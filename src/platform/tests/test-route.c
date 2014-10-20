@@ -66,56 +66,56 @@ test_ip4_route ()
 	inet_pton (AF_INET, "198.51.100.1", &gateway);
 
 	/* Add route to gateway */
-	g_assert (nm_platform_ip4_route_add (ifindex, NM_PLATFORM_SOURCE_USER, gateway, 32, INADDR_ANY, metric, mss));
+	g_assert (nm_platform_ip4_route_add (ifindex, NM_IP_CONFIG_SOURCE_USER, gateway, 32, INADDR_ANY, metric, mss));
 	no_error ();
 	accept_signal (route_added);
 
 	/* Add route */
 	g_assert (!nm_platform_ip4_route_exists (ifindex, network, plen, metric));
 	no_error ();
-	g_assert (nm_platform_ip4_route_add (ifindex, NM_PLATFORM_SOURCE_USER, network, plen, gateway, metric, mss));
+	g_assert (nm_platform_ip4_route_add (ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, gateway, metric, mss));
 	no_error ();
 	g_assert (nm_platform_ip4_route_exists (ifindex, network, plen, metric));
 	no_error ();
 	accept_signal (route_added);
 
 	/* Add route again */
-	g_assert (nm_platform_ip4_route_add (ifindex, NM_PLATFORM_SOURCE_USER, network, plen, gateway, metric, mss));
+	g_assert (nm_platform_ip4_route_add (ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, gateway, metric, mss));
 	no_error ();
 	accept_signal (route_changed);
 
 	/* Add default route */
 	g_assert (!nm_platform_ip4_route_exists (ifindex, 0, 0, metric));
 	no_error ();
-	g_assert (nm_platform_ip4_route_add (ifindex, NM_PLATFORM_SOURCE_USER, 0, 0, gateway, metric, mss));
+	g_assert (nm_platform_ip4_route_add (ifindex, NM_IP_CONFIG_SOURCE_USER, 0, 0, gateway, metric, mss));
 	no_error ();
 	g_assert (nm_platform_ip4_route_exists (ifindex, 0, 0, metric));
 	no_error ();
 	accept_signal (route_added);
 
 	/* Add default route again */
-	g_assert (nm_platform_ip4_route_add (ifindex, NM_PLATFORM_SOURCE_USER, 0, 0, gateway, metric, mss));
+	g_assert (nm_platform_ip4_route_add (ifindex, NM_IP_CONFIG_SOURCE_USER, 0, 0, gateway, metric, mss));
 	no_error ();
 	accept_signal (route_changed);
 
 	/* Test route listing */
 	routes = nm_platform_ip4_route_get_all (ifindex, TRUE);
 	memset (rts, 0, sizeof (rts));
-	rts[0].source = NM_PLATFORM_SOURCE_USER;
+	rts[0].source = NM_IP_CONFIG_SOURCE_USER;
 	rts[0].network = gateway;
 	rts[0].plen = 32;
 	rts[0].ifindex = ifindex;
 	rts[0].gateway = INADDR_ANY;
 	rts[0].metric = metric;
 	rts[0].mss = mss;
-	rts[1].source = NM_PLATFORM_SOURCE_USER;
+	rts[1].source = NM_IP_CONFIG_SOURCE_USER;
 	rts[1].network = network;
 	rts[1].plen = plen;
 	rts[1].ifindex = ifindex;
 	rts[1].gateway = gateway;
 	rts[1].metric = metric;
 	rts[1].mss = mss;
-	rts[2].source = NM_PLATFORM_SOURCE_USER;
+	rts[2].source = NM_IP_CONFIG_SOURCE_USER;
 	rts[2].network = 0;
 	rts[2].plen = 0;
 	rts[2].ifindex = ifindex;
@@ -161,56 +161,56 @@ test_ip6_route ()
 	inet_pton (AF_INET6, "2001:db8:c:d:1:2:3:4", &gateway);
 
 	/* Add route to gateway */
-	g_assert (nm_platform_ip6_route_add (ifindex, NM_PLATFORM_SOURCE_USER, gateway, 128, in6addr_any, metric, mss));
+	g_assert (nm_platform_ip6_route_add (ifindex, NM_IP_CONFIG_SOURCE_USER, gateway, 128, in6addr_any, metric, mss));
 	no_error ();
 	accept_signal (route_added);
 
 	/* Add route */
 	g_assert (!nm_platform_ip6_route_exists (ifindex, network, plen, metric));
 	no_error ();
-	g_assert (nm_platform_ip6_route_add (ifindex, NM_PLATFORM_SOURCE_USER, network, plen, gateway, metric, mss));
+	g_assert (nm_platform_ip6_route_add (ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, gateway, metric, mss));
 	no_error ();
 	g_assert (nm_platform_ip6_route_exists (ifindex, network, plen, metric));
 	no_error ();
 	accept_signal (route_added);
 
 	/* Add route again */
-	g_assert (nm_platform_ip6_route_add (ifindex, NM_PLATFORM_SOURCE_USER, network, plen, gateway, metric, mss));
+	g_assert (nm_platform_ip6_route_add (ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, gateway, metric, mss));
 	no_error ();
 	accept_signal (route_changed);
 
 	/* Add default route */
 	g_assert (!nm_platform_ip6_route_exists (ifindex, in6addr_any, 0, metric));
 	no_error ();
-	g_assert (nm_platform_ip6_route_add (ifindex, NM_PLATFORM_SOURCE_USER, in6addr_any, 0, gateway, metric, mss));
+	g_assert (nm_platform_ip6_route_add (ifindex, NM_IP_CONFIG_SOURCE_USER, in6addr_any, 0, gateway, metric, mss));
 	no_error ();
 	g_assert (nm_platform_ip6_route_exists (ifindex, in6addr_any, 0, metric));
 	no_error ();
 	accept_signal (route_added);
 
 	/* Add default route again */
-	g_assert (nm_platform_ip6_route_add (ifindex, NM_PLATFORM_SOURCE_USER, in6addr_any, 0, gateway, metric, mss));
+	g_assert (nm_platform_ip6_route_add (ifindex, NM_IP_CONFIG_SOURCE_USER, in6addr_any, 0, gateway, metric, mss));
 	no_error ();
 	accept_signal (route_changed);
 
 	/* Test route listing */
 	routes = nm_platform_ip6_route_get_all (ifindex, TRUE);
 	memset (rts, 0, sizeof (rts));
-	rts[0].source = NM_PLATFORM_SOURCE_USER;
+	rts[0].source = NM_IP_CONFIG_SOURCE_USER;
 	rts[0].network = gateway;
 	rts[0].plen = 128;
 	rts[0].ifindex = ifindex;
 	rts[0].gateway = in6addr_any;
 	rts[0].metric = metric;
 	rts[0].mss = mss;
-	rts[1].source = NM_PLATFORM_SOURCE_USER;
+	rts[1].source = NM_IP_CONFIG_SOURCE_USER;
 	rts[1].network = network;
 	rts[1].plen = plen;
 	rts[1].ifindex = ifindex;
 	rts[1].gateway = gateway;
 	rts[1].metric = metric;
 	rts[1].mss = mss;
-	rts[2].source = NM_PLATFORM_SOURCE_USER;
+	rts[2].source = NM_IP_CONFIG_SOURCE_USER;
 	rts[2].network = in6addr_any;
 	rts[2].plen = 0;
 	rts[2].ifindex = ifindex;

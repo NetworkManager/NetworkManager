@@ -1858,7 +1858,7 @@ nm_platform_ip6_route_get_all (int ifindex, gboolean include_default)
 }
 
 gboolean
-nm_platform_ip4_route_add (int ifindex, NMPlatformSource source,
+nm_platform_ip4_route_add (int ifindex, NMIPConfigSource source,
                            in_addr_t network, int plen,
                            in_addr_t gateway, int metric, int mss)
 {
@@ -1887,7 +1887,7 @@ nm_platform_ip4_route_add (int ifindex, NMPlatformSource source,
 }
 
 gboolean
-nm_platform_ip6_route_add (int ifindex, NMPlatformSource source,
+nm_platform_ip6_route_add (int ifindex, NMIPConfigSource source,
                            struct in6_addr network, int plen, struct in6_addr gateway,
                            int metric, int mss)
 {
@@ -2059,7 +2059,7 @@ nm_platform_ip4_route_sync (int ifindex, const GArray *known_routes)
 				                                     known_route->gateway,
 				                                     known_route->metric,
 				                                     known_route->mss);
-				if (!success && known_route->source < NM_PLATFORM_SOURCE_USER) {
+				if (!success && known_route->source < NM_IP_CONFIG_SOURCE_USER) {
 					nm_log_dbg (LOGD_PLATFORM, "ignore error adding IPv4 route to kernel: %s",
 					                           nm_platform_ip4_route_to_string (known_route));
 					success = TRUE;
@@ -2127,7 +2127,7 @@ nm_platform_ip6_route_sync (int ifindex, const GArray *known_routes)
 				                                     known_route->gateway,
 				                                     known_route->metric,
 				                                     known_route->mss);
-				if (!success && known_route->source < NM_PLATFORM_SOURCE_USER) {
+				if (!success && known_route->source < NM_IP_CONFIG_SOURCE_USER) {
 					nm_log_dbg (LOGD_PLATFORM, "ignore error adding IPv6 route to kernel: %s",
 					                           nm_platform_ip6_route_to_string (known_route));
 					success = TRUE;
@@ -2150,26 +2150,26 @@ nm_platform_route_flush (int ifindex)
 /******************************************************************/
 
 static const char *
-source_to_string (NMPlatformSource source)
+source_to_string (NMIPConfigSource source)
 {
 	switch (source) {
-	case NM_PLATFORM_SOURCE_KERNEL:
+	case NM_IP_CONFIG_SOURCE_KERNEL:
 		return "kernel";
-	case NM_PLATFORM_SOURCE_SHARED:
+	case NM_IP_CONFIG_SOURCE_SHARED:
 		return "shared";
-	case NM_PLATFORM_SOURCE_IP4LL:
+	case NM_IP_CONFIG_SOURCE_IP4LL:
 		return "ipv4ll";
-	case NM_PLATFORM_SOURCE_PPP:
+	case NM_IP_CONFIG_SOURCE_PPP:
 		return "ppp";
-	case NM_PLATFORM_SOURCE_WWAN:
+	case NM_IP_CONFIG_SOURCE_WWAN:
 		return "wwan";
-	case NM_PLATFORM_SOURCE_VPN:
+	case NM_IP_CONFIG_SOURCE_VPN:
 		return "vpn";
-	case NM_PLATFORM_SOURCE_DHCP:
+	case NM_IP_CONFIG_SOURCE_DHCP:
 		return "dhcp";
-	case NM_PLATFORM_SOURCE_RDISC:
+	case NM_IP_CONFIG_SOURCE_RDISC:
 		return "rdisc";
-	case NM_PLATFORM_SOURCE_USER:
+	case NM_IP_CONFIG_SOURCE_USER:
 		return "user";
 	default:
 		break;

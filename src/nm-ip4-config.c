@@ -23,7 +23,6 @@
 
 #include "nm-ip4-config.h"
 
-#include "nm-platform.h"
 #include "nm-utils.h"
 #include "nm-dbus-manager.h"
 #include "nm-dbus-glib-types.h"
@@ -50,6 +49,7 @@ typedef struct {
 	char *nis_domain;
 	GArray *wins;
 	guint32 mtu;
+	NMIPConfigSource mtu_source;
 } NMIP4ConfigPrivate;
 
 /* internal guint32 are assigned to gobject properties of type uint. Ensure, that uint is large enough */
@@ -336,7 +336,7 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIP4Config *setting, i
 		address.plen = nm_ip4_address_get_prefix (s_addr);
 		address.lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
 		address.preferred = NM_PLATFORM_LIFETIME_PERMANENT;
-		address.source = NM_PLATFORM_SOURCE_USER;
+		address.source = NM_IP_CONFIG_SOURCE_USER;
 		g_strlcpy (address.label, label, sizeof (address.label));
 
 		nm_ip4_config_add_address (config, &address);
@@ -356,7 +356,7 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIP4Config *setting, i
 		route.metric = nm_ip4_route_get_metric (s_route);
 		if (!route.metric)
 			route.metric = default_route_metric;
-		route.source = NM_PLATFORM_SOURCE_USER;
+		route.source = NM_IP_CONFIG_SOURCE_USER;
 
 		nm_ip4_config_add_route (config, &route);
 	}
@@ -447,7 +447,7 @@ nm_ip4_config_create_setting (const NMIP4Config *config)
 			continue;
 
 		/* Ignore routes provided by external sources */
-		if (route->source != NM_PLATFORM_SOURCE_USER)
+		if (route->source != NM_IP_CONFIG_SOURCE_USER)
 			continue;
 
 		s_route = nm_ip4_route_new ();
@@ -517,7 +517,8 @@ nm_ip4_config_merge (NMIP4Config *dst, const NMIP4Config *src)
 
 	/* MTU */
 	if (!nm_ip4_config_get_mtu (dst))
-		nm_ip4_config_set_mtu (dst, nm_ip4_config_get_mtu (src));
+		nm_ip4_config_set_mtu (dst, nm_ip4_config_get_mtu (src),
+		                       nm_ip4_config_get_mtu_source (src));
 
 	/* NIS */
 	for (i = 0; i < nm_ip4_config_get_num_nis_servers (src); i++)
@@ -631,7 +632,7 @@ nm_ip4_config_subtract (NMIP4Config *dst, const NMIP4Config *src)
 
 	/* MTU */
 	if (nm_ip4_config_get_mtu (src) == nm_ip4_config_get_mtu (dst))
-		nm_ip4_config_set_mtu (dst, 0);
+		nm_ip4_config_set_mtu (dst, 0, NM_IP_CONFIG_SOURCE_UNKNOWN);
 
 	/* NIS */
 	for (i = 0; i < nm_ip4_config_get_num_nis_servers (src); i++) {
@@ -871,7 +872,7 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 
 	/* mtu */
 	if (src_priv->mtu != dst_priv->mtu) {
-		nm_ip4_config_set_mtu (dst, src_priv->mtu);
+		nm_ip4_config_set_mtu (dst, src_priv->mtu, src_priv->mtu_source);
 		has_minor_changes = TRUE;
 	}
 
@@ -1052,7 +1053,7 @@ nm_ip4_config_add_address (NMIP4Config *config, const NMPlatformIP4Address *new)
 			 * with "what should be" and the kernel values are "what turned out after configuring it".
 			 *
 			 * For other sources, the longer lifetime wins. */
-			if (   (new->source == NM_PLATFORM_SOURCE_KERNEL && new->source != item_old.source)
+			if (   (new->source == NM_IP_CONFIG_SOURCE_KERNEL && new->source != item_old.source)
 			    || nm_platform_ip_address_cmp_expiry ((const NMPlatformIPAddress *) &item_old, (const NMPlatformIPAddress *) new) > 0) {
 				item->timestamp = item_old.timestamp;
 				item->lifetime = item_old.lifetime;
@@ -1139,7 +1140,7 @@ void
 nm_ip4_config_add_route (NMIP4Config *config, const NMPlatformIP4Route *new)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
-	NMPlatformSource old_source;
+	NMIPConfigSource old_source;
 	int i;
 
 	g_return_if_fail (new != NULL);
@@ -1503,11 +1504,15 @@ nm_ip4_config_get_wins (const NMIP4Config *config, guint i)
 /******************************************************************/
 
 void
-nm_ip4_config_set_mtu (NMIP4Config *config, guint32 mtu)
+nm_ip4_config_set_mtu (NMIP4Config *config, guint32 mtu, NMIPConfigSource source)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 
-	priv->mtu = mtu;
+	if (source > priv->mtu_source) {
+		priv->mtu = mtu;
+		priv->mtu_source = source;
+	} else if (source == priv->mtu_source && (!priv->mtu || priv->mtu > mtu))
+		priv->mtu = mtu;
 }
 
 guint32
@@ -1516,6 +1521,14 @@ nm_ip4_config_get_mtu (const NMIP4Config *config)
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 
 	return priv->mtu;
+}
+
+NMIPConfigSource
+nm_ip4_config_get_mtu_source (const NMIP4Config *config)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+
+	return priv->mtu_source;
 }
 
 /******************************************************************/

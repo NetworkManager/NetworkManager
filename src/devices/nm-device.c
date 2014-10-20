@@ -2359,14 +2359,14 @@ aipd_get_ip4_config (NMDevice *self, guint32 lla)
 	memset (&address, 0, sizeof (address));
 	address.address = lla;
 	address.plen = 16;
-	address.source = NM_PLATFORM_SOURCE_IP4LL;
+	address.source = NM_IP_CONFIG_SOURCE_IP4LL;
 	nm_ip4_config_add_address (config, &address);
 
 	/* Add a multicast route for link-local connections: destination= 224.0.0.0, netmask=240.0.0.0 */
 	memset (&route, 0, sizeof (route));
 	route.network = htonl (0xE0000000L);
 	route.plen = 4;
-	route.source = NM_PLATFORM_SOURCE_IP4LL;
+	route.source = NM_IP_CONFIG_SOURCE_IP4LL;
 	route.metric = nm_device_get_priority (self);
 	nm_ip4_config_add_route (config, &route);
 
@@ -2888,7 +2888,7 @@ shared4_new_config (NMDevice *self, NMConnection *connection, NMDeviceStateReaso
 	}
 
 	config = nm_ip4_config_new ();
-	address.source = NM_PLATFORM_SOURCE_SHARED;
+	address.source = NM_IP_CONFIG_SOURCE_SHARED;
 	nm_ip4_config_add_address (config, &address);
 
 	/* Remove the address lock when the object gets disposed */
@@ -3575,7 +3575,7 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *self)
 			address.preferred = discovered_address->preferred;
 			if (address.preferred > address.lifetime)
 				address.preferred = address.lifetime;
-			address.source = NM_PLATFORM_SOURCE_RDISC;
+			address.source = NM_IP_CONFIG_SOURCE_RDISC;
 			address.flags = ifa_flags;
 
 			nm_ip6_config_add_address (priv->ac_ip6_config, &address);
@@ -3599,7 +3599,7 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *self)
 				route.network = discovered_route->network;
 				route.plen = discovered_route->plen;
 				route.gateway = discovered_route->gateway;
-				route.source = NM_PLATFORM_SOURCE_RDISC;
+				route.source = NM_IP_CONFIG_SOURCE_RDISC;
 				route.metric = nm_device_get_priority (self);
 
 				nm_ip6_config_add_route (priv->ac_ip6_config, &route);
@@ -3661,6 +3661,13 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *self)
 
 		g_snprintf (val, sizeof (val), "%d", rdisc->hop_limit);
 		nm_device_ipv6_sysctl_set (self, "hop_limit", val);
+	}
+
+	if (changed & NM_RDISC_CONFIG_MTU) {
+		char val[16];
+
+		g_snprintf (val, sizeof (val), "%d", rdisc->mtu);
+		nm_device_ipv6_sysctl_set (self, "mtu", val);
 	}
 
 	nm_device_activate_schedule_ip6_config_result (self);

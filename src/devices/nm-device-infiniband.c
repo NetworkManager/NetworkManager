@@ -142,7 +142,7 @@ ip4_config_pre_commit (NMDevice *self, NMIP4Config *config)
 	/* MTU override */
 	mtu = nm_setting_infiniband_get_mtu (s_infiniband);
 	if (mtu)
-		nm_ip4_config_set_mtu (config, mtu);
+		nm_ip4_config_set_mtu (config, mtu, NM_IP_CONFIG_SOURCE_USER);
 }
 
 static gboolean

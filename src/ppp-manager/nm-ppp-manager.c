@@ -583,7 +583,7 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 		address.plen = g_value_get_uint (val);
 
 	if (address.address && address.plen) {
-		address.source = NM_PLATFORM_SOURCE_PPP;
+		address.source = NM_IP_CONFIG_SOURCE_PPP;
 		nm_ip4_config_add_address (config, &address);
 	} else {
 		nm_log_err (LOGD_PPP, "invalid IPv4 address received!");
@@ -610,7 +610,7 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 		goto out;
 
 	if (mtu)
-		nm_ip4_config_set_mtu (config, mtu);
+		nm_ip4_config_set_mtu (config, mtu, NM_IP_CONFIG_SOURCE_PPP);
 
 	/* Push the IP4 config up to the device */
 	g_signal_emit (manager, signals[IP4_CONFIG], 0, priv->ip_iface, config);

@@ -390,7 +390,7 @@ ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
 	if (s_wired) {
 		mtu = nm_setting_wired_get_mtu (s_wired);
 		if (mtu)
-			nm_ip4_config_set_mtu (config, mtu);
+			nm_ip4_config_set_mtu (config, mtu, NM_IP_CONFIG_SOURCE_USER);
 	}
 }
 

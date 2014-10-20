@@ -827,7 +827,7 @@ ip4_address_add (NMPlatform *platform, int ifindex,
 	int i;
 
 	memset (&address, 0, sizeof (address));
-	address.source = NM_PLATFORM_SOURCE_KERNEL;
+	address.source = NM_IP_CONFIG_SOURCE_KERNEL;
 	address.ifindex = ifindex;
 	address.address = addr;
 	address.peer_address = peer_addr;
@@ -869,7 +869,7 @@ ip6_address_add (NMPlatform *platform, int ifindex,
 	int i;
 
 	memset (&address, 0, sizeof (address));
-	address.source = NM_PLATFORM_SOURCE_KERNEL;
+	address.source = NM_IP_CONFIG_SOURCE_KERNEL;
 	address.ifindex = ifindex;
 	address.address = addr;
 	address.peer_address = peer_addr;
@@ -1040,7 +1040,7 @@ ip6_route_get_all (NMPlatform *platform, int ifindex, gboolean include_default)
 }
 
 static gboolean
-ip4_route_add (NMPlatform *platform, int ifindex, NMPlatformSource source,
+ip4_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
                in_addr_t network, int plen, in_addr_t gateway,
                int metric, int mss)
 {
@@ -1049,7 +1049,7 @@ ip4_route_add (NMPlatform *platform, int ifindex, NMPlatformSource source,
 	guint i;
 
 	memset (&route, 0, sizeof (route));
-	route.source = NM_PLATFORM_SOURCE_KERNEL;
+	route.source = NM_IP_CONFIG_SOURCE_KERNEL;
 	route.ifindex = ifindex;
 	route.source = source;
 	route.network = network;
@@ -1080,7 +1080,7 @@ ip4_route_add (NMPlatform *platform, int ifindex, NMPlatformSource source,
 }
 
 static gboolean
-ip6_route_add (NMPlatform *platform, int ifindex, NMPlatformSource source,
+ip6_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
                struct in6_addr network, int plen, struct in6_addr gateway,
                int metric, int mss)
 {
@@ -1089,7 +1089,7 @@ ip6_route_add (NMPlatform *platform, int ifindex, NMPlatformSource source,
 	guint i;
 
 	memset (&route, 0, sizeof (route));
-	route.source = NM_PLATFORM_SOURCE_KERNEL;
+	route.source = NM_IP_CONFIG_SOURCE_KERNEL;
 	route.ifindex = ifindex;
 	route.source = source;
 	route.network = network;
