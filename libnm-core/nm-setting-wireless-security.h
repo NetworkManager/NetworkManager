@@ -41,35 +41,6 @@ G_BEGIN_DECLS
 #define NM_SETTING_WIRELESS_SECURITY_SETTING_NAME "802-11-wireless-security"
 
 /**
- * NMSettingWirelessSecurityError:
- * @NM_SETTING_WIRELESS_SECURITY_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY: the property was invalid
- * @NM_SETTING_WIRELESS_SECURITY_ERROR_MISSING_PROPERTY: the property was
- * missing and is required
- * @NM_SETTING_WIRELESS_SECURITY_ERROR_MISSING_802_1X_SETTING: a property contained
- * a value that requires the connection to contain a #NMSetting8021x setting
- * @NM_SETTING_WIRELESS_SECURITY_ERROR_LEAP_REQUIRES_802_1X: LEAP authentication
- * was specified but key management was not set to "8021x"
- * @NM_SETTING_WIRELESS_SECURITY_ERROR_LEAP_REQUIRES_USERNAME: LEAP authentication
- * was specified but no LEAP username was given
- * @NM_SETTING_WIRELESS_SECURITY_ERROR_SHARED_KEY_REQUIRES_WEP: Shared Key
- * authentication was specified but the setting did not specify WEP as the
- * encryption protocol
- */
-typedef enum {
-	NM_SETTING_WIRELESS_SECURITY_ERROR_UNKNOWN = 0,            /*< nick=UnknownError >*/
-	NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,       /*< nick=InvalidProperty >*/
-	NM_SETTING_WIRELESS_SECURITY_ERROR_MISSING_PROPERTY,       /*< nick=MissingProperty >*/
-	NM_SETTING_WIRELESS_SECURITY_ERROR_MISSING_802_1X_SETTING, /*< nick=Missing8021xSetting >*/
-	NM_SETTING_WIRELESS_SECURITY_ERROR_LEAP_REQUIRES_802_1X,   /*< nick=LEAPRequires8021x >*/
-	NM_SETTING_WIRELESS_SECURITY_ERROR_LEAP_REQUIRES_USERNAME, /*< nick=LEAPRequiresUsername >*/
-	NM_SETTING_WIRELESS_SECURITY_ERROR_SHARED_KEY_REQUIRES_WEP /*< nick=SharedKeyRequiresWEP >*/
-} NMSettingWirelessSecurityError;
-
-#define NM_SETTING_WIRELESS_SECURITY_ERROR nm_setting_wireless_security_error_quark ()
-GQuark nm_setting_wireless_security_error_quark (void);
-
-/**
  * NMWepKeyType:
  * @NM_WEP_KEY_TYPE_UNKNOWN: unknown WEP key type
  * @NM_WEP_KEY_TYPE_KEY: indicates a hexadecimal or ASCII formatted WEP key.

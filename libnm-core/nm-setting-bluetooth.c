@@ -41,24 +41,6 @@
  * Point (NAP) profiles.
  **/
 
-/**
- * nm_setting_bluetooth_error_quark:
- *
- * Registers an error quark for #NMSettingBluetooth if necessary.
- *
- * Returns: the error quark used for #NMSettingBluetooth errors.
- **/
-GQuark
-nm_setting_bluetooth_error_quark (void)
-{
-	static GQuark quark;
-
-	if (G_UNLIKELY (!quark))
-		quark = g_quark_from_static_string ("nm-setting-bluetooth-error-quark");
-	return quark;
-}
-
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingBluetooth, nm_setting_bluetooth, NM_TYPE_SETTING,
                          _nm_register_setting (BLUETOOTH, 1))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_BLUETOOTH)
@@ -131,8 +113,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (!priv->bdaddr) {
 		g_set_error_literal (error,
-		                     NM_SETTING_BLUETOOTH_ERROR,
-		                     NM_SETTING_BLUETOOTH_ERROR_MISSING_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
 		                     _("property is missing"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_BLUETOOTH_SETTING_NAME, NM_SETTING_BLUETOOTH_BDADDR);
 		return FALSE;
@@ -140,8 +122,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (!nm_utils_hwaddr_valid (priv->bdaddr, ETH_ALEN)) {
 		g_set_error_literal (error,
-		                     NM_SETTING_BLUETOOTH_ERROR,
-		                     NM_SETTING_BLUETOOTH_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property is invalid"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_BLUETOOTH_SETTING_NAME, NM_SETTING_BLUETOOTH_BDADDR);
 		return FALSE;
@@ -149,16 +131,16 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (!priv->type) {
 		g_set_error_literal (error,
-		                     NM_SETTING_BLUETOOTH_ERROR,
-		                     NM_SETTING_BLUETOOTH_ERROR_MISSING_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
 		                     _("property is missing"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_BLUETOOTH_SETTING_NAME, NM_SETTING_BLUETOOTH_TYPE);
 		return FALSE;
 	} else if (!g_str_equal (priv->type, NM_SETTING_BLUETOOTH_TYPE_DUN) &&
 	           !g_str_equal (priv->type, NM_SETTING_BLUETOOTH_TYPE_PANU)) {
 		g_set_error (error,
-		             NM_SETTING_BLUETOOTH_ERROR,
-		             NM_SETTING_BLUETOOTH_ERROR_INVALID_PROPERTY,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		             _("'%s' is not a valid value for the property"),
 		             priv->type);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_BLUETOOTH_SETTING_NAME, NM_SETTING_BLUETOOTH_TYPE);
@@ -174,12 +156,17 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		cdma = !!nm_setting_find_in_list (all_settings, NM_SETTING_CDMA_SETTING_NAME);
 
 		if (!gsm && !cdma) {
+			/* We can't return MISSING_SETTING here, because we don't know
+			 * whether to prefix the message with NM_SETTING_GSM_SETTING_NAME or
+			 * NM_SETTING_CDMA_SETTING_NAME.
+			 */
 			g_set_error (error,
-			             NM_SETTING_BLUETOOTH_ERROR,
-			             NM_SETTING_BLUETOOTH_ERROR_TYPE_SETTING_NOT_FOUND,
-			             _("requires '%s' or '%s' setting"),
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_SETTING,
+			             _("'%s' connection requires '%s' or '%s' setting"),
+			             NM_SETTING_BLUETOOTH_TYPE_DUN,
 			             NM_SETTING_GSM_SETTING_NAME, NM_SETTING_CDMA_SETTING_NAME);
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_BLUETOOTH_SETTING_NAME, NM_SETTING_BLUETOOTH_TYPE);
+			g_prefix_error (error, "%s: ", NM_SETTING_BLUETOOTH_SETTING_NAME);
 			return FALSE;
 		}
 	}

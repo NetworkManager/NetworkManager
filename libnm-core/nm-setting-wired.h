@@ -40,22 +40,6 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_WIRED_SETTING_NAME "802-3-ethernet"
 
-/**
- * NMSettingWiredError:
- * @NM_SETTING_WIRED_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_SETTING_WIRED_ERROR_INVALID_PROPERTY: the property was invalid
- * @NM_SETTING_WIRED_ERROR_MISSING_PROPERTY: the property was missing and is
- * required
- */
-typedef enum {
-	NM_SETTING_WIRED_ERROR_UNKNOWN = 0,      /*< nick=UnknownError >*/
-	NM_SETTING_WIRED_ERROR_INVALID_PROPERTY, /*< nick=InvalidProperty >*/
-	NM_SETTING_WIRED_ERROR_MISSING_PROPERTY  /*< nick=MissingProperty >*/
-} NMSettingWiredError;
-
-#define NM_SETTING_WIRED_ERROR nm_setting_wired_error_quark ()
-GQuark nm_setting_wired_error_quark (void);
-
 #define NM_SETTING_WIRED_PORT "port"
 #define NM_SETTING_WIRED_SPEED "speed"
 #define NM_SETTING_WIRED_DUPLEX "duplex"

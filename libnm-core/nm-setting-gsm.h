@@ -40,25 +40,6 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_GSM_SETTING_NAME "gsm"
 
-/**
- * NMSettingGsmError:
- * @NM_SETTING_GSM_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_SETTING_GSM_ERROR_INVALID_PROPERTY: the property was invalid
- * @NM_SETTING_GSM_ERROR_MISSING_PROPERTY: the property was missing and is
- * required
- * @NM_SETTING_GSM_ERROR_MISSING_SERIAL_SETTING: the required #NMSettingSerial
- * is missing in the connection
- */
-typedef enum {
-	NM_SETTING_GSM_ERROR_UNKNOWN = 0,           /*< nick=UnknownError >*/
-	NM_SETTING_GSM_ERROR_INVALID_PROPERTY,      /*< nick=InvalidProperty >*/
-	NM_SETTING_GSM_ERROR_MISSING_PROPERTY,      /*< nick=MissingProperty >*/
-	NM_SETTING_GSM_ERROR_MISSING_SERIAL_SETTING /*< nick=MissingSerialSetting >*/
-} NMSettingGsmError;
-
-#define NM_SETTING_GSM_ERROR nm_setting_gsm_error_quark ()
-GQuark nm_setting_gsm_error_quark (void);
-
 #define NM_SETTING_GSM_NUMBER         "number"
 #define NM_SETTING_GSM_USERNAME       "username"
 #define NM_SETTING_GSM_PASSWORD       "password"

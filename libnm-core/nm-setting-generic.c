@@ -36,23 +36,6 @@
  * the "connection type" setting on #NMConnections for generic devices.
  **/
 
-/**
- * nm_setting_generic_error_quark:
- *
- * Registers an error quark for #NMSettingGeneric if necessary.
- *
- * Returns: the error quark used for #NMSettingGeneric errors.
- **/
-GQuark
-nm_setting_generic_error_quark (void)
-{
-	static GQuark quark;
-
-	if (G_UNLIKELY (!quark))
-		quark = g_quark_from_static_string ("nm-setting-generic-error-quark");
-	return quark;
-}
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingGeneric, nm_setting_generic, NM_TYPE_SETTING,
                          _nm_register_setting (GENERIC, 1))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_GENERIC)

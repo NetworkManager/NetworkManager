@@ -37,24 +37,6 @@
  * necessary for connection to Ethernet networks.
  **/
 
-/**
- * nm_setting_wired_error_quark:
- *
- * Registers an error quark for #NMSettingWired if necessary.
- *
- * Returns: the error quark used for #NMSettingWired errors.
- **/
-GQuark
-nm_setting_wired_error_quark (void)
-{
-	static GQuark quark;
-
-	if (G_UNLIKELY (!quark))
-		quark = g_quark_from_static_string ("nm-setting-wired-error-quark");
-	return quark;
-}
-
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingWired, nm_setting_wired, NM_TYPE_SETTING,
                          _nm_register_setting (WIRED, 1))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_WIRED)
@@ -586,8 +568,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (priv->port && !_nm_utils_string_in_list (priv->port, valid_ports)) {
 		g_set_error (error,
-		             NM_SETTING_WIRED_ERROR,
-		             NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		             _("'%s' is not a valid Ethernet port value"),
 		             priv->port);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_PORT);
@@ -596,8 +578,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (priv->duplex && !_nm_utils_string_in_list (priv->duplex, valid_duplex)) {
 		g_set_error (error,
-		             NM_SETTING_WIRED_ERROR,
-		             NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		             _("'%s' is not a valid duplex value"),
 		             priv->duplex);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_DUPLEX);
@@ -606,8 +588,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (priv->device_mac_address && !nm_utils_hwaddr_valid (priv->device_mac_address, ETH_ALEN)) {
 		g_set_error_literal (error,
-		                     NM_SETTING_WIRED_ERROR,
-		                     NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("is not a valid MAC address"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_MAC_ADDRESS);
 		return FALSE;
@@ -617,8 +599,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	     mac_blacklist_iter = mac_blacklist_iter->next) {
 		if (!nm_utils_hwaddr_valid (mac_blacklist_iter->data, ETH_ALEN)) {
 			g_set_error (error,
-			             NM_SETTING_WIRED_ERROR,
-			             NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("'%s' is not a valid MAC address"),
 			             (const char *) mac_blacklist_iter->data);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST);
@@ -631,8 +613,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 		if (len != 2 && len != 3) {
 			g_set_error_literal (error,
-			                     NM_SETTING_WIRED_ERROR,
-			                     NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			                     _("property is invalid"));
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_S390_SUBCHANNELS);
 			return FALSE;
@@ -641,8 +623,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (priv->s390_nettype && !_nm_utils_string_in_list (priv->s390_nettype, valid_nettype)) {
 		g_set_error_literal (error,
-		                     NM_SETTING_WIRED_ERROR,
-		                     NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property is invalid"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_S390_NETTYPE);
 		return FALSE;
@@ -654,8 +636,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		    || !strlen (value)
 		    || (strlen (value) > 200)) {
 			g_set_error (error,
-			             NM_SETTING_WIRED_ERROR,
-			             NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("invalid '%s' or its value '%s'"),
 			             key, value);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_S390_OPTIONS);
@@ -665,8 +647,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (priv->cloned_mac_address && !nm_utils_hwaddr_valid (priv->cloned_mac_address, ETH_ALEN)) {
 		g_set_error_literal (error,
-		                     NM_SETTING_WIRED_ERROR,
-		                     NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("is not a valid MAC address"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_CLONED_MAC_ADDRESS);
 		return FALSE;

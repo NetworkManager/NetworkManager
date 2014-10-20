@@ -29,16 +29,6 @@
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
 
-GQuark
-nm_setting_olpc_mesh_error_quark (void)
-{
-	static GQuark quark;
-
-	if (G_UNLIKELY (!quark))
-		quark = g_quark_from_static_string ("nm-setting-olpc-mesh-error-quark");
-	return quark;
-}
-
 static void nm_setting_olpc_mesh_init (NMSettingOlpcMesh *setting);
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingOlpcMesh, nm_setting_olpc_mesh, NM_TYPE_SETTING,
@@ -111,8 +101,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (!priv->ssid) {
 		g_set_error_literal (error,
-		                     NM_SETTING_OLPC_MESH_ERROR,
-		                     NM_SETTING_OLPC_MESH_ERROR_MISSING_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
 		                     _("property is missing"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_OLPC_MESH_SETTING_NAME, NM_SETTING_OLPC_MESH_SSID);
 		return FALSE;
@@ -121,8 +111,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	length = g_bytes_get_size (priv->ssid);
 	if (length == 0 || length > 32) {
 		g_set_error_literal (error,
-		                     NM_SETTING_OLPC_MESH_ERROR,
-		                     NM_SETTING_OLPC_MESH_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("SSID length is out of range <1-32> bytes"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_OLPC_MESH_SETTING_NAME, NM_SETTING_OLPC_MESH_SSID);
 		return FALSE;
@@ -130,8 +120,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (priv->channel == 0 || priv->channel > 13) {
 		g_set_error (error,
-		             NM_SETTING_OLPC_MESH_ERROR,
-		             NM_SETTING_OLPC_MESH_ERROR_INVALID_PROPERTY,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		             _("'%d' is not a valid channel"),
 		             priv->channel);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_OLPC_MESH_SETTING_NAME, NM_SETTING_OLPC_MESH_CHANNEL);
@@ -140,8 +130,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (priv->dhcp_anycast_addr && !nm_utils_hwaddr_valid (priv->dhcp_anycast_addr, ETH_ALEN)) {
 		g_set_error_literal (error,
-		                     NM_SETTING_OLPC_MESH_ERROR,
-		                     NM_SETTING_OLPC_MESH_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property is invalid"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_OLPC_MESH_SETTING_NAME, NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS);
 		return FALSE;

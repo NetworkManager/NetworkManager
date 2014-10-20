@@ -41,25 +41,6 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_IP6_CONFIG_SETTING_NAME "ipv6"
 
-/**
- * NMSettingIP6ConfigError:
- * @NM_SETTING_IP6_CONFIG_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_SETTING_IP6_CONFIG_ERROR_INVALID_PROPERTY: the property was invalid
- * @NM_SETTING_IP6_CONFIG_ERROR_MISSING_PROPERTY: the property was missing and is
- * required
- * @NM_SETTING_IP6_CONFIG_ERROR_NOT_ALLOWED_FOR_METHOD: the property's value is
- * not valid with the given IPv6 method
- */
-typedef enum {
-	NM_SETTING_IP6_CONFIG_ERROR_UNKNOWN = 0,           /*< nick=UnknownError >*/
-	NM_SETTING_IP6_CONFIG_ERROR_INVALID_PROPERTY,      /*< nick=InvalidProperty >*/
-	NM_SETTING_IP6_CONFIG_ERROR_MISSING_PROPERTY,      /*< nick=MissingProperty >*/
-	NM_SETTING_IP6_CONFIG_ERROR_NOT_ALLOWED_FOR_METHOD /*< nick=NotAllowedForMethod >*/
-} NMSettingIP6ConfigError;
-
-#define NM_SETTING_IP6_CONFIG_ERROR nm_setting_ip6_config_error_quark ()
-GQuark nm_setting_ip6_config_error_quark (void);
-
 #define NM_SETTING_IP6_CONFIG_METHOD             "method"
 #define NM_SETTING_IP6_CONFIG_DNS                "dns"
 #define NM_SETTING_IP6_CONFIG_DNS_SEARCH         "dns-search"

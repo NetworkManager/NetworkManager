@@ -35,24 +35,6 @@
  * necessary for team connections.
  **/
 
-/**
- * nm_setting_team_error_quark:
- *
- * Registers an error quark for #NMSettingTeam if necessary.
- *
- * Returns: the error quark used for #NMSettingTeam errors.
- **/
-GQuark
-nm_setting_team_error_quark (void)
-{
-	static GQuark quark;
-
-	if (G_UNLIKELY (!quark))
-		quark = g_quark_from_static_string ("nm-setting-team-error-quark");
-	return quark;
-}
-
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingTeam, nm_setting_team, NM_TYPE_SETTING,
                          _nm_register_setting (TEAM, 1))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_TEAM)

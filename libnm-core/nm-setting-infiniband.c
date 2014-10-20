@@ -36,23 +36,6 @@
  * necessary for connection to IP-over-InfiniBand networks.
  **/
 
-/**
- * nm_setting_infiniband_error_quark:
- *
- * Registers an error quark for #NMSettingInfiniband if necessary.
- *
- * Returns: the error quark used for #NMSettingInfiniband errors.
- **/
-GQuark
-nm_setting_infiniband_error_quark (void)
-{
-	static GQuark quark;
-
-	if (G_UNLIKELY (!quark))
-		quark = g_quark_from_static_string ("nm-setting-infiniband-error-quark");
-	return quark;
-}
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingInfiniband, nm_setting_infiniband, NM_TYPE_SETTING,
                          _nm_register_setting (INFINIBAND, 1))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_INFINIBAND)
@@ -203,8 +186,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (priv->mac_address && !nm_utils_hwaddr_valid (priv->mac_address, INFINIBAND_ALEN)) {
 		g_set_error_literal (error,
-		                     NM_SETTING_INFINIBAND_ERROR,
-		                     NM_SETTING_INFINIBAND_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property is invalid"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_INFINIBAND_SETTING_NAME, NM_SETTING_INFINIBAND_MAC_ADDRESS);
 		return FALSE;
@@ -218,8 +201,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			normerr_max_mtu = 65520;
 	} else {
 		g_set_error_literal (error,
-		                     NM_SETTING_INFINIBAND_ERROR,
-		                     NM_SETTING_INFINIBAND_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property is invalid"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_INFINIBAND_SETTING_NAME, NM_SETTING_INFINIBAND_TRANSPORT_MODE);
 		return FALSE;
@@ -228,16 +211,16 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	if (priv->parent) {
 		if (!nm_utils_iface_valid_name (priv->parent)) {
 			g_set_error_literal (error,
-			                     NM_SETTING_INFINIBAND_ERROR,
-			                     NM_SETTING_INFINIBAND_ERROR_INVALID_PROPERTY,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			                     _("not a valid interface name"));
 			g_prefix_error (error, "%s: ", NM_SETTING_INFINIBAND_PARENT);
 			return FALSE;
 		}
 		if (priv->p_key == -1) {
 			g_set_error_literal (error,
-			                     NM_SETTING_INFINIBAND_ERROR,
-			                     NM_SETTING_INFINIBAND_ERROR_INVALID_PROPERTY,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			                     _("Must specify a P_Key if specifying parent"));
 			g_prefix_error (error, "%s: ", NM_SETTING_INFINIBAND_PARENT);
 		}
@@ -246,8 +229,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	if (priv->p_key != -1) {
 		if (!priv->mac_address && !priv->parent) {
 			g_set_error_literal (error,
-			                     NM_SETTING_INFINIBAND_ERROR,
-			                     NM_SETTING_INFINIBAND_ERROR_MISSING_PROPERTY,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
 			                     _("InfiniBand P_Key connection did not specify parent interface name"));
 			g_prefix_error (error, "%s: ", NM_SETTING_INFINIBAND_PARENT);
 			return FALSE;
@@ -266,8 +249,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			 * NMSettingInfiniband.
 			 **/
 			g_set_error (error,
-			             NM_SETTING_CONNECTION_ERROR,
-			             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("'%s' is not a valid interface name"),
 			             interface_name);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
@@ -282,8 +265,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 					 * for now just reject such connections.
 					 **/
 					g_set_error (error,
-					             NM_SETTING_CONNECTION_ERROR,
-					             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
+					             NM_CONNECTION_ERROR,
+					             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 					             _("interface name of software infiniband device must be '%s' or unset (instead it is '%s')"),
 					             priv->virtual_iface_name, interface_name);
 					g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
@@ -297,8 +280,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (normerr_max_mtu > 0) {
 		g_set_error (error,
-		             NM_SETTING_INFINIBAND_ERROR,
-		             NM_SETTING_INFINIBAND_ERROR_INVALID_PROPERTY,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		             _("mtu for transport mode '%s' can be at most %d but it is %d"),
 		             priv->transport_mode, normerr_max_mtu, priv->mtu);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_INFINIBAND_SETTING_NAME, NM_SETTING_INFINIBAND_MTU);

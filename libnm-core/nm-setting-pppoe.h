@@ -40,25 +40,6 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_PPPOE_SETTING_NAME "pppoe"
 
-/**
- * NMSettingPppoeError:
- * @NM_SETTING_PPPOE_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_SETTING_PPPOE_ERROR_INVALID_PROPERTY: the property was invalid
- * @NM_SETTING_PPPOE_ERROR_MISSING_PROPERTY: the property was missing and is
- * required
- * @NM_SETTING_PPPOE_ERROR_MISSING_PPP_SETTING: the connection
- * did not contain a required PPP setting for PPP related options
- */
-typedef enum {
-	NM_SETTING_PPPOE_ERROR_UNKNOWN = 0,        /*< nick=UnknownError >*/
-	NM_SETTING_PPPOE_ERROR_INVALID_PROPERTY,   /*< nick=InvalidProperty >*/
-	NM_SETTING_PPPOE_ERROR_MISSING_PROPERTY,   /*< nick=MissingProperty >*/
-	NM_SETTING_PPPOE_ERROR_MISSING_PPP_SETTING /*< nick=MissingPPPSetting >*/
-} NMSettingPppoeError;
-
-#define NM_SETTING_PPPOE_ERROR nm_setting_pppoe_error_quark ()
-GQuark nm_setting_pppoe_error_quark (void);
-
 #define NM_SETTING_PPPOE_SERVICE        "service"
 #define NM_SETTING_PPPOE_USERNAME       "username"
 #define NM_SETTING_PPPOE_PASSWORD       "password"

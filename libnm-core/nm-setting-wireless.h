@@ -42,28 +42,6 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_WIRELESS_SETTING_NAME "802-11-wireless"
 
-/**
- * NMSettingWirelessError:
- * @NM_SETTING_WIRELESS_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY: the property was invalid
- * @NM_SETTING_WIRELESS_ERROR_MISSING_PROPERTY: the property was missing and is
- * required
- * @NM_SETTING_WIRELESS_ERROR_MISSING_SECURITY_SETTING: property values require
- * the presence of an #NMSettingWirelessSecurity object in the connection
- * @NM_SETTING_WIRELESS_ERROR_CHANNEL_REQUIRES_BAND: the property channel was
- * set to a value that requires the #NMSettingWireless:band property to be set
- */
-typedef enum {
-	NM_SETTING_WIRELESS_ERROR_UNKNOWN = 0,              /*< nick=UnknownError >*/
-	NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,         /*< nick=InvalidProperty >*/
-	NM_SETTING_WIRELESS_ERROR_MISSING_PROPERTY,         /*< nick=MissingProperty >*/
-	NM_SETTING_WIRELESS_ERROR_MISSING_SECURITY_SETTING, /*< nick=MissingSecuritySetting >*/
-	NM_SETTING_WIRELESS_ERROR_CHANNEL_REQUIRES_BAND     /*< nick=ChannelRequiresBand >*/
-} NMSettingWirelessError;
-
-#define NM_SETTING_WIRELESS_ERROR nm_setting_wireless_error_quark ()
-GQuark nm_setting_wireless_error_quark (void);
-
 #define NM_SETTING_WIRELESS_SSID        "ssid"
 #define NM_SETTING_WIRELESS_MODE        "mode"
 #define NM_SETTING_WIRELESS_BAND        "band"

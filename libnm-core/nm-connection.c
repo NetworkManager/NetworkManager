@@ -259,9 +259,10 @@ validate_permissions_type (GVariant *variant, GError **error)
 	if (permissions) {
 		if (!g_variant_is_of_type (permissions, G_VARIANT_TYPE_STRING_ARRAY)) {
 			g_set_error_literal (error,
-			                     NM_SETTING_ERROR,
-			                     NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH,
-			                     "Wrong permissions property type; should be a list of strings.");
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("wrong type; should be a list of strings."));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_PERMISSIONS);
 			valid = FALSE;
 		}
 		g_variant_unref (permissions);

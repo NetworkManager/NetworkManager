@@ -1449,9 +1449,10 @@ complete_connection (NMDevice *device,
 		/* Make sure the setting MAC (if any) matches the device's permanent MAC */
 		if (!nm_utils_hwaddr_matches (setting_mac, -1, priv->perm_hw_addr, -1)) {
 			g_set_error_literal (error,
-			                     NM_SETTING_WIRED_ERROR,
-			                     NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
-			                     NM_SETTING_WIRED_MAC_ADDRESS);
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("connection does not match device"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_MAC_ADDRESS);
 			return FALSE;
 		}
 	} else {

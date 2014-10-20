@@ -40,22 +40,6 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_OLPC_MESH_SETTING_NAME "802-11-olpc-mesh"
 
-/**
- * NMSettingOlpcMeshError:
- * @NM_SETTING_OLPC_MESH_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_SETTING_OLPC_MESH_ERROR_INVALID_PROPERTY: the property was invalid
- * @NM_SETTING_OLPC_MESH_ERROR_MISSING_PROPERTY: the property was missing and is
- * required
- */
-typedef enum {
-	NM_SETTING_OLPC_MESH_ERROR_UNKNOWN = 0,      /*< nick=UnknownError >*/
-	NM_SETTING_OLPC_MESH_ERROR_INVALID_PROPERTY, /*< nick=InvalidProperty >*/
-	NM_SETTING_OLPC_MESH_ERROR_MISSING_PROPERTY  /*< nick=MissingProperty >*/
-} NMSettingOlpcMeshError;
-
-#define NM_SETTING_OLPC_MESH_ERROR nm_setting_olpc_mesh_error_quark ()
-GQuark nm_setting_olpc_mesh_error_quark (void);
-
 #define NM_SETTING_OLPC_MESH_SSID                 "ssid"
 #define NM_SETTING_OLPC_MESH_CHANNEL              "channel"
 #define NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS "dhcp-anycast-address"

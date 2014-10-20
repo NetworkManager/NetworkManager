@@ -1107,9 +1107,10 @@ complete_connection (NMDevice *device,
 	 */
 	if (is_adhoc_wpa (connection)) {
 		g_set_error_literal (error,
-		                     NM_SETTING_WIRELESS_ERROR,
-		                     NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
-		                     "WPA Ad-Hoc disabled due to kernel bugs");
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_SETTING,
+		                     _("WPA Ad-Hoc disabled due to kernel bugs"));
+		g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
 		if (tmp_ssid)
 			g_byte_array_unref (tmp_ssid);
 		return FALSE;
@@ -1136,10 +1137,11 @@ complete_connection (NMDevice *device,
 	if (setting_mac) {
 		/* Make sure the setting MAC (if any) matches the device's permanent MAC */
 		if (!nm_utils_hwaddr_matches (setting_mac, -1, priv->perm_hw_addr, -1)) {
-			g_set_error (error,
-			             NM_SETTING_WIRELESS_ERROR,
-			             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
-			             NM_SETTING_WIRELESS_MAC_ADDRESS);
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("connection does not match device"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_MAC_ADDRESS);
 			return FALSE;
 		}
 	} else {

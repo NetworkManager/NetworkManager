@@ -39,22 +39,6 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_ADSL_SETTING_NAME "adsl"
 
-/**
- * NMSettingAdslError:
- * @NM_SETTING_ADSL_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_SETTING_ADSL_ERROR_INVALID_PROPERTY: the property was invalid
- * @NM_SETTING_ADSL_ERROR_MISSING_PROPERTY: the property was missing and is
- * required
- */
-typedef enum {
-	NM_SETTING_ADSL_ERROR_UNKNOWN = 0,              /*< nick=UnknownError >*/
-	NM_SETTING_ADSL_ERROR_INVALID_PROPERTY,         /*< nick=InvalidProperty >*/
-	NM_SETTING_ADSL_ERROR_MISSING_PROPERTY          /*< nick=MissingProperty >*/
-} NMSettingAdslError;
-
-#define NM_SETTING_ADSL_ERROR nm_setting_adsl_error_quark ()
-GQuark nm_setting_adsl_error_quark (void);
-
 #define NM_SETTING_ADSL_USERNAME            "username"
 #define NM_SETTING_ADSL_PASSWORD            "password"
 #define NM_SETTING_ADSL_PASSWORD_FLAGS      "password-flags"

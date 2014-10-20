@@ -38,24 +38,6 @@
  * a #NMSettingConnection setting.
  **/
 
-/**
- * nm_setting_connection_error_quark:
- *
- * Registers an error quark for #NMSettingConnection if necessary.
- *
- * Returns: the error quark used for #NMSettingConnection errors.
- **/
-GQuark
-nm_setting_connection_error_quark (void)
-{
-	static GQuark quark;
-
-	if (G_UNLIKELY (!quark))
-		quark = g_quark_from_static_string ("nm-setting-connection-error-quark");
-	return quark;
-}
-
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingConnection, nm_setting_connection, NM_TYPE_SETTING,
                          _nm_register_setting (CONNECTION, 0))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_CONNECTION)
@@ -754,11 +736,11 @@ static void
 _set_error_missing_base_setting (GError **error, const char *type)
 {
 	g_set_error (error,
-	             NM_SETTING_CONNECTION_ERROR,
-	             NM_SETTING_CONNECTION_ERROR_TYPE_SETTING_NOT_FOUND,
-	             _("requires presence of '%s' setting in the connection"),
+	             NM_CONNECTION_ERROR,
+	             NM_CONNECTION_ERROR_MISSING_SETTING,
+	             _("setting required for connection of type '%s'"),
 	             type);
-	g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_TYPE);
+	g_prefix_error (error, "%s: ", type);
 }
 
 static gboolean
@@ -775,15 +757,15 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (!priv->id) {
 		g_set_error_literal (error,
-		                     NM_SETTING_CONNECTION_ERROR,
-		                     NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
 		                     _("property is missing"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_ID);
 		return FALSE;
 	} else if (!priv->id[0]) {
 		g_set_error_literal (error,
-		                     NM_SETTING_CONNECTION_ERROR,
-		                     NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property is empty"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_ID);
 		return FALSE;
@@ -791,15 +773,15 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (!priv->uuid) {
 		g_set_error_literal (error,
-		                     NM_SETTING_CONNECTION_ERROR,
-		                     NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
 		                     _("property is missing"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_UUID);
 		return FALSE;
 	} else if (!nm_utils_is_uuid (priv->uuid)) {
 		g_set_error (error,
-		             NM_SETTING_CONNECTION_ERROR,
-		             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		             _("'%s' is not a valid UUID"),
 		             priv->uuid);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_UUID);
@@ -809,8 +791,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	if (priv->interface_name) {
 		if (!nm_utils_iface_valid_name (priv->interface_name)) {
 			g_set_error (error,
-			             NM_SETTING_CONNECTION_ERROR,
-			             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("'%s' is not a valid interface name"),
 			             priv->interface_name);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
@@ -821,8 +803,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	if (!priv->type) {
 		if (!(normerr_base_type = _nm_setting_find_in_list_base_type (all_settings))) {
 			g_set_error_literal (error,
-			                     NM_SETTING_CONNECTION_ERROR,
-			                     NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
 			                     _("property is missing"));
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_TYPE);
 			return FALSE;
@@ -832,8 +814,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 		if (!priv->type[0]) {
 			g_set_error_literal (error,
-			                     NM_SETTING_CONNECTION_ERROR,
-			                     NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			                     _("property is empty"));
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_TYPE);
 			return FALSE;
@@ -842,8 +824,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		base_type = nm_setting_lookup_type (priv->type);
 		if (base_type == G_TYPE_INVALID || !_nm_setting_type_is_base_type (base_type)) {
 			g_set_error (error,
-			             NM_SETTING_CONNECTION_ERROR,
-			             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("connection type '%s' is not valid"),
 			             priv->type);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_TYPE);
@@ -877,8 +859,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (priv->slave_type && !is_slave) {
 		g_set_error (error,
-		             NM_SETTING_CONNECTION_ERROR,
-		             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		             _("Unknown slave type '%s'"), priv->slave_type);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);
 		return FALSE;
@@ -887,8 +869,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	if (is_slave) {
 		if (!priv->master) {
 			g_set_error_literal (error,
-			                     NM_SETTING_CONNECTION_ERROR,
-			                     NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
 			                     _("Slave connections need a valid '" NM_SETTING_CONNECTION_MASTER "' property"));
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_MASTER);
 			return FALSE;
@@ -908,8 +890,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 				normerr_missing_slave_type_port = nm_setting_get_name (s_port);
 			} else {
 				g_set_error_literal (error,
-				                     NM_SETTING_CONNECTION_ERROR,
-				                     NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
+				                     NM_CONNECTION_ERROR,
+				                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
 				                     _("Cannot set '" NM_SETTING_CONNECTION_MASTER "' without '" NM_SETTING_CONNECTION_SLAVE_TYPE "'"));
 				g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);
 				return FALSE;
@@ -921,8 +903,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (normerr_base_type) {
 		g_set_error (error,
-		             NM_SETTING_CONNECTION_ERROR,
-		             NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_MISSING_PROPERTY,
 		             _("property type should be set to '%s'"),
 		             nm_setting_get_name (normerr_base_type));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_TYPE);
@@ -936,18 +918,18 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (normerr_slave_setting_type) {
 		g_set_error (error,
-		             NM_SETTING_CONNECTION_ERROR,
-		             NM_SETTING_CONNECTION_ERROR_SLAVE_SETTING_NOT_FOUND,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_MISSING_SETTING,
 		             _("slave-type '%s' requires a '%s' setting in the connection"),
 		             priv->slave_type, normerr_slave_setting_type);
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);
+		g_prefix_error (error, "%s: ", normerr_slave_setting_type);
 		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
 	}
 
 	if (normerr_missing_slave_type) {
 		g_set_error (error,
-		             NM_SETTING_CONNECTION_ERROR,
-		             NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_MISSING_PROPERTY,
 		             _("Detect a slave connection with '" NM_SETTING_CONNECTION_MASTER "' set and a port type '%s'. '" NM_SETTING_CONNECTION_SLAVE_TYPE "' should be set to '%s'"),
 		             normerr_missing_slave_type_port, normerr_missing_slave_type);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);

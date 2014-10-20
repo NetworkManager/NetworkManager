@@ -25,6 +25,7 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 
+#include <glib/gi18n.h>
 #include <WiMaxAPI.h>
 #include <WiMaxAPIEx.h>
 
@@ -451,10 +452,11 @@ complete_connection (NMDevice *device,
 	if (setting_mac) {
 		/* Make sure the setting MAC (if any) matches the device's permanent MAC */
 		if (!nm_utils_hwaddr_matches (setting_mac, -1, hw_address, -1)) {
-			g_set_error (error,
-				         NM_SETTING_WIMAX_ERROR,
-				         NM_SETTING_WIMAX_ERROR_INVALID_PROPERTY,
-				         NM_SETTING_WIMAX_MAC_ADDRESS);
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("connection does not match device"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIMAX_SETTING_NAME, NM_SETTING_WIMAX_MAC_ADDRESS);
 			return FALSE;
 		}
 	} else {

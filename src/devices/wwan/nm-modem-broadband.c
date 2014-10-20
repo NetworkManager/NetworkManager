@@ -466,9 +466,10 @@ complete_connection (NMModem *_self,
 		if (!s_gsm) {
 			/* Need a GSM setting at least */
 			g_set_error_literal (error,
-			                     NM_SETTING_GSM_ERROR,
-			                     NM_SETTING_GSM_ERROR_MISSING_PROPERTY,
-			                     NM_SETTING_GSM_APN);
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_MISSING_SETTING,
+			                     _("GSM mobile broadband connection requires a 'gsm' setting"));
+			g_prefix_error (error, "%s: ", NM_SETTING_GSM_SETTING_NAME);
 			return FALSE;
 		}
 

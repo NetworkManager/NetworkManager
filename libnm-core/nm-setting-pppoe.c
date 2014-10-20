@@ -37,24 +37,6 @@
  * to provide IP transport, for example cable or DSL modems.
  **/
 
-/**
- * nm_setting_pppoe_error_quark:
- *
- * Registers an error quark for #NMSettingPppoe if necessary.
- *
- * Returns: the error quark used for #NMSettingPppoe errors.
- **/
-GQuark
-nm_setting_pppoe_error_quark (void)
-{
-	static GQuark quark;
-
-	if (G_UNLIKELY (!quark))
-		quark = g_quark_from_static_string ("nm-setting-pppoe-error-quark");
-	return quark;
-}
-
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingPppoe, nm_setting_pppoe, NM_TYPE_SETTING,
                          _nm_register_setting (PPPOE, 3))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_PPPOE)
@@ -154,15 +136,15 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (!priv->username) {
 		g_set_error_literal (error,
-		                     NM_SETTING_PPPOE_ERROR,
-		                     NM_SETTING_PPPOE_ERROR_MISSING_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
 		                     _("property is missing"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_PPPOE_SETTING_NAME, NM_SETTING_PPPOE_USERNAME);
 		return FALSE;
 	} else if (!strlen (priv->username)) {
 		g_set_error_literal (error,
-		                     NM_SETTING_PPPOE_ERROR,
-		                     NM_SETTING_PPPOE_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property is empty"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_PPPOE_SETTING_NAME, NM_SETTING_PPPOE_USERNAME);
 		return FALSE;
@@ -170,8 +152,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (priv->service && !strlen (priv->service)) {
 		g_set_error_literal (error,
-		                     NM_SETTING_PPPOE_ERROR,
-		                     NM_SETTING_PPPOE_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property is empty"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_PPPOE_SETTING_NAME, NM_SETTING_PPPOE_SERVICE);
 		return FALSE;

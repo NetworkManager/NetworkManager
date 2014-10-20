@@ -37,23 +37,6 @@
  * properties related to IPv6 addressing, routing, and Domain Name Service
  **/
 
-/**
- * nm_setting_ip6_config_error_quark:
- *
- * Registers an error quark for #NMSettingIP6Config if necessary.
- *
- * Returns: the error quark used for #NMSettingIP6Config errors.
- **/
-GQuark
-nm_setting_ip6_config_error_quark (void)
-{
-	static GQuark quark;
-
-	if (G_UNLIKELY (!quark))
-		quark = g_quark_from_static_string ("nm-setting-ip6-config-error-quark");
-	return quark;
-}
-
 G_DEFINE_BOXED_TYPE (NMIP6Address, nm_ip6_address, nm_ip6_address_dup, nm_ip6_address_unref)
 G_DEFINE_BOXED_TYPE (NMIP6Route, nm_ip6_route, nm_ip6_route_dup, nm_ip6_route_unref)
 
@@ -811,8 +794,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (!priv->method) {
 		g_set_error_literal (error,
-		                     NM_SETTING_IP6_CONFIG_ERROR,
-		                     NM_SETTING_IP6_CONFIG_ERROR_MISSING_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
 		                     _("property is missing"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_METHOD);
 		return FALSE;
@@ -821,8 +804,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	if (!strcmp (priv->method, NM_SETTING_IP6_CONFIG_METHOD_MANUAL)) {
 		if (!priv->addresses) {
 			g_set_error (error,
-			             NM_SETTING_IP6_CONFIG_ERROR,
-			             NM_SETTING_IP6_CONFIG_ERROR_MISSING_PROPERTY,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_MISSING_PROPERTY,
 			             _("this property cannot be empty for '%s=%s'"),
 			             NM_SETTING_IP6_CONFIG_METHOD, priv->method);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_ADDRESSES);
@@ -833,8 +816,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	           || !strcmp (priv->method, NM_SETTING_IP6_CONFIG_METHOD_SHARED)) {
 		if (priv->dns) {
 			g_set_error (error,
-			             NM_SETTING_IP6_CONFIG_ERROR,
-			             NM_SETTING_IP6_CONFIG_ERROR_NOT_ALLOWED_FOR_METHOD,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("'%s' not allowed for %s=%s"),
 			             _("this property is not allowed for '%s=%s'"),
 			             NM_SETTING_IP6_CONFIG_METHOD, priv->method);
@@ -844,8 +827,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 		if (priv->dns_search) {
 			g_set_error (error,
-			             NM_SETTING_IP6_CONFIG_ERROR,
-			             NM_SETTING_IP6_CONFIG_ERROR_NOT_ALLOWED_FOR_METHOD,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("this property is not allowed for '%s=%s'"),
 			             NM_SETTING_IP6_CONFIG_METHOD, priv->method);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_DNS_SEARCH);
@@ -854,8 +837,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 		if (priv->addresses) {
 			g_set_error (error,
-			             NM_SETTING_IP6_CONFIG_ERROR,
-			             NM_SETTING_IP6_CONFIG_ERROR_NOT_ALLOWED_FOR_METHOD,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("this property is not allowed for '%s=%s'"),
 			             NM_SETTING_IP6_CONFIG_METHOD, priv->method);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_ADDRESSES);
@@ -866,8 +849,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		/* nothing to do */
 	} else {
 		g_set_error_literal (error,
-		                     NM_SETTING_IP6_CONFIG_ERROR,
-		                     NM_SETTING_IP6_CONFIG_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property is invalid"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_METHOD);
 		return FALSE;
@@ -875,8 +858,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (priv->dhcp_hostname && !strlen (priv->dhcp_hostname)) {
 		g_set_error_literal (error,
-		                     NM_SETTING_IP6_CONFIG_ERROR,
-		                     NM_SETTING_IP6_CONFIG_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property is missing"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_DHCP_HOSTNAME);
 		return FALSE;
@@ -888,8 +871,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 		if (inet_pton (AF_INET6, dns, &addr) != 1) {
 			g_set_error (error,
-			             NM_SETTING_IP6_CONFIG_ERROR,
-			             NM_SETTING_IP6_CONFIG_ERROR_INVALID_PROPERTY,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("%d. DNS server address is invalid"),
 			             i+1);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_DNS);

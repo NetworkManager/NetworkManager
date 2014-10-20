@@ -35,24 +35,6 @@
  * cable and DSL modems and some mobile broadband devices.
  **/
 
-/**
- * nm_setting_ppp_error_quark:
- *
- * Registers an error quark for #NMSettingPpp if necessary.
- *
- * Returns: the error quark used for #NMSettingPpp errors.
- **/
-GQuark
-nm_setting_ppp_error_quark (void)
-{
-	static GQuark quark;
-
-	if (G_UNLIKELY (!quark))
-		quark = g_quark_from_static_string ("nm-setting-ppp-error-quark");
-	return quark;
-}
-
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingPpp, nm_setting_ppp, NM_TYPE_SETTING,
                          _nm_register_setting (PPP, 3))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_PPP)
@@ -378,8 +360,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	if (priv->mru > 0) {
 		if (priv->mru < 128 || priv->mru > 16384) {
 			g_set_error (error,
-			             NM_SETTING_PPP_ERROR,
-			             NM_SETTING_PPP_ERROR_INVALID_PROPERTY,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("'%d' is out of valid range <128-16384>"),
 			             priv->mru);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_PPP_SETTING_NAME, NM_SETTING_PPP_MRU);
@@ -391,8 +373,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		/* lcp_echo_interval must also be non-zero */
 		if (priv->lcp_echo_interval == 0) {
 			g_set_error (error,
-			             NM_SETTING_PPP_ERROR,
-			             NM_SETTING_PPP_ERROR_INVALID_PROPERTY,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("setting this property requires non-zero '%s' property"),
 			             NM_SETTING_PPP_LCP_ECHO_INTERVAL);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_PPP_SETTING_NAME, NM_SETTING_PPP_LCP_ECHO_FAILURE);

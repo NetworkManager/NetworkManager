@@ -40,22 +40,6 @@ G_BEGIN_DECLS
 #define NM_SETTING_DCB_SETTING_NAME "dcb"
 
 /**
- * NMSettingDcbError:
- * @NM_SETTING_DCB_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_SETTING_DCB_ERROR_INVALID_PROPERTY: the property was invalid
- * @NM_SETTING_DCB_ERROR_MISSING_PROPERTY: the property was missing and is
- * required
- */
-typedef enum {
-	NM_SETTING_DCB_ERROR_UNKNOWN = 0,      /*< nick=UnknownError >*/
-	NM_SETTING_DCB_ERROR_INVALID_PROPERTY, /*< nick=InvalidProperty >*/
-	NM_SETTING_DCB_ERROR_MISSING_PROPERTY  /*< nick=MissingProperty >*/
-} NMSettingDcbError;
-
-#define NM_SETTING_DCB_ERROR nm_setting_dcb_error_quark ()
-GQuark nm_setting_dcb_error_quark (void);
-
-/**
  * NMSettingDcbFlags:
  * @NM_SETTING_DCB_FLAG_NONE: no flag
  * @NM_SETTING_DCB_FLAG_ENABLE: the feature is enabled

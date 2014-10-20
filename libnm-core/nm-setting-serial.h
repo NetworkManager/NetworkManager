@@ -41,25 +41,6 @@ G_BEGIN_DECLS
 #define NM_SETTING_SERIAL_SETTING_NAME "serial"
 
 /**
- * NMSettingSerialError:
- * @NM_SETTING_SERIAL_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_SETTING_SERIAL_ERROR_INVALID_PROPERTY: the property was invalid
- * @NM_SETTING_SERIAL_ERROR_MISSING_PROPERTY: the property was missing and is
- * required
- * @NM_SETTING_SERIAL_ERROR_MISSING_PPP_SETTING: one of the properties of the
- * setting requires the connection to contain an #NMSettingPpp setting
- */
-typedef enum {
-	NM_SETTING_SERIAL_ERROR_UNKNOWN = 0,        /*< nick=UnknownError >*/
-	NM_SETTING_SERIAL_ERROR_INVALID_PROPERTY,   /*< nick=InvalidProperty >*/
-	NM_SETTING_SERIAL_ERROR_MISSING_PROPERTY,   /*< nick=MissingProperty >*/
-	NM_SETTING_SERIAL_ERROR_MISSING_PPP_SETTING /*< nick=MissingPPPSetting >*/
-} NMSettingSerialError;
-
-#define NM_SETTING_SERIAL_ERROR nm_setting_serial_error_quark ()
-GQuark nm_setting_serial_error_quark (void);
-
-/**
  * NMSettingSerialParity:
  * @NM_SETTING_SERIAL_PARITY_NONE: No parity bits (default)
  * @NM_SETTING_SERIAL_PARITY_EVEN: Even parity

@@ -44,23 +44,6 @@
  * of properties and allowed values.
  */
 
-/**
- * nm_setting_error_quark:
- *
- * Registers an error quark for #NMSetting if necessary.
- *
- * Returns: the error quark used for NMSetting errors.
- **/
-GQuark
-nm_setting_error_quark (void)
-{
-	static GQuark quark;
-
-	if (G_UNLIKELY (!quark))
-		quark = g_quark_from_static_string ("nm-setting-error-quark");
-	return quark;
-}
-
 G_DEFINE_ABSTRACT_TYPE (NMSetting, nm_setting, G_TYPE_OBJECT)
 
 #define NM_SETTING_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING, NMSettingPrivate))
@@ -127,8 +110,7 @@ _ensure_registered (void)
  * @type: the #GType of the #NMSetting
  * @priority: the sort priority of the setting, see below
  *
- * INTERNAL ONLY: registers a setting's internal properties, like its priority
- * and its error quark type, with libnm.
+ * INTERNAL ONLY: registers a setting's internal properties with libnm.
  *
  * A setting's priority should roughly follow the OSI layer model, but it also
  * controls which settings get asked for secrets first.  Thus settings which
@@ -1476,10 +1458,11 @@ update_one_secret (NMSetting *setting, const char *key, GVariant *value, GError 
 
 	property = nm_setting_class_find_property (NM_SETTING_GET_CLASS (setting), key);
 	if (!property) {
-		g_set_error (error,
-		             NM_SETTING_ERROR,
-		             NM_SETTING_ERROR_PROPERTY_NOT_FOUND,
-		             "%s", key);
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_PROPERTY_NOT_FOUND,
+		                     _("secret not found"));
+		g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), key);
 		return NM_SETTING_UPDATE_SECRET_ERROR;
 	}
 
@@ -1567,19 +1550,21 @@ is_secret_prop (NMSetting *setting, const char *secret_name, GError **error)
 
 	property = nm_setting_class_find_property (NM_SETTING_GET_CLASS (setting), secret_name);
 	if (!property) {
-		g_set_error (error,
-		             NM_SETTING_ERROR,
-		             NM_SETTING_ERROR_PROPERTY_NOT_FOUND,
-		             "Secret %s not provided by this setting", secret_name);
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_PROPERTY_NOT_FOUND,
+		                     _("secret is not set"));
+		g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), secret_name);
 		return FALSE;
 	}
 
 	pspec = property->param_spec;
 	if (!pspec || !(pspec->flags & NM_SETTING_PARAM_SECRET)) {
-		g_set_error (error,
-		             NM_SETTING_ERROR,
-		             NM_SETTING_ERROR_PROPERTY_NOT_SECRET,
-		             "Property %s is not a secret", secret_name);
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_PROPERTY_NOT_SECRET,
+		                     _("not a secret property"));
+		g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), secret_name);
 		return FALSE;
 	}
 
@@ -1773,8 +1758,8 @@ _nm_setting_verify_required_virtual_interface_name (GSList *all_settings,
 	interface_name = s_con ? nm_setting_connection_get_interface_name (s_con) : NULL;
 	if (!interface_name) {
 		g_set_error_literal (error,
-		                     NM_SETTING_CONNECTION_ERROR,
-		                     NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
 		                     _("property is missing"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
 		return NM_SETTING_VERIFY_ERROR;

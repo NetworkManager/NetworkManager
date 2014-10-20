@@ -124,7 +124,7 @@ test_dcb_flags_invalid (void)
 	/* Assert that the setting is invalid while the app is disabled unless v is default */ \
 	success = nm_setting_verify (NM_SETTING (s_dcb), NULL, &error); \
 	if (v >= 0) { \
-		g_assert_error (error, NM_SETTING_DCB_ERROR, NM_SETTING_DCB_ERROR_INVALID_PROPERTY); \
+		g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY); \
 		g_assert (success == FALSE); \
 	} else { \
 		g_assert_no_error (error); \
@@ -177,7 +177,7 @@ test_dcb_app_priorities (void)
 			 * and a value has been set. \
 			 */ \
 			success = nm_setting_verify (NM_SETTING (s_dcb), NULL, &error); \
-			g_assert_error (error, NM_SETTING_DCB_ERROR, NM_SETTING_DCB_ERROR_INVALID_PROPERTY); \
+			g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY); \
 			g_assert (success == FALSE); \
 			g_clear_error (&error); \
 		} \
@@ -291,7 +291,7 @@ test_dcb_bandwidth_sums (void)
 	/* Assert verify fails when sums do not total 100% */
 	nm_setting_dcb_set_priority_group_bandwidth (s_dcb, 4, 20);
 	success = nm_setting_verify (NM_SETTING (s_dcb), NULL, &error);
-	g_assert_error (error, NM_SETTING_DCB_ERROR, NM_SETTING_DCB_ERROR_INVALID_PROPERTY);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
 	g_assert (success == FALSE);
 	g_clear_error (&error);
 }
