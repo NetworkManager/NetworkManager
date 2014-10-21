@@ -39,6 +39,8 @@ typedef struct {
 	char **nameservers;
 	char **domains;
 	char **searches;
+
+	gboolean new_style_data;
 } NMIP6ConfigPrivate;
 
 enum {
@@ -54,12 +56,29 @@ enum {
 };
 
 static gboolean
-demarshal_ip6_address_array (NMObject *object, GParamSpec *pspec, GVariant *value, gpointer field)
+demarshal_ip6_addresses (NMObject *object, GParamSpec *pspec, GVariant *value, gpointer field)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (object);
 
+	if (priv->new_style_data)
+		return TRUE;
+
 	g_ptr_array_unref (priv->addresses);
 	priv->addresses = nm_utils_ip6_addresses_from_variant (value, NULL);
+	_nm_object_queue_notify (object, NM_IP6_CONFIG_ADDRESSES);
+
+	return TRUE;
+}
+
+static gboolean
+demarshal_ip6_address_data (NMObject *object, GParamSpec *pspec, GVariant *value, gpointer field)
+{
+	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (object);
+
+	priv->new_style_data = TRUE;
+
+	g_ptr_array_unref (priv->addresses);
+	priv->addresses = nm_utils_ip_addresses_from_variant (value, AF_INET6);
 	_nm_object_queue_notify (object, NM_IP6_CONFIG_ADDRESSES);
 
 	return TRUE;
@@ -81,12 +100,29 @@ demarshal_ip6_nameserver_array (NMObject *object, GParamSpec *pspec, GVariant *v
 }
 
 static gboolean
-demarshal_ip6_routes_array (NMObject *object, GParamSpec *pspec, GVariant *value, gpointer field)
+demarshal_ip6_routes (NMObject *object, GParamSpec *pspec, GVariant *value, gpointer field)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (object);
 
+	if (priv->new_style_data)
+		return TRUE;
+
 	g_ptr_array_unref (priv->routes);
 	priv->routes = nm_utils_ip6_routes_from_variant (value);
+	_nm_object_queue_notify (object, NM_IP6_CONFIG_ROUTES);
+
+	return TRUE;
+}
+
+static gboolean
+demarshal_ip6_route_data (NMObject *object, GParamSpec *pspec, GVariant *value, gpointer field)
+{
+	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (object);
+
+	priv->new_style_data = TRUE;
+
+	g_ptr_array_unref (priv->routes);
+	priv->routes = nm_utils_ip_routes_from_variant (value, AF_INET6);
 	_nm_object_queue_notify (object, NM_IP6_CONFIG_ROUTES);
 
 	return TRUE;
@@ -98,8 +134,10 @@ init_dbus (NMObject *object)
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (object);
 	const NMPropertiesInfo property_info[] = {
 		{ NM_IP6_CONFIG_GATEWAY,      &priv->gateway, },
-		{ NM_IP6_CONFIG_ADDRESSES,    &priv->addresses, demarshal_ip6_address_array },
-		{ NM_IP6_CONFIG_ROUTES,       &priv->routes, demarshal_ip6_routes_array },
+		{ NM_IP6_CONFIG_ADDRESSES,    &priv->addresses, demarshal_ip6_addresses },
+		{ "address-data",             &priv->addresses, demarshal_ip6_address_data },
+		{ NM_IP6_CONFIG_ROUTES,       &priv->routes, demarshal_ip6_routes },
+		{ "route-data",               &priv->routes, demarshal_ip6_route_data },
 		{ NM_IP6_CONFIG_NAMESERVERS,  &priv->nameservers, demarshal_ip6_nameserver_array },
 		{ NM_IP6_CONFIG_DOMAINS,      &priv->domains, },
 		{ NM_IP6_CONFIG_SEARCHES,     &priv->searches, },

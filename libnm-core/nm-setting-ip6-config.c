@@ -214,9 +214,14 @@ ip6_addresses_set (NMSetting  *setting,
 	GVariant *s_ip6;
 	char *gateway = NULL;
 
-	addrs = nm_utils_ip6_addresses_from_variant (value, &gateway);
-
 	s_ip6 = g_variant_lookup_value (connection_dict, NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
+	/* If 'address-data' is set then ignore 'addresses' */
+	if (g_variant_lookup (s_ip6, "address-data", "aa{sv}", NULL)) {
+		g_variant_unref (s_ip6);
+		return;
+	}
+
+	addrs = nm_utils_ip6_addresses_from_variant (value, &gateway);
 
 	if (gateway && !g_variant_lookup (s_ip6, "gateway", "s", NULL)) {
 		g_object_set (setting,
@@ -232,16 +237,95 @@ ip6_addresses_set (NMSetting  *setting,
 }
 
 static GVariant *
-ip6_routes_to_dbus (const GValue *prop_value)
+ip6_address_data_get (NMSetting    *setting,
+                      NMConnection *connection,
+                      const char   *property)
 {
-	return nm_utils_ip6_routes_to_variant (g_value_get_boxed (prop_value));
+	GPtrArray *addrs;
+	GVariant *ret;
+
+	g_object_get (setting, NM_SETTING_IP_CONFIG_ADDRESSES, &addrs, NULL);
+	ret = nm_utils_ip_addresses_to_variant (addrs);
+	g_ptr_array_unref (addrs);
+
+	return ret;
 }
 
 static void
-ip6_routes_from_dbus (GVariant *dbus_value,
-                      GValue *prop_value)
+ip6_address_data_set (NMSetting  *setting,
+                      GVariant   *connection_dict,
+                      const char *property,
+                      GVariant   *value)
 {
-	g_value_take_boxed (prop_value, nm_utils_ip6_routes_from_variant (dbus_value));
+	GPtrArray *addrs;
+
+	addrs = nm_utils_ip_addresses_from_variant (value, AF_INET6);
+	g_object_set (setting, NM_SETTING_IP_CONFIG_ADDRESSES, addrs, NULL);
+	g_ptr_array_unref (addrs);
+}
+
+static GVariant *
+ip6_routes_get (NMSetting  *setting,
+                const char *property)
+{
+	GPtrArray *routes;
+	GVariant *ret;
+
+	g_object_get (setting, property, &routes, NULL);
+	ret = nm_utils_ip6_routes_to_variant (routes);
+	g_ptr_array_unref (routes);
+
+	return ret;
+}
+
+static void
+ip6_routes_set (NMSetting  *setting,
+                GVariant   *connection_dict,
+                const char *property,
+                GVariant   *value)
+{
+	GPtrArray *routes;
+	GVariant *s_ip6;
+
+	s_ip6 = g_variant_lookup_value (connection_dict, NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
+	/* If 'route-data' is set then ignore 'routes' */
+	if (g_variant_lookup (s_ip6, "route-data", "aa{sv}", NULL)) {
+		g_variant_unref (s_ip6);
+		return;
+	}
+	g_variant_unref (s_ip6);
+
+	routes = nm_utils_ip6_routes_from_variant (value);
+	g_object_set (setting, property, routes, NULL);
+	g_ptr_array_unref (routes);
+}
+
+static GVariant *
+ip6_route_data_get (NMSetting    *setting,
+                    NMConnection *connection,
+                    const char   *property)
+{
+	GPtrArray *routes;
+	GVariant *ret;
+
+	g_object_get (setting, NM_SETTING_IP_CONFIG_ROUTES, &routes, NULL);
+	ret = nm_utils_ip_routes_to_variant (routes);
+	g_ptr_array_unref (routes);
+
+	return ret;
+}
+
+static void
+ip6_route_data_set (NMSetting  *setting,
+                    GVariant   *connection_dict,
+                    const char *property,
+                    GVariant   *value)
+{
+	GPtrArray *routes;
+
+	routes = nm_utils_ip_routes_from_variant (value, AF_INET6);
+	g_object_set (setting, NM_SETTING_IP_CONFIG_ROUTES, routes, NULL);
+	g_ptr_array_unref (routes);
 }
 
 static void
@@ -324,9 +408,22 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
 	                                     ip6_addresses_set,
 	                                     NULL);
 
-	_nm_setting_class_transform_property (setting_class,
-	                                      NM_SETTING_IP_CONFIG_ROUTES,
-	                                      G_VARIANT_TYPE ("a(ayuayu)"),
-	                                      ip6_routes_to_dbus,
-	                                      ip6_routes_from_dbus);
+	_nm_setting_class_add_dbus_only_property (setting_class,
+	                                          "address-data",
+	                                          G_VARIANT_TYPE ("aa{sv}"),
+	                                          ip6_address_data_get,
+	                                          ip6_address_data_set);
+
+	_nm_setting_class_override_property (setting_class,
+	                                     NM_SETTING_IP_CONFIG_ROUTES,
+	                                     G_VARIANT_TYPE ("a(ayuayu)"),
+	                                     ip6_routes_get,
+	                                     ip6_routes_set,
+	                                     NULL);
+
+	_nm_setting_class_add_dbus_only_property (setting_class,
+	                                          "route-data",
+	                                          G_VARIANT_TYPE ("aa{sv}"),
+	                                          ip6_route_data_get,
+	                                          ip6_route_data_set);
 }

@@ -329,7 +329,7 @@ test_setting_ip4_config_labels (void)
 	GPtrArray *addrs;
 	char **labels;
 	NMConnection *conn;
-	GVariant *dict, *setting_dict, *value;
+	GVariant *dict, *dict2, *setting_dict, *value;
 	GError *error = NULL;
 
 	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
@@ -395,7 +395,9 @@ test_setting_ip4_config_labels (void)
 	label = nm_ip_address_get_attribute (addr, "label");
 	g_assert (label == NULL);
 
-	/* The labels should appear in the D-Bus serialization */
+	/* The labels should appear in the D-Bus serialization under both
+	 * 'address-labels' and 'address-data'.
+	 */
 	conn = nmtst_create_minimal_connection ("label test", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
 	nm_connection_add_setting (conn, NM_SETTING (s_ip4));
 	dict = nm_connection_to_dbus (conn, NM_CONNECTION_SERIALIZE_ALL);
@@ -403,19 +405,41 @@ test_setting_ip4_config_labels (void)
 
 	setting_dict = g_variant_lookup_value (dict, NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
 	g_assert (setting_dict != NULL);
+
 	value = g_variant_lookup_value (setting_dict, "address-labels", G_VARIANT_TYPE_STRING_ARRAY);
 	g_assert (value != NULL);
-
 	g_variant_get (value, "^as", &labels);
 	g_assert_cmpint (g_strv_length (labels), ==, 2);
 	g_assert_cmpstr (labels[0], ==, "eth0:1");
 	g_assert_cmpstr (labels[1], ==, "");
-
-	g_variant_unref (setting_dict);
 	g_variant_unref (value);
 	g_strfreev (labels);
 
-	/* And should be deserialized */
+	value = g_variant_lookup_value (setting_dict, "address-data", G_VARIANT_TYPE ("aa{sv}"));
+	addrs = nm_utils_ip_addresses_from_variant (value, AF_INET);
+	g_variant_unref (value);
+	g_assert (addrs != NULL);
+	g_assert_cmpint (addrs->len, ==, 2);
+	addr = addrs->pdata[0];
+	label = nm_ip_address_get_attribute (addr, "label");
+	g_assert (label != NULL);
+	g_assert_cmpstr (g_variant_get_string (label, NULL), ==, "eth0:1");
+	addr = addrs->pdata[1];
+	label = nm_ip_address_get_attribute (addr, "label");
+	g_assert (label == NULL);
+	g_ptr_array_unref (addrs);
+
+	g_variant_unref (setting_dict);
+
+	/* We should be able to deserialize the labels from either 'address-labels'
+	 * or 'address-data'.
+	 */
+	dict2 = g_variant_ref (dict);
+
+	NMTST_VARIANT_EDITOR (dict,
+	                      NMTST_VARIANT_DROP_PROPERTY (NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	                                                   "address-data");
+	                      );
 	conn = nm_simple_connection_new_from_dbus (dict, &error);
 	g_assert_no_error (error);
 	g_variant_unref (dict);
@@ -426,6 +450,28 @@ test_setting_ip4_config_labels (void)
 	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "2.2.2.2");
 	label = nm_ip_address_get_attribute (addr, "label");
 	g_assert (label != NULL);
+	g_assert_cmpstr (g_variant_get_string (label, NULL), ==, "eth0:1");
+
+	addr = nm_setting_ip_config_get_address (s_ip4, 1);
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "3.3.3.3");
+	label = nm_ip_address_get_attribute (addr, "label");
+	g_assert (label == NULL);
+
+	g_object_unref (conn);
+
+	NMTST_VARIANT_EDITOR (dict2,
+	                      NMTST_VARIANT_DROP_PROPERTY (NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	                                                   "address-labels");
+	                      );
+	conn = nm_simple_connection_new_from_dbus (dict2, &error);
+	g_assert_no_error (error);
+	g_variant_unref (dict2);
+
+	s_ip4 = nm_connection_get_setting_ip4_config (conn);
+
+	addr = nm_setting_ip_config_get_address (s_ip4, 0);
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "2.2.2.2");
+	label = nm_ip_address_get_attribute (addr, "label");
 	g_assert_cmpstr (g_variant_get_string (label, NULL), ==, "eth0:1");
 
 	addr = nm_setting_ip_config_get_address (s_ip4, 1);
@@ -3391,10 +3437,14 @@ test_setting_ip4_gateway (void)
 
 	g_variant_unref (ip4_dict);
 
-	/* When deserializing, the first gateway in ipv4.addresses is copied to ipv4.gateway */
+	/* When deserializing an old-style connection, the gateway from the first address
+	 * is copied to :gateway.
+	 */
 	NMTST_VARIANT_EDITOR (conn_dict,
 	                      NMTST_VARIANT_DROP_PROPERTY (NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	                                                   NM_SETTING_IP_CONFIG_GATEWAY);
+	                      NMTST_VARIANT_DROP_PROPERTY (NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	                                                   "address-data");
 	                      );
 
 	conn = nm_simple_connection_new_from_dbus (conn_dict, &error);
@@ -3460,10 +3510,14 @@ test_setting_ip6_gateway (void)
 
 	g_variant_unref (ip6_dict);
 
-	/* When deserializing, the first gateway in ipv4.addresses is copied to ipv4.gateway */
+	/* When deserializing an old-style connection, the gateway from the first address
+	 * is copied to :gateway.
+	 */
 	NMTST_VARIANT_EDITOR (conn_dict,
 	                      NMTST_VARIANT_DROP_PROPERTY (NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	                                                   NM_SETTING_IP_CONFIG_GATEWAY);
+	                      NMTST_VARIANT_DROP_PROPERTY (NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	                                                   "address-data");
 	                      );
 
 	conn = nm_simple_connection_new_from_dbus (conn_dict, &error);

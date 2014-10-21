@@ -472,6 +472,7 @@ nm_ip_address_set_attribute (NMIPAddress *address, const char *name, GVariant *v
 {
 	g_return_if_fail (address != NULL);
 	g_return_if_fail (name != NULL && *name != '\0');
+	g_return_if_fail (strcmp (name, "address") != 0 && strcmp (name, "prefix") != 0);
 
 	if (!address->attributes) {
 		address->attributes = g_hash_table_new_full (g_str_hash, g_str_equal,
@@ -1009,6 +1010,8 @@ nm_ip_route_set_attribute (NMIPRoute *route, const char *name, GVariant *value)
 {
 	g_return_if_fail (route != NULL);
 	g_return_if_fail (name != NULL && *name != '\0');
+	g_return_if_fail (   strcmp (name, "dest") != 0 && strcmp (name, "prefix") != 0
+	                  && strcmp (name, "next-hop") != 0 && strcmp (name, "metric") != 0);
 
 	if (!route->attributes) {
 		route->attributes = g_hash_table_new_full (g_str_hash, g_str_equal,

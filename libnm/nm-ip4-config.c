@@ -40,6 +40,8 @@ typedef struct {
 	char **domains;
 	char **searches;
 	char **wins;
+
+	gboolean new_style_data;
 } NMIP4ConfigPrivate;
 
 enum {
@@ -69,12 +71,29 @@ nm_ip4_config_init (NMIP4Config *config)
 }
 
 static gboolean
-demarshal_ip4_address_array (NMObject *object, GParamSpec *pspec, GVariant *value, gpointer field)
+demarshal_ip4_addresses (NMObject *object, GParamSpec *pspec, GVariant *value, gpointer field)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (object);
 
+	if (priv->new_style_data)
+		return TRUE;
+
 	g_ptr_array_unref (priv->addresses);
 	priv->addresses = nm_utils_ip4_addresses_from_variant (value, NULL);
+	_nm_object_queue_notify (object, NM_IP4_CONFIG_ADDRESSES);
+
+	return TRUE;
+}
+
+static gboolean
+demarshal_ip4_address_data (NMObject *object, GParamSpec *pspec, GVariant *value, gpointer field)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (object);
+
+	priv->new_style_data = TRUE;
+
+	g_ptr_array_unref (priv->addresses);
+	priv->addresses = nm_utils_ip_addresses_from_variant (value, AF_INET);
 	_nm_object_queue_notify (object, NM_IP4_CONFIG_ADDRESSES);
 
 	return TRUE;
@@ -96,12 +115,29 @@ demarshal_ip4_array (NMObject *object, GParamSpec *pspec, GVariant *value, gpoin
 }
 
 static gboolean
-demarshal_ip4_routes_array (NMObject *object, GParamSpec *pspec, GVariant *value, gpointer field)
+demarshal_ip4_routes (NMObject *object, GParamSpec *pspec, GVariant *value, gpointer field)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (object);
 
+	if (priv->new_style_data)
+		return TRUE;
+
 	g_ptr_array_unref (priv->routes);
 	priv->routes = nm_utils_ip4_routes_from_variant (value);
+	_nm_object_queue_notify (object, NM_IP4_CONFIG_ROUTES);
+
+	return TRUE;
+}
+
+static gboolean
+demarshal_ip4_route_data (NMObject *object, GParamSpec *pspec, GVariant *value, gpointer field)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (object);
+
+	priv->new_style_data = TRUE;
+
+	g_ptr_array_unref (priv->routes);
+	priv->routes = nm_utils_ip_routes_from_variant (value, AF_INET);
 	_nm_object_queue_notify (object, NM_IP4_CONFIG_ROUTES);
 
 	return TRUE;
@@ -113,8 +149,10 @@ init_dbus (NMObject *object)
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (object);
 	const NMPropertiesInfo property_info[] = {
 		{ NM_IP4_CONFIG_GATEWAY,      &priv->gateway, },
-		{ NM_IP4_CONFIG_ADDRESSES,    &priv->addresses, demarshal_ip4_address_array },
-		{ NM_IP4_CONFIG_ROUTES,       &priv->routes, demarshal_ip4_routes_array },
+		{ NM_IP4_CONFIG_ADDRESSES,    &priv->addresses, demarshal_ip4_addresses },
+		{ "address-data",             &priv->addresses, demarshal_ip4_address_data },
+		{ NM_IP4_CONFIG_ROUTES,       &priv->routes, demarshal_ip4_routes },
+		{ "route-data",               &priv->routes, demarshal_ip4_route_data },
 		{ NM_IP4_CONFIG_NAMESERVERS,  &priv->nameservers, demarshal_ip4_array },
 		{ NM_IP4_CONFIG_DOMAINS,      &priv->domains, },
 		{ NM_IP4_CONFIG_SEARCHES,     &priv->searches, },
