@@ -26,6 +26,8 @@
 #include "config.h"
 
 #include <unistd.h>
+#include <sys/stat.h>
+#include <errno.h>
 #include <string.h>
 #include <gmodule.h>
 #include <pwd.h>
@@ -626,10 +628,13 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 
 	for (iter = plugins; iter && *iter; iter++) {
 		GModule *plugin;
-		char *full_name, *path;
+		gs_free char *full_name = NULL;
+		gs_free char *path = NULL;
 		gs_free char *pname = NULL;
 		GObject *obj;
 		GObject * (*factory_func) (void);
+		struct stat st;
+		int errsv;
 
 		pname = g_strdup (*iter);
 		g_strstrip (pname);
@@ -658,17 +663,30 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 		full_name = g_strdup_printf ("nm-settings-plugin-%s", pname);
 		path = g_module_build_path (NMPLUGINDIR, full_name);
 
-		plugin = g_module_open (path, G_MODULE_BIND_LOCAL);
-		if (!plugin) {
-			LOG (LOGL_WARN, "Could not load plugin '%s': %s",
-			     pname, g_module_error ());
-			g_free (full_name);
-			g_free (path);
+		if (stat (path, &st) != 0) {
+			errsv = errno;
+			LOG (LOGL_WARN, "Could not load plugin '%s' from file '%s': %s", pname, path, strerror (errsv));
+			continue;
+		}
+		if (!S_ISREG (st.st_mode)) {
+			LOG (LOGL_WARN, "Could not load plugin '%s' from file '%s': not a file", pname, path);
+			continue;
+		}
+		if (st.st_uid != 0) {
+			LOG (LOGL_WARN, "Could not load plugin '%s' from file '%s': file must be owned by root", pname, path);
+			continue;
+		}
+		if (st.st_mode & (S_IWGRP | S_IWOTH | S_ISUID)) {
+			LOG (LOGL_WARN, "Could not load plugin '%s' from file '%s': invalid file permissions", pname, path);
 			continue;
 		}
 
-		g_free (full_name);
-		g_free (path);
+		plugin = g_module_open (path, G_MODULE_BIND_LOCAL);
+		if (!plugin) {
+			LOG (LOGL_WARN, "Could not load plugin '%s' from file '%s': %s",
+			     pname, full_name, g_module_error ());
+			continue;
+		}
 
 		/* errors after this point are fatal, because we loaded the shared library already. */
 
