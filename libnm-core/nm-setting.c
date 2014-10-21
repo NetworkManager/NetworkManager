@@ -716,8 +716,6 @@ _nm_setting_new_from_dbus (GType setting_type,
 {
 	NMSettingClass *class;
 	NMSetting *setting;
-	GVariantIter iter;
-	const char *prop_name;
 	const NMSettingProperty *properties;
 	guint n_properties;
 	guint i;
@@ -736,17 +734,11 @@ _nm_setting_new_from_dbus (GType setting_type,
 	 */
 	class = g_type_class_ref (setting_type);
 
-	/* Check for invalid properties first. */
-	g_variant_iter_init (&iter, setting_dict);
-	while (g_variant_iter_next (&iter, "{&sv}", &prop_name, NULL)) {
-		if (!nm_setting_class_find_property (class, prop_name)) {
-			/* Oh, we're so nice and only warn, maybe it should be a fatal error? */
-			g_warning ("Ignoring invalid property '%s'", prop_name);
-			continue;
-		}
-	}
-
-	/* Now build the setting object from the legitimate properties */
+	/* Build the setting object from the properties we know about; we assume
+	 * that any propreties in @setting_dict that we don't know about can
+	 * either be ignored or else has a backward-compatibility equivalent
+	 * that we do know about.
+	 */
 	setting = (NMSetting *) g_object_new (setting_type, NULL);
 
 	properties = nm_setting_class_get_properties (class, &n_properties);
