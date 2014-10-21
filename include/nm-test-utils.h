@@ -1059,7 +1059,7 @@ typedef enum {
 
 #define NMTST_VARIANT_DROP_SETTING(__setting_name) \
 	G_STMT_START { \
-		if (__phase == NMTST_VARIANT_EDITOR_SETTING) { \
+		if (__phase == NMTST_VARIANT_EDITOR_SETTING && __cur_setting_name) { \
 			if (!strcmp (__cur_setting_name, __setting_name)) \
 				__cur_setting_name = NULL; \
 		} \
@@ -1077,7 +1077,7 @@ typedef enum {
 
 #define NMTST_VARIANT_DROP_PROPERTY(__setting_name, __property_name) \
 	G_STMT_START { \
-		if (__phase == NMTST_VARIANT_EDITOR_PROPERTY) { \
+		if (__phase == NMTST_VARIANT_EDITOR_PROPERTY && __cur_property_name) { \
 			if (   !strcmp (__cur_setting_name, __setting_name) \
 			    && !strcmp (__cur_property_name, __property_name)) \
 				__cur_property_name = NULL; \
