@@ -909,67 +909,84 @@ _nmcli()
                             case "$OPTIONS_TYPE" in
                                 802-3|802-3-|802-3-e|802-3-et|802-3-eth|802-3-ethe|802-3-ether|802-3-ethern|802-3-etherne|802-3-ethernet| \
                                 e|et|eth|ethe|ether|ethern|etherne|ethernet)
+                                    OPTIONS_TYPE=ethernet
                                     OPTIONS_TYPED=(mac cloned-mac mtu)
                                     ;;
                                 802-11-w|802-11-wi|802-11-wir|802-11-wire|802-11-wirel|802-11-wirele|802-11-wireles|802-11-wireless| \
                                 wif|wifi)
+                                    OPTIONS_TYPE=wifi
                                     OPTIONS_TYPED=(ssid mac cloned-mac mtu)
                                     OPTIONS_MANDATORY=(ssid)
                                     ;;
                                 wim|wima|wimax)
+                                    OPTIONS_TYPE=wimax
                                     OPTIONS_TYPED=(mac nsp)
                                     ;;
                                 g|gs|gsm)
+                                    OPTIONS_TYPE=gsm
                                     OPTIONS_TYPED=(apn user password)
                                     OPTIONS_MANDATORY=(apn)
                                     ;;
                                 c|cd|cdm|cdma)
+                                    OPTIONS_TYPE=cdma
                                     OPTIONS_TYPED=(user password)
                                     ;;
                                 i|in|inf|infi|infin|infini|infinib|infiniba|infiniban|infiniband)
+                                    OPTIONS_TYPE=infiniband
                                     OPTIONS_TYPED=(mac mtu transport-mode parent p-key)
                                     ;;
                                 bl|blu|blue|bluet|blueto|bluetoo|bluetoot|bluetooth)
+                                    OPTIONS_TYPE=bluetooth
                                     OPTIONS_TYPED=(addr bt-type)
                                     ;;
                                 vl|vla|vlan)
+                                    OPTIONS_TYPE=vlan
                                     OPTIONS_TYPED=(dev id flags ingress egress mtu)
                                     OPTIONS_MANDATORY=(dev)
                                     ;;
                                 bond)
+                                    OPTIONS_TYPE=bond
                                     OPTIONS_TYPED=(mode miimon downdelay updelay arp-interval arp-ip-target primary lacp-rate)
                                     ;;
                                 bond-|bond-s|bond-sl|bond-sla|bond-slav|bond-slave)
+                                    OPTIONS_TYPE=bond-slave
                                     OPTIONS_TYPED=(master)
                                     OPTIONS_MANDATORY=(master)
                                     OPTIONS_IP=()
                                     ;;
                                 team)
+                                    OPTIONS_TYPE=team
                                     OPTIONS_TYPED=(config)
                                     ;;
                                 team-|team-s|team-sl|team-sla|team-slav|team-slave)
+                                    OPTIONS_TYPE=team-slave
                                     OPTIONS_TYPED=(master config)
                                     OPTIONS_MANDATORY=(master)
                                     OPTIONS_IP=()
                                     ;;
                                 bridge)
+                                    OPTIONS_TYPE=bridge
                                     OPTIONS_TYPED=(stp priority forward-delay hello-time max-age ageing-time mac)
                                     ;;
                                 bridge-|bridge-s|bridge-sl|bridge-sla|bridge-slav|bridge-slave)
+                                    OPTIONS_TYPE=bridge-slave
                                     OPTIONS_TYPED=(master priority path-cost hairpin)
                                     OPTIONS_MANDATORY=(master)
                                     OPTIONS_IP=()
                                     ;;
                                 vp|vpn)
+                                    OPTIONS_TYPE=vpn
                                     OPTIONS_TYPED=(vpn-type user)
                                     OPTIONS_MANDATORY=(vpn-type)
                                     ;;
                                 802-11-o|802-11-ol|802-11-olp|802-11-olpc|802-11-olpc-|802-11-olpc-m|802-11-olpc-me|802-11-olpc-mes|802-11-olpc-mesh| \
                                 o|ol|olp|olpc|olpc-|olpc-m|olpc-me|olpc-mes|olpc-mesh)
+                                    OPTIONS_TYPE=olpc-mesh
                                     OPTIONS_TYPED=(ssid channel dhcp-anycast)
                                     OPTIONS_MANDATORY=(ssid)
                                     ;;
                                 p|pp|ppp|pppo|pppoe)
+                                    OPTIONS_TYPE=pppoe
                                     OPTIONS_TYPED=(username password service mtu mac)
                                     OPTIONS_MANDATORY=(username)
                                     ;;
