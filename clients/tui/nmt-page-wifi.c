@@ -381,7 +381,7 @@ nmt_page_wifi_finalize (GObject *object)
 
 	g_clear_object (&priv->s_wsec);
 
-	G_OBJECT_CLASS (nmt_page_wifi_parent_class)->constructed (object);
+	G_OBJECT_CLASS (nmt_page_wifi_parent_class)->finalize (object);
 }
 
 
