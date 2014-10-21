@@ -651,7 +651,7 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 
 		plugin = g_module_open (path, G_MODULE_BIND_LOCAL);
 		if (!plugin) {
-			g_set_error (error, 0, 0,
+			g_set_error (error, NM_SETTINGS_ERROR, 0,
 			             "Could not load plugin '%s': %s",
 			             pname, g_module_error ());
 			g_free (full_name);
@@ -664,7 +664,7 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 		g_free (path);
 
 		if (!g_module_symbol (plugin, "nm_system_config_factory", (gpointer) (&factory_func))) {
-			g_set_error (error, 0, 0,
+			g_set_error (error, NM_SETTINGS_ERROR, 0,
 			             "Could not find plugin '%s' factory function.",
 			             pname);
 			success = FALSE;
@@ -673,7 +673,7 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 
 		obj = (*factory_func) ();
 		if (!obj || !NM_IS_SYSTEM_CONFIG_INTERFACE (obj)) {
-			g_set_error (error, 0, 0,
+			g_set_error (error, NM_SETTINGS_ERROR, 0,
 			             "Plugin '%s' returned invalid system config object.",
 			             pname);
 			success = FALSE;
