@@ -1916,7 +1916,7 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 
 		svSetValue (ifcfg, netmask_key, NULL, FALSE);
 
-		svSetValue (ifcfg, gw_key, nm_ip_address_get_gateway (addr), FALSE);
+		svSetValue (ifcfg, gw_key, n == 0 ? nm_ip_address_get_gateway (addr) : NULL, FALSE);
 
 		g_free (addr_key);
 		g_free (prefix_key);
@@ -2172,7 +2172,7 @@ write_ip4_aliases (NMConnection *connection, char *base_ifcfg_path)
 		svSetValue (ifcfg, "PREFIX", tmp, FALSE);
 		g_free (tmp);
 
-		svSetValue (ifcfg, "GATEWAY", nm_ip_address_get_gateway (addr), FALSE);
+		svSetValue (ifcfg, "GATEWAY", i == 0 ? nm_ip_address_get_gateway (addr) : NULL, FALSE);
 
 		svWriteFile (ifcfg, 0644, NULL);
 		svCloseFile (ifcfg);

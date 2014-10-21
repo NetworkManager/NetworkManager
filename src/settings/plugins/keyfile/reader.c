@@ -360,11 +360,14 @@ ip_address_or_route_parser (NMSetting *setting, const char *key, GKeyFile *keyfi
 				key_name = g_strdup (*key_basename);
 
 			item = read_one_ip_address_or_route (keyfile, setting_name, key_name, ipv6, routes);
-
-			if (item)
-				g_ptr_array_add (list, item);
-
 			g_free (key_name);
+
+			if (!item)
+				continue;
+
+			if (!routes && list->len > 0)
+				nm_ip_address_set_gateway (item, NULL);
+			g_ptr_array_add (list, item);
 		}
 	}
 

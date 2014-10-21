@@ -486,7 +486,9 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 			gateway_v = address_v;  /* dcbw: whaaa?? */
 
 		/* Add the new address to the setting */
-		addr = nm_ip_address_new (AF_INET, address_v, netmask_int, gateway_v, error);
+		addr = nm_ip_address_new (AF_INET, address_v, netmask_int,
+		                          nm_setting_ip_config_get_num_addresses (s_ip4) == 0 ? gateway_v : NULL,
+		                          error);
 		if (!addr)
 			goto error;
 
@@ -599,7 +601,9 @@ update_ip6_setting_from_if_block(NMConnection *connection,
 			gateway_v = address_v;  /* dcbw: whaaa?? */
 
 		/* Add the new address to the setting */
-		addr = nm_ip_address_new (AF_INET6, address_v, prefix_int, gateway_v, error);
+		addr = nm_ip_address_new (AF_INET6, address_v, prefix_int,
+		                          nm_setting_ip_config_get_num_addresses (s_ip6) == 0 ? gateway_v : NULL,
+		                          error);
 		if (!addr)
 			goto error;
 

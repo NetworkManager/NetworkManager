@@ -7831,14 +7831,11 @@ test_write_gateway (void)
 	g_assert_cmpstr (val, ==, "1.1.1.254");
 	g_free (val);
 
-	val = svGetValue (f, "GATEWAY1", FALSE);
-	g_assert (val);
-	g_assert_cmpstr (val, ==, "2.2.2.254");
-	g_free (val);
-
 	val = svGetValue (f, "GATEWAY0", FALSE);
 	g_assert (val == NULL);
 
+	val = svGetValue (f, "GATEWAY1", FALSE);
+	g_assert (val == NULL);
 
 	svCloseFile (f);
 

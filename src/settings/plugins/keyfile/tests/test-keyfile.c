@@ -247,10 +247,10 @@ test_read_valid_wired_connection (void)
 	/* IPv4 addresses */
 	g_assert (nm_setting_ip_config_get_num_addresses (s_ip4) == 6);
 	check_ip_address (s_ip4, 0, "2.3.4.5", 24, "2.3.4.6");
-	check_ip_address (s_ip4, 1, "192.168.0.5", 24, "192.168.0.1");
-	check_ip_address (s_ip4, 2, "1.2.3.4", 16, "1.2.1.1");
+	check_ip_address (s_ip4, 1, "192.168.0.5", 24, NULL);
+	check_ip_address (s_ip4, 2, "1.2.3.4", 16, NULL);
 	check_ip_address (s_ip4, 3, "3.4.5.6", 16, NULL);
-	check_ip_address (s_ip4, 4, "4.5.6.7", 24, "1.2.3.4");
+	check_ip_address (s_ip4, 4, "4.5.6.7", 24, NULL);
 	check_ip_address (s_ip4, 5, "5.6.7.8", 24, NULL);
 
 	/* IPv4 routes */
@@ -337,7 +337,7 @@ test_read_valid_wired_connection (void)
 	check_ip_address (s_ip6, 6, "3:4:5:6:7:8:9:16", 66, NULL);
 	check_ip_address (s_ip6, 7, "3:4:5:6:7:8:9:17", 67, NULL);
 	check_ip_address (s_ip6, 8, "3:4:5:6:7:8:9:18", 68, NULL);
-	check_ip_address (s_ip6, 9, "3:4:5:6:7:8:9:19", 69, "1::9");
+	check_ip_address (s_ip6, 9, "3:4:5:6:7:8:9:19", 69, NULL);
 
 	/* Route #1 */
 	g_assert (nm_setting_ip_config_get_num_routes (s_ip6) == 7);
@@ -406,7 +406,6 @@ test_write_wired_connection (void)
 	const char *address1 = "192.168.0.5";
 	const char *address1_gw = "192.168.0.1";
 	const char *address2 = "1.2.3.4";
-	const char *address2_gw = "1.2.1.1";
 	const char *route1 = "10.10.10.2";
 	const char *route1_nh = "10.10.10.1";
 	const char *route2 = "1.1.1.1";
@@ -467,7 +466,7 @@ test_write_wired_connection (void)
 
 	/* Addresses */
 	add_one_ip_address (s_ip4, address1, 24, address1_gw);
-	add_one_ip_address (s_ip4, address2, 8, address2_gw);
+	add_one_ip_address (s_ip4, address2, 8, NULL);
 
 	/* Routes */
 	add_one_ip_route (s_ip4, route1, route1_nh, 24, 3);

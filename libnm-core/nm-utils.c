@@ -1140,7 +1140,7 @@ nm_utils_ip4_dns_from_variant (GVariant *value)
  * Utility function to convert a #GPtrArray of #NMIPAddress objects representing
  * IPv4 addresses into a #GVariant of type 'aau' representing an array of
  * NetworkManager IPv4 addresses (which are tuples of address, prefix, and
- * gateway).
+ * gateway, although only the first "gateway" field is preserved)
  *
  * Returns: (transfer none): a new floating #GVariant representing @addresses.
  **/
@@ -1162,7 +1162,7 @@ nm_utils_ip4_addresses_to_variant (GPtrArray *addresses)
 
 			nm_ip_address_get_address_binary (addr, &array[0]);
 			array[1] = nm_ip_address_get_prefix (addr);
-			if (nm_ip_address_get_gateway (addr))
+			if (i == 0 && nm_ip_address_get_gateway (addr))
 				inet_pton (AF_INET, nm_ip_address_get_gateway (addr), &array[2]);
 			else
 				array[2] = 0;
@@ -1182,7 +1182,8 @@ nm_utils_ip4_addresses_to_variant (GPtrArray *addresses)
  *
  * Utility function to convert a #GVariant of type 'aau' representing a list of
  * NetworkManager IPv4 addresses (which are tuples of address, prefix, and
- * gateway) into a #GPtrArray of #NMIPAddress objects.
+ * gateway, although only the first "gateway" field is preserved) into a
+ * #GPtrArray of #NMIPAddress objects.
  *
  * Returns: (transfer full) (element-type NMIPAddress): a newly allocated
  *   #GPtrArray of #NMIPAddress objects
@@ -1213,7 +1214,8 @@ nm_utils_ip4_addresses_from_variant (GVariant *value)
 		}
 
 		addr = nm_ip_address_new_binary (AF_INET,
-		                                 &addr_array[0], addr_array[1], &addr_array[2],
+		                                 &addr_array[0], addr_array[1],
+		                                 addresses->len == 0 ? &addr_array[2] : NULL,
 		                                 &error);
 		if (addr)
 			g_ptr_array_add (addresses, addr);
@@ -1471,7 +1473,7 @@ nm_utils_ip6_dns_from_variant (GVariant *value)
  * Utility function to convert a #GPtrArray of #NMIPAddress objects representing
  * IPv6 addresses into a #GVariant of type 'a(ayuay)' representing an array of
  * NetworkManager IPv6 addresses (which are tuples of address, prefix, and
- * gateway).
+ * gateway, although only the first "gateway" field is preserved).
  *
  * Returns: (transfer none): a new floating #GVariant representing @addresses.
  **/
@@ -1498,7 +1500,7 @@ nm_utils_ip6_addresses_to_variant (GPtrArray *addresses)
 
 			prefix = nm_ip_address_get_prefix (addr);
 			
-			if (nm_ip_address_get_gateway (addr))
+			if (i == 0 && nm_ip_address_get_gateway (addr))
 				inet_pton (AF_INET6, nm_ip_address_get_gateway (addr), &gateway_bytes);
 			else
 				memset (&gateway_bytes, 0, sizeof (gateway_bytes));
@@ -1517,7 +1519,8 @@ nm_utils_ip6_addresses_to_variant (GPtrArray *addresses)
  *
  * Utility function to convert a #GVariant of type 'a(ayuay)' representing a
  * list of NetworkManager IPv6 addresses (which are tuples of address, prefix,
- * and gateway) into a #GPtrArray of #NMIPAddress objects.
+ * and gateway, although only the first "gateway" field is preserved) into a
+ * #GPtrArray of #NMIPAddress objects.
  *
  * Returns: (transfer full) (element-type NMIPAddress): a newly allocated
  *   #GPtrArray of #NMIPAddress objects
@@ -1560,7 +1563,9 @@ nm_utils_ip6_addresses_from_variant (GVariant *value)
 			goto next;
 		}
 
-		addr = nm_ip_address_new_binary (AF_INET6, addr_bytes, prefix, gateway_bytes, &error);
+		addr = nm_ip_address_new_binary (AF_INET6, addr_bytes, prefix,
+		                                 addresses->len == 0 ? gateway_bytes : NULL,
+		                                 &error);
 		if (addr)
 			g_ptr_array_add (addresses, addr);
 		else {

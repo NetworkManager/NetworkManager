@@ -1042,6 +1042,9 @@ make_ip4_setting (shvarFile *ifcfg,
 			continue;
 		}
 
+		if (nm_setting_ip_config_get_num_addresses (s_ip4))
+			nm_ip_address_set_gateway (addr, NULL);
+
 		if (!nm_setting_ip_config_add_address (s_ip4, addr))
 			PARSE_WARNING ("duplicate IP4 address");
 		nm_ip_address_unref (addr);

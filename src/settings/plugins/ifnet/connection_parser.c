@@ -614,8 +614,9 @@ make_ip4_setting (NMConnection *connection,
 			NMIPAddress *ip4_addr;
 			GError *local = NULL;
 
-			/* currently all the IPs has the same gateway */
-			ip4_addr = nm_ip_address_new (AF_INET, iblock->ip, iblock->prefix, iblock->next_hop, &local);
+			ip4_addr = nm_ip_address_new (AF_INET, iblock->ip, iblock->prefix,
+			                              nm_setting_ip_config_get_num_addresses (ip4_setting) == 0 ? iblock->next_hop : NULL,
+			                              &local);
 			if (iblock->next_hop)
 				g_object_set (ip4_setting,
 					      NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES,
@@ -2379,7 +2380,6 @@ write_ip4_setting (NMConnection *connection, const char *conn_name, GError **err
 	GString *ips;
 	GString *routes;
 	GString *dns;
-	gboolean has_def_route = FALSE;
 	gboolean success = FALSE;
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
@@ -2408,11 +2408,10 @@ write_ip4_setting (NMConnection *connection, const char *conn_name, GError **err
 			                        nm_ip_address_get_prefix (addr));
 
 			/* only the first gateway will be written */
-			if (!has_def_route && nm_ip_address_get_gateway (addr)) {
+			if (i == 0 && nm_ip_address_get_gateway (addr)) {
 				g_string_append_printf (routes,
 				                        "\"default via %s\" ",
 				                        nm_ip_address_get_gateway (addr));
-				has_def_route = TRUE;
 			}
 		}
 		ifnet_set_data (conn_name, "config", ips->str);

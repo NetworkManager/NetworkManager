@@ -319,14 +319,13 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIPConfig *setting, in
 		nm_ip4_config_set_never_default (config, TRUE);
 	else if (nm_setting_ip_config_get_ignore_auto_routes (setting))
 		nm_ip4_config_set_never_default (config, FALSE);
-	for (i = 0; i < naddresses; i++) {
-		const char *gateway_str = nm_ip_address_get_gateway (nm_setting_ip_config_get_address (setting, i));
+	if (naddresses) {
+		const char *gateway_str = nm_ip_address_get_gateway (nm_setting_ip_config_get_address (setting, 0));
 		guint32 gateway;
 
 		if (gateway_str) {
 			inet_pton (AF_INET, gateway_str, &gateway);
 			nm_ip4_config_set_gateway (config, gateway);
-			break;
 		}
 	}
 
@@ -426,13 +425,9 @@ nm_ip4_config_create_setting (const NMIP4Config *config)
 		if (!method)
 			method = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
 
-		s_addr = nm_ip_address_new_binary (AF_INET, &address->address, address->plen, NULL, NULL);
-		/* For backwards compatibility, attach the gateway to an address if it's
-		 * in the same subnet.
-		 */
-		if (same_prefix (address->address, gateway, address->plen))
-			nm_ip_address_set_gateway (s_addr, nm_utils_inet4_ntop (gateway, NULL));
-
+		s_addr = nm_ip_address_new_binary (AF_INET, &address->address, address->plen,
+		                                   i == 0 ? &gateway : NULL,
+		                                   NULL);
 		if (*address->label)
 			nm_ip_address_set_attribute (s_addr, "label", g_variant_new_string (address->label));
 
@@ -1723,10 +1718,11 @@ get_property (GObject *object, guint prop_id,
 			for (i = 0; i < naddr; i++) {
 				const NMPlatformIP4Address *address = nm_ip4_config_get_address (config, i);
 				GArray *array = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);
+				guint32 gateway = i == 0 ? priv->gateway : 0;
 
 				g_array_append_val (array, address->address);
 				g_array_append_val (array, address->plen);
-				g_array_append_val (array, priv->gateway);
+				g_array_append_val (array, gateway);
 
 				g_ptr_array_add (addresses, array);
 			}

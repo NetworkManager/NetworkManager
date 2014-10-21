@@ -147,7 +147,10 @@ write_ip_values (GKeyFile *file,
 
 			addr = nm_ip_address_get_address (address);
 			plen = nm_ip_address_get_prefix (address);
-			gw = nm_ip_address_get_gateway (address);
+			if (i == 0)
+				gw = nm_ip_address_get_gateway (address);
+			else
+				gw = NULL;
 			metric = 0;
 		}
 

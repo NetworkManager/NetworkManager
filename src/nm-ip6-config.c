@@ -423,14 +423,13 @@ nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIPConfig *setting, in
 		nm_ip6_config_set_never_default (config, TRUE);
 	else if (nm_setting_ip_config_get_ignore_auto_routes (setting))
 		nm_ip6_config_set_never_default (config, FALSE);
-	for (i = 0; i < naddresses; i++) {
-		const char *gateway_str = nm_ip_address_get_gateway (nm_setting_ip_config_get_address (setting, i));
+	if (naddresses) {
+		const char *gateway_str = nm_ip_address_get_gateway (nm_setting_ip_config_get_address (setting, 0));
 		struct in6_addr gateway;
 
 		if (gateway_str) {
 			inet_pton (AF_INET6, gateway_str, &gateway);
 			nm_ip6_config_set_gateway (config, &gateway);
-			break;
 		}
 	}
 
@@ -532,7 +531,9 @@ nm_ip6_config_create_setting (const NMIP6Config *config)
 		if (!method || strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0)
 			method = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
 
-		s_addr = nm_ip_address_new_binary (AF_INET6, &address->address, address->plen, gateway, NULL);
+		s_addr = nm_ip_address_new_binary (AF_INET6, &address->address, address->plen,
+		                                   i == 0 ? gateway : NULL,
+		                                   NULL);
 		nm_setting_ip_config_add_address (s_ip6, s_addr);
 		nm_ip_address_unref (s_addr);
 	}
@@ -1610,7 +1611,7 @@ get_property (GObject *object, guint prop_id,
 				/* Gateway */
 				g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
 				ba = g_byte_array_new ();
-				g_byte_array_append (ba, (guint8 *) (gateway ? gateway : &in6addr_any), sizeof (*gateway));
+				g_byte_array_append (ba, (guint8 *) (i == 0 && gateway ? gateway : &in6addr_any), sizeof (*gateway));
 				g_value_take_boxed (&element, ba);
 				g_value_array_append (array, &element);
 				g_value_unset (&element);
