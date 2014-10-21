@@ -91,6 +91,7 @@ AC_SUBST(nmstatedir, "$localstatedir/lib/$PACKAGE", [NetworkManager persistent s
 AC_SUBST(nmrundir, "$localstatedir/run/$PACKAGE", [NetworkManager runtime state directory])
 
 # Alternative configuration plugins
+AC_ARG_ENABLE(config-plugin-ibft, AS_HELP_STRING([--enable-config-plugin-ibft], [enable ibft configuration plugin]))
 AC_ARG_ENABLE(ifcfg-rh, AS_HELP_STRING([--enable-ifcfg-rh], [enable ifcfg-rh configuration plugin (Fedora/RHEL)]))
 AC_ARG_ENABLE(ifcfg-suse, AS_HELP_STRING([--enable-ifcfg-suse], [enable ifcfg-suse configuration plugin (SUSE)]))
 AC_ARG_ENABLE(ifupdown, AS_HELP_STRING([--enable-ifupdown], [enable ifupdown configuration plugin (Debian/Ubuntu)]))
@@ -107,7 +108,10 @@ AS_IF([test -z "$enable_ifcfg_rh"], enable_ifcfg_rh=no)
 AS_IF([test -z "$enable_ifcfg_suse"], enable_ifcfg_suse=no)
 AS_IF([test -z "$enable_ifupdown"], enable_ifupdown=no)
 AS_IF([test -z "$enable_ifnet"], enable_ifnet=no)
+# Enable ibft by default
+AS_IF([test -z "$enable_config_plugin_ibft"], enable_config_plugin_ibft="yes")
 # Create automake conditionals
+AM_CONDITIONAL(CONFIG_PLUGIN_IBFT, test "$enable_config_plugin_ibft" = "yes")
 AM_CONDITIONAL(CONFIG_PLUGIN_IFCFG_RH, test "$enable_ifcfg_rh" = "yes")
 AM_CONDITIONAL(CONFIG_PLUGIN_IFCFG_SUSE, test "$enable_ifcfg_suse" = "yes")
 AM_CONDITIONAL(CONFIG_PLUGIN_IFUPDOWN, test "$enable_ifupdown" = "yes")
@@ -1011,6 +1015,7 @@ echo "  nmtui: $build_nmtui"
 echo
 
 echo "Configuration plugins"
+echo "  ibft: ${enable_config_plugin_ibft}"
 echo "  ifcfg-rh: ${enable_ifcfg_rh}"
 echo "  ifcfg-suse: ${enable_ifcfg_suse}"
 echo "  ifupdown: ${enable_ifupdown}"
