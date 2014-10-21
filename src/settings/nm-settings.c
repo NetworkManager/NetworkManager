@@ -68,6 +68,14 @@
 #include "nm-connection-provider.h"
 #include "nm-config.h"
 #include "NetworkManagerUtils.h"
+#include "gsystem-local-alloc.h"
+
+#define LOG(level, ...) \
+	G_STMT_START { \
+		nm_log ((level), LOGD_CORE, \
+		        "settings: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__) \
+		        _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+	} G_STMT_END
 
 /* LINKER CRACKROCK */
 #define EXPORT(sym) void * __export_##sym = &sym;
@@ -619,17 +627,20 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 	for (iter = plugins; iter && *iter; iter++) {
 		GModule *plugin;
 		char *full_name, *path;
-		const char *pname = *iter;
+		gs_free char *pname = NULL;
 		GObject *obj;
 		GObject * (*factory_func) (void);
 
-		/* strip leading spaces */
-		while (g_ascii_isspace (*pname))
-			pname++;
+		pname = g_strdup (*iter);
+		g_strstrip (pname);
 
-		/* ifcfg-fedora was renamed ifcfg-rh; handle old configs here */
-		if (!strcmp (pname, "ifcfg-fedora"))
-			pname = "ifcfg-rh";
+		if (!*pname)
+			continue;
+
+		if (!*pname || strchr (pname, '/')) {
+			LOG (LOGL_WARN, "ignore invalid plugin \"%s\"", pname);
+			continue;
+		}
 
 		obj = find_plugin (list, pname);
 		if (obj)
@@ -649,20 +660,20 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 
 		plugin = g_module_open (path, G_MODULE_BIND_LOCAL);
 		if (!plugin) {
-			g_set_error (error, 0, 0,
-			             "Could not load plugin '%s': %s",
-			             pname, g_module_error ());
+			LOG (LOGL_WARN, "Could not load plugin '%s': %s",
+			     pname, g_module_error ());
 			g_free (full_name);
 			g_free (path);
-			success = FALSE;
-			break;
+			continue;
 		}
 
 		g_free (full_name);
 		g_free (path);
 
+		/* errors after this point are fatal, because we loaded the shared library already. */
+
 		if (!g_module_symbol (plugin, "nm_system_config_factory", (gpointer) (&factory_func))) {
-			g_set_error (error, 0, 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_GENERAL,
 			             "Could not find plugin '%s' factory function.",
 			             pname);
 			success = FALSE;
@@ -671,7 +682,7 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 
 		obj = (*factory_func) ();
 		if (!obj || !NM_IS_SYSTEM_CONFIG_INTERFACE (obj)) {
-			g_set_error (error, 0, 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_GENERAL,
 			             "Plugin '%s' returned invalid system config object.",
 			             pname);
 			success = FALSE;
