@@ -69,6 +69,7 @@ typedef struct {
 } PropertyInfo;
 
 static void reload_complete (NMObject *object);
+static gboolean demarshal_generic (NMObject *object, GParamSpec *pspec, GVariant *value, gpointer field);
 
 typedef struct {
 	GDBusConnection *connection;
@@ -1185,7 +1186,7 @@ handle_property_changed (NMObject *self, const char *dbus_name,
 	}
 
 	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (self)), prop_name);
-	if (!pspec) {
+	if (!pspec && pi->func == demarshal_generic) {
 		dbgmsg ("%s: property '%s' changed but wasn't defined by object type %s.",
 		        __func__,
 		        prop_name,

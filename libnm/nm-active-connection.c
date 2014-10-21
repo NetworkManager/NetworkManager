@@ -459,6 +459,24 @@ get_property (GObject *object,
 	}
 }
 
+static gboolean
+demarshal_specific_object_path (NMObject *object, GParamSpec *pspec, GVariant *value, gpointer field)
+{
+	char **param = (char **) field;
+
+	/* We have to demarshal this manually, because the D-Bus property name
+	 * ("SpecificObject"), doesn't match the object property name
+	 * ("specific-object-path"). (The name "specific-object" is reserved for
+	 * future use as an NMObject-valued property.)
+	 */
+	if (!g_variant_is_of_type (value, G_VARIANT_TYPE_OBJECT_PATH))
+		return FALSE;
+
+	g_free (*param);
+	*param = g_variant_dup_string (value, NULL);
+	return TRUE;
+}
+
 static void
 init_dbus (NMObject *object)
 {
@@ -468,7 +486,7 @@ init_dbus (NMObject *object)
 		{ NM_ACTIVE_CONNECTION_ID,                   &priv->id },
 		{ NM_ACTIVE_CONNECTION_UUID,                 &priv->uuid },
 		{ NM_ACTIVE_CONNECTION_TYPE,                 &priv->type },
-		{ NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT_PATH, &priv->specific_object_path },
+		{ "specific-object",                         &priv->specific_object_path, demarshal_specific_object_path },
 		{ NM_ACTIVE_CONNECTION_DEVICES,              &priv->devices, NULL, NM_TYPE_DEVICE },
 		{ NM_ACTIVE_CONNECTION_STATE,                &priv->state },
 		{ NM_ACTIVE_CONNECTION_DEFAULT,              &priv->is_default },
