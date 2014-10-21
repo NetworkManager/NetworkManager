@@ -174,8 +174,15 @@ add_dns_server (NMRDisc *rdisc, const NMRDiscDNSServer *new)
 		NMRDiscDNSServer *item = &g_array_index (rdisc->dns_servers, NMRDiscDNSServer, i);
 
 		if (IN6_ARE_ADDR_EQUAL (&item->address, &new->address)) {
-			gboolean changed = item->timestamp != new->timestamp ||
-			                   item->lifetime != new->lifetime;
+			gboolean changed;
+
+			if (new->lifetime == 0) {
+				g_array_remove_index (rdisc->dns_servers, i);
+				return TRUE;
+			}
+
+			changed = (item->timestamp != new->timestamp ||
+			           item->lifetime != new->lifetime);
 			if (changed) {
 				item->timestamp = new->timestamp;
 				item->lifetime = new->lifetime;
@@ -183,10 +190,6 @@ add_dns_server (NMRDisc *rdisc, const NMRDiscDNSServer *new)
 			return changed;
 		}
 	}
-
-	/* DNS server should no longer be used */
-	if (new->lifetime == 0)
-		return FALSE;
 
 	g_array_insert_val (rdisc->dns_servers, i, *new);
 	return TRUE;
@@ -203,8 +206,15 @@ add_dns_domain (NMRDisc *rdisc, const NMRDiscDNSDomain *new)
 		item = &g_array_index (rdisc->dns_domains, NMRDiscDNSDomain, i);
 
 		if (!g_strcmp0 (item->domain, new->domain)) {
-			gboolean changed = item->timestamp != new->timestamp ||
-			                   item->lifetime != new->lifetime;
+			gboolean changed;
+
+			if (new->lifetime == 0) {
+				g_array_remove_index (rdisc->dns_domains, i);
+				return TRUE;
+			}
+
+			changed = (item->timestamp != new->timestamp ||
+			           item->lifetime != new->lifetime);
 			if (changed) {
 				item->timestamp = new->timestamp;
 				item->lifetime = new->lifetime;
@@ -212,10 +222,6 @@ add_dns_domain (NMRDisc *rdisc, const NMRDiscDNSDomain *new)
 			return changed;
 		}
 	}
-
-	/* Domain should no longer be used */
-	if (new->lifetime == 0)
-		return FALSE;
 
 	g_array_insert_val (rdisc->dns_domains, i, *new);
 	item = &g_array_index (rdisc->dns_domains, NMRDiscDNSDomain, i);
