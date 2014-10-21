@@ -33,11 +33,40 @@
  * and some test programs.
  **/
 
-#include <glib.h>
-
-#include "nm-utils.h"
-
+#include "nm-connection.h"
+#include "nm-core-enum-types.h"
+#include "nm-dbus-interface.h"
+#include "nm-setting-8021x.h"
+#include "nm-setting-adsl.h"
+#include "nm-setting-bluetooth.h"
+#include "nm-setting-bond.h"
+#include "nm-setting-bridge-port.h"
+#include "nm-setting-bridge.h"
+#include "nm-setting-cdma.h"
+#include "nm-setting-connection.h"
+#include "nm-setting-dcb.h"
+#include "nm-setting-generic.h"
+#include "nm-setting-gsm.h"
+#include "nm-setting-infiniband.h"
 #include "nm-setting-ip4-config.h"
+#include "nm-setting-ip6-config.h"
+#include "nm-setting-olpc-mesh.h"
+#include "nm-setting-ppp.h"
+#include "nm-setting-pppoe.h"
+#include "nm-setting-serial.h"
+#include "nm-setting-team-port.h"
+#include "nm-setting-team.h"
+#include "nm-setting-vlan.h"
+#include "nm-setting-vpn.h"
+#include "nm-setting-wimax.h"
+#include "nm-setting-wired.h"
+#include "nm-setting-wireless-security.h"
+#include "nm-setting-wireless.h"
+#include "nm-setting.h"
+#include "nm-simple-connection.h"
+#include "nm-utils.h"
+#include "nm-version.h"
+#include "nm-vpn-dbus-interface.h"
 
 const char *_nm_setting_ip4_config_get_address_label      (NMSettingIP4Config *setting,
                                                            guint32             i);
