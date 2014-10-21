@@ -92,7 +92,7 @@ static GSList *
 construct_ip4_items (GSList *items, GVariant *ip4_config, const char *prefix)
 {
 	GPtrArray *addresses, *routes;
-	char **dns, **wins;
+	char **dns, **wins, *gateway;
 	GString *tmp;
 	GVariant *val;
 	int i;
@@ -106,26 +106,24 @@ construct_ip4_items (GSList *items, GVariant *ip4_config, const char *prefix)
 	/* IP addresses */
 	val = g_variant_lookup_value (ip4_config, "addresses", G_VARIANT_TYPE ("aau"));
 	if (val) {
-		addresses = nm_utils_ip4_addresses_from_variant (val);
+		addresses = nm_utils_ip4_addresses_from_variant (val, &gateway);
+		if (!gateway)
+			gateway = g_strdup ("0.0.0.0");
 
 		for (i = 0; i < addresses->len; i++) {
 			NMIPAddress *addr = addresses->pdata[i];
-			const char *gw;
 			char *addrtmp;
-
-			gw = nm_ip_address_get_gateway (addr);
-			if (!gw)
-				gw = "0.0.0.0";
 
 			addrtmp = g_strdup_printf ("%sIP4_ADDRESS_%d=%s/%d %s", prefix, i,
 			                           nm_ip_address_get_address (addr),
 			                           nm_ip_address_get_prefix (addr),
-			                           gw);
+			                           gateway);
 			items = g_slist_prepend (items, addrtmp);
 		}
 		if (addresses->len)
 			items = g_slist_prepend (items, g_strdup_printf ("%sIP4_NUM_ADDRESSES=%d", prefix, addresses->len));
 		g_ptr_array_unref (addresses);
+		g_free (gateway);
 		g_variant_unref (val);
 	}
 
@@ -228,7 +226,7 @@ static GSList *
 construct_ip6_items (GSList *items, GVariant *ip6_config, const char *prefix)
 {
 	GPtrArray *addresses, *routes;
-	char **dns;
+	char **dns, *gateway = NULL;
 	GString *tmp;
 	GVariant *val;
 	int i;
@@ -242,26 +240,24 @@ construct_ip6_items (GSList *items, GVariant *ip6_config, const char *prefix)
 	/* IP addresses */
 	val = g_variant_lookup_value (ip6_config, "addresses", G_VARIANT_TYPE ("a(ayuay)"));
 	if (val) {
-		addresses = nm_utils_ip6_addresses_from_variant (val);
+		addresses = nm_utils_ip6_addresses_from_variant (val, &gateway);
+		if (!gateway)
+			gateway = g_strdup ("::");
 
 		for (i = 0; i < addresses->len; i++) {
 			NMIPAddress *addr = addresses->pdata[i];
-			const char *gw;
 			char *addrtmp;
-
-			gw = nm_ip_address_get_gateway (addr);
-			if (!gw)
-				gw = "::";
 
 			addrtmp = g_strdup_printf ("%sIP6_ADDRESS_%d=%s/%d %s", prefix, i,
 			                           nm_ip_address_get_address (addr),
 			                           nm_ip_address_get_prefix (addr),
-			                           gw);
+			                           gateway);
 			items = g_slist_prepend (items, addrtmp);
 		}
 		if (addresses->len)
 			items = g_slist_prepend (items, g_strdup_printf ("%sIP6_NUM_ADDRESSES=%d", prefix, addresses->len));
 		g_ptr_array_unref (addresses);
+		g_free (gateway);
 		g_variant_unref (val);
 	}
 

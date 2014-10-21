@@ -480,15 +480,8 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 			}
 		}
 
-		/* gateway */
-		gateway_v = ifparser_getkey (block, "gateway");
-		if (!gateway_v)
-			gateway_v = address_v;  /* dcbw: whaaa?? */
-
 		/* Add the new address to the setting */
-		addr = nm_ip_address_new (AF_INET, address_v, netmask_int,
-		                          nm_setting_ip_config_get_num_addresses (s_ip4) == 0 ? gateway_v : NULL,
-		                          error);
+		addr = nm_ip_address_new (AF_INET, address_v, netmask_int, error);
 		if (!addr)
 			goto error;
 
@@ -499,6 +492,18 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 			nm_log_info (LOGD_SETTINGS, "ignoring duplicate IP4 address");
 		}
 		nm_ip_address_unref (addr);
+
+		/* gateway */
+		gateway_v = ifparser_getkey (block, "gateway");
+		if (gateway_v) {
+			if (!nm_utils_ipaddr_valid (AF_INET, gateway_v)) {
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+				             "Invalid IPv4 gateway '%s'", gateway_v);
+				goto error;
+			}
+			if (!nm_setting_ip_config_get_gateway (s_ip4))
+				g_object_set (s_ip4, NM_SETTING_IP_CONFIG_GATEWAY, gateway_v, NULL);
+		}
 
 		nameserver_v = ifparser_getkey (block, "dns-nameserver");
 		ifupdown_ip4_add_dns (s_ip4, nameserver_v);
@@ -595,15 +600,8 @@ update_ip6_setting_from_if_block(NMConnection *connection,
 		if (prefix_v)
 			prefix_int = g_ascii_strtoll (prefix_v, NULL, 10);
 
-		/* Gateway */
-		gateway_v = ifparser_getkey (block, "gateway");
-		if (!gateway_v)
-			gateway_v = address_v;  /* dcbw: whaaa?? */
-
 		/* Add the new address to the setting */
-		addr = nm_ip_address_new (AF_INET6, address_v, prefix_int,
-		                          nm_setting_ip_config_get_num_addresses (s_ip6) == 0 ? gateway_v : NULL,
-		                          error);
+		addr = nm_ip_address_new (AF_INET6, address_v, prefix_int, error);
 		if (!addr)
 			goto error;
 
@@ -614,6 +612,18 @@ update_ip6_setting_from_if_block(NMConnection *connection,
 			nm_log_info (LOGD_SETTINGS, "ignoring duplicate IP6 address");
 		}
 		nm_ip_address_unref (addr);
+
+		/* gateway */
+		gateway_v = ifparser_getkey (block, "gateway");
+		if (gateway_v) {
+			if (!nm_utils_ipaddr_valid (AF_INET6, gateway_v)) {
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+				             "Invalid IPv6 gateway '%s'", gateway_v);
+				goto error;
+			}
+			if (!nm_setting_ip_config_get_gateway (s_ip6))
+				g_object_set (s_ip6, NM_SETTING_IP_CONFIG_GATEWAY, gateway_v, NULL);
+		}
 
 		nameserver_v = ifparser_getkey(block, "dns-nameserver");
 		ifupdown_ip6_add_dns (s_ip6, nameserver_v);

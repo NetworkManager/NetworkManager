@@ -162,7 +162,8 @@ test_read_ibft_static (void)
 	g_assert (ip4_addr);
 	g_assert_cmpstr (nm_ip_address_get_address (ip4_addr), ==, "192.168.32.72");
 	g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 22);
-	g_assert_cmpstr (nm_ip_address_get_gateway (ip4_addr), ==, "192.168.35.254");
+
+	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, "192.168.35.254");
 
 	g_object_unref (connection);
 	g_ptr_array_unref (block);
@@ -259,7 +260,8 @@ test_read_ibft_vlan (void)
 	g_assert (ip4_addr);
 	g_assert_cmpstr (nm_ip_address_get_address (ip4_addr), ==, "192.168.6.200");
 	g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 24);
-	g_assert_cmpstr (nm_ip_address_get_gateway (ip4_addr), ==, NULL);
+
+	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, NULL);
 
 	g_object_unref (connection);
 	g_ptr_array_ref (block);

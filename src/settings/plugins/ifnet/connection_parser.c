@@ -614,9 +614,7 @@ make_ip4_setting (NMConnection *connection,
 			NMIPAddress *ip4_addr;
 			GError *local = NULL;
 
-			ip4_addr = nm_ip_address_new (AF_INET, iblock->ip, iblock->prefix,
-			                              nm_setting_ip_config_get_num_addresses (ip4_setting) == 0 ? iblock->next_hop : NULL,
-			                              &local);
+			ip4_addr = nm_ip_address_new (AF_INET, iblock->ip, iblock->prefix, &local);
 			if (iblock->next_hop)
 				g_object_set (ip4_setting,
 					      NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES,
@@ -795,7 +793,7 @@ make_ip6_setting (NMConnection *connection,
 			NMIPAddress *ip6_addr;
 			GError *local = NULL;
 
-			ip6_addr = nm_ip_address_new (AF_INET6, iblock->ip, iblock->prefix, NULL, &local);
+			ip6_addr = nm_ip_address_new (AF_INET6, iblock->ip, iblock->prefix, &local);
 			if (ip6_addr) {
 				if (nm_setting_ip_config_add_address (s_ip6, ip6_addr)) {
 					nm_log_info (LOGD_SETTINGS, "ipv6 addresses count: %d",
@@ -2408,10 +2406,10 @@ write_ip4_setting (NMConnection *connection, const char *conn_name, GError **err
 			                        nm_ip_address_get_prefix (addr));
 
 			/* only the first gateway will be written */
-			if (i == 0 && nm_ip_address_get_gateway (addr)) {
+			if (i == 0 && nm_setting_ip_config_get_gateway (s_ip4)) {
 				g_string_append_printf (routes,
 				                        "\"default via %s\" ",
-				                        nm_ip_address_get_gateway (addr));
+				                        nm_setting_ip_config_get_gateway (s_ip4));
 			}
 		}
 		ifnet_set_data (conn_name, "config", ips->str);

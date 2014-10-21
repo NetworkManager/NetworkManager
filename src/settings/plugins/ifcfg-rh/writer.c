@@ -1915,8 +1915,7 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		g_free (tmp);
 
 		svSetValue (ifcfg, netmask_key, NULL, FALSE);
-
-		svSetValue (ifcfg, gw_key, n == 0 ? nm_ip_address_get_gateway (addr) : NULL, FALSE);
+		svSetValue (ifcfg, gw_key, NULL, FALSE);
 
 		g_free (addr_key);
 		g_free (prefix_key);
@@ -1942,6 +1941,8 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		g_free (netmask_key);
 		g_free (gw_key);
 	}
+
+	svSetValue (ifcfg, "GATEWAY", nm_setting_ip_config_get_gateway (s_ip4), FALSE);
 
 	num = nm_setting_ip_config_get_num_dns (s_ip4);
 	for (i = 0; i < 254; i++) {
@@ -2172,8 +2173,6 @@ write_ip4_aliases (NMConnection *connection, char *base_ifcfg_path)
 		svSetValue (ifcfg, "PREFIX", tmp, FALSE);
 		g_free (tmp);
 
-		svSetValue (ifcfg, "GATEWAY", i == 0 ? nm_ip_address_get_gateway (addr) : NULL, FALSE);
-
 		svWriteFile (ifcfg, 0644, NULL);
 		svCloseFile (ifcfg);
 	}
@@ -2237,7 +2236,6 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	char *addr_key;
 	guint32 i, num, num4;
 	GString *searches;
-	const char *ipv6_defaultgw;
 	NMIPAddress *addr;
 	const char *dns;
 	GString *ip_str1, *ip_str2, *ip_ptr;
@@ -2292,7 +2290,6 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	num = nm_setting_ip_config_get_num_addresses (s_ip6);
 	ip_str1 = g_string_new (NULL);
 	ip_str2 = g_string_new (NULL);
-	ipv6_defaultgw = NULL;
 	for (i = 0; i < num; i++) {
 		if (i == 0)
 			ip_ptr = ip_str1;
@@ -2306,14 +2303,10 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		g_string_append_printf (ip_ptr, "%s/%u",
 		                        nm_ip_address_get_address (addr),
 		                        nm_ip_address_get_prefix (addr));
-
-		/* We only support gateway for the first IP address */
-		if (i == 0)
-			ipv6_defaultgw = nm_ip_address_get_gateway (addr);
 	}
 	svSetValue (ifcfg, "IPV6ADDR", ip_str1->str, FALSE);
 	svSetValue (ifcfg, "IPV6ADDR_SECONDARIES", ip_str2->str, FALSE);
-	svSetValue (ifcfg, "IPV6_DEFAULTGW", ipv6_defaultgw, FALSE);
+	svSetValue (ifcfg, "IPV6_DEFAULTGW", nm_setting_ip_config_get_gateway (s_ip6), FALSE);
 	g_string_free (ip_str1, TRUE);
 	g_string_free (ip_str2, TRUE);
 

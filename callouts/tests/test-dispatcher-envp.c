@@ -183,6 +183,7 @@ parse_ip4 (GKeyFile *kf, GVariant **out_props, const char *section, GError **err
 	char *tmp;
 	char **split, **iter;
 	GPtrArray *addresses, *routes;
+	const char *gateway = NULL;
 
 	g_variant_builder_init (&props, G_VARIANT_TYPE ("a{sv}"));
 
@@ -221,7 +222,7 @@ parse_ip4 (GKeyFile *kf, GVariant **out_props, const char *section, GError **err
 		addresses = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_address_unref);
 		for (iter = split; iter && *iter; iter++) {
 			NMIPAddress *addr;
-			char *ip, *prefix, *gw;
+			char *ip, *prefix;
 
 			if (strlen (g_strstrip (*iter)) == 0)
 				continue;
@@ -232,11 +233,13 @@ parse_ip4 (GKeyFile *kf, GVariant **out_props, const char *section, GError **err
 			g_assert (prefix);
 			*prefix++ = '\0';
 
-			gw = strchr (prefix, ' ');
-			g_assert (gw);
-			gw++;
+			if (addresses->len == 0) {
+				gateway = strchr (prefix, ' ');
+				g_assert (gateway);
+				gateway++;
+			}
 
-			addr = nm_ip_address_new (AF_INET, ip, (guint) atoi (prefix), gw, error);
+			addr = nm_ip_address_new (AF_INET, ip, (guint) atoi (prefix), error);
 			if (!addr) {
 				g_ptr_array_unref (addresses);
 				return FALSE;
@@ -245,7 +248,7 @@ parse_ip4 (GKeyFile *kf, GVariant **out_props, const char *section, GError **err
 		}
 
 		g_variant_builder_add (&props, "{sv}", "addresses",
-		                       nm_utils_ip4_addresses_to_variant (addresses));
+		                       nm_utils_ip4_addresses_to_variant (addresses, gateway));
 		g_ptr_array_unref (addresses);
 	}
 	g_strfreev (split);

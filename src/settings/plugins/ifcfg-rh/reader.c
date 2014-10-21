@@ -334,13 +334,13 @@ read_full_ip4_address (shvarFile *ifcfg,
                        gint32 which,
                        NMIPAddress *base_addr,
                        NMIPAddress **out_address,
+                       char **out_gateway,
                        GError **error)
 {
 	char *ip_tag, *prefix_tag, *netmask_tag, *gw_tag;
-	char *ip = NULL, *gw = NULL;
+	char *ip = NULL;
 	long prefix = 0;
 	gboolean success = FALSE;
-	shvarFile *network_ifcfg;
 	char *value;
 	guint32 tmp;
 
@@ -370,21 +370,9 @@ read_full_ip4_address (shvarFile *ifcfg,
 	}
 
 	/* Gateway */
-	if (!read_ip4_address (ifcfg, gw_tag, &gw, error))
-		goto done;
-	if (!gw && base_addr)
-		gw = g_strdup (nm_ip_address_get_gateway (base_addr));
-	if (!gw) {
-		gboolean read_success;
-
-		/* If no gateway in the ifcfg, try /etc/sysconfig/network instead */
-		network_ifcfg = svOpenFile (network_file, NULL);
-		if (network_ifcfg) {
-			read_success = read_ip4_address (network_ifcfg, "GATEWAY", &gw, error);
-			svCloseFile (network_ifcfg);
-			if (!read_success)
-				goto done;
-		}
+	if (out_gateway && !*out_gateway) {
+		if (!read_ip4_address (ifcfg, gw_tag, out_gateway, error))
+			goto done;
 	}
 
 	/* Prefix */
@@ -431,13 +419,12 @@ read_full_ip4_address (shvarFile *ifcfg,
 		goto done;
 	}
 
-	*out_address = nm_ip_address_new (AF_INET, ip, prefix, gw, error);
+	*out_address = nm_ip_address_new (AF_INET, ip, prefix, error);
 	if (*out_address)
 		success = TRUE;
 
 done:
 	g_free (ip);
-	g_free (gw);
 	g_free (ip_tag);
 	g_free (prefix_tag);
 	g_free (netmask_tag);
@@ -698,9 +685,8 @@ parse_full_ip6_address (shvarFile *ifcfg,
                         GError **error)
 {
 	char **list;
-	char *ip_val, *prefix_val, *gateway_val = NULL;
+	char *ip_val, *prefix_val;
 	long prefix;
-	shvarFile *network_ifcfg;
 	gboolean success = FALSE;
 
 	g_return_val_if_fail (addr_str != NULL, FALSE);
@@ -733,33 +719,12 @@ parse_full_ip6_address (shvarFile *ifcfg,
 		prefix = 64;
 	}
 
-	/* Gateway */
-	if (i == 0) {
-		char *ptr;
-
-		gateway_val = svGetValue (ifcfg, "IPV6_DEFAULTGW", FALSE);
-		if (!gateway_val) {
-			/* If no gateway in the ifcfg, try global /etc/sysconfig/network instead */
-			network_ifcfg = svOpenFile (network_file, NULL);
-			if (network_ifcfg) {
-				gateway_val = svGetValue (network_ifcfg, "IPV6_DEFAULTGW", FALSE);
-				svCloseFile (network_ifcfg);
-			}
-		}
-
-		if (   gateway_val
-		    && (ptr = strchr (gateway_val, '%')) != NULL)
-			*ptr = '\0';  /* remove %interface suffix if present */
-	} else
-		gateway_val = NULL;
-
-	*out_address = nm_ip_address_new (AF_INET6, ip_val, prefix, gateway_val, error);
+	*out_address = nm_ip_address_new (AF_INET6, ip_val, prefix, error);
 	if (*out_address)
 		success = TRUE;
 
 error:
 	g_strfreev (list);
-	g_free (gateway_val);
 	return success;
 }
 
@@ -927,6 +892,7 @@ make_ip4_setting (shvarFile *ifcfg,
 	char *value = NULL;
 	char *route_path = NULL;
 	char *method;
+	char *gateway = NULL;
 	gint32 i;
 	shvarFile *network_ifcfg;
 	shvarFile *route_ifcfg;
@@ -1031,7 +997,7 @@ make_ip4_setting (shvarFile *ifcfg,
 	for (i = -1; i < 256; i++) {
 		NMIPAddress *addr = NULL;
 
-		if (!read_full_ip4_address (ifcfg, network_file, i, NULL, &addr, error))
+		if (!read_full_ip4_address (ifcfg, network_file, i, NULL, &addr, &gateway, error))
 			goto done;
 
 		if (!addr) {
@@ -1042,13 +1008,24 @@ make_ip4_setting (shvarFile *ifcfg,
 			continue;
 		}
 
-		if (nm_setting_ip_config_get_num_addresses (s_ip4))
-			nm_ip_address_set_gateway (addr, NULL);
-
 		if (!nm_setting_ip_config_add_address (s_ip4, addr))
 			PARSE_WARNING ("duplicate IP4 address");
 		nm_ip_address_unref (addr);
 	}
+
+	/* Gateway */
+	if (!gateway) {
+		network_ifcfg = svOpenFile (network_file, NULL);
+		if (network_ifcfg) {
+			gboolean read_success;
+
+			read_success = read_ip4_address (network_ifcfg, "GATEWAY", &gateway, error);
+			svCloseFile (network_ifcfg);
+			if (!read_success)
+				goto done;
+		}
+	}
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_GATEWAY, gateway, NULL);
 
 	/* DNS servers
 	 * Pick up just IPv4 addresses (IPv6 addresses are taken by make_ip6_setting())
@@ -1155,6 +1132,7 @@ make_ip4_setting (shvarFile *ifcfg,
 	return NM_SETTING (s_ip4);
 
 done:
+	g_free (gateway);
 	g_free (route_path);
 	g_object_unref (s_ip4);
 	return NULL;
@@ -1235,7 +1213,7 @@ read_aliases (NMSettingIPConfig *s_ip4, const char *filename, const char *networ
 			}
 
 			addr = NULL;
-			ok = read_full_ip4_address (parsed, network_file, -1, base_addr, &addr, &err);
+			ok = read_full_ip4_address (parsed, network_file, -1, base_addr, &addr, NULL, &err);
 			svCloseFile (parsed);
 			if (ok) {
 				nm_ip_address_set_attribute (addr, "label", g_variant_new_string (device));
@@ -1430,6 +1408,33 @@ make_ip6_setting (shvarFile *ifcfg,
 		nm_ip_address_unref (addr);
 	}
 	g_strfreev (list);
+
+	/* Gateway */
+	if (nm_setting_ip_config_get_num_addresses (s_ip6)) {
+		value = svGetValue (ifcfg, "IPV6_DEFAULTGW", FALSE);
+		if (!value) {
+			/* If no gateway in the ifcfg, try global /etc/sysconfig/network instead */
+			network_ifcfg = svOpenFile (network_file, NULL);
+			if (network_ifcfg) {
+				value = svGetValue (network_ifcfg, "IPV6_DEFAULTGW", FALSE);
+				svCloseFile (network_ifcfg);
+			}
+		}
+		if (value) {
+			char *ptr;
+			if ((ptr = strchr (value, '%')) != NULL)
+				*ptr = '\0';  /* remove %interface prefix if present */
+			if (!nm_utils_ipaddr_valid (AF_INET6, value)) {
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+				             "Invalid IP6 address '%s'", value);
+				g_free (value);
+				goto error;
+			}
+
+			g_object_set (s_ip6, NM_SETTING_IP_CONFIG_GATEWAY, value, NULL);
+			g_free (value);
+		}
+	}
 
 	/* DNS servers
 	 * Pick up just IPv6 addresses (IPv4 addresses are taken by make_ip4_setting())

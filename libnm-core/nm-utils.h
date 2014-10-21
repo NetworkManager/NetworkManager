@@ -97,8 +97,10 @@ gboolean nm_utils_wpa_psk_valid (const char *psk);
 
 GVariant  *nm_utils_ip4_dns_to_variant (char **dns);
 char     **nm_utils_ip4_dns_from_variant (GVariant *value);
-GVariant  *nm_utils_ip4_addresses_to_variant (GPtrArray *addresses);
-GPtrArray *nm_utils_ip4_addresses_from_variant (GVariant *value);
+GVariant  *nm_utils_ip4_addresses_to_variant (GPtrArray *addresses,
+                                              const char *gateway);
+GPtrArray *nm_utils_ip4_addresses_from_variant (GVariant *value,
+                                                char **out_gateway);
 GVariant  *nm_utils_ip4_routes_to_variant (GPtrArray *routes);
 GPtrArray *nm_utils_ip4_routes_from_variant (GVariant *value);
 
@@ -108,8 +110,10 @@ guint32 nm_utils_ip4_get_default_prefix (guint32 ip);
 
 GVariant  *nm_utils_ip6_dns_to_variant (char **dns);
 char     **nm_utils_ip6_dns_from_variant (GVariant *value);
-GVariant  *nm_utils_ip6_addresses_to_variant (GPtrArray *addresses);
-GPtrArray *nm_utils_ip6_addresses_from_variant (GVariant *value);
+GVariant  *nm_utils_ip6_addresses_to_variant (GPtrArray *addresses,
+                                              const char *gateway);
+GPtrArray *nm_utils_ip6_addresses_from_variant (GVariant *value,
+                                                char **out_gateway);
 GVariant  *nm_utils_ip6_routes_to_variant (GPtrArray *routes);
 GPtrArray *nm_utils_ip6_routes_from_variant (GVariant *value);
 

@@ -82,6 +82,7 @@ print_ip4_config (NMIP4Config *cfg4,
                   const char *one_field)
 {
 	GPtrArray *ptr_array;
+	const char *gw;
 	char **addr_arr = NULL;
 	char **route_arr = NULL;
 	char **dns_arr = NULL;
@@ -103,20 +104,16 @@ print_ip4_config (NMIP4Config *cfg4,
 
 	/* addresses */
 	ptr_array = nm_ip4_config_get_addresses (cfg4);
+	gw = nm_ip4_config_get_gateway (cfg4);
 	if (ptr_array) {
 		addr_arr = g_new (char *, ptr_array->len + 1);
 		for (i = 0; i < ptr_array->len; i++) {
 			NMIPAddress *addr = (NMIPAddress *) g_ptr_array_index (ptr_array, i);
-			const char *gw;
-
-			gw = nm_ip_address_get_gateway (addr);
-			if (!gw)
-				gw = "0.0.0.0";
 
 			addr_arr[i] = g_strdup_printf ("ip = %s/%u, gw = %s",
 			                               nm_ip_address_get_address (addr),
 			                               nm_ip_address_get_prefix (addr),
-			                               gw);
+			                               (i == 0) && gw ? gw : "0.0.0.0");
 		}
 		addr_arr[i] = NULL;
 	}
@@ -175,6 +172,7 @@ print_ip6_config (NMIP6Config *cfg6,
                   const char *one_field)
 {
 	GPtrArray *ptr_array;
+	const char *gw;
 	char **addr_arr = NULL;
 	char **route_arr = NULL;
 	char **dns_arr = NULL;
@@ -195,20 +193,16 @@ print_ip6_config (NMIP6Config *cfg6,
 
 	/* addresses */
 	ptr_array = nm_ip6_config_get_addresses (cfg6);
+	gw = nm_ip6_config_get_gateway (cfg6);
 	if (ptr_array) {
 		addr_arr = g_new (char *, ptr_array->len + 1);
 		for (i = 0; i < ptr_array->len; i++) {
 			NMIPAddress *addr = (NMIPAddress *) g_ptr_array_index (ptr_array, i);
-			const char *gw;
-
-			gw = nm_ip_address_get_gateway (addr);
-			if (!gw)
-				gw = "::";
 
 			addr_arr[i] = g_strdup_printf ("ip = %s/%u, gw = %s",
 			                               nm_ip_address_get_address (addr),
 			                               nm_ip_address_get_prefix (addr),
-			                               gw);
+			                               (i == 0) && gw ? gw : "::");
 		}
 		addr_arr[i] = NULL;
 	}
@@ -355,10 +349,9 @@ print_dhcp6_config (NMDhcp6Config *dhcp6,
 /*
  * Parse IP address from string to NMIPAddress stucture.
  * ip_str is the IP address in the form address/prefix
- * gw_str is the gateway address (it is optional)
  */
 NMIPAddress *
-nmc_parse_and_build_address (int family, const char *ip_str, const char *gw_str, GError **error)
+nmc_parse_and_build_address (int family, const char *ip_str, GError **error)
 {
 	int max_prefix = (family == AF_INET) ? 32 : 128;
 	NMIPAddress *addr = NULL;
@@ -387,7 +380,7 @@ nmc_parse_and_build_address (int family, const char *ip_str, const char *gw_str,
 		}
 	}
 
-	addr = nm_ip_address_new (family, ip, (guint32) prefix, gw_str, &local);
+	addr = nm_ip_address_new (family, ip, (guint32) prefix, &local);
 	if (!addr) {
 		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 		             _("invalid IP address: %s"), local->message);

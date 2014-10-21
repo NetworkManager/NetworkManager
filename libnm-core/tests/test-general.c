@@ -338,7 +338,7 @@ test_setting_ip4_config_labels (void)
 	              NULL);
 
 	/* addr 1 */
-	addr = nm_ip_address_new (AF_INET, "1.1.1.1", 24, NULL, &error);
+	addr = nm_ip_address_new (AF_INET, "1.1.1.1", 24, &error);
 	g_assert_no_error (error);
 
 	nm_setting_ip_config_add_address (s_ip4, addr);
@@ -351,7 +351,7 @@ test_setting_ip4_config_labels (void)
 	g_assert (label == NULL);
 
 	/* addr 2 */
-	addr = nm_ip_address_new (AF_INET, "2.2.2.2", 24, NULL, &error);
+	addr = nm_ip_address_new (AF_INET, "2.2.2.2", 24, &error);
 	g_assert_no_error (error);
 	nm_ip_address_set_attribute (addr, "label", g_variant_new_string ("eth0:1"));
 
@@ -366,7 +366,7 @@ test_setting_ip4_config_labels (void)
 	g_assert_cmpstr (g_variant_get_string (label, NULL), ==, "eth0:1");
 
 	/* addr 3 */
-	addr = nm_ip_address_new (AF_INET, "3.3.3.3", 24, NULL, &error);
+	addr = nm_ip_address_new (AF_INET, "3.3.3.3", 24, &error);
 	g_assert_no_error (error);
 	nm_ip_address_set_attribute (addr, "label", NULL);
 
@@ -1634,6 +1634,7 @@ test_connection_diff_a_only (void)
 			{ NM_SETTING_IP_CONFIG_DNS,                NM_SETTING_DIFF_RESULT_IN_A },
 			{ NM_SETTING_IP_CONFIG_DNS_SEARCH,         NM_SETTING_DIFF_RESULT_IN_A },
 			{ NM_SETTING_IP_CONFIG_ADDRESSES,          NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP_CONFIG_GATEWAY,            NM_SETTING_DIFF_RESULT_IN_A },
 			{ NM_SETTING_IP_CONFIG_ROUTES,             NM_SETTING_DIFF_RESULT_IN_A },
 			{ NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES, NM_SETTING_DIFF_RESULT_IN_A },
 			{ NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS,    NM_SETTING_DIFF_RESULT_IN_A },
@@ -2480,7 +2481,7 @@ test_setting_ip4_changed_signal (void)
 	ASSERT_CHANGED (nm_setting_ip_config_add_dns_search (s_ip4, "foobar.com"));
 	ASSERT_CHANGED (nm_setting_ip_config_clear_dns_searches (s_ip4));
 
-	addr = nm_ip_address_new (AF_INET, "22.33.0.0", 24, NULL, &error);
+	addr = nm_ip_address_new (AF_INET, "22.33.0.0", 24, &error);
 	g_assert_no_error (error);
 	ASSERT_CHANGED (nm_setting_ip_config_add_address (s_ip4, addr));
 	ASSERT_CHANGED (nm_setting_ip_config_remove_address (s_ip4, 0));
@@ -2549,7 +2550,7 @@ test_setting_ip6_changed_signal (void)
 	nm_setting_ip_config_add_dns_search (s_ip6, "foobar.com");
 	ASSERT_CHANGED (nm_setting_ip_config_clear_dns_searches (s_ip6));
 
-	addr = nm_ip_address_new (AF_INET6, "1:2:3::4:5:6", 64, NULL, &error);
+	addr = nm_ip_address_new (AF_INET6, "1:2:3::4:5:6", 64, &error);
 	g_assert_no_error (error);
 
 	ASSERT_CHANGED (nm_setting_ip_config_add_address (s_ip6, addr));
@@ -3336,6 +3337,145 @@ test_connection_normalize_infiniband_mtu (void)
 	g_assert_cmpint (65520, ==, nm_setting_infiniband_get_mtu (s_infini));
 }
 
+static void
+test_setting_ip4_gateway (void)
+{
+	NMConnection *conn;
+	NMSettingIPConfig *s_ip4;
+	NMIPAddress *addr;
+	GVariant *conn_dict, *ip4_dict, *value;
+	GVariantIter iter;
+	GVariant *addr_var;
+	GError *error = NULL;
+
+	/* When serializing, ipv4.gateway is copied to the first entry of ipv4.addresses */
+	conn = nmtst_create_minimal_connection ("test_setting_ip4_gateway", NULL,
+	                                        NM_SETTING_WIRED_SETTING_NAME, NULL);
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
+	g_object_set (s_ip4,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "192.168.1.1",
+	              NULL);
+	nm_connection_add_setting (conn, NM_SETTING (s_ip4));
+
+	addr = nm_ip_address_new (AF_INET, "192.168.1.10", 24, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_address (s_ip4, addr);
+	nm_ip_address_unref (addr);
+
+	conn_dict = nm_connection_to_dbus (conn, NM_CONNECTION_SERIALIZE_ALL);
+	g_object_unref (conn);
+
+	ip4_dict = g_variant_lookup_value (conn_dict, NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
+	g_assert (ip4_dict != NULL);
+
+	value = g_variant_lookup_value (ip4_dict, NM_SETTING_IP_CONFIG_GATEWAY, G_VARIANT_TYPE_STRING);
+	g_assert (value != NULL);
+	g_assert_cmpstr (g_variant_get_string (value, NULL), ==, "192.168.1.1");
+	g_variant_unref (value);
+
+	value = g_variant_lookup_value (ip4_dict, NM_SETTING_IP_CONFIG_ADDRESSES, G_VARIANT_TYPE ("aau"));
+	g_assert (value != NULL);
+
+	g_variant_iter_init (&iter, value);
+	while (g_variant_iter_next (&iter, "@au", &addr_var)) {
+		const guint32 *addr_array;
+		gsize length;
+
+		addr_array = g_variant_get_fixed_array (addr_var, &length, sizeof (guint32));
+		g_assert_cmpint (length, ==, 3);
+		g_assert_cmpstr (nm_utils_inet4_ntop (addr_array[2], NULL), ==, "192.168.1.1");
+		g_variant_unref (addr_var);
+	}
+	g_variant_unref (value);
+
+	g_variant_unref (ip4_dict);
+
+	/* When deserializing, the first gateway in ipv4.addresses is copied to ipv4.gateway */
+	NMTST_VARIANT_EDITOR (conn_dict,
+	                      NMTST_VARIANT_DROP_PROPERTY (NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	                                                   NM_SETTING_IP_CONFIG_GATEWAY);
+	                      );
+
+	conn = nm_simple_connection_new_from_dbus (conn_dict, &error);
+	g_variant_unref (conn_dict);
+	g_assert_no_error (error);
+
+	s_ip4 = (NMSettingIPConfig *) nm_connection_get_setting_ip4_config (conn);
+	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, "192.168.1.1");
+
+	g_object_unref (conn);
+}
+
+static void
+test_setting_ip6_gateway (void)
+{
+	NMConnection *conn;
+	NMSettingIPConfig *s_ip6;
+	NMIPAddress *addr;
+	GVariant *conn_dict, *ip6_dict, *value;
+	GVariantIter iter;
+	GVariant *gateway_var;
+	GError *error = NULL;
+
+	/* When serializing, ipv6.gateway is copied to the first entry of ipv6.addresses */
+	conn = nmtst_create_minimal_connection ("test_setting_ip6_gateway", NULL,
+	                                        NM_SETTING_WIRED_SETTING_NAME, NULL);
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
+	g_object_set (s_ip6,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "abcd::1",
+	              NULL);
+	nm_connection_add_setting (conn, NM_SETTING (s_ip6));
+
+	addr = nm_ip_address_new (AF_INET6, "abcd::10", 64, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_address (s_ip6, addr);
+	nm_ip_address_unref (addr);
+
+	conn_dict = nm_connection_to_dbus (conn, NM_CONNECTION_SERIALIZE_ALL);
+	g_object_unref (conn);
+
+	ip6_dict = g_variant_lookup_value (conn_dict, NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
+	g_assert (ip6_dict != NULL);
+
+	value = g_variant_lookup_value (ip6_dict, NM_SETTING_IP_CONFIG_GATEWAY, G_VARIANT_TYPE_STRING);
+	g_assert (value != NULL);
+	g_assert_cmpstr (g_variant_get_string (value, NULL), ==, "abcd::1");
+
+	value = g_variant_lookup_value (ip6_dict, NM_SETTING_IP_CONFIG_ADDRESSES, G_VARIANT_TYPE ("a(ayuay)"));
+	g_assert (value != NULL);
+
+	g_variant_iter_init (&iter, value);
+	while (g_variant_iter_next (&iter, "(@ayu@ay)", NULL, NULL, &gateway_var)) {
+		const guint8 *gateway_bytes;
+		gsize length;
+
+		gateway_bytes = g_variant_get_fixed_array (gateway_var, &length, 1);
+		g_assert_cmpint (length, ==, 16);
+		g_assert_cmpstr (nm_utils_inet6_ntop ((struct in6_addr *) gateway_bytes, NULL), ==, "abcd::1");
+		g_variant_unref (gateway_var);
+	}
+	g_variant_unref (value);
+
+	g_variant_unref (ip6_dict);
+
+	/* When deserializing, the first gateway in ipv4.addresses is copied to ipv4.gateway */
+	NMTST_VARIANT_EDITOR (conn_dict,
+	                      NMTST_VARIANT_DROP_PROPERTY (NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	                                                   NM_SETTING_IP_CONFIG_GATEWAY);
+	                      );
+
+	conn = nm_simple_connection_new_from_dbus (conn_dict, &error);
+	g_variant_unref (conn_dict);
+	g_assert_no_error (error);
+
+	s_ip6 = (NMSettingIPConfig *) nm_connection_get_setting_ip6_config (conn);
+	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip6), ==, "abcd::1");
+
+	g_object_unref (conn);
+}
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -3424,6 +3564,8 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_setting_wireless_changed_signal", test_setting_wireless_changed_signal);
 	g_test_add_func ("/core/general/test_setting_wireless_security_changed_signal", test_setting_wireless_security_changed_signal);
 	g_test_add_func ("/core/general/test_setting_802_1x_changed_signal", test_setting_802_1x_changed_signal);
+	g_test_add_func ("/core/general/test_setting_ip4_gateway", test_setting_ip4_gateway);
+	g_test_add_func ("/core/general/test_setting_ip6_gateway", test_setting_ip6_gateway);
 
 	return g_test_run ();
 }

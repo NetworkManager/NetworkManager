@@ -319,14 +319,11 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIPConfig *setting, in
 		nm_ip4_config_set_never_default (config, TRUE);
 	else if (nm_setting_ip_config_get_ignore_auto_routes (setting))
 		nm_ip4_config_set_never_default (config, FALSE);
-	if (naddresses) {
-		const char *gateway_str = nm_ip_address_get_gateway (nm_setting_ip_config_get_address (setting, 0));
+	if (nm_setting_ip_config_get_gateway (setting)) {
 		guint32 gateway;
 
-		if (gateway_str) {
-			inet_pton (AF_INET, gateway_str, &gateway);
-			nm_ip4_config_set_gateway (config, gateway);
-		}
+		inet_pton (AF_INET, nm_setting_ip_config_get_gateway (setting), &gateway);
+		nm_ip4_config_set_gateway (config, gateway);
 	}
 
 	/* Addresses */
@@ -425,14 +422,19 @@ nm_ip4_config_create_setting (const NMIP4Config *config)
 		if (!method)
 			method = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
 
-		s_addr = nm_ip_address_new_binary (AF_INET, &address->address, address->plen,
-		                                   i == 0 ? &gateway : NULL,
-		                                   NULL);
+		s_addr = nm_ip_address_new_binary (AF_INET, &address->address, address->plen, NULL);
 		if (*address->label)
 			nm_ip_address_set_attribute (s_addr, "label", g_variant_new_string (address->label));
 
 		nm_setting_ip_config_add_address (s_ip4, s_addr);
 		nm_ip_address_unref (s_addr);
+	}
+
+	/* Gateway */
+	if (gateway) {
+		g_object_set (s_ip4,
+		              NM_SETTING_IP_CONFIG_GATEWAY, nm_utils_inet4_ntop (gateway, NULL),
+		              NULL);
 	}
 
 	/* Use 'disabled' if the method wasn't previously set */

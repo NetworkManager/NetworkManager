@@ -493,7 +493,9 @@ test_read_wired_static (const char *file,
 	g_assert (ip4_addr);
 	g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 24);
 	g_assert_cmpstr (nm_ip_address_get_address (ip4_addr), ==, "192.168.1.5");
-	g_assert_cmpstr (nm_ip_address_get_gateway (ip4_addr), ==, "192.168.1.1");
+
+	/* Gateway */
+	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, "192.168.1.1");
 
 	/* ===== IPv6 SETTING ===== */
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
@@ -762,7 +764,9 @@ test_read_wired_dhcp_plus_ip (void)
 	g_assert (ip4_addr);
 	g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 24);
 	g_assert_cmpstr (nm_ip_address_get_address (ip4_addr), ==, "1.2.3.4");
-	g_assert_cmpstr (nm_ip_address_get_gateway (ip4_addr), ==, "1.1.1.1");
+
+	/* Gateway */
+	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, "1.1.1.1");
 
 	ip4_addr = nm_setting_ip_config_get_address (s_ip4, 1);
 	g_assert (ip4_addr);
@@ -836,7 +840,9 @@ test_read_wired_global_gateway (void)
 	g_assert (ip4_addr);
 	g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 24);
 	g_assert_cmpstr (nm_ip_address_get_address (ip4_addr), ==, "192.168.1.5");
-	g_assert_cmpstr (nm_ip_address_get_gateway (ip4_addr), ==, "192.168.1.2");
+
+	/* Gateway */
+	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, "192.168.1.2");
 
 	g_object_unref (connection);
 }
@@ -2377,7 +2383,7 @@ test_read_wired_aliases_good (void)
 	int expected_num_addresses = 4;
 	const char *expected_address[4] = { "192.168.1.5", "192.168.1.6", "192.168.1.9", "192.168.1.99" };
 	const char *expected_label[4] = { NULL, "aliasem0:1", "aliasem0:2", "aliasem0:99" };
-	const char *expected_gateway[4] = { "192.168.1.1", "192.168.1.1", "192.168.1.1", "192.168.1.1" };
+	const char *expected_gateway = "192.168.1.1";
 	int i, j;
 
 	connection = connection_from_file (TEST_IFCFG_ALIASES_GOOD,
@@ -2457,7 +2463,6 @@ test_read_wired_aliases_good (void)
 		g_assert (j < expected_num_addresses);
 
 		g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 24);
-		g_assert_cmpstr (nm_ip_address_get_gateway (ip4_addr), ==, expected_gateway[j]);
 		label = nm_ip_address_get_attribute (ip4_addr, "label");
 		if (expected_label[j])
 			g_assert_cmpstr (g_variant_get_string (label, NULL), ==, expected_label[j]);
@@ -2465,9 +2470,11 @@ test_read_wired_aliases_good (void)
 			g_assert (label == NULL);
 
 		expected_address[j] = NULL;
-		expected_gateway[j] = NULL;
 		expected_label[j] = NULL;
 	}
+
+	/* Gateway */
+	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, expected_gateway);
 
 	for (i = 0; i < expected_num_addresses; i++) {
 		ASSERT (expected_address[i] == NULL,
@@ -2561,8 +2568,10 @@ test_read_wired_aliases_bad (const char *base, const char *expected_id)
 	g_assert (ip4_addr != NULL);
 	g_assert_cmpstr (nm_ip_address_get_address (ip4_addr), ==, "192.168.1.5");
 	g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 24);
-	g_assert_cmpstr (nm_ip_address_get_gateway (ip4_addr), ==, "192.168.1.1");
 	g_assert (nm_ip_address_get_attribute (ip4_addr, "label") == NULL);
+
+	/* Gateway */
+	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, "192.168.1.1");
 
 	g_free (keyfile);
 	g_free (routefile);
@@ -6282,14 +6291,15 @@ test_write_wired_static (void)
 	g_object_set (s_ip4,
 	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "1.1.1.1",
 	              NULL);
 
-	addr = nm_ip_address_new (AF_INET, "1.1.1.3", 24, "1.1.1.1", &error);
+	addr = nm_ip_address_new (AF_INET, "1.1.1.3", 24, &error);
 	g_assert_no_error (error);
 	nm_setting_ip_config_add_address (s_ip4, addr);
 	nm_ip_address_unref (addr);
 
-	addr = nm_ip_address_new (AF_INET, "1.1.1.5", 24, "1.1.1.1", &error);
+	addr = nm_ip_address_new (AF_INET, "1.1.1.5", 24, &error);
 	g_assert_no_error (error);
 	nm_setting_ip_config_add_address (s_ip4, addr);
 	nm_ip_address_unref (addr);
@@ -6310,17 +6320,17 @@ test_write_wired_static (void)
 	              NULL);
 
 	/* Add addresses */
-	addr6 = nm_ip_address_new (AF_INET6, "1003:1234:abcd::1", 11, NULL, &error);
+	addr6 = nm_ip_address_new (AF_INET6, "1003:1234:abcd::1", 11, &error);
 	g_assert_no_error (error);
 	nm_setting_ip_config_add_address (s_ip6, addr6);
 	nm_ip_address_unref (addr6);
 
-	addr6 = nm_ip_address_new (AF_INET6, "2003:1234:abcd::2", 22, NULL, &error);
+	addr6 = nm_ip_address_new (AF_INET6, "2003:1234:abcd::2", 22, &error);
 	g_assert_no_error (error);
 	nm_setting_ip_config_add_address (s_ip6, addr6);
 	nm_ip_address_unref (addr6);
 
-	addr6 = nm_ip_address_new (AF_INET6, "3003:1234:abcd::3", 33, NULL, &error);
+	addr6 = nm_ip_address_new (AF_INET6, "3003:1234:abcd::3", 33, &error);
 	g_assert_no_error (error);
 	nm_setting_ip_config_add_address (s_ip6, addr6);
 	nm_ip_address_unref (addr6);
@@ -6689,7 +6699,7 @@ test_write_wired_static_ip6_only (void)
 	              NULL);
 
 	/* Add addresses */
-	addr6 = nm_ip_address_new (AF_INET6, "1003:1234:abcd::1", 11, NULL, &error);
+	addr6 = nm_ip_address_new (AF_INET6, "1003:1234:abcd::1", 11, &error);
 	g_assert_no_error (error);
 	nm_setting_ip_config_add_address (s_ip6, addr6);
 	nm_ip_address_unref (addr6);
@@ -6815,10 +6825,11 @@ test_write_wired_static_ip6_only_gw (gconstpointer user_data)
 
 	g_object_set (s_ip6,
 	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_GATEWAY, gateway6,
 	              NULL);
 
 	/* Add addresses */
-	addr6 = nm_ip_address_new (AF_INET6, "1003:1234:abcd::1", 11, gateway6, &error);
+	addr6 = nm_ip_address_new (AF_INET6, "1003:1234:abcd::1", 11, &error);
 	g_assert_no_error (error);
 	nm_setting_ip_config_add_address (s_ip6, addr6);
 	nm_ip_address_unref (addr6);
@@ -6873,11 +6884,11 @@ test_write_wired_static_ip6_only_gw (gconstpointer user_data)
 
 	/* assert that the gateway was written and reloaded as expected */
 	if (!gateway6 || !strcmp (gateway6, "::")) {
-		g_assert (nm_ip_address_get_gateway (addr6) == NULL);
+		g_assert (nm_setting_ip_config_get_gateway (s_ip6) == NULL);
 		g_assert (written_ifcfg_gateway == NULL);
 	} else {
-		g_assert (nm_ip_address_get_gateway (addr6) != NULL);
-		g_assert_cmpstr (nm_ip_address_get_gateway (addr6), ==, gateway6);
+		g_assert (nm_setting_ip_config_get_gateway (s_ip6) != NULL);
+		g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip6), ==, gateway6);
 		g_assert_cmpstr (written_ifcfg_gateway, ==, gateway6);
 	}
 
@@ -7092,14 +7103,15 @@ test_write_wired_static_routes (void)
 
 	g_object_set (s_ip4,
 	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "1.1.1.1",
 	              NULL);
 
-	addr = nm_ip_address_new (AF_INET, "1.1.1.3", 24, "1.1.1.1", &error);
+	addr = nm_ip_address_new (AF_INET, "1.1.1.3", 24, &error);
 	g_assert_no_error (error);
 	nm_setting_ip_config_add_address (s_ip4, addr);
 	nm_ip_address_unref (addr);
 
-	addr = nm_ip_address_new (AF_INET, "1.1.1.5", 24, "1.1.1.1", &error);
+	addr = nm_ip_address_new (AF_INET, "1.1.1.5", 24, &error);
 	g_assert_no_error (error);
 	nm_setting_ip_config_add_address (s_ip4, addr);
 	nm_ip_address_unref (addr);
@@ -7610,11 +7622,12 @@ test_write_wired_aliases (void)
 
 	g_object_set (s_ip4,
 	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "1.1.1.1",
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	for (i = 0; i < num_addresses; i++) {
-		addr = nm_ip_address_new (AF_INET, ip[i], 24, "1.1.1.1", &error);
+		addr = nm_ip_address_new (AF_INET, ip[i], 24, &error);
 		g_assert_no_error (error);
 		if (label[i])
 			nm_ip_address_set_attribute (addr, "label", g_variant_new_string (label[i]));
@@ -7709,7 +7722,6 @@ test_write_wired_aliases (void)
 		g_assert (j < num_addresses);
 
 		g_assert_cmpint (nm_ip_address_get_prefix (addr), ==, 24);
-		g_assert_cmpstr (nm_ip_address_get_gateway (addr), ==, "1.1.1.1");
 		if (label[j])
 			g_assert_cmpstr (g_variant_get_string (nm_ip_address_get_attribute (addr, "label"), NULL), ==, label[j]);
 		else
@@ -7724,6 +7736,9 @@ test_write_wired_aliases (void)
 		        testfile,
 		        ip[i]);
 	}
+
+	/* Gateway */
+	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, "1.1.1.1");
 
 	g_free (testfile);
 	g_free (keyfile);
@@ -7770,15 +7785,16 @@ test_write_gateway (void)
 
 	g_object_set (s_ip4,
 	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "1.1.1.254",
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	addr = nm_ip_address_new (AF_INET, "1.1.1.3", 24, "1.1.1.254", &error);
+	addr = nm_ip_address_new (AF_INET, "1.1.1.3", 24, &error);
 	g_assert_no_error (error);
 	nm_setting_ip_config_add_address (s_ip4, addr);
 	nm_ip_address_unref (addr);
 
-	addr = nm_ip_address_new (AF_INET, "2.2.2.5", 24, "2.2.2.254", &error);
+	addr = nm_ip_address_new (AF_INET, "2.2.2.5", 24, &error);
 	g_assert_no_error (error);
 	nm_setting_ip_config_add_address (s_ip4, addr);
 	nm_ip_address_unref (addr);
@@ -8319,10 +8335,13 @@ test_write_wifi_wep_adhoc (void)
 	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL, NULL);
+	g_object_set (s_ip4,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "1.1.1.1",
+	              NULL);
 
 	/* IP Address */
-	addr = nm_ip_address_new (AF_INET, "1.1.1.3", 24, "1.1.1.1", &error);
+	addr = nm_ip_address_new (AF_INET, "1.1.1.3", 24, &error);
 	g_assert_no_error (error);
 	nm_setting_ip_config_add_address (s_ip4, addr);
 	nm_ip_address_unref (addr);
@@ -9313,10 +9332,13 @@ test_write_wifi_wpa_psk_adhoc (void)
 	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL, NULL);
+	g_object_set (s_ip4,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "1.1.1.1",
+	              NULL);
 
 	/* IP Address */
-	addr = nm_ip_address_new (AF_INET, "1.1.1.3", 25, "1.1.1.1", &error);
+	addr = nm_ip_address_new (AF_INET, "1.1.1.3", 25, &error);
 	g_assert_no_error (error);
 	nm_setting_ip_config_add_address (s_ip4, addr);
 	nm_ip_address_unref (addr);
@@ -11262,10 +11284,11 @@ test_write_bridge_main (void)
 
 	g_object_set (s_ip4,
 	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "1.1.1.1",
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	addr = nm_ip_address_new (AF_INET, "1.1.1.3", 24, "1.1.1.1", &error);
+	addr = nm_ip_address_new (AF_INET, "1.1.1.3", 24, &error);
 	g_assert_no_error (error);
 	nm_setting_ip_config_add_address (s_ip4, addr);
 	nm_ip_address_unref (addr);
@@ -12040,10 +12063,11 @@ test_write_bond_main (void)
 
 	g_object_set (s_ip4,
 	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "1.1.1.1",
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	addr = nm_ip_address_new (AF_INET, "1.1.1.3", 24, "1.1.1.1", &error);
+	addr = nm_ip_address_new (AF_INET, "1.1.1.3", 24, &error);
 	g_assert_no_error (error);
 	nm_setting_ip_config_add_address (s_ip4, addr);
 	nm_ip_address_unref (addr);
@@ -12380,10 +12404,11 @@ test_write_infiniband (void)
 
 	g_object_set (s_ip4,
 	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "1.1.1.1",
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	addr = nm_ip_address_new (AF_INET, "1.1.1.3", 24, "1.1.1.1", &error);
+	addr = nm_ip_address_new (AF_INET, "1.1.1.3", 24, &error);
 	g_assert_no_error (error);
 	nm_setting_ip_config_add_address (s_ip4, addr);
 	nm_ip_address_unref (addr);

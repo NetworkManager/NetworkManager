@@ -349,7 +349,7 @@ ip4_setting_add_from_block (const GPtrArray *block,
 		goto error;
 	}
 
-	addr = nm_ip_address_new (AF_INET, s_ipaddr, prefix, s_gateway, error);
+	addr = nm_ip_address_new (AF_INET, s_ipaddr, prefix, error);
 	if (!addr) {
 		g_prefix_error (error, "iBFT: malformed iscsiadm record: ");
 		goto error;
@@ -357,6 +357,8 @@ ip4_setting_add_from_block (const GPtrArray *block,
 
 	nm_setting_ip_config_add_address (s_ip4, addr);
 	nm_ip_address_unref (addr);
+
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_GATEWAY, s_gateway, NULL);
 
 	if (s_dns1)
 		nm_setting_ip_config_add_dns (s_ip4, s_dns1);

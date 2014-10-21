@@ -102,7 +102,7 @@ G_DEFINE_BOXED_TYPE (NMIPAddress, nm_ip_address, nm_ip_address_dup, nm_ip_addres
 struct NMIPAddress {
 	guint refcount;
 
-	char *address, *gateway;
+	char *address;
 	int prefix, family;
 
 	GHashTable *attributes;
@@ -113,7 +113,6 @@ struct NMIPAddress {
  * @family: the IP address family (%AF_INET or %AF_INET6)
  * @addr: the IP address
  * @prefix: the address prefix length
- * @gateway: (allow-none): the gateway
  * @error: location to store error, or %NULL
  *
  * Creates a new #NMIPAddress object.
@@ -122,7 +121,7 @@ struct NMIPAddress {
  **/
 NMIPAddress *
 nm_ip_address_new (int family,
-                   const char *addr, guint prefix, const char *gateway,
+                   const char *addr, guint prefix,
                    GError **error)
 {
 	NMIPAddress *address;
@@ -134,8 +133,6 @@ nm_ip_address_new (int family,
 		return NULL;
 	if (!valid_prefix (family, prefix, error))
 		return NULL;
-	if (gateway && !valid_ip (family, gateway, error))
-		return NULL;
 
 	address = g_slice_new0 (NMIPAddress);
 	address->refcount = 1;
@@ -143,7 +140,6 @@ nm_ip_address_new (int family,
 	address->family = family;
 	address->address = canonicalize_ip (family, addr, FALSE);
 	address->prefix = prefix;
-	address->gateway = canonicalize_ip (family, gateway, TRUE);
 
 	return address;
 }
@@ -153,17 +149,16 @@ nm_ip_address_new (int family,
  * @family: the IP address family (%AF_INET or %AF_INET6)
  * @addr: the IP address
  * @prefix: the address prefix length
- * @gateway: (allow-none): the gateway
  * @error: location to store error, or %NULL
  *
- * Creates a new #NMIPAddress object. @addr and @gateway (if non-%NULL) must
- * point to buffers of the correct size for @family.
+ * Creates a new #NMIPAddress object. @addr must point to a buffer of the
+ * correct size for @family.
  *
  * Returns: (transfer full): the new #NMIPAddress object, or %NULL on error
  **/
 NMIPAddress *
 nm_ip_address_new_binary (int family,
-                          gconstpointer addr, guint prefix, gconstpointer gateway,
+                          gconstpointer addr, guint prefix,
                           GError **error)
 {
 	NMIPAddress *address;
@@ -181,8 +176,6 @@ nm_ip_address_new_binary (int family,
 	address->family = family;
 	address->address = g_strdup (inet_ntop (family, addr, string, sizeof (string)));
 	address->prefix = prefix;
-	if (gateway)
-		address->gateway = g_strdup (inet_ntop (family, gateway, string, sizeof (string)));
 
 	return address;
 }
@@ -218,7 +211,6 @@ nm_ip_address_unref (NMIPAddress *address)
 	address->refcount--;
 	if (address->refcount == 0) {
 		g_free (address->address);
-		g_free (address->gateway);
 		if (address->attributes)
 			g_hash_table_unref (address->attributes);
 		g_slice_free (NMIPAddress, address);
@@ -230,8 +222,8 @@ nm_ip_address_unref (NMIPAddress *address)
  * @address: the #NMIPAddress
  * @other: the #NMIPAddress to compare @address to.
  *
- * Determines if two #NMIPAddress objects contain the same address, prefix, and
- * gateway (attributes are not compared).
+ * Determines if two #NMIPAddress objects contain the same address and prefix
+ * (attributes are not compared).
  *
  * Returns: %TRUE if the objects contain the same values, %FALSE if they do not.
  **/
@@ -246,8 +238,7 @@ nm_ip_address_equal (NMIPAddress *address, NMIPAddress *other)
 
 	if (   address->family != other->family
 	    || address->prefix != other->prefix
-	    || strcmp (address->address, other->address) != 0
-	    || g_strcmp0 (address->gateway, other->gateway) != 0)
+	    || strcmp (address->address, other->address) != 0)
 		return FALSE;
 	return TRUE;
 }
@@ -269,7 +260,7 @@ nm_ip_address_dup (NMIPAddress *address)
 	g_return_val_if_fail (address->refcount > 0, NULL);
 
 	copy = nm_ip_address_new (address->family,
-	                          address->address, address->prefix, address->gateway,
+	                          address->address, address->prefix,
 	                          NULL);
 	if (address->attributes) {
 		GHashTableIter iter;
@@ -415,46 +406,6 @@ nm_ip_address_set_prefix (NMIPAddress *address,
 	g_return_if_fail (valid_prefix (address->family, prefix, NULL));
 
 	address->prefix = prefix;
-}
-
-/**
- * nm_ip_address_get_gateway:
- * @address: the #NMIPAddress
- *
- * Gets the gateway property of this address object; this will be %NULL if the
- * address has no associated gateway.
- *
- * Returns: the gateway
- **/
-const char *
-nm_ip_address_get_gateway (NMIPAddress *address)
-{
-	g_return_val_if_fail (address != NULL, NULL);
-	g_return_val_if_fail (address->refcount > 0, NULL);
-
-	return address->gateway;
-}
-
-/**
- * nm_ip_address_set_gateway:
- * @address: the #NMIPAddress
- * @gateway: (allow-none): the gateway, as a string
- *
- * Sets the gateway property of this address object.
- *
- * @gateway (if non-%NULL) must be a valid address of @address's family. If you
- * aren't sure you have a valid address, use nm_utils_ipaddr_valid() to check
- * it.
- **/
-void
-nm_ip_address_set_gateway (NMIPAddress *address,
-                           const char *gateway)
-{
-	g_return_if_fail (address != NULL);
-	g_return_if_fail (!gateway || nm_utils_ipaddr_valid (address->family, gateway));
-
-	g_free (address->gateway);
-	address->gateway = canonicalize_ip (address->family, gateway, TRUE);
 }
 
 /**
@@ -1081,6 +1032,7 @@ typedef struct {
 	GPtrArray *dns_search; /* array of domain name strings */
 	GPtrArray *addresses;  /* array of NMIPAddress */
 	GPtrArray *routes;     /* array of NMIPRoute */
+	char *gateway;
 	gboolean ignore_auto_routes;
 	gboolean ignore_auto_dns;
 	char *dhcp_hostname;
@@ -1095,6 +1047,7 @@ enum {
 	PROP_DNS,
 	PROP_DNS_SEARCH,
 	PROP_ADDRESSES,
+	PROP_GATEWAY,
 	PROP_ROUTES,
 	PROP_IGNORE_AUTO_ROUTES,
 	PROP_IGNORE_AUTO_DNS,
@@ -1544,6 +1497,21 @@ nm_setting_ip_config_clear_addresses (NMSettingIPConfig *setting)
 }
 
 /**
+ * nm_setting_ip_config_get_gateway:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Returns: the IP address of the gateway associated with this configuration, or
+ * %NULL.
+ **/
+const char *
+nm_setting_ip_config_get_gateway (NMSettingIPConfig *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), NULL);
+
+	return NM_SETTING_IP_CONFIG_GET_PRIVATE (setting)->gateway;
+}
+
+/**
  * nm_setting_ip_config_get_num_routes:
  * @setting: the #NMSettingIPConfig
  *
@@ -1882,6 +1850,27 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
+	/* Validate gateway */
+	if (priv->gateway) {
+		if (!priv->addresses->len) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("gateway cannot be set if there are no addresses configured"));
+			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), NM_SETTING_IP_CONFIG_GATEWAY);
+			return FALSE;
+		}
+
+		if (!nm_utils_ipaddr_valid (NM_SETTING_IP_CONFIG_GET_FAMILY (setting), priv->gateway)) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("gateway is invalid"));
+			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), NM_SETTING_IP_CONFIG_GATEWAY);
+			return FALSE;
+		}
+	}
+
 	/* Validate routes */
 	for (i = 0; i < priv->routes->len; i++) {
 		NMIPRoute *route = (NMIPRoute *) priv->routes->pdata[i];
@@ -1919,6 +1908,7 @@ finalize (GObject *object)
 	NMSettingIPConfigPrivate *priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (self);
 
 	g_free (priv->method);
+	g_free (priv->gateway);
 	g_free (priv->dhcp_hostname);
 
 	g_ptr_array_unref (priv->dns);
@@ -1935,6 +1925,7 @@ set_property (GObject *object, guint prop_id,
 {
 	NMSettingIPConfig *setting = NM_SETTING_IP_CONFIG (object);
 	NMSettingIPConfigPrivate *priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+	const char *gateway;
 
 	switch (prop_id) {
 	case PROP_METHOD:
@@ -1954,6 +1945,12 @@ set_property (GObject *object, guint prop_id,
 		priv->addresses = _nm_utils_copy_array (g_value_get_boxed (value),
 		                                        (NMUtilsCopyFunc) nm_ip_address_dup,
 		                                        (GDestroyNotify) nm_ip_address_unref);
+		break;
+	case PROP_GATEWAY:
+		gateway = g_value_get_string (value);
+		g_return_if_fail (!gateway || nm_utils_ipaddr_valid (NM_SETTING_IP_CONFIG_GET_FAMILY (setting), gateway));
+		g_free (priv->gateway);
+		priv->gateway = canonicalize_ip (NM_SETTING_IP_CONFIG_GET_FAMILY (setting), gateway, TRUE);
 		break;
 	case PROP_ROUTES:
 		g_ptr_array_unref (priv->routes);
@@ -2007,6 +2004,9 @@ get_property (GObject *object, guint prop_id,
 		g_value_take_boxed (value, _nm_utils_copy_array (priv->addresses,
 		                                                 (NMUtilsCopyFunc) nm_ip_address_dup,
 		                                                 (GDestroyNotify) nm_ip_address_unref));
+		break;
+	case PROP_GATEWAY:
+		g_value_set_string (value, nm_setting_ip_config_get_gateway (setting));
 		break;
 	case PROP_ROUTES:
 		g_value_take_boxed (value, _nm_utils_copy_array (priv->routes,
@@ -2117,6 +2117,20 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *setting_class)
 		                     G_PARAM_READWRITE |
 		                     NM_SETTING_PARAM_INFERRABLE |
 		                     G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingIPConfig:gateway:
+	 *
+	 * The gateway associated with this configuration. This is only meaningful
+	 * if #NMSettingIPConfig:addresses is also set.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_GATEWAY,
+		 g_param_spec_string (NM_SETTING_IP_CONFIG_GATEWAY, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingIPConfig:routes:

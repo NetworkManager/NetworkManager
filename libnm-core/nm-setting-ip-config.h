@@ -38,12 +38,10 @@ GType        nm_ip_address_get_type            (void);
 NMIPAddress *nm_ip_address_new                 (int family,
                                                 const char  *addr,
                                                 guint prefix,
-                                                const char *gateway,
                                                 GError **error);
 NMIPAddress *nm_ip_address_new_binary          (int family,
                                                 gconstpointer addr,
                                                 guint prefix,
-                                                gconstpointer gateway,
                                                 GError **error);
 
 void         nm_ip_address_ref                 (NMIPAddress *address);
@@ -63,9 +61,6 @@ void         nm_ip_address_set_address_binary  (NMIPAddress *address,
 guint        nm_ip_address_get_prefix          (NMIPAddress *address);
 void         nm_ip_address_set_prefix          (NMIPAddress *address,
                                                 guint prefix);
-const char  *nm_ip_address_get_gateway         (NMIPAddress *address);
-void         nm_ip_address_set_gateway         (NMIPAddress *address,
-                                                const char *gateway);
 
 char       **nm_ip_address_get_attribute_names (NMIPAddress *address);
 GVariant    *nm_ip_address_get_attribute       (NMIPAddress *address,
@@ -139,6 +134,7 @@ void         nm_ip_route_set_attribute       (NMIPRoute   *route,
 #define NM_SETTING_IP_CONFIG_DNS                "dns"
 #define NM_SETTING_IP_CONFIG_DNS_SEARCH         "dns-search"
 #define NM_SETTING_IP_CONFIG_ADDRESSES          "addresses"
+#define NM_SETTING_IP_CONFIG_GATEWAY            "gateway"
 #define NM_SETTING_IP_CONFIG_ROUTES             "routes"
 #define NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES "ignore-auto-routes"
 #define NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS    "ignore-auto-dns"
@@ -194,6 +190,8 @@ void          nm_setting_ip_config_remove_address             (NMSettingIPConfig
 gboolean      nm_setting_ip_config_remove_address_by_value    (NMSettingIPConfig *setting,
                                                                NMIPAddress       *address);
 void          nm_setting_ip_config_clear_addresses            (NMSettingIPConfig *setting);
+
+const char   *nm_setting_ip_config_get_gateway                (NMSettingIPConfig *setting);
 
 guint         nm_setting_ip_config_get_num_routes             (NMSettingIPConfig *setting);
 NMIPRoute    *nm_setting_ip_config_get_route                  (NMSettingIPConfig *setting,

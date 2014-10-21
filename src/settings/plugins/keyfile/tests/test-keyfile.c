@@ -38,14 +38,13 @@
 #define TEST_WIRELESS_FILE TEST_KEYFILES_DIR"/Test_Wireless_Connection"
 
 static void
-check_ip_address (NMSettingIPConfig *config, int idx, const char *address, int plen, const char *gateway)
+check_ip_address (NMSettingIPConfig *config, int idx, const char *address, int plen)
 {
 	NMIPAddress *ip4 = nm_setting_ip_config_get_address (config, idx);
 
 	g_assert (ip4);
 	g_assert_cmpstr (nm_ip_address_get_address (ip4), ==, address);
 	g_assert_cmpint (nm_ip_address_get_prefix (ip4), ==, plen);
-	g_assert_cmpstr (nm_ip_address_get_gateway (ip4), ==, gateway);
 }
 
 static void
@@ -246,12 +245,19 @@ test_read_valid_wired_connection (void)
 
 	/* IPv4 addresses */
 	g_assert (nm_setting_ip_config_get_num_addresses (s_ip4) == 6);
-	check_ip_address (s_ip4, 0, "2.3.4.5", 24, "2.3.4.6");
-	check_ip_address (s_ip4, 1, "192.168.0.5", 24, NULL);
-	check_ip_address (s_ip4, 2, "1.2.3.4", 16, NULL);
-	check_ip_address (s_ip4, 3, "3.4.5.6", 16, NULL);
-	check_ip_address (s_ip4, 4, "4.5.6.7", 24, NULL);
-	check_ip_address (s_ip4, 5, "5.6.7.8", 24, NULL);
+	check_ip_address (s_ip4, 0, "2.3.4.5", 24);
+	check_ip_address (s_ip4, 1, "192.168.0.5", 24);
+	check_ip_address (s_ip4, 2, "1.2.3.4", 16);
+	check_ip_address (s_ip4, 3, "3.4.5.6", 16);
+	check_ip_address (s_ip4, 4, "4.5.6.7", 24);
+	check_ip_address (s_ip4, 5, "5.6.7.8", 24);
+
+	/* IPv4 gateway */
+	ASSERT (strcmp (nm_setting_ip_config_get_gateway (s_ip4), "2.3.4.6") == 0,
+	        "connection-verify-wired", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_WIRED_FILE,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP_CONFIG_GATEWAY);
 
 	/* IPv4 routes */
 	g_assert (nm_setting_ip_config_get_num_routes (s_ip4) == 12);
@@ -328,16 +334,23 @@ test_read_valid_wired_connection (void)
 
 	/* IPv6 addresses */
 	g_assert (nm_setting_ip_config_get_num_addresses (s_ip6) == 10);
-	check_ip_address (s_ip6, 0, "2:3:4:5:6:7:8:9", 64, "2:3:4:5:1:2:3:4");
-	check_ip_address (s_ip6, 1, "abcd:1234:ffff::cdde", 64, NULL);
-	check_ip_address (s_ip6, 2, "1:2:3:4:5:6:7:8", 96, NULL);
-	check_ip_address (s_ip6, 3, "3:4:5:6:7:8:9:0", 128, NULL);
-	check_ip_address (s_ip6, 4, "3:4:5:6:7:8:9:14", 64, NULL);
-	check_ip_address (s_ip6, 5, "3:4:5:6:7:8:9:15", 64, NULL);
-	check_ip_address (s_ip6, 6, "3:4:5:6:7:8:9:16", 66, NULL);
-	check_ip_address (s_ip6, 7, "3:4:5:6:7:8:9:17", 67, NULL);
-	check_ip_address (s_ip6, 8, "3:4:5:6:7:8:9:18", 68, NULL);
-	check_ip_address (s_ip6, 9, "3:4:5:6:7:8:9:19", 69, NULL);
+	check_ip_address (s_ip6, 0, "2:3:4:5:6:7:8:9", 64);
+	check_ip_address (s_ip6, 1, "abcd:1234:ffff::cdde", 64);
+	check_ip_address (s_ip6, 2, "1:2:3:4:5:6:7:8", 96);
+	check_ip_address (s_ip6, 3, "3:4:5:6:7:8:9:0", 128);
+	check_ip_address (s_ip6, 4, "3:4:5:6:7:8:9:14", 64);
+	check_ip_address (s_ip6, 5, "3:4:5:6:7:8:9:15", 64);
+	check_ip_address (s_ip6, 6, "3:4:5:6:7:8:9:16", 66);
+	check_ip_address (s_ip6, 7, "3:4:5:6:7:8:9:17", 67);
+	check_ip_address (s_ip6, 8, "3:4:5:6:7:8:9:18", 68);
+	check_ip_address (s_ip6, 9, "3:4:5:6:7:8:9:19", 69);
+
+	/* IPv6 gateway */
+	ASSERT (strcmp (nm_setting_ip_config_get_gateway (s_ip6), "2:3:4:5:1:2:3:4") == 0,
+	        "connection-verify-wired", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_WIRED_FILE,
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP_CONFIG_GATEWAY);
 
 	/* Route #1 */
 	g_assert (nm_setting_ip_config_get_num_routes (s_ip6) == 7);
@@ -354,14 +367,13 @@ test_read_valid_wired_connection (void)
 static void
 add_one_ip_address (NMSettingIPConfig *s_ip,
                     const char *addr,
-                    guint32 prefix,
-                    const char *gw)
+                    guint32 prefix)
 {
 	NMIPAddress *ip_addr;
 	GError *error = NULL;
 
 	ip_addr = nm_ip_address_new (NM_IS_SETTING_IP4_CONFIG (s_ip) ? AF_INET : AF_INET6,
-	                             addr, prefix, gw, &error);
+	                             addr, prefix, &error);
 	g_assert_no_error (error);
 	nm_setting_ip_config_add_address (s_ip, ip_addr);
 	nm_ip_address_unref (ip_addr);
@@ -404,8 +416,8 @@ test_write_wired_connection (void)
 	const char *dns1 = "4.2.2.1";
 	const char *dns2 = "4.2.2.2";
 	const char *address1 = "192.168.0.5";
-	const char *address1_gw = "192.168.0.1";
 	const char *address2 = "1.2.3.4";
+	const char *gw = "192.168.0.1";
 	const char *route1 = "10.10.10.2";
 	const char *route1_nh = "10.10.10.1";
 	const char *route2 = "1.1.1.1";
@@ -462,11 +474,12 @@ test_write_wired_connection (void)
 
 	g_object_set (s_ip4,
 	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_GATEWAY, gw,
 	              NULL);
 
 	/* Addresses */
-	add_one_ip_address (s_ip4, address1, 24, address1_gw);
-	add_one_ip_address (s_ip4, address2, 8, NULL);
+	add_one_ip_address (s_ip4, address1, 24);
+	add_one_ip_address (s_ip4, address2, 8);
 
 	/* Routes */
 	add_one_ip_route (s_ip4, route1, route1_nh, 24, 3);
@@ -488,8 +501,8 @@ test_write_wired_connection (void)
 	              NULL);
 
 	/* Addresses */
-	add_one_ip_address (s_ip6, address6_1, 64, NULL);
-	add_one_ip_address (s_ip6, address6_2, 56, NULL);
+	add_one_ip_address (s_ip6, address6_1, 64);
+	add_one_ip_address (s_ip6, address6_2, 56);
 
 	/* Routes */
 	add_one_ip_route (s_ip6, route6_1, route6_1_nh, 64, 3);
@@ -634,7 +647,14 @@ test_read_ip6_wired_connection (void)
 
 	/* IPv6 address */
 	g_assert (nm_setting_ip_config_get_num_addresses (s_ip6) == 1);
-	check_ip_address (s_ip6, 0, "abcd:1234:ffff::cdde", 64, "abcd:1234:ffff::cdd1");
+	check_ip_address (s_ip6, 0, "abcd:1234:ffff::cdde", 64);
+
+	/* IPv6 gateway */
+	ASSERT (strcmp (nm_setting_ip_config_get_gateway (s_ip6), "abcd:1234:ffff::cdd1") == 0,
+	        "connection-verify-wired", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_WIRED_IP6_FILE,
+	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP_CONFIG_GATEWAY);
 
 	g_object_unref (connection);
 }
@@ -695,10 +715,11 @@ test_write_ip6_wired_connection (void)
 
 	g_object_set (s_ip6,
 	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_GATEWAY, gw,
 	              NULL);
 
 	/* Addresses */
-	add_one_ip_address (s_ip6, address, 64, gw);
+	add_one_ip_address (s_ip6, address, 64);
 
 	/* DNS servers */
 	nm_setting_ip_config_add_dns (s_ip6, dns);
@@ -2816,9 +2837,10 @@ test_write_bridge_main (void)
 	g_object_set (s_ip4,
 	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "1.1.1.1",
 	              NULL);
 
-	add_one_ip_address (s_ip4, "1.2.3.4", 24, "1.1.1.1");
+	add_one_ip_address (s_ip4, "1.2.3.4", 24);
 
 	/* IP6 setting */
 	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();

@@ -37,12 +37,6 @@ void nm_editor_bind_ip_addresses_to_strv              (int            family,
                                                        gpointer       target,
                                                        const gchar   *target_property,
                                                        GBindingFlags  flags);
-void nm_editor_bind_ip_gateway_to_string              (int            family,
-                                                       gpointer       source,
-                                                       const gchar   *source_property,
-                                                       gpointer       target,
-                                                       const gchar   *target_property,
-                                                       GBindingFlags  flags);
 
 void nm_editor_bind_ip_route_to_strings               (int            family,
                                                        gpointer       source,

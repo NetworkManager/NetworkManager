@@ -102,10 +102,12 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingIP4ConfigPrivate *priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting);
 	NMSettingIPConfig *s_ip = NM_SETTING_IP_CONFIG (setting);
+	NMSettingVerifyResult ret;
 	const char *method;
 
-	if (!NM_SETTING_CLASS (nm_setting_ip4_config_parent_class)->verify (setting, connection, error))
-		return FALSE;
+	ret = NM_SETTING_CLASS (nm_setting_ip4_config_parent_class)->verify (setting, connection, error);
+	if (ret != NM_SETTING_VERIFY_SUCCESS)
+		return ret;
 
 	method = nm_setting_ip_config_get_method (s_ip);
 	/* Base class already checked that it exists */
@@ -245,10 +247,12 @@ ip4_addresses_get (NMSetting  *setting,
                    const char *property)
 {
 	GPtrArray *addrs;
+	const char *gateway;
 	GVariant *ret;
 
 	g_object_get (setting, property, &addrs, NULL);
-	ret = nm_utils_ip4_addresses_to_variant (addrs);
+	gateway = nm_setting_ip_config_get_gateway (NM_SETTING_IP_CONFIG (setting));
+	ret = nm_utils_ip4_addresses_to_variant (addrs, gateway);
 	g_ptr_array_unref (addrs);
 
 	return ret;
@@ -262,18 +266,27 @@ ip4_addresses_set (NMSetting  *setting,
 {
 	GPtrArray *addrs;
 	GVariant *s_ip4;
-	char **labels;
+	char **labels, *gateway = NULL;
 	int i;
 
-	addrs = nm_utils_ip4_addresses_from_variant (value);
+	addrs = nm_utils_ip4_addresses_from_variant (value, &gateway);
 
 	s_ip4 = g_variant_lookup_value (connection_dict, NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
+
 	if (g_variant_lookup (s_ip4, "address-labels", "^as", &labels)) {
 		for (i = 0; i < addrs->len && labels[i]; i++)
 			if (*labels[i])
 				nm_ip_address_set_attribute (addrs->pdata[i], "label", g_variant_new_string (labels[i]));
 		g_strfreev (labels);
 	}
+
+	if (gateway && !g_variant_lookup (s_ip4, "gateway", "s", NULL)) {
+		g_object_set (setting,
+		              NM_SETTING_IP_CONFIG_GATEWAY, gateway,
+		              NULL);
+	}
+	g_free (gateway);
+
 	g_variant_unref (s_ip4);
 
 	g_object_set (setting, property, addrs, NULL);

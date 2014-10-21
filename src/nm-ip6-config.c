@@ -404,6 +404,7 @@ void
 nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIPConfig *setting, int default_route_metric)
 {
 	guint naddresses, nroutes, nnameservers, nsearches;
+	const char *gateway_str;
 	int i;
 
 	if (!setting)
@@ -423,14 +424,12 @@ nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIPConfig *setting, in
 		nm_ip6_config_set_never_default (config, TRUE);
 	else if (nm_setting_ip_config_get_ignore_auto_routes (setting))
 		nm_ip6_config_set_never_default (config, FALSE);
-	if (naddresses) {
-		const char *gateway_str = nm_ip_address_get_gateway (nm_setting_ip_config_get_address (setting, 0));
+	gateway_str = nm_setting_ip_config_get_gateway (setting);
+	if (gateway_str) {
 		struct in6_addr gateway;
 
-		if (gateway_str) {
-			inet_pton (AF_INET6, gateway_str, &gateway);
-			nm_ip6_config_set_gateway (config, &gateway);
-		}
+		inet_pton (AF_INET6, gateway_str, &gateway);
+		nm_ip6_config_set_gateway (config, &gateway);
 	}
 
 	/* Addresses */
@@ -531,11 +530,16 @@ nm_ip6_config_create_setting (const NMIP6Config *config)
 		if (!method || strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0)
 			method = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
 
-		s_addr = nm_ip_address_new_binary (AF_INET6, &address->address, address->plen,
-		                                   i == 0 ? gateway : NULL,
-		                                   NULL);
+		s_addr = nm_ip_address_new_binary (AF_INET6, &address->address, address->plen, NULL);
 		nm_setting_ip_config_add_address (s_ip6, s_addr);
 		nm_ip_address_unref (s_addr);
+	}
+
+	/* Gateway */
+	if (gateway) {
+		g_object_set (s_ip6,
+		              NM_SETTING_IP_CONFIG_GATEWAY, nm_utils_inet6_ntop (gateway, NULL),
+		              NULL);
 	}
 
 	/* Use 'ignore' if the method wasn't previously set */

@@ -601,8 +601,9 @@ test_connection_no_match_ip4_addr (void)
 	g_assert (s_ip4);
 	g_object_set (G_OBJECT (s_ip4),
 	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "1.1.1.254",
 	              NULL);
-	nm_addr = nm_ip_address_new (AF_INET, "1.1.1.4", 24, "1.1.1.254", &error);
+	nm_addr = nm_ip_address_new (AF_INET, "1.1.1.4", 24, &error);
 	g_assert_no_error (error);
 	nm_setting_ip_config_add_address (s_ip4, nm_addr);
 	nm_ip_address_unref (nm_addr);
@@ -611,8 +612,9 @@ test_connection_no_match_ip4_addr (void)
 	g_assert (s_ip4);
 	g_object_set (G_OBJECT (s_ip4),
 	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "2.2.2.254",
 	              NULL);
-	nm_addr = nm_ip_address_new (AF_INET, "2.2.2.4", 24, "2.2.2.254", &error);
+	nm_addr = nm_ip_address_new (AF_INET, "2.2.2.4", 24, &error);
 	g_assert_no_error (error);
 	nm_setting_ip_config_add_address (s_ip4, nm_addr);
 	nm_ip_address_unref (nm_addr);

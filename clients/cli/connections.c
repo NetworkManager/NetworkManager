@@ -3811,24 +3811,21 @@ do_questionnaire_olpc (char **channel, char **dhcp_anycast)
 }
 
 static gboolean
-split_address (char* str, char **ip, char **gw, char **rest)
+split_address (char* str, char **ip, char **rest)
 {
-	size_t n1, n2, n3, n4, n5;
+	size_t n1, n2, n3;
 
-	*ip = *gw = *rest = NULL;
+	*ip = *rest = NULL;
 	if (!str)
 		return FALSE;
 
 	n1 = strspn  (str,    " \t");
 	n2 = strcspn (str+n1, " \t\0") + n1;
 	n3 = strspn  (str+n2, " \t")   + n2;
-	n4 = strcspn (str+n3, " \t\0") + n3;
-	n5 = strspn  (str+n4, " \t")   + n4;
 
-	str[n2] = str[n4] = '\0';
+	str[n2] = '\0';
 	*ip = str[n1] ? str + n1 : NULL;
-	*gw = str[n3] ? str + n3 : NULL;
-	*rest = str[n5] ? str + n5 : NULL;
+	*rest = str[n3] ? str + n3 : NULL;
 
 	return TRUE;
 }
@@ -3838,32 +3835,31 @@ ask_for_ip_addresses (NMConnection *connection, int family)
 {
 	gboolean ip_loop;
 	GError *error = NULL;
-	char *str, *ip, *gw, *rest;
+	char *str, *ip, *rest;
 	const char *prompt;
 	gboolean added;
 	NMIPAddress *ipaddr;
 
 	if (family == AF_INET)
-		prompt =_("IPv4 address (IP[/plen] [gateway]) [none]: ");
+		prompt =_("IPv4 address (IP[/plen]) [none]: ");
 	else
-		prompt =_("IPv6 address (IP[/plen] [gateway]) [none]: ");
+		prompt =_("IPv6 address (IP[/plen]) [none]: ");
 
 	ip_loop = TRUE;
 	do {
 		str = nmc_readline ("%s", prompt);
-		split_address (str, &ip, &gw, &rest);
+		split_address (str, &ip, &rest);
 		if (ip) {
-			ipaddr = nmc_parse_and_build_address (family, ip, gw, &error);
+			ipaddr = nmc_parse_and_build_address (family, ip, &error);
 			if (ipaddr) {
 				if (family == AF_INET)
 					added = add_ip4_address_to_connection (ipaddr, connection);
 				else
 					added = add_ip6_address_to_connection (ipaddr, connection);
-				gw = gw ? gw : (family == AF_INET) ? "0.0.0.0" : "::";
 				if (added)
-					g_print (_("  Address successfully added: %s %s\n"), ip, gw);
+					g_print (_("  Address successfully added: %s\n"), ip);
 				else
-					g_print (_("  Warning: address already present: %s %s\n"), ip, gw);
+					g_print (_("  Warning: address already present: %s\n"), ip);
 				if (rest)
 					g_print (_("  Warning: ignoring garbage at the end: '%s'\n"), rest);
 			} else {
@@ -3879,6 +3875,45 @@ ask_for_ip_addresses (NMConnection *connection, int family)
 }
 
 static void
+maybe_ask_for_gateway (NMConnection *connection, int family)
+{
+	gboolean gw_loop;
+	char *str, *gw, *rest;
+	const char *prompt;
+	NMSettingIPConfig *s_ip;
+
+	if (family == AF_INET) {
+		prompt =_("IPv4 gateway [none]: ");
+		s_ip = nm_connection_get_setting_ip4_config (connection);
+	} else {
+		prompt =_("IPv6 gateway [none]: ");
+		s_ip = nm_connection_get_setting_ip6_config (connection);
+	}
+	if (s_ip == NULL)
+		return;
+	if (   nm_setting_ip_config_get_num_addresses (s_ip) == 0
+	    || nm_setting_ip_config_get_gateway (s_ip) != NULL)
+		return;
+
+	gw_loop = TRUE;
+	do {
+		str = nmc_readline ("%s", prompt);
+		split_address (str, &gw, &rest);
+		if (gw) {
+			if (nm_utils_ipaddr_valid (family, gw)) {
+				g_object_set (s_ip,
+				              NM_SETTING_IP_CONFIG_GATEWAY, gw,
+				              NULL);
+				gw_loop = FALSE;
+			} else
+				g_print (_("Error: invalid gateway address '%s'\n"), gw);
+		} else
+			gw_loop = FALSE;
+		g_free (str);
+	} while (gw_loop);
+}
+
+static void
 do_questionnaire_ip (NMConnection *connection)
 {
 	char *answer;
@@ -3890,14 +3925,14 @@ do_questionnaire_ip (NMConnection *connection)
 		g_free (answer);
 		return;
 	}
+	g_free (answer);
 
 	g_print (_("Press <Enter> to finish adding addresses.\n"));
 
 	ask_for_ip_addresses (connection, AF_INET);
+	maybe_ask_for_gateway (connection, AF_INET);
 	ask_for_ip_addresses (connection, AF_INET6);
-
-	g_free (answer);
-	return;
+	maybe_ask_for_gateway (connection, AF_INET6);
 }
 
 static gboolean
@@ -5168,7 +5203,7 @@ cleanup_olpc:
 
 			/* coverity[dead_error_begin] */
 			if (ip4) {
-				ip4addr = nmc_parse_and_build_address (AF_INET, ip4, gw4, error);
+				ip4addr = nmc_parse_and_build_address (AF_INET, ip4, error);
 				if (!ip4addr) {
 					g_prefix_error (error, _("Error: "));
 					return FALSE;
@@ -5176,14 +5211,58 @@ cleanup_olpc:
 				add_ip4_address_to_connection (ip4addr, connection);
 			}
 
+			if (gw4) {
+				NMSettingIPConfig *s_ip = nm_connection_get_setting_ip4_config (connection);
+
+				if (!s_ip) {
+					g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+					             _("Error: IPv4 gateway specified without IPv4 addresses"));
+					return FALSE;
+				} else if (nm_setting_ip_config_get_gateway (s_ip)) {
+					g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+					             _("Error: multiple IPv4 gateways specified"));
+					return FALSE;
+				} else if (!nm_utils_ipaddr_valid (AF_INET, gw4)) {
+					g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+					             _("Error: Invalid IPv4 gateway '%s'"),
+					             gw4);
+				}
+
+				g_object_set (s_ip,
+				              NM_SETTING_IP_CONFIG_GATEWAY, gw4,
+				              NULL);
+			}
+
 			/* coverity[dead_error_begin] */
 			if (ip6) {
-				ip6addr = nmc_parse_and_build_address (AF_INET6, ip6, gw6, error);
+				ip6addr = nmc_parse_and_build_address (AF_INET6, ip6, error);
 				if (!ip6addr) {
 					g_prefix_error (error, _("Error: "));
 					return FALSE;
 				}
 				add_ip6_address_to_connection (ip6addr, connection);
+			}
+
+			if (gw6) {
+				NMSettingIPConfig *s_ip = nm_connection_get_setting_ip6_config (connection);
+
+				if (!s_ip) {
+					g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+					             _("Error: IPv6 gateway specified without IPv6 addresses"));
+					return FALSE;
+				} else if (nm_setting_ip_config_get_gateway (s_ip)) {
+					g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+					             _("Error: multiple IPv6 gateways specified"));
+					return FALSE;
+				} else if (!nm_utils_ipaddr_valid (AF_INET, gw6)) {
+					g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+					             _("Error: Invalid IPv6 gateway '%s'"),
+					             gw6);
+				}
+
+				g_object_set (s_ip,
+				              NM_SETTING_IP_CONFIG_GATEWAY, gw6,
+				              NULL);
 			}
 		}
 

@@ -59,7 +59,7 @@ demarshal_ip6_address_array (NMObject *object, GParamSpec *pspec, GVariant *valu
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (object);
 
 	g_ptr_array_unref (priv->addresses);
-	priv->addresses = nm_utils_ip6_addresses_from_variant (value);
+	priv->addresses = nm_utils_ip6_addresses_from_variant (value, NULL);
 	_nm_object_queue_notify (object, NM_IP6_CONFIG_ADDRESSES);
 
 	return TRUE;

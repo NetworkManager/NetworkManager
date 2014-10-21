@@ -100,10 +100,12 @@ static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingIPConfig *s_ip = NM_SETTING_IP_CONFIG (setting);
+	NMSettingVerifyResult ret;
 	const char *method;
 
-	if (!NM_SETTING_CLASS (nm_setting_ip6_config_parent_class)->verify (setting, connection, error))
-		return FALSE;
+	ret = NM_SETTING_CLASS (nm_setting_ip6_config_parent_class)->verify (setting, connection, error);
+	if (ret != NM_SETTING_VERIFY_SUCCESS)
+		return ret;
 
 	method = nm_setting_ip_config_get_method (s_ip);
 	/* Base class already checked that it exists */
@@ -187,16 +189,46 @@ ip6_dns_from_dbus (GVariant *dbus_value,
 }
 
 static GVariant *
-ip6_addresses_to_dbus (const GValue *prop_value)
+ip6_addresses_get (NMSetting  *setting,
+                   const char *property)
 {
-	return nm_utils_ip6_addresses_to_variant (g_value_get_boxed (prop_value));
+	GPtrArray *addrs;
+	const char *gateway;
+	GVariant *ret;
+
+	g_object_get (setting, property, &addrs, NULL);
+	gateway = nm_setting_ip_config_get_gateway (NM_SETTING_IP_CONFIG (setting));
+	ret = nm_utils_ip6_addresses_to_variant (addrs, gateway);
+	g_ptr_array_unref (addrs);
+
+	return ret;
 }
 
 static void
-ip6_addresses_from_dbus (GVariant *dbus_value,
-                         GValue *prop_value)
+ip6_addresses_set (NMSetting  *setting,
+                   GVariant   *connection_dict,
+                   const char *property,
+                   GVariant   *value)
 {
-	g_value_take_boxed (prop_value, nm_utils_ip6_addresses_from_variant (dbus_value));
+	GPtrArray *addrs;
+	GVariant *s_ip6;
+	char *gateway = NULL;
+
+	addrs = nm_utils_ip6_addresses_from_variant (value, &gateway);
+
+	s_ip6 = g_variant_lookup_value (connection_dict, NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
+
+	if (gateway && !g_variant_lookup (s_ip6, "gateway", "s", NULL)) {
+		g_object_set (setting,
+		              NM_SETTING_IP_CONFIG_GATEWAY, gateway,
+		              NULL);
+	}
+	g_free (gateway);
+
+	g_variant_unref (s_ip6);
+
+	g_object_set (setting, property, addrs, NULL);
+	g_ptr_array_unref (addrs);
 }
 
 static GVariant *
@@ -285,11 +317,12 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
 	                                      ip6_dns_to_dbus,
 	                                      ip6_dns_from_dbus);
 
-	_nm_setting_class_transform_property (setting_class,
-	                                      NM_SETTING_IP_CONFIG_ADDRESSES,
-	                                      G_VARIANT_TYPE ("a(ayuay)"),
-	                                      ip6_addresses_to_dbus,
-	                                      ip6_addresses_from_dbus);
+	_nm_setting_class_override_property (setting_class,
+	                                     NM_SETTING_IP_CONFIG_ADDRESSES,
+	                                     G_VARIANT_TYPE ("a(ayuay)"),
+	                                     ip6_addresses_get,
+	                                     ip6_addresses_set,
+	                                     NULL);
 
 	_nm_setting_class_transform_property (setting_class,
 	                                      NM_SETTING_IP_CONFIG_ROUTES,

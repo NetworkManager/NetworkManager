@@ -74,7 +74,7 @@ demarshal_ip4_address_array (NMObject *object, GParamSpec *pspec, GVariant *valu
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (object);
 
 	g_ptr_array_unref (priv->addresses);
-	priv->addresses = nm_utils_ip4_addresses_from_variant (value);
+	priv->addresses = nm_utils_ip4_addresses_from_variant (value, NULL);
 	_nm_object_queue_notify (object, NM_IP4_CONFIG_ADDRESSES);
 
 	return TRUE;

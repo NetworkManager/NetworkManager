@@ -156,7 +156,7 @@ ip_addresses_with_prefix_from_strv (GBinding     *binding,
 	int i;
 
 	strings = g_value_get_boxed (source_value);
-	/* Fetch the original property value, so as to preserve the gateway elements */
+	/* Fetch the original property value, so as to preserve their extra attributes */
 	g_object_get (g_binding_get_source (binding),
 	              g_binding_get_source_property (binding), &addrs,
 	              NULL);
@@ -164,9 +164,9 @@ ip_addresses_with_prefix_from_strv (GBinding     *binding,
 	for (i = 0; strings[i]; i++) {
 		if (i >= addrs->len) {
 			if (family == AF_INET)
-				addr = nm_ip_address_new (AF_INET, "0.0.0.0", 32, NULL, NULL);
+				addr = nm_ip_address_new (AF_INET, "0.0.0.0", 32, NULL);
 			else
-				addr = nm_ip_address_new (AF_INET6, "::", 128, NULL, NULL);
+				addr = nm_ip_address_new (AF_INET6, "::", 128, NULL);
 			g_ptr_array_add (addrs, addr);
 		} else
 			addr = addrs->pdata[i];
@@ -202,9 +202,7 @@ ip_addresses_with_prefix_from_strv (GBinding     *binding,
  *
  * Each #NMIPAddress in @source_property will be converted to a string of the
  * form "ip.ad.dr.ess/prefix" or "ip:ad:dr:ess/prefix" in @target_property (and
- * vice versa if %G_BINDING_BIDIRECTIONAL) is specified. The "gateway" fields in
- * @source_property are ignored when converting to strings, and unmodified when
- * converting from strings.
+ * vice versa if %G_BINDING_BIDIRECTIONAL) is specified.
  */
 void
 nm_editor_bind_ip_addresses_with_prefix_to_strv (int            family,
@@ -271,108 +269,6 @@ nm_editor_bind_ip_addresses_to_strv (int            family,
 	                             flags,
 	                             ip_addresses_check_and_copy,
 	                             ip_addresses_check_and_copy,
-	                             GINT_TO_POINTER (family), NULL);
-}
-
-static gboolean
-ip_gateway_to_string (GBinding     *binding,
-                      const GValue *source_value,
-                      GValue       *target_value,
-                      gpointer      user_data)
-{
-	GPtrArray *addrs;
-	NMIPAddress *addr;
-	const char *gateway = NULL;
-	int i;
-
-	addrs = g_value_get_boxed (source_value);
-	for (i = 0; i < addrs->len; i++) {
-		addr = addrs->pdata[i];
-		gateway = nm_ip_address_get_gateway (addr);
-		if (gateway)
-			break;
-	}
-
-	if (!gateway)
-		gateway = "";
-	g_value_set_string (target_value, gateway);
-	return TRUE;
-}
-
-static gboolean
-ip_gateway_from_string (GBinding     *binding,
-                        const GValue *source_value,
-                        GValue       *target_value,
-                        gpointer      user_data)
-{
-	int family = GPOINTER_TO_INT (user_data);
-	const char *text;
-	GPtrArray *addrs;
-	NMIPAddress *addr;
-	int i;
-
-	text = g_value_get_string (source_value);
-	if (*text) {
-		if (!nm_utils_ipaddr_valid (family, text))
-			return FALSE;
-	} else
-		text = NULL;
-
-	/* Fetch the original property value, so as to preserve the IP address elements */
-	g_object_get (g_binding_get_source (binding),
-	              g_binding_get_source_property (binding), &addrs,
-	              NULL);
-	if (!addrs->len) {
-		g_ptr_array_unref (addrs);
-		return FALSE;
-	}
-	addr = addrs->pdata[0];
-	if (!g_strcmp0 (text, nm_ip_address_get_gateway (addr))) {
-		g_ptr_array_unref (addrs);
-		return FALSE;
-	}
-	nm_ip_address_set_gateway (addr, text);
-
-	for (i = 1; i < addrs->len; i++) {
-	     addr = addrs->pdata[i];
-	     nm_ip_address_set_gateway (addr, NULL);
-	}
-
-	g_value_take_boxed (target_value, addrs);
-	return TRUE;
-}
-
-/**
- * nm_editor_bind_ip_gateway_to_string:
- * @family: the IP address family
- * @source: the source object (eg, an #NMSettingIP4Config)
- * @source_property: the property on @source to bind (eg,
- *   %NM_SETTING_IP4_CONFIG_ADDRESSES)
- * @target: the target object (eg, an #NmtNewtEntry)
- * @target_property: the property on @target to bind
- *   (eg, "text")
- * @flags: %GBindingFlags
- *
- * Binds the #GPtrArray-of-#NMIPRoute property @source_property on @source to
- * the %G_TYPE_STRING property @target_property on @target.
- *
- * Specifically, this binds the "gateway" field of the first address in
- * @source_property; all other addresses in @source_property are ignored, and
- * its "address" and "prefix" fields are unmodified.
- */
-void
-nm_editor_bind_ip_gateway_to_string (int            family,
-                                     gpointer       source,
-                                     const gchar   *source_property,
-                                     gpointer       target,
-                                     const gchar   *target_property,
-                                     GBindingFlags  flags)
-{
-	g_object_bind_property_full (source, source_property,
-	                             target, target_property,
-	                             flags,
-	                             ip_gateway_to_string,
-	                             ip_gateway_from_string,
 	                             GINT_TO_POINTER (family), NULL);
 }
 

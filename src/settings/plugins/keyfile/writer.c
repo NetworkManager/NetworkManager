@@ -117,6 +117,7 @@ static void
 write_ip_values (GKeyFile *file,
                  const char *setting_name,
                  GPtrArray *array,
+                 const char *gateway,
                  gboolean is_route)
 {
 	GString *output;
@@ -147,10 +148,7 @@ write_ip_values (GKeyFile *file,
 
 			addr = nm_ip_address_get_address (address);
 			plen = nm_ip_address_get_prefix (address);
-			if (i == 0)
-				gw = nm_ip_address_get_gateway (address);
-			else
-				gw = NULL;
+			gw = i == 0 ? gateway : NULL;
 			metric = 0;
 		}
 
@@ -190,10 +188,11 @@ addr_writer (GKeyFile *file,
 {
 	GPtrArray *array;
 	const char *setting_name = nm_setting_get_name (setting);
+	const char *gateway = nm_setting_ip_config_get_gateway (NM_SETTING_IP_CONFIG (setting));
 
 	array = (GPtrArray *) g_value_get_boxed (value);
 	if (array && array->len)
-		write_ip_values (file, setting_name, array, FALSE);
+		write_ip_values (file, setting_name, array, gateway, FALSE);
 }
 
 static void
@@ -203,6 +202,17 @@ ip4_addr_label_writer (GKeyFile *file,
                        NMSetting *setting,
                        const char *key,
                        const GValue *value)
+{
+	/* skip */
+}
+
+static void
+gateway_writer (GKeyFile *file,
+                const char *keyfile_dir,
+                const char *uuid,
+                NMSetting *setting,
+                const char *key,
+                const GValue *value)
 {
 	/* skip */
 }
@@ -220,7 +230,7 @@ route_writer (GKeyFile *file,
 
 	array = (GPtrArray *) g_value_get_boxed (value);
 	if (array && array->len)
-		write_ip_values (file, setting_name, array, TRUE);
+		write_ip_values (file, setting_name, array, NULL, TRUE);
 }
 
 static void
@@ -589,6 +599,12 @@ static KeyWriter key_writers[] = {
 	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	  NM_SETTING_IP_CONFIG_ADDRESSES,
 	  addr_writer },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	  NM_SETTING_IP_CONFIG_GATEWAY,
+	  gateway_writer },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	  NM_SETTING_IP_CONFIG_GATEWAY,
+	  gateway_writer },
 	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	  NM_SETTING_IP_CONFIG_ROUTES,
 	  route_writer },

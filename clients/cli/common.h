@@ -29,7 +29,7 @@ gboolean print_ip6_config (NMIP6Config *cfg6, NmCli *nmc, const char *group_pref
 gboolean print_dhcp4_config (NMDhcp4Config *dhcp4, NmCli *nmc, const char *group_prefix, const char *one_field);
 gboolean print_dhcp6_config (NMDhcp6Config *dhcp6, NmCli *nmc, const char *group_prefix, const char *one_field);
 
-NMIPAddress *nmc_parse_and_build_address (int family, const char *ip_str, const char *gw_str, GError **error);
+NMIPAddress *nmc_parse_and_build_address (int family, const char *ip_str, GError **error);
 NMIPRoute *nmc_parse_and_build_route (int family, const char *first, const char *second, const char *third, GError **error);
 
 const char * nmc_device_state_to_string (NMDeviceState state);
