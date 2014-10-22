@@ -27,6 +27,7 @@
 
 #include "nm-session-utils.h"
 #include "nm-session-monitor.h"
+#include "nm-errors.h"
 
 /* <internal>
  * SECTION:nm-session-monitor
@@ -86,8 +87,8 @@ check_key (GKeyFile *keyfile, const char *group, const char *key, GError **error
 
 	if (!error) {
 		g_set_error (error,
-			         NM_SESSION_MONITOR_ERROR,
-			         NM_SESSION_MONITOR_ERROR_MALFORMED_DATABASE,
+			         NM_MANAGER_ERROR,
+			         NM_MANAGER_ERROR_FAILED,
 			         "ConsoleKit database " CKDB_PATH " group '%s' had no '%s' key",
 			         group, key);
 	}
@@ -175,8 +176,8 @@ reload_database (NMSessionMonitor *self, GError **error)
 	errno = 0;
 	if (stat (CKDB_PATH, &statbuf) != 0) {
 		g_set_error (error,
-		             NM_SESSION_MONITOR_ERROR,
-		             errno == ENOENT ? NM_SESSION_MONITOR_ERROR_NO_DATABASE : NM_SESSION_MONITOR_ERROR_IO_ERROR,
+		             NM_MANAGER_ERROR,
+		             NM_MANAGER_ERROR_FAILED,
 		             "Error statting file " CKDB_PATH ": %s",
 		             strerror (errno));
 		goto error;
@@ -190,8 +191,8 @@ reload_database (NMSessionMonitor *self, GError **error)
 	groups = g_key_file_get_groups (self->database, &len);
 	if (!groups) {
 		g_set_error_literal (error,
-		                     NM_SESSION_MONITOR_ERROR,
-		                     NM_SESSION_MONITOR_ERROR_IO_ERROR,
+		                     NM_MANAGER_ERROR,
+		                     NM_MANAGER_ERROR_FAILED,
 		                     "Could not load groups from " CKDB_PATH "");
 		goto error;
 	}
@@ -238,8 +239,8 @@ ensure_database (NMSessionMonitor *self, GError **error)
 		errno = 0;
 		if (stat (CKDB_PATH, &statbuf) != 0) {
 			g_set_error (error,
-			             NM_SESSION_MONITOR_ERROR,
-			             errno == ENOENT ? NM_SESSION_MONITOR_ERROR_NO_DATABASE : NM_SESSION_MONITOR_ERROR_IO_ERROR,
+			             NM_MANAGER_ERROR,
+			             NM_MANAGER_ERROR_FAILED,
 			             "Error statting file " CKDB_PATH " to check timestamp: %s",
 			             strerror (errno));
 			goto out;
@@ -284,18 +285,14 @@ nm_session_monitor_init (NMSessionMonitor *self)
 	self->sessions_by_uid = g_hash_table_new (g_direct_hash, g_direct_equal);
 
 
-	error = NULL;
 	if (!ensure_database (self, &error)) {
-		/* Ignore the first error if the CK database isn't found yet */
-		if (g_error_matches (error,
-		                     NM_SESSION_MONITOR_ERROR,
-		                     NM_SESSION_MONITOR_ERROR_NO_DATABASE) == FALSE) {
-			nm_log_err (LOGD_CORE, "Error loading " CKDB_PATH ": %s", error->message);
-		}
+		nm_log_dbg (LOGD_CORE, "Error loading " CKDB_PATH ": %s", error->message);
+
+		/* Ignore the first error, the CK database might not exist yet */
 		g_error_free (error);
+		error = NULL;
 	}
 
-	error = NULL;
 	file = g_file_new_for_path (CKDB_PATH);
 	self->database_monitor = g_file_monitor_file (file, G_FILE_MONITOR_NONE, NULL, &error);
 	g_object_unref (file);
@@ -386,8 +383,8 @@ nm_session_monitor_user_has_session (NMSessionMonitor *monitor,
 	s = g_hash_table_lookup (monitor->sessions_by_user, (gpointer) username);
 	if (!s) {
 		g_set_error (error,
-		             NM_SESSION_MONITOR_ERROR,
-		             NM_SESSION_MONITOR_ERROR_UNKNOWN_USER,
+		             NM_MANAGER_ERROR,
+		             NM_MANAGER_ERROR_FAILED,
 		             "No session found for user '%s'",
 		             username);
 		return FALSE;
@@ -423,8 +420,8 @@ nm_session_monitor_uid_has_session (NMSessionMonitor *monitor,
 	s = g_hash_table_lookup (monitor->sessions_by_uid, GUINT_TO_POINTER (uid));
 	if (!s) {
 		g_set_error (error,
-		             NM_SESSION_MONITOR_ERROR,
-		             NM_SESSION_MONITOR_ERROR_UNKNOWN_USER,
+		             NM_MANAGER_ERROR,
+		             NM_MANAGER_ERROR_FAILED,
 		             "No session found for uid %d",
 		             uid);
 		return FALSE;
@@ -459,8 +456,8 @@ nm_session_monitor_user_active (NMSessionMonitor *monitor,
 	s = g_hash_table_lookup (monitor->sessions_by_user, (gpointer) username);
 	if (!s) {
 		g_set_error (error,
-		             NM_SESSION_MONITOR_ERROR,
-		             NM_SESSION_MONITOR_ERROR_UNKNOWN_USER,
+		             NM_MANAGER_ERROR,
+		             NM_MANAGER_ERROR_FAILED,
 		             "No session found for user '%s'",
 		             username);
 		return FALSE;
@@ -493,8 +490,8 @@ nm_session_monitor_uid_active (NMSessionMonitor *monitor,
 	s = g_hash_table_lookup (monitor->sessions_by_uid, GUINT_TO_POINTER (uid));
 	if (!s) {
 		g_set_error (error,
-		             NM_SESSION_MONITOR_ERROR,
-		             NM_SESSION_MONITOR_ERROR_UNKNOWN_USER,
+		             NM_MANAGER_ERROR,
+		             NM_MANAGER_ERROR_FAILED,
 		             "No session found for uid '%d'",
 		             uid);
 		return FALSE;
