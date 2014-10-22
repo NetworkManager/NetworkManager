@@ -36,24 +36,6 @@
  * such as mobile broadband or analog telephone connections.
  **/
 
-/**
- * nm_setting_serial_error_quark:
- *
- * Registers an error quark for #NMSettingSerial if necessary.
- *
- * Returns: the error quark used for #NMSettingSerial errors.
- **/
-GQuark
-nm_setting_serial_error_quark (void)
-{
-	static GQuark quark;
-
-	if (G_UNLIKELY (!quark))
-		quark = g_quark_from_static_string ("nm-setting-serial-error-quark");
-	return quark;
-}
-
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingSerial, nm_setting_serial, NM_TYPE_SETTING,
                          _nm_register_setting (SERIAL, 2))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_SERIAL)

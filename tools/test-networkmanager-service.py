@@ -113,6 +113,9 @@ class ExportedObj(dbus.service.Object):
 ###################################################################
 IFACE_DEVICE = 'org.freedesktop.NetworkManager.Device'
 
+class NotSoftwareException(dbus.DBusException):
+    _dbus_error_name = IFACE_DEVICE + '.NotSoftware'
+
 PD_UDI = "Udi"
 PD_IFACE = "Interface"
 PD_DRIVER = "Driver"
@@ -168,6 +171,12 @@ class Device(ExportedObj):
     # methods
     @dbus.service.method(dbus_interface=IFACE_DEVICE, in_signature='', out_signature='')
     def Disconnect(self):
+        pass
+
+    @dbus.service.method(dbus_interface=IFACE_DEVICE, in_signature='', out_signature='')
+    def Delete(self):
+        # We don't currently support any software device types, so...
+        raise NotSoftwareException()
         pass
 
     def __notify(self, propname):
@@ -905,9 +914,31 @@ class NetworkManager(ExportedObj):
 ###################################################################
 IFACE_CONNECTION = 'org.freedesktop.NetworkManager.Settings.Connection'
 
+class InvalidPropertyException(dbus.DBusException):
+    _dbus_error_name = IFACE_CONNECTION + '.InvalidProperty'
+
+class MissingPropertyException(dbus.DBusException):
+    _dbus_error_name = IFACE_CONNECTION + '.MissingProperty'
+
+class InvalidSettingException(dbus.DBusException):
+    _dbus_error_name = IFACE_CONNECTION + '.InvalidSetting'
+
+class MissingSettingException(dbus.DBusException):
+    _dbus_error_name = IFACE_CONNECTION + '.MissingSetting'
+
 class Connection(dbus.service.Object):
     def __init__(self, bus, object_path, settings, remove_func):
         dbus.service.Object.__init__(self, bus, object_path)
+
+        if not settings.has_key('connection'):
+            raise MissingSettingException('connection: setting is required')
+        s_con = settings['connection']
+        if not s_con.has_key('type'):
+            raise MissingPropertyException('connection.type: property is required')
+        type = s_con['type']
+        if not type in ['802-3-ethernet', '802-11-wireless', 'vlan', 'wimax']:
+            raise InvalidPropertyException('connection.type: unsupported connection type')
+
         self.path = object_path
         self.settings = settings
         self.remove_func = remove_func
@@ -959,6 +990,9 @@ class Connection(dbus.service.Object):
 ###################################################################
 IFACE_SETTINGS = 'org.freedesktop.NetworkManager.Settings'
 
+class InvalidHostnameException(dbus.DBusException):
+    _dbus_error_name = IFACE_SETTINGS + '.InvalidHostname'
+
 class Settings(dbus.service.Object):
     def __init__(self, bus, object_path):
         dbus.service.Object.__init__(self, bus, object_path)
@@ -1000,6 +1034,14 @@ class Settings(dbus.service.Object):
         del self.connections[connection.path]
         self.props['Connections'] = dbus.Array(self.connections.keys(), 'o')
         self.PropertiesChanged({ 'connections': self.props['Connections'] })
+
+    @dbus.service.method(dbus_interface=IFACE_SETTINGS, in_signature='s', out_signature='')
+    def SaveHostname(self, hostname):
+        # Arbitrary requirement to test error handling
+        if hostname.find('.') == -1:
+            raise InvalidHostnameException()
+        self.props['Hostname'] = hostname
+        self.PropertiesChanged({ 'hostname': hostname })
 
     @dbus.service.method(dbus_interface=dbus.PROPERTIES_IFACE, in_signature='s', out_signature='a{sv}')
     def GetAll(self, iface):

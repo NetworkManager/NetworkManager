@@ -21,6 +21,7 @@
 
 #include <config.h>
 #include <string.h>
+#include <glib/gi18n.h>
 
 #include "nm-glib-compat.h"
 
@@ -75,23 +76,6 @@ enum {
 	LAST_SIGNAL
 };
 static guint signals[LAST_SIGNAL] = { 0 };
-
-/**
- * nm_device_wimax_error_quark:
- *
- * Registers an error quark for #NMDeviceWimax if necessary.
- *
- * Returns: the error quark used for #NMDeviceWimax errors.
- **/
-GQuark
-nm_device_wimax_error_quark (void)
-{
-	static GQuark quark = 0;
-
-	if (G_UNLIKELY (quark == 0))
-		quark = g_quark_from_static_string ("nm-device-wimax-error-quark");
-	return quark;
-}
 
 /**
  * nm_device_wimax_get_hw_address:
@@ -306,25 +290,15 @@ nm_device_wimax_get_bsid (NMDeviceWimax *self)
 static gboolean
 connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
-	NMSettingConnection *s_con;
 	NMSettingWimax *s_wimax;
-	const char *ctype;
 	const char *hwaddr, *setting_hwaddr;
 
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
-
-	ctype = nm_setting_connection_get_connection_type (s_con);
-	if (strcmp (ctype, NM_SETTING_WIMAX_SETTING_NAME) != 0) {
-		g_set_error (error, NM_DEVICE_WIMAX_ERROR, NM_DEVICE_WIMAX_ERROR_NOT_WIMAX_CONNECTION,
-		             "The connection was not a Wimax connection.");
+	if (!NM_DEVICE_CLASS (nm_device_wimax_parent_class)->connection_compatible (device, connection, error))
 		return FALSE;
-	}
 
-	s_wimax = nm_connection_get_setting_wimax (connection);
-	if (!s_wimax) {
-		g_set_error (error, NM_DEVICE_WIMAX_ERROR, NM_DEVICE_WIMAX_ERROR_INVALID_WIMAX_CONNECTION,
-		             "The connection was not a valid Wimax connection.");
+	if (!nm_connection_is_type (connection, NM_SETTING_WIMAX_SETTING_NAME)) {
+		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+		                     _("The connection was not a WiMAX connection."));
 		return FALSE;
 	}
 
@@ -332,19 +306,20 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	hwaddr = nm_device_wimax_get_hw_address (NM_DEVICE_WIMAX (device));
 	if (hwaddr) {
 		if (!nm_utils_hwaddr_valid (hwaddr, ETH_ALEN)) {
-			g_set_error (error, NM_DEVICE_WIMAX_ERROR, NM_DEVICE_WIMAX_ERROR_INVALID_DEVICE_MAC,
-			             "Invalid device MAC address.");
+			g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+			                     _("Invalid device MAC address."));
 			return FALSE;
 		}
+		s_wimax = nm_connection_get_setting_wimax (connection);
 		setting_hwaddr = nm_setting_wimax_get_mac_address (s_wimax);
 		if (setting_hwaddr && !nm_utils_hwaddr_matches (setting_hwaddr, -1, hwaddr, -1)) {
-			g_set_error (error, NM_DEVICE_WIMAX_ERROR, NM_DEVICE_WIMAX_ERROR_MAC_MISMATCH,
-			             "The MACs of the device and the connection didn't match.");
+			g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+			                     _("The MACs of the device and the connection didn't match."));
 			return FALSE;
 		}
 	}
 
-	return NM_DEVICE_CLASS (nm_device_wimax_parent_class)->connection_compatible (device, connection, error);
+	return TRUE;
 }
 
 static GType

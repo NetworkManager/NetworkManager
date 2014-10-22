@@ -1297,7 +1297,7 @@ nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 	GError *verify_error = NULL;
 
 	if (stat (filename, &statbuf) != 0 || !S_ISREG (statbuf.st_mode)) {
-		g_set_error_literal (error, KEYFILE_PLUGIN_ERROR, 0,
+		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		                     "File did not exist or was not a regular file");
 		return NULL;
 	}
@@ -1305,7 +1305,7 @@ nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 	bad_permissions = statbuf.st_mode & 0077;
 
 	if (bad_permissions) {
-		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "File permissions (%o) were insecure",
 		             statbuf.st_mode);
 		return NULL;
@@ -1384,10 +1384,9 @@ nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 
 	/* Normalize and verify the connection */
 	if (!nm_connection_normalize (connection, NULL, NULL, &verify_error)) {
-		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
-			         "invalid or missing connection property '%s/%s'",
-			         verify_error ? g_type_name (nm_setting_lookup_type_by_quark (verify_error->domain)) : "(unknown)",
-			         (verify_error && verify_error->message) ? verify_error->message : "(unknown)");
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			         "invalid connection: %s",
+		             verify_error->message);
 		g_clear_error (&verify_error);
 		g_object_unref (connection);
 		connection = NULL;

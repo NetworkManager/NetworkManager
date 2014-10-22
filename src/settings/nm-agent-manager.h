@@ -34,17 +34,6 @@
 #define NM_IS_AGENT_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_AGENT_MANAGER))
 #define NM_AGENT_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_AGENT_MANAGER, NMAgentManagerClass))
 
-typedef enum {
-	NM_AGENT_MANAGER_ERROR_SENDER_UNKNOWN = 0, /*< nick=SenderUnknown >*/
-	NM_AGENT_MANAGER_ERROR_PERMISSION_DENIED,  /*< nick=PermissionDenied >*/
-	NM_AGENT_MANAGER_ERROR_SESSION_NOT_FOUND,  /*< nick=SessionNotFound >*/
-	NM_AGENT_MANAGER_ERROR_INVALID_IDENTIFIER, /*< nick=InvalidIdentifier >*/
-	NM_AGENT_MANAGER_ERROR_NOT_REGISTERED,     /*< nick=NotRegistered >*/
-	NM_AGENT_MANAGER_ERROR_INTERNAL_ERROR,     /*< nick=InternalError >*/
-	NM_AGENT_MANAGER_ERROR_NO_SECRETS,         /*< nick=NoSecrets >*/
-	NM_AGENT_MANAGER_ERROR_USER_CANCELED       /*< nick=UserCanceled >*/
-} NMAgentManagerError;
-
 struct _NMAgentManager {
 	GObject parent;
 };

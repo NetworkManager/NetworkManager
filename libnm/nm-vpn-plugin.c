@@ -91,18 +91,6 @@ enum {
 static GSList *active_plugins = NULL;
 
 
-GQuark
-nm_vpn_plugin_error_quark (void)
-{
-	static GQuark quark = 0;
-
-	if (!quark)
-		quark = g_quark_from_static_string ("nm_vpn_plugin_error");
-
-	return quark;
-}
-
-
 static void
 nm_vpn_plugin_set_connection (NMVpnPlugin *plugin,
                               GDBusConnection *connection)
@@ -490,10 +478,9 @@ impl_vpn_plugin_need_secrets (NMVpnPlugin *plugin,
 	if (!connection) {
 		g_dbus_method_invocation_return_error (context,
 		                                       NM_VPN_PLUGIN_ERROR,
-		                                       NM_VPN_PLUGIN_ERROR_CONNECTION_INVALID,
-		                                       "The connection was invalid: '%s' / '%s' invalid: %d.",
-		                                       g_type_name (nm_setting_lookup_type_by_quark (error->domain)),
-		                                       error->message, error->code);
+		                                       NM_VPN_PLUGIN_ERROR_INVALID_CONNECTION,
+		                                       "The connection was invalid: %s",
+		                                       error->message);
 		g_error_free (error);
 		return;
 	}
@@ -748,8 +735,11 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	                              G_DBUS_CALL_FLAGS_NONE, 0,
 	                              cancellable, error);
 	g_object_unref (proxy);
-	if (!ret)
+	if (!ret) {
+		if (error && *error)
+			g_dbus_error_strip_remote_error (*error);
 		goto out;
+	}
 	g_variant_unref (ret);
 
 	priv->dbus_vpn_plugin = nmdbus_vpn_plugin_skeleton_new ();
@@ -1033,10 +1023,6 @@ nm_vpn_plugin_class_init (NMVpnPluginClass *plugin_class)
 		              NULL,
 		              G_TYPE_NONE, 0,
 		              G_TYPE_NONE);
-
-	_nm_dbus_register_error_domain (NM_VPN_PLUGIN_ERROR,
-	                                NM_DBUS_VPN_ERROR_PREFIX,
-	                                NM_TYPE_VPN_PLUGIN_ERROR);
 
 	setup_unix_signal_handler ();
 }

@@ -27,7 +27,6 @@ noinst_PROGRAMS = test-ibft
 
 test_ibft_SOURCES = \
 	test-ibft.c \
-	../errors.c \
 	../reader.c
 
 test_ibft_LDADD = \

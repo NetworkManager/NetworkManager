@@ -33,17 +33,6 @@
 
 #define EXAMPLE_DIR NMCONFDIR "/example-plugin"
 
-/* Boilerplate stuff for the plugin's error domain.  Bits of the code that
- * create new errors in the plugin's domain will create errors of
- * type EXAMPLE_PLUGIN_ERROR like so:
- *
- *  error = g_error_new_literal (EXAMPLE_PLUGIN_ERROR,
- *                               <specific error number>,
- *                               "This is a really bad error.");
- */
-#define EXAMPLE_PLUGIN_ERROR (example_plugin_error_quark ())
-GQuark example_plugin_error_quark (void);
-
 /* Prototypes for the reader/writer functions */
 NMConnection *connection_from_file (const char *filename, GError **error);
 

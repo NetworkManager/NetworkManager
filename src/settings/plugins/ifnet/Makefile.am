@@ -38,6 +38,4 @@ lib_ifnet_io_la_SOURCES = \
 	net_utils.h\
 	net_utils.c\
 	wpa_parser.h\
-	wpa_parser.c \
-	errors.h \
-	errors.c
+	wpa_parser.c

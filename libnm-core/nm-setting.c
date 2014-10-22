@@ -44,23 +44,6 @@
  * of properties and allowed values.
  */
 
-/**
- * nm_setting_error_quark:
- *
- * Registers an error quark for #NMSetting if necessary.
- *
- * Returns: the error quark used for NMSetting errors.
- **/
-GQuark
-nm_setting_error_quark (void)
-{
-	static GQuark quark;
-
-	if (G_UNLIKELY (!quark))
-		quark = g_quark_from_static_string ("nm-setting-error-quark");
-	return quark;
-}
-
 G_DEFINE_ABSTRACT_TYPE (NMSetting, nm_setting, G_TYPE_OBJECT)
 
 #define NM_SETTING_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING, NMSettingPrivate))
@@ -69,7 +52,6 @@ typedef struct {
 	const char *name;
 	GType type;
 	guint32 priority;
-	GQuark error_quark;
 } SettingInfo;
 
 typedef struct {
@@ -127,10 +109,8 @@ _ensure_registered (void)
  * @name: the name of the #NMSetting object to register
  * @type: the #GType of the #NMSetting
  * @priority: the sort priority of the setting, see below
- * @error_quark: the setting's error quark
  *
- * INTERNAL ONLY: registers a setting's internal properties, like its priority
- * and its error quark type, with libnm.
+ * INTERNAL ONLY: registers a setting's internal properties with libnm.
  *
  * A setting's priority should roughly follow the OSI layer model, but it also
  * controls which settings get asked for secrets first.  Thus settings which
@@ -158,22 +138,19 @@ _ensure_registered (void)
 void
 (_nm_register_setting) (const char *name,
                         const GType type,
-                        const guint32 priority,
-                        const GQuark error_quark)
+                        const guint32 priority)
 {
 	SettingInfo *info;
 
 	g_return_if_fail (name != NULL && *name);
 	g_return_if_fail (type != G_TYPE_INVALID);
 	g_return_if_fail (type != G_TYPE_NONE);
-	g_return_if_fail (error_quark != 0);
 	g_return_if_fail (priority <= 4);
 
 	_ensure_registered ();
 
 	if (G_LIKELY ((info = g_hash_table_lookup (registered_settings, name)))) {
 		g_return_if_fail (info->type == type);
-		g_return_if_fail (info->error_quark == error_quark);
 		g_return_if_fail (info->priority == priority);
 		g_return_if_fail (g_strcmp0 (info->name, name) == 0);
 		return;
@@ -186,7 +163,6 @@ void
 	info = g_slice_new0 (SettingInfo);
 	info->type = type;
 	info->priority = priority;
-	info->error_quark = error_quark;
 	info->name = name;
 	g_hash_table_insert (registered_settings, (void *) info->name, info);
 	g_hash_table_insert (registered_settings_by_type, &info->type, info);
@@ -258,32 +234,6 @@ nm_setting_lookup_type (const char *name)
 
 	info = g_hash_table_lookup (registered_settings, name);
 	return info ? info->type : G_TYPE_INVALID;
-}
-
-/**
- * nm_setting_lookup_type_by_quark:
- * @error_quark: a setting error quark
- *
- * Returns the #GType of the setting's class for a given setting error quark.
- * Useful for figuring out which setting a returned error is for.
- *
- * Returns: the #GType of the setting's class, or %G_TYPE_INVALID if
- *   @error_quark is not recognized
- **/
-GType
-nm_setting_lookup_type_by_quark (GQuark error_quark)
-{
-	SettingInfo *info;
-	GHashTableIter iter;
-
-	_ensure_registered ();
-
-	g_hash_table_iter_init (&iter, registered_settings);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &info)) {
-		if (info->error_quark == error_quark)
-			return info->type;
-	}
-	return G_TYPE_INVALID;
 }
 
 gint
@@ -1508,10 +1458,11 @@ update_one_secret (NMSetting *setting, const char *key, GVariant *value, GError 
 
 	property = nm_setting_class_find_property (NM_SETTING_GET_CLASS (setting), key);
 	if (!property) {
-		g_set_error (error,
-		             NM_SETTING_ERROR,
-		             NM_SETTING_ERROR_PROPERTY_NOT_FOUND,
-		             "%s", key);
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_PROPERTY_NOT_FOUND,
+		                     _("secret not found"));
+		g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), key);
 		return NM_SETTING_UPDATE_SECRET_ERROR;
 	}
 
@@ -1599,19 +1550,21 @@ is_secret_prop (NMSetting *setting, const char *secret_name, GError **error)
 
 	property = nm_setting_class_find_property (NM_SETTING_GET_CLASS (setting), secret_name);
 	if (!property) {
-		g_set_error (error,
-		             NM_SETTING_ERROR,
-		             NM_SETTING_ERROR_PROPERTY_NOT_FOUND,
-		             "Secret %s not provided by this setting", secret_name);
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_PROPERTY_NOT_FOUND,
+		                     _("secret is not set"));
+		g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), secret_name);
 		return FALSE;
 	}
 
 	pspec = property->param_spec;
 	if (!pspec || !(pspec->flags & NM_SETTING_PARAM_SECRET)) {
-		g_set_error (error,
-		             NM_SETTING_ERROR,
-		             NM_SETTING_ERROR_PROPERTY_NOT_SECRET,
-		             "Property %s is not a secret", secret_name);
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_PROPERTY_NOT_SECRET,
+		                     _("not a secret property"));
+		g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), secret_name);
 		return FALSE;
 	}
 
@@ -1775,28 +1728,21 @@ nm_setting_to_string (NMSetting *setting)
 NMSetting *
 _nm_setting_find_in_list_required (GSList *all_settings,
                                    const char *setting_name,
-                                   GError **error,
-                                   const char *error_prefix_setting_name,
-                                   const char *error_prefix_property_name)
+                                   GError **error)
 {
 	NMSetting *setting;
 
 	g_return_val_if_fail (!error || !*error, NULL);
 	g_return_val_if_fail (all_settings, NULL);
 	g_return_val_if_fail (setting_name, NULL);
-	g_return_val_if_fail (!error_prefix_setting_name == !error_prefix_property_name, NULL);
 
 	setting = nm_setting_find_in_list (all_settings, setting_name);
 	if (!setting) {
-		g_set_error (error,
-		             NM_CONNECTION_ERROR,
-		             !strcmp (setting_name, NM_SETTING_CONNECTION_SETTING_NAME)
-		                 ? NM_CONNECTION_ERROR_CONNECTION_SETTING_NOT_FOUND
-		                 : NM_CONNECTION_ERROR_SETTING_NOT_FOUND,
-		             _("Missing '%s' setting"),
-		             setting_name);
-		if (error_prefix_setting_name)
-			g_prefix_error (error, "%s.%s: ", error_prefix_setting_name, error_prefix_property_name);
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_MISSING_SETTING,
+		                     _("missing setting"));
+		g_prefix_error (error, "%s: ", setting_name);
 	}
 	return setting;
 }
@@ -1812,8 +1758,8 @@ _nm_setting_verify_required_virtual_interface_name (GSList *all_settings,
 	interface_name = s_con ? nm_setting_connection_get_interface_name (s_con) : NULL;
 	if (!interface_name) {
 		g_set_error_literal (error,
-		                     NM_SETTING_CONNECTION_ERROR,
-		                     NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
 		                     _("property is missing"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
 		return NM_SETTING_VERIFY_ERROR;

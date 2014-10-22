@@ -37,25 +37,6 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_ETHERNET_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DEVICE_ETHERNET))
 #define NM_DEVICE_ETHERNET_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEVICE_ETHERNET, NMDeviceEthernetClass))
 
-/**
- * NMDeviceEthernetError:
- * @NM_DEVICE_ETHERNET_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_DEVICE_ETHERNET_ERROR_NOT_ETHERNET_CONNECTION: the connection was not of Ethernet or PPPoE type
- * @NM_DEVICE_ETHERNET_ERROR_INVALID_ETHERNET_CONNECTION: the Ethernet connection was invalid
- * @NM_DEVICE_ETHERNET_ERROR_INVALID_DEVICE_MAC: the device's MAC was invalid
- * @NM_DEVICE_ETHERNET_ERROR_MAC_MISMATCH: the MACs of the connection and the device mismatched
- */
-typedef enum {
-	NM_DEVICE_ETHERNET_ERROR_UNKNOWN = 0,                 /*< nick=UnknownError >*/
-	NM_DEVICE_ETHERNET_ERROR_NOT_ETHERNET_CONNECTION,     /*< nick=NotEthernetConnection >*/
-	NM_DEVICE_ETHERNET_ERROR_INVALID_ETHERNET_CONNECTION, /*< nick=InvalidEthernetConnection >*/
-	NM_DEVICE_ETHERNET_ERROR_INVALID_DEVICE_MAC,          /*< nick=InvalidDeviceMac >*/
-	NM_DEVICE_ETHERNET_ERROR_MAC_MISMATCH,                /*< nick=MacMismatch >*/
-} NMDeviceEthernetError;
-
-#define NM_DEVICE_ETHERNET_ERROR nm_device_ethernet_error_quark ()
-GQuark nm_device_ethernet_error_quark (void);
-
 #define NM_DEVICE_ETHERNET_HW_ADDRESS  "hw-address"
 #define NM_DEVICE_ETHERNET_PERMANENT_HW_ADDRESS "perm-hw-address"
 #define NM_DEVICE_ETHERNET_SPEED       "speed"

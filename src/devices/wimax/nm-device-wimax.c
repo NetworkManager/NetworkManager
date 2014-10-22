@@ -25,6 +25,7 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 
+#include <glib/gi18n.h>
 #include <WiMaxAPI.h>
 #include <WiMaxAPIEx.h>
 
@@ -106,19 +107,6 @@ typedef struct {
 	gint tx_power;
 	char *bsid;
 } NMDeviceWimaxPrivate;
-
-/***********************************************************/
-
-#define NM_WIMAX_ERROR (nm_wimax_error_quark ())
-
-static GQuark
-nm_wimax_error_quark (void)
-{
-	static GQuark quark = 0;
-	if (!quark)
-		quark = g_quark_from_static_string ("nm-wimax-error");
-	return quark;
-}
 
 /***********************************************************/
 
@@ -383,8 +371,8 @@ complete_connection (NMDevice *device,
 		/* If not given a specific object, we need at minimum an NSP name */
 		if (!s_wimax) {
 			g_set_error_literal (error,
-			                     NM_WIMAX_ERROR,
-			                     NM_WIMAX_ERROR_CONNECTION_INVALID,
+			                     NM_DEVICE_ERROR,
+			                     NM_DEVICE_ERROR_INVALID_CONNECTION,
 			                     "A 'wimax' setting is required if no NSP path was given.");
 			return FALSE;
 		}
@@ -392,8 +380,8 @@ complete_connection (NMDevice *device,
 		nsp_name = nm_setting_wimax_get_network_name (s_wimax);
 		if (!nsp_name || !strlen (nsp_name)) {
 			g_set_error_literal (error,
-			                     NM_WIMAX_ERROR,
-			                     NM_WIMAX_ERROR_CONNECTION_INVALID,
+			                     NM_DEVICE_ERROR,
+			                     NM_DEVICE_ERROR_INVALID_CONNECTION,
 			                     "A 'wimax' setting with a valid network name is required if no NSP path was given.");
 			return FALSE;
 		}
@@ -420,8 +408,8 @@ complete_connection (NMDevice *device,
 
 		if (!nsp) {
 			g_set_error (error,
-			             NM_WIMAX_ERROR,
-			             NM_WIMAX_ERROR_NSP_NOT_FOUND,
+			             NM_DEVICE_ERROR,
+			             NM_DEVICE_ERROR_SPECIFIC_OBJECT_NOT_FOUND,
 			             "The NSP %s was not in the scan list.",
 			             specific_object);
 			return FALSE;
@@ -451,10 +439,11 @@ complete_connection (NMDevice *device,
 	if (setting_mac) {
 		/* Make sure the setting MAC (if any) matches the device's permanent MAC */
 		if (!nm_utils_hwaddr_matches (setting_mac, -1, hw_address, -1)) {
-			g_set_error (error,
-				         NM_SETTING_WIMAX_ERROR,
-				         NM_SETTING_WIMAX_ERROR_INVALID_PROPERTY,
-				         NM_SETTING_WIMAX_MAC_ADDRESS);
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("connection does not match device"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIMAX_SETTING_NAME, NM_SETTING_WIMAX_MAC_ADDRESS);
 			return FALSE;
 		}
 	} else {
@@ -1424,6 +1413,4 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *klass)
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (klass),
 	                                        &dbus_glib_nm_device_wimax_object_info);
-
-	dbus_g_error_domain_register (NM_WIMAX_ERROR, NULL, NM_TYPE_WIMAX_ERROR);
 }

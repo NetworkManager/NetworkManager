@@ -37,24 +37,6 @@
  * necessary for connection to 802.16e Mobile WiMAX networks.
  **/
 
-/**
- * nm_setting_wimax_error_quark:
- *
- * Registers an error quark for #NMSettingWimax if necessary.
- *
- * Returns: the error quark used for #NMSettingWimax errors.
- **/
-GQuark
-nm_setting_wimax_error_quark (void)
-{
-	static GQuark quark;
-
-	if (G_UNLIKELY (!quark))
-		quark = g_quark_from_static_string ("nm-setting-wimax-error-quark");
-	return quark;
-}
-
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingWimax, nm_setting_wimax, NM_TYPE_SETTING,
                          _nm_register_setting (WIMAX, 1))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_WIMAX)
@@ -128,8 +110,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (!priv->network_name) {
 		g_set_error_literal (error,
-		                     NM_SETTING_WIMAX_ERROR,
-		                     NM_SETTING_WIMAX_ERROR_MISSING_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
 		                     _("property is missing"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIMAX_SETTING_NAME, NM_SETTING_WIMAX_NETWORK_NAME);
 		return FALSE;
@@ -137,8 +119,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (!strlen (priv->network_name)) {
 		g_set_error_literal (error,
-		                     NM_SETTING_WIMAX_ERROR,
-		                     NM_SETTING_WIMAX_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property is empty"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIMAX_SETTING_NAME, NM_SETTING_WIMAX_NETWORK_NAME);
 		return FALSE;
@@ -146,8 +128,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (priv->mac_address && !nm_utils_hwaddr_valid (priv->mac_address, ETH_ALEN)) {
 		g_set_error_literal (error,
-		                     NM_SETTING_WIMAX_ERROR,
-		                     NM_SETTING_WIMAX_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property is invalid"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIMAX_SETTING_NAME, NM_SETTING_WIMAX_MAC_ADDRESS);
 		return FALSE;

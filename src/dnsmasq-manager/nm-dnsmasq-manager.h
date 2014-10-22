@@ -61,9 +61,4 @@ gboolean nm_dnsmasq_manager_start (NMDnsMasqManager *manager,
 
 void     nm_dnsmasq_manager_stop  (NMDnsMasqManager *manager);
 
-#define NM_DNSMASQ_MANAGER_ERROR nm_dnsmasq_manager_error_quark()
-#define NM_TYPE_DNSMASQ_MANAGER_ERROR (nm_dnsmasq_manager_error_get_type ()) 
-
-GQuark nm_dnsmasq_manager_error_quark (void);
-
 #endif /* __NETWORKMANAGER_DNSMASQ_MANAGER_H__ */

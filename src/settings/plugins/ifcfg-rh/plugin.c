@@ -47,7 +47,6 @@
 #include "nm-dbus-glib-types.h"
 #include "plugin.h"
 #include "nm-system-config-interface.h"
-#include "nm-settings-error.h"
 #include "nm-config.h"
 #include "nm-logging.h"
 #include "NetworkManagerUtils.h"
@@ -142,7 +141,8 @@ _internal_new_connection (SCPluginIfcfg *self,
 		if (local)
 			g_propagate_error (error, local);
 		else
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0, "(unknown)");
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			             "(unknown)");
 		return NULL;
 	}
 
@@ -789,7 +789,7 @@ impl_ifcfgrh_get_ifcfg_details (SCPluginIfcfg *plugin,
 	if (!s_con) {
 		g_set_error (error,
 		             NM_SETTINGS_ERROR,
-		             NM_SETTINGS_ERROR_INTERNAL_ERROR,
+		             NM_SETTINGS_ERROR_FAILED,
 		             "unable to retrieve the connection setting");
 		return FALSE;
 	}
@@ -798,7 +798,7 @@ impl_ifcfgrh_get_ifcfg_details (SCPluginIfcfg *plugin,
 	if (!uuid) {
 		g_set_error (error,
 		             NM_SETTINGS_ERROR,
-		             NM_SETTINGS_ERROR_INTERNAL_ERROR,
+		             NM_SETTINGS_ERROR_FAILED,
 		             "unable to get the UUID");
 		return FALSE;
 	}
@@ -807,7 +807,7 @@ impl_ifcfgrh_get_ifcfg_details (SCPluginIfcfg *plugin,
 	if (!path) {
 		g_set_error (error,
 		             NM_SETTINGS_ERROR,
-		             NM_SETTINGS_ERROR_INTERNAL_ERROR,
+		             NM_SETTINGS_ERROR_FAILED,
 		             "unable to get the connection D-Bus path");
 		return FALSE;
 	}

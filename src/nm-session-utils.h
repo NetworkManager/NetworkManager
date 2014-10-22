@@ -23,17 +23,6 @@
 #include <glib.h>
 #include <glib-object.h>
 
-#define NM_SESSION_MONITOR_ERROR         (nm_session_monitor_error_quark ())
-GQuark nm_session_monitor_error_quark    (void) G_GNUC_CONST;
-GType  nm_session_monitor_error_get_type (void) G_GNUC_CONST;
-
-typedef enum {
-	NM_SESSION_MONITOR_ERROR_IO_ERROR = 0,       /*< nick=IOError >*/
-	NM_SESSION_MONITOR_ERROR_MALFORMED_DATABASE, /*< nick=MalformedDatabase >*/
-	NM_SESSION_MONITOR_ERROR_UNKNOWN_USER,       /*< nick=UnknownUser >*/
-	NM_SESSION_MONITOR_ERROR_NO_DATABASE,        /*< nick=NoDatabase >*/
-} NMSessionMonitorError;
-
 gboolean nm_session_uid_to_user (uid_t uid, const char **out_user, GError **error);
 
 gboolean nm_session_user_to_uid (const char *user, uid_t *out_uid, GError **error);

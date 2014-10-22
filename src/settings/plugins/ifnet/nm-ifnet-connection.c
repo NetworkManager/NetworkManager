@@ -27,7 +27,6 @@
 #include <nm-settings-connection.h>
 #include <nm-system-config-interface.h>
 #include <nm-logging.h>
-#include <nm-settings-error.h>
 #include "nm-ifnet-connection.h"
 #include "connection_parser.h"
 #include "net_parser.h"

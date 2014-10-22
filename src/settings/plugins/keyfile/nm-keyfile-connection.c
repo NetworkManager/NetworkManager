@@ -63,7 +63,7 @@ nm_keyfile_connection_new (NMConnection *source,
 
 		uuid = nm_connection_get_uuid (NM_CONNECTION (tmp));
 		if (!uuid) {
-			g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Connection in file %s had no UUID", full_path);
 			g_object_unref (tmp);
 			return NULL;

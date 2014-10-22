@@ -444,7 +444,7 @@ nmt_secret_agent_get_secrets (NMSecretAgent                 *agent,
 	request_id = g_strdup_printf ("%s/%s", connection_path, setting_name);
 	if (g_hash_table_lookup (priv->requests, request_id) != NULL) {
 		/* We already have a request pending for this (connection, setting) */
-		error = g_error_new (NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_INTERNAL_ERROR,
+		error = g_error_new (NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_FAILED,
 		                     "Request for %s secrets already pending", request_id);
 	nope:
 		callback (agent, connection, NULL, error, callback_data);

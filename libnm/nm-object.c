@@ -31,6 +31,7 @@
 #include "nm-object-private.h"
 #include "nm-glib-compat.h"
 #include "nm-dbus-helpers.h"
+#include "nm-client.h"
 
 static gboolean debug = FALSE;
 #define dbgmsg(f,...) if (G_UNLIKELY (debug)) { g_message (f, ## __VA_ARGS__ ); }
@@ -99,31 +100,6 @@ enum {
 	LAST_PROP
 };
 
-enum {
-	OBJECT_CREATION_FAILED,
-
-	LAST_SIGNAL
-};
-
-static guint signals[LAST_SIGNAL] = { 0 };
-
-/**
- * nm_object_error_quark:
- *
- * Registers an error quark for #NMObject if necessary.
- *
- * Returns: the error quark used for #NMObject errors.
- **/
-GQuark
-nm_object_error_quark (void)
-{
-	static GQuark quark;
-
-	if (G_UNLIKELY (!quark))
-		quark = g_quark_from_static_string ("nm-object-error-quark");
-	return quark;
-}
-
 static void
 on_name_owner_changed (GObject    *proxy,
                        GParamSpec *pspec,
@@ -171,7 +147,7 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	GSList *iter;
 
 	if (!priv->path) {
-		g_set_error_literal (error, NM_OBJECT_ERROR, NM_OBJECT_ERROR_OBJECT_CREATION_FAILURE,
+		g_set_error_literal (error, NM_CLIENT_ERROR, NM_CLIENT_ERROR_OBJECT_CREATION_FAILED,
 		                     _("Caller did not specify D-Bus path for object"));
 		return FALSE;
 	}
@@ -313,8 +289,8 @@ init_async (GAsyncInitable *initable, int io_priority,
 	if (!priv->path) {
 		g_simple_async_report_error_in_idle (G_OBJECT (initable),
 		                                     callback, user_data,
-		                                     NM_OBJECT_ERROR,
-		                                     NM_OBJECT_ERROR_OBJECT_CREATION_FAILURE,
+		                                     NM_CLIENT_ERROR,
+		                                     NM_CLIENT_ERROR_OBJECT_CREATION_FAILED,
 		                                     "%s",
 		                                     _("Caller did not specify D-Bus path for object"));
 		return;
@@ -468,28 +444,6 @@ nm_object_class_init (NMObjectClass *nm_object_class)
 		                       FALSE,
 		                       G_PARAM_READABLE |
 		                       G_PARAM_STATIC_STRINGS));
-
-	/* signals */
-
-	/**
-	 * NMObject::object-creation-failed:
-	 * @master_object: the object that received the signal
-	 * @error: the error that occured while creating object
-	 * @failed_path: object path of the failed object
-	 *
-	 * Indicates that an error occured while creating an #NMObject object
-	 * during property handling of @master_object.
-	 *
-	 * Note: Be aware that the signal is private for libnm's internal
-	 *       use.
-	 **/
-	signals[OBJECT_CREATION_FAILED] =
-		g_signal_new ("object-creation-failed",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMObjectClass, object_creation_failed),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 2, G_TYPE_POINTER, G_TYPE_POINTER);
 }
 
 static void
@@ -1038,14 +992,10 @@ object_created (GObject *obj, const char *path, gpointer user_data)
 	/* We assume that on error, the creator_func printed something */
 
 	if (obj == NULL && g_strcmp0 (path, "/") != 0 ) {
-		GError *error;
-		error = g_error_new (NM_OBJECT_ERROR,
-		                     NM_OBJECT_ERROR_OBJECT_CREATION_FAILURE,
-		                     "Creating object for path '%s' failed in libnm.",
-		                     path);
-		/* Emit a signal about the error. */
-		g_signal_emit (odata->self, signals[OBJECT_CREATION_FAILED], 0, error, path);
-		g_error_free (error);
+		NMObjectClass *object_class = NM_OBJECT_GET_CLASS (odata->self);
+
+		if (object_class->object_creation_failed)
+			object_class->object_creation_failed (odata->self, path);
 	}
 
 	odata->objects[--odata->remaining] = obj;
@@ -1445,8 +1395,11 @@ _nm_object_reload_properties (NMObject *object, GError **error)
 		                              g_variant_new ("(s)", interface),
 		                              G_DBUS_CALL_FLAGS_NONE, -1,
 		                              NULL, error);
-		if (!ret)
+		if (!ret) {
+			if (error && *error)
+				g_dbus_error_strip_remote_error (*error);
 			return FALSE;
+		}
 
 		g_variant_get (ret, "(@a{sv})", &props);
 		process_properties_changed (object, props, TRUE);
@@ -1581,6 +1534,7 @@ reload_got_properties (GObject *proxy,
 		g_variant_unref (props);
 		g_variant_unref (ret);
 	} else {
+		g_dbus_error_strip_remote_error (error);
 		if (priv->reload_error)
 			g_error_free (error);
 		else

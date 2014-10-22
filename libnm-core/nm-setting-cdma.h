@@ -40,25 +40,6 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_CDMA_SETTING_NAME "cdma"
 
-/**
- * NMSettingCdmaError:
- * @NM_SETTING_CDMA_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_SETTING_CDMA_ERROR_INVALID_PROPERTY: the property was invalid
- * @NM_SETTING_CDMA_ERROR_MISSING_PROPERTY: the property was missing and is
- * required
- * @NM_SETTING_CDMA_ERROR_MISSING_SERIAL_SETTING: the required #NMSettingSerial
- * is missing in the connection
- */
-typedef enum {
-	NM_SETTING_CDMA_ERROR_UNKNOWN = 0,           /*< nick=UnknownError >*/
-	NM_SETTING_CDMA_ERROR_INVALID_PROPERTY,      /*< nick=InvalidProperty >*/
-	NM_SETTING_CDMA_ERROR_MISSING_PROPERTY,      /*< nick=MissingProperty >*/
-	NM_SETTING_CDMA_ERROR_MISSING_SERIAL_SETTING /*< nick=MissingSerialSetting >*/
-} NMSettingCdmaError;
-
-#define NM_SETTING_CDMA_ERROR nm_setting_cdma_error_quark ()
-GQuark nm_setting_cdma_error_quark (void);
-
 #define NM_SETTING_CDMA_NUMBER         "number"
 #define NM_SETTING_CDMA_USERNAME       "username"
 #define NM_SETTING_CDMA_PASSWORD       "password"

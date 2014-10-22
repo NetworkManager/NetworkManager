@@ -193,19 +193,6 @@ static void remove_supplicant_interface_error_handler (NMDeviceWifi *self);
 
 /*****************************************************************/
 
-#define NM_WIFI_ERROR (nm_wifi_error_quark ())
-
-static GQuark
-nm_wifi_error_quark (void)
-{
-	static GQuark quark = 0;
-	if (!quark)
-		quark = g_quark_from_static_string ("nm-wifi-error");
-	return quark;
-}
-
-/*****************************************************************/
-
 static GObject*
 constructor (GType type,
              guint n_construct_params,
@@ -998,8 +985,8 @@ complete_connection (NMDevice *device,
 		/* If not given a specific object, we need at minimum an SSID */
 		if (!s_wifi) {
 			g_set_error_literal (error,
-			                     NM_WIFI_ERROR,
-			                     NM_WIFI_ERROR_CONNECTION_INVALID,
+			                     NM_DEVICE_ERROR,
+			                     NM_DEVICE_ERROR_INVALID_CONNECTION,
 			                     "A 'wireless' setting is required if no AP path was given.");
 			return FALSE;
 		}
@@ -1007,8 +994,8 @@ complete_connection (NMDevice *device,
 		setting_ssid = nm_setting_wireless_get_ssid (s_wifi);
 		if (!setting_ssid || g_bytes_get_size (setting_ssid) == 0) {
 			g_set_error_literal (error,
-			                     NM_WIFI_ERROR,
-			                     NM_WIFI_ERROR_CONNECTION_INVALID,
+			                     NM_DEVICE_ERROR,
+			                     NM_DEVICE_ERROR_INVALID_CONNECTION,
 			                     "A 'wireless' setting with a valid SSID is required if no AP path was given.");
 			return FALSE;
 		}
@@ -1045,8 +1032,8 @@ complete_connection (NMDevice *device,
 		ap = get_ap_by_path (self, specific_object);
 		if (!ap) {
 			g_set_error (error,
-			             NM_WIFI_ERROR,
-			             NM_WIFI_ERROR_ACCESS_POINT_NOT_FOUND,
+			             NM_DEVICE_ERROR,
+			             NM_DEVICE_ERROR_SPECIFIC_OBJECT_NOT_FOUND,
 			             "The access point %s was not in the scan list.",
 			             specific_object);
 			return FALSE;
@@ -1082,8 +1069,8 @@ complete_connection (NMDevice *device,
 			 * connection data, then we cannot connect at all.  Return an error.
 			 */
 			g_set_error_literal (error,
-			                     NM_WIFI_ERROR,
-			                     NM_WIFI_ERROR_CONNECTION_INVALID,
+			                     NM_DEVICE_ERROR,
+			                     NM_DEVICE_ERROR_INVALID_CONNECTION,
 			                     "A 'wireless' setting with a valid SSID is required for hidden access points.");
 			return FALSE;
 		}
@@ -1107,9 +1094,10 @@ complete_connection (NMDevice *device,
 	 */
 	if (is_adhoc_wpa (connection)) {
 		g_set_error_literal (error,
-		                     NM_SETTING_WIRELESS_ERROR,
-		                     NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
-		                     "WPA Ad-Hoc disabled due to kernel bugs");
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_SETTING,
+		                     _("WPA Ad-Hoc disabled due to kernel bugs"));
+		g_prefix_error (error, "%s: ", NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
 		if (tmp_ssid)
 			g_byte_array_unref (tmp_ssid);
 		return FALSE;
@@ -1136,10 +1124,11 @@ complete_connection (NMDevice *device,
 	if (setting_mac) {
 		/* Make sure the setting MAC (if any) matches the device's permanent MAC */
 		if (!nm_utils_hwaddr_matches (setting_mac, -1, priv->perm_hw_addr, -1)) {
-			g_set_error (error,
-			             NM_SETTING_WIRELESS_ERROR,
-			             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
-			             NM_SETTING_WIRELESS_MAC_ADDRESS);
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("connection does not match device"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_MAC_ADDRESS);
 			return FALSE;
 		}
 	} else {
@@ -1292,8 +1281,8 @@ request_scan_cb (NMDevice *device,
 	}
 
 	if (!check_scanning_allowed (self)) {
-		local = g_error_new_literal (NM_WIFI_ERROR,
-		                             NM_WIFI_ERROR_SCAN_NOT_ALLOWED,
+		local = g_error_new_literal (NM_DEVICE_ERROR,
+		                             NM_DEVICE_ERROR_NOT_ALLOWED,
 		                             "Scanning not allowed at this time");
 		dbus_g_method_return_error (context, local);
 		g_error_free (local);
@@ -1319,23 +1308,23 @@ impl_device_request_scan (NMDeviceWifi *self,
 	    || !priv->sup_iface
 	    || nm_device_get_state (device) < NM_DEVICE_STATE_DISCONNECTED
 	    || nm_device_is_activating (device)) {
-		error = g_error_new_literal (NM_WIFI_ERROR,
-		                             NM_WIFI_ERROR_SCAN_NOT_ALLOWED,
+		error = g_error_new_literal (NM_DEVICE_ERROR,
+		                             NM_DEVICE_ERROR_NOT_ALLOWED,
 		                             "Scanning not allowed while unavailable or activating");
 		goto error;
 	}
 
 	if (nm_supplicant_interface_get_scanning (priv->sup_iface)) {
-		error = g_error_new_literal (NM_WIFI_ERROR,
-		                             NM_WIFI_ERROR_SCAN_NOT_ALLOWED,
+		error = g_error_new_literal (NM_DEVICE_ERROR,
+		                             NM_DEVICE_ERROR_NOT_ALLOWED,
 		                             "Scanning not allowed while already scanning");
 		goto error;
 	}
 
 	last_scan = nm_supplicant_interface_get_last_scan_time (priv->sup_iface);
 	if (last_scan && (nm_utils_get_monotonic_timestamp_s () - last_scan) < 10) {
-		error = g_error_new_literal (NM_WIFI_ERROR,
-		                             NM_WIFI_ERROR_SCAN_NOT_ALLOWED,
+		error = g_error_new_literal (NM_DEVICE_ERROR,
+		                             NM_DEVICE_ERROR_NOT_ALLOWED,
 		                             "Scanning not allowed immediately following previous scan");
 		goto error;
 	}
@@ -3454,8 +3443,6 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (klass),
 	                                        &dbus_glib_nm_device_wifi_object_info);
-
-	dbus_g_error_domain_register (NM_WIFI_ERROR, NULL, NM_TYPE_WIFI_ERROR);
 }
 
 

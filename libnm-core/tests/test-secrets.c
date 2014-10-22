@@ -607,10 +607,10 @@ test_update_secrets_whole_connection_empty_hash (void)
 	GError *error = NULL;
 	gboolean success;
 
-	/* Test that updating secrets with an empty hash returns success */
+	/* Test that updating secrets with an empty connection hash returns success */
 
 	connection = wifi_connection_new ();
-	secrets = g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
+	secrets = g_variant_new_array (G_VARIANT_TYPE ("{sa{sv}}"), NULL, 0);
 	success = nm_connection_update_secrets (connection, NULL, secrets, &error);
 	g_assert_no_error (error);
 	g_assert (success == TRUE);
@@ -715,25 +715,29 @@ test_update_secrets_null_setting_name_with_setting_hash (void)
 
 	secrets = build_wep_secrets (wepkey);
 
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL,
+	                       "*nm_connection_update_secrets*setting_name != NULL || full_connection*");
 	success = nm_connection_update_secrets (connection, NULL, secrets, &error);
-	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_SETTING);
+	g_test_assert_expected_messages ();
+	g_assert_no_error (error);
 	g_assert (!success);
 
 	g_variant_unref (secrets);
 	g_object_unref (connection);
 }
 
-int main (int argc, char **argv)
+NMTST_DEFINE ();
+
+int
+main (int argc, char **argv)
 {
-	GError *error = NULL;
 	char *base;
 
 #if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
 #endif
 
-	if (!nm_utils_init (&error))
-		FAIL ("nm-utils-init", "failed to initialize libnm: %s", error->message);
+	nmtst_init (&argc, &argv, TRUE);
 
 	/* The tests */
 	test_need_tls_secrets_path ();

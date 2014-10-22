@@ -85,14 +85,6 @@ G_BEGIN_DECLS
 
 typedef enum NMActStageReturn NMActStageReturn;
 
-typedef enum {
-	NM_DEVICE_ERROR_CONNECTION_ACTIVATING = 0, /*< nick=ConnectionActivating >*/
-	NM_DEVICE_ERROR_CONNECTION_INVALID,        /*< nick=ConnectionInvalid >*/
-	NM_DEVICE_ERROR_NOT_ACTIVE,                /*< nick=NotActive >*/
-	NM_DEVICE_ERROR_UNSUPPORTED_DEVICE_TYPE,   /*< nick=UnsupportedDeviceType >*/
-	NM_DEVICE_ERROR_NOT_SOFTWARE,              /*< nick=NotSoftware >*/
-} NMDeviceError;
-
 struct _NMDevice {
 	GObject parent;
 };

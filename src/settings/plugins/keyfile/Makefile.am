@@ -26,7 +26,6 @@ libkeyfile_io_la_SOURCES = \
 	reader.h \
 	writer.c \
 	writer.h \
-	errors.c \
 	utils.c \
 	utils.h \
 	common.h

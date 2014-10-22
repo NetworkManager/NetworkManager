@@ -44,8 +44,6 @@ G_DEFINE_TYPE (NMDeviceInfiniband, nm_device_infiniband, NM_TYPE_DEVICE)
 
 #define NM_DEVICE_INFINIBAND_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_INFINIBAND, NMDeviceInfinibandPrivate))
 
-#define NM_INFINIBAND_ERROR (nm_infiniband_error_quark ())
-
 typedef struct {
 	int dummy;
 } NMDeviceInfinibandPrivate;
@@ -55,15 +53,6 @@ enum {
 
 	LAST_PROP
 };
-
-static GQuark
-nm_infiniband_error_quark (void)
-{
-	static GQuark quark = 0;
-	if (!quark)
-		quark = g_quark_from_static_string ("nm-infiniband-error");
-	return quark;
-}
 
 static void
 nm_device_infiniband_init (NMDeviceInfiniband * self)
@@ -202,9 +191,10 @@ complete_connection (NMDevice *device,
 		/* Make sure the setting MAC (if any) matches the device's MAC */
 		if (!nm_utils_hwaddr_matches (setting_mac, -1, hw_address, -1)) {
 			g_set_error_literal (error,
-			                     NM_SETTING_INFINIBAND_ERROR,
-			                     NM_SETTING_INFINIBAND_ERROR_INVALID_PROPERTY,
-			                     NM_SETTING_INFINIBAND_MAC_ADDRESS);
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("connection does not match device"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_INFINIBAND_SETTING_NAME, NM_SETTING_INFINIBAND_MAC_ADDRESS);
 			return FALSE;
 		}
 	} else {
@@ -295,8 +285,6 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *klass)
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (klass),
 	                                        &dbus_glib_nm_device_infiniband_object_info);
-
-	dbus_g_error_domain_register (NM_INFINIBAND_ERROR, NULL, NM_TYPE_INFINIBAND_ERROR);
 }
 
 /*************************************************************/

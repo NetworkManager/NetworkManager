@@ -101,6 +101,10 @@ test_device_added (void)
 	g_assert (device);
 	g_assert_cmpstr (nm_device_get_iface (device), ==, "eth0");
 
+	/* Try deleting the device via the ordinary NM interface, which should fail */
+	nm_device_delete (device, NULL, &error);
+	g_assert_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_NOT_SOFTWARE);
+
 	g_object_unref (client);
 	g_clear_pointer (&sinfo, nm_test_service_cleanup);
 }
@@ -1019,7 +1023,7 @@ activate_failed_cb (GObject *object,
 
 	ac = nm_client_activate_connection_finish (client, result, &error);
 	g_assert (ac == NULL);
-	g_assert_error (error, NM_OBJECT_ERROR, NM_OBJECT_ERROR_OBJECT_CREATION_FAILURE);
+	g_assert_error (error, NM_CLIENT_ERROR, NM_CLIENT_ERROR_OBJECT_CREATION_FAILED);
 	g_clear_error (&error);
 
 	g_main_loop_quit (loop);

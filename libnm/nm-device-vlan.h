@@ -36,27 +36,6 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_VLAN_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DEVICE_VLAN))
 #define NM_DEVICE_VLAN_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEVICE_VLAN, NMDeviceVlanClass))
 
-/**
- * NMDeviceVlanError:
- * @NM_DEVICE_VLAN_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_DEVICE_VLAN_ERROR_NOT_VLAN_CONNECTION: the connection was not of VLAN type
- * @NM_DEVICE_VLAN_ERROR_INVALID_VLAN_CONNECTION: the VLAN connection was invalid
- * @NM_DEVICE_VLAN_ERROR_ID_MISMATCH: the VLAN identifiers of the connection and the device mismatched
- * @NM_DEVICE_VLAN_ERROR_INTERFACE_MISMATCH: the interfaces of the connection and the device mismatched
- * @NM_DEVICE_VLAN_ERROR_MAC_MISMATCH: the MACs of the connection and the device mismatched
- */
-typedef enum {
-	NM_DEVICE_VLAN_ERROR_UNKNOWN = 0,             /*< nick=UnknownError >*/
-	NM_DEVICE_VLAN_ERROR_NOT_VLAN_CONNECTION,     /*< nick=NotVlanConnection >*/
-	NM_DEVICE_VLAN_ERROR_INVALID_VLAN_CONNECTION, /*< nick=InvalidVlanConnection >*/
-	NM_DEVICE_VLAN_ERROR_ID_MISMATCH,             /*< nick=IdMismatch >*/
-	NM_DEVICE_VLAN_ERROR_INTERFACE_MISMATCH,      /*< nick=InterfaceMismatch >*/
-	NM_DEVICE_VLAN_ERROR_MAC_MISMATCH,            /*< nick=MacMismatch >*/
-} NMDeviceVlanError;
-
-#define NM_DEVICE_VLAN_ERROR nm_device_vlan_error_quark ()
-GQuark nm_device_vlan_error_quark (void);
-
 #define NM_DEVICE_VLAN_HW_ADDRESS  "hw-address"
 #define NM_DEVICE_VLAN_CARRIER     "carrier"
 #define NM_DEVICE_VLAN_VLAN_ID     "vlan-id"

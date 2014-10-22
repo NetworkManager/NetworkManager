@@ -31,6 +31,7 @@
 #include <gnutls/pkcs12.h>
 
 #include "crypto.h"
+#include "nm-errors.h"
 
 #define SALT_LEN 8
 
@@ -44,10 +45,9 @@ crypto_init (GError **error)
 
 	if (gnutls_global_init() != 0) {
 		gnutls_global_deinit();
-		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_INIT_FAILED,
-		             "%s",
-		             _("Failed to initialize the crypto engine."));
+		g_set_error_literal (error, NM_CRYPTO_ERROR,
+		                     NM_CRYPTO_ERROR_FAILED,
+		                     _("Failed to initialize the crypto engine."));
 		return FALSE;
 	}
 
@@ -88,7 +88,7 @@ crypto_md5_hash (const char *salt,
 	err = gcry_md_open (&ctx, GCRY_MD_MD5, 0);
 	if (err) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_MD5_INIT_FAILED,
+		             NM_CRYPTO_ERROR_FAILED,
 		             _("Failed to initialize the MD5 engine: %s / %s."),
 		             gcry_strsource (err), gcry_strerror (err));
 		return FALSE;
@@ -147,7 +147,7 @@ crypto_decrypt (const char *cipher,
 		real_iv_len = 16;
 	} else {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_UNKNOWN_CIPHER,
+		             NM_CRYPTO_ERROR_UNKNOWN_CIPHER,
 		             _("Private key cipher '%s' was unknown."),
 		             cipher);
 		return NULL;
@@ -155,7 +155,7 @@ crypto_decrypt (const char *cipher,
 
 	if (iv_len < real_iv_len) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_RAW_IV_INVALID,
+		             NM_CRYPTO_ERROR_INVALID_DATA,
 		             _("Invalid IV length (must be at least %zd)."),
 		             real_iv_len);
 		return NULL;
@@ -166,7 +166,7 @@ crypto_decrypt (const char *cipher,
 	err = gcry_cipher_open (&ctx, cipher_mech, GCRY_CIPHER_MODE_CBC, 0);
 	if (err) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_CIPHER_INIT_FAILED,
+		             NM_CRYPTO_ERROR_DECRYPTION_FAILED,
 		             _("Failed to initialize the decryption cipher context: %s / %s."),
 		             gcry_strsource (err), gcry_strerror (err));
 		goto out;
@@ -175,7 +175,7 @@ crypto_decrypt (const char *cipher,
 	err = gcry_cipher_setkey (ctx, key, key_len);
 	if (err) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_CIPHER_SET_KEY_FAILED,
+		             NM_CRYPTO_ERROR_DECRYPTION_FAILED,
 		             _("Failed to set symmetric key for decryption: %s / %s."),
 		             gcry_strsource (err), gcry_strerror (err));
 		goto out;
@@ -184,7 +184,7 @@ crypto_decrypt (const char *cipher,
 	err = gcry_cipher_setiv (ctx, iv, iv_len);
 	if (err) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_CIPHER_SET_IV_FAILED,
+		             NM_CRYPTO_ERROR_DECRYPTION_FAILED,
 		             _("Failed to set IV for decryption: %s / %s."),
 		             gcry_strsource (err), gcry_strerror (err));
 		goto out;
@@ -193,7 +193,7 @@ crypto_decrypt (const char *cipher,
 	err = gcry_cipher_decrypt (ctx, output, data_len, data, data_len);
 	if (err) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
+		             NM_CRYPTO_ERROR_DECRYPTION_FAILED,
 		             _("Failed to decrypt the private key: %s / %s."),
 		             gcry_strsource (err), gcry_strerror (err));
 		goto out;
@@ -203,7 +203,7 @@ crypto_decrypt (const char *cipher,
 	/* Check if the padding at the end of the decrypted data is valid */
 	if (pad_len == 0 || pad_len > real_iv_len) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
+		             NM_CRYPTO_ERROR_DECRYPTION_FAILED,
 		             _("Failed to decrypt the private key: unexpected padding length."));
 		goto out;
 	}
@@ -214,7 +214,7 @@ crypto_decrypt (const char *cipher,
 	for (i = 1; i <= pad_len; ++i) {
 		if (output[data_len - i] != pad_len) {
 			g_set_error (error, NM_CRYPTO_ERROR,
-			             NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
+			             NM_CRYPTO_ERROR_DECRYPTION_FAILED,
 			             _("Failed to decrypt the private key."));
 			goto out;
 		}
@@ -265,7 +265,7 @@ crypto_encrypt (const char *cipher,
 		salt_len = iv_len;
 	} else {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_UNKNOWN_CIPHER,
+		             NM_CRYPTO_ERROR_UNKNOWN_CIPHER,
 		             _("Private key cipher '%s' was unknown."),
 		             cipher);
 		return NULL;
@@ -287,7 +287,7 @@ crypto_encrypt (const char *cipher,
 	err = gcry_cipher_open (&ctx, cipher_mech, GCRY_CIPHER_MODE_CBC, 0);
 	if (err) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_CIPHER_INIT_FAILED,
+		             NM_CRYPTO_ERROR_ENCRYPTION_FAILED,
 		             _("Failed to initialize the encryption cipher context: %s / %s."),
 		             gcry_strsource (err), gcry_strerror (err));
 		goto out;
@@ -296,7 +296,7 @@ crypto_encrypt (const char *cipher,
 	err = gcry_cipher_setkey (ctx, key, key_len);
 	if (err) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_CIPHER_SET_KEY_FAILED,
+		             NM_CRYPTO_ERROR_ENCRYPTION_FAILED,
 		             _("Failed to set symmetric key for encryption: %s / %s."),
 		             gcry_strsource (err), gcry_strerror (err));
 		goto out;
@@ -306,7 +306,7 @@ crypto_encrypt (const char *cipher,
 	err = gcry_cipher_setiv (ctx, iv, salt_len);
 	if (err) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_CIPHER_SET_IV_FAILED,
+		             NM_CRYPTO_ERROR_ENCRYPTION_FAILED,
 		             _("Failed to set IV for encryption: %s / %s."),
 		             gcry_strsource (err), gcry_strerror (err));
 		goto out;
@@ -315,7 +315,7 @@ crypto_encrypt (const char *cipher,
 	err = gcry_cipher_encrypt (ctx, output, output_len, padded_buf, padded_buf_len);
 	if (err) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
+		             NM_CRYPTO_ERROR_ENCRYPTION_FAILED,
 		             _("Failed to encrypt the data: %s / %s."),
 		             gcry_strsource (err), gcry_strerror (err));
 		goto out;
@@ -355,7 +355,7 @@ crypto_verify_cert (const unsigned char *data,
 	err = gnutls_x509_crt_init (&der);
 	if (err < 0) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_CERT_FORMAT_INVALID,
+		             NM_CRYPTO_ERROR_INVALID_DATA,
 		             _("Error initializing certificate data: %s"),
 		             gnutls_strerror (err));
 		return NM_CRYPTO_FILE_FORMAT_UNKNOWN;
@@ -377,7 +377,7 @@ crypto_verify_cert (const unsigned char *data,
 		return NM_CRYPTO_FILE_FORMAT_X509;
 
 	g_set_error (error, NM_CRYPTO_ERROR,
-	             NM_CRYPTO_ERR_CERT_FORMAT_INVALID,
+	             NM_CRYPTO_ERROR_INVALID_DATA,
 	             _("Couldn't decode certificate: %s"),
 	             gnutls_strerror (err));
 	return NM_CRYPTO_FILE_FORMAT_UNKNOWN;
@@ -402,7 +402,7 @@ crypto_verify_pkcs12 (const guint8 *data,
 	err = gnutls_pkcs12_init (&p12);
 	if (err < 0) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_DECODE_FAILED,
+		             NM_CRYPTO_ERROR_FAILED,
 		             _("Couldn't initialize PKCS#12 decoder: %s"),
 		             gnutls_strerror (err));
 		return FALSE;
@@ -415,7 +415,7 @@ crypto_verify_pkcs12 (const guint8 *data,
 		err = gnutls_pkcs12_import (p12, &dt, GNUTLS_X509_FMT_PEM, 0);
 		if (err < 0) {
 			g_set_error (error, NM_CRYPTO_ERROR,
-			             NM_CRYPTO_ERR_FILE_FORMAT_INVALID,
+			             NM_CRYPTO_ERROR_INVALID_DATA,
 			             _("Couldn't decode PKCS#12 file: %s"),
 			             gnutls_strerror (err));
 			goto out;
@@ -427,7 +427,7 @@ crypto_verify_pkcs12 (const guint8 *data,
 		success = TRUE;
 	else {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
+		             NM_CRYPTO_ERROR_DECRYPTION_FAILED,
 		             _("Couldn't verify PKCS#12 file: %s"),
 		             gnutls_strerror (err));
 	}
@@ -456,7 +456,7 @@ crypto_verify_pkcs8 (const guint8 *data,
 	err = gnutls_x509_privkey_init (&p8);
 	if (err < 0) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_DECODE_FAILED,
+		             NM_CRYPTO_ERROR_FAILED,
 		             _("Couldn't initialize PKCS#8 decoder: %s"),
 		             gnutls_strerror (err));
 		return FALSE;
@@ -479,7 +479,7 @@ crypto_verify_pkcs8 (const guint8 *data,
 			 */
 		} else {
 			g_set_error (error, NM_CRYPTO_ERROR,
-			             NM_CRYPTO_ERR_FILE_FORMAT_INVALID,
+			             NM_CRYPTO_ERROR_INVALID_DATA,
 			             _("Couldn't decode PKCS#8 file: %s"),
 			             gnutls_strerror (err));
 			return FALSE;

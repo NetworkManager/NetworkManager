@@ -40,25 +40,6 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_PPP_SETTING_NAME "ppp"
 
-/**
- * NMSettingPppError:
- * @NM_SETTING_PPP_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_SETTING_PPP_ERROR_INVALID_PROPERTY: the property was invalid
- * @NM_SETTING_PPP_ERROR_MISSING_PROPERTY: the property was missing and is
- * required
- * @NM_SETTING_PPP_ERROR_REQUIRE_MPPE_NOT_ALLOWED: requiring MPPE is not compatible
- * with other setting configuration parameters
- */
-typedef enum {
-	NM_SETTING_PPP_ERROR_UNKNOWN = 0,             /*< nick=UnknownError >*/
-	NM_SETTING_PPP_ERROR_INVALID_PROPERTY,        /*< nick=InvalidProperty >*/
-	NM_SETTING_PPP_ERROR_MISSING_PROPERTY,        /*< nick=MissingProperty >*/
-	NM_SETTING_PPP_ERROR_REQUIRE_MPPE_NOT_ALLOWED /*< nick=RequireMPPENotAllowed >*/
-} NMSettingPppError;
-
-#define NM_SETTING_PPP_ERROR nm_setting_ppp_error_quark ()
-GQuark nm_setting_ppp_error_quark (void);
-
 #define NM_SETTING_PPP_NOAUTH            "noauth"
 #define NM_SETTING_PPP_REFUSE_EAP        "refuse-eap"
 #define NM_SETTING_PPP_REFUSE_PAP        "refuse-pap"

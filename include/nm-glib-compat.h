@@ -150,4 +150,18 @@ __g_test_add_data_func_full (const char     *testpath,
 #define g_test_add_data_func_full __g_test_add_data_func_full
 
 
+#if !GLIB_CHECK_VERSION (2, 34, 0)
+#define G_DEFINE_QUARK(QN, q_n)               \
+GQuark                                        \
+q_n##_quark (void)                            \
+{                                             \
+	static GQuark q;                          \
+                                              \
+	if G_UNLIKELY (q == 0)                    \
+		q = g_quark_from_static_string (#QN); \
+                                              \
+	return q;                                 \
+}
+#endif
+
 #endif  /* __NM_GLIB_COMPAT_H__ */

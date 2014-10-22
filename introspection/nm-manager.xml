@@ -73,16 +73,6 @@
           The path of the active connection object representing this active connection.
         </tp:docstring>
       </arg>
-      <tp:possible-errors>
-        <tp:error name="org.freedesktop.NetworkManager.Error.UnknownConnection"/>
-        <tp:error name="org.freedesktop.NetworkManager.Error.UnknownDevice"/>
-        <tp:error name="org.freedesktop.NetworkManager.Error.ConnectionActivating">
-          <tp:docstring>Another connection is already activating or the same connection is already active.  FIXME: check if the error name is correct.  FIXME: split into 2 errors?</tp:docstring>
-        </tp:error>
-        <tp:error name="org.freedesktop.NetworkManager.Error.ConnectionInvalid">
-          <tp:docstring>The connection is invalid for this device.</tp:docstring>
-        </tp:error>
-      </tp:possible-errors>
     </method>
 
     <method name="AddAndActivateConnection">
@@ -125,13 +115,6 @@
           The path of the active connection object representing this active connection.
         </tp:docstring>
       </arg>
-      <tp:possible-errors>
-        <tp:error name="org.freedesktop.NetworkManager.Error.UnknownConnection"/>
-        <tp:error name="org.freedesktop.NetworkManager.Error.UnknownDevice"/>
-        <tp:error name="org.freedesktop.NetworkManager.Error.ConnectionInvalid">
-          <tp:docstring>The connection is invalid for this device.</tp:docstring>
-        </tp:error>
-      </tp:possible-errors>
     </method>
 
     <method name="DeactivateConnection">

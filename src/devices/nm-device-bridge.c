@@ -46,8 +46,6 @@ G_DEFINE_TYPE (NMDeviceBridge, nm_device_bridge, NM_TYPE_DEVICE)
 
 #define NM_DEVICE_BRIDGE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_BRIDGE, NMDeviceBridgePrivate))
 
-#define NM_BRIDGE_ERROR (nm_bridge_error_quark ())
-
 typedef struct {
 	int dummy;
 } NMDeviceBridgePrivate;
@@ -58,17 +56,6 @@ enum {
 
 	LAST_PROP
 };
-
-/******************************************************************/
-
-static GQuark
-nm_bridge_error_quark (void)
-{
-	static GQuark quark = 0;
-	if (!quark)
-		quark = g_quark_from_static_string ("nm-bridge-error");
-	return quark;
-}
 
 /******************************************************************/
 
@@ -481,8 +468,6 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (klass),
 	                                        &dbus_glib_nm_device_bridge_object_info);
-
-	dbus_g_error_domain_register (NM_BRIDGE_ERROR, NULL, NM_TYPE_BRIDGE_ERROR);
 }
 
 /*************************************************************/

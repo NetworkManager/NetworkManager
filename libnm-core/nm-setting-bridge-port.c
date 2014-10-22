@@ -37,23 +37,6 @@
  * optional properties that apply to bridge ports.
  **/
 
-/**
- * nm_setting_bridge_port_error_quark:
- *
- * Registers an error quark for #NMSettingBridgePort if necessary.
- *
- * Returns: the error quark used for #NMSettingBridgePort errors.
- **/
-GQuark
-nm_setting_bridge_port_error_quark (void)
-{
-	static GQuark quark;
-
-	if (G_UNLIKELY (!quark))
-		quark = g_quark_from_static_string ("nm-setting-bridge-port-error-quark");
-	return quark;
-}
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingBridgePort, nm_setting_bridge_port, NM_TYPE_SETTING,
                          _nm_register_setting (BRIDGE_PORT, 3))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_BRIDGE_PORT)
@@ -133,8 +116,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (priv->priority > BR_MAX_PORT_PRIORITY) {
 		g_set_error (error,
-		             NM_SETTING_BRIDGE_PORT_ERROR,
-		             NM_SETTING_BRIDGE_PORT_ERROR_INVALID_PROPERTY,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		             _("'%d' is not a valid value for the property (should be <= %d)"),
 		             priv->priority, BR_MAX_PORT_PRIORITY);
 		g_prefix_error (error, "%s.%s: ",
@@ -145,8 +128,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (priv->path_cost > BR_MAX_PATH_COST) {
 		g_set_error (error,
-		             NM_SETTING_BRIDGE_PORT_ERROR,
-		             NM_SETTING_BRIDGE_PORT_ERROR_INVALID_PROPERTY,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		             _("'%d' is not a valid value for the property (should be <= %d)"),
 		             priv->path_cost, BR_MAX_PATH_COST);
 		g_prefix_error (error, "%s.%s: ",
@@ -162,7 +145,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 		s_con = NM_SETTING_CONNECTION (_nm_setting_find_in_list_required (all_settings,
 		                                                                  NM_SETTING_CONNECTION_SETTING_NAME,
-		                                                                  error, NULL, NULL));
+		                                                                  error));
 		if (!s_con)
 			 return FALSE;
 
@@ -170,8 +153,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		if (   slave_type
 		    && strcmp (slave_type, NM_SETTING_BRIDGE_SETTING_NAME)) {
 			g_set_error (error,
-			             NM_SETTING_CONNECTION_ERROR,
-			             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("A connection with a '%s' setting must have the slave-type set to '%s'. Instead it is '%s'"),
 			             NM_SETTING_BRIDGE_PORT_SETTING_NAME,
 			             NM_SETTING_BRIDGE_SETTING_NAME,

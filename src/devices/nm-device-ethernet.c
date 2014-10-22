@@ -73,8 +73,6 @@ G_DEFINE_TYPE (NMDeviceEthernet, nm_device_ethernet, NM_TYPE_DEVICE)
 
 #define PPPOE_RECONNECT_DELAY 7
 
-#define NM_ETHERNET_ERROR (nm_ethernet_error_quark ())
-
 static NMSetting *device_get_setting (NMDevice *device, GType setting_type);
 
 typedef struct Supplicant {
@@ -141,15 +139,6 @@ enum {
 	LAST_PROP
 };
 
-
-static GQuark
-nm_ethernet_error_quark (void)
-{
-	static GQuark quark = 0;
-	if (!quark)
-		quark = g_quark_from_static_string ("nm-ethernet-error");
-	return quark;
-}
 
 static char *
 get_link_basename (const char *parent_path, const char *name, GError **error)
@@ -1449,9 +1438,10 @@ complete_connection (NMDevice *device,
 		/* Make sure the setting MAC (if any) matches the device's permanent MAC */
 		if (!nm_utils_hwaddr_matches (setting_mac, -1, priv->perm_hw_addr, -1)) {
 			g_set_error_literal (error,
-			                     NM_SETTING_WIRED_ERROR,
-			                     NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
-			                     NM_SETTING_WIRED_MAC_ADDRESS);
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("connection does not match device"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_MAC_ADDRESS);
 			return FALSE;
 		}
 	} else {
@@ -1743,8 +1733,6 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (klass),
 	                                        &dbus_glib_nm_device_ethernet_object_info);
-
-	dbus_g_error_domain_register (NM_ETHERNET_ERROR, NULL, NM_TYPE_ETHERNET_ERROR);
 }
 
 /*************************************************************/

@@ -542,7 +542,6 @@ save_hostname_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 
 	nm_client_save_hostname_finish (NM_CLIENT (object), result, &error);
 	if (error) {
-		g_dbus_error_strip_remote_error (error);
 		g_string_printf (nmc->return_text, _("Error: failed to set hostname: %s"),
 		                 error->message);
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
@@ -653,7 +652,6 @@ do_general (NmCli *nmc, int argc, char **argv)
 				nmc->get_client (nmc); /* create NMClient */
 				nm_client_set_logging (nmc->client, level, domains, &error);
 				if (error) {
-					g_dbus_error_strip_remote_error (error);
 					g_string_printf (nmc->return_text, _("Error: failed to set logging: %s"),
 					                 error->message);
 					nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;

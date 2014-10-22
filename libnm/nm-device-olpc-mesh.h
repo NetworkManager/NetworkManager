@@ -36,21 +36,6 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_OLPC_MESH_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DEVICE_OLPC_MESH))
 #define NM_DEVICE_OLPC_MESH_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEVICE_OLPC_MESH, NMDeviceOlpcMeshClass))
 
-/**
- * NMDeviceOlpcMeshError:
- * @NM_DEVICE_OLPC_MESH_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_DEVICE_OLPC_MESH_ERROR_NOT_OLPC_MESH_CONNECTION: the connection was not of Olpc Mesh type
- * @NM_DEVICE_OLPC_MESH_ERROR_INVALID_OLPC_MESH_CONNECTION: the Olpc Mesh connection was invalid
- */
-typedef enum {
-	NM_DEVICE_OLPC_MESH_ERROR_UNKNOWN = 0,                  /*< nick=UnknownError >*/
-	NM_DEVICE_OLPC_MESH_ERROR_NOT_OLPC_MESH_CONNECTION,     /*< nick=NotOlpcMeshConnection >*/
-	NM_DEVICE_OLPC_MESH_ERROR_INVALID_OLPC_MESH_CONNECTION, /*< nick=InvalidOlpcMeshConnection >*/
-} NMDeviceOlpcMeshError;
-
-#define NM_DEVICE_OLPC_MESH_ERROR nm_device_olpc_mesh_error_quark ()
-GQuark nm_device_olpc_mesh_error_quark (void);
-
 #define NM_DEVICE_OLPC_MESH_HW_ADDRESS     "hw-address"
 #define NM_DEVICE_OLPC_MESH_COMPANION      "companion"
 #define NM_DEVICE_OLPC_MESH_ACTIVE_CHANNEL "active-channel"

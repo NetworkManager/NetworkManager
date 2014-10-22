@@ -36,23 +36,6 @@
  * optional properties that apply to team ports.
  **/
 
-/**
- * nm_setting_team_port_error_quark:
- *
- * Registers an error quark for #NMSettingTeamPort if necessary.
- *
- * Returns: the error quark used for #NMSettingTeamPort errors.
- **/
-GQuark
-nm_setting_team_port_error_quark (void)
-{
-	static GQuark quark;
-
-	if (G_UNLIKELY (!quark))
-		quark = g_quark_from_static_string ("nm-setting-team-port-error-quark");
-	return quark;
-}
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingTeamPort, nm_setting_team_port, NM_TYPE_SETTING,
                          _nm_register_setting (TEAM_PORT, 3))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_TEAM_PORT)
@@ -105,7 +88,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 		s_con = NM_SETTING_CONNECTION (_nm_setting_find_in_list_required (all_settings,
 		                                                                  NM_SETTING_CONNECTION_SETTING_NAME,
-		                                                                  error, NULL, NULL));
+		                                                                  error));
 		if (!s_con)
 			return FALSE;
 
@@ -113,8 +96,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		if (   slave_type
 		    && strcmp (slave_type, NM_SETTING_TEAM_SETTING_NAME)) {
 			g_set_error (error,
-			             NM_SETTING_CONNECTION_ERROR,
-			             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("A connection with a '%s' setting must have the slave-type set to '%s'. Instead it is '%s'"),
 			             NM_SETTING_TEAM_PORT_SETTING_NAME,
 			             NM_SETTING_TEAM_SETTING_NAME,

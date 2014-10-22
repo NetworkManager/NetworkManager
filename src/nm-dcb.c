@@ -29,16 +29,6 @@
 #include "nm-posix-signals.h"
 #include "nm-logging.h"
 
-GQuark
-nm_dcb_error_quark (void)
-{
-	static GQuark ret = 0;
-
-	if (ret == 0)
-		ret = g_quark_from_static_string ("nm-dcb-error");
-	return ret;
-}
-
 static const char *helper_names[] = { "dcbtool", "fcoeadm" };
 
 gboolean
@@ -63,7 +53,7 @@ do_helper (const char *iface,
 
 	split = g_strsplit_set (cmdline, " ", 0);
 	if (!split) {
-		g_set_error (error, NM_DCB_ERROR, NM_DCB_ERROR_INTERNAL,
+		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
 		             "failure parsing %s command line", helper_names[which]);
 		goto out;
 	}
@@ -327,7 +317,7 @@ run_helper (char **argv, guint which, gpointer user_data, GError **error)
 		if (ignore_error == FALSE) {
 			nm_log_warn (LOGD_DCB, "'%s' failed: '%s'",
 			             cmdline, (errmsg && strlen (errmsg)) ? errmsg : outmsg);
-			g_set_error (error, NM_DCB_ERROR, NM_DCB_ERROR_HELPER_FAILED,
+			g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
 			             "Failed to run '%s'", cmdline);
 			success = FALSE;
 		}

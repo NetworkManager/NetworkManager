@@ -35,13 +35,6 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_ETHERNET_CLASS(klass)	(G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_DEVICE_ETHERNET))
 #define NM_DEVICE_ETHERNET_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_DEVICE_ETHERNET, NMDeviceEthernetClass))
 
-typedef enum
-{
-	NM_ETHERNET_ERROR_CONNECTION_NOT_WIRED = 0, /*< nick=ConnectionNotWired >*/
-	NM_ETHERNET_ERROR_CONNECTION_INVALID,       /*< nick=ConnectionInvalid >*/
-	NM_ETHERNET_ERROR_CONNECTION_INCOMPATIBLE,  /*< nick=ConnectionIncompatible >*/
-} NMEthernetError;
-
 #define NM_DEVICE_ETHERNET_PERMANENT_HW_ADDRESS "perm-hw-address"
 #define NM_DEVICE_ETHERNET_SPEED "speed"
 

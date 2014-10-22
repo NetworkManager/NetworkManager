@@ -8,9 +8,7 @@ noinst_LTLIBRARIES = libibft-io.la
 
 libibft_io_la_SOURCES = \
 	reader.c \
-	reader.h \
-	errors.c \
-	errors.h
+	reader.h
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/ \

@@ -21,6 +21,7 @@
 
 #include <config.h>
 #include <string.h>
+#include <glib/gi18n.h>
 
 #include "nm-glib-compat.h"
 
@@ -85,23 +86,6 @@ enum {
 	LAST_SIGNAL
 };
 static guint signals[LAST_SIGNAL] = { 0 };
-
-/**
- * nm_device_wifi_error_quark:
- *
- * Registers an error quark for #NMDeviceWifi if necessary.
- *
- * Returns: the error quark used for #NMDeviceWifi errors.
- **/
-GQuark
-nm_device_wifi_error_quark (void)
-{
-	static GQuark quark = 0;
-
-	if (G_UNLIKELY (quark == 0))
-		quark = g_quark_from_static_string ("nm-device-wifi-error-quark");
-	return quark;
-}
 
 /**
  * nm_device_wifi_get_hw_address:
@@ -304,12 +288,17 @@ nm_device_wifi_request_scan (NMDeviceWifi *device,
                              GCancellable *cancellable,
                              GError **error)
 {
+	gboolean ret;
+
 	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), FALSE);
 
-	return nmdbus_device_wifi_call_request_scan_sync (NM_DEVICE_WIFI_GET_PRIVATE (device)->proxy,
-	                                                  g_variant_new_array (G_VARIANT_TYPE ("{sv}"),
-	                                                                       NULL, 0),
-	                                                  cancellable, error);
+	ret = nmdbus_device_wifi_call_request_scan_sync (NM_DEVICE_WIFI_GET_PRIVATE (device)->proxy,
+	                                                 g_variant_new_array (G_VARIANT_TYPE ("{sv}"),
+	                                                                      NULL, 0),
+	                                                 cancellable, error);
+	if (error && *error)
+		g_dbus_error_strip_remote_error (*error);
+	return ret;
 }
 
 static void
@@ -326,8 +315,10 @@ request_scan_cb (GObject *source,
 	if (nmdbus_device_wifi_call_request_scan_finish (NMDBUS_DEVICE_WIFI (source),
 	                                                 result, &error))
 		g_simple_async_result_set_op_res_gboolean (info->simple, TRUE);
-	else
+	else {
+		g_dbus_error_strip_remote_error (error);
 		g_simple_async_result_take_error (info->simple, error);
+	}
 
 	g_simple_async_result_complete (info->simple);
 	g_object_unref (info->simple);
@@ -477,28 +468,18 @@ has_proto (NMSettingWirelessSecurity *s_wsec, const char *proto)
 static gboolean
 connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
-	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
-	const char *ctype;
 	const char *hwaddr, *setting_hwaddr;
 	NMDeviceWifiCapabilities wifi_caps;
 	const char *key_mgmt;
 
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
-
-	ctype = nm_setting_connection_get_connection_type (s_con);
-	if (strcmp (ctype, NM_SETTING_WIRELESS_SETTING_NAME) != 0) {
-		g_set_error (error, NM_DEVICE_WIFI_ERROR, NM_DEVICE_WIFI_ERROR_NOT_WIFI_CONNECTION,
-		             "The connection was not a Wi-Fi connection.");
+	if (!NM_DEVICE_CLASS (nm_device_wifi_parent_class)->connection_compatible (device, connection, error))
 		return FALSE;
-	}
 
-	s_wifi = nm_connection_get_setting_wireless (connection);
-	if (!s_wifi) {
-		g_set_error (error, NM_DEVICE_WIFI_ERROR, NM_DEVICE_WIFI_ERROR_INVALID_WIFI_CONNECTION,
-		             "The connection was not a valid Wi-Fi connection.");
+	if (!nm_connection_is_type (connection, NM_SETTING_WIRELESS_SETTING_NAME)) {
+		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+		                     _("The connection was not a Wi-Fi connection."));
 		return FALSE;
 	}
 
@@ -506,20 +487,20 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	hwaddr = nm_device_wifi_get_permanent_hw_address (NM_DEVICE_WIFI (device));
 	if (hwaddr) {
 		if (!nm_utils_hwaddr_valid (hwaddr, ETH_ALEN)) {
-			g_set_error (error, NM_DEVICE_WIFI_ERROR, NM_DEVICE_WIFI_ERROR_INVALID_DEVICE_MAC,
-			             "Invalid device MAC address.");
+			g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+			                     _("Invalid device MAC address."));
 			return FALSE;
 		}
+		s_wifi = nm_connection_get_setting_wireless (connection);
 		setting_hwaddr = nm_setting_wireless_get_mac_address (s_wifi);
 		if (setting_hwaddr && !nm_utils_hwaddr_matches (setting_hwaddr, -1, hwaddr, -1)) {
-			g_set_error (error, NM_DEVICE_WIFI_ERROR, NM_DEVICE_WIFI_ERROR_MAC_MISMATCH,
-			             "The MACs of the device and the connection didn't match.");
+			g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+			                     _("The MACs of the device and the connection didn't match."));
 			return FALSE;
 		}
 	}
 
 	/* Check device capabilities; we assume all devices can do WEP at least */
-	wifi_caps = nm_device_wifi_get_capabilities (NM_DEVICE_WIFI (device));
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	if (s_wsec) {
@@ -529,23 +510,25 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 		    || !g_strcmp0 (key_mgmt, "wpa-psk")
 		    || !g_strcmp0 (key_mgmt, "wpa-eap")) {
 
+			wifi_caps = nm_device_wifi_get_capabilities (NM_DEVICE_WIFI (device));
+
 			/* Is device only WEP capable? */
 			if (!(wifi_caps & WPA_CAPS)) {
-				g_set_error (error, NM_DEVICE_WIFI_ERROR, NM_DEVICE_WIFI_ERROR_MISSING_DEVICE_WPA_CAPS,
-				             "The device missed WPA capabilities required by the connection.");
+				g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+				                     _("The device is lacking WPA capabilities required by the connection."));
 				return FALSE;
 			}
 
 			/* Make sure WPA2/RSN-only connections don't get chosen for WPA-only cards */
 			if (has_proto (s_wsec, "rsn") && !has_proto (s_wsec, "wpa") && !(wifi_caps & RSN_CAPS)) {
-				g_set_error (error, NM_DEVICE_WIFI_ERROR, NM_DEVICE_WIFI_ERROR_MISSING_DEVICE_RSN_CAPS,
-				             "The device missed WPA2/RSN capabilities required by the connection.");
+				g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+				                     _("The device is lacking WPA2/RSN capabilities required by the connection."));
 				return FALSE;
 			}
 		}
 	}
 
-	return NM_DEVICE_CLASS (nm_device_wifi_parent_class)->connection_compatible (device, connection, error);
+	return TRUE;
 }
 
 static GType

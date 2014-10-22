@@ -37,22 +37,6 @@ G_BEGIN_DECLS
 #define NM_IS_OBJECT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_OBJECT))
 #define NM_OBJECT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_OBJECT, NMObjectClass))
 
-/**
- * NMObjectError:
- * @NM_OBJECT_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_OBJECT_ERROR_OBJECT_CREATION_FAILURE: an error ocured while creating an #NMObject
- *
- * Describes errors that may result from operations involving a #NMObject.
- *
- **/
-typedef enum {
-	NM_OBJECT_ERROR_UNKNOWN = 0,
-	NM_OBJECT_ERROR_OBJECT_CREATION_FAILURE,
-} NMObjectError;
-
-#define NM_OBJECT_ERROR nm_object_error_quark ()
-GQuark nm_object_error_quark (void);
-
 #define NM_OBJECT_PATH "path"
 #define NM_OBJECT_DBUS_CONNECTION "dbus-connection"
 
@@ -63,17 +47,15 @@ struct _NMObject {
 typedef struct {
 	GObjectClass parent;
 
-	/* Signals */
-	/* The "object-creation-failed" signal is PRIVATE for libnm and
+	/* Methods */
+	void (*init_dbus) (NMObject *object);
+
+	/* The "object-creation-failed" method is PRIVATE for libnm and
 	 * is not meant for any external usage.  It indicates that an error
 	 * occured during creation of an object.
 	 */
 	void (*object_creation_failed) (NMObject *master_object,
-	                                GError *error,
-	                                char *failed_path);
-
-	/* Methods */
-	void (*init_dbus) (NMObject *object);
+	                                const char *failed_path);
 
 	/*< private >*/
 	gpointer padding[8];

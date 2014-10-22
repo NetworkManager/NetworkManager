@@ -37,23 +37,6 @@
  * necessary for connection to VLAN interfaces.
  **/
 
-/**
- * nm_setting_vlan_error_quark:
- *
- * Registers an error quark for #NMSettingVlan if necessary.
- *
- * Returns: the error quark used for #NMSettingVlan errors.
- **/
-GQuark
-nm_setting_vlan_error_quark (void)
-{
-	static GQuark quark;
-
-	if (G_UNLIKELY (!quark))
-		quark = g_quark_from_static_string ("nm-setting-vlan-error-quark");
-	return quark;
-}
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingVlan, nm_setting_vlan, NM_TYPE_SETTING,
                          _nm_register_setting (VLAN, 1))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_VLAN)
@@ -524,8 +507,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 				if (master && g_strcmp0 (priv->parent, master) != 0) {
 					g_set_error (error,
-					             NM_SETTING_VLAN_ERROR,
-					             NM_SETTING_VLAN_ERROR_INVALID_PARENT,
+					             NM_CONNECTION_ERROR,
+					             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 					             _("'%s' value doesn't match '%s=%s'"),
 					             priv->parent, NM_SETTING_CONNECTION_MASTER, master);
 					g_prefix_error (error, "%s.%s: ", NM_SETTING_VLAN_SETTING_NAME, NM_SETTING_VLAN_PARENT);
@@ -535,8 +518,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		} else if (!nm_utils_iface_valid_name (priv->parent)) {
 			/* parent must be either a UUID or an interface name */
 			g_set_error (error,
-			             NM_SETTING_VLAN_ERROR,
-			             NM_SETTING_VLAN_ERROR_INVALID_PROPERTY,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("'%s' is neither an UUID nor an interface name"),
 			             priv->parent);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_VLAN_SETTING_NAME, NM_SETTING_VLAN_PARENT);
@@ -549,8 +532,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		if (   all_settings
 		    && (!s_wired || !nm_setting_wired_get_mac_address (s_wired))) {
 			g_set_error (error,
-			             NM_SETTING_VLAN_ERROR,
-			             NM_SETTING_VLAN_ERROR_MISSING_PROPERTY,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_MISSING_PROPERTY,
 			             _("property is not specified and neither is '%s:%s'"),
 			             NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_MAC_ADDRESS);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_VLAN_SETTING_NAME, NM_SETTING_VLAN_PARENT);
@@ -562,8 +545,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	                    NM_VLAN_FLAG_GVRP |
 	                    NM_VLAN_FLAG_LOOSE_BINDING)) {
 		g_set_error_literal (error,
-		                     NM_SETTING_VLAN_ERROR,
-		                     NM_SETTING_VLAN_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("flags are invalid"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_VLAN_SETTING_NAME, NM_SETTING_VLAN_FLAGS);
 		return FALSE;

@@ -36,23 +36,6 @@
  * properties of ADSL connections.
  */
 
-/**
- * nm_setting_adsl_error_quark:
- *
- * Registers an error quark for #NMSettingAdsl if necessary.
- *
- * Returns: the error quark used for #NMSettingAdsl errors.
- **/
-GQuark
-nm_setting_adsl_error_quark (void)
-{
-	static GQuark quark;
-
-	if (G_UNLIKELY (!quark))
-		quark = g_quark_from_static_string ("nm-setting-adsl-error-quark");
-	return quark;
-}
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingAdsl, nm_setting_adsl, NM_TYPE_SETTING,
                          _nm_register_setting (ADSL, 1))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_ADSL)
@@ -200,15 +183,15 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (!priv->username) {
 		g_set_error_literal (error,
-		                     NM_SETTING_ADSL_ERROR,
-		                     NM_SETTING_ADSL_ERROR_MISSING_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
 		                     _("property is missing"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_ADSL_SETTING_NAME, NM_SETTING_ADSL_USERNAME);
 		return FALSE;
 	} else if (!strlen (priv->username)) {
 		g_set_error_literal (error,
-		                     NM_SETTING_ADSL_ERROR,
-		                     NM_SETTING_ADSL_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property is empty"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_ADSL_SETTING_NAME, NM_SETTING_ADSL_USERNAME);
 		return FALSE;
@@ -216,8 +199,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (priv->password && !strlen (priv->password)) {
 		g_set_error_literal (error,
-		                     NM_SETTING_ADSL_ERROR,
-		                     NM_SETTING_ADSL_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property is empty"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_ADSL_SETTING_NAME, NM_SETTING_ADSL_PASSWORD);
 		return FALSE;
@@ -228,8 +211,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	        && strcmp (priv->protocol, NM_SETTING_ADSL_PROTOCOL_PPPOE)
 	        && strcmp (priv->protocol, NM_SETTING_ADSL_PROTOCOL_IPOATM))){
 		g_set_error (error,
-		             NM_SETTING_ADSL_ERROR,
-		             NM_SETTING_ADSL_ERROR_INVALID_PROPERTY,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		             _("'%s' is not a valid value for the property"),
 		             priv->protocol ? priv->protocol : "(null)");
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_ADSL_SETTING_NAME, NM_SETTING_ADSL_PROTOCOL);
@@ -240,8 +223,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	    && (   strcmp (priv->encapsulation, NM_SETTING_ADSL_ENCAPSULATION_VCMUX)
 	        && strcmp (priv->encapsulation, NM_SETTING_ADSL_ENCAPSULATION_LLC) )) {
 		g_set_error (error,
-		             NM_SETTING_ADSL_ERROR,
-		             NM_SETTING_ADSL_ERROR_INVALID_PROPERTY,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		             _("'%s' is not a valid value for the property"),
 		             priv->encapsulation);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_ADSL_SETTING_NAME, NM_SETTING_ADSL_ENCAPSULATION);

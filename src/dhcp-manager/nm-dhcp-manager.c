@@ -44,17 +44,6 @@
 #include "nm-glib-compat.h"
 #include "NetworkManagerUtils.h"
 
-GQuark
-nm_dhcp_manager_error_quark (void)
-{
-    static GQuark ret = 0;
-
-    if (ret == 0)
-        ret = g_quark_from_static_string ("nm_dhcp_manager_error");
-
-    return ret;
-}
-
 #define NM_DHCP_CLIENT_DBUS_IFACE   "org.freedesktop.nm_dhcp_client"
 
 #define DHCP_TIMEOUT 45 /* default DHCP timeout, in seconds */
@@ -298,7 +287,7 @@ get_client_type (const char *client, GError **error)
 			return NM_TYPE_DHCP_DHCPCD;
 		else {
 			g_set_error_literal (error,
-			                     NM_DHCP_MANAGER_ERROR, NM_DHCP_MANAGER_ERROR_BAD_CLIENT,
+			                     NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
 			                     _("no usable DHCP client could be found."));
 			return G_TYPE_INVALID;
 		}
@@ -307,7 +296,7 @@ get_client_type (const char *client, GError **error)
 	if (!strcmp (client, "dhclient")) {
 		if (!use_dhclient) {
 			g_set_error_literal (error,
-			                     NM_DHCP_MANAGER_ERROR, NM_DHCP_MANAGER_ERROR_BAD_CLIENT,
+			                     NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
 			                     _("'dhclient' could not be found or was disabled."));
 			return G_TYPE_INVALID;
 		}
@@ -317,7 +306,7 @@ get_client_type (const char *client, GError **error)
 	if (!strcmp (client, "dhcpcd")) {
 		if (!use_dhcpcd) {
 			g_set_error_literal (error,
-			                     NM_DHCP_MANAGER_ERROR, NM_DHCP_MANAGER_ERROR_BAD_CLIENT,
+			                     NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
 			                     _("'dhcpcd' could not be found or was disabled."));
 			return G_TYPE_INVALID;
 		}
@@ -325,7 +314,7 @@ get_client_type (const char *client, GError **error)
 	}
 
 	g_set_error (error,
-	             NM_DHCP_MANAGER_ERROR, NM_DHCP_MANAGER_ERROR_BAD_CLIENT,
+	             NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
 	             _("unsupported DHCP client '%s'"), client);
 	return G_TYPE_INVALID;
 }

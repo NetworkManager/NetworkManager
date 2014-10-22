@@ -278,7 +278,7 @@ read_ip4_address (shvarFile *ifcfg,
 		*out_addr = ip4_addr;
 		success = TRUE;
 	} else {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Invalid %s IP4 address '%s'", tag, value);
 	}
 	g_free (value);
@@ -300,7 +300,7 @@ parse_ip6_address (const char *value,
 
 	*out_addr = in6addr_any;
 	if (inet_pton (AF_INET6, value, &ip6_addr) <= 0) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Invalid IP6 address '%s'", value);
 		return FALSE;
 	}
@@ -416,7 +416,7 @@ read_full_ip4_address (shvarFile *ifcfg,
 		errno = 0;
 		prefix = strtol (value, NULL, 10);
 		if (errno || prefix <= 0 || prefix > 32) {
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid IP4 prefix '%s'", value);
 			g_free (value);
 			goto done;
@@ -447,7 +447,7 @@ read_full_ip4_address (shvarFile *ifcfg,
 
 	/* Validate the prefix */
 	if (nm_ip4_address_get_prefix (addr) > 32) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Missing or invalid IP4 prefix '%d'",
 		             nm_ip4_address_get_prefix (addr));
 		goto done;
@@ -523,7 +523,7 @@ read_one_ip4_route (shvarFile *ifcfg,
 	/* Validate the prefix */
 	if (  !nm_ip4_route_get_prefix (route)
 	    || nm_ip4_route_get_prefix (route) > 32) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Missing or invalid IP4 prefix '%d'",
 		             nm_ip4_route_get_prefix (route));
 		goto out;
@@ -537,7 +537,7 @@ read_one_ip4_route (shvarFile *ifcfg,
 		errno = 0;
 		metric = strtol (value, NULL, 10);
 		if (errno || metric < 0) {
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid IP4 route metric '%s'", value);
 			g_free (value);
 			goto out;
@@ -617,8 +617,8 @@ read_route_file_legacy (const char *filename, NMSettingIP4Config *s_ip4, GError 
 			g_regex_match (regex_to2, *iter, 0, &match_info);
 			if (!g_match_info_matches (match_info)) {
 				g_match_info_free (match_info);
-				g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-					     "Missing IP4 route destination address in record: '%s'", *iter);
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+				             "Missing IP4 route destination address in record: '%s'", *iter);
 				goto error;
 			}
 		}
@@ -626,8 +626,8 @@ read_route_file_legacy (const char *filename, NMSettingIP4Config *s_ip4, GError 
 		if (!strcmp (dest, "default"))
 			strcpy (dest, "0.0.0.0");
 		if (inet_pton (AF_INET, dest, &ip4_addr) != 1) {
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-				     "Invalid IP4 route destination address '%s'", dest);
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			             "Invalid IP4 route destination address '%s'", dest);
 			g_free (dest);
 			goto error;
 		}
@@ -642,8 +642,8 @@ read_route_file_legacy (const char *filename, NMSettingIP4Config *s_ip4, GError 
 			errno = 0;
 			prefix_int = strtol (prefix, NULL, 10);
 			if (errno || prefix_int <= 0 || prefix_int > 32) {
-				g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-					     "Invalid IP4 route destination prefix '%s'", prefix);
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+				             "Invalid IP4 route destination prefix '%s'", prefix);
 				g_free (prefix);
 				goto error;
 			}
@@ -656,7 +656,7 @@ read_route_file_legacy (const char *filename, NMSettingIP4Config *s_ip4, GError 
 		if (g_match_info_matches (match_info)) {
 			char *next_hop = g_match_info_fetch (match_info, 1);
 			if (inet_pton (AF_INET, next_hop, &ip4_addr) != 1) {
-				g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				             "Invalid IP4 route gateway address '%s'",
 				             next_hop);
 				g_match_info_free (match_info);
@@ -680,7 +680,7 @@ read_route_file_legacy (const char *filename, NMSettingIP4Config *s_ip4, GError 
 			metric_int = strtol (metric, NULL, 10);
 			if (errno || metric_int < 0) {
 				g_match_info_free (match_info);
-				g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				             "Invalid IP4 route metric '%s'", metric);
 				g_free (metric);
 				goto error;
@@ -735,7 +735,7 @@ parse_full_ip6_address (shvarFile *ifcfg,
 	/* Split the address and prefix */
 	list = g_strsplit_set (addr_str, "/", 2);
 	if (g_strv_length (list) < 1) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Invalid IP6 address '%s'", addr_str);
 		goto error;
 	}
@@ -748,7 +748,7 @@ parse_full_ip6_address (shvarFile *ifcfg,
 	if (!parse_ip6_address (ip_val, &tmp, error))
 		goto error;
 	if (IN6_IS_ADDR_UNSPECIFIED (&tmp)) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Invalid IP6 address '%s'", ip_val);
 		goto error;
 	}
@@ -761,7 +761,7 @@ parse_full_ip6_address (shvarFile *ifcfg,
 		errno = 0;
 		prefix = strtol (prefix_val, NULL, 10);
 		if (errno || prefix <= 0 || prefix > 128) {
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid IP6 prefix '%s'", prefix_val);
 			goto error;
 		}
@@ -873,8 +873,8 @@ read_route6_file (const char *filename, NMSettingIP6Config *s_ip6, GError **erro
 			g_regex_match (regex_to2, *iter, 0, &match_info);
 			if (!g_match_info_matches (match_info)) {
 				g_match_info_free (match_info);
-				g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-					     "Missing IP6 route destination address in record: '%s'", *iter);
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+				             "Missing IP6 route destination address in record: '%s'", *iter);
 				goto error;
 			}
 		}
@@ -887,8 +887,8 @@ read_route6_file (const char *filename, NMSettingIP6Config *s_ip6, GError **erro
 			continue;
 		}
 		if (inet_pton (AF_INET6, dest, &ip6_addr) != 1) {
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-				     "Invalid IP6 route destination address '%s'", dest);
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			             "Invalid IP6 route destination address '%s'", dest);
 			g_free (dest);
 			goto error;
 		}
@@ -903,8 +903,8 @@ read_route6_file (const char *filename, NMSettingIP6Config *s_ip6, GError **erro
 			errno = 0;
 			prefix_int = strtol (prefix, NULL, 10);
 			if (errno || prefix_int <= 0 || prefix_int > 128) {
-				g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-					     "Invalid IP6 route destination prefix '%s'", prefix);
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+				             "Invalid IP6 route destination prefix '%s'", prefix);
 				g_free (prefix);
 				goto error;
 			}
@@ -917,7 +917,7 @@ read_route6_file (const char *filename, NMSettingIP6Config *s_ip6, GError **erro
 		if (g_match_info_matches (match_info)) {
 			char *next_hop = g_match_info_fetch (match_info, 1);
 			if (inet_pton (AF_INET6, next_hop, &ip6_addr) != 1) {
-				g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				             "Invalid IPv6 route nexthop address '%s'",
 				             next_hop);
 				g_match_info_free (match_info);
@@ -941,7 +941,7 @@ read_route6_file (const char *filename, NMSettingIP6Config *s_ip6, GError **erro
 			metric_int = strtol (metric, NULL, 10);
 			if (errno || metric_int < 0 || metric_int > G_MAXUINT32) {
 				g_match_info_free (match_info);
-				g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				             "Invalid IP6 route metric '%s'", metric);
 				g_free (metric);
 				goto error;
@@ -1040,7 +1040,7 @@ make_ip4_setting (shvarFile *ifcfg,
 		              NULL);
 		return NM_SETTING (s_ip4);
 	} else {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Unknown BOOTPROTO '%s'", value);
 		g_free (value);
 		goto done;
@@ -1158,7 +1158,7 @@ make_ip4_setting (shvarFile *ifcfg,
 	/* Static routes  - route-<name> file */
 	route_path = utils_get_route_path (ifcfg->fileName);
 	if (!route_path) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Could not get route file path for '%s'", ifcfg->fileName);
 		goto done;
 	}
@@ -1527,7 +1527,7 @@ make_ip6_setting (shvarFile *ifcfg,
 	/* Read static routes from route6-<interface> file */
 	route6_path = utils_get_route6_path (ifcfg->fileName);
 	if (!route6_path) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Could not get route6 file path for '%s'", ifcfg->fileName);
 		goto error;
 	}
@@ -1648,7 +1648,7 @@ read_dcb_app (shvarFile *ifcfg,
 		if (success)
 			success = (priority >= 0 && priority <= 7);
 		if (!success) {
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid %s value '%s' (expected 0 - 7)",
 			             tmp, val);
 		}
@@ -1697,7 +1697,8 @@ read_dcb_bool_array (shvarFile *ifcfg,
 	val = g_strstrip (val);
 	if (strlen (val) != 8) {
 		PARSE_WARNING ("%s value '%s' must be 8 characters long", prop, val);
-		g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0, "boolean array must be 8 characters");
+		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		                     "boolean array must be 8 characters");
 		goto out;
 	}
 
@@ -1705,7 +1706,8 @@ read_dcb_bool_array (shvarFile *ifcfg,
 	for (i = 0; i < 8; i++) {
 		if (val[i] != '0' && val[i] != '1') {
 			PARSE_WARNING ("invalid %s value '%s': not all 0s and 1s", prop, val);
-			g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0, "invalid boolean digit");
+			g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			                     "invalid boolean digit");
 			goto out;
 		}
 		set_func (s_dcb, i, (val[i] == '1'));
@@ -1746,7 +1748,8 @@ read_dcb_uint_array (shvarFile *ifcfg,
 	val = g_strstrip (val);
 	if (strlen (val) != 8) {
 		PARSE_WARNING ("%s value '%s' must be 8 characters long", prop, val);
-		g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0, "uint array must be 8 characters");
+		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		                     "uint array must be 8 characters");
 		goto out;
 	}
 
@@ -1759,7 +1762,8 @@ read_dcb_uint_array (shvarFile *ifcfg,
 		else {
 			PARSE_WARNING ("invalid %s value '%s': not 0 - 7%s",
 			               prop, val, f_allowed ? " or 'f'" : "");
-			g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0, "invalid uint digit");
+			g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			                     "invalid uint digit");
 			goto out;
 		}
 	}
@@ -1800,14 +1804,16 @@ read_dcb_percent_array (shvarFile *ifcfg,
 	split = g_strsplit_set (val, ",", 0);
 	if (!split || (g_strv_length (split) != 8)) {
 		PARSE_WARNING ("invalid %s percentage list value '%s'", prop, val);
-		g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0, "percent array must be 8 elements");
+		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		                     "percent array must be 8 elements");
 		goto out;
 	}
 
 	for (iter = split, i = 0; iter && *iter; iter++, i++) {
 		if (!get_int (*iter, &tmp) || tmp < 0 || tmp > 100) {
 			PARSE_WARNING ("invalid %s percentage value '%s'", prop, *iter);
-			g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0, "invalid percent element");
+			g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			                     "invalid percent element");
 			goto out;
 		}
 		set_func (s_dcb, i, (guint) tmp);
@@ -1816,7 +1822,8 @@ read_dcb_percent_array (shvarFile *ifcfg,
 
 	if (sum_pct && (sum != 100)) {
 		PARSE_WARNING ("%s percentages do not equal 100%%", prop);
-		g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0, "invalid percentage sum");
+		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		                     "invalid percentage sum");
 		goto out;
 	}
 
@@ -1865,7 +1872,8 @@ make_dcb_setting (shvarFile *ifcfg,
 				g_object_set (G_OBJECT (s_dcb), NM_SETTING_DCB_APP_FCOE_MODE, val, NULL);
 			else {
 				PARSE_WARNING ("invalid FCoE mode '%s'", val);
-				g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0, "invalid FCoE mode");
+				g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+				                     "invalid FCoE mode");
 				g_free (val);
 				g_object_unref (s_dcb);
 				return FALSE;
@@ -2016,7 +2024,7 @@ add_one_wep_key (shvarFile *ifcfg,
 
 			while (*p) {
 				if (!g_ascii_isxdigit (*p)) {
-					g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+					g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 					             "Invalid hexadecimal WEP key.");
 					goto out;
 				}
@@ -2030,7 +2038,7 @@ add_one_wep_key (shvarFile *ifcfg,
 
 			while (*p) {
 				if (!g_ascii_isprint ((int) (*p))) {
-					g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+					g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 					             "Invalid ASCII WEP key.");
 					goto out;
 				}
@@ -2052,7 +2060,8 @@ add_one_wep_key (shvarFile *ifcfg,
 		g_free (key);
 		success = TRUE;
 	} else
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0, "Invalid WEP key length.");
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		             "Invalid WEP key length.");
 
 out:
 	g_free (value);
@@ -2137,7 +2146,7 @@ make_wep_setting (shvarFile *ifcfg,
 			default_key_idx--;  /* convert to [0...3] */
 			g_object_set (s_wsec, NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX, default_key_idx, NULL);
 		} else {
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid default WEP key '%s'", value);
 	 		g_free (value);
 			goto error;
@@ -2178,7 +2187,7 @@ make_wep_setting (shvarFile *ifcfg,
 		} else if (!strcmp (lcase, "restricted")) {
 			g_object_set (s_wsec, NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "shared", NULL);
 		} else {
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid WEP authentication algorithm '%s'",
 			             lcase);
 			g_free (lcase);
@@ -2200,7 +2209,7 @@ make_wep_setting (shvarFile *ifcfg,
 
 		auth_alg = nm_setting_wireless_security_get_auth_alg (s_wsec);
 		if (auth_alg && !strcmp (auth_alg, "shared")) {
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "WEP Shared Key authentication is invalid for "
 			             "unencrypted connections.");
 			goto error;
@@ -2328,7 +2337,7 @@ parse_wpa_psk (shvarFile *ifcfg,
 		/* Verify the hex PSK; 64 digits */
 		while (*p) {
 			if (!g_ascii_isxdigit (*p++)) {
-				g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				             "Invalid WPA_PSK (contains non-hexadecimal characters)");
 				goto out;
 			}
@@ -2346,7 +2355,7 @@ parse_wpa_psk (shvarFile *ifcfg,
 
 		/* Length check */
 		if (strlen (hashed) < 8 || strlen (hashed) > 63) {
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid WPA_PSK (passphrases must be between "
 			             "8 and 63 characters long (inclusive))");
 			g_free (hashed);
@@ -2356,7 +2365,7 @@ parse_wpa_psk (shvarFile *ifcfg,
 	}
 
 	if (!hashed) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Invalid WPA_PSK (doesn't look like a passphrase or hex key)");
 		goto out;
 	}
@@ -2379,7 +2388,7 @@ eap_simple_reader (const char *eap_method,
 
 	value = svGetValue (ifcfg, "IEEE_8021X_IDENTITY", FALSE);
 	if (!value) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Missing IEEE_8021X_IDENTITY for EAP method '%s'.",
 		             eap_method);
 		return FALSE;
@@ -2399,7 +2408,7 @@ eap_simple_reader (const char *eap_method,
 		}
 
 		if (!value) {
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Missing IEEE_8021X_PASSWORD for EAP method '%s'.",
 			             eap_method);
 			return FALSE;
@@ -2460,7 +2469,7 @@ eap_tls_reader (const char *eap_method,
 
 	value = svGetValue (ifcfg, "IEEE_8021X_IDENTITY", FALSE);
 	if (!value) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Missing IEEE_8021X_IDENTITY for EAP method '%s'.",
 		             eap_method);
 		return FALSE;
@@ -2507,7 +2516,7 @@ eap_tls_reader (const char *eap_method,
 		}
 
 		if (!privkey_password) {
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Missing %s for EAP method '%s'.",
 			             pk_pw_key,
 			             eap_method);
@@ -2518,7 +2527,7 @@ eap_tls_reader (const char *eap_method,
 	/* The private key itself */
 	privkey = svGetValue (ifcfg, pk_key, FALSE);
 	if (!privkey) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Missing %s for EAP method '%s'.",
 		             pk_key,
 		             eap_method);
@@ -2555,7 +2564,7 @@ eap_tls_reader (const char *eap_method,
 	    || privkey_format == NM_SETTING_802_1X_CK_FORMAT_X509) {
 		client_cert = svGetValue (ifcfg, cli_cert_key, FALSE);
 		if (!client_cert) {
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Missing %s for EAP method '%s'.",
 			             cli_cert_key,
 			             eap_method);
@@ -2631,7 +2640,7 @@ eap_peap_reader (const char *eap_method,
 		else if (!strcmp (peapver, "1"))
 			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE1_PEAPVER, "1", NULL);
 		else {
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Unknown IEEE_8021X_PEAP_VERSION value '%s'",
 			             peapver);
 			goto done;
@@ -2647,7 +2656,7 @@ eap_peap_reader (const char *eap_method,
 
 	inner_auth = svGetValue (ifcfg, "IEEE_8021X_INNER_AUTH_METHODS", FALSE);
 	if (!inner_auth) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Missing IEEE_8021X_INNER_AUTH_METHODS.");
 		goto done;
 	}
@@ -2667,7 +2676,7 @@ eap_peap_reader (const char *eap_method,
 			if (!eap_tls_reader (*iter, ifcfg, keys, s_8021x, TRUE, error))
 				goto done;
 		} else {
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Unknown IEEE_8021X_INNER_AUTH_METHOD '%s'.",
 			             *iter);
 			goto done;
@@ -2680,7 +2689,7 @@ eap_peap_reader (const char *eap_method,
 	}
 
 	if (!nm_setting_802_1x_get_phase2_auth (s_8021x)) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "No valid IEEE_8021X_INNER_AUTH_METHODS found.");
 		goto done;
 	}
@@ -2734,7 +2743,7 @@ eap_ttls_reader (const char *eap_method,
 
 	tmp = svGetValue (ifcfg, "IEEE_8021X_INNER_AUTH_METHODS", FALSE);
 	if (!tmp) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Missing IEEE_8021X_INNER_AUTH_METHODS.");
 		goto done;
 	}
@@ -2766,7 +2775,7 @@ eap_ttls_reader (const char *eap_method,
 				goto done;
 			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTHEAP, (*iter + STRLEN ("eap-")), NULL);
 		} else {
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Unknown IEEE_8021X_INNER_AUTH_METHOD '%s'.",
 			             *iter);
 			goto done;
@@ -2834,7 +2843,7 @@ eap_fast_reader (const char *eap_method,
 	g_object_set (s_8021x, NM_SETTING_802_1X_PHASE1_FAST_PROVISIONING, pac_prov_str, NULL);
 
 	if (!pac_file && !(allow_unauth || allow_auth)) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "IEEE_8021X_PAC_FILE not provided and EAP-FAST automatic PAC provisioning disabled.");
 		goto done;
 	}
@@ -2845,7 +2854,7 @@ eap_fast_reader (const char *eap_method,
 
 	inner_auth = svGetValue (ifcfg, "IEEE_8021X_INNER_AUTH_METHODS", FALSE);
 	if (!inner_auth) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Missing IEEE_8021X_INNER_AUTH_METHODS.");
 		goto done;
 	}
@@ -2861,7 +2870,7 @@ eap_fast_reader (const char *eap_method,
 			if (!eap_simple_reader (*iter, ifcfg, keys, s_8021x, TRUE, error))
 				goto done;
 		} else {
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Unknown IEEE_8021X_INNER_AUTH_METHOD '%s'.",
 			             *iter);
 			goto done;
@@ -2874,7 +2883,7 @@ eap_fast_reader (const char *eap_method,
 	}
 
 	if (!nm_setting_802_1x_get_phase2_auth (s_8021x)) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "No valid IEEE_8021X_INNER_AUTH_METHODS found.");
 		goto done;
 	}
@@ -2955,7 +2964,7 @@ fill_8021x (shvarFile *ifcfg,
 
 	value = svGetValue (ifcfg, "IEEE_8021X_EAP_METHODS", FALSE);
 	if (!value) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Missing IEEE_8021X_EAP_METHODS for key management '%s'",
 		             key_mgmt);
 		return NULL;
@@ -3009,7 +3018,7 @@ fill_8021x (shvarFile *ifcfg,
 	}
 
 	if (nm_setting_802_1x_get_num_eap_methods (s_8021x) == 0) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "No valid EAP methods found in IEEE_8021X_EAP_METHODS.");
 		goto error;
 	}
@@ -3119,7 +3128,7 @@ make_wpa_setting (shvarFile *ifcfg,
 	} else if (!strcmp (value, "WPA-EAP") || !strcmp (value, "IEEE8021X")) {
 		/* Adhoc mode is mutually exclusive with any 802.1x-based authentication */
 		if (adhoc) {
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Ad-Hoc mode cannot be used with KEY_MGMT type '%s'", value);
 			goto error;
 		}
@@ -3132,7 +3141,7 @@ make_wpa_setting (shvarFile *ifcfg,
 		g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, lower, NULL);
 		g_free (lower);
 	} else {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Unknown wireless KEY_MGMT type '%s'", value);
 		goto error;
 	}
@@ -3191,7 +3200,7 @@ make_leap_setting (shvarFile *ifcfg,
 
 	value = svGetValue (ifcfg, "IEEE_8021X_IDENTITY", FALSE);
 	if (!value || !strlen (value)) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Missing LEAP identity");
 		goto error;
 	}
@@ -3320,7 +3329,7 @@ make_wireless_setting (shvarFile *ifcfg,
 		} else if ((value_len > 2) && (strncmp (value, "0x", 2) == 0)) {
 			/* Hex representation */
 			if (value_len % 2) {
-				g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				             "Invalid SSID '%s' size (looks like hex but length not multiple of 2)",
 				             value);
 				g_free (value);
@@ -3330,7 +3339,7 @@ make_wireless_setting (shvarFile *ifcfg,
 			p = value + 2;
 			while (*p) {
 				if (!g_ascii_isxdigit (*p)) {
-					g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+					g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 					             "Invalid SSID '%s' character (looks like hex SSID but '%c' isn't a hex digit)",
 					             value, *p);
 					g_free (value);
@@ -3347,7 +3356,7 @@ make_wireless_setting (shvarFile *ifcfg,
 		}
 
 		if (ssid_len > 32 || ssid_len == 0) {
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid SSID '%s' (size %zu not between 1 and 32 inclusive)",
 			             value, ssid_len);
 			g_free (value);
@@ -3373,7 +3382,7 @@ make_wireless_setting (shvarFile *ifcfg,
 		} else if (!strcmp (lcase, "managed") || !strcmp (lcase, "auto")) {
 			mode = "infrastructure";
 		} else {
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid mode '%s' (not 'Ad-Hoc', 'Managed', or 'Auto')",
 			             lcase);
 			g_free (lcase);
@@ -3396,7 +3405,7 @@ make_wireless_setting (shvarFile *ifcfg,
 		errno = 0;
 		chan = nm_utils_ascii_str_to_int64 (value, 10, 1, 196, 0);
 		if (errno || (chan == 0)) {
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid wireless channel '%s'", value);
 			g_free (value);
 			goto error;
@@ -3409,20 +3418,20 @@ make_wireless_setting (shvarFile *ifcfg,
 	if (value) {
 		if (!strcmp (value, "a")) {
 			if (chan && chan <= 14) {
-				g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				             "Band '%s' invalid for channel %u", value, (guint32) chan);
 				g_free (value);
 				goto error;
 			}
 		} else if (!strcmp (value, "bg")) {
 			if (chan && chan > 14) {
-				g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				             "Band '%s' invalid for channel %u", value, (guint32) chan);
 				g_free (value);
 				goto error;
 			}
 		} else {
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid wireless band '%s'", value);
 			g_free (value);
 			goto error;
@@ -3443,7 +3452,7 @@ make_wireless_setting (shvarFile *ifcfg,
 		errno = 0;
 		mtu = strtol (value, NULL, 10);
 		if (errno || mtu < 0 || mtu > 50000) {
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid wireless MTU '%s'", value);
 			g_free (value);
 			goto error;
@@ -3525,7 +3534,7 @@ wireless_connection_from_ifcfg (const char *file,
 	                                       printable_ssid, NULL);
 	g_free (printable_ssid);
 	if (!con_setting) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Failed to create connection setting.");
 		g_object_unref (connection);
 		return NULL;
@@ -3663,7 +3672,7 @@ make_wired_setting (shvarFile *ifcfg,
 			if (!*s_8021x)
 				goto error;
 		} else {
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Unknown wired KEY_MGMT type '%s'", value);
 			goto error;
 		}
@@ -3695,7 +3704,7 @@ wired_connection_from_ifcfg (const char *file,
 
 	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_WIRED_SETTING_NAME, NULL, NULL);
 	if (!con_setting) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Failed to create connection setting.");
 		g_object_unref (connection);
 		return NULL;
@@ -3776,7 +3785,7 @@ parse_infiniband_p_key (shvarFile *ifcfg,
 	g_free (ifname);
 
 	if (!ret) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Failed to create InfiniBand setting.");
 	}
 	return ret;
@@ -3852,7 +3861,7 @@ infiniband_connection_from_ifcfg (const char *file,
 
 	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_INFINIBAND_SETTING_NAME, NULL, NULL);
 	if (!con_setting) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Failed to create connection setting.");
 		g_object_unref (connection);
 		return NULL;
@@ -3908,7 +3917,8 @@ make_bond_setting (shvarFile *ifcfg,
 
 	value = svGetValue (ifcfg, "DEVICE", FALSE);
 	if (!value || !strlen (value)) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0, "mandatory DEVICE keyword missing");
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		             "mandatory DEVICE keyword missing");
 		goto error;
 	}
 	g_free (value);
@@ -3962,7 +3972,7 @@ bond_connection_from_ifcfg (const char *file,
 
 	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_BOND_SETTING_NAME, NULL, _("Bond"));
 	if (!con_setting) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Failed to create connection setting.");
 		g_object_unref (connection);
 		return NULL;
@@ -4007,7 +4017,8 @@ read_team_config (shvarFile *ifcfg, const char *key, GError **error)
 	 */
 	l = strlen (value);
 	if (l > 20000) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0, "%s too long (size %zd)", key, l);
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		             "%s too long (size %zd)", key, l);
 		g_free (value);
 		return NULL;
 	}
@@ -4028,7 +4039,8 @@ make_team_setting (shvarFile *ifcfg,
 
 	value = svGetValue (ifcfg, "DEVICE", FALSE);
 	if (!value || !strlen (value)) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0, "mandatory DEVICE keyword missing");
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		             "mandatory DEVICE keyword missing");
 		goto error;
 	}
 	g_free (value);
@@ -4066,7 +4078,7 @@ team_connection_from_ifcfg (const char *file,
 
 	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_TEAM_SETTING_NAME, NULL, _("Team"));
 	if (!con_setting) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Failed to create connection setting.");
 		g_object_unref (connection);
 		return NULL;
@@ -4178,7 +4190,8 @@ make_bridge_setting (shvarFile *ifcfg,
 
 	value = svGetValue (ifcfg, "DEVICE", FALSE);
 	if (!value || !strlen (value)) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0, "mandatory DEVICE keyword missing");
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		             "mandatory DEVICE keyword missing");
 		goto error;
 	}
 	g_free (value);
@@ -4250,7 +4263,7 @@ bridge_connection_from_ifcfg (const char *file,
 
 	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_BRIDGE_SETTING_NAME, NULL, _("Bridge"));
 	if (!con_setting) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Failed to create connection setting.");
 		g_object_unref (connection);
 		return NULL;
@@ -4424,7 +4437,8 @@ make_vlan_setting (shvarFile *ifcfg,
 		errno = 0;
 		vlan_id = (gint) g_ascii_strtoll (value, NULL, 10);
 		if (vlan_id < 0 || vlan_id > 4096 || errno) {
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0, "Invalid VLAN_ID '%s'", value);
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			             "Invalid VLAN_ID '%s'", value);
 			g_free (value);
 			return NULL;
 		}
@@ -4434,7 +4448,7 @@ make_vlan_setting (shvarFile *ifcfg,
 	/* Need DEVICE if we don't have a separate VLAN_ID property */
 	iface_name = svGetValue (ifcfg, "DEVICE", FALSE);
 	if (!iface_name && vlan_id < 0) {
-		g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		                     "Missing DEVICE property; cannot determine VLAN ID.");
 		return NULL;
 	}
@@ -4471,7 +4485,7 @@ make_vlan_setting (shvarFile *ifcfg,
 			 */
 			vlan_id = (gint) g_ascii_strtoll (p, &end, 10);
 			if (vlan_id < 0 || vlan_id > 4095 || end == p || *end) {
-				g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				             "Failed to determine VLAN ID from DEVICE '%s'",
 				             iface_name);
 				goto error;
@@ -4480,14 +4494,14 @@ make_vlan_setting (shvarFile *ifcfg,
 	}
 
 	if (vlan_id < 0) {
-		g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		                     "Failed to determine VLAN ID from DEVICE or VLAN_ID.");
 		goto error;
 	}
 	g_object_set (s_vlan, NM_SETTING_VLAN_ID, vlan_id, NULL);
 
 	if (parent == NULL) {
-		g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		                     "Failed to determine VLAN parent from DEVICE or PHYSDEV");
 		goto error;
 	}
@@ -4537,8 +4551,8 @@ vlan_connection_from_ifcfg (const char *file,
 
 	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_VLAN_SETTING_NAME, NULL, "Vlan");
 	if (!con_setting) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-			     "Failed to create connection setting.");
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		             "Failed to create connection setting.");
 		g_object_unref (connection);
 		return NULL;
 	}
@@ -4706,7 +4720,7 @@ connection_from_file (const char *filename,
 
 	ifcfg_name = utils_get_ifcfg_name (filename, TRUE);
 	if (!ifcfg_name) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Ignoring connection '%s' because it's not an ifcfg file.", filename);
 		return NULL;
 	}
@@ -4729,7 +4743,7 @@ connection_from_file (const char *filename,
 	if (bootproto && !g_ascii_strcasecmp (bootproto, "ibft")) {
 		if (out_ignore_error)
 			*out_ignore_error = TRUE;
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Ignoring iBFT configuration");
 		g_free (bootproto);
 		goto done;
@@ -4754,7 +4768,7 @@ connection_from_file (const char *filename,
 
 		device = svGetValue (parsed, "DEVICE", FALSE);
 		if (!device) {
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "File '%s' had neither TYPE nor DEVICE keys.", filename);
 			goto done;
 		}
@@ -4762,7 +4776,7 @@ connection_from_file (const char *filename,
 		if (!strcmp (device, "lo")) {
 			if (out_ignore_error)
 				*out_ignore_error = TRUE;
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Ignoring loopback device config.");
 			g_free (device);
 			goto done;
@@ -4796,7 +4810,7 @@ connection_from_file (const char *filename,
 
 	if (svTrueValue (parsed, "BONDING_MASTER", FALSE) &&
 	    strcasecmp (type, TYPE_BOND)) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "BONDING_MASTER=yes key only allowed in TYPE=bond connections");
 		goto done;
 	}

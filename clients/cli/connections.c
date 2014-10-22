@@ -1856,7 +1856,6 @@ activate_connection_cb (GObject *client, GAsyncResult *result, gpointer user_dat
 	active = nm_client_activate_connection_finish (NM_CLIENT (client), result, &error);
 
 	if (error) {
-		g_dbus_error_strip_remote_error (error);
 		g_string_printf (nmc->return_text, _("Error: Connection activation failed: %s"),
 		                 error->message);
 		g_error_free (error);
@@ -4958,7 +4957,6 @@ add_connection_cb (GObject *client,
 
 	connection = nm_client_add_connection_finish (NM_CLIENT (client), result, &error);
 	if (error) {
-		g_dbus_error_strip_remote_error (error);
 		g_string_printf (nmc->return_text,
 		                 _("Error: Failed to add '%s' connection: %s"),
 		                 info->con_name, error->message);
@@ -7461,7 +7459,6 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					g_cond_wait (&nmc_editor_cond, &nmc_editor_mutex);
 
 				if (nmc_editor_error) {
-					g_dbus_error_strip_remote_error (nmc_editor_error);
 					g_print (_("Error: Failed to save '%s' (%s) connection: %s\n"),
 					         nm_connection_get_id (connection),
 					         nm_connection_get_uuid (connection),
@@ -7549,7 +7546,6 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				g_cond_wait (&nmc_editor_cond, &nmc_editor_mutex);
 
 			if (nmc_editor_error) {
-				g_dbus_error_strip_remote_error (nmc_editor_error);
 				g_print (_("Error: Failed to activate '%s' (%s) connection: %s\n"),
 				         nm_connection_get_id (connection),
 				         nm_connection_get_uuid (connection),
@@ -8003,7 +7999,6 @@ modify_connection_cb (GObject *connection,
 
 	if (!nm_remote_connection_commit_changes_finish (NM_REMOTE_CONNECTION (connection),
 	                                                 result, &error)) {
-		g_dbus_error_strip_remote_error (error);
 		g_string_printf (nmc->return_text,
 		                 _("Error: Failed to modify connection '%s': %s"),
 		                 nm_connection_get_id (NM_CONNECTION (connection)),
@@ -8216,7 +8211,6 @@ delete_cb (GObject *con, GAsyncResult *result, gpointer user_data)
 	GError *error = NULL;
 
 	if (!nm_remote_connection_delete_finish (NM_REMOTE_CONNECTION (con), result, &error)) {
-		g_dbus_error_strip_remote_error (error);
 		g_string_printf (info->nmc->return_text, _("Error: Connection deletion failed: %s"),
 		                 error->message);
 		g_error_free (error);
@@ -8341,7 +8335,6 @@ do_connection_reload (NmCli *nmc, int argc, char **argv)
 	}
 
 	if (!nm_client_reload_connections (nmc->client, NULL, &error)) {
-		g_dbus_error_strip_remote_error (error);
 		g_string_printf (nmc->return_text, _("Error: failed to reload connections: %s."),
 		                 error->message);
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
@@ -8381,7 +8374,6 @@ do_connection_load (NmCli *nmc, int argc, char **argv)
 	nm_client_load_connections (nmc->client, filenames, &failures, NULL, &error);
 	g_free (filenames);
 	if (error) {
-		g_dbus_error_strip_remote_error (error);
 		g_string_printf (nmc->return_text, _("Error: failed to load connection: %s."),
 		                 error->message);
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;

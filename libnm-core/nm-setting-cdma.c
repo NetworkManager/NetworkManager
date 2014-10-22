@@ -36,24 +36,6 @@
  * networks, including those using CDMA2000/EVDO technology.
  */
 
-/**
- * nm_setting_cdma_error_quark:
- *
- * Registers an error quark for #NMSettingCdma if necessary.
- *
- * Returns: the error quark used for #NMSettingCdma errors.
- **/
-GQuark
-nm_setting_cdma_error_quark (void)
-{
-	static GQuark quark;
-
-	if (G_UNLIKELY (!quark))
-		quark = g_quark_from_static_string ("nm-setting-cdma-error-quark");
-	return quark;
-}
-
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingCdma, nm_setting_cdma, NM_TYPE_SETTING,
                          _nm_register_setting (CDMA, 1))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_CDMA)
@@ -153,15 +135,15 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (!priv->number) {
 		g_set_error_literal (error,
-		                     NM_SETTING_CDMA_ERROR,
-		                     NM_SETTING_CDMA_ERROR_MISSING_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
 		                     _("property is missing"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_CDMA_SETTING_NAME, NM_SETTING_CDMA_NUMBER);
 		return FALSE;
 	} else if (!strlen (priv->number)) {
 		g_set_error_literal (error,
-		                     NM_SETTING_CDMA_ERROR,
-		                     NM_SETTING_CDMA_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property is empty'"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_CDMA_SETTING_NAME, NM_SETTING_CDMA_NUMBER);
 		return FALSE;
@@ -169,8 +151,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (priv->username && !strlen (priv->username)) {
 		g_set_error_literal (error,
-		                     NM_SETTING_CDMA_ERROR,
-		                     NM_SETTING_CDMA_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property is empty"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_CDMA_SETTING_NAME, NM_SETTING_CDMA_USERNAME);
 		return FALSE;
@@ -178,8 +160,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (priv->password && !strlen (priv->password)) {
 		g_set_error_literal (error,
-		                     NM_SETTING_CDMA_ERROR,
-		                     NM_SETTING_CDMA_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property is empty"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_CDMA_SETTING_NAME, NM_SETTING_CDMA_PASSWORD);
 		return FALSE;

@@ -417,17 +417,6 @@ update_wired_setting_from_if_block(NMConnection *connection,
 	nm_connection_add_setting(connection, NM_SETTING(s_wired));
 }
 
-static GQuark
-eni_plugin_error_quark() {
-	static GQuark error_quark = 0;
-
-	if(!error_quark) {
-		error_quark = g_quark_from_static_string ("eni-plugin-error-quark");
-	}
-
-	return error_quark;
-}
-
 static void
 ifupdown_ip4_add_dns (NMSettingIP4Config *s_ip4, const char *dns)
 {
@@ -480,7 +469,7 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 		/* Address */
 		address_v = ifparser_getkey (block, "address");
 		if (!address_v || !inet_pton (AF_INET, address_v, &tmp_addr)) {
-			g_set_error (error, eni_plugin_error_quark (), 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Missing IPv4 address '%s'",
 			             address_v ? address_v : "(none)");
 			goto error;
@@ -492,12 +481,12 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 			if (strlen (netmask_v) < 7) {
 				netmask_int = atoi (netmask_v);
 				if (netmask_int > 32) {
-					g_set_error (error, eni_plugin_error_quark (), 0,
+					g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 								"Invalid IPv4 netmask '%s'", netmask_v);
 					goto error;
 				}
 			} else if (!inet_pton (AF_INET, netmask_v, &tmp_mask)) {
-				g_set_error (error, eni_plugin_error_quark (), 0,
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 						   "Invalid IPv4 netmask '%s'", netmask_v);
 				goto error;
 			} else {
@@ -510,7 +499,7 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 		if (!gateway_v)
 			gateway_v = address_v;  /* dcbw: whaaa?? */
 		if (!inet_pton (AF_INET, gateway_v, &tmp_gw)) {
-			g_set_error (error, eni_plugin_error_quark (), 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 					   "Invalid IPv4 gateway '%s'", gateway_v);
 			goto error;
 		}
@@ -615,7 +604,7 @@ update_ip6_setting_from_if_block(NMConnection *connection,
 		/* Address */
 		address_v = ifparser_getkey(block, "address");
 		if (!address_v || !inet_pton (AF_INET6, address_v, &tmp_addr)) {
-			g_set_error (error, eni_plugin_error_quark (), 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Missing IPv6 address '%s'",
 			             address_v ? address_v : "(none)");
 			goto error;
@@ -631,7 +620,7 @@ update_ip6_setting_from_if_block(NMConnection *connection,
 		if (!gateway_v)
 			gateway_v = address_v;  /* dcbw: whaaa?? */
 		if (!inet_pton (AF_INET6, gateway_v, &tmp_gw)) {
-			g_set_error (error, eni_plugin_error_quark (), 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 					   "Invalid IPv6 gateway '%s'", gateway_v);
 			goto error;
 		}

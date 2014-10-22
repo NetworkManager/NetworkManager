@@ -40,25 +40,6 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_VLAN_SETTING_NAME "vlan"
 
-/**
- * NMSettingVlanError:
- * @NM_SETTING_VLAN_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_SETTING_VLAN_ERROR_INVALID_PROPERTY: the property was invalid
- * @NM_SETTING_VLAN_ERROR_MISSING_PROPERTY: the property was missing and is
- *   required
- * @NM_SETTING_VLAN_ERROR_INVALID_PARENT: the VLAN parent was specified
- *   inconsistently
- */
-typedef enum {
-	NM_SETTING_VLAN_ERROR_UNKNOWN = 0,      /*< nick=Unknown >*/
-	NM_SETTING_VLAN_ERROR_INVALID_PROPERTY, /*< nick=InvalidProperty >*/
-	NM_SETTING_VLAN_ERROR_MISSING_PROPERTY, /*< nick=MissingProperty >*/
-	NM_SETTING_VLAN_ERROR_INVALID_PARENT    /*< nick=InvalidParent >*/
-} NMSettingVlanError;
-
-#define NM_SETTING_VLAN_ERROR nm_setting_vlan_error_quark ()
-GQuark nm_setting_vlan_error_quark (void);
-
 #define NM_SETTING_VLAN_PARENT               "parent"
 #define NM_SETTING_VLAN_ID                   "id"
 #define NM_SETTING_VLAN_FLAGS                "flags"

@@ -197,11 +197,8 @@ update_connection_settings_commit_cb (NMSettingsConnection *orig, GError *error,
 	 * an error here.
 	 */
 	if (error) {
-		nm_log_warn (LOGD_SETTINGS, "%s: '%s' / '%s' invalid: %d",
-		             __func__,
-		             error ? g_type_name (nm_setting_lookup_type_by_quark (error->domain)) : "(none)",
-		             (error && error->message) ? error->message : "(none)",
-		             error ? error->code : -1);
+		nm_log_warn (LOGD_SETTINGS, "%s: connection invalid: %s",
+		             __func__, error->message);
 		g_clear_error (&error);
 
 		nm_settings_connection_signal_remove (orig);

@@ -163,15 +163,12 @@ nm_sources = \
 	settings/nm-secret-agent.h \
 	settings/nm-settings-connection.c \
 	settings/nm-settings-connection.h \
-	settings/nm-settings-error.c \
-	settings/nm-settings-error.h \
 	settings/nm-settings.c \
 	settings/nm-settings.h \
 	settings/nm-system-config-interface.c \
 	settings/nm-system-config-interface.h \
 	\
 	settings/plugins/keyfile/common.h \
-	settings/plugins/keyfile/errors.c \
 	settings/plugins/keyfile/nm-keyfile-connection.c \
 	settings/plugins/keyfile/nm-keyfile-connection.h \
 	settings/plugins/keyfile/plugin.c \
@@ -279,7 +276,7 @@ endif
 
 
 GLIB_GENERATED = nm-enum-types.h nm-enum-types.c
-GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM
+GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM --fhead '\#include <nm-core-enum-types.h>\n'
 GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
 nm_enum_types_sources = $(nm_sources)
 

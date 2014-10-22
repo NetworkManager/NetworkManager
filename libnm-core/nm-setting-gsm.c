@@ -37,24 +37,6 @@
  * networks, including those using GPRS/EDGE and UMTS/HSPA technology.
  */
 
-/**
- * nm_setting_gsm_error_quark:
- *
- * Registers an error quark for #NMSettingGsm if necessary.
- *
- * Returns: the error quark used for #NMSettingGsm errors.
- **/
-GQuark
-nm_setting_gsm_error_quark (void)
-{
-	static GQuark quark;
-
-	if (G_UNLIKELY (!quark))
-		quark = g_quark_from_static_string ("nm-setting-gsm-error-quark");
-	return quark;
-}
-
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingGsm, nm_setting_gsm, NM_TYPE_SETTING,
                          _nm_register_setting (GSM, 1))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_GSM)
@@ -237,8 +219,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (priv->number && !priv->number[0]) {
 		g_set_error_literal (error,
-		                     NM_SETTING_GSM_ERROR,
-		                     NM_SETTING_GSM_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property is empty"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_GSM_SETTING_NAME, NM_SETTING_GSM_NUMBER);
 		return FALSE;
@@ -250,8 +232,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 		if (apn_len < 1 || apn_len > 64) {
 			g_set_error (error,
-			             NM_SETTING_GSM_ERROR,
-			             NM_SETTING_GSM_ERROR_INVALID_PROPERTY,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("property value '%s' is empty or too long (>64)"),
 			             priv->apn);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_GSM_SETTING_NAME, NM_SETTING_GSM_APN);
@@ -282,8 +264,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			    && (priv->apn[i] != '_')
 			    && (priv->apn[i] != '-')) {
 				g_set_error (error,
-				             NM_SETTING_GSM_ERROR,
-				             NM_SETTING_GSM_ERROR_INVALID_PROPERTY,
+				             NM_CONNECTION_ERROR,
+				             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 				             _("'%s' contains invalid char(s) (use [A-Za-z._-])"),
 				             priv->apn);
 				g_prefix_error (error, "%s.%s: ", NM_SETTING_GSM_SETTING_NAME, NM_SETTING_GSM_APN);
@@ -294,8 +276,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (priv->username && !strlen (priv->username)) {
 		g_set_error_literal (error,
-		                     NM_SETTING_GSM_ERROR,
-		                     NM_SETTING_GSM_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property is empty"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_GSM_SETTING_NAME, NM_SETTING_GSM_USERNAME);
 		return FALSE;
@@ -303,8 +285,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (priv->password && !strlen (priv->password)) {
 		g_set_error_literal (error,
-		                     NM_SETTING_GSM_ERROR,
-		                     NM_SETTING_GSM_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property is empty"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_GSM_SETTING_NAME, NM_SETTING_GSM_USERNAME);
 		return FALSE;
@@ -317,8 +299,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		/* Accept both 5 and 6 digit MCC/MNC codes */
 		if ((nid_len < 5) || (nid_len > 6)) {
 			g_set_error (error,
-			             NM_SETTING_GSM_ERROR,
-			             NM_SETTING_GSM_ERROR_INVALID_PROPERTY,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("'%s' length is invalid (should be 5 or 6 digits)"),
 			             priv->network_id);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_GSM_SETTING_NAME, NM_SETTING_GSM_NETWORK_ID);
@@ -328,8 +310,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		for (i = 0; i < nid_len; i++) {
 			if (!g_ascii_isdigit (priv->network_id[i])) {
 				g_set_error (error,
-				             NM_SETTING_GSM_ERROR,
-				             NM_SETTING_GSM_ERROR_INVALID_PROPERTY,
+				             NM_CONNECTION_ERROR,
+				             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 				             _("'%s' is not a number"),
 				             priv->network_id);
 				g_prefix_error (error, "%s.%s: ", NM_SETTING_GSM_SETTING_NAME, NM_SETTING_GSM_NETWORK_ID);

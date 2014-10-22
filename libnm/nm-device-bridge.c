@@ -20,6 +20,7 @@
 
 #include <config.h>
 #include <string.h>
+#include <glib/gi18n.h>
 
 #include "nm-glib-compat.h"
 
@@ -50,23 +51,6 @@ enum {
 
 	LAST_PROP
 };
-
-/**
- * nm_device_bridge_error_quark:
- *
- * Registers an error quark for #NMDeviceBridge if necessary.
- *
- * Returns: the error quark used for #NMDeviceBridge errors.
- **/
-GQuark
-nm_device_bridge_error_quark (void)
-{
-	static GQuark quark = 0;
-
-	if (G_UNLIKELY (quark == 0))
-		quark = g_quark_from_static_string ("nm-device-bridge-error-quark");
-	return quark;
-}
 
 /**
  * nm_device_bridge_get_hw_address:
@@ -122,38 +106,18 @@ nm_device_bridge_get_slaves (NMDeviceBridge *device)
 static gboolean
 connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
-	NMSettingConnection *s_con;
-	NMSettingBridge *s_bridge;
-	const char *ctype, *dev_iface_name, *bridge_iface_name;
-
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
-
-	ctype = nm_setting_connection_get_connection_type (s_con);
-	if (strcmp (ctype, NM_SETTING_BRIDGE_SETTING_NAME) != 0) {
-		g_set_error (error, NM_DEVICE_BRIDGE_ERROR, NM_DEVICE_BRIDGE_ERROR_NOT_BRIDGE_CONNECTION,
-		             "The connection was not a bridge connection.");
+	if (!NM_DEVICE_CLASS (nm_device_bridge_parent_class)->connection_compatible (device, connection, error))
 		return FALSE;
-	}
 
-	s_bridge = nm_connection_get_setting_bridge (connection);
-	if (!s_bridge) {
-		g_set_error (error, NM_DEVICE_BRIDGE_ERROR, NM_DEVICE_BRIDGE_ERROR_INVALID_BRIDGE_CONNECTION,
-		             "The connection was not a valid bridge connection.");
-		return FALSE;
-	}
-
-	dev_iface_name = nm_device_get_iface (device);
-	bridge_iface_name = nm_setting_connection_get_interface_name (s_con);
-	if (g_strcmp0 (dev_iface_name, bridge_iface_name) != 0) {
-		g_set_error (error, NM_DEVICE_BRIDGE_ERROR, NM_DEVICE_BRIDGE_ERROR_INTERFACE_MISMATCH,
-		             "The interfaces of the device and the connection didn't match.");
+	if (!nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME)) {
+		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+		                     _("The connection was not a bridge connection."));
 		return FALSE;
 	}
 
 	/* FIXME: check ports? */
 
-	return NM_DEVICE_CLASS (nm_device_bridge_parent_class)->connection_compatible (device, connection, error);
+	return TRUE;
 }
 
 static GType

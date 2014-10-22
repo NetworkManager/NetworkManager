@@ -38,23 +38,6 @@
  * properties related to IPv4 addressing, routing, and Domain Name Service
  **/
 
-/**
- * nm_setting_ip4_config_error_quark:
- *
- * Registers an error quark for #NMSettingIP4Config if necessary.
- *
- * Returns: the error quark used for #NMSettingIP4Config errors.
- **/
-GQuark
-nm_setting_ip4_config_error_quark (void)
-{
-	static GQuark quark;
-
-	if (G_UNLIKELY (!quark))
-		quark = g_quark_from_static_string ("nm-setting-ip4-config-error-quark");
-	return quark;
-}
-
 G_DEFINE_BOXED_TYPE (NMIP4Address, nm_ip4_address, nm_ip4_address_dup, nm_ip4_address_unref)
 G_DEFINE_BOXED_TYPE (NMIP4Route, nm_ip4_route, nm_ip4_route_dup, nm_ip4_route_unref)
 
@@ -892,8 +875,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (!priv->method) {
 		g_set_error_literal (error,
-		                     NM_SETTING_IP4_CONFIG_ERROR,
-		                     NM_SETTING_IP4_CONFIG_ERROR_MISSING_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
 		                     _("property is missing"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_SETTING_IP4_CONFIG_METHOD);
 		return FALSE;
@@ -902,8 +885,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	if (!strcmp (priv->method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
 		if (!priv->addresses) {
 			g_set_error (error,
-			             NM_SETTING_IP4_CONFIG_ERROR,
-			             NM_SETTING_IP4_CONFIG_ERROR_MISSING_PROPERTY,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_MISSING_PROPERTY,
 			             _("this property cannot be empty for '%s=%s'"),
 			             NM_SETTING_IP4_CONFIG_METHOD, priv->method);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_SETTING_IP4_CONFIG_ADDRESSES);
@@ -914,8 +897,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	           || !strcmp (priv->method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)) {
 		if (priv->dns) {
 			g_set_error (error,
-			             NM_SETTING_IP4_CONFIG_ERROR,
-			             NM_SETTING_IP4_CONFIG_ERROR_NOT_ALLOWED_FOR_METHOD,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("this property is not allowed for '%s=%s'"),
 			             NM_SETTING_IP4_CONFIG_METHOD, priv->method);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_SETTING_IP4_CONFIG_DNS);
@@ -924,8 +907,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 		if (priv->dns_search) {
 			g_set_error (error,
-			             NM_SETTING_IP4_CONFIG_ERROR,
-			             NM_SETTING_IP4_CONFIG_ERROR_NOT_ALLOWED_FOR_METHOD,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("this property is not allowed for '%s=%s'"),
 			             NM_SETTING_IP4_CONFIG_METHOD, priv->method);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_SETTING_IP4_CONFIG_DNS_SEARCH);
@@ -936,8 +919,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		if (strcmp (priv->method, NM_SETTING_IP4_CONFIG_METHOD_SHARED) != 0) {
 			if (priv->addresses) {
 				g_set_error (error,
-				             NM_SETTING_IP4_CONFIG_ERROR,
-				             NM_SETTING_IP4_CONFIG_ERROR_NOT_ALLOWED_FOR_METHOD,
+				             NM_CONNECTION_ERROR,
+				             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 				             _("this property is not allowed for '%s=%s'"),
 				             NM_SETTING_IP4_CONFIG_METHOD, priv->method);
 				g_prefix_error (error, "%s.%s: ", NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_SETTING_IP4_CONFIG_ADDRESSES);
@@ -948,8 +931,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		/* nothing to do */
 	} else {
 		g_set_error_literal (error,
-		                     NM_SETTING_IP4_CONFIG_ERROR,
-		                     NM_SETTING_IP4_CONFIG_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property is invalid"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_SETTING_IP4_CONFIG_METHOD);
 		return FALSE;
@@ -957,8 +940,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (priv->dhcp_client_id && !strlen (priv->dhcp_client_id)) {
 		g_set_error_literal (error,
-		                     NM_SETTING_IP4_CONFIG_ERROR,
-		                     NM_SETTING_IP4_CONFIG_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property is empty"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID);
 		return FALSE;
@@ -966,8 +949,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (priv->dhcp_hostname && !strlen (priv->dhcp_hostname)) {
 		g_set_error_literal (error,
-		                     NM_SETTING_IP4_CONFIG_ERROR,
-		                     NM_SETTING_IP4_CONFIG_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property is empty"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME);
 		return FALSE;
@@ -983,8 +966,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 		if (!nm_ip4_address_get_address (addr)) {
 			g_set_error (error,
-			             NM_SETTING_IP4_CONFIG_ERROR,
-			             NM_SETTING_IP4_CONFIG_ERROR_INVALID_PROPERTY,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("%d. IPv4 address is invalid"),
 			             i+1);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_SETTING_IP4_CONFIG_ADDRESSES);
@@ -993,8 +976,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 		if (!prefix || prefix > 32) {
 			g_set_error (error,
-			             NM_SETTING_IP4_CONFIG_ERROR,
-			             NM_SETTING_IP4_CONFIG_ERROR_INVALID_PROPERTY,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("%d. IPv4 address has invalid prefix"),
 			             i+1);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_SETTING_IP4_CONFIG_ADDRESSES);
@@ -1003,8 +986,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 		if (!verify_label (label)) {
 			g_set_error (error,
-			             NM_SETTING_IP4_CONFIG_ERROR,
-			             NM_SETTING_IP4_CONFIG_ERROR_INVALID_PROPERTY,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("%d. IPv4 address has invalid label '%s'"),
 			             i+1, label);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP4_CONFIG_SETTING_NAME, "address-labels");
@@ -1014,8 +997,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (iter || l_iter) {
 		g_set_error (error,
-		             NM_SETTING_IP4_CONFIG_ERROR,
-		             NM_SETTING_IP4_CONFIG_ERROR_INVALID_PROPERTY,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		             _("IPv4 address / label count mismatch (%d vs %d)"),
 		             g_slist_length (priv->addresses),
 		             g_slist_length (priv->address_labels));
@@ -1030,8 +1013,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 		if (!nm_ip4_route_get_dest (route)) {
 			g_set_error (error,
-			             NM_SETTING_IP4_CONFIG_ERROR,
-			             NM_SETTING_IP4_CONFIG_ERROR_INVALID_PROPERTY,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("%d. route is invalid"),
 			             i+1);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_SETTING_IP4_CONFIG_ROUTES);
@@ -1040,8 +1023,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 		if (!prefix || prefix > 32) {
 			g_set_error (error,
-			             NM_SETTING_IP4_CONFIG_ERROR,
-			             NM_SETTING_IP4_CONFIG_ERROR_INVALID_PROPERTY,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("%d. route has invalid prefix"),
 			             i+1);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_SETTING_IP4_CONFIG_ROUTES);
@@ -1056,8 +1039,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 		if (inet_pton (AF_INET, dns, &addr) != 1) {
 			g_set_error (error,
-			             NM_SETTING_IP4_CONFIG_ERROR,
-			             NM_SETTING_IP4_CONFIG_ERROR_INVALID_PROPERTY,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("%d. DNS server address is invalid"),
 			             i+1);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_SETTING_IP4_CONFIG_DNS);

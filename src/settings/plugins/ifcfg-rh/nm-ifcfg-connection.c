@@ -143,20 +143,16 @@ nm_ifcfg_connection_new (NMConnection *source,
 	                                   NM_IFCFG_CONNECTION_UNMANAGED_SPEC, unmanaged_spec,
 	                                   NM_IFCFG_CONNECTION_UNRECOGNIZED_SPEC, unrecognized_spec,
 	                                   NULL);
-	if (object) {
-		/* Update our settings with what was read from the file */
-		if (nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
-		                                             tmp,
-		                                             update_unsaved,
-		                                             error)) {
-			/* Set the path and start monitoring */
-			if (full_path)
-				nm_ifcfg_connection_set_path (NM_IFCFG_CONNECTION (object), full_path);
-		} else {
-			g_object_unref (object);
-			object = NULL;
-		}
-	}
+	/* Update our settings with what was read from the file */
+	if (nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
+	                                             tmp,
+	                                             update_unsaved,
+	                                             error)) {
+		/* Set the path and start monitoring */
+		if (full_path)
+			nm_ifcfg_connection_set_path (NM_IFCFG_CONNECTION (object), full_path);
+	} else
+		g_clear_object (&object);
 
 	g_object_unref (tmp);
 	g_free (unhandled_spec);

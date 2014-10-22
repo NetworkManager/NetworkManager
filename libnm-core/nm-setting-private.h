@@ -46,13 +46,11 @@ typedef enum {
 
 void _nm_register_setting (const char *name,
                            const GType type,
-                           const guint32 priority,
-                           const GQuark error_quark);
+                           const guint32 priority);
 
 #define _nm_register_setting(name, priority) \
 	G_STMT_START { \
-		_nm_register_setting (NM_SETTING_ ## name ## _SETTING_NAME "", g_define_type_id, priority, NM_SETTING_ ## name ## _ERROR); \
-		g_type_ensure (NM_TYPE_SETTING_ ## name ## _ERROR); \
+		_nm_register_setting (NM_SETTING_ ## name ## _SETTING_NAME "", g_define_type_id, priority); \
 	} G_STMT_END
 
 gboolean _nm_setting_is_base_type (NMSetting *setting);
@@ -97,9 +95,7 @@ NMSetting *nm_setting_find_in_list (GSList *settings_list, const char *setting_n
 
 NMSetting * _nm_setting_find_in_list_required (GSList *all_settings,
                                                const char *setting_name,
-                                               GError **error,
-                                               const char *error_prefix_setting_name,
-                                               const char *error_prefix_property_name);
+                                               GError **error);
 
 NMSettingVerifyResult _nm_setting_verify_required_virtual_interface_name (GSList *all_settings,
                                                                           GError **error);

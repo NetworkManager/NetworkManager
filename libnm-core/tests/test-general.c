@@ -432,7 +432,7 @@ test_setting_ip4_config_labels (void)
 	g_strfreev (labels);
 
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
-	g_assert_error (error, NM_SETTING_IP4_CONFIG_ERROR, NM_SETTING_IP4_CONFIG_ERROR_INVALID_PROPERTY);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
 	g_assert (g_str_has_prefix (error->message, "ipv4.address-labels:"));
 	g_clear_error (&error);
 
@@ -450,7 +450,7 @@ test_setting_ip4_config_labels (void)
 	              NULL);
 	g_strfreev (labels);
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
-	g_assert_error (error, NM_SETTING_IP4_CONFIG_ERROR, NM_SETTING_IP4_CONFIG_ERROR_INVALID_PROPERTY);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
 	g_assert (g_str_has_prefix (error->message, "ipv4.address-labels:"));
 	g_clear_error (&error);
 
@@ -559,7 +559,7 @@ test_setting_gsm_without_number (void)
 
 	g_object_set (s_gsm, NM_SETTING_GSM_NUMBER, "", NULL);
 	success = nm_setting_verify (NM_SETTING (s_gsm), NULL, &error);
-	g_assert_error (error, NM_SETTING_GSM_ERROR, NM_SETTING_GSM_ERROR_INVALID_PROPERTY);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
 	g_error_free (error);
 }
 
@@ -1965,7 +1965,8 @@ test_connection_bad_base_types (void)
 	nm_connection_add_setting (connection, setting);
 
 	success = nm_connection_verify (connection, &error);
-	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
+	g_assert (g_str_has_prefix (error->message, "connection.type: "));
 	g_assert (success == FALSE);
 	g_object_unref (connection);
 	g_clear_error (&error);
@@ -1979,7 +1980,8 @@ test_connection_bad_base_types (void)
 	nm_connection_add_setting (connection, setting);
 
 	success = nm_connection_verify (connection, &error);
-	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
+	g_assert (g_str_has_prefix (error->message, "connection.type: "));
 	g_assert (success == FALSE);
 	g_object_unref (connection);
 	g_clear_error (&error);
@@ -1993,7 +1995,8 @@ test_connection_bad_base_types (void)
 	nm_connection_add_setting (connection, setting);
 
 	success = nm_connection_verify (connection, &error);
-	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
+	g_assert (g_str_has_prefix (error->message, "connection.type: "));
 	g_assert (success == FALSE);
 	g_object_unref (connection);
 	g_clear_error (&error);
@@ -2005,7 +2008,8 @@ test_connection_bad_base_types (void)
 	nm_connection_add_setting (connection, setting);
 
 	success = nm_connection_verify (connection, &error);
-	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
+	g_assert (g_str_has_prefix (error->message, "connection.type: "));
 	g_assert (success == FALSE);
 	g_object_unref (connection);
 	g_clear_error (&error);
@@ -2017,7 +2021,8 @@ test_connection_bad_base_types (void)
 	nm_connection_add_setting (connection, setting);
 
 	success = nm_connection_verify (connection, &error);
-	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
+	g_assert (g_str_has_prefix (error->message, "connection.type: "));
 	g_assert (success == FALSE);
 	g_object_unref (connection);
 	g_clear_error (&error);
@@ -2834,7 +2839,7 @@ test_connection_normalize_virtual_iface_name (void)
 	                      );
 
 	con = nm_simple_connection_new_from_dbus (connection_dict, &error);
-	g_assert_error (error, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
 	g_clear_error (&error);
 
 	/* If vlan.interface-name is valid, but doesn't match, it will be ignored. */
@@ -2888,7 +2893,7 @@ _test_connection_normalize_type_normalizable_setting (const char *type,
 
 	con = nmtst_create_minimal_connection (id, NULL, NULL, &s_con);
 
-	nmtst_assert_connection_unnormalizable (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY);
+	nmtst_assert_connection_unnormalizable (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_PROPERTY);
 
 	g_object_set (s_con, NM_SETTING_CONNECTION_TYPE, type, NULL);
 
@@ -2896,7 +2901,7 @@ _test_connection_normalize_type_normalizable_setting (const char *type,
 		prepare_normalizable_fcn (con);
 
 	g_assert (!nm_connection_get_setting_by_name (con, type));
-	nmtst_assert_connection_verifies_after_normalization (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_TYPE_SETTING_NOT_FOUND);
+	nmtst_assert_connection_verifies_after_normalization (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_SETTING);
 
 	s_base = nm_connection_get_setting_by_name (con, type);
 	g_assert (s_base);
@@ -2917,11 +2922,11 @@ _test_connection_normalize_type_unnormalizable_setting (const char *type)
 
 	con = nmtst_create_minimal_connection (id, NULL, NULL, &s_con);
 
-	nmtst_assert_connection_unnormalizable (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY);
+	nmtst_assert_connection_unnormalizable (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_PROPERTY);
 
 	g_object_set (s_con, NM_SETTING_CONNECTION_TYPE, type, NULL);
 
-	nmtst_assert_connection_unnormalizable (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_TYPE_SETTING_NOT_FOUND);
+	nmtst_assert_connection_unnormalizable (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_SETTING);
 }
 
 static void
@@ -2940,7 +2945,7 @@ _test_connection_normalize_type_normalizable_type (const char *type,
 
 	con = nmtst_create_minimal_connection (id, NULL, NULL, &s_con);
 
-	nmtst_assert_connection_unnormalizable (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY);
+	nmtst_assert_connection_unnormalizable (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_PROPERTY);
 
 	if (add_setting_fcn)
 		s_base = add_setting_fcn (con);
@@ -2952,7 +2957,7 @@ _test_connection_normalize_type_normalizable_type (const char *type,
 	g_assert (!nm_connection_get_connection_type (con));
 	g_assert (nm_connection_get_setting_by_name (con, type) == s_base);
 
-	nmtst_assert_connection_verifies_after_normalization (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY);
+	nmtst_assert_connection_verifies_after_normalization (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_PROPERTY);
 
 	g_assert_cmpstr (nm_connection_get_connection_type (con), ==, type);
 	g_assert (nm_connection_get_setting_by_name (con, type) == s_base);
@@ -3208,7 +3213,7 @@ test_connection_normalize_slave_type_1 (void)
 	              NM_SETTING_CONNECTION_SLAVE_TYPE, "invalid-type",
 	              NULL);
 
-	nmtst_assert_connection_unnormalizable (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY);
+	nmtst_assert_connection_unnormalizable (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
 	g_assert (!nm_connection_get_setting_by_name (con, NM_SETTING_BRIDGE_PORT_SETTING_NAME));
 
 	g_object_set (s_con,
@@ -3216,7 +3221,7 @@ test_connection_normalize_slave_type_1 (void)
 	              NULL);
 
 	g_assert (!nm_connection_get_setting_by_name (con, NM_SETTING_BRIDGE_PORT_SETTING_NAME));
-	nmtst_assert_connection_verifies_after_normalization (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_SLAVE_SETTING_NOT_FOUND);
+	nmtst_assert_connection_verifies_after_normalization (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_SETTING);
 	g_assert (nm_connection_get_setting_by_name (con, NM_SETTING_BRIDGE_PORT_SETTING_NAME));
 	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NM_SETTING_BRIDGE_SETTING_NAME);
 }
@@ -3236,7 +3241,7 @@ test_connection_normalize_slave_type_2 (void)
 	              NM_SETTING_CONNECTION_SLAVE_TYPE, "invalid-type",
 	              NULL);
 
-	nmtst_assert_connection_unnormalizable (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY);
+	nmtst_assert_connection_unnormalizable (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
 	g_assert (!nm_connection_get_setting_by_name (con, NM_SETTING_BRIDGE_PORT_SETTING_NAME));
 
 	g_object_set (s_con,
@@ -3246,7 +3251,7 @@ test_connection_normalize_slave_type_2 (void)
 
 	g_assert (nm_connection_get_setting_by_name (con, NM_SETTING_BRIDGE_PORT_SETTING_NAME));
 	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NULL);
-	nmtst_assert_connection_verifies_after_normalization (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY);
+	nmtst_assert_connection_verifies_after_normalization (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_PROPERTY);
 	g_assert (nm_connection_get_setting_by_name (con, NM_SETTING_BRIDGE_PORT_SETTING_NAME));
 	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NM_SETTING_BRIDGE_SETTING_NAME);
 }
@@ -3277,7 +3282,7 @@ test_connection_normalize_infiniband_mtu (void)
 	              NM_SETTING_INFINIBAND_TRANSPORT_MODE, "datagram",
 	              NM_SETTING_INFINIBAND_MTU, (guint) 2045,
 	              NULL);
-	nmtst_assert_connection_verifies_after_normalization (con, NM_SETTING_INFINIBAND_ERROR, NM_SETTING_INFINIBAND_ERROR_INVALID_PROPERTY);
+	nmtst_assert_connection_verifies_after_normalization (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
 	g_assert_cmpint (2044, ==, nm_setting_infiniband_get_mtu (s_infini));
 
 	g_object_set (s_infini,
@@ -3291,7 +3296,7 @@ test_connection_normalize_infiniband_mtu (void)
 	              NM_SETTING_INFINIBAND_TRANSPORT_MODE, "connected",
 	              NM_SETTING_INFINIBAND_MTU, (guint) 65521,
 	              NULL);
-	nmtst_assert_connection_verifies_after_normalization (con, NM_SETTING_INFINIBAND_ERROR, NM_SETTING_INFINIBAND_ERROR_INVALID_PROPERTY);
+	nmtst_assert_connection_verifies_after_normalization (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
 	g_assert_cmpint (65520, ==, nm_setting_infiniband_get_mtu (s_infini));
 }
 

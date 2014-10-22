@@ -552,7 +552,7 @@ write_cert_key_file (const char *path,
 	errno = 0;
 	fd = mkstemp (tmppath);
 	if (fd < 0) {
-		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		             "Could not create temporary file for '%s': %d",
 		             path, errno);
 		goto out;
@@ -563,7 +563,7 @@ write_cert_key_file (const char *path,
 	if (fchmod (fd, S_IRUSR | S_IWUSR) != 0) {
 		close (fd);
 		unlink (tmppath);
-		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		             "Could not set permissions for temporary file '%s': %d",
 		             path, errno);
 		goto out;
@@ -574,7 +574,7 @@ write_cert_key_file (const char *path,
 	if (written != data_len) {
 		close (fd);
 		unlink (tmppath);
-		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		             "Could not write temporary file for '%s': %d",
 		             path, errno);
 		goto out;
@@ -587,7 +587,7 @@ write_cert_key_file (const char *path,
 		success = TRUE;
 	else {
 		unlink (tmppath);
-		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		             "Could not rename temporary file to '%s': %d",
 		             path, errno);
 	}
@@ -922,7 +922,7 @@ _internal_write_connection (NMConnection *connection,
 
 	id = nm_connection_get_id (connection);
 	if (!id) {
-		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "%s.%d: connection had no ID", __FILE__, __LINE__);
 		return FALSE;
 	}
@@ -965,7 +965,7 @@ _internal_write_connection (NMConnection *connection,
 				 * is edited to contain the same ID as the other one.
 				 * Give up.
 				 */
-				g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 				                    "%s.%d: could not find suitable keyfile file name (%s already used)",
 				                    __FILE__, __LINE__, path);
 				g_free (path);
@@ -982,7 +982,7 @@ _internal_write_connection (NMConnection *connection,
 
 	g_file_set_contents (path, data, len, &local_err);
 	if (local_err) {
-		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		             "%s.%d: error writing to file '%s': %s", __FILE__, __LINE__,
 		             path, local_err->message);
 		g_error_free (local_err);
@@ -991,13 +991,13 @@ _internal_write_connection (NMConnection *connection,
 	}
 
 	if (chown (path, owner_uid, owner_grp) < 0) {
-		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		             "%s.%d: error chowning '%s': %d", __FILE__, __LINE__,
 		             path, errno);
 		unlink (path);
 	} else {
 		if (chmod (path, S_IRUSR | S_IWUSR) < 0) {
-			g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 			             "%s.%d: error setting permissions on '%s': %d", __FILE__,
 			             __LINE__, path, errno);
 			unlink (path);

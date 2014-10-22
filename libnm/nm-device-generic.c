@@ -21,6 +21,7 @@
 #include <config.h>
 
 #include <string.h>
+#include <glib/gi18n.h>
 
 #include "nm-device-generic.h"
 #include "nm-device-private.h"
@@ -43,23 +44,6 @@ enum {
 
 	LAST_PROP
 };
-
-/**
- * nm_device_generic_error_quark:
- *
- * Registers an error quark for #NMDeviceGeneric if necessary.
- *
- * Returns: the error quark used for #NMDeviceGeneric errors.
- **/
-GQuark
-nm_device_generic_error_quark (void)
-{
-	static GQuark quark = 0;
-
-	if (G_UNLIKELY (quark == 0))
-		quark = g_quark_from_static_string ("nm-device-generic-error-quark");
-	return quark;
-}
 
 /**
  * nm_device_generic_get_hw_address:
@@ -97,27 +81,25 @@ get_hw_address (NMDevice *device)
 static gboolean
 connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
-	NMSettingConnection *s_con;
-	const char *ctype, *iface_name;
+	const char *iface_name;
 
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
+	if (!NM_DEVICE_CLASS (nm_device_generic_parent_class)->connection_compatible (device, connection, error))
+		return FALSE;
 
-	ctype = nm_setting_connection_get_connection_type (s_con);
-	if (strcmp (ctype, NM_SETTING_GENERIC_SETTING_NAME) != 0) {
-		g_set_error (error, NM_DEVICE_GENERIC_ERROR, NM_DEVICE_GENERIC_ERROR_NOT_GENERIC_CONNECTION,
-		             "The connection was not a generic connection.");
+	if (!nm_connection_is_type (connection, NM_SETTING_GENERIC_SETTING_NAME)) {
+		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+		                     _("The connection was not a generic connection."));
 		return FALSE;
 	}
 
-	iface_name = nm_setting_connection_get_interface_name (s_con);
+	iface_name = nm_connection_get_interface_name (connection);
 	if (!iface_name) {
-		g_set_error (error, NM_DEVICE_GENERIC_ERROR, NM_DEVICE_GENERIC_ERROR_MISSING_INTERFACE_NAME,
-		             "The connection did not specify an interface name.");
+		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INVALID_CONNECTION,
+		                     _("The connection did not specify an interface name."));
 		return FALSE;
 	}
 
-	return NM_DEVICE_CLASS (nm_device_generic_parent_class)->connection_compatible (device, connection, error);
+	return TRUE;
 }
 
 static GType

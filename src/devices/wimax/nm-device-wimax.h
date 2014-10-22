@@ -34,14 +34,6 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_WIMAX_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_DEVICE_WIMAX))
 #define NM_DEVICE_WIMAX_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_DEVICE_WIMAX, NMDeviceWimaxClass))
 
-typedef enum
-{
-	NM_WIMAX_ERROR_CONNECTION_NOT_WIMAX = 0, /*< nick=ConnectionNotWimax >*/
-	NM_WIMAX_ERROR_CONNECTION_INVALID,       /*< nick=ConnectionInvalid >*/
-	NM_WIMAX_ERROR_CONNECTION_INCOMPATIBLE,  /*< nick=ConnectionIncompatible >*/
-	NM_WIMAX_ERROR_NSP_NOT_FOUND,            /*< nick=NspNotFound >*/
-} NMWimaxError;
-
 #define NM_DEVICE_WIMAX_NSPS             "nsps"
 #define NM_DEVICE_WIMAX_ACTIVE_NSP       "active-nsp"
 #define NM_DEVICE_WIMAX_CENTER_FREQUENCY "center-frequency"

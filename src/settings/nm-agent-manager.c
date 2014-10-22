@@ -94,20 +94,6 @@ static void impl_agent_manager_unregister (NMAgentManager *self,
 
 #include "nm-agent-manager-glue.h"
 
-/********************************************************************/
-
-#define NM_AGENT_MANAGER_ERROR         (nm_agent_manager_error_quark ())
-
-static GQuark
-nm_agent_manager_error_quark (void)
-{
-	static GQuark ret = 0;
-
-	if (G_UNLIKELY (ret == 0))
-		ret = g_quark_from_static_string ("nm-agent-manager-error");
-	return ret;
-}
-
 /*************************************************************/
 
 static gboolean
@@ -293,7 +279,7 @@ impl_agent_manager_register_with_capabilities (NMAgentManager *self,
 	subject = nm_auth_subject_new_unix_process_from_context (context);
 	if (!subject) {
 		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
-		                             NM_AGENT_MANAGER_ERROR_SENDER_UNKNOWN,
+		                             NM_AGENT_MANAGER_ERROR_PERMISSION_DENIED,
 		                             "Unable to determine request sender and UID.");
 		goto done;
 	}
@@ -305,7 +291,7 @@ impl_agent_manager_register_with_capabilities (NMAgentManager *self,
 	                                            NULL,
 	                                            &local)) {
 		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
-		                             NM_AGENT_MANAGER_ERROR_SESSION_NOT_FOUND,
+		                             NM_AGENT_MANAGER_ERROR_PERMISSION_DENIED,
 		                             local && local->message ? local->message : "Session not found");
 		goto done;
 	}
@@ -326,7 +312,7 @@ impl_agent_manager_register_with_capabilities (NMAgentManager *self,
 	agent = nm_secret_agent_new (context, subject, identifier, capabilities);
 	if (!agent) {
 		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
-		                             NM_AGENT_MANAGER_ERROR_INTERNAL_ERROR,
+		                             NM_AGENT_MANAGER_ERROR_FAILED,
 		                             "Failed to initialize the agent");
 		goto done;
 	}
@@ -344,7 +330,7 @@ impl_agent_manager_register_with_capabilities (NMAgentManager *self,
 		priv->chains = g_slist_append (priv->chains, chain);
 	} else {
 		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
-		                             NM_AGENT_MANAGER_ERROR_SENDER_UNKNOWN,
+		                             NM_AGENT_MANAGER_ERROR_FAILED,
 		                             "Unable to start agent authentication.");
 	}
 
@@ -378,7 +364,7 @@ impl_agent_manager_unregister (NMAgentManager *self,
 	                                      NULL,
 	                                      NULL)) {
 		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
-		                             NM_AGENT_MANAGER_ERROR_SENDER_UNKNOWN,
+		                             NM_AGENT_MANAGER_ERROR_PERMISSION_DENIED,
 		                             "Unable to determine request sender.");
 		goto done;
 	}

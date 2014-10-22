@@ -31,7 +31,6 @@ noinst_PROGRAMS = test-ifcfg-rh test-ifcfg-rh-utils
 
 test_ifcfg_rh_SOURCES = \
 	test-ifcfg-rh.c \
-	../errors.c \
 	../reader.c \
 	../shvar.c \
 	../utils.c \

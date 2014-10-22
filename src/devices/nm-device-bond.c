@@ -47,8 +47,6 @@ G_DEFINE_TYPE (NMDeviceBond, nm_device_bond, NM_TYPE_DEVICE)
 
 #define NM_DEVICE_BOND_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_BOND, NMDeviceBondPrivate))
 
-#define NM_BOND_ERROR (nm_bond_error_quark ())
-
 typedef struct {
 	int dummy;
 } NMDeviceBondPrivate;
@@ -59,17 +57,6 @@ enum {
 
 	LAST_PROP
 };
-
-/******************************************************************/
-
-static GQuark
-nm_bond_error_quark (void)
-{
-	static GQuark quark = 0;
-	if (!quark)
-		quark = g_quark_from_static_string ("nm-bond-error");
-	return quark;
-}
 
 /******************************************************************/
 
@@ -536,8 +523,6 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (klass),
 	                                        &dbus_glib_nm_device_bond_object_info);
-
-	dbus_g_error_domain_register (NM_BOND_ERROR, NULL, NM_TYPE_BOND_ERROR);
 }
 
 /*************************************************************/

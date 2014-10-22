@@ -37,25 +37,6 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_WIMAX_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DEVICE_WIMAX))
 #define NM_DEVICE_WIMAX_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEVICE_WIMAX, NMDeviceWimaxClass))
 
-/**
- * NMDeviceWimaxError:
- * @NM_DEVICE_WIMAX_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_DEVICE_WIMAX_ERROR_NOT_WIMAX_CONNECTION: the connection was not of WiMax type
- * @NM_DEVICE_WIMAX_ERROR_INVALID_WIMAX_CONNECTION: the WiMax connection was invalid
- * @NM_DEVICE_WIMAX_ERROR_INVALID_DEVICE_MAC: the device's MAC was invalid
- * @NM_DEVICE_WIMAX_ERROR_MAC_MISMATCH: the MACs of the connection and the device mismatched
- */
-typedef enum {
-	NM_DEVICE_WIMAX_ERROR_UNKNOWN = 0,              /*< nick=UnknownError >*/
-	NM_DEVICE_WIMAX_ERROR_NOT_WIMAX_CONNECTION,     /*< nick=NotWimaxConnection >*/
-	NM_DEVICE_WIMAX_ERROR_INVALID_WIMAX_CONNECTION, /*< nick=InvalidWimaxConnection >*/
-	NM_DEVICE_WIMAX_ERROR_INVALID_DEVICE_MAC,       /*< nick=InvalidDeviceMac >*/
-	NM_DEVICE_WIMAX_ERROR_MAC_MISMATCH,             /*< nick=MacMismatch >*/
-} NMDeviceWimaxError;
-
-#define NM_DEVICE_WIMAX_ERROR nm_device_wimax_error_quark ()
-GQuark nm_device_wimax_error_quark (void);
-
 #define NM_DEVICE_WIMAX_HW_ADDRESS       "hw-address"
 #define NM_DEVICE_WIMAX_ACTIVE_NSP       "active-nsp"
 #define NM_DEVICE_WIMAX_CENTER_FREQUENCY "center-frequency"

@@ -39,22 +39,6 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_BRIDGE_PORT_SETTING_NAME "bridge-port"
 
-/**
- * NMSettingBridgePortError:
- * @NM_SETTING_BRIDGE_PORT_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_SETTING_BRIDGE_PORT_ERROR_INVALID_PROPERTY: the property was invalid
- * @NM_SETTING_BRIDGE_PORT_ERROR_MISSING_PROPERTY: the property was missing and
- * is required
- */
-typedef enum {
-	NM_SETTING_BRIDGE_PORT_ERROR_UNKNOWN = 0,      /*< nick=UnknownError >*/
-	NM_SETTING_BRIDGE_PORT_ERROR_INVALID_PROPERTY, /*< nick=InvalidProperty >*/
-	NM_SETTING_BRIDGE_PORT_ERROR_MISSING_PROPERTY, /*< nick=MissingProperty >*/
-} NMSettingBridgePortError;
-
-#define NM_SETTING_BRIDGE_PORT_ERROR nm_setting_bridge_port_error_quark ()
-GQuark nm_setting_bridge_port_error_quark (void);
-
 #define NM_SETTING_BRIDGE_PORT_PRIORITY     "priority"
 #define NM_SETTING_BRIDGE_PORT_PATH_COST    "path-cost"
 #define NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE "hairpin-mode"

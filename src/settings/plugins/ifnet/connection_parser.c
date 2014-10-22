@@ -43,7 +43,6 @@
 #include "wpa_parser.h"
 #include "connection_parser.h"
 #include "nm-ifnet-connection.h"
-#include "errors.h"
 
 static char *
 connection_id_from_ifnet_name (const char *conn_name)
@@ -124,7 +123,7 @@ eap_simple_reader (const char *eap_method,
 	/* identity */
 	value = wpa_get_value (ssid, "identity");
 	if (!value) {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "Missing IEEE_8021X_IDENTITY for EAP method '%s'.",
 			     eap_method);
 		return FALSE;
@@ -134,7 +133,7 @@ eap_simple_reader (const char *eap_method,
 	/* password */
 	value = wpa_get_value (ssid, "password");
 	if (!value) {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "Missing IEEE_8021X_PASSWORD for EAP method '%s'.",
 			     eap_method);
 		return FALSE;
@@ -176,7 +175,7 @@ eap_tls_reader (const char *eap_method,
 	/* identity */
 	value = wpa_get_value (ssid, "identity");
 	if (!value) {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "Missing IEEE_8021X_IDENTITY for EAP method '%s'.",
 			     eap_method);
 		return FALSE;
@@ -211,7 +210,7 @@ eap_tls_reader (const char *eap_method,
 					  "private_key_passwd");
 
 	if (!privkey_password) {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "Missing %s for EAP method '%s'.",
 			     phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD" :
 			     "IEEE_8021X_PRIVATE_KEY_PASSWORD", eap_method);
@@ -221,7 +220,7 @@ eap_tls_reader (const char *eap_method,
 	/* The private key itself */
 	privkey = get_cert (ssid, phase2 ? "private_key2" : "private_key", basepath);
 	if (!privkey) {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "Missing %s for EAP method '%s'.",
 			     phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY" :
 			     "IEEE_8021X_PRIVATE_KEY", eap_method);
@@ -254,7 +253,7 @@ eap_tls_reader (const char *eap_method,
 	    || privkey_format == NM_SETTING_802_1X_CK_FORMAT_X509) {
 		client_cert = get_cert (ssid, phase2 ? "client_cert2" : "client_cert", basepath);
 		if (!client_cert) {
-			g_set_error (error, ifnet_plugin_error_quark (), 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				     "Missing %s for EAP method '%s'.",
 				     phase2 ? "IEEE_8021X_INNER_CLIENT_CERT" :
 				     "IEEE_8021X_CLIENT_CERT", eap_method);
@@ -322,7 +321,7 @@ eap_peap_reader (const char *eap_method,
 			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE1_PEAPVER,
 				      "1", NULL);
 		else {
-			g_set_error (error, ifnet_plugin_error_quark (), 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				     "Unknown IEEE_8021X_PEAP_VERSION value '%s'",
 				     peapver);
 			goto done;
@@ -336,7 +335,7 @@ eap_peap_reader (const char *eap_method,
 
 	inner_auth = wpa_get_value (ssid, "phase2");
 	if (!inner_auth) {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "Missing IEEE_8021X_INNER_AUTH_METHODS.");
 		goto done;
 	}
@@ -357,7 +356,7 @@ eap_peap_reader (const char *eap_method,
 			if (!eap_tls_reader (pos, ssid, s_8021x, TRUE, basepath, error))
 				goto done;
 		} else {
-			g_set_error (error, ifnet_plugin_error_quark (), 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				     "Unknown IEEE_8021X_INNER_AUTH_METHOD '%s'.",
 				     *iter);
 			goto done;
@@ -373,7 +372,7 @@ eap_peap_reader (const char *eap_method,
 	}
 
 	if (!nm_setting_802_1x_get_phase2_auth (s_8021x)) {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "No valid IEEE_8021X_INNER_AUTH_METHODS found.");
 		goto done;
 	}
@@ -422,7 +421,7 @@ eap_ttls_reader (const char *eap_method,
 
 	tmp = wpa_get_value (ssid, "phase2");
 	if (!tmp) {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "Missing IEEE_8021X_INNER_AUTH_METHODS.");
 		goto done;
 	}
@@ -457,7 +456,7 @@ eap_ttls_reader (const char *eap_method,
 			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTHEAP,
 				      pos, NULL);
 		} else {
-			g_set_error (error, ifnet_plugin_error_quark (), 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				     "Unknown IEEE_8021X_INNER_AUTH_METHOD '%s'.",
 				     *iter);
 			goto done;
@@ -506,7 +505,7 @@ read_mac_address (const char *conn_name, const char **mac, GError **error)
 		return TRUE;
 
 	if (!nm_utils_hwaddr_valid (value, ETH_ALEN)) {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "The MAC address '%s' was invalid.", value);
 		return FALSE;
 	}
@@ -577,7 +576,7 @@ make_ip4_setting (NMConnection *connection,
 	if (!is_static_block) {
 		method = ifnet_get_data (conn_name, "config");
 		if (!method){
-			g_set_error (error, ifnet_plugin_error_quark (), 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 						 "Unknown config for %s", conn_name);
 			g_object_unref (ip4_setting);
 			return;
@@ -602,7 +601,7 @@ make_ip4_setting (NMConnection *connection,
 			nm_connection_add_setting (connection, NM_SETTING (ip4_setting));
 			return;
 		} else {
-			g_set_error (error, ifnet_plugin_error_quark (), 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 						 "Unknown config for %s", conn_name);
 			g_object_unref (ip4_setting);
 			return;
@@ -611,7 +610,7 @@ make_ip4_setting (NMConnection *connection,
 	}else {
 		iblock = convert_ip4_config_block (conn_name);
 		if (!iblock) {
-			g_set_error (error, ifnet_plugin_error_quark (), 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				     "Ifnet plugin: can't aquire ip configuration for %s",
 				     conn_name);
 			g_object_unref (ip4_setting);
@@ -789,7 +788,7 @@ make_ip6_setting (NMConnection *connection,
 
 		iblock = convert_ip6_config_block (conn_name);
 		if (!iblock) {
-			g_set_error (error, ifnet_plugin_error_quark (), 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				     "Ifnet plugin: can't aquire ip6 configuration for %s",
 				     conn_name);
 			goto error;
@@ -919,8 +918,7 @@ make_wireless_connection_setting (const char *conn_name,
 		if ((value_len > 2) && (g_str_has_prefix (conn_name, "0x"))) {
 			/* Hex representation */
 			if (value_len % 2) {
-				g_set_error (error, ifnet_plugin_error_quark (),
-					     0,
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 					     "Invalid SSID '%s' size (looks like hex but length not multiple of 2)",
 					     conn_name);
 				goto error;
@@ -928,9 +926,7 @@ make_wireless_connection_setting (const char *conn_name,
 			// ignore "0x"
 			p = conn_name + 2;
 			if (!is_hex (p)) {
-				g_set_error (error,
-					     ifnet_plugin_error_quark (),
-					     0,
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 					     "Invalid SSID '%s' character (looks like hex SSID but '%c' isn't a hex digit)",
 					     conn_name, *p);
 				goto error;
@@ -944,7 +940,7 @@ make_wireless_connection_setting (const char *conn_name,
 		}
 
 		if (ssid_len > 32 || ssid_len == 0) {
-			g_set_error (error, ifnet_plugin_error_quark (), 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				     "Invalid SSID '%s' (size %zu not between 1 and 32 inclusive)",
 				     conn_name, ssid_len);
 			goto error;
@@ -954,7 +950,7 @@ make_wireless_connection_setting (const char *conn_name,
 		g_bytes_unref (bytes);
 		g_free (converted);
 	} else {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "Missing SSID");
 		goto error;
 	}
@@ -977,7 +973,7 @@ make_wireless_connection_setting (const char *conn_name,
 	value = wpa_get_value (conn_name, "bssid");
 	if (value) {
 		if (!nm_utils_hwaddr_valid (value, ETH_ALEN)) {
-			g_set_error (error, ifnet_plugin_error_quark (), 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 						 "Invalid BSSID '%s'", value);
 			goto error;
 		}
@@ -1035,7 +1031,7 @@ make_leap_setting (const char *ssid, GError **error)
 
 	value = wpa_get_value (ssid, "identity");
 	if (!value || !strlen (value)) {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "Missing LEAP identity");
 		goto error;
 	}
@@ -1077,8 +1073,8 @@ add_one_wep_key (const char *ssid,
 	if (strlen (value) == 10 || strlen (value) == 26) {
 		/* Hexadecimal WEP key */
 		if (!is_hex (value)) {
-			g_set_error (error, ifnet_plugin_error_quark (),
-				     0, "Invalid hexadecimal WEP key.");
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			             "Invalid hexadecimal WEP key.");
 			goto out;
 		}
 		converted = g_strdup (value);
@@ -1089,8 +1085,8 @@ add_one_wep_key (const char *ssid,
 		char *p = strip_string (tmp, '"');
 
 		if (!is_ascii (p)) {
-			g_set_error (error, ifnet_plugin_error_quark (),
-				     0, "Invalid ASCII WEP passphrase.");
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			             "Invalid ASCII WEP passphrase.");
 			g_free (tmp);
 			goto out;
 
@@ -1099,7 +1095,7 @@ add_one_wep_key (const char *ssid,
 		converted = nm_utils_bin2hexstr (tmp, strlen (tmp), strlen (tmp) * 2);
 		g_free (tmp);
 	} else {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "Invalid WEP key length. Key: %s", value);
 		goto out;
 	}
@@ -1153,7 +1149,7 @@ make_wep_setting (const char *ssid, GError **error)
 				      default_key_idx, NULL);
 			nm_log_info (LOGD_SETTINGS, "Default key index: %d", default_key_idx);
 		} else {
-			g_set_error (error, ifnet_plugin_error_quark (), 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				     "Invalid default WEP key '%s'", value);
 			goto error;
 		}
@@ -1165,19 +1161,19 @@ make_wep_setting (const char *ssid, GError **error)
 	/* If there's a default key, ensure that key exists */
 	if ((default_key_idx == 1)
 	    && !nm_setting_wireless_security_get_wep_key (s_wireless_sec, 1)) {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "Default WEP key index was 2, but no valid KEY2 exists.");
 		goto error;
 	} else if ((default_key_idx == 2)
 		   && !nm_setting_wireless_security_get_wep_key (s_wireless_sec,
 								 2)) {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "Default WEP key index was 3, but no valid KEY3 exists.");
 		goto error;
 	} else if ((default_key_idx == 3)
 		   && !nm_setting_wireless_security_get_wep_key (s_wireless_sec,
 								 3)) {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "Default WEP key index was 4, but no valid KEY4 exists.");
 		goto error;
 	}
@@ -1196,7 +1192,7 @@ make_wep_setting (const char *ssid, GError **error)
 				      "shared", NULL);
 			nm_log_info (LOGD_SETTINGS, "WEP: Use shared system authentication");
 		} else {
-			g_set_error (error, ifnet_plugin_error_quark (), 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				     "Invalid WEP authentication algorithm '%s'",
 				     auth_alg);
 			goto error;
@@ -1210,7 +1206,7 @@ make_wep_setting (const char *ssid, GError **error)
 	    && !nm_setting_wireless_security_get_wep_key (s_wireless_sec, 3)
 	    && !nm_setting_wireless_security_get_wep_tx_keyidx (s_wireless_sec)) {
 		if (auth_alg && !strcmp (auth_alg, "shared")) {
-			g_set_error (error, ifnet_plugin_error_quark (), 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				     "WEP Shared Key authentication is invalid for "
 				     "unencrypted connections.");
 			goto error;
@@ -1234,7 +1230,7 @@ parse_wpa_psk (const char *psk, GError **error)
 	gboolean quoted = FALSE;
 
 	if (!psk) {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "Missing WPA_PSK for WPA-PSK key management");
 		return NULL;
 	}
@@ -1250,9 +1246,8 @@ parse_wpa_psk (const char *psk, GError **error)
 	if (!quoted && (strlen (psk) == 64)) {
 		/* Verify the hex PSK; 64 digits */
 		if (!is_hex (psk)) {
-			g_set_error (error, ifnet_plugin_error_quark (),
-				     0,
-				     "Invalid WPA_PSK (contains non-hexadecimal characters)");
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			             "Invalid WPA_PSK (contains non-hexadecimal characters)");
 			goto out;
 		}
 		hashed = g_strdup (psk);
@@ -1263,7 +1258,7 @@ parse_wpa_psk (const char *psk, GError **error)
 
 		/* Length check */
 		if (strlen (stripped) < 8 || strlen (stripped) > 63) {
-			g_set_error (error, ifnet_plugin_error_quark (), 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				     "Invalid WPA_PSK (passphrases must be between "
 				     "8 and 63 characters long (inclusive))");
 			g_free (stripped);
@@ -1275,7 +1270,7 @@ parse_wpa_psk (const char *psk, GError **error)
 	}
 
 	if (!hashed) {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "Invalid WPA_PSK (doesn't look like a passphrase or hex key)");
 		goto out;
 	}
@@ -1359,7 +1354,7 @@ fill_8021x (const char *ssid,
 
 	value = wpa_get_value (ssid, "eap");
 	if (!value) {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "Missing IEEE_8021X_EAP_METHODS for key management '%s'",
 			     key_mgmt);
 		return NULL;
@@ -1410,7 +1405,7 @@ fill_8021x (const char *ssid,
 	g_strfreev (list);
 
 	if (nm_setting_802_1x_get_num_eap_methods (s_8021x) == 0) {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "No valid EAP methods found in IEEE_8021X_EAP_METHODS.");
 		goto error;
 	}
@@ -1434,7 +1429,7 @@ make_wpa_setting (const char *ssid,
 	gboolean adhoc = FALSE;
 
 	if (!exist_ssid (ssid)) {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "No security info found for ssid: %s", ssid);
 		return NULL;
 	}
@@ -1486,7 +1481,7 @@ make_wpa_setting (const char *ssid,
 				      "wpa-psk", NULL);
 	} else if (!strcmp (value, "WPA-EAP") || !strcmp (value, "IEEE8021X")) {
 		if (adhoc) {
-			g_set_error (error, ifnet_plugin_error_quark (), 0,
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				     "Ad-Hoc mode cannot be used with KEY_MGMT type '%s'",
 				     value);
 			goto error;
@@ -1500,7 +1495,7 @@ make_wpa_setting (const char *ssid,
 			      lower, NULL);
 		g_free (lower);
 	} else {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "Unknown wireless KEY_MGMT type '%s'", value);
 		goto error;
 	}
@@ -1551,7 +1546,7 @@ make_wireless_security_setting (const char *conn_name,
 	}
 
 	if (!wsec) {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "Can't handle security information for ssid: %s",
 			     conn_name);
 	}
@@ -1576,7 +1571,7 @@ make_pppoe_connection_setting (NMConnection *connection,
 	/* username */
 	value = ifnet_get_data (conn_name, "username");
 	if (!value) {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "ppp requires at lease a username");
 		return;
 	}
@@ -2070,7 +2065,7 @@ write_wireless_security_setting (NMConnection * connection,
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	if (!s_wsec) {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "Missing '%s' setting",
 			     NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
 		return FALSE;
@@ -2238,7 +2233,7 @@ write_wireless_setting (NMConnection *connection,
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
 	if (!s_wireless) {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "Missing '%s' setting",
 			     NM_SETTING_WIRELESS_SETTING_NAME);
 		return FALSE;
@@ -2246,14 +2241,14 @@ write_wireless_setting (NMConnection *connection,
 
 	ssid = nm_setting_wireless_get_ssid (s_wireless);
 	if (!ssid) {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "Missing SSID in '%s' setting",
 			     NM_SETTING_WIRELESS_SETTING_NAME);
 		return FALSE;
 	}
 	ssid_data = g_bytes_get_data (ssid, &ssid_len);
 	if (!ssid_len || ssid_len > 32) {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "Invalid SSID in '%s' setting",
 			     NM_SETTING_WIRELESS_SETTING_NAME);
 		return FALSE;
@@ -2345,7 +2340,7 @@ write_wired_setting (NMConnection *connection,
 
 	s_wired = nm_connection_get_setting_wired (connection);
 	if (!s_wired) {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "Missing '%s' setting",
 			     NM_SETTING_WIRED_SETTING_NAME);
 		return FALSE;
@@ -2385,7 +2380,7 @@ write_ip4_setting (NMConnection *connection, const char *conn_name, GError **err
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	if (!s_ip4) {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "Missing '%s' setting",
 			     NM_SETTING_IP4_CONFIG_SETTING_NAME);
 		return FALSE;
@@ -2584,7 +2579,7 @@ write_ip6_setting (NMConnection *connection, const char *conn_name, GError **err
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	if (!s_ip6) {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "Missing '%s' setting",
 			     NM_SETTING_IP6_CONFIG_SETTING_NAME);
 		return FALSE;
@@ -2743,7 +2738,7 @@ ifnet_update_parsers_by_connection (NMConnection *connection,
 
 	type = nm_setting_connection_get_connection_type (s_con);
 	if (!type) {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "Missing connection type!");
 		goto out;
 	}
@@ -2769,7 +2764,7 @@ ifnet_update_parsers_by_connection (NMConnection *connection,
 		wired = TRUE;
 		no_8021x = TRUE;
 	} else {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_NOT_SUPPORTED,
 			     "Can't write connection type '%s'", type);
 		goto out;
 	}
@@ -2865,7 +2860,7 @@ ifnet_can_write_connection (NMConnection *connection, GError **error)
 	/* If the connection is not available for all users, ignore
 	 * it as this plugin only deals with System Connections */
 	if (nm_setting_connection_get_num_permissions (s_con)) {
-		g_set_error_literal (error, IFNET_PLUGIN_ERROR, 0,
+		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_NOT_SUPPORTED,
 		                     "The ifnet plugin does not support non-system-wide connections.");
 		return FALSE;
 	}
@@ -2874,7 +2869,7 @@ ifnet_can_write_connection (NMConnection *connection, GError **error)
 	if (   !nm_connection_is_type (connection, NM_SETTING_WIRED_SETTING_NAME)
 	    && !nm_connection_is_type (connection, NM_SETTING_WIRELESS_SETTING_NAME)
 	    && !nm_connection_is_type (connection, NM_SETTING_PPPOE_SETTING_NAME)) {
-		g_set_error (error, IFNET_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_NOT_SUPPORTED,
 		             "The ifnet plugin cannot write the connection '%s' (type '%s')",
 		             nm_connection_get_id (connection),
 		             nm_setting_connection_get_connection_type (s_con));
@@ -2887,7 +2882,7 @@ ifnet_can_write_connection (NMConnection *connection, GError **error)
 	                                      check_unsupported_secrets,
 	                                      &has_unsupported_secrets);
 	if (has_unsupported_secrets) {
-		g_set_error_literal (error, IFNET_PLUGIN_ERROR, 0,
+		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_NOT_SUPPORTED,
 		                     "The ifnet plugin only supports persistent system secrets.");
 		return FALSE;
 	}
@@ -3019,7 +3014,7 @@ ifnet_add_new_connection (NMConnection *connection,
 			goto out;
 		new_type = "ppp";
 	} else {
-		g_set_error (error, ifnet_plugin_error_quark (), 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_NOT_SUPPORTED,
 			     "Can't write connection type '%s'", type);
 		goto out;
 	}

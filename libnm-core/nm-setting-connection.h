@@ -40,38 +40,6 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_CONNECTION_SETTING_NAME "connection"
 
-/**
- * NMSettingConnectionError:
- * @NM_SETTING_CONNECTION_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY: the property's value is
- *   invalid
- * @NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY: a required property is not
- *   present
- * @NM_SETTING_CONNECTION_ERROR_TYPE_SETTING_NOT_FOUND: the #NMSetting object
- *   referenced by the setting name contained in the
- *   #NMSettingConnection:type property was not present in the #NMConnection
- * @NM_SETTING_CONNECTION_ERROR_IP_CONFIG_NOT_ALLOWED: ip configuration is not
- *   allowed to be present.
- * @NM_SETTING_CONNECTION_ERROR_SLAVE_SETTING_NOT_FOUND: the mandatory #NMSetting
- *   object for the slave is missing. The slave type depends on #NMSettingConnection:slave-type
- *
- * Describes errors that may result from operations involving a
- * #NMSettingConnection.
- *
- **/
-typedef enum
-{
-	NM_SETTING_CONNECTION_ERROR_UNKNOWN = 0,            /*< nick=UnknownError >*/
-	NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,       /*< nick=InvalidProperty >*/
-	NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,       /*< nick=MissingProperty >*/
-	NM_SETTING_CONNECTION_ERROR_TYPE_SETTING_NOT_FOUND, /*< nick=TypeSettingNotFound >*/
-	NM_SETTING_CONNECTION_ERROR_IP_CONFIG_NOT_ALLOWED,  /*< nick=IpConfigNotAllowed >*/
-	NM_SETTING_CONNECTION_ERROR_SLAVE_SETTING_NOT_FOUND, /*< nick=SlaveSettingNotFound >*/
-} NMSettingConnectionError;
-
-#define NM_SETTING_CONNECTION_ERROR nm_setting_connection_error_quark ()
-GQuark nm_setting_connection_error_quark (void);
-
 #define NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_MIN -999
 #define NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_MAX 999
 #define NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_DEFAULT 0

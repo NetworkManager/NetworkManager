@@ -41,8 +41,6 @@ typedef struct {
 
 GType sc_plugin_keyfile_get_type (void);
 
-GQuark keyfile_plugin_error_quark (void);
-
 GObject *nm_settings_keyfile_plugin_new (void);
 
 #endif	/* _PLUGIN_H_ */

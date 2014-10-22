@@ -118,21 +118,6 @@ enum {
 	LAST_PROP
 };
 
-typedef enum {
-	NM_PPP_MANAGER_ERROR_UNKOWN
-} NMPPPManagerError;
-
-GQuark
-nm_ppp_manager_error_quark (void)
-{
-	static GQuark quark;
-
-	if (!quark)
-		quark = g_quark_from_static_string ("nm_ppp_manager_error");
-
-	return quark;
-}
-
 static void
 nm_ppp_manager_init (NMPPPManager *manager)
 {
@@ -388,7 +373,8 @@ extract_details_from_connection (NMConnection *connection,
 
 	setting = nm_connection_get_setting_by_name (connection, setting_name);
 	if (!setting) {
-		g_set_error_literal (error, NM_PPP_MANAGER_ERROR, NM_PPP_MANAGER_ERROR_UNKOWN,
+		/* This shouldn't ever happen */
+		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
 		                     "Missing type-specific setting; no secrets could be found.");
 		return FALSE;
 	}
@@ -1112,8 +1098,8 @@ nm_ppp_manager_start (NMPPPManager *manager,
 #if !WITH_PPP
 	/* PPP support disabled */
 	g_set_error_literal (err,
-	                     NM_PPP_MANAGER_ERROR,
-	                     NM_PPP_MANAGER_ERROR_UNKOWN,
+	                     NM_MANAGER_ERROR,
+	                     NM_MANAGER_ERROR_FAILED,
 	                     "PPP support is not enabled.");
 	return FALSE;
 #endif

@@ -64,23 +64,6 @@ typedef struct {
 
 #define NM_REMOTE_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_REMOTE_CONNECTION, NMRemoteConnectionPrivate))
 
-/**
- * nm_remote_connection_error_quark:
- *
- * Registers an error quark for #NMRemoteConnection if necessary.
- *
- * Returns: the error quark used for #NMRemoteConnection errors.
- **/
-GQuark
-nm_remote_connection_error_quark (void)
-{
-	static GQuark quark = 0;
-
-	if (G_UNLIKELY (quark == 0))
-		quark = g_quark_from_static_string ("nm-remote-connection-error-quark");
-	return quark;
-}
-
 /****************************************************************/
 
 /**
@@ -104,6 +87,7 @@ nm_remote_connection_commit_changes (NMRemoteConnection *connection,
 {
 	NMRemoteConnectionPrivate *priv;
 	GVariant *settings;
+	gboolean ret;
 
 	g_return_val_if_fail (NM_IS_REMOTE_CONNECTION (connection), FALSE);
 
@@ -111,14 +95,17 @@ nm_remote_connection_commit_changes (NMRemoteConnection *connection,
 
 	settings = nm_connection_to_dbus (NM_CONNECTION (connection), NM_CONNECTION_SERIALIZE_ALL);
 	if (save_to_disk) {
-		return nmdbus_settings_connection_call_update_sync (priv->proxy,
-		                                                    settings,
-		                                                    cancellable, error);
+		ret = nmdbus_settings_connection_call_update_sync (priv->proxy,
+		                                                   settings,
+		                                                   cancellable, error);
 	} else {
-		return nmdbus_settings_connection_call_update_unsaved_sync (priv->proxy,
-		                                                            settings,
-		                                                            cancellable, error);
+		ret = nmdbus_settings_connection_call_update_unsaved_sync (priv->proxy,
+		                                                           settings,
+		                                                           cancellable, error);
 	}
+	if (error && *error)
+		g_dbus_error_strip_remote_error (*error);
+	return ret;
 }
 
 static void
@@ -131,8 +118,10 @@ update_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 	finish_func = g_object_get_data (G_OBJECT (simple), "finish_func");
 	if (finish_func (NMDBUS_SETTINGS_CONNECTION (proxy), result, &error))
 		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-	else
+	else {
+		g_dbus_error_strip_remote_error (error);
 		g_simple_async_result_take_error (simple, error);
+	}
 	g_simple_async_result_complete (simple);
 	g_object_unref (simple);
 }
@@ -229,12 +218,16 @@ nm_remote_connection_save (NMRemoteConnection *connection,
                            GError **error)
 {
 	NMRemoteConnectionPrivate *priv;
+	gboolean ret;
 
 	g_return_val_if_fail (NM_IS_REMOTE_CONNECTION (connection), FALSE);
 
 	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (connection);
 
-	return nmdbus_settings_connection_call_save_sync (priv->proxy, cancellable, error);
+	ret = nmdbus_settings_connection_call_save_sync (priv->proxy, cancellable, error);
+	if (error && *error)
+		g_dbus_error_strip_remote_error (*error);
+	return ret;
 }
 
 static void
@@ -246,8 +239,10 @@ save_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 	if (nmdbus_settings_connection_call_save_finish (NMDBUS_SETTINGS_CONNECTION (proxy),
 	                                                 result, &error))
 		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-	else
+	else {
+		g_dbus_error_strip_remote_error (error);
 		g_simple_async_result_take_error (simple, error);
+	}
 	g_simple_async_result_complete (simple);
 	g_object_unref (simple);
 }
@@ -322,12 +317,16 @@ nm_remote_connection_delete (NMRemoteConnection *connection,
                              GError **error)
 {
 	NMRemoteConnectionPrivate *priv;
+	gboolean ret;
 
 	g_return_val_if_fail (NM_IS_REMOTE_CONNECTION (connection), FALSE);
 
 	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (connection);
 
-	return nmdbus_settings_connection_call_delete_sync (priv->proxy, cancellable, error);
+	ret = nmdbus_settings_connection_call_delete_sync (priv->proxy, cancellable, error);
+	if (error && *error)
+		g_dbus_error_strip_remote_error (*error);
+	return ret;
 }
 
 static void
@@ -339,8 +338,10 @@ delete_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 	if (nmdbus_settings_connection_call_delete_finish (NMDBUS_SETTINGS_CONNECTION (proxy),
 	                                                   result, &error))
 		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-	else
+	else {
+		g_dbus_error_strip_remote_error (error);
 		g_simple_async_result_take_error (simple, error);
+	}
 	g_simple_async_result_complete (simple);
 	g_object_unref (simple);
 }
@@ -429,8 +430,11 @@ nm_remote_connection_get_secrets (NMRemoteConnection *connection,
 	                                                      &secrets,
 	                                                      cancellable, error))
 		return secrets;
-	else
+	else {
+		if (error && *error)
+			g_dbus_error_strip_remote_error (*error);
 		return NULL;
+	}
 }
 
 static void
@@ -443,8 +447,10 @@ get_secrets_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 	if (nmdbus_settings_connection_call_get_secrets_finish (NMDBUS_SETTINGS_CONNECTION (proxy),
 	                                                        &secrets, result, &error))
 		g_simple_async_result_set_op_res_gpointer (simple, secrets, (GDestroyNotify) g_variant_unref);
-	else
+	else {
+		g_dbus_error_strip_remote_error (error);
 		g_simple_async_result_take_error (simple, error);
+	}
 
 	g_simple_async_result_complete (simple);
 	g_object_unref (simple);
@@ -644,8 +650,11 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 
 	if (!nmdbus_settings_connection_call_get_settings_sync (priv->proxy,
 	                                                        &settings,
-	                                                        cancellable, error))
+	                                                        cancellable, error)) {
+		if (error && *error)
+			g_dbus_error_strip_remote_error (*error);
 		return FALSE;
+	}
 
 	priv->visible = TRUE;
 	replace_settings (self, settings);
@@ -686,6 +695,7 @@ init_get_settings_cb (GObject *proxy,
 
 	if (!nmdbus_settings_connection_call_get_settings_finish (priv->proxy, &settings,
 	                                                          result, &error)) {
+		g_dbus_error_strip_remote_error (error);
 		init_async_complete (init_data, error);
 		return;
 	}

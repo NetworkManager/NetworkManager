@@ -39,22 +39,6 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_BRIDGE_SETTING_NAME "bridge"
 
-/**
- * NMSettingBridgeError:
- * @NM_SETTING_BRIDGE_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_SETTING_BRIDGE_ERROR_INVALID_PROPERTY: the property was invalid
- * @NM_SETTING_BRIDGE_ERROR_MISSING_PROPERTY: the property was missing and is
- * required
- */
-typedef enum {
-	NM_SETTING_BRIDGE_ERROR_UNKNOWN = 0,      /*< nick=UnknownError >*/
-	NM_SETTING_BRIDGE_ERROR_INVALID_PROPERTY, /*< nick=InvalidProperty >*/
-	NM_SETTING_BRIDGE_ERROR_MISSING_PROPERTY, /*< nick=MissingProperty >*/
-} NMSettingBridgeError;
-
-#define NM_SETTING_BRIDGE_ERROR nm_setting_bridge_error_quark ()
-GQuark nm_setting_bridge_error_quark (void);
-
 #define NM_SETTING_BRIDGE_MAC_ADDRESS    "mac-address"
 #define NM_SETTING_BRIDGE_STP            "stp"
 #define NM_SETTING_BRIDGE_PRIORITY       "priority"

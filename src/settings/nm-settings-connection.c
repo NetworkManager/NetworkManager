@@ -33,7 +33,6 @@
 #include "nm-settings-connection.h"
 #include "nm-session-monitor.h"
 #include "nm-dbus-manager.h"
-#include "nm-settings-error.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-logging.h"
 #include "nm-auth-utils.h"
@@ -570,7 +569,7 @@ nm_settings_connection_commit_changes (NMSettingsConnection *connection,
 		                                                               user_data);
 	} else {
 		GError *error = g_error_new (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_INTERNAL_ERROR,
+		                             NM_SETTINGS_ERROR_FAILED,
 		                             "%s: %s:%d commit_changes() unimplemented", __func__, __FILE__, __LINE__);
 		if (callback)
 			callback (connection, error, user_data);
@@ -591,7 +590,7 @@ nm_settings_connection_delete (NMSettingsConnection *connection,
 		                                                       user_data);
 	} else {
 		GError *error = g_error_new (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_INTERNAL_ERROR,
+		                             NM_SETTINGS_ERROR_FAILED,
 		                             "%s: %s:%d delete() unimplemented", __func__, __FILE__, __LINE__);
 		if (callback)
 			callback (connection, error, user_data);
@@ -754,7 +753,7 @@ agent_secrets_done_cb (NMAgentManager *manager,
 	}
 
 	if (!nm_connection_get_setting_by_name (NM_CONNECTION (self), setting_name)) {
-		local = g_error_new (NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_SETTING,
+		local = g_error_new (NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_SETTING_NOT_FOUND,
 		                     "%s.%d - Connection didn't have requested setting '%s'.",
 		                     __FILE__, __LINE__, setting_name);
 		callback (self, call_id, NULL, setting_name, local, callback_data);
@@ -916,7 +915,7 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 	 * will clear secrets on this object's settings.
 	 */
 	if (!priv->system_secrets) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		             "%s.%d - Internal error; secrets cache invalid.",
 		             __FILE__, __LINE__);
 		return 0;
@@ -924,7 +923,7 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 
 	/* Make sure the request actually requests something we can return */
 	if (!nm_connection_get_setting_by_name (NM_CONNECTION (self), setting_name)) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_SETTING,
+		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_SETTING_NOT_FOUND,
 		             "%s.%d - Connection didn't have requested setting '%s'.",
 		             __FILE__, __LINE__, setting_name);
 		return 0;
@@ -1009,7 +1008,7 @@ pk_auth_cb (NMAuthChain *chain,
 	/* If our NMSettingsConnection is already gone, do nothing */
 	if (chain_error) {
 		error = g_error_new (NM_SETTINGS_ERROR,
-		                     NM_SETTINGS_ERROR_GENERAL,
+		                     NM_SETTINGS_ERROR_FAILED,
 		                     "Error checking authorization: %s",
 		                     chain_error->message ? chain_error->message : "(unknown)");
 	} else if (result != NM_AUTH_CALL_RESULT_YES) {

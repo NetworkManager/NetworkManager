@@ -35,7 +35,6 @@
 
 #include "NetworkManagerUtils.h"
 
-#include "errors.h"
 #include "reader.h"
 #include "nm-logging.h"
 
@@ -208,7 +207,7 @@ test_read_ibft_bad_address (gconstpointer user_data)
 	block = read_block (iscsiadm_path, expected_mac_address);
 
 	connection = connection_from_block (block, &error);
-	g_assert_error (error, IBFT_PLUGIN_ERROR, 0);
+	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 	g_assert (strstr (error->message, "iBFT: malformed iscsiadm record: invalid"));
 	g_clear_error (&error);
 	g_assert (connection == NULL);

@@ -43,15 +43,6 @@ typedef struct {
 	guint monitor_id;
 } NMVpnManagerPrivate;
 
-GQuark
-nm_vpn_manager_error_quark (void)
-{
-	static GQuark quark = 0;
-	if (!quark)
-		quark = g_quark_from_static_string ("nm-vpn-manager-error");
-	return quark;
-}
-
 
 static NMVpnService *
 get_service_by_namefile (NMVpnManager *self, const char *namefile)
@@ -95,7 +86,7 @@ nm_vpn_manager_activate_connection (NMVpnManager *manager,
 	g_assert (device);
 	if (   nm_device_get_state (device) != NM_DEVICE_STATE_ACTIVATED
 	    && nm_device_get_state (device) != NM_DEVICE_STATE_SECONDARIES) {
-		g_set_error_literal (error, NM_VPN_MANAGER_ERROR, NM_VPN_MANAGER_ERROR_DEVICE_NOT_ACTIVE,
+		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_DEPENDENCY_FAILED,
 		                     "The base device for the VPN connection was not active.");
 		return FALSE;
 	}
@@ -109,7 +100,7 @@ nm_vpn_manager_activate_connection (NMVpnManager *manager,
 	g_assert (service_name);
 	service = g_hash_table_lookup (NM_VPN_MANAGER_GET_PRIVATE (manager)->services, service_name);
 	if (!service) {
-		g_set_error (error, NM_VPN_MANAGER_ERROR, NM_VPN_MANAGER_ERROR_SERVICE_INVALID,
+		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_NOT_AVAILABLE,
 		             "The VPN service '%s' was not installed.",
 		             service_name);
 		return FALSE;
@@ -302,7 +293,5 @@ nm_vpn_manager_class_init (NMVpnManagerClass *manager_class)
 
 	/* virtual methods */
 	object_class->dispose = dispose;
-
-	dbus_g_error_domain_register (NM_VPN_MANAGER_ERROR, NULL, NM_TYPE_VPN_MANAGER_ERROR);
 }
 

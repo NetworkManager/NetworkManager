@@ -354,10 +354,7 @@ connection_activated_none_cb (GObject *c,
 	GError *error = NULL;
 
 	ac = nm_client_activate_connection_finish (sadata->client, result, &error);
-
-	g_assert (error != NULL);
-	g_dbus_error_strip_remote_error (error);
-	g_assert_cmpstr (error->message, ==, "No secret agent available");
+	g_assert_error (error, NM_AGENT_MANAGER_ERROR, NM_AGENT_MANAGER_ERROR_NO_SECRETS);
 
 	g_main_loop_quit (sadata->loop);
 }
@@ -403,11 +400,7 @@ connection_activated_no_secrets_cb (GObject *c,
 	GError *error = NULL;
 
 	ac = nm_client_activate_connection_finish (sadata->client, result, &error);
-
-	g_assert (error != NULL);
-	g_dbus_error_strip_remote_error (error);
-	g_assert_cmpstr (error->message, ==, "No secrets provided");
-
+	g_assert_error (error, NM_AGENT_MANAGER_ERROR, NM_AGENT_MANAGER_ERROR_NO_SECRETS);
 	g_main_loop_quit (sadata->loop);
 }
 
@@ -442,11 +435,7 @@ connection_activated_cancel_cb (GObject *c,
 	GError *error = NULL;
 
 	ac = nm_client_activate_connection_finish (sadata->client, result, &error);
-
-	g_assert (error != NULL);
-	g_dbus_error_strip_remote_error (error);
-	g_assert_cmpstr (error->message, ==, "User canceled");
-
+	g_assert_error (error, NM_AGENT_MANAGER_ERROR, NM_AGENT_MANAGER_ERROR_USER_CANCELED);
 	g_main_loop_quit (sadata->loop);
 }
 
@@ -548,7 +537,7 @@ async_init_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 	GObject *agent;
 
 	agent = g_async_initable_new_finish (G_ASYNC_INITABLE (object), result, &error);
-	g_assert_error (error, NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_INTERNAL_ERROR);
+	g_assert_error (error, NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_FAILED);
 	g_assert (agent == NULL);
 	g_clear_error (&error);
 
@@ -565,7 +554,7 @@ test_secret_agent_nm_not_running (void)
 	agent = g_initable_new (test_secret_agent_get_type (), NULL, &error,
 	                        NM_SECRET_AGENT_IDENTIFIER, "test-secret-agent",
 	                        NULL);
-	g_assert_error (error, NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_INTERNAL_ERROR);
+	g_assert_error (error, NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_FAILED);
 	g_assert (agent == NULL);
 	g_clear_error (&error);
 

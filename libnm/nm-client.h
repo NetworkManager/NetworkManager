@@ -131,21 +131,23 @@ typedef enum {
 
 /**
  * NMClientError:
- * @NM_CLIENT_ERROR_UNKNOWN: unknown or unclassified error
+ * @NM_CLIENT_ERROR_FAILED: unknown or unclassified error
  * @NM_CLIENT_ERROR_MANAGER_NOT_RUNNING: an operation that requires NetworkManager
  *   failed because NetworkManager is not running
- * @NM_CLIENT_ERROR_CONNECTION_REMOVED: the #NMRemoteConnection object
- *   was removed before it was completely initialized
- * @NM_CLIENT_ERROR_CONNECTION_UNAVAILABLE: the #NMRemoteConnection object
- *   is not visible or otherwise unreadable
+ * @NM_CLIENT_ERROR_OBJECT_CREATION_FAILED: NetworkManager claimed that an
+ *   operation succeeded, but the object that was allegedly created (eg,
+ *   #NMRemoteConnection, #NMActiveConnection) was apparently destroyed before
+ *   #NMClient could create a representation of it.
  *
  * Describes errors that may result from operations involving a #NMClient.
+ *
+ * D-Bus operations may also return errors from other domains, including
+ * #NMManagerError, #NMSettingsError, #NMAgentManagerError, and #NMConnectionError.
  **/
 typedef enum {
-	NM_CLIENT_ERROR_UNKNOWN = 0,            /*< nick=UnknownError >*/
-	NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,    /*< nick=ManagerNotRunning >*/
-	NM_CLIENT_ERROR_CONNECTION_REMOVED,     /*< nick=ConnectionRemoved >*/
-	NM_CLIENT_ERROR_CONNECTION_UNAVAILABLE, /*< nick=ConnectionUnavailable >*/
+	NM_CLIENT_ERROR_FAILED = 0,
+	NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
+	NM_CLIENT_ERROR_OBJECT_CREATION_FAILED,
 } NMClientError;
 
 #define NM_CLIENT_ERROR nm_client_error_quark ()

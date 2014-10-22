@@ -139,23 +139,6 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-/**
- * nm_device_error_quark:
- *
- * Registers an error quark for #NMDevice if necessary.
- *
- * Returns: the error quark used for #NMDevice errors.
- **/
-GQuark
-nm_device_error_quark (void)
-{
-	static GQuark quark = 0;
-
-	if (G_UNLIKELY (quark == 0))
-		quark = g_quark_from_static_string ("nm-device-error-quark");
-	return quark;
-}
-
 static void
 nm_device_init (NMDevice *device)
 {
@@ -1917,10 +1900,15 @@ nm_device_disconnect (NMDevice *device,
                       GCancellable *cancellable,
                       GError **error)
 {
+	gboolean ret;
+
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
-	return nmdbus_device_call_disconnect_sync (NM_DEVICE_GET_PRIVATE (device)->proxy,
-	                                           cancellable, error);
+	ret = nmdbus_device_call_disconnect_sync (NM_DEVICE_GET_PRIVATE (device)->proxy,
+	                                          cancellable, error);
+	if (error && *error)
+		g_dbus_error_strip_remote_error (*error);
+	return ret;
 }
 
 static void
@@ -1933,8 +1921,10 @@ device_disconnect_cb (GObject *proxy,
 
 	if (nmdbus_device_call_disconnect_finish (NMDBUS_DEVICE (proxy), result, &error))
 		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-	else
+	else {
+		g_dbus_error_strip_remote_error (error);
 		g_simple_async_result_take_error (simple, error);
+	}
 
 	g_simple_async_result_complete (simple);
 	g_object_unref (simple);
@@ -2012,10 +2002,15 @@ nm_device_delete (NMDevice *device,
                   GCancellable *cancellable,
                   GError **error)
 {
+	gboolean ret;
+
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
-	return nmdbus_device_call_delete_sync (NM_DEVICE_GET_PRIVATE (device)->proxy,
-	                                       cancellable, error);
+	ret = nmdbus_device_call_delete_sync (NM_DEVICE_GET_PRIVATE (device)->proxy,
+	                                      cancellable, error);
+	if (error && *error)
+		g_dbus_error_strip_remote_error (*error);
+	return ret;
 }
 
 static void
@@ -2028,8 +2023,10 @@ device_delete_cb (GObject *proxy,
 
 	if (nmdbus_device_call_delete_finish (NMDBUS_DEVICE (proxy), result, &error))
 		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-	else
+	else {
+		g_dbus_error_strip_remote_error (error);
 		g_simple_async_result_take_error (simple, error);
+	}
 
 	g_simple_async_result_complete (simple);
 	g_object_unref (simple);
@@ -2115,17 +2112,21 @@ nm_device_connection_valid (NMDevice *device, NMConnection *connection)
 gboolean
 connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
-	NMSettingConnection *s_con;
 	const char *config_iface, *device_iface;
+	GError *local = NULL;
 
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
+	if (!nm_connection_verify (connection, &local)) {
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INVALID_CONNECTION,
+		             _("The connection was not valid: %s"), local->message);
+		g_error_free (local);
+		return FALSE;
+	}
 
-	config_iface = nm_setting_connection_get_interface_name (s_con);
+	config_iface = nm_connection_get_interface_name (connection);
 	device_iface = nm_device_get_iface (device);
 	if (config_iface && g_strcmp0 (config_iface, device_iface) != 0) {
-		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INTERFACE_MISMATCH,
-		             "The interface names of the device and the connection didn't match.");
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+		             _("The interface names of the device and the connection didn't match."));
 		return FALSE;
 	}
 

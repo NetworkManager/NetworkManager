@@ -329,27 +329,6 @@ _nm_dbus_new_proxy_for_connection_finish (GAsyncResult *result,
 	return G_DBUS_PROXY (proxy);
 }
 
-void
-_nm_dbus_register_error_domain (GQuark domain,
-                                const char *interface,
-                                GType enum_type)
-{
-	GEnumClass *enum_class;
-	GEnumValue *e;
-	char *error_name;
-	int i;
-
-	enum_class = g_type_class_ref (enum_type);
-	for (i = 0; i < enum_class->n_values; i++) {
-		e = &enum_class->values[i];
-		error_name = g_strdup_printf ("%s.%s", interface, e->value_nick);
-		g_dbus_error_register_error (domain, e->value, error_name);
-		g_free (error_name);
-	}
-
-	g_type_class_unref (enum_class);
-}
-
 /* Binds the properties on a generated server-side GDBus object to the
  * corresponding properties on the public object.
  */

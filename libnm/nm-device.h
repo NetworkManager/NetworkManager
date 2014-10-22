@@ -37,20 +37,6 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DEVICE))
 #define NM_DEVICE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEVICE, NMDeviceClass))
 
-/**
- * NMDeviceError:
- * @NM_DEVICE_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_DEVICE_ERROR_INTERFACE_MISMATCH: the interface names of the connection and the
- *   device mismatched
- */
-typedef enum {
-	NM_DEVICE_ERROR_UNKNOWN = 0,        /*< nick=UnknownError >*/
-	NM_DEVICE_ERROR_INTERFACE_MISMATCH, /*< nick=InterfaceMismatch >*/
-} NMDeviceError;
-
-#define NM_DEVICE_ERROR nm_device_error_quark ()
-GQuark nm_device_error_quark (void);
-
 #define NM_DEVICE_DEVICE_TYPE "device-type"
 #define NM_DEVICE_UDI "udi"
 #define NM_DEVICE_INTERFACE "interface"

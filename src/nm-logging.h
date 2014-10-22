@@ -86,15 +86,6 @@ enum {
 	LOGL_MAX
 };
 
-typedef enum {
-	NM_LOGGING_ERROR_UNKNOWN_LEVEL = 0,  /*< nick=UnknownLevel >*/
-	NM_LOGGING_ERROR_UNKNOWN_DOMAIN = 1, /*< nick=UnknownDomain >*/
-} NMLoggingError;
-
-#define NM_LOGGING_ERROR (nm_logging_error_quark ())
-GQuark nm_logging_error_quark    (void);
-
-
 #define nm_log_err(domain, ...)     nm_log (LOGL_ERR,   (domain), __VA_ARGS__)
 #define nm_log_warn(domain, ...)    nm_log (LOGL_WARN,  (domain), __VA_ARGS__)
 #define nm_log_info(domain, ...)    nm_log (LOGL_INFO,  (domain), __VA_ARGS__)

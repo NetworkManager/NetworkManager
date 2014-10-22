@@ -39,22 +39,6 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_WIMAX_SETTING_NAME "wimax"
 
-/**
- * NMSettingWimaxError:
- * @NM_SETTING_WIMAX_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_SETTING_WIMAX_ERROR_INVALID_PROPERTY: the property was invalid
- * @NM_SETTING_WIMAX_ERROR_MISSING_PROPERTY: the property was missing and is
- * required
- */
-typedef enum {
-	NM_SETTING_WIMAX_ERROR_UNKNOWN = 0,      /*< nick=UnknownError >*/
-	NM_SETTING_WIMAX_ERROR_INVALID_PROPERTY, /*< nick=InvalidProperty >*/
-	NM_SETTING_WIMAX_ERROR_MISSING_PROPERTY  /*< nick=MissingProperty >*/
-} NMSettingWimaxError;
-
-#define NM_SETTING_WIMAX_ERROR nm_setting_wimax_error_quark ()
-GQuark nm_setting_wimax_error_quark (void);
-
 #define NM_SETTING_WIMAX_NETWORK_NAME "network-name"
 #define NM_SETTING_WIMAX_MAC_ADDRESS  "mac-address"
 

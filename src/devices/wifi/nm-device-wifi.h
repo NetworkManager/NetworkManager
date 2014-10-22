@@ -38,16 +38,6 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_WIFI_CLASS(klass)	(G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_DEVICE_WIFI))
 #define NM_DEVICE_WIFI_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_DEVICE_WIFI, NMDeviceWifiClass))
 
-typedef enum {
-	NM_WIFI_ERROR_CONNECTION_NOT_WIRELESS = 0, /*< nick=ConnectionNotWireless >*/
-	NM_WIFI_ERROR_CONNECTION_INVALID,          /*< nick=ConnectionInvalid >*/
-	NM_WIFI_ERROR_CONNECTION_INCOMPATIBLE,     /*< nick=ConnectionIncompatible >*/
-	NM_WIFI_ERROR_ACCESS_POINT_NOT_FOUND,      /*< nick=AccessPointNotFound >*/
-	NM_WIFI_ERROR_SCAN_NOT_ALLOWED,            /*< nick=ScanNotAllowed >*/
-	NM_WIFI_ERROR_AP_MODE_UNSUPPORTED,         /*< nick=ApModeUnsupported >*/
-	NM_WIFI_ERROR_ADHOC_MODE_UNSUPPORTED,      /*< nick=AdhocModeUnsupported >*/
-} NMWifiError;
-
 #define NM_DEVICE_WIFI_PERMANENT_HW_ADDRESS "perm-hw-address"
 #define NM_DEVICE_WIFI_MODE                "mode"
 #define NM_DEVICE_WIFI_BITRATE             "bitrate"

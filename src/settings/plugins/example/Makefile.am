@@ -24,7 +24,6 @@ libnm_settings_plugin_example_la_SOURCES = \
 	nm-example-connection.h \
 	plugin.c \
 	plugin.h \
-	errors.c \
 	common.h \
 	reader.c \
 	writer.c

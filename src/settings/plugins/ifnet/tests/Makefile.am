@@ -25,8 +25,7 @@ check_ifnet_SOURCES = \
 	../connection_parser.c \
 	../net_parser.c \
 	../net_utils.c \
-	../wpa_parser.c \
-	../errors.c
+	../wpa_parser.c
 
 check_ifnet_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS)

@@ -37,24 +37,6 @@
  * necessary for bridging connections.
  **/
 
-/**
- * nm_setting_bridge_error_quark:
- *
- * Registers an error quark for #NMSettingBridge if necessary.
- *
- * Returns: the error quark used for #NMSettingBridge errors.
- **/
-GQuark
-nm_setting_bridge_error_quark (void)
-{
-	static GQuark quark;
-
-	if (G_UNLIKELY (!quark))
-		quark = g_quark_from_static_string ("nm-setting-bridge-error-quark");
-	return quark;
-}
-
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingBridge, nm_setting_bridge, NM_TYPE_SETTING,
                          _nm_register_setting (BRIDGE, 1))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_BRIDGE)
@@ -217,8 +199,8 @@ check_range (guint32 val,
 {
 	if ((val != 0) && (val < min || val > max)) {
 		g_set_error (error,
-		             NM_SETTING_BRIDGE_ERROR,
-		             NM_SETTING_BRIDGE_ERROR_INVALID_PROPERTY,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		             _("value '%d' is out of range <%d-%d>"),
 		             val, min, max);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_BRIDGE_SETTING_NAME, prop);
@@ -234,8 +216,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (priv->mac_address && !nm_utils_hwaddr_valid (priv->mac_address, ETH_ALEN)) {
 		g_set_error_literal (error,
-		                     NM_SETTING_BRIDGE_ERROR,
-		                     NM_SETTING_BRIDGE_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("is not a valid MAC address"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_BRIDGE_SETTING_NAME, NM_SETTING_BRIDGE_MAC_ADDRESS);
 		return FALSE;

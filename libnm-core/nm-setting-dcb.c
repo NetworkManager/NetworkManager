@@ -39,24 +39,6 @@
  * of storage technologies like Fibre Channel over Ethernet (FCoE) and iSCSI.
  **/
 
-/**
- * nm_setting_dcb_error_quark:
- *
- * Registers an error quark for #NMSettingDcb if necessary.
- *
- * Returns: the error quark used for #NMSettingDcb errors.
- **/
-GQuark
-nm_setting_dcb_error_quark (void)
-{
-	static GQuark quark;
-
-	if (G_UNLIKELY (!quark))
-		quark = g_quark_from_static_string ("nm-setting-dcb-error-quark");
-	return quark;
-}
-
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingDcb, nm_setting_dcb, NM_TYPE_SETTING,
                          _nm_register_setting (DCB, 2))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_DCB)
@@ -534,8 +516,8 @@ check_dcb_flags (NMSettingDcbFlags flags, const char *prop_name, GError **error)
 {
 	if (flags & ~DCB_FLAGS_ALL) {
 		g_set_error_literal (error,
-		                     NM_SETTING_DCB_ERROR,
-		                     NM_SETTING_DCB_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("flags invalid"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_DCB_SETTING_NAME, prop_name);
 		return FALSE;
@@ -543,8 +525,8 @@ check_dcb_flags (NMSettingDcbFlags flags, const char *prop_name, GError **error)
 
 	if (!(flags & NM_SETTING_DCB_FLAG_ENABLE) && (flags & ~NM_SETTING_DCB_FLAG_ENABLE)) {
 		g_set_error_literal (error,
-		                     NM_SETTING_DCB_ERROR,
-		                     NM_SETTING_DCB_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("flags invalid - disabled"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_DCB_SETTING_NAME, prop_name);
 		return FALSE;
@@ -569,8 +551,8 @@ check_uint_array (const guint *array,
 	for (i = 0; i < len; i++) {
 		if (!(flags & NM_SETTING_DCB_FLAG_ENABLE) && array[i]) {
 			g_set_error_literal (error,
-			                     NM_SETTING_DCB_ERROR,
-			                     NM_SETTING_DCB_ERROR_INVALID_PROPERTY,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			                     _("property invalid (not enabled)"));
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_DCB_SETTING_NAME, prop_name);
 			return FALSE;
@@ -578,8 +560,8 @@ check_uint_array (const guint *array,
 
 		if ((array[i] > max) && (array[i] != extra)) {
 			g_set_error_literal (error,
-			                     NM_SETTING_DCB_ERROR,
-			                     NM_SETTING_DCB_ERROR_INVALID_PROPERTY,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			                     _("element invalid"));
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_DCB_SETTING_NAME, prop_name);
 			return FALSE;
@@ -593,8 +575,8 @@ check_uint_array (const guint *array,
 			/* If the feature is enabled, sum must equal 100% */
 			if (sum != 100) {
 				g_set_error_literal (error,
-				                     NM_SETTING_DCB_ERROR,
-				                     NM_SETTING_DCB_ERROR_INVALID_PROPERTY,
+				                     NM_CONNECTION_ERROR,
+				                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 				                     _("sum not 100%"));
 				g_prefix_error (error, "%s.%s: ", NM_SETTING_DCB_SETTING_NAME, prop_name);
 				return FALSE;
@@ -618,8 +600,8 @@ check_priority (gint val,
 {
 	if (!(flags & NM_SETTING_DCB_FLAG_ENABLE) && (val >= 0)) {
 		g_set_error_literal (error,
-		                     NM_SETTING_DCB_ERROR,
-		                     NM_SETTING_DCB_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property invalid (not enabled)"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_DCB_SETTING_NAME, prop_name);
 		return FALSE;
@@ -627,8 +609,8 @@ check_priority (gint val,
 
 	if (val < -1 || val > 7) {
 		g_set_error_literal (error,
-		                     NM_SETTING_DCB_ERROR,
-		                     NM_SETTING_DCB_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property invalid"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_DCB_SETTING_NAME, prop_name);
 		return FALSE;
@@ -649,8 +631,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (!priv->app_fcoe_mode) {
 		g_set_error_literal (error,
-		                     NM_SETTING_DCB_ERROR,
-		                     NM_SETTING_DCB_ERROR_MISSING_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
 		                     _("property missing"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_DCB_SETTING_NAME, NM_SETTING_DCB_APP_FCOE_MODE);
 		return FALSE;
@@ -659,8 +641,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	if (strcmp (priv->app_fcoe_mode, NM_SETTING_DCB_FCOE_MODE_FABRIC) &&
 	    strcmp (priv->app_fcoe_mode, NM_SETTING_DCB_FCOE_MODE_VN2VN)) {
 		g_set_error_literal (error,
-		                     NM_SETTING_DCB_ERROR,
-		                     NM_SETTING_DCB_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property invalid"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_DCB_SETTING_NAME, NM_SETTING_DCB_APP_FCOE_MODE);
 		return FALSE;

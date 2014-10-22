@@ -36,25 +36,6 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_INFINIBAND_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DEVICE_INFINIBAND))
 #define NM_DEVICE_INFINIBAND_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEVICE_INFINIBAND, NMDeviceInfinibandClass))
 
-/**
- * NMDeviceInfinibandError:
- * @NM_DEVICE_INFINIBAND_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_DEVICE_INFINIBAND_ERROR_NOT_INFINIBAND_CONNECTION: the connection was not of InfiniBand type
- * @NM_DEVICE_INFINIBAND_ERROR_INVALID_INFINIBAND_CONNECTION: the InfiniBand connection was invalid
- * @NM_DEVICE_INFINIBAND_ERROR_INVALID_DEVICE_MAC: the device's MAC was invalid
- * @NM_DEVICE_INFINIBAND_ERROR_MAC_MISMATCH: the MACs of the connection and the device mismatched
- */
-typedef enum {
-	NM_DEVICE_INFINIBAND_ERROR_UNKNOWN = 0,                   /*< nick=UnknownError >*/
-	NM_DEVICE_INFINIBAND_ERROR_NOT_INFINIBAND_CONNECTION,     /*< nick=NotInfinibandConnection >*/
-	NM_DEVICE_INFINIBAND_ERROR_INVALID_INFINIBAND_CONNECTION, /*< nick=InvalidInfinibandConnection >*/
-	NM_DEVICE_INFINIBAND_ERROR_INVALID_DEVICE_MAC,            /*< nick=InvalidDeviceMac >*/
-	NM_DEVICE_INFINIBAND_ERROR_MAC_MISMATCH,                  /*< nick=MacMismatch >*/
-} NMDeviceInfinibandError;
-
-#define NM_DEVICE_INFINIBAND_ERROR nm_device_infiniband_error_quark ()
-GQuark nm_device_infiniband_error_quark (void);
-
 #define NM_DEVICE_INFINIBAND_HW_ADDRESS  "hw-address"
 #define NM_DEVICE_INFINIBAND_CARRIER     "carrier"
 

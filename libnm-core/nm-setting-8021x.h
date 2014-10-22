@@ -79,23 +79,6 @@ typedef enum { /*< underscore_name=nm_setting_802_1x_ck_scheme >*/
 
 #define NM_SETTING_802_1X_SETTING_NAME "802-1x"
 
-/**
- * NMSetting8021xError:
- * @NM_SETTING_802_1X_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_SETTING_802_1X_ERROR_INVALID_PROPERTY: the property was invalid
- * @NM_SETTING_802_1X_ERROR_MISSING_PROPERTY: the property was missing and is
- * required
- */
-typedef enum { /*< underscore_name=nm_setting_802_1x_error >*/
-	NM_SETTING_802_1X_ERROR_UNKNOWN = 0,      /*< nick=UnknownError >*/
-	NM_SETTING_802_1X_ERROR_INVALID_PROPERTY, /*< nick=InvalidProperty >*/
-	NM_SETTING_802_1X_ERROR_MISSING_PROPERTY  /*< nick=MissingProperty >*/
-} NMSetting8021xError;
-
-#define NM_SETTING_802_1X_ERROR nm_setting_802_1x_error_quark ()
-GQuark nm_setting_802_1x_error_quark (void);
-
-
 #define NM_SETTING_802_1X_EAP "eap"
 #define NM_SETTING_802_1X_IDENTITY "identity"
 #define NM_SETTING_802_1X_ANONYMOUS_IDENTITY "anonymous-identity"

@@ -25,7 +25,6 @@
 #include <glib/gstdio.h>
 
 #include "nm-ibft-connection.h"
-#include "errors.h"
 #include "reader.h"
 
 G_DEFINE_TYPE (NMIbftConnection, nm_ibft_connection, NM_TYPE_SETTINGS_CONNECTION)

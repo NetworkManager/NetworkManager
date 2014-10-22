@@ -368,7 +368,7 @@ add_remove_cb (GObject *s,
 	GError *error = NULL;
 
 	connection = nm_client_add_connection_finish (client, result, &error);
-	g_assert_error (error, NM_CLIENT_ERROR, NM_CLIENT_ERROR_CONNECTION_REMOVED);
+	g_assert_error (error, NM_CLIENT_ERROR, NM_CLIENT_ERROR_OBJECT_CREATION_FAILED);
 	g_assert (connection == NULL);
 
 	*done = TRUE;
@@ -415,6 +415,88 @@ test_add_remove_connection (void)
 
 /*******************************************************************/
 
+static void
+add_bad_cb (GObject *s,
+            GAsyncResult *result,
+            gpointer user_data)
+{
+	gboolean *done = user_data;
+	GError *error = NULL;
+
+	remote = nm_client_add_connection_finish (client, result, &error);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
+
+	*done = TRUE;
+}
+
+static void
+test_add_bad_connection (void)
+{
+	NMConnection *connection;
+	time_t start, now;
+	gboolean done = FALSE;
+
+	/* The test daemon doesn't support bond connections */
+	connection = nmtst_create_minimal_connection ("bad connection test", NULL, NM_SETTING_BOND_SETTING_NAME, NULL);
+
+	nm_client_add_connection_async (client,
+	                                connection,
+	                                TRUE,
+	                                NULL,
+	                                add_bad_cb,
+	                                &done);
+	g_object_unref (connection);
+
+	start = time (NULL);
+	do {
+		now = time (NULL);
+		g_main_context_iteration (NULL, FALSE);
+	} while ((done == FALSE) && (now - start < 5));
+	g_assert (done == TRUE);
+	g_assert (remote == NULL);
+}
+
+/*******************************************************************/
+
+static void
+save_hostname_cb (GObject *s,
+                  GAsyncResult *result,
+                  gpointer user_data)
+{
+	gboolean *done = user_data;
+	GError *error = NULL;
+
+	nm_client_save_hostname_finish (client, result, &error);
+	g_assert_no_error (error);
+
+	*done = TRUE;
+}
+
+static void
+test_save_hostname (void)
+{
+	time_t start, now;
+	gboolean done = FALSE;
+	GError *error = NULL;
+
+	/* test-networkmanager-service.py requires the hostname to contain a '.' */
+	nm_client_save_hostname (client, "foo", NULL, &error);
+	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_HOSTNAME);
+	g_clear_error (&error);
+
+	nm_client_save_hostname_async (client, "example.com", NULL, save_hostname_cb, &done);
+
+	start = time (NULL);
+	do {
+		now = time (NULL);
+		g_main_context_iteration (NULL, FALSE);
+	} while ((done == FALSE) && (now - start < 5));
+	g_assert (done == TRUE);
+	g_assert (remote == NULL);
+}
+
+/*******************************************************************/
+
 int
 main (int argc, char **argv)
 {
@@ -446,6 +528,8 @@ main (int argc, char **argv)
 	g_test_add_func ("/client/make_visible", test_make_visible);
 	g_test_add_func ("/client/remove_connection", test_remove_connection);
 	g_test_add_func ("/client/add_remove_connection", test_add_remove_connection);
+	g_test_add_func ("/client/add_bad_connection", test_add_bad_connection);
+	g_test_add_func ("/client/save_hostname", test_save_hostname);
 
 	ret = g_test_run ();
 

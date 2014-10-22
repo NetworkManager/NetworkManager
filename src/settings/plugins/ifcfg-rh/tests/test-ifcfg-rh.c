@@ -5952,7 +5952,7 @@ test_read_wifi_band_a_channel_mismatch (void)
 	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-band-a-channel-mismatch",
 	                                   NULL, TYPE_WIRELESS, NULL, NULL, NULL, NULL, &error, NULL);
 	g_assert (connection == NULL);
-	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
+	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 }
 
 static void
@@ -5964,7 +5964,7 @@ test_read_wifi_band_bg_channel_mismatch (void)
 	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-band-bg-channel-mismatch",
 	                                   NULL, TYPE_WIRELESS, NULL, NULL, NULL, NULL, &error, NULL);
 	g_assert (connection == NULL);
-	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
+	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 }
 
 #define TEST_IFCFG_WIRED_QETH_STATIC TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-qeth-static"
@@ -12287,7 +12287,7 @@ test_read_ibft_ignored (void)
 	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-ibft",
 	                                   NULL, TYPE_ETHERNET,
 	                                   NULL, NULL, NULL, NULL, &error, NULL);
-	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
+	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 	g_assert (connection == NULL);
 }
 
@@ -13169,7 +13169,7 @@ test_read_dcb_bad_booleans (void)
 	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, &error, NULL);
 	g_test_assert_expected_messages ();
 
-	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
+	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 	g_assert (strstr (error->message, "invalid boolean digit"));
 	g_assert (connection == NULL);
 }
@@ -13186,7 +13186,7 @@ test_read_dcb_short_booleans (void)
 	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, &error, NULL);
 	g_test_assert_expected_messages ();
 
-	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
+	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 	g_assert (strstr (error->message, "boolean array must be 8 characters"));
 	g_assert (connection == NULL);
 }
@@ -13203,7 +13203,7 @@ test_read_dcb_bad_uints (void)
 	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, &error, NULL);
 	g_test_assert_expected_messages ();
 
-	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
+	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 	g_assert (strstr (error->message, "invalid uint digit"));
 	g_assert (connection == NULL);
 }
@@ -13220,7 +13220,7 @@ test_read_dcb_short_uints (void)
 	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, &error, NULL);
 	g_test_assert_expected_messages ();
 
-	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
+	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 	g_assert (strstr (error->message, "uint array must be 8 characters"));
 	g_assert (connection == NULL);
 }
@@ -13237,7 +13237,7 @@ test_read_dcb_bad_percent (void)
 	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, &error, NULL);
 	g_test_assert_expected_messages ();
 
-	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
+	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 	g_assert (strstr (error->message, "invalid percent element"));
 	g_assert (connection == NULL);
 }
@@ -13254,7 +13254,7 @@ test_read_dcb_short_percent (void)
 	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, &error, NULL);
 	g_test_assert_expected_messages ();
 
-	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
+	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 	g_assert (strstr (error->message, "percent array must be 8 elements"));
 	g_assert (connection == NULL);
 }
@@ -13271,7 +13271,7 @@ test_read_dcb_pgpct_not_100 (void)
 	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, &error, NULL);
 	g_test_assert_expected_messages ();
 
-	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
+	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 	g_assert (strstr (error->message, "invalid percentage sum"));
 	g_assert (connection == NULL);
 }

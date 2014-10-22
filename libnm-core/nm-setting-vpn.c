@@ -42,24 +42,6 @@
  * properties.
  **/
 
-/**
- * nm_setting_vpn_error_quark:
- *
- * Registers an error quark for #NMSettingVpn if necessary.
- *
- * Returns: the error quark used for #NMSettingVpn errors.
- **/
-GQuark
-nm_setting_vpn_error_quark (void)
-{
-	static GQuark quark;
-
-	if (G_UNLIKELY (!quark))
-		quark = g_quark_from_static_string ("nm-setting-vpn-error-quark");
-	return quark;
-}
-
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingVpn, nm_setting_vpn, NM_TYPE_SETTING,
                          _nm_register_setting (VPN, 1))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_VPN)
@@ -391,8 +373,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (!priv->service_type) {
 		g_set_error_literal (error,
-		                     NM_SETTING_VPN_ERROR,
-		                     NM_SETTING_VPN_ERROR_MISSING_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
 		                     _("property is missing"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_VPN_SETTING_NAME, NM_SETTING_VPN_SERVICE_TYPE);
 		return FALSE;
@@ -400,8 +382,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (!strlen (priv->service_type)) {
 		g_set_error_literal (error,
-		                     NM_SETTING_VPN_ERROR,
-		                     NM_SETTING_VPN_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property is empty"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_VPN_SETTING_NAME, NM_SETTING_VPN_SERVICE_TYPE);
 		return FALSE;
@@ -410,8 +392,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	/* default username can be NULL, but can't be zero-length */
 	if (priv->user_name && !strlen (priv->user_name)) {
 		g_set_error_literal (error,
-		                     NM_SETTING_VPN_ERROR,
-		                     NM_SETTING_VPN_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property is empty"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_VPN_SETTING_NAME, NM_SETTING_VPN_USER_NAME);
 		return FALSE;
@@ -432,9 +414,10 @@ update_secret_string (NMSetting *setting,
 	g_return_val_if_fail (value != NULL, NM_SETTING_UPDATE_SECRET_ERROR);
 
 	if (!value || !strlen (value)) {
-		g_set_error (error, NM_SETTING_ERROR,
-		             NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH,
-		             "Secret %s was empty", key);
+		g_set_error (error, NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("secret was empty"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_VPN_SETTING_NAME, key);
 		return NM_SETTING_UPDATE_SECRET_ERROR;
 	}
 
@@ -461,16 +444,18 @@ update_secret_dict (NMSetting *setting,
 	g_variant_iter_init (&iter, secrets);
 	while (g_variant_iter_next (&iter, "{&s&s}", &name, &value)) {
 		if (!name || !strlen (name)) {
-			g_set_error_literal (error, NM_SETTING_ERROR,
-			                     NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH,
-			                     "Secret name was empty");
+			g_set_error_literal (error, NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_SETTING,
+			                     _("setting contained a secret with an empty name"));
+			g_prefix_error (error, "%s: ", NM_SETTING_VPN_SETTING_NAME);
 			return NM_SETTING_UPDATE_SECRET_ERROR;
 		}
 
 		if (!value || !strlen (value)) {
-			g_set_error (error, NM_SETTING_ERROR,
-			             NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH,
-			             "Secret %s value was empty", name);
+			g_set_error (error, NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("secret value was empty"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_VPN_SETTING_NAME, name);
 			return NM_SETTING_UPDATE_SECRET_ERROR;
 		}
 	}
@@ -514,12 +499,17 @@ update_one_secret (NMSetting *setting, const char *key, GVariant *value, GError 
 		success = update_secret_string (setting, key, g_variant_get_string (value, NULL), error);
 	} else if (g_variant_is_of_type (value, G_VARIANT_TYPE ("a{ss}"))) {
 		if (strcmp (key, NM_SETTING_VPN_SECRETS) != 0) {
-			g_set_error (error, NM_SETTING_ERROR, NM_SETTING_ERROR_PROPERTY_NOT_SECRET,
-			             "Property %s not a secret property", key);
+			g_set_error_literal (error, NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_PROPERTY_NOT_SECRET,
+			                     _("not a secret property"));
+			g_prefix_error (error, "%s.%s ", NM_SETTING_VPN_SETTING_NAME, key);
 		} else
 			success = update_secret_dict (setting, value, error);
-	} else
-		g_set_error_literal (error, NM_SETTING_ERROR, NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH, key);
+	} else {
+		g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("secret is not of correct type"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_VPN_SETTING_NAME, key);
+	}
 
 	if (success == NM_SETTING_UPDATE_SECRET_SUCCESS_MODIFIED)
 		g_object_notify (G_OBJECT (setting), NM_SETTING_VPN_SECRETS);
@@ -550,16 +540,18 @@ get_secret_flags (NMSetting *setting,
 			success = TRUE;
 		} else {
 			g_set_error (error,
-			             NM_SETTING_ERROR,
-			             NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH,
-			             _("Failed to convert '%s' value '%s' to uint"),
-			             flags_key, (const char *) val);
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("failed to convert value '%s' to uint"),
+			             (const char *) val);
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_VPN_SETTING_NAME, flags_key);
 		}
 	} else {
-		g_set_error (error,
-		             NM_SETTING_ERROR,
-		             NM_SETTING_ERROR_PROPERTY_NOT_FOUND,
-		             _("Secret flags property '%s' not found"), flags_key);
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
+		                     _("secret flags property not found"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_VPN_SETTING_NAME, flags_key);
 	}
 	g_free (flags_key);
 	if (out_flags)

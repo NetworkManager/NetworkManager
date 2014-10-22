@@ -36,21 +36,6 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_GENERIC_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DEVICE_GENERIC))
 #define NM_DEVICE_GENERIC_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEVICE_GENERIC, NMDeviceGenericClass))
 
-/**
- * NMDeviceGenericError:
- * @NM_DEVICE_GENERIC_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_DEVICE_GENERIC_ERROR_NOT_GENERIC_CONNECTION: the connection was not of generic type
- * @NM_DEVICE_GENERIC_ERROR_MISSING_INTERFACE_NAME: the connection did not specify the interface name
- */
-typedef enum {
-	NM_DEVICE_GENERIC_ERROR_UNKNOWN = 0,            /*< nick=UnknownError >*/
-	NM_DEVICE_GENERIC_ERROR_NOT_GENERIC_CONNECTION, /*< nick=NotGenericConnection >*/
-	NM_DEVICE_GENERIC_ERROR_MISSING_INTERFACE_NAME, /*< nick=MissingInterfaceName >*/
-} NMDeviceGenericError;
-
-#define NM_DEVICE_GENERIC_ERROR nm_device_generic_error_quark ()
-GQuark nm_device_generic_error_quark (void);
-
 #define NM_DEVICE_GENERIC_HW_ADDRESS       "hw-address"
 #define NM_DEVICE_GENERIC_TYPE_DESCRIPTION "type-description"
 

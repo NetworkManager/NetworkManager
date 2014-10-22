@@ -78,9 +78,5 @@
 #define KEY_DCB_PG_STRICT           "DCB_PG_STRICT"
 #define KEY_DCB_PG_UP2TC            "DCB_PG_UP2TC"
 
-#define IFCFG_PLUGIN_ERROR (ifcfg_plugin_error_quark ())
-GQuark ifcfg_plugin_error_quark (void);
-
-
 #endif  /* __COMMON_H__ */
 

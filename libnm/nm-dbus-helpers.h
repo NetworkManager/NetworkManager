@@ -68,10 +68,6 @@ void        _nm_dbus_new_proxy_for_connection_async  (GDBusConnection *connectio
 GDBusProxy *_nm_dbus_new_proxy_for_connection_finish (GAsyncResult *result,
                                                       GError **error);
 
-void _nm_dbus_register_error_domain (GQuark domain,
-                                     const char *interface,
-                                     GType enum_type);
-
 void _nm_dbus_bind_properties (gpointer object,
                                gpointer skeleton);
 

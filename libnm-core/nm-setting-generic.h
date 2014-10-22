@@ -39,22 +39,6 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_GENERIC_SETTING_NAME "generic"
 
-/**
- * NMSettingGenericError:
- * @NM_SETTING_GENERIC_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_SETTING_GENERIC_ERROR_INVALID_PROPERTY: the property was invalid
- * @NM_SETTING_GENERIC_ERROR_MISSING_PROPERTY: the property was missing and
- * is required
- */
-typedef enum {
-	NM_SETTING_GENERIC_ERROR_UNKNOWN = 0,      /*< nick=UnknownError >*/
-	NM_SETTING_GENERIC_ERROR_INVALID_PROPERTY, /*< nick=InvalidProperty >*/
-	NM_SETTING_GENERIC_ERROR_MISSING_PROPERTY, /*< nick=MissingProperty >*/
-} NMSettingGenericError;
-
-#define NM_SETTING_GENERIC_ERROR nm_setting_generic_error_quark ()
-GQuark nm_setting_generic_error_quark (void);
-
 typedef struct {
 	NMSetting parent;
 } NMSettingGeneric;

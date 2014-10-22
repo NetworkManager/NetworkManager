@@ -41,32 +41,6 @@ G_BEGIN_DECLS
 #define NM_IS_SETTING_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_SETTING))
 #define NM_SETTING_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_SETTING, NMSettingClass))
 
-/**
- * NMSettingError:
- * @NM_SETTING_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_SETTING_ERROR_PROPERTY_NOT_FOUND: a property required by the operation
- *   was not found; for example, an attempt to update an invalid secret
- * @NM_SETTING_ERROR_PROPERTY_NOT_SECRET: an operation which requires a secret
- *   was attempted on a non-secret property
- * @NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH: the operation requires a property
- *   of a specific type, or the value couldn't be transformed to the same type
- *   as the property being acted upon
- *
- * Describes errors that may result from operations involving a #NMSetting.
- *
- **/
-typedef enum
-{
-	NM_SETTING_ERROR_UNKNOWN = 0,           /*< nick=UnknownError >*/
-	NM_SETTING_ERROR_PROPERTY_NOT_FOUND,    /*< nick=PropertyNotFound >*/
-	NM_SETTING_ERROR_PROPERTY_NOT_SECRET,   /*< nick=PropertyNotSecret >*/
-	NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH /*< nick=PropertyTypeMismatch >*/
-} NMSettingError;
-
-#define NM_SETTING_ERROR nm_setting_error_quark ()
-GQuark nm_setting_error_quark (void);
-
-
 /* The property of the #NMSetting is required for the setting to be valid */
 #define NM_SETTING_PARAM_REQUIRED     (1 << (1 + G_PARAM_USER_SHIFT))
 
@@ -244,7 +218,6 @@ typedef void (*NMSettingValueIterFn) (NMSetting *setting,
 GType nm_setting_get_type (void);
 
 GType nm_setting_lookup_type (const char *name);
-GType nm_setting_lookup_type_by_quark (GQuark error_quark);
 
 NMSetting *nm_setting_duplicate      (NMSetting *setting);
 
