@@ -25,7 +25,7 @@
 #include "nm-setting-team.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
-#include "nm-setting-private.h"
+#include "nm-connection-private.h"
 
 /**
  * SECTION:nm-setting-team
@@ -79,9 +79,9 @@ nm_setting_team_get_config (NMSettingTeam *setting)
 }
 
 static gboolean
-verify (NMSetting *setting, GSList *all_settings, GError **error)
+verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
-	return _nm_setting_verify_required_virtual_interface_name (all_settings, error);
+	return _nm_connection_verify_required_interface_name (connection, error);
 }
 
 static void

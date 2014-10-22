@@ -283,64 +283,6 @@ _nm_setting_slave_type_is_valid (const char *slave_type, const char **out_port_t
 	return found;
 }
 
-
-NMSetting *
-_nm_setting_find_in_list_base_type (GSList *all_settings)
-{
-	GSList *iter;
-	NMSetting *setting = NULL;
-
-	for (iter = all_settings; iter; iter = iter->next) {
-		NMSetting *s_iter = NM_SETTING (iter->data);
-
-		if (!_nm_setting_is_base_type (s_iter))
-			continue;
-
-		if (setting) {
-			/* FIXME: currently, if there is more than one matching base type,
-			 * we cannot detect the base setting.
-			 * See: https://bugzilla.gnome.org/show_bug.cgi?id=696936#c8 */
-			return NULL;
-		}
-		setting = s_iter;
-	}
-	return setting;
-}
-
-const char *
-_nm_setting_slave_type_detect_from_settings (GSList *all_settings, NMSetting **out_s_port)
-{
-	GSList *iter;
-	const char *slave_type = NULL;
-	NMSetting *s_port = NULL;
-
-	for (iter = all_settings; iter; iter = iter->next) {
-		NMSetting *s_iter = NM_SETTING (iter->data);
-		const char *name = nm_setting_get_name (s_iter);
-		const char *i_slave_type = NULL;
-
-		if (!strcmp (name, NM_SETTING_BRIDGE_PORT_SETTING_NAME))
-			i_slave_type = NM_SETTING_BRIDGE_SETTING_NAME;
-		else if (!strcmp (name, NM_SETTING_TEAM_PORT_SETTING_NAME))
-			i_slave_type = NM_SETTING_TEAM_SETTING_NAME;
-		else
-			continue;
-
-		if (slave_type) {
-			/* there are more then one matching port types, cannot detect the slave type. */
-			slave_type = NULL;
-			s_port = NULL;
-			break;
-		}
-		slave_type = i_slave_type;
-		s_port = s_iter;
-	}
-
-	if (out_s_port)
-		*out_s_port = s_port;
-	return slave_type;
-}
-
 /*************************************************************/
 
 typedef struct {
@@ -900,28 +842,6 @@ nm_setting_duplicate (NMSetting *setting)
 	return NM_SETTING (dup);
 }
 
-static gint
-find_setting_by_name (gconstpointer a, gconstpointer b)
-{
-	NMSetting *setting = NM_SETTING (a);
-	const char *str = (const char *) b;
-
-	return strcmp (nm_setting_get_name (setting), str);
-}
-
-NMSetting *
-nm_setting_find_in_list (GSList     *settings_list,
-                         const char *setting_name)
-{
-	GSList *found;
-
-	found = g_slist_find_custom (settings_list, setting_name, find_setting_by_name);
-	if (found)
-		return found->data;
-	else
-		return NULL;
-}
-
 /**
  * nm_setting_get_name:
  * @setting: the #NMSetting
@@ -945,21 +865,21 @@ nm_setting_get_name (NMSetting *setting)
 /**
  * nm_setting_verify:
  * @setting: the #NMSetting to verify
- * @all_settings: (element-type NMSetting): a #GSList of all settings
- *     in the connection from which @setting came
+ * @connection: (allow-none): the #NMConnection that @setting came from, or
+ *   %NULL if @setting is being verified in isolation.
  * @error: location to store error, or %NULL
  *
  * Validates the setting.  Each setting's properties have allowed values, and
- * some are dependent on other values (hence the need for @all_settings).  The
+ * some are dependent on other values (hence the need for @connection).  The
  * returned #GError contains information about which property of the setting
  * failed validation, and in what way that property failed validation.
  *
  * Returns: %TRUE if the setting is valid, %FALSE if it is not
  **/
 gboolean
-nm_setting_verify (NMSetting *setting, GSList *all_settings, GError **error)
+nm_setting_verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
-	NMSettingVerifyResult result = _nm_setting_verify (setting, all_settings, error);
+	NMSettingVerifyResult result = _nm_setting_verify (setting, connection, error);
 
 	if (result == NM_SETTING_VERIFY_NORMALIZABLE)
 		g_clear_error (error);
@@ -968,13 +888,14 @@ nm_setting_verify (NMSetting *setting, GSList *all_settings, GError **error)
 }
 
 NMSettingVerifyResult
-_nm_setting_verify (NMSetting *setting, GSList *all_settings, GError **error)
+_nm_setting_verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	g_return_val_if_fail (NM_IS_SETTING (setting), NM_SETTING_VERIFY_ERROR);
+	g_return_val_if_fail (!connection || NM_IS_CONNECTION (connection), NM_SETTING_VERIFY_ERROR);
 	g_return_val_if_fail (!error || *error == NULL, NM_SETTING_VERIFY_ERROR);
 
 	if (NM_SETTING_GET_CLASS (setting)->verify)
-		return NM_SETTING_GET_CLASS (setting)->verify (setting, all_settings, error);
+		return NM_SETTING_GET_CLASS (setting)->verify (setting, connection, error);
 
 	return NM_SETTING_VERIFY_SUCCESS;
 }
@@ -1732,49 +1653,6 @@ nm_setting_to_string (NMSetting *setting)
 	g_string_append_c (string, '\n');
 
 	return g_string_free (string, FALSE);
-}
-
-NMSetting *
-_nm_setting_find_in_list_required (GSList *all_settings,
-                                   const char *setting_name,
-                                   GError **error)
-{
-	NMSetting *setting;
-
-	g_return_val_if_fail (!error || !*error, NULL);
-	g_return_val_if_fail (all_settings, NULL);
-	g_return_val_if_fail (setting_name, NULL);
-
-	setting = nm_setting_find_in_list (all_settings, setting_name);
-	if (!setting) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_MISSING_SETTING,
-		                     _("missing setting"));
-		g_prefix_error (error, "%s: ", setting_name);
-	}
-	return setting;
-}
-
-NMSettingVerifyResult
-_nm_setting_verify_required_virtual_interface_name (GSList *all_settings,
-                                                    GError **error)
-{
-	NMSettingConnection *s_con;
-	const char *interface_name;
-
-	s_con = NM_SETTING_CONNECTION (nm_setting_find_in_list (all_settings, NM_SETTING_CONNECTION_SETTING_NAME));
-	interface_name = s_con ? nm_setting_connection_get_interface_name (s_con) : NULL;
-	if (!interface_name) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
-		                     _("property is missing"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
-		return NM_SETTING_VERIFY_ERROR;
-	}
-
-	return NM_SETTING_VERIFY_SUCCESS;
 }
 
 GVariant *

@@ -27,7 +27,7 @@
 #include "nm-setting-bridge-port.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
-#include "nm-setting-private.h"
+#include "nm-connection-private.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-bridge.h"
 
@@ -112,7 +112,7 @@ nm_setting_bridge_port_get_hairpin_mode (NMSettingBridgePort *setting)
 #define BR_MAX_PATH_COST     65535
 
 static gboolean
-verify (NMSetting *setting, GSList *all_settings, GError **error)
+verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingBridgePortPrivate *priv = NM_SETTING_BRIDGE_PORT_GET_PRIVATE (setting);
 
@@ -141,15 +141,19 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	}
 
 
-	if (all_settings) {
+	if (connection) {
 		NMSettingConnection *s_con;
 		const char *slave_type;
 
-		s_con = NM_SETTING_CONNECTION (_nm_setting_find_in_list_required (all_settings,
-		                                                                  NM_SETTING_CONNECTION_SETTING_NAME,
-		                                                                  error));
-		if (!s_con)
-			 return FALSE;
+		s_con = nm_connection_get_setting_connection (connection);
+		if (!s_con) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_MISSING_SETTING,
+			             _("missing setting"));
+			g_prefix_error (error, "%s: ", NM_SETTING_CONNECTION_SETTING_NAME);
+			return FALSE;
+		}
 
 		slave_type = nm_setting_connection_get_slave_type (s_con);
 		if (   slave_type

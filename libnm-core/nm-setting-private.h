@@ -91,26 +91,15 @@ gboolean _nm_setting_clear_secrets_with_flags (NMSetting *setting,
 static void __attribute__((constructor)) register_setting (void) \
 { g_type_init (); g_type_ensure (x); }
 
-NMSetting *nm_setting_find_in_list (GSList *settings_list, const char *setting_name);
-
-NMSetting * _nm_setting_find_in_list_required (GSList *all_settings,
-                                               const char *setting_name,
-                                               GError **error);
-
-NMSettingVerifyResult _nm_setting_verify_required_virtual_interface_name (GSList *all_settings,
-                                                                          GError **error);
-
 GVariant *_nm_setting_get_deprecated_virtual_interface_name (NMSetting *setting,
                                                              NMConnection *connection,
                                                              const char *property);
 
 NMSettingVerifyResult _nm_setting_verify (NMSetting *setting,
-                                          GSList    *all_settings,
-                                          GError    **error);
+                                          NMConnection *connection,
+                                          GError **error);
 
-NMSetting *_nm_setting_find_in_list_base_type (GSList *all_settings);
 gboolean _nm_setting_slave_type_is_valid (const char *slave_type, const char **out_port_type);
-const char * _nm_setting_slave_type_detect_from_settings (GSList *all_settings, NMSetting **out_s_port);
 
 GVariant   *_nm_setting_to_dbus       (NMSetting *setting,
                                        NMConnection *connection,

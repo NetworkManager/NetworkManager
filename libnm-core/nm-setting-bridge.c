@@ -25,7 +25,7 @@
 #include <glib/gi18n.h>
 
 #include "nm-setting-bridge.h"
-#include "nm-setting-private.h"
+#include "nm-connection-private.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 
@@ -210,7 +210,7 @@ check_range (guint32 val,
 }
 
 static gboolean
-verify (NMSetting *setting, GSList *all_settings, GError **error)
+verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingBridgePrivate *priv = NM_SETTING_BRIDGE_GET_PRIVATE (setting);
 
@@ -251,7 +251,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	                  error))
 		return FALSE;
 
-	return _nm_setting_verify_required_virtual_interface_name (all_settings, error);
+	return _nm_connection_verify_required_interface_name (connection, error);
 }
 
 static void

@@ -130,7 +130,7 @@ nm_setting_pppoe_get_password_flags (NMSettingPppoe *setting)
 }
 
 static gboolean
-verify (NMSetting *setting, GSList *all_settings, GError **error)
+verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingPppoePrivate *priv = NM_SETTING_PPPOE_GET_PRIVATE (setting);
 

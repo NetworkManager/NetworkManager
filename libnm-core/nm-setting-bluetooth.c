@@ -107,7 +107,7 @@ nm_setting_bluetooth_get_bdaddr (NMSettingBluetooth *setting)
 }
 
 static gboolean
-verify (NMSetting *setting, GSList *all_settings, GError **error)
+verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingBluetoothPrivate *priv = NM_SETTING_BLUETOOTH_GET_PRIVATE (setting);
 
@@ -148,12 +148,12 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	}
 
 	/* Make sure the corresponding 'type' setting is present */
-	if (   all_settings
+	if (   connection
 	    && !strcmp (priv->type, NM_SETTING_BLUETOOTH_TYPE_DUN)) {
 		gboolean gsm = FALSE, cdma = FALSE;
 
-		gsm = !!nm_setting_find_in_list (all_settings, NM_SETTING_GSM_SETTING_NAME);
-		cdma = !!nm_setting_find_in_list (all_settings, NM_SETTING_CDMA_SETTING_NAME);
+		gsm = !!nm_connection_get_setting_gsm (connection);
+		cdma = !!nm_connection_get_setting_cdma (connection);
 
 		if (!gsm && !cdma) {
 			/* We can't return MISSING_SETTING here, because we don't know

@@ -1013,17 +1013,7 @@ complete_connection (NMDevice *device,
 		 * if the network isn't broadcasting the SSID for example.
 		 */
 		if (!ap) {
-			GSList *settings = NULL;
-			gboolean valid;
-
-			settings = g_slist_prepend (settings, s_wifi);
-			if (s_wsec)
-				settings = g_slist_prepend (settings, s_wsec);
-			if (s_8021x)
-				settings = g_slist_prepend (settings, s_8021x);
-			valid = nm_setting_verify (NM_SETTING (s_wifi), settings, error);
-			g_slist_free (settings);
-			if (!valid)
+			if (!nm_setting_verify (NM_SETTING (s_wifi), connection, error))
 				return FALSE;
 
 			hidden = TRUE;

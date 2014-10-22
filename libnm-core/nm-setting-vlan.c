@@ -28,6 +28,7 @@
 #include "nm-setting-connection.h"
 #include "nm-setting-private.h"
 #include "nm-setting-wired.h"
+#include "nm-connection-private.h"
 
 /**
  * SECTION:nm-setting-vlan
@@ -479,18 +480,18 @@ nm_setting_vlan_init (NMSettingVlan *setting)
 }
 
 static gboolean
-verify (NMSetting *setting, GSList *all_settings, GError **error)
+verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingVlanPrivate *priv = NM_SETTING_VLAN_GET_PRIVATE (setting);
-	NMSettingConnection *s_con = NULL;
-	NMSettingWired *s_wired = NULL;
-	GSList *iter;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
 
-	for (iter = all_settings; iter; iter = iter->next) {
-		if (NM_IS_SETTING_CONNECTION (iter->data))
-			s_con = iter->data;
-		else if (NM_IS_SETTING_WIRED (iter->data))
-			s_wired = iter->data;
+	if (connection) {
+		s_con = nm_connection_get_setting_connection (connection);
+		s_wired = nm_connection_get_setting_wired (connection);
+	} else {
+		s_con = NULL;
+		s_wired = NULL;
 	}
 
 	if (priv->parent) {
@@ -529,7 +530,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		/* If parent is NULL, the parent must be specified via
 		 * NMSettingWired:mac-address.
 		 */
-		if (   all_settings
+		if (   connection
 		    && (!s_wired || !nm_setting_wired_get_mac_address (s_wired))) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,

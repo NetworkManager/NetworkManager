@@ -786,7 +786,7 @@ nm_setting_ip6_config_get_ip6_privacy (NMSettingIP6Config *setting)
 }
 
 static gboolean
-verify (NMSetting *setting, GSList *all_settings, GError **error)
+verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingIP6ConfigPrivate *priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
 	GSList *iter;

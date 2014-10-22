@@ -26,7 +26,7 @@
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-setting-connection.h"
-#include "nm-setting-private.h"
+#include "nm-connection-private.h"
 #include "nm-setting-bond.h"
 #include "nm-setting-bridge.h"
 #include "nm-setting-team.h"
@@ -748,7 +748,7 @@ _set_error_missing_base_setting (GError **error, const char *type)
 }
 
 static gboolean
-verify (NMSetting *setting, GSList *all_settings, GError **error)
+verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE (setting);
 	gboolean is_slave;
@@ -805,7 +805,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	}
 
 	if (!priv->type) {
-		if (!(normerr_base_type = _nm_setting_find_in_list_base_type (all_settings))) {
+		if (!connection || !(normerr_base_type = _nm_connection_find_base_type_setting (connection))) {
 			g_set_error_literal (error,
 			                     NM_CONNECTION_ERROR,
 			                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
@@ -837,18 +837,18 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		}
 
 		/* Make sure the corresponding 'type' item is present */
-		if (   all_settings
-		    && !nm_setting_find_in_list (all_settings, priv->type)) {
+		if (   connection
+		    && !nm_connection_get_setting_by_name (connection, priv->type)) {
 			NMSetting *s_base;
-			GSList *all_settings2;
+			NMConnection *connection2;
 
 			s_base = g_object_new (base_type, NULL);
-			all_settings2 = g_slist_prepend (all_settings, s_base);
+			connection2 = nm_simple_connection_new_clone (connection);
+			nm_connection_add_setting (connection2, s_base);
 
-			normerr_base_setting = nm_setting_verify (s_base, all_settings2, NULL);
+			normerr_base_setting = nm_setting_verify (s_base, connection2, NULL);
 
-			g_slist_free_1 (all_settings2);
-			g_object_unref (s_base);
+			g_object_unref (connection2);
 
 			if (!normerr_base_setting) {
 				_set_error_missing_base_setting (error, priv->type);
@@ -880,16 +880,16 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			return FALSE;
 		}
 		if (   slave_setting_type
-		    && all_settings /* only check for an existing slave-setting when having @all_settings */
-		    && !nm_setting_find_in_list (all_settings, slave_setting_type))
+		    && connection
+		    && !nm_connection_get_setting_by_name (connection, slave_setting_type))
 			normerr_slave_setting_type = slave_setting_type;
 	} else {
 		if (priv->master) {
 			const char *slave_type;
 			NMSetting *s_port;
 
-			if (   all_settings
-			    && (slave_type = _nm_setting_slave_type_detect_from_settings (all_settings, &s_port))) {
+			if (   connection
+			    && (slave_type = _nm_connection_detect_slave_type (connection, &s_port))) {
 				normerr_missing_slave_type = slave_type;
 				normerr_missing_slave_type_port = nm_setting_get_name (s_port);
 			} else {

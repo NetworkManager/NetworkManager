@@ -555,7 +555,7 @@ nm_setting_wired_get_valid_s390_options (NMSettingWired *setting)
 }
 
 static gboolean
-verify (NMSetting *setting, GSList *all_settings, GError **error)
+verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingWiredPrivate *priv = NM_SETTING_WIRED_GET_PRIVATE (setting);
 	const char *valid_ports[] = { "tp", "aui", "bnc", "mii", NULL };

@@ -146,7 +146,7 @@ nm_setting_serial_get_send_delay (NMSettingSerial *setting)
 }
 
 static gboolean
-verify (NMSetting *setting, GSList *all_settings, GError **error)
+verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	return TRUE;
 }
