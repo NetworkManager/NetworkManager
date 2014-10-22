@@ -72,47 +72,16 @@
 #define error(...) nm_log_err (LOGD_PLATFORM, __VA_ARGS__)
 
 
+/******************************************************************
+ * libnl unility functions and wrappers
+ ******************************************************************/
+
 struct libnl_vtable
 {
 	void *handle;
 
 	int (*f_nl_has_capability) (int capability);
 };
-
-
-typedef struct {
-	struct nl_sock *nlh;
-	struct nl_sock *nlh_event;
-	struct nl_cache *link_cache;
-	struct nl_cache *address_cache;
-	struct nl_cache *route_cache;
-	GIOChannel *event_channel;
-	guint event_id;
-
-	GUdevClient *udev_client;
-	GHashTable *udev_devices;
-
-	GHashTable *wifi_data;
-
-	int support_kernel_extended_ifa_flags;
-	int support_user_ipv6ll;
-} NMLinuxPlatformPrivate;
-
-#define NM_LINUX_PLATFORM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_LINUX_PLATFORM, NMLinuxPlatformPrivate))
-
-G_DEFINE_TYPE (NMLinuxPlatform, nm_linux_platform, NM_TYPE_PLATFORM)
-
-static const char *to_string_object (NMPlatform *platform, struct nl_object *obj);
-static gboolean _address_match (struct rtnl_addr *addr, int family, int ifindex);
-static gboolean _route_match (struct rtnl_route *rtnlroute, int family, int ifindex, gboolean include_proto_kernel);
-
-void
-nm_linux_platform_setup (void)
-{
-	nm_platform_setup (NM_TYPE_LINUX_PLATFORM);
-}
-
-/******************************************************************/
 
 static int
 _nl_f_nl_has_capability (int capability)
@@ -148,57 +117,6 @@ _nl_has_capability (int capability)
 {
 	return (_nl_get_vtable ()->f_nl_has_capability) (capability);
 }
-
-/******************************************************************/
-
-static guint32
-_get_expiry (guint32 now_s, guint32 lifetime_s)
-{
-	gint64 t = ((gint64) now_s) + ((gint64) lifetime_s);
-
-	return MIN (t, NM_PLATFORM_LIFETIME_PERMANENT - 1);
-}
-
-/* The rtnl_addr object contains relative lifetimes @valid and @preferred
- * that count in seconds, starting from the moment when the kernel constructed
- * the netlink message.
- *
- * There is also a field rtnl_addr_last_update_time(), which is the absolute
- * time in 1/100th of a second of clock_gettime (CLOCK_MONOTONIC) when the address
- * was modified (wrapping every 497 days).
- * Immediately at the time when the address was last modified, #NOW and @last_update_time
- * are the same, so (only) in that case @valid and @preferred are anchored at @last_update_time.
- * However, this is not true in general. As time goes by, whenever kernel sends a new address
- * via netlink, the lifetimes keep counting down.
- *
- * As we cache the rtnl_addr object we must know the absolute expiries.
- * As a hack, modify the relative timestamps valid and preferred into absolute
- * timestamps of scale nm_utils_get_monotonic_timestamp_s().
- **/
-static void
-_rtnl_addr_hack_lifetimes_rel_to_abs (struct rtnl_addr *rtnladdr)
-{
-	guint32 a_valid  = rtnl_addr_get_valid_lifetime (rtnladdr);
-	guint32 a_preferred = rtnl_addr_get_preferred_lifetime (rtnladdr);
-	guint32 now;
-
-	if (a_valid == NM_PLATFORM_LIFETIME_PERMANENT &&
-	    a_preferred == NM_PLATFORM_LIFETIME_PERMANENT)
-		return;
-
-	now = (guint32) nm_utils_get_monotonic_timestamp_s ();
-
-	if (a_preferred > a_valid)
-		a_preferred = a_valid;
-
-	if (a_valid != NM_PLATFORM_LIFETIME_PERMANENT)
-		rtnl_addr_set_valid_lifetime (rtnladdr, _get_expiry (now, a_valid));
-	rtnl_addr_set_preferred_lifetime (rtnladdr, _get_expiry (now, a_preferred));
-}
-
-/******************************************************************/
-
-/* libnl library workarounds and additions */
 
 /* Automatic deallocation of local variables */
 #define auto_nl_cache __attribute__((cleanup(put_nl_cache)))
@@ -236,8 +154,6 @@ put_nl_addr (void *ptr)
 		*object = NULL;
 	}
 }
-
-/*******************************************************************/
 
 /* wrap the libnl alloc functions and abort on out-of-memory*/
 
@@ -303,8 +219,6 @@ _nm_rtnl_route_nh_alloc (void)
 	return nexthop;
 }
 
-/*******************************************************************/
-
 /* rtnl_addr_set_prefixlen fails to update the nl_addr prefixlen */
 static void
 nm_rtnl_addr_set_prefixlen (struct rtnl_addr *rtnladdr, int plen)
@@ -319,6 +233,57 @@ nm_rtnl_addr_set_prefixlen (struct rtnl_addr *rtnladdr, int plen)
 }
 #define rtnl_addr_set_prefixlen nm_rtnl_addr_set_prefixlen
 
+/******************************************************************/
+
+static guint32
+_get_expiry (guint32 now_s, guint32 lifetime_s)
+{
+	gint64 t = ((gint64) now_s) + ((gint64) lifetime_s);
+
+	return MIN (t, NM_PLATFORM_LIFETIME_PERMANENT - 1);
+}
+
+/* The rtnl_addr object contains relative lifetimes @valid and @preferred
+ * that count in seconds, starting from the moment when the kernel constructed
+ * the netlink message.
+ *
+ * There is also a field rtnl_addr_last_update_time(), which is the absolute
+ * time in 1/100th of a second of clock_gettime (CLOCK_MONOTONIC) when the address
+ * was modified (wrapping every 497 days).
+ * Immediately at the time when the address was last modified, #NOW and @last_update_time
+ * are the same, so (only) in that case @valid and @preferred are anchored at @last_update_time.
+ * However, this is not true in general. As time goes by, whenever kernel sends a new address
+ * via netlink, the lifetimes keep counting down.
+ *
+ * As we cache the rtnl_addr object we must know the absolute expiries.
+ * As a hack, modify the relative timestamps valid and preferred into absolute
+ * timestamps of scale nm_utils_get_monotonic_timestamp_s().
+ **/
+static void
+_rtnl_addr_hack_lifetimes_rel_to_abs (struct rtnl_addr *rtnladdr)
+{
+	guint32 a_valid  = rtnl_addr_get_valid_lifetime (rtnladdr);
+	guint32 a_preferred = rtnl_addr_get_preferred_lifetime (rtnladdr);
+	guint32 now;
+
+	if (a_valid == NM_PLATFORM_LIFETIME_PERMANENT &&
+	    a_preferred == NM_PLATFORM_LIFETIME_PERMANENT)
+		return;
+
+	now = (guint32) nm_utils_get_monotonic_timestamp_s ();
+
+	if (a_preferred > a_valid)
+		a_preferred = a_valid;
+
+	if (a_valid != NM_PLATFORM_LIFETIME_PERMANENT)
+		rtnl_addr_set_valid_lifetime (rtnladdr, _get_expiry (now, a_valid));
+	rtnl_addr_set_preferred_lifetime (rtnladdr, _get_expiry (now, a_preferred));
+}
+
+/******************************************************************
+ * NMPlatform types and functions
+ ******************************************************************/
+
 typedef enum {
 	OBJECT_TYPE_UNKNOWN,
 	OBJECT_TYPE_LINK,
@@ -329,6 +294,42 @@ typedef enum {
 	__OBJECT_TYPE_LAST,
 	OBJECT_TYPE_MAX = __OBJECT_TYPE_LAST - 1,
 } ObjectType;
+
+/******************************************************************/
+
+typedef struct {
+	struct nl_sock *nlh;
+	struct nl_sock *nlh_event;
+	struct nl_cache *link_cache;
+	struct nl_cache *address_cache;
+	struct nl_cache *route_cache;
+	GIOChannel *event_channel;
+	guint event_id;
+
+	GUdevClient *udev_client;
+	GHashTable *udev_devices;
+
+	GHashTable *wifi_data;
+
+	int support_kernel_extended_ifa_flags;
+	int support_user_ipv6ll;
+} NMLinuxPlatformPrivate;
+
+#define NM_LINUX_PLATFORM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_LINUX_PLATFORM, NMLinuxPlatformPrivate))
+
+G_DEFINE_TYPE (NMLinuxPlatform, nm_linux_platform, NM_TYPE_PLATFORM)
+
+static const char *to_string_object (NMPlatform *platform, struct nl_object *obj);
+static gboolean _address_match (struct rtnl_addr *addr, int family, int ifindex);
+static gboolean _route_match (struct rtnl_route *rtnlroute, int family, int ifindex, gboolean include_proto_kernel);
+
+void
+nm_linux_platform_setup (void)
+{
+	nm_platform_setup (NM_TYPE_LINUX_PLATFORM);
+}
+
+/******************************************************************/
 
 static ObjectType
 object_type_from_nl_object (const struct nl_object *object)
