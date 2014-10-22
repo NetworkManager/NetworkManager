@@ -1924,6 +1924,7 @@ nm_connection_private_free (NMConnectionPrivate *priv)
 
 	g_hash_table_foreach_remove (priv->settings, _setting_release, self);
 	g_hash_table_destroy (priv->settings);
+	g_free (priv->path);
 
 	g_slice_free (NMConnectionPrivate, priv);
 }
