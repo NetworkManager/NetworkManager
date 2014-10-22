@@ -1196,7 +1196,7 @@ process_properties_changed (NMObject *self, GVariant *properties, gboolean synch
 		return;
 
 	g_variant_iter_init (&iter, properties);
-	while (g_variant_iter_next (&iter, "{sv}", &name, &value))
+	while (g_variant_iter_next (&iter, "{&sv}", &name, &value))
 		handle_property_changed (self, name, value, synchronously);
 }
 
