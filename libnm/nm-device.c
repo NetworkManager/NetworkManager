@@ -275,6 +275,7 @@ device_state_changed (NMDBusDevice *proxy,
 	data->new_state = new_state;
 	data->reason = reason;
 	_nm_object_reload_properties_async (NM_OBJECT (user_data),
+	                                    NULL,
 	                                    device_state_change_reloaded,
 	                                    data);
 }

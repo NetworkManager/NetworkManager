@@ -246,7 +246,7 @@ init_async_got_proxy (GObject *object, GAsyncResult *result, gpointer user_data)
 
 	NM_OBJECT_GET_CLASS (self)->init_dbus (self);
 
-	_nm_object_reload_properties_async (init_data->object, init_async_got_properties, init_data);
+	_nm_object_reload_properties_async (init_data->object, init_data->cancellable, init_async_got_properties, init_data);
 }
 
 static void
@@ -1550,7 +1550,10 @@ reload_got_properties (GObject *proxy,
 }
 
 void
-_nm_object_reload_properties_async (NMObject *object, GAsyncReadyCallback callback, gpointer user_data)
+_nm_object_reload_properties_async (NMObject *object,
+                                    GCancellable *cancellable,
+                                    GAsyncReadyCallback callback,
+                                    gpointer user_data)
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
 	GSimpleAsyncResult *simple;
@@ -1583,7 +1586,7 @@ _nm_object_reload_properties_async (NMObject *object, GAsyncReadyCallback callba
 		                   "GetAll",
 		                   g_variant_new ("(s)", interface),
 		                   G_DBUS_CALL_FLAGS_NONE, -1,
-		                   NULL,
+		                   cancellable,
 		                   reload_got_properties, object);
 	}
 }
