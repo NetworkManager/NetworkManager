@@ -30,6 +30,7 @@
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
+#include "nm-setting-infiniband.h"
 
 /**
  * SECTION:nm-setting-bond

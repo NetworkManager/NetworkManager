@@ -52,6 +52,7 @@
 #include "nm-glib-compat.h"
 #include "nm-utils.h"
 #include "nm-dbus-helpers.h"
+#include "nm-setting-connection.h"
 
 #include "nmdbus-device.h"
 

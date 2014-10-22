@@ -27,6 +27,8 @@
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
+#include "nm-setting-connection.h"
+#include "nm-setting-team.h"
 
 /**
  * SECTION:nm-setting-team-port

@@ -24,19 +24,10 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <sys/types.h>
-#include <nm-setting.h>
-#include <nm-setting-ip4-config.h>
-#include <nm-setting-ip6-config.h>
-#include <nm-setting-vpn.h>
-#include <nm-setting-connection.h>
-#include <nm-setting-wired.h>
-#include <nm-setting-wireless.h>
-#include <nm-setting-bluetooth.h>
-#include <nm-setting-8021x.h>
-#include <nm-utils.h>
 #include <arpa/inet.h>
 #include <string.h>
 
+#include "nm-core-internal.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
 #include "nm-system-config-interface.h"

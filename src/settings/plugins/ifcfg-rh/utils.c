@@ -21,6 +21,9 @@
 #include <glib.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "nm-core-internal.h"
+
 #include "utils.h"
 #include "shvar.h"
 

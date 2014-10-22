@@ -26,11 +26,19 @@
 
 #include "nm-setting.h"
 #include "nm-setting-private.h"
-#include "nm-setting-connection.h"
 #include "nm-utils.h"
 #include "nm-core-internal.h"
 #include "nm-utils-private.h"
 #include "nm-property-compare.h"
+
+#include "nm-setting-connection.h"
+#include "nm-setting-bond.h"
+#include "nm-setting-bridge.h"
+#include "nm-setting-bridge-port.h"
+#include "nm-setting-pppoe.h"
+#include "nm-setting-team.h"
+#include "nm-setting-team-port.h"
+#include "nm-setting-vpn.h"
 
 /**
  * SECTION:nm-setting

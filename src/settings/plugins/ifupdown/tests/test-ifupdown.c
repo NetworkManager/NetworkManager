@@ -21,8 +21,7 @@
 #include <glib.h>
 #include <string.h>
 
-#include <nm-utils.h>
-
+#include "nm-core-internal.h"
 #include "nm-logging.h"
 #include "interface_parser.h"
 #include "parser.h"

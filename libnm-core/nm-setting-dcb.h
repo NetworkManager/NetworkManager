@@ -93,9 +93,9 @@ typedef enum { /*< flags >*/
 #define NM_SETTING_DCB_PRIORITY_TRAFFIC_CLASS    "priority-traffic-class"
 
 
-typedef struct {
+struct _NMSettingDcb {
 	NMSetting parent;
-} NMSettingDcb;
+};
 
 typedef struct {
 	NMSettingClass parent;

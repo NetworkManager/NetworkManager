@@ -25,10 +25,6 @@
 
 #include <nm-dbus-interface.h>
 #include <dbus/dbus-glib-lowlevel.h>
-#include <nm-setting-connection.h>
-#include <nm-setting-vpn.h>
-#include <nm-setting-wireless.h>
-#include <nm-utils.h>
 
 #include "nm-settings-connection.h"
 #include "nm-session-monitor.h"
@@ -40,6 +36,7 @@
 #include "nm-agent-manager.h"
 #include "NetworkManagerUtils.h"
 #include "nm-properties-changed-signal.h"
+#include "nm-core-internal.h"
 
 #define SETTINGS_TIMESTAMPS_FILE  NMSTATEDIR "/timestamps"
 #define SETTINGS_SEEN_BSSIDS_FILE NMSTATEDIR "/seen-bssids"

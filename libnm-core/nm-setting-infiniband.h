@@ -45,9 +45,9 @@ G_BEGIN_DECLS
 #define NM_SETTING_INFINIBAND_P_KEY          "p-key"
 #define NM_SETTING_INFINIBAND_PARENT         "parent"
 
-typedef struct {
+struct _NMSettingInfiniband {
 	NMSetting parent;
-} NMSettingInfiniband;
+};
 
 typedef struct {
 	NMSettingClass parent;

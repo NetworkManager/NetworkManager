@@ -45,9 +45,9 @@ G_BEGIN_DECLS
 #define NM_SETTING_VPN_DATA         "data"
 #define NM_SETTING_VPN_SECRETS      "secrets"
 
-typedef struct {
+struct _NMSettingVpn {
 	NMSetting parent;
-} NMSettingVpn;
+};
 
 typedef struct {
 	NMSettingClass parent;

@@ -24,13 +24,11 @@
 #include <gio/gio.h>
 #include <string.h>
 
-#include "nm-dbus-interface.h"
-#include "nm-setting-bluetooth.h"
+#include "nm-core-internal.h"
 
 #include "nm-bluez-common.h"
 #include "nm-bluez-device.h"
 #include "nm-logging.h"
-#include "nm-utils.h"
 #include "nm-settings-connection.h"
 #include "nm-bluez5-dun.h"
 #include "NetworkManagerUtils.h"

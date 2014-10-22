@@ -27,7 +27,7 @@
 #include "nm-utils.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-private.h"
-#include "nm-core-enum-types.h"
+#include "nm-setting-wired.h"
 
 /**
  * SECTION:nm-setting-vlan

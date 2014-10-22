@@ -44,9 +44,9 @@ G_BEGIN_DECLS
 #define NM_SETTING_OLPC_MESH_CHANNEL              "channel"
 #define NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS "dhcp-anycast-address"
 
-typedef struct {
+struct _NMSettingOlpcMesh {
 	NMSetting parent;
-} NMSettingOlpcMesh;
+};
 
 typedef struct {
 	NMSettingClass parent;

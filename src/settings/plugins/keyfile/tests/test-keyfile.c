@@ -26,19 +26,8 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 
-#include <nm-utils.h>
-#include <nm-setting-connection.h>
-#include <nm-setting-wired.h>
-#include <nm-setting-wireless.h>
-#include <nm-setting-ip4-config.h>
-#include <nm-setting-ip6-config.h>
-#include <nm-setting-bluetooth.h>
-#include <nm-setting-serial.h>
-#include <nm-setting-ppp.h>
-#include <nm-setting-gsm.h>
-#include <nm-setting-8021x.h>
-#include <nm-setting-infiniband.h>
-#include <nm-logging.h>
+#include "nm-core-internal.h"
+#include "nm-logging.h"
 
 #include "reader.h"
 #include "writer.h"

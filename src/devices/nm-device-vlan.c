@@ -37,9 +37,9 @@
 #include "nm-activation-request.h"
 #include "nm-ip4-config.h"
 #include "nm-platform.h"
-#include "nm-utils.h"
 #include "nm-device-factory.h"
 #include "nm-manager.h"
+#include "nm-core-internal.h"
 
 #include "nm-device-vlan-glue.h"
 

@@ -28,6 +28,8 @@
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
+#include "nm-setting-connection.h"
+#include "nm-setting-bridge.h"
 
 /**
  * SECTION:nm-setting-bridge-port

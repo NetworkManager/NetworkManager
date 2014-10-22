@@ -45,9 +45,9 @@ G_BEGIN_DECLS
 #define NM_SETTING_PPPOE_PASSWORD       "password"
 #define NM_SETTING_PPPOE_PASSWORD_FLAGS "password-flags"
 
-typedef struct {
+struct _NMSettingPppoe {
 	NMSetting parent;
-} NMSettingPppoe;
+};
 
 typedef struct {
 	NMSettingClass parent;

@@ -42,9 +42,9 @@ G_BEGIN_DECLS
 #define NM_SETTING_WIMAX_NETWORK_NAME "network-name"
 #define NM_SETTING_WIMAX_MAC_ADDRESS  "mac-address"
 
-typedef struct {
+struct _NMSettingWimax {
 	NMSetting parent;
-} NMSettingWimax;
+};
 
 typedef struct {
 	NMSettingClass parent;

@@ -29,7 +29,7 @@
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
-#include "nm-core-enum-types.h"
+#include "nm-setting-wireless.h"
 
 /**
  * SECTION:nm-setting-wireless-security

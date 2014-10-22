@@ -21,8 +21,9 @@
 #include <glib/gi18n.h>
 #include <string.h>
 #include <libmm-glib.h>
+
 #include "nm-modem-broadband.h"
-#include "nm-setting-connection.h"
+#include "nm-core-internal.h"
 #include "nm-logging.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"

@@ -52,9 +52,9 @@ G_BEGIN_DECLS
 #define NM_SETTING_WIRED_S390_NETTYPE "s390-nettype"
 #define NM_SETTING_WIRED_S390_OPTIONS "s390-options"
 
-typedef struct {
+struct _NMSettingWired {
 	NMSetting parent;
-} NMSettingWired;
+};
 
 typedef struct {
 	NMSettingClass parent;

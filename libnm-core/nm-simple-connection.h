@@ -36,9 +36,9 @@ G_BEGIN_DECLS
 #define NM_IS_SIMPLE_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_SIMPLE_CONNECTION))
 #define NM_SIMPLE_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_SIMPLE_CONNECTION, NMSimpleConnectionClass))
 
-typedef struct {
+struct _NMSimpleConnection {
 	GObject parent;
-} NMSimpleConnection;
+};
 
 typedef struct {
 	GObjectClass parent_class;

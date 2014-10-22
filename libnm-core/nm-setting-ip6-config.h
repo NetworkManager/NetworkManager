@@ -178,9 +178,9 @@ guint32                nm_ip6_route_get_metric   (NMIP6Route *route);
 void                   nm_ip6_route_set_metric   (NMIP6Route *route,
                                                   guint32 metric);
 
-typedef struct {
+struct _NMSettingIP6Config {
 	NMSetting parent;
-} NMSettingIP6Config;
+};
 
 typedef struct {
 	NMSettingClass parent;

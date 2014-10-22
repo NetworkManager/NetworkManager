@@ -89,9 +89,9 @@ typedef enum {
 #define NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD "leap-password"
 #define NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD_FLAGS "leap-password-flags"
 
-typedef struct {
+struct _NMSettingWirelessSecurity {
 	NMSetting parent;
-} NMSettingWirelessSecurity;
+};
 
 typedef struct {
 	NMSettingClass parent;

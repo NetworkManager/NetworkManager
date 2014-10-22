@@ -50,9 +50,9 @@ G_BEGIN_DECLS
 #define NM_SETTING_GSM_PIN_FLAGS      "pin-flags"
 #define NM_SETTING_GSM_HOME_ONLY      "home-only"
 
-typedef struct {
+struct _NMSettingGsm {
 	NMSetting parent;
-} NMSettingGsm;
+};
 
 typedef struct {
 	NMSettingClass parent;

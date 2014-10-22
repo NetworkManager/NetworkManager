@@ -24,11 +24,7 @@
 #include "nm-wifi-ap-utils.h"
 #include "nm-dbus-glib-types.h"
 
-#include "nm-setting-connection.h"
-#include "nm-setting-wireless.h"
-#include "nm-setting-wireless-security.h"
-#include "nm-setting-8021x.h"
-#include "nm-utils.h"
+#include "nm-core-internal.h"
 
 #define DEBUG 1
 

@@ -37,6 +37,7 @@
 #include "nm-connection.h"
 #include "nm-dbus-helpers.h"
 #include "nm-core-internal.h"
+#include "nm-simple-connection.h"
 
 #include "nmdbus-vpn-plugin.h"
 

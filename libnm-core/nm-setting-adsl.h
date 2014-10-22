@@ -54,9 +54,9 @@ G_BEGIN_DECLS
 #define NM_SETTING_ADSL_ENCAPSULATION_VCMUX "vcmux"
 #define NM_SETTING_ADSL_ENCAPSULATION_LLC   "llc"
 
-typedef struct {
+struct _NMSettingAdsl {
 	NMSetting parent;
-} NMSettingAdsl;
+};
 
 typedef struct {
 	NMSettingClass parent;

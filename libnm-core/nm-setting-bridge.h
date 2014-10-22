@@ -47,9 +47,9 @@ G_BEGIN_DECLS
 #define NM_SETTING_BRIDGE_MAX_AGE        "max-age"
 #define NM_SETTING_BRIDGE_AGEING_TIME    "ageing-time"
 
-typedef struct {
+struct _NMSettingBridge {
 	NMSetting parent;
-} NMSettingBridge;
+};
 
 typedef struct {
 	NMSettingClass parent;

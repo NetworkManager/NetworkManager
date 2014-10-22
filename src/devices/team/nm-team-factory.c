@@ -27,6 +27,7 @@
 #include "nm-device-team.h"
 #include "nm-logging.h"
 #include "nm-platform.h"
+#include "nm-core-internal.h"
 
 static GType nm_team_factory_get_type (void);
 

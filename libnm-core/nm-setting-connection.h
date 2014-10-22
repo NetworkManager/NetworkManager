@@ -65,9 +65,9 @@ G_BEGIN_DECLS
  * The NMSettingConnection struct contains only private data.
  * It should only be accessed through the functions described below.
  */
-typedef struct {
+struct _NMSettingConnection {
 	NMSetting parent;
-} NMSettingConnection;
+};
 
 typedef struct {
 	NMSettingClass parent;

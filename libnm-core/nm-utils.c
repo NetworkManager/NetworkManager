@@ -33,6 +33,15 @@
 #include "nm-setting-private.h"
 #include "crypto.h"
 
+#include "nm-setting-bond.h"
+#include "nm-setting-bridge.h"
+#include "nm-setting-infiniband.h"
+#include "nm-setting-ip6-config.h"
+#include "nm-setting-team.h"
+#include "nm-setting-vlan.h"
+#include "nm-setting-wired.h"
+#include "nm-setting-wireless.h"
+
 /**
  * SECTION:nm-utils
  * @short_description: Utility functions

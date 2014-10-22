@@ -32,7 +32,6 @@
 
 #include "nm-device-team.h"
 #include "nm-logging.h"
-#include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
 #include "nm-platform.h"
@@ -41,6 +40,7 @@
 #include "nm-enum-types.h"
 #include "nm-team-enum-types.h"
 #include "nm-posix-signals.h"
+#include "nm-core-internal.h"
 
 #include "nm-device-team-glue.h"
 

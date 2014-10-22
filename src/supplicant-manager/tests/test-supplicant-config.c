@@ -30,13 +30,7 @@
 
 #include <dbus/dbus-glib.h>
 
-#include <nm-utils.h>
-#include <nm-setting-connection.h>
-#include <nm-setting-wired.h>
-#include <nm-setting-wireless.h>
-#include <nm-setting-wireless-security.h>
-#include <nm-setting-ip4-config.h>
-#include <nm-setting-8021x.h>
+#include "nm-core-internal.h"
 
 #include "nm-supplicant-config.h"
 #include "nm-supplicant-settings-verify.h"

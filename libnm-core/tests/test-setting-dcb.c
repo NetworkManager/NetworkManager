@@ -24,6 +24,7 @@
 #include <nm-utils.h>
 #include <nm-glib-compat.h>
 #include "nm-setting-dcb.h"
+#include "nm-connection.h"
 
 #define DCB_FLAGS_ALL (NM_SETTING_DCB_FLAG_ENABLE | \
                        NM_SETTING_DCB_FLAG_ADVERTISE | \
