@@ -257,19 +257,19 @@ static char *
 get_available_connection_name (const char *format,
                                NMClient   *client)
 {
-	GSList *connections, *iter, *names = NULL;
+	const GPtrArray *conns;
+	GSList *names = NULL, *iter;
 	char *cname = NULL;
 	int i = 0;
 
-	connections = nm_client_list_connections (client);
-	for (iter = connections; iter; iter = iter->next) {
+	conns = nm_client_get_connections (client);
+	for (i = 0; i < conns->len; i++) {
 		const char *id;
 
-		id = nm_connection_get_id (NM_CONNECTION (iter->data));
+		id = nm_connection_get_id (NM_CONNECTION (conns->pdata[i]));
 		g_assert (id);
 		names = g_slist_append (names, (gpointer) id);
 	}
-	g_slist_free (connections);
 
 	/* Find the next available unique connection name */
 	while (!cname && (i++ < 10000)) {

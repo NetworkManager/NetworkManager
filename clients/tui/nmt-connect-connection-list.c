@@ -183,12 +183,12 @@ sort_connections (gconstpointer  a,
 
 static void
 add_connections_for_device (NmtConnectDevice *nmtdev,
-                            GSList           *connections)
+                            const GPtrArray  *connections)
 {
-	GSList *iter;
+	int i;
 
-	for (iter = connections; iter; iter = iter->next) {
-		NMConnection *conn = iter->data;
+	for (i = 0; i < connections->len; i++) {
+		NMConnection *conn = connections->pdata[i];
 		NMSettingConnection *s_con;
 
 		s_con = nm_connection_get_setting_connection (conn);
@@ -257,7 +257,7 @@ hash_ap (NMAccessPoint *ap)
 
 static void
 add_connections_for_aps (NmtConnectDevice *nmtdev,
-                         GSList           *connections)
+                         const GPtrArray  *connections)
 {
 	NmtConnectConnection *nmtconn;
 	NMConnection *conn;
@@ -266,8 +266,7 @@ add_connections_for_aps (NmtConnectDevice *nmtdev,
 	GHashTable *seen_ssids;
 	GBytes *ssid;
 	char *ap_hash;
-	GSList *iter;
-	int i;
+	int i, c;
 
 	aps = nm_device_wifi_get_access_points (NM_DEVICE_WIFI (nmtdev->device));
 	if (!aps->len)
@@ -296,8 +295,8 @@ add_connections_for_aps (NmtConnectDevice *nmtdev,
 			nmtconn->ssid = nm_utils_ssid_to_utf8 (g_bytes_get_data (ssid, NULL),
 			                                       g_bytes_get_size (ssid));
 
-		for (iter = connections; iter; iter = iter->next) {
-			conn = iter->data;
+		for (c = 0; c < connections->len; c++) {
+			conn = connections->pdata[c];
 			if (   nm_device_connection_valid (nmtdev->device, conn)
 			    && nm_access_point_connection_valid (ap, conn)) {
 				nmtconn->name = nm_connection_get_id (conn);
@@ -306,7 +305,7 @@ add_connections_for_aps (NmtConnectDevice *nmtdev,
 			}
 		}
 
-		if (!iter)
+		if (!nmtconn->name)
 			nmtconn->name = nmtconn->ssid ? nmtconn->ssid : "<unknown>";
 
 		nmtdev->conns = g_slist_prepend (nmtdev->conns, nmtconn);
@@ -319,7 +318,7 @@ static GSList *
 append_nmt_devices_for_devices (GSList           *nmt_devices,
                                 const GPtrArray  *devices,
                                 char            **names,
-                                GSList           *connections)
+                                const GPtrArray  *connections)
 {
 	NmtConnectDevice *nmtdev;
 	NMDevice *device;
@@ -350,11 +349,11 @@ append_nmt_devices_for_devices (GSList           *nmt_devices,
 }
 
 static GSList *
-append_nmt_devices_for_virtual_devices (GSList *nmt_devices,
-                                        GSList *connections)
+append_nmt_devices_for_virtual_devices (GSList          *nmt_devices,
+                                        const GPtrArray *connections)
 {
 	NmtConnectDevice *nmtdev = NULL;
-	GSList *iter;
+	int i;
 	GHashTable *devices_by_name;
 	char *name;
 	NMConnection *conn;
@@ -363,8 +362,8 @@ append_nmt_devices_for_virtual_devices (GSList *nmt_devices,
 
 	devices_by_name = g_hash_table_new (g_str_hash, g_str_equal);
 
-	for (iter = connections; iter; iter = iter->next) {
-		conn = iter->data;
+	for (i = 0; i < connections->len; i++) {
+		conn = connections->pdata[i];
 		sort_order = get_sort_order_for_connection (conn);
 		if (sort_order == -1)
 			continue;
@@ -395,11 +394,11 @@ append_nmt_devices_for_virtual_devices (GSList *nmt_devices,
 }
 
 static GSList *
-append_nmt_devices_for_vpns (GSList *nmt_devices,
-                             GSList *connections)
+append_nmt_devices_for_vpns (GSList          *nmt_devices,
+                             const GPtrArray *connections)
 {
 	NmtConnectDevice *nmtdev;
-	GSList *iter;
+	int i;
 	NMConnection *conn;
 	NmtConnectConnection *nmtconn;
 
@@ -407,8 +406,8 @@ append_nmt_devices_for_vpns (GSList *nmt_devices,
 	nmtdev->name = g_strdup (_("VPN"));
 	nmtdev->sort_order = 100;
 
-	for (iter = connections; iter; iter = iter->next) {
-		conn = iter->data;
+	for (i = 0; i < connections->len; i++) {
+		conn = connections->pdata[i];
 		if (!nm_connection_is_type (conn, NM_SETTING_VPN_SETTING_NAME))
 			continue;
 
@@ -464,11 +463,10 @@ nmt_connect_connection_list_rebuild (NmtConnectConnectionList *list)
 {
 	NmtConnectConnectionListPrivate *priv = NMT_CONNECT_CONNECTION_LIST_GET_PRIVATE (list);
 	NmtNewtListbox *listbox = NMT_NEWT_LISTBOX (list);
-	const GPtrArray *devices, *acs;
+	const GPtrArray *devices, *acs, *connections;
 	int max_width;
 	char **names, *row, active_col;
 	const char *strength_col;
-	GSList *connections;
 	GSList *nmt_devices, *diter, *citer;
 	NmtConnectDevice *nmtdev;
 	NmtConnectConnection *nmtconn;
@@ -479,7 +477,7 @@ nmt_connect_connection_list_rebuild (NmtConnectConnectionList *list)
 
 	devices = nm_client_get_devices (nm_client);
 	acs = nm_client_get_active_connections (nm_client);
-	connections = nm_client_list_connections (nm_client);
+	connections = nm_client_get_connections (nm_client);
 
 	nmt_devices = NULL;
 
@@ -491,7 +489,6 @@ nmt_connect_connection_list_rebuild (NmtConnectConnectionList *list)
 	nmt_devices = append_nmt_devices_for_vpns (nmt_devices, connections);
 
 	nmt_devices = g_slist_sort (nmt_devices, sort_nmt_devices);
-	g_slist_free (connections);
 
 	max_width = 0;
 	for (diter = nmt_devices; diter; diter = diter->next) {

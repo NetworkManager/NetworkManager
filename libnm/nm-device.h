@@ -144,8 +144,8 @@ gboolean             nm_device_delete_finish        (NMDevice *device,
                                                      GAsyncResult *result,
                                                      GError **error);
 
-GSList *             nm_device_filter_connections   (NMDevice *device,
-                                                     const GSList *connections);
+GPtrArray *          nm_device_filter_connections   (NMDevice *device,
+                                                     const GPtrArray *connections);
 
 gboolean             nm_device_connection_valid     (NMDevice *device,
                                                      NMConnection *connection);

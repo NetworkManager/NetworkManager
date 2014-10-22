@@ -72,7 +72,8 @@ edit_connection_list_filter (NmtEditConnectionList *list,
 	NMSettingConnection *s_con;
 	const char *master, *slave_type;
 	const char *uuid, *ifname;
-	GSList *conns, *iter;
+	const GPtrArray *conns;
+	int i;
 	gboolean found_master = FALSE;
 
 	s_con = nm_connection_get_setting_connection (connection);
@@ -87,16 +88,17 @@ edit_connection_list_filter (NmtEditConnectionList *list,
 	    && g_strcmp0 (slave_type, NM_SETTING_BRIDGE_SETTING_NAME) != 0)
 		return TRUE;
 
-	conns = nm_client_list_connections (nm_client);
-	for (iter = conns; iter; iter = iter->next) {
-		uuid = nm_connection_get_uuid (iter->data);
-		ifname = nm_connection_get_interface_name (iter->data);
+	conns = nm_client_get_connections (nm_client);
+	for (i = 0; i < conns->len; i++) {
+		NMConnection *candidate = conns->pdata[i];
+
+		uuid = nm_connection_get_uuid (candidate);
+		ifname = nm_connection_get_interface_name (candidate);
 		if (!g_strcmp0 (master, uuid) || !g_strcmp0 (master, ifname)) {
 			found_master = TRUE;
 			break;
 		}
 	}
-	g_slist_free (conns);
 
 	return !found_master;
 }
@@ -513,7 +515,8 @@ remove_one_connection (NMRemoteConnection *connection)
 void
 nmt_remove_connection (NMRemoteConnection *connection)
 {
-	GSList *conns, *iter;
+	const GPtrArray *conns;
+	int i;
 	NMRemoteConnection *slave;
 	NMSettingConnection *s_con;
 	const char *uuid, *iface, *master;
@@ -532,9 +535,9 @@ nmt_remove_connection (NMRemoteConnection *connection)
 	uuid = nm_connection_get_uuid (NM_CONNECTION (connection));
 	iface = nm_connection_get_interface_name (NM_CONNECTION (connection));
 
-	conns = nm_client_list_connections (nm_client);
-	for (iter = conns; iter; iter = iter->next) {
-		slave = iter->data;
+	conns = nm_client_get_connections (nm_client);
+	for (i = 0; i < conns->len; i++) {
+		slave = conns->pdata[i];
 		s_con = nm_connection_get_setting_connection (NM_CONNECTION (slave));
 		master = nm_setting_connection_get_master (s_con);
 		if (master) {
@@ -542,7 +545,6 @@ nmt_remove_connection (NMRemoteConnection *connection)
 				remove_one_connection (slave);
 		}
 	}
-	g_slist_free (conns);
 	g_object_unref (connection);
 }
 

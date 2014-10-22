@@ -62,13 +62,13 @@ struct _NMRemoteSettingsClass {
 
 GType nm_remote_settings_get_type (void);
 
-GSList *nm_remote_settings_list_connections (NMRemoteSettings *settings);
+const GPtrArray    *nm_remote_settings_get_connections        (NMRemoteSettings *settings);
 
-NMRemoteConnection *nm_remote_settings_get_connection_by_id (NMRemoteSettings *settings,
-                                                             const char *id);
+NMRemoteConnection *nm_remote_settings_get_connection_by_id   (NMRemoteSettings *settings,
+                                                               const char *id);
 
-NMRemoteConnection * nm_remote_settings_get_connection_by_path (NMRemoteSettings *settings,
-                                                                const char *path);
+NMRemoteConnection *nm_remote_settings_get_connection_by_path (NMRemoteSettings *settings,
+                                                               const char *path);
 
 NMRemoteConnection *nm_remote_settings_get_connection_by_uuid (NMRemoteSettings *settings,
                                                                const char *uuid);

@@ -74,8 +74,8 @@ NM80211Mode            nm_access_point_get_mode         (NMAccessPoint *ap);
 guint32                nm_access_point_get_max_bitrate  (NMAccessPoint *ap);
 guint8                 nm_access_point_get_strength     (NMAccessPoint *ap);
 
-GSList *               nm_access_point_filter_connections (NMAccessPoint *ap,
-                                                           const GSList *connections);
+GPtrArray *            nm_access_point_filter_connections (NMAccessPoint *ap,
+                                                           const GPtrArray *connections);
 
 gboolean               nm_access_point_connection_valid   (NMAccessPoint *ap,
                                                            NMConnection *connection);

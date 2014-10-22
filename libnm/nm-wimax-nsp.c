@@ -145,33 +145,32 @@ nm_wimax_nsp_connection_valid (NMWimaxNsp *nsp, NMConnection *connection)
 /**
  * nm_wimax_nsp_filter_connections:
  * @nsp: an #NMWimaxNsp to filter connections for
- * @connections: (element-type NMConnection): a list of
- * #NMConnection objects to filter
+ * @connections: (element-type NMConnection): an array of #NMConnections to
+ * filter
  *
- * Filters a given list of connections for a given #NMWimaxNsp object and
- * return connections which may be activated with the access point.  Any
- * returned connections will match the @nsp's network name and other attributes.
+ * Filters a given array of connections for a given #NMWimaxNsp object and
+ * return connections which may be activated with the NSP.  Any returned
+ * connections will match the @nsp's network name and other attributes.
  *
- * Returns: (transfer container) (element-type NMConnection): a
- * list of #NMConnection objects that could be activated with the given @nsp.
- * The elements of the list are owned by their creator and should not be freed
- * by the caller, but the returned list itself is owned by the caller and should
- * be freed with g_slist_free() when it is no longer required.
+ * Returns: (transfer container) (element-type NMConnection): an array of
+ * #NMConnections that could be activated with the given @nsp.  The array should
+ * be freed with g_ptr_array_unref() when it is no longer required.
  **/
-GSList *
-nm_wimax_nsp_filter_connections (NMWimaxNsp *nsp, const GSList *connections)
+GPtrArray *
+nm_wimax_nsp_filter_connections (NMWimaxNsp *nsp, const GPtrArray *connections)
 {
-	GSList *filtered = NULL;
-	const GSList *iter;
+	GPtrArray *filtered;
+	int i;
 
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMConnection *candidate = NM_CONNECTION (iter->data);
+	filtered = g_ptr_array_new_with_free_func (g_object_unref);
+	for (i = 0; i < connections->len; i++) {
+		NMConnection *candidate = connections->pdata[i];
 
 		if (nm_wimax_nsp_connection_valid (nsp, candidate))
-			filtered = g_slist_prepend (filtered, candidate);
+			g_ptr_array_add (filtered, g_object_ref (candidate));
 	}
 
-	return g_slist_reverse (filtered);
+	return filtered;
 }
 
 /************************************************************/

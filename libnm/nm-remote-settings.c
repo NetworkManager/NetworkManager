@@ -261,24 +261,12 @@ object_creation_failed (NMObject *object, const char *failed_path)
 	}
 }
 
-GSList *
-nm_remote_settings_list_connections (NMRemoteSettings *settings)
+const GPtrArray *
+nm_remote_settings_get_connections (NMRemoteSettings *settings)
 {
-	NMRemoteSettingsPrivate *priv;
-	GSList *list = NULL;
-	int i;
-
 	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), NULL);
 
-	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
-
-	if (_nm_object_get_nm_running (NM_OBJECT (settings))) {
-		for (i = 0; i < priv->visible_connections->len; i++)
-			list = g_slist_prepend (list, priv->visible_connections->pdata[i]);
-		list = g_slist_reverse (list);
-	}
-
-	return list;
+	return NM_REMOTE_SETTINGS_GET_PRIVATE (settings)->visible_connections;
 }
 
 static void

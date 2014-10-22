@@ -294,7 +294,7 @@ gboolean nm_client_deactivate_connection_finish (NMClient *client,
 
 /* Connections */
 
-GSList             *nm_client_list_connections (NMClient *client);
+const GPtrArray    *nm_client_get_connections        (NMClient *client);
 
 NMRemoteConnection *nm_client_get_connection_by_id   (NMClient *client, const char *id);
 NMRemoteConnection *nm_client_get_connection_by_path (NMClient *client, const char *path);

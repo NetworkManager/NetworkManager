@@ -110,7 +110,7 @@ typedef struct _NmCli {
 
 	int timeout;                                      /* Operation timeout */
 
-	GSList *connections;                              /* List of connections */
+	const GPtrArray *connections;                     /* List of connections */
 
 	gboolean should_wait;                             /* Indication that nmcli should not end yet */
 	gboolean nowait_flag;                             /* '--nowait' option; used for passing to callbacks */

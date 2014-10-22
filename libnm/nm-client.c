@@ -1150,22 +1150,19 @@ nm_client_deactivate_connection_finish (NMClient *client,
 /****************************************************************/
 
 /**
- * nm_client_list_connections:
+ * nm_client_get_connections:
  * @client: the %NMClient
  *
- * Returns: (transfer container) (element-type NMRemoteConnection): a
- * list containing all connections provided by the remote settings service.
- * Each element of the returned list is a %NMRemoteConnection instance, which is
- * owned by the %NMClient object and should not be freed by the caller.
- * The returned list is, however, owned by the caller and should be freed
- * using g_slist_free() when no longer required.
+ * Returns: (transfer none) (element-type NMRemoteConnection): an array
+ * containing all connections provided by the remote settings service.  The
+ * returned array is owned by the #NMClient object and should not be modified.
  **/
-GSList *
-nm_client_list_connections (NMClient *client)
+const GPtrArray *
+nm_client_get_connections (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 
-	return nm_remote_settings_list_connections (NM_CLIENT_GET_PRIVATE (client)->settings);
+	return nm_remote_settings_get_connections (NM_CLIENT_GET_PRIVATE (client)->settings);
 }
 
 /**

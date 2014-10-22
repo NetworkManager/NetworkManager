@@ -323,39 +323,38 @@ nm_access_point_connection_valid (NMAccessPoint *ap, NMConnection *connection)
 /**
  * nm_access_point_filter_connections:
  * @ap: an #NMAccessPoint to filter connections for
- * @connections: (element-type NMConnection): a list of
- * #NMConnection objects to filter
+ * @connections: (element-type NMConnection): an array of #NMConnections to
+ * filter
  *
- * Filters a given list of connections for a given #NMAccessPoint object and
- * return connections which may be activated with the access point.  Any
+ * Filters a given array of connections for a given #NMAccessPoint object and
+ * returns connections which may be activated with the access point.  Any
  * returned connections will match the @ap's SSID and (if given) BSSID and
  * other attributes like security settings, channel, etc.
  *
  * To obtain the list of connections that are compatible with this access point,
- * use nm_remote_settings_list_connections() and then filter the returned list
- * for a given #NMDevice using nm_device_filter_connections() and finally
- * filter that list with this function.
+ * use nm_client_get_connections() and then filter the returned list for a given
+ * #NMDevice using nm_device_filter_connections() and finally filter that list
+ * with this function.
  *
- * Returns: (transfer container) (element-type NMConnection): a
- * list of #NMConnection objects that could be activated with the given @ap.
- * The elements of the list are owned by their creator and should not be freed
- * by the caller, but the returned list itself is owned by the caller and should
- * be freed with g_slist_free() when it is no longer required.
+ * Returns: (transfer container) (element-type NMConnection): an array of
+ * #NMConnections that could be activated with the given @ap.  The array should
+ * be freed with g_ptr_array_unref() when it is no longer required.
  **/
-GSList *
-nm_access_point_filter_connections (NMAccessPoint *ap, const GSList *connections)
+GPtrArray *
+nm_access_point_filter_connections (NMAccessPoint *ap, const GPtrArray *connections)
 {
-	GSList *filtered = NULL;
-	const GSList *iter;
+	GPtrArray *filtered;
+	int i;
 
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMConnection *candidate = NM_CONNECTION (iter->data);
+	filtered = g_ptr_array_new_with_free_func (g_object_unref);
+	for (i = 0; i < connections->len; i++) {
+		NMConnection *candidate = connections->pdata[i];
 
 		if (nm_access_point_connection_valid (ap, candidate))
-			filtered = g_slist_prepend (filtered, candidate);
+			g_ptr_array_add (filtered, g_object_ref (candidate));
 	}
 
-	return g_slist_reverse (filtered);
+	return filtered;
 }
 
 /************************************************************/

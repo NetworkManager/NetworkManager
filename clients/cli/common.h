@@ -46,10 +46,10 @@ nmc_vlan_parse_priority_maps (const char *priority_map,
 const char *nmc_bond_validate_mode (const char *mode, GError **error);
 gboolean nmc_team_check_config (const char *config, char **out_config, GError **error);
 
-NMConnection *nmc_find_connection (GSList *list,
+NMConnection *nmc_find_connection (const GPtrArray *connections,
                                    const char *filter_type,
                                    const char *filter_val,
-                                   GSList **start);
+                                   int *start);
 
 void nmc_cleanup_readline (void);
 char *nmc_readline (const char *prompt_fmt, ...) G_GNUC_PRINTF (1, 2);

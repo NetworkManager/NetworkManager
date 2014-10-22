@@ -83,23 +83,6 @@ static void edit_clicked (NmtNewtButton *button, gpointer list);
 static void delete_clicked (NmtNewtButton *button, gpointer list);
 static void listbox_activated (NmtNewtWidget *listbox, gpointer list);
 
-/**
- * nmt_edit_connection_list_get_connections:
- * @list: an #NmtEditConnectionList
- *
- * Gets the list's list of connections
- *
- * Returns: (transfer none) (element-type #NMConnection): the
- *   list of connections.
- */
-GSList *
-nmt_edit_connection_list_get_connections (NmtEditConnectionList *list)
-{
-	NmtEditConnectionListPrivate *priv = NMT_EDIT_CONNECTION_LIST_GET_PRIVATE (list);
-
-	return priv->connections;
-}
-
 static void
 nmt_edit_connection_list_init (NmtEditConnectionList *list)
 {
@@ -175,13 +158,15 @@ free_connections (NmtEditConnectionList *list)
 		g_object_unref (conn);
 	}
 	g_slist_free (priv->connections);
+	priv->connections = NULL;
 }
 
 static void
 nmt_edit_connection_list_rebuild (NmtEditConnectionList *list)
 {
 	NmtEditConnectionListPrivate *priv = NMT_EDIT_CONNECTION_LIST_GET_PRIVATE (list);
-	GSList *iter, *next;
+	const GPtrArray *connections;
+	GSList *iter;
 	gboolean did_header = FALSE, did_vpn = FALSE;
 	NMEditorConnectionTypeData **types;
 	NMConnection *conn, *selected_conn;
@@ -191,20 +176,17 @@ nmt_edit_connection_list_rebuild (NmtEditConnectionList *list)
 	selected_conn = nmt_newt_listbox_get_active_key (priv->listbox);
 
 	free_connections (list);
-	priv->connections = nm_client_list_connections (nm_client);
-	for (iter = priv->connections; iter; iter = next) {
-		conn = iter->data;
-		next = iter->next;
+	connections = nm_client_get_connections (nm_client);
+	for (i = 0; i < connections->len; i++) {
+		conn = connections->pdata[i];
 
 		if (   priv->connection_filter
-		    && !priv->connection_filter (list, conn, priv->connection_filter_data)) {
-			priv->connections = g_slist_delete_link (priv->connections, iter);
+		    && !priv->connection_filter (list, conn, priv->connection_filter_data))
 			continue;
-		}
 
 		g_signal_connect (conn, NM_CONNECTION_CHANGED,
 		                  G_CALLBACK (rebuild_on_connection_changed), list);
-		g_object_ref (iter->data);
+		priv->connections = g_slist_prepend (priv->connections, g_object_ref (conn));
 	}
 	priv->connections = g_slist_sort (priv->connections, sort_by_timestamp);
 	g_object_notify (G_OBJECT (list), "connections");
