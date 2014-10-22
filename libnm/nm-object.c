@@ -108,8 +108,10 @@ on_name_owner_changed (GObject    *proxy,
 	NMObject *self = NM_OBJECT (user_data);
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
 	gboolean now_running;
+	char *owner;
 
-	now_running = (g_dbus_proxy_get_name_owner (priv->properties_proxy) != NULL);
+	now_running = ((owner = g_dbus_proxy_get_name_owner (priv->properties_proxy)) != NULL);
+	g_free (owner);
 	if (now_running != priv->nm_running) {
 		priv->nm_running = now_running;
 		g_object_notify (G_OBJECT (self), NM_OBJECT_NM_RUNNING);
@@ -128,11 +130,13 @@ static void
 init_dbus (NMObject *object)
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+	char *owner;
 
 	if (_nm_dbus_is_connection_private (priv->connection))
 		priv->nm_running = TRUE;
 	else {
-		priv->nm_running = (g_dbus_proxy_get_name_owner (priv->properties_proxy) != NULL);
+		priv->nm_running = ((owner = g_dbus_proxy_get_name_owner (priv->properties_proxy)) != NULL);
+		g_free (owner);
 		g_signal_connect (priv->properties_proxy, "notify::g-name-owner",
 		                  G_CALLBACK (on_name_owner_changed), object);
 	}

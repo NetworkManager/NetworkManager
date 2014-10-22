@@ -124,10 +124,13 @@ name_owner_changed (GObject *proxy,
 	NMSecretAgent *self = NM_SECRET_AGENT (user_data);
 	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
 	GSList *iter;
+	char *owner;
 
-	if (g_dbus_proxy_get_name_owner (G_DBUS_PROXY (proxy)) != NULL) {
+	owner = g_dbus_proxy_get_name_owner (G_DBUS_PROXY (proxy));
+	if (owner != NULL) {
 		if (should_auto_register (self))
 			nm_secret_agent_register_async (self, NULL, NULL, NULL);
+		g_free (owner);
 	} else {
 		/* Cancel any pending secrets requests */
 		for (iter = priv->pending_gets; iter; iter = g_slist_next (iter)) {
@@ -150,7 +153,7 @@ verify_sender (NMSecretAgent *self,
                GError **error)
 {
 	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
-	const char *nm_owner;
+	char *nm_owner;
 	const char *sender;
 	guint32 sender_uid;
 	GVariant *ret;
@@ -181,6 +184,7 @@ verify_sender (NMSecretAgent *self,
 		                     NM_SECRET_AGENT_ERROR,
 		                     NM_SECRET_AGENT_ERROR_PERMISSION_DENIED,
 		                     "Failed to get request sender.");
+		g_free (nm_owner);
 		return FALSE;
 	}
 
@@ -190,8 +194,10 @@ verify_sender (NMSecretAgent *self,
 		                     NM_SECRET_AGENT_ERROR,
 		                     NM_SECRET_AGENT_ERROR_PERMISSION_DENIED,
 		                     "Request sender does not match NetworkManager bus name owner.");
+		g_free (nm_owner);
 		return FALSE;
 	}
+	g_free (nm_owner);
 
 	/* If we're connected to the session bus, then this must be a test program,
 	 * so skip the UID check.
@@ -470,11 +476,15 @@ static gboolean
 check_nm_running (NMSecretAgent *self, GError **error)
 {
 	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
+	char *owner;
 
 	if (priv->private_bus)
 		return TRUE;
-	if (g_dbus_proxy_get_name_owner (G_DBUS_PROXY (priv->manager_proxy)))
+	owner = g_dbus_proxy_get_name_owner (G_DBUS_PROXY (priv->manager_proxy));
+	if (owner) {
+		g_free (owner);
 		return TRUE;
+	}
 
 	g_set_error (error, NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_FAILED,
 	             "NetworkManager is not running");
