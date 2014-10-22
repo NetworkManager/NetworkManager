@@ -1133,7 +1133,7 @@ _nm_object_register_properties (NMObject *object,
 	}
 }
 
-gboolean
+static gboolean
 _nm_object_reload_properties (NMObject *object, GError **error)
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
