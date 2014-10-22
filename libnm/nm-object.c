@@ -100,369 +100,6 @@ enum {
 	LAST_PROP
 };
 
-static void
-on_name_owner_changed (GObject    *proxy,
-                       GParamSpec *pspec,
-                       gpointer    user_data)
-{
-	NMObject *self = NM_OBJECT (user_data);
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
-	gboolean now_running;
-	char *owner;
-
-	now_running = ((owner = g_dbus_proxy_get_name_owner (priv->properties_proxy)) != NULL);
-	g_free (owner);
-	if (now_running != priv->nm_running) {
-		priv->nm_running = now_running;
-		g_object_notify (G_OBJECT (self), NM_OBJECT_NM_RUNNING);
-	}
-}
-
-static void
-nm_object_init (NMObject *object)
-{
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
-
-	priv->proxies = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
-}
-
-static void
-init_dbus (NMObject *object)
-{
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
-	char *owner;
-
-	if (_nm_dbus_is_connection_private (priv->connection))
-		priv->nm_running = TRUE;
-	else {
-		priv->nm_running = ((owner = g_dbus_proxy_get_name_owner (priv->properties_proxy)) != NULL);
-		g_free (owner);
-		g_signal_connect (priv->properties_proxy, "notify::g-name-owner",
-		                  G_CALLBACK (on_name_owner_changed), object);
-	}
-}
-
-static gboolean
-init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
-{
-	NMObject *self = NM_OBJECT (initable);
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
-	NMObjectClassPrivate *cpriv = NM_OBJECT_CLASS_GET_PRIVATE (NM_OBJECT_GET_CLASS (self));
-	GSList *iter;
-
-	if (!priv->path) {
-		g_set_error_literal (error, NM_CLIENT_ERROR, NM_CLIENT_ERROR_OBJECT_CREATION_FAILED,
-		                     _("Caller did not specify D-Bus path for object"));
-		return FALSE;
-	}
-
-	if (!priv->connection)
-		priv->connection = _nm_dbus_new_connection (cancellable, error);
-	if (!priv->connection)
-		return FALSE;
-
-	/* Create proxies */
-	for (iter = cpriv->interfaces; iter; iter = iter->next) {
-		const char *interface = iter->data;
-		GDBusProxy *proxy;
-
-		proxy = _nm_dbus_new_proxy_for_connection (priv->connection, priv->path, interface,
-		                                           cancellable, error);
-		if (!proxy)
-			return FALSE;
-		g_hash_table_insert (priv->proxies, (char *) interface, proxy);
-	}
-
-	priv->properties_proxy = _nm_dbus_new_proxy_for_connection (priv->connection,
-	                                                            priv->path,
-	                                                            DBUS_INTERFACE_PROPERTIES,
-	                                                            cancellable, error);
-	if (!priv->properties_proxy)
-		return FALSE;
-
-	NM_OBJECT_GET_CLASS (self)->init_dbus (self);
-
-	return _nm_object_reload_properties (self, error);
-}
-
-typedef struct {
-	NMObject *object;
-	GSimpleAsyncResult *simple;
-	GCancellable *cancellable;
-	int proxies_pending;
-	GError *error;
-} NMObjectInitData;
-
-static void
-init_async_complete (NMObjectInitData *init_data)
-{
-	if (init_data->error)
-		g_simple_async_result_take_error (init_data->simple, init_data->error);
-	else
-		g_simple_async_result_set_op_res_gboolean (init_data->simple, TRUE);
-	g_simple_async_result_complete (init_data->simple);
-	g_object_unref (init_data->simple);
-	g_clear_object (&init_data->cancellable);
-	g_slice_free (NMObjectInitData, init_data);
-}
-
-static void
-init_async_got_properties (GObject *object, GAsyncResult *result, gpointer user_data)
-{
-	NMObjectInitData *init_data = user_data;
-
-	_nm_object_reload_properties_finish (NM_OBJECT (object), result, &init_data->error);
-	init_async_complete (init_data);
-}
-
-static void
-init_async_got_proxy (GObject *object, GAsyncResult *result, gpointer user_data)
-{
-	NMObjectInitData *init_data = user_data;
-	NMObject *self = init_data->object;
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
-	GDBusProxy *proxy;
-
-	if (!init_data->error) {
-		proxy = _nm_dbus_new_proxy_for_connection_finish (result, &init_data->error);
-		if (proxy) {
-			const char *interface = g_dbus_proxy_get_interface_name (proxy);
-
-			if (!strcmp (interface, DBUS_INTERFACE_PROPERTIES))
-				priv->properties_proxy = proxy;
-			else
-				g_hash_table_insert (priv->proxies, (char *) interface, proxy);
-		}
-	}
-
-	init_data->proxies_pending--;
-	if (init_data->proxies_pending)
-		return;
-
-	if (init_data->error) {
-		init_async_complete (init_data);
-		return;
-	}
-
-	NM_OBJECT_GET_CLASS (self)->init_dbus (self);
-
-	_nm_object_reload_properties_async (init_data->object, init_data->cancellable, init_async_got_properties, init_data);
-}
-
-static void
-init_async_got_bus (GObject *object, GAsyncResult *result, gpointer user_data)
-{
-	NMObjectInitData *init_data = user_data;
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (init_data->object);
-	NMObjectClassPrivate *cpriv = NM_OBJECT_CLASS_GET_PRIVATE (NM_OBJECT_GET_CLASS (init_data->object));
-	GSList *iter;
-
-	priv->connection = _nm_dbus_new_connection_finish (result, &init_data->error);
-	if (!priv->connection) {
-		init_async_complete (init_data);
-		return;
-	}
-
-	for (iter = cpriv->interfaces; iter; iter = iter->next) {
-		const char *interface = iter->data;
-
-		_nm_dbus_new_proxy_for_connection_async (priv->connection,
-		                                         priv->path, interface,
-		                                         init_data->cancellable,
-		                                         init_async_got_proxy, init_data);
-		init_data->proxies_pending++;
-	}
-
-	_nm_dbus_new_proxy_for_connection_async (priv->connection,
-	                                         priv->path,
-	                                         DBUS_INTERFACE_PROPERTIES,
-	                                         init_data->cancellable,
-	                                         init_async_got_proxy, init_data);
-	init_data->proxies_pending++;
-}
-
-static void
-init_async (GAsyncInitable *initable, int io_priority,
-            GCancellable *cancellable, GAsyncReadyCallback callback,
-            gpointer user_data)
-{
-	NMObject *self = NM_OBJECT (initable);
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
-	NMObjectInitData *init_data;
-
-	if (!priv->path) {
-		g_simple_async_report_error_in_idle (G_OBJECT (initable),
-		                                     callback, user_data,
-		                                     NM_CLIENT_ERROR,
-		                                     NM_CLIENT_ERROR_OBJECT_CREATION_FAILED,
-		                                     "%s",
-		                                     _("Caller did not specify D-Bus path for object"));
-		return;
-	}
-
-	init_data = g_slice_new0 (NMObjectInitData);
-	init_data->object = self;
-	init_data->simple = g_simple_async_result_new (G_OBJECT (initable), callback, user_data, init_async);
-	init_data->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
-
-	_nm_dbus_new_connection_async (cancellable, init_async_got_bus, init_data);
-}
-
-static gboolean
-init_finish (GAsyncInitable *initable, GAsyncResult *result, GError **error)
-{
-	GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
-
-	if (g_simple_async_result_propagate_error (simple, error))
-		return FALSE;
-	else
-		return TRUE;
-}
-
-static void
-dispose (GObject *object)
-{
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
-
-	if (priv->notify_id) {
-		g_source_remove (priv->notify_id);
-		priv->notify_id = 0;
-	}
-
-	g_slist_free_full (priv->notify_props, g_free);
-	priv->notify_props = NULL;
-
-	g_clear_pointer (&priv->proxies, g_hash_table_unref);
-	g_clear_object (&priv->properties_proxy);
-
-	g_clear_object (&priv->connection);
-
-	G_OBJECT_CLASS (nm_object_parent_class)->dispose (object);
-}
-
-static void
-finalize (GObject *object)
-{
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
-
-	g_slist_free_full (priv->property_tables, (GDestroyNotify) g_hash_table_destroy);
-	g_free (priv->path);
-
-	G_OBJECT_CLASS (nm_object_parent_class)->finalize (object);
-}
-
-static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
-{
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
-
-	switch (prop_id) {
-	case PROP_PATH:
-		/* Construct only */
-		priv->path = g_value_dup_string (value);
-		break;
-	case PROP_DBUS_CONNECTION:
-		/* Construct only */
-		priv->connection = g_value_dup_object (value);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
-
-	switch (prop_id) {
-	case PROP_PATH:
-		g_value_set_string (value, priv->path);
-		break;
-	case PROP_DBUS_CONNECTION:
-		g_value_set_object (value, priv->connection);
-		break;
-	case PROP_NM_RUNNING:
-		g_value_set_boolean (value, priv->nm_running);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-nm_object_class_init (NMObjectClass *nm_object_class)
-{
-	GObjectClass *object_class = G_OBJECT_CLASS (nm_object_class);
-
-	g_type_class_add_private (nm_object_class, sizeof (NMObjectPrivate));
-
-	/* virtual methods */
-	object_class->set_property = set_property;
-	object_class->get_property = get_property;
-	object_class->dispose = dispose;
-	object_class->finalize = finalize;
-
-	nm_object_class->init_dbus = init_dbus;
-
-	/* Properties */
-
-	/**
-	 * NMObject:path:
-	 *
-	 * The D-Bus object path.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_PATH,
-		 g_param_spec_string (NM_OBJECT_PATH, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
-
-	/**
-	 * NMObject:dbus-connection: (skip)
-	 *
-	 * The #GDBusConnection of the object.
-	 **/
-	g_object_class_install_property
-	    (object_class, PROP_DBUS_CONNECTION,
-	     g_param_spec_object (NM_OBJECT_DBUS_CONNECTION, "", "",
-	                          G_TYPE_DBUS_CONNECTION,
-	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT_ONLY |
-	                          G_PARAM_STATIC_STRINGS));
-
-	/**
-	 * NMObject:manager-running: (skip)
-	 *
-	 * Internal use only.
-	 */
-	g_object_class_install_property
-		(object_class, PROP_NM_RUNNING,
-		 g_param_spec_boolean (NM_OBJECT_NM_RUNNING, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
-}
-
-static void
-nm_object_initable_iface_init (GInitableIface *iface)
-{
-	iface->init = init_sync;
-}
-
-static void
-nm_object_async_initable_iface_init (GAsyncInitableIface *iface)
-{
-	iface->init_async = init_async;
-	iface->init_finish = init_finish;
-}
-
 /**
  * _nm_object_class_add_interface:
  * @object_class: an #NMObjectClass
@@ -1617,3 +1254,373 @@ _nm_object_get_nm_running (NMObject *self)
 {
 	return NM_OBJECT_GET_PRIVATE (self)->nm_running;
 }
+
+/**************************************************************/
+
+static void
+on_name_owner_changed (GObject    *proxy,
+                       GParamSpec *pspec,
+                       gpointer    user_data)
+{
+	NMObject *self = NM_OBJECT (user_data);
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
+	gboolean now_running;
+	char *owner;
+
+	now_running = ((owner = g_dbus_proxy_get_name_owner (priv->properties_proxy)) != NULL);
+	g_free (owner);
+	if (now_running != priv->nm_running) {
+		priv->nm_running = now_running;
+		g_object_notify (G_OBJECT (self), NM_OBJECT_NM_RUNNING);
+	}
+}
+
+static void
+init_dbus (NMObject *object)
+{
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+	char *owner;
+
+	if (_nm_dbus_is_connection_private (priv->connection))
+		priv->nm_running = TRUE;
+	else {
+		priv->nm_running = ((owner = g_dbus_proxy_get_name_owner (priv->properties_proxy)) != NULL);
+		g_free (owner);
+		g_signal_connect (priv->properties_proxy, "notify::g-name-owner",
+		                  G_CALLBACK (on_name_owner_changed), object);
+	}
+}
+
+static gboolean
+init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
+{
+	NMObject *self = NM_OBJECT (initable);
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
+	NMObjectClassPrivate *cpriv = NM_OBJECT_CLASS_GET_PRIVATE (NM_OBJECT_GET_CLASS (self));
+	GSList *iter;
+
+	if (!priv->path) {
+		g_set_error_literal (error, NM_CLIENT_ERROR, NM_CLIENT_ERROR_OBJECT_CREATION_FAILED,
+		                     _("Caller did not specify D-Bus path for object"));
+		return FALSE;
+	}
+
+	if (!priv->connection)
+		priv->connection = _nm_dbus_new_connection (cancellable, error);
+	if (!priv->connection)
+		return FALSE;
+
+	/* Create proxies */
+	for (iter = cpriv->interfaces; iter; iter = iter->next) {
+		const char *interface = iter->data;
+		GDBusProxy *proxy;
+
+		proxy = _nm_dbus_new_proxy_for_connection (priv->connection, priv->path, interface,
+		                                           cancellable, error);
+		if (!proxy)
+			return FALSE;
+		g_hash_table_insert (priv->proxies, (char *) interface, proxy);
+	}
+
+	priv->properties_proxy = _nm_dbus_new_proxy_for_connection (priv->connection,
+	                                                            priv->path,
+	                                                            DBUS_INTERFACE_PROPERTIES,
+	                                                            cancellable, error);
+	if (!priv->properties_proxy)
+		return FALSE;
+
+	NM_OBJECT_GET_CLASS (self)->init_dbus (self);
+
+	return _nm_object_reload_properties (self, error);
+}
+
+/**************************************************************/
+
+typedef struct {
+	NMObject *object;
+	GSimpleAsyncResult *simple;
+	GCancellable *cancellable;
+	int proxies_pending;
+	GError *error;
+} NMObjectInitData;
+
+static void
+init_async_complete (NMObjectInitData *init_data)
+{
+	if (init_data->error)
+		g_simple_async_result_take_error (init_data->simple, init_data->error);
+	else
+		g_simple_async_result_set_op_res_gboolean (init_data->simple, TRUE);
+	g_simple_async_result_complete (init_data->simple);
+	g_object_unref (init_data->simple);
+	g_clear_object (&init_data->cancellable);
+	g_slice_free (NMObjectInitData, init_data);
+}
+
+static void
+init_async_got_properties (GObject *object, GAsyncResult *result, gpointer user_data)
+{
+	NMObjectInitData *init_data = user_data;
+
+	_nm_object_reload_properties_finish (NM_OBJECT (object), result, &init_data->error);
+	init_async_complete (init_data);
+}
+
+static void
+init_async_got_proxy (GObject *object, GAsyncResult *result, gpointer user_data)
+{
+	NMObjectInitData *init_data = user_data;
+	NMObject *self = init_data->object;
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
+	GDBusProxy *proxy;
+
+	if (!init_data->error) {
+		proxy = _nm_dbus_new_proxy_for_connection_finish (result, &init_data->error);
+		if (proxy) {
+			const char *interface = g_dbus_proxy_get_interface_name (proxy);
+
+			if (!strcmp (interface, DBUS_INTERFACE_PROPERTIES))
+				priv->properties_proxy = proxy;
+			else
+				g_hash_table_insert (priv->proxies, (char *) interface, proxy);
+		}
+	}
+
+	init_data->proxies_pending--;
+	if (init_data->proxies_pending)
+		return;
+
+	if (init_data->error) {
+		init_async_complete (init_data);
+		return;
+	}
+
+	NM_OBJECT_GET_CLASS (self)->init_dbus (self);
+
+	_nm_object_reload_properties_async (init_data->object, init_data->cancellable, init_async_got_properties, init_data);
+}
+
+static void
+init_async_got_bus (GObject *object, GAsyncResult *result, gpointer user_data)
+{
+	NMObjectInitData *init_data = user_data;
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (init_data->object);
+	NMObjectClassPrivate *cpriv = NM_OBJECT_CLASS_GET_PRIVATE (NM_OBJECT_GET_CLASS (init_data->object));
+	GSList *iter;
+
+	priv->connection = _nm_dbus_new_connection_finish (result, &init_data->error);
+	if (!priv->connection) {
+		init_async_complete (init_data);
+		return;
+	}
+
+	for (iter = cpriv->interfaces; iter; iter = iter->next) {
+		const char *interface = iter->data;
+
+		_nm_dbus_new_proxy_for_connection_async (priv->connection,
+		                                         priv->path, interface,
+		                                         init_data->cancellable,
+		                                         init_async_got_proxy, init_data);
+		init_data->proxies_pending++;
+	}
+
+	_nm_dbus_new_proxy_for_connection_async (priv->connection,
+	                                         priv->path,
+	                                         DBUS_INTERFACE_PROPERTIES,
+	                                         init_data->cancellable,
+	                                         init_async_got_proxy, init_data);
+	init_data->proxies_pending++;
+}
+
+static void
+init_async (GAsyncInitable *initable, int io_priority,
+            GCancellable *cancellable, GAsyncReadyCallback callback,
+            gpointer user_data)
+{
+	NMObject *self = NM_OBJECT (initable);
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
+	NMObjectInitData *init_data;
+
+	if (!priv->path) {
+		g_simple_async_report_error_in_idle (G_OBJECT (initable),
+		                                     callback, user_data,
+		                                     NM_CLIENT_ERROR,
+		                                     NM_CLIENT_ERROR_OBJECT_CREATION_FAILED,
+		                                     "%s",
+		                                     _("Caller did not specify D-Bus path for object"));
+		return;
+	}
+
+	init_data = g_slice_new0 (NMObjectInitData);
+	init_data->object = self;
+	init_data->simple = g_simple_async_result_new (G_OBJECT (initable), callback, user_data, init_async);
+	init_data->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
+
+	_nm_dbus_new_connection_async (cancellable, init_async_got_bus, init_data);
+}
+
+static gboolean
+init_finish (GAsyncInitable *initable, GAsyncResult *result, GError **error)
+{
+	GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
+
+	if (g_simple_async_result_propagate_error (simple, error))
+		return FALSE;
+	else
+		return TRUE;
+}
+
+/**************************************************************/
+
+static void
+nm_object_initable_iface_init (GInitableIface *iface)
+{
+	iface->init = init_sync;
+}
+
+static void
+nm_object_async_initable_iface_init (GAsyncInitableIface *iface)
+{
+	iface->init_async = init_async;
+	iface->init_finish = init_finish;
+}
+
+static void
+nm_object_init (NMObject *object)
+{
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+
+	priv->proxies = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
+}
+
+static void
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
+{
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+
+	switch (prop_id) {
+	case PROP_PATH:
+		/* Construct only */
+		priv->path = g_value_dup_string (value);
+		break;
+	case PROP_DBUS_CONNECTION:
+		/* Construct only */
+		priv->connection = g_value_dup_object (value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+
+	switch (prop_id) {
+	case PROP_PATH:
+		g_value_set_string (value, priv->path);
+		break;
+	case PROP_DBUS_CONNECTION:
+		g_value_set_object (value, priv->connection);
+		break;
+	case PROP_NM_RUNNING:
+		g_value_set_boolean (value, priv->nm_running);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+dispose (GObject *object)
+{
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+
+	if (priv->notify_id) {
+		g_source_remove (priv->notify_id);
+		priv->notify_id = 0;
+	}
+
+	g_slist_free_full (priv->notify_props, g_free);
+	priv->notify_props = NULL;
+
+	g_clear_pointer (&priv->proxies, g_hash_table_unref);
+	g_clear_object (&priv->properties_proxy);
+
+	g_clear_object (&priv->connection);
+
+	G_OBJECT_CLASS (nm_object_parent_class)->dispose (object);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+
+	g_slist_free_full (priv->property_tables, (GDestroyNotify) g_hash_table_destroy);
+	g_free (priv->path);
+
+	G_OBJECT_CLASS (nm_object_parent_class)->finalize (object);
+}
+
+static void
+nm_object_class_init (NMObjectClass *nm_object_class)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (nm_object_class);
+
+	g_type_class_add_private (nm_object_class, sizeof (NMObjectPrivate));
+
+	/* virtual methods */
+	object_class->set_property = set_property;
+	object_class->get_property = get_property;
+	object_class->dispose = dispose;
+	object_class->finalize = finalize;
+
+	nm_object_class->init_dbus = init_dbus;
+
+	/* Properties */
+
+	/**
+	 * NMObject:path:
+	 *
+	 * The D-Bus object path.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_PATH,
+		 g_param_spec_string (NM_OBJECT_PATH, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMObject:dbus-connection: (skip)
+	 *
+	 * The #GDBusConnection of the object.
+	 **/
+	g_object_class_install_property
+	    (object_class, PROP_DBUS_CONNECTION,
+	     g_param_spec_object (NM_OBJECT_DBUS_CONNECTION, "", "",
+	                          G_TYPE_DBUS_CONNECTION,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMObject:manager-running: (skip)
+	 *
+	 * Internal use only.
+	 */
+	g_object_class_install_property
+		(object_class, PROP_NM_RUNNING,
+		 g_param_spec_boolean (NM_OBJECT_NM_RUNNING, "", "",
+		                       FALSE,
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
+}
+
