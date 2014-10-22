@@ -54,7 +54,7 @@ typedef struct {
 	guint32 tx_power;
 	char *device_mac_address;
 	char *cloned_mac_address;
-	GSList *mac_address_blacklist;
+	GArray *mac_address_blacklist;
 	guint32 mtu;
 	GSList *seen_bssids;
 	gboolean hidden;
@@ -419,15 +419,17 @@ nm_setting_wireless_get_cloned_mac_address (NMSettingWireless *setting)
  * nm_setting_wireless_get_mac_address_blacklist:
  * @setting: the #NMSettingWireless
  *
- * Returns: (element-type utf8): the
- * #NMSettingWireless:mac-address-blacklist property of the setting
+ * Returns: the #NMSettingWireless:mac-address-blacklist property of the setting
  **/
-const GSList *
+const char * const *
 nm_setting_wireless_get_mac_address_blacklist (NMSettingWireless *setting)
 {
+	NMSettingWirelessPrivate *priv;
+
 	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), NULL);
 
-	return NM_SETTING_WIRELESS_GET_PRIVATE (setting)->mac_address_blacklist;
+	priv = NM_SETTING_WIRELESS_GET_PRIVATE (setting);
+	return (const char * const *) priv->mac_address_blacklist->data;
 }
 
 /**
@@ -441,7 +443,7 @@ nm_setting_wireless_get_num_mac_blacklist_items (NMSettingWireless *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), 0);
 
-	return g_slist_length (NM_SETTING_WIRELESS_GET_PRIVATE (setting)->mac_address_blacklist);
+	return NM_SETTING_WIRELESS_GET_PRIVATE (setting)->mac_address_blacklist->len;
 }
 
 /**
@@ -460,9 +462,9 @@ nm_setting_wireless_get_mac_blacklist_item (NMSettingWireless *setting, guint32 
 	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), NULL);
 
 	priv = NM_SETTING_WIRELESS_GET_PRIVATE (setting);
-	g_return_val_if_fail (idx <= g_slist_length (priv->mac_address_blacklist), NULL);
+	g_return_val_if_fail (idx <= priv->mac_address_blacklist->len, NULL);
 
-	return (const char *) g_slist_nth_data (priv->mac_address_blacklist, idx);
+	return g_array_index (priv->mac_address_blacklist, const char *, idx);
 }
 
 /**
@@ -479,7 +481,7 @@ gboolean
 nm_setting_wireless_add_mac_blacklist_item (NMSettingWireless *setting, const char *mac)
 {
 	NMSettingWirelessPrivate *priv;
-	GSList *iter;
+	int i;
 
 	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), FALSE);
 	g_return_val_if_fail (mac != NULL, FALSE);
@@ -488,13 +490,13 @@ nm_setting_wireless_add_mac_blacklist_item (NMSettingWireless *setting, const ch
 		return FALSE;
 
 	priv = NM_SETTING_WIRELESS_GET_PRIVATE (setting);
-	for (iter = priv->mac_address_blacklist; iter; iter = g_slist_next (iter)) {
-		if (!strcasecmp (mac, (char *) iter->data))
+	for (i = 0; i < priv->mac_address_blacklist->len; i++) {
+		if (!strcasecmp (mac, g_array_index (priv->mac_address_blacklist, char *, i)))
 			return FALSE;
 	}
 
-	priv->mac_address_blacklist = g_slist_append (priv->mac_address_blacklist,
-	                                              g_ascii_strup (mac, -1));
+	mac = g_ascii_strup (mac, -1);
+	g_array_append_val (priv->mac_address_blacklist, mac);
 	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST);
 	return TRUE;
 }
@@ -510,16 +512,13 @@ void
 nm_setting_wireless_remove_mac_blacklist_item (NMSettingWireless *setting, guint32 idx)
 {
 	NMSettingWirelessPrivate *priv;
-	GSList *elt;
 
 	g_return_if_fail (NM_IS_SETTING_WIRELESS (setting));
 
 	priv = NM_SETTING_WIRELESS_GET_PRIVATE (setting);
-	elt = g_slist_nth (priv->mac_address_blacklist, idx);
-	g_return_if_fail (elt != NULL);
+	g_return_if_fail (idx < priv->mac_address_blacklist->len);
 
-	g_free (elt->data);
-	priv->mac_address_blacklist = g_slist_delete_link (priv->mac_address_blacklist, elt);
+	g_array_remove_index (priv->mac_address_blacklist, idx);
 	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST);
 }
 
@@ -537,7 +536,7 @@ gboolean
 nm_setting_wireless_remove_mac_blacklist_item_by_value (NMSettingWireless *setting, const char *mac)
 {
 	NMSettingWirelessPrivate *priv;
-	GSList *iter;
+	int i;
 
 	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), FALSE);
 	g_return_val_if_fail (mac != NULL, FALSE);
@@ -546,9 +545,9 @@ nm_setting_wireless_remove_mac_blacklist_item_by_value (NMSettingWireless *setti
 		return FALSE;
 
 	priv = NM_SETTING_WIRELESS_GET_PRIVATE (setting);
-	for (iter = priv->mac_address_blacklist; iter; iter = g_slist_next (iter)) {
-		if (!strcasecmp (mac, (char *) iter->data)) {
-			priv->mac_address_blacklist = g_slist_delete_link (priv->mac_address_blacklist, iter);
+	for (i = 0; i < priv->mac_address_blacklist->len; i++) {
+		if (!strcasecmp (mac, g_array_index (priv->mac_address_blacklist, char *, i))) {
+			g_array_remove_index (priv->mac_address_blacklist, i);
 			g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST);
 			return TRUE;
 		}
@@ -567,8 +566,7 @@ nm_setting_wireless_clear_mac_blacklist_items (NMSettingWireless *setting)
 {
 	g_return_if_fail (NM_IS_SETTING_WIRELESS (setting));
 
-	g_slist_free_full (NM_SETTING_WIRELESS_GET_PRIVATE (setting)->mac_address_blacklist, g_free);
-	NM_SETTING_WIRELESS_GET_PRIVATE (setting)->mac_address_blacklist = NULL;
+	g_array_set_size (NM_SETTING_WIRELESS_GET_PRIVATE (setting)->mac_address_blacklist, 0);
 	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST);
 }
 
@@ -683,6 +681,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	const char *valid_modes[] = { NM_SETTING_WIRELESS_MODE_INFRA, NM_SETTING_WIRELESS_MODE_ADHOC, NM_SETTING_WIRELESS_MODE_AP, NULL };
 	const char *valid_bands[] = { "a", "bg", NULL };
 	GSList *iter;
+	int i;
 	gsize length;
 
 	if (!priv->ssid) {
@@ -773,13 +772,15 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	for (iter = priv->mac_address_blacklist; iter; iter = iter->next) {
-		if (!nm_utils_hwaddr_valid (iter->data, ETH_ALEN)) {
+	for (i = 0; i < priv->mac_address_blacklist->len; i++) {
+		const char *mac = g_array_index (priv->mac_address_blacklist, const char *, i);
+
+		if (!nm_utils_hwaddr_valid (mac, ETH_ALEN)) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("'%s' is not a valid MAC address"),
-			             (const char *) iter->data);
+			             mac);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST);
 			return FALSE;
 		}
@@ -812,8 +813,19 @@ nm_setting_wireless_get_security (NMSetting    *setting,
 }
 
 static void
+clear_blacklist_item (char **item_p)
+{
+	g_free (*item_p);
+}
+
+static void
 nm_setting_wireless_init (NMSettingWireless *setting)
 {
+	NMSettingWirelessPrivate *priv = NM_SETTING_WIRELESS_GET_PRIVATE (setting);
+
+	/* We use GArray rather than GPtrArray so it will automatically be NULL-terminated */
+	priv->mac_address_blacklist = g_array_new (TRUE, FALSE, sizeof (char *));
+	g_array_set_clear_func (priv->mac_address_blacklist, (GDestroyNotify) clear_blacklist_item);
 }
 
 static void
@@ -829,7 +841,7 @@ finalize (GObject *object)
 	g_free (priv->bssid);
 	g_free (priv->device_mac_address);
 	g_free (priv->cloned_mac_address);
-	g_slist_free_full (priv->mac_address_blacklist, g_free);
+	g_array_unref (priv->mac_address_blacklist);
 	g_slist_free_full (priv->seen_bssids, g_free);
 
 	G_OBJECT_CLASS (nm_setting_wireless_parent_class)->finalize (object);
@@ -840,6 +852,7 @@ set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
 	NMSettingWirelessPrivate *priv = NM_SETTING_WIRELESS_GET_PRIVATE (object);
+	char **blacklist;
 
 	switch (prop_id) {
 	case PROP_SSID:
@@ -877,8 +890,14 @@ set_property (GObject *object, guint prop_id,
 		priv->cloned_mac_address = g_value_dup_string (value);
 		break;
 	case PROP_MAC_ADDRESS_BLACKLIST:
-		g_slist_free_full (priv->mac_address_blacklist, g_free);
-		priv->mac_address_blacklist = _nm_utils_strv_to_slist (g_value_get_boxed (value));
+		blacklist = g_value_dup_boxed (value);
+		g_array_set_size (priv->mac_address_blacklist, 0);
+		if (blacklist) {
+			g_array_set_size (priv->mac_address_blacklist, g_strv_length (blacklist));
+			memcpy (priv->mac_address_blacklist->data, blacklist,
+			        priv->mac_address_blacklist->len * sizeof (char *));
+			g_free (blacklist);
+		}
 		break;
 	case PROP_MTU:
 		priv->mtu = g_value_get_uint (value);
@@ -932,7 +951,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, nm_setting_wireless_get_cloned_mac_address (setting));
 		break;
 	case PROP_MAC_ADDRESS_BLACKLIST:
-		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->mac_address_blacklist));
+		g_value_set_boxed (value, (char **) priv->mac_address_blacklist->data);
 		break;
 	case PROP_MTU:
 		g_value_set_uint (value, nm_setting_wireless_get_mtu (setting));

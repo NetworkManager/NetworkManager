@@ -73,7 +73,7 @@ gboolean          nm_setting_wired_get_auto_negotiate   (NMSettingWired *setting
 const char *      nm_setting_wired_get_mac_address      (NMSettingWired *setting);
 const char *      nm_setting_wired_get_cloned_mac_address (NMSettingWired *setting);
 
-const GSList     *nm_setting_wired_get_mac_address_blacklist   (NMSettingWired *setting);
+const char * const *nm_setting_wired_get_mac_address_blacklist   (NMSettingWired *setting);
 guint32           nm_setting_wired_get_num_mac_blacklist_items (NMSettingWired *setting);
 const char *      nm_setting_wired_get_mac_blacklist_item      (NMSettingWired *setting,
                                                                 guint32 idx);
