@@ -84,9 +84,9 @@ typedef struct {
 	gboolean firmware_missing;
 	gboolean autoconnect;
 	NMIPConfig *ip4_config;
-	NMDhcp4Config *dhcp4_config;
+	NMDhcpConfig *dhcp4_config;
 	NMIPConfig *ip6_config;
-	NMDhcp6Config *dhcp6_config;
+	NMDhcpConfig *dhcp6_config;
 	NMDeviceState state;
 	NMDeviceState last_seen_state;
 	NMDeviceStateReason reason;
@@ -658,12 +658,12 @@ nm_device_class_init (NMDeviceClass *device_class)
 	/**
 	 * NMDevice:dhcp4-config:
 	 *
-	 * The #NMDhcp4Config of the device.
+	 * The IPv4 #NMDhcpConfig of the device.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DHCP4_CONFIG,
 		 g_param_spec_object (NM_DEVICE_DHCP4_CONFIG, "", "",
-		                      NM_TYPE_DHCP4_CONFIG,
+		                      NM_TYPE_DHCP_CONFIG,
 		                      G_PARAM_READABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
@@ -682,12 +682,12 @@ nm_device_class_init (NMDeviceClass *device_class)
 	/**
 	 * NMDevice:dhcp6-config:
 	 *
-	 * The #NMDhcp6Config of the device.
+	 * The IPv6 #NMDhcpConfig of the device.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DHCP6_CONFIG,
 		 g_param_spec_object (NM_DEVICE_DHCP6_CONFIG, "", "",
-		                      NM_TYPE_DHCP6_CONFIG,
+		                      NM_TYPE_DHCP_CONFIG,
 		                      G_PARAM_READABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
@@ -1126,16 +1126,15 @@ nm_device_get_ip4_config (NMDevice *device)
  * nm_device_get_dhcp4_config:
  * @device: a #NMDevice
  *
- * Gets the current #NMDhcp4Config associated with the #NMDevice.
+ * Gets the current IPv4 #NMDhcpConfig associated with the #NMDevice.
  *
- * Note that as of NetworkManager 0.9.10, you can alternatively use
- * nm_active_connection_get_dhcp4_config(), which also works with VPN
- * connections.
+ * You can alternatively use nm_active_connection_get_dhcp4_config(), which also
+ * works with VPN connections.
  *
- * Returns: (transfer none): the #NMDhcp4Config or %NULL if the device is not activated or not
- * using DHCP.
+ * Returns: (transfer none): the IPv4 #NMDhcpConfig, or %NULL if the device is
+ * not activated or not using DHCP.
  **/
-NMDhcp4Config *
+NMDhcpConfig *
 nm_device_get_dhcp4_config (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
@@ -1166,16 +1165,15 @@ nm_device_get_ip6_config (NMDevice *device)
  * nm_device_get_dhcp6_config:
  * @device: a #NMDevice
  *
- * Gets the current #NMDhcp6Config associated with the #NMDevice.
+ * Gets the current IPv6 #NMDhcpConfig associated with the #NMDevice.
  *
- * Note that as of NetworkManager 0.9.10, you can alternatively use
- * nm_active_connection_get_dhcp6_config(), which also works with VPN
- * connections.
+ * You can alternatively use nm_active_connection_get_dhcp6_config(), which also
+ * works with VPN connections.
  *
- * Returns: (transfer none): the #NMDhcp6Config or %NULL if the device is not activated or not
- * using DHCP.
+ * Returns: (transfer none): the IPv6 #NMDhcpConfig, or %NULL if the device is
+ * not activated or not using DHCPv6.
  **/
-NMDhcp6Config *
+NMDhcpConfig *
 nm_device_get_dhcp6_config (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);

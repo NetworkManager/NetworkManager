@@ -1137,7 +1137,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 		/* DHCP4 */
 		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx].name,  nmc_fields_con_active_details_groups[2].name) == 0) {
 			gboolean b1 = FALSE;
-			NMDhcp4Config *dhcp4 = nm_active_connection_get_dhcp4_config (acon);
+			NMDhcpConfig *dhcp4 = nm_active_connection_get_dhcp4_config (acon);
 
 			b1 = print_dhcp4_config (dhcp4, nmc, "DHCP4", group_fld);
 			was_output = was_output || b1;
@@ -1155,7 +1155,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 		/* DHCP6 */
 		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx].name,  nmc_fields_con_active_details_groups[4].name) == 0) {
 			gboolean b1 = FALSE;
-			NMDhcp6Config *dhcp6 = nm_active_connection_get_dhcp6_config (acon);
+			NMDhcpConfig *dhcp6 = nm_active_connection_get_dhcp6_config (acon);
 
 			b1 = print_dhcp6_config (dhcp6, nmc, "DHCP6", group_fld);
 			was_output = was_output || b1;

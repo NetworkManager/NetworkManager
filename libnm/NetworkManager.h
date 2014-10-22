@@ -43,8 +43,7 @@
 #include <nm-device-wifi.h>
 #include <nm-device-wimax.h>
 #include <nm-device.h>
-#include <nm-dhcp4-config.h>
-#include <nm-dhcp6-config.h>
+#include <nm-dhcp-config.h>
 #include <nm-enum-types.h>
 #include <nm-ip-config.h>
 #include <nm-object.h>

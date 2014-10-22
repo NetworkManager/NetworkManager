@@ -251,7 +251,7 @@ print_ip6_config (NMIPConfig *cfg6,
 }
 
 gboolean
-print_dhcp4_config (NMDhcp4Config *dhcp4,
+print_dhcp4_config (NMDhcpConfig *dhcp4,
                     NmCli *nmc,
                     const char *group_prefix,
                     const char *one_field)
@@ -263,7 +263,7 @@ print_dhcp4_config (NMDhcp4Config *dhcp4,
 	if (dhcp4 == NULL)
 		return FALSE;
 
-	table = nm_dhcp4_config_get_options (dhcp4);
+	table = nm_dhcp_config_get_options (dhcp4);
 	if (table) {
 		GHashTableIter table_iter;
 		gpointer key, value;
@@ -299,7 +299,7 @@ print_dhcp4_config (NMDhcp4Config *dhcp4,
 }
 
 gboolean
-print_dhcp6_config (NMDhcp6Config *dhcp6,
+print_dhcp6_config (NMDhcpConfig *dhcp6,
                     NmCli *nmc,
                     const char *group_prefix,
                     const char *one_field)
@@ -311,7 +311,7 @@ print_dhcp6_config (NMDhcp6Config *dhcp6,
 	if (dhcp6 == NULL)
 		return FALSE;
 
-	table = nm_dhcp6_config_get_options (dhcp6);
+	table = nm_dhcp_config_get_options (dhcp6);
 	if (table) {
 		GHashTableIter table_iter;
 		gpointer key, value;

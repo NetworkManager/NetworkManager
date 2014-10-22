@@ -129,8 +129,7 @@
     <xi:include href="xml/nm-access-point.xml"/>
     <xi:include href="xml/nm-wimax-nsp.xml"/>
     <xi:include href="xml/nm-ip-config.xml"/>
-    <xi:include href="xml/nm-dhcp4-config.xml"/>
-    <xi:include href="xml/nm-dhcp6-config.xml"/>
+    <xi:include href="xml/nm-dhcp-config.xml"/>
   </chapter>
 
   <chapter>

@@ -76,10 +76,10 @@ NMActiveConnectionState  nm_active_connection_get_state                (NMActive
 NMDevice                *nm_active_connection_get_master               (NMActiveConnection *connection);
 gboolean                 nm_active_connection_get_default              (NMActiveConnection *connection);
 NMIPConfig              *nm_active_connection_get_ip4_config           (NMActiveConnection *connection);
-NMDhcp4Config           *nm_active_connection_get_dhcp4_config         (NMActiveConnection *connection);
+NMDhcpConfig            *nm_active_connection_get_dhcp4_config         (NMActiveConnection *connection);
 gboolean                 nm_active_connection_get_default6             (NMActiveConnection *connection);
 NMIPConfig              *nm_active_connection_get_ip6_config           (NMActiveConnection *connection);
-NMDhcp6Config           *nm_active_connection_get_dhcp6_config         (NMActiveConnection *connection);
+NMDhcpConfig            *nm_active_connection_get_dhcp6_config         (NMActiveConnection *connection);
 gboolean                 nm_active_connection_get_vpn                  (NMActiveConnection *connection);
 
 G_END_DECLS
