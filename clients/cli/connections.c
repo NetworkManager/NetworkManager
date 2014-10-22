@@ -1128,7 +1128,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 		/* IP4 */
 		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx].name,  nmc_fields_con_active_details_groups[1].name) == 0) {
 			gboolean b1 = FALSE;
-			NMIP4Config *cfg4 = nm_active_connection_get_ip4_config (acon);
+			NMIPConfig *cfg4 = nm_active_connection_get_ip4_config (acon);
 
 			b1 = print_ip4_config (cfg4, nmc, "IP4", group_fld);
 			was_output = was_output || b1;
@@ -1146,7 +1146,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 		/* IP6 */
 		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx].name,  nmc_fields_con_active_details_groups[3].name) == 0) {
 			gboolean b1 = FALSE;
-			NMIP6Config *cfg6 = nm_active_connection_get_ip6_config (acon);
+			NMIPConfig *cfg6 = nm_active_connection_get_ip6_config (acon);
 
 			b1 = print_ip6_config (cfg6, nmc, "IP6", group_fld);
 			was_output = was_output || b1;

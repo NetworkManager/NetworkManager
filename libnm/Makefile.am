@@ -46,8 +46,7 @@ libnminclude_hfiles =			\
 	nm-dhcp4-config.h		\
 	nm-dhcp6-config.h		\
 	nm-enum-types.h			\
-	nm-ip4-config.h			\
-	nm-ip6-config.h			\
+	nm-ip-config.h			\
 	nm-object.h			\
 	nm-remote-connection.h		\
 	nm-secret-agent.h		\
@@ -66,6 +65,8 @@ libnminclude_HEADERS =			\
 libnm_la_private_headers =		\
 	nm-dbus-helpers.h		\
 	nm-device-private.h		\
+	nm-ip4-config.h			\
+	nm-ip6-config.h			\
 	nm-manager.h			\
 	nm-object-cache.h		\
 	nm-object-private.h		\
@@ -94,6 +95,7 @@ libnm_la_csources =			\
 	nm-dhcp4-config.c		\
 	nm-dhcp6-config.c		\
 	nm-enum-types.c			\
+	nm-ip-config.c			\
 	nm-ip4-config.c			\
 	nm-ip6-config.c			\
 	nm-manager.c			\

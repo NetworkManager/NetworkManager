@@ -22,11 +22,7 @@
 #ifndef __NM_IP6_CONFIG_H__
 #define __NM_IP6_CONFIG_H__
 
-#if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
-#error "Only <NetworkManager.h> can be included directly."
-#endif
-
-#include <nm-object.h>
+#include <nm-ip-config.h>
 
 G_BEGIN_DECLS
 
@@ -37,32 +33,18 @@ G_BEGIN_DECLS
 #define NM_IS_IP6_CONFIG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_IP6_CONFIG))
 #define NM_IP6_CONFIG_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_IP6_CONFIG, NMIP6ConfigClass))
 
-struct _NMIP6Config {
-	NMObject parent;
-};
+typedef struct {
+	NMIPConfig parent;
+} NMIP6Config;
 
 typedef struct {
-	NMObjectClass parent;
+	NMIPConfigClass parent;
 
 	/*< private >*/
 	gpointer padding[4];
 } NMIP6ConfigClass;
 
-#define NM_IP6_CONFIG_GATEWAY "gateway"
-#define NM_IP6_CONFIG_ADDRESSES "addresses"
-#define NM_IP6_CONFIG_ROUTES "routes"
-#define NM_IP6_CONFIG_NAMESERVERS "nameservers"
-#define NM_IP6_CONFIG_DOMAINS "domains"
-#define NM_IP6_CONFIG_SEARCHES "searches"
-
 GType nm_ip6_config_get_type (void);
-
-const char *           nm_ip6_config_get_gateway         (NMIP6Config *config);
-GPtrArray *            nm_ip6_config_get_addresses       (NMIP6Config *config);
-GPtrArray *            nm_ip6_config_get_routes          (NMIP6Config *config);
-const char * const *   nm_ip6_config_get_nameservers     (NMIP6Config *config);
-const char * const *   nm_ip6_config_get_domains         (NMIP6Config *config);
-const char * const *   nm_ip6_config_get_searches        (NMIP6Config *config);
 
 G_END_DECLS
 

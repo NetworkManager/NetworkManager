@@ -34,6 +34,8 @@ IGNORE_HFILES= \
 	nm-dbus-helpers-private.h \
 	nm-core-internal.h \
 	nm-device-private.h \
+	nm-ip4-config.h \
+	nm-ip6-config.h \
 	nm-manager.h \
 	nm-object-cache.h \
 	nm-object-private.h \

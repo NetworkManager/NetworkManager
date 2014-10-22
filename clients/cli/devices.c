@@ -767,8 +767,7 @@ show_device_info (NMDevice *device, NmCli *nmc)
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 	gboolean was_output = FALSE;
-	NMIP4Config *cfg4;
-	NMIP6Config *cfg6;
+	NMIPConfig *cfg4, *cfg6;
 	NMDhcp4Config *dhcp4;
 	NMDhcp6Config *dhcp6;
 	const char *base_hdr = _("Device details");

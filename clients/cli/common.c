@@ -76,7 +76,7 @@ NmcOutputField nmc_fields_dhcp6_config[] = {
 
 
 gboolean
-print_ip4_config (NMIP4Config *cfg4,
+print_ip4_config (NMIPConfig *cfg4,
                   NmCli *nmc,
                   const char *group_prefix,
                   const char *one_field)
@@ -103,8 +103,8 @@ print_ip4_config (NMIP4Config *cfg4,
 	g_ptr_array_add (nmc->output_data, arr);
 
 	/* addresses */
-	ptr_array = nm_ip4_config_get_addresses (cfg4);
-	gw = nm_ip4_config_get_gateway (cfg4);
+	ptr_array = nm_ip_config_get_addresses (cfg4);
+	gw = nm_ip_config_get_gateway (cfg4);
 	if (ptr_array) {
 		addr_arr = g_new (char *, ptr_array->len + 1);
 		for (i = 0; i < ptr_array->len; i++) {
@@ -119,7 +119,7 @@ print_ip4_config (NMIP4Config *cfg4,
 	}
 
 	/* routes */
-	ptr_array = nm_ip4_config_get_routes (cfg4);
+	ptr_array = nm_ip_config_get_routes (cfg4);
 	if (ptr_array) {
 		route_arr = g_new (char *, ptr_array->len + 1);
 		for (i = 0; i < ptr_array->len; i++) {
@@ -140,13 +140,13 @@ print_ip4_config (NMIP4Config *cfg4,
 	}
 
 	/* DNS */
-	dns_arr = g_strdupv ((char **) nm_ip4_config_get_nameservers (cfg4));
+	dns_arr = g_strdupv ((char **) nm_ip_config_get_nameservers (cfg4));
 
 	/* domains */
-	domain_arr = g_strdupv ((char **) nm_ip4_config_get_domains (cfg4));
+	domain_arr = g_strdupv ((char **) nm_ip_config_get_domains (cfg4));
 
 	/* WINS */
-	wins_arr = g_strdupv ((char **) nm_ip4_config_get_wins_servers (cfg4));
+	wins_arr = g_strdupv ((char **) nm_ip_config_get_wins_servers (cfg4));
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_strc (arr, 0, group_prefix);
@@ -166,7 +166,7 @@ print_ip4_config (NMIP4Config *cfg4,
 }
 
 gboolean
-print_ip6_config (NMIP6Config *cfg6,
+print_ip6_config (NMIPConfig *cfg6,
                   NmCli *nmc,
                   const char *group_prefix,
                   const char *one_field)
@@ -192,8 +192,8 @@ print_ip6_config (NMIP6Config *cfg6,
 	g_ptr_array_add (nmc->output_data, arr);
 
 	/* addresses */
-	ptr_array = nm_ip6_config_get_addresses (cfg6);
-	gw = nm_ip6_config_get_gateway (cfg6);
+	ptr_array = nm_ip_config_get_addresses (cfg6);
+	gw = nm_ip_config_get_gateway (cfg6);
 	if (ptr_array) {
 		addr_arr = g_new (char *, ptr_array->len + 1);
 		for (i = 0; i < ptr_array->len; i++) {
@@ -208,7 +208,7 @@ print_ip6_config (NMIP6Config *cfg6,
 	}
 
 	/* routes */
-	ptr_array = nm_ip6_config_get_routes (cfg6);
+	ptr_array = nm_ip_config_get_routes (cfg6);
 	if (ptr_array) {
 		route_arr = g_new (char *, ptr_array->len + 1);
 		for (i = 0; i < ptr_array->len; i++) {
@@ -229,10 +229,10 @@ print_ip6_config (NMIP6Config *cfg6,
 	}
 
 	/* DNS */
-	dns_arr = g_strdupv ((char **) nm_ip6_config_get_nameservers (cfg6));
+	dns_arr = g_strdupv ((char **) nm_ip_config_get_nameservers (cfg6));
 
 	/* domains */
-	domain_arr = g_strdupv ((char **) nm_ip6_config_get_domains (cfg6));
+	domain_arr = g_strdupv ((char **) nm_ip_config_get_domains (cfg6));
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_strc (arr, 0, group_prefix);
