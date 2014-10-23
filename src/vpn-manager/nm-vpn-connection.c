@@ -76,6 +76,8 @@ typedef enum {
 
 typedef struct {
 	NMConnection *connection;
+	gboolean service_can_persist;
+	gboolean connection_can_persist;
 
 	guint32 secrets_id;
 	SecretsReq secrets_idx;
@@ -945,6 +947,12 @@ process_generic_config (NMVpnConnection *connection,
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 	GValue *val;
 
+	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_CAN_PERSIST);
+	if (val && G_VALUE_HOLDS_BOOLEAN (val) && g_value_get_boolean (val)) {
+		/* Defaults to FALSE, so only let service indicate TRUE */
+		priv->service_can_persist = TRUE;
+	}
+
 	g_clear_pointer (&priv->ip_iface, g_free);
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_CONFIG_TUNDEV);
 	if (val) {
@@ -1559,11 +1567,16 @@ void
 nm_vpn_connection_activate (NMVpnConnection *connection)
 {
 	NMVpnConnectionPrivate *priv;
+	NMSettingVpn *s_vpn;
 	DBusGConnection *bus;
 
 	g_return_if_fail (NM_IS_VPN_CONNECTION (connection));
 
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+
+	s_vpn = nm_connection_get_setting_vpn (priv->connection);
+	g_assert (s_vpn);
+	priv->connection_can_persist = nm_setting_vpn_get_persistent (s_vpn);
 
 	_set_vpn_state (connection, STATE_PREPARE, NM_VPN_CONNECTION_STATE_REASON_NONE, FALSE);
 
