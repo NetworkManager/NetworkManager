@@ -405,6 +405,7 @@ typedef struct {
 	guint32     (*wifi_get_rate)         (NMPlatform *, int ifindex);
 	NM80211Mode (*wifi_get_mode)         (NMPlatform *, int ifindex);
 	void        (*wifi_set_mode)         (NMPlatform *, int ifindex, NM80211Mode mode);
+	void        (*wifi_set_powersave)    (NMPlatform *, int ifindex, guint32 powersave);
 	guint32     (*wifi_find_frequency)   (NMPlatform *, int ifindex, const guint32 *freqs);
 	void        (*wifi_indicate_addressing_running) (NMPlatform *, int ifindex, gboolean running);
 
@@ -551,6 +552,7 @@ int         nm_platform_wifi_get_quality      (int ifindex);
 guint32     nm_platform_wifi_get_rate         (int ifindex);
 NM80211Mode nm_platform_wifi_get_mode         (int ifindex);
 void        nm_platform_wifi_set_mode         (int ifindex, NM80211Mode mode);
+void        nm_platform_wifi_set_powersave    (int ifindex, guint32 powersave);
 guint32     nm_platform_wifi_find_frequency   (int ifindex, const guint32 *freqs);
 void        nm_platform_wifi_indicate_addressing_running (int ifindex, gboolean running);
 

@@ -98,6 +98,14 @@ wifi_utils_set_mode (WifiData *data, const NM80211Mode mode)
 	return data->set_mode ? data->set_mode (data, mode) : TRUE;
 }
 
+gboolean
+wifi_utils_set_powersave (WifiData *data, guint32 powersave)
+{
+	g_return_val_if_fail (data != NULL, FALSE);
+
+	return data->set_powersave ? data->set_powersave (data, powersave) : TRUE;
+}
+
 guint32
 wifi_utils_get_freq (WifiData *data)
 {

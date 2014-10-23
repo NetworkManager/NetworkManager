@@ -65,6 +65,8 @@ gboolean wifi_utils_indicate_addressing_running (WifiData *data, gboolean runnin
 /* Returns true if WoWLAN is enabled on device */
 gboolean wifi_utils_get_wowlan (WifiData *data);
 
+gboolean wifi_utils_set_powersave (WifiData *data, guint32 powersave);
+
 
 /* OLPC Mesh-only functions */
 guint32 wifi_utils_get_mesh_channel (WifiData *data);

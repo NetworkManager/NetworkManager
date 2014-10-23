@@ -743,6 +743,8 @@ deactivate (NMDevice *device)
 	if (priv->initial_hw_addr)
 		nm_device_set_hw_addr (device, priv->initial_hw_addr, "reset", LOGD_WIFI);
 
+	nm_platform_wifi_set_powersave (ifindex, 0);
+
 	/* Ensure we're in infrastructure mode after deactivation; some devices
 	 * (usually older ones) don't scan well in adhoc mode.
 	 */
@@ -2757,6 +2759,11 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	 */
 	if ((nm_ap_get_mode (ap) == NM_802_11_MODE_ADHOC) || nm_ap_is_hotspot (ap))
 		ensure_hotspot_frequency (self, s_wireless, ap);
+
+	if (nm_ap_get_mode (ap) == NM_802_11_MODE_INFRA) {
+		nm_platform_wifi_set_powersave (nm_device_get_ifindex (device),
+		                                nm_setting_wireless_get_powersave (s_wireless));
+	}
 
 	/* Build up the supplicant configuration */
 	config = build_supplicant_config (self, connection, nm_ap_get_freq (ap));

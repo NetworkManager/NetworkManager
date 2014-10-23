@@ -165,6 +165,30 @@ wifi_wext_set_mode (WifiData *data, const NM80211Mode mode)
 	return TRUE;
 }
 
+static gboolean
+wifi_wext_set_powersave (WifiData *data, guint32 powersave)
+{
+	WifiDataWext *wext = (WifiDataWext *) data;
+	struct iwreq wrq;
+
+	memset (&wrq, 0, sizeof (struct iwreq));
+	if (powersave == 1) {
+		wrq.u.power.flags = IW_POWER_ALL_R;
+	} else
+		wrq.u.power.disabled = 1;
+
+	strncpy (wrq.ifr_name, wext->parent.iface, IFNAMSIZ);
+	if (ioctl (wext->fd, SIOCSIWPOWER, &wrq) < 0) {
+		if (errno != ENODEV) {
+			nm_log_err (LOGD_HW | LOGD_WIFI, "(%s): error setting powersave %" G_GUINT32_FORMAT,
+			            wext->parent.iface, powersave);
+		}
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
 static guint32
 wifi_wext_get_freq (WifiData *data)
 {
@@ -573,6 +597,7 @@ wifi_wext_init (const char *iface, int ifindex, gboolean check_scan)
 	wext = wifi_data_new (iface, ifindex, sizeof (*wext));
 	wext->parent.get_mode = wifi_wext_get_mode;
 	wext->parent.set_mode = wifi_wext_set_mode;
+	wext->parent.set_powersave = wifi_wext_set_powersave;
 	wext->parent.get_freq = wifi_wext_get_freq;
 	wext->parent.find_freq = wifi_wext_find_freq;
 	wext->parent.get_ssid = wifi_wext_get_ssid;
