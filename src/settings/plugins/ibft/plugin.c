@@ -57,7 +57,7 @@ static void
 read_connections (SCPluginIbft *self)
 {
 	SCPluginIbftPrivate *priv = SC_PLUGIN_IBFT_GET_PRIVATE (self);
-	GSList *blocks, *iter;
+	GSList *blocks = NULL, *iter;
 	GError *error = NULL;
 	NMIbftConnection *connection;
 
