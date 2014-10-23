@@ -1658,7 +1658,7 @@ device_autoconnect_changed (NMDevice *device,
                             GParamSpec *pspec,
                             gpointer user_data)
 {
-	if (nm_device_get_autoconnect (device))
+	if (nm_device_autoconnect_allowed (device))
 		schedule_activate_check ((NMPolicy *) user_data, device);
 }
 

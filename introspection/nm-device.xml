@@ -106,7 +106,8 @@
         If TRUE, indicates the device is allowed to autoconnect.  If FALSE,
         manual intervention is required before the device will automatically
         connect to a known network, such as activating a connection using the
-        device, or setting this property to TRUE.
+        device, or setting this property to TRUE.  This property cannot be
+        set to TRUE for default-unmanaged devices, since they never autoconnect.
       </tp:docstring>
     </property>
     <property name="FirmwareMissing" type="b" access="read">

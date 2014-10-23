@@ -1573,12 +1573,44 @@ nm_device_set_enabled (NMDevice *self, gboolean enabled)
 		NM_DEVICE_GET_CLASS (self)->set_enabled (self, enabled);
 }
 
+/**
+ * nm_device_get_autoconnect:
+ * @self: the #NMDevice
+ *
+ * Returns: %TRUE if the device allows autoconnect connections, or %FALSE if the
+ * device is explicitly blocking all autoconnect connections.  Does not take
+ * into account transient conditions like companion devices that may wish to
+ * block the device.
+ */
 gboolean
 nm_device_get_autoconnect (NMDevice *self)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
 	return NM_DEVICE_GET_PRIVATE (self)->autoconnect;
+}
+
+static void
+nm_device_set_autoconnect (NMDevice *self, gboolean autoconnect)
+{
+	NMDevicePrivate *priv;
+
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	if (priv->autoconnect == autoconnect)
+		return;
+
+	if (autoconnect) {
+		/* Default-unmanaged devices never autoconnect */
+		if (!nm_device_get_default_unmanaged (self)) {
+			priv->autoconnect = TRUE;
+			g_object_notify (G_OBJECT (self), NM_DEVICE_AUTOCONNECT);
+		}
+	} else {
+		priv->autoconnect = FALSE;
+		g_object_notify (G_OBJECT (self), NM_DEVICE_AUTOCONNECT);
+	}
 }
 
 static gboolean
@@ -1591,12 +1623,30 @@ autoconnect_allowed_accumulator (GSignalInvocationHint *ihint,
 	return TRUE;
 }
 
+/**
+ * nm_device_autoconnect_allowed:
+ * @self: the #NMDevice
+ *
+ * Returns: %TRUE if the device can be auto-connected immediately, taking
+ * transient conditions into account (like companion devices that may wish to
+ * block autoconnect for a time).
+ */
 gboolean
 nm_device_autoconnect_allowed (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	GValue instance = G_VALUE_INIT;
 	GValue retval = G_VALUE_INIT;
+
+	if (priv->state < NM_DEVICE_STATE_DISCONNECTED || !priv->autoconnect)
+		return FALSE;
+
+	/* The 'autoconnect-allowed' signal is emitted on a device to allow
+	 * other listeners to block autoconnect on the device if they wish.
+	 * This is mainly used by the OLPC Mesh devices to block autoconnect
+	 * on their companion WiFi device as they share radio resources and
+	 * cannot be connected at the same time.
+	 */
 
 	g_value_init (&instance, G_TYPE_OBJECT);
 	g_value_set_object (&instance, self);
@@ -1639,8 +1689,9 @@ can_auto_connect (NMDevice *self,
  * Checks if @connection can be auto-activated on @self right now.
  * This requires, at a minimum, that the connection be compatible with
  * @self, and that it have the #NMSettingConnection:autoconnect property
- * set. Some devices impose additional requirements. (Eg, a Wi-Fi connection
- * can only be activated if its SSID was seen in the last scan.)
+ * set, and that the device allow auto connections. Some devices impose
+ * additional requirements. (Eg, a Wi-Fi connection can only be activated
+ * if its SSID was seen in the last scan.)
  *
  * Returns: %TRUE, if the @connection can be auto-activated.
  **/
@@ -1653,7 +1704,9 @@ nm_device_can_auto_connect (NMDevice *self,
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (specific_object && !*specific_object, FALSE);
 
-	return NM_DEVICE_GET_CLASS (self)->can_auto_connect (self, connection, specific_object);
+	if (nm_device_autoconnect_allowed (self))
+		return NM_DEVICE_GET_CLASS (self)->can_auto_connect (self, connection, specific_object);
+	return FALSE;
 }
 
 static gboolean
@@ -5076,7 +5129,7 @@ disconnect_cb (NMDevice *self,
 		dbus_g_method_return_error (context, local);
 		g_error_free (local);
 	} else {
-		priv->autoconnect = FALSE;
+		nm_device_set_autoconnect (self, FALSE);
 
 		nm_device_state_changed (self,
 		                         NM_DEVICE_STATE_DEACTIVATING,
@@ -6856,7 +6909,7 @@ _set_state_full (NMDevice *self,
 	/* Reset autoconnect flag when the device is activating or connected. */
 	if (   state >= NM_DEVICE_STATE_PREPARE
 	    && state <= NM_DEVICE_STATE_ACTIVATED)
-		priv->autoconnect = TRUE;
+		nm_device_set_autoconnect (self, TRUE);
 
 	g_object_notify (G_OBJECT (self), NM_DEVICE_STATE);
 	g_object_notify (G_OBJECT (self), NM_DEVICE_STATE_REASON);
@@ -7412,8 +7465,10 @@ constructed (GObject *object)
 	 * since they don't transition from UNMANAGED (and thus the state handler
 	 * doesn't run and update them) until something external happens.
 	 */
-	if (nm_device_get_default_unmanaged (self))
+	if (nm_device_get_default_unmanaged (self)) {
+		nm_device_set_autoconnect (self, FALSE);
 		nm_device_recheck_available_connections (self);
+	}
 
 	G_OBJECT_CLASS (nm_device_parent_class)->constructed (object);
 }
@@ -7561,7 +7616,7 @@ set_property (GObject *object, guint prop_id,
 		priv->ip4_address = g_value_get_uint (value);
 		break;
 	case PROP_AUTOCONNECT:
-		priv->autoconnect = g_value_get_boolean (value);
+		nm_device_set_autoconnect (self, g_value_get_boolean (value));
 		break;
 	case PROP_FIRMWARE_MISSING:
 		priv->firmware_missing = g_value_get_boolean (value);
