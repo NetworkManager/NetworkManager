@@ -545,6 +545,9 @@ class CmdSubmit(CmdBase):
     def __process_line_get_GIT_TARGETBRANCH_detect(self, key_name):
         # we default to 'master', unless there is an RPM that looks like it's from
         # rhel-7.0.
+        v = os.environ.get('GIT_TARGETBRANCH')
+        if v is not None:
+            return v
         if self.rpm is not None:
             for x in self.rpm:
                 for u in x[1].url():
@@ -556,18 +559,27 @@ class CmdSubmit(CmdBase):
                         return 'master' # 0.9.10
                     if re.match(r'^.*/NetworkManager-0.9.9.9[0-9]+-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
                         return 'master' # 0.9.10-rc
-        raise Exception("could not detect %s. Try setting as environment variable" % (key_name))
+                    if re.match(r'^.*/NetworkManager-0\.9\.11\..*\.git20141022.e28ee14.el7.x86_64.rpm$', u):
+                        return 'master' # rhel-7.1-rc
+        raise Exception("could not detect the target branch. Try setting as environment variable GIT_TARGETBRANCH%s" % (
+                    ((" (or try setting "+key_name+")") if key_name == 'GIT_TARGETBRANCH' else '')))
 
     def _process_line_get_GIT_TARGETBRANCH(self, key, replacement, index=None, none=None):
         return self.__process_line_get_GIT_TARGETBRANCH_detect("GIT_TARGETBRANCH")
 
     def _process_line_get_DISTRO_NAME(self, key, replacement, index=None, none=None):
+        v = os.environ.get('DISTO_NAME')
+        if v is not None:
+            return v
         target_branch = self.__process_line_get_GIT_TARGETBRANCH_detect("DISTRO_NAME")
         if target_branch == 'rhel-7.0':
             return 'RHEL-7.0-20140507.0'
-        return 'RHEL-7.1-20140925.n.0'
+        return 'RHEL-7.1-20141023.n.1'
 
     def _process_line_get_RESERVESYS(self, key, replacement, index=None, none=None):
+        v = os.environ.get('RESERVESYS')
+        if v is not None:
+            return v
         if not self.options.reservesys:
             return ""
         return '<task name="/distribution/reservesys" role="STANDALONE"/>'
