@@ -658,6 +658,20 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 
 	gw_addr = nm_ip4_config_get_gateway (ip4_config);
 
+	if (best) {
+		const GSList *connections, *iter;
+
+		connections = nm_manager_get_active_connections (priv->manager);
+		for (iter = connections; iter; iter = g_slist_next (iter)) {
+			NMActiveConnection *active = iter->data;
+
+			if (   NM_IS_VPN_CONNECTION (active)
+			    && nm_vpn_connection_get_ip4_config (NM_VPN_CONNECTION (active))
+			    && !nm_active_connection_get_device (active))
+				nm_active_connection_set_device (active, best);
+		}
+	}
+
 	if (vpn) {
 		NMDevice *parent = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
 		int parent_ifindex = nm_device_get_ip_ifindex (parent);
@@ -860,6 +874,20 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 	gw_addr = nm_ip6_config_get_gateway (ip6_config);
 	if (!gw_addr)
 		gw_addr = &in6addr_any;
+
+	if (best) {
+		const GSList *connections, *iter;
+
+		connections = nm_manager_get_active_connections (priv->manager);
+		for (iter = connections; iter; iter = g_slist_next (iter)) {
+			NMActiveConnection *active = iter->data;
+
+			if (   NM_IS_VPN_CONNECTION (active)
+			    && nm_vpn_connection_get_ip6_config (NM_VPN_CONNECTION (active))
+			    && !nm_active_connection_get_device (active))
+				nm_active_connection_set_device (active, best);
+		}
+	}
 
 	if (vpn) {
 		NMDevice *parent = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));

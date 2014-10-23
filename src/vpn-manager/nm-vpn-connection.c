@@ -435,12 +435,27 @@ _set_vpn_state (NMVpnConnection *connection,
 		g_object_unref (parent_dev);
 }
 
+static gboolean
+_service_and_connection_can_persist (NMVpnConnection *self)
+{
+	return NM_VPN_CONNECTION_GET_PRIVATE (self)->connection_can_persist &&
+	       NM_VPN_CONNECTION_GET_PRIVATE (self)->service_can_persist;
+}
+
 static void
 device_state_changed (NMActiveConnection *active,
                       NMDevice *device,
                       NMDeviceState new_state,
                       NMDeviceState old_state)
 {
+	if (_service_and_connection_can_persist (NM_VPN_CONNECTION (active))) {
+		if (new_state <= NM_DEVICE_STATE_DISCONNECTED ||
+		    new_state == NM_DEVICE_STATE_FAILED) {
+			nm_active_connection_set_device (active, NULL);
+		}
+		return;
+	}
+
 	if (new_state <= NM_DEVICE_STATE_DISCONNECTED) {
 		_set_vpn_state (NM_VPN_CONNECTION (active),
 		                STATE_DISCONNECTED,
@@ -839,41 +854,29 @@ print_vpn_config (NMVpnConnection *connection)
 	}
 }
 
-static gboolean
-nm_vpn_connection_apply_config (NMVpnConnection *connection)
+static void
+apply_parent_device_config (NMVpnConnection *connection)
 {
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 	NMDevice *parent_dev = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (connection));
 	NMIP4Config *vpn4_parent_config = NULL;
 	NMIP6Config *vpn6_parent_config = NULL;
 
-	if (priv->ip_ifindex > 0) {
-		nm_platform_link_set_up (priv->ip_ifindex);
+	if (priv->ip4_config)
+		vpn4_parent_config = nm_ip4_config_new ();
+	if (priv->ip6_config)
+		vpn6_parent_config = nm_ip6_config_new ();
 
-		if (priv->ip4_config) {
-			if (!nm_ip4_config_commit (priv->ip4_config, priv->ip_ifindex))
-				return FALSE;
-		}
-
-		if (priv->ip6_config) {
-			if (!nm_ip6_config_commit (priv->ip6_config, priv->ip_ifindex))
-				return FALSE;
-		}
-
-		if (priv->ip4_config)
-			vpn4_parent_config = nm_ip4_config_new ();
-		if (priv->ip6_config)
-			vpn6_parent_config = nm_ip6_config_new ();
-	} else {
+	if (priv->ip_ifindex <= 0) {
 		/* If the VPN didn't return a network interface, it is a route-based
 		 * VPN (like kernel IPSec) and all IP addressing and routing should
 		 * be done on the parent interface instead.
 		 */
 
-		if (priv->ip4_config)
-			vpn4_parent_config = g_object_ref (priv->ip4_config);
-		if (priv->ip6_config)
-			vpn6_parent_config = g_object_ref (priv->ip6_config);
+		if (vpn4_parent_config)
+			nm_ip4_config_merge (vpn4_parent_config, priv->ip4_config);
+		if (vpn6_parent_config)
+			nm_ip6_config_merge (vpn6_parent_config, priv->ip6_config);
 	}
 
 	if (vpn4_parent_config) {
@@ -892,6 +895,28 @@ nm_vpn_connection_apply_config (NMVpnConnection *connection)
 		nm_device_set_vpn6_config (parent_dev, vpn6_parent_config);
 		g_object_unref (vpn6_parent_config);
 	}
+}
+
+static gboolean
+nm_vpn_connection_apply_config (NMVpnConnection *connection)
+{
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+
+	if (priv->ip_ifindex > 0) {
+		nm_platform_link_set_up (priv->ip_ifindex);
+
+		if (priv->ip4_config) {
+			if (!nm_ip4_config_commit (priv->ip4_config, priv->ip_ifindex))
+				return FALSE;
+		}
+
+		if (priv->ip6_config) {
+			if (!nm_ip6_config_commit (priv->ip6_config, priv->ip_ifindex))
+				return FALSE;
+		}
+	}
+
+	apply_parent_device_config (connection);
 
 	nm_log_info (LOGD_VPN, "VPN connection '%s' (IP Config Get) complete.",
 	             nm_connection_get_id (priv->connection));
@@ -1929,6 +1954,39 @@ plugin_interactive_secrets_required (DBusGProxy *proxy,
 /******************************************************************************/
 
 static void
+device_changed (NMActiveConnection *active,
+                NMDevice *new_device,
+                NMDevice *old_device)
+{
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (active);
+
+	if (!_service_and_connection_can_persist (NM_VPN_CONNECTION (active)))
+		return;
+	if (priv->vpn_state < STATE_CONNECT || priv->vpn_state > STATE_ACTIVATED)
+		return;
+
+	/* Route-based VPNs must update their routing and send a new IP config
+	 * since all their routes need to be adjusted for new_device.
+	 */
+	if (priv->ip_ifindex <= 0)
+		return;
+
+	/* Device changed underneath the VPN connection.  Let the plugin figure
+	 * out that connectivity is down and start its reconnect attempt if it
+	 * needs to.
+	 */
+	if (old_device) {
+		nm_device_set_vpn4_config (old_device, NULL);
+		nm_device_set_vpn6_config (old_device, NULL);
+	}
+
+	if (new_device)
+		apply_parent_device_config (NM_VPN_CONNECTION (active));
+}
+
+/******************************************************************************/
+
+static void
 nm_vpn_connection_init (NMVpnConnection *self)
 {
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
@@ -2049,6 +2107,7 @@ nm_vpn_connection_class_init (NMVpnConnectionClass *connection_class)
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	active_class->device_state_changed = device_state_changed;
+	active_class->device_changed = device_changed;
 
 	g_object_class_override_property (object_class, PROP_MASTER, NM_ACTIVE_CONNECTION_MASTER);
 

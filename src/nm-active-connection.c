@@ -19,6 +19,7 @@
  */
 
 #include <glib.h>
+
 #include "nm-types.h"
 #include "nm-active-connection.h"
 #include "nm-dbus-interface.h"
@@ -30,7 +31,7 @@
 #include "nm-auth-utils.h"
 #include "nm-auth-subject.h"
 #include "NetworkManagerUtils.h"
-
+#include "gsystem-local-alloc.h"
 #include "nm-active-connection-glue.h"
 
 /* Base class for anything implementing the Connection.Active D-Bus interface */
@@ -93,6 +94,12 @@ enum {
 
 	LAST_PROP
 };
+
+enum {
+	DEVICE_CHANGED,
+	LAST_SIGNAL
+};
+static guint signals[LAST_SIGNAL] = { 0 };
 
 static void check_master_ready (NMActiveConnection *self);
 static void _device_cleanup (NMActiveConnection *self);
@@ -395,20 +402,23 @@ gboolean
 nm_active_connection_set_device (NMActiveConnection *self, NMDevice *device)
 {
 	NMActiveConnectionPrivate *priv;
+	gs_unref_object NMDevice *old_device = NULL;
 
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (self), FALSE);
 	g_return_val_if_fail (!device || NM_IS_DEVICE (device), FALSE);
 
 	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+	if (device == priv->device)
+		return TRUE;
+
+	old_device = priv->device ? g_object_ref (priv->device) : NULL;
+	_device_cleanup (self);
 
 	if (device) {
-		g_return_val_if_fail (priv->device == NULL, FALSE);
-
 		/* Device obviously can't be its own master */
 		g_return_val_if_fail (!priv->master || device != nm_active_connection_get_device (priv->master), FALSE);
 
 		priv->device = g_object_ref (device);
-		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_INT_DEVICE);
 
 		g_signal_connect (device, "state-changed",
 		                  G_CALLBACK (device_state_changed), self);
@@ -419,7 +429,14 @@ nm_active_connection_set_device (NMActiveConnection *self, NMDevice *device)
 			priv->pending_activation_id = g_strdup_printf ("activation::%p", (void *)self);
 			nm_device_add_pending_action (device, priv->pending_activation_id, TRUE);
 		}
-	}
+	} else
+		priv->device = NULL;
+	g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_INT_DEVICE);
+
+	g_signal_emit (self, signals[DEVICE_CHANGED], 0, priv->device, old_device);
+
+	g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_DEVICES);
+
 	return TRUE;
 }
 
@@ -1013,6 +1030,14 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 		 g_param_spec_boolean (NM_ACTIVE_CONNECTION_INT_MASTER_READY, "", "",
 		                       FALSE, G_PARAM_READABLE |
 		                       G_PARAM_STATIC_STRINGS));
+
+	signals[DEVICE_CHANGED] =
+		g_signal_new (NM_ACTIVE_CONNECTION_DEVICE_CHANGED,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMActiveConnectionClass, device_changed),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 2, NM_TYPE_DEVICE, NM_TYPE_DEVICE);
 
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (ac_class),
