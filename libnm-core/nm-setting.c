@@ -823,6 +823,7 @@ _nm_setting_new_from_dbus (GType setting_type,
 			g_value_init (&object_value, property->param_spec->value_type);
 			set_property_from_dbus (property, value, &object_value);
 			g_object_set_property (G_OBJECT (setting), property->param_spec->name, &object_value);
+			g_value_unset (&object_value);
 		}
 
 		if (value)
