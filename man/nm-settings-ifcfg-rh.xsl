@@ -140,6 +140,21 @@ ONBOOT=yes
           </para>
           <para>
             <programlisting>
+            <emphasis role="bold">Bridge and bridge port configuration:</emphasis>
+ifcfg-bridge:                                ifcfg-bridge-port:
+NAME=bridge                                  NAME=bridge007-port-eth0
+UUID=4be99ce0-c5b2-4764-8b77-ec226e440125    UUID=3ad56c4a-47e1-419b-b0d4-8ad86eb967a3
+DEVICE=bridge007                             DEVICE=eth0
+STP=yes                                      ONBOOT=yes
+TYPE=Bridge                                  TYPE=Ethernet
+BRIDGING_OPTS=priority=32768                 BRIDGE=bridge007
+ONBOOT=yes
+BOOTPROTO=dhcp
+
+            </programlisting>
+          </para>
+          <para>
+            <programlisting>
             <emphasis role="bold">Bonding configuration:</emphasis>
 ifcfg-BOND:                                  ifcfg-BOND-slave:
 NAME=BOND                                    NAME=BOND-slave
@@ -181,6 +196,11 @@ ONBOOT=yes
 TEAM_MASTER=team0
 DEVICETYPE=TeamPort
             </programlisting>
+          </para>
+          <para>
+            The UUID values in the config files must be unique. You can use <emphasis>uuidgen</emphasis>
+            command line tool to generate such values. Alternatively, you can leave out UUID
+            entirely. In that case NetworkManager will generate a UUID based on the file name.
           </para>
         </formalpara>
       </refsect1>
