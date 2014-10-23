@@ -1740,15 +1740,36 @@ static gint64 monotonic_timestamp_offset_sec;
 static void
 monotonic_timestamp_get (struct timespec *tp)
 {
-	static gboolean initialized = FALSE;
-	int err;
+	static int clock_mode = 0;
+	gboolean first_time = FALSE;
+	int err = 0;
 
-	err = clock_gettime (CLOCK_BOOTTIME, tp);
+	switch (clock_mode) {
+	case 0:
+		/* the clock is not yet initialized (first run) */
+		err = clock_gettime (CLOCK_BOOTTIME, tp);
+		if (err == -1 && errno == EINVAL) {
+			clock_mode = 2;
+			err = clock_gettime (CLOCK_MONOTONIC, tp);
+		} else
+			clock_mode = 1;
+		first_time = TRUE;
+		break;
+	case 1:
+		/* default, return CLOCK_BOOTTIME */
+		err = clock_gettime (CLOCK_BOOTTIME, tp);
+		break;
+	case 2:
+		/* fallback, return CLOCK_MONOTONIC. Kernels prior to 2.6.39
+		 * don't support CLOCK_BOOTTIME. */
+		err = clock_gettime (CLOCK_MONOTONIC, tp);
+		break;
+	}
 
 	g_assert (err == 0); (void)err;
 	g_assert (tp->tv_nsec >= 0 && tp->tv_nsec < NM_UTILS_NS_PER_SECOND);
 
-	if (G_LIKELY (initialized))
+	if (G_LIKELY (!first_time))
 		return;
 
 	/* Calculate an offset for the time stamp.
@@ -1765,7 +1786,6 @@ monotonic_timestamp_get (struct timespec *tp)
 	 * wraps (~68 years).
 	 **/
 	monotonic_timestamp_offset_sec = (- ((gint64) tp->tv_sec)) + 1;
-	initialized = TRUE;
 
 	if (nm_logging_enabled (LOGL_DEBUG, LOGD_CORE)) {
 		time_t now = time (NULL);
@@ -1774,8 +1794,9 @@ monotonic_timestamp_get (struct timespec *tp)
 
 		strftime (s, sizeof (s), "%Y-%m-%d %H:%M:%S", localtime_r (&now, &tm));
 		nm_log_dbg (LOGD_CORE, "monotonic timestamp started counting 1.%09ld seconds ago with "
-		                       "an offset of %lld.0 seconds to CLOCK_BOOTTIME (local time is %s)",
-		                       tp->tv_nsec, (long long) -monotonic_timestamp_offset_sec, s);
+		                       "an offset of %lld.0 seconds to %s (local time is %s)",
+		                       tp->tv_nsec, (long long) -monotonic_timestamp_offset_sec,
+		                       clock_mode == 1 ? "CLOCK_BOOTTIME" : "CLOCK_MONOTONIC", s);
 	}
 }
 
