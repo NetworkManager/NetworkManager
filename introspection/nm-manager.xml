@@ -327,6 +327,14 @@
       </tp:docstring>
     </property>
 
+    <property name="PrimaryConnectionType" type="s" access="read">
+      <tp:docstring>
+        The connection type of the "primary" active connection being
+        used to access the network. This is the same as the Type
+        property on the object indicated by PrimaryConnection.
+      </tp:docstring>
+    </property>
+
     <property name="ActivatingConnection" type="o" access="read">
       <tp:docstring>
         The object path of an active connection that is currently

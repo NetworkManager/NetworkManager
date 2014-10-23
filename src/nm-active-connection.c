@@ -200,6 +200,17 @@ nm_active_connection_get_connection (NMActiveConnection *self)
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->connection;
 }
 
+const char *
+nm_active_connection_get_connection_type (NMActiveConnection *self)
+{
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+
+	if (priv->connection == NULL)
+		return NULL;
+
+	return nm_connection_get_connection_type (priv->connection);
+}
+
 void
 nm_active_connection_set_connection (NMActiveConnection *self,
                                      NMConnection *connection)

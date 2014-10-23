@@ -237,6 +237,7 @@ enum {
 	PROP_ACTIVE_CONNECTIONS,
 	PROP_CONNECTIVITY,
 	PROP_PRIMARY_CONNECTION,
+	PROP_PRIMARY_CONNECTION_TYPE,
 	PROP_ACTIVATING_CONNECTION,
 	PROP_DEVICES,
 
@@ -4270,6 +4271,7 @@ policy_default_device_changed (GObject *object, GParamSpec *pspec, gpointer user
 		priv->primary_connection = ac ? g_object_ref (ac) : NULL;
 		nm_log_dbg (LOGD_CORE, "PrimaryConnection now %s", ac ? nm_active_connection_get_id (ac) : "(none)");
 		g_object_notify (G_OBJECT (self), NM_MANAGER_PRIMARY_CONNECTION);
+		g_object_notify (G_OBJECT (self), NM_MANAGER_PRIMARY_CONNECTION_TYPE);
 	}
 }
 
@@ -4862,6 +4864,7 @@ get_property (GObject *object, guint prop_id,
 	GSList *iter;
 	GPtrArray *array;
 	const char *path;
+	const char *type;
 
 	switch (prop_id) {
 	case PROP_VERSION:
@@ -4910,6 +4913,10 @@ get_property (GObject *object, guint prop_id,
 	case PROP_PRIMARY_CONNECTION:
 		path = priv->primary_connection ? nm_active_connection_get_path (priv->primary_connection) : NULL;
 		g_value_set_boxed (value, path ? path : "/");
+		break;
+	case PROP_PRIMARY_CONNECTION_TYPE:
+		type = priv->primary_connection ? nm_active_connection_get_connection_type (priv->primary_connection) : NULL;
+		g_value_set_string (value, type ? type : "");
 		break;
 	case PROP_ACTIVATING_CONNECTION:
 		path = priv->activating_connection ? nm_active_connection_get_path (priv->activating_connection) : NULL;
@@ -5161,6 +5168,14 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		                     DBUS_TYPE_G_OBJECT_PATH,
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property
+		(object_class, PROP_PRIMARY_CONNECTION_TYPE,
+		 g_param_spec_string (NM_MANAGER_PRIMARY_CONNECTION_TYPE, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
+
 
 	g_object_class_install_property
 		(object_class, PROP_ACTIVATING_CONNECTION,
