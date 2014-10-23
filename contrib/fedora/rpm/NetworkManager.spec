@@ -166,6 +166,9 @@ BuildRequires: ModemManager-glib-devel >= 1.0
 %if 0%{?with_nmtui}
 BuildRequires: newt-devel
 %endif
+BuildRequires: /usr/bin/dbus-launch
+BuildRequires: pygobject3-base
+BuildRequires: dbus-python
 
 
 %description
@@ -466,6 +469,10 @@ mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/conf.d
 
 %clean
 %{__rm} -rf $RPM_BUILD_ROOT
+
+
+%check
+make check
 
 
 %post
