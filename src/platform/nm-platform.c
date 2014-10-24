@@ -2014,6 +2014,9 @@ array_contains_ip6_route (const GArray *routes, const NMPlatformIP6Route *route)
  * with the least possible disturbance. It simply removes routes that are
  * not listed and adds routes that are.
  *
+ * @known_routes should not contain a default route; if it does, it will be
+ * ignored.
+ *
  * Returns: %TRUE on success.
  */
 gboolean
@@ -2043,6 +2046,9 @@ nm_platform_ip4_route_sync (int ifindex, const GArray *known_routes)
 	for (i_type = 0, success = TRUE; i_type < 2 && success; i_type++) {
 		for (i = 0; i < known_routes->len && success; i++) {
 			known_route = &g_array_index (known_routes, NMPlatformIP4Route, i);
+
+			if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (known_route))
+				continue;
 
 			if ((known_route->gateway == 0) ^ (i_type != 0)) {
 				/* Make two runs over the list of routes. On the first, only add
@@ -2081,6 +2087,9 @@ nm_platform_ip4_route_sync (int ifindex, const GArray *known_routes)
  * with the least possible disturbance. It simply removes routes that are
  * not listed and adds routes that are.
  *
+ * @known_routes should not contain a default route; if it does, it will be
+ * ignored.
+ *
  * Returns: %TRUE on success.
  */
 gboolean
@@ -2111,6 +2120,9 @@ nm_platform_ip6_route_sync (int ifindex, const GArray *known_routes)
 	for (i_type = 0, success = TRUE; i_type < 2 && success; i_type++) {
 		for (i = 0; i < known_routes->len && success; i++) {
 			known_route = &g_array_index (known_routes, NMPlatformIP6Route, i);
+
+			if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (known_route))
+				continue;
 
 			if (IN6_IS_ADDR_UNSPECIFIED (&known_route->gateway) ^ (i_type != 0)) {
 				/* Make two runs over the list of routes. On the first, only add
