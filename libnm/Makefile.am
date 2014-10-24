@@ -54,7 +54,6 @@ libnminclude_hfiles =			\
 	nm-types.h			\
 	nm-vpn-connection.h		\
 	nm-vpn-plugin-ui-interface.h	\
-	nm-vpn-plugin-utils.h		\
 	nm-wimax-nsp.h
 
 libnminclude_nointrospect_hfiles =	\
@@ -106,7 +105,6 @@ libnm_la_csources =			\
 	nm-vpn-connection.c		\
 	nm-vpn-plugin-old.c		\
 	nm-vpn-plugin-ui-interface.c	\
-	nm-vpn-plugin-utils.c		\
 	nm-wimax-nsp.c
 
 libnm_la_SOURCES =			\

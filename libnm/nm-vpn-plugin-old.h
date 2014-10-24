@@ -121,6 +121,16 @@ void               nm_vpn_plugin_old_set_ip6_config (NMVpnPluginOld *plugin,
 gboolean           nm_vpn_plugin_old_disconnect     (NMVpnPluginOld *plugin,
                                                      GError **err);
 
+/* Utility functions */
+
+gboolean nm_vpn_plugin_old_read_vpn_details (int fd,
+                                             GHashTable **out_data,
+                                             GHashTable **out_secrets);
+
+gboolean nm_vpn_plugin_old_get_secret_flags (GHashTable *data,
+                                             const char *secret_name,
+                                             NMSettingSecretFlags *out_flags);
+
 G_END_DECLS
 
 #endif /* __NM_VPN_PLUGIN_OLD_H__ */
