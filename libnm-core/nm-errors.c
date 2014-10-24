@@ -34,7 +34,7 @@ G_DEFINE_QUARK (nm-device-error-quark, nm_device_error)
 G_DEFINE_QUARK (nm-manager-error-quark, nm_manager_error)
 G_DEFINE_QUARK (nm-secret-agent-error-quark, nm_secret_agent_error)
 G_DEFINE_QUARK (nm-settings-error-quark, nm_settings_error)
-G_DEFINE_QUARK (nm-vpn-plugin-quark, nm_vpn_plugin_error)
+G_DEFINE_QUARK (nm-vpn-plugin-error-quark, nm_vpn_plugin_error)
 
 static void
 register_error_domain (GQuark domain,
