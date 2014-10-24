@@ -626,11 +626,13 @@ fi
 
 %files config-connectivity-fedora
 %defattr(-,root,root,0755)
+%dir %{_sysconfdir}/%{name}
 %dir %{_sysconfdir}/%{name}/conf.d
 %config(noreplace) %{_sysconfdir}/%{name}/conf.d/20-connectivity-fedora.conf
 
 %files config-server
 %defattr(-,root,root,0755)
+%dir %{_sysconfdir}/%{name}
 %dir %{_sysconfdir}/%{name}/conf.d
 %config(noreplace) %{_sysconfdir}/%{name}/conf.d/00-server.conf
 
