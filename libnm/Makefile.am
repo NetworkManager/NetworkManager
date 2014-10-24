@@ -24,7 +24,7 @@ lib_LTLIBRARIES = libnm.la
 
 libnmincludedir = $(includedir)/libnm
 
-libnminclude_HEADERS =			\
+libnminclude_hfiles =			\
 	NetworkManager.h		\
 	nm-access-point.h		\
 	nm-active-connection.h		\
@@ -53,10 +53,16 @@ libnminclude_HEADERS =			\
 	nm-secret-agent.h		\
 	nm-types.h			\
 	nm-vpn-connection.h		\
-	nm-vpn-plugin.h			\
 	nm-vpn-plugin-ui-interface.h	\
 	nm-vpn-plugin-utils.h		\
 	nm-wimax-nsp.h
+
+libnminclude_nointrospect_hfiles =	\
+	nm-vpn-plugin-old.h
+
+libnminclude_HEADERS =			\
+	$(libnminclude_hfiles)		\
+	$(libnminclude_nointrospect_hfiles)
 
 libnm_la_private_headers =		\
 	nm-dbus-helpers.h		\
@@ -98,7 +104,7 @@ libnm_la_csources =			\
 	nm-remote-settings.c		\
 	nm-secret-agent.c		\
 	nm-vpn-connection.c		\
-	nm-vpn-plugin.c			\
+	nm-vpn-plugin-old.c		\
 	nm-vpn-plugin-ui-interface.c	\
 	nm-vpn-plugin-utils.c		\
 	nm-wimax-nsp.c
@@ -148,7 +154,7 @@ INTROSPECTION_COMPILER_ARGS =			\
 if HAVE_INTROSPECTION
 introspection_sources =				\
 	$(libnm_core_headers)			\
-	$(libnminclude_HEADERS)			\
+	$(libnminclude_hfiles)			\
 	$(libnm_core_sources)			\
 	$(libnm_la_csources)
 

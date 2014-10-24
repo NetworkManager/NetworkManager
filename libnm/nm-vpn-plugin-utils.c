@@ -24,7 +24,7 @@
 #include <string.h>
 
 #include "nm-vpn-plugin-utils.h"
-#include "nm-vpn-plugin.h"
+#include "nm-vpn-plugin-old.h"
 #include "nm-core-internal.h"
 
 #define DATA_KEY_TAG "DATA_KEY="
