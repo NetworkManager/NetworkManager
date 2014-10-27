@@ -81,6 +81,9 @@ GPtrArray *_nm_utils_copy_array (const GPtrArray *array,
                                  GDestroyNotify free_func);
 GPtrArray *_nm_utils_copy_object_array (const GPtrArray *array);
 
+gboolean    _nm_utils_string_in_list   (const char *str,
+                                        const char **valid_strings);
+
 void _nm_dbus_errors_init (void);
 
 #endif

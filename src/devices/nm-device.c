@@ -71,7 +71,7 @@
 #include "nm-dispatcher.h"
 #include "nm-config.h"
 #include "nm-dns-manager.h"
-#include "nm-utils-private.h"
+#include "nm-core-internal.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF (NMDevice);
