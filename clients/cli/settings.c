@@ -1848,6 +1848,32 @@ wireless_band_channel_changed_cb (GObject *object, GParamSpec *pspec, gpointer u
 	}
 }
 
+static void
+connection_master_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_data)
+{
+	NMSettingConnection *s_con = NM_SETTING_CONNECTION (object);
+	NMConnection *connection = NM_CONNECTION (user_data);
+	NMSetting *s_ipv4, *s_ipv6;
+	const char *value, *tmp_str;
+
+	value = nm_setting_connection_get_master (s_con);
+	if (value) {
+		s_ipv4 = nm_connection_get_setting_by_name (connection, NM_SETTING_IP4_CONFIG_SETTING_NAME);
+		s_ipv6 = nm_connection_get_setting_by_name (connection, NM_SETTING_IP6_CONFIG_SETTING_NAME);
+		if (s_ipv4 || s_ipv6) {
+			g_print (_("Warning: setting %s.%s requires removing ipv4 and ipv6 settings\n"),
+			         nm_setting_get_name (NM_SETTING (s_con)), g_param_spec_get_name (pspec));
+			tmp_str = nmc_get_user_input (_("Do you want to remove them? [yes] "));
+			if (!tmp_str || matches (tmp_str, "yes") == 0) {
+				if (s_ipv4)
+					nm_connection_remove_setting (connection, G_OBJECT_TYPE (s_ipv4));
+				if (s_ipv6)
+					nm_connection_remove_setting (connection, G_OBJECT_TYPE (s_ipv6));
+			}
+		}
+	}
+}
+
 void
 nmc_setting_ip4_connect_handlers (NMSettingIP4Config *setting)
 {
@@ -1879,6 +1905,15 @@ nmc_setting_wireless_connect_handlers (NMSettingWireless *setting)
 	                  G_CALLBACK (wireless_band_channel_changed_cb), NULL);
 	g_signal_connect (setting, "notify::" NM_SETTING_WIRELESS_CHANNEL,
 	                  G_CALLBACK (wireless_band_channel_changed_cb), NULL);
+}
+
+void
+nmc_setting_connection_connect_handlers (NMSettingConnection *setting, NMConnection *connection)
+{
+	g_return_if_fail (NM_IS_SETTING_CONNECTION (setting));
+
+	g_signal_connect (setting, "notify::" NM_SETTING_CONNECTION_MASTER,
+	                  G_CALLBACK (connection_master_changed_cb), connection);
 }
 
 /*

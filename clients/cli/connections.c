@@ -7688,6 +7688,8 @@ editor_init_new_connection (NmCli *nmc, NMConnection *connection)
 
 	/* Initialize new connection according to its type using sensible defaults. */
 
+	nmc_setting_connection_connect_handlers (s_con, connection);
+
 	if (g_strcmp0 (con_type, "bond-slave") == 0)
 		slave_type = NM_SETTING_BOND_SETTING_NAME;
 	if (g_strcmp0 (con_type, "team-slave") == 0)
@@ -7790,10 +7792,12 @@ editor_init_existing_connection (NMConnection *connection)
 	NMSettingIP4Config *s_ip4;
 	NMSettingIP6Config *s_ip6;
 	NMSettingWireless *s_wireless;
+	NMSettingConnection *s_con;
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	s_wireless = nm_connection_get_setting_wireless (connection);
+	s_con = nm_connection_get_setting_connection (connection);
 
 	if (s_ip4)
 		nmc_setting_ip4_connect_handlers (s_ip4);
@@ -7801,6 +7805,8 @@ editor_init_existing_connection (NMConnection *connection)
 		nmc_setting_ip6_connect_handlers (s_ip6);
 	if (s_wireless)
 		nmc_setting_wireless_connect_handlers (s_wireless);
+	if (s_con)
+		nmc_setting_connection_connect_handlers (s_con, connection);
 }
 
 static NMCResultCode
