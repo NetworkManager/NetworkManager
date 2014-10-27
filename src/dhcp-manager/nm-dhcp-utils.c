@@ -488,17 +488,19 @@ nm_dhcp_utils_ip4_config_from_options (const char *iface,
 
 	str = g_hash_table_lookup (options, "domain_name_servers");
 	if (str) {
-		char **searches = g_strsplit (str, " ", 0);
+		char **dns = g_strsplit (str, " ", 0);
 		char **s;
 
-		for (s = searches; *s; s++) {
+		for (s = dns; *s; s++) {
 			if (inet_pton (AF_INET, *s, &tmp_addr) > 0) {
-				nm_ip4_config_add_nameserver (ip4_config, tmp_addr);
-				nm_log_info (LOGD_DHCP4, "  nameserver '%s'", *s);
+				if (tmp_addr) {
+					nm_ip4_config_add_nameserver (ip4_config, tmp_addr);
+					nm_log_info (LOGD_DHCP4, "  nameserver '%s'", *s);
+				}
 			} else
 				nm_log_warn (LOGD_DHCP4, "ignoring invalid nameserver '%s'", *s);
 		}
-		g_strfreev (searches);
+		g_strfreev (dns);
 	}
 
 	str = g_hash_table_lookup (options, "domain_name");
@@ -519,17 +521,19 @@ nm_dhcp_utils_ip4_config_from_options (const char *iface,
 
 	str = g_hash_table_lookup (options, "netbios_name_servers");
 	if (str) {
-		char **searches = g_strsplit (str, " ", 0);
+		char **nbns = g_strsplit (str, " ", 0);
 		char **s;
 
-		for (s = searches; *s; s++) {
+		for (s = nbns; *s; s++) {
 			if (inet_pton (AF_INET, *s, &tmp_addr) > 0) {
-				nm_ip4_config_add_wins (ip4_config, tmp_addr);
-				nm_log_info (LOGD_DHCP4, "  wins '%s'", *s);
+				if (tmp_addr) {
+					nm_ip4_config_add_wins (ip4_config, tmp_addr);
+					nm_log_info (LOGD_DHCP4, "  wins '%s'", *s);
+				}
 			} else
 				nm_log_warn (LOGD_DHCP4, "ignoring invalid WINS server '%s'", *s);
 		}
-		g_strfreev (searches);
+		g_strfreev (nbns);
 	}
 
 	str = g_hash_table_lookup (options, "interface_mtu");
@@ -553,17 +557,19 @@ nm_dhcp_utils_ip4_config_from_options (const char *iface,
 
 	str = g_hash_table_lookup (options, "nis_servers");
 	if (str) {
-		char **searches = g_strsplit (str, " ", 0);
+		char **nis = g_strsplit (str, " ", 0);
 		char **s;
 
-		for (s = searches; *s; s++) {
+		for (s = nis; *s; s++) {
 			if (inet_pton (AF_INET, *s, &tmp_addr) > 0) {
-				nm_ip4_config_add_nis_server (ip4_config, tmp_addr);
-				nm_log_info (LOGD_DHCP4, "  nis '%s'", *s);
+				if (tmp_addr) {
+					nm_ip4_config_add_nis_server (ip4_config, tmp_addr);
+					nm_log_info (LOGD_DHCP4, "  nis '%s'", *s);
+				}
 			} else
 				nm_log_warn (LOGD_DHCP4, "ignoring invalid NIS server '%s'", *s);
 		}
-		g_strfreev (searches);
+		g_strfreev (nis);
 	}
 
 	return ip4_config;
@@ -643,17 +649,19 @@ nm_dhcp_utils_ip6_config_from_options (const char *iface,
 
 	str = g_hash_table_lookup (options, "dhcp6_name_servers");
 	if (str) {
-		char **searches = g_strsplit (str, " ", 0);
+		char **dns = g_strsplit (str, " ", 0);
 		char **s;
 
-		for (s = searches; *s; s++) {
+		for (s = dns; *s; s++) {
 			if (inet_pton (AF_INET6, *s, &tmp_addr) > 0) {
-				nm_ip6_config_add_nameserver (ip6_config, &tmp_addr);
-				nm_log_info (LOGD_DHCP6, "  nameserver '%s'", *s);
+				if (!IN6_IS_ADDR_UNSPECIFIED (&tmp_addr)) {
+					nm_ip6_config_add_nameserver (ip6_config, &tmp_addr);
+					nm_log_info (LOGD_DHCP6, "  nameserver '%s'", *s);
+				}
 			} else
 				nm_log_warn (LOGD_DHCP6, "ignoring invalid nameserver '%s'", *s);
 		}
-		g_strfreev (searches);
+		g_strfreev (dns);
 	}
 
 	str = g_hash_table_lookup (options, "dhcp6_domain_search");
