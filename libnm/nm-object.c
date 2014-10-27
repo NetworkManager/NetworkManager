@@ -632,7 +632,7 @@ _nm_object_create (GType type, GDBusConnection *connection, const char *path)
 		                              NULL, &error);
 		g_object_unref (proxy);
 		if (!ret) {
-			g_warning ("Could not fetch property '%s' of interface '%s' on %s: %s\n",
+			dbgmsg ("Could not fetch property '%s' of interface '%s' on %s: %s\n",
 			           type_data->property, type_data->interface, path, error->message);
 			g_error_free (error);
 			return NULL;
@@ -753,7 +753,7 @@ create_async_got_property (GObject *proxy, GAsyncResult *result, gpointer user_d
 		g_variant_unref (value);
 		g_variant_unref (ret);
 	} else {
-		g_warning ("Could not fetch property '%s' of interface '%s' on %s: %s\n",
+		dbgmsg ("Could not fetch property '%s' of interface '%s' on %s: %s\n",
 		           type_data->property, type_data->interface, async_data->path,
 		           error->message);
 		g_clear_error (&error);

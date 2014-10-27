@@ -1049,9 +1049,7 @@ test_activate_failed (void)
 
 	nm_client_add_and_activate_connection_async (client, conn, device, NULL,
 	                                             NULL, activate_failed_cb, NULL);
-	g_test_expect_message ("libnm", G_LOG_LEVEL_WARNING, "*Method*doesn't exist*");
 	g_main_loop_run (loop);
-	g_test_assert_expected_messages ();
 
 	g_object_unref (conn);
 	g_object_unref (client);
