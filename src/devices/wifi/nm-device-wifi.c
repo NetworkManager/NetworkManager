@@ -3021,7 +3021,7 @@ activation_success_handler (NMDevice *device)
 	 * the BSSID off the card and fill in the BSSID of the activation AP.
 	 */
 	nm_platform_wifi_get_bssid (ifindex, bssid);
-	if (!nm_ethernet_address_is_valid (nm_ap_get_address (ap), -1)) {
+	if (!nm_ap_get_address (ap)) {
 		char *bssid_str = nm_utils_hwaddr_ntoa (bssid, ETH_ALEN);
 		nm_ap_set_address (ap, bssid_str);
 		g_free (bssid_str);
