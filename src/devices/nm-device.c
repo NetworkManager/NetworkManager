@@ -71,6 +71,7 @@
 #include "nm-dispatcher.h"
 #include "nm-config.h"
 #include "nm-dns-manager.h"
+#include "nm-utils-private.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF (NMDevice);
@@ -1572,12 +1573,44 @@ nm_device_set_enabled (NMDevice *self, gboolean enabled)
 		NM_DEVICE_GET_CLASS (self)->set_enabled (self, enabled);
 }
 
+/**
+ * nm_device_get_autoconnect:
+ * @self: the #NMDevice
+ *
+ * Returns: %TRUE if the device allows autoconnect connections, or %FALSE if the
+ * device is explicitly blocking all autoconnect connections.  Does not take
+ * into account transient conditions like companion devices that may wish to
+ * block the device.
+ */
 gboolean
 nm_device_get_autoconnect (NMDevice *self)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
 	return NM_DEVICE_GET_PRIVATE (self)->autoconnect;
+}
+
+static void
+nm_device_set_autoconnect (NMDevice *self, gboolean autoconnect)
+{
+	NMDevicePrivate *priv;
+
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	if (priv->autoconnect == autoconnect)
+		return;
+
+	if (autoconnect) {
+		/* Default-unmanaged devices never autoconnect */
+		if (!nm_device_get_default_unmanaged (self)) {
+			priv->autoconnect = TRUE;
+			g_object_notify (G_OBJECT (self), NM_DEVICE_AUTOCONNECT);
+		}
+	} else {
+		priv->autoconnect = FALSE;
+		g_object_notify (G_OBJECT (self), NM_DEVICE_AUTOCONNECT);
+	}
 }
 
 static gboolean
@@ -1590,12 +1623,30 @@ autoconnect_allowed_accumulator (GSignalInvocationHint *ihint,
 	return TRUE;
 }
 
+/**
+ * nm_device_autoconnect_allowed:
+ * @self: the #NMDevice
+ *
+ * Returns: %TRUE if the device can be auto-connected immediately, taking
+ * transient conditions into account (like companion devices that may wish to
+ * block autoconnect for a time).
+ */
 gboolean
 nm_device_autoconnect_allowed (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	GValue instance = G_VALUE_INIT;
 	GValue retval = G_VALUE_INIT;
+
+	if (priv->state < NM_DEVICE_STATE_DISCONNECTED || !priv->autoconnect)
+		return FALSE;
+
+	/* The 'autoconnect-allowed' signal is emitted on a device to allow
+	 * other listeners to block autoconnect on the device if they wish.
+	 * This is mainly used by the OLPC Mesh devices to block autoconnect
+	 * on their companion WiFi device as they share radio resources and
+	 * cannot be connected at the same time.
+	 */
 
 	g_value_init (&instance, G_TYPE_OBJECT);
 	g_value_set_object (&instance, self);
@@ -1638,8 +1689,9 @@ can_auto_connect (NMDevice *self,
  * Checks if @connection can be auto-activated on @self right now.
  * This requires, at a minimum, that the connection be compatible with
  * @self, and that it have the #NMSettingConnection:autoconnect property
- * set. Some devices impose additional requirements. (Eg, a Wi-Fi connection
- * can only be activated if its SSID was seen in the last scan.)
+ * set, and that the device allow auto connections. Some devices impose
+ * additional requirements. (Eg, a Wi-Fi connection can only be activated
+ * if its SSID was seen in the last scan.)
  *
  * Returns: %TRUE, if the @connection can be auto-activated.
  **/
@@ -1652,7 +1704,9 @@ nm_device_can_auto_connect (NMDevice *self,
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (specific_object && !*specific_object, FALSE);
 
-	return NM_DEVICE_GET_CLASS (self)->can_auto_connect (self, connection, specific_object);
+	if (nm_device_autoconnect_allowed (self))
+		return NM_DEVICE_GET_CLASS (self)->can_auto_connect (self, connection, specific_object);
+	return FALSE;
 }
 
 static gboolean
@@ -1882,18 +1936,6 @@ nm_device_check_connection_compatible (NMDevice *self, NMConnection *connection)
 	return NM_DEVICE_GET_CLASS (self)->check_connection_compatible (self, connection);
 }
 
-static gboolean
-string_in_list (const char *str, const char **array, gsize array_len)
-{
-	gsize i;
-
-	for (i = 0; i < array_len; i++) {
-		if (strcmp (str, array[i]) == 0)
-			return TRUE;
-	}
-	return FALSE;
-}
-
 /**
  * nm_device_can_assume_connections:
  * @self: #NMDevice instance
@@ -1934,11 +1976,13 @@ nm_device_can_assume_active_connection (NMDevice *self)
 		NM_SETTING_IP6_CONFIG_METHOD_DHCP,
 		NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
 		NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+		NULL
 	};
 	const char *assumable_ip4_methods[] = {
 		NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
 		NM_SETTING_IP6_CONFIG_METHOD_AUTO,
 		NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+		NULL
 	};
 
 	if (!nm_device_can_assume_connections (self))
@@ -1957,11 +2001,11 @@ nm_device_can_assume_active_connection (NMDevice *self)
 		return FALSE;
 
 	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
-	if (!string_in_list (method, assumable_ip6_methods, G_N_ELEMENTS (assumable_ip6_methods)))
+	if (!_nm_utils_string_in_list (method, assumable_ip6_methods))
 		return FALSE;
 
 	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
-	if (!string_in_list (method, assumable_ip4_methods, G_N_ELEMENTS (assumable_ip4_methods)))
+	if (!_nm_utils_string_in_list (method, assumable_ip4_methods))
 		return FALSE;
 
 	return TRUE;
@@ -2889,6 +2933,79 @@ shared4_new_config (NMDevice *self, NMConnection *connection, NMDeviceStateReaso
 /*********************************************/
 
 static gboolean
+connection_ip4_method_requires_carrier (NMConnection *connection,
+                                        gboolean *out_ip4_enabled)
+{
+	const char *method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	static const char *ip4_carrier_methods[] = {
+		NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+		NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
+		NULL
+	};
+
+	if (out_ip4_enabled)
+		*out_ip4_enabled = !!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED);
+	return _nm_utils_string_in_list (method, ip4_carrier_methods);
+}
+
+static gboolean
+connection_ip6_method_requires_carrier (NMConnection *connection,
+                                        gboolean *out_ip6_enabled)
+{
+	const char *method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
+	static const char *ip6_carrier_methods[] = {
+		NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+		NM_SETTING_IP6_CONFIG_METHOD_DHCP,
+		NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
+		NULL
+	};
+
+	if (out_ip6_enabled)
+		*out_ip6_enabled = !!strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
+	return _nm_utils_string_in_list (method, ip6_carrier_methods);
+}
+
+static gboolean
+connection_requires_carrier (NMConnection *connection)
+{
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
+	gboolean ip4_carrier_wanted, ip6_carrier_wanted;
+	gboolean ip4_used = FALSE, ip6_used = FALSE;
+
+	ip4_carrier_wanted = connection_ip4_method_requires_carrier (connection, &ip4_used);
+	if (ip4_carrier_wanted) {
+		/* If IPv4 wants a carrier and cannot fail, the whole connection
+		 * requires a carrier regardless of the IPv6 method.
+		 */
+		s_ip4 = nm_connection_get_setting_ip4_config (connection);
+		if (s_ip4 && !nm_setting_ip4_config_get_may_fail (s_ip4))
+			return TRUE;
+	}
+
+	ip6_carrier_wanted = connection_ip6_method_requires_carrier (connection, &ip6_used);
+	if (ip6_carrier_wanted) {
+		/* If IPv6 wants a carrier and cannot fail, the whole connection
+		 * requires a carrier regardless of the IPv4 method.
+		 */
+		s_ip6 = nm_connection_get_setting_ip6_config (connection);
+		if (s_ip6 && !nm_setting_ip6_config_get_may_fail (s_ip6))
+			return TRUE;
+	}
+
+	/* If an IP version wants a carrier and and the other IP version isn't
+	 * used, the connection requires carrier since it will just fail without one.
+	 */
+	if (ip4_carrier_wanted && !ip6_used)
+		return TRUE;
+	if (ip6_carrier_wanted && !ip4_used)
+		return TRUE;
+
+	/* If both want a carrier, the whole connection wants a carrier */
+	return ip4_carrier_wanted && ip6_carrier_wanted;
+}
+
+static gboolean
 have_any_ready_slaves (NMDevice *self, const GSList *slaves)
 {
 	const GSList *iter;
@@ -2930,9 +3047,7 @@ act_stage3_ip4_config_start (NMDevice *self,
 	connection = nm_device_get_connection (self);
 	g_assert (connection);
 
-	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
-
-	if (   strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) != 0
+	if (   connection_ip4_method_requires_carrier (connection, NULL)
 	    && priv->is_master
 	    && !priv->carrier) {
 		_LOGI (LOGD_IP4 | LOGD_DEVICE,
@@ -2954,6 +3069,8 @@ act_stage3_ip4_config_start (NMDevice *self,
 			return NM_ACT_STAGE_RETURN_WAIT;
 		}
 	}
+
+	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
 
 	/* Start IPv4 addressing based on the method requested */
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0)
@@ -3947,9 +4064,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 	connection = nm_device_get_connection (self);
 	g_assert (connection);
 
-	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
-
-	if (   strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_MANUAL) != 0
+	if (   connection_ip4_method_requires_carrier (connection, NULL)
 	    && priv->is_master
 	    && !priv->carrier) {
 		_LOGI (LOGD_IP6 | LOGD_DEVICE,
@@ -3973,6 +4088,8 @@ act_stage3_ip6_config_start (NMDevice *self,
 	}
 
 	priv->dhcp6_mode = NM_RDISC_DHCP_LEVEL_NONE;
+
+	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
 
 	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0) {
 		if (!priv->master) {
@@ -5012,7 +5129,7 @@ disconnect_cb (NMDevice *self,
 		dbus_g_method_return_error (context, local);
 		g_error_free (local);
 	} else {
-		priv->autoconnect = FALSE;
+		nm_device_set_autoconnect (self, FALSE);
 
 		nm_device_state_changed (self,
 		                         NM_DEVICE_STATE_DEACTIVATING,
@@ -6288,7 +6405,8 @@ _clear_available_connections (NMDevice *self, gboolean do_signal)
 static gboolean
 _try_add_available_connection (NMDevice *self, NMConnection *connection)
 {
-	if (nm_device_get_state (self) < NM_DEVICE_STATE_DISCONNECTED)
+	if (   nm_device_get_state (self) < NM_DEVICE_STATE_DISCONNECTED
+	    && !nm_device_get_default_unmanaged (self))
 		return FALSE;
 
 	if (nm_device_check_connection_compatible (self, connection)) {
@@ -6306,55 +6424,6 @@ static gboolean
 _del_available_connection (NMDevice *self, NMConnection *connection)
 {
 	return g_hash_table_remove (NM_DEVICE_GET_PRIVATE (self)->available_connections, connection);
-}
-
-static gboolean
-connection_requires_carrier (NMConnection *connection)
-{
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
-	const char *method;
-	gboolean ip4_carrier_wanted = FALSE, ip6_carrier_wanted = FALSE;
-	gboolean ip4_used = FALSE, ip6_used = FALSE;
-
-	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
-	if (   strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) != 0
-	    && strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) != 0) {
-		ip4_carrier_wanted = TRUE;
-
-		/* If IPv4 wants a carrier and cannot fail, the whole connection
-		 * requires a carrier regardless of the IPv6 method.
-		 */
-		s_ip4 = nm_connection_get_setting_ip4_config (connection);
-		if (s_ip4 && !nm_setting_ip4_config_get_may_fail (s_ip4))
-			return TRUE;
-	}
-	ip4_used = (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) != 0);
-
-	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
-	if (   strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_MANUAL) != 0
-	    && strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) != 0) {
-		ip6_carrier_wanted = TRUE;
-
-		/* If IPv6 wants a carrier and cannot fail, the whole connection
-		 * requires a carrier regardless of the IPv4 method.
-		 */
-		s_ip6 = nm_connection_get_setting_ip6_config (connection);
-		if (s_ip6 && !nm_setting_ip6_config_get_may_fail (s_ip6))
-			return TRUE;
-	}
-	ip6_used = (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) != 0);
-
-	/* If an IP version wants a carrier and and the other IP version isn't
-	 * used, the connection requires carrier since it will just fail without one.
-	 */
-	if (ip4_carrier_wanted && !ip6_used)
-		return TRUE;
-	if (ip6_carrier_wanted && !ip4_used)
-		return TRUE;
-
-	/* If both want a carrier, the whole connection wants a carrier */
-	return ip4_carrier_wanted && ip6_carrier_wanted;
 }
 
 static gboolean
@@ -6775,8 +6844,8 @@ _set_state_full (NMDevice *self,
 	}
 
 	/* Update the available connections list when a device first becomes available */
-	if (   state >= NM_DEVICE_STATE_DISCONNECTED
-	    && old_state < NM_DEVICE_STATE_DISCONNECTED)
+	if (   (state >= NM_DEVICE_STATE_DISCONNECTED && old_state < NM_DEVICE_STATE_DISCONNECTED)
+	    || nm_device_get_default_unmanaged (self))
 		nm_device_recheck_available_connections (self);
 
 	/* Handle the new state here; but anything that could trigger
@@ -6840,7 +6909,7 @@ _set_state_full (NMDevice *self,
 	/* Reset autoconnect flag when the device is activating or connected. */
 	if (   state >= NM_DEVICE_STATE_PREPARE
 	    && state <= NM_DEVICE_STATE_ACTIVATED)
-		priv->autoconnect = TRUE;
+		nm_device_set_autoconnect (self, TRUE);
 
 	g_object_notify (G_OBJECT (self), NM_DEVICE_STATE);
 	g_object_notify (G_OBJECT (self), NM_DEVICE_STATE_REASON);
@@ -7392,6 +7461,15 @@ constructed (GObject *object)
 	                  G_CALLBACK (cp_connection_updated),
 	                  self);
 
+	/* Update default-unmanaged device available connections immediately,
+	 * since they don't transition from UNMANAGED (and thus the state handler
+	 * doesn't run and update them) until something external happens.
+	 */
+	if (nm_device_get_default_unmanaged (self)) {
+		nm_device_set_autoconnect (self, FALSE);
+		nm_device_recheck_available_connections (self);
+	}
+
 	G_OBJECT_CLASS (nm_device_parent_class)->constructed (object);
 }
 
@@ -7538,7 +7616,7 @@ set_property (GObject *object, guint prop_id,
 		priv->ip4_address = g_value_get_uint (value);
 		break;
 	case PROP_AUTOCONNECT:
-		priv->autoconnect = g_value_get_boolean (value);
+		nm_device_set_autoconnect (self, g_value_get_boolean (value));
 		break;
 	case PROP_FIRMWARE_MISSING:
 		priv->firmware_missing = g_value_get_boolean (value);
