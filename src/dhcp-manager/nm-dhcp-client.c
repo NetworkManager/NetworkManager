@@ -1276,11 +1276,10 @@ ip4_options_to_config (NMDHCPClient *self)
 		char **s;
 
 		for (s = searches; *s; s++) {
-			if (inet_pton (AF_INET, *s, &tmp_addr) > 0) {
+			if (inet_pton (AF_INET, *s, &tmp_addr) > 0 && tmp_addr) {
 				nm_ip4_config_add_nameserver (ip4_config, tmp_addr);
 				nm_log_info (LOGD_DHCP4, "  nameserver '%s'", *s);
-			} else
-				nm_log_warn (LOGD_DHCP4, "ignoring invalid nameserver '%s'", *s);
+			}
 		}
 		g_strfreev (searches);
 	}
@@ -1455,11 +1454,10 @@ ip6_options_to_config (NMDHCPClient *self)
 		char **s;
 
 		for (s = searches; *s; s++) {
-			if (inet_pton (AF_INET6, *s, &tmp_addr) > 0) {
+			if (inet_pton (AF_INET6, *s, &tmp_addr) > 0 && !IN6_IS_ADDR_UNSPECIFIED (&tmp_addr)) {
 				nm_ip6_config_add_nameserver (ip6_config, &tmp_addr);
 				nm_log_info (LOGD_DHCP6, "  nameserver '%s'", *s);
-			} else
-				nm_log_warn (LOGD_DHCP6, "ignoring invalid nameserver '%s'", *s);
+			}
 		}
 		g_strfreev (searches);
 	}
