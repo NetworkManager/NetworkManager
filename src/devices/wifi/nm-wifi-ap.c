@@ -1129,7 +1129,7 @@ nm_ap_check_compatible (NMAccessPoint *self,
 		return FALSE;
 
 	bssid = nm_setting_wireless_get_bssid (s_wireless);
-	if (bssid && !nm_utils_hwaddr_matches (bssid, -1, priv->address, -1))
+	if (bssid && (!priv->address || !nm_utils_hwaddr_matches (bssid, -1, priv->address, -1)))
 		return FALSE;
 
 	mode = nm_setting_wireless_get_mode (s_wireless);
