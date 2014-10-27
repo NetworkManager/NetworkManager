@@ -44,7 +44,13 @@ nm_call_store_add (NMCallStore *store,
 
 	g_return_if_fail (store != NULL);
 	g_return_if_fail (proxy != NULL);
-	g_return_if_fail (call != NULL);
+
+	if (!call) {
+		/* Allow calling nm_call_store_add() with NULL @call for convenience.
+		 * This way you can pass the result of dbus_g_proxy_begin_call() directly
+		 * to nm_call_store_add() without checking for NULL. */
+		return;
+	}
 
 	calls = g_hash_table_lookup (store, proxy);
 	if (!calls) {
