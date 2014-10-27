@@ -395,7 +395,7 @@ find_active_ap (NMDeviceWifi *self,
 			       ap_ssid ? "'" : "",
 			       ap_ssid ? nm_utils_escape_ssid (ap_ssid->data, ap_ssid->len) : "(none)",
 			       ap_ssid ? "'" : "",
-			       ap_bssid);
+			       str_if_set (ap_bssid, "(none)"));
 
 			if (ap == ignore_ap) {
 				_LOGD (LOGD_WIFI, "      ignored");
@@ -460,14 +460,13 @@ find_active_ap (NMDeviceWifi *self,
 	 * we can't match the AP based on frequency at all, just give up.
 	 */
 	if (match_nofreq && ((found_a_band != found_bg_band) || (devfreq == 0))) {
-		const char *ap_bssid = nm_ap_get_address (match_nofreq);
 		const GByteArray *ap_ssid = nm_ap_get_ssid (match_nofreq);
 
 		_LOGD (LOGD_WIFI, "    matched %s%s%s  %s",
 		       ap_ssid ? "'" : "",
 		       ap_ssid ? nm_utils_escape_ssid (ap_ssid->data, ap_ssid->len) : "(none)",
 		       ap_ssid ? "'" : "",
-		       ap_bssid);
+		       str_if_set (nm_ap_get_address (match_nofreq), "(none)"));
 
 		active_ap = match_nofreq;
 		goto done;
@@ -1708,12 +1707,12 @@ merge_scanned_ap (NMDeviceWifi *self,
 		if (ssid && (nm_utils_is_empty_ssid (ssid->data, ssid->len) == FALSE)) {
 			/* Yay, matched it, no longer treat as hidden */
 			_LOGD (LOGD_WIFI_SCAN, "matched hidden AP %s => '%s'",
-			       bssid, nm_utils_escape_ssid (ssid->data, ssid->len));
+			       str_if_set (bssid, "(none)"), nm_utils_escape_ssid (ssid->data, ssid->len));
 			nm_ap_set_broadcast (merge_ap, FALSE);
 		} else {
 			/* Didn't have an entry for this AP in the database */
 			_LOGD (LOGD_WIFI_SCAN, "failed to match hidden AP %s",
-			       bssid);
+			       str_if_set (bssid, "(none)"));
 		}
 	}
 
@@ -1732,7 +1731,7 @@ merge_scanned_ap (NMDeviceWifi *self,
 	if (found_ap) {
 		_LOGD (LOGD_WIFI_SCAN, "merging AP '%s' %s (%p) with existing (%p)",
 		            ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
-		            bssid,
+		            str_if_set (bssid, "(none)"),
 		            merge_ap,
 		            found_ap);
 
@@ -1754,7 +1753,7 @@ merge_scanned_ap (NMDeviceWifi *self,
 		/* New entry in the list */
 		_LOGD (LOGD_WIFI_SCAN, "adding new AP '%s' %s (%p)",
 		       ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
-		       bssid, merge_ap);
+		       str_if_set (bssid, "(none)"), merge_ap);
 
 		g_object_ref (merge_ap);
 		priv->ap_list = g_slist_prepend (priv->ap_list, merge_ap);
@@ -1810,14 +1809,12 @@ cull_scan_list (NMDeviceWifi *self)
 	/* Remove outdated APs */
 	for (elt = outdated_list; elt; elt = g_slist_next (elt)) {
 		NMAccessPoint *outdated_ap = NM_AP (elt->data);
-		const char *bssid;
 		const GByteArray *ssid;
 
-		bssid = nm_ap_get_address (outdated_ap);
 		ssid = nm_ap_get_ssid (outdated_ap);
 		_LOGD (LOGD_WIFI_SCAN,
 		       "   removing %s (%s%s%s)",
-		       bssid,
+		       str_if_set (nm_ap_get_address (outdated_ap), "(none)"),
 		       ssid ? "'" : "",
 		       ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
 		       ssid ? "'" : "");

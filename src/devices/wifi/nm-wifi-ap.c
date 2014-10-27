@@ -725,7 +725,7 @@ nm_ap_dump (NMAccessPoint *ap, const char *prefix)
 	            prefix,
 	            priv->ssid ? nm_utils_escape_ssid (priv->ssid->data, priv->ssid->len) : "(none)",
 	            ap);
-	nm_log_dbg (LOGD_WIFI_SCAN, "    BSSID     %s", priv->address);
+	nm_log_dbg (LOGD_WIFI_SCAN, "    BSSID     %s", str_if_set (priv->address, "(none)"));
 	nm_log_dbg (LOGD_WIFI_SCAN, "    mode      %d", priv->mode);
 	nm_log_dbg (LOGD_WIFI_SCAN, "    flags     0x%X", priv->flags);
 	nm_log_dbg (LOGD_WIFI_SCAN, "    wpa flags 0x%X", priv->wpa_flags);
