@@ -138,13 +138,6 @@
     <xi:include href="xml/nm-utils.xml"/>
   </chapter>
 
-  <chapter>
-    <title>VPN Plugin API Reference </title>
-    <xi:include href="xml/nm-vpn-plugin.xml"/>
-    <xi:include href="xml/nm-vpn-plugin-ui-interface.xml"/>
-    <xi:include href="xml/nm-vpn-plugin-utils.xml"/>
-  </chapter>
-
   <chapter id="object-tree">
     <title>Object Hierarchy</title>
      <xi:include href="xml/tree_index.sgml"/>
