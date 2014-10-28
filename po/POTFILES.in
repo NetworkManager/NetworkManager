@@ -118,7 +118,7 @@ libnm/nm-manager.c
 libnm/nm-object.c
 libnm/nm-remote-connection.c
 libnm/nm-remote-settings.c
-libnm/nm-vpn-plugin.c
+libnm/nm-vpn-plugin-old.c
 policy/org.freedesktop.NetworkManager.policy.in.in
 src/NetworkManagerUtils.c
 src/main.c
