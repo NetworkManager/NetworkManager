@@ -1351,14 +1351,6 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	 * WPA-PSK), or "wpa-eap" (WPA-Enterprise).  This property must be set for
 	 * any Wi-Fi connection that uses security.
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: key-mgmt
-	 * variable: KEY_MGMT(+)
-	 * values: IEEE8021X, WPA-PSK, WPA-EAP
-	 * description: Key management menthod.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_KEY_MGMT,
 		 g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "", "",
@@ -1375,15 +1367,6 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	 * (default key) through 3.  Note that some consumer access points (like the
 	 * Linksys WRT54G) number the keys 1 - 4.
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: wep-tx-keyidx
-	 * variable: DEFAULTKEY
-	 * values: 1, 2, 3, 4
-	 * default: 1
-	 * description: Index of active WEP key.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_WEP_TX_KEYIDX,
 		 g_param_spec_uint (NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX, "", "",
@@ -1401,14 +1384,6 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	 * using Cisco LEAP (ie, key-mgmt = "ieee8021x" and auth-alg = "leap") the
 	 * "leap-username" and "leap-password" properties must be specified.
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: auth-alg
-	 * variable: SECURITYMODE(+)
-	 * values: restricted, open, leap
-	 * description: Authentication algorithm for WEP.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_AUTH_ALG,
 		 g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "", "",
@@ -1423,15 +1398,6 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	 * Each element may be one "wpa" (allow WPA) or "rsn" (allow WPA2/RSN).  If
 	 * not specified, both WPA and RSN connections are allowed.
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: proto
-	 * variable: WPA_ALLOW_WPA(+), WPA_ALLOW_WPA2(+)
-	 * values: yes, no
-	 * default: no
-	 * description: Allowed WPA protocols, WPA and WPA2 (RSN).
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_PROTO,
 		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_SECURITY_PROTO, "", "",
@@ -1447,15 +1413,6 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	 * For maximum compatibility leave this property empty.  Each list element
 	 * may be one of "tkip" or "ccmp".
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: pairwise
-	 * variable: CIPHER_PAIRWISE(+)
-	 * values: CCMP, TKIP
-	 * description: Restrict pairwise encryption algorithms, specified as a space
-	 *   separated list.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_PAIRWISE,
 		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_SECURITY_PAIRWISE, "", "",
@@ -1471,15 +1428,6 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	 * in the list.  For maximum compatibility leave this property empty.  Each
 	 * list element may be one of "wep40", "wep104", "tkip", or "ccmp".
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: group
-	 * variable: CIPHER_GROUP(+)
-	 * values: CCMP, TKIP, WEP40, WEP104
-	 * description: Restrict group/broadcast encryption algorithms, specified as a space
-	 *   separated list.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_GROUP,
 		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_SECURITY_GROUP, "", "",
@@ -1493,13 +1441,6 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	 * The login username for legacy LEAP connections (ie, key-mgmt =
 	 * "ieee8021x" and auth-alg = "leap").
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: leap-username
-	 * variable: IEEE_8021X_IDENTITY(+)
-	 * description: Login name for LEAP.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_LEAP_USERNAME,
 		 g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME, "", "",
@@ -1513,13 +1454,6 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	 * Index 0 WEP key.  This is the WEP key used in most networks.  See the
 	 * "wep-key-type" property for a description of how this key is interpreted.
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: wep-key0
-	 * variable: KEY1, KEY_PASSPHRASE1(+)
-	 * description: The first WEP key (used in most networks). See also DEFAULTKEY for key index.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_WEP_KEY0,
 		 g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, "", "",
@@ -1534,13 +1468,6 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	 * Index 1 WEP key.  This WEP index is not used by most networks.  See the
 	 * "wep-key-type" property for a description of how this key is interpreted.
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: wep-key1
-	 * variable: KEY2, KEY_PASSPHRASE2(+)
-	 * description: WEP key with index 1. See also DEFAULTKEY for key index.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_WEP_KEY1,
 		 g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_WEP_KEY1, "", "",
@@ -1555,13 +1482,6 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	 * Index 2 WEP key.  This WEP index is not used by most networks.  See the
 	 * "wep-key-type" property for a description of how this key is interpreted.
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: wep-key2
-	 * variable: KEY3, KEY_PASSPHRASE3(+)
-	 * description: WEP key with index 2. See also DEFAULTKEY for key index.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_WEP_KEY2,
 		 g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_WEP_KEY2, "", "",
@@ -1576,13 +1496,6 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	 * Index 3 WEP key.  This WEP index is not used by most networks.  See the
 	 * "wep-key-type" property for a description of how this key is interpreted.
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: wep-key3
-	 * variable: KEY4, KEY_PASSPHRASE4(+)
-	 * description: WEP key with index 3. See also DEFAULTKEY for key index.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_WEP_KEY3,
 		 g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_WEP_KEY3, "", "",
@@ -1598,13 +1511,6 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	 * #NMSettingWirelessSecurity:wep-key1, #NMSettingWirelessSecurity:wep-key2,
 	 * and #NMSettingWirelessSecurity:wep-key3 properties.
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: wep-key-flags
-	 * variable: WEP_KEY_FLAGS(+)
-	 * description: Password flags for KEY<i>, KEY_PASSPHRASE<i> password.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_WEP_KEY_FLAGS,
 		 g_param_spec_uint (NM_SETTING_WIRELESS_SECURITY_WEP_KEY_FLAGS, "", "",
@@ -1624,13 +1530,6 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	 * WPA passphrase, and is hashed to derive the actual WPA-PSK used when
 	 * connecting to the Wi-Fi network.
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: psk
-	 * variable: WPA_PSK
-	 * description: Pre-Shared-Key for WPA networks.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_PSK,
 		 g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_PSK, "", "",
@@ -1645,14 +1544,6 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	 * Flags indicating how to handle the #NMSettingWirelessSecurity:psk
 	 * property.
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: psk-flags
-	 * variable: WPA_PSK_FLAGS(+)
-	 * description: Password flags for WPA_PSK_FLAGS.
-	 * example: WPA_PSK_FLAGS=user
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_PSK_FLAGS,
 		 g_param_spec_uint (NM_SETTING_WIRELESS_SECURITY_PSK_FLAGS, "", "",
@@ -1668,14 +1559,6 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	 * The login password for legacy LEAP connections (ie, key-mgmt =
 	 * "ieee8021x" and auth-alg = "leap").
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: leap-password
-	 * variable: IEEE_8021X_PASSWORD(+)
-	 * description: Password for LEAP. It can also go to "key-"
-	 *  lookaside file, or it can be owned by a secret agent.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_LEAP_PASSWORD,
 		 g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD, "", "",
@@ -1690,13 +1573,6 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	 * Flags indicating how to handle the
 	 * #NMSettingWirelessSecurity:leap-password property.
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: leap-password-flags
-	 * variable: IEEE_8021X_PASSWORD_FLAGS(+)
-	 * description: Password flags for IEEE_8021X_PASSWORD_FLAGS.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_LEAP_PASSWORD_FLAGS,
 		 g_param_spec_uint (NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD_FLAGS, "", "",
@@ -1716,16 +1592,6 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	 * as a string and will be hashed using the de-facto MD5 method to derive
 	 * the actual WEP key.
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: wep-key-type
-	 * variable: KEY<i> or KEY_PASSPHRASE<i>(+)
-	 * description: KEY is used for "key" type (10 or 26 hexadecimal characters,
-	 *   or 5 or 13 character string prefixed with "s:"). KEY_PASSPHRASE is used
-	 *   for WEP passphrases.
-	 * example: KEY1=s:ahoj, KEY1=0a1c45bc02, KEY_PASSPHRASE1=mysupersecretkey
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_WEP_KEY_TYPE,
 		 g_param_spec_uint (NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, "", "",

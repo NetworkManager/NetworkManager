@@ -262,15 +262,6 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *setting_class)
 	 *
 	 * Since: 0.9.8
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: priority
-	 * variable: BRIDGING_OPTS: priority=
-	 * values: 0 - 63
-	 * default: 32
-	 * description: STP priority.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY,
 		 g_param_spec_uint (NM_SETTING_BRIDGE_PORT_PRIORITY, "", "",
@@ -288,15 +279,6 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *setting_class)
 	 *
 	 * Since: 0.9.8
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: path-cost
-	 * variable: BRIDGING_OPTS: path_cost=
-	 * values: 1 - 65535
-	 * default: 100
-	 * description: STP cost.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_PATH_COST,
 		 g_param_spec_uint (NM_SETTING_BRIDGE_PORT_PATH_COST, "", "",
@@ -314,14 +296,6 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *setting_class)
 	 *
 	 * Since: 0.9.8
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: hairpin-mode
-	 * variable: BRIDGING_OPTS: hairpin_mode=
-	 * default: yes
-	 * description: Hairpin mode of the bridge port.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_HAIRPIN_MODE,
 		 g_param_spec_boolean (NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, "", "",

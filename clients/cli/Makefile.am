@@ -51,7 +51,7 @@ nmcli_LDADD += $(POLKIT_LIBS)
 endif
 
 if BUILD_SETTING_DOCS
-settings-docs.c: settings-docs.xsl $(top_builddir)/libnm-util/nm-setting-docs.xml
+settings-docs.c: settings-docs.xsl $(top_builddir)/libnm/nm-setting-docs.xml
 	$(AM_V_GEN) xsltproc --output $@ $^
 
 BUILT_SOURCES = settings-docs.c

@@ -726,6 +726,13 @@ nm_setting_bond_class_init (NMSettingBondClass *setting_class)
 	 *
 	 * Type: GHashTable(utf8,utf8)
 	 **/
+	/* ---ifcfg-rh---
+	 * property: options
+	 * variable: BONDING_OPTS
+	 * description: Bonding options.
+	 * example: BONDING_OPTS="miimon=100 mode=broadcast"
+	 * ---end---
+	 */
 	 g_object_class_install_property
 		 (object_class, PROP_OPTIONS,
 		 g_param_spec_boxed (NM_SETTING_BOND_OPTIONS, "", "",

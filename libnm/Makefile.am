@@ -181,3 +181,28 @@ endif
 
 check-local:
 	$(top_srcdir)/tools/check-exports.sh $(builddir)/.libs/libnm.so $(SYMBOL_VIS_FILE)
+
+if BUILD_SETTING_DOCS
+
+noinst_DATA = nm-setting-docs.xml nm-keyfile-docs.xml nm-ifcfg-rh-docs.xml
+
+docs_sources = $(filter-out nm-core-enum-types.c,$(libnm_core_sources))
+
+nm-setting-docs.xml: generate-setting-docs.py $(docs_sources) | NM-1.0.gir NM-1.0.typelib libnm.la
+	export GI_TYPELIB_PATH=$(abs_builddir)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}; \
+	export LD_LIBRARY_PATH=$(abs_builddir)/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}; \
+	$(srcdir)/generate-setting-docs.py \
+		--gir $(builddir)/NM-1.0.gir \
+		--output $@
+
+nm-keyfile-docs.xml: generate-plugin-docs.pl $(docs_sources)
+	$(srcdir)/generate-plugin-docs.pl keyfile $(top_srcdir)/libnm-core $@
+nm-ifcfg-rh-docs.xml: generate-plugin-docs.pl $(docs_sources)
+	$(srcdir)/generate-plugin-docs.pl ifcfg-rh $(top_srcdir)/libnm-core $@
+
+CLEANFILES += $(noinst_DATA)
+EXTRA_DIST += $(noinst_DATA)
+
+endif
+
+EXTRA_DIST += generate-setting-docs.py generate-plugin-docs.pl

@@ -752,16 +752,6 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 * parent interface may be given by the #NMSettingVlan:parent property or by
 	 * the #NMSettingWired:mac-address property of an #NMSettingWired setting.
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: interface-name
-	 * variable: PHYSDEV and VLAN_ID, or DEVICE
-	 * description: VLAN interface name.
-	 *   If all variables are set, parent device from PHYSDEV takes precedence over DEVICE,
-	 *   but VLAN id from DEVICE takes precedence over VLAN_ID.
-	 * example: PHYSDEV=eth0, VLAN_ID=12; or DEVICE=eth0.12
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_INTERFACE_NAME,
 		 g_param_spec_string (NM_SETTING_VLAN_INTERFACE_NAME, "", "",
@@ -779,13 +769,6 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 * not specified, the connection must contain an #NMSettingWired setting
 	 * with a #NMSettingWired:mac-address property.
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: parent
-	 * variable: DEVICE or PHYSDEV
-	 * description: Parent interface of the VLAN.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_PARENT,
 		 g_param_spec_string (NM_SETTING_VLAN_PARENT, "", "",
@@ -801,13 +784,6 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 * The VLAN identifier that the interface created by this connection should
 	 * be assigned.
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: id
-	 * variable: VLAN_ID or DEVICE
-	 * description: VLAN identifier.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_ID,
 		 g_param_spec_uint (NM_SETTING_VLAN_ID, "", "",
@@ -826,14 +802,6 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 * and %NM_VLAN_FLAG_LOOSE_BINDING (loose binding of the interface to its
 	 * master device's operating state).
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: flags
-	 * variable: VLAN_FLAGS, REORDER_HDR
-	 * values: "GVRP", "LOOSE_BINDING" for VLAN_FLAGS; 0 or 1 for REORDER_HDR
-	 * description: Parent interface of the VLAN.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_FLAGS,
 		 g_param_spec_uint (NM_SETTING_VLAN_FLAGS, "", "",
@@ -850,14 +818,6 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 * SKB priorities.  The mapping is given in the format "from:to" where both
 	 * "from" and "to" are unsigned integers, ie "7:3".
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: ingress-property-map
-	 * variable: VLAN_INGRESS_PRIORITY_MAP
-	 * description: Ingress priority mapping.
-	 * example: VLAN_INGRESS_PRIORITY_MAP=4:2,3:5
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_INGRESS_PRIORITY_MAP,
 		 _nm_param_spec_specialized (NM_SETTING_VLAN_INGRESS_PRIORITY_MAP, "", "",
@@ -873,14 +833,6 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 * 802.1p priorities.  The mapping is given in the format "from:to" where
 	 * both "from" and "to" are unsigned integers, ie "7:3".
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: egress-property-map
-	 * variable: VLAN_EGRESS_PRIORITY_MAP
-	 * description: Egress priority mapping.
-	 * example: VLAN_EGRESS_PRIORITY_MAP=5:4,4:1,3:7
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_EGRESS_PRIORITY_MAP,
 		 _nm_param_spec_specialized (NM_SETTING_VLAN_EGRESS_PRIORITY_MAP, "", "",

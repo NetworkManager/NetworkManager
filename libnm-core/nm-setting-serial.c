@@ -293,6 +293,15 @@ nm_setting_serial_class_init (NMSettingSerialClass *setting_class)
 	 *
 	 * Parity setting of the serial port.
 	 **/
+	/* ---keyfile---
+	 * property: parity
+	 * format: 'e', 'o', or 'n'
+	 * description: The connection parity; even, odd, or none. Note that older
+	 *   versions of NetworkManager stored this as an integer: 69 ('E') for even,
+	 *   111 ('o') for odd, or 110 ('n') for none.
+	 * example: parity=n
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_PARITY,
 		 g_param_spec_enum (NM_SETTING_SERIAL_PARITY, "", "",

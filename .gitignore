@@ -152,9 +152,6 @@ valgrind-*.log
 /libnm-glib/tests/test-nm-client
 /libnm-glib/tests/test-remote-settings-client
 
-/libnm-util/nm-ifcfg-rh-docs.xml
-/libnm-util/nm-keyfile-docs.xml
-/libnm-util/nm-setting-docs.xml
 /libnm-util/nm-version.h
 /libnm-util/test-crypto
 /libnm-util/tests/test-crypto
@@ -166,6 +163,9 @@ valgrind-*.log
 /libnm-util/tests/test-setting-8021x
 /libnm-util/tests/test-setting-dcb
 
+/libnm/nm-ifcfg-rh-docs.xml
+/libnm/nm-keyfile-docs.xml
+/libnm/nm-setting-docs.xml
 /libnm/tests/test-nm-client
 /libnm/tests/test-remote-settings-client
 /libnm/tests/test-secret-agent

@@ -18,7 +18,7 @@
 
 from __future__ import print_function
 
-from gi.repository import NetworkManager, GObject
+from gi.repository import NM, GObject
 import argparse, datetime, re, sys
 import xml.etree.ElementTree as ET
 
@@ -55,7 +55,7 @@ constants = {
     'NULL': 'NULL' }
 setting_names = {}
 
-def init_constants(girxml):
+def init_constants(girxml, settings):
     for const in girxml.findall('./gi:namespace/gi:constant', ns_map):
         cname = const.attrib['{%s}type' % ns_map['c']]
         cvalue = const.attrib['value']
@@ -64,21 +64,23 @@ def init_constants(girxml):
         constants[cname] = cvalue
 
     for enum in girxml.findall('./gi:namespace/gi:enumeration', ns_map):
-        flag = enum.attrib['name'].endswith('Flags')
         for enumval in enum.findall('./gi:member', ns_map):
             cname = enumval.attrib[identifier_key]
-            cvalue = enumval.attrib['value']
-            if flag:
-                cvalue = '%s (0x%x)' % (cname, int(cvalue))
-            else:
-                cvalue = '%s (%s)' % (cname, cvalue)
+            cvalue = '%s (%s)' % (cname, enumval.attrib['value'])
             constants[cname] = cvalue
 
-    for setting in girxml.findall('./gi:namespace/gi:class[@parent="Setting"]', ns_map):
+    for enum in girxml.findall('./gi:namespace/gi:bitfield', ns_map):
+        for enumval in enum.findall('./gi:member', ns_map):
+            cname = enumval.attrib[identifier_key]
+            cvalue = '%s (0x%x)' % (cname, int(enumval.attrib['value']))
+            constants[cname] = cvalue
+
+    for setting in settings:
         setting_type_name = 'NM' + setting.attrib['name'];
-        symbol_prefix = setting.attrib[symbol_prefix_key]
-        setting_name = constants['NM_' + symbol_prefix.upper() + '_SETTING_NAME']
-        setting_names[setting_type_name] = setting_name
+        setting_name_symbol = 'NM_' + setting.attrib[symbol_prefix_key].upper() + '_SETTING_NAME'
+        if constants.has_key(setting_name_symbol):
+            setting_name = constants[setting_name_symbol]
+            setting_names[setting_type_name] = setting_name
 
 def get_prop_type(setting, pspec, propxml):
     prop_type = pspec.value_type.name
@@ -110,6 +112,8 @@ def get_docs(setting, pspec, propxml):
 
     # remaining gtk-doc cleanup
     doc = doc.replace('%%', '%')
+    doc = doc.replace('<!-- -->', '')
+    doc = re.sub(r' Element-.ype:.*', '', doc)
     doc = re.sub(r'#([A-Z]\w*)', r'\1', doc)
 
     # Remove sentences that refer to functions
@@ -144,23 +148,26 @@ def usage():
     exit()
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-g', '--gir', metavar='FILE', help='NetworkManager-1.0.gir file')
+parser.add_argument('-g', '--gir', metavar='FILE', help='NM-1.0.gir file')
 parser.add_argument('-o', '--output', metavar='FILE', help='output file')
 
 args = parser.parse_args()
 if args.gir is None or args.output is None:
     usage()
 
-NetworkManager.utils_init()
+NM.utils_init()
 
 girxml = ET.parse(args.gir).getroot()
 outfile = open(args.output, mode='w')
 
-init_constants(girxml)
-
 basexml = girxml.find('./gi:namespace/gi:class[@name="Setting"]', ns_map)
 settings = girxml.findall('./gi:namespace/gi:class[@parent="Setting"]', ns_map)
+# Hack. Need a better way to do this
+ipxml = girxml.find('./gi:namespace/gi:class[@name="SettingIPConfig"]', ns_map)
+settings.extend(girxml.findall('./gi:namespace/gi:class[@parent="SettingIPConfig"]', ns_map))
 settings = sorted(settings, key=lambda setting: setting.attrib['{%s}symbol-prefix' % ns_map['c']])
+
+init_constants(girxml, settings)
 
 outfile.write("""<?xml version=\"1.0\"?>
 <!DOCTYPE nm-setting-docs [
@@ -170,7 +177,10 @@ outfile.write("""<?xml version=\"1.0\"?>
 """)
 
 for settingxml in settings:
-    new_func = NetworkManager.__getattr__(settingxml.attrib['name'])
+    if settingxml.attrib.has_key('abstract'):
+        continue
+
+    new_func = NM.__getattr__(settingxml.attrib['name'])
     setting = new_func()
 
     outfile.write("  <setting name=\"%s\">\n" % setting.props.name)
@@ -180,6 +190,8 @@ for settingxml in settings:
         propxml = settingxml.find('./gi:property[@name="%s"]' % pspec.name, ns_map)
         if propxml is None:
             propxml = basexml.find('./gi:property[@name="%s"]' % pspec.name, ns_map)
+        if propxml is None:
+            propxml = ipxml.find('./gi:property[@name="%s"]' % pspec.name, ns_map)
 
         value_type = get_prop_type(setting, pspec, propxml)
         value_desc = get_docs(setting, pspec, propxml)

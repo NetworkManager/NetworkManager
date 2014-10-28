@@ -864,6 +864,14 @@ nm_setting_vpn_class_init (NMSettingVpnClass *setting_class)
 	 *
 	 * Type: GHashTable(utf8,utf8)
 	 **/
+	/* ---keyfile---
+	 * property: data
+	 * variable: separate variables named after keys of the dictionary
+	 * description: The keys of the data dictionary are used as variable names directly
+	 *   under [vpn] section.
+	 * example: remote=ovpn.corp.com cipher=AES-256-CBC username=joe
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_DATA,
 		 g_param_spec_boxed (NM_SETTING_VPN_DATA, "", "",
@@ -883,6 +891,14 @@ nm_setting_vpn_class_init (NMSettingVpnClass *setting_class)
 	 *
 	 * Type: GHashTable(utf8,utf8)
 	 **/
+	/* ---keyfile---
+	 * property: secrets
+	 * variable: separate variables named after keys of the dictionary
+	 * description: The keys of the secrets dictionary are used as variable names directly
+	 *   under [vpn-secrets] section.
+	 * example: password=Popocatepetl
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_SECRETS,
 		 g_param_spec_boxed (NM_SETTING_VPN_SECRETS, "", "",

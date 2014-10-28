@@ -230,13 +230,6 @@ nm_setting_team_class_init (NMSettingTeamClass *setting_class)
 	 *
 	 * The name of the virtual in-kernel team network interface
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: interface-name
-	 * variable: DEVICE
-	 * description: Teaming interface name.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_INTERFACE_NAME,
 		 g_param_spec_string (NM_SETTING_TEAM_INTERFACE_NAME, "", "",
@@ -253,13 +246,6 @@ nm_setting_team_class_init (NMSettingTeamClass *setting_class)
 	 * the value is passed directly to teamd. If not specified, the default
 	 * configuration is used.  See man teamd.conf for the format details.
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: config
-	 * variable: TEAM_CONFIG
-	 * description: Team configuration in JSON. See man teamd.conf for details.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_CONFIG,
 		 g_param_spec_string (NM_SETTING_TEAM_CONFIG, "", "",

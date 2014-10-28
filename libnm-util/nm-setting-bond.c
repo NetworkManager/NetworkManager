@@ -797,13 +797,6 @@ nm_setting_bond_class_init (NMSettingBondClass *setting_class)
 	 *
 	 * The name of the virtual in-kernel bonding network interface
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: interface-name
-	 * variable: DEVICE
-	 * description: Bonding interface name.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_INTERFACE_NAME,
 		 g_param_spec_string (NM_SETTING_BOND_INTERFACE_NAME, "", "",
@@ -819,14 +812,6 @@ nm_setting_bond_class_init (NMSettingBondClass *setting_class)
 	 * must be strings. Option names must contain only alphanumeric characters
 	 * (ie, [a-zA-Z0-9]).
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: options
-	 * variable: BONDING_OPTS
-	 * description: Bonding options.
-	 * example: BONDING_OPTS="miimon=100 mode=broadcast"
-	 * ---end---
-	 */
 	 g_object_class_install_property
 		 (object_class, PROP_OPTIONS,
 		 _nm_param_spec_specialized (NM_SETTING_BOND_OPTIONS, "", "",
