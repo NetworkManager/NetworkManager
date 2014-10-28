@@ -67,4 +67,6 @@ char **     _nm_utils_strsplit_set (const char *str,
                                     const char *delimiters,
                                     int max_tokens);
 
+char *      _nm_utils_hwaddr_canonical_or_invalid (const char *mac, gssize length);
+
 #endif

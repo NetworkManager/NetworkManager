@@ -2353,6 +2353,59 @@ nm_utils_hwaddr_valid (const char *asc, gssize length)
 }
 
 /**
+ * nm_utils_hwaddr_canonical:
+ * @asc: the ASCII representation of a hardware address
+ * @length: the length of address that @asc is expected to convert to
+ *   (or -1 to accept any length up to %NM_UTILS_HWADDR_LEN_MAX)
+ *
+ * Parses @asc to see if it is a valid hardware address of the given
+ * length, and if so, returns it in canonical form (uppercase, with
+ * leading 0s as needed, and with colons rather than hyphens).
+ *
+ * Return value: (transfer full): the canonicalized address if @asc appears to
+ *   be a valid hardware address of the indicated length, %NULL if not.
+ */
+char *
+nm_utils_hwaddr_canonical (const char *asc, gssize length)
+{
+	guint8 buf[NM_UTILS_HWADDR_LEN_MAX];
+
+	g_return_val_if_fail (asc != NULL, NULL);
+	g_return_val_if_fail (length == -1 || (length > 0 && length <= NM_UTILS_HWADDR_LEN_MAX), NULL);
+
+	if (length == -1) {
+		length = hwaddr_binary_len (asc);
+		if (length == 0 || length > NM_UTILS_HWADDR_LEN_MAX)
+			return NULL;
+	}
+
+	if (nm_utils_hwaddr_aton (asc, buf, length) == NULL)
+		return NULL;
+
+	return g_strdup (nm_utils_hwaddr_ntoa (buf, length));
+}
+
+/* This is used to possibly canonicalize values passed to MAC address property
+ * setters. Unlike nm_utils_hwaddr_canonical(), it accepts %NULL, and if you
+ * pass it an invalid MAC address, it just returns that string rather than
+ * returning %NULL (so that we can return a proper error from verify() later).
+ */
+char *
+_nm_utils_hwaddr_canonical_or_invalid (const char *mac, gssize length)
+{
+	char *canonical;
+
+	if (!mac)
+		return NULL;
+
+	canonical = nm_utils_hwaddr_canonical (mac, length);
+	if (canonical)
+		return canonical;
+	else
+		return g_strdup (mac);
+}
+
+/**
  * nm_utils_hwaddr_matches:
  * @hwaddr1: pointer to a binary or ASCII hardware address, or %NULL
  * @hwaddr1_len: size of @hwaddr1, or -1 if @hwaddr1 is ASCII

@@ -104,7 +104,7 @@ guint32           nm_setting_wireless_get_tx_power           (NMSettingWireless 
 const char       *nm_setting_wireless_get_mac_address        (NMSettingWireless *setting);
 const char       *nm_setting_wireless_get_cloned_mac_address (NMSettingWireless *setting);
 
-const GSList     *nm_setting_wireless_get_mac_address_blacklist   (NMSettingWireless *setting);
+const char * const *nm_setting_wireless_get_mac_address_blacklist   (NMSettingWireless *setting);
 guint32           nm_setting_wireless_get_num_mac_blacklist_items (NMSettingWireless *setting);
 const char *      nm_setting_wireless_get_mac_blacklist_item      (NMSettingWireless *setting,
                                                                    guint32 idx);

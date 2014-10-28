@@ -442,7 +442,8 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 	if (s_wired) {
 		const char *mac;
 		gboolean try_mac = TRUE;
-		const GSList *mac_blacklist, *mac_blacklist_iter;
+		const char * const *mac_blacklist;
+		int i;
 
 		if (!match_subchans (self, s_wired, &try_mac))
 			return FALSE;
@@ -453,14 +454,13 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 
 		/* Check for MAC address blacklist */
 		mac_blacklist = nm_setting_wired_get_mac_address_blacklist (s_wired);
-		for (mac_blacklist_iter = mac_blacklist; mac_blacklist_iter;
-			 mac_blacklist_iter = g_slist_next (mac_blacklist_iter)) {
-			if (!nm_utils_hwaddr_valid (mac_blacklist_iter->data, ETH_ALEN)) {
+		for (i = 0; mac_blacklist[i]; i++) {
+			if (!nm_utils_hwaddr_valid (mac_blacklist[i], ETH_ALEN)) {
 				g_warn_if_reached ();
 				return FALSE;
 			}
 
-			if (nm_utils_hwaddr_matches (mac_blacklist_iter->data, -1, priv->perm_hw_addr, -1))
+			if (nm_utils_hwaddr_matches (mac_blacklist[i], -1, priv->perm_hw_addr, -1))
 				return FALSE;
 		}
 	}
