@@ -42,14 +42,8 @@
 #include "nm-supplicant-manager.h"
 #include "nm-supplicant-interface.h"
 #include "nm-supplicant-config.h"
-#include "nm-setting-connection.h"
-#include "nm-setting-wired.h"
-#include "nm-setting-8021x.h"
-#include "nm-setting-pppoe.h"
-#include "nm-setting-bond.h"
 #include "ppp-manager/nm-ppp-manager.h"
 #include "nm-logging.h"
-#include "nm-utils.h"
 #include "nm-enum-types.h"
 #include "nm-dbus-manager.h"
 #include "nm-platform.h"
@@ -59,6 +53,7 @@
 #include "nm-device-ethernet-utils.h"
 #include "nm-connection-provider.h"
 #include "nm-device-factory.h"
+#include "nm-core-internal.h"
 
 #include "nm-device-ethernet-glue.h"
 

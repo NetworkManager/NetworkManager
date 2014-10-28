@@ -29,7 +29,7 @@
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
-#include "nm-core-enum-types.h"
+#include "nm-setting-wireless.h"
 
 /**
  * SECTION:nm-setting-wireless-security
@@ -844,7 +844,7 @@ no_secrets:
 }
 
 static gboolean
-verify (NMSetting *setting, GSList *all_settings, GError **error)
+verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingWirelessSecurity *self = NM_SETTING_WIRELESS_SECURITY (setting);
 	NMSettingWirelessSecurityPrivate *priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (self);
@@ -904,7 +904,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		if (   (strcmp (priv->key_mgmt, "ieee8021x") == 0)
 		    || (strcmp (priv->key_mgmt, "wpa-eap") == 0)) {
 			/* Need an 802.1x setting too */
-			if (!nm_setting_find_in_list (all_settings, NM_SETTING_802_1X_SETTING_NAME)) {
+			if (connection && !nm_connection_get_setting_802_1x (connection)) {
 				g_set_error (error,
 				             NM_CONNECTION_ERROR,
 				             NM_CONNECTION_ERROR_MISSING_SETTING,

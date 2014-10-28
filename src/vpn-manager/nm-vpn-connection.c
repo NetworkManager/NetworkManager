@@ -27,19 +27,12 @@
 #include <errno.h>
 #include <stdlib.h>
 
-#include "nm-dbus-interface.h"
-#include "nm-vpn-dbus-interface.h"
 #include "nm-vpn-connection.h"
-#include "nm-setting-connection.h"
-#include "nm-setting-vpn.h"
-#include "nm-setting-ip4-config.h"
 #include "nm-ip4-config.h"
-#include "nm-setting-ip6-config.h"
 #include "nm-ip6-config.h"
 #include "nm-dbus-manager.h"
 #include "nm-platform.h"
 #include "nm-logging.h"
-#include "nm-utils.h"
 #include "nm-active-connection.h"
 #include "nm-dbus-glib-types.h"
 #include "NetworkManagerUtils.h"
@@ -47,6 +40,7 @@
 #include "settings/nm-settings-connection.h"
 #include "nm-dispatcher.h"
 #include "nm-agent-manager.h"
+#include "nm-core-internal.h"
 
 #include "nm-vpn-connection-glue.h"
 

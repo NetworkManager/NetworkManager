@@ -676,7 +676,7 @@ nm_setting_wireless_get_seen_bssid (NMSettingWireless *setting,
 }
 
 static gboolean
-verify (NMSetting *setting, GSList *all_settings, GError **error)
+verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingWirelessPrivate *priv = NM_SETTING_WIRELESS_GET_PRIVATE (setting);
 	const char *valid_modes[] = { NM_SETTING_WIRELESS_MODE_INFRA, NM_SETTING_WIRELESS_MODE_ADHOC, NM_SETTING_WIRELESS_MODE_AP, NULL };

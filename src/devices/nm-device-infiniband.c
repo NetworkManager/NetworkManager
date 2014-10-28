@@ -27,7 +27,6 @@
 
 #include "nm-device-infiniband.h"
 #include "nm-logging.h"
-#include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
 #include "nm-enum-types.h"
@@ -36,6 +35,7 @@
 #include "nm-ip4-config.h"
 #include "nm-platform.h"
 #include "nm-device-factory.h"
+#include "nm-core-internal.h"
 
 #include "nm-device-infiniband-glue.h"
 

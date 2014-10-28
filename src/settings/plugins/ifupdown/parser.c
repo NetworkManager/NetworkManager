@@ -25,19 +25,11 @@
 #include <arpa/inet.h>
 #include <stdlib.h>
 #include <errno.h>
-
-#include <nm-connection.h>
-#include <nm-dbus-interface.h>
-#include <nm-setting-connection.h>
-#include <nm-setting-ip4-config.h>
-#include <nm-setting-ppp.h>
-#include <nm-setting-wired.h>
-#include <nm-setting-wireless.h>
-#include <nm-setting-8021x.h>
-#include <nm-system-config-interface.h>
-#include <nm-utils.h>
-#include <nm-logging.h>
 #include <ctype.h>
+
+#include "nm-core-internal.h"
+#include "nm-system-config-interface.h"
+#include "nm-logging.h"
 
 #include "parser.h"
 #include "plugin.h"

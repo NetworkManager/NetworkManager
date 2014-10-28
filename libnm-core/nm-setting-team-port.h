@@ -40,9 +40,9 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_TEAM_PORT_CONFIG     "config"
 
-typedef struct {
+struct _NMSettingTeamPort {
 	NMSetting parent;
-} NMSettingTeamPort;
+};
 
 typedef struct {
 	NMSettingClass parent;

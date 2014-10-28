@@ -22,6 +22,7 @@
 
 #include <string.h>
 #include <glib/gi18n.h>
+#include <arpa/inet.h>
 
 #include "nm-setting-ip4-config.h"
 #include "nm-utils.h"
@@ -867,7 +868,7 @@ verify_label (const char *label)
 }
 
 static gboolean
-verify (NMSetting *setting, GSList *all_settings, GError **error)
+verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingIP4ConfigPrivate *priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting);
 	GSList *iter, *l_iter;

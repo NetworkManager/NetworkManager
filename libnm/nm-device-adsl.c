@@ -24,6 +24,7 @@
 #include "nm-object-private.h"
 
 #include "nm-setting-adsl.h"
+#include "nm-setting-connection.h"
 
 #include <string.h>
 #include <glib/gi18n.h>

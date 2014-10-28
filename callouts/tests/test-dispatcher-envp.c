@@ -25,11 +25,9 @@
 #include <glib.h>
 #include <glib-object.h>
 
-#include "nm-connection.h"
-#include "nm-setting-connection.h"
+#include "nm-core-internal.h"
 #include "nm-dispatcher-utils.h"
 #include "nm-dispatcher-api.h"
-#include "nm-utils.h"
 
 /*******************************************/
 

@@ -27,10 +27,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include <glib.h>
-#include <glib-object.h>
-
-#include <nm-version.h>
+#include <nm-core-types.h>
 
 G_BEGIN_DECLS
 
@@ -138,9 +135,9 @@ typedef enum {
  * The NMSetting struct contains only private data.
  * It should only be accessed through the functions described below.
  */
-typedef struct {
+struct _NMSetting {
 	GObject parent;
-} NMSetting;
+};
 
 
 /**
@@ -161,9 +158,9 @@ typedef struct {
 	GObjectClass parent;
 
 	/* Virtual functions */
-	gint        (*verify)            (NMSetting  *setting,
-	                                  GSList     *all_settings,
-	                                  GError     **error);
+	gint        (*verify)            (NMSetting     *setting,
+	                                  NMConnection  *connection,
+	                                  GError       **error);
 
 	GPtrArray  *(*need_secrets)      (NMSetting  *setting);
 
@@ -223,9 +220,9 @@ NMSetting *nm_setting_duplicate      (NMSetting *setting);
 
 const char *nm_setting_get_name      (NMSetting *setting);
 
-gboolean    nm_setting_verify        (NMSetting *setting,
-                                      GSList    *all_settings,
-                                      GError    **error);
+gboolean    nm_setting_verify        (NMSetting     *setting,
+                                      NMConnection  *connection,
+                                      GError       **error);
 
 gboolean    nm_setting_compare       (NMSetting *a,
                                       NMSetting *b,

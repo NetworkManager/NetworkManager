@@ -32,6 +32,7 @@
 #include "nm-settings-connection.h"
 #include "nm-modem-broadband.h"
 #include "NetworkManagerUtils.h"
+#include "nm-core-internal.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceModem);

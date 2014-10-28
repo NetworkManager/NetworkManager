@@ -683,7 +683,7 @@ nmc_connection_profile_details (NMConnection *connection, NmCli *nmc)
 
 static NMActiveConnection *
 find_active_connection (const GPtrArray *active_cons,
-                        const GSList *cons,
+                        const GPtrArray *cons,
                         const char *filter_type,
                         const char *filter_val,
                         int *idx)
@@ -905,19 +905,18 @@ static void
 fill_output_for_all_invisible (NmCli *nmc)
 {
 	const GPtrArray *acons;
-	GSList *iter;
-	int i;
+	int a, c;
 
 	g_return_if_fail (nmc != NULL);
 
 	acons = nm_client_get_active_connections (nmc->client);
-	for (i = 0; i < acons->len; i++) {
+	for (a = 0; a < acons->len; a++) {
 		gboolean found = FALSE;
-		NMActiveConnection *acon = g_ptr_array_index (acons, i);
+		NMActiveConnection *acon = g_ptr_array_index (acons, a);
 		const char *a_uuid = nm_active_connection_get_uuid (acon);
 
-		for (iter = nmc->connections; iter; iter = g_slist_next (iter)) {
-			NMConnection *con = NM_CONNECTION (iter->data);
+		for (c = 0; c < nmc->connections->len; c++) {
+			NMConnection *con = g_ptr_array_index (nmc->connections, c);
 			const char *c_uuid = nm_connection_get_uuid (con);
 
 			if (strcmp (a_uuid, c_uuid) == 0) {
@@ -1326,7 +1325,7 @@ do_connections_show (NmCli *nmc, gboolean active_only, int argc, char **argv)
 		char *fields_common = NMC_FIELDS_CON_SHOW_COMMON;
 		NmcOutputField *tmpl, *arr;
 		size_t tmpl_len;
-		GSList *iter;
+		int i;
 
 		if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
 			fields_str = fields_common;
@@ -1351,8 +1350,8 @@ do_connections_show (NmCli *nmc, gboolean active_only, int argc, char **argv)
 		g_ptr_array_add (nmc->output_data, arr);
 
 		/* Add values */
-		for (iter = nmc->connections; iter; iter = g_slist_next (iter)) {
-			NMConnection *con = NM_CONNECTION (iter->data);
+		for (i = 0; i < nmc->connections->len; i++) {
+			NMConnection *con = NM_CONNECTION (nmc->connections->pdata[i]);
 			fill_output_connection (con, nmc, active_only);
 		}
 		/* Some active connections may not be in connection list, show them here. */
@@ -1362,7 +1361,7 @@ do_connections_show (NmCli *nmc, gboolean active_only, int argc, char **argv)
 		gboolean new_line = FALSE;
 		gboolean without_fields = (nmc->required_fields == NULL);
 		const GPtrArray *active_cons = nm_client_get_active_connections (nmc->client);
-		GSList *pos = NULL;
+		int pos = 0;
 
 		/* multiline mode is default for 'connection show <ID>' */
 		if (!nmc->mode_specified)
@@ -2680,25 +2679,25 @@ add_ip6_address_to_connection (NMIP6Address *ip6addr, NMConnection *connection)
 }
 
 static char *
-unique_master_iface_ifname (GSList *list,
+unique_master_iface_ifname (const GPtrArray *connections,
                             const char *try_name)
 {
 	NMConnection *connection;
 	char *new_name;
 	unsigned int num = 1;
-	GSList *iterator = list;
+	int i = 0;
 	const char *ifname = NULL;
 
 	new_name = g_strdup (try_name);
-	while (iterator) {
-		connection = NM_CONNECTION (iterator->data);
+	while (i < connections->len) {
+		connection = NM_CONNECTION (connections->pdata[i]);
 		ifname = nm_connection_get_interface_name (connection);
 		if (g_strcmp0 (new_name, ifname) == 0) {
 			g_free (new_name);
 			new_name = g_strdup_printf ("%s%d", try_name, num++);
-			iterator = list;
+			i = 0;
 		} else
-			iterator = g_slist_next (iterator);
+			i++;
 	}
 	return new_name;
 }
@@ -2737,14 +2736,14 @@ _strip_master_prefix (const char *master, const char *(**func)(NMConnection *))
  * Returns: identifier of master connection if found, %NULL otherwise
  */
 static const char *
-verify_master_for_slave (GSList *connections,
+verify_master_for_slave (const GPtrArray *connections,
                          const char *master,
                          const char *type)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	const char *con_type, *id, *uuid, *ifname;
-	GSList *iterator = connections;
+	int i;
 	const char *found_by_id = NULL;
 	const char *out_master = NULL;
 	const char *(*func) (NMConnection *) = NULL;
@@ -2753,15 +2752,13 @@ verify_master_for_slave (GSList *connections,
 		return NULL;
 
 	master = _strip_master_prefix (master, &func);
-	while (iterator) {
-		connection = NM_CONNECTION (iterator->data);
+	for (i = 0; i < connections->len; i++) {
+		connection = NM_CONNECTION (connections->pdata[i]);
 		s_con = nm_connection_get_setting_connection (connection);
 		g_assert (s_con);
 		con_type = nm_setting_connection_get_connection_type (s_con);
-		if (g_strcmp0 (con_type, type) != 0) {
-			iterator = g_slist_next (iterator);
+		if (g_strcmp0 (con_type, type) != 0)
 			continue;
-		}
 		if (func) {
 			/* There was a prefix; only compare to that type. */
 			if (g_strcmp0 (master, func (connection)) == 0) {
@@ -2783,8 +2780,6 @@ verify_master_for_slave (GSList *connections,
 			if (!found_by_id && g_strcmp0 (master, id) == 0)
 				found_by_id = uuid;
 		}
-
-		iterator = g_slist_next (iterator);
 	}
 	return out_master ? out_master : found_by_id;
 }
@@ -3633,7 +3628,7 @@ do_questionnaire_ip (NMConnection *connection)
 static gboolean
 complete_connection_by_type (NMConnection *connection,
                              const char *con_type,
-                             GSList *all_connections,
+                             const GPtrArray *all_connections,
                              gboolean ask,
                              int argc,
                              char **argv,
@@ -4917,25 +4912,25 @@ cleanup_olpc:
 }
 
 static char *
-unique_connection_name (GSList *list, const char *try_name)
+unique_connection_name (const GPtrArray *connections, const char *try_name)
 {
 	NMConnection *connection;
 	const char *name;
 	char *new_name;
 	unsigned int num = 1;
-	GSList *iterator = list;
+	int i = 0;
 
 	new_name = g_strdup (try_name);
-	while (iterator) {
-		connection = NM_CONNECTION (iterator->data);
+	while (i < connections->len) {
+		connection = NM_CONNECTION (connections->pdata[i]);
 
 		name = nm_connection_get_id (connection);
 		if (g_strcmp0 (new_name, name) == 0) {
 			g_free (new_name);
 			new_name = g_strdup_printf ("%s-%d", try_name, num++);
-			iterator = list;
-		}
-		iterator = g_slist_next (iterator);
+			i = 0;
+		} else
+			i++;
 	}
 	return new_name;
 }
@@ -5039,7 +5034,7 @@ gen_func_bond_mon_mode (const char *text, int state)
 static char *
 gen_func_master_ifnames (const char *text, int state)
 {
-	GSList *iter;
+	int i;
 	GPtrArray *ifnames;
 	char *ret;
 	NMConnection *con;
@@ -5053,8 +5048,8 @@ gen_func_master_ifnames (const char *text, int state)
 	rl_completion_append_character = '\0';
 
 	ifnames = g_ptr_array_sized_new (20);
-	for (iter = nm_cli.connections; iter; iter = g_slist_next (iter)) {
-		con = NM_CONNECTION (iter->data);
+	for (i = 0; i < nm_cli.connections->len; i++) {
+		con = NM_CONNECTION (nm_cli.connections->pdata[i]);
 		s_con = nm_connection_get_setting_connection (con);
 		g_assert (s_con);
 		con_type = nm_setting_connection_get_connection_type (s_con);
@@ -5566,24 +5561,23 @@ gen_compat_devices (const char *text, int state)
 static char *
 gen_vpn_uuids (const char *text, int state)
 {
-	GSList *iter;
-	guint len;
-	int i = 0;
+	const GPtrArray *connections = nmc_tab_completion.nmc->connections;
+	int c, u = 0;
 	const char **uuids;
 	char *ret;
 
-	len = g_slist_length (nmc_tab_completion.nmc->connections);
-	if (len < 1)
+	if (connections->len < 1)
 		return NULL;
 
-	uuids = g_new (const char *, len + 1);
-	for (iter = nmc_tab_completion.nmc->connections; iter; iter = g_slist_next (iter)) {
-		const char *type = nm_connection_get_connection_type (NM_CONNECTION (iter->data));
+	uuids = g_new (const char *, connections->len + 1);
+	for (c = 0; c < connections->len; c++) {
+		NMConnection *connection = NM_CONNECTION (connections->pdata[c]);
+		const char *type = nm_connection_get_connection_type (connection);
 
 		if (g_strcmp0 (type, NM_SETTING_VPN_SETTING_NAME) == 0)
-			uuids[i++] = nm_connection_get_uuid (NM_CONNECTION (iter->data));
+			uuids[u++] = nm_connection_get_uuid (connection);
 	}
-	uuids[i] = NULL;
+	uuids[u] = NULL;
 
 	ret = nmc_rl_gen_func_basic (text, state, uuids);
 
@@ -8235,7 +8229,7 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 	int arg_num = argc;
 	GString *invalid_cons = NULL;
 	gboolean del_info_free = FALSE;
-	GSList *pos = NULL;
+	int pos = 0;
 
 	nmc->return_value = NMC_RESULT_SUCCESS;
 	nmc->should_wait = FALSE;
@@ -8421,17 +8415,16 @@ connection_editor_thread_func (gpointer data)
 static char *
 gen_func_connection_names (const char *text, int state)
 {
-	int i = 0;
-	GSList *iter;
+	int i;
 	const char **connections;
 	char *ret;
 
-	if (!nm_cli.connections)
+	if (nm_cli.connections->len == 0)
 		return NULL;
 
-	connections = g_new (const char *, g_slist_length (nm_cli.connections) + 1);
-	for (iter = nm_cli.connections; iter; iter = g_slist_next (iter)) {
-		NMConnection *con = NM_CONNECTION (iter->data);
+	connections = g_new (const char *, nm_cli.connections->len + 1);
+	for (i = 0; i < nm_cli.connections->len; i++) {
+		NMConnection *con = NM_CONNECTION (nm_cli.connections->pdata[i]);
 		const char *id = nm_connection_get_id (con);
 		connections[i++] = id;
 	}
@@ -8500,7 +8493,7 @@ do_connections (NmCli *nmc, int argc, char **argv)
 		return nmc->return_value;
 
 	/* Get the connection list */
-	nmc->connections = nm_client_list_connections (nmc->client);
+	nmc->connections = nm_client_get_connections (nmc->client);
 
 	/* Now parse the command line and perform the required operation */
 	if (argc == 0) {

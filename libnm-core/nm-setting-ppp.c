@@ -352,7 +352,7 @@ nm_setting_ppp_get_lcp_echo_interval (NMSettingPpp *setting)
 }
 
 static gboolean
-verify (NMSetting *setting, GSList *all_settings, GError **error)
+verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingPppPrivate *priv = NM_SETTING_PPP_GET_PRIVATE (setting);
 

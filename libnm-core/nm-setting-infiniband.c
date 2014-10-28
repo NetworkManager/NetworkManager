@@ -178,7 +178,7 @@ nm_setting_infiniband_get_virtual_interface_name (NMSettingInfiniband *setting)
 }
 
 static gboolean
-verify (NMSetting *setting, GSList *all_settings, GError **error)
+verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingConnection *s_con;
 	NMSettingInfinibandPrivate *priv = NM_SETTING_INFINIBAND_GET_PRIVATE (setting);
@@ -237,7 +237,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		}
 	}
 
-	s_con = NM_SETTING_CONNECTION (nm_setting_find_in_list (all_settings, NM_SETTING_CONNECTION_SETTING_NAME));
+	s_con = nm_connection_get_setting_connection (connection);
 	if (s_con) {
 		const char *interface_name = nm_setting_connection_get_interface_name (s_con);
 

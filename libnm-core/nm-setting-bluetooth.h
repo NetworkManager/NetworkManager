@@ -59,9 +59,9 @@ G_BEGIN_DECLS
  */
 #define NM_SETTING_BLUETOOTH_TYPE_PANU "panu"
 
-typedef struct {
+struct _NMSettingBluetooth {
 	NMSetting parent;
-} NMSettingBluetooth;
+};
 
 typedef struct {
 	NMSettingClass parent;

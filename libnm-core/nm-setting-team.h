@@ -40,9 +40,9 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_TEAM_CONFIG "config"
 
-typedef struct {
+struct _NMSettingTeam {
 	NMSetting parent;
-} NMSettingTeam;
+};
 
 typedef struct {
 	NMSettingClass parent;

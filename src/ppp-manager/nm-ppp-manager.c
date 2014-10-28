@@ -40,20 +40,14 @@
 #endif
 #include <linux/if_ppp.h>
 
-#include "nm-dbus-interface.h"
 #include "NetworkManagerUtils.h"
 #include "nm-glib-compat.h"
 #include "nm-ppp-manager.h"
-#include "nm-setting-connection.h"
-#include "nm-setting-ppp.h"
-#include "nm-setting-pppoe.h"
-#include "nm-setting-adsl.h"
-#include "nm-setting-gsm.h"
-#include "nm-setting-cdma.h"
 #include "nm-dbus-manager.h"
 #include "nm-logging.h"
 #include "nm-posix-signals.h"
 #include "nm-platform.h"
+#include "nm-core-internal.h"
 
 static void impl_ppp_manager_need_secrets (NMPPPManager *manager,
                                            DBusGMethodInvocation *context);

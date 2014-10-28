@@ -79,9 +79,9 @@ G_BEGIN_DECLS
  */
 #define NM_SETTING_WIRELESS_MODE_INFRA  "infrastructure"
 
-typedef struct {
+struct _NMSettingWireless {
 	NMSetting parent;
-} NMSettingWireless;
+};
 
 typedef struct {
 	NMSettingClass parent;

@@ -27,12 +27,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 
-#include <nm-utils.h>
-#include <nm-setting-connection.h>
-#include <nm-setting-wired.h>
-#include <nm-setting-ip4-config.h>
-#include <nm-setting-vlan.h>
-
+#include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 
 #include "reader.h"

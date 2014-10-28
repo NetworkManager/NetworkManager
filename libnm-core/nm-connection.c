@@ -24,34 +24,10 @@
 #include <glib/gi18n.h>
 #include <string.h>
 #include "nm-connection.h"
+#include "nm-connection-private.h"
 #include "nm-utils.h"
 #include "nm-setting-private.h"
-
-#include "nm-setting-8021x.h"
-#include "nm-setting-bluetooth.h"
-#include "nm-setting-connection.h"
-#include "nm-setting-infiniband.h"
-#include "nm-setting-ip4-config.h"
-#include "nm-setting-ip6-config.h"
-#include "nm-setting-ppp.h"
-#include "nm-setting-pppoe.h"
-#include "nm-setting-wimax.h"
-#include "nm-setting-wired.h"
-#include "nm-setting-adsl.h"
-#include "nm-setting-wireless.h"
-#include "nm-setting-wireless-security.h"
-#include "nm-setting-serial.h"
-#include "nm-setting-vpn.h"
-#include "nm-setting-olpc-mesh.h"
-#include "nm-setting-bond.h"
-#include "nm-setting-team.h"
-#include "nm-setting-team-port.h"
-#include "nm-setting-bridge.h"
-#include "nm-setting-bridge-port.h"
-#include "nm-setting-vlan.h"
-#include "nm-setting-serial.h"
-#include "nm-setting-gsm.h"
-#include "nm-setting-cdma.h"
+#include "nm-core-internal.h"
 
 /**
  * SECTION:nm-connection
@@ -525,13 +501,35 @@ nm_connection_diff (NMConnection *a,
 	return *out_settings ? FALSE : TRUE;
 }
 
+NMSetting *
+_nm_connection_find_base_type_setting (NMConnection *connection)
+{
+	NMConnectionPrivate *priv = NM_CONNECTION_GET_PRIVATE (connection);
+	GHashTableIter iter;
+	NMSetting *setting = NULL, *s_iter;
+
+	g_hash_table_iter_init (&iter, priv->settings);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &s_iter)) {
+		if (!_nm_setting_is_base_type (s_iter))
+			continue;
+
+		if (setting) {
+			/* FIXME: currently, if there is more than one matching base type,
+			 * we cannot detect the base setting.
+			 * See: https://bugzilla.gnome.org/show_bug.cgi?id=696936#c8 */
+			return NULL;
+		}
+		setting = s_iter;
+	}
+	return setting;
+}
+
 static gboolean
 _normalize_connection_type (NMConnection *self)
 {
 	NMSettingConnection *s_con = nm_connection_get_setting_connection (self);
 	NMSetting *s_base = NULL;
 	const char *type;
-	GSList *all_settings;
 
 	type = nm_setting_connection_get_connection_type (s_con);
 
@@ -546,18 +544,50 @@ _normalize_connection_type (NMConnection *self)
 			return TRUE;
 		}
 	} else {
-		all_settings = _nm_utils_hash_values_to_slist (NM_CONNECTION_GET_PRIVATE (self)->settings);
-
-		s_base =  _nm_setting_find_in_list_base_type (all_settings);
+		s_base =  _nm_connection_find_base_type_setting (self);
 		g_return_val_if_fail (s_base, FALSE);
 
 		type = nm_setting_get_name (s_base);
 		g_object_set (s_con, NM_SETTING_CONNECTION_TYPE, type, NULL);
-		g_slist_free (all_settings);
 		return TRUE;
 	}
 
 	return FALSE;
+}
+
+const char *
+_nm_connection_detect_slave_type (NMConnection *connection, NMSetting **out_s_port)
+{
+	NMConnectionPrivate *priv = NM_CONNECTION_GET_PRIVATE (connection);
+	GHashTableIter iter;
+	const char *slave_type = NULL;
+	NMSetting *s_port = NULL, *s_iter;
+
+	g_hash_table_iter_init (&iter, priv->settings);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &s_iter)) {
+		const char *name = nm_setting_get_name (s_iter);
+		const char *i_slave_type = NULL;
+
+		if (!strcmp (name, NM_SETTING_BRIDGE_PORT_SETTING_NAME))
+			i_slave_type = NM_SETTING_BRIDGE_SETTING_NAME;
+		else if (!strcmp (name, NM_SETTING_TEAM_PORT_SETTING_NAME))
+			i_slave_type = NM_SETTING_TEAM_SETTING_NAME;
+		else
+			continue;
+
+		if (slave_type) {
+			/* there are more then one matching port types, cannot detect the slave type. */
+			slave_type = NULL;
+			s_port = NULL;
+			break;
+		}
+		slave_type = i_slave_type;
+		s_port = s_iter;
+	}
+
+	if (out_s_port)
+		*out_s_port = s_port;
+	return slave_type;
 }
 
 static gboolean
@@ -565,7 +595,6 @@ _normalize_connection_slave_type (NMConnection *self)
 {
 	NMSettingConnection *s_con = nm_connection_get_setting_connection (self);
 	const char *slave_type, *port_type;
-	GSList *all_settings;
 
 	if (!s_con)
 		return FALSE;
@@ -588,14 +617,10 @@ _normalize_connection_slave_type (NMConnection *self)
 			}
 		}
 	} else {
-		all_settings = _nm_utils_hash_values_to_slist (NM_CONNECTION_GET_PRIVATE (self)->settings);
-
-		if ((slave_type = _nm_setting_slave_type_detect_from_settings (all_settings, NULL))) {
+		if ((slave_type = _nm_connection_detect_slave_type (self, NULL))) {
 			g_object_set (s_con, NM_SETTING_CONNECTION_SLAVE_TYPE, slave_type, NULL);
-			g_slist_free (all_settings);
 			return TRUE;
 		}
-		g_slist_free (all_settings);
 	}
 	return FALSE;
 }
@@ -746,8 +771,7 @@ _nm_connection_verify (NMConnection *connection, GError **error)
 		/* Order NMSettingConnection so that it will be verified first.
 		 * The reason is, that errors in this setting might be more fundamental
 		 * and should be checked and reported with higher priority.
-		 * Another reason is, that some settings look especially at the
-		 * NMSettingConnection, so they find it first in the all_settings list. */
+		 */
 		if (value == s_con)
 			all_settings = g_slist_append (all_settings, value);
 		else
@@ -767,7 +791,7 @@ _nm_connection_verify (NMConnection *connection, GError **error)
 		 * @NM_SETTING_VERIFY_NORMALIZABLE, so, if we encounter such an error type,
 		 * we remember it instead (to return it as output).
 		 **/
-		verify_result = _nm_setting_verify (NM_SETTING (setting_i->data), all_settings, &verify_error);
+		verify_result = _nm_setting_verify (NM_SETTING (setting_i->data), connection, &verify_error);
 		if (verify_result == NM_SETTING_VERIFY_NORMALIZABLE ||
 		    verify_result == NM_SETTING_VERIFY_NORMALIZABLE_ERROR) {
 			if (   verify_result == NM_SETTING_VERIFY_NORMALIZABLE_ERROR
@@ -1357,6 +1381,24 @@ nm_connection_get_interface_name (NMConnection *connection)
 	s_con = nm_connection_get_setting_connection (connection);
 
 	return s_con ? nm_setting_connection_get_interface_name (s_con) : NULL;
+}
+
+gboolean
+_nm_connection_verify_required_interface_name (NMConnection *connection,
+                                               GError **error)
+{
+	const char *interface_name;
+
+	interface_name = nm_connection_get_interface_name (connection);
+	if (interface_name)
+		return TRUE;
+
+	g_set_error_literal (error,
+	                     NM_CONNECTION_ERROR,
+	                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
+	                     _("property is missing"));
+	g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
+	return FALSE;
 }
 
 /**

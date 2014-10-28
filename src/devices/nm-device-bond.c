@@ -29,7 +29,6 @@
 #include "gsystem-local-alloc.h"
 #include "nm-device-bond.h"
 #include "nm-logging.h"
-#include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
 #include "nm-platform.h"
@@ -37,6 +36,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-enum-types.h"
 #include "nm-device-factory.h"
+#include "nm-core-internal.h"
 
 #include "nm-device-bond-glue.h"
 

@@ -54,8 +54,6 @@ typedef gboolean (*NmtEditConnectionListFilter) (NmtEditConnectionList *list,
                                                  NMConnection          *connection,
                                                  gpointer               user_data);
 
-GSList *nmt_edit_connection_list_get_connections (NmtEditConnectionList *list);
-
 G_END_DECLS
 
 #endif /* NMT_EDIT_CONNECTION_LIST_H */

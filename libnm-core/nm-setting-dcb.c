@@ -619,7 +619,7 @@ check_priority (gint val,
 }
 
 static gboolean
-verify (NMSetting *setting, GSList *all_settings, GError **error)
+verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingDcbPrivate *priv = NM_SETTING_DCB_GET_PRIVATE (setting);
 

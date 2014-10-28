@@ -24,7 +24,7 @@
 
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
-#include "nm-utils.h"
+#include "nm-core-internal.h"
 
 #include "nm-test-utils.h"
 

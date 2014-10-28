@@ -104,7 +104,7 @@ nm_setting_wimax_get_mac_address (NMSettingWimax *setting)
 }
 
 static gboolean
-verify (NMSetting *setting, GSList *all_settings, GError **error)
+verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingWimaxPrivate *priv = NM_SETTING_WIMAX_GET_PRIVATE (setting);
 

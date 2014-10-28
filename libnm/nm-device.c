@@ -52,6 +52,7 @@
 #include "nm-glib-compat.h"
 #include "nm-utils.h"
 #include "nm-dbus-helpers.h"
+#include "nm-setting-connection.h"
 
 #include "nmdbus-device.h"
 
@@ -2167,38 +2168,37 @@ nm_device_connection_compatible (NMDevice *device, NMConnection *connection, GEr
 /**
  * nm_device_filter_connections:
  * @device: an #NMDevice to filter connections for
- * @connections: (element-type NMConnection): a list of #NMConnection objects to filter
+ * @connections: (element-type NMConnection): an array of #NMConnections to filter
  *
- * Filters a given list of connections for a given #NMDevice object and return
+ * Filters a given array of connections for a given #NMDevice object and returns
  * connections which may be activated with the device. For example if @device
- * is a Wi-Fi device that supports only WEP encryption, the returned list will
+ * is a Wi-Fi device that supports only WEP encryption, the returned array will
  * contain any Wi-Fi connections in @connections that allow connection to
- * unencrypted or WEP-enabled SSIDs.  The returned list will not contain
+ * unencrypted or WEP-enabled SSIDs.  The returned array will not contain
  * Ethernet, Bluetooth, Wi-Fi WPA connections, or any other connection that is
  * incompatible with the device. To get the full list of connections see
- * nm_remote_settings_list_connections().
+ * nm_client_get_connections().
  *
- * Returns: (transfer container) (element-type NMConnection): a
- * list of #NMConnection objects that could be activated with the given @device.
- * The elements of the list are owned by their creator and should not be freed
- * by the caller, but the returned list itself is owned by the caller and should
- * be freed with g_slist_free() when it is no longer required.
+ * Returns: (transfer container) (element-type NMConnection): an array of
+ * #NMConnections that could be activated with the given @device.  The array
+ * should be freed with g_ptr_array_unref() when it is no longer required.
  **/
-GSList *
-nm_device_filter_connections (NMDevice *device, const GSList *connections)
+GPtrArray *
+nm_device_filter_connections (NMDevice *device, const GPtrArray *connections)
 {
-	GSList *filtered = NULL;
-	const GSList *iter;
+	GPtrArray *filtered;
+	int i;
 
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMConnection *candidate = NM_CONNECTION (iter->data);
+	filtered = g_ptr_array_new_with_free_func (g_object_unref);
+	for (i = 0; i < connections->len; i++) {
+		NMConnection *candidate = connections->pdata[i];
 
 		/* Connection applies to this device */
 		if (nm_device_connection_valid (device, candidate))
-			filtered = g_slist_prepend (filtered, candidate);
+			g_ptr_array_add (filtered, g_object_ref (candidate));
 	}
 
-	return g_slist_reverse (filtered);
+	return filtered;
 }
 
 /**

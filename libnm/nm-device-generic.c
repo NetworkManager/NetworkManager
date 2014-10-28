@@ -27,6 +27,7 @@
 #include "nm-device-private.h"
 #include "nm-object-private.h"
 #include "nm-setting-generic.h"
+#include "nm-setting-connection.h"
 
 G_DEFINE_TYPE (NMDeviceGeneric, nm_device_generic, NM_TYPE_DEVICE)
 

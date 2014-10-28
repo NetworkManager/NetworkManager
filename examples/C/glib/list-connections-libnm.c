@@ -34,9 +34,8 @@
 
 /* Print details of connection */
 static void
-show_connection (gpointer data, gpointer user_data)
+show_connection (NMConnection *connection)
 {
-	NMConnection *connection = (NMConnection *) data;
 	NMSettingConnection *s_con;
 	guint64 timestamp;
 	char *timestamp_str;
@@ -67,7 +66,8 @@ main (int argc, char *argv[])
 {
 	NMClient *client;
 	GError *error = NULL;
-	GSList *connections;
+	const GPtrArray *connections;
+	int i;
 
 #if !GLIB_CHECK_VERSION (2, 35, 0)
 	/* Initialize GType system */
@@ -86,13 +86,13 @@ main (int argc, char *argv[])
 	}
 
 	/* Now the connections can be listed. */
-	connections = nm_client_list_connections (client);
+	connections = nm_client_get_connections (client);
 
 	printf ("Connections:\n===================\n");
 
-	g_slist_foreach (connections, show_connection, NULL);
+	for (i = 0; i < connections->len; i++)
+		show_connection (connections->pdata[i]);
 
-	g_slist_free (connections);
 	g_object_unref (client);
 
 	return EXIT_SUCCESS;

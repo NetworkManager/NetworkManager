@@ -28,7 +28,6 @@
 #include "gsystem-local-alloc.h"
 #include "nm-device-bridge.h"
 #include "nm-logging.h"
-#include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
 #include "nm-dbus-glib-types.h"
@@ -36,6 +35,7 @@
 #include "nm-enum-types.h"
 #include "nm-platform.h"
 #include "nm-device-factory.h"
+#include "nm-core-internal.h"
 
 #include "nm-device-bridge-glue.h"
 

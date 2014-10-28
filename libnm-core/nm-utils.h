@@ -27,13 +27,15 @@
 
 #include <glib.h>
 
+#include <netinet/in.h>
+
 /* For ETH_ALEN and INFINIBAND_ALEN */
 #include <linux/if_ether.h>
 #include <linux/if_infiniband.h>
 
-#include "nm-connection.h"
-#include "nm-simple-connection.h"
+#include "nm-dbus-interface.h"
 #include "nm-core-enum-types.h"
+#include "nm-setting-wireless-security.h"
 
 G_BEGIN_DECLS
 

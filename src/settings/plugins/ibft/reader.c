@@ -32,14 +32,8 @@
 
 #include <glib.h>
 #include <glib/gi18n.h>
-#include <nm-connection.h>
-#include <nm-setting-connection.h>
-#include <nm-setting-ip4-config.h>
-#include <nm-setting-ip6-config.h>
-#include <nm-setting-vlan.h>
-#include <nm-setting-wired.h>
-#include <nm-utils.h>
 
+#include "nm-core-internal.h"
 #include "nm-platform.h"
 #include "nm-posix-signals.h"
 #include "NetworkManagerUtils.h"

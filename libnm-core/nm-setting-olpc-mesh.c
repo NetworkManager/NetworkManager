@@ -94,7 +94,7 @@ nm_setting_olpc_mesh_get_dhcp_anycast_address (NMSettingOlpcMesh *setting)
 }
 
 static gboolean
-verify (NMSetting *setting, GSList *all_settings, GError **error)
+verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingOlpcMeshPrivate *priv = NM_SETTING_OLPC_MESH_GET_PRIVATE (setting);
 	gsize length;

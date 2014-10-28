@@ -177,7 +177,7 @@ nm_setting_adsl_get_vci (NMSettingAdsl *setting)
 }
 
 static gboolean
-verify (NMSetting *setting, GSList *all_settings, GError **error)
+verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingAdslPrivate *priv = NM_SETTING_ADSL_GET_PRIVATE (setting);
 

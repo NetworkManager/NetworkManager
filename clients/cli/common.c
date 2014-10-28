@@ -993,7 +993,7 @@ nmc_team_check_config (const char *config, char **out_config, GError **error)
 
 /*
  * nmc_find_connection:
- * @list: list of NMConnections to search in
+ * @connections: array of NMConnections to search in
  * @filter_type: "id", "uuid", "path" or %NULL
  * @filter_val: connection to find (connection name, UUID or path)
  * @start: where to start in @list. The location is updated so that the function
@@ -1008,21 +1008,20 @@ nmc_team_check_config (const char *config, char **out_config, GError **error)
  * Returns: found connection, or %NULL
  */
 NMConnection *
-nmc_find_connection (GSList *list,
+nmc_find_connection (const GPtrArray *connections,
                      const char *filter_type,
                      const char *filter_val,
-                     GSList **start)
+                     int *start)
 {
 	NMConnection *connection;
 	NMConnection *found = NULL;
-	GSList *iterator;
+	int i;
 	const char *id;
 	const char *uuid;
 	const char *path, *path_num;
 
-	iterator = (start && *start) ? *start : list;
-	while (iterator) {
-		connection = NM_CONNECTION (iterator->data);
+	for (i = start ? *start : 0; i < connections->len; i++) {
+		connection = NM_CONNECTION (connections->pdata[i]);
 
 		id = nm_connection_get_id (connection);
 		uuid = nm_connection_get_uuid (connection);
@@ -1043,17 +1042,15 @@ nmc_find_connection (GSList *list,
 			if (!start)
 				return connection;
 			if (found) {
-				*start = iterator;
+				*start = i;
 				return found;
 			}
 			found = connection;
 		}
-
-		iterator = g_slist_next (iterator);
 	}
 
 	if (start)
-		*start = NULL;
+		*start = 0;
 	return found;
 }
 

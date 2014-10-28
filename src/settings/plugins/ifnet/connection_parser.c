@@ -27,17 +27,9 @@
 #include <errno.h>
 #include <glib/gi18n.h>
 
-#include <nm-setting-connection.h>
-#include <nm-setting-ip4-config.h>
-#include <nm-setting-ip6-config.h>
-#include <nm-setting-ppp.h>
-#include <nm-setting-pppoe.h>
-#include <nm-setting-wired.h>
-#include <nm-setting-wireless.h>
-#include <nm-setting-8021x.h>
-#include <nm-system-config-interface.h>
-#include <nm-logging.h>
-#include <nm-utils.h>
+#include "nm-system-config-interface.h"
+#include "nm-logging.h"
+#include "nm-core-internal.h"
 
 #include "net_utils.h"
 #include "wpa_parser.h"

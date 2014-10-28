@@ -22,17 +22,18 @@
 #include <glib.h>
 #include <string.h>
 
-#include "nm-setting-connection.h"
-#include "nm-setting-wired.h"
 #include "nm-setting-8021x.h"
-#include "nm-setting-ip4-config.h"
-#include "nm-setting-wireless.h"
-#include "nm-setting-wireless-security.h"
 #include "nm-setting-cdma.h"
+#include "nm-setting-connection.h"
 #include "nm-setting-gsm.h"
+#include "nm-setting-ip4-config.h"
 #include "nm-setting-ppp.h"
 #include "nm-setting-pppoe.h"
 #include "nm-setting-vpn.h"
+#include "nm-setting-wired.h"
+#include "nm-setting-wireless-security.h"
+#include "nm-setting-wireless.h"
+#include "nm-simple-connection.h"
 #include "nm-utils.h"
 
 #include "nm-test-utils.h"

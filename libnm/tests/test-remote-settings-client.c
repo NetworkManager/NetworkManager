@@ -133,7 +133,8 @@ static void
 test_make_invisible (void)
 {
 	time_t start, now;
-	GSList *list, *iter;
+	const GPtrArray *conns;
+	int i;
 	GDBusProxy *proxy;
 	gboolean visible_changed = FALSE, connection_removed = FALSE;
 	gboolean has_settings = FALSE;
@@ -177,9 +178,9 @@ test_make_invisible (void)
 	g_signal_handlers_disconnect_by_func (client, G_CALLBACK (connection_removed_cb), &connection_removed);
 
 	/* Ensure NMClient no longer has the connection */
-	list = nm_client_list_connections (client);
-	for (iter = list; iter; iter = g_slist_next (iter)) {
-		NMConnection *candidate = NM_CONNECTION (iter->data);
+	conns = nm_client_get_connections (client);
+	for (i = 0; i < conns->len; i++) {
+		NMConnection *candidate = NM_CONNECTION (conns->pdata[i]);
 
 		g_assert ((gpointer) remote != (gpointer) candidate);
 		g_assert (strcmp (path, nm_connection_get_path (candidate)) != 0);
@@ -210,7 +211,8 @@ static void
 test_make_visible (void)
 {
 	time_t start, now;
-	GSList *list, *iter;
+	const GPtrArray *conns;
+	int i;
 	GDBusProxy *proxy;
 	gboolean found = FALSE;
 	char *path;
@@ -255,9 +257,9 @@ test_make_visible (void)
 	g_signal_handlers_disconnect_by_func (client, G_CALLBACK (vis_new_connection_cb), &new);
 
 	/* Ensure NMClient has the connection */
-	list = nm_client_list_connections (client);
-	for (iter = list; iter; iter = g_slist_next (iter)) {
-		NMConnection *candidate = NM_CONNECTION (iter->data);
+	conns = nm_client_get_connections (client);
+	for (i = 0; i < conns->len; i++) {
+		NMConnection *candidate = NM_CONNECTION (conns->pdata[i]);
 
 		if ((gpointer) remote == (gpointer) candidate) {
 			g_assert_cmpstr (path, ==, nm_connection_get_path (candidate));
@@ -299,16 +301,17 @@ test_remove_connection (void)
 {
 	NMRemoteConnection *connection;
 	time_t start, now;
-	GSList *list, *iter;
+	const GPtrArray *conns;
+	int i;
 	GDBusProxy *proxy;
 	gboolean done = FALSE;
 	char *path;
 
 	/* Find a connection to delete */
-	list = nm_client_list_connections (client);
-	g_assert_cmpint (g_slist_length (list), >, 0);
+	conns = nm_client_get_connections (client);
+	g_assert_cmpint (conns->len, >, 0);
 
-	connection = NM_REMOTE_CONNECTION (list->data);
+	connection = NM_REMOTE_CONNECTION (conns->pdata[0]);
 	g_assert (connection);
 	g_assert (remote == connection);
 	path = g_strdup (nm_connection_get_path (NM_CONNECTION (connection)));
@@ -342,9 +345,9 @@ test_remove_connection (void)
 	g_assert (!remote);
 
 	/* Ensure NMClient no longer has the connection */
-	list = nm_client_list_connections (client);
-	for (iter = list; iter; iter = g_slist_next (iter)) {
-		NMConnection *candidate = NM_CONNECTION (iter->data);
+	conns = nm_client_get_connections (client);
+	for (i = 0; i < conns->len; i++) {
+		NMConnection *candidate = NM_CONNECTION (conns->pdata[i]);
 
 		g_assert ((gpointer) connection != (gpointer) candidate);
 		g_assert_cmpstr (path, ==, nm_connection_get_path (candidate));

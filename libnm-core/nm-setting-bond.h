@@ -58,9 +58,9 @@ G_BEGIN_DECLS
 #define NM_SETTING_BOND_OPTION_RESEND_IGMP      "resend_igmp"
 #define NM_SETTING_BOND_OPTION_LACP_RATE        "lacp_rate"
 
-typedef struct {
+struct _NMSettingBond {
 	NMSetting parent;
-} NMSettingBond;
+};
 
 typedef struct {
 	NMSettingClass parent;

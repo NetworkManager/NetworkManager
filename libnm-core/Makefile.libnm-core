@@ -9,6 +9,7 @@ libnm_core_headers =				\
 	$(core_build)/nm-core-enum-types.h	\
 	$(core_build)/nm-version.h		\
 	$(core)/nm-connection.h			\
+	$(core)/nm-core-types.h			\
 	$(core)/nm-dbus-interface.h		\
 	$(core)/nm-errors.h			\
 	$(core)/nm-setting-8021x.h		\
@@ -44,6 +45,7 @@ libnm_core_headers =				\
 
 libnm_core_private_headers =			\
 	$(core)/crypto.h			\
+	$(core)/nm-connection-private.h		\
 	$(core)/nm-core-internal.h		\
 	$(core)/nm-property-compare.h		\
 	$(core)/nm-setting-private.h		\

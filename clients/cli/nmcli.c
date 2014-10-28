@@ -524,8 +524,6 @@ nmc_cleanup (NmCli *nmc)
 
 	g_string_free (nmc->return_text, TRUE);
 
-	g_slist_free (nmc->connections);
-
 	g_free (nmc->required_fields);
 	nmc_empty_output_fields (nmc);
 	g_ptr_array_unref (nmc->output_data);

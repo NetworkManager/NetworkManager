@@ -29,6 +29,7 @@
 #include "nm-manager.h"
 #include "nm-platform.h"
 #include "nm-device-factory.h"
+#include "nm-core-internal.h"
 
 #include "nm-device-gre-glue.h"
 

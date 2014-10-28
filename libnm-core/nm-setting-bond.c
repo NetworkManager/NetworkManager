@@ -29,7 +29,8 @@
 #include "nm-setting-bond.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
-#include "nm-setting-private.h"
+#include "nm-connection-private.h"
+#include "nm-setting-infiniband.h"
 
 /**
  * SECTION:nm-setting-bond
@@ -431,7 +432,7 @@ nm_setting_bond_get_option_default (NMSettingBond *setting, const char *name)
 }
 
 static gboolean
-verify (NMSetting *setting, GSList *all_settings, GError **error)
+verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingBondPrivate *priv = NM_SETTING_BOND_GET_PRIVATE (setting);
 	GHashTableIter iter;
@@ -538,7 +539,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		}
 	}
 
-	if (nm_setting_find_in_list (all_settings, NM_SETTING_INFINIBAND_SETTING_NAME)) {
+	if (nm_connection_get_setting_infiniband (connection)) {
 		if (strcmp (value, "active-backup") != 0) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
@@ -641,7 +642,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	return _nm_setting_verify_required_virtual_interface_name (all_settings, error);
+	return _nm_connection_verify_required_interface_name (connection, error);
 }
 
 static void

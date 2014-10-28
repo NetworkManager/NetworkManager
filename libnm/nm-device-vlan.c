@@ -26,6 +26,7 @@
 
 #include <nm-setting-connection.h>
 #include <nm-setting-vlan.h>
+#include <nm-setting-wired.h>
 #include <nm-utils.h>
 
 #include "nm-device-vlan.h"
