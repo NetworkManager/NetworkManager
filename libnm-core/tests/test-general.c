@@ -2244,6 +2244,7 @@ test_hwaddr_canonical (void)
 	const char *string = "00:1A:2B:03:44:05";
 	const char *lower_string = "00:1a:2b:03:44:05";
 	const char *short_string = "0:1a:2b:3:44:5";
+	const char *hyphen_string = "00-1a-2b-03-44-05";
 	const char *invalid_string = "00:1A:2B";
 	char *canonical;
 
@@ -2256,6 +2257,10 @@ test_hwaddr_canonical (void)
 	g_free (canonical);
 
 	canonical = nm_utils_hwaddr_canonical (short_string, ETH_ALEN);
+	g_assert_cmpstr (canonical, ==, string);
+	g_free (canonical);
+
+	canonical = nm_utils_hwaddr_canonical (hyphen_string, ETH_ALEN);
 	g_assert_cmpstr (canonical, ==, string);
 	g_free (canonical);
 

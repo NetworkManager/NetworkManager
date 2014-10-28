@@ -278,7 +278,8 @@ set_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_MAC_ADDRESS:
 		g_free (priv->mac_address);
-		priv->mac_address = g_value_dup_string (value);
+		priv->mac_address = _nm_utils_hwaddr_canonical_or_invalid (g_value_get_string (value),
+		                                                           ETH_ALEN);
 		break;
 	case PROP_STP:
 		priv->stp = g_value_get_boolean (value);

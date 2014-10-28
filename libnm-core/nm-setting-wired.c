@@ -247,6 +247,7 @@ gboolean
 nm_setting_wired_add_mac_blacklist_item (NMSettingWired *setting, const char *mac)
 {
 	NMSettingWiredPrivate *priv;
+	const char *candidate;
 	int i;
 
 	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), FALSE);
@@ -257,11 +258,12 @@ nm_setting_wired_add_mac_blacklist_item (NMSettingWired *setting, const char *ma
 
 	priv = NM_SETTING_WIRED_GET_PRIVATE (setting);
 	for (i = 0; i < priv->mac_address_blacklist->len; i++) {
-		if (!strcasecmp (mac, g_array_index (priv->mac_address_blacklist, char *, i)))
+		candidate = g_array_index (priv->mac_address_blacklist, char *, i);
+		if (nm_utils_hwaddr_matches (mac, -1, candidate, -1))
 			return FALSE;
 	}
 
-	mac = g_ascii_strup (mac, -1);
+	mac = nm_utils_hwaddr_canonical (mac, ETH_ALEN);
 	g_array_append_val (priv->mac_address_blacklist, mac);
 	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST);
 	return TRUE;
@@ -302,17 +304,16 @@ gboolean
 nm_setting_wired_remove_mac_blacklist_item_by_value (NMSettingWired *setting, const char *mac)
 {
 	NMSettingWiredPrivate *priv;
+	const char *candidate;
 	int i;
 
 	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), FALSE);
 	g_return_val_if_fail (mac != NULL, FALSE);
 
-	if (!nm_utils_hwaddr_valid (mac, ETH_ALEN))
-		return FALSE;
-
 	priv = NM_SETTING_WIRED_GET_PRIVATE (setting);
 	for (i = 0; i < priv->mac_address_blacklist->len; i++) {
-		if (!strcasecmp (mac, g_array_index (priv->mac_address_blacklist, char *, i))) {
+		candidate = g_array_index (priv->mac_address_blacklist, char *, i);
+		if (!nm_utils_hwaddr_matches (mac, -1, candidate, -1)) {
 			g_array_remove_index (priv->mac_address_blacklist, i);
 			g_object_notify (G_OBJECT (setting), NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST);
 			return TRUE;
@@ -700,7 +701,9 @@ set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
 	NMSettingWiredPrivate *priv = NM_SETTING_WIRED_GET_PRIVATE (object);
-	char **blacklist;
+	const char * const *blacklist;
+	const char *mac;
+	int i;
 
 	switch (prop_id) {
 	case PROP_PORT:
@@ -719,20 +722,22 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_MAC_ADDRESS:
 		g_free (priv->device_mac_address);
-		priv->device_mac_address = g_value_dup_string (value);
+		priv->device_mac_address = _nm_utils_hwaddr_canonical_or_invalid (g_value_get_string (value),
+		                                                                  ETH_ALEN);
 		break;
 	case PROP_CLONED_MAC_ADDRESS:
 		g_free (priv->cloned_mac_address);
-		priv->cloned_mac_address = g_value_dup_string (value);
+		priv->cloned_mac_address = _nm_utils_hwaddr_canonical_or_invalid (g_value_get_string (value),
+		                                                                  ETH_ALEN);
 		break;
 	case PROP_MAC_ADDRESS_BLACKLIST:
-		blacklist = g_value_dup_boxed (value);
+		blacklist = g_value_get_boxed (value);
 		g_array_set_size (priv->mac_address_blacklist, 0);
-		if (blacklist) {
-			g_array_set_size (priv->mac_address_blacklist, g_strv_length (blacklist));
-			memcpy (priv->mac_address_blacklist->data, blacklist,
-			        priv->mac_address_blacklist->len * sizeof (char *));
-			g_free (blacklist);
+		if (blacklist && *blacklist) {
+			for (i = 0; blacklist[i]; i++) {
+				mac = _nm_utils_hwaddr_canonical_or_invalid (blacklist[i], ETH_ALEN);
+				g_array_append_val (priv->mac_address_blacklist, mac);
+			}
 		}
 		break;
 	case PROP_MTU:
