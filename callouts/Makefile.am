@@ -69,6 +69,8 @@ nmdbus-dispatcher.h: nm-dispatcher.xml
 nmdbus-dispatcher.c: nmdbus-dispatcher.h
 	@true
 
+BUILT_SOURCES = nmdbus-dispatcher.h nmdbus-dispatcher.c
+
 ###########################################
 # dispatcher envp
 ###########################################
