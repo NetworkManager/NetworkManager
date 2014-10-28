@@ -350,6 +350,25 @@ test_setting_ip4_config_labels (void)
 	label = nm_ip_address_get_attribute (addr, "label");
 	g_assert (label == NULL);
 
+	/* The 'address-labels' property should be omitted from the serialization if
+	 * there are no non-NULL labels.
+	 */
+	conn = nmtst_create_minimal_connection ("label test", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+	nm_connection_add_setting (conn, nm_setting_duplicate (NM_SETTING (s_ip4)));
+	dict = nm_connection_to_dbus (conn, NM_CONNECTION_SERIALIZE_ALL);
+	g_object_unref (conn);
+
+	setting_dict = g_variant_lookup_value (dict, NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
+	g_assert (setting_dict != NULL);
+
+	value = g_variant_lookup_value (setting_dict, "address-labels", NULL);
+	g_assert (value == NULL);
+
+	g_variant_unref (setting_dict);
+	g_variant_unref (dict);
+
+	/* Now back to constructing the original s_ip4... */
+
 	/* addr 2 */
 	addr = nm_ip_address_new (AF_INET, "2.2.2.2", 24, &error);
 	g_assert_no_error (error);

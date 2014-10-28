@@ -304,12 +304,25 @@ ip4_address_labels_get (NMSetting    *setting,
                         const char   *property)
 {
 	NMSettingIPConfig *s_ip = NM_SETTING_IP_CONFIG (setting);
+	gboolean have_labels = FALSE;
 	GPtrArray *labels;
 	GVariant *ret;
 	int num_addrs, i;
 
-	labels = g_ptr_array_new ();
 	num_addrs = nm_setting_ip_config_get_num_addresses (s_ip);
+	for (i = 0; i < num_addrs; i++) {
+		NMIPAddress *addr = nm_setting_ip_config_get_address (s_ip, i);
+		GVariant *label = nm_ip_address_get_attribute (addr, "label");
+
+		if (label) {
+			have_labels = TRUE;
+			break;
+		}
+	}
+	if (!have_labels)
+		return NULL;
+
+	labels = g_ptr_array_sized_new (num_addrs);
 	for (i = 0; i < num_addrs; i++) {
 		NMIPAddress *addr = nm_setting_ip_config_get_address (s_ip, i);
 		GVariant *label = nm_ip_address_get_attribute (addr, "label");
