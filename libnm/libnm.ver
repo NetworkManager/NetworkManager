@@ -809,6 +809,7 @@ global:
 	nm_utils_hexstr2bin;
 	nm_utils_hwaddr_atoba;
 	nm_utils_hwaddr_aton;
+	nm_utils_hwaddr_canonical;
 	nm_utils_hwaddr_len;
 	nm_utils_hwaddr_matches;
 	nm_utils_hwaddr_ntoa;

@@ -2239,6 +2239,35 @@ test_hwaddr_equal (void)
 }
 
 static void
+test_hwaddr_canonical (void)
+{
+	const char *string = "00:1A:2B:03:44:05";
+	const char *lower_string = "00:1a:2b:03:44:05";
+	const char *short_string = "0:1a:2b:3:44:5";
+	const char *invalid_string = "00:1A:2B";
+	char *canonical;
+
+	canonical = nm_utils_hwaddr_canonical (string, ETH_ALEN);
+	g_assert_cmpstr (canonical, ==, string);
+	g_free (canonical);
+
+	canonical = nm_utils_hwaddr_canonical (lower_string, ETH_ALEN);
+	g_assert_cmpstr (canonical, ==, string);
+	g_free (canonical);
+
+	canonical = nm_utils_hwaddr_canonical (short_string, ETH_ALEN);
+	g_assert_cmpstr (canonical, ==, string);
+	g_free (canonical);
+
+	canonical = nm_utils_hwaddr_canonical (invalid_string, ETH_ALEN);
+	g_assert_cmpstr (canonical, ==, NULL);
+
+	canonical = nm_utils_hwaddr_canonical (invalid_string, -1);
+	g_assert_cmpstr (canonical, ==, invalid_string);
+	g_free (canonical);
+}
+
+static void
 test_connection_changed_cb (NMConnection *connection, gboolean *data)
 {
 	*data = TRUE;
@@ -3372,6 +3401,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_hwaddr_aton_no_leading_zeros", test_hwaddr_aton_no_leading_zeros);
 	g_test_add_func ("/core/general/test_hwaddr_aton_malformed", test_hwaddr_aton_malformed);
 	g_test_add_func ("/core/general/test_hwaddr_equal", test_hwaddr_equal);
+	g_test_add_func ("/core/general/test_hwaddr_canonical", test_hwaddr_canonical);
 
 	g_test_add_func ("/core/general/test_ip4_prefix_to_netmask", test_ip4_prefix_to_netmask);
 	g_test_add_func ("/core/general/test_ip4_netmask_to_prefix", test_ip4_netmask_to_prefix);
