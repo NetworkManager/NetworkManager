@@ -22,7 +22,8 @@
 #ifndef __IWMXSDK_H__
 #define __IWMXSDK_H__
 
-#include <wimax/WiMaxType.h>
+#include "nm-wimax-util.h"
+
 #include <wimax/WiMaxTypesEx.h>
 #include <wimax/WiMaxAPIEx.h>
 

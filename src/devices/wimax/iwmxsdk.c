@@ -31,7 +31,8 @@
 
 #include <glib.h>
 
-#include <WiMaxType.h>
+#include "nm-wimax-util.h"
+
 #include <WiMaxAPI.h>
 #include <WiMaxAPIEx.h>
 

@@ -18,7 +18,6 @@
  * Copyright (C) 2009 Novell, Inc.
  */
 
-#include <WiMaxAPI.h>
 #include "nm-wimax-util.h"
 #include "nm-utils.h"
 #include "iwmxsdk.h"

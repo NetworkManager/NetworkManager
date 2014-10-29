@@ -26,6 +26,9 @@
 #include <sys/socket.h>
 
 #include <glib/gi18n.h>
+
+#include "nm-wimax-util.h"
+
 #include <WiMaxAPI.h>
 #include <WiMaxAPIEx.h>
 

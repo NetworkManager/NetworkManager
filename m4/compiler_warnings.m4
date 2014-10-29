@@ -25,6 +25,7 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 	for option in -Wshadow -Wmissing-declarations -Wmissing-prototypes \
 		      -Wdeclaration-after-statement -Wformat-security \
 		      -Wfloat-equal -Wno-unused-parameter -Wno-sign-compare \
+		      -Wstrict-prototypes \
 		      -fno-strict-aliasing -Wno-unused-but-set-variable \
 		      -Wundef -Wimplicit-function-declaration \
 		      -Wpointer-arith -Winit-self \
