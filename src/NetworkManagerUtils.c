@@ -199,7 +199,9 @@ nm_utils_get_start_time_for_pid (pid_t pid)
 	start_time = 0;
 	contents = NULL;
 
-	filename = g_strdup_printf ("/proc/%d/stat", pid);
+	g_return_val_if_fail (pid > 0, 0);
+
+	filename = g_strdup_printf ("/proc/%"G_GUINT64_FORMAT"/stat", (guint64) pid);
 
 	if (!g_file_get_contents (filename, &contents, &length, NULL))
 		goto out;
