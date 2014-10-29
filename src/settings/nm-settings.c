@@ -26,6 +26,8 @@
 #include "config.h"
 
 #include <unistd.h>
+#include <sys/stat.h>
+#include <errno.h>
 #include <string.h>
 #include <gmodule.h>
 #include <pwd.h>
@@ -69,6 +71,13 @@
 #include "nm-connection-provider.h"
 #include "nm-config.h"
 #include "NetworkManagerUtils.h"
+
+#define LOG(level, ...) \
+	G_STMT_START { \
+		nm_log ((level), LOGD_CORE, \
+		        "settings: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__) \
+		        _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+	} G_STMT_END
 
 /* LINKER CRACKROCK */
 #define EXPORT(sym) void * __export_##sym = &sym;
@@ -619,18 +628,24 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 
 	for (iter = plugins; iter && *iter; iter++) {
 		GModule *plugin;
-		char *full_name, *path;
-		const char *pname = *iter;
+		gs_free char *full_name = NULL;
+		gs_free char *path = NULL;
+		gs_free char *pname = NULL;
 		GObject *obj;
 		GObject * (*factory_func) (void);
+		struct stat st;
+		int errsv;
 
-		/* strip leading spaces */
-		while (g_ascii_isspace (*pname))
-			pname++;
+		pname = g_strdup (*iter);
+		g_strstrip (pname);
 
-		/* ifcfg-fedora was renamed ifcfg-rh; handle old configs here */
-		if (!strcmp (pname, "ifcfg-fedora"))
-			pname = "ifcfg-rh";
+		if (!*pname)
+			continue;
+
+		if (!*pname || strchr (pname, '/')) {
+			LOG (LOGL_WARN, "ignore invalid plugin \"%s\"", pname);
+			continue;
+		}
 
 		obj = find_plugin (list, pname);
 		if (obj)
@@ -648,19 +663,32 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 		full_name = g_strdup_printf ("nm-settings-plugin-%s", pname);
 		path = g_module_build_path (NMPLUGINDIR, full_name);
 
-		plugin = g_module_open (path, G_MODULE_BIND_LOCAL);
-		if (!plugin) {
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-			             "Could not load plugin '%s': %s",
-			             pname, g_module_error ());
-			g_free (full_name);
-			g_free (path);
-			success = FALSE;
-			break;
+		if (stat (path, &st) != 0) {
+			errsv = errno;
+			LOG (LOGL_WARN, "Could not load plugin '%s' from file '%s': %s", pname, path, strerror (errsv));
+			continue;
+		}
+		if (!S_ISREG (st.st_mode)) {
+			LOG (LOGL_WARN, "Could not load plugin '%s' from file '%s': not a file", pname, path);
+			continue;
+		}
+		if (st.st_uid != 0) {
+			LOG (LOGL_WARN, "Could not load plugin '%s' from file '%s': file must be owned by root", pname, path);
+			continue;
+		}
+		if (st.st_mode & (S_IWGRP | S_IWOTH | S_ISUID)) {
+			LOG (LOGL_WARN, "Could not load plugin '%s' from file '%s': invalid file permissions", pname, path);
+			continue;
 		}
 
-		g_free (full_name);
-		g_free (path);
+		plugin = g_module_open (path, G_MODULE_BIND_LOCAL);
+		if (!plugin) {
+			LOG (LOGL_WARN, "Could not load plugin '%s' from file '%s': %s",
+			     pname, full_name, g_module_error ());
+			continue;
+		}
+
+		/* errors after this point are fatal, because we loaded the shared library already. */
 
 		if (!g_module_symbol (plugin, "nm_system_config_factory", (gpointer) (&factory_func))) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,

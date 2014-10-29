@@ -423,7 +423,8 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 	--enable-ifcfg-rh=yes \
 	--with-system-libndp=yes \
 	--with-pppd-plugin-dir=%{_libdir}/pppd/%{ppp_version} \
-	--with-dist-version=%{version}-%{release}
+	--with-dist-version=%{version}-%{release} \
+	--with-setting-plugins-default='ifcfg-rh,ibft'
 
 make %{?_smp_mflags}
 
