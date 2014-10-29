@@ -212,18 +212,19 @@ dm_watch_cb (GPid pid, gint status, gpointer user_data)
 
 static NMCmdLine *
 create_dm_cmd_line (const char *iface,
-                    NMIP4Config *ip4_config,
+                    const NMPlatformIP4Address *listen_address,
                     const char *pidfile,
                     GError **error)
 {
 	NMCmdLine *cmd;
 	GString *s;
-	const NMPlatformIP4Address *tmp;
 	char first[INET_ADDRSTRLEN];
 	char last[INET_ADDRSTRLEN];
 	char localaddr[INET_ADDRSTRLEN];
 	char *error_desc = NULL;
 	const char *dm_binary;
+
+	g_return_val_if_fail (listen_address, NULL);
 
 	dm_binary = nm_utils_find_helper ("dnsmasq", DNSMASQ_PATH, error);
 	if (!dm_binary)
@@ -258,16 +259,13 @@ create_dm_cmd_line (const char *iface,
 	 */
 	nm_cmd_line_add_string (cmd, "--strict-order");
 
-	/* Find the IP4 address to use */
-	tmp = nm_ip4_config_get_address (ip4_config, 0);
-
 	s = g_string_new ("--listen-address=");
-	nm_utils_inet4_ntop (tmp->address, localaddr);
+	nm_utils_inet4_ntop (listen_address->address, localaddr);
 	g_string_append (s, localaddr);
 	nm_cmd_line_add_string (cmd, s->str);
 	g_string_free (s, TRUE);
 
-	if (!nm_dnsmasq_utils_get_range (tmp, first, last, &error_desc)) {
+	if (!nm_dnsmasq_utils_get_range (listen_address, first, last, &error_desc)) {
 		g_set_error_literal (error,
 		                     NM_MANAGER_ERROR,
 		                     NM_MANAGER_ERROR_FAILED,
@@ -351,14 +349,14 @@ nm_dnsmasq_manager_start (NMDnsMasqManager *manager,
 	gs_free char *cmd_str = NULL;
 
 	g_return_val_if_fail (NM_IS_DNSMASQ_MANAGER (manager), FALSE);
-	if (error)
-		g_return_val_if_fail (*error == NULL, FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
+	g_return_val_if_fail (nm_ip4_config_get_num_addresses (ip4_config) > 0, FALSE);
 
 	priv = NM_DNSMASQ_MANAGER_GET_PRIVATE (manager);
 
 	kill_existing_by_pidfile (priv->pidfile);
 
-	dm_cmd = create_dm_cmd_line (priv->iface, ip4_config, priv->pidfile, error);
+	dm_cmd = create_dm_cmd_line (priv->iface, nm_ip4_config_get_address (ip4_config, 0), priv->pidfile, error);
 	if (!dm_cmd)
 		return FALSE;
 
