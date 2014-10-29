@@ -124,6 +124,8 @@ sbin_PROGRAMS = NetworkManager
 
 NetworkManager_SOURCES = \
 	$(nm_device_sources) $(nm_device_headers) \
+	main-utils.c \
+	main-utils.h \
 	main.c
 
 NetworkManager_LDADD = libNetworkManager.la

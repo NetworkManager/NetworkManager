@@ -126,6 +126,7 @@ libnm/nm-vpn-plugin-old.c
 policy/org.freedesktop.NetworkManager.policy.in.in
 src/NetworkManagerUtils.c
 src/main.c
+src/main-utils.c
 src/dhcp-manager/nm-dhcp-dhclient.c
 src/dhcp-manager/nm-dhcp-dhclient-utils.c
 src/dhcp-manager/nm-dhcp-manager.c
