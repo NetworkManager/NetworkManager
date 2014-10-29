@@ -26,6 +26,7 @@
 #include <string.h>
 #include <netlink/route/addr.h>
 
+#include "gsystem-local-alloc.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-platform.h"

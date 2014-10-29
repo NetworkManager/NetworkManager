@@ -22,6 +22,7 @@
 #include "config.h"
 
 #include <glib.h>
+#include <gio/gio.h>
 #include <glib/gi18n.h>
 #include <errno.h>
 #include <fcntl.h>

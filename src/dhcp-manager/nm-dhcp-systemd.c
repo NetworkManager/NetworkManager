@@ -36,6 +36,7 @@
 #include "nm-logging.h"
 #include "nm-dhcp-utils.h"
 #include "NetworkManagerUtils.h"
+#include "gsystem-local-alloc.h"
 
 #include "nm-sd-adapt.h"
 

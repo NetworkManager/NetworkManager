@@ -23,6 +23,7 @@
 #include <netinet/icmp6.h>
 #include <netinet/in.h>
 
+#include "gsystem-local-alloc.h"
 #include "NetworkManagerUtils.h"
 #include "nm-fake-platform.h"
 #include "nm-logging.h"
