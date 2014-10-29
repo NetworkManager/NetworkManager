@@ -571,8 +571,8 @@ typedef enum {
  *   initiated by user-requested action via the D-Bus interface, as opposed to
  *   automatically initiated by NetworkManager in response to (for example) scan
  *   results or carrier changes.
- * @NM_SECRET_AGENT_GET_SECRETS_FLAG_ONLY_SYSTEM: (Internal flag, not part of
- *   the D-Bus API.)
+ * @NM_SECRET_AGENT_GET_SECRETS_FLAG_ONLY_SYSTEM: Internal flag, not part of
+ *   the D-Bus API.
  *
  * #NMSecretAgentGetSecretsFlags values modify the behavior of a GetSecrets request.
  *
