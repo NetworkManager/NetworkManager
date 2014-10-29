@@ -23,7 +23,6 @@
 #include "config.h"
 #include <glib.h>
 #include <glib/gi18n.h>
-#include <dbus/dbus.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <signal.h>
@@ -39,18 +38,12 @@
 #include "nm-dhcp-dhcpcd.h"
 #include "nm-dhcp-systemd.h"
 #include "nm-logging.h"
-#include "nm-dbus-manager.h"
 #include "nm-config.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
 #include "NetworkManagerUtils.h"
 
-#define NM_DHCP_CLIENT_DBUS_IFACE   "org.freedesktop.nm_dhcp_client"
-
 #define DHCP_TIMEOUT 45 /* default DHCP timeout, in seconds */
-
-#define PRIV_SOCK_PATH NMRUNDIR "/private-dhcp"
-#define PRIV_SOCK_TAG  "dhcp"
 
 /* default to installed helper, but can be modified for testing */
 const char *nm_dhcp_helper_path = LIBEXECDIR "/nm-dhcp-helper";
@@ -60,76 +53,15 @@ typedef GSList * (*GetLeaseConfigFunc) (const char *iface, const char *uuid, gbo
 typedef struct {
 	GType               client_type;
 	GetLeaseConfigFunc  get_lease_ip_configs_func;
-
-	NMDBusManager *     dbus_mgr;
-	guint               new_conn_id;
-	guint               dis_conn_id;
-	GHashTable *        proxies;
-
 	GHashTable *        clients;
-	DBusGProxy *        proxy;
 	char *              default_hostname;
 } NMDhcpManagerPrivate;
-
 
 #define NM_DHCP_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP_MANAGER, NMDhcpManagerPrivate))
 
 G_DEFINE_TYPE (NMDhcpManager, nm_dhcp_manager, G_TYPE_OBJECT)
 
-static char *
-garray_to_string (GArray *array, const char *key)
-{
-	GString *str;
-	int i;
-	unsigned char c;
-	char *converted = NULL;
-
-	g_return_val_if_fail (array != NULL, NULL);
-
-	/* Since the DHCP options come through environment variables, they should
-	 * already be UTF-8 safe, but just make sure.
-	 */
-	str = g_string_sized_new (array->len);
-	for (i = 0; i < array->len; i++) {
-		c = array->data[i];
-
-		/* Convert NULLs to spaces and non-ASCII characters to ? */
-		if (c == '\0')
-			c = ' ';
-		else if (c > 127)
-			c = '?';
-		str = g_string_append_c (str, c);
-	}
-	str = g_string_append_c (str, '\0');
-
-	converted = str->str;
-	if (!g_utf8_validate (converted, -1, NULL))
-		nm_log_warn (LOGD_DHCP, "DHCP option '%s' couldn't be converted to UTF-8", key);
-	g_string_free (str, FALSE);
-	return converted;
-}
-
-static NMDhcpClient *
-get_client_for_pid (NMDhcpManager *manager, GPid pid)
-{
-	NMDhcpManagerPrivate *priv;
-	GHashTableIter iter;
-	gpointer value;
-
-	g_return_val_if_fail (NM_IS_DHCP_MANAGER (manager), NULL);
-
-	priv = NM_DHCP_MANAGER_GET_PRIVATE (manager);
-
-	g_hash_table_iter_init (&iter, priv->clients);
-	while (g_hash_table_iter_next (&iter, NULL, &value)) {
-		NMDhcpClient *candidate = NM_DHCP_CLIENT (value);
-
-		if (nm_dhcp_client_get_pid (candidate) == pid)
-			return candidate;
-	}
-
-	return NULL;
-}
+/***************************************************/
 
 static NMDhcpClient *
 get_client_for_ifindex (NMDhcpManager *manager, int ifindex, gboolean ip6)
@@ -154,123 +86,6 @@ get_client_for_ifindex (NMDhcpManager *manager, int ifindex, gboolean ip6)
 
 	return NULL;
 }
-
-static char *
-get_option (GHashTable *hash, const char *key)
-{
-	GValue *value;
-
-	value = g_hash_table_lookup (hash, key);
-	if (value == NULL)
-		return NULL;
-
-	if (G_VALUE_TYPE (value) != DBUS_TYPE_G_UCHAR_ARRAY) {
-		nm_log_warn (LOGD_DHCP, "unexpected key %s value type was not "
-		             "DBUS_TYPE_G_UCHAR_ARRAY",
-		             (char *) key);
-		return NULL;
-	}
-
-	return garray_to_string ((GArray *) g_value_get_boxed (value), key);
-}
-
-static void
-nm_dhcp_manager_handle_event (DBusGProxy *proxy,
-                              GHashTable *options,
-                              gpointer user_data)
-{
-	NMDhcpManager *manager = NM_DHCP_MANAGER (user_data);
-	NMDhcpClient *client;
-	char *iface = NULL;
-	char *pid_str = NULL;
-	char *reason = NULL;
-	long pid;
-
-	iface = get_option (options, "interface");
-	if (iface == NULL) {
-		nm_log_warn (LOGD_DHCP, "DHCP event: didn't have associated interface.");
-		goto out;
-	}
-
-	pid_str = get_option (options, "pid");
-	pid = nm_utils_ascii_str_to_int64 (pid_str, 10, 0, LONG_MAX, -1);
-	if (pid == -1 || pid != (GPid)pid) {
-		nm_log_warn (LOGD_DHCP, "DHCP event: couldn't convert PID '%s' to an integer", pid_str ? pid_str : "(null)");
-		goto out;
-	}
-
-	reason = get_option (options, "reason");
-	client = get_client_for_pid (manager, (GPid) pid);
-	if (client == NULL) {
-		if (reason && g_ascii_strcasecmp (reason, "RELEASE") == 0) {
-			/* This happens regularly, when the dhcp client gets killed and we receive its last message.
-			 * Don't log a warning in this case. */
-			nm_log_dbg (LOGD_DHCP, "(pid %ld) unhandled RELEASE DHCP event for interface %s", pid, iface);
-		} else
-			nm_log_warn (LOGD_DHCP, "(pid %ld) unhandled DHCP event for interface %s", pid, iface);
-		goto out;
-	}
-
-	if (strcmp (iface, nm_dhcp_client_get_iface (client))) {
-		nm_log_warn (LOGD_DHCP, "(pid %ld) received DHCP event from unexpected interface '%s' (expected '%s')",
-		             pid, iface, nm_dhcp_client_get_iface (client));
-		goto out;
-	}
-
-	if (reason == NULL) {
-		nm_log_warn (LOGD_DHCP, "(pid %ld) DHCP event didn't have a reason", pid);
-		goto out;
-	}
-
-	nm_dhcp_client_new_options (client, options, reason);
-
-out:
-	g_free (iface);
-	g_free (pid_str);
-	g_free (reason);
-}
-
-#if HAVE_DBUS_GLIB_100
-static void
-new_connection_cb (NMDBusManager *mgr,
-                   DBusGConnection *connection,
-                   NMDhcpManager *self)
-{
-	NMDhcpManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
-	DBusGProxy *proxy;
-
-	/* Create a new proxy for the client */
-	proxy = dbus_g_proxy_new_for_peer (connection, "/", NM_DHCP_CLIENT_DBUS_IFACE);
-	dbus_g_proxy_add_signal (proxy,
-	                         "Event",
-	                         DBUS_TYPE_G_MAP_OF_VARIANT,
-	                         G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (proxy,
-	                             "Event",
-	                             G_CALLBACK (nm_dhcp_manager_handle_event),
-	                             self,
-	                             NULL);
-	g_hash_table_insert (priv->proxies, connection, proxy);
-}
-
-static void
-dis_connection_cb (NMDBusManager *mgr,
-                   DBusGConnection *connection,
-                   NMDhcpManager *self)
-{
-	NMDhcpManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
-	DBusGProxy *proxy;
-
-	proxy = g_hash_table_lookup (priv->proxies, connection);
-	if (proxy) {
-		dbus_g_proxy_disconnect_signal (proxy,
-		                                "Event",
-		                                G_CALLBACK (nm_dhcp_manager_handle_event),
-		                                self);
-		g_hash_table_remove (priv->proxies, connection);
-	}
-}
-#endif
 
 static GType
 get_client_type (const char *client, GError **error)
@@ -529,12 +344,6 @@ nm_dhcp_manager_init (NMDhcpManager *self)
 	NMDhcpManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
 	const char *client;
 	GError *error = NULL;
-#if !HAVE_DBUS_GLIB_100
-	DBusGConnection *g_connection;
-#endif
-
-	/* Maps DBusGConnection :: DBusGProxy */
-	priv->proxies = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, g_object_unref);
 
 	/* Client-specific setup */
 	client = nm_config_get_dhcp_client (nm_config_get ());
@@ -554,33 +363,6 @@ nm_dhcp_manager_init (NMDhcpManager *self)
 	                                       NULL,
 	                                       (GDestroyNotify) g_object_unref);
 	g_assert (priv->clients);
-
-	priv->dbus_mgr = nm_dbus_manager_get ();
-
-#if HAVE_DBUS_GLIB_100
-	/* Register the socket our DHCP clients will return lease info on */
-	nm_dbus_manager_private_server_register (priv->dbus_mgr, PRIV_SOCK_PATH, PRIV_SOCK_TAG);
-	priv->new_conn_id = g_signal_connect (priv->dbus_mgr,
-	                                      NM_DBUS_MANAGER_PRIVATE_CONNECTION_NEW "::" PRIV_SOCK_TAG,
-	                                      (GCallback) new_connection_cb,
-	                                      self);
-	priv->dis_conn_id = g_signal_connect (priv->dbus_mgr,
-	                                      NM_DBUS_MANAGER_PRIVATE_CONNECTION_DISCONNECTED "::" PRIV_SOCK_TAG,
-	                                      (GCallback) dis_connection_cb,
-	                                      self);
-#else
-	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
-	priv->proxy = dbus_g_proxy_new_for_name (g_connection,
-	                                         "org.freedesktop.nm_dhcp_client",
-	                                         "/",
-	                                         NM_DHCP_CLIENT_DBUS_IFACE);
-	g_assert (priv->proxy);
-	dbus_g_proxy_add_signal (priv->proxy, "Event", DBUS_TYPE_G_MAP_OF_VARIANT, G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->proxy, "Event",
-	                             G_CALLBACK (nm_dhcp_manager_handle_event),
-	                             self,
-	                             NULL);
-#endif
 }
 
 static void
@@ -595,23 +377,6 @@ dispose (GObject *object)
 			remove_client (NM_DHCP_MANAGER (object), NM_DHCP_CLIENT (iter->data));
 		g_list_free (values);
 	}
-
-	if (priv->new_conn_id) {
-		g_signal_handler_disconnect (priv->dbus_mgr, priv->new_conn_id);
-		priv->new_conn_id = 0;
-	}
-	if (priv->dis_conn_id) {
-		g_signal_handler_disconnect (priv->dbus_mgr, priv->dis_conn_id);
-		priv->dis_conn_id = 0;
-	}
-	priv->dbus_mgr = NULL;
-
-	if (priv->proxies) {
-		g_hash_table_destroy (priv->proxies);
-		priv->proxies = NULL;
-	}
-	if (priv->proxy)
-		g_object_unref (priv->proxy);
 
 	G_OBJECT_CLASS (nm_dhcp_manager_parent_class)->dispose (object);
 }

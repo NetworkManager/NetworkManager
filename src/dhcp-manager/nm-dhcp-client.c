@@ -673,10 +673,13 @@ copy_option (const char * key,
 		g_hash_table_insert (hash, g_strdup (key), str_value);
 }
 
-void
-nm_dhcp_client_new_options (NMDhcpClient *self,
-                            GHashTable *options,
-                            const char *reason)
+gboolean
+nm_dhcp_client_handle_event (gpointer unused,
+                             const char *iface,
+                             gint64 pid,
+                             GHashTable *options,
+                             const char *reason,
+                             NMDhcpClient *self)
 {
 	NMDhcpClientPrivate *priv;
 	guint32 old_state;
@@ -684,11 +687,19 @@ nm_dhcp_client_new_options (NMDhcpClient *self,
 	GHashTable *str_options = NULL;
 	GObject *ip_config = NULL;
 
-	g_return_if_fail (NM_IS_DHCP_CLIENT (self));
-	g_return_if_fail (options != NULL);
-	g_return_if_fail (reason != NULL);
+	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), FALSE);
+	g_return_val_if_fail (iface != NULL, FALSE);
+	g_return_val_if_fail (pid > 0, FALSE);
+	g_return_val_if_fail (options != NULL, FALSE);
+	g_return_val_if_fail (reason != NULL, FALSE);
 
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
+
+	if (g_strcmp0 (priv->iface, iface) != 0)
+		return FALSE;
+	if (priv->pid != pid)
+		return FALSE;
+
 	old_state = priv->state;
 	new_state = reason_to_state (priv->iface, reason);
 
@@ -719,6 +730,8 @@ nm_dhcp_client_new_options (NMDhcpClient *self,
 	if (str_options)
 		g_hash_table_destroy (str_options);
 	g_clear_object (&ip_config);
+
+	return TRUE;
 }
 
 /********************************************/

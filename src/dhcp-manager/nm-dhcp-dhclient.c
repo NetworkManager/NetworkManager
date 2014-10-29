@@ -43,6 +43,7 @@
 #include "nm-dhcp-manager.h"
 #include "nm-posix-signals.h"
 #include "NetworkManagerUtils.h"
+#include "nm-dhcp-listener.h"
 
 G_DEFINE_TYPE (NMDhcpDhclient, nm_dhcp_dhclient, NM_TYPE_DHCP_CLIENT)
 
@@ -612,12 +613,21 @@ nm_dhcp_dhclient_init (NMDhcpDhclient *self)
 	/* Fallback option */
 	if (!priv->def_leasefile)
 		priv->def_leasefile = SYSCONFDIR "/dhclient6.leases";
+
+	g_signal_connect (nm_dhcp_listener_get (),
+	                  NM_DHCP_LISTENER_EVENT,
+	                  G_CALLBACK (nm_dhcp_client_handle_event),
+	                  self);
 }
 
 static void
 dispose (GObject *object)
 {
 	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (object);
+
+	g_signal_handlers_disconnect_by_func (nm_dhcp_listener_get (),
+	                                      G_CALLBACK (nm_dhcp_client_handle_event),
+	                                      NM_DHCP_DHCLIENT (object));
 
 	g_free (priv->pid_file);
 	g_free (priv->conf_file);

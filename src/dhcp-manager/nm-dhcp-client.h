@@ -128,10 +128,6 @@ gboolean nm_dhcp_client_start_ip6 (NMDhcpClient *self,
 
 void nm_dhcp_client_stop (NMDhcpClient *self, gboolean release);
 
-void nm_dhcp_client_new_options (NMDhcpClient *self,
-                                 GHashTable *options,
-                                 const char *reason);
-
 /* Backend helpers for subclasses */
 void nm_dhcp_client_stop_existing (const char *pid_file, const char *binary_name);
 
@@ -143,6 +139,13 @@ void nm_dhcp_client_set_state (NMDhcpClient *self,
                                NMDhcpState new_state,
                                GObject *ip_config,   /* NMIP4Config or NMIP6Config */
                                GHashTable *options); /* str:str hash */
+
+gboolean nm_dhcp_client_handle_event (gpointer unused,
+                                      const char *iface,
+                                      gint64 pid,
+                                      GHashTable *options,
+                                      const char *reason,
+                                      NMDhcpClient *self);
 
 #endif /* __NETWORKMANAGER_DHCP_CLIENT_H__ */
 

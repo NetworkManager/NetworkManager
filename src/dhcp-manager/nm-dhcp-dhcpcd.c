@@ -38,6 +38,7 @@
 #include "nm-logging.h"
 #include "nm-posix-signals.h"
 #include "NetworkManagerUtils.h"
+#include "nm-dhcp-listener.h"
 
 G_DEFINE_TYPE (NMDhcpDhcpcd, nm_dhcp_dhcpcd, NM_TYPE_DHCP_CLIENT)
 
@@ -190,12 +191,20 @@ stop (NMDhcpClient *client, gboolean release, const GByteArray *duid)
 static void
 nm_dhcp_dhcpcd_init (NMDhcpDhcpcd *self)
 {
+	g_signal_connect (nm_dhcp_listener_get (),
+	                  NM_DHCP_LISTENER_EVENT,
+	                  G_CALLBACK (nm_dhcp_client_handle_event),
+	                  self);
 }
 
 static void
 dispose (GObject *object)
 {
 	NMDhcpDhcpcdPrivate *priv = NM_DHCP_DHCPCD_GET_PRIVATE (object);
+
+	g_signal_handlers_disconnect_by_func (nm_dhcp_listener_get (),
+	                                      G_CALLBACK (nm_dhcp_client_handle_event),
+	                                      NM_DHCP_DHCPCD (object));
 
 	g_free (priv->pid_file);
 
