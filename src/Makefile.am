@@ -124,6 +124,7 @@ sbin_PROGRAMS = NetworkManager
 
 NetworkManager_SOURCES = \
 	$(nm_device_sources) $(nm_device_headers) \
+	$(nm_dhcp_client_sources) $(nm_dhcp_client_headers) \
 	main-utils.c \
 	main-utils.h \
 	main.c
@@ -155,8 +156,21 @@ nm_device_headers = \
 	devices/nm-device-vlan.h \
 	devices/nm-device-vxlan.h
 
+nm_dhcp_client_sources = \
+	dhcp-manager/nm-dhcp-dhclient.c \
+	dhcp-manager/nm-dhcp-dhclient-utils.c \
+	dhcp-manager/nm-dhcp-dhcpcd.c \
+	dhcp-manager/nm-dhcp-systemd.c
+
+nm_dhcp_client_headers = \
+	dhcp-manager/nm-dhcp-dhclient.h \
+	dhcp-manager/nm-dhcp-dhclient-utils.h \
+	dhcp-manager/nm-dhcp-dhcpcd.h \
+	dhcp-manager/nm-dhcp-systemd.h
+
 nm_sources = \
 	$(nm_device_headers) \
+	$(nm_dhcp_client_headers) \
 	devices/nm-device.c \
 	devices/nm-device.h \
 	devices/nm-device-ethernet-utils.c \
@@ -174,14 +188,6 @@ nm_sources = \
 	dhcp-manager/nm-dhcp-utils.h \
 	dhcp-manager/nm-dhcp-listener.c \
 	dhcp-manager/nm-dhcp-listener.h \
-	dhcp-manager/nm-dhcp-dhclient.c \
-	dhcp-manager/nm-dhcp-dhclient.h \
-	dhcp-manager/nm-dhcp-dhclient-utils.c \
-	dhcp-manager/nm-dhcp-dhclient-utils.h \
-	dhcp-manager/nm-dhcp-dhcpcd.c \
-	dhcp-manager/nm-dhcp-dhcpcd.h \
-	dhcp-manager/nm-dhcp-systemd.h \
-	dhcp-manager/nm-dhcp-systemd.c \
 	dhcp-manager/nm-dhcp-manager.c \
 	dhcp-manager/nm-dhcp-manager.h \
 	\

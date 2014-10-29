@@ -41,9 +41,5 @@ typedef struct {
 
 GType nm_dhcp_systemd_get_type (void);
 
-GSList *nm_dhcp_systemd_get_lease_ip_configs (const char *iface,
-                                              const char *uuid,
-                                              gboolean ipv6);
-
 #endif /* NM_DHCP_SYSTEMD_H */
 

@@ -48,7 +48,7 @@ typedef struct {
 	char *pid_file;
 } NMDhcpDhcpcdPrivate;
 
-const char *
+static const char *
 nm_dhcp_dhcpcd_get_path (void)
 {
 	const char *path = NULL;
@@ -225,5 +225,15 @@ nm_dhcp_dhcpcd_class_init (NMDhcpDhcpcdClass *dhcpcd_class)
 	client_class->ip4_start = ip4_start;
 	client_class->ip6_start = ip6_start;
 	client_class->stop = stop;
+}
+
+static void __attribute__((constructor))
+register_dhcp_dhclient (void)
+{
+	g_type_init ();
+	_nm_dhcp_client_register (NM_TYPE_DHCP_DHCPCD,
+	                          "dhcpcd",
+	                          nm_dhcp_dhcpcd_get_path,
+	                          NULL);
 }
 

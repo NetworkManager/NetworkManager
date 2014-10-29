@@ -99,6 +99,17 @@ typedef struct {
 
 GType nm_dhcp_client_get_type (void);
 
+typedef const char *(*NMDhcpClientGetPathFunc) (void);
+
+typedef GSList *    (*NMDhcpClientGetLeaseConfigsFunc) (const char *iface,
+                                                        const char *uuid,
+                                                        gboolean ipv6);
+
+void _nm_dhcp_client_register (GType gtype,
+                               const char *name,
+                               NMDhcpClientGetPathFunc get_path_func,
+                               NMDhcpClientGetLeaseConfigsFunc get_lease_configs_func);
+
 pid_t nm_dhcp_client_get_pid (NMDhcpClient *self);
 
 const char *nm_dhcp_client_get_iface (NMDhcpClient *self);

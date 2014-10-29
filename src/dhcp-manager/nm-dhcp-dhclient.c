@@ -56,7 +56,7 @@ typedef struct {
 	char *pid_file;
 } NMDhcpDhclientPrivate;
 
-const char *
+static const char *
 nm_dhcp_dhclient_get_path (void)
 {
 	const char *path = NULL;
@@ -123,7 +123,7 @@ get_dhclient_leasefile (const char *iface,
 	return NULL;
 }
 
-GSList *
+static GSList *
 nm_dhcp_dhclient_get_lease_ip_configs (const char *iface,
                                        const char *uuid,
                                        gboolean ipv6)
@@ -651,5 +651,15 @@ nm_dhcp_dhclient_class_init (NMDhcpDhclientClass *dhclient_class)
 	client_class->ip6_start = ip6_start;
 	client_class->stop = stop;
 	client_class->get_duid = get_duid;
+}
+
+static void __attribute__((constructor))
+register_dhcp_dhclient (void)
+{
+	g_type_init ();
+	_nm_dhcp_client_register (NM_TYPE_DHCP_DHCLIENT,
+	                          "dhclient",
+	                          nm_dhcp_dhclient_get_path,
+	                          nm_dhcp_dhclient_get_lease_ip_configs);
 }
 

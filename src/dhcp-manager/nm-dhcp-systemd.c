@@ -374,7 +374,7 @@ get_leasefile_path (const char *iface, const char *uuid, gboolean ipv6)
 	                        iface);
 }
 
-GSList *
+static GSList *
 nm_dhcp_systemd_get_lease_ip_configs (const char *iface,
                                       const char *uuid,
                                       gboolean ipv6)
@@ -806,5 +806,15 @@ nm_dhcp_systemd_class_init (NMDhcpSystemdClass *sdhcp_class)
 	client_class->ip4_start = ip4_start;
 	client_class->ip6_start = ip6_start;
 	client_class->stop = stop;
+}
+
+static void __attribute__((constructor))
+register_dhcp_dhclient (void)
+{
+	g_type_init ();
+	_nm_dhcp_client_register (NM_TYPE_DHCP_SYSTEMD,
+	                          "internal",
+	                          NULL,
+	                          nm_dhcp_systemd_get_lease_ip_configs);
 }
 

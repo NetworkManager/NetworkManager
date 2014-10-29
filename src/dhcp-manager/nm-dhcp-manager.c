@@ -52,7 +52,6 @@ typedef GSList * (*GetLeaseConfigFunc) (const char *iface, const char *uuid, gbo
 
 typedef struct {
 	GType               client_type;
-	GetLeaseConfigFunc  get_lease_ip_configs_func;
 	GHashTable *        clients;
 	char *              default_hostname;
 } NMDhcpManagerPrivate;
@@ -60,6 +59,79 @@ typedef struct {
 #define NM_DHCP_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP_MANAGER, NMDhcpManagerPrivate))
 
 G_DEFINE_TYPE (NMDhcpManager, nm_dhcp_manager, G_TYPE_OBJECT)
+
+/***************************************************/
+
+typedef struct {
+	GType gtype;
+	const char *name;
+	NMDhcpClientGetPathFunc get_path_func;
+	NMDhcpClientGetLeaseConfigsFunc get_lease_configs_func;
+} ClientDesc;
+
+static GSList *client_descs = NULL;
+
+void
+_nm_dhcp_client_register (GType gtype,
+                          const char *name,
+                          NMDhcpClientGetPathFunc get_path_func,
+                          NMDhcpClientGetLeaseConfigsFunc get_lease_configs_func)
+{
+	ClientDesc *desc;
+	GSList *iter;
+
+	g_return_if_fail (gtype != G_TYPE_INVALID);
+	g_return_if_fail (name != NULL);
+
+	for (iter = client_descs; iter; iter = iter->next) {
+		desc = iter->data;
+		g_return_if_fail (desc->gtype != gtype);
+		g_return_if_fail (strcmp (desc->name, name) != 0);
+	}
+
+	desc = g_slice_new0 (ClientDesc);
+	desc->gtype = gtype;
+	desc->name = name;
+	desc->get_path_func = get_path_func;
+	desc->get_lease_configs_func = get_lease_configs_func;
+	client_descs = g_slist_prepend (client_descs, desc);
+
+	nm_log_info (LOGD_DHCP, "Registered DHCP client '%s'", name);
+}
+
+static ClientDesc *
+find_client_desc (const char *name, GType gtype)
+{
+	GSList *iter;
+
+	g_return_val_if_fail (name || gtype, NULL);
+
+	for (iter = client_descs; iter; iter = iter->next) {
+		ClientDesc *desc = iter->data;
+
+		if (name && strcmp (desc->name, name) != 0)
+			continue;
+		if (gtype && desc->name != 0)
+			continue;
+		return desc;
+	}
+	return NULL;
+}
+
+static GType
+is_client_enabled (const char *name, GError **error)
+{
+	ClientDesc *desc;
+
+	desc = find_client_desc (name, G_TYPE_INVALID);
+	if (desc && (!desc->get_path_func || desc->get_path_func()))
+		return desc->gtype;
+
+	g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
+	             _("'%s' support not found or not enabled."),
+	             name);
+	return G_TYPE_INVALID;
+}
 
 /***************************************************/
 
@@ -90,52 +162,23 @@ get_client_for_ifindex (NMDhcpManager *manager, int ifindex, gboolean ip6)
 static GType
 get_client_type (const char *client, GError **error)
 {
-	gboolean use_dhclient, use_dhcpcd;
+	GType client_gtype;
 
-	/* If a client was disabled at build-time, these will return FALSE */
-	use_dhclient = !!nm_dhcp_dhclient_get_path ();
-	use_dhcpcd = !!nm_dhcp_dhcpcd_get_path ();
-
-	if (!client) {
-		if (use_dhclient)
-			return NM_TYPE_DHCP_DHCLIENT;
-		else if (use_dhcpcd)
-			return NM_TYPE_DHCP_DHCPCD;
-		else {
-			g_set_error_literal (error,
-			                     NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
-			                     _("no usable DHCP client could be found."));
-			return G_TYPE_INVALID;
+	if (client)
+		client_gtype = is_client_enabled (client, error);
+	else {
+		/* Fallbacks */
+		client_gtype = is_client_enabled ("dhclient", NULL);
+		if (client_gtype == G_TYPE_INVALID)
+			client_gtype = is_client_enabled ("dhcpcd", NULL);
+		if (client_gtype == G_TYPE_INVALID)
+			client_gtype = is_client_enabled ("internal", NULL);
+		if (client_gtype == G_TYPE_INVALID) {
+			g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
+				                 _("no usable DHCP client could be found."));
 		}
 	}
-
-	if (!strcmp (client, "dhclient")) {
-		if (!use_dhclient) {
-			g_set_error_literal (error,
-			                     NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
-			                     _("'dhclient' could not be found or was disabled."));
-			return G_TYPE_INVALID;
-		}
-		return NM_TYPE_DHCP_DHCLIENT;
-	}
-
-	if (!strcmp (client, "dhcpcd")) {
-		if (!use_dhcpcd) {
-			g_set_error_literal (error,
-			                     NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
-			                     _("'dhcpcd' could not be found or was disabled."));
-			return G_TYPE_INVALID;
-		}
-		return NM_TYPE_DHCP_DHCPCD;
-	}
-
-	if (!strcmp (client, "internal"))
-		return NM_TYPE_DHCP_SYSTEMD;
-
-	g_set_error (error,
-	             NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
-	             _("unsupported DHCP client '%s'"), client);
-	return G_TYPE_INVALID;
+	return client_gtype;
 }
 
 static void client_state_changed (NMDhcpClient *client,
@@ -312,16 +355,15 @@ nm_dhcp_manager_get_lease_ip_configs (NMDhcpManager *self,
                                       const char *uuid,
                                       gboolean ipv6)
 {
-	NMDhcpManagerPrivate *priv;
+	ClientDesc *desc;
 
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
 	g_return_val_if_fail (iface != NULL, NULL);
 	g_return_val_if_fail (uuid != NULL, NULL);
 
-	priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
-
-	if (priv->get_lease_ip_configs_func)
-		return priv->get_lease_ip_configs_func (iface, uuid, ipv6);
+	desc = find_client_desc (NULL, NM_DHCP_MANAGER_GET_PRIVATE (self)->client_type);
+	if (desc && desc->get_lease_configs_func)
+		return desc->get_lease_configs_func (iface, uuid, ipv6);
 	return NULL;
 }
 
@@ -348,12 +390,7 @@ nm_dhcp_manager_init (NMDhcpManager *self)
 	/* Client-specific setup */
 	client = nm_config_get_dhcp_client (nm_config_get ());
 	priv->client_type = get_client_type (client, &error);
-
-	if (priv->client_type == NM_TYPE_DHCP_DHCLIENT)
-		priv->get_lease_ip_configs_func = nm_dhcp_dhclient_get_lease_ip_configs;
-	else if (priv->client_type == NM_TYPE_DHCP_SYSTEMD)
-		priv->get_lease_ip_configs_func = nm_dhcp_systemd_get_lease_ip_configs;
-	else if (priv->client_type == G_TYPE_INVALID) {
+	if (priv->client_type == G_TYPE_INVALID) {
 		nm_log_warn (LOGD_DHCP, "No usable DHCP client found (%s)! DHCP configurations will fail.",
 		             error->message);
 	}
