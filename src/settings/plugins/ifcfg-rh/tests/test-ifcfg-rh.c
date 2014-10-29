@@ -13736,7 +13736,7 @@ test_svUnescape_assert (const char *str)
 }
 
 static void
-test_svUnescape ()
+test_svUnescape (void)
 {
 	int len, repeat, i, k;
 	GRand *r = g_rand_new ();

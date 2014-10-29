@@ -125,7 +125,7 @@ test_nm_utils_kill_child_spawn (char **argv, gboolean do_not_reap_child)
 }
 
 static pid_t
-test_nm_utils_kill_child_create_and_join_pgroup ()
+test_nm_utils_kill_child_create_and_join_pgroup (void)
 {
 	int err, tmp = 0;
 	int pipefd[2];

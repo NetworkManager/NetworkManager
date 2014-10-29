@@ -1900,7 +1900,7 @@ read_device_factory_paths_sort_fcn (gconstpointer a, gconstpointer b)
 }
 
 static char**
-read_device_factory_paths ()
+read_device_factory_paths (void)
 {
 	GDir *dir;
 	GError *error = NULL;

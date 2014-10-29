@@ -125,7 +125,7 @@ static const LogDesc domain_descs[] = {
 /************************************************************************/
 
 static void
-_ensure_initialized ()
+_ensure_initialized (void)
 {
 	if (G_UNLIKELY (!logging_set_up))
 		nm_logging_setup ("INFO", "DEFAULT", NULL, NULL);

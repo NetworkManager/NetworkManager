@@ -1064,7 +1064,7 @@ new_connection_dict (char **out_uuid,
 }
 
 static void
-test_connection_replace_settings ()
+test_connection_replace_settings (void)
 {
 	NMConnection *connection;
 	GVariant *new_settings;
@@ -1103,7 +1103,7 @@ test_connection_replace_settings ()
 }
 
 static void
-test_connection_replace_settings_from_connection ()
+test_connection_replace_settings_from_connection (void)
 {
 	NMConnection *connection, *replacement;
 	NMSettingConnection *s_con;
@@ -1220,7 +1220,7 @@ test_connection_replace_settings_bad (void)
 }
 
 static void
-test_connection_new_from_dbus ()
+test_connection_new_from_dbus (void)
 {
 	NMConnection *connection;
 	GVariant *new_settings;

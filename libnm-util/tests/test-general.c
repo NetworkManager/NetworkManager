@@ -744,7 +744,7 @@ new_connection_hash (char **out_uuid,
 }
 
 static void
-test_connection_replace_settings ()
+test_connection_replace_settings (void)
 {
 	NMConnection *connection;
 	GHashTable *new_settings;
@@ -783,7 +783,7 @@ test_connection_replace_settings ()
 }
 
 static void
-test_connection_replace_settings_from_connection ()
+test_connection_replace_settings_from_connection (void)
 {
 	NMConnection *connection, *replacement;
 	GError *error = NULL;
@@ -845,7 +845,7 @@ test_connection_replace_settings_from_connection ()
 }
 
 static void
-test_connection_new_from_hash ()
+test_connection_new_from_hash (void)
 {
 	NMConnection *connection;
 	GHashTable *new_settings;

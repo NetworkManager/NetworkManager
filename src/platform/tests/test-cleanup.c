@@ -3,7 +3,7 @@
 #define DEVICE_NAME "nm-test-device"
 
 static void
-test_cleanup_internal ()
+test_cleanup_internal (void)
 {
 	SignalData *link_added = add_signal_ifname (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_ADDED, link_callback, DEVICE_NAME);
 	int ifindex;

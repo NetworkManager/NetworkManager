@@ -365,14 +365,14 @@ nmtst_is_debug (void)
 #endif
 
 inline static GRand *
-nmtst_get_rand0 ()
+nmtst_get_rand0 (void)
 {
 	g_assert (nmtst_initialized ());
 	return __nmtst_internal.rand0;
 }
 
 inline static GRand *
-nmtst_get_rand ()
+nmtst_get_rand (void)
 {
 	g_assert (nmtst_initialized ());
 

@@ -3364,7 +3364,7 @@ test_read_missing_id_uuid (void)
 }
 
 static void
-test_read_minimal ()
+test_read_minimal (void)
 {
 	NMConnection *connection = NULL;
 	gs_unref_object NMConnection *con_archetype = NULL;
@@ -3396,7 +3396,7 @@ test_read_minimal ()
 }
 
 static void
-test_read_minimal_slave ()
+test_read_minimal_slave (void)
 {
 	NMConnection *connection = NULL;
 	gs_unref_object NMConnection *con_archetype = NULL;

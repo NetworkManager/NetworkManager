@@ -48,7 +48,7 @@ ip6_route_callback (NMPlatform *platform, int ifindex, NMPlatformIP6Route *recei
 }
 
 static void
-test_ip4_route ()
+test_ip4_route (void)
 {
 	int ifindex = nm_platform_link_get_ifindex (DEVICE_NAME);
 	SignalData *route_added = add_signal (NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, NM_PLATFORM_SIGNAL_ADDED, ip4_route_callback);
@@ -143,7 +143,7 @@ test_ip4_route ()
 }
 
 static void
-test_ip6_route ()
+test_ip6_route (void)
 {
 	int ifindex = nm_platform_link_get_ifindex (DEVICE_NAME);
 	SignalData *route_added = add_signal (NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, NM_PLATFORM_SIGNAL_ADDED, ip6_route_callback);

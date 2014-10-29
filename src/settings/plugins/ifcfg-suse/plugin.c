@@ -137,7 +137,7 @@ hostname_is_dynamic (void)
 }
 
 static char *
-hostname_read ()
+hostname_read (void)
 {
 	GIOChannel *channel;
 	char *hostname = NULL;

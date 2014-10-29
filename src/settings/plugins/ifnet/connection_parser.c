@@ -2884,7 +2884,7 @@ ifnet_can_write_connection (NMConnection *connection, GError **error)
 
 /* get the available wired name(eth*). */
 static gchar *
-get_wired_name ()
+get_wired_name (void)
 {
 	int i = 0;
 
@@ -2901,7 +2901,7 @@ get_wired_name ()
 
 /* get the available pppoe name(ppp*). */
 static gchar *
-get_ppp_name ()
+get_ppp_name (void)
 {
 	int i = 0;
 

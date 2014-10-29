@@ -119,7 +119,7 @@ _nl_f_nl_has_capability (int capability)
 }
 
 static struct libnl_vtable *
-_nl_get_vtable ()
+_nl_get_vtable (void)
 {
 	static struct libnl_vtable vtable;
 
@@ -281,7 +281,7 @@ _nm_rtnl_addr_alloc (int ifindex)
 }
 
 static struct rtnl_route *
-_nm_rtnl_route_alloc ()
+_nm_rtnl_route_alloc (void)
 {
 	struct rtnl_route *rtnlroute = rtnl_route_alloc ();
 
@@ -291,7 +291,7 @@ _nm_rtnl_route_alloc ()
 }
 
 static struct rtnl_nexthop *
-_nm_rtnl_route_nh_alloc ()
+_nm_rtnl_route_nh_alloc (void)
 {
 	struct rtnl_nexthop *nexthop;
 

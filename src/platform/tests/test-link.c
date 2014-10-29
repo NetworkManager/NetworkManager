@@ -380,7 +380,7 @@ test_team (void)
 }
 
 static void
-test_vlan ()
+test_vlan (void)
 {
 	test_software (NM_LINK_TYPE_VLAN, "vlan");
 }

@@ -55,7 +55,7 @@ nm_config_get_dhcp_client (NMConfig *config)
 }
 
 static void
-test_getdata ()
+test_getdata (void)
 {
 	ASSERT (ifnet_get_data ("eth1", "config")
 		&& strcmp (ifnet_get_data ("eth1", "config"), "( \"dhcp\" )") == 0,
@@ -103,7 +103,7 @@ test_write_hostname (const char *temp_path)
 }
 
 static void
-test_is_static ()
+test_is_static (void)
 {
 	ASSERT (is_static_ip4 ("eth1") == FALSE, "is static",
 		"a dhcp interface is recognized as static");
@@ -114,7 +114,7 @@ test_is_static ()
 }
 
 static void
-test_has_default_route ()
+test_has_default_route (void)
 {
 	ASSERT (has_default_ip4_route ("eth0"),
 		"has default route", "eth0 should have a default ipv4 route");
@@ -126,7 +126,7 @@ test_has_default_route ()
 }
 
 static void
-test_has_ip6_address ()
+test_has_ip6_address (void)
 {
 	ASSERT (has_ip6_address ("eth2"), "has ip6 address",
 		"eth2 should have a ipv6 address");
@@ -136,7 +136,7 @@ test_has_ip6_address ()
 }
 
 static void
-test_is_ip4_address ()
+test_is_ip4_address (void)
 {
 	gchar *address1 = "192.168.4.232/24";
 	gchar *address2 = "192.168.100.{1..254}/24";
@@ -151,7 +151,7 @@ test_is_ip4_address ()
 }
 
 static void
-test_is_ip6_address ()
+test_is_ip6_address (void)
 {
 	gchar *address1 = "4321:0:1:2:3:4:567:89ac/24";
 
@@ -182,7 +182,7 @@ check_ip_block (ip_block * iblock, gchar * ip, gchar * netmask, gchar * gateway)
 }
 
 static void
-test_convert_ipv4_config_block ()
+test_convert_ipv4_config_block (void)
 {
 	ip_block *iblock = convert_ip4_config_block ("eth0");
 	ip_block *tmp = iblock;
@@ -218,7 +218,7 @@ test_convert_ipv4_config_block ()
 }
 
 static void
-test_convert_ipv4_routes_block ()
+test_convert_ipv4_routes_block (void)
 {
 	ip_block *iblock = convert_ip4_routes_block ("eth0");
 	ip_block *tmp = iblock;
@@ -242,7 +242,7 @@ test_convert_ipv4_routes_block ()
 }
 
 static void
-test_wpa_parser ()
+test_wpa_parser (void)
 {
 	const char *value;
 
@@ -261,7 +261,7 @@ test_wpa_parser ()
 }
 
 static void
-test_strip_string ()
+test_strip_string (void)
 {
 	gchar *str = "( \"default via     202.117.16.1\" )";
 	gchar *result = g_strdup (str);
@@ -277,7 +277,7 @@ test_strip_string ()
 }
 
 static void
-test_is_unmanaged ()
+test_is_unmanaged (void)
 {
 	ASSERT (is_managed ("eth0"), "test_is_unmanaged",
 		"eth0 should be managed");
@@ -286,7 +286,7 @@ test_is_unmanaged ()
 }
 
 static void
-test_new_connection ()
+test_new_connection (void)
 {
 	GError *error = NULL;
 	NMConnection *connection;
@@ -409,7 +409,7 @@ test_add_connection (const char *basepath)
 }
 
 static void
-test_delete_connection ()
+test_delete_connection (void)
 {
 	GError *error = NULL;
 	NMConnection *connection;
@@ -438,7 +438,7 @@ test_delete_connection ()
 }
 
 static void
-test_missing_config ()
+test_missing_config (void)
 {
 	GError *error = NULL;
 	NMConnection *connection;

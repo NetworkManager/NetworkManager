@@ -229,7 +229,7 @@ test_nm_utils_ip6_address_clear_host_address (void)
 
 
 static void
-test_nm_utils_log_connection_diff()
+test_nm_utils_log_connection_diff (void)
 {
 	NMConnection *connection;
 	NMConnection *connection2;
