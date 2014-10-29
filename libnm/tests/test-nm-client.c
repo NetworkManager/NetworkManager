@@ -888,6 +888,8 @@ client_devices_changed_cb (GObject *client,
 
 	devices = nm_client_get_devices (NM_CLIENT (client));
 	g_assert (devices != NULL);
+	if (devices->len < 2)
+		return;
 	g_assert_cmpint (devices->len, ==, 2);
 
 	if (NM_IS_DEVICE_VLAN (devices->pdata[0]))
