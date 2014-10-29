@@ -147,6 +147,7 @@ src/devices/wifi/nm-wifi-ap-utils.c
 src/devices/wimax/nm-device-wimax.c
 src/devices/wwan/nm-modem-broadband.c
 src/nm-config.c
+src/nm-iface-helper.c
 src/nm-logging.c
 src/nm-manager.c
 src/nm-sleep-monitor-systemd.c

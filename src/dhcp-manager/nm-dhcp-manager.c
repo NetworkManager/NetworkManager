@@ -386,11 +386,18 @@ static void
 nm_dhcp_manager_init (NMDhcpManager *self)
 {
 	NMDhcpManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
+	NMConfig *config = nm_config_get ();
 	const char *client;
 	GError *error = NULL;
 
 	/* Client-specific setup */
-	client = nm_config_get_dhcp_client (nm_config_get ());
+	client = nm_config_get_dhcp_client (config);
+	if (nm_config_get_configure_and_quit (config)) {
+		if (g_strcmp0 (client, "internal") != 0)
+			nm_log_warn (LOGD_DHCP, "Using internal DHCP client since configure-and-quit is set.");
+		client = "internal";
+	}
+
 	priv->client_type = get_client_type (client, &error);
 	if (priv->client_type == G_TYPE_INVALID) {
 		nm_log_warn (LOGD_DHCP, "No usable DHCP client found (%s)! DHCP configurations will fail.",

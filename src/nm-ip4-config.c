@@ -83,6 +83,7 @@ nm_ip4_config_new (void)
 }
 
 
+#ifndef NM_IFACE_HELPER
 void
 nm_ip4_config_export (NMIP4Config *config)
 {
@@ -94,6 +95,7 @@ nm_ip4_config_export (NMIP4Config *config)
 		nm_dbus_manager_register_object (nm_dbus_manager_get (), priv->path, config);
 	}
 }
+#endif
 
 const char *
 nm_ip4_config_get_dbus_path (const NMIP4Config *config)
@@ -1952,7 +1954,9 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 
 	g_object_class_install_properties (object_class, LAST_PROP, obj_properties);
 
+#ifndef NM_IFACE_HELPER
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (config_class),
 	                                        &dbus_glib_nm_ip4_config_object_info);
+#endif
 }

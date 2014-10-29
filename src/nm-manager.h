@@ -59,6 +59,7 @@
 /* Internal signals */
 #define NM_MANAGER_ACTIVE_CONNECTION_ADDED   "active-connection-added"
 #define NM_MANAGER_ACTIVE_CONNECTION_REMOVED "active-connection-removed"
+#define NM_MANAGER_CONFIGURE_QUIT            "configure-quit"
 
 
 struct _NMManager {
@@ -88,6 +89,7 @@ NMManager *   nm_manager_new                           (NMSettings *settings,
 NMManager *   nm_manager_get                           (void);
 
 void          nm_manager_start                         (NMManager *manager);
+void          nm_manager_stop                          (NMManager *manager);
 NMState       nm_manager_get_state                     (NMManager *manager);
 const GSList *nm_manager_get_active_connections        (NMManager *manager);
 GSList *      nm_manager_get_activatable_connections   (NMManager *manager);

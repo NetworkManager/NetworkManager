@@ -73,6 +73,7 @@ nm_ip6_config_new (void)
 	return (NMIP6Config *) g_object_new (NM_TYPE_IP6_CONFIG, NULL);
 }
 
+#ifndef NM_IFACE_HELPER
 void
 nm_ip6_config_export (NMIP6Config *config)
 {
@@ -84,6 +85,7 @@ nm_ip6_config_export (NMIP6Config *config)
 		nm_dbus_manager_register_object (nm_dbus_manager_get (), priv->path, config);
 	}
 }
+#endif
 
 const char *
 nm_ip6_config_get_dbus_path (const NMIP6Config *config)
@@ -1863,7 +1865,9 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 
 	g_object_class_install_properties (object_class, LAST_PROP, obj_properties);
 
+#ifndef NM_IFACE_HELPER
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (config_class),
 	                                        &dbus_glib_nm_ip6_config_object_info);
+#endif
 }

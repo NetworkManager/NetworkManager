@@ -178,17 +178,10 @@ _init_nm_debug (const char *debug)
 }
 
 static void
-manager_startup_complete (NMManager *manager, GParamSpec *pspec, gpointer user_data)
+manager_configure_quit (NMManager *manager, gpointer user_data)
 {
-	NMConfig *config = NM_CONFIG (user_data);
-	gboolean startup = FALSE;
-
-	g_object_get (G_OBJECT (manager), NM_MANAGER_STARTUP, &startup, NULL);
-
-	if (!startup && nm_config_get_configure_and_quit (config)) {
-		nm_log_info (LOGD_CORE, "quitting now that startup is complete");
-		g_main_loop_quit (main_loop);
-	}
+	nm_log_info (LOGD_CORE, "quitting now that startup is complete");
+	g_main_loop_quit (main_loop);
 }
 
 /*
@@ -462,10 +455,7 @@ main (int argc, char *argv[])
 		}
 	}
 
-	g_signal_connect (manager,
-	                  "notify::" NM_MANAGER_STARTUP,
-	                  G_CALLBACK (manager_startup_complete),
-	                  config);
+	g_signal_connect (manager, NM_MANAGER_CONFIGURE_QUIT, G_CALLBACK (manager_configure_quit), config);
 
 	nm_manager_start (manager);
 
@@ -485,10 +475,10 @@ main (int argc, char *argv[])
 	success = TRUE;
 
 	/* Told to quit before getting to the mainloop by the signal handler */
-	if (quit_early == TRUE)
-		goto done;
+	if (!quit_early)
+		g_main_loop_run (main_loop);
 
-	g_main_loop_run (main_loop);
+	nm_manager_stop (manager);
 
 done:
 	g_clear_object (&manager);

@@ -6990,6 +6990,173 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason)
 	_cleanup_generic_post (self, TRUE);
 }
 
+static char *
+bin2hexstr (const char *bytes, gsize len)
+{
+	GString *str;
+	int i;
+
+	g_return_val_if_fail (bytes != NULL, NULL);
+	g_return_val_if_fail (len > 0, NULL);
+
+	str = g_string_sized_new (len * 2 + 1);
+	for (i = 0; i < len; i++) {
+		if (str->len)
+			g_string_append_c (str, ':');
+		g_string_append_printf (str, "%02x", (guint8) bytes[i]);
+	}
+	return g_string_free (str, FALSE);
+}
+
+static char *
+find_dhcp4_address (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	guint i, n;
+
+	if (!priv->ip4_config)
+		return NULL;
+
+	n = nm_ip4_config_get_num_addresses (priv->ip4_config);
+	for (i = 0; i < n; i++) {
+		const NMPlatformIP4Address *a = nm_ip4_config_get_address (priv->ip4_config, i);
+
+		if (a->source == NM_IP_CONFIG_SOURCE_DHCP)
+			return g_strdup (nm_utils_inet4_ntop (a->address, NULL));
+	}
+	return NULL;
+}
+
+void
+nm_device_spawn_iface_helper (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	gboolean priority_set = FALSE, configured = FALSE;
+	NMConnection *connection;
+	GError *error = NULL;
+	const char *method;
+	GPtrArray *argv;
+	gs_free char *dhcp4_address = NULL;
+
+	if (priv->state != NM_DEVICE_STATE_ACTIVATED)
+		return;
+	if (!nm_device_can_assume_connections (self))
+		return;
+
+	connection = nm_device_get_connection (self);
+	g_assert (connection);
+
+	argv = g_ptr_array_sized_new (10);
+	g_ptr_array_set_free_func (argv, g_free);
+
+	g_ptr_array_add (argv, g_strdup (LIBEXECDIR "/nm-iface-helper"));
+	g_ptr_array_add (argv, g_strdup ("--ifname"));
+	g_ptr_array_add (argv, g_strdup (nm_device_get_ip_iface (self)));
+	g_ptr_array_add (argv, g_strdup ("--uuid"));
+	g_ptr_array_add (argv, g_strdup (nm_connection_get_uuid (connection)));
+
+	dhcp4_address = find_dhcp4_address (self);
+
+	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	if (   priv->ip4_config
+	    && priv->ip4_state == IP_DONE
+	    && g_strcmp0 (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0
+	    && priv->dhcp4_client
+	    && dhcp4_address) {
+		NMSettingIPConfig *s_ip4;
+		GBytes *client_id;
+		char *hex_client_id;
+		const char *hostname;
+
+		s_ip4 = nm_connection_get_setting_ip4_config (connection);
+		g_assert (s_ip4);
+
+		g_ptr_array_add (argv, g_strdup ("--priority"));
+		g_ptr_array_add (argv, g_strdup_printf ("%u", nm_dhcp_client_get_priority (priv->dhcp4_client)));
+		priority_set = TRUE;
+
+		g_ptr_array_add (argv, g_strdup ("--dhcp4"));
+		g_ptr_array_add (argv, g_strdup (dhcp4_address));
+		if (nm_setting_ip_config_get_may_fail (s_ip4) == FALSE)
+			g_ptr_array_add (argv, g_strdup ("--dhcp4-required"));
+
+		client_id = nm_dhcp_client_get_client_id (priv->dhcp4_client);
+		if (client_id) {
+			g_ptr_array_add (argv, g_strdup ("--dhcp4-clientid"));
+			hex_client_id = bin2hexstr (g_bytes_get_data (client_id, NULL),
+			                            g_bytes_get_size (client_id));
+			g_ptr_array_add (argv, hex_client_id);
+		}
+
+		hostname = nm_dhcp_client_get_hostname (priv->dhcp4_client);
+		if (client_id) {
+			g_ptr_array_add (argv, g_strdup ("--dhcp4-hostname"));
+			g_ptr_array_add (argv, g_strdup (hostname));
+		}
+
+		configured = TRUE;
+	}
+
+	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
+	if (   priv->ip6_config
+	    && priv->ip6_state == IP_DONE
+	    && g_strcmp0 (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0
+	    && priv->rdisc
+	    && priv->ac_ip6_config) {
+		NMSettingIPConfig *s_ip6;
+		char *hex_iid;
+		NMUtilsIPv6IfaceId iid = NM_UTILS_IPV6_IFACE_ID_INIT;
+
+		s_ip6 = nm_connection_get_setting_ip6_config (connection);
+		g_assert (s_ip6);
+
+		g_ptr_array_add (argv, g_strdup ("--slaac"));
+
+		if (nm_setting_ip_config_get_may_fail (s_ip6) == FALSE)
+			g_ptr_array_add (argv, g_strdup ("--slaac-required"));
+
+		g_ptr_array_add (argv, g_strdup ("--slaac-tempaddr"));
+		g_ptr_array_add (argv, g_strdup_printf ("%d", priv->rdisc_use_tempaddr));
+
+		if (nm_device_get_ip_iface_identifier (self, &iid)) {
+			g_ptr_array_add (argv, g_strdup ("--iid"));
+			hex_iid = bin2hexstr ((const char *) iid.id_u8, sizeof (NMUtilsIPv6IfaceId));
+			g_ptr_array_add (argv, hex_iid);
+		}
+
+		configured = TRUE;
+	}
+
+	if (configured) {
+		GPid pid;
+
+		if (!priority_set) {
+			g_ptr_array_add (argv, g_strdup ("--priority"));
+			g_ptr_array_add (argv, g_strdup_printf ("%u", nm_device_get_priority (self)));
+		}
+
+		g_ptr_array_add (argv, NULL);
+
+		if (nm_logging_enabled (LOGL_DEBUG, LOGD_DEVICE)) {
+			char *tmp;
+
+			tmp = g_strjoinv (" ", (char **) argv->pdata);
+			_LOGD (LOGD_DEVICE, "running '%s'", tmp);
+			g_free (tmp);
+		}
+
+		if (g_spawn_async (NULL, (char **) argv->pdata, NULL,
+		                   G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL, &pid, &error)) {
+			_LOGI (LOGD_DEVICE, "spawned helper PID %u", (guint) pid);
+		} else {
+			_LOGW (LOGD_DEVICE, "failed to spawn helper: %s", error->message);
+			g_error_free (error);
+		}
+	}
+
+	g_ptr_array_unref (argv);
+}
+
 /***********************************************************/
 
 static gboolean
