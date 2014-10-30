@@ -28,6 +28,7 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 
+#include "polkit-agent.h"
 #include "utils.h"
 #include "common.h"
 #include "devices.h"
@@ -2775,6 +2776,9 @@ NMCResultCode
 do_devices (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
+
+	/* Register polkit agent */
+	nmc_start_polkit_agent_start_try (nmc);
 
 	rl_attempted_completion_function = (rl_completion_func_t *) nmcli_device_tab_completion;
 

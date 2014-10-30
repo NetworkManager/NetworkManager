@@ -21,7 +21,7 @@
 .\"
 .\" Copyright 2010 - 2014 Red Hat, Inc.
 .\"
-.TH NMCLI "1" "11 September 2014"
+.TH NMCLI "1" "4 November 2014"
 
 .SH NAME
 nmcli \- command\(hyline tool for controlling NetworkManager
@@ -33,7 +33,7 @@ nmcli \- command\(hyline tool for controlling NetworkManager
 .sp
 
 .IR OBJECT " := { "
-.BR general " | " networking " | " radio " | " connection " | " device
+.BR general " | " networking " | " radio " | " connection " | " device " | " agent
 .RI " }"
 .sp
 
@@ -793,6 +793,39 @@ This command does not show the APs, use 'nmcli device wifi list' for that.
 List available WiMAX NSP. The \fIifname\fP and \fInsp\fP options
 can be used to list networks for a particular interface or with a specific
 NSP, respectively.
+.RE
+
+.TP
+.B agent \- run nmcli as a NetworkManager secret agent, or polkit agent
+.br
+.TP
+.SS \fICOMMAND\fP := { secret | polkit  | all }
+.sp
+.RS
+.TP
+.B secret
+.br
+Register nmcli as a NetworkManager secret agent and listen for secret requests.
+You do usually not need this command, because nmcli can handle secrets when
+connecting to networks. However, you may find the command useful when you use
+another tool for activating connections and you do not have a secret agent
+available (like nm-applet).
+.TP
+.B polkit
+.br
+Register nmcli as a polkit agent for the user session and listen for
+authorization requests. You do not usually need this command, because nmcli can
+handle polkit actions related to NetworkManager operations (when run with
+--ask).  However, you may find the command useful when you want to run a simple
+text based polkit agent and you do not have an agent of a desktop environment.
+Note that running this command makes nmcli handle all polkit requests, not only
+NetworkManager related ones, because only one polkit agent can run for the
+session.
+.TP
+.B all
+.br
+Runs nmcli as both NetworkManager secret and a polkit agent.
+.RE
 
 .SH ENVIRONMENT VARIABLES
 \fInmcli\fP's behavior is affected by the following environment variables.

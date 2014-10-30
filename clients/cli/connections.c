@@ -36,6 +36,7 @@
 #include "settings.h"
 #include "connections.h"
 #include "nm-secret-agent-simple.h"
+#include "polkit-agent.h"
 
 /* define some prompts for connection editor */
 #define EDITOR_PROMPT_SETTING  _("Setting name? ")
@@ -8795,6 +8796,9 @@ NMCResultCode
 do_connections (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
+
+	/* Register polkit agent */
+	nmc_start_polkit_agent_start_try (nmc);
 
 	/* Set completion function for 'nmcli con' */
 	rl_attempted_completion_function = (rl_completion_func_t *) nmcli_con_tab_completion;

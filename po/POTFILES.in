@@ -1,6 +1,7 @@
 [encoding: UTF-8]
 # List of source files containing translatable strings.
 # Please keep this file sorted alphabetically.
+clients/cli/agent.c
 clients/cli/common.c
 clients/cli/connections.c
 clients/cli/devices.c

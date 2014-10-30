@@ -1,4 +1,6 @@
-/* nmcli - command-line tool to control NetworkManager
+/*
+ *  nmcli - command-line tool for controlling NetworkManager
+ *  Functions for running NM secret agent.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,14 +19,11 @@
  * Copyright 2014 Red Hat, Inc.
  */
 
-#ifndef __NMC_POLKIT_AGENT_H__
-#define __NMC_POLKIT_AGENT_H__
+#ifndef __NMC_AGENT_H__
+#define __NMC_AGENT_H__
 
 #include "nmcli.h"
 
-gboolean nmc_polkit_agent_init (NmCli *nmc, gboolean for_session, GError **error);
-void nmc_polkit_agent_fini (NmCli* nmc);
+NMCResultCode do_agent (NmCli *nmc, int argc, char **argv);
 
-gboolean nmc_start_polkit_agent_start_try (NmCli *nmc);
-
-#endif /* __NMC_POLKIT_AGENT_H__ */
+#endif /* __NMC_AGENT_H__ */

@@ -25,6 +25,7 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 
+#include "polkit-agent.h"
 #include "utils.h"
 #include "general.h"
 
@@ -558,6 +559,9 @@ do_general (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
 
+	/* Register polkit agent */
+	nmc_start_polkit_agent_start_try (nmc);
+
 	if (argc == 0) {
 		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
 			g_string_printf (nmc->return_text, _("Error: %s."), error->message);
@@ -726,6 +730,9 @@ do_networking (NmCli *nmc, int argc, char **argv)
 {
 	gboolean enable_flag;
 
+	/* Register polkit agent */
+	nmc_start_polkit_agent_start_try (nmc);
+
 	if (argc == 0)
 		nmc_switch_show (nmc, NMC_FIELDS_NM_NETWORKING, _("Networking"));
 	else if (argc > 0) {
@@ -786,6 +793,9 @@ do_radio (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
 	gboolean enable_flag;
+
+	/* Register polkit agent */
+	nmc_start_polkit_agent_start_try (nmc);
 
 	if (argc == 0) {
 		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {

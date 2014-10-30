@@ -43,6 +43,7 @@
 #include "connections.h"
 #include "devices.h"
 #include "general.h"
+#include "agent.h"
 
 #if defined(NM_DIST_VERSION)
 # define NMCLI_VERSION NM_DIST_VERSION
@@ -102,6 +103,7 @@ usage (const char *prog_name)
 	              "  r[adio]         NetworkManager radio switches\n"
 	              "  c[onnection]    NetworkManager's connections\n"
 	              "  d[evice]        devices managed by NetworkManager\n"
+	              "  a[gent]         NetworkManager secret agent or polkit agent\n"
 	              "\n"),
 	            prog_name);
 }
@@ -122,6 +124,7 @@ static const struct cmd {
 	{ "radio",      do_radio },
 	{ "connection", do_connections },
 	{ "device",     do_devices },
+	{ "agent",      do_agent },
 	{ "help",       do_help },
 	{ 0 }
 };
@@ -266,14 +269,6 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 	}
 
 	if (argc > 1) {
-		GError *error = NULL;
-
-		/* Initialize polkit agent */
-		if (!nmc_polkit_agent_init (&nm_cli, FALSE, &error)) {
-			g_printerr ("Polkit agent initialization failed: %s\n", error->message);
-			g_error_free (error);
-		}
-
 		/* Now run the requested command */
 		return do_cmd (nmc, argv[1], argc-1, argv+1);
 	}

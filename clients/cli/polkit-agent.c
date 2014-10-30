@@ -102,10 +102,6 @@ nmc_polkit_agent_init (NmCli* nmc, gboolean for_session, GError **error)
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	/* We don't register polkit agent at all when running non-interactively */
-	if (!nmc->ask)
-		return TRUE;
-
 	listener = nm_polkit_listener_new (for_session, error);
 	if (!listener)
 		return FALSE;
@@ -125,6 +121,24 @@ nmc_polkit_agent_fini (NmCli* nmc)
 	g_clear_object (&nmc->pk_listener);
 }
 
+gboolean
+nmc_start_polkit_agent_start_try (NmCli *nmc)
+{
+	GError *error = NULL;
+
+	/* We don't register polkit agent at all when running non-interactively */
+	if (!nmc->ask)
+		return TRUE;
+
+	if (!nmc_polkit_agent_init (nmc, FALSE, &error)) {
+		g_printerr (_("Warning: polkit agent initialization failed: %s\n"),
+		            error->message);
+		g_error_free (error);
+		return FALSE;
+	}
+	return TRUE;
+}
+
 #else
 /* polkit agent is not avalable; implement stub functions. */
 
@@ -141,6 +155,12 @@ nmc_polkit_agent_init (NmCli* nmc, gboolean for_session, GError **error)
 void
 nmc_polkit_agent_fini (NmCli* nmc)
 {
+}
+
+gboolean
+nmc_start_polkit_agent_start_try (NmCli *nmc)
+{
+	return TRUE;
 }
 
 #endif /* #if WITH_POLKIT_AGENT */

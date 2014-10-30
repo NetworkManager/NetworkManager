@@ -16,6 +16,8 @@ AM_CPPFLAGS = \
 	-DNMCLI_LOCALEDIR=\"$(datadir)/locale\"
 
 nmcli_SOURCES = \
+	agent.c \
+	agent.h \
 	common.c \
 	common.h \
 	connections.c \
