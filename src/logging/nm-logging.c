@@ -34,6 +34,7 @@
 
 #include <glib/gi18n.h>
 
+#include "nm-glib-compat.h"
 #include "nm-logging.h"
 
 static void
@@ -42,30 +43,20 @@ nm_log_handler (const gchar *log_domain,
                 const gchar *message,
                 gpointer ignored);
 
-#define LOGD_ALL \
-	(LOGD_PLATFORM | LOGD_RFKILL | LOGD_ETHER | LOGD_WIFI | LOGD_BT | LOGD_MB | \
-	 LOGD_DHCP4 | LOGD_DHCP6 | LOGD_PPP | LOGD_WIFI_SCAN | LOGD_IP4 | \
-	 LOGD_IP6 | LOGD_AUTOIP4 | LOGD_DNS | LOGD_VPN | LOGD_SHARING | \
-	 LOGD_SUPPLICANT | LOGD_AGENTS | LOGD_SETTINGS | LOGD_SUSPEND | \
-	 LOGD_CORE | LOGD_DEVICE | LOGD_OLPC | LOGD_WIMAX | \
-	 LOGD_INFINIBAND | LOGD_FIREWALL | LOGD_ADSL | LOGD_BOND | \
-	 LOGD_VLAN | LOGD_BRIDGE | LOGD_DBUS_PROPS | LOGD_TEAM | LOGD_CONCHECK | \
-	 LOGD_DCB | LOGD_DISPATCH)
-
-#define LOGD_DEFAULT (LOGD_ALL & ~(LOGD_WIFI_SCAN | LOGD_DBUS_PROPS))
-
-static guint32 log_level = LOGL_INFO;
+static NMLogLevel log_level = LOGL_INFO;
 static char *log_domains;
-static guint64 logging[LOGL_MAX];
+static NMLogDomain logging[LOGL_MAX];
 static gboolean logging_set_up;
 static gboolean syslog_opened;
+static char *logging_domains_to_string;
 
 typedef struct {
-	guint64 num;
+	NMLogDomain num;
 	const char *name;
 } LogDesc;
 
 static const char *level_names[LOGL_MAX] = {
+	[LOGL_TRACE] = "TRACE",
 	[LOGL_DEBUG] = "DEBUG",
 	[LOGL_INFO] = "INFO",
 	[LOGL_WARN] = "WARN",
@@ -132,9 +123,16 @@ nm_logging_error_quark (void)
 
 /************************************************************************/
 
+static void
+_ensure_initialized ()
+{
+	if (G_UNLIKELY (!logging_set_up))
+		nm_logging_setup ("INFO", "DEFAULT", NULL, NULL);
+}
+
 static gboolean
 match_log_level (const char  *level,
-                 guint32     *out_level,
+                 NMLogLevel  *out_level,
                  GError     **error)
 {
 	int i;
@@ -158,10 +156,13 @@ nm_logging_setup (const char  *level,
                   GError     **error)
 {
 	GString *unrecognized = NULL;
-	guint64 new_logging[LOGL_MAX];
-	guint32 new_log_level = log_level;
+	NMLogDomain new_logging[LOGL_MAX];
+	NMLogLevel new_log_level = log_level;
 	char **tmp, **iter;
 	int i;
+
+	g_return_val_if_fail (!bad_domains || !*bad_domains, FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
 
 	logging_set_up = TRUE;
 
@@ -181,8 +182,8 @@ nm_logging_setup (const char  *level,
 	tmp = g_strsplit_set (domains, ", ", 0);
 	for (iter = tmp; iter && *iter; iter++) {
 		const LogDesc *diter;
-		guint32 domain_log_level;
-		guint64 bits;
+		NMLogLevel domain_log_level;
+		NMLogDomain bits;
 		char *p;
 
 		if (!strlen (*iter))
@@ -250,6 +251,8 @@ nm_logging_setup (const char  *level,
 		log_domains = g_strdup (domains);
 	}
 
+	g_clear_pointer (&logging_domains_to_string, g_free);
+
 	log_level = new_log_level;
 	for (i = 0; i < LOGL_MAX; i++)
 		logging[i] = new_logging[i];
@@ -260,10 +263,10 @@ nm_logging_setup (const char  *level,
 	return TRUE;
 }
 
-char *
+const char *
 nm_logging_level_to_string (void)
 {
-	return g_strdup (level_names[log_level]);
+	return level_names[log_level];
 }
 
 const char *
@@ -285,45 +288,50 @@ nm_logging_all_levels_to_string (void)
 	return str->str;
 }
 
-char *
+const char *
 nm_logging_domains_to_string (void)
 {
-	const LogDesc *diter;
-	GString *str;
-	int i;
+	_ensure_initialized ();
 
-	/* We don't just return g_strdup (log_domains) because we want to expand
-	 * "DEFAULT" and "ALL".
-	 */
+	if (G_UNLIKELY (!logging_domains_to_string)) {
+		const LogDesc *diter;
+		GString *str;
+		int i;
 
-	str = g_string_sized_new (75);
-	for (diter = &domain_descs[0]; diter->name; diter++) {
-		/* If it's set for any lower level, it will also be set for LOGL_ERR */
-		if (!(diter->num & logging[LOGL_ERR]))
-			continue;
+		/* We don't just return g_strdup (log_domains) because we want to expand
+		 * "DEFAULT" and "ALL".
+		 */
 
-		if (str->len)
-			g_string_append_c (str, ',');
-		g_string_append (str, diter->name);
+		str = g_string_sized_new (75);
+		for (diter = &domain_descs[0]; diter->name; diter++) {
+			/* If it's set for any lower level, it will also be set for LOGL_ERR */
+			if (!(diter->num & logging[LOGL_ERR]))
+				continue;
 
-		/* Check if it's logging at a lower level than the default. */
-		for (i = 0; i < log_level; i++) {
-			if (diter->num & logging[i]) {
-				g_string_append_printf (str, ":%s", level_names[i]);
-				break;
-			}
-		}
-		/* Check if it's logging at a higher level than the default. */
-		if (!(diter->num & logging[log_level])) {
-			for (i = log_level + 1; i < LOGL_MAX; i++) {
+			if (str->len)
+				g_string_append_c (str, ',');
+			g_string_append (str, diter->name);
+
+			/* Check if it's logging at a lower level than the default. */
+			for (i = 0; i < log_level; i++) {
 				if (diter->num & logging[i]) {
 					g_string_append_printf (str, ":%s", level_names[i]);
 					break;
 				}
 			}
+			/* Check if it's logging at a higher level than the default. */
+			if (!(diter->num & logging[log_level])) {
+				for (i = log_level + 1; i < LOGL_MAX; i++) {
+					if (diter->num & logging[i]) {
+						g_string_append_printf (str, ":%s", level_names[i]);
+						break;
+					}
+				}
+			}
 		}
+		logging_domains_to_string = g_string_free (str, FALSE);
 	}
-	return g_string_free (str, FALSE);
+	return logging_domains_to_string;
 }
 
 const char *
@@ -350,9 +358,11 @@ nm_logging_all_domains_to_string (void)
 }
 
 gboolean
-nm_logging_enabled (guint32 level, guint64 domain)
+nm_logging_enabled (NMLogLevel level, NMLogDomain domain)
 {
 	g_return_val_if_fail (level < LOGL_MAX, FALSE);
+
+	_ensure_initialized ();
 
 	return !!(logging[level] & domain);
 }
@@ -360,8 +370,8 @@ nm_logging_enabled (guint32 level, guint64 domain)
 void
 _nm_log (const char *loc,
          const char *func,
-         guint64 domain,
-         guint32 level,
+         NMLogLevel level,
+         NMLogDomain domain,
          const char *fmt,
          ...)
 {
@@ -374,8 +384,7 @@ _nm_log (const char *loc,
 
 	g_return_if_fail (level < LOGL_MAX);
 
-	if (G_UNLIKELY (!logging_set_up))
-		nm_logging_setup ("INFO", "DEFAULT", NULL, NULL);
+	_ensure_initialized ();
 
 	if (!(logging[level] & domain))
 		return;
@@ -385,6 +394,12 @@ _nm_log (const char *loc,
 	va_end (args);
 
 	switch (level) {
+	case LOGL_TRACE:
+		g_get_current_time (&tv);
+		syslog_level = LOG_DEBUG;
+		g_log_level = G_LOG_LEVEL_DEBUG;
+		fullmsg = g_strdup_printf ("<trace> [%ld.%06ld] [%s] %s(): %s", tv.tv_sec, tv.tv_usec, loc, func, msg);
+		break;
 	case LOGL_DEBUG:
 		g_get_current_time (&tv);
 		syslog_level = LOG_INFO;
@@ -394,12 +409,12 @@ _nm_log (const char *loc,
 	case LOGL_INFO:
 		syslog_level = LOG_INFO;
 		g_log_level = G_LOG_LEVEL_MESSAGE;
-		fullmsg = g_strconcat ("<info> ", msg, NULL);
+		fullmsg = g_strconcat ("<info>  ", msg, NULL);
 		break;
 	case LOGL_WARN:
 		syslog_level = LOG_WARNING;
 		g_log_level = G_LOG_LEVEL_WARNING;
-		fullmsg = g_strconcat ("<warn> ", msg, NULL);
+		fullmsg = g_strconcat ("<warn>  ", msg, NULL);
 		break;
 	case LOGL_ERR:
 		syslog_level = LOG_ERR;

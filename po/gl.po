@@ -2608,8 +2608,8 @@ msgstr "engadido1,engadido2"
 
 #. Translators: Do not translate the values in the square brackets
 #: ../src/main.c:371
-msgid "Log level: one of [ERR, WARN, INFO, DEBUG]"
-msgstr "Nivel de rexistroÑ un de [ERR, WARN, INFO, DEBUG]"
+msgid "Log level: one of [ERR, WARN, INFO, DEBUG, TRACE]"
+msgstr "Nivel de rexistroÑ un de [ERR, WARN, INFO, DEBUG, TRACE]"
 
 #. Translators: Do not translate the values in the square brackets
 #: ../src/main.c:374

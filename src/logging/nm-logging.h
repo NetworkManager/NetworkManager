@@ -29,59 +29,70 @@
 #include <glib.h>
 #include <glib-object.h>
 
-/* Log domains */
-enum {
-	LOGD_NONE       = 0LL,
-	LOGD_PLATFORM   = (1LL << 1), /* Platform services */
-	LOGD_RFKILL     = (1LL << 2),
-	LOGD_ETHER      = (1LL << 3),
-	LOGD_WIFI       = (1LL << 4),
-	LOGD_BT         = (1LL << 5),
-	LOGD_MB         = (1LL << 6), /* mobile broadband */
-	LOGD_DHCP4      = (1LL << 7),
-	LOGD_DHCP6      = (1LL << 8),
-	LOGD_PPP        = (1LL << 9),
-	LOGD_WIFI_SCAN  = (1LL << 10),
-	LOGD_IP4        = (1LL << 11),
-	LOGD_IP6        = (1LL << 12),
-	LOGD_AUTOIP4    = (1LL << 13),
-	LOGD_DNS        = (1LL << 14),
-	LOGD_VPN        = (1LL << 15),
-	LOGD_SHARING    = (1LL << 16), /* Connection sharing/dnsmasq */
-	LOGD_SUPPLICANT = (1LL << 17), /* WiFi and 802.1x */
-	LOGD_AGENTS     = (1LL << 18), /* Secret agents */
-	LOGD_SETTINGS   = (1LL << 19), /* Settings */
-	LOGD_SUSPEND    = (1LL << 20), /* Suspend/Resume */
-	LOGD_CORE       = (1LL << 21), /* Core daemon and policy stuff */
-	LOGD_DEVICE     = (1LL << 22), /* Device state and activation */
-	LOGD_OLPC       = (1LL << 23),
-	LOGD_WIMAX      = (1LL << 24),
-	LOGD_INFINIBAND = (1LL << 25),
-	LOGD_FIREWALL   = (1LL << 26),
-	LOGD_ADSL       = (1LL << 27),
-	LOGD_BOND       = (1LL << 28),
-	LOGD_VLAN       = (1LL << 29),
-	LOGD_BRIDGE     = (1LL << 30),
-	LOGD_DBUS_PROPS = (1LL << 31),
-	LOGD_TEAM       = (1LL << 32),
-	LOGD_CONCHECK   = (1LL << 33),
-	LOGD_DCB        = (1LL << 34), /* Data Center Bridging */
-	LOGD_DISPATCH   = (1LL << 35),
-};
+#include "nm-utils-internal.h"
 
-#define LOGD_DHCP (LOGD_DHCP4 | LOGD_DHCP6)
-#define LOGD_IP   (LOGD_IP4 | LOGD_IP6)
-#define LOGD_HW LOGD_PLATFORM
+/* Log domains */
+typedef enum  { /*< skip >*/
+	LOGD_NONE       = 0LL,
+	LOGD_PLATFORM   = (1LL << 0), /* Platform services */
+	LOGD_RFKILL     = (1LL << 1),
+	LOGD_ETHER      = (1LL << 2),
+	LOGD_WIFI       = (1LL << 3),
+	LOGD_BT         = (1LL << 4),
+	LOGD_MB         = (1LL << 5), /* mobile broadband */
+	LOGD_DHCP4      = (1LL << 6),
+	LOGD_DHCP6      = (1LL << 7),
+	LOGD_PPP        = (1LL << 8),
+	LOGD_WIFI_SCAN  = (1LL << 9),
+	LOGD_IP4        = (1LL << 10),
+	LOGD_IP6        = (1LL << 11),
+	LOGD_AUTOIP4    = (1LL << 12),
+	LOGD_DNS        = (1LL << 13),
+	LOGD_VPN        = (1LL << 14),
+	LOGD_SHARING    = (1LL << 15), /* Connection sharing/dnsmasq */
+	LOGD_SUPPLICANT = (1LL << 16), /* WiFi and 802.1x */
+	LOGD_AGENTS     = (1LL << 17), /* Secret agents */
+	LOGD_SETTINGS   = (1LL << 18), /* Settings */
+	LOGD_SUSPEND    = (1LL << 19), /* Suspend/Resume */
+	LOGD_CORE       = (1LL << 20), /* Core daemon and policy stuff */
+	LOGD_DEVICE     = (1LL << 21), /* Device state and activation */
+	LOGD_OLPC       = (1LL << 22),
+	LOGD_WIMAX      = (1LL << 23),
+	LOGD_INFINIBAND = (1LL << 24),
+	LOGD_FIREWALL   = (1LL << 25),
+	LOGD_ADSL       = (1LL << 26),
+	LOGD_BOND       = (1LL << 27),
+	LOGD_VLAN       = (1LL << 28),
+	LOGD_BRIDGE     = (1LL << 29),
+	LOGD_DBUS_PROPS = (1LL << 30),
+	LOGD_TEAM       = (1LL << 31),
+	LOGD_CONCHECK   = (1LL << 32),
+	LOGD_DCB        = (1LL << 33), /* Data Center Bridging */
+	LOGD_DISPATCH   = (1LL << 34),
+
+	__LOGD_MAX,
+	LOGD_ALL       = ((__LOGD_MAX - 1LL) << 1) - 1LL,
+	LOGD_DEFAULT   = LOGD_ALL & ~(
+	                              LOGD_DBUS_PROPS |
+	                              LOGD_WIFI_SCAN |
+	                              0),
+
+	/* aliases: */
+	LOGD_DHCP       = LOGD_DHCP4 | LOGD_DHCP6,
+	LOGD_IP         = LOGD_IP4 | LOGD_IP6,
+	LOGD_HW         = LOGD_PLATFORM,
+} NMLogDomain;
 
 /* Log levels */
-enum {
+typedef enum  { /*< skip >*/
+	LOGL_TRACE,
 	LOGL_DEBUG,
 	LOGL_INFO,
 	LOGL_WARN,
 	LOGL_ERR,
 
 	LOGL_MAX
-};
+} NMLogLevel;
 
 typedef enum {
 	NM_LOGGING_ERROR_UNKNOWN_LEVEL = 0,  /*< nick=UnknownLevel >*/
@@ -92,45 +103,59 @@ typedef enum {
 GQuark nm_logging_error_quark    (void);
 
 
-#define nm_log_err(domain, ...) \
-	_nm_log (G_STRLOC, G_STRFUNC, domain, LOGL_ERR, ## __VA_ARGS__ )
+#define nm_log_err(domain, ...)     nm_log (LOGL_ERR,   (domain), __VA_ARGS__)
+#define nm_log_warn(domain, ...)    nm_log (LOGL_WARN,  (domain), __VA_ARGS__)
+#define nm_log_info(domain, ...)    nm_log (LOGL_INFO,  (domain), __VA_ARGS__)
+#define nm_log_dbg(domain, ...)     nm_log (LOGL_DEBUG, (domain), __VA_ARGS__)
+#define nm_log_trace(domain, ...)   nm_log (LOGL_TRACE, (domain), __VA_ARGS__)
 
-#define nm_log_warn(domain, ...) \
-	_nm_log (G_STRLOC, G_STRFUNC, domain, LOGL_WARN, ## __VA_ARGS__ )
+/* nm_log() only evaluates it's argument list after checking
+ * whether logging for the given level/domain is enabled.  */
+#define nm_log(level, domain, ...) \
+    G_STMT_START { \
+        if (nm_logging_enabled ((level), (domain))) { \
+            _nm_log (G_STRLOC, G_STRFUNC, (level), (domain), __VA_ARGS__); \
+        } \
+    } G_STMT_END
 
-#define nm_log_info(domain, ...) \
-	_nm_log (G_STRLOC, G_STRFUNC, domain, LOGL_INFO, ## __VA_ARGS__ )
 
-#define nm_log_dbg(domain, ...) \
-	_nm_log (G_STRLOC, G_STRFUNC, domain, LOGL_DEBUG, ## __VA_ARGS__ )
+#define _nm_log_ptr(level, domain, self, ...) \
+   nm_log ((level), (domain), "[%p] " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), self _NM_UTILS_MACRO_REST(__VA_ARGS__))
 
-#define nm_log(domain, level, ...) \
-	_nm_log (G_STRLOC, G_STRFUNC, domain, level, ## __VA_ARGS__ )
+/* log a message for an object (with providing a generic @self pointer) */
+#define nm_log_ptr(level, domain, self, ...) \
+    G_STMT_START { \
+        if ((level) <= LOGL_DEBUG) { \
+            _nm_log_ptr ((level), (domain), (self), __VA_ARGS__); \
+        } else { \
+            nm_log ((level), (domain), __VA_ARGS__); \
+        } \
+    } G_STMT_END
+
+
+#define _nm_log_obj(level, domain, self, ...) \
+    _nm_log_ptr ((level), (domain), (self), __VA_ARGS__)
+
+/* log a message for an object (with providing a @self pointer to a GObject).
+ * Contrary to nm_log_ptr(), @self must be a GObject type (or %NULL).
+ * As of now, nm_log_obj() is identical to nm_log_ptr(), but we might change that */
+#define nm_log_obj(level, domain, self, ...) \
+    nm_log_ptr ((level), (domain), (self), __VA_ARGS__)
+
 
 void _nm_log (const char *loc,
               const char *func,
-              guint64 domain,
-              guint32 level,
+              NMLogLevel level,
+              NMLogDomain domain,
               const char *fmt,
               ...) __attribute__((__format__ (__printf__, 5, 6)));
 
-char *nm_logging_level_to_string (void);
-char *nm_logging_domains_to_string (void);
-gboolean nm_logging_enabled (guint32 level, guint64 domain);
+const char *nm_logging_level_to_string (void);
+const char *nm_logging_domains_to_string (void);
+gboolean nm_logging_enabled (NMLogLevel level, NMLogDomain domain);
 
 const char *nm_logging_all_levels_to_string (void);
 const char *nm_logging_all_domains_to_string (void);
-
-/* Undefine the nm-utils.h logging stuff to ensure errors */
-#undef nm_get_timestamp
-#undef nm_info
-#undef nm_info_str
-#undef nm_debug
-#undef nm_debug_str
-#undef nm_warning
-#undef nm_warning_str
-#undef nm_error
-#undef nm_error_str
 
 gboolean nm_logging_setup (const char  *level,
                            const char  *domains,
