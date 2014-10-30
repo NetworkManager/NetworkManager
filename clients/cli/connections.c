@@ -5383,7 +5383,7 @@ gen_func_bool_values (const char *text, int state)
 static char *
 gen_cmd_verify0 (const char *text, int state)
 {
-	const char *words[] = { "all", NULL };
+	const char *words[] = { "all", "fix", NULL };
 	return nmc_rl_gen_func_basic (text, state, words);
 }
 
@@ -6099,7 +6099,7 @@ editor_main_usage (void)
 	           "set      [<setting>.<prop> <value>]  :: set property value\n"
 	           "describe [<setting>.<prop>]          :: describe property\n"
 	           "print    [all | <setting>[.<prop>]]  :: print the connection\n"
-	           "verify   [all]                       :: verify the connection\n"
+	           "verify   [all | fix]                 :: verify the connection\n"
 	           "save     [persistent|temporary]      :: save the connection\n"
 	           "activate [<ifname>] [/<ap>|<nsp>]    :: activate the connection\n"
 	           "back                                 :: go one level up (back)\n"
@@ -6149,10 +6149,12 @@ editor_main_help (const char *command)
 			           "Example: nmcli ipv4> print all\n"));
 			break;
 		case NMC_EDITOR_MAIN_CMD_VERIFY:
-			g_print (_("verify [all]  :: verify setting or connection validity\n\n"
-			           "Verifies whether the setting or connection is valid and can "
-			           "be saved later. It indicates invalid values on error.\n\n"
+			g_print (_("verify [all | fix]  :: verify setting or connection validity\n\n"
+			           "Verifies whether the setting or connection is valid and can be saved later.\n"
+			           "It indicates invalid values on error. Some errors may be fixed automatically\n"
+			           "by 'fix' option.\n\n"
 			           "Examples: nmcli> verify\n"
+			           "          nmcli> verify fix\n"
 			           "          nmcli bond> verify\n"));
 			break;
 		case NMC_EDITOR_MAIN_CMD_SAVE:
@@ -7391,6 +7393,11 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 
 		case NMC_EDITOR_MAIN_CMD_VERIFY:
 			/* Verify current setting or the whole connection */
+			if (cmd_arg && strcmp (cmd_arg, "all") && strcmp (cmd_arg, "fix")) {
+				g_print (_("Invalid verify option: %s\n"), cmd_arg);
+				break;
+			}
+
 			if (   menu_ctx.curr_setting
 			    && (!cmd_arg || strcmp (cmd_arg, "all") != 0)) {
 				GError *tmp_err = NULL;
@@ -7401,9 +7408,19 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				g_clear_error (&tmp_err);
 			} else {
 				GError *tmp_err = NULL;
-				(void) nm_connection_verify (connection, &tmp_err);
+				gboolean valid, modified;
+				gboolean fixed = TRUE;
+
+				valid = nm_connection_verify (connection, &tmp_err);
+				if (!valid && (g_strcmp0 (cmd_arg, "fix") == 0)) {
+					/* Try to fix normalizable errors */
+					g_clear_error (&tmp_err);
+					fixed = nm_connection_normalize (connection, NULL, &modified, &tmp_err);
+				}
 				g_print (_("Verify connection: %s\n"),
 				         tmp_err ? tmp_err->message : "OK");
+				if (!fixed)
+					g_print (_("The error cannot be fixed automatically.\n"));
 				g_clear_error (&tmp_err);
 			}
 			break;
@@ -7493,9 +7510,11 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				nmc_editor_cb_called = FALSE;
 				nmc_editor_error = NULL;
 				g_mutex_unlock (&nmc_editor_mutex);
-			} else
+			} else {
 				g_print (_("Error: connection verification failed: %s\n"),
 				         err1 ? err1->message : _("(unknown error)"));
+				g_print (_("You may try running 'verify fix' to fix errors.\n"));
+			}
 
 			g_clear_error (&err1);
 			break;
@@ -7688,6 +7707,8 @@ editor_init_new_connection (NmCli *nmc, NMConnection *connection)
 
 	/* Initialize new connection according to its type using sensible defaults. */
 
+	nmc_setting_connection_connect_handlers (s_con, connection);
+
 	if (g_strcmp0 (con_type, "bond-slave") == 0)
 		slave_type = NM_SETTING_BOND_SETTING_NAME;
 	if (g_strcmp0 (con_type, "team-slave") == 0)
@@ -7790,10 +7811,12 @@ editor_init_existing_connection (NMConnection *connection)
 	NMSettingIP4Config *s_ip4;
 	NMSettingIP6Config *s_ip6;
 	NMSettingWireless *s_wireless;
+	NMSettingConnection *s_con;
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	s_wireless = nm_connection_get_setting_wireless (connection);
+	s_con = nm_connection_get_setting_connection (connection);
 
 	if (s_ip4)
 		nmc_setting_ip4_connect_handlers (s_ip4);
@@ -7801,6 +7824,8 @@ editor_init_existing_connection (NMConnection *connection)
 		nmc_setting_ip6_connect_handlers (s_ip6);
 	if (s_wireless)
 		nmc_setting_wireless_connect_handlers (s_wireless);
+	if (s_con)
+		nmc_setting_connection_connect_handlers (s_con, connection);
 }
 
 static NMCResultCode
