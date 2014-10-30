@@ -44,27 +44,15 @@ nm_log_handler (const gchar *log_domain,
                 const gchar *message,
                 gpointer ignored);
 
-#define LOGD_ALL \
-	(LOGD_PLATFORM | LOGD_RFKILL | LOGD_ETHER | LOGD_WIFI | LOGD_BT | LOGD_MB | \
-	 LOGD_DHCP4 | LOGD_DHCP6 | LOGD_PPP | LOGD_WIFI_SCAN | LOGD_IP4 | \
-	 LOGD_IP6 | LOGD_AUTOIP4 | LOGD_DNS | LOGD_VPN | LOGD_SHARING | \
-	 LOGD_SUPPLICANT | LOGD_AGENTS | LOGD_SETTINGS | LOGD_SUSPEND | \
-	 LOGD_CORE | LOGD_DEVICE | LOGD_OLPC | LOGD_WIMAX | \
-	 LOGD_INFINIBAND | LOGD_FIREWALL | LOGD_ADSL | LOGD_BOND | \
-	 LOGD_VLAN | LOGD_BRIDGE | LOGD_DBUS_PROPS | LOGD_TEAM | LOGD_CONCHECK | \
-	 LOGD_DCB | LOGD_DISPATCH)
-
-#define LOGD_DEFAULT (LOGD_ALL & ~(LOGD_WIFI_SCAN | LOGD_DBUS_PROPS))
-
-static guint32 log_level = LOGL_INFO;
+static NMLogLevel log_level = LOGL_INFO;
 static char *log_domains;
-static guint64 logging[LOGL_MAX];
+static NMLogDomain logging[LOGL_MAX];
 static gboolean logging_set_up;
 static gboolean syslog_opened;
 static char *logging_domains_to_string;
 
 typedef struct {
-	guint64 num;
+	NMLogDomain num;
 	const char *name;
 } LogDesc;
 
@@ -133,7 +121,7 @@ _ensure_initialized (void)
 
 static gboolean
 match_log_level (const char  *level,
-                 guint32     *out_level,
+                 NMLogLevel  *out_level,
                  GError     **error)
 {
 	int i;
@@ -157,8 +145,8 @@ nm_logging_setup (const char  *level,
                   GError     **error)
 {
 	GString *unrecognized = NULL;
-	guint64 new_logging[LOGL_MAX];
-	guint32 new_log_level = log_level;
+	NMLogDomain new_logging[LOGL_MAX];
+	NMLogLevel new_log_level = log_level;
 	char **tmp, **iter;
 	int i;
 
@@ -183,8 +171,8 @@ nm_logging_setup (const char  *level,
 	tmp = g_strsplit_set (domains, ", ", 0);
 	for (iter = tmp; iter && *iter; iter++) {
 		const LogDesc *diter;
-		guint32 domain_log_level;
-		guint64 bits;
+		NMLogLevel domain_log_level;
+		NMLogDomain bits;
 		char *p;
 
 		if (!strlen (*iter))
@@ -359,7 +347,7 @@ nm_logging_all_domains_to_string (void)
 }
 
 gboolean
-nm_logging_enabled (guint32 level, guint64 domain)
+nm_logging_enabled (NMLogLevel level, NMLogDomain domain)
 {
 	g_return_val_if_fail (level < LOGL_MAX, FALSE);
 
@@ -371,8 +359,8 @@ nm_logging_enabled (guint32 level, guint64 domain)
 void
 _nm_log (const char *loc,
          const char *func,
-         guint32 level,
-         guint64 domain,
+         NMLogLevel level,
+         NMLogDomain domain,
          const char *fmt,
          ...)
 {

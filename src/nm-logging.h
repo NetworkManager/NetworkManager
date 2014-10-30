@@ -32,7 +32,7 @@
 #include "nm-utils-internal.h"
 
 /* Log domains */
-enum {
+typedef enum  { /*< skip >*/
 	LOGD_NONE       = 0LL,
 	LOGD_PLATFORM   = (1LL << 0), /* Platform services */
 	LOGD_RFKILL     = (1LL << 1),
@@ -69,14 +69,22 @@ enum {
 	LOGD_CONCHECK   = (1LL << 32),
 	LOGD_DCB        = (1LL << 33), /* Data Center Bridging */
 	LOGD_DISPATCH   = (1LL << 34),
-};
 
-#define LOGD_DHCP (LOGD_DHCP4 | LOGD_DHCP6)
-#define LOGD_IP   (LOGD_IP4 | LOGD_IP6)
-#define LOGD_HW LOGD_PLATFORM
+	__LOGD_MAX,
+	LOGD_ALL       = ((__LOGD_MAX - 1LL) << 1) - 1LL,
+	LOGD_DEFAULT   = LOGD_ALL & ~(
+	                              LOGD_DBUS_PROPS |
+	                              LOGD_WIFI_SCAN |
+	                              0),
+
+	/* aliases: */
+	LOGD_DHCP       = LOGD_DHCP4 | LOGD_DHCP6,
+	LOGD_IP         = LOGD_IP4 | LOGD_IP6,
+	LOGD_HW         = LOGD_PLATFORM,
+} NMLogDomain;
 
 /* Log levels */
-enum {
+typedef enum  { /*< skip >*/
 	LOGL_TRACE,
 	LOGL_DEBUG,
 	LOGL_INFO,
@@ -84,7 +92,7 @@ enum {
 	LOGL_ERR,
 
 	LOGL_MAX
-};
+} NMLogLevel;
 
 #define nm_log_err(domain, ...)     nm_log (LOGL_ERR,   (domain), __VA_ARGS__)
 #define nm_log_warn(domain, ...)    nm_log (LOGL_WARN,  (domain), __VA_ARGS__)
@@ -128,14 +136,14 @@ enum {
 
 void _nm_log (const char *loc,
               const char *func,
-              guint32 level,
-              guint64 domain,
+              NMLogLevel level,
+              NMLogDomain domain,
               const char *fmt,
               ...) __attribute__((__format__ (__printf__, 5, 6)));
 
 const char *nm_logging_level_to_string (void);
 const char *nm_logging_domains_to_string (void);
-gboolean nm_logging_enabled (guint32 level, guint64 domain);
+gboolean nm_logging_enabled (NMLogLevel level, NMLogDomain domain);
 
 const char *nm_logging_all_levels_to_string (void);
 const char *nm_logging_all_domains_to_string (void);
