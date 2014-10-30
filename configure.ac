@@ -953,7 +953,6 @@ libnm-util/libnm-util.pc
 libnm-util/nm-version.h
 libnm-util/Makefile
 libnm-util/tests/Makefile
-libnm-util/tests/certs/Makefile
 libnm-glib/libnm-glib.pc
 libnm-glib/libnm-glib-vpn.pc
 libnm-glib/Makefile

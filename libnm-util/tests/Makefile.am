@@ -1,7 +1,5 @@
 if ENABLE_TESTS
 
-SUBDIRS=certs
-
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/libnm-util \
@@ -10,7 +8,7 @@ AM_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	-DBUILD_DIR=\"$(abs_builddir)\" \
-	-DTEST_CERT_DIR=\"$(top_srcdir)/libnm-util/tests/certs/\"
+	-DTEST_CERT_DIR=\"$(top_srcdir)/libnm-core/tests/certs/\"
 
 TESTS = \
 	test-settings-defaults \

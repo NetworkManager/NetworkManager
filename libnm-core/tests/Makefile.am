@@ -1,6 +1,6 @@
 if ENABLE_TESTS
 
-certsdir = $(top_srcdir)/libnm-util/tests/certs
+certsdir = $(srcdir)/certs
 
 AM_CPPFLAGS = \
 	-I${top_srcdir}/include \
@@ -27,3 +27,29 @@ LDADD = \
 TESTS = $(noinst_PROGRAMS)
 
 endif
+
+# test-cert.p12 created with:
+#
+# openssl pkcs12 -export \
+#	-in test_key_and_cert.pem \
+#	-inkey test_key_and_cert.pem \
+#	-certfile test_ca_cert.pem \
+#	-name "test-pkcs12" \
+#	-out test-cert.p12
+
+EXTRA_DIST =                              \
+	certs/test_ca_cert.pem            \
+	certs/test_ca_cert.der            \
+	certs/test_key_and_cert.pem       \
+	certs/test-cert.p12               \
+	certs/test2_ca_cert.pem           \
+	certs/test2_key_and_cert.pem      \
+	certs/test2-cert.p12              \
+	certs/ca-no-ending-newline.pem    \
+	certs/test-key-only.pem           \
+	certs/test-key-only-decrypted.der \
+	certs/pkcs8-enc-key.pem           \
+	certs/pkcs8-noenc-key.pem         \
+	certs/pkcs8-decrypted.der         \
+	certs/test-aes-key.pem
+
