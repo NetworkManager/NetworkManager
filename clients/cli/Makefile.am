@@ -30,6 +30,8 @@ nmcli_SOURCES = \
 	nmcli.h \
 	utils.c \
 	utils.h \
+	polkit-agent.c \
+	polkit-agent.h \
 	\
 	$(srcdir)/../common/nm-secret-agent-simple.c \
 	$(srcdir)/../common/nm-secret-agent-simple.h \
@@ -39,6 +41,12 @@ nmcli_LDADD = \
 	$(GLIB_LIBS) \
 	$(READLINE_LIBS) \
 	$(top_builddir)/libnm/libnm.la
+
+if WITH_POLKIT_AGENT
+AM_CPPFLAGS += $(POLKIT_CFLAGS)
+nmcli_SOURCES += $(srcdir)/../common/nm-polkit-listener.c $(srcdir)/../common/nm-polkit-listener.h
+nmcli_LDADD += $(POLKIT_LIBS)
+endif
 
 if BUILD_SETTING_DOCS
 settings-docs.c: settings-docs.xsl $(top_builddir)/libnm-util/nm-setting-docs.xml
