@@ -2156,6 +2156,32 @@ out:
 }
 
 
+#define IPV6_PROPERTY_DIR "/proc/sys/net/ipv6/conf/"
+#define IPV4_PROPERTY_DIR "/proc/sys/net/ipv4/conf/"
+G_STATIC_ASSERT (sizeof (IPV4_PROPERTY_DIR) == sizeof (IPV6_PROPERTY_DIR));
+
+static const char *
+_get_property_path (const char *ifname,
+                    const char *property,
+                    gboolean ipv6)
+{
+	static char path[sizeof (IPV6_PROPERTY_DIR) + IFNAMSIZ + 32];
+	int len;
+
+	ifname = ASSERT_VALID_PATH_COMPONENT (ifname);
+	property = ASSERT_VALID_PATH_COMPONENT (property);
+
+	len = g_snprintf (path,
+	                  sizeof (path),
+	                  "%s%s/%s",
+	                  ipv6 ? IPV6_PROPERTY_DIR : IPV4_PROPERTY_DIR,
+	                  ifname,
+	                  property);
+	g_assert (len < sizeof (path) - 1);
+
+	return path;
+}
+
 /**
  * nm_utils_ip6_property_path:
  * @ifname: an interface name
@@ -2167,18 +2193,21 @@ out:
 const char *
 nm_utils_ip6_property_path (const char *ifname, const char *property)
 {
-#define IPV6_PROPERTY_DIR "/proc/sys/net/ipv6/conf/"
-	static char path[sizeof (IPV6_PROPERTY_DIR) + IFNAMSIZ + 32];
-	int len;
+	return _get_property_path (ifname, property, TRUE);
+}
 
-	ifname = ASSERT_VALID_PATH_COMPONENT (ifname);
-	property = ASSERT_VALID_PATH_COMPONENT (property);
-
-	len = g_snprintf (path, sizeof (path), IPV6_PROPERTY_DIR "%s/%s",
-	                  ifname, property);
-	g_assert (len < sizeof (path) - 1);
-
-	return path;
+/**
+ * nm_utils_ip4_property_path:
+ * @ifname: an interface name
+ * @property: a property name
+ *
+ * Returns the path to IPv4 property @property on @ifname. Note that
+ * this uses a static buffer.
+ */
+const char *
+nm_utils_ip4_property_path (const char *ifname, const char *property)
+{
+	return _get_property_path (ifname, property, FALSE);
 }
 
 const char *
