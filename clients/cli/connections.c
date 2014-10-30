@@ -8482,7 +8482,7 @@ do_connections (NmCli *nmc, int argc, char **argv)
 	/* Get NMClient object early */
 	nmc->get_client (nmc);
 
-	/* Check whether NetworkManager is runnung */
+	/* Check whether NetworkManager is running */
 	if (!nm_client_get_nm_running (nmc->client)) {
 		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
 		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
