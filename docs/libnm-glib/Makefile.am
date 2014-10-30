@@ -30,13 +30,12 @@ CFILE_GLOB=$(top_srcdir)/libnm-glib/*.c
 
 # Header files to ignore when scanning.
 IGNORE_HFILES= \
+	nm-dbus-helpers-private.h \
 	nm-device-private.h \
 	nm-object-cache.h \
 	nm-object-private.h \
 	nm-remote-connection-private.h \
 	nm-types-private.h \
-	nm-settings-connection-glue.h \
-	nm-settings-glue.h \
 	nm-secret-agent-glue.h \
 	nm-vpn-plugin-glue.h
 
