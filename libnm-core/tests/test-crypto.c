@@ -109,6 +109,8 @@ test_cert (gconstpointer test_data)
 	g_assert_cmpint (format, ==, NM_CRYPTO_FILE_FORMAT_X509);
 
 	g_byte_array_free (array, TRUE);
+
+	g_assert (nm_utils_file_is_certificate (path));
 }
 
 static GByteArray *
@@ -134,8 +136,12 @@ test_load_private_key (const char *path,
                        int expected_error)
 {
 	NMCryptoKeyType key_type = NM_CRYPTO_KEY_TYPE_UNKNOWN;
+	gboolean is_encrypted = FALSE;
 	GByteArray *array, *decrypted;
 	GError *error = NULL;
+
+	g_assert (nm_utils_file_is_private_key (path, &is_encrypted));
+	g_assert (is_encrypted);
 
 	array = crypto_decrypt_openssl_private_key (path, password, &key_type, &error);
 	/* Even if the password is wrong, we should determine the key type */
@@ -178,6 +184,8 @@ test_load_pkcs12 (const char *path,
 	gboolean is_encrypted = FALSE;
 	GError *error = NULL;
 
+	g_assert (nm_utils_file_is_private_key (path, NULL));
+
 	format = crypto_verify_private_key (path, password, &is_encrypted, &error);
 	if (expected_error != -1) {
 		g_assert_error (error, NM_CRYPTO_ERROR, expected_error);
@@ -196,6 +204,8 @@ test_load_pkcs12_no_password (const char *path)
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 	gboolean is_encrypted = FALSE;
 	GError *error = NULL;
+
+	g_assert (nm_utils_file_is_private_key (path, NULL));
 
 	/* We should still get a valid returned crypto file format */
 	format = crypto_verify_private_key (path, NULL, &is_encrypted, &error);
@@ -230,6 +240,8 @@ test_load_pkcs8 (const char *path,
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 	gboolean is_encrypted = FALSE;
 	GError *error = NULL;
+
+	g_assert (nm_utils_file_is_private_key (path, NULL));
 
 	format = crypto_verify_private_key (path, password, &is_encrypted, &error);
 	if (expected_error != -1) {
@@ -330,6 +342,21 @@ test_key (gconstpointer test_data)
 }
 
 static void
+test_key_decrypted (gconstpointer test_data)
+{
+	const char *file = (const char *) test_data;
+	gboolean is_encrypted = FALSE;
+	char *path;
+
+	path = g_build_filename (TEST_CERT_DIR, file, NULL);
+
+	g_assert (nm_utils_file_is_private_key (path, &is_encrypted));
+	g_assert (!is_encrypted);
+
+	g_free (path);
+}
+
+static void
 test_pkcs12 (gconstpointer test_data)
 {
 	char **parts, *path, *password;
@@ -418,6 +445,9 @@ main (int argc, char **argv)
 	g_test_add_data_func ("/libnm/crypto/key/aes",
 	                      "test-aes-key.pem, test-aes-password",
 	                      test_key);
+	g_test_add_data_func ("/libnm/crypto/key/decrypted",
+	                      "test-key-only-decrypted.pem",
+	                      test_key_decrypted);
 
 	g_test_add_data_func ("/libnm/crypto/PKCS#12/1",
 	                      "test-cert.p12, test",
