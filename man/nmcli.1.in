@@ -19,9 +19,9 @@
 .\" with this manual; if not, write to the Free Software Foundation, Inc.,
 .\" 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 .\"
-.\" Copyright (C) 2010 - 2014 Red Hat, Inc.
+.\" Copyright 2010 - 2014 Red Hat, Inc.
 .\"
-.TH NMCLI "1" "11 July 2014"
+.TH NMCLI "1" "11 September 2014"
 
 .SH NAME
 nmcli \- command\(hyline tool for controlling NetworkManager
@@ -287,12 +287,12 @@ active if a device is using that connection profile. Without a parameter, all
 profiles are listed. When --active option is specified, only the active profiles
 are shown.
 .TP
-.B show [--active] [ id | uuid | path | apath ] <ID> ...
+.B show [--active] [--show-secrets] [ id | uuid | path | apath ] <ID> ...
 .br
 Show details for specified connections. By default, both static configuration
 and active connection data are displayed.  When --active option is specified,
-only the active profiles are taken into
-account.
+only the active profiles are taken into account. When --show-secrets option is
+specified, secrets associated with the profile will be revealed too.
 \fIid\fP, \fIuuid\fP, \fIpath\fP and \fIapath\fP keywords can be used if
 \fI<ID>\fP is ambiguous.
 .RS
@@ -858,6 +858,11 @@ shows all connection profile names and their auto-connect property.
 .IP "\fB\f(CWnmcli \-p connection show \(dq\&My default em1\(dq\&\fP\fP"
 .IP
 shows details for "My default em1" connection profile.
+
+.IP "\fB\f(CWnmcli connection show --show-secrets \(dq\&My Home WiFi\(dq\&\fP\fP"
+.IP
+shows details for "My Home WiFi" connection profile with all passwords.
+Without \fI--show-secrets\fP option, secrets would not be displayed.
 
 .IP "\fB\f(CWnmcli \-f active connection show \(dq\&My default em1\(dq\&\fP\fP"
 .IP

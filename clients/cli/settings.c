@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 - 2014 Red Hat, Inc.
+ * Copyright 2010 - 2014 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -6524,8 +6524,11 @@ nmc_property_set_gvalue (NMSetting *setting, const char *prop, GValue *value)
 
 /*----------------------------------------------------------------------------*/
 
+#define GET_SECRET(show, setting, func) \
+	(show ? func (setting) : g_strdup (_("<hidden>")))
+
 static gboolean
-setting_connection_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
+setting_connection_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
 {
 	NMSettingConnection *s_con = NM_SETTING_CONNECTION (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6564,7 +6567,7 @@ setting_connection_details (NMSetting *setting, NmCli *nmc, const char *one_prop
 }
 
 static gboolean
-setting_wired_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
+setting_wired_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
 {
 	NMSettingWired *s_wired = NM_SETTING_WIRED (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6600,7 +6603,7 @@ setting_wired_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 }
 
 static gboolean
-setting_802_1X_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
+setting_802_1X_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
 {
 	NMSetting8021x *s_8021x = NM_SETTING_802_1X (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6636,17 +6639,17 @@ setting_802_1X_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 	set_val_str (arr, 17, nmc_property_802_1X_get_phase2_subject_match (setting));
 	set_val_str (arr, 18, nmc_property_802_1X_get_phase2_altsubject_matches (setting));
 	set_val_str (arr, 19, nmc_property_802_1X_get_phase2_client_cert (setting));
-	set_val_str (arr, 20, nmc_property_802_1X_get_password (setting));
+	set_val_str (arr, 20, GET_SECRET (secrets, setting, nmc_property_802_1X_get_password));
 	set_val_str (arr, 21, nmc_property_802_1X_get_password_flags (setting));
-	set_val_str (arr, 22, nmc_property_802_1X_get_password_raw (setting));
+	set_val_str (arr, 22, GET_SECRET (secrets, setting, nmc_property_802_1X_get_password_raw));
 	set_val_str (arr, 23, nmc_property_802_1X_get_password_raw_flags (setting));
 	set_val_str (arr, 24, nmc_property_802_1X_get_private_key (setting));
-	set_val_str (arr, 25, nmc_property_802_1X_get_private_key_password (setting));
+	set_val_str (arr, 25, GET_SECRET (secrets, setting, nmc_property_802_1X_get_private_key_password));
 	set_val_str (arr, 26, nmc_property_802_1X_get_private_key_password_flags (setting));
 	set_val_str (arr, 27, nmc_property_802_1X_get_phase2_private_key (setting));
-	set_val_str (arr, 28, nmc_property_802_1X_get_phase2_private_key_password (setting));
+	set_val_str (arr, 28, GET_SECRET (secrets, setting, nmc_property_802_1X_get_phase2_private_key_password));
 	set_val_str (arr, 29, nmc_property_802_1X_get_phase2_private_key_password_flags (setting));
-	set_val_str (arr, 30, nmc_property_802_1X_get_pin (setting));
+	set_val_str (arr, 30, GET_SECRET (secrets, setting, nmc_property_802_1X_get_pin));
 	set_val_str (arr, 31, nmc_property_802_1X_get_pin_flags (setting));
 	set_val_str (arr, 32, nmc_property_802_1X_get_system_ca_certs (setting));
 	g_ptr_array_add (nmc->output_data, arr);
@@ -6657,7 +6660,7 @@ setting_802_1X_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 }
 
 static gboolean
-setting_wireless_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
+setting_wireless_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
 {
 	NMSettingWireless *s_wireless = NM_SETTING_WIRELESS (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6695,7 +6698,7 @@ setting_wireless_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 }
 
 static gboolean
-setting_wireless_security_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
+setting_wireless_security_details (NMSetting *setting, NmCli *nmc, const char *one_prop, gboolean secrets)
 {
 	NMSettingWirelessSecurity *s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6719,15 +6722,15 @@ setting_wireless_security_details (NMSetting *setting, NmCli *nmc, const char *o
 	set_val_str (arr, 5, nmc_property_wifi_sec_get_pairwise (setting));
 	set_val_str (arr, 6, nmc_property_wifi_sec_get_group (setting));
 	set_val_str (arr, 7, nmc_property_wifi_sec_get_leap_username (setting));
-	set_val_str (arr, 8, nmc_property_wifi_sec_get_wep_key0 (setting));
-	set_val_str (arr, 9, nmc_property_wifi_sec_get_wep_key1 (setting));
-	set_val_str (arr, 10, nmc_property_wifi_sec_get_wep_key2 (setting));
-	set_val_str (arr, 11, nmc_property_wifi_sec_get_wep_key3 (setting));
+	set_val_str (arr, 8, GET_SECRET (secrets, setting, nmc_property_wifi_sec_get_wep_key0));
+	set_val_str (arr, 9, GET_SECRET (secrets, setting, nmc_property_wifi_sec_get_wep_key1));
+	set_val_str (arr, 10, GET_SECRET (secrets, setting, nmc_property_wifi_sec_get_wep_key2));
+	set_val_str (arr, 11, GET_SECRET (secrets, setting, nmc_property_wifi_sec_get_wep_key3));
 	set_val_str (arr, 12, nmc_property_wifi_sec_get_wep_key_flags (setting));
 	set_val_str (arr, 13, nmc_property_wifi_sec_get_wep_key_type (setting));
-	set_val_str (arr, 14, nmc_property_wifi_sec_get_psk (setting));
+	set_val_str (arr, 14, GET_SECRET (secrets, setting, nmc_property_wifi_sec_get_psk));
 	set_val_str (arr, 15, nmc_property_wifi_sec_get_psk_flags (setting));
-	set_val_str (arr, 16, nmc_property_wifi_sec_get_leap_password (setting));
+	set_val_str (arr, 16, GET_SECRET (secrets, setting, nmc_property_wifi_sec_get_leap_password));
 	set_val_str (arr, 17, nmc_property_wifi_sec_get_leap_password_flags (setting));
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6737,7 +6740,7 @@ setting_wireless_security_details (NMSetting *setting, NmCli *nmc, const char *o
 }
 
 static gboolean
-setting_ip4_config_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
+setting_ip4_config_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
 {
 	NMSettingIP4Config *s_ip4 = NM_SETTING_IP4_CONFIG (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6774,7 +6777,7 @@ setting_ip4_config_details (NMSetting *setting, NmCli *nmc, const char *one_prop
 }
 
 static gboolean
-setting_ip6_config_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
+setting_ip6_config_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
 {
 	NMSettingIP6Config *s_ip6 = NM_SETTING_IP6_CONFIG (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6810,7 +6813,7 @@ setting_ip6_config_details (NMSetting *setting, NmCli *nmc, const char *one_prop
 }
 
 static gboolean
-setting_serial_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
+setting_serial_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
 {
 	NMSettingSerial *s_serial = NM_SETTING_SERIAL (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6840,7 +6843,7 @@ setting_serial_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 }
 
 static gboolean
-setting_ppp_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
+setting_ppp_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
 {
 	NMSettingPpp *s_ppp = NM_SETTING_PPP (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6883,7 +6886,7 @@ setting_ppp_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 }
 
 static gboolean
-setting_pppoe_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
+setting_pppoe_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
 {
 	NMSettingPppoe *s_pppoe = NM_SETTING_PPPOE (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6902,7 +6905,7 @@ setting_pppoe_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
 	set_val_str (arr, 1, nmc_property_pppoe_get_service (setting));
 	set_val_str (arr, 2, nmc_property_pppoe_get_username (setting));
-	set_val_str (arr, 3, nmc_property_pppoe_get_password (setting));
+	set_val_str (arr, 3, GET_SECRET (secrets, setting, nmc_property_pppoe_get_password));
 	set_val_str (arr, 4, nmc_property_pppoe_get_password_flags (setting));
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6912,7 +6915,7 @@ setting_pppoe_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 }
 
 static gboolean
-setting_gsm_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
+setting_gsm_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
 {
 	NMSettingGsm *s_gsm = NM_SETTING_GSM (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6931,11 +6934,11 @@ setting_gsm_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
 	set_val_str (arr, 1, nmc_property_gsm_get_number (setting));
 	set_val_str (arr, 2, nmc_property_gsm_get_username (setting));
-	set_val_str (arr, 3, nmc_property_gsm_get_password (setting));
+	set_val_str (arr, 3, GET_SECRET (secrets, setting, nmc_property_gsm_get_password));
 	set_val_str (arr, 4, nmc_property_gsm_get_password_flags (setting));
 	set_val_str (arr, 5, nmc_property_gsm_get_apn (setting));
 	set_val_str (arr, 6, nmc_property_gsm_get_network_id (setting));
-	set_val_str (arr, 7, nmc_property_gsm_get_pin (setting));
+	set_val_str (arr, 7, GET_SECRET (secrets, setting, nmc_property_gsm_get_pin));
 	set_val_str (arr, 8, nmc_property_gsm_get_pin_flags (setting));
 	set_val_str (arr, 9, nmc_property_gsm_get_home_only (setting));
 	g_ptr_array_add (nmc->output_data, arr);
@@ -6946,7 +6949,7 @@ setting_gsm_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 }
 
 static gboolean
-setting_cdma_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
+setting_cdma_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
 {
 	NMSettingCdma *s_cdma = NM_SETTING_CDMA (setting);
 	NmcOutputField *tmpl, *arr;
@@ -6965,7 +6968,7 @@ setting_cdma_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
 	set_val_str (arr, 1, nmc_property_cdma_get_number (setting));
 	set_val_str (arr, 2, nmc_property_cdma_get_username (setting));
-	set_val_str (arr, 3, nmc_property_cdma_get_password (setting));
+	set_val_str (arr, 3, GET_SECRET (secrets, setting, nmc_property_cdma_get_password));
 	set_val_str (arr, 4, nmc_property_cdma_get_password_flags (setting));
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -6975,7 +6978,7 @@ setting_cdma_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 }
 
 static gboolean
-setting_bluetooth_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
+setting_bluetooth_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
 {
 	NMSettingBluetooth *s_bluetooth = NM_SETTING_BLUETOOTH (setting);
 	NmcOutputField *tmpl, *arr;
@@ -7002,7 +7005,7 @@ setting_bluetooth_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 }
 
 static gboolean
-setting_olpc_mesh_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
+setting_olpc_mesh_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
 {
 	NMSettingOlpcMesh *s_olpc_mesh = NM_SETTING_OLPC_MESH (setting);
 	NmcOutputField *tmpl, *arr;
@@ -7030,7 +7033,7 @@ setting_olpc_mesh_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 }
 
 static gboolean
-setting_vpn_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
+setting_vpn_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
 {
 	NMSettingVpn *s_vpn = NM_SETTING_VPN (setting);
 	NmcOutputField *tmpl, *arr;
@@ -7050,7 +7053,7 @@ setting_vpn_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 	set_val_str (arr, 1, nmc_property_vpn_get_service_type (setting));
 	set_val_str (arr, 2, nmc_property_vpn_get_user_name (setting));
 	set_val_str (arr, 3, nmc_property_vpn_get_data (setting));
-	set_val_str (arr, 4, nmc_property_vpn_get_secrets (setting));
+	set_val_str (arr, 4, GET_SECRET (secrets, setting, nmc_property_vpn_get_secrets));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -7059,7 +7062,7 @@ setting_vpn_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 }
 
 static gboolean
-setting_wimax_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
+setting_wimax_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
 {
 	NMSettingWimax *s_wimax = NM_SETTING_WIMAX (setting);
 	NmcOutputField *tmpl, *arr;
@@ -7086,7 +7089,7 @@ setting_wimax_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 }
 
 static gboolean
-setting_infiniband_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
+setting_infiniband_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
 {
 	NMSettingInfiniband *s_infiniband = NM_SETTING_INFINIBAND (setting);
 	NmcOutputField *tmpl, *arr;
@@ -7116,7 +7119,7 @@ setting_infiniband_details (NMSetting *setting, NmCli *nmc, const char *one_prop
 }
 
 static gboolean
-setting_bond_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
+setting_bond_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
 {
 	NMSettingBond *s_bond = NM_SETTING_BOND (setting);
 	NmcOutputField *tmpl, *arr;
@@ -7142,7 +7145,7 @@ setting_bond_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 }
 
 static gboolean
-setting_vlan_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
+setting_vlan_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
 {
 	NMSettingVlan *s_vlan = NM_SETTING_VLAN (setting);
 	NmcOutputField *tmpl, *arr;
@@ -7172,7 +7175,7 @@ setting_vlan_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 }
 
 static gboolean
-setting_adsl_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
+setting_adsl_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
 {
 	NMSettingAdsl *s_adsl = NM_SETTING_ADSL (setting);
 	NmcOutputField *tmpl, *arr;
@@ -7190,7 +7193,7 @@ setting_adsl_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
 	set_val_str (arr, 1, nmc_property_adsl_get_username (setting));
-	set_val_str (arr, 2, nmc_property_adsl_get_password (setting));
+	set_val_str (arr, 2, GET_SECRET (secrets, setting, nmc_property_adsl_get_password));
 	set_val_str (arr, 3, nmc_property_adsl_get_password_flags (setting));
 	set_val_str (arr, 4, nmc_property_adsl_get_protocol (setting));
 	set_val_str (arr, 5, nmc_property_adsl_get_encapsulation (setting));
@@ -7204,7 +7207,7 @@ setting_adsl_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 }
 
 static gboolean
-setting_bridge_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
+setting_bridge_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
 {
 	NMSettingBridge *s_bridge = NM_SETTING_BRIDGE (setting);
 	NmcOutputField *tmpl, *arr;
@@ -7236,7 +7239,7 @@ setting_bridge_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 }
 
 static gboolean
-setting_bridge_port_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
+setting_bridge_port_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
 {
 	NMSettingBridgePort *s_bridge_port = NM_SETTING_BRIDGE_PORT (setting);
 	NmcOutputField *tmpl, *arr;
@@ -7264,7 +7267,7 @@ setting_bridge_port_details (NMSetting *setting, NmCli *nmc, const char *one_pro
 }
 
 static gboolean
-setting_team_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
+setting_team_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
 {
 	NMSettingTeam *s_team = NM_SETTING_TEAM (setting);
 	NmcOutputField *tmpl, *arr;
@@ -7290,7 +7293,7 @@ setting_team_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 }
 
 static gboolean
-setting_team_port_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
+setting_team_port_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
 {
 	NMSettingTeamPort *s_team_port = NM_SETTING_TEAM_PORT (setting);
 	NmcOutputField *tmpl, *arr;
@@ -7316,7 +7319,7 @@ setting_team_port_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 }
 
 static gboolean
-setting_dcb_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
+setting_dcb_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
 {
 	NMSettingDcb *s_dcb = NM_SETTING_DCB (setting);
 	NmcOutputField *tmpl, *arr;
@@ -7357,7 +7360,7 @@ setting_dcb_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 
 typedef struct {
 	const char *sname;
-	gboolean (*func) (NMSetting *setting, NmCli *nmc, const char *one_prop);
+	gboolean (*func) (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets);
 } SettingDetails;
 
 static const SettingDetails detail_printers[] = {
@@ -7390,7 +7393,7 @@ static const SettingDetails detail_printers[] = {
 };
 
 gboolean
-setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
+setting_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
 {
 	const SettingDetails *iter = &detail_printers[0];
 
@@ -7398,7 +7401,7 @@ setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 
 	while (iter->sname) {
 		if (nm_setting_lookup_type (iter->sname) == G_OBJECT_TYPE (setting))
-			return iter->func (setting, nmc, one_prop);
+			return iter->func (setting, nmc, one_prop, secrets);
 		iter++;
 	}
 

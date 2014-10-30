@@ -248,7 +248,7 @@ usage (void)
 {
 	g_printerr (_("Usage: nmcli connection { COMMAND | help }\n\n"
 	              "COMMAND := { show | up | down | add | modify | edit | delete | reload | load }\n\n"
-	              "  show [--active] [[id | uuid | path | apath] <ID>] ...\n\n"
+	              "  show [--active] [[--show-secrets] [id | uuid | path | apath] <ID>] ...\n\n"
 #if WITH_WIMAX
 	              "  up [[id | uuid | path] <ID>] [ifname <ifname>] [ap <BSSID>] [nsp <name>]\n\n"
 #else
@@ -276,13 +276,13 @@ usage_connection_show (void)
 	              "profiles are listed. When --active option is specified, only the active\n"
 	              "profiles are shown.\n"
 	              "\n"
-	              "ARGUMENTS := [--active] [id | uuid | path | apath] <ID> ...\n"
+	              "ARGUMENTS := [--active] [--show-secrets] [id | uuid | path | apath] <ID> ...\n"
 	              "\n"
 	              "Show details for specified connections. By default, both static configuration\n"
 	              "and active connection data are displayed. It is possible to filter the output\n"
 	              "using global '--fields' option. Refer to the manual page for more information.\n"
 	              "When --active option is specified, only the active profiles are taken into\n"
-	              "account.\n"));
+	              "account. --show-secrets option will reveal associated secrets as well.\n"));
 }
 
 static void
@@ -615,8 +615,23 @@ get_ac_for_connection (const GPtrArray *active_cons, NMConnection *connection)
 	return ac;
 }
 
+static void
+update_secrets_in_connection (NMRemoteConnection *con)
+{
+	GVariant *secrets;
+	int i;
+
+	for (i = 0; nmc_fields_settings_names[i].name; i++) {
+		secrets = nm_remote_connection_get_secrets (con, nmc_fields_settings_names[i].name, NULL, NULL);
+		if (secrets) {
+			(void) nm_connection_update_secrets (NM_CONNECTION (con), NULL, secrets, NULL);
+			g_variant_unref (secrets);
+		}
+	}
+}
+
 static gboolean
-nmc_connection_profile_details (NMConnection *connection, NmCli *nmc)
+nmc_connection_profile_details (NMConnection *connection, NmCli *nmc, gboolean secrets)
 {
 	GError *error = NULL;
 	GArray *print_settings_array;
@@ -668,7 +683,7 @@ nmc_connection_profile_details (NMConnection *connection, NmCli *nmc)
 
 		setting = nm_connection_get_setting_by_name (connection, nmc_fields_settings_names[section_idx].name);
 		if (setting) {
-			setting_details (setting, nmc, prop_name);
+			setting_details (setting, nmc, prop_name, secrets);
 			was_output = TRUE;
 			continue;
 		}
@@ -1312,7 +1327,8 @@ split_required_fields_for_con_show (const char *input,
 }
 
 static NMCResultCode
-do_connections_show (NmCli *nmc, gboolean active_only, int argc, char **argv)
+do_connections_show (NmCli *nmc, gboolean active_only, gboolean show_secrets,
+                     int argc, char **argv)
 {
 	GError *err = NULL;
 	char *profile_flds = NULL, *active_flds = NULL;
@@ -1427,7 +1443,9 @@ do_connections_show (NmCli *nmc, gboolean active_only, int argc, char **argv)
 			if (without_fields || profile_flds) {
 				if (con) {
 					nmc->required_fields = profile_flds;
-					res = nmc_connection_profile_details (con, nmc);
+					if (show_secrets)
+						update_secrets_in_connection (NM_REMOTE_CONNECTION (con));
+					res = nmc_connection_profile_details (con, nmc, show_secrets);
 					nmc->required_fields = NULL;
 					if (!res)
 						goto finish;
@@ -5362,7 +5380,7 @@ gen_nmcli_cmds_submenu (const char *text, int state)
 static char *
 gen_cmd_nmcli (const char *text, int state)
 {
-	const char *words[] = { "status-line", "save-confirmation", "prompt-color", NULL };
+	const char *words[] = { "status-line", "save-confirmation", "show-secrets", "prompt-color", NULL };
 	return nmc_rl_gen_func_basic (text, state, words);
 }
 
@@ -5593,6 +5611,8 @@ get_gen_func_cmd_nmcli (const char *str)
 	if (matches (str, "status-line") == 0)
 		return gen_func_bool_values;
 	if (matches (str, "save-confirmation") == 0)
+		return gen_func_bool_values;
+	if (matches (str, "show-secrets") == 0)
 		return gen_func_bool_values;
 	if (matches (str, "prompt-color") == 0)
 		return gen_cmd_nmcli_prompt_color;
@@ -6005,7 +6025,7 @@ editor_show_connection (NMConnection *connection, NmCli *nmc)
 	/* Remove any previous data */
 	nmc_empty_output_fields (nmc);
 
-	nmc_connection_profile_details (connection, nmc);
+	nmc_connection_profile_details (connection, nmc, nmc->editor_show_secrets);
 }
 
 static void
@@ -6021,7 +6041,7 @@ editor_show_setting (NMSetting *setting, NmCli *nmc)
 	/* Remove any previous data */
 	nmc_empty_output_fields (nmc);
 
-	setting_details (setting, nmc, NULL);
+	setting_details (setting, nmc, NULL, nmc->editor_show_secrets);
 }
 
 typedef enum {
@@ -6186,6 +6206,7 @@ editor_main_help (const char *command)
 			           "Configures nmcli. The following options are available:\n"
 			           "status-line yes | no        [default: no]\n"
 			           "save-confirmation yes | no  [default: yes]\n"
+			           "show-secrets yes | no       [default: no]\n"
 			           "prompt-color <0-8>          [default: 0]\n"
 			           "  0 = normal\n"
 			           "  1 = \33[30mblack\33[0m\n"
@@ -7008,6 +7029,12 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 	g_weak_ref_init (&weak, con_tmp);
 	rem_con = g_weak_ref_get (&weak);
 
+	/* Merge secrets into the connection */
+	if (rem_con) {
+		update_secrets_in_connection (rem_con);
+		nm_connection_replace_settings_from_connection (connection, NM_CONNECTION (rem_con));
+	}
+
 	while (cmd_loop) {
 		/* Connection is dirty? (not saved or differs from the saved) */
 		dirty = is_connection_dirty (connection, rem_con);
@@ -7615,6 +7642,14 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					g_clear_error (&tmp_err);
 				} else
 					nmc->editor_save_confirmation = bb;
+			} else if (cmd_arg_p && matches (cmd_arg_p, "show-secrets") == 0) {
+				GError *tmp_err = NULL;
+				gboolean bb;
+				if (!nmc_string_to_bool (cmd_arg_v ? g_strstrip (cmd_arg_v) : "", &bb, &tmp_err)) {
+					g_print (_("Error: show-secrets: %s\n"), tmp_err->message);
+					g_clear_error (&tmp_err);
+				} else
+					nmc->editor_show_secrets = bb;
 			} else if (cmd_arg_p && matches (cmd_arg_p, "prompt-color") == 0) {
 				unsigned long color;
 				if (!nmc_string_to_uint (cmd_arg_v ? g_strstrip (cmd_arg_v) : "X",
@@ -7634,13 +7669,15 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				g_print (_("Current nmcli configuration:\n"));
 				g_print ("status-line: %s\n"
 				         "save-confirmation: %s\n"
+				         "show-secrets: %s\n"
 				         "prompt-color: %d\n",
 				         nmc->editor_status_line ? "yes" : "no",
 				         nmc->editor_save_confirmation ? "yes" : "no",
+				         nmc->editor_show_secrets ? "yes" : "no",
 				         nmc->editor_prompt_color);
 			} else
 				g_print (_("Invalid configuration option '%s'; allowed [%s]\n"),
-				         cmd_arg_v ? cmd_arg_v : "", "status-line, save-confirmation, prompt-color");
+				         cmd_arg_v ? cmd_arg_v : "", "status-line, save-confirmation, show-secrets, prompt-color");
 
 			break;
 
@@ -8524,17 +8561,26 @@ do_connections (NmCli *nmc, int argc, char **argv)
 	if (argc == 0) {
 		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
 			goto opt_error;
-		nmc->return_value = do_connections_show (nmc, FALSE, argc, argv);
+		nmc->return_value = do_connections_show (nmc, FALSE, FALSE, argc, argv);
 	} else {
 		if (matches (*argv, "show") == 0) {
 			gboolean active = FALSE;
+			gboolean show_secrets = FALSE;
+			int i;
 
 			next_arg (&argc, &argv);
-			if (nmc_arg_is_option (*argv, "active")) {
-				active = TRUE;
-				next_arg (&argc, &argv);
+			/* check connection show options [--active] [--show-secrets] */
+			for (i = 0; i < 2; i++) {
+				if (!active && nmc_arg_is_option (*argv, "active")) {
+					active = TRUE;
+					next_arg (&argc, &argv);
+				}
+				if (!show_secrets && nmc_arg_is_option (*argv, "show-secrets")) {
+					show_secrets = TRUE;
+					next_arg (&argc, &argv);
+				}
 			}
-			nmc->return_value = do_connections_show (nmc, active, argc, argv);
+			nmc->return_value = do_connections_show (nmc, active, show_secrets, argc, argv);
 		} else if (matches(*argv, "up") == 0) {
 			nmc->return_value = do_connection_up (nmc, argc-1, argv+1);
 		} else if (matches(*argv, "down") == 0) {

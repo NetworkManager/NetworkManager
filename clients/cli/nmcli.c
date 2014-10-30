@@ -514,6 +514,7 @@ nmc_init (NmCli *nmc)
 	nmc->in_editor = FALSE;
 	nmc->editor_status_line = FALSE;
 	nmc->editor_save_confirmation = TRUE;
+	nmc->editor_show_secrets = FALSE;
 	nmc->editor_prompt_color = NMC_TERM_COLOR_NORMAL;
 }
 

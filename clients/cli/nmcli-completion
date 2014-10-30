@@ -170,6 +170,9 @@ _nmcli_compl_OPTIONS()
             ask)
                 _nmcli_array_delete_at words 0
                 ;;
+            show-secrets)
+                _nmcli_array_delete_at words 0
+                ;;
             active)
                 _nmcli_array_delete_at words 0
                 ;;
@@ -761,11 +764,11 @@ _nmcli()
                 case "$command" in
                     s|sh|sho|show)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\napath\n%s" "$(_nmcli_con_show NAME)")" active
+                            _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\napath\n%s" "$(_nmcli_con_show NAME)")" active show-secrets
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             _nmcli_array_delete_at words 0 1
 
-                            LONG_OPTIONS=(help active)
+                            LONG_OPTIONS=(help active show-secrets)
                             HELP_ONLY_AS_FIRST=1
                             _nmcli_compl_OPTIONS
                             i=$?
