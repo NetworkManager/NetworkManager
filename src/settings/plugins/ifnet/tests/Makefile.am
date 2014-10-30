@@ -35,6 +35,8 @@ check_ifnet_LDADD = $(top_builddir)/src/libNetworkManager.la
 check-local: check_ifnet
 	$(abs_builddir)/check_ifnet $(abs_srcdir) $(abs_builddir)
 
+endif
+
 EXTRA_DIST = \
 	hostname \
 	net \
@@ -42,5 +44,3 @@ EXTRA_DIST = \
 	nm-system-settings.conf \
 	wpa_supplicant.conf \
 	test_ca_cert.pem
-
-endif

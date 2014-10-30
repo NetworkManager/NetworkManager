@@ -1591,10 +1591,16 @@ _nm_object_reload_properties_async (NMObject *object, GAsyncReadyCallback callba
 gboolean
 _nm_object_reload_properties_finish (NMObject *object, GAsyncResult *result, GError **error)
 {
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
 	GSimpleAsyncResult *simple;
 
 	g_return_val_if_fail (NM_IS_OBJECT (object), FALSE);
 	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (object), _nm_object_reload_properties_async), FALSE);
+
+	/* NM might have disappeared meanwhile. That would cause a NoReply error to be emitted,
+	 * but we don't care if property updates were disabled. */
+	if (priv->suppress_property_updates)
+		return TRUE;
 
 	simple = G_SIMPLE_ASYNC_RESULT (result);
 	if (g_simple_async_result_propagate_error (simple, error))

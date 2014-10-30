@@ -30,10 +30,10 @@ test_dispatcher_envp_LDADD = \
 
 TESTS = test-dispatcher-envp
 
+endif
+
 EXTRA_DIST= \
 	dispatcher-old-down \
 	dispatcher-old-up \
 	dispatcher-old-vpn-down \
 	dispatcher-old-vpn-up
-
-endif
