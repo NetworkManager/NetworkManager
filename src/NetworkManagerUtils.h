@@ -31,7 +31,22 @@
 gboolean nm_ethernet_address_is_valid (gconstpointer addr, gssize len);
 
 in_addr_t nm_utils_ip4_address_clear_host_address (in_addr_t addr, guint8 plen);
-void nm_utils_ip6_address_clear_host_address (struct in6_addr *dst, const struct in6_addr *src, guint8 plen);
+const struct in6_addr *nm_utils_ip6_address_clear_host_address (struct in6_addr *dst, const struct in6_addr *src, guint8 plen);
+
+/**
+ * nm_utils_ip6_route_metric_normalize:
+ * @metric: the route metric
+ *
+ * For IPv6 route, kernel treats the value 0 as IP6_RT_PRIO_USER (1024).
+ * Thus, when comparing metric (values), we want to treat zero as NM_PLATFORM_ROUTE_METRIC_DEFAULT.
+ *
+ * Returns: @metric, if @metric is not zero, otherwise 1024.
+ */
+static inline guint32
+nm_utils_ip6_route_metric_normalize (guint32 metric)
+{
+	return metric ? metric : 1024 /*NM_PLATFORM_ROUTE_METRIC_DEFAULT*/;
+}
 
 int nm_spawn_process (const char *args);
 

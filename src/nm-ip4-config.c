@@ -1191,6 +1191,36 @@ nm_ip4_config_get_route (const NMIP4Config *config, guint i)
 	return &g_array_index (priv->routes, NMPlatformIP4Route, i);
 }
 
+const NMPlatformIP4Route *
+nm_ip4_config_get_direct_route_for_host (const NMIP4Config *config, guint32 host)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+	int i;
+	NMPlatformIP4Route *best_route = NULL;
+
+	g_return_val_if_fail (host, NULL);
+
+	for (i = 0; i < priv->routes->len; i++ ) {
+		NMPlatformIP4Route *item = &g_array_index (priv->routes, NMPlatformIP4Route, i);
+
+		if (item->gateway != 0)
+			continue;
+
+		if (best_route && best_route->plen > item->plen)
+			continue;
+
+		if (nm_utils_ip4_address_clear_host_address (host, item->plen) != nm_utils_ip4_address_clear_host_address (item->network, item->plen))
+			continue;
+
+		if (best_route && best_route->metric <= item->metric)
+			continue;
+
+		best_route = item;
+	}
+
+	return best_route;
+}
+
 /******************************************************************/
 
 void

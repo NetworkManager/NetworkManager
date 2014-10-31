@@ -451,13 +451,13 @@ nm_dhcp_utils_ip4_config_from_options (const char *iface,
 	str = g_hash_table_lookup (options, "dhcp_server_identifier");
 	if (str) {
 		if (inet_pton (AF_INET, str, &tmp_addr) > 0) {
-			NMPlatformIP4Route route;
-			guint32 mask = nm_utils_ip4_prefix_to_netmask (address.plen);
 
 			nm_log_info (LOGD_DHCP4, "  server identifier %s", str);
-			if ((tmp_addr & mask) != (address.address & mask)) {
-				/* DHCP server not on assigned subnet, route needed */
-				memset (&route, 0, sizeof (route));
+			if (   nm_utils_ip4_address_clear_host_address(tmp_addr, address.plen) != nm_utils_ip4_address_clear_host_address(address.address, address.plen)
+			    && !nm_ip4_config_get_direct_route_for_host (ip4_config, tmp_addr)) {
+				/* DHCP server not on assigned subnet and the no direct route was returned. Add route */
+				NMPlatformIP4Route route = { 0 };
+
 				route.network = tmp_addr;
 				route.plen = 32;
 				/* this will be a device route if gwaddr is 0 */
