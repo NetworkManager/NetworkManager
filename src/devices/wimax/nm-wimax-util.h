@@ -23,12 +23,11 @@
 
 #include <glib.h>
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#include "nm-utils-internal.h"
 
+NM_PRAGMA_WARNING_DISABLE("-Wstrict-prototypes")
 #include <WiMaxType.h>
-
-#pragma GCC diagnostic pop
+NM_PRAGMA_WARNING_REENABLE
 
 #include <WiMaxError.h>
 #include "nm-wimax-types.h"
