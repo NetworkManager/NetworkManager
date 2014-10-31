@@ -299,6 +299,7 @@ nmt_editor_constructed (GObject *object)
 	NmtDeviceEntry *deventry;
 	GType hardware_type;
 	const char *slave_type;
+	NmtEditorPage *page;
 
 	if (G_OBJECT_CLASS (nmt_editor_parent_class)->constructed)
 		G_OBJECT_CLASS (nmt_editor_parent_class)->constructed (object);
@@ -345,24 +346,23 @@ nmt_editor_constructed (GObject *object)
 	/* Now add the various pages... */
 
 	if (nm_connection_is_type (priv->edit_connection, NM_SETTING_BOND_SETTING_NAME))
-		add_sections_for_page (editor, grid, nmt_page_bond_new (priv->edit_connection, deventry));
+		page = nmt_page_bond_new (priv->edit_connection, deventry);
 	else if (nm_connection_is_type (priv->edit_connection, NM_SETTING_BRIDGE_SETTING_NAME))
-		add_sections_for_page (editor, grid, nmt_page_bridge_new (priv->edit_connection, deventry));
+		page = nmt_page_bridge_new (priv->edit_connection, deventry);
 	else if (nm_connection_is_type (priv->edit_connection, NM_SETTING_INFINIBAND_SETTING_NAME))
-		add_sections_for_page (editor, grid, nmt_page_infiniband_new (priv->edit_connection, deventry));
-	else if (nm_connection_is_type (priv->edit_connection, NM_SETTING_PPPOE_SETTING_NAME)) {
-		add_sections_for_page (editor, grid, nmt_page_dsl_new (priv->edit_connection));
-		add_sections_for_page (editor, grid, nmt_page_ethernet_new (priv->edit_connection, deventry));
-		add_sections_for_page (editor, grid, nmt_page_ppp_new (priv->edit_connection));
-	} else if (nm_connection_is_type (priv->edit_connection, NM_SETTING_TEAM_SETTING_NAME))
-		add_sections_for_page (editor, grid, nmt_page_team_new (priv->edit_connection, deventry));
+		page = nmt_page_infiniband_new (priv->edit_connection, deventry);
+	else if (nm_connection_is_type (priv->edit_connection, NM_SETTING_PPPOE_SETTING_NAME))
+		page = nmt_page_dsl_new (priv->edit_connection, deventry);
+	else if (nm_connection_is_type (priv->edit_connection, NM_SETTING_TEAM_SETTING_NAME))
+		page = nmt_page_team_new (priv->edit_connection, deventry);
 	else if (nm_connection_is_type (priv->edit_connection, NM_SETTING_VLAN_SETTING_NAME))
-		add_sections_for_page (editor, grid, nmt_page_vlan_new (priv->edit_connection, deventry));
+		page = nmt_page_vlan_new (priv->edit_connection, deventry);
 	else if (nm_connection_is_type (priv->edit_connection, NM_SETTING_WIRED_SETTING_NAME))
-		add_sections_for_page (editor, grid, nmt_page_ethernet_new (priv->edit_connection, deventry));
+		page = nmt_page_ethernet_new (priv->edit_connection, deventry);
 	else if (nm_connection_is_type (priv->edit_connection, NM_SETTING_WIRELESS_SETTING_NAME))
-		add_sections_for_page (editor, grid, nmt_page_wifi_new (priv->edit_connection, deventry));
+		page = nmt_page_wifi_new (priv->edit_connection, deventry);
 
+	add_sections_for_page (editor, grid, page);
 	nmt_editor_grid_append (grid, NULL, nmt_newt_separator_new (), NULL);
 
 	slave_type = nm_setting_connection_get_slave_type (s_con);

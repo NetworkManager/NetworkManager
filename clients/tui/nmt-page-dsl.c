@@ -27,15 +27,26 @@
 #include <glib/gi18n-lib.h>
 
 #include "nmt-page-dsl.h"
+#include "nmt-page-ethernet.h"
+#include "nmt-page-ppp.h"
 #include "nmt-password-fields.h"
 
-G_DEFINE_TYPE (NmtPageDsl, nmt_page_dsl, NMT_TYPE_EDITOR_PAGE)
+G_DEFINE_TYPE (NmtPageDsl, nmt_page_dsl, NMT_TYPE_EDITOR_PAGE_DEVICE)
+
+#define NMT_PAGE_DSL_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NMT_TYPE_PAGE_DSL, NmtPageDslPrivate))
+
+typedef struct {
+	NmtEditorPage *ethernet_page, *ppp_page;
+
+} NmtPageDslPrivate;
 
 NmtEditorPage *
-nmt_page_dsl_new (NMConnection *conn) 
+nmt_page_dsl_new (NMConnection *conn,
+                  NmtDeviceEntry *deventry)
 {
 	return g_object_new (NMT_TYPE_PAGE_DSL,
 	                     "connection", conn,
+	                     "device-entry", deventry,
 	                     NULL);
 }
 
@@ -44,22 +55,12 @@ nmt_page_dsl_init (NmtPageDsl *dsl)
 {
 }
 
-static void
-nmt_page_dsl_constructed (GObject *object)
+static NmtEditorSection *
+build_dsl_section (NmtPageDsl *dsl, NMSettingPppoe *s_pppoe)
 {
-	NmtPageDsl *dsl = NMT_PAGE_DSL (object);
 	NmtEditorSection *section;
 	NmtEditorGrid *grid;
-	NMSettingPppoe *s_pppoe;
 	NmtNewtWidget *widget;
-	NMConnection *conn;
-
-	conn = nmt_editor_page_get_connection (NMT_EDITOR_PAGE (dsl));
-	s_pppoe = nm_connection_get_setting_pppoe (conn);
-	if (!s_pppoe) {
-		nm_connection_add_setting (conn, nm_setting_pppoe_new ());
-		s_pppoe = nm_connection_get_setting_pppoe (conn);
-	}
 
 	section = nmt_editor_section_new (_("DSL"), NULL, TRUE);
 	grid = nmt_editor_section_get_body (section);
@@ -82,9 +83,52 @@ nmt_page_dsl_constructed (GObject *object)
 	                        widget, "text",
 	                        G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
 
+	return section;
+}
+
+static void
+nmt_page_dsl_constructed (GObject *object)
+{
+	NmtPageDsl *dsl = NMT_PAGE_DSL (object);
+	NmtPageDslPrivate *priv = NMT_PAGE_DSL_GET_PRIVATE (dsl);
+	NMConnection *conn;
+	NMSettingPppoe *s_pppoe;
+	NmtEditorSection *section;
+	const GSList *sections, *iter;
+
+	conn = nmt_editor_page_get_connection (NMT_EDITOR_PAGE (dsl));
+	s_pppoe = nm_connection_get_setting_pppoe (conn);
+	if (!s_pppoe) {
+		nm_connection_add_setting (conn, nm_setting_pppoe_new ());
+		s_pppoe = nm_connection_get_setting_pppoe (conn);
+	}
+
+	section = build_dsl_section (dsl, s_pppoe);
 	nmt_editor_page_add_section (NMT_EDITOR_PAGE (dsl), section);
 
+	priv->ethernet_page = nmt_page_ethernet_new (conn, nmt_editor_page_device_get_device_entry (NMT_EDITOR_PAGE_DEVICE (dsl)));
+	sections = nmt_editor_page_get_sections (priv->ethernet_page);
+	for (iter = sections; iter; iter = iter->next)
+		nmt_editor_page_add_section (NMT_EDITOR_PAGE (dsl), iter->data);
+
+	priv->ppp_page = nmt_page_ppp_new (conn);
+	sections = nmt_editor_page_get_sections (priv->ppp_page);
+	for (iter = sections; iter; iter = iter->next)
+		nmt_editor_page_add_section (NMT_EDITOR_PAGE (dsl), iter->data);
+
 	G_OBJECT_CLASS (nmt_page_dsl_parent_class)->constructed (object);
+}
+
+static void
+nmt_page_dsl_finalize (GObject *object)
+{
+	NmtPageDsl *dsl = NMT_PAGE_DSL (object);
+	NmtPageDslPrivate *priv = NMT_PAGE_DSL_GET_PRIVATE (dsl);
+
+	g_clear_object (&priv->ethernet_page);
+	g_clear_object (&priv->ppp_page);
+
+	G_OBJECT_CLASS (nmt_page_dsl_parent_class)->finalize (object);
 }
 
 static void
@@ -93,4 +137,5 @@ nmt_page_dsl_class_init (NmtPageDslClass *dsl_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (dsl_class);
 
 	object_class->constructed = nmt_page_dsl_constructed;
+	object_class->finalize = nmt_page_dsl_finalize;
 }

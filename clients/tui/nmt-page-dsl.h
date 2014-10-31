@@ -19,7 +19,7 @@
 #ifndef NMT_PAGE_DSL_H
 #define NMT_PAGE_DSL_H
 
-#include "nmt-editor-page.h"
+#include "nmt-editor-page-device.h"
 
 G_BEGIN_DECLS
 
@@ -31,18 +31,19 @@ G_BEGIN_DECLS
 #define NMT_PAGE_DSL_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NMT_TYPE_PAGE_DSL, NmtPageDslClass))
 
 typedef struct {
-	NmtEditorPage parent;
+	NmtEditorPageDevice parent;
 
 } NmtPageDsl;
 
 typedef struct {
-	NmtEditorPageClass parent;
+	NmtEditorPageDeviceClass parent;
 
 } NmtPageDslClass;
 
 GType nmt_page_dsl_get_type (void);
 
-NmtEditorPage *nmt_page_dsl_new (NMConnection *conn);
+NmtEditorPage *nmt_page_dsl_new (NMConnection *conn,
+                                 NmtDeviceEntry *deventry);
 
 G_END_DECLS
 
