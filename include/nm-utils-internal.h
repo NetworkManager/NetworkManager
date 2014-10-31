@@ -23,6 +23,10 @@
 #define __NM_UTILS_INTERNAL_H__
 
 
+#include <glib.h>
+
+/********************************************************/
+
 /* http://stackoverflow.com/a/11172679 */
 #define  _NM_UTILS_MACRO_FIRST(...)                           __NM_UTILS_MACRO_FIRST_HELPER(__VA_ARGS__, throwaway)
 #define __NM_UTILS_MACRO_FIRST_HELPER(first, ...)             first
@@ -40,5 +44,42 @@
                 TWOORMORE, TWOORMORE, TWOORMORE, ONE, throwaway)
 #define __NM_UTILS_MACRO_REST_SELECT_20TH(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, ...) a20
 
+/********************************************************/
+
+#if defined (__GNUC__)
+#define _NM_PRAGMA_WARNING_DO(warning)       G_STRINGIFY(GCC diagnostic ignored warning)
+#elif defined (__clang__)
+#define _NM_PRAGMA_WARNING_DO(warning)       G_STRINGIFY(clang diagnostic ignored warning)
+#endif
+
+/* you can only suppress a specific warning that the compiler
+ * understands. Otherwise you will get another compiler warning
+ * about invalid pragma option.
+ * It's not that bad however, because gcc and clang often have the
+ * same name for the same warning. */
+
+#if defined (__GNUC__)
+#define NM_PRAGMA_WARNING_DISABLE(warning) \
+        _Pragma("GCC diagnostic push"); \
+        _Pragma(_NM_PRAGMA_WARNING_DO(warning))
+#elif defined (__clang__)
+#define NM_PRAGMA_WARNING_DISABLE(warning) \
+        _Pragma("clang diagnostic push"); \
+        _Pragma(_NM_PRAGMA_WARNING_DO(warning))
+#else
+#define NM_PRAGMA_WARNING_DISABLE(warning)
+#endif
+
+#if defined (__GNUC__)
+#define NM_PRAGMA_WARNING_REENABLE \
+    _Pragma("GCC diagnostic pop")
+#elif defined (__clang__)
+#define NM_PRAGMA_WARNING_REENABLE \
+    _Pragma("clang diagnostic pop")
+#else
+#define NM_PRAGMA_WARNING_REENABLE
+#endif
+
+/********************************************************/
 
 #endif
