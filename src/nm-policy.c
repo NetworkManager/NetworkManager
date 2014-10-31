@@ -379,7 +379,7 @@ update_default_ac (NMPolicy *policy,
 }
 
 static NMIP4Config *
-get_best_ip4_config (NMPolicy *policy,
+get_best_ip4_config (NMPolicy *self,
                      gboolean ignore_never_default,
                      const char **out_ip_iface,
                      int *out_ip_ifindex,
@@ -387,73 +387,17 @@ get_best_ip4_config (NMPolicy *policy,
                      NMDevice **out_device,
                      NMVpnConnection **out_vpn)
 {
-	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
-	const GSList *connections, *iter;
-	NMDevice *device;
-	NMActRequest *req = NULL;
-	NMIP4Config *ip4_config = NULL;
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 
-	/* If a VPN connection is active, it is preferred */
-	connections = nm_manager_get_active_connections (priv->manager);
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMActiveConnection *active = NM_ACTIVE_CONNECTION (iter->data);
-		NMVpnConnection *candidate;
-		NMIP4Config *vpn_ip4;
-		NMConnection *tmp;
-		NMVpnConnectionState vpn_state;
-
-		if (!NM_IS_VPN_CONNECTION (active))
-			continue;
-
-		candidate = NM_VPN_CONNECTION (active);
-
-		tmp = nm_active_connection_get_connection (active);
-		g_assert (tmp);
-
-		vpn_state = nm_vpn_connection_get_vpn_state (candidate);
-		if (vpn_state != NM_VPN_CONNECTION_STATE_ACTIVATED)
-			continue;
-
-		vpn_ip4 = nm_vpn_connection_get_ip4_config (candidate);
-		if (!vpn_ip4)
-			continue;
-
-		if (!ignore_never_default && nm_ip4_config_get_never_default (vpn_ip4))
-			continue;
-
-		ip4_config = vpn_ip4;
-		if (out_vpn)
-			*out_vpn = candidate;
-		if (out_ac)
-			*out_ac = active;
-		if (out_ip_iface)
-			*out_ip_iface = nm_vpn_connection_get_ip_iface (candidate);
-		if (out_ip_ifindex)
-			*out_ip_ifindex = nm_vpn_connection_get_ip_ifindex (candidate);
-		break;
-	}
-
-	/* If no VPN connections, we use the best device instead */
-	if (!ip4_config) {
-		device = get_best_ip4_device (policy, TRUE);
-		if (device) {
-			ip4_config = nm_device_get_ip4_config (device);
-			g_assert (ip4_config);
-			req = nm_device_get_act_request (device);
-			g_assert (req);
-
-			if (out_device)
-				*out_device = device;
-			if (out_ac)
-				*out_ac = NM_ACTIVE_CONNECTION (req);
-			if (out_ip_iface)
-				*out_ip_iface = nm_device_get_ip_iface (device);
-			if (out_ip_ifindex)
-				*out_ip_ifindex = nm_device_get_ip_ifindex (device);
-		}
-	}
-
-	return ip4_config;
+	return nm_default_route_manager_ip4_get_best_config (nm_default_route_manager_get (),
+	                                                     priv->manager,
+	                                                     ignore_never_default,
+	                                                     priv->default_device4,
+	                                                     out_ip_iface,
+	                                                     out_ip_ifindex,
+	                                                     out_ac,
+	                                                     out_device,
+	                                                     out_vpn);
 }
 
 static void
@@ -565,7 +509,7 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 }
 
 static NMIP6Config *
-get_best_ip6_config (NMPolicy *policy,
+get_best_ip6_config (NMPolicy *self,
                      gboolean ignore_never_default,
                      const char **out_ip_iface,
                      int *out_ip_ifindex,
@@ -573,73 +517,17 @@ get_best_ip6_config (NMPolicy *policy,
                      NMDevice **out_device,
                      NMVpnConnection **out_vpn)
 {
-	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
-	const GSList *connections, *iter;
-	NMDevice *device;
-	NMActRequest *req = NULL;
-	NMIP6Config *ip6_config = NULL;
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 
-	/* If a VPN connection is active, it is preferred */
-	connections = nm_manager_get_active_connections (priv->manager);
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMActiveConnection *active = NM_ACTIVE_CONNECTION (iter->data);
-		NMVpnConnection *candidate;
-		NMIP6Config *vpn_ip6;
-		NMConnection *tmp;
-		NMVpnConnectionState vpn_state;
-
-		if (!NM_IS_VPN_CONNECTION (active))
-			continue;
-
-		candidate = NM_VPN_CONNECTION (active);
-
-		tmp = nm_active_connection_get_connection (active);
-		g_assert (tmp);
-
-		vpn_state = nm_vpn_connection_get_vpn_state (candidate);
-		if (vpn_state != NM_VPN_CONNECTION_STATE_ACTIVATED)
-			continue;
-
-		vpn_ip6 = nm_vpn_connection_get_ip6_config (candidate);
-		if (!vpn_ip6)
-			continue;
-
-		if (!ignore_never_default && nm_ip6_config_get_never_default (vpn_ip6))
-			continue;
-
-		ip6_config = vpn_ip6;
-		if (out_vpn)
-			*out_vpn = candidate;
-		if (out_ac)
-			*out_ac = NM_ACTIVE_CONNECTION (candidate);
-		if (out_ip_iface)
-			*out_ip_iface = nm_vpn_connection_get_ip_iface (candidate);
-		if (out_ip_ifindex)
-			*out_ip_ifindex = nm_vpn_connection_get_ip_ifindex (candidate);
-		break;
-	}
-
-	/* If no VPN connections, we use the best device instead */
-	if (!ip6_config) {
-		device = get_best_ip6_device (policy, TRUE);
-		if (device) {
-			req = nm_device_get_act_request (device);
-			g_assert (req);
-			ip6_config = nm_device_get_ip6_config (device);
-			g_assert (ip6_config);
-
-			if (out_device)
-				*out_device = device;
-			if (out_ac)
-				*out_ac = NM_ACTIVE_CONNECTION (req);
-			if (out_ip_iface)
-				*out_ip_iface = nm_device_get_ip_iface (device);
-			if (out_ip_ifindex)
-				*out_ip_ifindex = nm_device_get_ip_ifindex (device);
-		}
-	}
-
-	return ip6_config;
+	return nm_default_route_manager_ip6_get_best_config (nm_default_route_manager_get (),
+	                                                     priv->manager,
+	                                                     ignore_never_default,
+	                                                     priv->default_device6,
+	                                                     out_ip_iface,
+	                                                     out_ip_ifindex,
+	                                                     out_ac,
+	                                                     out_device,
+	                                                     out_vpn);
 }
 
 static void

@@ -29,6 +29,7 @@
 #include "nm-device.h"
 #include "nm-vpn-connection.h"
 #include "nm-platform.h"
+#include "nm-manager.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
 #include "nm-activation-request.h"
@@ -778,6 +779,157 @@ NMDevice *
 nm_default_route_manager_ip6_get_best_device (NMDefaultRouteManager *self, const GSList *devices, gboolean fully_activated, NMDevice *preferred_device)
 {
 	return _ipx_get_best_device (&vtable_ip6, self, devices, fully_activated, preferred_device);
+}
+
+/***********************************************************************************/
+
+static gpointer
+_ipx_get_best_config (const VTableIP *vtable,
+                      NMDefaultRouteManager *self,
+                      NMManager *manager,
+                      gboolean ignore_never_default,
+                      NMDevice *preferred_device,
+                      const char **out_ip_iface,
+                      int *out_ip_ifindex,
+                      NMActiveConnection **out_ac,
+                      NMDevice **out_device,
+                      NMVpnConnection **out_vpn)
+{
+	NMDefaultRouteManagerPrivate *priv;
+	const GSList *connections, *iter;
+	NMDevice *device;
+	NMActRequest *req = NULL;
+	gpointer config_result = NULL;
+
+	g_return_val_if_fail (NM_IS_DEFAULT_ROUTE_MANAGER (self), NULL);
+
+	priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
+
+	/* If a VPN connection is active, it is preferred */
+	connections = nm_manager_get_active_connections (manager);
+	for (iter = connections; iter; iter = g_slist_next (iter)) {
+		NMActiveConnection *active = NM_ACTIVE_CONNECTION (iter->data);
+		NMVpnConnection *candidate;
+		NMConnection *tmp;
+		NMVpnConnectionState vpn_state;
+
+		if (!NM_IS_VPN_CONNECTION (active))
+			continue;
+
+		candidate = NM_VPN_CONNECTION (active);
+
+		tmp = nm_active_connection_get_connection (active);
+		g_assert (tmp);
+
+		vpn_state = nm_vpn_connection_get_vpn_state (candidate);
+		if (vpn_state != NM_VPN_CONNECTION_STATE_ACTIVATED)
+			continue;
+
+		if (VTABLE_IS_IP4) {
+			NMIP4Config *vpn_ip4;
+
+			vpn_ip4 = nm_vpn_connection_get_ip4_config (candidate);
+			if (!vpn_ip4)
+				continue;
+
+			if (!ignore_never_default && nm_ip4_config_get_never_default (vpn_ip4))
+				continue;
+
+			config_result = vpn_ip4;
+		} else {
+			NMIP6Config *vpn_ip6;
+
+			vpn_ip6 = nm_vpn_connection_get_ip6_config (candidate);
+			if (!vpn_ip6)
+				continue;
+
+			if (!ignore_never_default && nm_ip6_config_get_never_default (vpn_ip6))
+				continue;
+
+			config_result = vpn_ip6;
+		}
+
+		if (out_vpn)
+			*out_vpn = candidate;
+		if (out_ac)
+			*out_ac = active;
+		if (out_ip_iface)
+			*out_ip_iface = nm_vpn_connection_get_ip_iface (candidate);
+		 if (out_ip_ifindex)
+			*out_ip_ifindex = nm_vpn_connection_get_ip_ifindex (candidate);
+		break;
+	}
+
+	/* If no VPN connections, we use the best device instead */
+	if (!config_result) {
+		device = _ipx_get_best_device (vtable, self, nm_manager_get_devices (manager), TRUE, preferred_device);
+		if (device) {
+			if (VTABLE_IS_IP4)
+				config_result = nm_device_get_ip4_config (device);
+			else
+				config_result = nm_device_get_ip6_config (device);
+			g_assert (config_result);
+			req = nm_device_get_act_request (device);
+			g_assert (req);
+
+			if (out_device)
+				*out_device = device;
+			if (out_ac)
+				*out_ac = NM_ACTIVE_CONNECTION (req);
+			if (out_ip_iface)
+				*out_ip_iface = nm_device_get_ip_iface (device);
+			if (out_ip_ifindex)
+				*out_ip_ifindex = nm_device_get_ip_ifindex (device);
+		}
+	}
+
+	return config_result;
+}
+
+NMIP4Config *
+nm_default_route_manager_ip4_get_best_config (NMDefaultRouteManager *self,
+                                              NMManager *manager,
+                                              gboolean ignore_never_default,
+                                              NMDevice *preferred_device,
+                                              const char **out_ip_iface,
+                                              int *out_ip_ifindex,
+                                              NMActiveConnection **out_ac,
+                                              NMDevice **out_device,
+                                              NMVpnConnection **out_vpn)
+{
+	return _ipx_get_best_config (&vtable_ip4,
+	                             self,
+	                             manager,
+	                             ignore_never_default,
+	                             preferred_device,
+	                             out_ip_iface,
+	                             out_ip_ifindex,
+	                             out_ac,
+	                             out_device,
+	                             out_vpn);
+}
+
+NMIP6Config *
+nm_default_route_manager_ip6_get_best_config (NMDefaultRouteManager *self,
+                                              NMManager *manager,
+                                              gboolean ignore_never_default,
+                                              NMDevice *preferred_device,
+                                              const char **out_ip_iface,
+                                              int *out_ip_ifindex,
+                                              NMActiveConnection **out_ac,
+                                              NMDevice **out_device,
+                                              NMVpnConnection **out_vpn)
+{
+	return _ipx_get_best_config (&vtable_ip6,
+	                             self,
+	                             manager,
+	                             ignore_never_default,
+	                             preferred_device,
+	                             out_ip_iface,
+	                             out_ip_ifindex,
+	                             out_ac,
+	                             out_device,
+	                             out_vpn);
 }
 
 /***********************************************************************************/

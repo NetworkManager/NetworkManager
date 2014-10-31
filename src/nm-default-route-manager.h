@@ -60,5 +60,24 @@ gboolean nm_default_route_manager_ip6_connection_has_default_route (NMDefaultRou
 NMDevice *nm_default_route_manager_ip4_get_best_device (NMDefaultRouteManager *manager, const GSList *devices, gboolean fully_activated, NMDevice *preferred_device);
 NMDevice *nm_default_route_manager_ip6_get_best_device (NMDefaultRouteManager *manager, const GSList *devices, gboolean fully_activated, NMDevice *preferred_device);
 
+NMIP4Config *nm_default_route_manager_ip4_get_best_config (NMDefaultRouteManager *manager,
+                                                           NMManager *nm_manager,
+                                                           gboolean ignore_never_default,
+                                                           NMDevice *preferred_device,
+                                                           const char **out_ip_iface,
+                                                           int *out_ip_ifindex,
+                                                           NMActiveConnection **out_ac,
+                                                           NMDevice **out_device,
+                                                           NMVpnConnection **out_vpn);
+NMIP6Config *nm_default_route_manager_ip6_get_best_config (NMDefaultRouteManager *manager,
+                                                           NMManager *nm_manager,
+                                                           gboolean ignore_never_default,
+                                                           NMDevice *preferred_device,
+                                                           const char **out_ip_iface,
+                                                           int *out_ip_ifindex,
+                                                           NMActiveConnection **out_ac,
+                                                           NMDevice **out_device,
+                                                           NMVpnConnection **out_vpn);
+
 #endif  /* NM_DEFAULT_ROUTE_MANAGER_H */
 
