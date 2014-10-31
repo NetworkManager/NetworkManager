@@ -70,6 +70,8 @@ struct sd_dhcp_lease {
         char *domainname;
         char *hostname;
         char *root_path;
+        uint8_t *client_id;
+        size_t client_id_len;
 };
 
 int dhcp_lease_new(sd_dhcp_lease **ret);
@@ -80,6 +82,9 @@ int dhcp_lease_save(sd_dhcp_lease *lease, const char *lease_file);
 int dhcp_lease_load(const char *lease_file, sd_dhcp_lease **ret);
 
 int dhcp_lease_set_default_subnet_mask(sd_dhcp_lease *lease);
+
+int dhcp_lease_set_client_id(sd_dhcp_lease *lease, const uint8_t *client_id,
+                             size_t client_id_len);
 
 DEFINE_TRIVIAL_CLEANUP_FUNC(sd_dhcp_lease*, sd_dhcp_lease_unref);
 #define _cleanup_dhcp_lease_unref_ _cleanup_(sd_dhcp_lease_unrefp)
