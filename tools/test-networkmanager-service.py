@@ -711,16 +711,16 @@ class NetworkManager(ExportedObj):
             raise UnknownDeviceException("No device found for the requested iface.")
 
         # See if we need secrets. For the moment, we only support WPA
-        if hash.has_key('802-11-wireless-security'):
+        if '802-11-wireless-security' in hash:
             s_wsec = hash['802-11-wireless-security']
-            if (s_wsec['key-mgmt'] == 'wpa-psk' and not s_wsec.has_key('psk')):
+            if (s_wsec['key-mgmt'] == 'wpa-psk' and 'psk' not in s_wsec):
                 secrets = agent_manager.get_secrets(hash, conpath, '802-11-wireless-security')
                 if secrets is None:
                     raise NoSecretsException("No secret agent available")
-                if not secrets.has_key('802-11-wireless-security'):
+                if '802-11-wireless-security' not in secrets:
                     raise NoSecretsException("No secrets provided")
                 s_wsec = secrets['802-11-wireless-security']
-                if not s_wsec.has_key('psk'):
+                if 'psk' not in s_wsec:
                     raise NoSecretsException("No secrets provided")
 
         ac = ActiveConnection(self._bus, device, connection, None)
@@ -930,10 +930,10 @@ class Connection(dbus.service.Object):
     def __init__(self, bus, object_path, settings, remove_func):
         dbus.service.Object.__init__(self, bus, object_path)
 
-        if not settings.has_key('connection'):
+        if 'connection' not in settings:
             raise MissingSettingException('connection: setting is required')
         s_con = settings['connection']
-        if not s_con.has_key('type'):
+        if 'type' not in s_con:
             raise MissingPropertyException('connection.type: property is required')
         type = s_con['type']
         if not type in ['802-3-ethernet', '802-11-wireless', 'vlan', 'wimax']:

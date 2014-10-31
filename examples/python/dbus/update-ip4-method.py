@@ -58,7 +58,7 @@ for c_path in settings.ListConnections():
         continue
 
     # add IPv4 setting if it doesn't yet exist
-    if not c_settings.has_key('ipv4'):
+    if 'ipv4' not in c_settings:
         c_settings['ipv4'] = {}
 
     # set the method and change properties
