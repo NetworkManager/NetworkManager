@@ -48,4 +48,7 @@ int sd_dhcp_lease_get_routes(sd_dhcp_lease *lease, struct sd_dhcp_route **routes
 int sd_dhcp_lease_get_client_id(sd_dhcp_lease *lease, const uint8_t **client_id,
                                 size_t *client_id_len);
 
+int sd_dhcp_lease_save(sd_dhcp_lease *lease, const char *lease_file);
+int sd_dhcp_lease_load(const char *lease_file, sd_dhcp_lease **ret);
+
 #endif

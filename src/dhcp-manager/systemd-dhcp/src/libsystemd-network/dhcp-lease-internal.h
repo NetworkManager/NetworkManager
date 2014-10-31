@@ -78,9 +78,6 @@ int dhcp_lease_new(sd_dhcp_lease **ret);
 int dhcp_lease_parse_options(uint8_t code, uint8_t len, const uint8_t *option,
                               void *user_data);
 
-int dhcp_lease_save(sd_dhcp_lease *lease, const char *lease_file);
-int dhcp_lease_load(const char *lease_file, sd_dhcp_lease **ret);
-
 int dhcp_lease_set_default_subnet_mask(sd_dhcp_lease *lease);
 
 int dhcp_lease_set_client_id(sd_dhcp_lease *lease, const uint8_t *client_id,
