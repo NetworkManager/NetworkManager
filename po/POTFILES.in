@@ -28,7 +28,6 @@ clients/tui/nmt-page-ethernet.c
 clients/tui/nmt-page-infiniband.c
 clients/tui/nmt-page-ip4.c
 clients/tui/nmt-page-ip6.c
-clients/tui/nmt-page-main.c
 clients/tui/nmt-page-ppp.c
 clients/tui/nmt-page-team-port.c
 clients/tui/nmt-page-team.c

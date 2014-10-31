@@ -85,8 +85,6 @@ nmtui_SOURCES = \
 	nmt-page-ip4.h \
 	nmt-page-ip6.c \
 	nmt-page-ip6.h \
-	nmt-page-main.c \
-	nmt-page-main.h \
 	nmt-page-ppp.c \
 	nmt-page-ppp.h \
 	nmt-page-team.c \
