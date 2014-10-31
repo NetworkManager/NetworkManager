@@ -17,10 +17,10 @@
  */
 
 /**
- * SECTION:nmt-page-grid
+ * SECTION:nmt-editor-grid
  * @short_description: Grid widget for #NmtEditorPages
  *
- * #NmtPageGrid is the layout grid used by #NmtEditorPages. It
+ * #NmtEditorGrid is the layout grid used by #NmtEditorPages. It
  * consists of a number of rows, each containing either a single
  * widget that spans the entire width of the row, or else containing a
  * label, a widget, and an optional extra widget.
@@ -29,10 +29,10 @@
  * its main widget is multiple rows high. The label and extra widgets
  * will be top-aligned if the row is taller than they are.
  *
- * The #NmtPageGrids in a form behave as though they are all in a
+ * The #NmtEditorGrids in a form behave as though they are all in a
  * "size group" together; they will all use the same column widths,
  * which will be wide enough for the widest labels/widgets in any of
- * the grids. #NmtPageGrid is also specially aware of #NmtNewtSection,
+ * the grids. #NmtEditorGrid is also specially aware of #NmtNewtSection,
  * and grids inside sections will automatically take the size of the
  * section border into account as well.
  */
@@ -41,65 +41,65 @@
 
 #include <string.h>
 
-#include "nmt-page-grid.h"
+#include "nmt-editor-grid.h"
 
-G_DEFINE_TYPE (NmtPageGrid, nmt_page_grid, NMT_TYPE_NEWT_CONTAINER)
+G_DEFINE_TYPE (NmtEditorGrid, nmt_editor_grid, NMT_TYPE_NEWT_CONTAINER)
 
-#define NMT_PAGE_GRID_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NMT_TYPE_PAGE_GRID, NmtPageGridPrivate))
+#define NMT_EDITOR_GRID_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NMT_TYPE_EDITOR_GRID, NmtEditorGridPrivate))
 
 typedef struct {
 	GArray *rows;
 	int *row_heights;
 	int indent;
-} NmtPageGridPrivate;
+} NmtEditorGridPrivate;
 
 typedef struct {
 	NmtNewtWidget *label;
 	NmtNewtWidget *widget;
 	NmtNewtWidget *extra;
-	NmtPageGridRowFlags flags;
-} NmtPageGridRow;
+	NmtEditorGridRowFlags flags;
+} NmtEditorGridRow;
 
 typedef struct {
 	int col_widths[3];
-} NmtPageGridFormState;
+} NmtEditorGridFormState;
 
 /**
- * nmt_page_grid_new:
+ * nmt_editor_grid_new:
  *
- * Creates a new #NmtPageGrid
+ * Creates a new #NmtEditorGrid
  *
- * Returns: a new #NmtPageGrid
+ * Returns: a new #NmtEditorGrid
  */ 
 NmtNewtWidget *
-nmt_page_grid_new (void)
+nmt_editor_grid_new (void)
 {
-	return g_object_new (NMT_TYPE_PAGE_GRID,
+	return g_object_new (NMT_TYPE_EDITOR_GRID,
 	                     NULL);
 }
 
 static void
-nmt_page_grid_init (NmtPageGrid *grid)
+nmt_editor_grid_init (NmtEditorGrid *grid)
 {
-	NmtPageGridPrivate *priv = NMT_PAGE_GRID_GET_PRIVATE (grid);
+	NmtEditorGridPrivate *priv = NMT_EDITOR_GRID_GET_PRIVATE (grid);
 
-	priv->rows = g_array_new (FALSE, TRUE, sizeof (NmtPageGridRow));
+	priv->rows = g_array_new (FALSE, TRUE, sizeof (NmtEditorGridRow));
 }
 
 static void
-nmt_page_grid_finalize (GObject *object)
+nmt_editor_grid_finalize (GObject *object)
 {
-	NmtPageGridPrivate *priv = NMT_PAGE_GRID_GET_PRIVATE (object);
+	NmtEditorGridPrivate *priv = NMT_EDITOR_GRID_GET_PRIVATE (object);
 
 	g_array_unref (priv->rows);
 	g_clear_pointer (&priv->row_heights, g_free);
 
-	G_OBJECT_CLASS (nmt_page_grid_parent_class)->finalize (object);
+	G_OBJECT_CLASS (nmt_editor_grid_parent_class)->finalize (object);
 }
 
 /**
- * nmt_page_grid_append:
- * @grid: the #NmtPageGrid
+ * nmt_editor_grid_append:
+ * @grid: the #NmtEditorGrid
  * @label: (allow-none): the label text for @widget, or %NULL
  * @widget: the (main) widget
  * @extra: (allow-none): optional extra widget
@@ -116,18 +116,18 @@ nmt_page_grid_finalize (GObject *object)
  *
  * FIXME: That's sort of weird.
  *
- * See also nmt_page_grid_set_row_flags().
+ * See also nmt_editor_grid_set_row_flags().
  */
 void
-nmt_page_grid_append (NmtPageGrid   *grid,
+nmt_editor_grid_append (NmtEditorGrid   *grid,
                       const char    *label,
                       NmtNewtWidget *widget,
                       NmtNewtWidget *extra)
 {
-	NmtPageGridPrivate *priv = NMT_PAGE_GRID_GET_PRIVATE (grid);
-	NmtNewtContainerClass *parent_class = NMT_NEWT_CONTAINER_CLASS (nmt_page_grid_parent_class);
+	NmtEditorGridPrivate *priv = NMT_EDITOR_GRID_GET_PRIVATE (grid);
+	NmtNewtContainerClass *parent_class = NMT_NEWT_CONTAINER_CLASS (nmt_editor_grid_parent_class);
 	NmtNewtContainer *container = NMT_NEWT_CONTAINER (grid);
-	NmtPageGridRow row;
+	NmtEditorGridRow row;
 
 	memset (&row, 0, sizeof (row));
 
@@ -153,11 +153,11 @@ nmt_page_grid_append (NmtPageGrid   *grid,
 }
 
 static int
-nmt_page_grid_find_widget (NmtPageGrid   *grid,
+nmt_editor_grid_find_widget (NmtEditorGrid   *grid,
                            NmtNewtWidget *widget)
 {
-	NmtPageGridPrivate *priv = NMT_PAGE_GRID_GET_PRIVATE (grid);
-	NmtPageGridRow *rows = (NmtPageGridRow *) priv->rows->data;
+	NmtEditorGridPrivate *priv = NMT_EDITOR_GRID_GET_PRIVATE (grid);
+	NmtEditorGridRow *rows = (NmtEditorGridRow *) priv->rows->data;
 	int i;
 
 	for (i = 0; i < priv->rows->len; i++) {
@@ -169,48 +169,48 @@ nmt_page_grid_find_widget (NmtPageGrid   *grid,
 }
 
 /**
- * NmtPageGridRowFlags:
- * @NMT_PAGE_GRID_ROW_LABEL_ALIGN_LEFT: the row's label should be
+ * NmtEditorGridRowFlags:
+ * @NMT_EDITOR_GRID_ROW_LABEL_ALIGN_LEFT: the row's label should be
  *   aligned left instead of right.
- * @NMT_PAGE_GRID_ROW_EXTRA_ALIGN_RIGHT: the row's extra widget
+ * @NMT_EDITOR_GRID_ROW_EXTRA_ALIGN_RIGHT: the row's extra widget
  *   should be aligned right instead of left.
  *
- * Flags to alter an #NmtPageGrid row's layout.
+ * Flags to alter an #NmtEditorGrid row's layout.
  */
 
 /**
- * nmt_page_grid_set_row_flags:
- * @grid: an #NmtPageGrid
+ * nmt_editor_grid_set_row_flags:
+ * @grid: an #NmtEditorGrid
  * @widget: the widget whose row you want to adjust
  * @flags: the flags to set
  *
  * Sets flags to adjust the layout of @widget's row in @grid.
  */
 void
-nmt_page_grid_set_row_flags (NmtPageGrid         *grid,
+nmt_editor_grid_set_row_flags (NmtEditorGrid         *grid,
                              NmtNewtWidget       *widget,
-                             NmtPageGridRowFlags  flags)
+                             NmtEditorGridRowFlags  flags)
 {
-	NmtPageGridPrivate *priv = NMT_PAGE_GRID_GET_PRIVATE (grid);
-	NmtPageGridRow *rows = (NmtPageGridRow *) priv->rows->data;
+	NmtEditorGridPrivate *priv = NMT_EDITOR_GRID_GET_PRIVATE (grid);
+	NmtEditorGridRow *rows = (NmtEditorGridRow *) priv->rows->data;
 	int i;
 
-	i = nmt_page_grid_find_widget (grid, widget);
+	i = nmt_editor_grid_find_widget (grid, widget);
 	if (i != -1)
 		rows[i].flags = flags;
 }
 
 static void
-nmt_page_grid_remove (NmtNewtContainer *container,
+nmt_editor_grid_remove (NmtNewtContainer *container,
                       NmtNewtWidget    *widget)
 {
-	NmtPageGrid *grid = NMT_PAGE_GRID (container);
-	NmtPageGridPrivate *priv = NMT_PAGE_GRID_GET_PRIVATE (grid);
-	NmtNewtContainerClass *parent_class = NMT_NEWT_CONTAINER_CLASS (nmt_page_grid_parent_class);
-	NmtPageGridRow *rows = (NmtPageGridRow *) priv->rows->data;
+	NmtEditorGrid *grid = NMT_EDITOR_GRID (container);
+	NmtEditorGridPrivate *priv = NMT_EDITOR_GRID_GET_PRIVATE (grid);
+	NmtNewtContainerClass *parent_class = NMT_NEWT_CONTAINER_CLASS (nmt_editor_grid_parent_class);
+	NmtEditorGridRow *rows = (NmtEditorGridRow *) priv->rows->data;
 	int i;
 
-	i = nmt_page_grid_find_widget (grid, widget);
+	i = nmt_editor_grid_find_widget (grid, widget);
 	if (i != -1) {
 		if (rows[i].label)
 			parent_class->remove (container, rows[i].label);
@@ -227,10 +227,10 @@ nmt_page_grid_remove (NmtNewtContainer *container,
 }
 
 static newtComponent *
-nmt_page_grid_get_components (NmtNewtWidget *widget)
+nmt_editor_grid_get_components (NmtNewtWidget *widget)
 {
-	NmtPageGridPrivate *priv = NMT_PAGE_GRID_GET_PRIVATE (widget);
-	NmtPageGridRow *rows = (NmtPageGridRow *) priv->rows->data;
+	NmtEditorGridPrivate *priv = NMT_EDITOR_GRID_GET_PRIVATE (widget);
+	NmtEditorGridRow *rows = (NmtEditorGridRow *) priv->rows->data;
 	newtComponent *child_cos;
 	GPtrArray *cos;
 	int i, c;
@@ -265,31 +265,31 @@ nmt_page_grid_get_components (NmtNewtWidget *widget)
 	return (newtComponent *) g_ptr_array_free (cos, FALSE);
 }
 
-static NmtPageGridFormState *
+static NmtEditorGridFormState *
 get_form_state (NmtNewtWidget *widget)
 {
 	NmtNewtForm *form = nmt_newt_widget_get_form (widget);
-	NmtPageGridFormState *state;
+	NmtEditorGridFormState *state;
 
 	if (!form)
 		return NULL;
 
-	state = g_object_get_data (G_OBJECT (form), "NmtPageGridFormState");
+	state = g_object_get_data (G_OBJECT (form), "NmtEditorGridFormState");
 	if (state)
 		return state;
 
-	state = g_new0 (NmtPageGridFormState, 1);
-	g_object_set_data_full (G_OBJECT (form), "NmtPageGridFormState", state, g_free);
+	state = g_new0 (NmtEditorGridFormState, 1);
+	g_object_set_data_full (G_OBJECT (form), "NmtEditorGridFormState", state, g_free);
 	return state;
 }
 
 static void
-nmt_page_grid_realize (NmtNewtWidget *widget)
+nmt_editor_grid_realize (NmtNewtWidget *widget)
 {
-	NmtPageGridPrivate *priv = NMT_PAGE_GRID_GET_PRIVATE (widget);
+	NmtEditorGridPrivate *priv = NMT_EDITOR_GRID_GET_PRIVATE (widget);
 	NmtNewtWidget *parent;
 
-	NMT_NEWT_WIDGET_CLASS (nmt_page_grid_parent_class)->realize (widget);
+	NMT_NEWT_WIDGET_CLASS (nmt_editor_grid_parent_class)->realize (widget);
 
 	/* This is a hack, but it's the simplest way to make it work... */
 	priv->indent = 0;
@@ -305,24 +305,24 @@ nmt_page_grid_realize (NmtNewtWidget *widget)
 }
 
 static void
-nmt_page_grid_unrealize (NmtNewtWidget *widget)
+nmt_editor_grid_unrealize (NmtNewtWidget *widget)
 {
-	NmtPageGridFormState *state = get_form_state (widget);
+	NmtEditorGridFormState *state = get_form_state (widget);
 
 	if (state)
 		memset (state->col_widths, 0, sizeof (state->col_widths));
 
-	NMT_NEWT_WIDGET_CLASS (nmt_page_grid_parent_class)->unrealize (widget);
+	NMT_NEWT_WIDGET_CLASS (nmt_editor_grid_parent_class)->unrealize (widget);
 }
 
 static void
-nmt_page_grid_size_request (NmtNewtWidget *widget,
+nmt_editor_grid_size_request (NmtNewtWidget *widget,
                             int           *width,
                             int           *height)
 {
-	NmtPageGridPrivate *priv = NMT_PAGE_GRID_GET_PRIVATE (widget);
-	NmtPageGridRow *rows = (NmtPageGridRow *) priv->rows->data;
-	NmtPageGridFormState *state = get_form_state (widget);
+	NmtEditorGridPrivate *priv = NMT_EDITOR_GRID_GET_PRIVATE (widget);
+	NmtEditorGridRow *rows = (NmtEditorGridRow *) priv->rows->data;
+	NmtEditorGridFormState *state = get_form_state (widget);
 	gboolean add_padding = FALSE;
 	int i;
 
@@ -367,15 +367,15 @@ nmt_page_grid_size_request (NmtNewtWidget *widget,
 
 
 static void
-nmt_page_grid_size_allocate (NmtNewtWidget *widget,
+nmt_editor_grid_size_allocate (NmtNewtWidget *widget,
                              int            x,
                              int            y,
                              int            width,
                              int            height)
 {
-	NmtPageGridPrivate *priv = NMT_PAGE_GRID_GET_PRIVATE (widget);
-	NmtPageGridRow *rows = (NmtPageGridRow *) priv->rows->data;
-	NmtPageGridFormState *state = get_form_state (widget);
+	NmtEditorGridPrivate *priv = NMT_EDITOR_GRID_GET_PRIVATE (widget);
+	NmtEditorGridRow *rows = (NmtEditorGridRow *) priv->rows->data;
+	NmtEditorGridFormState *state = get_form_state (widget);
 	int col0_width, col1_width, col2_width;
 	int i, row;
 
@@ -390,7 +390,7 @@ nmt_page_grid_size_allocate (NmtNewtWidget *widget,
 		if (rows[i].label) {
 			int lwidth, lheight, lx;
 
-			if (rows[i].flags & NMT_PAGE_GRID_ROW_LABEL_ALIGN_LEFT)
+			if (rows[i].flags & NMT_EDITOR_GRID_ROW_LABEL_ALIGN_LEFT)
 				lx = x;
 			else {
 				nmt_newt_widget_size_request (rows[i].label, &lwidth, &lheight);
@@ -411,7 +411,7 @@ nmt_page_grid_size_allocate (NmtNewtWidget *widget,
 			if (rows[i].extra) {
 				int wwidth, wheight, ex;
 
-				if (rows[i].flags & NMT_PAGE_GRID_ROW_EXTRA_ALIGN_RIGHT)
+				if (rows[i].flags & NMT_EDITOR_GRID_ROW_EXTRA_ALIGN_RIGHT)
 					ex = x + col0_width + col1_width + 2;
 				else {
 					nmt_newt_widget_size_request (rows[i].widget, &wwidth, &wheight);
@@ -437,22 +437,22 @@ nmt_page_grid_size_allocate (NmtNewtWidget *widget,
 }
 
 static void
-nmt_page_grid_class_init (NmtPageGridClass *grid_class)
+nmt_editor_grid_class_init (NmtEditorGridClass *grid_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (grid_class);
 	NmtNewtWidgetClass *widget_class = NMT_NEWT_WIDGET_CLASS (grid_class);
 	NmtNewtContainerClass *container_class = NMT_NEWT_CONTAINER_CLASS (grid_class);
 
-	g_type_class_add_private (grid_class, sizeof (NmtPageGridPrivate));
+	g_type_class_add_private (grid_class, sizeof (NmtEditorGridPrivate));
 
 	/* virtual methods */
-	object_class->finalize = nmt_page_grid_finalize;
+	object_class->finalize = nmt_editor_grid_finalize;
 
-	widget_class->realize        = nmt_page_grid_realize;
-	widget_class->unrealize      = nmt_page_grid_unrealize;
-	widget_class->get_components = nmt_page_grid_get_components;
-	widget_class->size_request   = nmt_page_grid_size_request;
-	widget_class->size_allocate  = nmt_page_grid_size_allocate;
+	widget_class->realize        = nmt_editor_grid_realize;
+	widget_class->unrealize      = nmt_editor_grid_unrealize;
+	widget_class->get_components = nmt_editor_grid_get_components;
+	widget_class->size_request   = nmt_editor_grid_size_request;
+	widget_class->size_allocate  = nmt_editor_grid_size_allocate;
 
-	container_class->remove = nmt_page_grid_remove;
+	container_class->remove = nmt_editor_grid_remove;
 }

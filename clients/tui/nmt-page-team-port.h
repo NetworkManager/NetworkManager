@@ -19,7 +19,7 @@
 #ifndef NMT_PAGE_TEAM_PORT_H
 #define NMT_PAGE_TEAM_PORT_H
 
-#include "nmt-page-device.h"
+#include "nmt-editor-page-device.h"
 
 G_BEGIN_DECLS
 

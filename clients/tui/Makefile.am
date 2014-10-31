@@ -55,8 +55,12 @@ nmtui_SOURCES = \
 	nmt-device-entry.h \
 	nmt-edit-connection-list.c \
 	nmt-edit-connection-list.h \
+	nmt-editor-grid.c \
+	nmt-editor-grid.h \
 	nmt-editor-page.c \
 	nmt-editor-page.h \
+	nmt-editor-page-device.c \
+	nmt-editor-page-device.h \
 	nmt-editor.c \
 	nmt-editor.h \
 	nmt-ip-entry.c \
@@ -71,14 +75,10 @@ nmtui_SOURCES = \
 	nmt-page-bridge.h \
 	nmt-page-bridge-port.c \
 	nmt-page-bridge-port.h \
-	nmt-page-device.c \
-	nmt-page-device.h \
 	nmt-page-dsl.c \
 	nmt-page-dsl.h \
 	nmt-page-ethernet.c \
 	nmt-page-ethernet.h \
-	nmt-page-grid.c \
-	nmt-page-grid.h \
 	nmt-page-infiniband.c \
 	nmt-page-infiniband.h \
 	nmt-page-ip4.c \

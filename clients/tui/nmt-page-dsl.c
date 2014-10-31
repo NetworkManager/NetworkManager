@@ -49,7 +49,7 @@ static void
 nmt_page_dsl_constructed (GObject *object)
 {
 	NmtPageDsl *dsl = NMT_PAGE_DSL (object);
-	NmtPageGrid *grid;
+	NmtEditorGrid *grid;
 	NMSettingPppoe *s_pppoe;
 	NmtNewtWidget *widget;
 	NMConnection *conn;
@@ -61,10 +61,10 @@ nmt_page_dsl_constructed (GObject *object)
 		s_pppoe = nm_connection_get_setting_pppoe (conn);
 	}
 
-	grid = NMT_PAGE_GRID (dsl);
+	grid = NMT_EDITOR_GRID (dsl);
 
 	widget = nmt_newt_entry_new (40, 0);
-	nmt_page_grid_append (grid, _("Username"), widget, NULL);
+	nmt_editor_grid_append (grid, _("Username"), widget, NULL);
 	g_object_bind_property (s_pppoe, NM_SETTING_PPPOE_USERNAME,
 	                        widget, "text",
 	                        G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
@@ -73,10 +73,10 @@ nmt_page_dsl_constructed (GObject *object)
 	g_object_bind_property (s_pppoe, NM_SETTING_PPPOE_PASSWORD,
 	                        widget, "password",
 	                        G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
-	nmt_page_grid_append (grid, _("Password"), widget, NULL);
+	nmt_editor_grid_append (grid, _("Password"), widget, NULL);
 
 	widget = nmt_newt_entry_new (40, 0);
-	nmt_page_grid_append (grid, _("Service"), widget, NULL);
+	nmt_editor_grid_append (grid, _("Service"), widget, NULL);
 	g_object_bind_property (s_pppoe, NM_SETTING_PPPOE_SERVICE,
 	                        widget, "text",
 	                        G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);

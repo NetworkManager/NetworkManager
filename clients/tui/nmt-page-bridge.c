@@ -31,7 +31,7 @@
 #include "nmt-address-list.h"
 #include "nmt-slave-list.h"
 
-G_DEFINE_TYPE (NmtPageBridge, nmt_page_bridge, NMT_TYPE_PAGE_DEVICE)
+G_DEFINE_TYPE (NmtPageBridge, nmt_page_bridge, NMT_TYPE_EDITOR_PAGE_DEVICE)
 
 NmtNewtWidget *
 nmt_page_bridge_new (NMConnection   *conn,
@@ -62,7 +62,7 @@ static void
 nmt_page_bridge_constructed (GObject *object)
 {
 	NmtPageBridge *bridge = NMT_PAGE_BRIDGE (object);
-	NmtPageGrid *grid;
+	NmtEditorGrid *grid;
 	NMSettingBridge *s_bridge;
 	NmtNewtWidget *widget, *label, *stp;
 	NMConnection *conn;
@@ -74,27 +74,27 @@ nmt_page_bridge_constructed (GObject *object)
 		s_bridge = nm_connection_get_setting_bridge (conn);
 	}
 
-	grid = NMT_PAGE_GRID (bridge);
+	grid = NMT_EDITOR_GRID (bridge);
 
 	widget = nmt_newt_separator_new ();
-	nmt_page_grid_append (grid, _("Slaves"), widget, NULL);
-	nmt_page_grid_set_row_flags (grid, widget, NMT_PAGE_GRID_ROW_LABEL_ALIGN_LEFT);
+	nmt_editor_grid_append (grid, _("Slaves"), widget, NULL);
+	nmt_editor_grid_set_row_flags (grid, widget, NMT_EDITOR_GRID_ROW_LABEL_ALIGN_LEFT);
 
 	widget = nmt_slave_list_new (conn, bridge_connection_type_filter, bridge);
-	nmt_page_grid_append (grid, NULL, widget, NULL);
+	nmt_editor_grid_append (grid, NULL, widget, NULL);
 
 	widget = nmt_newt_entry_numeric_new (10, 0, 1000000);
 	g_object_bind_property (s_bridge, NM_SETTING_BRIDGE_AGEING_TIME,
 	                        widget, "text",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 	label = nmt_newt_label_new (_("seconds"));
-	nmt_page_grid_append (grid, _("Aging time"), widget, label);
+	nmt_editor_grid_append (grid, _("Aging time"), widget, label);
 
 	widget = stp = nmt_newt_checkbox_new (_("Enable STP (Spanning Tree Protocol)"));
 	g_object_bind_property (s_bridge, NM_SETTING_BRIDGE_STP,
 	                        widget, "active",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-	nmt_page_grid_append (grid, NULL, widget, NULL);
+	nmt_editor_grid_append (grid, NULL, widget, NULL);
 
 	widget = nmt_newt_entry_numeric_new (10, 0, G_MAXINT);
 	g_object_bind_property (s_bridge, NM_SETTING_BRIDGE_PRIORITY,
@@ -103,7 +103,7 @@ nmt_page_bridge_constructed (GObject *object)
 	g_object_bind_property (s_bridge, NM_SETTING_BRIDGE_STP,
 	                        widget, "sensitive",
 	                        G_BINDING_SYNC_CREATE);
-	nmt_page_grid_append (grid, _("Priority"), widget, NULL);
+	nmt_editor_grid_append (grid, _("Priority"), widget, NULL);
 
 	widget = nmt_newt_entry_numeric_new (10, 2, 30);
 	g_object_bind_property (s_bridge, NM_SETTING_BRIDGE_FORWARD_DELAY,
@@ -113,7 +113,7 @@ nmt_page_bridge_constructed (GObject *object)
 	                        widget, "sensitive",
 	                        G_BINDING_SYNC_CREATE);
 	label = nmt_newt_label_new (_("seconds"));
-	nmt_page_grid_append (grid, _("Forward delay"), widget, label);
+	nmt_editor_grid_append (grid, _("Forward delay"), widget, label);
 
 	widget = nmt_newt_entry_numeric_new (10, 1, 10);
 	g_object_bind_property (s_bridge, NM_SETTING_BRIDGE_HELLO_TIME,
@@ -123,7 +123,7 @@ nmt_page_bridge_constructed (GObject *object)
 	                        widget, "sensitive",
 	                        G_BINDING_SYNC_CREATE);
 	label = nmt_newt_label_new (_("seconds"));
-	nmt_page_grid_append (grid, _("Hello time"), widget, label);
+	nmt_editor_grid_append (grid, _("Hello time"), widget, label);
 
 	widget = nmt_newt_entry_numeric_new (10, 6, 40);
 	g_object_bind_property (s_bridge, NM_SETTING_BRIDGE_MAX_AGE,
@@ -133,7 +133,7 @@ nmt_page_bridge_constructed (GObject *object)
 	                        widget, "sensitive",
 	                        G_BINDING_SYNC_CREATE);
 	label = nmt_newt_label_new (_("seconds"));
-	nmt_page_grid_append (grid, _("Max age"), widget, label);
+	nmt_editor_grid_append (grid, _("Max age"), widget, label);
 
 	G_OBJECT_CLASS (nmt_page_bridge_parent_class)->constructed (object);
 }

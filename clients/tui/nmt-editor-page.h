@@ -21,7 +21,7 @@
 
 #include <NetworkManager.h>
 
-#include "nmt-page-grid.h"
+#include "nmt-editor-grid.h"
 
 G_BEGIN_DECLS
 
@@ -33,12 +33,12 @@ G_BEGIN_DECLS
 #define NMT_EDITOR_PAGE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NMT_TYPE_EDITOR_PAGE, NmtEditorPageClass))
 
 typedef struct {
-	NmtPageGrid parent;
+	NmtEditorGrid parent;
 
 } NmtEditorPage;
 
 typedef struct {
-	NmtPageGridClass parent;
+	NmtEditorGridClass parent;
 
 	gboolean (*show_by_default) (NmtEditorPage *);
 } NmtEditorPageClass;

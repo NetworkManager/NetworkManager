@@ -30,7 +30,7 @@
 
 #include "nmt-slave-list.h"
 
-G_DEFINE_TYPE (NmtPageTeam, nmt_page_team, NMT_TYPE_PAGE_DEVICE)
+G_DEFINE_TYPE (NmtPageTeam, nmt_page_team, NMT_TYPE_EDITOR_PAGE_DEVICE)
 
 #define NMT_PAGE_TEAM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NMT_TYPE_PAGE_TEAM, NmtPageTeamPrivate))
 
@@ -146,7 +146,7 @@ nmt_page_team_constructed (GObject *object)
 	priv->s_team = s_team;
 
 	widget = nmt_newt_grid_new ();
-	nmt_page_grid_append (NMT_PAGE_GRID (team), NULL, widget, NULL);
+	nmt_editor_grid_append (NMT_EDITOR_GRID (team), NULL, widget, NULL);
 
 	grid = NMT_NEWT_GRID (widget);
 

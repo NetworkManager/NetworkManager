@@ -124,7 +124,7 @@ permissions_transform_from_allusers (GBinding     *binding,
 }
 
 static NmtNewtWidget *
-add_section_for_page (NmtPageGrid *grid, NmtNewtWidget *widget)
+add_section_for_page (NmtEditorGrid *grid, NmtNewtWidget *widget)
 {
 	NmtEditorPage *page;
 	NmtNewtWidget *section, *header, *toggle;
@@ -138,15 +138,15 @@ add_section_for_page (NmtPageGrid *grid, NmtNewtWidget *widget)
 
 	toggle = nmt_newt_toggle_button_new (_("Hide"), _("Show"));
 
-	header = nmt_page_grid_new ();
-	nmt_page_grid_append (NMT_PAGE_GRID (header),
+	header = nmt_editor_grid_new ();
+	nmt_editor_grid_append (NMT_EDITOR_GRID (header),
 	                      nmt_editor_page_get_title (page),
 	                      nmt_editor_page_get_header_widget (page),
 	                      toggle);
-	nmt_page_grid_set_row_flags (NMT_PAGE_GRID (header),
+	nmt_editor_grid_set_row_flags (NMT_EDITOR_GRID (header),
 	                             nmt_editor_page_get_header_widget (page),
-	                             NMT_PAGE_GRID_ROW_LABEL_ALIGN_LEFT |
-	                             NMT_PAGE_GRID_ROW_EXTRA_ALIGN_RIGHT);
+	                             NMT_EDITOR_GRID_ROW_LABEL_ALIGN_LEFT |
+	                             NMT_EDITOR_GRID_ROW_EXTRA_ALIGN_RIGHT);
 	nmt_newt_section_set_header (NMT_NEWT_SECTION (section), header);
 
 	nmt_newt_section_set_body (NMT_NEWT_SECTION (section), widget);
@@ -158,7 +158,7 @@ add_section_for_page (NmtPageGrid *grid, NmtNewtWidget *widget)
 	if (nmt_editor_page_show_by_default (page) || !nmt_newt_widget_get_valid (section))
 		nmt_newt_toggle_button_set_active (NMT_NEWT_TOGGLE_BUTTON (toggle), TRUE);
 
-	nmt_page_grid_append (grid, NULL, section, NULL);
+	nmt_editor_grid_append (grid, NULL, section, NULL);
 	return section;
 }
 
@@ -167,7 +167,7 @@ nmt_page_main_constructed (GObject *object)
 {
 	NmtPageMain *page_main = NMT_PAGE_MAIN (object);
 	NmtPageMainPrivate *priv = NMT_PAGE_MAIN_GET_PRIVATE (page_main);
-	NmtPageGrid *grid;
+	NmtEditorGrid *grid;
 	NMConnection *conn;
 	NMSettingConnection *s_con;
 	NmtNewtWidget *widget, *section, *separator;
@@ -179,13 +179,13 @@ nmt_page_main_constructed (GObject *object)
 	conn = nmt_editor_page_get_connection (NMT_EDITOR_PAGE (page_main));
 	s_con = nm_connection_get_setting_connection (conn);
 
-	grid = NMT_PAGE_GRID (page_main);
+	grid = NMT_EDITOR_GRID (page_main);
 
 	widget = nmt_newt_entry_new (40, NMT_NEWT_ENTRY_NONEMPTY);
 	g_object_bind_property (s_con, NM_SETTING_CONNECTION_ID,
 	                        widget, "text",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-	nmt_page_grid_append (grid, _("Profile name"), widget, NULL);
+	nmt_editor_grid_append (grid, _("Profile name"), widget, NULL);
 
 	if (priv->type_data->virtual)
 		hardware_type = G_TYPE_NONE;
@@ -201,13 +201,13 @@ nmt_page_main_constructed (GObject *object)
 		deventry_label = _("Device");
 
 	widget = nmt_device_entry_new (deventry_label, 40, hardware_type);
-	nmt_page_grid_append (grid, NULL, widget, NULL);
+	nmt_editor_grid_append (grid, NULL, widget, NULL);
 	deventry = NMT_DEVICE_ENTRY (widget);
 	g_object_bind_property (s_con, NM_SETTING_CONNECTION_INTERFACE_NAME,
 	                        deventry, "interface-name",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 
-	nmt_page_grid_append (grid, NULL, nmt_newt_separator_new (), NULL);
+	nmt_editor_grid_append (grid, NULL, nmt_newt_separator_new (), NULL);
 
 	if (nm_connection_is_type (conn, NM_SETTING_BOND_SETTING_NAME))
 		add_section_for_page (grid, nmt_page_bond_new (conn, deventry));
@@ -228,7 +228,7 @@ nmt_page_main_constructed (GObject *object)
 	else if (nm_connection_is_type (conn, NM_SETTING_WIRELESS_SETTING_NAME))
 		add_section_for_page (grid, nmt_page_wifi_new (conn, deventry));
 
-	nmt_page_grid_append (grid, NULL, nmt_newt_separator_new (), NULL);
+	nmt_editor_grid_append (grid, NULL, nmt_newt_separator_new (), NULL);
 
 	slave_type = nm_setting_connection_get_slave_type (s_con);
 	if (slave_type) {
@@ -242,18 +242,18 @@ nmt_page_main_constructed (GObject *object)
 		/* Add a separator between ip4 and ip6 that's only visible if ip4 is open */
 		separator = nmt_newt_separator_new ();
 		g_object_bind_property (section, "open", separator, "visible", G_BINDING_SYNC_CREATE);
-		nmt_page_grid_append (grid, NULL, separator, NULL);
+		nmt_editor_grid_append (grid, NULL, separator, NULL);
 
 		add_section_for_page (grid, nmt_page_ip6_new (conn));
 
-		nmt_page_grid_append (grid, NULL, nmt_newt_separator_new (), NULL);
+		nmt_editor_grid_append (grid, NULL, nmt_newt_separator_new (), NULL);
 	}
 
 	widget = nmt_newt_checkbox_new (_("Automatically connect"));
 	g_object_bind_property (s_con, NM_SETTING_CONNECTION_AUTOCONNECT,
 	                        widget, "active",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-	nmt_page_grid_append (grid, NULL, widget, NULL);
+	nmt_editor_grid_append (grid, NULL, widget, NULL);
 
 	widget = nmt_newt_checkbox_new (_("Available to all users"));
 	g_object_bind_property_full (s_con, NM_SETTING_CONNECTION_PERMISSIONS,
@@ -262,7 +262,7 @@ nmt_page_main_constructed (GObject *object)
 	                             permissions_transform_to_allusers,
 	                             permissions_transform_from_allusers,
 	                             NULL, NULL);
-	nmt_page_grid_append (grid, NULL, widget, NULL);
+	nmt_editor_grid_append (grid, NULL, widget, NULL);
 
 	G_OBJECT_CLASS (nmt_page_main_parent_class)->constructed (object);
 }

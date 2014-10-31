@@ -93,7 +93,7 @@ nmt_page_team_port_constructed (GObject *object)
 	priv->s_port = s_port;
 
 	widget = nmt_newt_grid_new ();
-	nmt_page_grid_append (NMT_PAGE_GRID (team), NULL, widget, NULL);
+	nmt_editor_grid_append (NMT_EDITOR_GRID (team), NULL, widget, NULL);
 
 	grid = NMT_NEWT_GRID (widget);
 

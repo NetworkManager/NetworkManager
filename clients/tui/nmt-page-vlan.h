@@ -19,7 +19,7 @@
 #ifndef NMT_PAGE_VLAN_H
 #define NMT_PAGE_VLAN_H
 
-#include "nmt-page-device.h"
+#include "nmt-editor-page-device.h"
 
 G_BEGIN_DECLS
 
@@ -31,12 +31,12 @@ G_BEGIN_DECLS
 #define NMT_PAGE_VLAN_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NMT_TYPE_PAGE_VLAN, NmtPageVlanClass))
 
 typedef struct {
-	NmtPageDevice parent;
+	NmtEditorPageDevice parent;
 
 } NmtPageVlan;
 
 typedef struct {
-	NmtPageDeviceClass parent;
+	NmtEditorPageDeviceClass parent;
 
 } NmtPageVlanClass;
 

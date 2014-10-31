@@ -32,7 +32,7 @@
 
 #include "nmt-editor-page.h"
 
-G_DEFINE_ABSTRACT_TYPE (NmtEditorPage, nmt_editor_page, NMT_TYPE_PAGE_GRID)
+G_DEFINE_ABSTRACT_TYPE (NmtEditorPage, nmt_editor_page, NMT_TYPE_EDITOR_GRID)
 
 #define NMT_EDITOR_PAGE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NMT_TYPE_EDITOR_PAGE, NmtEditorPagePrivate))
 

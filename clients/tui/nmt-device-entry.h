@@ -19,7 +19,7 @@
 #ifndef NMT_DEVICE_ENTRY_H
 #define NMT_DEVICE_ENTRY_H
 
-#include "nmt-page-grid.h"
+#include "nmt-editor-grid.h"
 
 #include <NetworkManager.h>
 
@@ -33,12 +33,12 @@ G_BEGIN_DECLS
 #define NMT_DEVICE_ENTRY_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NMT_TYPE_DEVICE_ENTRY, NmtDeviceEntryClass))
 
 typedef struct {
-	NmtPageGrid parent;
+	NmtEditorGrid parent;
 
 } NmtDeviceEntry;
 
 typedef struct {
-	NmtPageGridClass parent;
+	NmtEditorGridClass parent;
 
 } NmtDeviceEntryClass;
 

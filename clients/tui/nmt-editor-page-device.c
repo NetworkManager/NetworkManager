@@ -17,10 +17,10 @@
  */
 
 /**
- * SECTION:nmt-page-device
+ * SECTION:nmt-editor-page-device
  * @short_description: Abstract base class for "device" editor pages
  *
- * #NmtPageDevice is the base class for #NmtEditorPage subclasses
+ * #NmtEditorPageDevice is the base class for #NmtEditorPage subclasses
  * representing device-type-specific data. (Eg, #NmtPageEthernet,
  * #NmtPageVlan, etc).
  *
@@ -30,16 +30,16 @@
 
 #include "config.h"
 
-#include "nmt-page-device.h"
+#include "nmt-editor-page-device.h"
 
-G_DEFINE_TYPE (NmtPageDevice, nmt_page_device, NMT_TYPE_EDITOR_PAGE)
+G_DEFINE_TYPE (NmtEditorPageDevice, nmt_editor_page_device, NMT_TYPE_EDITOR_PAGE)
 
-#define NMT_PAGE_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NMT_TYPE_PAGE_DEVICE, NmtPageDevicePrivate))
+#define NMT_EDITOR_PAGE_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NMT_TYPE_EDITOR_PAGE_DEVICE, NmtEditorPageDevicePrivate))
 
 typedef struct {
 	NmtDeviceEntry *device_entry;
 	gboolean show_by_default;
-} NmtPageDevicePrivate;
+} NmtEditorPageDevicePrivate;
 
 enum {
 	PROP_0,
@@ -51,43 +51,43 @@ enum {
 };
 
 static void
-nmt_page_device_init (NmtPageDevice *device)
+nmt_editor_page_device_init (NmtEditorPageDevice *device)
 {
 }
 
 static void
-nmt_page_device_finalize (GObject *object)
+nmt_editor_page_device_finalize (GObject *object)
 {
-	NmtPageDevicePrivate *priv = NMT_PAGE_DEVICE_GET_PRIVATE (object);
+	NmtEditorPageDevicePrivate *priv = NMT_EDITOR_PAGE_DEVICE_GET_PRIVATE (object);
 
 	g_clear_object (&priv->device_entry);
 
-	G_OBJECT_CLASS (nmt_page_device_parent_class)->finalize (object);
+	G_OBJECT_CLASS (nmt_editor_page_device_parent_class)->finalize (object);
 }
 
 NmtDeviceEntry *
-nmt_page_device_get_device_entry (NmtPageDevice *page)
+nmt_editor_page_device_get_device_entry (NmtEditorPageDevice *page)
 {
-	NmtPageDevicePrivate *priv = NMT_PAGE_DEVICE_GET_PRIVATE (page);
+	NmtEditorPageDevicePrivate *priv = NMT_EDITOR_PAGE_DEVICE_GET_PRIVATE (page);
 
 	return priv->device_entry;
 }
 
 static gboolean
-nmt_page_device_show_by_default (NmtEditorPage *page)
+nmt_editor_page_device_show_by_default (NmtEditorPage *page)
 {
-	NmtPageDevicePrivate *priv = NMT_PAGE_DEVICE_GET_PRIVATE (page);
+	NmtEditorPageDevicePrivate *priv = NMT_EDITOR_PAGE_DEVICE_GET_PRIVATE (page);
 
 	return priv->show_by_default;
 }
 
 static void
-nmt_page_device_set_property (GObject      *object,
+nmt_editor_page_device_set_property (GObject      *object,
                               guint         prop_id,
                               const GValue *value,
                               GParamSpec   *pspec)
 {
-	NmtPageDevicePrivate *priv = NMT_PAGE_DEVICE_GET_PRIVATE (object);
+	NmtEditorPageDevicePrivate *priv = NMT_EDITOR_PAGE_DEVICE_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_DEVICE_ENTRY:
@@ -103,12 +103,12 @@ nmt_page_device_set_property (GObject      *object,
 }
 
 static void
-nmt_page_device_get_property (GObject    *object,
+nmt_editor_page_device_get_property (GObject    *object,
                               guint       prop_id,
                               GValue     *value,
                               GParamSpec *pspec)
 {
-	NmtPageDevicePrivate *priv = NMT_PAGE_DEVICE_GET_PRIVATE (object);
+	NmtEditorPageDevicePrivate *priv = NMT_EDITOR_PAGE_DEVICE_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_DEVICE_ENTRY:
@@ -124,19 +124,19 @@ nmt_page_device_get_property (GObject    *object,
 }
 
 static void
-nmt_page_device_class_init (NmtPageDeviceClass *page_device_class)
+nmt_editor_page_device_class_init (NmtEditorPageDeviceClass *page_device_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (page_device_class);
 	NmtEditorPageClass *page_class = NMT_EDITOR_PAGE_CLASS (page_device_class);
 
-	g_type_class_add_private (page_device_class, sizeof (NmtPageDevicePrivate));
+	g_type_class_add_private (page_device_class, sizeof (NmtEditorPageDevicePrivate));
 
 	/* virtual methods */
-	object_class->set_property = nmt_page_device_set_property;
-	object_class->get_property = nmt_page_device_get_property;
-	object_class->finalize     = nmt_page_device_finalize;
+	object_class->set_property = nmt_editor_page_device_set_property;
+	object_class->get_property = nmt_editor_page_device_get_property;
+	object_class->finalize     = nmt_editor_page_device_finalize;
 
-	page_class->show_by_default = nmt_page_device_show_by_default;
+	page_class->show_by_default = nmt_editor_page_device_show_by_default;
 
 	/* properties */
 	g_object_class_install_property

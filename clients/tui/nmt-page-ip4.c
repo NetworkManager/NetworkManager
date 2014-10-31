@@ -114,7 +114,7 @@ static void
 nmt_page_ip4_constructed (GObject *object)
 {
 	NmtPageIP4 *ip4 = NMT_PAGE_IP4 (object);
-	NmtPageGrid *grid;
+	NmtEditorGrid *grid;
 	NMSettingIPConfig *s_ip4;
 	NmtNewtWidget *widget, *button;
 	NMConnection *conn;
@@ -135,36 +135,36 @@ nmt_page_ip4_constructed (GObject *object)
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 	nmt_editor_page_set_header_widget (NMT_EDITOR_PAGE (ip4), widget);
 
-	grid = NMT_PAGE_GRID (ip4);
+	grid = NMT_EDITOR_GRID (ip4);
 
 	widget = nmt_address_list_new (NMT_ADDRESS_LIST_IP4_WITH_PREFIX);
 	nm_editor_bind_ip_addresses_with_prefix_to_strv (AF_INET,
 	                                                 s_ip4, NM_SETTING_IP_CONFIG_ADDRESSES,
 	                                                 widget, "strings",
 	                                                 G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-	nmt_page_grid_append (grid, _("Addresses"), widget, NULL);
+	nmt_editor_grid_append (grid, _("Addresses"), widget, NULL);
 
 	widget = nmt_ip_entry_new (25, AF_INET, FALSE, TRUE);
 	nm_editor_bind_ip_gateway_to_string (AF_INET,
 	                                     s_ip4,
 	                                     widget, "text", "sensitive",
 	                                     G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-	nmt_page_grid_append (grid, _("Gateway"), widget, NULL);
+	nmt_editor_grid_append (grid, _("Gateway"), widget, NULL);
 
 	widget = nmt_address_list_new (NMT_ADDRESS_LIST_IP4);
 	nm_editor_bind_ip_addresses_to_strv (AF_INET,
 	                                     s_ip4, NM_SETTING_IP_CONFIG_DNS,
 	                                     widget, "strings",
 	                                     G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-	nmt_page_grid_append (grid, _("DNS servers"), widget, NULL);
+	nmt_editor_grid_append (grid, _("DNS servers"), widget, NULL);
 
 	widget = nmt_address_list_new (NMT_ADDRESS_LIST_HOSTNAME);
 	g_object_bind_property (s_ip4, NM_SETTING_IP_CONFIG_DNS_SEARCH,
 	                        widget, "strings",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-	nmt_page_grid_append (grid, _("Search domains"), widget, NULL);
+	nmt_editor_grid_append (grid, _("Search domains"), widget, NULL);
 
-	nmt_page_grid_append (grid, NULL, nmt_newt_separator_new (), NULL);
+	nmt_editor_grid_append (grid, NULL, nmt_newt_separator_new (), NULL);
 
 	widget = g_object_new (NMT_TYPE_NEWT_LABEL,
 	                       "text", "",
@@ -177,22 +177,22 @@ nmt_page_ip4_constructed (GObject *object)
 	                             NULL, NULL, NULL);
 	button = nmt_newt_button_new (_("Edit..."));
 	g_signal_connect (button, "clicked", G_CALLBACK (edit_routes), s_ip4);
-	nmt_page_grid_append (grid, _("Routing"), widget, button);
+	nmt_editor_grid_append (grid, _("Routing"), widget, button);
 
 	widget = nmt_newt_checkbox_new (_("Never use this network for default route"));
 	g_object_bind_property (s_ip4, NM_SETTING_IP_CONFIG_NEVER_DEFAULT,
 	                        widget, "active",
 	                        G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
-	nmt_page_grid_append (grid, NULL, widget, NULL);
+	nmt_editor_grid_append (grid, NULL, widget, NULL);
 
-	nmt_page_grid_append (grid, NULL, nmt_newt_separator_new (), NULL);
+	nmt_editor_grid_append (grid, NULL, nmt_newt_separator_new (), NULL);
 
 	widget = nmt_newt_checkbox_new (_("Require IPv4 addressing for this connection"));
 	g_object_bind_property (s_ip4, NM_SETTING_IP_CONFIG_MAY_FAIL,
 	                        widget, "active",
 	                        G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL |
 	                        G_BINDING_INVERT_BOOLEAN);
-	nmt_page_grid_append (grid, NULL, widget, NULL);
+	nmt_editor_grid_append (grid, NULL, widget, NULL);
 
 	G_OBJECT_CLASS (nmt_page_ip4_parent_class)->constructed (object);
 }

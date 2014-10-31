@@ -30,7 +30,7 @@
 #include "nmt-mac-entry.h"
 #include "nmt-mtu-entry.h"
 
-G_DEFINE_TYPE (NmtPageEthernet, nmt_page_ethernet, NMT_TYPE_PAGE_DEVICE)
+G_DEFINE_TYPE (NmtPageEthernet, nmt_page_ethernet, NMT_TYPE_EDITOR_PAGE_DEVICE)
 
 NmtNewtWidget *
 nmt_page_ethernet_new (NMConnection   *conn,
@@ -54,7 +54,7 @@ nmt_page_ethernet_constructed (GObject *object)
 {
 	NmtPageEthernet *ethernet = NMT_PAGE_ETHERNET (object);
 	NmtDeviceEntry *deventry;
-	NmtPageGrid *grid;
+	NmtEditorGrid *grid;
 	NMSettingWired *s_wired;
 	NmtNewtWidget *widget;
 	NMConnection *conn;
@@ -66,24 +66,24 @@ nmt_page_ethernet_constructed (GObject *object)
 		s_wired = nm_connection_get_setting_wired (conn);
 	}
 
-	deventry = nmt_page_device_get_device_entry (NMT_PAGE_DEVICE (object));
+	deventry = nmt_editor_page_device_get_device_entry (NMT_EDITOR_PAGE_DEVICE (object));
 	g_object_bind_property (s_wired, NM_SETTING_WIRED_MAC_ADDRESS,
 	                        deventry, "mac-address",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 
-	grid = NMT_PAGE_GRID (ethernet);
+	grid = NMT_EDITOR_GRID (ethernet);
 
 	widget = nmt_mac_entry_new (40, ETH_ALEN);
 	g_object_bind_property (s_wired, NM_SETTING_WIRED_CLONED_MAC_ADDRESS,
 	                        widget, "mac-address",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-	nmt_page_grid_append (grid, _("Cloned MAC address"), widget, NULL);
+	nmt_editor_grid_append (grid, _("Cloned MAC address"), widget, NULL);
 
 	widget = nmt_mtu_entry_new ();
 	g_object_bind_property (s_wired, NM_SETTING_WIRED_MTU,
 	                        widget, "mtu",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-	nmt_page_grid_append (grid, _("MTU"), widget, NULL);
+	nmt_editor_grid_append (grid, _("MTU"), widget, NULL);
 
 	G_OBJECT_CLASS (nmt_page_ethernet_parent_class)->constructed (object);
 }

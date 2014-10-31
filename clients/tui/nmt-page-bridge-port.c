@@ -48,7 +48,7 @@ static void
 nmt_page_bridge_port_constructed (GObject *object)
 {
 	NmtPageBridgePort *bridge = NMT_PAGE_BRIDGE_PORT (object);
-	NmtPageGrid *grid;
+	NmtEditorGrid *grid;
 	NMSettingBridgePort *s_port;
 	NmtNewtWidget *widget;
 	NMConnection *conn;
@@ -60,25 +60,25 @@ nmt_page_bridge_port_constructed (GObject *object)
 		s_port = nm_connection_get_setting_bridge_port (conn);
 	}
 
-	grid = NMT_PAGE_GRID (bridge);
+	grid = NMT_EDITOR_GRID (bridge);
 
 	widget = nmt_newt_entry_numeric_new (10, 0, 63);
 	g_object_bind_property (s_port, NM_SETTING_BRIDGE_PORT_PRIORITY,
 	                        widget, "text",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-	nmt_page_grid_append (grid, _("Priority"), widget, NULL);
+	nmt_editor_grid_append (grid, _("Priority"), widget, NULL);
 
 	widget = nmt_newt_entry_numeric_new (10, 1, 65535);
 	g_object_bind_property (s_port, NM_SETTING_BRIDGE_PORT_PATH_COST,
 	                        widget, "text",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-	nmt_page_grid_append (grid, _("Path cost"), widget, NULL);
+	nmt_editor_grid_append (grid, _("Path cost"), widget, NULL);
 
 	widget = nmt_newt_checkbox_new (_("Hairpin mode"));
 	g_object_bind_property (s_port, NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE,
 	                        widget, "active",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-	nmt_page_grid_append (grid, NULL, widget, NULL);
+	nmt_editor_grid_append (grid, NULL, widget, NULL);
 
 	G_OBJECT_CLASS (nmt_page_bridge_port_parent_class)->constructed (object);
 }

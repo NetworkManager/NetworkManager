@@ -39,7 +39,7 @@
 
 #include "nm-editor-bindings.h"
 
-G_DEFINE_TYPE (NmtPageWifi, nmt_page_wifi, NMT_TYPE_PAGE_DEVICE)
+G_DEFINE_TYPE (NmtPageWifi, nmt_page_wifi, NMT_TYPE_EDITOR_PAGE_DEVICE)
 
 #define NMT_PAGE_WIFI_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NMT_TYPE_PAGE_WIFI, NmtPageWifiPrivate))
 
@@ -184,7 +184,7 @@ nmt_page_wifi_constructed (GObject *object)
 	NmtPageWifiPrivate *priv = NMT_PAGE_WIFI_GET_PRIVATE (object);
 	NmtPageWifi *wifi = NMT_PAGE_WIFI (object);
 	NmtDeviceEntry *deventry;
-	NmtPageGrid *grid;
+	NmtEditorGrid *grid;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
 	NmtNewtWidget *widget, *hbox, *subgrid;
@@ -209,12 +209,12 @@ nmt_page_wifi_constructed (GObject *object)
 	}
 	priv->s_wsec = g_object_ref_sink (s_wsec);
 
-	deventry = nmt_page_device_get_device_entry (NMT_PAGE_DEVICE (object));
+	deventry = nmt_editor_page_device_get_device_entry (NMT_EDITOR_PAGE_DEVICE (object));
 	g_object_bind_property (s_wireless, NM_SETTING_WIRELESS_MAC_ADDRESS,
 	                        deventry, "mac-address",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 
-	grid = NMT_PAGE_GRID (wifi);
+	grid = NMT_EDITOR_GRID (wifi);
 
 	widget = nmt_newt_entry_new (40, NMT_NEWT_ENTRY_NONEMPTY);
 	g_object_bind_property_full (s_wireless, NM_SETTING_WIRELESS_SSID,
@@ -223,13 +223,13 @@ nmt_page_wifi_constructed (GObject *object)
 	                             ssid_transform_to_entry,
 	                             ssid_transform_from_entry,
 	                             s_wireless, NULL);
-	nmt_page_grid_append (grid, _("SSID"), widget, NULL);
+	nmt_editor_grid_append (grid, _("SSID"), widget, NULL);
 
 	widget = nmt_newt_popup_new (wifi_mode);
 	g_object_bind_property (s_wireless, NM_SETTING_WIRELESS_MODE,
 	                        widget, "active-id",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-	nmt_page_grid_append (grid, _("Mode"), widget, NULL);
+	nmt_editor_grid_append (grid, _("Mode"), widget, NULL);
 	mode = widget;
 
 	hbox = nmt_newt_grid_new ();
@@ -255,28 +255,28 @@ nmt_page_wifi_constructed (GObject *object)
 	                             G_BINDING_SYNC_CREATE,
 	                             mode_transform_to_band_visibility,
 	                             NULL, NULL, NULL);
-	nmt_page_grid_append (grid, _("Channel"), hbox, NULL);
+	nmt_editor_grid_append (grid, _("Channel"), hbox, NULL);
 
-	nmt_page_grid_append (grid, NULL, nmt_newt_separator_new (), NULL);
+	nmt_editor_grid_append (grid, NULL, nmt_newt_separator_new (), NULL);
 
 	widget = nmt_newt_popup_new (wifi_security);
-	nmt_page_grid_append (grid, _("Security"), widget, NULL);
+	nmt_editor_grid_append (grid, _("Security"), widget, NULL);
 	security = widget;
 
 	widget = nmt_newt_stack_new ();
 	stack = NMT_NEWT_STACK (widget);
 
 	/* none */
-	subgrid = nmt_page_grid_new ();
+	subgrid = nmt_editor_grid_new ();
 	nmt_newt_stack_add (stack, "none", subgrid);
 
 	/* wpa-personal */
-	subgrid = nmt_page_grid_new ();
+	subgrid = nmt_editor_grid_new ();
 	widget = nmt_password_fields_new (40, NMT_PASSWORD_FIELDS_SHOW_PASSWORD);
 	g_object_bind_property (s_wsec, NM_SETTING_WIRELESS_SECURITY_PSK,
 	                        widget, "password",
 	                        G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
-	nmt_page_grid_append (NMT_PAGE_GRID (subgrid), _("Password"), widget, NULL);
+	nmt_editor_grid_append (NMT_EDITOR_GRID (subgrid), _("Password"), widget, NULL);
 	nmt_newt_stack_add (stack, "wpa-personal", subgrid);
 
 	/* "wpa-enterprise" */
@@ -285,13 +285,13 @@ nmt_page_wifi_constructed (GObject *object)
 	nmt_newt_stack_add (stack, "wpa-enterprise", widget);
 
 	/* wep-key */
-	subgrid = nmt_page_grid_new ();
+	subgrid = nmt_editor_grid_new ();
 
 	widget = entry = nmt_password_fields_new (40, NMT_PASSWORD_FIELDS_SHOW_PASSWORD);
-	nmt_page_grid_append (NMT_PAGE_GRID (subgrid), _("Key"), widget, NULL);
+	nmt_editor_grid_append (NMT_EDITOR_GRID (subgrid), _("Key"), widget, NULL);
 
 	widget = nmt_newt_popup_new (wep_index);
-	nmt_page_grid_append (NMT_PAGE_GRID (subgrid), _("WEP index"), widget, NULL);
+	nmt_editor_grid_append (NMT_EDITOR_GRID (subgrid), _("WEP index"), widget, NULL);
 
 	nm_editor_bind_wireless_security_wep_key (s_wsec,
 	                                          entry, "password",
@@ -299,18 +299,18 @@ nmt_page_wifi_constructed (GObject *object)
 	                                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 
 	widget = nmt_newt_popup_new (wep_auth);
-	nmt_page_grid_append (NMT_PAGE_GRID (subgrid), _("Authentication"), widget, NULL);
+	nmt_editor_grid_append (NMT_EDITOR_GRID (subgrid), _("Authentication"), widget, NULL);
 
 	nmt_newt_stack_add (stack, "wep-key", subgrid);
 
 	/* wep-passphrase */
-	subgrid = nmt_page_grid_new ();
+	subgrid = nmt_editor_grid_new ();
 
 	widget = entry = nmt_password_fields_new (40, NMT_PASSWORD_FIELDS_SHOW_PASSWORD);
-	nmt_page_grid_append (NMT_PAGE_GRID (subgrid), _("Password"), widget, NULL);
+	nmt_editor_grid_append (NMT_EDITOR_GRID (subgrid), _("Password"), widget, NULL);
 
 	widget = nmt_newt_popup_new (wep_index);
-	nmt_page_grid_append (NMT_PAGE_GRID (subgrid), _("WEP index"), widget, NULL);
+	nmt_editor_grid_append (NMT_EDITOR_GRID (subgrid), _("WEP index"), widget, NULL);
 
 	nm_editor_bind_wireless_security_wep_key (s_wsec,
 	                                          entry, "password",
@@ -318,7 +318,7 @@ nmt_page_wifi_constructed (GObject *object)
 	                                          G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 
 	widget = nmt_newt_popup_new (wep_auth);
-	nmt_page_grid_append (NMT_PAGE_GRID (subgrid), _("Authentication"), widget, NULL);
+	nmt_editor_grid_append (NMT_EDITOR_GRID (subgrid), _("Authentication"), widget, NULL);
 
 	nmt_newt_stack_add (stack, "wep-passphrase", subgrid);
 
@@ -328,10 +328,10 @@ nmt_page_wifi_constructed (GObject *object)
 	nmt_newt_stack_add (stack, "dynamic-wep", widget);
 
 	/* leap */
-	subgrid = nmt_page_grid_new ();
+	subgrid = nmt_editor_grid_new ();
 
 	widget = nmt_newt_entry_new (40, NMT_NEWT_ENTRY_NONEMPTY);
-	nmt_page_grid_append (NMT_PAGE_GRID (subgrid), _("Username"), widget, NULL);
+	nmt_editor_grid_append (NMT_EDITOR_GRID (subgrid), _("Username"), widget, NULL);
 	g_object_bind_property (s_wsec, NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME,
 	                        widget, "text",
 	                        G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
@@ -340,36 +340,36 @@ nmt_page_wifi_constructed (GObject *object)
 	g_object_bind_property (s_wsec, NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD,
 	                        widget, "password",
 	                        G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
-	nmt_page_grid_append (NMT_PAGE_GRID (subgrid), _("Password"), widget, NULL);
+	nmt_editor_grid_append (NMT_EDITOR_GRID (subgrid), _("Password"), widget, NULL);
 
 	nmt_newt_stack_add (stack, "leap", subgrid);
 
-	nmt_page_grid_append (grid, NULL, NMT_NEWT_WIDGET (stack), NULL);
+	nmt_editor_grid_append (grid, NULL, NMT_NEWT_WIDGET (stack), NULL);
 	g_object_bind_property (security, "active-id",
 	                        stack, "active-id",
 	                        G_BINDING_SYNC_CREATE);
 	nm_editor_bind_wireless_security_method (conn, s_wsec, security, "active-id",
 	                                         G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 
-	nmt_page_grid_append (grid, NULL, nmt_newt_separator_new (), NULL);
+	nmt_editor_grid_append (grid, NULL, nmt_newt_separator_new (), NULL);
 
 	widget = nmt_mac_entry_new (40, ETH_ALEN);
 	g_object_bind_property (s_wireless, NM_SETTING_WIRELESS_BSSID,
 	                        widget, "mac-address",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-	nmt_page_grid_append (grid, _("BSSID"), widget, NULL);
+	nmt_editor_grid_append (grid, _("BSSID"), widget, NULL);
 
 	widget = nmt_mac_entry_new (40, ETH_ALEN);
 	g_object_bind_property (s_wireless, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS,
 	                        widget, "mac-address",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-	nmt_page_grid_append (grid, _("Cloned MAC address"), widget, NULL);
+	nmt_editor_grid_append (grid, _("Cloned MAC address"), widget, NULL);
 
 	widget = nmt_mtu_entry_new ();
 	g_object_bind_property (s_wireless, NM_SETTING_WIRELESS_MTU,
 	                        widget, "mtu",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-	nmt_page_grid_append (grid, _("MTU"), widget, NULL);
+	nmt_editor_grid_append (grid, _("MTU"), widget, NULL);
 
 	G_OBJECT_CLASS (nmt_page_wifi_parent_class)->constructed (object);
 }
