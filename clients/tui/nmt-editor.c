@@ -64,6 +64,7 @@ typedef struct {
 
 	NMEditorConnectionTypeData *type_data;
 
+	GSList *pages;
 	NmtNewtWidget *ok, *cancel;
 	gboolean running;
 } NmtEditorPrivate;
@@ -266,42 +267,24 @@ permissions_transform_from_allusers (GBinding     *binding,
 }
 
 static NmtNewtWidget *
-add_section_for_page (NmtEditorGrid *grid, NmtNewtWidget *widget)
+add_sections_for_page (NmtEditor *editor, NmtEditorGrid *grid, NmtEditorPage *page)
 {
-	NmtEditorPage *page;
-	NmtNewtWidget *section, *header, *toggle;
+	NmtEditorPrivate *priv = NMT_EDITOR_GET_PRIVATE (editor);
+	NmtNewtWidget *first_section = NULL;
+	const GSList *sections, *iter;
 
-	g_return_val_if_fail (NMT_IS_EDITOR_PAGE (widget), NULL);
-	g_return_val_if_fail (nmt_newt_widget_get_parent (widget) == NULL, NULL);
+	g_return_val_if_fail (NMT_IS_EDITOR_PAGE (page), NULL);
 
-	page = NMT_EDITOR_PAGE (widget);
+	priv->pages = g_slist_prepend (priv->pages, page);
 
-	section = nmt_newt_section_new (TRUE);
+	sections = nmt_editor_page_get_sections (page);
+	for (iter = sections; iter; iter = iter->next) {
+		if (!first_section)
+			first_section = iter->data;
+		nmt_editor_grid_append (grid, NULL, iter->data, NULL);
+	}
 
-	toggle = nmt_newt_toggle_button_new (_("Hide"), _("Show"));
-
-	header = nmt_editor_grid_new ();
-	nmt_editor_grid_append (NMT_EDITOR_GRID (header),
-	                        nmt_editor_page_get_title (page),
-	                        nmt_editor_page_get_header_widget (page),
-	                        toggle);
-	nmt_editor_grid_set_row_flags (NMT_EDITOR_GRID (header),
-	                               nmt_editor_page_get_header_widget (page),
-	                               NMT_EDITOR_GRID_ROW_LABEL_ALIGN_LEFT |
-	                               NMT_EDITOR_GRID_ROW_EXTRA_ALIGN_RIGHT);
-	nmt_newt_section_set_header (NMT_NEWT_SECTION (section), header);
-
-	nmt_newt_section_set_body (NMT_NEWT_SECTION (section), widget);
-
-	g_object_bind_property (toggle, "active",
-	                        section, "open",
-	                        G_BINDING_SYNC_CREATE);
-
-	if (nmt_editor_page_show_by_default (page) || !nmt_newt_widget_get_valid (section))
-		nmt_newt_toggle_button_set_active (NMT_NEWT_TOGGLE_BUTTON (toggle), TRUE);
-
-	nmt_editor_grid_append (grid, NULL, section, NULL);
-	return section;
+	return first_section;
 }
 
 static void
@@ -362,43 +345,43 @@ nmt_editor_constructed (GObject *object)
 	/* Now add the various pages... */
 
 	if (nm_connection_is_type (priv->edit_connection, NM_SETTING_BOND_SETTING_NAME))
-		add_section_for_page (grid, nmt_page_bond_new (priv->edit_connection, deventry));
+		add_sections_for_page (editor, grid, nmt_page_bond_new (priv->edit_connection, deventry));
 	else if (nm_connection_is_type (priv->edit_connection, NM_SETTING_BRIDGE_SETTING_NAME))
-		add_section_for_page (grid, nmt_page_bridge_new (priv->edit_connection, deventry));
+		add_sections_for_page (editor, grid, nmt_page_bridge_new (priv->edit_connection, deventry));
 	else if (nm_connection_is_type (priv->edit_connection, NM_SETTING_INFINIBAND_SETTING_NAME))
-		add_section_for_page (grid, nmt_page_infiniband_new (priv->edit_connection, deventry));
+		add_sections_for_page (editor, grid, nmt_page_infiniband_new (priv->edit_connection, deventry));
 	else if (nm_connection_is_type (priv->edit_connection, NM_SETTING_PPPOE_SETTING_NAME)) {
-		add_section_for_page (grid, nmt_page_dsl_new (priv->edit_connection));
-		add_section_for_page (grid, nmt_page_ethernet_new (priv->edit_connection, deventry));
-		add_section_for_page (grid, nmt_page_ppp_new (priv->edit_connection));
+		add_sections_for_page (editor, grid, nmt_page_dsl_new (priv->edit_connection));
+		add_sections_for_page (editor, grid, nmt_page_ethernet_new (priv->edit_connection, deventry));
+		add_sections_for_page (editor, grid, nmt_page_ppp_new (priv->edit_connection));
 	} else if (nm_connection_is_type (priv->edit_connection, NM_SETTING_TEAM_SETTING_NAME))
-		add_section_for_page (grid, nmt_page_team_new (priv->edit_connection, deventry));
+		add_sections_for_page (editor, grid, nmt_page_team_new (priv->edit_connection, deventry));
 	else if (nm_connection_is_type (priv->edit_connection, NM_SETTING_VLAN_SETTING_NAME))
-		add_section_for_page (grid, nmt_page_vlan_new (priv->edit_connection, deventry));
+		add_sections_for_page (editor, grid, nmt_page_vlan_new (priv->edit_connection, deventry));
 	else if (nm_connection_is_type (priv->edit_connection, NM_SETTING_WIRED_SETTING_NAME))
-		add_section_for_page (grid, nmt_page_ethernet_new (priv->edit_connection, deventry));
+		add_sections_for_page (editor, grid, nmt_page_ethernet_new (priv->edit_connection, deventry));
 	else if (nm_connection_is_type (priv->edit_connection, NM_SETTING_WIRELESS_SETTING_NAME))
-		add_section_for_page (grid, nmt_page_wifi_new (priv->edit_connection, deventry));
+		add_sections_for_page (editor, grid, nmt_page_wifi_new (priv->edit_connection, deventry));
 
 	nmt_editor_grid_append (grid, NULL, nmt_newt_separator_new (), NULL);
 
 	slave_type = nm_setting_connection_get_slave_type (s_con);
 	if (slave_type) {
 		if (!strcmp (slave_type, NM_SETTING_BRIDGE_SETTING_NAME))
-			add_section_for_page (grid, nmt_page_bridge_port_new (priv->edit_connection));
+			add_sections_for_page (editor, grid, nmt_page_bridge_port_new (priv->edit_connection));
 		else if (!strcmp (slave_type, NM_SETTING_TEAM_SETTING_NAME))
-			add_section_for_page (grid, nmt_page_team_port_new (priv->edit_connection));
+			add_sections_for_page (editor, grid, nmt_page_team_port_new (priv->edit_connection));
 	} else {
 		NmtNewtWidget *section;
 
-		section = add_section_for_page (grid, nmt_page_ip4_new (priv->edit_connection));
+		section = add_sections_for_page (editor, grid, nmt_page_ip4_new (priv->edit_connection));
 
 		/* Add a separator between ip4 and ip6 that's only visible if ip4 is open */
 		widget = nmt_newt_separator_new ();
 		g_object_bind_property (section, "open", widget, "visible", G_BINDING_SYNC_CREATE);
 		nmt_editor_grid_append (grid, NULL, widget, NULL);
 
-		add_section_for_page (grid, nmt_page_ip6_new (priv->edit_connection));
+		add_sections_for_page (editor, grid, nmt_page_ip6_new (priv->edit_connection));
 
 		nmt_editor_grid_append (grid, NULL, nmt_newt_separator_new (), NULL);
 	}
@@ -445,6 +428,8 @@ nmt_editor_finalize (GObject *object)
 
 	g_clear_object (&priv->orig_connection);
 	g_clear_object (&priv->edit_connection);
+
+	g_slist_free_full (priv->pages, g_object_unref);
 
 	g_clear_object (&priv->ok);
 	g_clear_object (&priv->cancel);

@@ -37,12 +37,11 @@ typedef struct {
 
 } NmtPageTeamPortPrivate;
 
-NmtNewtWidget *
+NmtEditorPage *
 nmt_page_team_port_new (NMConnection *conn)
 {
 	return g_object_new (NMT_TYPE_PAGE_TEAM_PORT,
 	                     "connection", conn,
-	                     "title", _("TEAM PORT"),
 	                     NULL);
 }
 
@@ -79,6 +78,7 @@ nmt_page_team_port_constructed (GObject *object)
 {
 	NmtPageTeamPort *team = NMT_PAGE_TEAM_PORT (object);
 	NmtPageTeamPortPrivate *priv = NMT_PAGE_TEAM_PORT_GET_PRIVATE (team);
+	NmtEditorSection *section;
 	NmtNewtGrid *grid;
 	NMSettingTeamPort *s_port;
 	NmtNewtWidget *widget;
@@ -92,8 +92,10 @@ nmt_page_team_port_constructed (GObject *object)
 	}
 	priv->s_port = s_port;
 
+	section = nmt_editor_section_new (_("TEAM PORT"), NULL, TRUE);
+
 	widget = nmt_newt_grid_new ();
-	nmt_editor_grid_append (NMT_EDITOR_GRID (team), NULL, widget, NULL);
+	nmt_editor_grid_append (nmt_editor_section_get_body (section), NULL, widget, NULL);
 
 	grid = NMT_NEWT_GRID (widget);
 
@@ -110,6 +112,8 @@ nmt_page_team_port_constructed (GObject *object)
 	widget = nmt_newt_button_new (_("Edit..."));
 	g_signal_connect (widget, "clicked", G_CALLBACK (edit_clicked), team);
 	nmt_newt_grid_add (grid, widget, 0, 4);
+
+	nmt_editor_page_add_section (NMT_EDITOR_PAGE (team), section);
 
 	G_OBJECT_CLASS (nmt_page_team_port_parent_class)->constructed (object);
 }

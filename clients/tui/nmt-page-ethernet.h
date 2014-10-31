@@ -42,7 +42,7 @@ typedef struct {
 
 GType nmt_page_ethernet_get_type (void);
 
-NmtNewtWidget *nmt_page_ethernet_new (NMConnection   *conn,
+NmtEditorPage *nmt_page_ethernet_new (NMConnection   *conn,
                                       NmtDeviceEntry *deventry);
 
 G_END_DECLS

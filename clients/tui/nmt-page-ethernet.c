@@ -32,15 +32,13 @@
 
 G_DEFINE_TYPE (NmtPageEthernet, nmt_page_ethernet, NMT_TYPE_EDITOR_PAGE_DEVICE)
 
-NmtNewtWidget *
+NmtEditorPage *
 nmt_page_ethernet_new (NMConnection   *conn,
                        NmtDeviceEntry *deventry)
 {
 	return g_object_new (NMT_TYPE_PAGE_ETHERNET,
 	                     "connection", conn,
-	                     "title", _("ETHERNET"),
 	                     "device-entry", deventry,
-	                     "show-by-default", FALSE,
 	                     NULL);
 }
 
@@ -54,6 +52,7 @@ nmt_page_ethernet_constructed (GObject *object)
 {
 	NmtPageEthernet *ethernet = NMT_PAGE_ETHERNET (object);
 	NmtDeviceEntry *deventry;
+	NmtEditorSection *section;
 	NmtEditorGrid *grid;
 	NMSettingWired *s_wired;
 	NmtNewtWidget *widget;
@@ -71,7 +70,8 @@ nmt_page_ethernet_constructed (GObject *object)
 	                        deventry, "mac-address",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 
-	grid = NMT_EDITOR_GRID (ethernet);
+	section = nmt_editor_section_new (_("ETHERNET"), NULL, FALSE);
+	grid = nmt_editor_section_get_body (section);
 
 	widget = nmt_mac_entry_new (40, ETH_ALEN);
 	g_object_bind_property (s_wired, NM_SETTING_WIRED_CLONED_MAC_ADDRESS,
@@ -84,6 +84,8 @@ nmt_page_ethernet_constructed (GObject *object)
 	                        widget, "mtu",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 	nmt_editor_grid_append (grid, _("MTU"), widget, NULL);
+
+	nmt_editor_page_add_section (NMT_EDITOR_PAGE (ethernet), section);
 
 	G_OBJECT_CLASS (nmt_page_ethernet_parent_class)->constructed (object);
 }

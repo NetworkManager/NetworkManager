@@ -64,13 +64,12 @@ typedef struct {
 	gboolean updating;
 } NmtPageBondPrivate;
 
-NmtNewtWidget *
+NmtEditorPage *
 nmt_page_bond_new (NMConnection   *conn,
                    NmtDeviceEntry *deventry)
 {
 	return g_object_new (NMT_TYPE_PAGE_BOND,
 	                     "connection", conn,
-	                     "title", _("BOND"),
 	                     "device-entry", deventry,
 	                     NULL);
 }
@@ -338,6 +337,7 @@ nmt_page_bond_constructed (GObject *object)
 {
 	NmtPageBond *bond = NMT_PAGE_BOND (object);
 	NmtPageBondPrivate *priv = NMT_PAGE_BOND_GET_PRIVATE (bond);
+	NmtEditorSection *section;
 	NmtEditorGrid *grid;
 	NMSettingBond *s_bond;
 	NmtNewtWidget *widget, *label;
@@ -351,7 +351,8 @@ nmt_page_bond_constructed (GObject *object)
 	}
 	priv->s_bond = s_bond;
 
-	grid = NMT_EDITOR_GRID (bond);
+	section = nmt_editor_section_new (_("BOND"), NULL, TRUE);
+	grid = nmt_editor_section_get_body (section);
 
 	widget = nmt_newt_separator_new ();
 	nmt_editor_grid_append (grid, _("Slaves"), widget, NULL);
@@ -419,6 +420,8 @@ nmt_page_bond_constructed (GObject *object)
 	                  G_CALLBACK (bond_options_changed), bond);
 	bond_options_changed (G_OBJECT (s_bond), NULL, bond);
 	slaves_changed (G_OBJECT (priv->slaves), NULL, bond);
+
+	nmt_editor_page_add_section (NMT_EDITOR_PAGE (bond), section);
 
 	G_OBJECT_CLASS (nmt_page_bond_parent_class)->constructed (object);
 }

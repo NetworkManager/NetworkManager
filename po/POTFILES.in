@@ -18,6 +18,7 @@ clients/tui/nm-editor-utils.c
 clients/tui/nmt-connect-connection-list.c
 clients/tui/nmt-device-entry.c
 clients/tui/nmt-edit-connection-list.c
+clients/tui/nmt-editor-section.c
 clients/tui/nmt-editor.c
 clients/tui/nmt-mtu-entry.c
 clients/tui/nmt-page-bond.c

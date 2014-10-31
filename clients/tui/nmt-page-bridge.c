@@ -33,13 +33,12 @@
 
 G_DEFINE_TYPE (NmtPageBridge, nmt_page_bridge, NMT_TYPE_EDITOR_PAGE_DEVICE)
 
-NmtNewtWidget *
+NmtEditorPage *
 nmt_page_bridge_new (NMConnection   *conn,
                      NmtDeviceEntry *deventry)
 {
 	return g_object_new (NMT_TYPE_PAGE_BRIDGE,
 	                     "connection", conn,
-	                     "title", _("BRIDGE"),
 	                     "device-entry", deventry,
 	                     NULL);
 }
@@ -62,6 +61,7 @@ static void
 nmt_page_bridge_constructed (GObject *object)
 {
 	NmtPageBridge *bridge = NMT_PAGE_BRIDGE (object);
+	NmtEditorSection *section;
 	NmtEditorGrid *grid;
 	NMSettingBridge *s_bridge;
 	NmtNewtWidget *widget, *label, *stp;
@@ -74,7 +74,8 @@ nmt_page_bridge_constructed (GObject *object)
 		s_bridge = nm_connection_get_setting_bridge (conn);
 	}
 
-	grid = NMT_EDITOR_GRID (bridge);
+	section = nmt_editor_section_new (_("BRIDGE"), NULL, TRUE);
+	grid = nmt_editor_section_get_body (section);
 
 	widget = nmt_newt_separator_new ();
 	nmt_editor_grid_append (grid, _("Slaves"), widget, NULL);
@@ -134,6 +135,8 @@ nmt_page_bridge_constructed (GObject *object)
 	                        G_BINDING_SYNC_CREATE);
 	label = nmt_newt_label_new (_("seconds"));
 	nmt_editor_grid_append (grid, _("Max age"), widget, label);
+
+	nmt_editor_page_add_section (NMT_EDITOR_PAGE (bridge), section);
 
 	G_OBJECT_CLASS (nmt_page_bridge_parent_class)->constructed (object);
 }

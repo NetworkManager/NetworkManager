@@ -31,13 +31,12 @@
 
 G_DEFINE_TYPE (NmtPageInfiniband, nmt_page_infiniband, NMT_TYPE_EDITOR_PAGE_DEVICE)
 
-NmtNewtWidget *
+NmtEditorPage *
 nmt_page_infiniband_new (NMConnection   *conn,
                          NmtDeviceEntry *deventry)
 {
 	return g_object_new (NMT_TYPE_PAGE_INFINIBAND,
 	                     "connection", conn,
-	                     "title", _("INFINIBAND"),
 	                     "device-entry", deventry,
 	                     NULL);
 }
@@ -58,6 +57,7 @@ nmt_page_infiniband_constructed (GObject *object)
 {
 	NmtPageInfiniband *infiniband = NMT_PAGE_INFINIBAND (object);
 	NmtDeviceEntry *deventry;
+	NmtEditorSection *section;
 	NmtEditorGrid *grid;
 	NMSettingInfiniband *s_ib;
 	NmtNewtWidget *widget;
@@ -81,7 +81,8 @@ nmt_page_infiniband_constructed (GObject *object)
 	                        deventry, "mac-address",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 
-	grid = NMT_EDITOR_GRID (infiniband);
+	section = nmt_editor_section_new (_("INFINIBAND"), NULL, TRUE);
+	grid = nmt_editor_section_get_body (section);
 
 	widget = nmt_newt_popup_new (transport_mode);
 	g_object_bind_property (s_ib, NM_SETTING_INFINIBAND_TRANSPORT_MODE,
@@ -94,6 +95,8 @@ nmt_page_infiniband_constructed (GObject *object)
 	                        widget, "mtu",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 	nmt_editor_grid_append (grid, _("MTU"), widget, NULL);
+
+	nmt_editor_page_add_section (NMT_EDITOR_PAGE (infiniband), section);
 
 	G_OBJECT_CLASS (nmt_page_infiniband_parent_class)->constructed (object);
 }

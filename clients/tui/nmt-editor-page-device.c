@@ -45,7 +45,6 @@ enum {
 	PROP_0,
 
 	PROP_DEVICE_ENTRY,
-	PROP_SHOW_BY_DEFAULT,
 
 	LAST_PROP
 };
@@ -73,14 +72,6 @@ nmt_editor_page_device_get_device_entry (NmtEditorPageDevice *page)
 	return priv->device_entry;
 }
 
-static gboolean
-nmt_editor_page_device_show_by_default (NmtEditorPage *page)
-{
-	NmtEditorPageDevicePrivate *priv = NMT_EDITOR_PAGE_DEVICE_GET_PRIVATE (page);
-
-	return priv->show_by_default;
-}
-
 static void
 nmt_editor_page_device_set_property (GObject      *object,
                               guint         prop_id,
@@ -92,9 +83,6 @@ nmt_editor_page_device_set_property (GObject      *object,
 	switch (prop_id) {
 	case PROP_DEVICE_ENTRY:
 		priv->device_entry = g_value_dup_object (value);
-		break;
-	case PROP_SHOW_BY_DEFAULT:
-		priv->show_by_default = g_value_get_boolean (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -114,9 +102,6 @@ nmt_editor_page_device_get_property (GObject    *object,
 	case PROP_DEVICE_ENTRY:
 		g_value_set_object (value, priv->device_entry);
 		break;
-	case PROP_SHOW_BY_DEFAULT:
-		g_value_set_boolean (value, priv->show_by_default);
-		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -127,7 +112,6 @@ static void
 nmt_editor_page_device_class_init (NmtEditorPageDeviceClass *page_device_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (page_device_class);
-	NmtEditorPageClass *page_class = NMT_EDITOR_PAGE_CLASS (page_device_class);
 
 	g_type_class_add_private (page_device_class, sizeof (NmtEditorPageDevicePrivate));
 
@@ -135,8 +119,6 @@ nmt_editor_page_device_class_init (NmtEditorPageDeviceClass *page_device_class)
 	object_class->set_property = nmt_editor_page_device_set_property;
 	object_class->get_property = nmt_editor_page_device_get_property;
 	object_class->finalize     = nmt_editor_page_device_finalize;
-
-	page_class->show_by_default = nmt_editor_page_device_show_by_default;
 
 	/* properties */
 	g_object_class_install_property
@@ -146,11 +128,4 @@ nmt_editor_page_device_class_init (NmtEditorPageDeviceClass *page_device_class)
 		                      G_PARAM_READWRITE |
 		                      G_PARAM_CONSTRUCT_ONLY |
 		                      G_PARAM_STATIC_STRINGS));
-	g_object_class_install_property
-		(object_class, PROP_SHOW_BY_DEFAULT,
-		 g_param_spec_boolean ("show-by-default", "", "",
-		                       TRUE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_CONSTRUCT_ONLY |
-		                       G_PARAM_STATIC_STRINGS));
 }

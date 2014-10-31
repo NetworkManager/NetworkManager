@@ -42,13 +42,12 @@ typedef struct {
 
 } NmtPageVlanPrivate;
 
-NmtNewtWidget *
+NmtEditorPage *
 nmt_page_vlan_new (NMConnection   *conn,
                    NmtDeviceEntry *deventry)
 {
 	return g_object_new (NMT_TYPE_PAGE_VLAN,
 	                     "connection", conn,
-	                     "title", _("VLAN"),
 	                     "device-entry", deventry,
 	                     NULL);
 }
@@ -72,6 +71,7 @@ nmt_page_vlan_constructed (GObject *object)
 {
 	NmtPageVlan *vlan = NMT_PAGE_VLAN (object);
 	NmtPageVlanPrivate *priv = NMT_PAGE_VLAN_GET_PRIVATE (vlan);
+	NmtEditorSection *section;
 	NmtEditorGrid *grid;
 	NMSettingWired *s_wired;
 	NMSettingVlan *s_vlan;
@@ -94,7 +94,8 @@ nmt_page_vlan_constructed (GObject *object)
 	}
 	priv->s_wired = g_object_ref_sink (s_wired);
 
-	grid = NMT_EDITOR_GRID (vlan);
+	section = nmt_editor_section_new (_("VLAN"), NULL, TRUE);
+	grid = nmt_editor_section_get_body (section);
 
 	nm_editor_bind_vlan_name (s_vlan, nm_connection_get_setting_connection (conn));
 
@@ -128,6 +129,8 @@ nmt_page_vlan_constructed (GObject *object)
 	                        widget, "mtu",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 	nmt_editor_grid_append (grid, _("MTU"), widget, NULL);
+
+	nmt_editor_page_add_section (NMT_EDITOR_PAGE (vlan), section);
 
 	G_OBJECT_CLASS (nmt_page_vlan_parent_class)->constructed (object);
 }

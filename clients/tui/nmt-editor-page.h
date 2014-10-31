@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2013 Red Hat, Inc.
+ * Copyright 2013-2014 Red Hat, Inc.
  */
 
 #ifndef NMT_EDITOR_PAGE_H
@@ -22,6 +22,7 @@
 #include <NetworkManager.h>
 
 #include "nmt-editor-grid.h"
+#include "nmt-editor-section.h"
 
 G_BEGIN_DECLS
 
@@ -33,27 +34,24 @@ G_BEGIN_DECLS
 #define NMT_EDITOR_PAGE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NMT_TYPE_EDITOR_PAGE, NmtEditorPageClass))
 
 typedef struct {
-	NmtEditorGrid parent;
+	GObject parent;
 
 } NmtEditorPage;
 
 typedef struct {
-	NmtEditorGridClass parent;
+	GObjectClass parent;
 
-	gboolean (*show_by_default) (NmtEditorPage *);
 } NmtEditorPageClass;
 
 GType nmt_editor_page_get_type (void);
 
 NMConnection  *nmt_editor_page_get_connection    (NmtEditorPage *page);
 
-void           nmt_editor_page_set_header_widget (NmtEditorPage *page,
-                                                  NmtNewtWidget *widget);
-NmtNewtWidget *nmt_editor_page_get_header_widget (NmtEditorPage *page);
+GSList        *nmt_editor_page_get_sections      (NmtEditorPage *page);
 
-const char    *nmt_editor_page_get_title         (NmtEditorPage *page);
-
-gboolean       nmt_editor_page_show_by_default   (NmtEditorPage *page);
+/*< protected >*/
+void           nmt_editor_page_add_section       (NmtEditorPage *page,
+                                                  NmtEditorSection *section);
 
 G_END_DECLS
 

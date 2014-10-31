@@ -30,12 +30,11 @@
 
 G_DEFINE_TYPE (NmtPageBridgePort, nmt_page_bridge_port, NMT_TYPE_EDITOR_PAGE)
 
-NmtNewtWidget *
+NmtEditorPage *
 nmt_page_bridge_port_new (NMConnection *conn)
 {
 	return g_object_new (NMT_TYPE_PAGE_BRIDGE_PORT,
 	                     "connection", conn,
-	                     "title", _("BRIDGE PORT"),
 	                     NULL);
 }
 
@@ -48,6 +47,7 @@ static void
 nmt_page_bridge_port_constructed (GObject *object)
 {
 	NmtPageBridgePort *bridge = NMT_PAGE_BRIDGE_PORT (object);
+	NmtEditorSection *section;
 	NmtEditorGrid *grid;
 	NMSettingBridgePort *s_port;
 	NmtNewtWidget *widget;
@@ -60,7 +60,8 @@ nmt_page_bridge_port_constructed (GObject *object)
 		s_port = nm_connection_get_setting_bridge_port (conn);
 	}
 
-	grid = NMT_EDITOR_GRID (bridge);
+	section = nmt_editor_section_new (_("BRIDGE PORT"), NULL, TRUE);
+	grid = nmt_editor_section_get_body (section);
 
 	widget = nmt_newt_entry_numeric_new (10, 0, 63);
 	g_object_bind_property (s_port, NM_SETTING_BRIDGE_PORT_PRIORITY,
@@ -79,6 +80,8 @@ nmt_page_bridge_port_constructed (GObject *object)
 	                        widget, "active",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 	nmt_editor_grid_append (grid, NULL, widget, NULL);
+
+	nmt_editor_page_add_section (NMT_EDITOR_PAGE (bridge), section);
 
 	G_OBJECT_CLASS (nmt_page_bridge_port_parent_class)->constructed (object);
 }

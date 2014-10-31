@@ -21,9 +21,7 @@
  * @short_description: An #NmtEditor "page"
  *
  * #NmtEditorPage is the abstract base class for #NmtEditor "pages".
- * Note that despite the name, currently all "page" types except
- * #NmtPageMain are actually displayed as collapsible sections, not
- * separate tabs/forms.
+ * A "page" is a set of related #NmtEditorSections.
  */
 
 #include "config.h"
@@ -32,14 +30,13 @@
 
 #include "nmt-editor-page.h"
 
-G_DEFINE_ABSTRACT_TYPE (NmtEditorPage, nmt_editor_page, NMT_TYPE_EDITOR_GRID)
+G_DEFINE_ABSTRACT_TYPE (NmtEditorPage, nmt_editor_page, G_TYPE_OBJECT)
 
 #define NMT_EDITOR_PAGE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NMT_TYPE_EDITOR_PAGE, NmtEditorPagePrivate))
 
 typedef struct {
-	char *title;
-	NmtNewtWidget *header_widget;
 	NMConnection *connection;
+	GSList *sections;
 
 } NmtEditorPagePrivate;
 
@@ -47,7 +44,6 @@ enum {
 	PROP_0,
 
 	PROP_CONNECTION,
-	PROP_TITLE,
 
 	LAST_PROP
 };
@@ -55,9 +51,6 @@ enum {
 static void
 nmt_editor_page_init (NmtEditorPage *page)
 {
-	NmtEditorPagePrivate *priv = NMT_EDITOR_PAGE_GET_PRIVATE (page);
-
-	priv->header_widget = g_object_ref_sink (nmt_newt_separator_new ());
 }
 
 static void
@@ -65,9 +58,8 @@ nmt_editor_page_finalize (GObject *object)
 {
 	NmtEditorPagePrivate *priv = NMT_EDITOR_PAGE_GET_PRIVATE (object);
 
-	g_free (priv->title);
-	g_clear_object (&priv->header_widget);
 	g_clear_object (&priv->connection);
+	g_slist_free_full (priv->sections, g_object_unref);
 
 	G_OBJECT_CLASS (nmt_editor_page_parent_class)->finalize (object);
 }
@@ -89,81 +81,37 @@ nmt_editor_page_get_connection (NmtEditorPage *page)
 }
 
 /**
- * nmt_editor_page_set_header_widget:
+ * nmt_editor_page_get_sections:
  * @page: the #NmtEditorPage
- * @widget: an #NmtNewtWidget
  *
- * Sets the page's header widget. When displayed as a subpage of
- * #NmtPageMain, this widget will be put into the corresponding
- * #NmtNewtSection's header.
+ * Gets the page's list of sections to display.
  *
- * FIXME: for consistency, this should be a property as well.
+ * Returns: (transfer none): the list of sections; this is the internal list
+ * used by the page and must not be modified or freed.
+ */
+GSList *
+nmt_editor_page_get_sections (NmtEditorPage *page)
+{
+	NmtEditorPagePrivate *priv = NMT_EDITOR_PAGE_GET_PRIVATE (page);
+
+	return priv->sections;
+}
+
+/**
+ * nmt_editor_page_add_section:
+ * @page: the #NmtEditorPage
+ * @section: the #NmtEditorSection
+ *
+ * Adds a section to the page. This should only be called by #NmtEditorPage
+ * subclasses.
  */
 void
-nmt_editor_page_set_header_widget (NmtEditorPage *page,
-                                   NmtNewtWidget *widget)
+nmt_editor_page_add_section (NmtEditorPage *page,
+                             NmtEditorSection *section)
 {
 	NmtEditorPagePrivate *priv = NMT_EDITOR_PAGE_GET_PRIVATE (page);
 
-	g_clear_object (&priv->header_widget);
-
-	if (!widget)
-		widget = nmt_newt_separator_new ();
-	priv->header_widget = g_object_ref_sink (widget);
-}
-
-/**
- * nmt_editor_page_get_header_widget:
- * @page: the #NmtEditorPage
- *
- * Gets the page's header widget. When displayed as a subpage of
- * #NmtPageMain, this widget will be put into the corresponding
- * #NmtNewtSection's header.
- *
- * Returns: (transfer none): the page's header widget.
- */
-NmtNewtWidget *
-nmt_editor_page_get_header_widget (NmtEditorPage *page)
-{
-	NmtEditorPagePrivate *priv = NMT_EDITOR_PAGE_GET_PRIVATE (page);
-
-	return priv->header_widget;
-}
-
-/**
- * nmt_editor_page_get_title:
- * @page: the #NmtEditorPage
- *
- * Gets the page's title.
- *
- * Returns: the page's title
- */
-const char *
-nmt_editor_page_get_title (NmtEditorPage *page)
-{
-	NmtEditorPagePrivate *priv = NMT_EDITOR_PAGE_GET_PRIVATE (page);
-
-	return priv->title;
-}
-
-static gboolean
-nmt_editor_page_real_show_by_default (NmtEditorPage *page)
-{
-	return TRUE;
-}
-
-/**
- * nmt_editor_page_show_by_default:
- * @page: the #NmtEditorPage
- *
- * Checks if @page should be shown expanded by default
- *
- * Returns: %TRUE or %FALSE
- */
-gboolean
-nmt_editor_page_show_by_default (NmtEditorPage *page)
-{
-	return NMT_EDITOR_PAGE_GET_CLASS (page)->show_by_default (page);
+	priv->sections = g_slist_append (priv->sections, g_object_ref_sink (section));
 }
 
 static void
@@ -177,9 +125,6 @@ nmt_editor_page_set_property (GObject      *object,
 	switch (prop_id) {
 	case PROP_CONNECTION:
 		priv->connection = g_value_dup_object (value);
-		break;
-	case PROP_TITLE:
-		priv->title = g_value_dup_string (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -199,9 +144,6 @@ nmt_editor_page_get_property (GObject    *object,
 	case PROP_CONNECTION:
 		g_value_set_object (value, priv->connection);
 		break;
-	case PROP_TITLE:
-		g_value_set_string (value, priv->title);
-		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -220,8 +162,6 @@ nmt_editor_page_class_init (NmtEditorPageClass *page_class)
 	object_class->get_property = nmt_editor_page_get_property;
 	object_class->finalize     = nmt_editor_page_finalize;
 
-	page_class->show_by_default = nmt_editor_page_real_show_by_default;
-
 	/* properties */
 
 	/**
@@ -233,18 +173,6 @@ nmt_editor_page_class_init (NmtEditorPageClass *page_class)
 		(object_class, PROP_CONNECTION,
 		 g_param_spec_object ("connection", "", "",
 		                      NM_TYPE_CONNECTION,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
-	/**
-	 * NmtEditorPage:title:
-	 *
-	 * The page's title.
-	 */
-	g_object_class_install_property
-		(object_class, PROP_TITLE,
-		 g_param_spec_string ("title", "", "",
-		                      NULL,
 		                      G_PARAM_READWRITE |
 		                      G_PARAM_CONSTRUCT_ONLY |
 		                      G_PARAM_STATIC_STRINGS));

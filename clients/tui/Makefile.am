@@ -61,6 +61,8 @@ nmtui_SOURCES = \
 	nmt-editor-page.h \
 	nmt-editor-page-device.c \
 	nmt-editor-page-device.h \
+	nmt-editor-section.c \
+	nmt-editor-section.h \
 	nmt-editor.c \
 	nmt-editor.h \
 	nmt-ip-entry.c \

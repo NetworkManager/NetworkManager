@@ -31,12 +31,11 @@
 
 G_DEFINE_TYPE (NmtPageDsl, nmt_page_dsl, NMT_TYPE_EDITOR_PAGE)
 
-NmtNewtWidget *
+NmtEditorPage *
 nmt_page_dsl_new (NMConnection *conn) 
 {
 	return g_object_new (NMT_TYPE_PAGE_DSL,
 	                     "connection", conn,
-	                     "title", _("DSL"),
 	                     NULL);
 }
 
@@ -49,6 +48,7 @@ static void
 nmt_page_dsl_constructed (GObject *object)
 {
 	NmtPageDsl *dsl = NMT_PAGE_DSL (object);
+	NmtEditorSection *section;
 	NmtEditorGrid *grid;
 	NMSettingPppoe *s_pppoe;
 	NmtNewtWidget *widget;
@@ -61,7 +61,8 @@ nmt_page_dsl_constructed (GObject *object)
 		s_pppoe = nm_connection_get_setting_pppoe (conn);
 	}
 
-	grid = NMT_EDITOR_GRID (dsl);
+	section = nmt_editor_section_new (_("DSL"), NULL, TRUE);
+	grid = nmt_editor_section_get_body (section);
 
 	widget = nmt_newt_entry_new (40, 0);
 	nmt_editor_grid_append (grid, _("Username"), widget, NULL);
@@ -80,6 +81,8 @@ nmt_page_dsl_constructed (GObject *object)
 	g_object_bind_property (s_pppoe, NM_SETTING_PPPOE_SERVICE,
 	                        widget, "text",
 	                        G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
+
+	nmt_editor_page_add_section (NMT_EDITOR_PAGE (dsl), section);
 
 	G_OBJECT_CLASS (nmt_page_dsl_parent_class)->constructed (object);
 }

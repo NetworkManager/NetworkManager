@@ -48,13 +48,12 @@ typedef struct {
 
 } NmtPageWifiPrivate;
 
-NmtNewtWidget *
+NmtEditorPage *
 nmt_page_wifi_new (NMConnection   *conn,
                    NmtDeviceEntry *deventry)
 {
 	return g_object_new (NMT_TYPE_PAGE_WIFI,
 	                     "connection", conn,
-	                     "title", _("WI-FI"),
 	                     "device-entry", deventry,
 	                     NULL);
 }
@@ -184,6 +183,7 @@ nmt_page_wifi_constructed (GObject *object)
 	NmtPageWifiPrivate *priv = NMT_PAGE_WIFI_GET_PRIVATE (object);
 	NmtPageWifi *wifi = NMT_PAGE_WIFI (object);
 	NmtDeviceEntry *deventry;
+	NmtEditorSection *section;
 	NmtEditorGrid *grid;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
@@ -214,7 +214,8 @@ nmt_page_wifi_constructed (GObject *object)
 	                        deventry, "mac-address",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 
-	grid = NMT_EDITOR_GRID (wifi);
+	section = nmt_editor_section_new (_("WI-FI"), NULL, TRUE);
+	grid = nmt_editor_section_get_body (section);
 
 	widget = nmt_newt_entry_new (40, NMT_NEWT_ENTRY_NONEMPTY);
 	g_object_bind_property_full (s_wireless, NM_SETTING_WIRELESS_SSID,
@@ -370,6 +371,8 @@ nmt_page_wifi_constructed (GObject *object)
 	                        widget, "mtu",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 	nmt_editor_grid_append (grid, _("MTU"), widget, NULL);
+
+	nmt_editor_page_add_section (NMT_EDITOR_PAGE (wifi), section);
 
 	G_OBJECT_CLASS (nmt_page_wifi_parent_class)->constructed (object);
 }
