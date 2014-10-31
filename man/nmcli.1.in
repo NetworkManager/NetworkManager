@@ -418,6 +418,8 @@ Note: use quotes around \fB*\fP to suppress shell expansion.
 \(en MAC address of the device this connection is locked to
 .IP "\fI[cloned-mac <cloned MAC address>]\fP" 42
 \(en cloned MAC
+.IP "\fI[mode infrastructure|ap|adhoc]\fP" 42
+\(en Wi-Fi network mode. If blank, \fIinfrastructure\fP is assumed.
 .IP "\fI[mtu <MTU>]\fP" 42
 \(en MTU
 .RE

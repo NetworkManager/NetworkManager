@@ -3379,11 +3379,13 @@ make_wireless_setting (shvarFile *ifcfg,
 
 		if (!strcmp (lcase, "ad-hoc")) {
 			mode = "adhoc";
+		} else if (!strcmp (lcase, "ap")) {
+			mode = "ap";
 		} else if (!strcmp (lcase, "managed") || !strcmp (lcase, "auto")) {
 			mode = "infrastructure";
 		} else {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "Invalid mode '%s' (not 'Ad-Hoc', 'Managed', or 'Auto')",
+			             "Invalid mode '%s' (not 'Ad-Hoc', 'Ap', 'Managed', or 'Auto')",
 			             lcase);
 			g_free (lcase);
 			goto error;

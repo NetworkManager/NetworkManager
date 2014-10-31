@@ -1036,35 +1036,37 @@ complete_connection (NMDevice *device,
 		nm_connection_add_setting (connection, NM_SETTING (s_wifi));
 	}
 
-	if (ap) {
+	if (ap)
 		ssid = nm_ap_get_ssid (ap);
-
-		if (ssid == NULL) {
-			/* The AP must be hidden.  Connecting to a WiFi AP requires the SSID
-			 * as part of the initial handshake, so check the connection details
-			 * for the SSID.  The AP object will still be used for encryption
-			 * settings and such.
-			 */
-			setting_ssid = nm_setting_wireless_get_ssid (s_wifi);
-			if (setting_ssid) {
-				ssid = tmp_ssid = g_byte_array_new ();
-				g_byte_array_append (tmp_ssid,
-				                     g_bytes_get_data (setting_ssid, NULL),
-				                     g_bytes_get_size (setting_ssid));
-			}
+	if (ssid == NULL) {
+		/* The AP must be hidden.  Connecting to a WiFi AP requires the SSID
+		 * as part of the initial handshake, so check the connection details
+		 * for the SSID.  The AP object will still be used for encryption
+		 * settings and such.
+		 */
+		setting_ssid = nm_setting_wireless_get_ssid (s_wifi);
+		if (setting_ssid) {
+			ssid = tmp_ssid = g_byte_array_new ();
+			g_byte_array_append (tmp_ssid,
+			                     g_bytes_get_data (setting_ssid, NULL),
+			                     g_bytes_get_size (setting_ssid));
 		}
+	}
 
-		if (ssid == NULL) {
-			/* If there's no SSID on the AP itself, and no SSID in the
-			 * connection data, then we cannot connect at all.  Return an error.
-			 */
-			g_set_error_literal (error,
-			                     NM_DEVICE_ERROR,
-			                     NM_DEVICE_ERROR_INVALID_CONNECTION,
-			                     "A 'wireless' setting with a valid SSID is required for hidden access points.");
-			return FALSE;
-		}
+	if (ssid == NULL) {
+		/* If there's no SSID on the AP itself, and no SSID in the
+		 * connection data, then we cannot connect at all.  Return an error.
+		 */
+		g_set_error_literal (error,
+		                     NM_DEVICE_ERROR,
+		                     NM_DEVICE_ERROR_INVALID_CONNECTION,
+		                     ap
+		                         ? "A 'wireless' setting with a valid SSID is required for hidden access points."
+		                         : "Cannot create 'wireless' setting due to missing SSID.");
+		return FALSE;
+	}
 
+	if (ap) {
 		/* If the SSID is a well-known SSID, lock the connection to the AP's
 		 * specific BSSID so NM doesn't autoconnect to some random wifi net.
 		 */
@@ -1093,7 +1095,6 @@ complete_connection (NMDevice *device,
 		return FALSE;
 	}
 
-	g_assert (ssid);
 	str_ssid = nm_utils_ssid_to_utf8 (ssid->data, ssid->len);
 
 	nm_utils_complete_generic (connection,
