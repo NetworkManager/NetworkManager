@@ -101,117 +101,22 @@ static NMDevice *
 get_best_ip4_device (NMPolicy *self, gboolean fully_activated)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	const GSList *iter;
-	NMDevice *best = NULL;
-	guint32 best_prio = G_MAXUINT32;
 
-	for (iter = nm_manager_get_devices (priv->manager); iter; iter = g_slist_next (iter)) {
-		NMDevice *dev = NM_DEVICE (iter->data);
-		NMDeviceState state = nm_device_get_state (dev);
-		guint32 prio;
-
-		if (   state <= NM_DEVICE_STATE_DISCONNECTED
-		    || state >= NM_DEVICE_STATE_DEACTIVATING)
-			continue;
-
-		if (fully_activated && state < NM_DEVICE_STATE_SECONDARIES)
-			continue;
-
-		if (!nm_default_route_manager_ip4_connection_has_default_route (nm_default_route_manager_get (),
-		                                                                nm_device_get_connection (dev)))
-			continue;
-
-		if (fully_activated) {
-			gint64 effective_metric = nm_default_route_manager_ip4_get_effective_metric (nm_default_route_manager_get (), dev);
-
-			if (effective_metric == -1)
-				continue;
-			prio = (guint32) effective_metric;
-		} else
-			prio = nm_device_get_ip6_route_metric (dev);
-
-		if (   prio < best_prio
-		    || (priv->default_device4 == dev && prio == best_prio)
-		    || !best) {
-			best = dev;
-			best_prio = prio;
-		}
-	}
-
-	if (!best)
-		return NULL;
-
-	if (!fully_activated) {
-		NMDeviceState state = nm_device_get_state (best);
-
-		/* There's only a best activating device if the best device
-		 * among all activating and already-activated devices is a
-		 * still-activating one.
-		 */
-		if (state >= NM_DEVICE_STATE_SECONDARIES)
-			return NULL;
-	}
-
-	return best;
+	return nm_default_route_manager_ip4_get_best_device (nm_default_route_manager_get (),
+	                                                     nm_manager_get_devices (priv->manager),
+	                                                     fully_activated,
+	                                                     priv->default_device4);
 }
 
 static NMDevice *
 get_best_ip6_device (NMPolicy *self, gboolean fully_activated)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	const GSList *iter;
-	NMDevice *best = NULL;
-	guint32 best_prio = G_MAXUINT32;
 
-	for (iter = nm_manager_get_devices (priv->manager); iter; iter = g_slist_next (iter)) {
-		NMDevice *dev = NM_DEVICE (iter->data);
-		NMDeviceState state = nm_device_get_state (dev);
-		guint32 prio;
-
-		if (   state <= NM_DEVICE_STATE_DISCONNECTED
-		    || state >= NM_DEVICE_STATE_DEACTIVATING)
-			continue;
-
-		if (fully_activated && state < NM_DEVICE_STATE_SECONDARIES)
-			continue;
-
-		if (!nm_default_route_manager_ip6_connection_has_default_route (nm_default_route_manager_get (),
-		                                                                nm_device_get_connection (dev)))
-			continue;
-
-		if (fully_activated) {
-			gint64 effective_metric = nm_default_route_manager_ip6_get_effective_metric (nm_default_route_manager_get (), dev);
-
-			if (effective_metric == -1)
-				continue;
-			prio = (guint32) effective_metric;
-		} else
-			prio = nm_device_get_ip6_route_metric (dev);
-		prio = nm_utils_ip6_route_metric_normalize (prio);
-
-		if (   prio < best_prio
-		    || (priv->default_device6 == dev && prio == best_prio)
-		    || !best) {
-			best = dev;
-			best_prio = prio;
-		}
-	}
-
-	if (!best)
-		return NULL;
-
-	if (!fully_activated) {
-		NMDeviceState state = nm_device_get_state (best);
-
-		/* There's only a best activating device if the best device
-		 * among all activating and already-activated devices is an
-		 * activating one.
-		 */
-		if (state >= NM_DEVICE_STATE_SECONDARIES)
-			return NULL;
-	}
-
-	return best;
+	return nm_default_route_manager_ip6_get_best_device (nm_default_route_manager_get (),
+	                                                     nm_manager_get_devices (priv->manager),
+	                                                     fully_activated,
+	                                                     priv->default_device6);
 }
 
 #define FALLBACK_HOSTNAME4 "localhost.localdomain"

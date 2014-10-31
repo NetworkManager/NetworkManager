@@ -30,6 +30,7 @@
 #include "nm-platform.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
+#include "nm-activation-request.h"
 
 typedef struct {
 	GPtrArray *entries_ip4;
@@ -96,6 +97,7 @@ typedef struct {
 	const char *(*platform_route_to_string) (const NMPlatformIPRoute *route);
 	gboolean (*platform_route_delete_default) (int ifindex, guint32 metric);
 	guint32 (*route_metric_normalize) (guint32 metric);
+	guint32 (*device_get_route_metric) (NMDevice *self);
 } VTableIP;
 
 static const VTableIP vtable_ip4, vtable_ip6;
@@ -553,19 +555,6 @@ _ipx_get_effective_metric (const VTableIP *vtable, NMDefaultRouteManager *self, 
 	return -1;
 }
 
-gint64
-nm_default_route_manager_ip4_get_effective_metric (NMDefaultRouteManager *self, NMDevice *device)
-{
-	return _ipx_get_effective_metric (&vtable_ip4, self, device);
-}
-
-
-gint64
-nm_default_route_manager_ip6_get_effective_metric (NMDefaultRouteManager *self, NMDevice *device)
-{
-	return _ipx_get_effective_metric (&vtable_ip4, self, device);
-}
-
 /***********************************************************************************/
 
 static gboolean
@@ -615,6 +604,89 @@ nm_default_route_manager_ip6_connection_has_default_route (NMDefaultRouteManager
 
 /***********************************************************************************/
 
+/** _ipx_get_best_device:
+ * @vtable: the virtual table
+ * @self: #NMDefaultRouteManager
+ * @devices: list of devices to be searched. Only devices from this list will be considered
+ * @fully_activated: if #TRUE, only search for devices that are fully activated. Otherwise,
+ *   search if there is a best device going to be activated. In the latter case, this will
+ *   return NULL if the best device is already activated.
+ * @preferred_device: if not-NULL, this device is preferred if there are more devices with
+ *   the same priority.
+ **/
+static NMDevice *
+_ipx_get_best_device (const VTableIP *vtable, NMDefaultRouteManager *self, const GSList *devices, gboolean fully_activated, NMDevice *preferred_device)
+{
+	const GSList *iter;
+	NMDevice *best_device = NULL;
+	guint32 best_prio = G_MAXUINT32;
+
+	g_return_val_if_fail (NM_IS_DEFAULT_ROUTE_MANAGER (self), NULL);
+
+	for (iter = devices; iter; iter = g_slist_next (iter)) {
+		NMDevice *device = NM_DEVICE (iter->data);
+		NMDeviceState state = nm_device_get_state (device);
+		guint32 prio;
+
+		if (   state <= NM_DEVICE_STATE_DISCONNECTED
+		    || state >= NM_DEVICE_STATE_DEACTIVATING)
+			continue;
+
+		if (fully_activated && state < NM_DEVICE_STATE_SECONDARIES)
+			continue;
+
+		if (!_ipx_connection_has_default_route (vtable, self, nm_device_get_connection (device)))
+			continue;
+
+		if (fully_activated) {
+			gint64 effective_metric = _ipx_get_effective_metric (vtable, self, device);
+
+			if (effective_metric == -1)
+				continue;
+			prio = (guint32) effective_metric;
+		} else
+			prio = vtable->device_get_route_metric (device);
+		prio = vtable->route_metric_normalize (prio);
+
+		if (   prio < best_prio
+		    || (preferred_device == device && prio == best_prio)
+		    || !best_device) {
+			best_device = device;
+			best_prio = prio;
+		}
+	}
+
+	if (!best_device)
+		return NULL;
+
+	if (!fully_activated) {
+		NMDeviceState state = nm_device_get_state (best_device);
+
+		/* There's only a best activating device if the best device
+		 * among all activating and already-activated devices is a
+		 * still-activating one.
+		 */
+		if (state >= NM_DEVICE_STATE_SECONDARIES)
+			return NULL;
+	}
+
+	return best_device;
+}
+
+NMDevice *
+nm_default_route_manager_ip4_get_best_device (NMDefaultRouteManager *self, const GSList *devices, gboolean fully_activated, NMDevice *preferred_device)
+{
+	return _ipx_get_best_device (&vtable_ip4, self, devices, fully_activated, preferred_device);
+}
+
+NMDevice *
+nm_default_route_manager_ip6_get_best_device (NMDefaultRouteManager *self, const GSList *devices, gboolean fully_activated, NMDevice *preferred_device)
+{
+	return _ipx_get_best_device (&vtable_ip6, self, devices, fully_activated, preferred_device);
+}
+
+/***********************************************************************************/
+
 static GPtrArray *
 _v4_get_entries (NMDefaultRouteManagerPrivate *priv)
 {
@@ -651,6 +723,7 @@ static const VTableIP vtable_ip4 = {
 	.platform_route_to_string       = (const char *(*)(const NMPlatformIPRoute *)) nm_platform_ip4_route_to_string,
 	.platform_route_delete_default  = _v4_platform_route_delete_default,
 	.route_metric_normalize         = _v4_route_metric_normalize,
+	.device_get_route_metric        = nm_device_get_ip4_route_metric,
 };
 
 static const VTableIP vtable_ip6 = {
@@ -659,6 +732,7 @@ static const VTableIP vtable_ip6 = {
 	.platform_route_to_string       = (const char *(*)(const NMPlatformIPRoute *)) nm_platform_ip6_route_to_string,
 	.platform_route_delete_default  = _v6_platform_route_delete_default,
 	.route_metric_normalize         = nm_utils_ip6_route_metric_normalize,
+	.device_get_route_metric        = nm_device_get_ip6_route_metric,
 };
 
 /***********************************************************************************/
