@@ -681,7 +681,7 @@ init_dbus (NMObject *object)
 	                                property_info);
 
 	g_signal_connect (object, "notify::" NM_OBJECT_NM_RUNNING,
-	                  G_CALLBACK (nm_running_changed), NULL);
+	                  G_CALLBACK (nm_running_changed), object);
 }
 
 static GObject *
@@ -726,6 +726,8 @@ dispose (GObject *object)
 			cleanup_connection (self, priv->all_connections->pdata[i]);
 		g_clear_pointer (&priv->all_connections, g_ptr_array_unref);
 	}
+
+	g_signal_handlers_disconnect_by_func (object, G_CALLBACK (nm_running_changed), self);
 
 	g_clear_pointer (&priv->visible_connections, g_ptr_array_unref);
 	g_clear_pointer (&priv->hostname, g_free);
