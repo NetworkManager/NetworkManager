@@ -137,7 +137,7 @@ test_load_private_key (const char *path,
 	GByteArray *array, *decrypted;
 	GError *error = NULL;
 
-	array = crypto_decrypt_private_key (path, password, &key_type, &error);
+	array = crypto_decrypt_openssl_private_key (path, password, &key_type, &error);
 	/* Even if the password is wrong, we should determine the key type */
 	g_assert_cmpint (key_type, ==, NM_CRYPTO_KEY_TYPE_RSA);
 
@@ -175,9 +175,10 @@ test_load_pkcs12 (const char *path,
                   int expected_error)
 {
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+	gboolean is_encrypted = FALSE;
 	GError *error = NULL;
 
-	format = crypto_verify_private_key (path, password, &error);
+	format = crypto_verify_private_key (path, password, &is_encrypted, &error);
 	if (expected_error != -1) {
 		g_assert_error (error, NM_CRYPTO_ERROR, expected_error);
 		g_assert_cmpint (format, ==, NM_CRYPTO_FILE_FORMAT_UNKNOWN);
@@ -185,6 +186,7 @@ test_load_pkcs12 (const char *path,
 	} else {
 		g_assert_no_error (error);
 		g_assert_cmpint (format, ==, NM_CRYPTO_FILE_FORMAT_PKCS12);
+		g_assert (is_encrypted);
 	}
 }
 
@@ -192,12 +194,14 @@ static void
 test_load_pkcs12_no_password (const char *path)
 {
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+	gboolean is_encrypted = FALSE;
 	GError *error = NULL;
 
 	/* We should still get a valid returned crypto file format */
-	format = crypto_verify_private_key (path, NULL, &error);
+	format = crypto_verify_private_key (path, NULL, &is_encrypted, &error);
 	g_assert_no_error (error);
 	g_assert_cmpint (format, ==, NM_CRYPTO_FILE_FORMAT_PKCS12);
+	g_assert (is_encrypted);
 }
 
 static void
@@ -224,9 +228,10 @@ test_load_pkcs8 (const char *path,
                  int expected_error)
 {
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+	gboolean is_encrypted = FALSE;
 	GError *error = NULL;
 
-	format = crypto_verify_private_key (path, password, &error);
+	format = crypto_verify_private_key (path, password, &is_encrypted, &error);
 	if (expected_error != -1) {
 		g_assert_error (error, NM_CRYPTO_ERROR, expected_error);
 		g_assert_cmpint (format, ==, NM_CRYPTO_FILE_FORMAT_UNKNOWN);
@@ -234,6 +239,7 @@ test_load_pkcs8 (const char *path,
 	} else {
 		g_assert_no_error (error);
 		g_assert_cmpint (format, ==, NM_CRYPTO_FILE_FORMAT_RAW_KEY);
+		g_assert (is_encrypted);
 	}
 }
 
@@ -267,7 +273,7 @@ test_encrypt_private_key (const char *path,
 	GByteArray *array, *encrypted, *re_decrypted;
 	GError *error = NULL;
 
-	array = crypto_decrypt_private_key (path, password, &key_type, &error);
+	array = crypto_decrypt_openssl_private_key (path, password, &key_type, &error);
 	g_assert_no_error (error);
 	g_assert (array != NULL);
 	g_assert_cmpint (key_type, ==, NM_CRYPTO_KEY_TYPE_RSA);
@@ -282,8 +288,8 @@ test_encrypt_private_key (const char *path,
 
 	/* Then re-decrypt the private key */
 	key_type = NM_CRYPTO_KEY_TYPE_UNKNOWN;
-	re_decrypted = crypto_decrypt_private_key_data (encrypted->data, encrypted->len,
-	                                                password, &key_type, &error);
+	re_decrypted = crypto_decrypt_openssl_private_key_data (encrypted->data, encrypted->len,
+	                                                        password, &key_type, &error);
 	g_assert_no_error (error);
 	g_assert (re_decrypted != NULL);
 	g_assert_cmpint (key_type, ==, NM_CRYPTO_KEY_TYPE_RSA);

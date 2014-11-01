@@ -48,6 +48,7 @@ EXTRA_DIST =                              \
 	certs/ca-no-ending-newline.pem    \
 	certs/test-key-only.pem           \
 	certs/test-key-only-decrypted.der \
+	certs/test-key-only-decrypted.pem \
 	certs/pkcs8-enc-key.pem           \
 	certs/pkcs8-noenc-key.pem         \
 	certs/pkcs8-decrypted.der         \
