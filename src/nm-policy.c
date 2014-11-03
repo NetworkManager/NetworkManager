@@ -121,22 +121,6 @@ get_best_ip4_device (NMPolicy *self, gboolean fully_activated)
 		if (fully_activated && state < NM_DEVICE_STATE_SECONDARIES)
 			continue;
 
-		if (fully_activated) {
-			NMIP4Config *ip4_config;
-
-			ip4_config = nm_device_get_ip4_config (dev);
-			if (!ip4_config)
-				continue;
-
-			/* Make sure the device has a gateway */
-			if (!nm_ip4_config_get_gateway (ip4_config) && (devtype != NM_DEVICE_TYPE_MODEM))
-				continue;
-
-			/* 'never-default' devices can't ever be the default */
-			if (nm_ip4_config_get_never_default (ip4_config))
-				continue;
-		}
-
 		req = nm_device_get_act_request (dev);
 		g_assert (req);
 		connection = nm_act_request_get_connection (req);
@@ -153,6 +137,22 @@ get_best_ip4_device (NMPolicy *self, gboolean fully_activated)
 		g_assert (s_ip4);
 		if (nm_setting_ip_config_get_never_default (s_ip4))
 			continue;
+
+		if (fully_activated) {
+			NMIP4Config *ip4_config;
+
+			ip4_config = nm_device_get_ip4_config (dev);
+			if (!ip4_config)
+				continue;
+
+			/* Make sure the device has a gateway */
+			if (!nm_ip4_config_get_gateway (ip4_config) && (devtype != NM_DEVICE_TYPE_MODEM))
+				continue;
+
+			/* 'never-default' devices can't ever be the default */
+			if (nm_ip4_config_get_never_default (ip4_config))
+				continue;
+		}
 
 		prio = nm_device_get_priority (dev);
 		if (   prio < best_prio
@@ -205,20 +205,6 @@ get_best_ip6_device (NMPolicy *self, gboolean fully_activated)
 		if (fully_activated && state < NM_DEVICE_STATE_SECONDARIES)
 			continue;
 
-		if (fully_activated) {
-			NMIP6Config *ip6_config;
-
-			ip6_config = nm_device_get_ip6_config (dev);
-			if (!ip6_config)
-				continue;
-
-			if (!nm_ip6_config_get_gateway (ip6_config) && (devtype != NM_DEVICE_TYPE_MODEM))
-				continue;
-
-			if (nm_ip6_config_get_never_default (ip6_config))
-				continue;
-		}
-
 		req = nm_device_get_act_request (dev);
 		g_assert (req);
 		connection = nm_act_request_get_connection (req);
@@ -233,6 +219,20 @@ get_best_ip6_device (NMPolicy *self, gboolean fully_activated)
 		g_assert (s_ip6);
 		if (nm_setting_ip_config_get_never_default (s_ip6))
 			continue;
+
+		if (fully_activated) {
+			NMIP6Config *ip6_config;
+
+			ip6_config = nm_device_get_ip6_config (dev);
+			if (!ip6_config)
+				continue;
+
+			if (!nm_ip6_config_get_gateway (ip6_config) && (devtype != NM_DEVICE_TYPE_MODEM))
+				continue;
+
+			if (nm_ip6_config_get_never_default (ip6_config))
+				continue;
+		}
 
 		prio = nm_device_get_priority (dev);
 		if (   prio < best_prio
