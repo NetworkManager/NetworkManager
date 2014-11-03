@@ -150,6 +150,7 @@ nm_secret_agent_simple_secret_free (NMSecretAgentSimpleSecret *secret)
 	NMSecretAgentSimpleSecretReal *real = (NMSecretAgentSimpleSecretReal *)secret;
 
 	g_free (secret->name);
+	g_free (secret->prop_name);
 	g_free (secret->value);
 	g_free (real->property);
 	g_clear_object (&real->setting);
@@ -167,6 +168,7 @@ nm_secret_agent_simple_secret_new (const char *name,
 
 	real = g_slice_new0 (NMSecretAgentSimpleSecretReal);
 	real->base.name = g_strdup (name);
+	real->base.prop_name = g_strdup_printf ("%s.%s", nm_setting_get_name (setting), property);
 	real->base.password = password;
 
 	if (setting) {
