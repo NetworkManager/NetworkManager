@@ -1043,8 +1043,6 @@ object_creation_failed (NMObject *object, const char *failed_path)
 	GError *error;
 	GSList *iter;
 
-	g_return_if_fail (find_active_connection_by_path (self, failed_path) == NULL);
-
 	/* A newly activated connection failed due to some immediate error
 	 * and disappeared from active connection list.  Make sure the
 	 * callback gets called.
