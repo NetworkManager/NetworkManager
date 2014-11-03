@@ -64,7 +64,6 @@ typedef struct {
 	/* Methods */
 
 	gboolean (*ip4_start)     (NMDhcpClient *self,
-	                           const char *dhcp_client_id,
 	                           const char *anycast_addr,
 	                           const char *hostname);
 
@@ -126,6 +125,8 @@ const GByteArray *nm_dhcp_client_get_hw_addr (NMDhcpClient *self);
 
 guint32 nm_dhcp_client_get_priority (NMDhcpClient *self);
 
+GBytes *nm_dhcp_client_get_client_id (NMDhcpClient *self);
+
 gboolean nm_dhcp_client_start_ip4 (NMDhcpClient *self,
                                    const char *dhcp_client_id,
                                    const char *dhcp_anycast_addr,
@@ -157,6 +158,8 @@ gboolean nm_dhcp_client_handle_event (gpointer unused,
                                       GHashTable *options,
                                       const char *reason,
                                       NMDhcpClient *self);
+
+void nm_dhcp_client_set_client_id (NMDhcpClient *self, GBytes *client_id);
 
 #endif /* __NETWORKMANAGER_DHCP_CLIENT_H__ */
 

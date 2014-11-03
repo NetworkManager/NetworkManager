@@ -45,6 +45,7 @@ typedef struct {
 	guint32      priority;
 	guint32      timeout;
 	GByteArray * duid;
+	GBytes *     client_id;
 
 	NMDhcpState  state;
 	pid_t        pid;
@@ -141,6 +142,29 @@ nm_dhcp_client_get_priority (NMDhcpClient *self)
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), G_MAXUINT32);
 
 	return NM_DHCP_CLIENT_GET_PRIVATE (self)->priority;
+}
+
+GBytes *
+nm_dhcp_client_get_client_id (NMDhcpClient *self)
+{
+	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
+
+	return NM_DHCP_CLIENT_GET_PRIVATE (self)->client_id;
+}
+
+void
+nm_dhcp_client_set_client_id (NMDhcpClient *self, GBytes *client_id)
+{
+	NMDhcpClientPrivate *priv;
+
+	g_return_if_fail (NM_IS_DHCP_CLIENT (self));
+
+	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
+
+	if (priv->client_id && client_id && g_bytes_equal (priv->client_id, client_id))
+		return;
+	g_clear_pointer (&priv->client_id, g_bytes_unref);
+	priv->client_id = client_id ? g_bytes_ref (client_id) : NULL;
 }
 
 /********************************************/
@@ -374,7 +398,9 @@ nm_dhcp_client_start_ip4 (NMDhcpClient *self,
 	nm_log_info (LOGD_DHCP, "Activation (%s) Beginning DHCPv4 transaction (timeout in %d seconds)",
 	             priv->iface, priv->timeout);
 
-	return NM_DHCP_CLIENT_GET_CLASS (self)->ip4_start (self, dhcp_client_id, dhcp_anycast_addr, hostname);
+	nm_dhcp_client_set_client_id (self, dhcp_client_id ? nm_dhcp_utils_client_id_string_to_bytes (dhcp_client_id) : NULL);
+
+	return NM_DHCP_CLIENT_GET_CLASS (self)->ip4_start (self, dhcp_anycast_addr, hostname);
 }
 
 /* uuid_parse does not work for machine-id, so we use our own converter */

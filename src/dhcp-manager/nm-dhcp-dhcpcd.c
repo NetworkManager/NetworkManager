@@ -74,7 +74,6 @@ dhcpcd_child_setup (gpointer user_data G_GNUC_UNUSED)
 
 static gboolean
 ip4_start (NMDhcpClient *client,
-           const char *dhcp_client_id,
            const char *dhcp_anycast_addr,
            const char *hostname)
 {

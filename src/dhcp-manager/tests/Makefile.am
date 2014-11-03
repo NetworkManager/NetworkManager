@@ -20,6 +20,8 @@ noinst_PROGRAMS = \
 test_dhcp_dhclient_SOURCES = \
 	$(top_srcdir)/src/dhcp-manager/nm-dhcp-dhclient-utils.h \
 	$(top_srcdir)/src/dhcp-manager/nm-dhcp-dhclient-utils.c \
+	$(top_srcdir)/src/dhcp-manager/nm-dhcp-utils.h \
+	$(top_srcdir)/src/dhcp-manager/nm-dhcp-utils.c \
 	test-dhcp-dhclient.c
 
 test_dhcp_dhclient_LDADD = \
