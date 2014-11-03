@@ -692,3 +692,68 @@ nm_dhcp_utils_duid_to_string (const GByteArray *duid)
 	return g_string_free (s, FALSE);
 }
 
+/**
+ * nm_dhcp_utils_client_id_string_to_bytes:
+ * @client_id: the client ID string
+ *
+ * Accepts either a hex string ("aa:bb:cc") representing a binary client ID
+ * (the first byte is assumed to be the 'type' field per RFC 2132 section 9.14),
+ * or a string representing a non-hardware-address client ID, in which case
+ * the 'type' field is set to 0.
+ *
+ * Returns: the binary client ID suitable for sending over the wire
+ * to the DHCP server.
+ */
+GBytes *
+nm_dhcp_utils_client_id_string_to_bytes (const char *client_id)
+{
+	GBytes *bytes = NULL;
+	guint i = 0, x = 0;
+	guint len;
+	char *c;
+	int a;
+
+	g_return_val_if_fail (client_id && client_id[0], NULL);
+
+	/* Accept a binary client ID in hex digits with the ':' delimiter,
+	 * otherwise treat it as a string.
+	 */
+	len = strlen (client_id);
+	c = g_malloc0 (len / 2 + 1);
+	while (client_id[i]) {
+		a = g_ascii_xdigit_value (client_id[i++]);
+		if (a >= 0) {
+			if (client_id[i] != ':') {
+				c[x] = ((guint8) a << 4);
+				a = g_ascii_xdigit_value (client_id[i++]);
+			}
+			if (a >= 0)
+				c[x++] |= (guint8) a;
+		}
+		if (client_id[i]) {
+			if (client_id[i] != ':' || !client_id[i + 1]) {
+				/* missing or trailing ':' is invalid for hex-format */
+				a = -1;
+			}
+			i++;
+		}
+
+		if (a < 0) {
+			g_clear_pointer (&c, g_free);
+			break;
+		}
+	}
+
+	if (c) {
+		g_assert (x > 0);
+		bytes = g_bytes_new_take (c, x);
+	} else {
+		c = g_malloc (len + 1);
+		c[0] = 0;  /* type: non-hardware address per RFC 2132 section 9.14 */
+		memcpy (c + 1, client_id, len);
+		bytes = g_bytes_new_take (c, len + 1);
+	}
+
+	return bytes;
+}
+
