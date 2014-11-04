@@ -523,10 +523,6 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 					}
 				}
 			}
-
-			/* FIXME: for now, only track the default route for VPN.
-			 * Enable actual configuration of the route later. */
-			never_default = TRUE;
 		}
 	}
 	g_assert (!default_route || default_route->plen == 0);
@@ -790,7 +786,6 @@ _ipx_get_best_config (const VTableIP *vtable,
                       gboolean ignore_never_default,
                       NMDevice *preferred_device,
                       const char **out_ip_iface,
-                      int *out_ip_ifindex,
                       NMActiveConnection **out_ac,
                       NMDevice **out_device,
                       NMVpnConnection **out_vpn)
@@ -802,6 +797,15 @@ _ipx_get_best_config (const VTableIP *vtable,
 	gpointer config_result = NULL;
 
 	g_return_val_if_fail (NM_IS_DEFAULT_ROUTE_MANAGER (self), NULL);
+
+	if (out_ip_iface)
+		*out_ip_iface = NULL;
+	if (out_ac)
+		*out_ac = NULL;
+	if (out_device)
+		*out_device = NULL;
+	if (out_vpn)
+		*out_vpn = NULL;
 
 	priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
 
@@ -855,8 +859,6 @@ _ipx_get_best_config (const VTableIP *vtable,
 			*out_ac = active;
 		if (out_ip_iface)
 			*out_ip_iface = nm_vpn_connection_get_ip_iface (candidate);
-		 if (out_ip_ifindex)
-			*out_ip_ifindex = nm_vpn_connection_get_ip_ifindex (candidate);
 		break;
 	}
 
@@ -878,8 +880,6 @@ _ipx_get_best_config (const VTableIP *vtable,
 				*out_ac = NM_ACTIVE_CONNECTION (req);
 			if (out_ip_iface)
 				*out_ip_iface = nm_device_get_ip_iface (device);
-			if (out_ip_ifindex)
-				*out_ip_ifindex = nm_device_get_ip_ifindex (device);
 		}
 	}
 
@@ -892,7 +892,6 @@ nm_default_route_manager_ip4_get_best_config (NMDefaultRouteManager *self,
                                               gboolean ignore_never_default,
                                               NMDevice *preferred_device,
                                               const char **out_ip_iface,
-                                              int *out_ip_ifindex,
                                               NMActiveConnection **out_ac,
                                               NMDevice **out_device,
                                               NMVpnConnection **out_vpn)
@@ -903,7 +902,6 @@ nm_default_route_manager_ip4_get_best_config (NMDefaultRouteManager *self,
 	                             ignore_never_default,
 	                             preferred_device,
 	                             out_ip_iface,
-	                             out_ip_ifindex,
 	                             out_ac,
 	                             out_device,
 	                             out_vpn);
@@ -915,7 +913,6 @@ nm_default_route_manager_ip6_get_best_config (NMDefaultRouteManager *self,
                                               gboolean ignore_never_default,
                                               NMDevice *preferred_device,
                                               const char **out_ip_iface,
-                                              int *out_ip_ifindex,
                                               NMActiveConnection **out_ac,
                                               NMDevice **out_device,
                                               NMVpnConnection **out_vpn)
@@ -926,7 +923,6 @@ nm_default_route_manager_ip6_get_best_config (NMDefaultRouteManager *self,
 	                             ignore_never_default,
 	                             preferred_device,
 	                             out_ip_iface,
-	                             out_ip_ifindex,
 	                             out_ac,
 	                             out_device,
 	                             out_vpn);

@@ -382,7 +382,6 @@ static NMIP4Config *
 get_best_ip4_config (NMPolicy *self,
                      gboolean ignore_never_default,
                      const char **out_ip_iface,
-                     int *out_ip_ifindex,
                      NMActiveConnection **out_ac,
                      NMDevice **out_device,
                      NMVpnConnection **out_vpn)
@@ -394,7 +393,6 @@ get_best_ip4_config (NMPolicy *self,
 	                                                     ignore_never_default,
 	                                                     priv->default_device4,
 	                                                     out_ip_iface,
-	                                                     out_ip_ifindex,
 	                                                     out_ac,
 	                                                     out_device,
 	                                                     out_vpn);
@@ -408,7 +406,7 @@ update_ip4_dns (NMPolicy *policy, NMDnsManager *dns_mgr)
 	NMVpnConnection *vpn = NULL;
 	NMDnsIPConfigType dns_type = NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE;
 
-	ip4_config = get_best_ip4_config (policy, TRUE, &ip_iface, NULL, NULL, NULL, &vpn);
+	ip4_config = get_best_ip4_config (policy, TRUE, &ip_iface, NULL, NULL, &vpn);
 	if (ip4_config) {
 		if (vpn)
 			dns_type = NM_DNS_IP_CONFIG_TYPE_VPN;
@@ -428,16 +426,12 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 	NMConnection *connection = NULL;
 	NMVpnConnection *vpn = NULL;
 	NMActiveConnection *best_ac = NULL;
-	NMIP4Config *ip4_config = NULL;
 	const char *ip_iface = NULL;
-	int ip_ifindex = -1;
-	guint32 gw_addr = 0;
 
 	/* Note that we might have an IPv4 VPN tunneled over an IPv6-only device,
 	 * so we can get (vpn != NULL && best == NULL).
 	 */
-	ip4_config = get_best_ip4_config (policy, FALSE, &ip_iface, &ip_ifindex, &best_ac, &best, &vpn);
-	if (!ip4_config) {
+	if (!get_best_ip4_config (policy, FALSE, &ip_iface, &best_ac, &best, &vpn)) {
 		gboolean changed;
 
 		changed = (priv->default_device4 != NULL);
@@ -451,8 +445,6 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 
 	if (!force_update && best && (best == priv->default_device4))
 		return;
-
-	gw_addr = nm_ip4_config_get_gateway (ip4_config);
 
 	if (best) {
 		const GSList *connections, *iter;
@@ -468,32 +460,9 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 		}
 	}
 
-	if (vpn) {
-		in_addr_t int_gw = nm_vpn_connection_get_ip4_internal_gateway (vpn);
-		int mss = nm_ip4_config_get_mss (ip4_config);
-		guint32 route_metric = nm_vpn_connection_get_ip4_route_metric (vpn);
-
-		/* If no VPN interface, use the parent interface */
-		if (ip_ifindex <= 0)
-			ip_ifindex = nm_device_get_ip_ifindex (nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn)));
-
-		if (!nm_platform_ip4_route_add (ip_ifindex, NM_IP_CONFIG_SOURCE_VPN,
-		                                0, 0, int_gw,
-		                                route_metric, mss)) {
-			if (int_gw) {
-				(void) nm_platform_ip4_route_add (ip_ifindex, NM_IP_CONFIG_SOURCE_VPN,
-				                                  int_gw, 32, 0,
-				                                  route_metric, mss);
-				if (!nm_platform_ip4_route_add (ip_ifindex, NM_IP_CONFIG_SOURCE_VPN,
-				                                0, 0, int_gw,
-				                                route_metric, mss))
-					nm_log_err (LOGD_IP4 | LOGD_VPN, "Failed to set IPv4 default route via VPN.");
-			} else
-				nm_log_err (LOGD_IP4 | LOGD_VPN, "Failed to set IPv4 default route via VPN.");
-		}
-
+	if (vpn)
 		default_device = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
-	} else
+	else
 		default_device = best;
 
 	update_default_ac (policy, best_ac, nm_active_connection_set_default);
@@ -512,7 +481,6 @@ static NMIP6Config *
 get_best_ip6_config (NMPolicy *self,
                      gboolean ignore_never_default,
                      const char **out_ip_iface,
-                     int *out_ip_ifindex,
                      NMActiveConnection **out_ac,
                      NMDevice **out_device,
                      NMVpnConnection **out_vpn)
@@ -524,7 +492,6 @@ get_best_ip6_config (NMPolicy *self,
 	                                                     ignore_never_default,
 	                                                     priv->default_device6,
 	                                                     out_ip_iface,
-	                                                     out_ip_ifindex,
 	                                                     out_ac,
 	                                                     out_device,
 	                                                     out_vpn);
@@ -538,7 +505,7 @@ update_ip6_dns (NMPolicy *policy, NMDnsManager *dns_mgr)
 	NMVpnConnection *vpn = NULL;
 	NMDnsIPConfigType dns_type = NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE;
 
-	ip6_config = get_best_ip6_config (policy, TRUE, &ip_iface, NULL, NULL, NULL, &vpn);
+	ip6_config = get_best_ip6_config (policy, TRUE, &ip_iface, NULL, NULL, &vpn);
 	if (ip6_config) {
 		if (vpn)
 			dns_type = NM_DNS_IP_CONFIG_TYPE_VPN;
@@ -558,16 +525,12 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 	NMConnection *connection = NULL;
 	NMVpnConnection *vpn = NULL;
 	NMActiveConnection *best_ac = NULL;
-	NMIP6Config *ip6_config = NULL;
 	const char *ip_iface = NULL;
-	int ip_ifindex = -1;
-	const struct in6_addr *gw_addr;
 
 	/* Note that we might have an IPv6 VPN tunneled over an IPv4-only device,
 	 * so we can get (vpn != NULL && best == NULL).
 	 */
-	ip6_config = get_best_ip6_config (policy, FALSE, &ip_iface, &ip_ifindex, &best_ac, &best, &vpn);
-	if (!ip6_config) {
+	if (!get_best_ip6_config (policy, FALSE, &ip_iface, &best_ac, &best, &vpn)) {
 		gboolean changed;
 
 		changed = (priv->default_device6 != NULL);
@@ -581,13 +544,6 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 
 	if (!force_update && best && (best == priv->default_device6))
 		return;
-
-	/* If no better gateway is found, use ::; not all configurations will
-	 * have a gateway, especially WWAN/Point-to-Point connections.
-	 */
-	gw_addr = nm_ip6_config_get_gateway (ip6_config);
-	if (!gw_addr)
-		gw_addr = &in6addr_any;
 
 	if (best) {
 		const GSList *connections, *iter;
@@ -603,35 +559,9 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 		}
 	}
 
-	if (vpn) {
-		const struct in6_addr *int_gw = nm_vpn_connection_get_ip6_internal_gateway (vpn);
-		int mss = nm_ip6_config_get_mss (ip6_config);
-		guint32 route_metric = nm_vpn_connection_get_ip6_route_metric (vpn);
-
-		if (!int_gw)
-			int_gw = &in6addr_any;
-
-		/* If no VPN interface, use the parent interface */
-		if (ip_ifindex <= 0)
-			ip_ifindex = nm_device_get_ip_ifindex (nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn)));
-
-		if (!nm_platform_ip6_route_add (ip_ifindex, NM_IP_CONFIG_SOURCE_VPN,
-		                                in6addr_any, 0, *int_gw,
-		                                route_metric, mss)) {
-			if (!IN6_IS_ADDR_UNSPECIFIED (int_gw)) {
-				(void) nm_platform_ip6_route_add (ip_ifindex, NM_IP_CONFIG_SOURCE_VPN,
-				                                  *int_gw, 128, in6addr_any,
-				                                  route_metric, mss);
-				if (!nm_platform_ip6_route_add (ip_ifindex, NM_IP_CONFIG_SOURCE_VPN,
-				                                in6addr_any, 0, *int_gw,
-				                                route_metric, mss))
-					nm_log_err (LOGD_IP6 | LOGD_VPN, "Failed to set IPv6 default route via VPN.");
-			} else
-				nm_log_err (LOGD_IP6 | LOGD_VPN, "Failed to set IPv6 default route via VPN.");
-		}
-
+	if (vpn)
 		default_device6 = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
-	} else
+	else
 		default_device6 = best;
 
 	update_default_ac (policy, best_ac, nm_active_connection_set_default6);

@@ -65,7 +65,6 @@ NMIP4Config *nm_default_route_manager_ip4_get_best_config (NMDefaultRouteManager
                                                            gboolean ignore_never_default,
                                                            NMDevice *preferred_device,
                                                            const char **out_ip_iface,
-                                                           int *out_ip_ifindex,
                                                            NMActiveConnection **out_ac,
                                                            NMDevice **out_device,
                                                            NMVpnConnection **out_vpn);
@@ -74,7 +73,6 @@ NMIP6Config *nm_default_route_manager_ip6_get_best_config (NMDefaultRouteManager
                                                            gboolean ignore_never_default,
                                                            NMDevice *preferred_device,
                                                            const char **out_ip_iface,
-                                                           int *out_ip_ifindex,
                                                            NMActiveConnection **out_ac,
                                                            NMDevice **out_device,
                                                            NMVpnConnection **out_vpn);
