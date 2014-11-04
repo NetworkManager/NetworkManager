@@ -46,6 +46,7 @@ typedef struct {
 	guint32      timeout;
 	GByteArray * duid;
 	GBytes *     client_id;
+	char *       hostname;
 
 	NMDhcpState  state;
 	pid_t        pid;
@@ -165,6 +166,14 @@ nm_dhcp_client_set_client_id (NMDhcpClient *self, GBytes *client_id)
 		return;
 	g_clear_pointer (&priv->client_id, g_bytes_unref);
 	priv->client_id = client_id ? g_bytes_ref (client_id) : NULL;
+}
+
+const char *
+nm_dhcp_client_get_hostname (NMDhcpClient *self)
+{
+	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
+
+	return NM_DHCP_CLIENT_GET_PRIVATE (self)->hostname;
 }
 
 /********************************************/
@@ -400,7 +409,10 @@ nm_dhcp_client_start_ip4 (NMDhcpClient *self,
 
 	nm_dhcp_client_set_client_id (self, dhcp_client_id ? nm_dhcp_utils_client_id_string_to_bytes (dhcp_client_id) : NULL);
 
-	return NM_DHCP_CLIENT_GET_CLASS (self)->ip4_start (self, dhcp_anycast_addr, hostname);
+	g_clear_pointer (&priv->hostname, g_free);
+	priv->hostname = g_strdup (hostname);
+
+	return NM_DHCP_CLIENT_GET_CLASS (self)->ip4_start (self, dhcp_anycast_addr);
 }
 
 /* uuid_parse does not work for machine-id, so we use our own converter */
@@ -544,6 +556,9 @@ nm_dhcp_client_start_ip6 (NMDhcpClient *self,
 		g_free (str);
 	}
 
+	g_clear_pointer (&priv->hostname, g_free);
+	priv->hostname = g_strdup (hostname);
+
 	priv->info_only = info_only;
 
 	nm_log_info (LOGD_DHCP, "Activation (%s) Beginning DHCPv6 transaction (timeout in %d seconds)",
@@ -551,7 +566,6 @@ nm_dhcp_client_start_ip6 (NMDhcpClient *self,
 
 	return NM_DHCP_CLIENT_GET_CLASS (self)->ip6_start (self,
 	                                                   dhcp_anycast_addr,
-	                                                   hostname,
 	                                                   info_only,
 	                                                   privacy,
 	                                                   priv->duid);

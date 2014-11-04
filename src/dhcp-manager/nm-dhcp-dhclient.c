@@ -477,19 +477,18 @@ dhclient_start (NMDhcpClient *client,
 }
 
 static gboolean
-ip4_start (NMDhcpClient *client,
-           const char *dhcp_anycast_addr,
-           const char *hostname)
+ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr)
 {
 	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
 	GBytes *client_id;
 	gs_unref_bytes GBytes *new_client_id = NULL;
-	const char *iface, *uuid;
+	const char *iface, *uuid, *hostname;
 	gboolean success = FALSE;
 
 	iface = nm_dhcp_client_get_iface (client);
 	uuid = nm_dhcp_client_get_uuid (client);
 	client_id = nm_dhcp_client_get_client_id (client);
+	hostname = nm_dhcp_client_get_hostname (client);
 
 	priv->conf_file = create_dhclient_config (iface, FALSE, uuid, client_id, dhcp_anycast_addr, hostname, &new_client_id);
 	if (priv->conf_file) {
@@ -505,16 +504,16 @@ ip4_start (NMDhcpClient *client,
 static gboolean
 ip6_start (NMDhcpClient *client,
            const char *dhcp_anycast_addr,
-           const char *hostname,
            gboolean info_only,
            NMSettingIP6ConfigPrivacy privacy,
            const GByteArray *duid)
 {
 	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
-	const char *iface, *uuid;
+	const char *iface, *uuid, *hostname;
 
 	iface = nm_dhcp_client_get_iface (client);
 	uuid = nm_dhcp_client_get_uuid (client);
+	hostname = nm_dhcp_client_get_hostname (client);
 
 	priv->conf_file = create_dhclient_config (iface, TRUE, uuid, NULL, dhcp_anycast_addr, hostname, NULL);
 	if (!priv->conf_file) {

@@ -515,9 +515,7 @@ get_arp_type (const GByteArray *hwaddr)
 }
 
 static gboolean
-ip4_start (NMDhcpClient *client,
-           const char *dhcp_anycast_addr,
-           const char *hostname)
+ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr)
 {
 	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (client);
 	const char *iface = nm_dhcp_client_get_iface (client);
@@ -527,6 +525,7 @@ ip4_start (NMDhcpClient *client,
 	const uint8_t *client_id = NULL;
 	size_t client_id_len = 0;
 	struct in_addr last_addr;
+	const char *hostname;
 	int r, i;
 
 	g_assert (priv->client4 == NULL);
@@ -621,6 +620,7 @@ ip4_start (NMDhcpClient *client,
 			sd_dhcp_client_set_request_option (priv->client4, dhcp4_requests[i].num);
 	}
 
+	hostname = nm_dhcp_client_get_hostname (client);
 	if (hostname) {
 		r = sd_dhcp_client_set_hostname (priv->client4, hostname);
 		if (r < 0) {
@@ -683,7 +683,6 @@ dhcp6_event_cb (sd_dhcp6_client *client, int event, gpointer user_data)
 static gboolean
 ip6_start (NMDhcpClient *client,
            const char *dhcp_anycast_addr,
-           const char *hostname,
            gboolean info_only,
            NMSettingIP6ConfigPrivacy privacy,
            const GByteArray *duid)

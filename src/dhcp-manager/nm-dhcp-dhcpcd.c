@@ -73,16 +73,14 @@ dhcpcd_child_setup (gpointer user_data G_GNUC_UNUSED)
 }
 
 static gboolean
-ip4_start (NMDhcpClient *client,
-           const char *dhcp_anycast_addr,
-           const char *hostname)
+ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr)
 {
 	NMDhcpDhcpcdPrivate *priv = NM_DHCP_DHCPCD_GET_PRIVATE (client);
 	GPtrArray *argv = NULL;
 	pid_t pid = -1;
 	GError *error = NULL;
 	char *pid_contents = NULL, *binary_name, *cmd_str;
-	const char *iface, *dhcpcd_path = NULL;
+	const char *iface, *dhcpcd_path, *hostname;
 
 	g_return_val_if_fail (priv->pid_file == NULL, FALSE);
 
@@ -129,7 +127,8 @@ ip4_start (NMDhcpClient *client,
 	g_ptr_array_add (argv, (gpointer) "-4");
 #endif
 
-	if (hostname && strlen (hostname)) {
+	hostname = nm_dhcp_client_get_hostname (client);
+	if (hostname) {
 		g_ptr_array_add (argv, (gpointer) "-h");	/* Send hostname to DHCP server */
 		g_ptr_array_add (argv, (gpointer) hostname );
 	}
@@ -160,7 +159,6 @@ ip4_start (NMDhcpClient *client,
 static gboolean
 ip6_start (NMDhcpClient *client,
            const char *dhcp_anycast_addr,
-           const char *hostname,
            gboolean info_only,
            NMSettingIP6ConfigPrivacy privacy,
            const GByteArray *duid)
