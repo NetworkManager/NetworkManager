@@ -224,7 +224,8 @@ client_start (NMDhcpManager *self,
               const char *dhcp_anycast_addr,
               const char *hostname,
               gboolean info_only,
-              NMSettingIP6ConfigPrivacy privacy)
+              NMSettingIP6ConfigPrivacy privacy,
+              const char *last_ip4_address)
 {
 	NMDhcpManagerPrivate *priv;
 	NMDhcpClient *client;
@@ -265,7 +266,7 @@ client_start (NMDhcpManager *self,
 	if (ipv6)
 		success = nm_dhcp_client_start_ip6 (client, dhcp_anycast_addr, hostname, info_only, privacy);
 	else
-		success = nm_dhcp_client_start_ip4 (client, dhcp_client_id, dhcp_anycast_addr, hostname);
+		success = nm_dhcp_client_start_ip4 (client, dhcp_client_id, dhcp_anycast_addr, hostname, last_ip4_address);
 
 	if (!success) {
 		remove_client (self, client);
@@ -296,7 +297,8 @@ nm_dhcp_manager_start_ip4 (NMDhcpManager *self,
                            const char *dhcp_hostname,
                            const char *dhcp_client_id,
                            guint32 timeout,
-                           const char *dhcp_anycast_addr)
+                           const char *dhcp_anycast_addr,
+                           const char *last_ip_address)
 {
 	const char *hostname = NULL;
 
@@ -306,7 +308,7 @@ nm_dhcp_manager_start_ip4 (NMDhcpManager *self,
 		hostname = get_send_hostname (self, dhcp_hostname);
 	return client_start (self, iface, ifindex, hwaddr, uuid, priority, FALSE,
 	                     dhcp_client_id, timeout, dhcp_anycast_addr, hostname,
-	                     FALSE, 0);
+	                     FALSE, 0, last_ip_address);
 }
 
 /* Caller owns a reference to the NMDhcpClient on return */
@@ -332,7 +334,7 @@ nm_dhcp_manager_start_ip6 (NMDhcpManager *self,
 		hostname = get_send_hostname (self, dhcp_hostname);
 	return client_start (self, iface, ifindex, hwaddr, uuid, priority, TRUE,
 	                     NULL, timeout, dhcp_anycast_addr, hostname, info_only,
-	                     privacy);
+	                     privacy, NULL);
 }
 
 void

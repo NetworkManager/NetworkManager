@@ -393,7 +393,8 @@ gboolean
 nm_dhcp_client_start_ip4 (NMDhcpClient *self,
                           const char *dhcp_client_id,
                           const char *dhcp_anycast_addr,
-                          const char *hostname)
+                          const char *hostname,
+                          const char *last_ip4_address)
 {
 	NMDhcpClientPrivate *priv;
 
@@ -412,7 +413,7 @@ nm_dhcp_client_start_ip4 (NMDhcpClient *self,
 	g_clear_pointer (&priv->hostname, g_free);
 	priv->hostname = g_strdup (hostname);
 
-	return NM_DHCP_CLIENT_GET_CLASS (self)->ip4_start (self, dhcp_anycast_addr);
+	return NM_DHCP_CLIENT_GET_CLASS (self)->ip4_start (self, dhcp_anycast_addr, last_ip4_address);
 }
 
 /* uuid_parse does not work for machine-id, so we use our own converter */

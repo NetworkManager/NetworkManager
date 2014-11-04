@@ -2975,7 +2975,8 @@ dhcp4_start (NMDevice *self,
 	                                                nm_setting_ip_config_get_dhcp_hostname (s_ip4),
 	                                                nm_setting_ip4_config_get_dhcp_client_id (NM_SETTING_IP4_CONFIG (s_ip4)),
 	                                                priv->dhcp_timeout,
-	                                                priv->dhcp_anycast_address);
+	                                                priv->dhcp_anycast_address,
+	                                                NULL);
 
 	if (tmp)
 		g_byte_array_free (tmp, TRUE);

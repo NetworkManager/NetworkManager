@@ -61,7 +61,8 @@ NMDhcpClient * nm_dhcp_manager_start_ip4     (NMDhcpManager *manager,
                                               const char *dhcp_hostname,
                                               const char *dhcp_client_id,
                                               guint32 timeout,
-                                              const char *dhcp_anycast_addr);
+                                              const char *dhcp_anycast_addr,
+                                              const char *last_ip_address);
 
 NMDhcpClient * nm_dhcp_manager_start_ip6     (NMDhcpManager *manager,
                                               const char *iface,
