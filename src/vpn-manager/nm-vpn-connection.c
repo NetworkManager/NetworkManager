@@ -41,6 +41,7 @@
 #include "nm-dispatcher.h"
 #include "nm-agent-manager.h"
 #include "nm-core-internal.h"
+#include "nm-default-route-manager.h"
 
 #include "nm-vpn-connection-glue.h"
 
@@ -234,6 +235,9 @@ vpn_cleanup (NMVpnConnection *connection, NMDevice *parent_dev)
 		nm_platform_address_flush (priv->ip_ifindex);
 	}
 
+	nm_default_route_manager_ip4_remove_default_route (nm_default_route_manager_get (), connection);
+	nm_default_route_manager_ip6_remove_default_route (nm_default_route_manager_get (), connection);
+
 	nm_device_set_vpn4_config (parent_dev, NULL);
 	nm_device_set_vpn6_config (parent_dev, NULL);
 
@@ -337,6 +341,9 @@ _set_vpn_state (NMVpnConnection *connection,
 		               reason);
 		g_object_notify (G_OBJECT (connection), NM_VPN_CONNECTION_VPN_STATE);
 	}
+
+	nm_default_route_manager_ip4_update_default_route (nm_default_route_manager_get (), connection);
+	nm_default_route_manager_ip6_update_default_route (nm_default_route_manager_get (), connection);
 
 	switch (vpn_state) {
 	case STATE_NEED_AUTH:
@@ -941,6 +948,9 @@ nm_vpn_connection_apply_config (NMVpnConnection *connection)
 	}
 
 	apply_parent_device_config (connection);
+
+	nm_default_route_manager_ip4_update_default_route (nm_default_route_manager_get (), connection);
+	nm_default_route_manager_ip6_update_default_route (nm_default_route_manager_get (), connection);
 
 	nm_log_info (LOGD_VPN, "VPN connection '%s' (IP Config Get) complete.",
 	             nm_connection_get_id (priv->connection));

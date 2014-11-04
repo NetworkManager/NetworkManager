@@ -27,6 +27,7 @@
 
 #include "nm-logging.h"
 #include "nm-device.h"
+#include "nm-vpn-connection.h"
 #include "nm-platform.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
@@ -72,7 +73,7 @@ static NMDefaultRouteManager *_instance;
 		entry_idx, \
 		NM_IS_DEVICE (entry->source.pointer) ? "dev" : "vpn", \
 		entry->source.pointer, \
-		nm_device_get_iface (entry->source.device)
+		NM_IS_DEVICE (entry->source.pointer) ? nm_device_get_iface (entry->source.device) : nm_vpn_connection_get_connection_id (entry->source.vpn)
 
 /***********************************************************************************/
 
@@ -81,6 +82,7 @@ typedef struct {
 		void *pointer;
 		GObject *object;
 		NMDevice *device;
+		NMVpnConnection *vpn;
 	} source;
 	union {
 		NMPlatformIPRoute route;
@@ -88,6 +90,12 @@ typedef struct {
 		NMPlatformIP6Route route6;
 	};
 	gboolean synced; /* if true, we synced the entry to platform. We don't sync assumed devices */
+
+	/* it makes sense to order sources based on their priority, without
+	 * actually adding a default route. This is useful to decide which
+	 * DNS server to prefer. never_default entries are not synced to platform. */
+	gboolean never_default;
+
 	guint32 effective_metric;
 } Entry;
 
@@ -147,6 +155,9 @@ _platform_route_sync_add (const VTableIP *vtable, NMDefaultRouteManager *self, g
 	 * is unique (except for G_MAXUINT32, where a clash is not solvable). */
 	for (i = 0; i < entries->len; i++) {
 		Entry *e = g_ptr_array_index (entries, i);
+
+		if (e->never_default)
+			continue;
 
 		if (e->effective_metric != metric)
 			continue;
@@ -215,6 +226,9 @@ _platform_route_sync_flush (const VTableIP *vtable, NMDefaultRouteManager *self)
 		for (i = 0; i < entries->len; i++) {
 			Entry *e = g_ptr_array_index (entries, i);
 
+			if (e->never_default)
+				continue;
+
 			if (   e->route.ifindex == route->ifindex
 			    && e->synced) {
 				has_ifindex_synced = TRUE;
@@ -252,6 +266,10 @@ _sort_entries_cmp (gconstpointer a, gconstpointer b, gpointer user_data)
 
 	if (m_a != m_b)
 		return (m_a < m_b) ? -1 : 1;
+
+	/* If the metrics are equal, we prefer the one that is !never_default */
+	if (!!e_a->never_default != !!e_b->never_default)
+		return e_a->never_default ? 1 : -1;
 
 	/* If the metrics are equal, we prefer the one that is assumed (!synced).
 	 * Entries that we sync, can be modified so that only the best
@@ -300,6 +318,9 @@ _resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *c
 
 		g_assert (entry != old_entry);
 
+		if (entry->never_default)
+			continue;
+
 		if (!entry->synced) {
 			last_metric = MAX (last_metric, (gint64) entry->effective_metric);
 			continue;
@@ -342,7 +363,7 @@ _entry_at_idx_update (const VTableIP *vtable, NMDefaultRouteManager *self, guint
 {
 	NMDefaultRouteManagerPrivate *priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
 	Entry *entry;
-	NMDevice *device;
+	NMDevice *device = NULL;
 	GPtrArray *entries;
 
 	entries = vtable->get_entries (priv);
@@ -350,8 +371,8 @@ _entry_at_idx_update (const VTableIP *vtable, NMDefaultRouteManager *self, guint
 
 	entry = g_ptr_array_index (entries, entry_idx);
 
-	g_return_if_fail (NM_IS_DEVICE (entry->source.pointer));
-	device = entry->source.device;
+	if (NM_IS_DEVICE (entry->source.pointer))
+		device = entry->source.device;
 
 	g_assert (   !old_entry
 	          || (entry->source.pointer == old_entry->source.pointer && entry->route.ifindex == old_entry->route.ifindex));
@@ -362,7 +383,7 @@ _entry_at_idx_update (const VTableIP *vtable, NMDefaultRouteManager *self, guint
 		       LOG_ENTRY_ARGS (entry_idx, entry),
 		       old_entry ? "update" : "add",
 		       vtable->platform_route_to_string (&entry->route),
-		       entry->synced ? "" : " (not synced)");
+		       entry->never_default ? " (never-default)" : (entry->synced ? "" : " (not synced)"));
 	}
 
 	g_ptr_array_sort_with_data (entries, _sort_entries_cmp, NULL);
@@ -403,18 +424,38 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 	Entry *entry;
 	guint entry_idx;
 	const NMPlatformIPRoute *default_route = NULL;
+	union {
+		NMPlatformIPRoute vx;
+		NMPlatformIP4Route v4;
+		NMPlatformIP6Route v6;
+	} rt;
 	int ip_ifindex;
 	GPtrArray *entries;
 	NMDevice *device = NULL;
+	NMVpnConnection *vpn = NULL;
+	gboolean never_default = FALSE;
 	gboolean synced;
 
 	g_return_if_fail (NM_IS_DEFAULT_ROUTE_MANAGER (self));
 	if (NM_IS_DEVICE (source))
 		device = source;
+	else if (NM_IS_VPN_CONNECTION (source))
+		vpn = source;
 	else
 		g_return_if_reached ();
 
-	ip_ifindex = nm_device_get_ip_ifindex (device);
+	if (device)
+		ip_ifindex = nm_device_get_ip_ifindex (device);
+	else {
+		ip_ifindex = nm_vpn_connection_get_ip_ifindex (vpn);
+
+		if (ip_ifindex <= 0) {
+			NMDevice *parent = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
+
+			if (parent)
+				ip_ifindex = nm_device_get_ip_ifindex (parent);
+		}
+	}
 
 	priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
 
@@ -438,15 +479,60 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 
 	/* get the @default_route from the device. */
 	if (ip_ifindex > 0) {
-		if (VTABLE_IS_IP4)
-			default_route = (const NMPlatformIPRoute *) nm_device_get_ip4_default_route (device);
-		else
-			default_route = (const NMPlatformIPRoute *) nm_device_get_ip6_default_route (device);
+		if (device) {
+			if (VTABLE_IS_IP4)
+				default_route = (const NMPlatformIPRoute *) nm_device_get_ip4_default_route (device);
+			else
+				default_route = (const NMPlatformIPRoute *) nm_device_get_ip6_default_route (device);
+		} else {
+			NMConnection *connection = nm_active_connection_get_connection ((NMActiveConnection *) vpn);
+
+			if (   connection
+			    && nm_vpn_connection_get_vpn_state (vpn) == NM_VPN_CONNECTION_STATE_ACTIVATED) {
+
+				if (VTABLE_IS_IP4) {
+					NMIP4Config *vpn_config;
+
+					vpn_config = nm_vpn_connection_get_ip4_config (vpn);
+					if (vpn_config) {
+						never_default = nm_ip4_config_get_never_default (vpn_config);
+						memset (&rt.v4, 0, sizeof (rt.v4));
+						rt.v4.ifindex = ip_ifindex;
+						rt.v4.source = NM_IP_CONFIG_SOURCE_VPN;
+						rt.v4.gateway = nm_vpn_connection_get_ip4_internal_gateway (vpn);
+						rt.v4.metric = nm_vpn_connection_get_ip4_route_metric (vpn);
+						rt.v4.mss = nm_ip4_config_get_mss (vpn_config);
+						default_route = &rt.vx;
+					}
+				} else {
+					NMIP6Config *vpn_config;
+
+					vpn_config = nm_vpn_connection_get_ip6_config (vpn);
+					if (vpn_config) {
+						const struct in6_addr *int_gw = nm_vpn_connection_get_ip6_internal_gateway (vpn);
+
+						never_default = nm_ip6_config_get_never_default (vpn_config);
+						memset (&rt.v6, 0, sizeof (rt.v6));
+						rt.v6.ifindex = ip_ifindex;
+						rt.v6.source = NM_IP_CONFIG_SOURCE_VPN;
+						rt.v6.gateway = int_gw ? *int_gw : in6addr_any;
+						rt.v6.metric = nm_vpn_connection_get_ip6_route_metric (vpn);
+						rt.v6.mss = nm_ip6_config_get_mss (vpn_config);
+						default_route = &rt.vx;
+					}
+				}
+			}
+
+			/* FIXME: for now, only track the default route for VPN.
+			 * Enable actual configuration of the route later. */
+			never_default = TRUE;
+		}
 	}
 	g_assert (!default_route || default_route->plen == 0);
 
-	/* if the device uses an assumed connection, we don't sync the route. */
-	synced = !nm_device_uses_assumed_connection (device);
+	/* if the source is never_default or the device uses an assumed connection,
+	 * we don't sync the route. */
+	synced = !never_default && (!device || !nm_device_uses_assumed_connection (device));
 
 	if (!entry && !default_route)
 		/* nothing to do */;
@@ -463,6 +549,7 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 		/* only use normalized metrics */
 		entry->route.metric = vtable->route_metric_normalize (entry->route.metric);
 		entry->route.ifindex = ip_ifindex;
+		entry->never_default = never_default;
 		entry->effective_metric = entry->route.metric;
 		entry->synced = synced;
 
@@ -480,6 +567,7 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 		/* only use normalized metrics */
 		new_entry.route.metric = vtable->route_metric_normalize (new_entry.route.metric);
 		new_entry.route.ifindex = ip_ifindex;
+		new_entry.never_default = never_default;
 		new_entry.synced = synced;
 
 		if (memcmp (entry, &new_entry, sizeof (new_entry)) == 0)
@@ -515,7 +603,7 @@ _ipx_remove_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 	guint entry_idx;
 
 	g_return_if_fail (NM_IS_DEFAULT_ROUTE_MANAGER (self));
-	g_return_if_fail (NM_IS_DEVICE (source));
+	g_return_if_fail (NM_IS_DEVICE (source) || NM_IS_VPN_CONNECTION (source));
 
 	priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
 
