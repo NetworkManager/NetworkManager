@@ -295,7 +295,8 @@ NmcOutputField nmc_fields_setting_ip6_config[] = {
 	SETTING_FIELD (NM_SETTING_IP_CONFIG_NEVER_DEFAULT, 15),           /* 8 */
 	SETTING_FIELD (NM_SETTING_IP_CONFIG_MAY_FAIL, 12),                /* 9 */
 	SETTING_FIELD (NM_SETTING_IP6_CONFIG_IP6_PRIVACY, 15),            /* 10 */
-	SETTING_FIELD (NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, 14),           /* 11 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME, 19),      /* 11 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, 14),           /* 12 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_IP6_CONFIG_ALL     "name"","\
@@ -309,6 +310,7 @@ NmcOutputField nmc_fields_setting_ip6_config[] = {
                                               NM_SETTING_IP_CONFIG_NEVER_DEFAULT","\
                                               NM_SETTING_IP_CONFIG_MAY_FAIL","\
                                               NM_SETTING_IP6_CONFIG_IP6_PRIVACY","\
+                                              NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME","\
                                               NM_SETTING_IP_CONFIG_DHCP_HOSTNAME
 #define NMC_FIELDS_SETTING_IP6_CONFIG_COMMON  NMC_FIELDS_SETTING_IP4_CONFIG_ALL
 
@@ -1363,6 +1365,7 @@ DEFINE_GETTER (nmc_property_ipv6_get_ignore_auto_routes, NM_SETTING_IP_CONFIG_IG
 DEFINE_GETTER (nmc_property_ipv6_get_ignore_auto_dns, NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS)
 DEFINE_GETTER (nmc_property_ipv6_get_never_default, NM_SETTING_IP_CONFIG_NEVER_DEFAULT)
 DEFINE_GETTER (nmc_property_ipv6_get_may_fail, NM_SETTING_IP_CONFIG_MAY_FAIL)
+DEFINE_GETTER (nmc_property_ipv6_get_dhcp_send_hostname, NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME)
 DEFINE_GETTER (nmc_property_ipv6_get_dhcp_hostname, NM_SETTING_IP_CONFIG_DHCP_HOSTNAME)
 
 static char *
@@ -5579,6 +5582,13 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    nmc_property_out2in_cut_paren);
+	nmc_add_prop_funcs (GLUE_IP (6, DHCP_SEND_HOSTNAME),
+	                    nmc_property_ipv6_get_dhcp_send_hostname,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
 	nmc_add_prop_funcs (GLUE_IP (6, DHCP_HOSTNAME),
 	                    nmc_property_ipv6_get_dhcp_hostname,
 	                    nmc_property_set_string,
@@ -6780,7 +6790,8 @@ setting_ip6_config_details (NMSetting *setting, NmCli *nmc,  const char *one_pro
 	set_val_str (arr, 8, nmc_property_ipv6_get_never_default (setting));
 	set_val_str (arr, 9, nmc_property_ipv6_get_may_fail (setting));
 	set_val_str (arr, 10, nmc_property_ipv6_get_ip6_privacy (setting));
-	set_val_str (arr, 11, nmc_property_ipv6_get_dhcp_hostname (setting));
+	set_val_str (arr, 11, nmc_property_ipv6_get_dhcp_send_hostname (setting));
+	set_val_str (arr, 12, nmc_property_ipv6_get_dhcp_hostname (setting));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */

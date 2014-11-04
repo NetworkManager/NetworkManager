@@ -459,18 +459,19 @@ nm_dhcp_manager_start_ip6 (NMDhcpManager *self,
                            const GByteArray *hwaddr,
                            const char *uuid,
                            guint priority,
+                           gboolean send_hostname,
                            const char *dhcp_hostname,
                            guint32 timeout,
                            const char *dhcp_anycast_addr,
                            gboolean info_only,
                            NMSettingIP6ConfigPrivacy privacy)
 {
-	const char *hostname;
+	const char *hostname = NULL;
 
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
 
-	hostname = dhcp_hostname ? get_send_hostname (self, dhcp_hostname) : NULL;
-
+	if (send_hostname)
+		hostname = get_send_hostname (self, dhcp_hostname);
 	return client_start (self, iface, ifindex, hwaddr, uuid, priority, TRUE,
 	                     NULL, timeout, dhcp_anycast_addr, hostname, info_only,
 	                     privacy);
