@@ -327,7 +327,7 @@ ip_route_transform_to_metric_string (GBinding     *binding,
 	char *string;
 
 	route = g_value_get_boxed (source_value);
-	if (route && nm_ip_route_get_dest (route)) {
+	if (route && nm_ip_route_get_dest (route) && nm_ip_route_get_metric (route) != -1) {
 		string = g_strdup_printf ("%lu", (gulong) nm_ip_route_get_metric (route));
 		g_value_take_string (target_value, string);
 	} else
@@ -400,10 +400,13 @@ ip_route_transform_from_metric_string (GBinding     *binding,
 {
 	NMIPRoute *route;
 	const char *text;
-	guint32 metric;
+	gint64 metric;
 
 	text = g_value_get_string (source_value);
-	metric = strtoul (text, NULL, 10);
+	if (*text)
+		metric = strtoul (text, NULL, 10);
+	else
+		metric = -1;
 
 	/* Fetch the original property value */
 	g_object_get (g_binding_get_source (binding),

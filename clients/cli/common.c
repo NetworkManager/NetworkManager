@@ -130,11 +130,12 @@ print_ip4_config (NMIPConfig *cfg4,
 			if (!next_hop)
 				next_hop = "0.0.0.0";
 
-			route_arr[i] = g_strdup_printf ("dst = %s/%u, nh = %s, mt = %u",
+			route_arr[i] = g_strdup_printf ("dst = %s/%u, nh = %s%c mt = %u",
 			                                nm_ip_route_get_dest (route),
 			                                nm_ip_route_get_prefix (route),
 			                                next_hop,
-			                                nm_ip_route_get_metric (route));
+			                                nm_ip_route_get_metric (route) == -1 ? '\0' : ',',
+			                                (guint32) nm_ip_route_get_metric (route));
 		}
 		route_arr[i] = NULL;
 	}
@@ -219,11 +220,12 @@ print_ip6_config (NMIPConfig *cfg6,
 			if (!next_hop)
 				next_hop = "::";
 
-			route_arr[i] = g_strdup_printf ("dst = %s/%u, nh = %s, mt = %u",
+			route_arr[i] = g_strdup_printf ("dst = %s/%u, nh = %s%c mt = %u",
 			                                nm_ip_route_get_dest (route),
 			                                nm_ip_route_get_prefix (route),
 			                                next_hop,
-			                                nm_ip_route_get_metric (route));
+			                                nm_ip_route_get_metric (route) == -1 ? '\0' : ',',
+			                                (guint32) nm_ip_route_get_metric (route));
 		}
 		route_arr[i] = NULL;
 	}
@@ -417,7 +419,7 @@ nmc_parse_and_build_route (int family,
 	char *dest = NULL, *plen = NULL;
 	const char *next_hop = NULL;
 	const char *canon_dest;
-	long int prefix = max_prefix, metric = 0;
+	long int prefix = max_prefix, metric = -1;
 	NMIPRoute *route = NULL;
 	gboolean success = FALSE;
 	GError *local = NULL;

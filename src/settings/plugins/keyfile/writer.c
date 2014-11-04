@@ -142,7 +142,7 @@ write_ip_values (GKeyFile *file,
 			addr = nm_ip_route_get_dest (route);
 			plen = nm_ip_route_get_prefix (route);
 			gw = nm_ip_route_get_next_hop (route);
-			metric = nm_ip_route_get_metric (route);
+			metric = MAX (0, nm_ip_route_get_metric (route));
 		} else {
 			NMIPAddress *address = array->pdata[i];
 

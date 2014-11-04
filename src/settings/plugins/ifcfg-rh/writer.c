@@ -1747,7 +1747,8 @@ write_route_file_legacy (const char *filename, NMSettingIPConfig *s_ip4, GError 
 	char **route_items;
 	char *route_contents;
 	NMIPRoute *route;
-	guint32 prefix, metric;
+	guint32 prefix;
+	gint64 metric;
 	guint32 i, num;
 	gboolean success = FALSE;
 
@@ -1771,7 +1772,10 @@ write_route_file_legacy (const char *filename, NMSettingIPConfig *s_ip4, GError 
 		next_hop = nm_ip_route_get_next_hop (route);
 		metric = nm_ip_route_get_metric (route);
 
-		route_items[i] = g_strdup_printf ("%s/%u via %s metric %u\n", dest, prefix, next_hop, metric);
+		if (metric == -1)
+			route_items[i] = g_strdup_printf ("%s/%u via %s\n", dest, prefix, next_hop);
+		else
+			route_items[i] = g_strdup_printf ("%s/%u via %s metric %u\n", dest, prefix, next_hop, (guint32) metric);
 	}
 	route_items[num] = NULL;
 	route_contents = g_strjoinv (NULL, route_items);
@@ -2033,7 +2037,8 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		for (i = 0; i < 256; i++) {
 			char buf[INET_ADDRSTRLEN];
 			NMIPRoute *route;
-			guint32 netmask, metric;
+			guint32 netmask;
+			gint64 metric;
 
 			addr_key = g_strdup_printf ("ADDRESS%d", i);
 			netmask_key = g_strdup_printf ("NETMASK%d", i);
@@ -2059,10 +2064,10 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 
 				memset (buf, 0, sizeof (buf));
 				metric = nm_ip_route_get_metric (route);
-				if (metric == 0)
+				if (metric == -1)
 					svSetValue (routefile, metric_key, NULL, FALSE);
 				else {
-					tmp = g_strdup_printf ("%u", metric);
+					tmp = g_strdup_printf ("%u", (guint32) metric);
 					svSetValue (routefile, metric_key, tmp, FALSE);
 					g_free (tmp);
 				}
@@ -2204,11 +2209,19 @@ write_route6_file (const char *filename, NMSettingIPConfig *s_ip6, GError **erro
 	route_items = g_malloc0 (sizeof (char*) * (num + 1));
 	for (i = 0; i < num; i++) {
 		route = nm_setting_ip_config_get_route (s_ip6, i);
-		route_items[i] = g_strdup_printf ("%s/%u via %s metric %u\n",
-		                                  nm_ip_route_get_dest (route),
-		                                  nm_ip_route_get_prefix (route),
-		                                  nm_ip_route_get_next_hop (route),
-		                                  nm_ip_route_get_metric (route));
+
+		if (nm_ip_route_get_metric (route) == -1) {
+			route_items[i] = g_strdup_printf ("%s/%u via %s\n",
+			                                  nm_ip_route_get_dest (route),
+			                                  nm_ip_route_get_prefix (route),
+			                                  nm_ip_route_get_next_hop (route));
+		} else {
+			route_items[i] = g_strdup_printf ("%s/%u via %s metric %u\n",
+			                                  nm_ip_route_get_dest (route),
+			                                  nm_ip_route_get_prefix (route),
+			                                  nm_ip_route_get_next_hop (route),
+			                                  (guint32) nm_ip_route_get_metric (route));
+		}
 	}
 	route_items[num] = NULL;
 	route_contents = g_strjoinv (NULL, route_items);

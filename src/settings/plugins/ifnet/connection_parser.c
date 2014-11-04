@@ -30,6 +30,7 @@
 #include "nm-system-config-interface.h"
 #include "nm-logging.h"
 #include "nm-core-internal.h"
+#include "NetworkManagerUtils.h"
 
 #include "net_utils.h"
 #include "wpa_parser.h"
@@ -692,21 +693,21 @@ make_ip4_setting (NMConnection *connection,
 		ip_block *current_iblock = iblock;
 		const char *metric_str;
 		char *stripped;
-		long int metric;
+		gint64 metric;
 		NMIPRoute *route;
 		GError *local = NULL;
 
 		if ((metric_str = ifnet_get_data (conn_name, "metric")) != NULL) {
-			metric = strtol (metric_str, NULL, 10);
+			metric = nm_utils_ascii_str_to_int64 (metric_str, 10, 0, G_MAXUINT32, -1);
 		} else {
 			metric_str = ifnet_get_global_data ("metric");
 			if (metric_str) {
 				stripped = g_strdup (metric_str);
 				strip_string (stripped, '"');
-				metric = strtol (metric_str, NULL, 10);
+				metric = nm_utils_ascii_str_to_int64 (metric_str, 10, 0, G_MAXUINT32, -1);
 				g_free (stripped);
 			} else
-				metric = 0;
+				metric = -1;
 		}
 
 		route = nm_ip_route_new (AF_INET, iblock->ip, iblock->prefix, iblock->next_hop, metric, &local);
@@ -830,22 +831,20 @@ make_ip6_setting (NMConnection *connection,
 		ip_block *current_iblock = iblock;
 		const char *metric_str;
 		char *stripped;
-		long int metric;
+		gint64 metric;
 		NMIPRoute *route;
 		GError *local = NULL;
 
 		/* metric is not per routes configuration right now
 		 * global metric is also supported (metric="x") */
-		if ((metric_str = ifnet_get_data (conn_name, "metric")) != NULL) {
-			metric = strtol (metric_str, NULL, 10);
-			nm_ip_route_set_metric (route, (guint32) metric);
-		} else {
+		if ((metric_str = ifnet_get_data (conn_name, "metric")) != NULL)
+			metric = nm_utils_ascii_str_to_int64 (metric_str, 10, 0, G_MAXUINT32, -1);
+		else {
 			metric_str = ifnet_get_global_data ("metric");
 			if (metric_str) {
 				stripped = g_strdup (metric_str);
 				strip_string (stripped, '"');
-				metric = strtol (metric_str, NULL, 10);
-				nm_ip_route_set_metric (route, (guint32) metric);
+				metric = nm_utils_ascii_str_to_int64 (metric_str, 10, 0, G_MAXUINT32, -1);
 				g_free (stripped);
 			} else
 				metric = 1;

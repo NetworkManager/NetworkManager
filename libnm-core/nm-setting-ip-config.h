@@ -78,13 +78,13 @@ NMIPRoute   *nm_ip_route_new                 (int family,
                                               const char *dest,
                                               guint prefix,
                                               const char *next_hop,
-                                              guint metric,
+                                              gint64 metric,
                                               GError **error);
 NMIPRoute   *nm_ip_route_new_binary          (int family,
                                               gconstpointer dest,
                                               guint prefix,
                                               gconstpointer next_hop,
-                                              guint metric,
+                                              gint64 metric,
                                               GError **error);
 
 void         nm_ip_route_ref                 (NMIPRoute  *route);
@@ -111,9 +111,9 @@ gboolean     nm_ip_route_get_next_hop_binary (NMIPRoute  *route,
                                               gpointer next_hop);
 void         nm_ip_route_set_next_hop_binary (NMIPRoute  *route,
                                               gconstpointer next_hop);
-guint32      nm_ip_route_get_metric          (NMIPRoute  *route);
+gint64       nm_ip_route_get_metric          (NMIPRoute  *route);
 void         nm_ip_route_set_metric          (NMIPRoute  *route,
-                                              guint32 metric);
+                                              gint64 metric);
 
 char       **nm_ip_route_get_attribute_names (NMIPRoute   *route);
 GVariant    *nm_ip_route_get_attribute       (NMIPRoute   *route,

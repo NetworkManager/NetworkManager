@@ -185,11 +185,11 @@ construct_ip4_items (GSList *items, GVariant *ip4_config, const char *prefix)
 			if (!next_hop)
 				next_hop = "0.0.0.0";
 
-			routetmp = g_strdup_printf ("%sIP4_ROUTE_%d=%s/%d %s %d", prefix, i,
+			routetmp = g_strdup_printf ("%sIP4_ROUTE_%d=%s/%d %s %u", prefix, i,
 			                            nm_ip_route_get_dest (route),
 			                            nm_ip_route_get_prefix (route),
 			                            next_hop,
-			                            nm_ip_route_get_metric (route));
+			                            (guint32) MAX (0, nm_ip_route_get_metric (route)));
 			items = g_slist_prepend (items, routetmp);
 		}
 		items = g_slist_prepend (items, g_strdup_printf ("%sIP4_NUM_ROUTES=%d", prefix, routes->len));
@@ -299,11 +299,11 @@ construct_ip6_items (GSList *items, GVariant *ip6_config, const char *prefix)
 			if (!next_hop)
 				next_hop = "::";
 
-			routetmp = g_strdup_printf ("%sIP6_ROUTE_%d=%s/%d %s %d", prefix, i,
+			routetmp = g_strdup_printf ("%sIP6_ROUTE_%d=%s/%d %s %u", prefix, i,
 			                            nm_ip_route_get_dest (route),
 			                            nm_ip_route_get_prefix (route),
 			                            next_hop,
-			                            nm_ip_route_get_metric (route));
+			                            (guint32) MAX (0, nm_ip_route_get_metric (route)));
 			items = g_slist_prepend (items, routetmp);
 		}
 		if (routes->len)

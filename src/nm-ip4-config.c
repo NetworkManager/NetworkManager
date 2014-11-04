@@ -178,7 +178,7 @@ nm_ip4_config_capture (int ifindex, gboolean capture_resolv_conf)
 	NMIP4Config *config;
 	NMIP4ConfigPrivate *priv;
 	guint i;
-	guint lowest_metric = G_MAXUINT;
+	guint32 lowest_metric = G_MAXUINT32;
 	guint32 old_gateway = 0;
 	gboolean has_gateway = FALSE;
 
@@ -361,9 +361,10 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIPConfig *setting, in
 		nm_ip_route_get_dest_binary (s_route, &route.network);
 		route.plen = nm_ip_route_get_prefix (s_route);
 		nm_ip_route_get_next_hop_binary (s_route, &route.gateway);
-		route.metric = nm_ip_route_get_metric (s_route);
-		if (!route.metric)
+		if (nm_ip_route_get_metric (s_route) == -1)
 			route.metric = default_route_metric;
+		else
+			route.metric = nm_ip_route_get_metric (s_route);
 		route.source = NM_IP_CONFIG_SOURCE_USER;
 
 		nm_ip4_config_add_route (config, &route);
@@ -1802,8 +1803,8 @@ get_property (GObject *object, guint prop_id,
 				g_value_array_append (array, &val);
 				g_value_unset (&val);
 
-				g_value_init (&val, G_TYPE_UINT);
-				g_value_set_uint (&val, route->metric);
+				g_value_init (&val, G_TYPE_INT64);
+				g_value_set_int64 (&val, route->metric);
 				g_value_array_append (array, &val);
 				g_value_unset (&val);
 

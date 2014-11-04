@@ -96,6 +96,24 @@ valid_prefix (int family, guint prefix, GError **error)
 	return TRUE;
 }
 
+static gboolean
+valid_metric (gint64 metric, GError **error)
+{
+	if (metric < -1 || metric > G_MAXUINT32) {
+		if (error) {
+			char buf[64];
+
+			/* We can't concatenate G_GINT64_FORMAT into a translatable string */
+			g_snprintf (buf, sizeof (buf), "%" G_GINT64_FORMAT, metric);
+			g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+			             _("Invalid routing metric '%s'"), buf);
+		}
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
 
 G_DEFINE_BOXED_TYPE (NMIPAddress, nm_ip_address, nm_ip_address_dup, nm_ip_address_unref)
 
@@ -495,7 +513,7 @@ struct NMIPRoute {
 	char *dest;
 	guint prefix;
 	char *next_hop;
-	guint32 metric;
+	gint64 metric;
 
 	GHashTable *attributes;
 };
@@ -506,7 +524,7 @@ struct NMIPRoute {
  * @dest: the IP address of the route's destination
  * @prefix: the address prefix length
  * @next_hop: (allow-none): the IP address of the next hop (or %NULL)
- * @metric: the route metric (or 0 for "default")
+ * @metric: the route metric (or -1 for "default")
  * @error: location to store error, or %NULL
  *
  * Creates a new #NMIPRoute object.
@@ -518,7 +536,7 @@ nm_ip_route_new (int family,
                  const char *dest,
                  guint prefix,
                  const char *next_hop,
-                 guint metric,
+                 gint64 metric,
                  GError **error)
 {
 	NMIPRoute *route;
@@ -530,6 +548,8 @@ nm_ip_route_new (int family,
 	if (!valid_prefix (family, prefix, error))
 		return NULL;
 	if (next_hop && !valid_ip (family, next_hop, error))
+		return NULL;
+	if (!valid_metric (metric, error))
 		return NULL;
 
 	route = g_slice_new0 (NMIPRoute);
@@ -550,7 +570,7 @@ nm_ip_route_new (int family,
  * @dest: the IP address of the route's destination
  * @prefix: the address prefix length
  * @next_hop: (allow-none): the IP address of the next hop (or %NULL)
- * @metric: the route metric (or 0 for "default")
+ * @metric: the route metric (or -1 for "default")
  * @error: location to store error, or %NULL
  *
  * Creates a new #NMIPRoute object. @dest and @next_hop (if non-%NULL) must
@@ -563,7 +583,7 @@ nm_ip_route_new_binary (int family,
                         gconstpointer dest,
                         guint prefix,
                         gconstpointer next_hop,
-                        guint metric,
+                        gint64 metric,
                         GError **error)
 {
 	NMIPRoute *route;
@@ -572,6 +592,8 @@ nm_ip_route_new_binary (int family,
 	g_return_val_if_fail (family == AF_INET || family == AF_INET6, NULL);
 
 	if (!valid_prefix (family, prefix, error))
+		return NULL;
+	if (!valid_metric (metric, error))
 		return NULL;
 
 	route = g_slice_new0 (NMIPRoute);
@@ -916,12 +938,12 @@ nm_ip_route_set_next_hop_binary (NMIPRoute *route,
  * @route: the #NMIPRoute
  *
  * Gets the route metric property of this route object; lower values
- * indicate "better" or more preferred routes; 0 indicates "default"
+ * indicate "better" or more preferred routes; -1 indicates "default"
  * (meaning NetworkManager will set it appropriately).
  *
  * Returns: the route metric
  **/
-guint32
+gint64
 nm_ip_route_get_metric (NMIPRoute *route)
 {
 	g_return_val_if_fail (route != NULL, 0);
@@ -933,15 +955,16 @@ nm_ip_route_get_metric (NMIPRoute *route)
 /**
  * nm_ip_route_set_metric:
  * @route: the #NMIPRoute
- * @metric: the route metric
+ * @metric: the route metric (or -1 for "default")
  *
  * Sets the metric property of this route object.
  **/
 void
 nm_ip_route_set_metric (NMIPRoute *route,
-                        guint32 metric)
+                        gint64 metric)
 {
 	g_return_if_fail (route != NULL);
+	g_return_if_fail (valid_metric (metric, NULL));
 
 	route->metric = metric;
 }

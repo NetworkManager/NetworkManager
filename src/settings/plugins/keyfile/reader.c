@@ -167,7 +167,9 @@ build_route (int family,
 			return NULL;
 	}
 
-	route = nm_ip_route_new (family, dest_str, plen, gateway_str, metric, &error);
+	route = nm_ip_route_new (family, dest_str, plen, gateway_str,
+	                         metric ? (gint64) metric : -1,
+	                         &error);
 	if (!route) {
 		nm_log_warn (LOGD_SETTINGS, "%s: ignoring invalid %s route: %s", __func__,
 		             family == AF_INET ? "IPv4" : "IPv6",

@@ -1158,7 +1158,7 @@ test_read_wired_static_routes (void)
 	g_assert_cmpstr (nm_ip_route_get_dest (ip4_route), ==, "11.22.33.0");
 	g_assert_cmpint (nm_ip_route_get_prefix (ip4_route), ==, 24);
 	g_assert_cmpstr (nm_ip_route_get_next_hop (ip4_route), ==, "192.168.1.5");
-	g_assert_cmpint (nm_ip_route_get_metric (ip4_route), ==, 0);
+	g_assert_cmpint (nm_ip_route_get_metric (ip4_route), ==, -1);
 
 	ip4_route = nm_setting_ip_config_get_route (s_ip4, 1);
 	g_assert (ip4_route);
@@ -1279,7 +1279,7 @@ test_read_wired_static_routes_legacy (void)
 	g_assert_cmpstr (nm_ip_route_get_dest (ip4_route), ==, "32.42.52.62");
 	g_assert_cmpint (nm_ip_route_get_prefix (ip4_route), ==, 32);
 	g_assert_cmpstr (nm_ip_route_get_next_hop (ip4_route), ==, "8.8.8.8");
-	g_assert_cmpint (nm_ip_route_get_metric (ip4_route), ==, 0);
+	g_assert_cmpint (nm_ip_route_get_metric (ip4_route), ==, -1);
 
 	/* Route #3 */
 	ip4_route = nm_setting_ip_config_get_route (s_ip4, 2);

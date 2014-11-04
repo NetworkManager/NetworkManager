@@ -1269,7 +1269,8 @@ nm_utils_ip4_routes_to_variant (GPtrArray *routes)
 			nm_ip_route_get_dest_binary (route, &array[0]);
 			array[1] = nm_ip_route_get_prefix (route);
 			nm_ip_route_get_next_hop_binary (route, &array[2]);
-			array[3] = nm_ip_route_get_metric (route);
+			/* The old routes format uses "0" for default, not "-1" */
+			array[3] = MAX (0, nm_ip_route_get_metric (route));
 
 			g_variant_builder_add (&builder, "@au",
 			                       g_variant_new_fixed_array (G_VARIANT_TYPE_UINT32,
@@ -1317,8 +1318,11 @@ nm_utils_ip4_routes_from_variant (GVariant *value)
 		}
 
 		route = nm_ip_route_new_binary (AF_INET,
-		                                &route_array[0], route_array[1],
-		                                &route_array[2], route_array[3],
+		                                &route_array[0],
+		                                route_array[1],
+		                                &route_array[2],
+		                                /* The old routes format uses "0" for default, not "-1" */
+		                                route_array[3] ? (gint64) route_array[3] : -1,
 		                                &error);
 		if (route)
 			g_ptr_array_add (routes, route);
@@ -1636,7 +1640,8 @@ nm_utils_ip6_routes_to_variant (GPtrArray *routes)
 			prefix = nm_ip_route_get_prefix (route);
 			nm_ip_route_get_next_hop_binary (route, &next_hop_bytes);
 			next_hop = g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE, &next_hop_bytes, 16, 1);
-			metric = nm_ip_route_get_metric (route);
+			/* The old routes format uses "0" for default, not "-1" */
+			metric = MAX (0, nm_ip_route_get_metric (route));
 
 			g_variant_builder_add (&builder, "(@ayu@ayu)", dest, prefix, next_hop, metric);
 		}
@@ -1695,7 +1700,9 @@ nm_utils_ip6_routes_from_variant (GVariant *value)
 			goto next;
 		}
 
-		route = nm_ip_route_new_binary (AF_INET6, dest, prefix, next_hop, metric, &error);
+		route = nm_ip_route_new_binary (AF_INET6, dest, prefix, next_hop,
+		                                metric ? (gint64) metric : -1,
+		                                &error);
 		if (route)
 			g_ptr_array_add (routes, route);
 		else {
@@ -1861,10 +1868,10 @@ nm_utils_ip_routes_to_variant (GPtrArray *routes)
 				                       "next-hop",
 				                       g_variant_new_string (nm_ip_route_get_next_hop (route)));
 			}
-			if (nm_ip_route_get_metric (route)) {
+			if (nm_ip_route_get_metric (route) != -1) {
 				g_variant_builder_add (&route_builder, "{sv}",
 				                       "metric",
-				                       g_variant_new_uint32 (nm_ip_route_get_metric (route)));
+				                       g_variant_new_uint32 ((guint32) nm_ip_route_get_metric (route)));
 			}
 
 			names = nm_ip_route_get_attribute_names (route);
@@ -1903,7 +1910,8 @@ nm_utils_ip_routes_from_variant (GVariant *value,
 	GVariantIter iter, attrs_iter;
 	GVariant *route_var;
 	const char *dest, *next_hop;
-	guint32 prefix, metric;
+	guint32 prefix, metric32;
+	gint64 metric;
 	const char *attr_name;
 	GVariant *attr_val;
 	NMIPRoute *route;
@@ -1923,8 +1931,10 @@ nm_utils_ip_routes_from_variant (GVariant *value,
 		}
 		if (!g_variant_lookup (route_var, "next-hop", "&s", &next_hop))
 			next_hop = NULL;
-		if (!g_variant_lookup (route_var, "metric", "u", &metric))
-			metric = 0;
+		if (g_variant_lookup (route_var, "metric", "u", &metric32))
+			metric = metric32;
+		else
+			metric = -1;
 
 		route = nm_ip_route_new (family, dest, prefix, next_hop, metric, &error);
 		if (!route) {

@@ -443,7 +443,7 @@ read_one_ip4_route (shvarFile *ifcfg,
 {
 	char *ip_tag, *netmask_tag, *gw_tag, *metric_tag, *value;
 	char *dest = NULL, *next_hop = NULL;
-	long prefix, metric;
+	gint64 prefix, metric;
 	gboolean success = FALSE;
 
 	g_return_val_if_fail (ifcfg != NULL, FALSE);
@@ -510,7 +510,7 @@ read_one_ip4_route (shvarFile *ifcfg,
 		}
 		g_free (value);
 	} else
-		metric = 0;
+		metric = -1;
 
 	*out_route = nm_ip_route_new (AF_INET, dest, prefix, next_hop, metric, error);
 	if (*out_route)
@@ -536,7 +536,7 @@ read_route_file_legacy (const char *filename, NMSettingIPConfig *s_ip4, GError *
 	GMatchInfo *match_info;
 	NMIPRoute *route = NULL;
 	char *dest = NULL, *prefix = NULL, *next_hop = NULL, *metric = NULL;
-	long int prefix_int, metric_int;
+	gint64 prefix_int, metric_int;
 	gboolean success = FALSE;
 
 	const char *pattern_empty = "^\\s*(\\#.*)?$";
@@ -633,7 +633,7 @@ read_route_file_legacy (const char *filename, NMSettingIPConfig *s_ip4, GError *
 
 		/* Metric */
 		g_regex_match (regex_metric, *iter, 0, &match_info);
-		metric_int = 0;
+		metric_int = -1;
 		if (g_match_info_matches (match_info)) {
 			metric = g_match_info_fetch (match_info, 1);
 			errno = 0;
@@ -745,7 +745,7 @@ read_route6_file (const char *filename, NMSettingIPConfig *s_ip6, GError **error
 	GMatchInfo *match_info;
 	NMIPRoute *route = NULL;
 	char *dest = NULL, *prefix = NULL, *next_hop = NULL, *metric = NULL;
-	long int prefix_int, metric_int;
+	gint64 prefix_int, metric_int;
 	gboolean success = FALSE;
 
 	const char *pattern_empty = "^\\s*(\\#.*)?$";
@@ -840,7 +840,7 @@ read_route6_file (const char *filename, NMSettingIPConfig *s_ip6, GError **error
 
 		/* Metric */
 		g_regex_match (regex_metric, *iter, 0, &match_info);
-		metric_int = 0;
+		metric_int = -1;
 		if (g_match_info_matches (match_info)) {
 			metric = g_match_info_fetch (match_info, 1);
 			errno = 0;

@@ -49,7 +49,7 @@ check_ip_address (NMSettingIPConfig *config, int idx, const char *address, int p
 
 static void
 check_ip_route (NMSettingIPConfig *config, int idx, const char *destination, int plen,
-                const char *next_hop, int metric)
+                const char *next_hop, gint64 metric)
 {
 	NMIPRoute *route = nm_setting_ip_config_get_route (config, idx);
 
@@ -261,17 +261,17 @@ test_read_valid_wired_connection (void)
 
 	/* IPv4 routes */
 	g_assert (nm_setting_ip_config_get_num_routes (s_ip4) == 12);
-	check_ip_route (s_ip4, 0, "5.6.7.8", 32, NULL, 0);
+	check_ip_route (s_ip4, 0, "5.6.7.8", 32, NULL, -1);
 	check_ip_route (s_ip4, 1, "1.2.3.0", 24, "2.3.4.8", 99);
-	check_ip_route (s_ip4, 2, "1.1.1.2", 12, NULL, 0);
-	check_ip_route (s_ip4, 3, "1.1.1.3", 13, NULL, 0);
-	check_ip_route (s_ip4, 4, "1.1.1.4", 14, "2.2.2.4", 0);
-	check_ip_route (s_ip4, 5, "1.1.1.5", 15, "2.2.2.5", 0);
-	check_ip_route (s_ip4, 6, "1.1.1.6", 16, "2.2.2.6", 0);
-	check_ip_route (s_ip4, 7, "1.1.1.7", 17, NULL, 0);
-	check_ip_route (s_ip4, 8, "1.1.1.8", 18, NULL, 0);
-	check_ip_route (s_ip4, 9, "1.1.1.9", 19, NULL, 0);
-	check_ip_route (s_ip4, 10, "1.1.1.10", 20, NULL, 0);
+	check_ip_route (s_ip4, 2, "1.1.1.2", 12, NULL, -1);
+	check_ip_route (s_ip4, 3, "1.1.1.3", 13, NULL, -1);
+	check_ip_route (s_ip4, 4, "1.1.1.4", 14, "2.2.2.4", -1);
+	check_ip_route (s_ip4, 5, "1.1.1.5", 15, "2.2.2.5", -1);
+	check_ip_route (s_ip4, 6, "1.1.1.6", 16, "2.2.2.6", -1);
+	check_ip_route (s_ip4, 7, "1.1.1.7", 17, NULL, -1);
+	check_ip_route (s_ip4, 8, "1.1.1.8", 18, NULL, -1);
+	check_ip_route (s_ip4, 9, "1.1.1.9", 19, NULL, -1);
+	check_ip_route (s_ip4, 10, "1.1.1.10", 20, NULL, -1);
 	check_ip_route (s_ip4, 11, "1.1.1.11", 21, NULL, 21);
 
 	/* ===== IPv6 SETTING ===== */
@@ -354,13 +354,13 @@ test_read_valid_wired_connection (void)
 
 	/* Route #1 */
 	g_assert (nm_setting_ip_config_get_num_routes (s_ip6) == 7);
-	check_ip_route (s_ip6, 0, "d:e:f:0:1:2:3:4", 64, "f:e:d:c:1:2:3:4", 0);
+	check_ip_route (s_ip6, 0, "d:e:f:0:1:2:3:4", 64, "f:e:d:c:1:2:3:4", -1);
 	check_ip_route (s_ip6, 1, "a:b:c:d::", 64, "f:e:d:c:1:2:3:4", 99);
-	check_ip_route (s_ip6, 2, "8:7:6:5:4:3:2:1", 128, NULL, 0);
+	check_ip_route (s_ip6, 2, "8:7:6:5:4:3:2:1", 128, NULL, -1);
 	check_ip_route (s_ip6, 3, "6:7:8:9:0:1:2:3", 126, NULL, 1);
 	check_ip_route (s_ip6, 4, "7:8:9:0:1:2:3:4", 125, NULL, 5);
 	check_ip_route (s_ip6, 5, "8:9:0:1:2:3:4:5", 124, NULL, 6);
-	check_ip_route (s_ip6, 6, "8:9:0:1:2:3:4:6", 123, NULL, 0);
+	check_ip_route (s_ip6, 6, "8:9:0:1:2:3:4:6", 123, NULL, -1);
 	g_object_unref (connection);
 }
 
@@ -384,7 +384,7 @@ add_one_ip_route (NMSettingIPConfig *s_ip,
                   const char *dest,
                   const char *nh,
                   guint32 prefix,
-                  guint32 metric)
+                  gint64 metric)
 {
 	NMIPRoute *route;
 	GError *error = NULL;
@@ -484,7 +484,7 @@ test_write_wired_connection (void)
 	/* Routes */
 	add_one_ip_route (s_ip4, route1, route1_nh, 24, 3);
 	add_one_ip_route (s_ip4, route2, route2_nh, 8, 1);
-	add_one_ip_route (s_ip4, route3, route3_nh, 7, 0);
+	add_one_ip_route (s_ip4, route3, route3_nh, 7, -1);
 	add_one_ip_route (s_ip4, route4, route4_nh, 6, 4);
 
 	/* DNS servers */
@@ -508,7 +508,7 @@ test_write_wired_connection (void)
 	add_one_ip_route (s_ip6, route6_1, route6_1_nh, 64, 3);
 	add_one_ip_route (s_ip6, route6_2, route6_2_nh, 56, 1);
 	add_one_ip_route (s_ip6, route6_3, route6_3_nh, 63, 5);
-	add_one_ip_route (s_ip6, route6_4, route6_4_nh, 62, 0);
+	add_one_ip_route (s_ip6, route6_4, route6_4_nh, 62, -1);
 
 	/* DNS servers */
 	nm_setting_ip_config_add_dns (s_ip6, dns6_1);
