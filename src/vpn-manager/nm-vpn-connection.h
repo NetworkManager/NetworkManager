@@ -46,9 +46,9 @@
 #define NM_VPN_CONNECTION_INTERNAL_RETRY_AFTER_FAILURE "internal-retry-after-failure"
 
 
-typedef struct {
+struct _NMVpnConnection {
 	NMActiveConnection parent;
-} NMVpnConnection;
+};
 
 typedef struct {
 	NMActiveConnectionClass parent;
