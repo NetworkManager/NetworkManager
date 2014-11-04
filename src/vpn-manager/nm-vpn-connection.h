@@ -79,6 +79,7 @@ NMVpnConnection * nm_vpn_connection_new (NMConnection *connection,
 
 void                 nm_vpn_connection_activate        (NMVpnConnection *connection);
 NMConnection *       nm_vpn_connection_get_connection  (NMVpnConnection *connection);
+const char*          nm_vpn_connection_get_connection_id (NMVpnConnection *connection);
 NMVpnConnectionState nm_vpn_connection_get_vpn_state   (NMVpnConnection *connection);
 const char *         nm_vpn_connection_get_banner      (NMVpnConnection *connection);
 

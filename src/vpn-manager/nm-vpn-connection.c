@@ -1703,6 +1703,17 @@ nm_vpn_connection_get_connection (NMVpnConnection *connection)
 	return NM_VPN_CONNECTION_GET_PRIVATE (connection)->connection;
 }
 
+const char*
+nm_vpn_connection_get_connection_id (NMVpnConnection *connection)
+{
+	NMConnection *c;
+
+	g_return_val_if_fail (NM_IS_VPN_CONNECTION (connection), NULL);
+
+	c = NM_VPN_CONNECTION_GET_PRIVATE (connection)->connection;
+	return c ? nm_connection_get_id (c) : NULL;
+}
+
 NMVpnConnectionState
 nm_vpn_connection_get_vpn_state (NMVpnConnection *connection)
 {
