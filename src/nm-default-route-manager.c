@@ -672,6 +672,34 @@ nm_default_route_manager_ip6_connection_has_default_route (NMDefaultRouteManager
 /** _ipx_get_best_device:
  * @vtable: the virtual table
  * @self: #NMDefaultRouteManager
+ **/
+static NMDevice *
+_ipx_get_best_device (const VTableIP *vtable, NMDefaultRouteManager *self)
+{
+	NMDefaultRouteManagerPrivate *priv;
+	GPtrArray *entries;
+	guint i;
+
+	g_return_val_if_fail (NM_IS_DEFAULT_ROUTE_MANAGER (self), NULL);
+
+	priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
+	entries = vtable->get_entries (priv);
+
+	for (i = 0; i < entries->len; i++) {
+		Entry *entry = g_ptr_array_index (entries, i);
+
+		if (!NM_IS_DEVICE (entry->source.pointer))
+			continue;
+
+		g_assert (!entry->never_default);
+		return entry->source.pointer;
+	}
+	return NULL;
+}
+
+/** _ipx_get_best_activating_device:
+ * @vtable: the virtual table
+ * @self: #NMDefaultRouteManager
  * @devices: list of devices to be searched. Only devices from this list will be considered
  * @fully_activated: if #TRUE, only search for devices that are fully activated. Otherwise,
  *   search if there is a best device going to be activated. In the latter case, this will
@@ -680,101 +708,81 @@ nm_default_route_manager_ip6_connection_has_default_route (NMDefaultRouteManager
  *   the same priority.
  **/
 static NMDevice *
-_ipx_get_best_device (const VTableIP *vtable, NMDefaultRouteManager *self, const GSList *devices, gboolean fully_activated, NMDevice *preferred_device)
+_ipx_get_best_activating_device (const VTableIP *vtable, NMDefaultRouteManager *self, const GSList *devices, NMDevice *preferred_device)
 {
 	NMDefaultRouteManagerPrivate *priv;
 	const GSList *iter;
 	NMDevice *best_device = NULL;
 	guint32 best_prio = G_MAXUINT32;
-	guint best_idx = G_MAXUINT;
+	NMDevice *best_activated_device;
 
 	g_return_val_if_fail (NM_IS_DEFAULT_ROUTE_MANAGER (self), NULL);
 
 	priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
 
+	best_activated_device = _ipx_get_best_device (vtable, self);
+	g_return_val_if_fail (!best_activated_device || g_slist_find ((GSList *) devices, best_activated_device), NULL);
+
 	for (iter = devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *device = NM_DEVICE (iter->data);
-		NMDeviceState state = nm_device_get_state (device);
 		guint32 prio;
-		guint idx;
 		Entry *entry;
 
-		if (   state <= NM_DEVICE_STATE_DISCONNECTED
-		    || state >= NM_DEVICE_STATE_DEACTIVATING)
-			continue;
+		entry = _entry_find_by_source (vtable->get_entries (priv), device, NULL);
 
-		if (fully_activated && state < NM_DEVICE_STATE_SECONDARIES)
-			continue;
-
-		if (!_ipx_connection_has_default_route (vtable, self, nm_device_get_connection (device)))
-			continue;
-
-		entry = _entry_find_by_source (vtable->get_entries (priv), device, &idx);
-		if (fully_activated && !entry)
-			continue;
-
-		if (entry)
+		if (entry) {
+			/* of all the device that have an entry, we already know that best_activated_device
+			 * is the best. entry cannot be better. */
+			if (entry->source.device != best_activated_device)
+				continue;
 			prio = entry->effective_metric;
-		else
+		} else {
+			NMDeviceState state = nm_device_get_state (device);
+
+			if (   state <= NM_DEVICE_STATE_DISCONNECTED
+			    || state >= NM_DEVICE_STATE_DEACTIVATING)
+				continue;
+
+			if (!_ipx_connection_has_default_route (vtable, self, nm_device_get_connection (device)))
+				continue;
+
 			prio = nm_device_get_ip4_route_metric (device);
+		}
 		prio = vtable->route_metric_normalize (prio);
 
-		if (!best_device || prio < best_prio)
-			goto NEW_BEST_DEVICE;
-
-		if (prio == best_prio) {
-			/* the devices have the same priority... which one to prefer? */
-
-			if (fully_activated) {
-				/* for @fully_activated, respect the order as from the sorted entries. */
-				if (idx < best_idx)
-					goto NEW_BEST_DEVICE;
-			} else {
-				/* for !fully_activated, prefer @preferred_device. */
-				if (preferred_device == device)
-					goto NEW_BEST_DEVICE;
-				if (preferred_device != best_device) {
-					/* if both devices are not @preferred_device, prefer
-					 * the one with an entry (or the one with lower index,
-					 * if both have an entry).
-					 *
-					 * The following is correct because if @best_device has no entry, @best_idx
-					 * is G_MAXUINT. Also, if the currenty device has no entry, @idx is G_MAXUINT. */
-					if (idx < best_idx)
-						goto NEW_BEST_DEVICE;
-				}
-			}
+		if (   !best_device
+		    || prio < best_prio
+			|| (prio == best_prio && preferred_device == device)) {
+			best_device = device;
+			best_prio = prio;
 		}
-
-		continue;
-NEW_BEST_DEVICE:
-		best_device = device;
-		best_prio = prio;
-		best_idx = idx;
 	}
 
-	if (best_device && !fully_activated) {
-		/* There's only a best activating device if the best device
-		 * among all activating and already-activated devices is a
-		 * still-activating one.
-		 */
-		if (nm_device_get_state (best_device) >= NM_DEVICE_STATE_SECONDARIES)
-			return NULL;
-	}
-
+	/* There's only a best activating device if the best device
+	 * among all activating and already-activated devices is a
+	 * still-activating one.
+	 */
+	if (best_device && nm_device_get_state (best_device) >= NM_DEVICE_STATE_SECONDARIES)
+		return NULL;
 	return best_device;
 }
 
 NMDevice *
 nm_default_route_manager_ip4_get_best_device (NMDefaultRouteManager *self, const GSList *devices, gboolean fully_activated, NMDevice *preferred_device)
 {
-	return _ipx_get_best_device (&vtable_ip4, self, devices, fully_activated, preferred_device);
+	if (fully_activated)
+		return _ipx_get_best_device (&vtable_ip4, self);
+	else
+		return _ipx_get_best_activating_device (&vtable_ip4, self, devices, preferred_device);
 }
 
 NMDevice *
 nm_default_route_manager_ip6_get_best_device (NMDefaultRouteManager *self, const GSList *devices, gboolean fully_activated, NMDevice *preferred_device)
 {
-	return _ipx_get_best_device (&vtable_ip6, self, devices, fully_activated, preferred_device);
+	if (fully_activated)
+		return _ipx_get_best_device (&vtable_ip6, self);
+	else
+		return _ipx_get_best_activating_device (&vtable_ip6, self, devices, preferred_device);
 }
 
 /***********************************************************************************/
@@ -864,7 +872,7 @@ _ipx_get_best_config (const VTableIP *vtable,
 
 	/* If no VPN connections, we use the best device instead */
 	if (!config_result) {
-		device = _ipx_get_best_device (vtable, self, nm_manager_get_devices (manager), TRUE, preferred_device);
+		device = _ipx_get_best_device (vtable, self);
 		if (device) {
 			if (VTABLE_IS_IP4)
 				config_result = nm_device_get_ip4_config (device);
