@@ -675,27 +675,26 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 	}
 
 	if (vpn) {
-		NMDevice *parent = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
-		int parent_ifindex = nm_device_get_ip_ifindex (parent);
-		NMIP4Config *parent_ip4 = nm_device_get_ip4_config (parent);
-		guint32 parent_mss = parent_ip4 ? nm_ip4_config_get_mss (parent_ip4) : 0;
 		in_addr_t int_gw = nm_vpn_connection_get_ip4_internal_gateway (vpn);
 		int mss = nm_ip4_config_get_mss (ip4_config);
 
 		/* If no VPN interface, use the parent interface */
 		if (ip_ifindex <= 0)
-			ip_ifindex = parent_ifindex;
+			ip_ifindex = nm_device_get_ip_ifindex (nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn)));
 
 		if (!nm_platform_ip4_route_add (ip_ifindex, NM_IP_CONFIG_SOURCE_VPN,
 		                                0, 0, int_gw,
 		                                NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss)) {
-			(void) nm_platform_ip4_route_add (parent_ifindex, NM_IP_CONFIG_SOURCE_VPN,
-			                                  gw_addr, 32, 0,
-			                                  NM_PLATFORM_ROUTE_METRIC_DEFAULT, parent_mss);
-			if (!nm_platform_ip4_route_add (ip_ifindex, NM_IP_CONFIG_SOURCE_VPN,
-			                                0, 0, int_gw,
-			                                NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss))
-				nm_log_err (LOGD_IP4 | LOGD_VPN, "Failed to set default route.");
+			if (int_gw) {
+				(void) nm_platform_ip4_route_add (ip_ifindex, NM_IP_CONFIG_SOURCE_VPN,
+				                                  int_gw, 32, 0,
+				                                  NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss);
+				if (!nm_platform_ip4_route_add (ip_ifindex, NM_IP_CONFIG_SOURCE_VPN,
+				                                0, 0, int_gw,
+				                                NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss))
+					nm_log_err (LOGD_IP4 | LOGD_VPN, "Failed to set IPv4 default route via VPN.");
+			} else
+				nm_log_err (LOGD_IP4 | LOGD_VPN, "Failed to set IPv4 default route via VPN.");
 		}
 
 		default_device = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
@@ -892,10 +891,6 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 	}
 
 	if (vpn) {
-		NMDevice *parent = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
-		int parent_ifindex = nm_device_get_ip_ifindex (parent);
-		NMIP6Config *parent_ip6 = nm_device_get_ip6_config (parent);
-		guint32 parent_mss = parent_ip6 ? nm_ip6_config_get_mss (parent_ip6) : 0;
 		const struct in6_addr *int_gw = nm_vpn_connection_get_ip6_internal_gateway (vpn);
 		int mss = nm_ip6_config_get_mss (ip6_config);
 
@@ -904,19 +899,21 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 
 		/* If no VPN interface, use the parent interface */
 		if (ip_ifindex <= 0)
-			ip_ifindex = parent_ifindex;
+			ip_ifindex = nm_device_get_ip_ifindex (nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn)));
 
 		if (!nm_platform_ip6_route_add (ip_ifindex, NM_IP_CONFIG_SOURCE_VPN,
 		                                in6addr_any, 0, *int_gw,
 		                                NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss)) {
-			(void) nm_platform_ip6_route_add (parent_ifindex, NM_IP_CONFIG_SOURCE_VPN,
-			                                  *gw_addr, 128, in6addr_any,
-			                                  NM_PLATFORM_ROUTE_METRIC_DEFAULT, parent_mss);
-			if (!nm_platform_ip6_route_add (ip_ifindex, NM_IP_CONFIG_SOURCE_VPN,
-			                                in6addr_any, 0, *int_gw,
-			                                NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss)) {
-				nm_log_err (LOGD_IP6 | LOGD_VPN, "Failed to set default route.");
-			}
+			if (!IN6_IS_ADDR_UNSPECIFIED (int_gw)) {
+				(void) nm_platform_ip6_route_add (ip_ifindex, NM_IP_CONFIG_SOURCE_VPN,
+				                                  *int_gw, 128, in6addr_any,
+				                                  NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss);
+				if (!nm_platform_ip6_route_add (ip_ifindex, NM_IP_CONFIG_SOURCE_VPN,
+				                                in6addr_any, 0, *int_gw,
+				                                NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss))
+					nm_log_err (LOGD_IP6 | LOGD_VPN, "Failed to set IPv6 default route via VPN.");
+			} else
+				nm_log_err (LOGD_IP6 | LOGD_VPN, "Failed to set IPv6 default route via VPN.");
 		}
 
 		default_device6 = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
