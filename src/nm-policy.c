@@ -386,12 +386,8 @@ get_best_ip4_config (NMPolicy *self,
                      NMDevice **out_device,
                      NMVpnConnection **out_vpn)
 {
-	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-
 	return nm_default_route_manager_ip4_get_best_config (nm_default_route_manager_get (),
-	                                                     priv->manager,
 	                                                     ignore_never_default,
-	                                                     priv->default_device4,
 	                                                     out_ip_iface,
 	                                                     out_ac,
 	                                                     out_device,
@@ -485,12 +481,8 @@ get_best_ip6_config (NMPolicy *self,
                      NMDevice **out_device,
                      NMVpnConnection **out_vpn)
 {
-	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-
 	return nm_default_route_manager_ip6_get_best_config (nm_default_route_manager_get (),
-	                                                     priv->manager,
 	                                                     ignore_never_default,
-	                                                     priv->default_device6,
 	                                                     out_ip_iface,
 	                                                     out_ac,
 	                                                     out_device,

@@ -790,18 +790,15 @@ nm_default_route_manager_ip6_get_best_device (NMDefaultRouteManager *self, const
 static gpointer
 _ipx_get_best_config (const VTableIP *vtable,
                       NMDefaultRouteManager *self,
-                      NMManager *manager,
                       gboolean ignore_never_default,
-                      NMDevice *preferred_device,
                       const char **out_ip_iface,
                       NMActiveConnection **out_ac,
                       NMDevice **out_device,
                       NMVpnConnection **out_vpn)
 {
 	NMDefaultRouteManagerPrivate *priv;
-	const GSList *connections, *iter;
-	NMDevice *device;
-	NMActRequest *req = NULL;
+	GPtrArray *entries;
+	guint i;
 	gpointer config_result = NULL;
 
 	g_return_val_if_fail (NM_IS_DEFAULT_ROUTE_MANAGER (self), NULL);
@@ -817,63 +814,36 @@ _ipx_get_best_config (const VTableIP *vtable,
 
 	priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
 
-	/* If a VPN connection is active, it is preferred */
-	connections = nm_manager_get_active_connections (manager);
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMActiveConnection *active = NM_ACTIVE_CONNECTION (iter->data);
-		NMVpnConnection *candidate;
-		NMConnection *tmp;
-		NMVpnConnectionState vpn_state;
+	g_return_val_if_fail (NM_IS_DEFAULT_ROUTE_MANAGER (self), NULL);
 
-		if (!NM_IS_VPN_CONNECTION (active))
-			continue;
+	priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
+	entries = vtable->get_entries (priv);
 
-		candidate = NM_VPN_CONNECTION (active);
+	for (i = 0; i < entries->len; i++) {
+		Entry *entry = g_ptr_array_index (entries, i);
 
-		tmp = nm_active_connection_get_connection (active);
-		g_assert (tmp);
+		if (!NM_IS_DEVICE (entry->source.pointer)) {
+			NMVpnConnection *vpn = NM_VPN_CONNECTION (entry->source.vpn);
 
-		vpn_state = nm_vpn_connection_get_vpn_state (candidate);
-		if (vpn_state != NM_VPN_CONNECTION_STATE_ACTIVATED)
-			continue;
-
-		if (VTABLE_IS_IP4) {
-			NMIP4Config *vpn_ip4;
-
-			vpn_ip4 = nm_vpn_connection_get_ip4_config (candidate);
-			if (!vpn_ip4)
+			if (entry->never_default && !ignore_never_default)
 				continue;
 
-			if (!ignore_never_default && nm_ip4_config_get_never_default (vpn_ip4))
-				continue;
+			if (VTABLE_IS_IP4)
+				config_result = nm_vpn_connection_get_ip4_config (vpn);
+			else
+				config_result = nm_vpn_connection_get_ip6_config (vpn);
+			g_assert (config_result);
 
-			config_result = vpn_ip4;
+			if (out_vpn)
+				*out_vpn = vpn;
+			if (out_ac)
+				*out_ac = NM_ACTIVE_CONNECTION (vpn);
+			if (out_ip_iface)
+				*out_ip_iface = nm_vpn_connection_get_ip_iface (vpn);
 		} else {
-			NMIP6Config *vpn_ip6;
+			NMDevice *device = entry->source.device;
+			NMActRequest *req;
 
-			vpn_ip6 = nm_vpn_connection_get_ip6_config (candidate);
-			if (!vpn_ip6)
-				continue;
-
-			if (!ignore_never_default && nm_ip6_config_get_never_default (vpn_ip6))
-				continue;
-
-			config_result = vpn_ip6;
-		}
-
-		if (out_vpn)
-			*out_vpn = candidate;
-		if (out_ac)
-			*out_ac = active;
-		if (out_ip_iface)
-			*out_ip_iface = nm_vpn_connection_get_ip_iface (candidate);
-		break;
-	}
-
-	/* If no VPN connections, we use the best device instead */
-	if (!config_result) {
-		device = _ipx_get_best_device (vtable, self);
-		if (device) {
 			if (VTABLE_IS_IP4)
 				config_result = nm_device_get_ip4_config (device);
 			else
@@ -889,6 +859,7 @@ _ipx_get_best_config (const VTableIP *vtable,
 			if (out_ip_iface)
 				*out_ip_iface = nm_device_get_ip_iface (device);
 		}
+		break;
 	}
 
 	return config_result;
@@ -896,9 +867,7 @@ _ipx_get_best_config (const VTableIP *vtable,
 
 NMIP4Config *
 nm_default_route_manager_ip4_get_best_config (NMDefaultRouteManager *self,
-                                              NMManager *manager,
                                               gboolean ignore_never_default,
-                                              NMDevice *preferred_device,
                                               const char **out_ip_iface,
                                               NMActiveConnection **out_ac,
                                               NMDevice **out_device,
@@ -906,9 +875,7 @@ nm_default_route_manager_ip4_get_best_config (NMDefaultRouteManager *self,
 {
 	return _ipx_get_best_config (&vtable_ip4,
 	                             self,
-	                             manager,
 	                             ignore_never_default,
-	                             preferred_device,
 	                             out_ip_iface,
 	                             out_ac,
 	                             out_device,
@@ -917,9 +884,7 @@ nm_default_route_manager_ip4_get_best_config (NMDefaultRouteManager *self,
 
 NMIP6Config *
 nm_default_route_manager_ip6_get_best_config (NMDefaultRouteManager *self,
-                                              NMManager *manager,
                                               gboolean ignore_never_default,
-                                              NMDevice *preferred_device,
                                               const char **out_ip_iface,
                                               NMActiveConnection **out_ac,
                                               NMDevice **out_device,
@@ -927,9 +892,7 @@ nm_default_route_manager_ip6_get_best_config (NMDefaultRouteManager *self,
 {
 	return _ipx_get_best_config (&vtable_ip6,
 	                             self,
-	                             manager,
 	                             ignore_never_default,
-	                             preferred_device,
 	                             out_ip_iface,
 	                             out_ac,
 	                             out_device,
