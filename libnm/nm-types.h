@@ -49,6 +49,8 @@ typedef struct _NMObject            NMObject;
 typedef struct _NMRemoteConnection  NMRemoteConnection;
 typedef struct _NMSecretAgent       NMSecretAgent;
 typedef struct _NMVpnConnection     NMVpnConnection;
+typedef struct _NMVpnEditorPlugin   NMVpnEditorPlugin;
+typedef struct _NMVpnEditor         NMVpnEditor;
 typedef struct _NMWimaxNsp          NMWimaxNsp;
 
 #endif  /* NM_TYPES_H */
