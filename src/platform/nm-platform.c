@@ -1698,7 +1698,7 @@ _rebase_relative_time_on_now (guint32 timestamp, guint32 duration, guint32 now, 
 static gboolean
 _address_get_lifetime (const NMPlatformIPAddress *address, guint32 now, guint32 padding, guint32 *out_lifetime, guint32 *out_preferred)
 {
-	gint32 lifetime, preferred;
+	guint32 lifetime, preferred;
 
 	if (address->lifetime == 0) {
 		*out_lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
