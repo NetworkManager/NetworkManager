@@ -521,6 +521,9 @@ fi
 %{_libexecdir}/nm-iface-helper
 %dir %{_libdir}/NetworkManager
 %{_libdir}/NetworkManager/libnm-settings-plugin*.so
+%if 0%{?with_nmtui}
+%exclude %{_mandir}/man1/nmtui*
+%endif
 %{_mandir}/man1/*
 %{_mandir}/man5/*
 %{_mandir}/man8/*
@@ -651,6 +654,7 @@ fi
 %{_bindir}/nmtui-edit
 %{_bindir}/nmtui-connect
 %{_bindir}/nmtui-hostname
+%{_mandir}/man1/nmtui*
 %endif
 
 %changelog

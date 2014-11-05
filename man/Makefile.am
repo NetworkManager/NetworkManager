@@ -52,6 +52,7 @@ endif
 
 configure_generated_man_pages =		\
 	nmcli.1				\
+	nmtui.1				\
 	nm-online.1			\
 	nm-system-settings.conf.5
 
@@ -81,6 +82,14 @@ DISTCLEANFILES =				\
 	nm-settings-ifcfg-rh.xml
 
 man_MANS += $(configure_generated_man_pages)
+
+links = nmtui-edit nmtui-connect nmtui-hostname
+
+install-data-hook:
+	for link in $(links); do \
+		ln -f $(DESTDIR)$(mandir)/man1/nmtui.1 $(DESTDIR)$(mandir)/man1/$$link.1; \
+	done
+
 
 if ENABLE_GTK_DOC
 man_MANS += $(docbook_generated_man_pages)
