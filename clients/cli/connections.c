@@ -7109,12 +7109,6 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 	g_weak_ref_init (&weak, con_tmp);
 	rem_con = g_weak_ref_get (&weak);
 
-	/* Merge secrets into the connection */
-	if (rem_con) {
-		update_secrets_in_connection (rem_con);
-		nm_connection_replace_settings_from_connection (connection, NM_CONNECTION (rem_con));
-	}
-
 	while (cmd_loop) {
 		/* Connection is dirty? (not saved or differs from the saved) */
 		dirty = is_connection_dirty (connection, rem_con);
@@ -8020,6 +8014,9 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
 			goto error;
 		}
+
+		/* Merge secrets into the connection */
+		update_secrets_in_connection (NM_REMOTE_CONNECTION (found_con));
 
 		/* Duplicate the connection and use that so that we need not
 		 * differentiate existing vs. new later
