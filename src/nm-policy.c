@@ -541,7 +541,6 @@ get_best_ip4_config (NMPolicy *policy,
 		NMVpnConnection *candidate;
 		NMIP4Config *vpn_ip4;
 		NMConnection *tmp;
-		NMSettingIPConfig *s_ip4;
 		NMVpnConnectionState vpn_state;
 
 		if (!NM_IS_VPN_CONNECTION (active))
@@ -560,16 +559,8 @@ get_best_ip4_config (NMPolicy *policy,
 		if (!vpn_ip4)
 			continue;
 
-		if (ignore_never_default == FALSE) {
-			/* Check for a VPN-provided config never-default */
-			if (nm_ip4_config_get_never_default (vpn_ip4))
-				continue;
-
-			/* Check the user's preference from the NMConnection */
-			s_ip4 = nm_connection_get_setting_ip4_config (tmp);
-			if (nm_setting_ip_config_get_never_default (s_ip4))
-				continue;
-		}
+		if (!ignore_never_default && nm_ip4_config_get_never_default (vpn_ip4))
+			continue;
 
 		ip4_config = vpn_ip4;
 		if (out_vpn)
@@ -752,7 +743,6 @@ get_best_ip6_config (NMPolicy *policy,
 		NMVpnConnection *candidate;
 		NMIP6Config *vpn_ip6;
 		NMConnection *tmp;
-		NMSettingIPConfig *s_ip6;
 		NMVpnConnectionState vpn_state;
 
 		if (!NM_IS_VPN_CONNECTION (active))
@@ -771,16 +761,8 @@ get_best_ip6_config (NMPolicy *policy,
 		if (!vpn_ip6)
 			continue;
 
-		if (ignore_never_default == FALSE) {
-			/* Check for a VPN-provided config never-default */
-			if (nm_ip6_config_get_never_default (vpn_ip6))
-				continue;
-
-			/* Check the user's preference from the NMConnection */
-			s_ip6 = nm_connection_get_setting_ip6_config (tmp);
-			if (nm_setting_ip_config_get_never_default (s_ip6))
-				continue;
-		}
+		if (!ignore_never_default && nm_ip6_config_get_never_default (vpn_ip6))
+			continue;
 
 		ip6_config = vpn_ip6;
 		if (out_vpn)
