@@ -633,16 +633,23 @@ get_ac_for_connection (const GPtrArray *active_cons, NMConnection *connection)
 	return ac;
 }
 
+/* Put secrets into local connection. */
 static void
-update_secrets_in_connection (NMRemoteConnection *con)
+update_secrets_in_connection (NMRemoteConnection *remote, NMConnection *local)
 {
 	GVariant *secrets;
 	int i;
+	GError *error = NULL;
 
 	for (i = 0; nmc_fields_settings_names[i].name; i++) {
-		secrets = nm_remote_connection_get_secrets (con, nmc_fields_settings_names[i].name, NULL, NULL);
+		secrets = nm_remote_connection_get_secrets (remote, nmc_fields_settings_names[i].name, NULL, NULL);
 		if (secrets) {
-			(void) nm_connection_update_secrets (NM_CONNECTION (con), NULL, secrets, NULL);
+			if (!nm_connection_update_secrets (local, NULL, secrets, &error) && error) {
+				g_printerr (_("Error updating secrets for %s: %s\n"),
+				            nmc_fields_settings_names[i].name,
+				            error->message);
+				g_clear_error (&error);
+			}
 			g_variant_unref (secrets);
 		}
 	}
@@ -1462,7 +1469,7 @@ do_connections_show (NmCli *nmc, gboolean active_only, gboolean show_secrets,
 				if (con) {
 					nmc->required_fields = profile_flds;
 					if (show_secrets)
-						update_secrets_in_connection (NM_REMOTE_CONNECTION (con));
+						update_secrets_in_connection (NM_REMOTE_CONNECTION (con), con);
 					res = nmc_connection_profile_details (con, nmc, show_secrets);
 					nmc->required_fields = NULL;
 					if (!res)
@@ -6925,6 +6932,7 @@ is_connection_dirty (NMConnection *connection, NMRemoteConnection *remote)
 {
 	return !nm_connection_compare (connection,
 	                               remote ? NM_CONNECTION (remote) : NULL,
+	                               NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS |
 	                               NM_SETTING_COMPARE_FLAG_IGNORE_TIMESTAMP);
 }
 
@@ -8283,13 +8291,13 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 			goto error;
 		}
 
-		/* Merge secrets into the connection */
-		update_secrets_in_connection (NM_REMOTE_CONNECTION (found_con));
-
 		/* Duplicate the connection and use that so that we need not
 		 * differentiate existing vs. new later
 		 */
 		connection = nm_simple_connection_new_clone (found_con);
+
+		/* Merge secrets into the connection */
+		update_secrets_in_connection (NM_REMOTE_CONNECTION (found_con), connection);
 
 		s_con = nm_connection_get_setting_connection (connection);
 		g_assert (s_con);
