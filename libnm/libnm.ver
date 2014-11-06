@@ -756,7 +756,6 @@ global:
 	nm_utils_deinit;
 	nm_utils_escape_ssid;
 	nm_utils_file_is_pkcs12;
-	nm_utils_hex2byte;
 	nm_utils_hexstr2bin;
 	nm_utils_hwaddr_atoba;
 	nm_utils_hwaddr_aton;

@@ -167,9 +167,8 @@ gboolean    nm_utils_hwaddr_matches   (gconstpointer hwaddr1,
                                        gconstpointer hwaddr2,
                                        gssize        hwaddr2_len);
 
-char *nm_utils_bin2hexstr (const char *bytes, int len, int final_len);
-int   nm_utils_hex2byte   (const char *hex);
-char *nm_utils_hexstr2bin (const char *hex, size_t len);
+char *nm_utils_bin2hexstr (gconstpointer src, gsize len, int final_len);
+GBytes *nm_utils_hexstr2bin (const char *hex);
 
 gboolean    nm_utils_iface_valid_name(const char *name);
 

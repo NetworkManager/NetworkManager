@@ -1249,6 +1249,19 @@ nm_device_get_available_connections (NMDevice *device)
 	return NM_DEVICE_GET_PRIVATE (device)->available_connections;
 }
 
+static inline guint8
+hex2byte (const char *hex)
+{
+	int a, b;
+	a = g_ascii_xdigit_value (*hex++);
+	if (a < 0)
+		return -1;
+	b = g_ascii_xdigit_value (*hex++);
+	if (b < 0)
+		return -1;
+	return (a << 4) | b;
+}
+
 static char *
 get_decoded_property (GUdevDevice *device, const char *property)
 {
@@ -1264,7 +1277,7 @@ get_decoded_property (GUdevDevice *device, const char *property)
 	n = unescaped = g_malloc0 (len + 1);
 	while (*p) {
 		if ((len >= 4) && (*p == '\\') && (*(p+1) == 'x')) {
-			*n++ = (char) nm_utils_hex2byte (p + 2);
+			*n++ = (char) hex2byte (p + 2);
 			p += 4;
 			len -= 4;
 		} else {
