@@ -99,6 +99,7 @@ guint32 nm_ip6_config_get_num_routes (const NMIP6Config *config);
 const NMPlatformIP6Route *nm_ip6_config_get_route (const NMIP6Config *config, guint32 i);
 
 const NMPlatformIP6Route *nm_ip6_config_get_direct_route_for_host (const NMIP6Config *config, const struct in6_addr *host);
+const NMPlatformIP6Address *nm_ip6_config_get_subnet_for_host (const NMIP6Config *config, const struct in6_addr *host);
 
 /* Nameservers */
 void nm_ip6_config_reset_nameservers (NMIP6Config *config);

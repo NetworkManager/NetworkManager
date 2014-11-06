@@ -1210,12 +1210,12 @@ const NMPlatformIP4Route *
 nm_ip4_config_get_direct_route_for_host (const NMIP4Config *config, guint32 host)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
-	int i;
+	guint i;
 	NMPlatformIP4Route *best_route = NULL;
 
 	g_return_val_if_fail (host, NULL);
 
-	for (i = 0; i < priv->routes->len; i++ ) {
+	for (i = 0; i < priv->routes->len; i++) {
 		NMPlatformIP4Route *item = &g_array_index (priv->routes, NMPlatformIP4Route, i);
 
 		if (item->gateway != 0)
@@ -1234,6 +1234,28 @@ nm_ip4_config_get_direct_route_for_host (const NMIP4Config *config, guint32 host
 	}
 
 	return best_route;
+}
+
+const NMPlatformIP4Address *
+nm_ip4_config_get_subnet_for_host (const NMIP4Config *config, guint32 host)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+	guint i;
+	NMPlatformIP4Address *subnet = NULL;
+
+	g_return_val_if_fail (host, NULL);
+
+	for (i = 0; i < priv->addresses->len; i++) {
+		NMPlatformIP4Address *item = &g_array_index (priv->addresses, NMPlatformIP4Address, i);
+
+		if (subnet && subnet->plen >= item->plen)
+			continue;
+		if (nm_utils_ip4_address_clear_host_address (host, item->plen) != nm_utils_ip4_address_clear_host_address (item->address, item->plen))
+			continue;
+		subnet = item;
+	}
+
+	return subnet;
 }
 
 /******************************************************************/

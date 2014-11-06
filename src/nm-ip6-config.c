@@ -1217,13 +1217,13 @@ const NMPlatformIP6Route *
 nm_ip6_config_get_direct_route_for_host (const NMIP6Config *config, const struct in6_addr *host)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
-	int i;
+	guint i;
 	struct in6_addr network2, host2;
 	NMPlatformIP6Route *best_route = NULL;
 
 	g_return_val_if_fail (host && !IN6_IS_ADDR_UNSPECIFIED (host), NULL);
 
-	for (i = 0; i < priv->routes->len; i++ ) {
+	for (i = 0; i < priv->routes->len; i++) {
 		NMPlatformIP6Route *item = &g_array_index (priv->routes, NMPlatformIP6Route, i);
 
 		if (!IN6_IS_ADDR_UNSPECIFIED (&item->gateway))
@@ -1247,6 +1247,33 @@ nm_ip6_config_get_direct_route_for_host (const NMIP6Config *config, const struct
 
 	return best_route;
 }
+
+const NMPlatformIP6Address *
+nm_ip6_config_get_subnet_for_host (const NMIP6Config *config, const struct in6_addr *host)
+{
+	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	guint i;
+	NMPlatformIP6Address *subnet = NULL;
+	struct in6_addr subnet2, host2;
+
+	g_return_val_if_fail (host && !IN6_IS_ADDR_UNSPECIFIED (host), NULL);
+
+	for (i = 0; i < priv->addresses->len; i++) {
+		NMPlatformIP6Address *item = &g_array_index (priv->addresses, NMPlatformIP6Address, i);
+
+		if (subnet && subnet->plen >= item->plen)
+			continue;
+
+		nm_utils_ip6_address_clear_host_address (&host2, host, item->plen);
+		nm_utils_ip6_address_clear_host_address (&subnet2, &item->address, item->plen);
+
+		if (IN6_ARE_ADDR_EQUAL (&subnet2, &host2))
+			subnet = item;
+	}
+
+	return subnet;
+}
+
 
 /******************************************************************/
 
