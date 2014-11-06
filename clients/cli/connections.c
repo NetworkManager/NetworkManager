@@ -6755,8 +6755,12 @@ property_edit_submenu (NmCli *nmc,
 			if (!set_result) {
 				g_print (_("Error: failed to set '%s' property: %s\n"), prop_name, tmp_err->message);
 				g_clear_error (&tmp_err);
-				if (cmdsub == NMC_EDITOR_SUB_CMD_SET)
+				if (cmdsub == NMC_EDITOR_SUB_CMD_SET) {
+					/* Block change signals and restore original value */
+					g_signal_handlers_block_matched (curr_setting, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, NULL);
 					nmc_property_set_gvalue (curr_setting, prop_name, &prop_g_value);
+					g_signal_handlers_unblock_matched (curr_setting, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, NULL);
+				}
 			}
 			if (G_IS_VALUE (&prop_g_value))
 				g_value_unset (&prop_g_value);
@@ -6773,7 +6777,9 @@ property_edit_submenu (NmCli *nmc,
 			if (!nmc_setting_set_property (curr_setting, prop_name, prop_val_user, &tmp_err)) {
 				g_print (_("Error: failed to set '%s' property: %s\n"), prop_name, tmp_err->message);
 				g_clear_error (&tmp_err);
+				g_signal_handlers_block_matched (curr_setting, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, NULL);
 				nmc_property_set_gvalue (curr_setting, prop_name, &prop_g_value);
+				g_signal_handlers_unblock_matched (curr_setting, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, NULL);
 			}
 			g_free (prop_val_user);
 			if (G_IS_VALUE (&prop_g_value))
