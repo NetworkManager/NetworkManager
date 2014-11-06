@@ -739,6 +739,12 @@ _nmcli()
                             _nmcli_compl_ARGS
                         fi
                         ;;
+                    s|st|sta|stat|statu|status| \
+                    p|pe|per|perm|permi|permis|permiss|permissi|permissio|permission|permissions)
+                        if [[ ${#words[@]} -eq 3 ]]; then
+                            _nmcli_compl_COMMAND "${words[2]}"
+                        fi
+                        ;;
                 esac
             fi
             ;;
