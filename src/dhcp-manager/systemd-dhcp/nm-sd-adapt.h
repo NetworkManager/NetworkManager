@@ -30,7 +30,9 @@
 #include <stdio.h>
 #include <errno.h>
 #include <elf.h>
+#ifdef HAVE_SYS_AUXV_H
 #include <sys/auxv.h>
+#endif
 #include <unistd.h>
 #include <sys/syscall.h>
 
