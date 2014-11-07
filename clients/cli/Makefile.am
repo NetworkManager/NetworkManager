@@ -9,6 +9,7 @@ AM_CPPFLAGS = \
 	-I${top_builddir}/libnm-core \
 	-I${top_srcdir}/libnm \
 	-I${top_builddir}/libnm \
+	-I${top_srcdir}/clients/common \
 	$(GLIB_CFLAGS) \
 	-DG_LOG_DOMAIN=\""nmcli"\" \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
@@ -28,7 +29,11 @@ nmcli_SOURCES = \
 	nmcli.c \
 	nmcli.h \
 	utils.c \
-	utils.h
+	utils.h \
+	\
+	$(srcdir)/../common/nm-secret-agent-simple.c \
+	$(srcdir)/../common/nm-secret-agent-simple.h \
+	$(NULL)
 
 nmcli_LDADD = \
 	$(GLIB_LIBS) \

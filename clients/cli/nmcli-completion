@@ -502,7 +502,8 @@ _nmcli_compl_ARGS()
             user| \
             username| \
             service| \
-            password)
+            password| \
+            passwd-file)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     return 0
                 fi
@@ -845,9 +846,9 @@ _nmcli()
                             _nmcli_compl_ARGS_CONNECTION && return 0
 
                             if [[ "$COMMAND_CONNECTION_TYPE" = "ifname" ]]; then
-                                OPTIONS=(ap nsp)
+                                OPTIONS=(ap nsp passwd-file)
                             else
-                                OPTIONS=(ifname ap nsp)
+                                OPTIONS=(ifname ap nsp passwd-file)
                             fi
                             _nmcli_compl_ARGS
                         fi

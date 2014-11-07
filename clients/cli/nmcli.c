@@ -500,6 +500,9 @@ nmc_init (NmCli *nmc)
 
 	nmc->connections = NULL;
 
+	nmc->secret_agent = NULL;
+	nmc->pwds_hash = NULL;
+
 	nmc->should_wait = FALSE;
 	nmc->nowait_flag = TRUE;
 	nmc->print_output = NMC_PRINT_NORMAL;
@@ -524,6 +527,14 @@ nmc_cleanup (NmCli *nmc)
 	if (nmc->client) g_object_unref (nmc->client);
 
 	g_string_free (nmc->return_text, TRUE);
+
+	if (nmc->secret_agent) {
+		/* Destroy secret agent if we have one. */
+		nm_secret_agent_unregister (nmc->secret_agent, NULL, NULL);
+		g_object_unref (nmc->secret_agent);
+	}
+	if (nmc->pwds_hash)
+		g_hash_table_destroy (nmc->pwds_hash);
 
 	g_free (nmc->required_fields);
 	nmc_empty_output_fields (nmc);

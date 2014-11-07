@@ -35,6 +35,7 @@
 #include "common.h"
 #include "settings.h"
 #include "connections.h"
+#include "nm-secret-agent-simple.h"
 
 /* define some prompts for connection editor */
 #define EDITOR_PROMPT_SETTING  _("Setting name? ")
@@ -250,9 +251,9 @@ usage (void)
 	              "COMMAND := { show | up | down | add | modify | edit | delete | reload | load }\n\n"
 	              "  show [--active] [[--show-secrets] [id | uuid | path | apath] <ID>] ...\n\n"
 #if WITH_WIMAX
-	              "  up [[id | uuid | path] <ID>] [ifname <ifname>] [ap <BSSID>] [nsp <name>]\n\n"
+	              "  up [[id | uuid | path] <ID>] [ifname <ifname>] [ap <BSSID>] [nsp <name>] [passwd-file <file with passwords>]\n\n"
 #else
-	              "  up [[id | uuid | path] <ID>] [ifname <ifname>] [ap <BSSID>]\n\n"
+	              "  up [[id | uuid | path] <ID>] [ifname <ifname>] [ap <BSSID>] [passwd-file <file with passwords>]\n\n"
 #endif
 	              "  down [id | uuid | path | apath] <ID>\n\n"
 	              "  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n\n"
@@ -290,19 +291,20 @@ usage_connection_up (void)
 {
 	g_printerr (_("Usage: nmcli connection up { ARGUMENTS | help }\n"
 	              "\n"
-	              "ARGUMENTS := [id | uuid | path] <ID> [ifname <ifname>] [ap <BSSID>] [nsp <name>]\n"
+	              "ARGUMENTS := [id | uuid | path] <ID> [ifname <ifname>] [ap <BSSID>] [nsp <name>] [passwd-file <file with passwords>]\n"
 	              "\n"
 	              "Activate a connection on a device. The profile to activate is identified by its\n"
 	              "name, UUID or D-Bus path.\n"
 	              "\n"
-	              "ARGUMENTS := ifname <ifname> [ap <BSSID>] [nsp <name>]\n"
+	              "ARGUMENTS := ifname <ifname> [ap <BSSID>] [nsp <name>] [passwd-file <file with passwords>]\n"
 	              "\n"
 	              "Activate a device with a connection. The connection profile is selected\n"
 	              "automatically by NetworkManager.\n"
 	              "\n"
-	              "ifname - specifies the device to active the connection on\n"
-	              "ap     - specifies AP to connect to (only valid for Wi-Fi)\n"
-	              "nsp    - specifies NSP to connect to (only valid for WiMAX)\n\n"));
+	              "ifname      - specifies the device to active the connection on\n"
+	              "ap          - specifies AP to connect to (only valid for Wi-Fi)\n"
+	              "nsp         - specifies NSP to connect to (only valid for WiMAX)\n"
+	              "passwd-file - file with password(s) required to activate the connection\n\n"));
 }
 
 static void
@@ -505,6 +507,20 @@ quit (void)
 	}
 
 	g_main_loop_quit (loop);  /* quit main loop */
+}
+
+/* for pre-filling a string to readline prompt */
+static char *pre_input_deftext;
+static int
+set_deftext (void)
+{
+	if (pre_input_deftext && rl_startup_hook) {
+		rl_insert_text (pre_input_deftext);
+		g_free (pre_input_deftext);
+		pre_input_deftext = NULL;
+		rl_startup_hook = NULL;
+	}
+	return 0;
 }
 
 static const char *
@@ -1926,16 +1942,173 @@ activate_connection_cb (GObject *client, GAsyncResult *result, gpointer user_dat
 	g_free (info);
 }
 
+/**
+ * parse_passwords:
+ * @passwd_file: file with passwords to parse
+ * @error: location to store error, or %NULL
+ *
+ * Parse passwords given in @passwd_file and insert them into a hash table.
+ * Example of @passwd_file contents:
+ *   wifi.psk:tajne heslo
+ *   802-1x.password:krakonos
+ *   802-11-wireless-security:leap-password:my leap password
+ *
+ * Returns: hash table with parsed passwords, or %NULL on an error
+ */
+static GHashTable *
+parse_passwords (const char *passwd_file, GError **error)
+{
+	GHashTable *pwds_hash;
+	char *contents = NULL;
+	gsize len = 0;
+	GError *local_err = NULL;
+	char **lines, **iter;
+	char *pwd_spec, *pwd, *prop;
+	const char *setting;
+
+	pwds_hash = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+
+	if (!passwd_file)
+		return pwds_hash;
+
+        /* Read the passwords file */
+	if (!g_file_get_contents (passwd_file, &contents, &len, &local_err)) {
+		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+		             _("failed to read passwd-file '%s': %s"),
+		             passwd_file, local_err->message);
+		g_error_free (local_err);
+		g_hash_table_destroy (pwds_hash);
+		return NULL;
+	}
+
+	lines = nmc_strsplit_set (contents, "\r\n", -1);
+	for (iter = lines; *iter; iter++) {
+		pwd = strchr (*iter, ':');
+		if (!pwd) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("missing colon in 'password' entry '%s'"), *iter);
+			goto failure;
+		}
+		*(pwd++) = '\0';
+
+		prop = strchr (*iter, '.');
+		if (!prop) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("missing dot in 'password' entry '%s'"), *iter);
+			goto failure;
+		}
+		*(prop++) = '\0';
+
+		setting = *iter;
+		while (g_ascii_isspace (*setting))
+			setting++;
+		/* Accept wifi-sec or wifi instead of cumbersome '802-11-wireless-security' */
+		if (!strcmp (setting, "wifi-sec") || !strcmp (setting, "wifi"))
+			setting = NM_SETTING_WIRELESS_SECURITY_SETTING_NAME;
+		if (nm_setting_lookup_type (setting) == G_TYPE_INVALID) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("invalid setting name in 'password' entry '%s'"), setting);
+			goto failure;
+		}
+
+		pwd_spec = g_strdup_printf ("%s.%s", setting, prop);
+		g_hash_table_insert (pwds_hash, pwd_spec, g_strdup (pwd));
+	}
+	g_strfreev (lines);
+	g_free (contents);
+	return pwds_hash;
+
+failure:
+	g_strfreev (lines);
+	g_free (contents);
+	g_hash_table_destroy (pwds_hash);
+	return NULL;
+}
+
+static gboolean
+get_secrets_from_user (const char *request_id,
+                       const char *title,
+                       const char *msg,
+                       gboolean ask,
+                       GHashTable *pwds_hash,
+                       GPtrArray *secrets)
+{
+	int i;
+
+	for (i = 0; i < secrets->len; i++) {
+		NMSecretAgentSimpleSecret *secret = secrets->pdata[i];
+		char *pwd = NULL;
+
+		/* First try to find the password in provided passwords file,
+		 * then ask user. */
+		if (pwds_hash && (pwd = g_hash_table_lookup (pwds_hash, secret->prop_name))) {
+			pwd = g_strdup (pwd);
+		} else {
+			g_print ("%s\n", msg);
+			if (ask) {
+				if (secret->value) {
+					/* Prefill the password if we have it. */
+					rl_startup_hook = set_deftext;
+					pre_input_deftext = g_strdup (secret->value);
+				}
+				pwd = nmc_readline ("%s (%s): ", secret->name, secret->prop_name);
+				if (!pwd)
+					pwd = g_strdup ("");
+			} else {
+				g_printerr (_("Warning: password for '%s' not given in 'passwd-file' "
+				              "and nmcli cannot ask without '--ask' option.\n"),
+				            secret->prop_name);
+			}
+		}
+		/* No password provided, cancel the secrets. */
+		if (!pwd)
+			return FALSE;
+		g_free (secret->value);
+		secret->value = pwd;
+	}
+	return TRUE;
+}
+
+static void
+secrets_requested (NMSecretAgentSimple *agent,
+                   const char          *request_id,
+                   const char          *title,
+                   const char          *msg,
+                   GPtrArray           *secrets,
+                   gpointer             user_data)
+{
+	NmCli *nmc = (NmCli *) user_data;
+	gboolean success = FALSE;
+
+	if (nmc->print_output == NMC_PRINT_PRETTY)
+		nmc_terminal_erase_line ();
+
+	success = get_secrets_from_user (request_id, title, msg, nmc->in_editor || nmc->ask,
+	                                 nmc->pwds_hash, secrets);
+	if (success)
+		nm_secret_agent_simple_response (agent, request_id, secrets);
+	else {
+		/* Unregister our secret agent on failure, so that another agent
+		 * may be tried */
+		if (nmc->secret_agent) {
+			nm_secret_agent_unregister (nmc->secret_agent, NULL, NULL);
+			g_clear_object (&nmc->secret_agent);
+		}
+        }
+}
+
 static gboolean
 nmc_activate_connection (NmCli *nmc,
                          NMConnection *connection,
                          const char *ifname,
                          const char *ap,
                          const char *nsp,
+                         const char *pwds,
                          GAsyncReadyCallback callback,
                          GError **error)
 {
 	ActivateConnectionInfo *info;
+	GHashTable *pwds_hash;
 	NMDevice *device = NULL;
 	const char *spec_object = NULL;
 	gboolean device_found;
@@ -1967,6 +2140,21 @@ nmc_activate_connection (NmCli *nmc,
 		return FALSE;
 	}
 
+	/* Parse passwords given in passwords file */
+	pwds_hash = parse_passwords (pwds, &local);
+	if (local) {
+		g_propagate_error (error, local);
+		return FALSE;
+	}
+	if (nmc->pwds_hash)
+		g_hash_table_destroy (nmc->pwds_hash);
+	nmc->pwds_hash = pwds_hash;
+
+	/* Create secret agent */
+	nmc->secret_agent = nm_secret_agent_simple_new ("nmcli-connect");
+	if (nmc->secret_agent)
+		g_signal_connect (nmc->secret_agent, "request-secrets", G_CALLBACK (secrets_requested), nmc);
+
 	info = g_malloc0 (sizeof (ActivateConnectionInfo));
 	info->nmc = nmc;
 	info->device = device;
@@ -1988,6 +2176,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	const char *ifname = NULL;
 	const char *ap = NULL;
 	const char *nsp = NULL;
+	const char *pwds = NULL;
 	GError *error = NULL;
 	const char *selector = NULL;
 	const char *name = NULL;
@@ -2055,6 +2244,15 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 			nsp = *argv;
 		}
 #endif
+		else if (strcmp (*argv, "passwd-file") == 0) {
+			if (next_arg (&argc, &argv) != 0) {
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
+
+			pwds = *argv;
+		}
 		else {
 			g_printerr (_("Unknown parameter: %s\n"), *argv);
 		}
@@ -2070,7 +2268,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	nmc->nowait_flag = (nmc->timeout == 0);
 	nmc->should_wait = TRUE;
 
-	if (!nmc_activate_connection (nmc, connection, ifname, ap, nsp, activate_connection_cb, &error)) {
+	if (!nmc_activate_connection (nmc, connection, ifname, ap, nsp, pwds, activate_connection_cb, &error)) {
 		g_string_printf (nmc->return_text, _("Error: %s."),
 		                 error ? error->message : _("unknown error"));
 		nmc->return_value = error ? error->code : NMC_RESULT_ERROR_CON_ACTIVATION;
@@ -5426,19 +5624,6 @@ uuid_display_hook (char **array, int len, int max_len)
 	rl_forced_update_display ();
 }
 
-static char *pre_input_deftext;
-static int
-set_deftext (void)
-{
-	if (pre_input_deftext && rl_startup_hook) {
-		rl_insert_text (pre_input_deftext);
-		g_free (pre_input_deftext);
-		pre_input_deftext = NULL;
-		rl_startup_hook = NULL;
-	}
-	return 0;
-}
-
 static char *
 gen_nmcli_cmds_menu (const char *text, int state)
 {
@@ -7654,7 +7839,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 			nmc->nowait_flag = FALSE;
 			nmc->should_wait = TRUE;
 			nmc->print_output = NMC_PRINT_PRETTY;
-			if (!nmc_activate_connection (nmc, NM_CONNECTION (rem_con), ifname, ap_nsp, ap_nsp,
+			if (!nmc_activate_connection (nmc, NM_CONNECTION (rem_con), ifname, ap_nsp, ap_nsp, NULL,
 			                              activate_connection_editor_cb, &tmp_err)) {
 				g_print (_("Error: Cannot activate connection: %s.\n"), tmp_err->message);
 				g_clear_error (&tmp_err);
