@@ -131,6 +131,8 @@ incompatible versions may produce incorrect results.
 .B \-a, \-\-ask
 When using this option \fInmcli\fP will stop and ask for any missing required
 arguments, so do not use this option for non-interactive purposes like scripts.
+This option controls, for example, whether you will be prompted for a password
+if it is required for connecting to a network.
 .TP
 .B \-w, \-\-wait <seconds>
 This option sets a timeout period for which \fInmcli\fP will wait for \fINetworkManager\fP
@@ -371,7 +373,10 @@ For 802.1X password, the line would be
 \fI802-1x.password:my 1X password\fP
 .br
 nmcli also accepts "wifi-sec" and "wifi" strings instead of "802-11-wireless-security".
-When a required password is not given, nmcli will ask for it when run with --ask.
+When NetworkManager requires a password and it is not given, nmcli will ask for it
+when run with --ask. If --ask was not passed, NetworkManager can ask another secret
+agent that may be running (typically a GUI secret agent, such as nm-applet or
+gnome-shell).
 .RE
 .RE
 .TP
