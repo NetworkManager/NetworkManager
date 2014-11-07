@@ -959,7 +959,7 @@ nm_vpn_connection_config_maybe_complete (NMVpnConnection *connection,
 		}
 	}
 
-	if (priv->connect_timeout == 0) {
+	if (priv->connect_timeout) {
 		g_source_remove (priv->connect_timeout);
 		priv->connect_timeout = 0;
 	}
