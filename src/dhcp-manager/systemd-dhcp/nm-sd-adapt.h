@@ -53,7 +53,7 @@ _slog_level_to_nm (int slevel)
 G_STMT_START { \
 	guint32 _l = _slog_level_to_nm ((level)); \
 	if (nm_logging_enabled (_l, LOGD_DHCP)) \
-		_nm_log (#file ":" #line, func, LOGD_DHCP, _l, format, ## __VA_ARGS__); \
+		_nm_log (#file ":" #line, func, _l, LOGD_DHCP, format, ## __VA_ARGS__); \
 } G_STMT_END
 
 #define log_debug(...)       log_full(LOG_DEBUG, __VA_ARGS__)
