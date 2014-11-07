@@ -35,5 +35,7 @@ NMIP6Config *nm_dhcp_utils_ip6_config_from_options (const char *iface,
 
 char *       nm_dhcp_utils_duid_to_string          (const GByteArray *duid);
 
+GBytes *     nm_dhcp_utils_client_id_string_to_bytes (const char *client_id);
+
 #endif /* __NETWORKMANAGER_DHCP_UTILS_H__ */
 

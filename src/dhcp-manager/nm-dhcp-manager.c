@@ -37,6 +37,7 @@
 #include "nm-dhcp-manager.h"
 #include "nm-dhcp-dhclient.h"
 #include "nm-dhcp-dhcpcd.h"
+#include "nm-dhcp-systemd.h"
 #include "nm-logging.h"
 #include "nm-dbus-manager.h"
 #include "nm-config.h"
@@ -313,6 +314,9 @@ get_client_type (const char *client, GError **error)
 		return NM_TYPE_DHCP_DHCPCD;
 	}
 
+	if (!strcmp (client, "internal"))
+		return NM_TYPE_DHCP_SYSTEMD;
+
 	g_set_error (error,
 	             NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
 	             _("unsupported DHCP client '%s'"), client);
@@ -537,6 +541,8 @@ nm_dhcp_manager_init (NMDhcpManager *self)
 
 	if (priv->client_type == NM_TYPE_DHCP_DHCLIENT)
 		priv->get_lease_ip_configs_func = nm_dhcp_dhclient_get_lease_ip_configs;
+	else if (priv->client_type == NM_TYPE_DHCP_SYSTEMD)
+		priv->get_lease_ip_configs_func = nm_dhcp_systemd_get_lease_ip_configs;
 	else if (priv->client_type == G_TYPE_INVALID) {
 		nm_log_warn (LOGD_DHCP, "No usable DHCP client found (%s)! DHCP configurations will fail.",
 		             error->message);
