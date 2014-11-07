@@ -30,9 +30,11 @@ CFILE_GLOB=$(top_srcdir)/libnm-core/*.c $(top_srcdir)/libnm/*.c
 
 # Header files to ignore when scanning.
 IGNORE_HFILES= \
+	common.h \
 	crypto.h \
-	nm-dbus-helpers-private.h \
+	nm-dbus-helpers.h \
 	nm-core-internal.h \
+	nm-core-types.h \
 	nm-device-private.h \
 	nm-dhcp4-config.h \
 	nm-dhcp6-config.h \
@@ -41,12 +43,13 @@ IGNORE_HFILES= \
 	nm-manager.h \
 	nm-object-cache.h \
 	nm-object-private.h \
-	nm-param-spec-dbus.h \
+	nm-property-compare.h \
 	nm-remote-connection-private.h \
 	nm-remote-settings.h \
 	nm-setting-private.h \
-	nm-types-private.h \
-	nm-utils-private.h
+	nm-types.h \
+	nm-utils-private.h \
+	nm-vpn-plugin-old.h
 
 # Images to copy into HTML directory.
 HTML_IMAGES = libnm.png

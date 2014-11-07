@@ -2233,9 +2233,9 @@ nm_utils_rsa_key_encrypt_aes (const guint8 *data,
  * nm_utils_file_is_pkcs12:
  * @filename: name of the file to test
  *
- * Utility function to find out if the @filename is in PKCS#12 format.
+ * Utility function to find out if the @filename is in PKCS#<!-- -->12 format.
  *
- * Returns: %TRUE if the file is PKCS#12, %FALSE if it is not
+ * Returns: %TRUE if the file is PKCS#<!-- -->12, %FALSE if it is not
  **/
 gboolean
 nm_utils_file_is_pkcs12 (const char *filename)

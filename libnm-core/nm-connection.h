@@ -57,6 +57,13 @@ G_BEGIN_DECLS
  * client side, and #NMSettingsConnection on the daemon side.
  */
 
+/**
+ * NMConnectionInterface:
+ * @parent: the parent interace struct
+ * @secrets_updated: emitted when the connection's secrets are updated
+ * @secrets_cleared: emitted when the connection's secrets are cleared
+ * @changed: emitted when any change to the connection's settings occurs
+ */
 typedef struct {
 	GTypeInterface parent;
 

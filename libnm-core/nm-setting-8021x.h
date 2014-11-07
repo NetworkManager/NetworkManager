@@ -37,7 +37,7 @@ G_BEGIN_DECLS
  * @NM_SETTING_802_1X_CK_FORMAT_X509: file contains an X.509 format certificate
  * @NM_SETTING_802_1X_CK_FORMAT_RAW_KEY: file contains an old-style OpenSSL PEM
  * or DER private key
- * @NM_SETTING_802_1X_CK_FORMAT_PKCS12: file contains a PKCS#12 certificate
+ * @NM_SETTING_802_1X_CK_FORMAT_PKCS12: file contains a PKCS#<!-- -->12 certificate
  * and private key
  *
  * #NMSetting8021xCKFormat values indicate the general type of a certificate

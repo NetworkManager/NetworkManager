@@ -32,6 +32,9 @@
 
 G_BEGIN_DECLS
 
+typedef struct _NMVpnEditorPlugin NMVpnEditorPlugin;
+typedef struct _NMVpnEditor NMVpnEditor;
+
 /* Plugin's factory function that returns a GObject that implements
  * NMVpnEditorPlugin.
  */
@@ -75,41 +78,44 @@ typedef enum /*< flags >*/ {
 /* D-Bus service name of the plugin's VPN service */
 #define NM_VPN_EDITOR_PLUGIN_SERVICE "service"
 
+/**
+ * NMVpnEditorPluginInterface:
+ * @g_iface: the parent interface
+ * @get_editor: returns an #NMVpnEditor, pre-filled with values from @connection
+ *   if non-%NULL.
+ * @get_capabilities: returns a bitmask of capabilities.
+ * @import_from_file: Try to import a connection from the specified path.  On
+ *   success, return a partial #NMConnection object.  On error, return %NULL and
+ *   set @error with additional information.  Note that @error can be %NULL, in
+ *   which case no additional error information should be provided.
+ * @export_to_file: Export the given connection to the specified path.  Return
+ *   %TRUE on success.  On error, return %FALSE and set @error with additional
+ *   error information.  Note that @error can be %NULL, in which case no
+ *   additional error information should be provided.
+ * @get_suggested_filename: For a given connection, return a suggested file
+ *   name.  Returned value will be %NULL or a suggested file name to be freed by
+ *   the caller.
+ *
+ * Interface for VPN editor plugins.
+ */
 typedef struct {
 	GTypeInterface g_iface;
 
-	/* Returns an #NMVpnEditor, pre-filled with values from @connection if
-	 * non-%NULL.
-	 */
 	NMVpnEditor * (*get_editor) (NMVpnEditorPlugin *plugin,
 	                             NMConnection *connection,
 	                             GError **error);
 
-	/* Plugin's capabiltity function that returns a bitmask of capabilities. */
 	NMVpnEditorPluginCapability (*get_capabilities) (NMVpnEditorPlugin *plugin);
 
-	/* Try to import a connection from the specified path.  On success, return a
-	 * partial #NMConnection object.  On error, return %NULL and set @error with
-	 * additional information.  Note that @error can be %NULL, in which case no
-	 * additional error information should be provided.
-	 */
 	NMConnection * (*import_from_file) (NMVpnEditorPlugin *plugin,
 	                                    const char *path,
 	                                    GError **error);
 
-	/* Export the given connection to the specified path.  Return %TRUE on success.
-	 * On error, return %FALSE and set @error with additional error information.
-	 * Note that @error can be %NULL, in which case no additional error information
-	 * should be provided.
-	 */
 	gboolean (*export_to_file) (NMVpnEditorPlugin *plugin,
 	                            const char *path,
 	                            NMConnection *connection,
 	                            GError **error);
 
-	/* For a given connection, return a suggested file name.  Returned value
-	 * will be %NULL or a suggested file name to be freed by the caller.
-	 */
 	char * (*get_suggested_filename) (NMVpnEditorPlugin *plugin, NMConnection *connection);
 } NMVpnEditorPluginInterface;
 
@@ -140,28 +146,33 @@ char         *nm_vpn_editor_plugin_get_suggested_filename (NMVpnEditorPlugin *pl
 #define NM_IS_VPN_EDITOR(obj)            (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_VPN_EDITOR))
 #define NM_VPN_EDITOR_GET_INTERFACE(obj) (G_TYPE_INSTANCE_GET_INTERFACE ((obj), NM_TYPE_VPN_EDITOR, NMVpnEditorInterface))
 
+/**
+ * NMVpnEditorInterface:
+ * @g_iface: the parent interface
+ * @get_widget: return the #GtkWidget for the VPN editor's UI
+ * @placeholder: not currently used
+ * @update_connection: called to save the user-entered options to the connection
+ *   object.  Should return %FALSE and set @error if the current options are
+ *   invalid.  @error should contain enough information for the plugin to
+ *   determine which UI widget is invalid at a later point in time.  For
+ *   example, creating unique error codes for what error occurred and populating
+ *   the message field of @error with the name of the invalid property.
+ * @changed: emitted when the value of a UI widget changes.  May trigger a
+ *   validity check via @update_connection to write values to the connection.
+ *
+ * Interface for editing a specific #NMConnection
+ */
 typedef struct {
 	GTypeInterface g_iface;
 
-	/* Return the #GtkWidget for the VPN editor's UI */
 	GObject * (*get_widget) (NMVpnEditor *editor);
 
 	void (*placeholder) (void);
 
-	/* Called to save the user-entered options to the connection object.  Should
-	 * return %FALSE and set @error if the current options are invalid.  @error
-	 * should contain enough information for the plugin to determine which UI
-	 * widget is invalid at a later point in time.  For example, creating unique
-	 * error codes for what error occurred and populating the message field
-	 * of @error with the name of the invalid property.
-	 */
 	gboolean (*update_connection) (NMVpnEditor *editor,
 	                               NMConnection *connection,
 	                               GError **error);
 
-	/* Emitted when the value of a UI widget changes.  May trigger a validity
-	 * check via update_connection() to write values to the connection.
-	 */
 	void (*changed) (NMVpnEditor *editor);
 } NMVpnEditorInterface;
 
