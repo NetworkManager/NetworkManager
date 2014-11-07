@@ -1825,7 +1825,9 @@ dispose (GObject *object)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
 
+	g_signal_handlers_disconnect_by_data (priv->manager, object);
 	g_clear_object (&priv->manager);
+	g_signal_handlers_disconnect_by_data (priv->settings, object);
 	g_clear_object (&priv->settings);
 
 	G_OBJECT_CLASS (nm_client_parent_class)->dispose (object);
