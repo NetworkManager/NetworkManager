@@ -374,7 +374,7 @@ get_leasefile_path (const char *iface, const char *uuid, gboolean ipv6)
 	                        iface);
 }
 
-GSList *
+static GSList *
 nm_dhcp_systemd_get_lease_ip_configs (const char *iface,
                                       const char *uuid,
                                       gboolean ipv6)
@@ -400,6 +400,28 @@ nm_dhcp_systemd_get_lease_ip_configs (const char *iface,
 }
 
 /************************************************************/
+
+static void
+_save_client_id (NMDhcpSystemd *self,
+                 uint8_t type,
+                 const uint8_t *client_id,
+                 size_t len)
+{
+	gs_unref_bytes GBytes *b = NULL;
+	gs_free char *buf = NULL;
+
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (client_id != NULL);
+	g_return_if_fail (len > 0);
+
+	if (!nm_dhcp_client_get_client_id (NM_DHCP_CLIENT (self))) {
+		buf = g_malloc (len + 1);
+		buf[0] = type;
+		memcpy (buf + 1, client_id, len);
+		b = g_bytes_new (buf, len + 1);
+		nm_dhcp_client_set_client_id (NM_DHCP_CLIENT (self), b);
+	}
+}
 
 static void
 bound4_handle (NMDhcpSystemd *self)
@@ -428,8 +450,16 @@ bound4_handle (NMDhcpSystemd *self)
 	                                  TRUE,
 	                                  &error);
 	if (ip4_config) {
+		const uint8_t *client_id = NULL;
+		size_t client_id_len = 0;
+		uint8_t type = 0;
+
 		add_requests_to_options (options, dhcp4_requests);
 		sd_dhcp_lease_save (lease, priv->lease_file);
+
+		client_id = sd_dhcp_client_get_client_id(priv->client4, &type, &client_id_len);
+		if (client_id)
+			_save_client_id (self, type, client_id, client_id_len);
 
 		nm_dhcp_client_set_state (NM_DHCP_CLIENT (self),
 		                          NM_DHCP_STATE_BOUND,
@@ -485,18 +515,17 @@ get_arp_type (const GByteArray *hwaddr)
 }
 
 static gboolean
-ip4_start (NMDhcpClient *client,
-           const char *dhcp_client_id,
-           const char *dhcp_anycast_addr,
-           const char *hostname)
+ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last_ip4_address)
 {
 	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (client);
 	const char *iface = nm_dhcp_client_get_iface (client);
 	const GByteArray *hwaddr;
 	sd_dhcp_lease *lease = NULL;
+	GBytes *override_client_id;
 	const uint8_t *client_id = NULL;
 	size_t client_id_len = 0;
-	struct in_addr last_addr;
+	struct in_addr last_addr = { 0 };
+	const char *hostname;
 	int r, i;
 
 	g_assert (priv->client4 == NULL);
@@ -549,36 +578,38 @@ ip4_start (NMDhcpClient *client,
 
 	sd_dhcp_lease_load (priv->lease_file, &lease);
 
-	if (lease) {
-		r = sd_dhcp_lease_get_address (lease, &last_addr);
-		if (r == 0) {
-			r = sd_dhcp_client_set_request_address (priv->client4, &last_addr);
-			if (r < 0) {
-				nm_log_warn (LOGD_DHCP4, "(%s): failed to set last IPv4 address (%d)", iface, r);
-				goto error;
-			}
+	if (last_ip4_address)
+		inet_pton (AF_INET, last_ip4_address, &last_addr);
+	else if (lease)
+		sd_dhcp_lease_get_address (lease, &last_addr);
+
+	if (last_addr.s_addr) {
+		r = sd_dhcp_client_set_request_address (priv->client4, &last_addr);
+		if (r < 0) {
+			nm_log_warn (LOGD_DHCP4, "(%s): failed to set last IPv4 address (%d)", iface, r);
+			goto error;
 		}
 	}
 
-	if (dhcp_client_id) {
-		gs_unref_bytes GBytes *b = NULL;
-
-		b = nm_dhcp_utils_client_id_string_to_bytes (dhcp_client_id);
-		if (b) {
-			client_id = (const guint8 *) g_bytes_get_data (b, &client_id_len);
-			g_assert (client_id && client_id_len);
-			sd_dhcp_client_set_client_id (priv->client4,
-			                              client_id[0],
-			                              client_id + 1,
-			                              client_id_len - 1);
-		}
-	} else {
+	override_client_id = nm_dhcp_client_get_client_id (client);
+	if (override_client_id) {
+		client_id = g_bytes_get_data (override_client_id, &client_id_len);
+		g_assert (client_id && client_id_len);
+		sd_dhcp_client_set_client_id (priv->client4,
+		                              client_id[0],
+		                              client_id + 1,
+		                              client_id_len - 1);
+	} else if (lease) {
 		r = sd_dhcp_lease_get_client_id (lease, &client_id, &client_id_len);
 		if (r == 0 && client_id_len) {
 			sd_dhcp_client_set_client_id (priv->client4,
 			                              client_id[0],
 			                              client_id + 1,
 			                              client_id_len - 1);
+			_save_client_id (NM_DHCP_SYSTEMD (client),
+			                 client_id[0],
+			                 client_id + 1,
+			                 client_id_len - 1);
 		}
 	}
 
@@ -591,6 +622,7 @@ ip4_start (NMDhcpClient *client,
 			sd_dhcp_client_set_request_option (priv->client4, dhcp4_requests[i].num);
 	}
 
+	hostname = nm_dhcp_client_get_hostname (client);
 	if (hostname) {
 		r = sd_dhcp_client_set_hostname (priv->client4, hostname);
 		if (r < 0) {
@@ -653,7 +685,6 @@ dhcp6_event_cb (sd_dhcp6_client *client, int event, gpointer user_data)
 static gboolean
 ip6_start (NMDhcpClient *client,
            const char *dhcp_anycast_addr,
-           const char *hostname,
            gboolean info_only,
            NMSettingIP6ConfigPrivacy privacy,
            const GByteArray *duid)
@@ -806,5 +837,15 @@ nm_dhcp_systemd_class_init (NMDhcpSystemdClass *sdhcp_class)
 	client_class->ip4_start = ip4_start;
 	client_class->ip6_start = ip6_start;
 	client_class->stop = stop;
+}
+
+static void __attribute__((constructor))
+register_dhcp_dhclient (void)
+{
+	g_type_init ();
+	_nm_dhcp_client_register (NM_TYPE_DHCP_SYSTEMD,
+	                          "internal",
+	                          NULL,
+	                          nm_dhcp_systemd_get_lease_ip_configs);
 }
 

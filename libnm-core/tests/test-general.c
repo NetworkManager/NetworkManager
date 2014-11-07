@@ -3550,6 +3550,41 @@ test_setting_ip6_gateway (void)
 	g_object_unref (conn);
 }
 
+typedef struct {
+	const char *str;
+	const guint8 expected[20];
+	const guint expected_len;
+} HexItem;
+
+static void
+test_hexstr2bin (void)
+{
+	static const HexItem items[] = {
+		{ "aaBBCCddDD10496a",     { 0xaa, 0xbb, 0xcc, 0xdd, 0xdd, 0x10, 0x49, 0x6a }, 8 },
+		{ "aa:bb:cc:dd:10:49:6a", { 0xaa, 0xbb, 0xcc, 0xdd, 0x10, 0x49, 0x6a },       7 },
+		{ "0xccddeeff",           { 0xcc, 0xdd, 0xee, 0xff },                         4 },
+		{ "1:2:66:77:80",         { 0x01, 0x02, 0x66, 0x77, 0x80 },                   5 },
+		{ "e",                    { 0x0e },                                           1 },
+		{ "aabb1199:" },
+		{ ":aabb1199" },
+		{ "aabb$$dd" },
+		{ "aab:ccc:ddd" },
+		{ "aab::ccc:ddd" },
+	};
+	GBytes *b;
+	guint i;
+
+	for (i = 0; i < G_N_ELEMENTS (items); i++) {
+		b = nm_utils_hexstr2bin (items[i].str);
+		if (items[i].expected_len) {
+			g_assert (b);
+			g_assert_cmpint (g_bytes_get_size (b), ==, items[i].expected_len);
+			g_assert (memcmp (g_bytes_get_data (b, NULL), items[i].expected, g_bytes_get_size (b)) == 0);
+		} else
+			g_assert (b == NULL);
+	}
+}
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -3640,6 +3675,8 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_setting_802_1x_changed_signal", test_setting_802_1x_changed_signal);
 	g_test_add_func ("/core/general/test_setting_ip4_gateway", test_setting_ip4_gateway);
 	g_test_add_func ("/core/general/test_setting_ip6_gateway", test_setting_ip6_gateway);
+
+	g_test_add_func ("/core/general/hexstr2bin", test_hexstr2bin);
 
 	return g_test_run ();
 }

@@ -48,7 +48,10 @@ AM_CPPFLAGS =				\
 # primarily for its side effect of removing duplicates.
 AM_CPPFLAGS += $(foreach d,$(sort $(dir $(libNetworkManager_la_SOURCES))),-I$(top_srcdir)/src/$d)
 
-noinst_LTLIBRARIES = libNetworkManager.la libsystemd-dhcp.la
+noinst_LTLIBRARIES = \
+	libNetworkManager.la \
+	libnm-iface-helper.la \
+	libsystemd-dhcp.la
 
 ######################
 # libsystemd-dhcp
@@ -124,6 +127,9 @@ sbin_PROGRAMS = NetworkManager
 
 NetworkManager_SOURCES = \
 	$(nm_device_sources) $(nm_device_headers) \
+	$(nm_dhcp_client_sources) $(nm_dhcp_client_headers) \
+	main-utils.c \
+	main-utils.h \
 	main.c
 
 NetworkManager_LDADD = libNetworkManager.la
@@ -153,8 +159,21 @@ nm_device_headers = \
 	devices/nm-device-vlan.h \
 	devices/nm-device-vxlan.h
 
+nm_dhcp_client_sources = \
+	dhcp-manager/nm-dhcp-dhclient.c \
+	dhcp-manager/nm-dhcp-dhclient-utils.c \
+	dhcp-manager/nm-dhcp-dhcpcd.c \
+	dhcp-manager/nm-dhcp-systemd.c
+
+nm_dhcp_client_headers = \
+	dhcp-manager/nm-dhcp-dhclient.h \
+	dhcp-manager/nm-dhcp-dhclient-utils.h \
+	dhcp-manager/nm-dhcp-dhcpcd.h \
+	dhcp-manager/nm-dhcp-systemd.h
+
 nm_sources = \
 	$(nm_device_headers) \
+	$(nm_dhcp_client_headers) \
 	devices/nm-device.c \
 	devices/nm-device.h \
 	devices/nm-device-ethernet-utils.c \
@@ -170,14 +189,8 @@ nm_sources = \
 	dhcp-manager/nm-dhcp-client.h \
 	dhcp-manager/nm-dhcp-utils.c \
 	dhcp-manager/nm-dhcp-utils.h \
-	dhcp-manager/nm-dhcp-dhclient.c \
-	dhcp-manager/nm-dhcp-dhclient.h \
-	dhcp-manager/nm-dhcp-dhclient-utils.c \
-	dhcp-manager/nm-dhcp-dhclient-utils.h \
-	dhcp-manager/nm-dhcp-dhcpcd.c \
-	dhcp-manager/nm-dhcp-dhcpcd.h \
-	dhcp-manager/nm-dhcp-systemd.h \
-	dhcp-manager/nm-dhcp-systemd.c \
+	dhcp-manager/nm-dhcp-listener.c \
+	dhcp-manager/nm-dhcp-listener.h \
 	dhcp-manager/nm-dhcp-manager.c \
 	dhcp-manager/nm-dhcp-manager.h \
 	\
@@ -445,6 +458,86 @@ libNetworkManager_la_LIBADD += $(LIBSOUP_LIBS)
 endif
 
 NetworkManager_LDFLAGS = -rdynamic
+
+######################
+
+libnm_iface_helper_la_SOURCES = \
+	dhcp-manager/nm-dhcp-client.c \
+	dhcp-manager/nm-dhcp-client.h \
+	dhcp-manager/nm-dhcp-utils.c \
+	dhcp-manager/nm-dhcp-utils.h \
+	dhcp-manager/nm-dhcp-manager.c \
+	dhcp-manager/nm-dhcp-manager.h \
+	\
+	platform/nm-linux-platform.c \
+	platform/nm-linux-platform.h \
+	platform/nm-platform.c \
+	platform/nm-platform.h \
+	platform/wifi/wifi-utils-nl80211.c \
+	platform/wifi/wifi-utils-nl80211.h \
+	platform/wifi/wifi-utils-private.h \
+	platform/wifi/wifi-utils.c \
+	platform/wifi/wifi-utils.h \
+	\
+	rdisc/nm-fake-rdisc.c \
+	rdisc/nm-fake-rdisc.h \
+	rdisc/nm-lndp-rdisc.c \
+	rdisc/nm-lndp-rdisc.h \
+	rdisc/nm-rdisc.c \
+	rdisc/nm-rdisc.h \
+	\
+	nm-ip4-config.c \
+	nm-ip4-config.h \
+	nm-ip6-config.c \
+	nm-ip6-config.h \
+	\
+	nm-enum-types.c \
+	nm-enum-types.h \
+	nm-logging.c \
+	nm-logging.h \
+	nm-posix-signals.c \
+	nm-posix-signals.h \
+	NetworkManagerUtils.c \
+	NetworkManagerUtils.h
+
+if WITH_WEXT
+libnm_iface_helper_la_SOURCES += \
+	platform/wifi/wifi-utils-wext.c \
+	platform/wifi/wifi-utils-wext.h
+endif
+
+libnm_iface_helper_la_LIBADD = \
+	$(top_builddir)/libnm-core/libnm-core.la \
+	libsystemd-dhcp.la \
+	$(DBUS_LIBS) \
+	$(GLIB_LIBS) \
+	$(GUDEV_LIBS) \
+	$(LIBNL_LIBS) \
+	$(LIBNDP_LIBS) \
+	$(LIBDL) \
+	$(LIBM)
+
+libexec_PROGRAMS = nm-iface-helper
+
+nm_iface_helper_SOURCES = \
+	dhcp-manager/nm-dhcp-systemd.h \
+	dhcp-manager/nm-dhcp-systemd.c \
+	nm-iface-helper.c \
+	main-utils.c \
+	main-utils.h
+
+nm_iface_helper_LDADD = \
+	$(top_builddir)/libnm-core/libnm-core.la \
+	libsystemd-dhcp.la \
+	libnm-iface-helper.la \
+	$(DBUS_LIBS) \
+	$(GLIB_LIBS) \
+	$(GUDEV_LIBS) \
+	$(LIBNL_LIBS) \
+	$(LIBNDP_LIBS) \
+	$(LIBM)
+
+nm_iface_helper_LDFLAGS = -rdynamic
 
 ######################
 

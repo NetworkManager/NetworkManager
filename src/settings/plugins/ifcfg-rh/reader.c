@@ -3224,7 +3224,6 @@ make_wireless_setting (shvarFile *ifcfg,
                        GError **error)
 {
 	NMSettingWireless *s_wireless;
-	GBytes *bytes = NULL;
 	char *value = NULL;
 	gint64 chan = 0;
 
@@ -3256,19 +3255,19 @@ make_wireless_setting (shvarFile *ifcfg,
 
 	value = svGetValue (ifcfg, "ESSID", TRUE);
 	if (value) {
-		gsize ssid_len = 0, value_len = strlen (value);
-		char *p = value, *tmp;
-		char buf[33];
+		GBytes *bytes = NULL;
+		gsize ssid_len = 0;
+		gsize value_len = strlen (value);
 
-		ssid_len = value_len;
 		if (   (value_len >= 2)
 		    && (value[0] == '"')
 		    && (value[value_len - 1] == '"')) {
 			/* Strip the quotes and unescape */
-			p = value + 1;
+			char *p = value + 1;
+
 			value[value_len - 1] = '\0';
 			svUnescape (p);
-			ssid_len = strlen (p);
+			bytes = g_bytes_new (p, strlen (p));
 		} else if ((value_len > 2) && (strncmp (value, "0x", 2) == 0)) {
 			/* Hex representation */
 			if (value_len % 2) {
@@ -3279,34 +3278,27 @@ make_wireless_setting (shvarFile *ifcfg,
 				goto error;
 			}
 
-			p = value + 2;
-			while (*p) {
-				if (!g_ascii_isxdigit (*p)) {
-					g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-					             "Invalid SSID '%s' character (looks like hex SSID but '%c' isn't a hex digit)",
-					             value, *p);
-					g_free (value);
-					goto error;
-				}
-				p++;
+			bytes = nm_utils_hexstr2bin (value);
+			if (!bytes) {
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+				             "Invalid SSID '%s' (looks like hex SSID but isn't)",
+				             value);
+				g_free (value);
+				goto error;
 			}
+		} else
+			bytes = g_bytes_new (value, value_len);
 
-			tmp = nm_utils_hexstr2bin (value + 2, value_len - 2);
-			ssid_len  = (value_len - 2) / 2;
-			memcpy (buf, tmp, ssid_len);
-			p = &buf[0];
-			g_free (tmp);
-		}
-
+		ssid_len = g_bytes_get_size (bytes);
 		if (ssid_len > 32 || ssid_len == 0) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid SSID '%s' (size %zu not between 1 and 32 inclusive)",
 			             value, ssid_len);
+			g_bytes_unref (bytes);
 			g_free (value);
 			goto error;
 		}
 
-		bytes = g_bytes_new (p, ssid_len);
 		g_object_set (s_wireless, NM_SETTING_WIRELESS_SSID, bytes, NULL);
 		g_bytes_unref (bytes);
 		g_free (value);

@@ -126,6 +126,7 @@ libnm/nm-vpn-plugin-old.c
 policy/org.freedesktop.NetworkManager.policy.in.in
 src/NetworkManagerUtils.c
 src/main.c
+src/main-utils.c
 src/dhcp-manager/nm-dhcp-dhclient.c
 src/dhcp-manager/nm-dhcp-dhclient-utils.c
 src/dhcp-manager/nm-dhcp-manager.c
@@ -146,6 +147,7 @@ src/devices/wifi/nm-wifi-ap-utils.c
 src/devices/wimax/nm-device-wimax.c
 src/devices/wwan/nm-modem-broadband.c
 src/nm-config.c
+src/nm-iface-helper.c
 src/nm-logging.c
 src/nm-manager.c
 src/nm-sleep-monitor-systemd.c

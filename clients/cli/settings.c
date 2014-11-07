@@ -2343,7 +2343,7 @@ nmc_property_set_byte_array (NMSetting *setting, const char *prop, const char *v
 	char *val_strip;
 	const char *delimiters = " \t,";
 	long int val_int;
-	char *bin;
+	GBytes *bytes;
 	GByteArray *array = NULL;
 	gboolean success = TRUE;
 
@@ -2352,11 +2352,9 @@ nmc_property_set_byte_array (NMSetting *setting, const char *prop, const char *v
 	val_strip = g_strstrip (g_strdup (val));
 
 	/* First try hex string in the format of AAbbCCDd */
-	bin = nm_utils_hexstr2bin (val_strip, strlen (val_strip));
-	if (bin) {
-		array = g_byte_array_sized_new (strlen (val_strip)/2);
-		g_byte_array_append (array, (const guint8 *) bin, strlen (val_strip)/2);
-		g_free (bin);
+	bytes = nm_utils_hexstr2bin (val_strip);
+	if (bytes) {
+		array = g_bytes_unref_to_array (bytes);
 		goto done;
 	}
 

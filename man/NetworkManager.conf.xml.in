@@ -3,7 +3,7 @@
 "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
 
 <!--
-Copyright (C) 2010 - 2013 Red Hat, Inc.
+Copyright 2010 - 2014 Red Hat, Inc.
 -->
 
 <refentry id="NetworkManager.conf">
@@ -195,6 +195,28 @@ Copyright (C) 2010 - 2013 Red Hat, Inc.
 	    Note that the "carrier" property of NMDevices and device D-Bus
 	    interfaces will still reflect the actual device state; it's just
 	    that NetworkManager will not make use of that information.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><varname>configure-and-quit</varname></term>
+	<listitem>
+	  <para>
+	    When set to <literal>true</literal>, NetworkManager quits after
+	    performing initial network configuration but spawns small helpers
+	    to preserve DHCP leases and IPv6 addresses.  This is useful in
+	    environments where network setup is more or less static or it is
+	    desirable to save process time but still handle some dynamic
+	    configurations.  When this option is <literal>true</literal>,
+	    network configuration for WiFi, WWAN, Bluetooth, ADSL, and PPPoE
+	    interfaces cannot be preserved due to their use of external
+	    services, and these devices will be deconfigured when NetworkManager
+	    quits even though other interface's configuration may be preserved.
+	    The default value is <literal>false</literal>, meaning that
+	    NetworkManager will continue running after initial network
+	    configuration and continue responding to system and hardware events,
+	    D-Bus requests, and user commands.
 	  </para>
 	</listitem>
       </varlistentry>

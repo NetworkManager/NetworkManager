@@ -43,8 +43,16 @@ connection_id_from_ifnet_name (const char *conn_name)
 	int name_len = strlen (conn_name);
 
 	/* Convert a hex-encoded conn_name (only used for wifi SSIDs) to human-readable one */
-	if ((name_len > 2) && (g_str_has_prefix (conn_name, "0x")))
-		return nm_utils_hexstr2bin (conn_name + 2, name_len - 2);
+	if ((name_len > 2) && (g_str_has_prefix (conn_name, "0x"))) {
+		GBytes *bytes = nm_utils_hexstr2bin (conn_name);
+		char *buf;
+
+		if (bytes) {
+			buf = g_strndup (g_bytes_get_data (bytes, NULL), g_bytes_get_size (bytes));
+			g_bytes_unref (bytes);
+			return buf;
+		}
+	}
 
 	return g_strdup (conn_name);
 }
@@ -882,7 +890,6 @@ make_wireless_connection_setting (const char *conn_name,
                                   NMSetting8021x **s_8021x,
                                   GError **error)
 {
-	GBytes *bytes;
 	const char *mac = NULL;
 	NMSettingWireless *wireless_setting = NULL;
 	gboolean adhoc = FALSE;
@@ -913,9 +920,8 @@ make_wireless_connection_setting (const char *conn_name,
 
 	/* handle ssid (hex and ascii) */
 	if (conn_name) {
+		GBytes *bytes;
 		gsize ssid_len = 0, value_len = strlen (conn_name);
-		const char *p;
-		char *tmp, *converted = NULL;
 
 		ssid_len = value_len;
 		if ((value_len > 2) && (g_str_has_prefix (conn_name, "0x"))) {
@@ -926,32 +932,27 @@ make_wireless_connection_setting (const char *conn_name,
 					     conn_name);
 				goto error;
 			}
-			// ignore "0x"
-			p = conn_name + 2;
-			if (!is_hex (p)) {
+
+			bytes = nm_utils_hexstr2bin (conn_name);
+			if (!bytes) {
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-					     "Invalid SSID '%s' character (looks like hex SSID but '%c' isn't a hex digit)",
-					     conn_name, *p);
+				             "Invalid SSID '%s' (looks like hex SSID but isn't)",
+				             conn_name);
 				goto error;
-
 			}
-			tmp = nm_utils_hexstr2bin (p, value_len - 2);
-			ssid_len = (value_len - 2) / 2;
-			converted = g_malloc0 (ssid_len + 1);
-			memcpy (converted, tmp, ssid_len);
-			g_free (tmp);
-		}
+		} else
+			bytes = g_bytes_new (conn_name, value_len);
 
+		ssid_len = g_bytes_get_size (bytes);
 		if (ssid_len > 32 || ssid_len == 0) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				     "Invalid SSID '%s' (size %zu not between 1 and 32 inclusive)",
 				     conn_name, ssid_len);
 			goto error;
 		}
-		bytes = g_bytes_new (converted ? converted : conn_name, ssid_len);
+
 		g_object_set (wireless_setting, NM_SETTING_WIRELESS_SSID, bytes, NULL);
 		g_bytes_unref (bytes);
-		g_free (converted);
 	} else {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "Missing SSID");
@@ -1095,7 +1096,7 @@ add_one_wep_key (const char *ssid,
 
 		}
 
-		converted = nm_utils_bin2hexstr (tmp, strlen (tmp), strlen (tmp) * 2);
+		converted = nm_utils_bin2hexstr (tmp, strlen (tmp), -1);
 		g_free (tmp);
 	} else {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,

@@ -33,6 +33,7 @@
 #include "nm-glib-compat.h"
 #include "nm-setting-private.h"
 #include "crypto.h"
+#include "gsystem-local-alloc.h"
 
 #include "nm-setting-bond.h"
 #include "nm-setting-bridge.h"
@@ -2100,7 +2101,7 @@ nm_utils_rsa_key_encrypt_helper (const char *cipher,
 	if (!in_password) {
 		if (!crypto_randomize (pw_buf, sizeof (pw_buf), error))
 			return NULL;
-		in_password = tmp_password = nm_utils_bin2hexstr ((const char *) pw_buf, sizeof (pw_buf), -1);
+		in_password = tmp_password = nm_utils_bin2hexstr (pw_buf, sizeof (pw_buf), -1);
 	}
 
 	if (g_strcmp0 (cipher, CIPHER_AES_CBC) == 0)
@@ -2124,7 +2125,7 @@ nm_utils_rsa_key_encrypt_helper (const char *cipher,
 	g_string_append (pem, "Proc-Type: 4,ENCRYPTED\n");
 
 	/* Convert the salt to a hex string */
-	tmp = nm_utils_bin2hexstr ((const char *) salt, salt_len, salt_len * 2);
+	tmp = nm_utils_bin2hexstr (salt, salt_len, salt_len * 2);
 	g_string_append_printf (pem, "DEK-Info: %s,%s\n\n", cipher, tmp);
 	g_free (tmp);
 
@@ -2876,13 +2877,13 @@ _nm_utils_hwaddr_from_dbus (GVariant *dbus_value,
 
 /**
  * nm_utils_bin2hexstr:
- * @bytes: an array of bytes
+ * @src: an array of bytes
  * @len: the length of the @bytes array
  * @final_len: an index where to cut off the returned string, or -1
  *
- * Converts a byte-array @bytes into a hexadecimal string.
- * If @final_len is greater than -1, the returned string is terminated at
- * that index (returned_string[final_len] == '\0'),
+ * Converts the byte array @src into a hexadecimal string. If @final_len is
+ * greater than -1, the returned string is terminated at that index
+ * (returned_string[final_len] == '\0'),
  *
  * Return value: (transfer full): the textual form of @bytes
  */
@@ -2891,9 +2892,10 @@ _nm_utils_hwaddr_from_dbus (GVariant *dbus_value,
  *  copyright Red Hat, Inc. under terms of the LGPL.
  */
 char *
-nm_utils_bin2hexstr (const char *bytes, int len, int final_len)
+nm_utils_bin2hexstr (gconstpointer src, gsize len, int final_len)
 {
 	static char hex_digits[] = "0123456789abcdef";
+	const guint8 *bytes = src;
 	char *result;
 	int i;
 	gsize buflen = (len * 2) + 1;
@@ -2918,64 +2920,61 @@ nm_utils_bin2hexstr (const char *bytes, int len, int final_len)
 	return result;
 }
 
-/* From hostap, Copyright (c) 2002-2005, Jouni Malinen <jkmaline@cc.hut.fi> */
-/**
- * nm_utils_hex2byte:
- * @hex: a string representing a hex byte
- *
- * Converts a hex string (2 characters) into its byte representation.
- *
- * Return value: a byte, or -1 if @hex doesn't represent a hex byte
- */
-int
-nm_utils_hex2byte (const char *hex)
-{
-	int a, b;
-	a = g_ascii_xdigit_value (*hex++);
-	if (a < 0)
-		return -1;
-	b = g_ascii_xdigit_value (*hex++);
-	if (b < 0)
-		return -1;
-	return (a << 4) | b;
-}
-
 /**
  * nm_utils_hexstr2bin:
- * @hex: an hex string
- * @len: the length of the @hex string (it has to be even)
+ * @hex: a string of hexadecimal characters with optional ':' separators
  *
- * Converts a hexadecimal string @hex into a byte-array. The returned array
- * length is @len/2.
+ * Converts a hexadecimal string @hex into an array of bytes.  The optional
+ * separator ':' may be used between single or pairs of hexadecimal characters,
+ * eg "00:11" or "0:1".  Any "0x" at the beginning of @hex is ignored.  @hex
+ * may not start or end with ':'.
  *
- * Return value: (transfer full): a array of bytes, or %NULL on error
+ * Return value: (transfer full): the converted bytes, or %NULL on error
  */
-char *
-nm_utils_hexstr2bin (const char *hex, size_t len)
+GBytes *
+nm_utils_hexstr2bin (const char *hex)
 {
-	size_t       i;
-	int          a;
-	const char * ipos = hex;
-	char *       buf = NULL;
-	char *       opos;
+	guint i = 0, x = 0;
+	gs_free guint8 *c = NULL;
+	int a, b;
+	gboolean found_colon = FALSE;
 
-	/* Length must be a multiple of 2 */
-	if ((len % 2) != 0)
-		return NULL;
+	g_return_val_if_fail (hex != NULL, NULL);
 
-	opos = buf = g_malloc0 ((len / 2) + 1);
-	for (i = 0; i < len; i += 2) {
-		a = nm_utils_hex2byte (ipos);
-		if (a < 0) {
-			g_free (buf);
+	if (strncasecmp (hex, "0x", 2) == 0)
+		hex += 2;
+	found_colon = !!strchr (hex, ':');
+
+	c = g_malloc (strlen (hex) / 2 + 1);
+	for (;;) {
+		a = g_ascii_xdigit_value (hex[i++]);
+		if (a < 0)
+			return NULL;
+
+		if (hex[i] && hex[i] != ':') {
+			b = g_ascii_xdigit_value (hex[i++]);
+			if (b < 0)
+				return NULL;
+			c[x++] = ((guint) a << 4) | ((guint) b);
+		} else
+			c[x++] = (guint) a;
+
+		if (!hex[i])
+			break;
+		if (hex[i] == ':') {
+			if (!hex[i + 1]) {
+				/* trailing ':' is invalid */
+				return NULL;
+			}
+			i++;
+		} else if (found_colon) {
+			/* If colons exist, they must delimit 1 or 2 hex chars */
 			return NULL;
 		}
-		*opos++ = a;
-		ipos += 2;
 	}
-	return buf;
+
+	return g_bytes_new (c, x);
 }
-/* End from hostap */
 
 /**
  * nm_utils_iface_valid_name:

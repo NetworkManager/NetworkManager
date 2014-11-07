@@ -518,6 +518,7 @@ fi
 %{_libexecdir}/nm-dhcp-helper
 %{_libexecdir}/nm-avahi-autoipd.action
 %{_libexecdir}/nm-dispatcher
+%{_libexecdir}/nm-iface-helper
 %dir %{_libdir}/NetworkManager
 %{_libdir}/NetworkManager/libnm-settings-plugin*.so
 %{_mandir}/man1/*

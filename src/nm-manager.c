@@ -59,6 +59,7 @@
 #include "nm-session-monitor.h"
 #include "nm-activation-request.h"
 #include "nm-core-internal.h"
+#include "nm-config.h"
 
 #define NM_AUTOIP_DBUS_SERVICE "org.freedesktop.nm_avahi_autoipd"
 #define NM_AUTOIP_DBUS_IFACE   "org.freedesktop.nm_avahi_autoipd"
@@ -214,6 +215,7 @@ enum {
 	USER_PERMISSIONS_CHANGED,
 	ACTIVE_CONNECTION_ADDED,
 	ACTIVE_CONNECTION_REMOVED,
+	CONFIGURE_QUIT,
 
 	LAST_SIGNAL
 };
@@ -706,6 +708,9 @@ check_if_startup_complete (NMManager *self)
 
 		g_signal_handlers_disconnect_by_func (dev, G_CALLBACK (device_has_pending_action_changed), self);
 	}
+
+	if (nm_config_get_configure_and_quit (nm_config_get ()))
+		g_signal_emit (self, signals[CONFIGURE_QUIT], 0);
 }
 
 static void
@@ -745,6 +750,8 @@ remove_device (NMManager *manager,
 				nm_device_set_unmanaged_quitting (device);
 			else
 				nm_device_set_unmanaged (device, NM_UNMANAGED_INTERNAL, TRUE, NM_DEVICE_STATE_REASON_REMOVED);
+		} else if (quitting && nm_config_get_configure_and_quit (nm_config_get ())) {
+			nm_device_spawn_iface_helper (device);
 		}
 	}
 
@@ -4167,6 +4174,16 @@ nm_manager_start (NMManager *self)
 	check_if_startup_complete (self);
 }
 
+void
+nm_manager_stop (NMManager *self)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+
+	/* Remove all devices */
+	while (priv->devices)
+		remove_device (self, NM_DEVICE (priv->devices->data), TRUE, TRUE);
+}
+
 static gboolean
 handle_firmware_changed (gpointer user_data)
 {
@@ -4990,9 +5007,7 @@ dispose (GObject *object)
 	                                      G_CALLBACK (authority_changed_cb),
 	                                      manager);
 
-	/* Remove all devices */
-	while (priv->devices)
-		remove_device (manager, NM_DEVICE (priv->devices->data), TRUE, TRUE);
+	g_assert (priv->devices == NULL);
 
 	if (priv->ac_cleanup_id) {
 		g_source_remove (priv->ac_cleanup_id);
@@ -5257,6 +5272,13 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		              G_SIGNAL_RUN_FIRST,
 		              0, NULL, NULL, NULL,
 		              G_TYPE_NONE, 1, G_TYPE_OBJECT);
+
+	signals[CONFIGURE_QUIT] =
+		g_signal_new (NM_MANAGER_CONFIGURE_QUIT,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              0, NULL, NULL, NULL,
+		              G_TYPE_NONE, 0);
 
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (manager_class),
