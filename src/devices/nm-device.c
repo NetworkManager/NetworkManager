@@ -5081,6 +5081,8 @@ delete_on_deactivate_check_and_schedule (NMDevice *self, int ifindex)
 		return;
 	if (!priv->is_nm_owned)
 		return;
+	if (priv->queued_act_request)
+		return;
 	if (!nm_device_is_software (self))
 		return;
 	if (nm_device_get_state (self) == NM_DEVICE_STATE_UNMANAGED)

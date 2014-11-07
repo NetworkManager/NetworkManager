@@ -453,6 +453,7 @@ teamd_start (NMDevice *device, NMSettingTeam *s_team)
 	g_ptr_array_add (argv, (gpointer) "-n");
 	g_ptr_array_add (argv, (gpointer) "-U");
 	g_ptr_array_add (argv, (gpointer) "-D");
+	g_ptr_array_add (argv, (gpointer) "-N");
 	g_ptr_array_add (argv, (gpointer) "-t");
 	g_ptr_array_add (argv, (gpointer) iface);
 
