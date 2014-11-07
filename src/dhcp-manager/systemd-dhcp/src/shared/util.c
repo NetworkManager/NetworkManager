@@ -1619,7 +1619,7 @@ bool fstype_is_network(const char *fstype) {
 }
 
 int chvt(int vt) {
-        _cleanup_close_ int fd;
+        _cleanup_close_ int fd = -1;
 
         fd = open_terminal("/dev/tty0", O_RDWR|O_NOCTTY|O_CLOEXEC);
         if (fd < 0)
@@ -2490,7 +2490,7 @@ char* dirname_malloc(const char *path) {
 #endif
 
 int dev_urandom(void *p, size_t n) {
-        _cleanup_close_ int fd;
+        _cleanup_close_ int fd = -1;
         ssize_t k;
 
         fd = open("/dev/urandom", O_RDONLY|O_CLOEXEC|O_NOCTTY);
@@ -3492,7 +3492,7 @@ char *ellipsize(const char *s, size_t length, unsigned percent) {
 }
 
 int touch_file(const char *path, bool parents, usec_t stamp, uid_t uid, gid_t gid, mode_t mode) {
-        _cleanup_close_ int fd;
+        _cleanup_close_ int fd = -1;
         int r;
 
         assert(path);
@@ -4214,7 +4214,7 @@ int terminal_vhangup_fd(int fd) {
 }
 
 int terminal_vhangup(const char *name) {
-        _cleanup_close_ int fd;
+        _cleanup_close_ int fd = -1;
 
         fd = open_terminal(name, O_RDWR|O_NOCTTY|O_CLOEXEC);
         if (fd < 0)

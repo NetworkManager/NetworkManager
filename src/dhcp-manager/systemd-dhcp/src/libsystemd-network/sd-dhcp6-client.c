@@ -844,7 +844,7 @@ static int client_receive_message(sd_event_source *s, int fd, uint32_t revents,
                                   void *userdata) {
         sd_dhcp6_client *client = userdata;
         DHCP6_CLIENT_DONT_DESTROY(client);
-        _cleanup_free_ DHCP6Message *message;
+        _cleanup_free_ DHCP6Message *message = NULL;
         int r, buflen, len;
 
         assert(s);

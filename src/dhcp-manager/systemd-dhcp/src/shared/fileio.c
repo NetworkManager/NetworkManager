@@ -145,7 +145,7 @@ int read_one_line_file(const char *fn, char **line) {
 }
 
 ssize_t sendfile_full(int out_fd, const char *fn) {
-        _cleanup_fclose_ FILE *f;
+        _cleanup_fclose_ FILE *f = NULL;
         struct stat st;
         int r;
         ssize_t s;
@@ -589,17 +589,15 @@ static int parse_env_file_push(
         va_list aq, *ap = userdata;
 
         if (!utf8_is_valid(key)) {
-                _cleanup_free_ char *p;
+                _cleanup_free_ char *p = utf8_escape_invalid(key);
 
-                p = utf8_escape_invalid(key);
                 log_error("%s:%u: invalid UTF-8 in key '%s', ignoring.", strna(filename), line, p);
                 return -EINVAL;
         }
 
         if (value && !utf8_is_valid(value)) {
-                _cleanup_free_ char *p;
+                _cleanup_free_ char *p = utf8_escape_invalid(value);
 
-                p = utf8_escape_invalid(value);
                 log_error("%s:%u: invalid UTF-8 value for key %s: '%s', ignoring.", strna(filename), line, key, p);
                 return -EINVAL;
         }
