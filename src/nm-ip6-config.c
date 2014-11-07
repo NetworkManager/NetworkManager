@@ -1610,6 +1610,15 @@ nameservers_to_gvalue (GArray *array, GValue *value)
 }
 
 static void
+gvalue_destroy (gpointer data)
+{
+	GValue *value = (GValue *) data;
+
+	g_value_unset (value);
+	g_slice_free (GValue, value);
+}
+
+static void
 get_property (GObject *object, guint prop_id,
 			  GValue *value, GParamSpec *pspec)
 {
@@ -1625,27 +1634,22 @@ get_property (GObject *object, guint prop_id,
 
 			for (i = 0; i < naddr; i++) {
 				const NMPlatformIP6Address *address = nm_ip6_config_get_address (config, i);
-				GValueArray *array = g_value_array_new (3);
-				GHashTable *attrs;
-				GValue val = { 0, };
+				GHashTable *addr_hash;
+				GValue *val;
 
-				g_value_init (&val, G_TYPE_STRING);
-				g_value_set_string (&val, nm_utils_inet6_ntop (&address->address, NULL));
-				g_value_array_append (array, &val);
-				g_value_unset (&val);
+				addr_hash = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, gvalue_destroy);
 
-				g_value_init (&val, G_TYPE_UINT);
-				g_value_set_uint (&val, address->plen);
-				g_value_array_append (array, &val);
-				g_value_unset (&val);
+				val = g_slice_new0 (GValue);
+				g_value_init (val, G_TYPE_STRING);
+				g_value_set_string (val, nm_utils_inet6_ntop (&address->address, NULL));
+				g_hash_table_insert (addr_hash, "address", val);
 
-				g_value_init (&val, DBUS_TYPE_G_MAP_OF_STRING);
-				attrs = g_hash_table_new (g_str_hash, g_str_equal);
-				g_value_take_boxed (&val, attrs);
-				g_value_array_append (array, &val);
-				g_value_unset (&val);
+				val = g_slice_new0 (GValue);
+				g_value_init (val, G_TYPE_UINT);
+				g_value_set_uint (val, address->plen);
+				g_hash_table_insert (addr_hash, "prefix", val);
 
-				g_ptr_array_add (addresses, array);
+				g_ptr_array_add (addresses, addr_hash);
 			}
 
 			g_value_take_boxed (value, addresses);
@@ -1701,40 +1705,34 @@ get_property (GObject *object, guint prop_id,
 
 			for (i = 0; i < nroutes; i++) {
 				const NMPlatformIP6Route *route = nm_ip6_config_get_route (config, i);
-				GValueArray *array = g_value_array_new (5);
-				GHashTable *attrs;
-				GValue val = { 0, };
+				GHashTable *route_hash;
+				GValue *val;
 
-				g_value_init (&val, G_TYPE_STRING);
-				g_value_set_string (&val, nm_utils_inet6_ntop (&route->network, NULL));
-				g_value_array_append (array, &val);
-				g_value_unset (&val);
+				route_hash = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, gvalue_destroy);
 
-				g_value_init (&val, G_TYPE_UINT);
-				g_value_set_uint (&val, route->plen);
-				g_value_array_append (array, &val);
-				g_value_unset (&val);
+				val = g_slice_new0 (GValue);
+				g_value_init (val, G_TYPE_STRING);
+				g_value_set_string (val, nm_utils_inet6_ntop (&route->network, NULL));
+				g_hash_table_insert (route_hash, "dest", val);
 
-				g_value_init (&val, G_TYPE_STRING);
-				if (memcmp (&route->gateway, &in6addr_any, sizeof (struct in6_addr)) != 0)
-					g_value_set_string (&val, nm_utils_inet6_ntop (&route->gateway, NULL));
-				else
-					g_value_set_string (&val, "");
-				g_value_array_append (array, &val);
-				g_value_unset (&val);
+				val = g_slice_new0 (GValue);
+				g_value_init (val, G_TYPE_UINT);
+				g_value_set_uint (val, route->plen);
+				g_hash_table_insert (route_hash, "prefix", val);
 
-				g_value_init (&val, G_TYPE_INT64);
-				g_value_set_int64 (&val, route->metric);
-				g_value_array_append (array, &val);
-				g_value_unset (&val);
+				if (!IN6_IS_ADDR_UNSPECIFIED (&route->gateway)) {
+					val = g_slice_new0 (GValue);
+					g_value_init (val, G_TYPE_STRING);
+					g_value_set_string (val, nm_utils_inet6_ntop (&route->gateway, NULL));
+					g_hash_table_insert (route_hash, "gateway", val);
+				}
 
-				g_value_init (&val, DBUS_TYPE_G_MAP_OF_STRING);
-				attrs = g_hash_table_new (g_str_hash, g_str_equal);
-				g_value_take_boxed (&val, attrs);
-				g_value_array_append (array, &val);
-				g_value_unset (&val);
+				val = g_slice_new0 (GValue);
+				g_value_init (val, G_TYPE_UINT);
+				g_value_set_uint (val, route->metric);
+				g_hash_table_insert (route_hash, "metric", val);
 
-				g_ptr_array_add (routes, array);
+				g_ptr_array_add (routes, route_hash);
 			}
 
 			g_value_take_boxed (value, routes);
