@@ -56,6 +56,9 @@
 #define NM_ACTIVE_CONNECTION_INT_MASTER         "int-master"
 #define NM_ACTIVE_CONNECTION_INT_MASTER_READY   "int-master-ready"
 
+/* Internal signals*/
+#define NM_ACTIVE_CONNECTION_DEVICE_CHANGED     "device-changed"
+
 struct _NMActiveConnection {
 	GObject parent;
 };
@@ -71,6 +74,10 @@ typedef struct {
 	                              NMDeviceState new_state,
 	                              NMDeviceState old_state);
 	void (*master_failed)  (NMActiveConnection *connection);
+
+	void (*device_changed) (NMActiveConnection *connection,
+	                        NMDevice *new_device,
+	                        NMDevice *old_device);
 } NMActiveConnectionClass;
 
 GType         nm_active_connection_get_type (void);

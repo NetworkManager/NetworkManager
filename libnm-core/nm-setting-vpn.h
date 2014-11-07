@@ -42,6 +42,7 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_VPN_SERVICE_TYPE "service-type"
 #define NM_SETTING_VPN_USER_NAME    "user-name"
+#define NM_SETTING_VPN_PERSISTENT   "persistent"
 #define NM_SETTING_VPN_DATA         "data"
 #define NM_SETTING_VPN_SECRETS      "secrets"
 
@@ -70,6 +71,7 @@ GType nm_setting_vpn_get_type (void);
 NMSetting        *nm_setting_vpn_new               (void);
 const char       *nm_setting_vpn_get_service_type  (NMSettingVpn *setting);
 const char       *nm_setting_vpn_get_user_name     (NMSettingVpn *setting);
+gboolean          nm_setting_vpn_get_persistent    (NMSettingVpn *setting);
 
 guint32           nm_setting_vpn_get_num_data_items (NMSettingVpn *setting);
 void              nm_setting_vpn_add_data_item     (NMSettingVpn *setting,

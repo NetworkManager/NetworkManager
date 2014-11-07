@@ -206,6 +206,11 @@ typedef enum {
 /* boolean: Has IP6 configuration? */
 #define NM_VPN_PLUGIN_CONFIG_HAS_IP6     "has-ip6"
 
+/* boolean: If %TRUE the VPN plugin can persist/reconnect the connection over
+ * link changes and VPN server dropouts.
+ */
+#define NM_VPN_PLUGIN_CAN_PERSIST        "can-persist"
+
 
 /*** Ip4Config ***/
 

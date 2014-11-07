@@ -658,6 +658,20 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 
 	gw_addr = nm_ip4_config_get_gateway (ip4_config);
 
+	if (best) {
+		const GSList *connections, *iter;
+
+		connections = nm_manager_get_active_connections (priv->manager);
+		for (iter = connections; iter; iter = g_slist_next (iter)) {
+			NMActiveConnection *active = iter->data;
+
+			if (   NM_IS_VPN_CONNECTION (active)
+			    && nm_vpn_connection_get_ip4_config (NM_VPN_CONNECTION (active))
+			    && !nm_active_connection_get_device (active))
+				nm_active_connection_set_device (active, best);
+		}
+	}
+
 	if (vpn) {
 		NMDevice *parent = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
 		int parent_ifindex = nm_device_get_ip_ifindex (parent);
@@ -860,6 +874,20 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 	gw_addr = nm_ip6_config_get_gateway (ip6_config);
 	if (!gw_addr)
 		gw_addr = &in6addr_any;
+
+	if (best) {
+		const GSList *connections, *iter;
+
+		connections = nm_manager_get_active_connections (priv->manager);
+		for (iter = connections; iter; iter = g_slist_next (iter)) {
+			NMActiveConnection *active = iter->data;
+
+			if (   NM_IS_VPN_CONNECTION (active)
+			    && nm_vpn_connection_get_ip6_config (NM_VPN_CONNECTION (active))
+			    && !nm_active_connection_get_device (active))
+				nm_active_connection_set_device (active, best);
+		}
+	}
 
 	if (vpn) {
 		NMDevice *parent = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
@@ -1808,6 +1836,28 @@ vpn_connection_state_changed (NMVpnConnection *vpn,
 }
 
 static void
+vpn_connection_retry_after_failure (NMVpnConnection *vpn, NMPolicy *policy)
+{
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
+	NMActiveConnection *ac = NM_ACTIVE_CONNECTION (vpn);
+	NMConnection *connection = nm_active_connection_get_connection (ac);
+	GError *error = NULL;
+
+	/* Attempt to reconnect VPN connections that failed after being connected */
+	if (!nm_manager_activate_connection (priv->manager,
+	                                     connection,
+	                                     NULL,
+	                                     NULL,
+	                                     nm_active_connection_get_subject (ac),
+	                                     &error)) {
+		nm_log_warn (LOGD_DEVICE, "VPN '%s' reconnect failed: %s",
+		             nm_connection_get_id (connection),
+		             error->message ? error->message : "unknown");
+		g_clear_error (&error);
+	}
+}
+
+static void
 active_connection_state_changed (NMActiveConnection *active,
                                  GParamSpec *pspec,
                                  NMPolicy *policy)
@@ -1831,6 +1881,9 @@ active_connection_added (NMManager *manager,
 		g_signal_connect (active, NM_VPN_CONNECTION_INTERNAL_STATE_CHANGED,
 		                  G_CALLBACK (vpn_connection_state_changed),
 		                  policy);
+		g_signal_connect (active, NM_VPN_CONNECTION_INTERNAL_RETRY_AFTER_FAILURE,
+		                  G_CALLBACK (vpn_connection_retry_after_failure),
+		                  policy);
 	}
 
 	g_signal_connect (active, "notify::" NM_ACTIVE_CONNECTION_STATE,
@@ -1847,6 +1900,9 @@ active_connection_removed (NMManager *manager,
 
 	g_signal_handlers_disconnect_by_func (active,
 	                                      vpn_connection_state_changed,
+	                                      policy);
+	g_signal_handlers_disconnect_by_func (active,
+	                                      vpn_connection_retry_after_failure,
 	                                      policy);
 	g_signal_handlers_disconnect_by_func (active,
 	                                      active_connection_state_changed,
