@@ -655,7 +655,7 @@ test_ip4_prefix_classless (void)
 #define COMPARE_ID(src, is_str, expected, expected_len) \
 G_STMT_START { \
 	gs_unref_bytes GBytes *b = NULL; \
-	gconstpointer p; \
+	const char *p; \
 	gsize l; \
  \
 	b = nm_dhcp_utils_client_id_string_to_bytes (src); \
