@@ -3355,11 +3355,10 @@ ip6_config_merge_and_apply (NMDevice *self,
 				priv->default_route.v6_has = _device_get_default_route_from_platform (self, AF_INET, (NMPlatformIPRoute *) route);
 			else {
 				gateway = nm_ip6_config_get_gateway (composite);
-				if (   gateway
-				    || nm_device_get_device_type (self) == NM_DEVICE_TYPE_MODEM) {
+				if (gateway) {
 					memset (route, 0, sizeof (*route));
 					route->source = NM_IP_CONFIG_SOURCE_USER;
-					route->gateway = gateway ? *gateway : in6addr_any;
+					route->gateway = *gateway;
 					route->metric = nm_device_get_ip6_route_metric (self);
 					route->mss = nm_ip6_config_get_mss (composite);
 					priv->default_route.v6_has = TRUE;
