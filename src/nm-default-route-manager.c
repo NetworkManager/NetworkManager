@@ -669,18 +669,17 @@ nm_default_route_manager_ip6_connection_has_default_route (NMDefaultRouteManager
 
 /***********************************************************************************/
 
-/** _ipx_get_best_device:
- * @vtable: the virtual table
- * @self: #NMDefaultRouteManager
- **/
 static NMDevice *
-_ipx_get_best_device (const VTableIP *vtable, NMDefaultRouteManager *self)
+_ipx_get_best_device (const VTableIP *vtable, NMDefaultRouteManager *self, const GSList *devices)
 {
 	NMDefaultRouteManagerPrivate *priv;
 	GPtrArray *entries;
 	guint i;
 
 	g_return_val_if_fail (NM_IS_DEFAULT_ROUTE_MANAGER (self), NULL);
+
+	if (!devices)
+		return NULL;
 
 	priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
 	entries = vtable->get_entries (priv);
@@ -692,7 +691,9 @@ _ipx_get_best_device (const VTableIP *vtable, NMDefaultRouteManager *self)
 			continue;
 
 		g_assert (!entry->never_default);
-		return entry->source.pointer;
+
+		if (g_slist_find ((GSList *) devices, entry->source.device))
+			return entry->source.pointer;
 	}
 	return NULL;
 }
@@ -720,8 +721,7 @@ _ipx_get_best_activating_device (const VTableIP *vtable, NMDefaultRouteManager *
 
 	priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
 
-	best_activated_device = _ipx_get_best_device (vtable, self);
-	g_return_val_if_fail (!best_activated_device || g_slist_find ((GSList *) devices, best_activated_device), NULL);
+	best_activated_device = _ipx_get_best_device (vtable, self, devices);
 
 	for (iter = devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *device = NM_DEVICE (iter->data);
@@ -771,7 +771,7 @@ NMDevice *
 nm_default_route_manager_ip4_get_best_device (NMDefaultRouteManager *self, const GSList *devices, gboolean fully_activated, NMDevice *preferred_device)
 {
 	if (fully_activated)
-		return _ipx_get_best_device (&vtable_ip4, self);
+		return _ipx_get_best_device (&vtable_ip4, self, devices);
 	else
 		return _ipx_get_best_activating_device (&vtable_ip4, self, devices, preferred_device);
 }
@@ -780,7 +780,7 @@ NMDevice *
 nm_default_route_manager_ip6_get_best_device (NMDefaultRouteManager *self, const GSList *devices, gboolean fully_activated, NMDevice *preferred_device)
 {
 	if (fully_activated)
-		return _ipx_get_best_device (&vtable_ip6, self);
+		return _ipx_get_best_device (&vtable_ip6, self, devices);
 	else
 		return _ipx_get_best_activating_device (&vtable_ip6, self, devices, preferred_device);
 }
