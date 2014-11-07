@@ -44,6 +44,7 @@ typedef struct {
 	NMDBusSettings *proxy;
 	GPtrArray *all_connections;
 	GPtrArray *visible_connections;
+	GCancellable *props_cancellable;
 
 	/* AddConnectionInfo objects that are waiting for the connection to become initialized */
 	GSList *add_list;
@@ -604,7 +605,8 @@ updated_properties (GObject *object, GAsyncResult *result, gpointer user_data)
 	GError *error = NULL;
 
 	if (!_nm_object_reload_properties_finish (NM_OBJECT (object), result, &error)) {
-		g_warning ("%s: error reading NMRemoteSettings properties: %s", __func__, error->message);
+		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+			g_warning ("%s: error reading NMRemoteSettings properties: %s", __func__, error->message);
 		g_error_free (error);
 	}
 }
@@ -622,6 +624,8 @@ nm_running_changed (GObject *object,
 	if (!_nm_object_get_nm_running (NM_OBJECT (self))) {
 		GPtrArray *connections;
 		int i;
+
+		NM_UTILS_CLEAR_CANCELLABLE (priv->props_cancellable);
 
 		/* Clear connections */
 		connections = priv->all_connections;
@@ -645,7 +649,10 @@ nm_running_changed (GObject *object,
 		_nm_object_suppress_property_updates (NM_OBJECT (self), TRUE);
 	} else {
 		_nm_object_suppress_property_updates (NM_OBJECT (self), FALSE);
-		_nm_object_reload_properties_async (NM_OBJECT (self), updated_properties, self);
+
+		NM_UTILS_CLEAR_CANCELLABLE (priv->props_cancellable);
+		priv->props_cancellable = g_cancellable_new ();
+		_nm_object_reload_properties_async (NM_OBJECT (self), priv->props_cancellable, updated_properties, self);
 	}
 
 	g_object_thaw_notify (object);

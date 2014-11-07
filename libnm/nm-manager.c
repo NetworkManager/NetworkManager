@@ -53,6 +53,7 @@ G_DEFINE_TYPE_WITH_CODE (NMManager, nm_manager, NM_TYPE_OBJECT,
 
 typedef struct {
 	NMDBusManager *manager_proxy;
+	GCancellable *props_cancellable;
 	char *version;
 	NMState state;
 	gboolean startup;
@@ -1207,7 +1208,8 @@ updated_properties (GObject *object, GAsyncResult *result, gpointer user_data)
 	GError *error = NULL;
 
 	if (!_nm_object_reload_properties_finish (NM_OBJECT (object), result, &error)) {
-		g_warning ("%s: error reading NMManager properties: %s", __func__, error->message);
+		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+			g_warning ("%s: error reading NMManager properties: %s", __func__, error->message);
 		g_error_free (error);
 	}
 
@@ -1223,6 +1225,8 @@ nm_running_changed_cb (GObject *object,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 
 	if (!nm_manager_get_nm_running (manager)) {
+		NM_UTILS_CLEAR_CANCELLABLE (priv->props_cancellable);
+
 		priv->state = NM_STATE_UNKNOWN;
 		priv->startup = FALSE;
 		_nm_object_queue_notify (NM_OBJECT (manager), NM_MANAGER_NM_RUNNING);
@@ -1246,7 +1250,11 @@ nm_running_changed_cb (GObject *object,
 		_nm_object_cache_clear ();
 	} else {
 		_nm_object_suppress_property_updates (NM_OBJECT (manager), FALSE);
-		_nm_object_reload_properties_async (NM_OBJECT (manager), updated_properties, manager);
+
+		NM_UTILS_CLEAR_CANCELLABLE (priv->props_cancellable);
+		priv->props_cancellable = g_cancellable_new ();
+		_nm_object_reload_properties_async (NM_OBJECT (manager), priv->props_cancellable, updated_properties, manager);
+
 		manager_recheck_permissions (priv->manager_proxy, manager);
 	}
 }

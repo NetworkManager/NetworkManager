@@ -40,9 +40,8 @@ void _nm_object_register_properties (NMObject *object,
                                      const char *interface,
                                      const NMPropertiesInfo *info);
 
-gboolean _nm_object_reload_properties (NMObject *object, GError **error);
-
 void     _nm_object_reload_properties_async  (NMObject *object,
+                                              GCancellable *cancellable,
                                               GAsyncReadyCallback callback,
                                               gpointer user_data);
 gboolean _nm_object_reload_properties_finish (NMObject *object,

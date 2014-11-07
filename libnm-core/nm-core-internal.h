@@ -68,6 +68,12 @@
 #include "nm-version.h"
 #include "nm-vpn-dbus-interface.h"
 
+#define NM_UTILS_CLEAR_CANCELLABLE(c) \
+	if (c) { \
+		g_cancellable_cancel (c); \
+		g_clear_object (&c); \
+	}
+
 const char *_nm_setting_ip4_config_get_address_label      (NMSettingIP4Config *setting,
                                                            guint32             i);
 gboolean    _nm_setting_ip4_config_add_address_with_label (NMSettingIP4Config *setting,

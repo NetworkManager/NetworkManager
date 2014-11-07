@@ -111,6 +111,104 @@ test_device_added (void)
 
 /*******************************************************************/
 
+typedef enum {
+	SIGNAL_FIRST  = 0x01,
+	SIGNAL_SECOND = 0x02,
+	SIGNAL_MASK   = 0x0F,
+	NOTIFY_FIRST  = 0x10,
+	NOTIFY_SECOND = 0x20,
+	NOTIFY_MASK   = 0xF0
+} DeviceSignaledAfterInitType;
+
+static void
+device_sai_added_cb (NMClient *c,
+                     NMDevice *device,
+                     gpointer user_data)
+{
+	guint *result = user_data;
+
+	g_assert (device);
+	g_assert_cmpstr (nm_device_get_iface (device), ==, "eth0");
+
+	g_assert ((*result & SIGNAL_MASK) == 0);
+	*result |= *result ? SIGNAL_SECOND : SIGNAL_FIRST;
+}
+
+static void
+devices_sai_notify_cb (NMClient *c,
+                       GParamSpec *pspec,
+                       gpointer user_data)
+{
+	guint *result = user_data;
+	const GPtrArray *devices;
+	NMDevice *device;
+
+	devices = nm_client_get_devices (c);
+	g_assert (devices);
+	g_assert_cmpint (devices->len, ==, 1);
+
+	device = g_ptr_array_index (devices, 0);
+	g_assert (device);
+	g_assert_cmpstr (nm_device_get_iface (device), ==, "eth0");
+
+	g_assert ((*result & NOTIFY_MASK) == 0);
+	*result |= *result ? NOTIFY_SECOND : NOTIFY_FIRST;
+}
+
+static void
+test_device_added_signal_after_init (void)
+{
+	NMClient *client;
+	const GPtrArray *devices;
+	NMDevice *device;
+	guint result = 0;
+	GError *error = NULL;
+
+	sinfo = nm_test_service_init ();
+	client = nm_client_new (NULL, &error);
+	g_assert_no_error (error);
+
+	devices = nm_client_get_devices (client);
+	g_assert (devices->len == 0);
+
+	g_signal_connect (client,
+	                  NM_CLIENT_DEVICE_ADDED,
+	                  (GCallback) device_sai_added_cb,
+	                  &result);
+
+	g_signal_connect (client,
+	                  "notify::" NM_CLIENT_DEVICES,
+	                  (GCallback) devices_sai_notify_cb,
+	                  &result);
+
+	/* Tell the test service to add a new device */
+	nm_test_service_add_device (sinfo, client, "AddWiredDevice", "eth0");
+
+	/* Ensure the 'device-added' signal doesn't show up before
+	 * the 'Devices' property change notification */
+	while (!(result & SIGNAL_MASK) && !(result & NOTIFY_MASK))
+		g_main_context_iteration (NULL, TRUE);
+
+	g_signal_handlers_disconnect_by_func (client, device_sai_added_cb, &result);
+	g_signal_handlers_disconnect_by_func (client, devices_sai_notify_cb, &result);
+
+	g_assert ((result & NOTIFY_MASK) == NOTIFY_FIRST);
+	g_assert ((result & SIGNAL_MASK) == SIGNAL_SECOND);
+
+	devices = nm_client_get_devices (client);
+	g_assert (devices);
+	g_assert_cmpint (devices->len, ==, 1);
+
+	device = g_ptr_array_index (devices, 0);
+	g_assert (device);
+	g_assert_cmpstr (nm_device_get_iface (device), ==, "eth0");
+
+	g_object_unref (client);
+	g_clear_pointer (&sinfo, nm_test_service_cleanup);
+}
+
+/*******************************************************************/
+
 static const char *expected_bssid = "66:55:44:33:22:11";
 
 typedef struct {
@@ -1077,6 +1175,7 @@ main (int argc, char **argv)
 	loop = g_main_loop_new (NULL, FALSE);
 
 	g_test_add_func ("/libnm/device-added", test_device_added);
+	g_test_add_func ("/libnm/device-added-signal-after-init", test_device_added_signal_after_init);
 	g_test_add_func ("/libnm/wifi-ap-added-removed", test_wifi_ap_added_removed);
 	g_test_add_func ("/libnm/wimax-nsp-added-removed", test_wimax_nsp_added_removed);
 	g_test_add_func ("/libnm/devices-array", test_devices_array);
