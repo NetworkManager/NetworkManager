@@ -192,8 +192,8 @@ test_device_added_signal_after_init (void)
 	g_signal_handlers_disconnect_by_func (client, device_sai_added_cb, &result);
 	g_signal_handlers_disconnect_by_func (client, devices_sai_notify_cb, &result);
 
-	g_assert ((result & NOTIFY_MASK) == NOTIFY_FIRST);
-	g_assert ((result & SIGNAL_MASK) == SIGNAL_SECOND);
+	g_assert ((result & SIGNAL_MASK) == SIGNAL_FIRST);
+	g_assert ((result & NOTIFY_MASK) == NOTIFY_SECOND);
 
 	devices = nm_client_get_devices (client);
 	g_assert (devices);

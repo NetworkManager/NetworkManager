@@ -209,15 +209,9 @@ deferred_notify_cb (gpointer data)
 
 	g_object_ref (object);
 
-	/* Emit property change notifications first */
-	for (iter = props; iter; iter = g_slist_next (iter)) {
-		NotifyItem *item = iter->data;
-
-		if (item->property)
-			g_object_notify (G_OBJECT (object), item->property);
-	}
-
-	/* And added/removed signals second */
+	/* Emit added/removed signals first since some of our internal objects
+	 * use the added/removed signals for new object processing.
+	 */
 	for (iter = props; iter; iter = g_slist_next (iter)) {
 		NotifyItem *item = iter->data;
 		char buf[50];
@@ -243,6 +237,15 @@ deferred_notify_cb (gpointer data)
 			g_signal_emit_by_name (object, buf, item->changed);
 		}
 	}
+
+	/* Emit property change notifications second */
+	for (iter = props; iter; iter = g_slist_next (iter)) {
+		NotifyItem *item = iter->data;
+
+		if (item->property)
+			g_object_notify (G_OBJECT (object), item->property);
+	}
+
 	g_object_unref (object);
 
 	g_slist_free_full (props, (GDestroyNotify) notify_item_free);
