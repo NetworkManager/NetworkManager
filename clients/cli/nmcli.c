@@ -27,6 +27,8 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <pthread.h>
+#include <termios.h>
+#include <unistd.h>
 #include <locale.h>
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -34,6 +36,7 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 
+#include "polkit-agent.h"
 #include "nmcli.h"
 #include "utils.h"
 #include "common.h"
@@ -61,6 +64,7 @@ typedef struct {
 /* --- Global variables --- */
 GMainLoop *loop = NULL;
 static sigset_t signal_set;
+struct termios termios_orig;
 
 
 /* Get an error quark for use with GError */
@@ -261,8 +265,18 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 		argv++;
 	}
 
-	if (argc > 1)
+	if (argc > 1) {
+		GError *error = NULL;
+
+		/* Initialize polkit agent */
+		if (!nmc_polkit_agent_init (&nm_cli, FALSE, &error)) {
+			g_printerr ("Polkit agent initialization failed: %s\n", error->message);
+			g_error_free (error);
+		}
+
+		/* Now run the requested command */
 		return do_cmd (nmc, argv[1], argc-1, argv+1);
+	}
 
 	usage (base);
 	return nmc->return_value;
@@ -332,6 +346,7 @@ signal_handling_thread (void *arg) {
 				pthread_mutex_unlock (&sigint_mutex);
 			} else {
 				/* We can quit nmcli */
+				tcsetattr (STDIN_FILENO, TCSADRAIN, &termios_orig);
 				nmc_cleanup_readline ();
 				g_print (_("\nError: nmcli terminated by signal %s (%d)\n"),
 				         strsignal (signo), signo);
@@ -340,6 +355,7 @@ signal_handling_thread (void *arg) {
 			break;
 		case SIGQUIT:
 		case SIGTERM:
+			tcsetattr (STDIN_FILENO, TCSADRAIN, &termios_orig);
 			nmc_cleanup_readline ();
 			if (!nmcli_sigquit_internal)
 				g_print (_("\nError: nmcli terminated by signal %s (%d)\n"),
@@ -502,6 +518,7 @@ nmc_init (NmCli *nmc)
 
 	nmc->secret_agent = NULL;
 	nmc->pwds_hash = NULL;
+	nmc->pk_listener = NULL;
 
 	nmc->should_wait = FALSE;
 	nmc->nowait_flag = TRUE;
@@ -539,6 +556,8 @@ nmc_cleanup (NmCli *nmc)
 	g_free (nmc->required_fields);
 	nmc_empty_output_fields (nmc);
 	g_ptr_array_unref (nmc->output_data);
+
+	nmc_polkit_agent_fini (nmc);
 }
 
 static gboolean
@@ -576,6 +595,9 @@ main (int argc, char *argv[])
 #if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
 #endif
+	
+	/* Save terminal settings */
+	tcgetattr (STDIN_FILENO, &termios_orig);
 
 	/* readline init */
 	rl_event_hook = event_hook_for_readline;

@@ -6,8 +6,10 @@ clients/cli/connections.c
 clients/cli/devices.c
 clients/cli/general.c
 clients/cli/nmcli.c
+clients/cli/polkit-agent.c
 clients/cli/settings.c
 clients/cli/utils.c
+clients/common/nm-polkit-listener.c
 clients/common/nm-secret-agent-simple.c
 clients/nm-online.c
 clients/tui/newt/nmt-newt-utils.c
