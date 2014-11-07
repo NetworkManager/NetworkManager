@@ -538,7 +538,8 @@ nm_ip6_config_create_setting (const NMIP6Config *config)
 	}
 
 	/* Gateway */
-	if (gateway) {
+	if (   gateway
+	    && nm_setting_ip_config_get_num_addresses (s_ip6) > 0) {
 		g_object_set (s_ip6,
 		              NM_SETTING_IP_CONFIG_GATEWAY, nm_utils_inet6_ntop (gateway, NULL),
 		              NULL);
@@ -698,6 +699,9 @@ nm_ip6_config_subtract (NMIP6Config *dst, const NMIP6Config *src)
 	src_tmp = nm_ip6_config_get_gateway (src);
 	dst_tmp = nm_ip6_config_get_gateway (dst);
 	if (src_tmp && dst_tmp && IN6_ARE_ADDR_EQUAL (src_tmp, dst_tmp))
+		nm_ip6_config_set_gateway (dst, NULL);
+
+	if (!nm_ip6_config_get_num_addresses (dst))
 		nm_ip6_config_set_gateway (dst, NULL);
 
 	/* routes */

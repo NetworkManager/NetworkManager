@@ -430,7 +430,8 @@ nm_ip4_config_create_setting (const NMIP4Config *config)
 	}
 
 	/* Gateway */
-	if (gateway) {
+	if (   gateway
+	    && nm_setting_ip_config_get_num_addresses (s_ip4) > 0) {
 		g_object_set (s_ip4,
 		              NM_SETTING_IP_CONFIG_GATEWAY, nm_utils_inet4_ntop (gateway, NULL),
 		              NULL);
@@ -584,6 +585,9 @@ nm_ip4_config_subtract (NMIP4Config *dst, const NMIP4Config *src)
 
 	/* default gateway */
 	if (nm_ip4_config_get_gateway (src) == nm_ip4_config_get_gateway (dst))
+		nm_ip4_config_set_gateway (dst, 0);
+
+	if (!nm_ip4_config_get_num_addresses (dst))
 		nm_ip4_config_set_gateway (dst, 0);
 
 	/* routes */
