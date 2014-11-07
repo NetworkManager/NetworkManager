@@ -281,6 +281,8 @@ nm_sources = \
 	nm-dbus-manager.h \
 	nm-dcb.c \
 	nm-dcb.h \
+	nm-default-route-manager.c \
+	nm-default-route-manager.h \
 	nm-dhcp4-config.c \
 	nm-dhcp4-config.h \
 	nm-dhcp6-config.c \

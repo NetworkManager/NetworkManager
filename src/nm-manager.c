@@ -33,6 +33,7 @@
 #include <gio/gio.h>
 #include <glib/gi18n.h>
 
+#include "gsystem-local-alloc.h"
 #include "nm-glib-compat.h"
 #include "nm-manager.h"
 #include "nm-logging.h"

@@ -82,4 +82,19 @@
 
 /********************************************************/
 
+#define NM_IN_SET(x, y, ...)                                    \
+    ({                                                          \
+        const typeof(y) _y = (y);                               \
+        typeof(_y) _x = (x);                                    \
+        unsigned _i;                                            \
+        gboolean _found = FALSE;                                \
+        for (_i = 0; _i < 1 + sizeof((typeof(_x)[]) { __VA_ARGS__ })/sizeof(typeof(_x)); _i++) { \
+            if (((typeof(_x)[]) { _y, __VA_ARGS__ })[_i] == _x) { \
+                _found = TRUE;                                  \
+                break;                                          \
+            }                                                   \
+        }                                                       \
+        _found;                                                 \
+    })
+
 #endif

@@ -48,7 +48,11 @@ identifier_key = '{%s}identifier' % ns_map['c']
 nick_key = '{%s}nick' % ns_map['glib']
 symbol_prefix_key = '{%s}symbol-prefix' % ns_map['c']
 
-constants = { 'TRUE': 'TRUE', 'FALSE': 'FALSE', 'NULL': 'NULL' }
+constants = {
+    'TRUE': 'TRUE',
+    'FALSE': 'FALSE',
+    'G_MAXUINT32': 'G_MAXUINT32',
+    'NULL': 'NULL' }
 setting_names = {}
 
 def init_constants(girxml):

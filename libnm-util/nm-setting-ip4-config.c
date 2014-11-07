@@ -76,6 +76,7 @@ typedef struct {
 	GSList *dns_search; /* list of strings */
 	GSList *addresses;  /* array of NMIP4Address */
 	GSList *routes;     /* array of NMIP4Route */
+	gint64  route_metric;
 	gboolean ignore_auto_routes;
 	gboolean ignore_auto_dns;
 	char *dhcp_client_id;
@@ -92,6 +93,7 @@ enum {
 	PROP_DNS_SEARCH,
 	PROP_ADDRESSES,
 	PROP_ROUTES,
+	PROP_ROUTE_METRIC,
 	PROP_IGNORE_AUTO_ROUTES,
 	PROP_IGNORE_AUTO_DNS,
 	PROP_DHCP_CLIENT_ID,
@@ -689,6 +691,26 @@ nm_setting_ip4_config_clear_routes (NMSettingIP4Config *setting)
 }
 
 /**
+ * nm_setting_ip4_config_get_route_metric:
+ * @setting: the #NMSettingIP4Config
+ *
+ * Returns the value contained in the #NMSettingIP4Config:route-metric
+ * property.
+ *
+ * Returns: the route metric that is used for IPv4 routes that don't explicitly
+ * specify a metric. See #NMSettingIP4Config:route-metric for more details.
+ *
+ * Since: 1.0
+ **/
+gint64
+nm_setting_ip4_config_get_route_metric (NMSettingIP4Config *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP4_CONFIG (setting), -1);
+
+	return NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->route_metric;
+}
+
+/**
  * nm_setting_ip4_config_get_ignore_auto_routes:
  * @setting: the #NMSettingIP4Config
  *
@@ -1018,6 +1040,9 @@ set_property (GObject *object, guint prop_id,
 		g_slist_free_full (priv->routes, (GDestroyNotify) nm_ip4_route_unref);
 		priv->routes = nm_utils_ip4_routes_from_gvalue (value);
 		break;
+	case PROP_ROUTE_METRIC:
+		priv->route_metric = g_value_get_int64 (value);
+		break;
 	case PROP_IGNORE_AUTO_ROUTES:
 		priv->ignore_auto_routes = g_value_get_boolean (value);
 		break;
@@ -1069,6 +1094,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_ROUTES:
 		nm_utils_ip4_routes_to_gvalue (priv->routes, value);
+		break;
+	case PROP_ROUTE_METRIC:
+		g_value_set_int64 (value, priv->route_metric);
 		break;
 	case PROP_IGNORE_AUTO_ROUTES:
 		g_value_set_boolean (value, nm_setting_ip4_config_get_ignore_auto_routes (setting));
@@ -1274,6 +1302,28 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 		                             G_PARAM_READWRITE |
 		                             NM_SETTING_PARAM_INFERRABLE |
 		                             G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingIP4Config:route-metric:
+	 *
+	 * The default metric for routes that don't explicitly specify a metric.
+	 * The default value -1 means that the metric is choosen automatically
+	 * based on the device type.
+	 * The metric applies to dynamic routes, manual (static) routes that
+	 * don't have an explicit metric setting, address prefix routes, and
+	 * the default route.
+	 * As the linux kernel accepts zero (0) as a valid metric, zero is
+	 * a valid value.
+	 *
+	 * Since: 1.0
+	 **/
+	g_object_class_install_property
+	    (object_class, PROP_ROUTE_METRIC,
+	     g_param_spec_int64 (NM_SETTING_IP4_CONFIG_ROUTE_METRIC, "", "",
+	                         -1, G_MAXUINT32, -1,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_CONSTRUCT |
+	                         G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingIP4Config:ignore-auto-routes:

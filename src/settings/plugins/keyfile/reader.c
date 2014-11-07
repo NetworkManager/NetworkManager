@@ -36,6 +36,7 @@
 #include "common.h"
 #include "utils.h"
 #include "nm-core-internal.h"
+#include "NetworkManagerUtils.h"
 
 /* Some setting properties also contain setting names, such as
  * NMSettingConnection's 'type' property (which specifies the base type of the
@@ -1021,6 +1022,7 @@ read_one_setting_value (NMSetting *setting,
 {
 	ReadInfo *info = user_data;
 	const char *setting_name;
+	int errsv;
 	GType type;
 	GError *err = NULL;
 	gboolean check_for_key = TRUE;
@@ -1121,6 +1123,18 @@ read_one_setting_value (NMSetting *setting,
 		uint_val = g_ascii_strtoull (tmp_str, NULL, 10);
 		g_free (tmp_str);
 		g_object_set (setting, key, uint_val, NULL);
+	} else if (type == G_TYPE_INT64) {
+		char *tmp_str;
+		gint64 int_val;
+
+		tmp_str = nm_keyfile_plugin_kf_get_value (info->keyfile, setting_name, key, NULL);
+		int_val = nm_utils_ascii_str_to_int64 (tmp_str, 10, G_MININT64, G_MAXINT64, 0);
+		errsv = errno;
+		if (errsv)
+			nm_log_warn (LOGD_SETTINGS, "Invalid int64 value (%s)", tmp_str);
+		else
+			g_object_set (setting, key, int_val, NULL);
+		g_free (tmp_str);
  	} else if (type == G_TYPE_BYTES) {
 		gint *tmp;
 		GByteArray *array;

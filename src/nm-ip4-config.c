@@ -25,6 +25,7 @@
 #include "nm-ip4-config.h"
 
 #include "nm-utils.h"
+#include "nm-platform.h"
 #include "nm-dbus-manager.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-ip4-config-glue.h"
@@ -193,7 +194,7 @@ nm_ip4_config_capture (int ifindex, gboolean capture_resolv_conf)
 	g_array_unref (priv->routes);
 
 	priv->addresses = nm_platform_ip4_address_get_all (ifindex);
-	priv->routes = nm_platform_ip4_route_get_all (ifindex, TRUE);
+	priv->routes = nm_platform_ip4_route_get_all (ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
 
 	/* Extract gateway from default route */
 	old_gateway = priv->gateway;
@@ -277,13 +278,6 @@ nm_ip4_config_commit (const NMIP4Config *config, int ifindex)
 			    && nm_ip4_config_destination_is_direct (config, route->network, route->plen))
 				continue;
 
-			/* Don't add the default route if the connection
-			 * is never supposed to be the default connection.
-			 */
-			if (   nm_ip4_config_get_never_default (config)
-			    && NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route))
-				continue;
-
 			g_array_append_vals (routes, route, 1);
 		}
 
@@ -301,7 +295,7 @@ nm_ip4_config_commit (const NMIP4Config *config, int ifindex)
 }
 
 void
-nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIPConfig *setting, int default_route_metric)
+nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIPConfig *setting, guint32 default_route_metric)
 {
 	guint naddresses, nroutes, nnameservers, nsearches;
 	int i;
@@ -1209,12 +1203,12 @@ const NMPlatformIP4Route *
 nm_ip4_config_get_direct_route_for_host (const NMIP4Config *config, guint32 host)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
-	int i;
+	guint i;
 	NMPlatformIP4Route *best_route = NULL;
 
 	g_return_val_if_fail (host, NULL);
 
-	for (i = 0; i < priv->routes->len; i++ ) {
+	for (i = 0; i < priv->routes->len; i++) {
 		NMPlatformIP4Route *item = &g_array_index (priv->routes, NMPlatformIP4Route, i);
 
 		if (item->gateway != 0)
@@ -1233,6 +1227,28 @@ nm_ip4_config_get_direct_route_for_host (const NMIP4Config *config, guint32 host
 	}
 
 	return best_route;
+}
+
+const NMPlatformIP4Address *
+nm_ip4_config_get_subnet_for_host (const NMIP4Config *config, guint32 host)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+	guint i;
+	NMPlatformIP4Address *subnet = NULL;
+
+	g_return_val_if_fail (host, NULL);
+
+	for (i = 0; i < priv->addresses->len; i++) {
+		NMPlatformIP4Address *item = &g_array_index (priv->addresses, NMPlatformIP4Address, i);
+
+		if (subnet && subnet->plen >= item->plen)
+			continue;
+		if (nm_utils_ip4_address_clear_host_address (host, item->plen) != nm_utils_ip4_address_clear_host_address (item->address, item->plen))
+			continue;
+		subnet = item;
+	}
+
+	return subnet;
 }
 
 /******************************************************************/
@@ -1828,8 +1844,14 @@ get_property (GObject *object, guint prop_id,
 
 			for (i = 0; i < nroutes; i++) {
 				const NMPlatformIP4Route *route = nm_ip4_config_get_route (config, i);
-				GArray *array = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 4);
+				GArray *array;
 
+				/* legacy versions of nm_ip4_route_set_prefix() in libnm-util assert that the
+				 * plen is positive. Skip the default routes not to break older clients. */
+				if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route))
+					continue;
+
+				array = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 4);
 				g_array_append_val (array, route->network);
 				g_array_append_val (array, route->plen);
 				g_array_append_val (array, route->gateway);

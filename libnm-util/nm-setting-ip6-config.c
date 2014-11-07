@@ -75,6 +75,7 @@ typedef struct {
 	GSList *dns_search; /* list of strings */
 	GSList *addresses;  /* array of NMIP6Address */
 	GSList *routes;     /* array of NMIP6Route */
+	gint64  route_metric;
 	gboolean ignore_auto_routes;
 	gboolean ignore_auto_dns;
 	gboolean never_default;
@@ -91,6 +92,7 @@ enum {
 	PROP_DNS_SEARCH,
 	PROP_ADDRESSES,
 	PROP_ROUTES,
+	PROP_ROUTE_METRIC,
 	PROP_IGNORE_AUTO_ROUTES,
 	PROP_IGNORE_AUTO_DNS,
 	PROP_NEVER_DEFAULT,
@@ -709,6 +711,26 @@ nm_setting_ip6_config_clear_routes (NMSettingIP6Config *setting)
 }
 
 /**
+ * nm_setting_ip6_config_get_route_metric:
+ * @setting: the #NMSettingIP4Config
+ *
+ * Returns the value contained in the #NMSettingIP6Config:route-metric
+ * property.
+ *
+ * Returns: the route metric that is used for IPv6 routes that don't explicitly
+ * specify a metric. See #NMSettingIP6Config:route-metric for more details.
+ *
+ * Since: 1.0
+ **/
+gint64
+nm_setting_ip6_config_get_route_metric (NMSettingIP6Config *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), -1);
+
+	return NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->route_metric;
+}
+
+/**
  * nm_setting_ip6_config_get_ignore_auto_routes:
  * @setting: the #NMSettingIP6Config
  *
@@ -927,6 +949,9 @@ set_property (GObject *object, guint prop_id,
 		g_slist_free_full (priv->routes, g_free);
 		priv->routes = nm_utils_ip6_routes_from_gvalue (value);
 		break;
+	case PROP_ROUTE_METRIC:
+		priv->route_metric = g_value_get_int64 (value);
+		break;
 	case PROP_IGNORE_AUTO_ROUTES:
 		priv->ignore_auto_routes = g_value_get_boolean (value);
 		break;
@@ -973,6 +998,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_ROUTES:
 		nm_utils_ip6_routes_to_gvalue (priv->routes, value);
+		break;
+	case PROP_ROUTE_METRIC:
+		g_value_set_int64 (value, priv->route_metric);
 		break;
 	case PROP_IGNORE_AUTO_ROUTES:
 		g_value_set_boolean (value, priv->ignore_auto_routes);
@@ -1185,6 +1213,28 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 		                             G_PARAM_READWRITE |
 		                             NM_SETTING_PARAM_INFERRABLE |
 		                             G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingIP6Config:route-metric:
+	 *
+	 * The default metric for routes that don't explicitly specify a metric.
+	 * The default value -1 means that the metric is choosen automatically
+	 * based on the device type.
+	 * The metric applies to dynamic routes, manual (static) routes that
+	 * don't have an explicit metric setting, address prefix routes, and
+	 * the default route.
+	 * As the linux kernel replaces zero (0) by 1024 (user-default), setting
+	 * this property to 0 means effectively setting it to 1024.
+	 *
+	 * Since: 1.0
+	 **/
+	g_object_class_install_property
+	    (object_class, PROP_ROUTE_METRIC,
+	     g_param_spec_int64 (NM_SETTING_IP6_CONFIG_ROUTE_METRIC, "", "",
+	                         -1, G_MAXUINT32, -1,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_CONSTRUCT |
+	                         G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingIP6Config:ignore-auto-routes:

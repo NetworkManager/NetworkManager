@@ -367,6 +367,7 @@ global:
 	nm_setting_ip4_config_get_num_dns_searches;
 	nm_setting_ip4_config_get_num_routes;
 	nm_setting_ip4_config_get_route;
+	nm_setting_ip4_config_get_route_metric;
 	nm_setting_ip4_config_get_type;
 	nm_setting_ip4_config_new;
 	nm_setting_ip4_config_remove_address;
@@ -402,6 +403,7 @@ global:
 	nm_setting_ip6_config_get_num_dns_searches;
 	nm_setting_ip6_config_get_num_routes;
 	nm_setting_ip6_config_get_route;
+	nm_setting_ip6_config_get_route_metric;
 	nm_setting_ip6_config_get_type;
 	nm_setting_ip6_config_new;
 	nm_setting_ip6_config_privacy_get_type;

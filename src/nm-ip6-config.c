@@ -26,6 +26,7 @@
 
 #include "nm-glib-compat.h"
 #include "nm-utils.h"
+#include "nm-platform.h"
 #include "nm-dbus-manager.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-ip6-config-glue.h"
@@ -170,7 +171,9 @@ static gboolean
 routes_are_duplicate (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b, gboolean consider_gateway_and_metric)
 {
 	return IN6_ARE_ADDR_EQUAL (&a->network, &b->network) && a->plen == b->plen &&
-	       (!consider_gateway_and_metric || (IN6_ARE_ADDR_EQUAL (&a->gateway, &b->gateway) && a->metric == b->metric));
+	       (   !consider_gateway_and_metric
+	        || (   IN6_ARE_ADDR_EQUAL (&a->gateway, &b->gateway)
+	            && nm_utils_ip6_route_metric_normalize (a->metric) == nm_utils_ip6_route_metric_normalize (b->metric)));
 }
 
 static gint
@@ -303,7 +306,7 @@ nm_ip6_config_capture (int ifindex, gboolean capture_resolv_conf, NMSettingIP6Co
 	g_array_unref (priv->routes);
 
 	priv->addresses = nm_platform_ip6_address_get_all (ifindex);
-	priv->routes = nm_platform_ip6_route_get_all (ifindex, TRUE);
+	priv->routes = nm_platform_ip6_route_get_all (ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
 
 	/* Extract gateway from default route */
 	old_gateway = priv->gateway;
@@ -388,13 +391,6 @@ nm_ip6_config_commit (const NMIP6Config *config, int ifindex)
 			    && nm_ip6_config_destination_is_direct (config, &route->network, route->plen))
 				continue;
 
-			/* Don't add the default route if the connection
-			 * is never supposed to be the default connection.
-			 */
-			if (   nm_ip6_config_get_never_default (config)
-			    && NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route))
-				continue;
-
 			g_array_append_vals (routes, route, 1);
 		}
 
@@ -406,7 +402,7 @@ nm_ip6_config_commit (const NMIP6Config *config, int ifindex)
 }
 
 void
-nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIPConfig *setting, int default_route_metric)
+nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIPConfig *setting, guint32 default_route_metric)
 {
 	guint naddresses, nroutes, nnameservers, nsearches;
 	const char *gateway_str;
@@ -1214,13 +1210,13 @@ const NMPlatformIP6Route *
 nm_ip6_config_get_direct_route_for_host (const NMIP6Config *config, const struct in6_addr *host)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
-	int i;
+	guint i;
 	struct in6_addr network2, host2;
 	NMPlatformIP6Route *best_route = NULL;
 
 	g_return_val_if_fail (host && !IN6_IS_ADDR_UNSPECIFIED (host), NULL);
 
-	for (i = 0; i < priv->routes->len; i++ ) {
+	for (i = 0; i < priv->routes->len; i++) {
 		NMPlatformIP6Route *item = &g_array_index (priv->routes, NMPlatformIP6Route, i);
 
 		if (!IN6_IS_ADDR_UNSPECIFIED (&item->gateway))
@@ -1244,6 +1240,33 @@ nm_ip6_config_get_direct_route_for_host (const NMIP6Config *config, const struct
 
 	return best_route;
 }
+
+const NMPlatformIP6Address *
+nm_ip6_config_get_subnet_for_host (const NMIP6Config *config, const struct in6_addr *host)
+{
+	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	guint i;
+	NMPlatformIP6Address *subnet = NULL;
+	struct in6_addr subnet2, host2;
+
+	g_return_val_if_fail (host && !IN6_IS_ADDR_UNSPECIFIED (host), NULL);
+
+	for (i = 0; i < priv->addresses->len; i++) {
+		NMPlatformIP6Address *item = &g_array_index (priv->addresses, NMPlatformIP6Address, i);
+
+		if (subnet && subnet->plen >= item->plen)
+			continue;
+
+		nm_utils_ip6_address_clear_host_address (&host2, host, item->plen);
+		nm_utils_ip6_address_clear_host_address (&subnet2, &item->address, item->plen);
+
+		if (IN6_ARE_ADDR_EQUAL (&subnet2, &host2))
+			subnet = item;
+	}
+
+	return subnet;
+}
+
 
 /******************************************************************/
 
@@ -1720,11 +1743,17 @@ get_property (GObject *object, guint prop_id,
 			int i;
 
 			for (i = 0; i < nroutes; i++) {
+				GValueArray *array;
 				const NMPlatformIP6Route *route = nm_ip6_config_get_route (config, i);
-
-				GValueArray *array = g_value_array_new (4);
 				GByteArray *ba;
 				GValue element = G_VALUE_INIT;
+
+				/* legacy versions of nm_ip6_route_set_prefix() in libnm-util assert that the
+				 * plen is positive. Skip the default routes not to break older clients. */
+				if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route))
+					continue;
+
+				array = g_value_array_new (4);
 
 				g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
 				ba = g_byte_array_new ();

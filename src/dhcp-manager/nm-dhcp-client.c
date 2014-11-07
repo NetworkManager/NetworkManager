@@ -42,7 +42,7 @@ typedef struct {
 	GByteArray * hwaddr;
 	gboolean     ipv6;
 	char *       uuid;
-	guint        priority;
+	guint32      priority;
 	guint32      timeout;
 	GByteArray * duid;
 
@@ -885,7 +885,7 @@ nm_dhcp_client_class_init (NMDhcpClientClass *client_class)
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY,
 		 g_param_spec_uint (NM_DHCP_CLIENT_PRIORITY, "", "",
-		                    0, G_MAXUINT, 0,
+		                    0, G_MAXUINT32, 0,
 		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
 		                    G_PARAM_STATIC_STRINGS));
 

@@ -26,6 +26,7 @@
 #include <string.h>
 #include <netlink/route/addr.h>
 
+#include "gsystem-local-alloc.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-platform.h"
@@ -1836,38 +1837,36 @@ nm_platform_address_flush (int ifindex)
 /******************************************************************/
 
 GArray *
-nm_platform_ip4_route_get_all (int ifindex, gboolean include_default)
+nm_platform_ip4_route_get_all (int ifindex, NMPlatformGetRouteMode mode)
 {
 	reset_error ();
 
-	g_return_val_if_fail (ifindex > 0, NULL);
+	g_return_val_if_fail (ifindex >= 0, NULL);
 	g_return_val_if_fail (klass->ip4_route_get_all, NULL);
 
-	return klass->ip4_route_get_all (platform, ifindex, include_default);
+	return klass->ip4_route_get_all (platform, ifindex, mode);
 }
 
 GArray *
-nm_platform_ip6_route_get_all (int ifindex, gboolean include_default)
+nm_platform_ip6_route_get_all (int ifindex, NMPlatformGetRouteMode mode)
 {
 	reset_error ();
 
-	g_return_val_if_fail (ifindex > 0, NULL);
+	g_return_val_if_fail (ifindex >= 0, NULL);
 	g_return_val_if_fail (klass->ip6_route_get_all, NULL);
 
-	return klass->ip6_route_get_all (platform, ifindex, include_default);
+	return klass->ip6_route_get_all (platform, ifindex, mode);
 }
 
 gboolean
 nm_platform_ip4_route_add (int ifindex, NMIPConfigSource source,
                            in_addr_t network, int plen,
-                           in_addr_t gateway, int metric, int mss)
+                           in_addr_t gateway, guint32 metric, guint32 mss)
 {
 	reset_error ();
 
 	g_return_val_if_fail (platform, FALSE);
 	g_return_val_if_fail (0 <= plen && plen <= 32, FALSE);
-	g_return_val_if_fail (metric >= 0, FALSE);
-	g_return_val_if_fail (mss >= 0, FALSE);
 	g_return_val_if_fail (klass->ip4_route_add, FALSE);
 
 	if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
@@ -1889,12 +1888,10 @@ nm_platform_ip4_route_add (int ifindex, NMIPConfigSource source,
 gboolean
 nm_platform_ip6_route_add (int ifindex, NMIPConfigSource source,
                            struct in6_addr network, int plen, struct in6_addr gateway,
-                           int metric, int mss)
+                           guint32 metric, guint32 mss)
 {
 	g_return_val_if_fail (platform, FALSE);
 	g_return_val_if_fail (0 <= plen && plen <= 128, FALSE);
-	g_return_val_if_fail (metric >= 0, FALSE);
-	g_return_val_if_fail (mss >= 0, FALSE);
 	g_return_val_if_fail (klass->ip6_route_add, FALSE);
 
 	if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
@@ -1914,7 +1911,7 @@ nm_platform_ip6_route_add (int ifindex, NMIPConfigSource source,
 }
 
 gboolean
-nm_platform_ip4_route_delete (int ifindex, in_addr_t network, int plen, int metric)
+nm_platform_ip4_route_delete (int ifindex, in_addr_t network, int plen, guint32 metric)
 {
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
 
@@ -1923,14 +1920,14 @@ nm_platform_ip4_route_delete (int ifindex, in_addr_t network, int plen, int metr
 	g_return_val_if_fail (platform, FALSE);
 	g_return_val_if_fail (klass->ip4_route_delete, FALSE);
 
-	debug ("route: deleting IPv4 route %s/%d, metric=%d, ifindex %d%s",
+	debug ("route: deleting IPv4 route %s/%d, metric=%"G_GUINT32_FORMAT", ifindex %d%s",
 	       nm_utils_inet4_ntop (network, NULL), plen, metric, ifindex,
 	       _to_string_dev (ifindex, str_dev, sizeof (str_dev)));
 	return klass->ip4_route_delete (platform, ifindex, network, plen, metric);
 }
 
 gboolean
-nm_platform_ip6_route_delete (int ifindex, struct in6_addr network, int plen, int metric)
+nm_platform_ip6_route_delete (int ifindex, struct in6_addr network, int plen, guint32 metric)
 {
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
 
@@ -1939,14 +1936,14 @@ nm_platform_ip6_route_delete (int ifindex, struct in6_addr network, int plen, in
 	g_return_val_if_fail (platform, FALSE);
 	g_return_val_if_fail (klass->ip6_route_delete, FALSE);
 
-	debug ("route: deleting IPv6 route %s/%d, metric=%d, ifindex %d%s",
+	debug ("route: deleting IPv6 route %s/%d, metric=%"G_GUINT32_FORMAT", ifindex %d%s",
 	       nm_utils_inet6_ntop (&network, NULL), plen, metric, ifindex,
 	       _to_string_dev (ifindex, str_dev, sizeof (str_dev)));
 	return klass->ip6_route_delete (platform, ifindex, network, plen, metric);
 }
 
 gboolean
-nm_platform_ip4_route_exists (int ifindex, in_addr_t network, int plen, int metric)
+nm_platform_ip4_route_exists (int ifindex, in_addr_t network, int plen, guint32 metric)
 {
 	reset_error ();
 
@@ -1957,7 +1954,7 @@ nm_platform_ip4_route_exists (int ifindex, in_addr_t network, int plen, int metr
 }
 
 gboolean
-nm_platform_ip6_route_exists (int ifindex, struct in6_addr network, int plen, int metric)
+nm_platform_ip6_route_exists (int ifindex, struct in6_addr network, int plen, guint32 metric)
 {
 	reset_error ();
 
@@ -2013,9 +2010,8 @@ array_contains_ip6_route (const GArray *routes, const NMPlatformIP6Route *route)
  * A convenience function to synchronize routes for a specific interface
  * with the least possible disturbance. It simply removes routes that are
  * not listed and adds routes that are.
- *
- * @known_routes should not contain a default route; if it does, it will be
- * ignored.
+ * Default routes are ignored (both in @known_routes and those already
+ * configured on the device).
  *
  * Returns: %TRUE on success.
  */
@@ -2029,7 +2025,7 @@ nm_platform_ip4_route_sync (int ifindex, const GArray *known_routes)
 	int i, i_type;
 
 	/* Delete unknown routes */
-	routes = nm_platform_ip4_route_get_all (ifindex, FALSE);
+	routes = nm_platform_ip4_route_get_all (ifindex, NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT);
 	for (i = 0; i < routes->len; i++) {
 		route = &g_array_index (routes, NMPlatformIP4Route, i);
 
@@ -2086,9 +2082,8 @@ nm_platform_ip4_route_sync (int ifindex, const GArray *known_routes)
  * A convenience function to synchronize routes for a specific interface
  * with the least possible disturbance. It simply removes routes that are
  * not listed and adds routes that are.
- *
- * @known_routes should not contain a default route; if it does, it will be
- * ignored.
+ * Default routes are ignored (both in @known_routes and those already
+ * configured on the device).
  *
  * Returns: %TRUE on success.
  */
@@ -2102,7 +2097,7 @@ nm_platform_ip6_route_sync (int ifindex, const GArray *known_routes)
 	int i, i_type;
 
 	/* Delete unknown routes */
-	routes = nm_platform_ip6_route_get_all (ifindex, FALSE);
+	routes = nm_platform_ip6_route_get_all (ifindex, NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT);
 	for (i = 0; i < routes->len; i++) {
 		route = &g_array_index (routes, NMPlatformIP6Route, i);
 		route->ifindex = 0;
@@ -2427,7 +2422,7 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route)
 
 	_to_string_dev (route->ifindex, str_dev, sizeof (str_dev));
 
-	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%s/%d via %s%s metric %u mss %u src %s",
+	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%s/%d via %s%s metric %"G_GUINT32_FORMAT" mss %"G_GUINT32_FORMAT" src %s",
 	            s_network, route->plen, s_gateway,
 	            str_dev,
 	            route->metric, route->mss,
@@ -2460,7 +2455,7 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route)
 
 	_to_string_dev (route->ifindex, str_dev, sizeof (str_dev));
 
-	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%s/%d via %s%s metric %u mss %u src %s",
+	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%s/%d via %s%s metric %"G_GUINT32_FORMAT" mss %"G_GUINT32_FORMAT" src %s",
 	            s_network, route->plen, s_gateway,
 	            str_dev,
 	            route->metric, route->mss,

@@ -136,6 +136,7 @@ void         nm_ip_route_set_attribute       (NMIPRoute   *route,
 #define NM_SETTING_IP_CONFIG_ADDRESSES          "addresses"
 #define NM_SETTING_IP_CONFIG_GATEWAY            "gateway"
 #define NM_SETTING_IP_CONFIG_ROUTES             "routes"
+#define NM_SETTING_IP_CONFIG_ROUTE_METRIC       "route-metric"
 #define NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES "ignore-auto-routes"
 #define NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS    "ignore-auto-dns"
 #define NM_SETTING_IP_CONFIG_DHCP_HOSTNAME      "dhcp-hostname"
@@ -203,6 +204,8 @@ void          nm_setting_ip_config_remove_route               (NMSettingIPConfig
 gboolean      nm_setting_ip_config_remove_route_by_value      (NMSettingIPConfig *setting,
                                                                NMIPRoute         *route);
 void          nm_setting_ip_config_clear_routes               (NMSettingIPConfig *setting);
+
+gint64        nm_setting_ip_config_get_route_metric           (NMSettingIPConfig *setting);
 
 gboolean      nm_setting_ip_config_get_ignore_auto_routes     (NMSettingIPConfig *setting);
 gboolean      nm_setting_ip_config_get_ignore_auto_dns        (NMSettingIPConfig *setting);
