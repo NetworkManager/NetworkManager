@@ -28,6 +28,7 @@
 #include "nm-device-adsl.h"
 #include "nm-device-factory.h"
 #include "nm-logging.h"
+#include "nm-glib-compat.h"
 
 typedef struct {
 	GUdevClient *client;
