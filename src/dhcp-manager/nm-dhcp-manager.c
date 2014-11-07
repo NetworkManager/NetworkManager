@@ -95,8 +95,6 @@ _nm_dhcp_client_register (GType gtype,
 	desc->get_path_func = get_path_func;
 	desc->get_lease_configs_func = get_lease_configs_func;
 	client_descs = g_slist_prepend (client_descs, desc);
-
-	nm_log_info (LOGD_DHCP, "Registered DHCP client '%s'", name);
 }
 
 static ClientDesc *
@@ -389,6 +387,7 @@ nm_dhcp_manager_init (NMDhcpManager *self)
 	NMConfig *config = nm_config_get ();
 	const char *client;
 	GError *error = NULL;
+	GSList *iter;
 
 	/* Client-specific setup */
 	client = nm_config_get_dhcp_client (config);
@@ -409,6 +408,13 @@ nm_dhcp_manager_init (NMDhcpManager *self)
 	                                       NULL,
 	                                       (GDestroyNotify) g_object_unref);
 	g_assert (priv->clients);
+
+	for (iter = client_descs; iter; iter = iter->next) {
+		ClientDesc *desc = iter->data;
+
+		nm_log_dbg (LOGD_DHCP, "Registered DHCP client '%s' (%s)",
+		            desc->name, g_type_name (desc->gtype));
+	}
 }
 
 static void
