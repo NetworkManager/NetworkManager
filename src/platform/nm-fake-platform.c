@@ -988,23 +988,16 @@ ip4_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteMode mod
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	GArray *routes;
 	NMPlatformIP4Route *route;
-	int count = 0, i;
+	guint i;
 
 	g_return_val_if_fail (NM_IN_SET (mode, NM_PLATFORM_GET_ROUTE_MODE_ALL, NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT, NM_PLATFORM_GET_ROUTE_MODE_ONLY_DEFAULT), NULL);
 
-	/* Count routes */
-	for (i = 0; i < priv->ip4_routes->len; i++) {
-		route = &g_array_index (priv->ip4_routes, NMPlatformIP4Route, i);
-		if (route && route->ifindex == ifindex)
-			count++;
-	}
-
-	routes = g_array_sized_new (TRUE, TRUE, sizeof (NMPlatformIP4Route), count);
+	routes = g_array_new (TRUE, TRUE, sizeof (NMPlatformIP4Route));
 
 	/* Fill routes */
 	for (i = 0; i < priv->ip4_routes->len; i++) {
 		route = &g_array_index (priv->ip4_routes, NMPlatformIP4Route, i);
-		if (route && route->ifindex == ifindex) {
+		if (route && (!ifindex || route->ifindex == ifindex)) {
 			if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route)) {
 				if (mode != NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT)
 					g_array_append_val (routes, *route);
@@ -1024,23 +1017,16 @@ ip6_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteMode mod
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	GArray *routes;
 	NMPlatformIP6Route *route;
-	int count = 0, i;
+	guint i;
 
 	g_return_val_if_fail (NM_IN_SET (mode, NM_PLATFORM_GET_ROUTE_MODE_ALL, NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT, NM_PLATFORM_GET_ROUTE_MODE_ONLY_DEFAULT), NULL);
 
-	/* Count routes */
-	for (i = 0; i < priv->ip6_routes->len; i++) {
-		route = &g_array_index (priv->ip6_routes, NMPlatformIP6Route, i);
-		if (route && route->ifindex == ifindex)
-			count++;
-	}
-
-	routes = g_array_sized_new (TRUE, TRUE, sizeof (NMPlatformIP6Route), count);
+	routes = g_array_new (TRUE, TRUE, sizeof (NMPlatformIP6Route));
 
 	/* Fill routes */
 	for (i = 0; i < priv->ip6_routes->len; i++) {
 		route = &g_array_index (priv->ip6_routes, NMPlatformIP6Route, i);
-		if (route && route->ifindex == ifindex) {
+		if (route && (!ifindex || route->ifindex == ifindex)) {
 			if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route)) {
 				if (mode != NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT)
 					g_array_append_val (routes, *route);

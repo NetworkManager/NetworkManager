@@ -1841,7 +1841,7 @@ nm_platform_ip4_route_get_all (int ifindex, NMPlatformGetRouteMode mode)
 {
 	reset_error ();
 
-	g_return_val_if_fail (ifindex > 0, NULL);
+	g_return_val_if_fail (ifindex >= 0, NULL);
 	g_return_val_if_fail (klass->ip4_route_get_all, NULL);
 
 	return klass->ip4_route_get_all (platform, ifindex, mode);
@@ -1852,7 +1852,7 @@ nm_platform_ip6_route_get_all (int ifindex, NMPlatformGetRouteMode mode)
 {
 	reset_error ();
 
-	g_return_val_if_fail (ifindex > 0, NULL);
+	g_return_val_if_fail (ifindex >= 0, NULL);
 	g_return_val_if_fail (klass->ip6_route_get_all, NULL);
 
 	return klass->ip6_route_get_all (platform, ifindex, mode);
