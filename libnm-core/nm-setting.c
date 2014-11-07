@@ -291,6 +291,7 @@ typedef struct {
 	const GVariantType *dbus_type;
 
 	NMSettingPropertyGetFunc get_func;
+	NMSettingPropertySynthFunc synth_func;
 	NMSettingPropertySetFunc set_func;
 	NMSettingPropertyNotSetFunc not_set_func;
 
@@ -325,6 +326,7 @@ add_property_override (NMSettingClass *setting_class,
                        GParamSpec *param_spec,
                        const GVariantType *dbus_type,
                        NMSettingPropertyGetFunc get_func,
+                       NMSettingPropertySynthFunc synth_func,
                        NMSettingPropertySetFunc set_func,
                        NMSettingPropertyNotSetFunc not_set_func,
                        NMSettingPropertyTransformToFunc to_dbus,
@@ -341,6 +343,7 @@ add_property_override (NMSettingClass *setting_class,
 	override.param_spec = param_spec;
 	override.dbus_type = dbus_type;
 	override.get_func = get_func;
+	override.synth_func = synth_func;
 	override.set_func = set_func;
 	override.not_set_func = not_set_func;
 	override.to_dbus = to_dbus;
@@ -361,30 +364,27 @@ add_property_override (NMSettingClass *setting_class,
  * @setting_class: the setting class
  * @property_name: the name of the property to override
  * @dbus_type: the type of the property (in its D-Bus representation)
- * @get_func: (allow-none): function to call to get the value of the property
+ * @synth_func: (allow-none): function to call to synthesize a value for the property
  * @set_func: (allow-none): function to call to set the value of the property
  *
  * Registers a property named @property_name, which will be used in the D-Bus
  * serialization of objects of @setting_class, but which does not correspond to
  * a #GObject property.
  *
- * When serializing a setting to D-Bus, @get_func will be called to get the
- * property's value. (If it returns %NULL, no value will be added to the
- * serialization. If @get_func is %NULL, the property will always be omitted in
- * the serialization.)
+ * When serializing a setting to D-Bus, @synth_func will be called to synthesize
+ * a value for the property. (If it returns %NULL, no value will be added to the
+ * serialization. If @synth_func is %NULL, the property will always be omitted
+ * in the serialization.)
  *
  * When deserializing a D-Bus representation into a setting, if @property_name
- * is present, then @set_func will be called to set (and/or verify) it. If it
- * returns %TRUE, the value is considered to have been successfully set; if it
- * returns %FALSE then the deserializing operation as a whole will fail with the
- * returned #GError. (If @set_func is %NULL then the property will be ignored
- * when deserializing.)
+ * is present, then @set_func will be called to set it. (If @set_func is %NULL
+ * then the property will be ignored when deserializing.)
  */
 void
 _nm_setting_class_add_dbus_only_property (NMSettingClass *setting_class,
                                           const char *property_name,
                                           const GVariantType *dbus_type,
-                                          NMSettingPropertyGetFunc get_func,
+                                          NMSettingPropertySynthFunc synth_func,
                                           NMSettingPropertySetFunc set_func)
 {
 	g_return_if_fail (NM_IS_SETTING_CLASS (setting_class));
@@ -395,7 +395,7 @@ _nm_setting_class_add_dbus_only_property (NMSettingClass *setting_class,
 
 	add_property_override (setting_class,
 	                       property_name, NULL, dbus_type,
-	                       get_func, set_func, NULL,
+	                       NULL, synth_func, set_func, NULL,
 	                       NULL, NULL);
 }
 
@@ -412,17 +412,15 @@ _nm_setting_class_add_dbus_only_property (NMSettingClass *setting_class,
  * @property_name on @setting_class.
  *
  * When serializing a setting to D-Bus, if @get_func is non-%NULL, then it will
- * be called to get the property's value. If it returns %TRUE, the value will be
- * added to the hash, and if %FALSE, it will not. (If @get_func is %NULL, the
- * property will be read normally with g_object_get_property(), and added to the
- * hash if it is not the default value.)
+ * be called to get the property's value. If it returns a #GVariant, the
+ * property will be added to the hash, and if it returns %NULL, the property
+ * will be omitted. (If @get_func is %NULL, the property will be read normally
+ * with g_object_get_property(), and added to the hash if it is not the default
+ * value.)
  *
  * When deserializing a D-Bus representation into a setting, if @property_name
- * is present, then @set_func will be called to set (and/or verify) it. If it
- * returns %TRUE, the value is considered to have been successfully set; if it
- * returns %FALSE then the deserializing operation as a whole will fail with the
- * returned #GError. (If @set_func is %NULL then the property will be set normally
- * with g_object_set_property().)
+ * is present, then @set_func will be called to set it. (If @set_func is %NULL
+ * then the property will be set normally with g_object_set_property().)
  *
  * If @not_set_func is non-%NULL, then it will be called when deserializing a
  * representation that does NOT contain @property_name. This can be used, eg, if
@@ -444,7 +442,7 @@ _nm_setting_class_override_property (NMSettingClass *setting_class,
 
 	add_property_override (setting_class,
 	                       property_name, param_spec, dbus_type,
-	                       get_func, set_func, not_set_func,
+	                       get_func, NULL, set_func, not_set_func,
 	                       NULL, NULL);
 }
 
@@ -478,7 +476,7 @@ _nm_setting_class_transform_property (NMSettingClass *setting_class,
 
 	add_property_override (setting_class,
 	                       property, param_spec, dbus_type,
-	                       NULL, NULL, NULL,
+	                       NULL, NULL, NULL, NULL,
 	                       to_dbus, from_dbus);
 }
 
@@ -588,7 +586,10 @@ get_property_for_dbus (NMSetting *setting,
 	GValue prop_value = { 0, };
 	GVariant *dbus_value;
 
-	g_return_val_if_fail (property->param_spec != NULL, NULL);
+	if (property->get_func)
+		return property->get_func (setting, property->name);
+	else
+		g_return_val_if_fail (property->param_spec != NULL, NULL);
 
 	g_value_init (&prop_value, property->param_spec->value_type);
 	g_object_get_property (G_OBJECT (setting), property->param_spec->name, &prop_value);
@@ -656,8 +657,8 @@ _nm_setting_to_dbus (NMSetting *setting, NMConnection *connection, NMConnectionS
 		const NMSettingProperty *property = &properties[i];
 		GParamSpec *prop_spec = property->param_spec;
 
-		if (!prop_spec && !property->get_func) {
-			/* Override property with no get_func, so we skip it. */
+		if (!prop_spec && !property->synth_func) {
+			/* D-Bus-only property with no synth_func, so we skip it. */
 			continue;
 		}
 
@@ -672,12 +673,10 @@ _nm_setting_to_dbus (NMSetting *setting, NMConnection *connection, NMConnectionS
 		    && !(prop_spec && (prop_spec->flags & NM_SETTING_PARAM_SECRET)))
 			continue;
 
-		if (property->get_func)
-			dbus_value = property->get_func (setting, connection, property->name);
-		else if (prop_spec)
-			dbus_value = get_property_for_dbus (setting, property, TRUE);
+		if (property->synth_func)
+			dbus_value = property->synth_func (setting, connection, property->name);
 		else
-			g_assert_not_reached ();
+			dbus_value = get_property_for_dbus (setting, property, TRUE);
 		if (dbus_value) {
 			/* Allow dbus_value to be either floating or not. */
 			g_variant_take_ref (dbus_value);
@@ -717,8 +716,6 @@ _nm_setting_new_from_dbus (GType setting_type,
 {
 	NMSettingClass *class;
 	NMSetting *setting;
-	GVariantIter iter;
-	const char *prop_name;
 	const NMSettingProperty *properties;
 	guint n_properties;
 	guint i;
@@ -737,17 +734,11 @@ _nm_setting_new_from_dbus (GType setting_type,
 	 */
 	class = g_type_class_ref (setting_type);
 
-	/* Check for invalid properties first. */
-	g_variant_iter_init (&iter, setting_dict);
-	while (g_variant_iter_next (&iter, "{&sv}", &prop_name, NULL)) {
-		if (!nm_setting_class_find_property (class, prop_name)) {
-			/* Oh, we're so nice and only warn, maybe it should be a fatal error? */
-			g_warning ("Ignoring invalid property '%s'", prop_name);
-			continue;
-		}
-	}
-
-	/* Now build the setting object from the legitimate properties */
+	/* Build the setting object from the properties we know about; we assume
+	 * that any propreties in @setting_dict that we don't know about can
+	 * either be ignored or else has a backward-compatibility equivalent
+	 * that we do know about.
+	 */
 	setting = (NMSetting *) g_object_new (setting_type, NULL);
 
 	properties = nm_setting_class_get_properties (class, &n_properties);

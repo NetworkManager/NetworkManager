@@ -952,18 +952,6 @@ nmtst_assert_connection_unnormalizable (NMConnection *con,
 
 #endif
 
-static inline void
-nmtst_assert_ip4_address_equals (guint32 addr, const char *expected, const char *loc)
-{
-    guint32 addr2 = nmtst_inet4_from_string (expected);
-
-    if (addr != addr2)
-        g_error ("assert: %s: ip4 address '%s' expected, but got %s",
-                 loc, expected ? expected : "any", nm_utils_inet4_ntop (addr, NULL));
-}
-#define nmtst_assert_ip4_address_equals(addr, expected) \
-    nmtst_assert_ip4_address_equals (addr, expected, G_STRLOC)
-
 #ifdef __NM_UTILS_H__
 static inline void
 nmtst_assert_hwaddr_equals (gconstpointer hwaddr1, gssize hwaddr1_len, const char *expected, const char *loc)

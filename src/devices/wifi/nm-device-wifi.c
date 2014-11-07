@@ -2809,14 +2809,14 @@ act_stage3_ip4_config_start (NMDevice *device,
                              NMDeviceStateReason *reason)
 {
 	NMConnection *connection;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	const char *method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
 
 	connection = nm_device_get_connection (device);
 	g_assert (connection);
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	if (s_ip4)
-		method = nm_setting_ip4_config_get_method (s_ip4);
+		method = nm_setting_ip_config_get_method (s_ip4);
 
 	/* Indicate that a critical protocol is about to start */
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0)
@@ -2831,14 +2831,14 @@ act_stage3_ip6_config_start (NMDevice *device,
                              NMDeviceStateReason *reason)
 {
 	NMConnection *connection;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip6;
 	const char *method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
 
 	connection = nm_device_get_connection (device);
 	g_assert (connection);
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	if (s_ip6)
-		method = nm_setting_ip6_config_get_method (s_ip6);
+		method = nm_setting_ip_config_get_method (s_ip6);
 
 	/* Indicate that a critical protocol is about to start */
 	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0 ||
@@ -2938,7 +2938,7 @@ static NMActStageReturn
 act_stage4_ip4_config_timeout (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMConnection *connection;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	gboolean may_fail = FALSE, chain_up = FALSE;
 	NMActStageReturn ret;
 
@@ -2946,7 +2946,7 @@ act_stage4_ip4_config_timeout (NMDevice *device, NMDeviceStateReason *reason)
 	g_assert (connection);
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	may_fail = nm_setting_ip4_config_get_may_fail (s_ip4);
+	may_fail = nm_setting_ip_config_get_may_fail (s_ip4);
 
 	ret = handle_ip_config_timeout (NM_DEVICE_WIFI (device), connection, may_fail, &chain_up, reason);
 	if (chain_up)
@@ -2959,7 +2959,7 @@ static NMActStageReturn
 act_stage4_ip6_config_timeout (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMConnection *connection;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip6;
 	gboolean may_fail = FALSE, chain_up = FALSE;
 	NMActStageReturn ret;
 
@@ -2967,7 +2967,7 @@ act_stage4_ip6_config_timeout (NMDevice *device, NMDeviceStateReason *reason)
 	g_assert (connection);
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
-	may_fail = nm_setting_ip6_config_get_may_fail (s_ip6);
+	may_fail = nm_setting_ip_config_get_may_fail (s_ip6);
 
 	ret = handle_ip_config_timeout (NM_DEVICE_WIFI (device), connection, may_fail, &chain_up, reason);
 	if (chain_up)

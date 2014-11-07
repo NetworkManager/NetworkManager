@@ -15,18 +15,13 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2008 - 2010 Red Hat, Inc.
- * Copyright 2008 Novell, Inc.
+ * Copyright 2014 Red Hat, Inc.
  */
 
 #ifndef __NM_DHCP6_CONFIG_H__
 #define __NM_DHCP6_CONFIG_H__
 
-#if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
-#error "Only <NetworkManager.h> can be included directly."
-#endif
-
-#include <nm-object.h>
+#include <nm-dhcp-config.h>
 
 G_BEGIN_DECLS
 
@@ -36,24 +31,18 @@ G_BEGIN_DECLS
 #define NM_IS_DHCP6_CONFIG(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DHCP6_CONFIG))
 #define NM_IS_DHCP6_CONFIG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DHCP6_CONFIG))
 
-struct _NMDhcp6Config {
-	NMObject parent;
-};
+typedef struct {
+	NMDhcpConfig parent;
+} NMDhcp6Config;
 
 typedef struct {
-	NMObjectClass parent;
+	NMDhcpConfigClass parent;
 
 	/*< private >*/
 	gpointer padding[4];
 } NMDhcp6ConfigClass;
 
-#define NM_DHCP6_CONFIG_OPTIONS "options"
-
 GType nm_dhcp6_config_get_type (void);
-
-GHashTable * nm_dhcp6_config_get_options (NMDhcp6Config *config);
-
-const char * nm_dhcp6_config_get_one_option (NMDhcp6Config *config, const char *option);
 
 G_END_DECLS
 

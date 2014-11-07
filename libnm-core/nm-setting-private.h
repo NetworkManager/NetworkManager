@@ -111,6 +111,8 @@ NMSetting  *_nm_setting_new_from_dbus (GType setting_type,
                                        GError **error);
 
 typedef GVariant * (*NMSettingPropertyGetFunc)    (NMSetting     *setting,
+                                                   const char    *property);
+typedef GVariant * (*NMSettingPropertySynthFunc)  (NMSetting     *setting,
                                                    NMConnection  *connection,
                                                    const char    *property);
 typedef void       (*NMSettingPropertySetFunc)    (NMSetting     *setting,
@@ -124,7 +126,7 @@ typedef void       (*NMSettingPropertyNotSetFunc) (NMSetting     *setting,
 void _nm_setting_class_add_dbus_only_property (NMSettingClass *setting_class,
                                                const char *property_name,
                                                const GVariantType *dbus_type,
-                                               NMSettingPropertyGetFunc get_func,
+                                               NMSettingPropertySynthFunc synth_func,
                                                NMSettingPropertySetFunc set_func);
 
 void _nm_setting_class_override_property (NMSettingClass *setting_class,

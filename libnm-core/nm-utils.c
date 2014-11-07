@@ -24,6 +24,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <netinet/ether.h>
+#include <arpa/inet.h>
 #include <uuid/uuid.h>
 #include <gmodule.h>
 
@@ -662,13 +663,47 @@ _nm_utils_slist_to_strv (GSList *slist)
 {
 	GSList *iter;
 	char **strv;
-	int len, i = 0;
+	int len, i;
 
 	len = g_slist_length (slist);
 	strv = g_new (char *, len + 1);
 
 	for (i = 0, iter = slist; iter; iter = iter->next, i++)
 		strv[i] = g_strdup (iter->data);
+	strv[i] = NULL;
+
+	return strv;
+}
+
+GPtrArray *
+_nm_utils_strv_to_ptrarray (char **strv)
+{
+	GPtrArray *ptrarray;
+	int i;
+
+	ptrarray = g_ptr_array_new_with_free_func (g_free);
+
+	if (strv) {
+		for (i = 0; strv[i]; i++)
+			g_ptr_array_add (ptrarray, g_strdup (strv[i]));
+	}
+
+	return ptrarray;
+}
+
+char **
+_nm_utils_ptrarray_to_strv (GPtrArray *ptrarray)
+{
+	char **strv;
+	int i;
+
+	if (!ptrarray)
+		return g_new0 (char *, 1);
+
+	strv = g_new (char *, ptrarray->len + 1);
+
+	for (i = 0; i < ptrarray->len; i++)
+		strv[i] = g_strdup (ptrarray->pdata[i]);
 	strv[i] = NULL;
 
 	return strv;
@@ -1100,16 +1135,19 @@ nm_utils_ip4_dns_from_variant (GVariant *value)
 
 /**
  * nm_utils_ip4_addresses_to_variant:
- * @addresses: (element-type NMIP4Address): an array of #NMIP4Address objects
+ * @addresses: (element-type NMIPAddress): an array of #NMIPAddress objects
+ * @gateway: (allow-none): the gateway IP address
  *
- * Utility function to convert a #GPtrArray of #NMIP4Address objects into a
- * #GVariant of type 'aau' representing an array of NetworkManager IPv4
- * addresses (which are tuples of address, prefix, and gateway).
+ * Utility function to convert a #GPtrArray of #NMIPAddress objects representing
+ * IPv4 addresses into a #GVariant of type 'aau' representing an array of
+ * NetworkManager IPv4 addresses (which are tuples of address, prefix, and
+ * gateway). The "gateway" field of the first address will get the value of
+ * @gateway (if non-%NULL). In all of the other addresses, that field will be 0.
  *
  * Returns: (transfer none): a new floating #GVariant representing @addresses.
  **/
 GVariant *
-nm_utils_ip4_addresses_to_variant (GPtrArray *addresses)
+nm_utils_ip4_addresses_to_variant (GPtrArray *addresses, const char *gateway)
 {
 	GVariantBuilder builder;
 	int i;
@@ -1118,12 +1156,18 @@ nm_utils_ip4_addresses_to_variant (GPtrArray *addresses)
 
 	if (addresses) {
 		for (i = 0; i < addresses->len; i++) {
-			NMIP4Address *addr = addresses->pdata[i];
+			NMIPAddress *addr = addresses->pdata[i];
 			guint32 array[3];
 
-			array[0] = nm_ip4_address_get_address (addr);
-			array[1] = nm_ip4_address_get_prefix (addr);
-			array[2] = nm_ip4_address_get_gateway (addr);
+			if (nm_ip_address_get_family (addr) != AF_INET)
+				continue;
+
+			nm_ip_address_get_address_binary (addr, &array[0]);
+			array[1] = nm_ip_address_get_prefix (addr);
+			if (i == 0 && gateway)
+				inet_pton (AF_INET, gateway, &array[2]);
+			else
+				array[2] = 0;
 
 			g_variant_builder_add (&builder, "@au",
 			                       g_variant_new_fixed_array (G_VARIANT_TYPE_UINT32,
@@ -1137,16 +1181,19 @@ nm_utils_ip4_addresses_to_variant (GPtrArray *addresses)
 /**
  * nm_utils_ip4_addresses_from_variant:
  * @value: a #GVariant of type 'aau'
+ * @out_gateway: (out) (allow-none) (transfer full): on return, will contain the IP gateway
  *
  * Utility function to convert a #GVariant of type 'aau' representing a list of
  * NetworkManager IPv4 addresses (which are tuples of address, prefix, and
- * gateway) into a #GPtrArray of #NMIP4Address objects.
+ * gateway) into a #GPtrArray of #NMIPAddress objects. The "gateway" field of
+ * the first address (if set) will be returned in @out_gateway; the "gateway" fields
+ * of the other addresses are ignored.
  *
- * Returns: (transfer full) (element-type NMIP4Address): a newly allocated
- *   #GPtrArray of #NMIP4Address objects
+ * Returns: (transfer full) (element-type NMIPAddress): a newly allocated
+ *   #GPtrArray of #NMIPAddress objects
  **/
 GPtrArray *
-nm_utils_ip4_addresses_from_variant (GVariant *value)
+nm_utils_ip4_addresses_from_variant (GVariant *value, char **out_gateway)
 {
 	GPtrArray *addresses;
 	GVariantIter iter;
@@ -1154,13 +1201,17 @@ nm_utils_ip4_addresses_from_variant (GVariant *value)
 
 	g_return_val_if_fail (g_variant_is_of_type (value, G_VARIANT_TYPE ("aau")), NULL);
 
+	if (out_gateway)
+		*out_gateway = NULL;
+
 	g_variant_iter_init (&iter, value);
-	addresses = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip4_address_unref);
+	addresses = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_address_unref);
 
 	while (g_variant_iter_next (&iter, "@au", &addr_var)) {
 		const guint32 *addr_array;
 		gsize length;
-		NMIP4Address *addr;
+		NMIPAddress *addr;
+		GError *error = NULL;
 
 		addr_array = g_variant_get_fixed_array (addr_var, &length, sizeof (guint32));
 		if (length < 3) {
@@ -1169,12 +1220,19 @@ nm_utils_ip4_addresses_from_variant (GVariant *value)
 			continue;
 		}
 
-		addr = nm_ip4_address_new ();
-		nm_ip4_address_set_address (addr, addr_array[0]);
-		nm_ip4_address_set_prefix (addr, addr_array[1]);
-		nm_ip4_address_set_gateway (addr, addr_array[2]);
+		addr = nm_ip_address_new_binary (AF_INET, &addr_array[0], addr_array[1], &error);
+		if (addresses->len == 0 && out_gateway) {
+			if (addr_array[2])
+				*out_gateway = g_strdup (nm_utils_inet4_ntop (addr_array[2], NULL));
+		}
 
-		g_ptr_array_add (addresses, addr);
+		if (addr)
+			g_ptr_array_add (addresses, addr);
+		else {
+			g_warning ("Ignoring invalid IP4 address: %s", error->message);
+			g_clear_error (&error);
+		}
+
 		g_variant_unref (addr_var);
 	}
 
@@ -1183,11 +1241,12 @@ nm_utils_ip4_addresses_from_variant (GVariant *value)
 
 /**
  * nm_utils_ip4_routes_to_variant:
- * @routes: (element-type NMIP4Route): an array of #NMIP4Route objects
+ * @routes: (element-type NMIPRoute): an array of #NMIP4Route objects
  *
- * Utility function to convert a #GPtrArray of #NMIP4Route objects into a
- * #GVariant of type 'aau' representing an array of NetworkManager IPv4 routes
- * (which are tuples of route, prefix, next hop, and metric).
+ * Utility function to convert a #GPtrArray of #NMIPRoute objects representing
+ * IPv4 routes into a #GVariant of type 'aau' representing an array of
+ * NetworkManager IPv4 routes (which are tuples of route, prefix, next hop, and
+ * metric).
  *
  * Returns: (transfer none): a new floating #GVariant representing @routes.
  **/
@@ -1201,13 +1260,17 @@ nm_utils_ip4_routes_to_variant (GPtrArray *routes)
 
 	if (routes) {
 		for (i = 0; i < routes->len; i++) {
-			NMIP4Route *route = routes->pdata[i];
+			NMIPRoute *route = routes->pdata[i];
 			guint32 array[4];
 
-			array[0] = nm_ip4_route_get_dest (route);
-			array[1] = nm_ip4_route_get_prefix (route);
-			array[2] = nm_ip4_route_get_next_hop (route);
-			array[3] = nm_ip4_route_get_metric (route);
+			if (nm_ip_route_get_family (route) != AF_INET)
+				continue;
+
+			nm_ip_route_get_dest_binary (route, &array[0]);
+			array[1] = nm_ip_route_get_prefix (route);
+			nm_ip_route_get_next_hop_binary (route, &array[2]);
+			/* The old routes format uses "0" for default, not "-1" */
+			array[3] = MAX (0, nm_ip_route_get_metric (route));
 
 			g_variant_builder_add (&builder, "@au",
 			                       g_variant_new_fixed_array (G_VARIANT_TYPE_UINT32,
@@ -1224,10 +1287,10 @@ nm_utils_ip4_routes_to_variant (GPtrArray *routes)
  *
  * Utility function to convert a #GVariant of type 'aau' representing an array
  * of NetworkManager IPv4 routes (which are tuples of route, prefix, next hop,
- * and metric) into a #GPtrArray of #NMIP4Route objects.
+ * and metric) into a #GPtrArray of #NMIPRoute objects.
  *
- * Returns: (transfer full) (element-type NMIP4Route): a newly allocated
- *   #GPtrArray of #NMIP4Route objects
+ * Returns: (transfer full) (element-type NMIPRoute): a newly allocated
+ *   #GPtrArray of #NMIPRoute objects
  **/
 GPtrArray *
 nm_utils_ip4_routes_from_variant (GVariant *value)
@@ -1239,12 +1302,13 @@ nm_utils_ip4_routes_from_variant (GVariant *value)
 	g_return_val_if_fail (g_variant_is_of_type (value, G_VARIANT_TYPE ("aau")), NULL);
 
 	g_variant_iter_init (&iter, value);
-	routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip4_route_unref);
+	routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_route_unref);
 
 	while (g_variant_iter_next (&iter, "@au", &route_var)) {
 		const guint32 *route_array;
 		gsize length;
-		NMIP4Route *route;
+		NMIPRoute *route;
+		GError *error = NULL;
 
 		route_array = g_variant_get_fixed_array (route_var, &length, sizeof (guint32));
 		if (length < 4) {
@@ -1253,13 +1317,19 @@ nm_utils_ip4_routes_from_variant (GVariant *value)
 			continue;
 		}
 
-		route = nm_ip4_route_new ();
-		nm_ip4_route_set_dest (route, route_array[0]);
-		nm_ip4_route_set_prefix (route, route_array[1]);
-		nm_ip4_route_set_next_hop (route, route_array[2]);
-		nm_ip4_route_set_metric (route, route_array[3]);
-
-		g_ptr_array_add (routes, route);
+		route = nm_ip_route_new_binary (AF_INET,
+		                                &route_array[0],
+		                                route_array[1],
+		                                &route_array[2],
+		                                /* The old routes format uses "0" for default, not "-1" */
+		                                route_array[3] ? (gint64) route_array[3] : -1,
+		                                &error);
+		if (route)
+			g_ptr_array_add (routes, route);
+		else {
+			g_warning ("Ignoring invalid IP4 route: %s", error->message);
+			g_clear_error (&error);
+		}
 		g_variant_unref (route_var);
 	}
 
@@ -1412,16 +1482,20 @@ nm_utils_ip6_dns_from_variant (GVariant *value)
 
 /**
  * nm_utils_ip6_addresses_to_variant:
- * @addresses: (element-type NMIP6Address): an array of #NMIP6Address objects
+ * @addresses: (element-type NMIPAddress): an array of #NMIPAddress objects
+ * @gateway: (allow-none): the gateway IP address
  *
- * Utility function to convert a #GPtrArray of #NMIP6Address objects into a
- * #GVariant of type 'a(ayuay)' representing an array of NetworkManager IPv6
- * addresses (which are tuples of address, prefix, and gateway).
+ * Utility function to convert a #GPtrArray of #NMIPAddress objects representing
+ * IPv6 addresses into a #GVariant of type 'a(ayuay)' representing an array of
+ * NetworkManager IPv6 addresses (which are tuples of address, prefix, and
+ * gateway).  The "gateway" field of the first address will get the value of
+ * @gateway (if non-%NULL). In all of the other addresses, that field will be
+ * all 0s.
  *
  * Returns: (transfer none): a new floating #GVariant representing @addresses.
  **/
 GVariant *
-nm_utils_ip6_addresses_to_variant (GPtrArray *addresses)
+nm_utils_ip6_addresses_to_variant (GPtrArray *addresses, const char *gateway)
 {
 	GVariantBuilder builder;
 	int i;
@@ -1430,19 +1504,26 @@ nm_utils_ip6_addresses_to_variant (GPtrArray *addresses)
 
 	if (addresses) {
 		for (i = 0; i < addresses->len; i++) {
-			NMIP6Address *addr = addresses->pdata[i];
-			GVariant *ip, *gateway;
+			NMIPAddress *addr = addresses->pdata[i];
+			struct in6_addr ip_bytes, gateway_bytes;
+			GVariant *ip_var, *gateway_var;
 			guint32 prefix;
 
-			ip = g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
-			                                nm_ip6_address_get_address (addr),
-			                                16, 1);
-			prefix = nm_ip6_address_get_prefix (addr);
-			gateway = g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
-			                                     nm_ip6_address_get_gateway (addr),
-			                                     16, 1);
+			if (nm_ip_address_get_family (addr) != AF_INET6)
+				continue;
 
-			g_variant_builder_add (&builder, "(@ayu@ay)", ip, prefix, gateway);
+			nm_ip_address_get_address_binary (addr, &ip_bytes);
+			ip_var = g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE, &ip_bytes, 16, 1);
+
+			prefix = nm_ip_address_get_prefix (addr);
+
+			if (i == 0 && gateway)
+				inet_pton (AF_INET6, gateway, &gateway_bytes);
+			else
+				memset (&gateway_bytes, 0, sizeof (gateway_bytes));
+			gateway_var = g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE, &gateway_bytes, 16, 1);
+
+			g_variant_builder_add (&builder, "(@ayu@ay)", ip_var, prefix, gateway_var);
 		}
 	}
 
@@ -1452,16 +1533,19 @@ nm_utils_ip6_addresses_to_variant (GPtrArray *addresses)
 /**
  * nm_utils_ip6_addresses_from_variant:
  * @value: a #GVariant of type 'a(ayuay)'
+ * @out_gateway: (out) (allow-none) (transfer full): on return, will contain the IP gateway
  *
  * Utility function to convert a #GVariant of type 'a(ayuay)' representing a
  * list of NetworkManager IPv6 addresses (which are tuples of address, prefix,
- * and gateway) into a #GPtrArray of #NMIP6Address objects.
+ * and gateway) into a #GPtrArray of #NMIPAddress objects. The "gateway" field
+ * of the first address (if set) will be returned in @out_gateway; the "gateway"
+ * fields of the other addresses are ignored.
  *
- * Returns: (transfer full) (element-type NMIP6Address): a newly allocated
- *   #GPtrArray of #NMIP6Address objects
+ * Returns: (transfer full) (element-type NMIPAddress): a newly allocated
+ *   #GPtrArray of #NMIPAddress objects
  **/
 GPtrArray *
-nm_utils_ip6_addresses_from_variant (GVariant *value)
+nm_utils_ip6_addresses_from_variant (GVariant *value, char **out_gateway)
 {
 	GVariantIter iter;
 	GVariant *addr_var, *gateway_var;
@@ -1470,13 +1554,17 @@ nm_utils_ip6_addresses_from_variant (GVariant *value)
 
 	g_return_val_if_fail (g_variant_is_of_type (value, G_VARIANT_TYPE ("a(ayuay)")), NULL);
 
+	if (out_gateway)
+		*out_gateway = NULL;
+
 	g_variant_iter_init (&iter, value);
-	addresses = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip6_address_unref);
+	addresses = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_address_unref);
 
 	while (g_variant_iter_next (&iter, "(@ayu@ay)", &addr_var, &prefix, &gateway_var)) {
-		NMIP6Address *addr;
+		NMIPAddress *addr;
 		const struct in6_addr *addr_bytes, *gateway_bytes;
 		gsize addr_len, gateway_len;
+		GError *error = NULL;
 
 		if (   !g_variant_is_of_type (addr_var, G_VARIANT_TYPE_BYTESTRING)
 		    || !g_variant_is_of_type (gateway_var, G_VARIANT_TYPE_BYTESTRING)) {
@@ -1490,23 +1578,25 @@ nm_utils_ip6_addresses_from_variant (GVariant *value)
 			           __func__, (int) addr_len);
 			goto next;
 		}
-		if (prefix > 128) {
-			g_warning ("%s: ignoring invalid IP6 prefix %d",
-			           __func__, prefix);
-			goto next;
-		}
-		gateway_bytes = g_variant_get_fixed_array (gateway_var, &gateway_len, 1);
-		if (gateway_len != 16) {
-			g_warning ("%s: ignoring invalid IP6 address of length %d",
-			           __func__, (int) gateway_len);
-			goto next;
+
+		if (addresses->len == 0 && out_gateway) {
+			gateway_bytes = g_variant_get_fixed_array (gateway_var, &gateway_len, 1);
+			if (gateway_len != 16) {
+				g_warning ("%s: ignoring invalid IP6 address of length %d",
+				           __func__, (int) gateway_len);
+				goto next;
+			}
+			if (!IN6_IS_ADDR_UNSPECIFIED (gateway_bytes))
+				*out_gateway = g_strdup (nm_utils_inet6_ntop (gateway_bytes, NULL));
 		}
 
-		addr = nm_ip6_address_new ();
-		nm_ip6_address_set_address (addr, addr_bytes);
-		nm_ip6_address_set_prefix (addr, prefix);
-		nm_ip6_address_set_gateway (addr, gateway_bytes);
-		g_ptr_array_add (addresses, addr);
+		addr = nm_ip_address_new_binary (AF_INET6, addr_bytes, prefix, &error);
+		if (addr)
+			g_ptr_array_add (addresses, addr);
+		else {
+			g_warning ("Ignoring invalid IP4 address: %s", error->message);
+			g_clear_error (&error);
+		}
 
 	next:
 		g_variant_unref (addr_var);
@@ -1518,11 +1608,12 @@ nm_utils_ip6_addresses_from_variant (GVariant *value)
 
 /**
  * nm_utils_ip6_routes_to_variant:
- * @routes: (element-type NMIP6Route): an array of #NMIP6Route objects
+ * @routes: (element-type NMIPRoute): an array of #NMIPRoute objects
  *
- * Utility function to convert a #GPtrArray of #NMIP6Route objects into a
- * #GVariant of type 'a(ayuayu)' representing an array of NetworkManager IPv6
- * routes (which are tuples of route, prefix, next hop, and metric).
+ * Utility function to convert a #GPtrArray of #NMIPRoute objects representing
+ * IPv6 routes into a #GVariant of type 'a(ayuayu)' representing an array of
+ * NetworkManager IPv6 routes (which are tuples of route, prefix, next hop, and
+ * metric).
  *
  * Returns: (transfer none): a new floating #GVariant representing @routes.
  **/
@@ -1536,18 +1627,21 @@ nm_utils_ip6_routes_to_variant (GPtrArray *routes)
 
 	if (routes) {
 		for (i = 0; i < routes->len; i++) {
-			NMIP6Route *route = routes->pdata[i];
+			NMIPRoute *route = routes->pdata[i];
+			struct in6_addr dest_bytes, next_hop_bytes;
 			GVariant *dest, *next_hop;
 			guint32 prefix, metric;
 
-			dest = g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
-			                                  nm_ip6_route_get_dest (route),
-			                                  16, 1);
-			prefix = nm_ip6_route_get_prefix (route);
-			next_hop = g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
-			                                      nm_ip6_route_get_next_hop (route),
-			                                      16, 1);
-			metric = nm_ip6_route_get_metric (route);
+			if (nm_ip_route_get_family (route) != AF_INET6)
+				continue;
+
+			nm_ip_route_get_dest_binary (route, &dest_bytes);
+			dest = g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE, &dest_bytes, 16, 1);
+			prefix = nm_ip_route_get_prefix (route);
+			nm_ip_route_get_next_hop_binary (route, &next_hop_bytes);
+			next_hop = g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE, &next_hop_bytes, 16, 1);
+			/* The old routes format uses "0" for default, not "-1" */
+			metric = MAX (0, nm_ip_route_get_metric (route));
 
 			g_variant_builder_add (&builder, "(@ayu@ayu)", dest, prefix, next_hop, metric);
 		}
@@ -1562,10 +1656,10 @@ nm_utils_ip6_routes_to_variant (GPtrArray *routes)
  *
  * Utility function to convert a #GVariant of type 'a(ayuayu)' representing an
  * array of NetworkManager IPv6 routes (which are tuples of route, prefix, next
- * hop, and metric) into a #GPtrArray of #NMIP6Route objects.
+ * hop, and metric) into a #GPtrArray of #NMIPRoute objects.
  *
- * Returns: (transfer full) (element-type NMIP6Route): a newly allocated
- *   #GPtrArray of #NMIP6Route objects
+ * Returns: (transfer full) (element-type NMIPRoute): a newly allocated
+ *   #GPtrArray of #NMIPRoute objects
  **/
 GPtrArray *
 nm_utils_ip6_routes_from_variant (GVariant *value)
@@ -1579,11 +1673,12 @@ nm_utils_ip6_routes_from_variant (GVariant *value)
 
 	g_return_val_if_fail (g_variant_is_of_type (value, G_VARIANT_TYPE ("a(ayuayu)")), NULL);
 
-	routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip6_route_unref);
+	routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_route_unref);
 
 	g_variant_iter_init (&iter, value);
 	while (g_variant_iter_next (&iter, "(@ayu@ayu)", &dest_var, &prefix, &next_hop_var, &metric)) {
-		NMIP6Route *route;
+		NMIPRoute *route;
+		GError *error = NULL;
 
 		if (   !g_variant_is_of_type (dest_var, G_VARIANT_TYPE_BYTESTRING)
 		    || !g_variant_is_of_type (next_hop_var, G_VARIANT_TYPE_BYTESTRING)) {
@@ -1597,6 +1692,7 @@ nm_utils_ip6_routes_from_variant (GVariant *value)
 			           __func__, (int) dest_len);
 			goto next;
 		}
+
 		next_hop = g_variant_get_fixed_array (next_hop_var, &next_hop_len, 1);
 		if (next_hop_len != 16) {
 			g_warning ("%s: ignoring invalid IP6 address of length %d",
@@ -1604,16 +1700,261 @@ nm_utils_ip6_routes_from_variant (GVariant *value)
 			goto next;
 		}
 
-		route = nm_ip6_route_new ();
-		nm_ip6_route_set_dest (route, dest);
-		nm_ip6_route_set_prefix (route, prefix);
-		nm_ip6_route_set_next_hop (route, next_hop);
-		nm_ip6_route_set_metric (route, metric);
-		g_ptr_array_add (routes, route);
+		route = nm_ip_route_new_binary (AF_INET6, dest, prefix, next_hop,
+		                                metric ? (gint64) metric : -1,
+		                                &error);
+		if (route)
+			g_ptr_array_add (routes, route);
+		else {
+			g_warning ("Ignoring invalid IP6 route: %s", error->message);
+			g_clear_error (&error);
+		}
 
 	next:
 		g_variant_unref (dest_var);
 		g_variant_unref (next_hop_var);
+	}
+
+	return routes;
+}
+
+/**
+ * nm_utils_ip_addresses_to_variant:
+ * @addresses: (element-type NMIPAddress): an array of #NMIPAddress objects
+ *
+ * Utility function to convert a #GPtrArray of #NMIPAddress objects representing
+ * IPv4 or IPv6 addresses into a #GVariant of type 'aa{sv}' representing an
+ * array of new-style NetworkManager IP addresses. All addresses will include
+ * "address" (an IP address string), and "prefix" (a uint). Some addresses may
+ * include additional attributes.
+ *
+ * Returns: (transfer none): a new floating #GVariant representing @addresses.
+ **/
+GVariant *
+nm_utils_ip_addresses_to_variant (GPtrArray *addresses)
+{
+	GVariantBuilder builder;
+	int i;
+
+	g_variant_builder_init (&builder, G_VARIANT_TYPE ("aa{sv}"));
+
+	if (addresses) {
+		for (i = 0; i < addresses->len; i++) {
+			NMIPAddress *addr = addresses->pdata[i];
+			GVariantBuilder addr_builder;
+			char **names;
+			int n;
+
+			g_variant_builder_init (&addr_builder, G_VARIANT_TYPE ("a{sv}"));
+			g_variant_builder_add (&addr_builder, "{sv}",
+			                       "address",
+			                       g_variant_new_string (nm_ip_address_get_address (addr)));
+			g_variant_builder_add (&addr_builder, "{sv}",
+			                       "prefix",
+			                       g_variant_new_uint32 (nm_ip_address_get_prefix (addr)));
+
+			names = nm_ip_address_get_attribute_names (addr);
+			for (n = 0; names[n]; n++) {
+				g_variant_builder_add (&addr_builder, "{sv}",
+				                       names[n],
+				                       nm_ip_address_get_attribute (addr, names[n]));
+			}
+			g_strfreev (names);
+
+			g_variant_builder_add (&builder, "a{sv}", &addr_builder);
+		}
+	}
+
+	return g_variant_builder_end (&builder);
+}
+
+/**
+ * nm_utils_ip_addresses_from_variant:
+ * @value: a #GVariant of type 'aa{sv}'
+ * @family: an IP address family
+ *
+ * Utility function to convert a #GVariant representing a list of new-style
+ * NetworkManager IPv4 or IPv6 addresses (as described in the documentation for
+ * nm_utils_ip_addresses_to_variant()) into a #GPtrArray of #NMIPAddress
+ * objects.
+ *
+ * Returns: (transfer full) (element-type NMIPAddress): a newly allocated
+ *   #GPtrArray of #NMIPAddress objects
+ **/
+GPtrArray *
+nm_utils_ip_addresses_from_variant (GVariant *value,
+                                    int family)
+{
+	GPtrArray *addresses;
+	GVariantIter iter, attrs_iter;
+	GVariant *addr_var;
+	const char *ip;
+	guint32 prefix;
+	const char *attr_name;
+	GVariant *attr_val;
+	NMIPAddress *addr;
+	GError *error = NULL;
+
+	g_return_val_if_fail (g_variant_is_of_type (value, G_VARIANT_TYPE ("aa{sv}")), NULL);
+
+	g_variant_iter_init (&iter, value);
+	addresses = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_address_unref);
+
+	while (g_variant_iter_next (&iter, "@a{sv}", &addr_var)) {
+		if (   !g_variant_lookup (addr_var, "address", "&s", &ip)
+		    || !g_variant_lookup (addr_var, "prefix", "u", &prefix)) {
+			g_warning ("Ignoring invalid address");
+			g_variant_unref (addr_var);
+			continue;
+		}
+
+		addr = nm_ip_address_new (family, ip, prefix, &error);
+		if (!addr) {
+			g_warning ("Ignoring invalid address: %s", error->message);
+			g_clear_error (&error);
+			g_variant_unref (addr_var);
+			continue;
+		}
+
+		g_variant_iter_init (&attrs_iter, addr_var);
+		while (g_variant_iter_next (&attrs_iter, "{&sv}", &attr_name, &attr_val)) {
+			if (   strcmp (attr_name, "address") != 0
+			    && strcmp (attr_name, "prefix") != 0)
+				nm_ip_address_set_attribute (addr, attr_name, attr_val);
+			g_variant_unref (attr_val);
+		}
+
+		g_ptr_array_add (addresses, addr);
+	}
+
+	return addresses;
+}
+
+/**
+ * nm_utils_ip_routes_to_variant:
+ * @routes: (element-type NMIPRoute): an array of #NMIPRoute objects
+ *
+ * Utility function to convert a #GPtrArray of #NMIPRoute objects representing
+ * IPv4 or IPv6 routes into a #GVariant of type 'aa{sv}' representing an array
+ * of new-style NetworkManager IP routes (which are tuples of destination,
+ * prefix, next hop, metric, and additional attributes).
+ *
+ * Returns: (transfer none): a new floating #GVariant representing @routes.
+ **/
+GVariant *
+nm_utils_ip_routes_to_variant (GPtrArray *routes)
+{
+	GVariantBuilder builder;
+	int i;
+
+	g_variant_builder_init (&builder, G_VARIANT_TYPE ("aa{sv}"));
+
+	if (routes) {
+		for (i = 0; i < routes->len; i++) {
+			NMIPRoute *route = routes->pdata[i];
+			GVariantBuilder route_builder;
+			char **names;
+			int n;
+
+			g_variant_builder_init (&route_builder, G_VARIANT_TYPE ("a{sv}"));
+			g_variant_builder_add (&route_builder, "{sv}",
+			                       "dest",
+			                       g_variant_new_string (nm_ip_route_get_dest (route)));
+			g_variant_builder_add (&route_builder, "{sv}",
+			                       "prefix",
+			                       g_variant_new_uint32 (nm_ip_route_get_prefix (route)));
+			if (nm_ip_route_get_next_hop (route)) {
+				g_variant_builder_add (&route_builder, "{sv}",
+				                       "next-hop",
+				                       g_variant_new_string (nm_ip_route_get_next_hop (route)));
+			}
+			if (nm_ip_route_get_metric (route) != -1) {
+				g_variant_builder_add (&route_builder, "{sv}",
+				                       "metric",
+				                       g_variant_new_uint32 ((guint32) nm_ip_route_get_metric (route)));
+			}
+
+			names = nm_ip_route_get_attribute_names (route);
+			for (n = 0; names[n]; n++) {
+				g_variant_builder_add (&route_builder, "{sv}",
+				                       names[n],
+				                       nm_ip_route_get_attribute (route, names[n]));
+			}
+			g_strfreev (names);
+
+			g_variant_builder_add (&builder, "a{sv}", &route_builder);
+		}
+	}
+
+	return g_variant_builder_end (&builder);
+}
+
+/**
+ * nm_utils_ip_routes_from_variant:
+ * @value: a #GVariant of type 'aa{sv}'
+ * @family: an IP address family
+ *
+ * Utility function to convert a #GVariant representing a list of new-style
+ * NetworkManager IPv4 or IPv6 addresses (which are tuples of destination,
+ * prefix, next hop, metric, and additional attributes) into a #GPtrArray of
+ * #NMIPRoute objects.
+ *
+ * Returns: (transfer full) (element-type NMIPRoute): a newly allocated
+ *   #GPtrArray of #NMIPRoute objects
+ **/
+GPtrArray *
+nm_utils_ip_routes_from_variant (GVariant *value,
+                                 int family)
+{
+	GPtrArray *routes;
+	GVariantIter iter, attrs_iter;
+	GVariant *route_var;
+	const char *dest, *next_hop;
+	guint32 prefix, metric32;
+	gint64 metric;
+	const char *attr_name;
+	GVariant *attr_val;
+	NMIPRoute *route;
+	GError *error = NULL;
+
+	g_return_val_if_fail (g_variant_is_of_type (value, G_VARIANT_TYPE ("aa{sv}")), NULL);
+
+	g_variant_iter_init (&iter, value);
+	routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_route_unref);
+
+	while (g_variant_iter_next (&iter, "@a{sv}", &route_var)) {
+		if (   !g_variant_lookup (route_var, "dest", "&s", &dest)
+		    || !g_variant_lookup (route_var, "prefix", "u", &prefix)) {
+			g_warning ("Ignoring invalid address");
+			g_variant_unref (route_var);
+			continue;
+		}
+		if (!g_variant_lookup (route_var, "next-hop", "&s", &next_hop))
+			next_hop = NULL;
+		if (g_variant_lookup (route_var, "metric", "u", &metric32))
+			metric = metric32;
+		else
+			metric = -1;
+
+		route = nm_ip_route_new (family, dest, prefix, next_hop, metric, &error);
+		if (!route) {
+			g_warning ("Ignoring invalid route: %s", error->message);
+			g_clear_error (&error);
+			g_variant_unref (route_var);
+			continue;
+		}
+
+		g_variant_iter_init (&attrs_iter, route_var);
+		while (g_variant_iter_next (&attrs_iter, "{&sv}", &attr_name, &attr_val)) {
+			if (   strcmp (attr_name, "dest") != 0
+			    && strcmp (attr_name, "prefix") != 0
+			    && strcmp (attr_name, "next-hop") != 0
+			    && strcmp (attr_name, "metric") != 0)
+				nm_ip_route_set_attribute (route, attr_name, attr_val);
+			g_variant_unref (attr_val);
+		}
+
+		g_ptr_array_add (routes, route);
 	}
 
 	return routes;
@@ -2751,6 +3092,28 @@ nm_utils_inet6_ntop (const struct in6_addr *in6addr, char *dst)
 }
 
 /**
+ * nm_utils_ipaddr_valid:
+ * @family: %AF_INET or %AF_INET6, or %AF_UNSPEC to accept either
+ * @ip: an IP address
+ *
+ * Checks if @ip contains a valid IP address of the given family.
+ *
+ * Return value: %TRUE or %FALSE
+ */
+gboolean
+nm_utils_ipaddr_valid (int family, const char *ip)
+{
+	guint8 buf[sizeof (struct in6_addr)];
+
+	g_return_val_if_fail (family == AF_INET || family == AF_INET6 || family == AF_UNSPEC, FALSE);
+
+	if (family == AF_UNSPEC)
+		family = strchr (ip, ':') ? AF_INET6 : AF_INET;
+
+	return inet_pton (family, ip, buf) == 1;
+}
+
+/**
  * nm_utils_check_virtual_device_compatibility:
  * @virtual_type: a virtual connection type
  * @other_type: a connection type to test against @virtual_type
@@ -2809,5 +3172,3 @@ nm_utils_check_virtual_device_compatibility (GType virtual_type, GType other_typ
 		return FALSE;
 	}
 }
-
-

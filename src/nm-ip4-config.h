@@ -41,13 +41,17 @@ typedef struct {
 	GObjectClass parent;
 } NMIP4ConfigClass;
 
+#define NM_IP4_CONFIG_ADDRESS_DATA "address-data"
+#define NM_IP4_CONFIG_ROUTE_DATA "route-data"
 #define NM_IP4_CONFIG_GATEWAY "gateway"
-#define NM_IP4_CONFIG_ADDRESSES "addresses"
-#define NM_IP4_CONFIG_ROUTES "routes"
 #define NM_IP4_CONFIG_NAMESERVERS "nameservers"
 #define NM_IP4_CONFIG_DOMAINS "domains"
 #define NM_IP4_CONFIG_SEARCHES "searches"
 #define NM_IP4_CONFIG_WINS_SERVERS "wins-servers"
+
+/* deprecated */
+#define NM_IP4_CONFIG_ADDRESSES "addresses"
+#define NM_IP4_CONFIG_ROUTES "routes"
 
 GType nm_ip4_config_get_type (void);
 
@@ -61,7 +65,7 @@ const char * nm_ip4_config_get_dbus_path (const NMIP4Config *config);
 /* Integration with nm-platform and nm-setting */
 NMIP4Config *nm_ip4_config_capture (int ifindex, gboolean capture_resolv_conf);
 gboolean nm_ip4_config_commit (const NMIP4Config *config, int ifindex);
-void nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIP4Config *setting, int default_route_metric);
+void nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIPConfig *setting, int default_route_metric);
 NMSetting *nm_ip4_config_create_setting (const NMIP4Config *config);
 
 /* Utility functions */

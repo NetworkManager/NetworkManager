@@ -110,7 +110,7 @@ get_best_ip4_device (NMPolicy *self, gboolean fully_activated)
 		NMDeviceState state = nm_device_get_state (dev);
 		NMActRequest *req;
 		NMConnection *connection;
-		NMSettingIP4Config *s_ip4;
+		NMSettingIPConfig *s_ip4;
 		int prio;
 		const char *method = NULL;
 
@@ -151,7 +151,7 @@ get_best_ip4_device (NMPolicy *self, gboolean fully_activated)
 		/* 'never-default' devices can't ever be the default */
 		s_ip4 = nm_connection_get_setting_ip4_config (connection);
 		g_assert (s_ip4);
-		if (nm_setting_ip4_config_get_never_default (s_ip4))
+		if (nm_setting_ip_config_get_never_default (s_ip4))
 			continue;
 
 		prio = nm_device_get_priority (dev);
@@ -194,7 +194,7 @@ get_best_ip6_device (NMPolicy *self, gboolean fully_activated)
 		NMDeviceState state = nm_device_get_state (dev);
 		NMActRequest *req;
 		NMConnection *connection;
-		NMSettingIP6Config *s_ip6;
+		NMSettingIPConfig *s_ip6;
 		int prio;
 		const char *method = NULL;
 
@@ -231,7 +231,7 @@ get_best_ip6_device (NMPolicy *self, gboolean fully_activated)
 
 		s_ip6 = nm_connection_get_setting_ip6_config (connection);
 		g_assert (s_ip6);
-		if (nm_setting_ip6_config_get_never_default (s_ip6))
+		if (nm_setting_ip_config_get_never_default (s_ip6))
 			continue;
 
 		prio = nm_device_get_priority (dev);
@@ -539,7 +539,7 @@ get_best_ip4_config (NMPolicy *policy,
 		NMVpnConnection *candidate;
 		NMIP4Config *vpn_ip4;
 		NMConnection *tmp;
-		NMSettingIP4Config *s_ip4;
+		NMSettingIPConfig *s_ip4;
 		NMVpnConnectionState vpn_state;
 
 		if (!NM_IS_VPN_CONNECTION (active))
@@ -565,7 +565,7 @@ get_best_ip4_config (NMPolicy *policy,
 
 			/* Check the user's preference from the NMConnection */
 			s_ip4 = nm_connection_get_setting_ip4_config (tmp);
-			if (nm_setting_ip4_config_get_never_default (s_ip4))
+			if (nm_setting_ip_config_get_never_default (s_ip4))
 				continue;
 		}
 
@@ -751,7 +751,7 @@ get_best_ip6_config (NMPolicy *policy,
 		NMVpnConnection *candidate;
 		NMIP6Config *vpn_ip6;
 		NMConnection *tmp;
-		NMSettingIP6Config *s_ip6;
+		NMSettingIPConfig *s_ip6;
 		NMVpnConnectionState vpn_state;
 
 		if (!NM_IS_VPN_CONNECTION (active))
@@ -777,7 +777,7 @@ get_best_ip6_config (NMPolicy *policy,
 
 			/* Check the user's preference from the NMConnection */
 			s_ip6 = nm_connection_get_setting_ip6_config (tmp);
-			if (nm_setting_ip6_config_get_never_default (s_ip6))
+			if (nm_setting_ip_config_get_never_default (s_ip6))
 				continue;
 		}
 

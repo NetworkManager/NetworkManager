@@ -40,28 +40,11 @@ GVariant *  _nm_utils_bytes_to_dbus     (const GValue *prop_value);
 void        _nm_utils_bytes_from_dbus   (GVariant *dbus_value,
                                          GValue *prop_value);
 
-GVariant *  _nm_utils_ip4_dns_to_dbus         (const GValue *prop_value);
-void        _nm_utils_ip4_dns_from_dbus       (GVariant *dbus_value,
-                                               GValue *prop_value);
-GVariant *  _nm_utils_ip4_addresses_to_dbus   (const GValue *prop_value);
-void        _nm_utils_ip4_addresses_from_dbus (GVariant *dbus_value,
-                                               GValue *prop_value);
-GVariant *  _nm_utils_ip4_routes_to_dbus      (const GValue *prop_value);
-void        _nm_utils_ip4_routes_from_dbus    (GVariant *dbus_value,
-                                               GValue *prop_value);
-
-GVariant *  _nm_utils_ip6_dns_to_dbus         (const GValue *prop_value);
-void        _nm_utils_ip6_dns_from_dbus       (GVariant *dbus_value,
-                                               GValue *prop_value);
-GVariant *  _nm_utils_ip6_addresses_to_dbus   (const GValue *prop_value);
-void        _nm_utils_ip6_addresses_from_dbus (GVariant *dbus_value,
-                                               GValue *prop_value);
-GVariant *  _nm_utils_ip6_routes_to_dbus      (const GValue *prop_value);
-void        _nm_utils_ip6_routes_from_dbus    (GVariant *dbus_value,
-                                               GValue *prop_value);
-
 GSList *    _nm_utils_strv_to_slist (char **strv);
 char **     _nm_utils_slist_to_strv (GSList *slist);
+
+GPtrArray * _nm_utils_strv_to_ptrarray (char **strv);
+char **     _nm_utils_ptrarray_to_strv (GPtrArray *ptrarray);
 
 char **     _nm_utils_strsplit_set (const char *str,
                                     const char *delimiters,

@@ -193,8 +193,8 @@ NMSettingDcb *             nm_connection_get_setting_dcb               (NMConnec
 NMSettingGeneric *         nm_connection_get_setting_generic           (NMConnection *connection);
 NMSettingGsm *             nm_connection_get_setting_gsm               (NMConnection *connection);
 NMSettingInfiniband *      nm_connection_get_setting_infiniband        (NMConnection *connection);
-NMSettingIP4Config *       nm_connection_get_setting_ip4_config        (NMConnection *connection);
-NMSettingIP6Config *       nm_connection_get_setting_ip6_config        (NMConnection *connection);
+NMSettingIPConfig *        nm_connection_get_setting_ip4_config        (NMConnection *connection);
+NMSettingIPConfig *        nm_connection_get_setting_ip6_config        (NMConnection *connection);
 NMSettingOlpcMesh *        nm_connection_get_setting_olpc_mesh         (NMConnection *connection);
 NMSettingPpp *             nm_connection_get_setting_ppp               (NMConnection *connection);
 NMSettingPppoe *           nm_connection_get_setting_pppoe             (NMConnection *connection);
