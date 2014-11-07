@@ -2128,6 +2128,7 @@ nmc_activate_connection (NmCli *nmc,
 			g_clear_error (&local);
 			return FALSE;
 		}
+		g_clear_error (&local);
 	} else if (ifname) {
 		device = nm_client_get_device_by_iface (nmc->client, ifname);
 		if (!device) {
