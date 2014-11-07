@@ -230,6 +230,7 @@ valgrind-*.log
 /src/dhcp-manager/nm-dhcp-helper
 /src/dhcp-manager/tests/test-dhcp-dhclient
 /src/dhcp-manager/tests/test-dhcp-options
+/src/dhcp-manager/tests/test-dhcp-utils
 /src/dnsmasq-manager/tests/test-dnsmasq-utils
 /src/settings/plugins/ibft/tests/test-ibft
 /src/settings/plugins/ifcfg-rh/tests/network-scripts/*-Test_Write_*
