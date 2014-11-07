@@ -116,7 +116,16 @@ sed -e "/^__CHANGELOG__$/ \
             d
         }" > "$TEMPSPEC" || die "Error reading spec file"
 
-rpmbuild --define "_topdir $TEMP" -ba "$TEMPSPEC" || die "ERROR: rpmbuild FAILED"
+case "$BUILDTYPE" in
+	"SRPM")
+		RPM_BUILD_OPTION=-bs
+		;;
+	*)
+		RPM_BUILD_OPTION=-ba
+		;;
+esac
+
+rpmbuild --define "_topdir $TEMP" $RPM_BUILD_OPTION "$TEMPSPEC" || die "ERROR: rpmbuild FAILED"
 
 ln -snf "$TEMPBASE" ./latest
 TEMP_LATEST="$(readlink -f .)"/latest
@@ -128,6 +137,6 @@ LOG
 LOG "See \"$TEMP_LATEST/\" which symlinks to \"$TEMPBASE\""
 LOG
 LOG "Result:"
-ls -dla "$TEMP_LATEST" "$(dirname "$TEMP_LATEST")/$TEMPBASE/" "$TEMP_LATEST"/RPMS/*/ "$TEMP_LATEST"/RPMS/*/*.rpm "$TEMP_LATEST"/SRPMS/ "$TEMP_LATEST"/SRPMS/*.rpm | sed 's/^/    /'
+ls -dla "$TEMP_LATEST" "$(dirname "$TEMP_LATEST")/$TEMPBASE/" "$TEMP_LATEST"/RPMS/*/ "$TEMP_LATEST"/RPMS/*/*.rpm "$TEMP_LATEST"/SRPMS/ "$TEMP_LATEST"/SRPMS/*.rpm 2>/dev/null | sed 's/^/    /'
 
 
