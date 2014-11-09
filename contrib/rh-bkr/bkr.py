@@ -477,6 +477,7 @@ class CmdSubmit(CmdBase):
         self.parser.add_argument('--job', '-j', help='beaker xml job file')
         self.parser.add_argument('--verbose', '-v', action='count', help='print more information')
         self.parser.add_argument('--reservesys', '-R', action='store_true', help='add task /distribution/reservesys')
+        self.parser.add_argument('--var', '-V', action='append', help='Set template replacements (alternative to setting via environment variables')
 
     def _prepare_rpms(self):
         if self.options.rpm is None:
@@ -542,10 +543,23 @@ class CmdSubmit(CmdBase):
         for (k,v) in self.subs.iteritems():
             self._print_substitution(k, v)
 
+    def _get_default(self, key_name):
+        if not hasattr(self, '_default_var'):
+            self._default_var = {}
+            for v0 in self.options.var:
+                v = v0.split('=', 1)
+                if len(v) != 2:
+                    raise Exception("Invalid --var option %s. Should be NAME=VALUE" % (v0))
+                self._default_var[v[0]] = v[1]
+        if key_name in self._default_var:
+            return self._default_var[key_name]
+        return os.environ.get(key_name)
+
+
     def __process_line_get_GIT_TARGETBRANCH_detect(self, key_name):
         # we default to 'master', unless there is an RPM that looks like it's from
         # rhel-7.0.
-        v = os.environ.get('GIT_TARGETBRANCH')
+        v = self._get_default('GIT_TARGETBRANCH')
         if v is not None:
             return v
         if self.rpm is not None:
@@ -568,7 +582,7 @@ class CmdSubmit(CmdBase):
         return self.__process_line_get_GIT_TARGETBRANCH_detect("GIT_TARGETBRANCH")
 
     def _process_line_get_DISTRO_NAME(self, key, replacement, index=None, none=None):
-        v = os.environ.get('DISTO_NAME')
+        v = self._get_default('DISTO_NAME')
         if v is not None:
             return v
         target_branch = self.__process_line_get_GIT_TARGETBRANCH_detect("DISTRO_NAME")
@@ -577,7 +591,7 @@ class CmdSubmit(CmdBase):
         return 'RHEL-7.1-20141023.n.1'
 
     def _process_line_get_RESERVESYS(self, key, replacement, index=None, none=None):
-        v = os.environ.get('RESERVESYS')
+        v = self._get_default('RESERVESYS')
         if v is not None:
             return v
         if not self.options.reservesys:
@@ -600,7 +614,7 @@ class CmdSubmit(CmdBase):
         if key in replacement:
             return replacement[key]
         if not key in self.subs:
-            v = os.environ.get(key)
+            v = self._get_default(key)
             if v is None:
                 if not key in CmdSubmit.DefaultReplacements:
                     replacement[key] = None
