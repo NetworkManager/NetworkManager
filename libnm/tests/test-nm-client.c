@@ -1007,7 +1007,7 @@ client_devices_changed_cb (GObject *client,
 		info->remaining--;
 	else {
 		g_signal_connect (device, "notify::" NM_DEVICE_ACTIVE_CONNECTION,
-		                  G_CALLBACK (device_ac_changed_cb), &info);
+		                  G_CALLBACK (device_ac_changed_cb), info);
 	}
 
 	info->remaining--;
