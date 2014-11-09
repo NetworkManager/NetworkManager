@@ -818,9 +818,12 @@ recheck_pending_activations (NMManager *self)
 		devices = nm_active_connection_get_devices (candidate);
 		if (devices->len == 0)
 			continue;
-		device = devices->pdata[0];
-		if (nm_device_get_active_connection (device) != candidate)
-			continue;
+
+		if (!NM_IS_VPN_CONNECTION (candidate)) {
+			device = devices->pdata[0];
+			if (nm_device_get_active_connection (device) != candidate)
+				continue;
+		}
 
 		activate_info_complete (info, candidate, NULL);
 		break;
