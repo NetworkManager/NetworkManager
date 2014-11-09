@@ -1175,7 +1175,8 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 			NMSettingConnection *s_con;
 			NMSettingVpn *s_vpn;
 			NMVpnConnectionState vpn_state;
-			char *type_str, *banner_str, *vpn_state_str;
+			char *type_str, *banner_str = NULL, *vpn_state_str;
+			const char *banner;
 			const char *username = NULL;
 			char **vpn_data_array = NULL;
 			guint32 items_num;
@@ -1208,7 +1209,9 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 			}
 
 			type_str = get_vpn_connection_type (con);
-			banner_str = g_strescape (nm_vpn_connection_get_banner (NM_VPN_CONNECTION (acon)), "");
+			banner = nm_vpn_connection_get_banner (NM_VPN_CONNECTION (acon));
+			if (banner)
+				banner_str = g_strescape (banner, "");
 			vpn_state = nm_vpn_connection_get_vpn_state (NM_VPN_CONNECTION (acon));
 			vpn_state_str = g_strdup_printf ("%d - %s", vpn_state, vpn_connection_state_to_string (vpn_state));
 
