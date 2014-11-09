@@ -121,7 +121,7 @@ handle_event (DBusGProxy *proxy,
 	char *iface = NULL;
 	char *pid_str = NULL;
 	char *reason = NULL;
-	gint32 pid;
+	gint pid;
 	gboolean handled = FALSE;
 
 	iface = get_option (options, "interface");
@@ -131,8 +131,8 @@ handle_event (DBusGProxy *proxy,
 	}
 
 	pid_str = get_option (options, "pid");
-	pid = (gint32) nm_utils_ascii_str_to_int64 (pid_str, 10, 0, G_MAXINT32, -1);
-	if (pid == -1 || pid != (GPid) pid) {
+	pid = nm_utils_ascii_str_to_int64 (pid_str, 10, 0, G_MAXINT32, -1);
+	if (pid == -1) {
 		nm_log_warn (LOGD_DHCP, "DHCP event: couldn't convert PID '%s' to an integer", pid_str ? pid_str : "(null)");
 		goto out;
 	}
@@ -283,7 +283,7 @@ nm_dhcp_listener_class_init (NMDhcpListenerClass *listener_class)
 		              G_TYPE_BOOLEAN,     /* listeners return TRUE if handled */
 		              4,
 		              G_TYPE_STRING,      /* iface */
-		              G_TYPE_INT64,       /* pid */
+		              G_TYPE_INT,         /* pid */
 		              G_TYPE_HASH_TABLE,  /* options */
 		              G_TYPE_STRING);     /* reason */
 }
