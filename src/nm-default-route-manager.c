@@ -100,6 +100,7 @@ typedef struct {
 	int addr_family;
 	GPtrArray *(*get_entries) (NMDefaultRouteManagerPrivate *priv);
 	const char *(*platform_route_to_string) (const NMPlatformIPRoute *route);
+	GArray *(*platform_route_get_all) (int ifindex, NMPlatformGetRouteMode mode);
 	gboolean (*platform_route_delete_default) (int ifindex, guint32 metric);
 	guint32 (*route_metric_normalize) (guint32 metric);
 } VTableIP;
@@ -107,6 +108,15 @@ typedef struct {
 static const VTableIP vtable_ip4, vtable_ip6;
 
 #define VTABLE_IS_IP4 (vtable->addr_family == AF_INET)
+
+static NMPlatformIPRoute *
+_vt_route_index (const VTableIP *vtable, GArray *routes, guint index)
+{
+	if (VTABLE_IS_IP4)
+		return (NMPlatformIPRoute *) &g_array_index (routes, NMPlatformIP4Route, index);
+	else
+		return (NMPlatformIPRoute *) &g_array_index (routes, NMPlatformIP6Route, index);
+}
 
 static void
 _entry_free (Entry *entry)
@@ -206,20 +216,14 @@ _platform_route_sync_flush (const VTableIP *vtable, NMDefaultRouteManager *self)
 	guint i, j;
 
 	/* prune all other default routes from this device. */
-	if (VTABLE_IS_IP4)
-		routes = nm_platform_ip4_route_get_all (0, NM_PLATFORM_GET_ROUTE_MODE_ONLY_DEFAULT);
-	else
-		routes = nm_platform_ip6_route_get_all (0, NM_PLATFORM_GET_ROUTE_MODE_ONLY_DEFAULT);
+	routes = vtable->platform_route_get_all (0, NM_PLATFORM_GET_ROUTE_MODE_ONLY_DEFAULT);
 
 	for (i = 0; i < routes->len; i++) {
 		const NMPlatformIPRoute *route;
 		gboolean has_ifindex_synced = FALSE;
 		Entry *entry = NULL;
 
-		if (VTABLE_IS_IP4)
-			route = (const NMPlatformIPRoute *) &g_array_index (routes, NMPlatformIP4Route, i);
-		else
-			route = (const NMPlatformIPRoute *) &g_array_index (routes, NMPlatformIP6Route, i);
+		route = _vt_route_index (vtable, routes, i);
 
 		/* look at all entires and see if the route for this ifindex pair is
 		 * a known entry. */
@@ -902,6 +906,7 @@ static const VTableIP vtable_ip4 = {
 	.addr_family                    = AF_INET,
 	.get_entries                    = _v4_get_entries,
 	.platform_route_to_string       = (const char *(*)(const NMPlatformIPRoute *)) nm_platform_ip4_route_to_string,
+	.platform_route_get_all         = nm_platform_ip4_route_get_all,
 	.platform_route_delete_default  = _v4_platform_route_delete_default,
 	.route_metric_normalize         = _v4_route_metric_normalize,
 };
@@ -910,6 +915,7 @@ static const VTableIP vtable_ip6 = {
 	.addr_family                    = AF_INET6,
 	.get_entries                    = _v6_get_entries,
 	.platform_route_to_string       = (const char *(*)(const NMPlatformIPRoute *)) nm_platform_ip6_route_to_string,
+	.platform_route_get_all         = nm_platform_ip6_route_get_all,
 	.platform_route_delete_default  = _v6_platform_route_delete_default,
 	.route_metric_normalize         = nm_utils_ip6_route_metric_normalize,
 };
