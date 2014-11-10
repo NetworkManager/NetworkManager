@@ -153,7 +153,7 @@ _platform_route_sync_add (const VTableIP *vtable, NMDefaultRouteManager *self, g
 	NMDefaultRouteManagerPrivate *priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
 	GPtrArray *entries = vtable->get_entries (priv);
 	guint i;
-	gboolean has_unsynced_entry = FALSE;
+	Entry *entry_unsynced = NULL;
 	Entry *entry = NULL;
 	gboolean success;
 
@@ -174,11 +174,15 @@ _platform_route_sync_add (const VTableIP *vtable, NMDefaultRouteManager *self, g
 			if (!entry)
 				entry = e;
 		} else
-			has_unsynced_entry = TRUE;
+			entry_unsynced = e;
 	}
 
-	/* For synced entries, we expect that the metric is chosen uniquely. */
-	g_assert (!entry || !has_unsynced_entry || metric == G_MAXUINT32);
+	/* We don't expect to have an unsynced *and* a synced entry for the same metric.
+	 * Unless, (a) their metric is G_MAXUINT32, in which case we could not find an unused effective metric,
+	 * or (b) if we have an unsynced and a synced entry for the same ifindex.
+	 * The latter case happens for example when activating an openvpn connection (synced) and
+	 * assuming the corresponding tun0 interface (unsynced). */
+	g_assert (!entry || !entry_unsynced || (entry->route.rx.ifindex == entry_unsynced->route.rx.ifindex) || metric == G_MAXUINT32);
 
 	/* we only add the route, if we have an (to be synced) entry for it. */
 	if (!entry)
@@ -296,20 +300,67 @@ _sort_entries_cmp (gconstpointer a, gconstpointer b, gpointer user_data)
 	return 0;
 }
 
+static GHashTable *
+_get_assumed_interface_metrics (const VTableIP *vtable, NMDefaultRouteManager *self, GArray *routes)
+{
+	NMDefaultRouteManagerPrivate *priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
+	GPtrArray *entries;
+	guint i, j;
+	GHashTable *result;
+
+	/* create a list of all metrics that are currently assigned on an interface
+	 * that is *not* already covered by one of our synced entries.
+	 * IOW, returns the metrics that are in use by assumed interfaces
+	 * that we want to preserve. */
+
+	entries = vtable->get_entries (priv);
+
+	result = g_hash_table_new (NULL, NULL);
+
+	for (i = 0; i < routes->len; i++) {
+		gboolean ifindex_has_synced_entry = FALSE;
+		const NMPlatformIPRoute *route;
+
+		route = _vt_route_index (vtable, routes, i);
+
+		for (j = 0; j < entries->len; j++) {
+			Entry *e = g_ptr_array_index (entries, j);
+
+			if (   !e->never_default
+			    && e->synced
+			    && e->route.rx.ifindex == route->ifindex) {
+				ifindex_has_synced_entry = TRUE;
+				break;
+			}
+		}
+
+		if (!ifindex_has_synced_entry)
+			g_hash_table_add (result, GUINT_TO_POINTER (vtable->route_metric_normalize (route->metric)));
+	}
+
+	return result;
+}
+
 static void
 _resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *changed_entry, const Entry *old_entry)
 {
 	NMDefaultRouteManagerPrivate *priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
 	Entry *entry;
-	guint i;
+	guint i, j;
 	gint64 last_metric = -1;
 	guint32 expected_metric;
 	GPtrArray *entries;
 	GHashTableIter iter;
 	gpointer ptr;
 	GHashTable *changed_metrics = g_hash_table_new (NULL, NULL);
+	GHashTable *assumed_metrics;
+	GArray *routes;
 
 	entries = vtable->get_entries (priv);
+
+	routes = vtable->platform_route_get_all (0, NM_PLATFORM_GET_ROUTE_MODE_ONLY_DEFAULT);
+
+	assumed_metrics = _get_assumed_interface_metrics (vtable, self, routes);
 
 	if (old_entry && old_entry->synced) {
 		/* The old version obviously changed. */
@@ -326,13 +377,52 @@ _resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *c
 			continue;
 
 		if (!entry->synced) {
-			last_metric = MAX (last_metric, (gint64) entry->effective_metric);
+			gboolean has_synced_entry = FALSE;
+
+			/* A non synced entry is completely ignored, if we have
+			 * a synced entry for the same if index.
+			 * Otherwise the metric of the entry is still remembered as
+			 * last_metric to avoid reusing it. */
+			for (j = 0; j < entries->len; j++) {
+				const Entry *e = g_ptr_array_index (entries, j);
+
+				if (   !e->never_default
+				    && e->synced
+					&& e->route.rx.ifindex == entry->route.rx.ifindex) {
+					has_synced_entry = TRUE;
+					break;
+				}
+			}
+			if (!has_synced_entry)
+				last_metric = MAX (last_metric, (gint64) entry->effective_metric);
 			continue;
 		}
 
 		expected_metric = entry->route.rx.metric;
 		if ((gint64) expected_metric <= last_metric)
 			expected_metric = last_metric == G_MAXUINT32 ? G_MAXUINT32 : last_metric + 1;
+
+		while (   expected_metric < G_MAXUINT32
+		       && g_hash_table_contains (assumed_metrics, GUINT_TO_POINTER (expected_metric))) {
+			gboolean has_metric_for_ifindex = FALSE;
+
+			/* Check if there are assumed devices that have default routes with this metric.
+			 * If there are any, we have to pick another effective_metric. */
+
+			/* However, if there is a matching route (ifindex+metric) for our current entry, we are done. */
+			for (j = 0; j < routes->len; j++) {
+				const NMPlatformIPRoute *r = _vt_route_index (vtable, routes, i);
+
+				if (   r->metric == expected_metric
+				    && r->ifindex == entry->route.rx.ifindex) {
+					has_metric_for_ifindex = TRUE;
+					break;
+				}
+			}
+			if (has_metric_for_ifindex)
+				break;
+			expected_metric++;
+		}
 
 		if (changed_entry == entry) {
 			/* for the changed entry, the previous metric was either old_entry->effective_metric,
@@ -358,12 +448,15 @@ _resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *c
 		last_metric = expected_metric;
 	}
 
+	g_array_free (routes, TRUE);
+
 	g_hash_table_iter_init (&iter, changed_metrics);
 	while (g_hash_table_iter_next (&iter, &ptr, NULL))
 		_platform_route_sync_add (vtable, self, GPOINTER_TO_UINT (ptr));
 	_platform_route_sync_flush (vtable, self);
 
 	g_hash_table_unref (changed_metrics);
+	g_hash_table_unref (assumed_metrics);
 }
 
 static void
