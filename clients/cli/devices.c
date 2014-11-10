@@ -1598,15 +1598,26 @@ error:
 static void
 disconnect_state_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
 {
-	NmCli *nmc = (NmCli *) user_data;
 	NMDeviceState state;
 
 	state = nm_device_get_state (device);
 
 	if (state == NM_DEVICE_STATE_DISCONNECTED) {
-		g_string_printf (nmc->return_text, _("Success: Device '%s' successfully disconnected."), nm_device_get_iface (device));
+		g_signal_handlers_disconnect_by_data (device, user_data);
+		g_print (_("Device '%s' successfully disconnected.\n"),
+		         nm_device_get_iface (device));
 		quit ();
 	}
+}
+
+static void
+device_removed_cb (NMClient *client, NMDevice *device, gpointer user_data)
+{
+	/* Success: device has been removed. It happens when disconnecting a software device. */
+	g_signal_handlers_disconnect_by_data (client, user_data);
+	g_print (_("Device '%s' successfully disconnected.\n"),
+	         nm_device_get_iface (device));
+	quit ();
 }
 
 static void
@@ -1638,6 +1649,7 @@ disconnect_device_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 			quit ();
 		} else {
 			g_signal_connect (device, "notify::state", G_CALLBACK (disconnect_state_cb), nmc);
+			g_signal_connect (nmc->client, NM_CLIENT_DEVICE_REMOVED, G_CALLBACK (device_removed_cb), nmc);
 			/* Start timer not to loop forever if "notify::state" signal is not issued */
 			g_timeout_add_seconds (nmc->timeout, timeout_cb, nmc);
 		}
