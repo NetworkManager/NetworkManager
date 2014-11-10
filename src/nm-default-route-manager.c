@@ -204,7 +204,7 @@ _platform_route_sync_flush (const VTableIP *vtable, NMDefaultRouteManager *self)
 	NMDefaultRouteManagerPrivate *priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
 	GPtrArray *entries = vtable->get_entries (priv);
 	GArray *routes;
-	guint i;
+	guint i, j;
 
 	/* prune all other default routes from this device. */
 	if (VTABLE_IS_IP4)
@@ -224,8 +224,8 @@ _platform_route_sync_flush (const VTableIP *vtable, NMDefaultRouteManager *self)
 
 		/* look at all entires and see if the route for this ifindex pair is
 		 * a known entry. */
-		for (i = 0; i < entries->len; i++) {
-			Entry *e = g_ptr_array_index (entries, i);
+		for (j = 0; j < entries->len; j++) {
+			Entry *e = g_ptr_array_index (entries, j);
 
 			if (e->never_default)
 				continue;
