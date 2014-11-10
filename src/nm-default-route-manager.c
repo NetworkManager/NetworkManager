@@ -161,7 +161,8 @@ _platform_route_sync_add (const VTableIP *vtable, NMDefaultRouteManager *self, g
 
 		if (e->synced) {
 			g_assert (!entry || metric == G_MAXUINT32);
-			entry = e;
+			if (!entry)
+				entry = e;
 		} else
 			has_unsynced_entry = TRUE;
 	}
