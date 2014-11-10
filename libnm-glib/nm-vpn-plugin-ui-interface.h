@@ -224,6 +224,52 @@ gboolean nm_vpn_plugin_ui_widget_interface_save_secrets (NMVpnPluginUiWidgetInte
                                                          NMConnection *connection,
                                                          GError **error);
 
+
+#ifdef NM_VPN_LIBNM_COMPAT
+#define nm_vpn_editor_plugin_factory nm_vpn_plugin_ui_factory
+
+#define NM_TYPE_VPN_EDITOR_PLUGIN               NM_TYPE_VPN_PLUGIN_UI_INTERFACE
+#define NM_VPN_EDITOR_PLUGIN(obj)               NM_VPN_PLUGIN_UI_INTERFACE(obj)
+#define NM_IS_VPN_EDITOR_PLUGIN(obj)            NM_IS_VPN_PLUGIN_UI_INTERFACE(obj)
+#define NM_VPN_EDITOR_PLUGIN_GET_INTERFACE(obj) NM_VPN_PLUGIN_UI_INTERFACE_GET_INTERFACE(obj)
+
+#define NMVpnEditorPluginCapability NMVpnPluginUiCapability
+#define NM_VPN_EDITOR_PLUGIN_CAPABILITY_NONE   NM_VPN_PLUGIN_UI_CAPABILITY_NONE
+#define NM_VPN_EDITOR_PLUGIN_CAPABILITY_IMPORT NM_VPN_PLUGIN_UI_CAPABILITY_IMPORT
+#define NM_VPN_EDITOR_PLUGIN_CAPABILITY_EXPORT NM_VPN_PLUGIN_UI_CAPABILITY_EXPORT
+#define NM_VPN_EDITOR_PLUGIN_CAPABILITY_IPV6   NM_VPN_PLUGIN_UI_CAPABILITY_IPV6
+
+#define NM_VPN_EDITOR_PLUGIN_NAME        NM_VPN_PLUGIN_UI_INTERFACE_NAME
+#define NM_VPN_EDITOR_PLUGIN_DESCRIPTION NM_VPN_PLUGIN_UI_INTERFACE_DESC
+#define NM_VPN_EDITOR_PLUGIN_SERVICE     NM_VPN_PLUGIN_UI_INTERFACE_SERVICE
+
+#define NMVpnEditorPlugin NMVpnPluginUiInterface
+#define NMVpnEditorPluginInterface NMVpnPluginUiInterface
+
+#define get_editor             ui_factory
+#define get_suggested_filename get_suggested_name
+
+#define nm_vpn_editor_plugin_get_type nm_vpn_plugin_ui_interface_get_type
+#define nm_vpn_editor_plugin_get_editor nm_vpn_plugin_ui_interface_ui_factory
+#define nm_vpn_editor_plugin_get_capabilities nm_vpn_plugin_ui_interface_get_capabilities
+#define nm_vpn_editor_plugin_import nm_vpn_plugin_ui_interface_import
+#define nm_vpn_editor_plugin_export nm_vpn_plugin_ui_interface_export
+#define nm_vpn_editor_plugin_get_suggested_filename nm_vpn_plugin_ui_interface_get_suggested_name
+
+#define NM_TYPE_VPN_EDITOR               NM_TYPE_VPN_PLUGIN_UI_WIDGET_INTERFACE
+#define NM_VPN_EDITOR(obj)               NM_VPN_PLUGIN_UI_WIDGET_INTERFACE (obj)
+#define NM_IS_VPN_EDITOR(obj)            NM_IS_VPN_PLUGIN_UI_WIDGET_INTERFACE (obj)
+#define NM_VPN_EDITOR_GET_INTERFACE(obj) NM_VPN_PLUGIN_UI_WIDGET_INTERFACE_GET_INTERFACE (obj)
+
+#define NMVpnEditor NMVpnPluginUiWidgetInterface
+#define NMVpnEditorInterface NMVpnPluginUiWidgetInterface
+
+#define nm_vpn_editor_get_type nm_vpn_plugin_ui_widget_interface_get_type
+#define nm_vpn_editor_get_widget nm_vpn_plugin_ui_widget_interface_get_widget
+#define nm_vpn_editor_update_connection nm_vpn_plugin_ui_widget_interface_update_connection
+
+#endif /* NM_VPN_LIBNM_COMPAT */
+
 G_END_DECLS
 
 #endif	/* NM_VPN_PLUGIN_UI_INTERFACE_H */

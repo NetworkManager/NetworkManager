@@ -112,6 +112,10 @@ void              nm_setting_vpn_foreach_secret    (NMSettingVPN *setting,
                                                     NMVPNIterFunc func,
                                                     gpointer user_data);
 
+#ifdef NM_VPN_LIBNM_COMPAT
+#define NMSettingVpn NMSettingVPN
+#endif
+
 G_END_DECLS
 
 #endif /* NM_SETTING_VPN_H */
