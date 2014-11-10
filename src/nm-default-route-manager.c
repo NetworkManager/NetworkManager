@@ -85,11 +85,7 @@ typedef struct {
 		NMDevice *device;
 		NMVpnConnection *vpn;
 	} source;
-	union {
-		NMPlatformIPRoute route;
-		NMPlatformIP4Route route4;
-		NMPlatformIP6Route route6;
-	};
+	NMPlatformIPXRoute route;
 	gboolean synced; /* if true, we synced the entry to platform. We don't sync assumed devices */
 
 	/* it makes sense to order sources based on their priority, without
@@ -178,24 +174,26 @@ _platform_route_sync_add (const VTableIP *vtable, NMDefaultRouteManager *self, g
 		return;
 
 	if (VTABLE_IS_IP4) {
-		success = nm_platform_ip4_route_add (entry->route.ifindex,
-		                                     entry->route.source,
+		success = nm_platform_ip4_route_add (entry->route.rx.ifindex,
+		                                     entry->route.rx.source,
 		                                     0,
 		                                     0,
-		                                     entry->route4.gateway,
+		                                     entry->route.r4.gateway,
 		                                     entry->effective_metric,
-		                                     entry->route.mss);
+		                                     entry->route.rx.mss);
 	} else {
-		success = nm_platform_ip6_route_add (entry->route.ifindex,
-		                                     entry->route.source,
+		success = nm_platform_ip6_route_add (entry->route.rx.ifindex,
+		                                     entry->route.rx.source,
 		                                     in6addr_any,
 		                                     0,
-		                                     entry->route6.gateway,
+		                                     entry->route.r6.gateway,
 		                                     entry->effective_metric,
-		                                     entry->route.mss);
+		                                     entry->route.rx.mss);
 	}
-	if (!success)
-		_LOGW (vtable->addr_family, "failed to add default route %s with effective metric %u", vtable->platform_route_to_string (&entry->route), (guint) entry->effective_metric);
+	if (!success) {
+		_LOGW (vtable->addr_family, "failed to add default route %s with effective metric %u",
+		       vtable->platform_route_to_string (&entry->route.rx), (guint) entry->effective_metric);
+	}
 }
 
 static void
@@ -230,7 +228,7 @@ _platform_route_sync_flush (const VTableIP *vtable, NMDefaultRouteManager *self)
 			if (e->never_default)
 				continue;
 
-			if (   e->route.ifindex == route->ifindex
+			if (   e->route.rx.ifindex == route->ifindex
 			    && e->synced) {
 				has_ifindex_synced = TRUE;
 				if (e->effective_metric == route->metric)
@@ -259,8 +257,8 @@ _sort_entries_cmp (gconstpointer a, gconstpointer b, gpointer user_data)
 	const Entry *e_b = *((const Entry **) b);
 
 	/* when comparing routes, we consider the (original) metric. */
-	m_a = e_a->route.metric;
-	m_b = e_b->route.metric;
+	m_a = e_a->route.rx.metric;
+	m_b = e_b->route.rx.metric;
 
 	/* we normalize route.metric already in _ipx_update_default_route().
 	 * so we can just compare the metrics numerically */
@@ -327,7 +325,7 @@ _resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *c
 			continue;
 		}
 
-		expected_metric = entry->route.metric;
+		expected_metric = entry->route.rx.metric;
 		if ((gint64) expected_metric <= last_metric)
 			expected_metric = last_metric == G_MAXUINT32 ? G_MAXUINT32 : last_metric + 1;
 
@@ -335,14 +333,20 @@ _resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *c
 			/* for the changed entry, the previous metric was either old_entry->effective_metric,
 			 * or none. Hence, we only have to remember what is going to change. */
 			g_hash_table_add (changed_metrics, GUINT_TO_POINTER (expected_metric));
-			if (old_entry)
-				_LOGD (vtable->addr_family, LOG_ENTRY_FMT": update %s (%u -> %u)", LOG_ENTRY_ARGS (i, entry), vtable->platform_route_to_string (&entry->route), (guint) old_entry->effective_metric, (guint) expected_metric);
-			else
-				_LOGD (vtable->addr_family, LOG_ENTRY_FMT": add %s (%u)", LOG_ENTRY_ARGS (i, entry), vtable->platform_route_to_string (&entry->route), (guint) expected_metric);
+			if (old_entry) {
+				_LOGD (vtable->addr_family, LOG_ENTRY_FMT": update %s (%u -> %u)", LOG_ENTRY_ARGS (i, entry),
+				       vtable->platform_route_to_string (&entry->route.rx), (guint) old_entry->effective_metric,
+				       (guint) expected_metric);
+			} else {
+				_LOGD (vtable->addr_family, LOG_ENTRY_FMT": add %s (%u)", LOG_ENTRY_ARGS (i, entry),
+				       vtable->platform_route_to_string (&entry->route.rx), (guint) expected_metric);
+			}
 		} else if (entry->effective_metric != expected_metric) {
 			g_hash_table_add (changed_metrics, GUINT_TO_POINTER (entry->effective_metric));
 			g_hash_table_add (changed_metrics, GUINT_TO_POINTER (expected_metric));
-			_LOGD (vtable->addr_family, LOG_ENTRY_FMT": resync metric %s (%u -> %u)", LOG_ENTRY_ARGS (i, entry), vtable->platform_route_to_string (&entry->route), (guint) entry->effective_metric, (guint) expected_metric);
+			_LOGD (vtable->addr_family, LOG_ENTRY_FMT": resync metric %s (%u -> %u)", LOG_ENTRY_ARGS (i, entry),
+			       vtable->platform_route_to_string (&entry->route.rx), (guint) entry->effective_metric,
+			       (guint) expected_metric);
 		}
 
 		entry->effective_metric = expected_metric;
@@ -372,14 +376,14 @@ _entry_at_idx_update (const VTableIP *vtable, NMDefaultRouteManager *self, guint
 	entry = g_ptr_array_index (entries, entry_idx);
 
 	g_assert (   !old_entry
-	          || (entry->source.pointer == old_entry->source.pointer && entry->route.ifindex == old_entry->route.ifindex));
+	          || (entry->source.pointer == old_entry->source.pointer && entry->route.rx.ifindex == old_entry->route.rx.ifindex));
 
 	if (!entry->synced) {
-		entry->effective_metric = entry->route.metric;
+		entry->effective_metric = entry->route.rx.metric;
 		_LOGD (vtable->addr_family, LOG_ENTRY_FMT": %s %s%s",
 		       LOG_ENTRY_ARGS (entry_idx, entry),
 		       old_entry ? "update" : "add",
-		       vtable->platform_route_to_string (&entry->route),
+		       vtable->platform_route_to_string (&entry->route.rx),
 		       entry->never_default ? " (never-default)" : (entry->synced ? "" : " (not synced)"));
 	}
 
@@ -401,7 +405,9 @@ _entry_at_idx_remove (const VTableIP *vtable, NMDefaultRouteManager *self, guint
 
 	entry = g_ptr_array_index (entries, entry_idx);
 
-	_LOGD (vtable->addr_family, LOG_ENTRY_FMT": remove %s (%u%s)", LOG_ENTRY_ARGS (entry_idx, entry), vtable->platform_route_to_string (&entry->route), (guint) entry->effective_metric, entry->synced ? "" : ", not synced");
+	_LOGD (vtable->addr_family, LOG_ENTRY_FMT": remove %s (%u%s)", LOG_ENTRY_ARGS (entry_idx, entry),
+	       vtable->platform_route_to_string (&entry->route.rx), (guint) entry->effective_metric,
+	       entry->synced ? "" : ", not synced");
 
 	/* Remove the entry from the list (but don't free it yet) */
 	g_ptr_array_index (entries, entry_idx) = NULL;
@@ -421,11 +427,7 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 	Entry *entry;
 	guint entry_idx;
 	const NMPlatformIPRoute *default_route = NULL;
-	union {
-		NMPlatformIPRoute vx;
-		NMPlatformIP4Route v4;
-		NMPlatformIP6Route v6;
-	} rt;
+	NMPlatformIPXRoute rt;
 	int ip_ifindex;
 	GPtrArray *entries;
 	NMDevice *device = NULL;
@@ -460,11 +462,11 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 	entry = _entry_find_by_source (entries, source, &entry_idx);
 
 	if (   entry
-	    && entry->route.ifindex != ip_ifindex) {
+	    && entry->route.rx.ifindex != ip_ifindex) {
 		/* Strange... the ifindex changed... Remove the device and start again. */
 		_LOGD (vtable->addr_family, "ifindex of "LOG_ENTRY_FMT" changed: %d -> %d",
 		       LOG_ENTRY_ARGS (entry_idx, entry),
-		       entry->route.ifindex, ip_ifindex);
+		       entry->route.rx.ifindex, ip_ifindex);
 
 		g_object_freeze_notify (G_OBJECT (self));
 		_entry_at_idx_remove (vtable, self, entry_idx, FALSE);
@@ -487,19 +489,19 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 			if (   connection
 			    && nm_vpn_connection_get_vpn_state (vpn) == NM_VPN_CONNECTION_STATE_ACTIVATED) {
 
+				memset (&rt, 0, sizeof (rt));
 				if (VTABLE_IS_IP4) {
 					NMIP4Config *vpn_config;
 
 					vpn_config = nm_vpn_connection_get_ip4_config (vpn);
 					if (vpn_config) {
 						never_default = nm_ip4_config_get_never_default (vpn_config);
-						memset (&rt.v4, 0, sizeof (rt.v4));
-						rt.v4.ifindex = ip_ifindex;
-						rt.v4.source = NM_IP_CONFIG_SOURCE_VPN;
-						rt.v4.gateway = nm_vpn_connection_get_ip4_internal_gateway (vpn);
-						rt.v4.metric = nm_vpn_connection_get_ip4_route_metric (vpn);
-						rt.v4.mss = nm_ip4_config_get_mss (vpn_config);
-						default_route = &rt.vx;
+						rt.r4.ifindex = ip_ifindex;
+						rt.r4.source = NM_IP_CONFIG_SOURCE_VPN;
+						rt.r4.gateway = nm_vpn_connection_get_ip4_internal_gateway (vpn);
+						rt.r4.metric = nm_vpn_connection_get_ip4_route_metric (vpn);
+						rt.r4.mss = nm_ip4_config_get_mss (vpn_config);
+						default_route = &rt.rx;
 					}
 				} else {
 					NMIP6Config *vpn_config;
@@ -509,13 +511,12 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 						const struct in6_addr *int_gw = nm_vpn_connection_get_ip6_internal_gateway (vpn);
 
 						never_default = nm_ip6_config_get_never_default (vpn_config);
-						memset (&rt.v6, 0, sizeof (rt.v6));
-						rt.v6.ifindex = ip_ifindex;
-						rt.v6.source = NM_IP_CONFIG_SOURCE_VPN;
-						rt.v6.gateway = int_gw ? *int_gw : in6addr_any;
-						rt.v6.metric = nm_vpn_connection_get_ip6_route_metric (vpn);
-						rt.v6.mss = nm_ip6_config_get_mss (vpn_config);
-						default_route = &rt.vx;
+						rt.r6.ifindex = ip_ifindex;
+						rt.r6.source = NM_IP_CONFIG_SOURCE_VPN;
+						rt.r6.gateway = int_gw ? *int_gw : in6addr_any;
+						rt.r6.metric = nm_vpn_connection_get_ip6_route_metric (vpn);
+						rt.r6.mss = nm_ip6_config_get_mss (vpn_config);
+						default_route = &rt.rx;
 					}
 				}
 			}
@@ -535,15 +536,15 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 		entry->source.object = g_object_ref (source);
 
 		if (VTABLE_IS_IP4)
-			entry->route4 = *((const NMPlatformIP4Route *) default_route);
+			entry->route.r4 = *((const NMPlatformIP4Route *) default_route);
 		else
-			entry->route6 = *((const NMPlatformIP6Route *) default_route);
+			entry->route.r6 = *((const NMPlatformIP6Route *) default_route);
 
 		/* only use normalized metrics */
-		entry->route.metric = vtable->route_metric_normalize (entry->route.metric);
-		entry->route.ifindex = ip_ifindex;
+		entry->route.rx.metric = vtable->route_metric_normalize (entry->route.rx.metric);
+		entry->route.rx.ifindex = ip_ifindex;
 		entry->never_default = never_default;
-		entry->effective_metric = entry->route.metric;
+		entry->effective_metric = entry->route.rx.metric;
 		entry->synced = synced;
 
 		g_ptr_array_add (entries, entry);
@@ -554,12 +555,12 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 
 		new_entry = *entry;
 		if (VTABLE_IS_IP4)
-			new_entry.route4 = *((const NMPlatformIP4Route *) default_route);
+			new_entry.route.r4 = *((const NMPlatformIP4Route *) default_route);
 		else
-			new_entry.route6 = *((const NMPlatformIP6Route *) default_route);
+			new_entry.route.r6 = *((const NMPlatformIP6Route *) default_route);
 		/* only use normalized metrics */
-		new_entry.route.metric = vtable->route_metric_normalize (new_entry.route.metric);
-		new_entry.route.ifindex = ip_ifindex;
+		new_entry.route.rx.metric = vtable->route_metric_normalize (new_entry.route.rx.metric);
+		new_entry.route.rx.ifindex = ip_ifindex;
 		new_entry.never_default = never_default;
 		new_entry.synced = synced;
 
