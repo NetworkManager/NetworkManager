@@ -37,6 +37,13 @@
 typedef struct {
 	GPtrArray *entries_ip4;
 	GPtrArray *entries_ip6;
+	struct {
+		guint guard;
+		guint backoff_wait_time_ms;
+		guint idle_handle;
+		gboolean has_v4_changes;
+		gboolean has_v6_changes;
+	} resync;
 } NMDefaultRouteManagerPrivate;
 
 #define NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEFAULT_ROUTE_MANAGER, NMDefaultRouteManagerPrivate))
@@ -51,7 +58,7 @@ static NMDefaultRouteManager *_instance;
         guint64 __domain = __addr_family == AF_INET ? LOGD_IP4 : LOGD_IP6; \
         \
         if (nm_logging_enabled ((level), (__domain))) { \
-            char __ch = __addr_family == AF_INET ? '4' : '6'; \
+            char __ch = __addr_family == AF_INET ? '4' : (__addr_family == AF_INET6 ? '6' : '-'); \
             char __prefix[30] = "default-route"; \
             \
             if ((self) != _instance) \
@@ -75,6 +82,10 @@ static NMDefaultRouteManager *_instance;
 		NM_IS_DEVICE (entry->source.pointer) ? "dev" : "vpn", \
 		entry->source.pointer, \
 		NM_IS_DEVICE (entry->source.pointer) ? nm_device_get_iface (entry->source.device) : nm_vpn_connection_get_connection_id (entry->source.vpn)
+
+/***********************************************************************************/
+
+static void _resync_idle_cancel (NMDefaultRouteManager *self);
 
 /***********************************************************************************/
 
@@ -118,6 +129,34 @@ _vt_route_index (const VTableIP *vtable, GArray *routes, guint index)
 		return (NMPlatformIPRoute *) &g_array_index (routes, NMPlatformIP6Route, index);
 }
 
+static gboolean
+_vt_routes_has_entry (const VTableIP *vtable, GArray *routes, const Entry *entry)
+{
+	guint i;
+	NMPlatformIPXRoute route = entry->route;
+
+	route.rx.metric = entry->effective_metric;
+
+	if (VTABLE_IS_IP4) {
+		for (i = 0; i < routes->len; i++) {
+			NMPlatformIP4Route *r = &g_array_index (routes, NMPlatformIP4Route, i);
+
+			route.rx.source = r->source;
+			if (nm_platform_ip4_route_cmp (r, &route.r4) == 0)
+				return TRUE;
+		}
+	} else {
+		for (i = 0; i < routes->len; i++) {
+			NMPlatformIP6Route *r = &g_array_index (routes, NMPlatformIP6Route, i);
+
+			route.rx.source = r->source;
+			if (nm_platform_ip6_route_cmp (r, &route.r6) == 0)
+				return TRUE;
+		}
+	}
+	return FALSE;
+}
+
 static void
 _entry_free (Entry *entry)
 {
@@ -147,7 +186,7 @@ _entry_find_by_source (GPtrArray *entries, gpointer source, guint *out_idx)
 	return NULL;
 }
 
-static void
+static gboolean
 _platform_route_sync_add (const VTableIP *vtable, NMDefaultRouteManager *self, guint32 metric)
 {
 	NMDefaultRouteManagerPrivate *priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
@@ -186,7 +225,7 @@ _platform_route_sync_add (const VTableIP *vtable, NMDefaultRouteManager *self, g
 
 	/* we only add the route, if we have an (to be synced) entry for it. */
 	if (!entry)
-		return;
+		return FALSE;
 
 	if (VTABLE_IS_IP4) {
 		success = nm_platform_ip4_route_add (entry->route.rx.ifindex,
@@ -209,15 +248,17 @@ _platform_route_sync_add (const VTableIP *vtable, NMDefaultRouteManager *self, g
 		_LOGW (vtable->addr_family, "failed to add default route %s with effective metric %u",
 		       vtable->platform_route_to_string (&entry->route.rx), (guint) entry->effective_metric);
 	}
+	return TRUE;
 }
 
-static void
+static gboolean
 _platform_route_sync_flush (const VTableIP *vtable, NMDefaultRouteManager *self)
 {
 	NMDefaultRouteManagerPrivate *priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
 	GPtrArray *entries = vtable->get_entries (priv);
 	GArray *routes;
 	guint i, j;
+	gboolean changed = FALSE;
 
 	/* prune all other default routes from this device. */
 	routes = vtable->platform_route_get_all (0, NM_PLATFORM_GET_ROUTE_MODE_ONLY_DEFAULT);
@@ -252,10 +293,13 @@ _platform_route_sync_flush (const VTableIP *vtable, NMDefaultRouteManager *self)
 		 * Otherwise, don't delete the route because it's configured
 		 * externally (and will be assumed -- or already is assumed).
 		 */
-		if (has_ifindex_synced && !entry)
+		if (has_ifindex_synced && !entry) {
 			vtable->platform_route_delete_default (route->ifindex, route->metric);
+			changed = TRUE;
+		}
 	}
 	g_array_free (routes, TRUE);
+	return changed;
 }
 
 static int
@@ -341,8 +385,8 @@ _get_assumed_interface_metrics (const VTableIP *vtable, NMDefaultRouteManager *s
 	return result;
 }
 
-static void
-_resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *changed_entry, const Entry *old_entry)
+static gboolean
+_resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *changed_entry, const Entry *old_entry, gboolean external_change)
 {
 	NMDefaultRouteManagerPrivate *priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
 	Entry *entry;
@@ -355,6 +399,19 @@ _resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *c
 	GHashTable *changed_metrics = g_hash_table_new (NULL, NULL);
 	GHashTable *assumed_metrics;
 	GArray *routes;
+	gboolean changed = FALSE;
+
+	g_assert (priv->resync.guard == 0);
+	priv->resync.guard++;
+
+	if (!external_change) {
+		if (VTABLE_IS_IP4)
+			priv->resync.has_v4_changes = FALSE;
+		else
+			priv->resync.has_v6_changes = FALSE;
+		if (!priv->resync.has_v4_changes && !priv->resync.has_v6_changes)
+			_resync_idle_cancel (self);
+	}
 
 	entries = vtable->get_entries (priv);
 
@@ -442,9 +499,19 @@ _resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *c
 			_LOGD (vtable->addr_family, LOG_ENTRY_FMT": resync metric %s (%u -> %u)", LOG_ENTRY_ARGS (i, entry),
 			       vtable->platform_route_to_string (&entry->route.rx), (guint) entry->effective_metric,
 			       (guint) expected_metric);
+		} else {
+			if (!_vt_routes_has_entry (vtable, routes, entry)) {
+				g_hash_table_add (changed_metrics, GUINT_TO_POINTER (entry->effective_metric));
+				_LOGD (vtable->addr_family, LOG_ENTRY_FMT": readd route %s (%u -> %u)", LOG_ENTRY_ARGS (i, entry),
+				       vtable->platform_route_to_string (&entry->route.rx), (guint) entry->effective_metric,
+				       (guint) entry->effective_metric);
+			}
 		}
 
-		entry->effective_metric = expected_metric;
+		if (entry->effective_metric != expected_metric) {
+			entry->effective_metric = expected_metric;
+			changed = TRUE;
+		}
 		last_metric = expected_metric;
 	}
 
@@ -452,11 +519,14 @@ _resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *c
 
 	g_hash_table_iter_init (&iter, changed_metrics);
 	while (g_hash_table_iter_next (&iter, &ptr, NULL))
-		_platform_route_sync_add (vtable, self, GPOINTER_TO_UINT (ptr));
-	_platform_route_sync_flush (vtable, self);
+		changed |= _platform_route_sync_add (vtable, self, GPOINTER_TO_UINT (ptr));
+	changed |= _platform_route_sync_flush (vtable, self);
 
 	g_hash_table_unref (changed_metrics);
 	g_hash_table_unref (assumed_metrics);
+
+	priv->resync.guard--;
+	return changed;
 }
 
 static void
@@ -485,7 +555,7 @@ _entry_at_idx_update (const VTableIP *vtable, NMDefaultRouteManager *self, guint
 
 	g_ptr_array_sort_with_data (entries, _sort_entries_cmp, NULL);
 
-	_resync_all (vtable, self, entry, old_entry);
+	_resync_all (vtable, self, entry, old_entry, FALSE);
 }
 
 static void
@@ -509,7 +579,7 @@ _entry_at_idx_remove (const VTableIP *vtable, NMDefaultRouteManager *self, guint
 	g_ptr_array_index (entries, entry_idx) = NULL;
 	g_ptr_array_remove_index (entries, entry_idx);
 
-	_resync_all (vtable, self, NULL, entry);
+	_resync_all (vtable, self, NULL, entry, FALSE);
 
 	_entry_free (entry);
 }
@@ -1027,13 +1097,168 @@ nm_default_route_manager_get ()
 
 /***********************************************************************************/
 
+static gboolean
+_resync_idle_now (NMDefaultRouteManager *self)
+{
+	gboolean has_v4_changes, has_v6_changes;
+	gboolean changed = FALSE;
+
+	NMDefaultRouteManagerPrivate *priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
+
+	has_v4_changes = priv->resync.has_v4_changes;
+	has_v6_changes = priv->resync.has_v6_changes;
+
+	_LOGD (0, "resync: sync now (%u) (IPv4 changes: %s, IPv6 changes: %s)", priv->resync.idle_handle,
+	       has_v4_changes ? "yes" : "no", has_v6_changes ? "yes" : "no");
+
+	priv->resync.has_v4_changes = FALSE;
+	priv->resync.has_v6_changes = FALSE;
+	priv->resync.idle_handle = 0;
+	priv->resync.backoff_wait_time_ms =
+	    priv->resync.backoff_wait_time_ms == 0
+	    ? 100
+	    : priv->resync.backoff_wait_time_ms * 2;
+
+	if (has_v4_changes)
+		changed |= _resync_all (&vtable_ip4, self, NULL, NULL, TRUE);
+
+	if (has_v6_changes)
+		changed |= _resync_all (&vtable_ip6, self, NULL, NULL, TRUE);
+
+	if (!changed) {
+		/* Nothing changed: reset the backoff wait time */
+		_resync_idle_cancel (self);
+	}
+
+	return G_SOURCE_REMOVE;
+}
+
+static void
+_resync_idle_cancel (NMDefaultRouteManager *self)
+{
+	NMDefaultRouteManagerPrivate *priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
+
+	if (priv->resync.idle_handle) {
+		_LOGD (0, "resync: cancelled (%u)", priv->resync.idle_handle);
+		g_source_remove (priv->resync.idle_handle);
+		priv->resync.idle_handle = 0;
+	}
+	priv->resync.backoff_wait_time_ms = 0;
+	priv->resync.has_v4_changes = FALSE;
+	priv->resync.has_v6_changes = FALSE;
+}
+
+static void
+_resync_idle_reschedule (NMDefaultRouteManager *self)
+{
+	NMDefaultRouteManagerPrivate *priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
+
+	/* since we react on external changes and readd/remove default routes for
+	 * the interfaces we manage, there could be the erronous situation where two applications
+	 * fight over a certain default route.
+	 * Avoid this, by increasingly wait longer to touch the system (backoff wait time). */
+
+	if (priv->resync.backoff_wait_time_ms == 0) {
+		/* for scheduling idle, always reschedule (to process all other events first) */
+		if (priv->resync.idle_handle)
+			g_source_remove (priv->resync.idle_handle);
+		else
+			_LOGD (0, "resync: schedule on idle");
+		priv->resync.idle_handle = g_idle_add ((GSourceFunc) _resync_idle_now, self);
+	} else if (!priv->resync.idle_handle) {
+		priv->resync.idle_handle =  g_timeout_add (priv->resync.backoff_wait_time_ms, (GSourceFunc) _resync_idle_now, self);
+		_LOGD (0, "resync: schedule in %u.%03u seconds (%u)", priv->resync.backoff_wait_time_ms/1000,
+		       priv->resync.backoff_wait_time_ms%1000, priv->resync.idle_handle);
+	}
+}
+
+static void
+_platform_ipx_route_changed_cb (const VTableIP *vtable,
+                                NMDefaultRouteManager *self,
+                                const NMPlatformIPRoute *route)
+{
+	NMDefaultRouteManagerPrivate *priv;
+
+	if (route && !NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route)) {
+		/* we only care about address changes or changes of default route. */
+		return;
+	}
+
+	priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
+
+	if (priv->resync.guard) {
+		/* callbacks while executing _resync_all() are ignored. */
+		return;
+	}
+
+	if (VTABLE_IS_IP4)
+		priv->resync.has_v4_changes = TRUE;
+	else
+		priv->resync.has_v6_changes = TRUE;
+
+	_resync_idle_reschedule (self);
+}
+
+static void
+_platform_ip4_address_changed_cb (NMPlatform *platform,
+                                  int ifindex,
+                                  gpointer platform_object,
+                                  NMPlatformSignalChangeType change_type,
+                                  NMPlatformReason reason,
+                                  NMDefaultRouteManager *self)
+{
+	_platform_ipx_route_changed_cb (&vtable_ip4, self, NULL);
+}
+
+static void
+_platform_ip6_address_changed_cb (NMPlatform *platform,
+                                  int ifindex,
+                                  gpointer platform_object,
+                                  NMPlatformSignalChangeType change_type,
+                                  NMPlatformReason reason,
+                                  NMDefaultRouteManager *self)
+{
+	_platform_ipx_route_changed_cb (&vtable_ip6, self, NULL);
+}
+
+static void
+_platform_ip4_route_changed_cb (NMPlatform *platform,
+                                int ifindex,
+                                gpointer platform_object,
+                                NMPlatformSignalChangeType change_type,
+                                NMPlatformReason reason,
+                                NMDefaultRouteManager *self)
+{
+	_platform_ipx_route_changed_cb (&vtable_ip4, self, platform_object);
+}
+
+static void
+_platform_ip6_route_changed_cb (NMPlatform *platform,
+                                int ifindex,
+                                gpointer platform_object,
+                                NMPlatformSignalChangeType change_type,
+                                NMPlatformReason reason,
+                                NMDefaultRouteManager *self)
+{
+	_platform_ipx_route_changed_cb (&vtable_ip6, self, platform_object);
+}
+
+/***********************************************************************************/
+
 static void
 nm_default_route_manager_init (NMDefaultRouteManager *self)
 {
 	NMDefaultRouteManagerPrivate *priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
+	NMPlatform *platform;
 
 	priv->entries_ip4 = g_ptr_array_new_full (0, (GDestroyNotify) _entry_free);
 	priv->entries_ip6 = g_ptr_array_new_full (0, (GDestroyNotify) _entry_free);
+
+	platform = nm_platform_get ();
+	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED, G_CALLBACK (_platform_ip4_address_changed_cb), self);
+	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED, G_CALLBACK (_platform_ip6_address_changed_cb), self);
+	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, G_CALLBACK (_platform_ip4_route_changed_cb), self);
+	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, G_CALLBACK (_platform_ip6_route_changed_cb), self);
 }
 
 static void
@@ -1050,6 +1275,10 @@ dispose (GObject *object)
 		g_ptr_array_free (priv->entries_ip6, TRUE);
 		priv->entries_ip6 = NULL;
 	}
+
+	_resync_idle_cancel (self);
+
+	g_signal_handlers_disconnect_by_data (nm_platform_get (), self);
 
 	G_OBJECT_CLASS (nm_default_route_manager_parent_class)->dispose (object);
 }
