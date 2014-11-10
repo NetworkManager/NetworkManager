@@ -260,10 +260,14 @@ static inline gboolean
 check_range (guint32 val,
              guint32 min,
              guint32 max,
+             gboolean zero,
              const char *prop,
              GError **error)
 {
-	if ((val != 0) && (val < min || val > max)) {
+	if (zero && val == 0)
+		return TRUE;
+
+	if (val < min || val > max) {
 		g_set_error (error,
 		             NM_SETTING_BRIDGE_ERROR,
 		             NM_SETTING_BRIDGE_ERROR_INVALID_PROPERTY,
@@ -311,6 +315,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	if (!check_range (priv->forward_delay,
 	                  BR_MIN_FORWARD_DELAY,
 	                  BR_MAX_FORWARD_DELAY,
+	                  !priv->stp,
 	                  NM_SETTING_BRIDGE_FORWARD_DELAY,
 	                  error))
 		return FALSE;
@@ -318,6 +323,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	if (!check_range (priv->hello_time,
 	                  BR_MIN_HELLO_TIME,
 	                  BR_MAX_HELLO_TIME,
+	                  !priv->stp,
 	                  NM_SETTING_BRIDGE_HELLO_TIME,
 	                  error))
 		return FALSE;
@@ -325,6 +331,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	if (!check_range (priv->max_age,
 	                  BR_MIN_MAX_AGE,
 	                  BR_MAX_MAX_AGE,
+	                  !priv->stp,
 	                  NM_SETTING_BRIDGE_MAX_AGE,
 	                  error))
 		return FALSE;
@@ -332,6 +339,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	if (!check_range (priv->ageing_time,
 	                  BR_MIN_AGEING_TIME,
 	                  BR_MAX_AGEING_TIME,
+	                  !priv->stp,
 	                  NM_SETTING_BRIDGE_AGEING_TIME,
 	                  error))
 		return FALSE;
