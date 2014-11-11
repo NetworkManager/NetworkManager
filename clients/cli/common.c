@@ -39,13 +39,14 @@
 NmcOutputField nmc_fields_ip4_config[] = {
 	{"GROUP",      N_("GROUP"),       15},  /* 0 */
 	{"ADDRESS",    N_("ADDRESS"),     68},  /* 1 */
-	{"ROUTE",      N_("ROUTE"),       68},  /* 2 */
-	{"DNS",        N_("DNS"),         35},  /* 3 */
-	{"DOMAIN",     N_("DOMAIN"),      35},  /* 4 */
-	{"WINS",       N_("WINS"),        20},  /* 5 */
+	{"GATEWAY",    N_("GATEWAY"),      0},  /* 2 */
+	{"ROUTE",      N_("ROUTE"),       68},  /* 3 */
+	{"DNS",        N_("DNS"),         35},  /* 4 */
+	{"DOMAIN",     N_("DOMAIN"),      35},  /* 5 */
+	{"WINS",       N_("WINS"),        20},  /* 6 */
 	{NULL,         NULL,               0}
 };
-#define NMC_FIELDS_IP4_CONFIG_ALL     "GROUP,ADDRESS,ROUTE,DNS,DOMAIN,WINS"
+#define NMC_FIELDS_IP4_CONFIG_ALL     "GROUP,ADDRESS,GATEWAY,ROUTE,DNS,DOMAIN,WINS"
 
 /* Available fields for DHCPv4 group */
 NmcOutputField nmc_fields_dhcp4_config[] = {
@@ -59,12 +60,13 @@ NmcOutputField nmc_fields_dhcp4_config[] = {
 NmcOutputField nmc_fields_ip6_config[] = {
 	{"GROUP",      N_("GROUP"),       15},  /* 0 */
 	{"ADDRESS",    N_("ADDRESS"),     95},  /* 1 */
-	{"ROUTE",      N_("ROUTE"),       95},  /* 2 */
-	{"DNS",        N_("DNS"),         60},  /* 3 */
-	{"DOMAIN",     N_("DOMAIN"),      35},  /* 4 */
+	{"GATEWAY",    N_("GATEWAY"),      0},  /* 2 */
+	{"ROUTE",      N_("ROUTE"),       95},  /* 3 */
+	{"DNS",        N_("DNS"),         60},  /* 4 */
+	{"DOMAIN",     N_("DOMAIN"),      35},  /* 5 */
 	{NULL,         NULL,               0}
 };
-#define NMC_FIELDS_IP6_CONFIG_ALL     "GROUP,ADDRESS,ROUTE,DNS,DOMAIN"
+#define NMC_FIELDS_IP6_CONFIG_ALL     "GROUP,ADDRESS,GATEWAY,ROUTE,DNS,DOMAIN"
 
 /* Available fields for DHCPv6 group */
 NmcOutputField nmc_fields_dhcp6_config[] = {
@@ -82,7 +84,6 @@ print_ip4_config (NMIPConfig *cfg4,
                   const char *one_field)
 {
 	GPtrArray *ptr_array;
-	const char *gw;
 	char **addr_arr = NULL;
 	char **route_arr = NULL;
 	char **dns_arr = NULL;
@@ -104,16 +105,14 @@ print_ip4_config (NMIPConfig *cfg4,
 
 	/* addresses */
 	ptr_array = nm_ip_config_get_addresses (cfg4);
-	gw = nm_ip_config_get_gateway (cfg4);
 	if (ptr_array) {
 		addr_arr = g_new (char *, ptr_array->len + 1);
 		for (i = 0; i < ptr_array->len; i++) {
 			NMIPAddress *addr = (NMIPAddress *) g_ptr_array_index (ptr_array, i);
 
-			addr_arr[i] = g_strdup_printf ("ip = %s/%u, gw = %s",
+			addr_arr[i] = g_strdup_printf ("%s/%u",
 			                               nm_ip_address_get_address (addr),
-			                               nm_ip_address_get_prefix (addr),
-			                               (i == 0) && gw ? gw : "0.0.0.0");
+			                               nm_ip_address_get_prefix (addr));
 		}
 		addr_arr[i] = NULL;
 	}
@@ -152,10 +151,11 @@ print_ip4_config (NMIPConfig *cfg4,
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_strc (arr, 0, group_prefix);
 	set_val_arr  (arr, 1, addr_arr);
-	set_val_arr  (arr, 2, route_arr);
-	set_val_arr  (arr, 3, dns_arr);
-	set_val_arr  (arr, 4, domain_arr);
-	set_val_arr  (arr, 5, wins_arr);
+	set_val_strc (arr, 2, nm_ip_config_get_gateway (cfg4));
+	set_val_arr  (arr, 3, route_arr);
+	set_val_arr  (arr, 4, dns_arr);
+	set_val_arr  (arr, 5, domain_arr);
+	set_val_arr  (arr, 6, wins_arr);
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc); /* Print all data */
@@ -173,7 +173,6 @@ print_ip6_config (NMIPConfig *cfg6,
                   const char *one_field)
 {
 	GPtrArray *ptr_array;
-	const char *gw;
 	char **addr_arr = NULL;
 	char **route_arr = NULL;
 	char **dns_arr = NULL;
@@ -194,16 +193,14 @@ print_ip6_config (NMIPConfig *cfg6,
 
 	/* addresses */
 	ptr_array = nm_ip_config_get_addresses (cfg6);
-	gw = nm_ip_config_get_gateway (cfg6);
 	if (ptr_array) {
 		addr_arr = g_new (char *, ptr_array->len + 1);
 		for (i = 0; i < ptr_array->len; i++) {
 			NMIPAddress *addr = (NMIPAddress *) g_ptr_array_index (ptr_array, i);
 
-			addr_arr[i] = g_strdup_printf ("ip = %s/%u, gw = %s",
+			addr_arr[i] = g_strdup_printf ("%s/%u",
 			                               nm_ip_address_get_address (addr),
-			                               nm_ip_address_get_prefix (addr),
-			                               (i == 0) && gw ? gw : "::");
+			                               nm_ip_address_get_prefix (addr));
 		}
 		addr_arr[i] = NULL;
 	}
@@ -239,9 +236,10 @@ print_ip6_config (NMIPConfig *cfg6,
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_strc (arr, 0, group_prefix);
 	set_val_arr  (arr, 1, addr_arr);
-	set_val_arr  (arr, 2, route_arr);
-	set_val_arr  (arr, 3, dns_arr);
-	set_val_arr  (arr, 4, domain_arr);
+	set_val_strc (arr, 2, nm_ip_config_get_gateway (cfg6));
+	set_val_arr  (arr, 3, route_arr);
+	set_val_arr  (arr, 4, dns_arr);
+	set_val_arr  (arr, 5, domain_arr);
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc); /* Print all data */
