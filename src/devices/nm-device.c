@@ -3353,7 +3353,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 			NMPlatformIP6Route *route = &priv->default_route.v6;
 
 			if (assumed)
-				priv->default_route.v6_has = _device_get_default_route_from_platform (self, AF_INET, (NMPlatformIPRoute *) route);
+				priv->default_route.v6_has = _device_get_default_route_from_platform (self, AF_INET6, (NMPlatformIPRoute *) route);
 			else {
 				gateway = nm_ip6_config_get_gateway (composite);
 				if (gateway) {
