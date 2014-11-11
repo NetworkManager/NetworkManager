@@ -600,6 +600,7 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 	NMVpnConnection *vpn = NULL;
 	gboolean never_default = FALSE;
 	gboolean synced;
+	gboolean is_assumed = FALSE;
 
 	g_return_if_fail (NM_IS_DEFAULT_ROUTE_MANAGER (self));
 	if (NM_IS_DEVICE (source))
@@ -646,9 +647,9 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 	if (ip_ifindex > 0) {
 		if (device) {
 			if (VTABLE_IS_IP4)
-				default_route = (const NMPlatformIPRoute *) nm_device_get_ip4_default_route (device);
+				default_route = (const NMPlatformIPRoute *) nm_device_get_ip4_default_route (device, &is_assumed);
 			else
-				default_route = (const NMPlatformIPRoute *) nm_device_get_ip6_default_route (device);
+				default_route = (const NMPlatformIPRoute *) nm_device_get_ip6_default_route (device, &is_assumed);
 		} else {
 			NMConnection *connection = nm_active_connection_get_connection ((NMActiveConnection *) vpn);
 
@@ -692,7 +693,7 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 
 	/* if the source is never_default or the device uses an assumed connection,
 	 * we don't sync the route. */
-	synced = !never_default && (!device || !nm_device_uses_assumed_connection (device));
+	synced = !never_default && !is_assumed;
 
 	if (!entry && !default_route)
 		/* nothing to do */;

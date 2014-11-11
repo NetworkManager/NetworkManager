@@ -242,8 +242,10 @@ typedef struct {
 	NMIP4Config *   wwan_ip4_config; /* WWAN configuration */
 	struct {
 		gboolean v4_has;
+		gboolean v4_is_assumed;
 		NMPlatformIP4Route v4;
 		gboolean v6_has;
+		gboolean v6_is_assumed;
 		NMPlatformIP6Route v6;
 	} default_route;
 
@@ -726,25 +728,31 @@ nm_device_get_ip6_route_metric (NMDevice *self)
 }
 
 const NMPlatformIP4Route *
-nm_device_get_ip4_default_route (NMDevice *self)
+nm_device_get_ip4_default_route (NMDevice *self, gboolean *out_is_assumed)
 {
 	NMDevicePrivate *priv;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (out_is_assumed)
+		*out_is_assumed = priv->default_route.v4_has && priv->default_route.v4_is_assumed;
 
 	return priv->default_route.v4_has ? &priv->default_route.v4 : NULL;
 }
 
 const NMPlatformIP6Route *
-nm_device_get_ip6_default_route (NMDevice *self)
+nm_device_get_ip6_default_route (NMDevice *self, gboolean *out_is_assumed)
 {
 	NMDevicePrivate *priv;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (out_is_assumed)
+		*out_is_assumed = priv->default_route.v6_has && priv->default_route.v6_is_assumed;
 
 	return priv->default_route.v6_has ? &priv->default_route.v6 : NULL;
 }
@@ -2786,6 +2794,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 	priv->default_route.v4_has = FALSE;
 	if (connection) {
 		gboolean assumed = nm_device_uses_assumed_connection (self);
+		NMPlatformIP4Route *route = &priv->default_route.v4;
 
 		if (!nm_settings_connection_get_nm_generated_assumed (NM_SETTINGS_CONNECTION (connection))) {
 			nm_ip4_config_merge_setting (composite,
@@ -2804,14 +2813,12 @@ ip4_config_merge_and_apply (NMDevice *self,
 		 * NMDefaultRouteManager eventually configures (because the it might
 		 * tweak the effective metric).
 		 */
-		if (nm_default_route_manager_ip4_connection_has_default_route (nm_default_route_manager_get (), connection)) {
+		if (   !assumed
+		    && nm_default_route_manager_ip4_connection_has_default_route (nm_default_route_manager_get (), connection)) {
 			guint32 gateway = 0;
-			NMPlatformIP4Route *route = &priv->default_route.v4;
 
-			if (assumed)
-				priv->default_route.v4_has = _device_get_default_route_from_platform (self, AF_INET, (NMPlatformIPRoute *) route);
-			else if (   (!commit && priv->ext_ip4_config_had_any_addresses)
-			         || ( commit && nm_ip4_config_get_num_addresses (composite))) {
+			if (   (!commit && priv->ext_ip4_config_had_any_addresses)
+			    || ( commit && nm_ip4_config_get_num_addresses (composite))) {
 				/* For managed interfaces, we can only configure a gateway, if either the external config indicates
 				 * that we already have addresses, or if we are about to commit any addresses.
 				 * Otherwise adding a default route will fail, because NMDefaultRouteManager does not add any
@@ -2825,6 +2832,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 					route->metric = nm_device_get_ip4_route_metric (self);
 					route->mss = nm_ip4_config_get_mss (composite);
 					priv->default_route.v4_has = TRUE;
+					priv->default_route.v4_is_assumed = FALSE;
 
 					if (   gateway
 					    && !nm_ip4_config_get_subnet_for_host (composite, gateway)
@@ -2839,6 +2847,11 @@ ip4_config_merge_and_apply (NMDevice *self,
 					}
 				}
 			}
+		} else {
+			/* For interfaces that are assumed and that have no default-route by configuration, we assume
+			 * the default connection and pick up whatever is configured. */
+			priv->default_route.v4_has = _device_get_default_route_from_platform (self, AF_INET, (NMPlatformIPRoute *) route);
+			priv->default_route.v4_is_assumed = TRUE;
 		}
 	}
 
@@ -3340,6 +3353,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 	priv->default_route.v6_has = FALSE;
 	if (connection) {
 		gboolean assumed = nm_device_uses_assumed_connection (self);
+		NMPlatformIP6Route *route = &priv->default_route.v6;
 
 		if (!nm_settings_connection_get_nm_generated_assumed (NM_SETTINGS_CONNECTION (connection))) {
 			nm_ip6_config_merge_setting (composite,
@@ -3358,14 +3372,12 @@ ip6_config_merge_and_apply (NMDevice *self,
 		 * NMDefaultRouteManager eventually configures (because the it might
 		 * tweak the effective metric).
 		 */
-		if (nm_default_route_manager_ip6_connection_has_default_route (nm_default_route_manager_get (), connection)) {
+		if (   !assumed
+		    && nm_default_route_manager_ip6_connection_has_default_route (nm_default_route_manager_get (), connection)) {
 			const struct in6_addr *gateway = NULL;
-			NMPlatformIP6Route *route = &priv->default_route.v6;
 
-			if (assumed)
-				priv->default_route.v6_has = _device_get_default_route_from_platform (self, AF_INET6, (NMPlatformIPRoute *) route);
-			else if (   (!commit && priv->ext_ip6_config_had_any_addresses)
-			         || ( commit && nm_ip6_config_get_num_addresses (composite))) {
+			if (   (!commit && priv->ext_ip6_config_had_any_addresses)
+			    || ( commit && nm_ip6_config_get_num_addresses (composite))) {
 				/* For managed interfaces, we can only configure a gateway, if either the external config indicates
 				 * that we already have addresses, or if we are about to commit any addresses.
 				 * Otherwise adding a default route will fail, because NMDefaultRouteManager does not add any
@@ -3378,6 +3390,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 					route->metric = nm_device_get_ip6_route_metric (self);
 					route->mss = nm_ip6_config_get_mss (composite);
 					priv->default_route.v6_has = TRUE;
+					priv->default_route.v6_is_assumed = FALSE;
 
 					if (   gateway
 					    && !nm_ip6_config_get_subnet_for_host (composite, gateway)
@@ -3392,6 +3405,11 @@ ip6_config_merge_and_apply (NMDevice *self,
 					}
 				}
 			}
+		} else {
+			/* For interfaces that are assumed and that have no default-route by configuration, we assume
+			 * the default connection and pick up whatever is configured. */
+			priv->default_route.v6_has = _device_get_default_route_from_platform (self, AF_INET6, (NMPlatformIPRoute *) route);
+			priv->default_route.v6_is_assumed = TRUE;
 		}
 	}
 

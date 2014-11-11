@@ -362,8 +362,8 @@ gboolean nm_device_owns_iface (NMDevice *device, const char *iface);
 
 NMConnection *nm_device_new_default_connection (NMDevice *self);
 
-const NMPlatformIP4Route *nm_device_get_ip4_default_route (NMDevice *self);
-const NMPlatformIP6Route *nm_device_get_ip6_default_route (NMDevice *self);
+const NMPlatformIP4Route *nm_device_get_ip4_default_route (NMDevice *self, gboolean *out_is_assumed);
+const NMPlatformIP6Route *nm_device_get_ip6_default_route (NMDevice *self, gboolean *out_is_assumed);
 
 void nm_device_spawn_iface_helper (NMDevice *self);
 
