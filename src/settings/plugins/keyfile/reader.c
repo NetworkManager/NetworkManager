@@ -324,15 +324,17 @@ read_one_ip_address_or_route (GKeyFile *file,
 		}
 	}
 
+#define DEFAULT_PREFIX(for_route, for_ipv6) ( (for_route) ? ( (for_ipv6) ? 128 : 24 ) : ( (for_ipv6) ? 64 : 24 ) )
+
 	/* parse plen, fallback to defaults */
-	if (plen_str)
-		g_return_val_if_fail (get_one_int (plen_str, ipv6 ? 128 : 32,
-			key_name, &plen), NULL);
-	else {
-		if (route)
-			plen = ipv6 ? 128 : 24;
-		else
-			plen = ipv6 ? 64 : 24;
+	if (plen_str) {
+		if (!get_one_int (plen_str, ipv6 ? 128 : 32, key_name, &plen)) {
+			plen = DEFAULT_PREFIX (route, ipv6);
+			nm_log_warn (LOGD_SETTINGS, "keyfile: invalid prefix length '%s' in '%s.%s', defaulting to %d",
+			             plen_str, setting_name, key_name, plen);
+		}
+	} else {
+		plen = DEFAULT_PREFIX (route, ipv6);
 		nm_log_warn (LOGD_SETTINGS, "keyfile: Missing prefix length in '%s.%s', defaulting to %d",
 		             setting_name, key_name, plen);
 	}
