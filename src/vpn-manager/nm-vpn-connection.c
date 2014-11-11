@@ -325,6 +325,11 @@ _set_vpn_state (NMVpnConnection *connection,
 
 	dispatcher_cleanup (connection);
 
+	 if (vpn_state >= STATE_DISCONNECTED && vpn_state <= STATE_FAILED) {
+		nm_default_route_manager_ip4_remove_default_route (nm_default_route_manager_get (), connection);
+		nm_default_route_manager_ip6_remove_default_route (nm_default_route_manager_get (), connection);
+	}
+
 	/* The connection gets destroyed by the VPN manager when it enters the
 	 * disconnected/failed state, but we need to keep it around for a bit
 	 * to send out signals and handle the dispatcher.  So ref it.
@@ -341,9 +346,6 @@ _set_vpn_state (NMVpnConnection *connection,
 		               reason);
 		g_object_notify (G_OBJECT (connection), NM_VPN_CONNECTION_VPN_STATE);
 	}
-
-	nm_default_route_manager_ip4_update_default_route (nm_default_route_manager_get (), connection);
-	nm_default_route_manager_ip6_update_default_route (nm_default_route_manager_get (), connection);
 
 	switch (vpn_state) {
 	case STATE_NEED_AUTH:
