@@ -3735,6 +3735,7 @@ clear_host_address (int family, const void *network, int plen, void *dst)
 static struct nl_object *
 build_rtnl_route (int family, int ifindex, NMIPConfigSource source,
                   gconstpointer network, int plen, gconstpointer gateway,
+                  gconstpointer pref_src,
                   guint32 metric, guint32 mss)
 {
 	guint32 network_clean[4];
@@ -3744,6 +3745,7 @@ build_rtnl_route (int family, int ifindex, NMIPConfigSource source,
 	/* Workaround a libnl bug by using zero destination address length for default routes */
 	auto_nl_addr struct nl_addr *dst = NULL;
 	auto_nl_addr struct nl_addr *gw = gateway ? _nm_nl_addr_build (family, gateway, addrlen) : NULL;
+	auto_nl_addr struct nl_addr *pref_src_nl = pref_src ? _nm_nl_addr_build (family, pref_src, addrlen) : NULL;
 
 	/* There seem to be problems adding a route with non-zero host identifier.
 	 * Adding IPv6 routes is simply ignored, without error message.
@@ -3765,6 +3767,8 @@ build_rtnl_route (int family, int ifindex, NMIPConfigSource source,
 	rtnl_route_nh_set_ifindex (nexthop, ifindex);
 	if (gw && !nl_addr_iszero (gw))
 		rtnl_route_nh_set_gateway (nexthop, gw);
+	if (pref_src_nl)
+		rtnl_route_set_pref_src (rtnlroute, pref_src_nl);
 	rtnl_route_add_nexthop (rtnlroute, nexthop);
 
 	if (mss > 0)
@@ -3776,9 +3780,9 @@ build_rtnl_route (int family, int ifindex, NMIPConfigSource source,
 static gboolean
 ip4_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
                in_addr_t network, int plen, in_addr_t gateway,
-               guint32 metric, guint32 mss)
+               guint32 pref_src, guint32 metric, guint32 mss)
 {
-	return add_object (platform, build_rtnl_route (AF_INET, ifindex, source, &network, plen, &gateway, metric, mss));
+	return add_object (platform, build_rtnl_route (AF_INET, ifindex, source, &network, plen, &gateway, pref_src ? &pref_src : NULL, metric, mss));
 }
 
 static gboolean
@@ -3786,7 +3790,7 @@ ip6_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
                struct in6_addr network, int plen, struct in6_addr gateway,
                guint32 metric, guint32 mss)
 {
-	return add_object (platform, build_rtnl_route (AF_INET6, ifindex, source, &network, plen, &gateway, metric, mss));
+	return add_object (platform, build_rtnl_route (AF_INET6, ifindex, source, &network, plen, &gateway, NULL, metric, mss));
 }
 
 static struct rtnl_route *
@@ -3843,7 +3847,7 @@ ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen
 {
 	in_addr_t gateway = 0;
 	struct rtnl_route *cached_object;
-	struct nl_object *route = build_rtnl_route (AF_INET, ifindex, NM_IP_CONFIG_SOURCE_UNKNOWN, &network, plen, &gateway, metric, 0);
+	struct nl_object *route = build_rtnl_route (AF_INET, ifindex, NM_IP_CONFIG_SOURCE_UNKNOWN, &network, plen, &gateway, NULL, metric, 0);
 	uint8_t scope = RT_SCOPE_NOWHERE;
 	struct nl_cache *cache;
 
@@ -3903,7 +3907,7 @@ ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, in
 {
 	struct in6_addr gateway = IN6ADDR_ANY_INIT;
 
-	return delete_object (platform, build_rtnl_route (AF_INET6, ifindex, NM_IP_CONFIG_SOURCE_UNKNOWN ,&network, plen, &gateway, metric, 0), FALSE) &&
+	return delete_object (platform, build_rtnl_route (AF_INET6, ifindex, NM_IP_CONFIG_SOURCE_UNKNOWN ,&network, plen, &gateway, NULL, metric, 0), FALSE) &&
 	    refresh_route (platform, AF_INET6, ifindex, &network, plen, metric);
 }
 
@@ -3912,7 +3916,7 @@ ip_route_exists (NMPlatform *platform, int family, int ifindex, gpointer network
 {
 	auto_nl_object struct nl_object *object = build_rtnl_route (family, ifindex,
 	                                                            NM_IP_CONFIG_SOURCE_UNKNOWN,
-	                                                            network, plen, NULL, metric, 0);
+	                                                            network, plen, NULL, NULL, metric, 0);
 	struct nl_cache *cache = choose_cache (platform, object);
 	auto_nl_object struct nl_object *cached_object = nl_cache_search (cache, object);
 

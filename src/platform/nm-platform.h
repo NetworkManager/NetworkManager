@@ -417,7 +417,7 @@ typedef struct {
 	GArray * (*ip6_route_get_all) (NMPlatform *, int ifindex, NMPlatformGetRouteMode mode);
 	gboolean (*ip4_route_add) (NMPlatform *, int ifindex, NMIPConfigSource source,
 	                           in_addr_t network, int plen, in_addr_t gateway,
-	                           guint32 metric, guint32 mss);
+	                           guint32 pref_src, guint32 metric, guint32 mss);
 	gboolean (*ip6_route_add) (NMPlatform *, int ifindex, NMIPConfigSource source,
 	                           struct in6_addr network, int plen, struct in6_addr gateway,
 	                           guint32 metric, guint32 mss);
@@ -564,7 +564,7 @@ GArray *nm_platform_ip4_route_get_all (int ifindex, NMPlatformGetRouteMode mode)
 GArray *nm_platform_ip6_route_get_all (int ifindex, NMPlatformGetRouteMode mode);
 gboolean nm_platform_ip4_route_add (int ifindex, NMIPConfigSource source,
                                     in_addr_t network, int plen, in_addr_t gateway,
-                                    guint32 metric, guint32 mss);
+                                    guint32 pref_src, guint32 metric, guint32 mss);
 gboolean nm_platform_ip6_route_add (int ifindex, NMIPConfigSource source,
                                     struct in6_addr network, int plen, struct in6_addr gateway,
                                     guint32 metric, guint32 mss);

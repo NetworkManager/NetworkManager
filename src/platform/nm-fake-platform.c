@@ -1045,7 +1045,7 @@ ip6_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteMode mod
 static gboolean
 ip4_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
                in_addr_t network, int plen, in_addr_t gateway,
-               guint32 metric, guint32 mss)
+               guint32 pref_src, guint32 metric, guint32 mss)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	NMPlatformIP4Route route;

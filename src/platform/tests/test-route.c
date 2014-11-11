@@ -68,35 +68,35 @@ test_ip4_route (void)
 	inet_pton (AF_INET, "198.51.100.1", &gateway);
 
 	/* Add route to gateway */
-	g_assert (nm_platform_ip4_route_add (ifindex, NM_IP_CONFIG_SOURCE_USER, gateway, 32, INADDR_ANY, metric, mss));
+	g_assert (nm_platform_ip4_route_add (ifindex, NM_IP_CONFIG_SOURCE_USER, gateway, 32, INADDR_ANY, 0, metric, mss));
 	no_error ();
 	accept_signal (route_added);
 
 	/* Add route */
 	g_assert (!nm_platform_ip4_route_exists (ifindex, network, plen, metric));
 	no_error ();
-	g_assert (nm_platform_ip4_route_add (ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, gateway, metric, mss));
+	g_assert (nm_platform_ip4_route_add (ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, gateway, 0, metric, mss));
 	no_error ();
 	g_assert (nm_platform_ip4_route_exists (ifindex, network, plen, metric));
 	no_error ();
 	accept_signal (route_added);
 
 	/* Add route again */
-	g_assert (nm_platform_ip4_route_add (ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, gateway, metric, mss));
+	g_assert (nm_platform_ip4_route_add (ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, gateway, 0, metric, mss));
 	no_error ();
 	accept_signal (route_changed);
 
 	/* Add default route */
 	g_assert (!nm_platform_ip4_route_exists (ifindex, 0, 0, metric));
 	no_error ();
-	g_assert (nm_platform_ip4_route_add (ifindex, NM_IP_CONFIG_SOURCE_USER, 0, 0, gateway, metric, mss));
+	g_assert (nm_platform_ip4_route_add (ifindex, NM_IP_CONFIG_SOURCE_USER, 0, 0, gateway, 0, metric, mss));
 	no_error ();
 	g_assert (nm_platform_ip4_route_exists (ifindex, 0, 0, metric));
 	no_error ();
 	accept_signal (route_added);
 
 	/* Add default route again */
-	g_assert (nm_platform_ip4_route_add (ifindex, NM_IP_CONFIG_SOURCE_USER, 0, 0, gateway, metric, mss));
+	g_assert (nm_platform_ip4_route_add (ifindex, NM_IP_CONFIG_SOURCE_USER, 0, 0, gateway, 0, metric, mss));
 	no_error ();
 	accept_signal (route_changed);
 

@@ -1868,7 +1868,8 @@ nm_platform_ip6_route_get_all (int ifindex, NMPlatformGetRouteMode mode)
 gboolean
 nm_platform_ip4_route_add (int ifindex, NMIPConfigSource source,
                            in_addr_t network, int plen,
-                           in_addr_t gateway, guint32 metric, guint32 mss)
+                           in_addr_t gateway, guint32 pref_src,
+                           guint32 metric, guint32 mss)
 {
 	reset_error ();
 
@@ -1878,6 +1879,7 @@ nm_platform_ip4_route_add (int ifindex, NMIPConfigSource source,
 
 	if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
 		NMPlatformIP4Route route = { 0 };
+		char pref_src_buf[NM_UTILS_INET_ADDRSTRLEN];
 
 		route.ifindex = ifindex;
 		route.source = source;
@@ -1887,9 +1889,12 @@ nm_platform_ip4_route_add (int ifindex, NMIPConfigSource source,
 		route.metric = metric;
 		route.mss = mss;
 
-		debug ("route: adding or updating IPv4 route: %s", nm_platform_ip4_route_to_string (&route));
+		debug ("route: adding or updating IPv4 route: %s%s%s%s", nm_platform_ip4_route_to_string (&route),
+		       pref_src ? " (src: " : "",
+		       pref_src ? nm_utils_inet4_ntop (pref_src, pref_src_buf) : "",
+		       pref_src ? ")" : "");
 	}
-	return klass->ip4_route_add (platform, ifindex, source, network, plen, gateway, metric, mss);
+	return klass->ip4_route_add (platform, ifindex, source, network, plen, gateway, pref_src, metric, mss);
 }
 
 gboolean
@@ -2066,6 +2071,7 @@ nm_platform_ip4_route_sync (int ifindex, const GArray *known_routes)
 				                                     known_route->network,
 				                                     known_route->plen,
 				                                     known_route->gateway,
+				                                     0,
 				                                     known_route->metric,
 				                                     known_route->mss);
 				if (!success && known_route->source < NM_IP_CONFIG_SOURCE_USER) {

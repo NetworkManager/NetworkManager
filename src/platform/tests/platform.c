@@ -684,7 +684,7 @@ do_ip4_route_add (char **argv)
 	mss = strtol (*argv++, NULL, 10);
 
 	return nm_platform_ip4_route_add (ifindex, NM_IP_CONFIG_SOURCE_USER,
-	                                  network, plen, gateway,
+	                                  network, plen, gateway, 0,
 	                                  metric, mss);
 }
 
