@@ -272,7 +272,7 @@ get_available_connection_name (const char *format,
 	}
 
 	/* Find the next available unique connection name */
-	while (!cname && (i++ < 10000)) {
+	for (i = 1; !cname && i < 10000; i++) {
 		char *temp;
 		gboolean found = FALSE;
 
