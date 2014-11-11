@@ -397,6 +397,10 @@ create_ip4_block (gchar * ip)
 			nm_log_warn (LOGD_SETTINGS, "Can't handle ipv4 address: %s, missing netmask or prefix", ip);
 		return NULL;
 	}
+	if (iblock->prefix == 0 || iblock->prefix > 32) {
+		nm_log_warn (LOGD_SETTINGS, "Can't handle ipv4 address: %s, invalid prefix", ip);
+		goto error;
+	}
 	g_strfreev (ip_mask);
 	return iblock;
 error:

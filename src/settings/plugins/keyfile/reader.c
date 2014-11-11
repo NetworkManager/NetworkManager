@@ -139,6 +139,7 @@ build_route (int family,
 	guint32 metric = 0;
 	GError *error = NULL;
 
+	g_return_val_if_fail (plen, NULL);
 	g_return_val_if_fail (dest_str, NULL);
 
 	/* Next hop */
@@ -276,7 +277,7 @@ read_one_ip_address_or_route (GKeyFile *file,
                               gboolean route,
                               char **out_gateway)
 {
-	guint32 plen;
+	guint32 plen = G_MAXUINT32;
 	gpointer result;
 	char *address_str, *plen_str, *gateway_str, *metric_str, *value, *current, *error;
 
@@ -330,7 +331,8 @@ read_one_ip_address_or_route (GKeyFile *file,
 
 	/* parse plen, fallback to defaults */
 	if (plen_str) {
-		if (!get_one_int (plen_str, ipv6 ? 128 : 32, key_name, &plen)) {
+		if (!get_one_int (plen_str, ipv6 ? 128 : 32, key_name, &plen)
+		    || (route && plen == 0)) {
 			plen = DEFAULT_PREFIX (route, ipv6);
 			nm_log_warn (LOGD_SETTINGS, "keyfile: invalid prefix length '%s' in '%s.%s', defaulting to %d",
 			             plen_str, setting_name, key_name, plen);

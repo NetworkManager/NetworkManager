@@ -391,6 +391,7 @@ add_one_ip_route (NMSettingIPConfig *s_ip,
 	NMIPRoute *route;
 	GError *error = NULL;
 
+	g_assert (prefix > 0);
 	route = nm_ip_route_new (NM_IS_SETTING_IP4_CONFIG (s_ip) ? AF_INET : AF_INET6,
 	                         dest, prefix, nh, metric, &error);
 	g_assert_no_error (error);

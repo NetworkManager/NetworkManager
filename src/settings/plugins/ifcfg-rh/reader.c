@@ -488,7 +488,7 @@ read_one_ip4_route (shvarFile *ifcfg,
 		inet_pton (AF_INET, value, &netmask);
 		prefix = nm_utils_ip4_netmask_to_prefix (netmask);
 		g_free (value);
-		if (netmask != nm_utils_ip4_prefix_to_netmask (prefix)) {
+		if (prefix == 0 || netmask != nm_utils_ip4_prefix_to_netmask (prefix)) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid IP4 netmask '%s' \"%s\"", netmask_tag, nm_utils_inet4_ntop (netmask, NULL));
 			goto out;

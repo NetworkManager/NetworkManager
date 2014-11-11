@@ -84,11 +84,11 @@ valid_ip (int family, const char *ip, GError **error)
 }
 
 static gboolean
-valid_prefix (int family, guint prefix, GError **error)
+valid_prefix (int family, guint prefix, GError **error, gboolean allow_zero_prefix)
 {
 	if (   (family == AF_INET && prefix > 32)
 	    || (family == AF_INET6 && prefix > 128)
-	    || prefix == 0) {
+	    || (!allow_zero_prefix && prefix == 0)) {
 		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
 		             family == AF_INET ? _("Invalid IPv4 address prefix '%u'") : _("Invalid IPv6 address prefix '%u"),
 		             prefix);
@@ -151,7 +151,7 @@ nm_ip_address_new (int family,
 
 	if (!valid_ip (family, addr, error))
 		return NULL;
-	if (!valid_prefix (family, prefix, error))
+	if (!valid_prefix (family, prefix, error, FALSE))
 		return NULL;
 
 	address = g_slice_new0 (NMIPAddress);
@@ -187,7 +187,7 @@ nm_ip_address_new_binary (int family,
 	g_return_val_if_fail (family == AF_INET || family == AF_INET6, NULL);
 	g_return_val_if_fail (addr != NULL, NULL);
 
-	if (!valid_prefix (family, prefix, error))
+	if (!valid_prefix (family, prefix, error, FALSE))
 		return NULL;
 
 	address = g_slice_new0 (NMIPAddress);
@@ -423,7 +423,7 @@ nm_ip_address_set_prefix (NMIPAddress *address,
                           guint prefix)
 {
 	g_return_if_fail (address != NULL);
-	g_return_if_fail (valid_prefix (address->family, prefix, NULL));
+	g_return_if_fail (valid_prefix (address->family, prefix, NULL, FALSE));
 
 	address->prefix = prefix;
 }
@@ -547,7 +547,7 @@ nm_ip_route_new (int family,
 
 	if (!valid_ip (family, dest, error))
 		return NULL;
-	if (!valid_prefix (family, prefix, error))
+	if (!valid_prefix (family, prefix, error, TRUE))
 		return NULL;
 	if (next_hop && !valid_ip (family, next_hop, error))
 		return NULL;
@@ -593,7 +593,7 @@ nm_ip_route_new_binary (int family,
 
 	g_return_val_if_fail (family == AF_INET || family == AF_INET6, NULL);
 
-	if (!valid_prefix (family, prefix, error))
+	if (!valid_prefix (family, prefix, error, TRUE))
 		return NULL;
 	if (!valid_metric (metric, error))
 		return NULL;
@@ -836,7 +836,7 @@ nm_ip_route_set_prefix (NMIPRoute *route,
                         guint prefix)
 {
 	g_return_if_fail (route != NULL);
-	g_return_if_fail (valid_prefix (route->family, prefix, NULL));
+	g_return_if_fail (valid_prefix (route->family, prefix, NULL, TRUE));
 
 	route->prefix = prefix;
 }
@@ -1929,6 +1929,15 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("%d. route is invalid"),
+			             i+1);
+			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), NM_SETTING_IP_CONFIG_ROUTES);
+			return FALSE;
+		}
+		if (nm_ip_route_get_prefix (route) == 0) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("%d. route cannot be a default route"),
 			             i+1);
 			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), NM_SETTING_IP_CONFIG_ROUTES);
 			return FALSE;

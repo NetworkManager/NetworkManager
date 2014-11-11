@@ -467,6 +467,8 @@ nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIPConfig *setting, gu
 			route.metric = nm_ip_route_get_metric (s_route);
 		route.source = NM_IP_CONFIG_SOURCE_USER;
 
+		g_assert (route.plen > 0);
+
 		nm_ip6_config_add_route (config, &route);
 	}
 
@@ -1163,6 +1165,7 @@ nm_ip6_config_add_route (NMIP6Config *config, const NMPlatformIP6Route *new)
 	int i;
 
 	g_return_if_fail (new != NULL);
+	g_return_if_fail (new->plen > 0);
 
 	for (i = 0; i < priv->routes->len; i++ ) {
 		NMPlatformIP6Route *item = &g_array_index (priv->routes, NMPlatformIP6Route, i);
