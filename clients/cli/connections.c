@@ -2109,6 +2109,7 @@ nmc_activate_connection (NmCli *nmc,
                          GError **error)
 {
 	ActivateConnectionInfo *info;
+
 	GHashTable *pwds_hash;
 	NMDevice *device = NULL;
 	const char *spec_object = NULL;
@@ -2153,7 +2154,7 @@ nmc_activate_connection (NmCli *nmc,
 	nmc->pwds_hash = pwds_hash;
 
 	/* Create secret agent */
-	nmc->secret_agent = nm_secret_agent_simple_new ("nmcli-connect");
+	nmc->secret_agent = nm_secret_agent_simple_new ("nmcli-connect", nm_object_get_path (NM_OBJECT (connection)));
 	if (nmc->secret_agent)
 		g_signal_connect (nmc->secret_agent, "request-secrets", G_CALLBACK (secrets_requested), nmc);
 

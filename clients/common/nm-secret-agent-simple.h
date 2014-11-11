@@ -47,7 +47,7 @@ typedef struct {
 
 GType nm_secret_agent_simple_get_type (void);
 
-NMSecretAgent *nm_secret_agent_simple_new      (const char *name);
+NMSecretAgent *nm_secret_agent_simple_new      (const char *name, const char *path);
 void           nm_secret_agent_simple_response (NMSecretAgentSimple *self,
                                                 const char          *request_id,
                                                 GPtrArray           *secrets);

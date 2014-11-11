@@ -61,6 +61,8 @@ typedef struct {
 typedef struct {
 	/* <char *request_id, NMSecretAgentSimpleRequest *request> */
 	GHashTable *requests;
+
+	char *path;
 } NMSecretAgentSimplePrivate;
 
 static void
@@ -109,6 +111,8 @@ nm_secret_agent_simple_finalize (GObject *object)
 
 	g_hash_table_destroy (priv->requests);
 	g_error_free (error);
+
+	g_free (priv->path);
 
 	G_OBJECT_CLASS (nm_secret_agent_simple_parent_class)->finalize (object);
 }
@@ -447,6 +451,14 @@ nm_secret_agent_simple_get_secrets (NMSecretAgent                 *agent,
 		return;
 	}
 
+	if (priv->path && g_strcmp0 (priv->path, connection_path) != 0) {
+		/* We only handle requests for connection with @path if set. */
+		error = g_error_new (NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_FAILED,
+		                     "Request for %s secrets doesn't match path %s",
+		                     request_id, priv->path);
+		goto nope;
+	}
+
 	s_con = nm_connection_get_setting_connection (connection);
 	connection_type = nm_setting_connection_get_connection_type (s_con);
 
@@ -627,15 +639,22 @@ nm_secret_agent_simple_class_init (NMSecretAgentSimpleClass *klass)
 /**
  * nm_secret_agent_simple_new:
  * @name: the identifier of secret agent
+ * @path: (allow-none): the path of the connection the agent handle secrets for,
+ *   or %NULL to handle requests for all connections
  *
  * Creates a new #NMSecretAgentSimple.
  *
  * Returns: a new #NMSecretAgentSimple
  */
 NMSecretAgent *
-nm_secret_agent_simple_new (const char *name)
+nm_secret_agent_simple_new (const char *name, const char *path)
 {
-	return g_initable_new (NM_TYPE_SECRET_AGENT_SIMPLE, NULL, NULL,
-	                       NM_SECRET_AGENT_IDENTIFIER, name,
-	                       NULL);
+	NMSecretAgent *agent;
+
+	agent = g_initable_new (NM_TYPE_SECRET_AGENT_SIMPLE, NULL, NULL,
+	                        NM_SECRET_AGENT_IDENTIFIER, name,
+	                        NULL);
+	NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (agent)->path = g_strdup (path);
+
+	return agent;
 }

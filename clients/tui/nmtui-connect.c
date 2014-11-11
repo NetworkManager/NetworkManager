@@ -145,7 +145,7 @@ activate_connection (NMConnection *connection,
 	label = nmt_newt_label_new (_("Connecting..."));
 	nmt_newt_form_set_content (form, label);
 
-	agent = nm_secret_agent_simple_new ("nmtui");
+	agent = nm_secret_agent_simple_new ("nmtui", nm_object_get_path (NM_OBJECT (connection)));
 	g_signal_connect (agent, "request-secrets", G_CALLBACK (secrets_requested), NULL);
 
 	specific_object_path = specific_object ? nm_object_get_path (specific_object) : NULL;

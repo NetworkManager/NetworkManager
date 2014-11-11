@@ -142,7 +142,7 @@ static NMCResultCode
 do_agent_secret (NmCli *nmc, int argc, char **argv)
 {
 	/* Create secret agent */
-	nmc->secret_agent = nm_secret_agent_simple_new ("nmcli-agent");
+	nmc->secret_agent = nm_secret_agent_simple_new ("nmcli-agent", NULL);
 	if (nmc->secret_agent) {
 		/* We keep running */
 		nmc->should_wait = TRUE;
