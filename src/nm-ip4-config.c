@@ -251,7 +251,7 @@ nm_ip4_config_capture (int ifindex, gboolean capture_resolv_conf)
 }
 
 gboolean
-nm_ip4_config_commit (const NMIP4Config *config, int ifindex)
+nm_ip4_config_commit (const NMIP4Config *config, int ifindex, guint32 default_route_metric)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 	guint32 mtu = nm_ip4_config_get_mtu (config);
@@ -261,7 +261,7 @@ nm_ip4_config_commit (const NMIP4Config *config, int ifindex)
 	g_return_val_if_fail (config != NULL, FALSE);
 
 	/* Addresses */
-	nm_platform_ip4_address_sync (ifindex, priv->addresses);
+	nm_platform_ip4_address_sync (ifindex, priv->addresses, default_route_metric);
 
 	/* Routes */
 	{

@@ -936,7 +936,8 @@ nm_vpn_connection_apply_config (NMVpnConnection *connection)
 		nm_platform_link_set_up (priv->ip_ifindex);
 
 		if (priv->ip4_config) {
-			if (!nm_ip4_config_commit (priv->ip4_config, priv->ip_ifindex))
+			if (!nm_ip4_config_commit (priv->ip4_config, priv->ip_ifindex,
+			                           nm_vpn_connection_get_ip4_route_metric (connection)))
 				return FALSE;
 		}
 
