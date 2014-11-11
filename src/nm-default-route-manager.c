@@ -364,16 +364,12 @@ _entry_at_idx_update (const VTableIP *vtable, NMDefaultRouteManager *self, guint
 {
 	NMDefaultRouteManagerPrivate *priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
 	Entry *entry;
-	NMDevice *device = NULL;
 	GPtrArray *entries;
 
 	entries = vtable->get_entries (priv);
 	g_assert (entry_idx < entries->len);
 
 	entry = g_ptr_array_index (entries, entry_idx);
-
-	if (NM_IS_DEVICE (entry->source.pointer))
-		device = entry->source.device;
 
 	g_assert (   !old_entry
 	          || (entry->source.pointer == old_entry->source.pointer && entry->route.ifindex == old_entry->route.ifindex));
