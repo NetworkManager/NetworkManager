@@ -968,7 +968,7 @@ nm_ip6_config_dump (const NMIP6Config *config, const char *detail)
 	for (i = 0; i < nm_ip6_config_get_num_searches (config); i++)
 		g_message (" search: %s", nm_ip6_config_get_search (config, i));
 
-	g_message ("    mss: %u", nm_ip6_config_get_mss (config));
+	g_message ("    mss: %"G_GUINT32_FORMAT, nm_ip6_config_get_mss (config));
 	g_message (" n-dflt: %d", nm_ip6_config_get_never_default (config));
 }
 

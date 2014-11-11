@@ -254,7 +254,7 @@ gboolean
 nm_ip4_config_commit (const NMIP4Config *config, int ifindex)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
-	int mtu = nm_ip4_config_get_mtu (config);
+	guint32 mtu = nm_ip4_config_get_mtu (config);
 	int i;
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
@@ -936,8 +936,8 @@ nm_ip4_config_dump (const NMIP4Config *config, const char *detail)
 	for (i = 0; i < nm_ip4_config_get_num_searches (config); i++)
 		g_message (" search: %s", nm_ip4_config_get_search (config, i));
 
-	g_message ("    mss: %u", nm_ip4_config_get_mss (config));
-	g_message ("    mtu: %u", nm_ip4_config_get_mtu (config));
+	g_message ("    mss: %"G_GUINT32_FORMAT, nm_ip4_config_get_mss (config));
+	g_message ("    mtu: %"G_GUINT32_FORMAT, nm_ip4_config_get_mtu (config));
 
 	/* NIS */
 	for (i = 0; i < nm_ip4_config_get_num_nis_servers (config); i++) {
