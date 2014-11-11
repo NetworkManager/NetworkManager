@@ -293,7 +293,7 @@ _sort_entries_cmp (gconstpointer a, gconstpointer b, gpointer user_data)
 }
 
 static void
-_resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *changed_entry, const Entry *old_entry, gboolean do_sync)
+_resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *changed_entry, const Entry *old_entry)
 {
 	NMDefaultRouteManagerPrivate *priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
 	Entry *entry;
@@ -354,18 +354,16 @@ _resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *c
 		last_metric = expected_metric;
 	}
 
-	if (do_sync) {
-		g_hash_table_iter_init (&iter, changed_metrics);
-		while (g_hash_table_iter_next (&iter, &ptr, NULL))
-			_platform_route_sync_add (vtable, self, GPOINTER_TO_UINT (ptr));
-		_platform_route_sync_flush (vtable, self);
-	}
+	g_hash_table_iter_init (&iter, changed_metrics);
+	while (g_hash_table_iter_next (&iter, &ptr, NULL))
+		_platform_route_sync_add (vtable, self, GPOINTER_TO_UINT (ptr));
+	_platform_route_sync_flush (vtable, self);
 
 	g_hash_table_unref (changed_metrics);
 }
 
 static void
-_entry_at_idx_update (const VTableIP *vtable, NMDefaultRouteManager *self, guint entry_idx, const Entry *old_entry, gboolean do_sync)
+_entry_at_idx_update (const VTableIP *vtable, NMDefaultRouteManager *self, guint entry_idx, const Entry *old_entry)
 {
 	NMDefaultRouteManagerPrivate *priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
 	Entry *entry;
@@ -390,11 +388,11 @@ _entry_at_idx_update (const VTableIP *vtable, NMDefaultRouteManager *self, guint
 
 	g_ptr_array_sort_with_data (entries, _sort_entries_cmp, NULL);
 
-	_resync_all (vtable, self, entry, old_entry, do_sync);
+	_resync_all (vtable, self, entry, old_entry);
 }
 
 static void
-_entry_at_idx_remove (const VTableIP *vtable, NMDefaultRouteManager *self, guint entry_idx, gboolean do_sync)
+_entry_at_idx_remove (const VTableIP *vtable, NMDefaultRouteManager *self, guint entry_idx)
 {
 	NMDefaultRouteManagerPrivate *priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
 	Entry *entry;
@@ -414,7 +412,7 @@ _entry_at_idx_remove (const VTableIP *vtable, NMDefaultRouteManager *self, guint
 	g_ptr_array_index (entries, entry_idx) = NULL;
 	g_ptr_array_remove_index (entries, entry_idx);
 
-	_resync_all (vtable, self, NULL, entry, do_sync);
+	_resync_all (vtable, self, NULL, entry);
 
 	_entry_free (entry);
 }
@@ -470,7 +468,7 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 		       entry->route.rx.ifindex, ip_ifindex);
 
 		g_object_freeze_notify (G_OBJECT (self));
-		_entry_at_idx_remove (vtable, self, entry_idx, FALSE);
+		_entry_at_idx_remove (vtable, self, entry_idx);
 		g_assert (!_entry_find_by_source (entries, source, NULL));
 		_ipx_update_default_route (vtable, self, source);
 		g_object_thaw_notify (G_OBJECT (self));
@@ -549,7 +547,7 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 		entry->synced = synced;
 
 		g_ptr_array_add (entries, entry);
-		_entry_at_idx_update (vtable, self, entries->len - 1, NULL, TRUE);
+		_entry_at_idx_update (vtable, self, entries->len - 1, NULL);
 	} else if (default_route) {
 		/* update */
 		Entry old_entry, new_entry;
@@ -570,10 +568,10 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 
 		old_entry = *entry;
 		*entry = new_entry;
-		_entry_at_idx_update (vtable, self, entry_idx, &old_entry, TRUE);
+		_entry_at_idx_update (vtable, self, entry_idx, &old_entry);
 	} else {
 		/* delete */
-		_entry_at_idx_remove (vtable, self, entry_idx, TRUE);
+		_entry_at_idx_remove (vtable, self, entry_idx);
 	}
 }
 
@@ -603,7 +601,7 @@ _ipx_remove_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 	priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
 
 	if (_entry_find_by_source (vtable->get_entries (priv), source, &entry_idx))
-		_entry_at_idx_remove (vtable, self, entry_idx, TRUE);
+		_entry_at_idx_remove (vtable, self, entry_idx);
 }
 
 void
