@@ -22,6 +22,7 @@
 
 #include <string.h>
 #include <glib.h>
+#include <gio/gio.h>
 #include <dbus/dbus.h>
 
 #include "nm-firewall-manager.h"
@@ -71,9 +72,17 @@ cb_info_free (CBInfo *info)
 {
 	g_return_if_fail (info != NULL);
 
-	if (!info->completed)
+	if (!info->completed) {
 		nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone call cancelled [%u]", info->iface, info->id);
+		if (info->callback) {
+			GError *error;
 
+			error = g_error_new_literal (G_IO_ERROR, G_IO_ERROR_CANCELLED,
+			                             "Operation was cancelled");
+			info->callback (error, info->user_data);
+			g_error_free (error);
+		}
+	}
 	g_free (info->iface);
 	g_free (info);
 }

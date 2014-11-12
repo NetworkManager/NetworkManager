@@ -4545,8 +4545,14 @@ out:
 static void
 fw_change_zone_cb (GError *error, gpointer user_data)
 {
-	NMDevice *self = NM_DEVICE (user_data);
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDevice *self;
+	NMDevicePrivate *priv;
+
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	self = NM_DEVICE (user_data);
+	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	priv->fw_call = NULL;
 
@@ -4555,7 +4561,6 @@ fw_change_zone_cb (GError *error, gpointer user_data)
 	}
 
 	activation_source_schedule (self, nm_device_activate_stage3_ip_config_start, 0);
-
 	_LOGI (LOGD_DEVICE, "Activation: Stage 3 of 5 (IP Configure Start) scheduled.");
 }
 
@@ -4576,6 +4581,8 @@ nm_device_activate_schedule_stage3_ip_config_start (NMDevice *self)
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	g_return_if_fail (priv->act_request);
+
+	g_return_if_fail (!priv->fw_call);
 
 	/* Add the interface to the specified firewall zone */
 	connection = nm_device_get_connection (self);
