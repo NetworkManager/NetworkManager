@@ -210,9 +210,6 @@ nm_sources = \
 	dnsmasq-manager/nm-dnsmasq-utils.c \
 	dnsmasq-manager/nm-dnsmasq-utils.h \
 	\
-	firewall-manager/nm-firewall-manager.c \
-	firewall-manager/nm-firewall-manager.h \
-	\
 	platform/nm-fake-platform.c \
 	platform/nm-fake-platform.h \
 	platform/nm-linux-platform.c \
@@ -304,6 +301,8 @@ nm_sources = \
 	nm-dispatcher.h \
 	nm-enum-types.c \
 	nm-enum-types.h \
+	nm-firewall-manager.c \
+	nm-firewall-manager.h \
 	nm-ip4-config.c \
 	nm-ip4-config.h \
 	nm-ip6-config.c \
