@@ -427,7 +427,11 @@ nm_bluez_device_disconnect (NMBluezDevice *self)
 			args = g_variant_new ("(s)", priv->b4_iface),
 			dbus_iface = BLUEZ4_SERIAL_INTERFACE;
 		} else if (priv->bluez_version == 5) {
+#if WITH_BLUEZ5_DUN
 			nm_bluez5_dun_cleanup (priv->b5_dun_context);
+#else
+			g_assert_not_reached ();
+#endif
 			priv->connected = FALSE;
 			goto out;
 		}
@@ -541,9 +545,13 @@ nm_bluez_device_connect_async (NMBluezDevice *self,
 		if (priv->bluez_version == 4)
 			dbus_iface = BLUEZ4_SERIAL_INTERFACE;
 		else if (priv->bluez_version == 5) {
+#if WITH_BLUEZ5_DUN
 			if (priv->b5_dun_context == NULL)
 				priv->b5_dun_context = nm_bluez5_dun_new (priv->adapter_address, priv->address);
 			nm_bluez5_dun_connect (priv->b5_dun_context, bluez5_dun_connect_cb, simple);
+#else
+			g_assert_not_reached ();
+#endif
 			return;
 		}
 	} else
@@ -1090,7 +1098,11 @@ dispose (GObject *object)
 	}
 
 	if (priv->b5_dun_context) {
+#if WITH_BLUEZ5_DUN
 		nm_bluez5_dun_free (priv->b5_dun_context);
+#else
+		g_assert_not_reached ();
+#endif
 		priv->b5_dun_context = NULL;
 	}
 
