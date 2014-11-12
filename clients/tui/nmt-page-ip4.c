@@ -145,9 +145,10 @@ nmt_page_ip4_constructed (GObject *object)
 	nmt_page_grid_append (grid, _("Addresses"), widget, NULL);
 
 	widget = nmt_ip_entry_new (25, AF_INET, FALSE, TRUE);
-	g_object_bind_property (s_ip4, NM_SETTING_IP_CONFIG_GATEWAY,
-	                        widget, "text",
-	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+	nm_editor_bind_ip_gateway_to_string (AF_INET,
+	                                     s_ip4,
+	                                     widget, "text", "sensitive",
+	                                     G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 	nmt_page_grid_append (grid, _("Gateway"), widget, NULL);
 
 	widget = nmt_address_list_new (NMT_ADDRESS_LIST_IP4);

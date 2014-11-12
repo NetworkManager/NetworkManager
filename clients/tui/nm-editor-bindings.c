@@ -273,6 +273,113 @@ nm_editor_bind_ip_addresses_to_strv (int            family,
 }
 
 static gboolean
+ip_gateway_to_string (GBinding     *binding,
+                      const GValue *source_value,
+                      GValue       *target_value,
+                      gpointer      user_data)
+{
+	g_value_set_string (target_value, g_value_get_string (source_value));
+	return TRUE;
+}
+
+static gboolean
+ip_gateway_from_string (GBinding     *binding,
+                        const GValue *source_value,
+                        GValue       *target_value,
+                        gpointer      user_data)
+{
+	int family = GPOINTER_TO_INT (user_data);
+	const char *gateway;
+
+	gateway = g_value_get_string (source_value);
+	if (*gateway && !nm_utils_ipaddr_valid (family, gateway))
+		gateway = NULL;
+
+	g_value_set_string (target_value, gateway);
+	return TRUE;
+}
+
+static gboolean
+ip_addresses_to_gateway (GBinding     *binding,
+                         const GValue *source_value,
+                         GValue       *target_value,
+                         gpointer      user_data)
+{
+	GPtrArray *addrs;
+
+	addrs = g_value_get_boxed (source_value);
+	if (addrs->len == 0) {
+		g_value_set_string (target_value, NULL);
+		return TRUE;
+	} else
+		return FALSE;
+}
+
+static gboolean
+ip_addresses_to_sensitivity (GBinding     *binding,
+                             const GValue *source_value,
+                             GValue       *target_value,
+                             gpointer      user_data)
+{
+	GPtrArray *addrs;
+
+	addrs = g_value_get_boxed (source_value);
+	g_value_set_boolean (target_value, addrs->len != 0);
+	return TRUE;
+}
+
+/**
+ * nm_editor_bind_ip_gateway_to_string:
+ * @family: the IP address family
+ * @source: the source #NMSettingIPConfig
+ * @target: the target object (eg, an #NmtIPEntry)
+ * @target_property: the property on @target to bind (eg, "text")
+ * @target_sensitive_property: the "sensitivity" property on @target to bind
+ * @flags: %GBindingFlags
+ *
+ * Binds the #NMSettingIPConfig:gateway property on @source to the
+ * %G_TYPE_STRING property @target_property and %G_TYPE_BOOLEAN property
+ * @target_sensitive_property on @target, also taking the
+ * #NMSettingIPConfig:addresses property on @source into account.
+ *
+ * In particular, if @source has no static IP addresses, then @target_property
+ * will be set to "" and @target_sensitive_property will be set to %FALSE.
+ *
+ * If @source has at least one static IP address, then
+ * @target_sensitive_property will be set to %TRUE, @target_property will be
+ * initialized from @source's #NMSettingIPConfig:gateway, and @source will be
+ * updated with the value of @target_property whenever it contains a valid IP
+ * address.
+ */
+void
+nm_editor_bind_ip_gateway_to_string (int                family,
+                                     NMSettingIPConfig *source,
+                                     gpointer           target,
+                                     const gchar       *target_property,
+                                     const gchar       *target_sensitive_property,
+                                     GBindingFlags      flags)
+{
+	g_object_bind_property_full (source, "gateway",
+	                             target, target_property,
+	                             flags,
+	                             ip_gateway_to_string,
+	                             ip_gateway_from_string,
+	                             GINT_TO_POINTER (family), NULL);
+	g_object_bind_property_full (source, "addresses",
+	                             source, "gateway",
+	                             (flags & G_BINDING_SYNC_CREATE),
+	                             ip_addresses_to_gateway,
+	                             NULL,
+	                             NULL, NULL);
+	g_object_bind_property_full (source, "addresses",
+	                             target, target_sensitive_property,
+	                             (flags & G_BINDING_SYNC_CREATE),
+	                             ip_addresses_to_sensitivity,
+	                             NULL,
+	                             NULL, NULL);
+}
+
+static gboolean
 ip_route_transform_to_dest_string (GBinding     *binding,
                                    const GValue *source_value,
                                    GValue       *target_value,
