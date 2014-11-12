@@ -70,5 +70,10 @@ CLEANFILES += html/* tmpl/* xml/* \
 	NetworkManager-sections.txt \
 	NetworkManager-overrides.txt
 
-DISTCLEANFILES = $(GENERATED_FILES)
+if BUILD_SETTING_DOCS
+CLEANFILES += settings-spec.xml
+endif
 
+if ENABLE_GTK_DOC
+CLEANFILES += spec.html
+endif

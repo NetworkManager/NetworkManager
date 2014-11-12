@@ -55,9 +55,8 @@ settings-docs.c: settings-docs.xsl $(top_builddir)/libnm-util/nm-setting-docs.xm
 	$(AM_V_GEN) xsltproc --output $@ $^
 
 BUILT_SOURCES = settings-docs.c
+CLEANFILES = settings-docs.c
 endif
-
-DISTCLEANFILES = settings-docs.c
 
 EXTRA_DIST = settings-docs.c settings-docs.xsl
 

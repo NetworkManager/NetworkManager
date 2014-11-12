@@ -897,7 +897,7 @@ if test "$build_setting_docs" != "yes" \
 	-a -f man/nm-settings-keyfile.xml \
 	-a -f man/nm-settings-ifcfg-rh.xml \
 	-a -f docs/api/settings-spec.xml \
-	-a -f cli/src/settings-docs.c; then
+	-a -f clients/cli/settings-docs.c; then
     AC_DEFINE(HAVE_SETTING_DOCS, [1], [Define if you have pre-built settings docs])
     have_setting_docs=yes
 fi
