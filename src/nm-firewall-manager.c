@@ -119,7 +119,8 @@ add_or_change_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data
 		            info->iface, info->id);
 	}
 
-	info->callback (error, info->user_data);
+	if (info->callback)
+		info->callback (error, info->user_data);
 
 	info->completed = TRUE;
 	g_free (zone);
@@ -139,7 +140,8 @@ nm_firewall_manager_add_or_change_zone (NMFirewallManager *self,
 
 	if (priv->running == FALSE) {
 		nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone add/change skipped (not running)", iface);
-		callback (NULL, user_data);
+		if (callback)
+			callback (NULL, user_data);
 		return NULL;
 	}
 
