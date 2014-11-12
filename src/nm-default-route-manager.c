@@ -589,35 +589,6 @@ nm_default_route_manager_ip6_update_default_route (NMDefaultRouteManager *self, 
 
 /***********************************************************************************/
 
-static void
-_ipx_remove_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, gpointer source)
-{
-	NMDefaultRouteManagerPrivate *priv;
-	guint entry_idx;
-
-	g_return_if_fail (NM_IS_DEFAULT_ROUTE_MANAGER (self));
-	g_return_if_fail (NM_IS_DEVICE (source) || NM_IS_VPN_CONNECTION (source));
-
-	priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
-
-	if (_entry_find_by_source (vtable->get_entries (priv), source, &entry_idx))
-		_entry_at_idx_remove (vtable, self, entry_idx);
-}
-
-void
-nm_default_route_manager_ip4_remove_default_route (NMDefaultRouteManager *self, gpointer source)
-{
-	_ipx_remove_default_route (&vtable_ip4, self, source);
-}
-
-void
-nm_default_route_manager_ip6_remove_default_route (NMDefaultRouteManager *self, gpointer source)
-{
-	_ipx_remove_default_route (&vtable_ip6, self, source);
-}
-
-/***********************************************************************************/
-
 static gboolean
 _ipx_connection_has_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, NMConnection *connection)
 {

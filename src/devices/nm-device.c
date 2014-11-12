@@ -6935,8 +6935,8 @@ _cleanup_generic_post (NMDevice *self, gboolean deconfigure)
 	priv->default_route.v4_has = FALSE;
 	priv->default_route.v6_has = FALSE;
 
-	nm_default_route_manager_ip4_remove_default_route (nm_default_route_manager_get (), self);
-	nm_default_route_manager_ip6_remove_default_route (nm_default_route_manager_get (), self);
+	nm_default_route_manager_ip4_update_default_route (nm_default_route_manager_get (), self);
+	nm_default_route_manager_ip6_update_default_route (nm_default_route_manager_get (), self);
 
 	/* Clean up IP configs; this does not actually deconfigure the
 	 * interface; the caller must flush routes and addresses explicitly.

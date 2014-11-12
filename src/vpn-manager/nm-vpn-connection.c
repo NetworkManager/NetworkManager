@@ -237,9 +237,6 @@ vpn_cleanup (NMVpnConnection *connection, NMDevice *parent_dev)
 		nm_platform_address_flush (priv->ip_ifindex);
 	}
 
-	nm_default_route_manager_ip4_remove_default_route (nm_default_route_manager_get (), connection);
-	nm_default_route_manager_ip6_remove_default_route (nm_default_route_manager_get (), connection);
-
 	nm_device_set_vpn4_config (parent_dev, NULL);
 	nm_device_set_vpn6_config (parent_dev, NULL);
 
@@ -327,10 +324,8 @@ _set_vpn_state (NMVpnConnection *connection,
 
 	dispatcher_cleanup (connection);
 
-	 if (vpn_state >= STATE_DISCONNECTED && vpn_state <= STATE_FAILED) {
-		nm_default_route_manager_ip4_remove_default_route (nm_default_route_manager_get (), connection);
-		nm_default_route_manager_ip6_remove_default_route (nm_default_route_manager_get (), connection);
-	}
+	nm_default_route_manager_ip4_update_default_route (nm_default_route_manager_get (), connection);
+	nm_default_route_manager_ip6_update_default_route (nm_default_route_manager_get (), connection);
 
 	/* The connection gets destroyed by the VPN manager when it enters the
 	 * disconnected/failed state, but we need to keep it around for a bit

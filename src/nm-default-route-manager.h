@@ -51,9 +51,6 @@ NMDefaultRouteManager *nm_default_route_manager_get (void);
 void nm_default_route_manager_ip4_update_default_route (NMDefaultRouteManager *manager, gpointer source);
 void nm_default_route_manager_ip6_update_default_route (NMDefaultRouteManager *manager, gpointer source);
 
-void nm_default_route_manager_ip4_remove_default_route (NMDefaultRouteManager *manager, gpointer source);
-void nm_default_route_manager_ip6_remove_default_route (NMDefaultRouteManager *manager, gpointer source);
-
 gboolean nm_default_route_manager_ip4_connection_has_default_route (NMDefaultRouteManager *manager, NMConnection *connection);
 gboolean nm_default_route_manager_ip6_connection_has_default_route (NMDefaultRouteManager *manager, NMConnection *connection);
 
