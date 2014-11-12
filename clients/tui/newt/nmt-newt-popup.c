@@ -147,12 +147,27 @@ nmt_newt_popup_activated (NmtNewtWidget *widget)
 	for (i = 0; i < priv->entries->len; i++)
 		nmt_newt_listbox_append (NMT_NEWT_LISTBOX (listbox), entries[i].label, NULL);
 	nmt_newt_listbox_set_active (NMT_NEWT_LISTBOX (listbox), priv->active);
+	nmt_newt_widget_set_padding (listbox, 1, 0, 1, 0);
 
 	nmt_newt_widget_size_request (listbox, &list_w, &list_h);
+
+	g_object_get (nmt_newt_widget_get_form (widget),
+	              "x", &window_x,
+	              "y", &window_y,
+	              NULL);
 	newtComponentGetPosition (nmt_newt_component_get_component (NMT_NEWT_COMPONENT (widget)),
 	                          &button_x, &button_y);
-	window_x = button_x + 4;
-	window_y = button_y + 2 - priv->active;
+	/* (window_x + button_x) is the screen X coordinate of the newtComponent. A
+	 * newtButton labelled "Foo" is rendered as " <Foo>" (with a preceding
+	 * space), so the "F" is at (window_x + button_x + 2). We've added 1 column
+	 * of padding to the left of the listbox, so we need to position the popup
+	 * at (window_x + button_x + 1) in order for its text to be aligned with the
+	 * button's text. (The x and y coordinates given to NmtNewtForm are the
+	 * coordinates of the top left of the window content, ignoring the border
+	 * graphics.)
+	 */
+	window_x += button_x + 1;
+	window_y += button_y - priv->active;
 
 	form = g_object_new (NMT_TYPE_NEWT_FORM,
 	                     "x", window_x,
