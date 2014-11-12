@@ -2209,8 +2209,8 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *setting_class)
 	 * The metric applies to dynamic routes, manual (static) routes that
 	 * don't have an explicit metric setting, address prefix routes, and
 	 * the default route.
-	 * Note that for IPv6, the kernel accepts accepts zero (0) but coerces
-	 * it to 1024 (user default). Hence, setting this value to zero effectively
+	 * Note that for IPv6, the kernel accepts zero (0) but coerces it to
+	 * 1024 (user default). Hence, setting this property to zero effectively
 	 * mean setting it to 1024.
 	 * For IPv4, zero is a regular value for the metric.
 	 **/
