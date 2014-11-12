@@ -30,8 +30,11 @@
 #include "nm-bluez-device.h"
 #include "nm-logging.h"
 #include "nm-settings-connection.h"
-#include "nm-bluez5-dun.h"
 #include "NetworkManagerUtils.h"
+
+#if WITH_BLUEZ5_DUN
+#include "nm-bluez5-dun.h"
+#endif
 
 G_DEFINE_TYPE (NMBluezDevice, nm_bluez_device, G_TYPE_OBJECT)
 
@@ -59,7 +62,9 @@ typedef struct {
 	gboolean connected;
 
 	char *b4_iface;
+#if WITH_BLUEZ5_DUN
 	NMBluez5DunContext *b5_dun_context;
+#endif
 
 	NMConnectionProvider *provider;
 	GSList *connections;
@@ -495,6 +500,7 @@ bluez_connect_cb (GDBusConnection *dbus_connection,
 	g_object_unref (result_object);
 }
 
+#if WITH_BLUEZ5_DUN
 static void
 bluez5_dun_connect_cb (NMBluez5DunContext *context,
                    const char *device,
@@ -514,6 +520,7 @@ bluez5_dun_connect_cb (NMBluez5DunContext *context,
 	g_simple_async_result_complete (result);
 	g_object_unref (result);
 }
+#endif
 
 void
 nm_bluez_device_connect_async (NMBluezDevice *self,
@@ -1097,14 +1104,12 @@ dispose (GObject *object)
 		priv->pan_connection = NULL;
 	}
 
-	if (priv->b5_dun_context) {
 #if WITH_BLUEZ5_DUN
+	if (priv->b5_dun_context) {
 		nm_bluez5_dun_free (priv->b5_dun_context);
-#else
-		g_assert_not_reached ();
-#endif
 		priv->b5_dun_context = NULL;
 	}
+#endif
 
 	g_signal_handlers_disconnect_by_func (priv->provider, cp_connection_added, self);
 	g_signal_handlers_disconnect_by_func (priv->provider, cp_connection_removed, self);
