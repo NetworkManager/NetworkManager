@@ -658,7 +658,7 @@ if (test "${enable_bluez5_dun}" = "yes"); then
 	fi
 	AC_DEFINE(WITH_BLUEZ5_DUN, 1, [Define if you have Bluez 5 libraries])
 else
-	AC_DEFINE(HAVE_BLUEZ5_DUN, 0, [Define if you have Bluez 5 libraries])
+	AC_DEFINE(WITH_BLUEZ5_DUN, 0, [Define if you have Bluez 5 libraries])
 fi
 AM_CONDITIONAL(WITH_BLUEZ5_DUN, test "${enable_bluez5_dun}" = "yes")
 
