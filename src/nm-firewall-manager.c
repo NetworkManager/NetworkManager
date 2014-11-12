@@ -127,7 +127,7 @@ add_or_change_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data
 	g_clear_error (&error);
 }
 
-gpointer
+NMFirewallPendingCall
 nm_firewall_manager_add_or_change_zone (NMFirewallManager *self,
                                         const char *iface,
                                         const char *zone,
@@ -149,15 +149,15 @@ nm_firewall_manager_add_or_change_zone (NMFirewallManager *self,
 
 	nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone %s -> %s%s%s [%u]", iface, add ? "add" : "change",
 	                           zone?"\"":"", zone ? zone : "default", zone?"\"":"", info->id);
-	return dbus_g_proxy_begin_call_with_timeout (priv->proxy,
-	                                             add ? "addInterface" : "changeZone",
-	                                             add_or_change_cb,
-	                                             info,
-	                                             (GDestroyNotify) cb_info_free,
-	                                             10000,      /* timeout */
-	                                             G_TYPE_STRING, zone ? zone : "",
-	                                             G_TYPE_STRING, iface,
-	                                             G_TYPE_INVALID);
+	return (NMFirewallPendingCall) dbus_g_proxy_begin_call_with_timeout (priv->proxy,
+	                                                                     add ? "addInterface" : "changeZone",
+	                                                                     add_or_change_cb,
+	                                                                     info,
+	                                                                     (GDestroyNotify) cb_info_free,
+	                                                                     10000,      /* timeout */
+	                                                                     G_TYPE_STRING, zone ? zone : "",
+	                                                                     G_TYPE_STRING, iface,
+	                                                                     G_TYPE_INVALID);
 }
 
 static void
@@ -189,7 +189,7 @@ remove_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 	g_clear_error (&error);
 }
 
-gpointer
+NMFirewallPendingCall
 nm_firewall_manager_remove_from_zone (NMFirewallManager *self,
                                       const char *iface,
                                       const char *zone)
@@ -206,18 +206,18 @@ nm_firewall_manager_remove_from_zone (NMFirewallManager *self,
 
 	nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone remove -> %s%s%s [%u]", iface,
 	                           zone?"\"":"", zone ? zone : "*", zone?"\"":"", info->id);
-	return dbus_g_proxy_begin_call_with_timeout (priv->proxy,
-	                                             "removeInterface",
-	                                             remove_cb,
-	                                             info,
-	                                             (GDestroyNotify) cb_info_free,
-	                                             10000,      /* timeout */
-	                                             G_TYPE_STRING, zone ? zone : "",
-	                                             G_TYPE_STRING, iface,
-	                                             G_TYPE_INVALID);
+	return (NMFirewallPendingCall) dbus_g_proxy_begin_call_with_timeout (priv->proxy,
+	                                                                     "removeInterface",
+	                                                                     remove_cb,
+	                                                                     info,
+	                                                                     (GDestroyNotify) cb_info_free,
+	                                                                     10000,      /* timeout */
+	                                                                     G_TYPE_STRING, zone ? zone : "",
+	                                                                     G_TYPE_STRING, iface,
+	                                                                     G_TYPE_INVALID);
 }
 
-void nm_firewall_manager_cancel_call (NMFirewallManager *self, gpointer call)
+void nm_firewall_manager_cancel_call (NMFirewallManager *self, NMFirewallPendingCall call)
 {
 	g_return_if_fail (NM_IS_FIREWALL_MANAGER (self));
 	dbus_g_proxy_cancel_call (NM_FIREWALL_MANAGER_GET_PRIVATE (self)->proxy,

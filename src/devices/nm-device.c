@@ -260,7 +260,7 @@ typedef struct {
 	gulong            dnsmasq_state_id;
 
 	/* Firewall */
-	DBusGProxyCall    *fw_call;
+	NMFirewallPendingCall fw_call;
 
 	/* avahi-autoipd stuff */
 	GPid    aipd_pid;
