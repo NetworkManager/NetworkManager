@@ -419,10 +419,14 @@ AC_COMPILE_IFELSE(
                 #endif
                 #include <linux/if_link.h>]],
               [[int a = IN6_ADDR_GEN_MODE_EUI64; a++;]])],
-        [ac_have_kernel_gen_mode="1"],
-        [ac_have_kernel_gen_mode="0"])
-AC_DEFINE_UNQUOTED(HAVE_KERNEL_INET6_ADDR_GEN_MODE,
-	$ac_have_kernel_gen_mode, [Define if the kernel has IN6_ADDR_GEN_MODE_*])
+        [ac_have_kernel_gen_mode=yes],
+        [ac_have_kernel_gen_mode=no])
+AC_MSG_RESULT($ac_have_kernel_gen_mode)
+if test "$ac_have_kernel_gen_mode" = yes; then
+	AC_DEFINE(HAVE_KERNEL_INET6_ADDR_GEN_MODE, 1, [Define if the kernel has IN6_ADDR_GEN_MODE_*])
+else
+	AC_DEFINE(HAVE_KERNEL_INET6_ADDR_GEN_MODE, 0, [Define if the kernel has IN6_ADDR_GEN_MODE_*])
+fi
 
 # uuid library
 PKG_CHECK_MODULES(UUID, uuid)
