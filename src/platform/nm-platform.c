@@ -1704,6 +1704,11 @@ _address_get_lifetime (const NMPlatformIPAddress *address, guint32 now, guint32 
 	if (address->lifetime == 0) {
 		*out_lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
 		*out_preferred = NM_PLATFORM_LIFETIME_PERMANENT;
+
+		/* We treat lifetime==0 as permanent addresses to allow easy creation of such addresses
+		 * (without requiring to set the lifetime fields to NM_PLATFORM_LIFETIME_PERMANENT).
+		 * In that case we also expect that the other fields (timestamp and preferred) are left unset. */
+		g_return_val_if_fail (address->timestamp == 0 && address->preferred == 0, TRUE);
 	} else {
 		lifetime = _rebase_relative_time_on_now (address->timestamp, address->lifetime, now, padding);
 		if (!lifetime)
