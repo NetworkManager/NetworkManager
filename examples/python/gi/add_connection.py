@@ -48,10 +48,10 @@ def create_profile(name):
     s_wired = NM.SettingWired.new()
 
     s_ip4 = NM.SettingIP4Config.new()
-    s_ip4.set_property(NM.SETTING_IP4_CONFIG_METHOD, "auto")
+    s_ip4.set_property(NM.SETTING_IP_CONFIG_METHOD, "auto")
 
     s_ip6 = NM.SettingIP6Config.new()
-    s_ip6.set_property(NM.SETTING_IP6_CONFIG_METHOD, "auto")
+    s_ip6.set_property(NM.SETTING_IP_CONFIG_METHOD, "auto")
 
     profile.add_setting(s_con)
     profile.add_setting(s_ip4)
@@ -64,11 +64,12 @@ def create_profile(name):
     return profile
 
 # callback function
-def added_cb(settings, con, error, data):
-    if error is (None):
+def added_cb(client, result, data):
+    try:
+        client.add_connection_finish(result)
         print("The connection profile has been succesfully added to NetworkManager.")
-    else:
-        print(error)
+    except Exception, e:
+        print("Error: %s" % e)
     main_loop.quit()
 
 if __name__ == "__main__":
@@ -85,17 +86,14 @@ if __name__ == "__main__":
 
     main_loop = GLib.MainLoop()
 
-    # create RemoteSettings object
-    settings = NM.RemoteSettings.new(None)
+    # create Client object
+    client = NM.Client.new(None)
 
     # create a connection profile for NM
     con = create_profile(profile_name)
 
     # send the connection to NM
-    if persistent:
-        settings.add_connection(con, added_cb, None)
-    else:
-        settings.add_connection_unsaved(con, added_cb, None)
+    client.add_connection_async(con, persistent, None, added_cb, None)
 
     main_loop.run()
 
