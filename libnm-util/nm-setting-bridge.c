@@ -25,7 +25,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <dbus/dbus-glib.h>
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 #include <linux/if_ether.h>
 
 #include "nm-setting-bridge.h"

@@ -23,7 +23,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <dbus/dbus-glib.h>
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 
 #include "nm-setting-team.h"
 #include "nm-param-spec-specialized.h"

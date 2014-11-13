@@ -22,7 +22,7 @@
 #include "config.h"
 
 #include <string.h>
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-private.h"

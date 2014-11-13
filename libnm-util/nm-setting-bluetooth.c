@@ -24,7 +24,7 @@
 
 #include <string.h>
 #include <net/ethernet.h>
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 
 #include "nm-param-spec-specialized.h"
 #include "nm-dbus-glib-types.h"

@@ -23,7 +23,7 @@
 #include "config.h"
 
 #include <glib-object.h>
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 #include <string.h>
 #include "nm-connection.h"
 #include "nm-connection-private.h"

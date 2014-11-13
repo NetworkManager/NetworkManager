@@ -26,7 +26,7 @@
 #include <net/ethernet.h>
 #include <netinet/ether.h>
 #include <dbus/dbus-glib.h>
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 
 #include "NetworkManager.h"
 #include "nm-setting-wireless.h"

@@ -23,7 +23,7 @@
 
 #include <string.h>
 #include <gio/gio.h>
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 
 #include <NetworkManager.h>
 #include <nm-utils.h>

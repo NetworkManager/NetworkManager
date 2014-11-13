@@ -25,7 +25,7 @@
 #include <string.h>
 #include <net/ethernet.h>
 #include <dbus/dbus-glib.h>
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 
 #include "nm-setting-wimax.h"
 #include "nm-param-spec-specialized.h"

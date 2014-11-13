@@ -23,7 +23,7 @@
 #include "config.h"
 
 #include <glib-object.h>
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 #include <dbus/dbus-glib.h>
 #include <string.h>
 #include "nm-connection.h"

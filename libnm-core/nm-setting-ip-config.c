@@ -24,7 +24,7 @@
 
 #include <string.h>
 #include <arpa/inet.h>
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 
 #include "nm-setting-ip-config.h"
 #include "nm-setting-ip4-config.h"
