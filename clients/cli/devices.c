@@ -1366,7 +1366,8 @@ monitor_device_state_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data
 		g_print (_("Connection with UUID '%s' created and activated on device '%s'\n"),
 		         nm_active_connection_get_uuid (active), nm_device_get_iface (device));
 		quit ();
-	} else if (state == NM_DEVICE_STATE_FAILED) {
+	} else if (   state <= NM_DEVICE_STATE_DISCONNECTED
+	           || state >= NM_DEVICE_STATE_DEACTIVATING) {
 		reason = nm_device_get_state_reason (device);
 		g_string_printf (nmc->return_text, _("Error: Connection activation failed: (%d) %s."),
 		                 reason, nmc_device_reason_to_string (reason));
