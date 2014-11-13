@@ -292,7 +292,7 @@ ip_gateway_from_string (GBinding     *binding,
 	const char *gateway;
 
 	gateway = g_value_get_string (source_value);
-	if (*gateway && !nm_utils_ipaddr_valid (family, gateway))
+	if (gateway && !nm_utils_ipaddr_valid (family, gateway))
 		gateway = NULL;
 
 	g_value_set_string (target_value, gateway);
