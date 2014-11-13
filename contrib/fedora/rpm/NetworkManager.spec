@@ -170,6 +170,7 @@ BuildRequires: /usr/bin/dbus-launch
 BuildRequires: pygobject3-base
 BuildRequires: dbus-python
 BuildRequires: libselinux-devel
+BuildRequires: polkit-devel
 
 
 %description
@@ -416,6 +417,7 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 %endif
 	--with-selinux=yes \
 	--enable-polkit=yes \
+	--enable-polkit-agent \
 	--enable-modify-system=yes \
 	--enable-concheck \
 	--with-session-tracking=systemd \
