@@ -389,6 +389,13 @@ nm_dhcp_manager_init (NMDhcpManager *self)
 	GError *error = NULL;
 	GSList *iter;
 
+	for (iter = client_descs; iter; iter = iter->next) {
+		ClientDesc *desc = iter->data;
+
+		nm_log_dbg (LOGD_DHCP, "Registered DHCP client '%s' (%s)",
+		            desc->name, g_type_name (desc->gtype));
+	}
+
 	/* Client-specific setup */
 	client = nm_config_get_dhcp_client (config);
 	if (nm_config_get_configure_and_quit (config)) {
@@ -401,20 +408,15 @@ nm_dhcp_manager_init (NMDhcpManager *self)
 	if (priv->client_type == G_TYPE_INVALID) {
 		nm_log_warn (LOGD_DHCP, "No usable DHCP client found (%s)! DHCP configurations will fail.",
 		             error->message);
+	} else {
+		nm_log_dbg (LOGD_DHCP, "Using DHCP client '%s'", find_client_desc (NULL, priv->client_type)->name);
+
 	}
 	g_clear_error (&error);
 
 	priv->clients = g_hash_table_new_full (g_direct_hash, g_direct_equal,
 	                                       NULL,
 	                                       (GDestroyNotify) g_object_unref);
-	g_assert (priv->clients);
-
-	for (iter = client_descs; iter; iter = iter->next) {
-		ClientDesc *desc = iter->data;
-
-		nm_log_dbg (LOGD_DHCP, "Registered DHCP client '%s' (%s)",
-		            desc->name, g_type_name (desc->gtype));
-	}
 }
 
 static void
