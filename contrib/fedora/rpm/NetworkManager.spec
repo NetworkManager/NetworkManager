@@ -169,6 +169,7 @@ BuildRequires: newt-devel
 BuildRequires: /usr/bin/dbus-launch
 BuildRequires: pygobject3-base
 BuildRequires: dbus-python
+BuildRequires: libselinux-devel
 
 
 %description
@@ -413,6 +414,7 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 %else
 	--enable-teamdctl=no \
 %endif
+	--with-selinux=yes \
 	--enable-polkit=yes \
 	--enable-modify-system=yes \
 	--enable-concheck \
