@@ -18,6 +18,8 @@
  * Copyright 2008 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 #include <glib.h>
 #include "nm-object-cache.h"

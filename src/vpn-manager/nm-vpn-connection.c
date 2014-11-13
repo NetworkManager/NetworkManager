@@ -19,6 +19,8 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
+#include "config.h"
+
 #include <glib.h>
 #include <string.h>
 #include <sys/socket.h>

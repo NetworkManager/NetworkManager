@@ -21,6 +21,7 @@
  */
 
 #include "config.h"
+
 #include "interface_parser.h"
 #include <stdio.h>
 #include <stdlib.h>

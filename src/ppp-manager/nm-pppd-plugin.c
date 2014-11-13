@@ -19,7 +19,8 @@
  * Copyright (C) 2008 Red Hat, Inc.
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <string.h>
 #include <pppd/pppd.h>
 #include <pppd/fsm.h>

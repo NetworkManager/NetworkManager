@@ -18,7 +18,8 @@
  * Copyright (C) 2013 Red Hat, Inc.
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <sys/wait.h>
 #include <string.h>
 

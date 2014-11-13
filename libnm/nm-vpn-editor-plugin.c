@@ -19,6 +19,8 @@
  * Copyright 2008 Novell, Inc.
  */
 
+#include "config.h"
+
 #include "nm-vpn-editor-plugin.h"
 
 static void nm_vpn_editor_plugin_default_init (NMVpnEditorPluginInterface *iface);

@@ -19,7 +19,8 @@
  * Copyright (C) 2008 - 2013 Red Hat, Inc.
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <sys/stat.h>
 #include <unistd.h>
 #include <sys/types.h>

@@ -19,9 +19,9 @@
  */
 
 
-#include "nm-default-route-manager.h"
-
 #include "config.h"
+
+#include "nm-default-route-manager.h"
 
 #include "string.h"
 

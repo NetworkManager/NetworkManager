@@ -19,6 +19,8 @@
  * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 #include <glib.h>
 #include <dbus/dbus.h>

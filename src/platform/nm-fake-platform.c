@@ -18,6 +18,8 @@
  * Copyright (C) 2012–2013 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <errno.h>
 #include <unistd.h>
 #include <netinet/icmp6.h>

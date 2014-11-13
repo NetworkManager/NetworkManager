@@ -19,7 +19,8 @@
  * Copyright (C) 2013 Thomas Bechtold <thomasbechtold@jpberlin.de>
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <string.h>
 #include <stdio.h>
 

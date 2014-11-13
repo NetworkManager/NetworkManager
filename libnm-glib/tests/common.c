@@ -18,6 +18,8 @@
  *
  */
 
+#include "config.h"
+
 #include <dbus/dbus.h>
 #include <glib.h>
 #include <string.h>

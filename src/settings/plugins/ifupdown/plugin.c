@@ -22,6 +22,8 @@
  * (C) Copyright 2009 - 2011 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 #include <sys/inotify.h>
 

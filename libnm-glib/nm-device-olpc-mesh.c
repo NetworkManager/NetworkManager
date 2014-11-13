@@ -18,7 +18,8 @@
  * Copyright 2012 Red Hat, Inc.
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <string.h>
 
 #include "nm-glib-compat.h"

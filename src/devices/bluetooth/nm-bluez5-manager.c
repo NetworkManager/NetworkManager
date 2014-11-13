@@ -20,6 +20,8 @@
  * Copyright (C) 2013 Intel Corporation.
  */
 
+#include "config.h"
+
 #include <signal.h>
 #include <string.h>
 #include <stdlib.h>

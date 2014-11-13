@@ -19,7 +19,8 @@
  * Copyright 2007 - 2011 Red Hat, Inc.
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <string.h>
 #include <netinet/ether.h>
 

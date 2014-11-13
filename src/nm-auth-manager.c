@@ -18,6 +18,8 @@
  * Copyright (C) 2014 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include "nm-auth-manager.h"
 
 #include "nm-logging.h"

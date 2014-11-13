@@ -19,6 +19,8 @@
  * Copyright 2009 - 2011 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include "nm-device-adsl.h"
 #include "nm-device-private.h"
 #include "nm-object-private.h"

@@ -18,6 +18,8 @@
  * (C) Copyright 2008 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <unistd.h>
 #include <string.h>
 #include <sys/inotify.h>

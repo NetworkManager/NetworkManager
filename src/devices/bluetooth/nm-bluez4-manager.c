@@ -19,6 +19,8 @@
  * Copyright (C) 2007 - 2013 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <signal.h>
 #include <string.h>
 #include <stdlib.h>

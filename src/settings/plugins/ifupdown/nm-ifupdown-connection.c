@@ -21,6 +21,8 @@
  * (C) Copyright 2007,2008 Canonical Ltd.
  */
 
+#include "config.h"
+
 #include <string.h>
 #include <glib/gstdio.h>
 #include <nm-dbus-interface.h>

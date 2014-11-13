@@ -19,6 +19,8 @@
  * Copyright (C) 2009 Novell, Inc.
  */
 
+#include "config.h"
+
 #include "nm-wimax-nsp.h"
 #include "nm-dbus-interface.h"
 #include "nm-dbus-manager.h"

@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include "test-common.h"
 
 #include "nm-test-utils.h"

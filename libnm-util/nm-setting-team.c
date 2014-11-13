@@ -18,6 +18,8 @@
  * Copyright 2013 Jiri Pirko <jiri@resnulli.us>
  */
 
+#include "config.h"
+
 #include <string.h>
 #include <stdlib.h>
 #include <dbus/dbus-glib.h>

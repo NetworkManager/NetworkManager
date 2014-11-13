@@ -21,6 +21,8 @@
  * (C) Copyright 2008 Canonical Ltd.
  */
 
+#include "config.h"
+
 #include <string.h>
 #include <arpa/inet.h>
 #include <stdlib.h>

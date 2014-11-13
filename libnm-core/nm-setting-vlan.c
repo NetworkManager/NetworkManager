@@ -19,6 +19,8 @@
  * Copyright 2011 - 2014 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <glib/gi18n.h>

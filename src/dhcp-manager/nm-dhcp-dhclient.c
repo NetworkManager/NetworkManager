@@ -18,6 +18,8 @@
  * Copyright (C) 2005 - 2012 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #define _XOPEN_SOURCE
 #include <time.h>
 #undef _XOPEN_SOURCE
@@ -33,8 +35,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <ctype.h>
-
-#include <config.h>
 
 #include "nm-dhcp-dhclient.h"
 #include "nm-utils.h"

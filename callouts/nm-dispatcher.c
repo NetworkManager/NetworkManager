@@ -18,6 +18,8 @@
  * Copyright (C) 2008 - 2012 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <syslog.h>
 #include <stdio.h>
 #include <unistd.h>

@@ -20,6 +20,8 @@
  * Copyright 2009 Novell, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 #include <net/ethernet.h>
 #include <glib/gi18n.h>

@@ -27,6 +27,8 @@
    remove this comment, and you're almost done.
 */
 
+#include "config.h"
+
 #include "nm-setting-template.h"
 
 G_DEFINE_TYPE (NMSettingTemplate, nm_setting_template, NM_TYPE_SETTING)

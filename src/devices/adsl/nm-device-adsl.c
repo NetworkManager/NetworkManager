@@ -18,7 +18,7 @@
  * Pantelis Koukousoulas <pktoss@gmail.com>
  */
 
-#include <config.h>
+#include "config.h"
 
 #include <sys/socket.h>
 #include <linux/atmdev.h>

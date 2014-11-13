@@ -20,6 +20,8 @@
  * Copyright (C) 1999-2010 Gentoo Foundation, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 
 #include <gmodule.h>

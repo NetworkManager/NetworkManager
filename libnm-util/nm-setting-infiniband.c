@@ -19,6 +19,8 @@
  * Copyright 2011 - 2013 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <stdlib.h>
 #include <dbus/dbus-glib.h>
 #include <linux/if_infiniband.h>

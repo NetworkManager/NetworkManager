@@ -20,6 +20,8 @@
  * Copyright 2009 One Laptop per Child
  */
 
+#include "config.h"
+
 #include <string.h>
 #include <netinet/ether.h>
 #include <dbus/dbus-glib.h>

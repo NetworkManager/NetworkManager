@@ -18,7 +18,8 @@
  * Copyright (C) 2010 Red Hat, Inc.
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <string.h>
 #include <gio/gio.h>
 

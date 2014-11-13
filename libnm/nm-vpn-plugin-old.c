@@ -23,6 +23,8 @@
  * will be a new "NMVpnPlugin" class to replace it.
  */
 
+#include "config.h"
+
 #include <errno.h>
 #include <signal.h>
 #include <stdlib.h>

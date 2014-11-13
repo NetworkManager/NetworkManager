@@ -19,6 +19,8 @@
  * Copyright 2009 - 2012 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 #include <NetworkManager.h>
 #include <nm-connection.h>
