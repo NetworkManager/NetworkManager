@@ -26,6 +26,7 @@
 
 #include <nm-config.h>
 #include "nm-test-device.h"
+#include "nm-fake-platform.h"
 
 static void
 setup_config (const char *config_file, const char *config_dir, ...)
@@ -286,6 +287,8 @@ main (int argc, char **argv)
 #endif
 
 	g_test_init (&argc, &argv, NULL);
+
+	nm_fake_platform_setup ();
 
 	g_test_add_func ("/config/simple", test_config_simple);
 	g_test_add_func ("/config/non-existent", test_config_non_existent);

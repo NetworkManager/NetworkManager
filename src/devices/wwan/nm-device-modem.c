@@ -373,6 +373,12 @@ device_state_changed (NMDevice *device,
 	}
 }
 
+static guint32
+get_generic_capabilities (NMDevice *device)
+{
+	return NM_DEVICE_CAP_IS_NON_KERNEL;
+}
+
 static gboolean
 check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
@@ -701,6 +707,7 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 	object_class->set_property = set_property;
 	object_class->constructed = constructed;
 
+	device_class->get_generic_capabilities = get_generic_capabilities;
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->check_connection_available = check_connection_available;
 	device_class->complete_connection = complete_connection;

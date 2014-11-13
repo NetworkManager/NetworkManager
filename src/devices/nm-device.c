@@ -7771,6 +7771,9 @@ constructor (GType type,
 	if (NM_DEVICE_GET_CLASS (self)->get_generic_capabilities)
 		priv->capabilities |= NM_DEVICE_GET_CLASS (self)->get_generic_capabilities (self);
 
+	if (priv->ifindex <= 0 && !device_has_capability (self, NM_DEVICE_CAP_IS_NON_KERNEL))
+		_LOGW (LOGD_HW, "failed to look up interface index");
+
 	device_get_driver_info (self, priv->iface, &priv->driver_version, &priv->firmware_version);
 
 	/* Watch for external IP config changes */
@@ -7969,18 +7972,8 @@ set_property (GObject *object, guint prop_id,
 	case PROP_IFACE:
 		if (g_value_get_string (value)) {
 			g_free (priv->iface);
-			priv->ifindex = 0;
 			priv->iface = g_value_dup_string (value);
-
-			/* Only look up the ifindex if it appears to be an actual kernel
-			 * interface name.  eg Bluetooth devices won't have one until we know
-			 * the IP interface.
-			 */
-			if (priv->iface && !strchr (priv->iface, ':')) {
-				priv->ifindex = nm_platform_link_get_ifindex (priv->iface);
-				if (priv->ifindex <= 0)
-					_LOGW (LOGD_HW, "failed to look up interface index");
-			}
+			priv->ifindex = nm_platform_link_get_ifindex (priv->iface);
 		}
 		break;
 	case PROP_DRIVER:
