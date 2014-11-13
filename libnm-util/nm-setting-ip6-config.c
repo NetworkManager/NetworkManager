@@ -712,7 +712,7 @@ nm_setting_ip6_config_clear_routes (NMSettingIP6Config *setting)
 
 /**
  * nm_setting_ip6_config_get_route_metric:
- * @setting: the #NMSettingIP4Config
+ * @setting: the #NMSettingIP6Config
  *
  * Returns the value contained in the #NMSettingIP6Config:route-metric
  * property.
@@ -1060,7 +1060,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * property: method
 	 * variable: IPV6INIT, IPV6FORWARDING, IPV6_AUTOCONF, DHCPV6C
 	 * default:  IPV6INIT=yes; IPV6FORWARDING=no; IPV6_AUTOCONF=!IPV6FORWARDING, DHCPV6=no
-	 * description: Method used for IPv4 protocol configuration.
+	 * description: Method used for IPv6 protocol configuration.
 	 *   ignore ~ IPV6INIT=no; auto ~ IPV6_AUTOCONF=yes; dhcp ~ IPV6_AUTOCONF=no and DHCPV6C=yes
 	 * ---end---
 	 */
