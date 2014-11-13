@@ -448,7 +448,7 @@ nm_setting_802_1x_get_ca_cert_scheme (NMSetting8021x *setting)
  * reduces security by allowing man-in-the-middle attacks, because the identity
  * of the network cannot be confirmed by the client.
  *
- * Returns: the CA certificate data
+ * Returns: (transfer none): the CA certificate data
  **/
 GBytes *
 nm_setting_802_1x_get_ca_cert_blob (NMSetting8021x *setting)
@@ -777,7 +777,7 @@ nm_setting_802_1x_get_client_cert_scheme (NMSetting8021x *setting)
  * when EAP-TLS is used as either the "phase 1" or "phase 2" 802.1x
  * authentication method.
  *
- * Returns: the client certificate data
+ * Returns: (transfer none): the client certificate data
  **/
 GBytes *
 nm_setting_802_1x_get_client_cert_blob (NMSetting8021x *setting)
@@ -1043,7 +1043,7 @@ nm_setting_802_1x_get_phase2_ca_cert_scheme (NMSetting8021x *setting)
  * reduces security by allowing man-in-the-middle attacks, because the identity
  * of the network cannot be confirmed by the client.
  *
- * Returns: the "phase 2" CA certificate data
+ * Returns: (transfer none): the "phase 2" CA certificate data
  **/
 GBytes *
 nm_setting_802_1x_get_phase2_ca_cert_blob (NMSetting8021x *setting)
@@ -1360,7 +1360,7 @@ nm_setting_802_1x_get_phase2_client_cert_scheme (NMSetting8021x *setting)
  * when EAP-TLS is used as either the "phase 1" or "phase 2" 802.1x
  * authentication method.
  *
- * Returns: the "phase 2" client certificate data
+ * Returns: (transfer none): the "phase 2" client certificate data
  **/
 GBytes *
 nm_setting_802_1x_get_phase2_client_cert_blob (NMSetting8021x *setting)
@@ -1530,7 +1530,7 @@ nm_setting_802_1x_get_password_flags (NMSetting8021x *setting)
  * nm_setting_802_1x_get_password_raw:
  * @setting: the #NMSetting8021x
  *
- * Returns: the password used by the authentication method as a
+ * Returns: (transfer none): the password used by the authentication method as a
  * UTF-8-encoded array of bytes, as specified by the
  * #NMSetting8021x:password-raw property
  **/
@@ -1619,7 +1619,7 @@ nm_setting_802_1x_get_private_key_scheme (NMSetting8021x *setting)
  * unencrypted private key data may be readable by unprivileged users.  Private
  * keys should always be encrypted with a private key password.
  *
- * Returns: the private key data
+ * Returns: (transfer none): the private key data
  **/
 GBytes *
 nm_setting_802_1x_get_private_key_blob (NMSetting8021x *setting)
@@ -1954,7 +1954,7 @@ nm_setting_802_1x_get_phase2_private_key_scheme (NMSetting8021x *setting)
  * unencrypted private key data may be readable by unprivileged users.  Private
  * keys should always be encrypted with a private key password.
  *
- * Returns: the "phase 2" private key data
+ * Returns: (transfer none): the "phase 2" private key data
  **/
 GBytes *
 nm_setting_802_1x_get_phase2_private_key_blob (NMSetting8021x *setting)
