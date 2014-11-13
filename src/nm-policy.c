@@ -1576,7 +1576,8 @@ firewall_update_zone (NMPolicy *policy, NMConnection *connection)
 		NMDevice *dev = NM_DEVICE (iter->data);
 
 		if (   (nm_device_get_connection (dev) == connection)
-		    && (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED)) {
+		    && (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED)
+		    && !nm_device_uses_assumed_connection (dev)) {
 			nm_firewall_manager_add_or_change_zone (nm_firewall_manager_get (),
 			                                        nm_device_get_ip_iface (dev),
 			                                        nm_setting_connection_get_zone (s_con),
@@ -1606,7 +1607,8 @@ firewall_started (NMFirewallManager *manager,
 			continue;
 
 		s_con = nm_connection_get_setting_connection (connection);
-		if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED) {
+		if (    nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED
+		    && !nm_device_uses_assumed_connection (dev)) {
 			nm_firewall_manager_add_or_change_zone (nm_firewall_manager_get (),
 			                                        nm_device_get_ip_iface (dev),
 			                                        nm_setting_connection_get_zone (s_con),

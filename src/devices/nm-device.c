@@ -4590,6 +4590,14 @@ nm_device_activate_schedule_stage3_ip_config_start (NMDevice *self)
 	s_con = nm_connection_get_setting_connection (connection);
 
 	zone = nm_setting_connection_get_zone (s_con);
+
+	if (nm_device_uses_assumed_connection (self)) {
+		_LOGD (LOGD_DEVICE, "Activation: skip setting firewall zone '%s' for assumed device", zone ? zone : "default");
+		activation_source_schedule (self, nm_device_activate_stage3_ip_config_start, 0);
+		_LOGI (LOGD_DEVICE, "Activation: Stage 3 of 5 (IP Configure Start) scheduled.");
+		return;
+	}
+
 	_LOGD (LOGD_DEVICE, "Activation: setting firewall zone '%s'", zone ? zone : "default");
 	priv->fw_call = nm_firewall_manager_add_or_change_zone (nm_firewall_manager_get (),
 	                                                        nm_device_get_ip_iface (self),
@@ -6887,7 +6895,9 @@ _cleanup_generic_pre (NMDevice *self, gboolean deconfigure)
 	}
 
 	connection = nm_device_get_connection (self);
-	if (deconfigure && connection) {
+	if (   deconfigure
+	    && connection
+	    && !nm_device_uses_assumed_connection (self)) {
 		nm_firewall_manager_remove_from_zone (nm_firewall_manager_get (),
 		                                      nm_device_get_ip_iface (self),
 		                                      NULL);
