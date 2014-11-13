@@ -142,11 +142,12 @@ static NMCResultCode
 do_agent_secret (NmCli *nmc, int argc, char **argv)
 {
 	/* Create secret agent */
-	nmc->secret_agent = nm_secret_agent_simple_new ("nmcli-agent", NULL);
+	nmc->secret_agent = nm_secret_agent_simple_new ("nmcli-agent");
 	if (nmc->secret_agent) {
 		/* We keep running */
 		nmc->should_wait = TRUE;
 
+		nm_secret_agent_simple_enable (nmc->secret_agent);
 		g_signal_connect (nmc->secret_agent, "request-secrets", G_CALLBACK (secrets_requested), nmc);
 		g_print (_("nmcli successfully registered as a NetworkManager's secret agent.\n"));
 	} else {

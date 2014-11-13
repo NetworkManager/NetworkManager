@@ -145,8 +145,15 @@ activate_connection (NMConnection *connection,
 	label = nmt_newt_label_new (_("Connecting..."));
 	nmt_newt_form_set_content (form, label);
 
-	agent = nm_secret_agent_simple_new ("nmtui", nm_object_get_path (NM_OBJECT (connection)));
-	g_signal_connect (agent, "request-secrets", G_CALLBACK (secrets_requested), NULL);
+	agent = nm_secret_agent_simple_new ("nmtui");
+	if (agent) {
+		if (connection) {
+			nm_secret_agent_simple_set_connection_path (agent,
+								    nm_object_get_path (NM_OBJECT (connection)));
+			nm_secret_agent_simple_enable (agent);
+		}
+		g_signal_connect (agent, "request-secrets", G_CALLBACK (secrets_requested), NULL);
+	}
 
 	specific_object_path = specific_object ? nm_object_get_path (specific_object) : NULL;
 
@@ -180,6 +187,16 @@ activate_connection (NMConnection *connection,
 	} else if (!nmt_newt_widget_get_realized (NMT_NEWT_WIDGET (form))) {
 		/* User already hit Esc */
 		goto done;
+	}
+
+	if (!connection) {
+		connection = NM_CONNECTION (nm_active_connection_get_connection (ac));
+		if (connection) {
+			const gchar *path = nm_object_get_path (NM_OBJECT (connection));
+
+			nm_secret_agent_simple_set_connection_path (agent, path);
+			nm_secret_agent_simple_enable (agent);
+		}
 	}
 
 	/* Now wait for the connection to actually reach the ACTIVATED state,
