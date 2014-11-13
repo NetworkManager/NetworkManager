@@ -2224,8 +2224,14 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 		next_arg (&argc, &argv);
 	}
 
-	if (name)
+	if (name) {
 		connection = nmc_find_connection (nmc->connections, selector, name, NULL);
+		if (!connection) {
+			g_string_printf (nmc->return_text, _("Error: Connection '%s' does not exist."), name);
+			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
+			goto error;
+		}
+	}
 
 	while (argc > 0) {
 		if (strcmp (*argv, "ifname") == 0) {
