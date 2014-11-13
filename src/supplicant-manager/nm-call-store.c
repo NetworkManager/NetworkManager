@@ -19,6 +19,8 @@
  * Copyright (C) 2010 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include "nm-call-store.h"
 #include "nm-logging.h"
 

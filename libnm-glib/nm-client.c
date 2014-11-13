@@ -19,6 +19,8 @@
  * Copyright 2007 - 2013 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <dbus/dbus-glib.h>
 #include <string.h>
 #include <nm-utils.h>

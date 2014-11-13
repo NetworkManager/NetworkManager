@@ -19,8 +19,10 @@
  * Copyright 2009 - 2012 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 #include <nm-dbus-interface.h>
 #include <nm-connection.h>
 

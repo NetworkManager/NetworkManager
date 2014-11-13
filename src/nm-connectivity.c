@@ -19,7 +19,7 @@
  * Copyright (C) 2011 Dan Williams <dcbw@redhat.com>
  */
 
-#include <config.h>
+#include "config.h"
 
 #include <string.h>
 #if WITH_CONCHECK

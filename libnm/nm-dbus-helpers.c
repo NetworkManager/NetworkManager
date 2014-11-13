@@ -18,8 +18,9 @@
  * Copyright 2013 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
-#include <config.h>
 #include <gio/gio.h>
 #include "nm-dbus-helpers.h"
 #include "nm-dbus-interface.h"

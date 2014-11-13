@@ -17,6 +17,8 @@
  *
  */
 
+#include "config.h"
+
 #include <arpa/inet.h>
 #include <string.h>
 

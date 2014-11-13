@@ -26,6 +26,7 @@
 #include <netinet/ether.h>
 #include <linux/if_infiniband.h>
 #include <uuid/uuid.h>
+#include <libintl.h>
 #include <gmodule.h>
 
 #include "nm-utils.h"
@@ -233,6 +234,9 @@ nm_utils_init (GError **error)
 {
 	if (!initialized) {
 		initialized = TRUE;
+
+		bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
+		bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
 
 		if (!crypto_init (error))
 			return FALSE;

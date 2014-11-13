@@ -19,10 +19,12 @@
  * Copyright 2011 - 2014 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <dbus/dbus-glib.h>
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 
 #include "nm-setting-vlan.h"
 #include "nm-param-spec-specialized.h"

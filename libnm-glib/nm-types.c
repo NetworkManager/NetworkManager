@@ -18,6 +18,8 @@
  * Copyright 2008 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <glib.h>
 #include <dbus/dbus-glib.h>
 #include <string.h>

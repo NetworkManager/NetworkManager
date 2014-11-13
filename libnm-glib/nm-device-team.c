@@ -18,7 +18,8 @@
  * Copyright 2013 Jiri Pirko <jiri@resnulli.us>
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <string.h>
 #include <netinet/ether.h>
 

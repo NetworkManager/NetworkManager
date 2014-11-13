@@ -20,6 +20,8 @@
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 
 #include "nm-setting-serial.h"

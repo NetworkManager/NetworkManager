@@ -18,10 +18,10 @@
  * Copyright 2013 Red Hat, Inc.
  */
 
-#include <config.h>
+#include "config.h"
 
 #include <string.h>
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 
 #include "nm-device-generic.h"
 #include "nm-device-private.h"

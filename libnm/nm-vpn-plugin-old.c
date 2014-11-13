@@ -23,11 +23,13 @@
  * will be a new "NMVpnPlugin" class to replace it.
  */
 
+#include "config.h"
+
 #include <errno.h>
 #include <signal.h>
 #include <stdlib.h>
 
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 #include <gio/gio.h>
 
 #include "nm-glib-compat.h"

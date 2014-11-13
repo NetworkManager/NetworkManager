@@ -26,6 +26,8 @@
  * makes requests, like process identifier and user UID.
  */
 
+#include "config.h"
+
 #include "nm-auth-subject.h"
 
 #include <string.h>

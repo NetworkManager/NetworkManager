@@ -19,7 +19,8 @@
  * Copyright 2008 Novell, Inc.
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <string.h>
 
 #include "nm-glib-compat.h"

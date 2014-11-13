@@ -19,6 +19,8 @@
  * Copyright 2008 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 
 #include <nm-setting-ip4-config.h>

@@ -19,6 +19,8 @@
  * Copyright (C) 2008 Novell, Inc.
  */
 
+#include "config.h"
+
 #include "nm-system-config-interface.h"
 #include "nm-settings-connection.h"
 

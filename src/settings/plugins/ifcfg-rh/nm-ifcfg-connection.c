@@ -18,6 +18,8 @@
  * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 
 #include <glib/gstdio.h>

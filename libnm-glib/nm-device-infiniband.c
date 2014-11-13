@@ -18,7 +18,8 @@
  * Copyright 2011 - 2012 Red Hat, Inc.
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <string.h>
 #include <linux/if_infiniband.h>
 #include <netinet/ether.h>

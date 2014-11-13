@@ -18,6 +18,8 @@
  * Copyright 2009 - 2014 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>

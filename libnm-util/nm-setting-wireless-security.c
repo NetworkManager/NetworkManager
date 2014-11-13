@@ -20,10 +20,11 @@
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <string.h>
 #include <dbus/dbus-glib.h>
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-8021x.h"

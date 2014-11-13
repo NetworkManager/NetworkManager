@@ -18,7 +18,8 @@
  * Copyright (C) 2014 Red Hat, Inc.
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <glib.h>
 #include <glib-unix.h>
 #include <getopt.h>

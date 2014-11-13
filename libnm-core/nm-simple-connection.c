@@ -19,6 +19,8 @@
  * Copyright 2007 - 2014 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include "nm-simple-connection.h"
 #include "nm-setting-private.h"
 

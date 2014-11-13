@@ -18,8 +18,9 @@
  * Copyright 2013 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
-#include <config.h>
 #include <gio/gio.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>

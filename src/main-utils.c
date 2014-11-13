@@ -19,7 +19,8 @@
  * Copyright (C) 2005 - 2008 Novell, Inc.
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <stdio.h>
 #include <errno.h>
 #include <fcntl.h>

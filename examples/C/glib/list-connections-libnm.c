@@ -26,6 +26,8 @@
  *   gcc -Wall `pkg-config --libs --cflags glib-2.0 libnm` list-connections-libnm.c -o list-connections-libnm
  */
 
+#include "config.h"
+
 #include <glib.h>
 #include <stdio.h>
 #include <stdlib.h>
