@@ -115,4 +115,6 @@ gboolean    _nm_utils_string_in_list   (const char *str,
 
 void _nm_dbus_errors_init (void);
 
+extern gboolean _nm_utils_is_manager_process;
+
 #endif
