@@ -4170,6 +4170,8 @@ set_nm_ipv6ll (NMDevice *self, gboolean enable)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	int ifindex = nm_device_get_ip_ifindex (self);
+	const char *iface = nm_device_get_ip_iface (self);
+	char *value;
 
 	if (!nm_platform_check_support_user_ipv6ll ())
 		return;
@@ -4182,6 +4184,17 @@ set_nm_ipv6ll (NMDevice *self, gboolean enable)
 		if (  !nm_platform_link_set_user_ipv6ll_enabled (ifindex, enable)
 		   && nm_platform_get_error () != NM_PLATFORM_ERROR_NOT_FOUND)
 			_LOGW (LOGD_IP6, "failed to %s userspace IPv6LL address handling", detail);
+
+		if (enable) {
+			/* Bounce IPv6 to ensure the kernel stops IPv6LL address generation */
+			value = nm_platform_sysctl_get (nm_utils_ip6_property_path (iface, "disable_ipv6"));
+			if (g_strcmp0 (value, "0") == 0) {
+				nm_device_ipv6_sysctl_set (self, "disable_ipv6", "1");
+				nm_device_ipv6_sysctl_set (self, "disable_ipv6", "0");
+			}
+			g_free (value);
+		}
+
 	}
 }
 
@@ -7285,14 +7298,14 @@ _set_state_full (NMDevice *self,
 			nm_device_cleanup (self, reason);
 		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
-		/* Ensure devices that previously assumed a connection now have
-		 * userspace IPv6LL enabled.
-		 */
-		if (reason != NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED)
+		if (old_state > NM_DEVICE_STATE_DISCONNECTED) {
+			/* Ensure devices that previously assumed a connection now have
+			 * userspace IPv6LL enabled.
+			 */
 			set_nm_ipv6ll (self, TRUE);
 
-		if (old_state > NM_DEVICE_STATE_UNAVAILABLE)
 			nm_device_cleanup (self, reason);
+		}
 		break;
 	default:
 		break;
