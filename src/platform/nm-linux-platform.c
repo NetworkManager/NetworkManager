@@ -766,7 +766,7 @@ link_type_from_udev (NMPlatform *platform, int ifindex, const char *ifname, int 
 
 	prop = g_udev_device_get_property (udev_device, "DEVTYPE");
 	sysfs_path = g_udev_device_get_sysfs_path (udev_device);
-	if (g_strcmp0 (prop, "wlan") == 0 || wifi_utils_is_wifi (ifname, sysfs_path))
+	if (wifi_utils_is_wifi (ifname, sysfs_path, prop))
 		return_type (NM_LINK_TYPE_WIFI, "wifi");
 	else if (g_strcmp0 (prop, "wwan") == 0)
 		return_type (NM_LINK_TYPE_WWAN_ETHERNET, "wwan");
