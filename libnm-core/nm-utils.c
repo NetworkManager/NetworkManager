@@ -271,6 +271,8 @@ nm_utils_deinit (void)
 	}
 }
 
+gboolean _nm_utils_is_manager_process;
+
 /* ssid helpers */
 
 /**
