@@ -385,6 +385,17 @@ _get_assumed_interface_metrics (const VTableIP *vtable, NMDefaultRouteManager *s
 	return result;
 }
 
+static int
+_sort_metrics_ascending_fcn (gconstpointer a, gconstpointer b)
+{
+	guint32 m_a = *((guint32 *) a);
+	guint32 m_b = *((guint32 *) b);
+
+	if (m_a < m_b)
+		return -1;
+	return m_a == m_b ? 0 : 1;
+}
+
 static gboolean
 _resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *changed_entry, const Entry *old_entry, gboolean external_change)
 {
@@ -394,9 +405,7 @@ _resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *c
 	gint64 last_metric = -1;
 	guint32 expected_metric;
 	GPtrArray *entries;
-	GHashTableIter iter;
-	gpointer ptr;
-	GHashTable *changed_metrics = g_hash_table_new (NULL, NULL);
+	GArray *changed_metrics = g_array_new (FALSE, FALSE, sizeof (guint32));
 	GHashTable *assumed_metrics;
 	GArray *routes;
 	gboolean changed = FALSE;
@@ -421,7 +430,7 @@ _resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *c
 
 	if (old_entry && old_entry->synced) {
 		/* The old version obviously changed. */
-		g_hash_table_add (changed_metrics, GUINT_TO_POINTER (old_entry->effective_metric));
+		g_array_append_val (changed_metrics, old_entry->effective_metric);
 	}
 
 	/* first iterate over all entries and adjust the effective metrics. */
@@ -484,7 +493,7 @@ _resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *c
 		if (changed_entry == entry) {
 			/* for the changed entry, the previous metric was either old_entry->effective_metric,
 			 * or none. Hence, we only have to remember what is going to change. */
-			g_hash_table_add (changed_metrics, GUINT_TO_POINTER (expected_metric));
+			g_array_append_val (changed_metrics, expected_metric);
 			if (old_entry) {
 				_LOGD (vtable->addr_family, LOG_ENTRY_FMT": update %s (%u -> %u)", LOG_ENTRY_ARGS (i, entry),
 				       vtable->platform_route_to_string (&entry->route.rx), (guint) old_entry->effective_metric,
@@ -494,14 +503,14 @@ _resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *c
 				       vtable->platform_route_to_string (&entry->route.rx), (guint) expected_metric);
 			}
 		} else if (entry->effective_metric != expected_metric) {
-			g_hash_table_add (changed_metrics, GUINT_TO_POINTER (entry->effective_metric));
-			g_hash_table_add (changed_metrics, GUINT_TO_POINTER (expected_metric));
+			g_array_append_val (changed_metrics, entry->effective_metric);
+			g_array_append_val (changed_metrics, expected_metric);
 			_LOGD (vtable->addr_family, LOG_ENTRY_FMT": resync metric %s (%u -> %u)", LOG_ENTRY_ARGS (i, entry),
 			       vtable->platform_route_to_string (&entry->route.rx), (guint) entry->effective_metric,
 			       (guint) expected_metric);
 		} else {
 			if (!_vt_routes_has_entry (vtable, routes, entry)) {
-				g_hash_table_add (changed_metrics, GUINT_TO_POINTER (entry->effective_metric));
+				g_array_append_val (changed_metrics, entry->effective_metric);
 				_LOGD (vtable->addr_family, LOG_ENTRY_FMT": readd route %s (%u -> %u)", LOG_ENTRY_ARGS (i, entry),
 				       vtable->platform_route_to_string (&entry->route.rx), (guint) entry->effective_metric,
 				       (guint) entry->effective_metric);
@@ -517,12 +526,22 @@ _resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *c
 
 	g_array_free (routes, TRUE);
 
-	g_hash_table_iter_init (&iter, changed_metrics);
-	while (g_hash_table_iter_next (&iter, &ptr, NULL))
-		changed |= _platform_route_sync_add (vtable, self, GPOINTER_TO_UINT (ptr));
+	g_array_sort (changed_metrics, _sort_metrics_ascending_fcn);
+	last_metric = -1;
+	for (j = 0; j < changed_metrics->len; j++) {
+		expected_metric = g_array_index (changed_metrics, guint32, j);
+
+		if (last_metric == (gint64) expected_metric) {
+			/* skip duplicates. */
+			continue;
+		}
+		changed |= _platform_route_sync_add (vtable, self, expected_metric);
+		last_metric = expected_metric;
+	}
+
 	changed |= _platform_route_sync_flush (vtable, self);
 
-	g_hash_table_unref (changed_metrics);
+	g_array_free (changed_metrics, TRUE);
 	g_hash_table_unref (assumed_metrics);
 
 	priv->resync.guard--;
