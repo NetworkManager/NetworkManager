@@ -110,7 +110,7 @@ find_client_desc (const char *name, GType gtype)
 
 		if (name && strcmp (desc->name, name) != 0)
 			continue;
-		if (gtype && desc->name != 0)
+		if (gtype && desc->gtype != gtype)
 			continue;
 		return desc;
 	}
