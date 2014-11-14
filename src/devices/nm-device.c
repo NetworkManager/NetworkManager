@@ -4047,7 +4047,7 @@ addrconf6_start_with_link_ready (NMDevice *self)
 	return TRUE;
 }
 
-static NMActStageReturn
+static gboolean
 addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
