@@ -952,6 +952,9 @@ add_activate_cb (GObject *object,
 			                                       G_CALLBACK (activation_cancelled), info);
 		}
 
+		g_signal_connect (info->manager, "active-connection-removed",
+		                  G_CALLBACK (active_removed), info);
+
 		recheck_pending_activations (info->manager);
 	} else {
 		g_dbus_error_strip_remote_error (error);

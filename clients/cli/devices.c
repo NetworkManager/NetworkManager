@@ -1336,8 +1336,14 @@ connected_state_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
 {
 	NMActiveConnection *active = (NMActiveConnection *) user_data;
 	NMDeviceState state;
+	NMDeviceStateReason reason;
+	NMActiveConnectionState ac_state;
 
 	state = nm_device_get_state (device);
+	ac_state = nm_active_connection_get_state (active);
+
+	if (ac_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING)
+		return;
 
 	if (state == NM_DEVICE_STATE_ACTIVATED) {
 		nmc_terminal_erase_line ();
@@ -1346,31 +1352,12 @@ connected_state_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
 		         nm_active_connection_get_uuid (active));
 		g_object_unref (active);
 		quit ();
-	}
-}
-
-static void
-monitor_device_state_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
-{
-	NmCli *nmc = (NmCli *) user_data;
-	NMDeviceState state;
-	NMDeviceStateReason reason;
-
-	state = nm_device_get_state (device);
-
-	if (state == NM_DEVICE_STATE_ACTIVATED) {
-		NMActiveConnection *active = nm_device_get_active_connection (device);
-
-		if (nmc->print_output == NMC_PRINT_PRETTY)
-			nmc_terminal_erase_line ();
-		g_print (_("Connection with UUID '%s' created and activated on device '%s'\n"),
-		         nm_active_connection_get_uuid (active), nm_device_get_iface (device));
-		quit ();
-	} else if (state == NM_DEVICE_STATE_FAILED) {
+	} else if (   state <= NM_DEVICE_STATE_DISCONNECTED
+	           || state >= NM_DEVICE_STATE_DEACTIVATING) {
 		reason = nm_device_get_state_reason (device);
-		g_string_printf (nmc->return_text, _("Error: Connection activation failed: (%d) %s."),
-		                 reason, nmc_device_reason_to_string (reason));
-		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
+		g_print (_("Error: Connection activation failed: (%d) %s.\n"),
+		         reason, nmc_device_reason_to_string (reason));
+		g_object_unref (active);
 		quit ();
 	}
 }
@@ -1420,12 +1407,11 @@ add_and_activate_cb (GObject *client,
 			g_object_unref (active);
 			quit ();
 		} else {
-			g_signal_connect (device, "notify::state", G_CALLBACK (monitor_device_state_cb), nmc);
+			g_signal_connect (device, "notify::state", G_CALLBACK (connected_state_cb), active);
 			g_timeout_add_seconds (nmc->timeout, timeout_cb, nmc);  /* Exit if timeout expires */
 
 			if (nmc->print_output == NMC_PRINT_PRETTY)
 				progress_id = g_timeout_add (120, progress_cb, device);
-			g_object_unref (active);
 		}
 	}
 
