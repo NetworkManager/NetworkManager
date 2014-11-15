@@ -275,7 +275,7 @@ nm_utils_deinit (void)
 
 /**
  * nm_utils_ssid_to_utf8:
- * @ssid: pointer to a buffer containing the SSID data
+ * @ssid: (array length=len): pointer to a buffer containing the SSID data
  * @len: length of the SSID data in @ssid
  *
  * Wi-Fi SSIDs are byte arrays, they are _not_ strings.  Thus, an SSID may
@@ -347,7 +347,7 @@ nm_utils_ssid_to_utf8 (const guint8 *ssid, gsize len)
 /* Shamelessly ripped from the Linux kernel ieee80211 stack */
 /**
  * nm_utils_is_empty_ssid:
- * @ssid: pointer to a buffer containing the SSID data
+ * @ssid: (array length=len): pointer to a buffer containing the SSID data
  * @len: length of the SSID data in @ssid
  *
  * Different manufacturers use different mechanisms for not broadcasting the
@@ -375,7 +375,7 @@ nm_utils_is_empty_ssid (const guint8 *ssid, gsize len)
 
 /**
  * nm_utils_escape_ssid:
- * @ssid: pointer to a buffer containing the SSID data
+ * @ssid: (array length=len): pointer to a buffer containing the SSID data
  * @len: length of the SSID data in @ssid
  *
  * This function does a quick printable character conversion of the SSID, simply
@@ -414,9 +414,9 @@ nm_utils_escape_ssid (const guint8 *ssid, gsize len)
 
 /**
  * nm_utils_same_ssid:
- * @ssid1: the first SSID to compare
+ * @ssid1: (array length=len1): the first SSID to compare
  * @len1: length of the SSID data in @ssid1
- * @ssid2: the second SSID to compare
+ * @ssid2: (array length=len2): the second SSID to compare
  * @len2: length of the SSID data in @ssid2
  * @ignore_trailing_null: %TRUE to ignore one trailing NULL byte
  *
@@ -2063,19 +2063,19 @@ make_key (const char *cipher,
 /**
  * nm_utils_rsa_key_encrypt_helper:
  * @cipher: cipher to use for encryption ("DES-EDE3-CBC" or "AES-128-CBC")
- * @data: RSA private key data to be encrypted
+ * @data: (array length=len): RSA private key data to be encrypted
  * @len: length of @data
  * @in_password: (allow-none): existing password to use, if any
- * @out_password: (out) (allow-none): if @in_password was %NULL, a random password will be generated
- *  and returned in this argument
+ * @out_password: (out) (allow-none): if @in_password was %NULL, a random
+ *  password will be generated and returned in this argument
  * @error: detailed error information on return, if an error occurred
  *
  * Encrypts the given RSA private key data with the given password (or generates
  * a password if no password was given) and converts the data to PEM format
  * suitable for writing to a file.
  *
- * Returns: (transfer full): on success, PEM-formatted data suitable for writing to a PEM-formatted
- * certificate/private key file.
+ * Returns: (transfer full): on success, PEM-formatted data suitable for writing
+ * to a PEM-formatted certificate/private key file.
  **/
 static GByteArray *
 nm_utils_rsa_key_encrypt_helper (const char *cipher,
@@ -2173,19 +2173,19 @@ out:
 
 /**
  * nm_utils_rsa_key_encrypt:
- * @data: RSA private key data to be encrypted
+ * @data: (array length=len): RSA private key data to be encrypted
  * @len: length of @data
  * @in_password: (allow-none): existing password to use, if any
- * @out_password: (out) (allow-none): if @in_password was %NULL, a random password will be generated
- *  and returned in this argument
+ * @out_password: (out) (allow-none): if @in_password was %NULL, a random
+ *  password will be generated and returned in this argument
  * @error: detailed error information on return, if an error occurred
  *
  * Encrypts the given RSA private key data with the given password (or generates
  * a password if no password was given) and converts the data to PEM format
  * suitable for writing to a file. It uses Triple DES cipher for the encryption.
  *
- * Returns: (transfer full): on success, PEM-formatted data suitable for writing to a PEM-formatted
- * certificate/private key file.
+ * Returns: (transfer full): on success, PEM-formatted data suitable for writing
+ * to a PEM-formatted certificate/private key file.
  **/
 GByteArray *
 nm_utils_rsa_key_encrypt (const guint8 *data,
@@ -2205,19 +2205,19 @@ nm_utils_rsa_key_encrypt (const guint8 *data,
 
 /**
  * nm_utils_rsa_key_encrypt_aes:
- * @data: RSA private key data to be encrypted
+ * @data: (array length=len): RSA private key data to be encrypted
  * @len: length of @data
  * @in_password: (allow-none): existing password to use, if any
- * @out_password: (out) (allow-none): if @in_password was %NULL, a random password will be generated
- *  and returned in this argument
+ * @out_password: (out) (allow-none): if @in_password was %NULL, a random
+ *  password will be generated and returned in this argument
  * @error: detailed error information on return, if an error occurred
  *
  * Encrypts the given RSA private key data with the given password (or generates
  * a password if no password was given) and converts the data to PEM format
  * suitable for writing to a file.  It uses AES cipher for the encryption.
  *
- * Returns: (transfer full): on success, PEM-formatted data suitable for writing to a PEM-formatted
- * certificate/private key file.
+ * Returns: (transfer full): on success, PEM-formatted data suitable for writing
+ * to a PEM-formatted certificate/private key file.
  **/
 GByteArray *
 nm_utils_rsa_key_encrypt_aes (const guint8 *data,
@@ -2635,7 +2635,7 @@ nm_utils_hwaddr_aton (const char *asc, gpointer buffer, gsize length)
 
 /**
  * nm_utils_hwaddr_ntoa:
- * @addr: a binary hardware address
+ * @addr: (type guint8) (array length=length): a binary hardware address
  * @length: the length of @addr
  *
  * Converts @addr to textual form.
@@ -2881,8 +2881,8 @@ _nm_utils_hwaddr_from_dbus (GVariant *dbus_value,
 
 /**
  * nm_utils_bin2hexstr:
- * @src: an array of bytes
- * @len: the length of the @bytes array
+ * @src: (type guint8) (array length=len): an array of bytes
+ * @len: the length of the @src array
  * @final_len: an index where to cut off the returned string, or -1
  *
  * Converts the byte array @src into a hexadecimal string. If @final_len is

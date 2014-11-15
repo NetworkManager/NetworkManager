@@ -136,10 +136,11 @@ nm_setting_bond_get_num_options (NMSettingBond *setting)
  * @setting: the #NMSettingBond
  * @idx: index of the desired option, from 0 to
  * nm_setting_bond_get_num_options() - 1
- * @out_name: (out): on return, the name of the bonding option; this
- * value is owned by the setting and should not be modified
- * @out_value: (out): on return, the value of the name of the bonding
- * option; this value is owned by the setting and should not be modified
+ * @out_name: (out) (transfer none): on return, the name of the bonding option;
+ *   this value is owned by the setting and should not be modified
+ * @out_value: (out) (transfer none): on return, the value of the name of the
+ *   bonding option; this value is owned by the setting and should not be
+ *   modified
  *
  * Given an index, return the value of the bonding option at that index.  Indexes
  * are *not* guaranteed to be static across modifications to options done by

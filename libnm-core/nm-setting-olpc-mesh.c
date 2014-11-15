@@ -71,6 +71,11 @@ nm_setting_olpc_mesh_init (NMSettingOlpcMesh *setting)
 {
 }
 
+/**
+ * nm_setting_olpc_mesh_get_ssid:
+ *
+ * Returns: (transfer none):
+ */
 GBytes *
 nm_setting_olpc_mesh_get_ssid (NMSettingOlpcMesh *setting)
 {
