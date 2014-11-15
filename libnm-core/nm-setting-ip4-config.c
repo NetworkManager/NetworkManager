@@ -271,33 +271,26 @@ ip4_addresses_set (NMSetting  *setting,
 	char **labels, *gateway = NULL;
 	int i;
 
-	s_ip4 = g_variant_lookup_value (connection_dict, NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
-	/* If 'address-data' is set then ignore 'addresses' */
-	if (g_variant_lookup (s_ip4, "address-data", "aa{sv}", NULL)) {
-		g_variant_unref (s_ip4);
+	if (!_nm_setting_use_legacy_property (setting, connection_dict, "addresses", "address-data"))
 		return;
-	}
 
 	addrs = nm_utils_ip4_addresses_from_variant (value, &gateway);
 
+	s_ip4 = g_variant_lookup_value (connection_dict, NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
 	if (g_variant_lookup (s_ip4, "address-labels", "^as", &labels)) {
 		for (i = 0; i < addrs->len && labels[i]; i++)
 			if (*labels[i])
 				nm_ip_address_set_attribute (addrs->pdata[i], "label", g_variant_new_string (labels[i]));
 		g_strfreev (labels);
 	}
-
-	if (gateway && !g_variant_lookup (s_ip4, "gateway", "s", NULL)) {
-		g_object_set (setting,
-		              NM_SETTING_IP_CONFIG_GATEWAY, gateway,
-		              NULL);
-	}
-	g_free (gateway);
-
 	g_variant_unref (s_ip4);
 
-	g_object_set (setting, property, addrs, NULL);
+	g_object_set (setting,
+	              NM_SETTING_IP_CONFIG_ADDRESSES, addrs,
+	              NM_SETTING_IP_CONFIG_GATEWAY, gateway,
+	              NULL);
 	g_ptr_array_unref (addrs);
+	g_free (gateway);
 }
 
 static GVariant *
@@ -361,6 +354,10 @@ ip4_address_data_set (NMSetting  *setting,
 {
 	GPtrArray *addrs;
 
+	/* Ignore 'address-data' if we're going to process 'addresses' */
+	if (_nm_setting_use_legacy_property (setting, connection_dict, "addresses", "address-data"))
+		return;
+
 	addrs = nm_utils_ip_addresses_from_variant (value, AF_INET);
 	g_object_set (setting, NM_SETTING_IP_CONFIG_ADDRESSES, addrs, NULL);
 	g_ptr_array_unref (addrs);
@@ -387,15 +384,9 @@ ip4_routes_set (NMSetting  *setting,
                 GVariant   *value)
 {
 	GPtrArray *routes;
-	GVariant *s_ip4;
 
-	s_ip4 = g_variant_lookup_value (connection_dict, NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
-	/* If 'route-data' is set then ignore 'routes' */
-	if (g_variant_lookup (s_ip4, "route-data", "aa{sv}", NULL)) {
-		g_variant_unref (s_ip4);
+	if (!_nm_setting_use_legacy_property (setting, connection_dict, "routes", "route-data"))
 		return;
-	}
-	g_variant_unref (s_ip4);
 
 	routes = nm_utils_ip4_routes_from_variant (value);
 	g_object_set (setting, property, routes, NULL);
@@ -424,6 +415,10 @@ ip4_route_data_set (NMSetting  *setting,
                     GVariant   *value)
 {
 	GPtrArray *routes;
+
+	/* Ignore 'route-data' if we're going to process 'routes' */
+	if (_nm_setting_use_legacy_property (setting, connection_dict, "routes", "route-data"))
+		return;
 
 	routes = nm_utils_ip_routes_from_variant (value, AF_INET);
 	g_object_set (setting, NM_SETTING_IP_CONFIG_ROUTES, routes, NULL);

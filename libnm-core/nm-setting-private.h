@@ -86,6 +86,9 @@ gboolean _nm_setting_clear_secrets_with_flags (NMSetting *setting,
  */
 #define NM_SETTING_PARAM_INFERRABLE (1 << (4 + G_PARAM_USER_SHIFT))
 
+/* This is a legacy property, which clients should not send to the daemon. */
+#define NM_SETTING_PARAM_LEGACY (1 << (5 + G_PARAM_USER_SHIFT))
+
 /* Ensure the setting's GType is registered at library load time */
 #define NM_SETTING_REGISTER_TYPE(x) \
 static void __attribute__((constructor)) register_setting (void) \
@@ -144,6 +147,11 @@ void _nm_setting_class_transform_property (NMSettingClass *setting_class,
                                            const GVariantType *dbus_type,
                                            NMSettingPropertyTransformToFunc to_dbus,
                                            NMSettingPropertyTransformFromFunc from_dbus);
+
+gboolean _nm_setting_use_legacy_property (NMSetting *setting,
+                                          GVariant *connection_dict,
+                                          const char *legacy_property,
+                                          const char *new_property);
 
 GPtrArray  *_nm_setting_need_secrets (NMSetting *setting);
 

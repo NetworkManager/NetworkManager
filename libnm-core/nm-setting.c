@@ -482,6 +482,42 @@ _nm_setting_class_transform_property (NMSettingClass *setting_class,
 	                       to_dbus, from_dbus);
 }
 
+gboolean
+_nm_setting_use_legacy_property (NMSetting *setting,
+                                 GVariant *connection_dict,
+                                 const char *legacy_property,
+                                 const char *new_property)
+{
+	GVariant *setting_dict, *value;
+
+	setting_dict = g_variant_lookup_value (connection_dict, nm_setting_get_name (NM_SETTING (setting)), NM_VARIANT_TYPE_SETTING);
+	g_return_val_if_fail (setting_dict != NULL, FALSE);
+
+	/* If the new property isn't set, we have to use the legacy property. */
+	value = g_variant_lookup_value (setting_dict, new_property, NULL);
+	if (!value) {
+		g_variant_unref (setting_dict);
+		return TRUE;
+	}
+	g_variant_unref (value);
+
+	/* Otherwise, clients always prefer new properties sent from the daemon. */
+	if (!_nm_utils_is_manager_process) {
+		g_variant_unref (setting_dict);
+		return FALSE;
+	}
+
+	/* The daemon prefers the legacy property if it exists. */
+	value = g_variant_lookup_value (setting_dict, legacy_property, NULL);
+	g_variant_unref (setting_dict);
+
+	if (value) {
+		g_variant_unref (value);
+		return TRUE;
+	} else
+		return FALSE;
+}
+
 static GArray *
 nm_setting_class_ensure_properties (NMSettingClass *setting_class)
 {
@@ -665,6 +701,10 @@ _nm_setting_to_dbus (NMSetting *setting, NMConnection *connection, NMConnectionS
 		}
 
 		if (prop_spec && !(prop_spec->flags & G_PARAM_WRITABLE))
+			continue;
+
+		if (   prop_spec && (prop_spec->flags & NM_SETTING_PARAM_LEGACY)
+		    && !_nm_utils_is_manager_process)
 			continue;
 
 		if (   (flags & NM_CONNECTION_SERIALIZE_NO_SECRETS)

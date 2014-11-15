@@ -2093,6 +2093,19 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
+ip_gateway_set (NMSetting  *setting,
+                GVariant   *connection_dict,
+                const char *property,
+                GVariant   *value)
+{
+	/* Don't set from 'gateway' if we're going to use the gateway in 'addresses' */
+	if (_nm_setting_use_legacy_property (setting, connection_dict, "addresses", "gateway"))
+		return;
+
+	g_object_set (setting, property, g_variant_get_string (value, NULL), NULL);
+}
+
+static void
 nm_setting_ip_config_class_init (NMSettingIPConfigClass *setting_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
@@ -2171,6 +2184,11 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *setting_class)
 		                     G_TYPE_PTR_ARRAY,
 		                     G_PARAM_READWRITE |
 		                     NM_SETTING_PARAM_INFERRABLE |
+		                     /* "addresses" is a legacy D-Bus property, because the
+		                      * "addresses" GObject property normally gets set from
+		                      * the "address-data" D-Bus property...
+		                      */
+		                     NM_SETTING_PARAM_LEGACY |
 		                     G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -2187,6 +2205,13 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *setting_class)
 		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
+	_nm_setting_class_override_property (parent_class,
+	                                     NM_SETTING_IP_CONFIG_GATEWAY,
+	                                     G_VARIANT_TYPE_STRING,
+	                                     NULL,
+	                                     ip_gateway_set,
+	                                     NULL);
+
 	/**
 	 * NMSettingIPConfig:routes:
 	 *
@@ -2200,6 +2225,8 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *setting_class)
 		                     G_TYPE_PTR_ARRAY,
 		                     G_PARAM_READWRITE |
 		                     NM_SETTING_PARAM_INFERRABLE |
+		                     /* See :addresses above Re: LEGACY */
+		                     NM_SETTING_PARAM_LEGACY |
 		                     G_PARAM_STATIC_STRINGS));
 
 	/**

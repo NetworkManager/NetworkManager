@@ -416,12 +416,14 @@ test_setting_ip4_config_labels (void)
 	label = nm_ip_address_get_attribute (addr, "label");
 	g_assert (label == NULL);
 
-	/* The labels should appear in the D-Bus serialization under both
-	 * 'address-labels' and 'address-data'.
+	/* If we serialize as the daemon, the labels should appear in the D-Bus
+	 * serialization under both 'address-labels' and 'address-data'.
 	 */
 	conn = nmtst_create_minimal_connection ("label test", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
 	nm_connection_add_setting (conn, NM_SETTING (s_ip4));
+	_nm_utils_is_manager_process = TRUE;
 	dict = nm_connection_to_dbus (conn, NM_CONNECTION_SERIALIZE_ALL);
+	_nm_utils_is_manager_process = FALSE;
 	g_object_unref (conn);
 
 	setting_dict = g_variant_lookup_value (dict, NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
@@ -526,6 +528,126 @@ test_setting_ip4_config_labels (void)
 	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "3.3.3.3");
 	label = nm_ip_address_get_attribute (addr, "label");
 	g_assert (label == NULL);
+
+	g_object_unref (conn);
+}
+
+static void
+test_setting_ip4_config_address_data (void)
+{
+	NMSettingIPConfig *s_ip4;
+	NMIPAddress *addr;
+	GPtrArray *addrs;
+	NMConnection *conn;
+	GVariant *dict, *setting_dict, *value;
+	GError *error = NULL;
+
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
+	g_object_set (G_OBJECT (s_ip4),
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NULL);
+
+	/* addr 1 */
+	addr = nm_ip_address_new (AF_INET, "1.1.1.1", 24, &error);
+	g_assert_no_error (error);
+	nm_ip_address_set_attribute (addr, "one", g_variant_new_string ("foo"));
+	nm_ip_address_set_attribute (addr, "two", g_variant_new_int32 (42));
+
+	nm_setting_ip_config_add_address (s_ip4, addr);
+	nm_ip_address_unref (addr);
+	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
+	g_assert_no_error (error);
+
+	/* addr 2 */
+	addr = nm_ip_address_new (AF_INET, "2.2.2.2", 24, &error);
+	g_assert_no_error (error);
+
+	nm_setting_ip_config_add_address (s_ip4, addr);
+	nm_ip_address_unref (addr);
+	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
+	g_assert_no_error (error);
+
+	/* The client-side D-Bus serialization should include the attributes in
+	 * "address-data", and should not have an "addresses" property.
+	 */
+	conn = nmtst_create_minimal_connection ("address-data test", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+	nm_connection_add_setting (conn, NM_SETTING (s_ip4));
+	dict = nm_connection_to_dbus (conn, NM_CONNECTION_SERIALIZE_ALL);
+
+	setting_dict = g_variant_lookup_value (dict, NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
+	g_assert (setting_dict != NULL);
+
+	value = g_variant_lookup_value (setting_dict, "addresses", NULL);
+	g_assert (value == NULL);
+
+	value = g_variant_lookup_value (setting_dict, "address-data", G_VARIANT_TYPE ("aa{sv}"));
+	addrs = nm_utils_ip_addresses_from_variant (value, AF_INET);
+	g_variant_unref (value);
+	g_assert (addrs != NULL);
+	g_assert_cmpint (addrs->len, ==, 2);
+
+	addr = addrs->pdata[0];
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "1.1.1.1");
+	value = nm_ip_address_get_attribute (addr, "one");
+	g_assert (value != NULL);
+	g_assert_cmpstr (g_variant_get_string (value, NULL), ==, "foo");
+	value = nm_ip_address_get_attribute (addr, "two");
+	g_assert (value != NULL);
+	g_assert_cmpint (g_variant_get_int32 (value), ==, 42);
+
+	g_ptr_array_unref (addrs);
+	g_variant_unref (setting_dict);
+	g_variant_unref (dict);
+
+	/* The daemon-side serialization should include both 'addresses' and 'address-data' */
+	_nm_utils_is_manager_process = TRUE;
+	dict = nm_connection_to_dbus (conn, NM_CONNECTION_SERIALIZE_ALL);
+	_nm_utils_is_manager_process = FALSE;
+
+	setting_dict = g_variant_lookup_value (dict, NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
+	g_assert (setting_dict != NULL);
+
+	value = g_variant_lookup_value (setting_dict, "addresses", G_VARIANT_TYPE ("aau"));
+	g_assert (value != NULL);
+	g_variant_unref (value);
+
+	value = g_variant_lookup_value (setting_dict, "address-data", G_VARIANT_TYPE ("aa{sv}"));
+	g_assert (value != NULL);
+	g_variant_unref (value);
+
+	g_variant_unref (setting_dict);
+	g_object_unref (conn);
+
+	/* When we reserialize that dictionary as a client, 'address-data' will be preferred. */
+	conn = nm_simple_connection_new_from_dbus (dict, &error);
+	g_assert_no_error (error);
+
+	s_ip4 = nm_connection_get_setting_ip4_config (conn);
+
+	addr = nm_setting_ip_config_get_address (s_ip4, 0);
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "1.1.1.1");
+	value = nm_ip_address_get_attribute (addr, "one");
+	g_assert (value != NULL);
+	g_assert_cmpstr (g_variant_get_string (value, NULL), ==, "foo");
+	value = nm_ip_address_get_attribute (addr, "two");
+	g_assert (value != NULL);
+	g_assert_cmpint (g_variant_get_int32 (value), ==, 42);
+
+	/* But on the server side, 'addresses' will have precedence. */
+	_nm_utils_is_manager_process = TRUE;
+	conn = nm_simple_connection_new_from_dbus (dict, &error);
+	_nm_utils_is_manager_process = FALSE;
+	g_assert_no_error (error);
+	g_variant_unref (dict);
+
+	s_ip4 = nm_connection_get_setting_ip4_config (conn);
+
+	addr = nm_setting_ip_config_get_address (s_ip4, 0);
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "1.1.1.1");
+	value = nm_ip_address_get_attribute (addr, "one");
+	g_assert (value == NULL);
+	value = nm_ip_address_get_attribute (addr, "two");
+	g_assert (value == NULL);
 
 	g_object_unref (conn);
 }
@@ -3416,7 +3538,9 @@ test_setting_ip4_gateway (void)
 	GVariant *addr_var;
 	GError *error = NULL;
 
-	/* When serializing, ipv4.gateway is copied to the first entry of ipv4.addresses */
+	/* When serializing on the daemon side, ipv4.gateway is copied to the first
+	 * entry of ipv4.addresses
+	 */
 	conn = nmtst_create_minimal_connection ("test_setting_ip4_gateway", NULL,
 	                                        NM_SETTING_WIRED_SETTING_NAME, NULL);
 	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
@@ -3431,7 +3555,9 @@ test_setting_ip4_gateway (void)
 	nm_setting_ip_config_add_address (s_ip4, addr);
 	nm_ip_address_unref (addr);
 
+	_nm_utils_is_manager_process = TRUE;
 	conn_dict = nm_connection_to_dbus (conn, NM_CONNECTION_SERIALIZE_ALL);
+	_nm_utils_is_manager_process = FALSE;
 	g_object_unref (conn);
 
 	ip4_dict = g_variant_lookup_value (conn_dict, NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
@@ -3490,7 +3616,9 @@ test_setting_ip6_gateway (void)
 	GVariant *gateway_var;
 	GError *error = NULL;
 
-	/* When serializing, ipv6.gateway is copied to the first entry of ipv6.addresses */
+	/* When serializing on the daemon side, ipv6.gateway is copied to the first
+	 * entry of ipv6.addresses
+	 */
 	conn = nmtst_create_minimal_connection ("test_setting_ip6_gateway", NULL,
 	                                        NM_SETTING_WIRED_SETTING_NAME, NULL);
 	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
@@ -3505,7 +3633,9 @@ test_setting_ip6_gateway (void)
 	nm_setting_ip_config_add_address (s_ip6, addr);
 	nm_ip_address_unref (addr);
 
+	_nm_utils_is_manager_process = TRUE;
 	conn_dict = nm_connection_to_dbus (conn, NM_CONNECTION_SERIALIZE_ALL);
+	_nm_utils_is_manager_process = FALSE;
 	g_object_unref (conn);
 
 	ip6_dict = g_variant_lookup_value (conn_dict, NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
@@ -3598,6 +3728,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_setting_vpn_update_secrets", test_setting_vpn_update_secrets);
 	g_test_add_func ("/core/general/test_setting_vpn_modify_during_foreach", test_setting_vpn_modify_during_foreach);
 	g_test_add_func ("/core/general/test_setting_ip4_config_labels", test_setting_ip4_config_labels);
+	g_test_add_func ("/core/general/test_setting_ip4_config_address_data", test_setting_ip4_config_address_data);
 	g_test_add_func ("/core/general/test_setting_gsm_apn_spaces", test_setting_gsm_apn_spaces);
 	g_test_add_func ("/core/general/test_setting_gsm_apn_bad_chars", test_setting_gsm_apn_bad_chars);
 	g_test_add_func ("/core/general/test_setting_gsm_apn_underscore", test_setting_gsm_apn_underscore);

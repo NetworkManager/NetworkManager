@@ -59,6 +59,7 @@
 #include "nm-dispatcher.h"
 #include "nm-settings.h"
 #include "nm-auth-manager.h"
+#include "nm-core-internal.h"
 
 #if !defined(NM_DIST_VERSION)
 # define NM_DIST_VERSION VERSION
@@ -230,6 +231,8 @@ main (int argc, char *argv[])
 		{ "run-from-build-dir", 0, 0, G_OPTION_ARG_NONE, &run_from_build_dir, "Run from build directory", NULL },
 		{NULL}
 	};
+
+	_nm_utils_is_manager_process = TRUE;
 
 	main_loop = g_main_loop_new (NULL, FALSE);
 

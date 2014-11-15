@@ -213,29 +213,19 @@ ip6_addresses_set (NMSetting  *setting,
                    GVariant   *value)
 {
 	GPtrArray *addrs;
-	GVariant *s_ip6;
 	char *gateway = NULL;
 
-	s_ip6 = g_variant_lookup_value (connection_dict, NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
-	/* If 'address-data' is set then ignore 'addresses' */
-	if (g_variant_lookup (s_ip6, "address-data", "aa{sv}", NULL)) {
-		g_variant_unref (s_ip6);
+	if (!_nm_setting_use_legacy_property (setting, connection_dict, "addresses", "address-data"))
 		return;
-	}
 
 	addrs = nm_utils_ip6_addresses_from_variant (value, &gateway);
 
-	if (gateway && !g_variant_lookup (s_ip6, "gateway", "s", NULL)) {
-		g_object_set (setting,
-		              NM_SETTING_IP_CONFIG_GATEWAY, gateway,
-		              NULL);
-	}
-	g_free (gateway);
-
-	g_variant_unref (s_ip6);
-
-	g_object_set (setting, property, addrs, NULL);
+	g_object_set (setting,
+	              NM_SETTING_IP_CONFIG_ADDRESSES, addrs,
+	              NM_SETTING_IP_CONFIG_GATEWAY, gateway,
+	              NULL);
 	g_ptr_array_unref (addrs);
+	g_free (gateway);
 }
 
 static GVariant *
@@ -260,6 +250,10 @@ ip6_address_data_set (NMSetting  *setting,
                       GVariant   *value)
 {
 	GPtrArray *addrs;
+
+	/* Ignore 'address-data' if we're going to process 'addresses' */
+	if (_nm_setting_use_legacy_property (setting, connection_dict, "addresses", "address-data"))
+		return;
 
 	addrs = nm_utils_ip_addresses_from_variant (value, AF_INET6);
 	g_object_set (setting, NM_SETTING_IP_CONFIG_ADDRESSES, addrs, NULL);
@@ -287,15 +281,9 @@ ip6_routes_set (NMSetting  *setting,
                 GVariant   *value)
 {
 	GPtrArray *routes;
-	GVariant *s_ip6;
 
-	s_ip6 = g_variant_lookup_value (connection_dict, NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
-	/* If 'route-data' is set then ignore 'routes' */
-	if (g_variant_lookup (s_ip6, "route-data", "aa{sv}", NULL)) {
-		g_variant_unref (s_ip6);
+	if (!_nm_setting_use_legacy_property (setting, connection_dict, "routes", "route-data"))
 		return;
-	}
-	g_variant_unref (s_ip6);
 
 	routes = nm_utils_ip6_routes_from_variant (value);
 	g_object_set (setting, property, routes, NULL);
@@ -324,6 +312,10 @@ ip6_route_data_set (NMSetting  *setting,
                     GVariant   *value)
 {
 	GPtrArray *routes;
+
+	/* Ignore 'route-data' if we're going to process 'routes' */
+	if (_nm_setting_use_legacy_property (setting, connection_dict, "routes", "route-data"))
+		return;
 
 	routes = nm_utils_ip_routes_from_variant (value, AF_INET6);
 	g_object_set (setting, NM_SETTING_IP_CONFIG_ROUTES, routes, NULL);
