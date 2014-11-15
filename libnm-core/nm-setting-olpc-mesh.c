@@ -233,10 +233,6 @@ nm_setting_olpc_mesh_class_init (NMSettingOlpcMeshClass *setting_class)
 		                     G_PARAM_READWRITE |
 		                     NM_SETTING_PARAM_INFERRABLE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_OLPC_MESH_SSID,
-	                                      G_VARIANT_TYPE_BYTESTRING,
-	                                      _nm_utils_bytes_to_dbus,
-	                                      _nm_utils_bytes_from_dbus);
 
 	/**
 	 * NMSettingOlpcMesh:channel:

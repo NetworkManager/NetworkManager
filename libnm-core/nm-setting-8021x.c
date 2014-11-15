@@ -3206,10 +3206,6 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		                     G_TYPE_BYTES,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_802_1X_CA_CERT,
-	                                      G_VARIANT_TYPE_BYTESTRING,
-	                                      _nm_utils_bytes_to_dbus,
-	                                      _nm_utils_bytes_from_dbus);
 
 	/**
 	 * NMSetting8021x:ca-path:
@@ -3302,10 +3298,6 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		                     G_TYPE_BYTES,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_802_1X_CLIENT_CERT,
-	                                      G_VARIANT_TYPE_BYTESTRING,
-	                                      _nm_utils_bytes_to_dbus,
-	                                      _nm_utils_bytes_from_dbus);
 
 	/**
 	 * NMSetting8021x:phase1-peapver:
@@ -3456,10 +3448,6 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		                     G_TYPE_BYTES,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_802_1X_PHASE2_CA_CERT,
-	                                      G_VARIANT_TYPE_BYTESTRING,
-	                                      _nm_utils_bytes_to_dbus,
-	                                      _nm_utils_bytes_from_dbus);
 
 	/**
 	 * NMSetting8021x:phase2-ca-path:
@@ -3549,10 +3537,6 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		                     G_TYPE_BYTES,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_802_1X_PHASE2_CLIENT_CERT,
-	                                      G_VARIANT_TYPE_BYTESTRING,
-	                                      _nm_utils_bytes_to_dbus,
-	                                      _nm_utils_bytes_from_dbus);
 
 	/**
 	 * NMSetting8021x:password:
@@ -3616,10 +3600,6 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		                     G_PARAM_READWRITE |
 		                     NM_SETTING_PARAM_SECRET |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_802_1X_PASSWORD_RAW,
-	                                      G_VARIANT_TYPE_BYTESTRING,
-	                                      _nm_utils_bytes_to_dbus,
-	                                      _nm_utils_bytes_from_dbus);
 
 	/**
 	 * NMSetting8021x:password-raw-flags:
@@ -3684,10 +3664,6 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		                     G_TYPE_BYTES,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_802_1X_PRIVATE_KEY,
-	                                      G_VARIANT_TYPE_BYTESTRING,
-	                                      _nm_utils_bytes_to_dbus,
-	                                      _nm_utils_bytes_from_dbus);
 
 	/**
 	 * NMSetting8021x:private-key-password:
@@ -3772,10 +3748,6 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		                     G_TYPE_BYTES,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
-	                                      G_VARIANT_TYPE_BYTESTRING,
-	                                      _nm_utils_bytes_to_dbus,
-	                                      _nm_utils_bytes_from_dbus);
 
 	/**
 	 * NMSetting8021x:phase2-private-key-password:

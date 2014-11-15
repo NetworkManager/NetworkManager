@@ -1014,10 +1014,6 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 		                     G_TYPE_BYTES,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_WIRELESS_SSID,
-	                                      G_VARIANT_TYPE_BYTESTRING,
-	                                      _nm_utils_bytes_to_dbus,
-	                                      _nm_utils_bytes_from_dbus);
 
 	/**
 	 * NMSettingWireless:mode:

@@ -645,6 +645,8 @@ get_property_for_dbus (NMSetting *setting,
 		dbus_value = g_variant_new_int32 (g_value_get_enum (&prop_value));
 	else if (g_type_is_a (prop_value.g_type, G_TYPE_FLAGS))
 		dbus_value = g_variant_new_uint32 (g_value_get_flags (&prop_value));
+	else if (prop_value.g_type == G_TYPE_BYTES)
+		dbus_value = _nm_utils_bytes_to_dbus (&prop_value);
 	else
 		dbus_value = g_dbus_gvalue_to_gvariant (&prop_value, variant_type_for_gtype (prop_value.g_type));
 	g_value_unset (&prop_value);
@@ -659,6 +661,8 @@ set_property_from_dbus (const NMSettingProperty *property, GVariant *src_value, 
 
 	if (property->from_dbus)
 		property->from_dbus (src_value, dst_value);
+	else if (dst_value->g_type == G_TYPE_BYTES)
+		_nm_utils_bytes_from_dbus (src_value, dst_value);
 	else
 		g_dbus_gvariant_to_gvalue (src_value, dst_value);
 }
