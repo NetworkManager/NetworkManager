@@ -1317,6 +1317,13 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 * variable: (none)
 	 * description: This property is deprecated and not handled by ifcfg-rh-plugin.
 	 * ---end---
+	 * ---dbus---
+	 * property: security
+	 * description: This property is deprecated, but can be set to the value
+	 *   '802-11-wireless-security' when a wireless security setting is also
+	 *   present in the connection dictionary, for compatibility with very old
+	 *   NetworkManager daemons.
+	 * ---end---
 	 */
 	_nm_setting_class_add_dbus_only_property (parent_class, "security",
 	                                          G_VARIANT_TYPE_STRING,

@@ -806,6 +806,13 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 *   but VLAN id from DEVICE takes precedence over VLAN_ID.
 	 * example: PHYSDEV=eth0, VLAN_ID=12; or DEVICE=eth0.12
 	 * ---end---
+	 * ---dbus---
+	 * property: interface-name
+	 * format: string
+	 * description: Deprecated in favor of connection.interface-name, but can
+	 *   be used for backward-compatibility with older daemons, to set the
+	 *   vlan's interface name.
+	 * ---end---
 	 */
 	_nm_setting_class_add_dbus_only_property (parent_class, "interface-name",
 	                                          G_VARIANT_TYPE_STRING,

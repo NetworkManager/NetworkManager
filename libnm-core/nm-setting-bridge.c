@@ -525,6 +525,14 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 		                    NM_SETTING_PARAM_INFERRABLE |
 		                    G_PARAM_STATIC_STRINGS));
 
+	/* ---dbus---
+	 * property: interface-name
+	 * format: string
+	 * description: Deprecated in favor of connection.interface-name, but can
+	 *   be used for backward-compatibility with older daemons, to set the
+	 *   bridge's interface name.
+	 * ---end---
+	 */
 	_nm_setting_class_add_dbus_only_property (parent_class, "interface-name",
 	                                          G_VARIANT_TYPE_STRING,
 	                                          _nm_setting_get_deprecated_virtual_interface_name,

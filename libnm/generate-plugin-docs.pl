@@ -55,7 +55,6 @@ my @data;
 my $fo;
 
 (scalar @ARGV == 3) or die "Usage: $0 <plugin> <srcdir> <output-xml-file>\n";
-($ARGV[0] eq "keyfile" || $ARGV[0] eq "ifcfg-rh") or die "Allowed <plugin> values: keyfile, ifcfg-rh\n";
 my ($plugin, $srcdir, $output) = @ARGV;
 my $start_tag = "---$plugin---\\s*\$";
 my $end_tag   = '---end---';
@@ -155,6 +154,7 @@ sub process_data {
   my $exam   = $yaml_data->{example}     // "";
   my $desc   = $yaml_data->{description} // "";
 
+  chomp($name, $var, $format, $values, $def, $exam, $desc);
   escape_xml_chars($name, $var, $format, $values, $def, $exam, $desc);
   my $foo = sprintf("<property name=\"%s\" variable=\"%s\" format=\"%s\" values=\"%s\" ".
                     "default=\"%s\" example=\"%s\" description=\"%s\"/>",

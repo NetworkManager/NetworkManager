@@ -498,12 +498,33 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
 		                    G_PARAM_STATIC_STRINGS));
 
 	/* IP6-specific property overrides */
+
+	/* ---dbus---
+	 * property: dns
+	 * format: array of byte array
+	 * description: Array of IP addresses of DNS servers (in network byte order)
+	 * ---end---
+	 */
 	_nm_setting_class_transform_property (setting_class,
 	                                      NM_SETTING_IP_CONFIG_DNS,
 	                                      G_VARIANT_TYPE ("aay"),
 	                                      ip6_dns_to_dbus,
 	                                      ip6_dns_from_dbus);
 
+	/* ---dbus---
+	 * property: addresses
+	 * format: array of legacy IPv6 address struct (a(ayuay))
+	 * description: Deprecated in favor of the 'address-data' and 'gateway'
+	 *   properties, but this can be used for backward-compatibility with older
+	 *   daemons. Note that if you send this property the daemon will ignore
+	 *   'address-data' and 'gateway'.
+	 *
+	 *   Array of IPv6 address structures.  Each IPv6 address structure is
+	 *   composed of an IPv6 address, a prefix length (1 - 128), and an IPv6
+	 *   gateway address. The gateway may be zeroed out if no gateway exists for
+	 *   that subnet.
+	 * ---end---
+	 */
 	_nm_setting_class_override_property (setting_class,
 	                                     NM_SETTING_IP_CONFIG_ADDRESSES,
 	                                     G_VARIANT_TYPE ("a(ayuay)"),
@@ -511,12 +532,35 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
 	                                     ip6_addresses_set,
 	                                     NULL);
 
+	/* ---dbus---
+	 * property: address-data
+	 * format: array of vardict
+	 * description: Array of IPv6 addresses. Each address dictionary contains at
+	 *   least 'address' and 'prefix' entries, containing the IP address as a
+	 *   string, and the prefix length as a uint32. Additional attributes may
+	 *   also exist on some addresses.
+	 * ---end---
+	 */
 	_nm_setting_class_add_dbus_only_property (setting_class,
 	                                          "address-data",
 	                                          G_VARIANT_TYPE ("aa{sv}"),
 	                                          ip6_address_data_get,
 	                                          ip6_address_data_set);
 
+	/* ---dbus---
+	 * property: routes
+	 * format: array of legacy IPv6 route struct (a(ayuayu))
+	 * description: Deprecated in favor of the 'route-data' property, but this
+	 *   can be used for backward-compatibility with older daemons. Note that if
+	 *   you send this property the daemon will ignore 'route-data'.
+	 *
+	 *   Array of IPv6 route structures.  Each IPv6 route structure is
+	 *   composed of an IPv6 address, a prefix length (1 - 128), an IPv6
+	 *   next hop address (which may be zeroed out if there is no next hop),
+	 *   and a metric. If the metric is 0, NM will choose an appropriate
+	 *   default metric for the device.
+	 * ---end---
+	 */
 	_nm_setting_class_override_property (setting_class,
 	                                     NM_SETTING_IP_CONFIG_ROUTES,
 	                                     G_VARIANT_TYPE ("a(ayuayu)"),
@@ -524,6 +568,19 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
 	                                     ip6_routes_set,
 	                                     NULL);
 
+	/* ---dbus---
+	 * property: route-data
+	 * format: array of vardict
+	 * description: Array of IPv6 routes. Each route dictionary contains at
+	 *   least 'dest' and 'prefix' entries, containing the destination IP
+	 *   address as a string, and the prefix length as a uint32. Most routes
+	 *   will also have a 'next-hop' entry, containing the next hop IP address as
+	 *   a string. If the route has a 'metric' entry (containing a uint32), that
+	 *   will be used as the metric for the route (otherwise NM will pick a
+	 *   default value appropriate to the device). Additional attributes may
+	 *   also exist on some routes.
+	 * ---end---
+	 */
 	_nm_setting_class_add_dbus_only_property (setting_class,
 	                                          "route-data",
 	                                          G_VARIANT_TYPE ("aa{sv}"),
