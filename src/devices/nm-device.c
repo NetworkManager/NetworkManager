@@ -1602,6 +1602,23 @@ nm_device_get_enslaved (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->enslaved;
 }
 
+/**
+ * nm_device_removed:
+ * @self: the #NMDevice
+ *
+ * Called by the manager when the device was removed. Releases the device from
+ * the master in case it's enslaved.
+ */
+void
+nm_device_removed (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->enslaved)
+		nm_device_release_one_slave (priv->master, self, TRUE, NM_DEVICE_STATE_REASON_REMOVED);
+}
+
+
 static gboolean
 is_available (NMDevice *self)
 {
