@@ -22,21 +22,23 @@ from gi.repository import NM, GObject
 import argparse, datetime, re, sys
 import xml.etree.ElementTree as ET
 
-type_name_map = {
-    'gchararray': 'string',
-    'GSList_gchararray_': 'array of string',
-    'GArray_guchar_': 'byte array',
-    'gboolean': 'boolean',
-    'guint64': 'uint64',
-    'gint': 'int32',
-    'guint': 'uint32',
-    'GArray_guint_': 'array of uint32',
-    'GPtrArray_GArray_guint__': 'array of array of uint32',
-    'GPtrArray_GArray_guchar__': 'array of byte array',
-    'GPtrArray_gchararray_': 'array of string',
-    'GHashTable_gchararray+gchararray_': 'dict of (string::string)',
-    'GPtrArray_GValueArray_GArray_guchar_+guint+GArray_guchar___': 'array of (byte array, uint32, byte array)',
-    'GPtrArray_GValueArray_GArray_guchar_+guint+GArray_guchar_+guint__': 'array of (byte array, uint32, byte array, uint32)'
+dbus_type_name_map = {
+    'b': 'boolean',
+    's': 'string',
+    'i': 'int32',
+    'u': 'uint32',
+    't': 'uint64',
+    'x': 'int64',
+    'y': 'byte',
+    'as': 'array of string',
+    'au': 'array of uint32',
+    'ay': 'byte array',
+    'a{ss}': 'dict of string to string',
+    'a{sv}': 'vardict',
+    'aau': 'array of array of uint32',
+    'aay': 'array of byte array',
+    'a(ayuay)': 'array of legacy IPv6 address struct',
+    'a(ayuayu)': 'array of legacy IPv6 route struct',
 }
 
 ns_map = {
@@ -83,11 +85,12 @@ def init_constants(girxml, settings):
             setting_names[setting_type_name] = setting_name
 
 def get_prop_type(setting, pspec, propxml):
-    prop_type = pspec.value_type.name
-    if prop_type in type_name_map:
-        prop_type = type_name_map[prop_type]
-    if prop_type is None:
-        prop_type = ''
+    dbus_type = setting.get_dbus_property_type(pspec.name).dup_string()
+    prop_type = dbus_type_name_map[dbus_type]
+
+    if GObject.type_is_a(pspec.value_type, GObject.TYPE_ENUM) or GObject.type_is_a(pspec.value_type, GObject.TYPE_FLAGS):
+        prop_type = "%s (%s)" % (pspec.value_type.name, prop_type)
+
     return prop_type
 
 def get_docs(setting, pspec, propxml):

@@ -612,6 +612,12 @@ variant_type_for_gtype (GType type)
 		return G_VARIANT_TYPE_DOUBLE;
 	else if (type == G_TYPE_STRV)
 		return G_VARIANT_TYPE_STRING_ARRAY;
+	else if (type == G_TYPE_BYTES)
+		return G_VARIANT_TYPE_BYTESTRING;
+	else if (g_type_is_a (type, G_TYPE_ENUM))
+		return G_VARIANT_TYPE_INT32;
+	else if (g_type_is_a (type, G_TYPE_FLAGS))
+		return G_VARIANT_TYPE_UINT32;
 	else
 		g_assert_not_reached ();
 }
@@ -820,6 +826,34 @@ _nm_setting_new_from_dbus (GType setting_type,
 	g_type_class_unref (class);
 
 	return setting;
+}
+
+/**
+ * nm_setting_get_dbus_property_type:
+ * @setting: an #NMSetting
+ * @property_name: the property of @setting to get the type of
+ *
+ * Gets the D-Bus marshalling type of a property. @property_name is a D-Bus
+ * property name, which may not necessarily be a #GObject property.
+ *
+ * Returns: the D-Bus marshalling type of @property on @setting.
+ */
+const GVariantType *
+nm_setting_get_dbus_property_type (NMSetting *setting,
+                                   const char *property_name)
+{
+	const NMSettingProperty *property;
+
+	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
+	g_return_val_if_fail (property_name != NULL, NULL);
+
+	property = nm_setting_class_find_property (NM_SETTING_GET_CLASS (setting), property_name);
+	g_return_val_if_fail (property != NULL, NULL);
+
+	if (property->dbus_type)
+		return property->dbus_type;
+	else
+		return variant_type_for_gtype (property->param_spec->value_type);
 }
 
 gboolean

@@ -519,6 +519,7 @@ global:
 	nm_setting_enumerate_values;
 	nm_setting_generic_get_type;
 	nm_setting_generic_new;
+	nm_setting_get_dbus_property_type;
 	nm_setting_get_name;
 	nm_setting_get_secret_flags;
 	nm_setting_get_type;
