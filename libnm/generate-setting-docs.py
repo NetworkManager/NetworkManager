@@ -173,7 +173,8 @@ settings = sorted(settings, key=lambda setting: setting.attrib['{%s}symbol-prefi
 
 init_constants(girxml, settings)
 
-overrides = ET.parse(args.overrides).getroot()
+if args.overrides is not None:
+    overrides = ET.parse(args.overrides).getroot()
 
 outfile.write("""<?xml version=\"1.0\"?>
 <!DOCTYPE nm-setting-docs [
@@ -192,7 +193,10 @@ for settingxml in settings:
     outfile.write("  <setting name=\"%s\">\n" % setting.props.name)
 
     setting_properties = { prop.name: prop for prop in GObject.list_properties(setting) }
-    setting_overrides = { override.attrib['name']: override for override in overrides.findall('./setting[@name="%s"]/property' % setting.props.name) }
+    if args.overrides is None:
+        setting_overrides = {}
+    else:
+        setting_overrides = { override.attrib['name']: override for override in overrides.findall('./setting[@name="%s"]/property' % setting.props.name) }
 
     properties = sorted(set.union(set(setting_properties.keys()), set(setting_overrides.keys())))
 

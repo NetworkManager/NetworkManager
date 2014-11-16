@@ -185,6 +185,7 @@ check-local:
 if BUILD_SETTING_DOCS
 
 noinst_DATA = \
+	nm-property-docs.xml \
 	nm-setting-docs-overrides.xml \
 	nm-setting-docs.xml \
 	nm-keyfile-docs.xml \
@@ -194,6 +195,13 @@ docs_sources = $(filter-out nm-core-enum-types.c,$(libnm_core_sources))
 
 nm-setting-docs-overrides.xml: generate-plugin-docs.pl $(docs_sources)
 	$(srcdir)/generate-plugin-docs.pl dbus $(top_srcdir)/libnm-core $@
+
+nm-property-docs.xml: generate-setting-docs.py $(docs_sources) | NM-1.0.gir NM-1.0.typelib libnm.la
+	export GI_TYPELIB_PATH=$(abs_builddir)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}; \
+	export LD_LIBRARY_PATH=$(abs_builddir)/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}; \
+	$(srcdir)/generate-setting-docs.py \
+		--gir $(builddir)/NM-1.0.gir \
+		--output $@
 
 nm-setting-docs.xml: generate-setting-docs.py $(docs_sources) nm-setting-docs-overrides.xml | NM-1.0.gir NM-1.0.typelib libnm.la
 	export GI_TYPELIB_PATH=$(abs_builddir)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}; \

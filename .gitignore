@@ -165,6 +165,7 @@ valgrind-*.log
 
 /libnm/nm-ifcfg-rh-docs.xml
 /libnm/nm-keyfile-docs.xml
+/libnm/nm-property-docs.xml
 /libnm/nm-setting-docs.xml
 /libnm/nm-setting-docs-overrides.xml
 /libnm/tests/test-nm-client
