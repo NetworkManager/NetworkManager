@@ -780,6 +780,7 @@ remove_device (NMManager *manager,
 
 	g_signal_emit (manager, signals[DEVICE_REMOVED], 0, device);
 	g_object_notify (G_OBJECT (manager), NM_MANAGER_DEVICES);
+	nm_device_removed (device);
 
 	nm_dbus_manager_unregister_object (priv->dbus_mgr, device);
 	g_object_unref (device);

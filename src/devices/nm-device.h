@@ -255,6 +255,8 @@ NMDevice *      nm_device_get_master        (NMDevice *dev);
 NMActRequest *	nm_device_get_act_request	(NMDevice *dev);
 NMConnection *  nm_device_get_connection	(NMDevice *dev);
 
+void            nm_device_removed        (NMDevice *dev);
+
 gboolean        nm_device_is_available   (NMDevice *dev);
 gboolean        nm_device_has_carrier    (NMDevice *dev);
 
