@@ -1569,6 +1569,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	/* ---ifcfg-rh---
 	 * property: wep-key-flags
 	 * variable: WEP_KEY_FLAGS(+)
+	 * format: NMSettingSecretFlags
 	 * description: Password flags for KEY<i>, KEY_PASSPHRASE<i> password.
 	 * ---end---
 	 */
@@ -1613,6 +1614,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	/* ---ifcfg-rh---
 	 * property: psk-flags
 	 * variable: WPA_PSK_FLAGS(+)
+	 * format: NMSettingSecretFlags
 	 * description: Password flags for WPA_PSK_FLAGS.
 	 * example: WPA_PSK_FLAGS=user
 	 * ---end---
@@ -1655,6 +1657,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	/* ---ifcfg-rh---
 	 * property: leap-password-flags
 	 * variable: IEEE_8021X_PASSWORD_FLAGS(+)
+	 * format: NMSettingSecretFlags
 	 * description: Password flags for IEEE_8021X_PASSWORD_FLAGS.
 	 * ---end---
 	 */

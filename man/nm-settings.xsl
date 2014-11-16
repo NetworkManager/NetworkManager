@@ -155,7 +155,7 @@
       <entry align="left"><xsl:value-of select="@name"/></entry>
       <entry align="left"><xsl:value-of select="@type"/></entry>
       <entry align="left"><xsl:value-of select="@default"/></entry>
-      <entry><xsl:value-of select="@description"/><xsl:if test="contains(@name,'-flags') and $setting_name != 'dcb'"> (see <xref linkend="secrets-flags"/> for flag values)</xsl:if></entry>
+      <entry><xsl:value-of select="@description"/><xsl:if test="@type = 'NMSettingSecretFlags (uint32)'"> (see <xref linkend="secrets-flags"/> for flag values)</xsl:if></entry>
     </row>
   </xsl:template>
 

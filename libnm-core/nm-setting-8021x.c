@@ -3568,6 +3568,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	/* ---ifcfg-rh---
 	 * property: password-flags
 	 * variable: IEEE_8021X_PASSWORD_FLAGS(+)
+	 * format: NMSettingSecretFlags
 	 * description: Password flags for IEEE_8021X_PASSWORD password.
 	 * ---end---
 	 */
@@ -3699,6 +3700,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	/* ---ifcfg-rh---
 	 * property: private-key-password-flags
 	 * variable: IEEE_8021X_PRIVATE_KEY_PASSWORD_FLAGS(+)
+	 * format: NMSettingSecretFlags
 	 * description: Password flags for IEEE_8021X_PRIVATE_KEY_PASSWORD password.
 	 * ---end---
 	 */
@@ -3784,6 +3786,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	/* ---ifcfg-rh---
 	 * property: phase2-private-key-password-flags
 	 * variable: IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD_FLAGS(+)
+	 * format: NMSettingSecretFlags
 	 * description: Password flags for IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD password.
 	 * ---end---
 	 */

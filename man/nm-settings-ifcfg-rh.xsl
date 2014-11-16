@@ -368,7 +368,7 @@ DEVICETYPE=TeamPort
       </entry>
       <entry align="left"><xsl:value-of select="@default"/></entry>
       <entry align="left">
-        <xsl:value-of select="@description"/><xsl:if test="contains(@name,'-flags') and $setting_name != 'dcb'"> (see <xref linkend="secrets-flags"/> for _FLAGS values)</xsl:if>
+        <xsl:value-of select="@description"/><xsl:if test="@format = 'NMSettingSecretFlags'"> (see <xref linkend="secrets-flags"/> for _FLAGS values)</xsl:if>
 
         <xsl:if test="string-length(@example)">
         <emphasis role="bold">
