@@ -91,25 +91,25 @@ typedef enum { /*< flags >*/
  * @NM_SETTING_COMPARE_FLAG_IGNORE_ID: ignore the connection's ID
  * @NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS: ignore all secrets
  * @NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS: ignore secrets for which
- * the secret's flags indicate the secret is owned by a user secret agent
- * (ie, the secret's flag includes @NM_SETTING_SECRET_FLAG_AGENT_OWNED)
+ *   the secret's flags indicate the secret is owned by a user secret agent
+ *   (ie, the secret's flag includes @NM_SETTING_SECRET_FLAG_AGENT_OWNED)
  * @NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS: ignore secrets for which
- * the secret's flags indicate the secret should not be saved to persistent
- * storage (ie, the secret's flag includes @NM_SETTING_SECRET_FLAG_NOT_SAVED)
+ *   the secret's flags indicate the secret should not be saved to persistent
+ *   storage (ie, the secret's flag includes @NM_SETTING_SECRET_FLAG_NOT_SAVED)
  * @NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT: if this flag is set,
- * nm_setting_diff() and nm_connection_diff() will also include properties that
- * are set to their default value. See also @NM_SETTING_COMPARE_FLAG_DIFF_RESULT_NO_DEFAULT.
+ *   nm_setting_diff() and nm_connection_diff() will also include properties that
+ *   are set to their default value. See also @NM_SETTING_COMPARE_FLAG_DIFF_RESULT_NO_DEFAULT.
  * @NM_SETTING_COMPARE_FLAG_DIFF_RESULT_NO_DEFAULT: if this flag is set,
- * nm_setting_diff() and nm_connection_diff() will not include properties that
- * are set to their default value. This is the opposite of
- * @NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT. If both flags are set together,
- * @NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT wins. If both flags are unset,
- * this means to exclude default properties if there is a setting to compare,
- * but include all properties, if the setting 'b' is missing. This is the legacy
- * behaviour of libnm-util, where nm_setting_diff() behaved differently depending
- * on whether the setting 'b' was available. If @NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT
- * is set, nm_setting_diff() will also set the flags @NM_SETTING_DIFF_RESULT_IN_A_DEFAULT
- * and @NM_SETTING_DIFF_RESULT_IN_B_DEFAULT, if the values are default values.
+ *   nm_setting_diff() and nm_connection_diff() will not include properties that
+ *   are set to their default value. This is the opposite of
+ *   @NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT. If both flags are set together,
+ *   @NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT wins. If both flags are unset,
+ *   this means to exclude default properties if there is a setting to compare,
+ *   but include all properties, if the setting 'b' is missing. This is the legacy
+ *   behaviour of libnm-util, where nm_setting_diff() behaved differently depending
+ *   on whether the setting 'b' was available. If @NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT
+ *   is set, nm_setting_diff() will also set the flags @NM_SETTING_DIFF_RESULT_IN_A_DEFAULT
+ *   and @NM_SETTING_DIFF_RESULT_IN_B_DEFAULT, if the values are default values.
  *
  * These flags modify the comparison behavior when comparing two settings or
  * two connections.
