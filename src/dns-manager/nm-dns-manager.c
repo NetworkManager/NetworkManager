@@ -27,6 +27,7 @@
 #include <fcntl.h>
 #include <resolv.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 
@@ -446,6 +447,7 @@ update_resolv_conf (char **searches,
                     GError **error)
 {
 	FILE *f;
+	struct stat st;
 
 	g_return_val_if_fail (error != NULL, FALSE);
 
@@ -484,6 +486,39 @@ update_resolv_conf (char **searches,
 		             NM_MANAGER_ERROR_FAILED,
 		             "Could not replace %s: %s\n",
 		             MY_RESOLV_CONF,
+		             g_strerror (errno));
+		return FALSE;
+	}
+
+	/* Don't overwrite a symbolic link unless it points to MY_RESOLV_CONF. */
+	if (lstat (_PATH_RESCONF, &st) != -1) {
+		/* Don't overwrite a symbolic link. */
+		if (S_ISLNK (st.st_mode)) {
+			if (stat (_PATH_RESCONF, &st) != -1) {
+				char *path = g_file_read_link (_PATH_RESCONF, NULL);
+				gboolean not_ours = g_strcmp0 (path, MY_RESOLV_CONF) != 0;
+
+				g_free (path);
+				if (not_ours)
+					return TRUE;
+			} else {
+				if (errno != ENOENT)
+					return TRUE;
+				g_set_error (error,
+							 NM_MANAGER_ERROR,
+							 NM_MANAGER_ERROR_FAILED,
+							 "Could not stat %s: %s\n",
+							 _PATH_RESCONF,
+							 g_strerror (errno));
+				return FALSE;
+			}
+		}
+	} else if (errno != ENOENT) {
+		g_set_error (error,
+		             NM_MANAGER_ERROR,
+		             NM_MANAGER_ERROR_FAILED,
+		             "Could not lstat %s: %s\n",
+		             _PATH_RESCONF,
 		             g_strerror (errno));
 		return FALSE;
 	}
