@@ -389,7 +389,7 @@ nm_dhcp_systemd_get_lease_ip_configs (const char *iface,
 		return NULL;
 
 	path = get_leasefile_path (iface, uuid, FALSE);
-	r = sd_dhcp_lease_load (path, &lease);
+	r = sd_dhcp_lease_load (&lease, path);
 	if (r == 0) {
 		ip4_config = lease_to_ip4_config (lease, NULL, 0, FALSE, NULL);
 		if (ip4_config)
@@ -457,7 +457,7 @@ bound4_handle (NMDhcpSystemd *self)
 		add_requests_to_options (options, dhcp4_requests);
 		sd_dhcp_lease_save (lease, priv->lease_file);
 
-		client_id = sd_dhcp_client_get_client_id(priv->client4, &type, &client_id_len);
+		sd_dhcp_client_get_client_id(priv->client4, &type, &client_id, &client_id_len);
 		if (client_id)
 			_save_client_id (self, type, client_id, client_id_len);
 
@@ -576,7 +576,7 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 		goto error;
 	}
 
-	sd_dhcp_lease_load (priv->lease_file, &lease);
+	sd_dhcp_lease_load (&lease, priv->lease_file);
 
 	if (last_ip4_address)
 		inet_pton (AF_INET, last_ip4_address, &last_addr);
