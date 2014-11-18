@@ -210,24 +210,20 @@ lease_to_ip4_config (sd_dhcp_lease *lease,
 	const struct in_addr *addr_list;
 	char buf[INET_ADDRSTRLEN];
 	const char *str;
-	guint32 lifetime = 0, plen = 0, i;
+	guint32 lifetime = 0, i;
 	NMPlatformIP4Address address;
 	GString *l;
 	struct sd_dhcp_route *routes;
 	guint16 mtu;
 	int r, num;
-	gint64 end_time;
+	time_t end_time;
 
-	r = sd_dhcp_lease_get_address (lease, &tmp_addr);
-	if (r < 0) {
-		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
-		                     "failed to read address from lease");
-		return NULL;
-	}
+	g_return_val_if_fail (lease != NULL, NULL);
 
 	ip4_config = nm_ip4_config_new ();
 
 	/* Address */
+	sd_dhcp_lease_get_address (lease, &tmp_addr);
 	memset (&address, 0, sizeof (address));
 	address.address = tmp_addr.s_addr;
 	str = nm_utils_inet4_ntop (tmp_addr.s_addr, NULL);
@@ -235,33 +231,24 @@ lease_to_ip4_config (sd_dhcp_lease *lease,
 	add_option (options, dhcp4_requests, DHCP_OPTION_IP_ADDRESS, str);
 
 	/* Prefix/netmask */
-	r = sd_dhcp_lease_get_netmask (lease, &tmp_addr);
-	if (r < 0) {
-		/* Get default netmask for the IP according to appropriate class. */
-		plen = nm_utils_ip4_get_default_prefix (address.address);
-		LOG_LEASE (LOGD_DHCP4, "  plen %d (default)", plen);
-	} else {
-		plen = nm_utils_ip4_netmask_to_prefix (tmp_addr.s_addr);
-		LOG_LEASE (LOGD_DHCP4, "  plen %d", plen);
-	}
-	address.plen = plen;
-	tmp_addr.s_addr = nm_utils_ip4_prefix_to_netmask (plen);
+	sd_dhcp_lease_get_netmask (lease, &tmp_addr);
+	address.plen = nm_utils_ip4_netmask_to_prefix (tmp_addr.s_addr);
+	LOG_LEASE (LOGD_DHCP4, "  plen %d", address.plen);
 	add_option (options,
 	            dhcp4_requests,
 	            DHCP_OPTION_SUBNET_MASK,
 	            nm_utils_inet4_ntop (tmp_addr.s_addr, NULL));
 
 	/* Lease time */
-	r = sd_dhcp_lease_get_lifetime (lease, &lifetime);
-	if (r < 0)
-		lifetime = 3600; /* one hour */
+	sd_dhcp_lease_get_lifetime (lease, &lifetime);
 	address.timestamp = nm_utils_get_monotonic_timestamp_s ();
 	address.lifetime = address.preferred = lifetime;
-	end_time = (gint64) time (NULL) + lifetime;
+	end_time = MIN ((guint64) time (NULL) + lifetime, G_MAXUINT32 - 1);
+	LOG_LEASE (LOGD_DHCP4, "  expires %s", ctime (&end_time));
 	add_option_u32 (options,
 	                dhcp4_requests,
 	                DHCP_OPTION_IP_ADDRESS_LEASE_TIME,
-	                (guint) CLAMP (end_time, 0, G_MAXUINT32 - 1));
+	                (guint32) end_time);
 
 	address.source = NM_IP_CONFIG_SOURCE_DHCP;
 	nm_ip4_config_add_address (ip4_config, &address);
@@ -349,11 +336,12 @@ lease_to_ip4_config (sd_dhcp_lease *lease,
 	}
 
 	/* NTP servers */
-	num = sd_dhcp_lease_get_ntp(lease, &addr_list);
+	num = sd_dhcp_lease_get_ntp (lease, &addr_list);
 	if (num > 0) {
 		l = g_string_sized_new (30);
 		for (i = 0; i < num; i++) {
 			str = nm_utils_inet4_ntop (addr_list[i].s_addr, buf);
+			LOG_LEASE (LOGD_DHCP4, "  ntp server '%s'", str);
 			g_string_append_printf (l, "%s%s", l->len ? " " : "", str);
 		}
 		add_option (options, dhcp4_requests, DHCP_OPTION_NTP_SERVER, l->str);
