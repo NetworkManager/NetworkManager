@@ -245,6 +245,9 @@ static inline int safe_atoi64(const char *s, int64_t *ret_i) {
         return safe_atolli(s, (long long int*) ret_i);
 }
 
+int safe_atou16(const char *s, uint16_t *ret);
+int safe_atoi16(const char *s, int16_t *ret);
+
 const char* split(const char **state, size_t *l, const char *separator, bool quoted);
 
 #define FOREACH_WORD(word, length, s, state)                            \
@@ -270,6 +273,7 @@ char **replace_env_argv(char **argv, char **env);
 
 int readlinkat_malloc(int fd, const char *p, char **ret);
 int readlink_malloc(const char *p, char **r);
+int readlink_value(const char *p, char **ret);
 int readlink_and_make_absolute(const char *p, char **r);
 int readlink_and_canonicalize(const char *p, char **r);
 
@@ -321,6 +325,7 @@ int make_console_stdio(void);
 
 int dev_urandom(void *p, size_t n);
 void random_bytes(void *p, size_t n);
+void initialize_srand(void);
 
 static inline uint64_t random_u64(void) {
         uint64_t u;
@@ -581,8 +586,6 @@ static inline bool _pure_ in_charset(const char *s, const char* charset) {
 
 int block_get_whole_disk(dev_t d, dev_t *ret);
 
-int file_is_priv_sticky(const char *p);
-
 #define NULSTR_FOREACH(i, l)                                    \
         for ((i) = (l); (i) && *(i); (i) = strchr((i), 0)+1)
 
@@ -793,6 +796,15 @@ static inline void _reset_errno_(int *saved_errno) {
 
 #define PROTECT_ERRNO _cleanup_(_reset_errno_) __attribute__((unused)) int _saved_errno_ = errno
 
+static inline int negative_errno(void) {
+        /* This helper should be used to shut up gcc if you know 'errno' is
+         * negative. Instead of "return -errno;", use "return negative_errno();"
+         * It will suppress bogus gcc warnings in case it assumes 'errno' might
+         * be 0 and thus the caller's error-handling might not be triggered. */
+        assert_return(errno > 0, -EINVAL);
+        return -errno;
+}
+
 struct _umask_struct_ {
         mode_t mask;
         bool quit;
@@ -827,6 +839,21 @@ static inline int log2i(int x) {
         assert(x > 0);
 
         return __SIZEOF_INT__ * 8 - __builtin_clz(x) - 1;
+}
+
+static inline unsigned log2u(unsigned x) {
+        assert(x > 0);
+
+        return sizeof(unsigned) * 8 - __builtin_clz(x) - 1;
+}
+
+static inline unsigned log2u_round_up(unsigned x) {
+        assert(x > 0);
+
+        if (x == 1)
+                return 0;
+
+        return log2u(x - 1) + 1;
 }
 
 static inline bool logind_running(void) {
@@ -993,7 +1020,7 @@ int take_password_lock(const char *root);
 int is_symlink(const char *path);
 int is_dir(const char *path, bool follow);
 
-int unquote_first_word(const char **p, char **ret);
+int unquote_first_word(const char **p, char **ret, bool relax);
 int unquote_many_words(const char **p, ...) _sentinel_;
 
 int free_and_strdup(char **p, const char *s);
