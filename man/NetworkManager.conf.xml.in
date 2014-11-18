@@ -133,12 +133,18 @@ Copyright 2010 - 2014 Red Hat, Inc.
       <varlistentry>
 	<term><varname>dhcp</varname></term>
 	<listitem><para>This key sets up what DHCP client
-	NetworkManager will use. Presently
-	<literal>dhclient</literal> and <literal>dhcpcd</literal>
-	are supported. The client configured here should be
-	available on your system too. If this key is missing,
-	available DHCP clients are looked for in this order:
-	dhclient, dhcpcd.</para></listitem>
+	NetworkManager will use. Allowed values are
+	<literal>dhclient</literal>, <literal>dhcpcd</literal>, and
+	<literal>internal</literal>. The <literal>dhclient</literal>
+	and <literal>dhcpcd</literal> options require the indicated
+	clients to be installed. The <literal>internal</literal>
+	option uses a built-in DHCP client which is not currently as
+	featureful as the external clients (and in particular, does
+	not yet support DHCPv6).</para>
+	<para>If this key is missing, available DHCP clients are
+	looked for in this order: <literal>dhclient</literal>,
+	<literal>dhcpcd</literal>,
+	<literal>internal</literal>.</para></listitem>
       </varlistentry>
       <varlistentry>
 	<term><varname>no-auto-default</varname></term>
