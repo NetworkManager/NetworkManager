@@ -6925,7 +6925,7 @@ is_connection_dirty (NMConnection *connection, NMRemoteConnection *remote)
 {
 	return !nm_connection_compare (connection,
 	                               remote ? NM_CONNECTION (remote) : NULL,
-	                               NM_SETTING_COMPARE_FLAG_EXACT);
+	                               NM_SETTING_COMPARE_FLAG_IGNORE_TIMESTAMP);
 }
 
 static gboolean
