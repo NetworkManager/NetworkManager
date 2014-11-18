@@ -1831,7 +1831,7 @@ get_property (GObject *object, guint prop_id,
 					val = g_slice_new0 (GValue);
 					g_value_init (val, G_TYPE_STRING);
 					g_value_set_string (val, nm_utils_inet4_ntop (route->gateway, NULL));
-					g_hash_table_insert (route_hash, "gateway", val);
+					g_hash_table_insert (route_hash, "next-hop", val);
 				}
 
 				val = g_slice_new0 (GValue);
