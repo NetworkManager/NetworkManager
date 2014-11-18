@@ -68,12 +68,12 @@ sd_event_source_unref (sd_event_source *s)
 }
 
 int
-sd_event_source_set_name(sd_event_source *s, const char *name)
+sd_event_source_set_description(sd_event_source *s, const char *description)
 {
 	if (!s)
 		return -EINVAL;
 
-	g_source_set_name_by_id (s->id, name);
+	g_source_set_name_by_id (s->id, description);
 	return 0;
 }
 

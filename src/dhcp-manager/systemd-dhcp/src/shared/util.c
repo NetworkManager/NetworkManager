@@ -2554,6 +2554,7 @@ char* dirname_malloc(const char *path) {
 #endif
 
 int dev_urandom(void *p, size_t n) {
+#if 0 /* NM_IGNORED */
         static int have_syscall = -1;
         int r, fd;
         ssize_t k;
@@ -2593,6 +2594,10 @@ int dev_urandom(void *p, size_t n) {
                         /* too short read? */
                         return -EIO;
         }
+#else /* NM IGNORED */
+        int fd;
+        ssize_t k;
+#endif
 
         fd = open("/dev/urandom", O_RDONLY|O_CLOEXEC|O_NOCTTY);
         if (fd < 0)
@@ -3337,6 +3342,7 @@ fail:
         return NULL;
 }
 
+#if 0 /* NM_IGNORED */
 char **replace_env_argv(char **argv, char **env) {
         char **ret, **i;
         unsigned k = 0, l = 0;
@@ -3401,6 +3407,7 @@ char **replace_env_argv(char **argv, char **env) {
         ret[k] = NULL;
         return ret;
 }
+#endif
 
 int fd_columns(int fd) {
         struct winsize ws = {};
