@@ -1014,6 +1014,11 @@ compare_property (NMSetting *setting,
 	    && g_strcmp0 (prop_spec->name, NM_SETTING_CONNECTION_ID) == 0)
 		return TRUE;
 
+	/* Handle ignore timestamp */
+	if (   (flags & NM_SETTING_COMPARE_FLAG_IGNORE_TIMESTAMP)
+	    && g_strcmp0 (prop_spec->name, NM_SETTING_CONNECTION_TIMESTAMP) == 0)
+		return TRUE;
+
 	/* Otherwise chain up to parent to handle generic compare */
 	return NM_SETTING_CLASS (nm_setting_connection_parent_class)->compare_property (setting, other, prop_spec, flags);
 }
