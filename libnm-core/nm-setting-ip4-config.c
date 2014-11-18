@@ -479,16 +479,30 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *ip4_class)
 	/* ---keyfile---
 	 * property: addresses
 	 * variable: address1, address2, ...
-	 * format: address/plen[,gateway]
+	 * format: address/plen
 	 * description: List of static IP addresses.
-	 * example: address1=192.168.100.100/24,192.168.100.1
-	 *   address2=10.1.1.5/24
+	 * example: address1=192.168.100.100/24 address2=10.1.1.5/24
 	 * ---end---
 	 * ---ifcfg-rh---
 	 * property: addresses
-	 * variable: IPADDR, PREFIX, GATEWAY, IPADDR1, PREFIX1, GATEWAY1, ...
+	 * variable: IPADDR, PREFIX, IPADDR1, PREFIX1, ...
 	 * description: List of static IP addresses.
-	 * example: IPADDR 10.5.5.23 PREFIX=24 GATEWAY=10.5.5.1
+	 * example: IPADDR=10.5.5.23 PREFIX=24 IPADDR1=1.1.1.2 PREFIX1=16
+	 * ---end---
+	 */
+
+	/* ---keyfile---
+	 * property: gateway
+	 * variable: gateway
+	 * format: string
+	 * description: Gateway IP addresses as a string.
+	 * example: gateway=192.168.100.1
+	 * ---end---
+	 * ---ifcfg-rh---
+	 * property: gateway
+	 * variable: GATEWAY
+	 * description: Gateway IP address.
+	 * example: GATEWAY=10.5.5.1
 	 * ---end---
 	 */
 

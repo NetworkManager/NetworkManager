@@ -404,14 +404,31 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
 	/* ---keyfile---
 	 * property: addresses
 	 * variable: address1, address2, ...
-	 * format: address/plen[,gateway]
+	 * format: address/plen
 	 * description: List of static IP addresses.
-	 * example: address1=abbe::cafe/96,abbe::1
+	 * example: address1=abbe::cafe/96 address2=2001::1234
 	 * ---end---
 	 * ---ifcfg-rh---
 	 * property: addresses
-	 * variable: IPV6ADDR, IPV6_DEFAULTGW, IPV6ADDR_SECONDARIES
+	 * variable: IPV6ADDR, IPV6ADDR_SECONDARIES
 	 * description: List of static IP addresses.
+	 * example: IPV6ADDR=ab12:9876::1
+	 *   IPV6ADDR_SECONDARIES="ab12:9876::2 ab12:9876::3"
+	 * ---end---
+	 */
+
+	/* ---keyfile---
+	 * property: gateway
+	 * variable: gateway
+	 * format: string
+	 * description: Gateway IP addresses as a string.
+	 * example: gateway=abbe::1
+	 * ---end---
+	 * ---ifcfg-rh---
+	 * property: gateway
+	 * variable: IPV6_DEFAULTGW
+	 * description: Gateway IP address.
+	 * example: IPV6_DEFAULTGW=abbe::1
 	 * ---end---
 	 */
 
