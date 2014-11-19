@@ -692,6 +692,12 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 * not specified, the connection must contain an #NMSettingWired setting
 	 * with a #NMSettingWired:mac-address property.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: parent
+	 * variable: DEVICE or PHYSDEV
+	 * description: Parent interface of the VLAN.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_PARENT,
 		 g_param_spec_string (NM_SETTING_VLAN_PARENT, "", "",
@@ -707,6 +713,12 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 * The VLAN identifier that the interface created by this connection should
 	 * be assigned.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: id
+	 * variable: VLAN_ID or DEVICE
+	 * description: VLAN identifier.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_ID,
 		 g_param_spec_uint (NM_SETTING_VLAN_ID, "", "",
@@ -725,6 +737,13 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 * and %NM_VLAN_FLAG_LOOSE_BINDING (loose binding of the interface to its
 	 * master device's operating state).
 	 **/
+	/* ---ifcfg-rh---
+	 * property: flags
+	 * variable: VLAN_FLAGS, REORDER_HDR
+	 * values: "GVRP", "LOOSE_BINDING" for VLAN_FLAGS; 0 or 1 for REORDER_HDR
+	 * description: Parent interface of the VLAN.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_FLAGS,
 		 g_param_spec_flags (NM_SETTING_VLAN_FLAGS, "", "",
@@ -742,6 +761,13 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 * SKB priorities.  The mapping is given in the format "from:to" where both
 	 * "from" and "to" are unsigned integers, ie "7:3".
 	 **/
+	/* ---ifcfg-rh---
+	 * property: ingress-property-map
+	 * variable: VLAN_INGRESS_PRIORITY_MAP
+	 * description: Ingress priority mapping.
+	 * example: VLAN_INGRESS_PRIORITY_MAP=4:2,3:5
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_INGRESS_PRIORITY_MAP,
 		 g_param_spec_boxed (NM_SETTING_VLAN_INGRESS_PRIORITY_MAP, "", "",
@@ -757,6 +783,13 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 * 802.1p priorities.  The mapping is given in the format "from:to" where
 	 * both "from" and "to" are unsigned integers, ie "7:3".
 	 **/
+	/* ---ifcfg-rh---
+	 * property: egress-property-map
+	 * variable: VLAN_EGRESS_PRIORITY_MAP
+	 * description: Egress priority mapping.
+	 * example: VLAN_EGRESS_PRIORITY_MAP=5:4,4:1,3:7
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_EGRESS_PRIORITY_MAP,
 		 g_param_spec_boxed (NM_SETTING_VLAN_EGRESS_PRIORITY_MAP, "", "",
@@ -765,6 +798,22 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 		                     NM_SETTING_PARAM_INFERRABLE |
 		                     G_PARAM_STATIC_STRINGS));
 
+	/* ---ifcfg-rh---
+	 * property: interface-name
+	 * variable: PHYSDEV and VLAN_ID, or DEVICE
+	 * description: VLAN interface name.
+	 *   If all variables are set, parent device from PHYSDEV takes precedence over DEVICE,
+	 *   but VLAN id from DEVICE takes precedence over VLAN_ID.
+	 * example: PHYSDEV=eth0, VLAN_ID=12; or DEVICE=eth0.12
+	 * ---end---
+	 * ---dbus---
+	 * property: interface-name
+	 * format: string
+	 * description: Deprecated in favor of connection.interface-name, but can
+	 *   be used for backward-compatibility with older daemons, to set the
+	 *   vlan's interface name.
+	 * ---end---
+	 */
 	_nm_setting_class_add_dbus_only_property (parent_class, "interface-name",
 	                                          G_VARIANT_TYPE_STRING,
 	                                          _nm_setting_get_deprecated_virtual_interface_name,

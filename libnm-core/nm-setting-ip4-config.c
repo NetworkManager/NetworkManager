@@ -442,12 +442,148 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *ip4_class)
 
 	/* properties */
 
+	/* ---ifcfg-rh---
+	 * property: method
+	 * variable: BOOTPROTO
+	 * format:   string
+	 * values:   none, dhcp (bootp), static, ibft, autoip, shared
+	 * default:  none
+	 * description: Method used for IPv4 protocol configuration.
+	 * ---end---
+	 */
+
+	/* ---keyfile---
+	 * property: dns
+	 * format: list of DNS IP addresses
+	 * description: List of DNS servers.
+	 * example: dns=1.2.3.4;8.8.8.8;8.8.4.4;
+	 * ---end---
+	 * ---ifcfg-rh---
+	 * property: dns
+	 * variable: DNS1, DNS2, ...
+	 * format:   string
+	 * description: List of DNS servers. Even if NetworkManager supports many DNS
+	 *   servers, initscripts and resolver only care about the first three, usually.
+	 * example: DNS1=1.2.3.4 DNS2=10.0.0.254 DNS3=8.8.8.8
+	 * ---end---
+	 */
+
+	/* ---ifcfg-rh---
+	 * property: dns-search
+	 * variable: DOMAIN
+	 * format:   string (space-separated domains)
+	 * description: List of DNS search domains.
+	 * ---end---
+	 */
+
+	/* ---keyfile---
+	 * property: addresses
+	 * variable: address1, address2, ...
+	 * format: address/plen
+	 * description: List of static IP addresses.
+	 * example: address1=192.168.100.100/24 address2=10.1.1.5/24
+	 * ---end---
+	 * ---ifcfg-rh---
+	 * property: addresses
+	 * variable: IPADDR, PREFIX, IPADDR1, PREFIX1, ...
+	 * description: List of static IP addresses.
+	 * example: IPADDR=10.5.5.23 PREFIX=24 IPADDR1=1.1.1.2 PREFIX1=16
+	 * ---end---
+	 */
+
+	/* ---keyfile---
+	 * property: gateway
+	 * variable: gateway
+	 * format: string
+	 * description: Gateway IP addresses as a string.
+	 * example: gateway=192.168.100.1
+	 * ---end---
+	 * ---ifcfg-rh---
+	 * property: gateway
+	 * variable: GATEWAY
+	 * description: Gateway IP address.
+	 * example: GATEWAY=10.5.5.1
+	 * ---end---
+	 */
+
+	/* ---keyfile---
+	 * property: routes
+	 * variable: route1, route2, ...
+	 * format: route/plen[,gateway,metric]
+	 * description: List of IP routes.
+	 * example: route1=8.8.8.0/24,10.1.1.1,77
+	 *   route2=7.7.0.0/16
+	 * ---end---
+	 * ---ifcfg-rh---
+	 * property: routes
+	 * variable: ADDRESS1, NETMASK1, GATEWAY1, METRIC1, ...
+	 * description: List of static routes. They are not stored in ifcfg-* file,
+	 *   but in route-* file instead.
+	 * ---end---
+	 */
+
+	/* ---ifcfg-rh---
+	 * property: ignore-auto-routes
+	 * variable: PEERROUTES(+)
+	 * default: yes
+	 * description: PEERROUTES has the opposite meaning as 'ignore-auto-routes' property.
+	 * ---end---
+	 */
+
+	/* ---ifcfg-rh---
+	 * property: ignore-auto-dns
+	 * variable: PEERDNS
+	 * default: yes
+	 * description: PEERDNS has the opposite meaning as 'ignore-auto-dns' property.
+	 * ---end---
+	 */
+
+	/* ---ifcfg-rh---
+	 * property: dhcp-send-hostname
+	 * variable: DHCP_SEND_HOSTNAME(+)
+	 * default: yes
+	 * description: Whether DHCP_HOSTNAME should be sent to the DHCP server.
+	 * ---end---
+	 */
+
+	/* ---ifcfg-rh---
+	 * property: dhcp-hostname
+	 * variable: DHCP_HOSTNAME
+	 * description: Hostname to send to the DHCP server.
+	 * ---end---
+	 */
+
+	/* ---ifcfg-rh---
+	 * property: never-default
+	 * variable: DEFROUTE (GATEWAYDEV in /etc/sysconfig/network)
+	 * default: yes
+	 * description: DEFROUTE=no tells NetworkManager that this connection
+	 *   should not be assigned the default route. DEFROUTE has the opposite
+	 *   meaning as 'never-default' property.
+	 * ---end---
+	 */
+
+	/* ---ifcfg-rh---
+	 * property: may-fail
+	 * variable: IPV4_FAILURE_FATAL(+)
+	 * default: no
+	 * description: IPV4_FAILURE_FATAL has the opposite meaning as 'may-fail' property.
+	 * ---end---
+	 */
+
 	/**
 	 * NMSettingIP4Config:dhcp-client-id:
 	 *
 	 * A string sent to the DHCP server to identify the local machine which the
 	 * DHCP server may use to customize the DHCP lease and options.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: dhcp-client-id
+	 * variable: DHCP_CLIENT_ID(+)
+	 * description: A string sent to the DHCP server to identify the local machine.
+	 * example: DHCP_CLIENT_ID=ax-srv-1
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_DHCP_CLIENT_ID,
 		 g_param_spec_string (NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID, "", "",
@@ -456,12 +592,35 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *ip4_class)
 		                      G_PARAM_STATIC_STRINGS));
 
 	/* IP4-specific property overrides */
+
+	/* ---dbus---
+	 * property: dns
+	 * format: array of uint32
+	 * description: Array of IP addresses of DNS servers (as network-byte-order
+	 *   integers)
+	 * ---end---
+	 */
 	_nm_setting_class_transform_property (setting_class,
 	                                      NM_SETTING_IP_CONFIG_DNS,
 	                                      G_VARIANT_TYPE ("au"),
 	                                      ip4_dns_to_dbus,
 	                                      ip4_dns_from_dbus);
 
+	/* ---dbus---
+	 * property: addresses
+	 * format: array of array of uint32
+	 * description: Deprecated in favor of the 'address-data' and 'gateway'
+	 *   properties, but this can be used for backward-compatibility with older
+	 *   daemons. Note that if you send this property the daemon will ignore
+	 *   'address-data' and 'gateway'.
+	 *
+	 *   Array of IPv4 address structures.  Each IPv4 address structure is
+	 *   composed of 3 32-bit values; the first being the IPv4 address (network
+	 *   byte order), the second the prefix (1 - 32), and last the IPv4 gateway
+	 *   (network byte order). The gateway may be left as 0 if no gateway exists
+	 *   for that subnet.
+	 * ---end---
+	 */
 	_nm_setting_class_override_property (setting_class,
 	                                     NM_SETTING_IP_CONFIG_ADDRESSES,
 	                                     G_VARIANT_TYPE ("aau"),
@@ -475,12 +634,38 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *ip4_class)
 	                                          ip4_address_labels_get,
 	                                          NULL);
 
+	/* ---dbus---
+	 * property: address-data
+	 * format: array of vardict
+	 * description: Array of IPv4 addresses. Each address dictionary contains at
+	 *   least 'address' and 'prefix' entries, containing the IP address as a
+	 *   string, and the prefix length as a uint32. Additional attributes may
+	 *   also exist on some addresses.
+	 * ---end---
+	 */
 	_nm_setting_class_add_dbus_only_property (setting_class,
 	                                          "address-data",
 	                                          G_VARIANT_TYPE ("aa{sv}"),
 	                                          ip4_address_data_get,
 	                                          ip4_address_data_set);
 
+	/* ---dbus---
+	 * property: routes
+	 * format: array of array of uint32
+	 * description: Deprecated in favor of the 'route-data' property, but this
+	 *   can be used for backward-compatibility with older daemons. Note that if
+	 *   you send this property the daemon will ignore 'route-data'.
+	 *
+	 *   Array of IPv4 route structures.  Each IPv4 route structure is composed
+	 *   of 4 32-bit values; the first being the destination IPv4 network or
+	 *   address (network byte order), the second the destination network or
+	 *   address prefix (1 - 32), the third being the next-hop (network byte
+	 *   order) if any, and the fourth being the route metric. If the metric is
+	 *   0, NM will choose an appropriate default metric for the device. (There
+	 *   is no way to explicitly specify an actual metric of 0 with this
+	 *   property.)
+	 * ---end---
+	 */
 	_nm_setting_class_override_property (setting_class,
 	                                     NM_SETTING_IP_CONFIG_ROUTES,
 	                                     G_VARIANT_TYPE ("aau"),
@@ -488,6 +673,19 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *ip4_class)
 	                                     ip4_routes_set,
 	                                     NULL);
 
+	/* ---dbus---
+	 * property: route-data
+	 * format: array of vardict
+	 * description: Array of IPv4 routes. Each route dictionary contains at
+	 *   least 'dest' and 'prefix' entries, containing the destination IP
+	 *   address as a string, and the prefix length as a uint32. Most routes
+	 *   will also have a 'gateway' entry, containing the gateway IP address as
+	 *   a string. If the route has a 'metric' entry (containing a uint32), that
+	 *   will be used as the metric for the route (otherwise NM will pick a
+	 *   default value appropriate to the device). Additional attributes may
+	 *   also exist on some routes.
+	 * ---end---
+	 */
 	_nm_setting_class_add_dbus_only_property (setting_class,
 	                                          "route-data",
 	                                          G_VARIANT_TYPE ("aa{sv}"),

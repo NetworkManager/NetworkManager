@@ -51,7 +51,7 @@
           for static IPv4 routes and <filename>route6-*</filename> for static IPv6 routes.
           The plugin currently supports reading and writing Ethernet, Wi-Fi, InfiniBand,
           VLAN, Bond, Bridge, and Team connections. Unsupported connection types (such as
-          (WWAN, PPPoE, VPN, or ADSL) are handled by <emphasis>keyfile</emphasis> plugin
+          WWAN, PPPoE, VPN, or ADSL are handled by <emphasis>keyfile</emphasis> plugin
           (<citerefentry><refentrytitle>nm-settings-keyfile</refentrytitle><manvolnum>5</manvolnum></citerefentry>).
           The main reason for using <emphasis>ifcfg-rh</emphasis> plugin is the compatibility
           with legacy configurations for <emphasis>ifup</emphasis> and <emphasis>ifdown</emphasis>
@@ -273,8 +273,8 @@ DEVICETYPE=TeamPort
             Each secret property in a NetworkManager setting has an associated
             <emphasis>flags</emphasis> property that describes how to handle that secret.
             In the <emphasis>fcfg-rh</emphasis> plugin variables for secret flags have a
-            <emphasis>-FLAGS</emphasis> suffix. The variables contain one or more of the
-            folowing values (space separated). Missing (or empty) -FLAGS variable means
+            <emphasis>_FLAGS</emphasis> suffix. The variables contain one or more of the
+            folowing values (space separated). Missing (or empty) *_FLAGS variable means
             that the password is owned by NetworkManager.
           </para>
           <itemizedlist>
@@ -368,7 +368,7 @@ DEVICETYPE=TeamPort
       </entry>
       <entry align="left"><xsl:value-of select="@default"/></entry>
       <entry align="left">
-        <xsl:value-of select="@description"/><xsl:if test="contains(@name,'-flags') and $setting_name != 'dcb'"> (see <xref linkend="secrets-flags"/> for _FLAGS values)</xsl:if>
+        <xsl:value-of select="@description"/><xsl:if test="@format = 'NMSettingSecretFlags'"> (see <xref linkend="secrets-flags"/> for _FLAGS values)</xsl:if>
 
         <xsl:if test="string-length(@example)">
         <emphasis role="bold">

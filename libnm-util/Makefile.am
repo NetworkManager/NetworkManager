@@ -187,31 +187,6 @@ CLEANFILES += $(gir_DATA) $(typelib_DATA)
 
 endif
 
-if BUILD_SETTING_DOCS
-
-noinst_DATA = nm-setting-docs.xml nm-keyfile-docs.xml nm-ifcfg-rh-docs.xml
-
-docs_sources = $(filter-out $(BUILT_SOURCES),$(libnm_util_la_csources))
-
-nm-setting-docs.xml: generate-setting-docs.py $(docs_sources) | NetworkManager-1.0.gir NetworkManager-1.0.typelib libnm-util.la
-	export GI_TYPELIB_PATH=$(abs_builddir)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}; \
-	export LD_LIBRARY_PATH=$(abs_builddir)/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}; \
-	$(srcdir)/generate-setting-docs.py \
-		--gir $(builddir)/NetworkManager-1.0.gir \
-		--output $@
-
-nm-keyfile-docs.xml: generate-plugin-docs.pl $(docs_sources)
-	$(srcdir)/generate-plugin-docs.pl keyfile $(srcdir) $@
-nm-ifcfg-rh-docs.xml: generate-plugin-docs.pl $(docs_sources)
-	$(srcdir)/generate-plugin-docs.pl ifcfg-rh $(srcdir) $@
-
-CLEANFILES += $(noinst_DATA)
-EXTRA_DIST += $(noinst_DATA)
-
-endif
-
-EXTRA_DIST += generate-setting-docs.py generate-plugin-docs.pl
-
 if ENABLE_TESTS
 
 check-local:

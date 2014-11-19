@@ -400,22 +400,6 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 	 * permanent MAC address matches. This property does not change the MAC
 	 * address of the device (i.e. MAC spoofing).
 	 **/
-	/* plugins docs
-	 * ---keyfile---
-	 * property: mac-address
-	 * format: ususal hex-digits-and-colons notation
-	 * description: MAC address in traditional hex-digits-and-colons notation, or
-	 *   or semicolon separated list of 20 decimal bytes (obsolete)
-	 * example: mac-address= 80:00:00:6d:fe:80:00:00:00:00:00:00:00:02:55:00:70:33:cf:01
-	 * ---end---
-	 * ---ifcfg-rh---
-	 * property: mac-address
-	 * variable: HWADDR
-	 * description: IBoIP 20-byte hardware address of the device (in traditional
-	 *   hex-digits-and-colons notation).
-	 * example: HWADDR=01:02:03:04:05:06:07:08:09:0A:01:02:03:04:05:06:07:08:09:11
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,
 		 _nm_param_spec_specialized (NM_SETTING_INFINIBAND_MAC_ADDRESS, "", "",
@@ -430,13 +414,6 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 	 * If non-zero, only transmit packets of the specified size or smaller,
 	 * breaking larger packets up into multiple frames.
 	 **/
-	/* = plugins docs =
-	 * ---ifcfg-rh---
-	 * property: mtu
-	 * variable: MTU
-	 * description: MTU of the interface.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_MTU,
 		 g_param_spec_uint (NM_SETTING_INFINIBAND_MTU, "", "",
@@ -452,15 +429,6 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 	 * The IP-over-InfiniBand transport mode. Either "datagram" or
 	 * "connected".
 	 **/
-	/* = plugins docs =
-	 * ---ifcfg-rh---
-	 * property: transport-mode
-	 * variable: CONNECTED_MODE
-	 * default: CONNECTED_MODE=no
-	 * description: CONNECTED_MODE=yes for "connected" mode, CONNECTED_MODE=no for
-	 *   "datagram" mode
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_TRANSPORT_MODE,
 		 g_param_spec_string (NM_SETTING_INFINIBAND_TRANSPORT_MODE, "", "",
@@ -478,17 +446,6 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 	 * unsigned integer, whose high bit is set if it is a "full membership"
 	 * P_Key.
 	 **/
-	/* = plugins docs =
-	 * ---ifcfg-rh---
-	 * property: p-key
-	 * variable: PKEY_ID (and PKEY=yes)
-	 * default: PKEY=no
-	 * description: InfiniBand P_Key. The value can be a hex number prefixed with "0x"
-	 *   or a decimal number.
-	 *   When PKEY_ID is specified, PHYSDEV and DEVICE also must be specified.
-	 * example: PKEY=yes PKEY_ID=2 PHYSDEV=mlx4_ib0 DEVICE=mlx4_ib0.8002
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_P_KEY,
 		 g_param_spec_int (NM_SETTING_INFINIBAND_P_KEY, "", "",
@@ -506,15 +463,6 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 	 * specify the base device by setting either this property or
 	 * #NMSettingInfiniband:mac-address.
 	 **/
-	/* = plugins docs =
-	 * ---ifcfg-rh---
-	 * property: parent
-	 * variable: PHYSDEV (PKEY=yes)
-	 * default: PKEY=no
-	 * description: InfiniBand parent device.
-	 * example: PHYSDEV=ib0
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_PARENT,
 		 g_param_spec_string (NM_SETTING_INFINIBAND_PARENT, "", "",

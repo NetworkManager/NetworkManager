@@ -891,15 +891,6 @@ nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
 	 * Dictionary of key/value pairs of VPN plugin specific data.  Both keys and
 	 * values must be strings.
 	 **/
-	/* plugins docs
-	 * ---keyfile---
-	 * property: data
-	 * variable: separate variables named after keys of the dictionary
-	 * description: The keys of the data dictionary are used as variable names directly
-	 *   under [vpn] section.
-	 * example: remote=ovpn.corp.com cipher=AES-256-CBC username=joe
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_DATA,
 		 _nm_param_spec_specialized (NM_SETTING_VPN_DATA, "", "",
@@ -913,15 +904,6 @@ nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
 	 * Dictionary of key/value pairs of VPN plugin specific secrets like
 	 * passwords or private keys.  Both keys and values must be strings.
 	 **/
-	/* plugins docs
-	 * ---keyfile---
-	 * property: secrets
-	 * variable: separate variables named after keys of the dictionary
-	 * description: The keys of the secrets dictionary are used as variable names directly
-	 *   under [vpn-secrets] section.
-	 * example: password=Popocatepetl
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_SECRETS,
 		 _nm_param_spec_specialized (NM_SETTING_VPN_SECRETS, "", "",

@@ -726,6 +726,13 @@ nm_setting_bond_class_init (NMSettingBondClass *setting_class)
 	 *
 	 * Type: GHashTable(utf8,utf8)
 	 **/
+	/* ---ifcfg-rh---
+	 * property: options
+	 * variable: BONDING_OPTS
+	 * description: Bonding options.
+	 * example: BONDING_OPTS="miimon=100 mode=broadcast"
+	 * ---end---
+	 */
 	 g_object_class_install_property
 		 (object_class, PROP_OPTIONS,
 		 g_param_spec_boxed (NM_SETTING_BOND_OPTIONS, "", "",
@@ -738,6 +745,14 @@ nm_setting_bond_class_init (NMSettingBondClass *setting_class)
 	                                       _nm_utils_strdict_to_dbus,
 	                                       _nm_utils_strdict_from_dbus);
 
+	 /* ---dbus---
+	  * property: interface-name
+	  * format: string
+	  * description: Deprecated in favor of connection.interface-name, but can
+	  *   be used for backward-compatibility with older daemons, to set the
+	  *   bond's interface name.
+	  * ---end---
+	  */
 	 _nm_setting_class_add_dbus_only_property (parent_class, "interface-name",
 	                                           G_VARIANT_TYPE_STRING,
 	                                           _nm_setting_get_deprecated_virtual_interface_name,

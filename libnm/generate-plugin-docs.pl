@@ -55,17 +55,16 @@ my @data;
 my $fo;
 
 (scalar @ARGV == 3) or die "Usage: $0 <plugin> <srcdir> <output-xml-file>\n";
-($ARGV[0] eq "keyfile" || $ARGV[0] eq "ifcfg-rh") or die "Allowed <plugin> values: keyfile, ifcfg-rh\n";
 my ($plugin, $srcdir, $output) = @ARGV;
 my $start_tag = "---$plugin---\\s*\$";
 my $end_tag   = '---end---';
 
 # get source files to scan for documentation comments (nm-setting-<something>.c)
-my $file = "$srcdir/Makefile.am";
+my $file = "$srcdir/Makefile.libnm-core";
 open my $fh, '<', $file or die "Can't open $file: $!";
 while (my $line = <$fh>) {
   chomp $line;
-  my @strings = $line =~ /(?:^|\s)(nm-setting-[^.]*\.c)(?:\s|$)/g;
+  my @strings = $line =~ /\/(nm-setting-[^.]*\.c)(?:\s|$)/g;
   push @source_files, @strings
 }
 close $fh;
@@ -155,6 +154,7 @@ sub process_data {
   my $exam   = $yaml_data->{example}     // "";
   my $desc   = $yaml_data->{description} // "";
 
+  chomp($name, $var, $format, $values, $def, $exam, $desc);
   escape_xml_chars($name, $var, $format, $values, $def, $exam, $desc);
   my $foo = sprintf("<property name=\"%s\" variable=\"%s\" format=\"%s\" values=\"%s\" ".
                     "default=\"%s\" example=\"%s\" description=\"%s\"/>",

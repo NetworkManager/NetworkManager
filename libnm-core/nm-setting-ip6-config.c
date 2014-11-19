@@ -368,6 +368,126 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
 	setting_class->verify = verify;
 
 	/* Properties */
+
+	/* ---ifcfg-rh---
+	 * property: method
+	 * variable: IPV6INIT, IPV6FORWARDING, IPV6_AUTOCONF, DHCPV6C
+	 * default:  IPV6INIT=yes; IPV6FORWARDING=no; IPV6_AUTOCONF=!IPV6FORWARDING, DHCPV6=no
+	 * description: Method used for IPv6 protocol configuration.
+	 *   ignore ~ IPV6INIT=no; auto ~ IPV6_AUTOCONF=yes; dhcp ~ IPV6_AUTOCONF=no and DHCPV6C=yes
+	 * ---end---
+	 */
+
+	/* ---keyfile---
+	 * property: dns
+	 * format: list of DNS IP addresses
+	 * description: List of DNS servers.
+	 * example: dns=2001:4860:4860::8888;2001:4860:4860::8844;
+	 * ---end---
+	 * ---ifcfg-rh---
+	 * property: dns
+	 * variable: DNS1, DNS2, ...
+	 * format:   string
+	 * description: List of DNS servers. NetworkManager uses the variables both
+	 *   for IPv4 and IPv6.
+	 * ---end---
+	 */
+
+	/* ---ifcfg-rh---
+	 * property: dns-search
+	 * variable: DOMAIN
+	 * format:   string (space-separated domains)
+	 * description: List of DNS search domains.
+	 * ---end---
+	 */
+
+	/* ---keyfile---
+	 * property: addresses
+	 * variable: address1, address2, ...
+	 * format: address/plen
+	 * description: List of static IP addresses.
+	 * example: address1=abbe::cafe/96 address2=2001::1234
+	 * ---end---
+	 * ---ifcfg-rh---
+	 * property: addresses
+	 * variable: IPV6ADDR, IPV6ADDR_SECONDARIES
+	 * description: List of static IP addresses.
+	 * example: IPV6ADDR=ab12:9876::1
+	 *   IPV6ADDR_SECONDARIES="ab12:9876::2 ab12:9876::3"
+	 * ---end---
+	 */
+
+	/* ---keyfile---
+	 * property: gateway
+	 * variable: gateway
+	 * format: string
+	 * description: Gateway IP addresses as a string.
+	 * example: gateway=abbe::1
+	 * ---end---
+	 * ---ifcfg-rh---
+	 * property: gateway
+	 * variable: IPV6_DEFAULTGW
+	 * description: Gateway IP address.
+	 * example: IPV6_DEFAULTGW=abbe::1
+	 * ---end---
+	 */
+
+	/* ---keyfile---
+	 * property: routes
+	 * variable: route1, route2, ...
+	 * format: route/plen[,gateway,metric]
+	 * description: List of IP routes.
+	 * example: route1=2001:4860:4860::/64,2620:52:0:2219:222:68ff:fe11:5403
+	 * ---end---
+	 * ---ifcfg-rh---
+	 * property: routes
+	 * variable: (none)
+	 * description: List of static routes. They are not stored in ifcfg-* file,
+	 *   but in route6-* file instead in the form of command line for 'ip route add'.
+	 * ---end---
+	 */
+
+	/* ---ifcfg-rh---
+	 * property: ignore-auto-routes
+	 * variable: IPV6_PEERROUTES(+)
+	 * default: yes
+	 * description: IPV6_PEERROUTES has the opposite meaning as 'ignore-auto-routes' property.
+	 * ---end---
+	 */
+
+	/* ---ifcfg-rh---
+	 * property: ignore-auto-dns
+	 * variable: IPV6_PEERDNS(+)
+	 * default: yes
+	 * description: IPV6_PEERDNS has the opposite meaning as 'ignore-auto-dns' property.
+	 * ---end---
+	 */
+
+	/* ---ifcfg-rh---
+	 * property: dhcp-hostname
+	 * variable: DHCP_HOSTNAME
+	 * description: Hostname to send the DHCP server.
+	 * ---end---
+	 */
+
+	/* ---ifcfg-rh---
+	 * property: never-default
+	 * variable: IPV6_DEFROUTE(+), (and IPV6_DEFAULTGW, IPV6_DEFAULTDEV in /etc/sysconfig/network)
+	 * default: IPV6_DEFROUTE=yes (when no variable specified)
+	 * description: IPV6_DEFROUTE=no tells NetworkManager that this connection
+	 *   should not be assigned the default IPv6 route. IPV6_DEFROUTE has the opposite
+	 *   meaning as 'never-default' property.
+	 * ---end---
+	 */
+
+	/* ---ifcfg-rh---
+	 * property: may-fail
+	 * variable: IPV6_FAILURE_FATAL(+)
+	 * default: no
+	 * description: IPV6_FAILURE_FATAL has the opposite meaning as 'may-fail' property.
+	 * ---end---
+	 */
+
 	/**
 	 * NMSettingIP6Config:ip6-privacy:
 	 *
@@ -379,6 +499,16 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
 	 * 1: enabled (prefer public address), 2: enabled (prefer temporary
 	 * addresses).
 	 **/
+	/* ---ifcfg-rh---
+	 * property: ip6-privacy
+	 * variable: IPV6_PRIVACY, IPV6_PRIVACY_PREFER_PUBLIC_IP(+)
+	 * values: IPV6_PRIVACY: no, yes (rfc3041 or rfc4941);
+	 *   IPV6_PRIVACY_PREFER_PUBLIC_IP: yes, no
+	 * default: no
+	 * description: Configure IPv6 Privacy Extensions for SLAAC (RFC4941).
+	 * example: IPV6_PRIVACY=rfc3041 IPV6_PRIVACY_PREFER_PUBLIC_IP=yes
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_IP6_PRIVACY,
 		 g_param_spec_enum (NM_SETTING_IP6_CONFIG_IP6_PRIVACY, "", "",
@@ -389,12 +519,33 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
 		                    G_PARAM_STATIC_STRINGS));
 
 	/* IP6-specific property overrides */
+
+	/* ---dbus---
+	 * property: dns
+	 * format: array of byte array
+	 * description: Array of IP addresses of DNS servers (in network byte order)
+	 * ---end---
+	 */
 	_nm_setting_class_transform_property (setting_class,
 	                                      NM_SETTING_IP_CONFIG_DNS,
 	                                      G_VARIANT_TYPE ("aay"),
 	                                      ip6_dns_to_dbus,
 	                                      ip6_dns_from_dbus);
 
+	/* ---dbus---
+	 * property: addresses
+	 * format: array of legacy IPv6 address struct (a(ayuay))
+	 * description: Deprecated in favor of the 'address-data' and 'gateway'
+	 *   properties, but this can be used for backward-compatibility with older
+	 *   daemons. Note that if you send this property the daemon will ignore
+	 *   'address-data' and 'gateway'.
+	 *
+	 *   Array of IPv6 address structures.  Each IPv6 address structure is
+	 *   composed of an IPv6 address, a prefix length (1 - 128), and an IPv6
+	 *   gateway address. The gateway may be zeroed out if no gateway exists for
+	 *   that subnet.
+	 * ---end---
+	 */
 	_nm_setting_class_override_property (setting_class,
 	                                     NM_SETTING_IP_CONFIG_ADDRESSES,
 	                                     G_VARIANT_TYPE ("a(ayuay)"),
@@ -402,12 +553,35 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
 	                                     ip6_addresses_set,
 	                                     NULL);
 
+	/* ---dbus---
+	 * property: address-data
+	 * format: array of vardict
+	 * description: Array of IPv6 addresses. Each address dictionary contains at
+	 *   least 'address' and 'prefix' entries, containing the IP address as a
+	 *   string, and the prefix length as a uint32. Additional attributes may
+	 *   also exist on some addresses.
+	 * ---end---
+	 */
 	_nm_setting_class_add_dbus_only_property (setting_class,
 	                                          "address-data",
 	                                          G_VARIANT_TYPE ("aa{sv}"),
 	                                          ip6_address_data_get,
 	                                          ip6_address_data_set);
 
+	/* ---dbus---
+	 * property: routes
+	 * format: array of legacy IPv6 route struct (a(ayuayu))
+	 * description: Deprecated in favor of the 'route-data' property, but this
+	 *   can be used for backward-compatibility with older daemons. Note that if
+	 *   you send this property the daemon will ignore 'route-data'.
+	 *
+	 *   Array of IPv6 route structures.  Each IPv6 route structure is
+	 *   composed of an IPv6 address, a prefix length (1 - 128), an IPv6
+	 *   next hop address (which may be zeroed out if there is no next hop),
+	 *   and a metric. If the metric is 0, NM will choose an appropriate
+	 *   default metric for the device.
+	 * ---end---
+	 */
 	_nm_setting_class_override_property (setting_class,
 	                                     NM_SETTING_IP_CONFIG_ROUTES,
 	                                     G_VARIANT_TYPE ("a(ayuayu)"),
@@ -415,6 +589,19 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
 	                                     ip6_routes_set,
 	                                     NULL);
 
+	/* ---dbus---
+	 * property: route-data
+	 * format: array of vardict
+	 * description: Array of IPv6 routes. Each route dictionary contains at
+	 *   least 'dest' and 'prefix' entries, containing the destination IP
+	 *   address as a string, and the prefix length as a uint32. Most routes
+	 *   will also have a 'next-hop' entry, containing the next hop IP address as
+	 *   a string. If the route has a 'metric' entry (containing a uint32), that
+	 *   will be used as the metric for the route (otherwise NM will pick a
+	 *   default value appropriate to the device). Additional attributes may
+	 *   also exist on some routes.
+	 * ---end---
+	 */
 	_nm_setting_class_add_dbus_only_property (setting_class,
 	                                          "route-data",
 	                                          G_VARIANT_TYPE ("aa{sv}"),

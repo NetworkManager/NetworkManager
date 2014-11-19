@@ -273,6 +273,10 @@ gboolean    nm_setting_set_secret_flags (NMSetting *setting,
                                          NMSettingSecretFlags flags,
                                          GError **error);
 
+/* Properties */
+const GVariantType *nm_setting_get_dbus_property_type (NMSetting *setting,
+                                                       const char *property_name);
+
 G_END_DECLS
 
 #endif /* __NM_SETTING_H__ */

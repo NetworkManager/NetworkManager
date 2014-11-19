@@ -18,25 +18,27 @@
 
 from __future__ import print_function
 
-from gi.repository import NetworkManager, GObject
+from gi.repository import NM, GObject
 import argparse, datetime, re, sys
 import xml.etree.ElementTree as ET
 
-type_name_map = {
-    'gchararray': 'string',
-    'GSList_gchararray_': 'array of string',
-    'GArray_guchar_': 'byte array',
-    'gboolean': 'boolean',
-    'guint64': 'uint64',
-    'gint': 'int32',
-    'guint': 'uint32',
-    'GArray_guint_': 'array of uint32',
-    'GPtrArray_GArray_guint__': 'array of array of uint32',
-    'GPtrArray_GArray_guchar__': 'array of byte array',
-    'GPtrArray_gchararray_': 'array of string',
-    'GHashTable_gchararray+gchararray_': 'dict of (string::string)',
-    'GPtrArray_GValueArray_GArray_guchar_+guint+GArray_guchar___': 'array of (byte array, uint32, byte array)',
-    'GPtrArray_GValueArray_GArray_guchar_+guint+GArray_guchar_+guint__': 'array of (byte array, uint32, byte array, uint32)'
+dbus_type_name_map = {
+    'b': 'boolean',
+    's': 'string',
+    'i': 'int32',
+    'u': 'uint32',
+    't': 'uint64',
+    'x': 'int64',
+    'y': 'byte',
+    'as': 'array of string',
+    'au': 'array of uint32',
+    'ay': 'byte array',
+    'a{ss}': 'dict of string to string',
+    'a{sv}': 'vardict',
+    'aau': 'array of array of uint32',
+    'aay': 'array of byte array',
+    'a(ayuay)': 'array of legacy IPv6 address struct',
+    'a(ayuayu)': 'array of legacy IPv6 route struct',
 }
 
 ns_map = {
@@ -55,7 +57,7 @@ constants = {
     'NULL': 'NULL' }
 setting_names = {}
 
-def init_constants(girxml):
+def init_constants(girxml, settings):
     for const in girxml.findall('./gi:namespace/gi:constant', ns_map):
         cname = const.attrib['{%s}type' % ns_map['c']]
         cvalue = const.attrib['value']
@@ -64,28 +66,31 @@ def init_constants(girxml):
         constants[cname] = cvalue
 
     for enum in girxml.findall('./gi:namespace/gi:enumeration', ns_map):
-        flag = enum.attrib['name'].endswith('Flags')
         for enumval in enum.findall('./gi:member', ns_map):
             cname = enumval.attrib[identifier_key]
-            cvalue = enumval.attrib['value']
-            if flag:
-                cvalue = '%s (0x%x)' % (cname, int(cvalue))
-            else:
-                cvalue = '%s (%s)' % (cname, cvalue)
+            cvalue = '%s (%s)' % (cname, enumval.attrib['value'])
             constants[cname] = cvalue
 
-    for setting in girxml.findall('./gi:namespace/gi:class[@parent="Setting"]', ns_map):
+    for enum in girxml.findall('./gi:namespace/gi:bitfield', ns_map):
+        for enumval in enum.findall('./gi:member', ns_map):
+            cname = enumval.attrib[identifier_key]
+            cvalue = '%s (0x%x)' % (cname, int(enumval.attrib['value']))
+            constants[cname] = cvalue
+
+    for setting in settings:
         setting_type_name = 'NM' + setting.attrib['name'];
-        symbol_prefix = setting.attrib[symbol_prefix_key]
-        setting_name = constants['NM_' + symbol_prefix.upper() + '_SETTING_NAME']
-        setting_names[setting_type_name] = setting_name
+        setting_name_symbol = 'NM_' + setting.attrib[symbol_prefix_key].upper() + '_SETTING_NAME'
+        if constants.has_key(setting_name_symbol):
+            setting_name = constants[setting_name_symbol]
+            setting_names[setting_type_name] = setting_name
 
 def get_prop_type(setting, pspec, propxml):
-    prop_type = pspec.value_type.name
-    if prop_type in type_name_map:
-        prop_type = type_name_map[prop_type]
-    if prop_type is None:
-        prop_type = ''
+    dbus_type = setting.get_dbus_property_type(pspec.name).dup_string()
+    prop_type = dbus_type_name_map[dbus_type]
+
+    if GObject.type_is_a(pspec.value_type, GObject.TYPE_ENUM) or GObject.type_is_a(pspec.value_type, GObject.TYPE_FLAGS):
+        prop_type = "%s (%s)" % (pspec.value_type.name, prop_type)
+
     return prop_type
 
 def get_docs(setting, pspec, propxml):
@@ -110,6 +115,8 @@ def get_docs(setting, pspec, propxml):
 
     # remaining gtk-doc cleanup
     doc = doc.replace('%%', '%')
+    doc = doc.replace('<!-- -->', '')
+    doc = re.sub(r' Element-.ype:.*', '', doc)
     doc = re.sub(r'#([A-Z]\w*)', r'\1', doc)
 
     # Remove sentences that refer to functions
@@ -144,23 +151,30 @@ def usage():
     exit()
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-g', '--gir', metavar='FILE', help='NetworkManager-1.0.gir file')
+parser.add_argument('-g', '--gir', metavar='FILE', help='NM-1.0.gir file')
+parser.add_argument('-x', '--overrides', metavar='FILE', help='documentation overrides file')
 parser.add_argument('-o', '--output', metavar='FILE', help='output file')
 
 args = parser.parse_args()
 if args.gir is None or args.output is None:
     usage()
 
-NetworkManager.utils_init()
+NM.utils_init()
 
 girxml = ET.parse(args.gir).getroot()
 outfile = open(args.output, mode='w')
 
-init_constants(girxml)
-
 basexml = girxml.find('./gi:namespace/gi:class[@name="Setting"]', ns_map)
 settings = girxml.findall('./gi:namespace/gi:class[@parent="Setting"]', ns_map)
+# Hack. Need a better way to do this
+ipxml = girxml.find('./gi:namespace/gi:class[@name="SettingIPConfig"]', ns_map)
+settings.extend(girxml.findall('./gi:namespace/gi:class[@parent="SettingIPConfig"]', ns_map))
 settings = sorted(settings, key=lambda setting: setting.attrib['{%s}symbol-prefix' % ns_map['c']])
+
+init_constants(girxml, settings)
+
+if args.overrides is not None:
+    overrides = ET.parse(args.overrides).getroot()
 
 outfile.write("""<?xml version=\"1.0\"?>
 <!DOCTYPE nm-setting-docs [
@@ -170,27 +184,52 @@ outfile.write("""<?xml version=\"1.0\"?>
 """)
 
 for settingxml in settings:
-    new_func = NetworkManager.__getattr__(settingxml.attrib['name'])
+    if settingxml.attrib.has_key('abstract'):
+        continue
+
+    new_func = NM.__getattr__(settingxml.attrib['name'])
     setting = new_func()
 
     outfile.write("  <setting name=\"%s\">\n" % setting.props.name)
 
-    properties = sorted(GObject.list_properties(setting), key=lambda prop: prop.name)
-    for pspec in properties:
-        propxml = settingxml.find('./gi:property[@name="%s"]' % pspec.name, ns_map)
-        if propxml is None:
-            propxml = basexml.find('./gi:property[@name="%s"]' % pspec.name, ns_map)
+    setting_properties = { prop.name: prop for prop in GObject.list_properties(setting) }
+    if args.overrides is None:
+        setting_overrides = {}
+    else:
+        setting_overrides = { override.attrib['name']: override for override in overrides.findall('./setting[@name="%s"]/property' % setting.props.name) }
 
-        value_type = get_prop_type(setting, pspec, propxml)
-        value_desc = get_docs(setting, pspec, propxml)
-        default_value = get_default_value(setting, pspec, propxml)
+    properties = sorted(set.union(set(setting_properties.keys()), set(setting_overrides.keys())))
+
+    for prop in properties:
+        value_type = None
+        value_desc = None
+        default_value = None
+
+        if prop in setting_properties:
+            pspec = setting_properties[prop]
+            propxml = settingxml.find('./gi:property[@name="%s"]' % pspec.name, ns_map)
+            if propxml is None:
+                propxml = basexml.find('./gi:property[@name="%s"]' % pspec.name, ns_map)
+            if propxml is None:
+                propxml = ipxml.find('./gi:property[@name="%s"]' % pspec.name, ns_map)
+
+            value_type = get_prop_type(setting, pspec, propxml)
+            value_desc = get_docs(setting, pspec, propxml)
+            default_value = get_default_value(setting, pspec, propxml)
+
+        if prop in setting_overrides:
+            override = setting_overrides[prop]
+            if override.attrib['format'] != '':
+                value_type = override.attrib['format']
+            if override.attrib['description'] != '':
+                value_desc = override.attrib['description']
 
         if default_value is not None:
             outfile.write("    <property name=\"%s\" type=\"%s\" default=\"%s\" description=\"%s\" />\n" %
-                          (pspec.name, value_type, escape(default_value), escape(value_desc)))
+                          (prop, value_type, escape(default_value), escape(value_desc)))
         else:
             outfile.write("    <property name=\"%s\" type=\"%s\" description=\"%s\" />\n" %
-                          (pspec.name, value_type, escape(value_desc)))
+                          (prop, value_type, escape(value_desc)))
 
     outfile.write("  </setting>\n")
 

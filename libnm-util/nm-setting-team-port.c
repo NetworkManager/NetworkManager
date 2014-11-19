@@ -176,13 +176,6 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *setting_class)
 	 * directly to teamd. If not specified, the default configuration is
 	 * used. See man teamd.conf for the format details.
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: config
-	 * variable: TEAM_PORT_CONFIG
-	 * description: Team port configuration in JSON. See man teamd.conf for details.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_CONFIG,
 		 g_param_spec_string (NM_SETTING_TEAM_PORT_CONFIG, "", "",

@@ -967,15 +967,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 *
 	 * Since: 0.9.10
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: app-fcoe-flags
-	 * variable: DCB_APP_FCOE_ENABLE, DCB_APP_FCOE_ADVERTISE, DCB_APP_FCOE_WILLING
-	 * description: FCOE flags.
-	 * default: no
-	 * example: DCB_APP_FCOE_ENABLE=yes DCB_APP_FCOE_ADVERTISE=yes
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_APP_FCOE_FLAGS,
 		 g_param_spec_uint (NM_SETTING_DCB_APP_FCOE_FLAGS, "", "",
@@ -992,14 +983,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 *
 	 * Since: 0.9.10
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: app-fcoe-priority
-	 * variable: DCB_APP_FCOE_PRIORITY
-	 * values: 0 - 7
-	 * description: Priority of FCoE frames.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_APP_FCOE_PRIORITY,
 		 g_param_spec_int (NM_SETTING_DCB_APP_FCOE_PRIORITY, "", "",
@@ -1016,15 +999,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 *
 	 * Since: 0.9.10
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: app-fcoe-mode
-	 * variable: DCB_APP_FCOE_MODE
-	 * values: fabric, vn2vn
-	 * default: fabric
-	 * description: FCoE controller mode.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_APP_FCOE_MODE,
 		 g_param_spec_string (NM_SETTING_DCB_APP_FCOE_MODE, "", "",
@@ -1042,14 +1016,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 *
 	 * Since: 0.9.10
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: app-iscsi-flags
-	 * variable: DCB_APP_ISCSI_ENABLE, DCB_APP_ISCSI_ADVERTISE, DCB_APP_ISCSI_WILLING
-	 * default: no
-	 * description: iSCSI flags.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_APP_ISCSI_FLAGS,
 		 g_param_spec_uint (NM_SETTING_DCB_APP_ISCSI_FLAGS, "", "",
@@ -1066,14 +1032,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 *
 	 * Since: 0.9.10
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: app-iscsi-priority
-	 * variable: DCB_APP_ISCSI_PRIORITY
-	 * values: 0 - 7
-	 * description: Priority of iSCSI frames.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_APP_ISCSI_PRIORITY,
 		 g_param_spec_int (NM_SETTING_DCB_APP_ISCSI_PRIORITY, "", "",
@@ -1091,14 +1049,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 *
 	 * Since: 0.9.10
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: app-fip-flags
-	 * variable: DCB_APP_FIP_ENABLE, DCB_APP_FIP_ADVERTISE, DCB_APP_FIP_WILLING
-	 * default: no
-	 * description: FIP flags.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_APP_FIP_FLAGS,
 		 g_param_spec_uint (NM_SETTING_DCB_APP_FIP_FLAGS, "", "",
@@ -1115,14 +1065,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 *
 	 * Since: 0.9.10
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: app-fip-priority
-	 * variable: DCB_APP_FIP_PRIORITY
-	 * values: 0 - 7
-	 * description: Priority of FIP frames.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_APP_FIP_PRIORITY,
 		 g_param_spec_int (NM_SETTING_DCB_APP_FIP_PRIORITY, "", "",
@@ -1140,14 +1082,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 *
 	 * Since: 0.9.10
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: priority-flow-control-flags
-	 * variable: DCB_PFC_ENABLE, DCB_PFC_ADVERTISE, DCB_PFC_WILLING
-	 * default: no
-	 * description: Priority flow control flags.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_PFC_FLAGS,
 		 g_param_spec_uint (NM_SETTING_DCB_PRIORITY_FLOW_CONTROL_FLAGS, "", "",
@@ -1165,15 +1099,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 *
 	 * Since: 0.9.10
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: priority-flow-control
-	 * variable: DCB_PFC_UP
-	 * description: Priority flow control values. String of 8 "0" and "1", where "0".
-	 *   means "do not transmit priority pause", "1" means "transmit pause".
-	 * example: DCB_PFC_UP=01101110
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_PFC,
 		 _nm_param_spec_specialized (NM_SETTING_DCB_PRIORITY_FLOW_CONTROL, "", "",
@@ -1190,14 +1115,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 *
 	 * Since: 0.9.10
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: priority-group-flags
-	 * variable: DCB_PG_ENABLE, DCB_PG_ADVERTISE, DCB_PG_WILLING
-	 * default: no
-	 * description: Priority groups flags.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY_GROUP_FLAGS,
 		 g_param_spec_uint (NM_SETTING_DCB_PRIORITY_GROUP_FLAGS, "", "",
@@ -1214,15 +1131,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 *
 	 * Since: 0.9.10
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: priority-group-id
-	 * variable: DCB_PG_ID
-	 * description: Priority groups values. String of eight priorities (0 - 7) or "f"
-	 *   (unrestricted).
-	 * example: DCB_PG_ID=1205f173
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY_GROUP_ID,
 		 _nm_param_spec_specialized (NM_SETTING_DCB_PRIORITY_GROUP_ID, "", "",
@@ -1240,14 +1148,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 *
 	 * Since: 0.9.10
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: priority-group-bandwidth
-	 * variable: DCB_PG_PCT
-	 * description: Priority groups values. Eight bandwidths (in percent), separated with commas.
-	 * example: DCB_PG_PCT=10,5,10,15,10,10,10,30
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY_GROUP_BANDWIDTH,
 		 _nm_param_spec_specialized (NM_SETTING_DCB_PRIORITY_GROUP_BANDWIDTH, "", "",
@@ -1266,15 +1166,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 *
 	 * Since: 0.9.10
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: priority-bandwidth
-	 * variable: DCB_PG_UPPCT
-	 * description: Priority values. Eight bandwidths (in percent), separated with commas.
-	 *   The sum of the numbers must be 100.
-	 * example: DCB_PG_UPPCT=7,13,10,10,15,15,10,20
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY_BANDWIDTH,
 		 _nm_param_spec_specialized (NM_SETTING_DCB_PRIORITY_BANDWIDTH, "", "",
@@ -1293,15 +1184,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 *
 	 * Since: 0.9.10
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: priority-strict-bandwidth
-	 * variable: DCB_PG_STRICT
-	 * description: Priority values. String of eight "0" or "1", where "0" means
-	 *   "may not utilize all bandwidth", "1" means "may utilize all bandwidth".
-	 * example: DCB_PG_STRICT=01101110
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY_STRICT,
 		 _nm_param_spec_specialized (NM_SETTING_DCB_PRIORITY_STRICT_BANDWIDTH, "", "",
@@ -1318,14 +1200,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 *
 	 * Since: 0.9.10
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: priority-traffic-class
-	 * variable: DCB_PG_UP2TC
-	 * description: Priority values. String of eight trafic class values (0 - 7).
-	 * example: DCB_PG_UP2TC=01623701
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY_TRAFFIC_CLASS,
 		 _nm_param_spec_specialized (NM_SETTING_DCB_PRIORITY_TRAFFIC_CLASS, "", "",

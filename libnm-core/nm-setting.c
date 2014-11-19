@@ -612,6 +612,12 @@ variant_type_for_gtype (GType type)
 		return G_VARIANT_TYPE_DOUBLE;
 	else if (type == G_TYPE_STRV)
 		return G_VARIANT_TYPE_STRING_ARRAY;
+	else if (type == G_TYPE_BYTES)
+		return G_VARIANT_TYPE_BYTESTRING;
+	else if (g_type_is_a (type, G_TYPE_ENUM))
+		return G_VARIANT_TYPE_INT32;
+	else if (g_type_is_a (type, G_TYPE_FLAGS))
+		return G_VARIANT_TYPE_UINT32;
 	else
 		g_assert_not_reached ();
 }
@@ -645,6 +651,8 @@ get_property_for_dbus (NMSetting *setting,
 		dbus_value = g_variant_new_int32 (g_value_get_enum (&prop_value));
 	else if (g_type_is_a (prop_value.g_type, G_TYPE_FLAGS))
 		dbus_value = g_variant_new_uint32 (g_value_get_flags (&prop_value));
+	else if (prop_value.g_type == G_TYPE_BYTES)
+		dbus_value = _nm_utils_bytes_to_dbus (&prop_value);
 	else
 		dbus_value = g_dbus_gvalue_to_gvariant (&prop_value, variant_type_for_gtype (prop_value.g_type));
 	g_value_unset (&prop_value);
@@ -659,6 +667,8 @@ set_property_from_dbus (const NMSettingProperty *property, GVariant *src_value, 
 
 	if (property->from_dbus)
 		property->from_dbus (src_value, dst_value);
+	else if (dst_value->g_type == G_TYPE_BYTES)
+		_nm_utils_bytes_from_dbus (src_value, dst_value);
 	else
 		g_dbus_gvariant_to_gvalue (src_value, dst_value);
 }
@@ -816,6 +826,34 @@ _nm_setting_new_from_dbus (GType setting_type,
 	g_type_class_unref (class);
 
 	return setting;
+}
+
+/**
+ * nm_setting_get_dbus_property_type:
+ * @setting: an #NMSetting
+ * @property_name: the property of @setting to get the type of
+ *
+ * Gets the D-Bus marshalling type of a property. @property_name is a D-Bus
+ * property name, which may not necessarily be a #GObject property.
+ *
+ * Returns: the D-Bus marshalling type of @property on @setting.
+ */
+const GVariantType *
+nm_setting_get_dbus_property_type (NMSetting *setting,
+                                   const char *property_name)
+{
+	const NMSettingProperty *property;
+
+	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
+	g_return_val_if_fail (property_name != NULL, NULL);
+
+	property = nm_setting_class_find_property (NM_SETTING_GET_CLASS (setting), property_name);
+	g_return_val_if_fail (property != NULL, NULL);
+
+	if (property->dbus_type)
+		return property->dbus_type;
+	else
+		return variant_type_for_gtype (property->param_spec->value_type);
 }
 
 gboolean
