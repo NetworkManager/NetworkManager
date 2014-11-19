@@ -1391,6 +1391,16 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * connections with higher priority will be preferred. Defaults to 0.
 	 * The higher number means higher priority.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: autoconnect-priority
+	 * variable: AUTOCONNECT_PRIORITY(+)
+	 * values: -999 to 999
+	 * default: 0
+	 * description: Connection priority for automatic activation. Connections with
+	 *  higher numbers are preferred when selecting profiles for automatic activation.
+	 * example: AUTOCONNECT_PRIORITY=20
+	 * ---end---
+	 */
 	g_object_class_install_property
 	    (object_class, PROP_AUTOCONNECT_PRIORITY,
 	     g_param_spec_int (NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY, "", "",
