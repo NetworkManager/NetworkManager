@@ -3642,6 +3642,8 @@ have_ip6_address (const NMIP6Config *ip6_config, gboolean linklocal)
 	if (!ip6_config)
 		return FALSE;
 
+	linklocal = !!linklocal;
+
 	for (i = 0; i < nm_ip6_config_get_num_addresses (ip6_config); i++) {
 		const NMPlatformIP6Address *addr = nm_ip6_config_get_address (ip6_config, i);
 
