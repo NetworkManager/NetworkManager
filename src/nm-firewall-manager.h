@@ -40,6 +40,9 @@ G_BEGIN_DECLS
 
 #define NM_FIREWALL_MANAGER_AVAILABLE "available"
 
+struct _NMFirewallPendingCall;
+typedef struct _NMFirewallPendingCall *NMFirewallPendingCall;
+
 typedef struct {
 	GObject parent;
 } NMFirewallManager;
@@ -57,16 +60,16 @@ NMFirewallManager *nm_firewall_manager_get (void);
 
 typedef void (*FwAddToZoneFunc) (GError *error, gpointer user_data);
 
-gpointer nm_firewall_manager_add_or_change_zone (NMFirewallManager *mgr,
-                                                 const char *iface,
-                                                 const char *zone,
-                                                 gboolean add,
-                                                 FwAddToZoneFunc callback,
-                                                 gpointer user_data);
-gpointer nm_firewall_manager_remove_from_zone (NMFirewallManager *mgr,
-                                               const char *iface,
-                                               const char *zone);
+NMFirewallPendingCall nm_firewall_manager_add_or_change_zone (NMFirewallManager *mgr,
+                                                              const char *iface,
+                                                              const char *zone,
+                                                              gboolean add,
+                                                              FwAddToZoneFunc callback,
+                                                              gpointer user_data);
+NMFirewallPendingCall nm_firewall_manager_remove_from_zone (NMFirewallManager *mgr,
+                                                            const char *iface,
+                                                            const char *zone);
 
-void nm_firewall_manager_cancel_call (NMFirewallManager *mgr, gpointer fw_call);
+void nm_firewall_manager_cancel_call (NMFirewallManager *mgr, NMFirewallPendingCall fw_call);
 
 #endif /* __NETWORKMANAGER_FIREWALL_MANAGER_H__ */

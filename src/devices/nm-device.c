@@ -260,7 +260,7 @@ typedef struct {
 	gulong            dnsmasq_state_id;
 
 	/* Firewall */
-	DBusGProxyCall    *fw_call;
+	NMFirewallPendingCall fw_call;
 
 	/* avahi-autoipd stuff */
 	GPid    aipd_pid;
@@ -4545,8 +4545,14 @@ out:
 static void
 fw_change_zone_cb (GError *error, gpointer user_data)
 {
-	NMDevice *self = NM_DEVICE (user_data);
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDevice *self;
+	NMDevicePrivate *priv;
+
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	self = NM_DEVICE (user_data);
+	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	priv->fw_call = NULL;
 
@@ -4555,7 +4561,6 @@ fw_change_zone_cb (GError *error, gpointer user_data)
 	}
 
 	activation_source_schedule (self, nm_device_activate_stage3_ip_config_start, 0);
-
 	_LOGI (LOGD_DEVICE, "Activation: Stage 3 of 5 (IP Configure Start) scheduled.");
 }
 
@@ -4577,12 +4582,22 @@ nm_device_activate_schedule_stage3_ip_config_start (NMDevice *self)
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	g_return_if_fail (priv->act_request);
 
+	g_return_if_fail (!priv->fw_call);
+
 	/* Add the interface to the specified firewall zone */
 	connection = nm_device_get_connection (self);
 	g_assert (connection);
 	s_con = nm_connection_get_setting_connection (connection);
 
 	zone = nm_setting_connection_get_zone (s_con);
+
+	if (nm_device_uses_assumed_connection (self)) {
+		_LOGD (LOGD_DEVICE, "Activation: skip setting firewall zone '%s' for assumed device", zone ? zone : "default");
+		activation_source_schedule (self, nm_device_activate_stage3_ip_config_start, 0);
+		_LOGI (LOGD_DEVICE, "Activation: Stage 3 of 5 (IP Configure Start) scheduled.");
+		return;
+	}
+
 	_LOGD (LOGD_DEVICE, "Activation: setting firewall zone '%s'", zone ? zone : "default");
 	priv->fw_call = nm_firewall_manager_add_or_change_zone (nm_firewall_manager_get (),
 	                                                        nm_device_get_ip_iface (self),
@@ -6880,7 +6895,9 @@ _cleanup_generic_pre (NMDevice *self, gboolean deconfigure)
 	}
 
 	connection = nm_device_get_connection (self);
-	if (deconfigure && connection) {
+	if (   deconfigure
+	    && connection
+	    && !nm_device_uses_assumed_connection (self)) {
 		nm_firewall_manager_remove_from_zone (nm_firewall_manager_get (),
 		                                      nm_device_get_ip_iface (self),
 		                                      NULL);
