@@ -2259,11 +2259,11 @@ test_setting_compare_timestamp (void)
 	              NM_SETTING_CONNECTION_ID, "ignore timestamp connection",
 	              NM_SETTING_CONNECTION_UUID, "b047a198-0e0a-4f0e-a653-eea09bb35e40",
 	              NM_SETTING_CONNECTION_AUTOCONNECT, FALSE,
-	              NM_SETTING_CONNECTION_TIMESTAMP, 1234567890,
+	              NM_SETTING_CONNECTION_TIMESTAMP, (guint64) 1234567890,
 	              NULL);
 
 	new = nm_setting_duplicate (old);
-	g_object_set (new, NM_SETTING_CONNECTION_TIMESTAMP, 1416316539, NULL);
+	g_object_set (new, NM_SETTING_CONNECTION_TIMESTAMP, (guint64) 1416316539, NULL);
 
 	/* First make sure they are different */
 	success = nm_setting_compare (old, new, NM_SETTING_COMPARE_FLAG_EXACT);
