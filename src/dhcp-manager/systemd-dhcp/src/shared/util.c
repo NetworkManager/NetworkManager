@@ -374,6 +374,46 @@ int safe_atou8(const char *s, uint8_t *ret) {
         return 0;
 }
 
+int safe_atou16(const char *s, uint16_t *ret) {
+        char *x = NULL;
+        unsigned long l;
+
+        assert(s);
+        assert(ret);
+
+        errno = 0;
+        l = strtoul(s, &x, 0);
+
+        if (!x || x == s || *x || errno)
+                return errno > 0 ? -errno : -EINVAL;
+
+        if ((unsigned long) (uint16_t) l != l)
+                return -ERANGE;
+
+        *ret = (uint16_t) l;
+        return 0;
+}
+
+int safe_atoi16(const char *s, int16_t *ret) {
+        char *x = NULL;
+        long l;
+
+        assert(s);
+        assert(ret);
+
+        errno = 0;
+        l = strtol(s, &x, 0);
+
+        if (!x || x == s || *x || errno)
+                return errno > 0 ? -errno : -EINVAL;
+
+        if ((long) (int16_t) l != l)
+                return -ERANGE;
+
+        *ret = (int16_t) l;
+        return 0;
+}
+
 int safe_atollu(const char *s, long long unsigned *ret_llu) {
         char *x = NULL;
         unsigned long long l;
@@ -710,7 +750,7 @@ int get_process_cmdline(pid_t pid, size_t max_length, bool comm_fallback, char *
         }
 
         /* Kernel threads have no argv[] */
-        if (r == NULL || r[0] == 0) {
+        if (isempty(r)) {
                 _cleanup_free_ char *t = NULL;
                 int h;
 
@@ -908,6 +948,28 @@ int readlinkat_malloc(int fd, const char *p, char **ret) {
 
 int readlink_malloc(const char *p, char **ret) {
         return readlinkat_malloc(AT_FDCWD, p, ret);
+}
+
+int readlink_value(const char *p, char **ret) {
+        _cleanup_free_ char *link = NULL;
+        char *value;
+        int r;
+
+        r = readlink_malloc(p, &link);
+        if (r < 0)
+                return r;
+
+        value = basename(link);
+        if (!value)
+                return -ENOENT;
+
+        value = strdup(value);
+        if (!value)
+                return -ENOMEM;
+
+        *ret = value;
+
+        return 0;
 }
 
 int readlink_and_make_absolute(const char *p, char **r) {
@@ -2492,14 +2554,58 @@ char* dirname_malloc(const char *path) {
 #endif
 
 int dev_urandom(void *p, size_t n) {
-        _cleanup_close_ int fd = -1;
+#if 0 /* NM_IGNORED */
+        static int have_syscall = -1;
+        int r, fd;
         ssize_t k;
+
+        /* Gathers some randomness from the kernel. This call will
+         * never block, and will always return some data from the
+         * kernel, regardless if the random pool is fully initialized
+         * or not. It thus makes no guarantee for the quality of the
+         * returned entropy, but is good enough for or usual usecases
+         * of seeding the hash functions for hashtable */
+
+        /* Use the getrandom() syscall unless we know we don't have
+         * it, or when the requested size is too large for it. */
+        if (have_syscall != 0 || (size_t) (int) n != n) {
+                r = getrandom(p, n, GRND_NONBLOCK);
+                if (r == (int) n) {
+                        have_syscall = true;
+                        return 0;
+                }
+
+                if (r < 0) {
+                        if (errno == ENOSYS)
+                                /* we lack the syscall, continue with
+                                 * reading from /dev/urandom */
+                                have_syscall = false;
+                        else if (errno == EAGAIN)
+                                /* not enough entropy for now. Let's
+                                 * remember to use the syscall the
+                                 * next time, again, but also read
+                                 * from /dev/urandom for now, which
+                                 * doesn't care about the current
+                                 * amount of entropy.  */
+                                have_syscall = true;
+                        else
+                                return -errno;
+                } else
+                        /* too short read? */
+                        return -EIO;
+        }
+#else /* NM IGNORED */
+        int fd;
+        ssize_t k;
+#endif
 
         fd = open("/dev/urandom", O_RDONLY|O_CLOEXEC|O_NOCTTY);
         if (fd < 0)
                 return errno == ENOENT ? -ENOSYS : -errno;
 
         k = loop_read(fd, p, n, true);
+        safe_close(fd);
+
         if (k < 0)
                 return (int) k;
         if ((size_t) k != n)
@@ -2508,8 +2614,36 @@ int dev_urandom(void *p, size_t n) {
         return 0;
 }
 
-void random_bytes(void *p, size_t n) {
+void initialize_srand(void) {
         static bool srand_called = false;
+        unsigned x;
+#ifdef HAVE_SYS_AUXV_H
+        void *auxv;
+#endif
+
+        if (srand_called)
+                return;
+
+        x = 0;
+
+#ifdef HAVE_SYS_AUXV_H
+        /* The kernel provides us with a bit of entropy in auxv, so
+         * let's try to make use of that to seed the pseudo-random
+         * generator. It's better than nothing... */
+
+        auxv = (void*) getauxval(AT_RANDOM);
+        if (auxv)
+                x ^= *(unsigned*) auxv;
+#endif
+
+        x ^= (unsigned) now(CLOCK_REALTIME);
+        x ^= (unsigned) gettid();
+
+        srand(x);
+        srand_called = true;
+}
+
+void random_bytes(void *p, size_t n) {
         uint8_t *q;
         int r;
 
@@ -2520,28 +2654,7 @@ void random_bytes(void *p, size_t n) {
         /* If some idiot made /dev/urandom unavailable to us, he'll
          * get a PRNG instead. */
 
-        if (!srand_called) {
-                unsigned x = 0;
-
-#ifdef HAVE_SYS_AUXV_H
-                /* The kernel provides us with a bit of entropy in
-                 * auxv, so let's try to make use of that to seed the
-                 * pseudo-random generator. It's better than
-                 * nothing... */
-
-                void *auxv;
-
-                auxv = (void*) getauxval(AT_RANDOM);
-                if (auxv)
-                        x ^= *(unsigned*) auxv;
-#endif
-
-                x ^= (unsigned) now(CLOCK_REALTIME);
-                x ^= (unsigned) gettid();
-
-                srand(x);
-                srand_called = true;
-        }
+        initialize_srand();
 
         for (q = p; q < (uint8_t*) p + n; q ++)
                 *q = rand();
@@ -2764,7 +2877,7 @@ int get_ctty(pid_t pid, dev_t *_devnr, char **r) {
         if (k < 0)
                 return k;
 
-        snprintf(fn, sizeof(fn), "/dev/char/%u:%u", major(devnr), minor(devnr));
+        sprintf(fn, "/dev/char/%u:%u", major(devnr), minor(devnr));
 
         k = readlink_malloc(fn, &s);
         if (k < 0) {
@@ -2920,6 +3033,19 @@ int rm_rf_children(int fd, bool only_dirs, bool honour_sticky, struct stat *root
         }
 
         return rm_rf_children_dangerous(fd, only_dirs, honour_sticky, root_dev);
+}
+
+static int file_is_priv_sticky(const char *p) {
+        struct stat st;
+
+        assert(p);
+
+        if (lstat(p, &st) < 0)
+                return -errno;
+
+        return
+                (st.st_uid == 0 || st.st_uid == getuid()) &&
+                (st.st_mode & S_ISVTX);
 }
 
 static int rm_rf_internal(const char *path, bool only_dirs, bool delete_root, bool honour_sticky, bool dangerous) {
@@ -3160,7 +3286,8 @@ char *replace_env(const char *format, char **env) {
 
                 case CURLY:
                         if (*e == '{') {
-                                if (!(k = strnappend(r, word, e-word-1)))
+                                k = strnappend(r, word, e-word-1);
+                                if (!k)
                                         goto fail;
 
                                 free(r);
@@ -3170,7 +3297,8 @@ char *replace_env(const char *format, char **env) {
                                 state = VARIABLE;
 
                         } else if (*e == '$') {
-                                if (!(k = strnappend(r, word, e-word)))
+                                k = strnappend(r, word, e-word);
+                                if (!k)
                                         goto fail;
 
                                 free(r);
@@ -3202,7 +3330,8 @@ char *replace_env(const char *format, char **env) {
                 }
         }
 
-        if (!(k = strnappend(r, word, e-word)))
+        k = strnappend(r, word, e-word);
+        if (!k)
                 goto fail;
 
         free(r);
@@ -3213,6 +3342,7 @@ fail:
         return NULL;
 }
 
+#if 0 /* NM_IGNORED */
 char **replace_env_argv(char **argv, char **env) {
         char **ret, **i;
         unsigned k = 0, l = 0;
@@ -3235,7 +3365,7 @@ char **replace_env_argv(char **argv, char **env) {
                         if (e) {
                                 int r;
 
-                                r = strv_split_quoted(&m, e);
+                                r = strv_split_quoted(&m, e, true);
                                 if (r < 0) {
                                         ret[k] = NULL;
                                         strv_free(ret);
@@ -3277,6 +3407,7 @@ char **replace_env_argv(char **argv, char **env) {
         ret[k] = NULL;
         return ret;
 }
+#endif
 
 int fd_columns(int fd) {
         struct winsize ws = {};
@@ -3556,41 +3687,33 @@ char *unquote(const char *s, const char* quotes) {
 }
 
 char *normalize_env_assignment(const char *s) {
-        _cleanup_free_ char *name = NULL, *value = NULL, *p = NULL;
-        char *eq, *r;
+        _cleanup_free_ char *value = NULL;
+        const char *eq;
+        char *p, *name;
 
         eq = strchr(s, '=');
         if (!eq) {
-                char *t;
+                char *r, *t;
 
                 r = strdup(s);
                 if (!r)
                         return NULL;
 
                 t = strstrip(r);
-                if (t == r)
-                        return r;
+                if (t != r)
+                        memmove(r, t, strlen(t) + 1);
 
-                memmove(r, t, strlen(t) + 1);
                 return r;
         }
 
-        name = strndup(s, eq - s);
-        if (!name)
-                return NULL;
-
-        p = strdup(eq + 1);
-        if (!p)
-                return NULL;
+        name = strndupa(s, eq - s);
+        p = strdupa(eq + 1);
 
         value = unquote(strstrip(p), QUOTES);
         if (!value)
                 return NULL;
 
-        if (asprintf(&r, "%s=%s", strstrip(name), value) < 0)
-                r = NULL;
-
-        return r;
+        return strjoin(strstrip(name), "=", value, NULL);
 }
 
 int wait_for_terminate(pid_t pid, siginfo_t *status) {
@@ -4811,19 +4934,6 @@ int block_get_whole_disk(dev_t d, dev_t *ret) {
         }
 
         return -ENOENT;
-}
-
-int file_is_priv_sticky(const char *p) {
-        struct stat st;
-
-        assert(p);
-
-        if (lstat(p, &st) < 0)
-                return -errno;
-
-        return
-                (st.st_uid == 0 || st.st_uid == getuid()) &&
-                (st.st_mode & S_ISVTX);
 }
 
 static const char *const ioprio_class_table[] = {
@@ -6136,27 +6246,28 @@ int split_pair(const char *s, const char *sep, char **l, char **r) {
 
 int shall_restore_state(void) {
         _cleanup_free_ char *line = NULL;
-        const char *word, *state;
-        size_t l;
+        const char *p;
         int r;
 
         r = proc_cmdline(&line);
         if (r < 0)
                 return r;
-        if (r == 0) /* Container ... */
-                return 1;
 
         r = 1;
+        p = line;
 
-        FOREACH_WORD_QUOTED(word, l, line, state) {
+        for (;;) {
+                _cleanup_free_ char *word = NULL;
                 const char *e;
-                char n[l+1];
                 int k;
 
-                memcpy(n, word, l);
-                n[l] = 0;
+                k = unquote_first_word(&p, &word, true);
+                if (k < 0)
+                        return k;
+                if (k == 0)
+                        break;
 
-                e = startswith(n, "systemd.restore_state=");
+                e = startswith(word, "systemd.restore_state=");
                 if (!e)
                         continue;
 
@@ -6169,51 +6280,35 @@ int shall_restore_state(void) {
 }
 
 int proc_cmdline(char **ret) {
-        int r;
+        assert(ret);
 
-        if (detect_container(NULL) > 0) {
-                char *buf = NULL, *p;
-                size_t sz = 0;
-
-                r = read_full_file("/proc/1/cmdline", &buf, &sz);
-                if (r < 0)
-                        return r;
-
-                for (p = buf; p + 1 < buf + sz; p++)
-                        if (*p == 0)
-                                *p = ' ';
-
-                *p = 0;
-                *ret = buf;
-                return 1;
-        }
-
-        r = read_one_line_file("/proc/cmdline", ret);
-        if (r < 0)
-                return r;
-
-        return 1;
+        if (detect_container(NULL) > 0)
+                return get_process_cmdline(1, 0, false, ret);
+        else
+                return read_one_line_file("/proc/cmdline", ret);
 }
 
 int parse_proc_cmdline(int (*parse_item)(const char *key, const char *value)) {
         _cleanup_free_ char *line = NULL;
-        const char *w, *state;
-        size_t l;
+        const char *p;
         int r;
 
         assert(parse_item);
 
         r = proc_cmdline(&line);
         if (r < 0)
-                log_warning("Failed to read /proc/cmdline, ignoring: %s", strerror(-r));
-        if (r <= 0)
-                return 0;
+                return r;
 
-        FOREACH_WORD_QUOTED(w, l, line, state) {
-                char word[l+1], *value;
+        p = line;
+        for (;;) {
+                _cleanup_free_ char *word = NULL;
+                char *value = NULL;
 
-                memcpy(word, w, l);
-                word[l] = 0;
+                r = unquote_first_word(&p, &word, true);
+                if (r < 0)
+                        return r;
+                if (r == 0)
+                        break;
 
                 /* Filter out arguments that are intended only for the
                  * initrd */
@@ -6983,19 +7078,19 @@ int is_symlink(const char *path) {
 
 int is_dir(const char* path, bool follow) {
         struct stat st;
+        int r;
 
-        if (follow) {
-                if (stat(path, &st) < 0)
-                        return -errno;
-        } else {
-                if (lstat(path, &st) < 0)
-                        return -errno;
-        }
+        if (follow)
+                r = stat(path, &st);
+        else
+                r = lstat(path, &st);
+        if (r < 0)
+                return -errno;
 
         return !!S_ISDIR(st.st_mode);
 }
 
-int unquote_first_word(const char **p, char **ret) {
+int unquote_first_word(const char **p, char **ret, bool relax) {
         _cleanup_free_ char *s = NULL;
         size_t allocated = 0, sz = 0;
 
@@ -7054,8 +7149,11 @@ int unquote_first_word(const char **p, char **ret) {
                         break;
 
                 case VALUE_ESCAPE:
-                        if (c == 0)
+                        if (c == 0) {
+                                if (relax)
+                                        goto finish;
                                 return -EINVAL;
+                        }
 
                         if (!GREEDY_REALLOC(s, allocated, sz+2))
                                 return -ENOMEM;
@@ -7066,9 +7164,11 @@ int unquote_first_word(const char **p, char **ret) {
                         break;
 
                 case SINGLE_QUOTE:
-                        if (c == 0)
+                        if (c == 0) {
+                                if (relax)
+                                        goto finish;
                                 return -EINVAL;
-                        else if (c == '\'')
+                        } else if (c == '\'')
                                 state = VALUE;
                         else if (c == '\\')
                                 state = SINGLE_QUOTE_ESCAPE;
@@ -7082,8 +7182,11 @@ int unquote_first_word(const char **p, char **ret) {
                         break;
 
                 case SINGLE_QUOTE_ESCAPE:
-                        if (c == 0)
+                        if (c == 0) {
+                                if (relax)
+                                        goto finish;
                                 return -EINVAL;
+                        }
 
                         if (!GREEDY_REALLOC(s, allocated, sz+2))
                                 return -ENOMEM;
@@ -7109,8 +7212,11 @@ int unquote_first_word(const char **p, char **ret) {
                         break;
 
                 case DOUBLE_QUOTE_ESCAPE:
-                        if (c == 0)
+                        if (c == 0) {
+                                if (relax)
+                                        goto finish;
                                 return -EINVAL;
+                        }
 
                         if (!GREEDY_REALLOC(s, allocated, sz+2))
                                 return -ENOMEM;
@@ -7170,7 +7276,7 @@ int unquote_many_words(const char **p, ...) {
         l = newa0(char*, n);
         for (c = 0; c < n; c++) {
 
-                r = unquote_first_word(p, &l[c]);
+                r = unquote_first_word(p, &l[c], false);
                 if (r < 0) {
                         int j;
 

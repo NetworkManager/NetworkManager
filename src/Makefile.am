@@ -99,6 +99,7 @@ libsystemd_dhcp_la_SOURCES = \
 	dhcp-manager/systemd-dhcp/src/shared/fileio.c \
 	dhcp-manager/systemd-dhcp/src/shared/strv.h \
 	dhcp-manager/systemd-dhcp/src/shared/strv.c \
+	dhcp-manager/systemd-dhcp/src/shared/unaligned.h \
 	dhcp-manager/systemd-dhcp/src/shared/utf8.h \
 	dhcp-manager/systemd-dhcp/src/shared/utf8.c \
 	dhcp-manager/systemd-dhcp/src/systemd/sd-dhcp-lease.h \

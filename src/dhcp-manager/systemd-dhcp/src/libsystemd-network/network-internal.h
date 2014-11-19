@@ -29,7 +29,7 @@
 
 #if 0 /* NM_IGNORED */
 #include "udev.h"
-#include "condition-util.h"
+#include "condition.h"
 
 bool net_match_config(const struct ether_addr *match_mac,
                       const char *match_path,
