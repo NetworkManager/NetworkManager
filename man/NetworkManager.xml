@@ -182,7 +182,7 @@
           <term><varname>IP4_ADDRESS_N</varname></term>
           <listitem><para>
             The IPv4 address in the format "address/prefix gateway", where N is a number
-            from 0 to (# IPv4 address \- 1). gateway item in this variable is deprecated,
+            from 0 to (# IPv4 addresses - 1). gateway item in this variable is deprecated,
             use IP4_GATEWAY instead.
           </para></listitem>
         </varlistentry>
@@ -202,7 +202,7 @@
           <term><varname>IP4_ROUTE_N</varname></term>
           <listitem><para>
             The IPv4 route in the format "address/prefix next-hop metric", where N is a number
-            from 0 to (# IPv4 routes \- 1).
+            from 0 to (# IPv4 routes - 1).
           </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -301,7 +301,7 @@
 	<listitem><para> Specify configuration file to set up various
 	settings for NetworkManager.  If not specified, the default
 	value of /etc/NetworkManager/NetworkManager.conf is used with
-	a fallback to the older 'nm\-system\-settings.conf' if located
+	a fallback to the older 'nm-system-settings.conf' if located
 	in the same directory.  See
 	<citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
 	for more information on configuration file.
