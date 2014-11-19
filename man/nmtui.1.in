@@ -19,7 +19,7 @@
 .\" with this manual; if not, write to the Free Software Foundation, Inc.,
 .\" 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 .\"
-.\" Copyright (C) 2014 Red Hat, Inc.
+.\" Copyright 2014 Red Hat, Inc.
 .\"
 .TH NMTUI "1" "6 November 2014"
 
@@ -42,12 +42,12 @@ nmtui \- Text User Interface for controlling NetworkManager
 is a curses\(hybased TUI application for interacting with \fINetworkManager\fP.
 .P
 When starting \fInmtui\fP, the user is prompted to choose the activity to perform
-unless it was specified as first argument.
+unless it was specified as the first argument.
 .P
 The supported activities are:
 .IP \(em 4
-\fIedit\fP: show a connection editor that supports adding, modifying, viewing and deleting.
-It provides similar functionality as \fInm\-connection\-editor\fP.
+\fIedit\fP: show a connection editor that supports adding, modifying, viewing and deleting
+connections. It provides similar functionality as \fInm\-connection\-editor\fP.
 .IP \(em 4
 \fIconnect\fP: show a list of available connections, with the option to activate or deactivate
 them. It provides similar functionality as \fInm\-applet\fP.
@@ -57,7 +57,7 @@ them. It provides similar functionality as \fInm\-applet\fP.
 .P
 Corresponding to above activities, \fInmtui\fP also comes with binaries named
 \fInmtui\-edit\fP, \fInmtui\-connect\fP, and \fInmtui-hostname\fP to skip the selection
-of the actvities.
+of the activities.
 
 .SH SEE ALSO
 .BR NetworkManager(8),
