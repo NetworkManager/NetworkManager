@@ -175,6 +175,12 @@ struct _NMPlatformIP6Address {
 };
 G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPAddress, address_ptr) == G_STRUCT_OFFSET (NMPlatformIP6Address, address));
 
+typedef union {
+	NMPlatformIPAddress  ax;
+	NMPlatformIP4Address a4;
+	NMPlatformIP6Address a6;
+} NMPlatformIPXAddress;
+
 #undef __NMPlatformIPAddress_COMMON
 
 
@@ -214,6 +220,12 @@ struct _NMPlatformIP6Route {
 	struct in6_addr gateway;
 };
 G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPRoute, network_ptr) == G_STRUCT_OFFSET (NMPlatformIP6Route, network));
+
+typedef union {
+	NMPlatformIPRoute  rx;
+	NMPlatformIP4Route r4;
+	NMPlatformIP6Route r6;
+} NMPlatformIPXRoute;
 
 #undef __NMPlatformIPRoute_COMMON
 
