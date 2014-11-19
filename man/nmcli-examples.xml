@@ -3,7 +3,7 @@
 "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
 
 <!--
-Copyright (C) 2013 - 2014 Red Hat, Inc.
+Copyright 2013 - 2014 Red Hat, Inc.
 -->
 
 <refentry id="nmcli-examples">
@@ -18,7 +18,7 @@ Copyright (C) 2013 - 2014 Red Hat, Inc.
     <manvolnum>5</manvolnum>
     <refmiscinfo class="source">NetworkManager</refmiscinfo>
     <refmiscinfo class="manual">Examples</refmiscinfo>
-    <refmiscinfo class="version">0.9.10</refmiscinfo>
+    <refmiscinfo class="version">1.0</refmiscinfo>
   </refmeta>
 
   <refnamediv>

@@ -4,9 +4,9 @@
         "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
 
 <!--
- Copyright (C) 2005 - 2014 Red Hat, Inc.
- Copyright (C) 2005 - 2009 Novell, Inc.
- Copyright (C) 2005 Robert Love
+ Copyright 2005 - 2014 Red Hat, Inc.
+ Copyright 2005 - 2009 Novell, Inc.
+ Copyright 2005 Robert Love
 -->
 
 <refentry id="NetworkManager">
@@ -19,7 +19,7 @@
     <manvolnum>8</manvolnum>
     <refmiscinfo class="source">NetworkManager</refmiscinfo>
     <refmiscinfo class="manual">Network management daemons</refmiscinfo>
-    <refmiscinfo class="version">0.9.10</refmiscinfo>
+    <refmiscinfo class="version">1.0</refmiscinfo>
   </refmeta>
 
   <refnamediv>
