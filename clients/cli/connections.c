@@ -4031,9 +4031,9 @@ complete_connection_by_type (NMConnection *connection,
 			return FALSE;
 
 		/* Also ask for all optional arguments if '--ask' is specified. */
-		mtu = mtu_c ? g_strdup (mtu_c) : NULL;
-		mac = mac_c ? g_strdup (mac_c) : NULL;
-		cloned_mac = cloned_mac_c ? g_strdup (cloned_mac_c) : NULL;
+		mtu = g_strdup (mtu_c);
+		mac = g_strdup (mac_c);
+		cloned_mac = g_strdup (cloned_mac_c);
 		if (ask)
 			do_questionnaire_ethernet (TRUE, &mtu, &mac, &cloned_mac);
 
@@ -4089,11 +4089,11 @@ cleanup_wired:
 			return FALSE;
 
 		/* Also ask for all optional arguments if '--ask' is specified. */
-		mtu = mtu_c ? g_strdup (mtu_c) : NULL;
-		mac = mac_c ? g_strdup (mac_c) : NULL;
-		mode = mode_c ? g_strdup (mode_c) : NULL;
-		parent = parent_c ? g_strdup (parent_c) : NULL;
-		p_key = p_key_c ? g_strdup (p_key_c) : NULL;
+		mtu = g_strdup (mtu_c);
+		mac = g_strdup (mac_c);
+		mode = g_strdup (mode_c);
+		parent = g_strdup (parent_c);
+		p_key = g_strdup (p_key_c);
 		if (ask)
 			do_questionnaire_infiniband (&mtu, &mac, &mode, &parent, &p_key);
 
@@ -4173,10 +4173,10 @@ cleanup_ib:
 		}
 
 		/* Also ask for all optional arguments if '--ask' is specified. */
-		mtu = mtu_c ? g_strdup (mtu_c) : NULL;
-		mac = mac_c ? g_strdup (mac_c) : NULL;
-		cloned_mac = cloned_mac_c ? g_strdup (cloned_mac_c) : NULL;
-		mode = mode_c ? g_strdup (mode_c) : NULL;
+		mtu = g_strdup (mtu_c);
+		mac = g_strdup (mac_c);
+		cloned_mac = g_strdup (cloned_mac_c);
+		mode = g_strdup (mode_c);
 		if (ask)
 			do_questionnaire_wifi (&mtu, &mac, &cloned_mac, &mode);
 
@@ -4240,7 +4240,7 @@ cleanup_wifi:
 		}
 
 		/* Also ask for all optional arguments if '--ask' is specified. */
-		mac = mac_c ? g_strdup (mac_c) : NULL;
+		mac = g_strdup (mac_c);
 		if (ask)
 			do_questionnaire_wimax (&mac);
 
@@ -4367,8 +4367,8 @@ cleanup_pppoe:
 		}
 
 		/* Also ask for all optional arguments if '--ask' is specified. */
-		user = user_c ? g_strdup (user_c) : NULL;
-		password = password_c ? g_strdup (password_c) : NULL;
+		user = g_strdup (user_c);
+		password = g_strdup (password_c);
 		if (ask)
 			do_questionnaire_mobile (&user, &password);
 
@@ -4430,7 +4430,7 @@ cleanup_mobile:
 			goto cleanup_bt;
 
 		/* Also ask for all optional arguments if '--ask' is specified. */
-		bt_type = bt_type_c ? g_strdup (bt_type_c) : NULL;
+		bt_type = g_strdup (bt_type_c);
 		if (ask)
 			do_questionnaire_bluetooth (&bt_type);
 
@@ -4540,10 +4540,10 @@ cleanup_bt:
 		}
 
 		/* Also ask for all optional arguments if '--ask' is specified. */
-		mtu = mtu_c ? g_strdup (mtu_c) : NULL;
-		flags = flags_c ? g_strdup (flags_c) : NULL;
-		ingress = ingress_c ? g_strdup (ingress_c) : NULL;
-		egress = egress_c ? g_strdup (egress_c) : NULL;
+		mtu = g_strdup (mtu_c);
+		flags = g_strdup (flags_c);
+		ingress = g_strdup (ingress_c);
+		egress = g_strdup (egress_c);
 		if (ask)
 			do_questionnaire_vlan (&mtu, &flags, &ingress, &egress);
 
@@ -4633,13 +4633,13 @@ cleanup_vlan:
 			return FALSE;
 
 		/* Also ask for all optional arguments if '--ask' is specified. */
-		bond_mode = bond_mode_c ? g_strdup (bond_mode_c) : NULL;
-		bond_primary = bond_primary_c ? g_strdup (bond_primary_c) : NULL;
-		bond_miimon = bond_miimon_c ? g_strdup (bond_miimon_c) : NULL;
-		bond_downdelay = bond_downdelay_c ? g_strdup (bond_downdelay_c) : NULL;
-		bond_updelay = bond_updelay_c ? g_strdup (bond_updelay_c) : NULL;
-		bond_arpinterval = bond_arpinterval_c ? g_strdup (bond_arpinterval_c) : NULL;
-		bond_arpiptarget = bond_arpiptarget_c ? g_strdup (bond_arpiptarget_c) : NULL;
+		bond_mode = g_strdup (bond_mode_c);
+		bond_primary = g_strdup (bond_primary_c);
+		bond_miimon = g_strdup (bond_miimon_c);
+		bond_downdelay = g_strdup (bond_downdelay_c);
+		bond_updelay = g_strdup (bond_updelay_c);
+		bond_arpinterval = g_strdup (bond_arpinterval_c);
+		bond_arpiptarget = g_strdup (bond_arpiptarget_c);
 		bond_lacp_rate = g_strdup (bond_lacp_rate_c);
 		if (ask)
 			do_questionnaire_bond (&bond_mode, &bond_primary, &bond_miimon,
@@ -4909,12 +4909,12 @@ cleanup_team_slave:
 			return FALSE;
 
 		/* Also ask for all optional arguments if '--ask' is specified. */
-		stp = stp_c ? g_strdup (stp_c) : NULL;
-		priority = priority_c ? g_strdup (priority_c) : NULL;
-		fwd_delay = fwd_delay_c ? g_strdup (fwd_delay_c) : NULL;
-		hello_time = hello_time_c ? g_strdup (hello_time_c) : NULL;
-		max_age = max_age_c ? g_strdup (max_age_c) : NULL;
-		ageing_time = ageing_time_c ? g_strdup (ageing_time_c) : NULL;
+		stp = g_strdup (stp_c);
+		priority = g_strdup (priority_c);
+		fwd_delay = g_strdup (fwd_delay_c);
+		hello_time = g_strdup (hello_time_c);
+		max_age = g_strdup (max_age_c);
+		ageing_time = g_strdup (ageing_time_c);
 		mac = g_strdup (mac_c);
 		if (ask)
 			do_questionnaire_bridge (&stp, &priority, &fwd_delay, &hello_time,
@@ -5047,9 +5047,9 @@ cleanup_bridge:
 		nm_connection_add_setting (connection, NM_SETTING (s_bridge_port));
 
 		/* Also ask for all optional arguments if '--ask' is specified. */
-		priority = priority_c ? g_strdup (priority_c) : NULL;
-		path_cost = path_cost_c ? g_strdup (path_cost_c) : NULL;
-		hairpin = hairpin_c ? g_strdup (hairpin_c) : NULL;
+		priority = g_strdup (priority_c);
+		path_cost = g_strdup (path_cost_c);
+		hairpin = g_strdup (hairpin_c);
 		if (ask)
 			do_questionnaire_bridge_slave (&priority, &path_cost, &hairpin);
 
@@ -5131,7 +5131,7 @@ cleanup_bridge_slave:
 		service_type = g_strdup_printf ("%s.%s", NM_DBUS_INTERFACE, st);
 
 		/* Also ask for all optional arguments if '--ask' is specified. */
-		user = user_c ? g_strdup (user_c) : NULL;
+		user = g_strdup (user_c);
 		if (ask)
 			do_questionnaire_vpn (&user);
 
@@ -5178,8 +5178,8 @@ cleanup_vpn:
 		}
 
 		/* Also ask for all optional arguments if '--ask' is specified. */
-		channel = channel_c ? g_strdup (channel_c) : NULL;
-		dhcp_anycast = dhcp_anycast_c ? g_strdup (dhcp_anycast_c) : NULL;
+		channel = g_strdup (channel_c);
+		dhcp_anycast = g_strdup (dhcp_anycast_c);
 		if (ask)
 			do_questionnaire_olpc (&channel, &dhcp_anycast);
 
@@ -7225,7 +7225,7 @@ is_property_valid (NMSetting *setting, const char *property, GError **error)
 
 	valid_props = nmc_setting_get_valid_properties (setting);
 	prop_name = nmc_string_is_valid (property, (const char **) valid_props, error);
-	ret = prop_name ? g_strdup (prop_name) : NULL;
+	ret = g_strdup (prop_name);
 	g_strfreev (valid_props);
 	return ret;
 }
