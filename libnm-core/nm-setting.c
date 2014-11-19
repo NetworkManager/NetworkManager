@@ -1083,6 +1083,11 @@ should_compare_prop (NMSetting *setting,
 	    && !strcmp (prop_name, NM_SETTING_CONNECTION_ID))
 		return FALSE;
 
+	if (   (comp_flags & NM_SETTING_COMPARE_FLAG_IGNORE_TIMESTAMP)
+	    && NM_IS_SETTING_CONNECTION (setting)
+	    && !strcmp (prop_name, NM_SETTING_CONNECTION_TIMESTAMP))
+		return FALSE;
+
 	return TRUE;
 }
 

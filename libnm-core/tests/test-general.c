@@ -2248,6 +2248,31 @@ test_setting_compare_id (void)
 	g_assert (success);
 }
 
+static void
+test_setting_compare_timestamp (void)
+{
+	NMSetting *old, *new;
+	gboolean success;
+
+	old = nm_setting_connection_new ();
+	g_object_set (old,
+	              NM_SETTING_CONNECTION_ID, "ignore timestamp connection",
+	              NM_SETTING_CONNECTION_UUID, "b047a198-0e0a-4f0e-a653-eea09bb35e40",
+	              NM_SETTING_CONNECTION_AUTOCONNECT, FALSE,
+	              NM_SETTING_CONNECTION_TIMESTAMP, 1234567890,
+	              NULL);
+
+	new = nm_setting_duplicate (old);
+	g_object_set (new, NM_SETTING_CONNECTION_TIMESTAMP, 1416316539, NULL);
+
+	/* First make sure they are different */
+	success = nm_setting_compare (old, new, NM_SETTING_COMPARE_FLAG_EXACT);
+	g_assert (success == FALSE);
+
+	success = nm_setting_compare (old, new, NM_SETTING_COMPARE_FLAG_IGNORE_TIMESTAMP);
+	g_assert (success);
+}
+
 typedef struct {
 	NMSettingSecretFlags secret_flags;
 	NMSettingCompareFlags comp_flags;
@@ -3739,6 +3764,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_setting_to_dbus_transform", test_setting_to_dbus_transform);
 	g_test_add_func ("/core/general/test_setting_to_dbus_enum", test_setting_to_dbus_enum);
 	g_test_add_func ("/core/general/test_setting_compare_id", test_setting_compare_id);
+	g_test_add_func ("/core/general/test_setting_compare_timestamp", test_setting_compare_timestamp);
 #define ADD_FUNC(func, secret_flags, comp_flags, remove_secret) \
 	g_test_add_data_func_full ("/core/general/" G_STRINGIFY (func), \
 	                           test_data_compare_secrets_new (secret_flags, comp_flags, remove_secret), \
