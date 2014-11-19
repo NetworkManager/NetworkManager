@@ -119,14 +119,10 @@ typedef struct {
 	 *     (synced && never_default) entires the absence of the default route
 	 *     is enforced. NMDefaultRouteManager will actively remove any default
 	 *     route on such ifindexes.
-	 *     This combination makes only sense for device sources.
+	 *     Also, for VPN sources in addition we track them so that a never-default
+	 *     VPN connection can be choosen by get_best_config() to receive the DNS configuration.
 	 *
-	 * (!synced &&  never_default): this combination makes only sense for VPN sources.
-	 *     If a VPN gets no default route, we still track it so that we can choose
-	 *     it for DNS configuration.
-	 *     Effectively, we ignore any default routes on such ifindexes and don't configure
-	 *     them ourselfes. The VPN is tracked with its configured priority (regardless
-	 *     of whether any default routes are actually present on the interface).
+	 * (!synced &&  never_default): this combination makes no sense.
 	 */
 	gboolean synced;
 	gboolean never_default;
@@ -302,10 +298,6 @@ _platform_route_sync_flush (const VTableIP *vtable, NMDefaultRouteManager *self,
 		for (j = 0; j < entries->len; j++) {
 			Entry *e = g_ptr_array_index (entries, j);
 
-			if (   e->never_default
-			    && !NM_IS_DEVICE (e->source.object))
-				continue;
-
 			if (   e->route.rx.ifindex == route->ifindex
 			    && e->synced) {
 				has_ifindex_synced = TRUE;
@@ -399,10 +391,6 @@ _get_assumed_interface_metrics (const VTableIP *vtable, NMDefaultRouteManager *s
 
 		for (j = 0; j < entries->len; j++) {
 			Entry *e = g_ptr_array_index (entries, j);
-
-			if (   e->never_default
-			    && !NM_IS_DEVICE (e->source.object))
-				continue;
 
 			if (   e->synced
 			    && e->route.rx.ifindex == route->ifindex) {
@@ -765,7 +753,7 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 					}
 				}
 			}
-			synced = default_route && !never_default;
+			synced = TRUE;
 		}
 	}
 	g_assert (!default_route || default_route->plen == 0);
