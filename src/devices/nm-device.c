@@ -6281,7 +6281,8 @@ find_ip4_lease_config (NMDevice *self,
 	leases = nm_dhcp_manager_get_lease_ip_configs (nm_dhcp_manager_get (),
 	                                               ip_iface,
 	                                               nm_connection_get_uuid (connection),
-	                                               FALSE);
+	                                               FALSE,
+	                                               nm_device_get_ip4_route_metric (self));
 	for (liter = leases; liter && !found; liter = liter->next) {
 		NMIP4Config *lease_config = liter->data;
 		const NMPlatformIP4Address *address = nm_ip4_config_get_address (lease_config, 0);

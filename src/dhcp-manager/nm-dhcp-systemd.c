@@ -372,7 +372,8 @@ get_leasefile_path (const char *iface, const char *uuid, gboolean ipv6)
 static GSList *
 nm_dhcp_systemd_get_lease_ip_configs (const char *iface,
                                       const char *uuid,
-                                      gboolean ipv6)
+                                      gboolean ipv6,
+                                      guint32 default_route_metric)
 {
 	GSList *leases = NULL;
 	gs_free char *path = NULL;
@@ -386,7 +387,7 @@ nm_dhcp_systemd_get_lease_ip_configs (const char *iface,
 	path = get_leasefile_path (iface, uuid, FALSE);
 	r = sd_dhcp_lease_load (&lease, path);
 	if (r == 0 && lease) {
-		ip4_config = lease_to_ip4_config (lease, NULL, 0, FALSE, NULL);
+		ip4_config = lease_to_ip4_config (lease, NULL, default_route_metric, FALSE, NULL);
 		if (ip4_config)
 			leases = g_slist_append (leases, ip4_config);
 	}

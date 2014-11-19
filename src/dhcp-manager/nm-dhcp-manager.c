@@ -354,7 +354,8 @@ GSList *
 nm_dhcp_manager_get_lease_ip_configs (NMDhcpManager *self,
                                       const char *iface,
                                       const char *uuid,
-                                      gboolean ipv6)
+                                      gboolean ipv6,
+                                      guint32 default_route_metric)
 {
 	ClientDesc *desc;
 
@@ -364,7 +365,7 @@ nm_dhcp_manager_get_lease_ip_configs (NMDhcpManager *self,
 
 	desc = find_client_desc (NULL, NM_DHCP_MANAGER_GET_PRIVATE (self)->client_type);
 	if (desc && desc->get_lease_configs_func)
-		return desc->get_lease_configs_func (iface, uuid, ipv6);
+		return desc->get_lease_configs_func (iface, uuid, ipv6, default_route_metric);
 	return NULL;
 }
 

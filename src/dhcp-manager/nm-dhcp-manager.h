@@ -80,7 +80,8 @@ NMDhcpClient * nm_dhcp_manager_start_ip6     (NMDhcpManager *manager,
 GSList *       nm_dhcp_manager_get_lease_ip_configs (NMDhcpManager *self,
                                                      const char *iface,
                                                      const char *uuid,
-                                                     gboolean ipv6);
+                                                     gboolean ipv6,
+                                                     guint32 default_route_metric);
 
 /* For testing only */
 extern const char* nm_dhcp_helper_path;

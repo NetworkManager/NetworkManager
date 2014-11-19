@@ -127,7 +127,8 @@ get_dhclient_leasefile (const char *iface,
 static GSList *
 nm_dhcp_dhclient_get_lease_ip_configs (const char *iface,
                                        const char *uuid,
-                                       gboolean ipv6)
+                                       gboolean ipv6,
+                                       guint32 default_route_metric)
 {
 	char *contents = NULL;
 	char *leasefile;
