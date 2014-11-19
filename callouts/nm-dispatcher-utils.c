@@ -18,7 +18,8 @@
  * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <string.h>
 
 #include <glib-object.h>
@@ -92,11 +93,9 @@ static GSList *
 construct_ip4_items (GSList *items, GVariant *ip4_config, const char *prefix)
 {
 	GPtrArray *addresses, *routes;
-	char **dns, **wins;
+	char **dns, **wins, *gateway;
 	GString *tmp;
 	GVariant *val;
-	char str_addr[INET_ADDRSTRLEN];
-	char str_gw[INET_ADDRSTRLEN];
 	int i;
 
 	if (ip4_config == NULL)
@@ -108,22 +107,28 @@ construct_ip4_items (GSList *items, GVariant *ip4_config, const char *prefix)
 	/* IP addresses */
 	val = g_variant_lookup_value (ip4_config, "addresses", G_VARIANT_TYPE ("aau"));
 	if (val) {
-		addresses = nm_utils_ip4_addresses_from_variant (val);
+		addresses = nm_utils_ip4_addresses_from_variant (val, &gateway);
+		if (!gateway)
+			gateway = g_strdup ("0.0.0.0");
 
 		for (i = 0; i < addresses->len; i++) {
-			NMIP4Address *addr = addresses->pdata[i];
-			guint32 ip_prefix = nm_ip4_address_get_prefix (addr);
+			NMIPAddress *addr = addresses->pdata[i];
 			char *addrtmp;
 
-			nm_utils_inet4_ntop (nm_ip4_address_get_address (addr), str_addr);
-			nm_utils_inet4_ntop (nm_ip4_address_get_gateway (addr), str_gw);
-
-			addrtmp = g_strdup_printf ("%sIP4_ADDRESS_%d=%s/%d %s", prefix, i, str_addr, ip_prefix, str_gw);
+			addrtmp = g_strdup_printf ("%sIP4_ADDRESS_%d=%s/%d %s", prefix, i,
+			                           nm_ip_address_get_address (addr),
+			                           nm_ip_address_get_prefix (addr),
+			                           gateway);
 			items = g_slist_prepend (items, addrtmp);
 		}
 		if (addresses->len)
 			items = g_slist_prepend (items, g_strdup_printf ("%sIP4_NUM_ADDRESSES=%d", prefix, addresses->len));
+
+		/* Write gateway to a separate variable, too. */
+		items = g_slist_prepend (items, g_strdup_printf ("%sIP4_GATEWAY=%s", prefix, gateway));
+
 		g_ptr_array_unref (addresses);
+		g_free (gateway);
 		g_variant_unref (val);
 	}
 
@@ -177,15 +182,19 @@ construct_ip4_items (GSList *items, GVariant *ip4_config, const char *prefix)
 		routes = nm_utils_ip4_routes_from_variant (val);
 
 		for (i = 0; i < routes->len; i++) {
-			NMIP4Route *route = routes->pdata[i];
-			guint32 ip_prefix = nm_ip4_route_get_prefix (route);
-			guint32 metric = nm_ip4_route_get_metric (route);
+			NMIPRoute *route = routes->pdata[i];
+			const char *next_hop;
 			char *routetmp;
 
-			nm_utils_inet4_ntop (nm_ip4_route_get_dest (route), str_addr);
-			nm_utils_inet4_ntop (nm_ip4_route_get_next_hop (route), str_gw);
+			next_hop = nm_ip_route_get_next_hop (route);
+			if (!next_hop)
+				next_hop = "0.0.0.0";
 
-			routetmp = g_strdup_printf ("%sIP4_ROUTE_%d=%s/%d %s %d", prefix, i, str_addr, ip_prefix, str_gw, metric);
+			routetmp = g_strdup_printf ("%sIP4_ROUTE_%d=%s/%d %s %u", prefix, i,
+			                            nm_ip_route_get_dest (route),
+			                            nm_ip_route_get_prefix (route),
+			                            next_hop,
+			                            (guint32) MAX (0, nm_ip_route_get_metric (route)));
 			items = g_slist_prepend (items, routetmp);
 		}
 		items = g_slist_prepend (items, g_strdup_printf ("%sIP4_NUM_ROUTES=%d", prefix, routes->len));
@@ -222,11 +231,9 @@ static GSList *
 construct_ip6_items (GSList *items, GVariant *ip6_config, const char *prefix)
 {
 	GPtrArray *addresses, *routes;
-	char **dns;
+	char **dns, *gateway = NULL;
 	GString *tmp;
 	GVariant *val;
-	char str_addr[INET6_ADDRSTRLEN];
-	char str_gw[INET6_ADDRSTRLEN];
 	int i;
 
 	if (ip6_config == NULL)
@@ -238,22 +245,28 @@ construct_ip6_items (GSList *items, GVariant *ip6_config, const char *prefix)
 	/* IP addresses */
 	val = g_variant_lookup_value (ip6_config, "addresses", G_VARIANT_TYPE ("a(ayuay)"));
 	if (val) {
-		addresses = nm_utils_ip6_addresses_from_variant (val);
+		addresses = nm_utils_ip6_addresses_from_variant (val, &gateway);
+		if (!gateway)
+			gateway = g_strdup ("::");
 
 		for (i = 0; i < addresses->len; i++) {
-			NMIP6Address *addr = addresses->pdata[i];
-			guint32 ip_prefix = nm_ip6_address_get_prefix (addr);
+			NMIPAddress *addr = addresses->pdata[i];
 			char *addrtmp;
 
-			nm_utils_inet6_ntop (nm_ip6_address_get_address (addr), str_addr);
-			nm_utils_inet6_ntop (nm_ip6_address_get_gateway (addr), str_gw);
-
-			addrtmp = g_strdup_printf ("%sIP6_ADDRESS_%d=%s/%d %s", prefix, i, str_addr, ip_prefix, str_gw);
+			addrtmp = g_strdup_printf ("%sIP6_ADDRESS_%d=%s/%d %s", prefix, i,
+			                           nm_ip_address_get_address (addr),
+			                           nm_ip_address_get_prefix (addr),
+			                           gateway);
 			items = g_slist_prepend (items, addrtmp);
 		}
 		if (addresses->len)
 			items = g_slist_prepend (items, g_strdup_printf ("%sIP6_NUM_ADDRESSES=%d", prefix, addresses->len));
+
+		/* Write gateway to a separate variable, too. */
+		items = g_slist_prepend (items, g_strdup_printf ("%sIP6_GATEWAY=%s", prefix, gateway));
+
 		g_ptr_array_unref (addresses);
+		g_free (gateway);
 		g_variant_unref (val);
 	}
 
@@ -287,15 +300,19 @@ construct_ip6_items (GSList *items, GVariant *ip6_config, const char *prefix)
 		routes = nm_utils_ip6_routes_from_variant (val);
 
 		for (i = 0; i < routes->len; i++) {
-			NMIP6Route *route = routes->pdata[i];
-			guint32 ip_prefix = nm_ip6_route_get_prefix (route);
-			guint32 metric = nm_ip6_route_get_metric (route);
+			NMIPRoute *route = routes->pdata[i];
+			const char *next_hop;
 			char *routetmp;
 
-			nm_utils_inet6_ntop (nm_ip6_route_get_dest (route), str_addr);
-			nm_utils_inet6_ntop (nm_ip6_route_get_next_hop (route), str_gw);
+			next_hop = nm_ip_route_get_next_hop (route);
+			if (!next_hop)
+				next_hop = "::";
 
-			routetmp = g_strdup_printf ("%sIP6_ROUTE_%d=%s/%d %s %d", prefix, i, str_addr, ip_prefix, str_gw, metric);
+			routetmp = g_strdup_printf ("%sIP6_ROUTE_%d=%s/%d %s %u", prefix, i,
+			                            nm_ip_route_get_dest (route),
+			                            nm_ip_route_get_prefix (route),
+			                            next_hop,
+			                            (guint32) MAX (0, nm_ip_route_get_metric (route)));
 			items = g_slist_prepend (items, routetmp);
 		}
 		if (routes->len)

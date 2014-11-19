@@ -19,10 +19,12 @@
  * Copyright 2012 - 2013 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 
 #include "nm-setting-bridge-port.h"
 #include "nm-utils.h"
@@ -256,6 +258,14 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *setting_class)
 	 *
 	 * The Spanning Tree Protocol (STP) priority of this bridge port.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: priority
+	 * variable: BRIDGING_OPTS: priority=
+	 * values: 0 - 63
+	 * default: 32
+	 * description: STP priority.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY,
 		 g_param_spec_uint (NM_SETTING_BRIDGE_PORT_PRIORITY, "", "",
@@ -271,6 +281,14 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *setting_class)
 	 * The Spanning Tree Protocol (STP) port cost for destinations via this
 	 * port.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: path-cost
+	 * variable: BRIDGING_OPTS: path_cost=
+	 * values: 1 - 65535
+	 * default: 100
+	 * description: STP cost.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_PATH_COST,
 		 g_param_spec_uint (NM_SETTING_BRIDGE_PORT_PATH_COST, "", "",
@@ -286,6 +304,13 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *setting_class)
 	 * Enables or disabled "hairpin mode" for the port, which allows frames to
 	 * be sent back out through the port the frame was received on.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: hairpin-mode
+	 * variable: BRIDGING_OPTS: hairpin_mode=
+	 * default: yes
+	 * description: Hairpin mode of the bridge port.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_HAIRPIN_MODE,
 		 g_param_spec_boolean (NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, "", "",

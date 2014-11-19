@@ -19,6 +19,8 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 #include <stdlib.h>
 
@@ -725,7 +727,7 @@ nm_ap_dump (NMAccessPoint *ap, const char *prefix)
 	            prefix,
 	            priv->ssid ? nm_utils_escape_ssid (priv->ssid->data, priv->ssid->len) : "(none)",
 	            ap);
-	nm_log_dbg (LOGD_WIFI_SCAN, "    BSSID     %s", priv->address);
+	nm_log_dbg (LOGD_WIFI_SCAN, "    BSSID     %s", str_if_set (priv->address, "(none)"));
 	nm_log_dbg (LOGD_WIFI_SCAN, "    mode      %d", priv->mode);
 	nm_log_dbg (LOGD_WIFI_SCAN, "    flags     0x%X", priv->flags);
 	nm_log_dbg (LOGD_WIFI_SCAN, "    wpa flags 0x%X", priv->wpa_flags);
@@ -1129,7 +1131,7 @@ nm_ap_check_compatible (NMAccessPoint *self,
 		return FALSE;
 
 	bssid = nm_setting_wireless_get_bssid (s_wireless);
-	if (bssid && !nm_utils_hwaddr_matches (bssid, -1, priv->address, -1))
+	if (bssid && (!priv->address || !nm_utils_hwaddr_matches (bssid, -1, priv->address, -1)))
 		return FALSE;
 
 	mode = nm_setting_wireless_get_mode (s_wireless);

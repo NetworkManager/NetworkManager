@@ -18,7 +18,8 @@
  * Copyright (C) 2014 Red Hat, Inc.
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <sys/socket.h>
 #include <bluetooth/sdp.h>
 #include <bluetooth/sdp_lib.h>

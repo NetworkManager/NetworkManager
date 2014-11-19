@@ -18,6 +18,8 @@
  * Copyright (C) 2013 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <stdlib.h>
 #include <arpa/inet.h>
 

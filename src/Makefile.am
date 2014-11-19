@@ -48,6 +48,77 @@ AM_CPPFLAGS =				\
 # primarily for its side effect of removing duplicates.
 AM_CPPFLAGS += $(foreach d,$(sort $(dir $(libNetworkManager_la_SOURCES))),-I$(top_srcdir)/src/$d)
 
+noinst_LTLIBRARIES = \
+	libNetworkManager.la \
+	libnm-iface-helper.la \
+	libsystemd-dhcp.la
+
+######################
+# libsystemd-dhcp
+######################
+
+SYSTEMD_DHCP_CFLAGS = \
+	-I$(top_srcdir)/src/dhcp-manager/systemd-dhcp/src/systemd \
+	-I$(top_srcdir)/src/dhcp-manager/systemd-dhcp/src/libsystemd-network \
+	-I$(top_srcdir)/src/dhcp-manager/systemd-dhcp/src/shared \
+	-I$(top_srcdir)/src/dhcp-manager/systemd-dhcp
+
+libsystemd_dhcp_la_SOURCES = \
+	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp-network.c \
+	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp-packet.c \
+	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp-internal.h \
+	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp6-network.c \
+	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp6-lease-internal.h \
+	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp6-option.c \
+	dhcp-manager/systemd-dhcp/src/libsystemd-network/network-internal.c \
+	dhcp-manager/systemd-dhcp/src/libsystemd-network/sd-dhcp-lease.c \
+	dhcp-manager/systemd-dhcp/src/libsystemd-network/sd-dhcp-client.c \
+	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp-option.c \
+	dhcp-manager/systemd-dhcp/src/libsystemd-network/network-internal.h \
+	dhcp-manager/systemd-dhcp/src/libsystemd-network/sd-dhcp6-lease.c \
+	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp-protocol.h \
+	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp6-internal.h \
+	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp6-protocol.h \
+	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp-lease-internal.h \
+	dhcp-manager/systemd-dhcp/src/libsystemd-network/sd-dhcp6-client.c \
+	dhcp-manager/systemd-dhcp/src/shared/async.h \
+	dhcp-manager/systemd-dhcp/src/shared/time-util.h \
+	dhcp-manager/systemd-dhcp/src/shared/siphash24.h \
+	dhcp-manager/systemd-dhcp/src/shared/time-util.c \
+	dhcp-manager/systemd-dhcp/src/shared/socket-util.h \
+	dhcp-manager/systemd-dhcp/src/shared/sparse-endian.h \
+	dhcp-manager/systemd-dhcp/src/shared/macro.h \
+	dhcp-manager/systemd-dhcp/src/shared/refcnt.h \
+	dhcp-manager/systemd-dhcp/src/shared/util.c \
+	dhcp-manager/systemd-dhcp/src/shared/in-addr-util.c \
+	dhcp-manager/systemd-dhcp/src/shared/siphash24.c \
+	dhcp-manager/systemd-dhcp/src/shared/util.h \
+	dhcp-manager/systemd-dhcp/src/shared/in-addr-util.h \
+	dhcp-manager/systemd-dhcp/src/shared/list.h \
+	dhcp-manager/systemd-dhcp/src/shared/fileio.h \
+	dhcp-manager/systemd-dhcp/src/shared/fileio.c \
+	dhcp-manager/systemd-dhcp/src/shared/strv.h \
+	dhcp-manager/systemd-dhcp/src/shared/strv.c \
+	dhcp-manager/systemd-dhcp/src/shared/utf8.h \
+	dhcp-manager/systemd-dhcp/src/shared/utf8.c \
+	dhcp-manager/systemd-dhcp/src/systemd/sd-dhcp-lease.h \
+	dhcp-manager/systemd-dhcp/src/systemd/sd-dhcp-client.h \
+	dhcp-manager/systemd-dhcp/src/systemd/sd-id128.h \
+	dhcp-manager/systemd-dhcp/src/systemd/sd-dhcp6-lease.h \
+	dhcp-manager/systemd-dhcp/src/systemd/sd-dhcp6-client.h \
+	dhcp-manager/systemd-dhcp/src/systemd/sd-event.h \
+	dhcp-manager/systemd-dhcp/src/systemd/_sd-common.h \
+	dhcp-manager/systemd-dhcp/nm-sd-adapt.h \
+	dhcp-manager/systemd-dhcp/nm-sd-adapt.c
+
+libsystemd_dhcp_la_CPPFLAGS = \
+	-I$(top_srcdir)/include \
+	$(SYSTEMD_DHCP_CFLAGS) \
+	$(GLIB_CFLAGS)
+
+libsystemd_dhcp_la_LIBADD = \
+	$(GLIB_LIBS)
+
 ###########################################
 # NetworkManager
 ###########################################
@@ -56,11 +127,12 @@ sbin_PROGRAMS = NetworkManager
 
 NetworkManager_SOURCES = \
 	$(nm_device_sources) $(nm_device_headers) \
+	$(nm_dhcp_client_sources) $(nm_dhcp_client_headers) \
+	main-utils.c \
+	main-utils.h \
 	main.c
 
 NetworkManager_LDADD = libNetworkManager.la
-
-noinst_LTLIBRARIES = libNetworkManager.la
 
 nm_device_sources = \
 	devices/nm-device-bond.c \
@@ -87,8 +159,21 @@ nm_device_headers = \
 	devices/nm-device-vlan.h \
 	devices/nm-device-vxlan.h
 
+nm_dhcp_client_sources = \
+	dhcp-manager/nm-dhcp-dhclient.c \
+	dhcp-manager/nm-dhcp-dhclient-utils.c \
+	dhcp-manager/nm-dhcp-dhcpcd.c \
+	dhcp-manager/nm-dhcp-systemd.c
+
+nm_dhcp_client_headers = \
+	dhcp-manager/nm-dhcp-dhclient.h \
+	dhcp-manager/nm-dhcp-dhclient-utils.h \
+	dhcp-manager/nm-dhcp-dhcpcd.h \
+	dhcp-manager/nm-dhcp-systemd.h
+
 nm_sources = \
 	$(nm_device_headers) \
+	$(nm_dhcp_client_headers) \
 	devices/nm-device.c \
 	devices/nm-device.h \
 	devices/nm-device-ethernet-utils.c \
@@ -104,12 +189,8 @@ nm_sources = \
 	dhcp-manager/nm-dhcp-client.h \
 	dhcp-manager/nm-dhcp-utils.c \
 	dhcp-manager/nm-dhcp-utils.h \
-	dhcp-manager/nm-dhcp-dhclient.c \
-	dhcp-manager/nm-dhcp-dhclient.h \
-	dhcp-manager/nm-dhcp-dhclient-utils.c \
-	dhcp-manager/nm-dhcp-dhclient-utils.h \
-	dhcp-manager/nm-dhcp-dhcpcd.c \
-	dhcp-manager/nm-dhcp-dhcpcd.h \
+	dhcp-manager/nm-dhcp-listener.c \
+	dhcp-manager/nm-dhcp-listener.h \
 	dhcp-manager/nm-dhcp-manager.c \
 	dhcp-manager/nm-dhcp-manager.h \
 	\
@@ -128,9 +209,6 @@ nm_sources = \
 	dnsmasq-manager/nm-dnsmasq-manager.h \
 	dnsmasq-manager/nm-dnsmasq-utils.c \
 	dnsmasq-manager/nm-dnsmasq-utils.h \
-	\
-	firewall-manager/nm-firewall-manager.c \
-	firewall-manager/nm-firewall-manager.h \
 	\
 	platform/nm-fake-platform.c \
 	platform/nm-fake-platform.h \
@@ -213,6 +291,8 @@ nm_sources = \
 	nm-dbus-manager.h \
 	nm-dcb.c \
 	nm-dcb.h \
+	nm-default-route-manager.c \
+	nm-default-route-manager.h \
 	nm-dhcp4-config.c \
 	nm-dhcp4-config.h \
 	nm-dhcp6-config.c \
@@ -221,6 +301,8 @@ nm_sources = \
 	nm-dispatcher.h \
 	nm-enum-types.c \
 	nm-enum-types.h \
+	nm-firewall-manager.c \
+	nm-firewall-manager.h \
 	nm-ip4-config.c \
 	nm-ip4-config.h \
 	nm-ip6-config.c \
@@ -328,6 +410,7 @@ AM_CPPFLAGS += \
 	$(LIBNDP_CFLAGS) \
 	$(LIBSOUP_CFLAGS) \
 	$(SYSTEMD_LOGIN_CFLAGS) \
+	$(SYSTEMD_DHCP_CFLAGS) \
 	\
 	-DBINDIR=\"$(bindir)\" \
 	-DDATADIR=\"$(datadir)\" \
@@ -359,6 +442,7 @@ libNetworkManager_la_SOURCES = \
 
 libNetworkManager_la_LIBADD = \
 	$(top_builddir)/libnm-core/libnm-core.la \
+	libsystemd-dhcp.la \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS) \
 	$(GUDEV_LIBS) \
@@ -373,6 +457,88 @@ libNetworkManager_la_LIBADD += $(LIBSOUP_LIBS)
 endif
 
 NetworkManager_LDFLAGS = -rdynamic
+
+######################
+
+libnm_iface_helper_la_SOURCES = \
+	dhcp-manager/nm-dhcp-client.c \
+	dhcp-manager/nm-dhcp-client.h \
+	dhcp-manager/nm-dhcp-utils.c \
+	dhcp-manager/nm-dhcp-utils.h \
+	dhcp-manager/nm-dhcp-manager.c \
+	dhcp-manager/nm-dhcp-manager.h \
+	\
+	platform/nm-linux-platform.c \
+	platform/nm-linux-platform.h \
+	platform/nm-platform.c \
+	platform/nm-platform.h \
+	platform/wifi/wifi-utils-nl80211.c \
+	platform/wifi/wifi-utils-nl80211.h \
+	platform/wifi/wifi-utils-private.h \
+	platform/wifi/wifi-utils.c \
+	platform/wifi/wifi-utils.h \
+	\
+	rdisc/nm-fake-rdisc.c \
+	rdisc/nm-fake-rdisc.h \
+	rdisc/nm-lndp-rdisc.c \
+	rdisc/nm-lndp-rdisc.h \
+	rdisc/nm-rdisc.c \
+	rdisc/nm-rdisc.h \
+	\
+	nm-ip4-config.c \
+	nm-ip4-config.h \
+	nm-ip6-config.c \
+	nm-ip6-config.h \
+	\
+	nm-enum-types.c \
+	nm-enum-types.h \
+	nm-logging.c \
+	nm-logging.h \
+	nm-posix-signals.c \
+	nm-posix-signals.h \
+	NetworkManagerUtils.c \
+	NetworkManagerUtils.h
+
+if WITH_WEXT
+libnm_iface_helper_la_SOURCES += \
+	platform/wifi/wifi-utils-wext.c \
+	platform/wifi/wifi-utils-wext.h
+endif
+
+libnm_iface_helper_la_LIBADD = \
+	$(top_builddir)/libnm-core/libnm-core.la \
+	libsystemd-dhcp.la \
+	$(DBUS_LIBS) \
+	$(GLIB_LIBS) \
+	$(GUDEV_LIBS) \
+	$(LIBNL_LIBS) \
+	$(LIBNDP_LIBS) \
+	$(LIBDL) \
+	$(LIBM)
+
+libexec_PROGRAMS = nm-iface-helper
+
+nm_iface_helper_SOURCES = \
+	dhcp-manager/nm-dhcp-systemd.h \
+	dhcp-manager/nm-dhcp-systemd.c \
+	nm-iface-helper.c \
+	main-utils.c \
+	main-utils.h
+
+nm_iface_helper_LDADD = \
+	$(top_builddir)/libnm-core/libnm-core.la \
+	libsystemd-dhcp.la \
+	libnm-iface-helper.la \
+	$(DBUS_LIBS) \
+	$(GLIB_LIBS) \
+	$(GUDEV_LIBS) \
+	$(LIBNL_LIBS) \
+	$(LIBNDP_LIBS) \
+	$(LIBM)
+
+nm_iface_helper_LDFLAGS = -rdynamic
+
+######################
 
 dbusservicedir = $(DBUS_SYS_DIR)
 dbusservice_DATA = org.freedesktop.NetworkManager.conf

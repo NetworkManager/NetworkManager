@@ -37,8 +37,9 @@ enum NMActStageReturn {
 };
 
 #define NM_DEVICE_CAP_NONSTANDARD_CARRIER 0x80000000
+#define NM_DEVICE_CAP_IS_NON_KERNEL       0x40000000
 
-#define NM_DEVICE_CAP_INTERNAL_MASK 0x80000000
+#define NM_DEVICE_CAP_INTERNAL_MASK 0xc0000000
 
 void nm_device_set_ip_iface (NMDevice *self, const char *iface);
 

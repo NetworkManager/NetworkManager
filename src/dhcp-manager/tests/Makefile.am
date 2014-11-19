@@ -13,27 +13,31 @@ AM_CPPFLAGS = \
 
 noinst_PROGRAMS = \
 	test-dhcp-dhclient \
-	test-dhcp-options
+	test-dhcp-utils
 
 ####### dhclient leases test #######
 
 test_dhcp_dhclient_SOURCES = \
+	$(top_srcdir)/src/dhcp-manager/nm-dhcp-dhclient-utils.h \
+	$(top_srcdir)/src/dhcp-manager/nm-dhcp-dhclient-utils.c \
+	$(top_srcdir)/src/dhcp-manager/nm-dhcp-utils.h \
+	$(top_srcdir)/src/dhcp-manager/nm-dhcp-utils.c \
 	test-dhcp-dhclient.c
 
 test_dhcp_dhclient_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la
 
-####### DHCP options test #######
+####### DHCP utils test #######
 
-test_dhcp_options_SOURCES = \
-	test-dhcp-options.c
+test_dhcp_utils_SOURCES = \
+	test-dhcp-utils.c
 
-test_dhcp_options_LDADD = \
+test_dhcp_utils_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la
 
 #################################
 
-TESTS = test-dhcp-dhclient test-dhcp-options
+TESTS = test-dhcp-dhclient test-dhcp-utils
 
 EXTRA_DIST = \
 	test-dhclient-duid.leases \

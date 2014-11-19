@@ -30,6 +30,7 @@
 #include "nm-system-config-interface.h"
 #include "nm-logging.h"
 #include "nm-core-internal.h"
+#include "NetworkManagerUtils.h"
 
 #include "net_utils.h"
 #include "wpa_parser.h"
@@ -42,8 +43,16 @@ connection_id_from_ifnet_name (const char *conn_name)
 	int name_len = strlen (conn_name);
 
 	/* Convert a hex-encoded conn_name (only used for wifi SSIDs) to human-readable one */
-	if ((name_len > 2) && (g_str_has_prefix (conn_name, "0x")))
-		return nm_utils_hexstr2bin (conn_name + 2, name_len - 2);
+	if ((name_len > 2) && (g_str_has_prefix (conn_name, "0x"))) {
+		GBytes *bytes = nm_utils_hexstr2bin (conn_name);
+		char *buf;
+
+		if (bytes) {
+			buf = g_strndup (g_bytes_get_data (bytes, NULL), g_bytes_get_size (bytes));
+			g_bytes_unref (bytes);
+			return buf;
+		}
+	}
 
 	return g_strdup (conn_name);
 }
@@ -544,25 +553,25 @@ make_wired_connection_setting (NMConnection *connection,
 		nm_connection_add_setting (connection, NM_SETTING (s_wired));
 }
 
-/* add NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME,
- * NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID in future*/
+/* add NM_SETTING_IP_CONFIG_DHCP_HOSTNAME,
+ * NM_SETTING_IP_CONFIG_DHCP_CLIENT_ID in future*/
 static void
 make_ip4_setting (NMConnection *connection,
                   const char *conn_name,
                   GError **error)
 {
 
-	NMSettingIP4Config *ip4_setting =
-	    NM_SETTING_IP4_CONFIG (nm_setting_ip4_config_new ());
+	NMSettingIPConfig *ip4_setting =
+	    NM_SETTING_IP_CONFIG (nm_setting_ip4_config_new ());
 	const char *value, *method = NULL;
 	gboolean is_static_block = is_static_ip4 (conn_name);
 	ip_block *iblock = NULL;
 
 	/* set dhcp options (dhcp_xxx) */
 	value = ifnet_get_data (conn_name, "dhcp");
-	g_object_set (ip4_setting, NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS, value
+	g_object_set (ip4_setting, NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, value
 		      && strstr (value, "nodns") ? TRUE : FALSE,
-		      NM_SETTING_IP4_CONFIG_IGNORE_AUTO_ROUTES, value
+		      NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES, value
 		      && strstr (value, "nogateway") ? TRUE : FALSE, NULL);
 
 	if (!is_static_block) {
@@ -575,21 +584,21 @@ make_ip4_setting (NMConnection *connection,
 		}
 		if (strstr (method, "dhcp"))
 			g_object_set (ip4_setting,
-						  NM_SETTING_IP4_CONFIG_METHOD,
+						  NM_SETTING_IP_CONFIG_METHOD,
 						  NM_SETTING_IP4_CONFIG_METHOD_AUTO,
-						  NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, FALSE, NULL);
+						  NM_SETTING_IP_CONFIG_NEVER_DEFAULT, FALSE, NULL);
 		else if (strstr (method, "autoip")) {
 			g_object_set (ip4_setting,
-						  NM_SETTING_IP4_CONFIG_METHOD,
+						  NM_SETTING_IP_CONFIG_METHOD,
 						  NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
-						  NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, FALSE, NULL);
+						  NM_SETTING_IP_CONFIG_NEVER_DEFAULT, FALSE, NULL);
 			nm_connection_add_setting (connection, NM_SETTING (ip4_setting));
 			return;
 		} else if (strstr (method, "shared")) {
 			g_object_set (ip4_setting,
-						  NM_SETTING_IP4_CONFIG_METHOD,
+						  NM_SETTING_IP_CONFIG_METHOD,
 						  NM_SETTING_IP4_CONFIG_METHOD_SHARED,
-						  NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, FALSE, NULL);
+						  NM_SETTING_IP_CONFIG_NEVER_DEFAULT, FALSE, NULL);
 			nm_connection_add_setting (connection, NM_SETTING (ip4_setting));
 			return;
 		} else {
@@ -611,29 +620,32 @@ make_ip4_setting (NMConnection *connection,
 		/************** add all ip settings to the connection**********/
 		while (iblock) {
 			ip_block *current_iblock;
-			NMIP4Address *ip4_addr = nm_ip4_address_new ();
+			NMIPAddress *ip4_addr;
+			GError *local = NULL;
 
-			nm_ip4_address_set_address (ip4_addr, iblock->ip);
-			nm_ip4_address_set_prefix (ip4_addr,
-						   nm_utils_ip4_netmask_to_prefix
-						   (iblock->netmask));
-			/* currently all the IPs has the same gateway */
-			nm_ip4_address_set_gateway (ip4_addr, iblock->gateway);
-			if (iblock->gateway)
+			ip4_addr = nm_ip_address_new (AF_INET, iblock->ip, iblock->prefix, &local);
+			if (iblock->next_hop)
 				g_object_set (ip4_setting,
-					      NM_SETTING_IP4_CONFIG_IGNORE_AUTO_ROUTES,
+					      NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES,
 					      TRUE, NULL);
-			if (!nm_setting_ip4_config_add_address (ip4_setting, ip4_addr))
-				nm_log_warn (LOGD_SETTINGS, "ignoring duplicate IP4 address");
-			nm_ip4_address_unref (ip4_addr);
+
+			if (ip4_addr) {
+				if (!nm_setting_ip_config_add_address (ip4_setting, ip4_addr))
+					nm_log_warn (LOGD_SETTINGS, "ignoring duplicate IP4 address");
+				nm_ip_address_unref (ip4_addr);
+			} else {
+				nm_log_warn (LOGD_SETTINGS, "    ignoring invalid address entry: %s", local->message);
+				g_clear_error (&local);
+			}
+
 			current_iblock = iblock;
 			iblock = iblock->next;
 			destroy_ip_block (current_iblock);
 
 		}
 		g_object_set (ip4_setting,
-		              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
-		              NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, !has_default_ip4_route (conn_name),
+		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+		              NM_SETTING_IP_CONFIG_NEVER_DEFAULT, !has_default_ip4_route (conn_name),
 		              NULL);
 	}
 
@@ -644,7 +656,7 @@ make_ip4_setting (NMConnection *connection,
 		get_dhcp_hostname_and_client_id (&dhcp_hostname, &client_id);
 		if (dhcp_hostname) {
 			g_object_set (ip4_setting,
-				      NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME,
+				      NM_SETTING_IP_CONFIG_DHCP_HOSTNAME,
 				      dhcp_hostname, NULL);
 			nm_log_info (LOGD_SETTINGS, "DHCP hostname: %s", dhcp_hostname);
 			g_free (dhcp_hostname);
@@ -675,7 +687,7 @@ make_ip4_setting (NMConnection *connection,
 
 			for (item = searches; *item; item++) {
 				if (strlen (*item)) {
-					if (!nm_setting_ip4_config_add_dns_search (ip4_setting, *item))
+					if (!nm_setting_ip_config_add_dns_search (ip4_setting, *item))
 						nm_log_warn (LOGD_SETTINGS, "    duplicate DNS domain '%s'", *item);
 				}
 			}
@@ -689,34 +701,34 @@ make_ip4_setting (NMConnection *connection,
 		ip_block *current_iblock = iblock;
 		const char *metric_str;
 		char *stripped;
-		long int metric;
-		NMIP4Route *route = nm_ip4_route_new ();
+		gint64 metric;
+		NMIPRoute *route;
+		GError *local = NULL;
 
-		nm_ip4_route_set_dest (route, iblock->ip);
-		nm_ip4_route_set_next_hop (route, iblock->gateway);
-		nm_ip4_route_set_prefix (route,
-					 nm_utils_ip4_netmask_to_prefix
-					 (iblock->netmask));
 		if ((metric_str = ifnet_get_data (conn_name, "metric")) != NULL) {
-			metric = strtol (metric_str, NULL, 10);
-			nm_ip4_route_set_metric (route, (guint32) metric);
+			metric = nm_utils_ascii_str_to_int64 (metric_str, 10, 0, G_MAXUINT32, -1);
 		} else {
 			metric_str = ifnet_get_global_data ("metric");
 			if (metric_str) {
 				stripped = g_strdup (metric_str);
 				strip_string (stripped, '"');
-				metric = strtol (metric_str, NULL, 10);
-				nm_ip4_route_set_metric (route,
-							 (guint32) metric);
+				metric = nm_utils_ascii_str_to_int64 (metric_str, 10, 0, G_MAXUINT32, -1);
 				g_free (stripped);
-			}
+			} else
+				metric = -1;
 		}
 
-		if (!nm_setting_ip4_config_add_route (ip4_setting, route))
-			nm_log_warn (LOGD_SETTINGS, "duplicate IP4 route");
-		nm_log_info (LOGD_SETTINGS, "new IP4 route:%d\n", iblock->ip);
-
-		nm_ip4_route_unref (route);
+		route = nm_ip_route_new (AF_INET, iblock->ip, iblock->prefix, iblock->next_hop, metric, &local);
+		if (route) {
+			if (nm_setting_ip_config_add_route (ip4_setting, route))
+				nm_log_info (LOGD_SETTINGS, "new IP4 route:%s\n", iblock->ip);
+			else
+				nm_log_warn (LOGD_SETTINGS, "duplicate IP4 route");
+			nm_ip_route_unref (route);
+		} else {
+			nm_log_warn (LOGD_SETTINGS, "    ignoring invalid route entry: %s", local->message);
+			g_clear_error (&local);
+		}
 
 		current_iblock = iblock;
 		iblock = iblock->next;
@@ -732,17 +744,17 @@ make_ip6_setting (NMConnection *connection,
                   const char *conn_name,
                   GError **error)
 {
-	NMSettingIP6Config *s_ip6 = NULL;
+	NMSettingIPConfig *s_ip6 = NULL;
 	gboolean is_static_block = is_static_ip6 (conn_name);
 
 	// used to disable IPv6
 	gboolean ipv6_enabled = FALSE;
 	gchar *method = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
 	const char *value;
-	ip6_block *iblock;
+	ip_block *iblock;
 	gboolean never_default = !has_default_ip6_route (conn_name);
 
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 
 	value = ifnet_get_data (conn_name, "enable_ipv6");
 	if (value && is_true (value))
@@ -752,7 +764,7 @@ make_ip6_setting (NMConnection *connection,
 	// Currently only Manual and DHCP are supported
 	if (!ipv6_enabled) {
 		g_object_set (s_ip6,
-			      NM_SETTING_IP6_CONFIG_METHOD,
+			      NM_SETTING_IP_CONFIG_METHOD,
 			      NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
 		goto done;
 	} else if (!is_static_block) {
@@ -769,14 +781,14 @@ make_ip6_setting (NMConnection *connection,
 	nm_log_info (LOGD_SETTINGS, "IPv6 for %s enabled, using %s", conn_name, method);
 
 	g_object_set (s_ip6,
-		      NM_SETTING_IP6_CONFIG_METHOD, method,
-		      NM_SETTING_IP6_CONFIG_IGNORE_AUTO_DNS, FALSE,
-		      NM_SETTING_IP6_CONFIG_IGNORE_AUTO_ROUTES, FALSE,
-		      NM_SETTING_IP6_CONFIG_NEVER_DEFAULT, never_default, NULL);
+		      NM_SETTING_IP_CONFIG_METHOD, method,
+		      NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, FALSE,
+		      NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES, FALSE,
+		      NM_SETTING_IP_CONFIG_NEVER_DEFAULT, never_default, NULL);
 
 	/* Make manual settings */
 	if (!strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_MANUAL)) {
-		ip6_block *current_iblock;
+		ip_block *current_iblock;
 
 		iblock = convert_ip6_config_block (conn_name);
 		if (!iblock) {
@@ -787,73 +799,80 @@ make_ip6_setting (NMConnection *connection,
 		}
 		/* add all IPv6 addresses */
 		while (iblock) {
-			NMIP6Address *ip6_addr = nm_ip6_address_new ();
+			NMIPAddress *ip6_addr;
+			GError *local = NULL;
 
-			nm_ip6_address_set_address (ip6_addr, iblock->ip);
-			nm_ip6_address_set_prefix (ip6_addr, iblock->prefix);
-			if (nm_setting_ip6_config_add_address (s_ip6, ip6_addr)) {
-				nm_log_info (LOGD_SETTINGS, "ipv6 addresses count: %d",
-				             nm_setting_ip6_config_get_num_addresses (s_ip6));
+			ip6_addr = nm_ip_address_new (AF_INET6, iblock->ip, iblock->prefix, &local);
+			if (ip6_addr) {
+				if (nm_setting_ip_config_add_address (s_ip6, ip6_addr)) {
+					nm_log_info (LOGD_SETTINGS, "ipv6 addresses count: %d",
+					             nm_setting_ip_config_get_num_addresses (s_ip6));
+				} else {
+					nm_log_warn (LOGD_SETTINGS, "ignoring duplicate IP6 address");
+				}
+				nm_ip_address_unref (ip6_addr);
 			} else {
-				nm_log_warn (LOGD_SETTINGS, "ignoring duplicate IP4 address");
+				nm_log_warn (LOGD_SETTINGS, "    ignoring invalid address entry: %s", local->message);
+				g_clear_error (&local);
 			}
-			nm_ip6_address_unref (ip6_addr);
+
 			current_iblock = iblock;
 			iblock = iblock->next;
-			destroy_ip6_block (current_iblock);
+			destroy_ip_block (current_iblock);
 		}
 
 	} else if (!strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO)) {
 		/* - autoconf or DHCPv6 stuff goes here */
 	}
-	// DNS Servers, set NM_SETTING_IP6_CONFIG_IGNORE_AUTO_DNS TRUE here
+	// DNS Servers, set NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS TRUE here
 	set_ip6_dns_servers (s_ip6, conn_name);
 
-	/* DNS searches ('DOMAIN' key) are read by make_ip4_setting() and included in NMSettingIP4Config */
+	/* DNS searches ('DOMAIN' key) are read by make_ip4_setting() and included in NMSettingIPConfig */
 
 	// Add routes
 	iblock = convert_ip6_routes_block (conn_name);
 	if (iblock)
-		g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_IGNORE_AUTO_ROUTES,
+		g_object_set (s_ip6, NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES,
 			      TRUE, NULL);
 	/* Add all IPv6 routes */
 	while (iblock) {
-		ip6_block *current_iblock = iblock;
+		ip_block *current_iblock = iblock;
 		const char *metric_str;
 		char *stripped;
-		long int metric = 1;
-		NMIP6Route *route = nm_ip6_route_new ();
+		gint64 metric;
+		NMIPRoute *route;
+		GError *local = NULL;
 
-		nm_ip6_route_set_dest (route, iblock->ip);
-		nm_ip6_route_set_next_hop (route, iblock->next_hop);
-		nm_ip6_route_set_prefix (route, iblock->prefix);
 		/* metric is not per routes configuration right now
 		 * global metric is also supported (metric="x") */
-		if ((metric_str = ifnet_get_data (conn_name, "metric")) != NULL) {
-			metric = strtol (metric_str, NULL, 10);
-			nm_ip6_route_set_metric (route, (guint32) metric);
-		} else {
+		if ((metric_str = ifnet_get_data (conn_name, "metric")) != NULL)
+			metric = nm_utils_ascii_str_to_int64 (metric_str, 10, 0, G_MAXUINT32, -1);
+		else {
 			metric_str = ifnet_get_global_data ("metric");
 			if (metric_str) {
 				stripped = g_strdup (metric_str);
 				strip_string (stripped, '"');
-				metric = strtol (metric_str, NULL, 10);
-				nm_ip6_route_set_metric (route,
-							 (guint32) metric);
+				metric = nm_utils_ascii_str_to_int64 (metric_str, 10, 0, G_MAXUINT32, -1);
 				g_free (stripped);
 			} else
-				nm_ip6_route_set_metric (route, (guint32) 1);
+				metric = 1;
 		}
 
-		if (nm_setting_ip6_config_add_route (s_ip6, route))
-			nm_log_info (LOGD_SETTINGS, "    new IP6 route");
-		else
-			nm_log_warn (LOGD_SETTINGS, "    duplicate IP6 route");
-		nm_ip6_route_unref (route);
+		route = nm_ip_route_new (AF_INET6, iblock->ip, iblock->prefix, iblock->next_hop, metric, &local);
+		if (route) {
+			if (nm_setting_ip_config_add_route (s_ip6, route))
+				nm_log_info (LOGD_SETTINGS, "    new IP6 route");
+			else
+				nm_log_warn (LOGD_SETTINGS, "    duplicate IP6 route");
+			nm_ip_route_unref (route);
+		} else {
+			nm_log_warn (LOGD_SETTINGS, "    ignoring invalid route entry: %s", local->message);
+			g_clear_error (&local);
+		}
 
 		current_iblock = iblock;
 		iblock = iblock->next;
-		destroy_ip6_block (current_iblock);
+		destroy_ip_block (current_iblock);
 	}
 
 done:
@@ -871,7 +890,6 @@ make_wireless_connection_setting (const char *conn_name,
                                   NMSetting8021x **s_8021x,
                                   GError **error)
 {
-	GBytes *bytes;
 	const char *mac = NULL;
 	NMSettingWireless *wireless_setting = NULL;
 	gboolean adhoc = FALSE;
@@ -902,9 +920,8 @@ make_wireless_connection_setting (const char *conn_name,
 
 	/* handle ssid (hex and ascii) */
 	if (conn_name) {
+		GBytes *bytes;
 		gsize ssid_len = 0, value_len = strlen (conn_name);
-		const char *p;
-		char *tmp, *converted = NULL;
 
 		ssid_len = value_len;
 		if ((value_len > 2) && (g_str_has_prefix (conn_name, "0x"))) {
@@ -915,32 +932,27 @@ make_wireless_connection_setting (const char *conn_name,
 					     conn_name);
 				goto error;
 			}
-			// ignore "0x"
-			p = conn_name + 2;
-			if (!is_hex (p)) {
+
+			bytes = nm_utils_hexstr2bin (conn_name);
+			if (!bytes) {
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-					     "Invalid SSID '%s' character (looks like hex SSID but '%c' isn't a hex digit)",
-					     conn_name, *p);
+				             "Invalid SSID '%s' (looks like hex SSID but isn't)",
+				             conn_name);
 				goto error;
-
 			}
-			tmp = nm_utils_hexstr2bin (p, value_len - 2);
-			ssid_len = (value_len - 2) / 2;
-			converted = g_malloc0 (ssid_len + 1);
-			memcpy (converted, tmp, ssid_len);
-			g_free (tmp);
-		}
+		} else
+			bytes = g_bytes_new (conn_name, value_len);
 
+		ssid_len = g_bytes_get_size (bytes);
 		if (ssid_len > 32 || ssid_len == 0) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				     "Invalid SSID '%s' (size %zu not between 1 and 32 inclusive)",
 				     conn_name, ssid_len);
 			goto error;
 		}
-		bytes = g_bytes_new (converted ? converted : conn_name, ssid_len);
+
 		g_object_set (wireless_setting, NM_SETTING_WIRELESS_SSID, bytes, NULL);
 		g_bytes_unref (bytes);
-		g_free (converted);
 	} else {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			     "Missing SSID");
@@ -1084,7 +1096,7 @@ add_one_wep_key (const char *ssid,
 
 		}
 
-		converted = nm_utils_bin2hexstr (tmp, strlen (tmp), strlen (tmp) * 2);
+		converted = nm_utils_bin2hexstr (tmp, strlen (tmp), -1);
 		g_free (tmp);
 	} else {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
@@ -2359,15 +2371,13 @@ write_wired_setting (NMConnection *connection,
 static gboolean
 write_ip4_setting (NMConnection *connection, const char *conn_name, GError **error)
 {
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	const char *value;
-	char *tmp;
 	guint32 i, num;
 	GString *searches;
 	GString *ips;
 	GString *routes;
 	GString *dns;
-	gboolean has_def_route = FALSE;
 	gboolean success = FALSE;
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
@@ -2379,42 +2389,27 @@ write_ip4_setting (NMConnection *connection, const char *conn_name, GError **err
 	}
 	routes = g_string_new (NULL);
 
-	value = nm_setting_ip4_config_get_method (s_ip4);
+	value = nm_setting_ip_config_get_method (s_ip4);
 	g_assert (value);
 	if (!strcmp (value, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
 
-		num = nm_setting_ip4_config_get_num_addresses (s_ip4);
+		num = nm_setting_ip_config_get_num_addresses (s_ip4);
 		ips = g_string_new (NULL);
 		/* IPv4 addresses */
 		for (i = 0; i < num; i++) {
-			char buf[INET_ADDRSTRLEN + 1];
-			NMIP4Address *addr;
-			guint32 ip;
+			NMIPAddress *addr;
 
-			addr = nm_setting_ip4_config_get_address (s_ip4, i);
+			addr = nm_setting_ip_config_get_address (s_ip4, i);
 
-			memset (buf, 0, sizeof (buf));
-			ip = nm_ip4_address_get_address (addr);
-			inet_ntop (AF_INET, (const void *) &ip, &buf[0],
-				   sizeof (buf));
-			g_string_append_printf (ips, "\"%s", &buf[0]);
-
-			tmp =
-			    g_strdup_printf ("%u",
-					     nm_ip4_address_get_prefix (addr));
-			g_string_append_printf (ips, "/%s\" ", tmp);
-			g_free (tmp);
+			g_string_append_printf (ips, "\"%s/%u",
+			                        nm_ip_address_get_address (addr),
+			                        nm_ip_address_get_prefix (addr));
 
 			/* only the first gateway will be written */
-			if (!has_def_route && nm_ip4_address_get_gateway (addr)) {
-				memset (buf, 0, sizeof (buf));
-				ip = nm_ip4_address_get_gateway (addr);
-				inet_ntop (AF_INET, (const void *) &ip, &buf[0],
-					   sizeof (buf));
+			if (i == 0 && nm_setting_ip_config_get_gateway (s_ip4)) {
 				g_string_append_printf (routes,
-							"\"default via %s\" ",
-							&buf[0]);
-				has_def_route = TRUE;
+				                        "\"default via %s\" ",
+				                        nm_setting_ip_config_get_gateway (s_ip4));
 			}
 		}
 		ifnet_set_data (conn_name, "config", ips->str);
@@ -2427,13 +2422,13 @@ write_ip4_setting (NMConnection *connection, const char *conn_name, GError **err
 		ifnet_set_data (conn_name, "config", "dhcp");
 
 	/* DNS Servers */
-	num = nm_setting_ip4_config_get_num_dns (s_ip4);
+	num = nm_setting_ip_config_get_num_dns (s_ip4);
 	if (num > 0) {
 		dns = g_string_new (NULL);
 		for (i = 0; i < num; i++) {
 			const char *ip;
 
-			ip = nm_setting_ip4_config_get_dns (s_ip4, i);
+			ip = nm_setting_ip_config_get_dns (s_ip4, i);
 			g_string_append_printf (dns, " %s", ip);
 		}
 		ifnet_set_data (conn_name, "dns_servers", dns->str);
@@ -2442,14 +2437,14 @@ write_ip4_setting (NMConnection *connection, const char *conn_name, GError **err
 		ifnet_set_data (conn_name, "dns_servers", NULL);
 
 	/* DNS Searches */
-	num = nm_setting_ip4_config_get_num_dns_searches (s_ip4);
+	num = nm_setting_ip_config_get_num_dns_searches (s_ip4);
 	if (num > 0) {
 		searches = g_string_new (NULL);
 		for (i = 0; i < num; i++) {
 			if (i > 0)
 				g_string_append_c (searches, ' ');
 			g_string_append (searches,
-					 nm_setting_ip4_config_get_dns_search
+					 nm_setting_ip_config_get_dns_search
 					 (s_ip4, i));
 		}
 		ifnet_set_data (conn_name, "dns_search", searches->str);
@@ -2458,12 +2453,12 @@ write_ip4_setting (NMConnection *connection, const char *conn_name, GError **err
 		ifnet_set_data (conn_name, "dns_search", NULL);
 	/* FIXME Will be implemented when configuration supports it
 	   if (!strcmp(value, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
-	   value = nm_setting_ip4_config_get_dhcp_hostname(s_ip4);
+	   value = nm_setting_ip_config_get_dhcp_hostname(s_ip4);
 	   if (value)
 	   ifnet_set_data(conn_name, "DHCP_HOSTNAME", value,
 	   FALSE);
 
-	   value = nm_setting_ip4_config_get_dhcp_client_id(s_ip4);
+	   value = nm_setting_ip_config_get_dhcp_client_id(s_ip4);
 	   if (value)
 	   ifnet_set_data(conn_name, "DHCP_CLIENT_ID", value,
 	   FALSE);
@@ -2471,32 +2466,22 @@ write_ip4_setting (NMConnection *connection, const char *conn_name, GError **err
 	 */
 
 	/* Static routes */
-	num = nm_setting_ip4_config_get_num_routes (s_ip4);
+	num = nm_setting_ip_config_get_num_routes (s_ip4);
 	if (num > 0) {
 		for (i = 0; i < num; i++) {
-			char buf[INET_ADDRSTRLEN + 1];
-			NMIP4Route *route;
-			guint32 ip;
+			NMIPRoute *route;
+			const char *next_hop;
 
-			route = nm_setting_ip4_config_get_route (s_ip4, i);
+			route = nm_setting_ip_config_get_route (s_ip4, i);
 
-			memset (buf, 0, sizeof (buf));
-			ip = nm_ip4_route_get_dest (route);
-			inet_ntop (AF_INET, (const void *) &ip, &buf[0],
-				   sizeof (buf));
-			g_string_append_printf (routes, "\"%s", buf);
+			next_hop = nm_ip_route_get_next_hop (route);
+			if (!next_hop)
+				next_hop = "0.0.0.0";
 
-			tmp =
-			    g_strdup_printf ("%u",
-					     nm_ip4_route_get_prefix (route));
-			g_string_append_printf (routes, "/%s via ", tmp);
-			g_free (tmp);
-
-			memset (buf, 0, sizeof (buf));
-			ip = nm_ip4_route_get_next_hop (route);
-			inet_ntop (AF_INET, (const void *) &ip, &buf[0],
-				   sizeof (buf));
-			g_string_append_printf (routes, "%s\" ", buf);
+			g_string_append_printf (routes, "\"%s/%u via %s\" ",
+			                        nm_ip_route_get_dest (route),
+			                        nm_ip_route_get_prefix (route),
+			                        next_hop);
 		}
 	}
 	if (routes->len > 0)
@@ -2511,19 +2496,16 @@ write_ip4_setting (NMConnection *connection, const char *conn_name, GError **err
 }
 
 static gboolean
-write_route6_file (NMSettingIP6Config *s_ip6, const char *conn_name, GError **error)
+write_route6_file (NMSettingIPConfig *s_ip6, const char *conn_name, GError **error)
 {
-	char dest[INET6_ADDRSTRLEN + 1];
-	char next_hop[INET6_ADDRSTRLEN + 1];
-	NMIP6Route *route;
-	const struct in6_addr *ip;
-	guint32 prefix;
+	NMIPRoute *route;
+	const char *next_hop;
 	guint32 i, num;
 	GString *routes_string;
 	const char *old_routes;
 
 	g_return_val_if_fail (s_ip6 != NULL, FALSE);
-	num = nm_setting_ip6_config_get_num_routes (s_ip6);
+	num = nm_setting_ip_config_get_num_routes (s_ip6);
 	if (num == 0) {
 		return TRUE;
 	}
@@ -2533,22 +2515,16 @@ write_route6_file (NMSettingIP6Config *s_ip6, const char *conn_name, GError **er
 	if (old_routes)
 		g_string_append (routes_string, "\" ");
 	for (i = 0; i < num; i++) {
-		route = nm_setting_ip6_config_get_route (s_ip6, i);
+		route = nm_setting_ip_config_get_route (s_ip6, i);
 
-		memset (dest, 0, sizeof (dest));
-		ip = nm_ip6_route_get_dest (route);
-		inet_ntop (AF_INET6, (const void *) ip, &dest[0],
-			   sizeof (dest));
-
-		prefix = nm_ip6_route_get_prefix (route);
-
-		memset (next_hop, 0, sizeof (next_hop));
-		ip = nm_ip6_route_get_next_hop (route);
-		inet_ntop (AF_INET6, (const void *) ip, &next_hop[0],
-			   sizeof (next_hop));
+		next_hop = nm_ip_route_get_next_hop (route);
+		if (!next_hop)
+			next_hop = "::";
 
 		g_string_append_printf (routes_string, "\"%s/%u via %s\" ",
-					dest, prefix, next_hop);
+		                        nm_ip_route_get_dest (route),
+		                        nm_ip_route_get_prefix (route),
+		                        next_hop);
 	}
 	if (num > 0)
 		ifnet_set_data (conn_name, "routes", routes_string->str);
@@ -2560,14 +2536,11 @@ write_route6_file (NMSettingIP6Config *s_ip6, const char *conn_name, GError **er
 static gboolean
 write_ip6_setting (NMConnection *connection, const char *conn_name, GError **error)
 {
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip6;
 	const char *value;
-	char *prefix;
 	guint32 i, num;
 	GString *searches;
-	char buf[INET6_ADDRSTRLEN + 1];
-	NMIP6Address *addr;
-	const struct in6_addr *ip;
+	NMIPAddress *addr;
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	if (!s_ip6) {
@@ -2577,7 +2550,7 @@ write_ip6_setting (NMConnection *connection, const char *conn_name, GError **err
 		return FALSE;
 	}
 
-	value = nm_setting_ip6_config_get_method (s_ip6);
+	value = nm_setting_ip_config_get_method (s_ip6);
 	g_assert (value);
 	if (!strcmp (value, NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
 		ifnet_set_data (conn_name, "enable_ipv6", "false");
@@ -2611,22 +2584,16 @@ write_ip6_setting (NMConnection *connection, const char *conn_name, GError **err
 
 		if (!config)
 			config = "";
-		num = nm_setting_ip6_config_get_num_addresses (s_ip6);
+		num = nm_setting_ip_config_get_num_addresses (s_ip6);
 
 		/* IPv6 addresses */
 		ip_str = g_string_new (NULL);
 		for (i = 0; i < num; i++) {
-			addr = nm_setting_ip6_config_get_address (s_ip6, i);
-			ip = nm_ip6_address_get_address (addr);
-			prefix =
-			    g_strdup_printf ("%u",
-					     nm_ip6_address_get_prefix (addr));
-			memset (buf, 0, sizeof (buf));
-			inet_ntop (AF_INET6, (const void *) ip, buf,
-				   sizeof (buf));
-			g_string_append_printf (ip_str, "\"%s/", buf);
-			g_string_append_printf (ip_str, "%s\" ", prefix);
-			g_free (prefix);
+			addr = nm_setting_ip_config_get_address (s_ip6, i);
+
+			g_string_append_printf (ip_str, "\"%s/%u\"",
+			                        nm_ip_address_get_address (addr),
+			                        nm_ip_address_get_prefix (addr));
 		}
 		tmp = g_strdup_printf ("%s\" %s", config, ip_str->str);
 		ifnet_set_data (conn_name, "config", tmp);
@@ -2635,7 +2602,7 @@ write_ip6_setting (NMConnection *connection, const char *conn_name, GError **err
 	}
 
 	/* DNS Servers */
-	num = nm_setting_ip6_config_get_num_dns (s_ip6);
+	num = nm_setting_ip_config_get_num_dns (s_ip6);
 	if (num > 0) {
 		const char *dns_servers = ifnet_get_data (conn_name, "dns_servers");
 		gchar *tmp;
@@ -2645,7 +2612,7 @@ write_ip6_setting (NMConnection *connection, const char *conn_name, GError **err
 		if (!dns_servers)
 			dns_servers = "";
 		for (i = 0; i < num; i++) {
-			dns = nm_setting_ip6_config_get_dns (s_ip6, i);
+			dns = nm_setting_ip_config_get_dns (s_ip6, i);
 
 			if (!strstr (dns_servers, dns))
 				g_string_append_printf (dns_string, "%s ", dns);
@@ -2657,7 +2624,7 @@ write_ip6_setting (NMConnection *connection, const char *conn_name, GError **err
 
 	} else
 		/* DNS Searches */
-		num = nm_setting_ip6_config_get_num_dns_searches (s_ip6);
+		num = nm_setting_ip_config_get_num_dns_searches (s_ip6);
 	if (num > 0) {
 		const char *ip4_domains;
 
@@ -2669,7 +2636,7 @@ write_ip6_setting (NMConnection *connection, const char *conn_name, GError **err
 			const gchar *search = NULL;
 
 			search =
-			    nm_setting_ip6_config_get_dns_search (s_ip6, i);
+			    nm_setting_ip_config_get_dns_search (s_ip6, i);
 			if (search && !strstr (searches->str, search)) {
 				if (searches->len > 0)
 					g_string_append_c (searches, ' ');
@@ -2715,7 +2682,7 @@ ifnet_update_parsers_by_connection (NMConnection *connection,
                                     GError **error)
 {
 	NMSettingConnection *s_con;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip6;
 	gboolean success = FALSE;
 	const char *type;
 	gboolean no_8021x = FALSE;

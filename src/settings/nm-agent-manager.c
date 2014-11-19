@@ -18,7 +18,8 @@
  * Copyright (C) 2010 - 2013 Red Hat, Inc.
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <string.h>
 #include <pwd.h>
 

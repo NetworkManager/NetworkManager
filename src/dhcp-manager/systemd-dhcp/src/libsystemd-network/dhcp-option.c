@@ -19,6 +19,10 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
+#include "config.h"
+
+#include "nm-sd-adapt.h"
+
 #include <stdint.h>
 #include <string.h>
 #include <errno.h>

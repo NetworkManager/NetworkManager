@@ -19,6 +19,8 @@
  * Copyright 2009 - 2011 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include "nm-device-adsl.h"
 #include "nm-device-private.h"
 #include "nm-object-private.h"
@@ -27,7 +29,7 @@
 #include "nm-setting-connection.h"
 
 #include <string.h>
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 
 G_DEFINE_TYPE (NMDeviceAdsl, nm_device_adsl, NM_TYPE_DEVICE)
 

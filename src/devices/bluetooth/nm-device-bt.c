@@ -124,6 +124,12 @@ get_connection_bt_type (NMConnection *connection)
 	return NM_BT_CAPABILITY_NONE;
 }
 
+static guint32
+get_generic_capabilities (NMDevice *device)
+{
+	return NM_DEVICE_CAP_IS_NON_KERNEL;
+}
+
 static gboolean
 can_auto_connect (NMDevice *device,
                   NMConnection *connection,
@@ -1179,6 +1185,7 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 
+	device_class->get_generic_capabilities = get_generic_capabilities;
 	device_class->can_auto_connect = can_auto_connect;
 	device_class->deactivate = deactivate;
 	device_class->act_stage2_config = act_stage2_config;

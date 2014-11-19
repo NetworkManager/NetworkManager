@@ -19,6 +19,8 @@
  * Copyright (C) 2008 - 2012 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 #include <glib/gstdio.h>
 #include <nm-dbus-interface.h>

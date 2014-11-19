@@ -19,6 +19,8 @@
  *
  */
 
+#include "config.h"
+
 #include <glib.h>
 #include <string.h>
 
@@ -125,7 +127,7 @@ make_tls_connection (const char *detail, NMSetting8021xCKScheme scheme)
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
 	        detail, "failed to verify connection: %s",
@@ -293,7 +295,7 @@ make_tls_phase2_connection (const char *detail, NMSetting8021xCKScheme scheme)
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
 	        detail, "failed to verify connection: %s",

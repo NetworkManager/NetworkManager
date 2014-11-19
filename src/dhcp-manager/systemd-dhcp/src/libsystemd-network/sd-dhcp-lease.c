@@ -18,6 +18,10 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
+#include "config.h"
+
+#include "nm-sd-adapt.h"
+
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
@@ -28,7 +32,9 @@
 
 #include "util.h"
 #include "list.h"
+#if 0 /* NM_IGNORED */
 #include "mkdir.h"
+#endif
 #include "fileio.h"
 #include "unaligned.h"
 #include "in-addr-util.h"
@@ -663,7 +669,7 @@ int sd_dhcp_lease_save(sd_dhcp_lease *lease, const char *lease_file) {
 
         r = sd_dhcp_lease_get_client_id(lease, &client_id, &client_id_len);
         if (r >= 0) {
-                _cleanup_free_ char *client_id_hex;
+                _cleanup_free_ char *client_id_hex = NULL;
 
                 client_id_hex = hexmem (client_id, client_id_len);
                 if (!client_id_hex) {

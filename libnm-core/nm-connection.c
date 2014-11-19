@@ -20,8 +20,10 @@
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
+#include "config.h"
+
 #include <glib-object.h>
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 #include <string.h>
 #include "nm-connection.h"
 #include "nm-connection-private.h"
@@ -631,8 +633,7 @@ _normalize_ip_config (NMConnection *self, GHashTable *parameters)
 	NMSettingConnection *s_con = nm_connection_get_setting_connection (self);
 	const char *default_ip4_method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
 	const char *default_ip6_method = NULL;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4, *s_ip6;
 	NMSetting *setting;
 
 	if (parameters)
@@ -663,7 +664,7 @@ _normalize_ip_config (NMConnection *self, GHashTable *parameters)
 			setting = nm_setting_ip4_config_new ();
 
 			g_object_set (setting,
-			              NM_SETTING_IP4_CONFIG_METHOD, default_ip4_method,
+			              NM_SETTING_IP_CONFIG_METHOD, default_ip4_method,
 			              NULL);
 			nm_connection_add_setting (self, setting);
 		}
@@ -671,8 +672,8 @@ _normalize_ip_config (NMConnection *self, GHashTable *parameters)
 			setting = nm_setting_ip6_config_new ();
 
 			g_object_set (setting,
-			              NM_SETTING_IP6_CONFIG_METHOD, default_ip6_method,
-			              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+			              NM_SETTING_IP_CONFIG_METHOD, default_ip6_method,
+			              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 			              NULL);
 			nm_connection_add_setting (self, setting);
 		}
@@ -740,8 +741,7 @@ _nm_connection_verify (NMConnection *connection, GError **error)
 {
 	NMConnectionPrivate *priv;
 	NMSettingConnection *s_con;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4, *s_ip6;
 	GHashTableIter iter;
 	gpointer value;
 	GSList *all_settings = NULL, *setting_i;
@@ -1739,14 +1739,19 @@ nm_connection_get_setting_infiniband (NMConnection *connection)
  *
  * A shortcut to return any #NMSettingIP4Config the connection might contain.
  *
- * Returns: (transfer none): an #NMSettingIP4Config if the connection contains one, otherwise %NULL
+ * Note that it returns the value as type #NMSettingIPConfig, since the vast
+ * majority of IPv4-setting-related methods are on that type, not
+ * #NMSettingIP4Config.
+ *
+ * Returns: (type NMSettingIP4Config) (transfer none): an #NMSettingIP4Config if the
+ * connection contains one, otherwise %NULL
  **/
-NMSettingIP4Config *
+NMSettingIPConfig *
 nm_connection_get_setting_ip4_config (NMConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
-	return (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	return (NMSettingIPConfig *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
 }
 
 /**
@@ -1755,14 +1760,19 @@ nm_connection_get_setting_ip4_config (NMConnection *connection)
  *
  * A shortcut to return any #NMSettingIP6Config the connection might contain.
  *
- * Returns: (transfer none): an #NMSettingIP6Config if the connection contains one, otherwise %NULL
+ * Note that it returns the value as type #NMSettingIPConfig, since the vast
+ * majority of IPv6-setting-related methods are on that type, not
+ * #NMSettingIP6Config.
+ *
+ * Returns: (type NMSettingIP6Config) (transfer none): an #NMSettingIP6Config if the
+ * connection contains one, otherwise %NULL
  **/
-NMSettingIP6Config *
+NMSettingIPConfig *
 nm_connection_get_setting_ip6_config (NMConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
-	return (NMSettingIP6Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
+	return (NMSettingIPConfig *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
 }
 
 /**

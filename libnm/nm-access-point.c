@@ -19,7 +19,8 @@
  * Copyright 2007 - 2011 Red Hat, Inc.
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <string.h>
 
 #include "nm-glib-compat.h"
@@ -121,7 +122,8 @@ nm_access_point_get_rsn_flags (NMAccessPoint *ap)
  *
  * Gets the SSID of the access point.
  *
- * Returns: the #GBytes containing the SSID, or %NULL if the SSID is unknown.
+ * Returns: (transfer none): the #GBytes containing the SSID, or %NULL if the
+ *   SSID is unknown.
  **/
 GBytes *
 nm_access_point_get_ssid (NMAccessPoint *ap)

@@ -228,6 +228,8 @@ const char *	nm_device_get_type_desc (NMDevice *dev);
 NMDeviceType	nm_device_get_device_type	(NMDevice *dev);
 
 int			nm_device_get_priority (NMDevice *dev);
+guint32     nm_device_get_ip4_route_metric (NMDevice *dev);
+guint32     nm_device_get_ip6_route_metric (NMDevice *dev);
 
 const char *    nm_device_get_hw_address   (NMDevice *dev);
 
@@ -272,6 +274,8 @@ gboolean nm_device_complete_connection (NMDevice *device,
                                         GError **error);
 
 gboolean nm_device_check_connection_compatible (NMDevice *device, NMConnection *connection);
+
+gboolean nm_device_uses_assumed_connection (NMDevice *device);
 
 gboolean nm_device_can_assume_active_connection (NMDevice *device);
 
@@ -357,6 +361,11 @@ gboolean nm_device_notify_component_added (NMDevice *device, GObject *component)
 gboolean nm_device_owns_iface (NMDevice *device, const char *iface);
 
 NMConnection *nm_device_new_default_connection (NMDevice *self);
+
+const NMPlatformIP4Route *nm_device_get_ip4_default_route (NMDevice *self);
+const NMPlatformIP6Route *nm_device_get_ip6_default_route (NMDevice *self);
+
+void nm_device_spawn_iface_helper (NMDevice *self);
 
 G_END_DECLS
 

@@ -28,6 +28,7 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 
+#include "polkit-agent.h"
 #include "utils.h"
 #include "common.h"
 #include "devices.h"
@@ -766,10 +767,8 @@ show_device_info (NMDevice *device, NmCli *nmc)
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 	gboolean was_output = FALSE;
-	NMIP4Config *cfg4;
-	NMIP6Config *cfg6;
-	NMDhcp4Config *dhcp4;
-	NMDhcp6Config *dhcp6;
+	NMIPConfig *cfg4, *cfg6;
+	NMDhcpConfig *dhcp4, *dhcp6;
 	const char *base_hdr = _("Device details");
 	GPtrArray *fields_in_section = NULL;
 
@@ -1332,48 +1331,57 @@ progress_cb (gpointer user_data)
 	return TRUE;
 }
 
+static void connected_state_cb (NMDevice *device, NMActiveConnection *active);
+
 static void
-connected_state_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
+device_state_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
 {
 	NMActiveConnection *active = (NMActiveConnection *) user_data;
+
+	connected_state_cb (device, active);
+}
+
+static void
+active_state_cb (NMActiveConnection *active, GParamSpec *pspec, gpointer user_data)
+{
+	NMDevice *device = (NMDevice *) user_data;
+
+	connected_state_cb (device, active);
+}
+
+static void
+connected_state_cb (NMDevice *device, NMActiveConnection *active)
+{
 	NMDeviceState state;
+	NMDeviceStateReason reason;
+	NMActiveConnectionState ac_state;
 
 	state = nm_device_get_state (device);
+	ac_state = nm_active_connection_get_state (active);
+
+	if (ac_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING)
+		return;
 
 	if (state == NM_DEVICE_STATE_ACTIVATED) {
 		nmc_terminal_erase_line ();
 		g_print (_("Device '%s' successfully activated with '%s'.\n"),
 		         nm_device_get_iface (device),
 		         nm_active_connection_get_uuid (active));
-		g_object_unref (active);
-		quit ();
-	}
-}
-
-static void
-monitor_device_state_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
-{
-	NmCli *nmc = (NmCli *) user_data;
-	NMDeviceState state;
-	NMDeviceStateReason reason;
-
-	state = nm_device_get_state (device);
-
-	if (state == NM_DEVICE_STATE_ACTIVATED) {
-		NMActiveConnection *active = nm_device_get_active_connection (device);
-
-		if (nmc->print_output == NMC_PRINT_PRETTY)
-			nmc_terminal_erase_line ();
-		g_print (_("Connection with UUID '%s' created and activated on device '%s'\n"),
-		         nm_active_connection_get_uuid (active), nm_device_get_iface (device));
-		quit ();
-	} else if (state == NM_DEVICE_STATE_FAILED) {
+	} else if (   state <= NM_DEVICE_STATE_DISCONNECTED
+	           || state >= NM_DEVICE_STATE_DEACTIVATING) {
 		reason = nm_device_get_state_reason (device);
-		g_string_printf (nmc->return_text, _("Error: Connection activation failed: (%d) %s."),
-		                 reason, nmc_device_reason_to_string (reason));
-		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
-		quit ();
-	}
+		g_print (_("Error: Connection activation failed: (%d) %s.\n"),
+		         reason, nmc_device_reason_to_string (reason));
+	} else
+		return;
+
+	g_signal_handlers_disconnect_by_func (active, G_CALLBACK (active_state_cb), device);
+	g_signal_handlers_disconnect_by_func (device, G_CALLBACK (device_state_cb), active);
+
+	g_object_unref (active);
+	g_object_unref (device);
+
+	quit ();
 }
 
 typedef struct {
@@ -1407,6 +1415,7 @@ add_and_activate_cb (GObject *client,
 		if (state == NM_ACTIVE_CONNECTION_STATE_UNKNOWN) {
 			g_string_printf (nmc->return_text, _("Error: Failed to add/activate new connection: Unknown error"));
 			nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
+			g_object_unref (active);
 			quit ();
 		}
 
@@ -1421,12 +1430,14 @@ add_and_activate_cb (GObject *client,
 			g_object_unref (active);
 			quit ();
 		} else {
-			g_signal_connect (device, "notify::state", G_CALLBACK (monitor_device_state_cb), nmc);
+			g_object_ref (device);
+			g_signal_connect (device, "notify::state", G_CALLBACK (device_state_cb), active);
+			g_signal_connect (active, "notify::state", G_CALLBACK (active_state_cb), device);
+
 			g_timeout_add_seconds (nmc->timeout, timeout_cb, nmc);  /* Exit if timeout expires */
 
 			if (nmc->print_output == NMC_PRINT_PRETTY)
 				progress_id = g_timeout_add (120, progress_cb, device);
-			g_object_unref (active);
 		}
 	}
 
@@ -1488,6 +1499,7 @@ connect_device_cb (GObject *client, GAsyncResult *result, gpointer user_data)
 		if (devices->len == 0) {
 			g_string_printf (nmc->return_text, _("Error: Device activation failed: device was disconnected"));
 			nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
+			g_object_unref (active);
 			quit ();
 			g_free (info);
 			return;
@@ -1502,9 +1514,12 @@ connect_device_cb (GObject *client, GAsyncResult *result, gpointer user_data)
 				nmc_terminal_erase_line ();
 				g_print (_("Device '%s' has been connected.\n"), nm_device_get_iface (device));
 			}
+			g_object_unref (active);
 			quit ();
 		} else {
-			g_signal_connect (device, "notify::state", G_CALLBACK (connected_state_cb), active);
+			g_object_ref (device);
+			g_signal_connect (device, "notify::state", G_CALLBACK (device_state_cb), active);
+			g_signal_connect (active, "notify::state", G_CALLBACK (active_state_cb), device);
 			/* Start timer not to loop forever if "notify::state" signal is not issued */
 			g_timeout_add_seconds (nmc->timeout, timeout_cb, nmc);
 		}
@@ -1599,15 +1614,26 @@ error:
 static void
 disconnect_state_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
 {
-	NmCli *nmc = (NmCli *) user_data;
 	NMDeviceState state;
 
 	state = nm_device_get_state (device);
 
 	if (state == NM_DEVICE_STATE_DISCONNECTED) {
-		g_string_printf (nmc->return_text, _("Success: Device '%s' successfully disconnected."), nm_device_get_iface (device));
+		g_signal_handlers_disconnect_by_data (device, user_data);
+		g_print (_("Device '%s' successfully disconnected.\n"),
+		         nm_device_get_iface (device));
 		quit ();
 	}
+}
+
+static void
+device_removed_cb (NMClient *client, NMDevice *device, gpointer user_data)
+{
+	/* Success: device has been removed. It happens when disconnecting a software device. */
+	g_signal_handlers_disconnect_by_data (client, user_data);
+	g_print (_("Device '%s' successfully disconnected.\n"),
+	         nm_device_get_iface (device));
+	quit ();
 }
 
 static void
@@ -1639,6 +1665,7 @@ disconnect_device_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 			quit ();
 		} else {
 			g_signal_connect (device, "notify::state", G_CALLBACK (disconnect_state_cb), nmc);
+			g_signal_connect (nmc->client, NM_CLIENT_DEVICE_REMOVED, G_CALLBACK (device_removed_cb), nmc);
 			/* Start timer not to loop forever if "notify::state" signal is not issued */
 			g_timeout_add_seconds (nmc->timeout, timeout_cb, nmc);
 		}
@@ -2775,6 +2802,9 @@ NMCResultCode
 do_devices (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
+
+	/* Register polkit agent */
+	nmc_start_polkit_agent_start_try (nmc);
 
 	rl_attempted_completion_function = (rl_completion_func_t *) nmcli_device_tab_completion;
 

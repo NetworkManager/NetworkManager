@@ -18,6 +18,8 @@
  *
  */
 
+#include "config.h"
+
 #include <glib.h>
 #include <string.h>
 #include <errno.h>
@@ -288,8 +290,7 @@ _match_connection_new (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4, *s_ip6;
 	char *uuid;
 
 	connection = nm_simple_connection_new ();
@@ -308,16 +309,16 @@ _match_connection_new (void)
 	s_wired = (NMSettingWired *) nm_setting_wired_new ();
 	nm_connection_add_setting (connection, (NMSetting *) s_wired);
 
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, (NMSetting *) s_ip4);
 	g_object_set (G_OBJECT (s_ip4),
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
 	              NULL);
 
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, (NMSetting *) s_ip6);
 	g_object_set (G_OBJECT (s_ip6),
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
 	              NULL);
 
 	return connection;
@@ -328,7 +329,7 @@ test_connection_match_basic (void)
 {
 	NMConnection *orig, *copy, *matched;
 	GSList *connections = NULL;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 
 	orig = _match_connection_new ();
 	copy = nm_simple_connection_new_clone (orig);
@@ -341,7 +342,7 @@ test_connection_match_basic (void)
 	s_ip4 = nm_connection_get_setting_ip4_config (orig);
 	g_assert (s_ip4);
 	g_object_set (G_OBJECT (s_ip4),
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
 	              NULL);
 	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
 	g_assert (matched == NULL);
@@ -356,7 +357,7 @@ test_connection_match_ip6_method (void)
 {
 	NMConnection *orig, *copy, *matched;
 	GSList *connections = NULL;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip6;
 
 	orig = _match_connection_new ();
 	copy = nm_simple_connection_new_clone (orig);
@@ -369,14 +370,14 @@ test_connection_match_ip6_method (void)
 	s_ip6 = nm_connection_get_setting_ip6_config (orig);
 	g_assert (s_ip6);
 	g_object_set (G_OBJECT (s_ip6),
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
 	              NULL);
 
 	s_ip6 = nm_connection_get_setting_ip6_config (copy);
 	g_assert (s_ip6);
 	g_object_set (G_OBJECT (s_ip6),
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
@@ -392,7 +393,7 @@ test_connection_match_ip6_method_ignore (void)
 {
 	NMConnection *orig, *copy, *matched;
 	GSList *connections = NULL;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip6;
 
 	orig = _match_connection_new ();
 	copy = nm_simple_connection_new_clone (orig);
@@ -404,13 +405,13 @@ test_connection_match_ip6_method_ignore (void)
 	s_ip6 = nm_connection_get_setting_ip6_config (orig);
 	g_assert (s_ip6);
 	g_object_set (G_OBJECT (s_ip6),
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
 	              NULL);
 
 	s_ip6 = nm_connection_get_setting_ip6_config (copy);
 	g_assert (s_ip6);
 	g_object_set (G_OBJECT (s_ip6),
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
 	              NULL);
 
 	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
@@ -426,7 +427,7 @@ test_connection_match_ip6_method_ignore_auto (void)
 {
 	NMConnection *orig, *copy, *matched;
 	GSList *connections = NULL;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip6;
 
 	orig = _match_connection_new ();
 	copy = nm_simple_connection_new_clone (orig);
@@ -438,13 +439,13 @@ test_connection_match_ip6_method_ignore_auto (void)
 	s_ip6 = nm_connection_get_setting_ip6_config (orig);
 	g_assert (s_ip6);
 	g_object_set (G_OBJECT (s_ip6),
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
 	              NULL);
 
 	s_ip6 = nm_connection_get_setting_ip6_config (copy);
 	g_assert (s_ip6);
 	g_object_set (G_OBJECT (s_ip6),
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
 	              NULL);
 
 	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
@@ -461,7 +462,7 @@ test_connection_match_ip4_method (void)
 {
 	NMConnection *orig, *copy, *matched;
 	GSList *connections = NULL;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 
 	orig = _match_connection_new ();
 	copy = nm_simple_connection_new_clone (orig);
@@ -474,14 +475,14 @@ test_connection_match_ip4_method (void)
 	s_ip4 = nm_connection_get_setting_ip4_config (orig);
 	g_assert (s_ip4);
 	g_object_set (G_OBJECT (s_ip4),
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
 	              NULL);
 
 	s_ip4 = nm_connection_get_setting_ip4_config (copy);
 	g_assert (s_ip4);
 	g_object_set (G_OBJECT (s_ip4),
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
-	              NM_SETTING_IP4_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	matched = nm_utils_match_connection (connections, orig, FALSE, NULL, NULL);
@@ -574,10 +575,9 @@ test_connection_no_match_ip4_addr (void)
 {
 	NMConnection *orig, *copy, *matched;
 	GSList *connections = NULL;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
-	NMIP4Address *nm_addr;
-	guint32 addr, gw;
+	NMSettingIPConfig *s_ip4, *s_ip6;
+	NMIPAddress *nm_addr;
+	GError *error = NULL;
 
 	orig = _match_connection_new ();
 	copy = nm_simple_connection_new_clone (orig);
@@ -589,43 +589,37 @@ test_connection_no_match_ip4_addr (void)
 	s_ip6 = nm_connection_get_setting_ip6_config (orig);
 	g_assert (s_ip6);
 	g_object_set (G_OBJECT (s_ip6),
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
 	              NULL);
 
 	s_ip6 = nm_connection_get_setting_ip6_config (copy);
 	g_assert (s_ip6);
 	g_object_set (G_OBJECT (s_ip6),
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
 	              NULL);
 
 
 	s_ip4 = nm_connection_get_setting_ip4_config (orig);
 	g_assert (s_ip4);
 	g_object_set (G_OBJECT (s_ip4),
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "1.1.1.254",
 	              NULL);
-	nm_addr = nm_ip4_address_new ();
-	inet_pton (AF_INET, "1.1.1.4", &addr);
-	inet_pton (AF_INET, "1.1.1.254", &gw);
-	nm_ip4_address_set_address (nm_addr, addr);
-	nm_ip4_address_set_prefix (nm_addr, 24);
-	nm_ip4_address_set_gateway (nm_addr, gw);
-	nm_setting_ip4_config_add_address (s_ip4, nm_addr);
-	nm_ip4_address_unref (nm_addr);
+	nm_addr = nm_ip_address_new (AF_INET, "1.1.1.4", 24, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_address (s_ip4, nm_addr);
+	nm_ip_address_unref (nm_addr);
 
 	s_ip4 = nm_connection_get_setting_ip4_config (copy);
 	g_assert (s_ip4);
 	g_object_set (G_OBJECT (s_ip4),
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "2.2.2.254",
 	              NULL);
-	nm_addr = nm_ip4_address_new ();
-	inet_pton (AF_INET, "2.2.2.4", &addr);
-	inet_pton (AF_INET, "2.2.2.254", &gw);
-	nm_ip4_address_set_address (nm_addr, addr);
-	nm_ip4_address_set_prefix (nm_addr, 24);
-	nm_ip4_address_set_gateway (nm_addr, gw);
-	nm_setting_ip4_config_add_address (s_ip4, nm_addr);
-	nm_ip4_address_unref (nm_addr);
+	nm_addr = nm_ip_address_new (AF_INET, "2.2.2.4", 24, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_address (s_ip4, nm_addr);
+	nm_ip_address_unref (nm_addr);
 
 	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
 	g_assert (matched != copy);

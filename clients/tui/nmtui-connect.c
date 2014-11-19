@@ -36,16 +36,16 @@
 #include "nmtui-connect.h"
 #include "nmt-connect-connection-list.h"
 #include "nmt-password-dialog.h"
-#include "nmt-secret-agent.h"
+#include "nm-secret-agent-simple.h"
 #include "nmt-utils.h"
 
 static void
-secrets_requested (NmtSecretAgent *agent,
-                   const char     *request_id,
-                   const char     *title,
-                   const char     *msg,
-                   GPtrArray      *secrets,
-                   gpointer        user_data)
+secrets_requested (NMSecretAgentSimple *agent,
+                   const char          *request_id,
+                   const char          *title,
+                   const char          *msg,
+                   GPtrArray           *secrets,
+                   gpointer             user_data)
 {
 	NmtNewtForm *form;
 
@@ -53,9 +53,9 @@ secrets_requested (NmtSecretAgent *agent,
 	nmt_newt_form_run_sync (form);
 
 	if (nmt_password_dialog_succeeded (NMT_PASSWORD_DIALOG (form)))
-		nmt_secret_agent_response (agent, request_id, secrets);
+		nm_secret_agent_simple_response (agent, request_id, secrets);
 	else
-		nmt_secret_agent_response (agent, request_id, NULL);
+		nm_secret_agent_simple_response (agent, request_id, NULL);
 
 	g_object_unref (form);
 }
@@ -145,7 +145,7 @@ activate_connection (NMConnection *connection,
 	label = nmt_newt_label_new (_("Connecting..."));
 	nmt_newt_form_set_content (form, label);
 
-	agent = nmt_secret_agent_new ();
+	agent = nm_secret_agent_simple_new ("nmtui", nm_object_get_path (NM_OBJECT (connection)));
 	g_signal_connect (agent, "request-secrets", G_CALLBACK (secrets_requested), NULL);
 
 	specific_object_path = specific_object ? nm_object_get_path (specific_object) : NULL;

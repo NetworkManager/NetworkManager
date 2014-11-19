@@ -27,11 +27,12 @@
 
 char *nm_dhcp_dhclient_create_config (const char *interface,
                                       gboolean is_ip6,
-                                      const char *dhcp_client_id,
+                                      GBytes *client_id,
                                       const char *anycast_addr,
                                       const char *hostname,
                                       const char *orig_path,
-                                      const char *orig_contents);
+                                      const char *orig_contents,
+                                      GBytes **out_new_client_id);
 
 char *nm_dhcp_dhclient_escape_duid (const GByteArray *duid);
 
@@ -47,6 +48,8 @@ GSList *nm_dhcp_dhclient_read_lease_ip_configs (const char *iface,
                                                 const char *contents,
                                                 gboolean ipv6,
                                                 GDateTime *now);
+
+GBytes *nm_dhcp_dhclient_get_client_id_from_config_file (const char *path);
 
 #endif /* __NETWORKMANAGER_DHCP_DHCLIENT_UTILS_H__ */
 

@@ -19,7 +19,8 @@
  * Copyright (C) 2008 - 2012 Red Hat, Inc.
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -97,12 +98,12 @@ write_array_of_uint (GKeyFile *file,
 }
 
 static void
-ip4_dns_writer (GKeyFile *file,
-                const char *keyfile_dir,
-                const char *uuid,
-                NMSetting *setting,
-                const char *key,
-                const GValue *value)
+dns_writer (GKeyFile *file,
+            const char *keyfile_dir,
+            const char *uuid,
+            NMSetting *setting,
+            const char *key,
+            const GValue *value)
 {
 	char **list;
 
@@ -114,18 +115,22 @@ ip4_dns_writer (GKeyFile *file,
 }
 
 static void
-write_ip4_values (GKeyFile *file,
-                  const char *setting_name,
-                  GPtrArray *array,
-                  gboolean is_route)
+write_ip_values (GKeyFile *file,
+                 const char *setting_name,
+                 GPtrArray *array,
+                 const char *gateway,
+                 gboolean is_route)
 {
 	GString *output;
-	int i;
-	guint32 addr, gw, plen, metric;
+	int family, i;
+	const char *addr, *gw;
+	guint32 plen, metric;
 	char key_name[30], *key_name_idx;
 
 	if (!array->len)
 		return;
+
+	family = !strcmp (setting_name, NM_SETTING_IP4_CONFIG_SETTING_NAME) ? AF_INET : AF_INET6;
 
 	strcpy (key_name, is_route ? "route" : "address");
 	key_name_idx = key_name + strlen (key_name);
@@ -133,32 +138,37 @@ write_ip4_values (GKeyFile *file,
 	output = g_string_sized_new (2*INET_ADDRSTRLEN + 10);
 	for (i = 0; i < array->len; i++) {
 		if (is_route) {
-			NMIP4Route *route = array->pdata[i];
+			NMIPRoute *route = array->pdata[i];
 
-			addr = nm_ip4_route_get_dest (route);
-			plen = nm_ip4_route_get_prefix (route);
-			gw = nm_ip4_route_get_next_hop (route);
-			metric = nm_ip4_route_get_metric (route);
+			addr = nm_ip_route_get_dest (route);
+			plen = nm_ip_route_get_prefix (route);
+			gw = nm_ip_route_get_next_hop (route);
+			metric = MAX (0, nm_ip_route_get_metric (route));
 		} else {
-			NMIP4Address *address = array->pdata[i];
+			NMIPAddress *address = array->pdata[i];
 
-			addr = nm_ip4_address_get_address (address);
-			plen = nm_ip4_address_get_prefix (address);
-			gw = nm_ip4_address_get_gateway (address);
+			addr = nm_ip_address_get_address (address);
+			plen = nm_ip_address_get_prefix (address);
+			gw = i == 0 ? gateway : NULL;
 			metric = 0;
 		}
 
 		g_string_set_size (output, 0);
-		g_string_append_printf (output, "%s/%u",
-		                        nm_utils_inet4_ntop (addr, NULL),
-		                        (unsigned) plen);
+		g_string_append_printf (output, "%s/%u", addr, plen);
 		if (metric || gw) {
 			/* Older versions of the plugin do not support the form
 			 * "a.b.c.d/plen,,metric", so, we always have to write the
-			 * gateway, even if it's 0.0.0.0.
-			 * The current version support reading of the above form. */
-			g_string_append_c (output, ',');
-			g_string_append (output, nm_utils_inet4_ntop (gw, NULL));
+			 * gateway, even if there isn't one.
+			 * The current version supports reading of the above form.
+			 */
+			if (!gw) {
+				if (family == AF_INET)
+					gw = "0.0.0.0";
+				else
+					gw = "::";
+			}
+
+			g_string_append_printf (output, ",%s", gw);
 			if (metric)
 				g_string_append_printf (output, ",%lu", (unsigned long) metric);
 		}
@@ -170,19 +180,20 @@ write_ip4_values (GKeyFile *file,
 }
 
 static void
-ip4_addr_writer (GKeyFile *file,
-                 const char *keyfile_dir,
-                 const char *uuid,
-                 NMSetting *setting,
-                 const char *key,
-                 const GValue *value)
+addr_writer (GKeyFile *file,
+             const char *keyfile_dir,
+             const char *uuid,
+             NMSetting *setting,
+             const char *key,
+             const GValue *value)
 {
 	GPtrArray *array;
 	const char *setting_name = nm_setting_get_name (setting);
+	const char *gateway = nm_setting_ip_config_get_gateway (NM_SETTING_IP_CONFIG (setting));
 
 	array = (GPtrArray *) g_value_get_boxed (value);
 	if (array && array->len)
-		write_ip4_values (file, setting_name, array, FALSE);
+		write_ip_values (file, setting_name, array, gateway, FALSE);
 }
 
 static void
@@ -197,153 +208,31 @@ ip4_addr_label_writer (GKeyFile *file,
 }
 
 static void
-ip4_route_writer (GKeyFile *file,
-                  const char *keyfile_dir,
-                  const char *uuid,
-                  NMSetting *setting,
-                  const char *key,
-                  const GValue *value)
-{
-	GPtrArray *array;
-	const char *setting_name = nm_setting_get_name (setting);
-
-	array = (GPtrArray *) g_value_get_boxed (value);
-	if (array && array->len)
-		write_ip4_values (file, setting_name, array, TRUE);
-}
-
-static void
-ip6_dns_writer (GKeyFile *file,
+gateway_writer (GKeyFile *file,
                 const char *keyfile_dir,
                 const char *uuid,
                 NMSetting *setting,
                 const char *key,
                 const GValue *value)
 {
-	char **list;
-
-	list = g_value_get_boxed (value);
-	if (list && list[0]) {
-		nm_keyfile_plugin_kf_set_string_list (file, nm_setting_get_name (setting), key,
-		                                      (const char **) list, g_strv_length (list));
-	}
-}
-
-static char *
-ip6_values_to_addr_prefix (const struct in6_addr *addr, guint prefix, const struct in6_addr *gw,
-                           gboolean force_write_gateway)
-{
-	GString *ip6_str;
-	char buf[INET6_ADDRSTRLEN];
-
-	/* address */
-	nm_utils_inet6_ntop (addr, buf);
-
-	/* Enough space for the address, '/', and the prefix */
-	ip6_str = g_string_sized_new ((INET6_ADDRSTRLEN * 2) + 5);
-
-	/* prefix */
-	g_string_append (ip6_str, buf);
-	g_string_append_printf (ip6_str, "/%u", prefix);
-
-	/* gateway */
-	nm_utils_inet6_ntop (gw, buf);
-	if (force_write_gateway || !IN6_IS_ADDR_UNSPECIFIED (gw))
-		g_string_append_printf (ip6_str, ",%s", buf);
-
-	return g_string_free (ip6_str, FALSE);
+	/* skip */
 }
 
 static void
-ip6_addr_writer (GKeyFile *file,
-                 const char *keyfile_dir,
-                 const char *uuid,
-                 NMSetting *setting,
-                 const char *key,
-                 const GValue *value)
+route_writer (GKeyFile *file,
+              const char *keyfile_dir,
+              const char *uuid,
+              NMSetting *setting,
+              const char *key,
+              const GValue *value)
 {
 	GPtrArray *array;
 	const char *setting_name = nm_setting_get_name (setting);
-	int i, j;
 
 	array = (GPtrArray *) g_value_get_boxed (value);
-	if (!array || !array->len)
-		return;
-
-	for (i = 0, j = 1; i < array->len; i++) {
-		NMIP6Address *addr = array->pdata[i];
-		char *key_name, *ip6_addr;
-
-		ip6_addr = ip6_values_to_addr_prefix (nm_ip6_address_get_address (addr),
-		                                      nm_ip6_address_get_prefix (addr),
-		                                      nm_ip6_address_get_gateway (addr),
-		                                      /* we allow omitting the gateway if it's :: */
-		                                      FALSE);
-		/* Write it out */
-		key_name = g_strdup_printf ("address%d", j++);
-		nm_keyfile_plugin_kf_set_string (file, setting_name, key_name, ip6_addr);
-		g_free (key_name);
-		g_free (ip6_addr);
-	}
+	if (array && array->len)
+		write_ip_values (file, setting_name, array, NULL, TRUE);
 }
-
-static void
-ip6_route_writer (GKeyFile *file,
-                  const char *keyfile_dir,
-                  const char *uuid,
-                  NMSetting *setting,
-                  const char *key,
-                  const GValue *value)
-{
-	GPtrArray *array;
-	const char *setting_name = nm_setting_get_name (setting);
-	GString *output;
-	int i, j;
-
-	array = (GPtrArray *) g_value_get_boxed (value);
-	if (!array || !array->len)
-		return;
-
-	for (i = 0, j = 1; i < array->len; i++) {
-		NMIP6Route *route = array->pdata[i];
-		char *key_name;
-		char *addr_str;
-		guint metric;
-
-		output = g_string_new ("");
-
-		/* Metric */
-		metric = nm_ip6_route_get_metric (route);
-
-		/* Address, prefix and next hop
-		 * We allow omitting the gateway ::, if we also omit the metric
-		 * and force writing of the gateway, if we add a non zero metric.
-		 * The current version of the reader also supports the syntax
-		 * "a:b:c::/plen,,metric" for a gateway ::.
-		 * As older versions of the plugin, cannot read this form,
-		 * we always write the gateway, whenever we also write the metric.
-		 * But if possible, we omit them both (",::,0") or only the metric
-		 * (",0").
-		 **/
-		addr_str = ip6_values_to_addr_prefix (nm_ip6_route_get_dest (route),
-		                                      nm_ip6_route_get_prefix (route),
-		                                      nm_ip6_route_get_next_hop (route),
-		                                      metric != 0);
-		g_string_append (output, addr_str);
-		g_free (addr_str);
-
-		if (metric != 0)
-			g_string_append_printf (output, ",%u", metric);
-
-		/* Write it out */
-		key_name = g_strdup_printf ("route%d", j++);
-		nm_keyfile_plugin_kf_set_string (file, setting_name, key_name, output->str);
-		g_free (key_name);
-
-		g_string_free (output, TRUE);
-	}
-}
-
 
 static void
 write_hash_of_string (GKeyFile *file,
@@ -703,26 +592,32 @@ static KeyWriter key_writers[] = {
 	  NM_SETTING_CONNECTION_TYPE,
 	  setting_alias_writer },
 	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	  NM_SETTING_IP4_CONFIG_ADDRESSES,
-	  ip4_addr_writer },
+	  NM_SETTING_IP_CONFIG_ADDRESSES,
+	  addr_writer },
 	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	  "address-labels",
 	  ip4_addr_label_writer },
 	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	  NM_SETTING_IP6_CONFIG_ADDRESSES,
-	  ip6_addr_writer },
+	  NM_SETTING_IP_CONFIG_ADDRESSES,
+	  addr_writer },
 	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	  NM_SETTING_IP4_CONFIG_ROUTES,
-	  ip4_route_writer },
+	  NM_SETTING_IP_CONFIG_GATEWAY,
+	  gateway_writer },
 	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	  NM_SETTING_IP6_CONFIG_ROUTES,
-	  ip6_route_writer },
+	  NM_SETTING_IP_CONFIG_GATEWAY,
+	  gateway_writer },
 	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	  NM_SETTING_IP4_CONFIG_DNS,
-	  ip4_dns_writer },
+	  NM_SETTING_IP_CONFIG_ROUTES,
+	  route_writer },
 	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	  NM_SETTING_IP6_CONFIG_DNS,
-	  ip6_dns_writer },
+	  NM_SETTING_IP_CONFIG_ROUTES,
+	  route_writer },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	  NM_SETTING_IP_CONFIG_DNS,
+	  dns_writer },
+	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	  NM_SETTING_IP_CONFIG_DNS,
+	  dns_writer },
 	{ NM_SETTING_WIRELESS_SETTING_NAME,
 	  NM_SETTING_WIRELESS_SSID,
 	  ssid_writer },
@@ -826,6 +721,12 @@ write_setting_value (NMSetting *setting,
 		char *numstr;
 
 		numstr = g_strdup_printf ("%" G_GUINT64_FORMAT, g_value_get_uint64 (value));
+		nm_keyfile_plugin_kf_set_value (info->keyfile, setting_name, key, numstr);
+		g_free (numstr);
+	} else if (type == G_TYPE_INT64) {
+		char *numstr;
+
+		numstr = g_strdup_printf ("%" G_GINT64_FORMAT, g_value_get_int64 (value));
 		nm_keyfile_plugin_kf_set_value (info->keyfile, setting_name, key, numstr);
 		g_free (numstr);
 	} else if (type == G_TYPE_BOOLEAN) {

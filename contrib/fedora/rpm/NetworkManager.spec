@@ -169,6 +169,8 @@ BuildRequires: newt-devel
 BuildRequires: /usr/bin/dbus-launch
 BuildRequires: pygobject3-base
 BuildRequires: dbus-python
+BuildRequires: libselinux-devel
+BuildRequires: polkit-devel
 
 
 %description
@@ -413,7 +415,9 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 %else
 	--enable-teamdctl=no \
 %endif
+	--with-selinux=yes \
 	--enable-polkit=yes \
+	--enable-polkit-agent \
 	--enable-modify-system=yes \
 	--enable-concheck \
 	--with-session-tracking=systemd \
@@ -518,8 +522,12 @@ fi
 %{_libexecdir}/nm-dhcp-helper
 %{_libexecdir}/nm-avahi-autoipd.action
 %{_libexecdir}/nm-dispatcher
+%{_libexecdir}/nm-iface-helper
 %dir %{_libdir}/NetworkManager
 %{_libdir}/NetworkManager/libnm-settings-plugin*.so
+%if 0%{?with_nmtui}
+%exclude %{_mandir}/man1/nmtui*
+%endif
 %{_mandir}/man1/*
 %{_mandir}/man5/*
 %{_mandir}/man8/*
@@ -650,6 +658,7 @@ fi
 %{_bindir}/nmtui-edit
 %{_bindir}/nmtui-connect
 %{_bindir}/nmtui-hostname
+%{_mandir}/man1/nmtui*
 %endif
 
 %changelog

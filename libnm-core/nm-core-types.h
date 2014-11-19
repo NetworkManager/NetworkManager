@@ -40,6 +40,7 @@ typedef struct _NMSettingDcb              NMSettingDcb;
 typedef struct _NMSettingGeneric          NMSettingGeneric;
 typedef struct _NMSettingGsm              NMSettingGsm;
 typedef struct _NMSettingInfiniband       NMSettingInfiniband;
+typedef struct _NMSettingIPConfig         NMSettingIPConfig;
 typedef struct _NMSettingIP4Config        NMSettingIP4Config;
 typedef struct _NMSettingIP6Config        NMSettingIP6Config;
 typedef struct _NMSettingOlpcMesh         NMSettingOlpcMesh;

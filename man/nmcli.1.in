@@ -21,7 +21,7 @@
 .\"
 .\" Copyright 2010 - 2014 Red Hat, Inc.
 .\"
-.TH NMCLI "1" "11 September 2014"
+.TH NMCLI "1" "4 November 2014"
 
 .SH NAME
 nmcli \- command\(hyline tool for controlling NetworkManager
@@ -33,7 +33,7 @@ nmcli \- command\(hyline tool for controlling NetworkManager
 .sp
 
 .IR OBJECT " := { "
-.BR general " | " networking " | " radio " | " connection " | " device
+.BR general " | " networking " | " radio " | " connection " | " device " | " agent
 .RI " }"
 .sp
 
@@ -131,6 +131,8 @@ incompatible versions may produce incorrect results.
 .B \-a, \-\-ask
 When using this option \fInmcli\fP will stop and ask for any missing required
 arguments, so do not use this option for non-interactive purposes like scripts.
+This option controls, for example, whether you will be prompted for a password
+if it is required for connecting to a network.
 .TP
 .B \-w, \-\-wait <seconds>
 This option sets a timeout period for which \fInmcli\fP will wait for \fINetworkManager\fP
@@ -327,10 +329,10 @@ When no command is given to the \fIconnection\fP object, the default action
 is 'nmcli connection show'.
 .RE
 .TP
-.B up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [nsp <name>]
+.B up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [nsp <name>] [passwd <file with passwords>]
 .RE
 .RS
-.B up ifname <ifname> [ap <BSSID>] [nsp <name>]
+.B up ifname <ifname> [ap <BSSID>] [nsp <name>] [passwd <file with passwords>]
 .RS
 .br
 Activate a connection.  The connection is identified by its name, UUID or D-Bus
@@ -355,6 +357,26 @@ Available options are:
 \(en BSSID of the AP which the command should connect to (for Wi\(hyFi connections)
 .IP \fInsp\fP 13
 \(en NSP (Network Service Provider) which the command should connect to (for WiMAX connections)
+.IP \fIpasswd-file\fP 13
+\(en some networks may require credentials during activation. You can give these
+credentials using this option.
+Each line of the file should contain one password in the form of
+.br
+\fBsetting_name.property_name:the password\fP
+.br
+For example, for WPA Wi-Fi with PSK, the line would be
+.br
+\fI802-11-wireless-security.psk:secret12345\fP
+.br
+For 802.1X password, the line would be
+.br
+\fI802-1x.password:my 1X password\fP
+.br
+nmcli also accepts "wifi-sec" and "wifi" strings instead of "802-11-wireless-security".
+When NetworkManager requires a password and it is not given, nmcli will ask for it
+when run with --ask. If --ask was not passed, NetworkManager can ask another secret
+agent that may be running (typically a GUI secret agent, such as nm-applet or
+gnome-shell).
 .RE
 .RE
 .TP
@@ -771,6 +793,39 @@ This command does not show the APs, use 'nmcli device wifi list' for that.
 List available WiMAX NSP. The \fIifname\fP and \fInsp\fP options
 can be used to list networks for a particular interface or with a specific
 NSP, respectively.
+.RE
+
+.TP
+.B agent \- run nmcli as a NetworkManager secret agent, or polkit agent
+.br
+.TP
+.SS \fICOMMAND\fP := { secret | polkit  | all }
+.sp
+.RS
+.TP
+.B secret
+.br
+Register nmcli as a NetworkManager secret agent and listen for secret requests.
+You do usually not need this command, because nmcli can handle secrets when
+connecting to networks. However, you may find the command useful when you use
+another tool for activating connections and you do not have a secret agent
+available (like nm-applet).
+.TP
+.B polkit
+.br
+Register nmcli as a polkit agent for the user session and listen for
+authorization requests. You do not usually need this command, because nmcli can
+handle polkit actions related to NetworkManager operations (when run with
+--ask).  However, you may find the command useful when you want to run a simple
+text based polkit agent and you do not have an agent of a desktop environment.
+Note that running this command makes nmcli handle all polkit requests, not only
+NetworkManager related ones, because only one polkit agent can run for the
+session.
+.TP
+.B all
+.br
+Runs nmcli as both NetworkManager secret and a polkit agent.
+.RE
 
 .SH ENVIRONMENT VARIABLES
 \fInmcli\fP's behavior is affected by the following environment variables.

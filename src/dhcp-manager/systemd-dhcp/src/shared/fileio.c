@@ -19,6 +19,8 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
+#include "config.h"
+
 #include <unistd.h>
 
 #include "util.h"
@@ -508,17 +510,15 @@ static int parse_env_file_push(
         va_list aq, *ap = userdata;
 
         if (!utf8_is_valid(key)) {
-                _cleanup_free_ char *p;
+                _cleanup_free_ char *p = utf8_escape_invalid(key);
 
-                p = utf8_escape_invalid(key);
                 log_error("%s:%u: invalid UTF-8 in key '%s', ignoring.", strna(filename), line, p);
                 return -EINVAL;
         }
 
         if (value && !utf8_is_valid(value)) {
-                _cleanup_free_ char *p;
+                _cleanup_free_ char *p = utf8_escape_invalid(value);
 
-                p = utf8_escape_invalid(value);
                 log_error("%s:%u: invalid UTF-8 value for key %s: '%s', ignoring.", strna(filename), line, key, p);
                 return -EINVAL;
         }

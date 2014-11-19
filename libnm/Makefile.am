@@ -43,17 +43,15 @@ libnminclude_hfiles =			\
 	nm-device-wifi.h		\
 	nm-device-wimax.h		\
 	nm-device.h			\
-	nm-dhcp4-config.h		\
-	nm-dhcp6-config.h		\
+	nm-dhcp-config.h		\
 	nm-enum-types.h			\
-	nm-ip4-config.h			\
-	nm-ip6-config.h			\
+	nm-ip-config.h			\
 	nm-object.h			\
 	nm-remote-connection.h		\
 	nm-secret-agent.h		\
 	nm-types.h			\
 	nm-vpn-connection.h		\
-	nm-vpn-plugin-ui-interface.h	\
+	nm-vpn-editor-plugin.h		\
 	nm-wimax-nsp.h
 
 libnminclude_nointrospect_hfiles =	\
@@ -66,6 +64,10 @@ libnminclude_HEADERS =			\
 libnm_la_private_headers =		\
 	nm-dbus-helpers.h		\
 	nm-device-private.h		\
+	nm-dhcp4-config.h		\
+	nm-dhcp6-config.h		\
+	nm-ip4-config.h			\
+	nm-ip6-config.h			\
 	nm-manager.h			\
 	nm-object-cache.h		\
 	nm-object-private.h		\
@@ -91,9 +93,11 @@ libnm_la_csources =			\
 	nm-device-wifi.c		\
 	nm-device-wimax.c		\
 	nm-device.c			\
+	nm-dhcp-config.c		\
 	nm-dhcp4-config.c		\
 	nm-dhcp6-config.c		\
 	nm-enum-types.c			\
+	nm-ip-config.c			\
 	nm-ip4-config.c			\
 	nm-ip6-config.c			\
 	nm-manager.c			\
@@ -104,7 +108,7 @@ libnm_la_csources =			\
 	nm-secret-agent.c		\
 	nm-vpn-connection.c		\
 	nm-vpn-plugin-old.c		\
-	nm-vpn-plugin-ui-interface.c	\
+	nm-vpn-editor-plugin.c		\
 	nm-wimax-nsp.c
 
 libnm_la_SOURCES =			\
@@ -177,3 +181,44 @@ endif
 
 check-local:
 	$(top_srcdir)/tools/check-exports.sh $(builddir)/.libs/libnm.so $(SYMBOL_VIS_FILE)
+
+if BUILD_SETTING_DOCS
+
+noinst_DATA = \
+	nm-property-docs.xml \
+	nm-setting-docs-overrides.xml \
+	nm-setting-docs.xml \
+	nm-keyfile-docs.xml \
+	nm-ifcfg-rh-docs.xml
+
+docs_sources = $(filter-out nm-core-enum-types.c,$(libnm_core_sources))
+
+nm-setting-docs-overrides.xml: generate-plugin-docs.pl $(docs_sources)
+	$(srcdir)/generate-plugin-docs.pl dbus $(top_srcdir)/libnm-core $@
+
+nm-property-docs.xml: generate-setting-docs.py $(docs_sources) | NM-1.0.gir NM-1.0.typelib libnm.la
+	export GI_TYPELIB_PATH=$(abs_builddir)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}; \
+	export LD_LIBRARY_PATH=$(abs_builddir)/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}; \
+	$(srcdir)/generate-setting-docs.py \
+		--gir $(builddir)/NM-1.0.gir \
+		--output $@
+
+nm-setting-docs.xml: generate-setting-docs.py $(docs_sources) nm-setting-docs-overrides.xml | NM-1.0.gir NM-1.0.typelib libnm.la
+	export GI_TYPELIB_PATH=$(abs_builddir)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}; \
+	export LD_LIBRARY_PATH=$(abs_builddir)/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}; \
+	$(srcdir)/generate-setting-docs.py \
+		--gir $(builddir)/NM-1.0.gir \
+		--overrides $(builddir)/nm-setting-docs-overrides.xml \
+		--output $@
+
+nm-keyfile-docs.xml: generate-plugin-docs.pl $(docs_sources)
+	$(srcdir)/generate-plugin-docs.pl keyfile $(top_srcdir)/libnm-core $@
+nm-ifcfg-rh-docs.xml: generate-plugin-docs.pl $(docs_sources)
+	$(srcdir)/generate-plugin-docs.pl ifcfg-rh $(top_srcdir)/libnm-core $@
+
+CLEANFILES += $(noinst_DATA)
+EXTRA_DIST += $(noinst_DATA)
+
+endif
+
+EXTRA_DIST += generate-setting-docs.py generate-plugin-docs.pl

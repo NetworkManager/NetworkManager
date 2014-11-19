@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include "test-common.h"
 
 #define DEVICE_NAME "nm-test-device"

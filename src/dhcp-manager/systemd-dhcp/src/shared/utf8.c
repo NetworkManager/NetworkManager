@@ -43,6 +43,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "config.h"
+
+#include "nm-sd-adapt.h"
+
 #include <errno.h>
 #include <stdlib.h>
 #include <inttypes.h>

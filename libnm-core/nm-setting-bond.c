@@ -19,12 +19,14 @@
  * Copyright 2011 - 2013 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 
 #include "nm-setting-bond.h"
 #include "nm-utils.h"
@@ -134,10 +136,11 @@ nm_setting_bond_get_num_options (NMSettingBond *setting)
  * @setting: the #NMSettingBond
  * @idx: index of the desired option, from 0 to
  * nm_setting_bond_get_num_options() - 1
- * @out_name: (out): on return, the name of the bonding option; this
- * value is owned by the setting and should not be modified
- * @out_value: (out): on return, the value of the name of the bonding
- * option; this value is owned by the setting and should not be modified
+ * @out_name: (out) (transfer none): on return, the name of the bonding option;
+ *   this value is owned by the setting and should not be modified
+ * @out_value: (out) (transfer none): on return, the value of the name of the
+ *   bonding option; this value is owned by the setting and should not be
+ *   modified
  *
  * Given an index, return the value of the bonding option at that index.  Indexes
  * are *not* guaranteed to be static across modifications to options done by
@@ -723,6 +726,13 @@ nm_setting_bond_class_init (NMSettingBondClass *setting_class)
 	 *
 	 * Type: GHashTable(utf8,utf8)
 	 **/
+	/* ---ifcfg-rh---
+	 * property: options
+	 * variable: BONDING_OPTS
+	 * description: Bonding options.
+	 * example: BONDING_OPTS="miimon=100 mode=broadcast"
+	 * ---end---
+	 */
 	 g_object_class_install_property
 		 (object_class, PROP_OPTIONS,
 		 g_param_spec_boxed (NM_SETTING_BOND_OPTIONS, "", "",
@@ -735,6 +745,14 @@ nm_setting_bond_class_init (NMSettingBondClass *setting_class)
 	                                       _nm_utils_strdict_to_dbus,
 	                                       _nm_utils_strdict_from_dbus);
 
+	 /* ---dbus---
+	  * property: interface-name
+	  * format: string
+	  * description: Deprecated in favor of connection.interface-name, but can
+	  *   be used for backward-compatibility with older daemons, to set the
+	  *   bond's interface name.
+	  * ---end---
+	  */
 	 _nm_setting_class_add_dbus_only_property (parent_class, "interface-name",
 	                                           G_VARIANT_TYPE_STRING,
 	                                           _nm_setting_get_deprecated_virtual_interface_name,

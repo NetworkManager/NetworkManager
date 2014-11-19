@@ -20,7 +20,16 @@
 #ifndef NMC_NMCLI_H
 #define NMC_NMCLI_H
 
+#include "config.h"
+
 #include <NetworkManager.h>
+
+#if WITH_POLKIT_AGENT
+#include "nm-polkit-listener.h"
+#else
+/* polkit agent is not available; define fake NMPolkitListener */
+typedef gpointer NMPolkitListener;
+#endif
 
 /* nmcli exit codes */
 typedef enum {
@@ -111,6 +120,10 @@ typedef struct _NmCli {
 	int timeout;                                      /* Operation timeout */
 
 	const GPtrArray *connections;                     /* List of connections */
+
+	NMSecretAgent *secret_agent;                      /* Secret agent */
+	GHashTable *pwds_hash;                            /* Hash table with passwords in passwd-file */
+	NMPolkitListener *pk_listener ;                   /* polkit agent listener */
 
 	gboolean should_wait;                             /* Indication that nmcli should not end yet */
 	gboolean nowait_flag;                             /* '--nowait' option; used for passing to callbacks */

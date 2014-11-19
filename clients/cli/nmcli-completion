@@ -502,7 +502,8 @@ _nmcli_compl_ARGS()
             user| \
             username| \
             service| \
-            password)
+            password| \
+            passwd-file)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     return 0
                 fi
@@ -700,7 +701,7 @@ _nmcli()
             # (if the current word starts with a dash) or the OBJECT list
             # otherwise.
             if [[ "${words[0]:0:1}" != '-' ]]; then
-                OPTIONS=(help general networking radio connection device)
+                OPTIONS=(help general networking radio connection device agent)
             elif [[ "${words[0]:1:1}" == '-' ||  "${words[0]}" == "-" ]]; then
                 OPTIONS=("${LONG_OPTIONS[@]/#/--}")
             else
@@ -845,9 +846,9 @@ _nmcli()
                             _nmcli_compl_ARGS_CONNECTION && return 0
 
                             if [[ "$COMMAND_CONNECTION_TYPE" = "ifname" ]]; then
-                                OPTIONS=(ap nsp)
+                                OPTIONS=(ap nsp passwd-file)
                             else
-                                OPTIONS=(ifname ap nsp)
+                                OPTIONS=(ifname ap nsp passwd-file)
                             fi
                             _nmcli_compl_ARGS
                         fi
@@ -1265,6 +1266,11 @@ _nmcli()
                         ;;
 
                 esac
+            fi
+            ;;
+        a|ag|age|agen|agent)
+            if [[ ${#words[@]} -eq 2 ]]; then
+                _nmcli_compl_COMMAND "$command" secret polkit all
             fi
             ;;
     esac

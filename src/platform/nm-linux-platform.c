@@ -17,7 +17,7 @@
  *
  * Copyright (C) 2012-2013 Red Hat, Inc.
  */
-#include <config.h>
+#include "config.h"
 
 #include <errno.h>
 #include <unistd.h>
@@ -54,6 +54,7 @@
 #endif
 #endif
 
+#include "gsystem-local-alloc.h"
 #include "NetworkManagerUtils.h"
 #include "nm-linux-platform.h"
 #include "NetworkManagerUtils.h"
@@ -765,7 +766,7 @@ link_type_from_udev (NMPlatform *platform, int ifindex, const char *ifname, int 
 
 	prop = g_udev_device_get_property (udev_device, "DEVTYPE");
 	sysfs_path = g_udev_device_get_sysfs_path (udev_device);
-	if (g_strcmp0 (prop, "wlan") == 0 || wifi_utils_is_wifi (ifname, sysfs_path))
+	if (wifi_utils_is_wifi (ifname, sysfs_path, prop))
 		return_type (NM_LINK_TYPE_WIFI, "wifi");
 	else if (g_strcmp0 (prop, "wwan") == 0)
 		return_type (NM_LINK_TYPE_WWAN_ETHERNET, "wwan");
@@ -1294,6 +1295,16 @@ rtprot_to_source (guint rtprot)
 	default:
 		return NM_IP_CONFIG_SOURCE_USER;
 	}
+}
+
+static gboolean
+_rtnl_route_is_default (const struct rtnl_route *rtnlroute)
+{
+	struct nl_addr *dst;
+
+	return    rtnlroute
+	       && (dst = rtnl_route_get_dst ((struct rtnl_route *) rtnlroute))
+	       && nl_addr_get_prefixlen (dst) == 0;
 }
 
 static gboolean
@@ -3646,21 +3657,28 @@ _route_match (struct rtnl_route *rtnlroute, int family, int ifindex)
 }
 
 static GArray *
-ip4_route_get_all (NMPlatform *platform, int ifindex, gboolean include_default)
+ip4_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteMode mode)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	GArray *routes;
 	NMPlatformIP4Route route;
 	struct nl_object *object;
 
+	g_return_val_if_fail (NM_IN_SET (mode, NM_PLATFORM_GET_ROUTE_MODE_ALL, NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT, NM_PLATFORM_GET_ROUTE_MODE_ONLY_DEFAULT), NULL);
+
 	routes = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP4Route));
 
 	for (object = nl_cache_get_first (priv->route_cache); object; object = nl_cache_get_next (object)) {
 		if (_route_match ((struct rtnl_route *) object, AF_INET, ifindex)) {
-			if (init_ip4_route (&route, (struct rtnl_route *) object)) {
-				if (!NM_PLATFORM_IP_ROUTE_IS_DEFAULT (&route) || include_default)
-					g_array_append_val (routes, route);
+			if (_rtnl_route_is_default ((struct rtnl_route *) object)) {
+				if (mode == NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT)
+					continue;
+			} else {
+				if (mode == NM_PLATFORM_GET_ROUTE_MODE_ONLY_DEFAULT)
+					continue;
 			}
+			if (init_ip4_route (&route, (struct rtnl_route *) object))
+				g_array_append_val (routes, route);
 		}
 	}
 
@@ -3668,21 +3686,28 @@ ip4_route_get_all (NMPlatform *platform, int ifindex, gboolean include_default)
 }
 
 static GArray *
-ip6_route_get_all (NMPlatform *platform, int ifindex, gboolean include_default)
+ip6_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteMode mode)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	GArray *routes;
 	NMPlatformIP6Route route;
 	struct nl_object *object;
 
+	g_return_val_if_fail (NM_IN_SET (mode, NM_PLATFORM_GET_ROUTE_MODE_ALL, NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT, NM_PLATFORM_GET_ROUTE_MODE_ONLY_DEFAULT), NULL);
+
 	routes = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP6Route));
 
 	for (object = nl_cache_get_first (priv->route_cache); object; object = nl_cache_get_next (object)) {
 		if (_route_match ((struct rtnl_route *) object, AF_INET6, ifindex)) {
-			if (init_ip6_route (&route, (struct rtnl_route *) object)) {
-				if (!NM_PLATFORM_IP_ROUTE_IS_DEFAULT (&route) || include_default)
-					g_array_append_val (routes, route);
+			if (_rtnl_route_is_default ((struct rtnl_route *) object)) {
+				if (mode == NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT)
+					continue;
+			} else {
+				if (mode == NM_PLATFORM_GET_ROUTE_MODE_ONLY_DEFAULT)
+					continue;
 			}
+			if (init_ip6_route (&route, (struct rtnl_route *) object))
+				g_array_append_val (routes, route);
 		}
 	}
 
@@ -3710,7 +3735,7 @@ clear_host_address (int family, const void *network, int plen, void *dst)
 static struct nl_object *
 build_rtnl_route (int family, int ifindex, NMIPConfigSource source,
                   gconstpointer network, int plen, gconstpointer gateway,
-                  int metric, int mss)
+                  guint32 metric, guint32 mss)
 {
 	guint32 network_clean[4];
 	struct rtnl_route *rtnlroute;
@@ -3751,7 +3776,7 @@ build_rtnl_route (int family, int ifindex, NMIPConfigSource source,
 static gboolean
 ip4_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
                in_addr_t network, int plen, in_addr_t gateway,
-               int metric, int mss)
+               guint32 metric, guint32 mss)
 {
 	return add_object (platform, build_rtnl_route (AF_INET, ifindex, source, &network, plen, &gateway, metric, mss));
 }
@@ -3759,13 +3784,13 @@ ip4_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 static gboolean
 ip6_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
                struct in6_addr network, int plen, struct in6_addr gateway,
-               int metric, int mss)
+               guint32 metric, guint32 mss)
 {
 	return add_object (platform, build_rtnl_route (AF_INET6, ifindex, source, &network, plen, &gateway, metric, mss));
 }
 
 static struct rtnl_route *
-route_search_cache (struct nl_cache *cache, int family, int ifindex, const void *network, int plen, int metric)
+route_search_cache (struct nl_cache *cache, int family, int ifindex, const void *network, int plen, guint32 metric)
 {
 	guint32 network_clean[4], dst_clean[4];
 	struct nl_object *object;
@@ -3814,7 +3839,7 @@ refresh_route (NMPlatform *platform, int family, int ifindex, const void *networ
 }
 
 static gboolean
-ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen, int metric)
+ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen, guint32 metric)
 {
 	in_addr_t gateway = 0;
 	struct rtnl_route *cached_object;
@@ -3874,7 +3899,7 @@ ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen
 }
 
 static gboolean
-ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, int plen, int metric)
+ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, int plen, guint32 metric)
 {
 	struct in6_addr gateway = IN6ADDR_ANY_INIT;
 
@@ -3883,7 +3908,7 @@ ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, in
 }
 
 static gboolean
-ip_route_exists (NMPlatform *platform, int family, int ifindex, gpointer network, int plen, int metric)
+ip_route_exists (NMPlatform *platform, int family, int ifindex, gpointer network, int plen, guint32 metric)
 {
 	auto_nl_object struct nl_object *object = build_rtnl_route (family, ifindex,
 	                                                            NM_IP_CONFIG_SOURCE_UNKNOWN,
@@ -3897,13 +3922,13 @@ ip_route_exists (NMPlatform *platform, int family, int ifindex, gpointer network
 }
 
 static gboolean
-ip4_route_exists (NMPlatform *platform, int ifindex, in_addr_t network, int plen, int metric)
+ip4_route_exists (NMPlatform *platform, int ifindex, in_addr_t network, int plen, guint32 metric)
 {
 	return ip_route_exists (platform, AF_INET, ifindex, &network, plen, metric);
 }
 
 static gboolean
-ip6_route_exists (NMPlatform *platform, int ifindex, struct in6_addr network, int plen, int metric)
+ip6_route_exists (NMPlatform *platform, int ifindex, struct in6_addr network, int plen, guint32 metric)
 {
 	return ip_route_exists (platform, AF_INET6, ifindex, &network, plen, metric);
 }

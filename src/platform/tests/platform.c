@@ -18,12 +18,15 @@
  * Copyright (C) 2013 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <arpa/inet.h>
 #include <netlink/route/addr.h>
 
+#include "gsystem-local-alloc.h"
 #include "nm-platform.h"
 #include "nm-linux-platform.h"
 #include "nm-fake-platform.h"
@@ -630,7 +633,7 @@ do_ip4_route_get_all (char **argv)
 	int i;
 
 	if (ifindex) {
-		routes = nm_platform_ip4_route_get_all (ifindex, TRUE);
+		routes = nm_platform_ip4_route_get_all (ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
 		for (i = 0; i < routes->len; i++) {
 			route = &g_array_index (routes, NMPlatformIP4Route, i);
 			inet_ntop (AF_INET, &route->network, networkstr, sizeof (networkstr));
@@ -654,7 +657,7 @@ do_ip6_route_get_all (char **argv)
 	int i;
 
 	if (ifindex) {
-		routes = nm_platform_ip6_route_get_all (ifindex, TRUE);
+		routes = nm_platform_ip6_route_get_all (ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
 		for (i = 0; i < routes->len; i++) {
 			route = &g_array_index (routes, NMPlatformIP6Route, i);
 			inet_ntop (AF_INET6, &route->network, networkstr, sizeof (networkstr));

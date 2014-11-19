@@ -18,6 +18,8 @@
  * Copyright (C) 2005 - 2012 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #define _XOPEN_SOURCE
 #include <time.h>
 #undef _XOPEN_SOURCE
@@ -34,8 +36,6 @@
 #include <arpa/inet.h>
 #include <ctype.h>
 
-#include <config.h>
-
 #include "nm-dhcp-dhclient.h"
 #include "nm-utils.h"
 #include "nm-logging.h"
@@ -43,6 +43,8 @@
 #include "nm-dhcp-manager.h"
 #include "nm-posix-signals.h"
 #include "NetworkManagerUtils.h"
+#include "nm-dhcp-listener.h"
+#include "gsystem-local-alloc.h"
 
 G_DEFINE_TYPE (NMDhcpDhclient, nm_dhcp_dhclient, NM_TYPE_DHCP_CLIENT)
 
@@ -55,7 +57,7 @@ typedef struct {
 	char *pid_file;
 } NMDhcpDhclientPrivate;
 
-const char *
+static const char *
 nm_dhcp_dhclient_get_path (void)
 {
 	const char *path = NULL;
@@ -122,7 +124,7 @@ get_dhclient_leasefile (const char *iface,
 	return NULL;
 }
 
-GSList *
+static GSList *
 nm_dhcp_dhclient_get_lease_ip_configs (const char *iface,
                                        const char *uuid,
                                        gboolean ipv6)
@@ -151,10 +153,11 @@ static gboolean
 merge_dhclient_config (const char *iface,
                        const char *conf_file,
                        gboolean is_ip6,
-                       const char *dhcp_client_id,
+                       GBytes *client_id,
                        const char *anycast_addr,
                        const char *hostname,
                        const char *orig_path,
+                       GBytes **out_new_client_id,
                        GError **error)
 {
 	char *orig = NULL, *new;
@@ -173,7 +176,7 @@ merge_dhclient_config (const char *iface,
 		}
 	}
 
-	new = nm_dhcp_dhclient_create_config (iface, is_ip6, dhcp_client_id, anycast_addr, hostname, orig_path, orig);
+	new = nm_dhcp_dhclient_create_config (iface, is_ip6, client_id, anycast_addr, hostname, orig_path, orig, out_new_client_id);
 	g_assert (new);
 	success = g_file_set_contents (conf_file, new, -1, error);
 	g_free (new);
@@ -257,9 +260,10 @@ static char *
 create_dhclient_config (const char *iface,
                         gboolean is_ip6,
                         const char *uuid,
-                        const char *dhcp_client_id,
+                        GBytes *client_id,
                         const char *dhcp_anycast_addr,
-                        const char *hostname)
+                        const char *hostname,
+                        GBytes **out_new_client_id)
 {
 	char *orig = NULL, *new = NULL;
 	GError *error = NULL;
@@ -284,7 +288,7 @@ create_dhclient_config (const char *iface,
 	}
 
 	error = NULL;
-	success = merge_dhclient_config (iface, new, is_ip6, dhcp_client_id, dhcp_anycast_addr, hostname, orig, &error);
+	success = merge_dhclient_config (iface, new, is_ip6, client_id, dhcp_anycast_addr, hostname, orig, out_new_client_id, &error);
 	if (!success) {
 		nm_log_warn (LOGD_DHCP, "(%s): error creating dhclient%s configuration: %s",
 		             iface, is_ip6 ? "6" : "", error->message);
@@ -473,41 +477,45 @@ dhclient_start (NMDhcpClient *client,
 }
 
 static gboolean
-ip4_start (NMDhcpClient *client,
-           const char *dhcp_client_id,
-           const char *dhcp_anycast_addr,
-           const char *hostname)
+ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last_ip4_address)
 {
 	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
-	const char *iface, *uuid;
+	GBytes *client_id;
+	gs_unref_bytes GBytes *new_client_id = NULL;
+	const char *iface, *uuid, *hostname;
+	gboolean success = FALSE;
 
 	iface = nm_dhcp_client_get_iface (client);
 	uuid = nm_dhcp_client_get_uuid (client);
+	client_id = nm_dhcp_client_get_client_id (client);
+	hostname = nm_dhcp_client_get_hostname (client);
 
-	priv->conf_file = create_dhclient_config (iface, FALSE, uuid, dhcp_client_id, dhcp_anycast_addr, hostname);
-	if (!priv->conf_file) {
+	priv->conf_file = create_dhclient_config (iface, FALSE, uuid, client_id, dhcp_anycast_addr, hostname, &new_client_id);
+	if (priv->conf_file) {
+		if (new_client_id)
+			nm_dhcp_client_set_client_id (client, new_client_id);
+		success = dhclient_start (client, NULL, NULL, FALSE, NULL);
+	} else
 		nm_log_warn (LOGD_DHCP4, "(%s): error creating dhclient configuration file.", iface);
-		return FALSE;
-	}
 
-	return dhclient_start (client, NULL, NULL, FALSE, NULL);
+	return success;
 }
 
 static gboolean
 ip6_start (NMDhcpClient *client,
            const char *dhcp_anycast_addr,
-           const char *hostname,
            gboolean info_only,
            NMSettingIP6ConfigPrivacy privacy,
            const GByteArray *duid)
 {
 	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
-	const char *iface, *uuid;
+	const char *iface, *uuid, *hostname;
 
 	iface = nm_dhcp_client_get_iface (client);
 	uuid = nm_dhcp_client_get_uuid (client);
+	hostname = nm_dhcp_client_get_hostname (client);
 
-	priv->conf_file = create_dhclient_config (iface, TRUE, uuid, NULL, dhcp_anycast_addr, hostname);
+	priv->conf_file = create_dhclient_config (iface, TRUE, uuid, NULL, dhcp_anycast_addr, hostname, NULL);
 	if (!priv->conf_file) {
 		nm_log_warn (LOGD_DHCP6, "(%s): error creating dhclient6 configuration file.", iface);
 		return FALSE;
@@ -542,6 +550,24 @@ stop (NMDhcpClient *client, gboolean release, const GByteArray *duid)
 			nm_dhcp_client_stop_pid (rpid, nm_dhcp_client_get_iface (client));
 		}
 	}
+}
+
+static void
+state_changed (NMDhcpClient *client,
+	           NMDhcpState state,
+	           GObject *ip_config,
+	           GHashTable *options)
+{
+	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
+	gs_unref_bytes GBytes *client_id = NULL;
+
+	if (nm_dhcp_client_get_client_id (client))
+		return;
+	if (state != NM_DHCP_STATE_BOUND)
+		return;
+
+	client_id = nm_dhcp_dhclient_get_client_id_from_config_file (priv->conf_file);
+	nm_dhcp_client_set_client_id (client, client_id);
 }
 
 static GByteArray *
@@ -612,12 +638,21 @@ nm_dhcp_dhclient_init (NMDhcpDhclient *self)
 	/* Fallback option */
 	if (!priv->def_leasefile)
 		priv->def_leasefile = SYSCONFDIR "/dhclient6.leases";
+
+	g_signal_connect (nm_dhcp_listener_get (),
+	                  NM_DHCP_LISTENER_EVENT,
+	                  G_CALLBACK (nm_dhcp_client_handle_event),
+	                  self);
 }
 
 static void
 dispose (GObject *object)
 {
 	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (object);
+
+	g_signal_handlers_disconnect_by_func (nm_dhcp_listener_get (),
+	                                      G_CALLBACK (nm_dhcp_client_handle_event),
+	                                      NM_DHCP_DHCLIENT (object));
 
 	g_free (priv->pid_file);
 	g_free (priv->conf_file);
@@ -641,5 +676,16 @@ nm_dhcp_dhclient_class_init (NMDhcpDhclientClass *dhclient_class)
 	client_class->ip6_start = ip6_start;
 	client_class->stop = stop;
 	client_class->get_duid = get_duid;
+	client_class->state_changed = state_changed;
+}
+
+static void __attribute__((constructor))
+register_dhcp_dhclient (void)
+{
+	g_type_init ();
+	_nm_dhcp_client_register (NM_TYPE_DHCP_DHCLIENT,
+	                          "dhclient",
+	                          nm_dhcp_dhclient_get_path,
+	                          nm_dhcp_dhclient_get_lease_ip_configs);
 }
 

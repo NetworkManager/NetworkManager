@@ -18,7 +18,8 @@
  * Copyright (C) 2008 - 2012 Red Hat, Inc.
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <signal.h>

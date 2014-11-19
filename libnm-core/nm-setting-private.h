@@ -86,6 +86,9 @@ gboolean _nm_setting_clear_secrets_with_flags (NMSetting *setting,
  */
 #define NM_SETTING_PARAM_INFERRABLE (1 << (4 + G_PARAM_USER_SHIFT))
 
+/* This is a legacy property, which clients should not send to the daemon. */
+#define NM_SETTING_PARAM_LEGACY (1 << (5 + G_PARAM_USER_SHIFT))
+
 /* Ensure the setting's GType is registered at library load time */
 #define NM_SETTING_REGISTER_TYPE(x) \
 static void __attribute__((constructor)) register_setting (void) \
@@ -111,6 +114,8 @@ NMSetting  *_nm_setting_new_from_dbus (GType setting_type,
                                        GError **error);
 
 typedef GVariant * (*NMSettingPropertyGetFunc)    (NMSetting     *setting,
+                                                   const char    *property);
+typedef GVariant * (*NMSettingPropertySynthFunc)  (NMSetting     *setting,
                                                    NMConnection  *connection,
                                                    const char    *property);
 typedef void       (*NMSettingPropertySetFunc)    (NMSetting     *setting,
@@ -124,7 +129,7 @@ typedef void       (*NMSettingPropertyNotSetFunc) (NMSetting     *setting,
 void _nm_setting_class_add_dbus_only_property (NMSettingClass *setting_class,
                                                const char *property_name,
                                                const GVariantType *dbus_type,
-                                               NMSettingPropertyGetFunc get_func,
+                                               NMSettingPropertySynthFunc synth_func,
                                                NMSettingPropertySetFunc set_func);
 
 void _nm_setting_class_override_property (NMSettingClass *setting_class,
@@ -142,6 +147,11 @@ void _nm_setting_class_transform_property (NMSettingClass *setting_class,
                                            const GVariantType *dbus_type,
                                            NMSettingPropertyTransformToFunc to_dbus,
                                            NMSettingPropertyTransformFromFunc from_dbus);
+
+gboolean _nm_setting_use_legacy_property (NMSetting *setting,
+                                          GVariant *connection_dict,
+                                          const char *legacy_property,
+                                          const char *new_property);
 
 GPtrArray  *_nm_setting_need_secrets (NMSetting *setting);
 

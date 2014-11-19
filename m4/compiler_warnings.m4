@@ -29,7 +29,7 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 		      -fno-strict-aliasing -Wno-unused-but-set-variable \
 		      -Wundef -Wimplicit-function-declaration \
 		      -Wpointer-arith -Winit-self \
-		      -Wmissing-include-dirs -Waggregate-return; do
+		      -Wmissing-include-dirs; do
 		CFLAGS="$CFLAGS_MORE_WARNINGS $CFLAGS_EXTRA $option $CFLAGS_SAVED"
 		AC_MSG_CHECKING([whether gcc understands $option])
 		AC_TRY_COMPILE([], [],

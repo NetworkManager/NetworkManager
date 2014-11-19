@@ -17,6 +17,8 @@
  * Copyright (C) 2014 Red Hat, Inc.
  * Author: Pavel Šimerda <psimerda@redhat.com>
  */
+#include "config.h"
+
 #include "nm-dns-unbound.h"
 #include "NetworkManagerUtils.h"
 

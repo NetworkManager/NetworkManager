@@ -57,6 +57,13 @@ G_BEGIN_DECLS
  * client side, and #NMSettingsConnection on the daemon side.
  */
 
+/**
+ * NMConnectionInterface:
+ * @parent: the parent interace struct
+ * @secrets_updated: emitted when the connection's secrets are updated
+ * @secrets_cleared: emitted when the connection's secrets are cleared
+ * @changed: emitted when any change to the connection's settings occurs
+ */
 typedef struct {
 	GTypeInterface parent;
 
@@ -193,8 +200,8 @@ NMSettingDcb *             nm_connection_get_setting_dcb               (NMConnec
 NMSettingGeneric *         nm_connection_get_setting_generic           (NMConnection *connection);
 NMSettingGsm *             nm_connection_get_setting_gsm               (NMConnection *connection);
 NMSettingInfiniband *      nm_connection_get_setting_infiniband        (NMConnection *connection);
-NMSettingIP4Config *       nm_connection_get_setting_ip4_config        (NMConnection *connection);
-NMSettingIP6Config *       nm_connection_get_setting_ip6_config        (NMConnection *connection);
+NMSettingIPConfig *        nm_connection_get_setting_ip4_config        (NMConnection *connection);
+NMSettingIPConfig *        nm_connection_get_setting_ip6_config        (NMConnection *connection);
 NMSettingOlpcMesh *        nm_connection_get_setting_olpc_mesh         (NMConnection *connection);
 NMSettingPpp *             nm_connection_get_setting_ppp               (NMConnection *connection);
 NMSettingPppoe *           nm_connection_get_setting_pppoe             (NMConnection *connection);

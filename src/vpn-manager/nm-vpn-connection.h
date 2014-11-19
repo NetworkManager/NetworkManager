@@ -46,9 +46,12 @@
 #define NM_VPN_CONNECTION_INTERNAL_RETRY_AFTER_FAILURE "internal-retry-after-failure"
 
 
-typedef struct {
+#define NM_VPN_ROUTE_METRIC_DEFAULT     10
+
+
+struct _NMVpnConnection {
 	NMActiveConnection parent;
-} NMVpnConnection;
+};
 
 typedef struct {
 	NMActiveConnectionClass parent;
@@ -76,6 +79,7 @@ NMVpnConnection * nm_vpn_connection_new (NMConnection *connection,
 
 void                 nm_vpn_connection_activate        (NMVpnConnection *connection);
 NMConnection *       nm_vpn_connection_get_connection  (NMVpnConnection *connection);
+const char*          nm_vpn_connection_get_connection_id (NMVpnConnection *connection);
 NMVpnConnectionState nm_vpn_connection_get_vpn_state   (NMVpnConnection *connection);
 const char *         nm_vpn_connection_get_banner      (NMVpnConnection *connection);
 
@@ -92,5 +96,8 @@ const char *         nm_vpn_connection_get_ip_iface    (NMVpnConnection *connect
 int                  nm_vpn_connection_get_ip_ifindex  (NMVpnConnection *connection);
 guint32              nm_vpn_connection_get_ip4_internal_gateway (NMVpnConnection *connection);
 struct in6_addr *    nm_vpn_connection_get_ip6_internal_gateway (NMVpnConnection *connection);
+
+guint32              nm_vpn_connection_get_ip4_route_metric (NMVpnConnection *connection);
+guint32              nm_vpn_connection_get_ip6_route_metric (NMVpnConnection *connection);
 
 #endif /* __NETWORKMANAGER_VPN_CONNECTION_H__ */

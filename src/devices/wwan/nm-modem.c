@@ -19,6 +19,8 @@
  * Copyright (C) 2009 Novell, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 #include "nm-modem.h"
 #include "nm-platform.h"
@@ -235,26 +237,25 @@ nm_modem_get_connection_ip_type (NMModem *self,
                                  GError **error)
 {
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4, *s_ip6;
 	const char *method;
 	gboolean ip4 = TRUE, ip6 = TRUE;
 	gboolean ip4_may_fail = TRUE, ip6_may_fail = TRUE;
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	if (s_ip4) {
-		method = nm_setting_ip4_config_get_method (s_ip4);
+		method = nm_setting_ip_config_get_method (s_ip4);
 		if (g_strcmp0 (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0)
 			ip4 = FALSE;
-		ip4_may_fail = nm_setting_ip4_config_get_may_fail (s_ip4);
+		ip4_may_fail = nm_setting_ip_config_get_may_fail (s_ip4);
 	}
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	if (s_ip6) {
-		method = nm_setting_ip6_config_get_method (s_ip6);
+		method = nm_setting_ip_config_get_method (s_ip6);
 		if (g_strcmp0 (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0)
 			ip6 = FALSE;
-		ip6_may_fail = nm_setting_ip6_config_get_may_fail (s_ip6);
+		ip6_may_fail = nm_setting_ip_config_get_may_fail (s_ip6);
 	}
 
 	if (ip4 && !ip6) {

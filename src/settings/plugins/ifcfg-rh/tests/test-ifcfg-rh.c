@@ -18,6 +18,8 @@
  * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <unistd.h>
@@ -183,8 +185,8 @@ test_read_basic (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	GError *error = NULL;
 	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x16, 0x41, 0x11, 0x22, 0x33 };
@@ -225,14 +227,14 @@ test_read_basic (void)
 	/* ===== IPv4 SETTING ===== */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
-	g_assert_cmpstr (nm_setting_ip4_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_DISABLED);
-	g_assert (nm_setting_ip4_config_get_never_default (s_ip4) == FALSE);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_DISABLED);
+	g_assert (nm_setting_ip_config_get_never_default (s_ip4) == FALSE);
 
 	/* ===== IPv6 SETTING ===== */
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);
-	g_assert_cmpstr (nm_setting_ip6_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
-	g_assert (nm_setting_ip6_config_get_never_default (s_ip6) == FALSE);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
+	g_assert (nm_setting_ip_config_get_never_default (s_ip6) == FALSE);
 
 	g_object_unref (connection);
 }
@@ -243,7 +245,7 @@ test_read_miscellaneous_variables (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	GError *error = NULL;
 	char *expected_mac_blacklist[3] = { "00:16:41:11:22:88", "00:16:41:11:22:99", "6a:5d:5a:fa:dd:f0" };
 	int mac_blacklist_num, i;
@@ -281,8 +283,8 @@ test_read_miscellaneous_variables (void)
 	/* ===== IPv4 SETTING ===== */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
-	g_assert_cmpstr (nm_setting_ip4_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_DISABLED);
-	g_assert (nm_setting_ip4_config_get_never_default (s_ip4) == FALSE);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_DISABLED);
+	g_assert (nm_setting_ip_config_get_never_default (s_ip4) == FALSE);
 
 	g_object_unref (connection);
 }
@@ -293,7 +295,7 @@ test_read_variables_corner_cases (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	GError *error = NULL;
 	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x16, 0x41, 0x11, 0x22, 0x33 };
@@ -331,8 +333,8 @@ test_read_variables_corner_cases (void)
 	/* ===== IPv4 SETTING ===== */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
-	g_assert_cmpstr (nm_setting_ip4_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_DISABLED);
-	g_assert (nm_setting_ip4_config_get_never_default (s_ip4) == FALSE);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_DISABLED);
+	g_assert (nm_setting_ip_config_get_never_default (s_ip4) == FALSE);
 
 	g_object_unref (connection);
 }
@@ -440,17 +442,14 @@ test_read_wired_static (const char *file,
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *unmanaged = NULL;
 	GError *error = NULL;
 	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0xee };
-	struct in6_addr addr6;
-	const char *expected6_address1 = "dead:beaf::1";
-	const char *expected6_address2 = "dead:beaf::2";
-	NMIP4Address *ip4_addr;
-	NMIP6Address *ip6_addr;
+	NMIPAddress *ip4_addr;
+	NMIPAddress *ip6_addr;
 	gboolean success;
 
 	connection = connection_from_file (file, NULL, TYPE_ETHERNET,
@@ -482,50 +481,50 @@ test_read_wired_static (const char *file,
 	/* ===== IPv4 SETTING ===== */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
-	g_assert_cmpstr (nm_setting_ip4_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
-	g_assert (nm_setting_ip4_config_get_may_fail (s_ip4));
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
+	g_assert (nm_setting_ip_config_get_may_fail (s_ip4));
 
 	/* DNS Addresses */
-	g_assert_cmpint (nm_setting_ip4_config_get_num_dns (s_ip4), ==, 2);
-	g_assert_cmpstr (nm_setting_ip4_config_get_dns (s_ip4, 0), ==, "4.2.2.1");
-	g_assert_cmpstr (nm_setting_ip4_config_get_dns (s_ip4, 1), ==, "4.2.2.2");
+	g_assert_cmpint (nm_setting_ip_config_get_num_dns (s_ip4), ==, 2);
+	g_assert_cmpstr (nm_setting_ip_config_get_dns (s_ip4, 0), ==, "4.2.2.1");
+	g_assert_cmpstr (nm_setting_ip_config_get_dns (s_ip4, 1), ==, "4.2.2.2");
 
 	/* IP addresses */
-	g_assert_cmpint (nm_setting_ip4_config_get_num_addresses (s_ip4), ==, 1);
-	ip4_addr = nm_setting_ip4_config_get_address (s_ip4, 0);
+	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip4), ==, 1);
+	ip4_addr = nm_setting_ip_config_get_address (s_ip4, 0);
 	g_assert (ip4_addr);
-	g_assert_cmpint (nm_ip4_address_get_prefix (ip4_addr), ==, 24);
-	nmtst_assert_ip4_address_equals (nm_ip4_address_get_address (ip4_addr), "192.168.1.5");
-	nmtst_assert_ip4_address_equals (nm_ip4_address_get_gateway (ip4_addr), "192.168.1.1");
+	g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 24);
+	g_assert_cmpstr (nm_ip_address_get_address (ip4_addr), ==, "192.168.1.5");
+
+	/* Gateway */
+	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, "192.168.1.1");
 
 	/* ===== IPv6 SETTING ===== */
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);
 	if (expect_ip6) {
-		g_assert_cmpstr (nm_setting_ip6_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_MANUAL);
-		g_assert (nm_setting_ip6_config_get_may_fail (s_ip6));
+		g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_MANUAL);
+		g_assert (nm_setting_ip_config_get_may_fail (s_ip6));
 
 		/* DNS Addresses */
-		g_assert_cmpint (nm_setting_ip6_config_get_num_dns (s_ip6), ==, 2);
-		g_assert_cmpstr (nm_setting_ip6_config_get_dns (s_ip6, 0), ==, "1:2:3:4::a");
-		g_assert_cmpstr (nm_setting_ip6_config_get_dns (s_ip6, 1), ==, "1:2:3:4::b");
+		g_assert_cmpint (nm_setting_ip_config_get_num_dns (s_ip6), ==, 2);
+		g_assert_cmpstr (nm_setting_ip_config_get_dns (s_ip6, 0), ==, "1:2:3:4::a");
+		g_assert_cmpstr (nm_setting_ip_config_get_dns (s_ip6, 1), ==, "1:2:3:4::b");
 
 		/* IP addresses */
-		g_assert_cmpint (nm_setting_ip6_config_get_num_addresses (s_ip6), ==, 2);
+		g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip6), ==, 2);
 
-		ip6_addr = nm_setting_ip6_config_get_address (s_ip6, 0);
+		ip6_addr = nm_setting_ip_config_get_address (s_ip6, 0);
 		g_assert (ip6_addr);
-		g_assert_cmpint (nm_ip6_address_get_prefix (ip6_addr), ==, 64);
-		g_assert_cmpint (inet_pton (AF_INET6, expected6_address1, &addr6), >, 0);
-		g_assert (IN6_ARE_ADDR_EQUAL (nm_ip6_address_get_address (ip6_addr), &addr6));
+		g_assert_cmpint (nm_ip_address_get_prefix (ip6_addr), ==, 64);
+		g_assert_cmpstr (nm_ip_address_get_address (ip6_addr), ==, "dead:beaf::1");
 
-		ip6_addr = nm_setting_ip6_config_get_address (s_ip6, 1);
+		ip6_addr = nm_setting_ip_config_get_address (s_ip6, 1);
 		g_assert (ip6_addr);
-		g_assert_cmpint (nm_ip6_address_get_prefix (ip6_addr), ==, 56);
-		g_assert_cmpint (inet_pton (AF_INET6, expected6_address2, &addr6), >, 0);
-		g_assert (IN6_ARE_ADDR_EQUAL (nm_ip6_address_get_address (ip6_addr), &addr6));
+		g_assert_cmpint (nm_ip_address_get_prefix (ip6_addr), ==, 56);
+		g_assert_cmpstr (nm_ip_address_get_address (ip6_addr), ==, "dead:beaf::2");
 	} else {
-		g_assert_cmpstr (nm_setting_ip6_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
+		g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
 	}
 
 	g_free (unmanaged);
@@ -538,9 +537,9 @@ test_read_wired_static_no_prefix (gconstpointer user_data)
 	guint32 expected_prefix = GPOINTER_TO_UINT (user_data);
 	NMConnection *connection;
 	NMSettingConnection *s_con;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	GError *error = NULL;
-	NMIP4Address *ip4_addr;
+	NMIPAddress *ip4_addr;
 	char *file, *expected_id;
 
 	file = g_strdup_printf (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-static-no-prefix-%u", expected_prefix);
@@ -563,12 +562,12 @@ test_read_wired_static_no_prefix (gconstpointer user_data)
 	/* ===== IPv4 SETTING ===== */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
-	g_assert_cmpstr (nm_setting_ip4_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
 
-	g_assert_cmpint (nm_setting_ip4_config_get_num_addresses (s_ip4), ==, 1);
-	ip4_addr = nm_setting_ip4_config_get_address (s_ip4, 0);
+	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip4), ==, 1);
+	ip4_addr = nm_setting_ip_config_get_address (s_ip4, 0);
 	g_assert (ip4_addr);
-	g_assert_cmpint (nm_ip4_address_get_prefix (ip4_addr), ==, expected_prefix);
+	g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, expected_prefix);
 
 	g_free (file);
 	g_free (expected_id);
@@ -583,7 +582,7 @@ test_read_wired_dhcp (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
@@ -679,49 +678,49 @@ test_read_wired_dhcp (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
 
 	/* Method */
-	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	tmp = nm_setting_ip_config_get_method (s_ip4);
 	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
 	        "wired-dhcp-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_DHCP,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_METHOD);
+	        NM_SETTING_IP_CONFIG_METHOD);
 
-	tmp = nm_setting_ip4_config_get_dhcp_hostname (s_ip4);
+	tmp = nm_setting_ip_config_get_dhcp_hostname (s_ip4);
 	ASSERT (tmp != NULL,
 	        "wired-dhcp-verify-ip4", "failed to verify %s: missing %s / %s key",
 	        TEST_IFCFG_WIRED_DHCP,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME);
+	        NM_SETTING_IP_CONFIG_DHCP_HOSTNAME);
 	ASSERT (strcmp (tmp, expected_dhcp_hostname) == 0,
 	        "wired-dhcp-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_DHCP,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME);
+	        NM_SETTING_IP_CONFIG_DHCP_HOSTNAME);
 
-	ASSERT (nm_setting_ip4_config_get_ignore_auto_dns (s_ip4) == TRUE,
+	ASSERT (nm_setting_ip_config_get_ignore_auto_dns (s_ip4) == TRUE,
 	        "wired-dhcp-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_DHCP,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS);
+	        NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS);
 
 	/* DNS Addresses */
-	ASSERT (nm_setting_ip4_config_get_num_dns (s_ip4) == 2,
+	ASSERT (nm_setting_ip_config_get_num_dns (s_ip4) == 2,
 	        "wired-dhcp-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_DHCP,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_DNS);
+	        NM_SETTING_IP_CONFIG_DNS);
 
-	ASSERT (strcmp (nm_setting_ip4_config_get_dns (s_ip4, 0), "4.2.2.1") == 0,
+	ASSERT (strcmp (nm_setting_ip_config_get_dns (s_ip4, 0), "4.2.2.1") == 0,
 	        "wired-dhcp-verify-ip4", "failed to verify %s: unexpected %s / %s key value #1",
 	        TEST_IFCFG_WIRED_DHCP,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_DNS);
+	        NM_SETTING_IP_CONFIG_DNS);
 
-	ASSERT (strcmp (nm_setting_ip4_config_get_dns (s_ip4, 1), "4.2.2.2") == 0,
+	ASSERT (strcmp (nm_setting_ip_config_get_dns (s_ip4, 1), "4.2.2.2") == 0,
 	        "wired-dhcp-verify-ip4", "failed to verify %s: unexpected %s / %s key value #2",
 	        TEST_IFCFG_WIRED_DHCP,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_DNS);
+	        NM_SETTING_IP_CONFIG_DNS);
 
 	g_free (unmanaged);
 	g_free (keyfile);
@@ -734,13 +733,11 @@ static void
 test_read_wired_dhcp_plus_ip (void)
 {
 	NMConnection *connection;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	GError *error = NULL;
-	guint32 addr4;
-	struct in6_addr addr6;
-	NMIP4Address *ip4_addr;
-	NMIP6Address *ip6_addr;
+	NMIPAddress *ip4_addr;
+	NMIPAddress *ip6_addr;
 	gboolean success;
 
 	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-dhcp-plus-ip",
@@ -755,60 +752,56 @@ test_read_wired_dhcp_plus_ip (void)
 	/* ===== IPv4 SETTING ===== */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
-	g_assert_cmpstr (nm_setting_ip4_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
-	g_assert (nm_setting_ip4_config_get_may_fail (s_ip4));
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+	g_assert (nm_setting_ip_config_get_may_fail (s_ip4));
 
 	/* DNS Addresses */
-	g_assert_cmpint (nm_setting_ip4_config_get_num_dns (s_ip4), ==, 2);
-	g_assert_cmpstr (nm_setting_ip4_config_get_dns (s_ip4, 0), ==, "4.2.2.1");
-	g_assert_cmpstr (nm_setting_ip4_config_get_dns (s_ip4, 1), ==, "4.2.2.2");
+	g_assert_cmpint (nm_setting_ip_config_get_num_dns (s_ip4), ==, 2);
+	g_assert_cmpstr (nm_setting_ip_config_get_dns (s_ip4, 0), ==, "4.2.2.1");
+	g_assert_cmpstr (nm_setting_ip_config_get_dns (s_ip4, 1), ==, "4.2.2.2");
 
 	/* IP addresses */
-	g_assert_cmpint (nm_setting_ip4_config_get_num_addresses (s_ip4), ==, 2);
-	ip4_addr = nm_setting_ip4_config_get_address (s_ip4, 0);
+	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip4), ==, 2);
+	ip4_addr = nm_setting_ip_config_get_address (s_ip4, 0);
 	g_assert (ip4_addr);
-	g_assert_cmpint (nm_ip4_address_get_prefix (ip4_addr), ==, 24);
-	g_assert_cmpint (inet_pton (AF_INET, "1.2.3.4", &addr4), >, 0);
-	g_assert_cmpint (nm_ip4_address_get_address (ip4_addr), ==, addr4);
-	g_assert_cmpint (inet_pton (AF_INET, "1.1.1.1", &addr4), >, 0);
-	g_assert_cmpint (nm_ip4_address_get_gateway (ip4_addr), ==, addr4);
+	g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 24);
+	g_assert_cmpstr (nm_ip_address_get_address (ip4_addr), ==, "1.2.3.4");
 
-	ip4_addr = nm_setting_ip4_config_get_address (s_ip4, 1);
+	/* Gateway */
+	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, "1.1.1.1");
+
+	ip4_addr = nm_setting_ip_config_get_address (s_ip4, 1);
 	g_assert (ip4_addr);
-	g_assert_cmpint (nm_ip4_address_get_prefix (ip4_addr), ==, 16);
-	g_assert_cmpint (inet_pton (AF_INET, "9.8.7.6", &addr4), >, 0);
-	g_assert_cmpint (nm_ip4_address_get_address (ip4_addr), ==, addr4);
+	g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 16);
+	g_assert_cmpstr (nm_ip_address_get_address (ip4_addr), ==, "9.8.7.6");
 
 	/* ===== IPv6 SETTING ===== */
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);
-	g_assert_cmpstr (nm_setting_ip6_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
-	g_assert (nm_setting_ip6_config_get_may_fail (s_ip6));
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
+	g_assert (nm_setting_ip_config_get_may_fail (s_ip6));
 
 	/* DNS Addresses */
-	g_assert_cmpint (nm_setting_ip6_config_get_num_dns (s_ip6), ==, 2);
-	g_assert_cmpstr (nm_setting_ip6_config_get_dns (s_ip6, 0), ==, "1:2:3:4::a");
-	g_assert_cmpstr (nm_setting_ip6_config_get_dns (s_ip6, 1), ==, "1:2:3:4::b");
+	g_assert_cmpint (nm_setting_ip_config_get_num_dns (s_ip6), ==, 2);
+	g_assert_cmpstr (nm_setting_ip_config_get_dns (s_ip6, 0), ==, "1:2:3:4::a");
+	g_assert_cmpstr (nm_setting_ip_config_get_dns (s_ip6, 1), ==, "1:2:3:4::b");
 
 	/* IP addresses */
-	g_assert_cmpint (nm_setting_ip6_config_get_num_addresses (s_ip6), ==, 3);
-	ip6_addr = nm_setting_ip6_config_get_address (s_ip6, 0);
+	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip6), ==, 3);
+	ip6_addr = nm_setting_ip_config_get_address (s_ip6, 0);
 	g_assert (ip6_addr);
-	g_assert_cmpint (nm_ip6_address_get_prefix (ip6_addr), ==, 56);
-	g_assert_cmpint (inet_pton (AF_INET6, "1001:abba::1234", &addr6), >, 0);
-	g_assert (IN6_ARE_ADDR_EQUAL (nm_ip6_address_get_address (ip6_addr), &addr6));
+	g_assert_cmpint (nm_ip_address_get_prefix (ip6_addr), ==, 56);
+	g_assert_cmpstr (nm_ip_address_get_address (ip6_addr), ==, "1001:abba::1234");
 
-	ip6_addr = nm_setting_ip6_config_get_address (s_ip6, 1);
+	ip6_addr = nm_setting_ip_config_get_address (s_ip6, 1);
 	g_assert (ip6_addr);
-	g_assert_cmpint (nm_ip6_address_get_prefix (ip6_addr), ==, 64);
-	g_assert_cmpint (inet_pton (AF_INET6, "2001:abba::2234", &addr6), >, 0);
-	g_assert (IN6_ARE_ADDR_EQUAL (nm_ip6_address_get_address (ip6_addr), &addr6));
+	g_assert_cmpint (nm_ip_address_get_prefix (ip6_addr), ==, 64);
+	g_assert_cmpstr (nm_ip_address_get_address (ip6_addr), ==, "2001:abba::2234");
 
-	ip6_addr = nm_setting_ip6_config_get_address (s_ip6, 2);
+	ip6_addr = nm_setting_ip_config_get_address (s_ip6, 2);
 	g_assert (ip6_addr);
-	g_assert_cmpint (nm_ip6_address_get_prefix (ip6_addr), ==, 96);
-	g_assert_cmpint (inet_pton (AF_INET6, "3001:abba::3234", &addr6), >, 0);
-	g_assert (IN6_ARE_ADDR_EQUAL (nm_ip6_address_get_address (ip6_addr), &addr6));
+	g_assert_cmpint (nm_ip_address_get_prefix (ip6_addr), ==, 96);
+	g_assert_cmpstr (nm_ip_address_get_address (ip6_addr), ==, "3001:abba::3234");
 
 	g_object_unref (connection);
 }
@@ -819,9 +812,9 @@ test_read_wired_global_gateway (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	GError *error = NULL;
-	NMIP4Address *ip4_addr;
+	NMIPAddress *ip4_addr;
 	char *unmanaged = NULL;
 
 	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-global-gateway",
@@ -842,14 +835,16 @@ test_read_wired_global_gateway (void)
 	/* ===== IPv4 SETTING ===== */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
-	g_assert_cmpstr (nm_setting_ip4_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
 
 	/* Address #1 */
-	ip4_addr = nm_setting_ip4_config_get_address (s_ip4, 0);
+	ip4_addr = nm_setting_ip_config_get_address (s_ip4, 0);
 	g_assert (ip4_addr);
-	g_assert_cmpint (nm_ip4_address_get_prefix (ip4_addr), ==, 24);
-	nmtst_assert_ip4_address_equals (nm_ip4_address_get_address (ip4_addr), "192.168.1.5");
-	nmtst_assert_ip4_address_equals (nm_ip4_address_get_gateway (ip4_addr), "192.168.1.2");
+	g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 24);
+	g_assert_cmpstr (nm_ip_address_get_address (ip4_addr), ==, "192.168.1.5");
+
+	/* Gateway */
+	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, "192.168.1.2");
 
 	g_object_unref (connection);
 }
@@ -858,8 +853,8 @@ static void
 test_read_wired_never_default (void)
 {
 	NMConnection *connection;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	GError *error = NULL;
 
 	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-never-default",
@@ -873,15 +868,15 @@ test_read_wired_never_default (void)
 	/* ===== IPv4 SETTING ===== */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
-	g_assert_cmpstr (nm_setting_ip4_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
-	g_assert (nm_setting_ip4_config_get_never_default (s_ip4));
-	g_assert_cmpint (nm_setting_ip4_config_get_num_dns (s_ip4), ==, 0);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+	g_assert (nm_setting_ip_config_get_never_default (s_ip4));
+	g_assert_cmpint (nm_setting_ip_config_get_num_dns (s_ip4), ==, 0);
 
 	/* ===== IPv6 SETTING ===== */
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);
-	g_assert_cmpstr (nm_setting_ip6_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
-	g_assert (nm_setting_ip6_config_get_never_default (s_ip6));
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
+	g_assert (nm_setting_ip_config_get_never_default (s_ip6));
 
 	g_object_unref (connection);
 }
@@ -894,8 +889,8 @@ test_read_wired_defroute_no (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
@@ -961,18 +956,18 @@ test_read_wired_defroute_no (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
 
 	/* Method */
-	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	tmp = nm_setting_ip_config_get_method (s_ip4);
 	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
 	        "wired-defroute-no-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_DEFROUTE_NO,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_METHOD);
+	        NM_SETTING_IP_CONFIG_METHOD);
 
-	ASSERT (nm_setting_ip4_config_get_never_default (s_ip4) == TRUE,
+	ASSERT (nm_setting_ip_config_get_never_default (s_ip4) == TRUE,
 	        "wired-defroute-no-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_DEFROUTE_NO,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_NEVER_DEFAULT);
+	        NM_SETTING_IP_CONFIG_NEVER_DEFAULT);
 
 	/* ===== IPv6 SETTING ===== */
 
@@ -983,18 +978,18 @@ test_read_wired_defroute_no (void)
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
 
 	/* Method */
-	tmp = nm_setting_ip6_config_get_method (s_ip6);
+	tmp = nm_setting_ip_config_get_method (s_ip6);
 	ASSERT (strcmp (tmp, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0,
 	        "wired-defroute-no-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_DEFROUTE_NO,
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP6_CONFIG_METHOD);
+	        NM_SETTING_IP_CONFIG_METHOD);
 
-	ASSERT (nm_setting_ip6_config_get_never_default (s_ip6) == TRUE,
+	ASSERT (nm_setting_ip_config_get_never_default (s_ip6) == TRUE,
 	        "wired-defroute-no-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_DEFROUTE_NO,
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP6_CONFIG_NEVER_DEFAULT);
+	        NM_SETTING_IP_CONFIG_NEVER_DEFAULT);
 
 	g_free (unmanaged);
 	g_free (keyfile);
@@ -1012,8 +1007,8 @@ test_read_wired_defroute_no_gatewaydev_yes (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
@@ -1087,18 +1082,18 @@ test_read_wired_defroute_no_gatewaydev_yes (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
 
 	/* Method */
-	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	tmp = nm_setting_ip_config_get_method (s_ip4);
 	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
 	        "wired-defroute-no-gatewaydev-yes-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_METHOD);
+	        NM_SETTING_IP_CONFIG_METHOD);
 
-	ASSERT (nm_setting_ip4_config_get_never_default (s_ip4) == FALSE,
+	ASSERT (nm_setting_ip_config_get_never_default (s_ip4) == FALSE,
 	        "wired-defroute-no-gatewaydev-yes-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_NEVER_DEFAULT);
+	        NM_SETTING_IP_CONFIG_NEVER_DEFAULT);
 
 	/* ===== IPv6 SETTING ===== */
 
@@ -1109,18 +1104,18 @@ test_read_wired_defroute_no_gatewaydev_yes (void)
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
 
 	/* Method */
-	tmp = nm_setting_ip6_config_get_method (s_ip6);
-	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
-	        "wired-defroute-no-gatewaydev-yes-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	tmp = nm_setting_ip_config_get_method (s_ip6);
+	ASSERT (strcmp (tmp, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0,
+	        "wired-defroute-no-gatewaydev-yes-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP6_CONFIG_METHOD);
+	        NM_SETTING_IP_CONFIG_METHOD);
 
-	ASSERT (nm_setting_ip6_config_get_never_default (s_ip6) == FALSE,
-	        "wired-defroute-no-gatewaydev-yes-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	ASSERT (nm_setting_ip_config_get_never_default (s_ip6) == FALSE,
+	        "wired-defroute-no-gatewaydev-yes-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP6_CONFIG_NEVER_DEFAULT);
+	        NM_SETTING_IP_CONFIG_NEVER_DEFAULT);
 
 	g_free (unmanaged);
 	g_free (keyfile);
@@ -1135,9 +1130,9 @@ test_read_wired_static_routes (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	GError *error = NULL;
-	NMIP4Route *ip4_route;
+	NMIPRoute *ip4_route;
 
 	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static-routes",
 	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, &error, NULL);
@@ -1155,24 +1150,24 @@ test_read_wired_static_routes (void)
 	/* ===== IPv4 SETTING ===== */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
-	g_assert_cmpstr (nm_setting_ip4_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
 
 	/* Routes */
-	g_assert_cmpint (nm_setting_ip4_config_get_num_routes (s_ip4), ==, 2);
+	g_assert_cmpint (nm_setting_ip_config_get_num_routes (s_ip4), ==, 2);
 
-	ip4_route = nm_setting_ip4_config_get_route (s_ip4, 0);
+	ip4_route = nm_setting_ip_config_get_route (s_ip4, 0);
 	g_assert (ip4_route);
-	nmtst_assert_ip4_address_equals (nm_ip4_route_get_dest (ip4_route), "11.22.33.0");
-	g_assert_cmpint (nm_ip4_route_get_prefix (ip4_route), ==, 24);
-	nmtst_assert_ip4_address_equals (nm_ip4_route_get_next_hop (ip4_route), "192.168.1.5");
-	g_assert_cmpint (nm_ip4_route_get_metric (ip4_route), ==, 0);
+	g_assert_cmpstr (nm_ip_route_get_dest (ip4_route), ==, "11.22.33.0");
+	g_assert_cmpint (nm_ip_route_get_prefix (ip4_route), ==, 24);
+	g_assert_cmpstr (nm_ip_route_get_next_hop (ip4_route), ==, "192.168.1.5");
+	g_assert_cmpint (nm_ip_route_get_metric (ip4_route), ==, -1);
 
-	ip4_route = nm_setting_ip4_config_get_route (s_ip4, 1);
+	ip4_route = nm_setting_ip_config_get_route (s_ip4, 1);
 	g_assert (ip4_route);
-	nmtst_assert_ip4_address_equals (nm_ip4_route_get_dest (ip4_route), "44.55.66.77");
-	g_assert_cmpint (nm_ip4_route_get_prefix (ip4_route), ==, 32);
-	nmtst_assert_ip4_address_equals (nm_ip4_route_get_next_hop (ip4_route), "192.168.1.7");
-	g_assert_cmpint (nm_ip4_route_get_metric (ip4_route), ==, 3);
+	g_assert_cmpstr (nm_ip_route_get_dest (ip4_route), ==, "44.55.66.77");
+	g_assert_cmpint (nm_ip_route_get_prefix (ip4_route), ==, 32);
+	g_assert_cmpstr (nm_ip_route_get_next_hop (ip4_route), ==, "192.168.1.7");
+	g_assert_cmpint (nm_ip_route_get_metric (ip4_route), ==, 3);
 
 	g_object_unref (connection);
 }
@@ -1185,7 +1180,7 @@ test_read_wired_static_routes_legacy (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
@@ -1193,15 +1188,8 @@ test_read_wired_static_routes_legacy (void)
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
-	NMIP4Route *ip4_route;
-	guint32 addr;
+	NMIPRoute *ip4_route;
 	const char *expected_id = "System test-wired-static-routes-legacy";
-	const char *expected_dst1 = "21.31.41.0";
-	const char *expected_dst2 = "32.42.52.62";
-	const char *expected_dst3 = "43.53.0.0";
-	const char *expected_gw1 = "9.9.9.9";
-	const char *expected_gw2 = "8.8.8.8";
-	const char *expected_gw3 = "7.7.7.7";
 
 	connection = connection_from_file (TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
 	                                   NULL,
@@ -1265,115 +1253,43 @@ test_read_wired_static_routes_legacy (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
 
 	/* Method */
-	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	tmp = nm_setting_ip_config_get_method (s_ip4);
 	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) == 0,
 	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_METHOD);
+	        NM_SETTING_IP_CONFIG_METHOD);
 
 	/* Routes */
-	ASSERT (nm_setting_ip4_config_get_num_routes (s_ip4) == 3,
+	ASSERT (nm_setting_ip_config_get_num_routes (s_ip4) == 3,
 	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_ROUTES);
+	        NM_SETTING_IP_CONFIG_ROUTES);
 
 	/* Route #1 */
-	ip4_route = nm_setting_ip4_config_get_route (s_ip4, 0);
-	ASSERT (ip4_route,
-	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: missing IP4 route #1",
-	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
-
-	ASSERT (inet_pton (AF_INET, expected_dst1, &addr) > 0,
-	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: couldn't convert destination IP address #1",
-	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
-	ASSERT (nm_ip4_route_get_dest (ip4_route) == addr,
-	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected %s / %s key value #1",
-	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_ROUTES);
-
-	ASSERT (nm_ip4_route_get_prefix (ip4_route) == 24,
-	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected destination route #1 prefix",
-	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
-
-	ASSERT (inet_pton (AF_INET, expected_gw1, &addr) > 0,
-	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: couldn't convert next hop IP address #1",
-	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
-	ASSERT (nm_ip4_route_get_next_hop (ip4_route) == addr,
-	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected %s / %s key value #1",
-	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_ROUTES);
-
-	ASSERT (nm_ip4_route_get_metric (ip4_route) == 1,
-	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected destination route #1 metric",
-	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
+	ip4_route = nm_setting_ip_config_get_route (s_ip4, 0);
+	g_assert (ip4_route != NULL);
+	g_assert_cmpstr (nm_ip_route_get_dest (ip4_route), ==, "21.31.41.0");
+	g_assert_cmpint (nm_ip_route_get_prefix (ip4_route), ==, 24);
+	g_assert_cmpstr (nm_ip_route_get_next_hop (ip4_route), ==, "9.9.9.9");
+	g_assert_cmpint (nm_ip_route_get_metric (ip4_route), ==, 1);
 
 	/* Route #2 */
-	ip4_route = nm_setting_ip4_config_get_route (s_ip4, 1);
-	ASSERT (ip4_route,
-	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: missing IP4 route #2",
-	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
-
-	ASSERT (inet_pton (AF_INET, expected_dst2, &addr) > 0,
-	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: couldn't convert destination IP address #2",
-	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
-	ASSERT (nm_ip4_route_get_dest (ip4_route) == addr,
-	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected %s / %s key value #2",
-	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_ROUTES);
-
-	ASSERT (nm_ip4_route_get_prefix (ip4_route) == 32,
-	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected destination route #2 prefix",
-	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
-
-	ASSERT (inet_pton (AF_INET, expected_gw2, &addr) > 0,
-	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: couldn't convert next hop IP address #2",
-	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
-	ASSERT (nm_ip4_route_get_next_hop (ip4_route) == addr,
-	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected %s / %s key value #2",
-	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_ROUTES);
-
-	ASSERT (nm_ip4_route_get_metric (ip4_route) == 0,
-	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected destination route #2 metric",
-	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
+	ip4_route = nm_setting_ip_config_get_route (s_ip4, 1);
+	g_assert (ip4_route != NULL);
+	g_assert_cmpstr (nm_ip_route_get_dest (ip4_route), ==, "32.42.52.62");
+	g_assert_cmpint (nm_ip_route_get_prefix (ip4_route), ==, 32);
+	g_assert_cmpstr (nm_ip_route_get_next_hop (ip4_route), ==, "8.8.8.8");
+	g_assert_cmpint (nm_ip_route_get_metric (ip4_route), ==, -1);
 
 	/* Route #3 */
-	ip4_route = nm_setting_ip4_config_get_route (s_ip4, 2);
-	ASSERT (ip4_route,
-	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: missing IP4 route #3",
-	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
-
-	ASSERT (inet_pton (AF_INET, expected_dst3, &addr) > 0,
-	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: couldn't convert destination IP address #3",
-	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
-	ASSERT (nm_ip4_route_get_dest (ip4_route) == addr,
-	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected %s / %s key value #3",
-	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_ROUTES);
-
-	ASSERT (nm_ip4_route_get_prefix (ip4_route) == 16,
-	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected destination route #3 prefix",
-	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
-
-	ASSERT (inet_pton (AF_INET, expected_gw3, &addr) > 0,
-	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: couldn't convert next hop IP address #3",
-	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
-	ASSERT (nm_ip4_route_get_next_hop (ip4_route) == addr,
-	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected %s / %s key value #3",
-	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_ROUTES);
-
-	ASSERT (nm_ip4_route_get_metric (ip4_route) == 3,
-	        "wired-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected destination route #3 metric",
-	        TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY);
+	ip4_route = nm_setting_ip_config_get_route (s_ip4, 2);
+	g_assert (ip4_route != NULL);
+	g_assert_cmpstr (nm_ip_route_get_dest (ip4_route), ==, "43.53.0.0");
+	g_assert_cmpint (nm_ip_route_get_prefix (ip4_route), ==, 16);
+	g_assert_cmpstr (nm_ip_route_get_next_hop (ip4_route), ==, "7.7.7.7");
+	g_assert_cmpint (nm_ip_route_get_metric (ip4_route), ==, 3);
 
 	g_free (unmanaged);
 	g_free (keyfile);
@@ -1388,7 +1304,7 @@ test_read_wired_ipv4_manual (const char *file, const char *expected_id)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
@@ -1396,14 +1312,7 @@ test_read_wired_ipv4_manual (const char *file, const char *expected_id)
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
-	const char *expected_address1 = "1.2.3.4";
-	const char *expected_address2 = "9.8.7.6";
-	const char *expected_address3 = "3.3.3.3";
-	guint32 expected_prefix1 = 24;
-	guint32 expected_prefix2 = 16;
-	guint32 expected_prefix3 = 8;
-	NMIP4Address *ip4_addr;
-	guint32 addr;
+	NMIPAddress *ip4_addr;
 
 	connection = connection_from_file (file,
 	                                   NULL,
@@ -1461,70 +1370,37 @@ test_read_wired_ipv4_manual (const char *file, const char *expected_id)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
 
 	/* Method */
-	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	tmp = nm_setting_ip_config_get_method (s_ip4);
 	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) == 0,
 	        "wired-ipv4-manual-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        file,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_METHOD);
+	        NM_SETTING_IP_CONFIG_METHOD);
 
 	/* IP addresses */
-	ASSERT (nm_setting_ip4_config_get_num_addresses (s_ip4) == 3,
+	ASSERT (nm_setting_ip_config_get_num_addresses (s_ip4) == 3,
 		"wired-ipv4-manual-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 		file,
 		NM_SETTING_IP4_CONFIG_SETTING_NAME,
-		NM_SETTING_IP4_CONFIG_ADDRESSES);
+		NM_SETTING_IP_CONFIG_ADDRESSES);
 
 	/* Address #1 */
-	ip4_addr = nm_setting_ip4_config_get_address (s_ip4, 0);
-	ASSERT (ip4_addr,
-		"wired-ipv4-manual-verify-ip4", "failed to verify %s: missing IP4 address #1",
-		file);
-
-	ASSERT (nm_ip4_address_get_prefix (ip4_addr) == expected_prefix1,
-		"wired-ipv4-manual-verify-ip4", "failed to verify %s: unexpected IP4 address #1 prefix",
-		file);
-
-	ASSERT (inet_pton (AF_INET, expected_address1, &addr) > 0,
-		"wired-ipv4-manual-verify-ip4", "failed to verify %s: couldn't convert IP address #1",
-		file);
-	ASSERT (nm_ip4_address_get_address (ip4_addr) == addr,
-		"wired-ipv4-manual-verify-ip4", "failed to verify %s: unexpected IP4 address #1",
-		file);
+	ip4_addr = nm_setting_ip_config_get_address (s_ip4, 0);
+	g_assert (ip4_addr != NULL);
+	g_assert_cmpstr (nm_ip_address_get_address (ip4_addr), ==, "1.2.3.4");
+	g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 24);
 
 	/* Address #2 */
-	ip4_addr = nm_setting_ip4_config_get_address (s_ip4, 1);
-	ASSERT (ip4_addr,
-		"wired-ipv4-manual-verify-ip4", "failed to verify %s: missing IP4 address #2",
-		file);
-
-	ASSERT (nm_ip4_address_get_prefix (ip4_addr) == expected_prefix2,
-		"wired-ipv4-manual-verify-ip4", "failed to verify %s: unexpected IP4 address #2 prefix",
-		file);
-
-	ASSERT (inet_pton (AF_INET, expected_address2, &addr) > 0,
-		"wired-ipv4-manual-verify-ip4", "failed to verify %s: couldn't convert IP address #2",
-		file);
-	ASSERT (nm_ip4_address_get_address (ip4_addr) == addr,
-		"wired-ipv4-manual-verify-ip4", "failed to verify %s: unexpected IP4 address #2",
-		file);
+	ip4_addr = nm_setting_ip_config_get_address (s_ip4, 1);
+	g_assert (ip4_addr != NULL);
+	g_assert_cmpstr (nm_ip_address_get_address (ip4_addr), ==, "9.8.7.6");
+	g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 16);
 
 	/* Address #3 */
-	ip4_addr = nm_setting_ip4_config_get_address (s_ip4, 2);
-	ASSERT (ip4_addr,
-		"wired-ipv4-manual-verify-ip4", "failed to verify %s: missing IP4 address #3",
-		file);
-
-	ASSERT (nm_ip4_address_get_prefix (ip4_addr) == expected_prefix3,
-		"wired-ipv4-manual-verify-ip4", "failed to verify %s: unexpected IP4 address #3 prefix",
-		file);
-
-	ASSERT (inet_pton (AF_INET, expected_address3, &addr) > 0,
-		"wired-ipv4-manual-verify-ip4", "failed to verify %s: couldn't convert IP address #3",
-		file);
-	ASSERT (nm_ip4_address_get_address (ip4_addr) == addr,
-		"wired-ipv4-manual-verify-ip4", "failed to verify %s: unexpected IP4 address #3",
-		file);
+	ip4_addr = nm_setting_ip_config_get_address (s_ip4, 2);
+	g_assert (ip4_addr != NULL);
+	g_assert_cmpstr (nm_ip_address_get_address (ip4_addr), ==, "3.3.3.3");
+	g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 8);
 
 	g_free (unmanaged);
 	g_free (keyfile);
@@ -1541,8 +1417,8 @@ test_read_wired_ipv6_manual (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
@@ -1551,15 +1427,8 @@ test_read_wired_ipv6_manual (void)
 	GError *error = NULL;
 	const char *tmp;
 	const char *expected_id = "System test-wired-ipv6-manual";
-	const char *expected_address1 = "1001:abba::1234";
-	const char *expected_address2 = "2001:abba::2234";
-	const char *expected_address3 = "3001:abba::3234";
-	guint32 expected_prefix1 = 56;
-	guint32 expected_prefix2 = 64;
-	guint32 expected_prefix3 = 96;
-	NMIP6Address *ip6_addr;
-	NMIP6Route *ip6_route;
-	struct in6_addr addr;
+	NMIPAddress *ip6_addr;
+	NMIPRoute *ip6_route;
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*ignoring manual default route*");
@@ -1621,54 +1490,54 @@ test_read_wired_ipv6_manual (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
 
 	/* DNS Addresses */
-	ASSERT (nm_setting_ip4_config_get_num_dns (s_ip4) == 2,
+	ASSERT (nm_setting_ip_config_get_num_dns (s_ip4) == 2,
 	        "wired-ipv6-manual-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_IPV6_MANUAL,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_DNS);
+	        NM_SETTING_IP_CONFIG_DNS);
 
 	/* DNS search domains */
-	ASSERT (nm_setting_ip4_config_get_num_dns_searches (s_ip4) == 3,
+	ASSERT (nm_setting_ip_config_get_num_dns_searches (s_ip4) == 3,
 	        "wired-ipv6-manual-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_IPV6_MANUAL,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_DNS);
+	        NM_SETTING_IP_CONFIG_DNS);
 
-	tmp = nm_setting_ip4_config_get_dns_search (s_ip4, 0);
+	tmp = nm_setting_ip_config_get_dns_search (s_ip4, 0);
 	ASSERT (tmp != NULL,
 	        "wired-ipv6-manual-verify-ip4", "failed to verify %s: missing %s / %s key",
 	        TEST_IFCFG_WIRED_IPV6_MANUAL,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_DNS_SEARCH);
+	        NM_SETTING_IP_CONFIG_DNS_SEARCH);
 	ASSERT (strcmp (tmp, "lorem.com") == 0,
 	        "wired-ipv6-manual-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_IPV6_MANUAL,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_DNS_SEARCH);
+	        NM_SETTING_IP_CONFIG_DNS_SEARCH);
 
-	tmp = nm_setting_ip4_config_get_dns_search (s_ip4, 1);
+	tmp = nm_setting_ip_config_get_dns_search (s_ip4, 1);
 	ASSERT (tmp != NULL,
 	        "wired-ipv6-manual-verify-ip4", "failed to verify %s: missing %s / %s key",
 	        TEST_IFCFG_WIRED_IPV6_MANUAL,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_DNS_SEARCH);
+	        NM_SETTING_IP_CONFIG_DNS_SEARCH);
 	ASSERT (strcmp (tmp, "ipsum.org") == 0,
 	        "wired-ipv6-manual-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_IPV6_MANUAL,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_DNS_SEARCH);
+	        NM_SETTING_IP_CONFIG_DNS_SEARCH);
 
-	tmp = nm_setting_ip4_config_get_dns_search (s_ip4, 2);
+	tmp = nm_setting_ip_config_get_dns_search (s_ip4, 2);
 	ASSERT (tmp != NULL,
 	        "wired-ipv6-manual-verify-ip4", "failed to verify %s: missing %s / %s key",
 	        TEST_IFCFG_WIRED_IPV6_MANUAL,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_DNS_SEARCH);
+	        NM_SETTING_IP_CONFIG_DNS_SEARCH);
 	ASSERT (strcmp (tmp, "dolor.edu") == 0,
 	        "wired-ipv6-manual-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_IPV6_MANUAL,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_DNS_SEARCH);
+	        NM_SETTING_IP_CONFIG_DNS_SEARCH);
 
 	/* ===== IPv6 SETTING ===== */
 
@@ -1679,129 +1548,92 @@ test_read_wired_ipv6_manual (void)
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
 
 	/* Method */
-	tmp = nm_setting_ip6_config_get_method (s_ip6);
+	tmp = nm_setting_ip_config_get_method (s_ip6);
 	ASSERT (strcmp (tmp, NM_SETTING_IP6_CONFIG_METHOD_MANUAL) == 0,
 	        "wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_IPV6_MANUAL,
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP6_CONFIG_METHOD);
+	        NM_SETTING_IP_CONFIG_METHOD);
 
-	ASSERT (nm_setting_ip6_config_get_never_default (s_ip6) == FALSE,
+	ASSERT (nm_setting_ip_config_get_never_default (s_ip6) == FALSE,
 	        "wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_IPV6_MANUAL,
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP6_CONFIG_NEVER_DEFAULT);
+	        NM_SETTING_IP_CONFIG_NEVER_DEFAULT);
 
-	ASSERT (nm_setting_ip6_config_get_may_fail (s_ip6) == TRUE,
+	ASSERT (nm_setting_ip_config_get_may_fail (s_ip6) == TRUE,
 	        "wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_IPV6_MANUAL,
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP6_CONFIG_MAY_FAIL);
+	        NM_SETTING_IP_CONFIG_MAY_FAIL);
 
 	/* IP addresses */
-	ASSERT (nm_setting_ip6_config_get_num_addresses (s_ip6) == 3,
+	ASSERT (nm_setting_ip_config_get_num_addresses (s_ip6) == 3,
 		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
 		TEST_IFCFG_WIRED_IPV6_MANUAL,
 		NM_SETTING_IP6_CONFIG_SETTING_NAME,
-		NM_SETTING_IP6_CONFIG_ADDRESSES);
+		NM_SETTING_IP_CONFIG_ADDRESSES);
 
 	/* Address #1 */
-	ip6_addr = nm_setting_ip6_config_get_address (s_ip6, 0);
-	ASSERT (ip6_addr,
-		"wired-ipv6-manual-verify-ip6", "failed to verify %s: missing IP6 address #1",
-		TEST_IFCFG_WIRED_IPV6_MANUAL);
-
-	ASSERT (nm_ip6_address_get_prefix (ip6_addr) == expected_prefix1,
-		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected IP6 address #1 prefix",
-		TEST_IFCFG_WIRED_IPV6_MANUAL);
-
-	ASSERT (inet_pton (AF_INET6, expected_address1, &addr) > 0,
-		"wired-ipv6-manual-verify-ip6", "failed to verify %s: couldn't convert IP address #1",
-		TEST_IFCFG_WIRED_IPV6_MANUAL);
-	ASSERT (IN6_ARE_ADDR_EQUAL (nm_ip6_address_get_address (ip6_addr), &addr),
-		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected IP6 address #1",
-		TEST_IFCFG_WIRED_IPV6_MANUAL);
+	ip6_addr = nm_setting_ip_config_get_address (s_ip6, 0);
+	g_assert (ip6_addr != NULL);
+	g_assert_cmpstr (nm_ip_address_get_address (ip6_addr), ==, "1001:abba::1234");
+	g_assert_cmpint (nm_ip_address_get_prefix (ip6_addr), ==, 56);
 
 	/* Address #2 */
-	ip6_addr = nm_setting_ip6_config_get_address (s_ip6, 1);
-	ASSERT (ip6_addr,
-		"wired-ipv6-manual-verify-ip6", "failed to verify %s: missing IP6 address #2",
-		TEST_IFCFG_WIRED_IPV6_MANUAL);
-
-	ASSERT (nm_ip6_address_get_prefix (ip6_addr) == expected_prefix2,
-		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected IP6 address #2 prefix",
-		TEST_IFCFG_WIRED_IPV6_MANUAL);
-
-	ASSERT (inet_pton (AF_INET6, expected_address2, &addr) > 0,
-		"wired-ipv6-manual-verify-ip6", "failed to verify %s: couldn't convert IP address #2",
-		TEST_IFCFG_WIRED_IPV6_MANUAL);
-	ASSERT (IN6_ARE_ADDR_EQUAL (nm_ip6_address_get_address (ip6_addr), &addr),
-		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected IP6 address #2",
-		TEST_IFCFG_WIRED_IPV6_MANUAL);
+	ip6_addr = nm_setting_ip_config_get_address (s_ip6, 1);
+	g_assert (ip6_addr != NULL);
+	g_assert_cmpstr (nm_ip_address_get_address (ip6_addr), ==, "2001:abba::2234");
+	g_assert_cmpint (nm_ip_address_get_prefix (ip6_addr), ==, 64);
 
 	/* Address #3 */
-	ip6_addr = nm_setting_ip6_config_get_address (s_ip6, 2);
-	ASSERT (ip6_addr,
-		"wired-ipv6-manual-verify-ip6", "failed to verify %s: missing IP6 address #3",
-		TEST_IFCFG_WIRED_IPV6_MANUAL);
-
-	ASSERT (nm_ip6_address_get_prefix (ip6_addr) == expected_prefix3,
-		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected IP6 address #3 prefix",
-		TEST_IFCFG_WIRED_IPV6_MANUAL);
-
-	ASSERT (inet_pton (AF_INET6, expected_address3, &addr) > 0,
-		"wired-ipv6-manual-verify-ip6", "failed to verify %s: couldn't convert IP address #3",
-		TEST_IFCFG_WIRED_IPV6_MANUAL);
-	ASSERT (IN6_ARE_ADDR_EQUAL (nm_ip6_address_get_address (ip6_addr), &addr),
-		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected IP6 address #3",
-		TEST_IFCFG_WIRED_IPV6_MANUAL);
+	ip6_addr = nm_setting_ip_config_get_address (s_ip6, 2);
+	g_assert (ip6_addr != NULL);
+	g_assert_cmpstr (nm_ip_address_get_address (ip6_addr), ==, "3001:abba::3234");
+	g_assert_cmpint (nm_ip_address_get_prefix (ip6_addr), ==, 96);
 
 	/* Routes */
-	g_assert_cmpint (nm_setting_ip6_config_get_num_routes (s_ip6), ==, 2);
+	g_assert_cmpint (nm_setting_ip_config_get_num_routes (s_ip6), ==, 2);
 	/* Route #1 */
-	ip6_route = nm_setting_ip6_config_get_route (s_ip6, 0);
+	ip6_route = nm_setting_ip_config_get_route (s_ip6, 0);
 	g_assert (ip6_route);
-	g_assert_cmpint (inet_pton (AF_INET6, "9876::1234", &addr), >, 0);
-	g_assert_cmpint (memcmp (nm_ip6_route_get_dest (ip6_route), &addr, sizeof (struct in6_addr)), ==, 0);
-	g_assert_cmpint (nm_ip6_route_get_prefix (ip6_route), ==, 96);
-	g_assert_cmpint (inet_pton (AF_INET6, "9876::7777", &addr), >, 0);
-	g_assert_cmpint (memcmp (nm_ip6_route_get_next_hop (ip6_route), &addr, sizeof (struct in6_addr)), ==, 0);
-	g_assert_cmpint (nm_ip6_route_get_metric (ip6_route), ==, 2);
+	g_assert_cmpstr (nm_ip_route_get_dest (ip6_route), ==, "9876::1234");
+	g_assert_cmpint (nm_ip_route_get_prefix (ip6_route), ==, 96);
+	g_assert_cmpstr (nm_ip_route_get_next_hop (ip6_route), ==, "9876::7777");
+	g_assert_cmpint (nm_ip_route_get_metric (ip6_route), ==, 2);
 	/* Route #2 */
-	ip6_route = nm_setting_ip6_config_get_route (s_ip6, 1);
+	ip6_route = nm_setting_ip_config_get_route (s_ip6, 1);
 	g_assert (ip6_route);
-	g_assert_cmpint (inet_pton (AF_INET6, "abbe::cafe", &addr), >, 0);
-	g_assert_cmpint (memcmp (nm_ip6_route_get_dest (ip6_route), &addr, sizeof (struct in6_addr)), ==, 0);
-	g_assert_cmpint (nm_ip6_route_get_prefix (ip6_route), ==, 64);
-	g_assert_cmpint (inet_pton (AF_INET6, "::", &addr), >, 0);
-	g_assert_cmpint (memcmp (nm_ip6_route_get_next_hop (ip6_route), &addr, sizeof (struct in6_addr)), ==, 0);
-	g_assert_cmpint (nm_ip6_route_get_metric (ip6_route), ==, 777);
+	g_assert_cmpstr (nm_ip_route_get_dest (ip6_route), ==, "abbe::cafe");
+	g_assert_cmpint (nm_ip_route_get_prefix (ip6_route), ==, 64);
+	g_assert_cmpstr (nm_ip_route_get_next_hop (ip6_route), ==, NULL);
+	g_assert_cmpint (nm_ip_route_get_metric (ip6_route), ==, 777);
 
 	/* DNS Addresses */
-	ASSERT (nm_setting_ip6_config_get_num_dns (s_ip6) == 2,
+	ASSERT (nm_setting_ip_config_get_num_dns (s_ip6) == 2,
 	        "wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_IPV6_MANUAL,
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP6_CONFIG_DNS);
+	        NM_SETTING_IP_CONFIG_DNS);
 
-	ASSERT (strcmp (nm_setting_ip6_config_get_dns (s_ip6, 0), "1:2:3:4::a") == 0,
+	ASSERT (strcmp (nm_setting_ip_config_get_dns (s_ip6, 0), "1:2:3:4::a") == 0,
 		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected %s / %s key value #1",
 		TEST_IFCFG_WIRED_IPV6_MANUAL,
 		NM_SETTING_IP6_CONFIG_SETTING_NAME,
-		NM_SETTING_IP6_CONFIG_DNS);
+		NM_SETTING_IP_CONFIG_DNS);
 
-	ASSERT (strcmp (nm_setting_ip6_config_get_dns (s_ip6, 1), "1:2:3:4::b") == 0,
+	ASSERT (strcmp (nm_setting_ip_config_get_dns (s_ip6, 1), "1:2:3:4::b") == 0,
 		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected %s / %s key value #2",
 		TEST_IFCFG_WIRED_IPV6_MANUAL,
 		NM_SETTING_IP6_CONFIG_SETTING_NAME,
-		NM_SETTING_IP6_CONFIG_DNS);
+		NM_SETTING_IP_CONFIG_DNS);
 
 	/* DNS domains - none as domains are stuffed to 'ipv4' setting */
-	ASSERT (nm_setting_ip6_config_get_num_dns_searches (s_ip6) == 0,
+	ASSERT (nm_setting_ip_config_get_num_dns_searches (s_ip6) == 0,
 	        "wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_IPV6_MANUAL,
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP6_CONFIG_DNS_SEARCH);
+	        NM_SETTING_IP_CONFIG_DNS_SEARCH);
 
 	g_free (unmanaged);
 	g_free (keyfile);
@@ -1818,8 +1650,8 @@ test_read_wired_ipv6_only (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
@@ -1828,10 +1660,7 @@ test_read_wired_ipv6_only (void)
 	GError *error = NULL;
 	const char *tmp;
 	const char *expected_id = "System test-wired-ipv6-only";
-	const char *expected_address1 = "1001:abba::1234";
-	guint32 expected_prefix1 = 56;
-	NMIP6Address *ip6_addr;
-	struct in6_addr addr;
+	NMIPAddress *ip6_addr;
 	const char *method;
 
 	connection = connection_from_file (TEST_IFCFG_WIRED_IPV6_ONLY,
@@ -1889,12 +1718,12 @@ test_read_wired_ipv6_only (void)
 	        TEST_IFCFG_WIRED_IPV6_MANUAL,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
 
-	method = nm_setting_ip4_config_get_method (s_ip4);
+	method = nm_setting_ip_config_get_method (s_ip4);
 	ASSERT (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0,
 	        "wired-ipv6-only-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_IPV6_MANUAL,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_METHOD);
+	        NM_SETTING_IP_CONFIG_METHOD);
 
 	/* ===== IPv6 SETTING ===== */
 
@@ -1905,55 +1734,44 @@ test_read_wired_ipv6_only (void)
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
 
 	/* Method */
-	tmp = nm_setting_ip6_config_get_method (s_ip6);
+	tmp = nm_setting_ip_config_get_method (s_ip6);
 	ASSERT (strcmp (tmp, NM_SETTING_IP6_CONFIG_METHOD_MANUAL) == 0,
 	        "wired-ipv6-only-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_IPV6_MANUAL,
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP6_CONFIG_METHOD);
+	        NM_SETTING_IP_CONFIG_METHOD);
 
 	/* IP addresses */
-	ASSERT (nm_setting_ip6_config_get_num_addresses (s_ip6) == 1,
+	ASSERT (nm_setting_ip_config_get_num_addresses (s_ip6) == 1,
 		"wired-ipv6-only-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
 		TEST_IFCFG_WIRED_IPV6_MANUAL,
 		NM_SETTING_IP6_CONFIG_SETTING_NAME,
-		NM_SETTING_IP6_CONFIG_ADDRESSES);
+		NM_SETTING_IP_CONFIG_ADDRESSES);
 
 	/* Address #1 */
-	ip6_addr = nm_setting_ip6_config_get_address (s_ip6, 0);
-	ASSERT (ip6_addr,
-		"wired-ipv6-only-verify-ip6", "failed to verify %s: missing IP6 address #1",
-		TEST_IFCFG_WIRED_IPV6_MANUAL);
-
-	ASSERT (nm_ip6_address_get_prefix (ip6_addr) == expected_prefix1,
-		"wired-ipv6-only-verify-ip6", "failed to verify %s: unexpected IP6 address #1 prefix",
-		TEST_IFCFG_WIRED_IPV6_MANUAL);
-
-	ASSERT (inet_pton (AF_INET6, expected_address1, &addr) > 0,
-		"wired-ipv6-only-verify-ip6", "failed to verify %s: couldn't convert IP address #1",
-		TEST_IFCFG_WIRED_IPV6_MANUAL);
-	ASSERT (IN6_ARE_ADDR_EQUAL (nm_ip6_address_get_address (ip6_addr), &addr),
-		"wired-ipv6-only-verify-ip6", "failed to verify %s: unexpected IP6 address #1",
-		TEST_IFCFG_WIRED_IPV6_MANUAL);
+	ip6_addr = nm_setting_ip_config_get_address (s_ip6, 0);
+	g_assert (ip6_addr != NULL);
+	g_assert_cmpstr (nm_ip_address_get_address (ip6_addr), ==, "1001:abba::1234");
+	g_assert_cmpint (nm_ip_address_get_prefix (ip6_addr), ==, 56);
 
 	/* DNS Addresses */
-	ASSERT (nm_setting_ip6_config_get_num_dns (s_ip6) == 1,
+	ASSERT (nm_setting_ip_config_get_num_dns (s_ip6) == 1,
 	        "wired-ipv6-only-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_IPV6_MANUAL,
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP6_CONFIG_DNS);
+	        NM_SETTING_IP_CONFIG_DNS);
 
-	ASSERT (strcmp (nm_setting_ip6_config_get_dns (s_ip6, 0), "1:2:3:4::a") == 0,
+	ASSERT (strcmp (nm_setting_ip_config_get_dns (s_ip6, 0), "1:2:3:4::a") == 0,
 		"wired-ipv6-only-verify-ip6", "failed to verify %s: unexpected %s / %s key value #1",
 		TEST_IFCFG_WIRED_IPV6_MANUAL,
 		NM_SETTING_IP6_CONFIG_SETTING_NAME,
-		NM_SETTING_IP6_CONFIG_DNS);
+		NM_SETTING_IP_CONFIG_DNS);
 
 	/* DNS domains should be in IPv6, because IPv4 is disabled */
-	g_assert_cmpint (nm_setting_ip6_config_get_num_dns_searches (s_ip6), ==, 3);
-	g_assert_cmpstr (nm_setting_ip6_config_get_dns_search (s_ip6, 0), ==, "lorem.com");
-	g_assert_cmpstr (nm_setting_ip6_config_get_dns_search (s_ip6, 1), ==, "ipsum.org");
-	g_assert_cmpstr (nm_setting_ip6_config_get_dns_search (s_ip6, 2), ==, "dolor.edu");
+	g_assert_cmpint (nm_setting_ip_config_get_num_dns_searches (s_ip6), ==, 3);
+	g_assert_cmpstr (nm_setting_ip_config_get_dns_search (s_ip6, 0), ==, "lorem.com");
+	g_assert_cmpstr (nm_setting_ip_config_get_dns_search (s_ip6, 1), ==, "ipsum.org");
+	g_assert_cmpstr (nm_setting_ip_config_get_dns_search (s_ip6, 2), ==, "dolor.edu");
 
 	g_free (unmanaged);
 	g_free (keyfile);
@@ -1970,8 +1788,8 @@ test_read_wired_dhcp6_only (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
@@ -2037,12 +1855,12 @@ test_read_wired_dhcp6_only (void)
 	        TEST_IFCFG_WIRED_DHCP6_ONLY,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
 
-	method = nm_setting_ip4_config_get_method (s_ip4);
+	method = nm_setting_ip_config_get_method (s_ip4);
 	ASSERT (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0,
 	        "wired-dhcp6-only-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_DHCP6_ONLY,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_METHOD);
+	        NM_SETTING_IP_CONFIG_METHOD);
 
 	/* ===== IPv6 SETTING ===== */
 
@@ -2053,12 +1871,12 @@ test_read_wired_dhcp6_only (void)
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
 
 	/* Method */
-	tmp = nm_setting_ip6_config_get_method (s_ip6);
+	tmp = nm_setting_ip_config_get_method (s_ip6);
 	ASSERT (strcmp (tmp, NM_SETTING_IP6_CONFIG_METHOD_DHCP) == 0,
 	        "wired-dhcp6-only-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_DHCP6_ONLY,
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP6_CONFIG_METHOD);
+	        NM_SETTING_IP_CONFIG_METHOD);
 
 	g_free (unmanaged);
 	g_free (keyfile);
@@ -2127,8 +1945,8 @@ static void
 test_read_noip (void)
 {
 	NMConnection *connection;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
@@ -2151,13 +1969,13 @@ test_read_noip (void)
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
-	g_assert_cmpstr (nm_setting_ip4_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_DISABLED);
-	g_assert (nm_setting_ip4_config_get_never_default (s_ip4) == FALSE);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_DISABLED);
+	g_assert (nm_setting_ip_config_get_never_default (s_ip4) == FALSE);
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);
-	g_assert_cmpstr (nm_setting_ip6_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
-	g_assert (nm_setting_ip6_config_get_never_default (s_ip6) == FALSE);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
+	g_assert (nm_setting_ip_config_get_never_default (s_ip6) == FALSE);
 
 	g_free (unmanaged);
 	g_free (keyfile);
@@ -2174,7 +1992,7 @@ test_read_wired_8021x_peap_mschapv2 (void)
 {
 	NMConnection *connection;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	NMSetting8021x *s_8021x;
 	NMSetting8021x *tmp_8021x;
 	char *unmanaged = NULL;
@@ -2226,12 +2044,12 @@ test_read_wired_8021x_peap_mschapv2 (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
 
 	/* Method */
-	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	tmp = nm_setting_ip_config_get_method (s_ip4);
 	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
 	        "wired-8021x-peap-mschapv2-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_METHOD);
+	        NM_SETTING_IP_CONFIG_METHOD);
 
 	/* ===== 802.1x SETTING ===== */
 	s_8021x = nm_connection_get_setting_802_1x (connection);
@@ -2555,7 +2373,7 @@ test_read_wired_aliases_good (void)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
@@ -2564,10 +2382,10 @@ test_read_wired_aliases_good (void)
 	GError *error = NULL;
 	const char *tmp;
 	const char *expected_id = "System aliasem0";
-	int expected_num_addresses = 4, expected_prefix = 24;
+	int expected_num_addresses = 4;
 	const char *expected_address[4] = { "192.168.1.5", "192.168.1.6", "192.168.1.9", "192.168.1.99" };
-	const char *expected_label[4] = { "", "aliasem0:1", "aliasem0:2", "aliasem0:99" };
-	const char *expected_gateway[4] = { "192.168.1.1", "192.168.1.1", "192.168.1.1", "192.168.1.1" };
+	const char *expected_label[4] = { NULL, "aliasem0:1", "aliasem0:2", "aliasem0:99" };
+	const char *expected_gateway = "192.168.1.1";
 	int i, j;
 
 	connection = connection_from_file (TEST_IFCFG_ALIASES_GOOD,
@@ -2615,73 +2433,50 @@ test_read_wired_aliases_good (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
 
 	/* Method */
-	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	tmp = nm_setting_ip_config_get_method (s_ip4);
 	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) == 0,
 	        "aliases-good-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_ALIASES_GOOD,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_METHOD);
+	        NM_SETTING_IP_CONFIG_METHOD);
 
-	ASSERT (nm_setting_ip4_config_get_num_addresses (s_ip4) == expected_num_addresses,
+	ASSERT (nm_setting_ip_config_get_num_addresses (s_ip4) == expected_num_addresses,
 	        "aliases-good-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_ALIASES_GOOD,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_ADDRESSES);
+	        NM_SETTING_IP_CONFIG_ADDRESSES);
 
 	/* Addresses */
 	for (i = 0; i < expected_num_addresses; i++) {
-		NMIP4Address *ip4_addr;
-		char buf[INET_ADDRSTRLEN];
-		struct in_addr addr;
+		NMIPAddress *ip4_addr;
+		const char *addr;
+		GVariant *label;
 
-		ip4_addr = nm_setting_ip4_config_get_address (s_ip4, i);
-		ASSERT (ip4_addr,
-		        "aliases-good-verify-ip4", "failed to verify %s: missing IP4 address #%d",
-		        TEST_IFCFG_ALIASES_GOOD,
-		        i);
+		ip4_addr = nm_setting_ip_config_get_address (s_ip4, i);
+		g_assert (ip4_addr != NULL);
 
-		addr.s_addr = nm_ip4_address_get_address (ip4_addr);
-		ASSERT (inet_ntop (AF_INET, &addr, buf, sizeof (buf)) > 0,
-		        "aliases-good-verify-ip4", "failed to verify %s: couldn't convert IP address #%d",
-		        TEST_IFCFG_ALIASES_GOOD,
-		        i);
+		addr = nm_ip_address_get_address (ip4_addr);
+		g_assert (nm_utils_ipaddr_valid (AF_INET, addr));
 
 		for (j = 0; j < expected_num_addresses; j++) {
-			if (!g_strcmp0 (buf, expected_address[j]))
+			if (!g_strcmp0 (addr, expected_address[j]))
 				break;
 		}
+		g_assert (j < expected_num_addresses);
 
-		ASSERT (j < expected_num_addresses,
-		        "aliases-good-verify-ip4", "failed to verify %s: unexpected IP4 address #%d",
-		        TEST_IFCFG_ALIASES_GOOD,
-		        i);
-
-		ASSERT (nm_ip4_address_get_prefix (ip4_addr) == expected_prefix,
-		        "aliases-good-verify-ip4", "failed to verify %s: unexpected IP4 address prefix #%d",
-		        TEST_IFCFG_ALIASES_GOOD,
-		        i);
-
-		if (expected_gateway[j]) {
-			ASSERT (inet_pton (AF_INET, expected_gateway[j], &addr) > 0,
-			        "aliases-good-verify-ip4", "failed to verify %s: couldn't convert IP address gateway #%d",
-			        TEST_IFCFG_ALIASES_GOOD,
-			        i);
-		} else
-			addr.s_addr = 0;
-		ASSERT (nm_ip4_address_get_gateway (ip4_addr) == addr.s_addr,
-		        "aliases-good-verify-ip4", "failed to verify %s: unexpected IP4 address gateway #%d",
-		        TEST_IFCFG_ALIASES_GOOD,
-		        i);
-
-		ASSERT (g_strcmp0 (_nm_setting_ip4_config_get_address_label (s_ip4, i), expected_label[j]) == 0,
-		        "aliases-good-verify-ip4", "failed to verify %s: unexpected IP4 address label #%d",
-		        TEST_IFCFG_ALIASES_GOOD,
-		        i);
+		g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 24);
+		label = nm_ip_address_get_attribute (ip4_addr, "label");
+		if (expected_label[j])
+			g_assert_cmpstr (g_variant_get_string (label, NULL), ==, expected_label[j]);
+		else
+			g_assert (label == NULL);
 
 		expected_address[j] = NULL;
-		expected_gateway[j] = NULL;
 		expected_label[j] = NULL;
 	}
+
+	/* Gateway */
+	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, expected_gateway);
 
 	for (i = 0; i < expected_num_addresses; i++) {
 		ASSERT (expected_address[i] == NULL,
@@ -2701,7 +2496,7 @@ test_read_wired_aliases_bad (const char *base, const char *expected_id)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
@@ -2709,12 +2504,7 @@ test_read_wired_aliases_bad (const char *base, const char *expected_id)
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
-	int expected_num_addresses = 1, expected_prefix = 24;
-	const char *expected_address = "192.168.1.5";
-	const char *expected_label = "";
-	const char *expected_gateway = "192.168.1.1";
-	NMIP4Address *ip4_addr;
-	struct in_addr addr;
+	NMIPAddress *ip4_addr;
 
 	connection = connection_from_file (base,
 	                                   NULL,
@@ -2762,46 +2552,28 @@ test_read_wired_aliases_bad (const char *base, const char *expected_id)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
 
 	/* Method */
-	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	tmp = nm_setting_ip_config_get_method (s_ip4);
 	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) == 0,
 	        "aliases-bad-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        base,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_METHOD);
+	        NM_SETTING_IP_CONFIG_METHOD);
 
-	ASSERT (nm_setting_ip4_config_get_num_addresses (s_ip4) == expected_num_addresses,
+	ASSERT (nm_setting_ip_config_get_num_addresses (s_ip4) == 1,
 	        "aliases-bad-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        base,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_ADDRESSES);
+	        NM_SETTING_IP_CONFIG_ADDRESSES);
 
 	/* Addresses */
-	ip4_addr = nm_setting_ip4_config_get_address (s_ip4, 0);
-	ASSERT (ip4_addr,
-			"aliases-bad-verify-ip4", "failed to verify %s: missing IP4 address",
-			base);
+	ip4_addr = nm_setting_ip_config_get_address (s_ip4, 0);
+	g_assert (ip4_addr != NULL);
+	g_assert_cmpstr (nm_ip_address_get_address (ip4_addr), ==, "192.168.1.5");
+	g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 24);
+	g_assert (nm_ip_address_get_attribute (ip4_addr, "label") == NULL);
 
-	ASSERT (inet_pton (AF_INET, expected_address, &addr) > 0,
-			"aliases-bad-verify-ip4", "failed to verify %s: couldn't convert IP address",
-			base);
-	ASSERT (nm_ip4_address_get_address (ip4_addr) == addr.s_addr,
-			"aliases-bad-verify-ip4", "failed to verify %s: unexpected IP4 address",
-			base);
-
-	ASSERT (nm_ip4_address_get_prefix (ip4_addr) == expected_prefix,
-			"aliases-bad-verify-ip4", "failed to verify %s: unexpected IP4 address prefix",
-			base);
-
-	ASSERT (inet_pton (AF_INET, expected_gateway, &addr) > 0,
-			"aliases-bad-verify-ip4", "failed to verify %s: couldn't convert IP address gateway",
-			base);
-	ASSERT (nm_ip4_address_get_gateway (ip4_addr) == addr.s_addr,
-			"aliases-bad-verify-ip4", "failed to verify %s: unexpected IP4 address gateway",
-			base);
-
-	ASSERT (g_strcmp0 (_nm_setting_ip4_config_get_address_label (s_ip4, 0), expected_label) == 0,
-			"aliases-bad-verify-ip4", "failed to verify %s: unexpected IP4 address label",
-			base);
+	/* Gateway */
+	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, "192.168.1.1");
 
 	g_free (keyfile);
 	g_free (routefile);
@@ -2838,7 +2610,7 @@ test_read_wifi_open (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
@@ -2993,12 +2765,12 @@ test_read_wifi_open (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
 
 	/* Method */
-	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	tmp = nm_setting_ip_config_get_method (s_ip4);
 	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
 	        "wifi-open-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIFI_OPEN,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_METHOD);
+	        NM_SETTING_IP_CONFIG_METHOD);
 
 	g_free (unmanaged);
 	g_free (keyfile);
@@ -3302,7 +3074,7 @@ test_read_wifi_wep (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
@@ -3537,12 +3309,12 @@ test_read_wifi_wep (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
 
 	/* Method */
-	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	tmp = nm_setting_ip_config_get_method (s_ip4);
 	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
 	        "wifi-wep-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIFI_WEP,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_METHOD);
+	        NM_SETTING_IP_CONFIG_METHOD);
 
 	g_free (unmanaged);
 	g_free (keyfile);
@@ -3560,7 +3332,7 @@ test_read_wifi_wep_adhoc (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
@@ -3751,38 +3523,38 @@ test_read_wifi_wep_adhoc (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
 
 	/* Method */
-	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	tmp = nm_setting_ip_config_get_method (s_ip4);
 	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
 	        "wifi-wep-adhoc-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIFI_WEP_ADHOC,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_METHOD);
+	        NM_SETTING_IP_CONFIG_METHOD);
 
 	/* Ignore auto DNS */
-	ASSERT (nm_setting_ip4_config_get_ignore_auto_dns (s_ip4) == TRUE,
+	ASSERT (nm_setting_ip_config_get_ignore_auto_dns (s_ip4) == TRUE,
 	        "wifi-wep-adhoc-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIFI_WEP_ADHOC,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS);
+	        NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS);
 
 	/* DNS Addresses */
-	ASSERT (nm_setting_ip4_config_get_num_dns (s_ip4) == 2,
+	ASSERT (nm_setting_ip_config_get_num_dns (s_ip4) == 2,
 	        "wifi-wep-adhoc-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIFI_WEP_ADHOC,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_DNS);
+	        NM_SETTING_IP_CONFIG_DNS);
 
-	ASSERT (strcmp (nm_setting_ip4_config_get_dns (s_ip4, 0), "4.2.2.1") == 0,
+	ASSERT (strcmp (nm_setting_ip_config_get_dns (s_ip4, 0), "4.2.2.1") == 0,
 	        "wifi-wep-adhoc-verify-ip4", "failed to verify %s: unexpected %s / %s key value #1",
 	        TEST_IFCFG_WIFI_WEP_ADHOC,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_DNS);
+	        NM_SETTING_IP_CONFIG_DNS);
 
-	ASSERT (strcmp (nm_setting_ip4_config_get_dns (s_ip4, 1), "4.2.2.2") == 0,
+	ASSERT (strcmp (nm_setting_ip_config_get_dns (s_ip4, 1), "4.2.2.2") == 0,
 	        "wifi-wep-adhoc-verify-ip4", "failed to verify %s: unexpected %s / %s key value #2",
 	        TEST_IFCFG_WIFI_WEP_ADHOC,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_DNS);
+	        NM_SETTING_IP_CONFIG_DNS);
 
 	g_free (unmanaged);
 	g_free (keyfile);
@@ -4352,7 +4124,7 @@ test_read_wifi_wpa_psk (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
@@ -4630,12 +4402,12 @@ test_read_wifi_wpa_psk (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
 
 	/* Method */
-	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	tmp = nm_setting_ip_config_get_method (s_ip4);
 	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
 	        "wifi-wpa-psk-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIFI_WPA_PSK,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_METHOD);
+	        NM_SETTING_IP_CONFIG_METHOD);
 
 	g_free (unmanaged);
 	g_free (keyfile);
@@ -4871,7 +4643,7 @@ test_read_wifi_wpa_psk_adhoc (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
@@ -5026,12 +4798,12 @@ test_read_wifi_wpa_psk_adhoc (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
 
 	/* Method */
-	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	tmp = nm_setting_ip_config_get_method (s_ip4);
 	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
 	        "wifi-wpa-psk-adhoc-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIFI_WPA_PSK_ADHOC,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_METHOD);
+	        NM_SETTING_IP_CONFIG_METHOD);
 
 	g_free (unmanaged);
 	g_free (keyfile);
@@ -5049,7 +4821,7 @@ test_read_wifi_wpa_psk_hex (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
@@ -5168,12 +4940,12 @@ test_read_wifi_wpa_psk_hex (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
 
 	/* Method */
-	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	tmp = nm_setting_ip_config_get_method (s_ip4);
 	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
 	        "wifi-wpa-psk-hex-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIFI_WPA_PSK_HEX,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_METHOD);
+	        NM_SETTING_IP_CONFIG_METHOD);
 
 	g_free (unmanaged);
 	g_free (keyfile);
@@ -5192,7 +4964,7 @@ test_read_wifi_wpa_eap_tls (void)
 {
 	NMConnection *connection;
 	NMSettingWireless *s_wireless;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	NMSetting8021x *s_8021x;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
@@ -5239,12 +5011,12 @@ test_read_wifi_wpa_eap_tls (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
 
 	/* Method */
-	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	tmp = nm_setting_ip_config_get_method (s_ip4);
 	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
 	        "wifi-wpa-eap-tls-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIFI_WPA_EAP_TLS,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_METHOD);
+	        NM_SETTING_IP_CONFIG_METHOD);
 
 	/* ===== 802.1x SETTING ===== */
 	s_8021x = nm_connection_get_setting_802_1x (connection);
@@ -5332,7 +5104,7 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 {
 	NMConnection *connection;
 	NMSettingWireless *s_wireless;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	NMSetting8021x *s_8021x;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
@@ -5379,12 +5151,12 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
 
 	/* Method */
-	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	tmp = nm_setting_ip_config_get_method (s_ip4);
 	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
 	        "wifi-wpa-eap-ttls-tls-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_METHOD);
+	        NM_SETTING_IP_CONFIG_METHOD);
 
 	/* ===== 802.1x SETTING ===== */
 	s_8021x = nm_connection_get_setting_802_1x (connection);
@@ -5563,7 +5335,7 @@ test_read_wifi_wep_eap_ttls_chap (void)
 	NMConnection *connection;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	NMSetting8021x *s_8021x;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
@@ -5611,12 +5383,12 @@ test_read_wifi_wep_eap_ttls_chap (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
 
 	/* Method */
-	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	tmp = nm_setting_ip_config_get_method (s_ip4);
 	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
 	        "wifi-wep-eap-ttls-chap-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_METHOD);
+	        NM_SETTING_IP_CONFIG_METHOD);
 
 	/* ===== 802.1x SETTING ===== */
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
@@ -5975,7 +5747,7 @@ test_read_wired_qeth_static (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
@@ -6123,12 +5895,12 @@ test_read_wired_qeth_static (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
 
 	/* Method */
-	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	tmp = nm_setting_ip_config_get_method (s_ip4);
 	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) == 0,
 	        "wired-qeth-static-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_QETH_STATIC,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_METHOD);
+	        NM_SETTING_IP_CONFIG_METHOD);
 
 	g_free (unmanaged);
 	g_free (keyfile);
@@ -6465,30 +6237,22 @@ test_write_wired_static (void)
 	NMConnection *reread;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4, *reread_s_ip4;
-	NMSettingIP6Config *s_ip6, *reread_s_ip6;
+	NMSettingIPConfig *s_ip4, *reread_s_ip4;
+	NMSettingIPConfig *s_ip6, *reread_s_ip6;
 	static const char *mac = "31:33:33:37:be:cd";
 	guint32 mtu = 1492;
 	char *uuid;
-	const guint32 ip1 = htonl (0x01010103);
-	const guint32 ip2 = htonl (0x01010105);
-	const guint32 gw = htonl (0x01010101);
 	const char *dns1 = "4.2.2.1";
 	const char *dns2 = "4.2.2.2";
-	const guint32 prefix = 24;
 	const char *dns_search1 = "foobar.com";
 	const char *dns_search2 = "lab.foobar.com";
 	const char *dns_search3 = "foobar6.com";
 	const char *dns_search4 = "lab6.foobar.com";
-	struct in6_addr ip6, ip6_1, ip6_2;
-	struct in6_addr route1_dest, route2_dest, route1_nexthop, route2_nexthop;
 	const char *dns6_1 = "fade:0102:0103::face";
 	const char *dns6_2 = "cafe:ffff:eeee:dddd:cccc:bbbb:aaaa:feed";
-	const guint32 route1_prefix = 64, route2_prefix = 128;
-	const guint32 route1_metric = 99, route2_metric = 1;
-	NMIP4Address *addr;
-	NMIP6Address *addr6;
-	NMIP6Route *route6;
+	NMIPAddress *addr;
+	NMIPAddress *addr6;
+	NMIPRoute *route6;
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
@@ -6497,14 +6261,6 @@ test_write_wired_static (void)
 	char *routefile = NULL;
 	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
-
-	inet_pton (AF_INET6, "1003:1234:abcd::1", &ip6);
-	inet_pton (AF_INET6, "2003:1234:abcd::2", &ip6_1);
-	inet_pton (AF_INET6, "3003:1234:abcd::3", &ip6_2);
-	inet_pton (AF_INET6, "2222:aaaa:bbbb:cccc::", &route1_dest);
-	inet_pton (AF_INET6, "2222:aaaa:bbbb:cccc:dddd:eeee:5555:6666", &route1_nexthop);
-	inet_pton (AF_INET6, "::", &route2_dest);
-	inet_pton (AF_INET6, "2222:aaaa::9999", &route2_nexthop);
 
 	connection = nm_simple_connection_new ();
 
@@ -6531,86 +6287,76 @@ test_write_wired_static (void)
 	              NULL);
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	g_object_set (s_ip4,
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
-	              NM_SETTING_IP4_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "1.1.1.1",
 	              NULL);
 
-	addr = nm_ip4_address_new ();
-	nm_ip4_address_set_address (addr, ip1);
-	nm_ip4_address_set_prefix (addr, prefix);
-	nm_ip4_address_set_gateway (addr, gw);
-	nm_setting_ip4_config_add_address (s_ip4, addr);
-	nm_ip4_address_unref (addr);
+	addr = nm_ip_address_new (AF_INET, "1.1.1.3", 24, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_address (s_ip4, addr);
+	nm_ip_address_unref (addr);
 
-	addr = nm_ip4_address_new ();
-	nm_ip4_address_set_address (addr, ip2);
-	nm_ip4_address_set_prefix (addr, prefix);
-	nm_ip4_address_set_gateway (addr, gw);
-	nm_setting_ip4_config_add_address (s_ip4, addr);
-	nm_ip4_address_unref (addr);
+	addr = nm_ip_address_new (AF_INET, "1.1.1.5", 24, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_address (s_ip4, addr);
+	nm_ip_address_unref (addr);
 
-	nm_setting_ip4_config_add_dns (s_ip4, dns1);
-	nm_setting_ip4_config_add_dns (s_ip4, dns2);
+	nm_setting_ip_config_add_dns (s_ip4, dns1);
+	nm_setting_ip_config_add_dns (s_ip4, dns2);
 
-	nm_setting_ip4_config_add_dns_search (s_ip4, dns_search1);
-	nm_setting_ip4_config_add_dns_search (s_ip4, dns_search2);
+	nm_setting_ip_config_add_dns_search (s_ip4, dns_search1);
+	nm_setting_ip_config_add_dns_search (s_ip4, dns_search2);
 
 	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	/* Add addresses */
-	addr6 = nm_ip6_address_new ();
-	nm_ip6_address_set_address (addr6, &ip6);
-	nm_ip6_address_set_prefix (addr6, 11);
-	nm_setting_ip6_config_add_address (s_ip6, addr6);
-	nm_ip6_address_unref (addr6);
+	addr6 = nm_ip_address_new (AF_INET6, "1003:1234:abcd::1", 11, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_address (s_ip6, addr6);
+	nm_ip_address_unref (addr6);
 
-	addr6 = nm_ip6_address_new ();
-	nm_ip6_address_set_address (addr6, &ip6_1);
-	nm_ip6_address_set_prefix (addr6, 22);
-	nm_setting_ip6_config_add_address (s_ip6, addr6);
-	nm_ip6_address_unref (addr6);
+	addr6 = nm_ip_address_new (AF_INET6, "2003:1234:abcd::2", 22, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_address (s_ip6, addr6);
+	nm_ip_address_unref (addr6);
 
-	addr6 = nm_ip6_address_new ();
-	nm_ip6_address_set_address (addr6, &ip6_2);
-	nm_ip6_address_set_prefix (addr6, 33);
-	nm_setting_ip6_config_add_address (s_ip6, addr6);
-	nm_ip6_address_unref (addr6);
+	addr6 = nm_ip_address_new (AF_INET6, "3003:1234:abcd::3", 33, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_address (s_ip6, addr6);
+	nm_ip_address_unref (addr6);
 
 	/* Add routes */
-	route6 = nm_ip6_route_new ();
-	nm_ip6_route_set_dest (route6, &route1_dest);
-	nm_ip6_route_set_prefix (route6, route1_prefix);
-	nm_ip6_route_set_next_hop (route6, &route1_nexthop);
-	nm_ip6_route_set_metric (route6, route1_metric);
-	nm_setting_ip6_config_add_route (s_ip6, route6);
-	nm_ip6_route_unref (route6);
+	route6 = nm_ip_route_new (AF_INET6,
+	                          "2222:aaaa:bbbb:cccc::", 64,
+	                          "2222:aaaa:bbbb:cccc:dddd:eeee:5555:6666", 99, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_route (s_ip6, route6);
+	nm_ip_route_unref (route6);
 
-	route6 = nm_ip6_route_new ();
-	nm_ip6_route_set_dest (route6, &route2_dest);
-	nm_ip6_route_set_prefix (route6, route2_prefix);
-	nm_ip6_route_set_next_hop (route6, &route2_nexthop);
-	nm_ip6_route_set_metric (route6, route2_metric);
-	nm_setting_ip6_config_add_route (s_ip6, route6);
-	nm_ip6_route_unref (route6);
+	route6 = nm_ip_route_new (AF_INET6, "::", 128, "2222:aaaa::9999", 1, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_route (s_ip6, route6);
+	nm_ip_route_unref (route6);
 
 	/* DNS servers */
-	nm_setting_ip6_config_add_dns (s_ip6, dns6_1);
-	nm_setting_ip6_config_add_dns (s_ip6, dns6_2);
+	nm_setting_ip_config_add_dns (s_ip6, dns6_1);
+	nm_setting_ip_config_add_dns (s_ip6, dns6_2);
 
 	/* DNS domains */
-	nm_setting_ip6_config_add_dns_search (s_ip6, dns_search3);
-	nm_setting_ip6_config_add_dns_search (s_ip6, dns_search4);
+	nm_setting_ip_config_add_dns_search (s_ip6, dns_search3);
+	nm_setting_ip_config_add_dns_search (s_ip6, dns_search4);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
 	        "wired-static-write", "failed to verify connection: %s",
@@ -6655,10 +6401,10 @@ test_write_wired_static (void)
 	 */
 	reread_s_ip4 = nm_connection_get_setting_ip4_config (reread);
 	reread_s_ip6 = nm_connection_get_setting_ip6_config (reread);
-	nm_setting_ip6_config_add_dns_search (reread_s_ip6, nm_setting_ip4_config_get_dns_search (reread_s_ip4, 2));
-	nm_setting_ip6_config_add_dns_search (reread_s_ip6, nm_setting_ip4_config_get_dns_search (reread_s_ip4, 3));
-	nm_setting_ip4_config_remove_dns_search (reread_s_ip4, 3);
-	nm_setting_ip4_config_remove_dns_search (reread_s_ip4, 2);
+	nm_setting_ip_config_add_dns_search (reread_s_ip6, nm_setting_ip_config_get_dns_search (reread_s_ip4, 2));
+	nm_setting_ip_config_add_dns_search (reread_s_ip6, nm_setting_ip_config_get_dns_search (reread_s_ip4, 3));
+	nm_setting_ip_config_remove_dns_search (reread_s_ip4, 3);
+	nm_setting_ip_config_remove_dns_search (reread_s_ip4, 2);
 
 	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
 	        "wired-static-write", "written and re-read connection weren't the same.");
@@ -6682,8 +6428,8 @@ test_write_wired_dhcp (void)
 	NMConnection *reread;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
@@ -6714,15 +6460,15 @@ test_write_wired_dhcp (void)
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	g_object_set (s_ip4,
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
 	              NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID, "random-client-id-00:22:33",
-	              NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME, "awesome-hostname",
-	              NM_SETTING_IP4_CONFIG_IGNORE_AUTO_ROUTES, TRUE,
-	              NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS, TRUE,
+	              NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, "awesome-hostname",
+	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES, TRUE,
+	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, TRUE,
 	              NULL);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
@@ -6730,12 +6476,12 @@ test_write_wired_dhcp (void)
 	        (error && error->message) ? error->message : "(unknown)");
 
 	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	/* Save the ifcfg */
@@ -6830,8 +6576,8 @@ static void
 test_read_write_wired_dhcp_send_hostname (void)
 {
 	NMConnection *connection, *reread;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	const char * dhcp_hostname = "kamil-patka";
 	char *written = NULL;
 	GError *error = NULL;
@@ -6848,14 +6594,14 @@ test_read_write_wired_dhcp_send_hostname (void)
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip4);
 	g_assert (s_ip6);
-	g_assert (nm_setting_ip4_config_get_dhcp_send_hostname (s_ip4) == TRUE);
-	g_assert_cmpstr (nm_setting_ip4_config_get_dhcp_hostname (s_ip4), ==, "svata-pulec");
-	g_assert_cmpstr (nm_setting_ip6_config_get_dhcp_hostname (s_ip6), ==, "svata-pulec");
+	g_assert (nm_setting_ip_config_get_dhcp_send_hostname (s_ip4) == TRUE);
+	g_assert_cmpstr (nm_setting_ip_config_get_dhcp_hostname (s_ip4), ==, "svata-pulec");
+	g_assert_cmpstr (nm_setting_ip_config_get_dhcp_hostname (s_ip6), ==, "svata-pulec");
 
 	/* Set dhcp-send-hostname=false dhcp-hostname="kamil-patka" and write the connection. */
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_DHCP_SEND_HOSTNAME, FALSE, NULL);
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME, dhcp_hostname, NULL);
-	g_object_set (s_ip6, NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME, dhcp_hostname, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME, FALSE, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, dhcp_hostname, NULL);
+	g_object_set (s_ip6, NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, dhcp_hostname, NULL);
 
 	success = writer_new_connection (connection,
 	                                 TEST_SCRATCH_DIR "/network-scripts/",
@@ -6887,9 +6633,9 @@ test_read_write_wired_dhcp_send_hostname (void)
 	s_ip6 = nm_connection_get_setting_ip6_config (reread);
 	g_assert (s_ip4);
 	g_assert (s_ip6);
-	g_assert (nm_setting_ip4_config_get_dhcp_send_hostname (s_ip4) == FALSE);
-	g_assert_cmpstr (nm_setting_ip4_config_get_dhcp_hostname (s_ip4), ==, dhcp_hostname);
-	g_assert_cmpstr (nm_setting_ip6_config_get_dhcp_hostname (s_ip6), ==, dhcp_hostname);
+	g_assert (nm_setting_ip_config_get_dhcp_send_hostname (s_ip4) == FALSE);
+	g_assert_cmpstr (nm_setting_ip_config_get_dhcp_hostname (s_ip4), ==, dhcp_hostname);
+	g_assert_cmpstr (nm_setting_ip_config_get_dhcp_hostname (s_ip6), ==, dhcp_hostname);
 
 	g_object_unref (connection);
 	g_object_unref (reread);
@@ -6902,13 +6648,12 @@ test_write_wired_static_ip6_only (void)
 	NMConnection *reread;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	static const char *mac = "31:33:33:37:be:cd";
 	char *uuid;
-	struct in6_addr ip6;
 	const char *dns6 = "fade:0102:0103::face";
-	NMIP6Address *addr6;
+	NMIPAddress *addr6;
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
@@ -6917,8 +6662,6 @@ test_write_wired_static_ip6_only (void)
 	char *routefile = NULL;
 	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
-
-	inet_pton (AF_INET6, "1003:1234:abcd::1", &ip6);
 
 	connection = nm_simple_connection_new ();
 
@@ -6942,30 +6685,29 @@ test_write_wired_static_ip6_only (void)
 	g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, mac, NULL);
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	g_object_set (s_ip4,
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
 	              NULL);
 
 	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
 	              NULL);
 
 	/* Add addresses */
-	addr6 = nm_ip6_address_new ();
-	nm_ip6_address_set_address (addr6, &ip6);
-	nm_ip6_address_set_prefix (addr6, 11);
-	nm_setting_ip6_config_add_address (s_ip6, addr6);
-	nm_ip6_address_unref (addr6);
+	addr6 = nm_ip_address_new (AF_INET6, "1003:1234:abcd::1", 11, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_address (s_ip6, addr6);
+	nm_ip_address_unref (addr6);
 
 	/* DNS server */
-	nm_setting_ip6_config_add_dns (s_ip6, dns6);
+	nm_setting_ip_config_add_dns (s_ip6, dns6);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
 	        "wired-static-ip6-only-write", "failed to verify connection: %s",
@@ -7034,33 +6776,19 @@ test_write_wired_static_ip6_only_gw (gconstpointer user_data)
 	NMConnection *reread;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	static const char *mac = "31:33:33:37:be:cd";
 	char *uuid;
-	struct in6_addr ip6;
 	const char *dns6 = "fade:0102:0103::face";
-	NMIP6Address *addr6;
+	NMIPAddress *addr6;
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
 	char *id = NULL;
 	gboolean ignore_error = FALSE;
 	char *written_ifcfg_gateway;
-	char s_gateway6[INET6_ADDRSTRLEN] = { 0 };
-	struct in6_addr gateway6_autovar;
-	const struct in6_addr *gateway6 = NULL;
-
-	/* parsing the input argument and set the struct in6_addr "gateway6" to
-	 * the gateway address. NULL means "do not set the gateway explicitly". */
-	if (user_data) {
-		g_assert_cmpint (inet_pton (AF_INET6, user_data, &gateway6_autovar), ==, 1);
-		gateway6 = &gateway6_autovar;
-	}
-
-	inet_pton (AF_INET6, "1003:1234:abcd::1", &ip6);
-	if (gateway6)
-		inet_ntop (AF_INET6, gateway6, s_gateway6, sizeof (s_gateway6));
+	const char *gateway6 = user_data;
 
 	connection = nm_simple_connection_new ();
 
@@ -7069,7 +6797,7 @@ test_write_wired_static_ip6_only_gw (gconstpointer user_data)
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
 	uuid = nm_utils_uuid_generate ();
-	id = g_strdup_printf ("Test Write Wired Static IP6 Only With Gateway %s", gateway6 ? s_gateway6 : "NULL");
+	id = g_strdup_printf ("Test Write Wired Static IP6 Only With Gateway %s", gateway6 ? gateway6 : "NULL");
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_ID, id,
 	              NM_SETTING_CONNECTION_UUID, uuid,
@@ -7086,32 +6814,30 @@ test_write_wired_static_ip6_only_gw (gconstpointer user_data)
 	g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, mac, NULL);
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	g_object_set (s_ip4,
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
 	              NULL);
 
 	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_GATEWAY, gateway6,
 	              NULL);
 
 	/* Add addresses */
-	addr6 = nm_ip6_address_new ();
-	nm_ip6_address_set_address (addr6, &ip6);
-	nm_ip6_address_set_prefix (addr6, 11);
-	if (gateway6)
-		nm_ip6_address_set_gateway (addr6, gateway6);
-	nm_setting_ip6_config_add_address (s_ip6, addr6);
-	nm_ip6_address_unref (addr6);
+	addr6 = nm_ip_address_new (AF_INET6, "1003:1234:abcd::1", 11, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_address (s_ip6, addr6);
+	nm_ip_address_unref (addr6);
 
 	/* DNS server */
-	nm_setting_ip6_config_add_dns (s_ip6, dns6);
+	nm_setting_ip_config_add_dns (s_ip6, dns6);
 
 	g_assert (nm_connection_verify (connection, &error));
 
@@ -7154,18 +6880,18 @@ test_write_wired_static_ip6_only_gw (gconstpointer user_data)
 
 	/* access the gateway from the loaded connection. */
 	s_ip6 = nm_connection_get_setting_ip6_config (reread);
-	g_assert (s_ip6 && nm_setting_ip6_config_get_num_addresses (s_ip6)==1);
-	addr6 = nm_setting_ip6_config_get_address (s_ip6, 0);
+	g_assert (s_ip6 && nm_setting_ip_config_get_num_addresses (s_ip6)==1);
+	addr6 = nm_setting_ip_config_get_address (s_ip6, 0);
 	g_assert (addr6);
 
 	/* assert that the gateway was written and reloaded as expected */
-	if (!gateway6 || IN6_IS_ADDR_UNSPECIFIED (gateway6)) {
-		g_assert (IN6_IS_ADDR_UNSPECIFIED (nm_ip6_address_get_gateway (addr6)));
-		g_assert (written_ifcfg_gateway==NULL);
+	if (!gateway6 || !strcmp (gateway6, "::")) {
+		g_assert (nm_setting_ip_config_get_gateway (s_ip6) == NULL);
+		g_assert (written_ifcfg_gateway == NULL);
 	} else {
-		g_assert (!IN6_IS_ADDR_UNSPECIFIED (nm_ip6_address_get_gateway (addr6)));
-		g_assert_cmpint (memcmp (nm_ip6_address_get_gateway (addr6), gateway6, sizeof (struct in6_addr)), ==, 0);
-		g_assert_cmpstr (written_ifcfg_gateway, ==, s_gateway6);
+		g_assert (nm_setting_ip_config_get_gateway (s_ip6) != NULL);
+		g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip6), ==, gateway6);
+		g_assert_cmpstr (written_ifcfg_gateway, ==, gateway6);
 	}
 
 	g_free (testfile);
@@ -7182,7 +6908,7 @@ test_read_write_static_routes_legacy (void)
 	NMConnection *connection, *reread;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	char *unmanaged = NULL;
 	char *testfile = NULL;
 	char *keyfile = NULL;
@@ -7253,18 +6979,18 @@ test_read_write_static_routes_legacy (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
 
 	/* Method */
-	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	tmp = nm_setting_ip_config_get_method (s_ip4);
 	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
 	        "read-write-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_METHOD);
+	        NM_SETTING_IP_CONFIG_METHOD);
 
-	ASSERT (nm_setting_ip4_config_get_never_default (s_ip4) == FALSE,
+	ASSERT (nm_setting_ip_config_get_never_default (s_ip4) == FALSE,
 	        "read-write-static-routes-legacy-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_NEVER_DEFAULT);
+	        NM_SETTING_IP_CONFIG_NEVER_DEFAULT);
 
 	/* Save the ifcfg; use a special different scratch dir to ensure that
 	 * we can clean up after the written connection in both the original
@@ -7329,25 +7055,17 @@ test_write_wired_static_routes (void)
 	NMConnection *reread;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	static const char *mac = "31:33:33:37:be:cd";
 	guint32 mtu = 1492;
 	char *uuid;
-	const guint32 ip1 = htonl (0x01010103);
-	const guint32 ip2 = htonl (0x01010105);
-	const guint32 gw = htonl (0x01010101);
 	const char *dns1 = "4.2.2.1";
 	const char *dns2 = "4.2.2.2";
-	const guint32 route_dst1 = htonl (0x01020300);
-	const guint32 route_dst2= htonl (0x03020100);
-	const guint32 route_gw1 = htonl (0xdeadbeef);
-	const guint32 route_gw2 = htonl (0xcafeabbe);
-	const guint32 prefix = 24;
 	const char *dns_search1 = "foobar.com";
 	const char *dns_search2 = "lab.foobar.com";
-	NMIP4Address *addr;
-	NMIP4Route *route;
+	NMIPAddress *addr;
+	NMIPRoute *route;
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
@@ -7382,56 +7100,48 @@ test_write_wired_static_routes (void)
 	              NULL);
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	g_object_set (s_ip4,
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "1.1.1.1",
 	              NULL);
 
-	addr = nm_ip4_address_new ();
-	nm_ip4_address_set_address (addr, ip1);
-	nm_ip4_address_set_prefix (addr, prefix);
-	nm_ip4_address_set_gateway (addr, gw);
-	nm_setting_ip4_config_add_address (s_ip4, addr);
-	nm_ip4_address_unref (addr);
+	addr = nm_ip_address_new (AF_INET, "1.1.1.3", 24, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_address (s_ip4, addr);
+	nm_ip_address_unref (addr);
 
-	addr = nm_ip4_address_new ();
-	nm_ip4_address_set_address (addr, ip2);
-	nm_ip4_address_set_prefix (addr, prefix);
-	nm_ip4_address_set_gateway (addr, gw);
-	nm_setting_ip4_config_add_address (s_ip4, addr);
-	nm_ip4_address_unref (addr);
+	addr = nm_ip_address_new (AF_INET, "1.1.1.5", 24, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_address (s_ip4, addr);
+	nm_ip_address_unref (addr);
 
 	/* Write out routes */
-	route = nm_ip4_route_new ();
-	nm_ip4_route_set_dest (route, route_dst1);
-	nm_ip4_route_set_prefix (route, prefix);
-	nm_ip4_route_set_next_hop (route, route_gw1);
-	nm_setting_ip4_config_add_route (s_ip4, route);
-	nm_ip4_route_unref (route);
+	route = nm_ip_route_new (AF_INET, "1.2.3.0", 24, "222.173.190.239", 0, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_route (s_ip4, route);
+	nm_ip_route_unref (route);
 
-	route = nm_ip4_route_new ();
-	nm_ip4_route_set_dest (route, route_dst2);
-	nm_ip4_route_set_prefix (route, prefix);
-	nm_ip4_route_set_next_hop (route, route_gw2);
-	nm_ip4_route_set_metric (route, 77);
-	nm_setting_ip4_config_add_route (s_ip4, route);
-	nm_ip4_route_unref (route);
+	route = nm_ip_route_new (AF_INET, "3.2.1.0", 24, "202.254.186.190", 77, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_route (s_ip4, route);
+	nm_ip_route_unref (route);
 
-	nm_setting_ip4_config_add_dns (s_ip4, dns1);
-	nm_setting_ip4_config_add_dns (s_ip4, dns2);
+	nm_setting_ip_config_add_dns (s_ip4, dns1);
+	nm_setting_ip_config_add_dns (s_ip4, dns2);
 
-	nm_setting_ip4_config_add_dns_search (s_ip4, dns_search1);
-	nm_setting_ip4_config_add_dns_search (s_ip4, dns_search2);
+	nm_setting_ip_config_add_dns_search (s_ip4, dns_search1);
+	nm_setting_ip_config_add_dns_search (s_ip4, dns_search2);
 
 	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
@@ -7494,8 +7204,8 @@ test_write_wired_dhcp_8021x_peap_mschapv2 (void)
 	NMConnection *reread;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	NMSetting8021x *s_8021x;
 	char *uuid;
 	gboolean success;
@@ -7527,18 +7237,18 @@ test_write_wired_dhcp_8021x_peap_mschapv2 (void)
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
 	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	/* 802.1x setting */
@@ -7648,8 +7358,8 @@ test_write_wired_8021x_tls (NMSetting8021xCKScheme scheme,
 	NMConnection *reread;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	NMSetting8021x *s_8021x;
 	char *uuid;
 	gboolean success;
@@ -7687,17 +7397,17 @@ test_write_wired_8021x_tls (NMSetting8021xCKScheme scheme,
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	g_assert (s_ip4);
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	g_assert (s_ip6);
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
@@ -7862,14 +7572,12 @@ test_write_wired_aliases (void)
 	NMConnection *reread;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	char *uuid;
 	int num_addresses = 4;
-	guint32 ip[] = { 0x01010101, 0x01010102, 0x01010103, 0x01010104 };
-	const char *label[] = { "", "alias0:2", "", "alias0:3" };
-	const guint32 gw = htonl (0x01010101);
-	const guint32 prefix = 24;
-	NMIP4Address *addr;
+	const char *ip[] = { "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" };
+	const char *label[] = { NULL, "alias0:2", NULL, "alias0:3" };
+	NMIPAddress *addr;
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
@@ -7908,24 +7616,25 @@ test_write_wired_aliases (void)
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	ASSERT (s_ip4 != NULL,
 	        "wired-aliases-write", "failed to allocate new %s setting",
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	g_object_set (s_ip4,
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
-	              NM_SETTING_IP4_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "1.1.1.1",
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	for (i = 0; i < num_addresses; i++) {
-		addr = nm_ip4_address_new ();
-		nm_ip4_address_set_address (addr, ip[i]);
-		nm_ip4_address_set_prefix (addr, prefix);
-		nm_ip4_address_set_gateway (addr, gw);
-		_nm_setting_ip4_config_add_address_with_label (s_ip4, addr, label[i]);
-		nm_ip4_address_unref (addr);
+		addr = nm_ip_address_new (AF_INET, ip[i], 24, &error);
+		g_assert_no_error (error);
+		if (label[i])
+			nm_ip_address_set_attribute (addr, "label", g_variant_new_string (label[i]));
+		nm_setting_ip_config_add_address (s_ip4, addr);
+		nm_ip_address_unref (addr);
 	}
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
@@ -7994,49 +7703,33 @@ test_write_wired_aliases (void)
 	 * verify the aliases manually.
 	 */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	ASSERT (nm_setting_ip4_config_get_num_addresses (s_ip4) == num_addresses,
+	ASSERT (nm_setting_ip_config_get_num_addresses (s_ip4) == num_addresses,
 	        "wired-aliases-write-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
 	        testfile,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_ADDRESSES);
+	        NM_SETTING_IP_CONFIG_ADDRESSES);
 
 	/* Addresses */
 	for (i = 0; i < num_addresses; i++) {
-		guint32 addrbytes;
+		const char *addrstr;
 
-		addr = nm_setting_ip4_config_get_address (s_ip4, i);
-		ASSERT (addr,
-		        "wired-aliases-write-verify-ip4", "failed to verify %s: missing IP4 address #%d",
-		        testfile,
-		        i);
+		addr = nm_setting_ip_config_get_address (s_ip4, i);
+		g_assert (addr != NULL);
 
-		addrbytes = nm_ip4_address_get_address (addr);
+		addrstr = nm_ip_address_get_address (addr);
 		for (j = 0; j < num_addresses; j++) {
-			if (addrbytes == ip[j])
+			if (!g_strcmp0 (addrstr, ip[j]))
 				break;
 		}
+		g_assert (j < num_addresses);
 
-		ASSERT (j < num_addresses,
-		        "wired-aliases-write-verify-ip4", "failed to verify %s: unexpected IP4 address #%d",
-		        testfile,
-		        i);
+		g_assert_cmpint (nm_ip_address_get_prefix (addr), ==, 24);
+		if (label[j])
+			g_assert_cmpstr (g_variant_get_string (nm_ip_address_get_attribute (addr, "label"), NULL), ==, label[j]);
+		else
+			g_assert (nm_ip_address_get_attribute (addr, "label") == NULL);
 
-		ASSERT (nm_ip4_address_get_prefix (addr) == prefix,
-		        "wired-aliases-write-verify-ip4", "failed to verify %s: unexpected IP4 address prefix #%d",
-		        testfile,
-		        i);
-
-		ASSERT (nm_ip4_address_get_gateway (addr) == gw,
-		        "wired-aliases-write-verify-ip4", "failed to verify %s: unexpected IP4 address gateway #%d",
-		        testfile,
-		        i);
-
-		ASSERT (g_strcmp0 (_nm_setting_ip4_config_get_address_label (s_ip4, i), label[j]) == 0,
-		        "wired-aliases-write-verify-ip4", "failed to verify %s: unexpected IP4 address label #%d",
-		        testfile,
-		        i);
-
-		ip[j] = 0;
+		ip[j] = NULL;
 	}
 
 	for (i = 0; i < num_addresses; i++) {
@@ -8045,6 +7738,9 @@ test_write_wired_aliases (void)
 		        testfile,
 		        ip[i]);
 	}
+
+	/* Gateway */
+	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, "1.1.1.1");
 
 	g_free (testfile);
 	g_free (keyfile);
@@ -8060,18 +7756,12 @@ test_write_gateway (void)
 	NMConnection *connection, *reread;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	char *uuid, *testfile = NULL, *val;
 	gboolean success;
 	GError *error = NULL;
 	shvarFile *f;
-	NMIP4Address *addr;
-	const char *ip1_str = "1.1.1.3";
-	const char *ip2_str = "2.2.2.5";
-	const char *gw1_str = "1.1.1.254";
-	const char *gw2_str = "2.2.2.254";
-	struct in_addr ip1, ip2, gw1, gw2;
-	const guint32 prefix = 24;
+	NMIPAddress *addr;
 
 	connection = nm_simple_connection_new ();
 
@@ -8092,32 +7782,24 @@ test_write_gateway (void)
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	g_object_set (s_ip4,
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
-	              NM_SETTING_IP4_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "1.1.1.254",
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	inet_pton (AF_INET, ip1_str, &ip1);
-	inet_pton (AF_INET, ip2_str, &ip2);
-	inet_pton (AF_INET, gw1_str, &gw1);
-	inet_pton (AF_INET, gw2_str, &gw2);
+	addr = nm_ip_address_new (AF_INET, "1.1.1.3", 24, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_address (s_ip4, addr);
+	nm_ip_address_unref (addr);
 
-	addr = nm_ip4_address_new ();
-	nm_ip4_address_set_address (addr, ip1.s_addr);
-	nm_ip4_address_set_prefix (addr, prefix);
-	nm_ip4_address_set_gateway (addr, gw1.s_addr);
-	nm_setting_ip4_config_add_address (s_ip4, addr);
-	nm_ip4_address_unref (addr);
-
-	addr = nm_ip4_address_new ();
-	nm_ip4_address_set_address (addr, ip2.s_addr);
-	nm_ip4_address_set_prefix (addr, prefix);
-	nm_ip4_address_set_gateway (addr, gw2.s_addr);
-	nm_setting_ip4_config_add_address (s_ip4, addr);
-	nm_ip4_address_unref (addr);
+	addr = nm_ip_address_new (AF_INET, "2.2.2.5", 24, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_address (s_ip4, addr);
+	nm_ip_address_unref (addr);
 
 	success = nm_connection_verify (connection, &error);
 	g_assert_no_error (error);
@@ -8138,12 +7820,12 @@ test_write_gateway (void)
 	/* re-read the file to check that the keys was written as IPADDR, GATEWAY and IPADDR1, GATEWAY1 */
 	val = svGetValue (f, "IPADDR", FALSE);
 	g_assert (val);
-	g_assert_cmpstr (val, ==, ip1_str);
+	g_assert_cmpstr (val, ==, "1.1.1.3");
 	g_free (val);
 
 	val = svGetValue (f, "IPADDR1", FALSE);
 	g_assert (val);
-	g_assert_cmpstr (val, ==, ip2_str);
+	g_assert_cmpstr (val, ==, "2.2.2.5");
 	g_free (val);
 
 	val = svGetValue (f, "IPADDR0", FALSE);
@@ -8164,17 +7846,14 @@ test_write_gateway (void)
 
 	val = svGetValue (f, "GATEWAY", FALSE);
 	g_assert (val);
-	g_assert_cmpstr (val, ==, gw1_str);
-	g_free (val);
-
-	val = svGetValue (f, "GATEWAY1", FALSE);
-	g_assert (val);
-	g_assert_cmpstr (val, ==, gw2_str);
+	g_assert_cmpstr (val, ==, "1.1.1.254");
 	g_free (val);
 
 	val = svGetValue (f, "GATEWAY0", FALSE);
 	g_assert (val == NULL);
 
+	val = svGetValue (f, "GATEWAY1", FALSE);
+	g_assert (val == NULL);
 
 	svCloseFile (f);
 
@@ -8207,8 +7886,8 @@ test_write_wifi_open (void)
 	NMConnection *reread;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
@@ -8260,18 +7939,18 @@ test_write_wifi_open (void)
 	g_bytes_unref (ssid);
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
 	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
@@ -8347,8 +8026,8 @@ test_write_wifi_open_hex_ssid (void)
 	NMConnection *reread;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
@@ -8390,18 +8069,18 @@ test_write_wifi_open_hex_ssid (void)
 	g_bytes_unref (ssid);
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
 	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
@@ -8461,8 +8140,8 @@ test_write_wifi_wep (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
@@ -8519,18 +8198,18 @@ test_write_wifi_wep (void)
 	nm_setting_wireless_security_set_wep_key (s_wsec, 3, "BBBBBBBBBBBBBBBBBBBBBBBBBB");
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
 	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
@@ -8602,8 +8281,8 @@ test_write_wifi_wep_adhoc (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
@@ -8616,11 +8295,8 @@ test_write_wifi_wep_adhoc (void)
 	GBytes *ssid;
 	const char *ssid_data = "blahblah";
 	struct stat statbuf;
-	NMIP4Address *addr;
-	const guint32 ip1 = htonl (0x01010103);
-	const guint32 gw = htonl (0x01010101);
+	NMIPAddress *addr;
 	const char *dns1 = "4.2.2.1";
-	const guint32 prefix = 24;
 
 	connection = nm_simple_connection_new ();
 
@@ -8658,28 +8334,29 @@ test_write_wifi_wep_adhoc (void)
 	nm_setting_wireless_security_set_wep_key (s_wsec, 0, "0123456789abcdef0123456789");
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL, NULL);
+	g_object_set (s_ip4,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "1.1.1.1",
+	              NULL);
 
 	/* IP Address */
-	addr = nm_ip4_address_new ();
-	nm_ip4_address_set_address (addr, ip1);
-	nm_ip4_address_set_prefix (addr, prefix);
-	nm_ip4_address_set_gateway (addr, gw);
-	nm_setting_ip4_config_add_address (s_ip4, addr);
-	nm_ip4_address_unref (addr);
+	addr = nm_ip_address_new (AF_INET, "1.1.1.3", 24, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_address (s_ip4, addr);
+	nm_ip_address_unref (addr);
 
-	nm_setting_ip4_config_add_dns (s_ip4, dns1);
+	nm_setting_ip_config_add_dns (s_ip4, dns1);
 
 	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
@@ -8751,8 +8428,8 @@ test_write_wifi_wep_passphrase (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
@@ -8807,18 +8484,18 @@ test_write_wifi_wep_passphrase (void)
 	nm_setting_wireless_security_set_wep_key (s_wsec, 0, "asdfdjaslfjasd;flasjdfl;aksdf");
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
 	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
@@ -8890,8 +8567,8 @@ test_write_wifi_wep_40_ascii (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
@@ -8948,18 +8625,18 @@ test_write_wifi_wep_40_ascii (void)
 	nm_setting_wireless_security_set_wep_key (s_wsec, 3, "donec");
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
 	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
@@ -9031,8 +8708,8 @@ test_write_wifi_wep_104_ascii (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
@@ -9089,18 +8766,18 @@ test_write_wifi_wep_104_ascii (void)
 	nm_setting_wireless_security_set_wep_key (s_wsec, 3, "thisismyascii");
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
 	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
@@ -9172,8 +8849,8 @@ test_write_wifi_leap (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
@@ -9227,18 +8904,18 @@ test_write_wifi_leap (void)
 	              NULL);
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
 	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
@@ -9310,8 +8987,8 @@ test_write_wifi_leap_secret_flags (NMSettingSecretFlags flags)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
@@ -9366,19 +9043,19 @@ test_write_wifi_leap_secret_flags (NMSettingSecretFlags flags)
 	              NULL);
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	g_assert (s_ip4);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
 	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	g_assert (s_ip6);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	success = nm_connection_verify (connection, &error);
@@ -9449,8 +9126,8 @@ test_write_wifi_wpa_psk (const char *name,
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *uuid, *tmp;
 	gboolean success;
 	GError *error = NULL;
@@ -9518,18 +9195,18 @@ test_write_wifi_wpa_psk (const char *name,
 	}
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
 	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
@@ -9595,8 +9272,8 @@ test_write_wifi_wpa_psk_adhoc (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
@@ -9608,11 +9285,8 @@ test_write_wifi_wpa_psk_adhoc (void)
 	gboolean ignore_error = FALSE;
 	GBytes *ssid;
 	const char *ssid_data = "blahblah";
-	NMIP4Address *addr;
-	const guint32 ip1 = htonl (0x01010103);
-	const guint32 gw = htonl (0x01010101);
+	NMIPAddress *addr;
 	const char *dns1 = "4.2.2.1";
-	const guint32 prefix = 24;
 
 	connection = nm_simple_connection_new ();
 
@@ -9657,28 +9331,29 @@ test_write_wifi_wpa_psk_adhoc (void)
 	nm_setting_wireless_security_add_group (s_wsec, "tkip");
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL, NULL);
+	g_object_set (s_ip4,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "1.1.1.1",
+	              NULL);
 
 	/* IP Address */
-	addr = nm_ip4_address_new ();
-	nm_ip4_address_set_address (addr, ip1);
-	nm_ip4_address_set_prefix (addr, prefix);
-	nm_ip4_address_set_gateway (addr, gw);
-	nm_setting_ip4_config_add_address (s_ip4, addr);
-	nm_ip4_address_unref (addr);
+	addr = nm_ip_address_new (AF_INET, "1.1.1.3", 25, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_address (s_ip4, addr);
+	nm_ip_address_unref (addr);
 
-	nm_setting_ip4_config_add_dns (s_ip4, dns1);
+	nm_setting_ip_config_add_dns (s_ip4, dns1);
 
 	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
@@ -9743,8 +9418,8 @@ test_write_wifi_wpa_eap_tls (void)
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSetting8021x *s_8021x;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
@@ -9831,18 +9506,18 @@ test_write_wifi_wpa_eap_tls (void)
 	        TEST_IFCFG_WIFI_WPA_EAP_TLS_PRIVATE_KEY, error->message);
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
 	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
@@ -9907,8 +9582,8 @@ test_write_wifi_wpa_eap_ttls_tls (void)
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSetting8021x *s_8021x;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
@@ -10013,18 +9688,18 @@ test_write_wifi_wpa_eap_ttls_tls (void)
 	        TEST_IFCFG_WIFI_WPA_EAP_TLS_PRIVATE_KEY, error->message);
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
 	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
@@ -10089,8 +9764,8 @@ test_write_wifi_wpa_eap_ttls_mschapv2 (void)
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSetting8021x *s_8021x;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
@@ -10167,18 +9842,18 @@ test_write_wifi_wpa_eap_ttls_mschapv2 (void)
 
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
 	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
@@ -10242,8 +9917,8 @@ test_write_wifi_wpa_then_open (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
@@ -10310,20 +9985,20 @@ test_write_wifi_wpa_then_open (void)
 	nm_setting_wireless_security_add_group (s_wsec, "ccmp");
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	g_assert (s_ip4);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
 	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	g_assert (s_ip6);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	success = nm_connection_verify (connection, &error);
@@ -10432,8 +10107,8 @@ test_write_wifi_wpa_then_wep_with_perms (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
@@ -10506,20 +10181,20 @@ test_write_wifi_wpa_then_wep_with_perms (void)
 	nm_setting_wireless_security_add_group (s_wsec, "ccmp");
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	g_assert (s_ip4);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
 	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	g_assert (s_ip6);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	success = nm_connection_verify (connection, &error);
@@ -10636,8 +10311,8 @@ test_write_wifi_dynamic_wep_leap (void)
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSetting8021x *s_8021x;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
@@ -10702,19 +10377,19 @@ test_write_wifi_dynamic_wep_leap (void)
 	              NULL);
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	g_assert (s_ip4);
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	g_assert (s_ip6);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	success = nm_connection_verify (connection, &error);
@@ -10789,8 +10464,8 @@ test_write_wired_qeth_dhcp (void)
 	NMConnection *reread;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *uuid;
 	char **subchans;
 	gboolean success;
@@ -10834,20 +10509,20 @@ test_write_wired_qeth_dhcp (void)
 	nm_setting_wired_add_s390_option (s_wired, "protocol", "blahbalh");
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	g_object_set (s_ip4,
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
 	              NULL);
 
 	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	/* Verify */
@@ -10910,8 +10585,8 @@ test_write_wired_ctc_dhcp (void)
 	NMConnection *reread;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *uuid;
 	char **subchans;
 	gboolean success;
@@ -10955,19 +10630,19 @@ test_write_wired_ctc_dhcp (void)
 	nm_setting_wired_add_s390_option (s_wired, "ctcprot", "0");
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	g_assert (s_ip4);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
 	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	g_assert (s_ip6);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	/* Verify */
@@ -11043,8 +10718,8 @@ test_write_permissions (void)
 	NMConnection *reread;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
@@ -11079,20 +10754,20 @@ test_write_permissions (void)
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	g_object_set (s_ip4,
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
 	              NULL);
 
 	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	/* Verify */
@@ -11156,8 +10831,8 @@ test_write_wifi_wep_agent_keys (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *uuid;
 	const char *str_ssid = "foobarbaz";
 	GBytes *ssid;
@@ -11187,19 +10862,19 @@ test_write_wifi_wep_agent_keys (void)
 	g_free (uuid);
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	g_assert (s_ip4);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
 	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	g_assert (s_ip6);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	/* Wifi setting */
@@ -11294,7 +10969,7 @@ test_write_wired_pppoe (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	NMSettingPppoe *s_pppoe;
 	NMSettingPpp *s_ppp;
 	char *uuid;
@@ -11322,11 +10997,11 @@ test_write_wired_pppoe (void)
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	g_object_set (s_ip4,
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
 	              NULL);
 
 	/* PPPoE setting */
@@ -11363,7 +11038,7 @@ test_write_vpn (void)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	NMSettingVpn *s_vpn;
 	char *uuid;
 	gboolean success;
@@ -11398,11 +11073,11 @@ test_write_vpn (void)
 	nm_setting_vpn_add_secret (s_vpn, "password", "sup3rs3cr3t");
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	g_object_set (s_ip4,
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
 	              NULL);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
@@ -11425,7 +11100,7 @@ test_write_mobile_broadband (gboolean gsm)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	NMSettingGsm *s_gsm;
 	NMSettingCdma *s_cdma;
 	NMSettingPpp *s_ppp;
@@ -11476,11 +11151,11 @@ test_write_mobile_broadband (gboolean gsm)
 	              NULL);
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	g_object_set (s_ip4,
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
 	              NULL);
 
 	/* PPP setting */
@@ -11563,13 +11238,10 @@ test_write_bridge_main (void)
 	NMConnection *reread;
 	NMSettingConnection *s_con;
 	NMSettingBridge *s_bridge;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *uuid;
-	const guint32 ip1 = htonl (0x01010103);
-	const guint32 gw = htonl (0x01010101);
-	const guint32 prefix = 24;
-	NMIP4Address *addr;
+	NMIPAddress *addr;
 	static const char *mac = "31:33:33:37:be:cd";
 	gboolean success;
 	GError *error = NULL;
@@ -11608,29 +11280,28 @@ test_write_bridge_main (void)
 	              NULL);
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	g_assert (s_ip4);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	g_object_set (s_ip4,
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
-	              NM_SETTING_IP4_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "1.1.1.1",
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	addr = nm_ip4_address_new ();
-	nm_ip4_address_set_address (addr, ip1);
-	nm_ip4_address_set_prefix (addr, prefix);
-	nm_ip4_address_set_gateway (addr, gw);
-	nm_setting_ip4_config_add_address (s_ip4, addr);
-	nm_ip4_address_unref (addr);
+	addr = nm_ip_address_new (AF_INET, "1.1.1.3", 24, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_address (s_ip4, addr);
+	nm_ip_address_unref (addr);
 
 	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	g_assert (s_ip6);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
 	              NULL);
 
 	nmtst_assert_connection_verifies_without_normalization (connection);
@@ -12165,8 +11836,8 @@ test_write_ethernet_missing_ipv6 (void)
 	NMConnection *reread;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
@@ -12200,14 +11871,14 @@ test_write_ethernet_missing_ipv6 (void)
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	g_assert (s_ip4);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 	g_object_set (s_ip4,
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
 	              NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID, "random-client-id-00:22:33",
-	              NM_SETTING_IP4_CONFIG_IGNORE_AUTO_ROUTES, TRUE,
-	              NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS, TRUE,
+	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES, TRUE,
+	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, TRUE,
 	              NULL);
 
 	/* IP6 setting */
@@ -12258,12 +11929,12 @@ test_write_ethernet_missing_ipv6 (void)
 	 * the comparison can succeed. Missing IPv6 setting should have been
 	 * written out (and re-read) as Automatic IPv6.
 	 */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	g_assert (s_ip6);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
@@ -12350,14 +12021,11 @@ test_write_bond_main (void)
 	NMConnection *reread;
 	NMSettingConnection *s_con;
 	NMSettingBond *s_bond;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	NMSettingWired *s_wired;
 	char *uuid;
-	const guint32 ip1 = htonl (0x01010103);
-	const guint32 gw = htonl (0x01010101);
-	const guint32 prefix = 24;
-	NMIP4Address *addr;
+	NMIPAddress *addr;
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
@@ -12392,27 +12060,26 @@ test_write_bond_main (void)
 	nm_connection_add_setting (connection, NM_SETTING (s_bond));
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	g_object_set (s_ip4,
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
-	              NM_SETTING_IP4_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "1.1.1.1",
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	addr = nm_ip4_address_new ();
-	nm_ip4_address_set_address (addr, ip1);
-	nm_ip4_address_set_prefix (addr, prefix);
-	nm_ip4_address_set_gateway (addr, gw);
-	nm_setting_ip4_config_add_address (s_ip4, addr);
-	nm_ip4_address_unref (addr);
+	addr = nm_ip_address_new (AF_INET, "1.1.1.3", 24, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_address (s_ip4, addr);
+	nm_ip_address_unref (addr);
 
 	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
 	              NULL);
 
 	nmtst_assert_connection_verifies_without_normalization (connection);
@@ -12693,15 +12360,12 @@ test_write_infiniband (void)
 	NMConnection *reread;
 	NMSettingConnection *s_con;
 	NMSettingInfiniband *s_infiniband;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	const char *mac = "80:00:11:22:33:44:55:66:77:88:99:aa:bb:cc:dd:ee:ff:00:11:22";
 	guint32 mtu = 65520;
 	char *uuid;
-	const guint32 ip1 = htonl (0x01010103);
-	const guint32 gw = htonl (0x01010101);
-	const guint32 prefix = 24;
-	NMIP4Address *addr;
+	NMIPAddress *addr;
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
@@ -12737,27 +12401,26 @@ test_write_infiniband (void)
 	              NULL);
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	g_object_set (s_ip4,
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
-	              NM_SETTING_IP4_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "1.1.1.1",
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	addr = nm_ip4_address_new ();
-	nm_ip4_address_set_address (addr, ip1);
-	nm_ip4_address_set_prefix (addr, prefix);
-	nm_ip4_address_set_gateway (addr, gw);
-	nm_setting_ip4_config_add_address (s_ip4, addr);
-	nm_ip4_address_unref (addr);
+	addr = nm_ip_address_new (AF_INET, "1.1.1.3", 24, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_address (s_ip4, addr);
+	nm_ip_address_unref (addr);
 
 	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
 	              NULL);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
@@ -13033,8 +12696,8 @@ test_write_dcb_basic (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingDcb *s_dcb;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	gboolean success, ignore_error;
 	guint i;
 	char *uuid, *testfile;
@@ -13063,12 +12726,12 @@ test_write_dcb_basic (void)
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
 	/* IP stuff */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
-	g_object_set (G_OBJECT (s_ip4), NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
+	g_object_set (G_OBJECT (s_ip4), NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
-	g_object_set (G_OBJECT (s_ip6), NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO, NULL);
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
+	g_object_set (G_OBJECT (s_ip6), NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO, NULL);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	/* DCB */
@@ -13313,8 +12976,8 @@ test_write_fcoe_mode (gconstpointer user_data)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingDcb *s_dcb;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	gboolean success, ignore_error;
 	char *uuid, *testfile;
 
@@ -13336,12 +12999,12 @@ test_write_fcoe_mode (gconstpointer user_data)
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
 	/* IP stuff */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
-	g_object_set (G_OBJECT (s_ip4), NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
+	g_object_set (G_OBJECT (s_ip4), NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
-	g_object_set (G_OBJECT (s_ip6), NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO, NULL);
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
+	g_object_set (G_OBJECT (s_ip6), NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO, NULL);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	/* DCB */
@@ -13435,8 +13098,8 @@ test_write_team_master (void)
 	NMSettingConnection *s_con;
 	NMSettingTeam *s_team;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	char *uuid, *testfile = NULL, *val;
 	gboolean success;
 	GError *error = NULL;
@@ -13472,21 +13135,21 @@ test_write_team_master (void)
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	g_assert (s_ip4);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	g_object_set (s_ip4,
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
 	              NULL);
 
 	/* IP6 setting */
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	g_assert (s_ip6);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
 	              NULL);
 
 	nmtst_assert_connection_verifies_without_normalization (connection);
@@ -13791,6 +13454,43 @@ test_svUnescape (void)
 	g_rand_free (r);
 }
 
+static void
+test_read_vlan_trailing_spaces (void)
+{
+	const char *testfile = TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-trailing-spaces";
+	NMConnection *connection;
+	gboolean success;
+	GError *error = NULL;
+	NMSettingVlan *s_vlan;
+	char *contents = NULL;
+
+	/* Ensure there is whitespace at the end of the VLAN interface name,
+	 * to prevent the whitespace getting stripped off and committed mistakenly
+	 * by something in the future.
+	 */
+	success = g_file_get_contents (testfile, &contents, NULL, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+	g_assert (contents && contents[0]);
+	g_assert (strstr (contents, "DEVICE=\"vlan201\"  \n"));
+	g_free (contents);
+
+	connection = connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL,
+	                                   NULL, NULL, NULL, &error, NULL);
+	g_assert_no_error (error);
+	g_assert (connection != NULL);
+
+	s_vlan = nm_connection_get_setting_vlan (connection);
+	g_assert (s_vlan);
+
+	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "vlan201");
+	g_assert_cmpstr (nm_setting_vlan_get_parent (s_vlan), ==, "enccw0.0.fb00");
+	g_assert_cmpint (nm_setting_vlan_get_id (s_vlan), ==, 201);
+	g_assert_cmpint (nm_setting_vlan_get_flags (s_vlan), ==, 0);
+
+	g_object_unref (connection);
+}
+
 
 #define TEST_IFCFG_WIFI_OPEN_SSID_BAD_HEX TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-bad-hex"
 #define TEST_IFCFG_WIFI_OPEN_SSID_LONG_QUOTED TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-quoted"
@@ -13816,6 +13516,7 @@ int main (int argc, char **argv)
 	nmtst_init_assert_logging (&argc, &argv);
 
 	g_test_add_func (TPATH "svUnescape", test_svUnescape);
+	g_test_add_func (TPATH "vlan-trailing-spaces", test_read_vlan_trailing_spaces);
 
 	g_test_add_func (TPATH "unmanaged", test_read_unmanaged);
 	g_test_add_func (TPATH "unmanaged-unrecognized", test_read_unmanaged_unrecognized);
@@ -13829,7 +13530,7 @@ int main (int argc, char **argv)
 	g_test_add_data_func (TPATH "static-ip6-only-gw/_NULL_", NULL, test_write_wired_static_ip6_only_gw);
 	g_test_add_data_func (TPATH "static-ip6-only-gw/::", "::", test_write_wired_static_ip6_only_gw);
 	g_test_add_data_func (TPATH "static-ip6-only-gw/2001:db8:8:4::2", "2001:db8:8:4::2", test_write_wired_static_ip6_only_gw);
-	g_test_add_data_func (TPATH "static-ip6-only-gw/ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255", "ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255", test_write_wired_static_ip6_only_gw);
+	g_test_add_data_func (TPATH "static-ip6-only-gw/::ffff:255.255.255.255", "::ffff:255.255.255.255", test_write_wired_static_ip6_only_gw);
 
 	test_read_wired_static (TEST_IFCFG_WIRED_STATIC, "System test-wired-static", TRUE);
 	test_read_wired_static (TEST_IFCFG_WIRED_STATIC_BOOTPROTO, "System test-wired-static-bootproto", FALSE);

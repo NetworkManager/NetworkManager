@@ -22,6 +22,7 @@
 #define __NETWORKMANAGER_IP6_CONFIG_H__
 
 #include <glib-object.h>
+#include <netinet/in.h>
 
 #include "nm-types.h"
 #include "nm-setting-ip6-config.h"
@@ -41,12 +42,16 @@ typedef struct {
 	GObjectClass parent;
 } NMIP6ConfigClass;
 
+#define NM_IP6_CONFIG_ADDRESS_DATA "address-data"
+#define NM_IP6_CONFIG_ROUTE_DATA "route-data"
 #define NM_IP6_CONFIG_GATEWAY "gateway"
-#define NM_IP6_CONFIG_ADDRESSES "addresses"
-#define NM_IP6_CONFIG_ROUTES "routes"
 #define NM_IP6_CONFIG_NAMESERVERS "nameservers"
 #define NM_IP6_CONFIG_DOMAINS "domains"
 #define NM_IP6_CONFIG_SEARCHES "searches"
+
+/* deprecated */
+#define NM_IP6_CONFIG_ADDRESSES "addresses"
+#define NM_IP6_CONFIG_ROUTES "routes"
 
 GType nm_ip6_config_get_type (void);
 
@@ -60,7 +65,7 @@ const char * nm_ip6_config_get_dbus_path (const NMIP6Config *config);
 /* Integration with nm-platform and nm-setting */
 NMIP6Config *nm_ip6_config_capture (int ifindex, gboolean capture_resolv_conf, NMSettingIP6ConfigPrivacy use_temporary);
 gboolean nm_ip6_config_commit (const NMIP6Config *config, int ifindex);
-void nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIP6Config *setting, int default_route_metric);
+void nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIPConfig *setting, guint32 default_route_metric);
 NMSetting *nm_ip6_config_create_setting (const NMIP6Config *config);
 
 /* Utility functions */
@@ -94,6 +99,7 @@ guint32 nm_ip6_config_get_num_routes (const NMIP6Config *config);
 const NMPlatformIP6Route *nm_ip6_config_get_route (const NMIP6Config *config, guint32 i);
 
 const NMPlatformIP6Route *nm_ip6_config_get_direct_route_for_host (const NMIP6Config *config, const struct in6_addr *host);
+const NMPlatformIP6Address *nm_ip6_config_get_subnet_for_host (const NMIP6Config *config, const struct in6_addr *host);
 
 /* Nameservers */
 void nm_ip6_config_reset_nameservers (NMIP6Config *config);

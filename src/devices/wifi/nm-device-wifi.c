@@ -19,6 +19,8 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
+#include "config.h"
+
 #include <glib.h>
 #include <glib/gi18n.h>
 #include <dbus/dbus.h>
@@ -395,7 +397,7 @@ find_active_ap (NMDeviceWifi *self,
 			       ap_ssid ? "'" : "",
 			       ap_ssid ? nm_utils_escape_ssid (ap_ssid->data, ap_ssid->len) : "(none)",
 			       ap_ssid ? "'" : "",
-			       ap_bssid);
+			       str_if_set (ap_bssid, "(none)"));
 
 			if (ap == ignore_ap) {
 				_LOGD (LOGD_WIFI, "      ignored");
@@ -460,14 +462,13 @@ find_active_ap (NMDeviceWifi *self,
 	 * we can't match the AP based on frequency at all, just give up.
 	 */
 	if (match_nofreq && ((found_a_band != found_bg_band) || (devfreq == 0))) {
-		const char *ap_bssid = nm_ap_get_address (match_nofreq);
 		const GByteArray *ap_ssid = nm_ap_get_ssid (match_nofreq);
 
 		_LOGD (LOGD_WIFI, "    matched %s%s%s  %s",
 		       ap_ssid ? "'" : "",
 		       ap_ssid ? nm_utils_escape_ssid (ap_ssid->data, ap_ssid->len) : "(none)",
 		       ap_ssid ? "'" : "",
-		       ap_bssid);
+		       str_if_set (nm_ap_get_address (match_nofreq), "(none)"));
 
 		active_ap = match_nofreq;
 		goto done;
@@ -1699,12 +1700,12 @@ merge_scanned_ap (NMDeviceWifi *self,
 		if (ssid && (nm_utils_is_empty_ssid (ssid->data, ssid->len) == FALSE)) {
 			/* Yay, matched it, no longer treat as hidden */
 			_LOGD (LOGD_WIFI_SCAN, "matched hidden AP %s => '%s'",
-			       bssid, nm_utils_escape_ssid (ssid->data, ssid->len));
+			       str_if_set (bssid, "(none)"), nm_utils_escape_ssid (ssid->data, ssid->len));
 			nm_ap_set_broadcast (merge_ap, FALSE);
 		} else {
 			/* Didn't have an entry for this AP in the database */
 			_LOGD (LOGD_WIFI_SCAN, "failed to match hidden AP %s",
-			       bssid);
+			       str_if_set (bssid, "(none)"));
 		}
 	}
 
@@ -1723,7 +1724,7 @@ merge_scanned_ap (NMDeviceWifi *self,
 	if (found_ap) {
 		_LOGD (LOGD_WIFI_SCAN, "merging AP '%s' %s (%p) with existing (%p)",
 		            ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
-		            bssid,
+		            str_if_set (bssid, "(none)"),
 		            merge_ap,
 		            found_ap);
 
@@ -1745,7 +1746,7 @@ merge_scanned_ap (NMDeviceWifi *self,
 		/* New entry in the list */
 		_LOGD (LOGD_WIFI_SCAN, "adding new AP '%s' %s (%p)",
 		       ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
-		       bssid, merge_ap);
+		       str_if_set (bssid, "(none)"), merge_ap);
 
 		g_object_ref (merge_ap);
 		priv->ap_list = g_slist_prepend (priv->ap_list, merge_ap);
@@ -1801,14 +1802,12 @@ cull_scan_list (NMDeviceWifi *self)
 	/* Remove outdated APs */
 	for (elt = outdated_list; elt; elt = g_slist_next (elt)) {
 		NMAccessPoint *outdated_ap = NM_AP (elt->data);
-		const char *bssid;
 		const GByteArray *ssid;
 
-		bssid = nm_ap_get_address (outdated_ap);
 		ssid = nm_ap_get_ssid (outdated_ap);
 		_LOGD (LOGD_WIFI_SCAN,
 		       "   removing %s (%s%s%s)",
-		       bssid,
+		       str_if_set (nm_ap_get_address (outdated_ap), "(none)"),
 		       ssid ? "'" : "",
 		       ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
 		       ssid ? "'" : "");
@@ -2809,14 +2808,14 @@ act_stage3_ip4_config_start (NMDevice *device,
                              NMDeviceStateReason *reason)
 {
 	NMConnection *connection;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	const char *method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
 
 	connection = nm_device_get_connection (device);
 	g_assert (connection);
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	if (s_ip4)
-		method = nm_setting_ip4_config_get_method (s_ip4);
+		method = nm_setting_ip_config_get_method (s_ip4);
 
 	/* Indicate that a critical protocol is about to start */
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0)
@@ -2831,14 +2830,14 @@ act_stage3_ip6_config_start (NMDevice *device,
                              NMDeviceStateReason *reason)
 {
 	NMConnection *connection;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip6;
 	const char *method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
 
 	connection = nm_device_get_connection (device);
 	g_assert (connection);
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	if (s_ip6)
-		method = nm_setting_ip6_config_get_method (s_ip6);
+		method = nm_setting_ip_config_get_method (s_ip6);
 
 	/* Indicate that a critical protocol is about to start */
 	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0 ||
@@ -2938,7 +2937,7 @@ static NMActStageReturn
 act_stage4_ip4_config_timeout (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMConnection *connection;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	gboolean may_fail = FALSE, chain_up = FALSE;
 	NMActStageReturn ret;
 
@@ -2946,7 +2945,7 @@ act_stage4_ip4_config_timeout (NMDevice *device, NMDeviceStateReason *reason)
 	g_assert (connection);
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	may_fail = nm_setting_ip4_config_get_may_fail (s_ip4);
+	may_fail = nm_setting_ip_config_get_may_fail (s_ip4);
 
 	ret = handle_ip_config_timeout (NM_DEVICE_WIFI (device), connection, may_fail, &chain_up, reason);
 	if (chain_up)
@@ -2959,7 +2958,7 @@ static NMActStageReturn
 act_stage4_ip6_config_timeout (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMConnection *connection;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip6;
 	gboolean may_fail = FALSE, chain_up = FALSE;
 	NMActStageReturn ret;
 
@@ -2967,7 +2966,7 @@ act_stage4_ip6_config_timeout (NMDevice *device, NMDeviceStateReason *reason)
 	g_assert (connection);
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
-	may_fail = nm_setting_ip6_config_get_may_fail (s_ip6);
+	may_fail = nm_setting_ip_config_get_may_fail (s_ip6);
 
 	ret = handle_ip_config_timeout (NM_DEVICE_WIFI (device), connection, may_fail, &chain_up, reason);
 	if (chain_up)
@@ -3015,7 +3014,7 @@ activation_success_handler (NMDevice *device)
 	 * the BSSID off the card and fill in the BSSID of the activation AP.
 	 */
 	nm_platform_wifi_get_bssid (ifindex, bssid);
-	if (!nm_ethernet_address_is_valid (nm_ap_get_address (ap), -1)) {
+	if (!nm_ap_get_address (ap)) {
 		char *bssid_str = nm_utils_hwaddr_ntoa (bssid, ETH_ALEN);
 		nm_ap_set_address (ap, bssid_str);
 		g_free (bssid_str);

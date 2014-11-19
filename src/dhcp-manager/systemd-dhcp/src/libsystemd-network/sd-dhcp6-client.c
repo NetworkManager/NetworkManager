@@ -19,14 +19,20 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
+#include "config.h"
+
+#include "nm-sd-adapt.h"
+
 #include <errno.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <linux/if_infiniband.h>
 
+#if 0 /* NM_IGNORED */
 #include "udev.h"
 #include "udev-util.h"
 #include "virt.h"
+#endif
 #include "siphash24.h"
 #include "util.h"
 #include "refcnt.h"
@@ -57,6 +63,7 @@ struct sd_dhcp6_client {
         uint8_t mac_addr[MAX_MAC_ADDR_LEN];
         size_t mac_addr_len;
         uint16_t arp_type;
+        char ifname[IFNAMSIZ];
         DHCP6IA ia_na;
         be32_t transaction_id;
         usec_t transaction_start;
@@ -626,10 +633,7 @@ error:
 }
 
 static int client_ensure_iaid(sd_dhcp6_client *client) {
-        /* name is a pointer to memory in the udev_device struct, so must
-           have the same scope */
-        _cleanup_udev_device_unref_ struct udev_device *device = NULL;
-        const char *name = NULL;
+        const char *name;
         uint64_t id;
 
         assert(client);
@@ -637,27 +641,7 @@ static int client_ensure_iaid(sd_dhcp6_client *client) {
         if (client->ia_na.id)
                 return 0;
 
-        if (detect_container(NULL) <= 0) {
-                /* not in a container, udev will be around */
-                _cleanup_udev_unref_ struct udev *udev;
-                char ifindex_str[2 + DECIMAL_STR_MAX(int)];
-
-                udev = udev_new();
-                if (!udev)
-                        return -ENOMEM;
-
-                sprintf(ifindex_str, "n%d", client->index);
-                device = udev_device_new_from_device_id(udev, ifindex_str);
-                if (!device)
-                        return -errno;
-
-                if (udev_device_get_is_initialized(device) <= 0)
-                        /* not yet ready */
-                        return -EBUSY;
-
-                name = net_get_name(device);
-        }
-
+	name = client->ifname;
         if (name)
                 siphash24((uint8_t*)&id, name, strlen(name), HASH_KEY.bytes);
         else
@@ -860,7 +844,7 @@ static int client_receive_message(sd_event_source *s, int fd, uint32_t revents,
                                   void *userdata) {
         sd_dhcp6_client *client = userdata;
         DHCP6_CLIENT_DONT_DESTROY(client);
-        _cleanup_free_ DHCP6Message *message;
+        _cleanup_free_ DHCP6Message *message = NULL;
         int r, buflen, len;
 
         assert(s);
@@ -1193,8 +1177,10 @@ sd_dhcp6_client *sd_dhcp6_client_unref(sd_dhcp6_client *client) {
 int sd_dhcp6_client_new(sd_dhcp6_client **ret)
 {
         _cleanup_dhcp6_client_unref_ sd_dhcp6_client *client = NULL;
+#if 0 /* NM_IGNORED */
         sd_id128_t machine_id;
         int r;
+#endif
         size_t t;
 
         assert_return(ret, -EINVAL);
@@ -1211,6 +1197,7 @@ int sd_dhcp6_client_new(sd_dhcp6_client **ret)
 
         client->fd = -1;
 
+#if 0 /* NM_IGNORED */
         /* initialize DUID */
         client->duid.en.type = htobe16(DHCP6_DUID_EN);
         client->duid.en.pen = htobe32(SYSTEMD_PEN);
@@ -1223,6 +1210,7 @@ int sd_dhcp6_client_new(sd_dhcp6_client **ret)
         /* a bit of snake-oil perhaps, but no need to expose the machine-id
            directly */
         siphash24(client->duid.en.id, &machine_id, sizeof(machine_id), HASH_KEY.bytes);
+#endif
 
         client->req_opts_len = ELEMENTSOF(default_req_opts);
 
@@ -1238,3 +1226,17 @@ int sd_dhcp6_client_new(sd_dhcp6_client **ret)
 
         return 0;
 }
+
+/*******************************************/
+/* NetworkManager additions */
+
+int sd_dhcp6_client_set_ifname(sd_dhcp6_client *client, const char *ifname)
+{
+        assert_return(client, -EINVAL);
+        assert_return(ifname, -EINVAL);
+        assert_return(strlen (ifname) < sizeof (client->ifname), -EINVAL);
+
+        strcpy(client->ifname, ifname);
+        return 0;
+}
+

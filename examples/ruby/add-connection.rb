@@ -27,8 +27,13 @@ require 'ipaddr'
 # It also shows how to specify D-Bus signature for properties like "addresses"
 # and "clone-mac-address".
 #
+# This uses the old, backwards-compatible settings properties. The new 1.0
+# properties (eg, 'address-data' rather than 'addresses') would make this simpler;
+# see the python add-connection.py and add-connection-compat.py examples for
+# details
+#
 # Configuration settings are described here:
-# https://developer.gnome.org/NetworkManager/0.9/ref-settings.html
+# https://developer.gnome.org/NetworkManager/1.0/ref-settings.html
 #
 
 # Helper functions

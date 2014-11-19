@@ -2,14 +2,37 @@
 
 <node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
   <interface name="org.freedesktop.NetworkManager.IP6Config">
+    <property name="Addresses" type="a(ayuay)" access="read">
+      <tp:docstring>
+	Array of tuples of IPv6 address/prefix/gateway.
+
+	Deprecated: use AddressData and Gateway.
+      </tp:docstring>
+    </property>
+    <property name="AddressData" type="aa{sv}" access="read">
+      <tp:docstring>
+	Array of IP address data objects. All addresses will include
+	"address" (an IP address string), and "prefix" (a uint). Some
+	addresses may include additional attributes.
+      </tp:docstring>
+    </property>
     <property name="Gateway" type="s" access="read">
       <tp:docstring>The gateway in use.</tp:docstring>
     </property>
-    <property name="Addresses" type="a(ayuay)" access="read">
-      <tp:docstring>Tuples of IPv6 address/prefix/gateway.</tp:docstring>
-    </property>
     <property name="Routes" type="a(ayuayu)" access="read">
-      <tp:docstring>Tuples of IPv6 route/prefix/next-hop/metric.</tp:docstring>
+      <tp:docstring>
+	Tuples of IPv6 route/prefix/next-hop/metric.
+
+	Deprecated: use RouteData
+      </tp:docstring>
+    </property>
+    <property name="RouteData" type="aa{sv}" access="read">
+      <tp:docstring>
+	Array of IP route data objects. All routes will include "dest"
+	(an IP address string) and "prefix" (a uint). Some routes may
+	include "next-hop" (an IP address string), "metric" (a uint),
+	and additional attributes.
+      </tp:docstring>
     </property>
     <property name="Nameservers" type="aay" access="read">
       <tp:docstring>The nameservers in use.</tp:docstring>

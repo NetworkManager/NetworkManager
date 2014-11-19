@@ -18,9 +18,10 @@
  * Copyright 2013 Jiri Pirko <jiri@resnulli.us>
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <string.h>
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 
 #include "nm-glib-compat.h"
 

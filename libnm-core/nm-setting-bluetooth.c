@@ -20,9 +20,11 @@
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 #include <net/ethernet.h>
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 
 #include "nm-setting-bluetooth.h"
 #include "nm-setting-cdma.h"
@@ -79,7 +81,8 @@ NMSetting *nm_setting_bluetooth_new (void)
  * Returns the connection method for communicating with the remote device (i.e.
  * either DUN to a DUN-capable device or PANU to a NAP-capable device).
  *
- * Returns: the type, either %NM_SETTING_BLUETOOTH_PANU or %NM_SETTING_BLUETOOTH_DUN
+ * Returns: the type, either %NM_SETTING_BLUETOOTH_TYPE_PANU or
+ * %NM_SETTING_BLUETOOTH_TYPE_DUN
  **/
 const char *
 nm_setting_bluetooth_get_connection_type (NMSettingBluetooth *setting)

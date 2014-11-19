@@ -419,10 +419,14 @@ AC_COMPILE_IFELSE(
                 #endif
                 #include <linux/if_link.h>]],
               [[int a = IN6_ADDR_GEN_MODE_EUI64; a++;]])],
-        [ac_have_kernel_gen_mode="1"],
-        [ac_have_kernel_gen_mode="0"])
-AC_DEFINE_UNQUOTED(HAVE_KERNEL_INET6_ADDR_GEN_MODE,
-	$ac_have_kernel_gen_mode, [Define if the kernel has IN6_ADDR_GEN_MODE_*])
+        [ac_have_kernel_gen_mode=yes],
+        [ac_have_kernel_gen_mode=no])
+AC_MSG_RESULT($ac_have_kernel_gen_mode)
+if test "$ac_have_kernel_gen_mode" = yes; then
+	AC_DEFINE(HAVE_KERNEL_INET6_ADDR_GEN_MODE, 1, [Define if the kernel has IN6_ADDR_GEN_MODE_*])
+else
+	AC_DEFINE(HAVE_KERNEL_INET6_ADDR_GEN_MODE, 0, [Define if the kernel has IN6_ADDR_GEN_MODE_*])
+fi
 
 # uuid library
 PKG_CHECK_MODULES(UUID, uuid)
@@ -497,6 +501,22 @@ else
 	AC_DEFINE(WITH_POLKIT, 0, [whether to compile polkit support])
 fi
 AC_SUBST(NM_CONFIG_DEFAULT_AUTH_POLKIT_TEXT)
+
+PKG_CHECK_MODULES(POLKIT, [polkit-agent-1 >= 0.97], [have_pk_agent=yes],[have_pk_agent=no])
+AC_ARG_ENABLE(polkit-agent, AS_HELP_STRING([--enable-polkit-agent], [enable polkit agent for clients]),
+                     [enable_polkit_agent=${enableval}], [enable_polkit_agent=${have_pk_agent}])
+if (test "${enable_polkit_agent}" = "yes"); then
+	if test x"$have_pk_agent" = x"no"; then
+		AC_MSG_ERROR(Polkit agent is required)
+	fi
+
+	AC_SUBST(POLKIT_CFLAGS)
+	AC_SUBST(POLKIT_LIBS)
+	AC_DEFINE(WITH_POLKIT_AGENT, 1, [Define if you have polkit agent])
+else
+	AC_DEFINE(WITH_POLKIT_AGENT, 0, [Define if you have polkit agent])
+fi
+AM_CONDITIONAL(WITH_POLKIT_AGENT, test "${enable_polkit_agent}" = "yes")
 
 AC_ARG_ENABLE(modify-system,
               AS_HELP_STRING([--enable-modify-system], [Allow users to modify system connections]))
@@ -642,7 +662,7 @@ if (test "${enable_bluez5_dun}" = "yes"); then
 	fi
 	AC_DEFINE(WITH_BLUEZ5_DUN, 1, [Define if you have Bluez 5 libraries])
 else
-	AC_DEFINE(HAVE_BLUEZ5_DUN, 0, [Define if you have Bluez 5 libraries])
+	AC_DEFINE(WITH_BLUEZ5_DUN, 0, [Define if you have Bluez 5 libraries])
 fi
 AM_CONDITIONAL(WITH_BLUEZ5_DUN, test "${enable_bluez5_dun}" = "yes")
 
@@ -877,7 +897,7 @@ if test "$build_setting_docs" != "yes" \
 	-a -f man/nm-settings-keyfile.xml \
 	-a -f man/nm-settings-ifcfg-rh.xml \
 	-a -f docs/api/settings-spec.xml \
-	-a -f cli/src/settings-docs.c; then
+	-a -f clients/cli/settings-docs.c; then
     AC_DEFINE(HAVE_SETTING_DOCS, [1], [Define if you have pre-built settings docs])
     have_setting_docs=yes
 fi
@@ -959,6 +979,7 @@ man/NetworkManager.conf.xml
 man/nm-system-settings.conf.5
 man/nm-online.1
 man/nmcli.1
+man/nmtui.1
 po/Makefile.in
 policy/Makefile
 policy/org.freedesktop.NetworkManager.policy.in
@@ -1013,6 +1034,7 @@ if test "${enable_polkit}" = "yes"; then
 else
 	echo  "  policykit: no"
 fi
+echo "  polkit agent: ${enable_polkit_agent}"
 echo "  selinux: $have_selinux"
 echo
 

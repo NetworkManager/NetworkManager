@@ -19,6 +19,8 @@
  * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <errno.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -36,6 +38,7 @@
 #include "common.h"
 #include "utils.h"
 #include "nm-core-internal.h"
+#include "NetworkManagerUtils.h"
 
 /* Some setting properties also contain setting names, such as
  * NMSettingConnection's 'type' property (which specifies the base type of the
@@ -108,36 +111,58 @@ get_one_int (const char *str, guint32 max_val, const char *key_name, guint32 *ou
 }
 
 static gpointer
-build_ip4_address_or_route (const char *key_name, const char *address_str, guint32 plen, const char *gateway_str, const char *metric_str, gboolean route)
+build_address (int family, const char *address_str, guint32 plen)
 {
-	gpointer result;
-	guint32 addr;
-	guint32 address = 0;
-	guint32 gateway = 0;
-	guint32 metric = 0;
-	int err;
+	NMIPAddress *addr;
+	GError *error = NULL;
 
 	g_return_val_if_fail (address_str, NULL);
 
-	/* Address */
-	err = inet_pton (AF_INET, address_str, &addr);
-	if (err <= 0) {
-		nm_log_warn (LOGD_SETTINGS, "%s: ignoring invalid IPv4 address '%s'", __func__, address_str);
-		return NULL;
+	addr = nm_ip_address_new (family, address_str, plen, &error);
+	if (!addr) {
+		nm_log_warn (LOGD_SETTINGS, "%s: ignoring invalid %s address: %s", __func__,
+		             family == AF_INET ? "IPv4" : "IPv6",
+		             error->message);
+		g_error_free (error);
 	}
-	address = addr;
 
-	/* Gateway */
+	return addr;
+}
+
+static gpointer
+build_route (int family,
+             const char *dest_str, guint32 plen,
+             const char *gateway_str, const char *metric_str,
+             const char *key_name)
+{
+	NMIPRoute *route;
+	guint32 metric = 0;
+	GError *error = NULL;
+
+	g_return_val_if_fail (dest_str, NULL);
+
+	/* Next hop */
 	if (gateway_str && gateway_str[0]) {
-		err = inet_pton (AF_INET, gateway_str, &addr);
-		if (err <= 0) {
-			nm_log_warn (LOGD_SETTINGS, "%s: ignoring invalid IPv4 gateway '%s'", __func__, gateway_str);
-			return NULL;
+		if (!nm_utils_ipaddr_valid (family, gateway_str)) {
+			/* Try workaround for routes written by broken keyfile writer.
+			 * Due to bug bgo#719851, an older version of writer would have
+			 * written "a:b:c:d::/plen,metric" if the gateway was ::, instead
+			 * of "a:b:c:d::/plen,,metric" or "a:b:c:d::/plen,::,metric"
+			 * Try workaround by interpreting gateway_str as metric to accept such
+			 * invalid routes. This broken syntax should not be not officially
+			 * supported.
+			 **/
+			if (   family == AF_INET6
+			    && !metric_str
+			    && get_one_int (gateway_str, G_MAXUINT32, NULL, &metric))
+				gateway_str = NULL;
+			else {
+				nm_log_warn (LOGD_SETTINGS, "%s: ignoring invalid gateway '%s'", __func__, gateway_str);
+				return NULL;
+			}
 		}
-		gateway = addr;
-	}
-	else
-		gateway = 0;
+	} else
+		gateway_str = NULL;
 
 	/* parse metric, default to 0 */
 	if (metric_str) {
@@ -145,93 +170,17 @@ build_ip4_address_or_route (const char *key_name, const char *address_str, guint
 			return NULL;
 	}
 
-	if (route) {
-		result = nm_ip4_route_new ();
-		nm_ip4_route_set_dest (result, address);
-		nm_ip4_route_set_prefix (result, plen);
-		nm_ip4_route_set_next_hop (result, gateway);
-		nm_ip4_route_set_metric (result, metric);
-	} else {
-		result = nm_ip4_address_new ();
-		nm_ip4_address_set_address (result, address);
-		nm_ip4_address_set_prefix (result, plen);
-		nm_ip4_address_set_gateway (result, gateway);
+	route = nm_ip_route_new (family, dest_str, plen, gateway_str,
+	                         metric ? (gint64) metric : -1,
+	                         &error);
+	if (!route) {
+		nm_log_warn (LOGD_SETTINGS, "%s: ignoring invalid %s route: %s", __func__,
+		             family == AF_INET ? "IPv4" : "IPv6",
+		             error->message);
+		g_error_free (error);
 	}
 
-	return result;
-}
-
-static gpointer
-build_ip6_address_or_route (const char *key_name, const char *address_str, guint32 plen, const char *gateway_str, const char *metric_str, gboolean route)
-{
-	gpointer result;
-	struct in6_addr addr;
-	guint32 metric = 0;
-	int err;
-
-	g_return_val_if_fail (address_str, NULL);
-
-	if (route)
-		result = nm_ip6_route_new ();
-	else
-		result = nm_ip6_address_new ();
-
-	/* add address and prefix length */
-	err = inet_pton (AF_INET6, address_str, &addr);
-	if (err <= 0) {
-		nm_log_warn (LOGD_SETTINGS, "%s: ignoring invalid IPv6 address '%s'", __func__, address_str);
-		goto error_out;
-	}
-	if (route) {
-		nm_ip6_route_set_dest (result, &addr);
-		nm_ip6_route_set_prefix (result, plen);
-	} else {
-		nm_ip6_address_set_address (result, &addr);
-		nm_ip6_address_set_prefix (result, plen);
-	}
-
-	/* add gateway */
-	if (gateway_str && gateway_str[0]) {
-		err = inet_pton (AF_INET6, gateway_str, &addr);
-		if (err <= 0) {
-			/* Try workaround for routes written by broken keyfile writer.
-			 * Due to bug bgo#719851, an older version of writer would have
-			 * written "a:b:c:d::/plen,metric" if the gateway was ::, instead
-			 * of "a:b:c:d::/plen,,metric" or "a:b:c:d::/plen,::,metric"
-			 * Try workaround by interepeting gateway_str as metric to accept such
-			 * invalid routes. This broken syntax should not be not officially
-			 * supported.
-			 **/
-			if (route && !metric_str && get_one_int (gateway_str, G_MAXUINT32, NULL, &metric))
-				addr = in6addr_any;
-			else {
-				nm_log_warn (LOGD_SETTINGS, "%s: ignoring invalid IPv6 gateway '%s'", __func__, gateway_str);
-				goto error_out;
-			}
-		}
-	} else
-		addr = in6addr_any;
-
-	if (route) {
-		nm_ip6_route_set_next_hop (result, &addr);
-
-		/* parse metric, default to 0 */
-		if (metric_str) {
-			if (!get_one_int (metric_str, G_MAXUINT32, key_name, &metric))
-				goto error_out;
-		}
-		nm_ip6_route_set_metric (result, metric);
-	} else
-		nm_ip6_address_set_gateway (result, &addr);
-
-	return result;
-
-error_out:
-	if (route)
-		nm_ip6_route_unref (result);
-	else
-		nm_ip4_route_unref (result);
-	return NULL;
+	return route;
 }
 
 /* On success, returns pointer to the zero-terminated field (original @current).
@@ -324,7 +273,8 @@ read_one_ip_address_or_route (GKeyFile *file,
                               const char *setting_name,
                               const char *key_name,
                               gboolean ipv6,
-                              gboolean route)
+                              gboolean route,
+                              char **out_gateway)
 {
 	guint32 plen;
 	gpointer result;
@@ -376,22 +326,32 @@ read_one_ip_address_or_route (GKeyFile *file,
 		}
 	}
 
+#define DEFAULT_PREFIX(for_route, for_ipv6) ( (for_route) ? ( (for_ipv6) ? 128 : 24 ) : ( (for_ipv6) ? 64 : 24 ) )
+
 	/* parse plen, fallback to defaults */
-	if (plen_str)
-		g_return_val_if_fail (get_one_int (plen_str, ipv6 ? 128 : 32,
-			key_name, &plen), NULL);
-	else {
-		if (route)
-			plen = ipv6 ? 128 : 24;
-		else
-			plen = ipv6 ? 64 : 24;
+	if (plen_str) {
+		if (!get_one_int (plen_str, ipv6 ? 128 : 32, key_name, &plen)) {
+			plen = DEFAULT_PREFIX (route, ipv6);
+			nm_log_warn (LOGD_SETTINGS, "keyfile: invalid prefix length '%s' in '%s.%s', defaulting to %d",
+			             plen_str, setting_name, key_name, plen);
+		}
+	} else {
+		plen = DEFAULT_PREFIX (route, ipv6);
 		nm_log_warn (LOGD_SETTINGS, "keyfile: Missing prefix length in '%s.%s', defaulting to %d",
 		             setting_name, key_name, plen);
 	}
 
 	/* build the appropriate data structure for NetworkManager settings */
-	result = (ipv6 ? build_ip6_address_or_route : build_ip4_address_or_route) (
-	    key_name, address_str, plen, gateway_str, metric_str, route);
+	if (route) {
+		result = build_route (ipv6 ? AF_INET6 : AF_INET,
+		                      address_str, plen, gateway_str, metric_str,
+		                      key_name);
+	} else {
+		result = build_address (ipv6 ? AF_INET6 : AF_INET,
+		                        address_str, plen);
+		if (out_gateway && gateway_str)
+			*out_gateway = g_strdup (gateway_str);
+	}
 
 	g_free (value);
 	return result;
@@ -409,21 +369,15 @@ ip_address_or_route_parser (NMSetting *setting, const char *key, GKeyFile *keyfi
 	static const char *key_names_routes[] = { "route", "routes", NULL };
 	static const char *key_names_addresses[] = { "address", "addresses", NULL };
 	const char **key_names = routes ? key_names_routes : key_names_addresses;
+	char *gateway = NULL;
 	GPtrArray *list;
 	GDestroyNotify free_func;
 	int i;
 
-	if (ipv6) {
-		if (routes)
-			free_func = (GDestroyNotify) nm_ip6_route_unref;
-		else
-			free_func = (GDestroyNotify) nm_ip6_address_unref;
-	} else {
-		if (routes)
-			free_func = (GDestroyNotify) nm_ip4_route_unref;
-		else
-			free_func = (GDestroyNotify) nm_ip4_address_unref;
-	}
+	if (routes)
+		free_func = (GDestroyNotify) nm_ip_route_unref;
+	else
+		free_func = (GDestroyNotify) nm_ip_address_unref;
 	list = g_ptr_array_new_with_free_func (free_func);
 
 	for (i = -1; i < 1000; i++) {
@@ -439,8 +393,8 @@ ip_address_or_route_parser (NMSetting *setting, const char *key, GKeyFile *keyfi
 			else
 				key_name = g_strdup (*key_basename);
 
-			item = read_one_ip_address_or_route (keyfile, setting_name, key_name, ipv6, routes);
-
+			item = read_one_ip_address_or_route (keyfile, setting_name, key_name, ipv6, routes,
+			                                     gateway ? NULL : &gateway);
 			if (item)
 				g_ptr_array_add (list, item);
 
@@ -450,6 +404,11 @@ ip_address_or_route_parser (NMSetting *setting, const char *key, GKeyFile *keyfi
 
 	if (list->len >= 1)
 		g_object_set (setting, key, list, NULL);
+
+	if (gateway) {
+		g_object_set (setting, "gateway", gateway, NULL);
+		g_free (gateway);
+	}
 
 	g_ptr_array_unref (list);
 }
@@ -959,27 +918,27 @@ static KeyParser key_parsers[] = {
 	  TRUE,
 	  mac_address_parser_ETHER },
 	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	  NM_SETTING_IP4_CONFIG_ADDRESSES,
+	  NM_SETTING_IP_CONFIG_ADDRESSES,
 	  FALSE,
 	  ip_address_or_route_parser },
 	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	  NM_SETTING_IP6_CONFIG_ADDRESSES,
+	  NM_SETTING_IP_CONFIG_ADDRESSES,
 	  FALSE,
 	  ip_address_or_route_parser },
 	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	  NM_SETTING_IP4_CONFIG_ROUTES,
+	  NM_SETTING_IP_CONFIG_ROUTES,
 	  FALSE,
 	  ip_address_or_route_parser },
 	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	  NM_SETTING_IP6_CONFIG_ROUTES,
+	  NM_SETTING_IP_CONFIG_ROUTES,
 	  FALSE,
 	  ip_address_or_route_parser },
 	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	  NM_SETTING_IP4_CONFIG_DNS,
+	  NM_SETTING_IP_CONFIG_DNS,
 	  FALSE,
 	  ip4_dns_parser },
 	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	  NM_SETTING_IP6_CONFIG_DNS,
+	  NM_SETTING_IP_CONFIG_DNS,
 	  FALSE,
 	  ip6_dns_parser },
 	{ NM_SETTING_WIRED_SETTING_NAME,
@@ -1067,6 +1026,7 @@ read_one_setting_value (NMSetting *setting,
 {
 	ReadInfo *info = user_data;
 	const char *setting_name;
+	int errsv;
 	GType type;
 	GError *err = NULL;
 	gboolean check_for_key = TRUE;
@@ -1167,6 +1127,18 @@ read_one_setting_value (NMSetting *setting,
 		uint_val = g_ascii_strtoull (tmp_str, NULL, 10);
 		g_free (tmp_str);
 		g_object_set (setting, key, uint_val, NULL);
+	} else if (type == G_TYPE_INT64) {
+		char *tmp_str;
+		gint64 int_val;
+
+		tmp_str = nm_keyfile_plugin_kf_get_value (info->keyfile, setting_name, key, NULL);
+		int_val = nm_utils_ascii_str_to_int64 (tmp_str, 10, G_MININT64, G_MAXINT64, 0);
+		errsv = errno;
+		if (errsv)
+			nm_log_warn (LOGD_SETTINGS, "Invalid int64 value (%s)", tmp_str);
+		else
+			g_object_set (setting, key, int_val, NULL);
+		g_free (tmp_str);
  	} else if (type == G_TYPE_BYTES) {
 		gint *tmp;
 		GByteArray *array;

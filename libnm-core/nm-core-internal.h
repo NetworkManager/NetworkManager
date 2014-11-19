@@ -74,12 +74,6 @@
 		g_clear_object (&c); \
 	}
 
-const char *_nm_setting_ip4_config_get_address_label      (NMSettingIP4Config *setting,
-                                                           guint32             i);
-gboolean    _nm_setting_ip4_config_add_address_with_label (NMSettingIP4Config *setting,
-                                                           NMIP4Address       *address,
-                                                           const char         *label);
-
 /* NM_SETTING_COMPARE_FLAG_INFERRABLE: check whether a device-generated
  * connection can be replaced by a already-defined connection. This flag only
  * takes into account properties marked with the %NM_SETTING_PARAM_INFERRABLE
@@ -120,5 +114,7 @@ gboolean    _nm_utils_string_in_list   (const char *str,
                                         const char **valid_strings);
 
 void _nm_dbus_errors_init (void);
+
+extern gboolean _nm_utils_is_manager_process;
 
 #endif

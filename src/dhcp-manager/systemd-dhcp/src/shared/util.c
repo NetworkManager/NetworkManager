@@ -19,6 +19,10 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
+#include "config.h"
+
+#include "nm-sd-adapt.h"
+
 #include <assert.h>
 #include <string.h>
 #include <unistd.h>
@@ -69,6 +73,7 @@
 
 #include "macro.h"
 #include "util.h"
+#if 0 /* NM_IGNORED */
 #include "ioprio.h"
 #include "missing.h"
 #include "log.h"
@@ -85,7 +90,9 @@
 #include "gunicode.h"
 #include "virt.h"
 #include "def.h"
+#endif
 
+#if 0 /* NM_IGNORED */
 int saved_argc = 0;
 char **saved_argv = NULL;
 
@@ -105,6 +112,7 @@ size_t page_size(void) {
         pgsz = (size_t) r;
         return pgsz;
 }
+#endif
 
 bool streq_ptr(const char *a, const char *b) {
 
@@ -219,6 +227,7 @@ int safe_close(int fd) {
         return -1;
 }
 
+#if 0 /* NM_IGNORED */
 void close_many(const int fds[], unsigned n_fd) {
         unsigned i;
 
@@ -302,6 +311,7 @@ int parse_uid(const char *s, uid_t* ret_uid) {
         *ret_uid = uid;
         return 0;
 }
+#endif
 
 int safe_atou(const char *s, unsigned *ret_u) {
         char *x = NULL;
@@ -323,6 +333,7 @@ int safe_atou(const char *s, unsigned *ret_u) {
         return 0;
 }
 
+#if 0 /* NM_IGNORED */
 int safe_atoi(const char *s, int *ret_i) {
         char *x = NULL;
         long l;
@@ -455,6 +466,7 @@ int safe_atod(const char *s, double *ret_d) {
         *ret_d = (double) d;
         return 0;
 }
+#endif
 
 static size_t strcspn_escaped(const char *s, const char *reject) {
         bool escaped = false;
@@ -512,6 +524,7 @@ const char* split(const char **state, size_t *l, const char *separator, bool quo
         return current;
 }
 
+#if 0 /* NM_IGNORED */
 int get_parent_of_pid(pid_t pid, pid_t *_ppid) {
         int r;
         _cleanup_free_ char *line = NULL;
@@ -604,6 +617,7 @@ int get_starttime_of_pid(pid_t pid, unsigned long long *st) {
 
         return 0;
 }
+#endif
 
 int fchmod_umask(int fd, mode_t m) {
         mode_t u;
@@ -623,6 +637,7 @@ char *truncate_nl(char *s) {
         return s;
 }
 
+#if 0 /* NM_IGNORED */
 int get_process_state(pid_t pid) {
         const char *p;
         char state;
@@ -860,6 +875,7 @@ int get_process_gid(pid_t pid, gid_t *gid) {
         assert_cc(sizeof(uid_t) == sizeof(gid_t));
         return get_process_id(pid, "Gid:", gid);
 }
+#endif
 
 char *strnappend(const char *s, const char *suffix, size_t b) {
         size_t a;
@@ -896,6 +912,7 @@ char *strappend(const char *s, const char *suffix) {
         return strnappend(s, suffix, suffix ? strlen(suffix) : 0);
 }
 
+#if 0 /* NM_IGNORED */
 int readlinkat_malloc(int fd, const char *p, char **ret) {
         size_t l = 100;
         int r;
@@ -1032,6 +1049,7 @@ int reset_signal_mask(void) {
 
         return 0;
 }
+#endif
 
 char *strstrip(char *s) {
         char *e;
@@ -1050,6 +1068,7 @@ char *strstrip(char *s) {
         return s;
 }
 
+#if 0 /* NM_IGNORED */
 char *delete_chars(char *s, const char *bad) {
         char *f, *t;
 
@@ -1139,6 +1158,7 @@ int rmdir_parents(const char *path, const char *stop) {
 
         return 0;
 }
+#endif
 
 char hexchar(int x) {
         static const char table[16] = "0123456789abcdef";
@@ -1436,6 +1456,7 @@ char *cunescape_length(const char *s, size_t length) {
         return cunescape_length_with_prefix(s, length, NULL);
 }
 
+#if 0 /* NM_IGNORED */
 char *cunescape(const char *s) {
         assert(s);
 
@@ -1625,6 +1646,7 @@ int close_all_fds(const int except[], unsigned n_except) {
 
         return r;
 }
+#endif
 
 bool chars_intersect(const char *a, const char *b) {
         const char *p;
@@ -1637,6 +1659,7 @@ bool chars_intersect(const char *a, const char *b) {
         return false;
 }
 
+#if 0 /* NM_IGNORED */
 bool fstype_is_network(const char *fstype) {
         static const char table[] =
                 "cifs\0"
@@ -1660,7 +1683,7 @@ bool fstype_is_network(const char *fstype) {
 }
 
 int chvt(int vt) {
-        _cleanup_close_ int fd;
+        _cleanup_close_ int fd = -1;
 
         fd = open_terminal("/dev/tty0", O_RDWR|O_NOCTTY|O_CLOEXEC);
         if (fd < 0)
@@ -2246,6 +2269,7 @@ void safe_close_pair(int p[]) {
         p[0] = safe_close(p[0]);
         p[1] = safe_close(p[1]);
 }
+#endif
 
 ssize_t loop_read(int fd, void *buf, size_t nbytes, bool do_poll) {
         uint8_t *p = buf;
@@ -2282,6 +2306,7 @@ ssize_t loop_read(int fd, void *buf, size_t nbytes, bool do_poll) {
         return n;
 }
 
+#if 0 /* NM_IGNORED */
 ssize_t loop_write(int fd, const void *buf, size_t nbytes, bool do_poll) {
         const uint8_t *p = buf;
         ssize_t n = 0;
@@ -2526,6 +2551,7 @@ char* dirname_malloc(const char *path) {
 
         return dir;
 }
+#endif
 
 int dev_urandom(void *p, size_t n) {
         static int have_syscall = -1;
@@ -2629,6 +2655,7 @@ void random_bytes(void *p, size_t n) {
                 *q = rand();
 }
 
+#if 0 /* NM_IGNORED */
 void rename_process(const char name[8]) {
         assert(name);
 
@@ -3591,7 +3618,7 @@ char *ellipsize(const char *s, size_t length, unsigned percent) {
 }
 
 int touch_file(const char *path, bool parents, usec_t stamp, uid_t uid, gid_t gid, mode_t mode) {
-        _cleanup_close_ int fd;
+        _cleanup_close_ int fd = -1;
         int r;
 
         assert(path);
@@ -4137,6 +4164,7 @@ char* strshorten(char *s, size_t l) {
 
         return s;
 }
+#endif
 
 static bool hostname_valid_char(char c) {
         return
@@ -4178,6 +4206,7 @@ bool hostname_is_valid(const char *s) {
         return true;
 }
 
+#if 0 /* NM_IGNORED */
 char* hostname_cleanup(char *s, bool lowercase) {
         char *p, *d;
         bool dot;
@@ -4238,6 +4267,7 @@ int pipe_eof(int fd) {
 
         return pollfd.revents & POLLHUP;
 }
+#endif
 
 int fd_wait_for_event(int fd, int event, usec_t t) {
 
@@ -4291,6 +4321,7 @@ int fopen_temporary(const char *path, FILE **_f, char **_temp_path) {
         return 0;
 }
 
+#if 0 /* NM_IGNORED */
 int terminal_vhangup_fd(int fd) {
         assert(fd >= 0);
 
@@ -4301,7 +4332,7 @@ int terminal_vhangup_fd(int fd) {
 }
 
 int terminal_vhangup(const char *name) {
-        _cleanup_close_ int fd;
+        _cleanup_close_ int fd = -1;
 
         fd = open_terminal(name, O_RDWR|O_NOCTTY|O_CLOEXEC);
         if (fd < 0)
@@ -4769,6 +4800,7 @@ int get_files_in_directory(const char *path, char ***list) {
 
         return n;
 }
+#endif
 
 char *strjoin(const char *x, ...) {
         va_list ap;
@@ -4827,6 +4859,7 @@ char *strjoin(const char *x, ...) {
         return r;
 }
 
+#if 0 /* NM_IGNORED */
 bool is_main_thread(void) {
         static thread_local int cached = 0;
 
@@ -5134,6 +5167,7 @@ finish:
         return buf;
 
 }
+#endif
 
 void* memdup(const void *p, size_t l) {
         void *r;
@@ -5148,6 +5182,7 @@ void* memdup(const void *p, size_t l) {
         return r;
 }
 
+#if 0 /* NM_IGNORED */
 int fd_inc_sndbuf(int fd, size_t n) {
         int r, value;
         socklen_t l = sizeof(value);
@@ -5579,6 +5614,7 @@ bool string_is_safe(const char *p) {
 
         return true;
 }
+#endif
 
 /**
  * Check if a string contains control characters. If 'ok' is non-NULL
@@ -5603,6 +5639,7 @@ bool string_has_cc(const char *p, const char *ok) {
         return false;
 }
 
+#if 0 /* NM_IGNORED */
 bool path_is_safe(const char *p) {
 
         if (isempty(p))
@@ -6080,6 +6117,7 @@ char *strrep(const char *s, unsigned n) {
         *p = 0;
         return r;
 }
+#endif
 
 void* greedy_realloc(void **p, size_t *allocated, size_t need, size_t size) {
         size_t a, newalloc;
@@ -6107,6 +6145,7 @@ void* greedy_realloc(void **p, size_t *allocated, size_t need, size_t size) {
         return q;
 }
 
+#if 0 /* NM_IGNORED */
 void* greedy_realloc0(void **p, size_t *allocated, size_t need, size_t size) {
         size_t prev;
         uint8_t *q;
@@ -6494,6 +6533,7 @@ int getpeersec(int fd, char **ret) {
         *ret = s;
         return 0;
 }
+#endif
 
 /* This is much like like mkostemp() but is subject to umask(). */
 int mkostemp_safe(char *pattern, int flags) {
@@ -6511,6 +6551,7 @@ int mkostemp_safe(char *pattern, int flags) {
         return fd;
 }
 
+#if 0 /* NM_IGNORED */
 int open_tmpfile(const char *path, int flags) {
         char *p;
         int fd;
@@ -6897,6 +6938,7 @@ int bind_remount_recursive(const char *prefix, bool ro) {
                 }
         }
 }
+#endif
 
 int fflush_and_check(FILE *f) {
         assert(f);
@@ -6929,6 +6971,7 @@ char *tempfn_xxxxxx(const char *p) {
         return t;
 }
 
+#if 0 /* NM_IGNORED */
 char *tempfn_random(const char *p) {
         const char *fn;
         char *t, *x;
@@ -6957,6 +7000,7 @@ char *tempfn_random(const char *p) {
 
         return t;
 }
+#endif
 
 /* make sure the hostname is not "localhost" */
 bool is_localhost(const char *hostname) {
@@ -6975,6 +7019,7 @@ bool is_localhost(const char *hostname) {
                endswith(hostname, ".localdomain.");
 }
 
+#if 0 /* NM_IGNORED */
 int take_password_lock(const char *root) {
 
         struct flock flock = {
@@ -7294,3 +7339,5 @@ int sethostname_idempotent(const char *s) {
 
         return 1;
 }
+#endif
+

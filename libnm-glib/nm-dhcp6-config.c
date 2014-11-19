@@ -19,6 +19,8 @@
  * Copyright 2008 Novell, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 
 #include "nm-dhcp6-config.h"

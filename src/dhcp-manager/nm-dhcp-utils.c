@@ -17,11 +17,13 @@
  *
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <glib.h>
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
+#include <arpa/inet.h>
 
 #include "nm-logging.h"
 #include "nm-dhcp-utils.h"
@@ -33,7 +35,7 @@
 
 static gboolean
 ip4_process_dhcpcd_rfc3442_routes (const char *str,
-                                   guint priority,
+                                   guint32 priority,
                                    NMIP4Config *ip4_config,
                                    guint32 *gwaddr)
 {
@@ -160,7 +162,7 @@ error:
 
 static gboolean
 ip4_process_dhclient_rfc3442_routes (const char *str,
-                                     guint priority,
+                                     guint32 priority,
                                      NMIP4Config *ip4_config,
                                      guint32 *gwaddr)
 {
@@ -208,7 +210,7 @@ out:
 
 static gboolean
 ip4_process_classless_routes (GHashTable *options,
-                              guint priority,
+                              guint32 priority,
                               NMIP4Config *ip4_config,
                               guint32 *gwaddr)
 {
@@ -271,7 +273,7 @@ ip4_process_classless_routes (GHashTable *options,
 }
 
 static void
-process_classful_routes (GHashTable *options, guint priority, NMIP4Config *ip4_config)
+process_classful_routes (GHashTable *options, guint32 priority, NMIP4Config *ip4_config)
 {
 	const char *str;
 	char **searches, **s;
@@ -373,7 +375,7 @@ ip4_add_domain_search (gpointer data, gpointer user_data)
 NMIP4Config *
 nm_dhcp_utils_ip4_config_from_options (const char *iface,
                                        GHashTable *options,
-                                       guint priority)
+                                       guint32 priority)
 {
 	NMIP4Config *ip4_config = NULL;
 	guint32 tmp_addr;
@@ -590,7 +592,7 @@ ip6_add_domain_search (gpointer data, gpointer user_data)
 NMIP6Config *
 nm_dhcp_utils_ip6_config_from_options (const char *iface,
                                        GHashTable *options,
-                                       guint priority,
+                                       guint32 priority,
                                        gboolean info_only)
 {
 	NMIP6Config *ip6_config = NULL;
@@ -690,5 +692,41 @@ nm_dhcp_utils_duid_to_string (const GByteArray *duid)
 		g_string_append_printf (s, "%02x", duid->data[i++]);
 	}
 	return g_string_free (s, FALSE);
+}
+
+/**
+ * nm_dhcp_utils_client_id_string_to_bytes:
+ * @client_id: the client ID string
+ *
+ * Accepts either a hex string ("aa:bb:cc") representing a binary client ID
+ * (the first byte is assumed to be the 'type' field per RFC 2132 section 9.14),
+ * or a string representing a non-hardware-address client ID, in which case
+ * the 'type' field is set to 0.
+ *
+ * Returns: the binary client ID suitable for sending over the wire
+ * to the DHCP server.
+ */
+GBytes *
+nm_dhcp_utils_client_id_string_to_bytes (const char *client_id)
+{
+	GBytes *bytes = NULL;
+	guint len;
+	char *c;
+
+	g_return_val_if_fail (client_id && client_id[0], NULL);
+
+	/* Try as hex encoded */
+	if (strchr (client_id, ':'))
+		bytes = nm_utils_hexstr2bin (client_id);
+	if (!bytes) {
+		/* Fall back to string */
+		len = strlen (client_id);
+		c = g_malloc (len + 1);
+		c[0] = 0;  /* type: non-hardware address per RFC 2132 section 9.14 */
+		memcpy (c + 1, client_id, len);
+		bytes = g_bytes_new_take (c, len + 1);
+	}
+
+	return bytes;
 }
 

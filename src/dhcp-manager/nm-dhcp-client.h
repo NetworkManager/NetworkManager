@@ -64,13 +64,11 @@ typedef struct {
 	/* Methods */
 
 	gboolean (*ip4_start)     (NMDhcpClient *self,
-	                           const char *dhcp_client_id,
 	                           const char *anycast_addr,
-	                           const char *hostname);
+	                           const char *last_ip4_address);
 
 	gboolean (*ip6_start)     (NMDhcpClient *self,
 	                           const char *anycast_addr,
-	                           const char *hostname,
 	                           gboolean info_only,
 	                           NMSettingIP6ConfigPrivacy privacy,
 	                           const GByteArray *duid);
@@ -99,6 +97,17 @@ typedef struct {
 
 GType nm_dhcp_client_get_type (void);
 
+typedef const char *(*NMDhcpClientGetPathFunc) (void);
+
+typedef GSList *    (*NMDhcpClientGetLeaseConfigsFunc) (const char *iface,
+                                                        const char *uuid,
+                                                        gboolean ipv6);
+
+void _nm_dhcp_client_register (GType gtype,
+                               const char *name,
+                               NMDhcpClientGetPathFunc get_path_func,
+                               NMDhcpClientGetLeaseConfigsFunc get_lease_configs_func);
+
 pid_t nm_dhcp_client_get_pid (NMDhcpClient *self);
 
 const char *nm_dhcp_client_get_iface (NMDhcpClient *self);
@@ -115,10 +124,15 @@ const GByteArray *nm_dhcp_client_get_hw_addr (NMDhcpClient *self);
 
 guint32 nm_dhcp_client_get_priority (NMDhcpClient *self);
 
+GBytes *nm_dhcp_client_get_client_id (NMDhcpClient *self);
+
+const char *nm_dhcp_client_get_hostname (NMDhcpClient *self);
+
 gboolean nm_dhcp_client_start_ip4 (NMDhcpClient *self,
                                    const char *dhcp_client_id,
                                    const char *dhcp_anycast_addr,
-                                   const char *hostname);
+                                   const char *hostname,
+                                   const char *last_ip4_address);
 
 gboolean nm_dhcp_client_start_ip6 (NMDhcpClient *self,
                                    const char *dhcp_anycast_addr,
@@ -127,10 +141,6 @@ gboolean nm_dhcp_client_start_ip6 (NMDhcpClient *self,
                                    NMSettingIP6ConfigPrivacy privacy);
 
 void nm_dhcp_client_stop (NMDhcpClient *self, gboolean release);
-
-void nm_dhcp_client_new_options (NMDhcpClient *self,
-                                 GHashTable *options,
-                                 const char *reason);
 
 /* Backend helpers for subclasses */
 void nm_dhcp_client_stop_existing (const char *pid_file, const char *binary_name);
@@ -143,6 +153,15 @@ void nm_dhcp_client_set_state (NMDhcpClient *self,
                                NMDhcpState new_state,
                                GObject *ip_config,   /* NMIP4Config or NMIP6Config */
                                GHashTable *options); /* str:str hash */
+
+gboolean nm_dhcp_client_handle_event (gpointer unused,
+                                      const char *iface,
+                                      gint pid,
+                                      GHashTable *options,
+                                      const char *reason,
+                                      NMDhcpClient *self);
+
+void nm_dhcp_client_set_client_id (NMDhcpClient *self, GBytes *client_id);
 
 #endif /* __NETWORKMANAGER_DHCP_CLIENT_H__ */
 

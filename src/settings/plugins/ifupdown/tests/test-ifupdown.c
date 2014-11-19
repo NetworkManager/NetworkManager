@@ -18,6 +18,8 @@
  *
  */
 
+#include "config.h"
+
 #include <glib.h>
 #include <string.h>
 
@@ -459,18 +461,15 @@ test17_read_static_ipv4 (const char *path)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	NMSettingWired *s_wired;
 	char *unmanaged = NULL;
 	GError *error = NULL;
 	const char* tmp;
-	const char *expected_address = "10.0.0.3";
 	const char *expected_id = "Ifupdown (eth0)";
 	const char *expected_search1 = "example.com";
 	const char *expected_search2 = "foo.example.com";
-	guint32 expected_prefix = 8;
-	NMIP4Address *ip4_addr;
-	guint32 addr;
+	NMIPAddress *ip4_addr;
 #define TEST17_NAME "wired-static-verify-ip4"
 	if_block *block = NULL;
 
@@ -521,10 +520,6 @@ test17_read_static_ipv4 (const char *path)
 
 	/* ===== IPv4 SETTING ===== */
 
-	ASSERT (inet_pton (AF_INET, expected_address, &addr) > 0,
-			TEST17_NAME, "failed to verify %s: couldn't convert IP address #1",
-			file);
-
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	ASSERT (s_ip4 != NULL,
 			TEST17_NAME, "failed to verify %s: missing %s setting",
@@ -532,89 +527,81 @@ test17_read_static_ipv4 (const char *path)
 			NM_SETTING_IP4_CONFIG_SETTING_NAME);
 
 	/* Method */
-	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	tmp = nm_setting_ip_config_get_method (s_ip4);
 	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) == 0,
 			TEST17_NAME, "failed to verify %s: unexpected %s / %s key value",
 			file,
 			NM_SETTING_IP4_CONFIG_SETTING_NAME,
-			NM_SETTING_IP4_CONFIG_METHOD);
+			NM_SETTING_IP_CONFIG_METHOD);
 
 	/* IP addresses */
-	ASSERT (nm_setting_ip4_config_get_num_addresses (s_ip4) == 1,
+	ASSERT (nm_setting_ip_config_get_num_addresses (s_ip4) == 1,
 			TEST17_NAME, "failed to verify %s: unexpected %s / %s key value",
 			file,
 			NM_SETTING_IP4_CONFIG_SETTING_NAME,
-			NM_SETTING_IP4_CONFIG_ADDRESSES);
+			NM_SETTING_IP_CONFIG_ADDRESSES);
 
-	ip4_addr = nm_setting_ip4_config_get_address (s_ip4, 0);
-	ASSERT (ip4_addr,
-			TEST17_NAME, "failed to verify %s: missing IP4 address #1",
-			file);
-
-	ASSERT (nm_ip4_address_get_prefix (ip4_addr) == expected_prefix,
-			TEST17_NAME, "failed to verify %s: unexpected IP4 address prefix",
-			file);
-
-	ASSERT (nm_ip4_address_get_address (ip4_addr) == addr,
-			TEST17_NAME, "failed to verify %s: unexpected IP4 address: %s",
-			file, addr);
+	ip4_addr = nm_setting_ip_config_get_address (s_ip4, 0);
+	g_assert (ip4_addr != NULL);
+	g_assert_cmpstr (nm_ip_address_get_address (ip4_addr), ==, "10.0.0.3");
+	g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 8);
 
 	/* DNS Addresses */
-	ASSERT (nm_setting_ip4_config_get_num_dns (s_ip4) == 2,
+	ASSERT (nm_setting_ip_config_get_num_dns (s_ip4) == 2,
 			TEST17_NAME, "failed to verify %s: unexpected %s / %s key value",
 			file,
 			NM_SETTING_IP4_CONFIG_SETTING_NAME,
-			NM_SETTING_IP4_CONFIG_DNS);
+			NM_SETTING_IP_CONFIG_DNS);
 
-	ASSERT (!strcmp (nm_setting_ip4_config_get_dns (s_ip4, 0), "10.0.0.1"),
+	ASSERT (!strcmp (nm_setting_ip_config_get_dns (s_ip4, 0), "10.0.0.1"),
 			TEST17_NAME, "failed to verify %s: unexpected %s / %s key value #1",
 			file,
 			NM_SETTING_IP4_CONFIG_SETTING_NAME,
-			NM_SETTING_IP4_CONFIG_DNS);
+			NM_SETTING_IP_CONFIG_DNS);
 
-	ASSERT (!strcmp (nm_setting_ip4_config_get_dns (s_ip4, 1), "10.0.0.2"),
+	ASSERT (!strcmp (nm_setting_ip_config_get_dns (s_ip4, 1), "10.0.0.2"),
 			TEST17_NAME, "failed to verify %s: unexpected %s / %s key value #2",
 			file,
 			NM_SETTING_IP4_CONFIG_SETTING_NAME,
-			NM_SETTING_IP4_CONFIG_DNS);
+			NM_SETTING_IP_CONFIG_DNS);
 
-	ASSERT (nm_setting_ip4_config_get_num_addresses (s_ip4) == 1,
+	ASSERT (nm_setting_ip_config_get_num_addresses (s_ip4) == 1,
 			TEST17_NAME, "failed to verify %s: unexpected %s / %s key value",
 			file,
 			NM_SETTING_IP4_CONFIG_SETTING_NAME,
-			NM_SETTING_IP4_CONFIG_DNS);
+			NM_SETTING_IP_CONFIG_DNS);
 
 	/* DNS search domains */
-	ASSERT (nm_setting_ip4_config_get_num_dns_searches (s_ip4) == 2,
+	ASSERT (nm_setting_ip_config_get_num_dns_searches (s_ip4) == 2,
 			TEST17_NAME, "failed to verify %s: unexpected %s / %s key value",
 			file,
 			NM_SETTING_IP4_CONFIG_SETTING_NAME,
-			NM_SETTING_IP4_CONFIG_DNS);
+			NM_SETTING_IP_CONFIG_DNS);
 
-	tmp = nm_setting_ip4_config_get_dns_search (s_ip4, 0);
+	tmp = nm_setting_ip_config_get_dns_search (s_ip4, 0);
 	ASSERT (tmp != NULL,
 			TEST17_NAME, "failed to verify %s: missing %s / %s key",
 			file,
 			NM_SETTING_IP4_CONFIG_SETTING_NAME,
-			NM_SETTING_IP4_CONFIG_DNS_SEARCH);
+			NM_SETTING_IP_CONFIG_DNS_SEARCH);
 	ASSERT (strcmp (tmp, expected_search1) == 0,
 			TEST17_NAME, "failed to verify %s: unexpected %s / %s key value",
 			file,
 			NM_SETTING_IP4_CONFIG_SETTING_NAME,
-			NM_SETTING_IP4_CONFIG_DNS_SEARCH);
+			NM_SETTING_IP_CONFIG_DNS_SEARCH);
 
-	tmp = nm_setting_ip4_config_get_dns_search (s_ip4, 1);
+	tmp = nm_setting_ip_config_get_dns_search (s_ip4, 1);
 	ASSERT (tmp != NULL,
 			TEST17_NAME, "failed to verify %s: missing %s / %s key",
 			file,
 			NM_SETTING_IP4_CONFIG_SETTING_NAME,
-			NM_SETTING_IP4_CONFIG_DNS_SEARCH);
+			NM_SETTING_IP_CONFIG_DNS_SEARCH);
 
 	ASSERT (strcmp (tmp, expected_search2) == 0,
 			TEST17_NAME, "failed to verify %s: unexpected %s / %s key value",
 			file,
 			NM_SETTING_IP4_CONFIG_SETTING_NAME,
-			NM_SETTING_IP4_CONFIG_DNS_SEARCH);
+			NM_SETTING_IP_CONFIG_DNS_SEARCH);
 
 	g_object_unref (connection);
 }
@@ -624,18 +611,15 @@ test18_read_static_ipv6 (const char *path)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip6;
 	NMSettingWired *s_wired;
 	char *unmanaged = NULL;
 	GError *error = NULL;
 	const char* tmp;
-	const char *expected_address = "fc00::1";
 	const char *expected_id = "Ifupdown (myip6tunnel)";
 	const char *expected_search1 = "example.com";
 	const char *expected_search2 = "foo.example.com";
-	guint32 expected_prefix = 64;
-	NMIP6Address *ip6_addr;
-	struct in6_addr addr;
+	NMIPAddress *ip6_addr;
 	if_block *block = NULL;
 #define TEST18_NAME "wired-static-verify-ip6"
 	const char* file = "test18-" TEST18_NAME;
@@ -691,11 +675,6 @@ test18_read_static_ipv6 (const char *path)
 
 	/* ===== IPv6 SETTING ===== */
 
-	ASSERT (inet_pton (AF_INET6, expected_address, &addr) > 0,
-			TEST18_NAME,
-			"failed to verify %s: couldn't convert IP address #1",
-			file);
-
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	ASSERT (s_ip6 != NULL,
 			TEST18_NAME,
@@ -704,103 +683,85 @@ test18_read_static_ipv6 (const char *path)
 			NM_SETTING_IP6_CONFIG_SETTING_NAME);
 
 	/* Method */
-	tmp = nm_setting_ip6_config_get_method (s_ip6);
+	tmp = nm_setting_ip_config_get_method (s_ip6);
 	ASSERT (strcmp (tmp, NM_SETTING_IP6_CONFIG_METHOD_MANUAL) == 0,
 			TEST18_NAME,
 			"failed to verify %s: unexpected %s / %s key value",
 			file,
 			NM_SETTING_IP6_CONFIG_SETTING_NAME,
-			NM_SETTING_IP6_CONFIG_METHOD);
+			NM_SETTING_IP_CONFIG_METHOD);
 
 	/* IP addresses */
-	ASSERT (nm_setting_ip6_config_get_num_addresses (s_ip6) == 1,
+	ASSERT (nm_setting_ip_config_get_num_addresses (s_ip6) == 1,
 			TEST18_NAME,
 			"failed to verify %s: unexpected number of %s / %s",
 			file,
 			NM_SETTING_IP6_CONFIG_SETTING_NAME,
-			NM_SETTING_IP6_CONFIG_ADDRESSES);
+			NM_SETTING_IP_CONFIG_ADDRESSES);
 
-	ip6_addr = nm_setting_ip6_config_get_address (s_ip6, 0);
-	ASSERT (ip6_addr,
-			TEST18_NAME,
-			"failed to verify %s: missing %s / %s #1",
-			file,
-			NM_SETTING_IP6_CONFIG_SETTING_NAME,
-			NM_SETTING_IP6_CONFIG_ADDRESSES);
-
-	ASSERT (nm_ip6_address_get_prefix (ip6_addr) == expected_prefix,
-			TEST18_NAME
-			"failed to verify %s: unexpected %s / %s prefix",
-			file,
-			NM_SETTING_IP6_CONFIG_SETTING_NAME,
-			NM_SETTING_IP6_CONFIG_ADDRESSES);
-
-	ASSERT (IN6_ARE_ADDR_EQUAL (nm_ip6_address_get_address (ip6_addr),
-								&addr),
-			TEST18_NAME,
-			"failed to verify %s: unexpected %s / %s",
-			file,
-			NM_SETTING_IP6_CONFIG_SETTING_NAME,
-			NM_SETTING_IP6_CONFIG_ADDRESSES);
+	ip6_addr = nm_setting_ip_config_get_address (s_ip6, 0);
+	g_assert (ip6_addr != NULL);
+	g_assert_cmpstr (nm_ip_address_get_address (ip6_addr), ==, "fc00::1");
+	g_assert_cmpint (nm_ip_address_get_prefix (ip6_addr), ==, 64);
 
 	/* DNS Addresses */
-	ASSERT (nm_setting_ip6_config_get_num_dns (s_ip6) == 2,
+	ASSERT (nm_setting_ip_config_get_num_dns (s_ip6) == 2,
 			TEST18_NAME,
 			"failed to verify %s: unexpected number of %s / %s values",
 			file,
 			NM_SETTING_IP6_CONFIG_SETTING_NAME,
-			NM_SETTING_IP6_CONFIG_DNS);
+			NM_SETTING_IP_CONFIG_DNS);
 
-	ASSERT (!strcmp (nm_setting_ip6_config_get_dns (s_ip6, 0), "fc00::2"),
+	ASSERT (!strcmp (nm_setting_ip_config_get_dns (s_ip6, 0), "fc00::2"),
 			TEST18_NAME,
 			"failed to verify %s: unexpected %s / %s #1",
 			file,
 			NM_SETTING_IP6_CONFIG_SETTING_NAME,
-			NM_SETTING_IP6_CONFIG_DNS);
+			NM_SETTING_IP_CONFIG_DNS);
 
-	ASSERT (!strcmp (nm_setting_ip6_config_get_dns (s_ip6, 1), "fc00::3"),
+	ASSERT (!strcmp (nm_setting_ip_config_get_dns (s_ip6, 1), "fc00::3"),
 			TEST18_NAME, "failed to verify %s: unexpected %s / %s #2",
 			file,
 			NM_SETTING_IP6_CONFIG_SETTING_NAME,
-			NM_SETTING_IP6_CONFIG_DNS);
+			NM_SETTING_IP_CONFIG_DNS);
 
 	/* DNS search domains */
-	ASSERT (nm_setting_ip6_config_get_num_dns_searches (s_ip6) == 2,
+	ASSERT (nm_setting_ip_config_get_num_dns_searches (s_ip6) == 2,
 			TEST18_NAME,
 			"failed to verify %s: unexpected number of %s / %s values",
 			file,
 			NM_SETTING_IP6_CONFIG_SETTING_NAME,
-			NM_SETTING_IP6_CONFIG_DNS_SEARCH);
+			NM_SETTING_IP_CONFIG_DNS_SEARCH);
 
-	tmp = nm_setting_ip6_config_get_dns_search (s_ip6, 0);
+	tmp = nm_setting_ip_config_get_dns_search (s_ip6, 0);
 	ASSERT (tmp != NULL,
 			"wired-ipv6-manual-verify-ip6",
 			"failed to verify %s: missing %s / %s #1",
 			file,
 			NM_SETTING_IP6_CONFIG_SETTING_NAME,
-			NM_SETTING_IP6_CONFIG_DNS_SEARCH);
+			NM_SETTING_IP_CONFIG_DNS_SEARCH);
 
 	ASSERT (strcmp (tmp, expected_search1) == 0,
 			"wired-ipv6-manual-verify-ip6",
 			"failed to verify %s: unexpected %s / %s #1",
 			file,
 			NM_SETTING_IP6_CONFIG_SETTING_NAME,
-			NM_SETTING_IP6_CONFIG_DNS_SEARCH);
+			NM_SETTING_IP_CONFIG_DNS_SEARCH);
 
-	tmp = nm_setting_ip6_config_get_dns_search (s_ip6, 1);
+	tmp = nm_setting_ip_config_get_dns_search (s_ip6, 1);
 	ASSERT (tmp != NULL,
 			TEST18_NAME,
 			"failed to verify %s: missing %s / %s #2",
 			file,
 			NM_SETTING_IP6_CONFIG_SETTING_NAME,
-			NM_SETTING_IP6_CONFIG_DNS_SEARCH);
+			NM_SETTING_IP_CONFIG_DNS_SEARCH);
 
 	ASSERT (strcmp (tmp, expected_search2) == 0,
 			TEST18_NAME,
 			"failed to verify %s: unexpected %s / %s #2",
 			file,
 			NM_SETTING_IP6_CONFIG_SETTING_NAME,
-			NM_SETTING_IP6_CONFIG_DNS_SEARCH);
+			NM_SETTING_IP_CONFIG_DNS_SEARCH);
 
 	g_free (unmanaged);
 	g_object_unref (connection);
@@ -810,13 +771,10 @@ static void
 test19_read_static_ipv4_plen (const char *path)
 {
 	NMConnection *connection;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	char *unmanaged = NULL;
 	GError *error = NULL;
-	const char *expected_address = "10.0.0.3";
-	guint32 expected_prefix = 8;
-	NMIP4Address *ip4_addr;
-	guint32 addr;
+	NMIPAddress *ip4_addr;
 #define TEST19_NAME "wired-static-verify-ip4-plen"
 	if_block *block = NULL;
 
@@ -838,10 +796,6 @@ test19_read_static_ipv4_plen (const char *path)
 
 	/* ===== IPv4 SETTING ===== */
 
-	ASSERT (inet_pton (AF_INET, expected_address, &addr) > 0,
-			TEST19_NAME, "failed to verify %s: couldn't convert IP address #1",
-			file);
-
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	ASSERT (s_ip4 != NULL,
 			TEST19_NAME, "failed to verify %s: missing %s setting",
@@ -849,24 +803,16 @@ test19_read_static_ipv4_plen (const char *path)
 			NM_SETTING_IP4_CONFIG_SETTING_NAME);
 
 	/* IP addresses */
-	ASSERT (nm_setting_ip4_config_get_num_addresses (s_ip4) == 1,
+	ASSERT (nm_setting_ip_config_get_num_addresses (s_ip4) == 1,
 			TEST19_NAME, "failed to verify %s: unexpected %s / %s key value",
 			file,
 			NM_SETTING_IP4_CONFIG_SETTING_NAME,
-			NM_SETTING_IP4_CONFIG_ADDRESSES);
+			NM_SETTING_IP_CONFIG_ADDRESSES);
 
-	ip4_addr = nm_setting_ip4_config_get_address (s_ip4, 0);
-	ASSERT (ip4_addr,
-			TEST19_NAME, "failed to verify %s: missing IP4 address #1",
-			file);
-
-	ASSERT (nm_ip4_address_get_prefix (ip4_addr) == expected_prefix,
-			TEST19_NAME, "failed to verify %s: unexpected IP4 address prefix",
-			file);
-
-	ASSERT (nm_ip4_address_get_address (ip4_addr) == addr,
-			TEST19_NAME, "failed to verify %s: unexpected IP4 address: %s",
-			file, addr);
+	ip4_addr = nm_setting_ip_config_get_address (s_ip4, 0);
+	g_assert (ip4_addr != NULL);
+	g_assert_cmpstr (nm_ip_address_get_address (ip4_addr), ==, "10.0.0.3");
+	g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 8);
 
 	g_object_unref (connection);
 }

@@ -18,6 +18,8 @@
  * Copyright (C) 2014 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <glib.h>
 #include "nm-bt-error.h"
 

@@ -18,6 +18,8 @@
  * Copyright (C) 2013 - 2014 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <signal.h>
 #include <string.h>
 #include <stdlib.h>

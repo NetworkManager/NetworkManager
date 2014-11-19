@@ -18,6 +18,8 @@
  * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <unistd.h>
@@ -108,7 +110,7 @@ test_wifi_open (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	NMSupplicantConfig *config;
 	GHashTable *hash;
 	char *uuid;
@@ -149,10 +151,10 @@ test_wifi_open (void)
 	g_bytes_unref (ssid);
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
 	        "wifi-open", "failed to verify connection: %s",
@@ -203,7 +205,7 @@ test_wifi_wep_key (const char *detail,
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	NMSupplicantConfig *config;
 	GHashTable *hash;
 	char *uuid;
@@ -254,10 +256,10 @@ test_wifi_wep_key (const char *detail,
 	nm_setting_wireless_security_set_wep_key (s_wsec, 0, key_data);	
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
 	        detail, "failed to verify connection: %s",
@@ -340,7 +342,7 @@ test_wifi_wpa_psk (const char *detail,
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	NMSupplicantConfig *config;
 	GHashTable *hash;
 	char *uuid;
@@ -397,10 +399,10 @@ test_wifi_wpa_psk (const char *detail,
 	nm_setting_wireless_security_add_group (s_wsec, "ccmp");
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
 	        detail, "failed to verify connection: %s",

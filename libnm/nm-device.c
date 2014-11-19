@@ -19,9 +19,11 @@
  * Copyright 2007 - 2012 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 #include <gudev/gudev.h>
 
 #include "nm-dbus-interface.h"
@@ -83,10 +85,10 @@ typedef struct {
 	gboolean managed;
 	gboolean firmware_missing;
 	gboolean autoconnect;
-	NMIP4Config *ip4_config;
-	NMDhcp4Config *dhcp4_config;
-	NMIP6Config *ip6_config;
-	NMDhcp6Config *dhcp6_config;
+	NMIPConfig *ip4_config;
+	NMDhcpConfig *dhcp4_config;
+	NMIPConfig *ip6_config;
+	NMDhcpConfig *dhcp6_config;
 	NMDeviceState state;
 	NMDeviceState last_seen_state;
 	NMDeviceStateReason reason;
@@ -651,43 +653,43 @@ nm_device_class_init (NMDeviceClass *device_class)
 	g_object_class_install_property
 		(object_class, PROP_IP4_CONFIG,
 		 g_param_spec_object (NM_DEVICE_IP4_CONFIG, "", "",
-		                      NM_TYPE_IP4_CONFIG,
+		                      NM_TYPE_IP_CONFIG,
 		                      G_PARAM_READABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDevice:dhcp4-config:
 	 *
-	 * The #NMDhcp4Config of the device.
+	 * The IPv4 #NMDhcpConfig of the device.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DHCP4_CONFIG,
 		 g_param_spec_object (NM_DEVICE_DHCP4_CONFIG, "", "",
-		                      NM_TYPE_DHCP4_CONFIG,
+		                      NM_TYPE_DHCP_CONFIG,
 		                      G_PARAM_READABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDevice:ip6-config:
 	 *
-	 * The #NMIP6Config of the device.
+	 * The IPv6 #NMIPConfig of the device.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_IP6_CONFIG,
 		 g_param_spec_object (NM_DEVICE_IP6_CONFIG, "", "",
-		                      NM_TYPE_IP6_CONFIG,
+		                      NM_TYPE_IP_CONFIG,
 		                      G_PARAM_READABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDevice:dhcp6-config:
 	 *
-	 * The #NMDhcp6Config of the device.
+	 * The IPv6 #NMDhcpConfig of the device.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DHCP6_CONFIG,
 		 g_param_spec_object (NM_DEVICE_DHCP6_CONFIG, "", "",
-		                      NM_TYPE_DHCP6_CONFIG,
+		                      NM_TYPE_DHCP_CONFIG,
 		                      G_PARAM_READABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
@@ -1106,15 +1108,15 @@ nm_device_get_firmware_missing (NMDevice *device)
  * nm_device_get_ip4_config:
  * @device: a #NMDevice
  *
- * Gets the current #NMIP4Config associated with the #NMDevice.
+ * Gets the current IPv4 #NMIPConfig associated with the #NMDevice.
  *
- * Note that as of NetworkManager 0.9.10, you can alternatively use
- * nm_active_connection_get_ip4_config(), which also works with VPN
- * connections.
+ * You can alternatively use nm_active_connection_get_ip4_config(), which also
+ * works with VPN connections.
  *
- * Returns: (transfer none): the #NMIP4Config or %NULL if the device is not activated.
+ * Returns: (transfer none): the IPv4 #NMIPConfig, or %NULL if the device is not
+ * activated.
  **/
-NMIP4Config *
+NMIPConfig *
 nm_device_get_ip4_config (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
@@ -1126,16 +1128,15 @@ nm_device_get_ip4_config (NMDevice *device)
  * nm_device_get_dhcp4_config:
  * @device: a #NMDevice
  *
- * Gets the current #NMDhcp4Config associated with the #NMDevice.
+ * Gets the current IPv4 #NMDhcpConfig associated with the #NMDevice.
  *
- * Note that as of NetworkManager 0.9.10, you can alternatively use
- * nm_active_connection_get_dhcp4_config(), which also works with VPN
- * connections.
+ * You can alternatively use nm_active_connection_get_dhcp4_config(), which also
+ * works with VPN connections.
  *
- * Returns: (transfer none): the #NMDhcp4Config or %NULL if the device is not activated or not
- * using DHCP.
+ * Returns: (transfer none): the IPv4 #NMDhcpConfig, or %NULL if the device is
+ * not activated or not using DHCP.
  **/
-NMDhcp4Config *
+NMDhcpConfig *
 nm_device_get_dhcp4_config (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
@@ -1147,15 +1148,14 @@ nm_device_get_dhcp4_config (NMDevice *device)
  * nm_device_get_ip6_config:
  * @device: a #NMDevice
  *
- * Gets the current #NMIP6Config associated with the #NMDevice.
+ * Gets the current IPv6 #NMIPConfig associated with the #NMDevice.
  *
- * Note that as of NetworkManager 0.9.10, you can alternatively use
- * nm_active_connection_get_ip6_config(), which also works with VPN
- * connections.
+ * You can alternatively use nm_active_connection_get_ip6_config(), which also
+ * works with VPN connections.
  *
- * Returns: (transfer none): the #NMIP6Config or %NULL if the device is not activated.
+ * Returns: (transfer none): the IPv6 #NMIPConfig or %NULL if the device is not activated.
  **/
-NMIP6Config *
+NMIPConfig *
 nm_device_get_ip6_config (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
@@ -1167,16 +1167,15 @@ nm_device_get_ip6_config (NMDevice *device)
  * nm_device_get_dhcp6_config:
  * @device: a #NMDevice
  *
- * Gets the current #NMDhcp6Config associated with the #NMDevice.
+ * Gets the current IPv6 #NMDhcpConfig associated with the #NMDevice.
  *
- * Note that as of NetworkManager 0.9.10, you can alternatively use
- * nm_active_connection_get_dhcp6_config(), which also works with VPN
- * connections.
+ * You can alternatively use nm_active_connection_get_dhcp6_config(), which also
+ * works with VPN connections.
  *
- * Returns: (transfer none): the #NMDhcp6Config or %NULL if the device is not activated or not
- * using DHCP.
+ * Returns: (transfer none): the IPv6 #NMDhcpConfig, or %NULL if the device is
+ * not activated or not using DHCPv6.
  **/
-NMDhcp6Config *
+NMDhcpConfig *
 nm_device_get_dhcp6_config (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
@@ -1252,6 +1251,19 @@ nm_device_get_available_connections (NMDevice *device)
 	return NM_DEVICE_GET_PRIVATE (device)->available_connections;
 }
 
+static inline guint8
+hex2byte (const char *hex)
+{
+	int a, b;
+	a = g_ascii_xdigit_value (*hex++);
+	if (a < 0)
+		return -1;
+	b = g_ascii_xdigit_value (*hex++);
+	if (b < 0)
+		return -1;
+	return (a << 4) | b;
+}
+
 static char *
 get_decoded_property (GUdevDevice *device, const char *property)
 {
@@ -1267,7 +1279,7 @@ get_decoded_property (GUdevDevice *device, const char *property)
 	n = unescaped = g_malloc0 (len + 1);
 	while (*p) {
 		if ((len >= 4) && (*p == '\\') && (*(p+1) == 'x')) {
-			*n++ = (char) nm_utils_hex2byte (p + 2);
+			*n++ = (char) hex2byte (p + 2);
 			p += 4;
 			len -= 4;
 		} else {
@@ -1571,8 +1583,7 @@ get_short_vendor (NMDevice *device)
  * nm_device_get_description:
  * @device: an #NMDevice
  *
- * Gets a description of @device, incorporating the results of
- * nm_device_get_short_vendor() and nm_device_get_short_product().
+ * Gets a description of @device, based on its vendor and product names.
  *
  * Returns: a description of @device. If either the vendor or the
  *   product name is unknown, this returns the interface name.

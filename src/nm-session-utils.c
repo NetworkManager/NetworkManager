@@ -17,6 +17,8 @@
  * Author: Dan Williams <dcbw@redhat.com>
  */
 
+#include "config.h"
+
 #include <pwd.h>
 #include <sys/types.h>
 

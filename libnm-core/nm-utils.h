@@ -97,8 +97,10 @@ gboolean nm_utils_wpa_psk_valid (const char *psk);
 
 GVariant  *nm_utils_ip4_dns_to_variant (char **dns);
 char     **nm_utils_ip4_dns_from_variant (GVariant *value);
-GVariant  *nm_utils_ip4_addresses_to_variant (GPtrArray *addresses);
-GPtrArray *nm_utils_ip4_addresses_from_variant (GVariant *value);
+GVariant  *nm_utils_ip4_addresses_to_variant (GPtrArray *addresses,
+                                              const char *gateway);
+GPtrArray *nm_utils_ip4_addresses_from_variant (GVariant *value,
+                                                char **out_gateway);
 GVariant  *nm_utils_ip4_routes_to_variant (GPtrArray *routes);
 GPtrArray *nm_utils_ip4_routes_from_variant (GVariant *value);
 
@@ -108,10 +110,19 @@ guint32 nm_utils_ip4_get_default_prefix (guint32 ip);
 
 GVariant  *nm_utils_ip6_dns_to_variant (char **dns);
 char     **nm_utils_ip6_dns_from_variant (GVariant *value);
-GVariant  *nm_utils_ip6_addresses_to_variant (GPtrArray *addresses);
-GPtrArray *nm_utils_ip6_addresses_from_variant (GVariant *value);
+GVariant  *nm_utils_ip6_addresses_to_variant (GPtrArray *addresses,
+                                              const char *gateway);
+GPtrArray *nm_utils_ip6_addresses_from_variant (GVariant *value,
+                                                char **out_gateway);
 GVariant  *nm_utils_ip6_routes_to_variant (GPtrArray *routes);
 GPtrArray *nm_utils_ip6_routes_from_variant (GVariant *value);
+
+GVariant  *nm_utils_ip_addresses_to_variant (GPtrArray *addresses);
+GPtrArray *nm_utils_ip_addresses_from_variant (GVariant *value,
+                                               int family);
+GVariant  *nm_utils_ip_routes_to_variant (GPtrArray *routes);
+GPtrArray *nm_utils_ip_routes_from_variant (GVariant *value,
+                                            int family);
 
 char *nm_utils_uuid_generate (void);
 char *nm_utils_uuid_generate_from_string (const char *s);
@@ -156,9 +167,8 @@ gboolean    nm_utils_hwaddr_matches   (gconstpointer hwaddr1,
                                        gconstpointer hwaddr2,
                                        gssize        hwaddr2_len);
 
-char *nm_utils_bin2hexstr (const char *bytes, int len, int final_len);
-int   nm_utils_hex2byte   (const char *hex);
-char *nm_utils_hexstr2bin (const char *hex, size_t len);
+char *nm_utils_bin2hexstr (gconstpointer src, gsize len, int final_len);
+GBytes *nm_utils_hexstr2bin (const char *hex);
 
 gboolean    nm_utils_iface_valid_name(const char *name);
 
@@ -173,6 +183,8 @@ gboolean nm_utils_is_uuid (const char *str);
 #define NM_UTILS_INET_ADDRSTRLEN     INET6_ADDRSTRLEN
 const char *nm_utils_inet4_ntop (in_addr_t inaddr, char *dst);
 const char *nm_utils_inet6_ntop (const struct in6_addr *in6addr, char *dst);
+
+gboolean nm_utils_ipaddr_valid (int family, const char *ip);
 
 gboolean nm_utils_check_virtual_device_compatibility (GType virtual_type, GType other_type);
 

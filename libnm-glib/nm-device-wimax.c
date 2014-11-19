@@ -19,7 +19,8 @@
  * Copyright 2009 Novell, Inc.
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <string.h>
 #include <netinet/ether.h>
 

@@ -68,11 +68,14 @@
     <xi:include href="xml/nm-client.xml"/>
     <xi:include href="xml/nm-secret-agent.xml"/>
     <xi:include href="xml/nm-object.xml"/>
+    <xi:include href="xml/nm-errors.xml"/>
+    <xi:include href="xml/nm-dbus-interface.xml"/>
   </chapter>
 
   <chapter>
     <title>Connection and Setting API Reference</title>
     <xi:include href="xml/nm-connection.xml"/>
+    <xi:include href="xml/nm-simple-connection.xml"/>
     <xi:include href="xml/nm-setting.xml"/>
     <xi:include href="xml/nm-setting-connection.xml"/>
     <!-- begin alphabetical -->
@@ -87,6 +90,7 @@
     <xi:include href="xml/nm-setting-generic.xml"/>
     <xi:include href="xml/nm-setting-gsm.xml"/>
     <xi:include href="xml/nm-setting-infiniband.xml"/>
+    <xi:include href="xml/nm-setting-ip-config.xml"/>
     <xi:include href="xml/nm-setting-ip4-config.xml"/>
     <xi:include href="xml/nm-setting-ip6-config.xml"/>
     <xi:include href="xml/nm-setting-olpc-mesh.xml"/>
@@ -127,15 +131,20 @@
     <xi:include href="xml/nm-remote-connection.xml"/>
     <xi:include href="xml/nm-access-point.xml"/>
     <xi:include href="xml/nm-wimax-nsp.xml"/>
-    <xi:include href="xml/nm-ip4-config.xml"/>
-    <xi:include href="xml/nm-ip6-config.xml"/>
-    <xi:include href="xml/nm-dhcp4-config.xml"/>
-    <xi:include href="xml/nm-dhcp6-config.xml"/>
+    <xi:include href="xml/nm-ip-config.xml"/>
+    <xi:include href="xml/nm-dhcp-config.xml"/>
   </chapter>
 
   <chapter>
     <title>Utility API Reference</title>
     <xi:include href="xml/nm-utils.xml"/>
+    <xi:include href="xml/nm-version.xml"/>
+  </chapter>
+
+  <chapter>
+    <title>VPN Plugin API Reference</title>
+    <xi:include href="xml/nm-vpn-dbus-interface.xml"/>
+    <xi:include href="xml/nm-vpn-editor-plugin.xml"/>
   </chapter>
 
   <chapter id="object-tree">

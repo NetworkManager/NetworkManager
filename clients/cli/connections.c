@@ -35,6 +35,8 @@
 #include "common.h"
 #include "settings.h"
 #include "connections.h"
+#include "nm-secret-agent-simple.h"
+#include "polkit-agent.h"
 
 /* define some prompts for connection editor */
 #define EDITOR_PROMPT_SETTING  _("Setting name? ")
@@ -250,9 +252,9 @@ usage (void)
 	              "COMMAND := { show | up | down | add | modify | edit | delete | reload | load }\n\n"
 	              "  show [--active] [[--show-secrets] [id | uuid | path | apath] <ID>] ...\n\n"
 #if WITH_WIMAX
-	              "  up [[id | uuid | path] <ID>] [ifname <ifname>] [ap <BSSID>] [nsp <name>]\n\n"
+	              "  up [[id | uuid | path] <ID>] [ifname <ifname>] [ap <BSSID>] [nsp <name>] [passwd-file <file with passwords>]\n\n"
 #else
-	              "  up [[id | uuid | path] <ID>] [ifname <ifname>] [ap <BSSID>]\n\n"
+	              "  up [[id | uuid | path] <ID>] [ifname <ifname>] [ap <BSSID>] [passwd-file <file with passwords>]\n\n"
 #endif
 	              "  down [id | uuid | path | apath] <ID>\n\n"
 	              "  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n\n"
@@ -290,19 +292,20 @@ usage_connection_up (void)
 {
 	g_printerr (_("Usage: nmcli connection up { ARGUMENTS | help }\n"
 	              "\n"
-	              "ARGUMENTS := [id | uuid | path] <ID> [ifname <ifname>] [ap <BSSID>] [nsp <name>]\n"
+	              "ARGUMENTS := [id | uuid | path] <ID> [ifname <ifname>] [ap <BSSID>] [nsp <name>] [passwd-file <file with passwords>]\n"
 	              "\n"
 	              "Activate a connection on a device. The profile to activate is identified by its\n"
 	              "name, UUID or D-Bus path.\n"
 	              "\n"
-	              "ARGUMENTS := ifname <ifname> [ap <BSSID>] [nsp <name>]\n"
+	              "ARGUMENTS := ifname <ifname> [ap <BSSID>] [nsp <name>] [passwd-file <file with passwords>]\n"
 	              "\n"
 	              "Activate a device with a connection. The connection profile is selected\n"
 	              "automatically by NetworkManager.\n"
 	              "\n"
-	              "ifname - specifies the device to active the connection on\n"
-	              "ap     - specifies AP to connect to (only valid for Wi-Fi)\n"
-	              "nsp    - specifies NSP to connect to (only valid for WiMAX)\n\n"));
+	              "ifname      - specifies the device to active the connection on\n"
+	              "ap          - specifies AP to connect to (only valid for Wi-Fi)\n"
+	              "nsp         - specifies NSP to connect to (only valid for WiMAX)\n"
+	              "passwd-file - file with password(s) required to activate the connection\n\n"));
 }
 
 static void
@@ -507,6 +510,20 @@ quit (void)
 	g_main_loop_quit (loop);  /* quit main loop */
 }
 
+/* for pre-filling a string to readline prompt */
+static char *pre_input_deftext;
+static int
+set_deftext (void)
+{
+	if (pre_input_deftext && rl_startup_hook) {
+		rl_insert_text (pre_input_deftext);
+		g_free (pre_input_deftext);
+		pre_input_deftext = NULL;
+		rl_startup_hook = NULL;
+	}
+	return 0;
+}
+
 static const char *
 construct_header_name (const char *base, const char *spec)
 {
@@ -616,16 +633,23 @@ get_ac_for_connection (const GPtrArray *active_cons, NMConnection *connection)
 	return ac;
 }
 
+/* Put secrets into local connection. */
 static void
-update_secrets_in_connection (NMRemoteConnection *con)
+update_secrets_in_connection (NMRemoteConnection *remote, NMConnection *local)
 {
 	GVariant *secrets;
 	int i;
+	GError *error = NULL;
 
 	for (i = 0; nmc_fields_settings_names[i].name; i++) {
-		secrets = nm_remote_connection_get_secrets (con, nmc_fields_settings_names[i].name, NULL, NULL);
+		secrets = nm_remote_connection_get_secrets (remote, nmc_fields_settings_names[i].name, NULL, NULL);
 		if (secrets) {
-			(void) nm_connection_update_secrets (NM_CONNECTION (con), NULL, secrets, NULL);
+			if (!nm_connection_update_secrets (local, NULL, secrets, &error) && error) {
+				g_printerr (_("Error updating secrets for %s: %s\n"),
+				            nmc_fields_settings_names[i].name,
+				            error->message);
+				g_clear_error (&error);
+			}
 			g_variant_unref (secrets);
 		}
 	}
@@ -1111,7 +1135,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 		/* IP4 */
 		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx].name,  nmc_fields_con_active_details_groups[1].name) == 0) {
 			gboolean b1 = FALSE;
-			NMIP4Config *cfg4 = nm_active_connection_get_ip4_config (acon);
+			NMIPConfig *cfg4 = nm_active_connection_get_ip4_config (acon);
 
 			b1 = print_ip4_config (cfg4, nmc, "IP4", group_fld);
 			was_output = was_output || b1;
@@ -1120,7 +1144,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 		/* DHCP4 */
 		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx].name,  nmc_fields_con_active_details_groups[2].name) == 0) {
 			gboolean b1 = FALSE;
-			NMDhcp4Config *dhcp4 = nm_active_connection_get_dhcp4_config (acon);
+			NMDhcpConfig *dhcp4 = nm_active_connection_get_dhcp4_config (acon);
 
 			b1 = print_dhcp4_config (dhcp4, nmc, "DHCP4", group_fld);
 			was_output = was_output || b1;
@@ -1129,7 +1153,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 		/* IP6 */
 		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx].name,  nmc_fields_con_active_details_groups[3].name) == 0) {
 			gboolean b1 = FALSE;
-			NMIP6Config *cfg6 = nm_active_connection_get_ip6_config (acon);
+			NMIPConfig *cfg6 = nm_active_connection_get_ip6_config (acon);
 
 			b1 = print_ip6_config (cfg6, nmc, "IP6", group_fld);
 			was_output = was_output || b1;
@@ -1138,7 +1162,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 		/* DHCP6 */
 		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx].name,  nmc_fields_con_active_details_groups[4].name) == 0) {
 			gboolean b1 = FALSE;
-			NMDhcp6Config *dhcp6 = nm_active_connection_get_dhcp6_config (acon);
+			NMDhcpConfig *dhcp6 = nm_active_connection_get_dhcp6_config (acon);
 
 			b1 = print_dhcp6_config (dhcp6, nmc, "DHCP6", group_fld);
 			was_output = was_output || b1;
@@ -1445,7 +1469,7 @@ do_connections_show (NmCli *nmc, gboolean active_only, gboolean show_secrets,
 				if (con) {
 					nmc->required_fields = profile_flds;
 					if (show_secrets)
-						update_secrets_in_connection (NM_REMOTE_CONNECTION (con));
+						update_secrets_in_connection (NM_REMOTE_CONNECTION (con), con);
 					res = nmc_connection_profile_details (con, nmc, show_secrets);
 					nmc->required_fields = NULL;
 					if (!res)
@@ -1719,7 +1743,7 @@ device_state_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
 		g_print (_("Connection successfully activated (master waiting for slaves) (D-Bus active path: %s)\n"),
 		         nm_object_get_path (NM_OBJECT (active)));
 		quit ();
-	} else if (ac_state != NM_ACTIVE_CONNECTION_STATE_ACTIVATING) {
+	} else if (active && ac_state != NM_ACTIVE_CONNECTION_STATE_ACTIVATING) {
 		g_string_printf (nmc->return_text, _("Error: Connection activation failed."));
 		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
 		quit ();
@@ -1926,16 +1950,174 @@ activate_connection_cb (GObject *client, GAsyncResult *result, gpointer user_dat
 	g_free (info);
 }
 
+/**
+ * parse_passwords:
+ * @passwd_file: file with passwords to parse
+ * @error: location to store error, or %NULL
+ *
+ * Parse passwords given in @passwd_file and insert them into a hash table.
+ * Example of @passwd_file contents:
+ *   wifi.psk:tajne heslo
+ *   802-1x.password:krakonos
+ *   802-11-wireless-security:leap-password:my leap password
+ *
+ * Returns: hash table with parsed passwords, or %NULL on an error
+ */
+static GHashTable *
+parse_passwords (const char *passwd_file, GError **error)
+{
+	GHashTable *pwds_hash;
+	char *contents = NULL;
+	gsize len = 0;
+	GError *local_err = NULL;
+	char **lines, **iter;
+	char *pwd_spec, *pwd, *prop;
+	const char *setting;
+
+	pwds_hash = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+
+	if (!passwd_file)
+		return pwds_hash;
+
+        /* Read the passwords file */
+	if (!g_file_get_contents (passwd_file, &contents, &len, &local_err)) {
+		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+		             _("failed to read passwd-file '%s': %s"),
+		             passwd_file, local_err->message);
+		g_error_free (local_err);
+		g_hash_table_destroy (pwds_hash);
+		return NULL;
+	}
+
+	lines = nmc_strsplit_set (contents, "\r\n", -1);
+	for (iter = lines; *iter; iter++) {
+		pwd = strchr (*iter, ':');
+		if (!pwd) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("missing colon in 'password' entry '%s'"), *iter);
+			goto failure;
+		}
+		*(pwd++) = '\0';
+
+		prop = strchr (*iter, '.');
+		if (!prop) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("missing dot in 'password' entry '%s'"), *iter);
+			goto failure;
+		}
+		*(prop++) = '\0';
+
+		setting = *iter;
+		while (g_ascii_isspace (*setting))
+			setting++;
+		/* Accept wifi-sec or wifi instead of cumbersome '802-11-wireless-security' */
+		if (!strcmp (setting, "wifi-sec") || !strcmp (setting, "wifi"))
+			setting = NM_SETTING_WIRELESS_SECURITY_SETTING_NAME;
+		if (nm_setting_lookup_type (setting) == G_TYPE_INVALID) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("invalid setting name in 'password' entry '%s'"), setting);
+			goto failure;
+		}
+
+		pwd_spec = g_strdup_printf ("%s.%s", setting, prop);
+		g_hash_table_insert (pwds_hash, pwd_spec, g_strdup (pwd));
+	}
+	g_strfreev (lines);
+	g_free (contents);
+	return pwds_hash;
+
+failure:
+	g_strfreev (lines);
+	g_free (contents);
+	g_hash_table_destroy (pwds_hash);
+	return NULL;
+}
+
+static gboolean
+get_secrets_from_user (const char *request_id,
+                       const char *title,
+                       const char *msg,
+                       gboolean ask,
+                       GHashTable *pwds_hash,
+                       GPtrArray *secrets)
+{
+	int i;
+
+	for (i = 0; i < secrets->len; i++) {
+		NMSecretAgentSimpleSecret *secret = secrets->pdata[i];
+		char *pwd = NULL;
+
+		/* First try to find the password in provided passwords file,
+		 * then ask user. */
+		if (pwds_hash && (pwd = g_hash_table_lookup (pwds_hash, secret->prop_name))) {
+			pwd = g_strdup (pwd);
+		} else {
+			g_print ("%s\n", msg);
+			if (ask) {
+				if (secret->value) {
+					/* Prefill the password if we have it. */
+					rl_startup_hook = set_deftext;
+					pre_input_deftext = g_strdup (secret->value);
+				}
+				pwd = nmc_readline ("%s (%s): ", secret->name, secret->prop_name);
+				if (!pwd)
+					pwd = g_strdup ("");
+			} else {
+				g_printerr (_("Warning: password for '%s' not given in 'passwd-file' "
+				              "and nmcli cannot ask without '--ask' option.\n"),
+				            secret->prop_name);
+			}
+		}
+		/* No password provided, cancel the secrets. */
+		if (!pwd)
+			return FALSE;
+		g_free (secret->value);
+		secret->value = pwd;
+	}
+	return TRUE;
+}
+
+static void
+secrets_requested (NMSecretAgentSimple *agent,
+                   const char          *request_id,
+                   const char          *title,
+                   const char          *msg,
+                   GPtrArray           *secrets,
+                   gpointer             user_data)
+{
+	NmCli *nmc = (NmCli *) user_data;
+	gboolean success = FALSE;
+
+	if (nmc->print_output == NMC_PRINT_PRETTY)
+		nmc_terminal_erase_line ();
+
+	success = get_secrets_from_user (request_id, title, msg, nmc->in_editor || nmc->ask,
+	                                 nmc->pwds_hash, secrets);
+	if (success)
+		nm_secret_agent_simple_response (agent, request_id, secrets);
+	else {
+		/* Unregister our secret agent on failure, so that another agent
+		 * may be tried */
+		if (nmc->secret_agent) {
+			nm_secret_agent_unregister (nmc->secret_agent, NULL, NULL);
+			g_clear_object (&nmc->secret_agent);
+		}
+        }
+}
+
 static gboolean
 nmc_activate_connection (NmCli *nmc,
                          NMConnection *connection,
                          const char *ifname,
                          const char *ap,
                          const char *nsp,
+                         const char *pwds,
                          GAsyncReadyCallback callback,
                          GError **error)
 {
 	ActivateConnectionInfo *info;
+
+	GHashTable *pwds_hash;
 	NMDevice *device = NULL;
 	const char *spec_object = NULL;
 	gboolean device_found;
@@ -1954,6 +2136,7 @@ nmc_activate_connection (NmCli *nmc,
 			g_clear_error (&local);
 			return FALSE;
 		}
+		g_clear_error (&local);
 	} else if (ifname) {
 		device = nm_client_get_device_by_iface (nmc->client, ifname);
 		if (!device) {
@@ -1966,6 +2149,21 @@ nmc_activate_connection (NmCli *nmc,
 		                     _("neither a valid connection nor device given"));
 		return FALSE;
 	}
+
+	/* Parse passwords given in passwords file */
+	pwds_hash = parse_passwords (pwds, &local);
+	if (local) {
+		g_propagate_error (error, local);
+		return FALSE;
+	}
+	if (nmc->pwds_hash)
+		g_hash_table_destroy (nmc->pwds_hash);
+	nmc->pwds_hash = pwds_hash;
+
+	/* Create secret agent */
+	nmc->secret_agent = nm_secret_agent_simple_new ("nmcli-connect", nm_object_get_path (NM_OBJECT (connection)));
+	if (nmc->secret_agent)
+		g_signal_connect (nmc->secret_agent, "request-secrets", G_CALLBACK (secrets_requested), nmc);
 
 	info = g_malloc0 (sizeof (ActivateConnectionInfo));
 	info->nmc = nmc;
@@ -1988,6 +2186,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	const char *ifname = NULL;
 	const char *ap = NULL;
 	const char *nsp = NULL;
+	const char *pwds = NULL;
 	GError *error = NULL;
 	const char *selector = NULL;
 	const char *name = NULL;
@@ -2055,6 +2254,15 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 			nsp = *argv;
 		}
 #endif
+		else if (strcmp (*argv, "passwd-file") == 0) {
+			if (next_arg (&argc, &argv) != 0) {
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
+
+			pwds = *argv;
+		}
 		else {
 			g_printerr (_("Unknown parameter: %s\n"), *argv);
 		}
@@ -2070,7 +2278,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	nmc->nowait_flag = (nmc->timeout == 0);
 	nmc->should_wait = TRUE;
 
-	if (!nmc_activate_connection (nmc, connection, ifname, ap, nsp, activate_connection_cb, &error)) {
+	if (!nmc_activate_connection (nmc, connection, ifname, ap, nsp, pwds, activate_connection_cb, &error)) {
 		g_string_printf (nmc->return_text, _("Error: %s."),
 		                 error ? error->message : _("unknown error"));
 		nmc->return_value = error ? error->code : NMC_RESULT_ERROR_CON_ACTIVATION;
@@ -2688,9 +2896,9 @@ check_and_convert_vlan_prio_maps (const char *prio_map,
 }
 
 static gboolean
-add_ip4_address_to_connection (NMIP4Address *ip4addr, NMConnection *connection)
+add_ip4_address_to_connection (NMIPAddress *ip4addr, NMConnection *connection)
 {
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	gboolean ret;
 
 	if (!ip4addr)
@@ -2698,22 +2906,22 @@ add_ip4_address_to_connection (NMIP4Address *ip4addr, NMConnection *connection)
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	if (!s_ip4) {
-		s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+		s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 		g_object_set (s_ip4,
-		              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
 		              NULL);
 	}
-	ret = nm_setting_ip4_config_add_address (s_ip4, ip4addr);
-	nm_ip4_address_unref (ip4addr);
+	ret = nm_setting_ip_config_add_address (s_ip4, ip4addr);
+	nm_ip_address_unref (ip4addr);
 
 	return ret;
 }
 
 static gboolean
-add_ip6_address_to_connection (NMIP6Address *ip6addr, NMConnection *connection)
+add_ip6_address_to_connection (NMIPAddress *ip6addr, NMConnection *connection)
 {
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip6;
 	gboolean ret;
 
 	if (!ip6addr)
@@ -2721,14 +2929,14 @@ add_ip6_address_to_connection (NMIP6Address *ip6addr, NMConnection *connection)
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	if (!s_ip6) {
-		s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+		s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 		g_object_set (s_ip6,
-		              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
 		              NULL);
 	}
-	ret = nm_setting_ip6_config_add_address (s_ip6, ip6addr);
-	nm_ip6_address_unref (ip6addr);
+	ret = nm_setting_ip_config_add_address (s_ip6, ip6addr);
+	nm_ip_address_unref (ip6addr);
 
 	return ret;
 }
@@ -3612,24 +3820,21 @@ do_questionnaire_olpc (char **channel, char **dhcp_anycast)
 }
 
 static gboolean
-split_address (char* str, char **ip, char **gw, char **rest)
+split_address (char* str, char **ip, char **rest)
 {
-	size_t n1, n2, n3, n4, n5;
+	size_t n1, n2, n3;
 
-	*ip = *gw = *rest = NULL;
+	*ip = *rest = NULL;
 	if (!str)
 		return FALSE;
 
 	n1 = strspn  (str,    " \t");
 	n2 = strcspn (str+n1, " \t\0") + n1;
 	n3 = strspn  (str+n2, " \t")   + n2;
-	n4 = strcspn (str+n3, " \t\0") + n3;
-	n5 = strspn  (str+n4, " \t")   + n4;
 
-	str[n2] = str[n4] = '\0';
+	str[n2] = '\0';
 	*ip = str[n1] ? str + n1 : NULL;
-	*gw = str[n3] ? str + n3 : NULL;
-	*rest = str[n5] ? str + n5 : NULL;
+	*rest = str[n3] ? str + n3 : NULL;
 
 	return TRUE;
 }
@@ -3639,35 +3844,31 @@ ask_for_ip_addresses (NMConnection *connection, int family)
 {
 	gboolean ip_loop;
 	GError *error = NULL;
-	char *str, *ip, *gw, *rest;
+	char *str, *ip, *rest;
 	const char *prompt;
 	gboolean added;
-	gpointer ipaddr;
+	NMIPAddress *ipaddr;
 
-	if (family == 4)
-		prompt =_("IPv4 address (IP[/plen] [gateway]) [none]: ");
+	if (family == AF_INET)
+		prompt =_("IPv4 address (IP[/plen]) [none]: ");
 	else
-		prompt =_("IPv6 address (IP[/plen] [gateway]) [none]: ");
+		prompt =_("IPv6 address (IP[/plen]) [none]: ");
 
 	ip_loop = TRUE;
 	do {
 		str = nmc_readline ("%s", prompt);
-		split_address (str, &ip, &gw, &rest);
+		split_address (str, &ip, &rest);
 		if (ip) {
-			if (family == 4)
-				ipaddr = nmc_parse_and_build_ip4_address (ip, gw, &error);
-			else
-				ipaddr = nmc_parse_and_build_ip6_address (ip, gw, &error);
+			ipaddr = nmc_parse_and_build_address (family, ip, &error);
 			if (ipaddr) {
-				if (family == 4)
-					added = add_ip4_address_to_connection ((NMIP4Address *) ipaddr, connection);
+				if (family == AF_INET)
+					added = add_ip4_address_to_connection (ipaddr, connection);
 				else
-					added = add_ip6_address_to_connection ((NMIP6Address *) ipaddr, connection);
-				gw = gw ? gw : (family == 4) ? "0.0.0.0" : "::";
+					added = add_ip6_address_to_connection (ipaddr, connection);
 				if (added)
-					g_print (_("  Address successfully added: %s %s\n"), ip, gw);
+					g_print (_("  Address successfully added: %s\n"), ip);
 				else
-					g_print (_("  Warning: address already present: %s %s\n"), ip, gw);
+					g_print (_("  Warning: address already present: %s\n"), ip);
 				if (rest)
 					g_print (_("  Warning: ignoring garbage at the end: '%s'\n"), rest);
 			} else {
@@ -3683,6 +3884,45 @@ ask_for_ip_addresses (NMConnection *connection, int family)
 }
 
 static void
+maybe_ask_for_gateway (NMConnection *connection, int family)
+{
+	gboolean gw_loop;
+	char *str, *gw, *rest;
+	const char *prompt;
+	NMSettingIPConfig *s_ip;
+
+	if (family == AF_INET) {
+		prompt =_("IPv4 gateway [none]: ");
+		s_ip = nm_connection_get_setting_ip4_config (connection);
+	} else {
+		prompt =_("IPv6 gateway [none]: ");
+		s_ip = nm_connection_get_setting_ip6_config (connection);
+	}
+	if (s_ip == NULL)
+		return;
+	if (   nm_setting_ip_config_get_num_addresses (s_ip) == 0
+	    || nm_setting_ip_config_get_gateway (s_ip) != NULL)
+		return;
+
+	gw_loop = TRUE;
+	do {
+		str = nmc_readline ("%s", prompt);
+		split_address (str, &gw, &rest);
+		if (gw) {
+			if (nm_utils_ipaddr_valid (family, gw)) {
+				g_object_set (s_ip,
+				              NM_SETTING_IP_CONFIG_GATEWAY, gw,
+				              NULL);
+				gw_loop = FALSE;
+			} else
+				g_print (_("Error: invalid gateway address '%s'\n"), gw);
+		} else
+			gw_loop = FALSE;
+		g_free (str);
+	} while (gw_loop);
+}
+
+static void
 do_questionnaire_ip (NMConnection *connection)
 {
 	char *answer;
@@ -3694,14 +3934,14 @@ do_questionnaire_ip (NMConnection *connection)
 		g_free (answer);
 		return;
 	}
+	g_free (answer);
 
 	g_print (_("Press <Enter> to finish adding addresses.\n"));
 
-	ask_for_ip_addresses (connection, 4);
-	ask_for_ip_addresses (connection, 6);
-
-	g_free (answer);
-	return;
+	ask_for_ip_addresses (connection, AF_INET);
+	maybe_ask_for_gateway (connection, AF_INET);
+	ask_for_ip_addresses (connection, AF_INET6);
+	maybe_ask_for_gateway (connection, AF_INET6);
 }
 
 static gboolean
@@ -4952,8 +5192,7 @@ cleanup_olpc:
 	    && strcmp (con_type, "team-slave") != 0
 	    && strcmp (con_type, "bridge-slave") != 0) {
 
-		NMIP4Address *ip4addr = NULL;
-		NMIP6Address *ip6addr = NULL;
+		NMIPAddress *ip4addr = NULL, *ip6addr = NULL;
 		const char *ip4 = NULL, *gw4 = NULL, *ip6 = NULL, *gw6 = NULL;
 		nmc_arg_t exp_args[] = { {"ip4", TRUE, &ip4, FALSE}, {"gw4", TRUE, &gw4, FALSE},
 		                         {"ip6", TRUE, &ip6, FALSE}, {"gw6", TRUE, &gw6, FALSE},
@@ -4973,7 +5212,7 @@ cleanup_olpc:
 
 			/* coverity[dead_error_begin] */
 			if (ip4) {
-				ip4addr = nmc_parse_and_build_ip4_address (ip4, gw4, error);
+				ip4addr = nmc_parse_and_build_address (AF_INET, ip4, error);
 				if (!ip4addr) {
 					g_prefix_error (error, _("Error: "));
 					return FALSE;
@@ -4981,14 +5220,58 @@ cleanup_olpc:
 				add_ip4_address_to_connection (ip4addr, connection);
 			}
 
+			if (gw4) {
+				NMSettingIPConfig *s_ip = nm_connection_get_setting_ip4_config (connection);
+
+				if (!s_ip) {
+					g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+					             _("Error: IPv4 gateway specified without IPv4 addresses"));
+					return FALSE;
+				} else if (nm_setting_ip_config_get_gateway (s_ip)) {
+					g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+					             _("Error: multiple IPv4 gateways specified"));
+					return FALSE;
+				} else if (!nm_utils_ipaddr_valid (AF_INET, gw4)) {
+					g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+					             _("Error: Invalid IPv4 gateway '%s'"),
+					             gw4);
+				}
+
+				g_object_set (s_ip,
+				              NM_SETTING_IP_CONFIG_GATEWAY, gw4,
+				              NULL);
+			}
+
 			/* coverity[dead_error_begin] */
 			if (ip6) {
-				ip6addr = nmc_parse_and_build_ip6_address (ip6, gw6, error);
+				ip6addr = nmc_parse_and_build_address (AF_INET6, ip6, error);
 				if (!ip6addr) {
 					g_prefix_error (error, _("Error: "));
 					return FALSE;
 				}
 				add_ip6_address_to_connection (ip6addr, connection);
+			}
+
+			if (gw6) {
+				NMSettingIPConfig *s_ip = nm_connection_get_setting_ip6_config (connection);
+
+				if (!s_ip) {
+					g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+					             _("Error: IPv6 gateway specified without IPv6 addresses"));
+					return FALSE;
+				} else if (nm_setting_ip_config_get_gateway (s_ip)) {
+					g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+					             _("Error: multiple IPv6 gateways specified"));
+					return FALSE;
+				} else if (!nm_utils_ipaddr_valid (AF_INET, gw6)) {
+					g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+					             _("Error: Invalid IPv6 gateway '%s'"),
+					             gw6);
+				}
+
+				g_object_set (s_ip,
+				              NM_SETTING_IP_CONFIG_GATEWAY, gw6,
+				              NULL);
 			}
 		}
 
@@ -5424,19 +5707,6 @@ uuid_display_hook (char **array, int len, int max_len)
 	}
 	rl_display_match_list (array, len, max_len + max + 3);
 	rl_forced_update_display ();
-}
-
-static char *pre_input_deftext;
-static int
-set_deftext (void)
-{
-	if (pre_input_deftext && rl_startup_hook) {
-		rl_insert_text (pre_input_deftext);
-		g_free (pre_input_deftext);
-		pre_input_deftext = NULL;
-		rl_startup_hook = NULL;
-	}
-	return 0;
 }
 
 static char *
@@ -6662,7 +6932,8 @@ is_connection_dirty (NMConnection *connection, NMRemoteConnection *remote)
 {
 	return !nm_connection_compare (connection,
 	                               remote ? NM_CONNECTION (remote) : NULL,
-	                               NM_SETTING_COMPARE_FLAG_EXACT);
+	                               NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS |
+	                               NM_SETTING_COMPARE_FLAG_IGNORE_TIMESTAMP);
 }
 
 static gboolean
@@ -7654,7 +7925,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 			nmc->nowait_flag = FALSE;
 			nmc->should_wait = TRUE;
 			nmc->print_output = NMC_PRINT_PRETTY;
-			if (!nmc_activate_connection (nmc, NM_CONNECTION (rem_con), ifname, ap_nsp, ap_nsp,
+			if (!nmc_activate_connection (nmc, NM_CONNECTION (rem_con), ifname, ap_nsp, ap_nsp, NULL,
 			                              activate_connection_editor_cb, &tmp_err)) {
 				g_print (_("Error: Cannot activate connection: %s.\n"), tmp_err->message);
 				g_clear_error (&tmp_err);
@@ -7925,8 +8196,7 @@ editor_init_new_connection (NmCli *nmc, NMConnection *connection)
 static void
 editor_init_existing_connection (NMConnection *connection)
 {
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4, *s_ip6;
 	NMSettingWireless *s_wireless;
 	NMSettingConnection *s_con;
 
@@ -8021,13 +8291,13 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 			goto error;
 		}
 
-		/* Merge secrets into the connection */
-		update_secrets_in_connection (NM_REMOTE_CONNECTION (found_con));
-
 		/* Duplicate the connection and use that so that we need not
 		 * differentiate existing vs. new later
 		 */
 		connection = nm_simple_connection_new_clone (found_con);
+
+		/* Merge secrets into the connection */
+		update_secrets_in_connection (NM_REMOTE_CONNECTION (found_con), connection);
 
 		s_con = nm_connection_get_setting_connection (connection);
 		g_assert (s_con);
@@ -8610,6 +8880,9 @@ NMCResultCode
 do_connections (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
+
+	/* Register polkit agent */
+	nmc_start_polkit_agent_start_try (nmc);
 
 	/* Set completion function for 'nmcli con' */
 	rl_attempted_completion_function = (rl_completion_func_t *) nmcli_con_tab_completion;

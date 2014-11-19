@@ -15,6 +15,7 @@ usage() {
     echo "  --force: force build, even if working directory is not clean and has local modifications"
     echo "  --clean: run \`git-clean -fdx :/\` before build"
     echo "  --quick: only run \`make dist\` instead of \`make distcheck\`"
+    echo "  --srpm: only build the SRPM"
 }
 
 
@@ -45,6 +46,9 @@ for A; do
             ;;
         -Q|--quick)
             QUICK=1
+            ;;
+        -S|--srpm)
+            BUILDTYPE=SRPM
             ;;
         *)
             usage

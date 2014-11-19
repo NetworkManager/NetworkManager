@@ -22,6 +22,7 @@
 #include "config.h"
 
 #include <glib.h>
+#include <gio/gio.h>
 #include <glib/gi18n.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -35,6 +36,7 @@
 #include <linux/if_infiniband.h>
 
 #include "NetworkManagerUtils.h"
+#include "nm-platform.h"
 #include "nm-utils.h"
 #include "nm-core-internal.h"
 #include "nm-logging.h"
@@ -1212,8 +1214,7 @@ nm_utils_get_ip_config_method (NMConnection *connection,
                                GType         ip_setting_type)
 {
 	NMSettingConnection *s_con;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4, *s_ip6;
 	const char *method;
 
 	s_con = nm_connection_get_setting_connection (connection);
@@ -1226,7 +1227,7 @@ nm_utils_get_ip_config_method (NMConnection *connection,
 		else {
 			s_ip4 = nm_connection_get_setting_ip4_config (connection);
 			g_return_val_if_fail (s_ip4 != NULL, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
-			method = nm_setting_ip4_config_get_method (s_ip4);
+			method = nm_setting_ip_config_get_method (s_ip4);
 			g_return_val_if_fail (method != NULL, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 
 			return method;
@@ -1240,7 +1241,7 @@ nm_utils_get_ip_config_method (NMConnection *connection,
 		else {
 			s_ip6 = nm_connection_get_setting_ip6_config (connection);
 			g_return_val_if_fail (s_ip6 != NULL, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
-			method = nm_setting_ip6_config_get_method (s_ip6);
+			method = nm_setting_ip_config_get_method (s_ip6);
 			g_return_val_if_fail (method != NULL, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
 
 			return method;
@@ -1387,12 +1388,12 @@ check_ip6_method (NMConnection *orig,
 {
 	GHashTable *props;
 	const char *orig_ip6_method, *candidate_ip6_method;
-	NMSettingIP6Config *candidate_ip6;
+	NMSettingIPConfig *candidate_ip6;
 	gboolean allow = FALSE;
 
 	props = check_property_in_hash (settings,
 	                                NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	                                NM_SETTING_IP6_CONFIG_METHOD);
+	                                NM_SETTING_IP_CONFIG_METHOD);
 	if (!props)
 		return TRUE;
 
@@ -1408,7 +1409,7 @@ check_ip6_method (NMConnection *orig,
 
 	if (   strcmp (orig_ip6_method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0
 	    && strcmp (candidate_ip6_method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0
-	    && (!candidate_ip6 || nm_setting_ip6_config_get_may_fail (candidate_ip6))) {
+	    && (!candidate_ip6 || nm_setting_ip_config_get_may_fail (candidate_ip6))) {
 		allow = TRUE;
 	}
 
@@ -1425,7 +1426,7 @@ check_ip6_method (NMConnection *orig,
 	if (allow) {
 		remove_from_hash (settings, props,
 		                  NM_SETTING_IP6_CONFIG_SETTING_NAME,
-		                  NM_SETTING_IP6_CONFIG_METHOD);
+		                  NM_SETTING_IP_CONFIG_METHOD);
 	}
 	return allow;
 }
@@ -1438,11 +1439,11 @@ check_ip4_method (NMConnection *orig,
 {
 	GHashTable *props;
 	const char *orig_ip4_method, *candidate_ip4_method;
-	NMSettingIP4Config *candidate_ip4;
+	NMSettingIPConfig *candidate_ip4;
 
 	props = check_property_in_hash (settings,
 	                                NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	                                NM_SETTING_IP4_CONFIG_METHOD);
+	                                NM_SETTING_IP_CONFIG_METHOD);
 	if (!props)
 		return TRUE;
 
@@ -1457,11 +1458,11 @@ check_ip4_method (NMConnection *orig,
 
 	if (   strcmp (orig_ip4_method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0
 	    && strcmp (candidate_ip4_method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0
-	    && (!candidate_ip4 || nm_setting_ip4_config_get_may_fail (candidate_ip4))
+	    && (!candidate_ip4 || nm_setting_ip_config_get_may_fail (candidate_ip4))
 	    && (device_has_carrier == FALSE)) {
 		remove_from_hash (settings, props,
 		                  NM_SETTING_IP4_CONFIG_SETTING_NAME,
-		                  NM_SETTING_IP4_CONFIG_METHOD);
+		                  NM_SETTING_IP_CONFIG_METHOD);
 		return TRUE;
 	}
 	return FALSE;
@@ -2155,6 +2156,32 @@ out:
 }
 
 
+#define IPV6_PROPERTY_DIR "/proc/sys/net/ipv6/conf/"
+#define IPV4_PROPERTY_DIR "/proc/sys/net/ipv4/conf/"
+G_STATIC_ASSERT (sizeof (IPV4_PROPERTY_DIR) == sizeof (IPV6_PROPERTY_DIR));
+
+static const char *
+_get_property_path (const char *ifname,
+                    const char *property,
+                    gboolean ipv6)
+{
+	static char path[sizeof (IPV6_PROPERTY_DIR) + IFNAMSIZ + 32];
+	int len;
+
+	ifname = ASSERT_VALID_PATH_COMPONENT (ifname);
+	property = ASSERT_VALID_PATH_COMPONENT (property);
+
+	len = g_snprintf (path,
+	                  sizeof (path),
+	                  "%s%s/%s",
+	                  ipv6 ? IPV6_PROPERTY_DIR : IPV4_PROPERTY_DIR,
+	                  ifname,
+	                  property);
+	g_assert (len < sizeof (path) - 1);
+
+	return path;
+}
+
 /**
  * nm_utils_ip6_property_path:
  * @ifname: an interface name
@@ -2166,18 +2193,21 @@ out:
 const char *
 nm_utils_ip6_property_path (const char *ifname, const char *property)
 {
-#define IPV6_PROPERTY_DIR "/proc/sys/net/ipv6/conf/"
-	static char path[sizeof (IPV6_PROPERTY_DIR) + IFNAMSIZ + 32];
-	int len;
+	return _get_property_path (ifname, property, TRUE);
+}
 
-	ifname = ASSERT_VALID_PATH_COMPONENT (ifname);
-	property = ASSERT_VALID_PATH_COMPONENT (property);
-
-	len = g_snprintf (path, sizeof (path), IPV6_PROPERTY_DIR "%s/%s",
-	                  ifname, property);
-	g_assert (len < sizeof (path) - 1);
-
-	return path;
+/**
+ * nm_utils_ip4_property_path:
+ * @ifname: an interface name
+ * @property: a property name
+ *
+ * Returns the path to IPv4 property @property on @ifname. Note that
+ * this uses a static buffer.
+ */
+const char *
+nm_utils_ip4_property_path (const char *ifname, const char *property)
+{
+	return _get_property_path (ifname, property, FALSE);
 }
 
 const char *
@@ -2391,19 +2421,25 @@ nm_utils_ip4_routes_from_gvalue (const GValue *value)
 	routes = (GPtrArray *) g_value_get_boxed (value);
 	for (i = 0; routes && (i < routes->len); i++) {
 		GArray *array = (GArray *) g_ptr_array_index (routes, i);
-		NMIP4Route *route;
+		guint32 *array_val = (guint32 *) array->data;
+		NMIPRoute *route;
+		GError *error = NULL;
 
 		if (array->len < 4) {
 			g_warning ("Ignoring invalid IP4 route");
 			continue;
 		}
 
-		route = nm_ip4_route_new ();
-		nm_ip4_route_set_dest (route, g_array_index (array, guint32, 0));
-		nm_ip4_route_set_prefix (route, g_array_index (array, guint32, 1));
-		nm_ip4_route_set_next_hop (route, g_array_index (array, guint32, 2));
-		nm_ip4_route_set_metric (route, g_array_index (array, guint32, 3));
-		list = g_slist_prepend (list, route);
+		route = nm_ip_route_new_binary (AF_INET,
+		                                &array_val[0], array_val[1],
+		                                &array_val[2], array_val[3],
+		                                &error);
+		if (route)
+			list = g_slist_prepend (list, route);
+		else {
+			g_warning ("Ignoring invalid IP4 route: %s", error->message);
+			g_clear_error (&error);
+		}
 	}
 
 	return g_slist_reverse (list);
@@ -2445,7 +2481,8 @@ nm_utils_ip6_routes_from_gvalue (const GValue *value)
 		GValueArray *route_values = (GValueArray *) g_ptr_array_index (routes, i);
 		GByteArray *dest, *next_hop;
 		guint prefix, metric;
-		NMIP6Route *route;
+		NMIPRoute *route;
+		GError *error = NULL;
 
 		if (!_nm_utils_gvalue_array_validate (route_values, 4,
 		                                      DBUS_TYPE_G_UCHAR_ARRAY,
@@ -2474,12 +2511,16 @@ nm_utils_ip6_routes_from_gvalue (const GValue *value)
 
 		metric = g_value_get_uint (g_value_array_get_nth (route_values, 3));
 
-		route = nm_ip6_route_new ();
-		nm_ip6_route_set_dest (route, (struct in6_addr *)dest->data);
-		nm_ip6_route_set_prefix (route, prefix);
-		nm_ip6_route_set_next_hop (route, (struct in6_addr *)next_hop->data);
-		nm_ip6_route_set_metric (route, metric);
-		list = g_slist_prepend (list, route);
+		route = nm_ip_route_new_binary (AF_INET6,
+		                                dest->data, prefix,
+		                                next_hop->data, metric,
+		                                &error);
+		if (route)
+			list = g_slist_prepend (list, route);
+		else {
+			g_warning ("Ignoring invalid IP6 route: %s", error->message);
+			g_clear_error (&error);
+		}
 	}
 
 	return g_slist_reverse (list);

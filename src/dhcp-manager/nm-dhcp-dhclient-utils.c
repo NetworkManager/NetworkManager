@@ -17,22 +17,23 @@
  * Copyright (C) 2011 Red Hat, Inc.
  */
 
-#include <config.h>
+#include "config.h"
 
 #include <glib.h>
 #include <glib/gi18n.h>
 #include <string.h>
 #include <ctype.h>
+#include <arpa/inet.h>
 
 #include "nm-dhcp-dhclient-utils.h"
+#include "nm-dhcp-utils.h"
 #include "nm-ip4-config.h"
 #include "nm-utils.h"
 #include "nm-platform.h"
 #include "NetworkManagerUtils.h"
+#include "gsystem-local-alloc.h"
 
 #define CLIENTID_TAG            "send dhcp-client-identifier"
-#define CLIENTID_FORMAT         CLIENTID_TAG " \"%s\"; # added by NetworkManager"
-#define CLIENTID_FORMAT_OCTETS  CLIENTID_TAG " %s; # added by NetworkManager"
 
 #define HOSTNAME4_TAG    "send host-name"
 #define HOSTNAME4_FORMAT HOSTNAME4_TAG " \"%s\"; # added by NetworkManager"
@@ -72,40 +73,39 @@ add_hostname (GString *str, const char *format, const char *hostname)
 }
 
 static void
-add_ip4_config (GString *str, const char *dhcp_client_id, const char *hostname)
+add_ip4_config (GString *str, GBytes *client_id, const char *hostname)
 {
-	if (dhcp_client_id && *dhcp_client_id) {
-		gboolean is_octets = TRUE;
-		int i = 0;
+	if (client_id) {
+		const char *p;
+		gsize l;
+		guint i;
 
-		while (dhcp_client_id[i]) {
-			if (!g_ascii_isxdigit (dhcp_client_id[i])) {
-				is_octets = FALSE;
+		p = g_bytes_get_data (client_id, &l);
+		g_assert (p);
+
+		/* Allow type 0 (non-hardware address) to be represented as a string
+		 * as long as all the characters are printable.
+		 */
+		for (i = 1; (p[0] == 0) && i < l; i++) {
+			if (!g_ascii_isprint (p[i]))
 				break;
-			}
-			i++;
-			if (!dhcp_client_id[i])
-				break;
-			if (g_ascii_isxdigit (dhcp_client_id[i])) {
-				i++;
-				if (!dhcp_client_id[i])
-					break;
-			}
-			if (dhcp_client_id[i] != ':') {
-				is_octets = FALSE;
-				break;
-			}
-			i++;
 		}
 
-		/* If the client ID is just hex digits and : then don't use quotes,
-		 * because dhclient expects either a quoted ASCII string, or a byte
-		 * array formated as hex octets separated by :
-		 */
-		if (is_octets)
-			g_string_append_printf (str, CLIENTID_FORMAT_OCTETS "\n", dhcp_client_id);
-		else
-			g_string_append_printf (str, CLIENTID_FORMAT "\n", dhcp_client_id);
+		g_string_append (str, CLIENTID_TAG " ");
+		if (i < l) {
+			/* Unprintable; convert to a hex string */
+			for (i = 0; i < l; i++) {
+				if (i > 0)
+					g_string_append_c (str, ':');
+				g_string_append_printf (str, "%02x", (guint8) p[i]);
+			}
+		} else {
+			/* Printable; just add to the line minus the 'type' */
+			g_string_append_c (str, '"');
+			g_string_append_len (str, p + 1, l - 1);
+			g_string_append_c (str, '"');
+		}
+		g_string_append (str, "; # added by NetworkManager\n");
 	}
 
 	add_hostname (str, HOSTNAME4_FORMAT "\n", hostname);
@@ -133,14 +133,67 @@ add_ip6_config (GString *str, const char *hostname)
 	                 "send fqdn.server-update on;\n");
 }
 
+static GBytes *
+read_client_id (const char *str)
+{
+	gs_free char *s = NULL;
+	char *p;
+
+	g_assert (!strncmp (str, CLIENTID_TAG, STRLEN (CLIENTID_TAG)));
+
+	str += STRLEN (CLIENTID_TAG);
+	while (g_ascii_isspace (*str))
+		str++;
+
+	if (*str == '"') {
+		s = g_strdup (str + 1);
+		p = strrchr (s, '"');
+		if (p)
+			*p = '\0';
+		else
+			return NULL;
+	} else
+		s = g_strdup (str);
+
+	g_strchomp (s);
+	if (s[strlen (s) - 1] == ';')
+		s[strlen (s) - 1] = '\0';
+
+	return nm_dhcp_utils_client_id_string_to_bytes (s);
+}
+
+GBytes *
+nm_dhcp_dhclient_get_client_id_from_config_file (const char *path)
+{
+	gs_free char *contents = NULL;
+	gs_strfreev char **lines = NULL;
+	char **line;
+
+	g_return_val_if_fail (path != NULL, NULL);
+
+	if (!g_file_test (path, G_FILE_TEST_EXISTS))
+		return NULL;
+
+	if (!g_file_get_contents (path, &contents, NULL, NULL))
+		return NULL;
+
+	lines = g_strsplit_set (contents, "\n\r", 0);
+	for (line = lines; lines && *line; line++) {
+		if (!strncmp (*line, CLIENTID_TAG, STRLEN (CLIENTID_TAG)))
+			return read_client_id (*line);
+	}
+	return NULL;
+}
+
 char *
 nm_dhcp_dhclient_create_config (const char *interface,
                                 gboolean is_ip6,
-                                const char *dhcp_client_id,
+                                GBytes *client_id,
                                 const char *anycast_addr,
                                 const char *hostname,
                                 const char *orig_path,
-                                const char *orig_contents)
+                                const char *orig_contents,
+                                GBytes **out_new_client_id)
 {
 	GString *new_contents;
 	GPtrArray *alsoreq;
@@ -164,11 +217,15 @@ nm_dhcp_dhclient_create_config (const char *interface,
 			if (!strlen (g_strstrip (p)))
 				continue;
 
-			/* Override config file "dhcp-client-id" and use one from the
-			 * connection.
-			 */
-			if (dhcp_client_id && !strncmp (p, CLIENTID_TAG, strlen (CLIENTID_TAG)))
-				continue;
+			if (!strncmp (p, CLIENTID_TAG, strlen (CLIENTID_TAG))) {
+				/* Override config file "dhcp-client-id" and use one from the connection */
+				if (client_id)
+					continue;
+
+				/* Otherwise capture and return the existing client id */
+				if (out_new_client_id)
+					*out_new_client_id = read_client_id (p);
+			}
 
 			/* Override config file hostname and use one from the connection */
 			if (hostname) {
@@ -237,7 +294,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
 		add_also_request (alsoreq, "dhcp6.domain-search");
 		add_also_request (alsoreq, "dhcp6.client-id");
 	} else {
-		add_ip4_config (new_contents, dhcp_client_id, hostname);
+		add_ip4_config (new_contents, client_id, hostname);
 		add_also_request (alsoreq, "rfc3442-classless-static-routes");
 		add_also_request (alsoreq, "ms-classless-static-routes");
 		add_also_request (alsoreq, "static-routes");

@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include "test-common.h"
 
 #define DEVICE_NAME "nm-test-device"
@@ -52,8 +54,8 @@ test_cleanup_internal (void)
 
 	addresses4 = nm_platform_ip4_address_get_all (ifindex);
 	addresses6 = nm_platform_ip6_address_get_all (ifindex);
-	routes4 = nm_platform_ip4_route_get_all (ifindex, TRUE);
-	routes6 = nm_platform_ip6_route_get_all (ifindex, TRUE);
+	routes4 = nm_platform_ip4_route_get_all (ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
+	routes6 = nm_platform_ip6_route_get_all (ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
 
 	g_assert_cmpint (addresses4->len, ==, 1);
 	g_assert_cmpint (addresses6->len, ==, 1);
@@ -70,8 +72,8 @@ test_cleanup_internal (void)
 
 	addresses4 = nm_platform_ip4_address_get_all (ifindex);
 	addresses6 = nm_platform_ip6_address_get_all (ifindex);
-	routes4 = nm_platform_ip4_route_get_all (ifindex, TRUE);
-	routes6 = nm_platform_ip6_route_get_all (ifindex, TRUE);
+	routes4 = nm_platform_ip4_route_get_all (ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
+	routes6 = nm_platform_ip6_route_get_all (ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
 
 	g_assert_cmpint (addresses4->len, ==, 0);
 	g_assert_cmpint (addresses6->len, ==, 0);

@@ -18,7 +18,7 @@
  * Pantelis Koukousoulas <pktoss@gmail.com>
  */
 
-#include <config.h>
+#include "config.h"
 
 #include <sys/socket.h>
 #include <linux/atmdev.h>
@@ -76,7 +76,9 @@ typedef struct {
 static guint32
 get_generic_capabilities (NMDevice *dev)
 {
-	return (NM_DEVICE_CAP_CARRIER_DETECT | NM_DEVICE_CAP_NONSTANDARD_CARRIER);
+	return (  NM_DEVICE_CAP_CARRIER_DETECT
+	        | NM_DEVICE_CAP_NONSTANDARD_CARRIER
+	        | NM_DEVICE_CAP_IS_NON_KERNEL);
 }
 
 static gboolean

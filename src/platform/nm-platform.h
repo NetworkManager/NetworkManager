@@ -28,7 +28,6 @@
 #include <linux/if_addr.h>
 
 #include <nm-dbus-interface.h>
-#include "gsystem-local-alloc.h"
 #include "nm-types.h"
 
 #define NM_TYPE_PLATFORM            (nm_platform_get_type ())
@@ -73,49 +72,6 @@ typedef enum {
 	NM_PLATFORM_REASON_CACHE_CHECK
 } NMPlatformReason;
 
-typedef enum {
-	/* Please don't interpret type numbers outside nm-platform and use functions
-	 * like nm_platform_link_is_software() and nm_platform_supports_slaves().
-	 *
-	 * type & 0x10000 -> Software device type
-	 * type & 0x20000 -> Type supports slaves
-	 */
-
-	/* No type, used as error value */
-	NM_LINK_TYPE_NONE,
-
-	/* Unknown type  */
-	NM_LINK_TYPE_UNKNOWN,
-
-	/* Hardware types */
-	NM_LINK_TYPE_ETHERNET,
-	NM_LINK_TYPE_INFINIBAND,
-	NM_LINK_TYPE_OLPC_MESH,
-	NM_LINK_TYPE_WIFI,
-	NM_LINK_TYPE_WWAN_ETHERNET,   /* WWAN pseudo-ethernet */
-	NM_LINK_TYPE_WIMAX,
-
-	/* Software types */
-	NM_LINK_TYPE_DUMMY = 0x10000,
-	NM_LINK_TYPE_GRE,
-	NM_LINK_TYPE_GRETAP,
-	NM_LINK_TYPE_IFB,
-	NM_LINK_TYPE_LOOPBACK,
-	NM_LINK_TYPE_MACVLAN,
-	NM_LINK_TYPE_MACVTAP,
-	NM_LINK_TYPE_OPENVSWITCH,
-	NM_LINK_TYPE_TAP,
-	NM_LINK_TYPE_TUN,
-	NM_LINK_TYPE_VETH,
-	NM_LINK_TYPE_VLAN,
-	NM_LINK_TYPE_VXLAN,
-
-	/* Software types with slaves */
-	NM_LINK_TYPE_BRIDGE = 0x10000 | 0x20000,
-	NM_LINK_TYPE_BOND,
-	NM_LINK_TYPE_TEAM,
-} NMLinkType;
-
 #define __NMPlatformObject_COMMON \
 	int ifindex; \
 	;
@@ -142,6 +98,12 @@ typedef enum {
 } NMPlatformSignalChangeType;
 
 #define NM_PLATFORM_LIFETIME_PERMANENT G_MAXUINT32
+
+typedef enum {
+	NM_PLATFORM_GET_ROUTE_MODE_ALL,
+	NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT,
+	NM_PLATFORM_GET_ROUTE_MODE_ONLY_DEFAULT,
+} NMPlatformGetRouteMode;
 
 typedef struct {
 	__NMPlatformObject_COMMON;
@@ -224,8 +186,8 @@ G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPAddress, address_ptr) == G_STRUCT_
 	__NMPlatformObject_COMMON; \
 	NMIPConfigSource source; \
 	int plen; \
-	guint metric; \
-	guint mss; \
+	guint32 metric; \
+	guint32 mss; \
 	;
 
 typedef struct {
@@ -439,18 +401,18 @@ typedef struct {
 	gboolean (*ip4_address_exists) (NMPlatform *, int ifindex, in_addr_t address, int plen);
 	gboolean (*ip6_address_exists) (NMPlatform *, int ifindex, struct in6_addr address, int plen);
 
-	GArray * (*ip4_route_get_all) (NMPlatform *, int ifindex, gboolean include_default);
-	GArray * (*ip6_route_get_all) (NMPlatform *, int ifindex, gboolean include_default);
+	GArray * (*ip4_route_get_all) (NMPlatform *, int ifindex, NMPlatformGetRouteMode mode);
+	GArray * (*ip6_route_get_all) (NMPlatform *, int ifindex, NMPlatformGetRouteMode mode);
 	gboolean (*ip4_route_add) (NMPlatform *, int ifindex, NMIPConfigSource source,
 	                           in_addr_t network, int plen, in_addr_t gateway,
-	                           int prio, int mss);
+	                           guint32 metric, guint32 mss);
 	gboolean (*ip6_route_add) (NMPlatform *, int ifindex, NMIPConfigSource source,
 	                           struct in6_addr network, int plen, struct in6_addr gateway,
-	                           int prio, int mss);
-	gboolean (*ip4_route_delete) (NMPlatform *, int ifindex, in_addr_t network, int plen, int metric);
-	gboolean (*ip6_route_delete) (NMPlatform *, int ifindex, struct in6_addr network, int plen, int metric);
-	gboolean (*ip4_route_exists) (NMPlatform *, int ifindex, in_addr_t network, int plen, int metric);
-	gboolean (*ip6_route_exists) (NMPlatform *, int ifindex, struct in6_addr network, int plen, int metric);
+	                           guint32 metric, guint32 mss);
+	gboolean (*ip4_route_delete) (NMPlatform *, int ifindex, in_addr_t network, int plen, guint32 metric);
+	gboolean (*ip6_route_delete) (NMPlatform *, int ifindex, struct in6_addr network, int plen, guint32 metric);
+	gboolean (*ip4_route_exists) (NMPlatform *, int ifindex, in_addr_t network, int plen, guint32 metric);
+	gboolean (*ip6_route_exists) (NMPlatform *, int ifindex, struct in6_addr network, int plen, guint32 metric);
 
 	gboolean (*check_support_kernel_extended_ifa_flags) (NMPlatform *);
 	gboolean (*check_support_user_ipv6ll) (NMPlatform *);
@@ -586,19 +548,18 @@ gboolean nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresse
 gboolean nm_platform_ip6_address_sync (int ifindex, const GArray *known_addresses);
 gboolean nm_platform_address_flush (int ifindex);
 
-GArray *nm_platform_ip4_route_get_all (int ifindex, gboolean include_default);
-GArray *nm_platform_ip6_route_get_all (int ifindex, gboolean include_default);
-gboolean nm_platform_route_set_metric (int ifindex, int metric);
+GArray *nm_platform_ip4_route_get_all (int ifindex, NMPlatformGetRouteMode mode);
+GArray *nm_platform_ip6_route_get_all (int ifindex, NMPlatformGetRouteMode mode);
 gboolean nm_platform_ip4_route_add (int ifindex, NMIPConfigSource source,
                                     in_addr_t network, int plen, in_addr_t gateway,
-                                    int metric, int mss);
+                                    guint32 metric, guint32 mss);
 gboolean nm_platform_ip6_route_add (int ifindex, NMIPConfigSource source,
                                     struct in6_addr network, int plen, struct in6_addr gateway,
-                                    int metric, int mss);
-gboolean nm_platform_ip4_route_delete (int ifindex, in_addr_t network, int plen, int metric);
-gboolean nm_platform_ip6_route_delete (int ifindex, struct in6_addr network, int plen, int metric);
-gboolean nm_platform_ip4_route_exists (int ifindex, in_addr_t network, int plen, int metric);
-gboolean nm_platform_ip6_route_exists (int ifindex, struct in6_addr network, int plen, int metric);
+                                    guint32 metric, guint32 mss);
+gboolean nm_platform_ip4_route_delete (int ifindex, in_addr_t network, int plen, guint32 metric);
+gboolean nm_platform_ip6_route_delete (int ifindex, struct in6_addr network, int plen, guint32 metric);
+gboolean nm_platform_ip4_route_exists (int ifindex, in_addr_t network, int plen, guint32 metric);
+gboolean nm_platform_ip6_route_exists (int ifindex, struct in6_addr network, int plen, guint32 metric);
 gboolean nm_platform_ip4_route_sync (int ifindex, const GArray *known_routes);
 gboolean nm_platform_ip6_route_sync (int ifindex, const GArray *known_routes);
 gboolean nm_platform_route_flush (int ifindex);

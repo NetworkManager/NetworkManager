@@ -19,6 +19,8 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
+#include "config.h"
+
 #include <arpa/inet.h>
 
 #include "in-addr-util.h"

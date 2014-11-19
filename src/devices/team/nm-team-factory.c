@@ -18,10 +18,11 @@
  * Copyright (C) 2014 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 #include <gmodule.h>
 
-#include "config.h"
 #include "nm-device-factory.h"
 #include "nm-team-factory.h"
 #include "nm-device-team.h"

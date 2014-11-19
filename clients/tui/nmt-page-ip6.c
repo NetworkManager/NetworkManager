@@ -59,12 +59,12 @@ static gboolean
 nmt_page_ip6_show_by_default (NmtEditorPage *page)
 {
 	NMConnection *conn;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip6;
 
 	conn = nmt_editor_page_get_connection (page);
 	s_ip6 = nm_connection_get_setting_ip6_config (conn);
-	if (   !g_strcmp0 (nm_setting_ip6_config_get_method (s_ip6), NM_SETTING_IP6_CONFIG_METHOD_MANUAL)
-	       || nm_setting_ip6_config_get_num_addresses (s_ip6))
+	if (   !g_strcmp0 (nm_setting_ip_config_get_method (s_ip6), NM_SETTING_IP6_CONFIG_METHOD_MANUAL)
+	    || nm_setting_ip_config_get_num_addresses (s_ip6))
 		return TRUE;
 	return FALSE;
 }
@@ -115,22 +115,22 @@ nmt_page_ip6_constructed (GObject *object)
 {
 	NmtPageIP6 *ip6 = NMT_PAGE_IP6 (object);
 	NmtPageGrid *grid;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip6;
 	NmtNewtWidget *widget, *button;
 	NMConnection *conn;
 
 	conn = nmt_editor_page_get_connection (NMT_EDITOR_PAGE (ip6));
 	s_ip6 = nm_connection_get_setting_ip6_config (conn);
 	if (!s_ip6) {
-		s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+		s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 		g_object_set (G_OBJECT (s_ip6),
-		              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
 		              NULL);
 		nm_connection_add_setting (conn, (NMSetting *) s_ip6);
 	}
 
 	widget = nmt_newt_popup_new (ip6methods);
-	g_object_bind_property (s_ip6, NM_SETTING_IP6_CONFIG_METHOD,
+	g_object_bind_property (s_ip6, NM_SETTING_IP_CONFIG_METHOD,
 	                        widget, "active-id",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 	nmt_editor_page_set_header_widget (NMT_EDITOR_PAGE (ip6), widget);
@@ -138,25 +138,28 @@ nmt_page_ip6_constructed (GObject *object)
 	grid = NMT_PAGE_GRID (ip6);
 
 	widget = nmt_address_list_new (NMT_ADDRESS_LIST_IP6_WITH_PREFIX);
-	nm_editor_bind_ip6_addresses_with_prefix_to_strv (s_ip6, NM_SETTING_IP6_CONFIG_ADDRESSES,
-	                                                  widget, "strings",
-	                                                  G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+	nm_editor_bind_ip_addresses_with_prefix_to_strv (AF_INET6,
+	                                                 s_ip6, NM_SETTING_IP_CONFIG_ADDRESSES,
+	                                                 widget, "strings",
+	                                                 G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 	nmt_page_grid_append (grid, _("Addresses"), widget, NULL);
 
 	widget = nmt_ip_entry_new (25, AF_INET6, FALSE, TRUE);
-	nm_editor_bind_ip6_gateway_to_string (s_ip6, NM_SETTING_IP6_CONFIG_ADDRESSES,
-	                                      widget, "text",
-	                                      G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+	nm_editor_bind_ip_gateway_to_string (AF_INET6,
+	                                     s_ip6,
+	                                     widget, "text", "sensitive",
+	                                     G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 	nmt_page_grid_append (grid, _("Gateway"), widget, NULL);
 
 	widget = nmt_address_list_new (NMT_ADDRESS_LIST_IP6);
-	nm_editor_bind_ip6_addresses_to_strv (s_ip6, NM_SETTING_IP6_CONFIG_DNS,
-	                                      widget, "strings",
-	                                      G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+	nm_editor_bind_ip_addresses_to_strv (AF_INET6,
+	                                     s_ip6, NM_SETTING_IP_CONFIG_DNS,
+	                                     widget, "strings",
+	                                     G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 	nmt_page_grid_append (grid, _("DNS servers"), widget, NULL);
 
 	widget = nmt_address_list_new (NMT_ADDRESS_LIST_HOSTNAME);
-	g_object_bind_property (s_ip6, NM_SETTING_IP6_CONFIG_DNS_SEARCH,
+	g_object_bind_property (s_ip6, NM_SETTING_IP_CONFIG_DNS_SEARCH,
 	                        widget, "strings",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 	nmt_page_grid_append (grid, _("Search domains"), widget, NULL);
@@ -165,7 +168,7 @@ nmt_page_ip6_constructed (GObject *object)
 	                       "text", "",
 	                       "style", NMT_NEWT_LABEL_PLAIN,
 	                       NULL);
-	g_object_bind_property_full (s_ip6, NM_SETTING_IP6_CONFIG_ROUTES,
+	g_object_bind_property_full (s_ip6, NM_SETTING_IP_CONFIG_ROUTES,
 	                             widget, "text",
 	                             G_BINDING_SYNC_CREATE,
 	                             ip6_routes_transform_to_description,
@@ -175,7 +178,7 @@ nmt_page_ip6_constructed (GObject *object)
 	nmt_page_grid_append (grid, _("Routing"), widget, button);
 
 	widget = nmt_newt_checkbox_new (_("Never use this network for default route"));
-	g_object_bind_property (s_ip6, NM_SETTING_IP6_CONFIG_NEVER_DEFAULT,
+	g_object_bind_property (s_ip6, NM_SETTING_IP_CONFIG_NEVER_DEFAULT,
 	                        widget, "active",
 	                        G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
 	nmt_page_grid_append (grid, NULL, widget, NULL);
@@ -183,7 +186,7 @@ nmt_page_ip6_constructed (GObject *object)
 	nmt_page_grid_append (grid, NULL, nmt_newt_separator_new (), NULL);
 
 	widget = nmt_newt_checkbox_new (_("Require IPv6 addressing for this connection"));
-	g_object_bind_property (s_ip6, NM_SETTING_IP6_CONFIG_MAY_FAIL,
+	g_object_bind_property (s_ip6, NM_SETTING_IP_CONFIG_MAY_FAIL,
 	                        widget, "active",
 	                        G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL |
 	                        G_BINDING_INVERT_BOOLEAN);

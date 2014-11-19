@@ -18,6 +18,8 @@
  *
  */
 
+#include "config.h"
+
 #include <glib.h>
 #include <string.h>
 #include <sys/types.h>
@@ -192,8 +194,8 @@ test_device_added_signal_after_init (void)
 	g_signal_handlers_disconnect_by_func (client, device_sai_added_cb, &result);
 	g_signal_handlers_disconnect_by_func (client, devices_sai_notify_cb, &result);
 
-	g_assert ((result & NOTIFY_MASK) == NOTIFY_FIRST);
-	g_assert ((result & SIGNAL_MASK) == SIGNAL_SECOND);
+	g_assert ((result & SIGNAL_MASK) == SIGNAL_FIRST);
+	g_assert ((result & NOTIFY_MASK) == NOTIFY_SECOND);
 
 	devices = nm_client_get_devices (client);
 	g_assert (devices);
@@ -1007,7 +1009,7 @@ client_devices_changed_cb (GObject *client,
 		info->remaining--;
 	else {
 		g_signal_connect (device, "notify::" NM_DEVICE_ACTIVE_CONNECTION,
-		                  G_CALLBACK (device_ac_changed_cb), &info);
+		                  G_CALLBACK (device_ac_changed_cb), info);
 	}
 
 	info->remaining--;

@@ -37,6 +37,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-core-internal.h"
+#include "nm-glib-compat.h"
 
 #define SETTINGS_TIMESTAMPS_FILE  NMSTATEDIR "/timestamps"
 #define SETTINGS_SEEN_BSSIDS_FILE NMSTATEDIR "/seen-bssids"

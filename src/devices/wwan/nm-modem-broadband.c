@@ -18,8 +18,11 @@
  * Copyright (C) 2012 Aleksander Morgado <aleksander@gnu.org>
  */
 
+#include "config.h"
+
 #include <glib/gi18n.h>
 #include <string.h>
+#include <arpa/inet.h>
 #include <libmm-glib.h>
 
 #include "nm-modem-broadband.h"

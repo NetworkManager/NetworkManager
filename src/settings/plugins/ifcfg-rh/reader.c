@@ -18,7 +18,8 @@
  * Copyright 2008 - 2014 Red Hat, Inc.
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
@@ -255,12 +256,10 @@ make_connection_setting (const char *file,
 static gboolean
 read_ip4_address (shvarFile *ifcfg,
                   const char *tag,
-                  guint32 *out_addr,
+                  char **out_addr,
                   GError **error)
 {
 	char *value = NULL;
-	guint32 ip4_addr;
-	gboolean success = FALSE;
 
 	g_return_val_if_fail (ifcfg != NULL, FALSE);
 	g_return_val_if_fail (tag != NULL, FALSE);
@@ -268,45 +267,21 @@ read_ip4_address (shvarFile *ifcfg,
 	if (error)
 		g_return_val_if_fail (*error == NULL, FALSE);
 
-	*out_addr = 0;
+	*out_addr = NULL;
 
 	value = svGetValue (ifcfg, tag, FALSE);
 	if (!value)
 		return TRUE;
 
-	if (inet_pton (AF_INET, value, &ip4_addr) > 0) {
-		*out_addr = ip4_addr;
-		success = TRUE;
+	if (nm_utils_ipaddr_valid (AF_INET, value)) {
+		*out_addr = value;
+		return TRUE;
 	} else {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Invalid %s IP4 address '%s'", tag, value);
-	}
-	g_free (value);
-	return success;
-}
-
-/* Returns TRUE on valid address, including unspecified (::) */
-static gboolean
-parse_ip6_address (const char *value,
-                   struct in6_addr *out_addr,
-                   GError **error)
-{
-	struct in6_addr ip6_addr;
-
-	g_return_val_if_fail (value != NULL, FALSE);
-	g_return_val_if_fail (out_addr != NULL, FALSE);
-	if (error)
-		g_return_val_if_fail (*error == NULL, FALSE);
-
-	*out_addr = in6addr_any;
-	if (inet_pton (AF_INET6, value, &ip6_addr) <= 0) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Invalid IP6 address '%s'", value);
+		g_free (value);
 		return FALSE;
 	}
-
-	*out_addr = ip6_addr;
-	return TRUE;
 }
 
 static char *
@@ -358,19 +333,23 @@ static gboolean
 read_full_ip4_address (shvarFile *ifcfg,
                        const char *network_file,
                        gint32 which,
-                       NMIP4Address *addr,
+                       NMIPAddress *base_addr,
+                       NMIPAddress **out_address,
+                       char **out_gateway,
                        GError **error)
 {
 	char *ip_tag, *prefix_tag, *netmask_tag, *gw_tag;
-	guint32 tmp;
+	char *ip = NULL;
+	long prefix = 0;
 	gboolean success = FALSE;
-	shvarFile *network_ifcfg;
 	char *value;
+	guint32 tmp;
 
 	g_return_val_if_fail (which >= -1, FALSE);
 	g_return_val_if_fail (ifcfg != NULL, FALSE);
 	g_return_val_if_fail (network_file != NULL, FALSE);
-	g_return_val_if_fail (addr != NULL, FALSE);
+	g_return_val_if_fail (out_address != NULL, FALSE);
+	g_return_val_if_fail (*out_address == NULL, FALSE);
 	if (error)
 		g_return_val_if_fail (*error == NULL, FALSE);
 
@@ -380,82 +359,73 @@ read_full_ip4_address (shvarFile *ifcfg,
 	gw_tag = get_numbered_tag ("GATEWAY", which);
 
 	/* IP address */
-	if (!read_ip4_address (ifcfg, ip_tag, &tmp, error))
+	if (!read_ip4_address (ifcfg, ip_tag, &ip, error))
 		goto done;
-	if (tmp)
-		nm_ip4_address_set_address (addr, tmp);
-	else if (!nm_ip4_address_get_address (addr)) {
-		success = TRUE;
-		goto done;
+	if (!ip) {
+		if (base_addr)
+			ip = g_strdup (nm_ip_address_get_address (base_addr));
+		else {
+			success = TRUE;
+			goto done;
+		}
 	}
 
 	/* Gateway */
-	if (!read_ip4_address (ifcfg, gw_tag, &tmp, error))
-		goto done;
-	if (tmp)
-		nm_ip4_address_set_gateway (addr, tmp);
-	else {
-		gboolean read_success;
-
-		/* If no gateway in the ifcfg, try /etc/sysconfig/network instead */
-		network_ifcfg = svOpenFile (network_file, NULL);
-		if (network_ifcfg) {
-			read_success = read_ip4_address (network_ifcfg, "GATEWAY", &tmp, error);
-			svCloseFile (network_ifcfg);
-			if (!read_success)
-				goto done;
-			nm_ip4_address_set_gateway (addr, tmp);
-		}
+	if (out_gateway && !*out_gateway) {
+		if (!read_ip4_address (ifcfg, gw_tag, out_gateway, error))
+			goto done;
 	}
 
 	/* Prefix */
 	value = svGetValue (ifcfg, prefix_tag, FALSE);
 	if (value) {
-		long int prefix;
-
 		errno = 0;
 		prefix = strtol (value, NULL, 10);
-		if (errno || prefix <= 0 || prefix > 32) {
+		if (errno || prefix < 0) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid IP4 prefix '%s'", value);
 			g_free (value);
 			goto done;
 		}
-		nm_ip4_address_set_prefix (addr, (guint32) prefix);
 		g_free (value);
 	}
 
 	/* Fall back to NETMASK if no PREFIX was specified */
-	if (!nm_ip4_address_get_prefix (addr)) {
-		if (!read_ip4_address (ifcfg, netmask_tag, &tmp, error))
+	if (prefix == 0) {
+		if (!read_ip4_address (ifcfg, netmask_tag, &value, error))
 			goto done;
-		if (tmp)
-			nm_ip4_address_set_prefix (addr, nm_utils_ip4_netmask_to_prefix (tmp));
+		if (value) {
+			inet_pton (AF_INET, value, &tmp);
+			prefix = nm_utils_ip4_netmask_to_prefix (tmp);
+			g_free (value);
+		}
 	}
 
+	if (prefix == 0 && base_addr)
+		prefix = nm_ip_address_get_prefix (base_addr);
+
 	/* Try to autodetermine the prefix for the address' class */
-	if (!nm_ip4_address_get_prefix (addr)) {
-		guint32 prefix = 0;
+	if (prefix == 0) {
+		if (inet_pton (AF_INET, ip, &tmp) == 1) {
+			prefix = nm_utils_ip4_get_default_prefix (tmp);
 
-		prefix = nm_utils_ip4_get_default_prefix (nm_ip4_address_get_address (addr));
-		nm_ip4_address_set_prefix (addr, prefix);
-
-		value = svGetValue (ifcfg, ip_tag, FALSE);
-		PARSE_WARNING ("missing %s, assuming %s/%u", prefix_tag, value, prefix);
-		g_free (value);
+			PARSE_WARNING ("missing %s, assuming %s/%ld", prefix_tag, ip, prefix);
+		}
 	}
 
 	/* Validate the prefix */
-	if (nm_ip4_address_get_prefix (addr) > 32) {
+	if (prefix == 0) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Missing or invalid IP4 prefix '%d'",
-		             nm_ip4_address_get_prefix (addr));
+		             "Missing IP4 prefix");
 		goto done;
 	}
 
-	success = TRUE;
+	*out_address = nm_ip_address_new (AF_INET, ip, prefix, error);
+	if (*out_address)
+		success = TRUE;
 
 done:
+	g_free (ip);
 	g_free (ip_tag);
 	g_free (prefix_tag);
 	g_free (netmask_tag);
@@ -469,12 +439,12 @@ static gboolean
 read_one_ip4_route (shvarFile *ifcfg,
                     const char *network_file,
                     guint32 which,
-                    NMIP4Route **out_route,
+                    NMIPRoute **out_route,
                     GError **error)
 {
-	NMIP4Route *route;
 	char *ip_tag, *netmask_tag, *gw_tag, *metric_tag, *value;
-	guint32 tmp;
+	char *dest = NULL, *next_hop = NULL;
+	gint64 prefix, metric;
 	gboolean success = FALSE;
 
 	g_return_val_if_fail (ifcfg != NULL, FALSE);
@@ -484,75 +454,72 @@ read_one_ip4_route (shvarFile *ifcfg,
 	if (error)
 		g_return_val_if_fail (*error == NULL, FALSE);
 
-	route = nm_ip4_route_new ();
-
 	ip_tag = g_strdup_printf ("ADDRESS%u", which);
 	netmask_tag = g_strdup_printf ("NETMASK%u", which);
 	gw_tag = g_strdup_printf ("GATEWAY%u", which);
 	metric_tag = g_strdup_printf ("METRIC%u", which);
 
 	/* Destination */
-	if (!read_ip4_address (ifcfg, ip_tag, &tmp, error))
+	if (!read_ip4_address (ifcfg, ip_tag, &dest, error))
 		goto out;
-	if (!tmp) {
+	if (!dest) {
 		/* Check whether IP is missing or 0.0.0.0 */
 		char *val;
 		val = svGetValue (ifcfg, ip_tag, FALSE);
 		if (!val) {
-			nm_ip4_route_unref (route);
-			route = NULL;
+			*out_route = NULL;
 			success = TRUE;  /* missing route = success */
 			goto out;
 		}
 		g_free (val);
 	}
-	nm_ip4_route_set_dest (route, tmp);
 
 	/* Next hop */
-	if (!read_ip4_address (ifcfg, gw_tag, &tmp, error))
+	if (!read_ip4_address (ifcfg, gw_tag, &next_hop, error))
 		goto out;
-	/* No need to check tmp, because we don't make distinction between missing GATEWAY IP and 0.0.0.0 */
-	nm_ip4_route_set_next_hop (route, tmp);
+	/* We don't make distinction between missing GATEWAY IP and 0.0.0.0 */
 
 	/* Prefix */
-	if (!read_ip4_address (ifcfg, netmask_tag, &tmp, error))
+	if (!read_ip4_address (ifcfg, netmask_tag, &value, error))
 		goto out;
-	if (tmp)
-		nm_ip4_route_set_prefix (route, nm_utils_ip4_netmask_to_prefix (tmp));
+	if (value) {
+		guint32 netmask;
 
-	/* Validate the prefix */
-	if (  !nm_ip4_route_get_prefix (route)
-	    || nm_ip4_route_get_prefix (route) > 32) {
+		inet_pton (AF_INET, value, &netmask);
+		prefix = nm_utils_ip4_netmask_to_prefix (netmask);
+		g_free (value);
+		if (netmask != nm_utils_ip4_prefix_to_netmask (prefix)) {
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			             "Invalid IP4 netmask '%s' \"%s\"", netmask_tag, nm_utils_inet4_ntop (netmask, NULL));
+			goto out;
+		}
+	} else {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Missing or invalid IP4 prefix '%d'",
-		             nm_ip4_route_get_prefix (route));
+		             "Missing IP4 route element '%s'", netmask_tag);
 		goto out;
 	}
 
 	/* Metric */
 	value = svGetValue (ifcfg, metric_tag, FALSE);
 	if (value) {
-		long int metric;
-
-		errno = 0;
-		metric = strtol (value, NULL, 10);
-		if (errno || metric < 0) {
+		metric = nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXUINT32, -1);
+		if (metric < 0) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid IP4 route metric '%s'", value);
 			g_free (value);
 			goto out;
 		}
-		nm_ip4_route_set_metric (route, (guint32) metric);
 		g_free (value);
-	}
+	} else
+		metric = -1;
 
-	*out_route = route;
-	success = TRUE;
+	*out_route = nm_ip_route_new (AF_INET, dest, prefix, next_hop, metric, error);
+	if (*out_route)
+		success = TRUE;
 
 out:
-	if (!success && route)
-		nm_ip4_route_unref (route);
-
+	g_free (dest);
+	g_free (next_hop);
 	g_free (ip_tag);
 	g_free (netmask_tag);
 	g_free (gw_tag);
@@ -561,17 +528,16 @@ out:
 }
 
 static gboolean
-read_route_file_legacy (const char *filename, NMSettingIP4Config *s_ip4, GError **error)
+read_route_file_legacy (const char *filename, NMSettingIPConfig *s_ip4, GError **error)
 {
 	char *contents = NULL;
 	gsize len = 0;
 	char **lines = NULL, **iter;
 	GRegex *regex_to1, *regex_to2, *regex_via, *regex_metric;
 	GMatchInfo *match_info;
-	NMIP4Route *route;
-	guint32 ip4_addr;
-	char *dest = NULL, *prefix = NULL, *metric = NULL;
-	long int prefix_int, metric_int;
+	NMIPRoute *route = NULL;
+	char *dest = NULL, *prefix = NULL, *next_hop = NULL, *metric = NULL;
+	gint64 prefix_int, metric_int;
 	gboolean success = FALSE;
 
 	const char *pattern_empty = "^\\s*(\\#.*)?$";
@@ -599,9 +565,6 @@ read_route_file_legacy (const char *filename, NMSettingIP4Config *s_ip4, GError 
 	regex_via = g_regex_new (pattern_via, 0, 0, NULL);
 	regex_metric = g_regex_new (pattern_metric, 0, 0, NULL);
 
-	/* New NMIP4Route structure */
-	route = nm_ip4_route_new ();
-
 	/* Iterate through file lines */
 	lines = g_strsplit_set (contents, "\n\r", -1);
 	for (iter = lines; iter && *iter; iter++) {
@@ -625,14 +588,13 @@ read_route_file_legacy (const char *filename, NMSettingIP4Config *s_ip4, GError 
 		dest = g_match_info_fetch (match_info, 1);
 		if (!strcmp (dest, "default"))
 			strcpy (dest, "0.0.0.0");
-		if (inet_pton (AF_INET, dest, &ip4_addr) != 1) {
+		if (!nm_utils_ipaddr_valid (AF_INET, dest)) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid IP4 route destination address '%s'", dest);
 			g_free (dest);
+			g_match_info_free (match_info);
 			goto error;
 		}
-		nm_ip4_route_set_dest (route, ip4_addr);
-		g_free (dest);
 
 		/* Prefix - is optional; 32 if missing */
 		prefix = g_match_info_fetch (match_info, 2);
@@ -644,36 +606,35 @@ read_route_file_legacy (const char *filename, NMSettingIP4Config *s_ip4, GError 
 			if (errno || prefix_int <= 0 || prefix_int > 32) {
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				             "Invalid IP4 route destination prefix '%s'", prefix);
+				g_free (dest);
 				g_free (prefix);
 				goto error;
 			}
 		}
-		nm_ip4_route_set_prefix (route, (guint32) prefix_int);
 		g_free (prefix);
 
 		/* Next hop */
 		g_regex_match (regex_via, *iter, 0, &match_info);
 		if (g_match_info_matches (match_info)) {
-			char *next_hop = g_match_info_fetch (match_info, 1);
-			if (inet_pton (AF_INET, next_hop, &ip4_addr) != 1) {
+			next_hop = g_match_info_fetch (match_info, 1);
+			if (!nm_utils_ipaddr_valid (AF_INET, next_hop)) {
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				             "Invalid IP4 route gateway address '%s'",
 				             next_hop);
 				g_match_info_free (match_info);
+				g_free (dest);
 				g_free (next_hop);
 				goto error;
 			}
-			g_free (next_hop);
 		} else {
 			/* we don't make distinction between missing GATEWAY IP and 0.0.0.0 */
-			ip4_addr = 0;
+			next_hop = NULL;
 		}
-		nm_ip4_route_set_next_hop (route, ip4_addr);
 		g_match_info_free (match_info);
 
 		/* Metric */
 		g_regex_match (regex_metric, *iter, 0, &match_info);
-		metric_int = 0;
+		metric_int = -1;
 		if (g_match_info_matches (match_info)) {
 			metric = g_match_info_fetch (match_info, 1);
 			errno = 0;
@@ -682,18 +643,23 @@ read_route_file_legacy (const char *filename, NMSettingIP4Config *s_ip4, GError 
 				g_match_info_free (match_info);
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				             "Invalid IP4 route metric '%s'", metric);
+				g_free (dest);
+				g_free (next_hop);
 				g_free (metric);
 				goto error;
 			}
 			g_free (metric);
 		}
-
-		nm_ip4_route_set_metric (route, (guint32) metric_int);
 		g_match_info_free (match_info);
 
-		if (!nm_setting_ip4_config_add_route (s_ip4, route))
+		route = nm_ip_route_new (AF_INET, dest, prefix_int, next_hop, metric_int, error);
+		if (!route) {
+			g_free (dest);
+			g_free (next_hop);
+			goto error;
+		}
+		if (!nm_setting_ip_config_add_route (s_ip4, route))
 			PARSE_WARNING ("duplicate IP4 route");
-
 	}
 
 	success = TRUE;
@@ -701,7 +667,8 @@ read_route_file_legacy (const char *filename, NMSettingIP4Config *s_ip4, GError 
 error:
 	g_free (contents);
 	g_strfreev (lines);
-	nm_ip4_route_unref (route);
+	if (route)
+		nm_ip_route_unref (route);
 	g_regex_unref (regex_to1);
 	g_regex_unref (regex_to2);
 	g_regex_unref (regex_via);
@@ -715,15 +682,12 @@ parse_full_ip6_address (shvarFile *ifcfg,
                         const char *network_file,
                         const char *addr_str,
                         int i,
-                        NMIP6Address **out_address,
+                        NMIPAddress **out_address,
                         GError **error)
 {
-	NMIP6Address *addr = NULL;
 	char **list;
 	char *ip_val, *prefix_val;
-	shvarFile *network_ifcfg;
-	char *value = NULL;
-	struct in6_addr tmp = IN6ADDR_ANY_INIT;
+	long prefix;
 	gboolean success = FALSE;
 
 	g_return_val_if_fail (addr_str != NULL, FALSE);
@@ -741,23 +705,9 @@ parse_full_ip6_address (shvarFile *ifcfg,
 	}
 
 	ip_val = list[0];
+
 	prefix_val = list[1];
-
-	addr = nm_ip6_address_new ();
-	/* IP address */
-	if (!parse_ip6_address (ip_val, &tmp, error))
-		goto error;
-	if (IN6_IS_ADDR_UNSPECIFIED (&tmp)) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Invalid IP6 address '%s'", ip_val);
-		goto error;
-	}
-	nm_ip6_address_set_address (addr, &tmp);
-
-	/* Prefix */
 	if (prefix_val) {
-		long int prefix;
-
 		errno = 0;
 		prefix = strtol (prefix_val, NULL, 10);
 		if (errno || prefix <= 0 || prefix > 128) {
@@ -765,47 +715,17 @@ parse_full_ip6_address (shvarFile *ifcfg,
 			             "Invalid IP6 prefix '%s'", prefix_val);
 			goto error;
 		}
-		nm_ip6_address_set_prefix (addr, (guint32) prefix);
 	} else {
 		/* Missing prefix is treated as prefix of 64 */
-		nm_ip6_address_set_prefix (addr, 64);
+		prefix = 64;
 	}
 
-	/* Gateway */
-	tmp = in6addr_any;
-	value = svGetValue (ifcfg, "IPV6_DEFAULTGW", FALSE);
-	if (i != 0) {
-		/* We don't support gateways for IPV6ADDR_SECONDARIES yet */
-		g_free (value);
-		value = NULL;
-	}
-	if (!value) {
-		/* If no gateway in the ifcfg, try global /etc/sysconfig/network instead */
-		network_ifcfg = svOpenFile (network_file, NULL);
-		if (network_ifcfg) {
-			value = svGetValue (network_ifcfg, "IPV6_DEFAULTGW", FALSE);
-			svCloseFile (network_ifcfg);
-		}
-	}
-	if (value) {
-		char *ptr;
-
-		if ((ptr = strchr (value, '%')) != NULL)
-			*ptr = '\0';  /* remove %interface prefix if present */
-		if (!parse_ip6_address (value, &tmp, error))
-			goto error;
-		nm_ip6_address_set_gateway (addr, &tmp);
-	}
-
-	*out_address = addr;
-	success = TRUE;
+	*out_address = nm_ip_address_new (AF_INET6, ip_val, prefix, error);
+	if (*out_address)
+		success = TRUE;
 
 error:
-	if (!success && addr)
-		nm_ip6_address_unref (addr);
-
 	g_strfreev (list);
-	g_free (value);
 	return success;
 }
 
@@ -817,17 +737,16 @@ error:
 #define IPV6_ADDR_REGEX "[0-9A-Fa-f:.]+"
 
 static gboolean
-read_route6_file (const char *filename, NMSettingIP6Config *s_ip6, GError **error)
+read_route6_file (const char *filename, NMSettingIPConfig *s_ip6, GError **error)
 {
 	char *contents = NULL;
 	gsize len = 0;
 	char **lines = NULL, **iter;
 	GRegex *regex_to1, *regex_to2, *regex_via, *regex_metric;
 	GMatchInfo *match_info;
-	NMIP6Route *route;
-	struct in6_addr ip6_addr;
-	char *dest = NULL, *prefix = NULL, *metric = NULL;
-	long int prefix_int, metric_int;
+	NMIPRoute *route = NULL;
+	char *dest = NULL, *prefix = NULL, *next_hop = NULL, *metric = NULL;
+	gint64 prefix_int, metric_int;
 	gboolean success = FALSE;
 
 	const char *pattern_empty = "^\\s*(\\#.*)?$";
@@ -855,9 +774,6 @@ read_route6_file (const char *filename, NMSettingIP6Config *s_ip6, GError **erro
 	regex_via = g_regex_new (pattern_via, 0, 0, NULL);
 	regex_metric = g_regex_new (pattern_metric, 0, 0, NULL);
 
-	/* New NMIP6Route structure */
-	route = nm_ip6_route_new ();
-
 	/* Iterate through file lines */
 	lines = g_strsplit_set (contents, "\n\r", -1);
 	for (iter = lines; iter && *iter; iter++) {
@@ -881,19 +797,11 @@ read_route6_file (const char *filename, NMSettingIP6Config *s_ip6, GError **erro
 		dest = g_match_info_fetch (match_info, 1);
 		if (!g_strcmp0 (dest, "default")) {
 			/* Ignore default route - NM handles it internally */
-			g_free (dest);
+			g_clear_pointer (&dest, g_free);
 			g_match_info_free (match_info);
 			PARSE_WARNING ("ignoring manual default route: '%s' (%s)", *iter, filename);
 			continue;
 		}
-		if (inet_pton (AF_INET6, dest, &ip6_addr) != 1) {
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "Invalid IP6 route destination address '%s'", dest);
-			g_free (dest);
-			goto error;
-		}
-		nm_ip6_route_set_dest (route, &ip6_addr);
-		g_free (dest);
 
 		/* Prefix - is optional; 128 if missing */
 		prefix = g_match_info_fetch (match_info, 2);
@@ -905,36 +813,35 @@ read_route6_file (const char *filename, NMSettingIP6Config *s_ip6, GError **erro
 			if (errno || prefix_int <= 0 || prefix_int > 128) {
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				             "Invalid IP6 route destination prefix '%s'", prefix);
+				g_free (dest);
 				g_free (prefix);
 				goto error;
 			}
 		}
-		nm_ip6_route_set_prefix (route, (guint32) prefix_int);
 		g_free (prefix);
 
 		/* Next hop */
 		g_regex_match (regex_via, *iter, 0, &match_info);
 		if (g_match_info_matches (match_info)) {
-			char *next_hop = g_match_info_fetch (match_info, 1);
-			if (inet_pton (AF_INET6, next_hop, &ip6_addr) != 1) {
+			next_hop = g_match_info_fetch (match_info, 1);
+			if (!nm_utils_ipaddr_valid (AF_INET6, next_hop)) {
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				             "Invalid IPv6 route nexthop address '%s'",
 				             next_hop);
 				g_match_info_free (match_info);
+				g_free (dest);
 				g_free (next_hop);
 				goto error;
 			}
-			g_free (next_hop);
 		} else {
 			/* Missing "via" is taken as :: */
-			ip6_addr = in6addr_any;
+			next_hop = NULL;
 		}
-		nm_ip6_route_set_next_hop (route, &ip6_addr);
 		g_match_info_free (match_info);
 
 		/* Metric */
 		g_regex_match (regex_metric, *iter, 0, &match_info);
-		metric_int = 0;
+		metric_int = -1;
 		if (g_match_info_matches (match_info)) {
 			metric = g_match_info_fetch (match_info, 1);
 			errno = 0;
@@ -943,16 +850,21 @@ read_route6_file (const char *filename, NMSettingIP6Config *s_ip6, GError **erro
 				g_match_info_free (match_info);
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				             "Invalid IP6 route metric '%s'", metric);
+				g_free (dest);
+				g_free (next_hop);
 				g_free (metric);
 				goto error;
 			}
 			g_free (metric);
 		}
-
-		nm_ip6_route_set_metric (route, (guint32) metric_int);
 		g_match_info_free (match_info);
 
-		if (!nm_setting_ip6_config_add_route (s_ip6, route))
+		route = nm_ip_route_new (AF_INET6, dest, prefix_int, next_hop, metric_int, error);
+		g_free (dest);
+		g_free (next_hop);
+		if (!route)
+			goto error;
+		if (!nm_setting_ip_config_add_route (s_ip6, route))
 			PARSE_WARNING ("duplicate IP6 route");
 	}
 
@@ -961,7 +873,8 @@ read_route6_file (const char *filename, NMSettingIP6Config *s_ip6, GError **erro
 error:
 	g_free (contents);
 	g_strfreev (lines);
-	nm_ip6_route_unref (route);
+	if (route)
+		nm_ip_route_unref (route);
 	g_regex_unref (regex_to1);
 	g_regex_unref (regex_to2);
 	g_regex_unref (regex_via);
@@ -976,16 +889,17 @@ make_ip4_setting (shvarFile *ifcfg,
                   const char *network_file,
                   GError **error)
 {
-	NMSettingIP4Config *s_ip4 = NULL;
+	NMSettingIPConfig *s_ip4 = NULL;
 	char *value = NULL;
 	char *route_path = NULL;
 	char *method;
+	char *gateway = NULL;
 	gint32 i;
 	shvarFile *network_ifcfg;
 	shvarFile *route_ifcfg;
 	gboolean never_default = FALSE;
 
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 
 	/* First check if DEFROUTE is set for this device; DEFROUTE has the
 	 * opposite meaning from never-default. The default if DEFROUTE is not
@@ -1028,15 +942,15 @@ make_ip4_setting (shvarFile *ifcfg,
 	} else if (!g_ascii_strcasecmp (value, "autoip")) {
 		g_free (value);
 		g_object_set (s_ip4,
-		              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
-		              NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, never_default,
+		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
+		              NM_SETTING_IP_CONFIG_NEVER_DEFAULT, never_default,
 		              NULL);
 		return NM_SETTING (s_ip4);
 	} else if (!g_ascii_strcasecmp (value, "shared")) {
 		g_free (value);
 		g_object_set (s_ip4,
-		              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_SHARED,
-		              NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, never_default,
+		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_SHARED,
+		              NM_SETTING_IP_CONFIG_NEVER_DEFAULT, never_default,
 		              NULL);
 		return NM_SETTING (s_ip4);
 	} else {
@@ -1048,11 +962,11 @@ make_ip4_setting (shvarFile *ifcfg,
 	g_free (value);
 
 	g_object_set (s_ip4,
-	              NM_SETTING_IP4_CONFIG_METHOD, method,
-	              NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS, !svTrueValue (ifcfg, "PEERDNS", TRUE),
-	              NM_SETTING_IP4_CONFIG_IGNORE_AUTO_ROUTES, !svTrueValue (ifcfg, "PEERROUTES", TRUE),
-	              NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, never_default,
-	              NM_SETTING_IP4_CONFIG_MAY_FAIL, !svTrueValue (ifcfg, "IPV4_FAILURE_FATAL", FALSE),
+	              NM_SETTING_IP_CONFIG_METHOD, method,
+	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, !svTrueValue (ifcfg, "PEERDNS", TRUE),
+	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES, !svTrueValue (ifcfg, "PEERROUTES", TRUE),
+	              NM_SETTING_IP_CONFIG_NEVER_DEFAULT, never_default,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, !svTrueValue (ifcfg, "IPV4_FAILURE_FATAL", FALSE),
 	              NULL);
 
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0)
@@ -1062,11 +976,11 @@ make_ip4_setting (shvarFile *ifcfg,
 	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
 		value = svGetValue (ifcfg, "DHCP_HOSTNAME", FALSE);
 		if (value && strlen (value))
-			g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME, value, NULL);
+			g_object_set (s_ip4, NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, value, NULL);
 		g_free (value);
 
 		g_object_set (s_ip4,
-		              NM_SETTING_IP4_CONFIG_DHCP_SEND_HOSTNAME,
+		              NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME,
 		              svTrueValue (ifcfg, "DHCP_SEND_HOSTNAME", TRUE),
 		              NULL);
 
@@ -1082,16 +996,12 @@ make_ip4_setting (shvarFile *ifcfg,
 	 * the legacy 'network' service (ifup-eth).
 	 */
 	for (i = -1; i < 256; i++) {
-		NMIP4Address *addr = NULL;
+		NMIPAddress *addr = NULL;
 
-		addr = nm_ip4_address_new ();
-		if (!read_full_ip4_address (ifcfg, network_file, i, addr, error)) {
-			nm_ip4_address_unref (addr);
+		if (!read_full_ip4_address (ifcfg, network_file, i, NULL, &addr, &gateway, error))
 			goto done;
-		}
-		if (!nm_ip4_address_get_address (addr)) {
-			nm_ip4_address_unref (addr);
 
+		if (!addr) {
 			/* The first mandatory variable is 2-indexed (IPADDR2)
 			 * Variables IPADDR, IPADDR0 and IPADDR1 are optional */
 			if (i > 1)
@@ -1099,37 +1009,46 @@ make_ip4_setting (shvarFile *ifcfg,
 			continue;
 		}
 
-		if (!nm_setting_ip4_config_add_address (s_ip4, addr))
+		if (!nm_setting_ip_config_add_address (s_ip4, addr))
 			PARSE_WARNING ("duplicate IP4 address");
-		nm_ip4_address_unref (addr);
+		nm_ip_address_unref (addr);
 	}
+
+	/* Gateway */
+	if (!gateway) {
+		network_ifcfg = svOpenFile (network_file, NULL);
+		if (network_ifcfg) {
+			gboolean read_success;
+
+			read_success = read_ip4_address (network_ifcfg, "GATEWAY", &gateway, error);
+			svCloseFile (network_ifcfg);
+			if (!read_success)
+				goto done;
+		}
+	}
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_GATEWAY, gateway, NULL);
 
 	/* DNS servers
 	 * Pick up just IPv4 addresses (IPv6 addresses are taken by make_ip6_setting())
 	 */
 	for (i = 1; i <= 10; i++) {
 		char *tag;
-		guint32 dns;
-		struct in6_addr ip6_dns;
 
 		tag = g_strdup_printf ("DNS%u", i);
 		value = svGetValue (ifcfg, tag, FALSE);
 		if (value) {
-			if (!read_ip4_address (ifcfg, tag, &dns, error)) {
-				gboolean valid = TRUE;
-
+			if (nm_utils_ipaddr_valid (AF_INET, value)) {
+				if (!nm_setting_ip_config_add_dns (s_ip4, value))
+					PARSE_WARNING ("duplicate DNS server %s", tag);
+			} else if (nm_utils_ipaddr_valid (AF_INET6, value)) {
 				/* Ignore IPv6 addresses */
-				valid = parse_ip6_address (value, &ip6_dns, NULL);
-				if (!valid) {
-					g_free (tag);
-					goto done;
-				}
-				g_clear_error (error);
-				dns = 0;
+			} else {
+				PARSE_WARNING ("invalid DNS server address %s", value);
+				g_free (tag);
+				g_free (value);
+				goto done;
 			}
 
-			if (dns && !nm_setting_ip4_config_add_dns (s_ip4, value))
-				PARSE_WARNING ("duplicate DNS server %s", tag);
 			g_free (value);
 		}
 
@@ -1146,7 +1065,7 @@ make_ip4_setting (shvarFile *ifcfg,
 			char **item;
 			for (item = searches; *item; item++) {
 				if (strlen (*item)) {
-					if (!nm_setting_ip4_config_add_dns_search (s_ip4, *item))
+					if (!nm_setting_ip_config_add_dns_search (s_ip4, *item))
 						PARSE_WARNING ("duplicate DNS domain '%s'", *item);
 				}
 			}
@@ -1169,7 +1088,7 @@ make_ip4_setting (shvarFile *ifcfg,
 		route_ifcfg = utils_get_route_ifcfg (ifcfg->fileName, FALSE);
 		if (route_ifcfg) {
 			for (i = 0; i < 256; i++) {
-				NMIP4Route *route = NULL;
+				NMIPRoute *route = NULL;
 
 				if (!read_one_ip4_route (route_ifcfg, network_file, i, &route, error)) {
 					svCloseFile (route_ifcfg);
@@ -1179,9 +1098,9 @@ make_ip4_setting (shvarFile *ifcfg,
 				if (!route)
 					break;
 
-				if (!nm_setting_ip4_config_add_route (s_ip4, route))
+				if (!nm_setting_ip_config_add_route (s_ip4, route))
 					PARSE_WARNING ("duplicate IP4 route");
-				nm_ip4_route_unref (route);
+				nm_ip_route_unref (route);
 			}
 			svCloseFile (route_ifcfg);
 		}
@@ -1191,7 +1110,7 @@ make_ip4_setting (shvarFile *ifcfg,
 	}
 
 	/* Legacy value NM used for a while but is incorrect (rh #459370) */
-	if (!nm_setting_ip4_config_get_num_dns_searches (s_ip4)) {
+	if (!nm_setting_ip_config_get_num_dns_searches (s_ip4)) {
 		value = svGetValue (ifcfg, "SEARCH", FALSE);
 		if (value) {
 			char **searches = NULL;
@@ -1201,7 +1120,7 @@ make_ip4_setting (shvarFile *ifcfg,
 				char **item;
 				for (item = searches; *item; item++) {
 					if (strlen (*item)) {
-						if (!nm_setting_ip4_config_add_dns_search (s_ip4, *item))
+						if (!nm_setting_ip_config_add_dns_search (s_ip4, *item))
 							PARSE_WARNING ("duplicate DNS search '%s'", *item);
 					}
 				}
@@ -1214,27 +1133,28 @@ make_ip4_setting (shvarFile *ifcfg,
 	return NM_SETTING (s_ip4);
 
 done:
+	g_free (gateway);
 	g_free (route_path);
 	g_object_unref (s_ip4);
 	return NULL;
 }
 
 static void
-read_aliases (NMSettingIP4Config *s_ip4, const char *filename, const char *network_file)
+read_aliases (NMSettingIPConfig *s_ip4, const char *filename, const char *network_file)
 {
 	GDir *dir;
 	char *dirname, *base;
 	shvarFile *parsed;
-	NMIP4Address *base_addr;
+	NMIPAddress *base_addr;
 	GError *err = NULL;
 
 	g_return_if_fail (s_ip4 != NULL);
 	g_return_if_fail (filename != NULL);
 
-	if (nm_setting_ip4_config_get_num_addresses (s_ip4) == 0)
+	if (nm_setting_ip_config_get_num_addresses (s_ip4) == 0)
 		return;
 
-	base_addr = nm_setting_ip4_config_get_address (s_ip4, 0);
+	base_addr = nm_setting_ip_config_get_address (s_ip4, 0);
 
 	dirname = g_path_get_dirname (filename);
 	g_return_if_fail (dirname != NULL);
@@ -1244,7 +1164,7 @@ read_aliases (NMSettingIP4Config *s_ip4, const char *filename, const char *netwo
 	dir = g_dir_open (dirname, 0, &err);
 	if (dir) {
 		const char *item;
-		NMIP4Address *addr;
+		NMIPAddress *addr;
 		gboolean ok;
 
 		while ((item = g_dir_read_name (dir))) {
@@ -1293,18 +1213,19 @@ read_aliases (NMSettingIP4Config *s_ip4, const char *filename, const char *netwo
 				continue;
 			}
 
-			addr = nm_ip4_address_dup (base_addr);
-			ok = read_full_ip4_address (parsed, network_file, -1, addr, &err);
+			addr = NULL;
+			ok = read_full_ip4_address (parsed, network_file, -1, base_addr, &addr, NULL, &err);
 			svCloseFile (parsed);
 			if (ok) {
-				if (!_nm_setting_ip4_config_add_address_with_label (s_ip4, addr, device))
+				nm_ip_address_set_attribute (addr, "label", g_variant_new_string (device));
+				if (!nm_setting_ip_config_add_address (s_ip4, addr))
 					PARSE_WARNING ("duplicate IP4 address in alias file %s", item);
 			} else {
 				PARSE_WARNING ("error reading IP4 address from alias file '%s': %s",
 				               full_path, err ? err->message : "no address");
 				g_clear_error (&err);
 			}
-			nm_ip4_address_unref (addr);
+			nm_ip_address_unref (addr);
 
 			g_free (device);
 			g_free (full_path);
@@ -1325,7 +1246,7 @@ make_ip6_setting (shvarFile *ifcfg,
                   const char *network_file,
                   GError **error)
 {
-	NMSettingIP6Config *s_ip6 = NULL;
+	NMSettingIPConfig *s_ip6 = NULL;
 	char *value = NULL;
 	char *str_value;
 	char *route6_path = NULL;
@@ -1340,7 +1261,7 @@ make_ip6_setting (shvarFile *ifcfg,
 	char *ip6_privacy_str;
 	NMSettingIP6ConfigPrivacy ip6_privacy_val;
 
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 
 	/* First check if IPV6_DEFROUTE is set for this device; IPV6_DEFROUTE has the
 	 * opposite meaning from never-default. The default if IPV6_DEFROUTE is not
@@ -1437,11 +1358,11 @@ make_ip6_setting (shvarFile *ifcfg,
 	g_free (ip6_privacy_str);
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, method,
-	              NM_SETTING_IP6_CONFIG_IGNORE_AUTO_DNS, !svTrueValue (ifcfg, "IPV6_PEERDNS", TRUE),
-	              NM_SETTING_IP6_CONFIG_IGNORE_AUTO_ROUTES, !svTrueValue (ifcfg, "IPV6_PEERROUTES", TRUE),
-	              NM_SETTING_IP6_CONFIG_NEVER_DEFAULT, never_default,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, !svTrueValue (ifcfg, "IPV6_FAILURE_FATAL", FALSE),
+	              NM_SETTING_IP_CONFIG_METHOD, method,
+	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, !svTrueValue (ifcfg, "IPV6_PEERDNS", TRUE),
+	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES, !svTrueValue (ifcfg, "IPV6_PEERROUTES", TRUE),
+	              NM_SETTING_IP_CONFIG_NEVER_DEFAULT, never_default,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, !svTrueValue (ifcfg, "IPV6_FAILURE_FATAL", FALSE),
 	              NM_SETTING_IP6_CONFIG_IP6_PRIVACY, ip6_privacy_val,
 	              NULL);
 
@@ -1454,7 +1375,7 @@ make_ip6_setting (shvarFile *ifcfg,
 		/* METHOD_AUTO may trigger DHCPv6, so save the hostname to send to DHCP */
 		value = svGetValue (ifcfg, "DHCP_HOSTNAME", FALSE);
 		if (value && value[0])
-			g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_DHCP_HOSTNAME, value, NULL);
+			g_object_set (s_ip6, NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, value, NULL);
 		g_free (value);
 	}
 
@@ -1476,26 +1397,51 @@ make_ip6_setting (shvarFile *ifcfg,
 	list = g_strsplit_set (value, " ", 0);
 	g_free (value);
 	for (iter = list, i = 0; iter && *iter; iter++, i++) {
-		NMIP6Address *addr = NULL;
+		NMIPAddress *addr = NULL;
 
 		if (!parse_full_ip6_address (ifcfg, network_file, *iter, i, &addr, error)) {
 			g_strfreev (list);
 			goto error;
 		}
 
-		if (!nm_setting_ip6_config_add_address (s_ip6, addr))
+		if (!nm_setting_ip_config_add_address (s_ip6, addr))
 			PARSE_WARNING ("duplicate IP6 address");
-		nm_ip6_address_unref (addr);
+		nm_ip_address_unref (addr);
 	}
 	g_strfreev (list);
+
+	/* Gateway */
+	if (nm_setting_ip_config_get_num_addresses (s_ip6)) {
+		value = svGetValue (ifcfg, "IPV6_DEFAULTGW", FALSE);
+		if (!value) {
+			/* If no gateway in the ifcfg, try global /etc/sysconfig/network instead */
+			network_ifcfg = svOpenFile (network_file, NULL);
+			if (network_ifcfg) {
+				value = svGetValue (network_ifcfg, "IPV6_DEFAULTGW", FALSE);
+				svCloseFile (network_ifcfg);
+			}
+		}
+		if (value) {
+			char *ptr;
+			if ((ptr = strchr (value, '%')) != NULL)
+				*ptr = '\0';  /* remove %interface prefix if present */
+			if (!nm_utils_ipaddr_valid (AF_INET6, value)) {
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+				             "Invalid IP6 address '%s'", value);
+				g_free (value);
+				goto error;
+			}
+
+			g_object_set (s_ip6, NM_SETTING_IP_CONFIG_GATEWAY, value, NULL);
+			g_free (value);
+		}
+	}
 
 	/* DNS servers
 	 * Pick up just IPv6 addresses (IPv4 addresses are taken by make_ip4_setting())
 	 */
 	for (i = 1; i <= 10; i++) {
 		char *tag;
-		struct in6_addr ip6_dns;
-		guint32 ip4_addr;
 
 		tag = g_strdup_printf ("DNS%u", i);
 		value = svGetValue (ifcfg, tag, FALSE);
@@ -1504,25 +1450,23 @@ make_ip6_setting (shvarFile *ifcfg,
 			break; /* all done */
 		}
 
-		ip6_dns = in6addr_any;
-		if (parse_ip6_address (value, &ip6_dns, NULL)) {
-			if (!IN6_IS_ADDR_UNSPECIFIED (&ip6_dns) && !nm_setting_ip6_config_add_dns (s_ip6, value))
+		if (nm_utils_ipaddr_valid (AF_INET6, value)) {
+			if (!nm_setting_ip_config_add_dns (s_ip6, value))
 				PARSE_WARNING ("duplicate DNS server %s", tag);
+		} else if (nm_utils_ipaddr_valid (AF_INET, value)) {
+			/* Ignore IPv4 addresses */
 		} else {
-			/* Maybe an IPv4 address? If so ignore it */
-			if (inet_pton (AF_INET, value, &ip4_addr) != 1) {
-				g_free (tag);
-				g_free (value);
-				PARSE_WARNING ("duplicate IP6 address");
-				goto error;
-			}
+			PARSE_WARNING ("invalid DNS server address %s", value);
+			g_free (tag);
+			g_free (value);
+			goto error;
 		}
 
 		g_free (tag);
 		g_free (value);
 	}
 
-	/* DNS searches ('DOMAIN' key) are read by make_ip4_setting() and included in NMSettingIP4Config */
+	/* DNS searches ('DOMAIN' key) are read by make_ip4_setting() and included in NMSettingIPConfig */
 
 	/* Read static routes from route6-<interface> file */
 	route6_path = utils_get_route6_path (ifcfg->fileName);
@@ -3281,7 +3225,6 @@ make_wireless_setting (shvarFile *ifcfg,
                        GError **error)
 {
 	NMSettingWireless *s_wireless;
-	GBytes *bytes = NULL;
 	char *value = NULL;
 	gint64 chan = 0;
 
@@ -3313,19 +3256,19 @@ make_wireless_setting (shvarFile *ifcfg,
 
 	value = svGetValue (ifcfg, "ESSID", TRUE);
 	if (value) {
-		gsize ssid_len = 0, value_len = strlen (value);
-		char *p = value, *tmp;
-		char buf[33];
+		GBytes *bytes = NULL;
+		gsize ssid_len = 0;
+		gsize value_len = strlen (value);
 
-		ssid_len = value_len;
 		if (   (value_len >= 2)
 		    && (value[0] == '"')
 		    && (value[value_len - 1] == '"')) {
 			/* Strip the quotes and unescape */
-			p = value + 1;
+			char *p = value + 1;
+
 			value[value_len - 1] = '\0';
 			svUnescape (p);
-			ssid_len = strlen (p);
+			bytes = g_bytes_new (p, strlen (p));
 		} else if ((value_len > 2) && (strncmp (value, "0x", 2) == 0)) {
 			/* Hex representation */
 			if (value_len % 2) {
@@ -3336,34 +3279,27 @@ make_wireless_setting (shvarFile *ifcfg,
 				goto error;
 			}
 
-			p = value + 2;
-			while (*p) {
-				if (!g_ascii_isxdigit (*p)) {
-					g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-					             "Invalid SSID '%s' character (looks like hex SSID but '%c' isn't a hex digit)",
-					             value, *p);
-					g_free (value);
-					goto error;
-				}
-				p++;
+			bytes = nm_utils_hexstr2bin (value);
+			if (!bytes) {
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+				             "Invalid SSID '%s' (looks like hex SSID but isn't)",
+				             value);
+				g_free (value);
+				goto error;
 			}
+		} else
+			bytes = g_bytes_new (value, value_len);
 
-			tmp = nm_utils_hexstr2bin (value + 2, value_len - 2);
-			ssid_len  = (value_len - 2) / 2;
-			memcpy (buf, tmp, ssid_len);
-			p = &buf[0];
-			g_free (tmp);
-		}
-
+		ssid_len = g_bytes_get_size (bytes);
 		if (ssid_len > 32 || ssid_len == 0) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid SSID '%s' (size %zu not between 1 and 32 inclusive)",
 			             value, ssid_len);
+			g_bytes_unref (bytes);
 			g_free (value);
 			goto error;
 		}
 
-		bytes = g_bytes_new (p, ssid_len);
 		g_object_set (s_wireless, NM_SETTING_WIRELESS_SSID, bytes, NULL);
 		g_bytes_unref (bytes);
 		g_free (value);
@@ -4669,7 +4605,7 @@ check_dns_search_domains (shvarFile *ifcfg, NMSetting *s_ip4, NMSetting *s_ip6)
 	/* If there is no IPv4 config or it doesn't contain DNS searches,
 	 * read DOMAIN and put the domains into IPv6.
 	 */
-	if (!s_ip4 || nm_setting_ip4_config_get_num_dns_searches (NM_SETTING_IP4_CONFIG (s_ip4)) == 0) {
+	if (!s_ip4 || nm_setting_ip_config_get_num_dns_searches (NM_SETTING_IP_CONFIG (s_ip4)) == 0) {
 		/* DNS searches */
 		char *value = svGetValue (ifcfg, "DOMAIN", FALSE);
 		if (value) {
@@ -4678,7 +4614,7 @@ check_dns_search_domains (shvarFile *ifcfg, NMSetting *s_ip4, NMSetting *s_ip6)
 				char **item;
 				for (item = searches; *item; item++) {
 					if (strlen (*item)) {
-						if (!nm_setting_ip6_config_add_dns_search (NM_SETTING_IP6_CONFIG (s_ip6), *item))
+						if (!nm_setting_ip_config_add_dns_search (NM_SETTING_IP_CONFIG (s_ip6), *item))
 							PARSE_WARNING ("duplicate DNS domain '%s'", *item);
 					}
 				}
@@ -4859,7 +4795,7 @@ connection_from_file (const char *filename,
 		connection = NULL;
 		goto done;
 	} else {
-		read_aliases (NM_SETTING_IP4_CONFIG (s_ip4), filename, network_file);
+		read_aliases (NM_SETTING_IP_CONFIG (s_ip4), filename, network_file);
 		nm_connection_add_setting (connection, s_ip4);
 	}
 

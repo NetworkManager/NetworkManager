@@ -24,9 +24,10 @@
 
 #include <glib.h>
 #include <stdio.h>
+#include <arpa/inet.h>
 
 #include "nm-connection.h"
-#include "nm-platform.h"
+#include "nm-types.h"
 
 gboolean nm_ethernet_address_is_valid (gconstpointer addr, gssize len);
 
@@ -167,6 +168,7 @@ gint32 nm_utils_get_monotonic_timestamp_s (void);
 
 const char *ASSERT_VALID_PATH_COMPONENT (const char *name) G_GNUC_WARN_UNUSED_RESULT;
 const char *nm_utils_ip6_property_path (const char *ifname, const char *property);
+const char *nm_utils_ip4_property_path (const char *ifname, const char *property);
 
 gboolean nm_utils_is_specific_hostname (const char *name);
 
@@ -188,7 +190,7 @@ typedef struct {
 	};
 } NMUtilsIPv6IfaceId;
 
-#define NM_UTILS_IPV6_IFACE_ID_INIT { .id = 0 };
+#define NM_UTILS_IPV6_IFACE_ID_INIT { .id = 0 }
 
 gboolean nm_utils_get_ipv6_interface_identifier (NMLinkType link_type,
                                                  const guint8 *hwaddr,

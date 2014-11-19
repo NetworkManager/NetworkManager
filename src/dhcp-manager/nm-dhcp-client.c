@@ -17,7 +17,8 @@
  *
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <glib.h>
 #include <string.h>
 #include <sys/types.h>
@@ -42,9 +43,11 @@ typedef struct {
 	GByteArray * hwaddr;
 	gboolean     ipv6;
 	char *       uuid;
-	guint        priority;
+	guint32      priority;
 	guint32      timeout;
 	GByteArray * duid;
+	GBytes *     client_id;
+	char *       hostname;
 
 	NMDhcpState  state;
 	pid_t        pid;
@@ -141,6 +144,37 @@ nm_dhcp_client_get_priority (NMDhcpClient *self)
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), G_MAXUINT32);
 
 	return NM_DHCP_CLIENT_GET_PRIVATE (self)->priority;
+}
+
+GBytes *
+nm_dhcp_client_get_client_id (NMDhcpClient *self)
+{
+	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
+
+	return NM_DHCP_CLIENT_GET_PRIVATE (self)->client_id;
+}
+
+void
+nm_dhcp_client_set_client_id (NMDhcpClient *self, GBytes *client_id)
+{
+	NMDhcpClientPrivate *priv;
+
+	g_return_if_fail (NM_IS_DHCP_CLIENT (self));
+
+	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
+
+	if (priv->client_id && client_id && g_bytes_equal (priv->client_id, client_id))
+		return;
+	g_clear_pointer (&priv->client_id, g_bytes_unref);
+	priv->client_id = client_id ? g_bytes_ref (client_id) : NULL;
+}
+
+const char *
+nm_dhcp_client_get_hostname (NMDhcpClient *self)
+{
+	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
+
+	return NM_DHCP_CLIENT_GET_PRIVATE (self)->hostname;
 }
 
 /********************************************/
@@ -360,7 +394,8 @@ gboolean
 nm_dhcp_client_start_ip4 (NMDhcpClient *self,
                           const char *dhcp_client_id,
                           const char *dhcp_anycast_addr,
-                          const char *hostname)
+                          const char *hostname,
+                          const char *last_ip4_address)
 {
 	NMDhcpClientPrivate *priv;
 
@@ -374,7 +409,12 @@ nm_dhcp_client_start_ip4 (NMDhcpClient *self,
 	nm_log_info (LOGD_DHCP, "Activation (%s) Beginning DHCPv4 transaction (timeout in %d seconds)",
 	             priv->iface, priv->timeout);
 
-	return NM_DHCP_CLIENT_GET_CLASS (self)->ip4_start (self, dhcp_client_id, dhcp_anycast_addr, hostname);
+	nm_dhcp_client_set_client_id (self, dhcp_client_id ? nm_dhcp_utils_client_id_string_to_bytes (dhcp_client_id) : NULL);
+
+	g_clear_pointer (&priv->hostname, g_free);
+	priv->hostname = g_strdup (hostname);
+
+	return NM_DHCP_CLIENT_GET_CLASS (self)->ip4_start (self, dhcp_anycast_addr, last_ip4_address);
 }
 
 /* uuid_parse does not work for machine-id, so we use our own converter */
@@ -518,6 +558,9 @@ nm_dhcp_client_start_ip6 (NMDhcpClient *self,
 		g_free (str);
 	}
 
+	g_clear_pointer (&priv->hostname, g_free);
+	priv->hostname = g_strdup (hostname);
+
 	priv->info_only = info_only;
 
 	nm_log_info (LOGD_DHCP, "Activation (%s) Beginning DHCPv6 transaction (timeout in %d seconds)",
@@ -525,7 +568,6 @@ nm_dhcp_client_start_ip6 (NMDhcpClient *self,
 
 	return NM_DHCP_CLIENT_GET_CLASS (self)->ip6_start (self,
 	                                                   dhcp_anycast_addr,
-	                                                   hostname,
 	                                                   info_only,
 	                                                   privacy,
 	                                                   priv->duid);
@@ -673,10 +715,13 @@ copy_option (const char * key,
 		g_hash_table_insert (hash, g_strdup (key), str_value);
 }
 
-void
-nm_dhcp_client_new_options (NMDhcpClient *self,
-                            GHashTable *options,
-                            const char *reason)
+gboolean
+nm_dhcp_client_handle_event (gpointer unused,
+                             const char *iface,
+                             gint pid,
+                             GHashTable *options,
+                             const char *reason,
+                             NMDhcpClient *self)
 {
 	NMDhcpClientPrivate *priv;
 	guint32 old_state;
@@ -684,11 +729,19 @@ nm_dhcp_client_new_options (NMDhcpClient *self,
 	GHashTable *str_options = NULL;
 	GObject *ip_config = NULL;
 
-	g_return_if_fail (NM_IS_DHCP_CLIENT (self));
-	g_return_if_fail (options != NULL);
-	g_return_if_fail (reason != NULL);
+	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), FALSE);
+	g_return_val_if_fail (iface != NULL, FALSE);
+	g_return_val_if_fail (pid > 0, FALSE);
+	g_return_val_if_fail (options != NULL, FALSE);
+	g_return_val_if_fail (reason != NULL, FALSE);
 
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
+
+	if (g_strcmp0 (priv->iface, iface) != 0)
+		return FALSE;
+	if (priv->pid != pid)
+		return FALSE;
+
 	old_state = priv->state;
 	new_state = reason_to_state (priv->iface, reason);
 
@@ -719,6 +772,8 @@ nm_dhcp_client_new_options (NMDhcpClient *self,
 	if (str_options)
 		g_hash_table_destroy (str_options);
 	g_clear_object (&ip_config);
+
+	return TRUE;
 }
 
 /********************************************/
@@ -885,7 +940,7 @@ nm_dhcp_client_class_init (NMDhcpClientClass *client_class)
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY,
 		 g_param_spec_uint (NM_DHCP_CLIENT_PRIORITY, "", "",
-		                    0, G_MAXUINT, 0,
+		                    0, G_MAXUINT32, 0,
 		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
 		                    G_PARAM_STATIC_STRINGS));
 

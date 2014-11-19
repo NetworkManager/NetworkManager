@@ -18,7 +18,7 @@
  * Copyright (C) 2009 - 2013 Red Hat, Inc.
  */
 
-#include <config.h>
+#include "config.h"
 
 #include <string.h>
 #include <gudev/gudev.h>
@@ -28,6 +28,7 @@
 #include "nm-device-adsl.h"
 #include "nm-device-factory.h"
 #include "nm-logging.h"
+#include "nm-glib-compat.h"
 
 typedef struct {
 	GUdevClient *client;

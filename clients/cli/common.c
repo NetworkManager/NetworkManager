@@ -30,6 +30,8 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
+#include "nm-glib-compat.h"
+
 #include "common.h"
 #include "utils.h"
 
@@ -37,13 +39,14 @@
 NmcOutputField nmc_fields_ip4_config[] = {
 	{"GROUP",      N_("GROUP"),       15},  /* 0 */
 	{"ADDRESS",    N_("ADDRESS"),     68},  /* 1 */
-	{"ROUTE",      N_("ROUTE"),       68},  /* 2 */
-	{"DNS",        N_("DNS"),         35},  /* 3 */
-	{"DOMAIN",     N_("DOMAIN"),      35},  /* 4 */
-	{"WINS",       N_("WINS"),        20},  /* 5 */
+	{"GATEWAY",    N_("GATEWAY"),      0},  /* 2 */
+	{"ROUTE",      N_("ROUTE"),       68},  /* 3 */
+	{"DNS",        N_("DNS"),         35},  /* 4 */
+	{"DOMAIN",     N_("DOMAIN"),      35},  /* 5 */
+	{"WINS",       N_("WINS"),        20},  /* 6 */
 	{NULL,         NULL,               0}
 };
-#define NMC_FIELDS_IP4_CONFIG_ALL     "GROUP,ADDRESS,ROUTE,DNS,DOMAIN,WINS"
+#define NMC_FIELDS_IP4_CONFIG_ALL     "GROUP,ADDRESS,GATEWAY,ROUTE,DNS,DOMAIN,WINS"
 
 /* Available fields for DHCPv4 group */
 NmcOutputField nmc_fields_dhcp4_config[] = {
@@ -57,12 +60,13 @@ NmcOutputField nmc_fields_dhcp4_config[] = {
 NmcOutputField nmc_fields_ip6_config[] = {
 	{"GROUP",      N_("GROUP"),       15},  /* 0 */
 	{"ADDRESS",    N_("ADDRESS"),     95},  /* 1 */
-	{"ROUTE",      N_("ROUTE"),       95},  /* 2 */
-	{"DNS",        N_("DNS"),         60},  /* 3 */
-	{"DOMAIN",     N_("DOMAIN"),      35},  /* 4 */
+	{"GATEWAY",    N_("GATEWAY"),      0},  /* 2 */
+	{"ROUTE",      N_("ROUTE"),       95},  /* 3 */
+	{"DNS",        N_("DNS"),         60},  /* 4 */
+	{"DOMAIN",     N_("DOMAIN"),      35},  /* 5 */
 	{NULL,         NULL,               0}
 };
-#define NMC_FIELDS_IP6_CONFIG_ALL     "GROUP,ADDRESS,ROUTE,DNS,DOMAIN"
+#define NMC_FIELDS_IP6_CONFIG_ALL     "GROUP,ADDRESS,GATEWAY,ROUTE,DNS,DOMAIN"
 
 /* Available fields for DHCPv6 group */
 NmcOutputField nmc_fields_dhcp6_config[] = {
@@ -74,7 +78,7 @@ NmcOutputField nmc_fields_dhcp6_config[] = {
 
 
 gboolean
-print_ip4_config (NMIP4Config *cfg4,
+print_ip4_config (NMIPConfig *cfg4,
                   NmCli *nmc,
                   const char *group_prefix,
                   const char *one_field)
@@ -100,62 +104,58 @@ print_ip4_config (NMIP4Config *cfg4,
 	g_ptr_array_add (nmc->output_data, arr);
 
 	/* addresses */
-	ptr_array = nm_ip4_config_get_addresses (cfg4);
+	ptr_array = nm_ip_config_get_addresses (cfg4);
 	if (ptr_array) {
 		addr_arr = g_new (char *, ptr_array->len + 1);
 		for (i = 0; i < ptr_array->len; i++) {
-			NMIP4Address *addr = (NMIP4Address *) g_ptr_array_index (ptr_array, i);
-			guint32 prefix;
-			char *ip_str, *gw_str;
+			NMIPAddress *addr = (NMIPAddress *) g_ptr_array_index (ptr_array, i);
 
-			ip_str = nmc_ip4_address_as_string (nm_ip4_address_get_address (addr), NULL);
-			prefix = nm_ip4_address_get_prefix (addr);
-			gw_str = nmc_ip4_address_as_string (nm_ip4_address_get_gateway (addr), NULL);
-
-			addr_arr[i] = g_strdup_printf ("ip = %s/%u, gw = %s", ip_str, prefix, gw_str);
-			g_free (ip_str);
-			g_free (gw_str);
+			addr_arr[i] = g_strdup_printf ("%s/%u",
+			                               nm_ip_address_get_address (addr),
+			                               nm_ip_address_get_prefix (addr));
 		}
 		addr_arr[i] = NULL;
 	}
 
 	/* routes */
-	ptr_array = nm_ip4_config_get_routes (cfg4);
+	ptr_array = nm_ip_config_get_routes (cfg4);
 	if (ptr_array) {
 		route_arr = g_new (char *, ptr_array->len + 1);
 		for (i = 0; i < ptr_array->len; i++) {
-			NMIP4Route *route = (NMIP4Route *) g_ptr_array_index (ptr_array, i);
-			guint32 prefix, metric;
-			char *dest_str, *nexthop_str;
+			NMIPRoute *route = (NMIPRoute *) g_ptr_array_index (ptr_array, i);
+			const char *next_hop;
 
-			dest_str = nmc_ip4_address_as_string (nm_ip4_route_get_dest (route), NULL);
-			nexthop_str = nmc_ip4_address_as_string (nm_ip4_route_get_next_hop (route), NULL);
-			prefix = nm_ip4_route_get_prefix (route);
-			metric = nm_ip4_route_get_metric (route);
+			next_hop = nm_ip_route_get_next_hop (route);
+			if (!next_hop)
+				next_hop = "0.0.0.0";
 
-			route_arr[i] = g_strdup_printf ("dst = %s/%u, nh = %s, mt = %u", dest_str, prefix, nexthop_str, metric);
-			g_free (dest_str);
-			g_free (nexthop_str);
+			route_arr[i] = g_strdup_printf ("dst = %s/%u, nh = %s%c mt = %u",
+			                                nm_ip_route_get_dest (route),
+			                                nm_ip_route_get_prefix (route),
+			                                next_hop,
+			                                nm_ip_route_get_metric (route) == -1 ? '\0' : ',',
+			                                (guint32) nm_ip_route_get_metric (route));
 		}
 		route_arr[i] = NULL;
 	}
 
 	/* DNS */
-	dns_arr = g_strdupv ((char **) nm_ip4_config_get_nameservers (cfg4));
+	dns_arr = g_strdupv ((char **) nm_ip_config_get_nameservers (cfg4));
 
 	/* domains */
-	domain_arr = g_strdupv ((char **) nm_ip4_config_get_domains (cfg4));
+	domain_arr = g_strdupv ((char **) nm_ip_config_get_domains (cfg4));
 
 	/* WINS */
-	wins_arr = g_strdupv ((char **) nm_ip4_config_get_wins_servers (cfg4));
+	wins_arr = g_strdupv ((char **) nm_ip_config_get_wins_servers (cfg4));
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_strc (arr, 0, group_prefix);
 	set_val_arr  (arr, 1, addr_arr);
-	set_val_arr  (arr, 2, route_arr);
-	set_val_arr  (arr, 3, dns_arr);
-	set_val_arr  (arr, 4, domain_arr);
-	set_val_arr  (arr, 5, wins_arr);
+	set_val_strc (arr, 2, nm_ip_config_get_gateway (cfg4));
+	set_val_arr  (arr, 3, route_arr);
+	set_val_arr  (arr, 4, dns_arr);
+	set_val_arr  (arr, 5, domain_arr);
+	set_val_arr  (arr, 6, wins_arr);
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc); /* Print all data */
@@ -167,7 +167,7 @@ print_ip4_config (NMIP4Config *cfg4,
 }
 
 gboolean
-print_ip6_config (NMIP6Config *cfg6,
+print_ip6_config (NMIPConfig *cfg6,
                   NmCli *nmc,
                   const char *group_prefix,
                   const char *one_field)
@@ -192,58 +192,54 @@ print_ip6_config (NMIP6Config *cfg6,
 	g_ptr_array_add (nmc->output_data, arr);
 
 	/* addresses */
-	ptr_array = nm_ip6_config_get_addresses (cfg6);
+	ptr_array = nm_ip_config_get_addresses (cfg6);
 	if (ptr_array) {
 		addr_arr = g_new (char *, ptr_array->len + 1);
 		for (i = 0; i < ptr_array->len; i++) {
-			NMIP6Address *addr = (NMIP6Address *) g_ptr_array_index (ptr_array, i);
-			guint32 prefix;
-			char *ip_str, *gw_str;
+			NMIPAddress *addr = (NMIPAddress *) g_ptr_array_index (ptr_array, i);
 
-			ip_str = nmc_ip6_address_as_string (nm_ip6_address_get_address (addr), NULL);
-			prefix = nm_ip6_address_get_prefix (addr);
-			gw_str = nmc_ip6_address_as_string (nm_ip6_address_get_gateway (addr), NULL);
-
-			addr_arr[i] = g_strdup_printf ("ip = %s/%u, gw = %s", ip_str, prefix, gw_str);
-			g_free (ip_str);
-			g_free (gw_str);
+			addr_arr[i] = g_strdup_printf ("%s/%u",
+			                               nm_ip_address_get_address (addr),
+			                               nm_ip_address_get_prefix (addr));
 		}
 		addr_arr[i] = NULL;
 	}
 
 	/* routes */
-	ptr_array = nm_ip6_config_get_routes (cfg6);
+	ptr_array = nm_ip_config_get_routes (cfg6);
 	if (ptr_array) {
 		route_arr = g_new (char *, ptr_array->len + 1);
 		for (i = 0; i < ptr_array->len; i++) {
-			NMIP6Route *route = (NMIP6Route *) g_ptr_array_index (ptr_array, i);
-			guint32 prefix, metric;
-			char *dest_str, *nexthop_str;
+			NMIPRoute *route = (NMIPRoute *) g_ptr_array_index (ptr_array, i);
+			const char *next_hop;
 
-			dest_str = nmc_ip6_address_as_string (nm_ip6_route_get_dest (route), NULL);
-			nexthop_str = nmc_ip6_address_as_string (nm_ip6_route_get_next_hop (route), NULL);
-			prefix = nm_ip6_route_get_prefix (route);
-			metric = nm_ip6_route_get_metric (route);
+			next_hop = nm_ip_route_get_next_hop (route);
+			if (!next_hop)
+				next_hop = "::";
 
-			route_arr[i] = g_strdup_printf ("dst = %s/%u, nh = %s, mt = %u", dest_str, prefix, nexthop_str, metric);
-			g_free (dest_str);
-			g_free (nexthop_str);
+			route_arr[i] = g_strdup_printf ("dst = %s/%u, nh = %s%c mt = %u",
+			                                nm_ip_route_get_dest (route),
+			                                nm_ip_route_get_prefix (route),
+			                                next_hop,
+			                                nm_ip_route_get_metric (route) == -1 ? '\0' : ',',
+			                                (guint32) nm_ip_route_get_metric (route));
 		}
 		route_arr[i] = NULL;
 	}
 
 	/* DNS */
-	dns_arr = g_strdupv ((char **) nm_ip6_config_get_nameservers (cfg6));
+	dns_arr = g_strdupv ((char **) nm_ip_config_get_nameservers (cfg6));
 
 	/* domains */
-	domain_arr = g_strdupv ((char **) nm_ip6_config_get_domains (cfg6));
+	domain_arr = g_strdupv ((char **) nm_ip_config_get_domains (cfg6));
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_strc (arr, 0, group_prefix);
 	set_val_arr  (arr, 1, addr_arr);
-	set_val_arr  (arr, 2, route_arr);
-	set_val_arr  (arr, 3, dns_arr);
-	set_val_arr  (arr, 4, domain_arr);
+	set_val_strc (arr, 2, nm_ip_config_get_gateway (cfg6));
+	set_val_arr  (arr, 3, route_arr);
+	set_val_arr  (arr, 4, dns_arr);
+	set_val_arr  (arr, 5, domain_arr);
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc); /* Print all data */
@@ -255,7 +251,7 @@ print_ip6_config (NMIP6Config *cfg6,
 }
 
 gboolean
-print_dhcp4_config (NMDhcp4Config *dhcp4,
+print_dhcp4_config (NMDhcpConfig *dhcp4,
                     NmCli *nmc,
                     const char *group_prefix,
                     const char *one_field)
@@ -267,7 +263,7 @@ print_dhcp4_config (NMDhcp4Config *dhcp4,
 	if (dhcp4 == NULL)
 		return FALSE;
 
-	table = nm_dhcp4_config_get_options (dhcp4);
+	table = nm_dhcp_config_get_options (dhcp4);
 	if (table) {
 		GHashTableIter table_iter;
 		gpointer key, value;
@@ -303,7 +299,7 @@ print_dhcp4_config (NMDhcp4Config *dhcp4,
 }
 
 gboolean
-print_dhcp6_config (NMDhcp6Config *dhcp6,
+print_dhcp6_config (NMDhcpConfig *dhcp6,
                     NmCli *nmc,
                     const char *group_prefix,
                     const char *one_field)
@@ -315,7 +311,7 @@ print_dhcp6_config (NMDhcp6Config *dhcp6,
 	if (dhcp6 == NULL)
 		return FALSE;
 
-	table = nm_dhcp6_config_get_options (dhcp6);
+	table = nm_dhcp_config_get_options (dhcp6);
 	if (table) {
 		GHashTableIter table_iter;
 		gpointer key, value;
@@ -351,18 +347,19 @@ print_dhcp6_config (NMDhcp6Config *dhcp6,
 }
 
 /*
- * Parse IPv4 address from string to NMIP4Address stucture.
- * ip_str is the IPv4 address in the form address/prefix
- * gw_str is the gateway address (it is optional)
+ * Parse IP address from string to NMIPAddress stucture.
+ * ip_str is the IP address in the form address/prefix
  */
-NMIP4Address *
-nmc_parse_and_build_ip4_address (const char *ip_str, const char *gw_str, GError **error)
+NMIPAddress *
+nmc_parse_and_build_address (int family, const char *ip_str, GError **error)
 {
-	NMIP4Address *addr = NULL;
-	guint32 ip4_addr, gw_addr;
+	int max_prefix = (family == AF_INET) ? 32 : 128;
+	NMIPAddress *addr = NULL;
+	const char *ip;
 	char *tmp;
 	char *plen;
 	long int prefix;
+	GError *local = NULL;
 
 	g_return_val_if_fail (ip_str != NULL, NULL);
 	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
@@ -372,31 +369,23 @@ nmc_parse_and_build_ip4_address (const char *ip_str, const char *gw_str, GError 
 	if (plen)
 		*plen++ = '\0';
 
-	if (inet_pton (AF_INET, tmp, &ip4_addr) < 1) {
-		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-		             _("invalid IPv4 address '%s'"), tmp);
-		goto finish;
-	}
+	ip = tmp;
 
-	prefix = 32;
+	prefix = max_prefix;
 	if (plen) {
-		if (!nmc_string_to_int (plen, TRUE, 1, 32, &prefix)) {
+		if (!nmc_string_to_int (plen, TRUE, 1, max_prefix, &prefix)) {
 			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("invalid prefix '%s'; <1-32> allowed"), plen);
+			             _("invalid prefix '%s'; <1-%d> allowed"), plen, max_prefix);
 			goto finish;
 		}
 	}
 
-	if (inet_pton (AF_INET, gw_str ? gw_str : "0.0.0.0", &gw_addr) < 1) {
+	addr = nm_ip_address_new (family, ip, (guint32) prefix, &local);
+	if (!addr) {
 		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-		             _("invalid gateway '%s'"), gw_str);
-		goto finish;
+		             _("invalid IP address: %s"), local->message);
+		g_clear_error (&local);
 	}
-
-	addr = nm_ip4_address_new ();
-	nm_ip4_address_set_address (addr, ip4_addr);
-	nm_ip4_address_set_prefix (addr, (guint32) prefix);
-	nm_ip4_address_set_gateway (addr, gw_addr);
 
 finish:
 	g_free (tmp);
@@ -404,126 +393,47 @@ finish:
 }
 
 /*
- * Parse IPv6 address from string to NMIP6Address stucture.
- * ip_str is the IPv6 address in the form address/prefix
- * gw_str is the gateway address (it is optional)
- */
-NMIP6Address *
-nmc_parse_and_build_ip6_address (const char *ip_str, const char *gw_str, GError **error)
-{
-	NMIP6Address *addr = NULL;
-	struct in6_addr ip_addr, gw_addr;
-	char *tmp;
-	char *plen;
-	long int prefix;
-
-	g_return_val_if_fail (ip_str != NULL, NULL);
-	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
-
-	tmp = g_strdup (ip_str);
-	plen = strchr (tmp, '/');  /* prefix delimiter */
-	if (plen)
-		*plen++ = '\0';
-
-	if (inet_pton (AF_INET6, tmp, &ip_addr) < 1) {
-		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-		             _("invalid IPv6 address '%s'"), tmp);
-		goto finish;
-	}
-
-	prefix = 128;
-	if (plen) {
-		if (!nmc_string_to_int (plen, TRUE, 1, 128, &prefix)) {
-			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("invalid prefix '%s'; <1-128> allowed"), plen);
-			goto finish;
-		}
-	}
-
-	if (inet_pton (AF_INET6, gw_str ? gw_str : "::", &gw_addr) < 1) {
-		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-		             _("invalid gateway '%s'"), gw_str);
-		goto finish;
-	}
-
-	addr = nm_ip6_address_new ();
-	nm_ip6_address_set_address (addr, &ip_addr);
-	nm_ip6_address_set_prefix (addr, (guint32) prefix);
-	nm_ip6_address_set_gateway (addr, &gw_addr);
-
-finish:
-	g_free (tmp);
-	return addr;
-}
-
-typedef struct {
-	long int prefix;
-	long int metric;
-	union _IpDest {
-		guint32 ip4_dst;
-		struct in6_addr ip6_dst;
-	} dst;
-	union _IpNextHop {
-		guint32 ip4_nh;
-		struct in6_addr ip6_nh;
-	} nh;
-} ParsedRoute;
-
-/*
- * _parse_and_build_route:
+ * nmc_parse_and_build_route:
  * @family: AF_INET or AF_INET6
  * @first: the route destination in the form of "address/prefix"
      (/prefix is optional)
  * @second: (allow-none): next hop address, if third is not NULL. Otherwise it could be
      either next hop address or metric. (It can be NULL when @third is NULL).
  * @third: (allow-none): route metric
- * @out: (out): route struct to fill
  * @error: location to store GError
  *
- * Parse route from strings and fill @out parameter.
+ * Parse route from strings and return an #NMIPRoute
  *
  * Returns: %TRUE on success, %FALSE on failure
  */
-static gboolean
-_parse_and_build_route (int family,
-                        const char *first,
-                        const char *second,
-                        const char *third,
-                        ParsedRoute *out,
-                        GError **error)
+NMIPRoute *
+nmc_parse_and_build_route (int family,
+                           const char *first,
+                           const char *second,
+                           const char *third,
+                           GError **error)
 {
-	int max_prefix;
-	char *tmp, *plen;
+	int max_prefix = (family == AF_INET) ? 32 : 128;
+	char *dest = NULL, *plen = NULL;
+	const char *next_hop = NULL;
+	const char *canon_dest;
+	long int prefix = max_prefix, metric = -1;
+	NMIPRoute *route = NULL;
 	gboolean success = FALSE;
+	GError *local = NULL;
 
 	g_return_val_if_fail (family == AF_INET || family == AF_INET6, FALSE);
 	g_return_val_if_fail (first != NULL, FALSE);
 	g_return_val_if_fail (second || !third, FALSE);
-	g_return_val_if_fail (out, FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	max_prefix = (family == AF_INET) ? 32 : 128;
-	/* initialize default values */
-	out->prefix = max_prefix;
-	out->metric = 0;
-	if (family == AF_INET)
-		out->nh.ip4_nh = 0;
-	else
-		out->nh.ip6_nh = in6addr_any;
-
-	tmp = g_strdup (first);
-	plen = strchr (tmp, '/');  /* prefix delimiter */
+	dest = g_strdup (first);
+	plen = strchr (dest, '/');  /* prefix delimiter */
 	if (plen)
 		*plen++ = '\0';
 
-	if (inet_pton (family, tmp, family == AF_INET ? (void *) &out->dst.ip4_dst : (void *) &out->dst.ip6_dst) < 1) {
-		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-		             _("invalid route destination address '%s'"), tmp);
-		goto finish;
-	}
-
 	if (plen) {
-		if (!nmc_string_to_int (plen, TRUE, 1, max_prefix, &out->prefix)) {
+		if (!nmc_string_to_int (plen, TRUE, 1, max_prefix, &prefix)) {
 			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 			             _("invalid prefix '%s'; <1-%d> allowed"),
 			             plen, max_prefix);
@@ -532,113 +442,49 @@ _parse_and_build_route (int family,
 	}
 
 	if (second) {
-		if (inet_pton (family, second, family == AF_INET ? (void *) &out->nh.ip4_nh : (void *) &out->nh.ip6_nh) < 1) {
-			if (third) {
-				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-				             _("invalid next hop address '%s'"), second);
+		if (third || nm_utils_ipaddr_valid (family, second))
+			next_hop = second;
+		else {
+			/* 'second' can be a metric */
+			if (!nmc_string_to_int (second, TRUE, 0, G_MAXUINT32, &metric)) {
+				g_set_error (error, 1, 0, _("the second component of route ('%s') is neither "
+				                            "a next hop address nor a metric"), second);
 				goto finish;
-			} else {
-				/* 'second' can be a metric */
-				if (!nmc_string_to_int (second, TRUE, 0, G_MAXUINT32, &out->metric)) {
-					g_set_error (error, 1, 0, _("the second component of route ('%s') is neither "
-					                            "a next hop address nor a metric"), second);
-					goto finish;
-				}
 			}
 		}
 	}
 
 	if (third) {
-		if (!nmc_string_to_int (third, TRUE, 0, G_MAXUINT32, &out->metric)) {
+		if (!nmc_string_to_int (third, TRUE, 0, G_MAXUINT32, &metric)) {
 			g_set_error (error, 1, 0, _("invalid metric '%s'"), third);
 			goto finish;
 		}
 	}
 
-	/* We don't accept default routes as NetworkManager handles it itself */
-	if (   (family == AF_INET && out->dst.ip4_dst == 0)
-	    || (family == AF_INET6 && IN6_IS_ADDR_UNSPECIFIED (&out->dst.ip6_dst))) {
+	route = nm_ip_route_new (family, dest, prefix, next_hop, metric, &local);
+	if (!route) {
+		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+		             _("invalid route: %s"), local->message);
+		g_clear_error (&local);
+		goto finish;
+	}
+
+	/* We don't accept default routes as NetworkManager handles it
+	 * itself. But we have to check this after @route has normalized the
+	 * dest string.
+	 */
+	canon_dest = nm_ip_route_get_dest (route);
+	if (!strcmp (canon_dest, "0.0.0.0") || !strcmp (canon_dest, "::")) {
 		g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 		                     _("default route cannot be added (NetworkManager handles it by itself)"));
+		g_clear_pointer (&route, nm_ip_route_unref);
 		goto finish;
 	}
 
 	success = TRUE;
 
 finish:
-	g_free (tmp);
-	return success;
-}
-
-/*
- * nmc_parse_and_build_ip4_route:
- * @first: the IPv4 route destination in the form of "address/prefix"
-     (/prefix is optional)
- * @second: (allow-none): next hop address, if third is not NULL. Otherwise it could be
-     either next hop address or metric. (It can be NULL when @third is NULL).
- * @third: (allow-none): route metric
- * @error: location to store GError
- *
- * Parse IPv4 route from strings to NMIP4Route stucture.
- *
- * Returns: route as a NMIP4Route object, or %NULL on failure
- */
-NMIP4Route *
-nmc_parse_and_build_ip4_route (const char *first,
-                               const char *second,
-                               const char *third,
-                               GError **error)
-{
-	ParsedRoute tmp_route;
-	NMIP4Route *route = NULL;
-
-	g_return_val_if_fail (first != NULL, NULL);
-	g_return_val_if_fail (second || !third, NULL);
-	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
-
-	if (_parse_and_build_route (AF_INET, first, second, third, &tmp_route, error)) {
-		route = nm_ip4_route_new ();
-		nm_ip4_route_set_dest (route, tmp_route.dst.ip4_dst);
-		nm_ip4_route_set_prefix (route, (guint32) tmp_route.prefix);
-		nm_ip4_route_set_next_hop (route, tmp_route.nh.ip4_nh);
-		nm_ip4_route_set_metric (route, (guint32) tmp_route.metric);
-	}
-	return route;
-}
-
-/*
- * nmc_parse_and_build_ip6_route:
- * @first: the IPv6 route destination in the form of "address/prefix"
-     (/prefix is optional)
- * @second: (allow-none): next hop address, if third is not NULL. Otherwise it could be
-     either next hop address or metric. (It can be NULL when @third is NULL).
- * @third: (allow-none): route metric
- * @error: location to store GError
- *
- * Parse IPv6 route from strings to NMIP6Route stucture.
- *
- * Returns: route as a NMIP6Route object, or %NULL on failure
- */
-NMIP6Route *
-nmc_parse_and_build_ip6_route (const char *first,
-                               const char *second,
-                               const char *third,
-                               GError **error)
-{
-	ParsedRoute tmp_route;
-	NMIP6Route *route = NULL;
-
-	g_return_val_if_fail (first != NULL, NULL);
-	g_return_val_if_fail (second || !third, NULL);
-	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
-
-	if (_parse_and_build_route (AF_INET6, first, second, third, &tmp_route, error)) {
-		route = nm_ip6_route_new ();
-		nm_ip6_route_set_dest (route, &tmp_route.dst.ip6_dst);
-		nm_ip6_route_set_prefix (route, (guint32) tmp_route.prefix);
-		nm_ip6_route_set_next_hop (route, &tmp_route.nh.ip6_nh);
-		nm_ip6_route_set_metric (route, (guint32) tmp_route.metric);
-	}
+	g_free (dest);
 	return route;
 }
 

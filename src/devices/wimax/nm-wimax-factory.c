@@ -18,6 +18,8 @@
  * Copyright (C) 2011 - 2014 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <gmodule.h>
 
 #include "nm-device-factory.h"

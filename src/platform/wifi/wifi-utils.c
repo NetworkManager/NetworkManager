@@ -19,7 +19,8 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <sys/stat.h>
 #include <stdio.h>
 #include <string.h>
@@ -161,12 +162,19 @@ wifi_utils_deinit (WifiData *data)
 }
 
 gboolean
-wifi_utils_is_wifi (const char *iface, const char *sysfs_path)
+wifi_utils_is_wifi (const char *iface, const char *sysfs_path, const char *devtype)
 {
 	char phy80211_path[255];
 	struct stat s;
 
 	g_return_val_if_fail (iface != NULL, FALSE);
+
+	if (g_strcmp0 (devtype, "wlan") == 0) {
+		/* All Wi-Fi drivers should set DEVTYPE=wlan.  Since the kernel's
+		 * cfg80211/nl80211 stack does, this check should match any nl80211
+		 * capable driver (including mac82011-based ones). */
+		return TRUE;
+	}
 
 	if (sysfs_path) {
 		/* Check for nl80211 sysfs paths */
@@ -174,9 +182,6 @@ wifi_utils_is_wifi (const char *iface, const char *sysfs_path)
 		if ((stat (phy80211_path, &s) == 0 && (s.st_mode & S_IFDIR)))
 			return TRUE;
 	}
-
-	if (wifi_nl80211_is_wifi (iface))
-		return TRUE;
 
 #if HAVE_WEXT
 	if (wifi_wext_is_wifi (iface))

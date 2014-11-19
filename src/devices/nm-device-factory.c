@@ -18,6 +18,8 @@
  * Copyright (C) 2014 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include "nm-device-factory.h"
 
 enum {

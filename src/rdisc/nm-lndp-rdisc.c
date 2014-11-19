@@ -18,6 +18,8 @@
  * Copyright (C) 2013 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 #include <arpa/inet.h>
 /* stdarg.h included because of a bug in ndp.h */

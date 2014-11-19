@@ -4,9 +4,9 @@
         "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
 
 <!--
- Copyright (C) 2005 - 2014 Red Hat, Inc.
- Copyright (C) 2005 - 2009 Novell, Inc.
- Copyright (C) 2005 Robert Love
+ Copyright 2005 - 2014 Red Hat, Inc.
+ Copyright 2005 - 2009 Novell, Inc.
+ Copyright 2005 Robert Love
 -->
 
 <refentry id="NetworkManager">
@@ -19,7 +19,7 @@
     <manvolnum>8</manvolnum>
     <refmiscinfo class="source">NetworkManager</refmiscinfo>
     <refmiscinfo class="manual">Network management daemons</refmiscinfo>
-    <refmiscinfo class="version">0.9.10</refmiscinfo>
+    <refmiscinfo class="version">1.0</refmiscinfo>
   </refmeta>
 
   <refnamediv>
@@ -182,7 +182,8 @@
           <term><varname>IP4_ADDRESS_N</varname></term>
           <listitem><para>
             The IPv4 address in the format "address/prefix gateway", where N is a number
-            from 0 to (# IPv4 address \- 1).
+            from 0 to (# IPv4 addresses - 1). gateway item in this variable is deprecated,
+            use IP4_GATEWAY instead.
           </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -192,10 +193,16 @@
           </para></listitem>
         </varlistentry>
         <varlistentry>
+          <term><varname>IP4_GATEWAY</varname></term>
+          <listitem><para>
+            The gateway IPv4 address in traditional numbers-and-dots notation.
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><varname>IP4_ROUTE_N</varname></term>
           <listitem><para>
             The IPv4 route in the format "address/prefix next-hop metric", where N is a number
-            from 0 to (# IPv4 routes \- 1).
+            from 0 to (# IPv4 routes - 1).
           </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -294,7 +301,7 @@
 	<listitem><para> Specify configuration file to set up various
 	settings for NetworkManager.  If not specified, the default
 	value of /etc/NetworkManager/NetworkManager.conf is used with
-	a fallback to the older 'nm\-system\-settings.conf' if located
+	a fallback to the older 'nm-system-settings.conf' if located
 	in the same directory.  See
 	<citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
 	for more information on configuration file.

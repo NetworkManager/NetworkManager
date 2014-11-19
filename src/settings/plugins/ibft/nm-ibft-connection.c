@@ -18,6 +18,8 @@
  * Copyright 2014 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 #include <net/ethernet.h>
 #include <netinet/ether.h>

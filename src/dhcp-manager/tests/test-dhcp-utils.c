@@ -17,6 +17,8 @@
  *
  */
 
+#include "config.h"
+
 #include <glib.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -652,6 +654,42 @@ test_ip4_prefix_classless (void)
 	g_hash_table_destroy (options);
 }
 
+#define COMPARE_ID(src, is_str, expected, expected_len) \
+G_STMT_START { \
+	gs_unref_bytes GBytes *b = NULL; \
+	const char *p; \
+	gsize l; \
+ \
+	b = nm_dhcp_utils_client_id_string_to_bytes (src); \
+	g_assert (b); \
+	p = g_bytes_get_data (b, &l); \
+	if (is_str) { \
+		g_assert_cmpint (l, ==, expected_len + 1); \
+		g_assert_cmpint (((const char *) p)[0], ==, 0); \
+		g_assert (memcmp (p + 1, expected, expected_len) == 0); \
+	} else { \
+		g_assert_cmpint (l, ==, expected_len); \
+		g_assert (memcmp (p, expected, expected_len) == 0); \
+	} \
+} G_STMT_END
+
+static void
+test_client_id_from_string (void)
+{
+	const char *nothex = "asdfasdfasdfasdfasdfasdfasdf";
+	const char *allhex = "00:11:22:33:4:55:66:77:88";
+	const guint8 allhex_bin[] = { 0x00, 0x11, 0x22, 0x33, 0x04, 0x55, 0x66, 0x77, 0x88 };
+	const char *somehex = "00:11:22:33:44:55:asdfasdfasdf:99:10";
+	const char *nocolons = "0011223344559910";
+	const char *endcolon = "00:11:22:33:44:55:";
+
+	COMPARE_ID (nothex, TRUE, nothex, strlen (nothex));
+	COMPARE_ID (allhex, FALSE, allhex_bin, sizeof (allhex_bin));
+	COMPARE_ID (somehex, TRUE, somehex, strlen (somehex));
+	COMPARE_ID (nocolons, TRUE, nocolons, strlen (nocolons));
+	COMPARE_ID (endcolon, TRUE, endcolon, strlen (endcolon));
+}
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -678,6 +716,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/dhcp/ip4-missing-prefix-16", test_ip4_missing_prefix_16);
 	g_test_add_func ("/dhcp/ip4-missing-prefix-8", test_ip4_missing_prefix_8);
 	g_test_add_func ("/dhcp/ip4-prefix-classless", test_ip4_prefix_classless);
+	g_test_add_func ("/dhcp/client-id-from-string", test_client_id_from_string);
 
 	return g_test_run ();
 }

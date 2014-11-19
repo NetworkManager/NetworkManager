@@ -152,9 +152,6 @@ valgrind-*.log
 /libnm-glib/tests/test-nm-client
 /libnm-glib/tests/test-remote-settings-client
 
-/libnm-util/nm-ifcfg-rh-docs.xml
-/libnm-util/nm-keyfile-docs.xml
-/libnm-util/nm-setting-docs.xml
 /libnm-util/nm-version.h
 /libnm-util/test-crypto
 /libnm-util/tests/test-crypto
@@ -166,6 +163,11 @@ valgrind-*.log
 /libnm-util/tests/test-setting-8021x
 /libnm-util/tests/test-setting-dcb
 
+/libnm/nm-ifcfg-rh-docs.xml
+/libnm/nm-keyfile-docs.xml
+/libnm/nm-property-docs.xml
+/libnm/nm-setting-docs.xml
+/libnm/nm-setting-docs-overrides.xml
 /libnm/tests/test-nm-client
 /libnm/tests/test-remote-settings-client
 /libnm/tests/test-secret-agent
@@ -230,7 +232,9 @@ valgrind-*.log
 /src/dhcp-manager/nm-dhcp-helper
 /src/dhcp-manager/tests/test-dhcp-dhclient
 /src/dhcp-manager/tests/test-dhcp-options
+/src/dhcp-manager/tests/test-dhcp-utils
 /src/dnsmasq-manager/tests/test-dnsmasq-utils
+/src/nm-iface-helper
 /src/settings/plugins/ibft/tests/test-ibft
 /src/settings/plugins/ifcfg-rh/tests/network-scripts/*-Test_Write_*
 /src/settings/plugins/ifcfg-rh/tests/network-scripts/Test_Write_*
