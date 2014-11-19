@@ -1047,9 +1047,11 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 **/
 	/* ---ifcfg-rh---
 	 * property: band
-	 * variable: CHANNEL
-	 * description: Channels greater than 14 mean "a" band, otherwise the band is "bg".
-	 * example: CHANNEL=6
+	 * variable: BAND(+)
+	 * values: a, bg
+	 * description: BAND alone is honored, but CHANNEL overrides BAND since it
+	 *   implies a band.
+	 * example: BAND=bg
 	 * ---end---
 	 */
 	g_object_class_install_property
@@ -1071,6 +1073,8 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 * property: channel
 	 * variable: CHANNEL
 	 * description: Channel used for the Wi-Fi communication.
+	 *   Channels greater than 14 mean "a" band, otherwise the
+	 *   band is "bg".
 	 * example: CHANNEL=6
 	 * ---end---
 	 */
