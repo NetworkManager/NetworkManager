@@ -145,7 +145,7 @@ sub process_data {
   my $str = join ("", @data);
   my $yaml_data = Load($str);
 
-  # now write ia line into the XML
+  # now write a line into the XML
   my $name   = $yaml_data->{property}    // "";
   my $var    = $yaml_data->{variable}    // $name;  # fallback to "property: "
   my $format = $yaml_data->{format}      // "";
