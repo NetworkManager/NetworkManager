@@ -182,13 +182,20 @@
           <term><varname>IP4_ADDRESS_N</varname></term>
           <listitem><para>
             The IPv4 address in the format "address/prefix gateway", where N is a number
-            from 0 to (# IPv4 address \- 1).
+            from 0 to (# IPv4 address \- 1). gateway item in this variable is deprecated,
+            use IP4_GATEWAY instead.
           </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><varname>IP4_NUM_ADDRESSES</varname></term>
           <listitem><para>
             The variable contains the number of IPv4 addresses the script may expect.
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>IP4_GATEWAY</varname></term>
+          <listitem><para>
+            The gateway IPv4 address in traditional numbers-and-dots notation.
           </para></listitem>
         </varlistentry>
         <varlistentry>

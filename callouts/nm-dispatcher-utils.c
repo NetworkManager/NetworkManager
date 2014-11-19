@@ -123,6 +123,10 @@ construct_ip4_items (GSList *items, GVariant *ip4_config, const char *prefix)
 		}
 		if (addresses->len)
 			items = g_slist_prepend (items, g_strdup_printf ("%sIP4_NUM_ADDRESSES=%d", prefix, addresses->len));
+
+		/* Write gateway to a separate variable, too. */
+		items = g_slist_prepend (items, g_strdup_printf ("%sIP4_GATEWAY=%s", prefix, gateway));
+
 		g_ptr_array_unref (addresses);
 		g_free (gateway);
 		g_variant_unref (val);
@@ -257,6 +261,10 @@ construct_ip6_items (GSList *items, GVariant *ip6_config, const char *prefix)
 		}
 		if (addresses->len)
 			items = g_slist_prepend (items, g_strdup_printf ("%sIP6_NUM_ADDRESSES=%d", prefix, addresses->len));
+
+		/* Write gateway to a separate variable, too. */
+		items = g_slist_prepend (items, g_strdup_printf ("%sIP6_GATEWAY=%s", prefix, gateway));
+
 		g_ptr_array_unref (addresses);
 		g_free (gateway);
 		g_variant_unref (val);
