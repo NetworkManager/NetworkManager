@@ -502,7 +502,11 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
 	/* ---ifcfg-rh---
 	 * property: ip6-privacy
 	 * variable: IPV6_PRIVACY, IPV6_PRIVACY_PREFER_PUBLIC_IP(+)
+	 * values: IPV6_PRIVACY: no, yes (rfc3041 or rfc4941);
+	 *   IPV6_PRIVACY_PREFER_PUBLIC_IP: yes, no
+	 * default: no
 	 * description: Configure IPv6 Privacy Extensions for SLAAC (RFC4941).
+	 * example: IPV6_PRIVACY=rfc3041 IPV6_PRIVACY_PREFER_PUBLIC_IP=yes
 	 * ---end---
 	 */
 	g_object_class_install_property
