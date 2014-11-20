@@ -63,6 +63,7 @@ typedef struct {
 	GHashTable *requests;
 
 	char *path;
+	gboolean enabled;
 } NMSecretAgentSimplePrivate;
 
 static void
@@ -451,14 +452,6 @@ nm_secret_agent_simple_get_secrets (NMSecretAgent                 *agent,
 		return;
 	}
 
-	if (priv->path && g_strcmp0 (priv->path, connection_path) != 0) {
-		/* We only handle requests for connection with @path if set. */
-		error = g_error_new (NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_FAILED,
-		                     "Request for %s secrets doesn't match path %s",
-		                     request_id, priv->path);
-		goto nope;
-	}
-
 	s_con = nm_connection_get_setting_connection (connection);
 	connection_type = nm_setting_connection_get_connection_type (s_con);
 
@@ -485,7 +478,8 @@ nm_secret_agent_simple_get_secrets (NMSecretAgent                 *agent,
 	request->request_id = request_id;
 	g_hash_table_replace (priv->requests, request->request_id, request);
 
-	request_secrets_from_ui (request);
+	if (priv->enabled)
+		request_secrets_from_ui (request);
 }
 
 /**
@@ -588,6 +582,59 @@ nm_secret_agent_simple_delete_secrets (NMSecretAgent                  *agent,
 	callback (agent, connection, NULL, callback_data);
 }
 
+/**
+ * nm_secret_agent_simple_set_connection_path:
+ * @agent: the #NMSecretAgentSimple
+ * @path: the path of the connection the agent handle secrets for
+ *
+ * Sets the path for a new #NMSecretAgentSimple.
+ */
+void
+nm_secret_agent_simple_set_connection_path (NMSecretAgent *agent, const char *path)
+{
+	NMSecretAgentSimplePrivate *priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (agent);
+
+	g_free (priv->path);
+	priv->path = g_strdup (path);
+}
+
+/**
+ * nm_secret_agent_simple_enable:
+ * @agent: the #NMSecretAgentSimple
+ *
+ * Enables servicing the requests including the already queued ones.
+ */
+void
+nm_secret_agent_simple_enable (NMSecretAgent *agent)
+{
+	NMSecretAgentSimplePrivate *priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (agent);
+	GList *requests, *iter;
+	GError *error;
+
+	if (priv->enabled)
+		return;
+	priv->enabled = TRUE;
+
+	/* Service pending secret requests. */
+	requests = g_hash_table_get_values (priv->requests);
+	for (iter = requests; iter; iter = g_list_next (iter)) {
+		NMSecretAgentSimpleRequest *request = iter->data;
+
+		if (!g_str_has_prefix (request->request_id, priv->path)) {
+			request_secrets_from_ui (request);
+		} else {
+			/* We only handle requests for connection with @path if set. */
+			error = g_error_new (NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_FAILED,
+			                     "Request for %s secrets doesn't match path %s",
+			                     request->request_id, priv->path);
+			request->callback (agent, request->connection, NULL, error, request->callback_data);
+			g_hash_table_remove (priv->requests, request->request_id);
+			g_error_free (error);
+		}
+	}
+	g_list_free (requests);
+}
+
 void
 nm_secret_agent_simple_class_init (NMSecretAgentSimpleClass *klass)
 {
@@ -639,22 +686,21 @@ nm_secret_agent_simple_class_init (NMSecretAgentSimpleClass *klass)
 /**
  * nm_secret_agent_simple_new:
  * @name: the identifier of secret agent
- * @path: (allow-none): the path of the connection the agent handle secrets for,
- *   or %NULL to handle requests for all connections
  *
- * Creates a new #NMSecretAgentSimple.
+ * Creates a new #NMSecretAgentSimple. It does not serve any requests until
+ * nm_secret_agent_simple_enable() is called.
  *
- * Returns: a new #NMSecretAgentSimple
+ * Returns: a new #NMSecretAgentSimple if the agent creation is successful
+ * or %NULL in case of a failure.
  */
 NMSecretAgent *
-nm_secret_agent_simple_new (const char *name, const char *path)
+nm_secret_agent_simple_new (const char *name)
 {
 	NMSecretAgent *agent;
 
 	agent = g_initable_new (NM_TYPE_SECRET_AGENT_SIMPLE, NULL, NULL,
 	                        NM_SECRET_AGENT_IDENTIFIER, name,
 	                        NULL);
-	NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (agent)->path = g_strdup (path);
 
 	return agent;
 }
