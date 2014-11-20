@@ -584,15 +584,15 @@ nm_secret_agent_simple_delete_secrets (NMSecretAgent                  *agent,
 
 /**
  * nm_secret_agent_simple_set_connection_path:
- * @agent: the #NMSecretAgentSimple
+ * @self: the #NMSecretAgentSimple
  * @path: the path of the connection the agent handle secrets for
  *
  * Sets the path for a new #NMSecretAgentSimple.
  */
 void
-nm_secret_agent_simple_set_connection_path (NMSecretAgent *agent, const char *path)
+nm_secret_agent_simple_set_connection_path (NMSecretAgentSimple *self, const char *path)
 {
-	NMSecretAgentSimplePrivate *priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (agent);
+	NMSecretAgentSimplePrivate *priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (self);
 
 	g_free (priv->path);
 	priv->path = g_strdup (path);
@@ -600,14 +600,14 @@ nm_secret_agent_simple_set_connection_path (NMSecretAgent *agent, const char *pa
 
 /**
  * nm_secret_agent_simple_enable:
- * @agent: the #NMSecretAgentSimple
+ * @self: the #NMSecretAgentSimple
  *
  * Enables servicing the requests including the already queued ones.
  */
 void
-nm_secret_agent_simple_enable (NMSecretAgent *agent)
+nm_secret_agent_simple_enable (NMSecretAgentSimple *self)
 {
-	NMSecretAgentSimplePrivate *priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (agent);
+	NMSecretAgentSimplePrivate *priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (self);
 	GList *requests, *iter;
 	GError *error;
 
@@ -696,11 +696,7 @@ nm_secret_agent_simple_class_init (NMSecretAgentSimpleClass *klass)
 NMSecretAgent *
 nm_secret_agent_simple_new (const char *name)
 {
-	NMSecretAgent *agent;
-
-	agent = g_initable_new (NM_TYPE_SECRET_AGENT_SIMPLE, NULL, NULL,
-	                        NM_SECRET_AGENT_IDENTIFIER, name,
-	                        NULL);
-
-	return agent;
+	return g_initable_new (NM_TYPE_SECRET_AGENT_SIMPLE, NULL, NULL,
+	                       NM_SECRET_AGENT_OLD_IDENTIFIER, name,
+	                       NULL);
 }

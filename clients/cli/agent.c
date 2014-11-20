@@ -147,7 +147,7 @@ do_agent_secret (NmCli *nmc, int argc, char **argv)
 		/* We keep running */
 		nmc->should_wait = TRUE;
 
-		nm_secret_agent_simple_enable (nmc->secret_agent);
+		nm_secret_agent_simple_enable (NM_SECRET_AGENT_SIMPLE (nmc->secret_agent));
 		g_signal_connect (nmc->secret_agent, "request-secrets", G_CALLBACK (secrets_requested), nmc);
 		g_print (_("nmcli successfully registered as a NetworkManager's secret agent.\n"));
 	} else {
