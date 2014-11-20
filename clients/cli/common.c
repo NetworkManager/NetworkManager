@@ -980,7 +980,7 @@ nmc_secrets_requested (NMSecretAgentSimple *agent,
 		/* Unregister our secret agent on failure, so that another agent
 		 * may be tried */
 		if (nmc->secret_agent) {
-			nm_secret_agent_unregister (nmc->secret_agent, NULL, NULL);
+			nm_secret_agent_old_unregister (nmc->secret_agent, NULL, NULL);
 			g_clear_object (&nmc->secret_agent);
 		}
         }

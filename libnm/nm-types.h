@@ -47,7 +47,6 @@ typedef struct _NMDhcpConfig        NMDhcpConfig;
 typedef struct _NMIPConfig          NMIPConfig;
 typedef struct _NMObject            NMObject;
 typedef struct _NMRemoteConnection  NMRemoteConnection;
-typedef struct _NMSecretAgent       NMSecretAgent;
 typedef struct _NMVpnConnection     NMVpnConnection;
 typedef struct _NMWimaxNsp          NMWimaxNsp;
 

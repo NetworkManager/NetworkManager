@@ -132,7 +132,7 @@ activate_connection (NMConnection *connection,
                      NMObject     *specific_object)
 {
 	NmtNewtForm *form;
-	NMSecretAgent *agent;
+	NMSecretAgentOld *agent;
 	NmtNewtWidget *label;
 	NmtSyncOp op;
 	const char *specific_object_path;
@@ -220,7 +220,7 @@ activate_connection (NMConnection *connection,
 		nmt_newt_form_quit (form);
 	g_object_unref (form);
 
-	nm_secret_agent_unregister (agent, NULL, NULL);
+	nm_secret_agent_old_unregister (agent, NULL, NULL);
 	g_object_unref (agent);
 }
 

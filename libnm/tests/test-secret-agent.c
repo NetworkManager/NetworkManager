@@ -26,6 +26,7 @@
 #include <signal.h>
 
 #include <NetworkManager.h>
+#include <nm-secret-agent-old.h>
 #include "nm-glib-compat.h"
 #include "nm-test-utils.h"
 
@@ -41,11 +42,11 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-typedef NMSecretAgent TestSecretAgent;
-typedef NMSecretAgentClass TestSecretAgentClass;
+typedef NMSecretAgentOld TestSecretAgent;
+typedef NMSecretAgentOldClass TestSecretAgentClass;
 
 GType test_secret_agent_get_type (void);
-G_DEFINE_TYPE (TestSecretAgent, test_secret_agent, NM_TYPE_SECRET_AGENT)
+G_DEFINE_TYPE (TestSecretAgent, test_secret_agent, NM_TYPE_SECRET_AGENT_OLD)
 
 static void
 test_secret_agent_init (TestSecretAgent *agent)
@@ -53,14 +54,14 @@ test_secret_agent_init (TestSecretAgent *agent)
 }
 
 static void
-test_secret_agent_get_secrets (NMSecretAgent                 *agent,
-                               NMConnection                  *connection,
-                               const char                    *connection_path,
-                               const char                    *setting_name,
-                               const char                   **hints,
-                               NMSecretAgentGetSecretsFlags   flags,
-                               NMSecretAgentGetSecretsFunc    callback,
-                               gpointer                       callback_data)
+test_secret_agent_get_secrets (NMSecretAgentOld                 *agent,
+                               NMConnection                     *connection,
+                               const char                       *connection_path,
+                               const char                       *setting_name,
+                               const char                      **hints,
+                               NMSecretAgentGetSecretsFlags      flags,
+                               NMSecretAgentOldGetSecretsFunc    callback,
+                               gpointer                          callback_data)
 {
 	NMSettingWirelessSecurity *s_wsec;
 	GVariant *secrets = NULL;
@@ -113,29 +114,29 @@ done:
 }
 
 static void
-test_secret_agent_cancel_get_secrets (NMSecretAgent *agent,
-                                      const gchar   *connection_path,
-                                      const gchar   *setting_name)
+test_secret_agent_cancel_get_secrets (NMSecretAgentOld *agent,
+                                      const gchar      *connection_path,
+                                      const gchar      *setting_name)
 {
 	g_assert_not_reached ();
 }
 
 static void
-test_secret_agent_save_secrets (NMSecretAgent                *agent,
-                               NMConnection                 *connection,
-                               const gchar                  *connection_path,
-                               NMSecretAgentSaveSecretsFunc  callback,
-                               gpointer                      callback_data)
+test_secret_agent_save_secrets (NMSecretAgentOld                *agent,
+                                NMConnection                    *connection,
+                                const gchar                     *connection_path,
+                                NMSecretAgentOldSaveSecretsFunc  callback,
+                                gpointer                         callback_data)
 {
 	g_assert_not_reached ();
 }
 
 static void
-test_secret_agent_delete_secrets (NMSecretAgent                  *agent,
-                                 NMConnection                   *connection,
-                                 const gchar                    *connection_path,
-                                 NMSecretAgentDeleteSecretsFunc  callback,
-                                 gpointer                        callback_data)
+test_secret_agent_delete_secrets (NMSecretAgentOld                  *agent,
+                                  NMConnection                      *connection,
+                                  const gchar                       *connection_path,
+                                  NMSecretAgentOldDeleteSecretsFunc  callback,
+                                  gpointer                           callback_data)
 {
 	g_assert_not_reached ();
 }
@@ -144,7 +145,7 @@ static void
 test_secret_agent_class_init (TestSecretAgentClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
-	NMSecretAgentClass *agent_class = NM_SECRET_AGENT_CLASS (klass);
+	NMSecretAgentOldClass *agent_class = NM_SECRET_AGENT_OLD_CLASS (klass);
 
 	agent_class->get_secrets = test_secret_agent_get_secrets;
 	agent_class->cancel_get_secrets = test_secret_agent_cancel_get_secrets;
@@ -164,15 +165,15 @@ test_secret_agent_class_init (TestSecretAgentClass *klass)
 
 }
 
-static NMSecretAgent *
+static NMSecretAgentOld *
 test_secret_agent_new (void)
 {
-	NMSecretAgent *agent;
+	NMSecretAgentOld *agent;
 	GError *error = NULL;
 
 	agent = g_initable_new (test_secret_agent_get_type (), NULL, &error,
-	                        NM_SECRET_AGENT_IDENTIFIER, "test-secret-agent",
-	                        NM_SECRET_AGENT_AUTO_REGISTER, FALSE,
+	                        NM_SECRET_AGENT_OLD_IDENTIFIER, "test-secret-agent",
+	                        NM_SECRET_AGENT_OLD_AUTO_REGISTER, FALSE,
 	                        NULL);
 	g_assert_no_error (error);
 
@@ -185,7 +186,7 @@ typedef struct {
 	NMTestServiceInfo *sinfo;
 	NMClient *client;
 
-	NMSecretAgent *agent;
+	NMSecretAgentOld *agent;
 	NMDevice *device;
 	NMConnection *connection;
 
@@ -228,9 +229,9 @@ register_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 	TestSecretAgentData *sadata = user_data;
 	GError *error = NULL;
 
-	nm_secret_agent_register_finish (sadata->agent, result, &error);
+	nm_secret_agent_old_register_finish (sadata->agent, result, &error);
 	g_assert_no_error (error);
-	g_assert (nm_secret_agent_get_registered (sadata->agent));
+	g_assert (nm_secret_agent_old_get_registered (sadata->agent));
 
 	g_main_loop_quit (sadata->loop);
 }
@@ -297,11 +298,11 @@ test_setup (TestSecretAgentData *sadata, gconstpointer test_data)
 		sadata->agent = test_secret_agent_new ();
 
 		if (!strcmp (agent_notes, "sync")) {
-			nm_secret_agent_register (sadata->agent, NULL, &error);
+			nm_secret_agent_old_register (sadata->agent, NULL, &error);
 			g_assert_no_error (error);
-			g_assert (nm_secret_agent_get_registered (sadata->agent));
+			g_assert (nm_secret_agent_old_get_registered (sadata->agent));
 		} else {
-			nm_secret_agent_register_async (sadata->agent, NULL,
+			nm_secret_agent_old_register_async (sadata->agent, NULL,
 			                                register_cb, sadata);
 			g_main_loop_run (sadata->loop);
 		}
@@ -315,8 +316,8 @@ test_cleanup (TestSecretAgentData *sadata, gconstpointer test_data)
 	GError *error = NULL;
 
 	if (sadata->agent) {
-		if (nm_secret_agent_get_registered (sadata->agent)) {
-			nm_secret_agent_unregister (sadata->agent, NULL, &error);
+		if (nm_secret_agent_old_get_registered (sadata->agent)) {
+			nm_secret_agent_old_unregister (sadata->agent, NULL, &error);
 			g_assert_no_error (error);
 		}
 		g_object_unref (sadata->agent);
@@ -549,12 +550,12 @@ async_init_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 static void
 test_secret_agent_nm_not_running (void)
 {
-	NMSecretAgent *agent;
+	NMSecretAgentOld *agent;
 	GMainLoop *loop;
 	GError *error = NULL;
 
 	agent = g_initable_new (test_secret_agent_get_type (), NULL, &error,
-	                        NM_SECRET_AGENT_IDENTIFIER, "test-secret-agent",
+	                        NM_SECRET_AGENT_OLD_IDENTIFIER, "test-secret-agent",
 	                        NULL);
 	g_assert_error (error, NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_FAILED);
 	g_assert (agent == NULL);
@@ -564,7 +565,7 @@ test_secret_agent_nm_not_running (void)
 	g_async_initable_new_async (test_secret_agent_get_type (),
 	                            G_PRIORITY_DEFAULT,
 	                            NULL, async_init_cb, loop,
-	                            NM_SECRET_AGENT_IDENTIFIER, "test-secret-agent",
+	                            NM_SECRET_AGENT_OLD_IDENTIFIER, "test-secret-agent",
 	                            NULL);
 	g_main_loop_run (loop);
 	g_main_loop_unref (loop);
@@ -583,7 +584,7 @@ static void
 test_secret_agent_auto_register (void)
 {
 	NMTestServiceInfo *sinfo;
-	NMSecretAgent *agent;
+	NMSecretAgentOld *agent;
 	GMainLoop *loop;
 	GError *error = NULL;
 
@@ -592,30 +593,30 @@ test_secret_agent_auto_register (void)
 
 	agent = test_secret_agent_new ();
 	g_object_set (agent,
-	              NM_SECRET_AGENT_AUTO_REGISTER, TRUE,
+	              NM_SECRET_AGENT_OLD_AUTO_REGISTER, TRUE,
 	              NULL);
-	g_signal_connect (agent, "notify::" NM_SECRET_AGENT_REGISTERED,
+	g_signal_connect (agent, "notify::" NM_SECRET_AGENT_OLD_REGISTERED,
 	                  G_CALLBACK (registered_changed), loop);
 
-	g_assert (!nm_secret_agent_get_registered (agent));
-	nm_secret_agent_register (agent, NULL, &error);
+	g_assert (!nm_secret_agent_old_get_registered (agent));
+	nm_secret_agent_old_register (agent, NULL, &error);
 	g_assert_no_error (error);
-	g_assert (nm_secret_agent_get_registered (agent));
+	g_assert (nm_secret_agent_old_get_registered (agent));
 
 	/* Shut down test service */
 	nm_test_service_cleanup (sinfo);
 	g_main_loop_run (loop);
-	g_assert (!nm_secret_agent_get_registered (agent));
+	g_assert (!nm_secret_agent_old_get_registered (agent));
 
 	/* Restart test service */
 	sinfo = nm_test_service_init ();
 	g_main_loop_run (loop);
-	g_assert (nm_secret_agent_get_registered (agent));
+	g_assert (nm_secret_agent_old_get_registered (agent));
 
 	/* Shut down test service again */
 	nm_test_service_cleanup (sinfo);
 	g_main_loop_run (loop);
-	g_assert (!nm_secret_agent_get_registered (agent));
+	g_assert (!nm_secret_agent_old_get_registered (agent));
 
 	g_object_unref (agent);
 	g_main_loop_unref (loop);
