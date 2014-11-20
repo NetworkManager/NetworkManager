@@ -620,7 +620,7 @@ nm_secret_agent_simple_enable (NMSecretAgent *agent)
 	for (iter = requests; iter; iter = g_list_next (iter)) {
 		NMSecretAgentSimpleRequest *request = iter->data;
 
-		if (!g_str_has_prefix (request->request_id, priv->path)) {
+		if (g_str_has_prefix (request->request_id, priv->path)) {
 			request_secrets_from_ui (request);
 		} else {
 			/* We only handle requests for connection with @path if set. */
