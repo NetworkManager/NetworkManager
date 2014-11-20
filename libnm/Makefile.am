@@ -191,7 +191,7 @@ noinst_DATA = \
 	nm-keyfile-docs.xml \
 	nm-ifcfg-rh-docs.xml
 
-docs_sources = $(filter-out nm-core-enum-types.c,$(libnm_core_sources))
+docs_sources = $(filter-out %/nm-core-enum-types.c,$(libnm_core_sources))
 
 nm-setting-docs-overrides.xml: generate-plugin-docs.pl $(docs_sources)
 	$(srcdir)/generate-plugin-docs.pl dbus $(top_srcdir)/libnm-core $@
