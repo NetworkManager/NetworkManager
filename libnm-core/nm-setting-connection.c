@@ -1258,7 +1258,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	/* ---ifcfg-rh---
 	 * property: uuid
 	 * variable: UUID(+)
-	 * description: UUID for the connetcion profile. When missing NetworkManager
+	 * description: UUID for the connection profile. When missing, NetworkManager
 	 *   creates the UUID itself (by hashing the file).
 	 * ---end---
 	 */
