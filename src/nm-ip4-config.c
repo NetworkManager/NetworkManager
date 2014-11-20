@@ -536,6 +536,117 @@ nm_ip4_config_merge (NMIP4Config *dst, const NMIP4Config *src)
 	g_object_thaw_notify (G_OBJECT (dst));
 }
 
+/*******************************************************************************/
+
+static int
+_addresses_get_index (const NMIP4Config *self, const NMPlatformIP4Address *addr)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
+	guint i;
+
+	for (i = 0; i < priv->addresses->len; i++) {
+		const NMPlatformIP4Address *a = &g_array_index (priv->addresses, NMPlatformIP4Address, i);
+
+		if (addr->address == a->address &&
+		    addr->plen == a->plen)
+			return (int) i;
+	}
+	return -1;
+}
+
+static int
+_nameservers_get_index (const NMIP4Config *self, guint32 ns)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
+	guint i;
+
+	for (i = 0; i < priv->nameservers->len; i++) {
+		guint32 n = g_array_index (priv->nameservers, guint32, i);
+
+		if (ns == n)
+			return (int) i;
+	}
+	return -1;
+}
+
+static int
+_routes_get_index (const NMIP4Config *self, const NMPlatformIP4Route *route)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
+	guint i;
+
+	for (i = 0; i < priv->routes->len; i++) {
+		const NMPlatformIP4Route *r = &g_array_index (priv->routes, NMPlatformIP4Route, i);
+
+		if (   route->network == r->network
+		    && route->plen == r->plen)
+			return (int) i;
+	}
+	return -1;
+}
+
+static int
+_domains_get_index (const NMIP4Config *self, const char *domain)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
+	guint i;
+
+	for (i = 0; i < priv->domains->len; i++) {
+		const char *d = g_ptr_array_index (priv->domains, i);
+
+		if (g_strcmp0 (domain, d) == 0)
+			return (int) i;
+	}
+	return -1;
+}
+
+static int
+_searches_get_index (const NMIP4Config *self, const char *search)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
+	guint i;
+
+	for (i = 0; i < priv->searches->len; i++) {
+		const char *s = g_ptr_array_index (priv->searches, i);
+
+		if (g_strcmp0 (search, s) == 0)
+			return (int) i;
+	}
+	return -1;
+}
+
+static int
+_nis_servers_get_index (const NMIP4Config *self, guint32 nis_server)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
+	guint i;
+
+	for (i = 0; i < priv->nis->len; i++) {
+		guint32 n = g_array_index (priv->nis, guint32, i);
+
+		if (n == nis_server)
+			return (int) i;
+	}
+	return -1;
+}
+
+static int
+_wins_get_index (const NMIP4Config *self, guint32 wins_server)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
+	guint i;
+
+	for (i = 0; i < priv->wins->len; i++) {
+		guint32 n = g_array_index (priv->wins, guint32, i);
+
+		if (n == wins_server)
+			return (int) i;
+	}
+	return -1;
+}
+
+/*******************************************************************************/
+
 /**
  * nm_ip4_config_subtract:
  * @dst: config from which to remove everything in @src
@@ -546,7 +657,8 @@ nm_ip4_config_merge (NMIP4Config *dst, const NMIP4Config *src)
 void
 nm_ip4_config_subtract (NMIP4Config *dst, const NMIP4Config *src)
 {
-	guint32 i, j;
+	guint32 i;
+	gint idx;
 
 	g_return_if_fail (src != NULL);
 	g_return_if_fail (dst != NULL);
@@ -555,31 +667,16 @@ nm_ip4_config_subtract (NMIP4Config *dst, const NMIP4Config *src)
 
 	/* addresses */
 	for (i = 0; i < nm_ip4_config_get_num_addresses (src); i++) {
-		const NMPlatformIP4Address *src_addr = nm_ip4_config_get_address (src, i);
-
-		for (j = 0; j < nm_ip4_config_get_num_addresses (dst); j++) {
-			const NMPlatformIP4Address *dst_addr = nm_ip4_config_get_address (dst, j);
-
-			if (src_addr->address == dst_addr->address &&
-			    src_addr->plen == dst_addr->plen) {
-				nm_ip4_config_del_address (dst, j);
-				break;
-			}
-		}
+		idx = _addresses_get_index (dst, nm_ip4_config_get_address (src, i));
+		if (idx >= 0)
+			nm_ip4_config_del_address (dst, idx);
 	}
 
 	/* nameservers */
 	for (i = 0; i < nm_ip4_config_get_num_nameservers (src); i++) {
-		guint32 src_ns = nm_ip4_config_get_nameserver (src, i);
-
-		for (j = 0; j < nm_ip4_config_get_num_nameservers (dst); j++) {
-			guint32 dst_ns = nm_ip4_config_get_nameserver (dst, j);
-
-			if (dst_ns == src_ns) {
-				nm_ip4_config_del_nameserver (dst, j);
-				break;
-			}
-		}
+		idx = _nameservers_get_index (dst, nm_ip4_config_get_nameserver (src, i));
+		if (idx >= 0)
+			nm_ip4_config_del_nameserver (dst, idx);
 	}
 
 	/* default gateway */
@@ -591,44 +688,23 @@ nm_ip4_config_subtract (NMIP4Config *dst, const NMIP4Config *src)
 
 	/* routes */
 	for (i = 0; i < nm_ip4_config_get_num_routes (src); i++) {
-		const NMPlatformIP4Route *src_route = nm_ip4_config_get_route (src, i);
-
-		for (j = 0; j < nm_ip4_config_get_num_routes (dst); j++) {
-			const NMPlatformIP4Route *dst_route = nm_ip4_config_get_route (dst, j);
-
-			if (src_route->network == dst_route->network && src_route->plen == dst_route->plen) {
-				nm_ip4_config_del_route (dst, j);
-				break;
-			}
-		}
+		idx = _routes_get_index (dst, nm_ip4_config_get_route (src, i));
+		if (idx >= 0)
+			nm_ip4_config_del_route (dst, idx);
 	}
 
 	/* domains */
 	for (i = 0; i < nm_ip4_config_get_num_domains (src); i++) {
-		const char *src_domain = nm_ip4_config_get_domain (src, i);
-
-		for (j = 0; j < nm_ip4_config_get_num_domains (dst); j++) {
-			const char *dst_domain = nm_ip4_config_get_domain (dst, j);
-
-			if (g_strcmp0 (src_domain, dst_domain) == 0) {
-				nm_ip4_config_del_domain (dst, j);
-				break;
-			}
-		}
+		idx = _domains_get_index (dst, nm_ip4_config_get_domain (src, i));
+		if (idx >= 0)
+			nm_ip4_config_del_domain (dst, idx);
 	}
 
 	/* dns searches */
 	for (i = 0; i < nm_ip4_config_get_num_searches (src); i++) {
-		const char *src_search = nm_ip4_config_get_search (src, i);
-
-		for (j = 0; j < nm_ip4_config_get_num_searches (dst); j++) {
-			const char *dst_search = nm_ip4_config_get_search (dst, j);
-
-			if (g_strcmp0 (src_search, dst_search) == 0) {
-				nm_ip4_config_del_search (dst, j);
-				break;
-			}
-		}
+		idx = _searches_get_index (dst, nm_ip4_config_get_search (src, i));
+		if (idx >= 0)
+			nm_ip4_config_del_search (dst, idx);
 	}
 
 	/* MSS */
@@ -641,16 +717,9 @@ nm_ip4_config_subtract (NMIP4Config *dst, const NMIP4Config *src)
 
 	/* NIS */
 	for (i = 0; i < nm_ip4_config_get_num_nis_servers (src); i++) {
-		guint32 src_nis = nm_ip4_config_get_nis_server (src, i);
-
-		for (j = 0; j < nm_ip4_config_get_num_nis_servers (dst); j++) {
-			guint32 dst_nis = nm_ip4_config_get_nis_server (dst, j);
-
-			if (dst_nis == src_nis) {
-				nm_ip4_config_del_nis_server (dst, j);
-				break;
-			}
-		}
+		idx = _nis_servers_get_index (dst, nm_ip4_config_get_nis_server (src, i));
+		if (idx >= 0)
+			nm_ip4_config_del_nis_server (dst, idx);
 	}
 
 	if (g_strcmp0 (nm_ip4_config_get_nis_domain (src), nm_ip4_config_get_nis_domain (dst)) == 0)
@@ -658,16 +727,9 @@ nm_ip4_config_subtract (NMIP4Config *dst, const NMIP4Config *src)
 
 	/* WINS */
 	for (i = 0; i < nm_ip4_config_get_num_wins (src); i++) {
-		guint32 src_wins = nm_ip4_config_get_wins (src, i);
-
-		for (j = 0; j < nm_ip4_config_get_num_wins (dst); j++) {
-			guint32 dst_wins = nm_ip4_config_get_wins (dst, j);
-
-			if (dst_wins == src_wins) {
-				nm_ip4_config_del_wins (dst, j);
-				break;
-			}
-		}
+		idx = _wins_get_index (dst, nm_ip4_config_get_wins (src, i));
+		if (idx >= 0)
+			nm_ip4_config_del_wins (dst, idx);
 	}
 
 	g_object_thaw_notify (G_OBJECT (dst));
