@@ -2964,7 +2964,7 @@ tun_get_properties (NMPlatform *platform, int ifindex, NMPlatformTunProperties *
 #ifndef IFF_MULTI_QUEUE
 			const int IFF_MULTI_QUEUE = 0x0100;
 #endif
-			props->mode = ((flags & TUN_TYPE_MASK) == TUN_TUN_DEV) ? "tun" : "tap";
+			props->mode = ((flags & (IFF_TUN | IFF_TAP)) == IFF_TUN) ? "tun" : "tap";
 			props->no_pi = !!(flags & IFF_NO_PI);
 			props->vnet_hdr = !!(flags & IFF_VNET_HDR);
 			props->multi_queue = !!(flags & IFF_MULTI_QUEUE);
