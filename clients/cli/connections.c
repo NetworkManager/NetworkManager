@@ -1768,10 +1768,9 @@ active_connection_state_cb (NMActiveConnection *active, GParamSpec *pspec, gpoin
 
 		if (nmc->secret_agent) {
 			NMRemoteConnection *connection = nm_active_connection_get_connection (active);
-			const gchar *path = nm_connection_get_path (NM_CONNECTION (connection));
 
-			nm_secret_agent_simple_set_connection_path (NM_SECRET_AGENT_SIMPLE (nmc->secret_agent), path);
-			nm_secret_agent_simple_enable (NM_SECRET_AGENT_SIMPLE (nmc->secret_agent));
+			nm_secret_agent_simple_enable (NM_SECRET_AGENT_SIMPLE (nmc->secret_agent),
+			                               nm_connection_get_path (NM_CONNECTION (connection)));
 		}
 
 		devices = nm_active_connection_get_devices (active);
@@ -2092,10 +2091,8 @@ nmc_activate_connection (NmCli *nmc,
 	if (nmc->secret_agent) {
 		g_signal_connect (nmc->secret_agent, "request-secrets", G_CALLBACK (nmc_secrets_requested), nmc);
 		if (connection) {
-			const gchar *path = nm_object_get_path (NM_OBJECT (connection));
-
-			nm_secret_agent_simple_set_connection_path (NM_SECRET_AGENT_SIMPLE (nmc->secret_agent), path);
-			nm_secret_agent_simple_enable (NM_SECRET_AGENT_SIMPLE (nmc->secret_agent));
+			nm_secret_agent_simple_enable (NM_SECRET_AGENT_SIMPLE (nmc->secret_agent),
+			                               nm_object_get_path (NM_OBJECT (connection)));
 		}
 	}
 

@@ -53,9 +53,8 @@ void           nm_secret_agent_simple_response            (NMSecretAgentSimple *
                                                            const char          *request_id,
                                                            GPtrArray           *secrets);
 
-void           nm_secret_agent_simple_set_connection_path (NMSecretAgentSimple *self,
+void           nm_secret_agent_simple_enable              (NMSecretAgentSimple *self,
                                                            const char          *path);
-void           nm_secret_agent_simple_enable              (NMSecretAgentSimple *self);
 
 G_END_DECLS
 

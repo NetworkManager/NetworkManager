@@ -1520,10 +1520,9 @@ connect_device_cb (GObject *client, GAsyncResult *result, gpointer user_data)
 		} else {
 			if (nmc->secret_agent) {
 				NMRemoteConnection *connection = nm_active_connection_get_connection (active);
-				const char *path = nm_connection_get_path (NM_CONNECTION (connection));
 
-				nm_secret_agent_simple_set_connection_path (NM_SECRET_AGENT_SIMPLE (nmc->secret_agent), path);
-				nm_secret_agent_simple_enable (NM_SECRET_AGENT_SIMPLE (nmc->secret_agent));
+				nm_secret_agent_simple_enable (NM_SECRET_AGENT_SIMPLE (nmc->secret_agent),
+				                               nm_connection_get_path (NM_CONNECTION (connection)));
 			}
 
 			g_object_ref (device);

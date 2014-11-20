@@ -148,9 +148,8 @@ activate_connection (NMConnection *connection,
 	agent = nm_secret_agent_simple_new ("nmtui");
 	if (agent) {
 		if (connection) {
-			nm_secret_agent_simple_set_connection_path (NM_SECRET_AGENT_SIMPLE (agent),
-			                                            nm_object_get_path (NM_OBJECT (connection)));
-			nm_secret_agent_simple_enable (NM_SECRET_AGENT_SIMPLE (agent));
+			nm_secret_agent_simple_enable (NM_SECRET_AGENT_SIMPLE (agent),
+			                               nm_object_get_path (NM_OBJECT (connection)));
 		}
 		g_signal_connect (agent, "request-secrets", G_CALLBACK (secrets_requested), NULL);
 	}
@@ -192,10 +191,8 @@ activate_connection (NMConnection *connection,
 	if (!connection) {
 		connection = NM_CONNECTION (nm_active_connection_get_connection (ac));
 		if (connection) {
-			const gchar *path = nm_object_get_path (NM_OBJECT (connection));
-
-			nm_secret_agent_simple_set_connection_path (NM_SECRET_AGENT_SIMPLE (agent), path);
-			nm_secret_agent_simple_enable (NM_SECRET_AGENT_SIMPLE (agent));
+			nm_secret_agent_simple_enable (NM_SECRET_AGENT_SIMPLE (agent),
+			                               nm_object_get_path (NM_OBJECT (connection)));
 		}
 	}
 
