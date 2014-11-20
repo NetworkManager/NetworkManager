@@ -1968,8 +1968,9 @@ validate_int64 (NMSetting *setting, const char* prop, gint64 val, GError **error
 	g_assert (G_IS_PARAM_SPEC (pspec));
 	if (g_param_value_validate (pspec, &value)) {
 		GParamSpecInt64 *pspec_int = (GParamSpecInt64 *) pspec;
-		g_set_error (error, 1, 0, _("'%"G_GINT64_FORMAT"' is not valid; use <%"G_GINT64_FORMAT"-%"G_GINT64_FORMAT">"),
-		             val, pspec_int->minimum, pspec_int->maximum);
+		G_STATIC_ASSERT (sizeof (long long) >= sizeof (gint64));
+		g_set_error (error, 1, 0, _("'%lld' is not valid; use <%lld-%lld>"),
+		             (long long) val, (long long) pspec_int->minimum, (long long) pspec_int->maximum);
 		success = FALSE;
 	}
 	g_value_unset (&value);
@@ -1990,7 +1991,7 @@ validate_uint (NMSetting *setting, const char* prop, guint val, GError **error)
 	g_assert (G_IS_PARAM_SPEC (pspec));
 	if (g_param_value_validate (pspec, &value)) {
 		GParamSpecUInt *pspec_uint = (GParamSpecUInt *) pspec;
-		g_set_error (error, 1, 0, _("'%u' is not valid; use <%d-%d>"),
+		g_set_error (error, 1, 0, _("'%u' is not valid; use <%u-%u>"),
 		             val, pspec_uint->minimum, pspec_uint->maximum);
 		success = FALSE;
 	}

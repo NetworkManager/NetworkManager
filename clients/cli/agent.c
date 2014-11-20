@@ -61,7 +61,7 @@ usage_agent_polkit (void)
 	              "\n"
 	              "Registers nmcli as a polkit action for the user session.\n"
 	              "When a polkit daemon requires an authorization, nmcli asks the user and gives\n"
-	              "the reponse back to polkit.\n\n"));
+	              "the response back to polkit.\n\n"));
 }
 
 static void
