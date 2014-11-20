@@ -510,20 +510,6 @@ quit (void)
 	g_main_loop_quit (loop);  /* quit main loop */
 }
 
-/* for pre-filling a string to readline prompt */
-static char *pre_input_deftext;
-static int
-set_deftext (void)
-{
-	if (pre_input_deftext && rl_startup_hook) {
-		rl_insert_text (pre_input_deftext);
-		g_free (pre_input_deftext);
-		pre_input_deftext = NULL;
-		rl_startup_hook = NULL;
-	}
-	return 0;
-}
-
 static const char *
 construct_header_name (const char *base, const char *spec)
 {
@@ -2044,77 +2030,7 @@ failure:
 	return NULL;
 }
 
-static gboolean
-get_secrets_from_user (const char *request_id,
-                       const char *title,
-                       const char *msg,
-                       gboolean ask,
-                       GHashTable *pwds_hash,
-                       GPtrArray *secrets)
-{
-	int i;
 
-	for (i = 0; i < secrets->len; i++) {
-		NMSecretAgentSimpleSecret *secret = secrets->pdata[i];
-		char *pwd = NULL;
-
-		/* First try to find the password in provided passwords file,
-		 * then ask user. */
-		if (pwds_hash && (pwd = g_hash_table_lookup (pwds_hash, secret->prop_name))) {
-			pwd = g_strdup (pwd);
-		} else {
-			g_print ("%s\n", msg);
-			if (ask) {
-				if (secret->value) {
-					/* Prefill the password if we have it. */
-					rl_startup_hook = set_deftext;
-					pre_input_deftext = g_strdup (secret->value);
-				}
-				pwd = nmc_readline ("%s (%s): ", secret->name, secret->prop_name);
-				if (!pwd)
-					pwd = g_strdup ("");
-			} else {
-				g_printerr (_("Warning: password for '%s' not given in 'passwd-file' "
-				              "and nmcli cannot ask without '--ask' option.\n"),
-				            secret->prop_name);
-			}
-		}
-		/* No password provided, cancel the secrets. */
-		if (!pwd)
-			return FALSE;
-		g_free (secret->value);
-		secret->value = pwd;
-	}
-	return TRUE;
-}
-
-static void
-secrets_requested (NMSecretAgentSimple *agent,
-                   const char          *request_id,
-                   const char          *title,
-                   const char          *msg,
-                   GPtrArray           *secrets,
-                   gpointer             user_data)
-{
-	NmCli *nmc = (NmCli *) user_data;
-	gboolean success = FALSE;
-
-	if (nmc->print_output == NMC_PRINT_PRETTY)
-		nmc_terminal_erase_line ();
-
-	success = get_secrets_from_user (request_id, title, msg, nmc->in_editor || nmc->ask,
-	                                 nmc->pwds_hash, secrets);
-	if (success)
-		nm_secret_agent_simple_response (agent, request_id, secrets);
-	else {
-		/* Unregister our secret agent on failure, so that another agent
-		 * may be tried */
-		if (nmc->secret_agent) {
-			nm_secret_agent_unregister (nmc->secret_agent, NULL, NULL);
-			g_clear_object (&nmc->secret_agent);
-		}
-        }
-}
 
 static gboolean
 nmc_activate_connection (NmCli *nmc,
@@ -2174,7 +2090,7 @@ nmc_activate_connection (NmCli *nmc,
 	/* Create secret agent */
 	nmc->secret_agent = nm_secret_agent_simple_new ("nmcli-connect");
 	if (nmc->secret_agent) {
-		g_signal_connect (nmc->secret_agent, "request-secrets", G_CALLBACK (secrets_requested), nmc);
+		g_signal_connect (nmc->secret_agent, "request-secrets", G_CALLBACK (nmc_secrets_requested), nmc);
 		if (connection) {
 			const gchar *path = nm_object_get_path (NM_OBJECT (connection));
 
@@ -7062,8 +6978,8 @@ property_edit_submenu (NmCli *nmc,
 			break;
 
 		case NMC_EDITOR_SUB_CMD_CHANGE:
-			rl_startup_hook = set_deftext;
-			pre_input_deftext = nmc_setting_get_property_out2in (curr_setting, prop_name, NULL);
+			rl_startup_hook = nmc_rl_set_deftext;
+			nmc_rl_pre_input_deftext = nmc_setting_get_property_out2in (curr_setting, prop_name, NULL);
 			prop_val_user = nmc_readline (_("Edit '%s' value: "), prop_name);
 
 			nmc_property_get_gvalue (curr_setting, prop_name, &prop_g_value);

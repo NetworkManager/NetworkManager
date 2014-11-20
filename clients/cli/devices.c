@@ -28,6 +28,7 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 
+#include "nm-secret-agent-simple.h"
 #include "polkit-agent.h"
 #include "utils.h"
 #include "common.h"
@@ -1517,6 +1518,14 @@ connect_device_cb (GObject *client, GAsyncResult *result, gpointer user_data)
 			g_object_unref (active);
 			quit ();
 		} else {
+			if (nmc->secret_agent) {
+				NMRemoteConnection *connection = nm_active_connection_get_connection (active);
+				const char *path = nm_connection_get_path (NM_CONNECTION (connection));
+
+				nm_secret_agent_simple_set_connection_path (nmc->secret_agent, path);
+				nm_secret_agent_simple_enable (nmc->secret_agent);
+			}
+
 			g_object_ref (device);
 			g_signal_connect (device, "notify::state", G_CALLBACK (device_state_cb), active);
 			g_signal_connect (active, "notify::state", G_CALLBACK (active_state_cb), device);
@@ -1588,6 +1597,11 @@ do_device_connect (NmCli *nmc, int argc, char **argv)
 	 */
 	nmc->nowait_flag = (nmc->timeout == 0);
 	nmc->should_wait = TRUE;
+
+	/* Create secret agent */
+	nmc->secret_agent = nm_secret_agent_simple_new ("nmcli-connect");
+	if (nmc->secret_agent)
+		g_signal_connect (nmc->secret_agent, "request-secrets", G_CALLBACK (nmc_secrets_requested), nmc);
 
 	info = g_malloc0 (sizeof (AddAndActivateInfo));
 	info->nmc = nmc;

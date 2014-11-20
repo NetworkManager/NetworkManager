@@ -16,13 +16,14 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2012 - 2014 Red Hat, Inc.
+ * Copyright 2012 - 2014 Red Hat, Inc.
  */
 
 #ifndef NMC_COMMON_H
 #define NMC_COMMON_H
 
 #include "nmcli.h"
+#include "nm-secret-agent-simple.h"
 
 gboolean print_ip4_config (NMIPConfig *cfg4, NmCli *nmc, const char *group_prefix, const char *one_field);
 gboolean print_ip6_config (NMIPConfig *cfg6, NmCli *nmc, const char *group_prefix, const char *one_field);
@@ -48,10 +49,21 @@ NMConnection *nmc_find_connection (const GPtrArray *connections,
                                    const char *filter_val,
                                    int *start);
 
+void nmc_secrets_requested (NMSecretAgentSimple *agent,
+                            const char          *request_id,
+                            const char          *title,
+                            const char          *msg,
+                            GPtrArray           *secrets,
+                            gpointer             user_data);
+
 void nmc_cleanup_readline (void);
 char *nmc_readline (const char *prompt_fmt, ...) G_GNUC_PRINTF (1, 2);
 char *nmc_rl_gen_func_basic (const char *text, int state, const char **words);
 gboolean nmc_get_in_readline (void);
 void nmc_set_in_readline (gboolean in_readline);
+
+/* for pre-filling a string to readline prompt */
+extern char *nmc_rl_pre_input_deftext;
+int nmc_rl_set_deftext (void);
 
 #endif /* NMC_COMMON_H */
