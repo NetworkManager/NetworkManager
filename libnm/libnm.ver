@@ -756,7 +756,9 @@ global:
 	nm_utils_check_virtual_device_compatibility;
 	nm_utils_deinit;
 	nm_utils_escape_ssid;
+	nm_utils_file_is_certificate;
 	nm_utils_file_is_pkcs12;
+	nm_utils_file_is_private_key;
 	nm_utils_hexstr2bin;
 	nm_utils_hwaddr_atoba;
 	nm_utils_hwaddr_aton;

@@ -1752,7 +1752,7 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *setting,
 	 * given, that it decrypts the private key.
 	 */
 	if (key_path) {
-		format = crypto_verify_private_key (key_path, password, &local_err);
+		format = crypto_verify_private_key (key_path, password, NULL, &local_err);
 		if (format == NM_CRYPTO_FILE_FORMAT_UNKNOWN) {
 			g_set_error_literal (error,
 			                     NM_CONNECTION_ERROR,
@@ -2062,7 +2062,7 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *setting,
 	 * given, that it decrypts the private key.
 	 */
 	if (key_path) {
-		format = crypto_verify_private_key (key_path, password, &local_err);
+		format = crypto_verify_private_key (key_path, password, NULL, &local_err);
 		if (format == NM_CRYPTO_FILE_FORMAT_UNKNOWN) {
 			g_set_error_literal (error,
 			                     NM_CONNECTION_ERROR,
@@ -2206,11 +2206,11 @@ need_private_key_password (GBytes *blob,
 	/* Private key password is required */
 	if (password) {
 		if (path)
-			format = crypto_verify_private_key (path, password, NULL);
+			format = crypto_verify_private_key (path, password, NULL, NULL);
 		else if (blob)
 			format = crypto_verify_private_key_data (g_bytes_get_data (blob, NULL),
 			                                         g_bytes_get_size (blob),
-			                                         password, NULL);
+			                                         password, NULL, NULL);
 		else
 			g_warning ("%s: unknown private key password scheme", __func__);
 	}

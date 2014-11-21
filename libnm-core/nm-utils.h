@@ -137,6 +137,8 @@ GByteArray *nm_utils_rsa_key_encrypt_aes (const guint8 *data,
                                           const char *in_password,
                                           char **out_password,
                                           GError **error);
+gboolean nm_utils_file_is_certificate (const char *filename);
+gboolean nm_utils_file_is_private_key (const char *filename, gboolean *out_encrypted);
 gboolean nm_utils_file_is_pkcs12 (const char *filename);
 
 guint32 nm_utils_wifi_freq_to_channel (guint32 freq);
