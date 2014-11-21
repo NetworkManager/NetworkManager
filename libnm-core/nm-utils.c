@@ -2268,7 +2268,7 @@ gboolean
 nm_utils_file_is_certificate (const char *filename)
 {
 	const char *extensions[] = { ".der", ".pem", ".crt", ".cer", NULL };
-	NMCryptoFileFormat file_format;
+	NMCryptoFileFormat file_format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 	GByteArray *cert;
 
 	g_return_val_if_fail (filename != NULL, FALSE);
