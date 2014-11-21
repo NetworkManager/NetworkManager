@@ -250,9 +250,9 @@ typedef struct {
 	/* IP4 configuration info */
 	NMIP4Config *   ip4_config;     /* Combined config from VPN, settings, and device */
 	IpState         ip4_state;
+	NMIP4Config *   con_ip4_config; /* config from the setting */
 	NMIP4Config *   dev_ip4_config; /* Config from DHCP, PPP, LLv4, etc */
 	NMIP4Config *   ext_ip4_config; /* Stuff added outside NM */
-	gboolean        ext_ip4_config_had_any_addresses;
 	NMIP4Config *   wwan_ip4_config; /* WWAN configuration */
 	struct {
 		gboolean v4_has;
@@ -287,10 +287,10 @@ typedef struct {
 	/* IP6 configuration info */
 	NMIP6Config *  ip6_config;
 	IpState        ip6_state;
+	NMIP6Config *  con_ip6_config; /* config from the setting */
 	NMIP6Config *  vpn6_config;  /* routes added by a VPN which uses this device */
 	NMIP6Config *  wwan_ip6_config;
 	NMIP6Config *  ext_ip6_config; /* Stuff added outside NM */
-	gboolean       ext_ip6_config_had_any_addresses;
 	gboolean       nm_ipv6ll; /* TRUE if NM handles the device's IPv6LL address */
 	guint32        ip6_mtu;
 
@@ -3092,6 +3092,43 @@ _device_get_default_route_from_platform (NMDevice *self, int addr_family, NMPlat
 }
 
 /*********************************************/
+
+static void
+ensure_con_ipx_config (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMConnection *connection;
+
+	g_assert (!!priv->con_ip4_config == !!priv->con_ip6_config);
+
+	if (priv->con_ip4_config)
+		return;
+
+	connection = nm_device_get_connection (self);
+	if (!connection)
+		return;
+
+	priv->con_ip4_config = nm_ip4_config_new ();
+	priv->con_ip6_config = nm_ip6_config_new ();
+
+	nm_ip4_config_merge_setting (priv->con_ip4_config,
+	                             nm_connection_get_setting_ip4_config (connection),
+	                             nm_device_get_ip4_route_metric (self));
+	nm_ip6_config_merge_setting (priv->con_ip6_config,
+	                             nm_connection_get_setting_ip6_config (connection),
+	                             nm_device_get_ip6_route_metric (self));
+
+	if (nm_device_uses_assumed_connection (self)) {
+		/* For assumed connections ignore all addresses and routes. */
+		nm_ip4_config_reset_addresses (priv->con_ip4_config);
+		nm_ip4_config_reset_routes (priv->con_ip4_config);
+
+		nm_ip6_config_reset_addresses (priv->con_ip6_config);
+		nm_ip6_config_reset_routes (priv->con_ip6_config);
+	}
+}
+
+/*********************************************/
 /* DHCPv4 stuff */
 
 static void
@@ -3140,6 +3177,9 @@ ip4_config_merge_and_apply (NMDevice *self,
 	}
 
 	composite = nm_ip4_config_new ();
+
+	ensure_con_ipx_config (self);
+
 	if (priv->dev_ip4_config)
 		nm_ip4_config_merge (composite, priv->dev_ip4_config);
 	if (priv->vpn4_config)
@@ -3153,17 +3193,12 @@ ip4_config_merge_and_apply (NMDevice *self,
 	if (priv->wwan_ip4_config)
 		nm_ip4_config_merge (composite, priv->wwan_ip4_config);
 
-	/* Merge user overrides into the composite config.  Generated+assumed
-	 * connections come from the system not the user and merging them would
-	 * be redundant, so don't bother.
-	 */
+	/* Merge user overrides into the composite config. For assumed connection,
+	 * con_ip4_config is empty. */
+	if (priv->con_ip4_config)
+		nm_ip4_config_merge (composite, priv->con_ip4_config);
+
 	connection = nm_device_get_connection (self);
-	if (   connection
-	    && !nm_settings_connection_get_nm_generated_assumed (NM_SETTINGS_CONNECTION (connection))) {
-		nm_ip4_config_merge_setting (composite,
-		                             nm_connection_get_setting_ip4_config (connection),
-		                             default_route_metric);
-	}
 
 	/* Add the default route.
 	 *
@@ -3191,8 +3226,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 
 		priv->default_route.v4_is_assumed = FALSE;
 
-		if (   !(!commit && priv->ext_ip4_config_had_any_addresses)
-		    && !( commit && nm_ip4_config_get_num_addresses (composite))) {
+		if (!nm_ip4_config_get_num_addresses (composite)) {
 			/* without addresses we can have no default route. */
 			goto END_ADD_DEFAULT_ROUTE;
 		}
@@ -3710,7 +3744,8 @@ ip6_config_merge_and_apply (NMDevice *self,
 
 	/* If no config was passed in, create a new one */
 	composite = nm_ip6_config_new ();
-	g_assert (composite);
+
+	ensure_con_ipx_config (self);
 
 	/* Merge all the IP configs into the composite config */
 	if (priv->ac_ip6_config)
@@ -3728,17 +3763,12 @@ ip6_config_merge_and_apply (NMDevice *self,
 	if (priv->wwan_ip6_config)
 		nm_ip6_config_merge (composite, priv->wwan_ip6_config);
 
-	/* Merge user overrides into the composite config.  Generated+assumed
-	 * connections come from the system not the user and merging them would
-	 * be redundant, so don't bother.
-	 */
+	/* Merge user overrides into the composite config. For assumed connections,
+	 * con_ip6_config is empty. */
+	if (priv->con_ip6_config)
+		nm_ip6_config_merge (composite, priv->con_ip6_config);
+
 	connection = nm_device_get_connection (self);
-	if (   connection
-	    && !nm_settings_connection_get_nm_generated_assumed (NM_SETTINGS_CONNECTION (connection))) {
-		nm_ip6_config_merge_setting (composite,
-		                             nm_connection_get_setting_ip6_config (connection),
-		                             nm_device_get_ip6_route_metric (self));
-	}
 
 	/* Add the default route.
 	 *
@@ -3766,8 +3796,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 
 		priv->default_route.v6_is_assumed = FALSE;
 
-		if (   !(!commit && priv->ext_ip6_config_had_any_addresses)
-		    && !( commit && nm_ip6_config_get_num_addresses (composite))) {
+		if (!nm_ip6_config_get_num_addresses (composite)) {
 			/* without addresses we can have no default route. */
 			goto END_ADD_DEFAULT_ROUTE;
 		}
@@ -6936,13 +6965,31 @@ update_ip_config (NMDevice *self, gboolean initial)
 	/* IPv4 */
 	g_clear_object (&priv->ext_ip4_config);
 	priv->ext_ip4_config = nm_ip4_config_capture (ifindex, capture_resolv_conf);
-	priv->ext_ip4_config_had_any_addresses = (   priv->ext_ip4_config
-	                                          && nm_ip4_config_get_num_addresses (priv->ext_ip4_config) > 0);
 	if (priv->ext_ip4_config) {
 		if (initial) {
 			g_clear_object (&priv->dev_ip4_config);
 			capture_lease_config (self, priv->ext_ip4_config, &priv->dev_ip4_config, NULL, NULL);
 		}
+		ensure_con_ipx_config (self);
+
+		/* This function was called upon external changes. Remove the configuration
+		 * (adresses,routes) that is no longer present externally from the interal
+		 * config. This way, we don't readd addresses that were manually removed
+		 * by the user. */
+		if (priv->con_ip4_config)
+			nm_ip4_config_intersect (priv->con_ip4_config, priv->ext_ip4_config);
+		if (priv->dev_ip4_config)
+			nm_ip4_config_intersect (priv->dev_ip4_config, priv->ext_ip4_config);
+		if (priv->vpn4_config)
+			nm_ip4_config_intersect (priv->vpn4_config, priv->ext_ip4_config);
+		if (priv->wwan_ip4_config)
+			nm_ip4_config_intersect (priv->wwan_ip4_config, priv->ext_ip4_config);
+
+		/* Remove parts from ext_ip4_config to only contain the information that
+		 * was configured externally -- we already have the same configuration from
+		 * internal origins. */
+		if (priv->con_ip4_config)
+			nm_ip4_config_subtract (priv->ext_ip4_config, priv->con_ip4_config);
 		if (priv->dev_ip4_config)
 			nm_ip4_config_subtract (priv->ext_ip4_config, priv->dev_ip4_config);
 		if (priv->vpn4_config)
@@ -6956,14 +7003,34 @@ update_ip_config (NMDevice *self, gboolean initial)
 	/* IPv6 */
 	g_clear_object (&priv->ext_ip6_config);
 	priv->ext_ip6_config = nm_ip6_config_capture (ifindex, capture_resolv_conf, NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
-	priv->ext_ip6_config_had_any_addresses = (   priv->ext_ip6_config
-	                                          && nm_ip6_config_get_num_addresses (priv->ext_ip6_config) > 0);
 	if (priv->ext_ip6_config) {
 
 		/* Check this before modifying ext_ip6_config */
 		linklocal6_just_completed = priv->linklocal6_timeout_id &&
 		                            have_ip6_address (priv->ext_ip6_config, TRUE);
 
+		ensure_con_ipx_config (self);
+
+		/* This function was called upon external changes. Remove the configuration
+		 * (adresses,routes) that is no longer present externally from the interal
+		 * config. This way, we don't readd addresses that were manually removed
+		 * by the user. */
+		if (priv->con_ip6_config)
+			nm_ip6_config_intersect (priv->con_ip6_config, priv->ext_ip6_config);
+		if (priv->ac_ip6_config)
+			nm_ip6_config_intersect (priv->ac_ip6_config, priv->ext_ip6_config);
+		if (priv->dhcp6_ip6_config)
+			nm_ip6_config_intersect (priv->dhcp6_ip6_config, priv->ext_ip6_config);
+		if (priv->wwan_ip6_config)
+			nm_ip6_config_intersect (priv->wwan_ip6_config, priv->ext_ip6_config);
+		if (priv->vpn6_config)
+			nm_ip6_config_intersect (priv->vpn6_config, priv->ext_ip6_config);
+
+		/* Remove parts from ext_ip6_config to only contain the information that
+		 * was configured externally -- we already have the same configuration from
+		 * internal origins. */
+		if (priv->con_ip6_config)
+			nm_ip6_config_subtract (priv->ext_ip6_config, priv->con_ip6_config);
 		if (priv->ac_ip6_config)
 			nm_ip6_config_subtract (priv->ext_ip6_config, priv->ac_ip6_config);
 		if (priv->dhcp6_ip6_config)
@@ -7556,19 +7623,18 @@ _cleanup_generic_post (NMDevice *self, gboolean deconfigure)
 	 */
 	nm_device_set_ip4_config (self, NULL, 0, TRUE, &ignored);
 	nm_device_set_ip6_config (self, NULL, TRUE, &ignored);
+	g_clear_object (&priv->con_ip4_config);
 	g_clear_object (&priv->dev_ip4_config);
 	g_clear_object (&priv->ext_ip4_config);
 	g_clear_object (&priv->wwan_ip4_config);
 	g_clear_object (&priv->vpn4_config);
 	g_clear_object (&priv->ip4_config);
+	g_clear_object (&priv->con_ip6_config);
 	g_clear_object (&priv->ac_ip6_config);
 	g_clear_object (&priv->ext_ip6_config);
 	g_clear_object (&priv->vpn6_config);
 	g_clear_object (&priv->wwan_ip6_config);
 	g_clear_object (&priv->ip6_config);
-
-	priv->ext_ip4_config_had_any_addresses = FALSE;
-	priv->ext_ip6_config_had_any_addresses = FALSE;
 
 	clear_act_request (self);
 
