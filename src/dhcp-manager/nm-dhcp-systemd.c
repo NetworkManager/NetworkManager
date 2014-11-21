@@ -181,6 +181,13 @@ add_option_u32 (GHashTable *options, const ReqOption *requests, guint option, gu
 }
 
 static void
+add_option_u64 (GHashTable *options, const ReqOption *requests, guint option, guint64 value)
+{
+	if (options)
+		take_option (options, requests, option, g_strdup_printf ("%" G_GUINT64_FORMAT, value));
+}
+
+static void
 add_requests_to_options (GHashTable *options, const ReqOption *requests)
 {
 	guint i;
@@ -216,7 +223,7 @@ lease_to_ip4_config (sd_dhcp_lease *lease,
 	struct sd_dhcp_route *routes;
 	guint16 mtu;
 	int r, num;
-	time_t end_time;
+	guint64 end_time;
 
 	g_return_val_if_fail (lease != NULL, NULL);
 
@@ -243,12 +250,12 @@ lease_to_ip4_config (sd_dhcp_lease *lease,
 	sd_dhcp_lease_get_lifetime (lease, &lifetime);
 	address.timestamp = nm_utils_get_monotonic_timestamp_s ();
 	address.lifetime = address.preferred = lifetime;
-	end_time = MIN ((guint64) time (NULL) + lifetime, G_MAXUINT32 - 1);
-	LOG_LEASE (LOGD_DHCP4, "  expires %s", ctime (&end_time));
-	add_option_u32 (options,
+	end_time = (guint64) time (NULL) + lifetime;
+	LOG_LEASE (LOGD_DHCP4, "  expires in %" G_GUINT64_FORMAT " seconds", lifetime);
+	add_option_u64 (options,
 	                dhcp4_requests,
 	                DHCP_OPTION_IP_ADDRESS_LEASE_TIME,
-	                (guint32) end_time);
+	                end_time);
 
 	address.source = NM_IP_CONFIG_SOURCE_DHCP;
 	nm_ip4_config_add_address (ip4_config, &address);
