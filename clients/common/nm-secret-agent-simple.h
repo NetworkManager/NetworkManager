@@ -20,23 +20,24 @@
 #define __NM_SECRET_AGENT_SIMPLE_H__
 
 #include <NetworkManager.h>
+#include <nm-secret-agent-old.h>
 
 G_BEGIN_DECLS
 
 #define NM_TYPE_SECRET_AGENT_SIMPLE            (nm_secret_agent_simple_get_type ())
-#define NM_SECRET_AGENT_SIMPLE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SECRET_AGENT, NMSecretAgentSimple))
-#define NM_SECRET_AGENT_SIMPLE_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_SECRET_AGENT, NMSecretAgentSimpleClass))
-#define NM_IS_SECRET_AGENT_SIMPLE(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_SECRET_AGENT))
-#define NM_IS_SECRET_AGENT_SIMPLE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_SECRET_AGENT))
-#define NM_SECRET_AGENT_SIMPLE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_SECRET_AGENT, NMSecretAgentSimpleClass))
+#define NM_SECRET_AGENT_SIMPLE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SECRET_AGENT_SIMPLE, NMSecretAgentSimple))
+#define NM_SECRET_AGENT_SIMPLE_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_SECRET_AGENT_SIMPLE, NMSecretAgentSimpleClass))
+#define NM_IS_SECRET_AGENT_SIMPLE(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_SECRET_AGENT_SIMPLE))
+#define NM_IS_SECRET_AGENT_SIMPLE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_SECRET_AGENT_SIMPLE))
+#define NM_SECRET_AGENT_SIMPLE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_SECRET_AGENT_SIMPLE, NMSecretAgentSimpleClass))
 
 typedef struct {
-	NMSecretAgent parent;
+	NMSecretAgentOld parent;
 
 } NMSecretAgentSimple;
 
 typedef struct {
-	NMSecretAgentClass parent;
+	NMSecretAgentOldClass parent;
 
 } NMSecretAgentSimpleClass;
 
@@ -47,13 +48,14 @@ typedef struct {
 
 GType nm_secret_agent_simple_get_type (void);
 
-NMSecretAgent *nm_secret_agent_simple_new      (const char *name);
-void           nm_secret_agent_simple_response (NMSecretAgentSimple *self,
-                                                const char          *request_id,
-                                                GPtrArray           *secrets);
-void           nm_secret_agent_simple_set_connection_path (NMSecretAgent *agent,
-                                                           const char    *path);
-void           nm_secret_agent_simple_enable   (NMSecretAgent *agent);
+NMSecretAgentOld *nm_secret_agent_simple_new                 (const char          *name);
+
+void              nm_secret_agent_simple_response            (NMSecretAgentSimple *self,
+                                                              const char          *request_id,
+                                                              GPtrArray           *secrets);
+
+void              nm_secret_agent_simple_enable              (NMSecretAgentSimple *self,
+                                                              const char          *path);
 
 G_END_DECLS
 

@@ -36,7 +36,7 @@
 
 #include "nm-secret-agent-simple.h"
 
-G_DEFINE_TYPE (NMSecretAgentSimple, nm_secret_agent_simple, NM_TYPE_SECRET_AGENT)
+G_DEFINE_TYPE (NMSecretAgentSimple, nm_secret_agent_simple, NM_TYPE_SECRET_AGENT_OLD)
 
 #define NM_SECRET_AGENT_SIMPLE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SECRET_AGENT_SIMPLE, NMSecretAgentSimplePrivate))
 
@@ -54,7 +54,7 @@ typedef struct {
 	gchar                         *request_id;
 	NMConnection                  *connection;
 	gchar                        **hints;
-	NMSecretAgentGetSecretsFunc    callback;
+	NMSecretAgentOldGetSecretsFunc callback;
 	gpointer                       callback_data;
 } NMSecretAgentSimpleRequest;
 
@@ -104,7 +104,7 @@ nm_secret_agent_simple_finalize (GObject *object)
 	while (g_hash_table_iter_next (&iter, &key, &value)) {
 		NMSecretAgentSimpleRequest *request = value;
 
-		request->callback (NM_SECRET_AGENT (object),
+		request->callback (NM_SECRET_AGENT_OLD (object),
 		                   request->connection,
 		                   NULL, error,
 		                   request->callback_data);
@@ -423,14 +423,14 @@ request_secrets_from_ui (NMSecretAgentSimpleRequest *request)
 }
 
 static void
-nm_secret_agent_simple_get_secrets (NMSecretAgent                 *agent,
-                                    NMConnection                  *connection,
-                                    const gchar                   *connection_path,
-                                    const gchar                   *setting_name,
-                                    const gchar                  **hints,
-                                    NMSecretAgentGetSecretsFlags   flags,
-                                    NMSecretAgentGetSecretsFunc    callback,
-                                    gpointer                       callback_data)
+nm_secret_agent_simple_get_secrets (NMSecretAgentOld                 *agent,
+                                    NMConnection                     *connection,
+                                    const gchar                      *connection_path,
+                                    const gchar                      *setting_name,
+                                    const gchar                     **hints,
+                                    NMSecretAgentGetSecretsFlags      flags,
+                                    NMSecretAgentOldGetSecretsFunc    callback,
+                                    gpointer                          callback_data)
 {
 	NMSecretAgentSimple *self = NM_SECRET_AGENT_SIMPLE (agent);
 	NMSecretAgentSimplePrivate *priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (self);
@@ -546,70 +546,63 @@ nm_secret_agent_simple_response (NMSecretAgentSimple *self,
 		                     "User cancelled");
 	}
 
-	request->callback (NM_SECRET_AGENT (self), request->connection, dict, error, request->callback_data);
+	request->callback (NM_SECRET_AGENT_OLD (self), request->connection, dict, error, request->callback_data);
 
 	g_clear_error (&error);
 	g_hash_table_remove (priv->requests, request_id);
 }
 
 static void
-nm_secret_agent_simple_cancel_get_secrets (NMSecretAgent *agent,
-                                           const gchar   *connection_path,
-                                           const gchar   *setting_name)
+nm_secret_agent_simple_cancel_get_secrets (NMSecretAgentOld *agent,
+                                           const gchar      *connection_path,
+                                           const gchar      *setting_name)
 {
 	/* We don't support cancellation. Sorry! */
 }
 
 static void
-nm_secret_agent_simple_save_secrets (NMSecretAgent                *agent,
-                                     NMConnection                 *connection,
-                                     const gchar                  *connection_path,
-                                     NMSecretAgentSaveSecretsFunc  callback,
-                                     gpointer                      callback_data)
+nm_secret_agent_simple_save_secrets (NMSecretAgentOld                *agent,
+                                     NMConnection                    *connection,
+                                     const gchar                     *connection_path,
+                                     NMSecretAgentOldSaveSecretsFunc  callback,
+                                     gpointer                         callback_data)
 {
 	/* We don't support secret storage */
 	callback (agent, connection, NULL, callback_data);
 }
 
 static void
-nm_secret_agent_simple_delete_secrets (NMSecretAgent                  *agent,
-                                       NMConnection                   *connection,
-                                       const gchar                    *connection_path,
-                                       NMSecretAgentDeleteSecretsFunc  callback,
-                                       gpointer                        callback_data)
+nm_secret_agent_simple_delete_secrets (NMSecretAgentOld                  *agent,
+                                       NMConnection                      *connection,
+                                       const gchar                       *connection_path,
+                                       NMSecretAgentOldDeleteSecretsFunc  callback,
+                                       gpointer                           callback_data)
 {
 	/* We don't support secret storage, so there's nothing to delete. */
 	callback (agent, connection, NULL, callback_data);
 }
 
 /**
- * nm_secret_agent_simple_set_connection_path:
- * @agent: the #NMSecretAgentSimple
- * @path: the path of the connection the agent handle secrets for
- *
- * Sets the path for a new #NMSecretAgentSimple.
- */
-void
-nm_secret_agent_simple_set_connection_path (NMSecretAgent *agent, const char *path)
-{
-	NMSecretAgentSimplePrivate *priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (agent);
-
-	g_free (priv->path);
-	priv->path = g_strdup (path);
-}
-
-/**
  * nm_secret_agent_simple_enable:
- * @agent: the #NMSecretAgentSimple
+ * @self: the #NMSecretAgentSimple
+ * @path: (allow-none): the path of the connection (if any) to handle secrets
+ *        for.  If %NULL, secrets for any connection will be handled.
  *
- * Enables servicing the requests including the already queued ones.
+ * Enables servicing the requests including the already queued ones.  If @path
+ * is given, the agent will only handle requests for connections that match
+ * @path.
  */
 void
-nm_secret_agent_simple_enable (NMSecretAgent *agent)
+nm_secret_agent_simple_enable (NMSecretAgentSimple *self, const char *path)
 {
-	NMSecretAgentSimplePrivate *priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (agent);
+	NMSecretAgentSimplePrivate *priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (self);
 	GList *requests, *iter;
 	GError *error;
+
+	if (g_strcmp0 (path, priv->path) != 0) {
+		g_free (priv->path);
+		priv->path = g_strdup (path);
+	}
 
 	if (priv->enabled)
 		return;
@@ -627,7 +620,7 @@ nm_secret_agent_simple_enable (NMSecretAgent *agent)
 			error = g_error_new (NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_FAILED,
 			                     "Request for %s secrets doesn't match path %s",
 			                     request->request_id, priv->path);
-			request->callback (agent, request->connection, NULL, error, request->callback_data);
+			request->callback (NM_SECRET_AGENT_OLD (self), request->connection, NULL, error, request->callback_data);
 			g_hash_table_remove (priv->requests, request->request_id);
 			g_error_free (error);
 		}
@@ -639,7 +632,7 @@ void
 nm_secret_agent_simple_class_init (NMSecretAgentSimpleClass *klass)
 {
 	GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-	NMSecretAgentClass *agent_class = NM_SECRET_AGENT_CLASS (klass);
+	NMSecretAgentOldClass *agent_class = NM_SECRET_AGENT_OLD_CLASS (klass);
 
 	g_type_class_add_private (klass, sizeof (NMSecretAgentSimplePrivate));
 
@@ -693,14 +686,10 @@ nm_secret_agent_simple_class_init (NMSecretAgentSimpleClass *klass)
  * Returns: a new #NMSecretAgentSimple if the agent creation is successful
  * or %NULL in case of a failure.
  */
-NMSecretAgent *
+NMSecretAgentOld *
 nm_secret_agent_simple_new (const char *name)
 {
-	NMSecretAgent *agent;
-
-	agent = g_initable_new (NM_TYPE_SECRET_AGENT_SIMPLE, NULL, NULL,
-	                        NM_SECRET_AGENT_IDENTIFIER, name,
-	                        NULL);
-
-	return agent;
+	return g_initable_new (NM_TYPE_SECRET_AGENT_SIMPLE, NULL, NULL,
+	                       NM_SECRET_AGENT_OLD_IDENTIFIER, name,
+	                       NULL);
 }

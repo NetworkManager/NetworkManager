@@ -542,7 +542,7 @@ nmc_cleanup (NmCli *nmc)
 
 	if (nmc->secret_agent) {
 		/* Destroy secret agent if we have one. */
-		nm_secret_agent_unregister (nmc->secret_agent, NULL, NULL);
+		nm_secret_agent_old_unregister (nmc->secret_agent, NULL, NULL);
 		g_object_unref (nmc->secret_agent);
 	}
 	if (nmc->pwds_hash)

@@ -66,7 +66,7 @@
   <chapter>
     <title>Client Object API Reference</title>
     <xi:include href="xml/nm-client.xml"/>
-    <xi:include href="xml/nm-secret-agent.xml"/>
+    <xi:include href="xml/nm-secret-agent-old.xml"/>
     <xi:include href="xml/nm-object.xml"/>
     <xi:include href="xml/nm-errors.xml"/>
     <xi:include href="xml/nm-dbus-interface.xml"/>

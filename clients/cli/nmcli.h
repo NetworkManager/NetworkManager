@@ -23,6 +23,7 @@
 #include "config.h"
 
 #include <NetworkManager.h>
+#include <nm-secret-agent-old.h>
 
 #if WITH_POLKIT_AGENT
 #include "nm-polkit-listener.h"
@@ -121,7 +122,7 @@ typedef struct _NmCli {
 
 	const GPtrArray *connections;                     /* List of connections */
 
-	NMSecretAgent *secret_agent;                      /* Secret agent */
+	NMSecretAgentOld *secret_agent;                   /* Secret agent */
 	GHashTable *pwds_hash;                            /* Hash table with passwords in passwd-file */
 	NMPolkitListener *pk_listener ;                   /* polkit agent listener */
 
