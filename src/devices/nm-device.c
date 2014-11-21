@@ -3169,6 +3169,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 	NMIP4Config *composite;
 	gboolean has_direct_route;
 	const guint32 default_route_metric = nm_device_get_ip4_route_metric (self);
+	guint32 gateway;
 
 	/* Merge all the configs into the composite config */
 	if (config) {
@@ -3217,55 +3218,64 @@ ip4_config_merge_and_apply (NMDevice *self,
 	priv->default_route.v4_has = FALSE;
 	priv->default_route.v4_is_assumed = TRUE;
 
-	if (!connection)
+	if (!commit) {
+		/* during a non-commit event, we always pickup whatever is configured. */
+		goto END_ADD_DEFAULT_ROUTE;
+	}
+
+	if (nm_device_uses_assumed_connection (self))
 		goto END_ADD_DEFAULT_ROUTE;
 
-	if (   !nm_device_uses_assumed_connection (self)
-	    && nm_default_route_manager_ip4_connection_has_default_route (nm_default_route_manager_get (), connection, NULL)) {
-		guint32 gateway;
 
-		priv->default_route.v4_is_assumed = FALSE;
+	/* we are about to commit (for a non-assumed connection). Enforce whatever we have
+	 * configured. */
+	priv->default_route.v4_is_assumed = FALSE;
 
-		if (!nm_ip4_config_get_num_addresses (composite)) {
-			/* without addresses we can have no default route. */
-			goto END_ADD_DEFAULT_ROUTE;
-		}
+	if (   !connection
+	    || !nm_default_route_manager_ip4_connection_has_default_route (nm_default_route_manager_get (), connection, NULL))
+		goto END_ADD_DEFAULT_ROUTE;
 
-		gateway = nm_ip4_config_get_gateway (composite);
-		if (   !gateway
-		    && nm_device_get_device_type (self) != NM_DEVICE_TYPE_MODEM)
-			goto END_ADD_DEFAULT_ROUTE;
+	if (!nm_ip4_config_get_num_addresses (composite)) {
+		/* without addresses we can have no default route. */
+		goto END_ADD_DEFAULT_ROUTE;
+	}
 
-		has_direct_route = (   gateway == 0
-		                    || nm_ip4_config_get_subnet_for_host (composite, gateway)
-		                    || nm_ip4_config_get_direct_route_for_host (composite, gateway));
+	gateway = nm_ip4_config_get_gateway (composite);
+	if (   !gateway
+	    && nm_device_get_device_type (self) != NM_DEVICE_TYPE_MODEM)
+		goto END_ADD_DEFAULT_ROUTE;
 
-		/* In the (!has_direct_route && !commit) case it is not clear whether
-		 * adding the default route will succeed. Still give it a try and add it */
+	has_direct_route = (   gateway == 0
+	                    || nm_ip4_config_get_subnet_for_host (composite, gateway)
+	                    || nm_ip4_config_get_direct_route_for_host (composite, gateway));
 
-		priv->default_route.v4_has = TRUE;
-		memset (&priv->default_route.v4, 0, sizeof (priv->default_route.v4));
-		priv->default_route.v4.source = NM_IP_CONFIG_SOURCE_USER;
-		priv->default_route.v4.gateway = gateway;
-		priv->default_route.v4.metric = default_route_metric;
-		priv->default_route.v4.mss = nm_ip4_config_get_mss (composite);
+	priv->default_route.v4_has = TRUE;
+	memset (&priv->default_route.v4, 0, sizeof (priv->default_route.v4));
+	priv->default_route.v4.source = NM_IP_CONFIG_SOURCE_USER;
+	priv->default_route.v4.gateway = gateway;
+	priv->default_route.v4.metric = default_route_metric;
+	priv->default_route.v4.mss = nm_ip4_config_get_mss (composite);
 
-		if (!has_direct_route && commit) {
-			NMPlatformIP4Route r = priv->default_route.v4;
+	if (!has_direct_route) {
+		NMPlatformIP4Route r = priv->default_route.v4;
 
-			/* add a direct route to the gateway */
-			r.network = gateway;
-			r.plen = 32;
-			r.gateway = 0;
-			nm_ip4_config_add_route (composite, &r);
-		}
-	} else {
-		/* For interfaces that are assumed and that have no default-route by configuration, we assume
-		 * the default connection and pick up whatever is configured. */
-		priv->default_route.v4_has = _device_get_default_route_from_platform (self, AF_INET, (NMPlatformIPRoute *) &priv->default_route.v4);
+		/* add a direct route to the gateway */
+		r.network = gateway;
+		r.plen = 32;
+		r.gateway = 0;
+		nm_ip4_config_add_route (composite, &r);
 	}
 
 END_ADD_DEFAULT_ROUTE:
+
+	if (priv->default_route.v4_is_assumed) {
+		/* If above does not explicitly assign a default route, we always pick up the
+		 * default route based on what is currently configured.
+		 * That means that even managed connections with never-default, can
+		 * get a default route (if configured externally).
+		 */
+		priv->default_route.v4_has = _device_get_default_route_from_platform (self, AF_INET, (NMPlatformIPRoute *) &priv->default_route.v4);
+	}
 
 	/* Allow setting MTU etc */
 	if (commit) {
@@ -3741,6 +3751,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 	gboolean success;
 	NMIP6Config *composite;
 	gboolean has_direct_route;
+	const struct in6_addr *gateway;
 
 	/* If no config was passed in, create a new one */
 	composite = nm_ip6_config_new ();
@@ -3787,55 +3798,64 @@ ip6_config_merge_and_apply (NMDevice *self,
 	priv->default_route.v6_has = FALSE;
 	priv->default_route.v6_is_assumed = TRUE;
 
-	if (!connection)
+	if (!commit) {
+		/* during a non-commit event, we always pickup whatever is configured. */
+		goto END_ADD_DEFAULT_ROUTE;
+	}
+
+	if (nm_device_uses_assumed_connection (self))
 		goto END_ADD_DEFAULT_ROUTE;
 
-	if (   !nm_device_uses_assumed_connection (self)
-	    && nm_default_route_manager_ip6_connection_has_default_route (nm_default_route_manager_get (), connection, NULL)) {
-		const struct in6_addr *gateway;
 
-		priv->default_route.v6_is_assumed = FALSE;
+	/* we are about to commit (for a non-assumed connection). Enforce whatever we have
+	 * configured. */
+	priv->default_route.v6_is_assumed = FALSE;
 
-		if (!nm_ip6_config_get_num_addresses (composite)) {
-			/* without addresses we can have no default route. */
-			goto END_ADD_DEFAULT_ROUTE;
-		}
+	if (   !connection
+	    || !nm_default_route_manager_ip6_connection_has_default_route (nm_default_route_manager_get (), connection, NULL))
+		goto END_ADD_DEFAULT_ROUTE;
 
-		gateway = nm_ip6_config_get_gateway (composite);
-		if (!gateway)
-			goto END_ADD_DEFAULT_ROUTE;
+	if (!nm_ip6_config_get_num_addresses (composite)) {
+		/* without addresses we can have no default route. */
+		goto END_ADD_DEFAULT_ROUTE;
+	}
+
+	gateway = nm_ip6_config_get_gateway (composite);
+	if (!gateway)
+		goto END_ADD_DEFAULT_ROUTE;
 
 
-		has_direct_route = nm_ip6_config_get_direct_route_for_host (composite, gateway) != NULL;
+	has_direct_route = nm_ip6_config_get_direct_route_for_host (composite, gateway) != NULL;
 
 
 
-		/* In the (!has_direct_route && !commit) case it is not clear whether
-		 * adding the default route will succeed. Still give it a try and add it */
+	priv->default_route.v6_has = TRUE;
+	memset (&priv->default_route.v6, 0, sizeof (priv->default_route.v6));
+	priv->default_route.v6.source = NM_IP_CONFIG_SOURCE_USER;
+	priv->default_route.v6.gateway = *gateway;
+	priv->default_route.v6.metric = nm_device_get_ip6_route_metric (self);
+	priv->default_route.v6.mss = nm_ip6_config_get_mss (composite);
 
-		priv->default_route.v6_has = TRUE;
-		memset (&priv->default_route.v6, 0, sizeof (priv->default_route.v6));
-		priv->default_route.v6.source = NM_IP_CONFIG_SOURCE_USER;
-		priv->default_route.v6.gateway = *gateway;
-		priv->default_route.v6.metric = nm_device_get_ip6_route_metric (self);
-		priv->default_route.v6.mss = nm_ip6_config_get_mss (composite);
+	if (!has_direct_route) {
+		NMPlatformIP6Route r = priv->default_route.v6;
 
-		if (!has_direct_route && commit) {
-			NMPlatformIP6Route r = priv->default_route.v6;
-
-			/* add a direct route to the gateway */
-			r.network = *gateway;
-			r.plen = 128;
-			r.gateway = in6addr_any;
-			nm_ip6_config_add_route (composite, &r);
-		}
-	} else {
-		/* For interfaces that are assumed and that have no default-route by configuration, we assume
-		 * the default connection and pick up whatever is configured. */
-		priv->default_route.v6_has = _device_get_default_route_from_platform (self, AF_INET6, (NMPlatformIPRoute *) &priv->default_route.v6);
+		/* add a direct route to the gateway */
+		r.network = *gateway;
+		r.plen = 128;
+		r.gateway = in6addr_any;
+		nm_ip6_config_add_route (composite, &r);
 	}
 
 END_ADD_DEFAULT_ROUTE:
+
+	if (priv->default_route.v6_is_assumed) {
+		/* If above does not explicitly assign a default route, we always pick up the
+		 * default route based on what is currently configured.
+		 * That means that even managed connections with never-default, can
+		 * get a default route (if configured externally).
+		 */
+		priv->default_route.v6_has = _device_get_default_route_from_platform (self, AF_INET6, (NMPlatformIPRoute *) &priv->default_route.v6);
+	}
 
 	nm_ip6_config_addresses_sort (composite,
 	    priv->rdisc ? priv->rdisc_use_tempaddr : NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
