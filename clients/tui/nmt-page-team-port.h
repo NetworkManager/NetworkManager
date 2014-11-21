@@ -19,7 +19,7 @@
 #ifndef NMT_PAGE_TEAM_PORT_H
 #define NMT_PAGE_TEAM_PORT_H
 
-#include "nmt-page-device.h"
+#include "nmt-editor-page-device.h"
 
 G_BEGIN_DECLS
 
@@ -42,7 +42,7 @@ typedef struct {
 
 GType nmt_page_team_port_get_type (void);
 
-NmtNewtWidget *nmt_page_team_port_new (NMConnection *conn);
+NmtEditorPage *nmt_page_team_port_new (NMConnection *conn);
 
 G_END_DECLS
 

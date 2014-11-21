@@ -42,7 +42,7 @@ typedef struct {
 
 GType nmt_page_ip6_get_type (void);
 
-NmtNewtWidget *nmt_page_ip6_new          (NMConnection *conn);
+NmtEditorPage *nmt_page_ip6_new          (NMConnection *conn);
 
 G_END_DECLS
 

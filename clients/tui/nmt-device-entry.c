@@ -28,7 +28,7 @@
  * matching a known #NMDevice, then it will also display the other
  * property in parentheses.
  *
- * FIXME: #NmtDeviceEntry is currently an #NmtPageGrid object, so that
+ * FIXME: #NmtDeviceEntry is currently an #NmtEditorGrid object, so that
  * we can possibly eventually add a button to its "extra" field, that
  * would pop up a form for selecting a device. But if we're not going
  * to implement that then we should make it just an #NmtNewtEntry.
@@ -46,7 +46,7 @@
 #include "nmtui.h"
 #include "nmt-device-entry.h"
 
-G_DEFINE_TYPE (NmtDeviceEntry, nmt_device_entry, NMT_TYPE_PAGE_GRID)
+G_DEFINE_TYPE (NmtDeviceEntry, nmt_device_entry, NMT_TYPE_EDITOR_GRID)
 
 #define NMT_DEVICE_ENTRY_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NMT_TYPE_DEVICE_ENTRY, NmtDeviceEntryPrivate))
 
@@ -379,7 +379,7 @@ nmt_device_entry_constructed (GObject *object)
 {
 	NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE (object);
 
-	nmt_page_grid_append (NMT_PAGE_GRID (object), priv->label, NMT_NEWT_WIDGET (priv->entry), NULL);
+	nmt_editor_grid_append (NMT_EDITOR_GRID (object), priv->label, NMT_NEWT_WIDGET (priv->entry), NULL);
 
 	G_OBJECT_CLASS (nmt_device_entry_parent_class)->constructed (object);
 }

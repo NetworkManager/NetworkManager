@@ -33,7 +33,7 @@
 #include "nmt-mac-entry.h"
 #include "nmt-mtu-entry.h"
 
-G_DEFINE_TYPE (NmtPageVlan, nmt_page_vlan, NMT_TYPE_PAGE_DEVICE)
+G_DEFINE_TYPE (NmtPageVlan, nmt_page_vlan, NMT_TYPE_EDITOR_PAGE_DEVICE)
 
 #define NMT_PAGE_VLAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NMT_TYPE_PAGE_VLAN, NmtPageVlanPrivate))
 
@@ -42,13 +42,12 @@ typedef struct {
 
 } NmtPageVlanPrivate;
 
-NmtNewtWidget *
+NmtEditorPage *
 nmt_page_vlan_new (NMConnection   *conn,
                    NmtDeviceEntry *deventry)
 {
 	return g_object_new (NMT_TYPE_PAGE_VLAN,
 	                     "connection", conn,
-	                     "title", _("VLAN"),
 	                     "device-entry", deventry,
 	                     NULL);
 }
@@ -72,7 +71,8 @@ nmt_page_vlan_constructed (GObject *object)
 {
 	NmtPageVlan *vlan = NMT_PAGE_VLAN (object);
 	NmtPageVlanPrivate *priv = NMT_PAGE_VLAN_GET_PRIVATE (vlan);
-	NmtPageGrid *grid;
+	NmtEditorSection *section;
+	NmtEditorGrid *grid;
 	NMSettingWired *s_wired;
 	NMSettingVlan *s_vlan;
 	NmtNewtWidget *widget, *parent, *id_entry;
@@ -94,7 +94,8 @@ nmt_page_vlan_constructed (GObject *object)
 	}
 	priv->s_wired = g_object_ref_sink (s_wired);
 
-	grid = NMT_PAGE_GRID (vlan);
+	section = nmt_editor_section_new (_("VLAN"), NULL, TRUE);
+	grid = nmt_editor_section_get_body (section);
 
 	nm_editor_bind_vlan_name (s_vlan, nm_connection_get_setting_connection (conn));
 
@@ -107,27 +108,29 @@ nmt_page_vlan_constructed (GObject *object)
 	g_object_bind_property (s_wired, NM_SETTING_WIRED_MAC_ADDRESS,
 	                        widget, "mac-address",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-	nmt_page_grid_append (grid, NULL, widget, NULL);
+	nmt_editor_grid_append (grid, NULL, widget, NULL);
 
 	widget = id_entry = nmt_newt_entry_numeric_new (8, 0, 4095);
 	g_object_bind_property (s_vlan, NM_SETTING_VLAN_ID,
 	                        widget, "text",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-	nmt_page_grid_append (grid, _("VLAN id"), widget, NULL);
+	nmt_editor_grid_append (grid, _("VLAN id"), widget, NULL);
 
-	nmt_page_grid_append (grid, NULL, nmt_newt_separator_new (), NULL);
+	nmt_editor_grid_append (grid, NULL, nmt_newt_separator_new (), NULL);
 
 	widget = nmt_mac_entry_new (40, ETH_ALEN);
 	g_object_bind_property (s_wired, NM_SETTING_WIRED_CLONED_MAC_ADDRESS,
 	                        widget, "mac-address",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-	nmt_page_grid_append (grid, _("Cloned MAC address"), widget, NULL);
+	nmt_editor_grid_append (grid, _("Cloned MAC address"), widget, NULL);
 
 	widget = nmt_mtu_entry_new ();
 	g_object_bind_property (s_wired, NM_SETTING_WIRED_MTU,
 	                        widget, "mtu",
 	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-	nmt_page_grid_append (grid, _("MTU"), widget, NULL);
+	nmt_editor_grid_append (grid, _("MTU"), widget, NULL);
+
+	nmt_editor_page_add_section (NMT_EDITOR_PAGE (vlan), section);
 
 	G_OBJECT_CLASS (nmt_page_vlan_parent_class)->constructed (object);
 }
