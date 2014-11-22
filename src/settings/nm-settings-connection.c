@@ -1229,6 +1229,12 @@ has_some_secrets_cb (NMSetting *setting,
 {
 	GParamSpec *pspec;
 
+	if (NM_IS_SETTING_VPN (setting)) {
+		if (nm_setting_vpn_get_num_secrets (NM_SETTING_VPN(setting)))
+			*((gboolean *) user_data) = TRUE;
+		return;
+	}
+
 	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (setting)), key);
 	if (pspec) {
 		if (   (flags & NM_SETTING_PARAM_SECRET)
