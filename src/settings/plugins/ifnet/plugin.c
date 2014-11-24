@@ -393,7 +393,7 @@ check_unmanaged (gpointer key, gpointer data, gpointer user_data)
 
 	conn_name = nm_ifnet_connection_get_conn_name (connection);
 
-	if (is_managed (conn_name))
+	if (!conn_name || is_managed (conn_name))
 		return;
 
 	nm_log_info (LOGD_SETTINGS, "Checking unmanaged: %s", conn_name);
