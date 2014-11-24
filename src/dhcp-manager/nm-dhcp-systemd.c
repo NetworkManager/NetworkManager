@@ -251,7 +251,7 @@ lease_to_ip4_config (sd_dhcp_lease *lease,
 	address.timestamp = nm_utils_get_monotonic_timestamp_s ();
 	address.lifetime = address.preferred = lifetime;
 	end_time = (guint64) time (NULL) + lifetime;
-	LOG_LEASE (LOGD_DHCP4, "  expires in %" G_GUINT64_FORMAT " seconds", lifetime);
+	LOG_LEASE (LOGD_DHCP4, "  expires in %" G_GUINT32_FORMAT " seconds", lifetime);
 	add_option_u64 (options,
 	                dhcp4_requests,
 	                DHCP_OPTION_IP_ADDRESS_LEASE_TIME,
