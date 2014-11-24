@@ -192,11 +192,12 @@ static NmcOutputField nmc_fields_dev_show_master_prop[] = {
 /* Available fields for 'device show' - VLAN part */
 static NmcOutputField nmc_fields_dev_show_vlan_prop[] = {
 	{"NAME",           N_("NAME"),     18},  /* 0 */
-	{"ID",             N_("ID"),        5},  /* 1 */
+	{"PARENT",         N_("PARENT"),   10},  /* 1 */
+	{"ID",             N_("ID"),        5},  /* 2 */
 	{NULL,             NULL,            0}
 };
-#define NMC_FIELDS_DEV_SHOW_VLAN_PROP_ALL     "NAME,ID"
-#define NMC_FIELDS_DEV_SHOW_VLAN_PROP_COMMON  "NAME,ID"
+#define NMC_FIELDS_DEV_SHOW_VLAN_PROP_ALL     "NAME,PARENT,ID"
+#define NMC_FIELDS_DEV_SHOW_VLAN_PROP_COMMON  "NAME,PARENT,ID"
 
 /* Available fields for 'device show' - BLUETOOTH part */
 static NmcOutputField nmc_fields_dev_show_bluetooth[] = {
@@ -1084,6 +1085,7 @@ show_device_info (NMDevice *device, NmCli *nmc)
 		if ((NM_IS_DEVICE_VLAN (device))) {
 			if (!strcasecmp (nmc_fields_dev_show_sections[section_idx].name, nmc_fields_dev_show_sections[14].name)) {
 				char * vlan_id_str = g_strdup_printf ("%u", nm_device_vlan_get_vlan_id (NM_DEVICE_VLAN (device)));
+				NMDevice *parent = nm_device_vlan_get_parent (NM_DEVICE_VLAN (device));
 
 				tmpl = nmc_fields_dev_show_vlan_prop;
 				tmpl_len = sizeof (nmc_fields_dev_show_vlan_prop);
@@ -1094,7 +1096,8 @@ show_device_info (NMDevice *device, NmCli *nmc)
 
 				arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 				set_val_strc (arr, 0, nmc_fields_dev_show_sections[14].name);  /* "VLAN" */
-				set_val_str  (arr, 1, vlan_id_str);
+				set_val_strc (arr, 1, parent ? nm_device_get_iface (parent) : NULL);
+				set_val_str  (arr, 2, vlan_id_str);
 				g_ptr_array_add (nmc->output_data, arr);
 
 				print_data (nmc);  /* Print all data */
