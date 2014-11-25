@@ -1732,6 +1732,25 @@ _address_get_lifetime (const NMPlatformIPAddress *address, guint32 now, guint32 
 	return TRUE;
 }
 
+gboolean
+nm_platform_ip4_check_reinstall_device_route (int ifindex, const NMPlatformIP4Address *address, guint32 device_route_metric)
+{
+	g_return_val_if_fail (address, FALSE);
+
+	if (   ifindex <= 0
+	    || address->plen <= 0
+	    || address->plen >= 32)
+		return FALSE;
+
+	if (device_route_metric == NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE) {
+		/* The automatically added route would be already our desired priority.
+		 * Nothing to do. */
+		return FALSE;
+	}
+
+	return klass->ip4_check_reinstall_device_route (platform, ifindex, address, device_route_metric);
+}
+
 /**
  * nm_platform_ip4_address_sync:
  * @ifindex: Interface index
@@ -1771,40 +1790,33 @@ nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresses, guint3
 		const NMPlatformIP4Address *known_address = &g_array_index (known_addresses, NMPlatformIP4Address, i);
 		guint32 lifetime, preferred;
 		guint32 network;
+		gboolean reinstall_device_route = FALSE;
 
 		/* add a padding of 5 seconds to avoid potential races. */
 		if (!_address_get_lifetime ((NMPlatformIPAddress *) known_address, now, 5, &lifetime, &preferred))
 			continue;
 
+		if (nm_platform_ip4_check_reinstall_device_route (ifindex, known_address, device_route_metric))
+			reinstall_device_route = TRUE;
+
 		if (!nm_platform_ip4_address_add (ifindex, known_address->address, known_address->peer_address, known_address->plen, lifetime, preferred, known_address->label))
 			return FALSE;
 
-		if (known_address->plen == 0 || known_address->plen == 32)
-			continue;
-
-		if (device_route_metric == NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE) {
-			/* Kernel already adds routes for us with this metric. */
-			continue;
+		if (reinstall_device_route) {
+			/* Kernel automatically adds a device route for us with metric 0. That is not what we want.
+			 * Remove it, and re-add it.
+			 *
+			 * In face of having the same subnets on two different interfaces with the same metric,
+			 * this is a problem. Surprisingly, kernel is able to add two routes for the same subnet/prefix,metric
+			 * to different interfaces. We cannot. Adding one, would replace the other. This is avoided
+			 * by the above nm_platform_ip4_check_reinstall_device_route() check.
+			 */
+			network = nm_utils_ip4_address_clear_host_address (known_address->address, known_address->plen);
+			(void) nm_platform_ip4_route_add (ifindex, NM_IP_CONFIG_SOURCE_KERNEL, network, known_address->plen,
+			                                  0, known_address->address, device_route_metric, 0);
+			(void) nm_platform_ip4_route_delete (ifindex, network, known_address->plen,
+			                                     NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE);
 		}
-
-		/* Kernel automatically adds a device route for us with metric 0. That is not what we want.
-		 * Remove it, and re-add it.
-		 *
-		 * In face of having the same subnets on two different interfaces with the same metric,
-		 * this is a problem. Surprisingly, kernel is able to add two routes for the same subnet/prefix,metric
-		 * to different interfaces. We cannot. Adding one, will replace the other. Indeed we will
-		 * toggle the routes between the interfaces.
-		 *
-		 * Indeed we have that problem for all our routes, that if another interface wants the same route
-		 * we don't coordinate them. See bug 740064.
-		 *
-		 * The workaround is to configure different device priorities via ipv4.route-metric. */
-
-		network = nm_utils_ip4_address_clear_host_address (known_address->address, known_address->plen);
-		(void) nm_platform_ip4_route_add (ifindex, NM_IP_CONFIG_SOURCE_KERNEL, network, known_address->plen,
-		                                  0, known_address->address, device_route_metric, 0);
-		(void) nm_platform_ip4_route_delete (ifindex, network, known_address->plen,
-		                                     NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE);
 	}
 
 	return TRUE;

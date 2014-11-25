@@ -103,7 +103,7 @@ G_DEFINE_TYPE (NMLinuxPlatform, nm_linux_platform, NM_TYPE_PLATFORM)
 
 static const char *to_string_object (NMPlatform *platform, struct nl_object *obj);
 static gboolean _address_match (struct rtnl_addr *addr, int family, int ifindex);
-static gboolean _route_match (struct rtnl_route *rtnlroute, int family, int ifindex);
+static gboolean _route_match (struct rtnl_route *rtnlroute, int family, int ifindex, gboolean include_proto_kernel);
 
 void
 nm_linux_platform_setup (void)
@@ -1668,7 +1668,7 @@ announce_object (NMPlatform *platform, const struct nl_object *object, NMPlatfor
 		{
 			NMPlatformIP4Route route;
 
-			if (!_route_match ((struct rtnl_route *) object, AF_INET, 0)) {
+			if (!_route_match ((struct rtnl_route *) object, AF_INET, 0, FALSE)) {
 				nm_log_dbg (LOGD_PLATFORM, "skip announce unmatching IP4 route %s", to_string_ip4_route ((struct rtnl_route *) object));
 				return;
 			}
@@ -1680,7 +1680,7 @@ announce_object (NMPlatform *platform, const struct nl_object *object, NMPlatfor
 		{
 			NMPlatformIP6Route route;
 
-			if (!_route_match ((struct rtnl_route *) object, AF_INET6, 0)) {
+			if (!_route_match ((struct rtnl_route *) object, AF_INET6, 0, FALSE)) {
 				nm_log_dbg (LOGD_PLATFORM, "skip announce unmatching IP6 route %s", to_string_ip6_route ((struct rtnl_route *) object));
 				return;
 			}
@@ -3632,10 +3632,53 @@ ip6_address_exists (NMPlatform *platform, int ifindex, struct in6_addr addr, int
 	return ip_address_exists (platform, AF_INET6, ifindex, &addr, plen);
 }
 
+static gboolean
+ip4_check_reinstall_device_route (NMPlatform *platform, int ifindex, const NMPlatformIP4Address *address, guint32 device_route_metric)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	NMPlatformIP4Address addr_candidate;
+	NMPlatformIP4Route route_candidate;
+	struct nl_object *object;
+	guint32 device_network;
+
+	for (object = nl_cache_get_first (priv->address_cache); object; object = nl_cache_get_next (object)) {
+		if (_address_match ((struct rtnl_addr *) object, AF_INET, 0)) {
+			if (init_ip4_address (&addr_candidate, (struct rtnl_addr *) object))
+				if (   addr_candidate.plen == address->plen
+				    && addr_candidate.address == address->address) {
+					/* If we already have the same address installed on any interface,
+					 * we back off.
+					 * Perform this check first, as we expect to have significantly less
+					 * addresses to search. */
+					return FALSE;
+				}
+		}
+	}
+
+	device_network = nm_utils_ip4_address_clear_host_address (address->address, address->plen);
+
+	for (object = nl_cache_get_first (priv->route_cache); object; object = nl_cache_get_next (object)) {
+		if (_route_match ((struct rtnl_route *) object, AF_INET, 0, TRUE)) {
+			if (init_ip4_route (&route_candidate, (struct rtnl_route *) object)) {
+				if (   route_candidate.network == device_network
+				    && route_candidate.plen == address->plen
+				    && (   route_candidate.metric == 0
+				        || route_candidate.metric == device_route_metric)) {
+					/* There is already any route with metric 0 or the metric we want to install
+					 * for the same subnet. */
+					return FALSE;
+				}
+			}
+		}
+	}
+
+	return TRUE;
+}
+
 /******************************************************************/
 
 static gboolean
-_route_match (struct rtnl_route *rtnlroute, int family, int ifindex)
+_route_match (struct rtnl_route *rtnlroute, int family, int ifindex, gboolean include_proto_kernel)
 {
 	struct rtnl_nexthop *nexthop;
 
@@ -3643,7 +3686,7 @@ _route_match (struct rtnl_route *rtnlroute, int family, int ifindex)
 
 	if (rtnl_route_get_type (rtnlroute) != RTN_UNICAST ||
 	    rtnl_route_get_table (rtnlroute) != RT_TABLE_MAIN ||
-	    rtnl_route_get_protocol (rtnlroute) == RTPROT_KERNEL ||
+	    (!include_proto_kernel && rtnl_route_get_protocol (rtnlroute) == RTPROT_KERNEL) ||
 	    rtnl_route_get_family (rtnlroute) != family ||
 	    rtnl_route_get_nnexthops (rtnlroute) != 1 ||
 	    rtnl_route_get_flags (rtnlroute) & RTM_F_CLONED)
@@ -3669,7 +3712,7 @@ ip4_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteMode mod
 	routes = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP4Route));
 
 	for (object = nl_cache_get_first (priv->route_cache); object; object = nl_cache_get_next (object)) {
-		if (_route_match ((struct rtnl_route *) object, AF_INET, ifindex)) {
+		if (_route_match ((struct rtnl_route *) object, AF_INET, ifindex, FALSE)) {
 			if (_rtnl_route_is_default ((struct rtnl_route *) object)) {
 				if (mode == NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT)
 					continue;
@@ -3698,7 +3741,7 @@ ip6_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteMode mod
 	routes = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP6Route));
 
 	for (object = nl_cache_get_first (priv->route_cache); object; object = nl_cache_get_next (object)) {
-		if (_route_match ((struct rtnl_route *) object, AF_INET6, ifindex)) {
+		if (_route_match ((struct rtnl_route *) object, AF_INET6, ifindex, FALSE)) {
 			if (_rtnl_route_is_default ((struct rtnl_route *) object)) {
 				if (mode == NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT)
 					continue;
@@ -3805,7 +3848,7 @@ route_search_cache (struct nl_cache *cache, int family, int ifindex, const void 
 		struct nl_addr *dst;
 		struct rtnl_route *rtnlroute = (struct rtnl_route *) object;
 
-		if (!_route_match (rtnlroute, family, ifindex))
+		if (!_route_match (rtnlroute, family, ifindex, FALSE))
 			continue;
 
 		if (metric && metric != rtnl_route_get_priority (rtnlroute))
@@ -4361,6 +4404,8 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->ip6_address_delete = ip6_address_delete;
 	platform_class->ip4_address_exists = ip4_address_exists;
 	platform_class->ip6_address_exists = ip6_address_exists;
+
+	platform_class->ip4_check_reinstall_device_route = ip4_check_reinstall_device_route;
 
 	platform_class->ip4_route_get_all = ip4_route_get_all;
 	platform_class->ip6_route_get_all = ip6_route_get_all;

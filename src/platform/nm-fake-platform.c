@@ -982,6 +982,12 @@ ip6_address_exists (NMPlatform *platform, int ifindex, struct in6_addr addr, int
 	return FALSE;
 }
 
+static gboolean
+ip4_check_reinstall_device_route (NMPlatform *platform, int ifindex, const NMPlatformIP4Address *address, guint32 device_route_metric)
+{
+	return FALSE;
+}
+
 /******************************************************************/
 
 static GArray *
@@ -1344,6 +1350,8 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->ip6_address_delete = ip6_address_delete;
 	platform_class->ip4_address_exists = ip4_address_exists;
 	platform_class->ip6_address_exists = ip6_address_exists;
+
+	platform_class->ip4_check_reinstall_device_route = ip4_check_reinstall_device_route;
 
 	platform_class->ip4_route_get_all = ip4_route_get_all;
 	platform_class->ip6_route_get_all = ip6_route_get_all;
