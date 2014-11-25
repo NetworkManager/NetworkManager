@@ -188,6 +188,10 @@ typedef union {
  * Thus, the value is not choosen arbitraily, but matches kernel IPv6 default. */
 #define NM_PLATFORM_ROUTE_METRIC_DEFAULT 1024
 
+/* For IPv4, kernel adds a device route (subnet routes) with metric 0 when user
+ * configures addresses. */
+#define NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE 0
+
 #define __NMPlatformIPRoute_COMMON \
 	__NMPlatformObject_COMMON; \
 	NMIPConfigSource source; \
@@ -417,7 +421,7 @@ typedef struct {
 	GArray * (*ip6_route_get_all) (NMPlatform *, int ifindex, NMPlatformGetRouteMode mode);
 	gboolean (*ip4_route_add) (NMPlatform *, int ifindex, NMIPConfigSource source,
 	                           in_addr_t network, int plen, in_addr_t gateway,
-	                           guint32 metric, guint32 mss);
+	                           guint32 pref_src, guint32 metric, guint32 mss);
 	gboolean (*ip6_route_add) (NMPlatform *, int ifindex, NMIPConfigSource source,
 	                           struct in6_addr network, int plen, struct in6_addr gateway,
 	                           guint32 metric, guint32 mss);
@@ -556,7 +560,7 @@ gboolean nm_platform_ip4_address_delete (int ifindex, in_addr_t address, int ple
 gboolean nm_platform_ip6_address_delete (int ifindex, struct in6_addr address, int plen);
 gboolean nm_platform_ip4_address_exists (int ifindex, in_addr_t address, int plen);
 gboolean nm_platform_ip6_address_exists (int ifindex, struct in6_addr address, int plen);
-gboolean nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresses);
+gboolean nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresses, guint32 device_route_metric);
 gboolean nm_platform_ip6_address_sync (int ifindex, const GArray *known_addresses);
 gboolean nm_platform_address_flush (int ifindex);
 
@@ -564,7 +568,7 @@ GArray *nm_platform_ip4_route_get_all (int ifindex, NMPlatformGetRouteMode mode)
 GArray *nm_platform_ip6_route_get_all (int ifindex, NMPlatformGetRouteMode mode);
 gboolean nm_platform_ip4_route_add (int ifindex, NMIPConfigSource source,
                                     in_addr_t network, int plen, in_addr_t gateway,
-                                    guint32 metric, guint32 mss);
+                                    guint32 pref_src, guint32 metric, guint32 mss);
 gboolean nm_platform_ip6_route_add (int ifindex, NMIPConfigSource source,
                                     struct in6_addr network, int plen, struct in6_addr gateway,
                                     guint32 metric, guint32 mss);

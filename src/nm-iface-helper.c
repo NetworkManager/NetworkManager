@@ -56,7 +56,7 @@ static int ifindex = -1;
 static gboolean slaac_required = FALSE;
 static gboolean dhcp4_required = FALSE;
 static int tempaddr = NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
-static int priority = -1;
+static guint32 priority;
 
 static void
 dhcp4_state_changed (NMDhcpClient *client,
@@ -80,7 +80,7 @@ dhcp4_state_changed (NMDhcpClient *client,
 			nm_ip4_config_subtract (existing, last_config);
 
 		nm_ip4_config_merge (existing, ip4_config);
-		if (!nm_ip4_config_commit (existing, ifindex))
+		if (!nm_ip4_config_commit (existing, ifindex, priority))
 			nm_log_warn (LOGD_DHCP4, "(%s): failed to apply DHCPv4 config", ifname);
 
 		if (last_config) {
@@ -287,6 +287,7 @@ main (int argc, char *argv[])
 	size_t hwaddr_len = 0;
 	gconstpointer tmp;
 	gs_free NMUtilsIPv6IfaceId *iid = NULL;
+	gint64 priority64 = -1;
 
 	GOptionEntry options[] = {
 		/* Interface/IP config */
@@ -299,7 +300,7 @@ main (int argc, char *argv[])
 		{ "dhcp4-required", '4', 0, G_OPTION_ARG_NONE, &dhcp4_required, N_("Whether DHCPv4 must be successful"), NULL },
 		{ "dhcp4-clientid", 'c', 0, G_OPTION_ARG_STRING, &dhcp4_clientid, N_("Hex-encoded DHCPv4 client ID"), NULL },
 		{ "dhcp4-hostname", 'h', 0, G_OPTION_ARG_STRING, &dhcp4_hostname, N_("Hostname to send to DHCP server"), N_("barbar") },
-		{ "priority", 'p', 0, G_OPTION_ARG_INT, &priority, N_("Route priority"), N_("10") },
+		{ "priority", 'p', 0, G_OPTION_ARG_INT64, &priority64, N_("Route priority"), N_("10") },
 		{ "iid", 'e', 0, G_OPTION_ARG_STRING, &iid_str, N_("Hex-encoded Interface Identifier"), N_("") },
 
 		/* Logging/debugging */
@@ -417,7 +418,7 @@ main (int argc, char *argv[])
 		iid = g_bytes_unref_to_data (bytes, &ignored);
 	}
 
-	priority = MAX (0, priority);
+	priority = (guint32) CLAMP (priority64, 0, G_MAXUINT32);
 
 	if (dhcp4_address) {
 		nm_platform_sysctl_set (nm_utils_ip4_property_path (ifname, "promote_secondaries"), "1");

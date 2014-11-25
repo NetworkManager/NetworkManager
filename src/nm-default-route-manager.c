@@ -256,6 +256,7 @@ _platform_route_sync_add (const VTableIP *vtable, NMDefaultRouteManager *self, g
 		                                     0,
 		                                     0,
 		                                     entry->route.r4.gateway,
+		                                     0,
 		                                     entry->effective_metric,
 		                                     entry->route.rx.mss);
 	} else {

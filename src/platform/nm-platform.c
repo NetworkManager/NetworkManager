@@ -1736,6 +1736,8 @@ _address_get_lifetime (const NMPlatformIPAddress *address, guint32 now, guint32 
  * nm_platform_ip4_address_sync:
  * @ifindex: Interface index
  * @known_addresses: List of addresses
+ * @device_route_metric: the route metric for adding subnet routes (replaces
+ *   the kernel added routes).
  *
  * A convenience function to synchronize addresses for a specific interface
  * with the least possible disturbance. It simply removes addresses that are
@@ -1744,7 +1746,7 @@ _address_get_lifetime (const NMPlatformIPAddress *address, guint32 now, guint32 
  * Returns: %TRUE on success.
  */
 gboolean
-nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresses)
+nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresses, guint32 device_route_metric)
 {
 	GArray *addresses;
 	NMPlatformIP4Address *address;
@@ -1768,6 +1770,7 @@ nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresses)
 	for (i = 0; i < known_addresses->len; i++) {
 		const NMPlatformIP4Address *known_address = &g_array_index (known_addresses, NMPlatformIP4Address, i);
 		guint32 lifetime, preferred;
+		guint32 network;
 
 		/* add a padding of 5 seconds to avoid potential races. */
 		if (!_address_get_lifetime ((NMPlatformIPAddress *) known_address, now, 5, &lifetime, &preferred))
@@ -1775,6 +1778,31 @@ nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresses)
 
 		if (!nm_platform_ip4_address_add (ifindex, known_address->address, known_address->peer_address, known_address->plen, lifetime, preferred, known_address->label))
 			return FALSE;
+
+		if (known_address->plen == 0 || known_address->plen == 32)
+			continue;
+
+		if (device_route_metric == NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE) {
+			/* Kernel already adds routes for us with this metric. */
+			continue;
+		}
+
+		/* Kernel automatically adds a device route for us with metric 0. That is not what we want.
+		 * Remove it, and re-add it.
+		 *
+		 * In face of having the same subnets on two different interfaces with the same metric,
+		 * this is a problem. Surprisingly, kernel is able to add two routes for the same subnet/prefix,metric
+		 * to different interfaces. We cannot. Adding one, will replace the other. Indeed we will
+		 * toggle the routes between the interfaces.
+		 *
+		 * Indeed we have that problem for all our routes, that if another interface wants the same route
+		 * we don't coordinate them. See bug 740064.
+		 *
+		 * The workaround is to configure different device priorities via ipv4.route-metric. */
+
+		network = nm_utils_ip4_address_clear_host_address (known_address->address, known_address->plen);
+		nm_platform_ip4_route_add (ifindex, NM_IP_CONFIG_SOURCE_KERNEL, network, known_address->plen, 0, known_address->address, device_route_metric, 0);
+		nm_platform_ip4_route_delete (ifindex, network, known_address->plen, NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE);
 	}
 
 	return TRUE;
@@ -1837,7 +1865,7 @@ nm_platform_ip6_address_sync (int ifindex, const GArray *known_addresses)
 gboolean
 nm_platform_address_flush (int ifindex)
 {
-	return nm_platform_ip4_address_sync (ifindex, NULL)
+	return nm_platform_ip4_address_sync (ifindex, NULL, 0)
 			&& nm_platform_ip6_address_sync (ifindex, NULL);
 }
 
@@ -1868,7 +1896,8 @@ nm_platform_ip6_route_get_all (int ifindex, NMPlatformGetRouteMode mode)
 gboolean
 nm_platform_ip4_route_add (int ifindex, NMIPConfigSource source,
                            in_addr_t network, int plen,
-                           in_addr_t gateway, guint32 metric, guint32 mss)
+                           in_addr_t gateway, guint32 pref_src,
+                           guint32 metric, guint32 mss)
 {
 	reset_error ();
 
@@ -1878,6 +1907,7 @@ nm_platform_ip4_route_add (int ifindex, NMIPConfigSource source,
 
 	if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
 		NMPlatformIP4Route route = { 0 };
+		char pref_src_buf[NM_UTILS_INET_ADDRSTRLEN];
 
 		route.ifindex = ifindex;
 		route.source = source;
@@ -1887,9 +1917,12 @@ nm_platform_ip4_route_add (int ifindex, NMIPConfigSource source,
 		route.metric = metric;
 		route.mss = mss;
 
-		debug ("route: adding or updating IPv4 route: %s", nm_platform_ip4_route_to_string (&route));
+		debug ("route: adding or updating IPv4 route: %s%s%s%s", nm_platform_ip4_route_to_string (&route),
+		       pref_src ? " (src: " : "",
+		       pref_src ? nm_utils_inet4_ntop (pref_src, pref_src_buf) : "",
+		       pref_src ? ")" : "");
 	}
-	return klass->ip4_route_add (platform, ifindex, source, network, plen, gateway, metric, mss);
+	return klass->ip4_route_add (platform, ifindex, source, network, plen, gateway, pref_src, metric, mss);
 }
 
 gboolean
@@ -2066,6 +2099,7 @@ nm_platform_ip4_route_sync (int ifindex, const GArray *known_routes)
 				                                     known_route->network,
 				                                     known_route->plen,
 				                                     known_route->gateway,
+				                                     0,
 				                                     known_route->metric,
 				                                     known_route->mss);
 				if (!success && known_route->source < NM_IP_CONFIG_SOURCE_USER) {
