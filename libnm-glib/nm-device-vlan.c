@@ -137,7 +137,7 @@ nm_device_vlan_get_carrier (NMDeviceVlan *device)
  * nm_device_vlan_get_parent:
  * @device: a #NMDeviceVlan
  *
- * Returns: the device's parent device
+ * Returns: (transfer none): the device's parent device
  *
  * Since: 1.0
  **/
