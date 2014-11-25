@@ -196,6 +196,7 @@ nmt_editor_section_set_property (GObject      *object,
 		priv->header_widget = g_value_get_object (value);
 		if (priv->header_widget)
 			g_object_ref_sink (priv->header_widget);
+		rebuild_header (section);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
