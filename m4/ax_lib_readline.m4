@@ -90,6 +90,7 @@ AC_DEFUN([AX_LIB_READLINE], [
     AC_MSG_ERROR([readline library with terminfo support is required (one of ncurses, curses, or termcap)])
   fi
 
+  ORIG_LIBS="$LIBS"
   LIBS="$LIBS $ax_cv_lib_readline"
   AC_CHECK_HEADERS(readline.h readline/readline.h)
   AC_CACHE_CHECK([whether readline supports history],
@@ -101,6 +102,8 @@ AC_DEFUN([AX_LIB_READLINE], [
     AC_MSG_ERROR(readline history support is required)
   fi
   AC_CHECK_HEADERS(history.h readline/history.h)
+
+  LIBS="$ORIG_LIBS"
   READLINE_LIBS="$ax_cv_lib_readline"
   AC_SUBST(READLINE_LIBS)
 ])dnl
