@@ -2235,6 +2235,56 @@ error:
 	return nmc->return_value;
 }
 
+typedef struct {
+	NmCli *nmc;
+	NMActiveConnection *active;
+	guint timeout_id;
+} DeactivateConnectionInfo;
+
+static void deactivate_connection_info_free (gpointer user_data);
+
+static gboolean
+down_timeout_cb (gpointer user_data)
+{
+	DeactivateConnectionInfo *info = user_data;
+
+	info->timeout_id = 0;
+	timeout_cb (info->nmc);
+	deactivate_connection_info_free (info);
+	return G_SOURCE_REMOVE;
+}
+
+static void
+down_active_connection_state_cb (NMActiveConnection *active,
+                                 GParamSpec *pspec,
+                                 DeactivateConnectionInfo *info)
+{
+	if (nm_active_connection_get_state (active) < NM_ACTIVE_CONNECTION_STATE_DEACTIVATED)
+		return;
+
+	if (info->nmc->print_output == NMC_PRINT_PRETTY)
+		nmc_terminal_erase_line ();
+	g_print (_("Connection successfully deactivated (D-Bus active path: %s)\n"),
+	         nm_object_get_path (NM_OBJECT (info->active)));
+
+	deactivate_connection_info_free (info);
+	quit ();
+}
+
+static void
+deactivate_connection_info_free (gpointer user_data)
+{
+	DeactivateConnectionInfo *info = user_data;
+
+	if (info->timeout_id)
+		g_source_remove (info->timeout_id);
+	g_signal_handlers_disconnect_by_func (info->active,
+	                                      down_active_connection_state_cb,
+	                                      info);
+	g_object_unref (info->active);
+	g_slice_free (DeactivateConnectionInfo, info);
+}
+
 static NMCResultCode
 do_connection_down (NmCli *nmc, int argc, char **argv)
 {
@@ -2259,6 +2309,9 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 		}
 	}
 
+	if (nmc->timeout == -1)
+		nmc->timeout = 10;
+
 	/* Get active connections */
 	active_cons = nm_client_get_active_connections (nmc->client);
 	while (arg_num > 0) {
@@ -2279,7 +2332,25 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 
 		active = find_active_connection (active_cons, nmc->connections, selector, *arg_ptr, &idx);
 		if (active) {
+			DeactivateConnectionInfo *info;
+
 			nm_client_deactivate_connection (nmc->client, active, NULL, NULL);
+
+			if (nmc->timeout == 0)
+				break;
+
+			info = g_slice_new0 (DeactivateConnectionInfo);
+			info->nmc = nmc;
+			info->active = g_object_ref (active);
+
+			/* Wait for ActiveConnection to deactivate */
+			nmc->should_wait = TRUE;
+			info->timeout_id = g_timeout_add_seconds (nmc->timeout, down_timeout_cb, info);
+			g_signal_connect (active,
+			                  "notify::" NM_ACTIVE_CONNECTION_STATE,
+			                  G_CALLBACK (down_active_connection_state_cb),
+			                  info);
+			break;
 		} else {
 			g_string_printf (nmc->return_text, _("Error: '%s' is not an active connection."), *arg_ptr);
 			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
@@ -2290,9 +2361,8 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 			next_arg (&arg_num, &arg_ptr);
 	}
 
-	// FIXME: do something better then sleep()
-	/* Don't quit immediatelly and give NM time to check our permissions */
-	sleep (1);
+	g_strfreev (arg_arr);
+	return nmc->return_value;
 
 error:
 	nmc->should_wait = FALSE;
