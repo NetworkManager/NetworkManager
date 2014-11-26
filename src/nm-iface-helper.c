@@ -56,7 +56,8 @@ static int ifindex = -1;
 static gboolean slaac_required = FALSE;
 static gboolean dhcp4_required = FALSE;
 static int tempaddr = NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
-static guint32 priority;
+static guint32 priority_v4 = NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP4;
+static guint32 priority_v6 = NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6;
 
 static void
 dhcp4_state_changed (NMDhcpClient *client,
@@ -80,7 +81,7 @@ dhcp4_state_changed (NMDhcpClient *client,
 			nm_ip4_config_subtract (existing, last_config);
 
 		nm_ip4_config_merge (existing, ip4_config);
-		if (!nm_ip4_config_commit (existing, ifindex, priority))
+		if (!nm_ip4_config_commit (existing, ifindex, priority_v4))
 			nm_log_warn (LOGD_DHCP4, "(%s): failed to apply DHCPv4 config", ifname);
 
 		if (last_config) {
@@ -192,7 +193,7 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, gpointer user_da
 				route.plen = discovered_route->plen;
 				route.gateway = discovered_route->gateway;
 				route.source = NM_IP_CONFIG_SOURCE_RDISC;
-				route.metric = priority;
+				route.metric = priority_v6;
 
 				nm_ip6_config_add_route (ip6_config, &route);
 			}
@@ -287,7 +288,8 @@ main (int argc, char *argv[])
 	size_t hwaddr_len = 0;
 	gconstpointer tmp;
 	gs_free NMUtilsIPv6IfaceId *iid = NULL;
-	gint64 priority64 = -1;
+	gint64 priority64_v4 = -1;
+	gint64 priority64_v6 = -1;
 
 	GOptionEntry options[] = {
 		/* Interface/IP config */
@@ -300,7 +302,8 @@ main (int argc, char *argv[])
 		{ "dhcp4-required", '4', 0, G_OPTION_ARG_NONE, &dhcp4_required, N_("Whether DHCPv4 must be successful"), NULL },
 		{ "dhcp4-clientid", 'c', 0, G_OPTION_ARG_STRING, &dhcp4_clientid, N_("Hex-encoded DHCPv4 client ID"), NULL },
 		{ "dhcp4-hostname", 'h', 0, G_OPTION_ARG_STRING, &dhcp4_hostname, N_("Hostname to send to DHCP server"), N_("barbar") },
-		{ "priority", 'p', 0, G_OPTION_ARG_INT64, &priority64, N_("Route priority"), N_("10") },
+		{ "priority4", '\0', 0, G_OPTION_ARG_INT64, &priority64_v4, N_("Route priority for IPv4"), N_("0") },
+		{ "priority6", '\0', 0, G_OPTION_ARG_INT64, &priority64_v6, N_("Route priority for IPv6"), N_("1024") },
 		{ "iid", 'e', 0, G_OPTION_ARG_STRING, &iid_str, N_("Hex-encoded Interface Identifier"), N_("") },
 
 		/* Logging/debugging */
@@ -418,7 +421,11 @@ main (int argc, char *argv[])
 		iid = g_bytes_unref_to_data (bytes, &ignored);
 	}
 
-	priority = (guint32) CLAMP (priority64, 0, G_MAXUINT32);
+	if (priority64_v4 >= 0 && priority64_v4 <= G_MAXUINT32)
+		priority_v4 = (guint32) priority64_v4;
+
+	if (priority64_v6 >= 0 && priority64_v6 <= G_MAXUINT32)
+		priority_v6 = (guint32) priority64_v6;
 
 	if (dhcp4_address) {
 		nm_platform_sysctl_set (nm_utils_ip4_property_path (ifname, "promote_secondaries"), "1");
@@ -432,7 +439,7 @@ main (int argc, char *argv[])
 		                                          ifindex,
 		                                          hwaddr,
 		                                          uuid,
-		                                          priority,
+		                                          priority_v4,
 		                                          !!dhcp4_hostname,
 		                                          dhcp4_hostname,
 		                                          dhcp4_clientid,

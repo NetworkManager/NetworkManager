@@ -7139,7 +7139,7 @@ void
 nm_device_spawn_iface_helper (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	gboolean priority_set = FALSE, configured = FALSE;
+	gboolean configured = FALSE;
 	NMConnection *connection;
 	GError *error = NULL;
 	const char *method;
@@ -7179,9 +7179,8 @@ nm_device_spawn_iface_helper (NMDevice *self)
 		s_ip4 = nm_connection_get_setting_ip4_config (connection);
 		g_assert (s_ip4);
 
-		g_ptr_array_add (argv, g_strdup ("--priority"));
-		g_ptr_array_add (argv, g_strdup_printf ("%u", nm_dhcp_client_get_priority (priv->dhcp4_client)));
-		priority_set = TRUE;
+		g_ptr_array_add (argv, g_strdup ("--priority4"));
+		g_ptr_array_add (argv, g_strdup_printf ("%u", nm_device_get_ip4_route_metric (self)));
 
 		g_ptr_array_add (argv, g_strdup ("--dhcp4"));
 		g_ptr_array_add (argv, g_strdup (dhcp4_address));
@@ -7218,6 +7217,9 @@ nm_device_spawn_iface_helper (NMDevice *self)
 		s_ip6 = nm_connection_get_setting_ip6_config (connection);
 		g_assert (s_ip6);
 
+		g_ptr_array_add (argv, g_strdup ("--priority6"));
+		g_ptr_array_add (argv, g_strdup_printf ("%u", nm_device_get_ip6_route_metric (self)));
+
 		g_ptr_array_add (argv, g_strdup ("--slaac"));
 
 		if (nm_setting_ip_config_get_may_fail (s_ip6) == FALSE)
@@ -7237,11 +7239,6 @@ nm_device_spawn_iface_helper (NMDevice *self)
 
 	if (configured) {
 		GPid pid;
-
-		if (!priority_set) {
-			g_ptr_array_add (argv, g_strdup ("--priority"));
-			g_ptr_array_add (argv, g_strdup_printf ("%u", nm_device_get_priority (self)));
-		}
 
 		g_ptr_array_add (argv, NULL);
 
