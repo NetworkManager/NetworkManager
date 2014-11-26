@@ -657,42 +657,49 @@ nm_device_get_priority (NMDevice *self)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (self), 1000);
 
-	/* Device 'priority' is used for two things:
+	/* Device 'priority' is used for the default route-metric and is based on
+	 * the device type. The settings ipv4.route-metric and ipv6.route-metric
+	 * can overwrite this default.
 	 *
-	 * a) two devices on the same IP subnet: the "better" (ie, lower number)
-	 *     device is the default outgoing device for that subnet
-	 * b) default route: the "better" device gets the default route.  This can
-	 *     always be modified by setting a connection to never-default=TRUE, in
-	 *     which case that device will never take the default route when
-	 *     it's using that connection.
+	 * Currently for both IPv4 and IPv6 we use the same default values.
+	 *
+	 * The route-metric is used for the metric of the routes of device.
+	 * This also applies to the default route. Therefore it affects also
+	 * which device is the "best".
+	 *
+	 * For comparison, note that iproute2 by default adds IPv4 routes with
+	 * metric 0, and IPv6 routes with metric 1024. The latter is the IPv6
+	 * "user default" in the kernel (NM_PLATFORM_ROUTE_METRIC_DEFAULT).
+	 * In kernel, the full uint32_t range is available for route
+	 * metrics (except for IPv6, where 0 means 1024).
 	 */
 
 	switch (nm_device_get_device_type (self)) {
-	/* 10 is reserved for VPN (NM_VPN_ROUTE_METRIC_DEFAULT) */
+	/* 50 is reserved for VPN (NM_VPN_ROUTE_METRIC_DEFAULT) */
 	case NM_DEVICE_TYPE_ETHERNET:
-		return 20;
-	case NM_DEVICE_TYPE_INFINIBAND:
-		return 30;
-	case NM_DEVICE_TYPE_ADSL:
-		return 40;
-	case NM_DEVICE_TYPE_WIMAX:
-		return 50;
-	case NM_DEVICE_TYPE_BOND:
-		return 60;
-	case NM_DEVICE_TYPE_TEAM:
-		return 70;
-	case NM_DEVICE_TYPE_VLAN:
-		return 80;
-	case NM_DEVICE_TYPE_MODEM:
-		return 90;
-	case NM_DEVICE_TYPE_BT:
 		return 100;
-	case NM_DEVICE_TYPE_WIFI:
-		return 110;
-	case NM_DEVICE_TYPE_OLPC_MESH:
-		return 120;
-	default:
+	case NM_DEVICE_TYPE_INFINIBAND:
+		return 150;
+	case NM_DEVICE_TYPE_ADSL:
 		return 200;
+	case NM_DEVICE_TYPE_WIMAX:
+		return 250;
+	case NM_DEVICE_TYPE_BOND:
+		return 300;
+	case NM_DEVICE_TYPE_TEAM:
+		return 350;
+	case NM_DEVICE_TYPE_VLAN:
+		return 400;
+	case NM_DEVICE_TYPE_MODEM:
+		return 450;
+	case NM_DEVICE_TYPE_BT:
+		return 550;
+	case NM_DEVICE_TYPE_WIFI:
+		return 600;
+	case NM_DEVICE_TYPE_OLPC_MESH:
+		return 650;
+	default:
+		return 950;
 	}
 }
 
