@@ -71,7 +71,7 @@ typedef struct {
  *   NMSettingWirelessSecurity *s_wsec;
  *   GVariant *secrets_dict;
  *
- *   secrets = nm_connection_new ();
+ *   secrets = nm_simple_connection_new ();
  *   s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
  *   g_object_set (G_OBJECT (s_wsec),
  *                 NM_SETTING_WIRELESS_SECURITY_PSK, "my really cool PSK",
