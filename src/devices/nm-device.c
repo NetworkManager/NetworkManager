@@ -669,7 +669,7 @@ nm_device_get_priority (NMDevice *self)
 	 *
 	 * For comparison, note that iproute2 by default adds IPv4 routes with
 	 * metric 0, and IPv6 routes with metric 1024. The latter is the IPv6
-	 * "user default" in the kernel (NM_PLATFORM_ROUTE_METRIC_DEFAULT).
+	 * "user default" in the kernel (NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6).
 	 * In kernel, the full uint32_t range is available for route
 	 * metrics (except for IPv6, where 0 means 1024).
 	 */

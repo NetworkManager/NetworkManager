@@ -39,14 +39,14 @@ const struct in6_addr *nm_utils_ip6_address_clear_host_address (struct in6_addr 
  * @metric: the route metric
  *
  * For IPv6 route, kernel treats the value 0 as IP6_RT_PRIO_USER (1024).
- * Thus, when comparing metric (values), we want to treat zero as NM_PLATFORM_ROUTE_METRIC_DEFAULT.
+ * Thus, when comparing metric (values), we want to treat zero as NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6.
  *
  * Returns: @metric, if @metric is not zero, otherwise 1024.
  */
 static inline guint32
 nm_utils_ip6_route_metric_normalize (guint32 metric)
 {
-	return metric ? metric : 1024 /*NM_PLATFORM_ROUTE_METRIC_DEFAULT*/;
+	return metric ? metric : 1024 /*NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6*/;
 }
 
 int nm_spawn_process (const char *args);

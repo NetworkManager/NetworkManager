@@ -184,9 +184,15 @@ typedef union {
 #undef __NMPlatformIPAddress_COMMON
 
 
-/* Adding an IPv6 route with metric 0, kernel translates to IP6_RT_PRIO_USER (1024).
- * Thus, the value is not choosen arbitraily, but matches kernel IPv6 default. */
-#define NM_PLATFORM_ROUTE_METRIC_DEFAULT 1024
+/* Default value for adding an IPv4 route. This is also what iproute2 does.
+ * Note that contrary to IPv6, you can add routes with metric 0 and it is even
+ * the default.
+ */
+#define NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP4 0
+
+/* Default value for adding an IPv6 route. This is also what iproute2 does.
+ * Adding an IPv6 route with metric 0, kernel translates to IP6_RT_PRIO_USER (1024). */
+#define NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6 1024
 
 /* For IPv4, kernel adds a device route (subnet routes) with metric 0 when user
  * configures addresses. */
