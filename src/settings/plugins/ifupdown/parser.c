@@ -686,7 +686,7 @@ ifupdown_update_connection_from_if_block (NMConnection *connection,
 	idstr = g_strconcat ("Ifupdown (", block->name, ")", NULL);
 	uuid_base = idstr;
 
-	uuid = nm_utils_uuid_generate_from_string (uuid_base, -1);
+	uuid = nm_utils_uuid_generate_from_string (uuid_base, -1, NM_UTILS_UUID_TYPE_LEGACY, NULL);
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_TYPE, type,
 	              NM_SETTING_CONNECTION_INTERFACE_NAME, block->name,

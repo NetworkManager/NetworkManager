@@ -408,7 +408,7 @@ connection_setting_add (const GPtrArray *block,
 	                             s_vlanid ? s_vlanid : "0",
 	                             s_hwaddr,
 	                             s_ip4addr ? s_ip4addr : "DHCP");
-	uuid = nm_utils_uuid_generate_from_string (uuid_data, -1);
+	uuid = nm_utils_uuid_generate_from_string (uuid_data, -1, NM_UTILS_UUID_TYPE_LEGACY, NULL);
 	g_free (uuid_data);
 
 	s_con = nm_setting_connection_new ();

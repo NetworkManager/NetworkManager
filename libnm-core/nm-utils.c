@@ -1955,6 +1955,8 @@ nm_utils_uuid_generate (void)
  * @slen: if negative, treat @s as zero terminated C string.
  *   Otherwise, assume the length as given (and allow @s to be
  *   non-null terminated or contain '\0').
+ * @uuid_type: a type identifier which UUID format to generate.
+ * @type_args: additional arguments, depending on the uuid_type
  *
  * For a given @s, this function will always return the same UUID.
  *
@@ -1962,13 +1964,17 @@ nm_utils_uuid_generate (void)
  * object's #NMSettingConnection:id: property
  **/
 char *
-nm_utils_uuid_generate_from_string (const char *s, gssize slen)
+nm_utils_uuid_generate_from_string (const char *s, gssize slen, int uuid_type, gpointer type_args)
 {
 	uuid_t uuid;
 	char *buf = NULL;
 
 	g_return_val_if_fail (s && *s, NULL);
 	g_return_val_if_fail (slen < 0 || slen > 0, FALSE);
+
+	/* for now, only support legacy type */
+	g_return_val_if_fail (uuid_type == NM_UTILS_UUID_TYPE_LEGACY, NULL);
+	g_return_val_if_fail (!type_args, NULL);
 
 	if (slen < 0)
 		slen = strlen (s);

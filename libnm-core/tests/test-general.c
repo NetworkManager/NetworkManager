@@ -3805,21 +3805,24 @@ test_hexstr2bin (void)
 /******************************************************************************/
 
 static void
-_test_uuid (const char *expected_uuid, const char *str)
+_test_uuid (int uuid_type, const char *expected_uuid, const char *str, gssize slen, gpointer type_args)
 {
 	gs_free char *uuid_test = NULL;
 
 	g_assert (str);
 
-	uuid_test = nm_utils_uuid_generate_from_string (str, -1);
+	uuid_test = nm_utils_uuid_generate_from_string (str, slen, uuid_type, type_args);
 
 	g_assert (uuid_test);
 	g_assert (nm_utils_is_uuid (uuid_test));
 
 	if (strcmp (uuid_test, expected_uuid)) {
-		g_error ("UUID test failed: text=%s, uuid=%s, expected=%s",
-		         str, uuid_test, expected_uuid);
+		g_error ("UUID test failed: type=%d; text=%s, len=%lld, uuid=%s, expected=%s", uuid_type,
+		         str, (long long) slen, uuid_test, expected_uuid);
 	}
+
+	if (slen < 0)
+		_test_uuid (uuid_type, expected_uuid, str, strlen (str), type_args);
 }
 
 static void
@@ -3827,17 +3830,17 @@ test_nm_utils_uuid_generate_from_string (void)
 {
 	gs_free char *uuid_test = NULL;
 
-	_test_uuid ("0cc175b9-c0f1-b6a8-31c3-99e269772661", "a");
-	_test_uuid ("098f6bcd-4621-d373-cade-4e832627b4f6", "test");
-	_test_uuid ("59c0547b-7fe2-1c15-2cce-e328e8bf6742", "/etc/NetworkManager/system-connections/em1");
+	_test_uuid (NM_UTILS_UUID_TYPE_LEGACY, "0cc175b9-c0f1-b6a8-31c3-99e269772661", "a", -1, NULL);
+	_test_uuid (NM_UTILS_UUID_TYPE_LEGACY, "098f6bcd-4621-d373-cade-4e832627b4f6", "test", -1, NULL);
+	_test_uuid (NM_UTILS_UUID_TYPE_LEGACY, "59c0547b-7fe2-1c15-2cce-e328e8bf6742", "/etc/NetworkManager/system-connections/em1", -1, NULL);
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*char *nm_utils_uuid_generate_from_string(const char *): *s && *s*");
-	uuid_test = nm_utils_uuid_generate_from_string ("", -1);
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*char *nm_utils_uuid_generate_from_string(const char *, gssize, int, gpointer): *s && *s*");
+	uuid_test = nm_utils_uuid_generate_from_string ("", 0, NM_UTILS_UUID_TYPE_LEGACY, NULL);
 	g_assert (uuid_test == NULL);
 	g_test_assert_expected_messages ();
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*char *nm_utils_uuid_generate_from_string(const char *): *s && *s*");
-	uuid_test = nm_utils_uuid_generate_from_string (NULL, -1);
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*char *nm_utils_uuid_generate_from_string(const char *, gssize, int, gpointer): *s && *s*");
+	uuid_test = nm_utils_uuid_generate_from_string (NULL, 0, NM_UTILS_UUID_TYPE_LEGACY, NULL);
 	g_assert (uuid_test == NULL);
 	g_test_assert_expected_messages ();
 }

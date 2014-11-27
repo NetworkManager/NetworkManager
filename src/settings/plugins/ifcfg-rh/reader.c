@@ -148,7 +148,7 @@ make_connection_setting (const char *file,
 	uuid = svGetValue (ifcfg, "UUID", FALSE);
 	if (!uuid || !strlen (uuid)) {
 		g_free (uuid);
-		uuid = nm_utils_uuid_generate_from_string (ifcfg->fileName, -1);
+		uuid = nm_utils_uuid_generate_from_string (ifcfg->fileName, -1, NM_UTILS_UUID_TYPE_LEGACY, NULL);
 	}
 
 	g_object_set (s_con,
@@ -4588,7 +4588,7 @@ uuid_from_file (const char *filename)
 	uuid = svGetValue (ifcfg, "UUID", FALSE);
 	if (!uuid || !strlen (uuid)) {
 		g_free (uuid);
-		uuid = nm_utils_uuid_generate_from_string (ifcfg->fileName, -1);
+		uuid = nm_utils_uuid_generate_from_string (ifcfg->fileName, -1, NM_UTILS_UUID_TYPE_LEGACY, NULL);
 	}
 
 	svCloseFile (ifcfg);
