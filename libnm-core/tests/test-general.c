@@ -1424,7 +1424,7 @@ test_connection_new_from_dbus (void)
 	g_assert_cmpstr (nm_setting_connection_get_uuid (s_con), ==, uuid);
 
 	g_assert (nm_connection_get_setting_wired (connection));
-	g_assert (!nm_connection_get_setting_ip4_config (connection));
+	g_assert (nm_connection_get_setting_ip4_config (connection));
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);
