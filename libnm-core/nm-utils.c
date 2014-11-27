@@ -1952,6 +1952,9 @@ nm_utils_uuid_generate (void)
 /**
  * nm_utils_uuid_generate_from_string:
  * @s: a string to use as the seed for the UUID
+ * @slen: if negative, treat @s as zero terminated C string.
+ *   Otherwise, assume the length as given (and allow @s to be
+ *   non-null terminated or contain '\0').
  *
  * For a given @s, this function will always return the same UUID.
  *
@@ -1959,14 +1962,18 @@ nm_utils_uuid_generate (void)
  * object's #NMSettingConnection:id: property
  **/
 char *
-nm_utils_uuid_generate_from_string (const char *s)
+nm_utils_uuid_generate_from_string (const char *s, gssize slen)
 {
 	uuid_t uuid;
 	char *buf = NULL;
 
 	g_return_val_if_fail (s && *s, NULL);
+	g_return_val_if_fail (slen < 0 || slen > 0, FALSE);
 
-	crypto_md5_hash (NULL, 0, s, strlen (s), (char *) uuid, sizeof (uuid));
+	if (slen < 0)
+		slen = strlen (s);
+
+	crypto_md5_hash (NULL, 0, s, slen, (char *) uuid, sizeof (uuid));
 
 	buf = g_malloc0 (37);
 	uuid_unparse_lower (uuid, &buf[0]);

@@ -1629,7 +1629,7 @@ ifnet_update_connection_from_config_block (const char *conn_name,
 	id = connection_id_from_ifnet_name (conn_name);
 	uuid = g_strdup (ifnet_get_data (conn_name, "uuid"));
 	if (!uuid)
-		uuid = nm_utils_uuid_generate_from_string (id);
+		uuid = nm_utils_uuid_generate_from_string (id, -1);
 
 	g_object_set (setting,
 	              NM_SETTING_CONNECTION_TYPE, type,
