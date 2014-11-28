@@ -1969,17 +1969,41 @@ nm_utils_uuid_generate_from_string (const char *s, gssize slen, int uuid_type, g
 	uuid_t uuid;
 	char *buf = NULL;
 
-	g_return_val_if_fail (s && *s, NULL);
-	g_return_val_if_fail (slen < 0 || slen > 0, FALSE);
+	g_return_val_if_fail (slen == 0 || s, FALSE);
 
-	/* for now, only support legacy type */
-	g_return_val_if_fail (uuid_type == NM_UTILS_UUID_TYPE_LEGACY, NULL);
-	g_return_val_if_fail (!type_args, NULL);
+	g_return_val_if_fail (uuid_type == NM_UTILS_UUID_TYPE_LEGACY || uuid_type == NM_UTILS_UUID_TYPE_VARIANT3, NULL);
+	g_return_val_if_fail (!type_args || uuid_type == NM_UTILS_UUID_TYPE_VARIANT3, NULL);
 
 	if (slen < 0)
 		slen = strlen (s);
+	else if (slen == 0)
+		s = "";
 
-	crypto_md5_hash (NULL, 0, s, slen, (char *) uuid, sizeof (uuid));
+	switch (uuid_type) {
+	case NM_UTILS_UUID_TYPE_LEGACY:
+		g_return_val_if_fail (slen > 0, NULL);
+		crypto_md5_hash (NULL, 0, s, slen, (char *) uuid, sizeof (uuid));
+		break;
+	case NM_UTILS_UUID_TYPE_VARIANT3: {
+		uuid_t ns_uuid = { 0 };
+		GString *str;
+
+		if (type_args) {
+			/* type_args can be a name space UUID. Interpret it as (char *) */
+			if (uuid_parse ((char *) type_args, ns_uuid) != 0)
+				g_return_val_if_reached (NULL);
+		}
+		str = g_string_sized_new (sizeof (ns_uuid) + slen + 1);
+		g_string_append_len (str, (const char *) ns_uuid, sizeof (ns_uuid));
+		g_string_append_len (str, s, slen);
+		crypto_md5_hash (NULL, 0, str->str, str->len, (char *) uuid, sizeof (uuid));
+		uuid[6] = (uuid[6] & 0x0F) | 0x30;
+		uuid[8] = (uuid[8] & 0x3F) | 0x80;
+		break;
+	}
+	default:
+		g_return_val_if_reached (NULL);
+	}
 
 	buf = g_malloc0 (37);
 	uuid_unparse_lower (uuid, &buf[0]);

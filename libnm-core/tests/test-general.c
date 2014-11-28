@@ -3804,12 +3804,13 @@ test_hexstr2bin (void)
 
 /******************************************************************************/
 
+#define UUID_NIL        "00000000-0000-0000-0000-000000000000"
+#define UUID_NS_DNS     "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+
 static void
 _test_uuid (int uuid_type, const char *expected_uuid, const char *str, gssize slen, gpointer type_args)
 {
 	gs_free char *uuid_test = NULL;
-
-	g_assert (str);
 
 	uuid_test = nm_utils_uuid_generate_from_string (str, slen, uuid_type, type_args);
 
@@ -3823,6 +3824,9 @@ _test_uuid (int uuid_type, const char *expected_uuid, const char *str, gssize sl
 
 	if (slen < 0)
 		_test_uuid (uuid_type, expected_uuid, str, strlen (str), type_args);
+
+	if (uuid_type == NM_UTILS_UUID_TYPE_VARIANT3 && !type_args)
+		_test_uuid (uuid_type, expected_uuid, str, slen, UUID_NIL);
 }
 
 static void
@@ -3834,15 +3838,27 @@ test_nm_utils_uuid_generate_from_string (void)
 	_test_uuid (NM_UTILS_UUID_TYPE_LEGACY, "098f6bcd-4621-d373-cade-4e832627b4f6", "test", -1, NULL);
 	_test_uuid (NM_UTILS_UUID_TYPE_LEGACY, "59c0547b-7fe2-1c15-2cce-e328e8bf6742", "/etc/NetworkManager/system-connections/em1", -1, NULL);
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*char *nm_utils_uuid_generate_from_string(const char *, gssize, int, gpointer): *s && *s*");
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*char *nm_utils_uuid_generate_from_string(const char *, gssize, int, gpointer): *slen > 0*");
 	uuid_test = nm_utils_uuid_generate_from_string ("", 0, NM_UTILS_UUID_TYPE_LEGACY, NULL);
 	g_assert (uuid_test == NULL);
 	g_test_assert_expected_messages ();
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*char *nm_utils_uuid_generate_from_string(const char *, gssize, int, gpointer): *s && *s*");
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*char *nm_utils_uuid_generate_from_string(const char *, gssize, int, gpointer): *slen > 0*");
 	uuid_test = nm_utils_uuid_generate_from_string (NULL, 0, NM_UTILS_UUID_TYPE_LEGACY, NULL);
 	g_assert (uuid_test == NULL);
 	g_test_assert_expected_messages ();
+
+	_test_uuid (NM_UTILS_UUID_TYPE_VARIANT3, "4ae71336-e44b-39bf-b9d2-752e234818a5", NULL, 0, NULL);
+	_test_uuid (NM_UTILS_UUID_TYPE_VARIANT3, "4ae71336-e44b-39bf-b9d2-752e234818a5", "", -1, NULL);
+	_test_uuid (NM_UTILS_UUID_TYPE_VARIANT3, "0531103a-d8fc-3dd4-b972-d98e4750994e", "a", -1, NULL);
+	_test_uuid (NM_UTILS_UUID_TYPE_VARIANT3, "96e17d7a-ac89-38cf-95e1-bf5098da34e1", "test", -1, NULL);
+	_test_uuid (NM_UTILS_UUID_TYPE_VARIANT3, "8156568e-4ae6-3f34-a93e-18e2c6cbbf78", "a\0b", 3, NULL);
+
+	_test_uuid (NM_UTILS_UUID_TYPE_VARIANT3, "c87ee674-4ddc-3efe-a74e-dfe25da5d7b3", NULL, 0, UUID_NS_DNS);
+	_test_uuid (NM_UTILS_UUID_TYPE_VARIANT3, "c87ee674-4ddc-3efe-a74e-dfe25da5d7b3", "", -1, UUID_NS_DNS);
+	_test_uuid (NM_UTILS_UUID_TYPE_VARIANT3, "4c104dd0-4821-30d5-9ce3-0e7a1f8b7c0d", "a", -1, UUID_NS_DNS);
+	_test_uuid (NM_UTILS_UUID_TYPE_VARIANT3, "45a113ac-c7f2-30b0-90a5-a399ab912716", "test", -1, UUID_NS_DNS);
+	_test_uuid (NM_UTILS_UUID_TYPE_VARIANT3, "002a0ada-f547-375a-bab5-896a11d1927e", "a\0b", 3, UUID_NS_DNS);
 }
 
 /******************************************************************************/
