@@ -822,11 +822,7 @@ _internal_write_connection (NMConnection *connection,
 	}
 
 	id = nm_connection_get_id (connection);
-	if (!id) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "%s.%d: connection had no ID", __FILE__, __LINE__);
-		return FALSE;
-	}
+	g_assert (id && *id);
 
 	info.keyfile = key_file = g_key_file_new ();
 	info.keyfile_dir = keyfile_dir;
