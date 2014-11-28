@@ -1536,15 +1536,14 @@ update_connection (NMDevice *device, NMConnection *connection)
 
 	/* s390 */
 	if (priv->subchannels) {
-		GPtrArray *subchan_arr = g_ptr_array_sized_new (3);
-		if (priv->subchan1)
-			 g_ptr_array_add (subchan_arr, priv->subchan1);
-		if (priv->subchan2)
-			 g_ptr_array_add (subchan_arr, priv->subchan2);
-		if (priv->subchan3)
-			 g_ptr_array_add (subchan_arr, priv->subchan3);
-		g_object_set (s_wired, NM_SETTING_WIRED_S390_SUBCHANNELS, subchan_arr, NULL);
-		g_ptr_array_free (subchan_arr, TRUE);
+		char **subchannels = g_new (char *, 3 + 1);
+
+		subchannels[0] = g_strdup (priv->subchan1);
+		subchannels[1] = g_strdup (priv->subchan2);
+		subchannels[2] = g_strdup (priv->subchan3);
+		subchannels[3] = NULL;
+		g_object_set (s_wired, NM_SETTING_WIRED_S390_SUBCHANNELS, subchannels, NULL);
+		g_strfreev (subchannels);
 	}
 	if (priv->s390_nettype)
 		g_object_set (s_wired, NM_SETTING_WIRED_S390_NETTYPE, priv->s390_nettype, NULL);
