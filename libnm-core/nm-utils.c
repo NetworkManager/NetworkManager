@@ -1964,6 +1964,8 @@ nm_utils_uuid_generate_from_string (const char *s)
 	uuid_t *uuid;
 	char *buf = NULL;
 
+	g_return_val_if_fail (s && *s, NULL);
+
 	uuid = g_malloc0 (sizeof (*uuid));
 	crypto_md5_hash (NULL, 0, s, strlen (s), (char *) uuid, sizeof (*uuid));
 

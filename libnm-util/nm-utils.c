@@ -1490,6 +1490,8 @@ nm_utils_uuid_generate_from_string (const char *s)
 	uuid_t *uuid;
 	char *buf = NULL;
 
+	g_return_val_if_fail (s && *s, NULL);
+
 	if (!nm_utils_init (&error)) {
 		g_warning ("error initializing crypto: (%d) %s",
 		           error ? error->code : 0,
