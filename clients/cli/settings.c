@@ -4004,32 +4004,27 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_wired_remove_mac_address_blacklist,
 static gboolean
 nmc_property_wired_set_s390_subchannels (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
-	char **strv = NULL, **iter;
-	GPtrArray *s390_subchannels;
+	char **strv = NULL;
+	int len;
 
-	//FIXME: both libnm and ifcfg-rh also allow two strings (3rd is optional)
 	strv = nmc_strsplit_set (val, " ,\t", 0);
-	if (g_strv_length (strv) != 3) {
-		g_set_error (error, 1, 0, _("'%s' is not valid; 3 strings should be provided"),
+	len = g_strv_length (strv);
+	if (len != 2 && len != 3) {
+		g_set_error (error, 1, 0, _("'%s' is not valid; 2 or 3 strings should be provided"),
 		             val);
 		g_strfreev (strv);
 		return FALSE;
 	}
 
-	s390_subchannels = g_ptr_array_sized_new (3);
-	for (iter = strv; iter && *iter; iter++)
-		g_ptr_array_add (s390_subchannels, *iter);
-
-	g_object_set (setting, prop, s390_subchannels, NULL);
+	g_object_set (setting, prop, strv, NULL);
 	g_strfreev (strv);
-	g_ptr_array_free (s390_subchannels, TRUE);
 	return TRUE;
 }
 
 static const char *
 nmc_property_wired_describe_s390_subchannels (NMSetting *setting, const char *prop)
 {
-	return _("Enter a list of three channels (comma or space separated).\n\n"
+	return _("Enter a list of subchannels (comma or space separated).\n\n"
 	         "Example: 0.0.0e20 0.0.0e21 0.0.0e22\n");
 }
 
