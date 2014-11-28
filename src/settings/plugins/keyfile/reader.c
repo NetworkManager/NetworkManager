@@ -1316,7 +1316,7 @@ nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 	if (!nm_setting_connection_get_uuid (s_con)) {
 		char *hashed_uuid;
 
-		hashed_uuid = nm_utils_uuid_generate_from_string (filename, -1, NM_UTILS_UUID_TYPE_LEGACY, NULL);
+		hashed_uuid = nm_utils_uuid_generate_from_strings ("keyfile", filename, NULL);
 		g_object_set (s_con, NM_SETTING_CONNECTION_UUID, hashed_uuid, NULL);
 		g_free (hashed_uuid);
 	}
