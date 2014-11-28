@@ -850,24 +850,34 @@ _internal_write_connection (NMConnection *connection,
 	 * there's a race here, but there's not a lot we can do about it, and
 	 * we shouldn't get more than one connection with the same UUID either.
 	 */
-	if (g_file_test (path, G_FILE_TEST_EXISTS) && (g_strcmp0 (path, existing_path) != 0)) {
-		/* A keyfile with this connection's ID already exists. Pick another name. */
-		g_free (path);
+	if (g_strcmp0 (path, existing_path) != 0 && g_file_test (path, G_FILE_TEST_EXISTS)) {
+		guint i;
+		gboolean name_found = FALSE;
 
-		path = g_strdup_printf ("%s/%s-%s", keyfile_dir, filename, nm_connection_get_uuid (connection));
-		if (g_file_test (path, G_FILE_TEST_EXISTS)) {
-			if (existing_path == NULL || g_strcmp0 (path, existing_path) != 0) {
-				/* This should not happen. But, it actually occurs when
-				 * two connections have the same UUID, and one of the connections
-				 * is edited to contain the same ID as the other one.
-				 * Give up.
-				 */
+		/* A keyfile with this connection's ID already exists. Pick another name. */
+		for (i = 0; i < 100; i++) {
+			g_free (path);
+			if (i == 0)
+				path = g_strdup_printf ("%s/%s-%s", keyfile_dir, filename, nm_connection_get_uuid (connection));
+			else
+				path = g_strdup_printf ("%s/%s-%s-%u", keyfile_dir, filename, nm_connection_get_uuid (connection), i);
+			if (g_strcmp0 (path, existing_path) == 0 || !g_file_test (path, G_FILE_TEST_EXISTS)) {
+				name_found = TRUE;
+				break;
+			}
+		}
+		if (!name_found) {
+			g_free (path);
+			if (existing_path == NULL) {
+				/* this really should not happen, we tried hard to find an unused name... bail out. */
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-				                    "%s.%d: could not find suitable keyfile file name (%s already used)",
-				                    __FILE__, __LINE__, path);
-				g_free (path);
+				                    "%s.%d: could not find suitable keyfile file name (%s/%s already used)",
+				                    __FILE__, __LINE__, keyfile_dir, filename);
 				goto out;
 			}
+			/* Both our preferred path based on connection id and id-uuid are taken.
+			 * Fallback to @existing_path */
+			path = g_strdup (existing_path);
 		}
 	}
 
