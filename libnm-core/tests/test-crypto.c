@@ -435,7 +435,6 @@ test_md5 (void)
 {
 	char digest[LONG_DIGEST], *hex;
 	int i;
-	GError *error = NULL;
 
 	for (i = 0; i < G_N_ELEMENTS (md5_tests); i++) {
 		memset (digest, 0, sizeof (digest));
@@ -443,9 +442,7 @@ test_md5 (void)
 		                 md5_tests[i].salt ? strlen (md5_tests[i].salt) : 0,
 		                 md5_tests[i].password,
 		                 strlen (md5_tests[i].password),
-		                 digest, md5_tests[i].digest_size,
-		                 &error);
-		g_assert_no_error (error);
+		                 digest, md5_tests[i].digest_size);
 
 		hex = nm_utils_bin2hexstr (digest, md5_tests[i].digest_size, -1);
 		g_assert_cmpstr (hex, ==, md5_tests[i].result);

@@ -404,25 +404,15 @@ make_des_aes_key (const char *cipher,
 
 	key = g_malloc0 (digest_len + 1);
 
-	if (!crypto_md5_hash (salt,
-	                      salt_len,
-	                      password,
-	                      strlen (password),
-	                      key,
-	                      digest_len,
-	                      error))
-		goto error;
+	crypto_md5_hash (salt,
+	                 salt_len,
+	                 password,
+	                 strlen (password),
+	                 key,
+	                 digest_len);
 
 	*out_len = digest_len;
 	return key;
-
-error:
-	if (key) {
-		/* Don't leak stale key material */
-		memset (key, 0, digest_len);
-		g_free (key);
-	}
-	return NULL;
 }
 
 static GByteArray *
@@ -745,4 +735,52 @@ crypto_verify_private_key (const char *filename,
 		g_byte_array_free (contents, TRUE);
 	}
 	return format;
+}
+
+void
+crypto_md5_hash (const char *salt,
+                 const gsize salt_len,
+                 const char *password,
+                 gsize password_len,
+                 char *buffer,
+                 gsize buflen)
+{
+	GChecksum *ctx;
+	int nkey = buflen;
+	gsize digest_len;
+	int count = 0;
+	char digest[16];
+	char *p = buffer;
+
+	g_assert_cmpint (g_checksum_type_get_length (G_CHECKSUM_MD5), ==, sizeof (digest));
+
+	if (salt)
+		g_return_if_fail (salt_len >= 8);
+
+	g_return_if_fail (password != NULL);
+	g_return_if_fail (password_len > 0);
+	g_return_if_fail (buffer != NULL);
+	g_return_if_fail (buflen > 0);
+
+	ctx = g_checksum_new (G_CHECKSUM_MD5);
+
+	while (nkey > 0) {
+		int i = 0;
+
+		g_checksum_reset (ctx);
+		if (count++)
+			g_checksum_update (ctx, (const guchar *) digest, digest_len);
+		g_checksum_update (ctx, (const guchar *) password, password_len);
+		if (salt)
+			g_checksum_update (ctx, (const guchar *) salt, 8); /* Only use 8 bytes of salt */
+		g_checksum_get_digest (ctx, (guchar *) digest, &digest_len);
+
+		while (nkey && (i < digest_len)) {
+			*(p++) = digest[i++];
+			nkey--;
+		}
+	}
+
+	memset (digest, 0, sizeof (digest));
+	g_checksum_free (ctx);
 }

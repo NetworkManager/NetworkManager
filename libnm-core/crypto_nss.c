@@ -72,61 +72,6 @@ crypto_init (GError **error)
 	return TRUE;
 }
 
-gboolean
-crypto_md5_hash (const char *salt,
-                 const gsize salt_len,
-                 const char *password,
-                 gsize password_len,
-                 char *buffer,
-                 gsize buflen,
-                 GError **error)
-{
-	PK11Context *ctx;
-	int nkey = buflen;
-	unsigned int digest_len;
-	int count = 0;
-	char digest[MD5_HASH_LEN];
-	char *p = buffer;
-
-	if (salt)
-		g_return_val_if_fail (salt_len >= 8, FALSE);
-
-	g_return_val_if_fail (password != NULL, FALSE);
-	g_return_val_if_fail (password_len > 0, FALSE);
-	g_return_val_if_fail (buffer != NULL, FALSE);
-	g_return_val_if_fail (buflen > 0, FALSE);
-
-	ctx = PK11_CreateDigestContext (SEC_OID_MD5);
-	if (!ctx) {
-		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERROR_FAILED,
-		             _("Failed to initialize the MD5 context: %d."),
-		             PORT_GetError ());
-		return FALSE;
-	}
-
-	while (nkey > 0) {
-		int i = 0;
-
-		PK11_DigestBegin (ctx);
-		if (count++)
-			PK11_DigestOp (ctx, (const unsigned char *) digest, digest_len);
-		PK11_DigestOp (ctx, (const unsigned char *) password, password_len);
-		if (salt)
-			PK11_DigestOp (ctx, (const unsigned char *) salt, 8); /* Only use 8 bytes of salt */
-		PK11_DigestFinal (ctx, (unsigned char *) digest, &digest_len, sizeof (digest));
-
-		while (nkey && (i < digest_len)) {
-			*(p++) = digest[i++];
-			nkey--;
-		}
-	}
-
-	memset (digest, 0, sizeof (digest));
-	PK11_DestroyContext (ctx, PR_TRUE);
-	return TRUE;
-}
-
 char *
 crypto_decrypt (const char *cipher,
                 int key_type,

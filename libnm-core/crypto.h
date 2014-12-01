@@ -78,13 +78,12 @@ NMCryptoFileFormat crypto_verify_private_key (const char *file,
 
 /* Internal utils API bits for crypto providers */
 
-gboolean crypto_md5_hash (const char *salt,
-                          const gsize salt_len,
-                          const char *password,
-                          gsize password_len,
-                          char *buffer,
-                          gsize buflen,
-                          GError **error);
+void crypto_md5_hash (const char *salt,
+                      const gsize salt_len,
+                      const char *password,
+                      gsize password_len,
+                      char *buffer,
+                      gsize buflen);
 
 char * crypto_decrypt (const char *cipher,
                        int key_type,

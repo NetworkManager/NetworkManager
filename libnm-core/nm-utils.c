@@ -1976,33 +1976,15 @@ nm_utils_uuid_generate (void)
 char *
 nm_utils_uuid_generate_from_string (const char *s)
 {
-	GError *error = NULL;
 	uuid_t *uuid;
 	char *buf = NULL;
 
-	if (!nm_utils_init (&error)) {
-		g_warning ("error initializing crypto: (%d) %s",
-		           error ? error->code : 0,
-		           error ? error->message : "unknown");
-		if (error)
-			g_error_free (error);
-		return NULL;
-	}
-
 	uuid = g_malloc0 (sizeof (*uuid));
-	if (!crypto_md5_hash (NULL, 0, s, strlen (s), (char *) uuid, sizeof (*uuid), &error)) {
-		g_warning ("error generating UUID: (%d) %s",
-		           error ? error->code : 0,
-		           error ? error->message : "unknown");
-		if (error)
-			g_error_free (error);
-		goto out;
-	}
+	crypto_md5_hash (NULL, 0, s, strlen (s), (char *) uuid, sizeof (*uuid));
 
 	buf = g_malloc0 (37);
 	uuid_unparse_lower (*uuid, &buf[0]);
 
-out:
 	g_free (uuid);
 	return buf;
 }
@@ -2012,8 +1994,7 @@ make_key (const char *cipher,
           const char *salt,
           const gsize salt_len,
           const char *password,
-          gsize *out_len,
-          GError **error)
+          gsize *out_len)
 {
 	char *key;
 	guint32 digest_len = 24; /* DES-EDE3-CBC */
@@ -2030,13 +2011,8 @@ make_key (const char *cipher,
 
 	key = g_malloc0 (digest_len + 1);
 
-	if (!crypto_md5_hash (salt, salt_len, password, strlen (password), key, digest_len, error)) {
-		*out_len = 0;
-		memset (key, 0, digest_len);
-		g_free (key);
-		key = NULL;
-	} else
-		*out_len = digest_len;
+	crypto_md5_hash (salt, salt_len, password, strlen (password), key, digest_len);
+	*out_len = digest_len;
 
 	return key;
 }
@@ -2097,10 +2073,7 @@ nm_utils_rsa_key_encrypt_helper (const char *cipher,
 	if (!crypto_randomize (salt, salt_len, error))
 		goto out;
 
-	key = make_key (cipher, &salt[0], salt_len, in_password, &key_len, error);
-	if (!key)
-		goto out;
-
+	key = make_key (cipher, &salt[0], salt_len, in_password, &key_len);
 	enc = crypto_encrypt (cipher, data, len, salt, salt_len, key, key_len, &enc_len, error);
 	if (!enc)
 		goto out;
