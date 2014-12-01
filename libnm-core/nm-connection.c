@@ -527,6 +527,24 @@ _nm_connection_find_base_type_setting (NMConnection *connection)
 }
 
 static gboolean
+_normalize_connection_uuid (NMConnection *self)
+{
+	NMSettingConnection *s_con = nm_connection_get_setting_connection (self);
+	char *uuid;
+
+	g_assert (s_con);
+
+	if (nm_setting_connection_get_uuid (s_con))
+		return FALSE;
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con, NM_SETTING_CONNECTION_UUID, uuid, NULL);
+	g_free (uuid);
+
+	return TRUE;
+}
+
+static gboolean
 _normalize_connection_type (NMConnection *self)
 {
 	NMSettingConnection *s_con = nm_connection_get_setting_connection (self);
@@ -913,6 +931,7 @@ nm_connection_normalize (NMConnection *connection,
 	 * We only do this, after verifying that the connection contains no un-normalizable
 	 * errors, because in that case we rather fail without touching the settings. */
 
+	was_modified |= _normalize_connection_uuid (connection);
 	was_modified |= _normalize_connection_type (connection);
 	was_modified |= _normalize_connection_slave_type (connection);
 	was_modified |= _normalize_ip_config (connection, parameters);

@@ -3029,6 +3029,25 @@ test_setting_old_uuid (void)
 	g_assert (success == TRUE);
 }
 
+/******************************************************************************/
+
+static void
+test_connection_normalize_uuid (void)
+{
+	gs_unref_object NMConnection *con = NULL;
+
+	con = nmtst_create_minimal_connection ("test1", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+
+	nmtst_assert_connection_verifies_and_normalizable (con);
+
+	g_object_set (nm_connection_get_setting_connection (con),
+	              NM_SETTING_CONNECTION_UUID, NULL,
+	              NULL);
+	nmtst_assert_connection_verifies_after_normalization (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_PROPERTY);
+}
+
+/******************************************************************************/
+
 /*
  * Test normalization of interface-name
  */
@@ -3910,6 +3929,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_connection_replace_settings_bad", test_connection_replace_settings_bad);
 	g_test_add_func ("/core/general/test_connection_new_from_dbus", test_connection_new_from_dbus);
 	g_test_add_func ("/core/general/test_connection_normalize_virtual_iface_name", test_connection_normalize_virtual_iface_name);
+	g_test_add_func ("/core/general/test_connection_normalize_uuid", test_connection_normalize_uuid);
 	g_test_add_func ("/core/general/test_connection_normalize_type", test_connection_normalize_type);
 	g_test_add_func ("/core/general/test_connection_normalize_slave_type_1", test_connection_normalize_slave_type_1);
 	g_test_add_func ("/core/general/test_connection_normalize_slave_type_2", test_connection_normalize_slave_type_2);

@@ -777,14 +777,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (!priv->uuid) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
-		                     _("property is missing"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_UUID);
-		return FALSE;
-	} else if (!nm_utils_is_uuid (priv->uuid)) {
+	if (priv->uuid && !nm_utils_is_uuid (priv->uuid)) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -907,6 +900,15 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	}
 
 	/* *** errors above here should be always fatal, below NORMALIZABLE_ERROR *** */
+
+	if (!priv->uuid) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
+		                     _("property is missing"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_UUID);
+		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
+	}
 
 	if (normerr_base_type) {
 		g_set_error (error,
