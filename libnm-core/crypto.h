@@ -63,7 +63,7 @@ GByteArray *crypto_load_and_verify_certificate (const char *file,
 
 gboolean crypto_is_pkcs12_file (const char *file, GError **error);
 
-gboolean crypto_is_pkcs12_data (const guint8 *data, gsize len);
+gboolean crypto_is_pkcs12_data (const guint8 *data, gsize len, GError **error);
 
 NMCryptoFileFormat crypto_verify_private_key_data (const guint8 *data,
                                                    gsize data_len,

@@ -221,15 +221,14 @@ test_is_pkcs12 (const char *path, gboolean expect_fail)
 	GError *error = NULL;
 
 	is_pkcs12 = crypto_is_pkcs12_file (path, &error);
-	/* crypto_is_pkcs12_file() only returns an error if it couldn't read the
-	 * file, which we don't expect to happen here.
-	 */
-	g_assert_no_error (error);
 
-	if (expect_fail)
+	if (expect_fail) {
+		g_assert_error (error, NM_CRYPTO_ERROR, NM_CRYPTO_ERROR_INVALID_DATA);
 		g_assert (!is_pkcs12);
-	else
+	} else {
+		g_assert_no_error (error);
 		g_assert (is_pkcs12);
+	}
 }
 
 static void

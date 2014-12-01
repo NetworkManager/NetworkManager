@@ -97,6 +97,9 @@ crypto_decrypt (const char *cipher,
 	unsigned int pad_len = 0, extra = 0;
 	guint32 i, real_iv_len = 0;
 
+	if (!crypto_init (error))
+		return NULL;
+
 	if (!strcmp (cipher, CIPHER_DES_EDE3_CBC)) {
 		cipher_mech = CKM_DES3_CBC_PAD;
 		real_iv_len = 8;
@@ -264,6 +267,9 @@ crypto_encrypt (const char *cipher,
 	gboolean success = FALSE;
 	gsize padded_buf_len, pad_len;
 
+	if (!crypto_init (error))
+		return NULL;
+
 	if (!strcmp (cipher, CIPHER_DES_EDE3_CBC))
 		cipher_mech = CKM_DES3_CBC_PAD;
 	else if (!strcmp (cipher, CIPHER_AES_CBC))
@@ -368,6 +374,9 @@ crypto_verify_cert (const unsigned char *data,
 {
 	CERTCertificate *cert;
 
+	if (!crypto_init (error))
+		return NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+
 	/* Try DER/PEM first */
 	cert = CERT_DecodeCertFromPackage ((char *) data, len);
 	if (!cert) {
@@ -400,6 +409,9 @@ crypto_verify_pkcs12 (const guint8 *data,
 
 	if (error)
 		g_return_val_if_fail (*error == NULL, FALSE);
+
+	if (!crypto_init (error))
+		return FALSE;
 
 	/* PKCS#12 passwords are apparently UCS2 BIG ENDIAN, and NSS doesn't do
 	 * any conversions for us.
@@ -485,6 +497,9 @@ crypto_verify_pkcs8 (const guint8 *data,
 {
 	g_return_val_if_fail (data != NULL, FALSE);
 
+	if (!crypto_init (error))
+		return FALSE;
+
 	/* NSS apparently doesn't do PKCS#8 natively, but you have to put the
 	 * PKCS#8 key into a PKCS#12 file and import that??  So until we figure
 	 * all that out, we can only assume the password is valid.
@@ -496,6 +511,9 @@ gboolean
 crypto_randomize (void *buffer, gsize buffer_len, GError **error)
 {
 	SECStatus s;
+
+	if (!crypto_init (error))
+		return FALSE;
 
 	s = PK11_GenerateRandom (buffer, buffer_len);
 	if (s != SECSuccess) {

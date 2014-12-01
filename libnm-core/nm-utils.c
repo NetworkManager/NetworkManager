@@ -244,9 +244,6 @@ nm_utils_init (GError **error)
 		bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
 		bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
 
-		if (!crypto_init (error))
-			return FALSE;
-
 		_nm_dbus_errors_init ();
 	}
 	return TRUE;

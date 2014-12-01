@@ -75,6 +75,9 @@ crypto_decrypt (const char *cipher,
 	gboolean success = FALSE;
 	gsize pad_len, real_iv_len;
 
+	if (!crypto_init (error))
+		return NULL;
+
 	if (!strcmp (cipher, CIPHER_DES_EDE3_CBC)) {
 		cipher_mech = GCRY_CIPHER_3DES;
 		real_iv_len = SALT_LEN;
@@ -196,6 +199,9 @@ crypto_encrypt (const char *cipher,
 	guint32 i;
 	gsize salt_len;
 
+	if (!crypto_init (error))
+		return NULL;
+
 	if (!strcmp (cipher, CIPHER_DES_EDE3_CBC)) {
 		cipher_mech = GCRY_CIPHER_3DES;
 		salt_len = SALT_LEN;
@@ -291,6 +297,9 @@ crypto_verify_cert (const unsigned char *data,
 	gnutls_datum_t dt;
 	int err;
 
+	if (!crypto_init (error))
+		return NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+
 	err = gnutls_x509_crt_init (&der);
 	if (err < 0) {
 		g_set_error (error, NM_CRYPTO_ERROR,
@@ -334,6 +343,9 @@ crypto_verify_pkcs12 (const guint8 *data,
 	int err;
 
 	g_return_val_if_fail (data != NULL, FALSE);
+
+	if (!crypto_init (error))
+		return FALSE;
 
 	dt.data = (unsigned char *) data;
 	dt.size = data_len;
@@ -389,6 +401,9 @@ crypto_verify_pkcs8 (const guint8 *data,
 
 	g_return_val_if_fail (data != NULL, FALSE);
 
+	if (!crypto_init (error))
+		return FALSE;
+
 	dt.data = (unsigned char *) data;
 	dt.size = data_len;
 
@@ -431,6 +446,9 @@ crypto_verify_pkcs8 (const guint8 *data,
 gboolean
 crypto_randomize (void *buffer, gsize buffer_len, GError **error)
 {
+	if (!crypto_init (error))
+		return FALSE;
+
 	gcry_randomize (buffer, buffer_len, GCRY_STRONG_RANDOM);
 	return TRUE;
 }

@@ -1871,15 +1871,15 @@ nm_setting_802_1x_get_private_key_format (NMSetting8021x *setting)
 	switch (nm_setting_802_1x_get_private_key_scheme (setting)) {
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
 		if (crypto_is_pkcs12_data (g_bytes_get_data (priv->private_key, NULL),
-		                           g_bytes_get_size (priv->private_key)))
+		                           g_bytes_get_size (priv->private_key),
+		                           NULL))
 			return NM_SETTING_802_1X_CK_FORMAT_PKCS12;
 		return NM_SETTING_802_1X_CK_FORMAT_RAW_KEY;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		path = nm_setting_802_1x_get_private_key_path (setting);
 		if (crypto_is_pkcs12_file (path, &error))
 			return NM_SETTING_802_1X_CK_FORMAT_PKCS12;
-		if (error) {
-			/* Couldn't read the file or something */
+		if (error && error->domain == G_FILE_ERROR) {
 			g_error_free (error);
 			return NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
 		}
@@ -2151,15 +2151,15 @@ nm_setting_802_1x_get_phase2_private_key_format (NMSetting8021x *setting)
 	switch (nm_setting_802_1x_get_phase2_private_key_scheme (setting)) {
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
 		if (crypto_is_pkcs12_data (g_bytes_get_data (priv->phase2_private_key, NULL),
-		                           g_bytes_get_size (priv->phase2_private_key)))
+		                           g_bytes_get_size (priv->phase2_private_key),
+		                           NULL))
 			return NM_SETTING_802_1X_CK_FORMAT_PKCS12;
 		return NM_SETTING_802_1X_CK_FORMAT_RAW_KEY;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		path = nm_setting_802_1x_get_phase2_private_key_path (setting);
 		if (crypto_is_pkcs12_file (path, &error))
 			return NM_SETTING_802_1X_CK_FORMAT_PKCS12;
-		if (error) {
-			/* Couldn't read the file or something */
+		if (error && error->domain == G_FILE_ERROR) {
 			g_error_free (error);
 			return NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
 		}
@@ -2300,7 +2300,8 @@ verify_tls (NMSetting8021x *self, gboolean phase2, GError **error)
 
 		/* If the private key is PKCS#12, check that it matches the client cert */
 		if (crypto_is_pkcs12_data (g_bytes_get_data (priv->phase2_private_key, NULL),
-		                           g_bytes_get_size (priv->phase2_private_key))) {
+		                           g_bytes_get_size (priv->phase2_private_key),
+		                           NULL)) {
 			if (!g_bytes_equal (priv->phase2_private_key, priv->phase2_client_cert)) {
 				g_set_error (error,
 				             NM_CONNECTION_ERROR,
@@ -2347,7 +2348,8 @@ verify_tls (NMSetting8021x *self, gboolean phase2, GError **error)
 
 		/* If the private key is PKCS#12, check that it matches the client cert */
 		if (crypto_is_pkcs12_data (g_bytes_get_data (priv->private_key, NULL),
-		                           g_bytes_get_size (priv->private_key))) {
+		                           g_bytes_get_size (priv->private_key),
+		                           NULL)) {
 			if (!g_bytes_equal (priv->private_key, priv->client_cert)) {
 				g_set_error (error,
 				             NM_CONNECTION_ERROR,
@@ -3078,7 +3080,6 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
 	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
-	GError *error = NULL;
 
 	g_type_class_add_private (setting_class, sizeof (NMSetting8021xPrivate));
 
@@ -3859,11 +3860,4 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		                       G_PARAM_READWRITE |
 		                       G_PARAM_CONSTRUCT |
 		                       G_PARAM_STATIC_STRINGS));
-
-	/* Initialize crypto lbrary. */
-	if (!nm_utils_init (&error)) {
-		g_warning ("Couldn't initilize nm-utils/crypto system: %d %s",
-		           error->code, error->message);
-		g_error_free (error);
-	}
 }

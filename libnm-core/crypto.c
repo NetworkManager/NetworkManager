@@ -482,6 +482,9 @@ crypto_decrypt_openssl_private_key_data (const guint8 *data,
 	if (out_key_type)
 		g_return_val_if_fail (*out_key_type == NM_CRYPTO_KEY_TYPE_UNKNOWN, NULL);
 
+	if (!crypto_init (error))
+		return NULL;
+
 	parsed = parse_old_openssl_key_file (data, data_len, &key_type, &cipher, &iv, NULL);
 	/* return the key type even if decryption failed */
 	if (out_key_type)
@@ -526,6 +529,9 @@ crypto_decrypt_openssl_private_key (const char *file,
 {
 	GByteArray *contents;
 	GByteArray *key = NULL;
+
+	if (!crypto_init (error))
+		return NULL;
 
 	contents = file_to_g_byte_array (file, error);
 	if (contents) {
@@ -594,12 +600,15 @@ crypto_load_and_verify_certificate (const char *file,
 	g_return_val_if_fail (out_file_format != NULL, NULL);
 	g_return_val_if_fail (*out_file_format == NM_CRYPTO_FILE_FORMAT_UNKNOWN, NULL);
 
+	if (!crypto_init (error))
+		return NULL;
+
 	contents = file_to_g_byte_array (file, error);
 	if (!contents)
 		return NULL;
 
 	/* Check for PKCS#12 */
-	if (crypto_is_pkcs12_data (contents->data, contents->len)) {
+	if (crypto_is_pkcs12_data (contents->data, contents->len, NULL)) {
 		*out_file_format = NM_CRYPTO_FILE_FORMAT_PKCS12;
 		return contents;
 	}
@@ -628,20 +637,26 @@ crypto_load_and_verify_certificate (const char *file,
 
 gboolean
 crypto_is_pkcs12_data (const guint8 *data,
-                       gsize data_len)
+                       gsize data_len,
+                       GError **error)
 {
-	GError *error = NULL;
+	GError *local = NULL;
 	gboolean success;
 
 	g_return_val_if_fail (data != NULL, FALSE);
 
-	success = crypto_verify_pkcs12 (data, data_len, NULL, &error);
+	if (!crypto_init (error))
+		return FALSE;
+
+	success = crypto_verify_pkcs12 (data, data_len, NULL, &local);
 	if (success == FALSE) {
 		/* If the error was just a decryption error, then it's pkcs#12 */
-		if (error) {
-			if (g_error_matches (error, NM_CRYPTO_ERROR, NM_CRYPTO_ERROR_DECRYPTION_FAILED))
+		if (local) {
+			if (g_error_matches (local, NM_CRYPTO_ERROR, NM_CRYPTO_ERROR_DECRYPTION_FAILED)) {
 				success = TRUE;
-			g_error_free (error);
+				g_error_free (local);
+			} else
+				g_propagate_error (error, local);
 		}
 	}
 	return success;
@@ -655,9 +670,12 @@ crypto_is_pkcs12_file (const char *file, GError **error)
 
 	g_return_val_if_fail (file != NULL, FALSE);
 
+	if (!crypto_init (error))
+		return FALSE;
+
 	contents = file_to_g_byte_array (file, error);
 	if (contents) {
-		success = crypto_is_pkcs12_data (contents->data, contents->len);
+		success = crypto_is_pkcs12_data (contents->data, contents->len, error);
 		g_byte_array_free (contents, TRUE);
 	}
 	return success;
@@ -681,8 +699,11 @@ crypto_verify_private_key_data (const guint8 *data,
 	g_return_val_if_fail (data != NULL, NM_CRYPTO_FILE_FORMAT_UNKNOWN);
 	g_return_val_if_fail (out_is_encrypted == NULL || *out_is_encrypted == FALSE, NM_CRYPTO_FILE_FORMAT_UNKNOWN);
 
+	if (!crypto_init (error))
+		return NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+
 	/* Check for PKCS#12 first */
-	if (crypto_is_pkcs12_data (data, data_len)) {
+	if (crypto_is_pkcs12_data (data, data_len, NULL)) {
 		is_encrypted = TRUE;
 		if (!password || crypto_verify_pkcs12 (data, data_len, password, error))
 			format = NM_CRYPTO_FILE_FORMAT_PKCS12;
@@ -727,7 +748,10 @@ crypto_verify_private_key (const char *filename,
 	GByteArray *contents;
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 
-	g_return_val_if_fail (filename != NULL, FALSE);
+	g_return_val_if_fail (filename != NULL, NM_CRYPTO_FILE_FORMAT_UNKNOWN);
+
+	if (!crypto_init (error))
+		return NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 
 	contents = file_to_g_byte_array (filename, error);
 	if (contents) {
