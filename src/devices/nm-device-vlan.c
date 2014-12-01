@@ -390,7 +390,8 @@ deactivate (NMDevice *device)
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
 
 	/* Reset MAC address back to initial address */
-	nm_device_set_hw_addr (device, priv->initial_hw_addr, "reset", LOGD_VLAN);
+	if (priv->initial_hw_addr)
+		nm_device_set_hw_addr (device, priv->initial_hw_addr, "reset", LOGD_VLAN);
 }
 
 /******************************************************************/

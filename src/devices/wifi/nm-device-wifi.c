@@ -741,7 +741,8 @@ deactivate (NMDevice *device)
 	nm_platform_wifi_indicate_addressing_running (ifindex, FALSE);
 
 	/* Reset MAC address back to initial address */
-	nm_device_set_hw_addr (device, priv->initial_hw_addr, "reset", LOGD_WIFI);
+	if (priv->initial_hw_addr)
+		nm_device_set_hw_addr (device, priv->initial_hw_addr, "reset", LOGD_WIFI);
 
 	/* Ensure we're in infrastructure mode after deactivation; some devices
 	 * (usually older ones) don't scan well in adhoc mode.

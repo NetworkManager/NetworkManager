@@ -265,7 +265,9 @@ constructor (GType type,
 		int ifindex = nm_device_get_ifindex (NM_DEVICE (object));
 		NMLinkType link_type = nm_platform_link_get_type (ifindex);
 
-		g_assert (link_type == NM_LINK_TYPE_ETHERNET || link_type == NM_LINK_TYPE_VETH);
+		g_assert (   link_type == NM_LINK_TYPE_ETHERNET
+		          || link_type == NM_LINK_TYPE_VETH
+		          || link_type == NM_LINK_TYPE_NONE);
 #endif
 
 		/* s390 stuff */
@@ -1389,7 +1391,8 @@ deactivate (NMDevice *device)
 		NM_DEVICE_ETHERNET_GET_PRIVATE (device)->last_pppoe_time = nm_utils_get_monotonic_timestamp_s ();
 
 	/* Reset MAC address back to initial address */
-	nm_device_set_hw_addr (device, priv->initial_hw_addr, "reset", LOGD_ETHER);
+	if (priv->initial_hw_addr)
+		nm_device_set_hw_addr (device, priv->initial_hw_addr, "reset", LOGD_ETHER);
 }
 
 static gboolean
