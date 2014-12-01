@@ -210,7 +210,7 @@ get_encodings_for_lang (const char *lang,
 	return success;
 }
 
-/* init, deinit for libnm_util */
+/* init libnm */
 
 static void __attribute__((constructor))
 _check_symbols (void)
@@ -231,9 +231,7 @@ static gboolean initialized = FALSE;
  * @error: location to store error, or %NULL
  *
  * Initializes libnm; should be called when starting and program that
- * uses libnm.  Sets up an atexit() handler to ensure de-initialization
- * is performed, but calling nm_utils_deinit() to explicitly deinitialize
- * libnm can also be done.  This function can be called more than once.
+ * uses libnm.  This function can be called more than once.
  *
  * Returns: %TRUE if the initialization was successful, %FALSE on failure.
  **/
@@ -252,23 +250,6 @@ nm_utils_init (GError **error)
 		_nm_dbus_errors_init ();
 	}
 	return TRUE;
-}
-
-/**
- * nm_utils_deinit:
- *
- * Frees all resources used internally by libnm.  This function is called
- * from an atexit() handler, set up by nm_utils_init(), but is safe to be called
- * more than once.  Subsequent calls have no effect until nm_utils_init() is
- * called again.
- **/
-void
-nm_utils_deinit (void)
-{
-	if (initialized) {
-		crypto_deinit ();
-		initialized = FALSE;
-	}
 }
 
 gboolean _nm_utils_is_manager_process;

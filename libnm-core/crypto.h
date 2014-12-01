@@ -46,8 +46,6 @@ typedef enum {
 
 gboolean crypto_init (GError **error);
 
-void crypto_deinit (void);
-
 GByteArray *crypto_decrypt_openssl_private_key_data (const guint8 *data,
                                                      gsize data_len,
                                                      const char *password,

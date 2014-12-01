@@ -56,11 +56,6 @@ crypto_init (GError **error)
 	return TRUE;
 }
 
-void
-crypto_deinit (void)
-{
-}
-
 gboolean
 crypto_md5_hash (const char *salt,
                  const gsize salt_len,
