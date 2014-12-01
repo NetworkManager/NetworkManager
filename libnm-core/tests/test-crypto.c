@@ -401,6 +401,58 @@ test_pkcs8 (gconstpointer test_data)
 	g_strfreev (parts);
 }
 
+#define SALT "sodium chloride"
+#define SHORT_PASSWORD "short"
+#define LONG_PASSWORD "this is a longer password than the short one"
+#define SHORT_DIGEST 16
+#define LONG_DIGEST 57
+
+struct {
+	const char *salt, *password;
+	gsize digest_size;
+	const char *result;
+} md5_tests[] = {
+	{ NULL, SHORT_PASSWORD, SHORT_DIGEST,
+	  "4f09daa9d95bcb166a302407a0e0babe" },
+	{ NULL, SHORT_PASSWORD, LONG_DIGEST,
+	  "4f09daa9d95bcb166a302407a0e0babeb7d62e5baf706830d007c253f0fe7584ad7e92dc00a599ec277293c298ae70ee3904c348e23be61c91" },
+	{ SALT, SHORT_PASSWORD, SHORT_DIGEST,
+	  "774771f7292210233b5724991d1f9894" },
+	{ SALT, SHORT_PASSWORD, LONG_DIGEST,
+	  "774771f7292210233b5724991d1f98941a6ffdb45e4dc7fa04b1fa6aceed379c1ade0577bc8f261d109942ed5736921c052664d72e0d5bade9" },
+	{ NULL, LONG_PASSWORD, SHORT_DIGEST,
+	  "e9c03517f81ff29bb777dac21fb1699c" },
+	{ NULL, LONG_PASSWORD, LONG_DIGEST,
+	  "e9c03517f81ff29bb777dac21fb1699c50968c7ccd8db4f0a59d00ffd87b05876d45f25a927d51a8400c35af60fbd64584349a8b7435d62fd9" },
+	{ SALT, LONG_PASSWORD, SHORT_DIGEST,
+	  "4e5c076e2f85f5e03994acbf3a9e10d6" },
+	{ SALT, LONG_PASSWORD, LONG_DIGEST,
+	  "4e5c076e2f85f5e03994acbf3a9e10d61a6969c9fdf47ae8b1f7e2725b3767b05cc974bfcb5344b630c91761e015e09d7794b5065662533bc9" },
+};
+
+static void
+test_md5 (void)
+{
+	char digest[LONG_DIGEST], *hex;
+	int i;
+	GError *error = NULL;
+
+	for (i = 0; i < G_N_ELEMENTS (md5_tests); i++) {
+		memset (digest, 0, sizeof (digest));
+		crypto_md5_hash (md5_tests[i].salt,
+		                 md5_tests[i].salt ? strlen (md5_tests[i].salt) : 0,
+		                 md5_tests[i].password,
+		                 strlen (md5_tests[i].password),
+		                 digest, md5_tests[i].digest_size,
+		                 &error);
+		g_assert_no_error (error);
+
+		hex = nm_utils_bin2hexstr (digest, md5_tests[i].digest_size, -1);
+		g_assert_cmpstr (hex, ==, md5_tests[i].result);
+		g_free (hex);
+	}
+}
+
 NMTST_DEFINE ();
 
 int
@@ -459,6 +511,8 @@ main (int argc, char **argv)
 	g_test_add_data_func ("/libnm/crypto/PKCS#8",
 	                      "pkcs8-enc-key.pem, 1234567890",
 	                      test_pkcs8);
+
+	g_test_add_func ("/libnm/crypto/md5", test_md5);
 
 	ret = g_test_run ();
 
