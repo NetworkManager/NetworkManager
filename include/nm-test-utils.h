@@ -164,7 +164,6 @@ inline static void
 __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_level, const char *log_domains)
 {
 	static gsize atexit_registered = 0;
-	GError *error = NULL;
 	const char *nmtst_debug;
 	gboolean is_debug = FALSE;
 	char *c_log_level = NULL, *c_log_domains = NULL;
@@ -299,10 +298,6 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 		 * nmtst_init() at the very start. */
 		g_setenv ("G_MESSAGES_DEBUG", "all", TRUE);
 	}
-
-	if (!nm_utils_init (&error))
-		g_error ("failed to initialize libnm-util: %s", error->message);
-	g_assert (!error);
 
 	/* Delay messages until we setup logging. */
 	for (i = 0; i < debug_messages->len; i++)

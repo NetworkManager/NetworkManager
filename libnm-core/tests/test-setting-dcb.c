@@ -302,20 +302,14 @@ test_dcb_bandwidth_sums (void)
 
 #define TPATH "/libnm/settings/dcb/"
 
-int main (int argc, char **argv)
+int
+main (int argc, char **argv)
 {
-	GError *error = NULL;
-	gboolean success;
-
 	g_test_init (&argc, &argv, NULL);
 
 #if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
 #endif
-
-	success = nm_utils_init (&error);
-	g_assert_no_error (error);
-	g_assert (success);
 
 #if !GLIB_CHECK_VERSION(2,34,0)
 	g_log_set_always_fatal (G_LOG_LEVEL_CRITICAL);

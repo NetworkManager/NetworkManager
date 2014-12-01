@@ -159,8 +159,6 @@ args = parser.parse_args()
 if args.gir is None or args.output is None:
     usage()
 
-NM.utils_init()
-
 girxml = ET.parse(args.gir).getroot()
 outfile = open(args.output, mode='w')
 

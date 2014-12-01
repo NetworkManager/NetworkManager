@@ -770,7 +770,6 @@ global:
 	nm_utils_iface_valid_name;
 	nm_utils_inet4_ntop;
 	nm_utils_inet6_ntop;
-	nm_utils_init;
 	nm_utils_ip4_addresses_from_variant;
 	nm_utils_ip4_addresses_to_variant;
 	nm_utils_ip4_dns_from_variant;

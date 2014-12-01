@@ -39,9 +39,6 @@
 
 G_BEGIN_DECLS
 
-/* init libnm */
-gboolean nm_utils_init (GError **error);
-
 /* SSID helpers */
 gboolean    nm_utils_is_empty_ssid (const guint8 *ssid, gsize len);
 const char *nm_utils_escape_ssid   (const guint8 *ssid, gsize len);

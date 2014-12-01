@@ -212,41 +212,29 @@ get_encodings_for_lang (const char *lang,
 
 /* init libnm */
 
+static gboolean initialized = FALSE;
+
 static void __attribute__((constructor))
-_check_symbols (void)
+_nm_utils_init (void)
 {
 	GModule *self;
 	gpointer func;
+
+	if (initialized)
+		return;
+	initialized = TRUE;
 
 	self = g_module_open (NULL, 0);
 	if (g_module_symbol (self, "nm_util_get_private", &func))
 		g_error ("libnm-util symbols detected; Mixing libnm with libnm-util/libnm-glib is not supported");
 	g_module_close (self);
-}
 
-static gboolean initialized = FALSE;
+	bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
+	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
 
-/**
- * nm_utils_init:
- * @error: location to store error, or %NULL
- *
- * Initializes libnm; should be called when starting and program that
- * uses libnm.  This function can be called more than once.
- *
- * Returns: %TRUE if the initialization was successful, %FALSE on failure.
- **/
-gboolean
-nm_utils_init (GError **error)
-{
-	if (!initialized) {
-		initialized = TRUE;
+	g_type_init ();
 
-		bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
-		bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
-
-		_nm_dbus_errors_init ();
-	}
-	return TRUE;
+	_nm_dbus_errors_init ();
 }
 
 gboolean _nm_utils_is_manager_process;
