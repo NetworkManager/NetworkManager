@@ -256,7 +256,7 @@ usage (void)
 #else
 	              "  up [[id | uuid | path] <ID>] [ifname <ifname>] [ap <BSSID>] [passwd-file <file with passwords>]\n\n"
 #endif
-	              "  down [id | uuid | path | apath] <ID>\n\n"
+	              "  down [id | uuid | path | apath] <ID> ...\n\n"
 	              "  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n\n"
 	              "  modify [--temporary] [id | uuid | path] <ID> ([+|-]<setting>.<property> <value>)+\n\n"
 	              "  edit [id | uuid | path] <ID>\n"
@@ -313,7 +313,7 @@ usage_connection_down (void)
 {
 	g_printerr (_("Usage: nmcli connection down { ARGUMENTS | help }\n"
 	              "\n"
-	              "ARGUMENTS := [id | uuid | path | apath] <ID>\n"
+	              "ARGUMENTS := [id | uuid | path | apath] <ID> ...\n"
 	              "\n"
 	              "Deactivate a connection from a device (without preventing the device from\n"
 	              "further auto-activation). The profile to deactivate is identified by its name,\n"
@@ -2237,20 +2237,24 @@ error:
 
 typedef struct {
 	NmCli *nmc;
-	NMActiveConnection *active;
+	GSList *queue;
 	guint timeout_id;
 } DeactivateConnectionInfo;
 
-static void deactivate_connection_info_free (gpointer user_data);
+static void deactivate_connection_info_finish (DeactivateConnectionInfo *info,
+                                               NMActiveConnection *active);
 
 static gboolean
 down_timeout_cb (gpointer user_data)
 {
 	DeactivateConnectionInfo *info = user_data;
 
+	while (info->queue)
+		deactivate_connection_info_finish (info, info->queue->data);
+
 	info->timeout_id = 0;
 	timeout_cb (info->nmc);
-	deactivate_connection_info_free (info);
+	deactivate_connection_info_finish (info, NULL);
 	return G_SOURCE_REMOVE;
 }
 
@@ -2264,32 +2268,40 @@ down_active_connection_state_cb (NMActiveConnection *active,
 
 	if (info->nmc->print_output == NMC_PRINT_PRETTY)
 		nmc_terminal_erase_line ();
-	g_print (_("Connection successfully deactivated (D-Bus active path: %s)\n"),
-	         nm_object_get_path (NM_OBJECT (info->active)));
+	g_print (_("Connection '%s' successfully deactivated (D-Bus active path: %s)\n"),
+	         nm_active_connection_get_id (active), nm_object_get_path (NM_OBJECT (active)));
 
-	deactivate_connection_info_free (info);
-	quit ();
+	deactivate_connection_info_finish (info, active);
 }
 
 static void
-deactivate_connection_info_free (gpointer user_data)
+deactivate_connection_info_finish (DeactivateConnectionInfo *info,
+                                   NMActiveConnection *active)
 {
-	DeactivateConnectionInfo *info = user_data;
+	if (active) {
+		info->queue = g_slist_remove (info->queue, active);
+		g_signal_handlers_disconnect_by_func (active,
+			                              down_active_connection_state_cb,
+			                              info);
+		g_object_unref (active);
+	}
+
+	if (info->queue)
+		return;
 
 	if (info->timeout_id)
 		g_source_remove (info->timeout_id);
-	g_signal_handlers_disconnect_by_func (info->active,
-	                                      down_active_connection_state_cb,
-	                                      info);
-	g_object_unref (info->active);
 	g_slice_free (DeactivateConnectionInfo, info);
+	quit ();
 }
 
 static NMCResultCode
 do_connection_down (NmCli *nmc, int argc, char **argv)
 {
 	NMActiveConnection *active;
+	DeactivateConnectionInfo *info = NULL;
 	const GPtrArray *active_cons;
+	GSList *queue = NULL, *iter;
 	char *line = NULL;
 	char **arg_arr = NULL;
 	char **arg_ptr = argv;
@@ -2331,42 +2343,52 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 		}
 
 		active = find_active_connection (active_cons, nmc->connections, selector, *arg_ptr, &idx);
-		if (active) {
-			DeactivateConnectionInfo *info;
-
-			nm_client_deactivate_connection (nmc->client, active, NULL, NULL);
-
-			if (nmc->timeout == 0)
-				break;
-
-			info = g_slice_new0 (DeactivateConnectionInfo);
-			info->nmc = nmc;
-			info->active = g_object_ref (active);
-
-			/* Wait for ActiveConnection to deactivate */
-			nmc->should_wait = TRUE;
-			info->timeout_id = g_timeout_add_seconds (nmc->timeout, down_timeout_cb, info);
-			g_signal_connect (active,
-			                  "notify::" NM_ACTIVE_CONNECTION_STATE,
-			                  G_CALLBACK (down_active_connection_state_cb),
-			                  info);
-			break;
-		} else {
-			g_string_printf (nmc->return_text, _("Error: '%s' is not an active connection."), *arg_ptr);
+		if (active)
+			queue = g_slist_prepend (queue, active);
+		else {
+			g_printerr (_("Error: '%s' is not an active connection.\n"), *arg_ptr);
+			g_string_printf (nmc->return_text, _("Error: not all active connections found."));
 			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
-			goto error;
 		}
 
 		if (idx == 0)
 			next_arg (&arg_num, &arg_ptr);
 	}
 
-	g_strfreev (arg_arr);
-	return nmc->return_value;
+	if (!queue) {
+		g_string_printf (nmc->return_text, _("Error: no active connection provided."));
+		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
+		goto error;
+	}
+
+	queue = g_slist_reverse (queue);
+
+	if (nmc->timeout > 0) {
+		nmc->should_wait = TRUE;
+
+		info = g_slice_new0 (DeactivateConnectionInfo);
+		info->nmc = nmc;
+		info->timeout_id = g_timeout_add_seconds (nmc->timeout, down_timeout_cb, info);
+	}
+
+	for (iter = queue; iter; iter = g_slist_next (iter)) {
+		active = iter->data;
+
+		if (info) {
+			info->queue = g_slist_prepend (info->queue, g_object_ref (active));
+			g_signal_connect (active,
+			                  "notify::" NM_ACTIVE_CONNECTION_STATE,
+			                  G_CALLBACK (down_active_connection_state_cb),
+			                  info);
+		}
+
+		/* Now deactivate the connection */
+		nm_client_deactivate_connection (nmc->client, active, NULL, NULL);
+	}
 
 error:
-	nmc->should_wait = FALSE;
 	g_strfreev (arg_arr);
+	g_slist_free (queue);
 	return nmc->return_value;
 }
 

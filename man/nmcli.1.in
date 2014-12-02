@@ -21,7 +21,7 @@
 .\"
 .\" Copyright 2010 - 2014 Red Hat, Inc.
 .\"
-.TH NMCLI "1" "4 November 2014"
+.TH NMCLI "1" "3 December 2014"
 
 .SH NAME
 nmcli \- command\(hyline tool for controlling NetworkManager
@@ -380,15 +380,15 @@ gnome-shell).
 .RE
 .RE
 .TP
-.B down [ id | uuid | path | apath ] <ID>
+.B down [ id | uuid | path | apath ] <ID> ...
 .br
 Deactivate a connection from a device without preventing the device from
-further auto-activation.
+further auto-activation. Multiple connections can be passed to the command. 
 .sp
-Be aware that this command deactivates the specified active connection. The device
+Be aware that this command deactivates the specified active connection, but the device
 on which the connection was active, is still ready to connect and will perform
 auto-activation by looking for a suitable connection that has the 'autoconnect'
-flag set. This includes the just deactivated connection, so if the connection is set
+flag set. This includes the just deactivated connection. So if the connection is set
 to auto-connect, it will be automatically started on the disconnected device again.
 .br
 In most cases you may want to use \fIdevice disconnect\fP command instead.
