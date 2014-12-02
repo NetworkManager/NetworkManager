@@ -70,8 +70,6 @@ GQuark _nm_crypto_error_quark (void);
 
 gboolean crypto_init (GError **error);
 
-void crypto_deinit (void);
-
 GByteArray *crypto_decrypt_private_key_data (const GByteArray *contents,
                                              const char *password,
                                              NMCryptoKeyType *out_key_type,

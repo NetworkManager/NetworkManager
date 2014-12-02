@@ -374,8 +374,6 @@ int main (int argc, char **argv)
 		ASSERT (argc > 2, "test-crypto", "unknown test type (not --cert, --key, or --p12)");
 	}
 
-	crypto_deinit ();
-
 	progname = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", progname);
 	g_free (progname);
