@@ -368,13 +368,13 @@ error:
 	return NULL;
 }
 
-static char *
-make_des_aes_key (const char *cipher,
-                  const char *salt,
-                  const gsize salt_len,
-                  const char *password,
-                  gsize *out_len,
-                  GError **error)
+char *
+crypto_make_des_aes_key (const char *cipher,
+                         const char *salt,
+                         const gsize salt_len,
+                         const char *password,
+                         gsize *out_len,
+                         GError **error)
 {
 	char *key;
 	guint32 digest_len;
@@ -439,7 +439,7 @@ decrypt_key (const char *cipher,
 		return NULL;
 
 	/* Convert the password and IV into a DES or AES key */
-	key = make_des_aes_key (cipher, bin_iv, bin_iv_len, password, &key_len, error);
+	key = crypto_make_des_aes_key (cipher, bin_iv, bin_iv_len, password, &key_len, error);
 	if (!key || !key_len)
 		goto out;
 

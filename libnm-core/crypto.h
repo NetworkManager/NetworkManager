@@ -85,6 +85,13 @@ void crypto_md5_hash (const char *salt,
                       char *buffer,
                       gsize buflen);
 
+char *crypto_make_des_aes_key (const char *cipher,
+                               const char *salt,
+                               const gsize salt_len,
+                               const char *password,
+                               gsize *out_len,
+                               GError **error);
+
 char * crypto_decrypt (const char *cipher,
                        int key_type,
                        const guint8 *data,

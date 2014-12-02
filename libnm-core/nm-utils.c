@@ -1974,34 +1974,6 @@ nm_utils_uuid_generate_from_string (const char *s)
 	return buf;
 }
 
-static char *
-make_key (const char *cipher,
-          const char *salt,
-          const gsize salt_len,
-          const char *password,
-          gsize *out_len)
-{
-	char *key;
-	guint32 digest_len = 24; /* DES-EDE3-CBC */
-
-	g_return_val_if_fail (salt != NULL, NULL);
-	g_return_val_if_fail (salt_len >= 8, NULL);
-	g_return_val_if_fail (password != NULL, NULL);
-	g_return_val_if_fail (out_len != NULL, NULL);
-
-	if (!strcmp (cipher, "DES-EDE3-CBC"))
-		digest_len = 24;
-	else if (!strcmp (cipher, "AES-128-CBC"))
-		digest_len = 16;
-
-	key = g_malloc0 (digest_len + 1);
-
-	crypto_md5_hash (salt, salt_len, password, strlen (password), key, digest_len);
-	*out_len = digest_len;
-
-	return key;
-}
-
 /**
  * nm_utils_rsa_key_encrypt_helper:
  * @cipher: cipher to use for encryption ("DES-EDE3-CBC" or "AES-128-CBC")
@@ -2058,7 +2030,8 @@ nm_utils_rsa_key_encrypt_helper (const char *cipher,
 	if (!crypto_randomize (salt, salt_len, error))
 		goto out;
 
-	key = make_key (cipher, &salt[0], salt_len, in_password, &key_len);
+	key = crypto_make_des_aes_key (cipher, &salt[0], salt_len, in_password, &key_len, NULL);
+	g_return_val_if_fail (key, NULL);
 	enc = crypto_encrypt (cipher, data, len, salt, salt_len, key, key_len, &enc_len, error);
 	if (!enc)
 		goto out;
