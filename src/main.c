@@ -55,6 +55,7 @@
 #include "nm-posix-signals.h"
 #include "nm-session-monitor.h"
 #include "nm-dispatcher.h"
+#include "nm-utils.h"
 
 #if !defined(NM_DIST_VERSION)
 # define NM_DIST_VERSION VERSION
@@ -398,6 +399,13 @@ main (int argc, char *argv[])
 
 	if (getuid () != 0) {
 		fprintf (stderr, _("You must be root to run NetworkManager!\n"));
+		exit (1);
+	}
+
+	if (!nm_utils_init (&error)) {
+		fprintf (stderr, _("Unable to initialize NetworkManager libraries: %s\n"),
+		         error->message);
+		g_error_free (error);
 		exit (1);
 	}
 
