@@ -79,9 +79,9 @@ NMCryptoFileFormat crypto_verify_private_key (const char *file,
 /* Internal utils API bits for crypto providers */
 
 void crypto_md5_hash (const char *salt,
-                      const gsize salt_len,
+                      gssize salt_len,
                       const char *password,
-                      gsize password_len,
+                      gssize password_len,
                       char *buffer,
                       gsize buflen);
 

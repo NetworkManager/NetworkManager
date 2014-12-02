@@ -405,7 +405,7 @@ crypto_make_des_aes_key (const char *cipher,
 	key = g_malloc0 (digest_len + 1);
 
 	crypto_md5_hash (salt,
-	                 salt_len,
+	                 8,
 	                 password,
 	                 strlen (password),
 	                 key,
@@ -763,9 +763,9 @@ crypto_verify_private_key (const char *filename,
 
 void
 crypto_md5_hash (const char *salt,
-                 const gsize salt_len,
+                 gssize salt_len,
                  const char *password,
-                 gsize password_len,
+                 gssize password_len,
                  char *buffer,
                  gsize buflen)
 {
@@ -778,15 +778,17 @@ crypto_md5_hash (const char *salt,
 
 	g_assert_cmpint (g_checksum_type_get_length (G_CHECKSUM_MD5), ==, sizeof (digest));
 
-	if (salt)
-		g_return_if_fail (salt_len >= 8);
-
-	g_return_if_fail (password != NULL);
-	g_return_if_fail (password_len > 0);
+	g_return_if_fail (password_len == 0 || password);
 	g_return_if_fail (buffer != NULL);
 	g_return_if_fail (buflen > 0);
+	g_return_if_fail (salt_len == 0 || salt);
 
 	ctx = g_checksum_new (G_CHECKSUM_MD5);
+
+	if (salt_len < 0)
+		salt_len = strlen (salt);
+	if (password_len < 0)
+		password_len = strlen (password);
 
 	while (nkey > 0) {
 		int i = 0;
@@ -794,9 +796,10 @@ crypto_md5_hash (const char *salt,
 		g_checksum_reset (ctx);
 		if (count++)
 			g_checksum_update (ctx, (const guchar *) digest, digest_len);
-		g_checksum_update (ctx, (const guchar *) password, password_len);
-		if (salt)
-			g_checksum_update (ctx, (const guchar *) salt, 8); /* Only use 8 bytes of salt */
+		if (password_len > 0)
+			g_checksum_update (ctx, (const guchar *) password, password_len);
+		if (salt_len > 0)
+			g_checksum_update (ctx, (const guchar *) salt, salt_len);
 		g_checksum_get_digest (ctx, (guchar *) digest, &digest_len);
 
 		while (nkey && (i < digest_len)) {
