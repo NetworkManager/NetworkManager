@@ -478,6 +478,7 @@ class CmdSubmit(CmdBase):
         self.parser.add_argument('--verbose', '-v', action='count', help='print more information')
         self.parser.add_argument('--reservesys', '-R', action='store_true', help='add task /distribution/reservesys')
         self.parser.add_argument('--var', '-V', action='append', help='Set template replacements (alternative to setting via environment variables')
+        self.parser.add_argument('--hosttype', help='The host type. Known values are \'dcb\', \'infiniband\', and \'wifi\'. Anything else uses the default. This determines the $HOSTREQUIRES template')
 
     def _prepare_rpms(self):
         if self.options.rpm is None:
@@ -578,6 +579,24 @@ class CmdSubmit(CmdBase):
         raise Exception("could not detect the target branch. Try setting as environment variable GIT_TARGETBRANCH%s" % (
                     ((" (or try setting "+key_name+")") if key_name == 'GIT_TARGETBRANCH' else '')))
 
+    def _detect_hosttype(self):
+        return 'default'
+
+    def _process_line_get_HOSTREQUIRES(self, key, replacement, index=None, none=None):
+        v = self._get_default('HOSTREQUIRES')
+        if v is not None:
+            return v;
+        hosttype = self.options.hosttype
+        if hosttype == 'dcb':
+            return '<hostname op="=" value="wsfd-netdev7.lab.bos.redhat.com"/>'
+        elif hosttype == 'infiniband':
+            return '<hostname op="=" value="rdma-qe-11.lab.bos.redhat.com"/>'
+        elif hosttype == 'wifi':
+            return '<group op="=" value="wireless"/>'
+            #return '<hostname op="=" value="wlan-r2s26.wlan.rhts.eng.bos.redhat.com"/>'
+        else:
+            return '<group op="=" value="desktopqe-net"/>'
+
     def _process_line_get_GIT_TARGETBRANCH(self, key, replacement, index=None, none=None):
         return self.__process_line_get_GIT_TARGETBRANCH_detect("GIT_TARGETBRANCH")
 
@@ -605,6 +624,7 @@ class CmdSubmit(CmdBase):
             'DISTRO_NAME'       : _process_line_get_DISTRO_NAME,
             'DISTRO_METHOD'     : 'nfs',
             'DISTRO_ARCH'       : 'x86_64',
+            'HOSTREQUIRES'      : _process_line_get_HOSTREQUIRES,
             'TEST_URL'          : 'http://download.eng.brq.redhat.com/scratch/vbenes/NetworkManager-rhel-7.tar.gz',
             'GIT_TARGETBRANCH'  : _process_line_get_GIT_TARGETBRANCH,
             'UUID'              : str(uuid.uuid4()),
