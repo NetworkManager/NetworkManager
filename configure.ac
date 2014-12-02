@@ -821,6 +821,13 @@ AM_CONDITIONAL(BUILD_NMTUI, test "$build_nmtui" = yes)
 
 NM_COMPILER_WARNINGS
 
+AC_ARG_ENABLE(lto, AS_HELP_STRING([--enable-lto], [Enable Link Time Optimization for smaller size (default: no)]),
+              [enable_lto=yes], [enable_lto=no])
+if (test "${enable_lto}" = "yes"); then
+    CFLAGS="-flto $CFLAGS"
+fi
+
+
 dnl -------------------------
 dnl Vala bindings
 dnl -------------------------
@@ -1070,4 +1077,5 @@ echo "  documentation: $enable_gtk_doc"
 echo "  tests: $enable_tests"
 echo "  valgrind: $with_valgrind"
 echo "  code coverage: $enable_code_coverage"
+echo "  LTO: $enable_lto"
 echo
