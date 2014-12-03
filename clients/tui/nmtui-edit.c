@@ -515,7 +515,8 @@ remove_one_connection (NMRemoteConnection *connection)
 void
 nmt_remove_connection (NMRemoteConnection *connection)
 {
-	const GPtrArray *conns;
+	const GPtrArray *all_conns;
+	GSList *slaves, *iter;
 	int i;
 	NMRemoteConnection *slave;
 	NMSettingConnection *s_con;
@@ -535,16 +536,22 @@ nmt_remove_connection (NMRemoteConnection *connection)
 	uuid = nm_connection_get_uuid (NM_CONNECTION (connection));
 	iface = nm_connection_get_interface_name (NM_CONNECTION (connection));
 
-	conns = nm_client_get_connections (nm_client);
-	for (i = 0; i < conns->len; i++) {
-		slave = conns->pdata[i];
+	all_conns = nm_client_get_connections (nm_client);
+	slaves = NULL;
+	for (i = 0; i < all_conns->len; i++) {
+		slave = all_conns->pdata[i];
 		s_con = nm_connection_get_setting_connection (NM_CONNECTION (slave));
 		master = nm_setting_connection_get_master (s_con);
 		if (master) {
 			if (!g_strcmp0 (master, uuid) || !g_strcmp0 (master, iface))
-				remove_one_connection (slave);
+				slaves = g_slist_prepend (slaves, g_object_ref (slave));
 		}
 	}
+
+	for (iter = slaves; iter; iter = iter->next)
+		remove_one_connection (iter->data);
+	g_slist_free_full (slaves, g_object_unref);
+
 	g_object_unref (connection);
 }
 
