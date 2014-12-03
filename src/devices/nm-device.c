@@ -1623,7 +1623,7 @@ nm_device_removed (NMDevice *self)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	if (priv->enslaved)
-		nm_device_release_one_slave (priv->master, self, TRUE, NM_DEVICE_STATE_REASON_REMOVED);
+		nm_device_release_one_slave (priv->master, self, FALSE, NM_DEVICE_STATE_REASON_REMOVED);
 }
 
 
