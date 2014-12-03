@@ -113,6 +113,10 @@ GPtrArray *_nm_utils_copy_object_array (const GPtrArray *array);
 gboolean    _nm_utils_string_in_list   (const char *str,
                                         const char **valid_strings);
 
+char **     _nm_utils_strsplit_set (const char *str,
+                                    const char *delimiters,
+                                    int max_tokens);
+
 void _nm_dbus_errors_init (void);
 
 extern gboolean _nm_utils_is_manager_process;

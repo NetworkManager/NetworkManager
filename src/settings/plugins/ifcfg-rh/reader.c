@@ -50,7 +50,6 @@
 #include <nm-setting-dcb.h>
 #include <nm-setting-generic.h>
 #include "nm-core-internal.h"
-#include "nm-utils-private.h"
 #include <nm-utils.h>
 
 #include "nm-platform.h"

@@ -46,10 +46,6 @@ char **     _nm_utils_slist_to_strv (GSList *slist);
 GPtrArray * _nm_utils_strv_to_ptrarray (char **strv);
 char **     _nm_utils_ptrarray_to_strv (GPtrArray *ptrarray);
 
-char **     _nm_utils_strsplit_set (const char *str,
-                                    const char *delimiters,
-                                    int max_tokens);
-
 char *      _nm_utils_hwaddr_canonical_or_invalid (const char *mac, gssize length);
 
 #endif
