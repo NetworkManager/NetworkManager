@@ -120,11 +120,7 @@ GVariant  *nm_utils_ip_routes_to_variant (GPtrArray *routes);
 GPtrArray *nm_utils_ip_routes_from_variant (GVariant *value,
                                             int family);
 
-#define NM_UTILS_UUID_TYPE_LEGACY            0
-#define NM_UTILS_UUID_TYPE_VARIANT3          1
-
 char *nm_utils_uuid_generate (void);
-char *nm_utils_uuid_generate_from_string (const char *s, gssize slen, int uuid_type, gpointer type_args);
 
 gboolean nm_utils_file_is_certificate (const char *filename);
 gboolean nm_utils_file_is_private_key (const char *filename, gboolean *out_encrypted);
