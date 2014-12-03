@@ -33,6 +33,7 @@
 #include "crypto.h"
 #include "nm-utils.h"
 #include "nm-errors.h"
+#include "nm-core-internal.h"
 
 #include "nm-test-utils.h"
 
@@ -254,28 +255,6 @@ test_load_pkcs8 (const char *path,
 	}
 }
 
-static gboolean
-is_cipher_aes (const char *path)
-{
-	char *contents;
-	gsize length = 0;
-	const char *cipher;
-	gboolean is_aes = FALSE;
-
-	if (!g_file_get_contents (path, &contents, &length, NULL))
-		return FALSE;
-
-	cipher = strstr (contents, "DEK-Info: ");
-	if (cipher) {
-		cipher += strlen ("DEK-Info: ");
-		if (g_str_has_prefix (cipher, "AES-128-CBC"))
-			is_aes = TRUE;
-	}
-
-	g_free (contents);
-	return is_aes;
-}
-
 static void
 test_encrypt_private_key (const char *path,
                           const char *password)
@@ -290,10 +269,7 @@ test_encrypt_private_key (const char *path,
 	g_assert_cmpint (key_type, ==, NM_CRYPTO_KEY_TYPE_RSA);
 
 	/* Now re-encrypt the private key */
-	if (is_cipher_aes (path))
-		encrypted = nm_utils_rsa_key_encrypt_aes (array->data, array->len, password, NULL, &error);
-	else
-		encrypted = nm_utils_rsa_key_encrypt (array->data, array->len, password, NULL, &error);
+	encrypted = nm_utils_rsa_key_encrypt (array->data, array->len, password, NULL, &error);
 	g_assert_no_error (error);
 	g_assert (encrypted != NULL);
 
