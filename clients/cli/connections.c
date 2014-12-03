@@ -2249,10 +2249,6 @@ down_timeout_cb (gpointer user_data)
 {
 	DeactivateConnectionInfo *info = user_data;
 
-	while (info->queue)
-		deactivate_connection_info_finish (info, info->queue->data);
-
-	info->timeout_id = 0;
 	timeout_cb (info->nmc);
 	deactivate_connection_info_finish (info, NULL);
 	return G_SOURCE_REMOVE;
@@ -2275,15 +2271,26 @@ down_active_connection_state_cb (NMActiveConnection *active,
 }
 
 static void
+destroy_queue_element (gpointer data)
+{
+	g_signal_handlers_disconnect_matched (data, G_SIGNAL_MATCH_FUNC, 0, 0, 0,
+	                                      down_active_connection_state_cb, NULL);
+	g_object_unref (data);
+}
+
+static void
 deactivate_connection_info_finish (DeactivateConnectionInfo *info,
                                    NMActiveConnection *active)
 {
 	if (active) {
 		info->queue = g_slist_remove (info->queue, active);
 		g_signal_handlers_disconnect_by_func (active,
-			                              down_active_connection_state_cb,
-			                              info);
+		                                      down_active_connection_state_cb,
+		                                      info);
 		g_object_unref (active);
+	} else {
+		g_slist_free_full (info->queue, destroy_queue_element);
+		info->queue = NULL;
 	}
 
 	if (info->queue)
