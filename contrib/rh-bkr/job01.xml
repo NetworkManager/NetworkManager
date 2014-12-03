@@ -1,4 +1,4 @@
-<job product="cpe:/o:redhat:enterprise_linux:7.0" retention_tag="active+1">
+<job $JOBTYPE>
 	<whiteboard>
 		$WHITEBOARD $UUID
 		$ARGV

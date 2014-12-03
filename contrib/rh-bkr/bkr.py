@@ -479,6 +479,7 @@ class CmdSubmit(CmdBase):
         self.parser.add_argument('--reservesys', '-R', action='store_true', help='add task /distribution/reservesys')
         self.parser.add_argument('--var', '-V', action='append', help='Set template replacements (alternative to setting via environment variables')
         self.parser.add_argument('--hosttype', help='The host type. Known values are \'dcb\', \'infiniband\', and \'wifi\'. Anything else uses the default. This determines the $HOSTREQUIRES template')
+        self.parser.add_argument('--jobtype', help='The job type. Known values are \'rhel70\'. Anything else uses the default to create a retention=scratch job. This determines the $JOBTYPE template')
 
     def _prepare_rpms(self):
         if self.options.rpm is None:
@@ -582,6 +583,15 @@ class CmdSubmit(CmdBase):
     def _detect_hosttype(self):
         return 'default'
 
+    def _process_line_get_JOBTYPE(self, key, replacement, index=None, none=None):
+        v = self._get_default('JOBTYPE')
+        if v is not None:
+            return v;
+        jobtype = self.options.jobtype
+        if jobtype == 'rhel70':
+            return 'product="cpe:/o:redhat:enterprise_linux:7.0" retention_tag="active+1"'
+        return 'retention_tag="scratch"'
+
     def _process_line_get_HOSTREQUIRES(self, key, replacement, index=None, none=None):
         v = self._get_default('HOSTREQUIRES')
         if v is not None:
@@ -625,6 +635,7 @@ class CmdSubmit(CmdBase):
             'DISTRO_METHOD'     : 'nfs',
             'DISTRO_ARCH'       : 'x86_64',
             'HOSTREQUIRES'      : _process_line_get_HOSTREQUIRES,
+            'JOBTYPE'           : _process_line_get_JOBTYPE,
             'TEST_URL'          : 'http://download.eng.brq.redhat.com/scratch/vbenes/NetworkManager-rhel-7.tar.gz',
             'GIT_TARGETBRANCH'  : _process_line_get_GIT_TARGETBRANCH,
             'UUID'              : str(uuid.uuid4()),
