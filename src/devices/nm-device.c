@@ -7465,6 +7465,14 @@ _set_state_full (NMDevice *self,
 		nm_dispatcher_call (DISPATCHER_ACTION_UP, nm_act_request_get_connection (req), self, NULL, NULL, NULL);
 		break;
 	case NM_DEVICE_STATE_FAILED:
+		if (nm_device_uses_assumed_connection (self)) {
+			/* Avoid tearing down assumed connection, assume it's connected */
+			nm_device_queue_state (self,
+			                       NM_DEVICE_STATE_ACTIVATED,
+			                       NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
+			break;
+		}
+
 		connection = nm_device_get_connection (self);
 		_LOGW (LOGD_DEVICE | LOGD_WIFI,
 		       "Activation: failed for connection '%s'",
