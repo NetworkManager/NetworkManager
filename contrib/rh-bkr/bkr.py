@@ -602,7 +602,7 @@ class CmdSubmit(CmdBase):
         elif hosttype == 'infiniband':
             return '<hostname op="=" value="rdma-qe-11.lab.bos.redhat.com"/>'
         elif hosttype == 'wifi':
-            return '<group op="=" value="wireless"/>'
+            return '<group op="=" value="wireless"/><hostname op="like" value="wlan-r2%.wlan.rhts.eng.bos.redhat.com"/>'
             #return '<hostname op="=" value="wlan-r2s26.wlan.rhts.eng.bos.redhat.com"/>'
         else:
             return '<group op="=" value="desktopqe-net"/>'
