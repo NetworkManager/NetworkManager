@@ -1673,17 +1673,16 @@ recheck_assume_connection (NMDevice *device, gpointer user_data)
 	if (nm_device_get_unmanaged_flag (device, NM_UNMANAGED_USER))
 		return;
 
+	state = nm_device_get_state (device);
+	if (state > NM_DEVICE_STATE_DISCONNECTED)
+		return;
+
 	connection = get_existing_connection (self, device);
 	if (!connection) {
 		nm_log_dbg (LOGD_DEVICE, "(%s): can't assume; no connection",
 		            nm_device_get_iface (device));
 		return;
 	}
-
-	state = nm_device_get_state (device);
-
-	if (state > NM_DEVICE_STATE_DISCONNECTED)
-		return;
 
 	if (state == NM_DEVICE_STATE_UNMANAGED) {
 		was_unmanaged = TRUE;
