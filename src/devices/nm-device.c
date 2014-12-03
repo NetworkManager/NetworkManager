@@ -6915,6 +6915,13 @@ _set_state_full (NMDevice *device,
 		             "Activation (%s) failed for connection '%s'",
 		             nm_device_get_iface (device),
 		             connection ? nm_connection_get_id (connection) : "<unknown>");
+		if (req && nm_active_connection_get_assumed (NM_ACTIVE_CONNECTION (req))) {
+			/* Avoid tearing down assumed connection, assume it's connected */
+			nm_device_queue_state (device,
+			                       NM_DEVICE_STATE_ACTIVATED,
+			                       NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
+			break;
+		}
 
 		/* Notify any slaves of the unexpected failure */
 		nm_device_master_release_slaves (device);
