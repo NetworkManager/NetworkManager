@@ -1228,14 +1228,12 @@ nm_utils_ip4_addresses_from_variant (GVariant *value, char **out_gateway)
 		}
 
 		addr = nm_ip_address_new_binary (AF_INET, &addr_array[0], addr_array[1], &error);
-		if (addresses->len == 0 && out_gateway) {
-			if (addr_array[2])
-				*out_gateway = g_strdup (nm_utils_inet4_ntop (addr_array[2], NULL));
-		}
-
-		if (addr)
+		if (addr) {
 			g_ptr_array_add (addresses, addr);
-		else {
+
+			if (addr_array[2] && out_gateway && !*out_gateway)
+				*out_gateway = g_strdup (nm_utils_inet4_ntop (addr_array[2], NULL));
+		} else {
 			g_warning ("Ignoring invalid IP4 address: %s", error->message);
 			g_clear_error (&error);
 		}
@@ -1586,21 +1584,21 @@ nm_utils_ip6_addresses_from_variant (GVariant *value, char **out_gateway)
 			goto next;
 		}
 
-		if (addresses->len == 0 && out_gateway) {
-			gateway_bytes = g_variant_get_fixed_array (gateway_var, &gateway_len, 1);
-			if (gateway_len != 16) {
-				g_warning ("%s: ignoring invalid IP6 address of length %d",
-				           __func__, (int) gateway_len);
-				goto next;
-			}
-			if (!IN6_IS_ADDR_UNSPECIFIED (gateway_bytes))
-				*out_gateway = g_strdup (nm_utils_inet6_ntop (gateway_bytes, NULL));
-		}
-
 		addr = nm_ip_address_new_binary (AF_INET6, addr_bytes, prefix, &error);
-		if (addr)
+		if (addr) {
 			g_ptr_array_add (addresses, addr);
-		else {
+
+			if (out_gateway && !*out_gateway) {
+				gateway_bytes = g_variant_get_fixed_array (gateway_var, &gateway_len, 1);
+				if (gateway_len != 16) {
+					g_warning ("%s: ignoring invalid IP6 address of length %d",
+					           __func__, (int) gateway_len);
+					goto next;
+				}
+				if (!IN6_IS_ADDR_UNSPECIFIED (gateway_bytes))
+					*out_gateway = g_strdup (nm_utils_inet6_ntop (gateway_bytes, NULL));
+			}
+		} else {
 			g_warning ("Ignoring invalid IP4 address: %s", error->message);
 			g_clear_error (&error);
 		}

@@ -3561,6 +3561,9 @@ test_setting_ip4_gateway (void)
 	GVariant *conn_dict, *ip4_dict, *value;
 	GVariantIter iter;
 	GVariant *addr_var;
+	guint32 addr_vals_0[] = { 0x0a01a8c0, 0x00000018, 0x00000000 };
+	guint32 addr_vals_1[] = { 0x0b01a8c0, 0x00000018, 0x0101a8c0 };
+	GVariantBuilder addrs_builder;
 	GError *error = NULL;
 
 	/* When serializing on the daemon side, ipv4.gateway is copied to the first
@@ -3610,8 +3613,8 @@ test_setting_ip4_gateway (void)
 
 	g_variant_unref (ip4_dict);
 
-	/* When deserializing an old-style connection, the gateway from the first address
-	 * is copied to :gateway.
+	/* When deserializing an old-style connection, the first non-0 gateway in
+	 * ipv4.addresses is copied to :gateway.
 	 */
 	NMTST_VARIANT_EDITOR (conn_dict,
 	                      NMTST_VARIANT_DROP_PROPERTY (NM_SETTING_IP4_CONFIG_SETTING_NAME,
@@ -3621,8 +3624,30 @@ test_setting_ip4_gateway (void)
 	                      );
 
 	conn = nm_simple_connection_new_from_dbus (conn_dict, &error);
-	g_variant_unref (conn_dict);
 	g_assert_no_error (error);
+
+	s_ip4 = (NMSettingIPConfig *) nm_connection_get_setting_ip4_config (conn);
+	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, "192.168.1.1");
+
+	g_object_unref (conn);
+
+	/* Try again with the gateway in the second address. */
+	g_variant_builder_init (&addrs_builder, G_VARIANT_TYPE ("aau"));
+	g_variant_builder_add (&addrs_builder, "@au",
+	                       g_variant_new_fixed_array (G_VARIANT_TYPE_UINT32,
+	                                                  addr_vals_0, 3, 4));
+	g_variant_builder_add (&addrs_builder, "@au",
+	                       g_variant_new_fixed_array (G_VARIANT_TYPE_UINT32,
+	                                                  addr_vals_1, 3, 4));
+
+	NMTST_VARIANT_EDITOR (conn_dict,
+	                      NMTST_VARIANT_CHANGE_PROPERTY (NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	                                                     "addresses", "aau", &addrs_builder);
+	                      );
+
+	conn = nm_simple_connection_new_from_dbus (conn_dict, &error);
+	g_assert_no_error (error);
+	g_variant_unref (conn_dict);
 
 	s_ip4 = (NMSettingIPConfig *) nm_connection_get_setting_ip4_config (conn);
 	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, "192.168.1.1");
@@ -3639,6 +3664,13 @@ test_setting_ip6_gateway (void)
 	GVariant *conn_dict, *ip6_dict, *value;
 	GVariantIter iter;
 	GVariant *gateway_var;
+	GVariantBuilder addrs_builder;
+	guint8 addr_bytes_0[] = { 0xab, 0xcd, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	                          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0a };
+	guint8 addr_bytes_1[] = { 0xab, 0xcd, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	                          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0b };
+	guint8 gateway_bytes_1[] = { 0xab, 0xcd, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	                             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 };
 	GError *error = NULL;
 
 	/* When serializing on the daemon side, ipv6.gateway is copied to the first
@@ -3687,8 +3719,8 @@ test_setting_ip6_gateway (void)
 
 	g_variant_unref (ip6_dict);
 
-	/* When deserializing an old-style connection, the gateway from the first address
-	 * is copied to :gateway.
+	/* When deserializing an old-style connection, the first non-0 gateway in
+	 * ipv6.addresses is copied to :gateway.
 	 */
 	NMTST_VARIANT_EDITOR (conn_dict,
 	                      NMTST_VARIANT_DROP_PROPERTY (NM_SETTING_IP6_CONFIG_SETTING_NAME,
@@ -3698,8 +3730,36 @@ test_setting_ip6_gateway (void)
 	                      );
 
 	conn = nm_simple_connection_new_from_dbus (conn_dict, &error);
-	g_variant_unref (conn_dict);
 	g_assert_no_error (error);
+
+	s_ip6 = (NMSettingIPConfig *) nm_connection_get_setting_ip6_config (conn);
+	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip6), ==, "abcd::1");
+
+	g_object_unref (conn);
+
+	/* Try again with the gateway in the second address. */
+	g_variant_builder_init (&addrs_builder, G_VARIANT_TYPE ("a(ayuay)"));
+	g_variant_builder_add (&addrs_builder, "(@ayu@ay)",
+	                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
+	                                                  addr_bytes_0, 16, 1),
+	                       64,
+	                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
+	                                                  &in6addr_any, 16, 1));
+	g_variant_builder_add (&addrs_builder, "(@ayu@ay)",
+	                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
+	                                                  addr_bytes_1, 16, 1),
+	                       64,
+	                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
+	                                                  gateway_bytes_1, 16, 1));
+
+	NMTST_VARIANT_EDITOR (conn_dict,
+	                      NMTST_VARIANT_CHANGE_PROPERTY (NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	                                                     "addresses", "a(ayuay)", &addrs_builder);
+	                      );
+
+	conn = nm_simple_connection_new_from_dbus (conn_dict, &error);
+	g_assert_no_error (error);
+	g_variant_unref (conn_dict);
 
 	s_ip6 = (NMSettingIPConfig *) nm_connection_get_setting_ip6_config (conn);
 	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip6), ==, "abcd::1");
