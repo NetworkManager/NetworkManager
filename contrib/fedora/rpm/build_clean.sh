@@ -65,7 +65,7 @@ if [[ $IGNORE_DIRTY != 1 ]]; then
     # check for a clean working directory.
     # We ignore the /contrib directory, because this is where the automation
     # scripts and the build results will be.
-    if [[ "x$(LANG=C git clean -ndx | grep '^Would remove contrib/.*$' -v)" != x ]]; then
+    if [[ "x$(LANG=C git clean -ndx | grep '^Would \(remove contrib/\|skip repository libgsystem/\).*$' -v)" != x ]]; then
         die "The working directory is not clean. Refuse to run. Try \`$0 --force\`, \`$0 --clean\`, or \`git clean -e :/contrib -dx -n\`"
     fi
     if [[ "x$(git status --porcelain)" != x ]]; then
