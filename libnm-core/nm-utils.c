@@ -1985,19 +1985,20 @@ nm_utils_uuid_generate_from_string (const char *s, gssize slen, int uuid_type, g
 		break;
 	case NM_UTILS_UUID_TYPE_VARIANT3: {
 		uuid_t ns_uuid = { 0 };
-		GString *str;
+		char *str;
 
 		if (type_args) {
 			/* type_args can be a name space UUID. Interpret it as (char *) */
 			if (uuid_parse ((char *) type_args, ns_uuid) != 0)
 				g_return_val_if_reached (NULL);
 		}
-		str = g_string_sized_new (sizeof (ns_uuid) + slen + 1);
-		g_string_append_len (str, (const char *) ns_uuid, sizeof (ns_uuid));
-		g_string_append_len (str, s, slen);
-		crypto_md5_hash (NULL, 0, str->str, str->len, (char *) uuid, sizeof (uuid));
+		str = g_new (char, sizeof (ns_uuid) + slen);
+		memcpy (&str[0], ns_uuid, sizeof (ns_uuid));
+		memcpy (&str[sizeof (ns_uuid)], s, slen);
+		crypto_md5_hash (NULL, 0, str, sizeof (ns_uuid) + slen, (char *) uuid, sizeof (uuid));
 		uuid[6] = (uuid[6] & 0x0F) | 0x30;
 		uuid[8] = (uuid[8] & 0x3F) | 0x80;
+		g_free (str);
 		break;
 	}
 	default:
