@@ -1981,7 +1981,6 @@ nm_utils_uuid_generate_from_string (const char *s, gssize slen, int uuid_type, g
 
 	switch (uuid_type) {
 	case NM_UTILS_UUID_TYPE_LEGACY:
-		g_return_val_if_fail (slen > 0, NULL);
 		crypto_md5_hash (NULL, 0, s, slen, (char *) uuid, sizeof (uuid));
 		break;
 	case NM_UTILS_UUID_TYPE_VARIANT3: {

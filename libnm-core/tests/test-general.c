@@ -3841,39 +3841,34 @@ _test_uuid (int uuid_type, const char *expected_uuid, const char *str, gssize sl
 		         str, (long long) slen, uuid_test, expected_uuid);
 	}
 
-	if (slen < 0)
+	if (slen < 0) {
+		/* also test that passing slen==-1 yields the same result as passing strlen(str). */
 		_test_uuid (uuid_type, expected_uuid, str, strlen (str), type_args);
+	} else if (str && slen == 0) {
+		/* also test if we accept NULL for slen==0 */
+		_test_uuid (uuid_type, expected_uuid, NULL, 0, type_args);
+	}
 
-	if (uuid_type == NM_UTILS_UUID_TYPE_VARIANT3 && !type_args)
+	if (uuid_type == NM_UTILS_UUID_TYPE_VARIANT3 && !type_args) {
+		/* For NM_UTILS_UUID_TYPE_VARIANT3, a missing @type_args is equal to UUID_NIL */
 		_test_uuid (uuid_type, expected_uuid, str, slen, UUID_NIL);
+	}
 }
 
 static void
 test_nm_utils_uuid_generate_from_string (void)
 {
-	gs_free char *uuid_test = NULL;
-
+	_test_uuid (NM_UTILS_UUID_TYPE_LEGACY, "d41d8cd9-8f00-b204-e980-0998ecf8427e", "", -1, NULL);
 	_test_uuid (NM_UTILS_UUID_TYPE_LEGACY, "0cc175b9-c0f1-b6a8-31c3-99e269772661", "a", -1, NULL);
 	_test_uuid (NM_UTILS_UUID_TYPE_LEGACY, "098f6bcd-4621-d373-cade-4e832627b4f6", "test", -1, NULL);
+	_test_uuid (NM_UTILS_UUID_TYPE_LEGACY, "70350f60-27bc-e371-3f6b-76473084309b", "a\0b", 3, NULL);
 	_test_uuid (NM_UTILS_UUID_TYPE_LEGACY, "59c0547b-7fe2-1c15-2cce-e328e8bf6742", "/etc/NetworkManager/system-connections/em1", -1, NULL);
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*char *nm_utils_uuid_generate_from_string(const char *, gssize, int, gpointer): *slen > 0*");
-	uuid_test = nm_utils_uuid_generate_from_string ("", 0, NM_UTILS_UUID_TYPE_LEGACY, NULL);
-	g_assert (uuid_test == NULL);
-	g_test_assert_expected_messages ();
-
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*char *nm_utils_uuid_generate_from_string(const char *, gssize, int, gpointer): *slen > 0*");
-	uuid_test = nm_utils_uuid_generate_from_string (NULL, 0, NM_UTILS_UUID_TYPE_LEGACY, NULL);
-	g_assert (uuid_test == NULL);
-	g_test_assert_expected_messages ();
-
-	_test_uuid (NM_UTILS_UUID_TYPE_VARIANT3, "4ae71336-e44b-39bf-b9d2-752e234818a5", NULL, 0, NULL);
 	_test_uuid (NM_UTILS_UUID_TYPE_VARIANT3, "4ae71336-e44b-39bf-b9d2-752e234818a5", "", -1, NULL);
 	_test_uuid (NM_UTILS_UUID_TYPE_VARIANT3, "0531103a-d8fc-3dd4-b972-d98e4750994e", "a", -1, NULL);
 	_test_uuid (NM_UTILS_UUID_TYPE_VARIANT3, "96e17d7a-ac89-38cf-95e1-bf5098da34e1", "test", -1, NULL);
 	_test_uuid (NM_UTILS_UUID_TYPE_VARIANT3, "8156568e-4ae6-3f34-a93e-18e2c6cbbf78", "a\0b", 3, NULL);
 
-	_test_uuid (NM_UTILS_UUID_TYPE_VARIANT3, "c87ee674-4ddc-3efe-a74e-dfe25da5d7b3", NULL, 0, UUID_NS_DNS);
 	_test_uuid (NM_UTILS_UUID_TYPE_VARIANT3, "c87ee674-4ddc-3efe-a74e-dfe25da5d7b3", "", -1, UUID_NS_DNS);
 	_test_uuid (NM_UTILS_UUID_TYPE_VARIANT3, "4c104dd0-4821-30d5-9ce3-0e7a1f8b7c0d", "a", -1, UUID_NS_DNS);
 	_test_uuid (NM_UTILS_UUID_TYPE_VARIANT3, "45a113ac-c7f2-30b0-90a5-a399ab912716", "test", -1, UUID_NS_DNS);
