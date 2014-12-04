@@ -463,7 +463,7 @@ connection_deleted_callback (GObject      *connection,
 	ConnectionDeleteData *data = user_data;
 	GError *error = NULL;
 
-	if (!nm_remote_connection_delete_finish (data->connection, result, NULL)) {
+	if (!nm_remote_connection_delete_finish (data->connection, result, &error)) {
 		nmt_newt_message_dialog (_("Unable to delete connection: %s"),
 		                         error->message);
 	} else
