@@ -1487,8 +1487,10 @@ char *
 nm_utils_uuid_generate_from_string (const char *s)
 {
 	GError *error = NULL;
-	uuid_t *uuid;
+	uuid_t uuid;
 	char *buf = NULL;
+
+	g_return_val_if_fail (s && *s, NULL);
 
 	if (!nm_utils_init (&error)) {
 		g_warning ("error initializing crypto: (%d) %s",
@@ -1499,21 +1501,18 @@ nm_utils_uuid_generate_from_string (const char *s)
 		return NULL;
 	}
 
-	uuid = g_malloc0 (sizeof (*uuid));
-	if (!crypto_md5_hash (NULL, 0, s, strlen (s), (char *) uuid, sizeof (*uuid), &error)) {
+	if (!crypto_md5_hash (NULL, 0, s, strlen (s), (char *) uuid, sizeof (uuid), &error)) {
 		g_warning ("error generating UUID: (%d) %s",
 		           error ? error->code : 0,
 		           error ? error->message : "unknown");
 		if (error)
 			g_error_free (error);
-		goto out;
+		return NULL;
 	}
 
 	buf = g_malloc0 (37);
-	uuid_unparse_lower (*uuid, &buf[0]);
+	uuid_unparse_lower (uuid, &buf[0]);
 
-out:
-	g_free (uuid);
 	return buf;
 }
 

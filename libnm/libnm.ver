@@ -793,7 +793,6 @@ global:
 	nm_utils_security_valid;
 	nm_utils_ssid_to_utf8;
 	nm_utils_uuid_generate;
-	nm_utils_uuid_generate_from_string;
 	nm_utils_wep_key_valid;
 	nm_utils_wifi_channel_to_freq;
 	nm_utils_wifi_find_next_channel;

@@ -384,7 +384,7 @@ connection_setting_add (const GPtrArray *block,
                         GError **error)
 {
 	NMSetting *s_con;
-	char *id, *uuid, *uuid_data;
+	char *id, *uuid;
 	const char *s_hwaddr = NULL, *s_ip4addr = NULL, *s_vlanid;
 
 	if (!parse_ibft_config (block, error,
@@ -404,12 +404,13 @@ connection_setting_add (const GPtrArray *block,
 	                      prefix ? prefix : "",
 	                      iface);
 
-	uuid_data = g_strdup_printf ("%s%s%s",
-	                             s_vlanid ? s_vlanid : "0",
-	                             s_hwaddr,
-	                             s_ip4addr ? s_ip4addr : "DHCP");
-	uuid = nm_utils_uuid_generate_from_string (uuid_data);
-	g_free (uuid_data);
+	uuid = nm_utils_uuid_generate_from_strings ("ibft",
+	                                            s_hwaddr,
+	                                            s_vlanid ? "V" : "v",
+	                                            s_vlanid ? s_vlanid : "",
+	                                            s_ip4addr ? "A" : "DHCP",
+	                                            s_ip4addr ? s_ip4addr : "",
+	                                            NULL);
 
 	s_con = nm_setting_connection_new ();
 	g_object_set (s_con,

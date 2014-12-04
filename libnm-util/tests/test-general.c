@@ -2490,6 +2490,48 @@ test_libnm_linking (void)
 	g_free (err);
 }
 
+/******************************************************************************/
+
+static void
+_test_uuid (const char *expected_uuid, const char *str)
+{
+	gs_free char *uuid_test = NULL;
+
+	g_assert (str);
+
+	uuid_test = nm_utils_uuid_generate_from_string (str);
+
+	g_assert (uuid_test);
+	g_assert (nm_utils_is_uuid (uuid_test));
+
+	if (strcmp (uuid_test, expected_uuid)) {
+		g_error ("UUID test failed: text=%s, uuid=%s, expected=%s",
+		         str, uuid_test, expected_uuid);
+	}
+}
+
+static void
+test_nm_utils_uuid_generate_from_string (void)
+{
+	gs_free char *uuid_test = NULL;
+
+	_test_uuid ("0cc175b9-c0f1-b6a8-31c3-99e269772661", "a");
+	_test_uuid ("098f6bcd-4621-d373-cade-4e832627b4f6", "test");
+	_test_uuid ("59c0547b-7fe2-1c15-2cce-e328e8bf6742", "/etc/NetworkManager/system-connections/em1");
+
+	g_test_expect_message ("libnm-util", G_LOG_LEVEL_CRITICAL, "*char *nm_utils_uuid_generate_from_string(const char *): *s && *s*");
+	uuid_test = nm_utils_uuid_generate_from_string ("");
+	g_assert (uuid_test == NULL);
+	g_test_assert_expected_messages ();
+
+	g_test_expect_message ("libnm-util", G_LOG_LEVEL_CRITICAL, "*char *nm_utils_uuid_generate_from_string(const char *): *s && *s*");
+	uuid_test = nm_utils_uuid_generate_from_string (NULL);
+	g_assert (uuid_test == NULL);
+	g_test_assert_expected_messages ();
+}
+
+/******************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -2566,6 +2608,8 @@ int main (int argc, char **argv)
 	test_setting_802_1x_changed_signal ();
 
 	test_libnm_linking ();
+
+	test_nm_utils_uuid_generate_from_string ();
 
 	base = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", base);

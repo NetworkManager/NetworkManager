@@ -160,6 +160,10 @@ void nm_utils_log_connection_diff (NMConnection *connection, NMConnection *diff_
 
 gint64 nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 max, gint64 fallback);
 
+#define NM_UTILS_UUID_NS "b425e9fb-7598-44b4-9e3b-5a2e3aaa4905"
+
+char *nm_utils_uuid_generate_from_strings (const char *string1, ...) G_GNUC_NULL_TERMINATED;
+
 #define NM_UTILS_NS_PER_SECOND  ((gint64) 1000000000)
 gint64 nm_utils_get_monotonic_timestamp_ns (void);
 gint64 nm_utils_get_monotonic_timestamp_us (void);
