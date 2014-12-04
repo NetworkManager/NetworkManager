@@ -3982,6 +3982,42 @@ ip6_route_exists (NMPlatform *platform, int ifindex, struct in6_addr network, in
 
 /******************************************************************/
 
+/* Initialize the link cache while ensuring all links are of AF_UNSPEC,
+ * family (even though the kernel might set AF_BRIDGE for bridges).
+ * See also: _nl_link_family_unset() */
+static void
+init_link_cache (NMPlatform *platform)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	struct nl_object *object = NULL;
+
+	rtnl_link_alloc_cache (priv->nlh, AF_UNSPEC, &priv->link_cache);
+
+	do {
+		for (object = nl_cache_get_first (priv->link_cache); object; object = nl_cache_get_next (object)) {
+			if (rtnl_link_get_family ((struct rtnl_link *)object) != AF_UNSPEC)
+				break;
+		}
+
+		if (object) {
+			/* A non-AF_UNSPEC object encoutnered */
+			struct nl_object *existing;
+
+			nl_object_get (object);
+			nl_cache_remove (object);
+			rtnl_link_set_family ((struct rtnl_link *)object, AF_UNSPEC);
+			existing = nl_cache_search (priv->link_cache, object);
+			if (existing)
+				nl_object_put (existing);
+			else
+				nl_cache_add (priv->link_cache, object);
+			nl_object_put (object);
+		}
+	} while (object);
+}
+
+/******************************************************************/
+
 #define EVENT_CONDITIONS      ((GIOCondition) (G_IO_IN | G_IO_PRI))
 #define ERROR_CONDITIONS      ((GIOCondition) (G_IO_ERR | G_IO_NVAL))
 #define DISCONNECT_CONDITIONS ((GIOCondition) (G_IO_HUP))
@@ -4233,7 +4269,7 @@ setup (NMPlatform *platform)
 		event_handler, platform);
 
 	/* Allocate netlink caches */
-	rtnl_link_alloc_cache (priv->nlh, AF_UNSPEC, &priv->link_cache);
+	init_link_cache (platform);
 	rtnl_addr_alloc_cache (priv->nlh, &priv->address_cache);
 	rtnl_route_alloc_cache (priv->nlh, AF_UNSPEC, 0, &priv->route_cache);
 	g_assert (priv->link_cache && priv->address_cache && priv->route_cache);
