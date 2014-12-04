@@ -304,12 +304,11 @@ complete_connection (NMDevice *device,
 			fallback_prefix = _("GSM connection");
 			if (!nm_setting_gsm_get_number (s_gsm))
 				g_object_set (G_OBJECT (s_gsm), NM_SETTING_GSM_NUMBER, "*99#", NULL);
-		} else if (s_cdma) {
+		} else {
 			fallback_prefix = _("CDMA connection");
 			if (!nm_setting_cdma_get_number (s_cdma))
 				g_object_set (G_OBJECT (s_cdma), NM_SETTING_GSM_NUMBER, "#777", NULL);
-		} else
-			fallback_prefix = _("DUN connection");
+		}
 	} else {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
