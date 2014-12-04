@@ -57,7 +57,7 @@ G_STMT_START { \
 	if (nm_logging_enabled (_l, LOGD_DHCP)) { \
 		const char *_location = strrchr (file "", '/'); \
 		\
-		_nm_log (_location ? _location + 1 : file, line, func, _l, LOGD_DHCP, format, ## __VA_ARGS__); \
+		_nm_log (_location ? _location + 1 : file, line, func, _l, LOGD_DHCP, 0, format, ## __VA_ARGS__); \
 	} \
 } G_STMT_END
 
