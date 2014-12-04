@@ -795,14 +795,17 @@ crypto_md5_hash (const char *salt,
 
 		g_checksum_reset (ctx);
 		if (count++)
-			g_checksum_update (ctx, (const guchar *) digest, digest_len);
+			g_checksum_update (ctx, (const guchar *) digest, sizeof (digest));
 		if (password_len > 0)
 			g_checksum_update (ctx, (const guchar *) password, password_len);
 		if (salt_len > 0)
 			g_checksum_update (ctx, (const guchar *) salt, salt_len);
-		g_checksum_get_digest (ctx, (guchar *) digest, &digest_len);
 
-		while (nkey && (i < digest_len)) {
+		digest_len = sizeof (digest);
+		g_checksum_get_digest (ctx, (guchar *) digest, &digest_len);
+		g_assert (digest_len == sizeof (digest));
+
+		while (nkey && (i < sizeof (digest))) {
 			*(p++) = digest[i++];
 			nkey--;
 		}
