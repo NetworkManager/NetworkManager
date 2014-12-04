@@ -2519,12 +2519,12 @@ test_nm_utils_uuid_generate_from_string (void)
 	_test_uuid ("098f6bcd-4621-d373-cade-4e832627b4f6", "test");
 	_test_uuid ("59c0547b-7fe2-1c15-2cce-e328e8bf6742", "/etc/NetworkManager/system-connections/em1");
 
-	g_test_expect_message ("libnm-util", G_LOG_LEVEL_CRITICAL, "*char *nm_utils_uuid_generate_from_string(const char *): *s && *s*");
+	g_test_expect_message ("libnm-util", G_LOG_LEVEL_CRITICAL, "*nm_utils_uuid_generate_from_string*: *s && *s*");
 	uuid_test = nm_utils_uuid_generate_from_string ("");
 	g_assert (uuid_test == NULL);
 	g_test_assert_expected_messages ();
 
-	g_test_expect_message ("libnm-util", G_LOG_LEVEL_CRITICAL, "*char *nm_utils_uuid_generate_from_string(const char *): *s && *s*");
+	g_test_expect_message ("libnm-util", G_LOG_LEVEL_CRITICAL, "*nm_utils_uuid_generate_from_string*: *s && *s*");
 	uuid_test = nm_utils_uuid_generate_from_string (NULL);
 	g_assert (uuid_test == NULL);
 	g_test_assert_expected_messages ();
