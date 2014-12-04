@@ -4390,7 +4390,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 	 * IPv6LL if this is not an assumed connection, since assumed connections
 	 * will already have IPv6 set up.
 	 */
-	if (!nm_device_uses_generated_assumed_connection (self))
+	if (!nm_device_uses_assumed_connection (self))
 		set_nm_ipv6ll (self, TRUE);
 
 	/* Re-enable IPv6 on the interface */
