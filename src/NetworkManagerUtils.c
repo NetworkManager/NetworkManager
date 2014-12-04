@@ -486,6 +486,17 @@ nm_utils_kill_child_async (pid_t pid, int sig, guint64 log_domain,
 	g_child_watch_add (pid, _kc_cb_watch_child, data);
 }
 
+static inline gulong
+_sleep_duration_convert_ms_to_us (guint32 sleep_duration_msec)
+{
+	if (sleep_duration_msec > 0) {
+		guint64 x = (gint64) sleep_duration_msec * (guint64) 1000L;
+
+		return x < G_MAXULONG ? (gulong) x : G_MAXULONG;
+	}
+	return G_USEC_PER_SEC / 20;
+}
+
 /* nm_utils_kill_child_sync:
  * @pid: process id to kill
  * @sig: signal to sent initially. If 0, no signal is sent. If %SIGKILL, the
@@ -569,7 +580,7 @@ nm_utils_kill_child_sync (pid_t pid, int sig, guint64 log_domain, const char *lo
 		gulong sleep_time, sleep_duration_usec;
 		int loop_count = 0;
 
-		sleep_duration_usec = (sleep_duration_msec <= 0) ? (G_USEC_PER_SEC / 20) : MIN (G_MAXULONG, ((gint64) sleep_duration_msec) * 1000L);
+		sleep_duration_usec = _sleep_duration_convert_ms_to_us (sleep_duration_msec);
 		wait_until = wait_before_kill_msec <= 0 ? 0 : wait_start_us + (((gint64) wait_before_kill_msec) * 1000L);
 
 		while (TRUE) {
@@ -723,7 +734,7 @@ nm_utils_kill_process_sync (pid_t pid, guint64 start_time, int sig, guint64 log_
 
 	wait_start_us = nm_utils_get_monotonic_timestamp_us ();
 
-	sleep_duration_usec = (sleep_duration_msec == 0) ? (G_USEC_PER_SEC / 20) : MIN (G_MAXULONG, ((gulong) sleep_duration_msec) * 1000UL);
+	sleep_duration_usec = _sleep_duration_convert_ms_to_us (sleep_duration_msec);
 	wait_until = wait_start_us + (((gint64) wait_before_kill_msec) * 1000L);
 
 	while (TRUE) {
