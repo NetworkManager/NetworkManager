@@ -33,6 +33,7 @@
 #include "crypto.h"
 #include "nm-utils.h"
 #include "nm-errors.h"
+#include "nm-core-internal.h"
 
 #include "nm-test-utils.h"
 
@@ -221,15 +222,14 @@ test_is_pkcs12 (const char *path, gboolean expect_fail)
 	GError *error = NULL;
 
 	is_pkcs12 = crypto_is_pkcs12_file (path, &error);
-	/* crypto_is_pkcs12_file() only returns an error if it couldn't read the
-	 * file, which we don't expect to happen here.
-	 */
-	g_assert_no_error (error);
 
-	if (expect_fail)
+	if (expect_fail) {
+		g_assert_error (error, NM_CRYPTO_ERROR, NM_CRYPTO_ERROR_INVALID_DATA);
 		g_assert (!is_pkcs12);
-	else
+	} else {
+		g_assert_no_error (error);
 		g_assert (is_pkcs12);
+	}
 }
 
 static void
@@ -255,28 +255,6 @@ test_load_pkcs8 (const char *path,
 	}
 }
 
-static gboolean
-is_cipher_aes (const char *path)
-{
-	char *contents;
-	gsize length = 0;
-	const char *cipher;
-	gboolean is_aes = FALSE;
-
-	if (!g_file_get_contents (path, &contents, &length, NULL))
-		return FALSE;
-
-	cipher = strstr (contents, "DEK-Info: ");
-	if (cipher) {
-		cipher += strlen ("DEK-Info: ");
-		if (g_str_has_prefix (cipher, "AES-128-CBC"))
-			is_aes = TRUE;
-	}
-
-	g_free (contents);
-	return is_aes;
-}
-
 static void
 test_encrypt_private_key (const char *path,
                           const char *password)
@@ -291,10 +269,7 @@ test_encrypt_private_key (const char *path,
 	g_assert_cmpint (key_type, ==, NM_CRYPTO_KEY_TYPE_RSA);
 
 	/* Now re-encrypt the private key */
-	if (is_cipher_aes (path))
-		encrypted = nm_utils_rsa_key_encrypt_aes (array->data, array->len, password, NULL, &error);
-	else
-		encrypted = nm_utils_rsa_key_encrypt (array->data, array->len, password, NULL, &error);
+	encrypted = nm_utils_rsa_key_encrypt (array->data, array->len, password, NULL, &error);
 	g_assert_no_error (error);
 	g_assert (encrypted != NULL);
 
@@ -401,6 +376,59 @@ test_pkcs8 (gconstpointer test_data)
 	g_strfreev (parts);
 }
 
+#define SALT "sodium chloride"
+#define SHORT_PASSWORD "short"
+#define LONG_PASSWORD "this is a longer password than the short one"
+#define SHORT_DIGEST 16
+#define LONG_DIGEST 57
+
+struct {
+	const char *salt, *password;
+	gsize digest_size;
+	const char *result;
+} md5_tests[] = {
+	{ NULL, SHORT_PASSWORD, SHORT_DIGEST,
+	  "4f09daa9d95bcb166a302407a0e0babe" },
+	{ NULL, SHORT_PASSWORD, LONG_DIGEST,
+	  "4f09daa9d95bcb166a302407a0e0babeb7d62e5baf706830d007c253f0fe7584ad7e92dc00a599ec277293c298ae70ee3904c348e23be61c91" },
+	{ SALT, SHORT_PASSWORD, SHORT_DIGEST,
+	  "774771f7292210233b5724991d1f9894" },
+	{ SALT, SHORT_PASSWORD, LONG_DIGEST,
+	  "774771f7292210233b5724991d1f98941a6ffdb45e4dc7fa04b1fa6aceed379c1ade0577bc8f261d109942ed5736921c052664d72e0d5bade9" },
+	{ NULL, LONG_PASSWORD, SHORT_DIGEST,
+	  "e9c03517f81ff29bb777dac21fb1699c" },
+	{ NULL, LONG_PASSWORD, LONG_DIGEST,
+	  "e9c03517f81ff29bb777dac21fb1699c50968c7ccd8db4f0a59d00ffd87b05876d45f25a927d51a8400c35af60fbd64584349a8b7435d62fd9" },
+	{ SALT, LONG_PASSWORD, SHORT_DIGEST,
+	  "4e5c076e2f85f5e03994acbf3a9e10d6" },
+	{ SALT, LONG_PASSWORD, LONG_DIGEST,
+	  "4e5c076e2f85f5e03994acbf3a9e10d61a6969c9fdf47ae8b1f7e2725b3767b05cc974bfcb5344b630c91761e015e09d7794b5065662533bc9" },
+};
+
+static void
+test_md5 (void)
+{
+	char digest[LONG_DIGEST], *hex;
+	int i;
+
+	for (i = 0; i < G_N_ELEMENTS (md5_tests); i++) {
+		memset (digest, 0, sizeof (digest));
+		crypto_md5_hash (md5_tests[i].salt,
+		                 /* crypto_md5_hash() used to clamp salt_len to 8.  It
+		                  * doesn't any more, so we need to do it here now to
+		                  * get output that matches md5_tests[i].result.
+		                  */
+		                 md5_tests[i].salt ? 8 : 0,
+		                 md5_tests[i].password,
+		                 strlen (md5_tests[i].password),
+		                 digest, md5_tests[i].digest_size);
+
+		hex = nm_utils_bin2hexstr (digest, md5_tests[i].digest_size, -1);
+		g_assert_cmpstr (hex, ==, md5_tests[i].result);
+		g_free (hex);
+	}
+}
+
 NMTST_DEFINE ();
 
 int
@@ -460,9 +488,9 @@ main (int argc, char **argv)
 	                      "pkcs8-enc-key.pem, 1234567890",
 	                      test_pkcs8);
 
-	ret = g_test_run ();
+	g_test_add_func ("/libnm/crypto/md5", test_md5);
 
-	crypto_deinit ();
+	ret = g_test_run ();
 
 	return ret;
 }

@@ -210,65 +210,31 @@ get_encodings_for_lang (const char *lang,
 	return success;
 }
 
-/* init, deinit for libnm_util */
+/* init libnm */
+
+static gboolean initialized = FALSE;
 
 static void __attribute__((constructor))
-_check_symbols (void)
+_nm_utils_init (void)
 {
 	GModule *self;
 	gpointer func;
+
+	if (initialized)
+		return;
+	initialized = TRUE;
 
 	self = g_module_open (NULL, 0);
 	if (g_module_symbol (self, "nm_util_get_private", &func))
 		g_error ("libnm-util symbols detected; Mixing libnm with libnm-util/libnm-glib is not supported");
 	g_module_close (self);
-}
 
-static gboolean initialized = FALSE;
+	bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
+	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
 
-/**
- * nm_utils_init:
- * @error: location to store error, or %NULL
- *
- * Initializes libnm; should be called when starting and program that
- * uses libnm.  Sets up an atexit() handler to ensure de-initialization
- * is performed, but calling nm_utils_deinit() to explicitly deinitialize
- * libnm can also be done.  This function can be called more than once.
- *
- * Returns: %TRUE if the initialization was successful, %FALSE on failure.
- **/
-gboolean
-nm_utils_init (GError **error)
-{
-	if (!initialized) {
-		initialized = TRUE;
+	g_type_init ();
 
-		bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
-		bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
-
-		if (!crypto_init (error))
-			return FALSE;
-
-		_nm_dbus_errors_init ();
-	}
-	return TRUE;
-}
-
-/**
- * nm_utils_deinit:
- *
- * Frees all resources used internally by libnm.  This function is called
- * from an atexit() handler, set up by nm_utils_init(), but is safe to be called
- * more than once.  Subsequent calls have no effect until nm_utils_init() is
- * called again.
- **/
-void
-nm_utils_deinit (void)
-{
-	if (initialized) {
-		crypto_deinit ();
-		initialized = FALSE;
-	}
+	_nm_dbus_errors_init ();
 }
 
 gboolean _nm_utils_is_manager_process;
@@ -1995,74 +1961,21 @@ nm_utils_uuid_generate (void)
 char *
 nm_utils_uuid_generate_from_string (const char *s)
 {
-	GError *error = NULL;
 	uuid_t *uuid;
 	char *buf = NULL;
 
-	if (!nm_utils_init (&error)) {
-		g_warning ("error initializing crypto: (%d) %s",
-		           error ? error->code : 0,
-		           error ? error->message : "unknown");
-		if (error)
-			g_error_free (error);
-		return NULL;
-	}
-
 	uuid = g_malloc0 (sizeof (*uuid));
-	if (!crypto_md5_hash (NULL, 0, s, strlen (s), (char *) uuid, sizeof (*uuid), &error)) {
-		g_warning ("error generating UUID: (%d) %s",
-		           error ? error->code : 0,
-		           error ? error->message : "unknown");
-		if (error)
-			g_error_free (error);
-		goto out;
-	}
+	crypto_md5_hash (NULL, 0, s, strlen (s), (char *) uuid, sizeof (*uuid));
 
 	buf = g_malloc0 (37);
 	uuid_unparse_lower (*uuid, &buf[0]);
 
-out:
 	g_free (uuid);
 	return buf;
 }
 
-static char *
-make_key (const char *cipher,
-          const char *salt,
-          const gsize salt_len,
-          const char *password,
-          gsize *out_len,
-          GError **error)
-{
-	char *key;
-	guint32 digest_len = 24; /* DES-EDE3-CBC */
-
-	g_return_val_if_fail (salt != NULL, NULL);
-	g_return_val_if_fail (salt_len >= 8, NULL);
-	g_return_val_if_fail (password != NULL, NULL);
-	g_return_val_if_fail (out_len != NULL, NULL);
-
-	if (!strcmp (cipher, "DES-EDE3-CBC"))
-		digest_len = 24;
-	else if (!strcmp (cipher, "AES-128-CBC"))
-		digest_len = 16;
-
-	key = g_malloc0 (digest_len + 1);
-
-	if (!crypto_md5_hash (salt, salt_len, password, strlen (password), key, digest_len, error)) {
-		*out_len = 0;
-		memset (key, 0, digest_len);
-		g_free (key);
-		key = NULL;
-	} else
-		*out_len = digest_len;
-
-	return key;
-}
-
 /**
- * nm_utils_rsa_key_encrypt_helper:
- * @cipher: cipher to use for encryption ("DES-EDE3-CBC" or "AES-128-CBC")
+ * nm_utils_rsa_key_encrypt:
  * @data: (array length=len): RSA private key data to be encrypted
  * @len: length of @data
  * @in_password: (allow-none): existing password to use, if any
@@ -2072,18 +1985,17 @@ make_key (const char *cipher,
  *
  * Encrypts the given RSA private key data with the given password (or generates
  * a password if no password was given) and converts the data to PEM format
- * suitable for writing to a file.
+ * suitable for writing to a file. It uses Triple DES cipher for the encryption.
  *
  * Returns: (transfer full): on success, PEM-formatted data suitable for writing
  * to a PEM-formatted certificate/private key file.
  **/
-static GByteArray *
-nm_utils_rsa_key_encrypt_helper (const char *cipher,
-                                 const guint8 *data,
-                                 gsize len,
-                                 const char *in_password,
-                                 char **out_password,
-                                 GError **error)
+GByteArray *
+nm_utils_rsa_key_encrypt (const guint8 *data,
+                          gsize len,
+                          const char *in_password,
+                          char **out_password,
+                          GError **error)
 {
 	char salt[16];
 	int salt_len;
@@ -2095,7 +2007,6 @@ nm_utils_rsa_key_encrypt_helper (const char *cipher,
 	const char *p;
 	GByteArray *ret = NULL;
 
-	g_return_val_if_fail (!g_strcmp0 (cipher, CIPHER_DES_EDE3_CBC) || !g_strcmp0 (cipher, CIPHER_AES_CBC), NULL);
 	g_return_val_if_fail (data != NULL, NULL);
 	g_return_val_if_fail (len > 0, NULL);
 	if (out_password)
@@ -2108,19 +2019,13 @@ nm_utils_rsa_key_encrypt_helper (const char *cipher,
 		in_password = tmp_password = nm_utils_bin2hexstr (pw_buf, sizeof (pw_buf), -1);
 	}
 
-	if (g_strcmp0 (cipher, CIPHER_AES_CBC) == 0)
-		salt_len = 16;
-	else
-		salt_len = 8;
-
+	salt_len = 8;
 	if (!crypto_randomize (salt, salt_len, error))
 		goto out;
 
-	key = make_key (cipher, &salt[0], salt_len, in_password, &key_len, error);
-	if (!key)
-		goto out;
-
-	enc = crypto_encrypt (cipher, data, len, salt, salt_len, key, key_len, &enc_len, error);
+	key = crypto_make_des_aes_key (CIPHER_DES_EDE3_CBC, &salt[0], salt_len, in_password, &key_len, NULL);
+	g_return_val_if_fail (key, NULL);
+	enc = crypto_encrypt (CIPHER_DES_EDE3_CBC, data, len, salt, salt_len, key, key_len, &enc_len, error);
 	if (!enc)
 		goto out;
 
@@ -2130,7 +2035,7 @@ nm_utils_rsa_key_encrypt_helper (const char *cipher,
 
 	/* Convert the salt to a hex string */
 	tmp = nm_utils_bin2hexstr (salt, salt_len, salt_len * 2);
-	g_string_append_printf (pem, "DEK-Info: %s,%s\n\n", cipher, tmp);
+	g_string_append_printf (pem, "DEK-Info: %s,%s\n\n", CIPHER_DES_EDE3_CBC, tmp);
 	g_free (tmp);
 
 	/* Convert the encrypted key to a base64 string */
@@ -2169,69 +2074,6 @@ out:
 	}
 
 	return ret;
-}
-
-/**
- * nm_utils_rsa_key_encrypt:
- * @data: (array length=len): RSA private key data to be encrypted
- * @len: length of @data
- * @in_password: (allow-none): existing password to use, if any
- * @out_password: (out) (allow-none): if @in_password was %NULL, a random
- *  password will be generated and returned in this argument
- * @error: detailed error information on return, if an error occurred
- *
- * Encrypts the given RSA private key data with the given password (or generates
- * a password if no password was given) and converts the data to PEM format
- * suitable for writing to a file. It uses Triple DES cipher for the encryption.
- *
- * Returns: (transfer full): on success, PEM-formatted data suitable for writing
- * to a PEM-formatted certificate/private key file.
- **/
-GByteArray *
-nm_utils_rsa_key_encrypt (const guint8 *data,
-                          gsize len,
-                          const char *in_password,
-                          char **out_password,
-                          GError **error)
-{
-
-
-	return nm_utils_rsa_key_encrypt_helper (CIPHER_DES_EDE3_CBC,
-	                                        data, len,
-	                                        in_password,
-	                                        out_password,
-	                                        error);
-}
-
-/**
- * nm_utils_rsa_key_encrypt_aes:
- * @data: (array length=len): RSA private key data to be encrypted
- * @len: length of @data
- * @in_password: (allow-none): existing password to use, if any
- * @out_password: (out) (allow-none): if @in_password was %NULL, a random
- *  password will be generated and returned in this argument
- * @error: detailed error information on return, if an error occurred
- *
- * Encrypts the given RSA private key data with the given password (or generates
- * a password if no password was given) and converts the data to PEM format
- * suitable for writing to a file.  It uses AES cipher for the encryption.
- *
- * Returns: (transfer full): on success, PEM-formatted data suitable for writing
- * to a PEM-formatted certificate/private key file.
- **/
-GByteArray *
-nm_utils_rsa_key_encrypt_aes (const guint8 *data,
-                              gsize len,
-                              const char *in_password,
-                              char **out_password,
-                              GError **error)
-{
-
-	return nm_utils_rsa_key_encrypt_helper (CIPHER_AES_CBC,
-	                                        data, len,
-	                                        in_password,
-	                                        out_password,
-	                                        error);
 }
 
 static gboolean

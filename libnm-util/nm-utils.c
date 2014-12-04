@@ -222,10 +222,8 @@ static gboolean initialized = FALSE;
  * nm_utils_init:
  * @error: location to store error, or %NULL
  *
- * Initializes libnm-util; should be called when starting and program that
- * uses libnm-util.  Sets up an atexit() handler to ensure de-initialization
- * is performed, but calling nm_utils_deinit() to explicitly deinitialize
- * libnm-util can also be done.  This function can be called more than once.
+ * Initializes libnm-util; should be called when starting any program that
+ * uses libnm-util.  This function can be called more than once.
  *
  * Returns: %TRUE if the initialization was successful, %FALSE on failure.
  **/
@@ -249,18 +247,12 @@ nm_utils_init (GError **error)
 /**
  * nm_utils_deinit:
  *
- * Frees all resources used internally by libnm-util.  This function is called
- * from an atexit() handler, set up by nm_utils_init(), but is safe to be called
- * more than once.  Subsequent calls have no effect until nm_utils_init() is
- * called again.
+ * No-op. Although this function still exists for ABI compatibility reasons, it
+ * does not have any effect, and does not ever need to be called.
  **/
 void
 nm_utils_deinit (void)
 {
-	if (initialized) {
-		crypto_deinit ();
-		initialized = FALSE;
-	}
 }
 
 /* ssid helpers */

@@ -1788,13 +1788,6 @@ init_async (GAsyncInitable *initable, int io_priority,
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (initable);
 	NMClientInitData *init_data;
-	GError *error = NULL;
-
-	if (!nm_utils_init (&error)) {
-		g_simple_async_report_take_gerror_in_idle (G_OBJECT (initable),
-		                                           callback, user_data, error);
-		return;
-	}
 
 	init_data = g_slice_new0 (NMClientInitData);
 	init_data->client = NM_CLIENT (initable);

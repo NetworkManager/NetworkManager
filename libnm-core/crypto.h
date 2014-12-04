@@ -46,8 +46,6 @@ typedef enum {
 
 gboolean crypto_init (GError **error);
 
-void crypto_deinit (void);
-
 GByteArray *crypto_decrypt_openssl_private_key_data (const guint8 *data,
                                                      gsize data_len,
                                                      const char *password,
@@ -65,7 +63,7 @@ GByteArray *crypto_load_and_verify_certificate (const char *file,
 
 gboolean crypto_is_pkcs12_file (const char *file, GError **error);
 
-gboolean crypto_is_pkcs12_data (const guint8 *data, gsize len);
+gboolean crypto_is_pkcs12_data (const guint8 *data, gsize len, GError **error);
 
 NMCryptoFileFormat crypto_verify_private_key_data (const guint8 *data,
                                                    gsize data_len,
@@ -80,13 +78,19 @@ NMCryptoFileFormat crypto_verify_private_key (const char *file,
 
 /* Internal utils API bits for crypto providers */
 
-gboolean crypto_md5_hash (const char *salt,
-                          const gsize salt_len,
-                          const char *password,
-                          gsize password_len,
-                          char *buffer,
-                          gsize buflen,
-                          GError **error);
+void crypto_md5_hash (const char *salt,
+                      gssize salt_len,
+                      const char *password,
+                      gssize password_len,
+                      char *buffer,
+                      gsize buflen);
+
+char *crypto_make_des_aes_key (const char *cipher,
+                               const char *salt,
+                               const gsize salt_len,
+                               const char *password,
+                               gsize *out_len,
+                               GError **error);
 
 char * crypto_decrypt (const char *cipher,
                        int key_type,

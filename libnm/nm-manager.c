@@ -1306,9 +1306,6 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 {
 	NMManager *manager = NM_MANAGER (initable);
 
-	if (!nm_utils_init (error))
-		return FALSE;
-
 	if (!nm_manager_parent_initable_iface->init (initable, cancellable, error))
 		return FALSE;
 
@@ -1380,13 +1377,6 @@ init_async (GAsyncInitable *initable, int io_priority,
             gpointer user_data)
 {
 	NMManagerInitData *init_data;
-	GError *error = NULL;
-
-	if (!nm_utils_init (&error)) {
-		g_simple_async_report_take_gerror_in_idle (G_OBJECT (initable),
-		                                           callback, user_data, error);
-		return;
-	}
 
 	init_data = g_slice_new0 (NMManagerInitData);
 	init_data->manager = NM_MANAGER (initable);

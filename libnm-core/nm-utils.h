@@ -39,10 +39,6 @@
 
 G_BEGIN_DECLS
 
-/* init, deinit nm_utils */
-gboolean nm_utils_init (GError **error);
-void     nm_utils_deinit (void);
-
 /* SSID helpers */
 gboolean    nm_utils_is_empty_ssid (const guint8 *ssid, gsize len);
 const char *nm_utils_escape_ssid   (const guint8 *ssid, gsize len);
@@ -127,16 +123,6 @@ GPtrArray *nm_utils_ip_routes_from_variant (GVariant *value,
 char *nm_utils_uuid_generate (void);
 char *nm_utils_uuid_generate_from_string (const char *s);
 
-GByteArray *nm_utils_rsa_key_encrypt (const guint8 *data,
-                                      gsize len,
-                                      const char *in_password,
-                                      char **out_password,
-                                      GError **error);
-GByteArray *nm_utils_rsa_key_encrypt_aes (const guint8 *data,
-                                          gsize len,
-                                          const char *in_password,
-                                          char **out_password,
-                                          GError **error);
 gboolean nm_utils_file_is_certificate (const char *filename);
 gboolean nm_utils_file_is_private_key (const char *filename, gboolean *out_encrypted);
 gboolean nm_utils_file_is_pkcs12 (const char *filename);

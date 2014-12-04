@@ -242,9 +242,6 @@ nm_main_utils_early_setup (const char *progname,
 
 	/* Ensure gettext() gets the right environment (bgo #666516) */
 	setlocale (LC_ALL, "");
-
-	bindtextdomain (GETTEXT_PACKAGE, NMLOCALEDIR);
-	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
 	textdomain (GETTEXT_PACKAGE);
 
 	if (getuid () != 0) {
