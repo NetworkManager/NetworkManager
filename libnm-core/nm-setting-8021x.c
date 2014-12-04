@@ -1680,8 +1680,9 @@ file_to_secure_bytes (const char *filename)
 		g_byte_array_append (array, (guint8 *) contents, length);
 		g_assert (array->len == length);
 		g_free (contents);
+		return g_bytes_new_with_free_func (array->data, array->len, free_secure_bytes, array);
 	}
-	return g_bytes_new_with_free_func (array->data, array->len, free_secure_bytes, array);
+	return NULL;
 }
 
 /**
