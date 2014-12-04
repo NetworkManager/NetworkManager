@@ -114,6 +114,7 @@ get_property (GObject *object,
 	switch (prop_id) {
 	case PROP_FAMILY:
 		g_value_set_int (value, nm_dhcp_config_get_family (self));
+		break;
 	case PROP_OPTIONS:
 		g_value_set_boxed (value, nm_dhcp_config_get_options (self));
 		break;
