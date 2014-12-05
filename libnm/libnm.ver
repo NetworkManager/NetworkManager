@@ -1,4 +1,9 @@
-{
+__libnm_local {
+local:
+	*;
+};
+
+libnm_1_0_0 {
 global:
 	nm_802_11_ap_flags_get_type;
 	nm_802_11_ap_security_flags_get_type;
@@ -841,6 +846,4 @@ global:
 	nm_wimax_nsp_get_signal_quality;
 	nm_wimax_nsp_get_type;
 	nm_wimax_nsp_network_type_get_type;
-local:
-	*;
-};
+} __libnm_local;
