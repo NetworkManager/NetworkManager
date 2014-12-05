@@ -1653,7 +1653,9 @@ recheck_assume_connection (NMDevice *device, gpointer user_data)
 
 	if (manager_sleeping (self))
 		return FALSE;
-	if (nm_device_get_unmanaged_flag (device, NM_UNMANAGED_USER))
+	if (nm_device_get_unmanaged_flag (device, NM_UNMANAGED_USER) ||
+	    nm_device_get_unmanaged_flag (device, NM_UNMANAGED_INTERNAL) ||
+	    nm_device_get_unmanaged_flag (device, NM_UNMANAGED_PARENT))
 		return FALSE;
 
 	state = nm_device_get_state (device);
