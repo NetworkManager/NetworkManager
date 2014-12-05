@@ -2206,10 +2206,10 @@ nm_utils_file_is_pkcs12 (const char *filename)
  *   Can be empty or %NULL, in which case only @try_first is checked.
  * @file_test_flags: the flags passed to g_file_test() when searching
  *   for @progname. Set it to 0 to skip the g_file_test().
- * @predicate: if given, pass the file name to this function
+ * @predicate: (scope call): if given, pass the file name to this function
  *   for additional checks. This check is performed after the check for
  *   @file_test_flags. You cannot omit both @file_test_flags and @predicate.
- * @user_data: (allow-none): user data for @predicate function.
+ * @user_data: (closure): (allow-none): user data for @predicate function.
  * @error: on failure, a "not found" error using @error_domain and @error_code
  *
  * Searches for a @progname file in a list of search @paths.
