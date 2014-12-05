@@ -28,6 +28,7 @@
 #include <uuid/uuid.h>
 #include <libintl.h>
 #include <gmodule.h>
+#include <glib/gi18n-lib.h>
 
 #include "nm-utils.h"
 #include "nm-utils-private.h"
@@ -2192,6 +2193,82 @@ nm_utils_file_is_pkcs12 (const char *filename)
 
 	return crypto_is_pkcs12_file (filename, NULL);
 }
+
+/**********************************************************************************************/
+
+/**
+ * nm_utils_file_search_in_paths:
+ * @progname: the helper program name, like "iptables"
+ *   Must be a non-empty string, without path separator (/).
+ * @try_first: (allow-none): a custom path to try first before searching.
+ *   It is silently ignored if it is empty or not an absolute path.
+ * @paths: (allow-none): a %NULL terminated list of search paths.
+ *   Can be empty or %NULL, in which case only @try_first is checked.
+ * @file_test_flags: the flags passed to g_file_test() when searching
+ *   for @progname. Set it to 0 to skip the g_file_test().
+ * @predicate: if given, pass the file name to this function
+ *   for additional checks. This check is performed after the check for
+ *   @file_test_flags. You cannot omit both @file_test_flags and @predicate.
+ * @user_data: (allow-none): user data for @predicate function.
+ * @error: on failure, a "not found" error using @error_domain and @error_code
+ *
+ * Searches for a @progname file in a list of search @paths.
+ *
+ * Returns: (transfer none): the full path to the helper, if found, or %NULL if not found.
+ *   The returned string is not owned by the caller, but later
+ *   invocations of the function might overwrite it.
+ */
+const char *
+nm_utils_file_search_in_paths (const char *progname,
+                               const char *try_first,
+                               const char *const *paths,
+                               GFileTest file_test_flags,
+                               NMUtilsFileSearchInPathsPredicate predicate,
+                               gpointer user_data,
+                               GError **error)
+{
+	GString *tmp;
+	const char *ret;
+
+	g_return_val_if_fail (!error || !*error, NULL);
+	g_return_val_if_fail (progname && progname[0] && !strchr (progname, '/'), NULL);
+	g_return_val_if_fail (!file_test_flags || predicate, NULL);
+
+	/* Only consider @try_first if it is a valid, absolute path. This makes
+	 * it simpler to pass in a path from configure checks. */
+	if (   try_first
+	    && try_first[0] == '/'
+	    && (file_test_flags == 0 || g_file_test (try_first, file_test_flags))
+	    && (!predicate || predicate (try_first, user_data)))
+		return g_intern_string (try_first);
+
+	if (!paths || !*paths)
+		goto NOT_FOUND;
+
+	tmp = g_string_sized_new (50);
+	for (; *paths; paths++) {
+		if (!*paths)
+			continue;
+		g_string_append (tmp, *paths);
+		if (tmp->str[tmp->len - 1] != '/')
+			g_string_append_c (tmp, '/');
+		g_string_append (tmp, progname);
+		if (   (file_test_flags == 0 || g_file_test (tmp->str, file_test_flags))
+		    && (!predicate || predicate (tmp->str, user_data))) {
+			ret = g_intern_string (tmp->str);
+			g_string_free (tmp, TRUE);
+			return ret;
+		}
+		g_string_set_size (tmp, 0);
+	}
+	g_string_free (tmp, TRUE);
+
+NOT_FOUND:
+	g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, _("Could not find \"%s\" binary"), progname);
+	return NULL;
+}
+
+/**********************************************************************************************/
 
 /* Band, channel/frequency stuff for wireless */
 struct cf_pair {

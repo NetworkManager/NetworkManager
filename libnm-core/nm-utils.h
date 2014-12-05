@@ -126,6 +126,16 @@ gboolean nm_utils_file_is_certificate (const char *filename);
 gboolean nm_utils_file_is_private_key (const char *filename, gboolean *out_encrypted);
 gboolean nm_utils_file_is_pkcs12 (const char *filename);
 
+typedef gboolean (*NMUtilsFileSearchInPathsPredicate) (const char *filename, gpointer user_data);
+
+const char *nm_utils_file_search_in_paths (const char *progname,
+                                           const char *try_first,
+                                           const char *const *paths,
+                                           GFileTest file_test_flags,
+                                           NMUtilsFileSearchInPathsPredicate predicate,
+                                           gpointer user_data,
+                                           GError **error);
+
 guint32 nm_utils_wifi_freq_to_channel (guint32 freq);
 guint32 nm_utils_wifi_channel_to_freq (guint32 channel, const char *band);
 guint32 nm_utils_wifi_find_next_channel (guint32 channel, int direction, char *band);

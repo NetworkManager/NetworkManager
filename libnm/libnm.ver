@@ -759,6 +759,7 @@ global:
 	nm_utils_file_is_certificate;
 	nm_utils_file_is_pkcs12;
 	nm_utils_file_is_private_key;
+	nm_utils_file_search_in_paths;
 	nm_utils_hexstr2bin;
 	nm_utils_hwaddr_atoba;
 	nm_utils_hwaddr_aton;
