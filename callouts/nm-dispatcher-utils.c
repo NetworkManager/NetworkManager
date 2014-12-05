@@ -53,6 +53,37 @@ construct_basic_items (GSList *list,
 	return list;
 }
 
+static GSList *_list_append_val_strv (GSList *items, char **values, const char *format, ...) G_GNUC_PRINTF(3, 4);
+
+static GSList *
+_list_append_val_strv (GSList *items, char **values, const char *format, ...)
+{
+	if (!values)
+		g_return_val_if_reached (items);
+
+	/*  Only add an item if the list of @values is not empty */
+	if (values[0]) {
+		va_list args;
+		guint i;
+		GString *str = g_string_new (NULL);
+
+		va_start (args, format);
+		g_string_append_vprintf (str, format, args);
+		va_end (args);
+
+		g_string_append (str, values[0]);
+		for (i = 1; values[i]; i++) {
+			g_string_append_c (str, ' ');
+			g_string_append (str, values[i]);
+		}
+		items = g_slist_prepend (items, g_string_free (str, FALSE));
+	}
+
+	/* we take ownership of the values array and free it. */
+	g_strfreev (values);
+	return items;
+}
+
 static GSList *
 add_domains (GSList *items,
              GVariant *dict,
@@ -60,32 +91,14 @@ add_domains (GSList *items,
              const char four_or_six)
 {
 	GVariant *val;
-	char **domains = NULL;
-	GString *tmp;
-	guint i;
 
 	/* Search domains */
 	val = g_variant_lookup_value (dict, "domains", G_VARIANT_TYPE_STRING_ARRAY);
-	if (!val)
-		return items;
-
-	domains = g_variant_dup_strv (val, NULL);
-	g_variant_unref (val);
-	if (!domains[0]) {
-		g_strfreev (domains);
-		return items;
+	if (val) {
+		items = _list_append_val_strv (items, g_variant_dup_strv (val, NULL),
+		                               "%sIP%c_DOMAINS=", prefix, four_or_six);
+		g_variant_unref (val);
 	}
-
-	tmp = g_string_new (NULL);
-	g_string_append_printf (tmp, "%sIP%c_DOMAINS=", prefix, four_or_six);
-	for (i = 0; domains[i]; i++) {
-		if (i > 0)
-			g_string_append_c (tmp, ' ');
-		g_string_append (tmp, domains[i]);
-	}
-	items = g_slist_prepend (items, g_string_free (tmp, FALSE));
-
-	g_strfreev (domains);
 	return items;
 }
 
@@ -93,8 +106,7 @@ static GSList *
 construct_ip4_items (GSList *items, GVariant *ip4_config, const char *prefix)
 {
 	GPtrArray *addresses, *routes;
-	char **dns, **wins, *gateway;
-	GString *tmp;
+	char *gateway;
 	GVariant *val;
 	int i;
 
@@ -135,20 +147,8 @@ construct_ip4_items (GSList *items, GVariant *ip4_config, const char *prefix)
 	/* DNS servers */
 	val = g_variant_lookup_value (ip4_config, "nameservers", G_VARIANT_TYPE ("au"));
 	if (val) {
-		dns = nm_utils_ip4_dns_from_variant (val);
-
-		if (dns[0]) {
-			tmp = g_string_new (NULL);
-			g_string_append_printf (tmp, "%sIP4_NAMESERVERS=", prefix);
-			for (i = 0; dns[i]; i++) {
-				if (i != 0)
-					g_string_append_c (tmp, ' ');
-				g_string_append (tmp, dns[i]);
-			}
-
-			items = g_slist_prepend (items, g_string_free (tmp, FALSE));
-		}
-		g_strfreev (dns);
+		items = _list_append_val_strv (items, nm_utils_ip4_dns_from_variant (val),
+		                               "%sIP4_NAMESERVERS=", prefix);
 		g_variant_unref (val);
 	}
 
@@ -158,21 +158,8 @@ construct_ip4_items (GSList *items, GVariant *ip4_config, const char *prefix)
 	/* WINS servers */
 	val = g_variant_lookup_value (ip4_config, "wins-servers", G_VARIANT_TYPE ("au"));
 	if (val) {
-		wins = nm_utils_ip4_dns_from_variant (val);
-
-		if (wins[0]) {
-			tmp = g_string_new (NULL);
-			g_string_append_printf (tmp, "%sIP4_WINS_SERVERS=", prefix);
-
-			for (i = 0; wins[i]; i++) {
-				if (i != 0)
-					g_string_append_c (tmp, ' ');
-				g_string_append (tmp, wins[i]);
-			}
-
-			items = g_slist_prepend (items, g_string_free (tmp, FALSE));
-		}
-		g_strfreev (wins);
+		items = _list_append_val_strv (items, nm_utils_ip4_dns_from_variant (val),
+		                               "%sIP4_WINS_SERVERS=", prefix);
 		g_variant_unref (val);
 	}
 
@@ -231,8 +218,7 @@ static GSList *
 construct_ip6_items (GSList *items, GVariant *ip6_config, const char *prefix)
 {
 	GPtrArray *addresses, *routes;
-	char **dns, *gateway = NULL;
-	GString *tmp;
+	char *gateway = NULL;
 	GVariant *val;
 	int i;
 
@@ -273,21 +259,8 @@ construct_ip6_items (GSList *items, GVariant *ip6_config, const char *prefix)
 	/* DNS servers */
 	val = g_variant_lookup_value (ip6_config, "nameservers", G_VARIANT_TYPE ("aay"));
 	if (val) {
-		dns = nm_utils_ip6_dns_from_variant (val);
-
-		if (dns[0]) {
-			tmp = g_string_new (NULL);
-			g_string_append_printf (tmp, "%sIP6_NAMESERVERS=", prefix);
-
-			for (i = 0; dns[i]; i++) {
-				if (i != 0)
-					g_string_append_c (tmp, ' ');
-				g_string_append (tmp, dns[i]);
-			}
-
-			items = g_slist_prepend (items, g_string_free (tmp, FALSE));
-		}
-		g_strfreev (dns);
+		items = _list_append_val_strv (items, nm_utils_ip6_dns_from_variant (val),
+		                               "%sIP6_NAMESERVERS=", prefix);
 		g_variant_unref (val);
 	}
 
