@@ -216,6 +216,8 @@ GType nm_device_get_type (void);
 const char *    nm_device_get_path (NMDevice *dev);
 void            nm_device_dbus_export   (NMDevice *device);
 
+void            nm_device_finish_init   (NMDevice *device);
+
 const char *	nm_device_get_udi		(NMDevice *dev);
 const char *	nm_device_get_iface		(NMDevice *dev);
 int             nm_device_get_ifindex	(NMDevice *dev);
