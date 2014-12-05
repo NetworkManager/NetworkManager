@@ -854,6 +854,22 @@ nm_device_release_one_slave (NMDevice *dev, NMDevice *slave, gboolean configure,
 	return success;
 }
 
+/**
+ * nm_device_finish_init:
+ * @self: the master device
+ *
+ * Whatever needs to be done post-initialization, when the device has a DBus
+ * object name.
+ */
+void
+nm_device_finish_init (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->master)
+		nm_device_enslave_slave (priv->master, self, NULL);
+}
+
 static void
 carrier_changed (NMDevice *device, gboolean carrier)
 {
@@ -1018,6 +1034,27 @@ update_for_ip_ifname_change (NMDevice *device)
 }
 
 static void
+device_set_master (NMDevice *self, int ifindex)
+{
+	NMDevice *master;
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	master = nm_manager_get_device_by_ifindex (nm_manager_get (), ifindex);
+	if (master && NM_DEVICE_GET_CLASS (master)->enslave_slave) {
+		g_clear_object (&priv->master);
+		priv->master = g_object_ref (master);
+		nm_device_master_add_slave (master, self, FALSE);
+	} else if (master) {
+		nm_log_info (LOGD_DEVICE, "(%s): enslaved to non-master-type device %s; ignoring",
+		             nm_device_get_iface (self),
+		             nm_device_get_iface (master));
+	} else {
+		nm_log_warn (LOGD_DEVICE, "(%s): enslaved to unknown device",
+		             nm_device_get_iface (self));
+	}
+}
+
+static void
 device_link_changed (NMDevice *device, NMPlatformLink *info)
 {
 	NMDeviceClass *klass = NM_DEVICE_GET_CLASS (device);
@@ -1062,26 +1099,10 @@ device_link_changed (NMDevice *device, NMPlatformLink *info)
 	/* Update slave status for external changes */
 	if (priv->enslaved && info->master != nm_device_get_ifindex (priv->master))
 		nm_device_release_one_slave (priv->master, device, FALSE, NM_DEVICE_STATE_REASON_NONE);
-	if (info->master && !priv->enslaved) {
-		NMDevice *master;
-
-		master = nm_manager_get_device_by_ifindex (nm_manager_get (), info->master);
-		if (master && NM_DEVICE_GET_CLASS (master)->enslave_slave) {
-			g_clear_object (&priv->master);
-			priv->master = g_object_ref (master);
-			nm_device_master_add_slave (master, device, FALSE);
-			nm_device_enslave_slave (master, device, NULL);
-		} else if (master) {
-			nm_log_info (LOGD_DEVICE, "(%s): enslaved to non-master-type device %s; ignoring",
-			             nm_device_get_iface (device),
-			             nm_device_get_iface (master));
-		} else {
-			nm_log_warn (LOGD_DEVICE, "(%s): enslaved to unknown device %d %s",
-			             nm_device_get_iface (device),
-			             info->master,
-			             nm_platform_link_get_name (info->master));
-		}
-	}
+	if (info->master && !priv->enslaved)
+		device_set_master (device, info->master);
+	if (priv->master)
+		nm_device_enslave_slave (priv->master, device, NULL);
 
 	if (klass->link_changed)
 		klass->link_changed (device, info);
@@ -7417,6 +7438,7 @@ constructed (GObject *object)
 {
 	NMDevice *dev = NM_DEVICE (object);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (dev);
+	int master;
 
 	nm_device_update_hw_address (dev);
 
@@ -7448,6 +7470,11 @@ constructed (GObject *object)
 
 	if (priv->ifindex > 0)
 		priv->mtu = nm_platform_link_get_mtu (priv->ifindex);
+
+	/* Enslave ourselves */
+	master = nm_platform_link_get_master (priv->ifindex);
+	if (master)
+		device_set_master (dev, master);
 
 	priv->con_provider = nm_connection_provider_get ();
 	g_assert (priv->con_provider);
