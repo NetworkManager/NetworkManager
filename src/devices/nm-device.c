@@ -1060,6 +1060,8 @@ device_link_changed (NMDevice *device, NMPlatformLink *info)
 	}
 
 	/* Update slave status for external changes */
+	if (priv->enslaved && info->master != nm_device_get_ifindex (priv->master))
+		nm_device_release_one_slave (priv->master, device, FALSE, NM_DEVICE_STATE_REASON_NONE);
 	if (info->master && !priv->enslaved) {
 		NMDevice *master;
 
@@ -1079,8 +1081,7 @@ device_link_changed (NMDevice *device, NMPlatformLink *info)
 			             info->master,
 			             nm_platform_link_get_name (info->master));
 		}
-	} else if (priv->enslaved && !info->master)
-		nm_device_release_one_slave (priv->master, device, FALSE, NM_DEVICE_STATE_REASON_NONE);
+	}
 
 	if (klass->link_changed)
 		klass->link_changed (device, info);
