@@ -5176,7 +5176,7 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 
 	/* Interface must be IFF_UP before IP config can be applied */
 	ip_ifindex = nm_device_get_ip_ifindex (self);
-	if (!nm_platform_link_is_up (ip_ifindex)) {
+	if (!nm_platform_link_is_up (ip_ifindex) && !nm_device_uses_assumed_connection (self)) {
 		nm_platform_link_set_up (ip_ifindex);
 		if (!nm_platform_link_is_up (ip_ifindex))
 			_LOGW (LOGD_DEVICE, "interface %s not up for IP configuration", nm_device_get_ip_iface (self));
@@ -5287,7 +5287,7 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 
 	/* Interface must be IFF_UP before IP config can be applied */
 	ip_ifindex = nm_device_get_ip_ifindex (self);
-	if (!nm_platform_link_is_up (ip_ifindex)) {
+	if (!nm_platform_link_is_up (ip_ifindex) && !nm_device_uses_assumed_connection (self)) {
 		nm_platform_link_set_up (ip_ifindex);
 		if (!nm_platform_link_is_up (ip_ifindex))
 			_LOGW (LOGD_DEVICE, "interface %s not up for IP configuration", nm_device_get_ip_iface (self));
@@ -7487,21 +7487,23 @@ _set_state_full (NMDevice *self,
 				ip6_managed_setup (self);
 		}
 
-		if (old_state == NM_DEVICE_STATE_UNMANAGED || priv->firmware_missing) {
-			if (!nm_device_bring_up (self, TRUE, &no_firmware) && no_firmware)
-				_LOGW (LOGD_HW, "firmware may be missing.");
-			nm_device_set_firmware_missing (self, no_firmware ? TRUE : FALSE);
-		}
-		/* Ensure the device gets deactivated in response to stuff like
-		 * carrier changes or rfkill.  But don't deactivate devices that are
-		 * about to assume a connection since that defeats the purpose of
-		 * assuming the device's existing connection.
-		 *
-		 * Note that we "deactivate" the device even when coming from
-		 * UNMANAGED, to ensure that it's in a clean state.
-		 */
-		if (reason != NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED)
+		if (reason != NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED) {
+			if (old_state == NM_DEVICE_STATE_UNMANAGED || priv->firmware_missing) {
+				if (!nm_device_bring_up (self, TRUE, &no_firmware) && no_firmware)
+					_LOGW (LOGD_HW, "firmware may be missing.");
+				nm_device_set_firmware_missing (self, no_firmware ? TRUE : FALSE);
+			}
+
+			/* Ensure the device gets deactivated in response to stuff like
+			 * carrier changes or rfkill.  But don't deactivate devices that are
+			 * about to assume a connection since that defeats the purpose of
+			 * assuming the device's existing connection.
+			 *
+			 * Note that we "deactivate" the device even when coming from
+			 * UNMANAGED, to ensure that it's in a clean state.
+			 */
 			nm_device_cleanup (self, reason);
+		}
 		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
 		if (old_state > NM_DEVICE_STATE_DISCONNECTED) {
