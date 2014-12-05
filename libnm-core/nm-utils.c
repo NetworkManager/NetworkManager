@@ -2232,7 +2232,7 @@ nm_utils_file_search_in_paths (const char *progname,
 
 	g_return_val_if_fail (!error || !*error, NULL);
 	g_return_val_if_fail (progname && progname[0] && !strchr (progname, '/'), NULL);
-	g_return_val_if_fail (!file_test_flags || predicate, NULL);
+	g_return_val_if_fail (file_test_flags || predicate, NULL);
 
 	/* Only consider @try_first if it is a valid, absolute path. This makes
 	 * it simpler to pass in a path from configure checks. */
