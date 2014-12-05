@@ -2693,6 +2693,9 @@ hwaddr_binary_len (const char *asc)
 {
 	int octets = 1;
 
+	if (!*asc)
+		return 0;
+
 	for (; *asc; asc++) {
 		if (*asc == ':' || *asc == '-')
 			octets++;
@@ -2827,7 +2830,7 @@ nm_utils_hwaddr_matches (gconstpointer hwaddr1,
 		g_return_val_if_fail (hwaddr1 != NULL, FALSE);
 
 		hwaddr1_len = hwaddr_binary_len (hwaddr1);
-		if (hwaddr1_len > NM_UTILS_HWADDR_LEN_MAX)
+		if (hwaddr1_len == 0 || hwaddr1_len > NM_UTILS_HWADDR_LEN_MAX)
 			return FALSE;
 		if (!nm_utils_hwaddr_aton (hwaddr1, buf1, hwaddr1_len))
 			return FALSE;
@@ -2880,7 +2883,7 @@ _nm_utils_hwaddr_to_dbus (const GValue *prop_value)
 
 	if (str) {
 		len = hwaddr_binary_len (str);
-		g_return_val_if_fail (len <= NM_UTILS_HWADDR_LEN_MAX, NULL);
+		g_return_val_if_fail (len > 0 && len <= NM_UTILS_HWADDR_LEN_MAX, NULL);
 		if (!nm_utils_hwaddr_aton (str, buf, len))
 			len = 0;
 	} else
