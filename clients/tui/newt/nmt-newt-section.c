@@ -260,12 +260,12 @@ nmt_newt_section_size_request (NmtNewtWidget *widget,
                                int           *height)
 {
 	NmtNewtSectionPrivate *priv = NMT_NEWT_SECTION_GET_PRIVATE (widget);
-	int border_width, border_height;
+	int w_ignore, h_ignore;
 
 	g_return_if_fail (priv->header != NULL && priv->body != NULL);
 
 	if (priv->show_border)
-		nmt_newt_widget_size_request (priv->border_grid, &border_width, &border_height);
+		nmt_newt_widget_size_request (priv->border_grid, &w_ignore, &h_ignore);
 	nmt_newt_widget_size_request (priv->header, &priv->hwidth_req, &priv->hheight_req);
 	nmt_newt_widget_size_request (priv->body, &priv->bwidth_req, &priv->bheight_req);
 
@@ -322,10 +322,10 @@ nmt_newt_section_size_allocate (NmtNewtWidget *widget,
 	NmtNewtSectionPrivate *priv = NMT_NEWT_SECTION_GET_PRIVATE (widget);
 
 	if (priv->show_border) {
-		int border_height, border_width;
+		int w_ignore, h_ignore;
 
 		adjust_border_for_allocation (priv, height);
-		nmt_newt_widget_size_request (priv->border_grid, &border_height, &border_width);
+		nmt_newt_widget_size_request (priv->border_grid, &w_ignore, &h_ignore);
 		nmt_newt_widget_size_allocate (priv->border_grid, x, y, 1, height);
 		nmt_newt_widget_size_allocate (priv->header, x + 2, y, width, priv->hheight_req);
 	} else

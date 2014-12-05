@@ -919,7 +919,7 @@ handle_property_changed (NMObject *self, const char *dbus_name,
 		g_free (s);
 	}
 
-	if (pi->object_type) {
+	if (pspec && pi->object_type) {
 		if (g_variant_is_of_type (value, G_VARIANT_TYPE_OBJECT_PATH))
 			success = handle_object_property (self, pspec->name, value, pi, synchronously);
 		else if (g_variant_is_of_type (value, G_VARIANT_TYPE ("ao")))

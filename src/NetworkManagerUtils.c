@@ -486,6 +486,17 @@ nm_utils_kill_child_async (pid_t pid, int sig, guint64 log_domain,
 	g_child_watch_add (pid, _kc_cb_watch_child, data);
 }
 
+static inline gulong
+_sleep_duration_convert_ms_to_us (guint32 sleep_duration_msec)
+{
+	if (sleep_duration_msec > 0) {
+		guint64 x = (gint64) sleep_duration_msec * (guint64) 1000L;
+
+		return x < G_MAXULONG ? (gulong) x : G_MAXULONG;
+	}
+	return G_USEC_PER_SEC / 20;
+}
+
 /* nm_utils_kill_child_sync:
  * @pid: process id to kill
  * @sig: signal to sent initially. If 0, no signal is sent. If %SIGKILL, the
@@ -569,7 +580,7 @@ nm_utils_kill_child_sync (pid_t pid, int sig, guint64 log_domain, const char *lo
 		gulong sleep_time, sleep_duration_usec;
 		int loop_count = 0;
 
-		sleep_duration_usec = (sleep_duration_msec <= 0) ? (G_USEC_PER_SEC / 20) : MIN (G_MAXULONG, ((gint64) sleep_duration_msec) * 1000L);
+		sleep_duration_usec = _sleep_duration_convert_ms_to_us (sleep_duration_msec);
 		wait_until = wait_before_kill_msec <= 0 ? 0 : wait_start_us + (((gint64) wait_before_kill_msec) * 1000L);
 
 		while (TRUE) {
@@ -723,7 +734,7 @@ nm_utils_kill_process_sync (pid_t pid, guint64 start_time, int sig, guint64 log_
 
 	wait_start_us = nm_utils_get_monotonic_timestamp_us ();
 
-	sleep_duration_usec = (sleep_duration_msec == 0) ? (G_USEC_PER_SEC / 20) : MIN (G_MAXULONG, ((gulong) sleep_duration_msec) * 1000UL);
+	sleep_duration_usec = _sleep_duration_convert_ms_to_us (sleep_duration_msec);
 	wait_until = wait_start_us + (((gint64) wait_before_kill_msec) * 1000L);
 
 	while (TRUE) {
@@ -1862,7 +1873,7 @@ monotonic_timestamp_get (struct timespec *tp)
 gint64
 nm_utils_get_monotonic_timestamp_ns (void)
 {
-	struct timespec tp;
+	struct timespec tp = { 0 };
 
 	monotonic_timestamp_get (&tp);
 
@@ -1889,7 +1900,7 @@ nm_utils_get_monotonic_timestamp_ns (void)
 gint64
 nm_utils_get_monotonic_timestamp_us (void)
 {
-	struct timespec tp;
+	struct timespec tp = { 0 };
 
 	monotonic_timestamp_get (&tp);
 
@@ -1916,7 +1927,7 @@ nm_utils_get_monotonic_timestamp_us (void)
 gint64
 nm_utils_get_monotonic_timestamp_ms (void)
 {
-	struct timespec tp;
+	struct timespec tp = { 0 };
 
 	monotonic_timestamp_get (&tp);
 
@@ -1943,7 +1954,7 @@ nm_utils_get_monotonic_timestamp_ms (void)
 gint32
 nm_utils_get_monotonic_timestamp_s (void)
 {
-	struct timespec tp;
+	struct timespec tp = { 0 };
 
 	monotonic_timestamp_get (&tp);
 	return (((gint64) tp.tv_sec) + monotonic_timestamp_offset_sec);
@@ -2015,9 +2026,9 @@ _log_connection_sort_names_fcn (gconstpointer a, gconstpointer b)
 	/* we want to first show the items, that disappeared, then the one that changed and
 	 * then the ones that were added. */
 
-	if ((v1->diff_result & NM_SETTING_DIFF_RESULT_IN_A) != (v1->diff_result & NM_SETTING_DIFF_RESULT_IN_A))
+	if ((v1->diff_result & NM_SETTING_DIFF_RESULT_IN_A) != (v2->diff_result & NM_SETTING_DIFF_RESULT_IN_A))
 		return (v1->diff_result & NM_SETTING_DIFF_RESULT_IN_A) ? -1 : 1;
-	if ((v1->diff_result & NM_SETTING_DIFF_RESULT_IN_B) != (v1->diff_result & NM_SETTING_DIFF_RESULT_IN_B))
+	if ((v1->diff_result & NM_SETTING_DIFF_RESULT_IN_B) != (v2->diff_result & NM_SETTING_DIFF_RESULT_IN_B))
 		return (v1->diff_result & NM_SETTING_DIFF_RESULT_IN_B) ? 1 : -1;
 	return strcmp (v1->item_name, v2->item_name);
 }

@@ -1801,8 +1801,10 @@ nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresses, guint3
 		 * The workaround is to configure different device priorities via ipv4.route-metric. */
 
 		network = nm_utils_ip4_address_clear_host_address (known_address->address, known_address->plen);
-		nm_platform_ip4_route_add (ifindex, NM_IP_CONFIG_SOURCE_KERNEL, network, known_address->plen, 0, known_address->address, device_route_metric, 0);
-		nm_platform_ip4_route_delete (ifindex, network, known_address->plen, NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE);
+		(void) nm_platform_ip4_route_add (ifindex, NM_IP_CONFIG_SOURCE_KERNEL, network, known_address->plen,
+		                                  0, known_address->address, device_route_metric, 0);
+		(void) nm_platform_ip4_route_delete (ifindex, network, known_address->plen,
+		                                     NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE);
 	}
 
 	return TRUE;
@@ -2070,7 +2072,7 @@ nm_platform_ip4_route_sync (int ifindex, const GArray *known_routes)
 		route = &g_array_index (routes, NMPlatformIP4Route, i);
 
 		if (!array_contains_ip4_route (known_routes, route))
-			nm_platform_ip4_route_delete (ifindex, route->network, route->plen, route->metric);
+			(void) nm_platform_ip4_route_delete (ifindex, route->network, route->plen, route->metric);
 	}
 
 	if (!known_routes) {

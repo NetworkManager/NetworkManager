@@ -296,7 +296,7 @@ script_timeout_cb (gpointer user_data)
 
 	if (kill (script->pid, 0) == 0)
 		kill (script->pid, SIGKILL);
-	waitpid (script->pid, NULL, 0);
+	(void) waitpid (script->pid, NULL, 0);
 
 	script->error = g_strdup_printf ("Script '%s' timed out.", script->script);
 	script->result = DISPATCH_RESULT_TIMEOUT;
