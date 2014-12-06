@@ -6349,12 +6349,11 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 	 * a timeout is reached.
 	 */
 	if (device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
-		if (priv->carrier_wait_id) {
+		if (priv->carrier_wait_id)
 			g_source_remove (priv->carrier_wait_id);
-			nm_device_remove_pending_action (self, "carrier wait", TRUE);
-		}
+		else
+			nm_device_add_pending_action (self, "carrier wait", TRUE);
 		priv->carrier_wait_id = g_timeout_add_seconds (5, carrier_wait_timeout, self);
-		nm_device_add_pending_action (self, "carrier wait", TRUE);
 	}
 
 	/* Can only get HW address of some devices when they are up */
