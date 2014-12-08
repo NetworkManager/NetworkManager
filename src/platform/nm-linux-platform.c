@@ -3865,6 +3865,115 @@ init_link_cache (NMPlatform *platform)
 	} while (object);
 }
 
+/* Calls announce_object with appropriate arguments for all objects
+ * which are not coherent between old and new caches and deallocates
+ * the old cache. */
+static gboolean
+sync_cache (NMPlatform *platform, struct nl_cache *new, struct nl_cache *old)
+{
+	struct nl_object *object;
+	gboolean changed = FALSE;
+
+	if (!old)
+		return changed;
+
+	for (object = nl_cache_get_first (new); object; object = nl_cache_get_next (object)) {
+		struct nl_object *cached_object = nm_nl_cache_search (old, object);
+
+		if (cached_object) {
+			ObjectType type = object_type_from_nl_object (object);
+			if (nm_nl_object_diff (object, cached_object, type)) {
+				announce_object (platform, object, NM_PLATFORM_SIGNAL_CHANGED, NM_PLATFORM_REASON_EXTERNAL);
+				changed = TRUE;
+			}
+			nl_object_put (cached_object);
+		} else {
+			announce_object (platform, object, NM_PLATFORM_SIGNAL_ADDED, NM_PLATFORM_REASON_EXTERNAL);
+			changed = TRUE;
+		}
+	}
+	for (object = nl_cache_get_first (old); object; object = nl_cache_get_next (object)) {
+		struct nl_object *cached_object = nm_nl_cache_search (new, object);
+		if (cached_object) {
+			nl_object_put (cached_object);
+		} else {
+			announce_object (platform, object, NM_PLATFORM_SIGNAL_REMOVED, NM_PLATFORM_REASON_EXTERNAL);
+			changed = TRUE;
+		}
+	}
+
+	nl_cache_free (old);
+	return changed;
+}
+
+/* The cache should always avoid containing objects not handled by NM, like
+ * e.g. addresses of the AF_PHONET family. */
+static void
+cache_remove_unknown (struct nl_cache *cache)
+{
+	GPtrArray *objects_to_remove = NULL;
+	struct nl_object *object;
+
+	for (object = nl_cache_get_first (cache); object; object = nl_cache_get_next (object)) {
+		if (object_type_from_nl_object (object) == OBJECT_TYPE_UNKNOWN) {
+			if (!objects_to_remove)
+				objects_to_remove = g_ptr_array_new_with_free_func ((GDestroyNotify) nl_object_put);
+			nl_object_get (object);
+			g_ptr_array_add (objects_to_remove, object);
+		}
+	}
+
+	if (objects_to_remove) {
+		guint i;
+
+		for (i = 0; i < objects_to_remove->len; i++)
+			nl_cache_remove (g_ptr_array_index (objects_to_remove, i));
+
+		g_ptr_array_free (objects_to_remove, TRUE);
+	}
+}
+
+/* Creates and populates the netlink object caches. Called upon platform init
+ * and when we run out of sync (out of buffer space, netlink congestion control).
+ * Returns TRUE if there were changes,
+ * Does not guarrantee the caches are coherent with kernel -- we could have missed
+ * events while synchronizing. Should be re-called when there were changes. */
+static gboolean
+sync_platform (NMPlatform *platform)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	struct nl_cache *old_link_cache = priv->link_cache;
+	struct nl_cache *old_address_cache = priv->address_cache;
+	struct nl_cache *old_route_cache = priv->route_cache;
+	struct nl_object *object;
+	gboolean changed = FALSE;
+
+	/* Allocate new netlink caches */
+	init_link_cache (platform);
+	rtnl_addr_alloc_cache (priv->nlh, &priv->address_cache);
+	rtnl_route_alloc_cache (priv->nlh, AF_UNSPEC, 0, &priv->route_cache);
+	g_assert (priv->link_cache && priv->address_cache && priv->route_cache);
+
+	/* Remove all unknown objects from the caches */
+	cache_remove_unknown (priv->link_cache);
+	cache_remove_unknown (priv->address_cache);
+	cache_remove_unknown (priv->route_cache);
+
+	for (object = nl_cache_get_first (priv->address_cache); object; object = nl_cache_get_next (object)) {
+		_rtnl_addr_hack_lifetimes_rel_to_abs ((struct rtnl_addr *) object);
+	}
+
+	/* Make sure all changes we've missed are announced. */
+	if (sync_cache (platform, priv->link_cache, old_link_cache))
+		changed = TRUE;
+	if (sync_cache (platform, priv->address_cache, old_address_cache))
+		changed = TRUE;
+	if (sync_cache (platform, priv->route_cache, old_route_cache))
+		changed = TRUE;
+
+	return changed;
+}
+
 /******************************************************************/
 
 #define EVENT_CONDITIONS      ((GIOCondition) (G_IO_IN | G_IO_PRI))
@@ -3893,7 +4002,8 @@ event_handler (GIOChannel *channel,
                GIOCondition io_condition,
                gpointer user_data)
 {
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (user_data);
+	NMPlatform *platform = NM_PLATFORM (user_data);
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	int nle;
 
 	nle = nl_recvmsgs_default (priv->nlh_event);
@@ -3904,6 +4014,10 @@ event_handler (GIOChannel *channel,
 			 * to detect support for support_kernel_extended_ifa_flags. This is not critical
 			 * and can happen easily. */
 			debug ("Uncritical failure to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
+			break;
+		case -NLE_NOMEM:
+			warning ("Too many netlink events. Trying to resynchronize: %s (%d)", nl_geterror (nle), nle);
+			while (sync_platform (platform));
 			break;
 		default:
 			error ("Failed to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
@@ -4064,33 +4178,6 @@ nm_linux_platform_init (NMLinuxPlatform *platform)
 {
 }
 
-/* The cache should always avoid containing objects not handled by NM, like
- * e.g. addresses of the AF_PHONET family. */
-static void
-cache_remove_unknown (struct nl_cache *cache)
-{
-	GPtrArray *objects_to_remove = NULL;
-	struct nl_object *object;
-
-	for (object = nl_cache_get_first (cache); object; object = nl_cache_get_next (object)) {
-		if (object_type_from_nl_object (object) == OBJECT_TYPE_UNKNOWN) {
-			if (!objects_to_remove)
-				objects_to_remove = g_ptr_array_new_with_free_func ((GDestroyNotify) nl_object_put);
-			nl_object_get (object);
-			g_ptr_array_add (objects_to_remove, object);
-		}
-	}
-
-	if (objects_to_remove) {
-		guint i;
-
-		for (i = 0; i < objects_to_remove->len; i++)
-			nl_cache_remove (g_ptr_array_index (objects_to_remove, i));
-
-		g_ptr_array_free (objects_to_remove, TRUE);
-	}
-}
-
 static gboolean
 setup (NMPlatform *platform)
 {
@@ -4101,7 +4188,6 @@ setup (NMPlatform *platform)
 	int channel_flags;
 	gboolean status;
 	int nle;
-	struct nl_object *object;
 
 	/* Initialize netlink socket for requests */
 	priv->nlh = setup_socket (FALSE, platform);
@@ -4137,19 +4223,7 @@ setup (NMPlatform *platform)
 		(EVENT_CONDITIONS | ERROR_CONDITIONS | DISCONNECT_CONDITIONS),
 		event_handler, platform);
 
-	/* Allocate netlink caches */
-	init_link_cache (platform);
-	rtnl_addr_alloc_cache (priv->nlh, &priv->address_cache);
-	rtnl_route_alloc_cache (priv->nlh, AF_UNSPEC, 0, &priv->route_cache);
-	g_assert (priv->link_cache && priv->address_cache && priv->route_cache);
-
-	/* Remove all unknown objects from the caches */
-	cache_remove_unknown (priv->link_cache);
-	cache_remove_unknown (priv->address_cache);
-	cache_remove_unknown (priv->route_cache);
-
-	for (object = nl_cache_get_first (priv->address_cache); object; object = nl_cache_get_next (object))
-		_rtnl_addr_hack_lifetimes_rel_to_abs ((struct rtnl_addr *) object);
+	sync_platform (platform);
 
 	/* Set up udev monitoring */
 	priv->udev_client = g_udev_client_new (udev_subsys);
