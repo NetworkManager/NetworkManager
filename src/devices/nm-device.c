@@ -6908,30 +6908,44 @@ nm_device_connection_is_available (NMDevice *self,
                                    gboolean for_user_activation_request)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	gboolean available = FALSE;
+	gboolean is_default_unmanaged;
 
-	if (nm_device_get_default_unmanaged (self) && (priv->state == NM_DEVICE_STATE_UNMANAGED)) {
+	if (g_hash_table_contains (priv->available_connections, connection))
+		return TRUE;
+
+	is_default_unmanaged = priv->state == NM_DEVICE_STATE_UNMANAGED && nm_device_get_default_unmanaged (self);
+
+	if (!for_user_activation_request && !is_default_unmanaged) {
+		/* Shortcut: there are only additional checks for either @for_user_activation_request
+		 * or @is_default_unmanaged. Return FALSE right away. */
+		return FALSE;
+	}
+
+	if (!nm_device_check_connection_compatible (self, connection)) {
+		/* An incompatilbe connection is never available. */
+		return FALSE;
+	}
+
+	if (   is_default_unmanaged
+	    && NM_DEVICE_GET_CLASS (self)->check_connection_available (self, connection, NULL)) {
 		/* default-unmanaged  devices in UNMANAGED state have no available connections
-		 * so we must manually check whether the connection is available here.
-		 */
-		if (   nm_device_check_connection_compatible (self, connection)
-		    && NM_DEVICE_GET_CLASS (self)->check_connection_available (self, connection, NULL))
-			return TRUE;
+		 * so we must manually check whether the connection is available here. */
+		return TRUE;
 	}
 
-	available = !!g_hash_table_lookup (priv->available_connections, connection);
-	if (!available && for_user_activation_request) {
-		/* FIXME: hack for hidden WiFi becuase clients didn't consistently
-		 * set the 'hidden' property to indicate hidden SSID networks.  If
-		 * activating but the network isn't available let the device recheck
-		 * availability.
+	if (   for_user_activation_request
+	    && NM_DEVICE_GET_CLASS (self)->check_connection_available_wifi_hidden
+	    && NM_DEVICE_GET_CLASS (self)->check_connection_available_wifi_hidden (self, connection)) {
+		/* Connections for an explicit user activation request might only be available after
+		 * additional checking.
+		 *
+		 * For example in case of hidden Wi-Fi, the connection might not have the 'hidden' property
+		 * set. Support this by allowing device specific overrides.
 		 */
-		if (   nm_device_check_connection_compatible (self, connection)
-		    && NM_DEVICE_GET_CLASS (self)->check_connection_available_wifi_hidden)
-			available = NM_DEVICE_GET_CLASS (self)->check_connection_available_wifi_hidden (self, connection);
+		return TRUE;
 	}
 
-	return available;
+	return FALSE;
 }
 
 static void
