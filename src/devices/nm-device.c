@@ -6891,11 +6891,13 @@ nm_device_set_dhcp_anycast_address (NMDevice *self, const char *addr)
  * nm_device_connection_is_available():
  * @self: the #NMDevice
  * @connection: the #NMConnection to check for availability
- * @allow_device_override: set to %TRUE to let the device do specific checks
+ * @for_user_activation_request: set to %TRUE if we are checking whether
+ *   the connection is available on an explicit user request. This
+ *   also checks for device specific overrides.
  *
  * Check if @connection is available to be activated on @self.  Normally this
  * only checks if the connection is in @self's AvailableConnections property.
- * If @allow_device_override is %TRUE then the device is asked to do specific
+ * If @for_user_activation_request is %TRUE then the device is asked to do specific
  * checks that may bypass the AvailableConnections property.
  *
  * Returns: %TRUE if @connection can be activated on @self
@@ -6903,7 +6905,7 @@ nm_device_set_dhcp_anycast_address (NMDevice *self, const char *addr)
 gboolean
 nm_device_connection_is_available (NMDevice *self,
                                    NMConnection *connection,
-                                   gboolean allow_device_override)
+                                   gboolean for_user_activation_request)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	gboolean available = FALSE;
@@ -6918,7 +6920,7 @@ nm_device_connection_is_available (NMDevice *self,
 	}
 
 	available = !!g_hash_table_lookup (priv->available_connections, connection);
-	if (!available && allow_device_override) {
+	if (!available && for_user_activation_request) {
 		/* FIXME: hack for hidden WiFi becuase clients didn't consistently
 		 * set the 'hidden' property to indicate hidden SSID networks.  If
 		 * activating but the network isn't available let the device recheck

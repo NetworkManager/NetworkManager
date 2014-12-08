@@ -374,7 +374,7 @@ GPtrArray *nm_device_get_available_connections (NMDevice *device,
 
 gboolean   nm_device_connection_is_available (NMDevice *device,
                                               NMConnection *connection,
-                                              gboolean allow_device_override);
+                                              gboolean for_user_activation_request);
 
 gboolean nm_device_notify_component_added (NMDevice *device, GObject *component);
 
