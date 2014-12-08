@@ -78,6 +78,7 @@ is_available (NMDevice *dev)
 static gboolean
 check_connection_available (NMDevice *device,
                             NMConnection *connection,
+                            gboolean for_user_activation_request,
                             const char *specific_object)
 {
 	/* Connections are always available because the carrier state is determined

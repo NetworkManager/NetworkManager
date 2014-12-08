@@ -6927,15 +6927,15 @@ nm_device_connection_is_available (NMDevice *self,
 	}
 
 	if (   is_default_unmanaged
-	    && NM_DEVICE_GET_CLASS (self)->check_connection_available (self, connection, NULL)) {
+	    && NM_DEVICE_GET_CLASS (self)->check_connection_available (self, connection, FALSE, NULL)) {
 		/* default-unmanaged  devices in UNMANAGED state have no available connections
 		 * so we must manually check whether the connection is available here. */
 		return TRUE;
 	}
 
 	if (   for_user_activation_request
-	    && NM_DEVICE_GET_CLASS (self)->check_connection_available_wifi_hidden
-	    && NM_DEVICE_GET_CLASS (self)->check_connection_available_wifi_hidden (self, connection)) {
+	    && NM_DEVICE_GET_CLASS (self)->check_connection_available_has_user_override
+	    && NM_DEVICE_GET_CLASS (self)->check_connection_available (self, connection, TRUE, NULL)) {
 		/* Connections for an explicit user activation request might only be available after
 		 * additional checking.
 		 *
@@ -6970,7 +6970,7 @@ _try_add_available_connection (NMDevice *self, NMConnection *connection)
 		return FALSE;
 
 	if (nm_device_check_connection_compatible (self, connection)) {
-		if (NM_DEVICE_GET_CLASS (self)->check_connection_available (self, connection, NULL)) {
+		if (NM_DEVICE_GET_CLASS (self)->check_connection_available (self, connection, FALSE, NULL)) {
 			g_hash_table_add (NM_DEVICE_GET_PRIVATE (self)->available_connections,
 			                  g_object_ref (connection));
 			return TRUE;
@@ -6988,6 +6988,7 @@ _del_available_connection (NMDevice *self, NMConnection *connection)
 static gboolean
 check_connection_available (NMDevice *self,
                             NMConnection *connection,
+                            gboolean for_user_activation_request,
                             const char *specific_object)
 {
 	/* Connections which require a network connection are not available when
@@ -7049,7 +7050,7 @@ nm_device_get_available_connections (NMDevice *self, const char *specific_object
 			 * compatible with it.
 			 */
 			if (   !specific_object
-			    || NM_DEVICE_GET_CLASS (self)->check_connection_available (self, connection, specific_object))
+			    || NM_DEVICE_GET_CLASS (self)->check_connection_available (self, connection, FALSE, specific_object))
 				g_ptr_array_add (array, connection);
 		}
 	}

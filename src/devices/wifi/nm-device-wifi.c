@@ -864,10 +864,10 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 
 
 static gboolean
-_internal_check_connection_available (NMDevice *device,
-                                      NMConnection *connection,
-                                      const char *specific_object,
-                                      gboolean ignore_ap_list)
+check_connection_available (NMDevice *device,
+                            NMConnection *connection,
+                            gboolean for_user_activation_request,
+                            const char *specific_object)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
 	NMSettingWireless *s_wifi;
@@ -892,8 +892,15 @@ _internal_check_connection_available (NMDevice *device,
 	    || g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_AP) == 0)
 		return TRUE;
 
-	/* Hidden SSIDs obviously don't always appear in the scan list either */
-	if (nm_setting_wireless_get_hidden (s_wifi) || ignore_ap_list)
+	/* Hidden SSIDs obviously don't always appear in the scan list either.
+	 *
+	 * For an explict user-activation-request, a connection is considered
+	 * available because for hidden Wi-Fi, clients didn't consistently
+	 * set the 'hidden' property to indicate hidden SSID networks.  If
+	 * activating but the network isn't available let the device recheck
+	 * availability.
+	 */
+	if (nm_setting_wireless_get_hidden (s_wifi) || for_user_activation_request)
 		return TRUE;
 
 	/* check if its visible */
@@ -903,24 +910,6 @@ _internal_check_connection_available (NMDevice *device,
 	}
 
 	return FALSE;
-}
-
-static gboolean
-check_connection_available (NMDevice *device,
-                            NMConnection *connection,
-                            const char *specific_object)
-{
-	return _internal_check_connection_available (device, connection, specific_object, FALSE);
-}
-
-/* FIXME: remove this function when we require the 'hidden' property to be
- * set before a hidden connection can be activated.
- */
-static gboolean
-check_connection_available_wifi_hidden (NMDevice *device,
-                                        NMConnection *connection)
-{
-	return _internal_check_connection_available (device, connection, NULL, TRUE);
 }
 
 /*
@@ -3341,7 +3330,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	parent_class->is_available = is_available;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->check_connection_available = check_connection_available;
-	parent_class->check_connection_available_wifi_hidden = check_connection_available_wifi_hidden;
+	parent_class->check_connection_available_has_user_override = TRUE;
 	parent_class->complete_connection = complete_connection;
 	parent_class->set_enabled = set_enabled;
 

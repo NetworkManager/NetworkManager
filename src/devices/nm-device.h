@@ -137,18 +137,18 @@ typedef struct {
 	 * including any live network information like scan lists.  The connection
 	 * is checked against the object defined by @specific_object, if given.
 	 * Returns TRUE if the connection is available; FALSE if not.
+	 *
+	 * If @for_user_activation_request, a connection might be considered
+	 * available under additional circumstances. That means, if a connection
+	 * is available for an internal, non-user request, it also must be available
+	 * for an external, user request.
 	 */
 	gboolean    (* check_connection_available) (NMDevice *self,
 	                                            NMConnection *connection,
+	                                            gboolean for_user_activation_request,
 	                                            const char *specific_object);
 
-	/* Same as check_connection_available() but called if the connection
-	 * is not present in the activating-connections array during activation,
-	 * to give the device a chance to allow/deny the activation.  This is a
-	 * hack only meant for hidden WiFi networks.
-	 */
-	gboolean    (* check_connection_available_wifi_hidden) (NMDevice *self,
-	                                                        NMConnection *connection);
+	gboolean    check_connection_available_has_user_override;
 
 	gboolean    (* complete_connection)         (NMDevice *self,
 	                                             NMConnection *connection,
