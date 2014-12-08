@@ -4195,7 +4195,6 @@ udev_device_added (NMPlatform *platform,
 	const char *ifname;
 	int ifindex;
 	gboolean was_announceable = FALSE;
-	int nle;
 
 	ifname = g_udev_device_get_name (udev_device);
 	if (!ifname) {
@@ -4225,12 +4224,6 @@ udev_device_added (NMPlatform *platform,
 
 	g_hash_table_insert (priv->udev_devices, GINT_TO_POINTER (ifindex),
 	                     g_object_ref (udev_device));
-
-	/* Grow the netlink socket buffer beyond 128k if we have more that 32 interfaces. */
-	nle = nl_socket_set_buffer_size (priv->nlh_event,
-					 MAX (131072, 4096 * g_hash_table_size (priv->udev_devices)), 0);
-	if (nle)
-		warning ("udev-add: failed to adjust netlink socket buffer size");
 
 	/* Announce devices only if they also have been discovered via Netlink. */
 	if (rtnllink && link_is_announceable (platform, rtnllink))
