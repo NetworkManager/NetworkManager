@@ -94,7 +94,10 @@ typedef enum NMActStageReturn NMActStageReturn;
 typedef enum {
 	NM_DEVICE_CHECK_CON_AVAILABLE_NONE                                  = 0,
 
-	NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST                      = (1L << 0),
+	_NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER     = (1L << 0),
+	_NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP           = (1L << 1),
+	NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST                      = _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER
+	                                                                    | _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP,
 
 	__NM_DEVICE_CHECK_CON_AVAILABLE_ALL,
 	NM_DEVICE_CHECK_CON_AVAILABLE_ALL                                   = (((__NM_DEVICE_CHECK_CON_AVAILABLE_ALL - 1) << 1) - 1),

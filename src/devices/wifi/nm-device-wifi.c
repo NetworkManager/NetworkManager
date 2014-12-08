@@ -903,7 +903,7 @@ check_connection_available (NMDevice *device,
 	 * activating but the network isn't available let the device recheck
 	 * availability.
 	 */
-	if (nm_setting_wireless_get_hidden (s_wifi) || NM_FLAGS_HAS (flags, NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST))
+	if (nm_setting_wireless_get_hidden (s_wifi) || NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP))
 		return TRUE;
 
 	/* check if its visible */

@@ -210,6 +210,7 @@ typedef struct {
 	guint32         ip4_address;
 
 	NMActRequest *  queued_act_request;
+	gboolean        queued_act_request_is_waiting_for_carrier;
 	NMActRequest *  act_request;
 	guint           act_source_id;
 	gpointer        act_source_func;
@@ -337,6 +338,8 @@ static void nm_device_slave_notify_release (NMDevice *self, NMDeviceStateReason 
 static gboolean addrconf6_start_with_link_ready (NMDevice *self);
 static gboolean dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection);
 static NMActStageReturn linklocal6_start (NMDevice *self);
+
+static void _carrier_wait_check_queued_act_request (NMDevice *self);
 
 static gboolean nm_device_get_default_unmanaged (NMDevice *self);
 
@@ -1138,6 +1141,7 @@ nm_device_set_carrier (NMDevice *self, gboolean carrier)
 			g_source_remove (priv->carrier_wait_id);
 			priv->carrier_wait_id = 0;
 			nm_device_remove_pending_action (self, "carrier wait", TRUE);
+			_carrier_wait_check_queued_act_request (self);
 		}
 	} else if (state <= NM_DEVICE_STATE_DISCONNECTED) {
 		_LOGI (LOGD_DEVICE, "link disconnected");
@@ -5741,12 +5745,78 @@ _device_activate (NMDevice *self, NMActRequest *req)
 	nm_device_activate_schedule_stage1_device_prepare (self);
 }
 
+static void
+_carrier_wait_check_queued_act_request (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMActRequest *queued_req;
+
+	if (   !priv->queued_act_request
+	    || !priv->queued_act_request_is_waiting_for_carrier)
+		return;
+
+	priv->queued_act_request_is_waiting_for_carrier = FALSE;
+	if (!priv->carrier) {
+		_LOGD (LOGD_DEVICE, "Cancel queued activation request as we have no carrier after timeout");
+		g_clear_object (&priv->queued_act_request);
+	} else {
+		_LOGD (LOGD_DEVICE, "Activate queued activation request as we now have carrier");
+		queued_req = priv->queued_act_request;
+		priv->queued_act_request = NULL;
+		_device_activate (self, queued_req);
+		g_object_unref (queued_req);
+	}
+}
+
+static gboolean
+_carrier_wait_check_act_request_must_queue (NMDevice *self, NMActRequest *req)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMConnection *connection;
+
+	/* If we have carrier or if we are not waiting for it, the activation
+	 * request is not blocked waiting for carrier. */
+	if (priv->carrier)
+		return FALSE;
+	if (priv->carrier_wait_id == 0)
+		return FALSE;
+
+	connection = nm_act_request_get_connection (req);
+
+	if (!nm_device_check_connection_available (self, connection, NM_DEVICE_CHECK_CON_AVAILABLE_ALL, NULL)) {
+		/* We passed all @flags we have, and no @specific_object.
+		 * This equals maximal availability, if a connection is not available
+		 * in this case, it is not waiting for carrier.
+		 *
+		 * Actually, why are we even trying to activate it? Strange, but whatever
+		 * the reason, don't wait for carrier.
+		 */
+		return FALSE;
+	}
+
+	if (nm_device_check_connection_available (self, connection, NM_DEVICE_CHECK_CON_AVAILABLE_ALL & ~_NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER, NULL)) {
+		/* The connection was available with flags ALL, and it is still available
+		 * if we pretend not to wait for carrier. That means that the
+		 * connection is available now, and does not wait for carrier.
+		 *
+		 * Since the flags increase the availability of a connection, when checking
+		 * ALL&~WAITING_CARRIER, it means that we certainly would wait for carrier. */
+		return FALSE;
+	}
+
+	/* The activation request must wait for carrier. */
+	return TRUE;
+}
+
 void
 nm_device_queue_activation (NMDevice *self, NMActRequest *req)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	gboolean must_queue;
 
-	if (!priv->act_request) {
+	must_queue = _carrier_wait_check_act_request_must_queue (self, req);
+
+	if (!priv->act_request && !must_queue) {
 		/* Just activate immediately */
 		_device_activate (self, req);
 		return;
@@ -5755,12 +5825,17 @@ nm_device_queue_activation (NMDevice *self, NMActRequest *req)
 	/* supercede any already-queued request */
 	_clear_queued_act_request (priv);
 	priv->queued_act_request = g_object_ref (req);
+	priv->queued_act_request_is_waiting_for_carrier = must_queue;
 
-	/* Deactivate existing activation request first */
-	_LOGI (LOGD_DEVICE, "disconnecting for new activation request.");
-	nm_device_state_changed (self,
-	                         NM_DEVICE_STATE_DEACTIVATING,
-	                         NM_DEVICE_STATE_REASON_NONE);
+	_LOGD (LOGD_DEVICE, "queue activation request waiting for %s", must_queue ? "carrier" : "currently active connection to disconnect");
+
+	if (priv->act_request) {
+		/* Deactivate existing activation request first */
+		_LOGI (LOGD_DEVICE, "disconnecting for new activation request.");
+		nm_device_state_changed (self,
+		                         NM_DEVICE_STATE_DEACTIVATING,
+		                         NM_DEVICE_STATE_REASON_NONE);
+	}
 }
 
 /*
@@ -6302,6 +6377,9 @@ carrier_wait_timeout (gpointer user_data)
 
 	NM_DEVICE_GET_PRIVATE (self)->carrier_wait_id = 0;
 	nm_device_remove_pending_action (self, "carrier wait", TRUE);
+
+	_carrier_wait_check_queued_act_request (self);
+
 	return G_SOURCE_REMOVE;
 }
 
@@ -6925,7 +7003,10 @@ nm_device_check_connection_available (NMDevice *self,
 	    && nm_device_get_unmanaged_flag (self, NM_UNMANAGED_ALL & ~NM_UNMANAGED_DEFAULT))
 		return FALSE;
 	if (   state < NM_DEVICE_STATE_DISCONNECTED
-	    && !nm_device_is_available (self, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE))
+	    && (   (   !NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER)
+	            && !nm_device_is_available (self, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE))
+	        || (    NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER)
+	            && !nm_device_is_available (self, NM_DEVICE_CHECK_DEV_AVAILABLE_IGNORE_CARRIER))))
 		return FALSE;
 
 	if (!nm_device_check_connection_compatible (self, connection))
@@ -6971,13 +7052,25 @@ check_connection_available (NMDevice *self,
                             NMDeviceCheckConAvailableFlags flags,
                             const char *specific_object)
 {
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+
 	/* Connections which require a network connection are not available when
 	 * the device has no carrier, even with ignore-carrer=TRUE.
 	 */
-	if (NM_DEVICE_GET_PRIVATE (self)->carrier == FALSE)
-		return connection_requires_carrier (connection) ? FALSE : TRUE;
+	if (   priv->carrier
+	    || !connection_requires_carrier (connection))
+		return TRUE;
 
-	return TRUE;
+	if (   NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER)
+	    && priv->carrier_wait_id != 0) {
+		/* The device has no carrier though the connection requires it.
+		 *
+		 * If we are still waiting for carrier, the connection is available
+		 * for an explicit user-request. */
+		return TRUE;
+	}
+
+	return FALSE;
 }
 
 void
@@ -7766,7 +7859,8 @@ _set_state_full (NMDevice *self,
 		}
 		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
-		if (priv->queued_act_request) {
+		if (   priv->queued_act_request
+		    && !priv->queued_act_request_is_waiting_for_carrier) {
 			NMActRequest *queued_req;
 
 			queued_req = priv->queued_act_request;
