@@ -342,8 +342,9 @@ connection_new_or_changed (SCPluginIfcfg *self,
 		                                              FALSE,  /* don't set Unsaved */
 		                                              &error)) {
 			/* Shouldn't ever get here as 'new' was verified by the reader already */
-			g_assert_no_error (error);
+			g_assert_not_reached ();
 		}
+		g_assert_no_error (error);
 	}
 	g_object_unref (new);
 
