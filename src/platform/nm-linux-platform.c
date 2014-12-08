@@ -4028,6 +4028,70 @@ init_link_cache (NMPlatform *platform)
 	} while (object);
 }
 
+/* Calls announce_object with appropriate arguments for all objects
+ * which are not coherent between old and new caches and deallocates
+ * the old cache. */
+static void
+cache_announce_changes (NMPlatform *platform, struct nl_cache *new, struct nl_cache *old)
+{
+	struct nl_object *object;
+
+	if (!old)
+		return;
+
+	for (object = nl_cache_get_first (new); object; object = nl_cache_get_next (object)) {
+		struct nl_object *cached_object = nm_nl_cache_search (old, object);
+
+		if (cached_object) {
+			ObjectType type = object_type_from_nl_object (object);
+			if (nm_nl_object_diff (type, object, cached_object))
+				announce_object (platform, object, NM_PLATFORM_SIGNAL_CHANGED, NM_PLATFORM_REASON_EXTERNAL);
+			nl_object_put (cached_object);
+		} else
+			announce_object (platform, object, NM_PLATFORM_SIGNAL_ADDED, NM_PLATFORM_REASON_EXTERNAL);
+	}
+	for (object = nl_cache_get_first (old); object; object = nl_cache_get_next (object)) {
+		struct nl_object *cached_object = nm_nl_cache_search (new, object);
+		if (cached_object)
+			nl_object_put (cached_object);
+		else
+			announce_object (platform, object, NM_PLATFORM_SIGNAL_REMOVED, NM_PLATFORM_REASON_EXTERNAL);
+	}
+
+	nl_cache_free (old);
+}
+
+/* Creates and populates the netlink object caches. Called upon platform init and
+ * when we run out of sync (out of buffer space, netlink congestion control). In case
+ * the caches already exist, it finds changed, added and removed objects, announces
+ * them and destroys the old caches. */
+static void
+cache_repopulate_all (NMPlatform *platform)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	struct nl_cache *old_link_cache = priv->link_cache;
+	struct nl_cache *old_address_cache = priv->address_cache;
+	struct nl_cache *old_route_cache = priv->route_cache;
+	struct nl_object *object;
+
+	debug ("platform: %spopulate platform cache", old_link_cache ? "re" : "");
+
+	/* Allocate new netlink caches */
+	init_link_cache (platform);
+	rtnl_addr_alloc_cache (priv->nlh, &priv->address_cache);
+	rtnl_route_alloc_cache (priv->nlh, AF_UNSPEC, 0, &priv->route_cache);
+	g_assert (priv->link_cache && priv->address_cache && priv->route_cache);
+
+	for (object = nl_cache_get_first (priv->address_cache); object; object = nl_cache_get_next (object)) {
+		_rtnl_addr_hack_lifetimes_rel_to_abs ((struct rtnl_addr *) object);
+	}
+
+	/* Make sure all changes we've missed are announced. */
+	cache_announce_changes (platform, priv->link_cache, old_link_cache);
+	cache_announce_changes (platform, priv->address_cache, old_address_cache);
+	cache_announce_changes (platform, priv->route_cache, old_route_cache);
+}
+
 /******************************************************************/
 
 #define EVENT_CONDITIONS      ((GIOCondition) (G_IO_IN | G_IO_PRI))
@@ -4056,7 +4120,8 @@ event_handler (GIOChannel *channel,
                GIOCondition io_condition,
                gpointer user_data)
 {
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (user_data);
+	NMPlatform *platform = NM_PLATFORM (user_data);
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	int nle;
 
 	nle = nl_recvmsgs_default (priv->nlh_event);
@@ -4067,6 +4132,17 @@ event_handler (GIOChannel *channel,
 			 * to detect support for support_kernel_extended_ifa_flags. This is not critical
 			 * and can happen easily. */
 			debug ("Uncritical failure to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
+			break;
+		case -NLE_NOMEM:
+			warning ("Too many netlink events. Need to resynchronize platform cache");
+			/* Drain the event queue, we've lost events and are out of sync anyway and we'd
+			 * like to free up some space. We'll read in the status synchronously. */
+			nl_socket_modify_cb (priv->nlh_event, NL_CB_VALID, NL_CB_DEFAULT, NULL, NULL);
+			do {
+				nle = nl_recvmsgs_default (priv->nlh_event);
+			} while (nle != -NLE_AGAIN);
+			nl_socket_modify_cb (priv->nlh_event, NL_CB_VALID, NL_CB_CUSTOM, event_notification, user_data);
+			cache_repopulate_all (platform);
 			break;
 		default:
 			error ("Failed to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
@@ -4098,6 +4174,12 @@ setup_socket (gboolean event, gpointer user_data)
 	g_assert (!nle);
 	nle = nl_socket_set_passcred (sock, 1);
 	g_assert (!nle);
+
+	/* No blocking for event socket, so that we can drain it safely. */
+	if (event) {
+		nle = nl_socket_set_nonblocking (sock);
+		g_assert (!nle);
+	}
 
 	return sock;
 }
@@ -4244,7 +4326,6 @@ setup (NMPlatform *platform)
 	int channel_flags;
 	gboolean status;
 	int nle;
-	struct nl_object *object;
 
 	/* Initialize netlink socket for requests */
 	priv->nlh = setup_socket (FALSE, platform);
@@ -4280,14 +4361,7 @@ setup (NMPlatform *platform)
 		(EVENT_CONDITIONS | ERROR_CONDITIONS | DISCONNECT_CONDITIONS),
 		event_handler, platform);
 
-	/* Allocate netlink caches */
-	init_link_cache (platform);
-	rtnl_addr_alloc_cache (priv->nlh, &priv->address_cache);
-	rtnl_route_alloc_cache (priv->nlh, AF_UNSPEC, 0, &priv->route_cache);
-	g_assert (priv->link_cache && priv->address_cache && priv->route_cache);
-
-	for (object = nl_cache_get_first (priv->address_cache); object; object = nl_cache_get_next (object))
-		_rtnl_addr_hack_lifetimes_rel_to_abs ((struct rtnl_addr *) object);
+	cache_repopulate_all (platform);
 
 #if HAVE_LIBNL_INET6_ADDR_GEN_MODE
 	/* Initial check for user IPv6LL support once the link cache is allocated
