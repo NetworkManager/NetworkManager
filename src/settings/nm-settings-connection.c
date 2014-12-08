@@ -461,6 +461,15 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 	if (!nm_connection_normalize (new_connection, NULL, NULL, error))
 		return FALSE;
 
+	if (   nm_connection_get_path (NM_CONNECTION (self))
+	    && g_strcmp0 (nm_connection_get_uuid (NM_CONNECTION (self)), nm_connection_get_uuid (new_connection)) != 0) {
+		/* Updating the UUID is not allowed once the path is exported. */
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+		             "connection %s cannot change the UUID from %s to %s", nm_connection_get_id (NM_CONNECTION (self)),
+		             nm_connection_get_uuid (NM_CONNECTION (self)), nm_connection_get_uuid (new_connection));
+		return FALSE;
+	}
+
 	/* Do nothing if there's nothing to update */
 	if (nm_connection_compare (NM_CONNECTION (self),
 	                           new_connection,

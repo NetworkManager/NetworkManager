@@ -315,7 +315,8 @@ reload_connections (NMSystemConfigInterface *config)
 				                                              FALSE,  /* don't set Unsaved */
 				                                              "ifnet-update",
 				                                              &error)) {
-					/* Shouldn't ever get here as 'new' was verified by the reader already */
+					/* Shouldn't ever get here as 'new' was verified by the reader already
+					 * and the UUID did not change. */
 					g_assert_not_reached ();
 				}
 				g_assert_no_error (error);

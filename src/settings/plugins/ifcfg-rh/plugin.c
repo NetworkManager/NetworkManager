@@ -129,6 +129,7 @@ _internal_new_connection (SCPluginIfcfg *self,
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
 	NMIfcfgConnection *connection;
 	const char *cid;
+	const char *uuid;
 
 	if (!source)
 		nm_log_info (LOGD_SETTINGS, "parsing %s ... ", path);
@@ -137,11 +138,20 @@ _internal_new_connection (SCPluginIfcfg *self,
 	if (!connection)
 		return NULL;
 
+	uuid = nm_connection_get_uuid (NM_CONNECTION (connection));
+
+	if (g_hash_table_contains (priv->connections, uuid)) {
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+		             "Failed to add duplicate connection for UUID %s", uuid);
+		g_object_unref (connection);
+		return NULL;
+	}
+
 	cid = nm_connection_get_id (NM_CONNECTION (connection));
 	g_assert (cid);
 
 	g_hash_table_insert (priv->connections,
-	                     g_strdup (nm_connection_get_uuid (NM_CONNECTION (connection))),
+	                     g_strdup (uuid),
 	                     connection);
 	nm_log_info (LOGD_SETTINGS, "    read connection '%s'", cid);
 	g_signal_connect (connection, NM_SETTINGS_CONNECTION_REMOVED,
@@ -302,6 +312,15 @@ connection_new_or_changed (SCPluginIfcfg *self,
 		return;
 	}
 
+	if (g_strcmp0 (nm_connection_get_uuid (NM_CONNECTION (existing)), nm_connection_get_uuid (NM_CONNECTION (new))) != 0) {
+		/* FIXME: UUID changes are not supported by nm_settings_connection_replace_settings().
+		 * This function should be merged with _internal_new_connection() to be like keyfiles
+		 * update_connection(). */
+		nm_log_warn (LOGD_SETTINGS, "UUID changes are not supported. Cannot update connection %s (%s)", nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (new)), nm_connection_get_uuid (NM_CONNECTION (new)));
+		g_object_unref (new);
+		return;
+	}
+
 	nm_log_info (LOGD_SETTINGS, "updating %s", path);
 	g_object_set (existing,
 	              NM_IFCFG_CONNECTION_UNMANAGED_SPEC, new_unmanaged,
@@ -342,7 +361,8 @@ connection_new_or_changed (SCPluginIfcfg *self,
 		                                              FALSE,  /* don't set Unsaved */
 		                                              "ifcfg-rh-update",
 		                                              &error)) {
-			/* Shouldn't ever get here as 'new' was verified by the reader already */
+			/* Shouldn't ever get here as 'new' was verified by the reader already
+			 * and the UUID did not change. */
 			g_assert_not_reached ();
 		}
 		g_assert_no_error (error);

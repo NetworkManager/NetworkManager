@@ -251,7 +251,8 @@ update_connection (SCPluginKeyfile *self,
 			                                              FALSE,  /* don't set Unsaved */
 			                                              "keyfile-update",
 			                                              &local)) {
-				/* Shouldn't ever get here as 'connection_new' was verified by the reader already */
+				/* Shouldn't ever get here as 'connection_new' was verified by the reader already
+				 * and the UUID did not change. */
 				g_assert_not_reached ();
 			}
 			g_assert_no_error (local);
