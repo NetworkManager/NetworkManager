@@ -2091,9 +2091,9 @@ nm_utils_log_connection_diff (NMConnection *connection, NMConnection *diff_base,
 	connection_diff_are_same = nm_connection_diff (connection, diff_base, NM_SETTING_COMPARE_FLAG_EXACT | NM_SETTING_COMPARE_FLAG_DIFF_RESULT_NO_DEFAULT, &connection_diff);
 	if (connection_diff_are_same) {
 		if (diff_base)
-			nm_log (level, domain, "%sconnection '%s' (%p and %p): no difference", prefix, name, connection, diff_base);
+			nm_log (level, domain, "%sconnection '%s' (%p/%s and %p/%s): no difference", prefix, name, connection, G_OBJECT_TYPE_NAME (connection), diff_base, G_OBJECT_TYPE_NAME (diff_base));
 		else
-			nm_log (level, domain, "%sconnection '%s' (%p): no properties set", prefix, name, connection);
+			nm_log (level, domain, "%sconnection '%s' (%p/%s): no properties set", prefix, name, connection, G_OBJECT_TYPE_NAME (connection));
 		g_assert (!connection_diff);
 		return;
 	}
@@ -2128,9 +2128,9 @@ nm_utils_log_connection_diff (NMConnection *connection, NMConnection *diff_base,
 				GError *err_verify = NULL;
 
 				if (diff_base)
-					nm_log (level, domain, "%sconnection '%s' (%p < %p):", prefix, name, connection, diff_base);
+					nm_log (level, domain, "%sconnection '%s' (%p/%s < %p/%s):", prefix, name, connection, G_OBJECT_TYPE_NAME (connection), diff_base, G_OBJECT_TYPE_NAME (diff_base));
 				else
-					nm_log (level, domain, "%sconnection '%s' (%p):", prefix, name, connection);
+					nm_log (level, domain, "%sconnection '%s' (%p/%s):", prefix, name, connection, G_OBJECT_TYPE_NAME (connection));
 				print_header = FALSE;
 
 				if (!nm_connection_verify (connection, &err_verify)) {
