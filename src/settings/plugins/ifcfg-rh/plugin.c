@@ -340,6 +340,7 @@ connection_new_or_changed (SCPluginIfcfg *self,
 		if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (existing),
 		                                              NM_CONNECTION (new),
 		                                              FALSE,  /* don't set Unsaved */
+		                                              "ifcfg-rh-update",
 		                                              &error)) {
 			/* Shouldn't ever get here as 'new' was verified by the reader already */
 			g_assert_not_reached ();

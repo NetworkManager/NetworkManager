@@ -82,6 +82,7 @@ nm_example_connection_new (const char *full_path,
 	if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
 	                                              tmp,
 	                                              TRUE,
+	                                              NULL,
 	                                              error)) {
 		g_object_unref (object);
 		object = NULL;
