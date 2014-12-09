@@ -87,7 +87,7 @@ remove_connection (SCPluginKeyfile *self, NMKeyfileConnection *connection)
 
 	g_return_if_fail (connection != NULL);
 
-	nm_log_info (LOGD_SETTINGS, "removed %s.", nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection)));
+	nm_log_info (LOGD_SETTINGS, "keyfile: removed " NM_KEYFILE_CONNECTION_LOG_FMT, NM_KEYFILE_CONNECTION_LOG_ARG (connection));
 
 	/* Removing from the hash table should drop the last reference */
 	g_object_ref (connection);
@@ -151,8 +151,7 @@ update_connection (SCPluginKeyfile *self,
 	connection_new = nm_keyfile_connection_new (NULL, full_path, &error);
 	if (!connection_new) {
 		/* Error; remove the connection */
-		nm_log_warn (LOGD_SETTINGS, "    error in connection %s: %s", full_path,
-		             (error && error->message) ? error->message : "(unknown)");
+		nm_log_warn (LOGD_SETTINGS, "keyfile: error loading connection from file %s: %s", full_path, error->message);
 		g_clear_error (&error);
 		if (connection)
 			remove_connection (self, connection);
@@ -172,7 +171,7 @@ update_connection (SCPluginKeyfile *self,
 	if (   connection_by_uuid
 	    && protected_connections
 	    && g_hash_table_contains (protected_connections, connection_by_uuid)) {
-		nm_log_warn (LOGD_SETTINGS, "keyfile: cannot load %s due to conflicting UUID for %s", full_path, nm_connection_get_uuid (NM_CONNECTION (connection_by_uuid)));
+		nm_log_warn (LOGD_SETTINGS, "keyfile: cannot load %s due to conflicting UUID for "NM_KEYFILE_CONNECTION_LOG_FMT, full_path, NM_KEYFILE_CONNECTION_LOG_ARG (connection_by_uuid));
 		g_object_unref (connection_new);
 		return NULL;
 	}
@@ -189,9 +188,17 @@ update_connection (SCPluginKeyfile *self,
 	}
 
 	if (connection_by_uuid) {
+		const char *old_path;
+
 		/* An existing connection changed. */
 
-		nm_log_info (LOGD_SETTINGS, "updating %s", full_path);
+		old_path = nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection_by_uuid));
+		if (!g_strcmp0 (old_path, nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection_new))))
+			nm_log_info (LOGD_SETTINGS, "keyfile: update "NM_KEYFILE_CONNECTION_LOG_FMT, NM_KEYFILE_CONNECTION_LOG_ARG (connection_new));
+		else if (old_path)
+			nm_log_info (LOGD_SETTINGS, "keyfile: rename \"%s\" to "NM_KEYFILE_CONNECTION_LOG_FMT, old_path, NM_KEYFILE_CONNECTION_LOG_ARG (connection_new));
+		else
+			nm_log_info (LOGD_SETTINGS, "keyfile: update and persist "NM_KEYFILE_CONNECTION_LOG_FMT, NM_KEYFILE_CONNECTION_LOG_ARG (connection_new));
 
 		if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (connection_by_uuid),
 		                                              NM_CONNECTION (connection_new),
@@ -206,7 +213,7 @@ update_connection (SCPluginKeyfile *self,
 		g_object_unref (connection_new);
 		return connection_by_uuid;
 	} else {
-		nm_log_info (LOGD_SETTINGS, "new connection %s", full_path);
+		nm_log_info (LOGD_SETTINGS, "keyfile: new connection "NM_KEYFILE_CONNECTION_LOG_FMT, NM_KEYFILE_CONNECTION_LOG_ARG (connection_new));
 		g_hash_table_insert (priv->connections, g_strdup (uuid), connection_new);
 
 		g_signal_connect (connection_new, NM_SETTINGS_CONNECTION_REMOVED,
@@ -376,7 +383,7 @@ read_connections (NMSystemConfigInterface *config)
 
 	dir = g_dir_open (KEYFILE_DIR, 0, &error);
 	if (!dir) {
-		nm_log_warn (LOGD_SETTINGS, "Cannot read directory '%s': (%d) %s",
+		nm_log_warn (LOGD_SETTINGS, "keyfile: cannot read directory '%s': (%d) %s",
 		             KEYFILE_DIR,
 		             error ? error->code : -1,
 		             error && error->message ? error->message : "(unknown)");
@@ -489,6 +496,7 @@ add_connection (NMSystemConfigInterface *config,
 
 	added = (NMSettingsConnection *) nm_keyfile_connection_new (connection, path, error);
 	if (added) {
+		nm_log_info (LOGD_SETTINGS, "keyfile: add "NM_KEYFILE_CONNECTION_LOG_FMT, NM_KEYFILE_CONNECTION_LOG_ARG ((NMKeyfileConnection *) added));
 		g_hash_table_insert (priv->connections,
 		                     g_strdup (nm_connection_get_uuid (NM_CONNECTION (added))),
 		                     added);
@@ -555,7 +563,7 @@ get_unmanaged_specs (NMSystemConfigInterface *config)
 			} else if (!strncmp (udis[i], "interface-name:", 15) && nm_utils_iface_valid_name (udis[i] + 15)) {
 				specs = g_slist_append (specs, udis[i]);
 			} else {
-				nm_log_warn (LOGD_SETTINGS, "Error in file '%s': invalid unmanaged-devices entry: '%s'", priv->conf_file, udis[i]);
+				nm_log_warn (LOGD_SETTINGS, "keyfile: error in file '%s': invalid unmanaged-devices entry: '%s'", priv->conf_file, udis[i]);
 				g_free (udis[i]);
 			}
 		}
@@ -565,7 +573,7 @@ get_unmanaged_specs (NMSystemConfigInterface *config)
 
  out:
 	if (error) {
-		nm_log_warn (LOGD_SETTINGS, "%s", error->message);
+		nm_log_warn (LOGD_SETTINGS, "keyfile: error getting unmanaged specs: %s", error->message);
 		g_error_free (error);
 	}
 	if (key_file)
@@ -593,7 +601,7 @@ plugin_get_hostname (SCPluginKeyfile *plugin)
 
  out:
 	if (error) {
-		nm_log_warn (LOGD_SETTINGS, "%s", error->message);
+		nm_log_warn (LOGD_SETTINGS, "keyfile: error getting hostname: %s", error->message);
 		g_error_free (error);
 	}
 	if (key_file)
@@ -640,7 +648,7 @@ plugin_set_hostname (SCPluginKeyfile *plugin, const char *hostname)
 
  out:
 	if (error) {
-		nm_log_warn (LOGD_SETTINGS, "%s", error->message);
+		nm_log_warn (LOGD_SETTINGS, "keyfile: error setting hostname: %s", error->message);
 		g_error_free (error);
 	}
 	g_free (data);
