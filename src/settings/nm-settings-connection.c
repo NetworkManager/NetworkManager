@@ -538,6 +538,7 @@ replace_and_commit (NMSettingsConnection *self,
 	if (nm_settings_connection_replace_settings (self, new_connection, TRUE, &error)) {
 		nm_settings_connection_commit_changes (self, callback, user_data);
 	} else {
+		g_assert (error);
 		if (callback)
 			callback (self, error, user_data);
 		g_clear_error (&error);
@@ -1366,11 +1367,8 @@ update_auth_cb (NMSettingsConnection *self,
 		                                           con_update_cb,
 		                                           info);
 	} else {
-		/* Do nothing if there's nothing to update */
-		if (!nm_connection_compare (NM_CONNECTION (self), info->new_settings, NM_SETTING_COMPARE_FLAG_EXACT)) {
-			if (!nm_settings_connection_replace_settings (self, info->new_settings, TRUE, &local))
-				g_assert (local);
-		}
+		if (!nm_settings_connection_replace_settings (self, info->new_settings, TRUE, &local))
+			g_assert (local);
 		con_update_cb (self, local, info);
 		g_clear_error (&local);
 	}
