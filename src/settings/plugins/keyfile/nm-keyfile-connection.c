@@ -76,6 +76,7 @@ nm_keyfile_connection_new (NMConnection *source,
 	if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
 	                                              tmp,
 	                                              update_unsaved,
+	                                              NULL,
 	                                              error)) {
 		g_object_unref (object);
 		object = NULL;
