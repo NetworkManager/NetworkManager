@@ -123,6 +123,8 @@ find_by_path (SCPluginKeyfile *self, const char *path)
  * @connection: an existing connection that might be updated.
  *   If given, @connection must be an existing connection that is currently
  *   owned by the plugin.
+ * @protected_connections: (allow-none): if given, we only update an
+ *   existing connection if it is not contained in this hash.
  *
  * Loads a connection from file @full_path. This can both be used to
  * load a connection initially or to update an existing connection.
@@ -137,7 +139,8 @@ find_by_path (SCPluginKeyfile *self, const char *path)
 static NMKeyfileConnection *
 update_connection (SCPluginKeyfile *self,
                    const char *full_path,
-                   NMKeyfileConnection *connection)
+                   NMKeyfileConnection *connection,
+                   GHashTable *protected_connections)
 {
 	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (self);
 	NMKeyfileConnection *connection_new;
@@ -167,6 +170,14 @@ update_connection (SCPluginKeyfile *self,
 	}
 
 	if (   connection_by_uuid
+	    && protected_connections
+	    && g_hash_table_contains (protected_connections, connection_by_uuid)) {
+		nm_log_warn (LOGD_SETTINGS, "keyfile: cannot load %s due to conflicting UUID for %s", full_path, nm_connection_get_uuid (NM_CONNECTION (connection_by_uuid)));
+		g_object_unref (connection_new);
+		return NULL;
+	}
+
+	if (   connection_by_uuid
 	    && nm_connection_compare (NM_CONNECTION (connection_by_uuid),
 	                              NM_CONNECTION (connection_new),
 	                              NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS |
@@ -179,7 +190,9 @@ update_connection (SCPluginKeyfile *self,
 
 	if (connection_by_uuid) {
 		/* An existing connection changed. */
+
 		nm_log_info (LOGD_SETTINGS, "updating %s", full_path);
+
 		if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (connection_by_uuid),
 		                                              NM_CONNECTION (connection_new),
 		                                              FALSE,  /* don't set Unsaved */
@@ -232,7 +245,7 @@ dir_changed (GFileMonitor *monitor,
 		break;
 	case G_FILE_MONITOR_EVENT_CREATED:
 	case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
-		update_connection (SC_PLUGIN_KEYFILE (config), full_path, connection);
+		update_connection (SC_PLUGIN_KEYFILE (config), full_path, connection, NULL);
 		break;
 	default:
 		break;
@@ -308,6 +321,43 @@ setup_monitoring (NMSystemConfigInterface *config)
 	}
 }
 
+static GHashTable *
+_paths_from_connections (GHashTable *connections)
+{
+	GHashTableIter iter;
+	NMKeyfileConnection *connection;
+	GHashTable *paths = g_hash_table_new (g_str_hash, g_str_equal);
+
+	g_hash_table_iter_init (&iter, connections);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &connection)) {
+		const char *path = nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection));
+
+		if (path)
+			g_hash_table_add (paths, (void *) path);
+	}
+	return paths;
+}
+
+static int
+_sort_paths (const char **f1, const char **f2, GHashTable *paths)
+{
+	struct stat st;
+	gboolean c1, c2;
+	gint64 m1, m2;
+
+	c1 = !!g_hash_table_contains (paths, *f1);
+	c2 = !!g_hash_table_contains (paths, *f2);
+	if (c1 != c2)
+		return c1 ? -1 : 1;
+
+	m1 = stat (*f1, &st) == 0 ? (gint64) st.st_mtime : G_MININT64;
+	m2 = stat (*f2, &st) == 0 ? (gint64) st.st_mtime : G_MININT64;
+	if (m1 != m2)
+		return m1 > m2 ? -1 : 1;
+
+	return strcmp (*f1, *f2);
+}
+
 static void
 read_connections (NMSystemConfigInterface *config)
 {
@@ -321,6 +371,8 @@ read_connections (NMSystemConfigInterface *config)
 	NMKeyfileConnection *connection;
 	GPtrArray *dead_connections = NULL;
 	guint i;
+	GPtrArray *filenames;
+	GHashTable *paths;
 
 	dir = g_dir_open (KEYFILE_DIR, 0, &error);
 	if (!dir) {
@@ -334,20 +386,30 @@ read_connections (NMSystemConfigInterface *config)
 
 	alive_connections = g_hash_table_new (NULL, NULL);
 
+	filenames = g_ptr_array_new_with_free_func (g_free);
 	while ((item = g_dir_read_name (dir))) {
-		char *full_path;
-
 		if (nm_keyfile_plugin_utils_should_ignore_file (item))
 			continue;
+		g_ptr_array_add (filenames, g_build_filename (KEYFILE_DIR, item, NULL));
+	}
+	g_dir_close (dir);
 
-		full_path = g_build_filename (KEYFILE_DIR, item, NULL);
-		connection = update_connection (self, full_path, NULL);
-		g_free (full_path);
+	/* While reloading, we don't replace connections that we already loaded while
+	 * iterating over the files.
+	 *
+	 * To have sensible, reproducible behavior, sort the paths by last modification
+	 * time prefering older files.
+	 */
+	paths = _paths_from_connections (priv->connections);
+	g_ptr_array_sort_with_data (filenames, (GCompareDataFunc) _sort_paths, paths);
+	g_hash_table_destroy (paths);
 
+	for (i = 0; i < filenames->len; i++) {
+		connection = update_connection (self, filenames->pdata[i], NULL, alive_connections);
 		if (connection)
 			g_hash_table_add (alive_connections, connection);
 	}
-	g_dir_close (dir);
+	g_ptr_array_free (filenames, TRUE);
 
 	g_hash_table_iter_init (&iter, priv->connections);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &connection)) {
@@ -398,7 +460,7 @@ load_connection (NMSystemConfigInterface *config,
 	if (nm_keyfile_plugin_utils_should_ignore_file (filename + dir_len + 1))
 		return FALSE;
 
-	connection = update_connection (self, filename, find_by_path (self, filename));
+	connection = update_connection (self, filename, find_by_path (self, filename), NULL);
 
 	return (connection != NULL);
 }
