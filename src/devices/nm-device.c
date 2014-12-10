@@ -7002,13 +7002,29 @@ nm_device_has_pending_action (NMDevice *self)
 /***********************************************************/
 
 static void
-_cleanup_generic_pre (NMDevice *self, gboolean deconfigure)
+_cleanup_ip_pre (NMDevice *self, gboolean deconfigure)
 {
-	NMConnection *connection;
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	/* Clean up when device was deactivated during call to firewall */
+	priv->ip4_state = priv->ip6_state = IP_NONE;
+	nm_device_queued_ip_config_change_clear (self);
 
+	dhcp4_cleanup (self, deconfigure, FALSE);
+	arp_cleanup (self);
+	dhcp6_cleanup (self, deconfigure, FALSE);
+	linklocal6_cleanup (self);
+	addrconf6_cleanup (self);
+	dnsmasq_cleanup (self);
+	aipd_cleanup (self);
+}
+
+static void
+_cleanup_generic_pre (NMDevice *self, gboolean deconfigure)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMConnection *connection;
+
+	/* Clean up when device was deactivated during call to firewall */
 	if (priv->fw_call) {
 		nm_firewall_manager_cancel_call (nm_firewall_manager_get (), priv->fw_call);
 		priv->fw_call = NULL;
@@ -7031,17 +7047,8 @@ _cleanup_generic_pre (NMDevice *self, gboolean deconfigure)
 
 	/* Clear any queued transitions */
 	nm_device_queued_state_clear (self);
-	nm_device_queued_ip_config_change_clear (self);
 
-	priv->ip4_state = priv->ip6_state = IP_NONE;
-
-	dhcp4_cleanup (self, deconfigure, FALSE);
-	arp_cleanup (self);
-	dhcp6_cleanup (self, deconfigure, FALSE);
-	linklocal6_cleanup (self);
-	addrconf6_cleanup (self);
-	dnsmasq_cleanup (self);
-	aipd_cleanup (self);
+	_cleanup_ip_pre (self, deconfigure);
 }
 
 static void
@@ -7444,6 +7451,14 @@ _set_state_full (NMDevice *self,
 			set_nm_ipv6ll (self, TRUE);
 
 			nm_device_cleanup (self, reason);
+		}
+		break;
+	case NM_DEVICE_STATE_NEED_AUTH:
+		if (old_state > NM_DEVICE_STATE_NEED_AUTH) {
+			/* Clean up any half-done IP operations if the device's layer2
+			 * finds out it needs authentication during IP config.
+			 */
+			_cleanup_ip_pre (self, TRUE);
 		}
 		break;
 	default:
