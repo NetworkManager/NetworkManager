@@ -813,13 +813,10 @@ _internal_write_connection (NMConnection *connection,
 	WriteInfo info;
 	GError *local_err = NULL;
 
-	if (out_path)
-		g_return_val_if_fail (*out_path == NULL, FALSE);
+	g_return_val_if_fail (!out_path || !*out_path, FALSE);
 
-	if (!nm_connection_verify (connection, error)) {
+	if (!nm_connection_verify (connection, error))
 		g_return_val_if_reached (FALSE);
-		return FALSE;
-	}
 
 	id = nm_connection_get_id (connection);
 	g_assert (id && *id);
