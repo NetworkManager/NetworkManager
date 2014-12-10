@@ -88,10 +88,13 @@ static gboolean impl_ifcfgrh_get_ifcfg_details (SCPluginIfcfg *plugin,
 
 #include "nm-ifcfg-rh-glue.h"
 
-static void connection_new_or_changed (SCPluginIfcfg *plugin,
-                                       const char *path,
-                                       NMIfcfgConnection *existing,
-                                       char **out_old_path);
+static void update_connection (SCPluginIfcfg *plugin,
+                               NMConnection *source,
+                               const char *full_path,
+                               NMIfcfgConnection *connection,
+                               GHashTable *protected_connections,
+                               char **out_old_path,
+                               GError **error);
 
 static void system_config_interface_init (NMSystemConfigInterface *system_config_interface_class);
 
@@ -128,7 +131,7 @@ connection_ifcfg_changed (NMIfcfgConnection *connection, gpointer user_data)
 	path = nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection));
 	g_return_if_fail (path != NULL);
 
-	connection_new_or_changed (plugin, path, connection, NULL);
+	update_connection (plugin, NULL, path, connection, NULL, NULL, NULL);
 }
 
 static void
@@ -140,7 +143,7 @@ connection_removed_cb (NMSettingsConnection *obj, gpointer user_data)
 
 static NMIfcfgConnection *
 _internal_new_connection (SCPluginIfcfg *self,
-                          const char *path,
+                          const char *full_path,
                           NMConnection *source,
                           GError **error)
 {
@@ -150,9 +153,9 @@ _internal_new_connection (SCPluginIfcfg *self,
 	const char *uuid;
 
 	if (!source)
-		_LOGI ("parsing %s ... ", path);
+		_LOGI ("parsing %s ... ", full_path);
 
-	connection = nm_ifcfg_connection_new (source, path, error);
+	connection = nm_ifcfg_connection_new (source, full_path, error);
 	if (!connection)
 		return NULL;
 
@@ -258,134 +261,137 @@ find_by_uuid_from_path (SCPluginIfcfg *self, const char *path)
 }
 
 static void
-connection_new_or_changed (SCPluginIfcfg *self,
-                           const char *path,
-                           NMIfcfgConnection *existing,
-                           char **out_old_path)
+update_connection (SCPluginIfcfg *self,
+                   NMConnection *source,
+                   const char *full_path,
+                   NMIfcfgConnection *connection,
+                   GHashTable *protected_connections,
+                   char **out_old_path,
+                   GError **error)
 {
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
-	NMIfcfgConnection *new;
-	GError *error = NULL;
+	NMIfcfgConnection *connection_new;
+	GError *local = NULL;
 	const char *new_unmanaged = NULL, *old_unmanaged = NULL;
 	const char *new_unrecognized = NULL, *old_unrecognized = NULL;
 	gboolean unmanaged_changed, unrecognized_changed;
 
 	g_return_if_fail (self != NULL);
-	g_return_if_fail (path != NULL);
+	g_return_if_fail (full_path != NULL);
 
 	if (out_old_path)
 		*out_old_path = NULL;
 
-	if (!existing) {
+	if (!connection) {
 		/* See if it's a rename */
-		existing = find_by_uuid_from_path (self, path);
-		if (existing) {
-			const char *old_path = nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (existing));
-			_LOGI ("renaming %s -> %s", old_path, path);
+		connection = find_by_uuid_from_path (self, full_path);
+		if (connection) {
+			const char *old_path = nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection));
+			_LOGI ("renaming %s -> %s", old_path, full_path);
 			if (out_old_path)
 				*out_old_path = g_strdup (old_path);
-			nm_settings_connection_set_filename (NM_SETTINGS_CONNECTION (existing), path);
+			nm_settings_connection_set_filename (NM_SETTINGS_CONNECTION (connection), full_path);
 		}
 	}
 
-	if (!existing) {
+	if (!connection) {
 		/* New connection */
-		new = _internal_new_connection (self, path, NULL, NULL);
-		if (new) {
-			if (nm_ifcfg_connection_get_unmanaged_spec (new))
+		connection_new = _internal_new_connection (self, full_path, NULL, NULL);
+		if (connection_new) {
+			if (nm_ifcfg_connection_get_unmanaged_spec (connection_new))
 				g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
-			else if (nm_ifcfg_connection_get_unrecognized_spec (new))
+			else if (nm_ifcfg_connection_get_unrecognized_spec (connection_new))
 				g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNRECOGNIZED_SPECS_CHANGED);
 			else
-				g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, new);
+				g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, connection_new);
 		}
 		return;
 	}
 
-	new = (NMIfcfgConnection *) nm_ifcfg_connection_new (NULL, path, NULL);
-	if (!new) {
+	connection_new = (NMIfcfgConnection *) nm_ifcfg_connection_new (NULL, full_path, NULL);
+	if (!connection_new) {
 		/* errors reading connection; remove it */
-		_LOGI ("removed %s.", path);
-		remove_connection (self, existing);
+		_LOGI ("removed %s.", full_path);
+		remove_connection (self, connection);
 		return;
 	}
 
 	/* Successfully read connection changes */
 
-	old_unmanaged = nm_ifcfg_connection_get_unmanaged_spec (NM_IFCFG_CONNECTION (existing));
-	new_unmanaged = nm_ifcfg_connection_get_unmanaged_spec (NM_IFCFG_CONNECTION (new));
+	old_unmanaged = nm_ifcfg_connection_get_unmanaged_spec (NM_IFCFG_CONNECTION (connection));
+	new_unmanaged = nm_ifcfg_connection_get_unmanaged_spec (NM_IFCFG_CONNECTION (connection_new));
 	unmanaged_changed = g_strcmp0 (old_unmanaged, new_unmanaged);
 
-	old_unrecognized = nm_ifcfg_connection_get_unrecognized_spec (NM_IFCFG_CONNECTION (existing));
-	new_unrecognized = nm_ifcfg_connection_get_unrecognized_spec (NM_IFCFG_CONNECTION (new));
+	old_unrecognized = nm_ifcfg_connection_get_unrecognized_spec (NM_IFCFG_CONNECTION (connection));
+	new_unrecognized = nm_ifcfg_connection_get_unrecognized_spec (NM_IFCFG_CONNECTION (connection_new));
 	unrecognized_changed = g_strcmp0 (old_unrecognized, new_unrecognized);
 
 	if (   !unmanaged_changed
 	    && !unrecognized_changed
-	    && nm_connection_compare (NM_CONNECTION (existing),
-	                              NM_CONNECTION (new),
+	    && nm_connection_compare (NM_CONNECTION (connection),
+	                              NM_CONNECTION (connection_new),
 	                              NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS |
 	                                  NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)) {
-		g_object_unref (new);
+		g_object_unref (connection_new);
 		return;
 	}
 
-	if (g_strcmp0 (nm_connection_get_uuid (NM_CONNECTION (existing)), nm_connection_get_uuid (NM_CONNECTION (new))) != 0) {
+	if (g_strcmp0 (nm_connection_get_uuid (NM_CONNECTION (connection)), nm_connection_get_uuid (NM_CONNECTION (connection_new))) != 0) {
 		/* FIXME: UUID changes are not supported by nm_settings_connection_replace_settings().
 		 * This function should be merged with _internal_new_connection() to be like keyfiles
 		 * update_connection(). */
-		_LOGW ("UUID changes are not supported. Cannot update connection %s (%s)", nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (new)), nm_connection_get_uuid (NM_CONNECTION (new)));
-		g_object_unref (new);
+		_LOGW ("UUID changes are not supported. Cannot update connection %s (%s)", nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection_new)), nm_connection_get_uuid (NM_CONNECTION (connection_new)));
+		g_object_unref (connection_new);
 		return;
 	}
 
-	_LOGI ("updating %s", path);
-	g_object_set (existing,
+	_LOGI ("updating %s", full_path);
+	g_object_set (connection,
 	              NM_IFCFG_CONNECTION_UNMANAGED_SPEC, new_unmanaged,
 	              NM_IFCFG_CONNECTION_UNRECOGNIZED_SPEC, new_unrecognized,
 	              NULL);
 
 	if (new_unmanaged || new_unrecognized) {
 		if (!old_unmanaged && !old_unrecognized) {
-			g_object_ref (existing);
+			g_object_ref (connection);
 			/* Unexport the connection by telling the settings service it's
 			 * been removed.
 			 */
-			nm_settings_connection_signal_remove (NM_SETTINGS_CONNECTION (existing));
+			nm_settings_connection_signal_remove (NM_SETTINGS_CONNECTION (connection));
 			/* Remove the path so that claim_connection() doesn't complain later when
 			 * interface gets managed and connection is re-added. */
-			nm_connection_set_path (NM_CONNECTION (existing), NULL);
+			nm_connection_set_path (NM_CONNECTION (connection), NULL);
 
 			/* signal_remove() will end up removing the connection from our hash,
 			 * so add it back now.
 			 */
 			g_hash_table_insert (priv->connections,
-			                     g_strdup (nm_connection_get_uuid (NM_CONNECTION (existing))),
-			                     existing);
+			                     g_strdup (nm_connection_get_uuid (NM_CONNECTION (connection))),
+			                     connection);
 		}
 	} else {
-		const char *cid = nm_connection_get_id (NM_CONNECTION (new));
+		const char *cid = nm_connection_get_id (NM_CONNECTION (connection_new));
 
 		if (old_unmanaged /* && !new_unmanaged */) {
 			_LOGI ("Managing connection '%s' and its device because NM_CONTROLLED was true.", cid);
-			g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, existing);
+			g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, connection);
 		} else if (old_unrecognized /* && !new_unrecognized */) {
 			_LOGI ("Managing connection '%s' because it is now a recognized type.", cid);
-			g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, existing);
+			g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, connection);
 		}
 
-		if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (existing),
-		                                              NM_CONNECTION (new),
+		if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (connection),
+		                                              NM_CONNECTION (connection_new),
 		                                              FALSE,  /* don't set Unsaved */
 		                                              "ifcfg-rh-update",
-		                                              &error)) {
-			/* Shouldn't ever get here as 'new' was verified by the reader already
+		                                              &local)) {
+			/* Shouldn't ever get here as 'connection_new' was verified by the reader already
 			 * and the UUID did not change. */
 			g_assert_not_reached ();
 		}
-		g_assert_no_error (error);
+		g_assert_no_error (local);
 	}
-	g_object_unref (new);
+	g_object_unref (connection_new);
 
 	if (unmanaged_changed)
 		g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
@@ -429,7 +435,7 @@ ifcfg_dir_changed (GFileMonitor *monitor,
 		case G_FILE_MONITOR_EVENT_CREATED:
 		case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
 			/* Update or new */
-			connection_new_or_changed (plugin, ifcfg_path, connection, NULL);
+			update_connection (plugin, NULL, ifcfg_path, connection, NULL, NULL, NULL);
 			break;
 		default:
 			break;
@@ -499,7 +505,7 @@ read_connections (SCPluginIfcfg *plugin)
 
 		connection = g_hash_table_lookup (oldconns, full_path);
 		g_hash_table_remove (oldconns, full_path);
-		connection_new_or_changed (plugin, full_path, connection, &old_path);
+		update_connection (plugin, NULL, full_path, connection, NULL, &old_path, NULL);
 
 		if (old_path) {
 			g_hash_table_remove (oldconns, old_path);
@@ -565,7 +571,7 @@ load_connection (NMSystemConfigInterface *config,
 		return FALSE;
 
 	connection = find_by_path (plugin, filename);
-	connection_new_or_changed (plugin, filename, connection, NULL);
+	update_connection (plugin, NULL, filename, connection, NULL, NULL, NULL);
 	if (!connection)
 		connection = find_by_path (plugin, filename);
 
