@@ -4319,6 +4319,9 @@ setup (NMPlatform *platform)
 	int channel_flags;
 	gboolean status;
 	int nle;
+#if HAVE_LIBNL_INET6_ADDR_GEN_MODE
+	struct nl_object *object;
+#endif
 
 	/* Initialize netlink socket for requests */
 	priv->nlh = setup_socket (FALSE, platform);
