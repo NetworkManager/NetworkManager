@@ -183,6 +183,7 @@ static const char *state_table[NM_DHCP_STATE_MAX + 1] = {
 	[NM_DHCP_STATE_UNKNOWN]  = "unknown",
 	[NM_DHCP_STATE_BOUND]    = "bound",
 	[NM_DHCP_STATE_TIMEOUT]  = "timeout",
+	[NM_DHCP_STATE_EXPIRE]   = "expire",
 	[NM_DHCP_STATE_DONE]     = "done",
 	[NM_DHCP_STATE_FAIL]     = "fail",
 };
@@ -208,13 +209,14 @@ reason_to_state (const char *iface, const char *reason)
 		return NM_DHCP_STATE_BOUND;
 	else if (g_ascii_strcasecmp (reason, "timeout") == 0)
 		return NM_DHCP_STATE_TIMEOUT;
+	else if (g_ascii_strcasecmp (reason, "nak") == 0 ||
+	         g_ascii_strcasecmp (reason, "expire") == 0 ||
+	         g_ascii_strcasecmp (reason, "expire6") == 0)
+		return NM_DHCP_STATE_EXPIRE;
 	else if (g_ascii_strcasecmp (reason, "end") == 0)
 		return NM_DHCP_STATE_DONE;
 	else if (g_ascii_strcasecmp (reason, "fail") == 0 ||
-	         g_ascii_strcasecmp (reason, "abend") == 0 ||
-	         g_ascii_strcasecmp (reason, "nak") == 0 ||
-	         g_ascii_strcasecmp (reason, "expire") == 0 ||
-	         g_ascii_strcasecmp (reason, "expire6") == 0)
+	         g_ascii_strcasecmp (reason, "abend") == 0)
 		return NM_DHCP_STATE_FAIL;
 
 	nm_log_dbg (LOGD_DHCP, "(%s): unmapped DHCP state '%s'", iface, reason);
@@ -744,6 +746,8 @@ nm_dhcp_client_handle_event (gpointer unused,
 
 	old_state = priv->state;
 	new_state = reason_to_state (priv->iface, reason);
+	nm_log_dbg (LOGD_DHCP, "(%s): DHCP reason '%s' -> state '%s'",
+	            iface, reason, state_to_string (new_state));
 
 	if (new_state == NM_DHCP_STATE_BOUND) {
 		/* Copy options */

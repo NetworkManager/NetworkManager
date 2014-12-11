@@ -485,6 +485,8 @@ dhcp_event_cb (sd_dhcp_client *client, int event, gpointer user_data)
 
 	switch (event) {
 	case DHCP_EVENT_EXPIRED:
+		nm_dhcp_client_set_state (NM_DHCP_CLIENT (user_data), NM_DHCP_STATE_EXPIRE, NULL, NULL);
+		break;
 	case DHCP_EVENT_STOP:
 		nm_dhcp_client_set_state (NM_DHCP_CLIENT (user_data), NM_DHCP_STATE_FAIL, NULL, NULL);
 		break;

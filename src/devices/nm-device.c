@@ -3006,9 +3006,13 @@ dhcp4_state_changed (NMDhcpClient *client,
 	case NM_DHCP_STATE_TIMEOUT:
 		dhcp4_fail (self, TRUE);
 		break;
+	case NM_DHCP_STATE_EXPIRE:
+		/* Ignore expiry before we even have a lease (NAK, old lease, etc) */
+		if (priv->ip4_state == IP_CONF)
+			break;
+		/* Fall through */
 	case NM_DHCP_STATE_DONE:
 	case NM_DHCP_STATE_FAIL:
-		/* dhclient quit and can't get/renew a lease; so kill the connection */
 		dhcp4_fail (self, FALSE);
 		break;
 	default:
@@ -3597,6 +3601,11 @@ dhcp6_state_changed (NMDhcpClient *client,
 	case NM_DHCP_STATE_TIMEOUT:
 		dhcp6_timeout (self, client);
 		break;
+	case NM_DHCP_STATE_EXPIRE:
+		/* Ignore expiry before we even have a lease (NAK, old lease, etc) */
+		if (priv->ip6_state != IP_CONF)
+			dhcp6_fail (self, FALSE);
+		break;
 	case NM_DHCP_STATE_DONE:
 		/* In IPv6 info-only mode, the client doesn't handle leases so it
 		 * may exit right after getting a response from the server.  That's
@@ -3606,7 +3615,6 @@ dhcp6_state_changed (NMDhcpClient *client,
 			break;
 		/* Otherwise, fall through */
 	case NM_DHCP_STATE_FAIL:
-		/* dhclient quit and can't get/renew a lease; so kill the connection */
 		dhcp6_fail (self, FALSE);
 		break;
 	default:

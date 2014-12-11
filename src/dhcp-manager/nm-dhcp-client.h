@@ -46,10 +46,11 @@
 
 typedef enum {
 	NM_DHCP_STATE_UNKNOWN = 0,
-	NM_DHCP_STATE_BOUND,        /* lease changed (state_is_bound) */
-	NM_DHCP_STATE_TIMEOUT,      /* TIMEOUT */
-	NM_DHCP_STATE_DONE,         /* END */
-	NM_DHCP_STATE_FAIL,          /* failed or quit unexpectedly */
+	NM_DHCP_STATE_BOUND,        /* new lease or lease changed */
+	NM_DHCP_STATE_TIMEOUT,      /* timed out contacting server */
+	NM_DHCP_STATE_DONE,         /* client quit or stopped */
+	NM_DHCP_STATE_EXPIRE,       /* lease expired or NAKed */
+	NM_DHCP_STATE_FAIL,         /* failed for some reason */
 	__NM_DHCP_STATE_MAX,
 	NM_DHCP_STATE_MAX = __NM_DHCP_STATE_MAX - 1,
 } NMDhcpState;
