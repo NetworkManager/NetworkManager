@@ -2059,12 +2059,13 @@ activation_source_schedule (NMDevice *self, GSourceFunc func, int family)
 	}
 }
 
-gboolean
-nm_device_ip_config_should_fail (NMDevice *self, gboolean ip6)
+static gboolean
+get_ip_config_may_fail (NMDevice *self, int family)
 {
 	NMConnection *connection;
 	NMSettingIP4Config *s_ip4;
 	NMSettingIP6Config *s_ip6;
+	gboolean may_fail = TRUE;
 
 	g_return_val_if_fail (self != NULL, TRUE);
 
@@ -2072,17 +2073,22 @@ nm_device_ip_config_should_fail (NMDevice *self, gboolean ip6)
 	g_assert (connection);
 
 	/* Fail the connection if the failed IP method is required to complete */
-	if (ip6) {
-		s_ip6 = nm_connection_get_setting_ip6_config (connection);
-		if (!nm_setting_ip6_config_get_may_fail (s_ip6))
-			return TRUE;
-	} else {
+	switch (family) {
+	case AF_INET:
 		s_ip4 = nm_connection_get_setting_ip4_config (connection);
-		if (!nm_setting_ip4_config_get_may_fail (s_ip4))
-			return TRUE;
+		if (s_ip4)
+			may_fail = nm_setting_ip4_config_get_may_fail (s_ip4);
+		break;
+	case AF_INET6:
+		s_ip6 = nm_connection_get_setting_ip6_config (connection);
+		if (s_ip6)
+			may_fail = nm_setting_ip6_config_get_may_fail (s_ip6);
+		break;
+	default:
+		g_assert_not_reached ();
 	}
 
-	return FALSE;
+	return may_fail;
 }
 
 static void
@@ -4229,7 +4235,7 @@ nm_device_activate_schedule_stage3_ip_config_start (NMDevice *self)
 static NMActStageReturn
 act_stage4_ip4_config_timeout (NMDevice *self, NMDeviceStateReason *reason)
 {
-	if (nm_device_ip_config_should_fail (self, FALSE)) {
+	if (!get_ip_config_may_fail (self, AF_INET)) {
 		*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
@@ -4312,7 +4318,7 @@ nm_device_activate_schedule_ip4_config_timeout (NMDevice *self)
 static NMActStageReturn
 act_stage4_ip6_config_timeout (NMDevice *self, NMDeviceStateReason *reason)
 {
-	if (nm_device_ip_config_should_fail (self, TRUE)) {
+	if (!get_ip_config_may_fail (self, AF_INET6)) {
 		*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}

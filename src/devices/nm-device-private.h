@@ -56,8 +56,6 @@ gboolean nm_device_update_hw_address (NMDevice *self);
 gboolean nm_device_set_hw_addr (NMDevice *device, const guint8 *addr,
                                 const char *detail, guint64 hw_log_domain);
 
-gboolean nm_device_ip_config_should_fail (NMDevice *self, gboolean ip6);
-
 void nm_device_set_firmware_missing (NMDevice *self, gboolean missing);
 
 void nm_device_activate_schedule_stage1_device_prepare (NMDevice *device);
