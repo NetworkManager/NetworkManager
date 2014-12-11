@@ -538,13 +538,12 @@ test_connection_match_wired (void)
 	GSList *connections = NULL;
 	NMSettingWired *s_wired;
 	char *subchan_arr[] = { "0.0.8000", "0.0.8001", "0.0.8002", NULL };
-	GByteArray *mac;
+	const char *mac = "52:54:00:ab:db:23";
 
 	orig = _match_connection_new ();
 	copy = nm_simple_connection_new_clone (orig);
 	connections = g_slist_append (connections, copy);
 
-	mac = nm_utils_hwaddr_atoba ("52:54:00:ab:db:23", ETH_ALEN);
 	s_wired = nm_connection_get_setting_wired (orig);
 	g_assert (s_wired);
 	g_object_set (G_OBJECT (s_wired),
@@ -553,7 +552,6 @@ test_connection_match_wired (void)
 	              NM_SETTING_WIRED_S390_SUBCHANNELS, subchan_arr,
 	              NM_SETTING_WIRED_S390_NETTYPE, "qeth",
 	              NULL);
-	g_byte_array_free (mac, TRUE);
 
 	s_wired = nm_connection_get_setting_wired (copy);
 	g_assert (s_wired);
