@@ -1219,10 +1219,11 @@ device_link_changed (NMDevice *self, NMPlatformLink *info)
 	/* Update slave status for external changes */
 	if (priv->enslaved && info->master != nm_device_get_ifindex (priv->master))
 		nm_device_release_one_slave (priv->master, self, FALSE, NM_DEVICE_STATE_REASON_NONE);
-	if (info->master && !priv->enslaved)
+	if (info->master && !priv->enslaved) {
 		device_set_master (self, info->master);
-	if (priv->master)
-		nm_device_enslave_slave (priv->master, self, NULL);
+		if (priv->master)
+			nm_device_enslave_slave (priv->master, self, NULL);
+	}
 
 	if (klass->link_changed)
 		klass->link_changed (self, info);
