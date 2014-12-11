@@ -2215,11 +2215,11 @@ activation_source_schedule (NMDevice *self, GSourceFunc func, int family)
 	}
 }
 
-gboolean
-nm_device_ip_config_should_fail (NMDevice *self, gboolean ip6)
+static gboolean
+get_ip_config_may_fail (NMDevice *self, int family)
 {
 	NMConnection *connection;
-	NMSettingIPConfig *s_ip4, *s_ip6;
+	NMSettingIPConfig *s_ip = NULL;
 
 	g_return_val_if_fail (self != NULL, TRUE);
 
@@ -2227,17 +2227,18 @@ nm_device_ip_config_should_fail (NMDevice *self, gboolean ip6)
 	g_assert (connection);
 
 	/* Fail the connection if the failed IP method is required to complete */
-	if (ip6) {
-		s_ip6 = nm_connection_get_setting_ip6_config (connection);
-		if (!nm_setting_ip_config_get_may_fail (s_ip6))
-			return TRUE;
-	} else {
-		s_ip4 = nm_connection_get_setting_ip4_config (connection);
-		if (!nm_setting_ip_config_get_may_fail (s_ip4))
-			return TRUE;
+	switch (family) {
+	case AF_INET:
+		s_ip = nm_connection_get_setting_ip4_config (connection);
+		break;
+	case AF_INET6:
+		s_ip = nm_connection_get_setting_ip6_config (connection);
+		break;
+	default:
+		g_assert_not_reached ();
 	}
 
-	return FALSE;
+	return nm_setting_ip_config_get_may_fail (s_ip);
 }
 
 static void
@@ -4536,6 +4537,42 @@ nm_device_activate_stage3_ip6_start (NMDevice *self)
 }
 
 /*
+ * nm_device_check_ip_failed
+ *
+ * Progress the device to appropriate state if both IPv4 and IPv6 failed
+ */
+static void
+nm_device_check_ip_failed (NMDevice *self, gboolean may_fail)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDeviceState state;
+
+	if (   priv->ip4_state != IP_FAIL
+	    || priv->ip6_state != IP_FAIL)
+		return;
+
+	if (nm_device_uses_assumed_connection (self)) {
+		/* We have assumed configuration, but couldn't
+		 * redo it. No problem, move to check state. */
+		priv->ip4_state = priv->ip6_state = IP_DONE;
+		state = NM_DEVICE_STATE_IP_CHECK;
+	} else if (   may_fail
+	           && get_ip_config_may_fail (self, AF_INET)
+	           && get_ip_config_may_fail (self, AF_INET6)) {
+		/* Couldn't start either IPv6 and IPv4 autoconfiguration,
+		 * but both are allowed to fail. */
+		state = NM_DEVICE_STATE_SECONDARIES;
+	} else {
+		/* Autoconfiguration attempted without success. */
+		state = NM_DEVICE_STATE_FAILED;
+	}
+
+	nm_device_state_changed (self,
+	                         state,
+	                         NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
+}
+
+/*
  * nm_device_activate_stage3_ip_config_start
  *
  * Begin automatic/manual IP configuration
@@ -4589,10 +4626,7 @@ nm_device_activate_stage3_ip_config_start (gpointer user_data)
 	if (!nm_device_activate_stage3_ip6_start (self))
 		goto out;
 
-	if (priv->ip4_state == IP_FAIL && priv->ip6_state == IP_FAIL) {
-		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED,
-		                         NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
-	}
+	nm_device_check_ip_failed (self, TRUE);
 
 out:
 	_LOGI (LOGD_DEVICE, "Activation: Stage 3 of 5 (IP Configure Start) complete.");
@@ -4668,7 +4702,7 @@ nm_device_activate_schedule_stage3_ip_config_start (NMDevice *self)
 static NMActStageReturn
 act_stage4_ip4_config_timeout (NMDevice *self, NMDeviceStateReason *reason)
 {
-	if (nm_device_ip_config_should_fail (self, FALSE)) {
+	if (!get_ip_config_may_fail (self, AF_INET)) {
 		*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
@@ -4707,11 +4741,7 @@ nm_device_activate_ip4_config_timeout (gpointer user_data)
 
 	priv->ip4_state = IP_FAIL;
 
-	/* If IPv4 failed and IPv6 failed, the activation fails */
-	if (priv->ip6_state == IP_FAIL)
-		nm_device_state_changed (self,
-		                         NM_DEVICE_STATE_FAILED,
-		                         NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
+	nm_device_check_ip_failed (self, FALSE);
 
 out:
 	_LOGI (LOGD_DEVICE | LOGD_IP4,
@@ -4746,7 +4776,7 @@ nm_device_activate_schedule_ip4_config_timeout (NMDevice *self)
 static NMActStageReturn
 act_stage4_ip6_config_timeout (NMDevice *self, NMDeviceStateReason *reason)
 {
-	if (nm_device_ip_config_should_fail (self, TRUE)) {
+	if (!get_ip_config_may_fail (self, AF_INET6)) {
 		*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
@@ -4786,11 +4816,7 @@ nm_device_activate_ip6_config_timeout (gpointer user_data)
 
 	priv->ip6_state = IP_FAIL;
 
-	/* If IPv6 failed and IPv4 failed, the activation fails */
-	if (priv->ip4_state == IP_FAIL)
-		nm_device_state_changed (self,
-		                         NM_DEVICE_STATE_FAILED,
-		                         NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
+	nm_device_check_ip_failed (self, FALSE);
 
 out:
 	_LOGI (LOGD_DEVICE | LOGD_IP6,
@@ -6064,7 +6090,7 @@ nm_device_start_ip_check (NMDevice *self)
 	timeout = nm_setting_connection_get_gateway_ping_timeout (s_con);
 
 	if (timeout) {
-		if (priv->ip4_state == IP_DONE) {
+		if (priv->ip4_config && priv->ip4_state == IP_DONE) {
 			guint gw = 0;
 
 			ping_binary = "/usr/bin/ping";
@@ -7464,6 +7490,14 @@ _set_state_full (NMDevice *self,
 		nm_dispatcher_call (DISPATCHER_ACTION_UP, nm_act_request_get_connection (req), self, NULL, NULL, NULL);
 		break;
 	case NM_DEVICE_STATE_FAILED:
+		if (nm_device_uses_assumed_connection (self)) {
+			/* Avoid tearing down assumed connection, assume it's connected */
+			nm_device_queue_state (self,
+			                       NM_DEVICE_STATE_ACTIVATED,
+			                       NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
+			break;
+		}
+
 		connection = nm_device_get_connection (self);
 		_LOGW (LOGD_DEVICE | LOGD_WIFI,
 		       "Activation: failed for connection '%s'",
