@@ -1819,6 +1819,7 @@ add_device (NMManager *self, NMDevice *device, gboolean try_assume)
 	nm_device_set_initial_unmanaged_flag (device, NM_UNMANAGED_INTERNAL, sleeping);
 
 	nm_device_dbus_export (device);
+	nm_device_finish_init (device);
 
 	if (try_assume) {
 		connection_assumed = recheck_assume_connection (device, self);
