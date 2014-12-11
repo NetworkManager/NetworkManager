@@ -62,6 +62,24 @@
 #define DBUS_SERVICE_NAME "com.redhat.ifcfgrh1"
 #define DBUS_OBJECT_PATH "/com/redhat/ifcfgrh1"
 
+
+#define _LOG_DEFAULT_DOMAIN  LOGD_SETTINGS
+
+#define _LOG(level, domain, ...) \
+    G_STMT_START { \
+        nm_log ((level), (domain), \
+                "%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                "ifcfg-rh: " \
+                _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+    } G_STMT_END
+
+#define _LOGT(...)      _LOG (LOGL_TRACE, _LOG_DEFAULT_DOMAIN, __VA_ARGS__)
+#define _LOGD(...)      _LOG (LOGL_DEBUG, _LOG_DEFAULT_DOMAIN, __VA_ARGS__)
+#define _LOGI(...)      _LOG (LOGL_INFO,  _LOG_DEFAULT_DOMAIN, __VA_ARGS__)
+#define _LOGW(...)      _LOG (LOGL_WARN,  _LOG_DEFAULT_DOMAIN, __VA_ARGS__)
+#define _LOGE(...)      _LOG (LOGL_ERR,   _LOG_DEFAULT_DOMAIN, __VA_ARGS__)
+
+
 static gboolean impl_ifcfgrh_get_ifcfg_details (SCPluginIfcfg *plugin,
                                                 const char *in_ifcfg,
                                                 const char **out_uuid,
@@ -132,7 +150,7 @@ _internal_new_connection (SCPluginIfcfg *self,
 	const char *uuid;
 
 	if (!source)
-		nm_log_info (LOGD_SETTINGS, "parsing %s ... ", path);
+		_LOGI ("parsing %s ... ", path);
 
 	connection = nm_ifcfg_connection_new (source, path, error);
 	if (!connection)
@@ -153,7 +171,7 @@ _internal_new_connection (SCPluginIfcfg *self,
 	g_hash_table_insert (priv->connections,
 	                     g_strdup (uuid),
 	                     connection);
-	nm_log_info (LOGD_SETTINGS, "    read connection '%s'", cid);
+	_LOGI ("    read connection '%s'", cid);
 	g_signal_connect (connection, NM_SETTINGS_CONNECTION_REMOVED,
 	                  G_CALLBACK (connection_removed_cb),
 	                  self);
@@ -168,10 +186,10 @@ _internal_new_connection (SCPluginIfcfg *self,
 			device_id++;
 		else
 			device_id = spec;
-		nm_log_warn (LOGD_SETTINGS, "    Ignoring connection '%s' / device '%s' due to NM_CONTROLLED=no.",
+		_LOGW ("    Ignoring connection '%s' / device '%s' due to NM_CONTROLLED=no.",
 		             cid, device_id);
 	} else if (nm_ifcfg_connection_get_unrecognized_spec (connection)) {
-		nm_log_warn (LOGD_SETTINGS, "    Ignoring connection '%s' of unrecognized type.", cid);
+		_LOGW ("    Ignoring connection '%s' of unrecognized type.", cid);
 	}
 
 	/* watch changes of ifcfg hardlinks */
@@ -263,7 +281,7 @@ connection_new_or_changed (SCPluginIfcfg *self,
 		existing = find_by_uuid_from_path (self, path);
 		if (existing) {
 			const char *old_path = nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (existing));
-			nm_log_info (LOGD_SETTINGS, "renaming %s -> %s", old_path, path);
+			_LOGI ("renaming %s -> %s", old_path, path);
 			if (out_old_path)
 				*out_old_path = g_strdup (old_path);
 			nm_settings_connection_set_filename (NM_SETTINGS_CONNECTION (existing), path);
@@ -287,7 +305,7 @@ connection_new_or_changed (SCPluginIfcfg *self,
 	new = (NMIfcfgConnection *) nm_ifcfg_connection_new (NULL, path, NULL);
 	if (!new) {
 		/* errors reading connection; remove it */
-		nm_log_info (LOGD_SETTINGS, "removed %s.", path);
+		_LOGI ("removed %s.", path);
 		remove_connection (self, existing);
 		return;
 	}
@@ -316,12 +334,12 @@ connection_new_or_changed (SCPluginIfcfg *self,
 		/* FIXME: UUID changes are not supported by nm_settings_connection_replace_settings().
 		 * This function should be merged with _internal_new_connection() to be like keyfiles
 		 * update_connection(). */
-		nm_log_warn (LOGD_SETTINGS, "UUID changes are not supported. Cannot update connection %s (%s)", nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (new)), nm_connection_get_uuid (NM_CONNECTION (new)));
+		_LOGW ("UUID changes are not supported. Cannot update connection %s (%s)", nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (new)), nm_connection_get_uuid (NM_CONNECTION (new)));
 		g_object_unref (new);
 		return;
 	}
 
-	nm_log_info (LOGD_SETTINGS, "updating %s", path);
+	_LOGI ("updating %s", path);
 	g_object_set (existing,
 	              NM_IFCFG_CONNECTION_UNMANAGED_SPEC, new_unmanaged,
 	              NM_IFCFG_CONNECTION_UNRECOGNIZED_SPEC, new_unrecognized,
@@ -349,10 +367,10 @@ connection_new_or_changed (SCPluginIfcfg *self,
 		const char *cid = nm_connection_get_id (NM_CONNECTION (new));
 
 		if (old_unmanaged /* && !new_unmanaged */) {
-			nm_log_info (LOGD_SETTINGS, "Managing connection '%s' and its device because NM_CONTROLLED was true.", cid);
+			_LOGI ("Managing connection '%s' and its device because NM_CONTROLLED was true.", cid);
 			g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, existing);
 		} else if (old_unrecognized /* && !new_unrecognized */) {
-			nm_log_info (LOGD_SETTINGS, "Managing connection '%s' because it is now a recognized type.", cid);
+			_LOGI ("Managing connection '%s' because it is now a recognized type.", cid);
 			g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, existing);
 		}
 
@@ -404,7 +422,7 @@ ifcfg_dir_changed (GFileMonitor *monitor,
 		connection = find_by_path (plugin, ifcfg_path);
 		switch (event_type) {
 		case G_FILE_MONITOR_EVENT_DELETED:
-			nm_log_info (LOGD_SETTINGS, "removed %s.", ifcfg_path);
+			_LOGI ("removed %s.", ifcfg_path);
 			if (connection)
 				remove_connection (plugin, connection);
 			break;
@@ -454,7 +472,7 @@ read_connections (SCPluginIfcfg *plugin)
 
 	dir = g_dir_open (IFCFG_DIR, 0, &err);
 	if (!dir) {
-		nm_log_warn (LOGD_SETTINGS, "Could not read directory '%s': %s", IFCFG_DIR, err->message);
+		_LOGW ("Could not read directory '%s': %s", IFCFG_DIR, err->message);
 		g_error_free (err);
 		return;
 	}
@@ -496,7 +514,7 @@ read_connections (SCPluginIfcfg *plugin)
 
 	g_hash_table_iter_init (&iter, oldconns);
 	while (g_hash_table_iter_next (&iter, &key, &value)) {
-		nm_log_info (LOGD_SETTINGS, "removed %s.", (char *)key);
+		_LOGI ("removed %s.", (char *)key);
 		g_hash_table_iter_remove (&iter);
 		remove_connection (plugin, value);
 	}
@@ -648,7 +666,7 @@ plugin_get_hostname (SCPluginIfcfg *plugin)
 
 	network = svOpenFile (SC_NETWORK_FILE, NULL);
 	if (!network) {
-		nm_log_warn (LOGD_SETTINGS, "Could not get hostname: failed to read " SC_NETWORK_FILE);
+		_LOGW ("Could not get hostname: failed to read " SC_NETWORK_FILE);
 		return NULL;
 	}
 
@@ -700,7 +718,7 @@ plugin_set_hostname (SCPluginIfcfg *plugin, const char *hostname)
 #endif
 
 	if (!ret) {
-		nm_log_warn (LOGD_SETTINGS, "Could not save hostname: failed to create/open " HOSTNAME_FILE);
+		_LOGW ("Could not save hostname: failed to create/open " HOSTNAME_FILE);
 		g_free (hostname_eol);
 		return FALSE;
 	}
@@ -869,7 +887,7 @@ sc_plugin_ifcfg_init (SCPluginIfcfg *plugin)
 
 	priv->bus = dbus_g_bus_get (DBUS_BUS_SYSTEM, &error);
 	if (!priv->bus) {
-		nm_log_warn (LOGD_SETTINGS, "Couldn't connect to D-Bus: %s", error->message);
+		_LOGW ("Couldn't connect to D-Bus: %s", error->message);
 		g_clear_error (&error);
 	} else {
 		DBusConnection *tmp;
@@ -890,10 +908,10 @@ sc_plugin_ifcfg_init (SCPluginIfcfg *plugin)
 		                        G_TYPE_INVALID,
 		                        G_TYPE_UINT, &result,
 		                        G_TYPE_INVALID)) {
-			nm_log_warn (LOGD_SETTINGS, "Couldn't acquire D-Bus service: %s", error->message);
+			_LOGW ("Couldn't acquire D-Bus service: %s", error->message);
 			g_clear_error (&error);
 		} else if (result != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
-			nm_log_warn (LOGD_SETTINGS, "Couldn't acquire ifcfgrh1 D-Bus service (already taken)");
+			_LOGW ("Couldn't acquire ifcfgrh1 D-Bus service (already taken)");
 		} else
 			success = TRUE;
 	}
@@ -1055,7 +1073,7 @@ nm_system_config_factory (void)
 			dbus_g_connection_register_g_object (priv->bus,
 			                                     DBUS_OBJECT_PATH,
 			                                     G_OBJECT (singleton));
-		nm_log_info (LOGD_SETTINGS, "Acquired D-Bus service %s", DBUS_SERVICE_NAME);
+		_LOGI ("Acquired D-Bus service %s", DBUS_SERVICE_NAME);
 	} else
 		g_object_ref (singleton);
 
