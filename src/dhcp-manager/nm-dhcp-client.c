@@ -625,11 +625,14 @@ state_to_string (NMDHCPState state)
 }
 
 static NMDHCPState
-string_to_state (const char *name)
+string_to_state (const char *name, gboolean ipv6)
 {
 	int i;
 
 	if (name) {
+		if (strcasecmp (name, "nak") == 0)
+			return ipv6 ? DHC_EXPIRE6 : DHC_EXPIRE;
+
 		for (i = 0; i < G_N_ELEMENTS (state_table); i++) {
 			const char *n = state_table[i];
 
@@ -709,7 +712,7 @@ nm_dhcp_client_new_options (NMDHCPClient *self,
 
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 	old_state = priv->state;
-	new_state = string_to_state (reason);
+	new_state = string_to_state (reason, priv->ipv6);
 
 	/* Clear old and save new DHCP options */
 	g_hash_table_remove_all (priv->options);
