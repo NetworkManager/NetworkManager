@@ -920,6 +920,7 @@ nm_secret_agent_old_get_secrets (NMSecretAgentOld *self,
 	g_return_if_fail (setting_name != NULL);
 	g_return_if_fail (strlen (setting_name) > 0);
 	g_return_if_fail (!(flags & NM_SECRET_AGENT_GET_SECRETS_FLAG_ONLY_SYSTEM));
+	g_return_if_fail (!(flags & NM_SECRET_AGENT_GET_SECRETS_FLAG_NO_ERRORS));
 	g_return_if_fail (callback != NULL);
 
 	NM_SECRET_AGENT_OLD_GET_CLASS (self)->get_secrets (self,
