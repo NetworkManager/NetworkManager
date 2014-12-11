@@ -464,6 +464,43 @@ setup_ifcfg_monitoring (SCPluginIfcfg *plugin)
 	}
 }
 
+static GHashTable *
+_paths_from_connections (GHashTable *connections)
+{
+	GHashTableIter iter;
+	NMIfcfgConnection *connection;
+	GHashTable *paths = g_hash_table_new (g_str_hash, g_str_equal);
+
+	g_hash_table_iter_init (&iter, connections);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &connection)) {
+		const char *path = nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection));
+
+		if (path)
+			g_hash_table_add (paths, (void *) path);
+	}
+	return paths;
+}
+
+static int
+_sort_paths (const char **f1, const char **f2, GHashTable *paths)
+{
+	struct stat st;
+	gboolean c1, c2;
+	gint64 m1, m2;
+
+	c1 = !!g_hash_table_contains (paths, *f1);
+	c2 = !!g_hash_table_contains (paths, *f2);
+	if (c1 != c2)
+		return c1 ? -1 : 1;
+
+	m1 = stat (*f1, &st) == 0 ? (gint64) st.st_mtime : G_MININT64;
+	m2 = stat (*f2, &st) == 0 ? (gint64) st.st_mtime : G_MININT64;
+	if (m1 != m2)
+		return m1 > m2 ? -1 : 1;
+
+	return strcmp (*f1, *f2);
+}
+
 static void
 read_connections (SCPluginIfcfg *plugin)
 {
@@ -475,6 +512,9 @@ read_connections (SCPluginIfcfg *plugin)
 	GHashTableIter iter;
 	gpointer key, value;
 	NMIfcfgConnection *connection;
+	guint i;
+	GPtrArray *filenames;
+	GHashTable *paths;
 
 	dir = g_dir_open (IFCFG_DIR, 0, &err);
 	if (!dir) {
@@ -491,8 +531,9 @@ read_connections (SCPluginIfcfg *plugin)
 			g_hash_table_insert (oldconns, g_strdup (ifcfg_path), value);
 	}
 
+	filenames = g_ptr_array_new_with_free_func (g_free);
 	while ((item = g_dir_read_name (dir))) {
-		char *full_path, *old_path;
+		char *full_path;
 
 		if (utils_should_ignore_file (item, TRUE))
 			continue;
@@ -501,8 +542,27 @@ read_connections (SCPluginIfcfg *plugin)
 
 		full_path = g_build_filename (IFCFG_DIR, item, NULL);
 		if (!utils_get_ifcfg_name (full_path, TRUE))
-			goto next;
+			g_free (full_path);
+		else
+			g_ptr_array_add (filenames, full_path);
+	}
+	g_dir_close (dir);
 
+	/* While reloading, we don't replace connections that we already loaded while
+	 * iterating over the files.
+	 *
+	 * To have sensible, reproducible behavior, sort the paths by last modification
+	 * time prefering older files.
+	 */
+	paths = _paths_from_connections (priv->connections);
+	g_ptr_array_sort_with_data (filenames, (GCompareDataFunc) _sort_paths, paths);
+	g_hash_table_destroy (paths);
+
+	for (i = 0; i < filenames->len; i++) {
+		const char *full_path;
+		char *old_path;
+
+		full_path = filenames->pdata[i];
 		connection = g_hash_table_lookup (oldconns, full_path);
 		g_hash_table_remove (oldconns, full_path);
 		update_connection (plugin, NULL, full_path, connection, NULL, &old_path, NULL);
@@ -511,12 +571,8 @@ read_connections (SCPluginIfcfg *plugin)
 			g_hash_table_remove (oldconns, old_path);
 			g_free (old_path);
 		}
-
-	next:
-		g_free (full_path);
 	}
-
-	g_dir_close (dir);
+	g_ptr_array_free (filenames, TRUE);
 
 	g_hash_table_iter_init (&iter, oldconns);
 	while (g_hash_table_iter_next (&iter, &key, &value)) {
