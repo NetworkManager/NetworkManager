@@ -835,7 +835,7 @@ nm_device_release_one_slave (NMDevice *dev, NMDevice *slave, gboolean configure,
 	}
 
 	if (!configure) {
-		g_warn_if_fail (reason == NM_DEVICE_STATE_REASON_NONE);
+		g_warn_if_fail (reason == NM_DEVICE_STATE_REASON_NONE || reason == NM_DEVICE_STATE_REASON_REMOVED);
 		reason = NM_DEVICE_STATE_REASON_NONE;
 	} else if (reason == NM_DEVICE_STATE_REASON_NONE) {
 		g_warn_if_reached ();
