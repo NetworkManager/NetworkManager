@@ -26,6 +26,7 @@ typedef struct _NMActiveConnection   NMActiveConnection;
 typedef struct _NMVpnConnection      NMVpnConnection;
 typedef struct _NMActRequest         NMActRequest;
 typedef struct _NMAuthSubject        NMAuthSubject;
+typedef struct _NMConfig             NMConfig;
 typedef struct _NMConnectionProvider NMConnectionProvider;
 typedef struct _NMConnectivity       NMConnectivity;
 typedef struct _NMDBusManager        NMDBusManager;
