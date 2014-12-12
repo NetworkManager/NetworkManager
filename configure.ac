@@ -4,9 +4,8 @@ dnl The NM version number
 m4_define([nm_major_version], [1])
 m4_define([nm_minor_version], [1])
 m4_define([nm_micro_version], [0])
-m4_define([nm_nano_version],  [0])
 m4_define([nm_version],
-          [nm_major_version.nm_minor_version.nm_micro_version.nm_nano_version])
+          [nm_major_version.nm_minor_version.nm_micro_version])
 m4_define([nm_git_sha], [m4_esyscmd([ ( [ -d ./.git/ ] && [ "$(readlink -f ./.git/)" = "$(readlink -f "$(git rev-parse --git-dir 2>/dev/null)" 2>/dev/null)" ] && git rev-parse --verify -q HEAD 2>/dev/null ) || true ])])
 
 AC_INIT([NetworkManager], [nm_version],
