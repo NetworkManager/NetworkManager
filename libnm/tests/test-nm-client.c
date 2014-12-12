@@ -90,6 +90,7 @@ test_device_added (void)
 	/* Tell the test service to add a new device */
 	nm_test_service_add_device (sinfo, client, "AddWiredDevice", "eth0");
 
+	/* coverity[loop_condition] */
 	while (!notified)
 		g_main_context_iteration (NULL, TRUE);
 
@@ -188,6 +189,7 @@ test_device_added_signal_after_init (void)
 
 	/* Ensure the 'device-added' signal doesn't show up before
 	 * the 'Devices' property change notification */
+	/* coverity[loop_condition] */
 	while (!(result & SIGNAL_MASK) && !(result & NOTIFY_MASK))
 		g_main_context_iteration (NULL, TRUE);
 
