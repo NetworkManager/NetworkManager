@@ -330,16 +330,21 @@ teamd_dbus_appeared (GDBusConnection *connection,
 	NMDeviceTeam *self = NM_DEVICE_TEAM (user_data);
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (self);
 	NMDevice *device = NM_DEVICE (self);
+	gboolean success;
 
 	g_return_if_fail (priv->teamd_dbus_watch);
 
 	_LOGI (LOGD_TEAM, "teamd appeared on D-Bus");
 	teamd_timeout_remove (device);
-	if (!ensure_teamd_connection (device)) {
-		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
+
+	success = ensure_teamd_connection (device);
+	if (nm_device_get_state (device) == NM_DEVICE_STATE_PREPARE) {
+		if (success)
+			nm_device_activate_schedule_stage2_device_config (device);
+		else if (!nm_device_uses_assumed_connection (device))
+			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
 		return;
 	}
-	nm_device_activate_schedule_stage2_device_config (device);
 }
 
 static void
