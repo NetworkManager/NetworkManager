@@ -410,12 +410,11 @@ teamd_dbus_appeared (GDBusConnection *connection,
 	teamd_timeout_remove (dev);
 	nm_device_queue_recheck_assume (dev);
 #if WITH_TEAMDCTL
-	if (!ensure_teamd_connection (dev)) {
-		nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
+	if (!ensure_teamd_connection (dev))
 		return;
-	}
+	if (nm_device_get_state (dev) == NM_DEVICE_STATE_PREPARE)
+		nm_device_activate_schedule_stage2_device_config (dev);
 #endif
-	nm_device_activate_schedule_stage2_device_config (dev);
 }
 
 static void
