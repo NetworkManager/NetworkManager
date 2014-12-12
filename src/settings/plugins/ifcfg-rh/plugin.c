@@ -671,10 +671,12 @@ plugin_set_hostname (SCPluginIfcfg *plugin, const char *hostname)
 #if HAVE_SELINUX
 	security_context_t se_ctx_prev = NULL, se_ctx = NULL;
 	struct stat file_stat = { .st_mode = 0 };
+	mode_t st_mode = 0;
 
 	/* Get default context for HOSTNAME_FILE and set it for fscreate */
-	stat (HOSTNAME_FILE, &file_stat);
-	matchpathcon (HOSTNAME_FILE, file_stat.st_mode, &se_ctx);
+	if (stat (HOSTNAME_FILE, &file_stat) == 0)
+		st_mode = file_stat.st_mode;
+	matchpathcon (HOSTNAME_FILE, st_mode, &se_ctx);
 	matchpathcon_fini ();
 	getfscreatecon (&se_ctx_prev);
 	setfscreatecon (se_ctx);
