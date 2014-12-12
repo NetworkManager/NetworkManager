@@ -945,6 +945,39 @@ nmtst_assert_connection_unnormalizable (NMConnection *con,
 	g_clear_error (&error);
 }
 
+inline static void
+nmtst_assert_setting_verifies (NMSetting *setting)
+{
+	/* assert that the setting verifies without an error */
+
+	GError *error = NULL;
+	gboolean success;
+
+	g_assert (NM_IS_SETTING (setting));
+
+	success = nm_setting_verify (setting, NULL, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+}
+
+inline static void
+nmtst_assert_setting_verify_fails (NMSetting *setting,
+                                   GQuark expect_error_domain,
+                                   gint expect_error_code)
+{
+	/* assert that the setting verification fails */
+
+	GError *error = NULL;
+	gboolean success;
+
+	g_assert (NM_IS_SETTING (setting));
+
+	success = nm_setting_verify (setting, NULL, &error);
+	nmtst_assert_error (error, expect_error_domain, expect_error_code, NULL);
+	g_assert (!success);
+	g_clear_error (&error);
+}
+
 #endif
 
 #ifdef __NM_UTILS_H__
