@@ -1751,6 +1751,7 @@ nm_utils_uuid_generate_from_strings (const char *string1, ...)
 		g_string_append_len (str, s, strlen (s) + 1);
 		s = va_arg (args, const char *);
 	}
+	va_end (args);
 
 	uuid = nm_utils_uuid_generate_from_string (str->str, str->len, NM_UTILS_UUID_TYPE_VARIANT3, NM_UTILS_UUID_NS);
 
