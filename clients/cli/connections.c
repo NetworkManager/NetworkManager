@@ -5256,6 +5256,7 @@ cleanup_olpc:
 				add_ip4_address_to_connection (ip4addr, connection);
 			}
 
+			/* coverity[dead_error_begin] */
 			if (gw4) {
 				NMSettingIPConfig *s_ip = nm_connection_get_setting_ip4_config (connection);
 
@@ -5288,6 +5289,7 @@ cleanup_olpc:
 				add_ip6_address_to_connection (ip6addr, connection);
 			}
 
+			/* coverity[dead_error_begin] */
 			if (gw6) {
 				NMSettingIPConfig *s_ip = nm_connection_get_setting_ip6_config (connection);
 
