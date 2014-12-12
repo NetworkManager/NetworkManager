@@ -24,14 +24,14 @@ abs_path() {
 }
 
 get_version() {
-    local major minor micro nano
+    local major minor micro
     local F="${1:-"$GITDIR/configure.ac"}"
 
-    vars="$(sed -n 's/^m4_define(\[nm_\(major\|minor\|micro\|nano\)_version\], *\[\([0-9]\+\)\]) *$/local \1='\''\2'\''/p' "$F" 2>/dev/null)"
+    vars="$(sed -n 's/^m4_define(\[nm_\(major\|minor\|micro\)_version\], *\[\([0-9]\+\)\]) *$/local \1='\''\2'\''/p' "$F" 2>/dev/null)"
     eval "$vars"
 
-    [[ -n "$major" && -n "$minor" && "$micro" && "$nano" ]] || return 1
-    echo "$major.$minor.$micro.$nano"
+    [[ -n "$major" && -n "$minor" && "$micro" ]] || return 1
+    echo "$major.$minor.$micro"
 }
 
 write_changelog() {
