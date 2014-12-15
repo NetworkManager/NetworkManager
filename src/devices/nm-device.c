@@ -5037,16 +5037,18 @@ send_arps (NMDevice *self, const char *mode_arg)
 
 	for (i = 0; i < num; i++) {
 		gs_free char *tmp_str = NULL;
+		gboolean success;
+
 		addr = nm_setting_ip_config_get_address (s_ip4, i);
 		argv[ip_arg] = nm_ip_address_get_address (addr);
 
 		_LOGD (LOGD_DEVICE | LOGD_IP4,
 		       "arping: run %s", (tmp_str = g_strjoinv (" ", (char **) argv)));
-		g_spawn_async (NULL, (char **) argv, NULL,
-		               G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL,
-		               nm_unblock_posix_signals,
-		               NULL, NULL, &error);
-		if (error) {
+		success = g_spawn_async (NULL, (char **) argv, NULL,
+		                         G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL,
+		                         nm_unblock_posix_signals,
+		                         NULL, NULL, &error);
+		if (!success) {
 			_LOGW (LOGD_DEVICE | LOGD_IP4,
 			       "arping: could not send ARP for local address %s: %s",
 			       argv[ip_arg], error->message);

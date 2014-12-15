@@ -2054,7 +2054,9 @@ nm_utils_rsa_key_encrypt (const guint8 *data,
 		goto out;
 
 	key = crypto_make_des_aes_key (CIPHER_DES_EDE3_CBC, &salt[0], salt_len, in_password, &key_len, NULL);
-	g_return_val_if_fail (key, NULL);
+	if (!key)
+		g_return_val_if_reached (NULL);
+
 	enc = crypto_encrypt (CIPHER_DES_EDE3_CBC, data, len, salt, salt_len, key, key_len, &enc_len, error);
 	if (!enc)
 		goto out;

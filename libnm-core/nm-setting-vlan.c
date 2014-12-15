@@ -223,7 +223,8 @@ nm_setting_vlan_add_priority_str (NMSettingVlan *setting,
 	list = get_map (setting, map);
 
 	item = priority_map_new_from_str (map, str);
-	g_return_val_if_fail (item != NULL, FALSE);
+	if (!item)
+		g_return_val_if_reached (FALSE);
 
 	/* Duplicates get replaced */
 	for (iter = list; iter; iter = g_slist_next (iter)) {
