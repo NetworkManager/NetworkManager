@@ -345,8 +345,7 @@ test_setting_ip4_config_labels (void)
 
 	nm_setting_ip_config_add_address (s_ip4, addr);
 	nm_ip_address_unref (addr);
-	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
-	g_assert_no_error (error);
+	nmtst_assert_setting_verifies (NM_SETTING (s_ip4));
 
 	addr = nm_setting_ip_config_get_address (s_ip4, 0);
 	label = nm_ip_address_get_attribute (addr, "label");
@@ -378,8 +377,7 @@ test_setting_ip4_config_labels (void)
 
 	nm_setting_ip_config_add_address (s_ip4, addr);
 	nm_ip_address_unref (addr);
-	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
-	g_assert_no_error (error);
+	nmtst_assert_setting_verifies (NM_SETTING (s_ip4));
 
 	addr = nm_setting_ip_config_get_address (s_ip4, 1);
 	label = nm_ip_address_get_attribute (addr, "label");
@@ -393,8 +391,7 @@ test_setting_ip4_config_labels (void)
 
 	nm_setting_ip_config_add_address (s_ip4, addr);
 	nm_ip_address_unref (addr);
-	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
-	g_assert_no_error (error);
+	nmtst_assert_setting_verifies (NM_SETTING (s_ip4));
 
 	addr = nm_setting_ip_config_get_address (s_ip4, 2);
 	label = nm_ip_address_get_attribute (addr, "label");
@@ -402,8 +399,7 @@ test_setting_ip4_config_labels (void)
 
 	/* Remove addr 1 and re-verify remaining addresses */
 	nm_setting_ip_config_remove_address (s_ip4, 0);
-	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
-	g_assert_no_error (error);
+	nmtst_assert_setting_verifies (NM_SETTING (s_ip4));
 
 	addr = nm_setting_ip_config_get_address (s_ip4, 0);
 	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "2.2.2.2");
@@ -514,8 +510,7 @@ test_setting_ip4_config_labels (void)
 	              NM_SETTING_IP_CONFIG_ADDRESSES, addrs,
 	              NULL);
 	g_ptr_array_unref (addrs);
-	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
-	g_assert_no_error (error);
+	nmtst_assert_setting_verifies (NM_SETTING (s_ip4));
 	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip4), ==, 2);
 
 	addr = nm_setting_ip_config_get_address (s_ip4, 0);
@@ -555,8 +550,7 @@ test_setting_ip4_config_address_data (void)
 
 	nm_setting_ip_config_add_address (s_ip4, addr);
 	nm_ip_address_unref (addr);
-	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
-	g_assert_no_error (error);
+	nmtst_assert_setting_verifies (NM_SETTING (s_ip4));
 
 	/* addr 2 */
 	addr = nm_ip_address_new (AF_INET, "2.2.2.2", 24, &error);
@@ -564,8 +558,7 @@ test_setting_ip4_config_address_data (void)
 
 	nm_setting_ip_config_add_address (s_ip4, addr);
 	nm_ip_address_unref (addr);
-	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
-	g_assert_no_error (error);
+	nmtst_assert_setting_verifies (NM_SETTING (s_ip4));
 
 	/* The client-side D-Bus serialization should include the attributes in
 	 * "address-data", and should not have an "addresses" property.
@@ -722,8 +715,6 @@ static void
 test_setting_gsm_apn_underscore (void)
 {
 	NMSettingGsm *s_gsm;
-	GError *error = NULL;
-	gboolean success;
 
 	s_gsm = (NMSettingGsm *) nm_setting_gsm_new ();
 	g_assert (s_gsm);
@@ -732,30 +723,23 @@ test_setting_gsm_apn_underscore (void)
 
 	/* 65-character long */
 	g_object_set (s_gsm, NM_SETTING_GSM_APN, "foobar_baz", NULL);
-	success = nm_setting_verify (NM_SETTING (s_gsm), NULL, &error);
-	g_assert_no_error (error);
-	g_assert (success == TRUE);
+	nmtst_assert_setting_verifies (NM_SETTING (s_gsm));
 }
 
 static void
 test_setting_gsm_without_number (void)
 {
 	NMSettingGsm *s_gsm;
-	GError *error = NULL;
-	gboolean success;
 
 	s_gsm = (NMSettingGsm *) nm_setting_gsm_new ();
 	g_assert (s_gsm);
 
 	g_object_set (s_gsm, NM_SETTING_GSM_NUMBER, NULL, NULL);
-	success = nm_setting_verify (NM_SETTING (s_gsm), NULL, &error);
-	g_assert_no_error (error);
-	g_assert (success == TRUE);
+	nmtst_assert_setting_verifies (NM_SETTING (s_gsm));
 
 	g_object_set (s_gsm, NM_SETTING_GSM_NUMBER, "", NULL);
-	success = nm_setting_verify (NM_SETTING (s_gsm), NULL, &error);
-	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
-	g_error_free (error);
+	nmtst_assert_setting_verify_fails (NM_SETTING (s_gsm), NM_CONNECTION_ERROR,
+	                                   NM_CONNECTION_ERROR_INVALID_PROPERTY);
 }
 
 static NMSettingWirelessSecurity *
@@ -3009,9 +2993,7 @@ test_setting_802_1x_changed_signal (void)
 static void
 test_setting_old_uuid (void)
 {
-	GError *error = NULL;
 	NMSetting *setting;
-	gboolean success;
 
 	/* NetworkManager-0.9.4.0 generated 40-character UUIDs with no dashes,
 	 * like this one. Test that we maintain compatibility. */
@@ -3024,9 +3006,7 @@ test_setting_old_uuid (void)
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
 	              NULL);
 
-	success = nm_setting_verify (NM_SETTING (setting), NULL, &error);
-	g_assert_no_error (error);
-	g_assert (success == TRUE);
+	nmtst_assert_setting_verifies (NM_SETTING (setting));
 }
 
 /******************************************************************************/

@@ -48,6 +48,7 @@ test_client_new (void)
 	NMClient *client;
 	DBusGConnection *bus;
 	GError *error = NULL;
+	gboolean success;
 
 	bus = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
 	g_assert_no_error (error);
@@ -60,8 +61,9 @@ test_client_new (void)
 
 	dbus_g_connection_unref (bus);
 
-	g_initable_init (G_INITABLE (client), NULL, &error);
+	success = g_initable_init (G_INITABLE (client), NULL, &error);
 	g_assert_no_error (error);
+	g_assert (success == TRUE);
 
 	return client;
 }
