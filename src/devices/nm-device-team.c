@@ -215,6 +215,8 @@ ensure_teamd_connection (NMDevice *self)
 static void
 update_connection (NMDevice *device, NMConnection *connection)
 {
+	NMDeviceTeam *self = NM_DEVICE_TEAM (device);
+	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (self);
 	NMSettingTeam *s_team = nm_connection_get_setting_team (connection);
 	const char *iface = nm_device_get_iface (device);
 
@@ -226,7 +228,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 	g_object_set (G_OBJECT (s_team), NM_SETTING_TEAM_CONFIG, NULL, NULL);
 
 #if WITH_TEAMDCTL
-	if (ensure_teamd_connection (device)) {
+	if (priv->tdc) {
 		const char *config = NULL;
 		int err;
 
@@ -352,11 +354,6 @@ teamd_cleanup (NMDevice *dev, gboolean device_state_failed)
 {
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (dev);
 
-	if (priv->teamd_dbus_watch) {
-		g_bus_unwatch_name (priv->teamd_dbus_watch);
-		priv->teamd_dbus_watch = 0;
-	}
-
 	if (priv->teamd_process_watch) {
 		g_source_remove (priv->teamd_process_watch);
 		priv->teamd_process_watch = 0;
@@ -411,6 +408,7 @@ teamd_dbus_appeared (GDBusConnection *connection,
 
 	nm_log_info (LOGD_TEAM, "(%s): teamd appeared on D-Bus", nm_device_get_iface (dev));
 	teamd_timeout_remove (dev);
+	nm_device_queue_recheck_assume (dev);
 #if WITH_TEAMDCTL
 	if (!ensure_teamd_connection (dev)) {
 		nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
@@ -430,7 +428,7 @@ teamd_dbus_vanished (GDBusConnection *connection,
 
 	g_return_if_fail (priv->teamd_dbus_watch);
 
-	if (priv->teamd_timeout) {
+	if (!priv->teamd_pid) {
 		/* g_bus_watch_name will always raise an initial signal, to indicate whether the
 		 * name exists/not exists initially. Do not take this as a failure, until the
 		 * startup timeout is over.
@@ -438,7 +436,7 @@ teamd_dbus_vanished (GDBusConnection *connection,
 		 * Note that g_bus_watch_name is guaranteed to alternate vanished/appeared signals,
 		 * so we won't hit this condition again (because the next signal is either 'appeared'
 		 * or 'timeout'). */
-		nm_log_dbg (LOGD_TEAM, "(%s): teamd vanished from D-Bus (ignored)", nm_device_get_iface (dev));
+		nm_log_dbg (LOGD_TEAM, "(%s): teamd not on D-Bus (ignored)", nm_device_get_iface (dev));
 		return;
 	}
 
@@ -477,6 +475,25 @@ teamd_child_setup (gpointer user_data G_GNUC_UNUSED)
 	nm_unblock_posix_signals (NULL);
 }
 
+static void
+nm_device_team_watch_dbus (NMDeviceTeam *self)
+{
+	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (self);
+	const char *iface = nm_device_get_ip_iface (NM_DEVICE (self));
+	char *tmp_str = NULL;
+
+	/* Register D-Bus name watcher */
+	tmp_str = g_strdup_printf ("org.libteam.teamd.%s", iface);
+	priv->teamd_dbus_watch = g_bus_watch_name (G_BUS_TYPE_SYSTEM,
+	                                           tmp_str,
+	                                           G_BUS_NAME_WATCHER_FLAGS_NONE,
+	                                           teamd_dbus_appeared,
+	                                           teamd_dbus_vanished,
+	                                           NM_DEVICE (self),
+	                                           NULL);
+	g_free (tmp_str);
+}
+
 static gboolean
 teamd_start (NMDevice *dev, NMSettingTeam *s_team)
 {
@@ -495,8 +512,7 @@ teamd_start (NMDevice *dev, NMSettingTeam *s_team)
 	gboolean ret;
 	int status;
 
-	if (priv->teamd_dbus_watch ||
-	    priv->teamd_process_watch ||
+	if (priv->teamd_process_watch ||
 	    priv->teamd_pid > 0 ||
 #if WITH_TEAMDCTL
 	    priv->tdc ||
@@ -563,17 +579,6 @@ teamd_start (NMDevice *dev, NMSettingTeam *s_team)
 
 	/* Start a timeout for teamd to appear at D-Bus */
 	priv->teamd_timeout = g_timeout_add_seconds (5, teamd_timeout_cb, dev);
-
-	/* Register D-Bus name watcher */
-	tmp_str = g_strdup_printf ("org.libteam.teamd.%s", iface);
-	priv->teamd_dbus_watch = g_bus_watch_name (G_BUS_TYPE_SYSTEM,
-	                                           tmp_str,
-	                                           G_BUS_NAME_WATCHER_FLAGS_NONE,
-	                                           teamd_dbus_appeared,
-	                                           teamd_dbus_vanished,
-	                                           dev,
-	                                           NULL);
-	g_free (tmp_str);
 
 	ret = g_spawn_async ("/", (char **) argv->pdata, NULL, G_SPAWN_DO_NOT_REAP_CHILD,
 	                    &teamd_child_setup, NULL, &priv->teamd_pid, &error);
@@ -793,7 +798,11 @@ nm_device_team_new_for_connection (NMConnection *connection)
 static void
 constructed (GObject *object)
 {
+	NMDeviceTeam *self = NM_DEVICE_TEAM (object);
+
 	G_OBJECT_CLASS (nm_device_team_parent_class)->constructed (object);
+
+	nm_device_team_watch_dbus (self);
 
 	nm_log_dbg (LOGD_HW | LOGD_TEAM, "(%s): kernel ifindex %d",
 	            nm_device_get_iface (NM_DEVICE (object)),
@@ -842,6 +851,14 @@ set_property (GObject *object, guint prop_id,
 static void
 dispose (GObject *object)
 {
+	NMDeviceTeam *self = NM_DEVICE_TEAM (object);
+	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (self);
+
+	if (priv->teamd_dbus_watch) {
+		g_bus_unwatch_name (priv->teamd_dbus_watch);
+		priv->teamd_dbus_watch = 0;
+	}
+
 	teamd_cleanup (NM_DEVICE (object), FALSE);
 
 	G_OBJECT_CLASS (nm_device_team_parent_class)->dispose (object);
