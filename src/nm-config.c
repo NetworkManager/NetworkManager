@@ -648,6 +648,7 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 	guint i;
 	char *o_config_main_file = NULL;
 	char *o_config_description = NULL;
+	char **plugins_tmp;
 
 	g_return_val_if_fail (config_dir, NULL);
 	g_return_val_if_fail (out_config_main_file && !*out_config_main_file, FALSE);
@@ -667,19 +668,35 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 	for (i = 0; i < confs->len; i++) {
 		if (!read_config (keyfile, confs->pdata[i], error)) {
 			g_key_file_free (keyfile);
-			keyfile = NULL;
-			break;
+			g_free (o_config_main_file);
+			g_free (o_config_description);
+			g_ptr_array_unref (confs);
+			return NULL;
 		}
 	}
 	g_ptr_array_unref (confs);
 
-	if (keyfile) {
-		*out_config_main_file = o_config_main_file;
-		*out_config_description = o_config_description;
-	} else {
-		g_free (o_config_main_file);
-		g_free (o_config_description);
-	}
+	/* Merge settings from command line. They overwrite everything read from
+	 * config files. */
+
+	if (cli && cli->plugins && cli->plugins[0])
+		g_key_file_set_value (keyfile, "main", "plugins", cli->plugins);
+	plugins_tmp = g_key_file_get_string_list (keyfile, "main", "plugins", NULL, NULL);
+	if (!plugins_tmp) {
+		if (STRLEN (CONFIG_PLUGINS_DEFAULT) > 0)
+			g_key_file_set_value (keyfile, "main", "plugins", CONFIG_PLUGINS_DEFAULT);
+	} else
+		g_strfreev (plugins_tmp);
+
+	if (cli && cli->connectivity_uri && cli->connectivity_uri[0])
+		g_key_file_set_value (keyfile, "connectivity", "uri", cli->connectivity_uri);
+	if (cli && cli->connectivity_interval >= 0)
+		g_key_file_set_integer (keyfile, "connectivity", "interval", cli->connectivity_interval);
+	if (cli && cli->connectivity_response && cli->connectivity_response[0])
+		g_key_file_set_value (keyfile, "connectivity", "response", cli->connectivity_response);
+
+	*out_config_main_file = o_config_main_file;
+	*out_config_description = o_config_description;
 	return keyfile;
 }
 
@@ -795,7 +812,8 @@ nm_config_new (const NMConfigCmdLineOptions *cli, GError **error)
 	g_key_file_free (priv->keyfile);
 	priv->keyfile = keyfile;
 
-	/* Handle no-auto-default key and state file */
+	/* Initialize read only private members */
+
 	priv->no_auto_default = g_key_file_get_string_list (priv->keyfile, "main", "no-auto-default", NULL, NULL);
 	if (priv->cli.no_auto_default_file)
 		priv->no_auto_default_file = g_strdup (priv->cli.no_auto_default_file);
@@ -803,12 +821,9 @@ nm_config_new (const NMConfigCmdLineOptions *cli, GError **error)
 		priv->no_auto_default_file = g_strdup (NM_NO_AUTO_DEFAULT_STATE_FILE);
 	merge_no_auto_default_state (self);
 
-	/* Now let command-line options override the config files, and fill in priv. */
-	if (priv->cli.plugins && priv->cli.plugins[0])
-		g_key_file_set_value (priv->keyfile, "main", "plugins", priv->cli.plugins);
 	priv->plugins = g_key_file_get_string_list (priv->keyfile, "main", "plugins", NULL, NULL);
-	if (!priv->plugins && STRLEN (CONFIG_PLUGINS_DEFAULT) > 0)
-		priv->plugins = g_strsplit (CONFIG_PLUGINS_DEFAULT, ",", -1);
+	if (!priv->plugins)
+		priv->plugins = g_new0 (char *, 1);
 
 	priv->monitor_connection_files = _get_bool_value (priv->keyfile, "main", "monitor-connection-files", FALSE);
 
@@ -822,21 +837,13 @@ nm_config_new (const NMConfigCmdLineOptions *cli, GError **error)
 
 	priv->debug = g_key_file_get_value (priv->keyfile, "main", "debug", NULL);
 
-	if (priv->cli.connectivity_uri && priv->cli.connectivity_uri[0])
-		g_key_file_set_value (priv->keyfile, "connectivity", "uri", priv->cli.connectivity_uri);
-	connectivity_uri = g_key_file_get_value (priv->keyfile, "connectivity", "uri", NULL);
-
-	if (priv->cli.connectivity_interval >= 0)
-		g_key_file_set_integer (priv->keyfile, "connectivity", "interval", priv->cli.connectivity_interval);
-	connectivity_interval = g_key_file_get_integer (priv->keyfile, "connectivity", "interval", NULL);
-
-	if (priv->cli.connectivity_response && priv->cli.connectivity_response[0])
-		g_key_file_set_value (priv->keyfile, "connectivity", "response", priv->cli.connectivity_response);
-	connectivity_response = g_key_file_get_value (priv->keyfile, "connectivity", "response", NULL);
-
 	priv->ignore_carrier = g_key_file_get_string_list (priv->keyfile, "main", "ignore-carrier", NULL, NULL);
 
 	priv->configure_and_quit = _get_bool_value (priv->keyfile, "main", "configure-and-quit", FALSE);
+
+	connectivity_uri = g_key_file_get_value (priv->keyfile, "connectivity", "uri", NULL);
+	connectivity_interval = g_key_file_get_integer (priv->keyfile, "connectivity", "interval", NULL);
+	connectivity_response = g_key_file_get_value (priv->keyfile, "connectivity", "response", NULL);
 
 	priv->config_data = g_object_new (NM_TYPE_CONFIG_DATA,
 	                                  NM_CONFIG_DATA_CONNECTIVITY_URI, connectivity_uri,
