@@ -436,6 +436,16 @@ nm_config_cmd_line_options_add_to_entries (NMConfigCmdLineOptions *cli,
 
 /************************************************************************/
 
+GKeyFile *
+nm_config_create_keyfile ()
+{
+	GKeyFile *keyfile;
+
+	keyfile = g_key_file_new ();
+	g_key_file_set_list_separator (keyfile, ',');
+	return keyfile;
+}
+
 static gboolean
 read_config (GKeyFile *keyfile, const char *path, GError **error)
 {
@@ -445,6 +455,8 @@ read_config (GKeyFile *keyfile, const char *path, GError **error)
 	int g, k;
 
 	g_return_val_if_fail (keyfile, FALSE);
+	g_return_val_if_fail (path, FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
 
 	if (g_file_test (path, G_FILE_TEST_EXISTS) == FALSE) {
 		g_set_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND, "file %s not found", path);
@@ -453,8 +465,7 @@ read_config (GKeyFile *keyfile, const char *path, GError **error)
 
 	nm_log_dbg (LOGD_SETTINGS, "Reading config file '%s'", path);
 
-	kf = g_key_file_new ();
-	g_key_file_set_list_separator (kf, ',');
+	kf = nm_config_create_keyfile ();
 	if (!g_key_file_load_from_file (kf, path, G_KEY_FILE_NONE, error)) {
 		g_key_file_free (kf);
 		return FALSE;
@@ -619,6 +630,53 @@ _get_config_dir_files (const char *config_main_file,
 	return confs;
 }
 
+static GKeyFile *
+read_entire_config (const NMConfigCmdLineOptions *cli,
+                    const char *config_dir,
+                    char **out_config_main_file,
+                    char **out_config_description,
+                    GError **error)
+{
+	GKeyFile *keyfile = nm_config_create_keyfile ();
+	GPtrArray *confs;
+	guint i;
+	char *o_config_main_file = NULL;
+	char *o_config_description = NULL;
+
+	g_return_val_if_fail (config_dir, NULL);
+	g_return_val_if_fail (out_config_main_file && !*out_config_main_file, FALSE);
+	g_return_val_if_fail (out_config_description && !*out_config_description, NULL);
+	g_return_val_if_fail (!error || !*error, FALSE);
+
+	/* First read the base config file */
+	if (   cli
+	    && !read_base_config (keyfile, cli->config_main_file, &o_config_main_file, error)) {
+		g_key_file_free (keyfile);
+		return NULL;
+	}
+
+	g_assert (o_config_main_file);
+
+	confs = _get_config_dir_files (o_config_main_file, config_dir, &o_config_description);
+	for (i = 0; i < confs->len; i++) {
+		if (!read_config (keyfile, confs->pdata[i], error)) {
+			g_key_file_free (keyfile);
+			keyfile = NULL;
+			break;
+		}
+	}
+	g_ptr_array_unref (confs);
+
+	if (keyfile) {
+		*out_config_main_file = o_config_main_file;
+		*out_config_description = o_config_description;
+	} else {
+		g_free (o_config_main_file);
+		g_free (o_config_description);
+	}
+	return keyfile;
+}
+
 /************************************************************************/
 
 void
@@ -704,11 +762,10 @@ NMConfig *
 nm_config_new (const NMConfigCmdLineOptions *cli, GError **error)
 {
 	NMConfigPrivate *priv = NULL;
-	int i;
 	NMConfig *self;
 	char *connectivity_uri, *connectivity_response;
 	guint connectivity_interval;
-	GPtrArray *confs;
+	GKeyFile *keyfile;
 
 	self = NM_CONFIG (g_object_new (NM_TYPE_CONFIG, NULL));
 	priv = NM_CONFIG_GET_PRIVATE (self);
@@ -724,23 +781,17 @@ nm_config_new (const NMConfigCmdLineOptions *cli, GError **error)
 	else
 		priv->config_dir = g_strdup (NM_DEFAULT_SYSTEM_CONF_DIR);
 
-	/* First read the base config file */
-	if (!read_base_config (priv->keyfile, priv->cli.config_main_file, &priv->config_main_file, error)) {
+	keyfile = read_entire_config (&priv->cli,
+	                              priv->config_dir,
+	                              &priv->config_main_file,
+	                              &priv->config_description,
+	                              error);
+	if (!keyfile) {
 		g_object_unref (self);
 		return NULL;
 	}
-
-	confs = _get_config_dir_files (priv->config_main_file, priv->config_dir, &priv->config_description);
-	for (i = 0; i < confs->len; i++) {
-		if (!read_config (priv->keyfile, confs->pdata[i], error)) {
-			g_object_unref (self);
-			self = NULL;
-			break;
-		}
-	}
-	g_ptr_array_unref (confs);
-	if (!self)
-		return NULL;
+	g_key_file_free (priv->keyfile);
+	priv->keyfile = keyfile;
 
 	/* Handle no-auto-default key and state file */
 	priv->no_auto_default = g_key_file_get_string_list (priv->keyfile, "main", "no-auto-default", NULL, NULL);
@@ -804,8 +855,7 @@ nm_config_init (NMConfig *config)
 
 	priv->auth_polkit = NM_CONFIG_DEFAULT_AUTH_POLKIT;
 
-	priv->keyfile = g_key_file_new ();
-	g_key_file_set_list_separator (priv->keyfile, ',');
+	priv->keyfile = nm_config_create_keyfile ();
 }
 
 static void

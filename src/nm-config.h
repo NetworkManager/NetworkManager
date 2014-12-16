@@ -90,6 +90,8 @@ NMConfig *nm_config_new (const NMConfigCmdLineOptions *cli, GError **error);
 NMConfig *nm_config_setup (const NMConfigCmdLineOptions *cli, GError **error);
 void nm_config_reload (NMConfig *config);
 
+GKeyFile *nm_config_create_keyfile (void);
+
 G_END_DECLS
 
 #endif /* __NETWORKMANAGER_CONFIG_H__ */
