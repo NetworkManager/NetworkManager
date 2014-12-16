@@ -4629,9 +4629,6 @@ connection_from_file_full (const char *filename,
                            const char *network_file,  /* for unit tests only */
                            const char *test_type,     /* for unit tests only */
                            char **out_unhandled,
-                           char **out_keyfile,
-                           char **out_routefile,
-                           char **out_route6file,
                            GError **error,
                            gboolean *out_ignore_error)
 {
@@ -4644,12 +4641,6 @@ connection_from_file_full (const char *filename,
 	g_return_val_if_fail (filename != NULL, NULL);
 	if (out_unhandled)
 		g_return_val_if_fail (*out_unhandled == NULL, NULL);
-	if (out_keyfile)
-		g_return_val_if_fail (*out_keyfile == NULL, NULL);
-	if (out_routefile)
-		g_return_val_if_fail (*out_routefile == NULL, NULL);
-	if (out_route6file)
-		g_return_val_if_fail (*out_route6file == NULL, NULL);
 
 	/* Non-NULL only for unit tests; normally use /etc/sysconfig/network */
 	if (!network_file)
@@ -4827,13 +4818,6 @@ connection_from_file_full (const char *filename,
 		connection = NULL;
 	}
 
-	if (out_keyfile)
-		*out_keyfile = utils_get_keys_path (filename);
-	if (out_routefile)
-		*out_routefile = utils_get_route_path (filename);
-	if (out_route6file)
-		*out_route6file = utils_get_route6_path (filename);
-
 done:
 	svCloseFile (parsed);
 	return connection;
@@ -4849,7 +4833,6 @@ connection_from_file (const char *filename,
 
 	conn = connection_from_file_full (filename, NULL, NULL,
 	                                  out_unhandled,
-	                                  NULL, NULL, NULL,
 	                                  error,
 	                                  &ignore_error);
 	if (error && *error && !ignore_error)
@@ -4862,18 +4845,12 @@ connection_from_file_test (const char *filename,
                            const char *network_file,
                            const char *test_type,
                            char **out_unhandled,
-                           char **out_keyfile,
-                           char **out_routefile,
-                           char **out_route6file,
                            GError **error)
 {
 	return connection_from_file_full (filename,
 	                                  network_file,
 	                                  test_type,
 	                                  out_unhandled,
-	                                  out_keyfile,
-	                                  out_routefile,
-	                                  out_route6file,
 	                                  error,
 	                                  NULL);
 }
