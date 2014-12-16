@@ -129,23 +129,13 @@ _internal_new_connection (SCPluginIfcfg *self,
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
 	NMIfcfgConnection *connection;
 	const char *cid;
-	GError *local = NULL;
-	gboolean ignore_error = FALSE;
 
 	if (!source)
 		nm_log_info (LOGD_SETTINGS, "parsing %s ... ", path);
 
-	connection = nm_ifcfg_connection_new (source, path, &local, &ignore_error);
-	if (!connection) {
-		if (!ignore_error)
-			nm_log_warn (LOGD_SETTINGS, "    %s", (local && local->message) ? local->message : "(unknown)");
-		if (local)
-			g_propagate_error (error, local);
-		else
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "(unknown)");
+	connection = nm_ifcfg_connection_new (source, path, error);
+	if (!connection)
 		return NULL;
-	}
 
 	cid = nm_connection_get_id (NM_CONNECTION (connection));
 	g_assert (cid);
@@ -248,7 +238,6 @@ connection_new_or_changed (SCPluginIfcfg *self,
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
 	NMIfcfgConnection *new;
 	GError *error = NULL;
-	gboolean ignore_error = FALSE;
 	const char *new_unmanaged = NULL, *old_unmanaged = NULL;
 	const char *new_unrecognized = NULL, *old_unrecognized = NULL;
 	gboolean unmanaged_changed, unrecognized_changed;
@@ -285,13 +274,9 @@ connection_new_or_changed (SCPluginIfcfg *self,
 		return;
 	}
 
-	new = (NMIfcfgConnection *) nm_ifcfg_connection_new (NULL, path, &error, &ignore_error);
+	new = (NMIfcfgConnection *) nm_ifcfg_connection_new (NULL, path, NULL);
 	if (!new) {
 		/* errors reading connection; remove it */
-		if (!ignore_error)
-			nm_log_warn (LOGD_SETTINGS, "    %s", (error && error->message) ? error->message : "(unknown)");
-		g_clear_error (&error);
-
 		nm_log_info (LOGD_SETTINGS, "removed %s.", path);
 		remove_connection (self, existing);
 		return;

@@ -4842,14 +4842,19 @@ done:
 NMConnection *
 connection_from_file (const char *filename,
                       char **out_unhandled,
-                      GError **error,
-                      gboolean *out_ignore_error)
+                      GError **error)
 {
-	return connection_from_file_full (filename, NULL, NULL,
+	gboolean ignore_error = FALSE;
+	NMConnection *conn;
+
+	conn = connection_from_file_full (filename, NULL, NULL,
 	                                  out_unhandled,
 	                                  NULL, NULL, NULL,
 	                                  error,
-	                                  out_ignore_error);
+	                                  &ignore_error);
+	if (error && *error && !ignore_error)
+		PARSE_WARNING ("%s", (*error)->message);
+	return conn;
 }
 
 NMConnection *
