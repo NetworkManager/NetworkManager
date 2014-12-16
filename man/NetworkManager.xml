@@ -167,6 +167,12 @@
           </para></listitem>
         </varlistentry>
         <varlistentry>
+          <term><varname>CONNECTION_FILENAME</varname></term>
+          <listitem><para>
+            The backing file name of the connection profile (if any).
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><varname>DEVICE_IFACE</varname></term>
           <listitem><para>
             The interface name of the device.
