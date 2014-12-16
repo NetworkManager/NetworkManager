@@ -36,19 +36,12 @@
 
 G_DEFINE_TYPE (NMKeyfileConnection, nm_keyfile_connection, NM_TYPE_SETTINGS_CONNECTION)
 
-#define NM_KEYFILE_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_KEYFILE_CONNECTION, NMKeyfileConnectionPrivate))
-
-typedef struct {
-	char *path;
-} NMKeyfileConnectionPrivate;
-
 NMKeyfileConnection *
 nm_keyfile_connection_new (NMConnection *source,
                            const char *full_path,
                            GError **error)
 {
 	GObject *object;
-	NMKeyfileConnectionPrivate *priv;
 	NMConnection *tmp;
 	const char *uuid;
 	gboolean update_unsaved = TRUE;
@@ -75,10 +68,9 @@ nm_keyfile_connection_new (NMConnection *source,
 		update_unsaved = FALSE;
 	}
 
-	object = (GObject *) g_object_new (NM_TYPE_KEYFILE_CONNECTION, NULL);
-
-	priv = NM_KEYFILE_CONNECTION_GET_PRIVATE (object);
-	priv->path = g_strdup (full_path);
+	object = (GObject *) g_object_new (NM_TYPE_KEYFILE_CONNECTION,
+	                                   NM_SETTINGS_CONNECTION_FILENAME, full_path,
+	                                   NULL);
 
 	/* Update our settings with what was read from the file */
 	if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
@@ -93,38 +85,16 @@ nm_keyfile_connection_new (NMConnection *source,
 	return (NMKeyfileConnection *) object;
 }
 
-const char *
-nm_keyfile_connection_get_path (NMKeyfileConnection *self)
-{
-	g_return_val_if_fail (NM_IS_KEYFILE_CONNECTION (self), NULL);
-
-	return NM_KEYFILE_CONNECTION_GET_PRIVATE (self)->path;
-}
-
-void
-nm_keyfile_connection_set_path (NMKeyfileConnection *self, const char *path)
-{
-	NMKeyfileConnectionPrivate *priv;
-
-	g_return_if_fail (NM_IS_KEYFILE_CONNECTION (self));
-	g_return_if_fail (path != NULL);
-
-	priv = NM_KEYFILE_CONNECTION_GET_PRIVATE (self);
-	g_free (priv->path);
-	priv->path = g_strdup (path);
-}
-
 static void
 commit_changes (NMSettingsConnection *connection,
                 NMSettingsConnectionCommitFunc callback,
                 gpointer user_data)
 {
-	NMKeyfileConnectionPrivate *priv = NM_KEYFILE_CONNECTION_GET_PRIVATE (connection);
 	char *path = NULL;
 	GError *error = NULL;
 
 	if (!nm_keyfile_plugin_write_connection (NM_CONNECTION (connection),
-	                                         priv->path,
+	                                         nm_settings_connection_get_filename (connection),
 	                                         &path,
 	                                         &error)) {
 		callback (connection, error, user_data);
@@ -133,10 +103,8 @@ commit_changes (NMSettingsConnection *connection,
 	}
 
 	/* Update the filename if it changed */
-	if (path) {
-		g_free (priv->path);
-		priv->path = path;
-	}
+	if (path)
+		nm_settings_connection_set_filename (connection, path);
 
 	NM_SETTINGS_CONNECTION_CLASS (nm_keyfile_connection_parent_class)->commit_changes (connection,
 	                                                                                   callback,
@@ -148,10 +116,11 @@ do_delete (NMSettingsConnection *connection,
            NMSettingsConnectionDeleteFunc callback,
            gpointer user_data)
 {
-	NMKeyfileConnectionPrivate *priv = NM_KEYFILE_CONNECTION_GET_PRIVATE (connection);
+	const char *path;
 
-	if (priv->path)
-		g_unlink (priv->path);
+	path = nm_settings_connection_get_filename (connection);
+	if (path)
+		g_unlink (path);
 
 	NM_SETTINGS_CONNECTION_CLASS (nm_keyfile_connection_parent_class)->delete (connection,
 	                                                                           callback,
@@ -166,23 +135,11 @@ nm_keyfile_connection_init (NMKeyfileConnection *connection)
 }
 
 static void
-finalize (GObject *object)
-{
-	g_free (NM_KEYFILE_CONNECTION_GET_PRIVATE (object)->path);
-
-	G_OBJECT_CLASS (nm_keyfile_connection_parent_class)->finalize (object);
-}
-
-static void
 nm_keyfile_connection_class_init (NMKeyfileConnectionClass *keyfile_connection_class)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (keyfile_connection_class);
 	NMSettingsConnectionClass *settings_class = NM_SETTINGS_CONNECTION_CLASS (keyfile_connection_class);
 
-	g_type_class_add_private (keyfile_connection_class, sizeof (NMKeyfileConnectionPrivate));
-
 	/* Virtual methods */
-	object_class->finalize = finalize;
 	settings_class->commit_changes = commit_changes;
 	settings_class->delete = do_delete;
 }
