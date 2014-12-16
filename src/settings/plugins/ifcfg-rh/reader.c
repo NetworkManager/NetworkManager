@@ -4624,16 +4624,16 @@ check_dns_search_domains (shvarFile *ifcfg, NMSetting *s_ip4, NMSetting *s_ip6)
 	}
 }
 
-NMConnection *
-connection_from_file (const char *filename,
-                      const char *network_file,  /* for unit tests only */
-                      const char *test_type,     /* for unit tests only */
-                      char **out_unhandled,
-                      char **out_keyfile,
-                      char **out_routefile,
-                      char **out_route6file,
-                      GError **error,
-                      gboolean *out_ignore_error)
+static NMConnection *
+connection_from_file_full (const char *filename,
+                           const char *network_file,  /* for unit tests only */
+                           const char *test_type,     /* for unit tests only */
+                           char **out_unhandled,
+                           char **out_keyfile,
+                           char **out_routefile,
+                           char **out_route6file,
+                           GError **error,
+                           gboolean *out_ignore_error)
 {
 	NMConnection *connection = NULL;
 	shvarFile *parsed;
@@ -4837,5 +4837,39 @@ connection_from_file (const char *filename,
 done:
 	svCloseFile (parsed);
 	return connection;
+}
+
+NMConnection *
+connection_from_file (const char *filename,
+                      char **out_unhandled,
+                      GError **error,
+                      gboolean *out_ignore_error)
+{
+	return connection_from_file_full (filename, NULL, NULL,
+	                                  out_unhandled,
+	                                  NULL, NULL, NULL,
+	                                  error,
+	                                  out_ignore_error);
+}
+
+NMConnection *
+connection_from_file_test (const char *filename,
+                           const char *network_file,
+                           const char *test_type,
+                           char **out_unhandled,
+                           char **out_keyfile,
+                           char **out_routefile,
+                           char **out_route6file,
+                           GError **error)
+{
+	return connection_from_file_full (filename,
+	                                  network_file,
+	                                  test_type,
+	                                  out_unhandled,
+	                                  out_keyfile,
+	                                  out_routefile,
+	                                  out_route6file,
+	                                  error,
+	                                  NULL);
 }
 
