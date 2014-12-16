@@ -6327,9 +6327,6 @@ test_write_wired_static (void)
 	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
 	        "wired-static-write", "written and re-read connection weren't the same.");
 
-	if (route6file)
-		unlink (route6file);
-
 	g_free (testfile);
 	g_free (unmanaged);
 	g_free (keyfile);
@@ -6662,9 +6659,6 @@ test_write_wired_static_ip6_only (void)
 
 	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
 	        "wired-static-ip6-only-write", "written and re-read connection weren't the same.");
-
-	if (route6file)
-		unlink (route6file);
 
 	g_free (testfile);
 	g_free (unmanaged);
@@ -10429,9 +10423,6 @@ test_write_wired_qeth_dhcp (void)
 	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
 	        "wired-qeth-dhcp-write", "written and re-read connection weren't the same.");
 
-	if (route6file)
-		unlink (route6file);
-
 	g_free (testfile);
 	g_free (unmanaged);
 	g_free (keyfile);
@@ -10560,9 +10551,6 @@ test_write_wired_ctc_dhcp (void)
 	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
 	g_assert (success);
 
-	if (route6file)
-		unlink (route6file);
-
 	g_free (testfile);
 	g_free (unmanaged);
 	g_free (keyfile);
@@ -10669,9 +10657,6 @@ test_write_permissions (void)
 
 	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
 	        "permissions-write", "written and re-read connection weren't the same.");
-
-	if (route6file)
-		unlink (route6file);
 
 	g_free (testfile);
 	g_free (unmanaged);
@@ -10807,9 +10792,6 @@ test_write_wifi_wep_agent_keys (void)
 	/* Compare original and reread */
 	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
 	g_assert (success);
-
-	if (route6file)
-		unlink (route6file);
 
 	g_free (testfile);
 	g_free (unmanaged);
@@ -11332,9 +11314,6 @@ test_write_bridge_component (void)
 	g_assert_no_error (error);
 
 	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
-
-	if (route6file)
-		unlink (route6file);
 
 	g_free (testfile);
 	g_free (unmanaged);
@@ -12091,9 +12070,6 @@ test_write_bond_slave (void)
 	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
 	        "bond-slave-write", "written and re-read connection weren't the same.");
 
-	if (route6file)
-		unlink (route6file);
-
 	g_free (testfile);
 	g_free (unmanaged);
 	g_free (keyfile);
@@ -12425,9 +12401,6 @@ test_write_bond_slave_ib (void)
 
 	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
 	        "bond-slave-write-ib", "written and re-read connection weren't the same.");
-
-	if (route6file)
-		unlink (route6file);
 
 	g_free (testfile);
 	g_free (unmanaged);
