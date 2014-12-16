@@ -102,8 +102,7 @@ files_changed_cb (NMInotifyHelper *ih,
 NMIfcfgConnection *
 nm_ifcfg_connection_new (NMConnection *source,
                          const char *full_path,
-                         GError **error,
-                         gboolean *ignore_error)
+                         GError **error)
 {
 	GObject *object;
 	NMConnection *tmp;
@@ -119,8 +118,7 @@ nm_ifcfg_connection_new (NMConnection *source,
 	else {
 		tmp = connection_from_file (full_path,
 		                            &unhandled_spec,
-		                            error,
-		                            ignore_error);
+		                            error);
 		if (!tmp)
 			return NULL;
 
@@ -259,7 +257,7 @@ commit_changes (NMSettingsConnection *connection,
 	 * it if it's really changed.
 	 */
 	if (priv->path) {
-		reread = connection_from_file (priv->path, NULL, NULL, NULL);
+		reread = connection_from_file (priv->path, NULL, NULL);
 		if (reread) {
 			same = nm_connection_compare (NM_CONNECTION (connection),
 			                              reread,
