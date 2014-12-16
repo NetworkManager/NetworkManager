@@ -3213,3 +3213,64 @@ nm_utils_check_virtual_device_compatibility (GType virtual_type, GType other_typ
 		return FALSE;
 	}
 }
+
+typedef struct {
+	const char *str;
+	const char *num;
+} BondMode;
+
+static BondMode bond_mode_table[] = {
+	[0] = { "balance-rr",    "0" },
+	[1] = { "active-backup", "1" },
+	[2] = { "balance-xor",   "2" },
+	[3] = { "broadcast",     "3" },
+	[4] = { "802.3ad",       "4" },
+	[5] = { "balance-tlb",   "5" },
+	[6] = { "balance-alb",   "6" },
+};
+
+/**
+ * nm_utils_bond_mode_int_to_string:
+ * @mode: bonding mode as a numeric value
+ *
+ * Convert bonding mode from integer value to descriptive name.
+ * See https://www.kernel.org/doc/Documentation/networking/bonding.txt for
+ * available modes.
+ *
+ * Returns: bonding mode string, or NULL on error
+*/
+
+const char *
+nm_utils_bond_mode_int_to_string (int mode)
+{
+	if (mode >= 0 && mode < G_N_ELEMENTS (bond_mode_table))
+		return bond_mode_table[mode].str;
+	return NULL;
+}
+
+/**
+ * nm_utils_bond_mode_string_to_int:
+ * @mode: bonding mode as string
+ *
+ * Convert bonding mode from string representation to numeric value.
+ * See https://www.kernel.org/doc/Documentation/networking/bonding.txt for
+ * available modes.
+ * The @mode string can be either a descriptive name or a number (as string).
+ *
+ * Returns: numeric bond mode, or -1 on error
+*/
+int
+nm_utils_bond_mode_string_to_int (const char *mode)
+{
+	int i;
+
+	if (!mode || !*mode)
+		return -1;
+
+	for (i = 0; i < G_N_ELEMENTS (bond_mode_table); i++) {
+		if (   strcmp (mode, bond_mode_table[i].str) == 0
+		    || strcmp (mode, bond_mode_table[i].num) == 0)
+			return i;
+	}
+	return -1;
+}

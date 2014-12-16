@@ -15,7 +15,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2005 - 2013 Red Hat, Inc.
+ * Copyright 2005 - 2014 Red Hat, Inc.
  */
 
 #ifndef __NM_UTILS_H__
@@ -184,6 +184,9 @@ const char *nm_utils_inet6_ntop (const struct in6_addr *in6addr, char *dst);
 gboolean nm_utils_ipaddr_valid (int family, const char *ip);
 
 gboolean nm_utils_check_virtual_device_compatibility (GType virtual_type, GType other_type);
+
+int nm_utils_bond_mode_string_to_int (const char *mode);
+const char *nm_utils_bond_mode_int_to_string (int mode);
 
 G_END_DECLS
 
