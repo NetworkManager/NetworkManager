@@ -37,9 +37,6 @@ NMConnection *connection_from_file_test (const char *filename,
                                          const char *network_file,
                                          const char *test_type,
                                          char **out_unhandled,
-                                         char **out_keyfile,
-                                         char **out_routefile,
-                                         char **out_route6file,
                                          GError **error);
 
 #endif  /* __READER_H__ */
