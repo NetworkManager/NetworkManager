@@ -709,36 +709,45 @@ void
 nm_config_reload (NMConfig *self)
 {
 	NMConfigPrivate *priv;
-	NMConfig *new;
 	GError *error = NULL;
 	GHashTable *changes;
+	GKeyFile *keyfile;
 	NMConfigData *old_data;
 	NMConfigData *new_data = NULL;
+	char *config_main_file = NULL;
+	char *config_description = NULL;
 
 	g_return_if_fail (NM_IS_CONFIG (self));
 
 	priv = NM_CONFIG_GET_PRIVATE (self);
 
+
 	/* pass on the original command line options. This means, that
 	 * options specified at command line cannot ever be reloaded from
 	 * file. That seems desirable.
 	 */
-	new = nm_config_new (&priv->cli, &error);
-
-	if (!new) {
+	keyfile = read_entire_config (&priv->cli,
+	                              priv->config_dir,
+	                              &config_main_file,
+	                              &config_description,
+	                              &error);
+	g_free (config_main_file);
+	g_free (config_description);
+	if (!keyfile) {
 		nm_log_err (LOGD_CORE, "Failed to reload the configuration: %s", error->message);
 		g_clear_error (&error);
 		return;
 	}
+	new_data = nm_config_data_new (keyfile);
+	g_key_file_free (keyfile);
 
-	old_data = priv->config_data;
-	new_data = nm_config_get_data (new);
 
 	changes = g_hash_table_new (g_str_hash, g_str_equal);
 
 	/* reloading configuration means we have to carefully check every single option
 	 * that we want to support and take specific actions. */
 
+	old_data = priv->config_data;
 	if (   nm_config_data_get_connectivity_interval (old_data) != nm_config_data_get_connectivity_interval (new_data)
 	    || g_strcmp0 (nm_config_data_get_connectivity_uri (old_data), nm_config_data_get_connectivity_uri (new_data))
 	    || g_strcmp0 (nm_config_data_get_connectivity_response (old_data), nm_config_data_get_connectivity_response (new_data))) {
@@ -746,19 +755,15 @@ nm_config_reload (NMConfig *self)
 		g_hash_table_insert (changes, NM_CONFIG_CHANGES_CONNECTIVITY, NULL);
 	}
 
-	if (g_hash_table_size (changes))
-		new_data = g_object_ref (new_data);
-	else
-		new_data = NULL;
-
-	g_object_unref (new);
-
-	if (new_data) {
-		old_data = priv->config_data;
-		priv->config_data = new_data;
-		g_signal_emit (self, signals[SIGNAL_CONFIG_CHANGED], 0, new_data, changes, old_data);
-		g_object_unref (old_data);
+	if (!g_hash_table_size (changes)) {
+		g_hash_table_destroy (changes);
+		g_object_unref (new_data);
+		return;
 	}
+
+	priv->config_data = new_data;
+	g_signal_emit (self, signals[SIGNAL_CONFIG_CHANGED], 0, new_data, changes, old_data);
+	g_object_unref (old_data);
 
 	g_hash_table_destroy (changes);
 }
@@ -789,8 +794,6 @@ nm_config_new (const NMConfigCmdLineOptions *cli, GError **error)
 {
 	NMConfigPrivate *priv = NULL;
 	NMConfig *self;
-	char *connectivity_uri, *connectivity_response;
-	guint connectivity_interval;
 	GKeyFile *keyfile;
 
 	self = NM_CONFIG (g_object_new (NM_TYPE_CONFIG,
@@ -843,18 +846,11 @@ nm_config_new (const NMConfigCmdLineOptions *cli, GError **error)
 
 	priv->configure_and_quit = _get_bool_value (priv->keyfile, "main", "configure-and-quit", FALSE);
 
-	connectivity_uri = g_key_file_get_value (priv->keyfile, "connectivity", "uri", NULL);
-	connectivity_interval = g_key_file_get_integer (priv->keyfile, "connectivity", "interval", NULL);
-	connectivity_response = g_key_file_get_value (priv->keyfile, "connectivity", "response", NULL);
+	priv->config_data_orig = nm_config_data_new (priv->keyfile);
 
-	priv->config_data = g_object_new (NM_TYPE_CONFIG_DATA,
-	                                  NM_CONFIG_DATA_CONNECTIVITY_URI, connectivity_uri,
-	                                  NM_CONFIG_DATA_CONNECTIVITY_INTERVAL, connectivity_interval,
-	                                  NM_CONFIG_DATA_CONNECTIVITY_RESPONSE, connectivity_response,
-	                                  NULL);
-	priv->config_data_orig = g_object_ref (priv->config_data);
-	g_free (connectivity_uri);
-	g_free (connectivity_response);
+	/* Initialize mutable members. */
+
+	priv->config_data = g_object_ref (priv->config_data_orig);
 
 	priv->no_auto_default = g_strdupv (priv->no_auto_default_orig);
 	merge_no_auto_default_state (self);

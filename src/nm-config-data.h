@@ -50,14 +50,11 @@ typedef struct {
 
 GType nm_config_data_get_type (void);
 
+NMConfigData *nm_config_data_new (GKeyFile *keyfile);
+
 const char *nm_config_data_get_connectivity_uri (const NMConfigData *config_data);
 const guint nm_config_data_get_connectivity_interval (const NMConfigData *config_data);
 const char *nm_config_data_get_connectivity_response (const NMConfigData *config_data);
-
-#include "nm-config.h"
-
-/* private function: internal use only */
-void _nm_config_data_set_config (NMConfigData *config_data, NMConfig *config);
 
 G_END_DECLS
 
