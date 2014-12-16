@@ -461,7 +461,7 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 	                             &error);
 	if (error) {
 		nm_log_info (LOGD_SETTINGS, "loading system config file (%s) caused error: %s",
-		             nm_config_get_path (nm_config_get ()),
+		             nm_config_get_config_main_file (nm_config_get ()),
 		             error->message);
 	} else {
 		gboolean manage_well_known;

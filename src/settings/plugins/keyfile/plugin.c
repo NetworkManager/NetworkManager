@@ -843,7 +843,7 @@ nm_settings_keyfile_plugin_new (void)
 		singleton = SC_PLUGIN_KEYFILE (g_object_new (SC_TYPE_PLUGIN_KEYFILE, NULL));
 		priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (singleton);
 
-		priv->conf_file = nm_config_get_path (nm_config_get ());
+		priv->conf_file = nm_config_get_config_main_file (nm_config_get ());
 
 		/* plugin_set_hostname() has to be called *after* priv->conf_file is set */
 		priv->hostname = plugin_get_hostname (singleton);
