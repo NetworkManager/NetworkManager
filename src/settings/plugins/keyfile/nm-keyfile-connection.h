@@ -47,9 +47,6 @@ NMKeyfileConnection *nm_keyfile_connection_new (NMConnection *source,
                                                 const char *filename,
                                                 GError **error);
 
-const char *nm_keyfile_connection_get_path (NMKeyfileConnection *self);
-void        nm_keyfile_connection_set_path (NMKeyfileConnection *self, const char *path);
-
 G_END_DECLS
 
 #endif /* __NETWORKMANAGER_KEYFILE_CONNECTION_H__ */

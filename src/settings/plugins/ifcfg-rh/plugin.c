@@ -107,7 +107,7 @@ connection_ifcfg_changed (NMIfcfgConnection *connection, gpointer user_data)
 	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (user_data);
 	const char *path;
 
-	path = nm_ifcfg_connection_get_path (connection);
+	path = nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection));
 	g_return_if_fail (path != NULL);
 
 	connection_new_or_changed (plugin, path, connection, NULL);
@@ -202,14 +202,14 @@ find_by_path (SCPluginIfcfg *self, const char *path)
 {
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
 	GHashTableIter iter;
-	NMIfcfgConnection *candidate = NULL;
+	NMSettingsConnection *candidate = NULL;
 
 	g_return_val_if_fail (path != NULL, NULL);
 
 	g_hash_table_iter_init (&iter, priv->connections);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &candidate)) {
-		if (g_strcmp0 (path, nm_ifcfg_connection_get_path (candidate)) == 0)
-			return candidate;
+		if (g_strcmp0 (path, nm_settings_connection_get_filename (candidate)) == 0)
+			return NM_IFCFG_CONNECTION (candidate);
 	}
 	return NULL;
 }
@@ -252,11 +252,11 @@ connection_new_or_changed (SCPluginIfcfg *self,
 		/* See if it's a rename */
 		existing = find_by_uuid_from_path (self, path);
 		if (existing) {
-			const char *old_path = nm_ifcfg_connection_get_path (existing);
+			const char *old_path = nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (existing));
 			nm_log_info (LOGD_SETTINGS, "renaming %s -> %s", old_path, path);
 			if (out_old_path)
 				*out_old_path = g_strdup (old_path);
-			nm_ifcfg_connection_set_path (existing, path);
+			nm_settings_connection_set_filename (NM_SETTINGS_CONNECTION (existing), path);
 		}
 	}
 
@@ -440,7 +440,7 @@ read_connections (SCPluginIfcfg *plugin)
 	oldconns = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 	g_hash_table_iter_init (&iter, priv->connections);
 	while (g_hash_table_iter_next (&iter, NULL, &value)) {
-		const char *ifcfg_path = nm_ifcfg_connection_get_path (value);
+		const char *ifcfg_path = nm_settings_connection_get_filename (value);
 		if (ifcfg_path)
 			g_hash_table_insert (oldconns, g_strdup (ifcfg_path), value);
 	}

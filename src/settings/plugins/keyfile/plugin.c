@@ -87,7 +87,7 @@ remove_connection (SCPluginKeyfile *self, NMKeyfileConnection *connection)
 
 	g_return_if_fail (connection != NULL);
 
-	nm_log_info (LOGD_SETTINGS, "removed %s.", nm_keyfile_connection_get_path (connection));
+	nm_log_info (LOGD_SETTINGS, "removed %s.", nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection)));
 
 	/* Removing from the hash table should drop the last reference */
 	g_object_ref (connection);
@@ -139,14 +139,14 @@ find_by_path (SCPluginKeyfile *self, const char *path)
 {
 	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (self);
 	GHashTableIter iter;
-	NMKeyfileConnection *candidate = NULL;
+	NMSettingsConnection *candidate = NULL;
 
 	g_return_val_if_fail (path != NULL, NULL);
 
 	g_hash_table_iter_init (&iter, priv->connections);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &candidate)) {
-		if (g_strcmp0 (path, nm_keyfile_connection_get_path (candidate)) == 0)
-			return candidate;
+		if (g_strcmp0 (path, nm_settings_connection_get_filename (candidate)) == 0)
+			return NM_KEYFILE_CONNECTION (candidate);
 	}
 	return NULL;
 }
@@ -157,7 +157,8 @@ new_connection (SCPluginKeyfile *self,
                 char **out_old_path)
 {
 	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (self);
-	NMKeyfileConnection *tmp, *connection;
+	NMKeyfileConnection *tmp;
+	NMSettingsConnection *connection;
 	GError *error = NULL;
 	const char *uuid;
 
@@ -176,8 +177,8 @@ new_connection (SCPluginKeyfile *self,
 	uuid = nm_connection_get_uuid (NM_CONNECTION (tmp));
 	connection = g_hash_table_lookup (priv->connections, uuid);
 	if (connection) {
-		nm_log_info (LOGD_SETTINGS, "rename %s -> %s", nm_keyfile_connection_get_path (connection), name);
-		if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (connection),
+		nm_log_info (LOGD_SETTINGS, "rename %s -> %s", nm_settings_connection_get_filename (connection), name);
+		if (!nm_settings_connection_replace_settings (connection,
 		                                              NM_CONNECTION (tmp),
 		                                              FALSE,  /* don't set Unsaved */
 		                                              &error)) {
@@ -186,8 +187,8 @@ new_connection (SCPluginKeyfile *self,
 		}
 		g_object_unref (tmp);
 		if (out_old_path)
-			*out_old_path = g_strdup (nm_keyfile_connection_get_path (connection));
-		nm_keyfile_connection_set_path (connection, name);
+			*out_old_path = g_strdup (nm_settings_connection_get_filename (connection));
+		nm_settings_connection_set_filename (connection, name);
 	} else {
 		nm_log_info (LOGD_SETTINGS, "new connection %s", name);
 		g_hash_table_insert (priv->connections, g_strdup (uuid), tmp);
@@ -330,7 +331,7 @@ read_connections (NMSystemConfigInterface *config)
 	oldconns = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 	g_hash_table_iter_init (&iter, priv->connections);
 	while (g_hash_table_iter_next (&iter, NULL, &data)) {
-		const char *con_path = nm_keyfile_connection_get_path (data);
+		const char *con_path = nm_settings_connection_get_filename (data);
 		if (con_path)
 			g_hash_table_insert (oldconns, g_strdup (con_path), data);
 	}

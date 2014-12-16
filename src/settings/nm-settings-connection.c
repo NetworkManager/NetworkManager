@@ -84,6 +84,7 @@ enum {
 	PROP_UNSAVED,
 	PROP_READY,
 	PROP_FLAGS,
+	PROP_FILENAME,
 };
 
 enum {
@@ -129,6 +130,8 @@ typedef struct {
 	int autoconnect_retries;
 	gint32 autoconnect_retry_time;
 	NMDeviceStateReason autoconnect_blocked_reason;
+
+	char *filename;
 
 } NMSettingsConnectionPrivate;
 
@@ -2188,6 +2191,45 @@ nm_settings_connection_set_ready (NMSettingsConnection *connection,
 	}
 }
 
+/**
+ * nm_settings_connection_set_filename:
+ * @connection: an #NMSettingsConnection
+ * @filename: @connection's filename
+ *
+ * Called by a backend to sets the filename that @connection is read
+ * from/written to.
+ */
+void
+nm_settings_connection_set_filename (NMSettingsConnection *connection,
+                                     const char *filename)
+{
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (connection);
+
+	if (g_strcmp0 (filename, priv->filename) != 0) {
+		g_free (priv->filename);
+		priv->filename = g_strdup (filename);
+		g_object_notify (G_OBJECT (connection), NM_SETTINGS_CONNECTION_FILENAME);
+	}
+}
+
+/**
+ * nm_settings_connection_get_filename:
+ * @connection: an #NMSettingsConnection
+ *
+ * Gets the filename that @connection was read from/written to.  This may be
+ * %NULL if @connection is unsaved, or if it is associated with a backend that
+ * does not store each connection in a separate file.
+ *
+ * Returns: @connection's filename.
+ */
+const char *
+nm_settings_connection_get_filename (NMSettingsConnection *connection)
+{
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (connection);
+
+	return priv->filename;
+}
+
 /**************************************************************/
 
 static void
@@ -2277,6 +2319,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_FLAGS:
 		g_value_set_uint (value, nm_settings_connection_get_flags (self));
 		break;
+	case PROP_FILENAME:
+		g_value_set_string (value, nm_settings_connection_get_filename (self));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -2295,6 +2340,9 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_FLAGS:
 		nm_settings_connection_set_flags_all (self, g_value_get_uint (value));
+		break;
+	case PROP_FILENAME:
+		nm_settings_connection_set_filename (self, g_value_get_string (value));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -2348,6 +2396,13 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 	                        NM_SETTINGS_CONNECTION_FLAGS_NONE,
 	                        G_PARAM_READWRITE |
 	                        G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property
+		(object_class, PROP_FILENAME,
+		 g_param_spec_string (NM_SETTINGS_CONNECTION_FILENAME, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/* Signals */
 
