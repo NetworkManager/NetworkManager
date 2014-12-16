@@ -437,13 +437,14 @@ nm_config_cmd_line_options_add_to_entries (NMConfigCmdLineOptions *cli,
 /************************************************************************/
 
 static gboolean
-read_config (NMConfig *config, const char *path, GError **error)
+read_config (GKeyFile *keyfile, const char *path, GError **error)
 {
-	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (config);
 	GKeyFile *kf;
 	char **groups, **keys;
 	gsize ngroups, nkeys;
 	int g, k;
+
+	g_return_val_if_fail (keyfile, FALSE);
 
 	if (g_file_test (path, G_FILE_TEST_EXISTS) == FALSE) {
 		g_set_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND, "file %s not found", path);
@@ -471,16 +472,16 @@ read_config (NMConfig *config, const char *path, GError **error)
 
 			if (keys[k][len - 1] == '+') {
 				char *base_key = g_strndup (keys[k], len - 1);
-				char *old_val = g_key_file_get_value (priv->keyfile, groups[g], base_key, NULL);
+				char *old_val = g_key_file_get_value (keyfile, groups[g], base_key, NULL);
 				char *new_val = g_key_file_get_value (kf, groups[g], keys[k], NULL);
 
 				if (old_val && *old_val) {
 					char *combined = g_strconcat (old_val, ",", new_val, NULL);
 
-					g_key_file_set_value (priv->keyfile, groups[g], base_key, combined);
+					g_key_file_set_value (keyfile, groups[g], base_key, combined);
 					g_free (combined);
 				} else
-					g_key_file_set_value (priv->keyfile, groups[g], base_key, new_val);
+					g_key_file_set_value (keyfile, groups[g], base_key, new_val);
 
 				g_free (base_key);
 				g_free (old_val);
@@ -488,7 +489,7 @@ read_config (NMConfig *config, const char *path, GError **error)
 				continue;
 			}
 
-			g_key_file_set_value (priv->keyfile, groups[g], keys[k],
+			g_key_file_set_value (keyfile, groups[g], keys[k],
 			                      v = g_key_file_get_value (kf, groups[g], keys[k], NULL));
 			g_free (v);
 		}
@@ -501,16 +502,22 @@ read_config (NMConfig *config, const char *path, GError **error)
 }
 
 static gboolean
-find_base_config (NMConfig *config, GError **error)
+read_base_config (GKeyFile *keyfile,
+                  const char *cli_config_path,
+                  char **out_config_path,
+                  GError **error)
 {
-	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (config);
 	GError *my_error = NULL;
 
+	g_return_val_if_fail (keyfile, FALSE);
+	g_return_val_if_fail (out_config_path && !*out_config_path, FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
+
 	/* Try a user-specified config file first */
-	if (priv->cli.config_path) {
+	if (cli_config_path) {
 		/* Bad user-specific config file path is a hard error */
-		if (read_config (config, priv->cli.config_path, error)) {
-			priv->nm_conf_path = g_strdup (priv->cli.config_path);
+		if (read_config (keyfile, cli_config_path, error)) {
+			*out_config_path = g_strdup (cli_config_path);
 			return TRUE;
 		} else
 			return FALSE;
@@ -524,8 +531,8 @@ find_base_config (NMConfig *config, GError **error)
 	 */
 
 	/* Try deprecated nm-system-settings.conf first */
-	if (read_config (config, NM_OLD_SYSTEM_CONF_FILE, &my_error)) {
-		priv->nm_conf_path = g_strdup (NM_OLD_SYSTEM_CONF_FILE);
+	if (read_config (keyfile, NM_OLD_SYSTEM_CONF_FILE, &my_error)) {
+		*out_config_path = g_strdup (NM_OLD_SYSTEM_CONF_FILE);
 		return TRUE;
 	}
 
@@ -537,8 +544,8 @@ find_base_config (NMConfig *config, GError **error)
 	g_clear_error (&my_error);
 
 	/* Try the standard config file location next */
-	if (read_config (config, NM_DEFAULT_SYSTEM_CONF_FILE, &my_error)) {
-		priv->nm_conf_path = g_strdup (NM_DEFAULT_SYSTEM_CONF_FILE);
+	if (read_config (keyfile, NM_DEFAULT_SYSTEM_CONF_FILE, &my_error)) {
+		*out_config_path = g_strdup (NM_DEFAULT_SYSTEM_CONF_FILE);
 		return TRUE;
 	}
 
@@ -554,7 +561,7 @@ find_base_config (NMConfig *config, GError **error)
 	/* If for some reason no config file exists, use the default
 	 * config file path.
 	 */
-	priv->nm_conf_path = g_strdup (NM_DEFAULT_SYSTEM_CONF_FILE);
+	*out_config_path = g_strdup (NM_DEFAULT_SYSTEM_CONF_FILE);
 	nm_log_info (LOGD_CORE, "No config file found or given; using %s\n",
 	             NM_DEFAULT_SYSTEM_CONF_FILE);
 	return TRUE;
@@ -673,17 +680,17 @@ nm_config_new (const NMConfigCmdLineOptions *cli, GError **error)
 	else
 		_nm_config_cmd_line_options_copy (cli, &priv->cli);
 
-	/* First read the base config file */
-	if (!find_base_config (self, error)) {
-		g_object_unref (self);
-		return NULL;
-	}
-
 	/* Now read the overrides in the config dir */
 	if (priv->cli.config_dir)
 		priv->config_dir = g_strdup (priv->cli.config_dir);
 	else
 		priv->config_dir = g_strdup (NM_DEFAULT_SYSTEM_CONF_DIR);
+
+	/* First read the base config file */
+	if (!read_base_config (priv->keyfile, priv->cli.config_path, &priv->nm_conf_path, error)) {
+		g_object_unref (self);
+		return NULL;
+	}
 
 	confs = g_ptr_array_new_with_free_func (g_free);
 	config_description = g_string_new (priv->nm_conf_path);
@@ -709,7 +716,7 @@ nm_config_new (const NMConfigCmdLineOptions *cli, GError **error)
 	g_ptr_array_sort (confs, sort_asciibetically);
 	priv->config_description = g_string_free (config_description, FALSE);
 	for (i = 0; i < confs->len; i++) {
-		if (!read_config (self, confs->pdata[i], error)) {
+		if (!read_config (priv->keyfile, confs->pdata[i], error)) {
 			g_object_unref (self);
 			self = NULL;
 			break;
