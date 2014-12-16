@@ -291,9 +291,11 @@ get_numbered_tag (char *tag_name, int which)
 }
 
 static gboolean
-is_any_ip4_address_defined (shvarFile *ifcfg)
+is_any_ip4_address_defined (shvarFile *ifcfg, int *idx)
 {
-	int i;
+	int i, ignore, *ret_idx;;
+
+	ret_idx = idx ? idx : &ignore;
 
 	for (i = -1; i <= 2; i++) {
 		char *tag;
@@ -304,6 +306,7 @@ is_any_ip4_address_defined (shvarFile *ifcfg)
 		g_free (tag);
 		if (value) {
 			g_free (value);
+			*ret_idx = i;
 			return TRUE;
 		}
 
@@ -312,6 +315,7 @@ is_any_ip4_address_defined (shvarFile *ifcfg)
 		g_free(tag);
 		if (value) {
 			g_free (value);
+			*ret_idx = i;
 			return TRUE;
 		}
 
@@ -320,6 +324,7 @@ is_any_ip4_address_defined (shvarFile *ifcfg)
 		g_free(tag);
 		if (value) {
 			g_free (value);
+			*ret_idx = i;
 			return TRUE;
 		}
 	}
@@ -924,7 +929,7 @@ make_ip4_setting (shvarFile *ifcfg,
 	value = svGetValue (ifcfg, "BOOTPROTO", FALSE);
 
 	if (!value || !*value || !g_ascii_strcasecmp (value, "none")) {
-		if (is_any_ip4_address_defined (ifcfg))
+		if (is_any_ip4_address_defined (ifcfg, NULL))
 			method = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
 		else
 			method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
@@ -940,11 +945,26 @@ make_ip4_setting (shvarFile *ifcfg,
 		              NULL);
 		return NM_SETTING (s_ip4);
 	} else if (!g_ascii_strcasecmp (value, "shared")) {
+		int idx;
+
 		g_free (value);
 		g_object_set (s_ip4,
 		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_SHARED,
 		              NM_SETTING_IP_CONFIG_NEVER_DEFAULT, never_default,
 		              NULL);
+		/* 1 IP address is allowed for shared connections. Read it. */
+		if (is_any_ip4_address_defined (ifcfg, &idx)) {
+			NMIPAddress *addr = NULL;
+
+			if (!read_full_ip4_address (ifcfg, network_file, idx, NULL, &addr, NULL, error))
+				goto done;
+			if (!read_ip4_address (ifcfg, "GATEWAY", &gateway, error))
+				goto done;
+			(void) nm_setting_ip_config_add_address (s_ip4, addr);
+			nm_ip_address_unref (addr);
+			g_object_set (s_ip4, NM_SETTING_IP_CONFIG_GATEWAY, gateway, NULL);
+			g_free (gateway);
+		}
 		return NM_SETTING (s_ip4);
 	} else {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
