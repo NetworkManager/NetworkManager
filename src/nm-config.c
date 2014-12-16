@@ -83,6 +83,12 @@ typedef struct {
 } NMConfigPrivate;
 
 enum {
+	PROP_0,
+	PROP_CMD_LINE_OPTIONS,
+	LAST_PROP,
+};
+
+enum {
 	SIGNAL_CONFIG_CHANGED,
 
 	LAST_SIGNAL
@@ -767,15 +773,11 @@ nm_config_new (const NMConfigCmdLineOptions *cli, GError **error)
 	guint connectivity_interval;
 	GKeyFile *keyfile;
 
-	self = NM_CONFIG (g_object_new (NM_TYPE_CONFIG, NULL));
+	self = NM_CONFIG (g_object_new (NM_TYPE_CONFIG,
+	                                NM_CONFIG_CMD_LINE_OPTIONS, cli,
+	                                NULL));
 	priv = NM_CONFIG_GET_PRIVATE (self);
 
-	if (!cli)
-		_nm_config_cmd_line_options_clear (&priv->cli);
-	else
-		_nm_config_cmd_line_options_copy (cli, &priv->cli);
-
-	/* Now read the overrides in the config dir */
 	if (priv->cli.config_dir)
 		priv->config_dir = g_strdup (priv->cli.config_dir);
 	else
@@ -885,6 +887,28 @@ finalize (GObject *gobject)
 	G_OBJECT_CLASS (nm_config_parent_class)->finalize (gobject);
 }
 
+static void
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
+{
+	NMConfig *self = NM_CONFIG (object);
+	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (self);
+	NMConfigCmdLineOptions *cli;
+
+	switch (prop_id) {
+	case PROP_CMD_LINE_OPTIONS:
+		/* construct only */
+		cli = g_value_get_pointer (value);
+		if (!cli)
+			_nm_config_cmd_line_options_clear (&priv->cli);
+		else
+			_nm_config_cmd_line_options_copy (cli, &priv->cli);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
 
 static void
 nm_config_class_init (NMConfigClass *config_class)
@@ -893,6 +917,14 @@ nm_config_class_init (NMConfigClass *config_class)
 
 	g_type_class_add_private (config_class, sizeof (NMConfigPrivate));
 	object_class->finalize = finalize;
+	object_class->set_property = set_property;
+
+	g_object_class_install_property
+	    (object_class, PROP_CMD_LINE_OPTIONS,
+	     g_param_spec_pointer (NM_CONFIG_CMD_LINE_OPTIONS, "", "",
+	                           G_PARAM_WRITABLE |
+	                           G_PARAM_CONSTRUCT_ONLY |
+	                           G_PARAM_STATIC_STRINGS));
 
 	signals[SIGNAL_CONFIG_CHANGED] =
 	    g_signal_new (NM_CONFIG_SIGNAL_CONFIG_CHANGED,
