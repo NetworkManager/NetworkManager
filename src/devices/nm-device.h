@@ -304,13 +304,15 @@ RfKillType nm_device_get_rfkill_type (NMDevice *device);
  *   because NM is sleeping or not managed for some other reason)
  * @NM_UNMANAGED_USER: %TRUE when unmanaged by user decision (via unmanaged-specs)
  * @NM_UNMANAGED_PARENT: %TRUE when unmanaged due to parent device being unmanaged
+ * @NM_UNMANAGED_EXTERNAL_DOWN: %TRUE when unmanaged because !IFF_UP and not created by NM
  */
 typedef enum {
-	NM_UNMANAGED_NONE     = 0x00,
-	NM_UNMANAGED_DEFAULT  = 0x01,
-	NM_UNMANAGED_INTERNAL = 0x02,
-	NM_UNMANAGED_USER     = 0x04,
-	NM_UNMANAGED_PARENT   = 0x08,
+	NM_UNMANAGED_NONE          = 0x00,
+	NM_UNMANAGED_DEFAULT       = 0x01,
+	NM_UNMANAGED_INTERNAL      = 0x02,
+	NM_UNMANAGED_USER          = 0x04,
+	NM_UNMANAGED_PARENT        = 0x08,
+	NM_UNMANAGED_EXTERNAL_DOWN = 0x10,
 
 	/* Boundary value */
 	__NM_UNMANAGED_LAST,
