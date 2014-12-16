@@ -61,7 +61,8 @@ test_ip4_route (void)
 	in_addr_t network;
 	int plen = 24;
 	in_addr_t gateway;
-	int metric = 20;
+	/* Choose a high metric so that we hopefully don't conflict. */
+	int metric = 22986;
 	int mss = 1000;
 
 	inet_pton (AF_INET, "192.0.3.0", &network);
@@ -156,7 +157,8 @@ test_ip6_route (void)
 	struct in6_addr network;
 	int plen = 64;
 	struct in6_addr gateway;
-	int metric = 20;
+	/* Choose a high metric so that we hopefully don't conflict. */
+	int metric = 22987;
 	int mss = 1000;
 
 	inet_pton (AF_INET6, "2001:db8:a:b:0:0:0:0", &network);
