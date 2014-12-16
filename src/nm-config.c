@@ -76,10 +76,13 @@ typedef struct {
 
 	char *debug;
 
-	char **no_auto_default;
+	char **no_auto_default_orig;
 	char **ignore_carrier;
 
 	gboolean configure_and_quit;
+
+	/* MUTABLE properties: */
+	char **no_auto_default; /* mutable via merge_no_auto_default_state() */
 } NMConfigPrivate;
 
 enum {
@@ -814,12 +817,11 @@ nm_config_new (const NMConfigCmdLineOptions *cli, GError **error)
 
 	/* Initialize read only private members */
 
-	priv->no_auto_default = g_key_file_get_string_list (priv->keyfile, "main", "no-auto-default", NULL, NULL);
 	if (priv->cli.no_auto_default_file)
 		priv->no_auto_default_file = g_strdup (priv->cli.no_auto_default_file);
 	else
 		priv->no_auto_default_file = g_strdup (NM_NO_AUTO_DEFAULT_STATE_FILE);
-	merge_no_auto_default_state (self);
+	priv->no_auto_default_orig = g_key_file_get_string_list (priv->keyfile, "main", "no-auto-default", NULL, NULL);
 
 	priv->plugins = g_key_file_get_string_list (priv->keyfile, "main", "plugins", NULL, NULL);
 	if (!priv->plugins)
@@ -854,6 +856,9 @@ nm_config_new (const NMConfigCmdLineOptions *cli, GError **error)
 	g_free (connectivity_uri);
 	g_free (connectivity_response);
 
+	priv->no_auto_default = g_strdupv (priv->no_auto_default_orig);
+	merge_no_auto_default_state (self);
+
 	return self;
 }
 
@@ -883,6 +888,7 @@ finalize (GObject *gobject)
 	g_free (priv->log_level);
 	g_free (priv->log_domains);
 	g_free (priv->debug);
+	g_strfreev (priv->no_auto_default_orig);
 	g_strfreev (priv->no_auto_default);
 	g_strfreev (priv->ignore_carrier);
 
