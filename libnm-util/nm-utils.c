@@ -37,6 +37,10 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-setting-private.h"
 #include "crypto.h"
+#include "nm-utils-internal.h"
+
+/* Embed the commit id in the build binary */
+static const char *const __nm_git_sha = STRLEN (NM_GIT_SHA) > 0 ? "NM_GIT_SHA:"NM_GIT_SHA : "";
 
 /**
  * SECTION:nm-utils
@@ -232,6 +236,8 @@ static gboolean initialized = FALSE;
 gboolean
 nm_utils_init (GError **error)
 {
+	(void) __nm_git_sha;
+
 	if (!initialized) {
 		initialized = TRUE;
 

@@ -59,6 +59,7 @@ AC_SUBST(NM_MAJOR_VERSION)
 AC_SUBST(NM_MINOR_VERSION)
 AC_SUBST(NM_MICRO_VERSION)
 AC_SUBST(NM_VERSION)
+AC_DEFINE_UNQUOTED(NM_GIT_SHA,"$NM_GIT_SHA",[git commit id of the original source code version])
 
 dnl
 dnl Checks for typedefs, structures, and compiler characteristics.

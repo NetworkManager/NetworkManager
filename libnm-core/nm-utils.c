@@ -36,6 +36,7 @@
 #include "nm-setting-private.h"
 #include "crypto.h"
 #include "gsystem-local-alloc.h"
+#include "nm-utils-internal.h"
 
 #include "nm-setting-bond.h"
 #include "nm-setting-bridge.h"
@@ -45,6 +46,9 @@
 #include "nm-setting-vlan.h"
 #include "nm-setting-wired.h"
 #include "nm-setting-wireless.h"
+
+/* Embed the commit id in the build binary */
+static const char *const __nm_git_sha = STRLEN (NM_GIT_SHA) > 0 ? "NM_GIT_SHA:"NM_GIT_SHA : "";
 
 /**
  * SECTION:nm-utils
@@ -220,6 +224,8 @@ _nm_utils_init (void)
 {
 	GModule *self;
 	gpointer func;
+
+	(void) __nm_git_sha;
 
 	if (initialized)
 		return;
