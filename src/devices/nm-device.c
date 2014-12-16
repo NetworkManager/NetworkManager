@@ -1495,11 +1495,16 @@ nm_device_slave_notify_release (NMDevice *dev, NMDeviceStateReason reason)
 		            master_status);
 
 		nm_device_queue_state (dev, new_state, reason);
-	} else {
+	} else if (priv->master) {
 		nm_log_info (LOGD_DEVICE,
 		             "(%s): released from master %s",
 		             nm_device_get_iface (dev),
 		             nm_device_get_iface (priv->master));
+	} else {
+		nm_log_info (LOGD_DEVICE,
+		             "(%s): released from master%s",
+		             nm_device_get_iface (dev),
+		             priv->enslaved ? "" : " (was not enslaved)");
 	}
 
 	if (priv->enslaved) {
