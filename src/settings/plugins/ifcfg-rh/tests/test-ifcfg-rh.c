@@ -869,6 +869,37 @@ test_read_wired_global_gateway (void)
 }
 
 static void
+test_read_wired_obsolete_gateway_n (void)
+{
+	NMConnection *connection;
+	NMSettingIPConfig *s_ip4;
+	GError *error = NULL;
+	NMIPAddress *ip4_addr;
+
+	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-obsolete-gateway-n",
+	                                        NULL, TYPE_ETHERNET, NULL,
+	                                        &error);
+	nmtst_assert_connection_verifies_without_normalization (connection);
+
+	/* ===== IPv4 SETTING ===== */
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	g_assert (s_ip4);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
+
+	/* IP addresses */
+	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip4), ==, 1);
+	ip4_addr = nm_setting_ip_config_get_address (s_ip4, 0);
+	g_assert (ip4_addr);
+	g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 24);
+	g_assert_cmpstr (nm_ip_address_get_address (ip4_addr), ==, "1.2.3.4");
+
+	/* Gateway */
+	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, "1.1.1.1");
+
+	g_object_unref (connection);
+}
+
+static void
 test_read_wired_never_default (void)
 {
 	NMConnection *connection;
@@ -12421,6 +12452,7 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "shared-plus-ip", test_read_wired_shared_plus_ip);
 	g_test_add_func (TPATH "dhcp-send-hostname", test_read_write_wired_dhcp_send_hostname);
 	g_test_add_func (TPATH "global-gateway", test_read_wired_global_gateway);
+	g_test_add_func (TPATH "obsolete-gateway-n", test_read_wired_obsolete_gateway_n);
 	g_test_add_func (TPATH "never-default", test_read_wired_never_default);
 	test_read_wired_defroute_no ();
 	test_read_wired_defroute_no_gatewaydev_yes ();

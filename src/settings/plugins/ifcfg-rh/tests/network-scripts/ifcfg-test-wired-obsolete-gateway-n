@@ -1,0 +1,13 @@
+# GATEWAY<N> is obsolete, but we read it for backwards compatibility
+
+TYPE=Ethernet
+DEVICE=eth0
+HWADDR=00:11:22:33:44:ee
+BOOTPROTO=none
+ONBOOT=yes
+
+# manual IP
+IPADDR1=1.2.3.4
+PREFIX1=24
+GATEWAY1=1.1.1.1
+

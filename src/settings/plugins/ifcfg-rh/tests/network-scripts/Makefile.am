@@ -14,6 +14,7 @@ EXTRA_DIST = \
 	ifcfg-test-wired-dhcp6-only \
 	ifcfg-test-wired-global-gateway \
 	network-test-wired-global-gateway \
+	ifcfg-test-wired-obsolete-gateway-n \
 	ifcfg-test-wired-never-default \
 	network-test-wired-never-default \
 	ifcfg-test-wired-defroute-no \
