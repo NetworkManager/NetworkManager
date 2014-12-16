@@ -51,8 +51,6 @@ G_DEFINE_TYPE (NMDeviceTeam, nm_device_team, NM_TYPE_DEVICE)
 
 #define NM_DEVICE_TEAM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_TEAM, NMDeviceTeamPrivate))
 
-static gboolean teamd_start (NMDevice *device, NMSettingTeam *s_team);
-
 typedef struct {
 	struct teamdctl *tdc;
 	GPid teamd_pid;
@@ -178,8 +176,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 	}
 	g_object_set (G_OBJECT (s_team), NM_SETTING_TEAM_CONFIG, NULL, NULL);
 
-	teamd_start (device, s_team);
-	if (NM_DEVICE_TEAM_GET_PRIVATE (device)->teamd_pid > 0 && ensure_teamd_connection (device)) {
+	if (ensure_teamd_connection (device)) {
 		const char *config = NULL;
 		int err;
 
@@ -426,8 +423,9 @@ teamd_start (NMDevice *device, NMSettingTeam *s_team)
 	    priv->tdc ||
 	    priv->teamd_timeout)
 	{
-		/* Just return if teamd_start() was already called */
-		return TRUE;
+		/* FIXME g_assert that this never hits. For now, be more reluctant, and try to recover. */
+		g_warn_if_reached ();
+		teamd_cleanup (device, FALSE);
 	}
 
 	teamd_binary = nm_utils_find_helper ("teamd", NULL, NULL);
