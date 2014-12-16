@@ -143,6 +143,28 @@ nm_config_data_init (NMConfigData *self)
 {
 }
 
+NMConfigData *
+nm_config_data_new (GKeyFile *keyfile)
+{
+	char *connectivity_uri, *connectivity_response;
+	guint connectivity_interval;
+	NMConfigData *config_data;
+
+	connectivity_uri = g_key_file_get_value (keyfile, "connectivity", "uri", NULL);
+	connectivity_interval = g_key_file_get_integer (keyfile, "connectivity", "interval", NULL);
+	connectivity_response = g_key_file_get_value (keyfile, "connectivity", "response", NULL);
+
+	config_data = g_object_new (NM_TYPE_CONFIG_DATA,
+	                            NM_CONFIG_DATA_CONNECTIVITY_URI, connectivity_uri,
+	                            NM_CONFIG_DATA_CONNECTIVITY_INTERVAL, connectivity_interval,
+	                            NM_CONFIG_DATA_CONNECTIVITY_RESPONSE, connectivity_response,
+	                            NULL);
+	g_free (connectivity_uri);
+	g_free (connectivity_response);
+
+	return config_data;
+}
+
 static void
 nm_config_data_class_init (NMConfigDataClass *config_class)
 {
