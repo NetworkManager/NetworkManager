@@ -4455,12 +4455,15 @@ act_stage3_ip6_config_start (NMDevice *self,
 
 	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0) {
 		if (!priv->master) {
+			gboolean old_nm_ipv6ll = priv->nm_ipv6ll;
+
 			/* When activating an IPv6 'ignore' connection we need to revert back
 			 * to kernel IPv6LL, but the kernel won't actually assign an address
 			 * to the interface until disable_ipv6 is bounced.
 			 */
 			set_nm_ipv6ll (self, FALSE);
-			nm_device_ipv6_sysctl_set (self, "disable_ipv6", "1");
+			if (old_nm_ipv6ll == TRUE)
+				nm_device_ipv6_sysctl_set (self, "disable_ipv6", "1");
 			restore_ip6_properties (self);
 		}
 		return NM_ACT_STAGE_RETURN_STOP;
