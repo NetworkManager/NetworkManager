@@ -243,11 +243,21 @@ DEVICETYPE=TeamPort
                     nameservers to resolv.conf".</para>
                   </listitem>
                   <listitem>
-                  <para><literal>ONBOOT</literal> -
+                    <para><literal>ONBOOT</literal> -
                     initscripts use ONBOOT=yes to mark the devices that are to be activated
                     during boot. NetworkManager extents this to also mean that this profile
                     can be used for auto-connecting at any time.</para>
                   </listitem>
+                  <listitem>
+                    <para><literal>BOOTPROTO</literal> -
+                    NetworkManager supports traditional values <emphasis>none</emphasis> (static),
+                    <emphasis>dhcp</emphasis>. But it also allows additional values to
+                    enable new addressing methods. They are <emphasis>autoip</emphasis> for IPv4
+                    link-local addressing using Avahi daemon and <emphasis>shared</emphasis> for
+                    connection sharing. When <emphasis>shared</emphasis> is used, NetworkManager
+                    assigns the interface 10.42.0.1, or it uses the first static address,
+                    if configured.</para>
+                 </listitem>
                 </itemizedlist>
               </para></listitem>
             </varlistentry>
