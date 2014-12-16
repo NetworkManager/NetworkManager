@@ -40,7 +40,7 @@
 #define NM_NO_AUTO_DEFAULT_STATE_FILE  NMSTATEDIR "/no-auto-default.state"
 
 struct NMConfigCmdLineOptions {
-	char *config_path;
+	char *config_main_file;
 	char *config_dir;
 	char *no_auto_default_file;
 	char *plugins;
@@ -59,7 +59,7 @@ typedef struct {
 	NMConfigData *config_data;
 	NMConfigData *config_data_orig;
 
-	char *nm_conf_path;
+	char *config_main_file;
 	char *config_dir;
 	char *config_description;
 	char *no_auto_default_file;
@@ -151,15 +151,15 @@ nm_config_get_data_orig (NMConfig *config)
 }
 
 const char *
-nm_config_get_path (NMConfig *config)
+nm_config_get_config_main_file (NMConfig *config)
 {
 	g_return_val_if_fail (config != NULL, NULL);
 
-	return NM_CONFIG_GET_PRIVATE (config)->nm_conf_path;
+	return NM_CONFIG_GET_PRIVATE (config)->config_main_file;
 }
 
 const char *
-nm_config_get_description (NMConfig *config)
+nm_config_get_config_description (NMConfig *config)
 {
 	g_return_val_if_fail (config != NULL, NULL);
 
@@ -365,7 +365,7 @@ nm_config_set_ethernet_no_auto_default (NMConfig *config, NMDevice *device)
 static void
 _nm_config_cmd_line_options_clear (NMConfigCmdLineOptions *cli)
 {
-	g_clear_pointer (&cli->config_path, g_free);
+	g_clear_pointer (&cli->config_main_file, g_free);
 	g_clear_pointer (&cli->config_dir, g_free);
 	g_clear_pointer (&cli->no_auto_default_file, g_free);
 	g_clear_pointer (&cli->plugins, g_free);
@@ -383,7 +383,7 @@ _nm_config_cmd_line_options_copy (const NMConfigCmdLineOptions *cli, NMConfigCmd
 
 	_nm_config_cmd_line_options_clear (dst);
 	dst->config_dir = g_strdup (cli->config_dir);
-	dst->config_path = g_strdup (cli->config_path);
+	dst->config_main_file = g_strdup (cli->config_main_file);
 	dst->no_auto_default_file = g_strdup (cli->no_auto_default_file);
 	dst->plugins = g_strdup (cli->plugins);
 	dst->connectivity_uri = g_strdup (cli->connectivity_uri);
@@ -418,7 +418,7 @@ nm_config_cmd_line_options_add_to_entries (NMConfigCmdLineOptions *cli,
 
 	{
 		GOptionEntry config_options[] = {
-			{ "config", 0, 0, G_OPTION_ARG_FILENAME, &cli->config_path, N_("Config file location"), N_("/path/to/config.file") },
+			{ "config", 0, 0, G_OPTION_ARG_FILENAME, &cli->config_main_file, N_("Config file location"), N_("/path/to/config.file") },
 			{ "config-dir", 0, 0, G_OPTION_ARG_FILENAME, &cli->config_dir, N_("Config directory location"), N_("/path/to/config/dir") },
 			{ "no-auto-default", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_FILENAME, &cli->no_auto_default_file, "no-auto-default.state location", NULL },
 			{ "plugins", 0, 0, G_OPTION_ARG_STRING, &cli->plugins, N_("List of plugins separated by ','"), N_("plugin1,plugin2") },
@@ -503,21 +503,21 @@ read_config (GKeyFile *keyfile, const char *path, GError **error)
 
 static gboolean
 read_base_config (GKeyFile *keyfile,
-                  const char *cli_config_path,
-                  char **out_config_path,
+                  const char *cli_config_main_file,
+                  char **out_config_main_file,
                   GError **error)
 {
 	GError *my_error = NULL;
 
 	g_return_val_if_fail (keyfile, FALSE);
-	g_return_val_if_fail (out_config_path && !*out_config_path, FALSE);
+	g_return_val_if_fail (out_config_main_file && !*out_config_main_file, FALSE);
 	g_return_val_if_fail (!error || !*error, FALSE);
 
 	/* Try a user-specified config file first */
-	if (cli_config_path) {
+	if (cli_config_main_file) {
 		/* Bad user-specific config file path is a hard error */
-		if (read_config (keyfile, cli_config_path, error)) {
-			*out_config_path = g_strdup (cli_config_path);
+		if (read_config (keyfile, cli_config_main_file, error)) {
+			*out_config_main_file = g_strdup (cli_config_main_file);
 			return TRUE;
 		} else
 			return FALSE;
@@ -532,7 +532,7 @@ read_base_config (GKeyFile *keyfile,
 
 	/* Try deprecated nm-system-settings.conf first */
 	if (read_config (keyfile, NM_OLD_SYSTEM_CONF_FILE, &my_error)) {
-		*out_config_path = g_strdup (NM_OLD_SYSTEM_CONF_FILE);
+		*out_config_main_file = g_strdup (NM_OLD_SYSTEM_CONF_FILE);
 		return TRUE;
 	}
 
@@ -545,7 +545,7 @@ read_base_config (GKeyFile *keyfile,
 
 	/* Try the standard config file location next */
 	if (read_config (keyfile, NM_DEFAULT_SYSTEM_CONF_FILE, &my_error)) {
-		*out_config_path = g_strdup (NM_DEFAULT_SYSTEM_CONF_FILE);
+		*out_config_main_file = g_strdup (NM_DEFAULT_SYSTEM_CONF_FILE);
 		return TRUE;
 	}
 
@@ -561,7 +561,7 @@ read_base_config (GKeyFile *keyfile,
 	/* If for some reason no config file exists, use the default
 	 * config file path.
 	 */
-	*out_config_path = g_strdup (NM_DEFAULT_SYSTEM_CONF_FILE);
+	*out_config_main_file = g_strdup (NM_DEFAULT_SYSTEM_CONF_FILE);
 	nm_log_info (LOGD_CORE, "No config file found or given; using %s\n",
 	             NM_DEFAULT_SYSTEM_CONF_FILE);
 	return TRUE;
@@ -687,13 +687,13 @@ nm_config_new (const NMConfigCmdLineOptions *cli, GError **error)
 		priv->config_dir = g_strdup (NM_DEFAULT_SYSTEM_CONF_DIR);
 
 	/* First read the base config file */
-	if (!read_base_config (priv->keyfile, priv->cli.config_path, &priv->nm_conf_path, error)) {
+	if (!read_base_config (priv->keyfile, priv->cli.config_main_file, &priv->config_main_file, error)) {
 		g_object_unref (self);
 		return NULL;
 	}
 
 	confs = g_ptr_array_new_with_free_func (g_free);
-	config_description = g_string_new (priv->nm_conf_path);
+	config_description = g_string_new (priv->config_main_file);
 	dir = g_file_new_for_path (priv->config_dir);
 	direnum = g_file_enumerate_children (dir, G_FILE_ATTRIBUTE_STANDARD_NAME, 0, NULL, NULL);
 	if (direnum) {
@@ -797,7 +797,7 @@ finalize (GObject *gobject)
 {
 	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (gobject);
 
-	g_free (priv->nm_conf_path);
+	g_free (priv->config_main_file);
 	g_free (priv->config_dir);
 	g_free (priv->config_description);
 	g_free (priv->no_auto_default_file);
