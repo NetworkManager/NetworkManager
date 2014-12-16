@@ -567,6 +567,58 @@ read_base_config (GKeyFile *keyfile,
 	return TRUE;
 }
 
+static int
+sort_asciibetically (gconstpointer a, gconstpointer b)
+{
+	const char *s1 = *(const char **)a;
+	const char *s2 = *(const char **)b;
+
+	return strcmp (s1, s2);
+}
+
+static GPtrArray *
+_get_config_dir_files (const char *config_main_file,
+                       const char *config_dir,
+                       char **out_config_description)
+{
+	GFile *dir;
+	GFileEnumerator *direnum;
+	GFileInfo *info;
+	GPtrArray *confs;
+	GString *config_description;
+	const char *name;
+
+	g_return_val_if_fail (config_main_file, NULL);
+	g_return_val_if_fail (config_dir, NULL);
+	g_return_val_if_fail (out_config_description && !*out_config_description, NULL);
+
+	confs = g_ptr_array_new_with_free_func (g_free);
+	config_description = g_string_new (config_main_file);
+	dir = g_file_new_for_path (config_dir);
+	direnum = g_file_enumerate_children (dir, G_FILE_ATTRIBUTE_STANDARD_NAME, 0, NULL, NULL);
+	if (direnum) {
+		while ((info = g_file_enumerator_next_file (direnum, NULL, NULL))) {
+			name = g_file_info_get_name (info);
+			if (g_str_has_suffix (name, ".conf")) {
+				g_ptr_array_add (confs, g_build_filename (config_dir, name, NULL));
+				if (confs->len == 1)
+					g_string_append (config_description, " and conf.d: ");
+				else
+					g_string_append (config_description, ", ");
+				g_string_append (config_description, name);
+			}
+			g_object_unref (info);
+		}
+		g_object_unref (direnum);
+	}
+	g_object_unref (dir);
+
+	g_ptr_array_sort (confs, sort_asciibetically);
+
+	*out_config_description = g_string_free (config_description, FALSE);
+	return confs;
+}
+
 /************************************************************************/
 
 void
@@ -648,29 +700,15 @@ nm_config_setup (const NMConfigCmdLineOptions *cli, GError **error)
 	return singleton_instance;
 }
 
-static int
-sort_asciibetically (gconstpointer a, gconstpointer b)
-{
-	const char *s1 = *(const char **)a;
-	const char *s2 = *(const char **)b;
-
-	return strcmp (s1, s2);
-}
-
 NMConfig *
 nm_config_new (const NMConfigCmdLineOptions *cli, GError **error)
 {
 	NMConfigPrivate *priv = NULL;
-	GFile *dir;
-	GFileEnumerator *direnum;
-	GFileInfo *info;
-	GPtrArray *confs;
-	const char *name;
 	int i;
-	GString *config_description;
 	NMConfig *self;
 	char *connectivity_uri, *connectivity_response;
 	guint connectivity_interval;
+	GPtrArray *confs;
 
 	self = NM_CONFIG (g_object_new (NM_TYPE_CONFIG, NULL));
 	priv = NM_CONFIG_GET_PRIVATE (self);
@@ -692,29 +730,7 @@ nm_config_new (const NMConfigCmdLineOptions *cli, GError **error)
 		return NULL;
 	}
 
-	confs = g_ptr_array_new_with_free_func (g_free);
-	config_description = g_string_new (priv->config_main_file);
-	dir = g_file_new_for_path (priv->config_dir);
-	direnum = g_file_enumerate_children (dir, G_FILE_ATTRIBUTE_STANDARD_NAME, 0, NULL, NULL);
-	if (direnum) {
-		while ((info = g_file_enumerator_next_file (direnum, NULL, NULL))) {
-			name = g_file_info_get_name (info);
-			if (g_str_has_suffix (name, ".conf")) {
-				g_ptr_array_add (confs, g_build_filename (priv->config_dir, name, NULL));
-				if (confs->len == 1)
-					g_string_append (config_description, " and conf.d: ");
-				else
-					g_string_append (config_description, ", ");
-				g_string_append (config_description, name);
-			}
-			g_object_unref (info);
-		}
-		g_object_unref (direnum);
-	}
-	g_object_unref (dir);
-
-	g_ptr_array_sort (confs, sort_asciibetically);
-	priv->config_description = g_string_free (config_description, FALSE);
+	confs = _get_config_dir_files (priv->config_main_file, priv->config_dir, &priv->config_description);
 	for (i = 0; i < confs->len; i++) {
 		if (!read_config (priv->keyfile, confs->pdata[i], error)) {
 			g_object_unref (self);
