@@ -527,16 +527,13 @@ ignore_cb (NMSettingsConnection *connection,
  * subsystems watching this connection. Before returning, 'callback' is run
  * with the given 'user_data' along with any errors encountered.
  */
-void
-nm_settings_connection_replace_and_commit (NMSettingsConnection *self,
-                                           NMConnection *new_connection,
-                                           NMSettingsConnectionCommitFunc callback,
-                                           gpointer user_data)
+static void
+replace_and_commit (NMSettingsConnection *self,
+                    NMConnection *new_connection,
+                    NMSettingsConnectionCommitFunc callback,
+                    gpointer user_data)
 {
 	GError *error = NULL;
-
-	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (self));
-	g_return_if_fail (NM_IS_CONNECTION (new_connection));
 
 	if (nm_settings_connection_replace_settings (self, new_connection, TRUE, &error)) {
 		nm_settings_connection_commit_changes (self, callback, user_data);
@@ -545,6 +542,18 @@ nm_settings_connection_replace_and_commit (NMSettingsConnection *self,
 			callback (self, error, user_data);
 		g_clear_error (&error);
 	}
+}
+
+void
+nm_settings_connection_replace_and_commit (NMSettingsConnection *self,
+                                           NMConnection *new_connection,
+                                           NMSettingsConnectionCommitFunc callback,
+                                           gpointer user_data)
+{
+	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (self));
+	g_return_if_fail (NM_IS_CONNECTION (new_connection));
+
+	NM_SETTINGS_CONNECTION_GET_CLASS (self)->replace_and_commit (self, new_connection, callback, user_data);
 }
 
 static void
@@ -2362,6 +2371,7 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 
+	class->replace_and_commit = replace_and_commit;
 	class->commit_changes = commit_changes;
 	class->delete = do_delete;
 	class->supports_secrets = supports_secrets;

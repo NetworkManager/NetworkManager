@@ -103,6 +103,11 @@ struct _NMSettingsConnectionClass {
 	GObjectClass parent;
 
 	/* virtual methods */
+	void (*replace_and_commit) (NMSettingsConnection *connection,
+	                            NMConnection *new_connection,
+	                            NMSettingsConnectionCommitFunc callback,
+	                            gpointer user_data);
+
 	void (*commit_changes) (NMSettingsConnection *connection,
 	                        NMSettingsConnectionCommitFunc callback,
 	                        gpointer user_data);
