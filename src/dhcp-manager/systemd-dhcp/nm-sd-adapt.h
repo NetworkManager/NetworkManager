@@ -55,9 +55,9 @@ _slog_level_to_nm (int slevel)
 G_STMT_START { \
 	guint32 _l = _slog_level_to_nm ((level)); \
 	if (nm_logging_enabled (_l, LOGD_DHCP)) { \
-		const char *_location = strrchr ((file ":" G_STRINGIFY(line)), '/'); \
+		const char *_location = strrchr (file "", '/'); \
 		\
-		_nm_log (_location ? _location + 1 : (file ":" G_STRINGIFY(line)), func, _l, LOGD_DHCP, format, ## __VA_ARGS__); \
+		_nm_log (_location ? _location + 1 : file, line, func, _l, LOGD_DHCP, format, ## __VA_ARGS__); \
 	} \
 } G_STMT_END
 
