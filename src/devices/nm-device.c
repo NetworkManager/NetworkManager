@@ -174,6 +174,7 @@ typedef struct {
 
 typedef struct {
 	gboolean in_state_changed;
+	gboolean initialized;
 
 	NMDeviceState state;
 	NMDeviceStateReason state_reason;
@@ -996,6 +997,8 @@ nm_device_finish_init (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
+	g_assert (priv->initialized == FALSE);
+
 	/* Do not manage externally created software devices until they are IFF_UP */
 	if (   is_software_external (self)
 	    && !nm_platform_link_is_up (priv->ifindex)
@@ -1004,6 +1007,8 @@ nm_device_finish_init (NMDevice *self)
 
 	if (priv->master)
 		nm_device_enslave_slave (priv->master, self, NULL);
+
+	priv->initialized = TRUE;
 }
 
 static void
@@ -6723,9 +6728,9 @@ nm_device_set_unmanaged_quitting (NMDevice *self)
  * @flag: an #NMUnmanagedFlag
  * @unmanaged: %TRUE or %FALSE to set or clear @flag
  *
- * Like nm_device_set_unmanaged() but must be set before the device is exported
- * and does not trigger state changes.  Should only be used when initializing
- * a device.
+ * Like nm_device_set_unmanaged(), but must be set before the device is
+ * initialized by nm_device_finish_init(), and does not trigger state changes.
+ * Should only be used when initializing a device.
  */
 void
 nm_device_set_initial_unmanaged_flag (NMDevice *self,
@@ -6738,7 +6743,7 @@ nm_device_set_initial_unmanaged_flag (NMDevice *self,
 	g_return_if_fail (flag <= NM_UNMANAGED_LAST);
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
-	g_return_if_fail (priv->path == NULL);
+	g_return_if_fail (priv->initialized == FALSE);
 
 	if (unmanaged)
 		priv->unmanaged_flags |= flag;
