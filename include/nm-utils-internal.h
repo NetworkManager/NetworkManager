@@ -82,6 +82,9 @@
 
 /********************************************************/
 
+/* macro to return strlen() of a compile time string. */
+#define STRLEN(str)     ( sizeof ("" str) - 1 )
+
 #define NM_IN_SET(x, y, ...)                                    \
     ({                                                          \
         const typeof(y) _y = (y);                               \

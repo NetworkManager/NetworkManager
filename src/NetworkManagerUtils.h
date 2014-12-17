@@ -51,9 +51,6 @@ nm_utils_ip6_route_metric_normalize (guint32 metric)
 
 int nm_spawn_process (const char *args);
 
-/* macro to return strlen() of a compile time string. */
-#define STRLEN(str)     ( sizeof ("" str) - 1 )
-
 /* check if @flags has exactly one flag (@check) set. You should call this
  * only with @check being a compile time constant and a power of two. */
 #define NM_FLAGS_HAS(flags, check)  \
