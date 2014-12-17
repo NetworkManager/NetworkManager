@@ -357,7 +357,8 @@ nm_logging_enabled (NMLogLevel level, NMLogDomain domain)
 }
 
 void
-_nm_log (const char *loc,
+_nm_log (const char *file,
+         guint line,
          const char *func,
          NMLogLevel level,
          NMLogDomain domain,
@@ -387,13 +388,13 @@ _nm_log (const char *loc,
 		g_get_current_time (&tv);
 		syslog_level = LOG_DEBUG;
 		g_log_level = G_LOG_LEVEL_DEBUG;
-		fullmsg = g_strdup_printf ("<trace> [%ld.%06ld] [%s] %s(): %s", tv.tv_sec, tv.tv_usec, loc, func, msg);
+		fullmsg = g_strdup_printf ("<trace> [%ld.%06ld] [%s:%u] %s(): %s", tv.tv_sec, tv.tv_usec, file, line, func, msg);
 		break;
 	case LOGL_DEBUG:
 		g_get_current_time (&tv);
 		syslog_level = LOG_INFO;
 		g_log_level = G_LOG_LEVEL_DEBUG;
-		fullmsg = g_strdup_printf ("<debug> [%ld.%06ld] [%s] %s(): %s", tv.tv_sec, tv.tv_usec, loc, func, msg);
+		fullmsg = g_strdup_printf ("<debug> [%ld.%06ld] [%s:%u] %s(): %s", tv.tv_sec, tv.tv_usec, file, line, func, msg);
 		break;
 	case LOGL_INFO:
 		syslog_level = LOG_INFO;
@@ -410,7 +411,7 @@ _nm_log (const char *loc,
 		/* g_log_level is still WARNING, because ERROR is fatal */
 		g_log_level = G_LOG_LEVEL_WARNING;
 		g_get_current_time (&tv);
-		fullmsg = g_strdup_printf ("<error> [%ld.%06ld] [%s] %s(): %s", tv.tv_sec, tv.tv_usec, loc, func, msg);
+		fullmsg = g_strdup_printf ("<error> [%ld.%06ld] [%s:%u] %s(): %s", tv.tv_sec, tv.tv_usec, file, line, func, msg);
 		break;
 	default:
 		g_assert_not_reached ();
