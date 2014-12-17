@@ -52,7 +52,7 @@
 			</task>
 			<task name="/distribution/command" role="STANDALONE">
 				<params>
-					<param name="CMDS_TO_RUN" value="sed -i '$$s/$$/\n[logging]\n    level=DEBUG\n    domains=ALL\n/' /etc/NetworkManager/NetworkManager.conf"/>
+					<param name="CMDS_TO_RUN" value="sed -i '$$s/$$/\n[logging]\n    level=DEBUG\n    domains=ALL\n\n[main]\n    debug=RLIMIT_CORE\n/' /etc/NetworkManager/NetworkManager.conf"/>
 				</params>
 			</task>
 			<task name="/distribution/command" role="STANDALONE">
