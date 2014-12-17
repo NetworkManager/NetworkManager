@@ -723,6 +723,27 @@ _normalize_infiniband_mtu (NMConnection *self, GHashTable *parameters)
 	return FALSE;
 }
 
+static gboolean
+_normalize_bond_mode (NMConnection *self, GHashTable *parameters)
+{
+	NMSettingBond *s_bond = nm_connection_get_setting_bond (self);
+
+	/* Convert mode from numeric to string notation */
+	if (s_bond) {
+		const char *mode = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_MODE);
+		int mode_int = nm_utils_bond_mode_string_to_int (mode);
+
+		if (mode_int != -1) {
+			const char *mode_new = nm_utils_bond_mode_int_to_string (mode_int);
+			if (g_strcmp0 (mode_new, mode) != 0) {
+				nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_MODE, mode_new);
+				return TRUE;
+			}
+		}
+	}
+	return FALSE;
+}
+
 /**
  * nm_connection_verify:
  * @connection: the #NMConnection to verify
@@ -936,6 +957,7 @@ nm_connection_normalize (NMConnection *connection,
 	was_modified |= _normalize_connection_slave_type (connection);
 	was_modified |= _normalize_ip_config (connection, parameters);
 	was_modified |= _normalize_infiniband_mtu (connection, parameters);
+	was_modified |= _normalize_bond_mode (connection, parameters);
 
 	/* Verify anew. */
 	success = _nm_connection_verify (connection, error);

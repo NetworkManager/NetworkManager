@@ -441,6 +441,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	GHashTableIter iter;
 	const char *key, *value;
 	int mode, miimon = 0, arp_interval = 0;
+	const char *mode_orig, *mode_new;
 	const char *arp_ip_target = NULL;
 	const char *lacp_rate;
 	const char *primary;
@@ -477,7 +478,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	}
 
 	/* Verify bond mode */
-	value = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_MODE);
+	mode_orig = value = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_MODE);
 	if (!value) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
@@ -497,7 +498,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
 		return FALSE;
 	}
-	value = nm_utils_bond_mode_int_to_string (mode);
+	mode_new = value = nm_utils_bond_mode_int_to_string (mode);
 
 	/* Make sure mode is compatible with other settings */
 	if (   strcmp (value, "balance-alb") == 0
@@ -640,7 +641,22 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	return _nm_connection_verify_required_interface_name (connection, error);
+	if (!_nm_connection_verify_required_interface_name (connection, error))
+		return FALSE;
+
+	/* *** errors above here should be always fatal, below NORMALIZABLE_ERROR *** */
+
+	if (g_strcmp0 (mode_orig, mode_new) != 0) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("'%s' option should be string"),
+		             NM_SETTING_BOND_OPTION_MODE);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
+		return NM_SETTING_VERIFY_NORMALIZABLE;
+	}
+
+	return TRUE;
 }
 
 static void
