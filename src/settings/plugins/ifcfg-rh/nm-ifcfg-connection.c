@@ -332,6 +332,28 @@ nm_ifcfg_connection_get_unrecognized_spec (NMIfcfgConnection *self)
 }
 
 static void
+replace_and_commit (NMSettingsConnection *connection,
+                    NMConnection *new_connection,
+                    NMSettingsConnectionCommitFunc callback,
+                    gpointer user_data)
+{
+	const char *filename;
+	GError *error = NULL;
+
+	filename = nm_settings_connection_get_filename (connection);
+	if (filename && utils_has_complex_routes (filename)) {
+		if (callback) {
+			error = g_error_new_literal (NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+			                             "Cannot modify a connection that has an associated 'rule-' or 'rule6-' file");
+			callback (connection, error, user_data);
+			g_clear_error (&error);
+		}
+	}
+
+	NM_SETTINGS_CONNECTION_CLASS (nm_ifcfg_connection_parent_class)->replace_and_commit (connection, new_connection, callback, user_data);
+}
+
+static void
 commit_changes (NMSettingsConnection *connection,
                 NMSettingsConnectionCommitFunc callback,
                 gpointer user_data)
@@ -493,6 +515,7 @@ nm_ifcfg_connection_class_init (NMIfcfgConnectionClass *ifcfg_connection_class)
 	object_class->get_property = get_property;
 	object_class->dispose      = dispose;
 	settings_class->delete = do_delete;
+	settings_class->replace_and_commit = replace_and_commit;
 	settings_class->commit_changes = commit_changes;
 
 	/* Properties */

@@ -2638,6 +2638,12 @@ writer_update_connection (NMConnection *connection,
                           const char *keyfile,
                           GError **error)
 {
+	if (utils_has_complex_routes (filename)) {
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+		             "Cannot modify a connection that has an associated 'rule-' or 'rule6-' file");
+		return FALSE;
+	}
+
 	return write_connection (connection, ifcfg_dir, filename, keyfile, NULL, error);
 }
 
