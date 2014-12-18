@@ -194,8 +194,8 @@ test_read_basic (void)
 	guint64 expected_timestamp = 0;
 	gboolean success;
 
-	connection = connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-minimal",
-	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-minimal",
+	                                        NULL, TYPE_ETHERNET, NULL, &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 	success = nm_connection_verify (connection, &error);
@@ -254,8 +254,8 @@ test_read_miscellaneous_variables (void)
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*invalid MAC in HWADDR_BLACKLIST 'XX:aa:invalid'*");
-	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-misc-variables",
-	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-misc-variables",
+	                                        NULL, TYPE_ETHERNET, NULL, &error);
 	g_test_assert_expected_messages ();
 	g_assert_no_error (error);
 	g_assert (connection);
@@ -304,8 +304,8 @@ test_read_variables_corner_cases (void)
 	guint64 expected_timestamp = 0;
 	gboolean success;
 
-	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-variables-corner-cases-1",
-	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-variables-corner-cases-1",
+	                                        NULL, TYPE_ETHERNET, NULL, &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 	success = nm_connection_verify (connection, &error);
@@ -350,10 +350,10 @@ test_read_unmanaged (void)
 	guint64 expected_timestamp = 0;
 	gboolean success;
 
-	connection = connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-nm-controlled",
-	                                   NULL, TYPE_ETHERNET,
-	                                   &unhandled_spec,
-	                                   NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-nm-controlled",
+	                                        NULL, TYPE_ETHERNET,
+	                                        &unhandled_spec,
+	                                        &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 	success = nm_connection_verify (connection, &error);
@@ -383,10 +383,10 @@ test_read_unmanaged_unrecognized (void)
 	guint64 expected_timestamp = 0;
 	gboolean success;
 
-	connection = connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-nm-controlled-unrecognized",
-	                                   NULL, NULL,
-	                                   &unhandled_spec,
-	                                   NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-nm-controlled-unrecognized",
+	                                        NULL, NULL,
+	                                        &unhandled_spec,
+	                                        &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 	success = nm_connection_verify (connection, &error);
@@ -414,10 +414,10 @@ test_read_unrecognized (void)
 	guint64 expected_timestamp = 0;
 	gboolean success;
 
-	connection = connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-unrecognized",
-	                                   NULL, NULL,
-	                                   &unhandled_spec,
-	                                   NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-unrecognized",
+	                                        NULL, NULL,
+	                                        &unhandled_spec,
+	                                        &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 	success = nm_connection_verify (connection, &error);
@@ -452,8 +452,8 @@ test_read_wired_static (const char *file,
 	NMIPAddress *ip6_addr;
 	gboolean success;
 
-	connection = connection_from_file (file, NULL, TYPE_ETHERNET,
-	                                   &unmanaged, NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (file, NULL, TYPE_ETHERNET,
+	                                        &unmanaged, &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 	success = nm_connection_verify (connection, &error);
@@ -527,7 +527,6 @@ test_read_wired_static (const char *file,
 		g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
 	}
 
-	g_free (unmanaged);
 	g_object_unref (connection);
 }
 
@@ -547,8 +546,8 @@ test_read_wired_static_no_prefix (gconstpointer user_data)
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*missing PREFIX, assuming*");
-	connection = connection_from_file (file, NULL, TYPE_ETHERNET, NULL,
-	                                   NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (file, NULL, TYPE_ETHERNET, NULL,
+	                                        &error);
 	g_test_assert_expected_messages ();
 	g_assert_no_error (error);
 	g_assert (connection);
@@ -584,10 +583,6 @@ test_read_wired_dhcp (void)
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
 	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0xee };
@@ -595,15 +590,11 @@ test_read_wired_dhcp (void)
 	const char *expected_id = "System test-wired-dhcp";
 	const char *expected_dhcp_hostname = "foobar";
 
-	connection = connection_from_file (TEST_IFCFG_WIRED_DHCP,
-	                                   NULL,
-	                                   TYPE_ETHERNET,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_WIRED_DHCP,
+	                                        NULL,
+	                                        TYPE_ETHERNET,
+	                                        &unmanaged,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "wired-dhcp-read", "failed to read %s: %s", TEST_IFCFG_WIRED_DHCP, error->message);
 
@@ -722,10 +713,6 @@ test_read_wired_dhcp (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP_CONFIG_DNS);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -740,9 +727,9 @@ test_read_wired_dhcp_plus_ip (void)
 	NMIPAddress *ip6_addr;
 	gboolean success;
 
-	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-dhcp-plus-ip",
-	                                   NULL, TYPE_ETHERNET, NULL,
-	                                   NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-dhcp-plus-ip",
+	                                        NULL, TYPE_ETHERNET, NULL,
+	                                        &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 	success = nm_connection_verify (connection, &error);
@@ -817,9 +804,9 @@ test_read_wired_global_gateway (void)
 	NMIPAddress *ip4_addr;
 	char *unmanaged = NULL;
 
-	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-global-gateway",
-	                                   TEST_IFCFG_DIR"/network-scripts/network-test-wired-global-gateway",
-	                                   TYPE_ETHERNET, &unmanaged, NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-global-gateway",
+	                                        TEST_IFCFG_DIR"/network-scripts/network-test-wired-global-gateway",
+	                                        TYPE_ETHERNET, &unmanaged, &error);
 	nmtst_assert_connection_verifies_without_normalization (connection);
 	g_assert (unmanaged == NULL);
 
@@ -857,9 +844,9 @@ test_read_wired_never_default (void)
 	NMSettingIPConfig *s_ip6;
 	GError *error = NULL;
 
-	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-never-default",
-	                                   TEST_IFCFG_DIR"/network-scripts/network-test-wired-never-default",
-	                                   TYPE_ETHERNET, NULL, NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-never-default",
+	                                        TEST_IFCFG_DIR"/network-scripts/network-test-wired-never-default",
+	                                        TYPE_ETHERNET, NULL, &error);
 	nmtst_assert_connection_verifies_without_normalization (connection);
 
 	/* ===== WIRED SETTING ===== */
@@ -892,23 +879,15 @@ test_read_wired_defroute_no (void)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
 	const char *expected_id = "System test-wired-defroute-no";
 
-	connection = connection_from_file (TEST_IFCFG_WIRED_DEFROUTE_NO,
-	                                   NULL,
-	                                   TYPE_ETHERNET,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_WIRED_DEFROUTE_NO,
+	                                        NULL,
+	                                        TYPE_ETHERNET,
+	                                        &unmanaged,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "wired-defroute-no-read", "failed to read %s: %s", TEST_IFCFG_WIRED_DEFROUTE_NO, error->message);
 
@@ -991,10 +970,6 @@ test_read_wired_defroute_no (void)
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP_CONFIG_NEVER_DEFAULT);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -1010,23 +985,15 @@ test_read_wired_defroute_no_gatewaydev_yes (void)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
 	const char *expected_id = "System test-wired-defroute-no-gatewaydev-yes";
 
-	connection = connection_from_file (TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
-	                                   TEST_NETWORK_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
-	                                   TYPE_ETHERNET,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
+	                                        TEST_NETWORK_WIRED_DEFROUTE_NO_GATEWAYDEV_YES,
+	                                        TYPE_ETHERNET,
+	                                        &unmanaged,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "wired-defroute-no-gatewaydev-yes-read",
 	        "failed to read %s: %s",
@@ -1117,10 +1084,6 @@ test_read_wired_defroute_no_gatewaydev_yes (void)
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP_CONFIG_NEVER_DEFAULT);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -1134,8 +1097,8 @@ test_read_wired_static_routes (void)
 	GError *error = NULL;
 	NMIPRoute *ip4_route;
 
-	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static-routes",
-	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static-routes",
+	                                        NULL, TYPE_ETHERNET, NULL, &error);
 	nmtst_assert_connection_verifies_without_normalization (connection);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -1182,24 +1145,16 @@ test_read_wired_static_routes_legacy (void)
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
 	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
 	NMIPRoute *ip4_route;
 	const char *expected_id = "System test-wired-static-routes-legacy";
 
-	connection = connection_from_file (TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
-	                                   NULL,
-	                                   TYPE_ETHERNET,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_WIRED_STATIC_ROUTES_LEGACY,
+	                                        NULL,
+	                                        TYPE_ETHERNET,
+	                                        &unmanaged,
+	                                        &error);
 
 	ASSERT (connection != NULL,
 	        "wired-static-routes-legacy-read",
@@ -1291,10 +1246,6 @@ test_read_wired_static_routes_legacy (void)
 	g_assert_cmpstr (nm_ip_route_get_next_hop (ip4_route), ==, "7.7.7.7");
 	g_assert_cmpint (nm_ip_route_get_metric (ip4_route), ==, 3);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -1306,23 +1257,15 @@ test_read_wired_ipv4_manual (const char *file, const char *expected_id)
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
 	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
 	NMIPAddress *ip4_addr;
 
-	connection = connection_from_file (file,
-	                                   NULL,
-	                                   TYPE_ETHERNET,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (file,
+	                                        NULL,
+	                                        TYPE_ETHERNET,
+	                                        &unmanaged,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "wired-ipv4-manual-read", "failed to read %s: %s", file, error->message);
 
@@ -1402,10 +1345,6 @@ test_read_wired_ipv4_manual (const char *file, const char *expected_id)
 	g_assert_cmpstr (nm_ip_address_get_address (ip4_addr), ==, "3.3.3.3");
 	g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 8);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -1420,10 +1359,6 @@ test_read_wired_ipv6_manual (void)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
 	const char *expected_id = "System test-wired-ipv6-manual";
@@ -1432,15 +1367,11 @@ test_read_wired_ipv6_manual (void)
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*ignoring manual default route*");
-	connection = connection_from_file (TEST_IFCFG_WIRED_IPV6_MANUAL,
-	                                   NULL,
-	                                   TYPE_ETHERNET,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_WIRED_IPV6_MANUAL,
+	                                        NULL,
+	                                        TYPE_ETHERNET,
+	                                        &unmanaged,
+	                                        &error);
 	g_test_assert_expected_messages ();
 
 	ASSERT (connection != NULL,
@@ -1635,10 +1566,6 @@ test_read_wired_ipv6_manual (void)
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP_CONFIG_DNS_SEARCH);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -1653,25 +1580,17 @@ test_read_wired_ipv6_only (void)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
 	const char *expected_id = "System test-wired-ipv6-only";
 	NMIPAddress *ip6_addr;
 	const char *method;
 
-	connection = connection_from_file (TEST_IFCFG_WIRED_IPV6_ONLY,
-	                                   NULL,
-	                                   TYPE_ETHERNET,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_WIRED_IPV6_ONLY,
+	                                        NULL,
+	                                        TYPE_ETHERNET,
+	                                        &unmanaged,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "wired-ipv6-only-read", "failed to read %s: %s", TEST_IFCFG_WIRED_IPV6_ONLY, error->message);
 
@@ -1773,10 +1692,6 @@ test_read_wired_ipv6_only (void)
 	g_assert_cmpstr (nm_setting_ip_config_get_dns_search (s_ip6, 1), ==, "ipsum.org");
 	g_assert_cmpstr (nm_setting_ip_config_get_dns_search (s_ip6, 2), ==, "dolor.edu");
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -1791,24 +1706,16 @@ test_read_wired_dhcp6_only (void)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
 	const char *expected_id = "System test-wired-dhcp6-only";
 	const char *method;
 
-	connection = connection_from_file (TEST_IFCFG_WIRED_DHCP6_ONLY,
-	                                   NULL,
-	                                   TYPE_ETHERNET,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_WIRED_DHCP6_ONLY,
+	                                        NULL,
+	                                        TYPE_ETHERNET,
+	                                        &unmanaged,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "wired-dhcp6-only-read", "failed to read %s: %s", TEST_IFCFG_WIRED_DHCP6_ONLY, error->message);
 
@@ -1878,10 +1785,6 @@ test_read_wired_dhcp6_only (void)
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP_CONFIG_METHOD);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -1893,21 +1796,13 @@ test_read_onboot_no (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 
-	connection = connection_from_file (TEST_IFCFG_ONBOOT_NO,
-	                                   NULL,
-	                                   TYPE_ETHERNET,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_ONBOOT_NO,
+	                                        NULL,
+	                                        TYPE_ETHERNET,
+	                                        &unmanaged,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "onboot-no-read", "failed to read %s: %s", TEST_IFCFG_ONBOOT_NO, error->message);
 
@@ -1932,10 +1827,6 @@ test_read_onboot_no (void)
 	        NM_SETTING_CONNECTION_SETTING_NAME,
 	        NM_SETTING_CONNECTION_AUTOCONNECT);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -1947,22 +1838,13 @@ test_read_noip (void)
 	NMConnection *connection;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 
-	connection = connection_from_file (TEST_IFCFG_NOIP,
-	                                   NULL,
-	                                   TYPE_ETHERNET,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_NOIP,
+	                                        NULL,
+	                                        TYPE_ETHERNET,
+	                                        NULL,
+	                                        &error);
 	g_assert (connection);
 	g_assert (nm_connection_verify (connection, &error));
 	g_assert_no_error (error);
@@ -1977,10 +1859,6 @@ test_read_noip (void)
 	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
 	g_assert (nm_setting_ip_config_get_never_default (s_ip6) == FALSE);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -1996,10 +1874,6 @@ test_read_wired_8021x_peap_mschapv2 (void)
 	NMSetting8021x *s_8021x;
 	NMSetting8021x *tmp_8021x;
 	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
 	const char *expected_identity = "David Smith";
@@ -2009,15 +1883,11 @@ test_read_wired_8021x_peap_mschapv2 (void)
 	const char *expected_ca_cert_path;
 	const char *read_ca_cert_path;
 
-	connection = connection_from_file (TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
-	                                   NULL,
-	                                   TYPE_ETHERNET,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	                                        NULL,
+	                                        TYPE_ETHERNET,
+	                                        &unmanaged,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "wired-8021x-peap-mschapv2-read", "failed to read %s: %s", TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2, error->message);
 
@@ -2176,10 +2046,6 @@ test_read_wired_8021x_peap_mschapv2 (void)
 
 	g_object_unref (tmp_8021x);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -2192,25 +2058,16 @@ test_read_wired_8021x_tls_secret_flags (const char *ifcfg, NMSettingSecretFlags 
 	NMConnection *connection;
 	NMSettingWired *s_wired;
 	NMSetting8021x *s_8021x;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *expected_identity = "David Smith";
 	gboolean success = FALSE;
 	char *dirname, *tmp;
 
-	connection = connection_from_file (ifcfg,
-	                                   NULL,
-	                                   TYPE_ETHERNET,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (ifcfg,
+	                                        NULL,
+	                                        TYPE_ETHERNET,
+	                                        NULL,
+	                                        &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 
@@ -2242,10 +2099,6 @@ test_read_wired_8021x_tls_secret_flags (const char *ifcfg, NMSettingSecretFlags 
 
 	g_free (dirname);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -2260,9 +2113,9 @@ test_read_write_802_1X_subj_matches (void)
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*missing IEEE_8021X_CA_CERT*peap*");
-	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-802-1X-subj-matches",
-	                                   NULL, TYPE_ETHERNET, NULL,
-	                                   NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-802-1X-subj-matches",
+	                                        NULL, TYPE_ETHERNET, NULL,
+	                                        &error);
 	g_test_assert_expected_messages ();
 	g_assert_no_error (error);
 	g_assert (connection != NULL);
@@ -2295,8 +2148,8 @@ test_read_write_802_1X_subj_matches (void)
 	/* re-read the connection for comparison */
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*missing IEEE_8021X_CA_CERT*peap*");
-	reread = connection_from_file (written, NULL, TYPE_ETHERNET, NULL,
-	                               NULL, NULL, NULL, &error, NULL);
+	reread = connection_from_file_test (written, NULL, TYPE_ETHERNET, NULL,
+	                                    &error);
 	g_test_assert_expected_messages ();
 	unlink (written);
 	g_free (written);
@@ -2343,8 +2196,8 @@ test_read_802_1x_ttls_eapgtc (void)
 	 * NMSetting8021x::autheap property.
 	 */
 
-	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-802-1x-ttls-eapgtc",
-	                                   NULL, TYPE_WIRELESS, NULL, NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-802-1x-ttls-eapgtc",
+	                                        NULL, TYPE_WIRELESS, NULL, &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 	success = nm_connection_verify (connection, &error);
@@ -2374,11 +2227,6 @@ test_read_wired_aliases_good (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingIPConfig *s_ip4;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
 	const char *expected_id = "System aliasem0";
@@ -2388,15 +2236,11 @@ test_read_wired_aliases_good (void)
 	const char *expected_gateway = "192.168.1.1";
 	int i, j;
 
-	connection = connection_from_file (TEST_IFCFG_ALIASES_GOOD,
-	                                   NULL,
-	                                   TYPE_ETHERNET,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_ALIASES_GOOD,
+	                                        NULL,
+	                                        TYPE_ETHERNET,
+	                                        NULL,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "aliases-good-read", "failed to read %s: %s", TEST_IFCFG_ALIASES_GOOD, error->message);
 
@@ -2485,9 +2329,6 @@ test_read_wired_aliases_good (void)
 		        expected_address[i]);
 	}
 
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -2497,24 +2338,15 @@ test_read_wired_aliases_bad (const char *base, const char *expected_id)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingIPConfig *s_ip4;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
 	NMIPAddress *ip4_addr;
 
-	connection = connection_from_file (base,
-	                                   NULL,
-	                                   TYPE_ETHERNET,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (base,
+	                                        NULL,
+	                                        TYPE_ETHERNET,
+	                                        NULL,
+	                                        &error);
 	g_test_assert_expected_messages ();
 	ASSERT (connection != NULL,
 	        "aliases-bad-read", "failed to read %s: %s", base, error->message);
@@ -2575,9 +2407,6 @@ test_read_wired_aliases_bad (const char *base, const char *expected_id)
 	/* Gateway */
 	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, "192.168.1.1");
 
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -2611,11 +2440,6 @@ test_read_wifi_open (void)
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIPConfig *s_ip4;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
 	GBytes *ssid;
@@ -2627,15 +2451,11 @@ test_read_wifi_open (void)
 	const char *expected_mode = "infrastructure";
 	const guint32 expected_channel = 1;
 
-	connection = connection_from_file (TEST_IFCFG_WIFI_OPEN,
-	                                   NULL,
-	                                   TYPE_WIRELESS,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_WIFI_OPEN,
+	                                        NULL,
+	                                        TYPE_WIRELESS,
+	                                        NULL,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "wifi-open-read", "failed to read %s: %s", TEST_IFCFG_WIFI_OPEN, error->message);
 
@@ -2772,10 +2592,6 @@ test_read_wifi_open (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP_CONFIG_METHOD);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -2787,25 +2603,16 @@ test_read_wifi_open_auto (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
 	const char *expected_id = "System blahblah (test-wifi-open-auto)";
 	const char *expected_mode = "infrastructure";
 
-	connection = connection_from_file (TEST_IFCFG_WIFI_OPEN_AUTO,
-	                                   NULL,
-	                                   TYPE_WIRELESS,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_WIFI_OPEN_AUTO,
+	                                        NULL,
+	                                        TYPE_WIRELESS,
+	                                        NULL,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "wifi-open-auto-read", "failed to read %s: %s", TEST_IFCFG_WIFI_OPEN_AUTO, error->message);
 
@@ -2853,10 +2660,6 @@ test_read_wifi_open_auto (void)
 	        NM_SETTING_WIRELESS_SETTING_NAME,
 	        NM_SETTING_WIRELESS_MODE);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -2868,26 +2671,17 @@ test_read_wifi_open_ssid_hex (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
 	GBytes *ssid;
 	const char *expected_id = "System blahblah (test-wifi-open-ssid-hex)";
 	const char *expected_ssid = "blahblah";
 
-	connection = connection_from_file (TEST_IFCFG_WIFI_OPEN_SSID_HEX,
-	                                   NULL,
-	                                   TYPE_WIRELESS,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_WIFI_OPEN_SSID_HEX,
+	                                        NULL,
+	                                        TYPE_WIRELESS,
+	                                        NULL,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "wifi-open-ssid-hex-read", "failed to read %s: %s", TEST_IFCFG_WIFI_OPEN_SSID_HEX, error->message);
 
@@ -2941,10 +2735,6 @@ test_read_wifi_open_ssid_hex (void)
 	        NM_SETTING_WIRELESS_SETTING_NAME,
 	        NM_SETTING_WIRELESS_SSID);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -2952,29 +2742,16 @@ static void
 test_read_wifi_open_ssid_bad (const char *file, const char *test)
 {
 	NMConnection *connection;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 
-	connection = connection_from_file (file,
-	                                   NULL,
-	                                   TYPE_WIRELESS,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (file,
+	                                        NULL,
+	                                        TYPE_WIRELESS,
+	                                        NULL,
+	                                        &error);
 	ASSERT (connection == NULL, test, "unexpected success reading %s", file);
 	g_clear_error (&error);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 }
 
 #define TEST_IFCFG_WIFI_OPEN_SSID_QUOTED TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-quoted"
@@ -2985,26 +2762,17 @@ test_read_wifi_open_ssid_quoted (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
 	GBytes *ssid;
 	const char *expected_id = "System foo\"bar\\ (test-wifi-open-ssid-quoted)";
 	const char *expected_ssid = "foo\"bar\\";
 
-	connection = connection_from_file (TEST_IFCFG_WIFI_OPEN_SSID_QUOTED,
-	                                   NULL,
-	                                   TYPE_WIRELESS,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_WIFI_OPEN_SSID_QUOTED,
+	                                        NULL,
+	                                        TYPE_WIRELESS,
+	                                        NULL,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "wifi-open-ssid-quoted-read", "failed to read %s: %s", TEST_IFCFG_WIFI_OPEN_SSID_QUOTED, error->message);
 
@@ -3058,10 +2826,6 @@ test_read_wifi_open_ssid_quoted (void)
 	        NM_SETTING_WIRELESS_SETTING_NAME,
 	        NM_SETTING_WIRELESS_SSID);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -3075,11 +2839,6 @@ test_read_wifi_wep (void)
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIPConfig *s_ip4;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
 	GBytes *ssid;
@@ -3093,15 +2852,11 @@ test_read_wifi_wep (void)
 	const char *expected_wep_key0 = "0123456789abcdef0123456789";
 	NMWepKeyType key_type;
 
-	connection = connection_from_file (TEST_IFCFG_WIFI_WEP,
-	                                   NULL,
-	                                   TYPE_WIRELESS,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_WIFI_WEP,
+	                                        NULL,
+	                                        TYPE_WIRELESS,
+	                                        NULL,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "wifi-wep-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WEP, error->message);
 
@@ -3316,10 +3071,6 @@ test_read_wifi_wep (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP_CONFIG_METHOD);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -3333,11 +3084,6 @@ test_read_wifi_wep_adhoc (void)
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIPConfig *s_ip4;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
 	GBytes *ssid;
@@ -3346,15 +3092,11 @@ test_read_wifi_wep_adhoc (void)
 	const char *expected_mode = "adhoc";
 	const char *expected_wep_key0 = "0123456789abcdef0123456789";
 
-	connection = connection_from_file (TEST_IFCFG_WIFI_WEP_ADHOC,
-	                                   NULL,
-	                                   TYPE_WIRELESS,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_WIFI_WEP_ADHOC,
+	                                        NULL,
+	                                        TYPE_WIRELESS,
+	                                        NULL,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "wifi-wep-adhoc-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WEP_ADHOC, error->message);
 
@@ -3556,10 +3298,6 @@ test_read_wifi_wep_adhoc (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP_CONFIG_DNS);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -3572,25 +3310,16 @@ test_read_wifi_wep_passphrase (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
 	const char *expected_wep_key0 = "foobar222blahblah";
 	NMWepKeyType key_type;
 
-	connection = connection_from_file (TEST_IFCFG_WIFI_WEP_PASSPHRASE,
-	                                   NULL,
-	                                   TYPE_WIRELESS,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_WIFI_WEP_PASSPHRASE,
+	                                        NULL,
+	                                        TYPE_WIRELESS,
+	                                        NULL,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "wifi-wep-passphrase-read", "failed to read %s: %s",
 	        TEST_IFCFG_WIFI_WEP_PASSPHRASE, error->message);
@@ -3681,10 +3410,6 @@ test_read_wifi_wep_passphrase (void)
 	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY3);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -3697,25 +3422,16 @@ test_read_wifi_wep_40_ascii (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
 	const char *expected_wep_key0 = "Lorem";
 	NMWepKeyType key_type;
 
-	connection = connection_from_file (TEST_IFCFG_WIFI_WEP_40_ASCII,
-	                                   NULL,
-	                                   TYPE_WIRELESS,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_WIFI_WEP_40_ASCII,
+	                                        NULL,
+	                                        TYPE_WIRELESS,
+	                                        NULL,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "wifi-wep-40-ascii-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WEP_40_ASCII, error->message);
 
@@ -3804,10 +3520,6 @@ test_read_wifi_wep_40_ascii (void)
 	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY3);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -3820,25 +3532,16 @@ test_read_wifi_wep_104_ascii (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
 	const char *expected_wep_key0 = "LoremIpsumSit";
 	NMWepKeyType key_type;
 
-	connection = connection_from_file (TEST_IFCFG_WIFI_WEP_104_ASCII,
-	                                   NULL,
-	                                   TYPE_WIRELESS,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_WIFI_WEP_104_ASCII,
+	                                        NULL,
+	                                        TYPE_WIRELESS,
+	                                        NULL,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "wifi-wep-104-ascii-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WEP_104_ASCII, error->message);
 
@@ -3927,10 +3630,6 @@ test_read_wifi_wep_104_ascii (void)
 	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY3);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -3943,26 +3642,17 @@ test_read_wifi_leap (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
 	const char *expected_id = "System blahblah (test-wifi-leap)";
 	const char *expected_identity = "Bill Smith";
 	const char *expected_password = "foobarblah";
 
-	connection = connection_from_file (TEST_IFCFG_WIFI_LEAP,
-	                                   NULL,
-	                                   TYPE_WIRELESS,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_WIFI_LEAP,
+	                                        NULL,
+	                                        TYPE_WIRELESS,
+	                                        NULL,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "wifi-leap-read", "failed to read %s: %s", TEST_IFCFG_WIFI_LEAP, error->message);
 
@@ -4052,10 +3742,6 @@ test_read_wifi_leap (void)
 	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	        NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -4068,24 +3754,15 @@ test_read_wifi_leap_secret_flags (const char *file, NMSettingSecretFlags expecte
 	NMConnection *connection;
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *expected_identity = "Bill Smith";
 	gboolean success;
 
-	connection = connection_from_file (file,
-	                                   NULL,
-	                                   TYPE_WIRELESS,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (file,
+	                                        NULL,
+	                                        TYPE_WIRELESS,
+	                                        NULL,
+	                                        &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 
@@ -4108,10 +3785,6 @@ test_read_wifi_leap_secret_flags (const char *file, NMSettingSecretFlags expecte
 	g_assert (nm_setting_wireless_security_get_leap_password_flags (s_wsec) == expected_flags);
 	g_assert (nm_setting_wireless_security_get_leap_password (s_wsec) == NULL);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -4125,11 +3798,6 @@ test_read_wifi_wpa_psk (void)
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIPConfig *s_ip4;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
 	GBytes *ssid;
@@ -4152,15 +3820,11 @@ test_read_wifi_wpa_psk (void)
 	gboolean found_proto_wpa = FALSE;
 	gboolean found_proto_rsn = FALSE;
 
-	connection = connection_from_file (TEST_IFCFG_WIFI_WPA_PSK,
-	                                   NULL,
-	                                   TYPE_WIRELESS,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_WIFI_WPA_PSK,
+	                                        NULL,
+	                                        TYPE_WIRELESS,
+	                                        NULL,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "wifi-wpa-psk-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WPA_PSK, error->message);
 
@@ -4409,10 +4073,6 @@ test_read_wifi_wpa_psk (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP_CONFIG_METHOD);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -4425,25 +4085,16 @@ test_read_wifi_wpa_psk_2 (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
 	const char *expected_id = "System ipsum (test-wifi-wpa-psk-2)";
 	const char *expected_psk = "They're really saying I love you. >>`<< \\";
 
-	connection = connection_from_file (TEST_IFCFG_WIFI_WPA_PSK_2,
-                                     NULL,
-                                     TYPE_WIRELESS,
-                                     &unmanaged,
-                                     &keyfile,
-                                     &routefile,
-                                     &route6file,
-                                     &error,
-                                     &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_WIFI_WPA_PSK_2,
+	                                        NULL,
+	                                        TYPE_WIRELESS,
+	                                        NULL,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "wifi-wpa-psk-2-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WPA_PSK_2, error->message);
 
@@ -4500,10 +4151,6 @@ test_read_wifi_wpa_psk_2 (void)
 	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	        NM_SETTING_WIRELESS_SECURITY_PSK);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -4516,25 +4163,16 @@ test_read_wifi_wpa_psk_unquoted (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
 	const char *expected_id = "System blahblah (test-wifi-wpa-psk-unquoted)";
 	const char *expected_psk = "54336845e2f3f321c4c7";
 
-	connection = connection_from_file (TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED,
-	                                   NULL,
-	                                   TYPE_WIRELESS,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED,
+	                                        NULL,
+	                                        TYPE_WIRELESS,
+	                                        NULL,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "wifi-wpa-psk-unquoted-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED, error->message);
 
@@ -4591,10 +4229,6 @@ test_read_wifi_wpa_psk_unquoted (void)
 	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	        NM_SETTING_WIRELESS_SECURITY_PSK);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -4604,34 +4238,21 @@ static void
 test_read_wifi_wpa_psk_unquoted2 (void)
 {
 	NMConnection *connection;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 
 	/* Ensure a quoted 64-character WPA passphrase will fail since passphrases
 	 * must be between 8 and 63 ASCII characters inclusive per the WPA spec.
 	 */
 
-	connection = connection_from_file (TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED2,
-	                                   NULL,
-	                                   TYPE_WIRELESS,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED2,
+	                                        NULL,
+	                                        TYPE_WIRELESS,
+	                                        NULL,
+	                                        &error);
 	ASSERT (connection == NULL,
 	        "wifi-wpa-psk-unquoted-read", "unexpected success reading %s", TEST_IFCFG_WIFI_WPA_PSK_UNQUOTED2);
 	g_clear_error (&error);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 }
 
 #define TEST_IFCFG_WIFI_WPA_PSK_ADHOC TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wpa-psk-adhoc"
@@ -4644,11 +4265,6 @@ test_read_wifi_wpa_psk_adhoc (void)
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIPConfig *s_ip4;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
 	const char *expected_id = "System blahblah (test-wifi-wpa-psk-adhoc)";
@@ -4658,15 +4274,11 @@ test_read_wifi_wpa_psk_adhoc (void)
 	const char *expected_group = "ccmp";
 	const char *expected_proto = "wpa";
 
-	connection = connection_from_file (TEST_IFCFG_WIFI_WPA_PSK_ADHOC,
-	                                   NULL,
-	                                   TYPE_WIRELESS,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_WIFI_WPA_PSK_ADHOC,
+	                                        NULL,
+	                                        TYPE_WIRELESS,
+	                                        NULL,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "wifi-wpa-psk-adhoc-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WPA_PSK_ADHOC, error->message);
 
@@ -4805,10 +4417,6 @@ test_read_wifi_wpa_psk_adhoc (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP_CONFIG_METHOD);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -4822,11 +4430,6 @@ test_read_wifi_wpa_psk_hex (void)
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIPConfig *s_ip4;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
 	GBytes *ssid;
@@ -4835,15 +4438,11 @@ test_read_wifi_wpa_psk_hex (void)
 	const char *expected_key_mgmt = "wpa-psk";
 	const char *expected_psk = "1da190379817bc360dda52e85c388c439a21ea5c7bf819c64e9da051807deae6";
 
-	connection = connection_from_file (TEST_IFCFG_WIFI_WPA_PSK_HEX,
-	                                   NULL,
-	                                   TYPE_WIRELESS,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_WIFI_WPA_PSK_HEX,
+	                                        NULL,
+	                                        TYPE_WIRELESS,
+	                                        NULL,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "wifi-wpa-psk-hex-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WPA_PSK_HEX, error->message);
 
@@ -4947,10 +4546,6 @@ test_read_wifi_wpa_psk_hex (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP_CONFIG_METHOD);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -4967,24 +4562,16 @@ test_read_wifi_wpa_eap_tls (void)
 	NMSettingIPConfig *s_ip4;
 	NMSetting8021x *s_8021x;
 	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp, *password;
 	const char *expected_identity = "Bill Smith";
 	const char *expected_privkey_password = "test1";
 
-	connection = connection_from_file (TEST_IFCFG_WIFI_WPA_EAP_TLS,
-	                                   NULL,
-	                                   TYPE_ETHERNET,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_WIFI_WPA_EAP_TLS,
+	                                        NULL,
+	                                        TYPE_ETHERNET,
+	                                        &unmanaged,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "wifi-wpa-eap-tls-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WPA_EAP_TLS, error->message);
 
@@ -5088,10 +4675,6 @@ test_read_wifi_wpa_eap_tls (void)
 	                    expected_privkey_password,
 	                    NM_SETTING_802_1X_PRIVATE_KEY);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -5107,24 +4690,16 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 	NMSettingIPConfig *s_ip4;
 	NMSetting8021x *s_8021x;
 	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp, *password;
 	const char *expected_identity = "Chuck Shumer";
 	const char *expected_privkey_password = "test1";
 
-	connection = connection_from_file (TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
-	                                   NULL,
-	                                   TYPE_WIRELESS,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	                                        NULL,
+	                                        TYPE_WIRELESS,
+	                                        &unmanaged,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "wifi-wpa-eap-ttls-tls-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS, error->message);
 
@@ -5247,10 +4822,6 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 	        NM_SETTING_802_1X_SETTING_NAME,
 	        NM_SETTING_802_1X_IDENTITY);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -5263,22 +4834,14 @@ test_read_wifi_dynamic_wep_leap (void)
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSetting8021x *s_8021x;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE, success;
+	gboolean success;
 	GError *error = NULL;
 
-	connection = connection_from_file (TEST_IFCFG_WIFI_DYNAMIC_WEP_LEAP,
-	                                   NULL,
-	                                   TYPE_WIRELESS,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_WIFI_DYNAMIC_WEP_LEAP,
+	                                        NULL,
+	                                        TYPE_WIRELESS,
+	                                        NULL,
+	                                        &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 
@@ -5319,10 +4882,6 @@ test_read_wifi_dynamic_wep_leap (void)
 	g_assert_cmpstr (nm_setting_802_1x_get_identity (s_8021x), ==, "bill smith");
 	g_assert_cmpstr (nm_setting_802_1x_get_password (s_8021x), ==, "foobar baz");
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -5338,25 +4897,17 @@ test_read_wifi_wep_eap_ttls_chap (void)
 	NMSettingIPConfig *s_ip4;
 	NMSetting8021x *s_8021x;
 	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
 	const char *expected_password = "foobar baz";
 	const char *expected_identity = "David Smith";
 	const char *expected_key_mgmt = "ieee8021x";
 
-	connection = connection_from_file (TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
-	                                   NULL,
-	                                   TYPE_WIRELESS,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	                                        NULL,
+	                                        TYPE_WIRELESS,
+	                                        &unmanaged,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "wifi-wep-eap-ttls-chap-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP, error->message);
 
@@ -5480,10 +5031,6 @@ test_read_wifi_wep_eap_ttls_chap (void)
 	        NM_SETTING_802_1X_SETTING_NAME,
 	        NM_SETTING_802_1X_PASSWORD);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -5496,8 +5043,8 @@ test_read_wifi_hidden (void)
 	gboolean success;
 	GError *error = NULL;
 
-	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-hidden",
-	                                   NULL, TYPE_WIRELESS, NULL, NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-hidden",
+	                                        NULL, TYPE_WIRELESS, NULL, &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 
@@ -5584,8 +5131,8 @@ test_write_wifi_hidden (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile, NULL, TYPE_WIRELESS,
-	                               NULL, NULL, NULL, NULL, &error, NULL);
+	reread = connection_from_file_test (testfile, NULL, TYPE_WIRELESS,
+	                                    NULL, &error);
 	unlink (testfile);
 	g_assert_no_error (error);
 	g_assert (reread);
@@ -5610,8 +5157,8 @@ test_read_wifi_band_a (void)
 	gboolean success;
 	GError *error = NULL;
 
-	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-band-a",
-	                                   NULL, TYPE_WIRELESS, NULL, NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-band-a",
+	                                        NULL, TYPE_WIRELESS, NULL, &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 
@@ -5698,8 +5245,8 @@ test_write_wifi_band_a (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile, NULL, TYPE_WIRELESS,
-	                               NULL, NULL, NULL, NULL, &error, NULL);
+	reread = connection_from_file_test (testfile, NULL, TYPE_WIRELESS,
+	                                    NULL, &error);
 	unlink (testfile);
 	g_assert_no_error (error);
 	g_assert (reread);
@@ -5721,8 +5268,8 @@ test_read_wifi_band_a_channel_mismatch (void)
 	NMConnection *connection;
 	GError *error = NULL;
 
-	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-band-a-channel-mismatch",
-	                                   NULL, TYPE_WIRELESS, NULL, NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-band-a-channel-mismatch",
+	                                        NULL, TYPE_WIRELESS, NULL, &error);
 	g_assert (connection == NULL);
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 }
@@ -5733,8 +5280,8 @@ test_read_wifi_band_bg_channel_mismatch (void)
 	NMConnection *connection;
 	GError *error = NULL;
 
-	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-band-bg-channel-mismatch",
-	                                   NULL, TYPE_WIRELESS, NULL, NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-band-bg-channel-mismatch",
+	                                        NULL, TYPE_WIRELESS, NULL, &error);
 	g_assert (connection == NULL);
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 }
@@ -5749,10 +5296,6 @@ test_read_wired_qeth_static (void)
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
 	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
 	const char *expected_id = "System test-wired-qeth-static";
@@ -5762,15 +5305,11 @@ test_read_wired_qeth_static (void)
 	const char *expected_channel2 = "0.0.0602";
 	const char * const *subchannels;
 
-	connection = connection_from_file (TEST_IFCFG_WIRED_QETH_STATIC,
-	                                   NULL,
-	                                   TYPE_ETHERNET,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_WIRED_QETH_STATIC,
+	                                        NULL,
+	                                        TYPE_ETHERNET,
+	                                        &unmanaged,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "wired-qeth-static-read", "failed to read %s: %s", TEST_IFCFG_WIRED_QETH_STATIC, error->message);
 
@@ -5902,10 +5441,6 @@ test_read_wired_qeth_static (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP_CONFIG_METHOD);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -5918,10 +5453,6 @@ test_read_wired_ctc_static (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
 	const char *expected_id = "System test-wired-ctc-static";
@@ -5930,15 +5461,11 @@ test_read_wired_ctc_static (void)
 	const char * const *subchannels;
 	gboolean success;
 
-	connection = connection_from_file (TEST_IFCFG_WIRED_CTC_STATIC,
-	                                   NULL,
-	                                   TYPE_ETHERNET,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_WIRED_CTC_STATIC,
+	                                        NULL,
+	                                        TYPE_ETHERNET,
+	                                        &unmanaged,
+	                                        &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 	
@@ -5974,10 +5501,6 @@ test_read_wired_ctc_static (void)
 	g_assert (tmp != NULL);
 	g_assert_cmpstr (tmp, ==, "0");
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -5990,25 +5513,16 @@ test_read_wifi_wep_no_keys (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *tmp;
 	const char *expected_id = "System foobar (test-wifi-wep-no-keys)";
 	NMWepKeyType key_type;
 
-	connection = connection_from_file (TEST_IFCFG_WIFI_WEP_NO_KEYS,
-	                                   NULL,
-	                                   TYPE_WIRELESS,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_WIFI_WEP_NO_KEYS,
+	                                        NULL,
+	                                        TYPE_WIRELESS,
+	                                        NULL,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "wifi-wep-no-keys-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WEP_NO_KEYS, error->message);
 
@@ -6086,10 +5600,6 @@ test_read_wifi_wep_no_keys (void)
 	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	        NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -6100,24 +5610,16 @@ test_read_permissions (void)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE, success;
+	gboolean success;
 	GError *error = NULL;
 	guint32 num;
 	const char *tmp;
 
-	connection = connection_from_file (TEST_IFCFG_PERMISSIONS,
-	                                   NULL,
-	                                   TYPE_ETHERNET,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_PERMISSIONS,
+	                                        NULL,
+	                                        TYPE_ETHERNET,
+	                                        NULL,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "permissions-read", "failed to read %s: %s", TEST_IFCFG_PERMISSIONS, error->message);
 
@@ -6159,10 +5661,6 @@ test_read_permissions (void)
 	ASSERT (strcmp (tmp, "johnny5") == 0,
 	        "permissions-verify-permissions", "unexpected permission #3");
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -6174,25 +5672,16 @@ test_read_wifi_wep_agent_keys (void)
 	NMConnection *connection;
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	NMWepKeyType key_type;
 	gboolean success;
 	NMSettingSecretFlags flags;
 
-	connection = connection_from_file (TEST_IFCFG_WIFI_WEP_AGENT_KEYS,
-	                                   NULL,
-	                                   TYPE_WIRELESS,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_WIFI_WEP_AGENT_KEYS,
+	                                        NULL,
+	                                        TYPE_WIRELESS,
+	                                        NULL,
+	                                        &error);
 	g_assert (connection != NULL);
 
 	success = nm_connection_verify (connection, &error);
@@ -6223,10 +5712,6 @@ test_read_wifi_wep_agent_keys (void)
 	flags = nm_setting_wireless_security_get_wep_key_flags (s_wsec);
 	g_assert (flags & NM_SETTING_SECRET_FLAG_AGENT_OWNED);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -6256,11 +5741,7 @@ test_write_wired_static (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
 	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 
 	connection = nm_simple_connection_new ();
 
@@ -6378,15 +5859,11 @@ test_write_wired_static (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_ETHERNET,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_ETHERNET,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 
 	ASSERT (reread != NULL,
@@ -6409,13 +5886,7 @@ test_write_wired_static (void)
 	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
 	        "wired-static-write", "written and re-read connection weren't the same.");
 
-	if (route6file)
-		unlink (route6file);
-
 	g_free (testfile);
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
 	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
@@ -6434,11 +5905,6 @@ test_write_wired_dhcp (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 
 	connection = nm_simple_connection_new ();
 
@@ -6500,15 +5966,11 @@ test_write_wired_dhcp (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_ETHERNET,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_ETHERNET,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 
 	ASSERT (reread != NULL,
@@ -6521,10 +5983,6 @@ test_write_wired_dhcp (void)
 	        "wired-dhcp-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -6537,9 +5995,9 @@ test_write_wired_dhcp_plus_ip (void)
 	GError *error = NULL;
 	gboolean success = FALSE;
 
-	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-dhcp-plus-ip",
-	                                   NULL, TYPE_ETHERNET, NULL,
-	                                   NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-dhcp-plus-ip",
+	                                        NULL, TYPE_ETHERNET, NULL,
+	                                        &error);
 	g_assert_no_error (error);
 	g_assert (connection != NULL);
 
@@ -6553,8 +6011,8 @@ test_write_wired_dhcp_plus_ip (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (written, NULL, TYPE_ETHERNET, NULL,
-	                               NULL, NULL, NULL, &error, NULL);
+	reread = connection_from_file_test (written, NULL, TYPE_ETHERNET, NULL,
+	                                    &error);
 	unlink (written);
 	g_free (written);
 
@@ -6583,9 +6041,9 @@ test_read_write_wired_dhcp_send_hostname (void)
 	GError *error = NULL;
 	gboolean success = FALSE;
 
-	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-dhcp-send-hostname",
-	                                   NULL, TYPE_ETHERNET, NULL,
-	                                   NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-dhcp-send-hostname",
+	                                        NULL, TYPE_ETHERNET, NULL,
+	                                        &error);
 	g_assert_no_error (error);
 	g_assert (connection != NULL);
 
@@ -6613,8 +6071,8 @@ test_read_write_wired_dhcp_send_hostname (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (written, NULL, TYPE_ETHERNET, NULL,
-	                               NULL, NULL, NULL, &error, NULL);
+	reread = connection_from_file_test (written, NULL, TYPE_ETHERNET, NULL,
+	                                    &error);
 	unlink (written);
 	g_free (written);
 
@@ -6657,11 +6115,7 @@ test_write_wired_static_ip6_only (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
 	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 
 	connection = nm_simple_connection_new ();
 
@@ -6729,15 +6183,11 @@ test_write_wired_static_ip6_only (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_ETHERNET,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_ETHERNET,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 
 	ASSERT (reread != NULL,
@@ -6749,13 +6199,7 @@ test_write_wired_static_ip6_only (void)
 	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
 	        "wired-static-ip6-only-write", "written and re-read connection weren't the same.");
 
-	if (route6file)
-		unlink (route6file);
-
 	g_free (testfile);
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
 	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
@@ -6786,7 +6230,6 @@ test_write_wired_static_ip6_only_gw (gconstpointer user_data)
 	GError *error = NULL;
 	char *testfile = NULL;
 	char *id = NULL;
-	gboolean ignore_error = FALSE;
 	char *written_ifcfg_gateway;
 	const char *gateway6 = user_data;
 
@@ -6854,13 +6297,11 @@ test_write_wired_static_ip6_only_gw (gconstpointer user_data)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_ETHERNET,
-	                               NULL, NULL,
-	                               NULL, NULL,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_ETHERNET,
+	                                    NULL,
+	                                    &error);
 	g_assert_no_error (error);
 	g_assert (reread);
 	g_assert (nm_connection_verify (reread, &error));
@@ -6909,28 +6350,18 @@ test_read_write_static_routes_legacy (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
-	char *unmanaged = NULL;
 	char *testfile = NULL;
-	char *keyfile = NULL;
-	char *keyfile2 = NULL;
-	char *routefile = NULL;
 	char *routefile2 = NULL;
-	char *route6file = NULL;
 	char *route6file2 = NULL;
-	gboolean ignore_error = FALSE;
 	gboolean success;
 	GError *error = NULL;
 	const char *tmp;
 
-	connection = connection_from_file (TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY,
-	                                   NULL,
-	                                   TYPE_ETHERNET,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY,
+	                                        NULL,
+	                                        TYPE_ETHERNET,
+	                                        NULL,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "read-write-static-routes-legacy-read", "failed to read %s: %s",
 	        TEST_IFCFG_READ_WRITE_STATIC_ROUTES_LEGACY, error->message);
@@ -7011,17 +6442,15 @@ test_read_write_static_routes_legacy (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_ETHERNET,
-	                               &unmanaged,
-	                               &keyfile2,
-	                               &routefile2,
-	                               &route6file2,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_ETHERNET,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
+	routefile2 = utils_get_route_path (testfile);
 	unlink (routefile2);
+	route6file2 = utils_get_route6_path (testfile);
 	unlink (route6file2);
 
 	ASSERT (reread != NULL,
@@ -7037,12 +6466,7 @@ test_read_write_static_routes_legacy (void)
 	        "read-write-static-routes-legacy-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (keyfile2);
-	g_free (routefile);
 	g_free (routefile2);
-	g_free (route6file);
 	g_free (route6file2);
 	g_object_unref (connection);
 	g_object_unref (reread);
@@ -7069,11 +6493,7 @@ test_write_wired_static_routes (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
 	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 
 	connection = nm_simple_connection_new ();
 
@@ -7164,22 +6584,17 @@ test_write_wired_static_routes (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_ETHERNET,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_ETHERNET,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 
 	ASSERT (reread != NULL,
 	        "wired-static-routes-write-reread", "failed to read %s: %s", testfile, error->message);
 
-	ASSERT (routefile != NULL,
-	        "wired-static-routes-write-reread", "expected routefile for '%s'", testfile);
+	routefile = utils_get_route_path (testfile);
 	unlink (routefile);
 
 	ASSERT (nm_connection_verify (reread, &error),
@@ -7189,10 +6604,7 @@ test_write_wired_static_routes (void)
 	        "wired-static-routes-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
-	g_free (unmanaged);
-	g_free (keyfile);
 	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -7211,11 +6623,7 @@ test_write_wired_dhcp_8021x_peap_mschapv2 (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
 	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 
 	connection = nm_simple_connection_new ();
 
@@ -7295,22 +6703,17 @@ test_write_wired_dhcp_8021x_peap_mschapv2 (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_ETHERNET,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_ETHERNET,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 
 	ASSERT (reread != NULL,
 	        "wired-dhcp-8021x-peap-mschapv2write-reread", "failed to read %s: %s", testfile, error->message);
 
-	ASSERT (keyfile != NULL,
-	        "wired-dhcp-8021x-peap-mschapv2write-reread", "expected keyfile for '%s'", testfile);
+	keyfile = utils_get_keys_path (testfile);
 	unlink (keyfile);
 
 	ASSERT (nm_connection_verify (reread, &error),
@@ -7320,10 +6723,7 @@ test_write_wired_dhcp_8021x_peap_mschapv2 (void)
 	        "wired-dhcp-8021x-peap-mschapv2write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
-	g_free (unmanaged);
 	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -7365,11 +6765,7 @@ test_write_wired_8021x_tls (NMSetting8021xCKScheme scheme,
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
 	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	NMSetting8021xCKFormat format = NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
 	const char *pw;
 	char *tmp;
@@ -7479,17 +6875,13 @@ test_write_wired_8021x_tls (NMSetting8021xCKScheme scheme,
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_WIRELESS,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_WIRELESS,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
-	g_assert (keyfile != NULL);
+	keyfile = utils_get_keys_path (testfile);
 	unlink (keyfile);
 
 	g_assert (reread != NULL);
@@ -7555,10 +6947,7 @@ test_write_wired_8021x_tls (NMSetting8021xCKScheme scheme,
 	g_free (tmp);
 
 	g_free (testfile);
-	g_free (unmanaged);
 	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -7581,11 +6970,6 @@ test_write_wired_aliases (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	shvarFile *ifcfg;
 	int i, j;
 
@@ -7679,15 +7063,11 @@ test_write_wired_aliases (void)
 	        "wired-aliases-write", "saving failed to delete unused ifcfg-alias0:5");
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_ETHERNET,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_ETHERNET,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 	unlink (TEST_SCRATCH_ALIAS_BASE ":2");
 	unlink (TEST_SCRATCH_ALIAS_BASE ":3");
@@ -7743,9 +7123,6 @@ test_write_wired_aliases (void)
 	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, "1.1.1.1");
 
 	g_free (testfile);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -7861,8 +7238,8 @@ test_write_gateway (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile, NULL, TYPE_WIRELESS,
-	                               NULL, NULL, NULL, NULL, &error, NULL);
+	reread = connection_from_file_test (testfile, NULL, TYPE_WIRELESS,
+	                                    NULL, &error);
 	unlink (testfile);
 	g_assert_no_error (error);
 	g_assert (reread);
@@ -7892,11 +7269,6 @@ test_write_wifi_open (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GBytes *ssid;
 	const unsigned char ssid_data[] = { 0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44 };
 	const char *bssid = "11:22:33:44:55:66";
@@ -7973,15 +7345,11 @@ test_write_wifi_open (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_WIRELESS,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_WIRELESS,
+	                                    NULL,
+	                                    &error);
 	g_assert_no_error (error);
 
 	/* Now make sure that the ESSID item isn't double-quoted (rh #606518) */
@@ -8011,10 +7379,6 @@ test_write_wifi_open (void)
 	        "wifi-open-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -8032,11 +7396,6 @@ test_write_wifi_open_hex_ssid (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GBytes *ssid;
 	const unsigned char ssid_data[] = { 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd };
 
@@ -8103,15 +7462,11 @@ test_write_wifi_open_hex_ssid (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_WIRELESS,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_WIRELESS,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 
 	ASSERT (reread != NULL,
@@ -8124,10 +7479,6 @@ test_write_wifi_open_hex_ssid (void)
 	        "wifi-open-hex-ssid-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -8146,11 +7497,7 @@ test_write_wifi_wep (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
 	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GBytes *ssid;
 	const char *ssid_data = "blahblah";
 	struct stat statbuf;
@@ -8232,27 +7579,20 @@ test_write_wifi_wep (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_WIRELESS,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_WIRELESS,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 
-	ASSERT (keyfile != NULL,
-	        "wifi-wep-write-reread", "expected keyfile for '%s'", testfile);
-
+	keyfile = utils_get_keys_path (testfile);
 	ASSERT (stat (keyfile, &statbuf) == 0,
 	        "wifi-wep-write-reread", "couldn't stat() '%s'", keyfile);
 	ASSERT (S_ISREG (statbuf.st_mode),
 	        "wifi-wep-write-reread", "keyfile '%s' wasn't a normal file", keyfile);
 	ASSERT ((statbuf.st_mode & 0077) == 0,
 	        "wifi-wep-write-reread", "keyfile '%s' wasn't readable only by its owner", keyfile);
-
 	unlink (keyfile);
 
 	ASSERT (reread != NULL,
@@ -8265,10 +7605,7 @@ test_write_wifi_wep (void)
 	        "wifi-wep-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
-	g_free (unmanaged);
 	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -8287,11 +7624,7 @@ test_write_wifi_wep_adhoc (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
 	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GBytes *ssid;
 	const char *ssid_data = "blahblah";
 	struct stat statbuf;
@@ -8379,27 +7712,20 @@ test_write_wifi_wep_adhoc (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_WIRELESS,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_WIRELESS,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 
-	ASSERT (keyfile != NULL,
-	        "wifi-wep-adhoc-write-reread", "expected keyfile for '%s'", testfile);
-
+	keyfile = utils_get_keys_path (testfile);
 	ASSERT (stat (keyfile, &statbuf) == 0,
 	        "wifi-wep-adhoc-write-reread", "couldn't stat() '%s'", keyfile);
 	ASSERT (S_ISREG (statbuf.st_mode),
 	        "wifi-wep-adhoc-write-reread", "keyfile '%s' wasn't a normal file", keyfile);
 	ASSERT ((statbuf.st_mode & 0077) == 0,
 	        "wifi-wep-adhoc-write-reread", "keyfile '%s' wasn't readable only by its owner", keyfile);
-
 	unlink (keyfile);
 
 	ASSERT (reread != NULL,
@@ -8412,10 +7738,7 @@ test_write_wifi_wep_adhoc (void)
 	        "wifi-wep-adhoc-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
-	g_free (unmanaged);
 	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -8434,11 +7757,7 @@ test_write_wifi_wep_passphrase (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
 	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GBytes *ssid;
 	const char *ssid_data = "blahblah";
 	struct stat statbuf;
@@ -8518,27 +7837,20 @@ test_write_wifi_wep_passphrase (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_WIRELESS,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_WIRELESS,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 
-	ASSERT (keyfile != NULL,
-	        "wifi-wep-passphrase-write-reread", "expected keyfile for '%s'", testfile);
-
+	keyfile = utils_get_keys_path (testfile);
 	ASSERT (stat (keyfile, &statbuf) == 0,
 	        "wifi-wep-passphrase-write-reread", "couldn't stat() '%s'", keyfile);
 	ASSERT (S_ISREG (statbuf.st_mode),
 	        "wifi-wep-passphrase-write-reread", "keyfile '%s' wasn't a normal file", keyfile);
 	ASSERT ((statbuf.st_mode & 0077) == 0,
 	        "wifi-wep-passphrase-write-reread", "keyfile '%s' wasn't readable only by its owner", keyfile);
-
 	unlink (keyfile);
 
 	ASSERT (reread != NULL,
@@ -8551,10 +7863,7 @@ test_write_wifi_wep_passphrase (void)
 	        "wifi-wep-passphrase-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
-	g_free (unmanaged);
 	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -8573,11 +7882,7 @@ test_write_wifi_wep_40_ascii (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
 	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GBytes *ssid;
 	const char *ssid_data = "blahblah40";
 	struct stat statbuf;
@@ -8659,27 +7964,20 @@ test_write_wifi_wep_40_ascii (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_WIRELESS,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_WIRELESS,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 
-	ASSERT (keyfile != NULL,
-	        "wifi-wep-40-ascii-write-reread", "expected keyfile for '%s'", testfile);
-
+	keyfile = utils_get_keys_path (testfile);
 	ASSERT (stat (keyfile, &statbuf) == 0,
 	        "wifi-wep-40-ascii-write-reread", "couldn't stat() '%s'", keyfile);
 	ASSERT (S_ISREG (statbuf.st_mode),
 	        "wifi-wep-40-ascii-write-reread", "keyfile '%s' wasn't a normal file", keyfile);
 	ASSERT ((statbuf.st_mode & 0077) == 0,
 	        "wifi-wep-40-ascii-write-reread", "keyfile '%s' wasn't readable only by its owner", keyfile);
-
 	unlink (keyfile);
 
 	ASSERT (reread != NULL,
@@ -8692,10 +7990,7 @@ test_write_wifi_wep_40_ascii (void)
 	        "wifi-wep-40-ascii-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
-	g_free (unmanaged);
 	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -8714,11 +8009,7 @@ test_write_wifi_wep_104_ascii (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
 	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GBytes *ssid;
 	const char *ssid_data = "blahblah104";
 	struct stat statbuf;
@@ -8800,27 +8091,20 @@ test_write_wifi_wep_104_ascii (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_WIRELESS,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_WIRELESS,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 
-	ASSERT (keyfile != NULL,
-	        "wifi-wep-104-ascii-write-reread", "expected keyfile for '%s'", testfile);
-
+	keyfile = utils_get_keys_path (testfile);
 	ASSERT (stat (keyfile, &statbuf) == 0,
 	        "wifi-wep-104-ascii-write-reread", "couldn't stat() '%s'", keyfile);
 	ASSERT (S_ISREG (statbuf.st_mode),
 	        "wifi-wep-104-ascii-write-reread", "keyfile '%s' wasn't a normal file", keyfile);
 	ASSERT ((statbuf.st_mode & 0077) == 0,
 	        "wifi-wep-104-ascii-write-reread", "keyfile '%s' wasn't readable only by its owner", keyfile);
-
 	unlink (keyfile);
 
 	ASSERT (reread != NULL,
@@ -8833,10 +8117,7 @@ test_write_wifi_wep_104_ascii (void)
 	        "wifi-wep-104-ascii-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
-	g_free (unmanaged);
 	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -8855,11 +8136,7 @@ test_write_wifi_leap (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
 	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GBytes *ssid;
 	const char *ssid_data = "blahblah";
 	struct stat statbuf;
@@ -8938,27 +8215,20 @@ test_write_wifi_leap (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_WIRELESS,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_WIRELESS,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 
-	ASSERT (keyfile != NULL,
-	        "wifi-leap-write-reread", "expected keyfile for '%s'", testfile);
-
+	keyfile = utils_get_keys_path (testfile);
 	ASSERT (stat (keyfile, &statbuf) == 0,
 	        "wifi-leap-write-reread", "couldn't stat() '%s'", keyfile);
 	ASSERT (S_ISREG (statbuf.st_mode),
 	        "wifi-leap-write-reread", "keyfile '%s' wasn't a normal file", keyfile);
 	ASSERT ((statbuf.st_mode & 0077) == 0,
 	        "wifi-leap-write-reread", "keyfile '%s' wasn't readable only by its owner", keyfile);
-
 	unlink (keyfile);
 
 	ASSERT (reread != NULL,
@@ -8971,10 +8241,7 @@ test_write_wifi_leap (void)
 	        "wifi-leap-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
-	g_free (unmanaged);
 	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -8993,11 +8260,7 @@ test_write_wifi_leap_secret_flags (NMSettingSecretFlags flags)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
 	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GBytes *ssid;
 	const char *ssid_data = "blahblah";
 
@@ -9075,21 +8338,17 @@ test_write_wifi_leap_secret_flags (NMSettingSecretFlags flags)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_WIRELESS,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_WIRELESS,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 
 	g_assert_no_error (error);
 
 	/* No key should be written out since the secret is not system owned */
-	g_assert (keyfile);
+	keyfile = utils_get_keys_path (testfile);
 	g_assert (g_file_test (keyfile, G_FILE_TEST_EXISTS) == FALSE);
 
 	g_assert (reread);
@@ -9105,10 +8364,7 @@ test_write_wifi_leap_secret_flags (NMSettingSecretFlags flags)
 	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
 
 	g_free (testfile);
-	g_free (unmanaged);
 	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -9132,11 +8388,7 @@ test_write_wifi_wpa_psk (const char *name,
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
 	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GBytes *ssid;
 	const char *ssid_data = "blahblah";
 
@@ -9229,22 +8481,17 @@ test_write_wifi_wpa_psk (const char *name,
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_WIRELESS,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_WIRELESS,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 
-	tmp = g_strdup_printf ("%s-reread", test_name);
-	ASSERT (keyfile != NULL,
-	        tmp, "expected keyfile for '%s'", testfile);
+	keyfile = utils_get_keys_path (testfile);
 	unlink (keyfile);
 
+	tmp = g_strdup_printf ("%s-reread", test_name);
 	ASSERT (reread != NULL,
 	        tmp, "failed to read %s: %s", testfile, error->message);
 
@@ -9256,10 +8503,7 @@ test_write_wifi_wpa_psk (const char *name,
 	        test_name, "written and re-read connection weren't the same.");
 
 	g_free (testfile);
-	g_free (unmanaged);
 	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -9278,11 +8522,7 @@ test_write_wifi_wpa_psk_adhoc (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
 	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GBytes *ssid;
 	const char *ssid_data = "blahblah";
 	NMIPAddress *addr;
@@ -9376,19 +8616,14 @@ test_write_wifi_wpa_psk_adhoc (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_WIRELESS,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_WIRELESS,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 
-	ASSERT (keyfile != NULL,
-	        "wifi-wpa-psk-adhoc-write-reread", "expected keyfile for '%s'", testfile);
+	keyfile = utils_get_keys_path (testfile);
 	unlink (keyfile);
 
 	ASSERT (reread != NULL,
@@ -9401,10 +8636,7 @@ test_write_wifi_wpa_psk_adhoc (void)
 	        "wifi-wpa-psk-adhoc-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
-	g_free (unmanaged);
 	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -9424,11 +8656,7 @@ test_write_wifi_wpa_eap_tls (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
 	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GBytes *ssid;
 	const char *ssid_data = "blahblah";
 
@@ -9540,19 +8768,14 @@ test_write_wifi_wpa_eap_tls (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_WIRELESS,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_WIRELESS,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 
-	ASSERT (keyfile != NULL,
-	        "wifi-wpa-eap-tls-write-reread", "expected keyfile for '%s'", testfile);
+	keyfile = utils_get_keys_path (testfile);
 	unlink (keyfile);
 
 	ASSERT (reread != NULL,
@@ -9565,10 +8788,7 @@ test_write_wifi_wpa_eap_tls (void)
 	        "wifi-wpa-eap-tls-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
-	g_free (unmanaged);
 	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -9588,11 +8808,7 @@ test_write_wifi_wpa_eap_ttls_tls (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
 	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GBytes *ssid;
 	const char *ssid_data = "blahblah";
 
@@ -9722,22 +8938,17 @@ test_write_wifi_wpa_eap_ttls_tls (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_WIRELESS,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_WIRELESS,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 
 	ASSERT (reread != NULL,
 	        "wifi-wpa-eap-ttls-tls-write-reread", "failed to read %s: %s", testfile, error->message);
 
-	ASSERT (keyfile != NULL,
-	        "wifi-wpa-eap-ttls-tls-write-reread", "expected keyfile for '%s'", testfile);
+	keyfile = utils_get_keys_path (testfile);
 	unlink (keyfile);
 
 	ASSERT (nm_connection_verify (reread, &error),
@@ -9747,10 +8958,7 @@ test_write_wifi_wpa_eap_ttls_tls (void)
 	        "wifi-wpa-eap-ttls-tls-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
-	g_free (unmanaged);
 	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -9770,11 +8978,7 @@ test_write_wifi_wpa_eap_ttls_mschapv2 (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
 	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GBytes *ssid;
 	const char *ssid_data = "blahblah";
 
@@ -9876,22 +9080,17 @@ test_write_wifi_wpa_eap_ttls_mschapv2 (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_WIRELESS,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_WIRELESS,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 
 	ASSERT (reread != NULL,
 	        "wifi-wpa-eap-ttls-mschapv2-write-reread", "failed to read %s: %s", testfile, error->message);
 
-	ASSERT (keyfile != NULL,
-	        "wifi-wpa-eap-ttls-mschapv2-write-reread", "expected keyfile for '%s'", testfile);
+	keyfile = utils_get_keys_path (testfile);
 	unlink (keyfile);
 
 	ASSERT (nm_connection_verify (reread, &error),
@@ -9901,10 +9100,7 @@ test_write_wifi_wpa_eap_ttls_mschapv2 (void)
 	        "wifi-wpa-eap-ttls-mschapv2-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
-	g_free (unmanaged);
 	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -9923,11 +9119,7 @@ test_write_wifi_wpa_then_open (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
 	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GBytes *ssid;
 	const char *ssid_data = "blahblah";
 
@@ -10018,15 +9210,11 @@ test_write_wifi_wpa_then_open (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_WIRELESS,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_WIRELESS,
+	                                    NULL,
+	                                    &error);
 	g_assert_no_error (error);
 	g_assert (reread);
 
@@ -10036,18 +9224,13 @@ test_write_wifi_wpa_then_open (void)
 	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
 	g_assert (success);
 
-	g_free (unmanaged);
-	unmanaged = NULL;
-	g_free (routefile);
-	routefile = NULL;
-	g_free (route6file);
-	route6file = NULL;
 	g_object_unref (reread);
 
 	/* Now change the connection to open and recheck */
 	nm_connection_remove_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
 
 	/* Write it back out */
+	keyfile = utils_get_keys_path (testfile);
 	success = writer_update_connection (connection,
 	                                    TEST_SCRATCH_DIR "/network-scripts/",
 	                                    testfile,
@@ -10064,22 +9247,18 @@ test_write_wifi_wpa_then_open (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read it for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_WIRELESS,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_WIRELESS,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 	g_assert_no_error (error);
 
 	g_assert (reread);
 
 	/* No keyfile since it's an open connection this time */
-	g_assert (keyfile);
+	keyfile = utils_get_keys_path (testfile);
 	g_assert (g_file_test (keyfile, G_FILE_TEST_EXISTS) == FALSE);
 
 	success = nm_connection_verify (reread, &error);
@@ -10090,10 +9269,7 @@ test_write_wifi_wpa_then_open (void)
 
 	unlink (testfile);
 	g_free (testfile);
-	g_free (unmanaged);
 	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (reread);
 
 	g_object_unref (connection);
@@ -10113,11 +9289,7 @@ test_write_wifi_wpa_then_wep_with_perms (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
 	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GBytes *ssid;
 	char **perms;
 	const char *ssid_data = "SomeSSID";
@@ -10214,15 +9386,11 @@ test_write_wifi_wpa_then_wep_with_perms (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_WIRELESS,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_WIRELESS,
+	                                    NULL,
+	                                    &error);
 	g_assert_no_error (error);
 	g_assert (reread);
 
@@ -10232,12 +9400,6 @@ test_write_wifi_wpa_then_wep_with_perms (void)
 	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
 	g_assert (success);
 
-	g_free (unmanaged);
-	unmanaged = NULL;
-	g_free (routefile);
-	routefile = NULL;
-	g_free (route6file);
-	route6file = NULL;
 	g_object_unref (reread);
 
 	/* Now change the connection to WEP and recheck */
@@ -10251,6 +9413,7 @@ test_write_wifi_wpa_then_wep_with_perms (void)
 	nm_setting_wireless_security_set_wep_key (s_wsec, 0, "abraka  dabra");
 
 	/* Write it back out */
+	keyfile = utils_get_keys_path (testfile);
 	success = writer_update_connection (connection,
 	                                    TEST_SCRATCH_DIR "/network-scripts/",
 	                                    testfile,
@@ -10266,15 +9429,11 @@ test_write_wifi_wpa_then_wep_with_perms (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read it for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_WIRELESS,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_WIRELESS,
+	                                    NULL,
+	                                    &error);
 	g_assert_no_error (error);
 
 	g_assert (reread);
@@ -10289,14 +9448,11 @@ test_write_wifi_wpa_then_wep_with_perms (void)
 	ASSERT (success,
 	        "test_write_wifi_wpa_then_wep_with_perms", "failed to compare connections");
 
+	keyfile = utils_get_keys_path (testfile);
 	unlink (keyfile);
 	unlink (testfile);
 
 	g_free (testfile);
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (reread);
 
 	g_object_unref (connection);
@@ -10317,11 +9473,7 @@ test_write_wifi_dynamic_wep_leap (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
 	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GBytes *ssid;
 	const char *ssid_data = "blahblah";
 	shvarFile *ifcfg;
@@ -10409,18 +9561,15 @@ test_write_wifi_dynamic_wep_leap (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_WIRELESS,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_WIRELESS,
+	                                    NULL,
+	                                    &error);
 	g_assert_no_error (error);
 	g_assert (reread);
-	g_assert (keyfile);
+
+	keyfile = utils_get_keys_path (testfile);
 	unlink (keyfile);
 
 	success = nm_connection_verify (reread, &error);
@@ -10449,10 +9598,7 @@ test_write_wifi_dynamic_wep_leap (void)
 	unlink (testfile);
 
 	g_free (testfile);
-	g_free (unmanaged);
 	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -10471,11 +9617,7 @@ test_write_wired_qeth_dhcp (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
 	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 
 	connection = nm_simple_connection_new ();
 
@@ -10546,15 +9688,11 @@ test_write_wired_qeth_dhcp (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_ETHERNET,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_ETHERNET,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 
 	ASSERT (reread != NULL,
@@ -10566,13 +9704,7 @@ test_write_wired_qeth_dhcp (void)
 	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
 	        "wired-qeth-dhcp-write", "written and re-read connection weren't the same.");
 
-	if (route6file)
-		unlink (route6file);
-
 	g_free (testfile);
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
 	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
@@ -10592,11 +9724,7 @@ test_write_wired_ctc_dhcp (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
 	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	shvarFile *ifcfg;
 	char *tmp;
 
@@ -10680,15 +9808,11 @@ test_write_wired_ctc_dhcp (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_ETHERNET,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_ETHERNET,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 
 	g_assert (reread);
@@ -10699,13 +9823,7 @@ test_write_wired_ctc_dhcp (void)
 	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
 	g_assert (success);
 
-	if (route6file)
-		unlink (route6file);
-
 	g_free (testfile);
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
 	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
@@ -10724,11 +9842,7 @@ test_write_permissions (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
 	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 
 	connection = nm_simple_connection_new ();
 
@@ -10791,15 +9905,11 @@ test_write_permissions (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_ETHERNET,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_ETHERNET,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 
 	ASSERT (reread != NULL,
@@ -10811,13 +9921,7 @@ test_write_permissions (void)
 	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
 	        "permissions-write", "written and re-read connection weren't the same.");
 
-	if (route6file)
-		unlink (route6file);
-
 	g_free (testfile);
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
 	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
@@ -10839,11 +9943,7 @@ test_write_wifi_wep_agent_keys (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
 	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 
 	connection = nm_simple_connection_new ();
 	g_assert (connection != NULL);
@@ -10919,15 +10019,11 @@ test_write_wifi_wep_agent_keys (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_WIRELESS,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_WIRELESS,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 
 	g_assert_no_error (error);
@@ -10951,13 +10047,7 @@ test_write_wifi_wep_agent_keys (void)
 	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
 	g_assert (success);
 
-	if (route6file)
-		unlink (route6file);
-
 	g_free (testfile);
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
 	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
@@ -11186,22 +10276,13 @@ test_read_bridge_main (void)
 	NMSettingBridge *s_bridge;
 	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x16, 0x41, 0x11, 0x22, 0x33 };
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 
-	connection = connection_from_file (TEST_IFCFG_BRIDGE_MAIN,
-	                                   NULL,
-	                                   TYPE_ETHERNET,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_BRIDGE_MAIN,
+	                                        NULL,
+	                                        TYPE_ETHERNET,
+	                                        NULL,
+	                                        &error);
 	g_assert (connection);
 	g_assert (nm_connection_verify (connection, &error));
 	g_assert_no_error (error);
@@ -11224,10 +10305,6 @@ test_read_bridge_main (void)
 	g_assert (mac);
 	g_assert (nm_utils_hwaddr_matches (mac, -1, expected_mac_address, ETH_ALEN));
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -11246,11 +10323,6 @@ test_write_bridge_main (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 
 	connection = nm_simple_connection_new ();
 	g_assert (connection);
@@ -11318,15 +10390,11 @@ test_write_bridge_main (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_BRIDGE,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_BRIDGE,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 
 	g_assert (reread);
@@ -11335,10 +10403,6 @@ test_write_bridge_main (void)
 	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
 
 	g_free (testfile);
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -11351,23 +10415,14 @@ test_read_bridge_component (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingBridgePort *s_port;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	gboolean success;
 
-	connection = connection_from_file (TEST_IFCFG_BRIDGE_COMPONENT,
-	                                   NULL,
-	                                   TYPE_ETHERNET,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_BRIDGE_COMPONENT,
+	                                        NULL,
+	                                        TYPE_ETHERNET,
+	                                        NULL,
+	                                        &error);
 	g_assert (connection);
 
 	success = nm_connection_verify (connection, &error);
@@ -11385,10 +10440,6 @@ test_read_bridge_component (void)
 	g_assert_cmpuint (nm_setting_bridge_port_get_priority (s_port), ==, 28);
 	g_assert_cmpuint (nm_setting_bridge_port_get_path_cost (s_port), ==, 100);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -11406,11 +10457,7 @@ test_write_bridge_component (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
 	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 
 	connection = nm_simple_connection_new ();
 	g_assert (connection);
@@ -11466,15 +10513,11 @@ test_write_bridge_component (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_ETHERNET,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_ETHERNET,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 
 	g_assert (reread);
@@ -11484,13 +10527,7 @@ test_write_bridge_component (void)
 
 	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
 
-	if (route6file)
-		unlink (route6file);
-
 	g_free (testfile);
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
 	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
@@ -11501,22 +10538,13 @@ test_read_bridge_missing_stp (void)
 {
 	NMConnection *connection;
 	NMSettingBridge *s_bridge;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 
-	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-bridge-missing-stp",
-	                                   NULL,
-	                                   TYPE_BRIDGE,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-bridge-missing-stp",
+	                                        NULL,
+	                                        TYPE_BRIDGE,
+	                                        NULL,
+	                                        &error);
 	g_assert (connection);
 	g_assert (nm_connection_verify (connection, &error));
 	g_assert_no_error (error);
@@ -11529,10 +10557,6 @@ test_read_bridge_missing_stp (void)
 	g_assert (s_bridge);
 	g_assert (nm_setting_bridge_get_stp (s_bridge) == FALSE);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -11542,31 +10566,18 @@ static void
 test_read_vlan_interface (void)
 {
 	NMConnection *connection;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	NMSettingVlan *s_vlan;
 	guint32 from = 0, to = 0;
 
-	connection = connection_from_file (TEST_IFCFG_VLAN_INTERFACE,
-	                                   NULL,
-	                                   TYPE_ETHERNET,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_VLAN_INTERFACE,
+	                                        NULL,
+	                                        TYPE_ETHERNET,
+	                                        NULL,
+	                                        &error);
 	g_assert_no_error (error);
 	g_assert (connection != NULL);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "vlan43");
 
@@ -11613,30 +10624,17 @@ static void
 test_read_vlan_only_vlan_id (void)
 {
 	NMConnection *connection;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	NMSettingVlan *s_vlan;
 
-	connection = connection_from_file (TEST_IFCFG_VLAN_ONLY_VLANID,
-	                                   NULL,
-	                                   TYPE_ETHERNET,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_VLAN_ONLY_VLANID,
+	                                        NULL,
+	                                        TYPE_ETHERNET,
+	                                        NULL,
+	                                        &error);
 	g_assert_no_error (error);
 	g_assert (connection != NULL);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 
 	g_assert (nm_connection_get_interface_name (connection) == NULL);
 
@@ -11655,30 +10653,17 @@ static void
 test_read_vlan_only_device (void)
 {
 	NMConnection *connection;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	NMSettingVlan *s_vlan;
 
-	connection = connection_from_file (TEST_IFCFG_VLAN_ONLY_DEVICE,
-	                                   NULL,
-	                                   TYPE_ETHERNET,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_VLAN_ONLY_DEVICE,
+	                                        NULL,
+	                                        TYPE_ETHERNET,
+	                                        NULL,
+	                                        &error);
 	g_assert_no_error (error);
 	g_assert (connection != NULL);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "eth0.9");
 
@@ -11698,9 +10683,9 @@ test_read_vlan_physdev (void)
 	GError *error = NULL;
 	NMSettingVlan *s_vlan;
 
-	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-physdev",
-	                                   NULL, TYPE_ETHERNET, NULL,
-	                                   NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-physdev",
+	                                        NULL, TYPE_ETHERNET, NULL,
+	                                        &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 	g_assert (nm_connection_verify (connection, &error));
@@ -11720,24 +10705,15 @@ static void
 test_write_vlan (void)
 {
 	NMConnection *connection;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
 	char *written = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	gboolean success = FALSE;
 
-	connection = connection_from_file (TEST_IFCFG_VLAN_INTERFACE,
-	                                   NULL,
-	                                   TYPE_VLAN,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_VLAN_INTERFACE,
+	                                        NULL,
+	                                        TYPE_VLAN,
+	                                        NULL,
+	                                        &error);
 	g_assert (connection != NULL);
 
 	success = writer_new_connection (connection,
@@ -11749,45 +10725,23 @@ test_write_vlan (void)
 	unlink (written);
 	g_free (written);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 }
 
 static void
 test_write_vlan_only_vlanid (void)
 {
 	NMConnection *connection, *reread;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
 	char *written = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	gboolean success = FALSE;
 
-	connection = connection_from_file (TEST_IFCFG_VLAN_ONLY_VLANID,
-	                                   NULL,
-	                                   TYPE_VLAN,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_VLAN_ONLY_VLANID,
+	                                        NULL,
+	                                        TYPE_VLAN,
+	                                        NULL,
+	                                        &error);
 	g_assert_no_error (error);
 	g_assert (connection != NULL);
-
-	g_free (unmanaged);
-	unmanaged = NULL;
-	g_free (keyfile);
-	keyfile = NULL;
-	g_free (routefile);
-	routefile = NULL;
-	g_free (route6file);
-	route6file = NULL;
 
 	success = writer_new_connection (connection,
 	                                 TEST_SCRATCH_DIR "/network-scripts/",
@@ -11799,21 +10753,13 @@ test_write_vlan_only_vlanid (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (written,
-	                               NULL,
-	                               TYPE_ETHERNET,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (written,
+	                                    NULL,
+	                                    TYPE_ETHERNET,
+	                                    NULL,
+	                                    &error);
 	unlink (written);
 	g_free (written);
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 
 	g_assert_no_error (error);
 	g_assert (reread != NULL);
@@ -11842,11 +10788,6 @@ test_write_ethernet_missing_ipv6 (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 
 	connection = nm_simple_connection_new ();
 	g_assert (connection);
@@ -11907,15 +10848,11 @@ test_write_ethernet_missing_ipv6 (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_ETHERNET,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_ETHERNET,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 
 	ASSERT (reread != NULL,
@@ -11941,10 +10878,6 @@ test_write_ethernet_missing_ipv6 (void)
 	        "ethernet-missing-ipv6", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -11955,9 +10888,9 @@ test_read_ibft_ignored (void)
 	NMConnection *connection;
 	GError *error = NULL;
 
-	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-ibft",
-	                                   NULL, TYPE_ETHERNET,
-	                                   NULL, NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-ibft",
+	                                        NULL, TYPE_ETHERNET,
+	                                        NULL, &error);
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 	g_assert (connection == NULL);
 }
@@ -11969,22 +10902,13 @@ test_read_bond_main (void)
 {
 	NMConnection *connection;
 	NMSettingBond *s_bond;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 
-	connection = connection_from_file (TEST_IFCFG_BOND_MAIN,
-	                                   NULL,
-	                                   TYPE_ETHERNET,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_BOND_MAIN,
+	                                        NULL,
+	                                        TYPE_ETHERNET,
+	                                        NULL,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "bond-main-read", "unexpected failure reading %s", TEST_IFCFG_BOND_MAIN);
 
@@ -12007,10 +10931,6 @@ test_read_bond_main (void)
 	        "bond-main", "failed to verify %s: miimon=%s does not match 100",
 	        TEST_IFCFG_BOND_MAIN, nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_MIIMON));
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -12029,11 +10949,6 @@ test_write_bond_main (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 
 	connection = nm_simple_connection_new ();
 
@@ -12100,15 +11015,11 @@ test_write_bond_main (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_BOND,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_BOND,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 
 	ASSERT (reread != NULL,
@@ -12121,10 +11032,6 @@ test_write_bond_main (void)
 	        "bond-main-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -12136,22 +11043,13 @@ test_read_bond_slave (void)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 
-	connection = connection_from_file (TEST_IFCFG_BOND_SLAVE,
-	                                   NULL,
-	                                   TYPE_ETHERNET,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_BOND_SLAVE,
+	                                        NULL,
+	                                        TYPE_ETHERNET,
+	                                        NULL,
+	                                        &error);
 	g_test_assert_expected_messages ();
 
 	ASSERT (connection != NULL,
@@ -12173,10 +11071,6 @@ test_read_bond_slave (void)
 	        "bond-slave-read", "failed to verify %s: slave-type is not bond",
 	        TEST_IFCFG_BOND_SLAVE);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -12193,11 +11087,7 @@ test_write_bond_slave (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
 	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 
 	connection = nm_simple_connection_new ();
 
@@ -12245,15 +11135,11 @@ test_write_bond_slave (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_ETHERNET,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_ETHERNET,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 
 	ASSERT (reread != NULL,
@@ -12265,13 +11151,7 @@ test_write_bond_slave (void)
 	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
 	        "bond-slave-write", "written and re-read connection weren't the same.");
 
-	if (route6file)
-		unlink (route6file);
-
 	g_free (testfile);
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
 	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
@@ -12285,24 +11165,16 @@ test_read_infiniband (void)
 	NMConnection *connection;
 	NMSettingInfiniband *s_infiniband;
 	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 	const char *mac;
 	char expected_mac_address[INFINIBAND_ALEN] = { 0x80, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x00, 0x11, 0x22 };
 	const char *transport_mode;
 
-	connection = connection_from_file (TEST_IFCFG_INFINIBAND,
-	                                   NULL,
-	                                   TYPE_INFINIBAND,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_INFINIBAND,
+	                                        NULL,
+	                                        TYPE_INFINIBAND,
+	                                        &unmanaged,
+	                                        &error);
 	ASSERT (connection != NULL,
 	        "infiniband-read", "failed to read %s: %s", TEST_IFCFG_INFINIBAND, error->message);
 
@@ -12346,10 +11218,6 @@ test_read_infiniband (void)
 	        NM_SETTING_INFINIBAND_SETTING_NAME,
 	        NM_SETTING_INFINIBAND_TRANSPORT_MODE);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -12369,11 +11237,6 @@ test_write_infiniband (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 
 	connection = nm_simple_connection_new ();
 
@@ -12443,15 +11306,11 @@ test_write_infiniband (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_INFINIBAND,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_INFINIBAND,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 
 	ASSERT (reread != NULL,
@@ -12464,10 +11323,6 @@ test_write_infiniband (void)
 	        "infiniband-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -12479,22 +11334,13 @@ test_read_bond_slave_ib (void)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
-	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 
-	connection = connection_from_file (TEST_IFCFG_BOND_SLAVE_IB,
-	                                   NULL,
-	                                   NULL,
-	                                   &unmanaged,
-	                                   &keyfile,
-	                                   &routefile,
-	                                   &route6file,
-	                                   &error,
-	                                   &ignore_error);
+	connection = connection_from_file_test (TEST_IFCFG_BOND_SLAVE_IB,
+	                                        NULL,
+	                                        NULL,
+	                                        NULL,
+	                                        &error);
 	g_test_assert_expected_messages();
 
 	ASSERT (connection != NULL,
@@ -12516,10 +11362,6 @@ test_read_bond_slave_ib (void)
 	        "bond-slave-read-ib", "failed to verify %s: slave-type is not bond",
 	        TEST_IFCFG_BOND_SLAVE_IB);
 
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
-	g_free (route6file);
 	g_object_unref (connection);
 }
 
@@ -12535,11 +11377,7 @@ test_write_bond_slave_ib (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *unmanaged = NULL;
-	char *keyfile = NULL;
-	char *routefile = NULL;
 	char *route6file = NULL;
-	gboolean ignore_error = FALSE;
 
 	connection = nm_simple_connection_new ();
 
@@ -12588,15 +11426,11 @@ test_write_bond_slave_ib (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               NULL,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &routefile,
-	                               &route6file,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    NULL,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 
 	ASSERT (reread != NULL,
@@ -12608,13 +11442,7 @@ test_write_bond_slave_ib (void)
 	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
 	        "bond-slave-write-ib", "written and re-read connection weren't the same.");
 
-	if (route6file)
-		unlink (route6file);
-
 	g_free (testfile);
-	g_free (unmanaged);
-	g_free (keyfile);
-	g_free (routefile);
 	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
@@ -12639,8 +11467,8 @@ test_read_dcb_basic (void)
 	guint expected_traffic_classes[8] = { 7, 6, 5, 4, 3, 2, 1, 0 };
 	gboolean expected_pfcs[8] = { TRUE, FALSE, FALSE, TRUE, TRUE, FALSE, TRUE, FALSE };
 
-	connection = connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb",
-	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb",
+	                                        NULL, TYPE_ETHERNET, NULL, &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 	success = nm_connection_verify (connection, &error);
@@ -12698,7 +11526,7 @@ test_write_dcb_basic (void)
 	NMSettingDcb *s_dcb;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
-	gboolean success, ignore_error;
+	gboolean success;
 	guint i;
 	char *uuid, *testfile;
 	const guint group_ids[8] = { 4, 0xF, 6, 0xF, 1, 7, 3, 0xF };
@@ -12770,13 +11598,11 @@ test_write_dcb_basic (void)
 	g_assert (testfile);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_ETHERNET,
-	                               NULL, NULL,
-	                               NULL, NULL,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_ETHERNET,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 
 	g_assert_no_error (error);
@@ -12797,8 +11623,8 @@ test_read_dcb_default_app_priorities (void)
 	NMSettingDcb *s_dcb;
 	gboolean success;
 
-	connection = connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-default-app-priorities",
-	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-default-app-priorities",
+	                                        NULL, TYPE_ETHERNET, NULL, &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 	success = nm_connection_verify (connection, &error);
@@ -12828,8 +11654,8 @@ test_read_dcb_bad_booleans (void)
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*invalid DCB_PG_STRICT value*not all 0s and 1s*");
-	connection = connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-bad-booleans",
-	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-bad-booleans",
+	                                        NULL, TYPE_ETHERNET, NULL, &error);
 	g_test_assert_expected_messages ();
 
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
@@ -12845,8 +11671,8 @@ test_read_dcb_short_booleans (void)
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*DCB_PG_STRICT value*8 characters*");
-	connection = connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-short-booleans",
-	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-short-booleans",
+	                                        NULL, TYPE_ETHERNET, NULL, &error);
 	g_test_assert_expected_messages ();
 
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
@@ -12862,8 +11688,8 @@ test_read_dcb_bad_uints (void)
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*invalid DCB_PG_UP2TC value*not 0 - 7*");
-	connection = connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-bad-uints",
-	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-bad-uints",
+	                                        NULL, TYPE_ETHERNET, NULL, &error);
 	g_test_assert_expected_messages ();
 
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
@@ -12879,8 +11705,8 @@ test_read_dcb_short_uints (void)
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*DCB_PG_UP2TC value*8 characters*");
-	connection = connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-short-uints",
-	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-short-uints",
+	                                        NULL, TYPE_ETHERNET, NULL, &error);
 	g_test_assert_expected_messages ();
 
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
@@ -12896,8 +11722,8 @@ test_read_dcb_bad_percent (void)
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*invalid DCB_PG_PCT percentage value*");
-	connection = connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-bad-percent",
-	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-bad-percent",
+	                                        NULL, TYPE_ETHERNET, NULL, &error);
 	g_test_assert_expected_messages ();
 
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
@@ -12913,8 +11739,8 @@ test_read_dcb_short_percent (void)
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*invalid DCB_PG_PCT percentage list value*");
-	connection = connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-short-percent",
-	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-short-percent",
+	                                        NULL, TYPE_ETHERNET, NULL, &error);
 	g_test_assert_expected_messages ();
 
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
@@ -12930,8 +11756,8 @@ test_read_dcb_pgpct_not_100 (void)
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*DCB_PG_PCT percentages do not equal 100*");
-	connection = connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-pgpct-not-100",
-	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-pgpct-not-100",
+	                                        NULL, TYPE_ETHERNET, NULL, &error);
 	g_test_assert_expected_messages ();
 
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
@@ -12950,7 +11776,7 @@ test_read_fcoe_mode (gconstpointer user_data)
 	char *file;
 
 	file = g_strdup_printf (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-fcoe-%s", expected_mode);
-	connection = connection_from_file (file, NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (file, NULL, TYPE_ETHERNET, NULL, &error);
 	g_free (file);
 	g_assert_no_error (error);
 	g_assert (connection);
@@ -12978,7 +11804,7 @@ test_write_fcoe_mode (gconstpointer user_data)
 	NMSettingDcb *s_dcb;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
-	gboolean success, ignore_error;
+	gboolean success;
 	char *uuid, *testfile;
 
 	connection = nm_simple_connection_new ();
@@ -13040,13 +11866,11 @@ test_write_fcoe_mode (gconstpointer user_data)
 	}
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_ETHERNET,
-	                               NULL, NULL,
-	                               NULL, NULL,
-	                               &error,
-	                               &ignore_error);
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_ETHERNET,
+	                                    NULL,
+	                                    &error);
 	unlink (testfile);
 
 	g_assert_no_error (error);
@@ -13069,8 +11893,8 @@ test_read_team_master (void)
 	GError *error = NULL;
 	const char *expected_config = "{ \"device\": \"team0\", \"link_watch\": { \"name\": \"ethtool\" } }";
 
-	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-master",
-	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-master",
+	                                        NULL, TYPE_ETHERNET, NULL, &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 
@@ -13181,8 +12005,8 @@ test_write_team_master (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile, NULL, TYPE_ETHERNET,
-	                               NULL, NULL, NULL, NULL, &error, NULL);
+	reread = connection_from_file_test (testfile, NULL, TYPE_ETHERNET,
+	                                    NULL, &error);
 	unlink (testfile);
 	g_assert_no_error (error);
 	g_assert (reread);
@@ -13208,8 +12032,8 @@ test_read_team_port (void)
 	GError *error = NULL;
 	const char *expected_config = "{ \"p4p1\": { \"prio\": -10, \"sticky\": true } }";
 
-	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-port",
-	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-port",
+	                                        NULL, TYPE_ETHERNET, NULL, &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 
@@ -13304,8 +12128,8 @@ test_write_team_port (void)
 	nm_connection_normalize (connection, NULL, NULL, NULL);
 
 	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile, NULL, TYPE_ETHERNET,
-	                               NULL, NULL, NULL, NULL, &error, NULL);
+	reread = connection_from_file_test (testfile, NULL, TYPE_ETHERNET,
+	                                    NULL, &error);
 	unlink (testfile);
 	g_assert_no_error (error);
 	g_assert (reread);
@@ -13329,8 +12153,8 @@ test_read_team_port_empty_config (void)
 	gboolean success;
 	GError *error = NULL;
 
-	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-port-empty-config",
-	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-port-empty-config",
+	                                        NULL, TYPE_ETHERNET, NULL, &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 
@@ -13475,8 +12299,8 @@ test_read_vlan_trailing_spaces (void)
 	g_assert (strstr (contents, "DEVICE=\"vlan201\"  \n"));
 	g_free (contents);
 
-	connection = connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL,
-	                                   NULL, NULL, NULL, &error, NULL);
+	connection = connection_from_file_test (testfile, NULL, TYPE_ETHERNET, NULL,
+	                                        &error);
 	g_assert_no_error (error);
 	g_assert (connection != NULL);
 
