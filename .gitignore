@@ -236,8 +236,6 @@ valgrind-*.log
 /src/dnsmasq-manager/tests/test-dnsmasq-utils
 /src/nm-iface-helper
 /src/settings/plugins/ibft/tests/test-ibft
-/src/settings/plugins/ifcfg-rh/tests/network-scripts/*-Test_Write_*
-/src/settings/plugins/ifcfg-rh/tests/network-scripts/Test_Write_*
 /src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh
 /src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh-utils
 /src/settings/plugins/ifnet/tests/check_ifnet
