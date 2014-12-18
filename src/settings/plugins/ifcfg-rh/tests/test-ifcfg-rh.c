@@ -6118,7 +6118,6 @@ test_write_wired_static_ip6_only (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *route6file = NULL;
 
 	connection = nm_simple_connection_new ();
 
@@ -6203,7 +6202,6 @@ test_write_wired_static_ip6_only (void)
 	        "wired-static-ip6-only-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
-	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -6354,8 +6352,8 @@ test_read_write_static_routes_legacy (void)
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
 	char *testfile = NULL;
-	char *routefile2 = NULL;
-	char *route6file2 = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
 	gboolean success;
 	GError *error = NULL;
 	const char *tmp;
@@ -6451,16 +6449,13 @@ test_read_write_static_routes_legacy (void)
 	                                    NULL,
 	                                    &error);
 	unlink (testfile);
-	routefile2 = utils_get_route_path (testfile);
-	unlink (routefile2);
-	route6file2 = utils_get_route6_path (testfile);
-	unlink (route6file2);
+	routefile = utils_get_route_path (testfile);
+	unlink (routefile);
+	route6file = utils_get_route6_path (testfile);
+	unlink (route6file);
 
 	ASSERT (reread != NULL,
 	        "read-write-static-routes-legacy-reread", "failed to read %s: %s", testfile, error->message);
-
-	ASSERT (routefile2 != NULL,
-	        "read-write-static-routes-legacy-reread", "expected routefile for '%s'", testfile);
 
 	ASSERT (nm_connection_verify (reread, &error),
 	        "read-write-static-routes-legacy-reread-verify", "failed to verify %s: %s", testfile, error->message);
@@ -6469,8 +6464,8 @@ test_read_write_static_routes_legacy (void)
 	        "read-write-static-routes-legacy-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
-	g_free (routefile2);
-	g_free (route6file2);
+	g_free (routefile);
+	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -9620,7 +9615,6 @@ test_write_wired_qeth_dhcp (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *route6file = NULL;
 
 	connection = nm_simple_connection_new ();
 
@@ -9708,7 +9702,6 @@ test_write_wired_qeth_dhcp (void)
 	        "wired-qeth-dhcp-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
-	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -9727,7 +9720,6 @@ test_write_wired_ctc_dhcp (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *route6file = NULL;
 	shvarFile *ifcfg;
 	char *tmp;
 
@@ -9827,7 +9819,6 @@ test_write_wired_ctc_dhcp (void)
 	g_assert (success);
 
 	g_free (testfile);
-	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -9845,7 +9836,6 @@ test_write_permissions (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *route6file = NULL;
 
 	connection = nm_simple_connection_new ();
 
@@ -9925,7 +9915,6 @@ test_write_permissions (void)
 	        "permissions-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
-	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -9946,7 +9935,6 @@ test_write_wifi_wep_agent_keys (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *route6file = NULL;
 
 	connection = nm_simple_connection_new ();
 	g_assert (connection != NULL);
@@ -10051,7 +10039,6 @@ test_write_wifi_wep_agent_keys (void)
 	g_assert (success);
 
 	g_free (testfile);
-	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -10460,7 +10447,6 @@ test_write_bridge_component (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *route6file = NULL;
 
 	connection = nm_simple_connection_new ();
 	g_assert (connection);
@@ -10531,7 +10517,6 @@ test_write_bridge_component (void)
 	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
 
 	g_free (testfile);
-	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -11090,7 +11075,6 @@ test_write_bond_slave (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *route6file = NULL;
 
 	connection = nm_simple_connection_new ();
 
@@ -11155,7 +11139,6 @@ test_write_bond_slave (void)
 	        "bond-slave-write", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
-	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
@@ -11380,7 +11363,6 @@ test_write_bond_slave_ib (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	char *route6file = NULL;
 
 	connection = nm_simple_connection_new ();
 
@@ -11446,7 +11428,6 @@ test_write_bond_slave_ib (void)
 	        "bond-slave-write-ib", "written and re-read connection weren't the same.");
 
 	g_free (testfile);
-	g_free (route6file);
 	g_object_unref (connection);
 	g_object_unref (reread);
 }
