@@ -5886,6 +5886,9 @@ test_write_wired_static (void)
 	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
 	        "wired-static-write", "written and re-read connection weren't the same.");
 
+	route6file = utils_get_route6_path (testfile);
+	unlink (route6file);
+
 	g_free (testfile);
 	g_free (route6file);
 	g_object_unref (connection);
