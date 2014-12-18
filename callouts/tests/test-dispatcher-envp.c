@@ -537,27 +537,27 @@ test_generic (const char *file, const char *override_vpn_ip_iface)
 /*******************************************/
 
 static void
-test_old_up (void)
+test_up (void)
 {
-	test_generic ("dispatcher-old-up", NULL);
+	test_generic ("dispatcher-up", NULL);
 }
 
 static void
-test_old_down (void)
+test_down (void)
 {
-	test_generic ("dispatcher-old-down", NULL);
+	test_generic ("dispatcher-down", NULL);
 }
 
 static void
-test_old_vpn_up (void)
+test_vpn_up (void)
 {
-	test_generic ("dispatcher-old-vpn-up", NULL);
+	test_generic ("dispatcher-vpn-up", NULL);
 }
 
 static void
-test_old_vpn_down (void)
+test_vpn_down (void)
 {
-	test_generic ("dispatcher-old-vpn-down", NULL);
+	test_generic ("dispatcher-vpn-down", NULL);
 }
 
 static void
@@ -566,7 +566,7 @@ test_up_empty_vpn_iface (void)
 	/* Test that an empty VPN iface variable, like is passed through D-Bus
 	 * from NM, is ignored by the dispatcher environment construction code.
 	 */
-	test_generic ("dispatcher-old-up", "");
+	test_generic ("dispatcher-up", "");
 }
 
 /*******************************************/
@@ -580,10 +580,10 @@ main (int argc, char **argv)
 	g_type_init ();
 #endif
 
-	g_test_add_func ("/dispatcher/old_up", test_old_up);
-	g_test_add_func ("/dispatcher/old_down", test_old_down);
-	g_test_add_func ("/dispatcher/old_vpn_up", test_old_vpn_up);
-	g_test_add_func ("/dispatcher/old_vpn_down", test_old_vpn_down);
+	g_test_add_func ("/dispatcher/up", test_up);
+	g_test_add_func ("/dispatcher/down", test_down);
+	g_test_add_func ("/dispatcher/vpn_up", test_vpn_up);
+	g_test_add_func ("/dispatcher/vpn_down", test_vpn_down);
 
 	g_test_add_func ("/dispatcher/up_empty_vpn_iface", test_up_empty_vpn_iface);
 
