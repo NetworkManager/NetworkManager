@@ -333,7 +333,7 @@ nm_dispatcher_utils_construct_envp (const char *action,
                                     char **out_iface)
 {
 	const char *iface = NULL, *ip_iface = NULL;
-	const char *uuid = NULL, *id = NULL, *path;
+	const char *uuid = NULL, *id = NULL, *path = NULL;
 	const char *filename = NULL;
 	NMDeviceState dev_state = NM_DEVICE_STATE_UNKNOWN;
 	GVariant *value;
@@ -350,9 +350,16 @@ nm_dispatcher_utils_construct_envp (const char *action,
 	if (!strcmp (action, "hostname"))
 		goto done;
 
-	/* config filename */
+	/* Connection properties */
+	if (!g_variant_lookup (connection_props, NMD_CONNECTION_PROPS_PATH, "&o", &path)) {
+		g_warning ("Missing or invalid required value " NMD_CONNECTION_PROPS_PATH "!");
+		return NULL;
+	}
+	items = g_slist_prepend (items, g_strdup_printf ("CONNECTION_DBUS_PATH=%s", path));
+
 	if (g_variant_lookup (connection_props, NMD_CONNECTION_PROPS_FILENAME, "&s", &filename))
 		items = g_slist_prepend (items, g_strdup_printf ("CONNECTION_FILENAME=%s", filename));
+
 
 	/* Canonicalize the VPN interface name; "" is used when passing it through
 	 * D-Bus so make sure that's fixed up here.

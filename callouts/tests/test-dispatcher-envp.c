@@ -81,7 +81,7 @@ parse_main (GKeyFile *kf,
 
 	g_variant_builder_init (&props, G_VARIANT_TYPE ("a{sv}"));
 	g_variant_builder_add (&props, "{sv}",
-	                       "connection-path",
+	                       NMD_CONNECTION_PROPS_PATH,
 	                       g_variant_new_object_path ("/org/freedesktop/NetworkManager/Connections/5"));
 	/* Strip out the non-fixed portion of the filename */
 	filename = strstr (filename, "/callouts");

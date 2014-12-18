@@ -33,6 +33,7 @@ domains=hsd1.mn.comcast.net.
 [env]
 PATH=
 CONNECTION_UUID=355653c0-34d3-4777-ad25-f9a498b7ef8e
+CONNECTION_DBUS_PATH=/org/freedesktop/NetworkManager/Connections/5
 CONNECTION_ID=Random Connection
 CONNECTION_FILENAME=/callouts/tests/dispatcher-vpn-up
 DEVICE_IFACE=wlan0
