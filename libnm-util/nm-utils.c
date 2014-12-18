@@ -1730,9 +1730,9 @@ nm_utils_rsa_key_encrypt_aes (const GByteArray *data,
  * nm_utils_file_is_pkcs12:
  * @filename: name of the file to test
  *
- * Utility function to find out if the @filename is in PKCS#12 format.
+ * Utility function to find out if the @filename is in PKCS#<!-- -->12 format.
  *
- * Returns: %TRUE if the file is PKCS#12, %FALSE if it is not
+ * Returns: %TRUE if the file is PKCS#<!-- -->12, %FALSE if it is not
  **/
 gboolean
 nm_utils_file_is_pkcs12 (const char *filename)
@@ -2027,7 +2027,8 @@ nm_utils_wifi_is_channel_valid (guint32 channel, const char *band)
 
 /**
  * nm_utils_hwaddr_len:
- * @type: the type of address; either %ARPHRD_ETHER or %ARPHRD_INFINIBAND
+ * @type: the type of address; either <literal>ARPHRD_ETHER</literal> or
+ *   <literal>ARPHRD_INFINIBAND</literal>
  *
  * Returns the length in octets of a hardware address of type @type.
  *
@@ -2048,11 +2049,12 @@ nm_utils_hwaddr_len (int type)
  * nm_utils_hwaddr_type:
  * @len: the length of hardware address in bytes
  *
- * Returns the type (either %ARPHRD_ETHER or %ARPHRD_INFINIBAND) of
- * the raw address given its length.
+ * Returns the type (either <literal>ARPHRD_ETHER</literal> or
+ * <literal>ARPHRD_INFINIBAND</literal>) of the raw address given its length.
  *
- * Return value: the type, either %ARPHRD_ETHER or %ARPHRD_INFINIBAND.
- * If the length is unexpected, return -1 (unsupported type/length).
+ * Return value: the type, either <literal>ARPHRD_ETHER</literal> or
+ * <literal>ARPHRD_INFINIBAND</literal>.  If the length is unexpected, return -1
+ * (unsupported type/length).
  *
  * Deprecated: This could not be extended to cover other types, since
  * there is not a one-to-one mapping between types and lengths. This
@@ -2077,7 +2079,8 @@ nm_utils_hwaddr_type (int len)
 /**
  * nm_utils_hwaddr_aton:
  * @asc: the ASCII representation of a hardware address
- * @type: the type of address; either %ARPHRD_ETHER or %ARPHRD_INFINIBAND
+ * @type: the type of address; either <literal>ARPHRD_ETHER</literal> or
+ *   <literal>ARPHRD_INFINIBAND</literal>
  * @buffer: buffer to store the result into
  *
  * Parses @asc and converts it to binary form in @buffer. See
@@ -2104,7 +2107,8 @@ nm_utils_hwaddr_aton (const char *asc, int type, gpointer buffer)
 /**
  * nm_utils_hwaddr_atoba:
  * @asc: the ASCII representation of a hardware address
- * @type: the type of address; either %ARPHRD_ETHER or %ARPHRD_INFINIBAND
+ * @type: the type of address; either <literal>ARPHRD_ETHER</literal> or
+ *   <literal>ARPHRD_INFINIBAND</literal>
  *
  * Parses @asc and converts it to binary form in a #GByteArray. See
  * nm_utils_hwaddr_aton() if you don't want a #GByteArray.
@@ -2136,7 +2140,8 @@ nm_utils_hwaddr_atoba (const char *asc, int type)
 /**
  * nm_utils_hwaddr_ntoa:
  * @addr: a binary hardware address
- * @type: the type of address; either %ARPHRD_ETHER or %ARPHRD_INFINIBAND
+ * @type: the type of address; either <literal>ARPHRD_ETHER</literal> or
+ *   <literal>ARPHRD_INFINIBAND</literal>
  *
  * Converts @addr to textual form.
  *
@@ -2469,13 +2474,14 @@ static char _nm_utils_inet_ntop_buffer[NM_UTILS_INET_ADDRSTRLEN];
 /**
  * nm_utils_inet4_ntop: (skip)
  * @inaddr: the address that should be converted to string.
- * @dst: the destination buffer, it must contain at least %INET_ADDRSTRLEN
- *  or %NM_UTILS_INET_ADDRSTRLEN characters. If set to %NULL, it will return
- *  a pointer to an internal, static buffer (shared with nm_utils_inet6_ntop()).
- *  Beware, that the internal buffer will be overwritten with ever new call
- *  of nm_utils_inet4_ntop() or nm_utils_inet6_ntop() that does not provied it's
- *  own @dst buffer. Also, using the internal buffer is not thread safe. When
- *  in doubt, pass your own @dst buffer to avoid these issues.
+ * @dst: the destination buffer, it must contain at least
+ *  <literal>INET_ADDRSTRLEN</literal> or %NM_UTILS_INET_ADDRSTRLEN
+ *  characters. If set to %NULL, it will return a pointer to an internal, static
+ *  buffer (shared with nm_utils_inet6_ntop()).  Beware, that the internal
+ *  buffer will be overwritten with ever new call of nm_utils_inet4_ntop() or
+ *  nm_utils_inet6_ntop() that does not provied it's own @dst buffer. Also,
+ *  using the internal buffer is not thread safe. When in doubt, pass your own
+ *  @dst buffer to avoid these issues.
  *
  * Wrapper for inet_ntop.
  *
@@ -2494,13 +2500,14 @@ nm_utils_inet4_ntop (in_addr_t inaddr, char *dst)
 /**
  * nm_utils_inet6_ntop: (skip)
  * @in6addr: the address that should be converted to string.
- * @dst: the destination buffer, it must contain at least %INET6_ADDRSTRLEN
- *  or %NM_UTILS_INET_ADDRSTRLEN characters. If set to %NULL, it will return
- *  a pointer to an internal, static buffer (shared with nm_utils_inet4_ntop()).
- *  Beware, that the internal buffer will be overwritten with ever new call
- *  of nm_utils_inet4_ntop() or nm_utils_inet6_ntop() that does not provied it's
- *  own @dst buffer. Also, using the internal buffer is not thread safe. When
- *  in doubt, pass your own @dst buffer to avoid these issues.
+ * @dst: the destination buffer, it must contain at least
+ *  <literal>INET6_ADDRSTRLEN</literal> or %NM_UTILS_INET_ADDRSTRLEN
+ *  characters. If set to %NULL, it will return a pointer to an internal, static
+ *  buffer (shared with nm_utils_inet4_ntop()).  Beware, that the internal
+ *  buffer will be overwritten with ever new call of nm_utils_inet4_ntop() or
+ *  nm_utils_inet6_ntop() that does not provied it's own @dst buffer. Also,
+ *  using the internal buffer is not thread safe. When in doubt, pass your own
+ *  @dst buffer to avoid these issues.
  *
  * Wrapper for inet_ntop.
  *

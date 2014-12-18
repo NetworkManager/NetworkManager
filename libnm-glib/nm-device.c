@@ -1759,8 +1759,7 @@ get_short_vendor (NMDevice *device)
  * nm_device_get_description:
  * @device: an #NMDevice
  *
- * Gets a description of @device, incorporating the results of
- * nm_device_get_short_vendor() and nm_device_get_short_product().
+ * Gets a description of @device, based on its vendor and product names.
  *
  * Returns: a description of @device. If either the vendor or the
  *   product name is unknown, this returns the interface name.

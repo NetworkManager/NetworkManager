@@ -73,6 +73,8 @@
     <xi:include href="xml/nm-setting-pppoe.xml"/>
     <xi:include href="xml/nm-setting-vpn.xml"/>
     <xi:include href="xml/nm-utils.xml"/>
+    <xi:include href="xml/NetworkManager.xml"/>
+    <xi:include href="xml/NetworkManagerVPN.xml"/>
 
   </chapter>
   <chapter id="object-tree">

@@ -143,7 +143,8 @@ nm_dhcp_config_class_init (NMDhcpConfigClass *config_class)
 	/**
 	 * NMDhcpConfig:family:
 	 *
-	 * The IP address family of the configuration; either %AF_INET or %AF_INET6.
+	 * The IP address family of the configuration; either
+	 * <literal>AF_INET</literal> or <literal>AF_INET6</literal>.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_FAMILY,
@@ -173,7 +174,8 @@ nm_dhcp_config_class_init (NMDhcpConfigClass *config_class)
  *
  * Gets the IP address family of the configuration
  *
- * Returns: the IP address family; either %AF_INET or %AF_INET6
+ * Returns: the IP address family; either <literal>AF_INET</literal> or
+ *   <literal>AF_INET6</literal>
  **/
 int
 nm_dhcp_config_get_family (NMDhcpConfig *config)

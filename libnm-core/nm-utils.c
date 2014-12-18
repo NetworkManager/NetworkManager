@@ -2549,12 +2549,13 @@ nm_utils_wifi_strength_bars (guint8 strength)
 
 /**
  * nm_utils_hwaddr_len:
- * @type: the type of address; either %ARPHRD_ETHER or %ARPHRD_INFINIBAND
+ * @type: the type of address; either <literal>ARPHRD_ETHER</literal> or
+ * <literal>ARPHRD_INFINIBAND</literal>
  *
  * Returns the length in octets of a hardware address of type @type.
  *
- * It is an error to call this function with any value other than %ARPHRD_ETHER
- * or %ARPHRD_INFINIBAND.
+ * It is an error to call this function with any value other than
+ * <literal>ARPHRD_ETHER</literal> or <literal>ARPHRD_INFINIBAND</literal>.
  *
  * Return value: the length.
  */
@@ -2812,10 +2813,11 @@ _nm_utils_hwaddr_canonical_or_invalid (const char *mac, gssize length)
  *      a zero-filled buffer @hwaddr1_len or @hwaddr2_len bytes long.
  *
  *   3. If @hwaddr1 and @hwaddr2 are InfiniBand hardware addresses (that is, if
- *      they are %INFINIBAND_ALEN bytes long in binary form) then only the last
- *      8 bytes are compared, since those are the only bytes that actually
- *      identify the hardware. (The other 12 bytes will change depending on the
- *      configuration of the InfiniBand fabric that the device is connected to.)
+ *      they are <literal>INFINIBAND_ALEN</literal> bytes long in binary form)
+ *      then only the last 8 bytes are compared, since those are the only bytes
+ *      that actually identify the hardware. (The other 12 bytes will change
+ *      depending on the configuration of the InfiniBand fabric that the device
+ *      is connected to.)
  *
  * If a passed-in ASCII hardware address cannot be parsed, or would parse to an
  * address larger than %NM_UTILS_HWADDR_LEN_MAX, then it will silently fail to
@@ -3082,13 +3084,14 @@ static char _nm_utils_inet_ntop_buffer[NM_UTILS_INET_ADDRSTRLEN];
 /**
  * nm_utils_inet4_ntop: (skip)
  * @inaddr: the address that should be converted to string.
- * @dst: the destination buffer, it must contain at least %INET_ADDRSTRLEN
- *  or %NM_UTILS_INET_ADDRSTRLEN characters. If set to %NULL, it will return
- *  a pointer to an internal, static buffer (shared with nm_utils_inet6_ntop()).
- *  Beware, that the internal buffer will be overwritten with ever new call
- *  of nm_utils_inet4_ntop() or nm_utils_inet6_ntop() that does not provied it's
- *  own @dst buffer. Also, using the internal buffer is not thread safe. When
- *  in doubt, pass your own @dst buffer to avoid these issues.
+ * @dst: the destination buffer, it must contain at least
+ *  <literal>INET_ADDRSTRLEN</literal> or %NM_UTILS_INET_ADDRSTRLEN
+ *  characters. If set to %NULL, it will return a pointer to an internal, static
+ *  buffer (shared with nm_utils_inet6_ntop()).  Beware, that the internal
+ *  buffer will be overwritten with ever new call of nm_utils_inet4_ntop() or
+ *  nm_utils_inet6_ntop() that does not provied it's own @dst buffer. Also,
+ *  using the internal buffer is not thread safe. When in doubt, pass your own
+ *  @dst buffer to avoid these issues.
  *
  * Wrapper for inet_ntop.
  *
@@ -3105,13 +3108,14 @@ nm_utils_inet4_ntop (in_addr_t inaddr, char *dst)
 /**
  * nm_utils_inet6_ntop: (skip)
  * @in6addr: the address that should be converted to string.
- * @dst: the destination buffer, it must contain at least %INET6_ADDRSTRLEN
- *  or %NM_UTILS_INET_ADDRSTRLEN characters. If set to %NULL, it will return
- *  a pointer to an internal, static buffer (shared with nm_utils_inet4_ntop()).
- *  Beware, that the internal buffer will be overwritten with ever new call
- *  of nm_utils_inet4_ntop() or nm_utils_inet6_ntop() that does not provied it's
- *  own @dst buffer. Also, using the internal buffer is not thread safe. When
- *  in doubt, pass your own @dst buffer to avoid these issues.
+ * @dst: the destination buffer, it must contain at least
+ *  <literal>INET6_ADDRSTRLEN</literal> or %NM_UTILS_INET_ADDRSTRLEN
+ *  characters. If set to %NULL, it will return a pointer to an internal, static
+ *  buffer (shared with nm_utils_inet4_ntop()).  Beware, that the internal
+ *  buffer will be overwritten with ever new call of nm_utils_inet4_ntop() or
+ *  nm_utils_inet6_ntop() that does not provied it's own @dst buffer. Also,
+ *  using the internal buffer is not thread safe. When in doubt, pass your own
+ *  @dst buffer to avoid these issues.
  *
  * Wrapper for inet_ntop.
  *
@@ -3129,7 +3133,8 @@ nm_utils_inet6_ntop (const struct in6_addr *in6addr, char *dst)
 
 /**
  * nm_utils_ipaddr_valid:
- * @family: %AF_INET or %AF_INET6, or %AF_UNSPEC to accept either
+ * @family: <literal>AF_INET</literal> or <literal>AF_INET6</literal>, or
+ *   <literal>AF_UNSPEC</literal> to accept either
  * @ip: an IP address
  *
  * Checks if @ip contains a valid IP address of the given family.

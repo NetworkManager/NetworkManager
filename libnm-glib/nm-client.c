@@ -360,9 +360,9 @@ client_recheck_permissions (DBusGProxy *proxy, gpointer user_data)
  * @client: a #NMClient
  *
  * Gets all the known network devices.  Use nm_device_get_type() or the
- * NM_IS_DEVICE_XXXX() functions to determine what kind of device member of the
- * returned array is, and then you may use device-specific methods such as
- * nm_device_ethernet_get_hw_address().
+ * <literal>NM_IS_DEVICE_XXXX</literal> functions to determine what kind of
+ * device member of the returned array is, and then you may use device-specific
+ * methods such as nm_device_ethernet_get_hw_address().
  *
  * Returns: (transfer none) (element-type NMDevice): a #GPtrArray
  * containing all the #NMDevices.  The returned array is owned by the

@@ -840,7 +840,7 @@ nm_setting_802_1x_get_client_cert_path (NMSetting8021x *setting)
  * @setting: the #NMSetting8021x
  * @cert_path: when @scheme is set to either %NM_SETTING_802_1X_CK_SCHEME_PATH
  *   or %NM_SETTING_802_1X_CK_SCHEME_BLOB, pass the path of the client
- *   certificate file (PEM, DER, or PKCS#12 format).  The path must be UTF-8
+ *   certificate file (PEM, DER, or PKCS#<!-- -->12 format).  The path must be UTF-8
  *   encoded; use g_filename_to_utf8() to convert if needed.  Passing %NULL with
  *   any @scheme clears the client certificate.
  * @scheme: desired storage scheme for the certificate
@@ -1425,7 +1425,7 @@ nm_setting_802_1x_get_phase2_client_cert_path (NMSetting8021x *setting)
  * @setting: the #NMSetting8021x
  * @cert_path: when @scheme is set to either %NM_SETTING_802_1X_CK_SCHEME_PATH
  *   or %NM_SETTING_802_1X_CK_SCHEME_BLOB, pass the path of the "phase2" client
- *   certificate file (PEM, DER, or PKCS#12 format).  The path must be UTF-8
+ *   certificate file (PEM, DER, or PKCS#<!-- -->12 format).  The path must be UTF-8
  *   encoded; use g_filename_to_utf8() to convert if needed.  Passing %NULL with
  *   any @scheme clears the "phase2" client certificate.
  * @scheme: desired storage scheme for the certificate
@@ -1700,7 +1700,7 @@ file_to_byte_array (const char *filename)
  * @setting: the #NMSetting8021x
  * @key_path: when @scheme is set to either %NM_SETTING_802_1X_CK_SCHEME_PATH or
  *   %NM_SETTING_802_1X_CK_SCHEME_BLOB, pass the path of the private key file
- *   (PEM, DER, or PKCS#12 format).  The path must be UTF-8 encoded; use
+ *   (PEM, DER, or PKCS#<!-- -->12 format).  The path must be UTF-8 encoded; use
  *   g_filename_to_utf8() to convert if needed.  Passing %NULL with any @scheme
  *   clears the private key.
  * @password: password used to decrypt the private key, or %NULL if the password
@@ -2011,7 +2011,7 @@ nm_setting_802_1x_get_phase2_private_key_path (NMSetting8021x *setting)
  * @setting: the #NMSetting8021x
  * @key_path: when @scheme is set to either %NM_SETTING_802_1X_CK_SCHEME_PATH or
  *   %NM_SETTING_802_1X_CK_SCHEME_BLOB, pass the path of the "phase2" private
- *   key file (PEM, DER, or PKCS#12 format).  The path must be UTF-8 encoded;
+ *   key file (PEM, DER, or PKCS#<!-- -->12 format).  The path must be UTF-8 encoded;
  *   use g_filename_to_utf8() to convert if needed.  Passing %NULL with any
  *   @scheme clears the private key.
  * @password: password used to decrypt the private key, or %NULL if the password
@@ -3530,15 +3530,15 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * should be set to the key's encrypted PEM encoded data. When using private
 	 * keys with the path scheme, this property should be set to the full UTF-8
 	 * encoded path of the key, prefixed with the string "file://" and ending
-	 * with a terminating NUL byte. When using PKCS#12 format private keys and
-	 * the blob scheme, this property should be set to the PKCS#12 data and the
+	 * with a terminating NUL byte. When using PKCS#<!-- -->12 format private keys and
+	 * the blob scheme, this property should be set to the PKCS#<!-- -->12 data and the
 	 * #NMSetting8021x:private-key-password property must be set to password
-	 * used to decrypt the PKCS#12 certificate and key. When using PKCS#12 files
+	 * used to decrypt the PKCS#<!-- -->12 certificate and key. When using PKCS#<!-- -->12 files
 	 * and the path scheme, this property should be set to the full UTF-8
 	 * encoded path of the key, prefixed with the string "file://" and and
 	 * ending with a terminating NUL byte, and as with the blob scheme the
 	 * "private-key-password" property must be set to the password used to
-	 * decode the PKCS#12 private key and certificate.
+	 * decode the PKCS#<!-- -->12 private key and certificate.
 	 *
 	 * Setting this property directly is discouraged; use the
 	 * nm_setting_802_1x_set_private_key() function instead.
@@ -3561,7 +3561,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 *
 	 * The password used to decrypt the private key specified in the
 	 * #NMSetting8021x:private-key property when the private key either uses the
-	 * path scheme, or if the private key is a PKCS#12 format key.  Setting this
+	 * path scheme, or if the private key is a PKCS#<!-- -->12 format key.  Setting this
 	 * property directly is not generally necessary except when returning
 	 * secrets to NetworkManager; it is generally set automatically when setting
 	 * the private key by the nm_setting_802_1x_set_private_key() function.
@@ -3601,15 +3601,15 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * should be set to the key's encrypted PEM encoded data. When using private
 	 * keys with the path scheme, this property should be set to the full UTF-8
 	 * encoded path of the key, prefixed with the string "file://" and ending
-	 * with a terminating NUL byte. When using PKCS#12 format private keys and
-	 * the blob scheme, this property should be set to the PKCS#12 data and the
+	 * with a terminating NUL byte. When using PKCS#<!-- -->12 format private keys and
+	 * the blob scheme, this property should be set to the PKCS#<!-- -->12 data and the
 	 * #NMSetting8021x:phase2-private-key-password property must be set to
-	 * password used to decrypt the PKCS#12 certificate and key. When using
-	 * PKCS#12 files and the path scheme, this property should be set to the
+	 * password used to decrypt the PKCS#<!-- -->12 certificate and key. When using
+	 * PKCS#<!-- -->12 files and the path scheme, this property should be set to the
 	 * full UTF-8 encoded path of the key, prefixed with the string "file://"
 	 * and and ending with a terminating NUL byte, and as with the blob scheme
 	 * the #NMSetting8021x:phase2-private-key-password property must be set to
-	 * the password used to decode the PKCS#12 private key and certificate.
+	 * the password used to decode the PKCS#<!-- -->12 private key and certificate.
 	 *
 	 * Setting this property directly is discouraged; use the
 	 * nm_setting_802_1x_set_phase2_private_key() function instead.
@@ -3626,7 +3626,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 *
 	 * The password used to decrypt the "phase 2" private key specified in the
 	 * #NMSetting8021x:phase2-private-key property when the private key either
-	 * uses the path scheme, or is a PKCS#12 format key.  Setting this property
+	 * uses the path scheme, or is a PKCS#<!-- -->12 format key.  Setting this property
 	 * directly is not generally necessary except when returning secrets to
 	 * NetworkManager; it is generally set automatically when setting the
 	 * private key by the nm_setting_802_1x_set_phase2_private_key() function.

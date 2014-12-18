@@ -35,7 +35,8 @@ IGNORE_HFILES= \
 	nm-utils-private.h \
 	nm-setting-private.h \
 	nm-param-spec-specialized.h \
-	nm-test-utils.h
+	nm-test-utils.h \
+	nm-version.h
 
 # Images to copy into HTML directory.
 HTML_IMAGES = 
