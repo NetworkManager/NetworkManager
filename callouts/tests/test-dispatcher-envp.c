@@ -83,11 +83,19 @@ parse_main (GKeyFile *kf,
 	g_variant_builder_add (&props, "{sv}",
 	                       NMD_CONNECTION_PROPS_PATH,
 	                       g_variant_new_object_path ("/org/freedesktop/NetworkManager/Connections/5"));
+
 	/* Strip out the non-fixed portion of the filename */
 	filename = strstr (filename, "/callouts");
 	g_variant_builder_add (&props, "{sv}",
 	                       "filename",
 	                       g_variant_new_string (filename));
+
+	if (g_key_file_get_boolean (kf, "main", "external", NULL)) {
+		g_variant_builder_add (&props, "{sv}",
+		                       "external",
+		                       g_variant_new_boolean (TRUE));
+	}
+
 	*out_con_props = g_variant_builder_end (&props);
 
 	return TRUE;
@@ -561,6 +569,12 @@ test_vpn_down (void)
 }
 
 static void
+test_external (void)
+{
+	test_generic ("dispatcher-external", NULL);
+}
+
+static void
 test_up_empty_vpn_iface (void)
 {
 	/* Test that an empty VPN iface variable, like is passed through D-Bus
@@ -584,6 +598,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/dispatcher/down", test_down);
 	g_test_add_func ("/dispatcher/vpn_up", test_vpn_up);
 	g_test_add_func ("/dispatcher/vpn_down", test_vpn_down);
+	g_test_add_func ("/dispatcher/external", test_external);
 
 	g_test_add_func ("/dispatcher/up_empty_vpn_iface", test_up_empty_vpn_iface);
 

@@ -179,6 +179,13 @@
           </para></listitem>
         </varlistentry>
         <varlistentry>
+          <term><varname>CONNECTION_EXTERNAL</varname></term>
+          <listitem><para>
+            If "1", this indicates that the connection describes a
+            network configuration created outside of NetworkManager.
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><varname>DEVICE_IFACE</varname></term>
           <listitem><para>
             The interface name of the device.

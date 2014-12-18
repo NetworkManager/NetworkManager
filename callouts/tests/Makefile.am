@@ -34,6 +34,7 @@ endif
 
 EXTRA_DIST= \
 	dispatcher-down \
+	dispatcher-external \
 	dispatcher-up \
 	dispatcher-vpn-down \
 	dispatcher-vpn-up

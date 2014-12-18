@@ -335,6 +335,7 @@ nm_dispatcher_utils_construct_envp (const char *action,
 	const char *iface = NULL, *ip_iface = NULL;
 	const char *uuid = NULL, *id = NULL, *path = NULL;
 	const char *filename = NULL;
+	gboolean external;
 	NMDeviceState dev_state = NM_DEVICE_STATE_UNKNOWN;
 	GVariant *value;
 	char **envp = NULL, *path_item;
@@ -356,6 +357,9 @@ nm_dispatcher_utils_construct_envp (const char *action,
 		return NULL;
 	}
 	items = g_slist_prepend (items, g_strdup_printf ("CONNECTION_DBUS_PATH=%s", path));
+
+	if (g_variant_lookup (connection_props, NMD_CONNECTION_PROPS_EXTERNAL, "b", &external) && external)
+		items = g_slist_prepend (items, g_strdup ("CONNECTION_EXTERNAL=1"));
 
 	if (g_variant_lookup (connection_props, NMD_CONNECTION_PROPS_FILENAME, "&s", &filename))
 		items = g_slist_prepend (items, g_strdup_printf ("CONNECTION_FILENAME=%s", filename));
