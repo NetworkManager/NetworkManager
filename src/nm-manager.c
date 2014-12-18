@@ -1658,6 +1658,7 @@ recheck_assume_connection (NMDevice *device, gpointer user_data)
 		return FALSE;
 	if (nm_device_get_unmanaged_flag (device, NM_UNMANAGED_USER) ||
 	    nm_device_get_unmanaged_flag (device, NM_UNMANAGED_INTERNAL) ||
+	    nm_device_get_unmanaged_flag (device, NM_UNMANAGED_EXTERNAL_DOWN) ||
 	    nm_device_get_unmanaged_flag (device, NM_UNMANAGED_PARENT))
 		return FALSE;
 
