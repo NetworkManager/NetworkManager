@@ -42,6 +42,8 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Software devices (bridge, bond, team, etc) can now be deleted from the D-Bus
     API or with nmcli
 * The manpages, documentation, and API annotations have received many cleanups
+* Externally created virtual interfaces are no longer managed by NetworkManager
+    until they are set "up" or activated via nmcli
 
 
 ==============================================
