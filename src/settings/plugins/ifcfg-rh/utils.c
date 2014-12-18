@@ -25,6 +25,8 @@
 #include <string.h>
 
 #include "nm-core-internal.h"
+#include "nm-macros-internal.h"
+#include "NetworkManagerUtils.h"
 
 #include "utils.h"
 #include "shvar.h"
@@ -205,34 +207,37 @@ utils_cert_path (const char *parent, const char *suffix)
 const char *
 utils_get_ifcfg_name (const char *file, gboolean only_ifcfg)
 {
-	const char *name = NULL, *start = NULL;
-	char *base;
+	const char *name;
 
 	g_return_val_if_fail (file != NULL, NULL);
 
-	base = g_path_get_basename (file);
-	if (!base)
+	name = strrchr (file, '/');
+	if (!name)
+		name = file;
+	else
+		name++;
+	if (!*name)
 		return NULL;
 
-	/* Find the point in 'file' where 'base' starts.  We use 'file' since it's
-	 * const and thus will survive after we free 'base'.
-	 */
-	start = file + strlen (file) - strlen (base);
-	g_assert (strcmp (start, base) == 0);
-	g_free (base);
+#define MATCH_TAG_AND_RETURN(name, TAG) \
+	G_STMT_START { \
+		if (strncmp (name, TAG, STRLEN (TAG)) == 0) { \
+			name += STRLEN (TAG); \
+			if (name[0] == '\0') \
+				return NULL; \
+			else \
+				return name; \
+		} \
+	} G_STMT_END
 
-	if (!strncmp (start, IFCFG_TAG, strlen (IFCFG_TAG)))
-		name = start + strlen (IFCFG_TAG);
-	else if (only_ifcfg == FALSE)  {
-		if (!strncmp (start, KEYS_TAG, strlen (KEYS_TAG)))
-			name = start + strlen (KEYS_TAG);
-		else if (!strncmp (start, ROUTE_TAG, strlen (ROUTE_TAG)))
-			name = start + strlen (ROUTE_TAG);
-		else if (!strncmp (start, ROUTE6_TAG, strlen (ROUTE6_TAG)))
-			name = start + strlen (ROUTE6_TAG);
+	MATCH_TAG_AND_RETURN (name, IFCFG_TAG);
+	if (!only_ifcfg) {
+		MATCH_TAG_AND_RETURN (name, KEYS_TAG);
+		MATCH_TAG_AND_RETURN (name, ROUTE_TAG);
+		MATCH_TAG_AND_RETURN (name, ROUTE6_TAG);
 	}
 
-	return name;
+	return NULL;
 }
 
 /* Used to get any ifcfg/extra file path from any other ifcfg/extra path
