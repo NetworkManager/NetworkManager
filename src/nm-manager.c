@@ -729,6 +729,9 @@ remove_device (NMManager *manager,
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 
+	nm_log_dbg (LOGD_DEVICE, "(%s): removing device (allow_unmanage %d, managed %d)",
+	            nm_device_get_iface (device), allow_unmanage, nm_device_get_managed (device));
+
 	if (allow_unmanage && nm_device_get_managed (device)) {
 		NMActRequest *req = nm_device_get_act_request (device);
 		gboolean unmanage = FALSE;

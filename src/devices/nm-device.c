@@ -8131,6 +8131,8 @@ dispose (GObject *object)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMPlatform *platform;
 
+	_LOGD (LOGD_DEVICE, "dispose(): %s", G_OBJECT_TYPE_NAME (self));
+
 	dispatcher_cleanup (self);
 
 	_cleanup_generic_pre (self, FALSE);
