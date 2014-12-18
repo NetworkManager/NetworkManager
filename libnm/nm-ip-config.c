@@ -269,7 +269,8 @@ nm_ip_config_class_init (NMIPConfigClass *config_class)
 	/**
 	 * NMIPConfig:family:
 	 *
-	 * The IP address family of the configuration; either %AF_INET or %AF_INET6.
+	 * The IP address family of the configuration; either
+	 * <literal>AF_INET</literal> or <literal>AF_INET6</literal>.
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_FAMILY,
@@ -370,7 +371,8 @@ nm_ip_config_class_init (NMIPConfigClass *config_class)
  *
  * Gets the IP address family
  *
- * Returns: the IP address family; either %AF_INET or %AF_INET6
+ * Returns: the IP address family; either <literal>AF_INET</literal> or
+ * <literal>AF_INET6</literal>
  **/
 int
 nm_ip_config_get_family (NMIPConfig *config)

@@ -59,7 +59,7 @@ typedef enum {
  * NMSecretAgentCapabilities:
  * @NM_SECRET_AGENT_CAPABILITY_NONE: the agent supports no special capabilities
  * @NM_SECRET_AGENT_CAPABILITY_VPN_HINTS: the agent supports sending hints given
- * by the NMSecretAgentClass::get_secrets() class method to VPN plugin
+ * by the <literal>get_secrets</literal> class method to VPN plugin
  * authentication dialogs.
  * @NM_SECRET_AGENT_CAPABILITY_LAST: bounds checking value; should not be used.
  *

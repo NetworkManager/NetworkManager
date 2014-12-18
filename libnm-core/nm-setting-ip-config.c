@@ -130,7 +130,8 @@ struct NMIPAddress {
 
 /**
  * nm_ip_address_new:
- * @family: the IP address family (%AF_INET or %AF_INET6)
+ * @family: the IP address family (<literal>AF_INET</literal> or
+ *   <literal>AF_INET6</literal>)
  * @addr: the IP address
  * @prefix: the address prefix length
  * @error: location to store error, or %NULL
@@ -166,7 +167,8 @@ nm_ip_address_new (int family,
 
 /**
  * nm_ip_address_new_binary:
- * @family: the IP address family (%AF_INET or %AF_INET6)
+ * @family: the IP address family (<literal>AF_INET</literal> or
+ *   <literal>AF_INET6</literal>)
  * @addr: the IP address
  * @prefix: the address prefix length
  * @error: location to store error, or %NULL
@@ -522,7 +524,8 @@ struct NMIPRoute {
 
 /**
  * nm_ip_route_new:
- * @family: the IP address family (%AF_INET or %AF_INET6)
+ * @family: the IP address family (<literal>AF_INET</literal> or
+ *   <literal>AF_INET6</literal>)
  * @dest: the IP address of the route's destination
  * @prefix: the address prefix length
  * @next_hop: (allow-none): the IP address of the next hop (or %NULL)
@@ -568,7 +571,8 @@ nm_ip_route_new (int family,
 
 /**
  * nm_ip_route_new_binary:
- * @family: the IP address family (%AF_INET or %AF_INET6)
+ * @family: the IP address family (<literal>AF_INET</literal> or
+ *   <literal>AF_INET6</literal>)
  * @dest: the IP address of the route's destination
  * @prefix: the address prefix length
  * @next_hop: (allow-none): the IP address of the next hop (or %NULL)
