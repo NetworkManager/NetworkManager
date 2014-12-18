@@ -48,6 +48,7 @@ G_BEGIN_DECLS
 /* Properties */
 #define NM_SETTINGS_CONNECTION_VISIBLE "visible"
 #define NM_SETTINGS_CONNECTION_UNSAVED "unsaved"
+#define NM_SETTINGS_CONNECTION_READY   "ready"
 #define NM_SETTINGS_CONNECTION_FLAGS   "flags"
 
 
@@ -195,6 +196,10 @@ gboolean nm_settings_connection_can_autoconnect (NMSettingsConnection *connectio
 
 gboolean nm_settings_connection_get_nm_generated (NMSettingsConnection *connection);
 gboolean nm_settings_connection_get_nm_generated_assumed (NMSettingsConnection *connection);
+
+gboolean nm_settings_connection_get_ready (NMSettingsConnection *connection);
+void     nm_settings_connection_set_ready (NMSettingsConnection *connection,
+                                           gboolean ready);
 
 G_END_DECLS
 
