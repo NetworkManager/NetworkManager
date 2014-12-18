@@ -151,6 +151,8 @@ typedef struct {
 	GSList *unmanaged_specs;
 	GSList *unrecognized_specs;
 	GSList *get_connections_cache;
+
+	gboolean startup_complete;
 } NMSettingsPrivate;
 
 #define NM_SETTINGS_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTINGS, NMSettingsPrivate))
@@ -175,9 +177,41 @@ enum {
 	PROP_HOSTNAME,
 	PROP_CAN_MODIFY,
 	PROP_CONNECTIONS,
+	PROP_STARTUP_COMPLETE,
 
 	LAST_PROP
 };
+
+static void
+check_startup_complete (NMSettings *self)
+{
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	GHashTableIter iter;
+	NMSettingsConnection *conn;
+
+	if (priv->startup_complete)
+		return;
+
+	g_hash_table_iter_init (&iter, priv->connections);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &conn)) {
+		if (!nm_settings_connection_get_ready (conn))
+			return;
+	}
+
+	priv->startup_complete = TRUE;
+	g_object_notify (G_OBJECT (self), NM_SETTINGS_STARTUP_COMPLETE);
+}
+
+static void
+connection_ready_changed (NMSettingsConnection *conn,
+                          GParamSpec *pspec,
+                          gpointer user_data)
+{
+	NMSettings *self = NM_SETTINGS (user_data);
+
+	if (nm_settings_connection_get_ready (conn))
+		check_startup_complete (self);
+}
 
 static void
 plugin_connection_added (NMSystemConfigInterface *config,
@@ -771,6 +805,7 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_updated), self);
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_updated_by_user), self);
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_visibility_changed), self);
+	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_ready_changed), self);
 
 	/* Forget about the connection internally */
 	g_hash_table_remove (NM_SETTINGS_GET_PRIVATE (user_data)->connections,
@@ -782,6 +817,8 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 	/* Re-emit for listeners like NMPolicy */
 	g_signal_emit_by_name (self, NM_CP_SIGNAL_CONNECTION_REMOVED, connection);
 	g_object_notify (G_OBJECT (self), NM_SETTINGS_CONNECTIONS);
+
+	check_startup_complete (self);
 
 	g_object_unref (connection);
 }
@@ -888,6 +925,11 @@ claim_connection (NMSettings *self,
 	g_signal_connect (connection, "notify::" NM_SETTINGS_CONNECTION_VISIBLE,
 	                  G_CALLBACK (connection_visibility_changed),
 	                  self);
+	if (!priv->startup_complete) {
+		g_signal_connect (connection, "notify::" NM_SETTINGS_CONNECTION_READY,
+		                  G_CALLBACK (connection_ready_changed),
+		                  self);
+	}
 
 	/* Export the connection over D-Bus */
 	g_warn_if_fail (nm_connection_get_path (NM_CONNECTION (connection)) == NULL);
@@ -1778,6 +1820,16 @@ cp_get_connection_by_uuid (NMConnectionProvider *provider, const char *uuid)
 
 /***************************************************************/
 
+gboolean
+nm_settings_get_startup_complete (NMSettings *self)
+{
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+
+	return priv->startup_complete;
+}
+
+/***************************************************************/
+
 NMSettings *
 nm_settings_new (GError **error)
 {
@@ -1798,6 +1850,7 @@ nm_settings_new (GError **error)
 	}
 
 	load_connections (self);
+	check_startup_complete (self);
 
 	nm_dbus_manager_register_object (priv->dbus_mgr, NM_DBUS_PATH_SETTINGS, self);
 	return self;
@@ -1897,6 +1950,9 @@ get_property (GObject *object, guint prop_id,
 		while (g_hash_table_iter_next (&citer, (gpointer) &path, NULL))
 			g_ptr_array_add (array, g_strdup (path));
 		g_value_take_boxed (value, array);
+		break;
+	case PROP_STARTUP_COMPLETE:
+		g_value_set_boolean (value, nm_settings_get_startup_complete (self));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);

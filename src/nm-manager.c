@@ -687,6 +687,11 @@ check_if_startup_complete (NMManager *self)
 	if (!priv->startup)
 		return;
 
+	if (!nm_settings_get_startup_complete (priv->settings)) {
+		nm_log_dbg (LOGD_CORE, "check_if_startup_complete returns FALSE because of NMSettings");
+		return;
+	}
+
 	for (iter = priv->devices; iter; iter = iter->next) {
 		NMDevice *dev = iter->data;
 
@@ -715,6 +720,14 @@ check_if_startup_complete (NMManager *self)
 
 static void
 device_has_pending_action_changed (NMDevice *device,
+                                   GParamSpec *pspec,
+                                   NMManager *self)
+{
+	check_if_startup_complete (self);
+}
+
+static void
+settings_startup_complete_changed (NMSettings *settings,
                                    GParamSpec *pspec,
                                    NMManager *self)
 {
@@ -4716,6 +4729,8 @@ nm_manager_new (NMSettings *settings,
 	priv->prop_filter_added = TRUE;
 
 	priv->settings = g_object_ref (settings);
+	g_signal_connect (priv->settings, "notify::" NM_SETTINGS_STARTUP_COMPLETE,
+	                  G_CALLBACK (settings_startup_complete_changed), singleton);
 
 	priv->state_file = g_strdup (state_file);
 
