@@ -71,6 +71,10 @@
 %global with_team 0
 %endif
 
+%define with_modem_manager_1 0
+%if 0%{?with_bluetooth} || (0%{?with_wwan} && (0%{?rhel} || (0%{?fedora} && 0%{?fedora} > 19)))
+%define with_modem_manager_1 1
+%endif
 
 %global _hardened_build 1
 
@@ -160,7 +164,7 @@ BuildRequires: wimax-devel
 BuildRequires: systemd >= 200-3 systemd-devel
 BuildRequires: libsoup-devel
 BuildRequires: libndp-devel >= 1.0
-%if 0%{?with_bluetooth} || (0%{?with_wwan} && (0%{?rhel} || (0%{?fedora} && 0%{?fedora} > 19)))
+%if 0%{?with_modem_manager_1}
 BuildRequires: ModemManager-glib-devel >= 1.0
 %endif
 %if 0%{?with_nmtui}
@@ -389,7 +393,7 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 	--with-crypto=nss \
 	--enable-more-warnings=error \
 	--enable-ppp=yes \
-%if 0%{?rhel} || (0%{?fedora} > 19)
+%if 0%{?with_modem_manager_1}
 	--with-modem-manager-1=yes \
 %else
 	--with-modem-manager-1=no \
