@@ -340,7 +340,7 @@ test_setting_ip4_config_labels (void)
 	              NULL);
 
 	/* addr 1 */
-	addr = nm_ip_address_new (AF_INET, "1.1.1.1", 24, &error);
+	addr = nm_ip_address_new (AF_INET, "1.2.3.4", 24, &error);
 	g_assert_no_error (error);
 
 	nm_setting_ip_config_add_address (s_ip4, addr);
@@ -371,7 +371,7 @@ test_setting_ip4_config_labels (void)
 	/* Now back to constructing the original s_ip4... */
 
 	/* addr 2 */
-	addr = nm_ip_address_new (AF_INET, "2.2.2.2", 24, &error);
+	addr = nm_ip_address_new (AF_INET, "2.3.4.5", 24, &error);
 	g_assert_no_error (error);
 	nm_ip_address_set_attribute (addr, "label", g_variant_new_string ("eth0:1"));
 
@@ -385,7 +385,7 @@ test_setting_ip4_config_labels (void)
 	g_assert_cmpstr (g_variant_get_string (label, NULL), ==, "eth0:1");
 
 	/* addr 3 */
-	addr = nm_ip_address_new (AF_INET, "3.3.3.3", 24, &error);
+	addr = nm_ip_address_new (AF_INET, "3.4.5.6", 24, &error);
 	g_assert_no_error (error);
 	nm_ip_address_set_attribute (addr, "label", NULL);
 
@@ -402,13 +402,13 @@ test_setting_ip4_config_labels (void)
 	nmtst_assert_setting_verifies (NM_SETTING (s_ip4));
 
 	addr = nm_setting_ip_config_get_address (s_ip4, 0);
-	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "2.2.2.2");
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "2.3.4.5");
 	label = nm_ip_address_get_attribute (addr, "label");
 	g_assert (label != NULL);
 	g_assert_cmpstr (g_variant_get_string (label, NULL), ==, "eth0:1");
 
 	addr = nm_setting_ip_config_get_address (s_ip4, 1);
-	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "3.3.3.3");
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "3.4.5.6");
 	label = nm_ip_address_get_attribute (addr, "label");
 	g_assert (label == NULL);
 
@@ -466,13 +466,13 @@ test_setting_ip4_config_labels (void)
 	s_ip4 = nm_connection_get_setting_ip4_config (conn);
 
 	addr = nm_setting_ip_config_get_address (s_ip4, 0);
-	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "2.2.2.2");
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "2.3.4.5");
 	label = nm_ip_address_get_attribute (addr, "label");
 	g_assert (label != NULL);
 	g_assert_cmpstr (g_variant_get_string (label, NULL), ==, "eth0:1");
 
 	addr = nm_setting_ip_config_get_address (s_ip4, 1);
-	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "3.3.3.3");
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "3.4.5.6");
 	label = nm_ip_address_get_attribute (addr, "label");
 	g_assert (label == NULL);
 
@@ -489,12 +489,12 @@ test_setting_ip4_config_labels (void)
 	s_ip4 = nm_connection_get_setting_ip4_config (conn);
 
 	addr = nm_setting_ip_config_get_address (s_ip4, 0);
-	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "2.2.2.2");
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "2.3.4.5");
 	label = nm_ip_address_get_attribute (addr, "label");
 	g_assert_cmpstr (g_variant_get_string (label, NULL), ==, "eth0:1");
 
 	addr = nm_setting_ip_config_get_address (s_ip4, 1);
-	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "3.3.3.3");
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "3.4.5.6");
 	label = nm_ip_address_get_attribute (addr, "label");
 	g_assert (label == NULL);
 
@@ -514,13 +514,13 @@ test_setting_ip4_config_labels (void)
 	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip4), ==, 2);
 
 	addr = nm_setting_ip_config_get_address (s_ip4, 0);
-	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "2.2.2.2");
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "2.3.4.5");
 	label = nm_ip_address_get_attribute (addr, "label");
 	g_assert (label != NULL);
 	g_assert_cmpstr (g_variant_get_string (label, NULL), ==, "eth0:1");
 
 	addr = nm_setting_ip_config_get_address (s_ip4, 1);
-	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "3.3.3.3");
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "3.4.5.6");
 	label = nm_ip_address_get_attribute (addr, "label");
 	g_assert (label == NULL);
 
@@ -543,7 +543,7 @@ test_setting_ip4_config_address_data (void)
 	              NULL);
 
 	/* addr 1 */
-	addr = nm_ip_address_new (AF_INET, "1.1.1.1", 24, &error);
+	addr = nm_ip_address_new (AF_INET, "1.2.3.4", 24, &error);
 	g_assert_no_error (error);
 	nm_ip_address_set_attribute (addr, "one", g_variant_new_string ("foo"));
 	nm_ip_address_set_attribute (addr, "two", g_variant_new_int32 (42));
@@ -553,7 +553,7 @@ test_setting_ip4_config_address_data (void)
 	nmtst_assert_setting_verifies (NM_SETTING (s_ip4));
 
 	/* addr 2 */
-	addr = nm_ip_address_new (AF_INET, "2.2.2.2", 24, &error);
+	addr = nm_ip_address_new (AF_INET, "2.3.4.5", 24, &error);
 	g_assert_no_error (error);
 
 	nm_setting_ip_config_add_address (s_ip4, addr);
@@ -580,7 +580,7 @@ test_setting_ip4_config_address_data (void)
 	g_assert_cmpint (addrs->len, ==, 2);
 
 	addr = addrs->pdata[0];
-	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "1.1.1.1");
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "1.2.3.4");
 	value = nm_ip_address_get_attribute (addr, "one");
 	g_assert (value != NULL);
 	g_assert_cmpstr (g_variant_get_string (value, NULL), ==, "foo");
@@ -618,7 +618,7 @@ test_setting_ip4_config_address_data (void)
 	s_ip4 = nm_connection_get_setting_ip4_config (conn);
 
 	addr = nm_setting_ip_config_get_address (s_ip4, 0);
-	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "1.1.1.1");
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "1.2.3.4");
 	value = nm_ip_address_get_attribute (addr, "one");
 	g_assert (value != NULL);
 	g_assert_cmpstr (g_variant_get_string (value, NULL), ==, "foo");
@@ -636,7 +636,7 @@ test_setting_ip4_config_address_data (void)
 	s_ip4 = nm_connection_get_setting_ip4_config (conn);
 
 	addr = nm_setting_ip_config_get_address (s_ip4, 0);
-	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "1.1.1.1");
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "1.2.3.4");
 	value = nm_ip_address_get_attribute (addr, "one");
 	g_assert (value == NULL);
 	value = nm_ip_address_get_attribute (addr, "two");
