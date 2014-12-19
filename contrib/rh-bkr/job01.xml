@@ -23,6 +23,7 @@
 				<and>
 					<arch op="=" value="x86_64"/>
 					<!-- default -->    <!-- <group op="=" value="desktopqe-net"/> -->
+					<!-- veth -->       <!-- <group op="=" value="desktop"/> -->
 					<!-- dcb -->        <!-- <hostname op="=" value="wsfd-netdev7.lab.bos.redhat.com"/> -->
 					<!-- infiniband --> <!-- <hostname op="=" value="rdma-qe-11.lab.bos.redhat.com"/> -->
 					<!-- wifi -->       <!-- <group op="=" value="wireless"/><hostname op="like" value="wlan-r2%.wlan.rhts.eng.bos.redhat.com"/> -->

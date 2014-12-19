@@ -478,7 +478,7 @@ class CmdSubmit(CmdBase):
         self.parser.add_argument('--verbose', '-v', action='count', help='print more information')
         self.parser.add_argument('--reservesys', '-R', action='store_true', help='add task /distribution/reservesys')
         self.parser.add_argument('--var', '-V', action='append', help='Set template replacements (alternative to setting via environment variables')
-        self.parser.add_argument('--hosttype', help='The host type. Known values are \'dcb\', \'infiniband\', and \'wifi\'. Anything else uses the default. This determines the $HOSTREQUIRES template')
+        self.parser.add_argument('--hosttype', help='The host type. Known values are \'veth\', \'dcb\', \'infiniband\', and \'wifi\'. Anything else uses the default. This determines the $HOSTREQUIRES template')
         self.parser.add_argument('--jobtype', help='The job type. Known values are \'rhel70\'. Anything else uses the default to create a retention=scratch job. This determines the $JOBTYPE template')
 
     def _prepare_rpms(self):
@@ -599,7 +599,9 @@ class CmdSubmit(CmdBase):
         if v is not None:
             return v;
         hosttype = self.options.hosttype
-        if hosttype == 'dcb':
+        if hosttype == 'veth':
+            return '<group op="=" value="desktop"/>'
+        elif hosttype == 'dcb':
             return '<hostname op="=" value="wsfd-netdev7.lab.bos.redhat.com"/>'
         elif hosttype == 'infiniband':
             return '<hostname op="=" value="rdma-qe-11.lab.bos.redhat.com"/>'
