@@ -88,5 +88,7 @@ else
     make distcheck || die "Error make distcheck"
 fi
 
+export BUILDTYPE
+
 "$SCRIPTDIR"/build.sh
 
