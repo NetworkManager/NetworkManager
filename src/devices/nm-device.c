@@ -4345,11 +4345,12 @@ set_nm_ipv6ll (NMDevice *self, gboolean enable)
 		if (enable) {
 			/* Bounce IPv6 to ensure the kernel stops IPv6LL address generation */
 			value = nm_platform_sysctl_get (nm_utils_ip6_property_path (iface, "disable_ipv6"));
-			if (g_strcmp0 (value, "0") == 0) {
+			if (g_strcmp0 (value, "0") == 0)
 				nm_device_ipv6_sysctl_set (self, "disable_ipv6", "1");
-				nm_device_ipv6_sysctl_set (self, "disable_ipv6", "0");
-			}
 			g_free (value);
+
+			/* Ensure IPv6 is enabled */
+			nm_device_ipv6_sysctl_set (self, "disable_ipv6", "0");
 		}
 
 	}
