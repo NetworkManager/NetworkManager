@@ -13,7 +13,7 @@ TMPFILE="$(mktemp .nm-check-exports.XXXXXX)"
 
 get_syms() {
     nm "$1" |
-    sed -n 's/^[[:xdigit:]]\+ T //p' |
+    sed -n 's/^[[:xdigit:]]\+ [DT] //p' |
     sort
 }
 
