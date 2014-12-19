@@ -229,6 +229,7 @@ typedef struct {
 	guint           carrier_wait_id;
 	gboolean        ignore_carrier;
 	guint32         mtu;
+	gboolean        up;   /* IFF_UP */
 
 	/* Generic DHCP stuff */
 	guint32         dhcp_timeout;
@@ -1250,35 +1251,46 @@ device_link_changed (NMDevice *self, NMPlatformLink *info)
 	if (ip_ifname_changed)
 		update_for_ip_ifname_change (self);
 
-	/* Manage externally-created software interfaces only when they are IFF_UP */
-	if (   is_software_external (self)
-	    && (nm_device_get_state (self) <= NM_DEVICE_STATE_DISCONNECTED)
-	    && priv->ifindex > 0) {
-		gboolean external_down = nm_device_get_unmanaged_flag (self, NM_UNMANAGED_EXTERNAL_DOWN);
+	if (priv->up != info->up) {
+		priv->up = info->up;
 
-		if (external_down && info->up) {
-			/* Ensure the assume check is queued before any queued state changes
-			 * from the transition to UNAVAILABLE.
-			 */
-			nm_device_queue_recheck_assume (self);
+		/* Manage externally-created software interfaces only when they are IFF_UP */
+		g_assert (priv->ifindex > 0);
+		if (is_software_external (self)) {
+			gboolean external_down = nm_device_get_unmanaged_flag (self, NM_UNMANAGED_EXTERNAL_DOWN);
 
-			/* Resetting the EXTERNAL_DOWN flag may change the device's state
-			 * to UNAVAILABLE.  To ensure that the state change doesn't touch
-			 * the device before assumption occurs, pass
-			 * NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED as the reason.
-			 */
-			nm_device_set_unmanaged (self,
-			                         NM_UNMANAGED_EXTERNAL_DOWN,
-			                         FALSE,
-			                         NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
-		} else if (!external_down && !info->up) {
-			/* If the device is already disconnected and is set !IFF_UP,
-			 * unmanage it.
-			 */
-			nm_device_set_unmanaged (self,
-			                         NM_UNMANAGED_EXTERNAL_DOWN,
-			                         TRUE,
-			                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
+			if (external_down && info->up) {
+				if (nm_device_get_state (self) < NM_DEVICE_STATE_DISCONNECTED) {
+					/* Ensure the assume check is queued before any queued state changes
+					 * from the transition to UNAVAILABLE.
+					 */
+					nm_device_queue_recheck_assume (self);
+
+					/* Resetting the EXTERNAL_DOWN flag may change the device's state
+					 * to UNAVAILABLE.  To ensure that the state change doesn't touch
+					 * the device before assumption occurs, pass
+					 * NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED as the reason.
+					 */
+					nm_device_set_unmanaged (self,
+					                         NM_UNMANAGED_EXTERNAL_DOWN,
+					                         FALSE,
+					                         NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
+				} else {
+					/* Don't trigger a state change; if the device is in a
+					 * state higher than UNAVAILABLE, it is already IFF_UP
+					 * or an explicit activation request was received.
+					 */
+					priv->unmanaged_flags &= ~NM_UNMANAGED_EXTERNAL_DOWN;
+				}
+			} else if (!external_down && !info->up && nm_device_get_state (self) <= NM_DEVICE_STATE_DISCONNECTED) {
+				/* If the device is already disconnected and is set !IFF_UP,
+				 * unmanage it.
+				 */
+				nm_device_set_unmanaged (self,
+				                         NM_UNMANAGED_EXTERNAL_DOWN,
+				                         TRUE,
+				                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
+			}
 		}
 	}
 }
@@ -8228,6 +8240,7 @@ set_property (GObject *object, guint prop_id,
 			g_free (priv->iface);
 			priv->iface = g_strdup (platform_device->name);
 			priv->ifindex = platform_device->ifindex;
+			priv->up = platform_device->up;
 			g_free (priv->driver);
 			priv->driver = g_strdup (platform_device->driver);
 		}
@@ -8243,6 +8256,8 @@ set_property (GObject *object, guint prop_id,
 			g_free (priv->iface);
 			priv->iface = g_value_dup_string (value);
 			priv->ifindex = nm_platform_link_get_ifindex (priv->iface);
+			if (priv->ifindex > 0)
+				priv->up = nm_platform_link_is_up (priv->ifindex);
 		}
 		break;
 	case PROP_DRIVER:
