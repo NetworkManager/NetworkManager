@@ -3560,10 +3560,12 @@ test_setting_ip4_gateway (void)
 	GVariant *conn_dict, *ip4_dict, *value;
 	GVariantIter iter;
 	GVariant *addr_var;
-	guint32 addr_vals_0[] = { 0x0a01a8c0, 0x00000018, 0x00000000 };
-	guint32 addr_vals_1[] = { 0x0b01a8c0, 0x00000018, 0x0101a8c0 };
+	guint32 addr_vals_0[] = { htonl (0xc0a8010a), 0x00000018, htonl (0x00000000) };
+	guint32 addr_vals_1[] = { htonl (0xc0a8010b), 0x00000018, htonl (0xc0a80101) };
 	GVariantBuilder addrs_builder;
 	GError *error = NULL;
+
+	g_assert_cmpstr (nm_utils_inet4_ntop (addr_vals_0[0], NULL), ==, "192.168.1.10");
 
 	/* When serializing on the daemon side, ipv4.gateway is copied to the first
 	 * entry of ipv4.addresses
