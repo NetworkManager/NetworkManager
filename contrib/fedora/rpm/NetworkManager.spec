@@ -554,6 +554,8 @@ fi
 %files adsl
 %defattr(-,root,root,0755)
 %{_libdir}/%{name}/libnm-device-plugin-adsl.so
+%else
+%exclude %{_libdir}/%{name}/libnm-device-plugin-adsl.so
 %endif
 
 %if 0%{?with_bluetooth}
@@ -572,6 +574,8 @@ fi
 %files wifi
 %defattr(-,root,root,0755)
 %{_libdir}/%{name}/libnm-device-plugin-wifi.so
+%else
+%exclude %{_libdir}/%{name}/libnm-device-plugin-wifi.so
 %endif
 
 %if 0%{?with_wwan}
