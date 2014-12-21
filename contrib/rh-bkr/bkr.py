@@ -347,7 +347,7 @@ class UploadFile_ParseWebsite(UploadFile):
         self._urls = None
         UploadFile.__init__(self, uri)
 
-    DefaultPattern = '^.*/NetworkManager(-adsl|-bluetooth|-config-connectivity-fedora|-debuginfo|-glib|-libnm|-team|-tui|-wifi|-wwan)?-[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+-[^ /]*\.x86_64\.rpm$'
+    DefaultPattern = '^.*/NetworkManager(-adsl|-bluetooth|-config-connectivity-fedora|-debuginfo|-glib|-libnm|-team|-tui|-wifi|-wwan)?-[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)?-[^ /]*\.x86_64\.rpm$'
     @property
     def pattern(self):
         if self._pattern is not None:
