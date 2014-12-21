@@ -1654,7 +1654,7 @@ msgstr "దోషం: '%s': '%s' చెల్లునది కాదు; <%u-%
 
 #. Ask for optional arguments.
 #: ../clients/cli/connections.c:2808
-#, c-format
+#, fuzzy, c-format
 #| msgid "There is 1 optional argument for '%s' connection type.\n"
 msgid "There is %d optional argument for '%s' connection type.\n"
 msgid_plural "There are %d optional arguments for '%s' connection type.\n"

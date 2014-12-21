@@ -1701,7 +1701,7 @@ msgstr "Hata: '%s': '%s' geçerli değil; <%u-%u> kullanın."
 
 #. Ask for optional arguments.
 #: ../clients/cli/connections.c:3113
-#, c-format
+#, fuzzy, c-format
 #| msgid "Error: missing argument for '%s' option."
 msgid "There is %d optional argument for '%s' connection type.\n"
 msgid_plural "There are %d optional arguments for '%s' connection type.\n"
@@ -1709,7 +1709,7 @@ msgstr[0] "'%s' bağlantı türü için %d isteğe bağlı seçenek mevcut.\n"
 msgstr[1] "'%s' bağlantı türü için %d isteğe bağlı seçenek mevcut.\n"
 
 #: ../clients/cli/connections.c:3116
-#, c-format
+#, fuzzy, c-format
 msgid "Do you want to provide it? %s"
 msgid_plural "Do you want to provide them? %s"
 msgstr[0] "Bunu sağlamak istiyor musunuz? %s"
@@ -6154,7 +6154,7 @@ msgid "(No custom routes)"
 msgstr "(Özel bir yönlendirme yok)"
 
 #: ../clients/tui/nmt-page-ip4.c:103 ../clients/tui/nmt-page-ip6.c:103
-#, c-format
+#, fuzzy, c-format
 msgid "One custom route"
 msgid_plural "%d custom routes"
 msgstr[0] "Bir özel yönlendirme"
