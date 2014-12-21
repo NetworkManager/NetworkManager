@@ -573,6 +573,10 @@ class CmdSubmit(CmdBase):
                         return 'master' # upstream pre 1.0
                     if re.match(r'^.*/NetworkManager-0.9[0-9][0-9]+.0.0-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
                         return 'master' # upstream 1.0-beta
+                    if re.match(r'^.*/NetworkManager-1.0.[0-9]+-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
+                        return 'master' # upstream 1.0
+                    if re.match(r'^.*/NetworkManager-1.1.[0-9]+-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
+                        return 'master' # upstream 1.1
                     if re.match(r'^.*/NetworkManager-0.9.10.[0-9]+-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
                         return 'master' # 0.9.10
                     if re.match(r'^.*/NetworkManager-0.9.9.9[0-9]+-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
