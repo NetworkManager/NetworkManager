@@ -480,6 +480,8 @@ class CmdSubmit(CmdBase):
         self.parser.add_argument('--var', '-V', action='append', help='Set template replacements (alternative to setting via environment variables')
         self.parser.add_argument('--hosttype', help='The host type. Known values are \'veth\', \'dcb\', \'infiniband\', and \'wifi\'. Anything else uses the default. This determines the $HOSTREQUIRES template')
         self.parser.add_argument('--jobtype', help='The job type. Known values are \'rhel70\'. Anything else uses the default to create a retention=scratch job. This determines the $JOBTYPE template')
+        self.parser.add_argument('--profile', '-p', help='A predefined set of arguments. Known values are \'default\', \'veth\', \'wifi\', \'infiniband\', \'dcb\'.')
+
 
     def _prepare_rpms(self):
         if self.options.rpm is None:
@@ -541,6 +543,7 @@ class CmdSubmit(CmdBase):
 
         self.subs['TESTS'] = ','.join(sorted(set(tests)))
         self.subs['ARGV'] = ("\"" + "\" \"".join(sys.argv) + "\"") if sys.argv else ''
+        self.subs['ARGV_PROFILE'] = ("\"" + "\" \"".join(self.argv_profile) + "\"") if getattr(self, 'argv_profile') else ''
 
         for (k,v) in self.subs.iteritems():
             self._print_substitution(k, v)
@@ -699,6 +702,19 @@ class CmdSubmit(CmdBase):
 
     def run(self, argv):
         self.options = self.parser.parse_args(argv)
+
+        if self.options.profile:
+            argv_profiles = {
+                'default':    [ "-s", "CONFIRMED",                             "-a", "-t", "t-master", "-T", "wifi", "-T", "infiniband", "-T", "dcb", "-T", "no-t-master" ],
+                'veth':       [ "-s", "CONFIRMED", "--hosttype", "veth",       "-a", "-t", "t-master", "-T", "wifi", "-T", "infiniband", "-T", "dcb", "-T", "no-t-master" ],
+                'wifi':       [ "-s", "CONFIRMED", "--hosttype", "wifi",       "-t", "wifi" ],
+                'infiniband': [ "-s", "CONFIRMED", "--hosttype", "infiniband", "-t", "infiniband" ],
+                'dcb':        [ "-s", "CONFIRMED", "--hosttype", "dcb",        "-t", "dcb" ],
+            }
+            if self.options.profile not in argv_profiles:
+                raise Exception("Unknown profile \"%s\". Valid values are %s" % (self.options.profile, argv_profiles.keys()))
+            self.argv_profile = argv_profiles[self.options.profile]
+            self.options = self.parser.parse_args(self.argv_profile + argv)
 
         if self.options.job:
             with open(self.options.job) as f:

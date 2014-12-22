@@ -1,7 +1,7 @@
 <job $JOBTYPE>
 	<whiteboard>
 		$WHITEBOARD $UUID
-		$ARGV
+		$ARGV $ARGV_PROFILE
 	</whiteboard>
 	<recipeSet priority="Normal">
 		<recipe kernel_options="" kernel_options_post="" ks_meta="" role="None" whiteboard="$WHITEBOARD $UUID">
