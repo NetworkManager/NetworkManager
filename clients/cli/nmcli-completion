@@ -1150,7 +1150,7 @@ _nmcli()
                                     ;;
                             esac
 
-                            OPTIONS=(id uuid path apath)
+                            OPTIONS=(id uuid path)
                             _nmcli_compl_ARGS_CONNECTION && return 0
                             while [[ "${#words[@]}" -gt 0 ]]; do
                                 if [[ ${#words[@]} -le 1 ]]; then
