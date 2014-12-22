@@ -1159,14 +1159,14 @@ _nmcli()
                                     if [[ "${words[0]:0:1}" == [+-] ]]; then
                                         PREFIX="${words[0]:0:1}"
                                     fi
-                                    _nmcli_list_nl "$(nmcli --fields profile connection show "${COMMAND_CONNECTION_TYPE:-id}" "$COMMAND_CONNECTION_ID" 2>/dev/null | sed -n 's/^\([^:]\+\):.*/'$PREFIX'\1/p')"
+                                    _nmcli_list_nl "$(nmcli --fields profile connection show ${COMMAND_CONNECTION_TYPE} "$COMMAND_CONNECTION_ID" 2>/dev/null | sed -n 's/^\([^:]\+\):.*/'$PREFIX'\1/p')"
                                     return 0
                                 elif [[ ${#words[@]} -le 2 ]]; then
                                     return 0
                                 fi
                                 _nmcli_array_delete_at words 0 1
                             done
-                            _nmcli_list_nl "$(nmcli --fields profile connection show "${COMMAND_CONNECTION_TYPE:-id}" "$COMMAND_CONNECTION_ID" 2>/dev/null | sed -n 's/^\([^:]\+\):.*/\1/p')"
+                            _nmcli_list_nl "$(nmcli --fields profile connection show ${COMMAND_CONNECTION_TYPE} "$COMMAND_CONNECTION_ID" 2>/dev/null | sed -n 's/^\([^:]\+\):.*/\1/p')"
                             return 0
                         fi
                         ;;
