@@ -224,6 +224,8 @@ Group: System Environment/Base
 BuildRequires: teamd-devel
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
 Obsoletes: NetworkManager < %{obsoletes_nmver}
+# Team was split from main NM binary between 0.9.10 and 1.0
+Obsoletes: NetworkManager < 1.0.0
 
 %description team
 This package contains NetworkManager support for team devices.
