@@ -3845,6 +3845,8 @@ ip6_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
                struct in6_addr network, int plen, struct in6_addr gateway,
                guint32 metric, guint32 mss)
 {
+	metric = nm_utils_ip6_route_metric_normalize (metric);
+
 	return add_object (platform, build_rtnl_route (AF_INET6, ifindex, source, &network, plen, &gateway, NULL, metric, mss));
 }
 
@@ -3962,6 +3964,8 @@ ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, in
 {
 	struct in6_addr gateway = IN6ADDR_ANY_INIT;
 
+	metric = nm_utils_ip6_route_metric_normalize (metric);
+
 	return delete_object (platform, build_rtnl_route (AF_INET6, ifindex, NM_IP_CONFIG_SOURCE_UNKNOWN ,&network, plen, &gateway, NULL, metric, 0), FALSE) &&
 	    refresh_route (platform, AF_INET6, ifindex, &network, plen, metric);
 }
@@ -3989,6 +3993,8 @@ ip4_route_exists (NMPlatform *platform, int ifindex, in_addr_t network, int plen
 static gboolean
 ip6_route_exists (NMPlatform *platform, int ifindex, struct in6_addr network, int plen, guint32 metric)
 {
+	metric = nm_utils_ip6_route_metric_normalize (metric);
+
 	return ip_route_exists (platform, AF_INET6, ifindex, &network, plen, metric);
 }
 
