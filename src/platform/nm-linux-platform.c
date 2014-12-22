@@ -3884,7 +3884,7 @@ route_search_cache (struct nl_cache *cache, int family, int ifindex, const void 
 }
 
 static gboolean
-refresh_route (NMPlatform *platform, int family, int ifindex, const void *network, int plen, int metric)
+refresh_route (NMPlatform *platform, int family, int ifindex, const void *network, int plen, guint32 metric)
 {
 	struct nl_cache *cache;
 	auto_nl_object struct rtnl_route *cached_object = NULL;
