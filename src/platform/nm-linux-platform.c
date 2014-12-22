@@ -3912,6 +3912,19 @@ ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen
 
 	cache = choose_cache_by_type (platform, OBJECT_TYPE_IP4_ROUTE);
 
+	if (metric == 0) {
+		/* Deleting an IPv4 route with metric 0 does not only delete an exectly matching route.
+		 * If no route with metric 0 exists, it might delete another route to the same destination.
+		 * For nm_platform_ip4_route_delete() we don't want this semantic.
+		 *
+		 * Instead, re-fetch the route from kernel, and if that fails, there is nothing to do.
+		 * On success, there is still a race that we might end up deleting the wrong route. */
+		if (!refresh_object (platform, (struct nl_object *) route, FALSE, NM_PLATFORM_REASON_INTERNAL)) {
+			rtnl_route_put ((struct rtnl_route *) route);
+			return TRUE;
+		}
+	}
+
 	/* when deleting an IPv4 route, several fields of the provided route must match.
 	 * Lookup in the cache so that we hopefully get the right values. */
 	cached_object = (struct rtnl_route *) nl_cache_search (cache, route);
