@@ -3865,7 +3865,7 @@ route_search_cache (struct nl_cache *cache, int family, int ifindex, const void 
 		if (!_route_match (rtnlroute, family, ifindex, FALSE))
 			continue;
 
-		if (metric && metric != rtnl_route_get_priority (rtnlroute))
+		if (metric != rtnl_route_get_priority (rtnlroute))
 			continue;
 
 		dst = rtnl_route_get_dst (rtnlroute);
