@@ -2439,7 +2439,7 @@ test_read_wifi_open (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
-	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip4, *s_ip6;
 	GError *error = NULL;
 	const char *tmp;
 	GBytes *ssid;
@@ -2584,6 +2584,8 @@ test_read_wifi_open (void)
 	        TEST_IFCFG_WIFI_OPEN,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
 
+	g_assert_cmpint (nm_setting_ip_config_get_route_metric (s_ip4), ==, 104);
+
 	/* Method */
 	tmp = nm_setting_ip_config_get_method (s_ip4);
 	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
@@ -2591,6 +2593,10 @@ test_read_wifi_open (void)
 	        TEST_IFCFG_WIFI_OPEN,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP_CONFIG_METHOD);
+
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+	g_assert( s_ip6);
+	g_assert_cmpint (nm_setting_ip_config_get_route_metric (s_ip6), ==, 106);
 
 	g_object_unref (connection);
 }
@@ -5775,6 +5781,7 @@ test_write_wired_static (void)
 	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NM_SETTING_IP_CONFIG_GATEWAY, "1.1.1.1",
+	              NM_SETTING_IP_CONFIG_ROUTE_METRIC, (gint64) 204,
 	              NULL);
 
 	addr = nm_ip_address_new (AF_INET, "1.1.1.3", 24, &error);
@@ -5800,6 +5807,7 @@ test_write_wired_static (void)
 	g_object_set (s_ip6,
 	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_ROUTE_METRIC, (gint64) 206,
 	              NULL);
 
 	/* Add addresses */
@@ -5882,6 +5890,9 @@ test_write_wired_static (void)
 	nm_setting_ip_config_add_dns_search (reread_s_ip6, nm_setting_ip_config_get_dns_search (reread_s_ip4, 3));
 	nm_setting_ip_config_remove_dns_search (reread_s_ip4, 3);
 	nm_setting_ip_config_remove_dns_search (reread_s_ip4, 2);
+
+	g_assert_cmpint (nm_setting_ip_config_get_route_metric (reread_s_ip4), ==, 204);
+	g_assert_cmpint (nm_setting_ip_config_get_route_metric (reread_s_ip6), ==, 206);
 
 	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
 	        "wired-static-write", "written and re-read connection weren't the same.");
