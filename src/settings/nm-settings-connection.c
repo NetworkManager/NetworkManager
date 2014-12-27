@@ -1071,7 +1071,6 @@ auth_start (NMSettingsConnection *self,
 
 	/* Ensure the caller can view this connection */
 	if (!nm_auth_is_subject_in_acl (NM_CONNECTION (self),
-	                                priv->session_monitor,
 	                                subject,
 	                                &error_desc)) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
@@ -1434,7 +1433,6 @@ impl_settings_connection_update_helper (NMSettingsConnection *self,
 	 * invisible to yourself.
 	 */
 	if (!nm_auth_is_subject_in_acl (tmp ? tmp : NM_CONNECTION (self),
-	                                priv->session_monitor,
 	                                subject,
 	                                &error_desc)) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,

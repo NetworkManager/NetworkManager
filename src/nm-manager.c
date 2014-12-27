@@ -1462,7 +1462,6 @@ device_auth_request_cb (NMDevice *device,
 
 	/* Ensure the subject has permissions for this connection */
 	if (connection && !nm_auth_is_subject_in_acl (connection,
-	                                              nm_session_monitor_get (),
 	                                              subject,
 	                                              &error_desc)) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
@@ -2666,7 +2665,6 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 		subject = nm_active_connection_get_subject (active);
 		if (existing_connection &&
 		    !nm_auth_is_subject_in_acl (existing_connection,
-			                            nm_session_monitor_get (),
 			                            subject,
 			                            &error_desc)) {
 			g_set_error (error,
@@ -2958,7 +2956,6 @@ nm_manager_activate_connection (NMManager *self,
 
 	/* Ensure the subject has permissions for this connection */
 	if (!nm_auth_is_subject_in_acl (connection,
-	                                nm_session_monitor_get (),
 	                                subject,
 	                                &error_desc)) {
 		g_set_error_literal (error,
@@ -3012,7 +3009,6 @@ validate_activation_request (NMManager *self,
 
 	/* Ensure the subject has permissions for this connection */
 	if (!nm_auth_is_subject_in_acl (connection,
-	                                nm_session_monitor_get (),
 	                                subject,
 	                                &error_desc)) {
 		g_set_error_literal (error,
@@ -3542,7 +3538,6 @@ impl_manager_deactivate_connection (NMManager *self,
 
 	/* Ensure the subject has permissions for this connection */
 	if (!nm_auth_is_subject_in_acl (connection,
-	                                nm_session_monitor_get (),
 	                                subject,
 	                                &error_desc)) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,

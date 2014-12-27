@@ -89,7 +89,6 @@ void nm_auth_chain_unref (NMAuthChain *chain);
 
 /* Caller must free returned error description */
 gboolean nm_auth_is_subject_in_acl (NMConnection *connection,
-                                    NMSessionMonitor *smon,
                                     NMAuthSubject *subect,
                                     char **out_error_desc);
 

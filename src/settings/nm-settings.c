@@ -306,7 +306,6 @@ impl_settings_get_connection_by_uuid (NMSettings *self,
 	}
 
 	if (!nm_auth_is_subject_in_acl (NM_CONNECTION (connection),
-	                                nm_session_monitor_get (),
 	                                subject,
 	                                &error_desc)) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
@@ -1183,7 +1182,6 @@ nm_settings_add_connection_dbus (NMSettings *self,
 	 * or that the permissions is empty (ie, visible by everyone).
 	 */
 	if (!nm_auth_is_subject_in_acl (connection,
-	                                nm_session_monitor_get (),
 	                                subject,
 	                                &error_desc)) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,

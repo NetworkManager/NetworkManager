@@ -697,7 +697,7 @@ connection_request_add_agent (Request *parent, NMSecretAgent *agent)
 	/* Ensure the caller's username exists in the connection's permissions,
 	 * or that the permissions is empty (ie, visible by everyone).
 	 */
-	if (!nm_auth_is_subject_in_acl (req->connection, nm_session_monitor_get (), subject, NULL)) {
+	if (!nm_auth_is_subject_in_acl (req->connection, subject, NULL)) {
 		nm_log_dbg (LOGD_AGENTS, "(%s) agent ignored for secrets request %p/%s (not in ACL)",
 		            nm_secret_agent_get_description (agent),
 		            parent, parent->detail);

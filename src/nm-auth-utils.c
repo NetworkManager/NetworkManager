@@ -419,7 +419,6 @@ nm_auth_chain_unref (NMAuthChain *self)
 
 gboolean
 nm_auth_is_subject_in_acl (NMConnection *connection,
-                           NMSessionMonitor *smon,
                            NMAuthSubject *subject,
                            char **out_error_desc)
 {
@@ -428,7 +427,6 @@ nm_auth_is_subject_in_acl (NMConnection *connection,
 	gulong uid;
 
 	g_return_val_if_fail (connection != NULL, FALSE);
-	g_return_val_if_fail (smon != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_AUTH_SUBJECT (subject), FALSE);
 	g_return_val_if_fail (nm_auth_subject_is_internal (subject) || nm_auth_subject_is_unix_process (subject), FALSE);
 
