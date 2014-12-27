@@ -211,7 +211,6 @@ main (int argc, char *argv[])
 	gs_unref_object NMFirewallManager *fw_mgr = NULL;
 	gs_unref_object NMSettings *settings = NULL;
 	gs_unref_object NMConfig *config = NULL;
-	gs_unref_object NMSessionMonitor *session_monitor = NULL;
 	GError *error = NULL;
 	gboolean wrote_pidfile = FALSE;
 	char *bad_domains = NULL;
@@ -439,10 +438,6 @@ main (int argc, char *argv[])
 	/* Initialize Firewall manager */
 	fw_mgr = nm_firewall_manager_get ();
 	g_assert (fw_mgr != NULL);
-
-	/* Initialize session monitor */
-	session_monitor = nm_session_monitor_get ();
-	g_assert (session_monitor != NULL);
 
 	if (!nm_dbus_manager_get_connection (dbus_mgr)) {
 #if HAVE_DBUS_GLIB_100
