@@ -285,14 +285,6 @@ impl_agent_manager_register_with_capabilities (NMAgentManager *self,
 	}
 	sender_uid = nm_auth_subject_get_unix_process_uid (subject);
 
-	if (   0 != sender_uid
-	    && !nm_session_monitor_session_exists (sender_uid, FALSE)) {
-		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
-		                             NM_AGENT_MANAGER_ERROR_PERMISSION_DENIED,
-		                             "Session not found");
-		goto done;
-	}
-
 	/* Validate the identifier */
 	if (!validate_identifier (identifier, &error))
 		goto done;
