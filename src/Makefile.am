@@ -411,6 +411,7 @@ AM_CPPFLAGS += \
 	-DDATADIR=\"$(datadir)\" \
 	-DLIBEXECDIR=\"$(libexecdir)\" \
 	-DLOCALSTATEDIR=\"$(localstatedir)\" \
+	-DRUNSTATEDIR=\"$(runstatedir)\" \
 	-DSBINDIR=\"$(sbindir)\" \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DRUNDIR=\"$(rundir)\" \
@@ -539,7 +540,7 @@ EXTRA_DIST = \
 	$(dbusservice_DATA) \
 	$(NetworkManager_DATA)
 
-rundir=$(localstatedir)/run/NetworkManager
+rundir=$(runstatedir)/NetworkManager
 statedir=$(localstatedir)/lib/NetworkManager
 install-data-hook:
 	$(mkinstalldirs) -m 0700 $(DESTDIR)$(rundir)
