@@ -128,15 +128,22 @@ typedef struct {
 static void
 connection_ifcfg_changed (NMIfcfgConnection *connection, gpointer user_data)
 {
-	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (user_data);
+	SCPluginIfcfg *self = SC_PLUGIN_IFCFG (user_data);
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
 	const char *path;
 
 	path = nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection));
 	g_return_if_fail (path != NULL);
 
-	_LOGD ("connection_ifcfg_changed("NM_IFCFG_CONNECTION_LOG_FMTD")", NM_IFCFG_CONNECTION_LOG_ARGD (connection));
 
-	update_connection (plugin, NULL, path, connection, TRUE, NULL, NULL);
+	if (!priv->ifcfg_monitor) {
+		_LOGD ("connection_ifcfg_changed("NM_IFCFG_CONNECTION_LOG_FMTD"): %s", NM_IFCFG_CONNECTION_LOG_ARGD (connection), "ignore event");
+		return;
+	}
+
+	_LOGD ("connection_ifcfg_changed("NM_IFCFG_CONNECTION_LOG_FMTD"): %s", NM_IFCFG_CONNECTION_LOG_ARGD (connection), "reload");
+
+	update_connection (self, NULL, path, connection, TRUE, NULL, NULL);
 }
 
 static void
