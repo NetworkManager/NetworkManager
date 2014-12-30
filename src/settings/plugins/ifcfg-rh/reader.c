@@ -263,8 +263,7 @@ read_ip4_address (shvarFile *ifcfg,
 	g_return_val_if_fail (ifcfg != NULL, FALSE);
 	g_return_val_if_fail (tag != NULL, FALSE);
 	g_return_val_if_fail (out_addr != NULL, FALSE);
-	if (error)
-		g_return_val_if_fail (*error == NULL, FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
 
 	*out_addr = NULL;
 
@@ -349,8 +348,7 @@ read_full_ip4_address (shvarFile *ifcfg,
 	g_return_val_if_fail (network_file != NULL, FALSE);
 	g_return_val_if_fail (out_address != NULL, FALSE);
 	g_return_val_if_fail (*out_address == NULL, FALSE);
-	if (error)
-		g_return_val_if_fail (*error == NULL, FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
 
 	ip_tag = get_numbered_tag ("IPADDR", which);
 	prefix_tag = get_numbered_tag ("PREFIX", which);
@@ -450,8 +448,7 @@ read_one_ip4_route (shvarFile *ifcfg,
 	g_return_val_if_fail (network_file != NULL, FALSE);
 	g_return_val_if_fail (out_route != NULL, FALSE);
 	g_return_val_if_fail (*out_route == NULL, FALSE);
-	if (error)
-		g_return_val_if_fail (*error == NULL, FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
 
 	ip_tag = g_strdup_printf ("ADDRESS%u", which);
 	netmask_tag = g_strdup_printf ("NETMASK%u", which);
@@ -549,8 +546,7 @@ read_route_file_legacy (const char *filename, NMSettingIPConfig *s_ip4, GError *
 
 	g_return_val_if_fail (filename != NULL, FALSE);
 	g_return_val_if_fail (s_ip4 != NULL, FALSE);
-	if (error)
-		g_return_val_if_fail (*error == NULL, FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
 
 	/* Read the route file */
 	if (!g_file_get_contents (filename, &contents, &len, NULL) || !len) {
@@ -692,8 +688,7 @@ parse_full_ip6_address (shvarFile *ifcfg,
 	g_return_val_if_fail (addr_str != NULL, FALSE);
 	g_return_val_if_fail (out_address != NULL, FALSE);
 	g_return_val_if_fail (*out_address == NULL, FALSE);
-	if (error)
-		g_return_val_if_fail (*error == NULL, FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
 
 	/* Split the address and prefix */
 	list = g_strsplit_set (addr_str, "/", 2);
@@ -758,8 +753,7 @@ read_route6_file (const char *filename, NMSettingIPConfig *s_ip6, GError **error
 
 	g_return_val_if_fail (filename != NULL, FALSE);
 	g_return_val_if_fail (s_ip6 != NULL, FALSE);
-	if (error)
-		g_return_val_if_fail (*error == NULL, FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
 
 	/* Read the route file */
 	if (!g_file_get_contents (filename, &contents, &len, NULL) || !len) {
