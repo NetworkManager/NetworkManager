@@ -59,6 +59,7 @@ MKHTML_OPTIONS=--path="$(abs_srcdir)"
 content_files = \
 	version.xml \
 	migrating-to-09.xml \
+	../../COPYING \
 	$(NULL)
 
 include $(top_srcdir)/gtk-doc.make
