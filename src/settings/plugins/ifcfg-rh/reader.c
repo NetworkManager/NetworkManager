@@ -3174,6 +3174,8 @@ make_wireless_security_setting (shvarFile *ifcfg,
 {
 	NMSetting *wsec;
 
+	g_return_val_if_fail (error && !*error, NULL);
+
 	if (!adhoc) {
 		wsec = make_leap_setting (ifcfg, file, error);
 		if (wsec)
@@ -3425,11 +3427,11 @@ wireless_connection_from_ifcfg (const char *file,
 	char *printable_ssid = NULL;
 	const char *mode;
 	gboolean adhoc = FALSE;
+	GError *local = NULL;
 
 	g_return_val_if_fail (file != NULL, NULL);
 	g_return_val_if_fail (ifcfg != NULL, NULL);
-	g_return_val_if_fail (error != NULL, NULL);
-	g_return_val_if_fail (*error == NULL, NULL);
+	g_return_val_if_fail (!error || !*error, NULL);
 
 	connection = nm_simple_connection_new ();
 
@@ -3453,10 +3455,11 @@ wireless_connection_from_ifcfg (const char *file,
 		adhoc = TRUE;
 
 	/* Wireless security */
-	security_setting = make_wireless_security_setting (ifcfg, file, ssid, adhoc, &s_8021x, error);
-	if (*error) {
+	security_setting = make_wireless_security_setting (ifcfg, file, ssid, adhoc, &s_8021x, &local);
+	if (local) {
 		g_free (printable_ssid);
 		g_object_unref (connection);
+		g_propagate_error (error, local);
 		return NULL;
 	}
 	if (security_setting) {
