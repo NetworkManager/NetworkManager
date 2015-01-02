@@ -95,7 +95,6 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
 	NMAgentManager *agent_mgr;
-	NMSessionMonitor *session_monitor;
 	guint session_changed_id;
 
 	NMSettingsConnectionFlags flags;
@@ -2177,11 +2176,7 @@ nm_settings_connection_init (NMSettingsConnection *self)
 
 	priv->visible = FALSE;
 
-	priv->session_monitor = nm_session_monitor_get ();
-	priv->session_changed_id = g_signal_connect (priv->session_monitor,
-	                                             NM_SESSION_MONITOR_CHANGED,
-	                                             G_CALLBACK (session_changed_cb),
-	                                             self);
+	priv->session_changed_id = nm_session_monitor_connect (session_changed_cb, self);
 
 	priv->agent_mgr = nm_agent_manager_get ();
 
@@ -2232,7 +2227,7 @@ dispose (GObject *object)
 	set_visible (self, FALSE);
 
 	if (priv->session_changed_id) {
-		g_signal_handler_disconnect (priv->session_monitor, priv->session_changed_id);
+		nm_session_monitor_disconnect (priv->session_changed_id);
 		priv->session_changed_id = 0;
 	}
 	g_clear_object (&priv->agent_mgr);

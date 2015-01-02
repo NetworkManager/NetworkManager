@@ -23,6 +23,36 @@
 #include "nm-session-monitor.h"
 
 /**
+ * nm_session_monitor_connect:
+ * @callback: The callback.
+ * @user_data: User data for the callback.
+ *
+ * Connect a callback to the session monitor.
+ *
+ * Returns: Handler ID to be used with nm_session_monitor_disconnect().
+ */
+gulong
+nm_session_monitor_connect (NMSessionCallback callback, gpointer user_data)
+{
+	return g_signal_connect (nm_session_monitor_get (),
+                             NM_SESSION_MONITOR_CHANGED,
+                             G_CALLBACK (callback),
+                             user_data);
+}
+
+/**
+ * nm_session_monitor_disconnect:
+ * @handler_id: Handler ID returned by nm_session_monitor-connect().
+ *
+ * Disconnect callback from the session handler.
+ */
+void
+nm_session_monitor_disconnect (gulong handler_id)
+{
+	g_signal_handler_disconnect (nm_session_monitor_get (), handler_id);
+}
+
+/**
  * nm_session_monitor_uid_to_user:
  * @uid: UID.
  * @out_user: Return location for user name.
