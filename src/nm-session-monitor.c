@@ -65,3 +65,25 @@ nm_session_monitor_user_to_uid (const char *user, uid_t *out_uid)
 
 	return TRUE;
 }
+
+/**
+ * nm_session_monitor_session_exists:
+ * @uid: A user ID.
+ * @active: Ignore inactive sessions.
+ *
+ * Checks whether the given @uid is logged into an active session. Don't
+ * use this feature for security purposes. It is there just to allow you
+ * to prefer an agent from an active session over an agent from an
+ * inactive one.
+ *
+ * Returns: %FALSE if @error is set otherwise %TRUE if the given @uid is
+ * logged into an active session.
+ */
+gboolean
+nm_session_monitor_session_exists (uid_t uid, gboolean active)
+{
+	if (active)
+		return nm_session_monitor_uid_active (nm_session_monitor_get (), uid, NULL);
+	else
+		return nm_session_monitor_uid_has_session (nm_session_monitor_get (), uid, NULL, NULL);
+}

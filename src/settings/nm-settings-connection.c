@@ -262,14 +262,18 @@ nm_settings_connection_recheck_visibility (NMSettingsConnection *self)
 	}
 
 	for (i = 0; i < num; i++) {
-		const char *puser;
+		const char *user;
+		uid_t uid;
 
-		if (nm_setting_connection_get_permission (s_con, i, NULL, &puser, NULL)) {
-			if (nm_session_monitor_user_has_session (priv->session_monitor, puser, NULL, NULL)) {
-				set_visible (self, TRUE);
-				return;
-			}
-		}
+		if (!nm_setting_connection_get_permission (s_con, i, NULL, &user, NULL))
+			continue;
+		if (!nm_session_monitor_user_to_uid (user, &uid))
+			continue;
+		if (!nm_session_monitor_session_exists (uid, FALSE))
+			continue;
+
+		set_visible (self, TRUE);
+		return;
 	}
 
 	set_visible (self, FALSE);

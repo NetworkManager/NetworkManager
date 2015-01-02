@@ -43,6 +43,7 @@ NMSessionMonitor *nm_session_monitor_get          (void);
 
 gboolean          nm_session_monitor_uid_to_user    (uid_t uid, const char **out_user);
 gboolean          nm_session_monitor_user_to_uid    (const char *user, uid_t *out_uid);
+gboolean          nm_session_monitor_session_exists (uid_t uid, gboolean active);
 
 gboolean          nm_session_monitor_user_has_session (NMSessionMonitor *monitor,
                                                        const char *username,
