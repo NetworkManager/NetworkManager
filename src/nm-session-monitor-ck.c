@@ -126,7 +126,7 @@ session_new (GKeyFile *keyfile, const char *group, GError **error)
 		goto error;
 
 	if (!nm_session_uid_to_user (s->uid, &uname, error))
-		return FALSE;
+		goto error;
 	s->user = g_strdup (uname);
 
 	return s;
