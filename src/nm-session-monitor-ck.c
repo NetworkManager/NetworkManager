@@ -26,7 +26,6 @@
 #include <gio/gio.h>
 #include "nm-logging.h"
 
-#include "nm-session-utils.h"
 #include "nm-session-monitor.h"
 #include "nm-errors.h"
 
@@ -125,8 +124,14 @@ session_new (GKeyFile *keyfile, const char *group, GError **error)
 	if (local)
 		goto error;
 
-	if (!nm_session_uid_to_user (s->uid, &uname, error))
+	if (!nm_session_monitor_uid_to_user (s->uid, &uname)) {
+		g_set_error (error,
+                     NM_MANAGER_ERROR,
+                     NM_MANAGER_ERROR_FAILED,
+                     "Could not get username for UID %d",
+                     s->uid);
 		goto error;
+	}
 	s->user = g_strdup (uname);
 
 	return s;

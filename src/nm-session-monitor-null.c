@@ -23,7 +23,6 @@
 #include <string.h>
 #include "nm-logging.h"
 
-#include "nm-session-utils.h"
 #include "nm-session-monitor.h"
 
 /* <internal>

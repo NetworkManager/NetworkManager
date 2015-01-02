@@ -30,7 +30,6 @@
 #include <systemd/sd-login.h>
 #include <stdlib.h>
 
-#include "nm-session-utils.h"
 #include "nm-session-monitor.h"
 #include "nm-logging.h"
 

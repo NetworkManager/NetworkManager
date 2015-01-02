@@ -13,58 +13,55 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2012 Red Hat, Inc.
+ * (C) Copyright 2008 - 2015 Red Hat, Inc.
  * Author: Dan Williams <dcbw@redhat.com>
+ * Author: Pavel Šimerda <psimerda@redhat.com>
  */
-
-#include "config.h"
-
 #include <pwd.h>
 #include <sys/types.h>
 
-#include "nm-session-utils.h"
-#include "nm-errors.h"
+#include "nm-session-monitor.h"
 
-/********************************************************************/
-
+/**
+ * nm_session_monitor_uid_to_user:
+ * @uid: UID.
+ * @out_user: Return location for user name.
+ *
+ * Translates a UID to a user name.
+ */
 gboolean
-nm_session_uid_to_user (uid_t uid, const char **out_user, GError **error)
+nm_session_monitor_uid_to_user (uid_t uid, const char **out_user)
 {
-	struct passwd *pw;
+	struct passwd *pw = getpwuid (uid);
 
-	pw = getpwuid (uid);
-	if (!pw) {
-		g_set_error (error,
-			         NM_MANAGER_ERROR,
-			         NM_MANAGER_ERROR_FAILED,
-			         "Could not get username for UID %d",
-			         uid);
+	g_assert (out_user);
+
+	if (!pw)
 		return FALSE;
-	}
 
-	if (out_user)
-		*out_user = pw->pw_name;
+	*out_user = pw->pw_name;
+
 	return TRUE;
 }
 
+/**
+ * nm_session_monitor_user_to_uid:
+ * @user: User naee.
+ * @out_uid: Return location for UID.
+ *
+ * Translates a user name to a UID.
+ */
 gboolean
-nm_session_user_to_uid (const char *user, uid_t *out_uid, GError **error)
+nm_session_monitor_user_to_uid (const char *user, uid_t *out_uid)
 {
-	struct passwd *pw;
+	struct passwd *pw = getpwnam (user);
 
-	pw = getpwnam (user);
-	if (!pw) {
-		g_set_error (error,
-			         NM_MANAGER_ERROR,
-			         NM_MANAGER_ERROR_FAILED,
-			         "Could not get UID for username '%s'",
-			         user);
+	g_assert (out_uid);
+
+	if (!pw)
 		return FALSE;
-	}
 
-	/* Ugly, but hey, use ConsoleKit */
-	if (out_uid)
-		*out_uid = pw->pw_uid;
+	*out_uid = pw->pw_uid;
+
 	return TRUE;
 }
-

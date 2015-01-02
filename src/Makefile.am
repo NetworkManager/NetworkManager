@@ -327,8 +327,7 @@ nm_sources = \
 	nm-rfkill-manager.c \
 	nm-rfkill-manager.h \
 	nm-session-monitor.h \
-	nm-session-utils.c \
-	nm-session-utils.h \
+	nm-session-monitor.c \
 	nm-sleep-monitor.h \
 	nm-types.h \
 	NetworkManagerUtils.c \
