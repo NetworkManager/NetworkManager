@@ -439,13 +439,6 @@ nm_auth_is_subject_in_acl (NMConnection *connection,
 	if (0 == uid)
 		return TRUE;
 
-	/* Reject the request if the request comes from no session at all */
-	if (!nm_session_monitor_session_exists (uid, FALSE)) {
-		if (out_error_desc)
-			*out_error_desc = g_strdup_printf ("No session found for uid %lu", uid);
-		return FALSE;
-	}
-
 	if (!nm_session_monitor_uid_to_user (uid, &user)) {
 		if (out_error_desc)
 			*out_error_desc = g_strdup_printf ("Could not determine username for uid %lu", uid);
