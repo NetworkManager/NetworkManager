@@ -67,6 +67,7 @@
 #include "nm-dns-manager.h"
 #include "nm-core-internal.h"
 #include "nm-default-route-manager.h"
+#include "nm-route-manager.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF (NMDevice);
@@ -7758,7 +7759,7 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, gboolean deconfig
 	/* Take out any entries in the routing table and any IP address the device had. */
 	ifindex = nm_device_get_ip_ifindex (self);
 	if (ifindex > 0) {
-		nm_platform_route_flush (NM_PLATFORM_GET, ifindex);
+		nm_route_manager_route_flush (nm_route_manager_get (), ifindex);
 		nm_platform_address_flush (NM_PLATFORM_GET, ifindex);
 	}
 

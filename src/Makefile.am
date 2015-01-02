@@ -300,6 +300,8 @@ nm_sources = \
 	nm-dbus-manager.h \
 	nm-dcb.c \
 	nm-dcb.h \
+	nm-route-manager.c \
+	nm-route-manager.h \
 	nm-default-route-manager.c \
 	nm-default-route-manager.h \
 	nm-dhcp4-config.c \
@@ -497,6 +499,9 @@ libnm_iface_helper_la_SOURCES = \
 	rdisc/nm-lndp-rdisc.h \
 	rdisc/nm-rdisc.c \
 	rdisc/nm-rdisc.h \
+	\
+	nm-route-manager.c \
+	nm-route-manager.h \
 	\
 	nm-ip4-config.c \
 	nm-ip4-config.h \

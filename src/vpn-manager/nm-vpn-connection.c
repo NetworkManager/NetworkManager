@@ -44,6 +44,7 @@
 #include "nm-agent-manager.h"
 #include "nm-core-internal.h"
 #include "nm-default-route-manager.h"
+#include "nm-route-manager.h"
 
 #include "nm-vpn-connection-glue.h"
 
@@ -233,7 +234,7 @@ vpn_cleanup (NMVpnConnection *connection, NMDevice *parent_dev)
 
 	if (priv->ip_ifindex) {
 		nm_platform_link_set_down (NM_PLATFORM_GET, priv->ip_ifindex);
-		nm_platform_route_flush (NM_PLATFORM_GET, priv->ip_ifindex);
+		nm_route_manager_route_flush (nm_route_manager_get (), priv->ip_ifindex);
 		nm_platform_address_flush (NM_PLATFORM_GET, priv->ip_ifindex);
 	}
 

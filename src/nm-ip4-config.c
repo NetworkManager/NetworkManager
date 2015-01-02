@@ -33,6 +33,7 @@
 #include "nm-ip4-config-glue.h"
 #include "NetworkManagerUtils.h"
 #include "nm-core-internal.h"
+#include "nm-route-manager.h"
 
 G_DEFINE_TYPE (NMIP4Config, nm_ip4_config, G_TYPE_OBJECT)
 
@@ -282,7 +283,7 @@ nm_ip4_config_commit (const NMIP4Config *config, int ifindex, guint32 default_ro
 			g_array_append_vals (routes, route, 1);
 		}
 
-		success = nm_platform_ip4_route_sync (NM_PLATFORM_GET, ifindex, routes);
+		success = nm_route_manager_ip4_route_sync (nm_route_manager_get (), ifindex, routes);
 		g_array_unref (routes);
 		if (!success)
 			return FALSE;

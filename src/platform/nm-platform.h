@@ -713,9 +713,6 @@ gboolean nm_platform_ip4_route_delete (NMPlatform *self, int ifindex, in_addr_t 
 gboolean nm_platform_ip6_route_delete (NMPlatform *self, int ifindex, struct in6_addr network, int plen, guint32 metric);
 gboolean nm_platform_ip4_route_exists (NMPlatform *self, int ifindex, in_addr_t network, int plen, guint32 metric);
 gboolean nm_platform_ip6_route_exists (NMPlatform *self, int ifindex, struct in6_addr network, int plen, guint32 metric);
-gboolean nm_platform_ip4_route_sync (NMPlatform *self, int ifindex, const GArray *known_routes);
-gboolean nm_platform_ip6_route_sync (NMPlatform *self, int ifindex, const GArray *known_routes);
-gboolean nm_platform_route_flush (NMPlatform *self, int ifindex);
 
 const char *nm_platform_link_to_string (const NMPlatformLink *link);
 const char *nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address);
