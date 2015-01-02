@@ -4830,13 +4830,18 @@ connection_from_file (const char *filename,
 {
 	gboolean ignore_error = FALSE;
 	NMConnection *conn;
+	GError *local = NULL;
 
 	conn = connection_from_file_full (filename, NULL, NULL,
 	                                  out_unhandled,
-	                                  error,
+	                                  &local,
 	                                  &ignore_error);
-	if (error && *error && !ignore_error)
-		PARSE_WARNING ("%s", (*error)->message);
+	if (local) {
+		if (!ignore_error)
+			PARSE_WARNING ("%s", local->message);
+		g_propagate_error (error, local);
+	}
+
 	return conn;
 }
 
