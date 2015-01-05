@@ -50,7 +50,7 @@ typedef struct {
 
 G_DEFINE_TYPE (NMDefaultRouteManager, nm_default_route_manager, G_TYPE_OBJECT)
 
-static NMDefaultRouteManager *_instance;
+static NMDefaultRouteManager *singleton_instance;
 
 #define _LOG(level, addr_family, ...) \
     G_STMT_START { \
@@ -61,7 +61,7 @@ static NMDefaultRouteManager *_instance;
             char __ch = __addr_family == AF_INET ? '4' : (__addr_family == AF_INET6 ? '6' : '-'); \
             char __prefix[30] = "default-route"; \
             \
-            if ((self) != _instance) \
+            if ((self) != singleton_instance) \
                 g_snprintf (__prefix, sizeof (__prefix), "default-route%c[%p]", __ch, (self)); \
             else \
                 __prefix[STRLEN ("default-route")] = __ch; \
@@ -1157,11 +1157,11 @@ static const VTableIP vtable_ip6 = {
 NMDefaultRouteManager *
 nm_default_route_manager_get ()
 {
-	if (G_UNLIKELY (!_instance)) {
-		_instance = NM_DEFAULT_ROUTE_MANAGER (g_object_new (NM_TYPE_DEFAULT_ROUTE_MANAGER, NULL));
-		g_object_add_weak_pointer (G_OBJECT (_instance), (gpointer *) &_instance);
+	if (G_UNLIKELY (!singleton_instance)) {
+		singleton_instance = NM_DEFAULT_ROUTE_MANAGER (g_object_new (NM_TYPE_DEFAULT_ROUTE_MANAGER, NULL));
+		g_object_add_weak_pointer (G_OBJECT (singleton_instance), (gpointer *) &singleton_instance);
 	}
-	return _instance;
+	return singleton_instance;
 }
 
 /***********************************************************************************/

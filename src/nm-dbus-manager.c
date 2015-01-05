@@ -81,17 +81,17 @@ static void object_destroyed (NMDBusManager *self, gpointer object);
 NMDBusManager *
 nm_dbus_manager_get (void)
 {
-	static NMDBusManager *singleton = NULL;
+	static NMDBusManager *singleton_instance = NULL;
 	static gsize once = 0;
 
 	if (g_once_init_enter (&once)) {
-		singleton = (NMDBusManager *) g_object_new (NM_TYPE_DBUS_MANAGER, NULL);
-		g_assert (singleton);
-		if (!nm_dbus_manager_init_bus (singleton))
-			start_reconnection_timeout (singleton);
+		singleton_instance = (NMDBusManager *) g_object_new (NM_TYPE_DBUS_MANAGER, NULL);
+		g_assert (singleton_instance);
+		if (!nm_dbus_manager_init_bus (singleton_instance))
+			start_reconnection_timeout (singleton_instance);
 		g_once_init_leave (&once, 1);
 	}
-	return singleton;
+	return singleton_instance;
 }
 
 /**************************************************************/

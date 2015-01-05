@@ -148,20 +148,20 @@ init_inotify (NMInotifyHelper *self)
 NMInotifyHelper *
 nm_inotify_helper_get (void)
 {
-	static NMInotifyHelper *singleton = NULL;
+	static NMInotifyHelper *singleton_instance = NULL;
 
-	if (!singleton) {
-		singleton = (NMInotifyHelper *) g_object_new (NM_TYPE_INOTIFY_HELPER, NULL);
+	if (!singleton_instance) {
+		singleton_instance = (NMInotifyHelper *) g_object_new (NM_TYPE_INOTIFY_HELPER, NULL);
 
-		if (!init_inotify (singleton)) {
-			g_clear_object (&singleton);
+		if (!init_inotify (singleton_instance)) {
+			g_clear_object (&singleton_instance);
 			return NULL;
 		}
 	} else
-		g_object_ref (singleton);
+		g_object_ref (singleton_instance);
 
-	g_assert (singleton);
-	return singleton;
+	g_assert (singleton_instance);
+	return singleton_instance;
 }
 
 static void
