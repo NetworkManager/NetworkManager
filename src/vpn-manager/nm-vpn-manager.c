@@ -200,19 +200,7 @@ vpn_dir_changed (GFileMonitor *monitor,
 
 /******************************************************************************/
 
-NMVpnManager *
-nm_vpn_manager_get (void)
-{
-	static NMVpnManager *singleton = NULL;
-
-	if (!singleton)
-		singleton = NM_VPN_MANAGER (g_object_new (NM_TYPE_VPN_MANAGER, NULL));
-	else
-		g_object_ref (singleton);
-
-	g_assert (singleton);
-	return singleton;
-}
+NM_DEFINE_SINGLETON_GETTER (NMVpnManager, nm_vpn_manager_get, NM_TYPE_VPN_MANAGER);
 
 static void
 nm_vpn_manager_init (NMVpnManager *self)

@@ -50,7 +50,6 @@
 #include "nm-supplicant-manager.h"
 #include "nm-dhcp-manager.h"
 #include "nm-firewall-manager.h"
-#include "nm-vpn-manager.h"
 #include "nm-logging.h"
 #include "nm-config.h"
 #include "nm-posix-signals.h"
@@ -202,7 +201,6 @@ main (int argc, char *argv[])
 	gboolean wifi_enabled = TRUE, net_enabled = TRUE, wwan_enabled = TRUE, wimax_enabled = TRUE;
 	gboolean success, show_version = FALSE;
 	NMManager *manager = NULL;
-	gs_unref_object NMVpnManager *vpn_manager = NULL;
 	gs_unref_object NMDBusManager *dbus_mgr = NULL;
 	gs_unref_object NMSupplicantManager *sup_mgr = NULL;
 	gs_unref_object NMFirewallManager *fw_mgr = NULL;
@@ -395,9 +393,6 @@ main (int argc, char *argv[])
 	/* Initialize our DBus service & connection */
 	dbus_mgr = nm_dbus_manager_get ();
 	g_assert (dbus_mgr != NULL);
-
-	vpn_manager = nm_vpn_manager_get ();
-	g_assert (vpn_manager != NULL);
 
 	nm_dispatcher_init ();
 
