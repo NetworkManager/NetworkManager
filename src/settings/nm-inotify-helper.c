@@ -24,6 +24,7 @@
 #include <string.h>
 #include <sys/inotify.h>
 #include <glib.h>
+#include <errno.h>
 
 #include "nm-inotify-helper.h"
 #include "nm-logging.h"
@@ -55,9 +56,10 @@ nm_inotify_helper_add_watch (NMInotifyHelper *self, const char *path)
 {
 	NMInotifyHelperPrivate *priv = NM_INOTIFY_HELPER_GET_PRIVATE (self);
 	int wd;
-	guint32 refcount;
+	guint refcount;
 
-	g_return_val_if_fail (priv->ifd >= 0, -1);
+	if (priv->ifd < 0)
+		return -1;
 
 	/* We only care about modifications since we're just trying to get change
 	 * notifications on hardlinks.
@@ -78,9 +80,10 @@ void
 nm_inotify_helper_remove_watch (NMInotifyHelper *self, int wd)
 {
 	NMInotifyHelperPrivate *priv = NM_INOTIFY_HELPER_GET_PRIVATE (self);
-	guint32 refcount;
+	guint refcount;
 
-	g_return_if_fail (priv->ifd >= 0);
+	if (priv->ifd < 0)
+		return;
 
 	refcount = GPOINTER_TO_UINT (g_hash_table_lookup (priv->wd_refs, GINT_TO_POINTER (wd)));
 	if (!refcount)
@@ -128,7 +131,9 @@ init_inotify (NMInotifyHelper *self)
 
 	priv->ifd = inotify_init ();
 	if (priv->ifd == -1) {
-		nm_log_warn (LOGD_SETTINGS, "couldn't initialize inotify");
+		int errsv = errno;
+
+		nm_log_warn (LOGD_SETTINGS, "couldn't initialize inotify: %s (%d)", strerror (errsv), errsv);
 		return FALSE;
 	}
 
@@ -145,24 +150,7 @@ init_inotify (NMInotifyHelper *self)
 	return TRUE;
 }
 
-NMInotifyHelper *
-nm_inotify_helper_get (void)
-{
-	static NMInotifyHelper *singleton_instance = NULL;
-
-	if (!singleton_instance) {
-		singleton_instance = (NMInotifyHelper *) g_object_new (NM_TYPE_INOTIFY_HELPER, NULL);
-
-		if (!init_inotify (singleton_instance)) {
-			g_clear_object (&singleton_instance);
-			return NULL;
-		}
-	} else
-		g_object_ref (singleton_instance);
-
-	g_assert (singleton_instance);
-	return singleton_instance;
-}
+NM_DEFINE_SINGLETON_GETTER (NMInotifyHelper, nm_inotify_helper_get, NM_TYPE_INOTIFY_HELPER);
 
 static void
 nm_inotify_helper_init (NMInotifyHelper *self)
@@ -170,6 +158,14 @@ nm_inotify_helper_init (NMInotifyHelper *self)
 	NMInotifyHelperPrivate *priv = NM_INOTIFY_HELPER_GET_PRIVATE (self);
 
 	priv->wd_refs = g_hash_table_new (g_direct_hash, g_direct_equal);
+}
+
+static void
+constructed (GObject *object)
+{
+	G_OBJECT_CLASS (nm_inotify_helper_parent_class)->constructed (object);
+
+	init_inotify (NM_INOTIFY_HELPER (object));
 }
 
 static void
@@ -193,6 +189,7 @@ nm_inotify_helper_class_init (NMInotifyHelperClass *klass)
 	g_type_class_add_private (klass, sizeof (NMInotifyHelperPrivate));
 
 	/* Virtual methods */
+	object_class->constructed = constructed;
 	object_class->finalize = finalize;
 
 	/* Signals */
