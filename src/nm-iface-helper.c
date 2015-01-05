@@ -277,7 +277,6 @@ main (int argc, char *argv[])
 	gboolean show_version = FALSE, slaac = FALSE;
 	char *bad_domains = NULL, *dhcp4_hostname = NULL, *uuid = NULL;
 	char *iid_str = NULL, *dhcp4_clientid = NULL, *dhcp4_address = NULL;
-	gs_unref_object NMDhcpManager *dhcp_mgr = NULL;
 	GError *error = NULL;
 	gboolean wrote_pidfile = FALSE;
 	gs_free char *pidfile = NULL;
@@ -430,11 +429,7 @@ main (int argc, char *argv[])
 	if (dhcp4_address) {
 		nm_platform_sysctl_set (nm_utils_ip4_property_path (ifname, "promote_secondaries"), "1");
 
-		/* Initialize DHCP manager */
-		dhcp_mgr = nm_dhcp_manager_get ();
-		g_assert (dhcp_mgr != NULL);
-
-		dhcp4_client = nm_dhcp_manager_start_ip4 (dhcp_mgr,
+		dhcp4_client = nm_dhcp_manager_start_ip4 (nm_dhcp_manager_get (),
 		                                          ifname,
 		                                          ifindex,
 		                                          hwaddr,

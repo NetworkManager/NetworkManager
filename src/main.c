@@ -205,7 +205,6 @@ main (int argc, char *argv[])
 	gs_unref_object NMVpnManager *vpn_manager = NULL;
 	gs_unref_object NMDBusManager *dbus_mgr = NULL;
 	gs_unref_object NMSupplicantManager *sup_mgr = NULL;
-	gs_unref_object NMDhcpManager *dhcp_mgr = NULL;
 	gs_unref_object NMFirewallManager *fw_mgr = NULL;
 	gs_unref_object NMSettings *settings = NULL;
 	gs_unref_object NMConfig *config = NULL;
@@ -399,10 +398,6 @@ main (int argc, char *argv[])
 
 	vpn_manager = nm_vpn_manager_get ();
 	g_assert (vpn_manager != NULL);
-
-	/* Initialize DHCP manager */
-	dhcp_mgr = nm_dhcp_manager_get ();
-	g_assert (dhcp_mgr != NULL);
 
 	nm_dispatcher_init ();
 
