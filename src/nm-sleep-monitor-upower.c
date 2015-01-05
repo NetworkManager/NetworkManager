@@ -133,16 +133,6 @@ nm_sleep_monitor_class_init (NMSleepMonitorClass *klass)
                                           G_TYPE_NONE, 0);
 }
 
-NMSleepMonitor *
-nm_sleep_monitor_get (void)
-{
-        static NMSleepMonitor *singleton = NULL;
-
-        if (singleton)
-                return g_object_ref (singleton);
-
-        singleton = NM_SLEEP_MONITOR (g_object_new (NM_TYPE_SLEEP_MONITOR, NULL));
-        return singleton;
-}
+NM_DEFINE_SINGLETON_GETTER (NMSleepMonitor, nm_sleep_monitor_get, NM_TYPE_SLEEP_MONITOR);
 
 /* ---------------------------------------------------------------------------------------------------- */

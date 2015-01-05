@@ -4908,10 +4908,10 @@ nm_manager_init (NMManager *manager)
 		nm_log_warn (LOGD_AUTOIP4, "could not initialize avahi-autoipd D-Bus proxy");
 
 	/* sleep/wake handling */
-	priv->sleep_monitor = nm_sleep_monitor_get ();
-	g_signal_connect (priv->sleep_monitor, "sleeping",
+	priv->sleep_monitor = g_object_ref (nm_sleep_monitor_get ());
+	g_signal_connect (priv->sleep_monitor, NM_SLEEP_MONITOR_SLEEPING,
 	                  G_CALLBACK (sleeping_cb), manager);
-	g_signal_connect (priv->sleep_monitor, "resuming",
+	g_signal_connect (priv->sleep_monitor, NM_SLEEP_MONITOR_RESUMING,
 	                  G_CALLBACK (resuming_cb), manager);
 
 	/* Listen for authorization changes */
@@ -5142,7 +5142,11 @@ dispose (GObject *object)
 	}
 
 	g_clear_object (&priv->aipd_proxy);
-	g_clear_object (&priv->sleep_monitor);
+	if (priv->sleep_monitor) {
+		g_signal_handlers_disconnect_by_func (priv->sleep_monitor, sleeping_cb, manager);
+		g_signal_handlers_disconnect_by_func (priv->sleep_monitor, resuming_cb, manager);
+		g_clear_object (&priv->sleep_monitor);
+	}
 
 	if (priv->fw_monitor) {
 		g_signal_handlers_disconnect_by_func (priv->fw_monitor, firmware_dir_changed, manager);
