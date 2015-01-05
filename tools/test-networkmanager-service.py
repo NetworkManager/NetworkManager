@@ -356,11 +356,7 @@ class WifiDevice(Device):
     @dbus.service.method(dbus_interface=IFACE_WIFI, in_signature='', out_signature='ao')
     def GetAccessPoints(self):
         # only include non-hidden APs
-        array = []
-        for a in self.aps:
-            if a.ssid():
-                array.append(a)
-        return to_path_array(array)
+        return to_path_array([a for a in self.aps if a.ssid])
 
     @dbus.service.method(dbus_interface=IFACE_WIFI, in_signature='', out_signature='ao')
     def GetAllAccessPoints(self):
