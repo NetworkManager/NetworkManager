@@ -46,7 +46,6 @@
 #include "main-utils.h"
 #include "nm-manager.h"
 #include "nm-linux-platform.h"
-#include "nm-dns-manager.h"
 #include "nm-dbus-manager.h"
 #include "nm-supplicant-manager.h"
 #include "nm-dhcp-manager.h"
@@ -294,7 +293,6 @@ main (int argc, char *argv[])
 	gboolean success = FALSE;
 	NMManager *manager = NULL;
 	gs_unref_object NMVpnManager *vpn_manager = NULL;
-	gs_unref_object NMDnsManager *dns_mgr = NULL;
 	gs_unref_object NMSupplicantManager *sup_mgr = NULL;
 	gs_unref_object NMDhcpManager *dhcp_mgr = NULL;
 	gs_unref_object NMFirewallManager *fw_mgr = NULL;
@@ -485,9 +483,6 @@ main (int argc, char *argv[])
 
 	vpn_manager = nm_vpn_manager_get ();
 	g_assert (vpn_manager != NULL);
-
-	dns_mgr = nm_dns_manager_get ();
-	g_assert (dns_mgr != NULL);
 
 	/* Initialize DHCP manager */
 	dhcp_mgr = nm_dhcp_manager_get ();
