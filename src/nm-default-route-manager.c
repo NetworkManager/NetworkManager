@@ -60,7 +60,7 @@ typedef struct {
 
 G_DEFINE_TYPE (NMDefaultRouteManager, nm_default_route_manager, G_TYPE_OBJECT)
 
-static NMDefaultRouteManager *singleton_instance;
+NM_DEFINE_SINGLETON_GETTER (NMDefaultRouteManager, nm_default_route_manager_get, NM_TYPE_DEFAULT_ROUTE_MANAGER);
 
 #define _LOG(level, addr_family, ...) \
     G_STMT_START { \
@@ -1170,18 +1170,6 @@ static const VTableIP vtable_ip6 = {
 	.vt                             = &nm_platform_vtable_route_v6,
 	.get_entries                    = _v6_get_entries,
 };
-
-/***********************************************************************************/
-
-NMDefaultRouteManager *
-nm_default_route_manager_get ()
-{
-	if (G_UNLIKELY (!singleton_instance)) {
-		singleton_instance = NM_DEFAULT_ROUTE_MANAGER (g_object_new (NM_TYPE_DEFAULT_ROUTE_MANAGER, NULL));
-		g_object_add_weak_pointer (G_OBJECT (singleton_instance), (gpointer *) &singleton_instance);
-	}
-	return singleton_instance;
-}
 
 /***********************************************************************************/
 

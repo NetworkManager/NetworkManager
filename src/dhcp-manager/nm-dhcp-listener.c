@@ -194,16 +194,7 @@ dis_connection_cb (NMDBusManager *mgr,
 
 /***************************************************/
 
-NMDhcpListener *
-nm_dhcp_listener_get (void)
-{
-	static NMDhcpListener *singleton = NULL;
-
-	if (G_UNLIKELY (singleton == NULL))
-		singleton = g_object_new (NM_TYPE_DHCP_LISTENER, NULL);
-	g_assert (singleton);
-	return singleton;
-}
+NM_DEFINE_SINGLETON_GETTER (NMDhcpListener, nm_dhcp_listener_get, NM_TYPE_DHCP_LISTENER);
 
 static void
 nm_dhcp_listener_init (NMDhcpListener *self)
