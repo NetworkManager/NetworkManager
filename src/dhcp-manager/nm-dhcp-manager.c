@@ -373,16 +373,7 @@ nm_dhcp_manager_get_lease_ip_configs (NMDhcpManager *self,
 
 /***************************************************/
 
-NMDhcpManager *
-nm_dhcp_manager_get (void)
-{
-	static NMDhcpManager *singleton = NULL;
-
-	if (G_UNLIKELY (singleton == NULL))
-		singleton = g_object_new (NM_TYPE_DHCP_MANAGER, NULL);
-	g_assert (singleton);
-	return singleton;
-}
+NM_DEFINE_SINGLETON_GETTER (NMDhcpManager, nm_dhcp_manager_get, NM_TYPE_DHCP_MANAGER);
 
 static void
 nm_dhcp_manager_init (NMDhcpManager *self)
