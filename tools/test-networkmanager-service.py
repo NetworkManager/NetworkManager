@@ -312,7 +312,7 @@ class WifiAp(ExportedObj):
         props[PP_FLAGS] = dbus.UInt32(self.flags)
         props[PP_WPA_FLAGS] = dbus.UInt32(self.wpaf)
         props[PP_RSN_FLAGS] = dbus.UInt32(self.rsnf)
-        props[PP_SSID] = dbus.ByteArray(self.ssid)
+        props[PP_SSID] = dbus.ByteArray(self.ssid.encode('utf-8'))
         props[PP_FREQUENCY] = dbus.UInt32(self.freq)
         props[PP_HW_ADDRESS] = self.bssid
         props[PP_MODE] = dbus.UInt32(2)  # NM_802_11_MODE_INFRA
