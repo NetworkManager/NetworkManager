@@ -511,6 +511,8 @@ connection_inited (GObject *source, GAsyncResult *result, gpointer user_data)
 	priv->init_left--;
 	if (priv->init_left == 0)
 		g_signal_emit (self, signals[CONNECTIONS_READ], 0);
+
+	g_object_unref (self);
 }
 
 static NMRemoteConnection *
@@ -533,7 +535,7 @@ new_connection_cb (DBusGProxy *proxy, const char *path, gpointer user_data)
 	if (connection) {
 		g_async_initable_init_async (G_ASYNC_INITABLE (connection),
 		                             G_PRIORITY_DEFAULT, NULL,
-		                             connection_inited, self);
+		                             connection_inited, g_object_ref (self));
 
 		/* Add the connection to the pending table to wait for it to retrieve
 		 * it's settings asynchronously over D-Bus.  The connection isn't
