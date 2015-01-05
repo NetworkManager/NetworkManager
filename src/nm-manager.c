@@ -4880,7 +4880,7 @@ nm_manager_init (NMManager *manager)
 	                  G_CALLBACK (dbus_connection_changed_cb),
 	                  manager);
 
-	priv->vpn_manager = nm_vpn_manager_get ();
+	priv->vpn_manager = g_object_ref (nm_vpn_manager_get ());
 
 	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
 
