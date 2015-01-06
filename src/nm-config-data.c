@@ -22,6 +22,9 @@
 #include "nm-config-data.h"
 
 typedef struct {
+	char *config_main_file;
+	char *config_description;
+
 	struct {
 		char *uri;
 		char *response;
@@ -32,6 +35,8 @@ typedef struct {
 
 enum {
 	PROP_0,
+	PROP_CONFIG_MAIN_FILE,
+	PROP_CONFIG_DESCRIPTION,
 	PROP_CONNECTIVITY_URI,
 	PROP_CONNECTIVITY_INTERVAL,
 	PROP_CONNECTIVITY_RESPONSE,
@@ -44,6 +49,22 @@ G_DEFINE_TYPE (NMConfigData, nm_config_data, G_TYPE_OBJECT)
 #define NM_CONFIG_DATA_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_CONFIG_DATA, NMConfigDataPrivate))
 
 /************************************************************************/
+
+const char *
+nm_config_data_get_config_main_file (const NMConfigData *self)
+{
+	g_return_val_if_fail (self, NULL);
+
+	return NM_CONFIG_DATA_GET_PRIVATE (self)->config_main_file;
+}
+
+const char *
+nm_config_data_get_config_description (const NMConfigData *self)
+{
+	g_return_val_if_fail (self, NULL);
+
+	return NM_CONFIG_DATA_GET_PRIVATE (self)->config_description;
+}
 
 const char *
 nm_config_data_get_connectivity_uri (const NMConfigData *self)
@@ -81,6 +102,12 @@ get_property (GObject *object,
 	NMConfigData *self = NM_CONFIG_DATA (object);
 
 	switch (prop_id) {
+	case PROP_CONFIG_MAIN_FILE:
+		g_value_set_string (value, nm_config_data_get_config_main_file (self));
+		break;
+	case PROP_CONFIG_DESCRIPTION:
+		g_value_set_string (value, nm_config_data_get_config_description (self));
+		break;
 	case PROP_CONNECTIVITY_URI:
 		g_value_set_string (value, nm_config_data_get_connectivity_uri (self));
 		break;
@@ -107,6 +134,12 @@ set_property (GObject *object,
 
 	/* This type is immutable. All properties are construct only. */
 	switch (prop_id) {
+	case PROP_CONFIG_MAIN_FILE:
+		priv->config_main_file = g_value_dup_string (value);
+		break;
+	case PROP_CONFIG_DESCRIPTION:
+		priv->config_description = g_value_dup_string (value);
+		break;
 	case PROP_CONNECTIVITY_URI:
 		priv->connectivity.uri = g_value_dup_string (value);
 		break;
@@ -132,6 +165,9 @@ finalize (GObject *gobject)
 {
 	NMConfigDataPrivate *priv = NM_CONFIG_DATA_GET_PRIVATE (gobject);
 
+	g_free (priv->config_main_file);
+	g_free (priv->config_description);
+
 	g_free (priv->connectivity.uri);
 	g_free (priv->connectivity.response);
 
@@ -144,7 +180,9 @@ nm_config_data_init (NMConfigData *self)
 }
 
 NMConfigData *
-nm_config_data_new (GKeyFile *keyfile)
+nm_config_data_new (const char *config_main_file,
+                    const char *config_description,
+                    GKeyFile *keyfile)
 {
 	char *connectivity_uri, *connectivity_response;
 	guint connectivity_interval;
@@ -155,6 +193,8 @@ nm_config_data_new (GKeyFile *keyfile)
 	connectivity_response = g_key_file_get_value (keyfile, "connectivity", "response", NULL);
 
 	config_data = g_object_new (NM_TYPE_CONFIG_DATA,
+	                            NM_CONFIG_DATA_CONFIG_MAIN_FILE, config_main_file,
+	                            NM_CONFIG_DATA_CONFIG_DESCRIPTION, config_description,
 	                            NM_CONFIG_DATA_CONNECTIVITY_URI, connectivity_uri,
 	                            NM_CONFIG_DATA_CONNECTIVITY_INTERVAL, connectivity_interval,
 	                            NM_CONFIG_DATA_CONNECTIVITY_RESPONSE, connectivity_response,
@@ -176,6 +216,22 @@ nm_config_data_class_init (NMConfigDataClass *config_class)
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
+
+	g_object_class_install_property
+	    (object_class, PROP_CONFIG_MAIN_FILE,
+	     g_param_spec_string (NM_CONFIG_DATA_CONFIG_MAIN_FILE, "", "",
+	                          NULL,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property
+	    (object_class, PROP_CONFIG_DESCRIPTION,
+	     g_param_spec_string (NM_CONFIG_DATA_CONFIG_DESCRIPTION, "", "",
+	                          NULL,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 	    (object_class, PROP_CONNECTIVITY_URI,
