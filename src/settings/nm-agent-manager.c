@@ -50,9 +50,8 @@ G_DEFINE_TYPE (NMAgentManager, nm_agent_manager, G_TYPE_OBJECT)
                                          NMAgentManagerPrivate))
 
 typedef struct {
-	gboolean disposed;
-
 	NMDBusManager *dbus_mgr;
+	NMAuthManager *auth_mgr;
 
 	/* Auth chains for checking agent permissions */
 	GSList *chains;
@@ -1559,35 +1558,7 @@ authority_changed_cb (NMAuthManager *auth_manager, NMAgentManager *self)
 
 /*************************************************************/
 
-NMAgentManager *
-nm_agent_manager_get (void)
-{
-	static NMAgentManager *singleton = NULL;
-	NMAgentManagerPrivate *priv;
-
-	if (singleton)
-		return g_object_ref (singleton);
-
-	singleton = (NMAgentManager *) g_object_new (NM_TYPE_AGENT_MANAGER, NULL);
-	g_assert (singleton);
-
-	priv = NM_AGENT_MANAGER_GET_PRIVATE (singleton);
-	priv->dbus_mgr = nm_dbus_manager_get ();
-
-	nm_dbus_manager_register_object (priv->dbus_mgr, NM_DBUS_PATH_AGENT_MANAGER, singleton);
-
-	g_signal_connect (priv->dbus_mgr,
-	                  NM_DBUS_MANAGER_NAME_OWNER_CHANGED,
-	                  G_CALLBACK (name_owner_changed_cb),
-	                  singleton);
-
-	g_signal_connect (nm_auth_manager_get (),
-	                  NM_AUTH_MANAGER_SIGNAL_CHANGED,
-	                  G_CALLBACK (authority_changed_cb),
-	                  singleton);
-
-	return singleton;
-}
+NM_DEFINE_SINGLETON_GETTER (NMAgentManager, nm_agent_manager_get, NM_TYPE_AGENT_MANAGER);
 
 static void
 nm_agent_manager_init (NMAgentManager *self)
@@ -1602,23 +1573,57 @@ nm_agent_manager_init (NMAgentManager *self)
 }
 
 static void
+constructed (GObject *object)
+{
+	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (object);
+
+	G_OBJECT_CLASS (nm_agent_manager_parent_class)->constructed (object);
+
+	priv->dbus_mgr = g_object_ref (nm_dbus_manager_get ());
+	priv->auth_mgr = g_object_ref (nm_auth_manager_get ());
+
+	nm_dbus_manager_register_object (priv->dbus_mgr, NM_DBUS_PATH_AGENT_MANAGER, object);
+
+	g_signal_connect (priv->dbus_mgr,
+	                  NM_DBUS_MANAGER_NAME_OWNER_CHANGED,
+	                  G_CALLBACK (name_owner_changed_cb),
+	                  object);
+
+	g_signal_connect (priv->auth_mgr,
+	                  NM_AUTH_MANAGER_SIGNAL_CHANGED,
+	                  G_CALLBACK (authority_changed_cb),
+	                  object);
+}
+
+static void
 dispose (GObject *object)
 {
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (object);
 
-	if (!priv->disposed) {
-		priv->disposed = TRUE;
+	g_slist_free_full (priv->chains, (GDestroyNotify) nm_auth_chain_unref);
+	priv->chains = NULL;
 
-		g_signal_handlers_disconnect_by_func (nm_auth_manager_get (),
+	if (priv->agents) {
+		g_hash_table_destroy (priv->agents);
+		priv->agents = NULL;
+	}
+	if (priv->requests) {
+		g_hash_table_destroy (priv->requests);
+		priv->requests = NULL;
+	}
+
+	if (priv->auth_mgr) {
+		g_signal_handlers_disconnect_by_func (priv->auth_mgr,
 		                                      G_CALLBACK (authority_changed_cb),
 		                                      object);
-
-		g_slist_free_full (priv->chains, (GDestroyNotify) nm_auth_chain_unref);
-
-		g_hash_table_destroy (priv->agents);
-		g_hash_table_destroy (priv->requests);
-
-		priv->dbus_mgr = NULL;
+		g_clear_object (&priv->auth_mgr);
+	}
+	if (priv->dbus_mgr) {
+		g_signal_handlers_disconnect_by_func (priv->dbus_mgr,
+		                                      G_CALLBACK (name_owner_changed_cb),
+		                                      object);
+		nm_dbus_manager_unregister_object (priv->dbus_mgr, object);
+		g_clear_object (&priv->dbus_mgr);
 	}
 
 	G_OBJECT_CLASS (nm_agent_manager_parent_class)->dispose (object);
@@ -1632,6 +1637,7 @@ nm_agent_manager_class_init (NMAgentManagerClass *agent_manager_class)
 	g_type_class_add_private (agent_manager_class, sizeof (NMAgentManagerPrivate));
 
 	/* virtual methods */
+	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 
 	/* Signals */

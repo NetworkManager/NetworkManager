@@ -1663,7 +1663,6 @@ static void
 really_activate (NMVpnConnection *connection, const char *username)
 {
 	NMVpnConnectionPrivate *priv;
-	NMAgentManager *agent_mgr;
 	GHashTable *details;
 
 	g_return_if_fail (NM_IS_VPN_CONNECTION (connection));
@@ -1702,8 +1701,7 @@ really_activate (NMVpnConnection *connection, const char *username)
 	 * dialog and we won't get the secrets we need.  In this case fall back to
 	 * the old Connect() call.
 	 */
-	agent_mgr = nm_agent_manager_get ();
-	if (nm_agent_manager_all_agents_have_capability (agent_mgr,
+	if (nm_agent_manager_all_agents_have_capability (nm_agent_manager_get (),
 	                                                 nm_active_connection_get_subject (NM_ACTIVE_CONNECTION (connection)),
 	                                                 NM_SECRET_AGENT_CAPABILITY_VPN_HINTS)) {
 		nm_log_dbg (LOGD_VPN, "Allowing interactive secrets as all agents have that capability");
@@ -1719,7 +1717,6 @@ really_activate (NMVpnConnection *connection, const char *username)
 		                         DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, priv->connect_hash,
 		                         G_TYPE_INVALID);
 	}
-	g_object_unref (agent_mgr);
 	g_hash_table_destroy (details);
 
 	_set_vpn_state (connection, STATE_CONNECT, NM_VPN_CONNECTION_STATE_REASON_NONE, FALSE);
