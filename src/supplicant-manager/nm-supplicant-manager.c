@@ -301,19 +301,7 @@ name_owner_changed (NMDBusManager *dbus_mgr,
 
 /*******************************************************************/
 
-NMSupplicantManager *
-nm_supplicant_manager_get (void)
-{
-	static NMSupplicantManager *singleton = NULL;
-
-	if (!singleton)
-		singleton = NM_SUPPLICANT_MANAGER (g_object_new (NM_TYPE_SUPPLICANT_MANAGER, NULL));
-	else
-		g_object_ref (singleton);
-
-	g_assert (singleton);
-	return singleton;
-}
+NM_DEFINE_SINGLETON_GETTER (NMSupplicantManager, nm_supplicant_manager_get, NM_TYPE_SUPPLICANT_MANAGER);
 
 static void
 nm_supplicant_manager_init (NMSupplicantManager *self)
