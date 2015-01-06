@@ -260,6 +260,8 @@ test-*.trs
 /src/tests/test-ip4-config
 /src/tests/test-ip6-config
 /src/tests/test-resolvconf-capture
+/src/tests/test-route-manager-fake
+/src/tests/test-route-manager-linux
 /src/tests/test-wired-defname
 
 /vapi/*.vapi
