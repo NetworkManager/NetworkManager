@@ -387,7 +387,7 @@ main (int argc, char *argv[])
 	nm_log_info (LOGD_CORE, "NetworkManager (version " NM_DIST_VERSION ") is starting...");
 	success = FALSE;
 
-	nm_log_info (LOGD_CORE, "Read config: %s", nm_config_get_config_description (config));
+	nm_log_info (LOGD_CORE, "Read config: %s", nm_config_data_get_config_description (nm_config_get_data (config)));
 	nm_log_info (LOGD_CORE, "WEXT support is %s",
 #if HAVE_WEXT
 	             "enabled"
