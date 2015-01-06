@@ -49,7 +49,6 @@
 #include "nm-dbus-manager.h"
 #include "nm-supplicant-manager.h"
 #include "nm-dhcp-manager.h"
-#include "nm-firewall-manager.h"
 #include "nm-logging.h"
 #include "nm-config.h"
 #include "nm-session-monitor.h"
@@ -292,7 +291,6 @@ main (int argc, char *argv[])
 	gboolean success = FALSE;
 	NMManager *manager = NULL;
 	gs_unref_object NMSupplicantManager *sup_mgr = NULL;
-	gs_unref_object NMFirewallManager *fw_mgr = NULL;
 	gs_unref_object NMSettings *settings = NULL;
 	gs_unref_object NMConfig *config = NULL;
 	gs_unref_object NMSessionMonitor *session_monitor = NULL;
@@ -497,10 +495,6 @@ main (int argc, char *argv[])
 	/* Initialize the supplicant manager */
 	sup_mgr = nm_supplicant_manager_get ();
 	g_assert (sup_mgr != NULL);
-
-	/* Initialize Firewall manager */
-	fw_mgr = nm_firewall_manager_get ();
-	g_assert (fw_mgr != NULL);
 
 	/* Initialize session monitor */
 	session_monitor = nm_session_monitor_get ();
