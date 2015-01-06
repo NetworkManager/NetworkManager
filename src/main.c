@@ -200,7 +200,6 @@ main (int argc, char *argv[])
 	gboolean wifi_enabled = TRUE, net_enabled = TRUE, wwan_enabled = TRUE, wimax_enabled = TRUE;
 	gboolean success, show_version = FALSE;
 	NMManager *manager = NULL;
-	gs_unref_object NMDBusManager *dbus_mgr = NULL;
 	gs_unref_object NMSettings *settings = NULL;
 	gs_unref_object NMConfig *config = NULL;
 	GError *error = NULL;
@@ -387,10 +386,6 @@ main (int argc, char *argv[])
 
 	nm_auth_manager_setup (nm_config_get_auth_polkit (config));
 
-	/* Initialize our DBus service & connection */
-	dbus_mgr = nm_dbus_manager_get ();
-	g_assert (dbus_mgr != NULL);
-
 	nm_dispatcher_init ();
 
 	settings = nm_settings_new (&error);
@@ -413,7 +408,7 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
-	if (!nm_dbus_manager_get_connection (dbus_mgr)) {
+	if (!nm_dbus_manager_get_connection (nm_dbus_manager_get ())) {
 #if HAVE_DBUS_GLIB_100
 		nm_log_warn (LOGD_CORE, "Failed to connect to D-Bus; only private bus is available");
 #else
@@ -422,7 +417,7 @@ main (int argc, char *argv[])
 #endif
 	} else {
 		/* Start our DBus service */
-		if (!nm_dbus_manager_start_service (dbus_mgr)) {
+		if (!nm_dbus_manager_start_service (nm_dbus_manager_get ())) {
 			nm_log_err (LOGD_CORE, "failed to start the dbus service.");
 			goto done;
 		}
