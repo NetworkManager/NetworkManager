@@ -27,6 +27,7 @@
 #include <sys/stat.h>
 #include <gio/gio.h>
 
+#include "nm-glib-compat.h"
 #include "nm-session-monitor.h"
 #include "nm-logging.h"
 
