@@ -1186,12 +1186,21 @@ ip6_route_get (NMPlatform *platform, int ifindex, struct in6_addr network, int p
 static gboolean
 ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen, guint32 metric)
 {
-	NMPlatformIP4Route *route = ip4_route_get (platform, ifindex, network, plen, metric);
-	NMPlatformIP4Route deleted_route;
+	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
+	int i;
 
-	if (route) {
+	for (i = 0; i < priv->ip4_routes->len; i++) {
+		NMPlatformIP4Route *route = &g_array_index (priv->ip4_routes, NMPlatformIP4Route, i);
+		NMPlatformIP4Route deleted_route;
+
+		if (   route->ifindex != ifindex
+		    || route->network != network
+		    || route->plen != plen
+		    || route->metric != metric)
+			continue;
+
 		memcpy (&deleted_route, route, sizeof (deleted_route));
-		memset (route, 0, sizeof (*route));
+		g_array_remove_index (priv->ip4_routes, i);
 		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, ifindex, &deleted_route, NM_PLATFORM_SIGNAL_REMOVED, NM_PLATFORM_REASON_INTERNAL);
 	}
 
@@ -1201,12 +1210,21 @@ ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen
 static gboolean
 ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, int plen, guint32 metric)
 {
-	NMPlatformIP6Route *route = ip6_route_get (platform, ifindex, network, plen, metric);
-	NMPlatformIP6Route deleted_route;
+	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
+	int i;
 
-	if (route) {
+	for (i = 0; i < priv->ip6_routes->len; i++) {
+		NMPlatformIP6Route *route = &g_array_index (priv->ip6_routes, NMPlatformIP6Route, i);
+		NMPlatformIP6Route deleted_route;
+
+		if (   route->ifindex != ifindex
+		    || !IN6_ARE_ADDR_EQUAL (&route->network, &network)
+		    || route->plen != plen
+		    || route->metric != metric)
+			continue;
+
 		memcpy (&deleted_route, route, sizeof (deleted_route));
-		memset (route, 0, sizeof (*route));
+		g_array_remove_index (priv->ip6_routes, i);
 		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, ifindex, &deleted_route, NM_PLATFORM_SIGNAL_REMOVED, NM_PLATFORM_REASON_INTERNAL);
 	}
 
