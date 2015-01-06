@@ -219,8 +219,7 @@ constructor (GType type,
 		_LOGI (LOGD_HW | LOGD_WIFI, "driver supports Access Point (AP) mode");
 
 	/* Connect to the supplicant manager */
-	priv->sup_mgr = nm_supplicant_manager_get ();
-	g_assert (priv->sup_mgr);
+	priv->sup_mgr = g_object_ref (nm_supplicant_manager_get ());
 
 	return object;
 }

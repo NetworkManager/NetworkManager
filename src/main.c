@@ -47,7 +47,7 @@
 #include "nm-manager.h"
 #include "nm-linux-platform.h"
 #include "nm-dbus-manager.h"
-#include "nm-supplicant-manager.h"
+#include "nm-device.h"
 #include "nm-dhcp-manager.h"
 #include "nm-logging.h"
 #include "nm-config.h"
@@ -290,7 +290,6 @@ main (int argc, char *argv[])
 	gboolean wifi_enabled = TRUE, net_enabled = TRUE, wwan_enabled = TRUE, wimax_enabled = TRUE;
 	gboolean success = FALSE;
 	NMManager *manager = NULL;
-	gs_unref_object NMSupplicantManager *sup_mgr = NULL;
 	gs_unref_object NMSettings *settings = NULL;
 	gs_unref_object NMConfig *config = NULL;
 	gs_unref_object NMSessionMonitor *session_monitor = NULL;
@@ -491,10 +490,6 @@ main (int argc, char *argv[])
 	                          wifi_enabled,
 	                          wwan_enabled,
 	                          wimax_enabled);
-
-	/* Initialize the supplicant manager */
-	sup_mgr = nm_supplicant_manager_get ();
-	g_assert (sup_mgr != NULL);
 
 	/* Initialize session monitor */
 	session_monitor = nm_session_monitor_get ();

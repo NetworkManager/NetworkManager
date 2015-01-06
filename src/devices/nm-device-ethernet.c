@@ -883,7 +883,7 @@ nm_8021x_stage2_config (NMDeviceEthernet *self, NMDeviceStateReason *reason)
 	}
 
 	if (!priv->supplicant.mgr)
-		priv->supplicant.mgr = nm_supplicant_manager_get ();
+		priv->supplicant.mgr = g_object_ref (nm_supplicant_manager_get ());
 
 	/* If we need secrets, get them */
 	setting_name = nm_connection_need_secrets (connection, NULL);
