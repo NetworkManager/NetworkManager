@@ -339,26 +339,28 @@ AC_ARG_WITH(consolekit, AS_HELP_STRING([--with-consolekit=yes|no],
 	[Support consolekit session tracking]))
 AC_ARG_WITH(session-tracking, AS_HELP_STRING([--with-session-tracking=systemd|consolekit|no],
 	[Compatibility option to choose one session tracking module]))
-# defaults
-AS_IF([test -z "$with_systemd_logind"], [with_systemd_logind="yes"])
-AS_IF([test -z "$with_consolekit"], [with_consolekit="yes"])
 # backwards compatibility
-AS_IF([test "$with_session_tracking" = "ck"], [with_consolekit="yes" with_systemd_logind="no"])
-AS_IF([test "$with_session_tracking" = "consolekit"], [with_consolekit="yes" with_systemd_logind="no"])
-AS_IF([test "$with_session_tracking" = "systemd"], [with_consolekit="no" with_systemd_logind="yes"])
-AS_IF([test "$with_session_tracking" = "no"], [with_consolekit="no" with_systemd_logind="no"])
-AS_IF([test "$with_session_tracking" = "none"], [with_consolekit="no" with_systemd_logind="no"])
-unset with_session_tracking
+AS_IF([test "$with_session_tracking" = "ck"], [use_consolekit="yes" use_systemd_logind="no"])
+AS_IF([test "$with_session_tracking" = "consolekit"], [use_consolekit="yes" use_systemd_logind="no"])
+AS_IF([test "$with_session_tracking" = "systemd"], [use_consolekit="no" use_systemd_logind="yes"])
+AS_IF([test "$with_session_tracking" = "no"], [use_consolekit="no" use_systemd_logind="no"])
+AS_IF([test "$with_session_tracking" = "none"], [use_consolekit="no" use_systemd_logind="no"])
+# current options
+AS_IF([test -n "$with_systemd_logind" ], [use_systemd_logind="$with_systemd_logind"])
+AS_IF([test -n "$with_consolekit" ], [use_consolekit="$with_consolekit"])
+# defaults
+AS_IF([test -z "$use_systemd_logind"], [use_systemd_logind="yes"])
+AS_IF([test -z "$use_consolekit"], [use_consolekit="yes"])
 # output
 session_tracking=
-if test "$with_systemd_logind" = "yes"; then
+if test "$use_systemd_logind" = "yes"; then
 	PKG_CHECK_MODULES(SYSTEMD_LOGIN, [libsystemd-login])
 	AC_SUBST(SYSTEMD_LOGIN_CFLAGS)
 	AC_SUBST(SYSTEMD_LOGIN_LIBS)
 	AC_DEFINE([SESSION_TRACKING_SYSTEMD], 1, [Define to 1 if libsystemd-login is available])
 	session_tracking="$session_tracking, systemd-logind"
 fi
-if test "$with_consolekit" = "yes"; then
+if test "$use_consolekit" = "yes"; then
 	AC_DEFINE([SESSION_TRACKING_CONSOLEKIT], 1, [Define to 1 if ConsoleKit is available])
 	AC_DEFINE([CKDB_PATH], "/var/run/ConsoleKit/database", [Path to ConsoleKit database])
 	session_tracking="$session_tracking, consolekit"
