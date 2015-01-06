@@ -207,7 +207,6 @@ main (int argc, char *argv[])
 	NMManager *manager = NULL;
 	gs_unref_object NMVpnManager *vpn_manager = NULL;
 	gs_unref_object NMDnsManager *dns_mgr = NULL;
-	gs_unref_object NMDBusManager *dbus_mgr = NULL;
 	gs_unref_object NMSupplicantManager *sup_mgr = NULL;
 	gs_unref_object NMDhcpManager *dhcp_mgr = NULL;
 	gs_unref_object NMFirewallManager *fw_mgr = NULL;
@@ -397,10 +396,6 @@ main (int argc, char *argv[])
 
 	nm_auth_manager_setup (nm_config_get_auth_polkit (config));
 
-	/* Initialize our DBus service & connection */
-	dbus_mgr = nm_dbus_manager_get ();
-	g_assert (dbus_mgr != NULL);
-
 	vpn_manager = nm_vpn_manager_get ();
 	g_assert (vpn_manager != NULL);
 
@@ -445,7 +440,7 @@ main (int argc, char *argv[])
 	session_monitor = nm_session_monitor_get ();
 	g_assert (session_monitor != NULL);
 
-	if (!nm_dbus_manager_get_connection (dbus_mgr)) {
+	if (!nm_dbus_manager_get_connection (nm_dbus_manager_get ())) {
 #if HAVE_DBUS_GLIB_100
 		nm_log_warn (LOGD_CORE, "Failed to connect to D-Bus; only private bus is available");
 #else
@@ -454,7 +449,7 @@ main (int argc, char *argv[])
 #endif
 	} else {
 		/* Start our DBus service */
-		if (!nm_dbus_manager_start_service (dbus_mgr)) {
+		if (!nm_dbus_manager_start_service (nm_dbus_manager_get ())) {
 			nm_log_err (LOGD_CORE, "failed to start the dbus service.");
 			goto done;
 		}
