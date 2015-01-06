@@ -76,7 +76,8 @@ typedef struct {
 #endif
 } NMAuthManagerPrivate;
 
-static NMAuthManager *singleton_instance = NULL;
+NM_DEFINE_SINGLETON_DESTRUCTOR (NMAuthManager);
+NM_DEFINE_SINGLETON_WEAK_REF (NMAuthManager);
 
 G_DEFINE_TYPE (NMAuthManager, nm_auth_manager, G_TYPE_OBJECT)
 
@@ -502,7 +503,10 @@ nm_auth_manager_setup (gboolean polkit_enabled)
 	                     NULL);
 	_LOGD ("set instance");
 
-	return (singleton_instance = self);
+	singleton_instance = self;
+	nm_singleton_instance_weak_ref_register ();
+
+	return self;
 }
 
 /*****************************************************************************/
@@ -610,19 +614,6 @@ dispose (GObject *object)
 }
 
 static void
-finalize (GObject *object)
-{
-	NMAuthManager* self = NM_AUTH_MANAGER (object);
-
-	G_OBJECT_CLASS (nm_auth_manager_parent_class)->finalize (object);
-
-	if (self == singleton_instance) {
-		singleton_instance = NULL;
-		_LOGD ("unset instance");
-	}
-}
-
-static void
 nm_auth_manager_class_init (NMAuthManagerClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
@@ -633,7 +624,6 @@ nm_auth_manager_class_init (NMAuthManagerClass *klass)
 	object_class->set_property = set_property;
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
-	object_class->finalize = finalize;
 
 	g_object_class_install_property
 	    (object_class, PROP_POLKIT_ENABLED,
