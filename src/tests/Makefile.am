@@ -20,6 +20,8 @@ noinst_PROGRAMS = \
 	test-general-with-expect \
 	test-ip4-config \
 	test-ip6-config \
+	test-route-manager-linux \
+	test-route-manager-fake \
 	test-dcb \
 	test-resolvconf-capture \
 	test-wired-defname
@@ -38,6 +40,34 @@ test_ip6_config_SOURCES = \
 	test-ip6-config.c
 
 test_ip6_config_LDADD = \
+	$(top_builddir)/src/libNetworkManager.la
+
+####### route manager test #######
+
+test_route_manager_fake_CPPFLAGS = \
+	$(AM_CPPFLAGS) \
+	-I$(top_builddir)/src/platform/tests \
+	-DSETUP=nm_fake_platform_setup \
+	-DKERNEL_HACKS=0
+
+test_route_manager_fake_SOURCES = \
+	../platform/tests/test-common.c \
+	test-route-manager.c
+
+test_route_manager_fake_LDADD = \
+	$(top_builddir)/src/libNetworkManager.la
+
+test_route_manager_linux_SOURCES = \
+	../platform/tests/test-common.c \
+	test-route-manager.c
+
+test_route_manager_linux_CPPFLAGS = \
+	$(AM_CPPFLAGS) \
+	-I$(top_builddir)/src/platform/tests \
+	-DSETUP=nm_linux_platform_setup \
+	-DKERNEL_HACKS=1
+
+test_route_manager_linux_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la
 
 ####### DCB test #######
@@ -90,6 +120,8 @@ EXTRA_DIST = test-secret-agent.py
 TESTS = \
 	test-ip4-config \
 	test-ip6-config \
+	test-route-manager-fake \
+	test-route-manager-linux \
 	test-dcb \
 	test-resolvconf-capture \
 	test-general \
