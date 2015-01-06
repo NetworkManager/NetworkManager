@@ -337,18 +337,7 @@ name_owner_changed (NMDBusManager *dbus_mgr,
 
 /*******************************************************************/
 
-NMFirewallManager *
-nm_firewall_manager_get (void)
-{
-	static NMFirewallManager *singleton = NULL;
-
-	if (G_UNLIKELY (!singleton)) {
-		singleton = NM_FIREWALL_MANAGER (g_object_new (NM_TYPE_FIREWALL_MANAGER, NULL));
-		g_assert (singleton);
-	}
-
-	return singleton;
-}
+NM_DEFINE_SINGLETON_GETTER (NMFirewallManager, nm_firewall_manager_get, NM_TYPE_FIREWALL_MANAGER);
 
 static void
 nm_firewall_manager_init (NMFirewallManager * self)
