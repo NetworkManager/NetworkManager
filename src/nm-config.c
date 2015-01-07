@@ -248,27 +248,22 @@ nm_config_get_ignore_carrier (NMConfig *config, NMDevice *device)
 
 /************************************************************************/
 
-static void
-merge_no_auto_default_state (NMConfig *config)
+static char **
+no_auto_default_merge_from_file (const char *no_auto_default_file, const char *const* no_auto_default)
 {
-	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (config);
 	GPtrArray *updated;
 	char **list;
 	int i, j;
 	char *data;
 
-	/* If the config already matches everything, we don't need to do anything else. */
-	if (priv->no_auto_default && !g_strcmp0 (priv->no_auto_default[0], "*"))
-		return;
-
 	updated = g_ptr_array_new ();
-	if (priv->no_auto_default) {
-		for (i = 0; priv->no_auto_default[i]; i++)
-			g_ptr_array_add (updated, priv->no_auto_default[i]);
-		g_free (priv->no_auto_default);
+	if (no_auto_default) {
+		for (i = 0; no_auto_default[i]; i++)
+			g_ptr_array_add (updated, g_strdup (no_auto_default[i]));
 	}
 
-	if (g_file_get_contents (priv->no_auto_default_file, &data, NULL, NULL)) {
+	if (   no_auto_default_file
+	    && g_file_get_contents (no_auto_default_file, &data, NULL, NULL)) {
 		list = g_strsplit (data, "\n", -1);
 		for (i = 0; list[i]; i++) {
 			if (!*list[i]) {
@@ -289,7 +284,7 @@ merge_no_auto_default_state (NMConfig *config)
 	}
 
 	g_ptr_array_add (updated, NULL);
-	priv->no_auto_default = (char **) g_ptr_array_free (updated, FALSE);
+	return (char **) g_ptr_array_free (updated, FALSE);
 }
 
 gboolean
@@ -316,6 +311,7 @@ nm_config_set_ethernet_no_auto_default (NMConfig *config, NMDevice *device)
 	char *current;
 	GString *updated;
 	GError *error = NULL;
+	char **no_auto_default;
 
 	if (!nm_config_get_ethernet_can_auto_default (config, device))
 		return;
@@ -339,7 +335,9 @@ nm_config_set_ethernet_no_auto_default (NMConfig *config, NMDevice *device)
 
 	g_string_free (updated, TRUE);
 
-	merge_no_auto_default_state (config);
+	no_auto_default = no_auto_default_merge_from_file (priv->no_auto_default_file, (const char *const *) priv->no_auto_default);
+	g_strfreev (priv->no_auto_default);
+	priv->no_auto_default = no_auto_default;
 }
 
 /************************************************************************/
@@ -828,8 +826,7 @@ nm_config_new (const NMConfigCmdLineOptions *cli, GError **error)
 
 	priv->config_data = g_object_ref (priv->config_data_orig);
 
-	priv->no_auto_default = g_strdupv (priv->no_auto_default_orig);
-	merge_no_auto_default_state (self);
+	priv->no_auto_default = no_auto_default_merge_from_file (priv->no_auto_default_file, (const char *const *) priv->no_auto_default_orig);
 
 	g_free (config_main_file);
 	g_free (config_description);
