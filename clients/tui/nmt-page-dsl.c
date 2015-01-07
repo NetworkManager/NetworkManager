@@ -136,6 +136,8 @@ nmt_page_dsl_class_init (NmtPageDslClass *dsl_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (dsl_class);
 
+	g_type_class_add_private (object_class, sizeof (NmtPageDslPrivate));
+
 	object_class->constructed = nmt_page_dsl_constructed;
 	object_class->finalize = nmt_page_dsl_finalize;
 }
