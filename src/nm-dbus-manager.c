@@ -480,7 +480,7 @@ private_server_setup (NMDBusManager *self)
 		return;
 
 	/* Set up our main private DBus socket */
-	if (mkdir (NMRUNDIR, 0700) == -1) {
+	if (mkdir (NMRUNDIR, 0755) == -1) {
 		if (errno != EEXIST)
 			nm_log_warn (LOGD_CORE, "Error creating directory \"%s\": %d (%s)", NMRUNDIR, errno, g_strerror (errno));
 	}
