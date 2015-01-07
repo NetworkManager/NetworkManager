@@ -37,6 +37,11 @@ typedef struct {
 		char *response;
 		guint interval;
 	} connectivity;
+
+	struct {
+		char **arr;
+		GSList *specs;
+	} no_auto_default;
 } NMConfigDataPrivate;
 
 
@@ -48,6 +53,7 @@ enum {
 	PROP_CONNECTIVITY_URI,
 	PROP_CONNECTIVITY_INTERVAL,
 	PROP_CONNECTIVITY_RESPONSE,
+	PROP_NO_AUTO_DEFAULT,
 
 	LAST_PROP
 };
@@ -106,6 +112,21 @@ nm_config_data_get_connectivity_response (const NMConfigData *self)
 	return NM_CONFIG_DATA_GET_PRIVATE (self)->connectivity.response;
 }
 
+const char *const*
+nm_config_data_get_no_auto_default (const NMConfigData *self)
+{
+	g_return_val_if_fail (self, FALSE);
+
+	return (const char *const*) NM_CONFIG_DATA_GET_PRIVATE (self)->no_auto_default.arr;
+}
+
+const GSList *
+nm_config_data_get_no_auto_default_list (const NMConfigData *self)
+{
+	g_return_val_if_fail (self, NULL);
+
+	return NM_CONFIG_DATA_GET_PRIVATE (self)->no_auto_default.specs;
+}
 
 /************************************************************************/
 
@@ -141,6 +162,7 @@ nm_config_data_diff (NMConfigData *old_data, NMConfigData *new_data)
 {
 	GHashTable *changes;
 	NMConfigDataPrivate *priv_old, *priv_new;
+	GSList *spec_old, *spec_new;
 
 	g_return_val_if_fail (NM_IS_CONFIG_DATA (old_data), NULL);
 	g_return_val_if_fail (NM_IS_CONFIG_DATA (new_data), NULL);
@@ -162,6 +184,15 @@ nm_config_data_diff (NMConfigData *old_data, NMConfigData *new_data)
 	    || g_strcmp0 (nm_config_data_get_connectivity_uri (old_data), nm_config_data_get_connectivity_uri (new_data))
 	    || g_strcmp0 (nm_config_data_get_connectivity_response (old_data), nm_config_data_get_connectivity_response (new_data)))
 		g_hash_table_insert (changes, NM_CONFIG_CHANGES_CONNECTIVITY, NULL);
+
+	spec_old = priv_old->no_auto_default.specs;
+	spec_new = priv_new->no_auto_default.specs;
+	while (spec_old && spec_new && strcmp (spec_old->data, spec_new->data) == 0) {
+		spec_old = spec_old->next;
+		spec_new = spec_new->next;
+	}
+	if (spec_old || spec_new)
+		g_hash_table_insert (changes, NM_CONFIG_CHANGES_NO_AUTO_DEFAULT, NULL);
 
 	if (!g_hash_table_size (changes)) {
 		g_hash_table_destroy (changes);
@@ -187,6 +218,9 @@ get_property (GObject *object,
 	case PROP_CONFIG_DESCRIPTION:
 		g_value_set_string (value, nm_config_data_get_config_description (self));
 		break;
+	case PROP_NO_AUTO_DEFAULT:
+		g_value_take_boxed (value, g_strdupv ((char **) nm_config_data_get_no_auto_default (self)));
+		break;
 	case PROP_CONNECTIVITY_URI:
 		g_value_set_string (value, nm_config_data_get_connectivity_uri (self));
 		break;
@@ -210,6 +244,7 @@ set_property (GObject *object,
 {
 	NMConfigData *self = NM_CONFIG_DATA (object);
 	NMConfigDataPrivate *priv = NM_CONFIG_DATA_GET_PRIVATE (self);
+	guint i;
 
 	/* This type is immutable. All properties are construct only. */
 	switch (prop_id) {
@@ -223,6 +258,14 @@ set_property (GObject *object,
 		priv->keyfile = g_value_dup_boxed (value);
 		if (!priv->keyfile)
 			priv->keyfile = nm_config_create_keyfile ();
+		break;
+	case PROP_NO_AUTO_DEFAULT:
+		priv->no_auto_default.arr = g_strdupv (g_value_get_boxed (value));
+		if (!priv->no_auto_default.arr)
+			priv->no_auto_default.arr = g_new0 (char *, 1);
+		for (i = 0; priv->no_auto_default.arr[i]; i++)
+			priv->no_auto_default.specs = g_slist_prepend (priv->no_auto_default.specs, priv->no_auto_default.arr[i]);
+		priv->no_auto_default.specs = g_slist_reverse (priv->no_auto_default.specs);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -245,6 +288,9 @@ finalize (GObject *gobject)
 
 	g_free (priv->connectivity.uri);
 	g_free (priv->connectivity.response);
+
+	g_slist_free (priv->no_auto_default.specs);
+	g_strfreev (priv->no_auto_default.arr);
 
 	G_OBJECT_CLASS (nm_config_data_parent_class)->finalize (gobject);
 }
@@ -273,12 +319,28 @@ constructed (GObject *object)
 NMConfigData *
 nm_config_data_new (const char *config_main_file,
                     const char *config_description,
+                    const char *const*no_auto_default,
                     GKeyFile *keyfile)
 {
 	return g_object_new (NM_TYPE_CONFIG_DATA,
 	                     NM_CONFIG_DATA_CONFIG_MAIN_FILE, config_main_file,
 	                     NM_CONFIG_DATA_CONFIG_DESCRIPTION, config_description,
 	                     NM_CONFIG_DATA_KEYFILE, keyfile,
+	                     NM_CONFIG_DATA_NO_AUTO_DEFAULT, no_auto_default,
+	                     NULL);
+}
+
+NMConfigData *
+nm_config_data_new_update_no_auto_default (const NMConfigData *base,
+                                           const char *const*no_auto_default)
+{
+	NMConfigDataPrivate *priv = NM_CONFIG_DATA_GET_PRIVATE (base);
+
+	return g_object_new (NM_TYPE_CONFIG_DATA,
+	                     NM_CONFIG_DATA_CONFIG_MAIN_FILE, priv->config_main_file,
+	                     NM_CONFIG_DATA_CONFIG_DESCRIPTION, priv->config_description,
+	                     NM_CONFIG_DATA_KEYFILE, priv->keyfile, /* the keyfile is unchanged. It's safe to share it. */
+	                     NM_CONFIG_DATA_NO_AUTO_DEFAULT, no_auto_default,
 	                     NULL);
 }
 
@@ -339,6 +401,14 @@ nm_config_data_class_init (NMConfigDataClass *config_class)
 	                          NULL,
 	                          G_PARAM_READABLE |
 	                          G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property
+	    (object_class, PROP_NO_AUTO_DEFAULT,
+	     g_param_spec_boxed (NM_CONFIG_DATA_NO_AUTO_DEFAULT, "", "",
+	                         G_TYPE_STRV,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_STATIC_STRINGS));
 
 }
 

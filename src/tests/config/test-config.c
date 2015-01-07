@@ -198,13 +198,16 @@ test_config_no_auto_default (void)
 	dev3 = nm_test_device_new ("33:33:33:33:33:33");
 	dev4 = nm_test_device_new ("44:44:44:44:44:44");
 
-	g_assert (!nm_config_get_ethernet_can_auto_default (config, dev1));
-	g_assert (!nm_config_get_ethernet_can_auto_default (config, dev2));
-	g_assert (nm_config_get_ethernet_can_auto_default (config, dev3));
-	g_assert (!nm_config_get_ethernet_can_auto_default (config, dev4));
+	g_assert (nm_config_get_no_auto_default_for_device (config, dev1));
+	g_assert (nm_config_get_no_auto_default_for_device (config, dev2));
+	g_assert (!nm_config_get_no_auto_default_for_device (config, dev3));
+	g_assert (nm_config_get_no_auto_default_for_device (config, dev4));
 
-	nm_config_set_ethernet_no_auto_default (config, dev3);
-	g_assert (!nm_config_get_ethernet_can_auto_default (config, dev3));
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE, "*config: update * (no-auto-default)*");
+	nm_config_set_no_auto_default_for_device (config, dev3);
+	g_test_assert_expected_messages ();
+
+	g_assert (nm_config_get_no_auto_default_for_device (config, dev3));
 
 	g_object_unref (config);
 
@@ -212,10 +215,10 @@ test_config_no_auto_default (void)
 	                       "--no-auto-default", state_file,
 	                       NULL);
 
-	g_assert (!nm_config_get_ethernet_can_auto_default (config, dev1));
-	g_assert (!nm_config_get_ethernet_can_auto_default (config, dev2));
-	g_assert (!nm_config_get_ethernet_can_auto_default (config, dev3));
-	g_assert (!nm_config_get_ethernet_can_auto_default (config, dev4));
+	g_assert (nm_config_get_no_auto_default_for_device (config, dev1));
+	g_assert (nm_config_get_no_auto_default_for_device (config, dev2));
+	g_assert (nm_config_get_no_auto_default_for_device (config, dev3));
+	g_assert (nm_config_get_no_auto_default_for_device (config, dev4));
 
 	g_object_unref (config);
 

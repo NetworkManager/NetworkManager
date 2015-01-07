@@ -46,6 +46,7 @@ G_BEGIN_DECLS
 #define NM_CONFIG_CHANGES_CONFIG_FILES              "config-files"
 #define NM_CONFIG_CHANGES_VALUES                    "values"
 #define NM_CONFIG_CHANGES_CONNECTIVITY              "connectivity"
+#define NM_CONFIG_CHANGES_NO_AUTO_DEFAULT           "no-auto-default"
 
 typedef struct NMConfigCmdLineOptions NMConfigCmdLineOptions;
 
@@ -76,9 +77,6 @@ const char *nm_config_get_log_domains (NMConfig *config);
 const char *nm_config_get_debug (NMConfig *config);
 gboolean nm_config_get_configure_and_quit (NMConfig *config);
 
-gboolean nm_config_get_ethernet_can_auto_default (NMConfig *config, NMDevice *device);
-void     nm_config_set_ethernet_no_auto_default  (NMConfig *config, NMDevice *device);
-
 gboolean nm_config_get_ignore_carrier (NMConfig *config, NMDevice *device);
 
 /* for main.c only */
@@ -86,6 +84,9 @@ NMConfigCmdLineOptions *nm_config_cmd_line_options_new (void);
 void                    nm_config_cmd_line_options_free (NMConfigCmdLineOptions *cli);
 void                    nm_config_cmd_line_options_add_to_entries (NMConfigCmdLineOptions *cli,
                                                                    GOptionContext *opt_ctx);
+
+gboolean nm_config_get_no_auto_default_for_device (NMConfig *config, NMDevice *device);
+void nm_config_set_no_auto_default_for_device  (NMConfig *config, NMDevice *device);
 
 NMConfig *nm_config_new (const NMConfigCmdLineOptions *cli, GError **error);
 NMConfig *nm_config_setup (const NMConfigCmdLineOptions *cli, GError **error);

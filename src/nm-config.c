@@ -73,13 +73,9 @@ typedef struct {
 
 	char *debug;
 
-	char **no_auto_default_orig;
 	char **ignore_carrier;
 
 	gboolean configure_and_quit;
-
-	/* MUTABLE properties: */
-	char **no_auto_default; /* mutable via merge_no_auto_default_state() */
 } NMConfigPrivate;
 
 enum {
@@ -99,6 +95,10 @@ static guint signals[LAST_SIGNAL] = { 0 };
 G_DEFINE_TYPE (NMConfig, nm_config, G_TYPE_OBJECT)
 
 #define NM_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_CONFIG, NMConfigPrivate))
+
+/************************************************************************/
+
+static void _set_config_data (NMConfig *self, NMConfigData *new_data);
 
 /************************************************************************/
 
@@ -288,32 +288,31 @@ no_auto_default_merge_from_file (const char *no_auto_default_file, const char *c
 }
 
 gboolean
-nm_config_get_ethernet_can_auto_default (NMConfig *config, NMDevice *device)
+nm_config_get_no_auto_default_for_device (NMConfig *self, NMDevice *device)
 {
-	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (config);
-	GSList *specs = NULL;
-	int i;
-	gboolean match;
+	NMConfigData *config_data;
 
-	for (i = 0; priv->no_auto_default[i]; i++)
-		specs = g_slist_prepend (specs, priv->no_auto_default[i]);
+	g_return_val_if_fail (NM_IS_CONFIG (self), FALSE);
+	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
-	match = nm_device_spec_match_list (device, specs);
-
-	g_slist_free (specs);
-	return !match;
+	config_data = NM_CONFIG_GET_PRIVATE (self)->config_data;
+	return nm_device_spec_match_list (device, nm_config_data_get_no_auto_default_list (config_data));
 }
 
 void
-nm_config_set_ethernet_no_auto_default (NMConfig *config, NMDevice *device)
+nm_config_set_no_auto_default_for_device (NMConfig *self, NMDevice *device)
 {
-	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (config);
+	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (self);
 	char *current;
 	GString *updated;
 	GError *error = NULL;
 	char **no_auto_default;
+	NMConfigData *new_data = NULL;
 
-	if (!nm_config_get_ethernet_can_auto_default (config, device))
+	g_return_if_fail (NM_IS_CONFIG (self));
+	g_return_if_fail (NM_IS_DEVICE (device));
+
+	if (nm_config_get_no_auto_default_for_device (self, device))
 		return;
 
 	updated = g_string_new (NULL);
@@ -335,9 +334,11 @@ nm_config_set_ethernet_no_auto_default (NMConfig *config, NMDevice *device)
 
 	g_string_free (updated, TRUE);
 
-	no_auto_default = no_auto_default_merge_from_file (priv->no_auto_default_file, (const char *const *) priv->no_auto_default);
-	g_strfreev (priv->no_auto_default);
-	priv->no_auto_default = no_auto_default;
+	no_auto_default = no_auto_default_merge_from_file (priv->no_auto_default_file, nm_config_data_get_no_auto_default (priv->config_data));
+	new_data = nm_config_data_new_update_no_auto_default (priv->config_data, (const char *const*) no_auto_default);
+	g_strfreev (no_auto_default);
+
+	_set_config_data (self, new_data);
 }
 
 /************************************************************************/
@@ -681,9 +682,7 @@ nm_config_reload (NMConfig *self)
 {
 	NMConfigPrivate *priv;
 	GError *error = NULL;
-	GHashTable *changes;
 	GKeyFile *keyfile;
-	NMConfigData *old_data;
 	NMConfigData *new_data = NULL;
 	char *config_main_file = NULL;
 	char *config_description = NULL;
@@ -691,7 +690,6 @@ nm_config_reload (NMConfig *self)
 	g_return_if_fail (NM_IS_CONFIG (self));
 
 	priv = NM_CONFIG_GET_PRIVATE (self);
-
 
 	/* pass on the original command line options. This means, that
 	 * options specified at command line cannot ever be reloaded from
@@ -707,12 +705,21 @@ nm_config_reload (NMConfig *self)
 		g_clear_error (&error);
 		return;
 	}
-	new_data = nm_config_data_new (config_main_file, config_description, keyfile);
+	new_data = nm_config_data_new (config_main_file, config_description, nm_config_data_get_no_auto_default (priv->config_data), keyfile);
 	g_free (config_main_file);
 	g_free (config_description);
 	g_key_file_unref (keyfile);
 
-	old_data = priv->config_data;
+	_set_config_data (self, new_data);
+}
+
+static void
+_set_config_data (NMConfig *self, NMConfigData *new_data)
+{
+	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (self);
+	NMConfigData *old_data = priv->config_data;
+	GHashTable *changes;
+
 	changes = nm_config_data_diff (old_data, new_data);
 
 	if (!changes) {
@@ -771,6 +778,8 @@ nm_config_new (const NMConfigCmdLineOptions *cli, GError **error)
 	GKeyFile *keyfile;
 	char *config_main_file = NULL;
 	char *config_description = NULL;
+	char **no_auto_default;
+	char **no_auto_default_orig;
 
 	self = NM_CONFIG (g_object_new (NM_TYPE_CONFIG,
 	                                NM_CONFIG_CMD_LINE_OPTIONS, cli,
@@ -798,7 +807,6 @@ nm_config_new (const NMConfigCmdLineOptions *cli, GError **error)
 		priv->no_auto_default_file = g_strdup (priv->cli.no_auto_default_file);
 	else
 		priv->no_auto_default_file = g_strdup (NM_NO_AUTO_DEFAULT_STATE_FILE);
-	priv->no_auto_default_orig = g_key_file_get_string_list (keyfile, "main", "no-auto-default", NULL, NULL);
 
 	priv->plugins = g_key_file_get_string_list (keyfile, "main", "plugins", NULL, NULL);
 	if (!priv->plugins)
@@ -820,13 +828,18 @@ nm_config_new (const NMConfigCmdLineOptions *cli, GError **error)
 
 	priv->configure_and_quit = _get_bool_value (keyfile, "main", "configure-and-quit", FALSE);
 
-	priv->config_data_orig = nm_config_data_new (config_main_file, config_description, keyfile);
+	no_auto_default_orig = g_key_file_get_string_list (keyfile, "main", "no-auto-default", NULL, NULL);
+	no_auto_default = no_auto_default_merge_from_file (priv->no_auto_default_file, (const char *const *) no_auto_default_orig);
+
+	priv->config_data_orig = nm_config_data_new (config_main_file, config_description, (const char *const*) no_auto_default, keyfile);
+
+	g_strfreev (no_auto_default);
+	g_strfreev (no_auto_default_orig);
 
 	/* Initialize mutable members. */
 
 	priv->config_data = g_object_ref (priv->config_data_orig);
 
-	priv->no_auto_default = no_auto_default_merge_from_file (priv->no_auto_default_file, (const char *const *) priv->no_auto_default_orig);
 
 	g_free (config_main_file);
 	g_free (config_description);
@@ -855,8 +868,6 @@ finalize (GObject *gobject)
 	g_free (priv->log_level);
 	g_free (priv->log_domains);
 	g_free (priv->debug);
-	g_strfreev (priv->no_auto_default_orig);
-	g_strfreev (priv->no_auto_default);
 	g_strfreev (priv->ignore_carrier);
 
 	_nm_config_cmd_line_options_clear (&priv->cli);
