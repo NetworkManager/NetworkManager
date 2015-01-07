@@ -723,28 +723,10 @@ nm_config_reload (NMConfig *self)
 	g_free (config_description);
 	g_key_file_free (keyfile);
 
-
-	changes = g_hash_table_new (g_str_hash, g_str_equal);
-
-	/* reloading configuration means we have to carefully check every single option
-	 * that we want to support and take specific actions. */
-
 	old_data = priv->config_data;
-	if (   nm_config_data_get_connectivity_interval (old_data) != nm_config_data_get_connectivity_interval (new_data)
-	    || g_strcmp0 (nm_config_data_get_connectivity_uri (old_data), nm_config_data_get_connectivity_uri (new_data))
-	    || g_strcmp0 (nm_config_data_get_connectivity_response (old_data), nm_config_data_get_connectivity_response (new_data))) {
-		nm_log_dbg (LOGD_CORE, "config: reload: change '" NM_CONFIG_CHANGES_CONNECTIVITY "'");
-		g_hash_table_insert (changes, NM_CONFIG_CHANGES_CONNECTIVITY, NULL);
-	}
+	changes = nm_config_data_diff (old_data, new_data);
 
-	if (   g_strcmp0 (nm_config_data_get_config_main_file (old_data), nm_config_data_get_config_main_file (new_data)) != 0
-	    || g_strcmp0 (nm_config_data_get_config_description (old_data), nm_config_data_get_config_description (new_data)) != 0) {
-		nm_log_dbg (LOGD_CORE, "config: reload: change '" NM_CONFIG_CHANGES_CONFIG_FILES "'");
-		g_hash_table_insert (changes, NM_CONFIG_CHANGES_CONFIG_FILES, NULL);
-	}
-
-	if (!g_hash_table_size (changes)) {
-		g_hash_table_destroy (changes);
+	if (!changes) {
 		g_object_unref (new_data);
 		return;
 	}
