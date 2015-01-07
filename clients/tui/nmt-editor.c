@@ -256,7 +256,7 @@ permissions_transform_from_allusers (GBinding     *binding,
 	gboolean allusers = g_value_get_boolean (source_value);
 	char **perms = NULL;
 
-	if (allusers) {
+	if (!allusers) {
 		perms = g_new (char *, 2);
 
 		perms[0] = g_strdup_printf ("user:%s:", g_get_user_name ());
