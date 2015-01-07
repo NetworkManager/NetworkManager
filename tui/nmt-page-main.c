@@ -112,7 +112,7 @@ permissions_transform_from_allusers (GBinding     *binding,
 	gboolean allusers = g_value_get_boolean (source_value);
 	GSList *perms = NULL;
 
-	if (allusers) {
+	if (!allusers) {
 		char *perm = g_strdup_printf ("user:%s:", g_get_user_name ());
 
 		perms = g_slist_prepend (perms, perm);
