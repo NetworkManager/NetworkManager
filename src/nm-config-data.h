@@ -56,6 +56,8 @@ NMConfigData *nm_config_data_new (const char *config_main_file,
                                   const char *config_description,
                                   GKeyFile *keyfile);
 
+GHashTable *nm_config_data_diff (NMConfigData *old_data, NMConfigData *new_data);
+
 const char *nm_config_data_get_config_main_file (const NMConfigData *config_data);
 const char *nm_config_data_get_config_description (const NMConfigData *config_data);
 

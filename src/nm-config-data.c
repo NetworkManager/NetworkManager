@@ -21,6 +21,8 @@
 
 #include "nm-config-data.h"
 
+#include "nm-config.h"
+
 typedef struct {
 	char *config_main_file;
 	char *config_description;
@@ -90,6 +92,34 @@ nm_config_data_get_connectivity_response (const NMConfigData *self)
 	return NM_CONFIG_DATA_GET_PRIVATE (self)->connectivity.response;
 }
 
+
+/************************************************************************/
+
+GHashTable *
+nm_config_data_diff (NMConfigData *old_data, NMConfigData *new_data)
+{
+	GHashTable *changes;
+
+	g_return_val_if_fail (NM_IS_CONFIG_DATA (old_data), NULL);
+	g_return_val_if_fail (NM_IS_CONFIG_DATA (new_data), NULL);
+
+	changes = g_hash_table_new (g_str_hash, g_str_equal);
+
+	if (   g_strcmp0 (nm_config_data_get_config_main_file (old_data), nm_config_data_get_config_main_file (new_data)) != 0
+	    || g_strcmp0 (nm_config_data_get_config_description (old_data), nm_config_data_get_config_description (new_data)) != 0)
+		g_hash_table_insert (changes, NM_CONFIG_CHANGES_CONFIG_FILES, NULL);
+
+	if (   nm_config_data_get_connectivity_interval (old_data) != nm_config_data_get_connectivity_interval (new_data)
+	    || g_strcmp0 (nm_config_data_get_connectivity_uri (old_data), nm_config_data_get_connectivity_uri (new_data))
+	    || g_strcmp0 (nm_config_data_get_connectivity_response (old_data), nm_config_data_get_connectivity_response (new_data)))
+		g_hash_table_insert (changes, NM_CONFIG_CHANGES_CONNECTIVITY, NULL);
+
+	if (!g_hash_table_size (changes)) {
+		g_hash_table_destroy (changes);
+		return NULL;
+	}
+	return changes;
+}
 
 /************************************************************************/
 
