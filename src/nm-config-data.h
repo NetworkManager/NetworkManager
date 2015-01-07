@@ -42,6 +42,7 @@ G_BEGIN_DECLS
 #define NM_CONFIG_DATA_CONNECTIVITY_URI      "connectivity-uri"
 #define NM_CONFIG_DATA_CONNECTIVITY_INTERVAL "connectivity-interval"
 #define NM_CONFIG_DATA_CONNECTIVITY_RESPONSE "connectivity-response"
+#define NM_CONFIG_DATA_NO_AUTO_DEFAULT       "no-auto-default"
 
 struct _NMConfigData {
 	GObject parent;
@@ -55,7 +56,9 @@ GType nm_config_data_get_type (void);
 
 NMConfigData *nm_config_data_new (const char *config_main_file,
                                   const char *config_description,
+                                  const char *const*no_auto_default,
                                   GKeyFile *keyfile);
+NMConfigData *nm_config_data_new_update_no_auto_default (const NMConfigData *base, const char *const*no_auto_default);
 
 GHashTable *nm_config_data_diff (NMConfigData *old_data, NMConfigData *new_data);
 
@@ -67,6 +70,9 @@ char *nm_config_data_get_value (const NMConfigData *config_data, const char *gro
 const char *nm_config_data_get_connectivity_uri (const NMConfigData *config_data);
 const guint nm_config_data_get_connectivity_interval (const NMConfigData *config_data);
 const char *nm_config_data_get_connectivity_response (const NMConfigData *config_data);
+
+const char *const*nm_config_data_get_no_auto_default (const NMConfigData *config_data);
+const GSList *    nm_config_data_get_no_auto_default_list (const NMConfigData *config_data);
 
 G_END_DECLS
 

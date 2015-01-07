@@ -27,6 +27,9 @@
 #include <nm-config.h>
 #include "nm-test-device.h"
 #include "nm-fake-platform.h"
+#include "nm-logging.h"
+
+#include "nm-test-utils.h"
 
 static NMConfig *
 setup_config (GError **error, const char *config_file, const char *config_dir, ...)
@@ -194,13 +197,16 @@ test_config_no_auto_default (void)
 	dev3 = nm_test_device_new ("33:33:33:33:33:33");
 	dev4 = nm_test_device_new ("44:44:44:44:44:44");
 
-	g_assert (!nm_config_get_ethernet_can_auto_default (config, dev1));
-	g_assert (!nm_config_get_ethernet_can_auto_default (config, dev2));
-	g_assert (nm_config_get_ethernet_can_auto_default (config, dev3));
-	g_assert (!nm_config_get_ethernet_can_auto_default (config, dev4));
+	g_assert (nm_config_get_no_auto_default_for_device (config, dev1));
+	g_assert (nm_config_get_no_auto_default_for_device (config, dev2));
+	g_assert (!nm_config_get_no_auto_default_for_device (config, dev3));
+	g_assert (nm_config_get_no_auto_default_for_device (config, dev4));
 
-	nm_config_set_ethernet_no_auto_default (config, dev3);
-	g_assert (!nm_config_get_ethernet_can_auto_default (config, dev3));
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE, "*config: update * (no-auto-default)*");
+	nm_config_set_no_auto_default_for_device (config, dev3);
+	g_test_assert_expected_messages ();
+
+	g_assert (nm_config_get_no_auto_default_for_device (config, dev3));
 
 	g_object_unref (config);
 
@@ -208,10 +214,10 @@ test_config_no_auto_default (void)
 	                       "--no-auto-default", state_file,
 	                       NULL);
 
-	g_assert (!nm_config_get_ethernet_can_auto_default (config, dev1));
-	g_assert (!nm_config_get_ethernet_can_auto_default (config, dev2));
-	g_assert (!nm_config_get_ethernet_can_auto_default (config, dev3));
-	g_assert (!nm_config_get_ethernet_can_auto_default (config, dev4));
+	g_assert (nm_config_get_no_auto_default_for_device (config, dev1));
+	g_assert (nm_config_get_no_auto_default_for_device (config, dev2));
+	g_assert (nm_config_get_no_auto_default_for_device (config, dev3));
+	g_assert (nm_config_get_no_auto_default_for_device (config, dev4));
 
 	g_object_unref (config);
 
@@ -280,14 +286,12 @@ test_config_confdir_parse_error (void)
 	g_clear_error (&error);
 }
 
+NMTST_DEFINE ();
+
 int
 main (int argc, char **argv)
 {
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
-
-	g_test_init (&argc, &argv, NULL);
+	nmtst_init_assert_logging (&argc, &argv);
 
 	nm_fake_platform_setup ();
 

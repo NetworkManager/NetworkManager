@@ -1463,7 +1463,7 @@ new_default_connection (NMDevice *self)
 	const char *hw_address;
 	char *defname, *uuid;
 
-	if (!nm_config_get_ethernet_can_auto_default (nm_config_get (), self))
+	if (nm_config_get_no_auto_default_for_device (nm_config_get (), self))
 		return NULL;
 
 	hw_address = nm_device_get_hw_address (self);
