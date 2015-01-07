@@ -21,11 +21,16 @@
 
 #include "nm-config-data.h"
 
+#include <string.h>
+
 #include "nm-config.h"
+#include "gsystem-local-alloc.h"
 
 typedef struct {
 	char *config_main_file;
 	char *config_description;
+
+	GKeyFile *keyfile;
 
 	struct {
 		char *uri;
@@ -39,6 +44,7 @@ enum {
 	PROP_0,
 	PROP_CONFIG_MAIN_FILE,
 	PROP_CONFIG_DESCRIPTION,
+	PROP_KEYFILE,
 	PROP_CONNECTIVITY_URI,
 	PROP_CONNECTIVITY_INTERVAL,
 	PROP_CONNECTIVITY_RESPONSE,
@@ -68,6 +74,14 @@ nm_config_data_get_config_description (const NMConfigData *self)
 	return NM_CONFIG_DATA_GET_PRIVATE (self)->config_description;
 }
 
+char *
+nm_config_data_get_value (const NMConfigData *self, const char *group, const char *key, GError **error)
+{
+	g_return_val_if_fail (self, NULL);
+
+	return g_key_file_get_string (NM_CONFIG_DATA_GET_PRIVATE (self)->keyfile, group, key, error);
+}
+
 const char *
 nm_config_data_get_connectivity_uri (const NMConfigData *self)
 {
@@ -95,15 +109,50 @@ nm_config_data_get_connectivity_response (const NMConfigData *self)
 
 /************************************************************************/
 
+static gboolean
+_keyfile_a_contains_all_in_b (GKeyFile *kf_a, GKeyFile *kf_b)
+{
+	gs_strfreev char **groups = NULL;
+	guint i, j;
+
+	if (kf_a == kf_b)
+		return TRUE;
+
+	groups = g_key_file_get_groups (kf_a, NULL);
+	for (i = 0; groups && groups[i]; i++) {
+		gs_strfreev char **keys = NULL;
+
+		keys = g_key_file_get_keys (kf_a, groups[i], NULL, NULL);
+		if (keys) {
+			for (j = 0; keys[j]; j++) {
+				gs_free char *key_a = g_key_file_get_value (kf_a, groups[i], keys[j], NULL);
+				gs_free char *key_b = g_key_file_get_value (kf_b, groups[i], keys[j], NULL);
+
+				if (g_strcmp0 (key_a, key_b) != 0)
+					return FALSE;
+			}
+		}
+	}
+	return TRUE;
+}
+
 GHashTable *
 nm_config_data_diff (NMConfigData *old_data, NMConfigData *new_data)
 {
 	GHashTable *changes;
+	NMConfigDataPrivate *priv_old, *priv_new;
 
 	g_return_val_if_fail (NM_IS_CONFIG_DATA (old_data), NULL);
 	g_return_val_if_fail (NM_IS_CONFIG_DATA (new_data), NULL);
 
 	changes = g_hash_table_new (g_str_hash, g_str_equal);
+
+	priv_old = NM_CONFIG_DATA_GET_PRIVATE (old_data);
+	priv_new = NM_CONFIG_DATA_GET_PRIVATE (new_data);
+
+	if (   !_keyfile_a_contains_all_in_b (priv_old->keyfile, priv_new->keyfile)
+	    || !_keyfile_a_contains_all_in_b (priv_new->keyfile, priv_old->keyfile))
+		g_hash_table_insert (changes, NM_CONFIG_CHANGES_VALUES, NULL);
 
 	if (   g_strcmp0 (nm_config_data_get_config_main_file (old_data), nm_config_data_get_config_main_file (new_data)) != 0
 	    || g_strcmp0 (nm_config_data_get_config_description (old_data), nm_config_data_get_config_description (new_data)) != 0)
@@ -170,14 +219,10 @@ set_property (GObject *object,
 	case PROP_CONFIG_DESCRIPTION:
 		priv->config_description = g_value_dup_string (value);
 		break;
-	case PROP_CONNECTIVITY_URI:
-		priv->connectivity.uri = g_value_dup_string (value);
-		break;
-	case PROP_CONNECTIVITY_INTERVAL:
-		priv->connectivity.interval = g_value_get_uint (value);
-		break;
-	case PROP_CONNECTIVITY_RESPONSE:
-		priv->connectivity.response = g_value_dup_string (value);
+	case PROP_KEYFILE:
+		priv->keyfile = g_value_dup_boxed (value);
+		if (!priv->keyfile)
+			priv->keyfile = nm_config_create_keyfile ();
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -209,30 +254,32 @@ nm_config_data_init (NMConfigData *self)
 {
 }
 
+static void
+constructed (GObject *object)
+{
+	NMConfigData *self = NM_CONFIG_DATA (object);
+	NMConfigDataPrivate *priv = NM_CONFIG_DATA_GET_PRIVATE (self);
+	int interval;
+
+	priv->connectivity.uri = g_key_file_get_value (priv->keyfile, "connectivity", "uri", NULL);
+	priv->connectivity.response = g_key_file_get_value (priv->keyfile, "connectivity", "response", NULL);
+
+	interval = g_key_file_get_integer (priv->keyfile, "connectivity", "interval", NULL);
+	priv->connectivity.interval = MAX (0, interval);
+
+	G_OBJECT_CLASS (nm_config_data_parent_class)->constructed (object);
+}
+
 NMConfigData *
 nm_config_data_new (const char *config_main_file,
                     const char *config_description,
                     GKeyFile *keyfile)
 {
-	char *connectivity_uri, *connectivity_response;
-	guint connectivity_interval;
-	NMConfigData *config_data;
-
-	connectivity_uri = g_key_file_get_value (keyfile, "connectivity", "uri", NULL);
-	connectivity_interval = g_key_file_get_integer (keyfile, "connectivity", "interval", NULL);
-	connectivity_response = g_key_file_get_value (keyfile, "connectivity", "response", NULL);
-
-	config_data = g_object_new (NM_TYPE_CONFIG_DATA,
-	                            NM_CONFIG_DATA_CONFIG_MAIN_FILE, config_main_file,
-	                            NM_CONFIG_DATA_CONFIG_DESCRIPTION, config_description,
-	                            NM_CONFIG_DATA_CONNECTIVITY_URI, connectivity_uri,
-	                            NM_CONFIG_DATA_CONNECTIVITY_INTERVAL, connectivity_interval,
-	                            NM_CONFIG_DATA_CONNECTIVITY_RESPONSE, connectivity_response,
-	                            NULL);
-	g_free (connectivity_uri);
-	g_free (connectivity_response);
-
-	return config_data;
+	return g_object_new (NM_TYPE_CONFIG_DATA,
+	                     NM_CONFIG_DATA_CONFIG_MAIN_FILE, config_main_file,
+	                     NM_CONFIG_DATA_CONFIG_DESCRIPTION, config_description,
+	                     NM_CONFIG_DATA_KEYFILE, keyfile,
+	                     NULL);
 }
 
 static void
@@ -242,6 +289,7 @@ nm_config_data_class_init (NMConfigDataClass *config_class)
 
 	g_type_class_add_private (config_class, sizeof (NMConfigDataPrivate));
 
+	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
@@ -264,27 +312,32 @@ nm_config_data_class_init (NMConfigDataClass *config_class)
 	                          G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
+	      (object_class, PROP_KEYFILE,
+	       g_param_spec_boxed (NM_CONFIG_DATA_KEYFILE, "", "",
+	                           G_TYPE_KEY_FILE,
+	                           G_PARAM_WRITABLE |
+	                           G_PARAM_CONSTRUCT_ONLY |
+	                           G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property
 	    (object_class, PROP_CONNECTIVITY_URI,
 	     g_param_spec_string (NM_CONFIG_DATA_CONNECTIVITY_URI, "", "",
 	                          NULL,
-	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_READABLE |
 	                          G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 	    (object_class, PROP_CONNECTIVITY_INTERVAL,
 	     g_param_spec_uint (NM_CONFIG_DATA_CONNECTIVITY_INTERVAL, "", "",
 	                        0, G_MAXUINT, 0,
-	                        G_PARAM_READWRITE |
-	                        G_PARAM_CONSTRUCT_ONLY |
+	                        G_PARAM_READABLE |
 	                        G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 	    (object_class, PROP_CONNECTIVITY_RESPONSE,
 	     g_param_spec_string (NM_CONFIG_DATA_CONNECTIVITY_RESPONSE, "", "",
 	                          NULL,
-	                          G_PARAM_READWRITE |
-	                          G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_READABLE |
 	                          G_PARAM_STATIC_STRINGS));
 
 }

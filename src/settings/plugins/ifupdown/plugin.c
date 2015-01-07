@@ -456,9 +456,9 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 	g_hash_table_destroy (auto_ifaces);
 
 	/* Check the config file to find out whether to manage interfaces */
-	value = nm_config_get_value (nm_config_get (),
-	                             IFUPDOWN_KEY_FILE_GROUP, IFUPDOWN_KEY_FILE_KEY_MANAGED,
-	                             &error);
+	value = nm_config_data_get_value (nm_config_get_data_orig (nm_config_get ()),
+	                                  IFUPDOWN_KEY_FILE_GROUP, IFUPDOWN_KEY_FILE_KEY_MANAGED,
+	                                  &error);
 	if (error) {
 		nm_log_info (LOGD_SETTINGS, "loading system config file (%s) caused error: %s",
 		             nm_config_data_get_config_main_file (nm_config_get_data (nm_config_get ())),

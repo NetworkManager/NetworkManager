@@ -108,16 +108,16 @@ test_config_simple (void)
 	g_assert_cmpstr (plugins[1], ==, "bar");
 	g_assert_cmpstr (plugins[2], ==, "baz");
 
-	value = nm_config_get_value (config, "extra-section", "extra-key", NULL);
+	value = nm_config_data_get_value (nm_config_get_data_orig (config), "extra-section", "extra-key", NULL);
 	g_assert_cmpstr (value, ==, "some value");
 	g_free (value);
 
-	value = nm_config_get_value (config, "extra-section", "no-key", &error);
+	value = nm_config_data_get_value (nm_config_get_data_orig (config), "extra-section", "no-key", &error);
 	g_assert (!value);
 	g_assert_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_KEY_NOT_FOUND);
 	g_clear_error (&error);
 
-	value = nm_config_get_value (config, "no-section", "no-key", &error);
+	value = nm_config_data_get_value (nm_config_get_data_orig (config), "no-section", "no-key", &error);
 	g_assert (!value);
 	g_assert_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_GROUP_NOT_FOUND);
 	g_clear_error (&error);
@@ -252,21 +252,21 @@ test_config_confdir (void)
 	g_assert_cmpstr (plugins[3], ==, "one");
 	g_assert_cmpstr (plugins[4], ==, "two");
 
-	value = nm_config_get_value (config, "main", "extra", NULL);
+	value = nm_config_data_get_value (nm_config_get_data_orig (config), "main", "extra", NULL);
 	g_assert_cmpstr (value, ==, "hello");
 	g_free (value);
 
-	value = nm_config_get_value (config, "main", "new", NULL);
+	value = nm_config_data_get_value (nm_config_get_data_orig (config), "main", "new", NULL);
 	g_assert_cmpstr (value, ==, "something"); /* not ",something" */
 	g_free (value);
 
-	value = nm_config_get_value (config, "order", "a", NULL);
+	value = nm_config_data_get_value (nm_config_get_data_orig (config), "order", "a", NULL);
 	g_assert_cmpstr (value, ==, "90");
 	g_free (value);
-	value = nm_config_get_value (config, "order", "b", NULL);
+	value = nm_config_data_get_value (nm_config_get_data_orig (config), "order", "b", NULL);
 	g_assert_cmpstr (value, ==, "10");
 	g_free (value);
-	value = nm_config_get_value (config, "order", "c", NULL);
+	value = nm_config_data_get_value (nm_config_get_data_orig (config), "order", "c", NULL);
 	g_assert_cmpstr (value, ==, "0");
 	g_free (value);
 

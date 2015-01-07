@@ -44,6 +44,7 @@ G_BEGIN_DECLS
 #define NM_CONFIG_SIGNAL_CONFIG_CHANGED             "config-changed"
 
 #define NM_CONFIG_CHANGES_CONFIG_FILES              "config-files"
+#define NM_CONFIG_CHANGES_VALUES                    "values"
 #define NM_CONFIG_CHANGES_CONNECTIVITY              "connectivity"
 
 typedef struct NMConfigCmdLineOptions NMConfigCmdLineOptions;
@@ -79,8 +80,6 @@ gboolean nm_config_get_ethernet_can_auto_default (NMConfig *config, NMDevice *de
 void     nm_config_set_ethernet_no_auto_default  (NMConfig *config, NMDevice *device);
 
 gboolean nm_config_get_ignore_carrier (NMConfig *config, NMDevice *device);
-
-char *nm_config_get_value (NMConfig *config, const char *group, const char *key, GError **error);
 
 /* for main.c only */
 NMConfigCmdLineOptions *nm_config_cmd_line_options_new (void);
