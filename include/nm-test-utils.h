@@ -75,7 +75,14 @@ struct __nmtst_internal
 extern struct __nmtst_internal __nmtst_internal;
 
 #define NMTST_DEFINE() \
-	struct __nmtst_internal __nmtst_internal = { 0 };
+struct __nmtst_internal __nmtst_internal = { 0 }; \
+\
+__attribute__ ((destructor)) static void \
+_nmtst_exit (void) \
+{ \
+	nmtst_free (); \
+	g_test_assert_expected_messages (); \
+}
 
 
 inline static gboolean
@@ -163,7 +170,6 @@ nmtst_free (void)
 inline static void
 __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_level, const char *log_domains)
 {
-	static gsize atexit_registered = 0;
 	const char *nmtst_debug;
 	gboolean is_debug = FALSE;
 	char *c_log_level = NULL, *c_log_domains = NULL;
@@ -306,11 +312,6 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 	g_strfreev ((char **) g_array_free (debug_messages, FALSE));
 	g_free (c_log_level);
 	g_free (c_log_domains);
-
-	if (g_once_init_enter (&atexit_registered)) {
-		atexit (nmtst_free);
-		g_once_init_leave (&atexit_registered, 1);
-	}
 
 #ifdef __NETWORKMANAGER_UTILS_H__
 	/* ensure that monotonic timestamp is called (because it initially logs a line) */
