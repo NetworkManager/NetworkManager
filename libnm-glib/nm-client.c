@@ -1548,7 +1548,7 @@ nm_client_check_connectivity_async (NMClient *client,
 	g_return_if_fail (NM_IS_CLIENT (client));
 	priv = NM_CLIENT_GET_PRIVATE (client);
 
-	ccd = g_slice_new (CheckConnectivityData);
+	ccd = g_slice_new0 (CheckConnectivityData);
 	ccd->client = client;
 
 	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
