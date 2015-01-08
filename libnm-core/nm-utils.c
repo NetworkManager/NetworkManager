@@ -2218,7 +2218,7 @@ nm_utils_file_is_pkcs12 (const char *filename)
  *   for additional checks. This check is performed after the check for
  *   @file_test_flags. You cannot omit both @file_test_flags and @predicate.
  * @user_data: (closure): (allow-none): user data for @predicate function.
- * @error: on failure, a "not found" error using @error_domain and @error_code
+ * @error: (allow-none): on failure, set a "not found" error %G_IO_ERROR %G_IO_ERROR_NOT_FOUND.
  *
  * Searches for a @progname file in a list of search @paths.
  *
