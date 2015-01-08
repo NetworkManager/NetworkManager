@@ -831,10 +831,11 @@ AM_CONDITIONAL(BUILD_NMTUI, test "$build_nmtui" = yes)
 
 NM_COMPILER_WARNINGS
 
-AC_ARG_ENABLE(lto, AS_HELP_STRING([--enable-lto], [Enable Link Time Optimization for smaller size (default: no)]),
-              [enable_lto=yes], [enable_lto=no])
+AC_ARG_ENABLE(lto, AS_HELP_STRING([--enable-lto], [Enable Link Time Optimization for smaller size (default: no)]))
 if (test "${enable_lto}" = "yes"); then
     CFLAGS="-flto $CFLAGS"
+else
+    enable_lto='no'
 fi
 
 
