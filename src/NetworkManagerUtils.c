@@ -814,6 +814,7 @@ const char *const NM_PATHS_DEFAULT[] = {
 	"/sbin/",
 	"/usr/sbin/",
 	"/usr/local/sbin/",
+	"/bin/",
 	"/usr/bin/",
 	"/usr/local/bin/",
 	NULL,
