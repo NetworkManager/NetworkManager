@@ -52,15 +52,6 @@
 %global with_wwan 1
 %endif
 
-%ifarch s390 s390x
-# No hardware-based plugins on s390
-%global with_adsl 0
-%global with_bluetooth 0
-%global with_wifi 0
-%global with_wimax 0
-%global with_wwan 0
-%endif
-
 %if (0%{?fedora} && 0%{?fedora} <= 19)
 %global with_team 0
 %endif
