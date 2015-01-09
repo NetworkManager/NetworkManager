@@ -2272,7 +2272,6 @@ build_rtnl_link (int ifindex, const char *name, NMLinkType type)
 static gboolean
 link_add (NMPlatform *platform, const char *name, NMLinkType type, const void *address, size_t address_len)
 {
-	int r;
 	struct nl_object *l;
 
 	if (type == NM_LINK_TYPE_BOND) {
@@ -2284,8 +2283,7 @@ link_add (NMPlatform *platform, const char *name, NMLinkType type, const void *a
 		 * bond0 automatically.
 		 */
 		if (!g_file_test ("/sys/class/net/bonding_masters", G_FILE_TEST_EXISTS))
-			/* Ignore return value to shut up the compiler */
-			r = system ("modprobe bonding max_bonds=0");
+			nm_utils_modprobe (NULL, "bonding", "max_bonds=0", NULL);
 	}
 
 	debug ("link: add link '%s' of type '%s' (%d)",

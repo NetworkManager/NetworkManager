@@ -5060,20 +5060,9 @@ nm_device_activate_schedule_ip6_config_timeout (NMDevice *self)
 	_LOGD (LOGD_DEVICE | LOGD_IP6, "Activation: Stage 4 of 5 (IPv6 Configure Timeout) scheduled...");
 }
 
-static void
-share_child_setup (gpointer user_data G_GNUC_UNUSED)
-{
-	/* We are in the child process at this point */
-	pid_t pid = getpid ();
-	setpgid (pid, pid);
-
-	nm_unblock_posix_signals (NULL);
-}
-
 static gboolean
 share_init (void)
 {
-	int status;
 	char *modules[] = { "ip_tables", "iptable_nat", "nf_nat_ftp", "nf_nat_irc",
 	                    "nf_nat_sip", "nf_nat_tftp", "nf_nat_pptp", "nf_nat_h323",
 	                    NULL };
@@ -5093,20 +5082,8 @@ share_init (void)
 		            errsv, strerror (errsv));
 	}
 
-	for (iter = modules; *iter; iter++) {
-		char *argv[3] = { "/sbin/modprobe", *iter, NULL };
-		char *envp[1] = { NULL };
-		GError *error = NULL;
-
-		if (!g_spawn_sync ("/", argv, envp, G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL,
-		                   share_child_setup, NULL, NULL, NULL, &status, &error)) {
-			nm_log_err (LOGD_SHARING, "share: error loading NAT module %s: (%d) %s",
-			            *iter, error ? error->code : 0,
-			            (error && error->message) ? error->message : "unknown");
-			if (error)
-				g_error_free (error);
-		}
-	}
+	for (iter = modules; *iter; iter++)
+		nm_utils_modprobe (NULL, *iter, NULL);
 
 	return TRUE;
 }
