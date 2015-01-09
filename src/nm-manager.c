@@ -645,10 +645,9 @@ nm_manager_update_state (NMManager *manager)
 		nm_connectivity_check_async (priv->connectivity,
 		                             checked_connectivity,
 		                             g_object_ref (manager));
-		return;
-	}
+	} else
+		nm_connectivity_set_online (priv->connectivity, new_state >= NM_STATE_CONNECTED_LOCAL);
 
-	nm_connectivity_set_online (priv->connectivity, new_state >= NM_STATE_CONNECTED_LOCAL);
 	set_state (manager, new_state);
 }
 
