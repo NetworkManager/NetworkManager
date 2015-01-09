@@ -49,6 +49,7 @@
 #include "nm-auth-utils.h"
 #include "nm-posix-signals.h"
 #include "nm-dbus-glib-types.h"
+#include "gsystem-local-alloc.h"
 
 /*
  * Some toolchains (E.G. uClibc 0.9.33 and earlier) don't export
@@ -173,6 +174,42 @@ nm_spawn_process (const char *args, GError **error)
 	}
 
 	return status;
+}
+
+int
+nm_utils_modprobe (GError **error, const char *arg1, ...)
+{
+	gs_unref_ptrarray GPtrArray *argv = NULL;
+	int exit_status;
+	gs_free char *_log_str = NULL;
+#define ARGV_TO_STR(argv)   (_log_str ? _log_str : (_log_str = g_strjoinv (" ", (char **) argv->pdata)))
+	GError *local = NULL;
+	va_list ap;
+
+	g_return_val_if_fail (!error || !*error, -1);
+	g_return_val_if_fail (arg1, -1);
+
+	/* construct the argument list */
+	argv = g_ptr_array_sized_new (4);
+	g_ptr_array_add (argv, "/sbin/modprobe");
+	g_ptr_array_add (argv, (char *) arg1);
+
+	va_start (ap, arg1);
+	while ((arg1 = va_arg (ap, const char *)))
+		g_ptr_array_add (argv, (char *) arg1);
+	va_end (ap);
+
+	g_ptr_array_add (argv, NULL);
+
+	nm_log_dbg (LOGD_CORE, "modprobe: '%s'", ARGV_TO_STR (argv));
+	if (!g_spawn_sync (NULL, (char **) argv->pdata, NULL, 0, NULL, NULL, NULL, NULL, &exit_status, &local)) {
+		nm_log_err (LOGD_CORE, "modprobe: '%s' failed: %s", ARGV_TO_STR (argv), local->message);
+		g_propagate_error (error, local);
+		return -1;
+	} else if (exit_status != 0)
+		nm_log_err (LOGD_CORE, "modprobe: '%s' exited with error %d", ARGV_TO_STR (argv), exit_status);
+
+	return exit_status;
 }
 
 /**
