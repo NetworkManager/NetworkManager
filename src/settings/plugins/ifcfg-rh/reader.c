@@ -4852,3 +4852,25 @@ connection_from_file_test (const char *filename,
 	                                  NULL);
 }
 
+guint
+devtimeout_from_file (const char *filename)
+{
+	shvarFile *ifcfg;
+	char *devtimeout_str;
+	guint devtimeout;
+
+	g_return_val_if_fail (filename != NULL, NULL);
+
+	ifcfg = svOpenFile (filename, NULL);
+	if (!ifcfg)
+		return 0;
+
+	devtimeout_str = svGetValue (ifcfg, "DEVTIMEOUT", FALSE);
+	if (devtimeout_str) {
+		devtimeout = nm_utils_ascii_str_to_int64 (devtimeout_str, 10, 0, G_MAXUINT, 0);
+		g_free (devtimeout_str);
+	} else
+		devtimeout = 0;
+
+	return devtimeout;
+}
