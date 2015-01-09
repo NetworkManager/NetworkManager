@@ -10283,7 +10283,7 @@ test_read_bridge_main (void)
 
 	s_bridge = nm_connection_get_setting_bridge (connection);
 	g_assert (s_bridge);
-	g_assert_cmpuint (nm_setting_bridge_get_forward_delay (s_bridge), ==, 0);
+	g_assert_cmpuint (nm_setting_bridge_get_forward_delay (s_bridge), ==, 2);
 	g_assert (nm_setting_bridge_get_stp (s_bridge));
 	g_assert_cmpuint (nm_setting_bridge_get_priority (s_bridge), ==, 32744);
 	g_assert_cmpuint (nm_setting_bridge_get_hello_time (s_bridge), ==, 7);

@@ -3,6 +3,6 @@ ONBOOT=no
 TYPE=Bridge
 BOOTPROTO=dhcp
 STP=on
-DELAY=0
+DELAY=2
 BRIDGING_OPTS="priority=32744 hello_time=7 max_age=39 ageing_time=235352"
 MACADDR=00:16:41:11:22:33
