@@ -306,8 +306,6 @@ NetworkManager API. See also NetworkManager-libnm-devel.
 %package libnm
 Summary: Libraries for adding NetworkManager support to applications (new API).
 Group: Development/Libraries
-Requires: dbus >= %{dbus_version}
-Requires: dbus-glib >= %{dbus_glib_version}
 
 %description libnm
 This package contains the libraries that make it easier to use some NetworkManager
@@ -321,7 +319,6 @@ Group: Development/Libraries
 Requires: %{name}-libnm%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: glib2-devel
 Requires: pkgconfig
-Requires: dbus-glib-devel >= %{dbus_glib_version}
 
 %description libnm-devel
 This package contains the header and pkg-config files for development applications using
