@@ -205,9 +205,10 @@ read_field (char **current, char **error, const char *characters, const char *de
 	g_return_val_if_fail (characters, NULL);
 	g_return_val_if_fail (delimiters, NULL);
 
+	*error = NULL;
+
 	if (!*current) {
 		/* graceful failure, leave '*current' NULL */
-		*error = NULL;
 		return NULL;
 	}
 
@@ -223,7 +224,6 @@ read_field (char **current, char **error, const char *characters, const char *de
 	if (**current)
 		if (strchr (delimiters, **current)) {
 			/* success, more data available */
-			*error = NULL;
 			*(*current)++ = '\0';
 			return start;
 		} else {
@@ -234,7 +234,6 @@ read_field (char **current, char **error, const char *characters, const char *de
 		}
 	else {
 		/* success, end of input */
-		*error = NULL;
 		*current = NULL;
 		return start;
 	}
