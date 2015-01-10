@@ -4859,7 +4859,7 @@ devtimeout_from_file (const char *filename)
 	char *devtimeout_str;
 	guint devtimeout;
 
-	g_return_val_if_fail (filename != NULL, NULL);
+	g_return_val_if_fail (filename != NULL, 0);
 
 	ifcfg = svOpenFile (filename, NULL);
 	if (!ifcfg)
