@@ -96,6 +96,7 @@ libsystemd_dhcp_la_SOURCES = \
 	dhcp-manager/systemd-dhcp/src/shared/util.h \
 	dhcp-manager/systemd-dhcp/src/shared/in-addr-util.h \
 	dhcp-manager/systemd-dhcp/src/shared/list.h \
+	dhcp-manager/systemd-dhcp/src/shared/log.h \
 	dhcp-manager/systemd-dhcp/src/shared/fileio.h \
 	dhcp-manager/systemd-dhcp/src/shared/fileio.c \
 	dhcp-manager/systemd-dhcp/src/shared/strv.h \

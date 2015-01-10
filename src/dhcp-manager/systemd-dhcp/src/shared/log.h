@@ -21,6 +21,8 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
+#include "nm-sd-adapt.h"
+
 #include <stdbool.h>
 #include <stdarg.h>
 #include <syslog.h>
@@ -74,6 +76,7 @@ void log_close_console(void);
 
 void log_parse_environment(void);
 
+#if 0 /* NM_IGNORED */
 int log_internal(
                 int level,
                 int error,
@@ -161,6 +164,7 @@ void log_assert_failed_return(
                         ? log_internal(_level, _e, __FILE__, __LINE__, __func__, __VA_ARGS__) \
                         : -abs(_e);                                     \
         })
+#endif /* NM_IGNORED */
 
 #define log_full(level, ...) log_full_errno(level, 0, __VA_ARGS__)
 
