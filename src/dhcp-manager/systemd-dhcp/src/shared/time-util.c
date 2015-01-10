@@ -786,7 +786,7 @@ int parse_nsec(const char *t, nsec_t *nsec) {
         s = startswith(p, "infinity");
         if (s) {
                 s += strspn(s, WHITESPACE);
-                if (!*s != 0)
+                if (*s != 0)
                         return -EINVAL;
 
                 *nsec = NSEC_INFINITY;
@@ -965,7 +965,7 @@ bool timezone_is_valid(const char *name) {
         if (slash)
                 return false;
 
-        t = strappenda("/usr/share/zoneinfo/", name);
+        t = strjoina("/usr/share/zoneinfo/", name);
         if (stat(t, &st) < 0)
                 return false;
 

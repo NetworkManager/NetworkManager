@@ -243,10 +243,23 @@ int in_addr_from_string_auto(const char *s, int *family, union in_addr_union *re
         return -EINVAL;
 }
 
-unsigned in_addr_netmask_to_prefixlen(const struct in_addr *addr) {
+unsigned char in_addr_netmask_to_prefixlen(const struct in_addr *addr) {
         assert(addr);
 
         return 32 - u32ctz(be32toh(addr->s_addr));
+}
+
+struct in_addr* in_addr_prefixlen_to_netmask(struct in_addr *addr, unsigned char prefixlen) {
+        assert(addr);
+        assert(prefixlen <= 32);
+
+        /* Shifting beyond 32 is not defined, handle this specially. */
+        if (prefixlen == 0)
+                addr->s_addr = 0;
+        else
+                addr->s_addr = htobe32((0xffffffff << (32 - prefixlen)) & 0xffffffff);
+
+        return addr;
 }
 
 int in_addr_default_prefixlen(const struct in_addr *addr, unsigned char *prefixlen) {
@@ -284,9 +297,42 @@ int in_addr_default_subnet_mask(const struct in_addr *addr, struct in_addr *mask
         if (r < 0)
                 return r;
 
-        assert(prefixlen > 0 && prefixlen < 32);
-
-        mask->s_addr = htobe32((0xffffffff << (32 - prefixlen)) & 0xffffffff);
-
+        in_addr_prefixlen_to_netmask(mask, prefixlen);
         return 0;
+}
+
+int in_addr_mask(int family, union in_addr_union *addr, unsigned char prefixlen) {
+        assert(addr);
+
+        if (family == AF_INET) {
+                struct in_addr mask;
+
+                if (!in_addr_prefixlen_to_netmask(&mask, prefixlen))
+                        return -EINVAL;
+
+                addr->in.s_addr &= mask.s_addr;
+                return 0;
+        }
+
+        if (family == AF_INET6) {
+                unsigned i;
+
+                for (i = 0; i < 16; i++) {
+                        uint8_t mask;
+
+                        if (prefixlen >= 8) {
+                                mask = 0xFF;
+                                prefixlen -= 8;
+                        } else {
+                                mask = 0xFF << (8 - prefixlen);
+                                prefixlen = 0;
+                        }
+
+                        addr->in6.s6_addr[i] &= mask;
+                }
+
+                return 0;
+        }
+
+        return -EAFNOSUPPORT;
 }

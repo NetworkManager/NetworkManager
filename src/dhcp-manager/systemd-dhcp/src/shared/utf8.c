@@ -142,19 +142,19 @@ int utf8_encoded_to_unichar(const char *str) {
 }
 
 bool utf8_is_printable_newline(const char* str, size_t length, bool newline) {
-        const uint8_t *p;
+        const char *p;
 
         assert(str);
 
-        for (p = (const uint8_t*) str; length;) {
+        for (p = str; length;) {
                 int encoded_len, val;
 
-                encoded_len = utf8_encoded_valid_unichar((const char *) p);
+                encoded_len = utf8_encoded_valid_unichar(p);
                 if (encoded_len < 0 ||
                     (size_t) encoded_len > length)
                         return false;
 
-                val = utf8_encoded_to_unichar((const char*) p);
+                val = utf8_encoded_to_unichar(p);
                 if (val < 0 ||
                     is_unicode_control(val) ||
                     (!newline && val == '\n'))
@@ -202,7 +202,46 @@ char *utf8_escape_invalid(const char *str) {
                         s = mempcpy(s, str, len);
                         str += len;
                 } else {
-                        s = mempcpy(s, UTF8_REPLACEMENT_CHARACTER, strlen(UTF8_REPLACEMENT_CHARACTER));
+                        s = stpcpy(s, UTF8_REPLACEMENT_CHARACTER);
+                        str += 1;
+                }
+        }
+
+        *s = '\0';
+
+        return p;
+}
+
+char *utf8_escape_non_printable(const char *str) {
+        char *p, *s;
+
+        assert(str);
+
+        p = s = malloc(strlen(str) * 4 + 1);
+        if (!p)
+                return NULL;
+
+        while (*str) {
+                int len;
+
+                len = utf8_encoded_valid_unichar(str);
+                if (len > 0) {
+                        if (utf8_is_printable(str, len)) {
+                                s = mempcpy(s, str, len);
+                                str += len;
+                        } else {
+                                while (len > 0) {
+                                        *(s++) = '\\';
+                                        *(s++) = 'x';
+                                        *(s++) = hexchar((int) *str >> 4);
+                                        *(s++) = hexchar((int) *str);
+
+                                        str += 1;
+                                        len --;
+                                }
+                        }
+                } else {
+                        s = stpcpy(s, UTF8_REPLACEMENT_CHARACTER);
                         str += 1;
                 }
         }
@@ -224,39 +263,91 @@ char *ascii_is_valid(const char *str) {
         return (char*) str;
 }
 
-char *utf16_to_utf8(const void *s, size_t length) {
-        char *r;
-        const uint8_t *f;
-        uint8_t *t;
+/**
+ * utf8_encode_unichar() - Encode single UCS-4 character as UTF-8
+ * @out_utf8: output buffer of at least 4 bytes or NULL
+ * @g: UCS-4 character to encode
+ *
+ * This encodes a single UCS-4 character as UTF-8 and writes it into @out_utf8.
+ * The length of the character is returned. It is not zero-terminated! If the
+ * output buffer is NULL, only the length is returned.
+ *
+ * Returns: The length in bytes that the UTF-8 representation does or would
+ *          occupy.
+ */
+size_t utf8_encode_unichar(char *out_utf8, uint32_t g) {
+        if (g < (1 << 7)) {
+                if (out_utf8)
+                        out_utf8[0] = g & 0x7f;
+                return 1;
+        } else if (g < (1 << 11)) {
+                if (out_utf8) {
+                        out_utf8[0] = 0xc0 | ((g >> 6) & 0x1f);
+                        out_utf8[1] = 0x80 | (g & 0x3f);
+                }
+                return 2;
+        } else if (g < (1 << 16)) {
+                if (out_utf8) {
+                        out_utf8[0] = 0xe0 | ((g >> 12) & 0x0f);
+                        out_utf8[1] = 0x80 | ((g >> 6) & 0x3f);
+                        out_utf8[2] = 0x80 | (g & 0x3f);
+                }
+                return 3;
+        } else if (g < (1 << 21)) {
+                if (out_utf8) {
+                        out_utf8[0] = 0xf0 | ((g >> 18) & 0x07);
+                        out_utf8[1] = 0x80 | ((g >> 12) & 0x3f);
+                        out_utf8[2] = 0x80 | ((g >> 6) & 0x3f);
+                        out_utf8[3] = 0x80 | (g & 0x3f);
+                }
+                return 4;
+        } else {
+                return 0;
+        }
+}
 
-        r = new(char, (length*3+1)/2 + 1);
+char *utf16_to_utf8(const void *s, size_t length) {
+        const uint8_t *f;
+        char *r, *t;
+
+        r = new(char, (length * 4 + 1) / 2 + 1);
         if (!r)
                 return NULL;
 
-        t = (uint8_t*) r;
+        f = s;
+        t = r;
 
-        for (f = s; f < (const uint8_t*) s + length; f += 2) {
-                uint16_t c;
+        while (f < (const uint8_t*) s + length) {
+                uint16_t w1, w2;
 
-                c = (f[1] << 8) | f[0];
+                /* see RFC 2781 section 2.2 */
 
-                if (c == 0) {
-                        *t = 0;
-                        return r;
-                } else if (c < 0x80) {
-                        *(t++) = (uint8_t) c;
-                } else if (c < 0x800) {
-                        *(t++) = (uint8_t) (0xc0 | (c >> 6));
-                        *(t++) = (uint8_t) (0x80 | (c & 0x3f));
-                } else {
-                        *(t++) = (uint8_t) (0xe0 | (c >> 12));
-                        *(t++) = (uint8_t) (0x80 | ((c >> 6) & 0x3f));
-                        *(t++) = (uint8_t) (0x80 | (c & 0x3f));
+                w1 = f[1] << 8 | f[0];
+                f += 2;
+
+                if (!utf16_is_surrogate(w1)) {
+                        t += utf8_encode_unichar(t, w1);
+
+                        continue;
                 }
+
+                if (utf16_is_trailing_surrogate(w1))
+                        continue;
+                else if (f >= (const uint8_t*) s + length)
+                        break;
+
+                w2 = f[1] << 8 | f[0];
+                f += 2;
+
+                if (!utf16_is_trailing_surrogate(w2)) {
+                        f -= 2;
+                        continue;
+                }
+
+                t += utf8_encode_unichar(t, utf16_surrogate_pair_to_unichar(w1, w2));
         }
 
         *t = 0;
-
         return r;
 }
 

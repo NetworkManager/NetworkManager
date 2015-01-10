@@ -22,22 +22,15 @@
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
-#include <net/ethernet.h>
 #include <arpa/inet.h>
-#include <sys/param.h>
 
-#include "util.h"
-#include "list.h"
-#include "mkdir.h"
 #include "fileio.h"
 #include "unaligned.h"
 #include "in-addr-util.h"
 
 #include "dhcp-protocol.h"
-#include "dhcp-internal.h"
 #include "dhcp-lease-internal.h"
 #include "sd-dhcp-lease.h"
-#include "sd-dhcp-client.h"
 #include "network-internal.h"
 
 int sd_dhcp_lease_get_address(sd_dhcp_lease *lease, struct in_addr *addr) {
@@ -51,7 +44,7 @@ int sd_dhcp_lease_get_address(sd_dhcp_lease *lease, struct in_addr *addr) {
 
 int sd_dhcp_lease_get_lifetime(sd_dhcp_lease *lease, uint32_t *lifetime) {
         assert_return(lease, -EINVAL);
-        assert_return(lease, -EINVAL);
+        assert_return(lifetime, -EINVAL);
 
         *lifetime = lease->lifetime;
 
@@ -193,7 +186,7 @@ sd_dhcp_lease *sd_dhcp_lease_ref(sd_dhcp_lease *lease) {
 }
 
 sd_dhcp_lease *sd_dhcp_lease_unref(sd_dhcp_lease *lease) {
-        if (lease && REFCNT_DEC(lease->n_ref) <= 0) {
+        if (lease && REFCNT_DEC(lease->n_ref) == 0) {
                 free(lease->hostname);
                 free(lease->domainname);
                 free(lease->dns);
@@ -497,10 +490,19 @@ int dhcp_lease_parse_options(uint8_t code, uint8_t len, const uint8_t *option,
         case DHCP_OPTION_DOMAIN_NAME:
         {
                 _cleanup_free_ char *domainname = NULL;
+                char *e;
 
                 r = lease_parse_string(option, len, &domainname);
                 if (r < 0)
                         return r;
+
+                /* Chop off trailing dot of domain name that some DHCP
+                 * servers send us back. Internally we want to store
+                 * host names without trailing dots and
+                 * host_name_is_valid() doesn't accept them. */
+                e = endswith(domainname, ".");
+                if (e)
+                        *e = 0;
 
                 if (!hostname_is_valid(domainname) || is_localhost(domainname))
                         break;
@@ -514,10 +516,15 @@ int dhcp_lease_parse_options(uint8_t code, uint8_t len, const uint8_t *option,
         case DHCP_OPTION_HOST_NAME:
         {
                 _cleanup_free_ char *hostname = NULL;
+                char *e;
 
                 r = lease_parse_string(option, len, &hostname);
                 if (r < 0)
                         return r;
+
+                e = endswith(hostname, ".");
+                if (e)
+                        *e = 0;
 
                 if (!hostname_is_valid(hostname) || is_localhost(hostname))
                         break;
@@ -685,7 +692,7 @@ int sd_dhcp_lease_save(sd_dhcp_lease *lease, const char *lease_file) {
 
 finish:
         if (r < 0)
-                log_error("Failed to save lease data %s: %s", lease_file, strerror(-r));
+                log_error_errno(r, "Failed to save lease data %s: %m", lease_file);
 
         return r;
 }
@@ -725,8 +732,7 @@ int sd_dhcp_lease_load(sd_dhcp_lease **ret, const char *lease_file) {
                 if (r == -ENOENT)
                         return 0;
 
-                log_error("Failed to read %s: %s", lease_file, strerror(-r));
-                return r;
+                return log_error_errno(r, "Failed to read %s: %m", lease_file);
         }
 
         r = inet_pton(AF_INET, address, &addr);

@@ -67,7 +67,7 @@ typedef struct dual_timestamp {
 
 #define TIME_T_MAX (time_t)((1UL << ((sizeof(time_t) << 3) - 1)) - 1)
 
-#define DUAL_TIMESTAMP_NULL ((struct dual_timestamp) { 0, 0 })
+#define DUAL_TIMESTAMP_NULL ((struct dual_timestamp) { 0ULL, 0ULL })
 
 usec_t now(clockid_t clock);
 
@@ -107,3 +107,5 @@ int get_timezones(char ***l);
 bool timezone_is_valid(const char *name);
 
 clockid_t clock_boottime_or_monotonic(void);
+
+#define xstrftime(buf, fmt, tm) assert_se(strftime(buf, ELEMENTSOF(buf), fmt, tm) > 0)

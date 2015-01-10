@@ -55,6 +55,14 @@
                 *_head = _item;                                         \
         } while(false)
 
+/* Append an item to the list */
+#define LIST_APPEND(name,head,item)                                     \
+        do {                                                            \
+                typeof(*(head)) *_tail;                                 \
+                LIST_FIND_TAIL(name,head,_tail);                        \
+                LIST_INSERT_AFTER(name,head,_tail,item);                \
+        } while(false)
+
 /* Remove an item from the list */
 #define LIST_REMOVE(name,head,item)                                     \
         do {                                                            \
@@ -129,6 +137,18 @@
 
 #define LIST_FOREACH_AFTER(name,i,p)                                    \
         for ((i) = (p)->name##_next; (i); (i) = (i)->name##_next)
+
+/* Iterate through all the members of the list p is included in, but skip over p */
+#define LIST_FOREACH_OTHERS(name,i,p)                                   \
+        for (({                                                         \
+                (i) = (p);                                              \
+                while ((i) && (i)->name##_prev)                         \
+                        (i) = (i)->name##_prev;                         \
+                if ((i) == (p))                                         \
+                        (i) = (p)->name##_next;                         \
+             });                                                        \
+             (i);                                                       \
+             (i) = (i)->name##_next == (p) ? (p)->name##_next : (i)->name##_next)
 
 /* Loop starting from p->next until p->prev.
    p can be adjusted meanwhile. */
