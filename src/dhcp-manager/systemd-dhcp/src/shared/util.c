@@ -85,7 +85,9 @@
 #include "log.h"
 #include "strv.h"
 #include "mkdir.h"
+#endif /* NM_IGNORED */
 #include "path-util.h"
+#if 0 /* NM_IGNORED */
 #include "exit-status.h"
 #include "hashmap.h"
 #include "env-util.h"
