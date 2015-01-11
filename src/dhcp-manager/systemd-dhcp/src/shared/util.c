@@ -3342,7 +3342,6 @@ fail:
         return NULL;
 }
 
-#if 0 /* NM_IGNORED */
 char **replace_env_argv(char **argv, char **env) {
         char **ret, **i;
         unsigned k = 0, l = 0;
@@ -3407,7 +3406,6 @@ char **replace_env_argv(char **argv, char **env) {
         ret[k] = NULL;
         return ret;
 }
-#endif
 
 int fd_columns(int fd) {
         struct winsize ws = {};
