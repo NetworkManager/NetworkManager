@@ -1806,6 +1806,7 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	char *route_path = NULL;
 	gint32 j;
 	guint32 i, n, num;
+	gint64 route_metric;
 	GString *searches;
 	gboolean success = FALSE;
 	gboolean fake_ip4 = FALSE;
@@ -2014,6 +2015,11 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	svSetValue (ifcfg, "IPV4_FAILURE_FATAL",
 	            nm_setting_ip_config_get_may_fail (s_ip4) ? "no" : "yes",
 	            FALSE);
+
+	route_metric = nm_setting_ip_config_get_route_metric (s_ip4);
+	tmp = route_metric != -1 ? g_strdup_printf ("%"G_GINT64_FORMAT, route_metric) : NULL;
+	svSetValue (ifcfg, "IPV4_ROUTE_METRIC", tmp, FALSE);
+	g_free (tmp);
 
 	/* Static routes - route-<name> file */
 	route_path = utils_get_route_path (ifcfg->fileName);
@@ -2249,10 +2255,12 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	NMSettingIPConfig *s_ip4;
 	const char *value;
 	char *addr_key;
+	char *tmp;
 	guint32 i, num, num4;
 	GString *searches;
 	NMIPAddress *addr;
 	const char *dns;
+	gint64 route_metric;
 	GString *ip_str1, *ip_str2, *ip_ptr;
 	char *route6_path;
 
@@ -2266,6 +2274,7 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		svSetValue (ifcfg, "IPV6_PEERDNS", "yes", FALSE);
 		svSetValue (ifcfg, "IPV6_PEERROUTES", "yes", FALSE);
 		svSetValue (ifcfg, "IPV6_FAILURE_FATAL", "no", FALSE);
+		svSetValue (ifcfg, "IPV6_ROUTE_METRIC", NULL, FALSE);
 		return TRUE;
 	}
 
@@ -2379,6 +2388,11 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	svSetValue (ifcfg, "IPV6_FAILURE_FATAL",
 	            nm_setting_ip_config_get_may_fail (s_ip6) ? "no" : "yes",
 	            FALSE);
+
+	route_metric = nm_setting_ip_config_get_route_metric (s_ip6);
+	tmp = route_metric != -1 ? g_strdup_printf ("%"G_GINT64_FORMAT, route_metric) : NULL;
+	svSetValue (ifcfg, "IPV6_ROUTE_METRIC", tmp, FALSE);
+	g_free (tmp);
 
 	/* IPv6 Privacy Extensions */
 	svSetValue (ifcfg, "IPV6_PRIVACY", NULL, FALSE);

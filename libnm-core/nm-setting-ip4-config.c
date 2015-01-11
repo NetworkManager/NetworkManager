@@ -571,6 +571,15 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *ip4_class)
 	 * ---end---
 	 */
 
+	/* ---ifcfg-rh---
+	 * property: route-metric
+	 * variable: IPV4_ROUTE_METRIC(+)
+	 * default: -1
+	 * description: IPV4_ROUTE_METRIC is the default IPv4 metric for routes on this connection.
+	 *   If set to -1, a default metric based on the device type is used.
+	 * ---end---
+	 */
+
 	/**
 	 * NMSettingIP4Config:dhcp-client-id:
 	 *

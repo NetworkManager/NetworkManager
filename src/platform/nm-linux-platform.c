@@ -3845,6 +3845,8 @@ ip6_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
                struct in6_addr network, int plen, struct in6_addr gateway,
                guint32 metric, guint32 mss)
 {
+	metric = nm_utils_ip6_route_metric_normalize (metric);
+
 	return add_object (platform, build_rtnl_route (AF_INET6, ifindex, source, &network, plen, &gateway, NULL, metric, mss));
 }
 
@@ -3863,7 +3865,7 @@ route_search_cache (struct nl_cache *cache, int family, int ifindex, const void 
 		if (!_route_match (rtnlroute, family, ifindex, FALSE))
 			continue;
 
-		if (metric && metric != rtnl_route_get_priority (rtnlroute))
+		if (metric != rtnl_route_get_priority (rtnlroute))
 			continue;
 
 		dst = rtnl_route_get_dst (rtnlroute);
@@ -3884,7 +3886,7 @@ route_search_cache (struct nl_cache *cache, int family, int ifindex, const void 
 }
 
 static gboolean
-refresh_route (NMPlatform *platform, int family, int ifindex, const void *network, int plen, int metric)
+refresh_route (NMPlatform *platform, int family, int ifindex, const void *network, int plen, guint32 metric)
 {
 	struct nl_cache *cache;
 	auto_nl_object struct rtnl_route *cached_object = NULL;
@@ -3909,6 +3911,19 @@ ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen
 	g_return_val_if_fail (route, FALSE);
 
 	cache = choose_cache_by_type (platform, OBJECT_TYPE_IP4_ROUTE);
+
+	if (metric == 0) {
+		/* Deleting an IPv4 route with metric 0 does not only delete an exectly matching route.
+		 * If no route with metric 0 exists, it might delete another route to the same destination.
+		 * For nm_platform_ip4_route_delete() we don't want this semantic.
+		 *
+		 * Instead, re-fetch the route from kernel, and if that fails, there is nothing to do.
+		 * On success, there is still a race that we might end up deleting the wrong route. */
+		if (!refresh_object (platform, (struct nl_object *) route, FALSE, NM_PLATFORM_REASON_INTERNAL)) {
+			rtnl_route_put ((struct rtnl_route *) route);
+			return TRUE;
+		}
+	}
 
 	/* when deleting an IPv4 route, several fields of the provided route must match.
 	 * Lookup in the cache so that we hopefully get the right values. */
@@ -3962,6 +3977,8 @@ ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, in
 {
 	struct in6_addr gateway = IN6ADDR_ANY_INIT;
 
+	metric = nm_utils_ip6_route_metric_normalize (metric);
+
 	return delete_object (platform, build_rtnl_route (AF_INET6, ifindex, NM_IP_CONFIG_SOURCE_UNKNOWN ,&network, plen, &gateway, NULL, metric, 0), FALSE) &&
 	    refresh_route (platform, AF_INET6, ifindex, &network, plen, metric);
 }
@@ -3989,6 +4006,8 @@ ip4_route_exists (NMPlatform *platform, int ifindex, in_addr_t network, int plen
 static gboolean
 ip6_route_exists (NMPlatform *platform, int ifindex, struct in6_addr network, int plen, guint32 metric)
 {
+	metric = nm_utils_ip6_route_metric_normalize (metric);
+
 	return ip_route_exists (platform, AF_INET6, ifindex, &network, plen, metric);
 }
 
