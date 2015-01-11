@@ -34,7 +34,7 @@
 #include "list.h"
 #if 0 /* NM_IGNORED */
 #include "mkdir.h"
-#endif
+#endif /* NM_IGNORED */
 #include "fileio.h"
 #include "unaligned.h"
 #include "in-addr-util.h"

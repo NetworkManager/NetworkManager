@@ -312,7 +312,7 @@ int strv_split_quoted(char ***t, const char *s, bool relax) {
 
         return 0;
 }
-#endif
+#endif /* NM_IGNORED */
 
 char *strv_join(char **l, const char *separator) {
         char *r, *e;

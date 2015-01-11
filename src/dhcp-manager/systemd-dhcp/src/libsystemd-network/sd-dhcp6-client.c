@@ -32,7 +32,7 @@
 #include "udev.h"
 #include "udev-util.h"
 #include "virt.h"
-#endif
+#endif /* NM_IGNORED */
 #include "siphash24.h"
 #include "util.h"
 #include "refcnt.h"
@@ -1180,7 +1180,7 @@ int sd_dhcp6_client_new(sd_dhcp6_client **ret)
 #if 0 /* NM_IGNORED */
         sd_id128_t machine_id;
         int r;
-#endif
+#endif /* NM_IGNORED */
         size_t t;
 
         assert_return(ret, -EINVAL);
@@ -1210,7 +1210,7 @@ int sd_dhcp6_client_new(sd_dhcp6_client **ret)
         /* a bit of snake-oil perhaps, but no need to expose the machine-id
            directly */
         siphash24(client->duid.en.id, &machine_id, sizeof(machine_id), HASH_KEY.bytes);
-#endif
+#endif /* NM_IGNORED */
 
         client->req_opts_len = ELEMENTSOF(default_req_opts);
 

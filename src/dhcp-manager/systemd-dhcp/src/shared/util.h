@@ -85,12 +85,12 @@
 #else
 #  error Unknown rlim_t size
 #endif
-#endif
+#endif /* NM_IGNORED */
 
 #include "macro.h"
 #if 0 /* NM_IGNORED */
 #include "missing.h"
-#endif
+#endif /* NM_IGNORED */
 #include "time-util.h"
 
 /* What is interpreted as whitespace? */
@@ -987,7 +987,7 @@ bool pid_is_unwaited(pid_t pid);
 #if 0 /* NM_IGNORED */
 int getpeercred(int fd, struct ucred *ucred);
 int getpeersec(int fd, char **ret);
-#endif
+#endif /* NM_IGNORED */
 
 int writev_safe(int fd, const struct iovec *w, int j);
 
@@ -1010,7 +1010,7 @@ union file_handle_union {
         struct file_handle handle;
         char padding[sizeof(struct file_handle) + MAX_HANDLE_SZ];
 };
-#endif
+#endif /* NM_IGNORED */
 
 int update_reboot_param_file(const char *param);
 

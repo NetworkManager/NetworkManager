@@ -32,7 +32,7 @@
 #include "time-util.h"
 #if 0 /* NM_IGNORED */
 #include "strv.h"
-#endif
+#endif /* NM_IGNORED */
 
 usec_t now(clockid_t clock_id) {
         struct timespec ts;
@@ -279,7 +279,7 @@ char *format_timestamp_relative(char *buf, size_t l, usec_t t) {
         buf[l-1] = 0;
         return buf;
 }
-#endif
+#endif /* NM_IGNORED */
 
 char *format_timespan(char *buf, size_t l, usec_t t, usec_t accuracy) {
         static const struct {
@@ -981,7 +981,7 @@ bool timezone_is_valid(const char *name) {
 
         return true;
 }
-#endif
+#endif /* NM_IGNORED */
 
 clockid_t clock_boottime_or_monotonic(void) {
         static clockid_t clock = -1;

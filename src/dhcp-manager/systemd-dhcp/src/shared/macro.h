@@ -410,4 +410,4 @@ do {                                                                    \
 #endif
 
 #include "log.h"
-#endif
+#endif /* NM_IGNORED */
