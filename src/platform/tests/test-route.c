@@ -55,7 +55,7 @@ test_ip4_route_metric0 (void)
 {
 	int ifindex = nm_platform_link_get_ifindex (DEVICE_NAME);
 	SignalData *route_added = add_signal (NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, NM_PLATFORM_SIGNAL_ADDED, ip4_route_callback);
-	/*SignalData *route_changed = add_signal (NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, NM_PLATFORM_SIGNAL_CHANGED, ip4_route_callback);*/
+	SignalData *route_changed = add_signal (NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, NM_PLATFORM_SIGNAL_CHANGED, ip4_route_callback);
 	SignalData *route_removed = add_signal (NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, NM_PLATFORM_SIGNAL_REMOVED, ip4_route_callback);
 	in_addr_t network = nmtst_inet4_from_string ("192.0.2.5"); /* from 192.0.2.0/24 (TEST-NET-1) (rfc5737) */
 	int plen = 32;
@@ -115,7 +115,7 @@ test_ip4_route_metric0 (void)
 	assert_ip4_route_exists (FALSE, DEVICE_NAME, network, plen, metric);
 
 	free_signal (route_added);
-	/*free_signal (route_changed);*/
+	free_signal (route_changed);
 	free_signal (route_removed);
 }
 
