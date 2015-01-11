@@ -917,7 +917,6 @@ int get_process_gid(pid_t pid, gid_t *gid) {
         assert_cc(sizeof(uid_t) == sizeof(gid_t));
         return get_process_id(pid, "Gid:", gid);
 }
-#endif /* NM_IGNORED */
 
 int get_process_cwd(pid_t pid, char **cwd) {
         const char *p;
@@ -971,6 +970,7 @@ int get_process_environ(pid_t pid, char **env) {
 
         return 0;
 }
+#endif /* NM_IGNORED */
 
 char *strnappend(const char *s, const char *suffix, size_t b) {
         size_t a;

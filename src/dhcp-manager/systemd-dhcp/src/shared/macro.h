@@ -410,6 +410,7 @@ do {                                                                    \
                 _found;                                                 \
         })
 
+#if 0 /* NM_IGNORED */
 /* Return a nulstr for a standard cascade of configuration directories,
  * suitable to pass to conf_files_list_nulstr or config_parse_many. */
 #define CONF_DIRS_NULSTR(n) \
@@ -425,7 +426,6 @@ do {                                                                    \
 #define CONF_DIR_SPLIT_USR(n)
 #endif
 
-#if 0 /* NM_IGNORED */
 /* Define C11 thread_local attribute even on older gcc compiler
  * version */
 #ifndef thread_local
