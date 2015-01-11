@@ -2,6 +2,7 @@
 
 #include "test-common.h"
 #include "nm-test-utils.h"
+#include "NetworkManagerUtils.h"
 
 #define DEVICE_NAME "nm-test-device"
 
@@ -205,21 +206,21 @@ test_ip6_route (void)
 	rts[0].plen = 128;
 	rts[0].ifindex = ifindex;
 	rts[0].gateway = in6addr_any;
-	rts[0].metric = metric;
+	rts[0].metric = nm_utils_ip6_route_metric_normalize (metric);
 	rts[0].mss = mss;
 	rts[1].source = NM_IP_CONFIG_SOURCE_USER;
 	rts[1].network = network;
 	rts[1].plen = plen;
 	rts[1].ifindex = ifindex;
 	rts[1].gateway = gateway;
-	rts[1].metric = metric;
+	rts[1].metric = nm_utils_ip6_route_metric_normalize (metric);
 	rts[1].mss = mss;
 	rts[2].source = NM_IP_CONFIG_SOURCE_USER;
 	rts[2].network = in6addr_any;
 	rts[2].plen = 0;
 	rts[2].ifindex = ifindex;
 	rts[2].gateway = gateway;
-	rts[2].metric = metric;
+	rts[2].metric = nm_utils_ip6_route_metric_normalize (metric);
 	rts[2].mss = mss;
 	g_assert_cmpint (routes->len, ==, 3);
 	g_assert (!memcmp (routes->data, rts, sizeof (rts)));

@@ -488,6 +488,15 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
 	 * ---end---
 	 */
 
+	/* ---ifcfg-rh---
+	 * property: route-metric
+	 * variable: IPV6_ROUTE_METRIC(+)
+	 * default: -1
+	 * description: IPV6_ROUTE_METRIC is the default IPv6 metric for routes on this connection.
+	 *   If set to -1, a default metric based on the device type is used.
+	 * ---end---
+	 */
+
 	/**
 	 * NMSettingIP6Config:ip6-privacy:
 	 *
