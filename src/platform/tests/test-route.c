@@ -75,11 +75,11 @@ test_ip4_route (void)
 	accept_signal (route_added);
 
 	/* Add route */
-	g_assert (!nm_platform_ip4_route_exists (ifindex, network, plen, metric));
+	assert_ip4_route_exists (FALSE, DEVICE_NAME, network, plen, metric);
 	no_error ();
 	g_assert (nm_platform_ip4_route_add (ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, gateway, 0, metric, mss));
 	no_error ();
-	g_assert (nm_platform_ip4_route_exists (ifindex, network, plen, metric));
+	assert_ip4_route_exists (TRUE, DEVICE_NAME, network, plen, metric);
 	no_error ();
 	accept_signal (route_added);
 
@@ -89,11 +89,11 @@ test_ip4_route (void)
 	accept_signal (route_changed);
 
 	/* Add default route */
-	g_assert (!nm_platform_ip4_route_exists (ifindex, 0, 0, metric));
+	assert_ip4_route_exists (FALSE, DEVICE_NAME, 0, 0, metric);
 	no_error ();
 	g_assert (nm_platform_ip4_route_add (ifindex, NM_IP_CONFIG_SOURCE_USER, 0, 0, gateway, 0, metric, mss));
 	no_error ();
-	g_assert (nm_platform_ip4_route_exists (ifindex, 0, 0, metric));
+	assert_ip4_route_exists (TRUE, DEVICE_NAME, 0, 0, metric);
 	no_error ();
 	accept_signal (route_added);
 
@@ -134,7 +134,7 @@ test_ip4_route (void)
 	/* Remove route */
 	g_assert (nm_platform_ip4_route_delete (ifindex, network, plen, metric));
 	no_error ();
-	g_assert (!nm_platform_ip4_route_exists (ifindex, network, plen, metric));
+	assert_ip4_route_exists (FALSE, DEVICE_NAME, network, plen, metric);
 	accept_signal (route_removed);
 
 	/* Remove route again */
