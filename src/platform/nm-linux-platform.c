@@ -1668,6 +1668,9 @@ announce_object (NMPlatform *platform, const struct nl_object *object, NMPlatfor
 		{
 			NMPlatformIP4Route route;
 
+			if (reason == _NM_PLATFORM_REASON_CACHE_CHECK_INTERNAL)
+				return;
+
 			if (!_route_match ((struct rtnl_route *) object, AF_INET, 0, FALSE)) {
 				nm_log_dbg (LOGD_PLATFORM, "skip announce unmatching IP4 route %s", to_string_ip4_route ((struct rtnl_route *) object));
 				return;
@@ -1679,6 +1682,9 @@ announce_object (NMPlatform *platform, const struct nl_object *object, NMPlatfor
 	case OBJECT_TYPE_IP6_ROUTE:
 		{
 			NMPlatformIP6Route route;
+
+			if (reason == _NM_PLATFORM_REASON_CACHE_CHECK_INTERNAL)
+				return;
 
 			if (!_route_match ((struct rtnl_route *) object, AF_INET6, 0, FALSE)) {
 				nm_log_dbg (LOGD_PLATFORM, "skip announce unmatching IP6 route %s", to_string_ip6_route ((struct rtnl_route *) object));
@@ -3919,7 +3925,7 @@ ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen
 		 *
 		 * Instead, re-fetch the route from kernel, and if that fails, there is nothing to do.
 		 * On success, there is still a race that we might end up deleting the wrong route. */
-		if (!refresh_object (platform, (struct nl_object *) route, FALSE, NM_PLATFORM_REASON_INTERNAL)) {
+		if (!refresh_object (platform, (struct nl_object *) route, FALSE, _NM_PLATFORM_REASON_CACHE_CHECK_INTERNAL)) {
 			rtnl_route_put ((struct rtnl_route *) route);
 			return TRUE;
 		}
