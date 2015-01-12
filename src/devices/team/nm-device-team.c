@@ -383,17 +383,6 @@ teamd_process_watch_cb (GPid pid, gint status, gpointer user_data)
 }
 
 static void
-teamd_child_setup (gpointer user_data G_GNUC_UNUSED)
-{
-	/* We are in the child process at this point.
-	 * Give child it's own program group for signal
-	 * separation.
-	 */
-	pid_t pid = getpid ();
-	setpgid (pid, pid);
-}
-
-static void
 nm_device_team_watch_dbus (NMDeviceTeam *self)
 {
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (self);
@@ -486,7 +475,7 @@ teamd_start (NMDevice *device, NMSettingTeam *s_team)
 	priv->teamd_timeout = g_timeout_add_seconds (5, teamd_timeout_cb, device);
 
 	ret = g_spawn_async ("/", (char **) argv->pdata, NULL, G_SPAWN_DO_NOT_REAP_CHILD,
-	                    &teamd_child_setup, NULL, &priv->teamd_pid, &error);
+	                    nm_utils_setpgid, NULL, &priv->teamd_pid, &error);
 	g_ptr_array_free (argv, TRUE);
 	if (!ret) {
 		_LOGW (LOGD_TEAM, "Activation: (team) failed to start teamd: %s", error->message);

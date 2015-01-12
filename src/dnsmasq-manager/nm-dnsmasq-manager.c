@@ -296,14 +296,6 @@ create_dm_cmd_line (const char *iface,
 }
 
 static void
-dm_child_setup (gpointer user_data G_GNUC_UNUSED)
-{
-	/* We are in the child process at this point */
-	pid_t pid = getpid ();
-	setpgid (pid, pid);
-}
-
-static void
 kill_existing_for_iface (const char *iface, const char *pidfile)
 {
 	char *contents = NULL;
@@ -367,9 +359,9 @@ nm_dnsmasq_manager_start (NMDnsMasqManager *manager,
 
 	priv->pid = 0;
 	if (!g_spawn_async (NULL, (char **) dm_cmd->array->pdata, NULL,
-					G_SPAWN_DO_NOT_REAP_CHILD,
-					dm_child_setup,
-					NULL, &priv->pid, error)) {
+	                    G_SPAWN_DO_NOT_REAP_CHILD,
+	                    nm_utils_setpgid, NULL,
+	                    &priv->pid, error)) {
 		goto out;
 	}
 
