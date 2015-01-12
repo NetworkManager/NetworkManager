@@ -92,7 +92,12 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-G_DEFINE_TYPE (NMConfig, nm_config, G_TYPE_OBJECT)
+static void nm_config_initable_iface_init (GInitableIface *iface);
+
+G_DEFINE_TYPE_WITH_CODE (NMConfig, nm_config, G_TYPE_OBJECT,
+                         G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE, nm_config_initable_iface_init);
+                         )
+
 
 #define NM_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_CONFIG, NMConfigPrivate))
 
@@ -770,21 +775,24 @@ nm_config_setup (const NMConfigCmdLineOptions *cli, GError **error)
 	return singleton_instance;
 }
 
-NMConfig *
-nm_config_new (const NMConfigCmdLineOptions *cli, GError **error)
+static gboolean
+init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 {
-	NMConfigPrivate *priv = NULL;
-	NMConfig *self;
+	NMConfig *self = NM_CONFIG (initable);
+	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (self);
 	GKeyFile *keyfile;
 	char *config_main_file = NULL;
 	char *config_description = NULL;
 	char **no_auto_default;
 	char **no_auto_default_orig;
 
-	self = NM_CONFIG (g_object_new (NM_TYPE_CONFIG,
-	                                NM_CONFIG_CMD_LINE_OPTIONS, cli,
-	                                NULL));
-	priv = NM_CONFIG_GET_PRIVATE (self);
+	if (priv->config_dir) {
+		/* Object is already initialized. */
+		if (priv->config_data)
+			return TRUE;
+		g_set_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND, "unspecified error");
+		return FALSE;
+	}
 
 	if (priv->cli.config_dir)
 		priv->config_dir = g_strdup (priv->cli.config_dir);
@@ -796,10 +804,8 @@ nm_config_new (const NMConfigCmdLineOptions *cli, GError **error)
 	                              &config_main_file,
 	                              &config_description,
 	                              error);
-	if (!keyfile) {
-		g_object_unref (self);
-		return NULL;
-	}
+	if (!keyfile)
+		return FALSE;
 
 	/* Initialize read only private members */
 
@@ -836,15 +842,22 @@ nm_config_new (const NMConfigCmdLineOptions *cli, GError **error)
 	g_strfreev (no_auto_default);
 	g_strfreev (no_auto_default_orig);
 
-	/* Initialize mutable members. */
-
 	priv->config_data = g_object_ref (priv->config_data_orig);
-
 
 	g_free (config_main_file);
 	g_free (config_description);
 	g_key_file_unref (keyfile);
-	return self;
+	return TRUE;
+}
+
+NMConfig *
+nm_config_new (const NMConfigCmdLineOptions *cli, GError **error)
+{
+	return NM_CONFIG (g_initable_new (NM_TYPE_CONFIG,
+	                                  NULL,
+	                                  error,
+	                                  NM_CONFIG_CMD_LINE_OPTIONS, cli,
+	                                  NULL));
 }
 
 static void
@@ -924,5 +937,11 @@ nm_config_class_init (NMConfigClass *config_class)
 	                  G_STRUCT_OFFSET (NMConfigClass, config_changed),
 	                  NULL, NULL, NULL,
 	                  G_TYPE_NONE, 3, NM_TYPE_CONFIG_DATA, G_TYPE_HASH_TABLE, NM_TYPE_CONFIG_DATA);
+}
+
+static void
+nm_config_initable_iface_init (GInitableIface *iface)
+{
+	iface->init = init_sync;
 }
 
