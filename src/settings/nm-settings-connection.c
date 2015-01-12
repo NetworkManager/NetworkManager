@@ -2200,7 +2200,7 @@ nm_settings_connection_init (NMSettingsConnection *self)
 
 	priv->session_changed_id = nm_session_monitor_connect (session_changed_cb, self);
 
-	priv->agent_mgr = nm_agent_manager_get ();
+	priv->agent_mgr = g_object_ref (nm_agent_manager_get ());
 
 	priv->seen_bssids = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 
