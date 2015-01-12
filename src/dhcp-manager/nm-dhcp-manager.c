@@ -557,6 +557,7 @@ nm_dhcp_manager_test_ip4_options_to_config (const char *dhcp_client,
 
 	client = (NMDHCPClient *) g_object_new (client_type,
 	                                        NM_DHCP_CLIENT_INTERFACE, iface,
+	                                        NM_DHCP_CLIENT_IFINDEX, 2,
 	                                        NULL);
 	g_return_val_if_fail (client != NULL, NULL);
 	nm_dhcp_client_new_options (client, options, reason);
