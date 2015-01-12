@@ -263,24 +263,16 @@ rdisc_ra_timeout (NMRDisc *rdisc, gpointer user_data)
 static gboolean
 quit_handler (gpointer user_data)
 {
-	gboolean *quit_early_ptr = user_data;
-
-	*quit_early_ptr = TRUE;
 	g_main_loop_quit (main_loop);
-	return G_SOURCE_CONTINUE;
+	return G_SOURCE_REMOVE;
 }
 
 static void
-setup_signals (gboolean *quit_early_ptr)
+setup_signals (void)
 {
-	sigset_t sigmask;
-
-	sigemptyset (&sigmask);
-	pthread_sigmask (SIG_SETMASK, &sigmask, NULL);
-
 	signal (SIGPIPE, SIG_IGN);
-	g_unix_signal_add (SIGINT, quit_handler, quit_early_ptr);
-	g_unix_signal_add (SIGTERM, quit_handler, quit_early_ptr);
+	g_unix_signal_add (SIGINT, quit_handler, NULL);
+	g_unix_signal_add (SIGTERM, quit_handler, NULL);
 }
 
 static void
@@ -338,7 +330,6 @@ main (int argc, char *argv[])
 	GError *error = NULL;
 	gboolean wrote_pidfile = FALSE;
 	gs_free char *pidfile = NULL;
-	gboolean quit_early = FALSE;
 	gs_unref_object NMDhcpClient *dhcp4_client = NULL;
 	gs_unref_object NMRDisc *rdisc = NULL;
 	GByteArray *hwaddr = NULL;
@@ -415,7 +406,7 @@ main (int argc, char *argv[])
 
 	/* Set up unix signal handling - before creating threads, but after daemonizing! */
 	main_loop = g_main_loop_new (NULL, FALSE);
-	setup_signals (&quit_early);
+	setup_signals ();
 
 	nm_logging_syslog_openlog (global_opt.debug);
 
@@ -493,8 +484,7 @@ main (int argc, char *argv[])
 		nm_rdisc_start (rdisc);
 	}
 
-	if (!quit_early)
-		g_main_loop_run (main_loop);
+	g_main_loop_run (main_loop);
 
 	g_clear_pointer (&hwaddr, g_byte_array_unref);
 
