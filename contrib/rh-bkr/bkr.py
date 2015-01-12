@@ -543,7 +543,7 @@ class CmdSubmit(CmdBase):
 
         self.subs['TESTS'] = ','.join(sorted(set(tests)))
         self.subs['ARGV'] = ("\"" + "\" \"".join(sys.argv) + "\"") if sys.argv else ''
-        self.subs['ARGV_PROFILE'] = ("\"" + "\" \"".join(self.argv_profile) + "\"") if getattr(self, 'argv_profile') else ''
+        self.subs['ARGV_PROFILE'] = ("\"" + "\" \"".join(self.argv_profile) + "\"") if hasattr(self, 'argv_profile') else ''
 
         for (k,v) in self.subs.iteritems():
             self._print_substitution(k, v)
