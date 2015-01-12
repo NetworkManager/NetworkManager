@@ -4158,7 +4158,13 @@ event_handler (GIOChannel *channel,
 			 * like to free up some space. We'll read in the status synchronously. */
 			nl_socket_modify_cb (priv->nlh_event, NL_CB_VALID, NL_CB_DEFAULT, NULL, NULL);
 			do {
+				errno = 0;
+
 				nle = nl_recvmsgs_default (priv->nlh_event);
+
+				/* Work around a libnl bug fixed in 3.2.22 (375a6294) */
+				if (nle == 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
+					nle = -NLE_AGAIN;
 			} while (nle != -NLE_AGAIN);
 			nl_socket_modify_cb (priv->nlh_event, NL_CB_VALID, NL_CB_CUSTOM, event_notification, user_data);
 			cache_repopulate_all (platform);
