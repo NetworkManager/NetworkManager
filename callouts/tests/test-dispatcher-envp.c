@@ -34,6 +34,7 @@
 
 static gboolean
 parse_main (GKeyFile *kf,
+            const char *filename,
             GVariant **out_con_dict,
             GVariant **out_con_props,
             char **out_expected_iface,
@@ -82,6 +83,11 @@ parse_main (GKeyFile *kf,
 	g_variant_builder_add (&props, "{sv}",
 	                       "connection-path",
 	                       g_variant_new_object_path ("/org/freedesktop/NetworkManager/Connections/5"));
+	/* Strip out the non-fixed portion of the filename */
+	filename = strstr (filename, "/callouts");
+	g_variant_builder_add (&props, "{sv}",
+	                       "filename",
+	                       g_variant_new_string (filename));
 	*out_con_props = g_variant_builder_end (&props);
 
 	return TRUE;
@@ -358,6 +364,7 @@ get_dispatcher_file (const char *file,
 		return FALSE;
 
 	if (!parse_main (kf,
+	                 file,
 	                 out_con_dict,
 	                 out_con_props,
 	                 out_expected_iface,

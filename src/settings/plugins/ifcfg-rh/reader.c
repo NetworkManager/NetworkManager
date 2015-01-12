@@ -1071,14 +1071,10 @@ make_ip4_setting (shvarFile *ifcfg,
 
 	/* Static routes  - route-<name> file */
 	route_path = utils_get_route_path (ifcfg->fileName);
-	if (!route_path) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Could not get route file path for '%s'", ifcfg->fileName);
-		goto done;
-	}
 
-	/* First test new/legacy syntax */
-	if (utils_has_route_file_new_syntax (route_path)) {
+	if (utils_has_complex_routes (route_path)) {
+		PARSE_WARNING ("'rule-' or 'rule6-' file is present; you will need to use a dispatcher script to apply these routes");
+	} else if (utils_has_route_file_new_syntax (route_path)) {
 		/* Parse route file in new syntax */
 		route_ifcfg = utils_get_route_ifcfg (ifcfg->fileName, FALSE);
 		if (route_ifcfg) {
@@ -1465,18 +1461,15 @@ make_ip6_setting (shvarFile *ifcfg,
 
 	/* DNS searches ('DOMAIN' key) are read by make_ip4_setting() and included in NMSettingIPConfig */
 
-	/* Read static routes from route6-<interface> file */
-	route6_path = utils_get_route6_path (ifcfg->fileName);
-	if (!route6_path) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "Could not get route6 file path for '%s'", ifcfg->fileName);
-		goto error;
+	if (!utils_has_complex_routes (ifcfg->fileName)) {
+		/* Read static routes from route6-<interface> file */
+		route6_path = utils_get_route6_path (ifcfg->fileName);
+		if (!read_route6_file (route6_path, s_ip6, error))
+			goto error;
+
+		g_free (route6_path);
 	}
 
-	if (!read_route6_file (route6_path, s_ip6, error))
-		goto error;
-
-	g_free (route6_path);
 	return NM_SETTING (s_ip6);
 
 error:

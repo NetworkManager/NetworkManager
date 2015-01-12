@@ -37,6 +37,7 @@
 #include "nm-dhcp6-config.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
+#include "nm-settings-connection.h"
 
 #define CALL_TIMEOUT (1000 * 60 * 10)  /* 10 minutes for all scripts */
 
@@ -474,6 +475,7 @@ _dispatcher_call (DispatcherAction action,
 
 	if (connection) {
 		GVariant *connection_dict;
+		const char *filename;
 
 		connection_dict = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_NO_SECRETS);
 		connection_hash = nm_utils_connection_dict_to_hash (connection_dict);
@@ -483,6 +485,12 @@ _dispatcher_call (DispatcherAction action,
 		value_hash_add_object_path (connection_props,
 		                            NMD_CONNECTION_PROPS_PATH,
 		                            nm_connection_get_path (connection));
+		filename = nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection));
+		if (filename) {
+			value_hash_add_str (connection_props,
+			                    NMD_CONNECTION_PROPS_FILENAME,
+			                    filename);
+		}
 	} else {
 		connection_hash = value_hash_create ();
 		connection_props = value_hash_create ();
