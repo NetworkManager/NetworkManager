@@ -46,17 +46,11 @@ G_BEGIN_DECLS
 #define NM_SETTINGS_CONNECTION_UPDATED_BY_USER "updated-by-user"
 
 /* Properties */
-<<<<<<< HEAD
-#define NM_SETTINGS_CONNECTION_VISIBLE "visible"
-#define NM_SETTINGS_CONNECTION_UNSAVED "unsaved"
-#define NM_SETTINGS_CONNECTION_READY   "ready"
-#define NM_SETTINGS_CONNECTION_FLAGS   "flags"
-=======
 #define NM_SETTINGS_CONNECTION_VISIBLE  "visible"
 #define NM_SETTINGS_CONNECTION_UNSAVED  "unsaved"
+#define NM_SETTINGS_CONNECTION_READY    "ready"
 #define NM_SETTINGS_CONNECTION_FLAGS    "flags"
 #define NM_SETTINGS_CONNECTION_FILENAME "filename"
->>>>>>> settings: add NMSettingsConnection:filename
 
 
 /**

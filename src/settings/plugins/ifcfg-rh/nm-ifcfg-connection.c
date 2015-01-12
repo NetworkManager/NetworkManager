@@ -156,7 +156,7 @@ nm_ifcfg_connection_check_devtimeout (NMIfcfgConnection *self)
 	ifname = nm_setting_connection_get_interface_name (s_con);
 	if (!ifname)
 		return;
-	devtimeout = devtimeout_from_file (nm_ifcfg_connection_get_path (self));
+	devtimeout = devtimeout_from_file (nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (self)));
 	if (!devtimeout)
 		return;
 
