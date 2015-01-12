@@ -54,7 +54,6 @@
 #include "nm-vpn-manager.h"
 #include "nm-logging.h"
 #include "nm-config.h"
-#include "nm-posix-signals.h"
 #include "nm-session-monitor.h"
 #include "nm-dispatcher.h"
 #include "nm-settings.h"
@@ -69,7 +68,7 @@
 #define NM_DEFAULT_SYSTEM_STATE_FILE NMSTATEDIR "/NetworkManager.state"
 
 static GMainLoop *main_loop = NULL;
-static gboolean quit_early = FALSE;
+static gboolean configure_and_quit = FALSE;
 
 static struct {
 	gboolean show_version;
@@ -226,7 +225,7 @@ manager_configure_quit (NMManager *manager, gpointer user_data)
 {
 	nm_log_info (LOGD_CORE, "quitting now that startup is complete");
 	g_main_loop_quit (main_loop);
-	quit_early = TRUE;
+	configure_and_quit = TRUE;
 }
 
 static void
@@ -400,8 +399,7 @@ main (int argc, char *argv[])
 	}
 
 	/* Set up unix signal handling - before creating threads, but after daemonizing! */
-	if (!nm_main_utils_setup_signals (main_loop, &quit_early))
-		exit (1);
+	nm_main_utils_setup_signals (main_loop);
 
 	nm_logging_syslog_openlog (global_opt.debug);
 
@@ -516,8 +514,7 @@ main (int argc, char *argv[])
 
 	success = TRUE;
 
-	/* Told to quit before getting to the mainloop by the signal handler */
-	if (!quit_early)
+	if (configure_and_quit == FALSE)
 		g_main_loop_run (main_loop);
 
 	nm_manager_stop (manager);

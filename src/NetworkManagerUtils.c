@@ -47,7 +47,6 @@
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-auth-utils.h"
-#include "nm-posix-signals.h"
 #include "nm-dbus-glib-types.h"
 #include "gsystem-local-alloc.h"
 
@@ -164,7 +163,7 @@ nm_spawn_process (const char *args, GError **error)
 	g_return_val_if_fail (!error || !*error, -1);
 
 	if (g_shell_parse_argv (args, &num_args, &argv, &local)) {
-		g_spawn_sync ("/", argv, NULL, 0, nm_unblock_posix_signals, NULL, NULL, NULL, &status, &local);
+		g_spawn_sync ("/", argv, NULL, 0, NULL, NULL, NULL, NULL, &status, &local);
 		g_strfreev (argv);
 	}
 

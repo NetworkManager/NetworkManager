@@ -53,7 +53,6 @@
 #include <nm-utils.h>
 
 #include "nm-platform.h"
-#include "nm-posix-signals.h"
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
 #include "gsystem-local-alloc.h"

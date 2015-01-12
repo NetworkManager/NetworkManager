@@ -41,7 +41,6 @@
 #include "nm-logging.h"
 #include "nm-dhcp-dhclient-utils.h"
 #include "nm-dhcp-manager.h"
-#include "nm-posix-signals.h"
 #include "NetworkManagerUtils.h"
 #include "nm-dhcp-listener.h"
 #include "gsystem-local-alloc.h"
@@ -307,12 +306,6 @@ dhclient_child_setup (gpointer user_data G_GNUC_UNUSED)
 	/* We are in the child process at this point */
 	pid_t pid = getpid ();
 	setpgid (pid, pid);
-
-	/*
-	 * We blocked signals in main(). We need to restore original signal
-	 * mask for dhclient here so that it can receive signals.
-	 */
-	nm_unblock_posix_signals (NULL);
 }
 
 static gboolean

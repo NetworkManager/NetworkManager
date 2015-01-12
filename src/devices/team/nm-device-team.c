@@ -39,7 +39,6 @@
 #include "nm-dbus-manager.h"
 #include "nm-enum-types.h"
 #include "nm-team-enum-types.h"
-#include "nm-posix-signals.h"
 #include "nm-core-internal.h"
 #include "gsystem-local-alloc.h"
 
@@ -433,12 +432,6 @@ teamd_child_setup (gpointer user_data G_GNUC_UNUSED)
 	 */
 	pid_t pid = getpid ();
 	setpgid (pid, pid);
-
-	/*
-	 * We blocked signals in main(). We need to restore original signal
-	 * mask for avahi-autoipd here so that it can receive signals.
-	 */
-	nm_unblock_posix_signals (NULL);
 }
 
 static gboolean
@@ -463,7 +456,7 @@ teamd_kill (NMDeviceTeam *self, const char *teamd_binary, GError **error)
 	g_ptr_array_add (argv, NULL);
 
 	_LOGD (LOGD_TEAM, "running: %s", (tmp_str = g_strjoinv (" ", (gchar **) argv->pdata)));
-	return g_spawn_sync ("/", (char **) argv->pdata, NULL, 0, nm_unblock_posix_signals, NULL, NULL, NULL, NULL, error);
+	return g_spawn_sync ("/", (char **) argv->pdata, NULL, 0, NULL, NULL, NULL, NULL, NULL, error);
 }
 
 static gboolean
