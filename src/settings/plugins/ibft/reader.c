@@ -36,7 +36,6 @@
 
 #include "nm-core-internal.h"
 #include "nm-platform.h"
-#include "nm-posix-signals.h"
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
 
@@ -52,12 +51,6 @@ iscsiadm_child_setup (gpointer user_data G_GNUC_UNUSED)
 	 */
 	pid_t pid = getpid ();
 	setpgid (pid, pid);
-
-	/*
-	 * We blocked signals in main(). We need to restore original signal
-	 * mask for iscsiadm here so that it can receive signals.
-	 */
-	nm_unblock_posix_signals (NULL);
 }
 
 /* Removes trailing whitespace and whitespace before and immediately after the '=' */

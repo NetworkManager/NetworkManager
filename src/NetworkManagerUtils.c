@@ -47,7 +47,6 @@
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-auth-utils.h"
-#include "nm-posix-signals.h"
 #include "nm-dbus-glib-types.h"
 
 /*
@@ -167,7 +166,7 @@ nm_spawn_process (const char *args)
 		return -1;
 	}
 
-	if (!g_spawn_sync ("/", argv, NULL, 0, nm_unblock_posix_signals, NULL, NULL, NULL, &status, &error)) {
+	if (!g_spawn_sync ("/", argv, NULL, 0, NULL, NULL, NULL, NULL, &status, &error)) {
 		nm_log_warn (LOGD_CORE, "could not spawn process '%s': %s", args, error->message);
 		g_error_free (error);
 	}

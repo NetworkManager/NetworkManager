@@ -51,7 +51,6 @@
 #include "nm-dhcp-manager.h"
 #include "nm-logging.h"
 #include "nm-config.h"
-#include "nm-posix-signals.h"
 #include "nm-session-monitor.h"
 #include "nm-dispatcher.h"
 #include "nm-settings.h"
@@ -205,7 +204,6 @@ main (int argc, char *argv[])
 	GError *error = NULL;
 	gboolean wrote_pidfile = FALSE;
 	char *bad_domains = NULL;
-	gboolean quit_early = FALSE;
 
 	GOptionEntry options[] = {
 		{ "version", 'V', 0, G_OPTION_ARG_NONE, &show_version, N_("Print NetworkManager version and exit"), NULL },
@@ -345,8 +343,7 @@ main (int argc, char *argv[])
 	_init_nm_debug (nm_config_get_debug (config));
 
 	/* Set up unix signal handling - before creating threads, but after daemonizing! */
-	if (!nm_main_utils_setup_signals (main_loop, &quit_early))
-		exit (1);
+	nm_main_utils_setup_signals (main_loop);
 
 	if (g_fatal_warnings) {
 		GLogLevelFlags fatal_mask;
@@ -442,9 +439,7 @@ main (int argc, char *argv[])
 
 	success = TRUE;
 
-	/* Told to quit before getting to the mainloop by the signal handler */
-	if (!quit_early)
-		g_main_loop_run (main_loop);
+	g_main_loop_run (main_loop);
 
 	nm_manager_stop (manager);
 

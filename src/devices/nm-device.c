@@ -62,7 +62,6 @@
 #include "nm-enum-types.h"
 #include "nm-settings-connection.h"
 #include "nm-connection-provider.h"
-#include "nm-posix-signals.h"
 #include "nm-auth-utils.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-dispatcher.h"
@@ -2726,12 +2725,6 @@ aipd_child_setup (gpointer user_data G_GNUC_UNUSED)
 	 */
 	pid_t pid = getpid ();
 	setpgid (pid, pid);
-
-	/*
-	 * We blocked signals in main(). We need to restore original signal
-	 * mask for avahi-autoipd here so that it can receive signals.
-	 */
-	nm_unblock_posix_signals (NULL);
 }
 
 /* default to installed helper, but can be modified for testing */
@@ -4955,8 +4948,6 @@ share_child_setup (gpointer user_data G_GNUC_UNUSED)
 	/* We are in the child process at this point */
 	pid_t pid = getpid ();
 	setpgid (pid, pid);
-
-	nm_unblock_posix_signals (NULL);
 }
 
 static gboolean
@@ -5113,8 +5104,7 @@ send_arps (NMDevice *self, const char *mode_arg)
 		       "arping: run %s", (tmp_str = g_strjoinv (" ", (char **) argv)));
 		success = g_spawn_async (NULL, (char **) argv, NULL,
 		                         G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL,
-		                         nm_unblock_posix_signals,
-		                         NULL, NULL, &error);
+		                         NULL, NULL, NULL, &error);
 		if (!success) {
 			_LOGW (LOGD_DEVICE | LOGD_IP4,
 			       "arping: could not send ARP for local address %s: %s",
@@ -6149,7 +6139,7 @@ spawn_ping (NMDevice *self,
 	                         (gchar **) args,
 	                         NULL,
 	                         G_SPAWN_DO_NOT_REAP_CHILD,
-	                         nm_unblock_posix_signals,
+	                         NULL,
 	                         NULL,
 	                         &priv->gw_ping.pid,
 	                         &error);

@@ -35,7 +35,6 @@
 #include "nm-device.h"
 #include "nm-active-connection.h"
 #include "nm-settings-connection.h"
-#include "nm-posix-signals.h"
 #include "nm-auth-subject.h"
 
 G_DEFINE_TYPE (NMActRequest, nm_act_request, NM_TYPE_ACTIVE_CONNECTION)
@@ -202,8 +201,6 @@ share_child_setup (gpointer user_data G_GNUC_UNUSED)
 	/* We are in the child process at this point */
 	pid_t pid = getpid ();
 	setpgid (pid, pid);
-
-	nm_unblock_posix_signals (NULL);
 }
 
 void

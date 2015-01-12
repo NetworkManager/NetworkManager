@@ -27,7 +27,6 @@
 #include "nm-dcb.h"
 #include "nm-platform.h"
 #include "NetworkManagerUtils.h"
-#include "nm-posix-signals.h"
 #include "nm-logging.h"
 
 static const char *helper_names[] = { "dcbtool", "fcoeadm" };
@@ -305,7 +304,7 @@ run_helper (char **argv, guint which, gpointer user_data, GError **error)
 	nm_log_dbg (LOGD_DCB, "%s", cmdline);
 
 	success = g_spawn_sync ("/", argv, NULL, 0 /*G_SPAWN_DEFAULT*/,
-	                        nm_unblock_posix_signals, NULL,
+	                        NULL, NULL,
 	                        &outmsg, &errmsg, &exit_status, error);
 	/* Log any stderr output */
 	if (success && WIFEXITED (exit_status) && WEXITSTATUS (exit_status) && (errmsg || outmsg)) {

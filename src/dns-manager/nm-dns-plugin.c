@@ -28,7 +28,6 @@
 
 #include "nm-dns-plugin.h"
 #include "nm-logging.h"
-#include "nm-posix-signals.h"
 #include "NetworkManagerUtils.h"
 
 typedef struct {
@@ -142,12 +141,6 @@ child_setup (gpointer user_data G_GNUC_UNUSED)
 	/* We are in the child process at this point */
 	pid_t pid = getpid ();
 	setpgid (pid, pid);
-
-	/*
-	 * We blocked signals in main(). We need to restore original signal
-	 * mask for DNS plugin here so that it can receive signals.
-	 */
-	nm_unblock_posix_signals (NULL);
 }
 
 GPid
