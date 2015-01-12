@@ -2918,17 +2918,6 @@ aipd_timeout_cb (gpointer user_data)
 	return FALSE;
 }
 
-static void
-aipd_child_setup (gpointer user_data G_GNUC_UNUSED)
-{
-	/* We are in the child process at this point.
-	 * Give child it's own program group for signal
-	 * separation.
-	 */
-	pid_t pid = getpid ();
-	setpgid (pid, pid);
-}
-
 /* default to installed helper, but can be modified for testing */
 const char *nm_device_autoipd_helper_path = LIBEXECDIR "/nm-avahi-autoipd.action";
 
@@ -2968,7 +2957,7 @@ aipd_start (NMDevice *self, NMDeviceStateReason *reason)
 	g_free (cmdline);
 
 	if (!g_spawn_async ("/", (char **) argv, NULL, G_SPAWN_DO_NOT_REAP_CHILD,
-	                    &aipd_child_setup, NULL, &(priv->aipd_pid), &error)) {
+	                    nm_utils_setpgid, NULL, &(priv->aipd_pid), &error)) {
 		_LOGW (LOGD_DEVICE | LOGD_AUTOIP4,
 		       "Activation: Stage 3 of 5 (IP Configure Start) failed"
 		       " to start avahi-autoipd: %s",

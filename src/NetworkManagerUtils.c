@@ -2689,3 +2689,21 @@ nm_utils_ip6_routes_from_gvalue (const GValue *value)
 
 	return g_slist_reverse (list);
 }
+
+/**
+ * nm_utils_setpgid:
+ * @unused: unused
+ *
+ * This can be passed as a child setup function to the g_spawn*() family
+ * of functions, to ensure that the child is in its own process group
+ * (and thus, in some situations, will not be killed when NetworkManager
+ * is killed).
+ */
+void
+nm_utils_setpgid (gpointer unused G_GNUC_UNUSED)
+{
+	pid_t pid;
+
+	pid = getpid ();
+	setpgid (pid, pid);
+}

@@ -423,17 +423,6 @@ teamd_process_watch_cb (GPid pid, gint status, gpointer user_data)
 	}
 }
 
-static void
-teamd_child_setup (gpointer user_data G_GNUC_UNUSED)
-{
-	/* We are in the child process at this point.
-	 * Give child it's own program group for signal
-	 * separation.
-	 */
-	pid_t pid = getpid ();
-	setpgid (pid, pid);
-}
-
 static gboolean
 teamd_kill (NMDeviceTeam *self, const char *teamd_binary, GError **error)
 {
@@ -507,7 +496,7 @@ teamd_start (NMDevice *device, NMSettingTeam *s_team)
 
 	_LOGD (LOGD_TEAM, "running: %s", (tmp_str = g_strjoinv (" ", (gchar **) argv->pdata)));
 	if (!g_spawn_async ("/", (char **) argv->pdata, NULL, G_SPAWN_DO_NOT_REAP_CHILD,
-	                    teamd_child_setup, NULL, &priv->teamd_pid, &error)) {
+	                    nm_utils_setpgid, NULL, &priv->teamd_pid, &error)) {
 		_LOGW (LOGD_TEAM, "Activation: (team) failed to start teamd: %s", error->message);
 		teamd_cleanup (device, TRUE);
 		return FALSE;

@@ -300,14 +300,6 @@ create_dhclient_config (const char *iface,
 }
 
 
-static void
-dhclient_child_setup (gpointer user_data G_GNUC_UNUSED)
-{
-	/* We are in the child process at this point */
-	pid_t pid = getpid ();
-	setpgid (pid, pid);
-}
-
 static gboolean
 dhclient_start (NMDhcpClient *client,
                 const char *mode_opt,
@@ -450,7 +442,7 @@ dhclient_start (NMDhcpClient *client,
 
 	if (g_spawn_async (NULL, (char **) argv->pdata, NULL,
 	                   G_SPAWN_DO_NOT_REAP_CHILD | G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL,
-	                   &dhclient_child_setup, NULL, &pid, &error)) {
+	                   nm_utils_setpgid, NULL, &pid, &error)) {
 		g_assert (pid > 0);
 		nm_log_info (log_domain, "dhclient started with pid %d", pid);
 		if (release == FALSE)
