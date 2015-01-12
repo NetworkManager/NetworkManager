@@ -69,7 +69,10 @@ typedef enum {
 	/* Event came from the kernel. */
 	NM_PLATFORM_REASON_EXTERNAL,
 	/* Event is a result of cache checking and cleanups. */
-	NM_PLATFORM_REASON_CACHE_CHECK
+	NM_PLATFORM_REASON_CACHE_CHECK,
+
+	/* Internal reason to suppress announcing change events */
+	_NM_PLATFORM_REASON_CACHE_CHECK_INTERNAL,
 } NMPlatformReason;
 
 #define __NMPlatformObject_COMMON \
