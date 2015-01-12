@@ -223,13 +223,6 @@ merge_one_ip6_config (NMResolvConfData *rc, NMIP6Config *src)
 /**********************************/
 /* SUSE */
 
-static void
-netconfig_child_setup (gpointer user_data G_GNUC_UNUSED)
-{
-	pid_t pid = getpid ();
-	setpgid (pid, pid);
-}
-
 static GPid
 run_netconfig (GError **error, gint *stdin_fd)
 {
@@ -247,7 +240,7 @@ run_netconfig (GError **error, gint *stdin_fd)
 	nm_log_dbg (LOGD_DNS, "spawning '%s'", tmp);
 	g_free (tmp);
 
-	if (!g_spawn_async_with_pipes (NULL, argv, NULL, 0, netconfig_child_setup,
+	if (!g_spawn_async_with_pipes (NULL, argv, NULL, 0, NULL,
 	                               NULL, &pid, stdin_fd, NULL, NULL, error))
 		return -1;
 

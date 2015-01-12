@@ -4942,14 +4942,6 @@ nm_device_activate_schedule_ip6_config_timeout (NMDevice *self)
 	       "Activation: Stage 4 of 5 (IPv6 Configure Timeout) scheduled...");
 }
 
-static void
-share_child_setup (gpointer user_data G_GNUC_UNUSED)
-{
-	/* We are in the child process at this point */
-	pid_t pid = getpid ();
-	setpgid (pid, pid);
-}
-
 static gboolean
 share_init (void)
 {
@@ -4979,7 +4971,7 @@ share_init (void)
 		GError *error = NULL;
 
 		if (!g_spawn_sync ("/", argv, envp, G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL,
-		                   share_child_setup, NULL, NULL, NULL, &status, &error)) {
+		                   NULL, NULL, NULL, NULL, &status, &error)) {
 			nm_log_err (LOGD_SHARING, "share: error loading NAT module %s: (%d) %s",
 			            *iter, error ? error->code : 0,
 			            (error && error->message) ? error->message : "unknown");

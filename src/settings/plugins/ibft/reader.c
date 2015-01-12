@@ -43,16 +43,6 @@
 
 #define PARSE_WARNING(msg...) nm_log_warn (LOGD_SETTINGS, "    " msg)
 
-static void
-iscsiadm_child_setup (gpointer user_data G_GNUC_UNUSED)
-{
-	/* We are in the child process here; set a different process group to
-	 * ensure signal isolation between child and parent.
-	 */
-	pid_t pid = getpid ();
-	setpgid (pid, pid);
-}
-
 /* Removes trailing whitespace and whitespace before and immediately after the '=' */
 static char *
 remove_most_whitespace (const char *src)
@@ -119,7 +109,7 @@ read_ibft_blocks (const char *iscsiadm_path,
 	g_return_val_if_fail (out_blocks != NULL && *out_blocks == NULL, FALSE);
 
 	if (!g_spawn_sync ("/", (char **) argv, (char **) envp, 0,
-	                   iscsiadm_child_setup, NULL, &out, &err, &status, error))
+	                   NULL, NULL, &out, &err, &status, error))
 		goto done;
 
 	if (!WIFEXITED (status)) {
