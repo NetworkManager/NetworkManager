@@ -195,14 +195,6 @@ clear_share_rules (NMActRequest *req)
 	priv->share_rules = NULL;
 }
 
-static void
-share_child_setup (gpointer user_data G_GNUC_UNUSED)
-{
-	/* We are in the child process at this point */
-	pid_t pid = getpid ();
-	setpgid (pid, pid);
-}
-
 void
 nm_act_request_set_shared (NMActRequest *req, gboolean shared)
 {
@@ -240,7 +232,7 @@ nm_act_request_set_shared (NMActRequest *req, gboolean shared)
 
 			nm_log_info (LOGD_SHARING, "Executing: %s", cmd);
 			if (!g_spawn_sync ("/", argv, envp, G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL,
-			                   share_child_setup, NULL, NULL, NULL, &status, &error)) {
+			                   NULL, NULL, NULL, NULL, &status, &error)) {
 				nm_log_warn (LOGD_SHARING, "Error executing command: (%d) %s",
 				             error ? error->code : -1,
 				             (error && error->message) ? error->message : "(unknown)");
