@@ -313,10 +313,13 @@ reload_connections (NMSystemConfigInterface *config)
 				if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (old),
 				                                              NM_CONNECTION (new),
 				                                              FALSE,  /* don't set Unsaved */
+				                                              "ifnet-update",
 				                                              &error)) {
-					/* Shouldn't ever get here as 'new' was verified by the reader already */
-					g_assert_no_error (error);
+					/* Shouldn't ever get here as 'new' was verified by the reader already
+					 * and the UUID did not change. */
+					g_assert_not_reached ();
 				}
+				g_assert_no_error (error);
 				nm_log_info (LOGD_SETTINGS, "Connection %s updated",
 				             nm_connection_get_id (NM_CONNECTION (new)));
 			}

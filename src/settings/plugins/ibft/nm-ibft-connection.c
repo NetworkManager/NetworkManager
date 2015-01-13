@@ -46,6 +46,7 @@ nm_ibft_connection_new (const GPtrArray *block, GError **error)
 	if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
 	                                              source,
 	                                              FALSE,
+	                                              NULL,
 	                                              error))
 		g_clear_object (&object);
 

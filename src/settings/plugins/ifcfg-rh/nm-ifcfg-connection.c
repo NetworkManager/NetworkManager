@@ -235,6 +235,7 @@ nm_ifcfg_connection_new (NMConnection *source,
 	if (nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
 	                                             tmp,
 	                                             update_unsaved,
+	                                             NULL,
 	                                             error))
 		nm_ifcfg_connection_check_devtimeout (NM_IFCFG_CONNECTION (object));
 	else

@@ -148,8 +148,8 @@ notify (GObject *object, GParamSpec *pspec)
 			break;
 	}
 	if (!dbus_property_name) {
-		nm_log_dbg (LOGD_DBUS_PROPS, "ignoring notification for prop %s on type %s",
-		            pspec->name, G_OBJECT_TYPE_NAME (object));
+		nm_log_trace (LOGD_DBUS_PROPS, "ignoring notification for prop %s on type %s",
+		              pspec->name, G_OBJECT_TYPE_NAME (object));
 		return;
 	}
 

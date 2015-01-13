@@ -25,6 +25,13 @@
 #include <nm-connection.h>
 #include "shvar.h"
 #include "common.h"
+#include "nm-logging.h"
+
+#define NM_IFCFG_CONNECTION_LOG_PATH(path)  str_if_set (path,"in-memory")
+#define NM_IFCFG_CONNECTION_LOG_FMT         "%s (%s,\"%s\")"
+#define NM_IFCFG_CONNECTION_LOG_ARG(con)    NM_IFCFG_CONNECTION_LOG_PATH (nm_settings_connection_get_filename ((NMSettingsConnection *) (con))), nm_connection_get_uuid ((NMConnection *) (con)), nm_connection_get_id ((NMConnection *) (con))
+#define NM_IFCFG_CONNECTION_LOG_FMTD        "%s (%s,\"%s\",%p)"
+#define NM_IFCFG_CONNECTION_LOG_ARGD(con)   NM_IFCFG_CONNECTION_LOG_PATH (nm_settings_connection_get_filename ((NMSettingsConnection *) (con))), nm_connection_get_uuid ((NMConnection *) (con)), nm_connection_get_id ((NMConnection *) (con)), (con)
 
 char *utils_single_quote_string (const char *str);
 
