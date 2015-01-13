@@ -69,12 +69,33 @@ nm_connectivity_get_state (NMConnectivity *connectivity)
 	return NM_CONNECTIVITY_GET_PRIVATE (connectivity)->state;
 }
 
+static const char *
+state_name (NMConnectivityState state)
+{
+	switch (state) {
+	case NM_CONNECTIVITY_UNKNOWN:
+		return "UNKNOWN";
+	case NM_CONNECTIVITY_NONE:
+		return "NONE";
+	case NM_CONNECTIVITY_LIMITED:
+		return "LIMITED";
+	case NM_CONNECTIVITY_PORTAL:
+		return "PORTAL";
+	case NM_CONNECTIVITY_FULL:
+		return "FULL";
+	default:
+		return "???";
+	}
+}
+
 static void
 update_state (NMConnectivity *self, NMConnectivityState state)
 {
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
 	if (priv->state != state) {
+		nm_log_dbg (LOGD_CONCHECK, "Connectivity state changed from %s to %s",
+		            state_name (priv->state), state_name (state));
 		priv->state = state;
 		g_object_notify (G_OBJECT (self), NM_CONNECTIVITY_STATE);
 	}
@@ -155,7 +176,6 @@ run_check (gpointer user_data)
 
 	nm_connectivity_check_async (self, run_check_complete, NULL);
 	priv->running = TRUE;
-	nm_log_dbg (LOGD_CONCHECK, "Connectivity check with uri '%s' started.", priv->uri);
 
 	return TRUE;
 }
@@ -167,7 +187,11 @@ nm_connectivity_set_online (NMConnectivity *self,
 {
 #if WITH_CONCHECK
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
+#endif
 
+	nm_log_dbg (LOGD_CONCHECK, "nm_connectivity_set_online(%s)", online ? "TRUE" : "FALSE");
+
+#if WITH_CONCHECK
 	if (online && priv->uri && priv->interval) {
 		if (!priv->check_id)
 			priv->check_id = g_timeout_add_seconds (priv->interval, run_check, self);
@@ -200,6 +224,11 @@ nm_connectivity_check_async (NMConnectivity      *self,
 
 	g_return_if_fail (NM_IS_CONNECTIVITY (self));
 	priv = NM_CONNECTIVITY_GET_PRIVATE (self);
+
+	if (callback == run_check_complete)
+		nm_log_dbg (LOGD_CONCHECK, "Periodic connectivity check started with uri '%s'.", priv->uri);
+	else
+		nm_log_dbg (LOGD_CONCHECK, "Connectivity check started with uri '%s'.", priv->uri);
 
 	simple = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
 	                                    nm_connectivity_check_async);
