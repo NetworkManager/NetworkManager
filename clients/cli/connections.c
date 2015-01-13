@@ -3501,7 +3501,7 @@ do_questionnaire_bond (char **mode, char **primary, char **miimon,
 	GError *error = NULL;
 
 	/* Ask for optional 'bond' arguments. */
-	if (!want_provide_opt_args (_("bond"), 7))
+	if (!want_provide_opt_args (_("bond"), 5))
 		return;
 
 	if (!*mode) {
