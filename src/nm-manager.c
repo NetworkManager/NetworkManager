@@ -592,7 +592,6 @@ find_best_device_state (NMManager *manager)
 		case NM_ACTIVE_CONNECTION_STATE_ACTIVATED:
 			if (   nm_active_connection_get_default (ac)
 			    || nm_active_connection_get_default6 (ac)) {
-				nm_connectivity_set_online (priv->connectivity, TRUE);
 				if (nm_connectivity_get_state (priv->connectivity) == NM_CONNECTIVITY_FULL)
 					return NM_STATE_CONNECTED_GLOBAL;
 
@@ -637,12 +636,13 @@ nm_manager_update_state (NMManager *manager)
 	else
 		new_state = find_best_device_state (manager);
 
+	nm_connectivity_set_online (priv->connectivity, new_state >= NM_STATE_CONNECTED_LOCAL);
+
 	if (new_state == NM_STATE_CONNECTED_SITE) {
 		nm_connectivity_check_async (priv->connectivity,
 		                             checked_connectivity,
 		                             g_object_ref (manager));
-	} else
-		nm_connectivity_set_online (priv->connectivity, new_state >= NM_STATE_CONNECTED_LOCAL);
+	}
 
 	set_state (manager, new_state);
 }
