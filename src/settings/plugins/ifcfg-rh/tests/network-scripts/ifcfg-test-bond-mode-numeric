@@ -1,0 +1,5 @@
+DEVICE=bond0
+ONBOOT=no
+TYPE=Bond
+BOOTPROTO=dhcp
+BONDING_OPTS="mode=4 miimon=100"

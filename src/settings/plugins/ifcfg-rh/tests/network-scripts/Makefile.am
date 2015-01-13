@@ -106,6 +106,7 @@ EXTRA_DIST = \
 	ifcfg-test-bond-main \
 	ifcfg-test-bond-slave \
 	ifcfg-test-bond-slave-ib \
+	ifcfg-test-bond-mode-numeric \
 	ifcfg-test-dcb \
 	ifcfg-test-dcb-default-app-priorities \
 	ifcfg-test-dcb-bad-booleans \

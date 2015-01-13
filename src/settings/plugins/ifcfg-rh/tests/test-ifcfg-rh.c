@@ -11443,6 +11443,37 @@ test_write_bond_slave_ib (void)
 	g_object_unref (reread);
 }
 
+static void
+test_read_bond_opts_mode_numeric (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingBond *s_bond;
+	gboolean success;
+	GError *error = NULL;
+
+	connection = connection_from_file_test (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-bond-mode-numeric",
+	                                        NULL, TYPE_ETHERNET, NULL, &error);
+	g_assert_no_error (error);
+	g_assert (connection);
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "bond0");
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_BOND_SETTING_NAME);
+
+	s_bond = nm_connection_get_setting_bond (connection);
+	g_assert (s_bond);
+	g_assert_cmpstr (nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_MODE), ==, "802.3ad");
+
+	g_object_unref (connection);
+}
+
 #define DCB_ALL_FLAGS (NM_SETTING_DCB_FLAG_ENABLE | \
                        NM_SETTING_DCB_FLAG_ADVERTISE | \
                        NM_SETTING_DCB_FLAG_WILLING)
@@ -12525,6 +12556,7 @@ int main (int argc, char **argv)
 	test_write_bond_main ();
 	test_write_bond_slave ();
 	test_write_bond_slave_ib ();
+	g_test_add_func (TPATH "bond/bonding-opts-numeric-mode", test_read_bond_opts_mode_numeric);
 
 	/* bridging */
 	test_read_bridge_main ();
