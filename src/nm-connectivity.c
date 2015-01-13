@@ -44,7 +44,7 @@ typedef struct {
 
 #if WITH_CONCHECK
 	SoupSession *soup_session;
-	gboolean running;
+	guint pending_checks;
 	guint check_id;
 #endif
 
@@ -114,6 +114,7 @@ nm_connectivity_check_cb (SoupSession *session, SoupMessage *msg, gpointer user_
 	self = NM_CONNECTIVITY (g_async_result_get_source_object (G_ASYNC_RESULT (simple)));
 	g_object_unref (self);
 	priv = NM_CONNECTIVITY_GET_PRIVATE (self);
+	priv->pending_checks--;
 
 	if (SOUP_STATUS_IS_TRANSPORT_ERROR (msg->status_code)) {
 		nm_log_info (LOGD_CONCHECK, "Connectivity check for uri '%s' failed with '%s'.",
@@ -157,11 +158,9 @@ run_check_complete (GObject      *object,
                     gpointer      user_data)
 {
 	NMConnectivity *self = NM_CONNECTIVITY (object);
-	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 	GError *error = NULL;
 
 	nm_connectivity_check_finish (self, result, &error);
-	priv->running = FALSE;
 	if (error) {
 		nm_log_err (LOGD_CONCHECK, "Connectivity check failed: %s", error->message);
 		g_error_free (error);
@@ -172,12 +171,22 @@ static gboolean
 run_check (gpointer user_data)
 {
 	NMConnectivity *self = NM_CONNECTIVITY (user_data);
-	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
 	nm_connectivity_check_async (self, run_check_complete, NULL);
-	priv->running = TRUE;
-
 	return TRUE;
+}
+
+static gboolean
+idle_start_periodic_checks (gpointer user_data)
+{
+	NMConnectivity *self = user_data;
+	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
+
+	priv->check_id = g_timeout_add_seconds (priv->interval, run_check, self);
+	if (!priv->pending_checks)
+		run_check (self);
+
+	return FALSE;
 }
 #endif
 
@@ -194,9 +203,7 @@ nm_connectivity_set_online (NMConnectivity *self,
 #if WITH_CONCHECK
 	if (online && priv->uri && priv->interval) {
 		if (!priv->check_id)
-			priv->check_id = g_timeout_add_seconds (priv->interval, run_check, self);
-		if (!priv->running)
-			run_check (self);
+			priv->check_id = g_timeout_add (0, idle_start_periodic_checks, self);
 
 		return;
 	} else if (priv->check_id) {
@@ -241,6 +248,7 @@ nm_connectivity_check_async (NMConnectivity      *self,
 		                            msg,
 		                            nm_connectivity_check_cb,
 		                            simple);
+		priv->pending_checks++;
 
 		return;
 	}
