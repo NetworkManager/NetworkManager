@@ -123,6 +123,7 @@ void nm_settings_connection_commit_changes (NMSettingsConnection *connection,
 gboolean nm_settings_connection_replace_settings (NMSettingsConnection *self,
                                                   NMConnection *new_connection,
                                                   gboolean update_unsaved,
+                                                  const char *log_diff_name,
                                                   GError **error);
 
 void nm_settings_connection_replace_and_commit (NMSettingsConnection *self,

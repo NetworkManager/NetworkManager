@@ -45,6 +45,7 @@
 #include "writer.h"
 #include "common.h"
 #include "utils.h"
+#include "gsystem-local-alloc.h"
 
 static char *plugin_get_hostname (SCPluginKeyfile *plugin);
 static void system_config_interface_init (NMSystemConfigInterface *system_config_interface_class);
@@ -87,7 +88,7 @@ remove_connection (SCPluginKeyfile *self, NMKeyfileConnection *connection)
 
 	g_return_if_fail (connection != NULL);
 
-	nm_log_info (LOGD_SETTINGS, "removed %s.", nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection)));
+	nm_log_info (LOGD_SETTINGS, "keyfile: removed " NM_KEYFILE_CONNECTION_LOG_FMT, NM_KEYFILE_CONNECTION_LOG_ARG (connection));
 
 	/* Removing from the hash table should drop the last reference */
 	g_object_ref (connection);
@@ -98,40 +99,6 @@ remove_connection (SCPluginKeyfile *self, NMKeyfileConnection *connection)
 	g_object_unref (connection);
 
 	g_return_if_fail (removed);
-}
-
-static void
-update_connection (SCPluginKeyfile *self,
-                   NMKeyfileConnection *connection,
-                   const char *name)
-{
-	NMKeyfileConnection *tmp;
-	GError *error = NULL;
-
-	tmp = nm_keyfile_connection_new (NULL, name, &error);
-	if (!tmp) {
-		/* Error; remove the connection */
-		nm_log_warn (LOGD_SETTINGS, "    error in connection %s: %s", name,
-		             (error && error->message) ? error->message : "(unknown)");
-		g_clear_error (&error);
-		remove_connection (self, connection);
-		return;
-	}
-
-	if (!nm_connection_compare (NM_CONNECTION (connection),
-	                            NM_CONNECTION (tmp),
-	                            NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS |
-		                          NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)) {
-		nm_log_info (LOGD_SETTINGS, "updating %s", name);
-		if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (connection),
-		                                              NM_CONNECTION (tmp),
-		                                              FALSE,  /* don't set Unsaved */
-		                                              &error)) {
-			/* Shouldn't ever get here as 'new' was verified by the reader already */
-			g_assert_no_error (error);
-		}
-	}
-	g_object_unref (tmp);
 }
 
 static NMKeyfileConnection *
@@ -151,52 +118,165 @@ find_by_path (SCPluginKeyfile *self, const char *path)
 	return NULL;
 }
 
-static void
-new_connection (SCPluginKeyfile *self,
-                const char *name,
-                char **out_old_path)
+/* update_connection:
+ * @self: the plugin instance
+ * @source: if %NULL, this re-reads the connection from @full_path
+ *   and updates it. When passing @source, this adds a connection from
+ *   memory.
+ * @full_path: the filename of the keyfile to be loaded
+ * @connection: an existing connection that might be updated.
+ *   If given, @connection must be an existing connection that is currently
+ *   owned by the plugin.
+ * @protect_existing_connection: if %TRUE, and !@connection, we don't allow updating
+ *   an existing connection with the same UUID.
+ *   If %TRUE and @connection, allow updating only if the reload would modify
+ *   @connection (without changing its UUID) or if we would create a new connection.
+ *   In other words, if this paramter is %TRUE, we only allow creating a
+ *   new connection (with an unseen UUID) or updating the passed in @connection
+ *   (whereas the UUID cannot change).
+ *   Note, that this allows for @connection to be replaced by a new connection.
+ * @protected_connections: (allow-none): if given, we only update an
+ *   existing connection if it is not contained in this hash.
+ * @error: error in case of failure
+ *
+ * Loads a connection from file @full_path. This can both be used to
+ * load a connection initially or to update an existing connection.
+ *
+ * If you pass in an existing connection and the reloaded file happens
+ * to have a different UUID, the connection is deleted.
+ * Beware, that means that after the function, you have a dangling pointer
+ * if the returned connection is different from @connection.
+ *
+ * Returns: the updated connection.
+ * */
+static NMKeyfileConnection *
+update_connection (SCPluginKeyfile *self,
+                   NMConnection *source,
+                   const char *full_path,
+                   NMKeyfileConnection *connection,
+                   gboolean protect_existing_connection,
+                   GHashTable *protected_connections,
+                   GError **error)
 {
 	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (self);
-	NMKeyfileConnection *tmp;
-	NMSettingsConnection *connection;
-	GError *error = NULL;
+	NMKeyfileConnection *connection_new;
+	NMKeyfileConnection *connection_by_uuid;
+	GError *local = NULL;
 	const char *uuid;
 
-	if (out_old_path)
-		*out_old_path = NULL;
+	g_return_val_if_fail (!source || NM_IS_CONNECTION (source), NULL);
+	g_return_val_if_fail (full_path || source, NULL);
 
-	tmp = nm_keyfile_connection_new (NULL, name, &error);
-	if (!tmp) {
-		nm_log_warn (LOGD_SETTINGS, "    error in connection %s: %s", name,
-		             (error && error->message) ? error->message : "(unknown)");
-		g_clear_error (&error);
-		return;
+	if (full_path)
+		nm_log_dbg (LOGD_SETTINGS, "keyfile: loading from file \"%s\"...", full_path);
+
+	connection_new = nm_keyfile_connection_new (source, full_path, &local);
+	if (!connection_new) {
+		/* Error; remove the connection */
+		if (source)
+			nm_log_warn (LOGD_SETTINGS, "keyfile: error creating connection %s: %s", nm_connection_get_uuid (source), local->message);
+		else
+			nm_log_warn (LOGD_SETTINGS, "keyfile: error loading connection from file %s: %s", full_path, local->message);
+		if (   connection
+		    && !protect_existing_connection
+		    && (!protected_connections || !g_hash_table_contains (protected_connections, connection)))
+			remove_connection (self, connection);
+		g_propagate_error (error, local);
+		return NULL;
 	}
 
-	/* Connection renames will show as different paths but same UUID */
-	uuid = nm_connection_get_uuid (NM_CONNECTION (tmp));
-	connection = g_hash_table_lookup (priv->connections, uuid);
-	if (connection) {
-		nm_log_info (LOGD_SETTINGS, "rename %s -> %s", nm_settings_connection_get_filename (connection), name);
-		if (!nm_settings_connection_replace_settings (connection,
-		                                              NM_CONNECTION (tmp),
-		                                              FALSE,  /* don't set Unsaved */
-		                                              &error)) {
-			/* Shouldn't ever get here as 'tmp' was verified by the reader already */
-			g_assert_no_error (error);
-		}
-		g_object_unref (tmp);
-		if (out_old_path)
-			*out_old_path = g_strdup (nm_settings_connection_get_filename (connection));
-		nm_settings_connection_set_filename (connection, name);
-	} else {
-		nm_log_info (LOGD_SETTINGS, "new connection %s", name);
-		g_hash_table_insert (priv->connections, g_strdup (uuid), tmp);
-		g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, tmp);
+	uuid = nm_connection_get_uuid (NM_CONNECTION (connection_new));
+	connection_by_uuid = g_hash_table_lookup (priv->connections, uuid);
 
-		g_signal_connect (tmp, NM_SETTINGS_CONNECTION_REMOVED,
+	if (   connection
+	    && connection != connection_by_uuid) {
+
+		if (   (protect_existing_connection && connection_by_uuid != NULL)
+		    || (protected_connections && g_hash_table_contains (protected_connections, connection))) {
+			NMKeyfileConnection *conflicting = (protect_existing_connection && connection_by_uuid != NULL) ? connection_by_uuid : connection;
+
+			if (source)
+				nm_log_warn (LOGD_SETTINGS, "keyfile: cannot update protected "NM_KEYFILE_CONNECTION_LOG_FMT" connection due to conflicting UUID %s", NM_KEYFILE_CONNECTION_LOG_ARG (conflicting), uuid);
+			else
+				nm_log_warn (LOGD_SETTINGS, "keyfile: cannot load %s due to conflicting UUID for "NM_KEYFILE_CONNECTION_LOG_FMT, full_path, NM_KEYFILE_CONNECTION_LOG_ARG (conflicting));
+			g_object_unref (connection_new);
+			g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+			                      "Cannot update protected connection due to conflicting UUID");
+			return NULL;
+		}
+
+		/* The new connection has a different UUID then the original one.
+		 * Remove @connection. */
+		remove_connection (self, connection);
+	}
+
+	if (   connection_by_uuid
+	    && (   (!connection && protect_existing_connection)
+	        || (protected_connections && g_hash_table_contains (protected_connections, connection_by_uuid)))) {
+		if (source)
+			nm_log_warn (LOGD_SETTINGS, "keyfile: cannot update connection due to conflicting UUID for "NM_KEYFILE_CONNECTION_LOG_FMT, NM_KEYFILE_CONNECTION_LOG_ARG (connection_by_uuid));
+		else
+			nm_log_warn (LOGD_SETTINGS, "keyfile: cannot load %s due to conflicting UUID for "NM_KEYFILE_CONNECTION_LOG_FMT, full_path, NM_KEYFILE_CONNECTION_LOG_ARG (connection_by_uuid));
+		g_object_unref (connection_new);
+		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+		                      "Skip updating protected connection during reload");
+		return NULL;
+	}
+
+	if (connection_by_uuid) {
+		const char *old_path;
+
+		old_path = nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection_by_uuid));
+
+		if (nm_connection_compare (NM_CONNECTION (connection_by_uuid),
+		                           NM_CONNECTION (connection_new),
+		                           NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS |
+		                           NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)) {
+			/* Nothing to do... except updating the path. */
+			if (old_path && g_strcmp0 (old_path, full_path) != 0)
+				nm_log_info (LOGD_SETTINGS, "keyfile: rename \"%s\" to "NM_KEYFILE_CONNECTION_LOG_FMT" without other changes", old_path, NM_KEYFILE_CONNECTION_LOG_ARG (connection_new));
+		} else {
+			/* An existing connection changed. */
+			if (source)
+				nm_log_info (LOGD_SETTINGS, "keyfile: update "NM_KEYFILE_CONNECTION_LOG_FMT" from %s", NM_KEYFILE_CONNECTION_LOG_ARG (connection_new), NM_KEYFILE_CONNECTION_LOG_PATH (old_path));
+			else if (!g_strcmp0 (old_path, nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection_new))))
+				nm_log_info (LOGD_SETTINGS, "keyfile: update "NM_KEYFILE_CONNECTION_LOG_FMT, NM_KEYFILE_CONNECTION_LOG_ARG (connection_new));
+			else if (old_path)
+				nm_log_info (LOGD_SETTINGS, "keyfile: rename \"%s\" to "NM_KEYFILE_CONNECTION_LOG_FMT, old_path, NM_KEYFILE_CONNECTION_LOG_ARG (connection_new));
+			else
+				nm_log_info (LOGD_SETTINGS, "keyfile: update and persist "NM_KEYFILE_CONNECTION_LOG_FMT, NM_KEYFILE_CONNECTION_LOG_ARG (connection_new));
+
+			if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (connection_by_uuid),
+			                                              NM_CONNECTION (connection_new),
+			                                              FALSE,  /* don't set Unsaved */
+			                                              "keyfile-update",
+			                                              &local)) {
+				/* Shouldn't ever get here as 'connection_new' was verified by the reader already
+				 * and the UUID did not change. */
+				g_assert_not_reached ();
+			}
+			g_assert_no_error (local);
+		}
+		nm_settings_connection_set_filename (NM_SETTINGS_CONNECTION (connection_by_uuid), full_path);
+		g_object_unref (connection_new);
+		return connection_by_uuid;
+	} else {
+		if (source)
+			nm_log_info (LOGD_SETTINGS, "keyfile: add connection "NM_KEYFILE_CONNECTION_LOG_FMT, NM_KEYFILE_CONNECTION_LOG_ARG (connection_new));
+		else
+			nm_log_info (LOGD_SETTINGS, "keyfile: new connection "NM_KEYFILE_CONNECTION_LOG_FMT, NM_KEYFILE_CONNECTION_LOG_ARG (connection_new));
+		g_hash_table_insert (priv->connections, g_strdup (uuid), connection_new);
+
+		g_signal_connect (connection_new, NM_SETTINGS_CONNECTION_REMOVED,
 		                  G_CALLBACK (connection_removed_cb),
 		                  self);
+
+		if (!source) {
+			/* Only raise the signal if we were called without source, i.e. if we read the connection from file.
+			 * Otherwise, we were called by add_connection() which does not expect the signal. */
+			g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, connection_new);
+		}
+		return connection_new;
 	}
 }
 
@@ -211,26 +291,28 @@ dir_changed (GFileMonitor *monitor,
 	SCPluginKeyfile *self = SC_PLUGIN_KEYFILE (config);
 	NMKeyfileConnection *connection;
 	char *full_path;
+	gboolean exists;
 
 	full_path = g_file_get_path (file);
 	if (nm_keyfile_plugin_utils_should_ignore_file (full_path)) {
 		g_free (full_path);
 		return;
 	}
+	exists = g_file_test (full_path, G_FILE_TEST_EXISTS);
+
+	nm_log_dbg (LOGD_SETTINGS, "dir_changed(%s) = %d; file %s", full_path, event_type, exists ? "exists" : "does not exist");
 
 	connection = find_by_path (self, full_path);
 
 	switch (event_type) {
 	case G_FILE_MONITOR_EVENT_DELETED:
-		if (connection)
+		if (!exists && connection)
 			remove_connection (SC_PLUGIN_KEYFILE (config), connection);
 		break;
 	case G_FILE_MONITOR_EVENT_CREATED:
 	case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
-		if (connection)
-			update_connection (SC_PLUGIN_KEYFILE (config), connection, full_path);
-		else
-			new_connection (SC_PLUGIN_KEYFILE (config), full_path, NULL);
+		if (exists)
+			update_connection (SC_PLUGIN_KEYFILE (config), NULL, full_path, connection, TRUE, NULL, NULL);
 		break;
 	default:
 		break;
@@ -306,6 +388,43 @@ setup_monitoring (NMSystemConfigInterface *config)
 	}
 }
 
+static GHashTable *
+_paths_from_connections (GHashTable *connections)
+{
+	GHashTableIter iter;
+	NMKeyfileConnection *connection;
+	GHashTable *paths = g_hash_table_new (g_str_hash, g_str_equal);
+
+	g_hash_table_iter_init (&iter, connections);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &connection)) {
+		const char *path = nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection));
+
+		if (path)
+			g_hash_table_add (paths, (void *) path);
+	}
+	return paths;
+}
+
+static int
+_sort_paths (const char **f1, const char **f2, GHashTable *paths)
+{
+	struct stat st;
+	gboolean c1, c2;
+	gint64 m1, m2;
+
+	c1 = !!g_hash_table_contains (paths, *f1);
+	c2 = !!g_hash_table_contains (paths, *f2);
+	if (c1 != c2)
+		return c1 ? -1 : 1;
+
+	m1 = stat (*f1, &st) == 0 ? (gint64) st.st_mtime : G_MININT64;
+	m2 = stat (*f2, &st) == 0 ? (gint64) st.st_mtime : G_MININT64;
+	if (m1 != m2)
+		return m1 > m2 ? -1 : 1;
+
+	return strcmp (*f1, *f2);
+}
+
 static void
 read_connections (NMSystemConfigInterface *config)
 {
@@ -314,13 +433,17 @@ read_connections (NMSystemConfigInterface *config)
 	GDir *dir;
 	GError *error = NULL;
 	const char *item;
-	GHashTable *oldconns;
+	GHashTable *alive_connections;
 	GHashTableIter iter;
-	gpointer data;
+	NMKeyfileConnection *connection;
+	GPtrArray *dead_connections = NULL;
+	guint i;
+	GPtrArray *filenames;
+	GHashTable *paths;
 
 	dir = g_dir_open (KEYFILE_DIR, 0, &error);
 	if (!dir) {
-		nm_log_warn (LOGD_SETTINGS, "Cannot read directory '%s': (%d) %s",
+		nm_log_warn (LOGD_SETTINGS, "keyfile: cannot read directory '%s': (%d) %s",
 		             KEYFILE_DIR,
 		             error ? error->code : -1,
 		             error && error->message ? error->message : "(unknown)");
@@ -328,45 +451,49 @@ read_connections (NMSystemConfigInterface *config)
 		return;
 	}
 
-	oldconns = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
-	g_hash_table_iter_init (&iter, priv->connections);
-	while (g_hash_table_iter_next (&iter, NULL, &data)) {
-		const char *con_path = nm_settings_connection_get_filename (data);
-		if (con_path)
-			g_hash_table_insert (oldconns, g_strdup (con_path), data);
-	}
+	alive_connections = g_hash_table_new (NULL, NULL);
 
+	filenames = g_ptr_array_new_with_free_func (g_free);
 	while ((item = g_dir_read_name (dir))) {
-		NMKeyfileConnection *connection;
-		char *full_path, *old_path;
-
 		if (nm_keyfile_plugin_utils_should_ignore_file (item))
 			continue;
-
-		full_path = g_build_filename (KEYFILE_DIR, item, NULL);
-
-		connection = g_hash_table_lookup (oldconns, full_path);
-		if (connection) {
-			g_hash_table_remove (oldconns, full_path);
-			update_connection (self, connection, full_path);
-		} else {
-			new_connection (self, full_path, &old_path);
-			if (old_path) {
-				g_hash_table_remove (oldconns, old_path);
-				g_free (old_path);
-			}
-		}
-
-		g_free (full_path);
+		g_ptr_array_add (filenames, g_build_filename (KEYFILE_DIR, item, NULL));
 	}
 	g_dir_close (dir);
 
-	g_hash_table_iter_init (&iter, oldconns);
-	while (g_hash_table_iter_next (&iter, NULL, &data)) {
-		g_hash_table_iter_remove (&iter);
-		remove_connection (self, data);
+	/* While reloading, we don't replace connections that we already loaded while
+	 * iterating over the files.
+	 *
+	 * To have sensible, reproducible behavior, sort the paths by last modification
+	 * time prefering older files.
+	 */
+	paths = _paths_from_connections (priv->connections);
+	g_ptr_array_sort_with_data (filenames, (GCompareDataFunc) _sort_paths, paths);
+	g_hash_table_destroy (paths);
+
+	for (i = 0; i < filenames->len; i++) {
+		connection = update_connection (self, NULL, filenames->pdata[i], NULL, FALSE, alive_connections, NULL);
+		if (connection)
+			g_hash_table_add (alive_connections, connection);
 	}
-	g_hash_table_destroy (oldconns);
+	g_ptr_array_free (filenames, TRUE);
+
+	g_hash_table_iter_init (&iter, priv->connections);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &connection)) {
+		if (   !g_hash_table_contains (alive_connections, connection)
+		    && nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection))) {
+			if (!dead_connections)
+				dead_connections = g_ptr_array_new ();
+			g_ptr_array_add (dead_connections, connection);
+		}
+	}
+	g_hash_table_destroy (alive_connections);
+
+	if (dead_connections) {
+		for (i = 0; i < dead_connections->len; i++)
+			remove_connection (self, dead_connections->pdata[i]);
+		g_ptr_array_free (dead_connections, TRUE);
+	}
 }
 
 /* Plugin */
@@ -400,13 +527,7 @@ load_connection (NMSystemConfigInterface *config,
 	if (nm_keyfile_plugin_utils_should_ignore_file (filename + dir_len + 1))
 		return FALSE;
 
-	connection = find_by_path (self, filename);
-	if (connection)
-		update_connection (self, connection, filename);
-	else {
-		new_connection (self, filename, NULL);
-		connection = find_by_path (self, filename);
-	}
+	connection = update_connection (self, NULL, filename, find_by_path (self, filename), TRUE, NULL, NULL);
 
 	return (connection != NULL);
 }
@@ -424,26 +545,13 @@ add_connection (NMSystemConfigInterface *config,
                 GError **error)
 {
 	SCPluginKeyfile *self = SC_PLUGIN_KEYFILE (config);
-	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (self);
-	NMSettingsConnection *added = NULL;
-	char *path = NULL;
+	gs_free char *path = NULL;
 
 	if (save_to_disk) {
 		if (!nm_keyfile_plugin_write_connection (connection, NULL, &path, error))
 			return NULL;
 	}
-
-	added = (NMSettingsConnection *) nm_keyfile_connection_new (connection, path, error);
-	if (added) {
-		g_hash_table_insert (priv->connections,
-		                     g_strdup (nm_connection_get_uuid (NM_CONNECTION (added))),
-		                     added);
-		g_signal_connect (added, NM_SETTINGS_CONNECTION_REMOVED,
-		                  G_CALLBACK (connection_removed_cb),
-		                  self);
-	}
-	g_free (path);
-	return added;
+	return NM_SETTINGS_CONNECTION (update_connection (self, connection, path, NULL, FALSE, NULL, error));
 }
 
 static gboolean
@@ -501,7 +609,7 @@ get_unmanaged_specs (NMSystemConfigInterface *config)
 			} else if (!strncmp (udis[i], "interface-name:", 15) && nm_utils_iface_valid_name (udis[i] + 15)) {
 				specs = g_slist_append (specs, udis[i]);
 			} else {
-				nm_log_warn (LOGD_SETTINGS, "Error in file '%s': invalid unmanaged-devices entry: '%s'", priv->conf_file, udis[i]);
+				nm_log_warn (LOGD_SETTINGS, "keyfile: error in file '%s': invalid unmanaged-devices entry: '%s'", priv->conf_file, udis[i]);
 				g_free (udis[i]);
 			}
 		}
@@ -511,7 +619,7 @@ get_unmanaged_specs (NMSystemConfigInterface *config)
 
  out:
 	if (error) {
-		nm_log_warn (LOGD_SETTINGS, "%s", error->message);
+		nm_log_warn (LOGD_SETTINGS, "keyfile: error getting unmanaged specs: %s", error->message);
 		g_error_free (error);
 	}
 	if (key_file)
@@ -539,7 +647,7 @@ plugin_get_hostname (SCPluginKeyfile *plugin)
 
  out:
 	if (error) {
-		nm_log_warn (LOGD_SETTINGS, "%s", error->message);
+		nm_log_warn (LOGD_SETTINGS, "keyfile: error getting hostname: %s", error->message);
 		g_error_free (error);
 	}
 	if (key_file)
@@ -586,7 +694,7 @@ plugin_set_hostname (SCPluginKeyfile *plugin, const char *hostname)
 
  out:
 	if (error) {
-		nm_log_warn (LOGD_SETTINGS, "%s", error->message);
+		nm_log_warn (LOGD_SETTINGS, "keyfile: error setting hostname: %s", error->message);
 		g_error_free (error);
 	}
 	g_free (data);

@@ -450,6 +450,7 @@ gboolean
 nm_settings_connection_replace_settings (NMSettingsConnection *self,
                                          NMConnection *new_connection,
                                          gboolean update_unsaved,
+                                         const char *log_diff_name,
                                          GError **error)
 {
 	NMSettingsConnectionPrivate *priv;
@@ -463,6 +464,15 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 	if (!nm_connection_normalize (new_connection, NULL, NULL, error))
 		return FALSE;
 
+	if (   nm_connection_get_path (NM_CONNECTION (self))
+	    && g_strcmp0 (nm_connection_get_uuid (NM_CONNECTION (self)), nm_connection_get_uuid (new_connection)) != 0) {
+		/* Updating the UUID is not allowed once the path is exported. */
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+		             "connection %s cannot change the UUID from %s to %s", nm_connection_get_id (NM_CONNECTION (self)),
+		             nm_connection_get_uuid (NM_CONNECTION (self)), nm_connection_get_uuid (new_connection));
+		return FALSE;
+	}
+
 	/* Do nothing if there's nothing to update */
 	if (nm_connection_compare (NM_CONNECTION (self),
 	                           new_connection,
@@ -475,7 +485,8 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 	 */
 	g_signal_handlers_block_by_func (self, G_CALLBACK (changed_cb), GUINT_TO_POINTER (TRUE));
 
-	nm_utils_log_connection_diff (new_connection, NM_CONNECTION (self), LOGL_DEBUG, LOGD_CORE, "update connection", "++ ");
+	if (log_diff_name)
+		nm_utils_log_connection_diff (new_connection, NM_CONNECTION (self), LOGL_DEBUG, LOGD_CORE, log_diff_name, "++ ");
 
 	nm_connection_replace_settings_from_connection (NM_CONNECTION (self), new_connection);
 	nm_settings_connection_set_flags (self,
@@ -535,9 +546,10 @@ replace_and_commit (NMSettingsConnection *self,
 {
 	GError *error = NULL;
 
-	if (nm_settings_connection_replace_settings (self, new_connection, TRUE, &error)) {
+	if (nm_settings_connection_replace_settings (self, new_connection, TRUE, "replace-and-commit-disk", &error))
 		nm_settings_connection_commit_changes (self, callback, user_data);
-	} else {
+	else {
+		g_assert (error);
 		if (callback)
 			callback (self, error, user_data);
 		g_clear_error (&error);
@@ -1366,11 +1378,8 @@ update_auth_cb (NMSettingsConnection *self,
 		                                           con_update_cb,
 		                                           info);
 	} else {
-		/* Do nothing if there's nothing to update */
-		if (!nm_connection_compare (NM_CONNECTION (self), info->new_settings, NM_SETTING_COMPARE_FLAG_EXACT)) {
-			if (!nm_settings_connection_replace_settings (self, info->new_settings, TRUE, &local))
-				g_assert (local);
-		}
+		if (!nm_settings_connection_replace_settings (self, info->new_settings, TRUE, "replace-and-commit-memory", &local))
+			g_assert (local);
 		con_update_cb (self, local, info);
 		g_clear_error (&local);
 	}

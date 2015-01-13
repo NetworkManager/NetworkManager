@@ -886,6 +886,7 @@ claim_connection (NMSettings *self,
 	GHashTableIter iter;
 	gpointer data;
 	char *path;
+	NMSettingsConnection *existing;
 
 	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (connection));
 	g_return_if_fail (nm_connection_get_path (NM_CONNECTION (connection)) == NULL);
@@ -901,6 +902,23 @@ claim_connection (NMSettings *self,
 		nm_log_warn (LOGD_SETTINGS, "plugin provided invalid connection: %s",
 		             error->message);
 		g_error_free (error);
+		return;
+	}
+
+	existing = nm_settings_get_connection_by_uuid (self, nm_connection_get_uuid (NM_CONNECTION (connection)));
+	if (existing) {
+		/* Cannot add duplicate connections per UUID. Just return without action and
+		 * log a warning.
+		 *
+		 * This means, that plugins must not provide duplicate connections (UUID).
+		 * In fact, none of the plugins currently would do that.
+		 *
+		 * But globaly, over different setting plugins, there could be duplicates
+		 * without the individual plugins being aware. Don't handle that at all, just
+		 * error out. That should not happen unless the admin misconfigured the system
+		 * to create conflicting connections. */
+		nm_log_warn (LOGD_SETTINGS, "plugin provided duplicate connection with UUID %s",
+		             nm_connection_get_uuid (NM_CONNECTION (connection)));
 		return;
 	}
 
