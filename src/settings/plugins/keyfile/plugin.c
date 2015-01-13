@@ -290,25 +290,28 @@ dir_changed (GFileMonitor *monitor,
 	SCPluginKeyfile *self = SC_PLUGIN_KEYFILE (config);
 	NMKeyfileConnection *connection;
 	char *full_path;
+	gboolean exists;
 
 	full_path = g_file_get_path (file);
 	if (nm_keyfile_plugin_utils_should_ignore_file (full_path)) {
 		g_free (full_path);
 		return;
 	}
+	exists = g_file_test (full_path, G_FILE_TEST_EXISTS);
 
-	nm_log_dbg (LOGD_SETTINGS, "dir_changed(%s) = %d", full_path, event_type);
+	nm_log_dbg (LOGD_SETTINGS, "dir_changed(%s) = %d; file %s", full_path, event_type, exists ? "exists" : "does not exist");
 
 	connection = find_by_path (self, full_path);
 
 	switch (event_type) {
 	case G_FILE_MONITOR_EVENT_DELETED:
-		if (connection)
+		if (!exists && connection)
 			remove_connection (SC_PLUGIN_KEYFILE (config), connection);
 		break;
 	case G_FILE_MONITOR_EVENT_CREATED:
 	case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
-		update_connection (SC_PLUGIN_KEYFILE (config), NULL, full_path, connection, TRUE, NULL, NULL);
+		if (exists)
+			update_connection (SC_PLUGIN_KEYFILE (config), NULL, full_path, connection, TRUE, NULL, NULL);
 		break;
 	default:
 		break;
