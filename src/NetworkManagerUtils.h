@@ -198,6 +198,9 @@ typedef enum {
 	/* Indicate that test mode is enabled in general. Explicitly calling _nm_utils_set_testing() will always set this flag. */
 	_NM_UTILS_TEST_GENERAL                          = (1LL << 1),
 
+	/* Don't check the owner of keyfiles during testing. */
+	NM_UTILS_TEST_NO_KEYFILE_OWNER_CHECK            = (1LL << 2),
+
 	_NM_UTILS_TEST_LAST,
 	NM_UTILS_TEST_ALL                               = (((_NM_UTILS_TEST_LAST - 1) << 1) - 1) & ~(_NM_UTILS_TEST_INITIALIZED),
 } NMUtilsTestFlags;
