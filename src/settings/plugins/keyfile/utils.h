@@ -33,6 +33,8 @@
 
 gboolean nm_keyfile_plugin_utils_should_ignore_file (const char *filename);
 
+char *nm_keyfile_plugin_utils_escape_filename (const char *filename);
+
 const char *nm_keyfile_plugin_get_alias_for_setting_name (const char *setting_name);
 
 const char *nm_keyfile_plugin_get_setting_name_for_alias (const char *alias);
