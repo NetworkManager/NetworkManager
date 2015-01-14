@@ -3631,6 +3631,7 @@ NMTST_DEFINE ();
 
 int main (int argc, char **argv)
 {
+	_nm_utils_set_testing (NM_UTILS_TEST_NO_KEYFILE_OWNER_CHECK);
 	nmtst_init_assert_logging (&argc, &argv, "INFO", "DEFAULT");
 
 	/* The tests */
