@@ -175,23 +175,23 @@ nm_modem_set_mm_enabled (NMModem *self,
 	NMModemState prev_state = priv->state;
 
 	if (enabled && priv->state >= NM_MODEM_STATE_ENABLING) {
-		nm_log_dbg (LOGD_MB, "(%s) cannot enable modem: already enabled",
+		nm_log_dbg (LOGD_MB, "(%s): cannot enable modem: already enabled",
 		            nm_modem_get_uid (self));
 		return;
 	}
 	if (!enabled && priv->state <= NM_MODEM_STATE_DISABLING) {
-		nm_log_dbg (LOGD_MB, "(%s) cannot disable modem: already disabled",
+		nm_log_dbg (LOGD_MB, "(%s): cannot disable modem: already disabled",
 		            nm_modem_get_uid (self));
 		return;
 	}
 
 	if (priv->state <= NM_MODEM_STATE_INITIALIZING) {
-		nm_log_dbg (LOGD_MB, "(%s) cannot enable/disable modem: initializing or failed",
+		nm_log_dbg (LOGD_MB, "(%s): cannot enable/disable modem: initializing or failed",
 		            nm_modem_get_uid (self));
 		return;
 	} else if (priv->state == NM_MODEM_STATE_LOCKED) {
 		/* Don't try to enable if the modem is locked since that will fail */
-		nm_log_warn (LOGD_MB, "(%s) cannot enable/disable modem: locked",
+		nm_log_warn (LOGD_MB, "(%s): cannot enable/disable modem: locked",
 		             nm_modem_get_uid (self));
 
 		/* Try to unlock the modem if it's being enabled */
@@ -464,7 +464,8 @@ ppp_stage3_ip_config_start (NMModem *self,
 	/* Check if ModemManager requested a specific IP timeout to be used. If 0 reported,
 	 * use the default one (30s) */
 	if (priv->mm_ip_timeout > 0) {
-		nm_log_info (LOGD_PPP, "using modem-specified IP timeout: %u seconds",
+		nm_log_info (LOGD_PPP, "(%s): using modem-specified IP timeout: %u seconds",
+					 nm_modem_get_uid (self),
 		             priv->mm_ip_timeout);
 		ip_timeout = priv->mm_ip_timeout;
 	}
@@ -486,7 +487,8 @@ ppp_stage3_ip_config_start (NMModem *self,
 
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	} else {
-		nm_log_err (LOGD_PPP, "error starting PPP: (%d) %s",
+		nm_log_err (LOGD_PPP, "(%s): error starting PPP: (%d) %s",
+					nm_modem_get_uid (self),
 		            error ? error->code : -1,
 		            error && error->message ? error->message : "(unknown)");
 		g_error_free (error);
@@ -705,7 +707,7 @@ modem_secrets_cb (NMActRequest *req,
 	priv->secrets_id = 0;
 
 	if (error)
-		nm_log_warn (LOGD_MB, "%s", error->message);
+		nm_log_warn (LOGD_MB, "(%s): %s", nm_modem_get_uid (self), error->message);
 
 	g_signal_emit (self, signals[AUTH_RESULT], 0, error);
 }
@@ -953,7 +955,7 @@ ppp_manager_stop_ready (NMPPPManager *ppp_manager,
 	GError *error = NULL;
 
 	if (!nm_ppp_manager_stop_finish (ppp_manager, res, &error)) {
-		nm_log_warn (LOGD_MB, "(%s) cannot stop PPP manager: %s",
+		nm_log_warn (LOGD_MB, "(%s): cannot stop PPP manager: %s",
 		             nm_modem_get_uid (ctx->self),
 		             error->message);
 		g_simple_async_result_take_error (ctx->result, error);
