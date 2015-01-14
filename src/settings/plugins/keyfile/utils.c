@@ -59,7 +59,7 @@ check_prefix (const char *base, const char *tag)
 
 	len = strlen (base);
 	tag_len = strlen (tag);
-	if ((len > tag_len) && !strncasecmp (base, tag, tag_len))
+	if ((len > tag_len) && !g_ascii_strncasecmp (base, tag, tag_len))
 		return TRUE;
 	return FALSE;
 }
@@ -74,7 +74,7 @@ check_suffix (const char *base, const char *tag)
 
 	len = strlen (base);
 	tag_len = strlen (tag);
-	if ((len > tag_len) && !strcasecmp (base + len - tag_len, tag))
+	if ((len > tag_len) && !g_ascii_strcasecmp (base + len - tag_len, tag))
 		return TRUE;
 	return FALSE;
 }
