@@ -3891,7 +3891,14 @@ route_search_cache (struct nl_cache *cache, int family, int ifindex, const void 
 		    || nl_addr_get_prefixlen (dst) != plen)
 			continue;
 
-		clear_host_address (family, nl_addr_get_binary_addr (dst), plen, dst_clean);
+		/* plen = 0 means all host bits, so all bits should be cleared.
+		 * Likewise if the binary address is not present or all zeros.
+		 */
+		if (plen == 0 || nl_addr_iszero (dst))
+			memset (dst_clean, 0, sizeof (dst_clean));
+		else
+			clear_host_address (family, nl_addr_get_binary_addr (dst), plen, dst_clean);
+
 		if (memcmp (dst_clean, network_clean,
 		            family == AF_INET ? sizeof (guint32) : sizeof (struct in6_addr)) != 0)
 			continue;
