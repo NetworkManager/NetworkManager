@@ -26,7 +26,9 @@
 #define IFCFG_TAG "ifcfg-"
 #define KEYS_TAG "keys-"
 #define ROUTE_TAG "route-"
+#define RULE_TAG "rule-"
 #define ROUTE6_TAG "route6-"
+#define RULE6_TAG "rule6-"
 
 #define BAK_TAG ".bak"
 #define TILDE_TAG "~"

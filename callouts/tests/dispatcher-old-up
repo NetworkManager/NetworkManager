@@ -34,6 +34,7 @@ domains=hsd1.mn.comcast.net.
 PATH=
 CONNECTION_UUID=3fd2a33a-d81b-423f-ae99-e6baba742311
 CONNECTION_ID=Random Connection
+CONNECTION_FILENAME=/callouts/tests/dispatcher-old-up
 DEVICE_IFACE=wlan0
 DEVICE_IP_IFACE=wlan0
 IP4_ADDRESS_0=192.168.1.119/24 192.168.1.1
