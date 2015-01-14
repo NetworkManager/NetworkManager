@@ -203,7 +203,7 @@ connect_ready (MMModemSimple *simple_iface,
 			if (g_dbus_error_is_remote_error (error))
 				g_dbus_error_strip_remote_error (error);
 
-			nm_log_warn (LOGD_MB, "(%s) failed to connect modem: %s",
+			nm_log_warn (LOGD_MB, "(%s): failed to connect modem: %s",
 			             nm_modem_get_uid (NM_MODEM (self)),
 			             error && error->message ? error->message : "(unknown)");
 			g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE, translate_mm_error (error));
@@ -225,7 +225,7 @@ connect_ready (MMModemSimple *simple_iface,
 
 	if (ip4_method == NM_MODEM_IP_METHOD_UNKNOWN &&
 	    ip6_method == NM_MODEM_IP_METHOD_UNKNOWN) {
-		nm_log_warn (LOGD_MB, "(%s) failed to connect modem: invalid bearer IP configuration",
+		nm_log_warn (LOGD_MB, "(%s): failed to connect modem: invalid bearer IP configuration",
 		             nm_modem_get_uid (NM_MODEM (self)));
 
 		error = g_error_new_literal (NM_DEVICE_ERROR,
@@ -365,7 +365,7 @@ act_stage1_prepare (NMModem *_self,
 	else if (MODEM_CAPS_3GPP2 (caps))
 		self->priv->connect_properties = create_cdma_connect_properties (connection);
 	else {
-		nm_log_warn (LOGD_MB, "(%s) not a mobile broadband modem",
+		nm_log_warn (LOGD_MB, "(%s): not a mobile broadband modem",
 					 nm_modem_get_uid (NM_MODEM (self)));
 		*reason = NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED;
 		return NM_ACT_STAGE_RETURN_FAILURE;
@@ -566,7 +566,7 @@ set_power_state_low_ready (MMModem *modem,
 
 	if (!mm_modem_set_power_state_finish (modem, result, &error)) {
 		/* Log but ignore errors; not all modems support low power state */
-		nm_log_dbg (LOGD_MB, "(%s) failed to set modem low power state: %s",
+		nm_log_dbg (LOGD_MB, "(%s): failed to set modem low power state: %s",
 		             nm_modem_get_uid (NM_MODEM (self)),
 		             error && error->message ? error->message : "(unknown)");
 		g_clear_error (&error);
@@ -591,7 +591,7 @@ modem_disable_ready (MMModem *modem_iface,
 		                          (GAsyncReadyCallback) set_power_state_low_ready,
 		                          g_object_ref (self));
 	} else {
-		nm_log_warn (LOGD_MB, "(%s) failed to disable modem: %s",
+		nm_log_warn (LOGD_MB, "(%s): failed to disable modem: %s",
 		             nm_modem_get_uid (NM_MODEM (self)),
 		             error && error->message ? error->message : "(unknown)");
 		nm_modem_set_prev_state (NM_MODEM (self), "disable failed");
@@ -1069,7 +1069,7 @@ get_sim_ready (MMModem *modem,
 		              NULL);
 		g_object_unref (new_sim);
 	} else {
-		nm_log_warn (LOGD_MB, "(%s) failed to retrieve SIM object: %s",
+		nm_log_warn (LOGD_MB, "(%s): failed to retrieve SIM object: %s",
 		             nm_modem_get_uid (NM_MODEM (self)),
 		             error && error->message ? error->message : "(unknown)");
 	}
