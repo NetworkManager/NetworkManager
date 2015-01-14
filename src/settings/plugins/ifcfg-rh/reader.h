@@ -32,6 +32,8 @@ NMConnection *connection_from_file (const char *filename,
 
 char *uuid_from_file (const char *filename);
 
+guint devtimeout_from_file (const char *filename);
+
 /* for test-ifcfg-rh */
 NMConnection *connection_from_file_test (const char *filename,
                                          const char *network_file,

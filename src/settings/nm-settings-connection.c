@@ -82,6 +82,7 @@ enum {
 	PROP_0 = 0,
 	PROP_VISIBLE,
 	PROP_UNSAVED,
+	PROP_READY,
 	PROP_FLAGS,
 };
 
@@ -99,6 +100,7 @@ typedef struct {
 	guint session_changed_id;
 
 	NMSettingsConnectionFlags flags;
+	gboolean ready;
 
 	guint updated_idle_id;
 
@@ -2166,6 +2168,25 @@ nm_settings_connection_get_nm_generated_assumed (NMSettingsConnection *connectio
 	return NM_FLAGS_HAS (nm_settings_connection_get_flags (connection), NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED_ASSUMED);
 }
 
+gboolean
+nm_settings_connection_get_ready (NMSettingsConnection *connection)
+{
+	return NM_SETTINGS_CONNECTION_GET_PRIVATE (connection)->ready;
+}
+
+void
+nm_settings_connection_set_ready (NMSettingsConnection *connection,
+                                  gboolean ready)
+{
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (connection);
+
+	ready = !!ready;
+	if (priv->ready != ready) {
+		priv->ready = ready;
+		g_object_notify (G_OBJECT (connection), NM_SETTINGS_CONNECTION_READY);
+	}
+}
+
 /**************************************************************/
 
 static void
@@ -2174,6 +2195,7 @@ nm_settings_connection_init (NMSettingsConnection *self)
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
 	priv->visible = FALSE;
+	priv->ready = TRUE;
 
 	priv->session_monitor = nm_session_monitor_get ();
 	priv->session_changed_id = g_signal_connect (priv->session_monitor,
@@ -2252,6 +2274,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_UNSAVED:
 		g_value_set_boolean (value, nm_settings_connection_get_unsaved (self));
 		break;
+	case PROP_READY:
+		g_value_set_boolean (value, nm_settings_connection_get_ready (self));
+		break;
 	case PROP_FLAGS:
 		g_value_set_uint (value, nm_settings_connection_get_flags (self));
 		break;
@@ -2268,6 +2293,9 @@ set_property (GObject *object, guint prop_id,
 	NMSettingsConnection *self = NM_SETTINGS_CONNECTION (object);
 
 	switch (prop_id) {
+	case PROP_READY:
+		nm_settings_connection_set_ready (self, g_value_get_boolean (value));
+		break;
 	case PROP_FLAGS:
 		nm_settings_connection_set_flags_all (self, g_value_get_uint (value));
 		break;
@@ -2306,6 +2334,13 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 		 g_param_spec_boolean (NM_SETTINGS_CONNECTION_UNSAVED, "", "",
 		                       FALSE,
 		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property
+		(object_class, PROP_READY,
+		 g_param_spec_boolean (NM_SETTINGS_CONNECTION_READY, "", "",
+		                       TRUE,
+		                       G_PARAM_READWRITE |
 		                       G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
