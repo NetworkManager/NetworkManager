@@ -585,6 +585,42 @@ compute_hash (NMDnsManager *self, guint8 buffer[HASH_LEN])
 	g_checksum_free (sum);
 }
 
+static void
+build_plugin_config_lists (NMDnsManager *self,
+                           GSList **out_vpn_configs,
+                           GSList **out_dev_configs,
+                           GSList **out_other_configs)
+{
+	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+	GSList *iter;
+
+	g_return_if_fail (out_vpn_configs && !*out_vpn_configs);
+	g_return_if_fail (out_dev_configs && !*out_dev_configs);
+	g_return_if_fail (out_other_configs && !*out_other_configs);
+
+	/* Build up config lists for plugins; we use the raw configs here, not the
+	 * merged information that we write to resolv.conf so that the plugins can
+	 * still use the domain information in each config to provide split DNS if
+	 * they want to.
+	 */
+	if (priv->ip4_vpn_config)
+		*out_vpn_configs = g_slist_append (*out_vpn_configs, priv->ip4_vpn_config);
+	if (priv->ip6_vpn_config)
+		*out_vpn_configs = g_slist_append (*out_vpn_configs, priv->ip6_vpn_config);
+	if (priv->ip4_device_config)
+		*out_dev_configs = g_slist_append (*out_dev_configs, priv->ip4_device_config);
+	if (priv->ip6_device_config)
+		*out_dev_configs = g_slist_append (*out_dev_configs, priv->ip6_device_config);
+
+	for (iter = priv->configs; iter; iter = g_slist_next (iter)) {
+		if (   (iter->data != priv->ip4_vpn_config)
+		    && (iter->data != priv->ip4_device_config)
+		    && (iter->data != priv->ip6_vpn_config)
+		    && (iter->data != priv->ip6_device_config))
+			*out_other_configs = g_slist_append (*out_other_configs, iter->data);
+	}
+}
+
 static gboolean
 update_dns (NMDnsManager *self,
             gboolean no_caching,
@@ -592,7 +628,7 @@ update_dns (NMDnsManager *self,
 {
 	NMDnsManagerPrivate *priv;
 	NMResolvConfData rc;
-	GSList *iter, *vpn_configs = NULL, *dev_configs = NULL, *other_configs = NULL;
+	GSList *iter;
 	const char *nis_domain = NULL;
 	char **searches = NULL;
 	char **nameservers = NULL;
@@ -698,32 +734,11 @@ update_dns (NMDnsManager *self,
 
 	nis_domain = rc.nis_domain;
 
-	/* Build up config lists for plugins; we use the raw configs here, not the
-	 * merged information that we write to resolv.conf so that the plugins can
-	 * still use the domain information in each config to provide split DNS if
-	 * they want to.
-	 */
-	if (priv->ip4_vpn_config)
-		vpn_configs = g_slist_append (vpn_configs, priv->ip4_vpn_config);
-	if (priv->ip6_vpn_config)
-		vpn_configs = g_slist_append (vpn_configs, priv->ip6_vpn_config);
-	if (priv->ip4_device_config)
-		dev_configs = g_slist_append (dev_configs, priv->ip4_device_config);
-	if (priv->ip6_device_config)
-		dev_configs = g_slist_append (dev_configs, priv->ip6_device_config);
-
-	for (iter = priv->configs; iter; iter = g_slist_next (iter)) {
-		if (   (iter->data != priv->ip4_vpn_config)
-		    && (iter->data != priv->ip4_device_config)
-		    && (iter->data != priv->ip6_vpn_config)
-		    && (iter->data != priv->ip6_device_config))
-			other_configs = g_slist_append (other_configs, iter->data);
-	}
-
 	/* Let any plugins do their thing first */
 	if (priv->plugin) {
 		NMDnsPlugin *plugin = priv->plugin;
 		const char *plugin_name = nm_dns_plugin_get_name (plugin);
+		GSList *vpn_configs = NULL, *dev_configs = NULL, *other_configs = NULL;
 
 		if (nm_dns_plugin_is_caching (plugin)) {
 			if (no_caching) {
@@ -733,6 +748,8 @@ update_dns (NMDnsManager *self,
 			}
 			caching = TRUE;
 		}
+
+		build_plugin_config_lists (self, &vpn_configs, &dev_configs, &other_configs);
 
 		nm_log_dbg (LOGD_DNS, "DNS: updating plugin %s", plugin_name);
 		if (!nm_dns_plugin_update (plugin,
@@ -747,14 +764,13 @@ update_dns (NMDnsManager *self,
 			 */
 			caching = FALSE;
 		}
+		g_slist_free (vpn_configs);
+		g_slist_free (dev_configs);
+		g_slist_free (other_configs);
 
 	skip:
 		;
 	}
-
-	g_slist_free (vpn_configs);
-	g_slist_free (dev_configs);
-	g_slist_free (other_configs);
 
 	/* If caching was successful, we only send 127.0.0.1 to /etc/resolv.conf
 	 * to ensure that the glibc resolver doesn't try to round-robin nameservers,
