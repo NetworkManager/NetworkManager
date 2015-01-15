@@ -1651,8 +1651,14 @@ refresh_object (NMPlatform *platform, struct nl_object *object, gboolean removed
 			announce_object (platform, cached_object, NM_PLATFORM_SIGNAL_REMOVED, reason);
 		}
 	} else {
+		ObjectType type;
+
 		if (!kernel_object)
 			return FALSE;
+
+		/* Unsupported object types should never have reached the caches */
+		type = object_type_from_nl_object (kernel_object);
+		g_assert (type != OBJECT_TYPE_UNKNOWN);
 
 		hack_empty_master_iff_lower_up (platform, kernel_object);
 
@@ -1667,7 +1673,7 @@ refresh_object (NMPlatform *platform, struct nl_object *object, gboolean removed
 		announce_object (platform, kernel_object, cached_object ? NM_PLATFORM_SIGNAL_CHANGED : NM_PLATFORM_SIGNAL_ADDED, reason);
 
 		/* Refresh the master device (even on enslave/release) */
-		if (object_type_from_nl_object (kernel_object) == OBJECT_TYPE_LINK) {
+		if (type == OBJECT_TYPE_LINK) {
 			int kernel_master = rtnl_link_get_master ((struct rtnl_link *) kernel_object);
 			int cached_master = cached_object ? rtnl_link_get_master ((struct rtnl_link *) cached_object) : 0;
 			struct nl_object *master_object;
@@ -1902,6 +1908,11 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 		 */
 		if (!kernel_object)
 			return NL_OK;
+
+		/* Ignore unsupported object types (e.g. AF_PHONET family addresses) */
+		if (type == OBJECT_TYPE_UNKNOWN)
+			return NL_OK;
+
 		/* Handle external addition */
 		if (!cached_object) {
 			nle = nl_cache_add (cache, kernel_object);
@@ -4004,6 +4015,33 @@ nm_linux_platform_init (NMLinuxPlatform *platform)
 {
 }
 
+/* The cache should always avoid containing objects not handled by NM, like
+ * e.g. addresses of the AF_PHONET family. */
+static void
+cache_remove_unknown (struct nl_cache *cache)
+{
+	GPtrArray *objects_to_remove = NULL;
+	struct nl_object *object;
+
+	for (object = nl_cache_get_first (cache); object; object = nl_cache_get_next (object)) {
+		if (object_type_from_nl_object (object) == OBJECT_TYPE_UNKNOWN) {
+			if (!objects_to_remove)
+				objects_to_remove = g_ptr_array_new_with_free_func ((GDestroyNotify) nl_object_put);
+			nl_object_get (object);
+			g_ptr_array_add (objects_to_remove, object);
+		}
+	}
+
+	if (objects_to_remove) {
+		guint i;
+
+		for (i = 0; i < objects_to_remove->len; i++)
+			nl_cache_remove (g_ptr_array_index (objects_to_remove, i));
+
+		g_ptr_array_free (objects_to_remove, TRUE);
+	}
+}
+
 static gboolean
 setup (NMPlatform *platform)
 {
@@ -4055,6 +4093,11 @@ setup (NMPlatform *platform)
 	rtnl_addr_alloc_cache (priv->nlh, &priv->address_cache);
 	rtnl_route_alloc_cache (priv->nlh, AF_UNSPEC, 0, &priv->route_cache);
 	g_assert (priv->link_cache && priv->address_cache && priv->route_cache);
+
+	/* Remove all unknown objects from the caches */
+	cache_remove_unknown (priv->link_cache);
+	cache_remove_unknown (priv->address_cache);
+	cache_remove_unknown (priv->route_cache);
 
 	for (object = nl_cache_get_first (priv->address_cache); object; object = nl_cache_get_next (object))
 		_rtnl_addr_hack_lifetimes_rel_to_abs ((struct rtnl_addr *) object);
