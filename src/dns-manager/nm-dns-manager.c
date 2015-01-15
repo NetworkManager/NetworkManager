@@ -846,6 +846,22 @@ plugin_failed (NMDnsPlugin *plugin, gpointer user_data)
 	}
 }
 
+static void
+plugin_child_quit (NMDnsPlugin *plugin, int exit_status, gpointer user_data)
+{
+	NMDnsManager *self = NM_DNS_MANAGER (user_data);
+	GError *error = NULL;
+
+	nm_log_warn (LOGD_DNS, "DNS: plugin %s child quit unexpectedly; refreshing DNS",
+	             nm_dns_plugin_get_name (plugin));
+
+	/* Let the plugin try to spawn the child again */
+	if (!update_dns (self, FALSE, &error)) {
+		nm_log_warn (LOGD_DNS, "could not commit DNS changes: %s", error->message);
+		g_clear_error (&error);
+	}
+}
+
 gboolean
 nm_dns_manager_add_ip4_config (NMDnsManager *mgr,
                                const char *iface,
@@ -1131,6 +1147,7 @@ init_resolv_conf_mode (NMDnsManager *self)
 	if (priv->plugin) {
 		nm_log_info (LOGD_DNS, "DNS: loaded plugin %s", nm_dns_plugin_get_name (priv->plugin));
 		g_signal_connect (priv->plugin, NM_DNS_PLUGIN_FAILED, G_CALLBACK (plugin_failed), self);
+		g_signal_connect (priv->plugin, NM_DNS_PLUGIN_CHILD_QUIT, G_CALLBACK (plugin_child_quit), self);
 	}
 }
 
@@ -1176,7 +1193,11 @@ dispose (GObject *object)
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 	GError *error = NULL;
 
-	g_clear_object (&priv->plugin);
+	if (priv->plugin) {
+		g_signal_handlers_disconnect_by_func (priv->plugin, plugin_failed, self);
+		g_signal_handlers_disconnect_by_func (priv->plugin, plugin_child_quit, self);
+		g_clear_object (&priv->plugin);
+	}
 
 	/* If we're quitting, leave a valid resolv.conf in place, not one
 	 * pointing to 127.0.0.1 if any plugins were active.  Thus update
