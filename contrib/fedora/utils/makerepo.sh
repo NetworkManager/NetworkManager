@@ -178,6 +178,7 @@ detect_build_type 'wireless_tools.[0-9]*' wireless-tools.spec
 detect_build_type 'umip-[0-9]*' mipv6-daemon.spec
 detect_build_type 'initscripts-[0-9]*' initscripts.spec
 detect_build_type 'libqmi-[0-9]*' libqmi.spec
+detect_build_type 'libibverbs-[0-9]*' libibverbs.spec
 
 [[ -n "$BUILD_TYPE" ]] || die "Could not detect dist-git type"
 
@@ -243,6 +244,8 @@ pushd "$DIRNAME"
         git remote add origin "git://git.umip.org/umip.git";
     elif [[ "$BUILD_TYPE" == "libqmi" ]]; then
         git remote add origin 'git://anongit.freedesktop.org/libqmi';
+    elif [[ "$BUILD_TYPE" == "libibverbs" ]]; then
+        git remote add origin 'git://git.kernel.org/pub/scm/libs/infiniband/libibverbs.git';
     elif [[ "$BUILD_TYPE" == "initscripts" ]]; then
         git remote add origin "https://git.fedorahosted.org/git/initscripts.git";
     fi
@@ -311,6 +314,9 @@ c37a79d43ebe1192ba8dcc5036cd668631b6473e  d87db7021629cef7c110a371dd42b7a8 *Netw
 
 # libqmi
 7d688f382f9756027bf92338e413e425365d2835  17d6c2b404ee1eb4d1e60050fef64491 *libqmi-1.6.0.tar.xz
+
+# libibverbs
+990ca025d0ad967b6f266bae700bf82a4ceaff1a  1fe85889c8bbc4968b1feba6524ca408 *libibverbs-1.1.8.tar.gz
 EOF
 )"
             OLDIFS="$IFS"
