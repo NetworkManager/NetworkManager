@@ -3238,8 +3238,9 @@ static BondMode bond_mode_table[] = {
  * available modes.
  *
  * Returns: bonding mode string, or NULL on error
-*/
-
+ *
+ * Since: 1.2
+ */
 const char *
 nm_utils_bond_mode_int_to_string (int mode)
 {
@@ -3258,7 +3259,9 @@ nm_utils_bond_mode_int_to_string (int mode)
  * The @mode string can be either a descriptive name or a number (as string).
  *
  * Returns: numeric bond mode, or -1 on error
-*/
+ *
+ * Since: 1.2
+ */
 int
 nm_utils_bond_mode_string_to_int (const char *mode)
 {

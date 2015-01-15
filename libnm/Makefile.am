@@ -130,7 +130,7 @@ libnm_la_LIBADD = \
 SYMBOL_VIS_FILE=$(srcdir)/libnm.ver
 
 libnm_la_LDFLAGS = -Wl,--version-script=$(SYMBOL_VIS_FILE) \
-	-version-info "0:0:0"
+	-version-info "1:0:1"
 
 ###
 

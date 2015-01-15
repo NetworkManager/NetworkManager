@@ -185,7 +185,9 @@ gboolean nm_utils_ipaddr_valid (int family, const char *ip);
 
 gboolean nm_utils_check_virtual_device_compatibility (GType virtual_type, GType other_type);
 
+NM_AVAILABLE_IN_1_2
 int nm_utils_bond_mode_string_to_int (const char *mode);
+NM_AVAILABLE_IN_1_2
 const char *nm_utils_bond_mode_int_to_string (int mode);
 
 G_END_DECLS
