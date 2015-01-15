@@ -796,7 +796,12 @@ _nm_setting_new_from_dbus (GType setting_type,
 	properties = nm_setting_class_get_properties (class, &n_properties);
 	for (i = 0; i < n_properties; i++) {
 		const NMSettingProperty *property = &properties[i];
-		GVariant *value = g_variant_lookup_value (setting_dict, property->name, NULL);
+		GVariant *value;
+
+		if (property->param_spec && !(property->param_spec->flags & G_PARAM_WRITABLE))
+			continue;
+
+		value = g_variant_lookup_value (setting_dict, property->name, NULL);
 
 		if (value && property->set_func) {
 			property->set_func (setting,
@@ -809,9 +814,6 @@ _nm_setting_new_from_dbus (GType setting_type,
 			                        property->name);
 		} else if (value && property->param_spec) {
 			GValue object_value = { 0, };
-
-			if (!(property->param_spec->flags & G_PARAM_WRITABLE))
-				continue;
 
 			g_value_init (&object_value, property->param_spec->value_type);
 			set_property_from_dbus (property, value, &object_value);
