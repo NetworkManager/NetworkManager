@@ -766,7 +766,6 @@ _nm_setting_new_from_dbus (GType setting_type,
                            GVariant *connection_dict,
                            GError **error)
 {
-	NMSettingClass *class;
 	NMSetting *setting;
 	const NMSettingProperty *properties;
 	guint n_properties;
@@ -781,11 +780,6 @@ _nm_setting_new_from_dbus (GType setting_type,
 	if (connection_dict)
 		g_return_val_if_fail (g_variant_is_of_type (connection_dict, NM_VARIANT_TYPE_CONNECTION), NULL);
 
-	/* g_type_class_ref() ensures the setting class is created if it hasn't
-	 * already been used.
-	 */
-	class = g_type_class_ref (setting_type);
-
 	/* Build the setting object from the properties we know about; we assume
 	 * that any propreties in @setting_dict that we don't know about can
 	 * either be ignored or else has a backward-compatibility equivalent
@@ -793,7 +787,7 @@ _nm_setting_new_from_dbus (GType setting_type,
 	 */
 	setting = (NMSetting *) g_object_new (setting_type, NULL);
 
-	properties = nm_setting_class_get_properties (class, &n_properties);
+	properties = nm_setting_class_get_properties (NM_SETTING_GET_CLASS (setting), &n_properties);
 	for (i = 0; i < n_properties; i++) {
 		const NMSettingProperty *property = &properties[i];
 		GVariant *value;
@@ -824,8 +818,6 @@ _nm_setting_new_from_dbus (GType setting_type,
 		if (value)
 			g_variant_unref (value);
 	}
-
-	g_type_class_unref (class);
 
 	return setting;
 }
