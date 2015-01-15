@@ -660,17 +660,40 @@ get_property_for_dbus (NMSetting *setting,
 	return dbus_value;
 }
 
-static void
-set_property_from_dbus (const NMSettingProperty *property, GVariant *src_value, GValue *dst_value)
+static gboolean
+set_property_from_dbus (const NMSettingProperty *property,
+                        GVariant *src_value,
+                        GValue *dst_value)
 {
 	g_return_if_fail (property->param_spec != NULL);
 
-	if (property->from_dbus)
+	if (property->from_dbus) {
+		if (!g_variant_type_equal (g_variant_get_type (src_value), property->dbus_type))
+			return FALSE;
+
 		property->from_dbus (src_value, dst_value);
-	else if (dst_value->g_type == G_TYPE_BYTES)
+	} else if (dst_value->g_type == G_TYPE_BYTES) {
+		if (!g_variant_is_of_type (src_value, G_VARIANT_TYPE_BYTESTRING))
+			return FALSE;
+
 		_nm_utils_bytes_from_dbus (src_value, dst_value);
-	else
-		g_dbus_gvariant_to_gvalue (src_value, dst_value);
+	} else {
+		GValue tmp = G_VALUE_INIT;
+
+		g_dbus_gvariant_to_gvalue (src_value, &tmp);
+		if (G_VALUE_TYPE (&tmp) == G_VALUE_TYPE (dst_value))
+			*dst_value = tmp;
+		else {
+			gboolean success;
+
+			success = g_value_transform (&tmp, dst_value);
+			g_value_unset (&tmp);
+			if (!success)
+				return FALSE;
+		}
+	}
+
+	return TRUE;
 }
 
 
@@ -798,6 +821,21 @@ _nm_setting_new_from_dbus (GType setting_type,
 		value = g_variant_lookup_value (setting_dict, property->name, NULL);
 
 		if (value && property->set_func) {
+			if (!g_variant_type_equal (g_variant_get_type (value), property->dbus_type)) {
+			property_type_error:
+				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				             _("can't set property of type '%s' from value of type '%s'"),
+				             property->dbus_type ?
+				                 g_variant_type_peek_string (property->dbus_type) :
+				                 g_type_name (property->param_spec->value_type),
+				             g_variant_get_type_string (value));
+				g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), property->name);
+
+				g_variant_unref (value);
+				g_object_unref (setting);
+				return NULL;
+			}
+
 			property->set_func (setting,
 			                    connection_dict,
 			                    property->name,
@@ -810,7 +848,9 @@ _nm_setting_new_from_dbus (GType setting_type,
 			GValue object_value = { 0, };
 
 			g_value_init (&object_value, property->param_spec->value_type);
-			set_property_from_dbus (property, value, &object_value);
+			if (!set_property_from_dbus (property, value, &object_value))
+				goto property_type_error;
+
 			g_object_set_property (G_OBJECT (setting), property->param_spec->name, &object_value);
 			g_value_unset (&object_value);
 		}
