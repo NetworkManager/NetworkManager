@@ -276,13 +276,17 @@ merge_no_auto_default_state (NMConfig *config)
 		list = g_strsplit (data, "\n", -1);
 		for (i = 0; list[i]; i++) {
 			if (!*list[i])
-				continue;
-			for (j = 0; j < updated->len; j++) {
-				if (!strcmp (list[i], updated->pdata[j]))
-					break;
+				g_free (list[i]);
+			else {
+				for (j = 0; j < updated->len; j++) {
+					if (!strcmp (list[i], updated->pdata[j]))
+						break;
+				}
+				if (j == updated->len)
+					g_ptr_array_add (updated, list[i]);
+				else
+					g_free (list[i]);
 			}
-			if (j == updated->len)
-				g_ptr_array_add (updated, list[i]);
 		}
 		g_free (list);
 		g_free (data);
