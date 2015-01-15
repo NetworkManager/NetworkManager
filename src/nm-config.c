@@ -580,7 +580,7 @@ nm_config_new (GError **error)
 	}
 	g_ptr_array_unref (confs);
 	if (!singleton)
-		return FALSE;
+		return NULL;
 
 	/* Handle no-auto-default key and state file */
 	priv->no_auto_default = g_key_file_get_string_list (priv->keyfile, "main", "no-auto-default", NULL, NULL);
