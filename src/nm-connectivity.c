@@ -232,9 +232,11 @@ nm_connectivity_check_async (NMConnectivity      *self,
 	g_return_if_fail (NM_IS_CONNECTIVITY (self));
 	priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
+#if WITH_CONCHECK
 	if (callback == run_check_complete)
 		nm_log_dbg (LOGD_CONCHECK, "Periodic connectivity check started with uri '%s'.", priv->uri);
 	else
+#endif
 		nm_log_dbg (LOGD_CONCHECK, "Connectivity check started with uri '%s'.", priv->uri);
 
 	simple = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
