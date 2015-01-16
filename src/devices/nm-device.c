@@ -6947,9 +6947,8 @@ _try_add_available_connection (NMDevice *self, NMConnection *connection)
 
 	if (nm_device_check_connection_compatible (self, connection)) {
 		if (NM_DEVICE_GET_CLASS (self)->check_connection_available (self, connection, NULL)) {
-			g_hash_table_insert (NM_DEVICE_GET_PRIVATE (self)->available_connections,
-			                     g_object_ref (connection),
-			                     GUINT_TO_POINTER (1));
+			g_hash_table_add (NM_DEVICE_GET_PRIVATE (self)->available_connections,
+			                  g_object_ref (connection));
 			return TRUE;
 		}
 	}
