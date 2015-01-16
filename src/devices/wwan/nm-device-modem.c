@@ -394,7 +394,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 static gboolean
 check_connection_available (NMDevice *device,
                             NMConnection *connection,
-                            gboolean for_user_activation_request,
+                            NMDeviceCheckConAvailableFlags flags,
                             const char *specific_object)
 {
 	NMDeviceModem *self = NM_DEVICE_MODEM (device);

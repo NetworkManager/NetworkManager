@@ -334,12 +334,15 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 static gboolean
 check_connection_available (NMDevice *device,
                             NMConnection *connection,
-                            gboolean for_user_activation_request,
+                            NMDeviceCheckConAvailableFlags flags,
                             const char *specific_object)
 {
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (device);
 	const GSList *ns_iter = NULL;
 	NMWimaxNsp *nsp;
+
+	/* a connection that is available for a certain @specific_object, MUST
+	 * also be available in general (without @specific_object). */
 
 	if (specific_object) {
 		nsp = get_nsp_by_path (NM_DEVICE_WIMAX (device), specific_object);
