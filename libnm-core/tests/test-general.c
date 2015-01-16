@@ -1140,6 +1140,183 @@ test_setting_new_from_dbus_enum (void)
 	g_object_unref (s_serial);
 }
 
+static void
+test_setting_new_from_dbus_bad (void)
+{
+	NMSetting *setting;
+	NMConnection *conn;
+	GBytes *ssid;
+	GPtrArray *addrs;
+	GVariant *orig_dict, *dict;
+	GError *error = NULL;
+
+	/* We want to test:
+	 * - ordinary scalar properties
+	 * - string properties
+	 * - GBytes-valued properties (which are handled specially by set_property_from_dbus())
+	 * - enum/flags-valued properties
+	 * - overridden properties
+	 * - transformed properties
+	 *
+	 * No single setting class has examples of all of these, so we need two settings.
+	 */
+
+	conn = nm_simple_connection_new ();
+
+	setting = nm_setting_connection_new ();
+	g_object_set (setting,
+	              NM_SETTING_CONNECTION_ID, "test",
+	              NM_SETTING_CONNECTION_UUID, "83c5a841-1759-4cdb-bfce-8d4087956497",
+	              NULL);
+	nm_connection_add_setting (conn, setting);
+
+	setting = nm_setting_wireless_new ();
+	ssid = g_bytes_new ("my-ssid", 7);
+	g_object_set (setting,
+	              /* scalar */
+	              NM_SETTING_WIRELESS_RATE, 100,
+	              /* string */
+	              NM_SETTING_WIRELESS_MODE, NM_SETTING_WIRELESS_MODE_INFRA,
+	              /* GBytes */
+	              NM_SETTING_WIRELESS_SSID, ssid,
+	              /* transformed */
+	              NM_SETTING_WIRELESS_BSSID, "00:11:22:33:44:55",
+	              NULL);
+	g_bytes_unref (ssid);
+	nm_connection_add_setting (conn, setting);
+
+	setting = nm_setting_ip6_config_new ();
+	addrs = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_address_unref);
+	g_ptr_array_add (addrs, nm_ip_address_new (AF_INET6, "1234::5678", 64, NULL));
+	g_object_set (setting,
+	              /* enum */
+	              NM_SETTING_IP6_CONFIG_IP6_PRIVACY, NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR,
+	              /* overridden */
+	              NM_SETTING_IP_CONFIG_ADDRESSES, addrs,
+	              /* (needed in order to verify()) */
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+	              NULL);
+	g_ptr_array_unref (addrs);
+	nm_connection_add_setting (conn, setting);
+
+	orig_dict = nm_connection_to_dbus (conn, NM_CONNECTION_SERIALIZE_ALL);
+	g_object_unref (conn);
+
+	/* sanity-check */
+	conn = nm_simple_connection_new_from_dbus (orig_dict, &error);
+	g_assert_no_error (error);
+	g_assert (conn);
+	g_object_unref (conn);
+
+	/* Compatible mismatches */
+
+	dict = g_variant_ref (orig_dict);
+	NMTST_VARIANT_EDITOR (dict,
+	                      NMTST_VARIANT_CHANGE_PROPERTY (NM_SETTING_WIRELESS_SETTING_NAME,
+	                                                     NM_SETTING_WIRELESS_RATE,
+	                                                     "i", 10);
+	                      );
+	conn = nm_simple_connection_new_from_dbus (dict, &error);
+	g_assert (conn);
+	g_assert_no_error (error);
+	setting = nm_connection_get_setting (conn, NM_TYPE_SETTING_WIRELESS);
+	g_assert (setting);
+	g_assert_cmpint (nm_setting_wireless_get_rate (NM_SETTING_WIRELESS (setting)), ==, 10);
+	g_object_unref (conn);
+	g_variant_unref (dict);
+
+	dict = g_variant_ref (orig_dict);
+	NMTST_VARIANT_EDITOR (dict,
+	                      NMTST_VARIANT_CHANGE_PROPERTY (NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	                                                     NM_SETTING_IP6_CONFIG_IP6_PRIVACY,
+	                                                     "i", NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR);
+	                      );
+	conn = nm_simple_connection_new_from_dbus (dict, &error);
+	g_assert (conn);
+	g_assert_no_error (error);
+	setting = nm_connection_get_setting (conn, NM_TYPE_SETTING_IP6_CONFIG);
+	g_assert (setting);
+	g_assert_cmpint (nm_setting_ip6_config_get_ip6_privacy (NM_SETTING_IP6_CONFIG (setting)), ==, NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR);
+	g_object_unref (conn);
+	g_variant_unref (dict);
+
+	/* Incompatible mismatches */
+
+	dict = g_variant_ref (orig_dict);
+	NMTST_VARIANT_EDITOR (dict,
+	                      NMTST_VARIANT_CHANGE_PROPERTY (NM_SETTING_WIRELESS_SETTING_NAME,
+	                                                     NM_SETTING_WIRELESS_RATE,
+	                                                     "s", "ten");
+	                      );
+	conn = nm_simple_connection_new_from_dbus (dict, &error);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
+	g_assert (g_str_has_prefix (error->message, "802-11-wireless.rate:"));
+	g_clear_error (&error);
+	g_variant_unref (dict);
+
+	dict = g_variant_ref (orig_dict);
+	NMTST_VARIANT_EDITOR (dict,
+	                      NMTST_VARIANT_CHANGE_PROPERTY (NM_SETTING_WIRELESS_SETTING_NAME,
+	                                                     NM_SETTING_WIRELESS_MODE,
+	                                                     "b", FALSE);
+	                      );
+	conn = nm_simple_connection_new_from_dbus (dict, &error);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
+	g_assert (g_str_has_prefix (error->message, "802-11-wireless.mode:"));
+	g_clear_error (&error);
+	g_variant_unref (dict);
+
+	dict = g_variant_ref (orig_dict);
+	NMTST_VARIANT_EDITOR (dict,
+	                      NMTST_VARIANT_CHANGE_PROPERTY (NM_SETTING_WIRELESS_SETTING_NAME,
+	                                                     NM_SETTING_WIRELESS_SSID,
+	                                                     "s", "fred");
+	                      );
+	conn = nm_simple_connection_new_from_dbus (dict, &error);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
+	g_assert (g_str_has_prefix (error->message, "802-11-wireless.ssid:"));
+	g_clear_error (&error);
+	g_variant_unref (dict);
+
+	dict = g_variant_ref (orig_dict);
+	NMTST_VARIANT_EDITOR (dict,
+	                      NMTST_VARIANT_CHANGE_PROPERTY (NM_SETTING_WIRELESS_SETTING_NAME,
+	                                                     NM_SETTING_WIRELESS_BSSID,
+	                                                     "i", 42);
+	                      );
+	conn = nm_simple_connection_new_from_dbus (dict, &error);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
+	g_assert (g_str_has_prefix (error->message, "802-11-wireless.bssid:"));
+	g_clear_error (&error);
+	g_variant_unref (dict);
+
+	dict = g_variant_ref (orig_dict);
+	NMTST_VARIANT_EDITOR (dict,
+	                      NMTST_VARIANT_CHANGE_PROPERTY (NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	                                                     NM_SETTING_IP6_CONFIG_IP6_PRIVACY,
+	                                                     "s", "private");
+	                      );
+	conn = nm_simple_connection_new_from_dbus (dict, &error);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
+	g_assert (g_str_has_prefix (error->message, "ipv6.ip6-privacy:"));
+	g_clear_error (&error);
+	g_variant_unref (dict);
+
+	dict = g_variant_ref (orig_dict);
+	NMTST_VARIANT_EDITOR (dict,
+	                      NMTST_VARIANT_CHANGE_PROPERTY (NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	                                                     NM_SETTING_IP_CONFIG_ADDRESSES,
+	                                                     "s", "1234::5678");
+	                      );
+	conn = nm_simple_connection_new_from_dbus (dict, &error);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
+	g_assert (g_str_has_prefix (error->message, "ipv6.addresses:"));
+	g_clear_error (&error);
+	g_variant_unref (dict);
+
+	g_variant_unref (orig_dict);
+}
+
 static NMConnection *
 new_test_connection (void)
 {
@@ -3901,6 +4078,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_setting_new_from_dbus", test_setting_new_from_dbus);
 	g_test_add_func ("/core/general/test_setting_new_from_dbus_transform", test_setting_new_from_dbus_transform);
 	g_test_add_func ("/core/general/test_setting_new_from_dbus_enum", test_setting_new_from_dbus_enum);
+	g_test_add_func ("/core/general/test_setting_new_from_dbus_bad", test_setting_new_from_dbus_bad);
 	g_test_add_func ("/core/general/test_connection_replace_settings", test_connection_replace_settings);
 	g_test_add_func ("/core/general/test_connection_replace_settings_from_connection", test_connection_replace_settings_from_connection);
 	g_test_add_func ("/core/general/test_connection_replace_settings_bad", test_connection_replace_settings_bad);
