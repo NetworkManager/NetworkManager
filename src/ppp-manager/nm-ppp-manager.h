@@ -24,6 +24,7 @@
 
 #include <glib.h>
 #include <glib-object.h>
+#include <gio/gio.h>
 
 #include "nm-ppp-status.h"
 #include "nm-activation-request.h"
@@ -69,5 +70,12 @@ gboolean nm_ppp_manager_start (NMPPPManager *manager,
                                guint32 timeout_secs,
                                GError **err);
 
+void     nm_ppp_manager_stop        (NMPPPManager *manager,
+                                     GCancellable *cancellable,
+                                     GAsyncReadyCallback callback,
+                                     gpointer user_data);
+gboolean nm_ppp_manager_stop_finish (NMPPPManager *manager,
+                                     GAsyncResult *res,
+                                     GError **error);
 
 #endif /* __NETWORKMANAGER_PPP_MANAGER_H__ */
