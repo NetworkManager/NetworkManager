@@ -3327,7 +3327,6 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	parent_class->is_available = is_available;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->check_connection_available = check_connection_available;
-	parent_class->check_connection_available_has_user_override = TRUE;
 	parent_class->complete_connection = complete_connection;
 	parent_class->set_enabled = set_enabled;
 

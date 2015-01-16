@@ -173,8 +173,6 @@ typedef struct {
 	                                            NMDeviceCheckConAvailableFlags flags,
 	                                            const char *specific_object);
 
-	gboolean    check_connection_available_has_user_override;
-
 	gboolean    (* complete_connection)         (NMDevice *self,
 	                                             NMConnection *connection,
 	                                             const char *specific_object,
@@ -397,9 +395,10 @@ gboolean nm_device_has_pending_action    (NMDevice *device);
 GPtrArray *nm_device_get_available_connections (NMDevice *device,
                                                 const char *specific_object);
 
-gboolean   nm_device_connection_is_available (NMDevice *device,
-                                              NMConnection *connection,
-                                              gboolean for_user_activation_request);
+gboolean   nm_device_check_connection_available (NMDevice *device,
+                                                 NMConnection *connection,
+                                                 NMDeviceCheckConAvailableFlags flags,
+                                                 const char *specific_object);
 
 gboolean nm_device_notify_component_added (NMDevice *device, GObject *component);
 
