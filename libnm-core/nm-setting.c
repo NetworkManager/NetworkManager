@@ -665,7 +665,7 @@ set_property_from_dbus (const NMSettingProperty *property,
                         GVariant *src_value,
                         GValue *dst_value)
 {
-	g_return_if_fail (property->param_spec != NULL);
+	g_return_val_if_fail (property->param_spec != NULL, FALSE);
 
 	if (property->from_dbus) {
 		if (!g_variant_type_equal (g_variant_get_type (src_value), property->dbus_type))
