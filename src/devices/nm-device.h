@@ -86,6 +86,19 @@ G_BEGIN_DECLS
 
 typedef enum NMActStageReturn NMActStageReturn;
 
+/* These flags affect whether a connection is considered available on a device
+ * (check_connection_available()). The flags should have the meaning of relaxing
+ * a condition, so that adding a flag might make a connection available that would
+ * not be available otherwise. Adding a flag should never make a connection
+ * not available if it would be available otherwise. */
+typedef enum {
+	NM_DEVICE_CHECK_CON_AVAILABLE_NONE                                  = 0,
+	NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST                      = (1L << 0),
+
+	__NM_DEVICE_CHECK_CON_AVAILABLE_ALL,
+	NM_DEVICE_CHECK_CON_AVAILABLE_ALL                                   = (((__NM_DEVICE_CHECK_CON_AVAILABLE_ALL - 1) << 1) - 1),
+} NMDeviceCheckConAvailableFlags;
+
 struct _NMDevice {
 	GObject parent;
 };
@@ -138,14 +151,15 @@ typedef struct {
 	 * is checked against the object defined by @specific_object, if given.
 	 * Returns TRUE if the connection is available; FALSE if not.
 	 *
-	 * If @for_user_activation_request, a connection might be considered
-	 * available under additional circumstances. That means, if a connection
-	 * is available for an internal, non-user request, it also must be available
-	 * for an external, user request.
+	 * The passed @flags affect whether a connection is considered
+	 * available or not. Adding more flags, means the connection is
+	 * *more* available.
+	 *
+	 * Specifying @specific_object can only reduce the availability of a connection.
 	 */
 	gboolean    (* check_connection_available) (NMDevice *self,
 	                                            NMConnection *connection,
-	                                            gboolean for_user_activation_request,
+	                                            NMDeviceCheckConAvailableFlags flags,
 	                                            const char *specific_object);
 
 	gboolean    check_connection_available_has_user_override;

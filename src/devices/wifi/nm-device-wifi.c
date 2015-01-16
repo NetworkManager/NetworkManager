@@ -866,7 +866,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 static gboolean
 check_connection_available (NMDevice *device,
                             NMConnection *connection,
-                            gboolean for_user_activation_request,
+                            NMDeviceCheckConAvailableFlags flags,
                             const char *specific_object)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
@@ -876,6 +876,9 @@ check_connection_available (NMDevice *device,
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_return_val_if_fail (s_wifi, FALSE);
+
+	/* a connection that is available for a certain @specific_object, MUST
+	 * also be available in general (without @specific_object). */
 
 	if (specific_object) {
 		NMAccessPoint *ap;
@@ -900,7 +903,7 @@ check_connection_available (NMDevice *device,
 	 * activating but the network isn't available let the device recheck
 	 * availability.
 	 */
-	if (nm_setting_wireless_get_hidden (s_wifi) || for_user_activation_request)
+	if (nm_setting_wireless_get_hidden (s_wifi) || NM_FLAGS_HAS (flags, NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST))
 		return TRUE;
 
 	/* check if its visible */
