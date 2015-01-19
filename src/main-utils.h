@@ -23,7 +23,7 @@
 
 #include <glib.h>
 
-gboolean nm_main_utils_setup_signals (GMainLoop *main_loop, gboolean *quit_early_ptr);
+void     nm_main_utils_setup_signals (GMainLoop *main_loop);
 
 gboolean nm_main_utils_write_pidfile (const char *pidfile);
 

@@ -28,7 +28,6 @@
 
 #include "nm-dns-plugin.h"
 #include "nm-logging.h"
-#include "nm-posix-signals.h"
 #include "NetworkManagerUtils.h"
 
 typedef struct {
@@ -136,20 +135,6 @@ watch_cb (GPid pid, gint status, gpointer user_data)
 	g_signal_emit (self, signals[CHILD_QUIT], 0, status);
 }
 
-static void
-child_setup (gpointer user_data G_GNUC_UNUSED)
-{
-	/* We are in the child process at this point */
-	pid_t pid = getpid ();
-	setpgid (pid, pid);
-
-	/*
-	 * We blocked signals in main(). We need to restore original signal
-	 * mask for DNS plugin here so that it can receive signals.
-	 */
-	nm_unblock_posix_signals (NULL);
-}
-
 GPid
 nm_dns_plugin_child_spawn (NMDnsPlugin *self,
                            const char **argv,
@@ -183,8 +168,8 @@ nm_dns_plugin_child_spawn (NMDnsPlugin *self,
 	priv->pid = 0;
 	if (g_spawn_async (NULL, (char **) argv, NULL,
 	                   G_SPAWN_DO_NOT_REAP_CHILD,
-	                   child_setup,
-	                   NULL, &priv->pid,
+	                   nm_utils_setpgid, NULL,
+	                   &priv->pid,
 	                   &error)) {
 		nm_log_dbg (LOGD_DNS, "%s started with pid %d", priv->progname, priv->pid);
 		priv->watch_id = g_child_watch_add (priv->pid, (GChildWatchFunc) watch_cb, self);

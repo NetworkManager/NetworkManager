@@ -320,8 +320,6 @@ nm_sources = \
 	nm-manager.h \
 	nm-policy.c \
 	nm-policy.h \
-	nm-posix-signals.c \
-	nm-posix-signals.h \
 	nm-properties-changed-signal.c \
 	nm-properties-changed-signal.h \
 	nm-rfkill-manager.c \
@@ -481,8 +479,6 @@ libnm_iface_helper_la_SOURCES = \
 	nm-enum-types.h \
 	nm-logging.c \
 	nm-logging.h \
-	nm-posix-signals.c \
-	nm-posix-signals.h \
 	NetworkManagerUtils.c \
 	NetworkManagerUtils.h
 

@@ -47,7 +47,6 @@
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-auth-utils.h"
-#include "nm-posix-signals.h"
 #include "nm-dbus-glib-types.h"
 
 /*
@@ -167,7 +166,7 @@ nm_spawn_process (const char *args)
 		return -1;
 	}
 
-	if (!g_spawn_sync ("/", argv, NULL, 0, nm_unblock_posix_signals, NULL, NULL, NULL, &status, &error)) {
+	if (!g_spawn_sync ("/", argv, NULL, 0, NULL, NULL, NULL, NULL, &status, &error)) {
 		nm_log_warn (LOGD_CORE, "could not spawn process '%s': %s", args, error->message);
 		g_error_free (error);
 	}
@@ -2546,4 +2545,22 @@ nm_utils_ip6_routes_from_gvalue (const GValue *value)
 	}
 
 	return g_slist_reverse (list);
+}
+
+/**
+ * nm_utils_setpgid:
+ * @unused: unused
+ *
+ * This can be passed as a child setup function to the g_spawn*() family
+ * of functions, to ensure that the child is in its own process group
+ * (and thus, in some situations, will not be killed when NetworkManager
+ * is killed).
+ */
+void
+nm_utils_setpgid (gpointer unused G_GNUC_UNUSED)
+{
+	pid_t pid;
+
+	pid = getpid ();
+	setpgid (pid, pid);
 }

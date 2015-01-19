@@ -62,7 +62,6 @@
 #include "nm-enum-types.h"
 #include "nm-settings-connection.h"
 #include "nm-connection-provider.h"
-#include "nm-posix-signals.h"
 #include "nm-auth-utils.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-dispatcher.h"
@@ -2717,23 +2716,6 @@ aipd_timeout_cb (gpointer user_data)
 	return FALSE;
 }
 
-static void
-aipd_child_setup (gpointer user_data G_GNUC_UNUSED)
-{
-	/* We are in the child process at this point.
-	 * Give child it's own program group for signal
-	 * separation.
-	 */
-	pid_t pid = getpid ();
-	setpgid (pid, pid);
-
-	/*
-	 * We blocked signals in main(). We need to restore original signal
-	 * mask for avahi-autoipd here so that it can receive signals.
-	 */
-	nm_unblock_posix_signals (NULL);
-}
-
 /* default to installed helper, but can be modified for testing */
 const char *nm_device_autoipd_helper_path = LIBEXECDIR "/nm-avahi-autoipd.action";
 
@@ -2773,7 +2755,7 @@ aipd_start (NMDevice *self, NMDeviceStateReason *reason)
 	g_free (cmdline);
 
 	if (!g_spawn_async ("/", (char **) argv, NULL, G_SPAWN_DO_NOT_REAP_CHILD,
-	                    &aipd_child_setup, NULL, &(priv->aipd_pid), &error)) {
+	                    nm_utils_setpgid, NULL, &(priv->aipd_pid), &error)) {
 		_LOGW (LOGD_DEVICE | LOGD_AUTOIP4,
 		       "Activation: Stage 3 of 5 (IP Configure Start) failed"
 		       " to start avahi-autoipd: %s",
@@ -4949,16 +4931,6 @@ nm_device_activate_schedule_ip6_config_timeout (NMDevice *self)
 	       "Activation: Stage 4 of 5 (IPv6 Configure Timeout) scheduled...");
 }
 
-static void
-share_child_setup (gpointer user_data G_GNUC_UNUSED)
-{
-	/* We are in the child process at this point */
-	pid_t pid = getpid ();
-	setpgid (pid, pid);
-
-	nm_unblock_posix_signals (NULL);
-}
-
 static gboolean
 share_init (void)
 {
@@ -4988,7 +4960,7 @@ share_init (void)
 		GError *error = NULL;
 
 		if (!g_spawn_sync ("/", argv, envp, G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL,
-		                   share_child_setup, NULL, NULL, NULL, &status, &error)) {
+		                   NULL, NULL, NULL, NULL, &status, &error)) {
 			nm_log_err (LOGD_SHARING, "share: error loading NAT module %s: (%d) %s",
 			            *iter, error ? error->code : 0,
 			            (error && error->message) ? error->message : "unknown");
@@ -5113,8 +5085,7 @@ send_arps (NMDevice *self, const char *mode_arg)
 		       "arping: run %s", (tmp_str = g_strjoinv (" ", (char **) argv)));
 		success = g_spawn_async (NULL, (char **) argv, NULL,
 		                         G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL,
-		                         nm_unblock_posix_signals,
-		                         NULL, NULL, &error);
+		                         NULL, NULL, NULL, &error);
 		if (!success) {
 			_LOGW (LOGD_DEVICE | LOGD_IP4,
 			       "arping: could not send ARP for local address %s: %s",
@@ -6149,7 +6120,7 @@ spawn_ping (NMDevice *self,
 	                         (gchar **) args,
 	                         NULL,
 	                         G_SPAWN_DO_NOT_REAP_CHILD,
-	                         nm_unblock_posix_signals,
+	                         NULL,
 	                         NULL,
 	                         &priv->gw_ping.pid,
 	                         &error);
