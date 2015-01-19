@@ -32,6 +32,7 @@
 
 #define NMD_CONNECTION_PROPS_PATH         "path"
 #define NMD_CONNECTION_PROPS_FILENAME     "filename"
+#define NMD_CONNECTION_PROPS_EXTERNAL     "external"
 
 #define NMD_DEVICE_PROPS_INTERFACE        "interface"
 #define NMD_DEVICE_PROPS_IP_INTERFACE     "ip-interface"

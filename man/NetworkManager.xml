@@ -167,9 +167,22 @@
           </para></listitem>
         </varlistentry>
         <varlistentry>
+          <term><varname>CONNECTION_DBUS_PATH</varname></term>
+          <listitem><para>
+            The NetworkManager D-Bus path of the connection.
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><varname>CONNECTION_FILENAME</varname></term>
           <listitem><para>
             The backing file name of the connection profile (if any).
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>CONNECTION_EXTERNAL</varname></term>
+          <listitem><para>
+            If "1", this indicates that the connection describes a
+            network configuration created outside of NetworkManager.
           </para></listitem>
         </varlistentry>
         <varlistentry>

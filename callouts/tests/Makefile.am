@@ -33,7 +33,8 @@ TESTS = test-dispatcher-envp
 endif
 
 EXTRA_DIST= \
-	dispatcher-old-down \
-	dispatcher-old-up \
-	dispatcher-old-vpn-down \
-	dispatcher-old-vpn-up
+	dispatcher-down \
+	dispatcher-external \
+	dispatcher-up \
+	dispatcher-vpn-down \
+	dispatcher-vpn-up

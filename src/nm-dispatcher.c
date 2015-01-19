@@ -491,6 +491,11 @@ _dispatcher_call (DispatcherAction action,
 			                    NMD_CONNECTION_PROPS_FILENAME,
 			                    filename);
 		}
+		if (nm_settings_connection_get_nm_generated_assumed (NM_SETTINGS_CONNECTION (connection))) {
+			value_hash_add_bool (connection_props,
+			                     NMD_CONNECTION_PROPS_EXTERNAL,
+			                     TRUE);
+		}
 	} else {
 		connection_hash = value_hash_create ();
 		connection_props = value_hash_create ();
