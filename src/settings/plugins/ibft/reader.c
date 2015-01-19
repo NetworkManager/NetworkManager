@@ -36,29 +36,12 @@
 
 #include "nm-core-internal.h"
 #include "nm-platform.h"
-#include "nm-posix-signals.h"
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
 
 #include "reader.h"
 
 #define PARSE_WARNING(msg...) nm_log_warn (LOGD_SETTINGS, "    " msg)
-
-static void
-iscsiadm_child_setup (gpointer user_data G_GNUC_UNUSED)
-{
-	/* We are in the child process here; set a different process group to
-	 * ensure signal isolation between child and parent.
-	 */
-	pid_t pid = getpid ();
-	setpgid (pid, pid);
-
-	/*
-	 * We blocked signals in main(). We need to restore original signal
-	 * mask for iscsiadm here so that it can receive signals.
-	 */
-	nm_unblock_posix_signals (NULL);
-}
 
 /* Removes trailing whitespace and whitespace before and immediately after the '=' */
 static char *
@@ -126,7 +109,7 @@ read_ibft_blocks (const char *iscsiadm_path,
 	g_return_val_if_fail (out_blocks != NULL && *out_blocks == NULL, FALSE);
 
 	if (!g_spawn_sync ("/", (char **) argv, (char **) envp, 0,
-	                   iscsiadm_child_setup, NULL, &out, &err, &status, error))
+	                   NULL, NULL, &out, &err, &status, error))
 		goto done;
 
 	if (!WIFEXITED (status)) {

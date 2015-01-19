@@ -47,7 +47,6 @@
 #include "nm-ppp-manager.h"
 #include "nm-dbus-manager.h"
 #include "nm-logging.h"
-#include "nm-posix-signals.h"
 #include "nm-platform.h"
 #include "nm-core-internal.h"
 
@@ -1031,20 +1030,6 @@ create_pppd_cmd_line (NMPPPManager *self,
 }
 
 static void
-pppd_child_setup (gpointer user_data G_GNUC_UNUSED)
-{
-	/* We are in the child process at this point */
-	pid_t pid = getpid ();
-	setpgid (pid, pid);
-
-	/*
-	 * We blocked signals in main(). We need to restore original signal
-	 * mask for pppd here so that it can receive signals.
-	 */
-	nm_unblock_posix_signals (NULL);
-}
-
-static void
 pppoe_fill_defaults (NMSettingPpp *setting)
 {
 	if (!nm_setting_ppp_get_mtu (setting))
@@ -1141,8 +1126,8 @@ nm_ppp_manager_start (NMPPPManager *manager,
 	priv->pid = 0;
 	if (!g_spawn_async (NULL, (char **) ppp_cmd->array->pdata, NULL,
 	                    G_SPAWN_DO_NOT_REAP_CHILD,
-	                    pppd_child_setup,
-	                    NULL, &priv->pid, err)) {
+	                    nm_utils_setpgid, NULL,
+	                    &priv->pid, err)) {
 		goto out;
 	}
 

@@ -37,7 +37,6 @@
 #include "nm-dhcp-manager.h"
 #include "nm-utils.h"
 #include "nm-logging.h"
-#include "nm-posix-signals.h"
 #include "NetworkManagerUtils.h"
 #include "nm-dhcp-listener.h"
 
@@ -57,20 +56,6 @@ nm_dhcp_dhcpcd_get_path (void)
 	if (WITH_DHCPCD)
 		path = nm_utils_find_helper ("dhcpcd", DHCPCD_PATH, NULL);
 	return path;
-}
-
-static void
-dhcpcd_child_setup (gpointer user_data G_GNUC_UNUSED)
-{
-	/* We are in the child process at this point */
-	pid_t pid = getpid ();
-	setpgid (pid, pid);
-
-	/*
-	 * We blocked signals in main(). We need to restore original signal
-	 * mask for dhcpcd here so that it can receive signals.
-	 */
-	nm_unblock_posix_signals (NULL);
 }
 
 static gboolean
@@ -143,7 +128,7 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 
 	if (g_spawn_async (NULL, (char **) argv->pdata, NULL,
 	                   G_SPAWN_DO_NOT_REAP_CHILD | G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL,
-	                   &dhcpcd_child_setup, NULL, &pid, &error)) {
+	                   nm_utils_setpgid, NULL, &pid, &error)) {
 		g_assert (pid > 0);
 		nm_log_info (LOGD_DHCP4, "dhcpcd started with pid %d", pid);
 		nm_dhcp_client_watch_child (client, pid);

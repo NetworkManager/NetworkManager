@@ -25,7 +25,7 @@
 
 void     nm_main_utils_ensure_root (void);
 
-gboolean nm_main_utils_setup_signals (GMainLoop *main_loop, gboolean *quit_early_ptr);
+void     nm_main_utils_setup_signals (GMainLoop *main_loop);
 
 void     nm_main_utils_ensure_rundir (void);
 

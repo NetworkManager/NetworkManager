@@ -31,7 +31,6 @@
 #include "nm-vpn-service.h"
 #include "nm-dbus-manager.h"
 #include "nm-logging.h"
-#include "nm-posix-signals.h"
 #include "nm-vpn-manager.h"
 #include "nm-glib-compat.h"
 
@@ -167,20 +166,6 @@ nm_vpn_service_stop_connections (NMVpnService *service,
 	g_clear_pointer (&priv->pending, g_slist_free);
 }
 
-static void
-_daemon_setup (gpointer user_data G_GNUC_UNUSED)
-{
-	/* We are in the child process at this point */
-	pid_t pid = getpid ();
-	setpgid (pid, pid);
-
-	/*
-	 * We blocked signals in main(). We need to restore original signal
-	 * mask for VPN service here so that it can receive signals.
-	 */
-	nm_unblock_posix_signals (NULL);
-}
-
 static gboolean
 _daemon_exec_timeout (gpointer data)
 {
@@ -207,7 +192,7 @@ nm_vpn_service_daemon_exec (NMVpnService *service, GError **error)
 	vpn_argv[0] = priv->program;
 	vpn_argv[1] = NULL;
 
-	success = g_spawn_async (NULL, vpn_argv, NULL, 0, _daemon_setup, NULL, &pid, &spawn_error);
+	success = g_spawn_async (NULL, vpn_argv, NULL, 0, nm_utils_setpgid, NULL, &pid, &spawn_error);
 	if (success) {
 		nm_log_info (LOGD_VPN, "VPN service '%s' started (%s), PID %ld",
 		             priv->name, priv->dbus_service, (long int) pid);
