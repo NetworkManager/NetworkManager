@@ -37,6 +37,23 @@ G_DEFINE_TYPE (NMConnectivity, nm_connectivity, G_TYPE_OBJECT)
 
 #define DEFAULT_RESPONSE "NetworkManager is online" /* NOT LOCALIZED */
 
+#define _LOG_DEFAULT_DOMAIN  LOGD_CONCHECK
+
+#define _LOG(level, domain, ...) \
+    G_STMT_START { \
+        nm_log ((level), (domain), \
+                "%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                "connectivity: " \
+                _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+    } G_STMT_END
+
+#define _LOGT(...)      _LOG (LOGL_TRACE, _LOG_DEFAULT_DOMAIN, __VA_ARGS__)
+#define _LOGD(...)      _LOG (LOGL_DEBUG, _LOG_DEFAULT_DOMAIN, __VA_ARGS__)
+#define _LOGI(...)      _LOG (LOGL_INFO,  _LOG_DEFAULT_DOMAIN, __VA_ARGS__)
+#define _LOGW(...)      _LOG (LOGL_WARN,  _LOG_DEFAULT_DOMAIN, __VA_ARGS__)
+#define _LOGE(...)      _LOG (LOGL_ERR,   _LOG_DEFAULT_DOMAIN, __VA_ARGS__)
+
+
 typedef struct {
 	char *uri;
 	char *response;
@@ -95,9 +112,9 @@ update_state (NMConnectivity *self, NMConnectivityState state)
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
 	if (priv->state != state) {
-		nm_log_dbg (LOGD_CONCHECK, "Connectivity state changed from %s to %s",
-		            nm_connectivity_state_to_string (priv->state),
-		            nm_connectivity_state_to_string (state));
+		_LOGD ("state changed from %s to %s",
+		       nm_connectivity_state_to_string (priv->state),
+		       nm_connectivity_state_to_string (state));
 		priv->state = state;
 		g_object_notify (G_OBJECT (self), NM_CONNECTIVITY_STATE);
 	}
@@ -129,8 +146,7 @@ nm_connectivity_check_cb (SoupSession *session, SoupMessage *msg, gpointer user_
 	priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
 	if (SOUP_STATUS_IS_TRANSPORT_ERROR (msg->status_code)) {
-		nm_log_info (LOGD_CONCHECK, "Connectivity check for uri '%s' failed with '%s'.",
-		             uri, msg->reason_phrase);
+		_LOGI ("check for uri '%s' failed with '%s'", uri, msg->reason_phrase);
 		new_state = NM_CONNECTIVITY_LIMITED;
 		goto done;
 	}
@@ -138,22 +154,21 @@ nm_connectivity_check_cb (SoupSession *session, SoupMessage *msg, gpointer user_
 	/* Check headers; if we find the NM-specific one we're done */
 	nm_header = soup_message_headers_get_one (msg->response_headers, "X-NetworkManager-Status");
 	if (g_strcmp0 (nm_header, "online") == 0) {
-		nm_log_dbg (LOGD_CONCHECK, "Connectivity check for uri '%s' with Status header successful.", uri);
+		_LOGD ("check for uri '%s' with Status header successful.", uri);
 		new_state = NM_CONNECTIVITY_FULL;
 	} else if (msg->status_code == SOUP_STATUS_OK) {
 		/* check response */
 		if (msg->response_body->data && g_str_has_prefix (msg->response_body->data, response)) {
-			nm_log_dbg (LOGD_CONCHECK, "Connectivity check for uri '%s' successful.",
-			            uri);
+			_LOGD ("check for uri '%s' successful.", uri);
 			new_state = NM_CONNECTIVITY_FULL;
 		} else {
-			nm_log_info (LOGD_CONCHECK, "Connectivity check for uri '%s' did not match expected response '%s'; assuming captive portal.",
-			             uri, response);
+			_LOGI ("check for uri '%s' did not match expected response '%s'; assuming captive portal.",
+			       uri, response);
 			new_state = NM_CONNECTIVITY_PORTAL;
 		}
 	} else {
-		nm_log_info (LOGD_CONCHECK, "Connectivity check for uri '%s' returned status '%d %s'; assuming captive portal.",
-		             uri, msg->status_code, msg->reason_phrase);
+		_LOGI ("check for uri '%s' returned status '%d %s'; assuming captive portal.",
+		       uri, msg->status_code, msg->reason_phrase);
 		new_state = NM_CONNECTIVITY_PORTAL;
 	}
 
@@ -191,7 +206,7 @@ run_check_complete (GObject      *object,
 
 	nm_connectivity_check_finish (self, result, &error);
 	if (error) {
-		nm_log_err (LOGD_CONCHECK, "Connectivity check failed: %s", error->message);
+		_LOGE ("check failed: %s", error->message);
 		g_error_free (error);
 	}
 }
@@ -256,7 +271,7 @@ nm_connectivity_set_online (NMConnectivity *self,
 
 	online = !!online;
 	if (priv->online != online) {
-		nm_log_dbg (LOGD_CONCHECK, "connectivity: set %s", online ? "online" : "offline");
+		_LOGD ("set %s", online ? "online" : "offline");
 		priv->online = online;
 		_reschedule_periodic_checks (self, FALSE);
 	}
@@ -298,14 +313,14 @@ nm_connectivity_check_async (NMConnectivity      *self,
 		                            cb_data);
 		priv->initial_check_obsoleted = TRUE;
 
-		nm_log_dbg (LOGD_CONCHECK, "%sconnectivity check: send request to '%s'", IS_PERIODIC_CHECK (callback) ? "periodic " : "", priv->uri);
+		_LOGD ("check: send %srequest to '%s'", IS_PERIODIC_CHECK (callback) ? "periodic " : "", priv->uri);
 		return;
 	} else {
 		g_warn_if_fail (!IS_PERIODIC_CHECK (callback));
-		nm_log_dbg (LOGD_CONCHECK, "connectivity check: faking request. Connectivity check disabled");
+		_LOGD ("check: faking request. Connectivity check disabled");
 	}
 #else
-	nm_log_dbg (LOGD_CONCHECK, "connectivity check: faking request. Compiled without connectivity-check support");
+	_LOGD ("check: faking request. Compiled without connectivity-check support");
 #endif
 
 	g_simple_async_result_set_op_res_gssize (simple, priv->state);
@@ -364,7 +379,7 @@ set_property (GObject *object, guint property_id,
 			SoupURI *soup_uri = soup_uri_new (uri);
 
 			if (!soup_uri || !SOUP_URI_VALID_FOR_HTTP (soup_uri)) {
-				nm_log_err (LOGD_CONCHECK, "Invalid uri '%s' for connectivity check.", uri);
+				_LOGE ("invalid uri '%s' for connectivity check.", uri);
 				uri = NULL;
 			}
 			if (soup_uri)
