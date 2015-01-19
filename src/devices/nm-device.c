@@ -2614,6 +2614,7 @@ aipd_get_ip4_config (NMDevice *self, guint32 lla)
 	NMPlatformIP4Route route;
 
 	config = nm_ip4_config_new ();
+	nm_ip4_config_set_ifindex (config, nm_device_get_ifindex (self));
 	g_assert (config);
 
 	memset (&address, 0, sizeof (address));
@@ -2875,6 +2876,8 @@ ensure_con_ipx_config (NMDevice *self)
 	priv->con_ip4_config = nm_ip4_config_new ();
 	priv->con_ip6_config = nm_ip6_config_new ();
 
+	nm_ip4_config_set_ifindex (priv->con_ip4_config, nm_device_get_ifindex (self));
+
 	nm_ip4_config_merge_setting (priv->con_ip4_config,
 	                             nm_connection_get_setting_ip4_config (connection),
 	                             nm_device_get_ip4_route_metric (self));
@@ -2942,6 +2945,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 	}
 
 	composite = nm_ip4_config_new ();
+	nm_ip4_config_set_ifindex (composite, nm_device_get_ifindex (self));
 
 	ensure_con_ipx_config (self);
 
@@ -3296,6 +3300,7 @@ shared4_new_config (NMDevice *self, NMConnection *connection, NMDeviceStateReaso
 	}
 
 	config = nm_ip4_config_new ();
+	nm_ip4_config_set_ifindex (config, nm_device_get_ifindex (self));
 	address.source = NM_IP_CONFIG_SOURCE_SHARED;
 	nm_ip4_config_add_address (config, &address);
 
@@ -3456,6 +3461,7 @@ act_stage3_ip4_config_start (NMDevice *self,
 	else if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) == 0) {
 		/* Use only IPv4 config from the connection data */
 		*out_config = nm_ip4_config_new ();
+		nm_ip4_config_set_ifindex (*out_config, nm_device_get_ifindex (self));
 		g_assert (*out_config);
 		ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	} else if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED) == 0) {
@@ -6565,6 +6571,7 @@ find_ip4_lease_config (NMDevice *self,
                        NMIP4Config *ext_ip4_config)
 {
 	const char *ip_iface = nm_device_get_ip_iface (self);
+	int ifindex = nm_device_get_ifindex (self);
 	GSList *leases, *liter;
 	NMIP4Config *found = NULL;
 
@@ -6587,6 +6594,7 @@ find_ip4_lease_config (NMDevice *self,
 		if (gateway != nm_ip4_config_get_gateway (ext_ip4_config))
 			continue;
 		found = g_object_ref (lease_config);
+		nm_ip4_config_set_ifindex (found, ifindex);
 	}
 
 	g_slist_free_full (leases, g_object_unref);

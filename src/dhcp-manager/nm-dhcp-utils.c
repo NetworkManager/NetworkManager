@@ -374,7 +374,8 @@ ip4_add_domain_search (gpointer data, gpointer user_data)
 }
 
 NMIP4Config *
-nm_dhcp_utils_ip4_config_from_options (const char *iface,
+nm_dhcp_utils_ip4_config_from_options (int ifindex,
+                                       const char *iface,
                                        GHashTable *options,
                                        guint32 priority)
 {
@@ -387,6 +388,7 @@ nm_dhcp_utils_ip4_config_from_options (const char *iface,
 	g_return_val_if_fail (options != NULL, NULL);
 
 	ip4_config = nm_ip4_config_new ();
+	nm_ip4_config_set_ifindex (ip4_config, ifindex);
 	memset (&address, 0, sizeof (address));
 	address.timestamp = nm_utils_get_monotonic_timestamp_s ();
 

@@ -547,6 +547,7 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 	remove_timeout_handler (manager);
 
 	config = nm_ip4_config_new ();
+	nm_ip4_config_set_ifindex (config, nm_platform_link_get_ifindex (priv->ip_iface));
 	memset (&address, 0, sizeof (address));
 	address.plen = 32;
 

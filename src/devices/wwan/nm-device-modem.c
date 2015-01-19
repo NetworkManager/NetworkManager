@@ -165,6 +165,7 @@ modem_ip4_config_result (NMModem *modem,
 
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
 	} else {
+		nm_ip4_config_set_ifindex (config, nm_device_get_ifindex (device));
 		nm_device_set_wwan_ip4_config (device, config);
 		nm_device_activate_schedule_ip4_config_result (device, NULL);
 	}

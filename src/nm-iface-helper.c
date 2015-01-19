@@ -87,6 +87,7 @@ dhcp4_state_changed (NMDhcpClient *client,
 		if (last_config) {
 			g_object_unref (last_config);
 			last_config = nm_ip4_config_new ();
+			nm_ip4_config_set_ifindex (last_config, nm_dhcp_client_get_ifindex (client));
 			nm_ip4_config_replace (last_config, ip4_config, NULL);
 		}
 		break;

@@ -763,7 +763,8 @@ nm_dhcp_client_handle_event (gpointer unused,
 				                                                               priv->priority,
 				                                                               priv->info_only);
 			} else {
-				ip_config = (GObject *) nm_dhcp_utils_ip4_config_from_options (priv->iface,
+				ip_config = (GObject *) nm_dhcp_utils_ip4_config_from_options (priv->ifindex,
+				                                                               priv->iface,
 				                                                               str_options,
 				                                                               priv->priority);
 			}

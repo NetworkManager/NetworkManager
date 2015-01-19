@@ -55,6 +55,7 @@ typedef struct {
 	GArray *wins;
 	guint32 mtu;
 	NMIPConfigSource mtu_source;
+	int ifindex;
 } NMIP4ConfigPrivate;
 
 /* internal guint32 are assigned to gobject properties of type uint. Ensure, that uint is large enough */
@@ -78,13 +79,22 @@ enum {
 static GParamSpec *obj_properties[LAST_PROP] = { NULL, };
 #define _NOTIFY(config, prop)    G_STMT_START { g_object_notify_by_pspec (G_OBJECT (config), obj_properties[prop]); } G_STMT_END
 
-
 NMIP4Config *
-nm_ip4_config_new (void)
+nm_ip4_config_new ()
 {
 	return (NMIP4Config *) g_object_new (NM_TYPE_IP4_CONFIG, NULL);
 }
 
+void
+nm_ip4_config_set_ifindex (NMIP4Config *config, int ifindex)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+
+	g_return_if_fail (priv->ifindex == 0);
+	g_assert (priv->routes->len == 0);
+
+	priv->ifindex = ifindex;
+}
 
 void
 nm_ip4_config_export (NMIP4Config *config)
@@ -191,6 +201,7 @@ nm_ip4_config_capture (int ifindex, gboolean capture_resolv_conf)
 		return NULL;
 
 	config = nm_ip4_config_new ();
+	nm_ip4_config_set_ifindex (config, ifindex);
 	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 
 	g_array_unref (priv->addresses);
@@ -825,6 +836,12 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 
 	g_object_freeze_notify (G_OBJECT (dst));
 
+	/* ifindex */
+	if (src_priv->ifindex != dst_priv->ifindex) {
+		nm_ip4_config_set_ifindex (dst, src_priv->ifindex);
+		has_minor_changes = TRUE;
+	}
+
 	/* never_default */
 	if (src_priv->never_default != dst_priv->never_default) {
 		dst_priv->never_default = src_priv->never_default;
@@ -1266,6 +1283,7 @@ nm_ip4_config_add_route (NMIP4Config *config, const NMPlatformIP4Route *new)
 
 	g_return_if_fail (new != NULL);
 	g_return_if_fail (new->plen > 0);
+	g_assert (priv->ifindex);
 
 	for (i = 0; i < priv->routes->len; i++ ) {
 		NMPlatformIP4Route *item = &g_array_index (priv->routes, NMPlatformIP4Route, i);
@@ -1282,6 +1300,7 @@ nm_ip4_config_add_route (NMIP4Config *config, const NMPlatformIP4Route *new)
 	}
 
 	g_array_append_val (priv->routes, *new);
+	g_array_index (priv->routes, NMPlatformIP4Route, priv->routes->len - 1).ifindex = priv->ifindex;
 NOTIFY:
 	_NOTIFY (config, PROP_ROUTE_DATA);
 	_NOTIFY (config, PROP_ROUTES);

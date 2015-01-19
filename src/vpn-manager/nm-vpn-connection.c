@@ -893,8 +893,10 @@ apply_parent_device_config (NMVpnConnection *connection)
 	NMIP4Config *vpn4_parent_config = NULL;
 	NMIP6Config *vpn6_parent_config = NULL;
 
-	if (priv->ip4_config)
+	if (priv->ip4_config) {
 		vpn4_parent_config = nm_ip4_config_new ();
+		nm_ip4_config_set_ifindex (vpn4_parent_config, priv->ip_ifindex);
+	}
 	if (priv->ip6_config)
 		vpn6_parent_config = nm_ip6_config_new ();
 
@@ -1191,6 +1193,7 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 	}
 
 	config = nm_ip4_config_new ();
+	nm_ip4_config_set_ifindex (config, priv->ip_ifindex);
 
 	memset (&address, 0, sizeof (address));
 	address.plen = 24;

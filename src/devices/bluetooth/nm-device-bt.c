@@ -498,8 +498,10 @@ modem_ip4_config_result (NMModem *modem,
 		       error->code, error->message ? error->message : "(unknown)");
 
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
-	} else
+	} else {
+		nm_ip4_config_set_ifindex (config, nm_device_get_ifindex (device));
 		nm_device_activate_schedule_ip4_config_result (device, config);
+	}
 }
 
 static void

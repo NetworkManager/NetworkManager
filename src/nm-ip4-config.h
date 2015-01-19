@@ -57,6 +57,7 @@ GType nm_ip4_config_get_type (void);
 
 
 NMIP4Config * nm_ip4_config_new (void);
+void nm_ip4_config_set_ifindex (NMIP4Config *config, int ifindex);
 
 /* D-Bus integration */
 void nm_ip4_config_export (NMIP4Config *config);
