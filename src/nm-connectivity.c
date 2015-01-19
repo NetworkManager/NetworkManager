@@ -330,6 +330,8 @@ set_property (GObject *object, guint property_id,
 				g_free (priv->uri);
 				priv->uri = NULL;
 			}
+			if (uri)
+				soup_uri_free (uri);
 		}
 #endif
 		break;
