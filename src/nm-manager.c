@@ -3107,6 +3107,16 @@ validate_activation_request (NMManager *self,
 		goto error;
 	}
 
+	/* Not implemented yet, we want to fail early */
+	if (strcmp (nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG),
+	            NM_SETTING_IP6_CONFIG_METHOD_SHARED) == 0) {
+		g_set_error_literal (error,
+		                     NM_MANAGER_ERROR,
+		                     NM_MANAGER_ERROR_CONNECTION_NOT_AVAILABLE,
+		                     "Sharing IPv6 connections is not supported yet.");
+		return NULL;
+	}
+
 	/* Check whether it's a VPN or not */
 	if (   nm_connection_get_setting_vpn (connection)
 	    || nm_connection_is_type (connection, NM_SETTING_VPN_SETTING_NAME))
