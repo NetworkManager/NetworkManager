@@ -1028,6 +1028,7 @@ get_virtual_iface_name (NMManager *self,
  * system_create_virtual_device:
  * @self: the #NMManager
  * @connection: the connection which might require a virtual device
+ * @error: the error set when return value is NULL
  *
  * If @connection requires a virtual device and one does not yet exist for it,
  * creates that device.
@@ -1035,19 +1036,27 @@ get_virtual_iface_name (NMManager *self,
  * Returns: the #NMDevice if successfully created, %NULL if not
  */
 static NMDevice *
-system_create_virtual_device (NMManager *self, NMConnection *connection)
+system_create_virtual_device (NMManager *self, NMConnection *connection, GError **error)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GError *error = NULL;
+	GError *local_err = NULL;
 	GSList *iter;
 	char *iface = NULL;
 	NMDevice *device = NULL, *parent = NULL;
 	gboolean nm_owned = FALSE;
 
+	g_return_val_if_fail (NM_IS_MANAGER (self), NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+
 	iface = get_virtual_iface_name (self, connection, &parent);
 	if (!iface) {
 		nm_log_dbg (LOGD_DEVICE, "(%s) failed to determine virtual interface name",
 		            nm_connection_get_id (connection));
+		g_set_error_literal (error,
+		                     NM_MANAGER_ERROR,
+		                     NM_MANAGER_ERROR_FAILED,
+		                     "failed to determine virtual interface name");
 		return NULL;
 	}
 
@@ -1056,8 +1065,15 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 		NMDevice *candidate = iter->data;
 
 		if (   g_strcmp0 (nm_device_get_iface (candidate), iface) == 0
-		    || nm_device_check_connection_compatible (candidate, connection))
+		    || nm_device_check_connection_compatible (candidate, connection)) {
+			nm_log_dbg (LOGD_DEVICE, "(%s) already created virtual interface name %s",
+			            nm_connection_get_id (connection), iface);
+			g_set_error (error,
+			             NM_MANAGER_ERROR,
+			             NM_MANAGER_ERROR_FAILED,
+			             "interface name '%s' already created", iface);
 			goto out;
+		}
 	}
 
 	/* Block notification of link added since we're creating the device
@@ -1072,14 +1088,15 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 		device = nm_device_factory_create_virtual_device_for_connection (NM_DEVICE_FACTORY (iter->data),
 		                                                                 connection,
 		                                                                 parent,
-		                                                                 &error);
-		if (device || error) {
+		                                                                 &local_err);
+		if (device || local_err) {
 			if (device)
-				g_assert_no_error (error);
+				g_assert_no_error (local_err);
 			else {
 				nm_log_err (LOGD_DEVICE, "(%s) failed to create virtual device: %s",
-				            nm_connection_get_id (connection), error ? error->message : "(unknown error)");
-				g_clear_error (&error);
+				            nm_connection_get_id (connection),
+				            local_err ? local_err->message : "(unknown error)");
+				g_propagate_error (error, local_err);
 			}
 			break;
 		}
@@ -1095,6 +1112,16 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 		add_device (self, device, !nm_owned);
 
 		g_object_unref (device);
+	} else {
+		if (error && !*error)
+			nm_log_err (LOGD_DEVICE, "(%s:%s) NetworkManager plugin for '%s' unavailable",
+			            nm_connection_get_id (connection), iface,
+			            nm_connection_get_connection_type (connection));
+			g_set_error (error,
+			             NM_MANAGER_ERROR,
+			             NM_MANAGER_ERROR_FAILED,
+			             "NetworkManager plugin for '%s' unavailable",
+			             nm_connection_get_connection_type (connection));
 	}
 
 	priv->ignore_link_added_cb--;
@@ -1119,7 +1146,7 @@ system_create_virtual_devices (NMManager *self)
 		/* We only create a virtual interface if the connection can autoconnect */
 		if (   nm_connection_is_virtual (connection)
 		    && nm_settings_connection_can_autoconnect (NM_SETTINGS_CONNECTION (connection)))
-			system_create_virtual_device (self, connection);
+			system_create_virtual_device (self, connection, NULL);
 	}
 	g_slist_free (connections);
 }
@@ -1136,7 +1163,7 @@ connection_added (NMSettings *settings,
 
 		g_assert (s_con);
 		if (nm_setting_connection_get_autoconnect (s_con))
-			system_create_virtual_device (manager, connection);
+			system_create_virtual_device (manager, connection, NULL);
 	}
 }
 
@@ -2608,6 +2635,7 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	NMConnection *connection;
 	NMConnection *master_connection = NULL;
 	NMActiveConnection *master_ac = NULL;
+	GError *local_err = NULL;
 
 	g_return_val_if_fail (NM_IS_MANAGER (self), FALSE);
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (active), FALSE);
@@ -2632,12 +2660,14 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 			return FALSE;
 		}
 
-		device = system_create_virtual_device (self, connection);
+		device = system_create_virtual_device (self, connection, &local_err);
 		if (!device) {
-			g_set_error_literal (error,
-			                     NM_MANAGER_ERROR,
-			                     NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-			                     "Failed to create virtual interface");
+			g_set_error (error,
+			             NM_MANAGER_ERROR,
+			             NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+			             "Failed to create virtual interface: %s",
+			             local_err ? local_err->message : "(unknown)");
+			g_clear_error (&local_err);
 			return FALSE;
 		}
 
