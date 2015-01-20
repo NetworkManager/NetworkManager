@@ -3777,8 +3777,8 @@ ip6_config_merge_and_apply (NMDevice *self,
 			goto END_ADD_DEFAULT_ROUTE;
 
 
-		has_direct_route = (   nm_ip6_config_get_subnet_for_host (composite, gateway)
-		                    || nm_ip6_config_get_direct_route_for_host (composite, gateway));
+		has_direct_route = nm_ip6_config_get_direct_route_for_host (composite, gateway) != NULL;
+
 
 
 		/* In the (!has_direct_route && !commit) case it is not clear whether
