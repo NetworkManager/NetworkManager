@@ -327,7 +327,8 @@ typedef enum {
 
 	/* Boundary value */
 	__NM_UNMANAGED_LAST,
-	NM_UNMANAGED_LAST     = __NM_UNMANAGED_LAST - 1,
+	NM_UNMANAGED_LAST          = __NM_UNMANAGED_LAST - 1,
+	NM_UNMANAGED_ALL           = ((NM_UNMANAGED_LAST << 1) - 1),
 } NMUnmanagedFlags;
 
 gboolean nm_device_get_managed (NMDevice *device);
