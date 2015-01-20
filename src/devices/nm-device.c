@@ -1738,7 +1738,13 @@ is_available (NMDevice *self, NMDeviceCheckDevAvailableFlags flags)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	return priv->carrier || priv->ignore_carrier;
+	if (priv->carrier || priv->ignore_carrier)
+		return TRUE;
+
+	if (NM_FLAGS_HAS (flags, NM_DEVICE_CHECK_DEV_AVAILABLE_IGNORE_CARRIER))
+		return TRUE;
+
+	return FALSE;
 }
 
 /**
