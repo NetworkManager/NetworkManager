@@ -587,21 +587,16 @@ static gboolean
 is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 {
 	NMDeviceModem *self = NM_DEVICE_MODEM (device);
-	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
+	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (self);
 	NMModemState modem_state;
 
-	if (!priv->rf_enabled) {
-		_LOGD (LOGD_MB, "not available because WWAN airplane mode is on");
+	if (!priv->rf_enabled)
 		return FALSE;
-	}
 
 	g_assert (priv->modem);
 	modem_state = nm_modem_get_state (priv->modem);
-	if (modem_state <= NM_MODEM_STATE_INITIALIZING) {
-		_LOGD (LOGD_MB, "not available because modem is not ready (%s)",
-		       nm_modem_state_to_string (modem_state));
+	if (modem_state <= NM_MODEM_STATE_INITIALIZING)
 		return FALSE;
-	}
 
 	return TRUE;
 }

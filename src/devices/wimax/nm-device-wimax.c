@@ -491,27 +491,18 @@ static gboolean
 is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 {
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (device);
-	const char *iface = nm_device_get_iface (device);
 
-	if (!priv->enabled) {
-		nm_log_dbg (LOGD_WIMAX, "(%s): not available because not enabled", iface);
+	if (!priv->enabled)
 		return FALSE;
-	}
 
-	if (!priv->wimaxd_enabled) {
-		nm_log_dbg (LOGD_WIMAX, "(%s): not available because not enabled in wimaxd", iface);
+	if (!priv->wimaxd_enabled)
 		return FALSE;
-	}
 
-	if (!nm_wimax_util_sdk_is_initialized ()) {
-		nm_log_dbg (LOGD_WIMAX, "(%s): not available because WiMAX SDK not initialized", iface);
+	if (!nm_wimax_util_sdk_is_initialized ())
 		return FALSE;
-	}
 
-	if (!priv->sdk) {
-		nm_log_dbg (LOGD_WIMAX, "(%s): not available because not known to WiMAX SDK", iface);
+	if (!priv->sdk)
 		return FALSE;
-	}
 
 	return iwmxsdk_status_get (priv->sdk) >= WIMAX_API_DEVICE_STATUS_Ready;
 }
