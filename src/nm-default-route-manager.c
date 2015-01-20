@@ -87,14 +87,14 @@ NM_DEFINE_SINGLETON_GETTER (NMDefaultRouteManager, nm_default_route_manager_get,
 #define _LOGW(addr_family, ...)      _LOG (LOGL_WARN , addr_family, __VA_ARGS__)
 #define _LOGE(addr_family, ...)      _LOG (LOGL_ERR  , addr_family, __VA_ARGS__)
 
-#define LOG_ENTRY_FMT  "entry[%u/%s:%p:%s:%c%c]"
+#define LOG_ENTRY_FMT  "entry[%u/%s:%p:%s:%c:%csync]"
 #define LOG_ENTRY_ARGS(entry_idx, entry) \
 		(entry_idx), \
 		NM_IS_DEVICE ((entry)->source.pointer) ? "dev" : "vpn", \
 		(entry)->source.pointer, \
 		NM_IS_DEVICE ((entry)->source.pointer) ? nm_device_get_iface ((entry)->source.device) : nm_vpn_connection_get_connection_id ((entry)->source.vpn), \
-		((entry)->never_default ? 'N' : 'n'), \
-		((entry)->synced ? 'S' : 's')
+		((entry)->never_default ? '0' : '1'), \
+		((entry)->synced ? '+' : '-')
 
 /***********************************************************************************/
 
