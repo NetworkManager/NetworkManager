@@ -930,7 +930,7 @@ bluez_device_removed (NMBluezDevice *bdev, gpointer user_data)
 /*****************************************************************************/
 
 static gboolean
-is_available (NMDevice *dev)
+is_available (NMDevice *dev, NMDeviceCheckDevAvailableFlags flags)
 {
 	NMDeviceBt *self = NM_DEVICE_BT (dev);
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (self);
@@ -958,7 +958,7 @@ handle_availability_change (NMDeviceBt *self,
 		return;
 	}
 
-	available = nm_device_is_available (device);
+	available = nm_device_is_available (device, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE);
 	if (available == old_available)
 		return;
 
@@ -988,7 +988,7 @@ set_mm_running (NMDeviceBt *self, gboolean running)
 	_LOGD (LOGD_BT, "ModemManager now %s",
 	       running ? "available" : "unavailable");
 
-	old_available = nm_device_is_available (NM_DEVICE (self));
+	old_available = nm_device_is_available (NM_DEVICE (self), NM_DEVICE_CHECK_DEV_AVAILABLE_NONE);
 	priv->mm_running = running;
 	handle_availability_change (self, old_available, NM_DEVICE_STATE_REASON_MODEM_MANAGER_UNAVAILABLE);
 
