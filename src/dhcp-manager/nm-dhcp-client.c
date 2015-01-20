@@ -758,7 +758,8 @@ nm_dhcp_client_handle_event (gpointer unused,
 		g_warn_if_fail (g_hash_table_size (str_options));
 		if (g_hash_table_size (str_options)) {
 			if (priv->ipv6) {
-				ip_config = (GObject *) nm_dhcp_utils_ip6_config_from_options (priv->iface,
+				ip_config = (GObject *) nm_dhcp_utils_ip6_config_from_options (priv->ifindex,
+				                                                               priv->iface,
 				                                                               str_options,
 				                                                               priv->priority,
 				                                                               priv->info_only);

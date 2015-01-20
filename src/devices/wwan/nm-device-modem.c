@@ -198,8 +198,10 @@ modem_ip6_config_result (NMModem *modem,
 	/* Re-enable IPv6 on the interface */
 	nm_device_ipv6_sysctl_set (device, "disable_ipv6", "0");
 
-	if (config)
+	if (config) {
+		nm_ip6_config_set_ifindex (config, nm_device_get_ifindex (device));
 		nm_device_set_wwan_ip6_config (device, config);
+	}
 
 	if (do_slaac == FALSE) {
 		if (got_config)

@@ -29,7 +29,8 @@ NMIP4Config *nm_dhcp_utils_ip4_config_from_options (int ifindex,
                                                     GHashTable *options,
                                                     guint priority);
 
-NMIP6Config *nm_dhcp_utils_ip6_config_from_options (const char *iface,
+NMIP6Config *nm_dhcp_utils_ip6_config_from_options (int ifindex,
+                                                    const char *iface,
                                                     GHashTable *options,
                                                     guint priority,
                                                     gboolean info_only);

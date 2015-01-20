@@ -593,7 +593,8 @@ ip6_add_domain_search (gpointer data, gpointer user_data)
 }
 
 NMIP6Config *
-nm_dhcp_utils_ip6_config_from_options (const char *iface,
+nm_dhcp_utils_ip6_config_from_options (int ifindex,
+                                       const char *iface,
                                        GHashTable *options,
                                        guint32 priority,
                                        gboolean info_only)
@@ -618,6 +619,7 @@ nm_dhcp_utils_ip6_config_from_options (const char *iface,
 	}
 
 	ip6_config = nm_ip6_config_new ();
+	nm_ip6_config_set_ifindex (ip6_config, ifindex);
 
 	str = g_hash_table_lookup (options, "max_life");
 	if (str) {

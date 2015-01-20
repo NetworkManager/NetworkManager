@@ -37,6 +37,7 @@ build_test_config (void)
 
 	/* Build up the config to subtract */
 	config = nm_ip6_config_new ();
+	nm_ip6_config_set_ifindex (config, 1);
 
 	nm_ip6_config_add_address (config, nmtst_platform_ip6_address ("abcd:1234:4321::cdde", "1:2:3:4::5", 64));
 	nm_ip6_config_add_route (config, nmtst_platform_ip6_route ("abcd:1234:4321::", 24, "abcd:1234:4321:cdde::2"));
@@ -130,7 +131,9 @@ test_compare_with_source (void)
 	NMPlatformIP6Route route;
 
 	a = nm_ip6_config_new ();
+	nm_ip6_config_set_ifindex (a, 1);
 	b = nm_ip6_config_new ();
+	nm_ip6_config_set_ifindex (b, 2);
 
 	/* Address */
 	addr = *nmtst_platform_ip6_address ("1122:3344:5566::7788", NULL, 64);
@@ -163,6 +166,7 @@ test_add_address_with_source (void)
 	const NMPlatformIP6Address *test_addr;
 
 	a = nm_ip6_config_new ();
+	nm_ip6_config_set_ifindex (a, 1);
 
 	/* Test that a higher priority source is not overwritten */
 	addr = *nmtst_platform_ip6_address ("1122:3344:5566::7788", NULL, 64);
@@ -203,6 +207,7 @@ test_add_route_with_source (void)
 	const NMPlatformIP6Route *test_route;
 
 	a = nm_ip6_config_new ();
+	nm_ip6_config_set_ifindex (a, 1);
 
 	/* Test that a higher priority source is not overwritten */
 	route = *nmtst_platform_ip6_route ("abcd:1234:4321::", 24, "abcd:1234:4321:cdde::2");

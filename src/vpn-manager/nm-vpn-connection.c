@@ -897,8 +897,10 @@ apply_parent_device_config (NMVpnConnection *connection)
 		vpn4_parent_config = nm_ip4_config_new ();
 		nm_ip4_config_set_ifindex (vpn4_parent_config, priv->ip_ifindex);
 	}
-	if (priv->ip6_config)
+	if (priv->ip6_config) {
 		vpn6_parent_config = nm_ip6_config_new ();
+		nm_ip6_config_set_ifindex (vpn6_parent_config, priv->ip_ifindex);
+	}
 
 	if (priv->ip_ifindex <= 0) {
 		/* If the VPN didn't return a network interface, it is a route-based
@@ -1339,6 +1341,7 @@ nm_vpn_connection_ip6_config_get (DBusGProxy *proxy,
 	}
 
 	config = nm_ip6_config_new ();
+	nm_ip6_config_set_ifindex (config, priv->ip_ifindex);
 
 	memset (&address, 0, sizeof (address));
 	address.plen = 128;
