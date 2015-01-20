@@ -235,7 +235,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 }
 
 static gboolean
-is_available (NMDevice *device)
+is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 {
 	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (device);
 

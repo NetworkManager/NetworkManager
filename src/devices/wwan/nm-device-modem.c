@@ -300,14 +300,14 @@ modem_state_cb (NMModem *modem,
 		nm_device_recheck_available_connections (device);
 	}
 
-	if ((dev_state >= NM_DEVICE_STATE_DISCONNECTED) && !nm_device_is_available (device)) {
+	if ((dev_state >= NM_DEVICE_STATE_DISCONNECTED) && !nm_device_is_available (device, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE)) {
 		nm_device_state_changed (device,
 		                         NM_DEVICE_STATE_UNAVAILABLE,
 		                         NM_DEVICE_STATE_REASON_MODEM_FAILED);
 		return;
 	}
 
-	if ((dev_state == NM_DEVICE_STATE_UNAVAILABLE) && nm_device_is_available (device)) {
+	if ((dev_state == NM_DEVICE_STATE_UNAVAILABLE) && nm_device_is_available (device, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE)) {
 		nm_device_state_changed (device,
 		                         NM_DEVICE_STATE_DISCONNECTED,
 		                         NM_DEVICE_STATE_REASON_MODEM_AVAILABLE);
@@ -584,7 +584,7 @@ set_enabled (NMDevice *device, gboolean enabled)
 }
 
 static gboolean
-is_available (NMDevice *device)
+is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 {
 	NMDeviceModem *self = NM_DEVICE_MODEM (device);
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);

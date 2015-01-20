@@ -1734,7 +1734,7 @@ nm_device_removed (NMDevice *self)
 
 
 static gboolean
-is_available (NMDevice *self)
+is_available (NMDevice *self, NMDeviceCheckDevAvailableFlags flags)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
@@ -1744,6 +1744,8 @@ is_available (NMDevice *self)
 /**
  * nm_device_is_available:
  * @self: the #NMDevice
+ * @flags: additional flags to influence the check. Flags have the
+ *   meaning to increase the availability of a device.
  *
  * Checks if @self would currently be capable of activating a
  * connection. In particular, it checks that the device is ready (eg,
@@ -1759,14 +1761,14 @@ is_available (NMDevice *self)
  * Returns: %TRUE or %FALSE
  */
 gboolean
-nm_device_is_available (NMDevice *self)
+nm_device_is_available (NMDevice *self, NMDeviceCheckDevAvailableFlags flags)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	if (priv->firmware_missing)
 		return FALSE;
 
-	return NM_DEVICE_GET_CLASS (self)->is_available (self);
+	return NM_DEVICE_GET_CLASS (self)->is_available (self, flags);
 }
 
 gboolean
@@ -7755,7 +7757,7 @@ _set_state_full (NMDevice *self,
 		 * we can't change states again from the state handler for a variety of
 		 * reasons.
 		 */
-		if (nm_device_is_available (self)) {
+		if (nm_device_is_available (self, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE)) {
 			_LOGD (LOGD_DEVICE, "device is available, will transition to DISCONNECTED");
 			nm_device_queue_state (self, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_NONE);
 		} else {

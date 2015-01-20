@@ -103,6 +103,15 @@ struct _NMDevice {
 	GObject parent;
 };
 
+/* The flags have an relaxing meaning, that means, specifying more flags, can make
+ * a device appear more available. It can never make a device less available. */
+typedef enum {
+	NM_DEVICE_CHECK_DEV_AVAILABLE_NONE                                  = 0,
+
+	__NM_DEVICE_CHECK_DEV_AVAILABLE_ALL,
+	NM_DEVICE_CHECK_DEV_AVAILABLE_ALL                                   = (((__NM_DEVICE_CHECK_DEV_AVAILABLE_ALL - 1) << 1) - 1),
+} NMDeviceCheckDevAvailableFlags;
+
 typedef struct {
 	GObjectClass parent;
 
@@ -130,7 +139,7 @@ typedef struct {
 
 	guint32		(* get_generic_capabilities)	(NMDevice *self);
 
-	gboolean	(* is_available) (NMDevice *self);
+	gboolean	(* is_available) (NMDevice *self, NMDeviceCheckDevAvailableFlags flags);
 
 	gboolean    (* get_enabled) (NMDevice *self);
 
@@ -282,7 +291,7 @@ NMConnection *  nm_device_get_connection	(NMDevice *dev);
 
 void            nm_device_removed        (NMDevice *dev);
 
-gboolean        nm_device_is_available   (NMDevice *dev);
+gboolean        nm_device_is_available   (NMDevice *dev, NMDeviceCheckDevAvailableFlags flags);
 gboolean        nm_device_has_carrier    (NMDevice *dev);
 
 NMConnection * nm_device_generate_connection (NMDevice *self, NMDevice *master);

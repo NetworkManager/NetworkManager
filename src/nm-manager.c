@@ -2696,7 +2696,7 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 		 * in the UNAVAILABLE state here.  To ensure it can be activated
 		 * immediately, we transition it to DISCONNECTED.
 		 */
-		if (   nm_device_is_available (device)
+		if (   nm_device_is_available (device, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE)
 			&& (nm_device_get_state (device) == NM_DEVICE_STATE_UNAVAILABLE)) {
 			nm_device_state_changed (device,
 			                         NM_DEVICE_STATE_DISCONNECTED,
