@@ -562,6 +562,7 @@ global:
 	nm_setting_wireless_get_mtu;
 	nm_setting_wireless_get_num_mac_blacklist_items;
 	nm_setting_wireless_get_num_seen_bssids;
+	nm_setting_wireless_get_powersave;
 	nm_setting_wireless_get_rate;
 	nm_setting_wireless_get_security;
 	nm_setting_wireless_get_seen_bssid;

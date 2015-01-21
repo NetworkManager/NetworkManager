@@ -60,6 +60,7 @@ typedef struct {
 	guint32 mtu;
 	GSList *seen_bssids;
 	gboolean hidden;
+	guint32 powersave;
 } NMSettingWirelessPrivate;
 
 enum {
@@ -77,6 +78,7 @@ enum {
 	PROP_MTU,
 	PROP_SEEN_BSSIDS,
 	PROP_HIDDEN,
+	PROP_POWERSAVE,
 
 	LAST_PROP
 };
@@ -602,6 +604,22 @@ nm_setting_wireless_get_hidden (NMSettingWireless *setting)
 }
 
 /**
+ * nm_setting_wireless_get_powersave:
+ * @setting: the #NMSettingWireless
+ *
+ * Returns: the #NMSettingWireless:powersave property of the setting
+ *
+ * Since: 1.2
+ **/
+guint32
+nm_setting_wireless_get_powersave (NMSettingWireless *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), 0);
+
+	return NM_SETTING_WIRELESS_GET_PRIVATE (setting)->powersave;
+}
+
+/**
  * nm_setting_wireless_add_seen_bssid:
  * @setting: the #NMSettingWireless
  * @bssid: the new BSSID to add to the list
@@ -916,6 +934,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_HIDDEN:
 		priv->hidden = g_value_get_boolean (value);
 		break;
+	case PROP_POWERSAVE:
+		priv->powersave = g_value_get_uint (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -968,6 +989,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_HIDDEN:
 		g_value_set_boolean (value, nm_setting_wireless_get_hidden (setting));
+		break;
+	case PROP_POWERSAVE:
+		g_value_set_uint (value, nm_setting_wireless_get_powersave (setting));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1314,6 +1338,23 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 		                       FALSE,
 		                       G_PARAM_READWRITE |
 		                       G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingWireless:powersave:
+	 *
+	 * If set to %FALSE, Wi-Fi power saving behavior is disabled.  If set to
+	 * %TRUE, Wi-Fi power saving behavior is enabled.  All other values are
+	 * reserved.  Note that even though only boolean values are allowed, the
+	 * property type is an unsigned integer to allow for future expansion.
+	 *
+	 * Since: 1.2
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_POWERSAVE,
+		 g_param_spec_uint (NM_SETTING_WIRELESS_POWERSAVE, "", "",
+		                    0, G_MAXUINT32, 0,
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/* Compatibility for deprecated property */
 	/* ---ifcfg-rh---

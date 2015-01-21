@@ -265,6 +265,24 @@ wifi_nl80211_set_mode (WifiData *data, const NM80211Mode mode)
 	return FALSE;
 }
 
+static gboolean
+wifi_nl80211_set_powersave (WifiData *data, guint32 powersave)
+{
+	WifiDataNl80211 *nl80211 = (WifiDataNl80211 *) data;
+	struct nl_msg *msg;
+	int err;
+
+	msg = nl80211_alloc_msg (nl80211, NL80211_CMD_SET_POWER_SAVE, 0);
+	NLA_PUT_U32 (msg, NL80211_ATTR_PS_STATE,
+	             powersave == 1 ? NL80211_PS_ENABLED : NL80211_PS_DISABLED);
+	err = nl80211_send_and_recv (nl80211, msg, NULL, NULL);
+	return err ? FALSE : TRUE;
+
+nla_put_failure:
+	nlmsg_free (msg);
+	return FALSE;
+}
+
 /* @divisor: pass what value @xbm should be divided by to get dBm */
 static guint32
 nl80211_xbm_to_percent (gint32 xbm, guint32 divisor)
@@ -842,6 +860,7 @@ wifi_nl80211_init (const char *iface, int ifindex)
 	nl80211 = wifi_data_new (iface, ifindex, sizeof (*nl80211));
 	nl80211->parent.get_mode = wifi_nl80211_get_mode;
 	nl80211->parent.set_mode = wifi_nl80211_set_mode;
+	nl80211->parent.set_powersave = wifi_nl80211_set_powersave;
 	nl80211->parent.get_freq = wifi_nl80211_get_freq;
 	nl80211->parent.find_freq = wifi_nl80211_find_freq;
 	nl80211->parent.get_ssid = wifi_nl80211_get_ssid;

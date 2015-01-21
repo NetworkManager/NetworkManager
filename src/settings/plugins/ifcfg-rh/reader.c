@@ -3415,6 +3415,11 @@ make_wireless_setting (shvarFile *ifcfg,
 	              svTrueValue (ifcfg, "SSID_HIDDEN", FALSE),
 	              NULL);
 
+	g_object_set (s_wireless,
+	              NM_SETTING_WIRELESS_POWERSAVE,
+	              svTrueValue (ifcfg, "POWERSAVE", FALSE) ? 1 : 0,
+	              NULL);
+
 	return NM_SETTING (s_wireless);
 
 error:

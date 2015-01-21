@@ -55,6 +55,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_WIRELESS_MTU         "mtu"
 #define NM_SETTING_WIRELESS_SEEN_BSSIDS "seen-bssids"
 #define NM_SETTING_WIRELESS_HIDDEN      "hidden"
+#define NM_SETTING_WIRELESS_POWERSAVE   "powersave"
 
 /**
  * NM_SETTING_WIRELESS_MODE_ADHOC:
@@ -118,6 +119,8 @@ void              nm_setting_wireless_clear_mac_blacklist_items   (NMSettingWire
 
 guint32           nm_setting_wireless_get_mtu                (NMSettingWireless *setting);
 gboolean          nm_setting_wireless_get_hidden             (NMSettingWireless *setting);
+NM_AVAILABLE_IN_1_2
+guint32           nm_setting_wireless_get_powersave          (NMSettingWireless *setting);
 
 gboolean          nm_setting_wireless_add_seen_bssid         (NMSettingWireless *setting,
                                                               const char *bssid);

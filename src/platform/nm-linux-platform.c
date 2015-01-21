@@ -3372,6 +3372,15 @@ wifi_set_mode (NMPlatform *platform, int ifindex, NM80211Mode mode)
 		wifi_utils_set_mode (wifi_data, mode);
 }
 
+static void
+wifi_set_powersave (NMPlatform *platform, int ifindex, guint32 powersave)
+{
+	WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
+
+	if (wifi_data)
+		wifi_utils_set_powersave (wifi_data, powersave);
+}
+
 static guint32
 wifi_find_frequency (NMPlatform *platform, int ifindex, const guint32 *freqs)
 {
@@ -4586,6 +4595,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->wifi_get_rate = wifi_get_rate;
 	platform_class->wifi_get_mode = wifi_get_mode;
 	platform_class->wifi_set_mode = wifi_set_mode;
+	platform_class->wifi_set_powersave = wifi_set_powersave;
 	platform_class->wifi_find_frequency = wifi_find_frequency;
 	platform_class->wifi_indicate_addressing_running = wifi_indicate_addressing_running;
 
