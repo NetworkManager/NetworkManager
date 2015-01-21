@@ -132,4 +132,8 @@ GByteArray *nm_utils_rsa_key_encrypt (const guint8 *data,
                                       char **out_password,
                                       GError **error);
 
+/* These are public API in NM 1.2, but private on nm-1-0. */
+int nm_utils_bond_mode_string_to_int (const char *mode);
+const char *nm_utils_bond_mode_int_to_string (int mode);
+
 #endif

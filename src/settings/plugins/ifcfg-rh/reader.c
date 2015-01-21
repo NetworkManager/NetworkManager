@@ -3858,7 +3858,8 @@ handle_bond_option (NMSettingBond *s_bond,
 	}
 
 	if (!nm_setting_bond_add_option (s_bond, key, sanitized ? sanitized : value))
-		PARSE_WARNING ("invalid bonding option '%s'", key);
+		PARSE_WARNING ("invalid bonding option '%s' = %s",
+		               key, sanitized ? sanitized : value);
 	g_free (sanitized);
 }
 
