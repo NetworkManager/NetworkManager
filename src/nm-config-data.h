@@ -44,6 +44,17 @@ G_BEGIN_DECLS
 #define NM_CONFIG_DATA_CONNECTIVITY_RESPONSE "connectivity-response"
 #define NM_CONFIG_DATA_NO_AUTO_DEFAULT       "no-auto-default"
 
+typedef enum { /*< flags >*/
+	NM_CONFIG_CHANGE_NONE                      = 0,
+	NM_CONFIG_CHANGE_CONFIG_FILES              = (1L << 0),
+	NM_CONFIG_CHANGE_VALUES                    = (1L << 1),
+	NM_CONFIG_CHANGE_CONNECTIVITY              = (1L << 2),
+	NM_CONFIG_CHANGE_NO_AUTO_DEFAULT           = (1L << 3),
+
+	_NM_CONFIG_CHANGE_LAST,
+	NM_CONFIG_CHANGE_ALL                       = ((_NM_CONFIG_CHANGE_LAST - 1) << 1) - 1,
+} NMConfigChangeFlags;
+
 struct _NMConfigData {
 	GObject parent;
 };
@@ -60,7 +71,7 @@ NMConfigData *nm_config_data_new (const char *config_main_file,
                                   GKeyFile *keyfile);
 NMConfigData *nm_config_data_new_update_no_auto_default (const NMConfigData *base, const char *const*no_auto_default);
 
-GHashTable *nm_config_data_diff (NMConfigData *old_data, NMConfigData *new_data);
+NMConfigChangeFlags nm_config_data_diff (NMConfigData *old_data, NMConfigData *new_data);
 
 const char *nm_config_data_get_config_main_file (const NMConfigData *config_data);
 const char *nm_config_data_get_config_description (const NMConfigData *config_data);

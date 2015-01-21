@@ -465,7 +465,7 @@ active_connection_get_by_path (NMManager *manager, const char *path)
 /************************************************************************/
 
 static void
-_config_changed_cb (NMConfig *config, NMConfigData *config_data, GHashTable *changes, NMConfigData *old_data, NMManager *self)
+_config_changed_cb (NMConfig *config, NMConfigData *config_data, NMConfigChangeFlags changes, NMConfigData *old_data, NMManager *self)
 {
 	g_object_set (NM_MANAGER_GET_PRIVATE (self)->connectivity,
 	              NM_CONNECTIVITY_URI, nm_config_data_get_connectivity_uri (config_data),
