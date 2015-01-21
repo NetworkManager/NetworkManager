@@ -491,11 +491,11 @@ update_resolv_conf (char **searches,
 				if (errno != ENOENT)
 					return TRUE;
 				g_set_error (error,
-							 NM_MANAGER_ERROR,
-							 NM_MANAGER_ERROR_FAILED,
-							 "Could not stat %s: %s\n",
-							 _PATH_RESCONF,
-							 g_strerror (errno));
+				             NM_MANAGER_ERROR,
+				             NM_MANAGER_ERROR_FAILED,
+				             "Could not stat %s: %s\n",
+				             _PATH_RESCONF,
+				             g_strerror (errno));
 				return FALSE;
 			}
 		}
