@@ -236,4 +236,18 @@ nm_clear_g_source (guint *id)
 
 /*****************************************************************************/
 
+#define _NM_BACKPORT_SYMBOL_IMPL(VERSION, RETURN_TYPE, ORIG_FUNC, VERSIONED_FUNC, ARGS_TYPED, ARGS) \
+RETURN_TYPE VERSIONED_FUNC ARGS_TYPED; \
+RETURN_TYPE VERSIONED_FUNC ARGS_TYPED \
+{ \
+    return ORIG_FUNC ARGS; \
+} \
+RETURN_TYPE ORIG_FUNC ARGS_TYPED; \
+__asm__(".symver "G_STRINGIFY(VERSIONED_FUNC)", "G_STRINGIFY(ORIG_FUNC)"@"G_STRINGIFY(VERSION))
+
+#define NM_BACKPORT_SYMBOL(VERSION, RETURN_TYPE, FUNC, ARGS_TYPED, ARGS) \
+_NM_BACKPORT_SYMBOL_IMPL(VERSION, RETURN_TYPE, FUNC, _##FUNC##_##VERSION, ARGS_TYPED, ARGS)
+
+/*****************************************************************************/
+
 #endif /* __NM_MACROS_INTERNAL_H__ */

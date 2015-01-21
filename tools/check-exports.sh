@@ -18,9 +18,7 @@ get_syms() {
 }
 
 get_syms_from_def() {
-    # be strict and only parse entries that start with one \t and end with a ';'
-    sed -n 's/^\t\([_a-zA-Z0-9]\+\);$/\1/p' "$1" |
-    grep '^\*$' -v |
+    sed -n 's/^\t\(\([_a-zA-Z0-9]\+\)\|#\s*\([_a-zA-Z0-9]\+@@\?[_a-zA-Z0-9]\+\)\);$/\2\3/p' "$1" |
     sort
 }
 
