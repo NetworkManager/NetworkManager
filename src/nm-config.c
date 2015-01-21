@@ -30,6 +30,8 @@
 #include "nm-glib-compat.h"
 #include "nm-device.h"
 #include "NetworkManagerUtils.h"
+#include "gsystem-local-alloc.h"
+#include "nm-enum-types.h"
 
 #include <gio/gio.h>
 #include <glib/gi18n.h>
@@ -718,40 +720,60 @@ nm_config_reload (NMConfig *self)
 	_set_config_data (self, new_data);
 }
 
+static const char *
+_change_flags_one_to_string (NMConfigChangeFlags flag)
+{
+	switch (flag) {
+	case NM_CONFIG_CHANGE_CONFIG_FILES:
+		return "config-files";
+	case NM_CONFIG_CHANGE_VALUES:
+		return "values";
+	case NM_CONFIG_CHANGE_CONNECTIVITY:
+		return "connectivity";
+	case NM_CONFIG_CHANGE_NO_AUTO_DEFAULT:
+		return "no-auto-default";
+	default:
+		g_return_val_if_reached ("unknown");
+	}
+}
+
+char *
+nm_config_change_flags_to_string (NMConfigChangeFlags flags)
+{
+	GString *str = g_string_new ("");
+	NMConfigChangeFlags s = 0x01;
+
+	while (flags) {
+		if (NM_FLAGS_HAS (flags, s)) {
+			if (str->len)
+				g_string_append_c (str, ',');
+			g_string_append (str, _change_flags_one_to_string (s));
+		}
+		flags = flags & ~s;
+		s <<= 1;
+	}
+	return g_string_free (str, FALSE);
+}
+
 static void
 _set_config_data (NMConfig *self, NMConfigData *new_data)
 {
 	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (self);
 	NMConfigData *old_data = priv->config_data;
-	GHashTable *changes;
+	NMConfigChangeFlags changes;
+	gs_free char *log_str = NULL;
 
 	changes = nm_config_data_diff (old_data, new_data);
-
-	if (!changes) {
+	if (changes == NM_CONFIG_CHANGE_NONE) {
 		g_object_unref (new_data);
 		return;
 	}
 
-	if (nm_logging_enabled (LOGL_INFO, LOGD_CORE)) {
-		GString *str = g_string_new (NULL);
-		GHashTableIter iter;
-		const char *key;
-
-		g_hash_table_iter_init (&iter, changes);
-		while (g_hash_table_iter_next (&iter, (gpointer) &key, NULL)) {
-			if (str->len)
-				g_string_append (str, ",");
-			g_string_append (str, key);
-		}
-		nm_log_info (LOGD_CORE, "config: update %s (%s)", nm_config_data_get_config_description (new_data), str->str);
-		g_string_free (str, TRUE);
-	}
-
+	nm_log_info (LOGD_CORE, "config: update %s (%s)", nm_config_data_get_config_description (new_data),
+	             (log_str = nm_config_change_flags_to_string (changes)));
 	priv->config_data = new_data;
 	g_signal_emit (self, signals[SIGNAL_CONFIG_CHANGED], 0, new_data, changes, old_data);
 	g_object_unref (old_data);
-
-	g_hash_table_destroy (changes);
 }
 
 NM_DEFINE_SINGLETON_DESTRUCTOR (NMConfig);
@@ -936,7 +958,7 @@ nm_config_class_init (NMConfigClass *config_class)
 	                  G_SIGNAL_RUN_FIRST,
 	                  G_STRUCT_OFFSET (NMConfigClass, config_changed),
 	                  NULL, NULL, NULL,
-	                  G_TYPE_NONE, 3, NM_TYPE_CONFIG_DATA, G_TYPE_HASH_TABLE, NM_TYPE_CONFIG_DATA);
+	                  G_TYPE_NONE, 3, NM_TYPE_CONFIG_DATA, NM_TYPE_CONFIG_CHANGE_FLAGS, NM_TYPE_CONFIG_DATA);
 }
 
 static void

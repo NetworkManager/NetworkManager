@@ -157,33 +157,31 @@ _keyfile_a_contains_all_in_b (GKeyFile *kf_a, GKeyFile *kf_b)
 	return TRUE;
 }
 
-GHashTable *
+NMConfigChangeFlags
 nm_config_data_diff (NMConfigData *old_data, NMConfigData *new_data)
 {
-	GHashTable *changes;
+	NMConfigChangeFlags changes = NM_CONFIG_CHANGE_NONE;
 	NMConfigDataPrivate *priv_old, *priv_new;
 	GSList *spec_old, *spec_new;
 
-	g_return_val_if_fail (NM_IS_CONFIG_DATA (old_data), NULL);
-	g_return_val_if_fail (NM_IS_CONFIG_DATA (new_data), NULL);
-
-	changes = g_hash_table_new (g_str_hash, g_str_equal);
+	g_return_val_if_fail (NM_IS_CONFIG_DATA (old_data), NM_CONFIG_CHANGE_NONE);
+	g_return_val_if_fail (NM_IS_CONFIG_DATA (new_data), NM_CONFIG_CHANGE_NONE);
 
 	priv_old = NM_CONFIG_DATA_GET_PRIVATE (old_data);
 	priv_new = NM_CONFIG_DATA_GET_PRIVATE (new_data);
 
 	if (   !_keyfile_a_contains_all_in_b (priv_old->keyfile, priv_new->keyfile)
 	    || !_keyfile_a_contains_all_in_b (priv_new->keyfile, priv_old->keyfile))
-		g_hash_table_insert (changes, NM_CONFIG_CHANGES_VALUES, NULL);
+		changes |= NM_CONFIG_CHANGE_VALUES;
 
 	if (   g_strcmp0 (nm_config_data_get_config_main_file (old_data), nm_config_data_get_config_main_file (new_data)) != 0
 	    || g_strcmp0 (nm_config_data_get_config_description (old_data), nm_config_data_get_config_description (new_data)) != 0)
-		g_hash_table_insert (changes, NM_CONFIG_CHANGES_CONFIG_FILES, NULL);
+		changes |= NM_CONFIG_CHANGE_CONFIG_FILES;
 
 	if (   nm_config_data_get_connectivity_interval (old_data) != nm_config_data_get_connectivity_interval (new_data)
 	    || g_strcmp0 (nm_config_data_get_connectivity_uri (old_data), nm_config_data_get_connectivity_uri (new_data))
 	    || g_strcmp0 (nm_config_data_get_connectivity_response (old_data), nm_config_data_get_connectivity_response (new_data)))
-		g_hash_table_insert (changes, NM_CONFIG_CHANGES_CONNECTIVITY, NULL);
+		changes |= NM_CONFIG_CHANGE_CONNECTIVITY;
 
 	spec_old = priv_old->no_auto_default.specs;
 	spec_new = priv_new->no_auto_default.specs;
@@ -192,12 +190,8 @@ nm_config_data_diff (NMConfigData *old_data, NMConfigData *new_data)
 		spec_new = spec_new->next;
 	}
 	if (spec_old || spec_new)
-		g_hash_table_insert (changes, NM_CONFIG_CHANGES_NO_AUTO_DEFAULT, NULL);
+		changes |= NM_CONFIG_CHANGE_NO_AUTO_DEFAULT;
 
-	if (!g_hash_table_size (changes)) {
-		g_hash_table_destroy (changes);
-		return NULL;
-	}
 	return changes;
 }
 

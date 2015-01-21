@@ -43,11 +43,6 @@ G_BEGIN_DECLS
 /* Signals */
 #define NM_CONFIG_SIGNAL_CONFIG_CHANGED             "config-changed"
 
-#define NM_CONFIG_CHANGES_CONFIG_FILES              "config-files"
-#define NM_CONFIG_CHANGES_VALUES                    "values"
-#define NM_CONFIG_CHANGES_CONNECTIVITY              "connectivity"
-#define NM_CONFIG_CHANGES_NO_AUTO_DEFAULT           "no-auto-default"
-
 typedef struct NMConfigCmdLineOptions NMConfigCmdLineOptions;
 
 struct _NMConfig {
@@ -64,6 +59,8 @@ typedef struct {
 GType nm_config_get_type (void);
 
 NMConfig *nm_config_get (void);
+
+char *nm_config_change_flags_to_string (NMConfigChangeFlags flags);
 
 NMConfigData *nm_config_get_data (NMConfig *config);
 NMConfigData *nm_config_get_data_orig (NMConfig *config);
