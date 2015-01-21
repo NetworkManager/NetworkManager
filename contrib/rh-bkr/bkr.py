@@ -636,7 +636,7 @@ class CmdSubmit(CmdBase):
             return v
         if not self.options.reservesys:
             return ""
-        return '<task name="/distribution/reservesys" role="STANDALONE"/>'
+        return '<reservesys duration="86400"/>'
 
     DefaultReplacements = {
             'WHITEBOARD'        : 'Test NetworkManager',
