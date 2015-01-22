@@ -1,4 +1,46 @@
 ==============================================
+NetworkManager-0.9.10.2
+Overview of changes since NetworkManager-0.9.10.0
+==============================================
+
+This is a bugfix release of NetworkManager 0.9.10.  Notable changes include:
+
+* Kernel 'cache' routes (such as those added by IPv6 operations) are ignored,
+    preventing unwanted CPU usage
+* Vala bindings for libnm-glib async methods have been added
+* Some interactions with external OpenVPN daemon default routes have been fixed
+* Fixed usage of libnm-glib connectivity checking from garbage-collected languages
+* An unusual delay acquiring a DHCP lease with dhcpcd has been fixed
+* A libnm-glib crash has been fixed when multiple NMClients are created
+* A failure to pass certificate blobs to wpa_supplicant has been fixed
+* A failure to send the inner private key password to wpa_supplicant has been fixed
+* nmcli now returns earlier when activating master interfaces
+* nmtui password fields now correctly display the password
+* The IPv6 hop limit is no longer mistakenly set to 0 in some cases
+* Some DHCPv6 failures are no longer fatal
+* Handling of DHCP 'nak' and 'expire' states has been fixed in some cases
+* WiFi band locking has been fixed
+* Support for Bluetooth DUN with Bluez5 has returned
+* Non-local users can now control networking after authenticating with PolicyKit
+* Externally added routes no longer have their metrics overwritten
+* Some child interfaces (eg VPN or WWAN) are no longer deconfigured when recognized
+* Support for the PrimaryConnection D-Bus property has been backported
+* IPv6 RDNSS/DNSSL forced expiration is now handled properly
+* An invalid route to the DHCP server is no longer added in some configurations
+* A crash when external master/slave changes were made has been fixed
+* Various nmtui bugs for slaves, WiFi, and IP address buttons have been fixed
+* DHCP no longer fails due to SIGPIPE when the systemd journal is restarted
+* Unmanaged slaves are now updated correctly when they disappear
+* Cooperation with external team interfaces has been fixed
+* Bridge STP property ranges are now properly checked
+* Manager state is now properly updated on resume
+* Slave interfaces are no longer released on exit
+* Static IPv6 configuration is now added before SLAAC is started
+* Allow shared connections to be started without a carrier
+* A crash when disconnecting older Nokia phones has been fixed
+
+
+==============================================
 NetworkManager-0.9.10
 Overview of changes since NetworkManager-0.9.8
 ==============================================
