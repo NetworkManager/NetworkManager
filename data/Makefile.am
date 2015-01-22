@@ -36,7 +36,9 @@ examples_DATA = server.conf
 
 if WITH_UDEV_DIR
 udevrulesdir = $(UDEV_DIR)/rules.d
-udevrules_DATA = 85-nm-unmanaged.rules
+udevrules_DATA = \
+	85-nm-unmanaged.rules \
+	77-nm-olpc-mesh.rules
 endif
 
 server.conf: server.conf.in
@@ -57,6 +59,7 @@ EXTRA_DIST = \
 	NetworkManager-dispatcher.service.in \
 	org.freedesktop.NetworkManager.service.in \
 	85-nm-unmanaged.rules \
+	77-nm-olpc-mesh.rules \
 	server.conf.in
 
 CLEANFILES = \
