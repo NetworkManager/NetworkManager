@@ -685,6 +685,25 @@ nm_platform_link_get_type_name (int ifindex)
 }
 
 /**
+ * nm_platform_link_get_unmanaged:
+ * @ifindex: Interface index.
+ * @managed: Management status in case %TRUE is returned
+ *
+ * Returns: %TRUE if platform overrides whether the device ought
+ * to be managed by default. %FALSE with @managed unmodified
+ * otherwise.
+ */
+gboolean
+nm_platform_link_get_unmanaged (int ifindex, gboolean *managed)
+{
+	reset_error ();
+
+	g_return_val_if_fail (klass->link_get_unmanaged, FALSE);
+
+	return klass->link_get_unmanaged (platform, ifindex, managed);
+}
+
+/**
  * nm_platform_link_is_software:
  * @ifindex: Interface index.
  *

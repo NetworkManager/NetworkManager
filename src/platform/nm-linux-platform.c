@@ -2400,6 +2400,20 @@ link_get_type_name (NMPlatform *platform, int ifindex)
 	return type;
 }
 
+static gboolean
+link_get_unmanaged (NMPlatform *platform, int ifindex, gboolean *managed)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	GUdevDevice *udev_device = g_hash_table_lookup (priv->udev_devices, GINT_TO_POINTER (ifindex));
+
+	if (g_udev_device_get_property (udev_device, "NM_UNMANAGED")) {
+		*managed = g_udev_device_get_property_as_boolean (udev_device, "NM_UNMANAGED");
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
 static guint32
 link_get_flags (NMPlatform *platform, int ifindex)
 {
@@ -4591,6 +4605,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_get_name = link_get_name;
 	platform_class->link_get_type = link_get_type;
 	platform_class->link_get_type_name = link_get_type_name;
+	platform_class->link_get_unmanaged = link_get_unmanaged;
 
 	platform_class->link_refresh = link_refresh;
 

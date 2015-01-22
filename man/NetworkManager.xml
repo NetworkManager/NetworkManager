@@ -346,6 +346,33 @@
   </refsect1>
 
   <refsect1>
+    <title>UDEV PROPERTIES</title>
+
+    <para>
+      <citerefentry><refentrytitle>udev</refentrytitle><manvolnum>7</manvolnum></citerefentry>
+      device manager is used for the network device discovery. The following
+      property influences how NetworkManager manages the devices:
+    </para>
+
+    <variablelist>
+      <varlistentry>
+	<term><varname>NM_UNMANAGED</varname></term>
+	<listitem><para>
+	  No default connection will be created and automatic activation
+	  will not be attempted when this property of a device is set to a
+	  true value ("1" or "true"). You will still be able to attach a
+	  connection to the device manually or observe externally added
+	  configuration such as addresses or routes.
+	</para><para>
+	  Create an udev rule that sets this property to prevent NetworkManager
+	  from interfering with virtual Ethernet device interfaces that are
+	  managed by virtualization tools.
+	</para></listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+
+  <refsect1>
     <title>DEBUGGING</title>
     <para>
       The following environment variables are supported to help
@@ -373,6 +400,7 @@
       <citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
       <citerefentry><refentrytitle>nm-applet</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
       <citerefentry><refentrytitle>nm-connection-editor</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+      <citerefentry><refentrytitle>udev</refentrytitle><manvolnum>7</manvolnum></citerefentry>
     </para>
   </refsect1>
 </refentry>

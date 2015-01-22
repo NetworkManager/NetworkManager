@@ -299,6 +299,12 @@ link_get_type_name (NMPlatform *platform, int ifindex)
 	return type_to_type_name (link_get_type (platform, ifindex));
 }
 
+static gboolean
+link_get_unmanaged (NMPlatform *platform, int ifindex, gboolean *managed)
+{
+	return FALSE;
+}
+
 static void
 link_changed (NMPlatform *platform, NMFakePlatformLink *device)
 {
@@ -1393,6 +1399,7 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->link_get_name = link_get_name;
 	platform_class->link_get_type = link_get_type;
 	platform_class->link_get_type_name = link_get_type_name;
+	platform_class->link_get_unmanaged = link_get_unmanaged;
 
 	platform_class->link_set_up = link_set_up;
 	platform_class->link_set_down = link_set_down;

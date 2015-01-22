@@ -1797,7 +1797,7 @@ add_device (NMManager *self, NMDevice *device, gboolean try_assume)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	const char *iface, *driver, *type_desc;
 	const GSList *unmanaged_specs;
-	gboolean user_unmanaged, sleeping;
+	gboolean user_unmanaged, sleeping, platform_unmanaged;
 	gboolean enabled = FALSE;
 	RfKillType rtype;
 	GSList *iter, *remove = NULL;
@@ -1876,6 +1876,9 @@ add_device (NMManager *self, NMDevice *device, gboolean try_assume)
 	unmanaged_specs = nm_settings_get_unmanaged_specs (priv->settings);
 	user_unmanaged = nm_device_spec_match_list (device, unmanaged_specs);
 	nm_device_set_initial_unmanaged_flag (device, NM_UNMANAGED_USER, user_unmanaged);
+
+	if (nm_platform_link_get_unmanaged (nm_device_get_ifindex (device), &platform_unmanaged))
+		nm_device_set_initial_unmanaged_flag (device, NM_UNMANAGED_DEFAULT, platform_unmanaged);
 
 	sleeping = manager_sleeping (self);
 	nm_device_set_initial_unmanaged_flag (device, NM_UNMANAGED_INTERNAL, sleeping);
