@@ -693,6 +693,8 @@ nm_device_get_priority (NMDevice *self)
 		return 350;
 	case NM_DEVICE_TYPE_VLAN:
 		return 400;
+	case NM_DEVICE_TYPE_BRIDGE:
+		return 425;
 	case NM_DEVICE_TYPE_MODEM:
 		return 450;
 	case NM_DEVICE_TYPE_BT:
@@ -701,9 +703,16 @@ nm_device_get_priority (NMDevice *self)
 		return 600;
 	case NM_DEVICE_TYPE_OLPC_MESH:
 		return 650;
-	default:
+	case NM_DEVICE_TYPE_GENERIC:
 		return 950;
+	case NM_DEVICE_TYPE_UNKNOWN:
+		return 10000;
+	case NM_DEVICE_TYPE_UNUSED1:
+	case NM_DEVICE_TYPE_UNUSED2:
+		/* omit default: to get compiler warning about missing switch cases */
+		break;
 	}
+	return 11000;
 }
 
 guint32
