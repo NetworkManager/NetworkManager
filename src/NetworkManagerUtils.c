@@ -1761,10 +1761,10 @@ nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 max
  * Returns a variant3 UUID based on the concatenated C strings.
  * It does not simply concatenate them, but also includes the
  * terminating '\0' character. For example "a", "b", gives
- * "a\0b\0\0".
+ * "a\0b\0".
  *
  * This has the advantage, that the following invocations
- * all give different UUIDs: (""), ("",""), ("","a"), ("a",""),
+ * all give different UUIDs: (NULL), (""), ("",""), ("","a"), ("a",""),
  * ("aa"), ("aa", ""), ("", "aa"), ...
  */
 char *
