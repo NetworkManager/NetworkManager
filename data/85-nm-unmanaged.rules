@@ -1,0 +1,34 @@
+# Do not modify this file, it will get overwriten on updates.
+# To override or extend the rules place a file in /etc/udev/rules.d
+
+SUBSYSTEM!="net", GOTO="nm_unmanaged_end"
+
+# Determine ID_NET_DRIVER if there's no ID_NET_DRIVER or DRIVERS (old udev?)
+ENV{ID_NET_DRIVER}=="?*", GOTO="nm_unmanaged_driver"
+DRIVERS=="?*", GOTO="nm_unmanaged_driver"
+PROGRAM="/bin/sh -c '/usr/sbin/ethtool -i $env{INTERFACE} |/bin/sed -n s/^driver:\ //p'", RESULT=="?*", ENV{ID_NET_DRIVER}="%c"
+LABEL="nm_unmanaged_driver"
+
+# VirtualBox host networking. Out-of-tree driver that looks like an ordinary
+# Ethernet. No parent device (lives in /virtual/), no support for ethtool
+# to identify the driver, MAC address defaults to 08:00:27:, but can be
+# changed. Interface name will have to do, it's always vboxnet*.
+ENV{INTERFACE}=="vboxnet[0-9]*", ENV{NM_UNMANAGED}="1"
+
+# VMWare host networking. Out-of-tree driver that looks like an ordinary
+# Ethernet. No parent device (lives in /virtual/), no support for
+# ethtool to identify the driver. They have their own MAC prefix that
+# can not be changed.
+PROGRAM="/bin/cat %S%p/address", RESULT=="00:50:56:*", ENV{INTERFACE}=="vmnet[0-9]*", ENV{NM_UNMANAGED}="1"
+
+# Parallels Workstation host networking. Out-of-tree driver that looks like
+# an ordinary Ethernet. No parent device (lives in /virtual/),  no support for
+# ethtool to identify the driver and the interface name is too generic.
+# However, they have their own MAC prefix that can not be changed.
+PROGRAM="/bin/cat %S%p/address", RESULT=="00:1c:42:*", ENV{INTERFACE}=="vnic[0-9]*", ENV{NM_UNMANAGED}="1"
+
+# Virtual Ethernet device pair. Often used to communicate with a peer interface
+# in another net namespace and managed by libvirt, Docker or the like.
+ENV{ID_NET_DRIVER}=="veth", ENV{NM_UNMANAGED}="1"
+
+LABEL="nm_unmanaged_end"
