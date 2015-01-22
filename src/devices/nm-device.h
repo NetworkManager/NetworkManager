@@ -23,6 +23,7 @@
 #define __NETWORKMANAGER_DEVICE_H__
 
 #include <glib-object.h>
+#include <gio/gio.h>
 #include <dbus/dbus-glib.h>
 #include <netinet/in.h>
 
@@ -174,6 +175,16 @@ typedef struct {
 	void                (* ip4_config_pre_commit) (NMDevice *self, NMIP4Config *config);
 	void                (* ip6_config_pre_commit) (NMDevice *self, NMIP6Config *config);
 
+	/* Async deactivating (in the DEACTIVATING phase) */
+	void            (* deactivate_async)        (NMDevice *self,
+	                                             GCancellable *cancellable,
+	                                             GAsyncReadyCallback callback,
+	                                             gpointer user_data);
+	gboolean        (* deactivate_async_finish) (NMDevice *self,
+	                                             GAsyncResult *res,
+	                                             GError **error);
+
+	/* Sync deactivating (in the DISCONNECTED phase) */
 	void			(* deactivate)			(NMDevice *self);
 
 	gboolean        (* spec_match_list)     (NMDevice *self, const GSList *specs);

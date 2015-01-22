@@ -67,6 +67,7 @@ static gboolean impl_ppp_manager_set_ip6_config (NMPPPManager *manager,
 #include "nm-ppp-manager-glue.h"
 
 static void _ppp_cleanup  (NMPPPManager *manager);
+static void _ppp_kill (NMPPPManager *manager);
 
 #define NM_PPPD_PLUGIN PPPD_PLUGIN_DIR "/nm-pppd-plugin.so"
 #define PPP_MANAGER_SECRET_TRIES "ppp-manager-secret-tries"
@@ -138,6 +139,7 @@ dispose (GObject *object)
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (object);
 
 	_ppp_cleanup (NM_PPP_MANAGER (object));
+	_ppp_kill (NM_PPP_MANAGER (object));
 
 	g_clear_object (&priv->act_req);
 
@@ -835,6 +837,7 @@ pppd_timed_out (gpointer data)
 
 	nm_log_warn (LOGD_PPP, "pppd timed out or didn't initialize our dbus module");
 	_ppp_cleanup (manager);
+	_ppp_kill (manager);
 
 	g_signal_emit (manager, signals[STATE_CHANGED], 0, NM_PPP_STATUS_DEAD);
 
@@ -1144,6 +1147,21 @@ out:
 }
 
 static void
+_ppp_kill (NMPPPManager *manager)
+{
+	NMPPPManagerPrivate *priv;
+
+	g_return_if_fail (NM_IS_PPP_MANAGER (manager));
+
+	priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
+
+	if (priv->pid) {
+		nm_utils_kill_child_async (priv->pid, SIGTERM, LOGD_PPP, "pppd", 2000, NULL, NULL);
+		priv->pid = 0;
+	}
+}
+
+static void
 _ppp_cleanup (NMPPPManager *manager)
 {
 	NMPPPManagerPrivate *priv;
@@ -1175,9 +1193,96 @@ _ppp_cleanup (NMPPPManager *manager)
 		g_source_remove (priv->ppp_watch_id);
 		priv->ppp_watch_id = 0;
 	}
+}
 
-	if (priv->pid) {
-		nm_utils_kill_child_async (priv->pid, SIGTERM, LOGD_PPP, "pppd", 2000, NULL, NULL);
-		priv->pid = 0;
+/***********************************************************/
+
+typedef struct {
+	NMPPPManager *manager;
+	GSimpleAsyncResult *result;
+	GCancellable *cancellable;
+} StopContext;
+
+static void
+stop_context_complete (StopContext *ctx)
+{
+	if (ctx->cancellable)
+		g_object_unref (ctx->cancellable);
+	g_simple_async_result_complete_in_idle (ctx->result);
+	g_object_unref (ctx->result);
+	g_object_unref (ctx->manager);
+	g_slice_free (StopContext, ctx);
+}
+
+static gboolean
+stop_context_complete_if_cancelled (StopContext *ctx)
+{
+	GError *error = NULL;
+
+	if (g_cancellable_set_error_if_cancelled (ctx->cancellable, &error)) {
+		g_simple_async_result_take_error (ctx->result, error);
+		stop_context_complete (ctx);
+		return TRUE;
 	}
+	return FALSE;
+}
+
+gboolean
+nm_ppp_manager_stop_finish (NMPPPManager *manager,
+                            GAsyncResult *res,
+                            GError **error)
+{
+	return !g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (res), error);
+}
+
+static void
+kill_child_ready  (pid_t pid,
+                   gboolean success,
+                   int child_status,
+                   StopContext *ctx)
+{
+	if (stop_context_complete_if_cancelled (ctx))
+		return;
+	stop_context_complete (ctx);
+}
+
+void
+nm_ppp_manager_stop (NMPPPManager *manager,
+                     GCancellable *cancellable,
+                     GAsyncReadyCallback callback,
+                     gpointer user_data)
+{
+	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
+	StopContext *ctx;
+
+	ctx = g_slice_new0 (StopContext);
+	ctx->manager = g_object_ref (manager);
+	ctx->result = g_simple_async_result_new (G_OBJECT (manager),
+	                                         callback,
+	                                         user_data,
+	                                         nm_ppp_manager_stop);
+
+	/* Setup cancellable */
+	ctx->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
+	if (stop_context_complete_if_cancelled (ctx))
+		return;
+
+	/* Cleanup internals */
+	_ppp_cleanup (manager);
+
+	/* If no pppd running, we're done */
+	if (!priv->pid) {
+		stop_context_complete (ctx);
+		return;
+	}
+
+	/* No cancellable operation, so just wait until it returns always */
+	nm_utils_kill_child_async (priv->pid,
+	                           SIGTERM,
+	                           LOGD_PPP,
+	                           "pppd",
+	                           2000,
+	                           (NMUtilsKillChildAsyncCb) kill_child_ready,
+	                           ctx);
+	priv->pid = 0;
 }
