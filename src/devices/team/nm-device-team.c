@@ -351,14 +351,11 @@ teamd_dbus_vanished (GDBusConnection *connection,
 
 	g_return_if_fail (priv->teamd_dbus_watch);
 
-	if (!priv->teamd_pid) {
+	if (!priv->tdc) {
 		/* g_bus_watch_name will always raise an initial signal, to indicate whether the
-		 * name exists/not exists initially. Do not take this as a failure, until the
-		 * startup timeout is over.
-		 *
-		 * Note that g_bus_watch_name is guaranteed to alternate vanished/appeared signals,
-		 * so we won't hit this condition again (because the next signal is either 'appeared'
-		 * or 'timeout'). */
+		 * name exists/not exists initially. Do not take this as a failure if it hadn't
+		 * previously appeared.
+		 */
 		_LOGD (LOGD_TEAM, "teamd not on D-Bus (ignored)");
 		return;
 	}
