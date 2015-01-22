@@ -827,7 +827,8 @@ _nm_setting_new_from_dbus (GType setting_type,
 				             _("can't set property of type '%s' from value of type '%s'"),
 				             property->dbus_type ?
 				                 g_variant_type_peek_string (property->dbus_type) :
-				                 g_type_name (property->param_spec->value_type),
+				                 property->param_spec ?
+				                     g_type_name (property->param_spec->value_type) : "(unknown)",
 				             g_variant_get_type_string (value));
 				g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), property->name);
 
