@@ -389,6 +389,11 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 %else
 	--with-modem-manager-1=no \
 %endif
+%if 0%{?with_wifi}
+	--enable-wifi=yes \
+%else
+	--enable-wifi=no \
+%endif
 %if 0%{?with_wimax}
 	--enable-wimax=yes \
 %else
@@ -576,8 +581,6 @@ fi
 %files wifi
 %defattr(-,root,root,0755)
 %{_libdir}/%{name}/libnm-device-plugin-wifi.so
-%else
-%exclude %{_libdir}/%{name}/libnm-device-plugin-wifi.so
 %endif
 
 %if 0%{?with_wwan}
