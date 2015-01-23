@@ -133,11 +133,26 @@ if ! test x"$ac_distver" = x""; then
   AC_DEFINE_UNQUOTED(NM_DIST_VERSION, "$ac_distver", [Define the distribution version string])
 fi
 
+AC_ARG_ENABLE(wifi, AS_HELP_STRING([--enable-wifi], [enable Wi-Fi support]))
+if test "${enable_wifi}" != "no"; then
+	enable_wifi='yes'
+	AC_DEFINE(WITH_WIFI, 1, [Define if you have Wi-Fi support])
+else
+	AC_DEFINE(WITH_WIFI, 0, [Define if you have Wi-Fi support])
+fi
+AM_CONDITIONAL(WITH_WIFI, test "${enable_wifi}" = "yes")
+
 dnl
 dnl Default to using WEXT but allow it to be disabled
 dnl
-AC_ARG_WITH(wext, AS_HELP_STRING([--with-wext=yes], [Enable or disable Linux Wireless Extensions]), ac_with_wext=$withval, ac_with_wext="yes")
+AC_ARG_WITH(wext, AS_HELP_STRING([--with-wext=yes], [Enable or disable Linux Wireless Extensions]), ac_with_wext=$withval, ac_with_wext="$enable_wifi")
+if test "$ac_with_wext" != 'no'; then
+	ac_with_wext='yes'
+fi
 if test x"$ac_with_wext" = x"yes"; then
+	if test "$enable_wifi" != "yes"; then
+		AC_MSG_ERROR(Enabling WEXT support and disabling Wi-Fi makes no sense)
+	fi
 	AC_MSG_CHECKING([Linux kernel WEXT headers])
 	AC_COMPILE_IFELSE(
 		[AC_LANG_PROGRAM(
@@ -181,20 +196,24 @@ if test "$ac_have_nl80211" = no; then
 	AC_MSG_ERROR(Linux kernel development header linux/nl80211.h not installed or not functional)
 fi
 
-AC_MSG_CHECKING([Linux kernel nl80211 Critical Protocol Start/Stop])
-AC_COMPILE_IFELSE(
-	[AC_LANG_PROGRAM(
-              [[#ifndef __user
-                #define __user
-                #endif
-                #include <sys/types.h>
-                #include <linux/types.h>
-                #include <sys/socket.h>
-                #include <linux/nl80211.h>]],
-              [[unsigned int a = NL80211_CMD_CRIT_PROTOCOL_START; a++;]])],
-        [ac_have_nl80211_critproto=yes],
-        [ac_have_nl80211_critproto=no])
-AC_MSG_RESULT($ac_have_nl80211_critproto)
+if test "$with_wifi" = "yes"; then
+	AC_MSG_CHECKING([Linux kernel nl80211 Critical Protocol Start/Stop])
+	AC_COMPILE_IFELSE(
+		[AC_LANG_PROGRAM(
+                  [[#ifndef __user
+                    #define __user
+                    #endif
+                    #include <sys/types.h>
+                    #include <linux/types.h>
+                    #include <sys/socket.h>
+                    #include <linux/nl80211.h>]],
+                  [[unsigned int a = NL80211_CMD_CRIT_PROTOCOL_START; a++;]])],
+		[ac_have_nl80211_critproto=yes],
+		[ac_have_nl80211_critproto=no])
+	AC_MSG_RESULT($ac_have_nl80211_critproto)
+else
+	ac_have_nl80211_critproto='no'
+fi
 if test "$ac_have_nl80211_critproto" = yes; then
 	AC_DEFINE(HAVE_NL80211_CRITICAL_PROTOCOL_CMDS, 1, [Define if nl80211 has critical protocol support])
 else
@@ -1067,6 +1086,7 @@ echo
 
 echo "Features:"
 echo "  wext: $ac_with_wext"
+echo "  wifi: $enable_wifi"
 echo "  wimax: $enable_wimax"
 echo "  ppp: $enable_ppp"
 echo "  modemmanager-1: $with_modem_manager_1"

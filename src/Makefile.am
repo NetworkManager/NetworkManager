@@ -5,7 +5,6 @@ include $(GLIB_MAKEFILE)
 SUBDIRS =				\
 	.				\
 	devices/adsl			\
-	devices/wifi			\
 	dhcp-manager			\
 	ppp-manager			\
 	settings/plugins
@@ -14,6 +13,10 @@ if WITH_MODEM_MANAGER_1
 SUBDIRS +=				\
 	devices/wwan			\
 	devices/bluetooth
+endif
+
+if WITH_WIFI
+SUBDIRS += devices/wifi
 endif
 
 if WITH_WIMAX
