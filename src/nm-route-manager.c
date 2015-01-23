@@ -25,6 +25,8 @@
 #include "nm-platform.h"
 #include "nm-logging.h"
 
+#include "NetworkManagerUtils.h"
+
 G_DEFINE_TYPE (NMRouteManager, nm_route_manager, G_TYPE_OBJECT)
 
 static NMRouteManager *_instance;
@@ -56,11 +58,13 @@ array_contains_ip6_route (const GArray *routes, const NMPlatformIP6Route *route)
 
 	for (i = 0; i < len; i++) {
 		NMPlatformIP6Route *c = &g_array_index (routes, NMPlatformIP6Route, i);
+		int route_metric = nm_utils_ip6_route_metric_normalize (route->metric);
+		int c_metric = nm_utils_ip6_route_metric_normalize (c->metric);
 
 		if (IN6_ARE_ADDR_EQUAL (&route->network, &c->network) &&
 		    route->plen == c->plen &&
 		    IN6_ARE_ADDR_EQUAL (&route->gateway, &c->gateway) &&
-		    route->metric == c->metric)
+		    route_metric == c_metric)
 			return TRUE;
 	}
 
