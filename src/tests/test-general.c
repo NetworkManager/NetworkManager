@@ -803,7 +803,7 @@ _test_match_spec_contains (const char **matches, const char *match)
 }
 
 static void
-test_match_spec_ifname (const char *spec_str, const char **matches)
+test_match_spec_ifname (const char *spec_str, const char **matches, const char **neg_matches)
 {
 	const char *m;
 	char **spec_str_split;
@@ -819,14 +819,20 @@ test_match_spec_ifname (const char *spec_str, const char **matches)
 	specs = g_slist_reverse (g_slist_copy (specs_reverse));
 
 	for (i = 0; matches && matches[i]; i++) {
-		g_assert (nm_match_spec_interface_name (specs, matches[i]));
-		g_assert (nm_match_spec_interface_name (specs_reverse, matches[i]));
+		g_assert (nm_match_spec_interface_name (specs, matches[i]) == NM_MATCH_SPEC_MATCH);
+		g_assert (nm_match_spec_interface_name (specs_reverse, matches[i]) == NM_MATCH_SPEC_MATCH);
+	}
+	for (i = 0; neg_matches && neg_matches[i]; i++) {
+		g_assert (nm_match_spec_interface_name (specs, neg_matches[i]) == NM_MATCH_SPEC_NEG_MATCH);
+		g_assert (nm_match_spec_interface_name (specs_reverse, neg_matches[i]) == NM_MATCH_SPEC_NEG_MATCH);
 	}
 	for (i = 0; (m = _test_match_spec_all[i]); i++) {
 		if (_test_match_spec_contains (matches, m))
 			continue;
-		g_assert (!nm_match_spec_interface_name (specs, m));
-		g_assert (!nm_match_spec_interface_name (specs_reverse, m));
+		if (_test_match_spec_contains (neg_matches, m))
+			continue;
+		g_assert (nm_match_spec_interface_name (specs, m) == NM_MATCH_SPEC_NO_MATCH);
+		g_assert (nm_match_spec_interface_name (specs_reverse, m) == NM_MATCH_SPEC_NO_MATCH);
 	}
 
 	g_slist_free (specs_reverse);
@@ -839,20 +845,34 @@ test_nm_match_spec_interface_name (void)
 {
 #define S(...) ((const char *[]) { __VA_ARGS__, NULL } )
 	test_match_spec_ifname ("em1",
-	                        S ("em1"));
+	                        S ("em1"),
+	                        NULL);
 	test_match_spec_ifname ("em1,em2",
-	                        S ("em1", "em2"));
+	                        S ("em1", "em2"),
+	                        NULL);
 	test_match_spec_ifname ("em1,em2,interface-name:em2",
-	                        S ("em1", "em2"));
+	                        S ("em1", "em2"),
+	                        NULL);
 	test_match_spec_ifname ("interface-name:em1",
-	                        S ("em1"));
+	                        S ("em1"),
+	                        NULL);
 	test_match_spec_ifname ("interface-name:em*",
-	                        S ("em", "em*", "em\\", "em\\*", "em\\1", "em\\11", "em\\2", "em1", "em11", "em2", "em3"));
+	                        S ("em", "em*", "em\\", "em\\*", "em\\1", "em\\11", "em\\2", "em1", "em11", "em2", "em3"),
+	                        NULL);
 	test_match_spec_ifname ("interface-name:em\\*",
-	                        S ("em\\", "em\\*", "em\\1", "em\\11", "em\\2"));
+	                        S ("em\\", "em\\*", "em\\1", "em\\11", "em\\2"),
+	                        NULL);
 	test_match_spec_ifname ("interface-name:~em\\*",
-	                        S ("em\\", "em\\*", "em\\1", "em\\11", "em\\2"));
+	                        S ("em\\", "em\\*", "em\\1", "em\\11", "em\\2"),
+	                        NULL);
 	test_match_spec_ifname ("interface-name:=em*",
+	                        S ("em*"),
+	                        NULL);
+	test_match_spec_ifname ("interface-name:em*,except:interface-name:em1*",
+	                        S ("em", "em*", "em\\", "em\\*", "em\\1", "em\\11", "em\\2", "em2", "em3"),
+	                        S ("em1", "em11"));
+	test_match_spec_ifname ("interface-name:em*,except:interface-name:=em*",
+	                        S ("em", "em\\", "em\\*", "em\\1", "em\\11", "em\\2", "em1", "em11", "em2", "em3"),
 	                        S ("em*"));
 #undef S
 }

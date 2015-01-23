@@ -8209,27 +8209,30 @@ nm_device_spec_match_list (NMDevice *self, const GSList *specs)
 	if (!specs)
 		return FALSE;
 
-	return NM_DEVICE_GET_CLASS (self)->spec_match_list (self, specs);
+	return NM_DEVICE_GET_CLASS (self)->spec_match_list (self, specs) == NM_MATCH_SPEC_MATCH;
 }
 
-static gboolean
+static NMMatchSpecMatchType
 spec_match_list (NMDevice *self, const GSList *specs)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	gboolean matched = FALSE;
+	NMMatchSpecMatchType matched = NM_MATCH_SPEC_NO_MATCH, m;
 	const GSList *iter;
 
 	for (iter = specs; iter; iter = g_slist_next (iter)) {
-		if (!strcmp ((const char *) iter->data, "*"))
-			return TRUE;
+		if (!strcmp ((const char *) iter->data, "*")) {
+			matched = NM_MATCH_SPEC_MATCH;
+			break;
+		}
 	}
-
-	if (priv->hw_addr_len)
-		matched = nm_match_spec_hwaddr (specs, priv->hw_addr);
-
-	if (!matched)
-		matched = nm_match_spec_interface_name (specs, nm_device_get_iface (self));
-
+	if (priv->hw_addr_len) {
+		m = nm_match_spec_hwaddr (specs, priv->hw_addr);
+		matched = MAX (matched, m);
+	}
+	if (matched != NM_MATCH_SPEC_NEG_MATCH) {
+		m = nm_match_spec_interface_name (specs, nm_device_get_iface (self));
+		matched = MAX (matched, m);
+	}
 	return matched;
 }
 

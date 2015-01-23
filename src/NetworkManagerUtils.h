@@ -94,9 +94,15 @@ const char *nm_utils_find_helper (const char *progname,
                                   const char *try_first,
                                   GError **error);
 
-gboolean nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr);
-gboolean nm_match_spec_s390_subchannels (const GSList *specs, const char *subchannels);
-gboolean nm_match_spec_interface_name (const GSList *specs, const char *interface_name);
+typedef enum {
+	NM_MATCH_SPEC_NO_MATCH  = 0,
+	NM_MATCH_SPEC_MATCH     = 1,
+	NM_MATCH_SPEC_NEG_MATCH = 2,
+} NMMatchSpecMatchType;
+
+NMMatchSpecMatchType nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr);
+NMMatchSpecMatchType nm_match_spec_s390_subchannels (const GSList *specs, const char *subchannels);
+NMMatchSpecMatchType nm_match_spec_interface_name (const GSList *specs, const char *interface_name);
 
 const char *nm_utils_get_shared_wifi_permission (NMConnection *connection);
 
