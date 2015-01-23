@@ -187,7 +187,7 @@ typedef struct {
 	/* Sync deactivating (in the DISCONNECTED phase) */
 	void			(* deactivate)			(NMDevice *self);
 
-	gboolean        (* spec_match_list)     (NMDevice *self, const GSList *specs);
+	NMMatchSpecMatchType (* spec_match_list)   (NMDevice *self, const GSList *specs);
 
 	/* Update the connection with currently configured L2 settings */
 	void            (* update_connection) (NMDevice *device, NMConnection *connection);
