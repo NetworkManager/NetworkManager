@@ -8088,9 +8088,12 @@ spec_match_list (NMDevice *self, const GSList *specs)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	gboolean matched = FALSE;
+	const GSList *iter;
 
-	if (nm_match_spec_string (specs, "*"))
-		return TRUE;
+	for (iter = specs; iter; iter = g_slist_next (iter)) {
+		if (!strcmp ((const char *) iter->data, "*"))
+			return TRUE;
+	}
 
 	if (priv->hw_addr_len)
 		matched = nm_match_spec_hwaddr (specs, priv->hw_addr);

@@ -864,19 +864,6 @@ nm_utils_find_helper(const char *progname, const char *try_first, GError **error
 
 /******************************************************************************************/
 
-gboolean
-nm_match_spec_string (const GSList *specs, const char *match)
-{
-	const GSList *iter;
-
-	for (iter = specs; iter; iter = g_slist_next (iter)) {
-		if (!g_ascii_strcasecmp ((const char *) iter->data, match))
-			return TRUE;
-	}
-
-	return FALSE;
-}
-
 #define MAC_TAG "mac:"
 #define INTERFACE_NAME_TAG "interface-name:"
 #define SUBCHAN_TAG "s390-subchannels:"
