@@ -1087,6 +1087,8 @@ ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, in
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	int i;
 
+	metric = nm_utils_ip6_route_metric_normalize (metric);
+
 	for (i = 0; i < priv->ip6_routes->len; i++) {
 		NMPlatformIP6Route *route = &g_array_index (priv->ip6_routes, NMPlatformIP6Route, i);
 		NMPlatformIP6Route deleted_route;
