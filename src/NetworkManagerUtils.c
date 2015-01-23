@@ -843,6 +843,10 @@ nm_match_spec_string (const GSList *specs, const char *match)
 	return FALSE;
 }
 
+#define MAC_TAG "mac:"
+#define INTERFACE_NAME_TAG "interface-name:"
+#define SUBCHAN_TAG "s390-subchannels:"
+
 gboolean
 nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr)
 {
@@ -853,32 +857,57 @@ nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr)
 	for (iter = specs; iter; iter = g_slist_next (iter)) {
 		const char *spec_str = iter->data;
 
-		if (   !g_ascii_strncasecmp (spec_str, "mac:", 4)
-		    && nm_utils_hwaddr_matches (spec_str + 4, -1, hwaddr, -1))
-			return TRUE;
+		if (!spec_str || !*spec_str)
+			continue;
+
+		if (   !g_ascii_strncasecmp (spec_str, INTERFACE_NAME_TAG, STRLEN (INTERFACE_NAME_TAG))
+		    || !g_ascii_strncasecmp (spec_str, SUBCHAN_TAG, STRLEN (SUBCHAN_TAG)))
+			continue;
+
+		if (!g_ascii_strncasecmp (spec_str, MAC_TAG, STRLEN (MAC_TAG)))
+			spec_str += STRLEN (MAC_TAG);
 
 		if (nm_utils_hwaddr_matches (spec_str, -1, hwaddr, -1))
 			return TRUE;
 	}
-
 	return FALSE;
 }
 
 gboolean
 nm_match_spec_interface_name (const GSList *specs, const char *interface_name)
 {
-	char *iface_match;
-	gboolean matched;
+	const GSList *iter;
 
 	g_return_val_if_fail (interface_name != NULL, FALSE);
 
-	if (nm_match_spec_string (specs, interface_name))
-		return TRUE;
+	for (iter = specs; iter; iter = g_slist_next (iter)) {
+		const char *spec_str = iter->data;
+		gboolean use_pattern = FALSE;
 
-	iface_match = g_strdup_printf ("interface-name:%s", interface_name);
-	matched = nm_match_spec_string (specs, iface_match);
-	g_free (iface_match);
-	return matched;
+		if (!spec_str || !*spec_str)
+			continue;
+
+		if (   !g_ascii_strncasecmp (spec_str, MAC_TAG, STRLEN (MAC_TAG))
+		    || !g_ascii_strncasecmp (spec_str, SUBCHAN_TAG, STRLEN (SUBCHAN_TAG)))
+			continue;
+
+		if (!g_ascii_strncasecmp (spec_str, INTERFACE_NAME_TAG, STRLEN (INTERFACE_NAME_TAG))) {
+			spec_str += STRLEN (INTERFACE_NAME_TAG);
+			if (spec_str[0] == '=')
+				spec_str += 1;
+			else {
+				if (spec_str[0] == '~')
+					spec_str += 1;
+				use_pattern=TRUE;
+			}
+		}
+
+		if (!strcmp (spec_str, interface_name))
+			return TRUE;
+		if (use_pattern && g_pattern_match_simple (spec_str, interface_name))
+			return TRUE;
+	}
+	return FALSE;
 }
 
 #define BUFSIZE 10
@@ -947,8 +976,6 @@ parse_subchannels (const char *subchannels, guint32 *a, guint32 *b, guint32 *c)
 	return TRUE;
 }
 
-#define SUBCHAN_TAG "s390-subchannels:"
-
 gboolean
 nm_match_spec_s390_subchannels (const GSList *specs, const char *subchannels)
 {
@@ -962,11 +989,14 @@ nm_match_spec_s390_subchannels (const GSList *specs, const char *subchannels)
 		return FALSE;
 
 	for (iter = specs; iter; iter = g_slist_next (iter)) {
-		const char *spec = iter->data;
+		const char *spec_str = iter->data;
 
-		if (!strncmp (spec, SUBCHAN_TAG, strlen (SUBCHAN_TAG))) {
-			spec += strlen (SUBCHAN_TAG);
-			if (parse_subchannels (spec, &spec_a, &spec_b, &spec_c)) {
+		if (!spec_str || !*spec_str)
+			continue;
+
+		if (!g_ascii_strncasecmp (spec_str, SUBCHAN_TAG, STRLEN (SUBCHAN_TAG))) {
+			spec_str += STRLEN (SUBCHAN_TAG);
+			if (parse_subchannels (spec_str, &spec_a, &spec_b, &spec_c)) {
 				if (a == spec_a && b == spec_b && c == spec_c)
 					return TRUE;
 			}
