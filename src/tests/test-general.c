@@ -847,11 +847,13 @@ test_nm_match_spec_interface_name (void)
 	test_match_spec_ifname ("interface-name:em1",
 	                        S ("em1"));
 	test_match_spec_ifname ("interface-name:em*",
-	                        S ("em*"));
+	                        S ("em", "em*", "em\\", "em\\*", "em\\1", "em\\11", "em\\2", "em1", "em11", "em2", "em3"));
 	test_match_spec_ifname ("interface-name:em\\*",
-	                        S ("em\\*"));
+	                        S ("em\\", "em\\*", "em\\1", "em\\11", "em\\2"));
+	test_match_spec_ifname ("interface-name:~em\\*",
+	                        S ("em\\", "em\\*", "em\\1", "em\\11", "em\\2"));
 	test_match_spec_ifname ("interface-name:=em*",
-	                        S ("=em*"));
+	                        S ("em*"));
 #undef S
 }
 
