@@ -362,14 +362,14 @@ find_active_ap (NMDeviceWifi *self,
 	guint32 devfreq;
 
 	nm_platform_wifi_get_bssid (ifindex, bssid);
-	_LOGD (LOGD_WIFI, "active BSSID: %02x:%02x:%02x:%02x:%02x:%02x",
+	_LOGT (LOGD_WIFI, "active BSSID: %02x:%02x:%02x:%02x:%02x:%02x",
 	       bssid[0], bssid[1], bssid[2], bssid[3], bssid[4], bssid[5]);
 
 	if (!nm_ethernet_address_is_valid (bssid, ETH_ALEN))
 		return NULL;
 
 	ssid = nm_platform_wifi_get_ssid (ifindex);
-	_LOGD (LOGD_WIFI, "active SSID: %s%s%s",
+	_LOGT (LOGD_WIFI, "active SSID: %s%s%s",
 	       ssid ? "'" : "",
 	       ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
 	       ssid ? "'" : "");
@@ -382,7 +382,7 @@ find_active_ap (NMDeviceWifi *self,
 	 * and therefore it won't get matched the first time around.
 	 */
 	while (i++ < (match_hidden ? 2 : 1)) {
-		_LOGD (LOGD_WIFI, "  Pass #%d %s", i, i > 1 ? "(ignoring SSID)" : "");
+		_LOGT (LOGD_WIFI, "  Pass #%d %s", i, i > 1 ? "(ignoring SSID)" : "");
 
 		/* Find this SSID + BSSID in the device's AP list */
 		for (iter = priv->ap_list; iter; iter = g_slist_next (iter)) {
@@ -392,19 +392,19 @@ find_active_ap (NMDeviceWifi *self,
 			NM80211Mode apmode;
 			guint32 apfreq;
 
-			_LOGD (LOGD_WIFI, "    AP: %s%s%s  %s",
+			_LOGT (LOGD_WIFI, "    AP: %s%s%s  %s",
 			       ap_ssid ? "'" : "",
 			       ap_ssid ? nm_utils_escape_ssid (ap_ssid->data, ap_ssid->len) : "(none)",
 			       ap_ssid ? "'" : "",
 			       str_if_set (ap_bssid, "(none)"));
 
 			if (ap == ignore_ap) {
-				_LOGD (LOGD_WIFI, "      ignored");
+				_LOGT (LOGD_WIFI, "      ignored");
 				continue;
 			}
 
 			if (!nm_utils_hwaddr_matches (bssid, ETH_ALEN, ap_bssid, -1)) {
-				_LOGD (LOGD_WIFI, "      BSSID mismatch");
+				_LOGT (LOGD_WIFI, "      BSSID mismatch");
 				continue;
 			}
 
@@ -414,21 +414,21 @@ find_active_ap (NMDeviceWifi *self,
 				    || (ssid && ap_ssid && !nm_utils_same_ssid (ssid->data, ssid->len,
 				                                                ap_ssid->data, ap_ssid->len,
 				                                                TRUE))) {
-					_LOGD (LOGD_WIFI, "      SSID mismatch");
+					_LOGT (LOGD_WIFI, "      SSID mismatch");
 					continue;
 				}
 			}
 
 			apmode = nm_ap_get_mode (ap);
 			if (devmode != apmode) {
-				_LOGD (LOGD_WIFI, "      mode mismatch (device %d, ap %d)",
+				_LOGT (LOGD_WIFI, "      mode mismatch (device %d, ap %d)",
 				       devmode, apmode);
 				continue;
 			}
 
 			apfreq = nm_ap_get_freq (ap);
 			if (devfreq != apfreq) {
-				_LOGD (LOGD_WIFI, "      frequency mismatch (device %u, ap %u)",
+				_LOGT (LOGD_WIFI, "      frequency mismatch (device %u, ap %u)",
 				       devfreq, apfreq);
 
 				if (match_nofreq == NULL)
@@ -442,7 +442,7 @@ find_active_ap (NMDeviceWifi *self,
 			}
 
 			// FIXME: handle security settings here too
-			_LOGD (LOGD_WIFI, "      matched");
+			_LOGT (LOGD_WIFI, "      matched");
 			active_ap = ap;
 			goto done;
 		}
@@ -463,7 +463,7 @@ find_active_ap (NMDeviceWifi *self,
 	if (match_nofreq && ((found_a_band != found_bg_band) || (devfreq == 0))) {
 		const GByteArray *ap_ssid = nm_ap_get_ssid (match_nofreq);
 
-		_LOGD (LOGD_WIFI, "    matched %s%s%s  %s",
+		_LOGT (LOGD_WIFI, "    matched %s%s%s  %s",
 		       ap_ssid ? "'" : "",
 		       ap_ssid ? nm_utils_escape_ssid (ap_ssid->data, ap_ssid->len) : "(none)",
 		       ap_ssid ? "'" : "",
@@ -473,7 +473,7 @@ find_active_ap (NMDeviceWifi *self,
 		goto done;
 	}
 
-	_LOGD (LOGD_WIFI, "  No matching AP found.");
+	_LOGT (LOGD_WIFI, "  No matching AP found.");
 
 done:
 	if (ssid)
