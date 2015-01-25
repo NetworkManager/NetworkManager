@@ -7,15 +7,15 @@
 # Wadim Dziedzic <wdziedzic@aviary.pl>, 2007-2008.
 # Artur Flinta <aflinta@at.kernel.pl>, 2007.
 # Tomasz Dominikowski <dominikowski@gmail.com>, 2008-2010.
-# Piotr Drąg <piotrdrag@gmail.com>, 2009-2014.
-# Aviary.pl <gnomepl@aviary.pl>, 2007-2014.
+# Piotr Drąg <piotrdrag@gmail.com>, 2009-2015.
+# Aviary.pl <gnomepl@aviary.pl>, 2007-2015.
 #: ../src/nm-iface-helper.c:307
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-12-21 19:55+0100\n"
-"PO-Revision-Date: 2014-12-21 18:58+0100\n"
+"POT-Creation-Date: 2015-01-25 20:28+0100\n"
+"PO-Revision-Date: 2015-01-25 20:29+0100\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish <gnomepl@aviary.pl>\n"
 "Language: pl\n"
@@ -1612,7 +1612,7 @@ msgstr "Błąd: \"%s\": \"%s\" nie jest prawidłowym adresem MAC %s."
 
 #. Ask for optional arguments
 #: ../clients/cli/connections.c:2764 ../clients/cli/connections.c:3226
-#: ../clients/tui/nm-editor-utils.c:164 ../libnm-core/nm-connection.c:1551
+#: ../clients/tui/nm-editor-utils.c:164 ../libnm-core/nm-connection.c:1573
 #: ../libnm-glib/nm-device.c:1801 ../libnm/nm-device.c:1623
 msgid "InfiniBand"
 msgstr "InfiniBand"
@@ -1778,7 +1778,7 @@ msgstr "Błąd: \"bt-type\": \"%s\" nie jest prawidłowym typem Bluetooth.\n"
 #. 13
 #: ../clients/cli/connections.c:3439 ../clients/cli/devices.c:233
 #: ../clients/tui/nm-editor-utils.c:218 ../clients/tui/nmt-page-vlan.c:97
-#: ../libnm-core/nm-connection.c:1549 ../libnm-glib/nm-device.c:1809
+#: ../libnm-core/nm-connection.c:1571 ../libnm-glib/nm-device.c:1809
 #: ../libnm-util/nm-connection.c:1614 ../libnm/nm-device.c:1631
 msgid "VLAN"
 msgstr "VLAN"
@@ -4781,7 +4781,7 @@ msgid "Do you want to remove them? [yes] "
 msgstr "Usunąć je? [yes] "
 
 #: ../clients/cli/settings.c:1931 ../clients/cli/settings.c:2253
-#: ../clients/cli/settings.c:4326
+#: ../clients/cli/settings.c:4365
 #, c-format
 msgid "'%s' is not valid"
 msgstr "\"%s\" jest nieprawidłowe"
@@ -4961,29 +4961,92 @@ msgstr "nie podano hasła klucza prywatnego"
 msgid "the property doesn't contain EAP method '%s'"
 msgstr "właściwość nie zawiera metody EAP \"%s\""
 
-#: ../clients/cli/settings.c:2775
+#: ../clients/cli/settings.c:2765
+msgid ""
+"Enter file path to CA certificate (optionally prefixed with file://).\n"
+"  [file://]<file path>\n"
+"Note that nmcli does not support specifying certificates as raw blob data.\n"
+"Example: /home/cimrman/cacert.crt\n"
+msgstr ""
+"Proszę podać ścieżkę do pliku certyfikatu CA (z opcjonalnym przedrostkiem "
+"file://).\n"
+"  [file://]<ścieżka do pliku>\n"
+"Proszę zauważyć, że nmcli nie obsługuje podawania certyfikatów jako surowych "
+"danych typu blob.\n"
+"Przykład: /home/cimrman/cacert.crt\n"
+
+#: ../clients/cli/settings.c:2784
 #, c-format
 msgid "the property doesn't contain alternative subject match '%s'"
 msgstr "właściwość nie zawiera alternatywnego dopasowania tematu \"%s\""
 
-#: ../clients/cli/settings.c:2804
+#: ../clients/cli/settings.c:2800
+msgid ""
+"Enter file path to client certificate (optionally prefixed with file://).\n"
+"  [file://]<file path>\n"
+"Note that nmcli does not support specifying certificates as raw blob data.\n"
+"Example: /home/cimrman/jara.crt\n"
+msgstr ""
+"Proszę podać ścieżkę do pliku certyfikatu klienta (z opcjonalnym "
+"przedrostkiem file://).\n"
+"  [file://]<ścieżka do pliku>\n"
+"Proszę zauważyć, że nmcli nie obsługuje podawania certyfikatów jako surowych "
+"danych typu blob.\n"
+"Przykład: /home/cimrman/jara.crt\n"
+
+#: ../clients/cli/settings.c:2812
+msgid ""
+"Enter file path to CA certificate for inner authentication (optionally "
+"prefixed\n"
+"with file://).\n"
+"  [file://]<file path>\n"
+"Note that nmcli does not support specifying certificates as raw blob data.\n"
+"Example: /home/cimrman/ca-zweite-phase.crt\n"
+msgstr ""
+"Proszę podać ścieżkę do pliku certyfikatu CA do wewnętrznego\n"
+"uwierzytelnienia (z opcjonalnym przedrostkiem file://).\n"
+"  [file://]<ścieżka do pliku>\n"
+"Proszę zauważyć, że nmcli nie obsługuje podawania certyfikatów jako surowych "
+"danych typu blob.\n"
+"Przykład: /home/cimrman/ca-zweite-phase.crt\n"
+
+#: ../clients/cli/settings.c:2832
 #, c-format
 msgid "the property doesn't contain \"phase2\" alternative subject match '%s'"
 msgstr ""
 "właściwość nie zawiera alternatywnego dopasowania tematu \"phase2\" \"%s\""
 
-#: ../clients/cli/settings.c:2830
+#: ../clients/cli/settings.c:2848
+msgid ""
+"Enter file path to client certificate for inner authentication (optionally "
+"prefixed\n"
+"with file://).\n"
+"  [file://]<file path>\n"
+"Note that nmcli does not support specifying certificates as raw blob data.\n"
+"Example: /home/cimrman/jara-zweite-phase.crt\n"
+msgstr ""
+"Proszę podać ścieżkę do pliku certyfikatu klienta do wewnętrznego\n"
+"uwierzytelnienia (z opcjonalnym przedrostkiem file://).\n"
+"  [file://]<ścieżka do pliku>\n"
+"Proszę zauważyć, że nmcli nie obsługuje podawania certyfikatów jako surowych "
+"danych typu blob.\n"
+"Przykład: /home/cimrman/jara-zweite-phase.crt\n"
+
+#: ../clients/cli/settings.c:2868
 msgid ""
 "Enter path to a private key and the key password (if not set yet):\n"
-"  <file path> [<password>]\n"
+"  [file://]<file path> [<password>]\n"
+"Note that nmcli does not support specifying private key as raw blob data.\n"
 "Example: /home/cimrman/jara-priv-key Dardanely\n"
 msgstr ""
 "Proszę podać ścieżkę do klucza prywatnego i jego hasło (jeśli nie jest "
 "jeszcze ustawione):\n"
-"  <ścieżka do pliku> [<hasło>]\n"
+"  [file://]<ścieżka do pliku> [<hasło>]\n"
+"Proszę zauważyć, że nmcli nie obsługuje podawania klucza prywatnego jako "
+"surowych danych typu blob.\n"
 "Przykład: /home/cimrman/jara-priv-key Dardanely\n"
 
-#: ../clients/cli/settings.c:2900
+#: ../clients/cli/settings.c:2939
 msgid ""
 "Enter bytes as a list of hexadecimal values.\n"
 "Two formats are accepted:\n"
@@ -5004,7 +5067,7 @@ msgstr ""
 "Przykłady: ab0455a6ea3a74C2\n"
 "           ab 4 55 0xa6 ea 3a 74 C2\n"
 
-#: ../clients/cli/settings.c:3003
+#: ../clients/cli/settings.c:3042
 #, c-format
 msgid ""
 "Enter a list of bonding options formatted as:\n"
@@ -5035,33 +5098,33 @@ msgstr ""
 "\n"
 "Przykład: mode=2,miimon=120\n"
 
-#: ../clients/cli/settings.c:3041
+#: ../clients/cli/settings.c:3080
 #, c-format
 msgid "'%s' is not a valid InfiniBand MAC"
 msgstr "\"%s\" nie jest prawidłowym adresem MAC InfiniBand"
 
-#: ../clients/cli/settings.c:3078
+#: ../clients/cli/settings.c:3117
 #, c-format
 msgid "'%s' is not a valid IBoIP P_Key"
 msgstr "\"%s\" nie jest prawidłowym P_Key IBoIP"
 
-#: ../clients/cli/settings.c:3109
+#: ../clients/cli/settings.c:3148
 #, c-format
 msgid "'%s' is not valid (the format is: ip[/prefix] [next-hop] [metric])"
 msgstr ""
 "\"%s\" jest nieprawidłowe (format: ip[/przedrostek] [next-hop] [parametry])"
 
-#: ../clients/cli/settings.c:3157 ../clients/cli/settings.c:3176
+#: ../clients/cli/settings.c:3196 ../clients/cli/settings.c:3215
 #, c-format
 msgid "invalid IPv4 address '%s'"
 msgstr "nieprawidłowy adres IPv4 \"%s\""
 
-#: ../clients/cli/settings.c:3182 ../clients/cli/settings.c:3483
+#: ../clients/cli/settings.c:3221 ../clients/cli/settings.c:3522
 #, c-format
 msgid "the property doesn't contain DNS server '%s'"
 msgstr "właściwość nie zawiera serwera DNS \"%s\""
 
-#: ../clients/cli/settings.c:3194
+#: ../clients/cli/settings.c:3233
 msgid ""
 "Enter a list of IPv4 addresses of DNS servers.\n"
 "\n"
@@ -5071,17 +5134,17 @@ msgstr ""
 "\n"
 "Przykład: 8.8.8.8, 8.8.4.4\n"
 
-#: ../clients/cli/settings.c:3230 ../clients/cli/settings.c:3537
+#: ../clients/cli/settings.c:3269 ../clients/cli/settings.c:3576
 #, c-format
 msgid "the property doesn't contain DNS search domain '%s'"
 msgstr "właściwość nie zawiera domeny wyszukiwania DNS \"%s\""
 
-#: ../clients/cli/settings.c:3284 ../clients/cli/settings.c:3590
+#: ../clients/cli/settings.c:3323 ../clients/cli/settings.c:3629
 #, c-format
 msgid "the property doesn't contain IP address '%s'"
 msgstr "właściwość nie zawiera adresu IP \"%s\""
 
-#: ../clients/cli/settings.c:3297
+#: ../clients/cli/settings.c:3336
 msgid ""
 "Enter a list of IPv4 addresses formatted as:\n"
 "  ip[/prefix], ip[/prefix],...\n"
@@ -5095,17 +5158,17 @@ msgstr ""
 "\n"
 "Przykład: 192.168.1.5/24, 10.0.0.11/24\n"
 
-#: ../clients/cli/settings.c:3313 ../clients/cli/settings.c:3619
+#: ../clients/cli/settings.c:3352 ../clients/cli/settings.c:3658
 #, c-format
 msgid "invalid gateway address '%s'"
 msgstr "nieprawidłowy adres bramy \"%s\""
 
-#: ../clients/cli/settings.c:3368 ../clients/cli/settings.c:3674
+#: ../clients/cli/settings.c:3407 ../clients/cli/settings.c:3713
 #, c-format
 msgid "the property doesn't contain route '%s'"
 msgstr "właściwość nie zawiera trasy \"%s\""
 
-#: ../clients/cli/settings.c:3381
+#: ../clients/cli/settings.c:3420
 msgid ""
 "Enter a list of IPv4 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -5128,12 +5191,12 @@ msgstr ""
 "Przykłady: 192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n"
 "           10.1.2.0/24\n"
 
-#: ../clients/cli/settings.c:3458 ../clients/cli/settings.c:3477
+#: ../clients/cli/settings.c:3497 ../clients/cli/settings.c:3516
 #, c-format
 msgid "invalid IPv6 address '%s'"
 msgstr "nieprawidłowy adres IPv6 \"%s\""
 
-#: ../clients/cli/settings.c:3495
+#: ../clients/cli/settings.c:3534
 msgid ""
 "Enter a list of IPv6 addresses of DNS servers.  If the IPv6 configuration "
 "method is 'auto' these DNS servers are appended to those (if any) returned "
@@ -5154,7 +5217,7 @@ msgstr ""
 "\n"
 "Przykład: 2607:f0d0:1002:51::4, 2607:f0d0:1002:51::1\n"
 
-#: ../clients/cli/settings.c:3603
+#: ../clients/cli/settings.c:3642
 msgid ""
 "Enter a list of IPv6 addresses formatted as:\n"
 "  ip[/prefix], ip[/prefix],...\n"
@@ -5168,7 +5231,7 @@ msgstr ""
 "\n"
 "Przykład: 2607:f0d0:1002:51::4/64, 1050:0:0:0:5:600:300c:326b\n"
 
-#: ../clients/cli/settings.c:3687
+#: ../clients/cli/settings.c:3726
 msgid ""
 "Enter a list of IPv6 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -5193,28 +5256,28 @@ msgstr ""
 "db8:beef::3 2\n"
 "          abbe::/64 55\n"
 
-#: ../clients/cli/settings.c:3704 ../libnm-core/nm-setting-gsm.c:317
+#: ../clients/cli/settings.c:3743 ../libnm-core/nm-setting-gsm.c:317
 #: ../libnm-util/nm-setting-gsm.c:374
 #, c-format
 msgid "'%s' is not a number"
 msgstr "\"%s\" nie jest liczbą"
 
-#: ../clients/cli/settings.c:3711
+#: ../clients/cli/settings.c:3750
 #, c-format
 msgid "'%s' is not valid; use 0, 1, or 2"
 msgstr "\"%s\" jest nieprawidłowe; należy użyć 0, 1 lub 2"
 
-#: ../clients/cli/settings.c:3728
+#: ../clients/cli/settings.c:3767
 #, c-format
 msgid "'%s' is not a valid channel; use <1-13>"
 msgstr "\"%s\" nie jest prawidłowym kanałem; należy użyć <1-13>"
 
-#: ../clients/cli/settings.c:3765
+#: ../clients/cli/settings.c:3804
 #, c-format
 msgid "'%s' is not valid; use [e, o, n]"
 msgstr "\"%s\" jest nieprawidłowe; należy użyć [e, o, n]"
 
-#: ../clients/cli/settings.c:3793
+#: ../clients/cli/settings.c:3832
 msgid ""
 "nmcli can accepts both direct JSON configuration data and a file name "
 "containing the configuration. In the latter case the file is read and the "
@@ -5232,16 +5295,16 @@ msgstr ""
 "\"roundrobin\"}, \"ports\": {\"eth1\": {}, \"eth2\": {}} }\n"
 "          set team.config /etc/mój-zespół.conf\n"
 
-#: ../clients/cli/settings.c:3833
+#: ../clients/cli/settings.c:3872
 msgid "no priority to remove"
 msgstr "brak priorytetu do usunięcia"
 
-#: ../clients/cli/settings.c:3837
+#: ../clients/cli/settings.c:3876
 #, c-format
 msgid "index '%d' is not in the range of <0-%d>"
 msgstr "indeks \"%d\" jest poza zakresem <0-%d>"
 
-#: ../clients/cli/settings.c:3876
+#: ../clients/cli/settings.c:3915
 #, c-format
 msgid ""
 "Warning: only one mapping at a time is supported; taking the first one (%s)\n"
@@ -5249,12 +5312,12 @@ msgstr ""
 "Ostrzeżenie: obsługiwane jest tylko jedno mapowanie na raz; przyjmowanie "
 "pierwszego (%s)\n"
 
-#: ../clients/cli/settings.c:3883
+#: ../clients/cli/settings.c:3922
 #, c-format
 msgid "the property doesn't contain mapping '%s'"
 msgstr "właściwość nie zawiera mapowania \"%s\""
 
-#: ../clients/cli/settings.c:3992 ../clients/cli/settings.c:4155
+#: ../clients/cli/settings.c:4031 ../clients/cli/settings.c:4194
 #: ../libnm-core/nm-setting-wired.c:607
 #: ../libnm-core/nm-setting-wireless.c:785
 #: ../libnm-core/nm-setting-wireless.c:797
@@ -5265,17 +5328,17 @@ msgstr "właściwość nie zawiera mapowania \"%s\""
 msgid "'%s' is not a valid MAC address"
 msgstr "\"%s\" nie jest prawidłowym adresem MAC"
 
-#: ../clients/cli/settings.c:3998 ../clients/cli/settings.c:4161
+#: ../clients/cli/settings.c:4037 ../clients/cli/settings.c:4200
 #, c-format
 msgid "the property doesn't contain MAC address '%s'"
 msgstr "właściwość nie zawiera adresu MAC \"%s\""
 
-#: ../clients/cli/settings.c:4017
+#: ../clients/cli/settings.c:4056
 #, c-format
 msgid "'%s' is not valid; 2 or 3 strings should be provided"
 msgstr "\"%s\" jest nieprawidłowe; powinny zostać podane dwa lub trzy ciągi"
 
-#: ../clients/cli/settings.c:4031
+#: ../clients/cli/settings.c:4070
 msgid ""
 "Enter a list of subchannels (comma or space separated).\n"
 "\n"
@@ -5285,7 +5348,7 @@ msgstr ""
 "\n"
 "Przykład: 0.0.0e20 0.0.0e21 0.0.0e22\n"
 
-#: ../clients/cli/settings.c:4081
+#: ../clients/cli/settings.c:4120
 #, c-format
 msgid ""
 "Enter a list of S/390 options formatted as:\n"
@@ -5296,23 +5359,23 @@ msgstr ""
 "  opcja = <wartość>, opcja = <wartość>,...\n"
 "Prawidłowe opcje: %s\n"
 
-#: ../clients/cli/settings.c:4127
+#: ../clients/cli/settings.c:4166
 #, c-format
 msgid "'%s' is not a valid channel"
 msgstr "\"%s\" nie jest prawidłowym kanałem"
 
-#: ../clients/cli/settings.c:4133
+#: ../clients/cli/settings.c:4172
 #, c-format
 msgid "'%ld' is not a valid channel"
 msgstr "\"%ld\" nie jest prawidłowym kanałem"
 
-#: ../clients/cli/settings.c:4220 ../clients/cli/settings.c:4258
-#: ../clients/cli/settings.c:4296
+#: ../clients/cli/settings.c:4259 ../clients/cli/settings.c:4297
+#: ../clients/cli/settings.c:4335
 #, c-format
 msgid "the property doesn't contain protocol '%s'"
 msgstr "właściwość nie zawiera protokołu \"%s\""
 
-#: ../clients/cli/settings.c:4335
+#: ../clients/cli/settings.c:4374
 #, c-format
 msgid ""
 "'%s' not compatible with %s '%s', please change the key or set the right %s "
@@ -5321,23 +5384,23 @@ msgstr ""
 "\"%s\" nie jest zgodne z %s \"%s\", proszę zmienić klucz lub ustawić "
 "najpierw właściwe %s."
 
-#: ../clients/cli/settings.c:4343
+#: ../clients/cli/settings.c:4382
 #, c-format
 msgid "WEP key is guessed to be of '%s'\n"
 msgstr "Klucz WEP jest prawdopodobnie typu \"%s\"\n"
 
-#: ../clients/cli/settings.c:4345
+#: ../clients/cli/settings.c:4384
 #, c-format
 msgid "WEP key index set to '%d'\n"
 msgstr "Ustawiono indeks klucza WEP na \"%d\"\n"
 
-#: ../clients/cli/settings.c:4368
+#: ../clients/cli/settings.c:4407
 #, c-format
 msgid "'%s' not among [0 (unknown), 1 (key), 2 (passphrase)]"
 msgstr "\"%s\" nie jest jednym z [0 (unknown), 1 (key), 2 (passphrase)]"
 
-#: ../clients/cli/settings.c:4384 ../clients/cli/settings.c:4387
-#: ../clients/cli/settings.c:4390 ../clients/cli/settings.c:4393
+#: ../clients/cli/settings.c:4423 ../clients/cli/settings.c:4426
+#: ../clients/cli/settings.c:4429 ../clients/cli/settings.c:4432
 #, c-format
 msgid ""
 "Warning: '%s' is not compatible with '%s' type, please change or delete the "
@@ -5346,7 +5409,7 @@ msgstr ""
 "Ostrzeżenie: \"%s\" nie jest zgodne z typem \"%s\", proszę zmienić lub "
 "usunąć klucz.\n"
 
-#: ../clients/cli/settings.c:4406
+#: ../clients/cli/settings.c:4445
 #, c-format
 msgid ""
 "Enter the type of WEP keys. The accepted values are: 0 or unknown, 1 or key, "
@@ -5355,36 +5418,36 @@ msgstr ""
 "Proszę podać typ kluczy WEP. Możliwe wartości: 0 lub \"unknown\", 1 lub \"key"
 "\" i 2 lub \"passphrase\".\n"
 
-#: ../clients/cli/settings.c:4419
+#: ../clients/cli/settings.c:4458
 #, c-format
 msgid "'%s' is not a valid PSK"
 msgstr "\"%s\" nie jest prawidłowym PSK"
 
-#: ../clients/cli/settings.c:4463
+#: ../clients/cli/settings.c:4502
 #, c-format
 msgid "'%s' is not a valid DCB flag"
 msgstr "\"%s\" nie jest prawidłową flagą DCB"
 
-#: ../clients/cli/settings.c:4486
+#: ../clients/cli/settings.c:4525
 #, c-format
 msgid "'%s' is not a DCB app priority"
 msgstr "\"%s\" nie jest prawidłowym priorytetem aplikacji DCB"
 
-#: ../clients/cli/settings.c:4512
+#: ../clients/cli/settings.c:4551
 msgid "must contain 8 comma-separated numbers"
 msgstr "musi zawierać osiem liczb oddzielonych przecinkami"
 
-#: ../clients/cli/settings.c:4529
+#: ../clients/cli/settings.c:4568
 #, c-format
 msgid "'%s' not a number between 0 and %u (inclusive) or %u"
 msgstr "\"%s\" nie jest liczbą między 0 a %u (włącznie) lub %u"
 
-#: ../clients/cli/settings.c:4532
+#: ../clients/cli/settings.c:4571
 #, c-format
 msgid "'%s' not a number between 0 and %u (inclusive)"
 msgstr "\"%s\" nie jest liczbą między 0 a %u (włącznie)"
 
-#: ../clients/cli/settings.c:4554
+#: ../clients/cli/settings.c:4593
 #, c-format
 msgid ""
 "Warning: changes will have no effect until '%s' includes 1 (enabled)\n"
@@ -5394,33 +5457,33 @@ msgstr ""
 "(włączone)\n"
 "\n"
 
-#: ../clients/cli/settings.c:4607
+#: ../clients/cli/settings.c:4646
 #, c-format
 msgid "bandwidth percentages must total 100%%"
 msgstr "procenty szerokości pasma muszą razem wynosić 100%%"
 
-#: ../clients/cli/settings.c:6301
+#: ../clients/cli/settings.c:6340
 msgid "don't know how to get the property value"
 msgstr "nie wiadomo, jak uzyskać wartość właściwości"
 
-#: ../clients/cli/settings.c:6354 ../clients/cli/settings.c:6394
+#: ../clients/cli/settings.c:6393 ../clients/cli/settings.c:6433
 msgid "the property can't be changed"
 msgstr "nie można zmieniać tej właściwości"
 
-#: ../clients/cli/settings.c:6477
+#: ../clients/cli/settings.c:6516
 msgid "(not available)"
 msgstr "(niedostępne)"
 
-#: ../clients/cli/settings.c:6502
+#: ../clients/cli/settings.c:6541
 msgid "[NM property description]"
 msgstr "[opis właściwości NM]"
 
-#: ../clients/cli/settings.c:6507
+#: ../clients/cli/settings.c:6546
 msgid "[nmcli specific description]"
 msgstr "[konkretny opis nmcli]"
 
 #. ----------------------------------------------------------------------------
-#: ../clients/cli/settings.c:6556
+#: ../clients/cli/settings.c:6595
 msgid "<hidden>"
 msgstr "<ukryte>"
 
@@ -5707,9 +5770,9 @@ msgstr "DSL"
 msgid "DSL connection %d"
 msgstr "Połączenie DSL %d"
 
-#: ../clients/tui/nm-editor-utils.c:191 ../libnm-core/nm-connection.c:1543
+#: ../clients/tui/nm-editor-utils.c:191 ../libnm-core/nm-connection.c:1565
 #: ../libnm-glib/nm-device.c:1803 ../libnm-util/nm-connection.c:1608
-#: ../libnm/nm-device.c:1625 ../src/settings/plugins/ifcfg-rh/reader.c:3910
+#: ../libnm/nm-device.c:1625 ../src/settings/plugins/ifcfg-rh/reader.c:3931
 msgid "Bond"
 msgstr "Wiązane"
 
@@ -5718,9 +5781,9 @@ msgstr "Wiązane"
 msgid "Bond connection %d"
 msgstr "Połączenie wiązane %d"
 
-#: ../clients/tui/nm-editor-utils.c:200 ../libnm-core/nm-connection.c:1547
+#: ../clients/tui/nm-editor-utils.c:200 ../libnm-core/nm-connection.c:1569
 #: ../libnm-glib/nm-device.c:1807 ../libnm-util/nm-connection.c:1612
-#: ../libnm/nm-device.c:1629 ../src/settings/plugins/ifcfg-rh/reader.c:4201
+#: ../libnm/nm-device.c:1629 ../src/settings/plugins/ifcfg-rh/reader.c:4222
 msgid "Bridge"
 msgstr "Mostek"
 
@@ -5729,9 +5792,9 @@ msgstr "Mostek"
 msgid "Bridge connection %d"
 msgstr "Połączenie mostkowane %d"
 
-#: ../clients/tui/nm-editor-utils.c:209 ../libnm-core/nm-connection.c:1545
+#: ../clients/tui/nm-editor-utils.c:209 ../libnm-core/nm-connection.c:1567
 #: ../libnm-glib/nm-device.c:1805 ../libnm-util/nm-connection.c:1610
-#: ../libnm/nm-device.c:1627 ../src/settings/plugins/ifcfg-rh/reader.c:4016
+#: ../libnm/nm-device.c:1627 ../src/settings/plugins/ifcfg-rh/reader.c:4037
 msgid "Team"
 msgstr "Zespół"
 
@@ -6741,27 +6804,27 @@ msgstr "błędny typ; powinien być listą ciągów."
 msgid "unknown setting name"
 msgstr "nieznana nazwa ustawienia"
 
-#: ../libnm-core/nm-connection.c:781
+#: ../libnm-core/nm-connection.c:802
 msgid "setting not found"
 msgstr "nie odnaleziono ustawienia"
 
-#: ../libnm-core/nm-connection.c:845
+#: ../libnm-core/nm-connection.c:866
 msgid "setting not allowed in slave connection"
 msgstr "ustawienie nie jest dozwolone w połączeniu podrzędnym"
 
-#: ../libnm-core/nm-connection.c:856
+#: ../libnm-core/nm-connection.c:877
 msgid "setting is required for non-slave connections"
 msgstr "wymagane jest ustawienie dla niepodrzędnych połączeń"
 
-#: ../libnm-core/nm-connection.c:922
+#: ../libnm-core/nm-connection.c:943
 msgid "Unexpected failure to verify the connection"
 msgstr "Sprawdzenie połączenia niespodziewanie się nie powiodło"
 
-#: ../libnm-core/nm-connection.c:954
+#: ../libnm-core/nm-connection.c:976
 msgid "Unexpected failure to normalize the connection"
 msgstr "Znormalizowanie połączenia niespodziewanie się nie powiodło"
 
-#: ../libnm-core/nm-connection.c:1418 ../libnm-core/nm-setting-8021x.c:2273
+#: ../libnm-core/nm-connection.c:1440 ../libnm-core/nm-setting-8021x.c:2273
 #: ../libnm-core/nm-setting-8021x.c:2290 ../libnm-core/nm-setting-8021x.c:2321
 #: ../libnm-core/nm-setting-8021x.c:2338 ../libnm-core/nm-setting-8021x.c:2380
 #: ../libnm-core/nm-setting-8021x.c:2392 ../libnm-core/nm-setting-8021x.c:2410
@@ -6938,68 +7001,73 @@ msgstr "\"%s\" nie jest prawidłową wartością dla właściwości"
 msgid "'%s' connection requires '%s' or '%s' setting"
 msgstr "połączenie \"%s\" wymaga ustawienia \"%s\" lub \"%s\""
 
-#: ../libnm-core/nm-setting-bond.c:462 ../libnm-util/nm-setting-bond.c:503
+#: ../libnm-core/nm-setting-bond.c:455 ../libnm-util/nm-setting-bond.c:503
 #, c-format
 msgid "invalid option '%s' or its value '%s'"
 msgstr "nieprawidłowa opcja \"%s\" lub jej wartość \"%s\""
 
-#: ../libnm-core/nm-setting-bond.c:481 ../libnm-util/nm-setting-bond.c:522
+#: ../libnm-core/nm-setting-bond.c:474 ../libnm-util/nm-setting-bond.c:522
 #, c-format
 msgid "only one of '%s' and '%s' can be set"
 msgstr "tylko jedno z \"%s\" lub \"%s\" może być ustawione"
 
-#: ../libnm-core/nm-setting-bond.c:492 ../libnm-util/nm-setting-bond.c:533
+#: ../libnm-core/nm-setting-bond.c:486 ../libnm-util/nm-setting-bond.c:533
 #, c-format
 msgid "mandatory option '%s' is missing"
 msgstr "brak wymaganej opcji \"%s\""
 
-#: ../libnm-core/nm-setting-bond.c:501 ../libnm-util/nm-setting-bond.c:542
+#: ../libnm-core/nm-setting-bond.c:496 ../libnm-util/nm-setting-bond.c:542
 #, c-format
 msgid "'%s' is not a valid value for '%s'"
 msgstr "\"%s\" nie jest prawidłową wartością dla \"%s\""
 
-#: ../libnm-core/nm-setting-bond.c:514 ../libnm-util/nm-setting-bond.c:555
+#: ../libnm-core/nm-setting-bond.c:510 ../libnm-util/nm-setting-bond.c:555
 #, c-format
 msgid "'%s=%s' is incompatible with '%s > 0'"
 msgstr "\"%s=%s\" nie jest zgodne z \"%s > 0\""
 
-#: ../libnm-core/nm-setting-bond.c:527 ../libnm-util/nm-setting-bond.c:568
+#: ../libnm-core/nm-setting-bond.c:523 ../libnm-util/nm-setting-bond.c:568
 #, c-format
 msgid "'%s' is not a valid interface name for '%s' option"
 msgstr "\"%s\" nie jest prawidłową nazwą interfejsu dla opcji \"%s\""
 
-#: ../libnm-core/nm-setting-bond.c:537 ../libnm-util/nm-setting-bond.c:578
+#: ../libnm-core/nm-setting-bond.c:533 ../libnm-util/nm-setting-bond.c:578
 #, c-format
 msgid "'%s' option is only valid for '%s=%s'"
 msgstr "opcja \"%s\" jest prawidłowa tylko dla \"%s=%s\""
 
-#: ../libnm-core/nm-setting-bond.c:550 ../libnm-util/nm-setting-bond.c:591
+#: ../libnm-core/nm-setting-bond.c:546 ../libnm-util/nm-setting-bond.c:591
 #, c-format
 msgid "'%s=%s' is not a valid configuration for '%s'"
 msgstr "\"%s=%s\" nie jest prawidłową konfiguracją dla \"%s\""
 
-#: ../libnm-core/nm-setting-bond.c:563 ../libnm-core/nm-setting-bond.c:572
-#: ../libnm-core/nm-setting-bond.c:592 ../libnm-core/nm-setting-bond.c:628
+#: ../libnm-core/nm-setting-bond.c:559 ../libnm-core/nm-setting-bond.c:568
+#: ../libnm-core/nm-setting-bond.c:588 ../libnm-core/nm-setting-bond.c:624
 #: ../libnm-util/nm-setting-bond.c:604 ../libnm-util/nm-setting-bond.c:613
 #: ../libnm-util/nm-setting-bond.c:633 ../libnm-util/nm-setting-bond.c:669
 #, c-format
 msgid "'%s' option requires '%s' option to be set"
 msgstr "opcja \"%s\" wymaga ustawienia opcji \"%s\""
 
-#: ../libnm-core/nm-setting-bond.c:603 ../libnm-util/nm-setting-bond.c:644
+#: ../libnm-core/nm-setting-bond.c:599 ../libnm-util/nm-setting-bond.c:644
 #, c-format
 msgid "'%s' option is empty"
 msgstr "opcja \"%s\" jest pusta"
 
-#: ../libnm-core/nm-setting-bond.c:615 ../libnm-util/nm-setting-bond.c:656
+#: ../libnm-core/nm-setting-bond.c:611 ../libnm-util/nm-setting-bond.c:656
 #, c-format
 msgid "'%s' is not a valid IPv4 address for '%s' option"
 msgstr "\"%s\" nie jest prawidłowym adresem IPv4 dla opcji \"%s\""
 
-#: ../libnm-core/nm-setting-bond.c:642 ../libnm-util/nm-setting-bond.c:683
+#: ../libnm-core/nm-setting-bond.c:638 ../libnm-util/nm-setting-bond.c:683
 #, c-format
 msgid "'%s' option is only valid with mode '%s'"
 msgstr "opcja \"%s\" jest prawidłowa tylko z trybem \"%s\""
+
+#: ../libnm-core/nm-setting-bond.c:653
+#, c-format
+msgid "'%s' option should be string"
+msgstr "opcja \"%s\" powinna być ciągiem"
 
 #: ../libnm-core/nm-setting-bridge-port.c:125
 #: ../libnm-core/nm-setting-bridge-port.c:137
@@ -7026,12 +7094,12 @@ msgstr ""
 "Połączenie z ustawieniem \"%s\" musi mieć slave-type ustawiony na \"%s\". "
 "Zamiast tego jest \"%s\""
 
-#: ../libnm-core/nm-setting-bridge.c:206 ../libnm-util/nm-setting-bridge.c:270
+#: ../libnm-core/nm-setting-bridge.c:210 ../libnm-util/nm-setting-bridge.c:270
 #, c-format
 msgid "value '%d' is out of range <%d-%d>"
 msgstr "wartość \"%d\" jest poza zakresem <%d-%d>"
 
-#: ../libnm-core/nm-setting-bridge.c:223 ../libnm-core/nm-setting-wired.c:595
+#: ../libnm-core/nm-setting-bridge.c:227 ../libnm-core/nm-setting-wired.c:595
 #: ../libnm-core/nm-setting-wired.c:655 ../libnm-util/nm-setting-bridge.c:287
 #: ../libnm-util/nm-setting-wired.c:637 ../libnm-util/nm-setting-wired.c:695
 msgid "is not a valid MAC address"
@@ -7314,7 +7382,7 @@ msgstr "ustawienie zawierało hasło o pustej nazwie"
 msgid "secret value was empty"
 msgstr "wartość hasła jest pusta"
 
-#: ../libnm-core/nm-setting-vpn.c:526 ../libnm-core/nm-setting.c:1572
+#: ../libnm-core/nm-setting-vpn.c:526 ../libnm-core/nm-setting.c:1606
 msgid "not a secret property"
 msgstr "nie jest właściwością hasła"
 
@@ -7393,11 +7461,16 @@ msgstr "\"%s\" nie jest prawidłowym pasmem"
 msgid "'%s' requires setting '%s' property"
 msgstr "\"%s\" wymaga ustawienia właściwości \"%s\""
 
-#: ../libnm-core/nm-setting.c:1470
+#: ../libnm-core/nm-setting.c:827
+#, c-format
+msgid "can't set property of type '%s' from value of type '%s'"
+msgstr "nie można ustawić właściwości typu \"%s\" z wartości typu \"%s\""
+
+#: ../libnm-core/nm-setting.c:1504
 msgid "secret not found"
 msgstr "nie odnaleziono hasła"
 
-#: ../libnm-core/nm-setting.c:1562
+#: ../libnm-core/nm-setting.c:1596
 msgid "secret is not set"
 msgstr "nie ustawiono hasła"
 
@@ -7752,7 +7825,7 @@ msgstr ""
 #. * as "Wired Connection" or "VPN Connection". The %d is a number
 #. * that is combined with the first argument to create a unique
 #. * connection id.
-#: ../src/NetworkManagerUtils.c:1138
+#: ../src/NetworkManagerUtils.c:1139
 #, c-format
 msgctxt "connection id fallback"
 msgid "%s %d"
@@ -7997,7 +8070,7 @@ msgstr "Połączenie InfiniBand"
 msgid "VLAN connection"
 msgstr "Połączenie VLAN"
 
-#: ../src/devices/team/nm-device-team.c:134
+#: ../src/devices/team/nm-device-team.c:132
 msgid "Team connection"
 msgstr "Połączenie zespołowe"
 
@@ -8319,7 +8392,7 @@ msgstr "Nieznany poziom dziennika \"%s\""
 msgid "Unknown log domain '%s'"
 msgstr "Nieznana domena dziennika \"%s\""
 
-#: ../src/nm-manager.c:3375
+#: ../src/nm-manager.c:3413
 msgid "VPN connection"
 msgstr "Połączenie VPN"
 
