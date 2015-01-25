@@ -1127,14 +1127,18 @@ ip4_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 	for (i = 0; i < priv->ip4_routes->len; i++) {
 		NMPlatformIP4Route *item = &g_array_index (priv->ip4_routes, NMPlatformIP4Route, i);
 
-		if (item->ifindex != route.ifindex)
-			continue;
 		if (item->network != route.network)
 			continue;
 		if (item->plen != route.plen)
 			continue;
 		if (item->metric != metric)
 			continue;
+
+		if (item->ifindex != route.ifindex) {
+			ip4_route_delete (platform, item->ifindex, item->network, item->plen, item->metric);
+			i--;
+			continue;
+		}
 
 		memcpy (item, &route, sizeof (route));
 		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, ifindex, &route, NM_PLATFORM_SIGNAL_CHANGED, NM_PLATFORM_REASON_INTERNAL);
@@ -1171,14 +1175,18 @@ ip6_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 	for (i = 0; i < priv->ip6_routes->len; i++) {
 		NMPlatformIP6Route *item = &g_array_index (priv->ip6_routes, NMPlatformIP6Route, i);
 
-		if (item->ifindex != route.ifindex)
-			continue;
 		if (!IN6_ARE_ADDR_EQUAL (&item->network, &route.network))
 			continue;
 		if (item->plen != route.plen)
 			continue;
 		if (item->metric != metric)
 			continue;
+
+		if (item->ifindex != route.ifindex) {
+			ip6_route_delete (platform, item->ifindex, item->network, item->plen, item->metric);
+			i--;
+			continue;
+		}
 
 		memcpy (item, &route, sizeof (route));
 		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, ifindex, &route, NM_PLATFORM_SIGNAL_CHANGED, NM_PLATFORM_REASON_INTERNAL);
