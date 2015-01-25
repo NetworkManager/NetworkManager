@@ -302,7 +302,7 @@ AM_CONDITIONAL(WITH_QT, test "${enable_qt}" = "yes")
 
 AC_ARG_WITH(udev-dir, AS_HELP_STRING([--with-udev-dir=DIR], [Absolute path of the udev base directory. Set to 'no' not to install the udev rules]), [], [with_udev_dir="yes"])
 if (test "$with_udev_dir" != 'no'); then
-	if (test "$with_udev_dir" != 'yes' && echo -n "$with_udev_dir" | grep -v -q '^/'); then
+	if (test "$with_udev_dir" != 'yes' && printf '%s' "$with_udev_dir" | grep -v -q '^/'); then
 		AC_MSG_ERROR([--with-udev-dir must be an absolute path or 'yes' or 'no'. Instead it is '$with_udev_dir'])
 	fi
 	if (test "$with_udev_dir" = 'yes'); then
