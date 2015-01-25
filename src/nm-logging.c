@@ -104,6 +104,9 @@ static const LogDesc domain_descs[] = {
 	{ 0, NULL }
 };
 
+/* We have more then 32 logging domains. Assert that it compiles to a 64 bit sized enum */
+G_STATIC_ASSERT (sizeof (NMLogDomain) >= sizeof (guint64));
+
 /* Combined domains */
 #define LOGD_ALL_STRING     "ALL"
 #define LOGD_DEFAULT_STRING "DEFAULT"
