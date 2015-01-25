@@ -7,14 +7,14 @@
 # Wadim Dziedzic <wdziedzic@aviary.pl>, 2007-2008.
 # Artur Flinta <aflinta@at.kernel.pl>, 2007.
 # Tomasz Dominikowski <dominikowski@gmail.com>, 2008-2010.
-# Piotr Drąg <piotrdrag@gmail.com>, 2009-2014.
-# Aviary.pl <gnomepl@aviary.pl>, 2007-2014.
+# Piotr Drąg <piotrdrag@gmail.com>, 2009-2015.
+# Aviary.pl <gnomepl@aviary.pl>, 2007-2015.
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-12-21 16:50+0100\n"
-"PO-Revision-Date: 2014-12-21 16:52+0100\n"
+"POT-Creation-Date: 2015-01-25 20:20+0100\n"
+"PO-Revision-Date: 2015-01-25 20:21+0100\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish <gnomepl@aviary.pl>\n"
 "Language: pl\n"
@@ -62,8 +62,8 @@ msgstr "WINS"
 msgid "OPTION"
 msgstr "OPCJA"
 
-#: ../cli/src/common.c:408 ../cli/src/settings.c:3020
-#: ../cli/src/settings.c:3039
+#: ../cli/src/common.c:408 ../cli/src/settings.c:3059
+#: ../cli/src/settings.c:3078
 #, c-format
 msgid "invalid IPv4 address '%s'"
 msgstr "nieprawidłowy adres IPv4 \"%s\""
@@ -78,8 +78,8 @@ msgstr "nieprawidłowy przedrostek \"%s\"; dozwolone <1-32>"
 msgid "invalid gateway '%s'"
 msgstr "nieprawidłowa brama \"%s\""
 
-#: ../cli/src/common.c:461 ../cli/src/settings.c:3365
-#: ../cli/src/settings.c:3384
+#: ../cli/src/common.c:461 ../cli/src/settings.c:3404
+#: ../cli/src/settings.c:3423
 #, c-format
 msgid "invalid IPv6 address '%s'"
 msgstr "nieprawidłowy adres IPv6 \"%s\""
@@ -4519,7 +4519,7 @@ msgstr ""
 "infrastruktury\n"
 
 #: ../cli/src/settings.c:1870 ../cli/src/settings.c:2150
-#: ../cli/src/settings.c:4232
+#: ../cli/src/settings.c:4271
 #, c-format
 msgid "'%s' is not valid"
 msgstr "\"%s\" jest nieprawidłowe"
@@ -4572,14 +4572,14 @@ msgstr "\"%s\" nie jest prawidłową liczbą (lub jest poza zakresem)"
 msgid "'%s' is not a valid Ethernet MAC"
 msgstr "\"%s\" nie jest prawidłowym adresem MAC Ethernetu"
 
-#: ../cli/src/settings.c:2196 ../libnm-util/nm-setting-bridge.c:296
+#: ../cli/src/settings.c:2196 ../libnm-util/nm-setting-bridge.c:300
 #: ../libnm-util/nm-setting-connection.c:830
 #: ../libnm-util/nm-setting-vlan.c:548
 #, c-format
 msgid "'%s' is not a valid interface name"
 msgstr "\"%s\" nie jest prawidłową nazwą interfejsu"
 
-#: ../cli/src/settings.c:2214 ../cli/src/settings.c:3621
+#: ../cli/src/settings.c:2214 ../cli/src/settings.c:3660
 #: ../libnm-util/nm-setting-gsm.c:375
 #, c-format
 msgid "'%s' is not a number"
@@ -4685,29 +4685,92 @@ msgstr "nie podano hasła klucza prywatnego"
 msgid "the property doesn't contain EAP method '%s'"
 msgstr "właściwość nie zawiera metody EAP \"%s\""
 
-#: ../cli/src/settings.c:2670
+#: ../cli/src/settings.c:2660
+msgid ""
+"Enter file path to CA certificate (optionally prefixed with file://).\n"
+"  [file://]<file path>\n"
+"Note that nmcli does not support specifying certificates as raw blob data.\n"
+"Example: /home/cimrman/cacert.crt\n"
+msgstr ""
+"Proszę podać ścieżkę do pliku certyfikatu CA (z opcjonalnym przedrostkiem "
+"file://).\n"
+"  [file://]<ścieżka do pliku>\n"
+"Proszę zauważyć, że nmcli nie obsługuje podawania certyfikatów jako surowych "
+"danych typu blob.\n"
+"Przykład: /home/cimrman/cacert.crt\n"
+
+#: ../cli/src/settings.c:2679
 #, c-format
 msgid "the property doesn't contain alternative subject match '%s'"
 msgstr "właściwość nie zawiera alternatywnego dopasowania tematu \"%s\""
 
-#: ../cli/src/settings.c:2699
+#: ../cli/src/settings.c:2695
+msgid ""
+"Enter file path to client certificate (optionally prefixed with file://).\n"
+"  [file://]<file path>\n"
+"Note that nmcli does not support specifying certificates as raw blob data.\n"
+"Example: /home/cimrman/jara.crt\n"
+msgstr ""
+"Proszę podać ścieżkę do pliku certyfikatu klienta (z opcjonalnym "
+"przedrostkiem file://).\n"
+"  [file://]<ścieżka do pliku>\n"
+"Proszę zauważyć, że nmcli nie obsługuje podawania certyfikatów jako surowych "
+"danych typu blob.\n"
+"Przykład: /home/cimrman/jara.crt\n"
+
+#: ../cli/src/settings.c:2707
+msgid ""
+"Enter file path to CA certificate for inner authentication (optionally "
+"prefixed\n"
+"with file://).\n"
+"  [file://]<file path>\n"
+"Note that nmcli does not support specifying certificates as raw blob data.\n"
+"Example: /home/cimrman/ca-zweite-phase.crt\n"
+msgstr ""
+"Proszę podać ścieżkę do pliku certyfikatu CA do wewnętrznego\n"
+"uwierzytelnienia (z opcjonalnym przedrostkiem file://).\n"
+"  [file://]<ścieżka do pliku>\n"
+"Proszę zauważyć, że nmcli nie obsługuje podawania certyfikatów jako surowych "
+"danych typu blob.\n"
+"Przykład: /home/cimrman/ca-zweite-phase.crt\n"
+
+#: ../cli/src/settings.c:2727
 #, c-format
 msgid "the property doesn't contain \"phase2\" alternative subject match '%s'"
 msgstr ""
 "właściwość nie zawiera alternatywnego dopasowania tematu \"phase2\" \"%s\""
 
-#: ../cli/src/settings.c:2725
+#: ../cli/src/settings.c:2743
+msgid ""
+"Enter file path to client certificate for inner authentication (optionally "
+"prefixed\n"
+"with file://).\n"
+"  [file://]<file path>\n"
+"Note that nmcli does not support specifying certificates as raw blob data.\n"
+"Example: /home/cimrman/jara-zweite-phase.crt\n"
+msgstr ""
+"Proszę podać ścieżkę do pliku certyfikatu klienta do wewnętrznego\n"
+"uwierzytelnienia (z opcjonalnym przedrostkiem file://).\n"
+"  [file://]<ścieżka do pliku>\n"
+"Proszę zauważyć, że nmcli nie obsługuje podawania certyfikatów jako surowych "
+"danych typu blob.\n"
+"Przykład: /home/cimrman/jara-zweite-phase.crt\n"
+
+#: ../cli/src/settings.c:2763
 msgid ""
 "Enter path to a private key and the key password (if not set yet):\n"
-"  <file path> [<password>]\n"
+"  [file://]<file path> [<password>]\n"
+"Note that nmcli does not support specifying private key as raw blob data.\n"
 "Example: /home/cimrman/jara-priv-key Dardanely\n"
 msgstr ""
 "Proszę podać ścieżkę do klucza prywatnego i jego hasło (jeśli nie jest "
 "jeszcze ustawione):\n"
-"  <ścieżka do pliku> [<hasło>]\n"
+"  [file://]<ścieżka do pliku> [<hasło>]\n"
+"Proszę zauważyć, że nmcli nie obsługuje podawania klucza prywatnego jako "
+"surowych danych typu blob.\n"
 "Przykład: /home/cimrman/jara-priv-key Dardanely\n"
 
-#: ../cli/src/settings.c:2795
+#: ../cli/src/settings.c:2834
 msgid ""
 "Enter bytes as a list of hexadecimal values.\n"
 "Two formats are accepted:\n"
@@ -4728,7 +4791,7 @@ msgstr ""
 "Przykłady: ab0455a6ea3a74C2\n"
 "           ab 4 55 0xa6 ea 3a 74 C2\n"
 
-#: ../cli/src/settings.c:2898
+#: ../cli/src/settings.c:2937
 #, c-format
 msgid ""
 "Enter a list of bonding options formatted as:\n"
@@ -4759,22 +4822,22 @@ msgstr ""
 "\n"
 "Przykład: mode=2,miimon=120\n"
 
-#: ../cli/src/settings.c:2939
+#: ../cli/src/settings.c:2978
 #, c-format
 msgid "'%s' is not a valid InfiniBand MAC"
 msgstr "\"%s\" nie jest prawidłowym adresem MAC InfiniBand"
 
-#: ../cli/src/settings.c:2977
+#: ../cli/src/settings.c:3016
 #, c-format
 msgid "'%s' is not a valid IBoIP P_Key"
 msgstr "\"%s\" nie jest prawidłowym P_Key IBoIP"
 
-#: ../cli/src/settings.c:3045 ../cli/src/settings.c:3390
+#: ../cli/src/settings.c:3084 ../cli/src/settings.c:3429
 #, c-format
 msgid "the property doesn't contain DNS server '%s'"
 msgstr "właściwość nie zawiera serwera DNS \"%s\""
 
-#: ../cli/src/settings.c:3057
+#: ../cli/src/settings.c:3096
 msgid ""
 "Enter a list of IPv4 addresses of DNS servers.\n"
 "\n"
@@ -4784,22 +4847,22 @@ msgstr ""
 "\n"
 "Przykład: 8.8.8.8, 8.8.4.4\n"
 
-#: ../cli/src/settings.c:3093 ../cli/src/settings.c:3444
+#: ../cli/src/settings.c:3132 ../cli/src/settings.c:3483
 #, c-format
 msgid "the property doesn't contain DNS search domain '%s'"
 msgstr "właściwość nie zawiera domeny wyszukiwania DNS \"%s\""
 
-#: ../cli/src/settings.c:3113 ../cli/src/settings.c:3464
+#: ../cli/src/settings.c:3152 ../cli/src/settings.c:3503
 #, c-format
 msgid "'%s' is not valid (use ip[/prefix] [gateway])"
 msgstr "\"%s\" jest nieprawidłowe (należy użyć ip[/przedrostek] [brama])"
 
-#: ../cli/src/settings.c:3162 ../cli/src/settings.c:3512
+#: ../cli/src/settings.c:3201 ../cli/src/settings.c:3551
 #, c-format
 msgid "the property doesn't contain IP address '%s'"
 msgstr "właściwość nie zawiera adresu IP \"%s\""
 
-#: ../cli/src/settings.c:3175
+#: ../cli/src/settings.c:3214
 msgid ""
 "Enter a list of IPv4 addresses formatted as:\n"
 "  ip[/prefix] [gateway], ip[/prefix] [gateway],...\n"
@@ -4813,18 +4876,18 @@ msgstr ""
 "\n"
 "Przykład: 192.168.1.5/24 192.168.1.1, 10.0.0.11/24\n"
 
-#: ../cli/src/settings.c:3228 ../cli/src/settings.c:3543
+#: ../cli/src/settings.c:3267 ../cli/src/settings.c:3582
 #, c-format
 msgid "'%s' is not valid (the format is: ip[/prefix] [next-hop] [metric])"
 msgstr ""
 "\"%s\" jest nieprawidłowe (format: ip[/przedrostek] [next-hop] [parametry])"
 
-#: ../cli/src/settings.c:3276 ../cli/src/settings.c:3591
+#: ../cli/src/settings.c:3315 ../cli/src/settings.c:3630
 #, c-format
 msgid "the property doesn't contain route '%s'"
 msgstr "właściwość nie zawiera trasy \"%s\""
 
-#: ../cli/src/settings.c:3289
+#: ../cli/src/settings.c:3328
 msgid ""
 "Enter a list of IPv4 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -4845,7 +4908,7 @@ msgstr ""
 "Przykład: 192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n"
 "          10.1.2.0/24\n"
 
-#: ../cli/src/settings.c:3402
+#: ../cli/src/settings.c:3441
 msgid ""
 "Enter a list of IPv6 addresses of DNS servers.  If the IPv6 configuration "
 "method is 'auto' these DNS servers are appended to those (if any) returned "
@@ -4866,7 +4929,7 @@ msgstr ""
 "\n"
 "Przykład: 2607:f0d0:1002:51::4, 2607:f0d0:1002:51::1\n"
 
-#: ../cli/src/settings.c:3525
+#: ../cli/src/settings.c:3564
 msgid ""
 "Enter a list of IPv6 addresses formatted as:\n"
 "  ip[/prefix] [gateway], ip[/prefix] [gateway],...\n"
@@ -4882,7 +4945,7 @@ msgstr ""
 "Przykład: 2607:f0d0:1002:51::4/64 2607:f0d0:1002:51::1, "
 "1050:0:0:0:5:600:300c:326b\n"
 
-#: ../cli/src/settings.c:3604
+#: ../cli/src/settings.c:3643
 msgid ""
 "Enter a list of IPv6 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -4907,22 +4970,22 @@ msgstr ""
 "db8:beef::3 2\n"
 "          abbe::/64 55\n"
 
-#: ../cli/src/settings.c:3628
+#: ../cli/src/settings.c:3667
 #, c-format
 msgid "'%s' is not valid; use 0, 1, or 2"
 msgstr "\"%s\" jest nieprawidłowe; należy użyć 0, 1 lub 2"
 
-#: ../cli/src/settings.c:3645
+#: ../cli/src/settings.c:3684
 #, c-format
 msgid "'%s' is not a valid channel; use <1-13>"
 msgstr "\"%s\" nie jest prawidłowym kanałem; należy użyć <1-13>"
 
-#: ../cli/src/settings.c:3666
+#: ../cli/src/settings.c:3705
 #, c-format
 msgid "'%s' is not valid; use [e, o, n]"
 msgstr "\"%s\" jest nieprawidłowe; należy użyć [e, o, n]"
 
-#: ../cli/src/settings.c:3694
+#: ../cli/src/settings.c:3733
 msgid ""
 "nmcli can accepts both direct JSON configuration data and a file name "
 "containing the configuration. In the latter case the file is read and the "
@@ -4940,16 +5003,16 @@ msgstr ""
 "\"roundrobin\"}, \"ports\": {\"eth1\": {}, \"eth2\": {}} }\n"
 "          set team.config /etc/mój-zespół.conf\n"
 
-#: ../cli/src/settings.c:3734
+#: ../cli/src/settings.c:3773
 msgid "no priority to remove"
 msgstr "brak priorytetu do usunięcia"
 
-#: ../cli/src/settings.c:3738
+#: ../cli/src/settings.c:3777
 #, c-format
 msgid "index '%d' is not in the range of <0-%d>"
 msgstr "indeks \"%d\" jest poza zakresem <0-%d>"
 
-#: ../cli/src/settings.c:3777
+#: ../cli/src/settings.c:3816
 #, c-format
 msgid ""
 "Warning: only one mapping at a time is supported; taking the first one (%s)\n"
@@ -4957,12 +5020,12 @@ msgstr ""
 "Ostrzeżenie: obsługiwane jest tylko jedno mapowanie na raz; przyjmowanie "
 "pierwszego (%s)\n"
 
-#: ../cli/src/settings.c:3784
+#: ../cli/src/settings.c:3823
 #, c-format
 msgid "the property doesn't contain mapping '%s'"
 msgstr "właściwość nie zawiera mapowania \"%s\""
 
-#: ../cli/src/settings.c:3893 ../cli/src/settings.c:4061
+#: ../cli/src/settings.c:3932 ../cli/src/settings.c:4100
 #: ../libnm-util/nm-setting-wired.c:651
 #: ../libnm-util/nm-setting-wireless.c:843
 #: ../libnm-util/nm-setting-wireless.c:857
@@ -4970,17 +5033,17 @@ msgstr "właściwość nie zawiera mapowania \"%s\""
 msgid "'%s' is not a valid MAC address"
 msgstr "\"%s\" nie jest prawidłowym adresem MAC"
 
-#: ../cli/src/settings.c:3899 ../cli/src/settings.c:4067
+#: ../cli/src/settings.c:3938 ../cli/src/settings.c:4106
 #, c-format
 msgid "the property doesn't contain MAC address '%s'"
 msgstr "właściwość nie zawiera adresu MAC \"%s\""
 
-#: ../cli/src/settings.c:3918
+#: ../cli/src/settings.c:3957
 #, c-format
 msgid "'%s' is not valid; 3 strings should be provided"
 msgstr "\"%s\" jest nieprawidłowe; powinny zostać podane trzy ciągi"
 
-#: ../cli/src/settings.c:3937
+#: ../cli/src/settings.c:3976
 msgid ""
 "Enter a list of three channels (comma or space separated).\n"
 "\n"
@@ -4990,7 +5053,7 @@ msgstr ""
 "\n"
 "Przykład: 0.0.0e20 0.0.0e21 0.0.0e22\n"
 
-#: ../cli/src/settings.c:3987
+#: ../cli/src/settings.c:4026
 #, c-format
 msgid ""
 "Enter a list of S/390 options formatted as:\n"
@@ -5001,23 +5064,23 @@ msgstr ""
 "  opcja = <wartość>, opcja = <wartość>,...\n"
 "Prawidłowe opcje: %s\n"
 
-#: ../cli/src/settings.c:4033
+#: ../cli/src/settings.c:4072
 #, c-format
 msgid "'%s' is not a valid channel"
 msgstr "\"%s\" nie jest prawidłowym kanałem"
 
-#: ../cli/src/settings.c:4039
+#: ../cli/src/settings.c:4078
 #, c-format
 msgid "'%ld' is not a valid channel"
 msgstr "\"%ld\" nie jest prawidłowym kanałem"
 
-#: ../cli/src/settings.c:4126 ../cli/src/settings.c:4164
-#: ../cli/src/settings.c:4202
+#: ../cli/src/settings.c:4165 ../cli/src/settings.c:4203
+#: ../cli/src/settings.c:4241
 #, c-format
 msgid "the property doesn't contain protocol '%s'"
 msgstr "właściwość nie zawiera protokołu \"%s\""
 
-#: ../cli/src/settings.c:4241
+#: ../cli/src/settings.c:4280
 #, c-format
 msgid ""
 "'%s' not compatible with %s '%s', please change the key or set the right %s "
@@ -5026,23 +5089,23 @@ msgstr ""
 "\"%s\" nie jest zgodne z %s \"%s\", proszę zmienić klucz lub ustawić "
 "najpierw właściwe %s."
 
-#: ../cli/src/settings.c:4249
+#: ../cli/src/settings.c:4288
 #, c-format
 msgid "WEP key is guessed to be of '%s'\n"
 msgstr "Klucz WEP jest prawdopodobnie typu \"%s\"\n"
 
-#: ../cli/src/settings.c:4251
+#: ../cli/src/settings.c:4290
 #, c-format
 msgid "WEP key index set to '%d'\n"
 msgstr "Ustawiono indeks klucza WEP na \"%d\"\n"
 
-#: ../cli/src/settings.c:4274
+#: ../cli/src/settings.c:4313
 #, c-format
 msgid "'%s' not among [0 (unknown), 1 (key), 2 (passphrase)]"
 msgstr "\"%s\" nie jest jednym z [0 (unknown), 1 (key), 2 (passphrase)]"
 
-#: ../cli/src/settings.c:4290 ../cli/src/settings.c:4293
-#: ../cli/src/settings.c:4296 ../cli/src/settings.c:4299
+#: ../cli/src/settings.c:4329 ../cli/src/settings.c:4332
+#: ../cli/src/settings.c:4335 ../cli/src/settings.c:4338
 #, c-format
 msgid ""
 "Warning: '%s' is not compatible with '%s' type, please change or delete the "
@@ -5051,7 +5114,7 @@ msgstr ""
 "Ostrzeżenie: \"%s\" nie jest zgodne z typem \"%s\", proszę zmienić lub "
 "usunąć klucz.\n"
 
-#: ../cli/src/settings.c:4312
+#: ../cli/src/settings.c:4351
 #, c-format
 msgid ""
 "Enter the type of WEP keys. The accepted values are: 0 or unknown, 1 or key, "
@@ -5060,36 +5123,36 @@ msgstr ""
 "Proszę podać typ kluczy WEP. Możliwe wartości: 0 lub \"unknown\", 1 lub \"key"
 "\" i 2 lub \"passphrase\".\n"
 
-#: ../cli/src/settings.c:4325
+#: ../cli/src/settings.c:4364
 #, c-format
 msgid "'%s' is not a valid PSK"
 msgstr "\"%s\" nie jest prawidłowym PSK"
 
-#: ../cli/src/settings.c:4369
+#: ../cli/src/settings.c:4408
 #, c-format
 msgid "'%s' is not a valid DCB flag"
 msgstr "\"%s\" nie jest prawidłową flagą DCB"
 
-#: ../cli/src/settings.c:4392
+#: ../cli/src/settings.c:4431
 #, c-format
 msgid "'%s' is not a DCB app priority"
 msgstr "\"%s\" nie jest prawidłowym priorytetem aplikacji DCB"
 
-#: ../cli/src/settings.c:4418
+#: ../cli/src/settings.c:4457
 msgid "must contain 8 comma-separated numbers"
 msgstr "musi zawierać osiem liczb oddzielonych przecinkami"
 
-#: ../cli/src/settings.c:4435
+#: ../cli/src/settings.c:4474
 #, c-format
 msgid "'%s' not a number between 0 and %u (inclusive) or %u"
 msgstr "\"%s\" nie jest liczbą między 0 a %u (włącznie) lub %u"
 
-#: ../cli/src/settings.c:4438
+#: ../cli/src/settings.c:4477
 #, c-format
 msgid "'%s' not a number between 0 and %u (inclusive)"
 msgstr "\"%s\" nie jest liczbą między 0 a %u (włącznie)"
 
-#: ../cli/src/settings.c:4460
+#: ../cli/src/settings.c:4499
 #, c-format
 msgid ""
 "Warning: changes will have no effect until '%s' includes 1 (enabled)\n"
@@ -5099,24 +5162,24 @@ msgstr ""
 "(włączone)\n"
 "\n"
 
-#: ../cli/src/settings.c:4513
+#: ../cli/src/settings.c:4552
 #, c-format
 msgid "bandwidth percentages must total 100%%"
 msgstr "procenty szerokości pasma muszą razem wynosić 100%%"
 
-#: ../cli/src/settings.c:6198
+#: ../cli/src/settings.c:6237
 msgid "don't know how to get the property value"
 msgstr "nie wiadomo, jak uzyskać wartość właściwości"
 
-#: ../cli/src/settings.c:6251 ../cli/src/settings.c:6291
+#: ../cli/src/settings.c:6290 ../cli/src/settings.c:6330
 msgid "the property can't be changed"
 msgstr "nie można zmieniać tej właściwości"
 
-#: ../cli/src/settings.c:6395
+#: ../cli/src/settings.c:6434
 msgid "[NM property description]"
 msgstr "[opis właściwości NM]"
 
-#: ../cli/src/settings.c:6401
+#: ../cli/src/settings.c:6440
 msgid "[nmcli specific description]"
 msgstr "[konkretny opis nmcli]"
 
@@ -5597,7 +5660,7 @@ msgstr "nieprawidłowy klucz prywatny drugiego etapu"
 #: ../libnm-util/nm-setting-adsl.c:212
 #: ../libnm-util/nm-setting-bluetooth.c:144
 #: ../libnm-util/nm-setting-bluetooth.c:162
-#: ../libnm-util/nm-setting-bond.c:498 ../libnm-util/nm-setting-bridge.c:287
+#: ../libnm-util/nm-setting-bond.c:498 ../libnm-util/nm-setting-bridge.c:291
 #: ../libnm-util/nm-setting-cdma.c:163
 #: ../libnm-util/nm-setting-connection.c:770
 #: ../libnm-util/nm-setting-connection.c:786
@@ -5745,12 +5808,12 @@ msgid "'%d' is not a valid value for the property (should be <= %d)"
 msgstr ""
 "\"%d\" nie jest prawidłową wartością dla właściwości (powinno wynosić <= %d)"
 
-#: ../libnm-util/nm-setting-bridge.c:270
+#: ../libnm-util/nm-setting-bridge.c:274
 #, c-format
 msgid "value '%d' is out of range <%d-%d>"
 msgstr "wartość \"%d\" jest poza zakresem <%d-%d>"
 
-#: ../libnm-util/nm-setting-bridge.c:306 ../libnm-util/nm-setting-wired.c:638
+#: ../libnm-util/nm-setting-bridge.c:310 ../libnm-util/nm-setting-wired.c:638
 #: ../libnm-util/nm-setting-wired.c:696
 msgid "is not a valid MAC address"
 msgstr "nie jest prawidłowym adresem MAC"
@@ -6360,7 +6423,7 @@ msgstr "Połączenie przewodowe"
 msgid "InfiniBand connection"
 msgstr "Połączenie InfiniBand"
 
-#: ../src/devices/nm-device-team.c:153
+#: ../src/devices/nm-device-team.c:151
 msgid "Team connection"
 msgstr "Połączenie zespołowe"
 
@@ -6372,7 +6435,7 @@ msgstr "Połączenie VLAN"
 msgid "Mesh"
 msgstr "Sieć kratowa"
 
-#: ../src/nm-manager.c:3388
+#: ../src/nm-manager.c:3389
 msgid "VPN connection"
 msgstr "Połączenie VPN"
 
