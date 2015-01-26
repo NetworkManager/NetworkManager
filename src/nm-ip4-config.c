@@ -755,14 +755,7 @@ nm_ip4_config_intersect (NMIP4Config *dst, const NMIP4Config *src)
 			i++;
 	}
 
-	/* nameservers */
-	for (i = 0; i < nm_ip4_config_get_num_nameservers (dst); ) {
-		idx = _nameservers_get_index (src, nm_ip4_config_get_nameserver (dst, i));
-		if (idx < 0)
-			nm_ip4_config_del_nameserver (dst, i);
-		else
-			i++;
-	}
+	/* ignore nameservers */
 
 	/* default gateway */
 	if (   !nm_ip4_config_get_num_addresses (dst)
@@ -778,41 +771,10 @@ nm_ip4_config_intersect (NMIP4Config *dst, const NMIP4Config *src)
 			i++;
 	}
 
-	/* domains */
-	for (i = 0; i < nm_ip4_config_get_num_domains (dst); ) {
-		idx = _domains_get_index (src, nm_ip4_config_get_domain (dst, i));
-		if (idx < 0)
-			nm_ip4_config_del_domain (dst, i);
-		else
-			i++;
-	}
-
-	/* dns searches */
-	for (i = 0; i < nm_ip4_config_get_num_searches (dst); ) {
-		idx = _searches_get_index (src, nm_ip4_config_get_search (dst, i));
-		if (idx < 0)
-			nm_ip4_config_del_search (dst, i);
-		else
-			i++;
-	}
-
-	/* NIS */
-	for (i = 0; i < nm_ip4_config_get_num_nis_servers (dst); ) {
-		idx = _nis_servers_get_index (src, nm_ip4_config_get_nis_server (dst, i));
-		if (idx < 0)
-			nm_ip4_config_del_nis_server (dst, i);
-		else
-			i++;
-	}
-
-	/* WINS */
-	for (i = 0; i < nm_ip4_config_get_num_wins (dst); ) {
-		idx = _wins_get_index (src, nm_ip4_config_get_wins (dst, i));
-		if (idx < 0)
-			nm_ip4_config_del_wins (dst, i);
-		else
-			i++;
-	}
+	/* ignore domains */
+	/* ignore dns searches */
+	/* ignore NIS */
+	/* ignore WINS */
 
 	g_object_thaw_notify (G_OBJECT (dst));
 }
