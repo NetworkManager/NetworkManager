@@ -822,14 +822,7 @@ nm_ip6_config_intersect (NMIP6Config *dst, const NMIP6Config *src)
 			i++;
 	}
 
-	/* nameservers */
-	for (i = 0; i < nm_ip6_config_get_num_nameservers (dst); ) {
-		idx = _nameservers_get_index (src, nm_ip6_config_get_nameserver (dst, i));
-		if (idx < 0)
-			nm_ip6_config_del_nameserver (dst, i);
-		else
-			i++;
-	}
+	/* ignore nameservers */
 
 	/* default gateway */
 	dst_tmp = nm_ip6_config_get_gateway (dst);
@@ -850,23 +843,8 @@ nm_ip6_config_intersect (NMIP6Config *dst, const NMIP6Config *src)
 			i++;
 	}
 
-	/* domains */
-	for (i = 0; i < nm_ip6_config_get_num_domains (src); ) {
-		idx = _domains_get_index (src, nm_ip6_config_get_domain (dst, i));
-		if (idx < 0)
-			nm_ip6_config_del_domain (dst, i);
-		else
-			i++;
-	}
-
-	/* dns searches */
-	for (i = 0; i < nm_ip6_config_get_num_searches (src); i++) {
-		idx = _searches_get_index (src, nm_ip6_config_get_search (dst, i));
-		if (idx < 0)
-			nm_ip6_config_del_search (dst, i);
-		else
-			i++;
-	}
+	/* ignore domains */
+	/* ignore dns searches */
 
 	g_object_thaw_notify (G_OBJECT (dst));
 }
