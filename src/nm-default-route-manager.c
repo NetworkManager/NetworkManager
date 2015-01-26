@@ -885,6 +885,7 @@ _ipx_get_best_device (const VTableIP *vtable, NMDefaultRouteManager *self, const
 
 	for (i = 0; i < entries->len; i++) {
 		Entry *entry = g_ptr_array_index (entries, i);
+		NMDeviceState state;
 
 		if (!NM_IS_DEVICE (entry->source.pointer))
 			continue;
@@ -892,8 +893,22 @@ _ipx_get_best_device (const VTableIP *vtable, NMDefaultRouteManager *self, const
 		if (entry->never_default)
 			continue;
 
-		if (g_slist_find ((GSList *) devices, entry->source.device))
+		state = nm_device_get_state (entry->source.device);
+		if (   state <= NM_DEVICE_STATE_DISCONNECTED
+		    || state >= NM_DEVICE_STATE_DEACTIVATING) {
+			/* FIXME: we also track unmanaged devices with assumed default routes.
+			 * Skip them, they are (currently) no candidates for best-device.
+			 *
+			 * Later we also want to properly assume connections for unmanaged devices.
+			 *
+			 * Also, we don't want to have DEACTIVATING devices returned as best_device(). */
+			continue;
+		}
+
+		if (g_slist_find ((GSList *) devices, entry->source.device)) {
+			g_return_val_if_fail (nm_device_get_act_request (entry->source.pointer), entry->source.pointer);
 			return entry->source.pointer;
+		}
 	}
 	return NULL;
 }
@@ -1043,9 +1058,23 @@ _ipx_get_best_config (const VTableIP *vtable,
 		} else {
 			NMDevice *device = entry->source.device;
 			NMActRequest *req;
+			NMDeviceState state;
 
 			if (entry->never_default)
 				continue;
+
+			state = nm_device_get_state (device);
+			if (   state <= NM_DEVICE_STATE_DISCONNECTED
+			    || state >= NM_DEVICE_STATE_DEACTIVATING) {
+				/* FIXME: the device has a default route, but we ignore it due to
+				 * unexpected state. That happens for example for unmanaged devices.
+				 *
+				 * In the future, we want unmanaged devices also assume a connection
+				 * if they are activated externally.
+				 *
+				 * Also, we don't want to have DEACTIVATING devices returned as best_config(). */
+				continue;
+			}
 
 			if (VTABLE_IS_IP4)
 				config_result = nm_device_get_ip4_config (device);
