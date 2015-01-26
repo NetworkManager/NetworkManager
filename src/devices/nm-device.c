@@ -8213,6 +8213,9 @@ constructor (GType type,
 	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, G_CALLBACK (device_ip_changed), self);
 	g_signal_connect (platform, NM_PLATFORM_SIGNAL_LINK_CHANGED, G_CALLBACK (link_changed_cb), self);
 
+	/* trigger initial ip config change to initialize ip-config */
+	priv->queued_ip_config_id = g_idle_add (queued_ip_config_change, self);
+
 	if (nm_platform_check_support_user_ipv6ll ()) {
 		int ip_ifindex = nm_device_get_ip_ifindex (self);
 
