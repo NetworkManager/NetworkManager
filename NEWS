@@ -44,6 +44,7 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * The manpages, documentation, and API annotations have received many cleanups
 * Externally created virtual interfaces are no longer managed by NetworkManager
     until they are set "up" or activated via nmcli
+* Team device support is now an optional plugin
 
 
 ==============================================
@@ -89,7 +90,7 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * The dispatcher timeout has increased to 10 minutes, and new "pre-up" and
     "pre-down" events have been added which block activation until complete
 * NetworkManager no longer prevents Wake-on-LAN functionality from working
-* PPPoE now requires userland "rp-pppoe" to work around kernel bugs with
+* PPPoE now requires userland "rp-pppoe" to work around kernel bugs
     that prevent detecting server-side termination of the PPP link
 * An ARP announcement is now sent after IPv4 addresses are configured
 * Added a DNS plugin for dnssec-trigger for better DNSSEC operation
