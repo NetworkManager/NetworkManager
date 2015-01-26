@@ -774,6 +774,89 @@ test_nm_utils_uuid_generate_from_strings (void)
 
 /*******************************************/
 
+static const char *_test_match_spec_all[] = {
+	"e",
+	"em",
+	"em*",
+	"em\\",
+	"em\\*",
+	"em\\1",
+	"em\\11",
+	"em\\2",
+	"em1",
+	"em11",
+	"em2",
+	"=em*",
+	NULL
+};
+
+static gboolean
+_test_match_spec_contains (const char **matches, const char *match)
+{
+	guint i;
+
+	for (i = 0; matches && matches[i]; i++) {
+		if (strcmp (match, matches[i]) == 0)
+			return TRUE;
+	}
+	return FALSE;
+}
+
+static void
+test_match_spec_ifname (const char *spec_str, const char **matches)
+{
+	const char *m;
+	char **spec_str_split;
+	GSList *specs, *specs_reverse = NULL;
+	guint i;
+
+	g_assert (spec_str);
+	spec_str_split = g_strsplit_set (spec_str, ";,", -1);
+	for (i = 0; spec_str_split[i]; i++) {
+		if (spec_str_split[i])
+			specs_reverse = g_slist_prepend (specs_reverse, spec_str_split[i]);
+	}
+	specs = g_slist_reverse (g_slist_copy (specs_reverse));
+
+	for (i = 0; matches && matches[i]; i++) {
+		g_assert (nm_match_spec_interface_name (specs, matches[i]));
+		g_assert (nm_match_spec_interface_name (specs_reverse, matches[i]));
+	}
+	for (i = 0; (m = _test_match_spec_all[i]); i++) {
+		if (_test_match_spec_contains (matches, m))
+			continue;
+		g_assert (!nm_match_spec_interface_name (specs, m));
+		g_assert (!nm_match_spec_interface_name (specs_reverse, m));
+	}
+
+	g_slist_free (specs_reverse);
+	g_slist_free (specs);
+	g_strfreev (spec_str_split);
+}
+
+static void
+test_nm_match_spec_interface_name (void)
+{
+#define S(...) ((const char *[]) { __VA_ARGS__, NULL } )
+	test_match_spec_ifname ("em1",
+	                        S ("em1"));
+	test_match_spec_ifname ("em1,em2",
+	                        S ("em1", "em2"));
+	test_match_spec_ifname ("em1,em2,interface-name:em2",
+	                        S ("em1", "em2"));
+	test_match_spec_ifname ("interface-name:em1",
+	                        S ("em1"));
+	test_match_spec_ifname ("interface-name:em*",
+	                        S ("em*"));
+	test_match_spec_ifname ("interface-name:em\\*",
+	                        S ("em\\*"));
+	test_match_spec_ifname ("interface-name:=em*",
+	                        S ("=em*"));
+#undef S
+}
+
+/*******************************************/
+
 NMTST_DEFINE ();
 
 int
@@ -797,6 +880,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/general/connection-sort/autoconnect-priority", test_connection_sort_autoconnect_priority);
 
 	g_test_add_func ("/general/nm_utils_uuid_generate_from_strings", test_nm_utils_uuid_generate_from_strings);
+	g_test_add_func ("/general/nm_match_spec_interface_name", test_nm_match_spec_interface_name);
 
 	return g_test_run ();
 }
