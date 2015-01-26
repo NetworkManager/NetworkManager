@@ -141,7 +141,7 @@ typedef struct {
 
 GType nm_rdisc_get_type (void);
 
-void nm_rdisc_set_iid (NMRDisc *rdisc, const NMUtilsIPv6IfaceId iid);
+gboolean nm_rdisc_set_iid (NMRDisc *rdisc, const NMUtilsIPv6IfaceId iid);
 void nm_rdisc_start (NMRDisc *rdisc);
 
 #endif /* __NETWORKMANAGER_RDISC_H__ */

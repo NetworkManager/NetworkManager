@@ -379,6 +379,8 @@ typedef struct {
 	gboolean (*link_is_connected) (NMPlatform *, int ifindex);
 	gboolean (*link_uses_arp) (NMPlatform *, int ifindex);
 
+	gboolean (*link_get_ipv6_token) (NMPlatform *, int ifindex, NMUtilsIPv6IfaceId *iid);
+
 	gboolean (*link_get_user_ipv6ll_enabled) (NMPlatform *, int ifindex);
 	gboolean (*link_set_user_ipv6ll_enabled) (NMPlatform *, int ifindex, gboolean enabled);
 
@@ -527,6 +529,8 @@ gboolean nm_platform_link_set_noarp (int ifindex);
 gboolean nm_platform_link_is_up (int ifindex);
 gboolean nm_platform_link_is_connected (int ifindex);
 gboolean nm_platform_link_uses_arp (int ifindex);
+
+gboolean nm_platform_link_get_ipv6_token (int ifindex, NMUtilsIPv6IfaceId *iid);
 
 gboolean nm_platform_link_get_user_ipv6ll_enabled (int ifindex);
 gboolean nm_platform_link_set_user_ipv6ll_enabled (int ifindex, gboolean enabled);

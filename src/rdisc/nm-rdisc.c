@@ -241,12 +241,38 @@ clear_rs_timeout (NMRDisc *rdisc)
 	}
 }
 
-void
+/**
+ * nm_rdisc_set_iid:
+ * @rdisc: the #NMRDisc
+ * @iid: the new interface ID
+ *
+ * Sets the "Modified EUI-64" interface ID to be used when generating
+ * IPv6 addresses using received prefixes. Identifiers are either generated
+ * from the hardware addresses or manually set by the operator with
+ * "ip token" command.
+ *
+ * Upon token change (or initial setting) all addresses generated using
+ * the old identifier are removed. The caller should ensure the addresses
+ * will be reset by soliciting router advertisements.
+ *
+ * Returns: %TRUE if the token was changed, %FALSE otherwise.
+ **/
+gboolean
 nm_rdisc_set_iid (NMRDisc *rdisc, const NMUtilsIPv6IfaceId iid)
 {
-	g_return_if_fail (NM_IS_RDISC (rdisc));
+	g_return_val_if_fail (NM_IS_RDISC (rdisc), FALSE);
 
-	rdisc->iid = iid;
+	if (rdisc->iid.id != iid.id) {
+		rdisc->iid = iid;
+		if (rdisc->addresses->len) {
+			debug ("(%s) IPv6 interface identifier changed, flushing addresses", rdisc->ifname);
+			g_array_remove_range (rdisc->addresses, 0, rdisc->addresses->len);
+			g_signal_emit_by_name (rdisc, NM_RDISC_CONFIG_CHANGED, NM_RDISC_CONFIG_ADDRESSES);
+		}
+		return TRUE;
+	}
+
+	return FALSE;
 }
 
 static gboolean
