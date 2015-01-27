@@ -1813,6 +1813,25 @@ nm_device_disambiguate_names (NMDevice **devices,
 	if (!find_duplicates (names, duplicates, num_devices))
 		goto done;
 
+	/* If dealing with Bluetooth devices, try to distinguish them by
+	 * device name.
+	 */
+	for (i = 0; i < num_devices; i++) {
+		if (duplicates[i] && NM_IS_DEVICE_BT (devices[i])) {
+			const char *devname = nm_device_bt_get_name (NM_DEVICE_BT (devices[i]));
+
+			if (!devname)
+				continue;
+
+			g_free (names[i]);
+			names[i] = g_strdup_printf ("%s (%s)",
+			                            get_device_type_name_with_iface (devices[i]),
+			                            devname);
+		}
+	}
+	if (!find_duplicates (names, duplicates, num_devices))
+		goto done;
+
 	/* We have multiple identical network cards, so we have to differentiate
 	 * them by interface name.
 	 */
