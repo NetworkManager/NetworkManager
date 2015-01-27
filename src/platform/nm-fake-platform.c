@@ -1124,6 +1124,23 @@ ip4_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 	route.metric = metric;
 	route.mss = mss;
 
+	if (gateway) {
+		for (i = 0; i < priv->ip4_routes->len; i++) {
+			NMPlatformIP4Route *item = &g_array_index (priv->ip4_routes,
+			                                           NMPlatformIP4Route, i);
+			guint32 gate = ntohl (item->network) >> (32 - item->plen);
+			guint32 host = ntohl (gateway) >> (32 - item->plen);
+
+			if (ifindex == item->ifindex && gate == host)
+				break;
+		}
+		if (i == priv->ip4_routes->len) {
+			g_warning ("Fake platform: error adding %s: Network Unreachable",
+			           nm_platform_ip4_route_to_string (&route));
+			return FALSE;
+		}
+	}
+
 	for (i = 0; i < priv->ip4_routes->len; i++) {
 		NMPlatformIP4Route *item = &g_array_index (priv->ip4_routes, NMPlatformIP4Route, i);
 
@@ -1171,6 +1188,25 @@ ip6_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 	route.gateway = gateway;
 	route.metric = metric;
 	route.mss = mss;
+
+	if (!IN6_IS_ADDR_UNSPECIFIED(&gateway)) {
+		for (i = 0; i < priv->ip6_routes->len; i++) {
+			NMPlatformIP6Route *item = &g_array_index (priv->ip6_routes,
+			                                           NMPlatformIP6Route, i);
+			guint8 gate_bits = gateway.s6_addr[item->plen / 8] >> (8 - item->plen % 8);
+			guint8 host_bits = item->network.s6_addr[item->plen / 8] >> (8 - item->plen % 8);
+
+			if (   ifindex == item->ifindex
+			    && memcmp (&gateway, &item->network, item->plen / 8) == 0
+			    && gate_bits == host_bits)
+				break;
+		}
+		if (i == priv->ip6_routes->len) {
+			g_warning ("Fake platform: error adding %s: Network Unreachable",
+			           nm_platform_ip6_route_to_string (&route));
+			return FALSE;
+		}
+	}
 
 	for (i = 0; i < priv->ip6_routes->len; i++) {
 		NMPlatformIP6Route *item = &g_array_index (priv->ip6_routes, NMPlatformIP6Route, i);
