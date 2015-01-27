@@ -514,6 +514,7 @@ fi
 %{_datadir}/bash-completion/completions/nmcli
 %dir %{_sysconfdir}/%{name}/
 %dir %{_sysconfdir}/%{name}/dispatcher.d
+%{_sysconfdir}/%{name}/dispatcher.d/10-ifcfg-rh-routes.sh
 %dir %{_sysconfdir}/%{name}/dispatcher.d/pre-down.d
 %dir %{_sysconfdir}/%{name}/dispatcher.d/pre-up.d
 %{_sysconfdir}/%{name}/dispatcher.d/pre-up.d/10-ifcfg-rh-routes.sh
