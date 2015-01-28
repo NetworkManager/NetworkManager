@@ -56,6 +56,7 @@
 #include "nm-posix-signals.h"
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
+#include "gsystem-local-alloc.h"
 
 #include "common.h"
 #include "shvar.h"
@@ -897,7 +898,7 @@ make_ip4_setting (shvarFile *ifcfg,
 	char *value = NULL;
 	char *route_path = NULL;
 	char *method;
-	char *gateway = NULL;
+	gs_free char *gateway = NULL;
 	gint32 i;
 	shvarFile *network_ifcfg;
 	shvarFile *route_ifcfg;
@@ -969,7 +970,6 @@ make_ip4_setting (shvarFile *ifcfg,
 			(void) nm_setting_ip_config_add_address (s_ip4, addr);
 			nm_ip_address_unref (addr);
 			g_object_set (s_ip4, NM_SETTING_IP_CONFIG_GATEWAY, gateway, NULL);
-			g_free (gateway);
 		}
 		return NM_SETTING (s_ip4);
 	} else {
@@ -1019,6 +1019,8 @@ make_ip4_setting (shvarFile *ifcfg,
 	for (i = -1; i < 256; i++) {
 		NMIPAddress *addr = NULL;
 
+		/* gateway will only be set if still unset. Hence, we don't leak gateway
+		 * here by calling read_full_ip4_address() repeatedly */
 		if (!read_full_ip4_address (ifcfg, network_file, i, NULL, &addr, &gateway, error))
 			goto done;
 
@@ -1151,7 +1153,6 @@ make_ip4_setting (shvarFile *ifcfg,
 	return NM_SETTING (s_ip4);
 
 done:
-	g_free (gateway);
 	g_free (route_path);
 	g_object_unref (s_ip4);
 	return NULL;
