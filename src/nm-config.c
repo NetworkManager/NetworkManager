@@ -403,6 +403,8 @@ read_config (NMConfig *config, const char *path, GError **error)
 			continue;
 		for (k = 0; keys[k]; k++) {
 			int len = strlen (keys[k]);
+			char *v;
+
 			if (keys[k][len - 1] == '+') {
 				char *base_key = g_strndup (keys[k], len - 1);
 				const char *old_val = g_key_file_get_value (priv->keyfile, groups[g], base_key, NULL);
@@ -421,9 +423,12 @@ read_config (NMConfig *config, const char *path, GError **error)
 			}
 
 			g_key_file_set_value (priv->keyfile, groups[g], keys[k],
-			                      g_key_file_get_value (kf, groups[g], keys[k], NULL));
+			                      v = g_key_file_get_value (kf, groups[g], keys[k], NULL));
+			g_free (v);
 		}
+		g_strfreev (keys);
 	}
+	g_strfreev (groups);
 	g_key_file_free (kf);
 
 	return TRUE;
