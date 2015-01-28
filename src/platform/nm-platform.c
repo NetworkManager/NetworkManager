@@ -1867,6 +1867,7 @@ nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresses, guint3
  * nm_platform_ip6_address_sync:
  * @ifindex: Interface index
  * @known_addresses: List of addresses
+ * @keep_link_local: Don't remove link-local address
  *
  * A convenience function to synchronize addresses for a specific interface
  * with the least possible disturbance. It simply removes addresses that are
@@ -1875,7 +1876,7 @@ nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresses, guint3
  * Returns: %TRUE on success.
  */
 gboolean
-nm_platform_ip6_address_sync (int ifindex, const GArray *known_addresses)
+nm_platform_ip6_address_sync (int ifindex, const GArray *known_addresses, gboolean keep_link_local)
 {
 	GArray *addresses;
 	NMPlatformIP6Address *address;
@@ -1888,7 +1889,7 @@ nm_platform_ip6_address_sync (int ifindex, const GArray *known_addresses)
 		address = &g_array_index (addresses, NMPlatformIP6Address, i);
 
 		/* Leave link local address management to the kernel */
-		if (IN6_IS_ADDR_LINKLOCAL (&address->address))
+		if (keep_link_local && IN6_IS_ADDR_LINKLOCAL (&address->address))
 			continue;
 
 		if (!array_contains_ip6_address (known_addresses, address))
@@ -1921,7 +1922,7 @@ gboolean
 nm_platform_address_flush (int ifindex)
 {
 	return nm_platform_ip4_address_sync (ifindex, NULL, 0)
-			&& nm_platform_ip6_address_sync (ifindex, NULL);
+			&& nm_platform_ip6_address_sync (ifindex, NULL, FALSE);
 }
 
 /******************************************************************/
