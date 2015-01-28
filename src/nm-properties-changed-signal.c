@@ -228,15 +228,19 @@ nm_properties_changed_signal_add_property (GType       type,
 	if (!classinfo)
 		classinfo = nm_properties_changed_signal_setup_type (type);
 
+	g_assert (!g_hash_table_contains (classinfo->exported_props, (char *) gobject_property_name));
 	g_hash_table_insert (classinfo->exported_props,
 	                     (char *) gobject_property_name,
 	                     (char *) dbus_property_name);
 
+	if (!strchr (gobject_property_name, '_'))
+		return;
 	hyphen_name = g_strdup (gobject_property_name);
 	for (p = hyphen_name; *p; p++) {
 		if (*p == '_')
 			*p = '-';
 	}
+	g_assert (!g_hash_table_contains (classinfo->exported_props, hyphen_name));
 	g_hash_table_insert (classinfo->exported_props,
 	                     hyphen_name,
 	                     (char *) dbus_property_name);
