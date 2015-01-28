@@ -1118,6 +1118,7 @@ make_ip4_setting (shvarFile *ifcfg,
 		if (!read_route_file_legacy (route_path, s_ip4, error))
 			goto done;
 	}
+	g_free (route_path);
 
 	/* Legacy value NM used for a while but is incorrect (rh #459370) */
 	if (!nm_setting_ip_config_get_num_dns_searches (s_ip4)) {
