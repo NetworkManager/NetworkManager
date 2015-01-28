@@ -92,7 +92,8 @@ URL: http://www.gnome.org/projects/NetworkManager/
 Source: __SOURCE1__
 Source1: NetworkManager.conf
 Source2: 00-server.conf
-Source3: 20-connectivity-fedora.conf
+Source3: 10-ibft-plugin.conf
+Source4: 20-connectivity-fedora.conf
 
 #Patch1: 0001-some.patch
 
@@ -450,6 +451,7 @@ make install DESTDIR=$RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/conf.d
 %{__cp} %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/conf.d
 %{__cp} %{SOURCE3} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/conf.d
+%{__cp} %{SOURCE4} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/conf.d
 
 # create a VPN directory
 %{__mkdir_p} $RPM_BUILD_ROOT%{_sysconfdir}/NetworkManager/VPN
@@ -541,6 +543,7 @@ fi
 %if 0%{?with_nmtui}
 %exclude %{_mandir}/man1/nmtui*
 %endif
+%config %{_sysconfdir}/%{name}/conf.d/10-ibft-plugin.conf
 %{_mandir}/man1/*
 %{_mandir}/man5/*
 %{_mandir}/man8/*
