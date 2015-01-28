@@ -4695,6 +4695,7 @@ connection_from_file_full (const char *filename,
 		g_free (bootproto);
 		goto done;
 	}
+	g_free (bootproto);
 
 	type = NULL;
 
