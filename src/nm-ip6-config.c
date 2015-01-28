@@ -1677,6 +1677,8 @@ finalize (GObject *object)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (object);
 
+	g_free (priv->path);
+
 	g_array_unref (priv->addresses);
 	g_array_unref (priv->routes);
 	g_array_unref (priv->nameservers);

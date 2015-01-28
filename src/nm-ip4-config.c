@@ -1827,6 +1827,8 @@ finalize (GObject *object)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (object);
 
+	g_free (priv->path);
+
 	g_array_unref (priv->addresses);
 	g_array_unref (priv->routes);
 	g_array_unref (priv->nameservers);
