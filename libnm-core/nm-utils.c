@@ -2771,7 +2771,7 @@ nm_utils_hwaddr_canonical (const char *asc, gssize length)
 	if (nm_utils_hwaddr_aton (asc, buf, length) == NULL)
 		return NULL;
 
-	return g_strdup (nm_utils_hwaddr_ntoa (buf, length));
+	return nm_utils_hwaddr_ntoa (buf, length);
 }
 
 /* This is used to possibly canonicalize values passed to MAC address property
