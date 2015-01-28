@@ -38,6 +38,7 @@
 #include "nm-enum-types.h"
 #include "nm-glib-compat.h"
 #include "NetworkManagerUtils.h"
+#include "gsystem-local-alloc.h"
 
 G_DEFINE_TYPE (NMAuthSubject, nm_auth_subject, G_TYPE_OBJECT)
 
@@ -175,7 +176,7 @@ _new_unix_process (DBusGMethodInvocation *context,
 	NMAuthSubject *self;
 	gboolean success = FALSE;
 	gulong pid = 0, uid = 0;
-	char *dbus_sender = NULL;
+	gs_free char *dbus_sender = NULL;
 
 	g_return_val_if_fail (context || (connection && message), NULL);
 
