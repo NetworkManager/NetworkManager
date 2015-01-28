@@ -4897,5 +4897,7 @@ devtimeout_from_file (const char *filename)
 	} else
 		devtimeout = 0;
 
+	svCloseFile (ifcfg);
+
 	return devtimeout;
 }
