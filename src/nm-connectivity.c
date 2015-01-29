@@ -28,7 +28,6 @@
 
 #include "nm-connectivity.h"
 #include "nm-logging.h"
-#include "nm-config.h"
 
 G_DEFINE_TYPE (NMConnectivity, nm_connectivity, G_TYPE_OBJECT)
 
@@ -346,17 +345,14 @@ nm_connectivity_check_finish (NMConnectivity  *self,
 /**************************************************************************/
 
 NMConnectivity *
-nm_connectivity_new (void)
+nm_connectivity_new (const char *uri,
+                     guint interval,
+                     const char *response)
 {
-	NMConfigData *config_data = nm_config_get_data (nm_config_get ());
-
-	/* NMConnectivity is (almost) independent from NMConfig and works
-	 * fine without it. As convenience, the default constructor nm_connectivity_new()
-	 * uses the parameters from NMConfig to create an instance. */
 	return g_object_new (NM_TYPE_CONNECTIVITY,
-	                     NM_CONNECTIVITY_URI, nm_config_data_get_connectivity_uri (config_data),
-	                     NM_CONNECTIVITY_INTERVAL, nm_config_data_get_connectivity_interval (config_data),
-	                     NM_CONNECTIVITY_RESPONSE, nm_config_data_get_connectivity_response (config_data),
+	                     NM_CONNECTIVITY_URI, uri,
+	                     NM_CONNECTIVITY_INTERVAL, interval,
+	                     NM_CONNECTIVITY_RESPONSE, response,
 	                     NULL);
 }
 
