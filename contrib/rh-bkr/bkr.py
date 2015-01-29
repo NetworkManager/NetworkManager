@@ -586,6 +586,8 @@ class CmdSubmit(CmdBase):
                         return 'master' # 0.9.10-rc
                     if re.match(r'^.*/NetworkManager-0\.9\.11\..*\.git20141022.e28ee14.el7.x86_64.rpm$', u):
                         return 'master' # rhel-7.1-rc
+                    if re.match(r'^.*/NetworkManager-1.0.[0-9]+-[0-9]+\.git20150121\.b4ea599c\.el7.x86_64.rpm$', u):
+                        return 'master' # rhel-7.1-rc
         raise Exception("could not detect the target branch. Try setting as environment variable GIT_TARGETBRANCH%s" % (
                     ((" (or try setting "+key_name+")") if key_name == 'GIT_TARGETBRANCH' else '')))
 
