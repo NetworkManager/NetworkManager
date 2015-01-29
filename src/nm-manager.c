@@ -4719,6 +4719,7 @@ nm_manager_new (NMSettings *settings,
 	NMManagerPrivate *priv;
 	DBusGConnection *bus;
 	DBusConnection *dbus_connection;
+	NMConfigData *config_data;
 
 	g_assert (settings);
 
@@ -4750,7 +4751,10 @@ nm_manager_new (NMSettings *settings,
 	g_signal_connect (priv->policy, "notify::" NM_POLICY_ACTIVATING_IP6_DEVICE,
 	                  G_CALLBACK (policy_activating_device_changed), singleton);
 
-	priv->connectivity = nm_connectivity_new ();
+	config_data = nm_config_get_data (nm_config_get ());
+	priv->connectivity = nm_connectivity_new (nm_config_data_get_connectivity_uri (config_data),
+	                                          nm_config_data_get_connectivity_interval (config_data),
+	                                          nm_config_data_get_connectivity_response (config_data));
 	g_signal_connect (priv->connectivity, "notify::" NM_CONNECTIVITY_STATE,
 	                  G_CALLBACK (connectivity_changed), singleton);
 
@@ -5071,7 +5075,10 @@ dispose (GObject *object)
 	g_clear_object (&priv->primary_connection);
 	g_clear_object (&priv->activating_connection);
 
-	g_clear_object (&priv->connectivity);
+	if (priv->connectivity) {
+		g_signal_handlers_disconnect_by_func (priv->connectivity, connectivity_changed, manager);
+		g_clear_object (&priv->connectivity);
+	}
 
 	g_free (priv->hostname);
 
