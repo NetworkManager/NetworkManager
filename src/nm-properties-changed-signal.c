@@ -242,6 +242,7 @@ nm_properties_changed_signal_add_property (GType       type,
 	}
 	g_assert (!g_hash_table_contains (classinfo->exported_props, hyphen_name));
 	g_hash_table_insert (classinfo->exported_props,
-	                     hyphen_name,
+	                     (char *) g_intern_string (hyphen_name),
 	                     (char *) dbus_property_name);
+	g_free (hyphen_name);
 }
