@@ -167,6 +167,7 @@ typedef struct {
 
 	GSList *devices;
 	NMState state;
+	NMConfig *config;
 	NMConnectivity *connectivity;
 
 	int ignore_link_added_cb;
@@ -459,6 +460,18 @@ active_connection_get_by_path (NMManager *manager, const char *path)
 			return candidate;
 	}
 	return NULL;
+}
+
+/************************************************************************/
+
+static void
+_config_changed_cb (NMConfig *config, NMConfigData *config_data, GHashTable *changes, NMConfigData *old_data, NMManager *self)
+{
+	g_object_set (NM_MANAGER_GET_PRIVATE (self)->connectivity,
+	              NM_CONNECTIVITY_URI, nm_config_data_get_connectivity_uri (config_data),
+	              NM_CONNECTIVITY_INTERVAL, nm_config_data_get_connectivity_interval (config_data),
+	              NM_CONNECTIVITY_RESPONSE, nm_config_data_get_connectivity_response (config_data),
+	              NULL);
 }
 
 /************************************************************************/
@@ -4751,7 +4764,13 @@ nm_manager_new (NMSettings *settings,
 	g_signal_connect (priv->policy, "notify::" NM_POLICY_ACTIVATING_IP6_DEVICE,
 	                  G_CALLBACK (policy_activating_device_changed), singleton);
 
-	config_data = nm_config_get_data (nm_config_get ());
+	priv->config = g_object_ref (nm_config_get ());
+	g_signal_connect (G_OBJECT (priv->config),
+	                  NM_CONFIG_SIGNAL_CONFIG_CHANGED,
+	                  G_CALLBACK (_config_changed_cb),
+	                  singleton);
+
+	config_data = nm_config_get_data (priv->config);
 	priv->connectivity = nm_connectivity_new (nm_config_data_get_connectivity_uri (config_data),
 	                                          nm_config_data_get_connectivity_interval (config_data),
 	                                          nm_config_data_get_connectivity_response (config_data));
@@ -5075,6 +5094,10 @@ dispose (GObject *object)
 	g_clear_object (&priv->primary_connection);
 	g_clear_object (&priv->activating_connection);
 
+	if (priv->config) {
+		g_signal_handlers_disconnect_by_func (priv->config, _config_changed_cb, manager);
+		g_clear_object (&priv->config);
+	}
 	if (priv->connectivity) {
 		g_signal_handlers_disconnect_by_func (priv->connectivity, connectivity_changed, manager);
 		g_clear_object (&priv->connectivity);
