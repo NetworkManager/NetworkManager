@@ -3108,8 +3108,10 @@ validate_activation_request (NMManager *self,
 	}
 
 	/* Not implemented yet, we want to fail early */
-	if (strcmp (nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG),
-	            NM_SETTING_IP6_CONFIG_METHOD_SHARED) == 0) {
+	if (   nm_connection_get_setting_connection (connection)
+	    && nm_connection_get_setting_ip6_config (connection)
+	    && !strcmp (nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG),
+	                NM_SETTING_IP6_CONFIG_METHOD_SHARED)) {
 		g_set_error_literal (error,
 		                     NM_MANAGER_ERROR,
 		                     NM_MANAGER_ERROR_CONNECTION_NOT_AVAILABLE,
