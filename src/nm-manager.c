@@ -4842,7 +4842,7 @@ nm_manager_init (NMManager *manager)
 	priv->radio_states[RFKILL_TYPE_WWAN].rtype = RFKILL_TYPE_WWAN;
 
 	priv->radio_states[RFKILL_TYPE_WIMAX].user_enabled = TRUE;
-	priv->radio_states[RFKILL_TYPE_WIMAX].key = "WiMAXEnabled";
+	priv->radio_states[RFKILL_TYPE_WIMAX].key = "WimaxEnabled";
 	priv->radio_states[RFKILL_TYPE_WIMAX].prop = NM_MANAGER_WIMAX_ENABLED;
 	priv->radio_states[RFKILL_TYPE_WIMAX].hw_prop = NM_MANAGER_WIMAX_HARDWARE_ENABLED;
 	priv->radio_states[RFKILL_TYPE_WIMAX].desc = "WiMAX";
