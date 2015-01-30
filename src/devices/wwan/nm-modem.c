@@ -847,7 +847,6 @@ deactivate_cleanup (NMModem *self, NMDevice *device)
 	int ifindex;
 
 	g_return_if_fail (NM_IS_MODEM (self));
-	g_return_if_fail (NM_IS_DEVICE (device));
 
 	priv = NM_MODEM_GET_PRIVATE (self);
 
@@ -867,6 +866,8 @@ deactivate_cleanup (NMModem *self, NMDevice *device)
 	}
 
 	if (device) {
+		g_return_if_fail (NM_IS_DEVICE (device));
+
 		if (priv->ip4_method == NM_MODEM_IP_METHOD_STATIC ||
 		    priv->ip4_method == NM_MODEM_IP_METHOD_AUTO ||
 		    priv->ip6_method == NM_MODEM_IP_METHOD_STATIC ||
