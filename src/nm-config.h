@@ -40,6 +40,8 @@ G_BEGIN_DECLS
 /* Signals */
 #define NM_CONFIG_SIGNAL_CONFIG_CHANGED             "config-changed"
 
+#define NM_CONFIG_CHANGES_CONNECTIVITY              "connectivity"
+
 typedef struct NMConfigCmdLineOptions NMConfigCmdLineOptions;
 
 struct _NMConfig {

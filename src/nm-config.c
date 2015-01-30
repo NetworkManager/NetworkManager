@@ -596,7 +596,12 @@ nm_config_reload (NMConfig *self)
 	/* reloading configuration means we have to carefully check every single option
 	 * that we want to support and take specific actions. */
 
-	/* FIXME: no actual reloading implemented yet */
+	if (   nm_config_data_get_connectivity_interval (old_data) != nm_config_data_get_connectivity_interval (new_data)
+	    || g_strcmp0 (nm_config_data_get_connectivity_uri (old_data), nm_config_data_get_connectivity_uri (new_data))
+	    || g_strcmp0 (nm_config_data_get_connectivity_response (old_data), nm_config_data_get_connectivity_response (new_data))) {
+		nm_log_dbg (LOGD_CORE, "config: reload: change '" NM_CONFIG_CHANGES_CONNECTIVITY "'");
+		g_hash_table_insert (changes, NM_CONFIG_CHANGES_CONNECTIVITY, NULL);
+	}
 
 	if (g_hash_table_size (changes))
 		new_data = g_object_ref (new_data);
