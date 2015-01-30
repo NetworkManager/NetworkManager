@@ -2935,12 +2935,6 @@ msgstr "Datei »%s« konnte nicht geladen werden\n"
 msgid "Error: '%s' is not valid 'connection' command."
 msgstr "Fehler: »%s« ist kein aktiver Verbindungsbefehl."
 
-#: ../clients/cli/connections.c:8658 ../clients/cli/network-manager.c:613
-#, fuzzy, c-format
-#| msgid "Error: Could not get system settings."
-msgid "Error: Could not get system settings: %s."
-msgstr "Fehler: Systemeinstellungen konnten nicht ermittelt werden."
-
 #: ../clients/cli/connections.c:8669
 #, c-format
 msgid "Error: Can't obtain connections: settings service is not running."
@@ -4446,10 +4440,9 @@ msgid "Failed to create signal handling thread: %d\n"
 msgstr "Erstellen des Threads für die Signalbehandlung schlug fehl: %d\n"
 
 #: ../clients/cli/nmcli.c:399 ../clients/nm-online.c:197
-#, fuzzy, c-format
-#| msgid "Error: Could not create NMClient object."
+#, c-format
 msgid "Error: Could not create NMClient object: %s."
-msgstr "Fehler: NMClient-Objekt konnte nicht erstellt werden."
+msgstr "Fehler: NMClient-Objekt konnte nicht erstellt werden: %s."
 
 #: ../clients/cli/nmcli.c:416
 msgid "Success"
@@ -4735,7 +4728,7 @@ msgid "the property doesn't contain EAP method '%s'"
 msgstr "Die Eigenschaft enthält nicht die EAP-Methode »%s«"
 
 #: ../clients/cli/settings.c:2585
-#, fuzzy, c-format
+#, c-format
 msgid "the property doesn't contain alternative subject match '%s'"
 msgstr "die Eigenschaft enthält kein alternative Themen passend zu »%s«"
 
