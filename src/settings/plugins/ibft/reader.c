@@ -136,6 +136,15 @@ read_ibft_blocks (const char *iscsiadm_path,
 	}
 
 	if (WEXITSTATUS (status) != 0) {
+		if (err) {
+			char *nl;
+
+			/* the error message contains newlines. concatenate the lines with whitespace */
+			for (nl = err; *nl; nl++) {
+				if (*nl == '\n')
+					*nl = ' ';
+			}
+		}
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		             "iBFT: %s exited with error %d.  Message: '%s'",
 		             iscsiadm_path, WEXITSTATUS (status), err ? err : "(none)");
