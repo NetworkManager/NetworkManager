@@ -27,7 +27,6 @@
 
 #include "NetworkManagerUtils.h"
 #include "nm-supplicant-interface.h"
-#include "nm-supplicant-manager.h"
 #include "nm-logging.h"
 #include "nm-supplicant-config.h"
 #include "nm-dbus-manager.h"
@@ -81,8 +80,6 @@ enum {
 
 
 typedef struct {
-	NMSupplicantManager * smgr;
-	gulong                smgr_avail_id;
 	NMDBusManager *       dbus_mgr;
 	char *                dev;
 	gboolean              is_wireless;
@@ -303,12 +300,6 @@ set_state (NMSupplicantInterface *self, guint32 new_state)
 		/* Cancel all pending calls when going down */
 		nm_call_store_clear (priv->other_pcalls);
 		nm_call_store_clear (priv->assoc_pcalls);
-
-		/* Disconnect supplicant manager state listeners since we're done */
-		if (priv->smgr_avail_id) {
-			g_signal_handler_disconnect (priv->smgr, priv->smgr_avail_id);
-			priv->smgr_avail_id = 0;
-		}
 
 		if (priv->iface_proxy) {
 			dbus_g_proxy_disconnect_signal (priv->iface_proxy,
@@ -910,15 +901,13 @@ interface_add (NMSupplicantInterface *self, gboolean is_wireless)
 	g_value_unset (&ifname);
 }
 
-static void
-smgr_avail_cb (NMSupplicantManager *smgr,
-               GParamSpec *pspec,
-               gpointer user_data)
+void
+nm_supplicant_interface_set_supplicant_available (NMSupplicantInterface *self,
+                                                  gboolean available)
 {
-	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (user_data);
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
-	if (nm_supplicant_manager_available (smgr)) {
+	if (available) {
 		/* This can happen if the supplicant couldn't be activated but
 		 * for some reason was started after the activation failure.
 		 */
@@ -1321,8 +1310,7 @@ nm_supplicant_interface_get_max_scan_ssids (NMSupplicantInterface *self)
 /*******************************************************************/
 
 NMSupplicantInterface *
-nm_supplicant_interface_new (NMSupplicantManager *smgr,
-                             const char *ifname,
+nm_supplicant_interface_new (const char *ifname,
                              gboolean is_wireless,
                              gboolean fast_supported,
                              ApSupport ap_support,
@@ -1330,20 +1318,11 @@ nm_supplicant_interface_new (NMSupplicantManager *smgr,
 {
 	NMSupplicantInterface *self;
 	NMSupplicantInterfacePrivate *priv;
-	guint id;
 
-	g_return_val_if_fail (NM_IS_SUPPLICANT_MANAGER (smgr), NULL);
 	g_return_val_if_fail (ifname != NULL, NULL);
 
 	self = g_object_new (NM_TYPE_SUPPLICANT_INTERFACE, NULL);
 	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	priv->smgr = g_object_ref (smgr);
-	id = g_signal_connect (priv->smgr,
-	                       "notify::" NM_SUPPLICANT_MANAGER_AVAILABLE,
-	                       G_CALLBACK (smgr_avail_cb),
-	                       self);
-	priv->smgr_avail_id = id;
 
 	priv->dev = g_strdup (ifname);
 	priv->is_wireless = is_wireless;
@@ -1434,12 +1413,6 @@ dispose (GObject *object)
 	if (priv->bss_proxies) {
 		g_hash_table_destroy (priv->bss_proxies);
 		priv->bss_proxies = NULL;
-	}
-
-	if (priv->smgr) {
-		if (priv->smgr_avail_id)
-			g_signal_handler_disconnect (priv->smgr, priv->smgr_avail_id);
-		g_clear_object (&priv->smgr);
 	}
 
 	g_free (priv->dev);
