@@ -80,34 +80,34 @@ enum {
 
 
 typedef struct {
-	NMDBusManager *       dbus_mgr;
-	char *                dev;
-	gboolean              is_wireless;
-	gboolean              has_credreq;  /* Whether querying 802.1x credentials is supported */
-	ApSupport             ap_support;   /* Lightweight AP mode support */
-	gboolean              fast_supported;
-	guint32               max_scan_ssids;
-	guint32               ready_count;
+	NMDBusManager *dbus_mgr;
+	char *         dev;
+	gboolean       is_wireless;
+	gboolean       has_credreq;  /* Whether querying 802.1x credentials is supported */
+	ApSupport      ap_support;   /* Lightweight AP mode support */
+	gboolean       fast_supported;
+	guint32        max_scan_ssids;
+	guint32        ready_count;
 
-	char *                object_path;
-	guint32               state;
-	int                   disconnect_reason;
-	NMCallStore *         assoc_pcalls;
-	NMCallStore *         other_pcalls;
+	char *         object_path;
+	guint32        state;
+	int            disconnect_reason;
+	NMCallStore *  assoc_pcalls;
+	NMCallStore *  other_pcalls;
 
-	gboolean              scanning;
+	gboolean       scanning;
 
-	DBusGProxy *          wpas_proxy;
-	DBusGProxy *          introspect_proxy;
-	DBusGProxy *          iface_proxy;
-	DBusGProxy *          props_proxy;
-	char *                net_path;
-	guint32               blobs_left;
-	GHashTable *          bss_proxies;
+	DBusGProxy *   wpas_proxy;
+	DBusGProxy *   introspect_proxy;
+	DBusGProxy *   iface_proxy;
+	DBusGProxy *   props_proxy;
+	char *         net_path;
+	guint32        blobs_left;
+	GHashTable *   bss_proxies;
 
-	gint32                last_scan; /* timestamp as returned by nm_utils_get_monotonic_timestamp_s() */
+	gint32         last_scan; /* timestamp as returned by nm_utils_get_monotonic_timestamp_s() */
 
-	NMSupplicantConfig *  cfg;
+	NMSupplicantConfig *cfg;
 } NMSupplicantInterfacePrivate;
 
 static void
