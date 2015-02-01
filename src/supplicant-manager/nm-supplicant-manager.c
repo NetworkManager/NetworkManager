@@ -38,13 +38,6 @@
 
 G_DEFINE_TYPE (NMSupplicantManager, nm_supplicant_manager, G_TYPE_OBJECT)
 
-/* Properties */
-enum {
-	PROP_0 = 0,
-	PROP_AVAILABLE,
-	LAST_PROP
-};
-
 typedef struct {
 	GDBusProxy *     proxy;
 	GCancellable *   cancellable;
@@ -89,8 +82,7 @@ nm_supplicant_manager_iface_get (NMSupplicantManager * self,
 		start_now = !die_count_exceeded (priv->die_count);
 
 		nm_log_dbg (LOGD_SUPPLICANT, "(%s): creating new supplicant interface", ifname);
-		iface = nm_supplicant_interface_new (self,
-		                                     ifname,
+		iface = nm_supplicant_interface_new (ifname,
 		                                     is_wireless,
 		                                     priv->fast_supported,
 		                                     priv->ap_support,
@@ -194,8 +186,20 @@ update_capabilities (NMSupplicantManager *self)
 	nm_log_dbg (LOGD_SUPPLICANT, "EAP-FAST is %ssupported", priv->fast_supported ? "" : "not ");
 }
 
-gboolean
-nm_supplicant_manager_available (NMSupplicantManager *self)
+static void
+availability_changed (NMSupplicantManager *self, gboolean available)
+{
+	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
+	NMSupplicantInterface *iface;
+	GHashTableIter iter;
+
+	g_hash_table_iter_init (&iter, priv->ifaces);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &iface))
+		nm_supplicant_interface_set_supplicant_available (iface, available);
+}
+
+static gboolean
+is_available (NMSupplicantManager *self)
 {
 	g_return_val_if_fail (NM_IS_SUPPLICANT_MANAGER (self), FALSE);
 
@@ -208,22 +212,26 @@ static void
 set_running (NMSupplicantManager *self, gboolean now_running)
 {
 	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
-	gboolean old_available = nm_supplicant_manager_available (self);
+	gboolean old_available = is_available (self);
+	gboolean new_available;
 
 	priv->running = now_running;
-	if (old_available != nm_supplicant_manager_available (self))
-		g_object_notify (G_OBJECT (self), NM_SUPPLICANT_MANAGER_AVAILABLE);
+	new_available = is_available (self);
+	if (old_available != new_available)
+		availability_changed (self, new_available);
 }
 
 static void
 set_die_count (NMSupplicantManager *self, guint new_die_count)
 {
 	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
-	gboolean old_available = nm_supplicant_manager_available (self);
+	gboolean old_available = is_available (self);
+	gboolean new_available;
 
 	priv->die_count = new_die_count;
-	if (old_available != nm_supplicant_manager_available (self))
-		g_object_notify (G_OBJECT (self), NM_SUPPLICANT_MANAGER_AVAILABLE);
+	new_available = is_available (self);
+	if (old_available != new_available)
+		availability_changed (self, new_available);
 }
 
 static gboolean
@@ -340,25 +348,6 @@ nm_supplicant_manager_init (NMSupplicantManager *self)
 }
 
 static void
-set_property (GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
-{
-	G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-}
-
-static void
-get_property (GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
-{
-	switch (prop_id) {
-	case PROP_AVAILABLE:
-		g_value_set_boolean (value, nm_supplicant_manager_available (NM_SUPPLICANT_MANAGER (object)));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
 dispose (GObject *object)
 {
 	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (object);
@@ -386,15 +375,6 @@ nm_supplicant_manager_class_init (NMSupplicantManagerClass *klass)
 
 	g_type_class_add_private (object_class, sizeof (NMSupplicantManagerPrivate));
 
-	object_class->get_property = get_property;
-	object_class->set_property = set_property;
 	object_class->dispose = dispose;
-
-	g_object_class_install_property
-		(object_class, PROP_AVAILABLE,
-		 g_param_spec_boolean (NM_SUPPLICANT_MANAGER_AVAILABLE, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
 }
 
