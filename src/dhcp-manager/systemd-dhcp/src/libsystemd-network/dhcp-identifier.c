@@ -19,13 +19,18 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
+#include "nm-sd-adapt.h"
 
 #include "sd-id128.h"
+#if 0 /* NM_IGNORED a*/
 #include "libudev.h"
 #include "udev-util.h"
 
 #include "virt.h"
 #include "sparse-endian.h"
+#else /* NM_IGNORED */
+#include <net/if.h>
+#endif /* NM_IGNORED */
 #include "siphash24.h"
 
 #include "dhcp6-protocol.h"
@@ -59,12 +64,17 @@ int dhcp_identifier_set_duid_en(struct duid *duid, size_t *len) {
 
 
 int dhcp_identifier_set_iaid(int ifindex, uint8_t *mac, size_t mac_len, uint32_t *_id) {
+#if 0 /* NM_IGNORED */
         /* name is a pointer to memory in the udev_device struct, so must
            have the same scope */
         _cleanup_udev_device_unref_ struct udev_device *device = NULL;
+#else /* NM_IGNORED */
+        char name_buf[IF_NAMESIZE];
+#endif /* NM_IGNORED */
         const char *name = NULL;
         uint64_t id;
 
+#if 0 /* NM_IGNORED */
         if (detect_container(NULL) <= 0) {
                 /* not in a container, udev will be around */
                 _cleanup_udev_unref_ struct udev *udev;
@@ -84,6 +94,9 @@ int dhcp_identifier_set_iaid(int ifindex, uint8_t *mac, size_t mac_len, uint32_t
                         name = net_get_name(device);
                 }
         }
+#else /* NM_IGNORED */
+        name = if_indextoname(ifindex, name_buf);
+#endif /* NM_IGNORED */
 
         if (name)
                 siphash24((uint8_t*)&id, name, strlen(name), HASH_KEY.bytes);

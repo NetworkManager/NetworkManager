@@ -66,6 +66,8 @@ SYSTEMD_DHCP_CFLAGS = \
 
 libsystemd_dhcp_la_SOURCES = \
 	dhcp-manager/systemd-dhcp/src/libsystemd/sd-id128/sd-id128.c \
+	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp-identifier.c \
+	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp-identifier.h \
 	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp-network.c \
 	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp-packet.c \
 	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp-internal.h \
