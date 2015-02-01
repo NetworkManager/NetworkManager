@@ -1567,6 +1567,7 @@ find_device_for_connection (NmCli *nmc,
 	int i, j;
 
 	g_return_val_if_fail (nmc != NULL, FALSE);
+	g_return_val_if_fail (iface || ap || nsp, FALSE);
 	g_return_val_if_fail (device != NULL && *device == NULL, FALSE);
 	g_return_val_if_fail (spec_object != NULL && *spec_object == NULL, FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
@@ -2052,7 +2053,7 @@ nmc_activate_connection (NmCli *nmc,
 	g_return_val_if_fail (nmc != NULL, FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	if (connection) {
+	if (connection && (ifname || ap || nsp)) {
 		device_found = find_device_for_connection (nmc, connection, ifname, ap, nsp, &device, &spec_object, &local);
 
 		/* Virtual connection may not have their interfaces created yet */
@@ -2070,7 +2071,7 @@ nmc_activate_connection (NmCli *nmc,
 			             _("unknown device '%s'."), ifname);
 			return FALSE;
 		}
-	} else {
+	} else if (!connection) {
 		g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_NOT_FOUND,
 		                     _("neither a valid connection nor device given"));
 		return FALSE;
