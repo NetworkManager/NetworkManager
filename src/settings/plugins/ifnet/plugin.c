@@ -20,6 +20,8 @@
  * Copyright (C) 1999-2010 Gentoo Foundation, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 
 #include <gmodule.h>
@@ -121,9 +123,9 @@ is_managed_plugin (void)
 {
 	char *result = NULL;
 
-	result = nm_config_get_value (nm_config_get (),
-	                              IFNET_KEY_FILE_GROUP, IFNET_KEY_FILE_KEY_MANAGED,
-	                              NULL);
+	result = nm_config_data_get_value (nm_config_get_data_orig (nm_config_get ()),
+	                                   IFNET_KEY_FILE_GROUP, IFNET_KEY_FILE_KEY_MANAGED,
+	                                   NULL);
 	if (result) {
 		gboolean ret = is_true (result);
 		g_free (result);
@@ -262,9 +264,9 @@ reload_connections (NMSystemConfigInterface *config)
 
 	nm_log_info (LOGD_SETTINGS, "Loading connections");
 
-	str_auto_refresh = nm_config_get_value (nm_config_get (),
-	                                        IFNET_KEY_FILE_GROUP, "auto_refresh",
-	                                        NULL);
+	str_auto_refresh = nm_config_data_get_value (nm_config_get_data_orig (nm_config_get ()),
+	                                             IFNET_KEY_FILE_GROUP, "auto_refresh",
+	                                             NULL);
 	if (str_auto_refresh && is_true (str_auto_refresh))
 		auto_refresh = TRUE;
 	g_free (str_auto_refresh);
@@ -311,10 +313,13 @@ reload_connections (NMSystemConfigInterface *config)
 				if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (old),
 				                                              NM_CONNECTION (new),
 				                                              FALSE,  /* don't set Unsaved */
+				                                              "ifnet-update",
 				                                              &error)) {
-					/* Shouldn't ever get here as 'new' was verified by the reader already */
-					g_assert_no_error (error);
+					/* Shouldn't ever get here as 'new' was verified by the reader already
+					 * and the UUID did not change. */
+					g_assert_not_reached ();
 				}
+				g_assert_no_error (error);
 				nm_log_info (LOGD_SETTINGS, "Connection %s updated",
 				             nm_connection_get_id (NM_CONNECTION (new)));
 			}
@@ -391,7 +396,7 @@ check_unmanaged (gpointer key, gpointer data, gpointer user_data)
 
 	conn_name = nm_ifnet_connection_get_conn_name (connection);
 
-	if (is_managed (conn_name))
+	if (!conn_name || is_managed (conn_name))
 		return;
 
 	nm_log_info (LOGD_SETTINGS, "Checking unmanaged: %s", conn_name);

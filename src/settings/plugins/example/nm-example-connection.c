@@ -18,6 +18,8 @@
  * Copyright (C) 2012 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 #include <glib/gstdio.h>
 #include <nm-dbus-interface.h>
@@ -80,6 +82,7 @@ nm_example_connection_new (const char *full_path,
 	if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
 	                                              tmp,
 	                                              TRUE,
+	                                              NULL,
 	                                              error)) {
 		g_object_unref (object);
 		object = NULL;

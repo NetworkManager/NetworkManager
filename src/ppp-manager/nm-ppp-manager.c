@@ -19,7 +19,8 @@
  * Copyright (C) 2008 - 2012 Red Hat, Inc.
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <signal.h>
@@ -45,7 +46,6 @@
 #include "nm-ppp-manager.h"
 #include "nm-dbus-manager.h"
 #include "nm-logging.h"
-#include "nm-posix-signals.h"
 #include "nm-platform.h"
 #include "nm-core-internal.h"
 
@@ -67,6 +67,7 @@ static gboolean impl_ppp_manager_set_ip6_config (NMPPPManager *manager,
 #include "nm-ppp-manager-glue.h"
 
 static void _ppp_cleanup  (NMPPPManager *manager);
+static void _ppp_kill (NMPPPManager *manager);
 
 #define NM_PPPD_PLUGIN PPPD_PLUGIN_DIR "/nm-pppd-plugin.so"
 #define PPP_MANAGER_SECRET_TRIES "ppp-manager-secret-tries"
@@ -138,6 +139,7 @@ dispose (GObject *object)
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (object);
 
 	_ppp_cleanup (NM_PPP_MANAGER (object));
+	_ppp_kill (NM_PPP_MANAGER (object));
 
 	g_clear_object (&priv->act_req);
 
@@ -544,7 +546,8 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 
 	remove_timeout_handler (manager);
 
-	config = nm_ip4_config_new ();
+	config = nm_ip4_config_new (nm_platform_link_get_ifindex (priv->ip_iface));
+
 	memset (&address, 0, sizeof (address));
 	address.plen = 32;
 
@@ -648,7 +651,7 @@ impl_ppp_manager_set_ip6_config (NMPPPManager *manager,
 
 	remove_timeout_handler (manager);
 
-	config = nm_ip6_config_new ();
+	config = nm_ip6_config_new (nm_platform_link_get_ifindex (priv->ip_iface));
 
 	memset (&addr, 0, sizeof (addr));
 	addr.plen = 64;
@@ -835,6 +838,7 @@ pppd_timed_out (gpointer data)
 
 	nm_log_warn (LOGD_PPP, "pppd timed out or didn't initialize our dbus module");
 	_ppp_cleanup (manager);
+	_ppp_kill (manager);
 
 	g_signal_emit (manager, signals[STATE_CHANGED], 0, NM_PPP_STATUS_DEAD);
 
@@ -1026,20 +1030,6 @@ create_pppd_cmd_line (NMPPPManager *self,
 }
 
 static void
-pppd_child_setup (gpointer user_data G_GNUC_UNUSED)
-{
-	/* We are in the child process at this point */
-	pid_t pid = getpid ();
-	setpgid (pid, pid);
-
-	/*
-	 * We blocked signals in main(). We need to restore original signal
-	 * mask for pppd here so that it can receive signals.
-	 */
-	nm_unblock_posix_signals (NULL);
-}
-
-static void
 pppoe_fill_defaults (NMSettingPpp *setting)
 {
 	if (!nm_setting_ppp_get_mtu (setting))
@@ -1082,7 +1072,6 @@ nm_ppp_manager_start (NMPPPManager *manager,
 	NMCmdLine *ppp_cmd;
 	char *cmd_str;
 	struct stat st;
-	int ignored;
 
 	g_return_val_if_fail (NM_IS_PPP_MANAGER (manager), FALSE);
 	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
@@ -1102,7 +1091,7 @@ nm_ppp_manager_start (NMPPPManager *manager,
 
 	/* Make sure /dev/ppp exists (bgo #533064) */
 	if (stat ("/dev/ppp", &st) || !S_ISCHR (st.st_mode))
-		ignored = system ("/sbin/modprobe ppp_generic");
+		nm_utils_modprobe (NULL, "ppp_generic", NULL);
 
 	connection = nm_act_request_get_connection (req);
 	g_assert (connection);
@@ -1137,8 +1126,8 @@ nm_ppp_manager_start (NMPPPManager *manager,
 	priv->pid = 0;
 	if (!g_spawn_async (NULL, (char **) ppp_cmd->array->pdata, NULL,
 	                    G_SPAWN_DO_NOT_REAP_CHILD,
-	                    pppd_child_setup,
-	                    NULL, &priv->pid, err)) {
+	                    nm_utils_setpgid, NULL,
+	                    &priv->pid, err)) {
 		goto out;
 	}
 
@@ -1156,6 +1145,21 @@ out:
 		nm_cmd_line_destroy (ppp_cmd);
 
 	return priv->pid > 0;
+}
+
+static void
+_ppp_kill (NMPPPManager *manager)
+{
+	NMPPPManagerPrivate *priv;
+
+	g_return_if_fail (NM_IS_PPP_MANAGER (manager));
+
+	priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
+
+	if (priv->pid) {
+		nm_utils_kill_child_async (priv->pid, SIGTERM, LOGD_PPP, "pppd", 2000, NULL, NULL);
+		priv->pid = 0;
+	}
 }
 
 static void
@@ -1190,9 +1194,96 @@ _ppp_cleanup (NMPPPManager *manager)
 		g_source_remove (priv->ppp_watch_id);
 		priv->ppp_watch_id = 0;
 	}
+}
 
-	if (priv->pid) {
-		nm_utils_kill_child_async (priv->pid, SIGTERM, LOGD_PPP, "pppd", 2000, NULL, NULL);
-		priv->pid = 0;
+/***********************************************************/
+
+typedef struct {
+	NMPPPManager *manager;
+	GSimpleAsyncResult *result;
+	GCancellable *cancellable;
+} StopContext;
+
+static void
+stop_context_complete (StopContext *ctx)
+{
+	if (ctx->cancellable)
+		g_object_unref (ctx->cancellable);
+	g_simple_async_result_complete_in_idle (ctx->result);
+	g_object_unref (ctx->result);
+	g_object_unref (ctx->manager);
+	g_slice_free (StopContext, ctx);
+}
+
+static gboolean
+stop_context_complete_if_cancelled (StopContext *ctx)
+{
+	GError *error = NULL;
+
+	if (g_cancellable_set_error_if_cancelled (ctx->cancellable, &error)) {
+		g_simple_async_result_take_error (ctx->result, error);
+		stop_context_complete (ctx);
+		return TRUE;
 	}
+	return FALSE;
+}
+
+gboolean
+nm_ppp_manager_stop_finish (NMPPPManager *manager,
+                            GAsyncResult *res,
+                            GError **error)
+{
+	return !g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (res), error);
+}
+
+static void
+kill_child_ready  (pid_t pid,
+                   gboolean success,
+                   int child_status,
+                   StopContext *ctx)
+{
+	if (stop_context_complete_if_cancelled (ctx))
+		return;
+	stop_context_complete (ctx);
+}
+
+void
+nm_ppp_manager_stop (NMPPPManager *manager,
+                     GCancellable *cancellable,
+                     GAsyncReadyCallback callback,
+                     gpointer user_data)
+{
+	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
+	StopContext *ctx;
+
+	ctx = g_slice_new0 (StopContext);
+	ctx->manager = g_object_ref (manager);
+	ctx->result = g_simple_async_result_new (G_OBJECT (manager),
+	                                         callback,
+	                                         user_data,
+	                                         nm_ppp_manager_stop);
+
+	/* Setup cancellable */
+	ctx->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
+	if (stop_context_complete_if_cancelled (ctx))
+		return;
+
+	/* Cleanup internals */
+	_ppp_cleanup (manager);
+
+	/* If no pppd running, we're done */
+	if (!priv->pid) {
+		stop_context_complete (ctx);
+		return;
+	}
+
+	/* No cancellable operation, so just wait until it returns always */
+	nm_utils_kill_child_async (priv->pid,
+	                           SIGTERM,
+	                           LOGD_PPP,
+	                           "pppd",
+	                           2000,
+	                           (NMUtilsKillChildAsyncCb) kill_child_ready,
+	                           ctx);
+	priv->pid = 0;
 }

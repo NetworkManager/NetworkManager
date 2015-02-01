@@ -67,6 +67,8 @@ enum {
 	PROP_PARENT,
 	PROP_VLAN_ID,
 
+	PROP_INT_PARENT_DEVICE,
+
 	LAST_PROP
 };
 
@@ -388,7 +390,8 @@ deactivate (NMDevice *device)
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
 
 	/* Reset MAC address back to initial address */
-	nm_device_set_hw_addr (device, priv->initial_hw_addr, "reset", LOGD_VLAN);
+	if (priv->initial_hw_addr)
+		nm_device_set_hw_addr (device, priv->initial_hw_addr, "reset", LOGD_VLAN);
 }
 
 /******************************************************************/
@@ -406,16 +409,7 @@ parent_state_changed (NMDevice *parent,
 	if (reason == NM_DEVICE_STATE_REASON_CARRIER)
 		return;
 
-	if (new_state < NM_DEVICE_STATE_DISCONNECTED) {
-		/* If the parent becomes unavailable or unmanaged so does the VLAN */
-		nm_device_state_changed (NM_DEVICE (self), new_state, reason);
-	} else if (   new_state == NM_DEVICE_STATE_DISCONNECTED
-	           && old_state < NM_DEVICE_STATE_DISCONNECTED) {
-		/* Mark VLAN interface as available/disconnected when the parent
-		 * becomes available as a result of becoming initialized.
-		 */
-		nm_device_state_changed (NM_DEVICE (self), new_state, reason);
-	}
+	nm_device_set_unmanaged (NM_DEVICE (self), NM_UNMANAGED_PARENT, !nm_device_get_managed (parent), reason);
 }
 
 /******************************************************************/
@@ -477,6 +471,12 @@ get_property (GObject *object, guint prop_id,
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (object);
 
 	switch (prop_id) {
+	case PROP_PARENT:
+		g_value_set_boxed (value, priv->parent ? nm_device_get_path (priv->parent) : "/");
+		break;
+	case PROP_INT_PARENT_DEVICE:
+		g_value_set_object (value, priv->parent);
+		break;
 	case PROP_VLAN_ID:
 		g_value_set_uint (value, priv->vlan_id);
 		break;
@@ -493,7 +493,7 @@ set_property (GObject *object, guint prop_id,
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (object);
 
 	switch (prop_id) {
-	case PROP_PARENT:
+	case PROP_INT_PARENT_DEVICE:
 		nm_device_vlan_set_parent (NM_DEVICE_VLAN (object), g_value_get_object (value));
 		break;
 	case PROP_VLAN_ID:
@@ -564,16 +564,24 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 	/* properties */
 	g_object_class_install_property
 		(object_class, PROP_PARENT,
-		 g_param_spec_object (NM_DEVICE_VLAN_PARENT, "", "",
-		                      NM_TYPE_DEVICE,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_DEVICE_VLAN_PARENT, "", "",
+		                     DBUS_TYPE_G_OBJECT_PATH,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 	g_object_class_install_property
 		(object_class, PROP_VLAN_ID,
 		 g_param_spec_uint (NM_DEVICE_VLAN_ID, "", "",
 		                    0, 4095, 0,
 		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
 		                    G_PARAM_STATIC_STRINGS));
+
+	/* Internal properties */
+	g_object_class_install_property
+	    (object_class, PROP_INT_PARENT_DEVICE,
+	     g_param_spec_object (NM_DEVICE_VLAN_INT_PARENT_DEVICE, "", "",
+	                          NM_TYPE_DEVICE,
+	                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_STATIC_STRINGS));
 
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (klass),
@@ -613,7 +621,7 @@ new_link (NMDeviceFactory *factory, NMPlatformLink *plink, GError **error)
 
 	device = (NMDevice *) g_object_new (NM_TYPE_DEVICE_VLAN,
 	                                    NM_DEVICE_PLATFORM_DEVICE, plink,
-	                                    NM_DEVICE_VLAN_PARENT, parent,
+	                                    NM_DEVICE_VLAN_INT_PARENT_DEVICE, parent,
 	                                    NM_DEVICE_DRIVER, "8021q",
 	                                    NM_DEVICE_TYPE_DESC, "VLAN",
 	                                    NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_VLAN,
@@ -622,6 +630,10 @@ new_link (NMDeviceFactory *factory, NMPlatformLink *plink, GError **error)
 		g_object_unref (device);
 		device = NULL;
 	}
+
+	/* Set initial parent-dependent unmanaged flag */
+	if (device)
+		nm_device_set_initial_unmanaged_flag (device, NM_UNMANAGED_PARENT, !nm_device_get_managed (parent));
 
 	return device;
 }
@@ -663,7 +675,7 @@ create_virtual_device_for_connection (NMDeviceFactory *factory,
 
 	device = (NMDevice *) g_object_new (NM_TYPE_DEVICE_VLAN,
 	                                    NM_DEVICE_IFACE, iface,
-	                                    NM_DEVICE_VLAN_PARENT, parent,
+	                                    NM_DEVICE_VLAN_INT_PARENT_DEVICE, parent,
 	                                    NM_DEVICE_DRIVER, "8021q",
 	                                    NM_DEVICE_TYPE_DESC, "VLAN",
 	                                    NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_VLAN,
@@ -673,6 +685,10 @@ create_virtual_device_for_connection (NMDeviceFactory *factory,
 		g_object_unref (device);
 		device = NULL;
 	}
+
+	/* Set initial parent-dependent unmanaged flag */
+	if (device)
+		nm_device_set_initial_unmanaged_flag (device, NM_UNMANAGED_PARENT, !nm_device_get_managed (parent));
 
 	return device;
 }

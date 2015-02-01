@@ -37,6 +37,7 @@ _nm_device_log_self_to_device (t *self) \
                 (self) ? str_if_set (nm_device_get_iface (_nm_device_log_self_to_device (self)), "(null)") : "(none)" \
                 _NM_UTILS_MACRO_REST(__VA_ARGS__))
 
+#define _LOGT(domain, ...)      _LOG (LOGL_TRACE, domain, __VA_ARGS__)
 #define _LOGD(domain, ...)      _LOG (LOGL_DEBUG, domain, __VA_ARGS__)
 #define _LOGI(domain, ...)      _LOG (LOGL_INFO,  domain, __VA_ARGS__)
 #define _LOGW(domain, ...)      _LOG (LOGL_WARN,  domain, __VA_ARGS__)

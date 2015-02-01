@@ -61,30 +61,32 @@ dispose (GObject *object)
 	g_object_class->dispose (object);
 }
 
-static void
-finalize (GObject *object)
+static guint32
+get_generic_capabilities (NMDevice *device)
 {
-	g_object_class->finalize (object);
+	return NM_DEVICE_CAP_IS_NON_KERNEL;
 }
 
 static void
 nm_test_device_class_init (NMTestDeviceClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	g_object_class = g_type_class_peek (G_TYPE_OBJECT);
 
 	object_class->constructor = constructor;
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
-	object_class->finalize = finalize;
+
+	device_class->get_generic_capabilities = get_generic_capabilities;
 }
 
 NMDevice *
 nm_test_device_new (const char *hwaddr)
 {
 	return g_object_new (NM_TYPE_TEST_DEVICE,
-	                     NM_DEVICE_IFACE, "dummy:",
+	                     NM_DEVICE_IFACE, "dummy",
 	                     NM_DEVICE_HW_ADDRESS, hwaddr,
 	                     NULL);
 }

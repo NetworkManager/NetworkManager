@@ -20,8 +20,10 @@
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 
 #include "nm-setting.h"
 #include "nm-setting-private.h"
@@ -346,12 +348,6 @@ nm_setting_to_hash (NMSetting *setting, NMSettingHashFlags flags)
 			destroy_gvalue (value);
 	}
 	g_free (property_specs);
-
-	/* Don't return empty hashes, except for base types */
-	if (g_hash_table_size (hash) < 1 && !_nm_setting_is_base_type (setting)) {
-		g_hash_table_destroy (hash);
-		hash = NULL;
-	}
 
 	return hash;
 }

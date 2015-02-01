@@ -19,6 +19,8 @@
  * Copyright 2008 Novell, Inc.
  */
 
+#include "config.h"
+
 #include "nm-vpn-plugin-ui-interface.h"
 
 static void

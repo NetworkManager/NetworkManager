@@ -41,12 +41,11 @@ typedef struct {
 
 #define NMT_PAGE_PPP_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NMT_TYPE_PAGE_PPP, NmtPagePppPrivate))
 
-NmtNewtWidget *
+NmtEditorPage *
 nmt_page_ppp_new (NMConnection *conn)
 {
 	return g_object_new (NMT_TYPE_PAGE_PPP,
 	                     "connection", conn,
-	                     "title", _("PPP CONFIGURATION"),
 	                     NULL);
 }
 
@@ -111,11 +110,12 @@ nmt_page_ppp_constructed (GObject *object)
 {
 	NmtPagePpp *ppp = NMT_PAGE_PPP (object);
 	NmtPagePppPrivate *priv = NMT_PAGE_PPP_GET_PRIVATE (ppp);
-	NmtPageGrid *grid;
+	NmtEditorSection *section;
+	NmtEditorGrid *grid;
 	NMSettingPpp *s_ppp;
 	NmtNewtWidget *widget, *use_mppe;
 	NmtNewtGrid *auth_grid, *mppe_grid;
-	NmtNewtSection *section;
+	NmtNewtSection *auth_section, *mppe_section;
 	NMConnection *conn;
 
 	conn = nmt_editor_page_get_connection (NMT_EDITOR_PAGE (ppp));
@@ -131,20 +131,21 @@ nmt_page_ppp_constructed (GObject *object)
 		priv->lcp_echo_failure = 5;
 	}
 
-	grid = NMT_PAGE_GRID (ppp);
+	section = nmt_editor_section_new (_("PPP CONFIGURATION"), NULL, TRUE);
+	grid = nmt_editor_section_get_body (section);
 
 	/* Auth methods */
 	widget = nmt_newt_section_new (FALSE);
-	section = NMT_NEWT_SECTION (widget);
-	g_object_set (section, "open", TRUE, NULL);
-	nmt_page_grid_append (grid, NULL, widget, NULL);
+	auth_section = NMT_NEWT_SECTION (widget);
+	g_object_set (auth_section, "open", TRUE, NULL);
+	nmt_editor_grid_append (grid, NULL, widget, NULL);
 
 	widget = nmt_newt_label_new (_("Allowed authentication methods:"));
-	nmt_newt_section_set_header (section, widget);
+	nmt_newt_section_set_header (auth_section, widget);
 
 	widget = nmt_newt_grid_new ();
 	auth_grid = NMT_NEWT_GRID (widget);
-	nmt_newt_section_set_body (section, widget);
+	nmt_newt_section_set_body (auth_section, widget);
 
 	widget = nmt_newt_checkbox_new (_("EAP"));
 	g_object_bind_property (s_ppp, NM_SETTING_PPP_REFUSE_EAP,
@@ -186,13 +187,13 @@ nmt_page_ppp_constructed (GObject *object)
 	                        G_BINDING_SYNC_CREATE);
 	nmt_newt_grid_add (auth_grid, widget, 0, 4);
 
-	nmt_page_grid_append (grid, NULL, nmt_newt_separator_new (), NULL);
+	nmt_editor_grid_append (grid, NULL, nmt_newt_separator_new (), NULL);
 
 	/* MPPE */
 	widget = nmt_newt_section_new (FALSE);
-	section = NMT_NEWT_SECTION (widget);
-	g_object_set (section, "open", TRUE, NULL);
-	nmt_page_grid_append (grid, NULL, widget, NULL);
+	mppe_section = NMT_NEWT_SECTION (widget);
+	g_object_set (mppe_section, "open", TRUE, NULL);
+	nmt_editor_grid_append (grid, NULL, widget, NULL);
 
 	widget = nmt_newt_checkbox_new (_("Use point-to-point encryption (MPPE)"));
 	g_object_bind_property (s_ppp, NM_SETTING_PPP_REQUIRE_MPPE,
@@ -200,11 +201,11 @@ nmt_page_ppp_constructed (GObject *object)
 	                        G_BINDING_BIDIRECTIONAL |
 	                        G_BINDING_SYNC_CREATE);
 	use_mppe = widget;
-	nmt_newt_section_set_header (section, widget);
+	nmt_newt_section_set_header (mppe_section, widget);
 
 	widget = nmt_newt_grid_new ();
 	mppe_grid = NMT_NEWT_GRID (widget);
-	nmt_newt_section_set_body (section, widget);
+	nmt_newt_section_set_body (mppe_section, widget);
 
 	widget = nmt_newt_checkbox_new (_("Require 128-bit encryption"));
 	g_object_bind_property (use_mppe, "active",
@@ -226,7 +227,7 @@ nmt_page_ppp_constructed (GObject *object)
 	                        G_BINDING_SYNC_CREATE);
 	nmt_newt_grid_add (mppe_grid, widget, 0, 1);
 
-	nmt_page_grid_append (grid, NULL, nmt_newt_separator_new (), NULL);
+	nmt_editor_grid_append (grid, NULL, nmt_newt_separator_new (), NULL);
 
 	widget = nmt_newt_checkbox_new (_("Allow BSD data compression"));
 	g_object_bind_property (s_ppp, NM_SETTING_PPP_NOBSDCOMP,
@@ -234,7 +235,7 @@ nmt_page_ppp_constructed (GObject *object)
 	                        G_BINDING_BIDIRECTIONAL |
 	                        G_BINDING_INVERT_BOOLEAN |
 	                        G_BINDING_SYNC_CREATE);
-	nmt_page_grid_append (grid, NULL, widget, NULL);
+	nmt_editor_grid_append (grid, NULL, widget, NULL);
 
 	widget = nmt_newt_checkbox_new (_("Allow Deflate data compression"));
 	g_object_bind_property (s_ppp, NM_SETTING_PPP_NODEFLATE,
@@ -242,7 +243,7 @@ nmt_page_ppp_constructed (GObject *object)
 	                        G_BINDING_BIDIRECTIONAL |
 	                        G_BINDING_INVERT_BOOLEAN |
 	                        G_BINDING_SYNC_CREATE);
-	nmt_page_grid_append (grid, NULL, widget, NULL);
+	nmt_editor_grid_append (grid, NULL, widget, NULL);
 
 	widget = nmt_newt_checkbox_new (_("Use TCP header compression"));
 	g_object_bind_property (s_ppp, NM_SETTING_PPP_NO_VJ_COMP,
@@ -250,9 +251,9 @@ nmt_page_ppp_constructed (GObject *object)
 	                        G_BINDING_BIDIRECTIONAL |
 	                        G_BINDING_INVERT_BOOLEAN |
 	                        G_BINDING_SYNC_CREATE);
-	nmt_page_grid_append (grid, NULL, widget, NULL);
+	nmt_editor_grid_append (grid, NULL, widget, NULL);
 
-	nmt_page_grid_append (grid, NULL, nmt_newt_separator_new (), NULL);
+	nmt_editor_grid_append (grid, NULL, nmt_newt_separator_new (), NULL);
 
 	widget = nmt_newt_checkbox_new (_("Send PPP echo packets"));
 	g_object_bind_property_full (s_ppp, NM_SETTING_PPP_LCP_ECHO_INTERVAL,
@@ -269,7 +270,9 @@ nmt_page_ppp_constructed (GObject *object)
 	                             transform_lcp_echo_properties_to_checkbox,
 	                             transform_checkbox_to_lcp_echo_failure,
 	                             ppp, NULL);
-	nmt_page_grid_append (grid, NULL, widget, NULL);
+	nmt_editor_grid_append (grid, NULL, widget, NULL);
+
+	nmt_editor_page_add_section (NMT_EDITOR_PAGE (ppp), section);
 
 	G_OBJECT_CLASS (nmt_page_ppp_parent_class)->constructed (object);
 }

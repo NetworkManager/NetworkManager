@@ -19,10 +19,12 @@
  * Copyright 2011 - 2013 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 
 #include "nm-setting-bridge.h"
 #include "nm-connection-private.h"
@@ -51,6 +53,7 @@ typedef struct {
 	guint16  hello_time;
 	guint16  max_age;
 	guint32  ageing_time;
+	gboolean multicast_snooping;
 } NMSettingBridgePrivate;
 
 enum {
@@ -62,6 +65,7 @@ enum {
 	PROP_HELLO_TIME,
 	PROP_MAX_AGE,
 	PROP_AGEING_TIME,
+	PROP_MULTICAST_SNOOPING,
 	LAST_PROP
 };
 
@@ -176,6 +180,22 @@ nm_setting_bridge_get_ageing_time (NMSettingBridge *setting)
 	return NM_SETTING_BRIDGE_GET_PRIVATE (setting)->ageing_time;
 }
 
+/**
+ * nm_setting_bridge_get_multicast_snooping:
+ * @setting: the #NMSettingBridge
+ *
+ * Returns: the #NMSettingBridge:multicast-snooping property of the setting
+ *
+ * Since: 1.2
+ **/
+gboolean
+nm_setting_bridge_get_multicast_snooping (NMSettingBridge *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_BRIDGE (setting), FALSE);
+
+	return NM_SETTING_BRIDGE_GET_PRIVATE (setting)->multicast_snooping;
+}
+
 /* IEEE 802.1D-1998 timer values */
 #define BR_MIN_HELLO_TIME    1
 #define BR_MAX_HELLO_TIME    10
@@ -194,10 +214,14 @@ static inline gboolean
 check_range (guint32 val,
              guint32 min,
              guint32 max,
+             gboolean zero,
              const char *prop,
              GError **error)
 {
-	if ((val != 0) && (val < min || val > max)) {
+	if (zero && val == 0)
+		return TRUE;
+
+	if (val < min || val > max) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -226,6 +250,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	if (!check_range (priv->forward_delay,
 	                  BR_MIN_FORWARD_DELAY,
 	                  BR_MAX_FORWARD_DELAY,
+	                  !priv->stp,
 	                  NM_SETTING_BRIDGE_FORWARD_DELAY,
 	                  error))
 		return FALSE;
@@ -233,6 +258,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	if (!check_range (priv->hello_time,
 	                  BR_MIN_HELLO_TIME,
 	                  BR_MAX_HELLO_TIME,
+	                  !priv->stp,
 	                  NM_SETTING_BRIDGE_HELLO_TIME,
 	                  error))
 		return FALSE;
@@ -240,6 +266,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	if (!check_range (priv->max_age,
 	                  BR_MIN_MAX_AGE,
 	                  BR_MAX_MAX_AGE,
+	                  !priv->stp,
 	                  NM_SETTING_BRIDGE_MAX_AGE,
 	                  error))
 		return FALSE;
@@ -247,6 +274,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	if (!check_range (priv->ageing_time,
 	                  BR_MIN_AGEING_TIME,
 	                  BR_MAX_AGEING_TIME,
+	                  !priv->stp,
 	                  NM_SETTING_BRIDGE_AGEING_TIME,
 	                  error))
 		return FALSE;
@@ -299,6 +327,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_AGEING_TIME:
 		priv->ageing_time = g_value_get_uint (value);
 		break;
+	case PROP_MULTICAST_SNOOPING:
+		priv->multicast_snooping = g_value_get_boolean (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -334,6 +365,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_AGEING_TIME:
 		g_value_set_uint (value, priv->ageing_time);
 		break;
+	case PROP_MULTICAST_SNOOPING:
+		g_value_set_boolean (value, priv->multicast_snooping);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -362,6 +396,22 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	 * MAC address will be set. When matching an existing (outside
 	 * NetworkManager created) bridge, this MAC address must match.
 	 **/
+	/* ---keyfile---
+	 * property: mac-address
+	 * format: ususal hex-digits-and-colons notation
+	 * description: MAC address in traditional hex-digits-and-colons notation,
+	 *   or semicolon separated list of 6 decimal bytes (obsolete)
+	 * example: mac-address=00:22:68:12:79:A2
+	 *  mac-address=0;34;104;18;121;162;
+	 * ---end---
+	 * ---ifcfg-rh---
+	 * property: mac-address
+	 * variable: MACADDR(+)
+	 * description: MAC address of the bridge. Note that this requires a recent
+	 *   kernel support, originally introduced in 3.15 upstream kernel)
+	 *   MACADDR for bridges is an NM extension.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,
 		 g_param_spec_string (NM_SETTING_BRIDGE_MAC_ADDRESS, "", "",
@@ -379,6 +429,13 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	 *
 	 * Controls whether Spanning Tree Protocol (STP) is enabled for this bridge.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: stp
+	 * variable: STP
+	 * default: no
+	 * description: Span tree protocol participation.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_STP,
 		 g_param_spec_boolean (NM_SETTING_BRIDGE_STP, "", "",
@@ -395,6 +452,14 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	 * values are "better"; the lowest priority bridge will be elected the root
 	 * bridge.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: priority
+	 * variable: BRIDGING_OPTS: priority=
+	 * values: 0 - 32768
+	 * default: 32768
+	 * description: STP priority.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY,
 		 g_param_spec_uint (NM_SETTING_BRIDGE_PRIORITY, "", "",
@@ -409,6 +474,14 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	 *
 	 * The Spanning Tree Protocol (STP) forwarding delay, in seconds.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: forward-delay
+	 * variable: DELAY
+	 * values: 2 - 30
+	 * default: 15
+	 * description: STP forwarding delay.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_FORWARD_DELAY,
 		 g_param_spec_uint (NM_SETTING_BRIDGE_FORWARD_DELAY, "", "",
@@ -423,6 +496,14 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	 *
 	 * The Spanning Tree Protocol (STP) hello time, in seconds.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: hello-time
+	 * variable: BRIDGING_OPTS: hello_time=
+	 * values: 1 - 10
+	 * default: 2
+	 * description: STP hello time.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_HELLO_TIME,
 		 g_param_spec_uint (NM_SETTING_BRIDGE_HELLO_TIME, "", "",
@@ -437,6 +518,14 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	 *
 	 * The Spanning Tree Protocol (STP) maximum message age, in seconds.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: max-age
+	 * variable: BRIDGING_OPTS: max_age=
+	 * values: 6 - 40
+	 * default: 20
+	 * description: STP maximum message age.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_MAX_AGE,
 		 g_param_spec_uint (NM_SETTING_BRIDGE_MAX_AGE, "", "",
@@ -451,6 +540,14 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	 *
 	 * The Ethernet MAC address aging time, in seconds.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: ageing-time
+	 * variable: BRIDGING_OPTS: ageing_time=
+	 * values: 0 - 1000000
+	 * default: 300
+	 * description: Ethernet MAC ageing time.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_AGEING_TIME,
 		 g_param_spec_uint (NM_SETTING_BRIDGE_AGEING_TIME, "", "",
@@ -460,6 +557,41 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 		                    NM_SETTING_PARAM_INFERRABLE |
 		                    G_PARAM_STATIC_STRINGS));
 
+	/**
+	 * NMSettingBridge:multicast-snooping:
+	 *
+	 * Controls whether IGMP snooping is enabled for this bridge.
+	 * Note that if snooping was automatically disabled due to hash collisions,
+	 * the system may refuse to enable the feature until the collisions are
+	 * resolved.
+	 *
+	 * Since: 1.2
+	 **/
+	/* ---ifcfg-rh---
+	 * property: multicast-snooping
+	 * variable: BRIDGING_OPTS: multicast_snooping=
+	 * values: 0 or 1
+	 * default: 1
+	 * description: IGMP snooping support.
+	 * ---end---
+	 */
+	g_object_class_install_property
+		(object_class, PROP_MULTICAST_SNOOPING,
+		 g_param_spec_boolean (NM_SETTING_BRIDGE_MULTICAST_SNOOPING, "", "",
+		                       TRUE,
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT |
+		                       NM_SETTING_PARAM_INFERRABLE |
+		                       G_PARAM_STATIC_STRINGS));
+
+	/* ---dbus---
+	 * property: interface-name
+	 * format: string
+	 * description: Deprecated in favor of connection.interface-name, but can
+	 *   be used for backward-compatibility with older daemons, to set the
+	 *   bridge's interface name.
+	 * ---end---
+	 */
 	_nm_setting_class_add_dbus_only_property (parent_class, "interface-name",
 	                                          G_VARIANT_TYPE_STRING,
 	                                          _nm_setting_get_deprecated_virtual_interface_name,

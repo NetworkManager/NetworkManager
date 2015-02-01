@@ -21,7 +21,8 @@
  */
 
 
-#include <config.h>
+#include "config.h"
+
 #include <glib.h>
 #include <glib/gi18n.h>
 #include <string.h>
@@ -36,8 +37,8 @@
 #include "nm-dhcp-manager.h"
 #include "nm-utils.h"
 #include "nm-logging.h"
-#include "nm-posix-signals.h"
 #include "NetworkManagerUtils.h"
+#include "nm-dhcp-listener.h"
 
 G_DEFINE_TYPE (NMDhcpDhcpcd, nm_dhcp_dhcpcd, NM_TYPE_DHCP_CLIENT)
 
@@ -47,7 +48,7 @@ typedef struct {
 	char *pid_file;
 } NMDhcpDhcpcdPrivate;
 
-const char *
+static const char *
 nm_dhcp_dhcpcd_get_path (void)
 {
 	const char *path = NULL;
@@ -57,32 +58,15 @@ nm_dhcp_dhcpcd_get_path (void)
 	return path;
 }
 
-static void
-dhcpcd_child_setup (gpointer user_data G_GNUC_UNUSED)
-{
-	/* We are in the child process at this point */
-	pid_t pid = getpid ();
-	setpgid (pid, pid);
-
-	/*
-	 * We blocked signals in main(). We need to restore original signal
-	 * mask for dhcpcd here so that it can receive signals.
-	 */
-	nm_unblock_posix_signals (NULL);
-}
-
 static gboolean
-ip4_start (NMDhcpClient *client,
-           const char *dhcp_client_id,
-           const char *dhcp_anycast_addr,
-           const char *hostname)
+ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last_ip4_address)
 {
 	NMDhcpDhcpcdPrivate *priv = NM_DHCP_DHCPCD_GET_PRIVATE (client);
 	GPtrArray *argv = NULL;
 	pid_t pid = -1;
 	GError *error = NULL;
 	char *pid_contents = NULL, *binary_name, *cmd_str;
-	const char *iface, *dhcpcd_path = NULL;
+	const char *iface, *dhcpcd_path, *hostname;
 
 	g_return_val_if_fail (priv->pid_file == NULL, FALSE);
 
@@ -129,7 +113,8 @@ ip4_start (NMDhcpClient *client,
 	g_ptr_array_add (argv, (gpointer) "-4");
 #endif
 
-	if (hostname && strlen (hostname)) {
+	hostname = nm_dhcp_client_get_hostname (client);
+	if (hostname) {
 		g_ptr_array_add (argv, (gpointer) "-h");	/* Send hostname to DHCP server */
 		g_ptr_array_add (argv, (gpointer) hostname );
 	}
@@ -143,7 +128,7 @@ ip4_start (NMDhcpClient *client,
 
 	if (g_spawn_async (NULL, (char **) argv->pdata, NULL,
 	                   G_SPAWN_DO_NOT_REAP_CHILD | G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL,
-	                   &dhcpcd_child_setup, NULL, &pid, &error)) {
+	                   nm_utils_setpgid, NULL, &pid, &error)) {
 		g_assert (pid > 0);
 		nm_log_info (LOGD_DHCP4, "dhcpcd started with pid %d", pid);
 		nm_dhcp_client_watch_child (client, pid);
@@ -160,7 +145,6 @@ ip4_start (NMDhcpClient *client,
 static gboolean
 ip6_start (NMDhcpClient *client,
            const char *dhcp_anycast_addr,
-           const char *hostname,
            gboolean info_only,
            NMSettingIP6ConfigPrivacy privacy,
            const GByteArray *duid)
@@ -190,12 +174,20 @@ stop (NMDhcpClient *client, gboolean release, const GByteArray *duid)
 static void
 nm_dhcp_dhcpcd_init (NMDhcpDhcpcd *self)
 {
+	g_signal_connect (nm_dhcp_listener_get (),
+	                  NM_DHCP_LISTENER_EVENT,
+	                  G_CALLBACK (nm_dhcp_client_handle_event),
+	                  self);
 }
 
 static void
 dispose (GObject *object)
 {
 	NMDhcpDhcpcdPrivate *priv = NM_DHCP_DHCPCD_GET_PRIVATE (object);
+
+	g_signal_handlers_disconnect_by_func (nm_dhcp_listener_get (),
+	                                      G_CALLBACK (nm_dhcp_client_handle_event),
+	                                      NM_DHCP_DHCPCD (object));
 
 	g_free (priv->pid_file);
 
@@ -216,5 +208,15 @@ nm_dhcp_dhcpcd_class_init (NMDhcpDhcpcdClass *dhcpcd_class)
 	client_class->ip4_start = ip4_start;
 	client_class->ip6_start = ip6_start;
 	client_class->stop = stop;
+}
+
+static void __attribute__((constructor))
+register_dhcp_dhclient (void)
+{
+	g_type_init ();
+	_nm_dhcp_client_register (NM_TYPE_DHCP_DHCPCD,
+	                          "dhcpcd",
+	                          nm_dhcp_dhcpcd_get_path,
+	                          NULL);
 }
 

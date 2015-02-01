@@ -27,6 +27,8 @@
  *   gcc -Wall `pkg-config --libs --cflags glib-2.0 libnm` add-connection-libnm.c -o add-connection-libnm
  */
 
+#include "config.h"
+
 #include <glib.h>
 #include <NetworkManager.h>
 
@@ -86,7 +88,7 @@ add_connection (NMClient *client, GMainLoop *loop, const char *con_name)
 	/* Build up the 'ipv4' Setting */
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
 	g_object_set (G_OBJECT (s_ip4),
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
 	              NULL);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 

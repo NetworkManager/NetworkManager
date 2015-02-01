@@ -19,6 +19,8 @@
  * Copyright (C) 2005 - 2008 Novell, Inc.
  */
 
+#include "config.h"
+
 #include <glib.h>
 #include <gio/gio.h>
 #include <string.h>
@@ -35,6 +37,7 @@
 #include "nm-dhcp6-config.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
+#include "nm-settings-connection.h"
 
 #define CALL_TIMEOUT (1000 * 60 * 10)  /* 10 minutes for all scripts */
 
@@ -472,6 +475,7 @@ _dispatcher_call (DispatcherAction action,
 
 	if (connection) {
 		GVariant *connection_dict;
+		const char *filename;
 
 		connection_dict = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_NO_SECRETS);
 		connection_hash = nm_utils_connection_dict_to_hash (connection_dict);
@@ -481,6 +485,17 @@ _dispatcher_call (DispatcherAction action,
 		value_hash_add_object_path (connection_props,
 		                            NMD_CONNECTION_PROPS_PATH,
 		                            nm_connection_get_path (connection));
+		filename = nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection));
+		if (filename) {
+			value_hash_add_str (connection_props,
+			                    NMD_CONNECTION_PROPS_FILENAME,
+			                    filename);
+		}
+		if (nm_settings_connection_get_nm_generated_assumed (NM_SETTINGS_CONNECTION (connection))) {
+			value_hash_add_bool (connection_props,
+			                     NMD_CONNECTION_PROPS_EXTERNAL,
+			                     TRUE);
+		}
 	} else {
 		connection_hash = value_hash_create ();
 		connection_props = value_hash_create ();

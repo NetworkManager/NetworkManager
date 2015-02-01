@@ -19,6 +19,8 @@
  *
  */
 
+#include "config.h"
+
 #include <glib.h>
 #include <string.h>
 
@@ -99,17 +101,14 @@ test_defaults (GType type, const char *name)
 	g_object_unref (setting);
 }
 
-int main (int argc, char **argv)
+int
+main (int argc, char **argv)
 {
-	GError *error = NULL;
 	char *base;
 
 #if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
 #endif
-
-	if (!nm_utils_init (&error))
-		FAIL ("nm-utils-init", "failed to initialize libnm: %s", error->message);
 
 	/* The tests */
 	test_defaults (NM_TYPE_SETTING_CONNECTION, NM_SETTING_CONNECTION_SETTING_NAME);

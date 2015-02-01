@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2010 - 2014 Red Hat, Inc.
+ * Copyright 2010 - 2015 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -25,6 +25,7 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 
+#include "polkit-agent.h"
 #include "utils.h"
 #include "general.h"
 
@@ -263,6 +264,26 @@ nm_state_to_string (NMState state)
 	}
 }
 
+static NmcTermColor
+state_to_color (NMState state)
+{
+	switch (state) {
+	case NM_STATE_CONNECTING:
+		return NMC_TERM_COLOR_YELLOW;
+	case NM_STATE_CONNECTED_LOCAL:
+	case NM_STATE_CONNECTED_SITE:
+	case NM_STATE_CONNECTED_GLOBAL:
+		return NMC_TERM_COLOR_GREEN;
+	case NM_STATE_DISCONNECTING:
+		return NMC_TERM_COLOR_YELLOW;
+	case NM_STATE_ASLEEP:
+	case NM_STATE_DISCONNECTED:
+		return NMC_TERM_COLOR_RED;
+	default:
+		return NMC_TERM_COLOR_NORMAL;
+	}
+}
+
 static const char *
 nm_connectivity_to_string (NMConnectivityState connectivity)
 {
@@ -281,17 +302,33 @@ nm_connectivity_to_string (NMConnectivityState connectivity)
 	}
 }
 
+static NmcTermColor
+connectivity_to_color (NMConnectivityState connectivity)
+{
+	switch (connectivity) {
+	case NM_CONNECTIVITY_NONE:
+		return NMC_TERM_COLOR_RED;
+	case NM_CONNECTIVITY_PORTAL:
+	case NM_CONNECTIVITY_LIMITED:
+		return NMC_TERM_COLOR_YELLOW;
+	case NM_CONNECTIVITY_FULL:
+		return NMC_TERM_COLOR_GREEN;
+	default:
+		return NMC_TERM_COLOR_NORMAL;
+	}
+}
+
 static gboolean
 show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_flds)
 {
 	gboolean startup = FALSE;
 	NMState state = NM_STATE_UNKNOWN;
 	NMConnectivityState connectivity = NM_CONNECTIVITY_UNKNOWN;
-	const char *net_enabled_str;
-	const char *wireless_hw_enabled_str, *wireless_enabled_str;
-	const char *wwan_hw_enabled_str, *wwan_enabled_str;
+	gboolean net_enabled;
+	gboolean wireless_hw_enabled, wireless_enabled;
+	gboolean wwan_hw_enabled, wwan_enabled;
 #if WITH_WIMAX
-	const char *wimax_hw_enabled_str, *wimax_enabled_str;
+	gboolean wimax_hw_enabled, wimax_enabled;
 #endif
 	GError *error = NULL;
 	const char *fields_str;
@@ -332,14 +369,14 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 	state = nm_client_get_state (nmc->client);
 	startup = nm_client_get_startup (nmc->client);
 	connectivity = nm_client_get_connectivity (nmc->client);
-	net_enabled_str = nm_client_networking_get_enabled (nmc->client) ? _("enabled") : _("disabled");
-	wireless_hw_enabled_str = nm_client_wireless_hardware_get_enabled (nmc->client) ? _("enabled") : _("disabled");
-	wireless_enabled_str = nm_client_wireless_get_enabled (nmc->client) ? _("enabled") : _("disabled");
-	wwan_hw_enabled_str = nm_client_wwan_hardware_get_enabled (nmc->client) ? _("enabled") : _("disabled");
-	wwan_enabled_str = nm_client_wwan_get_enabled (nmc->client) ? _("enabled") : _("disabled");
+	net_enabled = nm_client_networking_get_enabled (nmc->client);
+	wireless_hw_enabled = nm_client_wireless_hardware_get_enabled (nmc->client);
+	wireless_enabled = nm_client_wireless_get_enabled (nmc->client);
+	wwan_hw_enabled = nm_client_wwan_hardware_get_enabled (nmc->client);
+	wwan_enabled = nm_client_wwan_get_enabled (nmc->client);
 #if WITH_WIMAX
-	wimax_hw_enabled_str = nm_client_wimax_hardware_get_enabled (nmc->client) ? _("enabled") : _("disabled");
-	wimax_enabled_str = nm_client_wimax_get_enabled (nmc->client) ? _("enabled") : _("disabled");
+	wimax_hw_enabled = nm_client_wimax_hardware_get_enabled (nmc->client);
+	wimax_enabled = nm_client_wimax_get_enabled (nmc->client);
 #endif
 
 	nmc->print_fields.header_name = pretty_header_name ? (char *) pretty_header_name : _("NetworkManager status");
@@ -352,15 +389,30 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 	set_val_strc (arr, 2, nm_state_to_string (state));
 	set_val_strc (arr, 3, startup ? _("starting") : _("started"));
 	set_val_strc (arr, 4, nm_connectivity_to_string (connectivity));
-	set_val_strc (arr, 5, net_enabled_str);
-	set_val_strc (arr, 6, wireless_hw_enabled_str);
-	set_val_strc (arr, 7, wireless_enabled_str);
-	set_val_strc (arr, 8, wwan_hw_enabled_str);
-	set_val_strc (arr, 9, wwan_enabled_str);
+	set_val_strc (arr, 5, net_enabled ? _("enabled") : _("disabled"));
+	set_val_strc (arr, 6, wireless_hw_enabled ? _("enabled") : _("disabled"));
+	set_val_strc (arr, 7, wireless_enabled ? _("enabled") : _("disabled"));
+	set_val_strc (arr, 8, wwan_hw_enabled ? _("enabled") : _("disabled"));
+	set_val_strc (arr, 9, wwan_enabled ? _("enabled") : _("disabled"));
 #if WITH_WIMAX
-	set_val_strc (arr, 10, wimax_hw_enabled_str);
-	set_val_strc (arr, 11, wimax_enabled_str);
+	set_val_strc (arr, 10, wimax_hw_enabled ? _("enabled") : _("disabled"));
+	set_val_strc (arr, 11, wimax_enabled ? _("enabled") : _("disabled"));
 #endif
+
+	/* Set colors */
+	arr[2].color = state_to_color (state);
+	arr[3].color = startup ? NMC_TERM_COLOR_YELLOW : NMC_TERM_COLOR_GREEN;
+	arr[4].color = connectivity_to_color (connectivity);
+	arr[5].color = net_enabled ? NMC_TERM_COLOR_GREEN : NMC_TERM_COLOR_RED;
+	arr[6].color = wireless_hw_enabled ? NMC_TERM_COLOR_GREEN : NMC_TERM_COLOR_RED;
+	arr[7].color = wireless_enabled ? NMC_TERM_COLOR_GREEN : NMC_TERM_COLOR_RED;
+	arr[8].color = wwan_hw_enabled ? NMC_TERM_COLOR_GREEN : NMC_TERM_COLOR_RED;
+	arr[9].color = wwan_enabled ? NMC_TERM_COLOR_GREEN : NMC_TERM_COLOR_RED;
+#if WITH_WIMAX
+	arr[10].color = wimax_hw_enabled ? NMC_TERM_COLOR_GREEN : NMC_TERM_COLOR_RED;
+	arr[11].color = wimax_enabled ? NMC_TERM_COLOR_GREEN : NMC_TERM_COLOR_RED;
+#endif
+
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -558,6 +610,9 @@ do_general (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
 
+	/* Register polkit agent */
+	nmc_start_polkit_agent_start_try (nmc);
+
 	if (argc == 0) {
 		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {
 			g_string_printf (nmc->return_text, _("Error: %s."), error->message);
@@ -726,6 +781,9 @@ do_networking (NmCli *nmc, int argc, char **argv)
 {
 	gboolean enable_flag;
 
+	/* Register polkit agent */
+	nmc_start_polkit_agent_start_try (nmc);
+
 	if (argc == 0)
 		nmc_switch_show (nmc, NMC_FIELDS_NM_NETWORKING, _("Networking"));
 	else if (argc > 0) {
@@ -786,6 +844,9 @@ do_radio (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
 	gboolean enable_flag;
+
+	/* Register polkit agent */
+	nmc_start_polkit_agent_start_try (nmc);
 
 	if (argc == 0) {
 		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error)) {

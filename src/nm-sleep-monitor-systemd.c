@@ -18,6 +18,7 @@
  */
 
 #include "config.h"
+
 #include <errno.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -147,24 +148,59 @@ signal_cb (GDBusProxy  *proxy,
 }
 
 static void
-sleep_setup (NMSleepMonitor *self)
+name_owner_cb (GObject    *object,
+               GParamSpec *pspec,
+               gpointer    user_data)
 {
-	GDBusConnection *bus;
+	GDBusProxy *proxy = G_DBUS_PROXY (object);
+	NMSleepMonitor *self = NM_SLEEP_MONITOR (user_data);
+	char *owner;
 
-	bus = g_bus_get_sync (G_BUS_TYPE_SYSTEM, NULL, NULL);
-	self->sd_proxy = g_dbus_proxy_new_sync (bus, 0, NULL,
-	                                        SD_NAME, SD_PATH, SD_INTERFACE,
-	                                        NULL, NULL);
-	g_object_unref (bus);
+	g_assert (proxy == self->sd_proxy);
+
+	owner = g_dbus_proxy_get_name_owner (proxy);
+	if (owner)
+		take_inhibitor (self);
+	else
+		drop_inhibitor (self);
+	g_free (owner);
+}
+
+static void
+on_proxy_acquired (GObject *object,
+                   GAsyncResult *res,
+                   NMSleepMonitor *self)
+{
+	GError *error = NULL;
+	char *owner;
+
+	self->sd_proxy = g_dbus_proxy_new_for_bus_finish (res, &error);
+	if (!self->sd_proxy) {
+		nm_log_warn (LOGD_SUSPEND, "Failed to acquire logind proxy: %s", error->message);
+		g_clear_error (&error);
+		return;
+	}
+
+	g_signal_connect (self->sd_proxy, "notify::g-name-owner", G_CALLBACK (name_owner_cb), self);
 	g_signal_connect (self->sd_proxy, "g-signal", G_CALLBACK (signal_cb), self);
+
+	owner = g_dbus_proxy_get_name_owner (self->sd_proxy);
+	if (owner)
+		take_inhibitor (self);
+	g_free (owner);
 }
 
 static void
 nm_sleep_monitor_init (NMSleepMonitor *self)
 {
 	self->inhibit_fd = -1;
-	sleep_setup (self);
-	take_inhibitor (self);
+	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
+	                          G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START |
+	                          G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
+	                          NULL,
+	                          SD_NAME, SD_PATH, SD_INTERFACE,
+	                          NULL,
+	                          (GAsyncReadyCallback) on_proxy_acquired, self);
 }
 
 static void
@@ -207,16 +243,6 @@ nm_sleep_monitor_class_init (NMSleepMonitorClass *klass)
 	                                  G_TYPE_NONE, 0);
 }
 
-NMSleepMonitor *
-nm_sleep_monitor_get (void)
-{
-	static NMSleepMonitor *singleton = NULL;
-
-	if (singleton)
-		return g_object_ref (singleton);
-
-	singleton = NM_SLEEP_MONITOR (g_object_new (NM_TYPE_SLEEP_MONITOR, NULL));
-	return singleton;
-}
+NM_DEFINE_SINGLETON_GETTER (NMSleepMonitor, nm_sleep_monitor_get, NM_TYPE_SLEEP_MONITOR);
 
 /* ---------------------------------------------------------------------------------------------------- */

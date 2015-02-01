@@ -22,8 +22,9 @@
  */
 
 #include "config.h"
+
 #include <glib.h>
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 
 #include <gcrypt.h>
 #include <gnutls/gnutls.h>
@@ -55,68 +56,6 @@ crypto_init (GError **error)
 	return TRUE;
 }
 
-void
-crypto_deinit (void)
-{
-}
-
-gboolean
-crypto_md5_hash (const char *salt,
-                 const gsize salt_len,
-                 const char *password,
-                 gsize password_len,
-                 char *buffer,
-                 gsize buflen,
-                 GError **error)
-{
-	gcry_md_hd_t ctx;
-	gcry_error_t err;
-	int nkey = buflen;
-	const gsize digest_len = 16;
-	int count = 0;
-	char digest[MD5_HASH_LEN];
-	char *p = buffer;
-
-	if (salt)
-		g_return_val_if_fail (salt_len >= SALT_LEN, FALSE);
-
-	g_return_val_if_fail (password != NULL, FALSE);
-	g_return_val_if_fail (password_len > 0, FALSE);
-	g_return_val_if_fail (buffer != NULL, FALSE);
-	g_return_val_if_fail (buflen > 0, FALSE);
-
-	err = gcry_md_open (&ctx, GCRY_MD_MD5, 0);
-	if (err) {
-		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERROR_FAILED,
-		             _("Failed to initialize the MD5 engine: %s / %s."),
-		             gcry_strsource (err), gcry_strerror (err));
-		return FALSE;
-	}
-
-	while (nkey > 0) {
-		int i = 0;
-
-		if (count++)
-			gcry_md_write (ctx, digest, digest_len);
-		gcry_md_write (ctx, password, password_len);
-		if (salt)
-			gcry_md_write (ctx, salt, SALT_LEN); /* Only use 8 bytes of salt */
-		gcry_md_final (ctx);
-		memcpy (digest, gcry_md_read (ctx, 0), digest_len);
-		gcry_md_reset (ctx);
-
-		while (nkey && (i < digest_len)) {
-			*(p++) = digest[i++];
-			nkey--;
-		}
-	}
-
-	memset (digest, 0, sizeof (digest));
-	gcry_md_close (ctx);
-	return TRUE;
-}
-
 char *
 crypto_decrypt (const char *cipher,
                 int key_type,
@@ -135,6 +74,9 @@ crypto_decrypt (const char *cipher,
 	char *output = NULL;
 	gboolean success = FALSE;
 	gsize pad_len, real_iv_len;
+
+	if (!crypto_init (error))
+		return NULL;
 
 	if (!strcmp (cipher, CIPHER_DES_EDE3_CBC)) {
 		cipher_mech = GCRY_CIPHER_3DES;
@@ -257,6 +199,9 @@ crypto_encrypt (const char *cipher,
 	guint32 i;
 	gsize salt_len;
 
+	if (!crypto_init (error))
+		return NULL;
+
 	if (!strcmp (cipher, CIPHER_DES_EDE3_CBC)) {
 		cipher_mech = GCRY_CIPHER_3DES;
 		salt_len = SALT_LEN;
@@ -352,6 +297,9 @@ crypto_verify_cert (const unsigned char *data,
 	gnutls_datum_t dt;
 	int err;
 
+	if (!crypto_init (error))
+		return NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+
 	err = gnutls_x509_crt_init (&der);
 	if (err < 0) {
 		g_set_error (error, NM_CRYPTO_ERROR,
@@ -395,6 +343,9 @@ crypto_verify_pkcs12 (const guint8 *data,
 	int err;
 
 	g_return_val_if_fail (data != NULL, FALSE);
+
+	if (!crypto_init (error))
+		return FALSE;
 
 	dt.data = (unsigned char *) data;
 	dt.size = data_len;
@@ -450,6 +401,9 @@ crypto_verify_pkcs8 (const guint8 *data,
 
 	g_return_val_if_fail (data != NULL, FALSE);
 
+	if (!crypto_init (error))
+		return FALSE;
+
 	dt.data = (unsigned char *) data;
 	dt.size = data_len;
 
@@ -492,6 +446,9 @@ crypto_verify_pkcs8 (const guint8 *data,
 gboolean
 crypto_randomize (void *buffer, gsize buffer_len, GError **error)
 {
+	if (!crypto_init (error))
+		return FALSE;
+
 	gcry_randomize (buffer, buffer_len, GCRY_STRONG_RANDOM);
 	return TRUE;
 }

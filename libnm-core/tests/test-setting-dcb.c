@@ -19,6 +19,8 @@
  *
  */
 
+#include "config.h"
+
 #include <glib.h>
 #include <string.h>
 #include <nm-utils.h>
@@ -26,6 +28,7 @@
 #include "nm-setting-dcb.h"
 #include "nm-connection.h"
 #include "nm-errors.h"
+#include "gsystem-local-alloc.h"
 
 #define DCB_FLAGS_ALL (NM_SETTING_DCB_FLAG_ENABLE | \
                        NM_SETTING_DCB_FLAG_ADVERTISE | \
@@ -34,7 +37,7 @@
 static void
 test_dcb_flags_valid (void)
 {
-	NMSettingDcb *s_dcb;
+	gs_unref_object NMSettingDcb *s_dcb = NULL;
 	GError *error = NULL;
 	gboolean success;
 	guint i;
@@ -87,7 +90,7 @@ test_dcb_flags_valid (void)
 static void
 test_dcb_flags_invalid (void)
 {
-	NMSettingDcb *s_dcb;
+	gs_unref_object NMSettingDcb *s_dcb = NULL;
 	GError *error = NULL;
 	gboolean success;
 
@@ -146,7 +149,7 @@ test_dcb_flags_invalid (void)
 static void
 test_dcb_app_priorities (void)
 {
-	NMSettingDcb *s_dcb;
+	gs_unref_object NMSettingDcb *s_dcb = NULL;
 	GError *error = NULL;
 	gboolean success;
 
@@ -208,7 +211,7 @@ test_dcb_app_priorities (void)
 static void
 test_dcb_priorities_valid (void)
 {
-	NMSettingDcb *s_dcb;
+	gs_unref_object NMSettingDcb *s_dcb = NULL;
 	GError *error = NULL;
 	gboolean success;
 	guint i;
@@ -267,7 +270,7 @@ test_dcb_priorities_valid (void)
 static void
 test_dcb_bandwidth_sums (void)
 {
-	NMSettingDcb *s_dcb;
+	gs_unref_object NMSettingDcb *s_dcb = NULL;
 	GError *error = NULL;
 	gboolean success;
 
@@ -300,20 +303,14 @@ test_dcb_bandwidth_sums (void)
 
 #define TPATH "/libnm/settings/dcb/"
 
-int main (int argc, char **argv)
+int
+main (int argc, char **argv)
 {
-	GError *error = NULL;
-	gboolean success;
-
 	g_test_init (&argc, &argv, NULL);
 
 #if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
 #endif
-
-	success = nm_utils_init (&error);
-	g_assert_no_error (error);
-	g_assert (success);
 
 #if !GLIB_CHECK_VERSION(2,34,0)
 	g_log_set_always_fatal (G_LOG_LEVEL_CRITICAL);

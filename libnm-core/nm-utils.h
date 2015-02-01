@@ -15,7 +15,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2005 - 2013 Red Hat, Inc.
+ * Copyright 2005 - 2014 Red Hat, Inc.
  */
 
 #ifndef __NM_UTILS_H__
@@ -38,10 +38,6 @@
 #include "nm-setting-wireless-security.h"
 
 G_BEGIN_DECLS
-
-/* init, deinit nm_utils */
-gboolean nm_utils_init (GError **error);
-void     nm_utils_deinit (void);
 
 /* SSID helpers */
 gboolean    nm_utils_is_empty_ssid (const guint8 *ssid, gsize len);
@@ -97,8 +93,10 @@ gboolean nm_utils_wpa_psk_valid (const char *psk);
 
 GVariant  *nm_utils_ip4_dns_to_variant (char **dns);
 char     **nm_utils_ip4_dns_from_variant (GVariant *value);
-GVariant  *nm_utils_ip4_addresses_to_variant (GPtrArray *addresses);
-GPtrArray *nm_utils_ip4_addresses_from_variant (GVariant *value);
+GVariant  *nm_utils_ip4_addresses_to_variant (GPtrArray *addresses,
+                                              const char *gateway);
+GPtrArray *nm_utils_ip4_addresses_from_variant (GVariant *value,
+                                                char **out_gateway);
 GVariant  *nm_utils_ip4_routes_to_variant (GPtrArray *routes);
 GPtrArray *nm_utils_ip4_routes_from_variant (GVariant *value);
 
@@ -108,25 +106,35 @@ guint32 nm_utils_ip4_get_default_prefix (guint32 ip);
 
 GVariant  *nm_utils_ip6_dns_to_variant (char **dns);
 char     **nm_utils_ip6_dns_from_variant (GVariant *value);
-GVariant  *nm_utils_ip6_addresses_to_variant (GPtrArray *addresses);
-GPtrArray *nm_utils_ip6_addresses_from_variant (GVariant *value);
+GVariant  *nm_utils_ip6_addresses_to_variant (GPtrArray *addresses,
+                                              const char *gateway);
+GPtrArray *nm_utils_ip6_addresses_from_variant (GVariant *value,
+                                                char **out_gateway);
 GVariant  *nm_utils_ip6_routes_to_variant (GPtrArray *routes);
 GPtrArray *nm_utils_ip6_routes_from_variant (GVariant *value);
 
-char *nm_utils_uuid_generate (void);
-char *nm_utils_uuid_generate_from_string (const char *s);
+GVariant  *nm_utils_ip_addresses_to_variant (GPtrArray *addresses);
+GPtrArray *nm_utils_ip_addresses_from_variant (GVariant *value,
+                                               int family);
+GVariant  *nm_utils_ip_routes_to_variant (GPtrArray *routes);
+GPtrArray *nm_utils_ip_routes_from_variant (GVariant *value,
+                                            int family);
 
-GByteArray *nm_utils_rsa_key_encrypt (const guint8 *data,
-                                      gsize len,
-                                      const char *in_password,
-                                      char **out_password,
-                                      GError **error);
-GByteArray *nm_utils_rsa_key_encrypt_aes (const guint8 *data,
-                                          gsize len,
-                                          const char *in_password,
-                                          char **out_password,
-                                          GError **error);
+char *nm_utils_uuid_generate (void);
+
+gboolean nm_utils_file_is_certificate (const char *filename);
+gboolean nm_utils_file_is_private_key (const char *filename, gboolean *out_encrypted);
 gboolean nm_utils_file_is_pkcs12 (const char *filename);
+
+typedef gboolean (*NMUtilsFileSearchInPathsPredicate) (const char *filename, gpointer user_data);
+
+const char *nm_utils_file_search_in_paths (const char *progname,
+                                           const char *try_first,
+                                           const char *const *paths,
+                                           GFileTest file_test_flags,
+                                           NMUtilsFileSearchInPathsPredicate predicate,
+                                           gpointer user_data,
+                                           GError **error);
 
 guint32 nm_utils_wifi_freq_to_channel (guint32 freq);
 guint32 nm_utils_wifi_channel_to_freq (guint32 channel, const char *band);
@@ -156,9 +164,8 @@ gboolean    nm_utils_hwaddr_matches   (gconstpointer hwaddr1,
                                        gconstpointer hwaddr2,
                                        gssize        hwaddr2_len);
 
-char *nm_utils_bin2hexstr (const char *bytes, int len, int final_len);
-int   nm_utils_hex2byte   (const char *hex);
-char *nm_utils_hexstr2bin (const char *hex, size_t len);
+char *nm_utils_bin2hexstr (gconstpointer src, gsize len, int final_len);
+GBytes *nm_utils_hexstr2bin (const char *hex);
 
 gboolean    nm_utils_iface_valid_name(const char *name);
 
@@ -174,7 +181,14 @@ gboolean nm_utils_is_uuid (const char *str);
 const char *nm_utils_inet4_ntop (in_addr_t inaddr, char *dst);
 const char *nm_utils_inet6_ntop (const struct in6_addr *in6addr, char *dst);
 
+gboolean nm_utils_ipaddr_valid (int family, const char *ip);
+
 gboolean nm_utils_check_virtual_device_compatibility (GType virtual_type, GType other_type);
+
+NM_AVAILABLE_IN_1_2
+int nm_utils_bond_mode_string_to_int (const char *mode);
+NM_AVAILABLE_IN_1_2
+const char *nm_utils_bond_mode_int_to_string (int mode);
 
 G_END_DECLS
 

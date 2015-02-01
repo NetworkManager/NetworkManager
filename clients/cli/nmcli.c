@@ -16,7 +16,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2010 - 2014 Red Hat, Inc.
+ * Copyright 2010 - 2015 Red Hat, Inc.
  */
 
 /* Generated configuration file */
@@ -27,6 +27,8 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <pthread.h>
+#include <termios.h>
+#include <unistd.h>
 #include <locale.h>
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -34,12 +36,14 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 
+#include "polkit-agent.h"
 #include "nmcli.h"
 #include "utils.h"
 #include "common.h"
 #include "connections.h"
 #include "devices.h"
 #include "general.h"
+#include "agent.h"
 
 #if defined(NM_DIST_VERSION)
 # define NMCLI_VERSION NM_DIST_VERSION
@@ -61,6 +65,7 @@ typedef struct {
 /* --- Global variables --- */
 GMainLoop *loop = NULL;
 static sigset_t signal_set;
+struct termios termios_orig;
 
 
 /* Get an error quark for use with GError */
@@ -84,6 +89,7 @@ usage (const char *prog_name)
 	              "  -t[erse]                                   terse output\n"
 	              "  -p[retty]                                  pretty output\n"
 	              "  -m[ode] tabular|multiline                  output mode\n"
+	              "  -c[olors] auto|yes|no                      whether to use colors in output\n"
 	              "  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
 	              "  -e[scape] yes|no                           escape columns separators in values\n"
 	              "  -n[ocheck]                                 don't check nmcli and NetworkManager versions\n"
@@ -98,6 +104,7 @@ usage (const char *prog_name)
 	              "  r[adio]         NetworkManager radio switches\n"
 	              "  c[onnection]    NetworkManager's connections\n"
 	              "  d[evice]        devices managed by NetworkManager\n"
+	              "  a[gent]         NetworkManager secret agent or polkit agent\n"
 	              "\n"),
 	            prog_name);
 }
@@ -118,6 +125,7 @@ static const struct cmd {
 	{ "radio",      do_radio },
 	{ "connection", do_connections },
 	{ "device",     do_devices },
+	{ "agent",      do_agent },
 	{ "help",       do_help },
 	{ 0 }
 };
@@ -203,6 +211,24 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				return nmc->return_value;
 			}
+		} else if (matches (opt, "-colors") == 0) {
+			next_arg (&argc, &argv);
+			if (argc <= 1) {
+		 		g_string_printf (nmc->return_text, _("Error: missing argument for '%s' option."), opt);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return nmc->return_value;
+			}
+			if (matches (argv[1], "auto") == 0)
+				nmc->use_colors = NMC_USE_COLOR_AUTO;
+			else if (matches (argv[1], "yes") == 0)
+				nmc->use_colors = NMC_USE_COLOR_YES;
+			else if (matches (argv[1], "no") == 0)
+				nmc->use_colors = NMC_USE_COLOR_NO;
+			else {
+		 		g_string_printf (nmc->return_text, _("Error: '%s' is not valid argument for '%s' option."), argv[1], opt);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return nmc->return_value;
+			}
 		} else if (matches (opt, "-escape") == 0) {
 			next_arg (&argc, &argv);
 			if (argc <= 1) {
@@ -261,8 +287,10 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 		argv++;
 	}
 
-	if (argc > 1)
+	if (argc > 1) {
+		/* Now run the requested command */
 		return do_cmd (nmc, argv[1], argc-1, argv+1);
+	}
 
 	usage (base);
 	return nmc->return_value;
@@ -332,6 +360,7 @@ signal_handling_thread (void *arg) {
 				pthread_mutex_unlock (&sigint_mutex);
 			} else {
 				/* We can quit nmcli */
+				tcsetattr (STDIN_FILENO, TCSADRAIN, &termios_orig);
 				nmc_cleanup_readline ();
 				g_print (_("\nError: nmcli terminated by signal %s (%d)\n"),
 				         strsignal (signo), signo);
@@ -340,6 +369,7 @@ signal_handling_thread (void *arg) {
 			break;
 		case SIGQUIT:
 		case SIGTERM:
+			tcsetattr (STDIN_FILENO, TCSADRAIN, &termios_orig);
 			nmc_cleanup_readline ();
 			if (!nmcli_sigquit_internal)
 				g_print (_("\nError: nmcli terminated by signal %s (%d)\n"),
@@ -500,6 +530,10 @@ nmc_init (NmCli *nmc)
 
 	nmc->connections = NULL;
 
+	nmc->secret_agent = NULL;
+	nmc->pwds_hash = NULL;
+	nmc->pk_listener = NULL;
+
 	nmc->should_wait = FALSE;
 	nmc->nowait_flag = TRUE;
 	nmc->print_output = NMC_PRINT_NORMAL;
@@ -511,6 +545,7 @@ nmc_init (NmCli *nmc)
 	memset (&nmc->print_fields, '\0', sizeof (NmcPrintFields));
 	nmc->nocheck_ver = FALSE;
 	nmc->ask = FALSE;
+	nmc->use_colors = NMC_USE_COLOR_AUTO;
 	nmc->in_editor = FALSE;
 	nmc->editor_status_line = FALSE;
 	nmc->editor_save_confirmation = TRUE;
@@ -525,9 +560,19 @@ nmc_cleanup (NmCli *nmc)
 
 	g_string_free (nmc->return_text, TRUE);
 
+	if (nmc->secret_agent) {
+		/* Destroy secret agent if we have one. */
+		nm_secret_agent_old_unregister (nmc->secret_agent, NULL, NULL);
+		g_object_unref (nmc->secret_agent);
+	}
+	if (nmc->pwds_hash)
+		g_hash_table_destroy (nmc->pwds_hash);
+
 	g_free (nmc->required_fields);
 	nmc_empty_output_fields (nmc);
 	g_ptr_array_unref (nmc->output_data);
+
+	nmc_polkit_agent_fini (nmc);
 }
 
 static gboolean
@@ -565,6 +610,9 @@ main (int argc, char *argv[])
 #if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
 #endif
+	
+	/* Save terminal settings */
+	tcgetattr (STDIN_FILENO, &termios_orig);
 
 	/* readline init */
 	rl_event_hook = event_hook_for_readline;

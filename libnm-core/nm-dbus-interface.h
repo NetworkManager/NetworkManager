@@ -526,8 +526,6 @@ typedef enum {
 	NM_DEVICE_STATE_REASON_MODEM_FAILED = 57,
 	NM_DEVICE_STATE_REASON_MODEM_AVAILABLE = 58,
 	NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT = 59,
-
-	NM_DEVICE_STATE_REASON_LAST = 0xFFFF
 } NMDeviceStateReason;
 
 
@@ -573,6 +571,8 @@ typedef enum {
  *   results or carrier changes.
  * @NM_SECRET_AGENT_GET_SECRETS_FLAG_ONLY_SYSTEM: Internal flag, not part of
  *   the D-Bus API.
+ * @NM_SECRET_AGENT_GET_SECRETS_FLAG_NO_ERRORS: Internal flag, not part of
+ *   the D-Bus API.
  *
  * #NMSecretAgentGetSecretsFlags values modify the behavior of a GetSecrets request.
  *
@@ -585,7 +585,8 @@ typedef enum { /*< flags >*/
 	NM_SECRET_AGENT_GET_SECRETS_FLAG_USER_REQUESTED = 0x4,
 
 	/* Internal to NM; not part of the D-Bus API */
-	NM_SECRET_AGENT_GET_SECRETS_FLAG_ONLY_SYSTEM = 0x80000000
+	NM_SECRET_AGENT_GET_SECRETS_FLAG_ONLY_SYSTEM = 0x80000000,
+	NM_SECRET_AGENT_GET_SECRETS_FLAG_NO_ERRORS = 0x40000000,
 } NMSecretAgentGetSecretsFlags;
 
 /**

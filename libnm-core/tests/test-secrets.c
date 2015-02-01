@@ -19,6 +19,8 @@
  *
  */
 
+#include "config.h"
+
 #include <glib.h>
 #include <string.h>
 
@@ -125,7 +127,7 @@ make_tls_connection (const char *detail, NMSetting8021xCKScheme scheme)
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
 	        detail, "failed to verify connection: %s",
@@ -174,6 +176,7 @@ test_need_tls_secrets_path (void)
 			"need-tls-secrets-path-key-password",
 			"expected to require private key password, but it wasn't");
 
+	g_ptr_array_free (hints, TRUE);
 	g_object_unref (connection);
 }
 
@@ -217,6 +220,7 @@ test_need_tls_secrets_blob (void)
 			"need-tls-secrets-blob-key-password",
 			"expected to require private key password, but it wasn't");
 
+	g_ptr_array_free (hints, TRUE);
 	g_object_unref (connection);
 }
 
@@ -293,7 +297,7 @@ make_tls_phase2_connection (const char *detail, NMSetting8021xCKScheme scheme)
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
 	        detail, "failed to verify connection: %s",
@@ -343,6 +347,7 @@ test_need_tls_phase2_secrets_path (void)
 			"need-tls-phase2-secrets-path-key-password",
 			"expected to require private key password, but it wasn't");
 
+	g_ptr_array_free (hints, TRUE);
 	g_object_unref (connection);
 }
 
@@ -387,6 +392,7 @@ test_need_tls_phase2_secrets_blob (void)
 			"need-tls-phase2-secrets-blob-key-password",
 			"expected to require private key password, but it wasn't");
 
+	g_ptr_array_free (hints, TRUE);
 	g_object_unref (connection);
 }
 
@@ -557,8 +563,8 @@ test_update_secrets_wifi_bad_setting_name (void)
 	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_SETTING_NOT_FOUND);
 	g_assert (success == FALSE);
 
+	g_clear_error (&error);
 	g_variant_unref (secrets);
-
 	g_object_unref (connection);
 }
 
@@ -666,6 +672,7 @@ test_update_secrets_whole_connection_bad_setting (void)
 	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_SETTING_NOT_FOUND);
 	g_assert (success == FALSE);
 
+	g_clear_error (&error);
 	g_variant_unref (copy);
 	g_object_unref (connection);
 }

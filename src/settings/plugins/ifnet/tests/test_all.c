@@ -20,6 +20,8 @@
  * Copyright (C) 1999-2010 Gentoo Foundation, Inc.
  */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <glib.h>
@@ -160,25 +162,14 @@ test_is_ip6_address (void)
 }
 
 static void
-check_ip_block (ip_block * iblock, gchar * ip, gchar * netmask, gchar * gateway)
+check_ip_block (ip_block * iblock, gchar * ip, guint32 prefix, gchar * gateway)
 {
-	char *str;
-	guint32 tmp_ip4_addr;
-
-	str = malloc (INET_ADDRSTRLEN);
-	tmp_ip4_addr = iblock->ip;
-	inet_ntop (AF_INET, &tmp_ip4_addr, str, INET_ADDRSTRLEN);
-	ASSERT (strcmp (ip, str) == 0, "check ip",
-		"ip expected:%s, find:%s", ip, str);
-	tmp_ip4_addr = iblock->netmask;
-	inet_ntop (AF_INET, &tmp_ip4_addr, str, INET_ADDRSTRLEN);
-	ASSERT (strcmp (netmask, str) == 0, "check netmask",
-		"netmask expected:%s, find:%s", netmask, str);
-	tmp_ip4_addr = iblock->gateway;
-	inet_ntop (AF_INET, &tmp_ip4_addr, str, INET_ADDRSTRLEN);
-	ASSERT (strcmp (gateway, str) == 0, "check gateway",
-		"gateway expected:%s, find:%s", gateway, str);
-	free (str);
+	ASSERT (strcmp (ip, iblock->ip) == 0, "check ip",
+		"ip expected:%s, find:%s", ip, iblock->ip);
+	ASSERT (prefix == iblock->prefix, "check netmask",
+		"prefix expected:%d, find:%d", prefix, iblock->prefix);
+	ASSERT (g_strcmp0 (gateway, iblock->next_hop) == 0, "check gateway",
+		"gateway expected:%s, find:%s", gateway, iblock->next_hop);
 }
 
 static void
@@ -189,14 +180,12 @@ test_convert_ipv4_config_block (void)
 
 	ASSERT (iblock != NULL, "convert ipv4 block",
 		"block eth0 should not be NULL");
-	check_ip_block (iblock, "202.117.16.121", "255.255.255.0",
-			"202.117.16.1");
+	check_ip_block (iblock, "202.117.16.121", 24, "202.117.16.1");
 	iblock = iblock->next;
 	destroy_ip_block (tmp);
 	ASSERT (iblock != NULL, "convert ipv4 block",
 		"block eth0 should have a second IP address");
-	check_ip_block (iblock, "192.168.4.121", "255.255.255.0",
-			"202.117.16.1");
+	check_ip_block (iblock, "192.168.4.121", 24, "202.117.16.1");
 	destroy_ip_block (iblock);
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
@@ -206,7 +195,7 @@ test_convert_ipv4_config_block (void)
 	ASSERT (iblock != NULL
 		&& iblock->next == NULL,
 		"convert error IPv4 address", "should only get one address");
-	check_ip_block (iblock, "192.168.4.121", "255.255.255.0", "0.0.0.0");
+	check_ip_block (iblock, "192.168.4.121", 24, NULL);
 	destroy_ip_block (iblock);
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
@@ -214,7 +203,6 @@ test_convert_ipv4_config_block (void)
 	iblock = convert_ip4_config_block ("eth3");
 	ASSERT (iblock == NULL, "convert config_block",
 		"convert error configuration");
-	destroy_ip_block (iblock);
 }
 
 static void
@@ -224,7 +212,7 @@ test_convert_ipv4_routes_block (void)
 	ip_block *tmp = iblock;
 
 	ASSERT (iblock != NULL, "convert ip4 routes", "should get one route");
-	check_ip_block (iblock, "192.168.4.0", "255.255.255.0", "192.168.4.1");
+	check_ip_block (iblock, "192.168.4.0", 24, "192.168.4.1");
 	iblock = iblock->next;
 	destroy_ip_block (tmp);
 	ASSERT (iblock == NULL, "convert ip4 routes",
@@ -234,7 +222,7 @@ test_convert_ipv4_routes_block (void)
 	tmp = iblock;
 
 	ASSERT (iblock != NULL, "convert ip4 routes", "should get one route");
-	check_ip_block (iblock, "10.0.0.0", "255.0.0.0", "192.168.0.1");
+	check_ip_block (iblock, "10.0.0.0", 8, "192.168.0.1");
 	iblock = iblock->next;
 	destroy_ip_block (tmp);
 	ASSERT (iblock == NULL, "convert ip4 routes",

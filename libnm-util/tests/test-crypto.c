@@ -21,6 +21,8 @@
  * Copyright 2007 - 2011 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <glib.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -94,7 +96,7 @@ out:
 static void
 test_cert (gconstpointer test_data)
 {
-	char *path;
+	gs_free char *path = NULL;
 	GByteArray *array;
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 	GError *error = NULL;
@@ -151,6 +153,7 @@ test_load_private_key (const char *path,
 		        "unexpected failure determining private key file '%s' "
 		        "type with invalid password (expected %d, got %d)",
 		        path, NM_CRYPTO_KEY_TYPE_UNKNOWN, key_type);
+		g_clear_error (&error);
 		return;
 	}
 
@@ -181,6 +184,7 @@ test_load_private_key (const char *path,
 		g_byte_array_free (decrypted, TRUE);
 	}
 
+	g_clear_error (&error);
 	g_byte_array_free (array, TRUE);
 }
 
@@ -205,6 +209,7 @@ test_load_pkcs12 (const char *path,
 			    "%d): %d %s",
 			    path, NM_CRYPTO_FILE_FORMAT_PKCS12, format, error->code, error->message);
 	}
+	g_clear_error (&error);
 }
 
 static void
@@ -410,7 +415,6 @@ int
 main (int argc, char **argv)
 {
 	GError *error = NULL;
-	int ret;
 
 	nmtst_init (&argc, &argv, TRUE);
 
@@ -460,10 +464,6 @@ main (int argc, char **argv)
 	                      "pkcs8-enc-key.pem, 1234567890",
 	                      test_pkcs8);
 
-	ret = g_test_run ();
-
-	crypto_deinit ();
-
-	return ret;
+	return g_test_run ();
 }
 

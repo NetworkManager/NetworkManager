@@ -1,3 +1,52 @@
+===============================================
+NetworkManager-1.0
+Overview of changes since NetworkManager-0.9.10
+===============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* A new 'libnm' GObject-based client library to replace libnm-util/libnm-glib
+  - IP address, IP route, hardware address, and other properties are now
+      represented as strings
+  - Based on GIO's GDBus bindings instead of dbus-glib
+  - Uses modern GObject APIs including GAsyncResult and GVariant
+  - For more information see https://wiki.gnome.org/Projects/NetworkManager/libnm
+* Devices and VPN connections now have individual default routes.  Priorities
+    are handled through configurable route metrics.
+* nmcli now supports password requests and PolicyKit authorizations
+* A faster, lighter-weight (though less capable) internal DHCP client has been
+    added and may be selected with the "dhcp=internal" option.  It supports
+    fewer DHCP options and does not yet support DHCPv6.
+* A new 'configure-and-quit=yes' option has been added for environments with
+    less dynamic network configuration
+* When running on 3.17 and later kernels, NetworkManager handles IPv6LL address
+    assignment to ensure that IPv6 connectivity is not enabled until
+    intentionally configured by the user
+* NetworkManager no longer causes the nl80211 kernel module to be loaded on
+    systems with no Wi-Fi devices
+* Bluetooth DUN support now works with Bluez 5.x
+* VPN connections can now persist across link changes and suspend/resume if
+    their VPN plugin supports this feature
+* A new 'ibft' settings plugin has been added to support firmware-based
+    iBFT/iSCSI configurations.  This functionality has been moved to 'ibft'
+    from the 'ifcfg-rh' plugin.
+* IPv6 router advertisement MTUs are now respected
+* NetworkManager no longer requires polkit libraries at runtime when Polkit
+    support is enabled, and Polkit can be disabled at build time too
+* Automatically created connections are now deleted when their device goes away
+* 'nmcli dev connect' now attemts to create a connection if none exists
+* Manually configured static IPv6 configuration is kept even if SLAAC fails
+* Manpages for the 'keyfile' and 'ifcfg-rh' plugins now describe their
+    configuration syntax and available options
+* WWAN connections now support IPv6 if the modem and provider support IPv6
+* Software devices (bridge, bond, team, etc) can now be deleted from the D-Bus
+    API or with nmcli
+* The manpages, documentation, and API annotations have received many cleanups
+* Externally created virtual interfaces are no longer managed by NetworkManager
+    until they are set "up" or activated via nmcli
+* Team device support is now an optional plugin
+
+
 ==============================================
 NetworkManager-0.9.10
 Overview of changes since NetworkManager-0.9.8
@@ -41,7 +90,7 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * The dispatcher timeout has increased to 10 minutes, and new "pre-up" and
     "pre-down" events have been added which block activation until complete
 * NetworkManager no longer prevents Wake-on-LAN functionality from working
-* PPPoE now requires userland "rp-pppoe" to work around kernel bugs with
+* PPPoE now requires userland "rp-pppoe" to work around kernel bugs
     that prevent detecting server-side termination of the PPP link
 * An ARP announcement is now sent after IPv4 addresses are configured
 * Added a DNS plugin for dnssec-trigger for better DNSSEC operation

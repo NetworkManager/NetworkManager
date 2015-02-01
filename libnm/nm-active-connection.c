@@ -19,6 +19,8 @@
  * Copyright 2008 Novell, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 
 #include "nm-dbus-interface.h"
@@ -57,11 +59,11 @@ typedef struct {
 	GPtrArray *devices;
 	NMActiveConnectionState state;
 	gboolean is_default;
-	NMIP4Config *ip4_config;
-	NMDhcp4Config *dhcp4_config;
+	NMIPConfig *ip4_config;
+	NMDhcpConfig *dhcp4_config;
 	gboolean is_default6;
-	NMIP6Config *ip6_config;
-	NMDhcp6Config *dhcp6_config;
+	NMIPConfig *ip6_config;
+	NMDhcpConfig *dhcp6_config;
 	gboolean is_vpn;
 	NMDevice *master;
 } NMActiveConnectionPrivate;
@@ -242,13 +244,12 @@ nm_active_connection_get_default (NMActiveConnection *connection)
  * nm_active_connection_get_ip4_config:
  * @connection: an #NMActiveConnection
  *
- * Gets the current #NMIP4Config associated with the #NMActiveConnection.
+ * Gets the current IPv4 #NMIPConfig associated with the #NMActiveConnection.
  *
- * Returns: (transfer none): the #NMIP4Config, or %NULL if the
- *   connection is not in the %NM_ACTIVE_CONNECTION_STATE_ACTIVATED
- *   state.
+ * Returns: (transfer none): the IPv4 #NMIPConfig, or %NULL if the connection is
+ *   not in the %NM_ACTIVE_CONNECTION_STATE_ACTIVATED state.
  **/
-NMIP4Config *
+NMIPConfig *
 nm_active_connection_get_ip4_config (NMActiveConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
@@ -260,14 +261,14 @@ nm_active_connection_get_ip4_config (NMActiveConnection *connection)
  * nm_active_connection_get_dhcp4_config:
  * @connection: an #NMActiveConnection
  *
- * Gets the current #NMDhcp4Config (if any) associated with the
+ * Gets the current IPv4 #NMDhcpConfig (if any) associated with the
  * #NMActiveConnection.
  *
- * Returns: (transfer none): the #NMDhcp4Config, or %NULL if the
- *   connection does not use DHCP, or is not in the
- *   %NM_ACTIVE_CONNECTION_STATE_ACTIVATED state.
+ * Returns: (transfer none): the IPv4 #NMDhcpConfig, or %NULL if the connection
+ *   does not use DHCP, or is not in the %NM_ACTIVE_CONNECTION_STATE_ACTIVATED
+ *   state.
  **/
-NMDhcp4Config *
+NMDhcpConfig *
 nm_active_connection_get_dhcp4_config (NMActiveConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
@@ -296,13 +297,12 @@ nm_active_connection_get_default6 (NMActiveConnection *connection)
  * nm_active_connection_get_ip6_config:
  * @connection: an #NMActiveConnection
  *
- * Gets the current #NMIP6Config associated with the #NMActiveConnection.
+ * Gets the current IPv6 #NMIPConfig associated with the #NMActiveConnection.
  *
- * Returns: (transfer none): the #NMIP6Config, or %NULL if the
- *   connection is not in the %NM_ACTIVE_CONNECTION_STATE_ACTIVATED
- *   state.
+ * Returns: (transfer none): the IPv6 #NMIPConfig, or %NULL if the connection is
+ *   not in the %NM_ACTIVE_CONNECTION_STATE_ACTIVATED state.
  **/
-NMIP6Config *
+NMIPConfig *
 nm_active_connection_get_ip6_config (NMActiveConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
@@ -314,14 +314,14 @@ nm_active_connection_get_ip6_config (NMActiveConnection *connection)
  * nm_active_connection_get_dhcp6_config:
  * @connection: an #NMActiveConnection
  *
- * Gets the current #NMDhcp6Config (if any) associated with the
+ * Gets the current IPv6 #NMDhcpConfig (if any) associated with the
  * #NMActiveConnection.
  *
- * Returns: (transfer none): the #NMDhcp6Config, or %NULL if the
- *   connection does not use DHCPv6, or is not in the
- *   %NM_ACTIVE_CONNECTION_STATE_ACTIVATED state.
+ * Returns: (transfer none): the IPv6 #NMDhcpConfig, or %NULL if the connection
+ *   does not use DHCPv6, or is not in the %NM_ACTIVE_CONNECTION_STATE_ACTIVATED
+ *   state.
  **/
-NMDhcp6Config *
+NMDhcpConfig *
 nm_active_connection_get_dhcp6_config (NMActiveConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
@@ -631,24 +631,24 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	/**
 	 * NMActiveConnection:ip4-config:
 	 *
-	 * The #NMIP4Config of the connection.
+	 * The IPv4 #NMIPConfig of the connection.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_IP4_CONFIG,
 		 g_param_spec_object (NM_ACTIVE_CONNECTION_IP4_CONFIG, "", "",
-		                      NM_TYPE_IP4_CONFIG,
+		                      NM_TYPE_IP_CONFIG,
 		                      G_PARAM_READABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMActiveConnection:dhcp4-config:
 	 *
-	 * The #NMDhcp4Config of the connection.
+	 * The IPv4 #NMDhcpConfig of the connection.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DHCP4_CONFIG,
 		 g_param_spec_object (NM_ACTIVE_CONNECTION_DHCP4_CONFIG, "", "",
-		                      NM_TYPE_DHCP4_CONFIG,
+		                      NM_TYPE_DHCP_CONFIG,
 		                      G_PARAM_READABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
@@ -667,24 +667,24 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	/**
 	 * NMActiveConnection:ip6-config:
 	 *
-	 * The #NMIP6Config of the connection.
+	 * The IPv6 #NMIPConfig of the connection.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_IP6_CONFIG,
 		 g_param_spec_object (NM_ACTIVE_CONNECTION_IP6_CONFIG, "", "",
-		                      NM_TYPE_IP6_CONFIG,
+		                      NM_TYPE_IP_CONFIG,
 		                      G_PARAM_READABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMActiveConnection:dhcp6-config:
 	 *
-	 * The #NMDhcp6Config of the connection.
+	 * The IPv6 #NMDhcpConfig of the connection.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DHCP6_CONFIG,
 		 g_param_spec_object (NM_ACTIVE_CONNECTION_DHCP6_CONFIG, "", "",
-		                      NM_TYPE_DHCP6_CONFIG,
+		                      NM_TYPE_DHCP_CONFIG,
 		                      G_PARAM_READABLE |
 		                      G_PARAM_STATIC_STRINGS));
 

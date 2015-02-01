@@ -19,6 +19,8 @@
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
+#include "config.h"
+
 #include <arpa/inet.h>
 #include <netinet/in.h>
 

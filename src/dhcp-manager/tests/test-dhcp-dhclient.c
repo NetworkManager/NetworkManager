@@ -18,34 +18,51 @@
  *
  */
 
+#include "config.h"
+
 #include <glib.h>
 #include <string.h>
 #include <unistd.h>
+#include <arpa/inet.h>
 
+#include "gsystem-local-alloc.h"
+#include "NetworkManagerUtils.h"
 #include "nm-dhcp-dhclient-utils.h"
+#include "nm-dhcp-utils.h"
 #include "nm-utils.h"
 #include "nm-ip4-config.h"
 #include "nm-platform.h"
+#include "nm-utils-internal.h"
 
-#define DEBUG 0
+#define DEBUG 1
 
 static void
 test_config (const char *orig,
              const char *expected,
+             gboolean ipv6,
              const char *hostname,
              const char *dhcp_client_id,
+             GBytes *expected_new_client_id,
              const char *iface,
              const char *anycast_addr)
 {
-	char *new;
+	gs_free char *new = NULL;
+	gs_unref_bytes GBytes *client_id = NULL;
+	gs_unref_bytes GBytes *new_client_id = NULL;
+
+	if (dhcp_client_id) {
+		client_id = nm_dhcp_utils_client_id_string_to_bytes (dhcp_client_id);
+		g_assert (client_id);
+	}
 
 	new = nm_dhcp_dhclient_create_config (iface,
-	                                      FALSE,
-	                                      dhcp_client_id,
+	                                      ipv6,
+	                                      client_id,
 	                                      anycast_addr,
 	                                      hostname,
 	                                      "/path/to/dhclient.conf",
-	                                      orig);
+	                                      orig,
+	                                      &new_client_id);
 	g_assert (new != NULL);
 
 #if DEBUG
@@ -59,9 +76,13 @@ test_config (const char *orig,
 		           new, expected);
 	}
 #endif
-	g_assert (strlen (new) == strlen (expected));
-	g_assert (strcmp (new, expected) == 0);
-	g_free (new);
+	g_assert_cmpstr (new, ==, expected);
+
+	if (expected_new_client_id) {
+		g_assert (new_client_id);
+		g_assert (g_bytes_equal (new_client_id, expected_new_client_id));
+	 } else
+		g_assert (new_client_id == NULL);
 }
 
 /*******************************************/
@@ -83,11 +104,7 @@ static const char *orig_missing_expected = \
 static void
 test_orig_missing (void)
 {
-	test_config (NULL, orig_missing_expected,
-	             NULL,
-	             NULL,
-	             "eth0",
-	             NULL);
+	test_config (NULL, orig_missing_expected, FALSE, NULL, NULL, NULL, "eth0", NULL);
 }
 
 /*******************************************/
@@ -116,8 +133,9 @@ static void
 test_override_client_id (void)
 {
 	test_config (override_client_id_orig, override_client_id_expected,
-	             NULL,
+	             FALSE, NULL,
 	             "11:22:33:44:55:66",
+	             NULL,
 	             "eth0",
 	             NULL);
 }
@@ -144,8 +162,9 @@ static void
 test_quote_client_id (void)
 {
 	test_config (NULL, quote_client_id_expected,
-	             NULL,
+	             FALSE, NULL,
 	             "1234",
+	             NULL,
 	             "eth0",
 	             NULL);
 }
@@ -172,8 +191,9 @@ static void
 test_ascii_client_id (void)
 {
 	test_config (NULL, ascii_client_id_expected,
-	             NULL,
+	             FALSE, NULL,
 	             "qb:cd:ef:12:34:56",
+	             NULL,
 	             "eth0",
 	             NULL);
 }
@@ -183,7 +203,7 @@ test_ascii_client_id (void)
 static const char *hex_single_client_id_expected = \
 	"# Created by NetworkManager\n"
 	"\n"
-	"send dhcp-client-identifier ab:cd:e:12:34:56; # added by NetworkManager\n"
+	"send dhcp-client-identifier ab:cd:0e:12:34:56; # added by NetworkManager\n"
 	"\n"
 	"option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n"
 	"option ms-classless-static-routes code 249 = array of unsigned integer 8;\n"
@@ -200,8 +220,86 @@ static void
 test_hex_single_client_id (void)
 {
 	test_config (NULL, hex_single_client_id_expected,
-	             NULL,
+	             FALSE, NULL,
 	             "ab:cd:e:12:34:56",
+	             NULL,
+	             "eth0",
+	             NULL);
+}
+
+/*******************************************/
+
+static const char *existing_hex_client_id_orig = \
+	"send dhcp-client-identifier 00:30:04:20:7A:08;\n";
+
+static const char *existing_hex_client_id_expected = \
+	"# Created by NetworkManager\n"
+	"# Merged from /path/to/dhclient.conf\n"
+	"\n"
+	"send dhcp-client-identifier 00:30:04:20:7A:08;\n"
+	"\n"
+	"option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n"
+	"option ms-classless-static-routes code 249 = array of unsigned integer 8;\n"
+	"option wpad code 252 = string;\n"
+	"\n"
+	"also request rfc3442-classless-static-routes;\n"
+	"also request ms-classless-static-routes;\n"
+	"also request static-routes;\n"
+	"also request wpad;\n"
+	"also request ntp-servers;\n"
+	"\n";
+
+static void
+test_existing_hex_client_id (void)
+{
+	gs_unref_bytes GBytes *new_client_id = NULL;
+	const guint8 bytes[] = { 0x00, 0x30, 0x04,0x20, 0x7A, 0x08 };
+
+	new_client_id = g_bytes_new (bytes, sizeof (bytes));
+	test_config (existing_hex_client_id_orig, existing_hex_client_id_expected,
+	             FALSE, NULL,
+	             NULL,
+	             new_client_id,
+	             "eth0",
+	             NULL);
+}
+
+/*******************************************/
+
+#define EACID "qb:cd:ef:12:34:56"
+
+static const char *existing_ascii_client_id_orig = \
+	"send dhcp-client-identifier \"" EACID "\";\n";
+
+static const char *existing_ascii_client_id_expected = \
+	"# Created by NetworkManager\n"
+	"# Merged from /path/to/dhclient.conf\n"
+	"\n"
+	"send dhcp-client-identifier \"" EACID "\";\n"
+	"\n"
+	"option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n"
+	"option ms-classless-static-routes code 249 = array of unsigned integer 8;\n"
+	"option wpad code 252 = string;\n"
+	"\n"
+	"also request rfc3442-classless-static-routes;\n"
+	"also request ms-classless-static-routes;\n"
+	"also request static-routes;\n"
+	"also request wpad;\n"
+	"also request ntp-servers;\n"
+	"\n";
+
+static void
+test_existing_ascii_client_id (void)
+{
+	gs_unref_bytes GBytes *new_client_id = NULL;
+	char buf[STRLEN (EACID) + 1] = { 0 };
+
+	memcpy (buf + 1, EACID, STRLEN (EACID));
+	new_client_id = g_bytes_new (buf, sizeof (buf));
+	test_config (existing_ascii_client_id_orig, existing_ascii_client_id_expected,
+	             FALSE, NULL,
+	             NULL,
+	             new_client_id,
 	             "eth0",
 	             NULL);
 }
@@ -232,7 +330,59 @@ static void
 test_override_hostname (void)
 {
 	test_config (override_hostname_orig, override_hostname_expected,
-	             "blahblah",
+	             FALSE, "blahblah",
+	             NULL,
+	             NULL,
+	             "eth0",
+	             NULL);
+}
+
+/*******************************************/
+
+static const char *override_hostname6_orig = \
+	"send fqdn.fqdn \"foobar\";\n";
+
+static const char *override_hostname6_expected = \
+	"# Created by NetworkManager\n"
+	"# Merged from /path/to/dhclient.conf\n"
+	"\n"
+	"send fqdn.fqdn \"blahblah.local\"; # added by NetworkManager\n"
+	"send fqdn.encoded on;\n"
+	"send fqdn.server-update on;\n"
+	"\n"
+	"also request dhcp6.name-servers;\n"
+	"also request dhcp6.domain-search;\n"
+	"also request dhcp6.client-id;\n"
+	"\n";
+
+static void
+test_override_hostname6 (void)
+{
+	test_config (override_hostname6_orig, override_hostname6_expected,
+	             TRUE, "blahblah.local",
+	             NULL,
+	             NULL,
+	             "eth0",
+	             NULL);
+}
+
+/*******************************************/
+
+static const char *nonfqdn_hostname6_expected = \
+	"# Created by NetworkManager\n"
+	"\n"
+	"also request dhcp6.name-servers;\n"
+	"also request dhcp6.domain-search;\n"
+	"also request dhcp6.client-id;\n"
+	"\n";
+
+static void
+test_nonfqdn_hostname6 (void)
+{
+	/* Non-FQDN hostname can't be used with dhclient */
+	test_config (NULL, nonfqdn_hostname6_expected,
+	             TRUE, "blahblah",
+	             NULL,
 	             NULL,
 	             "eth0",
 	             NULL);
@@ -266,6 +416,7 @@ static void
 test_existing_alsoreq (void)
 {
 	test_config (existing_alsoreq_orig, existing_alsoreq_expected,
+	             FALSE, NULL,
 	             NULL,
 	             NULL,
 	             "eth0",
@@ -304,6 +455,7 @@ static void
 test_existing_multiline_alsoreq (void)
 {
 	test_config (existing_multiline_alsoreq_orig, existing_multiline_alsoreq_expected,
+	             FALSE, NULL,
 	             NULL,
 	             NULL,
 	             "eth0",
@@ -330,6 +482,9 @@ test_one_duid (const char *escaped, const guint8 *unescaped, guint len)
 	g_assert (w);
 	g_assert_cmpint (strlen (escaped), ==, strlen (w));
 	g_assert_cmpstr (escaped, ==, w);
+
+	g_byte_array_free (t, TRUE);
+	g_free (w);
 }
 
 static void
@@ -498,7 +653,7 @@ test_read_lease_ip4_config_basic (void)
 
 	/* Date from before the least expiration */
 	now = g_date_time_new_utc (2013, 11, 1, 19, 55, 32);
-	leases = nm_dhcp_dhclient_read_lease_ip_configs ("wlan0", contents, FALSE, now);
+	leases = nm_dhcp_dhclient_read_lease_ip_configs ("wlan0", -1, contents, FALSE, now);
 	g_assert_cmpint (g_slist_length (leases), ==, 2);
 
 	/* IP4Config #1 */
@@ -570,7 +725,7 @@ test_read_lease_ip4_config_expired (void)
 
 	/* Date from *after* the lease expiration */
 	now = g_date_time_new_utc (2013, 12, 1, 19, 55, 32);
-	leases = nm_dhcp_dhclient_read_lease_ip_configs ("wlan0", contents, FALSE, now);
+	leases = nm_dhcp_dhclient_read_lease_ip_configs ("wlan0", -1, contents, FALSE, now);
 	g_assert (leases == NULL);
 
 	g_date_time_unref (now);
@@ -592,7 +747,7 @@ test_read_lease_ip4_config_expect_failure (gconstpointer user_data)
 
 	/* Date from before the least expiration */
 	now = g_date_time_new_utc (2013, 11, 1, 1, 1, 1);
-	leases = nm_dhcp_dhclient_read_lease_ip_configs ("wlan0", contents, FALSE, now);
+	leases = nm_dhcp_dhclient_read_lease_ip_configs ("wlan0", -1, contents, FALSE, now);
 	g_assert (leases == NULL);
 
 	g_date_time_unref (now);
@@ -615,7 +770,11 @@ main (int argc, char **argv)
 	g_test_add_func ("/dhcp/dhclient/quote_client_id", test_quote_client_id);
 	g_test_add_func ("/dhcp/dhclient/ascii_client_id", test_ascii_client_id);
 	g_test_add_func ("/dhcp/dhclient/hex_single_client_id", test_hex_single_client_id);
+	g_test_add_func ("/dhcp/dhclient/existing-hex-client-id", test_existing_hex_client_id);
+	g_test_add_func ("/dhcp/dhclient/existing-ascii-client-id", test_existing_ascii_client_id);
 	g_test_add_func ("/dhcp/dhclient/override_hostname", test_override_hostname);
+	g_test_add_func ("/dhcp/dhclient/override_hostname6", test_override_hostname6);
+	g_test_add_func ("/dhcp/dhclient/nonfqdn_hostname6", test_nonfqdn_hostname6);
 	g_test_add_func ("/dhcp/dhclient/existing_alsoreq", test_existing_alsoreq);
 	g_test_add_func ("/dhcp/dhclient/existing_multiline_alsoreq", test_existing_multiline_alsoreq);
 	g_test_add_func ("/dhcp/dhclient/duids", test_duids);

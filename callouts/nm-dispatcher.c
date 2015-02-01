@@ -18,6 +18,8 @@
  * Copyright (C) 2008 - 2012 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <syslog.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -294,7 +296,7 @@ script_timeout_cb (gpointer user_data)
 
 	if (kill (script->pid, 0) == 0)
 		kill (script->pid, SIGKILL);
-	waitpid (script->pid, NULL, 0);
+	(void) waitpid (script->pid, NULL, 0);
 
 	script->error = g_strdup_printf ("Script '%s' timed out.", script->script);
 	script->result = DISPATCH_RESULT_TIMEOUT;
@@ -359,15 +361,6 @@ check_filename (const char *file_name)
 	return TRUE;
 }
 
-static void
-child_setup (gpointer user_data G_GNUC_UNUSED)
-{
-	/* We are in the child process at this point */
-	/* Give child a different process group to ensure signal separation. */
-	pid_t pid = getpid ();
-	setpgid (pid, pid);
-}
-
 #define SCRIPT_TIMEOUT 600  /* 10 minutes */
 
 static void
@@ -385,7 +378,7 @@ dispatch_one_script (Request *request)
 	if (request->debug)
 		g_message ("Running script '%s'", script->script);
 
-	if (g_spawn_async ("/", argv, request->envp, G_SPAWN_DO_NOT_REAP_CHILD, child_setup, request, &script->pid, &error)) {
+	if (g_spawn_async ("/", argv, request->envp, G_SPAWN_DO_NOT_REAP_CHILD, NULL, request, &script->pid, &error)) {
 		request->script_watch_id = g_child_watch_add (script->pid, (GChildWatchFunc) script_watch_cb, script);
 		request->script_timeout_id = g_timeout_add_seconds (SCRIPT_TIMEOUT, script_timeout_cb, script);
 	} else {

@@ -18,6 +18,8 @@
  *
  */
 
+#include "config.h"
+
 #include <glib.h>
 #include <string.h>
 #include <errno.h>
@@ -135,7 +137,10 @@ test_nm_utils_kill_child_create_and_join_pgroup (void)
 	g_assert (err == 0);
 
 	pgid = fork();
-	g_assert (pgid >= 0);
+	if (pgid < 0) {
+		g_assert_not_reached ();
+		return pgid;
+	}
 
 	if (pgid == 0) {
 		/* child process... */
@@ -297,6 +302,7 @@ test_nm_utils_kill_child (void)
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*kill child process 'test-a-3-0' (*): unexpected error sending Unexpected signal: Invalid argument (22)");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_DEBUG, "*kill child process 'test-a-3-0' (*): invoke callback: killing child failed");
+	/* coverity[negative_returns] */
 	test_nm_utils_kill_child_async_do ("test-a-3-0", pid3a, -1, 1000 / 2, FALSE, NULL);
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_DEBUG, "*kill child process 'test-a-3-1' (*): wait for process to terminate after sending SIGTERM (15) (send SIGKILL in 500 milliseconds)...");

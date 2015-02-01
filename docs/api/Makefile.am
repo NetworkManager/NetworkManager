@@ -15,7 +15,7 @@ GENERATED_FILES = spec.html
 
 if SETTING_DOCS_AVAILABLE
 
-settings-spec.xml: settings-spec.xsl $(top_builddir)/libnm-util/nm-setting-docs.xml
+settings-spec.xml: settings-spec.xsl $(top_builddir)/libnm/nm-setting-docs.xml
 	$(AM_V_GEN) xsltproc --output $@ $^
 
 # Top-level SGML file includes (depends on) settings-spec.xml
@@ -59,6 +59,7 @@ MKHTML_OPTIONS=--path="$(abs_srcdir)"
 content_files = \
 	version.xml \
 	migrating-to-09.xml \
+	../../COPYING \
 	$(NULL)
 
 include $(top_srcdir)/gtk-doc.make
@@ -70,5 +71,10 @@ CLEANFILES += html/* tmpl/* xml/* \
 	NetworkManager-sections.txt \
 	NetworkManager-overrides.txt
 
-DISTCLEANFILES = $(GENERATED_FILES)
+if BUILD_SETTING_DOCS
+CLEANFILES += settings-spec.xml
+endif
 
+if ENABLE_GTK_DOC
+CLEANFILES += spec.html
+endif

@@ -35,6 +35,9 @@ struct WifiData {
 
 	gboolean (*set_mode) (WifiData *data, const NM80211Mode mode);
 
+	/* Set power saving mode on an interface */
+	gboolean (*set_powersave) (WifiData *data, guint32 powersave);
+
 	/* Return current frequency in MHz (really associated BSS frequency) */
 	guint32 (*get_freq) (WifiData *data);
 

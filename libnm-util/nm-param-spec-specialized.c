@@ -20,6 +20,8 @@
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
+#include "config.h"
+
 #include "nm-param-spec-specialized.h"
 #include "nm-glib-compat.h"
 

@@ -503,9 +503,11 @@ nmt_connect_connection_list_rebuild (NmtConnectConnectionList *list)
 	for (diter = nmt_devices; diter; diter = diter->next) {
 		nmtdev = diter->data;
 
-		if (diter != nmt_devices)
-			nmt_newt_listbox_append (listbox, "", NULL);
-		nmt_newt_listbox_append (listbox, nmtdev->name, NULL);
+		if (nmtdev->conns) {
+			if (diter != nmt_devices)
+				nmt_newt_listbox_append (listbox, "", NULL);
+			nmt_newt_listbox_append (listbox, nmtdev->name, NULL);
+		}
 
 		for (citer = nmtdev->conns; citer; citer = citer->next) {
 			nmtconn = citer->data;
@@ -544,17 +546,9 @@ nmt_connect_connection_list_rebuild (NmtConnectConnectionList *list)
 }
 
 static void
-rebuild_on_acs_changed (GObject    *object,
-                        GParamSpec *spec,
-                        gpointer    list)
-{
-	nmt_connect_connection_list_rebuild (list);
-}
-
-static void
-rebuild_on_devices_changed (NMClient *client,
-                            NMDevice *device,
-                            gpointer  list)
+rebuild_on_property_changed (GObject    *object,
+                             GParamSpec *spec,
+                             gpointer    list)
 {
 	nmt_connect_connection_list_rebuild (list);
 }
@@ -565,11 +559,11 @@ nmt_connect_connection_list_constructed (GObject *object)
 	NmtConnectConnectionList *list = NMT_CONNECT_CONNECTION_LIST (object);
 
 	g_signal_connect (nm_client, "notify::" NM_CLIENT_ACTIVE_CONNECTIONS,
-	                  G_CALLBACK (rebuild_on_acs_changed), list);
-	g_signal_connect (nm_client, "device-added",
-	                  G_CALLBACK (rebuild_on_devices_changed), list);
-	g_signal_connect (nm_client, "device-removed",
-	                  G_CALLBACK (rebuild_on_devices_changed), list);
+	                  G_CALLBACK (rebuild_on_property_changed), list);
+	g_signal_connect (nm_client, "notify::" NM_CLIENT_CONNECTIONS,
+	                  G_CALLBACK (rebuild_on_property_changed), list);
+	g_signal_connect (nm_client, "notify::" NM_CLIENT_DEVICES,
+	                  G_CALLBACK (rebuild_on_property_changed), list);
 
 	nmt_connect_connection_list_rebuild (list);
 
@@ -583,8 +577,7 @@ nmt_connect_connection_list_finalize (GObject *object)
 
 	g_slist_free_full (priv->nmt_devices, (GDestroyNotify) nmt_connect_device_free);
 
-	g_signal_handlers_disconnect_by_func (nm_client, G_CALLBACK (rebuild_on_acs_changed), object);
-	g_signal_handlers_disconnect_by_func (nm_client, G_CALLBACK (rebuild_on_devices_changed), object);
+	g_signal_handlers_disconnect_by_func (nm_client, G_CALLBACK (rebuild_on_property_changed), object);
 
 	G_OBJECT_CLASS (nmt_connect_connection_list_parent_class)->finalize (object);
 }

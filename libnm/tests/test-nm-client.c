@@ -18,6 +18,8 @@
  *
  */
 
+#include "config.h"
+
 #include <glib.h>
 #include <string.h>
 #include <sys/types.h>
@@ -88,6 +90,7 @@ test_device_added (void)
 	/* Tell the test service to add a new device */
 	nm_test_service_add_device (sinfo, client, "AddWiredDevice", "eth0");
 
+	/* coverity[loop_condition] */
 	while (!notified)
 		g_main_context_iteration (NULL, TRUE);
 
@@ -186,14 +189,15 @@ test_device_added_signal_after_init (void)
 
 	/* Ensure the 'device-added' signal doesn't show up before
 	 * the 'Devices' property change notification */
+	/* coverity[loop_condition] */
 	while (!(result & SIGNAL_MASK) && !(result & NOTIFY_MASK))
 		g_main_context_iteration (NULL, TRUE);
 
 	g_signal_handlers_disconnect_by_func (client, device_sai_added_cb, &result);
 	g_signal_handlers_disconnect_by_func (client, devices_sai_notify_cb, &result);
 
-	g_assert ((result & NOTIFY_MASK) == NOTIFY_FIRST);
-	g_assert ((result & SIGNAL_MASK) == SIGNAL_SECOND);
+	g_assert ((result & SIGNAL_MASK) == SIGNAL_FIRST);
+	g_assert ((result & NOTIFY_MASK) == NOTIFY_SECOND);
 
 	devices = nm_client_get_devices (client);
 	g_assert (devices);
@@ -1007,7 +1011,7 @@ client_devices_changed_cb (GObject *client,
 		info->remaining--;
 	else {
 		g_signal_connect (device, "notify::" NM_DEVICE_ACTIVE_CONNECTION,
-		                  G_CALLBACK (device_ac_changed_cb), &info);
+		                  G_CALLBACK (device_ac_changed_cb), info);
 	}
 
 	info->remaining--;

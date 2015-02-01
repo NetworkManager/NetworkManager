@@ -24,7 +24,7 @@
 #include <glib.h>
 
 #define KEYFILE_PLUGIN_NAME "keyfile"
-#define KEYFILE_PLUGIN_INFO "(c) 2007 - 2013 Red Hat, Inc.  To report bugs please use the NetworkManager mailing list."
+#define KEYFILE_PLUGIN_INFO "(c) 2007 - 2015 Red Hat, Inc.  To report bugs please use the NetworkManager mailing list."
 
 #define KEYFILE_DIR NMCONFDIR "/system-connections"
 

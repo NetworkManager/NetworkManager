@@ -24,14 +24,19 @@
 #include <string.h>
 #include <stdlib.h>
 #include <netinet/ether.h>
+#include <arpa/inet.h>
 #include <uuid/uuid.h>
+#include <libintl.h>
 #include <gmodule.h>
+#include <glib/gi18n-lib.h>
 
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-glib-compat.h"
 #include "nm-setting-private.h"
 #include "crypto.h"
+#include "gsystem-local-alloc.h"
+#include "nm-utils-internal.h"
 
 #include "nm-setting-bond.h"
 #include "nm-setting-bridge.h"
@@ -41,6 +46,9 @@
 #include "nm-setting-vlan.h"
 #include "nm-setting-wired.h"
 #include "nm-setting-wireless.h"
+
+/* Embed the commit id in the build binary */
+static const char *const __nm_git_sha = STRLEN (NM_GIT_SHA) > 0 ? "NM_GIT_SHA:"NM_GIT_SHA : "";
 
 /**
  * SECTION:nm-utils
@@ -207,69 +215,42 @@ get_encodings_for_lang (const char *lang,
 	return success;
 }
 
-/* init, deinit for libnm_util */
+/* init libnm */
+
+static gboolean initialized = FALSE;
 
 static void __attribute__((constructor))
-_check_symbols (void)
+_nm_utils_init (void)
 {
 	GModule *self;
 	gpointer func;
+
+	(void) __nm_git_sha;
+
+	if (initialized)
+		return;
+	initialized = TRUE;
 
 	self = g_module_open (NULL, 0);
 	if (g_module_symbol (self, "nm_util_get_private", &func))
 		g_error ("libnm-util symbols detected; Mixing libnm with libnm-util/libnm-glib is not supported");
 	g_module_close (self);
+
+	bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
+	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
+
+	g_type_init ();
+
+	_nm_dbus_errors_init ();
 }
 
-static gboolean initialized = FALSE;
-
-/**
- * nm_utils_init:
- * @error: location to store error, or %NULL
- *
- * Initializes libnm; should be called when starting and program that
- * uses libnm.  Sets up an atexit() handler to ensure de-initialization
- * is performed, but calling nm_utils_deinit() to explicitly deinitialize
- * libnm can also be done.  This function can be called more than once.
- *
- * Returns: %TRUE if the initialization was successful, %FALSE on failure.
- **/
-gboolean
-nm_utils_init (GError **error)
-{
-	if (!initialized) {
-		initialized = TRUE;
-
-		if (!crypto_init (error))
-			return FALSE;
-
-		_nm_dbus_errors_init ();
-	}
-	return TRUE;
-}
-
-/**
- * nm_utils_deinit:
- *
- * Frees all resources used internally by libnm.  This function is called
- * from an atexit() handler, set up by nm_utils_init(), but is safe to be called
- * more than once.  Subsequent calls have no effect until nm_utils_init() is
- * called again.
- **/
-void
-nm_utils_deinit (void)
-{
-	if (initialized) {
-		crypto_deinit ();
-		initialized = FALSE;
-	}
-}
+gboolean _nm_utils_is_manager_process;
 
 /* ssid helpers */
 
 /**
  * nm_utils_ssid_to_utf8:
- * @ssid: pointer to a buffer containing the SSID data
+ * @ssid: (array length=len): pointer to a buffer containing the SSID data
  * @len: length of the SSID data in @ssid
  *
  * Wi-Fi SSIDs are byte arrays, they are _not_ strings.  Thus, an SSID may
@@ -341,7 +322,7 @@ nm_utils_ssid_to_utf8 (const guint8 *ssid, gsize len)
 /* Shamelessly ripped from the Linux kernel ieee80211 stack */
 /**
  * nm_utils_is_empty_ssid:
- * @ssid: pointer to a buffer containing the SSID data
+ * @ssid: (array length=len): pointer to a buffer containing the SSID data
  * @len: length of the SSID data in @ssid
  *
  * Different manufacturers use different mechanisms for not broadcasting the
@@ -369,7 +350,7 @@ nm_utils_is_empty_ssid (const guint8 *ssid, gsize len)
 
 /**
  * nm_utils_escape_ssid:
- * @ssid: pointer to a buffer containing the SSID data
+ * @ssid: (array length=len): pointer to a buffer containing the SSID data
  * @len: length of the SSID data in @ssid
  *
  * This function does a quick printable character conversion of the SSID, simply
@@ -408,9 +389,9 @@ nm_utils_escape_ssid (const guint8 *ssid, gsize len)
 
 /**
  * nm_utils_same_ssid:
- * @ssid1: the first SSID to compare
+ * @ssid1: (array length=len1): the first SSID to compare
  * @len1: length of the SSID data in @ssid1
- * @ssid2: the second SSID to compare
+ * @ssid2: (array length=len2): the second SSID to compare
  * @len2: length of the SSID data in @ssid2
  * @ignore_trailing_null: %TRUE to ignore one trailing NULL byte
  *
@@ -662,13 +643,47 @@ _nm_utils_slist_to_strv (GSList *slist)
 {
 	GSList *iter;
 	char **strv;
-	int len, i = 0;
+	int len, i;
 
 	len = g_slist_length (slist);
 	strv = g_new (char *, len + 1);
 
 	for (i = 0, iter = slist; iter; iter = iter->next, i++)
 		strv[i] = g_strdup (iter->data);
+	strv[i] = NULL;
+
+	return strv;
+}
+
+GPtrArray *
+_nm_utils_strv_to_ptrarray (char **strv)
+{
+	GPtrArray *ptrarray;
+	int i;
+
+	ptrarray = g_ptr_array_new_with_free_func (g_free);
+
+	if (strv) {
+		for (i = 0; strv[i]; i++)
+			g_ptr_array_add (ptrarray, g_strdup (strv[i]));
+	}
+
+	return ptrarray;
+}
+
+char **
+_nm_utils_ptrarray_to_strv (GPtrArray *ptrarray)
+{
+	char **strv;
+	int i;
+
+	if (!ptrarray)
+		return g_new0 (char *, 1);
+
+	strv = g_new (char *, ptrarray->len + 1);
+
+	for (i = 0; i < ptrarray->len; i++)
+		strv[i] = g_strdup (ptrarray->pdata[i]);
 	strv[i] = NULL;
 
 	return strv;
@@ -1100,16 +1115,19 @@ nm_utils_ip4_dns_from_variant (GVariant *value)
 
 /**
  * nm_utils_ip4_addresses_to_variant:
- * @addresses: (element-type NMIP4Address): an array of #NMIP4Address objects
+ * @addresses: (element-type NMIPAddress): an array of #NMIPAddress objects
+ * @gateway: (allow-none): the gateway IP address
  *
- * Utility function to convert a #GPtrArray of #NMIP4Address objects into a
- * #GVariant of type 'aau' representing an array of NetworkManager IPv4
- * addresses (which are tuples of address, prefix, and gateway).
+ * Utility function to convert a #GPtrArray of #NMIPAddress objects representing
+ * IPv4 addresses into a #GVariant of type 'aau' representing an array of
+ * NetworkManager IPv4 addresses (which are tuples of address, prefix, and
+ * gateway). The "gateway" field of the first address will get the value of
+ * @gateway (if non-%NULL). In all of the other addresses, that field will be 0.
  *
  * Returns: (transfer none): a new floating #GVariant representing @addresses.
  **/
 GVariant *
-nm_utils_ip4_addresses_to_variant (GPtrArray *addresses)
+nm_utils_ip4_addresses_to_variant (GPtrArray *addresses, const char *gateway)
 {
 	GVariantBuilder builder;
 	int i;
@@ -1118,12 +1136,18 @@ nm_utils_ip4_addresses_to_variant (GPtrArray *addresses)
 
 	if (addresses) {
 		for (i = 0; i < addresses->len; i++) {
-			NMIP4Address *addr = addresses->pdata[i];
+			NMIPAddress *addr = addresses->pdata[i];
 			guint32 array[3];
 
-			array[0] = nm_ip4_address_get_address (addr);
-			array[1] = nm_ip4_address_get_prefix (addr);
-			array[2] = nm_ip4_address_get_gateway (addr);
+			if (nm_ip_address_get_family (addr) != AF_INET)
+				continue;
+
+			nm_ip_address_get_address_binary (addr, &array[0]);
+			array[1] = nm_ip_address_get_prefix (addr);
+			if (i == 0 && gateway)
+				inet_pton (AF_INET, gateway, &array[2]);
+			else
+				array[2] = 0;
 
 			g_variant_builder_add (&builder, "@au",
 			                       g_variant_new_fixed_array (G_VARIANT_TYPE_UINT32,
@@ -1137,16 +1161,19 @@ nm_utils_ip4_addresses_to_variant (GPtrArray *addresses)
 /**
  * nm_utils_ip4_addresses_from_variant:
  * @value: a #GVariant of type 'aau'
+ * @out_gateway: (out) (allow-none) (transfer full): on return, will contain the IP gateway
  *
  * Utility function to convert a #GVariant of type 'aau' representing a list of
  * NetworkManager IPv4 addresses (which are tuples of address, prefix, and
- * gateway) into a #GPtrArray of #NMIP4Address objects.
+ * gateway) into a #GPtrArray of #NMIPAddress objects. The "gateway" field of
+ * the first address (if set) will be returned in @out_gateway; the "gateway" fields
+ * of the other addresses are ignored.
  *
- * Returns: (transfer full) (element-type NMIP4Address): a newly allocated
- *   #GPtrArray of #NMIP4Address objects
+ * Returns: (transfer full) (element-type NMIPAddress): a newly allocated
+ *   #GPtrArray of #NMIPAddress objects
  **/
 GPtrArray *
-nm_utils_ip4_addresses_from_variant (GVariant *value)
+nm_utils_ip4_addresses_from_variant (GVariant *value, char **out_gateway)
 {
 	GPtrArray *addresses;
 	GVariantIter iter;
@@ -1154,13 +1181,17 @@ nm_utils_ip4_addresses_from_variant (GVariant *value)
 
 	g_return_val_if_fail (g_variant_is_of_type (value, G_VARIANT_TYPE ("aau")), NULL);
 
+	if (out_gateway)
+		*out_gateway = NULL;
+
 	g_variant_iter_init (&iter, value);
-	addresses = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip4_address_unref);
+	addresses = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_address_unref);
 
 	while (g_variant_iter_next (&iter, "@au", &addr_var)) {
 		const guint32 *addr_array;
 		gsize length;
-		NMIP4Address *addr;
+		NMIPAddress *addr;
+		GError *error = NULL;
 
 		addr_array = g_variant_get_fixed_array (addr_var, &length, sizeof (guint32));
 		if (length < 3) {
@@ -1169,12 +1200,17 @@ nm_utils_ip4_addresses_from_variant (GVariant *value)
 			continue;
 		}
 
-		addr = nm_ip4_address_new ();
-		nm_ip4_address_set_address (addr, addr_array[0]);
-		nm_ip4_address_set_prefix (addr, addr_array[1]);
-		nm_ip4_address_set_gateway (addr, addr_array[2]);
+		addr = nm_ip_address_new_binary (AF_INET, &addr_array[0], addr_array[1], &error);
+		if (addr) {
+			g_ptr_array_add (addresses, addr);
 
-		g_ptr_array_add (addresses, addr);
+			if (addr_array[2] && out_gateway && !*out_gateway)
+				*out_gateway = g_strdup (nm_utils_inet4_ntop (addr_array[2], NULL));
+		} else {
+			g_warning ("Ignoring invalid IP4 address: %s", error->message);
+			g_clear_error (&error);
+		}
+
 		g_variant_unref (addr_var);
 	}
 
@@ -1183,11 +1219,12 @@ nm_utils_ip4_addresses_from_variant (GVariant *value)
 
 /**
  * nm_utils_ip4_routes_to_variant:
- * @routes: (element-type NMIP4Route): an array of #NMIP4Route objects
+ * @routes: (element-type NMIPRoute): an array of #NMIP4Route objects
  *
- * Utility function to convert a #GPtrArray of #NMIP4Route objects into a
- * #GVariant of type 'aau' representing an array of NetworkManager IPv4 routes
- * (which are tuples of route, prefix, next hop, and metric).
+ * Utility function to convert a #GPtrArray of #NMIPRoute objects representing
+ * IPv4 routes into a #GVariant of type 'aau' representing an array of
+ * NetworkManager IPv4 routes (which are tuples of route, prefix, next hop, and
+ * metric).
  *
  * Returns: (transfer none): a new floating #GVariant representing @routes.
  **/
@@ -1201,13 +1238,17 @@ nm_utils_ip4_routes_to_variant (GPtrArray *routes)
 
 	if (routes) {
 		for (i = 0; i < routes->len; i++) {
-			NMIP4Route *route = routes->pdata[i];
+			NMIPRoute *route = routes->pdata[i];
 			guint32 array[4];
 
-			array[0] = nm_ip4_route_get_dest (route);
-			array[1] = nm_ip4_route_get_prefix (route);
-			array[2] = nm_ip4_route_get_next_hop (route);
-			array[3] = nm_ip4_route_get_metric (route);
+			if (nm_ip_route_get_family (route) != AF_INET)
+				continue;
+
+			nm_ip_route_get_dest_binary (route, &array[0]);
+			array[1] = nm_ip_route_get_prefix (route);
+			nm_ip_route_get_next_hop_binary (route, &array[2]);
+			/* The old routes format uses "0" for default, not "-1" */
+			array[3] = MAX (0, nm_ip_route_get_metric (route));
 
 			g_variant_builder_add (&builder, "@au",
 			                       g_variant_new_fixed_array (G_VARIANT_TYPE_UINT32,
@@ -1224,10 +1265,10 @@ nm_utils_ip4_routes_to_variant (GPtrArray *routes)
  *
  * Utility function to convert a #GVariant of type 'aau' representing an array
  * of NetworkManager IPv4 routes (which are tuples of route, prefix, next hop,
- * and metric) into a #GPtrArray of #NMIP4Route objects.
+ * and metric) into a #GPtrArray of #NMIPRoute objects.
  *
- * Returns: (transfer full) (element-type NMIP4Route): a newly allocated
- *   #GPtrArray of #NMIP4Route objects
+ * Returns: (transfer full) (element-type NMIPRoute): a newly allocated
+ *   #GPtrArray of #NMIPRoute objects
  **/
 GPtrArray *
 nm_utils_ip4_routes_from_variant (GVariant *value)
@@ -1239,12 +1280,13 @@ nm_utils_ip4_routes_from_variant (GVariant *value)
 	g_return_val_if_fail (g_variant_is_of_type (value, G_VARIANT_TYPE ("aau")), NULL);
 
 	g_variant_iter_init (&iter, value);
-	routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip4_route_unref);
+	routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_route_unref);
 
 	while (g_variant_iter_next (&iter, "@au", &route_var)) {
 		const guint32 *route_array;
 		gsize length;
-		NMIP4Route *route;
+		NMIPRoute *route;
+		GError *error = NULL;
 
 		route_array = g_variant_get_fixed_array (route_var, &length, sizeof (guint32));
 		if (length < 4) {
@@ -1253,13 +1295,19 @@ nm_utils_ip4_routes_from_variant (GVariant *value)
 			continue;
 		}
 
-		route = nm_ip4_route_new ();
-		nm_ip4_route_set_dest (route, route_array[0]);
-		nm_ip4_route_set_prefix (route, route_array[1]);
-		nm_ip4_route_set_next_hop (route, route_array[2]);
-		nm_ip4_route_set_metric (route, route_array[3]);
-
-		g_ptr_array_add (routes, route);
+		route = nm_ip_route_new_binary (AF_INET,
+		                                &route_array[0],
+		                                route_array[1],
+		                                &route_array[2],
+		                                /* The old routes format uses "0" for default, not "-1" */
+		                                route_array[3] ? (gint64) route_array[3] : -1,
+		                                &error);
+		if (route)
+			g_ptr_array_add (routes, route);
+		else {
+			g_warning ("Ignoring invalid IP4 route: %s", error->message);
+			g_clear_error (&error);
+		}
 		g_variant_unref (route_var);
 	}
 
@@ -1412,16 +1460,20 @@ nm_utils_ip6_dns_from_variant (GVariant *value)
 
 /**
  * nm_utils_ip6_addresses_to_variant:
- * @addresses: (element-type NMIP6Address): an array of #NMIP6Address objects
+ * @addresses: (element-type NMIPAddress): an array of #NMIPAddress objects
+ * @gateway: (allow-none): the gateway IP address
  *
- * Utility function to convert a #GPtrArray of #NMIP6Address objects into a
- * #GVariant of type 'a(ayuay)' representing an array of NetworkManager IPv6
- * addresses (which are tuples of address, prefix, and gateway).
+ * Utility function to convert a #GPtrArray of #NMIPAddress objects representing
+ * IPv6 addresses into a #GVariant of type 'a(ayuay)' representing an array of
+ * NetworkManager IPv6 addresses (which are tuples of address, prefix, and
+ * gateway).  The "gateway" field of the first address will get the value of
+ * @gateway (if non-%NULL). In all of the other addresses, that field will be
+ * all 0s.
  *
  * Returns: (transfer none): a new floating #GVariant representing @addresses.
  **/
 GVariant *
-nm_utils_ip6_addresses_to_variant (GPtrArray *addresses)
+nm_utils_ip6_addresses_to_variant (GPtrArray *addresses, const char *gateway)
 {
 	GVariantBuilder builder;
 	int i;
@@ -1430,19 +1482,26 @@ nm_utils_ip6_addresses_to_variant (GPtrArray *addresses)
 
 	if (addresses) {
 		for (i = 0; i < addresses->len; i++) {
-			NMIP6Address *addr = addresses->pdata[i];
-			GVariant *ip, *gateway;
+			NMIPAddress *addr = addresses->pdata[i];
+			struct in6_addr ip_bytes, gateway_bytes;
+			GVariant *ip_var, *gateway_var;
 			guint32 prefix;
 
-			ip = g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
-			                                nm_ip6_address_get_address (addr),
-			                                16, 1);
-			prefix = nm_ip6_address_get_prefix (addr);
-			gateway = g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
-			                                     nm_ip6_address_get_gateway (addr),
-			                                     16, 1);
+			if (nm_ip_address_get_family (addr) != AF_INET6)
+				continue;
 
-			g_variant_builder_add (&builder, "(@ayu@ay)", ip, prefix, gateway);
+			nm_ip_address_get_address_binary (addr, &ip_bytes);
+			ip_var = g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE, &ip_bytes, 16, 1);
+
+			prefix = nm_ip_address_get_prefix (addr);
+
+			if (i == 0 && gateway)
+				inet_pton (AF_INET6, gateway, &gateway_bytes);
+			else
+				memset (&gateway_bytes, 0, sizeof (gateway_bytes));
+			gateway_var = g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE, &gateway_bytes, 16, 1);
+
+			g_variant_builder_add (&builder, "(@ayu@ay)", ip_var, prefix, gateway_var);
 		}
 	}
 
@@ -1452,16 +1511,19 @@ nm_utils_ip6_addresses_to_variant (GPtrArray *addresses)
 /**
  * nm_utils_ip6_addresses_from_variant:
  * @value: a #GVariant of type 'a(ayuay)'
+ * @out_gateway: (out) (allow-none) (transfer full): on return, will contain the IP gateway
  *
  * Utility function to convert a #GVariant of type 'a(ayuay)' representing a
  * list of NetworkManager IPv6 addresses (which are tuples of address, prefix,
- * and gateway) into a #GPtrArray of #NMIP6Address objects.
+ * and gateway) into a #GPtrArray of #NMIPAddress objects. The "gateway" field
+ * of the first address (if set) will be returned in @out_gateway; the "gateway"
+ * fields of the other addresses are ignored.
  *
- * Returns: (transfer full) (element-type NMIP6Address): a newly allocated
- *   #GPtrArray of #NMIP6Address objects
+ * Returns: (transfer full) (element-type NMIPAddress): a newly allocated
+ *   #GPtrArray of #NMIPAddress objects
  **/
 GPtrArray *
-nm_utils_ip6_addresses_from_variant (GVariant *value)
+nm_utils_ip6_addresses_from_variant (GVariant *value, char **out_gateway)
 {
 	GVariantIter iter;
 	GVariant *addr_var, *gateway_var;
@@ -1470,13 +1532,17 @@ nm_utils_ip6_addresses_from_variant (GVariant *value)
 
 	g_return_val_if_fail (g_variant_is_of_type (value, G_VARIANT_TYPE ("a(ayuay)")), NULL);
 
+	if (out_gateway)
+		*out_gateway = NULL;
+
 	g_variant_iter_init (&iter, value);
-	addresses = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip6_address_unref);
+	addresses = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_address_unref);
 
 	while (g_variant_iter_next (&iter, "(@ayu@ay)", &addr_var, &prefix, &gateway_var)) {
-		NMIP6Address *addr;
+		NMIPAddress *addr;
 		const struct in6_addr *addr_bytes, *gateway_bytes;
 		gsize addr_len, gateway_len;
+		GError *error = NULL;
 
 		if (   !g_variant_is_of_type (addr_var, G_VARIANT_TYPE_BYTESTRING)
 		    || !g_variant_is_of_type (gateway_var, G_VARIANT_TYPE_BYTESTRING)) {
@@ -1490,23 +1556,25 @@ nm_utils_ip6_addresses_from_variant (GVariant *value)
 			           __func__, (int) addr_len);
 			goto next;
 		}
-		if (prefix > 128) {
-			g_warning ("%s: ignoring invalid IP6 prefix %d",
-			           __func__, prefix);
-			goto next;
-		}
-		gateway_bytes = g_variant_get_fixed_array (gateway_var, &gateway_len, 1);
-		if (gateway_len != 16) {
-			g_warning ("%s: ignoring invalid IP6 address of length %d",
-			           __func__, (int) gateway_len);
-			goto next;
-		}
 
-		addr = nm_ip6_address_new ();
-		nm_ip6_address_set_address (addr, addr_bytes);
-		nm_ip6_address_set_prefix (addr, prefix);
-		nm_ip6_address_set_gateway (addr, gateway_bytes);
-		g_ptr_array_add (addresses, addr);
+		addr = nm_ip_address_new_binary (AF_INET6, addr_bytes, prefix, &error);
+		if (addr) {
+			g_ptr_array_add (addresses, addr);
+
+			if (out_gateway && !*out_gateway) {
+				gateway_bytes = g_variant_get_fixed_array (gateway_var, &gateway_len, 1);
+				if (gateway_len != 16) {
+					g_warning ("%s: ignoring invalid IP6 address of length %d",
+					           __func__, (int) gateway_len);
+					goto next;
+				}
+				if (!IN6_IS_ADDR_UNSPECIFIED (gateway_bytes))
+					*out_gateway = g_strdup (nm_utils_inet6_ntop (gateway_bytes, NULL));
+			}
+		} else {
+			g_warning ("Ignoring invalid IP4 address: %s", error->message);
+			g_clear_error (&error);
+		}
 
 	next:
 		g_variant_unref (addr_var);
@@ -1518,11 +1586,12 @@ nm_utils_ip6_addresses_from_variant (GVariant *value)
 
 /**
  * nm_utils_ip6_routes_to_variant:
- * @routes: (element-type NMIP6Route): an array of #NMIP6Route objects
+ * @routes: (element-type NMIPRoute): an array of #NMIPRoute objects
  *
- * Utility function to convert a #GPtrArray of #NMIP6Route objects into a
- * #GVariant of type 'a(ayuayu)' representing an array of NetworkManager IPv6
- * routes (which are tuples of route, prefix, next hop, and metric).
+ * Utility function to convert a #GPtrArray of #NMIPRoute objects representing
+ * IPv6 routes into a #GVariant of type 'a(ayuayu)' representing an array of
+ * NetworkManager IPv6 routes (which are tuples of route, prefix, next hop, and
+ * metric).
  *
  * Returns: (transfer none): a new floating #GVariant representing @routes.
  **/
@@ -1536,18 +1605,21 @@ nm_utils_ip6_routes_to_variant (GPtrArray *routes)
 
 	if (routes) {
 		for (i = 0; i < routes->len; i++) {
-			NMIP6Route *route = routes->pdata[i];
+			NMIPRoute *route = routes->pdata[i];
+			struct in6_addr dest_bytes, next_hop_bytes;
 			GVariant *dest, *next_hop;
 			guint32 prefix, metric;
 
-			dest = g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
-			                                  nm_ip6_route_get_dest (route),
-			                                  16, 1);
-			prefix = nm_ip6_route_get_prefix (route);
-			next_hop = g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
-			                                      nm_ip6_route_get_next_hop (route),
-			                                      16, 1);
-			metric = nm_ip6_route_get_metric (route);
+			if (nm_ip_route_get_family (route) != AF_INET6)
+				continue;
+
+			nm_ip_route_get_dest_binary (route, &dest_bytes);
+			dest = g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE, &dest_bytes, 16, 1);
+			prefix = nm_ip_route_get_prefix (route);
+			nm_ip_route_get_next_hop_binary (route, &next_hop_bytes);
+			next_hop = g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE, &next_hop_bytes, 16, 1);
+			/* The old routes format uses "0" for default, not "-1" */
+			metric = MAX (0, nm_ip_route_get_metric (route));
 
 			g_variant_builder_add (&builder, "(@ayu@ayu)", dest, prefix, next_hop, metric);
 		}
@@ -1562,10 +1634,10 @@ nm_utils_ip6_routes_to_variant (GPtrArray *routes)
  *
  * Utility function to convert a #GVariant of type 'a(ayuayu)' representing an
  * array of NetworkManager IPv6 routes (which are tuples of route, prefix, next
- * hop, and metric) into a #GPtrArray of #NMIP6Route objects.
+ * hop, and metric) into a #GPtrArray of #NMIPRoute objects.
  *
- * Returns: (transfer full) (element-type NMIP6Route): a newly allocated
- *   #GPtrArray of #NMIP6Route objects
+ * Returns: (transfer full) (element-type NMIPRoute): a newly allocated
+ *   #GPtrArray of #NMIPRoute objects
  **/
 GPtrArray *
 nm_utils_ip6_routes_from_variant (GVariant *value)
@@ -1579,11 +1651,12 @@ nm_utils_ip6_routes_from_variant (GVariant *value)
 
 	g_return_val_if_fail (g_variant_is_of_type (value, G_VARIANT_TYPE ("a(ayuayu)")), NULL);
 
-	routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip6_route_unref);
+	routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_route_unref);
 
 	g_variant_iter_init (&iter, value);
 	while (g_variant_iter_next (&iter, "(@ayu@ayu)", &dest_var, &prefix, &next_hop_var, &metric)) {
-		NMIP6Route *route;
+		NMIPRoute *route;
+		GError *error = NULL;
 
 		if (   !g_variant_is_of_type (dest_var, G_VARIANT_TYPE_BYTESTRING)
 		    || !g_variant_is_of_type (next_hop_var, G_VARIANT_TYPE_BYTESTRING)) {
@@ -1597,6 +1670,7 @@ nm_utils_ip6_routes_from_variant (GVariant *value)
 			           __func__, (int) dest_len);
 			goto next;
 		}
+
 		next_hop = g_variant_get_fixed_array (next_hop_var, &next_hop_len, 1);
 		if (next_hop_len != 16) {
 			g_warning ("%s: ignoring invalid IP6 address of length %d",
@@ -1604,16 +1678,262 @@ nm_utils_ip6_routes_from_variant (GVariant *value)
 			goto next;
 		}
 
-		route = nm_ip6_route_new ();
-		nm_ip6_route_set_dest (route, dest);
-		nm_ip6_route_set_prefix (route, prefix);
-		nm_ip6_route_set_next_hop (route, next_hop);
-		nm_ip6_route_set_metric (route, metric);
-		g_ptr_array_add (routes, route);
+		route = nm_ip_route_new_binary (AF_INET6, dest, prefix, next_hop,
+		                                metric ? (gint64) metric : -1,
+		                                &error);
+		if (route)
+			g_ptr_array_add (routes, route);
+		else {
+			g_warning ("Ignoring invalid IP6 route: %s", error->message);
+			g_clear_error (&error);
+		}
 
 	next:
 		g_variant_unref (dest_var);
 		g_variant_unref (next_hop_var);
+	}
+
+	return routes;
+}
+
+/**
+ * nm_utils_ip_addresses_to_variant:
+ * @addresses: (element-type NMIPAddress): an array of #NMIPAddress objects
+ *
+ * Utility function to convert a #GPtrArray of #NMIPAddress objects representing
+ * IPv4 or IPv6 addresses into a #GVariant of type 'aa{sv}' representing an
+ * array of new-style NetworkManager IP addresses. All addresses will include
+ * "address" (an IP address string), and "prefix" (a uint). Some addresses may
+ * include additional attributes.
+ *
+ * Returns: (transfer none): a new floating #GVariant representing @addresses.
+ **/
+GVariant *
+nm_utils_ip_addresses_to_variant (GPtrArray *addresses)
+{
+	GVariantBuilder builder;
+	int i;
+
+	g_variant_builder_init (&builder, G_VARIANT_TYPE ("aa{sv}"));
+
+	if (addresses) {
+		for (i = 0; i < addresses->len; i++) {
+			NMIPAddress *addr = addresses->pdata[i];
+			GVariantBuilder addr_builder;
+			char **names;
+			int n;
+
+			g_variant_builder_init (&addr_builder, G_VARIANT_TYPE ("a{sv}"));
+			g_variant_builder_add (&addr_builder, "{sv}",
+			                       "address",
+			                       g_variant_new_string (nm_ip_address_get_address (addr)));
+			g_variant_builder_add (&addr_builder, "{sv}",
+			                       "prefix",
+			                       g_variant_new_uint32 (nm_ip_address_get_prefix (addr)));
+
+			names = nm_ip_address_get_attribute_names (addr);
+			for (n = 0; names[n]; n++) {
+				g_variant_builder_add (&addr_builder, "{sv}",
+				                       names[n],
+				                       nm_ip_address_get_attribute (addr, names[n]));
+			}
+			g_strfreev (names);
+
+			g_variant_builder_add (&builder, "a{sv}", &addr_builder);
+		}
+	}
+
+	return g_variant_builder_end (&builder);
+}
+
+/**
+ * nm_utils_ip_addresses_from_variant:
+ * @value: a #GVariant of type 'aa{sv}'
+ * @family: an IP address family
+ *
+ * Utility function to convert a #GVariant representing a list of new-style
+ * NetworkManager IPv4 or IPv6 addresses (as described in the documentation for
+ * nm_utils_ip_addresses_to_variant()) into a #GPtrArray of #NMIPAddress
+ * objects.
+ *
+ * Returns: (transfer full) (element-type NMIPAddress): a newly allocated
+ *   #GPtrArray of #NMIPAddress objects
+ **/
+GPtrArray *
+nm_utils_ip_addresses_from_variant (GVariant *value,
+                                    int family)
+{
+	GPtrArray *addresses;
+	GVariantIter iter, attrs_iter;
+	GVariant *addr_var;
+	const char *ip;
+	guint32 prefix;
+	const char *attr_name;
+	GVariant *attr_val;
+	NMIPAddress *addr;
+	GError *error = NULL;
+
+	g_return_val_if_fail (g_variant_is_of_type (value, G_VARIANT_TYPE ("aa{sv}")), NULL);
+
+	g_variant_iter_init (&iter, value);
+	addresses = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_address_unref);
+
+	while (g_variant_iter_next (&iter, "@a{sv}", &addr_var)) {
+		if (   !g_variant_lookup (addr_var, "address", "&s", &ip)
+		    || !g_variant_lookup (addr_var, "prefix", "u", &prefix)) {
+			g_warning ("Ignoring invalid address");
+			g_variant_unref (addr_var);
+			continue;
+		}
+
+		addr = nm_ip_address_new (family, ip, prefix, &error);
+		if (!addr) {
+			g_warning ("Ignoring invalid address: %s", error->message);
+			g_clear_error (&error);
+			g_variant_unref (addr_var);
+			continue;
+		}
+
+		g_variant_iter_init (&attrs_iter, addr_var);
+		while (g_variant_iter_next (&attrs_iter, "{&sv}", &attr_name, &attr_val)) {
+			if (   strcmp (attr_name, "address") != 0
+			    && strcmp (attr_name, "prefix") != 0)
+				nm_ip_address_set_attribute (addr, attr_name, attr_val);
+			g_variant_unref (attr_val);
+		}
+
+		g_variant_unref (addr_var);
+		g_ptr_array_add (addresses, addr);
+	}
+
+	return addresses;
+}
+
+/**
+ * nm_utils_ip_routes_to_variant:
+ * @routes: (element-type NMIPRoute): an array of #NMIPRoute objects
+ *
+ * Utility function to convert a #GPtrArray of #NMIPRoute objects representing
+ * IPv4 or IPv6 routes into a #GVariant of type 'aa{sv}' representing an array
+ * of new-style NetworkManager IP routes (which are tuples of destination,
+ * prefix, next hop, metric, and additional attributes).
+ *
+ * Returns: (transfer none): a new floating #GVariant representing @routes.
+ **/
+GVariant *
+nm_utils_ip_routes_to_variant (GPtrArray *routes)
+{
+	GVariantBuilder builder;
+	int i;
+
+	g_variant_builder_init (&builder, G_VARIANT_TYPE ("aa{sv}"));
+
+	if (routes) {
+		for (i = 0; i < routes->len; i++) {
+			NMIPRoute *route = routes->pdata[i];
+			GVariantBuilder route_builder;
+			char **names;
+			int n;
+
+			g_variant_builder_init (&route_builder, G_VARIANT_TYPE ("a{sv}"));
+			g_variant_builder_add (&route_builder, "{sv}",
+			                       "dest",
+			                       g_variant_new_string (nm_ip_route_get_dest (route)));
+			g_variant_builder_add (&route_builder, "{sv}",
+			                       "prefix",
+			                       g_variant_new_uint32 (nm_ip_route_get_prefix (route)));
+			if (nm_ip_route_get_next_hop (route)) {
+				g_variant_builder_add (&route_builder, "{sv}",
+				                       "next-hop",
+				                       g_variant_new_string (nm_ip_route_get_next_hop (route)));
+			}
+			if (nm_ip_route_get_metric (route) != -1) {
+				g_variant_builder_add (&route_builder, "{sv}",
+				                       "metric",
+				                       g_variant_new_uint32 ((guint32) nm_ip_route_get_metric (route)));
+			}
+
+			names = nm_ip_route_get_attribute_names (route);
+			for (n = 0; names[n]; n++) {
+				g_variant_builder_add (&route_builder, "{sv}",
+				                       names[n],
+				                       nm_ip_route_get_attribute (route, names[n]));
+			}
+			g_strfreev (names);
+
+			g_variant_builder_add (&builder, "a{sv}", &route_builder);
+		}
+	}
+
+	return g_variant_builder_end (&builder);
+}
+
+/**
+ * nm_utils_ip_routes_from_variant:
+ * @value: a #GVariant of type 'aa{sv}'
+ * @family: an IP address family
+ *
+ * Utility function to convert a #GVariant representing a list of new-style
+ * NetworkManager IPv4 or IPv6 addresses (which are tuples of destination,
+ * prefix, next hop, metric, and additional attributes) into a #GPtrArray of
+ * #NMIPRoute objects.
+ *
+ * Returns: (transfer full) (element-type NMIPRoute): a newly allocated
+ *   #GPtrArray of #NMIPRoute objects
+ **/
+GPtrArray *
+nm_utils_ip_routes_from_variant (GVariant *value,
+                                 int family)
+{
+	GPtrArray *routes;
+	GVariantIter iter, attrs_iter;
+	GVariant *route_var;
+	const char *dest, *next_hop;
+	guint32 prefix, metric32;
+	gint64 metric;
+	const char *attr_name;
+	GVariant *attr_val;
+	NMIPRoute *route;
+	GError *error = NULL;
+
+	g_return_val_if_fail (g_variant_is_of_type (value, G_VARIANT_TYPE ("aa{sv}")), NULL);
+
+	g_variant_iter_init (&iter, value);
+	routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_route_unref);
+
+	while (g_variant_iter_next (&iter, "@a{sv}", &route_var)) {
+		if (   !g_variant_lookup (route_var, "dest", "&s", &dest)
+		    || !g_variant_lookup (route_var, "prefix", "u", &prefix)) {
+			g_warning ("Ignoring invalid address");
+			g_variant_unref (route_var);
+			continue;
+		}
+		if (!g_variant_lookup (route_var, "next-hop", "&s", &next_hop))
+			next_hop = NULL;
+		if (g_variant_lookup (route_var, "metric", "u", &metric32))
+			metric = metric32;
+		else
+			metric = -1;
+
+		route = nm_ip_route_new (family, dest, prefix, next_hop, metric, &error);
+		if (!route) {
+			g_warning ("Ignoring invalid route: %s", error->message);
+			g_clear_error (&error);
+			g_variant_unref (route_var);
+			continue;
+		}
+
+		g_variant_iter_init (&attrs_iter, route_var);
+		while (g_variant_iter_next (&attrs_iter, "{&sv}", &attr_name, &attr_val)) {
+			if (   strcmp (attr_name, "dest") != 0
+			    && strcmp (attr_name, "prefix") != 0
+			    && strcmp (attr_name, "next-hop") != 0
+			    && strcmp (attr_name, "metric") != 0)
+				nm_ip_route_set_attribute (route, attr_name, attr_val);
+			g_variant_unref (attr_val);
+		}
+
+		g_ptr_array_add (routes, route);
 	}
 
 	return routes;
@@ -1640,6 +1960,11 @@ nm_utils_uuid_generate (void)
 /**
  * nm_utils_uuid_generate_from_string:
  * @s: a string to use as the seed for the UUID
+ * @slen: if negative, treat @s as zero terminated C string.
+ *   Otherwise, assume the length as given (and allow @s to be
+ *   non-null terminated or contain '\0').
+ * @uuid_type: a type identifier which UUID format to generate.
+ * @type_args: additional arguments, depending on the uuid_type
  *
  * For a given @s, this function will always return the same UUID.
  *
@@ -1647,97 +1972,67 @@ nm_utils_uuid_generate (void)
  * object's #NMSettingConnection:id: property
  **/
 char *
-nm_utils_uuid_generate_from_string (const char *s)
+nm_utils_uuid_generate_from_string (const char *s, gssize slen, int uuid_type, gpointer type_args)
 {
-	GError *error = NULL;
-	uuid_t *uuid;
-	char *buf = NULL;
+	uuid_t uuid;
+	char *buf;
 
-	if (!nm_utils_init (&error)) {
-		g_warning ("error initializing crypto: (%d) %s",
-		           error ? error->code : 0,
-		           error ? error->message : "unknown");
-		if (error)
-			g_error_free (error);
-		return NULL;
+	g_return_val_if_fail (slen == 0 || s, FALSE);
+
+	g_return_val_if_fail (uuid_type == NM_UTILS_UUID_TYPE_LEGACY || uuid_type == NM_UTILS_UUID_TYPE_VARIANT3, NULL);
+	g_return_val_if_fail (!type_args || uuid_type == NM_UTILS_UUID_TYPE_VARIANT3, NULL);
+
+	switch (uuid_type) {
+	case NM_UTILS_UUID_TYPE_LEGACY:
+		crypto_md5_hash (NULL, 0, s, slen, (char *) uuid, sizeof (uuid));
+		break;
+	case NM_UTILS_UUID_TYPE_VARIANT3: {
+		uuid_t ns_uuid = { 0 };
+
+		if (type_args) {
+			/* type_args can be a name space UUID. Interpret it as (char *) */
+			if (uuid_parse ((char *) type_args, ns_uuid) != 0)
+				g_return_val_if_reached (NULL);
+		}
+
+		crypto_md5_hash (s, slen, (char *) ns_uuid, sizeof (ns_uuid), (char *) uuid, sizeof (uuid));
+
+		uuid[6] = (uuid[6] & 0x0F) | 0x30;
+		uuid[8] = (uuid[8] & 0x3F) | 0x80;
+		break;
 	}
-
-	uuid = g_malloc0 (sizeof (*uuid));
-	if (!crypto_md5_hash (NULL, 0, s, strlen (s), (char *) uuid, sizeof (*uuid), &error)) {
-		g_warning ("error generating UUID: (%d) %s",
-		           error ? error->code : 0,
-		           error ? error->message : "unknown");
-		if (error)
-			g_error_free (error);
-		goto out;
+	default:
+		g_return_val_if_reached (NULL);
 	}
 
 	buf = g_malloc0 (37);
-	uuid_unparse_lower (*uuid, &buf[0]);
+	uuid_unparse_lower (uuid, &buf[0]);
 
-out:
-	g_free (uuid);
 	return buf;
 }
 
-static char *
-make_key (const char *cipher,
-          const char *salt,
-          const gsize salt_len,
-          const char *password,
-          gsize *out_len,
-          GError **error)
-{
-	char *key;
-	guint32 digest_len = 24; /* DES-EDE3-CBC */
-
-	g_return_val_if_fail (salt != NULL, NULL);
-	g_return_val_if_fail (salt_len >= 8, NULL);
-	g_return_val_if_fail (password != NULL, NULL);
-	g_return_val_if_fail (out_len != NULL, NULL);
-
-	if (!strcmp (cipher, "DES-EDE3-CBC"))
-		digest_len = 24;
-	else if (!strcmp (cipher, "AES-128-CBC"))
-		digest_len = 16;
-
-	key = g_malloc0 (digest_len + 1);
-
-	if (!crypto_md5_hash (salt, salt_len, password, strlen (password), key, digest_len, error)) {
-		*out_len = 0;
-		memset (key, 0, digest_len);
-		g_free (key);
-		key = NULL;
-	} else
-		*out_len = digest_len;
-
-	return key;
-}
-
 /**
- * nm_utils_rsa_key_encrypt_helper:
- * @cipher: cipher to use for encryption ("DES-EDE3-CBC" or "AES-128-CBC")
- * @data: RSA private key data to be encrypted
+ * nm_utils_rsa_key_encrypt:
+ * @data: (array length=len): RSA private key data to be encrypted
  * @len: length of @data
  * @in_password: (allow-none): existing password to use, if any
- * @out_password: (out) (allow-none): if @in_password was %NULL, a random password will be generated
- *  and returned in this argument
+ * @out_password: (out) (allow-none): if @in_password was %NULL, a random
+ *  password will be generated and returned in this argument
  * @error: detailed error information on return, if an error occurred
  *
  * Encrypts the given RSA private key data with the given password (or generates
  * a password if no password was given) and converts the data to PEM format
- * suitable for writing to a file.
+ * suitable for writing to a file. It uses Triple DES cipher for the encryption.
  *
- * Returns: (transfer full): on success, PEM-formatted data suitable for writing to a PEM-formatted
- * certificate/private key file.
+ * Returns: (transfer full): on success, PEM-formatted data suitable for writing
+ * to a PEM-formatted certificate/private key file.
  **/
-static GByteArray *
-nm_utils_rsa_key_encrypt_helper (const char *cipher,
-                                 const guint8 *data,
-                                 gsize len,
-                                 const char *in_password,
-                                 char **out_password,
-                                 GError **error)
+GByteArray *
+nm_utils_rsa_key_encrypt (const guint8 *data,
+                          gsize len,
+                          const char *in_password,
+                          char **out_password,
+                          GError **error)
 {
 	char salt[16];
 	int salt_len;
@@ -1749,7 +2044,6 @@ nm_utils_rsa_key_encrypt_helper (const char *cipher,
 	const char *p;
 	GByteArray *ret = NULL;
 
-	g_return_val_if_fail (!g_strcmp0 (cipher, CIPHER_DES_EDE3_CBC) || !g_strcmp0 (cipher, CIPHER_AES_CBC), NULL);
 	g_return_val_if_fail (data != NULL, NULL);
 	g_return_val_if_fail (len > 0, NULL);
 	if (out_password)
@@ -1759,22 +2053,18 @@ nm_utils_rsa_key_encrypt_helper (const char *cipher,
 	if (!in_password) {
 		if (!crypto_randomize (pw_buf, sizeof (pw_buf), error))
 			return NULL;
-		in_password = tmp_password = nm_utils_bin2hexstr ((const char *) pw_buf, sizeof (pw_buf), -1);
+		in_password = tmp_password = nm_utils_bin2hexstr (pw_buf, sizeof (pw_buf), -1);
 	}
 
-	if (g_strcmp0 (cipher, CIPHER_AES_CBC) == 0)
-		salt_len = 16;
-	else
-		salt_len = 8;
-
+	salt_len = 8;
 	if (!crypto_randomize (salt, salt_len, error))
 		goto out;
 
-	key = make_key (cipher, &salt[0], salt_len, in_password, &key_len, error);
+	key = crypto_make_des_aes_key (CIPHER_DES_EDE3_CBC, &salt[0], salt_len, in_password, &key_len, NULL);
 	if (!key)
-		goto out;
+		g_return_val_if_reached (NULL);
 
-	enc = crypto_encrypt (cipher, data, len, salt, salt_len, key, key_len, &enc_len, error);
+	enc = crypto_encrypt (CIPHER_DES_EDE3_CBC, data, len, salt, salt_len, key, key_len, &enc_len, error);
 	if (!enc)
 		goto out;
 
@@ -1783,8 +2073,8 @@ nm_utils_rsa_key_encrypt_helper (const char *cipher,
 	g_string_append (pem, "Proc-Type: 4,ENCRYPTED\n");
 
 	/* Convert the salt to a hex string */
-	tmp = nm_utils_bin2hexstr ((const char *) salt, salt_len, salt_len * 2);
-	g_string_append_printf (pem, "DEK-Info: %s,%s\n\n", cipher, tmp);
+	tmp = nm_utils_bin2hexstr (salt, salt_len, salt_len * 2);
+	g_string_append_printf (pem, "DEK-Info: %s,%s\n\n", CIPHER_DES_EDE3_CBC, tmp);
 	g_free (tmp);
 
 	/* Convert the encrypted key to a base64 string */
@@ -1825,82 +2115,169 @@ out:
 	return ret;
 }
 
-/**
- * nm_utils_rsa_key_encrypt:
- * @data: RSA private key data to be encrypted
- * @len: length of @data
- * @in_password: (allow-none): existing password to use, if any
- * @out_password: (out) (allow-none): if @in_password was %NULL, a random password will be generated
- *  and returned in this argument
- * @error: detailed error information on return, if an error occurred
- *
- * Encrypts the given RSA private key data with the given password (or generates
- * a password if no password was given) and converts the data to PEM format
- * suitable for writing to a file. It uses Triple DES cipher for the encryption.
- *
- * Returns: (transfer full): on success, PEM-formatted data suitable for writing to a PEM-formatted
- * certificate/private key file.
- **/
-GByteArray *
-nm_utils_rsa_key_encrypt (const guint8 *data,
-                          gsize len,
-                          const char *in_password,
-                          char **out_password,
-                          GError **error)
+static gboolean
+file_has_extension (const char *filename, const char *extensions[])
 {
+	const char *ext;
+	int i;
 
+	ext = strrchr (filename, '.');
+	if (!ext)
+		return FALSE;
 
-	return nm_utils_rsa_key_encrypt_helper (CIPHER_DES_EDE3_CBC,
-	                                        data, len,
-	                                        in_password,
-	                                        out_password,
-	                                        error);
+	for (i = 0; extensions[i]; i++) {
+		if (!g_ascii_strcasecmp (ext, extensions[i]))
+			return TRUE;
+	}
+
+	return FALSE;
 }
 
 /**
- * nm_utils_rsa_key_encrypt_aes:
- * @data: RSA private key data to be encrypted
- * @len: length of @data
- * @in_password: (allow-none): existing password to use, if any
- * @out_password: (out) (allow-none): if @in_password was %NULL, a random password will be generated
- *  and returned in this argument
- * @error: detailed error information on return, if an error occurred
+ * nm_utils_file_is_certificate:
+ * @filename: name of the file to test
  *
- * Encrypts the given RSA private key data with the given password (or generates
- * a password if no password was given) and converts the data to PEM format
- * suitable for writing to a file.  It uses AES cipher for the encryption.
+ * Tests if @filename has a valid extension for an X.509 certificate file
+ * (".cer", ".crt", ".der", or ".pem"), and contains a certificate in a format
+ * recognized by NetworkManager.
  *
- * Returns: (transfer full): on success, PEM-formatted data suitable for writing to a PEM-formatted
- * certificate/private key file.
+ * Returns: %TRUE if the file is a certificate, %FALSE if it is not
  **/
-GByteArray *
-nm_utils_rsa_key_encrypt_aes (const guint8 *data,
-                              gsize len,
-                              const char *in_password,
-                              char **out_password,
-                              GError **error)
+gboolean
+nm_utils_file_is_certificate (const char *filename)
 {
+	const char *extensions[] = { ".der", ".pem", ".crt", ".cer", NULL };
+	NMCryptoFileFormat file_format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+	GByteArray *cert;
 
-	return nm_utils_rsa_key_encrypt_helper (CIPHER_AES_CBC,
-	                                        data, len,
-	                                        in_password,
-	                                        out_password,
-	                                        error);
+	g_return_val_if_fail (filename != NULL, FALSE);
+
+	if (!file_has_extension (filename, extensions))
+		return FALSE;
+
+	cert = crypto_load_and_verify_certificate (filename, &file_format, NULL);
+	if (cert)
+		g_byte_array_unref (cert);
+
+	return file_format = NM_CRYPTO_FILE_FORMAT_X509;
+}
+
+/**
+ * nm_utils_file_is_private_key:
+ * @filename: name of the file to test
+ * @out_encrypted: (out): on return, whether the file is encrypted
+ *
+ * Tests if @filename has a valid extension for an X.509 private key file
+ * (".der", ".key", ".pem", or ".p12"), and contains a private key in a format
+ * recognized by NetworkManager.
+ *
+ * Returns: %TRUE if the file is a private key, %FALSE if it is not
+ **/
+gboolean
+nm_utils_file_is_private_key (const char *filename, gboolean *out_encrypted)
+{
+	const char *extensions[] = { ".der", ".pem", ".p12", ".key", NULL };
+
+	g_return_val_if_fail (filename != NULL, FALSE);
+	g_return_val_if_fail (out_encrypted == NULL || *out_encrypted == FALSE, FALSE);
+
+	if (!file_has_extension (filename, extensions))
+		return FALSE;
+
+	return crypto_verify_private_key (filename, NULL, out_encrypted, NULL) != NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 }
 
 /**
  * nm_utils_file_is_pkcs12:
  * @filename: name of the file to test
  *
- * Utility function to find out if the @filename is in PKCS#12 format.
+ * Tests if @filename is a PKCS#<!-- -->12 file.
  *
- * Returns: %TRUE if the file is PKCS#12, %FALSE if it is not
+ * Returns: %TRUE if the file is PKCS#<!-- -->12, %FALSE if it is not
  **/
 gboolean
 nm_utils_file_is_pkcs12 (const char *filename)
 {
+	g_return_val_if_fail (filename != NULL, FALSE);
+
 	return crypto_is_pkcs12_file (filename, NULL);
 }
+
+/**********************************************************************************************/
+
+/**
+ * nm_utils_file_search_in_paths:
+ * @progname: the helper program name, like "iptables"
+ *   Must be a non-empty string, without path separator (/).
+ * @try_first: (allow-none): a custom path to try first before searching.
+ *   It is silently ignored if it is empty or not an absolute path.
+ * @paths: (allow-none): a %NULL terminated list of search paths.
+ *   Can be empty or %NULL, in which case only @try_first is checked.
+ * @file_test_flags: the flags passed to g_file_test() when searching
+ *   for @progname. Set it to 0 to skip the g_file_test().
+ * @predicate: (scope call): if given, pass the file name to this function
+ *   for additional checks. This check is performed after the check for
+ *   @file_test_flags. You cannot omit both @file_test_flags and @predicate.
+ * @user_data: (closure): (allow-none): user data for @predicate function.
+ * @error: (allow-none): on failure, set a "not found" error %G_IO_ERROR %G_IO_ERROR_NOT_FOUND.
+ *
+ * Searches for a @progname file in a list of search @paths.
+ *
+ * Returns: (transfer none): the full path to the helper, if found, or %NULL if not found.
+ *   The returned string is not owned by the caller, but later
+ *   invocations of the function might overwrite it.
+ */
+const char *
+nm_utils_file_search_in_paths (const char *progname,
+                               const char *try_first,
+                               const char *const *paths,
+                               GFileTest file_test_flags,
+                               NMUtilsFileSearchInPathsPredicate predicate,
+                               gpointer user_data,
+                               GError **error)
+{
+	GString *tmp;
+	const char *ret;
+
+	g_return_val_if_fail (!error || !*error, NULL);
+	g_return_val_if_fail (progname && progname[0] && !strchr (progname, '/'), NULL);
+	g_return_val_if_fail (file_test_flags || predicate, NULL);
+
+	/* Only consider @try_first if it is a valid, absolute path. This makes
+	 * it simpler to pass in a path from configure checks. */
+	if (   try_first
+	    && try_first[0] == '/'
+	    && (file_test_flags == 0 || g_file_test (try_first, file_test_flags))
+	    && (!predicate || predicate (try_first, user_data)))
+		return g_intern_string (try_first);
+
+	if (!paths || !*paths)
+		goto NOT_FOUND;
+
+	tmp = g_string_sized_new (50);
+	for (; *paths; paths++) {
+		if (!*paths)
+			continue;
+		g_string_append (tmp, *paths);
+		if (tmp->str[tmp->len - 1] != '/')
+			g_string_append_c (tmp, '/');
+		g_string_append (tmp, progname);
+		if (   (file_test_flags == 0 || g_file_test (tmp->str, file_test_flags))
+		    && (!predicate || predicate (tmp->str, user_data))) {
+			ret = g_intern_string (tmp->str);
+			g_string_free (tmp, TRUE);
+			return ret;
+		}
+		g_string_set_size (tmp, 0);
+	}
+	g_string_free (tmp, TRUE);
+
+NOT_FOUND:
+	g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, _("Could not find \"%s\" binary"), progname);
+	return NULL;
+}
+
+/**********************************************************************************************/
 
 /* Band, channel/frequency stuff for wireless */
 struct cf_pair {
@@ -2173,12 +2550,13 @@ nm_utils_wifi_strength_bars (guint8 strength)
 
 /**
  * nm_utils_hwaddr_len:
- * @type: the type of address; either %ARPHRD_ETHER or %ARPHRD_INFINIBAND
+ * @type: the type of address; either <literal>ARPHRD_ETHER</literal> or
+ * <literal>ARPHRD_INFINIBAND</literal>
  *
  * Returns the length in octets of a hardware address of type @type.
  *
- * It is an error to call this function with any value other than %ARPHRD_ETHER
- * or %ARPHRD_INFINIBAND.
+ * It is an error to call this function with any value other than
+ * <literal>ARPHRD_ETHER</literal> or <literal>ARPHRD_INFINIBAND</literal>.
  *
  * Return value: the length.
  */
@@ -2289,7 +2667,7 @@ nm_utils_hwaddr_aton (const char *asc, gpointer buffer, gsize length)
 
 /**
  * nm_utils_hwaddr_ntoa:
- * @addr: a binary hardware address
+ * @addr: (type guint8) (array length=length): a binary hardware address
  * @length: the length of @addr
  *
  * Converts @addr to textual form.
@@ -2324,6 +2702,9 @@ static int
 hwaddr_binary_len (const char *asc)
 {
 	int octets = 1;
+
+	if (!*asc)
+		return 0;
 
 	for (; *asc; asc++) {
 		if (*asc == ':' || *asc == '-')
@@ -2391,7 +2772,7 @@ nm_utils_hwaddr_canonical (const char *asc, gssize length)
 	if (nm_utils_hwaddr_aton (asc, buf, length) == NULL)
 		return NULL;
 
-	return g_strdup (nm_utils_hwaddr_ntoa (buf, length));
+	return nm_utils_hwaddr_ntoa (buf, length);
 }
 
 /* This is used to possibly canonicalize values passed to MAC address property
@@ -2433,10 +2814,11 @@ _nm_utils_hwaddr_canonical_or_invalid (const char *mac, gssize length)
  *      a zero-filled buffer @hwaddr1_len or @hwaddr2_len bytes long.
  *
  *   3. If @hwaddr1 and @hwaddr2 are InfiniBand hardware addresses (that is, if
- *      they are %INFINIBAND_ALEN bytes long in binary form) then only the last
- *      8 bytes are compared, since those are the only bytes that actually
- *      identify the hardware. (The other 12 bytes will change depending on the
- *      configuration of the InfiniBand fabric that the device is connected to.)
+ *      they are <literal>INFINIBAND_ALEN</literal> bytes long in binary form)
+ *      then only the last 8 bytes are compared, since those are the only bytes
+ *      that actually identify the hardware. (The other 12 bytes will change
+ *      depending on the configuration of the InfiniBand fabric that the device
+ *      is connected to.)
  *
  * If a passed-in ASCII hardware address cannot be parsed, or would parse to an
  * address larger than %NM_UTILS_HWADDR_LEN_MAX, then it will silently fail to
@@ -2459,7 +2841,7 @@ nm_utils_hwaddr_matches (gconstpointer hwaddr1,
 		g_return_val_if_fail (hwaddr1 != NULL, FALSE);
 
 		hwaddr1_len = hwaddr_binary_len (hwaddr1);
-		if (hwaddr1_len > NM_UTILS_HWADDR_LEN_MAX)
+		if (hwaddr1_len == 0 || hwaddr1_len > NM_UTILS_HWADDR_LEN_MAX)
 			return FALSE;
 		if (!nm_utils_hwaddr_aton (hwaddr1, buf1, hwaddr1_len))
 			return FALSE;
@@ -2512,7 +2894,7 @@ _nm_utils_hwaddr_to_dbus (const GValue *prop_value)
 
 	if (str) {
 		len = hwaddr_binary_len (str);
-		g_return_val_if_fail (len <= NM_UTILS_HWADDR_LEN_MAX, NULL);
+		g_return_val_if_fail (len > 0 && len <= NM_UTILS_HWADDR_LEN_MAX, NULL);
 		if (!nm_utils_hwaddr_aton (str, buf, len))
 			len = 0;
 	} else
@@ -2535,13 +2917,13 @@ _nm_utils_hwaddr_from_dbus (GVariant *dbus_value,
 
 /**
  * nm_utils_bin2hexstr:
- * @bytes: an array of bytes
- * @len: the length of the @bytes array
+ * @src: (type guint8) (array length=len): an array of bytes
+ * @len: the length of the @src array
  * @final_len: an index where to cut off the returned string, or -1
  *
- * Converts a byte-array @bytes into a hexadecimal string.
- * If @final_len is greater than -1, the returned string is terminated at
- * that index (returned_string[final_len] == '\0'),
+ * Converts the byte array @src into a hexadecimal string. If @final_len is
+ * greater than -1, the returned string is terminated at that index
+ * (returned_string[final_len] == '\0'),
  *
  * Return value: (transfer full): the textual form of @bytes
  */
@@ -2550,9 +2932,10 @@ _nm_utils_hwaddr_from_dbus (GVariant *dbus_value,
  *  copyright Red Hat, Inc. under terms of the LGPL.
  */
 char *
-nm_utils_bin2hexstr (const char *bytes, int len, int final_len)
+nm_utils_bin2hexstr (gconstpointer src, gsize len, int final_len)
 {
 	static char hex_digits[] = "0123456789abcdef";
+	const guint8 *bytes = src;
 	char *result;
 	int i;
 	gsize buflen = (len * 2) + 1;
@@ -2577,64 +2960,61 @@ nm_utils_bin2hexstr (const char *bytes, int len, int final_len)
 	return result;
 }
 
-/* From hostap, Copyright (c) 2002-2005, Jouni Malinen <jkmaline@cc.hut.fi> */
-/**
- * nm_utils_hex2byte:
- * @hex: a string representing a hex byte
- *
- * Converts a hex string (2 characters) into its byte representation.
- *
- * Return value: a byte, or -1 if @hex doesn't represent a hex byte
- */
-int
-nm_utils_hex2byte (const char *hex)
-{
-	int a, b;
-	a = g_ascii_xdigit_value (*hex++);
-	if (a < 0)
-		return -1;
-	b = g_ascii_xdigit_value (*hex++);
-	if (b < 0)
-		return -1;
-	return (a << 4) | b;
-}
-
 /**
  * nm_utils_hexstr2bin:
- * @hex: an hex string
- * @len: the length of the @hex string (it has to be even)
+ * @hex: a string of hexadecimal characters with optional ':' separators
  *
- * Converts a hexadecimal string @hex into a byte-array. The returned array
- * length is @len/2.
+ * Converts a hexadecimal string @hex into an array of bytes.  The optional
+ * separator ':' may be used between single or pairs of hexadecimal characters,
+ * eg "00:11" or "0:1".  Any "0x" at the beginning of @hex is ignored.  @hex
+ * may not start or end with ':'.
  *
- * Return value: (transfer full): a array of bytes, or %NULL on error
+ * Return value: (transfer full): the converted bytes, or %NULL on error
  */
-char *
-nm_utils_hexstr2bin (const char *hex, size_t len)
+GBytes *
+nm_utils_hexstr2bin (const char *hex)
 {
-	size_t       i;
-	int          a;
-	const char * ipos = hex;
-	char *       buf = NULL;
-	char *       opos;
+	guint i = 0, x = 0;
+	gs_free guint8 *c = NULL;
+	int a, b;
+	gboolean found_colon = FALSE;
 
-	/* Length must be a multiple of 2 */
-	if ((len % 2) != 0)
-		return NULL;
+	g_return_val_if_fail (hex != NULL, NULL);
 
-	opos = buf = g_malloc0 ((len / 2) + 1);
-	for (i = 0; i < len; i += 2) {
-		a = nm_utils_hex2byte (ipos);
-		if (a < 0) {
-			g_free (buf);
+	if (strncasecmp (hex, "0x", 2) == 0)
+		hex += 2;
+	found_colon = !!strchr (hex, ':');
+
+	c = g_malloc (strlen (hex) / 2 + 1);
+	for (;;) {
+		a = g_ascii_xdigit_value (hex[i++]);
+		if (a < 0)
+			return NULL;
+
+		if (hex[i] && hex[i] != ':') {
+			b = g_ascii_xdigit_value (hex[i++]);
+			if (b < 0)
+				return NULL;
+			c[x++] = ((guint) a << 4) | ((guint) b);
+		} else
+			c[x++] = (guint) a;
+
+		if (!hex[i])
+			break;
+		if (hex[i] == ':') {
+			if (!hex[i + 1]) {
+				/* trailing ':' is invalid */
+				return NULL;
+			}
+			i++;
+		} else if (found_colon) {
+			/* If colons exist, they must delimit 1 or 2 hex chars */
 			return NULL;
 		}
-		*opos++ = a;
-		ipos += 2;
 	}
-	return buf;
+
+	return g_bytes_new (c, x);
 }
-/* End from hostap */
 
 /**
  * nm_utils_iface_valid_name:
@@ -2705,13 +3085,14 @@ static char _nm_utils_inet_ntop_buffer[NM_UTILS_INET_ADDRSTRLEN];
 /**
  * nm_utils_inet4_ntop: (skip)
  * @inaddr: the address that should be converted to string.
- * @dst: the destination buffer, it must contain at least %INET_ADDRSTRLEN
- *  or %NM_UTILS_INET_ADDRSTRLEN characters. If set to %NULL, it will return
- *  a pointer to an internal, static buffer (shared with nm_utils_inet6_ntop()).
- *  Beware, that the internal buffer will be overwritten with ever new call
- *  of nm_utils_inet4_ntop() or nm_utils_inet6_ntop() that does not provied it's
- *  own @dst buffer. Also, using the internal buffer is not thread safe. When
- *  in doubt, pass your own @dst buffer to avoid these issues.
+ * @dst: the destination buffer, it must contain at least
+ *  <literal>INET_ADDRSTRLEN</literal> or %NM_UTILS_INET_ADDRSTRLEN
+ *  characters. If set to %NULL, it will return a pointer to an internal, static
+ *  buffer (shared with nm_utils_inet6_ntop()).  Beware, that the internal
+ *  buffer will be overwritten with ever new call of nm_utils_inet4_ntop() or
+ *  nm_utils_inet6_ntop() that does not provied it's own @dst buffer. Also,
+ *  using the internal buffer is not thread safe. When in doubt, pass your own
+ *  @dst buffer to avoid these issues.
  *
  * Wrapper for inet_ntop.
  *
@@ -2728,13 +3109,14 @@ nm_utils_inet4_ntop (in_addr_t inaddr, char *dst)
 /**
  * nm_utils_inet6_ntop: (skip)
  * @in6addr: the address that should be converted to string.
- * @dst: the destination buffer, it must contain at least %INET6_ADDRSTRLEN
- *  or %NM_UTILS_INET_ADDRSTRLEN characters. If set to %NULL, it will return
- *  a pointer to an internal, static buffer (shared with nm_utils_inet4_ntop()).
- *  Beware, that the internal buffer will be overwritten with ever new call
- *  of nm_utils_inet4_ntop() or nm_utils_inet6_ntop() that does not provied it's
- *  own @dst buffer. Also, using the internal buffer is not thread safe. When
- *  in doubt, pass your own @dst buffer to avoid these issues.
+ * @dst: the destination buffer, it must contain at least
+ *  <literal>INET6_ADDRSTRLEN</literal> or %NM_UTILS_INET_ADDRSTRLEN
+ *  characters. If set to %NULL, it will return a pointer to an internal, static
+ *  buffer (shared with nm_utils_inet4_ntop()).  Beware, that the internal
+ *  buffer will be overwritten with ever new call of nm_utils_inet4_ntop() or
+ *  nm_utils_inet6_ntop() that does not provied it's own @dst buffer. Also,
+ *  using the internal buffer is not thread safe. When in doubt, pass your own
+ *  @dst buffer to avoid these issues.
  *
  * Wrapper for inet_ntop.
  *
@@ -2748,6 +3130,29 @@ nm_utils_inet6_ntop (const struct in6_addr *in6addr, char *dst)
 	g_return_val_if_fail (in6addr, NULL);
 	return inet_ntop (AF_INET6, in6addr, dst ? dst : _nm_utils_inet_ntop_buffer,
 	                  INET6_ADDRSTRLEN);
+}
+
+/**
+ * nm_utils_ipaddr_valid:
+ * @family: <literal>AF_INET</literal> or <literal>AF_INET6</literal>, or
+ *   <literal>AF_UNSPEC</literal> to accept either
+ * @ip: an IP address
+ *
+ * Checks if @ip contains a valid IP address of the given family.
+ *
+ * Return value: %TRUE or %FALSE
+ */
+gboolean
+nm_utils_ipaddr_valid (int family, const char *ip)
+{
+	guint8 buf[sizeof (struct in6_addr)];
+
+	g_return_val_if_fail (family == AF_INET || family == AF_INET6 || family == AF_UNSPEC, FALSE);
+
+	if (family == AF_UNSPEC)
+		family = strchr (ip, ':') ? AF_INET6 : AF_INET;
+
+	return inet_pton (family, ip, buf) == 1;
 }
 
 /**
@@ -2810,4 +3215,66 @@ nm_utils_check_virtual_device_compatibility (GType virtual_type, GType other_typ
 	}
 }
 
+typedef struct {
+	const char *str;
+	const char *num;
+} BondMode;
 
+static BondMode bond_mode_table[] = {
+	[0] = { "balance-rr",    "0" },
+	[1] = { "active-backup", "1" },
+	[2] = { "balance-xor",   "2" },
+	[3] = { "broadcast",     "3" },
+	[4] = { "802.3ad",       "4" },
+	[5] = { "balance-tlb",   "5" },
+	[6] = { "balance-alb",   "6" },
+};
+
+/**
+ * nm_utils_bond_mode_int_to_string:
+ * @mode: bonding mode as a numeric value
+ *
+ * Convert bonding mode from integer value to descriptive name.
+ * See https://www.kernel.org/doc/Documentation/networking/bonding.txt for
+ * available modes.
+ *
+ * Returns: bonding mode string, or NULL on error
+ *
+ * Since: 1.2
+ */
+const char *
+nm_utils_bond_mode_int_to_string (int mode)
+{
+	if (mode >= 0 && mode < G_N_ELEMENTS (bond_mode_table))
+		return bond_mode_table[mode].str;
+	return NULL;
+}
+
+/**
+ * nm_utils_bond_mode_string_to_int:
+ * @mode: bonding mode as string
+ *
+ * Convert bonding mode from string representation to numeric value.
+ * See https://www.kernel.org/doc/Documentation/networking/bonding.txt for
+ * available modes.
+ * The @mode string can be either a descriptive name or a number (as string).
+ *
+ * Returns: numeric bond mode, or -1 on error
+ *
+ * Since: 1.2
+ */
+int
+nm_utils_bond_mode_string_to_int (const char *mode)
+{
+	int i;
+
+	if (!mode || !*mode)
+		return -1;
+
+	for (i = 0; i < G_N_ELEMENTS (bond_mode_table); i++) {
+		if (   strcmp (mode, bond_mode_table[i].str) == 0
+		    || strcmp (mode, bond_mode_table[i].num) == 0)
+			return i;
+	}
+	return -1;
+}

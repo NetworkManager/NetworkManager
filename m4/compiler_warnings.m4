@@ -29,8 +29,9 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 		      -fno-strict-aliasing -Wno-unused-but-set-variable \
 		      -Wundef -Wimplicit-function-declaration \
 		      -Wpointer-arith -Winit-self \
-		      -Wmissing-include-dirs -Waggregate-return; do
-		CFLAGS="$CFLAGS_MORE_WARNINGS $CFLAGS_EXTRA $option $CFLAGS_SAVED"
+		      -Wmissing-include-dirs; do
+		dnl GCC 4.4 does not warn when checking for -Wno-* flags (https://gcc.gnu.org/wiki/FAQ#wnowarning)
+		CFLAGS="$CFLAGS_MORE_WARNINGS $CFLAGS_EXTRA $(printf '%s' "$option" | sed 's/^-Wno-/-W/')  $CFLAGS_SAVED"
 		AC_MSG_CHECKING([whether gcc understands $option])
 		AC_TRY_COMPILE([], [],
 			has_option=yes,

@@ -19,6 +19,8 @@
  * Copyright (C) 1999-2010 Gentoo Foundation, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 #include <glib/gstdio.h>
 #include <nm-dbus-interface.h>
@@ -80,6 +82,7 @@ nm_ifnet_connection_new (NMConnection *source, const char *conn_name)
 	nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
 	                                         tmp,
 	                                         update_unsaved,
+	                                         NULL,
 	                                         NULL);
 	g_object_unref (tmp);
 

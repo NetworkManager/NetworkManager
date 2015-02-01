@@ -18,7 +18,8 @@
  * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <string.h>
 
 #include <glib-object.h>
@@ -52,6 +53,37 @@ construct_basic_items (GSList *list,
 	return list;
 }
 
+static GSList *_list_append_val_strv (GSList *items, char **values, const char *format, ...) G_GNUC_PRINTF(3, 4);
+
+static GSList *
+_list_append_val_strv (GSList *items, char **values, const char *format, ...)
+{
+	if (!values)
+		g_return_val_if_reached (items);
+
+	/*  Only add an item if the list of @values is not empty */
+	if (values[0]) {
+		va_list args;
+		guint i;
+		GString *str = g_string_new (NULL);
+
+		va_start (args, format);
+		g_string_append_vprintf (str, format, args);
+		va_end (args);
+
+		g_string_append (str, values[0]);
+		for (i = 1; values[i]; i++) {
+			g_string_append_c (str, ' ');
+			g_string_append (str, values[i]);
+		}
+		items = g_slist_prepend (items, g_string_free (str, FALSE));
+	}
+
+	/* we take ownership of the values array and free it. */
+	g_strfreev (values);
+	return items;
+}
+
 static GSList *
 add_domains (GSList *items,
              GVariant *dict,
@@ -59,32 +91,14 @@ add_domains (GSList *items,
              const char four_or_six)
 {
 	GVariant *val;
-	char **domains = NULL;
-	GString *tmp;
-	guint i;
 
 	/* Search domains */
 	val = g_variant_lookup_value (dict, "domains", G_VARIANT_TYPE_STRING_ARRAY);
-	if (!val)
-		return items;
-
-	domains = g_variant_dup_strv (val, NULL);
-	g_variant_unref (val);
-	if (!domains[0]) {
-		g_strfreev (domains);
-		return items;
+	if (val) {
+		items = _list_append_val_strv (items, g_variant_dup_strv (val, NULL),
+		                               "%sIP%c_DOMAINS=", prefix, four_or_six);
+		g_variant_unref (val);
 	}
-
-	tmp = g_string_new (NULL);
-	g_string_append_printf (tmp, "%sIP%c_DOMAINS=", prefix, four_or_six);
-	for (i = 0; domains[i]; i++) {
-		if (i > 0)
-			g_string_append_c (tmp, ' ');
-		g_string_append (tmp, domains[i]);
-	}
-	items = g_slist_prepend (items, g_string_free (tmp, FALSE));
-
-	g_strfreev (domains);
 	return items;
 }
 
@@ -92,11 +106,8 @@ static GSList *
 construct_ip4_items (GSList *items, GVariant *ip4_config, const char *prefix)
 {
 	GPtrArray *addresses, *routes;
-	char **dns, **wins;
-	GString *tmp;
+	char *gateway;
 	GVariant *val;
-	char str_addr[INET_ADDRSTRLEN];
-	char str_gw[INET_ADDRSTRLEN];
 	int i;
 
 	if (ip4_config == NULL)
@@ -108,42 +119,36 @@ construct_ip4_items (GSList *items, GVariant *ip4_config, const char *prefix)
 	/* IP addresses */
 	val = g_variant_lookup_value (ip4_config, "addresses", G_VARIANT_TYPE ("aau"));
 	if (val) {
-		addresses = nm_utils_ip4_addresses_from_variant (val);
+		addresses = nm_utils_ip4_addresses_from_variant (val, &gateway);
+		if (!gateway)
+			gateway = g_strdup ("0.0.0.0");
 
 		for (i = 0; i < addresses->len; i++) {
-			NMIP4Address *addr = addresses->pdata[i];
-			guint32 ip_prefix = nm_ip4_address_get_prefix (addr);
+			NMIPAddress *addr = addresses->pdata[i];
 			char *addrtmp;
 
-			nm_utils_inet4_ntop (nm_ip4_address_get_address (addr), str_addr);
-			nm_utils_inet4_ntop (nm_ip4_address_get_gateway (addr), str_gw);
-
-			addrtmp = g_strdup_printf ("%sIP4_ADDRESS_%d=%s/%d %s", prefix, i, str_addr, ip_prefix, str_gw);
+			addrtmp = g_strdup_printf ("%sIP4_ADDRESS_%d=%s/%d %s", prefix, i,
+			                           nm_ip_address_get_address (addr),
+			                           nm_ip_address_get_prefix (addr),
+			                           gateway);
 			items = g_slist_prepend (items, addrtmp);
 		}
 		if (addresses->len)
 			items = g_slist_prepend (items, g_strdup_printf ("%sIP4_NUM_ADDRESSES=%d", prefix, addresses->len));
+
+		/* Write gateway to a separate variable, too. */
+		items = g_slist_prepend (items, g_strdup_printf ("%sIP4_GATEWAY=%s", prefix, gateway));
+
 		g_ptr_array_unref (addresses);
+		g_free (gateway);
 		g_variant_unref (val);
 	}
 
 	/* DNS servers */
 	val = g_variant_lookup_value (ip4_config, "nameservers", G_VARIANT_TYPE ("au"));
 	if (val) {
-		dns = nm_utils_ip4_dns_from_variant (val);
-
-		if (dns[0]) {
-			tmp = g_string_new (NULL);
-			g_string_append_printf (tmp, "%sIP4_NAMESERVERS=", prefix);
-			for (i = 0; dns[i]; i++) {
-				if (i != 0)
-					g_string_append_c (tmp, ' ');
-				g_string_append (tmp, dns[i]);
-			}
-
-			items = g_slist_prepend (items, g_string_free (tmp, FALSE));
-		}
-		g_strfreev (dns);
+		items = _list_append_val_strv (items, nm_utils_ip4_dns_from_variant (val),
+		                               "%sIP4_NAMESERVERS=", prefix);
 		g_variant_unref (val);
 	}
 
@@ -153,21 +158,8 @@ construct_ip4_items (GSList *items, GVariant *ip4_config, const char *prefix)
 	/* WINS servers */
 	val = g_variant_lookup_value (ip4_config, "wins-servers", G_VARIANT_TYPE ("au"));
 	if (val) {
-		wins = nm_utils_ip4_dns_from_variant (val);
-
-		if (wins[0]) {
-			tmp = g_string_new (NULL);
-			g_string_append_printf (tmp, "%sIP4_WINS_SERVERS=", prefix);
-
-			for (i = 0; wins[i]; i++) {
-				if (i != 0)
-					g_string_append_c (tmp, ' ');
-				g_string_append (tmp, wins[i]);
-			}
-
-			items = g_slist_prepend (items, g_string_free (tmp, FALSE));
-		}
-		g_strfreev (wins);
+		items = _list_append_val_strv (items, nm_utils_ip4_dns_from_variant (val),
+		                               "%sIP4_WINS_SERVERS=", prefix);
 		g_variant_unref (val);
 	}
 
@@ -177,15 +169,19 @@ construct_ip4_items (GSList *items, GVariant *ip4_config, const char *prefix)
 		routes = nm_utils_ip4_routes_from_variant (val);
 
 		for (i = 0; i < routes->len; i++) {
-			NMIP4Route *route = routes->pdata[i];
-			guint32 ip_prefix = nm_ip4_route_get_prefix (route);
-			guint32 metric = nm_ip4_route_get_metric (route);
+			NMIPRoute *route = routes->pdata[i];
+			const char *next_hop;
 			char *routetmp;
 
-			nm_utils_inet4_ntop (nm_ip4_route_get_dest (route), str_addr);
-			nm_utils_inet4_ntop (nm_ip4_route_get_next_hop (route), str_gw);
+			next_hop = nm_ip_route_get_next_hop (route);
+			if (!next_hop)
+				next_hop = "0.0.0.0";
 
-			routetmp = g_strdup_printf ("%sIP4_ROUTE_%d=%s/%d %s %d", prefix, i, str_addr, ip_prefix, str_gw, metric);
+			routetmp = g_strdup_printf ("%sIP4_ROUTE_%d=%s/%d %s %u", prefix, i,
+			                            nm_ip_route_get_dest (route),
+			                            nm_ip_route_get_prefix (route),
+			                            next_hop,
+			                            (guint32) MAX (0, nm_ip_route_get_metric (route)));
 			items = g_slist_prepend (items, routetmp);
 		}
 		items = g_slist_prepend (items, g_strdup_printf ("%sIP4_NUM_ROUTES=%d", prefix, routes->len));
@@ -222,11 +218,8 @@ static GSList *
 construct_ip6_items (GSList *items, GVariant *ip6_config, const char *prefix)
 {
 	GPtrArray *addresses, *routes;
-	char **dns;
-	GString *tmp;
+	char *gateway = NULL;
 	GVariant *val;
-	char str_addr[INET6_ADDRSTRLEN];
-	char str_gw[INET6_ADDRSTRLEN];
 	int i;
 
 	if (ip6_config == NULL)
@@ -238,43 +231,36 @@ construct_ip6_items (GSList *items, GVariant *ip6_config, const char *prefix)
 	/* IP addresses */
 	val = g_variant_lookup_value (ip6_config, "addresses", G_VARIANT_TYPE ("a(ayuay)"));
 	if (val) {
-		addresses = nm_utils_ip6_addresses_from_variant (val);
+		addresses = nm_utils_ip6_addresses_from_variant (val, &gateway);
+		if (!gateway)
+			gateway = g_strdup ("::");
 
 		for (i = 0; i < addresses->len; i++) {
-			NMIP6Address *addr = addresses->pdata[i];
-			guint32 ip_prefix = nm_ip6_address_get_prefix (addr);
+			NMIPAddress *addr = addresses->pdata[i];
 			char *addrtmp;
 
-			nm_utils_inet6_ntop (nm_ip6_address_get_address (addr), str_addr);
-			nm_utils_inet6_ntop (nm_ip6_address_get_gateway (addr), str_gw);
-
-			addrtmp = g_strdup_printf ("%sIP6_ADDRESS_%d=%s/%d %s", prefix, i, str_addr, ip_prefix, str_gw);
+			addrtmp = g_strdup_printf ("%sIP6_ADDRESS_%d=%s/%d %s", prefix, i,
+			                           nm_ip_address_get_address (addr),
+			                           nm_ip_address_get_prefix (addr),
+			                           gateway);
 			items = g_slist_prepend (items, addrtmp);
 		}
 		if (addresses->len)
 			items = g_slist_prepend (items, g_strdup_printf ("%sIP6_NUM_ADDRESSES=%d", prefix, addresses->len));
+
+		/* Write gateway to a separate variable, too. */
+		items = g_slist_prepend (items, g_strdup_printf ("%sIP6_GATEWAY=%s", prefix, gateway));
+
 		g_ptr_array_unref (addresses);
+		g_free (gateway);
 		g_variant_unref (val);
 	}
 
 	/* DNS servers */
 	val = g_variant_lookup_value (ip6_config, "nameservers", G_VARIANT_TYPE ("aay"));
 	if (val) {
-		dns = nm_utils_ip6_dns_from_variant (val);
-
-		if (dns[0]) {
-			tmp = g_string_new (NULL);
-			g_string_append_printf (tmp, "%sIP6_NAMESERVERS=", prefix);
-
-			for (i = 0; dns[i]; i++) {
-				if (i != 0)
-					g_string_append_c (tmp, ' ');
-				g_string_append (tmp, dns[i]);
-			}
-
-			items = g_slist_prepend (items, g_string_free (tmp, FALSE));
-		}
-		g_strfreev (dns);
+		items = _list_append_val_strv (items, nm_utils_ip6_dns_from_variant (val),
+		                               "%sIP6_NAMESERVERS=", prefix);
 		g_variant_unref (val);
 	}
 
@@ -287,15 +273,19 @@ construct_ip6_items (GSList *items, GVariant *ip6_config, const char *prefix)
 		routes = nm_utils_ip6_routes_from_variant (val);
 
 		for (i = 0; i < routes->len; i++) {
-			NMIP6Route *route = routes->pdata[i];
-			guint32 ip_prefix = nm_ip6_route_get_prefix (route);
-			guint32 metric = nm_ip6_route_get_metric (route);
+			NMIPRoute *route = routes->pdata[i];
+			const char *next_hop;
 			char *routetmp;
 
-			nm_utils_inet6_ntop (nm_ip6_route_get_dest (route), str_addr);
-			nm_utils_inet6_ntop (nm_ip6_route_get_next_hop (route), str_gw);
+			next_hop = nm_ip_route_get_next_hop (route);
+			if (!next_hop)
+				next_hop = "::";
 
-			routetmp = g_strdup_printf ("%sIP6_ROUTE_%d=%s/%d %s %d", prefix, i, str_addr, ip_prefix, str_gw, metric);
+			routetmp = g_strdup_printf ("%sIP6_ROUTE_%d=%s/%d %s %u", prefix, i,
+			                            nm_ip_route_get_dest (route),
+			                            nm_ip_route_get_prefix (route),
+			                            next_hop,
+			                            (guint32) MAX (0, nm_ip_route_get_metric (route)));
 			items = g_slist_prepend (items, routetmp);
 		}
 		if (routes->len)
@@ -343,7 +333,9 @@ nm_dispatcher_utils_construct_envp (const char *action,
                                     char **out_iface)
 {
 	const char *iface = NULL, *ip_iface = NULL;
-	const char *uuid = NULL, *id = NULL, *path;
+	const char *uuid = NULL, *id = NULL, *path = NULL;
+	const char *filename = NULL;
+	gboolean external;
 	NMDeviceState dev_state = NM_DEVICE_STATE_UNKNOWN;
 	GVariant *value;
 	char **envp = NULL, *path_item;
@@ -358,6 +350,20 @@ nm_dispatcher_utils_construct_envp (const char *action,
 	/* Hostname changes don't require a device nor contain a connection */
 	if (!strcmp (action, "hostname"))
 		goto done;
+
+	/* Connection properties */
+	if (!g_variant_lookup (connection_props, NMD_CONNECTION_PROPS_PATH, "&o", &path)) {
+		g_warning ("Missing or invalid required value " NMD_CONNECTION_PROPS_PATH "!");
+		return NULL;
+	}
+	items = g_slist_prepend (items, g_strdup_printf ("CONNECTION_DBUS_PATH=%s", path));
+
+	if (g_variant_lookup (connection_props, NMD_CONNECTION_PROPS_EXTERNAL, "b", &external) && external)
+		items = g_slist_prepend (items, g_strdup ("CONNECTION_EXTERNAL=1"));
+
+	if (g_variant_lookup (connection_props, NMD_CONNECTION_PROPS_FILENAME, "&s", &filename))
+		items = g_slist_prepend (items, g_strdup_printf ("CONNECTION_FILENAME=%s", filename));
+
 
 	/* Canonicalize the VPN interface name; "" is used when passing it through
 	 * D-Bus so make sure that's fixed up here.

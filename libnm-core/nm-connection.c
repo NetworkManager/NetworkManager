@@ -20,8 +20,10 @@
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
+#include "config.h"
+
 #include <glib-object.h>
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 #include <string.h>
 #include "nm-connection.h"
 #include "nm-connection-private.h"
@@ -302,6 +304,8 @@ nm_connection_replace_settings (NMConnection *connection,
 	for (s = settings; s; s = s->next)
 		_nm_connection_add_setting (connection, s->data);
 
+	g_slist_free (settings);
+
 	if (changed)
 		g_signal_emit (connection, signals[CHANGED], 0);
 	return TRUE;
@@ -525,6 +529,24 @@ _nm_connection_find_base_type_setting (NMConnection *connection)
 }
 
 static gboolean
+_normalize_connection_uuid (NMConnection *self)
+{
+	NMSettingConnection *s_con = nm_connection_get_setting_connection (self);
+	char *uuid;
+
+	g_assert (s_con);
+
+	if (nm_setting_connection_get_uuid (s_con))
+		return FALSE;
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con, NM_SETTING_CONNECTION_UUID, uuid, NULL);
+	g_free (uuid);
+
+	return TRUE;
+}
+
+static gboolean
 _normalize_connection_type (NMConnection *self)
 {
 	NMSettingConnection *s_con = nm_connection_get_setting_connection (self);
@@ -631,8 +653,7 @@ _normalize_ip_config (NMConnection *self, GHashTable *parameters)
 	NMSettingConnection *s_con = nm_connection_get_setting_connection (self);
 	const char *default_ip4_method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
 	const char *default_ip6_method = NULL;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4, *s_ip6;
 	NMSetting *setting;
 
 	if (parameters)
@@ -663,7 +684,7 @@ _normalize_ip_config (NMConnection *self, GHashTable *parameters)
 			setting = nm_setting_ip4_config_new ();
 
 			g_object_set (setting,
-			              NM_SETTING_IP4_CONFIG_METHOD, default_ip4_method,
+			              NM_SETTING_IP_CONFIG_METHOD, default_ip4_method,
 			              NULL);
 			nm_connection_add_setting (self, setting);
 		}
@@ -671,8 +692,8 @@ _normalize_ip_config (NMConnection *self, GHashTable *parameters)
 			setting = nm_setting_ip6_config_new ();
 
 			g_object_set (setting,
-			              NM_SETTING_IP6_CONFIG_METHOD, default_ip6_method,
-			              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+			              NM_SETTING_IP_CONFIG_METHOD, default_ip6_method,
+			              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 			              NULL);
 			nm_connection_add_setting (self, setting);
 		}
@@ -697,6 +718,27 @@ _normalize_infiniband_mtu (NMConnection *self, GHashTable *parameters)
 
 			if (max_mtu && nm_setting_infiniband_get_mtu (s_infini) > max_mtu) {
 				g_object_set (s_infini, NM_SETTING_INFINIBAND_MTU, max_mtu, NULL);
+				return TRUE;
+			}
+		}
+	}
+	return FALSE;
+}
+
+static gboolean
+_normalize_bond_mode (NMConnection *self, GHashTable *parameters)
+{
+	NMSettingBond *s_bond = nm_connection_get_setting_bond (self);
+
+	/* Convert mode from numeric to string notation */
+	if (s_bond) {
+		const char *mode = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_MODE);
+		int mode_int = nm_utils_bond_mode_string_to_int (mode);
+
+		if (mode_int != -1) {
+			const char *mode_new = nm_utils_bond_mode_int_to_string (mode_int);
+			if (g_strcmp0 (mode_new, mode) != 0) {
+				nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_MODE, mode_new);
 				return TRUE;
 			}
 		}
@@ -740,8 +782,7 @@ _nm_connection_verify (NMConnection *connection, GError **error)
 {
 	NMConnectionPrivate *priv;
 	NMSettingConnection *s_con;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4, *s_ip6;
 	GHashTableIter iter;
 	gpointer value;
 	GSList *all_settings = NULL, *setting_i;
@@ -913,10 +954,12 @@ nm_connection_normalize (NMConnection *connection,
 	 * We only do this, after verifying that the connection contains no un-normalizable
 	 * errors, because in that case we rather fail without touching the settings. */
 
+	was_modified |= _normalize_connection_uuid (connection);
 	was_modified |= _normalize_connection_type (connection);
 	was_modified |= _normalize_connection_slave_type (connection);
 	was_modified |= _normalize_ip_config (connection, parameters);
 	was_modified |= _normalize_infiniband_mtu (connection, parameters);
+	was_modified |= _normalize_bond_mode (connection, parameters);
 
 	/* Verify anew. */
 	success = _nm_connection_verify (connection, error);
@@ -1739,14 +1782,19 @@ nm_connection_get_setting_infiniband (NMConnection *connection)
  *
  * A shortcut to return any #NMSettingIP4Config the connection might contain.
  *
- * Returns: (transfer none): an #NMSettingIP4Config if the connection contains one, otherwise %NULL
+ * Note that it returns the value as type #NMSettingIPConfig, since the vast
+ * majority of IPv4-setting-related methods are on that type, not
+ * #NMSettingIP4Config.
+ *
+ * Returns: (type NMSettingIP4Config) (transfer none): an #NMSettingIP4Config if the
+ * connection contains one, otherwise %NULL
  **/
-NMSettingIP4Config *
+NMSettingIPConfig *
 nm_connection_get_setting_ip4_config (NMConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
-	return (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	return (NMSettingIPConfig *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
 }
 
 /**
@@ -1755,14 +1803,19 @@ nm_connection_get_setting_ip4_config (NMConnection *connection)
  *
  * A shortcut to return any #NMSettingIP6Config the connection might contain.
  *
- * Returns: (transfer none): an #NMSettingIP6Config if the connection contains one, otherwise %NULL
+ * Note that it returns the value as type #NMSettingIPConfig, since the vast
+ * majority of IPv6-setting-related methods are on that type, not
+ * #NMSettingIP6Config.
+ *
+ * Returns: (type NMSettingIP6Config) (transfer none): an #NMSettingIP6Config if the
+ * connection contains one, otherwise %NULL
  **/
-NMSettingIP6Config *
+NMSettingIPConfig *
 nm_connection_get_setting_ip6_config (NMConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
-	return (NMSettingIP6Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
+	return (NMSettingIPConfig *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
 }
 
 /**

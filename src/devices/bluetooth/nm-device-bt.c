@@ -124,6 +124,12 @@ get_connection_bt_type (NMConnection *connection)
 	return NM_BT_CAPABILITY_NONE;
 }
 
+static guint32
+get_generic_capabilities (NMDevice *device)
+{
+	return NM_DEVICE_CAP_IS_NON_KERNEL;
+}
+
 static gboolean
 can_auto_connect (NMDevice *device,
                   NMConnection *connection,
@@ -181,6 +187,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 static gboolean
 check_connection_available (NMDevice *device,
                             NMConnection *connection,
+                            NMDeviceCheckConAvailableFlags flags,
                             const char *specific_object)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
@@ -298,12 +305,11 @@ complete_connection (NMDevice *device,
 			fallback_prefix = _("GSM connection");
 			if (!nm_setting_gsm_get_number (s_gsm))
 				g_object_set (G_OBJECT (s_gsm), NM_SETTING_GSM_NUMBER, "*99#", NULL);
-		} else if (s_cdma) {
+		} else {
 			fallback_prefix = _("CDMA connection");
 			if (!nm_setting_cdma_get_number (s_cdma))
 				g_object_set (G_OBJECT (s_cdma), NM_SETTING_GSM_NUMBER, "#777", NULL);
-		} else
-			fallback_prefix = _("DUN connection");
+		}
 	} else {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
@@ -924,7 +930,7 @@ bluez_device_removed (NMBluezDevice *bdev, gpointer user_data)
 /*****************************************************************************/
 
 static gboolean
-is_available (NMDevice *dev)
+is_available (NMDevice *dev, NMDeviceCheckDevAvailableFlags flags)
 {
 	NMDeviceBt *self = NM_DEVICE_BT (dev);
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (self);
@@ -952,7 +958,7 @@ handle_availability_change (NMDeviceBt *self,
 		return;
 	}
 
-	available = nm_device_is_available (device);
+	available = nm_device_is_available (device, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE);
 	if (available == old_available)
 		return;
 
@@ -982,7 +988,7 @@ set_mm_running (NMDeviceBt *self, gboolean running)
 	_LOGD (LOGD_BT, "ModemManager now %s",
 	       running ? "available" : "unavailable");
 
-	old_available = nm_device_is_available (NM_DEVICE (self));
+	old_available = nm_device_is_available (NM_DEVICE (self), NM_DEVICE_CHECK_DEV_AVAILABLE_NONE);
 	priv->mm_running = running;
 	handle_availability_change (self, old_available, NM_DEVICE_STATE_REASON_MODEM_MANAGER_UNAVAILABLE);
 
@@ -1179,6 +1185,7 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 
+	device_class->get_generic_capabilities = get_generic_capabilities;
 	device_class->can_auto_connect = can_auto_connect;
 	device_class->deactivate = deactivate;
 	device_class->act_stage2_config = act_stage2_config;

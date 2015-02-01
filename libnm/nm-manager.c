@@ -19,8 +19,10 @@
  * Copyright 2007 - 2014 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 #include <nm-utils.h>
 
 #include "nm-manager.h"
@@ -743,6 +745,8 @@ typedef struct {
 	char *new_connection_path;
 } ActivateInfo;
 
+static void active_removed (NMObject *object, NMActiveConnection *active, gpointer user_data);
+
 static void
 activate_info_complete (ActivateInfo *info,
                         NMActiveConnection *active,
@@ -750,6 +754,7 @@ activate_info_complete (ActivateInfo *info,
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (info->manager);
 
+	g_signal_handlers_disconnect_by_func (info->manager, G_CALLBACK (active_removed), info);
 	if (active)
 		g_simple_async_result_set_op_res_gpointer (info->simple, g_object_ref (active), g_object_unref);
 	else
@@ -813,9 +818,12 @@ recheck_pending_activations (NMManager *self)
 		devices = nm_active_connection_get_devices (candidate);
 		if (devices->len == 0)
 			continue;
-		device = devices->pdata[0];
-		if (nm_device_get_active_connection (device) != candidate)
-			continue;
+
+		if (!NM_IS_VPN_CONNECTION (candidate)) {
+			device = devices->pdata[0];
+			if (nm_device_get_active_connection (device) != candidate)
+				continue;
+		}
 
 		activate_info_complete (info, candidate, NULL);
 		break;
@@ -837,6 +845,22 @@ activation_cancelled (GCancellable *cancellable,
 }
 
 static void
+active_removed (NMObject *object, NMActiveConnection *active, gpointer user_data)
+{
+	ActivateInfo *info = user_data;
+	GError *error = NULL;
+
+	if (strcmp (info->active_path, nm_object_get_path (NM_OBJECT (active))))
+		return;
+
+	error = g_error_new_literal (NM_CLIENT_ERROR,
+	                             NM_CLIENT_ERROR_FAILED,
+	                             _("Active connection could not be attached to the device"));
+	activate_info_complete (info, NULL, error);
+	g_clear_error (&error);
+}
+
+static void
 activate_cb (GObject *object,
              GAsyncResult *result,
              gpointer user_data)
@@ -851,6 +875,9 @@ activate_cb (GObject *object,
 			info->cancelled_id = g_signal_connect (info->cancellable, "cancelled",
 			                                       G_CALLBACK (activation_cancelled), info);
 		}
+
+		g_signal_connect (info->manager, "active-connection-removed",
+		                  G_CALLBACK (active_removed), info);
 
 		recheck_pending_activations (info->manager);
 	} else {
@@ -927,6 +954,9 @@ add_activate_cb (GObject *object,
 			info->cancelled_id = g_signal_connect (info->cancellable, "cancelled",
 			                                       G_CALLBACK (activation_cancelled), info);
 		}
+
+		g_signal_connect (info->manager, "active-connection-removed",
+		                  G_CALLBACK (active_removed), info);
 
 		recheck_pending_activations (info->manager);
 	} else {
@@ -1042,8 +1072,6 @@ object_creation_failed (NMObject *object, const char *failed_path)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GError *error;
 	GSList *iter;
-
-	g_return_if_fail (find_active_connection_by_path (self, failed_path) == NULL);
 
 	/* A newly activated connection failed due to some immediate error
 	 * and disappeared from active connection list.  Make sure the
@@ -1278,9 +1306,6 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 {
 	NMManager *manager = NM_MANAGER (initable);
 
-	if (!nm_utils_init (error))
-		return FALSE;
-
 	if (!nm_manager_parent_initable_iface->init (initable, cancellable, error))
 		return FALSE;
 
@@ -1352,13 +1377,6 @@ init_async (GAsyncInitable *initable, int io_priority,
             gpointer user_data)
 {
 	NMManagerInitData *init_data;
-	GError *error = NULL;
-
-	if (!nm_utils_init (&error)) {
-		g_simple_async_report_take_gerror_in_idle (G_OBJECT (initable),
-		                                           callback, user_data, error);
-		return;
-	}
 
 	init_data = g_slice_new0 (NMManagerInitData);
 	init_data->manager = NM_MANAGER (initable);

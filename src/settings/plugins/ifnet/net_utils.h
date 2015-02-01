@@ -31,18 +31,11 @@
 #define has_default_ip6_route(conn_name) has_default_route((conn_name), &is_ip6_address)
 
 typedef struct _ip_block {
-	guint32 ip;
-	guint32 netmask;
-	guint32 gateway;
+	char *ip;
+	guint32 prefix;
+	char *next_hop;
 	struct _ip_block *next;
 } ip_block;
-
-typedef struct _ip6_block {
-	struct in6_addr *ip;
-	long int prefix;
-	struct in6_addr *next_hop;
-	struct _ip6_block *next;
-} ip6_block;
 
 gchar *read_hostname (const char *path);
 gboolean write_hostname (const char *path, const char *hostname);
@@ -55,14 +48,13 @@ gboolean has_default_route (const char *conn_name, gboolean (*check_fn) (const c
 gboolean reload_parsers (void);
 
 ip_block *convert_ip4_config_block (const char *conn_name);
-ip6_block *convert_ip6_config_block (const char *conn_name);
+ip_block *convert_ip6_config_block (const char *conn_name);
 ip_block *convert_ip4_routes_block (const char *conn_name);
-ip6_block *convert_ip6_routes_block (const char *conn_name);
+ip_block *convert_ip6_routes_block (const char *conn_name);
 void destroy_ip_block (ip_block * iblock);
-void destroy_ip6_block (ip6_block * iblock);
 
-void set_ip4_dns_servers (NMSettingIP4Config * s_ip4, const char *conn_name);
-void set_ip6_dns_servers (NMSettingIP6Config * s_ip6, const char *conn_name);
+void set_ip4_dns_servers (NMSettingIPConfig * s_ip4, const char *conn_name);
+void set_ip6_dns_servers (NMSettingIPConfig * s_ip6, const char *conn_name);
 
 gchar *strip_string (gchar *str, gchar t);
 gboolean is_managed (const char *conn_name);

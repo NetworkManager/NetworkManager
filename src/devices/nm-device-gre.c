@@ -21,6 +21,7 @@
 #include "config.h"
 
 #include <string.h>
+#include <arpa/inet.h>
 
 #include "nm-device-gre.h"
 #include "nm-device-private.h"

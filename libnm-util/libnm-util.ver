@@ -367,6 +367,7 @@ global:
 	nm_setting_ip4_config_get_num_dns_searches;
 	nm_setting_ip4_config_get_num_routes;
 	nm_setting_ip4_config_get_route;
+	nm_setting_ip4_config_get_route_metric;
 	nm_setting_ip4_config_get_type;
 	nm_setting_ip4_config_new;
 	nm_setting_ip4_config_remove_address;
@@ -402,6 +403,7 @@ global:
 	nm_setting_ip6_config_get_num_dns_searches;
 	nm_setting_ip6_config_get_num_routes;
 	nm_setting_ip6_config_get_route;
+	nm_setting_ip6_config_get_route_metric;
 	nm_setting_ip6_config_get_type;
 	nm_setting_ip6_config_new;
 	nm_setting_ip6_config_privacy_get_type;
@@ -560,6 +562,7 @@ global:
 	nm_setting_wireless_get_mtu;
 	nm_setting_wireless_get_num_mac_blacklist_items;
 	nm_setting_wireless_get_num_seen_bssids;
+	nm_setting_wireless_get_powersave;
 	nm_setting_wireless_get_rate;
 	nm_setting_wireless_get_security;
 	nm_setting_wireless_get_seen_bssid;
@@ -610,6 +613,7 @@ global:
 	nm_utils_deinit;
 	nm_utils_escape_ssid;
 	nm_utils_file_is_pkcs12;
+	nm_utils_file_search_in_paths;
 	nm_utils_get_private;
 	nm_utils_gvalue_hash_dup;
 	nm_utils_hex2byte;

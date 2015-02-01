@@ -18,7 +18,7 @@
  * Copyright (C) 2010 - 2011 Red Hat, Inc.
  */
 
-#include <config.h>
+#include "config.h"
 
 #include <sys/types.h>
 #include <pwd.h>
@@ -299,8 +299,9 @@ nm_secret_agent_get_secrets (NMSecretAgent *self,
 	hash = nm_utils_connection_dict_to_hash (dict);
 	g_variant_unref (dict);
 
-	/* Mask off the private ONLY_SYSTEM flag if present */
+	/* Mask off the private flags if present */
 	flags &= ~NM_SECRET_AGENT_GET_SECRETS_FLAG_ONLY_SYSTEM;
+	flags &= ~NM_SECRET_AGENT_GET_SECRETS_FLAG_NO_ERRORS;
 
 	r = request_new (self, nm_connection_get_path (connection), setting_name, callback, callback_data);
 	r->call = dbus_g_proxy_begin_call_with_timeout (priv->proxy,

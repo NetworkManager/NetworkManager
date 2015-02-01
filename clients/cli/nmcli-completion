@@ -170,6 +170,33 @@ _nmcli_compl_OPTIONS()
             ask)
                 _nmcli_array_delete_at words 0
                 ;;
+            order)
+                if [[ "${#words[@]}" -eq 2 ]]; then
+                   local ord="${words[1]}"
+                   local ord_sta=""
+                   local i
+                   local c=()
+
+                   # FIXME: currently the completion considers colon as separator
+                   # for words. Hence the following doesn't work as $ord will
+                   # not contain any colons at this point.
+                   # See https://bugzilla.gnome.org/show_bug.cgi?id=745157
+
+                   if [[ $ord = *":"* ]]; then
+                       ord_sta="${ord%:*}:"
+                       ord="${ord##*:}"
+                   fi
+                   if [[ $ord = [-+]* ]]; then
+                       ord_sta="$ord_sta${ord:0:1}"
+                   fi
+                   for i in active name type path; do
+                       c=("${c[@]}" "$ord_sta$i")
+                   done
+                   _nmcli_list "${c[*]}"
+                   return 0
+                fi
+                _nmcli_array_delete_at words 0 1
+                ;;
             show-secrets)
                 _nmcli_array_delete_at words 0
                 ;;
@@ -193,6 +220,13 @@ _nmcli_compl_OPTIONS()
             mode)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     _nmcli_list "tabular multiline"
+                   return 0
+                fi
+                _nmcli_array_delete_at words 0 1
+                ;;
+            colors)
+                if [[ "${#words[@]}" -eq 2 ]]; then
+                    _nmcli_list "yes no auto"
                    return 0
                 fi
                 _nmcli_array_delete_at words 0 1
@@ -502,7 +536,8 @@ _nmcli_compl_ARGS()
             user| \
             username| \
             service| \
-            password)
+            password| \
+            passwd-file)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     return 0
                 fi
@@ -682,7 +717,7 @@ _nmcli()
     local COMMAND_CONNECTION_ACTIVE=""
 
     HELP_ONLY_AS_FIRST=
-    local LONG_OPTIONS=(terse pretty mode fields escape nocheck ask wait version help)
+    local LONG_OPTIONS=(terse pretty mode fields colors escape nocheck ask wait version help)
     _nmcli_compl_OPTIONS
     i=$?
 
@@ -700,7 +735,7 @@ _nmcli()
             # (if the current word starts with a dash) or the OBJECT list
             # otherwise.
             if [[ "${words[0]:0:1}" != '-' ]]; then
-                OPTIONS=(help general networking radio connection device)
+                OPTIONS=(help general networking radio connection device agent)
             elif [[ "${words[0]:1:1}" == '-' ||  "${words[0]}" == "-" ]]; then
                 OPTIONS=("${LONG_OPTIONS[@]/#/--}")
             else
@@ -777,11 +812,11 @@ _nmcli()
                 case "$command" in
                     s|sh|sho|show)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\napath\n%s" "$(_nmcli_con_show NAME)")" active show-secrets
+                            _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\napath\n%s" "$(_nmcli_con_show NAME)")" active show-secrets order
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             _nmcli_array_delete_at words 0 1
 
-                            LONG_OPTIONS=(help active show-secrets)
+                            LONG_OPTIONS=(help active show-secrets order)
                             HELP_ONLY_AS_FIRST=1
                             _nmcli_compl_OPTIONS
                             i=$?
@@ -845,9 +880,9 @@ _nmcli()
                             _nmcli_compl_ARGS_CONNECTION && return 0
 
                             if [[ "$COMMAND_CONNECTION_TYPE" = "ifname" ]]; then
-                                OPTIONS=(ap nsp)
+                                OPTIONS=(ap nsp passwd-file)
                             else
-                                OPTIONS=(ifname ap nsp)
+                                OPTIONS=(ifname ap nsp passwd-file)
                             fi
                             _nmcli_compl_ARGS
                         fi
@@ -1149,18 +1184,23 @@ _nmcli()
                                     ;;
                             esac
 
-                            OPTIONS=(id uuid path apath)
+                            OPTIONS=(id uuid path)
                             _nmcli_compl_ARGS_CONNECTION && return 0
                             while [[ "${#words[@]}" -gt 0 ]]; do
                                 if [[ ${#words[@]} -le 1 ]]; then
-                                    _nmcli_list_nl "$(nmcli --fields profile connection show "${COMMAND_CONNECTION_TYPE:-id}" "$COMMAND_CONNECTION_ID" 2>/dev/null | sed -n 's/^\([^:]\+\):.*/\1/p')"
+                                    local PREFIX=""
+
+                                    if [[ "${words[0]:0:1}" == [+-] ]]; then
+                                        PREFIX="${words[0]:0:1}"
+                                    fi
+                                    _nmcli_list_nl "$(nmcli --fields profile connection show ${COMMAND_CONNECTION_TYPE} "$COMMAND_CONNECTION_ID" 2>/dev/null | sed -n 's/^\([^:]\+\):.*/'$PREFIX'\1/p')"
                                     return 0
                                 elif [[ ${#words[@]} -le 2 ]]; then
                                     return 0
                                 fi
                                 _nmcli_array_delete_at words 0 1
                             done
-                            _nmcli_list_nl "$(nmcli --fields profile connection show "${COMMAND_CONNECTION_TYPE:-id}" "$COMMAND_CONNECTION_ID" 2>/dev/null | sed -n 's/^\([^:]\+\):.*/\1/p')"
+                            _nmcli_list_nl "$(nmcli --fields profile connection show ${COMMAND_CONNECTION_TYPE} "$COMMAND_CONNECTION_ID" 2>/dev/null | sed -n 's/^\([^:]\+\):.*/\1/p')"
                             return 0
                         fi
                         ;;
@@ -1265,6 +1305,11 @@ _nmcli()
                         ;;
 
                 esac
+            fi
+            ;;
+        a|ag|age|agen|agent)
+            if [[ ${#words[@]} -eq 2 ]]; then
+                _nmcli_compl_COMMAND "$command" secret polkit all
             fi
             ;;
     esac

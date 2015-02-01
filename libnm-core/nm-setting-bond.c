@@ -19,12 +19,14 @@
  * Copyright 2011 - 2013 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 
 #include "nm-setting-bond.h"
 #include "nm-utils.h"
@@ -134,10 +136,11 @@ nm_setting_bond_get_num_options (NMSettingBond *setting)
  * @setting: the #NMSettingBond
  * @idx: index of the desired option, from 0 to
  * nm_setting_bond_get_num_options() - 1
- * @out_name: (out): on return, the name of the bonding option; this
- * value is owned by the setting and should not be modified
- * @out_value: (out): on return, the value of the name of the bonding
- * option; this value is owned by the setting and should not be modified
+ * @out_name: (out) (transfer none): on return, the name of the bonding option;
+ *   this value is owned by the setting and should not be modified
+ * @out_value: (out) (transfer none): on return, the value of the name of the
+ *   bonding option; this value is owned by the setting and should not be
+ *   modified
  *
  * Given an index, return the value of the bonding option at that index.  Indexes
  * are *not* guaranteed to be static across modifications to options done by
@@ -437,15 +440,8 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	NMSettingBondPrivate *priv = NM_SETTING_BOND_GET_PRIVATE (setting);
 	GHashTableIter iter;
 	const char *key, *value;
-	const char *valid_modes[] = { "balance-rr",
-	                              "active-backup",
-	                              "balance-xor",
-	                              "broadcast",
-	                              "802.3ad",
-	                              "balance-tlb",
-	                              "balance-alb",
-	                              NULL };
-	int miimon = 0, arp_interval = 0;
+	int mode, miimon = 0, arp_interval = 0;
+	const char *mode_orig, *mode_new;
 	const char *arp_ip_target = NULL;
 	const char *lacp_rate;
 	const char *primary;
@@ -481,7 +477,8 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
 	}
 
-	value = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_MODE);
+	/* Verify bond mode */
+	mode_orig = value = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_MODE);
 	if (!value) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
@@ -491,7 +488,8 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
 		return FALSE;
 	}
-	if (!_nm_utils_string_in_list (value, valid_modes)) {
+	mode = nm_utils_bond_mode_string_to_int (value);
+	if (mode == -1) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -500,6 +498,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
 		return FALSE;
 	}
+	mode_new = value = nm_utils_bond_mode_int_to_string (mode);
 
 	/* Make sure mode is compatible with other settings */
 	if (   strcmp (value, "balance-alb") == 0
@@ -642,7 +641,22 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	return _nm_connection_verify_required_interface_name (connection, error);
+	if (!_nm_connection_verify_required_interface_name (connection, error))
+		return FALSE;
+
+	/* *** errors above here should be always fatal, below NORMALIZABLE_ERROR *** */
+
+	if (g_strcmp0 (mode_orig, mode_new) != 0) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("'%s' option should be string"),
+		             NM_SETTING_BOND_OPTION_MODE);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
+		return NM_SETTING_VERIFY_NORMALIZABLE;
+	}
+
+	return TRUE;
 }
 
 static void
@@ -723,6 +737,13 @@ nm_setting_bond_class_init (NMSettingBondClass *setting_class)
 	 *
 	 * Type: GHashTable(utf8,utf8)
 	 **/
+	/* ---ifcfg-rh---
+	 * property: options
+	 * variable: BONDING_OPTS
+	 * description: Bonding options.
+	 * example: BONDING_OPTS="miimon=100 mode=broadcast"
+	 * ---end---
+	 */
 	 g_object_class_install_property
 		 (object_class, PROP_OPTIONS,
 		 g_param_spec_boxed (NM_SETTING_BOND_OPTIONS, "", "",
@@ -735,6 +756,14 @@ nm_setting_bond_class_init (NMSettingBondClass *setting_class)
 	                                       _nm_utils_strdict_to_dbus,
 	                                       _nm_utils_strdict_from_dbus);
 
+	 /* ---dbus---
+	  * property: interface-name
+	  * format: string
+	  * description: Deprecated in favor of connection.interface-name, but can
+	  *   be used for backward-compatibility with older daemons, to set the
+	  *   bond's interface name.
+	  * ---end---
+	  */
 	 _nm_setting_class_add_dbus_only_property (parent_class, "interface-name",
 	                                           G_VARIANT_TYPE_STRING,
 	                                           _nm_setting_get_deprecated_virtual_interface_name,

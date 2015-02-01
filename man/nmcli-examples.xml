@@ -3,13 +3,13 @@
 "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
 
 <!--
-Copyright (C) 2013 - 2014 Red Hat, Inc.
+Copyright 2013 - 2014 Red Hat, Inc.
 -->
 
 <refentry id="nmcli-examples">
   <refentryinfo>
     <title>nmcli-examples</title>
-    <date>16 June 2014</date>
+    <date>19 November 2014</date>
     <author>NetworkManager developers</author>
   </refentryinfo>
 
@@ -18,7 +18,7 @@ Copyright (C) 2013 - 2014 Red Hat, Inc.
     <manvolnum>5</manvolnum>
     <refmiscinfo class="source">NetworkManager</refmiscinfo>
     <refmiscinfo class="manual">Examples</refmiscinfo>
-    <refmiscinfo class="version">0.9.10</refmiscinfo>
+    <refmiscinfo class="version">1.0</refmiscinfo>
   </refmeta>
 
   <refnamediv>
@@ -96,6 +96,7 @@ GENERAL.STATE:                          100 (connected)
 GENERAL.REASON:                         0 (No reason given)
 GENERAL.UDI:                            /sys/devices/pci0000:00/0000:00:1c.1/0000:03:00.0/net/wlan0
 GENERAL.IP-IFACE:                       wlan0
+GENERAL.IS-SOFTWARE:                    no
 GENERAL.NM-MANAGED:                     yes
 GENERAL.AUTOCONNECT:                    yes
 GENERAL.FIRMWARE-MISSING:               no
@@ -242,6 +243,7 @@ $ nmcli con modify TowerBridge bridge.stp no
         <emphasis role="bold">
 $ nmcli con add con-name my-con-em1 ifname em1 type ethernet ip4 192.168.100.100/24 gw4 192.168.100.1 ip4 1.2.3.4 ip6 abbe::cafe
 $ nmcli con mod my-con-em1 ipv4.dns "8.8.8.8 8.8.4.4"
+$ nmcli con mod my-con-em1 +ipv4.dns 1.2.3.4
 $ nmcli con mod my-con-em1 ipv6.dns "2001:4860:4860::8888 2001:4860:4860::8844"
 $ nmcli -p con show my-con-em1
         </emphasis>
@@ -252,11 +254,10 @@ $ nmcli -p con show my-con-em1
       that is bound to interface name <emphasis>em1</emphasis>. The profile is configured
       with static IP addresses. Three addresses are added, two IPv4 addresses and one IPv6.
       The first IP 192.168.100.100 has a prefix of 24 (netmask equivalent of 255.255.255.0).
-      Gateway entry for the first IP address will become the default route if this profile
-      is activated on em1 interface (and there is no connection with higher priority).
-      The second two addresses don't specify a prefix, so a default prefix will be used, i.e.
-      32 for IPv4 and 128 for IPv6.
-      The second and third commands modify DNS parameters of the new connection profile.
+      Gateway entry will become the default route if this profile is activated on em1 interface
+      (and there is no connection with higher priority). The next two addresses do not
+      specify a prefix, so a default prefix will be used, i.e. 32 for IPv4 and 128 for IPv6.
+      The second, third and fourth commands modify DNS parameters of the new connection profile.
       The last <emphasis>con show</emphasis> command displays the profile so that all
       parameters can be reviewed.
     </para>
@@ -339,6 +340,7 @@ connection.uuid:                        de89cdeb-a3e1-4d53-8fa0-c22546c775f4
 connection.interface-name:              --
 connection.type:                        802-3-ethernet
 connection.autoconnect:                 yes
+connection.autoconnect-priority:        0
 connection.timestamp:                   0
 connection.read-only:                   no
 connection.permissions:                 
@@ -364,7 +366,9 @@ ipv4.method:                            auto
 ipv4.dns:                               
 ipv4.dns-search:                        
 ipv4.addresses:                         
+ipv4.gateway:                           --
 ipv4.routes:                            
+ipv4.route-metric:                      -1
 ipv4.ignore-auto-routes:                no
 ipv4.ignore-auto-dns:                   no
 ipv4.dhcp-client-id:                    --
@@ -377,7 +381,9 @@ ipv6.method:                            auto
 ipv6.dns:                               
 ipv6.dns-search:                        
 ipv6.addresses:                         
+ipv6.gateway:                           --
 ipv6.routes:                            
+ipv6.route-metric:                      -1
 ipv6.ignore-auto-routes:                no
 ipv6.ignore-auto-dns:                   no
 ipv6.never-default:                     no
@@ -394,22 +400,23 @@ nmcli ipv4.addresses> desc
 
 === [addresses] ===
 [NM property description]
-Array of IPv4 address structures.  Each IPv4 address structure is composed of 3 32-bit values; the first being the IPv4 address (network byte order), the second the prefix (1 - 32), and last the IPv4 gateway (network byte order). The gateway may be left as 0 if no gateway exists for that subnet.  For the 'auto' method, given IP addresses are appended to those returned by automatic configuration.  Addresses cannot be used with the 'shared', 'link-local', or 'disabled' methods as addressing is either automatic or disabled with these methods.
+Array of IP addresses.
 
 [nmcli specific description]
 Enter a list of IPv4 addresses formatted as:
-  ip[/prefix] [gateway], ip[/prefix] [gateway],...
+  ip[/prefix], ip[/prefix],...
 Missing prefix is regarded as prefix of 32.
 
-Example: 192.168.1.5/24 192.168.1.1, 10.0.0.11/24
+Example: 192.168.1.5/24, 10.0.0.11/24
 
-nmcli ipv4.addresses> set 192.168.1.100/24 192.168.1.1
+nmcli ipv4.addresses> set 192.168.1.100/24
 Do you also want to set 'ipv4.method' to 'manual'? [yes]: yes
 nmcli ipv4.addresses>
 nmcli ipv4.addresses> print
-addresses: { ip = 192.168.1.100/24, gw = 192.168.1.1 }
+addresses: 192.168.1.100/24
 nmcli ipv4.addresses> back
 nmcli ipv4> b
+nmcli> set ipv4.gateway 192.168.1.1
 nmcli> verify
 Verify connection: OK
 nmcli> print
@@ -421,6 +428,7 @@ connection.uuid:                        de89cdeb-a3e1-4d53-8fa0-c22546c775f4
 connection.interface-name:              --
 connection.type:                        802-3-ethernet
 connection.autoconnect:                 yes
+connection.autoconnect-priority:        0
 connection.timestamp:                   0
 connection.read-only:                   no
 connection.permissions:                 
@@ -445,8 +453,10 @@ connection.gateway-ping-timeout:        0
 ipv4.method:                            manual
 ipv4.dns:                               
 ipv4.dns-search:                        
-ipv4.addresses:                         { ip = 192.168.1.100/24, gw = 192.168.1.1 }
+ipv4.addresses:                         192.168.1.100/24
+ipv4.gateway:                           192.168.1.1
 ipv4.routes:                            
+ipv4.route-metric:                      -1
 ipv4.ignore-auto-routes:                no
 ipv4.ignore-auto-dns:                   no
 ipv4.dhcp-client-id:                    --
@@ -460,6 +470,7 @@ ipv6.dns:
 ipv6.dns-search:                        
 ipv6.addresses:                         
 ipv6.routes:                            
+ipv6.route-metric:                      -1
 ipv6.ignore-auto-routes:                no
 ipv6.ignore-auto-dns:                   no
 ipv6.never-default:                     no
@@ -477,6 +488,7 @@ connection.uuid:                        de89cdeb-a3e1-4d53-8fa0-c22546c775f4
 connection.interface-name:              --
 connection.type:                        802-3-ethernet
 connection.autoconnect:                 yes
+connection.autoconnect-priority:        0
 connection.timestamp:                   0
 connection.read-only:                   no
 connection.permissions:                 
@@ -499,10 +511,12 @@ connection.gateway-ping-timeout:        0
 802-3-ethernet.s390-options:            
 -------------------------------------------------------------------------------
 ipv4.method:                            manual
-ipv4.dns:                               8.8.8.8, 8.8.4.4
+ipv4.dns:                               8.8.8.8,8.8.4.4
 ipv4.dns-search:                        
-ipv4.addresses:                         { ip = 192.168.1.100/24, gw = 192.168.1.1 }
+ipv4.addresses:                         192.168.1.100/24
+ipv4.gateway:                           192.168.1.1
 ipv4.routes:                            
+ipv4.route-metric:                      -1
 ipv4.ignore-auto-routes:                no
 ipv4.ignore-auto-dns:                   no
 ipv4.dhcp-client-id:                    --
@@ -515,7 +529,9 @@ ipv6.method:                            auto
 ipv6.dns:                               
 ipv6.dns-search:                        
 ipv6.addresses:                         
+ipv6.gateway:                           --
 ipv6.routes:                            
+ipv6.route-metric:                      -1
 ipv6.ignore-auto-routes:                no
 ipv6.ignore-auto-dns:                   no
 ipv6.never-default:                     no
@@ -532,7 +548,7 @@ nmcli> quit
     </example>
     <para>
       Example session in the nmcli interactive connection editor.
-      The scenario creates an Ethernet connection (configuration) with static addressing (IPs and DNS).
+      The scenario creates an Ethernet connection profile with static addressing (IPs and DNS).
     </para>
 
   </refsect1>

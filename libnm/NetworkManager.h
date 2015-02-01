@@ -43,14 +43,11 @@
 #include <nm-device-wifi.h>
 #include <nm-device-wimax.h>
 #include <nm-device.h>
-#include <nm-dhcp4-config.h>
-#include <nm-dhcp6-config.h>
+#include <nm-dhcp-config.h>
 #include <nm-enum-types.h>
-#include <nm-ip4-config.h>
-#include <nm-ip6-config.h>
+#include <nm-ip-config.h>
 #include <nm-object.h>
 #include <nm-remote-connection.h>
-#include <nm-secret-agent.h>
 #include <nm-setting-8021x.h>
 #include <nm-setting-adsl.h>
 #include <nm-setting-bluetooth.h>
@@ -63,6 +60,7 @@
 #include <nm-setting-generic.h>
 #include <nm-setting-gsm.h>
 #include <nm-setting-infiniband.h>
+#include <nm-setting-ip-config.h>
 #include <nm-setting-ip4-config.h>
 #include <nm-setting-ip6-config.h>
 #include <nm-setting-olpc-mesh.h>
@@ -83,6 +81,7 @@
 #include <nm-version.h>
 #include <nm-vpn-connection.h>
 #include <nm-vpn-dbus-interface.h>
+#include <nm-vpn-editor-plugin.h>
 #include <nm-wimax-nsp.h>
 
 #undef __NETWORKMANAGER_H_INSIDE__

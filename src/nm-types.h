@@ -23,11 +23,15 @@
 
 /* core */
 typedef struct _NMActiveConnection   NMActiveConnection;
+typedef struct _NMVpnConnection      NMVpnConnection;
 typedef struct _NMActRequest         NMActRequest;
 typedef struct _NMAuthSubject        NMAuthSubject;
+typedef struct _NMConfig             NMConfig;
+typedef struct _NMConfigData         NMConfigData;
 typedef struct _NMConnectionProvider NMConnectionProvider;
 typedef struct _NMConnectivity       NMConnectivity;
 typedef struct _NMDBusManager        NMDBusManager;
+typedef struct _NMDefaultRouteManager NMDefaultRouteManager;
 typedef struct _NMDevice             NMDevice;
 typedef struct _NMDhcp4Config        NMDhcp4Config;
 typedef struct _NMDhcp6Config        NMDhcp6Config;
@@ -36,6 +40,7 @@ typedef struct _NMIP6Config          NMIP6Config;
 typedef struct _NMManager            NMManager;
 typedef struct _NMPolicy             NMPolicy;
 typedef struct _NMRfkillManager      NMRfkillManager;
+typedef struct _NMRouteManager       NMRouteManager;
 typedef struct _NMSessionMonitor     NMSessionMonitor;
 typedef struct _NMSleepMonitor       NMSleepMonitor;
 
@@ -60,10 +65,56 @@ typedef struct _NMPlatformIP6Address NMPlatformIP6Address;
 typedef struct _NMPlatformIP6Route   NMPlatformIP6Route;
 typedef struct _NMPlatformLink       NMPlatformLink;
 
+typedef enum {
+	/* Please don't interpret type numbers outside nm-platform and use functions
+	 * like nm_platform_link_is_software() and nm_platform_supports_slaves().
+	 *
+	 * type & 0x10000 -> Software device type
+	 * type & 0x20000 -> Type supports slaves
+	 */
+
+	/* No type, used as error value */
+	NM_LINK_TYPE_NONE,
+
+	/* Unknown type  */
+	NM_LINK_TYPE_UNKNOWN,
+
+	/* Hardware types */
+	NM_LINK_TYPE_ETHERNET,
+	NM_LINK_TYPE_INFINIBAND,
+	NM_LINK_TYPE_OLPC_MESH,
+	NM_LINK_TYPE_WIFI,
+	NM_LINK_TYPE_WWAN_ETHERNET,   /* WWAN pseudo-ethernet */
+	NM_LINK_TYPE_WIMAX,
+
+	/* Software types */
+	NM_LINK_TYPE_DUMMY = 0x10000,
+	NM_LINK_TYPE_GRE,
+	NM_LINK_TYPE_GRETAP,
+	NM_LINK_TYPE_IFB,
+	NM_LINK_TYPE_LOOPBACK,
+	NM_LINK_TYPE_MACVLAN,
+	NM_LINK_TYPE_MACVTAP,
+	NM_LINK_TYPE_OPENVSWITCH,
+	NM_LINK_TYPE_TAP,
+	NM_LINK_TYPE_TUN,
+	NM_LINK_TYPE_VETH,
+	NM_LINK_TYPE_VLAN,
+	NM_LINK_TYPE_VXLAN,
+
+	/* Software types with slaves */
+	NM_LINK_TYPE_BRIDGE = 0x10000 | 0x20000,
+	NM_LINK_TYPE_BOND,
+	NM_LINK_TYPE_TEAM,
+} NMLinkType;
+
 /* settings */
 typedef struct _NMAgentManager       NMAgentManager;
 typedef struct _NMSecretAgent        NMSecretAgent;
 typedef struct _NMSettings           NMSettings;
 typedef struct _NMSettingsConnection NMSettingsConnection;
+
+/* utils */
+typedef struct _NMUtilsIPv6IfaceId   NMUtilsIPv6IfaceId;
 
 #endif  /* NM_TYPES_H */

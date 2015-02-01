@@ -18,7 +18,8 @@
  * Copyright (C) 2012 Red Hat, Inc.
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <sys/stat.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -846,7 +847,7 @@ nm_system_config_factory (void)
 		priv = SC_PLUGIN_EXAMPLE_GET_PRIVATE (singleton);
 
 		/* Cache the config file path */
-		priv->conf_file = nm_config_get_path (nm_config_get ());
+		priv->conf_file = nm_config_data_get_config_main_file (nm_config_get_data (nm_config_get ()));
 	} else {
 		/* This function should never be called twice */
 		g_assert_not_reached ();

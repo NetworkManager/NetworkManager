@@ -37,7 +37,7 @@
       <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <arg name="options" type="a{sv}" direction="in">
         <tp:docstring>
-          Options of scan
+          Options of scan (currently unused argument).
         </tp:docstring>
       </arg>
       <tp:docstring>

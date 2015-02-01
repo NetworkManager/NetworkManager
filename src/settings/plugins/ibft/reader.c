@@ -18,7 +18,8 @@
  * Copyright 2014 Red Hat, Inc.
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
@@ -35,29 +36,12 @@
 
 #include "nm-core-internal.h"
 #include "nm-platform.h"
-#include "nm-posix-signals.h"
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
 
 #include "reader.h"
 
 #define PARSE_WARNING(msg...) nm_log_warn (LOGD_SETTINGS, "    " msg)
-
-static void
-iscsiadm_child_setup (gpointer user_data G_GNUC_UNUSED)
-{
-	/* We are in the child process here; set a different process group to
-	 * ensure signal isolation between child and parent.
-	 */
-	pid_t pid = getpid ();
-	setpgid (pid, pid);
-
-	/*
-	 * We blocked signals in main(). We need to restore original signal
-	 * mask for iscsiadm here so that it can receive signals.
-	 */
-	nm_unblock_posix_signals (NULL);
-}
 
 /* Removes trailing whitespace and whitespace before and immediately after the '=' */
 static char *
@@ -125,7 +109,7 @@ read_ibft_blocks (const char *iscsiadm_path,
 	g_return_val_if_fail (out_blocks != NULL && *out_blocks == NULL, FALSE);
 
 	if (!g_spawn_sync ("/", (char **) argv, (char **) envp, 0,
-	                   iscsiadm_child_setup, NULL, &out, &err, &status, error))
+	                   NULL, NULL, &out, &err, &status, error))
 		goto done;
 
 	if (!WIFEXITED (status)) {
@@ -135,6 +119,15 @@ read_ibft_blocks (const char *iscsiadm_path,
 	}
 
 	if (WEXITSTATUS (status) != 0) {
+		if (err) {
+			char *nl;
+
+			/* the error message contains newlines. concatenate the lines with whitespace */
+			for (nl = err; *nl; nl++) {
+				if (*nl == '\n')
+					*nl = ' ';
+			}
+		}
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		             "iBFT: %s exited with error %d.  Message: '%s'",
 		             iscsiadm_path, WEXITSTATUS (status), err ? err : "(none)");
@@ -185,6 +178,7 @@ done:
 	if (lines)
 		g_strfreev (lines);
 	g_free (out);
+	g_free (err);
 	if (success)
 		*out_blocks = blocks;
 	else
@@ -267,19 +261,15 @@ ip4_setting_add_from_block (const GPtrArray *block,
                             NMConnection *connection,
                             GError **error)
 {
-	NMSettingIP4Config *s_ip4 = NULL;
-	NMIP4Address *addr;
+	NMSettingIPConfig *s_ip4 = NULL;
+	NMIPAddress *addr;
 	const char *s_method = NULL;
 	const char *s_ipaddr = NULL;
 	const char *s_gateway = NULL;
 	const char *s_dns1 = NULL;
 	const char *s_dns2 = NULL;
 	const char *s_netmask = NULL;
-	guint32 ipaddr = 0;
 	guint32 netmask = 0;
-	guint32 gateway = 0;
-	guint32 dns1 = 0;
-	guint32 dns2 = 0;
 	guint32 prefix;
 
 	g_assert (block);
@@ -300,10 +290,10 @@ ip4_setting_add_from_block (const GPtrArray *block,
 		goto error;
 	}
 
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 
 	if (!g_ascii_strcasecmp (s_method, "dhcp")) {
-		g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+		g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 		goto success;
 	} else if (g_ascii_strcasecmp (s_method, "static") != 0) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
@@ -313,10 +303,10 @@ ip4_setting_add_from_block (const GPtrArray *block,
 	}
 
 	/* Static configuration stuff */
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL, NULL);
 
 	/* IP address */
-	if (!s_ipaddr || inet_pton (AF_INET, s_ipaddr, &ipaddr) != 1) {
+	if (!s_ipaddr || !nm_utils_ipaddr_valid (AF_INET, s_ipaddr)) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "iBFT: malformed iscsiadm record: invalid IP address '%s'.",
 		             s_ipaddr);
@@ -332,38 +322,42 @@ ip4_setting_add_from_block (const GPtrArray *block,
 	}
 	prefix = nm_utils_ip4_netmask_to_prefix (netmask);
 
-	if (s_gateway && inet_pton (AF_INET, s_gateway, &gateway) != 1) {
+	if (s_gateway && !nm_utils_ipaddr_valid (AF_INET, s_gateway)) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "iBFT: malformed iscsiadm record: invalid IP gateway '%s'.",
 		             s_gateway);
 		goto error;
 	}
 
-	if (s_dns1 && inet_pton (AF_INET, s_dns1, &dns1) != 1) {
+	if (s_dns1 && !nm_utils_ipaddr_valid (AF_INET, s_dns1)) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "iBFT: malformed iscsiadm record: invalid DNS1 address '%s'.",
 		             s_dns1);
 		goto error;
 	}
 
-	if (s_dns2 && inet_pton (AF_INET, s_dns2, &dns2) != 1) {
+	if (s_dns2 && !nm_utils_ipaddr_valid (AF_INET, s_dns2)) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "iBFT: malformed iscsiadm record: invalid DNS2 address '%s'.",
 		             s_dns2);
 		goto error;
 	}
 
-	addr = nm_ip4_address_new ();
-	nm_ip4_address_set_address (addr, ipaddr);
-	nm_ip4_address_set_prefix (addr, prefix);
-	nm_ip4_address_set_gateway (addr, gateway);
-	nm_setting_ip4_config_add_address (s_ip4, addr);
-	nm_ip4_address_unref (addr);
+	addr = nm_ip_address_new (AF_INET, s_ipaddr, prefix, error);
+	if (!addr) {
+		g_prefix_error (error, "iBFT: malformed iscsiadm record: ");
+		goto error;
+	}
+
+	nm_setting_ip_config_add_address (s_ip4, addr);
+	nm_ip_address_unref (addr);
+
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_GATEWAY, s_gateway, NULL);
 
 	if (s_dns1)
-		nm_setting_ip4_config_add_dns (s_ip4, s_dns1);
+		nm_setting_ip_config_add_dns (s_ip4, s_dns1);
 	if (s_dns2)
-		nm_setting_ip4_config_add_dns (s_ip4, s_dns2);
+		nm_setting_ip_config_add_dns (s_ip4, s_dns2);
 
 success:
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
@@ -383,7 +377,7 @@ connection_setting_add (const GPtrArray *block,
                         GError **error)
 {
 	NMSetting *s_con;
-	char *id, *uuid, *uuid_data;
+	char *id, *uuid;
 	const char *s_hwaddr = NULL, *s_ip4addr = NULL, *s_vlanid;
 
 	if (!parse_ibft_config (block, error,
@@ -403,12 +397,13 @@ connection_setting_add (const GPtrArray *block,
 	                      prefix ? prefix : "",
 	                      iface);
 
-	uuid_data = g_strdup_printf ("%s%s%s",
-	                             s_vlanid ? s_vlanid : "0",
-	                             s_hwaddr,
-	                             s_ip4addr ? s_ip4addr : "DHCP");
-	uuid = nm_utils_uuid_generate_from_string (uuid_data);
-	g_free (uuid_data);
+	uuid = nm_utils_uuid_generate_from_strings ("ibft",
+	                                            s_hwaddr,
+	                                            s_vlanid ? "V" : "v",
+	                                            s_vlanid ? s_vlanid : "",
+	                                            s_ip4addr ? "A" : "DHCP",
+	                                            s_ip4addr ? s_ip4addr : "",
+	                                            NULL);
 
 	s_con = nm_setting_connection_new ();
 	g_object_set (s_con,

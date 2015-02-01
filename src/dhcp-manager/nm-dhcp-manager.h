@@ -56,19 +56,21 @@ NMDhcpClient * nm_dhcp_manager_start_ip4     (NMDhcpManager *manager,
                                               int ifindex,
                                               const GByteArray *hwaddr,
                                               const char *uuid,
-                                              guint priority,
+                                              guint32 priority,
                                               gboolean send_hostname,
                                               const char *dhcp_hostname,
                                               const char *dhcp_client_id,
                                               guint32 timeout,
-                                              const char *dhcp_anycast_addr);
+                                              const char *dhcp_anycast_addr,
+                                              const char *last_ip_address);
 
 NMDhcpClient * nm_dhcp_manager_start_ip6     (NMDhcpManager *manager,
                                               const char *iface,
                                               int ifindex,
                                               const GByteArray *hwaddr,
                                               const char *uuid,
-                                              guint priority,
+                                              guint32 priority,
+                                              gboolean send_hostname,
                                               const char *dhcp_hostname,
                                               guint32 timeout,
                                               const char *dhcp_anycast_addr,
@@ -77,8 +79,10 @@ NMDhcpClient * nm_dhcp_manager_start_ip6     (NMDhcpManager *manager,
 
 GSList *       nm_dhcp_manager_get_lease_ip_configs (NMDhcpManager *self,
                                                      const char *iface,
+                                                     int ifindex,
                                                      const char *uuid,
-                                                     gboolean ipv6);
+                                                     gboolean ipv6,
+                                                     guint32 default_route_metric);
 
 /* For testing only */
 extern const char* nm_dhcp_helper_path;

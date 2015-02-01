@@ -24,14 +24,14 @@ abs_path() {
 }
 
 get_version() {
-    local major minor micro nano
+    local major minor micro
     local F="${1:-"$GITDIR/configure.ac"}"
 
-    vars="$(sed -n 's/^m4_define(\[nm_\(major\|minor\|micro\|nano\)_version\], *\[\([0-9]\+\)\]) *$/local \1='\''\2'\''/p' "$F" 2>/dev/null)"
+    vars="$(sed -n 's/^m4_define(\[nm_\(major\|minor\|micro\)_version\], *\[\([0-9]\+\)\]) *$/local \1='\''\2'\''/p' "$F" 2>/dev/null)"
     eval "$vars"
 
-    [[ -n "$major" && -n "$minor" && "$micro" && "$nano" ]] || return 1
-    echo "$major.$minor.$micro.$nano"
+    [[ -n "$major" && -n "$minor" && "$micro" ]] || return 1
+    echo "$major.$minor.$micro"
 }
 
 write_changelog() {
@@ -73,6 +73,7 @@ SOURCE="$(abs_path "$SOURCE" "$(ls -1 "$GITDIR/NetworkManager-$VERSION"*.tar* 2>
 [[ -f "$SOURCE" ]] || die "could not find source ${_SOURCE:-$GITDIR/NetworkManager-$VERSION*.tar*} . Did you execute \`make dist\`? Otherwise set \$SOURCE variable"
 SOURCE_NETWORKMANAGER_CONF="$(abs_path "$SOURCE_NETWORKMANAGER_CONF" "$SCRIPTDIR/NetworkManager.conf")"
 SOURCE_CONFIG_SERVER="$(abs_path "$SOURCE_CONFIG_SERVER" "$SCRIPTDIR/00-server.conf")"
+SOURCE_CONFIG_IBFT_PLUGIN="$(abs_path "$SOURCE_CONFIG_IBFT_PLUGIN" "$SCRIPTDIR/10-ibft-plugin.conf")"
 SOURCE_CONFIG_CONNECTIVITY_FEDORA="$(abs_path "$SOURCE_CONFIG_CONNECTIVITY_FEDORA" "$SCRIPTDIR/20-connectivity-fedora.conf")"
 
 TEMP="$(mktemp -d "$SCRIPTDIR/NetworkManager.$DATE.XXXXXX")"
@@ -87,6 +88,7 @@ LOG "SPECFILE=$SPECFILE"
 LOG "SOURCE=$SOURCE"
 LOG "SOURCE_NETWORKMANAGER_CONF=$SOURCE_NETWORKMANAGER_CONF"
 LOG "SOURCE_CONFIG_SERVER=$SOURCE_CONFIG_SERVER"
+LOG "SOURCE_CONFIG_IBFT_PLUGIN=$SOURCE_CONFIG_IBFT_PLUGIN"
 LOG "SOURCE_CONFIG_CONNECTIVITY_FEDORA=$SOURCE_CONFIG_CONNECTIVITY_FEDORA"
 LOG "BASEDIR=$TEMP"
 
@@ -100,6 +102,7 @@ mkdir -p "$TEMP/SOURCES/" "$TEMP/SPECS/" || die "error creating SPECS directoy"
 cp "$SOURCE" "$TEMP/SOURCES/" || die "Could not copy source $SOURCE to $TEMP/SOURCES"
 cp "$SOURCE_NETWORKMANAGER_CONF" "$TEMP/SOURCES/NetworkManager.conf" || die "Could not copy source $SOURCE_NETWORKMANAGER_CONF to $TEMP/SOURCES"
 cp "$SOURCE_CONFIG_SERVER" "$TEMP/SOURCES/00-server.conf" || die "Could not copy source $SOURCE_CONFIG_SERVER to $TEMP/SOURCES"
+cp "$SOURCE_CONFIG_IBFT_PLUGIN" "$TEMP/SOURCES/10-ibft-plugin.conf" || die "Could not copy source $SOURCE_CONFIG_IBFT_PLUGIN to $TEMP/SOURCES"
 cp "$SOURCE_CONFIG_CONNECTIVITY_FEDORA" "$TEMP/SOURCES/20-connectivity-fedora.conf" || die "Could not copy source $SOURCE_CONFIG_CONNECTIVITY_FEDORA to $TEMP/SOURCES"
 
 write_changelog
@@ -116,7 +119,16 @@ sed -e "/^__CHANGELOG__$/ \
             d
         }" > "$TEMPSPEC" || die "Error reading spec file"
 
-rpmbuild --define "_topdir $TEMP" -ba "$TEMPSPEC" || die "ERROR: rpmbuild FAILED"
+case "$BUILDTYPE" in
+	"SRPM")
+		RPM_BUILD_OPTION=-bs
+		;;
+	*)
+		RPM_BUILD_OPTION=-ba
+		;;
+esac
+
+rpmbuild --define "_topdir $TEMP" $RPM_BUILD_OPTION "$TEMPSPEC" || die "ERROR: rpmbuild FAILED"
 
 ln -snf "$TEMPBASE" ./latest
 TEMP_LATEST="$(readlink -f .)"/latest
@@ -128,6 +140,6 @@ LOG
 LOG "See \"$TEMP_LATEST/\" which symlinks to \"$TEMPBASE\""
 LOG
 LOG "Result:"
-ls -dla "$TEMP_LATEST" "$(dirname "$TEMP_LATEST")/$TEMPBASE/" "$TEMP_LATEST"/RPMS/*/ "$TEMP_LATEST"/RPMS/*/*.rpm "$TEMP_LATEST"/SRPMS/ "$TEMP_LATEST"/SRPMS/*.rpm | sed 's/^/    /'
+ls -dla "$TEMP_LATEST" "$(dirname "$TEMP_LATEST")/$TEMPBASE/" "$TEMP_LATEST"/RPMS/*/ "$TEMP_LATEST"/RPMS/*/*.rpm "$TEMP_LATEST"/SRPMS/ "$TEMP_LATEST"/SRPMS/*.rpm 2>/dev/null | sed 's/^/    /'
 
 

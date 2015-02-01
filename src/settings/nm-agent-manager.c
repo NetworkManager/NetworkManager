@@ -18,7 +18,8 @@
  * Copyright (C) 2010 - 2013 Red Hat, Inc.
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <string.h>
 #include <pwd.h>
 
@@ -49,9 +50,8 @@ G_DEFINE_TYPE (NMAgentManager, nm_agent_manager, G_TYPE_OBJECT)
                                          NMAgentManagerPrivate))
 
 typedef struct {
-	gboolean disposed;
-
 	NMDBusManager *dbus_mgr;
+	NMAuthManager *auth_mgr;
 
 	/* Auth chains for checking agent permissions */
 	GSList *chains;
@@ -272,7 +272,7 @@ impl_agent_manager_register_with_capabilities (NMAgentManager *self,
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
 	NMAuthSubject *subject;
 	gulong sender_uid = G_MAXULONG;
-	GError *error = NULL, *local = NULL;
+	GError *error = NULL;
 	NMSecretAgent *agent;
 	NMAuthChain *chain;
 
@@ -284,17 +284,6 @@ impl_agent_manager_register_with_capabilities (NMAgentManager *self,
 		goto done;
 	}
 	sender_uid = nm_auth_subject_get_unix_process_uid (subject);
-
-	if (   0 != sender_uid
-	    && !nm_session_monitor_uid_has_session (nm_session_monitor_get (),
-	                                            sender_uid,
-	                                            NULL,
-	                                            &local)) {
-		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
-		                             NM_AGENT_MANAGER_ERROR_PERMISSION_DENIED,
-		                             local && local->message ? local->message : "Session not found");
-		goto done;
-	}
 
 	/* Validate the identifier */
 	if (!validate_identifier (identifier, &error))
@@ -329,6 +318,7 @@ impl_agent_manager_register_with_capabilities (NMAgentManager *self,
 
 		priv->chains = g_slist_append (priv->chains, chain);
 	} else {
+		g_object_unref (agent);
 		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
 		                             NM_AGENT_MANAGER_ERROR_FAILED,
 		                             "Unable to start agent authentication.");
@@ -338,7 +328,6 @@ done:
 	if (error)
 		dbus_g_method_return_error (context, error);
 	g_clear_error (&error);
-	g_clear_error (&local);
 	g_clear_object (&subject);
 }
 
@@ -529,12 +518,8 @@ agent_compare_func (gconstpointer aa, gconstpointer bb, gpointer user_data)
 	}
 
 	/* Prefer agents in active sessions */
-	a_active = nm_session_monitor_uid_active (nm_session_monitor_get (),
-	                                          nm_secret_agent_get_owner_uid (a),
-	                                          NULL);
-	b_active = nm_session_monitor_uid_active (nm_session_monitor_get (),
-	                                          nm_secret_agent_get_owner_uid (b),
-	                                          NULL);
+	a_active = nm_session_monitor_session_exists (nm_secret_agent_get_owner_uid (a), TRUE);
+	b_active = nm_session_monitor_session_exists (nm_secret_agent_get_owner_uid (b), TRUE);
 	if (a_active && !b_active)
 		return -1;
 	else if (a_active == b_active)
@@ -601,11 +586,12 @@ request_next_agent (Request *req)
 {
 	GError *error = NULL;
 
+	req->current_call_id = NULL;
+	if (req->current)
+		g_object_unref (req->current);
+
 	if (req->pending) {
 		/* Send the request to the next agent */
-		req->current_call_id = NULL;
-		if (req->current)
-			g_object_unref (req->current);
 		req->current = req->pending->data;
 		req->pending = g_slist_remove (req->pending, req->current);
 
@@ -615,7 +601,6 @@ request_next_agent (Request *req)
 
 		req->next_callback (req);
 	} else {
-		req->current_call_id = NULL;
 		req->current = NULL;
 
 		/* No more secret agents are available to fulfill this secrets request */
@@ -704,7 +689,7 @@ connection_request_add_agent (Request *parent, NMSecretAgent *agent)
 	/* Ensure the caller's username exists in the connection's permissions,
 	 * or that the permissions is empty (ie, visible by everyone).
 	 */
-	if (!nm_auth_is_subject_in_acl (req->connection, nm_session_monitor_get (), subject, NULL)) {
+	if (!nm_auth_is_subject_in_acl (req->connection, subject, NULL)) {
 		nm_log_dbg (LOGD_AGENTS, "(%s) agent ignored for secrets request %p/%s (not in ACL)",
 		            nm_secret_agent_get_description (agent),
 		            parent, parent->detail);
@@ -1106,7 +1091,13 @@ get_start (gpointer user_data)
 				            req, parent->detail, req->setting_name);
 
 				/* We don't, so ask some agents for additional secrets */
-				request_next_agent (parent);
+				if (   req->flags & NM_SECRET_AGENT_GET_SECRETS_FLAG_NO_ERRORS
+				    && !parent->pending) {
+					/* The request initiated from GetSecrets() via DBus,
+					 * don't error out if any secrets are missing. */
+					req_complete_success (parent, req->existing_secrets, NULL, NULL);
+				} else
+					request_next_agent (parent);
 			}
 		}
 		g_variant_unref (secrets_dict);
@@ -1538,35 +1529,7 @@ authority_changed_cb (NMAuthManager *auth_manager, NMAgentManager *self)
 
 /*************************************************************/
 
-NMAgentManager *
-nm_agent_manager_get (void)
-{
-	static NMAgentManager *singleton = NULL;
-	NMAgentManagerPrivate *priv;
-
-	if (singleton)
-		return g_object_ref (singleton);
-
-	singleton = (NMAgentManager *) g_object_new (NM_TYPE_AGENT_MANAGER, NULL);
-	g_assert (singleton);
-
-	priv = NM_AGENT_MANAGER_GET_PRIVATE (singleton);
-	priv->dbus_mgr = nm_dbus_manager_get ();
-
-	nm_dbus_manager_register_object (priv->dbus_mgr, NM_DBUS_PATH_AGENT_MANAGER, singleton);
-
-	g_signal_connect (priv->dbus_mgr,
-	                  NM_DBUS_MANAGER_NAME_OWNER_CHANGED,
-	                  G_CALLBACK (name_owner_changed_cb),
-	                  singleton);
-
-	g_signal_connect (nm_auth_manager_get (),
-	                  NM_AUTH_MANAGER_SIGNAL_CHANGED,
-	                  G_CALLBACK (authority_changed_cb),
-	                  singleton);
-
-	return singleton;
-}
+NM_DEFINE_SINGLETON_GETTER (NMAgentManager, nm_agent_manager_get, NM_TYPE_AGENT_MANAGER);
 
 static void
 nm_agent_manager_init (NMAgentManager *self)
@@ -1581,23 +1544,57 @@ nm_agent_manager_init (NMAgentManager *self)
 }
 
 static void
+constructed (GObject *object)
+{
+	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (object);
+
+	G_OBJECT_CLASS (nm_agent_manager_parent_class)->constructed (object);
+
+	priv->dbus_mgr = g_object_ref (nm_dbus_manager_get ());
+	priv->auth_mgr = g_object_ref (nm_auth_manager_get ());
+
+	nm_dbus_manager_register_object (priv->dbus_mgr, NM_DBUS_PATH_AGENT_MANAGER, object);
+
+	g_signal_connect (priv->dbus_mgr,
+	                  NM_DBUS_MANAGER_NAME_OWNER_CHANGED,
+	                  G_CALLBACK (name_owner_changed_cb),
+	                  object);
+
+	g_signal_connect (priv->auth_mgr,
+	                  NM_AUTH_MANAGER_SIGNAL_CHANGED,
+	                  G_CALLBACK (authority_changed_cb),
+	                  object);
+}
+
+static void
 dispose (GObject *object)
 {
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (object);
 
-	if (!priv->disposed) {
-		priv->disposed = TRUE;
+	g_slist_free_full (priv->chains, (GDestroyNotify) nm_auth_chain_unref);
+	priv->chains = NULL;
 
-		g_signal_handlers_disconnect_by_func (nm_auth_manager_get (),
+	if (priv->agents) {
+		g_hash_table_destroy (priv->agents);
+		priv->agents = NULL;
+	}
+	if (priv->requests) {
+		g_hash_table_destroy (priv->requests);
+		priv->requests = NULL;
+	}
+
+	if (priv->auth_mgr) {
+		g_signal_handlers_disconnect_by_func (priv->auth_mgr,
 		                                      G_CALLBACK (authority_changed_cb),
 		                                      object);
-
-		g_slist_free_full (priv->chains, (GDestroyNotify) nm_auth_chain_unref);
-
-		g_hash_table_destroy (priv->agents);
-		g_hash_table_destroy (priv->requests);
-
-		priv->dbus_mgr = NULL;
+		g_clear_object (&priv->auth_mgr);
+	}
+	if (priv->dbus_mgr) {
+		g_signal_handlers_disconnect_by_func (priv->dbus_mgr,
+		                                      G_CALLBACK (name_owner_changed_cb),
+		                                      object);
+		nm_dbus_manager_unregister_object (priv->dbus_mgr, object);
+		g_clear_object (&priv->dbus_mgr);
 	}
 
 	G_OBJECT_CLASS (nm_agent_manager_parent_class)->dispose (object);
@@ -1611,6 +1608,7 @@ nm_agent_manager_class_init (NMAgentManagerClass *agent_manager_class)
 	g_type_class_add_private (agent_manager_class, sizeof (NMAgentManagerPrivate));
 
 	/* virtual methods */
+	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 
 	/* Signals */

@@ -19,7 +19,7 @@
 #ifndef NMT_PAGE_ETHERNET_H
 #define NMT_PAGE_ETHERNET_H
 
-#include "nmt-page-device.h"
+#include "nmt-editor-page-device.h"
 
 G_BEGIN_DECLS
 
@@ -31,18 +31,18 @@ G_BEGIN_DECLS
 #define NMT_PAGE_ETHERNET_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NMT_TYPE_PAGE_ETHERNET, NmtPageEthernetClass))
 
 typedef struct {
-	NmtPageDevice parent;
+	NmtEditorPageDevice parent;
 
 } NmtPageEthernet;
 
 typedef struct {
-	NmtPageDeviceClass parent;
+	NmtEditorPageDeviceClass parent;
 
 } NmtPageEthernetClass;
 
 GType nmt_page_ethernet_get_type (void);
 
-NmtNewtWidget *nmt_page_ethernet_new (NMConnection   *conn,
+NmtEditorPage *nmt_page_ethernet_new (NMConnection   *conn,
                                       NmtDeviceEntry *deventry);
 
 G_END_DECLS

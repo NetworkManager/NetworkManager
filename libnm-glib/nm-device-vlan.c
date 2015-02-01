@@ -18,7 +18,8 @@
  * Copyright 2012 Red Hat, Inc.
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <string.h>
 #include <netinet/ether.h>
 
@@ -41,6 +42,7 @@ typedef struct {
 
 	char *hw_address;
 	gboolean carrier;
+	NMDevice *parent;
 	guint vlan_id;
 } NMDeviceVlanPrivate;
 
@@ -48,6 +50,7 @@ enum {
 	PROP_0,
 	PROP_HW_ADDRESS,
 	PROP_CARRIER,
+	PROP_PARENT,
 	PROP_VLAN_ID,
 
 	LAST_PROP
@@ -128,6 +131,23 @@ nm_device_vlan_get_carrier (NMDeviceVlan *device)
 
 	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_VLAN_GET_PRIVATE (device)->carrier;
+}
+
+/**
+ * nm_device_vlan_get_parent:
+ * @device: a #NMDeviceVlan
+ *
+ * Returns: (transfer none): the device's parent device
+ *
+ * Since: 1.0
+ **/
+NMDevice *
+nm_device_vlan_get_parent (NMDeviceVlan *device)
+{
+	g_return_val_if_fail (NM_IS_DEVICE_VLAN (device), FALSE);
+
+	_nm_object_ensure_inited (NM_OBJECT (device));
+	return NM_DEVICE_VLAN_GET_PRIVATE (device)->parent;
 }
 
 /**
@@ -230,6 +250,7 @@ register_properties (NMDeviceVlan *device)
 	const NMPropertiesInfo property_info[] = {
 		{ NM_DEVICE_VLAN_HW_ADDRESS, &priv->hw_address },
 		{ NM_DEVICE_VLAN_CARRIER,    &priv->carrier },
+		{ NM_DEVICE_VLAN_PARENT,     &priv->parent, NULL, NM_TYPE_DEVICE },
 		{ NM_DEVICE_VLAN_VLAN_ID,    &priv->vlan_id },
 		{ NULL },
 	};
@@ -255,6 +276,7 @@ dispose (GObject *object)
 {
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (object);
 
+	g_clear_object (&priv->parent);
 	g_clear_object (&priv->proxy);
 
 	G_OBJECT_CLASS (nm_device_vlan_parent_class)->dispose (object);
@@ -286,6 +308,9 @@ get_property (GObject *object,
 		break;
 	case PROP_CARRIER:
 		g_value_set_boolean (value, nm_device_vlan_get_carrier (device));
+		break;
+	case PROP_PARENT:
+		g_value_set_object (value, nm_device_vlan_get_parent (device));
 		break;
 	case PROP_VLAN_ID:
 		g_value_set_uint (value, nm_device_vlan_get_vlan_id (device));
@@ -338,6 +363,20 @@ nm_device_vlan_class_init (NMDeviceVlanClass *vlan_class)
 		                       FALSE,
 		                       G_PARAM_READABLE |
 		                       G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMDeviceVlan:parent:
+	 *
+	 * The devices's parent device.
+	 *
+	 * Since: 1.0
+	 **/
+	g_object_class_install_property
+	    (object_class, PROP_PARENT,
+	     g_param_spec_object (NM_DEVICE_VLAN_PARENT, "", "",
+	                          NM_TYPE_DEVICE,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDeviceVlan:vlan-id:

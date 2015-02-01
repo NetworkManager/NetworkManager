@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2011 - 2012 Red Hat, Inc.
+ * Copyright 2011 - 2015 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -66,7 +66,7 @@ get_generic_capabilities (NMDevice *dev)
 }
 
 static gboolean
-is_available (NMDevice *dev)
+is_available (NMDevice *dev, NMDeviceCheckDevAvailableFlags flags)
 {
 	if (NM_DEVICE_GET_CLASS (dev)->is_up)
 		return NM_DEVICE_GET_CLASS (dev)->is_up (dev);
@@ -76,6 +76,7 @@ is_available (NMDevice *dev)
 static gboolean
 check_connection_available (NMDevice *device,
                             NMConnection *connection,
+                            NMDeviceCheckConAvailableFlags flags,
                             const char *specific_object)
 {
 	/* Connections are always available because the carrier state is determined
@@ -157,6 +158,7 @@ static const Option master_options[] = {
 	{ NM_SETTING_BRIDGE_HELLO_TIME, "hello_time", TRUE, TRUE },
 	{ NM_SETTING_BRIDGE_MAX_AGE, "max_age", TRUE, TRUE },
 	{ NM_SETTING_BRIDGE_AGEING_TIME, "ageing_time", TRUE, TRUE },
+	{ NM_SETTING_BRIDGE_MULTICAST_SNOOPING, "multicast_snooping", FALSE, FALSE },
 	{ NULL, NULL }
 };
 

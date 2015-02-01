@@ -23,6 +23,8 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
+#include "nm-sd-adapt.h"
+
 #include <netinet/in.h>
 #include <net/ethernet.h>
 

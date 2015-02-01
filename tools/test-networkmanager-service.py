@@ -74,7 +74,7 @@ class UnknownPropertyException(dbus.DBusException):
 def to_path_array(src):
     array = dbus.Array([], signature=dbus.Signature('o'))
     for o in src:
-        array.append(o.path)
+        array.append(to_path(o))
     return array
 
 def to_path(src):
@@ -312,7 +312,7 @@ class WifiAp(ExportedObj):
         props[PP_FLAGS] = dbus.UInt32(self.flags)
         props[PP_WPA_FLAGS] = dbus.UInt32(self.wpaf)
         props[PP_RSN_FLAGS] = dbus.UInt32(self.rsnf)
-        props[PP_SSID] = dbus.ByteArray(self.ssid)
+        props[PP_SSID] = dbus.ByteArray(self.ssid.encode('utf-8'))
         props[PP_FREQUENCY] = dbus.UInt32(self.freq)
         props[PP_HW_ADDRESS] = self.bssid
         props[PP_MODE] = dbus.UInt32(2)  # NM_802_11_MODE_INFRA
@@ -356,11 +356,7 @@ class WifiDevice(Device):
     @dbus.service.method(dbus_interface=IFACE_WIFI, in_signature='', out_signature='ao')
     def GetAccessPoints(self):
         # only include non-hidden APs
-        array = []
-        for a in self.aps:
-            if a.ssid():
-                array.append(a)
-        return to_path_array(array)
+        return to_path_array([a for a in self.aps if a.ssid])
 
     @dbus.service.method(dbus_interface=IFACE_WIFI, in_signature='', out_signature='ao')
     def GetAllAccessPoints(self):
@@ -414,7 +410,7 @@ class WifiDevice(Device):
     def add_test_ap(self, ssid, mac):
         ap = WifiAp(self._bus, ssid, mac, 0x1, 0x1cc, 0x1cc, 2412)
         self.add_ap(ap)
-        return ap.path
+        return ap
 
     def remove_ap_by_path(self, path):
         for ap in self.aps:
@@ -546,7 +542,7 @@ class WimaxDevice(Device):
     def add_test_nsp(self, name):
         nsp = WimaxNsp(self._bus, name)
         self.add_nsp(nsp)
-        return nsp.path
+        return nsp
 
     def remove_nsp_by_path(self, path):
         for nsp in self.nsps:
@@ -685,7 +681,7 @@ class NetworkManager(ExportedObj):
         for d in self.devices:
             # ignore iface/ip_iface distinction for now
             if d.iface == ip_iface:
-                return d.path
+                return to_path(d)
         raise UnknownDeviceException("No device found for the requested iface.")
 
     @dbus.service.method(dbus_interface=IFACE_NM, in_signature='ooo', out_signature='o')
@@ -849,7 +845,7 @@ class NetworkManager(ExportedObj):
                 raise PermissionDeniedException("Device already added")
         dev = WiredDevice(self._bus, ifname)
         self.add_device(dev)
-        return dbus.ObjectPath(dev.path)
+        return to_path(dev)
 
     @dbus.service.method(IFACE_TEST, in_signature='s', out_signature='o')
     def AddWifiDevice(self, ifname):
@@ -858,7 +854,7 @@ class NetworkManager(ExportedObj):
                 raise PermissionDeniedException("Device already added")
         dev = WifiDevice(self._bus, ifname)
         self.add_device(dev)
-        return dbus.ObjectPath(dev.path)
+        return to_path(dev)
 
     @dbus.service.method(IFACE_TEST, in_signature='s', out_signature='o')
     def AddWimaxDevice(self, ifname):
@@ -867,7 +863,7 @@ class NetworkManager(ExportedObj):
                 raise PermissionDeniedException("Device already added")
         dev = WimaxDevice(self._bus, ifname)
         self.add_device(dev)
-        return dbus.ObjectPath(dev.path)
+        return to_path(dev)
 
     @dbus.service.method(IFACE_TEST, in_signature='o', out_signature='')
     def RemoveDevice(self, path):
@@ -881,7 +877,7 @@ class NetworkManager(ExportedObj):
     def AddWifiAp(self, ifname, ssid, mac):
         for d in self.devices:
             if d.iface == ifname:
-                return dbus.ObjectPath(d.add_test_ap(ssid, mac))
+                return to_path(d.add_test_ap(ssid, mac))
         raise UnknownDeviceException("Device not found")
 
     @dbus.service.method(IFACE_TEST, in_signature='so', out_signature='')
@@ -896,7 +892,7 @@ class NetworkManager(ExportedObj):
     def AddWimaxNsp(self, ifname, name):
         for d in self.devices:
             if d.iface == ifname:
-                return dbus.ObjectPath(d.add_test_nsp(name))
+                return to_path(d.add_test_nsp(name))
         raise UnknownDeviceException("Device not found")
 
     @dbus.service.method(IFACE_TEST, in_signature='so', out_signature='')

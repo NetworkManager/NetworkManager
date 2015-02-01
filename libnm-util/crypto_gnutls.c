@@ -22,8 +22,9 @@
  */
 
 #include "config.h"
+
 #include <glib.h>
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 
 #include <gcrypt.h>
 #include <gnutls/gnutls.h>
@@ -53,11 +54,6 @@ crypto_init (GError **error)
 
 	initialized = TRUE;
 	return TRUE;
-}
-
-void
-crypto_deinit (void)
-{
 }
 
 gboolean

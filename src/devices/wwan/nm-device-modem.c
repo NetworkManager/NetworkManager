@@ -295,16 +295,19 @@ modem_state_cb (NMModem *modem,
 		 * device's enabled/disabled state.
 		 */
 		nm_modem_set_mm_enabled (priv->modem, priv->rf_enabled);
+
+		/* Now allow connections without a PIN to be available */
+		nm_device_recheck_available_connections (device);
 	}
 
-	if ((dev_state >= NM_DEVICE_STATE_DISCONNECTED) && !nm_device_is_available (device)) {
+	if ((dev_state >= NM_DEVICE_STATE_DISCONNECTED) && !nm_device_is_available (device, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE)) {
 		nm_device_state_changed (device,
 		                         NM_DEVICE_STATE_UNAVAILABLE,
 		                         NM_DEVICE_STATE_REASON_MODEM_FAILED);
 		return;
 	}
 
-	if ((dev_state == NM_DEVICE_STATE_UNAVAILABLE) && nm_device_is_available (device)) {
+	if ((dev_state == NM_DEVICE_STATE_UNAVAILABLE) && nm_device_is_available (device, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE)) {
 		nm_device_state_changed (device,
 		                         NM_DEVICE_STATE_DISCONNECTED,
 		                         NM_DEVICE_STATE_REASON_MODEM_AVAILABLE);
@@ -373,6 +376,12 @@ device_state_changed (NMDevice *device,
 	}
 }
 
+static guint32
+get_generic_capabilities (NMDevice *device)
+{
+	return NM_DEVICE_CAP_IS_NON_KERNEL;
+}
+
 static gboolean
 check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
@@ -385,6 +394,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 static gboolean
 check_connection_available (NMDevice *device,
                             NMConnection *connection,
+                            NMDeviceCheckConAvailableFlags flags,
                             const char *specific_object)
 {
 	NMDeviceModem *self = NM_DEVICE_MODEM (device);
@@ -426,6 +436,50 @@ deactivate (NMDevice *device)
 {
 	nm_modem_deactivate (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem, device);
 }
+
+/***********************************************************/
+
+static gboolean
+deactivate_async_finish (NMDevice *self,
+                         GAsyncResult *res,
+                         GError **error)
+{
+	return !g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (res), error);
+}
+
+static void
+modem_deactivate_async_ready (NMModem *modem,
+                              GAsyncResult *res,
+                              GSimpleAsyncResult *simple)
+{
+	GError *error = NULL;
+
+	if (!nm_modem_deactivate_async_finish (modem, res, &error))
+		g_simple_async_result_take_error (simple, error);
+	g_simple_async_result_complete (simple);
+	g_object_unref (simple);
+}
+
+static void
+deactivate_async (NMDevice *self,
+                  GCancellable *cancellable,
+                  GAsyncReadyCallback callback,
+                  gpointer user_data)
+{
+	GSimpleAsyncResult *simple;
+
+	simple = g_simple_async_result_new (G_OBJECT (self),
+	                                    callback,
+	                                    user_data,
+	                                    deactivate_async);
+	nm_modem_deactivate_async (NM_DEVICE_MODEM_GET_PRIVATE (self)->modem,
+	                           self,
+	                           cancellable,
+	                           (GAsyncReadyCallback) modem_deactivate_async_ready,
+	                           simple);
+}
+
+/***********************************************************/
 
 static NMActStageReturn
 act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
@@ -530,24 +584,19 @@ set_enabled (NMDevice *device, gboolean enabled)
 }
 
 static gboolean
-is_available (NMDevice *device)
+is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 {
 	NMDeviceModem *self = NM_DEVICE_MODEM (device);
-	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
+	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (self);
 	NMModemState modem_state;
 
-	if (!priv->rf_enabled) {
-		_LOGD (LOGD_MB, "not available because WWAN airplane mode is on");
+	if (!priv->rf_enabled)
 		return FALSE;
-	}
 
 	g_assert (priv->modem);
 	modem_state = nm_modem_get_state (priv->modem);
-	if (modem_state <= NM_MODEM_STATE_INITIALIZING) {
-		_LOGD (LOGD_MB, "not available because modem is not ready (%s)",
-		       nm_modem_state_to_string (modem_state));
+	if (modem_state <= NM_MODEM_STATE_INITIALIZING)
 		return FALSE;
-	}
 
 	return TRUE;
 }
@@ -632,7 +681,7 @@ set_modem (NMDeviceModem *self, NMModem *modem)
 
 static void
 set_property (GObject *object, guint prop_id,
-			  const GValue *value, GParamSpec *pspec)
+              const GValue *value, GParamSpec *pspec)
 {
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (object);
 
@@ -655,7 +704,7 @@ set_property (GObject *object, guint prop_id,
 
 static void
 get_property (GObject *object, guint prop_id,
-			  GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (object);
 
@@ -701,9 +750,12 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 	object_class->set_property = set_property;
 	object_class->constructed = constructed;
 
+	device_class->get_generic_capabilities = get_generic_capabilities;
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->check_connection_available = check_connection_available;
 	device_class->complete_connection = complete_connection;
+	device_class->deactivate_async = deactivate_async;
+	device_class->deactivate_async_finish = deactivate_async_finish;
 	device_class->deactivate = deactivate;
 	device_class->act_stage1_prepare = act_stage1_prepare;
 	device_class->act_stage2_config = act_stage2_config;

@@ -18,8 +18,9 @@
  * Copyright 2013 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
-#include <config.h>
 #include <gio/gio.h>
 #include "nm-dbus-helpers.h"
 #include "nm-dbus-interface.h"
@@ -348,6 +349,7 @@ _nm_dbus_bind_properties (gpointer object, gpointer skeleton)
 		                        skeleton, properties[i]->name,
 		                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 	}
+	g_free (properties);
 }
 
 static char *

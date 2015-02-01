@@ -35,7 +35,7 @@
 #include "nmt-address-list.h"
 #include "nmt-slave-list.h"
 
-G_DEFINE_TYPE (NmtPageBond, nmt_page_bond, NMT_TYPE_PAGE_DEVICE)
+G_DEFINE_TYPE (NmtPageBond, nmt_page_bond, NMT_TYPE_EDITOR_PAGE_DEVICE)
 
 #define NMT_PAGE_BOND_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NMT_TYPE_PAGE_BOND, NmtPageBondPrivate))
 
@@ -64,13 +64,12 @@ typedef struct {
 	gboolean updating;
 } NmtPageBondPrivate;
 
-NmtNewtWidget *
+NmtEditorPage *
 nmt_page_bond_new (NMConnection   *conn,
                    NmtDeviceEntry *deventry)
 {
 	return g_object_new (NMT_TYPE_PAGE_BOND,
 	                     "connection", conn,
-	                     "title", _("BOND"),
 	                     "device-entry", deventry,
 	                     NULL);
 }
@@ -338,7 +337,8 @@ nmt_page_bond_constructed (GObject *object)
 {
 	NmtPageBond *bond = NMT_PAGE_BOND (object);
 	NmtPageBondPrivate *priv = NMT_PAGE_BOND_GET_PRIVATE (bond);
-	NmtPageGrid *grid;
+	NmtEditorSection *section;
+	NmtEditorGrid *grid;
 	NMSettingBond *s_bond;
 	NmtNewtWidget *widget, *label;
 	NMConnection *conn;
@@ -351,74 +351,77 @@ nmt_page_bond_constructed (GObject *object)
 	}
 	priv->s_bond = s_bond;
 
-	grid = NMT_PAGE_GRID (bond);
+	section = nmt_editor_section_new (_("BOND"), NULL, TRUE);
+	grid = nmt_editor_section_get_body (section);
 
 	widget = nmt_newt_separator_new ();
-	nmt_page_grid_append (grid, _("Slaves"), widget, NULL);
-	nmt_page_grid_set_row_flags (grid, widget, NMT_PAGE_GRID_ROW_LABEL_ALIGN_LEFT);
+	nmt_editor_grid_append (grid, _("Slaves"), widget, NULL);
+	nmt_editor_grid_set_row_flags (grid, widget, NMT_EDITOR_GRID_ROW_LABEL_ALIGN_LEFT);
 
 	widget = nmt_slave_list_new (conn, bond_connection_type_filter, bond);
 	g_signal_connect (widget, "notify::connections",
 	                  G_CALLBACK (slaves_changed), bond);
-	nmt_page_grid_append (grid, NULL, widget, NULL);
+	nmt_editor_grid_append (grid, NULL, widget, NULL);
 	priv->slaves = NMT_SLAVE_LIST (widget);
 
 	widget = nmt_newt_popup_new (bond_mode);
 	g_signal_connect (widget, "notify::active-id",
 	                  G_CALLBACK (mode_widget_changed), bond);
-	nmt_page_grid_append (grid, _("Mode"), widget, NULL);
+	nmt_editor_grid_append (grid, _("Mode"), widget, NULL);
 	priv->mode = NMT_NEWT_POPUP (widget);
 
 	widget = nmt_newt_entry_new (40, 0);
 	g_signal_connect (widget, "notify::text",
 	                  G_CALLBACK (primary_widget_changed), bond);
-	nmt_page_grid_append (grid, _("Primary"), widget, NULL);
+	nmt_editor_grid_append (grid, _("Primary"), widget, NULL);
 	priv->primary = NMT_NEWT_ENTRY (widget);
 
 	widget = nmt_newt_popup_new (bond_monitoring);
 	g_signal_connect (widget, "notify::active",
 	                  G_CALLBACK (monitoring_widget_changed), bond);
-	nmt_page_grid_append (grid, _("Link monitoring"), widget, NULL);
+	nmt_editor_grid_append (grid, _("Link monitoring"), widget, NULL);
 	priv->monitoring = NMT_NEWT_POPUP (widget);
 
 	widget = nmt_newt_entry_numeric_new (10, 0, G_MAXINT);
 	g_signal_connect (widget, "notify::text",
 	                  G_CALLBACK (miimon_widget_changed), bond);
 	label = nmt_newt_label_new (C_("milliseconds", "ms"));
-	nmt_page_grid_append (grid, _("Monitoring frequency"), widget, label);
+	nmt_editor_grid_append (grid, _("Monitoring frequency"), widget, label);
 	priv->miimon = NMT_NEWT_ENTRY (widget);
 
 	widget = nmt_newt_entry_numeric_new (10, 0, G_MAXINT);
 	g_signal_connect (widget, "notify::text",
 	                  G_CALLBACK (updelay_widget_changed), bond);
 	label = nmt_newt_label_new (C_("milliseconds", "ms"));
-	nmt_page_grid_append (grid, _("Link up delay"), widget, label);
+	nmt_editor_grid_append (grid, _("Link up delay"), widget, label);
 	priv->updelay = NMT_NEWT_ENTRY (widget);
 
 	widget = nmt_newt_entry_numeric_new (10, 0, G_MAXINT);
 	g_signal_connect (widget, "notify::text",
 	                  G_CALLBACK (downdelay_widget_changed), bond);
 	label = nmt_newt_label_new (C_("milliseconds", "ms"));
-	nmt_page_grid_append (grid, _("Link down delay"), widget, label);
+	nmt_editor_grid_append (grid, _("Link down delay"), widget, label);
 	priv->downdelay = NMT_NEWT_ENTRY (widget);
 
 	widget = nmt_newt_entry_numeric_new (10, 0, G_MAXINT);
 	g_signal_connect (widget, "notify::text",
 	                  G_CALLBACK (arp_interval_widget_changed), bond);
 	label = nmt_newt_label_new (C_("milliseconds", "ms"));
-	nmt_page_grid_append (grid, _("Monitoring frequency"), widget, label);
+	nmt_editor_grid_append (grid, _("Monitoring frequency"), widget, label);
 	priv->arp_interval = NMT_NEWT_ENTRY (widget);
 
 	widget = nmt_address_list_new (NMT_ADDRESS_LIST_IP4);
 	g_signal_connect (widget, "notify::strings",
 	                  G_CALLBACK (arp_ip_target_widget_changed), bond);
-	nmt_page_grid_append (grid, _("ARP targets"), widget, NULL);
+	nmt_editor_grid_append (grid, _("ARP targets"), widget, NULL);
 	priv->arp_ip_target = NMT_ADDRESS_LIST (widget);
 
 	g_signal_connect (s_bond, "notify::" NM_SETTING_BOND_OPTIONS,
 	                  G_CALLBACK (bond_options_changed), bond);
 	bond_options_changed (G_OBJECT (s_bond), NULL, bond);
 	slaves_changed (G_OBJECT (priv->slaves), NULL, bond);
+
+	nmt_editor_page_add_section (NMT_EDITOR_PAGE (bond), section);
 
 	G_OBJECT_CLASS (nmt_page_bond_parent_class)->constructed (object);
 }

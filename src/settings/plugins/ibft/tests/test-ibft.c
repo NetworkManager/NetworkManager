@@ -18,6 +18,8 @@
  * Copyright 2014 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <unistd.h>
@@ -61,7 +63,7 @@ read_block (const char *iscsiadm_path, const char *expected_mac)
 	}
 	g_assert (block);
 
-	g_slist_foreach (blocks, (GFunc) g_ptr_array_unref, NULL);
+	g_slist_free_full (blocks, (GDestroyNotify) g_ptr_array_unref);
 	return block;
 }
 
@@ -71,7 +73,7 @@ test_read_ibft_dhcp (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	GError *error = NULL;
 	const char *mac_address;
 	const char *expected_mac_address = "00:33:21:98:b9:f1";
@@ -105,9 +107,10 @@ test_read_ibft_dhcp (void)
 	/* ===== IPv4 SETTING ===== */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
-	g_assert_cmpstr (nm_setting_ip4_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 
 	g_object_unref (connection);
+	g_ptr_array_unref (block);
 }
 
 static void
@@ -116,11 +119,11 @@ test_read_ibft_static (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	GError *error = NULL;
 	const char *mac_address;
 	const char *expected_mac_address = "00:33:21:98:b9:f0";
-	NMIP4Address *ip4_addr;
+	NMIPAddress *ip4_addr;
 	GPtrArray *block;
 
 	block = read_block (TEST_IBFT_DIR "/iscsiadm-test-static", expected_mac_address);
@@ -151,18 +154,19 @@ test_read_ibft_static (void)
 	/* ===== IPv4 SETTING ===== */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
-	g_assert_cmpstr (nm_setting_ip4_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
 
-	g_assert_cmpint (nm_setting_ip4_config_get_num_dns (s_ip4), ==, 2);
-	g_assert_cmpstr (nm_setting_ip4_config_get_dns (s_ip4, 0), ==, "10.16.255.2");
-	g_assert_cmpstr (nm_setting_ip4_config_get_dns (s_ip4, 1), ==, "10.16.255.3");
+	g_assert_cmpint (nm_setting_ip_config_get_num_dns (s_ip4), ==, 2);
+	g_assert_cmpstr (nm_setting_ip_config_get_dns (s_ip4, 0), ==, "10.16.255.2");
+	g_assert_cmpstr (nm_setting_ip_config_get_dns (s_ip4, 1), ==, "10.16.255.3");
 
-	g_assert_cmpint (nm_setting_ip4_config_get_num_addresses (s_ip4), ==, 1);
-	ip4_addr = nm_setting_ip4_config_get_address (s_ip4, 0);
+	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip4), ==, 1);
+	ip4_addr = nm_setting_ip_config_get_address (s_ip4, 0);
 	g_assert (ip4_addr);
-	nmtst_assert_ip4_address_equals (nm_ip4_address_get_address (ip4_addr), "192.168.32.72");
-	g_assert_cmpint (nm_ip4_address_get_prefix (ip4_addr), ==, 22);
-	nmtst_assert_ip4_address_equals (nm_ip4_address_get_gateway (ip4_addr), "192.168.35.254");
+	g_assert_cmpstr (nm_ip_address_get_address (ip4_addr), ==, "192.168.32.72");
+	g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 22);
+
+	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, "192.168.35.254");
 
 	g_object_unref (connection);
 	g_ptr_array_unref (block);
@@ -217,10 +221,10 @@ test_read_ibft_vlan (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingVlan *s_vlan;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	const char *mac_address;
 	const char *expected_mac_address = "00:33:21:98:b9:f0";
-	NMIP4Address *ip4_addr;
+	NMIPAddress *ip4_addr;
 	GError *error = NULL;
 	GPtrArray *block;
 
@@ -250,19 +254,20 @@ test_read_ibft_vlan (void)
 	/* ===== IPv4 SETTING ===== */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
-	g_assert_cmpstr (nm_setting_ip4_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
 
-	g_assert_cmpint (nm_setting_ip4_config_get_num_dns (s_ip4), ==, 0);
+	g_assert_cmpint (nm_setting_ip_config_get_num_dns (s_ip4), ==, 0);
 
-	g_assert_cmpint (nm_setting_ip4_config_get_num_addresses (s_ip4), ==, 1);
-	ip4_addr = nm_setting_ip4_config_get_address (s_ip4, 0);
+	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip4), ==, 1);
+	ip4_addr = nm_setting_ip_config_get_address (s_ip4, 0);
 	g_assert (ip4_addr);
-	nmtst_assert_ip4_address_equals (nm_ip4_address_get_address (ip4_addr), "192.168.6.200");
-	g_assert_cmpint (nm_ip4_address_get_prefix (ip4_addr), ==, 24);
-	nmtst_assert_ip4_address_equals (nm_ip4_address_get_gateway (ip4_addr), "0.0.0.0");
+	g_assert_cmpstr (nm_ip_address_get_address (ip4_addr), ==, "192.168.6.200");
+	g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 24);
+
+	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, NULL);
 
 	g_object_unref (connection);
-	g_ptr_array_ref (block);
+	g_ptr_array_unref (block);
 }
 
 NMTST_DEFINE ();

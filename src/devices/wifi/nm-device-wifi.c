@@ -19,6 +19,8 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
+#include "config.h"
+
 #include <glib.h>
 #include <glib/gi18n.h>
 #include <dbus/dbus.h>
@@ -222,8 +224,7 @@ constructor (GType type,
 		_LOGI (LOGD_HW | LOGD_WIFI, "driver supports Access Point (AP) mode");
 
 	/* Connect to the supplicant manager */
-	priv->sup_mgr = nm_supplicant_manager_get ();
-	g_assert (priv->sup_mgr);
+	priv->sup_mgr = g_object_ref (nm_supplicant_manager_get ());
 
 	return object;
 }
@@ -361,14 +362,14 @@ find_active_ap (NMDeviceWifi *self,
 	guint32 devfreq;
 
 	nm_platform_wifi_get_bssid (ifindex, bssid);
-	_LOGD (LOGD_WIFI, "active BSSID: %02x:%02x:%02x:%02x:%02x:%02x",
+	_LOGT (LOGD_WIFI, "active BSSID: %02x:%02x:%02x:%02x:%02x:%02x",
 	       bssid[0], bssid[1], bssid[2], bssid[3], bssid[4], bssid[5]);
 
 	if (!nm_ethernet_address_is_valid (bssid, ETH_ALEN))
 		return NULL;
 
 	ssid = nm_platform_wifi_get_ssid (ifindex);
-	_LOGD (LOGD_WIFI, "active SSID: %s%s%s",
+	_LOGT (LOGD_WIFI, "active SSID: %s%s%s",
 	       ssid ? "'" : "",
 	       ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
 	       ssid ? "'" : "");
@@ -381,7 +382,7 @@ find_active_ap (NMDeviceWifi *self,
 	 * and therefore it won't get matched the first time around.
 	 */
 	while (i++ < (match_hidden ? 2 : 1)) {
-		_LOGD (LOGD_WIFI, "  Pass #%d %s", i, i > 1 ? "(ignoring SSID)" : "");
+		_LOGT (LOGD_WIFI, "  Pass #%d %s", i, i > 1 ? "(ignoring SSID)" : "");
 
 		/* Find this SSID + BSSID in the device's AP list */
 		for (iter = priv->ap_list; iter; iter = g_slist_next (iter)) {
@@ -391,19 +392,19 @@ find_active_ap (NMDeviceWifi *self,
 			NM80211Mode apmode;
 			guint32 apfreq;
 
-			_LOGD (LOGD_WIFI, "    AP: %s%s%s  %s",
+			_LOGT (LOGD_WIFI, "    AP: %s%s%s  %s",
 			       ap_ssid ? "'" : "",
 			       ap_ssid ? nm_utils_escape_ssid (ap_ssid->data, ap_ssid->len) : "(none)",
 			       ap_ssid ? "'" : "",
-			       ap_bssid);
+			       str_if_set (ap_bssid, "(none)"));
 
 			if (ap == ignore_ap) {
-				_LOGD (LOGD_WIFI, "      ignored");
+				_LOGT (LOGD_WIFI, "      ignored");
 				continue;
 			}
 
 			if (!nm_utils_hwaddr_matches (bssid, ETH_ALEN, ap_bssid, -1)) {
-				_LOGD (LOGD_WIFI, "      BSSID mismatch");
+				_LOGT (LOGD_WIFI, "      BSSID mismatch");
 				continue;
 			}
 
@@ -413,21 +414,21 @@ find_active_ap (NMDeviceWifi *self,
 				    || (ssid && ap_ssid && !nm_utils_same_ssid (ssid->data, ssid->len,
 				                                                ap_ssid->data, ap_ssid->len,
 				                                                TRUE))) {
-					_LOGD (LOGD_WIFI, "      SSID mismatch");
+					_LOGT (LOGD_WIFI, "      SSID mismatch");
 					continue;
 				}
 			}
 
 			apmode = nm_ap_get_mode (ap);
 			if (devmode != apmode) {
-				_LOGD (LOGD_WIFI, "      mode mismatch (device %d, ap %d)",
+				_LOGT (LOGD_WIFI, "      mode mismatch (device %d, ap %d)",
 				       devmode, apmode);
 				continue;
 			}
 
 			apfreq = nm_ap_get_freq (ap);
 			if (devfreq != apfreq) {
-				_LOGD (LOGD_WIFI, "      frequency mismatch (device %u, ap %u)",
+				_LOGT (LOGD_WIFI, "      frequency mismatch (device %u, ap %u)",
 				       devfreq, apfreq);
 
 				if (match_nofreq == NULL)
@@ -441,7 +442,7 @@ find_active_ap (NMDeviceWifi *self,
 			}
 
 			// FIXME: handle security settings here too
-			_LOGD (LOGD_WIFI, "      matched");
+			_LOGT (LOGD_WIFI, "      matched");
 			active_ap = ap;
 			goto done;
 		}
@@ -460,20 +461,19 @@ find_active_ap (NMDeviceWifi *self,
 	 * we can't match the AP based on frequency at all, just give up.
 	 */
 	if (match_nofreq && ((found_a_band != found_bg_band) || (devfreq == 0))) {
-		const char *ap_bssid = nm_ap_get_address (match_nofreq);
 		const GByteArray *ap_ssid = nm_ap_get_ssid (match_nofreq);
 
-		_LOGD (LOGD_WIFI, "    matched %s%s%s  %s",
+		_LOGT (LOGD_WIFI, "    matched %s%s%s  %s",
 		       ap_ssid ? "'" : "",
 		       ap_ssid ? nm_utils_escape_ssid (ap_ssid->data, ap_ssid->len) : "(none)",
 		       ap_ssid ? "'" : "",
-		       ap_bssid);
+		       str_if_set (nm_ap_get_address (match_nofreq), "(none)"));
 
 		active_ap = match_nofreq;
 		goto done;
 	}
 
-	_LOGD (LOGD_WIFI, "  No matching AP found.");
+	_LOGT (LOGD_WIFI, "  No matching AP found.");
 
 done:
 	if (ssid)
@@ -740,7 +740,10 @@ deactivate (NMDevice *device)
 	nm_platform_wifi_indicate_addressing_running (ifindex, FALSE);
 
 	/* Reset MAC address back to initial address */
-	nm_device_set_hw_addr (device, priv->initial_hw_addr, "reset", LOGD_WIFI);
+	if (priv->initial_hw_addr)
+		nm_device_set_hw_addr (device, priv->initial_hw_addr, "reset", LOGD_WIFI);
+
+	nm_platform_wifi_set_powersave (ifindex, 0);
 
 	/* Ensure we're in infrastructure mode after deactivation; some devices
 	 * (usually older ones) don't scan well in adhoc mode.
@@ -861,10 +864,10 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 
 
 static gboolean
-_internal_check_connection_available (NMDevice *device,
-                                      NMConnection *connection,
-                                      const char *specific_object,
-                                      gboolean ignore_ap_list)
+check_connection_available (NMDevice *device,
+                            NMConnection *connection,
+                            NMDeviceCheckConAvailableFlags flags,
+                            const char *specific_object)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
 	NMSettingWireless *s_wifi;
@@ -873,6 +876,9 @@ _internal_check_connection_available (NMDevice *device,
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_return_val_if_fail (s_wifi, FALSE);
+
+	/* a connection that is available for a certain @specific_object, MUST
+	 * also be available in general (without @specific_object). */
 
 	if (specific_object) {
 		NMAccessPoint *ap;
@@ -889,8 +895,15 @@ _internal_check_connection_available (NMDevice *device,
 	    || g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_AP) == 0)
 		return TRUE;
 
-	/* Hidden SSIDs obviously don't always appear in the scan list either */
-	if (nm_setting_wireless_get_hidden (s_wifi) || ignore_ap_list)
+	/* Hidden SSIDs obviously don't always appear in the scan list either.
+	 *
+	 * For an explict user-activation-request, a connection is considered
+	 * available because for hidden Wi-Fi, clients didn't consistently
+	 * set the 'hidden' property to indicate hidden SSID networks.  If
+	 * activating but the network isn't available let the device recheck
+	 * availability.
+	 */
+	if (nm_setting_wireless_get_hidden (s_wifi) || NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP))
 		return TRUE;
 
 	/* check if its visible */
@@ -900,24 +913,6 @@ _internal_check_connection_available (NMDevice *device,
 	}
 
 	return FALSE;
-}
-
-static gboolean
-check_connection_available (NMDevice *device,
-                            NMConnection *connection,
-                            const char *specific_object)
-{
-	return _internal_check_connection_available (device, connection, specific_object, FALSE);
-}
-
-/* FIXME: remove this function when we require the 'hidden' property to be
- * set before a hidden connection can be activated.
- */
-static gboolean
-check_connection_available_wifi_hidden (NMDevice *device,
-                                        NMConnection *connection)
-{
-	return _internal_check_connection_available (device, connection, NULL, TRUE);
 }
 
 /*
@@ -1141,28 +1136,22 @@ complete_connection (NMDevice *device,
 }
 
 static gboolean
-is_available (NMDevice *device)
+is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	guint32 state;
 
-	if (!priv->enabled) {
-		_LOGD (LOGD_WIFI, "not available because not enabled");
+	if (!priv->enabled)
 		return FALSE;
-	}
 
-	if (!priv->sup_iface) {
-		_LOGD (LOGD_WIFI, "not available because supplicant not running");
+	if (!priv->sup_iface)
 		return FALSE;
-	}
 
 	state = nm_supplicant_interface_get_state (priv->sup_iface);
 	if (   state < NM_SUPPLICANT_INTERFACE_STATE_READY
-	    || state > NM_SUPPLICANT_INTERFACE_STATE_COMPLETED) {
-		_LOGD (LOGD_WIFI, "not available because supplicant interface not ready");
+	    || state > NM_SUPPLICANT_INTERFACE_STATE_COMPLETED)
 		return FALSE;
-	}
 
 	return TRUE;
 }
@@ -1699,12 +1688,12 @@ merge_scanned_ap (NMDeviceWifi *self,
 		if (ssid && (nm_utils_is_empty_ssid (ssid->data, ssid->len) == FALSE)) {
 			/* Yay, matched it, no longer treat as hidden */
 			_LOGD (LOGD_WIFI_SCAN, "matched hidden AP %s => '%s'",
-			       bssid, nm_utils_escape_ssid (ssid->data, ssid->len));
+			       str_if_set (bssid, "(none)"), nm_utils_escape_ssid (ssid->data, ssid->len));
 			nm_ap_set_broadcast (merge_ap, FALSE);
 		} else {
 			/* Didn't have an entry for this AP in the database */
 			_LOGD (LOGD_WIFI_SCAN, "failed to match hidden AP %s",
-			       bssid);
+			       str_if_set (bssid, "(none)"));
 		}
 	}
 
@@ -1723,7 +1712,7 @@ merge_scanned_ap (NMDeviceWifi *self,
 	if (found_ap) {
 		_LOGD (LOGD_WIFI_SCAN, "merging AP '%s' %s (%p) with existing (%p)",
 		            ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
-		            bssid,
+		            str_if_set (bssid, "(none)"),
 		            merge_ap,
 		            found_ap);
 
@@ -1745,7 +1734,7 @@ merge_scanned_ap (NMDeviceWifi *self,
 		/* New entry in the list */
 		_LOGD (LOGD_WIFI_SCAN, "adding new AP '%s' %s (%p)",
 		       ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
-		       bssid, merge_ap);
+		       str_if_set (bssid, "(none)"), merge_ap);
 
 		g_object_ref (merge_ap);
 		priv->ap_list = g_slist_prepend (priv->ap_list, merge_ap);
@@ -1801,14 +1790,12 @@ cull_scan_list (NMDeviceWifi *self)
 	/* Remove outdated APs */
 	for (elt = outdated_list; elt; elt = g_slist_next (elt)) {
 		NMAccessPoint *outdated_ap = NM_AP (elt->data);
-		const char *bssid;
 		const GByteArray *ssid;
 
-		bssid = nm_ap_get_address (outdated_ap);
 		ssid = nm_ap_get_ssid (outdated_ap);
 		_LOGD (LOGD_WIFI_SCAN,
 		       "   removing %s (%s%s%s)",
-		       bssid,
+		       str_if_set (nm_ap_get_address (outdated_ap), "(none)"),
 		       ssid ? "'" : "",
 		       ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
 		       ssid ? "'" : "");
@@ -2169,7 +2156,7 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 		/* If the interface can now be activated because the supplicant is now
 		 * available, transition to DISCONNECTED.
 		 */
-		if ((devstate == NM_DEVICE_STATE_UNAVAILABLE) && nm_device_is_available (device)) {
+		if ((devstate == NM_DEVICE_STATE_UNAVAILABLE) && nm_device_is_available (device, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE)) {
 			nm_device_state_changed (device,
 			                         NM_DEVICE_STATE_DISCONNECTED,
 			                         NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE);
@@ -2759,6 +2746,11 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	if ((nm_ap_get_mode (ap) == NM_802_11_MODE_ADHOC) || nm_ap_is_hotspot (ap))
 		ensure_hotspot_frequency (self, s_wireless, ap);
 
+	if (nm_ap_get_mode (ap) == NM_802_11_MODE_INFRA) {
+		nm_platform_wifi_set_powersave (nm_device_get_ifindex (device),
+		                                nm_setting_wireless_get_powersave (s_wireless));
+	}
+
 	/* Build up the supplicant configuration */
 	config = build_supplicant_config (self, connection, nm_ap_get_freq (ap));
 	if (config == NULL) {
@@ -2809,14 +2801,14 @@ act_stage3_ip4_config_start (NMDevice *device,
                              NMDeviceStateReason *reason)
 {
 	NMConnection *connection;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	const char *method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
 
 	connection = nm_device_get_connection (device);
 	g_assert (connection);
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	if (s_ip4)
-		method = nm_setting_ip4_config_get_method (s_ip4);
+		method = nm_setting_ip_config_get_method (s_ip4);
 
 	/* Indicate that a critical protocol is about to start */
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0)
@@ -2831,14 +2823,14 @@ act_stage3_ip6_config_start (NMDevice *device,
                              NMDeviceStateReason *reason)
 {
 	NMConnection *connection;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip6;
 	const char *method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
 
 	connection = nm_device_get_connection (device);
 	g_assert (connection);
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	if (s_ip6)
-		method = nm_setting_ip6_config_get_method (s_ip6);
+		method = nm_setting_ip_config_get_method (s_ip6);
 
 	/* Indicate that a critical protocol is about to start */
 	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0 ||
@@ -2938,7 +2930,7 @@ static NMActStageReturn
 act_stage4_ip4_config_timeout (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMConnection *connection;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	gboolean may_fail = FALSE, chain_up = FALSE;
 	NMActStageReturn ret;
 
@@ -2946,7 +2938,7 @@ act_stage4_ip4_config_timeout (NMDevice *device, NMDeviceStateReason *reason)
 	g_assert (connection);
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	may_fail = nm_setting_ip4_config_get_may_fail (s_ip4);
+	may_fail = nm_setting_ip_config_get_may_fail (s_ip4);
 
 	ret = handle_ip_config_timeout (NM_DEVICE_WIFI (device), connection, may_fail, &chain_up, reason);
 	if (chain_up)
@@ -2959,7 +2951,7 @@ static NMActStageReturn
 act_stage4_ip6_config_timeout (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMConnection *connection;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip6;
 	gboolean may_fail = FALSE, chain_up = FALSE;
 	NMActStageReturn ret;
 
@@ -2967,7 +2959,7 @@ act_stage4_ip6_config_timeout (NMDevice *device, NMDeviceStateReason *reason)
 	g_assert (connection);
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
-	may_fail = nm_setting_ip6_config_get_may_fail (s_ip6);
+	may_fail = nm_setting_ip_config_get_may_fail (s_ip6);
 
 	ret = handle_ip_config_timeout (NM_DEVICE_WIFI (device), connection, may_fail, &chain_up, reason);
 	if (chain_up)
@@ -3015,7 +3007,7 @@ activation_success_handler (NMDevice *device)
 	 * the BSSID off the card and fill in the BSSID of the activation AP.
 	 */
 	nm_platform_wifi_get_bssid (ifindex, bssid);
-	if (!nm_ethernet_address_is_valid (nm_ap_get_address (ap), -1)) {
+	if (!nm_ap_get_address (ap)) {
 		char *bssid_str = nm_utils_hwaddr_ntoa (bssid, ETH_ALEN);
 		nm_ap_set_address (ap, bssid_str);
 		g_free (bssid_str);
@@ -3335,7 +3327,6 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	parent_class->is_available = is_available;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->check_connection_available = check_connection_available;
-	parent_class->check_connection_available_wifi_hidden = check_connection_available_wifi_hidden;
 	parent_class->complete_connection = complete_connection;
 	parent_class->set_enabled = set_enabled;
 

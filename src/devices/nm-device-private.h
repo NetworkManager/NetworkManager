@@ -37,8 +37,9 @@ enum NMActStageReturn {
 };
 
 #define NM_DEVICE_CAP_NONSTANDARD_CARRIER 0x80000000
+#define NM_DEVICE_CAP_IS_NON_KERNEL       0x40000000
 
-#define NM_DEVICE_CAP_INTERNAL_MASK 0x80000000
+#define NM_DEVICE_CAP_INTERNAL_MASK 0xc0000000
 
 void nm_device_set_ip_iface (NMDevice *self, const char *iface);
 
@@ -54,8 +55,6 @@ void nm_device_take_down (NMDevice *self, gboolean block);
 
 gboolean nm_device_set_hw_addr (NMDevice *device, const char *addr,
                                 const char *detail, guint64 hw_log_domain);
-
-gboolean nm_device_ip_config_should_fail (NMDevice *self, gboolean ip6);
 
 void nm_device_set_firmware_missing (NMDevice *self, gboolean missing);
 

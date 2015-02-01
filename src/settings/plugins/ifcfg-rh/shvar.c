@@ -23,6 +23,8 @@
  *
  */
 
+#include "config.h"
+
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -238,8 +240,7 @@ svEscape (const char *s)
 		new[j++] = s[i];
 	}
 	new[j++] = '"';
-	new[j++] = '\0'
-;
+	new[j++] = '\0';
 	g_assert (j == slen + mangle - newline + 3);
 
 	return new;
@@ -266,7 +267,8 @@ svGetValue (shvarFile *s, const char *key, gboolean verbatim)
 	for (s->current = s->lineList; s->current; s->current = s->current->next) {
 		line = s->current->data;
 		if (!strncmp (keyString, line, len)) {
-			value = g_strdup (line + len);
+			/* Strip trailing spaces before unescaping to preserve spaces quoted whitespace */
+			value = g_strchomp (g_strdup (line + len));
 			if (!verbatim)
 				svUnescape (value);
 			break;
@@ -370,10 +372,12 @@ svSetValue (shvarFile *s, const char *key, const char *value, gboolean verbatim)
 		if (oldval) {
 			/* delete line */
 			s->lineList = g_list_remove_link (s->lineList, s->current);
+			g_free (s->current->data);
 			g_list_free_1 (s->current);
 			s->modified = TRUE;
 		}
-		goto bail; /* do not need keyValue */
+		g_free (keyValue);
+		goto end;
 	}
 
 	if (!oldval) {
@@ -385,21 +389,19 @@ svSetValue (shvarFile *s, const char *key, const char *value, gboolean verbatim)
 
 	if (strcmp (oldval, newval) != 0) {
 		/* change line */
-		if (s->current)
+		if (s->current) {
+			g_free (s->current->data);
 			s->current->data = keyValue;
-		else
+		} else
 			s->lineList = g_list_append (s->lineList, keyValue);
 		s->modified = TRUE;
-	}
+	} else
+		g_free (keyValue);
 
  end:
 	g_free (newval);
 	g_free (oldval);
 	return;
-
- bail:
-	g_free (keyValue);
-	goto end;
 }
 
 /* Write the current contents iff modified.  Returns FALSE on error

@@ -18,6 +18,8 @@
  * Copyright 2008, 2014 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <stdlib.h>
 #include <string.h>
 

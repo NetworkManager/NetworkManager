@@ -17,6 +17,8 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
+#include "nm-sd-adapt.h"
+
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
@@ -399,7 +401,7 @@ static void client_stop(sd_dhcp_client *client, int error) {
 
 static int client_message_init(sd_dhcp_client *client, DHCPPacket **ret,
                                uint8_t type, size_t *_optlen, size_t *_optoffset) {
-        _cleanup_free_ DHCPPacket *packet;
+        _cleanup_free_ DHCPPacket *packet = NULL;
         size_t optlen, optoffset, size;
         be16_t max_size;
         usec_t time_now;
@@ -412,6 +414,8 @@ static int client_message_init(sd_dhcp_client *client, DHCPPacket **ret,
         assert(_optlen);
         assert(_optoffset);
         assert(type == DHCP_DISCOVER || type == DHCP_REQUEST);
+
+        /* See RFC2131 section 4.4.1 */
 
         optlen = DHCP_MIN_OPTIONS_SIZE;
         size = sizeof(DHCPPacket) + optlen;

@@ -15,7 +15,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2012 Red Hat, Inc.
+ * Copyright 2012 - 2014 Red Hat, Inc.
  */
 
 #ifndef __NM_DEVICE_VLAN_H__
@@ -38,6 +38,7 @@ G_BEGIN_DECLS
 
 #define NM_DEVICE_VLAN_HW_ADDRESS  "hw-address"
 #define NM_DEVICE_VLAN_CARRIER     "carrier"
+#define NM_DEVICE_VLAN_PARENT      "parent"
 #define NM_DEVICE_VLAN_VLAN_ID     "vlan-id"
 
 struct _NMDeviceVlan {
@@ -55,6 +56,7 @@ GType nm_device_vlan_get_type (void);
 
 const char * nm_device_vlan_get_hw_address (NMDeviceVlan *device);
 gboolean     nm_device_vlan_get_carrier (NMDeviceVlan *device);
+NMDevice *   nm_device_vlan_get_parent  (NMDeviceVlan *device);
 guint        nm_device_vlan_get_vlan_id (NMDeviceVlan *device);
 
 G_END_DECLS

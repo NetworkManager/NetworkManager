@@ -19,13 +19,17 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
+#include "nm-sd-adapt.h"
+
 #include <errno.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <linux/if_infiniband.h>
 
+#if 0 /* NM_IGNORED */
 #include "udev.h"
 #include "udev-util.h"
+#endif /* NM_IGNORED */
 #include "util.h"
 #include "refcnt.h"
 
@@ -48,6 +52,7 @@ struct sd_dhcp6_client {
         uint8_t mac_addr[MAX_MAC_ADDR_LEN];
         size_t mac_addr_len;
         uint16_t arp_type;
+        char ifname[IFNAMSIZ];
         DHCP6IA ia_na;
         be32_t transaction_id;
         usec_t transaction_start;
@@ -841,7 +846,7 @@ static int client_receive_message(sd_event_source *s, int fd, uint32_t revents,
                                   void *userdata) {
         sd_dhcp6_client *client = userdata;
         DHCP6_CLIENT_DONT_DESTROY(client);
-        _cleanup_free_ DHCP6Message *message;
+        _cleanup_free_ DHCP6Message *message = NULL;
         int r, buflen, len;
 
         assert(s);
@@ -1205,7 +1210,9 @@ sd_dhcp6_client *sd_dhcp6_client_unref(sd_dhcp6_client *client) {
 int sd_dhcp6_client_new(sd_dhcp6_client **ret)
 {
         _cleanup_dhcp6_client_unref_ sd_dhcp6_client *client = NULL;
+#if 0 /* NM_IGNORED */
         int r;
+#endif /* NM_IGNORED */
         size_t t;
 
         assert_return(ret, -EINVAL);
@@ -1222,10 +1229,12 @@ int sd_dhcp6_client_new(sd_dhcp6_client **ret)
 
         client->fd = -1;
 
+#if 0 /* NM_IGNORED */
         /* initialize DUID */
         r = dhcp_identifier_set_duid_en(&client->duid, &client->duid_len);
         if (r < 0)
                 return r;
+#endif /* NM_IGNORED */
 
         client->req_opts_len = ELEMENTSOF(default_req_opts);
 
@@ -1241,3 +1250,17 @@ int sd_dhcp6_client_new(sd_dhcp6_client **ret)
 
         return 0;
 }
+
+/*******************************************/
+/* NetworkManager additions */
+
+int sd_dhcp6_client_set_ifname(sd_dhcp6_client *client, const char *ifname)
+{
+        assert_return(client, -EINVAL);
+        assert_return(ifname, -EINVAL);
+        assert_return(strlen (ifname) < sizeof (client->ifname), -EINVAL);
+
+        strcpy(client->ifname, ifname);
+        return 0;
+}
+

@@ -37,4 +37,9 @@
 #define DBUS_TYPE_G_IP6_ROUTE               (dbus_g_type_get_struct ("GValueArray", DBUS_TYPE_G_UCHAR_ARRAY, G_TYPE_UINT, DBUS_TYPE_G_UCHAR_ARRAY, G_TYPE_UINT, G_TYPE_INVALID))
 #define DBUS_TYPE_G_ARRAY_OF_IP6_ROUTE      (dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_IP6_ROUTE))
 
+#define DBUS_TYPE_NM_IP_ADDRESS             DBUS_TYPE_G_MAP_OF_VARIANT
+#define DBUS_TYPE_NM_IP_ADDRESSES           (dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_NM_IP_ADDRESS))
+#define DBUS_TYPE_NM_IP_ROUTE               DBUS_TYPE_G_MAP_OF_VARIANT
+#define DBUS_TYPE_NM_IP_ROUTES              (dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_NM_IP_ROUTE))
+
 #endif /* __NM_DBUS_GLIB_TYPES_H__ */

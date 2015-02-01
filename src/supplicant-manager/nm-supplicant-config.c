@@ -19,9 +19,7 @@
  * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
+#include "config.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -542,8 +540,8 @@ add_wep_key (NMSupplicantConfig *self,
              const char *name,
              NMWepKeyType wep_type)
 {
-	char *value;
-	gboolean success;
+	GBytes *bytes;
+	gboolean success = FALSE;
 	size_t key_len = key ? strlen (key) : 0;
 
 	if (!key || !key_len)
@@ -552,9 +550,15 @@ add_wep_key (NMSupplicantConfig *self,
 	if (   (wep_type == NM_WEP_KEY_TYPE_UNKNOWN)
 	    || (wep_type == NM_WEP_KEY_TYPE_KEY)) {
 		if ((key_len == 10) || (key_len == 26)) {
-			value = nm_utils_hexstr2bin (key, strlen (key));
-			success = nm_supplicant_config_add_option (self, name, value, key_len / 2, TRUE);
-			g_free (value);
+			bytes = nm_utils_hexstr2bin (key);
+			if (bytes) {
+				success = nm_supplicant_config_add_option (self,
+				                                           name,
+				                                           g_bytes_get_data (bytes, NULL),
+				                                           g_bytes_get_size (bytes),
+				                                           TRUE);
+				g_bytes_unref (bytes);
+			}
 			if (!success) {
 				nm_log_warn (LOGD_SUPPLICANT, "Error adding %s to supplicant config.", name);
 				return FALSE;
@@ -590,8 +594,7 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
                                                     NMSetting8021x *setting_8021x,
                                                     const char *con_uuid)
 {
-	char *value;
-	gboolean success;
+	gboolean success = FALSE;
 	const char *key_mgmt, *auth_alg;
 	const char *psk;
 
@@ -612,10 +615,18 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 		size_t psk_len = strlen (psk);
 
 		if (psk_len == 64) {
+			GBytes *bytes;
+
 			/* Hex PSK */
-			value = nm_utils_hexstr2bin (psk, psk_len);
-			success = nm_supplicant_config_add_option (self, "psk", value, psk_len / 2, TRUE);
-			g_free (value);
+			bytes = nm_utils_hexstr2bin (psk);
+			if (bytes) {
+				success = nm_supplicant_config_add_option (self,
+				                                           "psk",
+				                                           g_bytes_get_data (bytes, NULL),
+				                                           g_bytes_get_size (bytes),
+				                                           TRUE);
+				g_bytes_unref (bytes);
+			}
 			if (!success) {
 				nm_log_warn (LOGD_SUPPLICANT, "Error adding 'psk' to supplicant config.");
 				return FALSE;
@@ -653,6 +664,7 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 		const char *wep1 = nm_setting_wireless_security_get_wep_key (setting, 1);
 		const char *wep2 = nm_setting_wireless_security_get_wep_key (setting, 2);
 		const char *wep3 = nm_setting_wireless_security_get_wep_key (setting, 3);
+		char *value;
 
 		if (!add_wep_key (self, wep0, "wep_key0", wep_type))
 			return FALSE;

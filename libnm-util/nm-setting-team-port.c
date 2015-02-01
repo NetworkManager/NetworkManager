@@ -18,11 +18,13 @@
  * Copyright 2013 Jiri Pirko <jiri@resnulli.us>
  */
 
+#include "config.h"
+
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <dbus/dbus-glib.h>
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 
 #include "nm-setting-team-port.h"
 #include "nm-utils.h"
@@ -128,6 +130,7 @@ set_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_CONFIG:
+		g_free (priv->config);
 		priv->config = g_value_dup_string (value);
 		break;
 	default:
@@ -153,6 +156,16 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
+finalize (GObject *object)
+{
+	NMSettingTeamPortPrivate *priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (object);
+
+	g_free (priv->config);
+
+	G_OBJECT_CLASS (nm_setting_team_port_parent_class)->finalize (object);
+}
+
+static void
 nm_setting_team_port_class_init (NMSettingTeamPortClass *setting_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
@@ -163,6 +176,7 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *setting_class)
 	/* virtual methods */
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->finalize = finalize;
 	parent_class->verify       = verify;
 
 	/* Properties */
@@ -174,13 +188,6 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *setting_class)
 	 * directly to teamd. If not specified, the default configuration is
 	 * used. See man teamd.conf for the format details.
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: config
-	 * variable: TEAM_PORT_CONFIG
-	 * description: Team port configuration in JSON. See man teamd.conf for details.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_CONFIG,
 		 g_param_spec_string (NM_SETTING_TEAM_PORT_CONFIG, "", "",

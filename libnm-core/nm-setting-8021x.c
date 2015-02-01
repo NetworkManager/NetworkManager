@@ -20,8 +20,10 @@
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 
 #include "nm-setting-8021x.h"
 #include "nm-utils.h"
@@ -446,7 +448,7 @@ nm_setting_802_1x_get_ca_cert_scheme (NMSetting8021x *setting)
  * reduces security by allowing man-in-the-middle attacks, because the identity
  * of the network cannot be confirmed by the client.
  *
- * Returns: the CA certificate data
+ * Returns: (transfer none): the CA certificate data
  **/
 GBytes *
 nm_setting_802_1x_get_ca_cert_blob (NMSetting8021x *setting)
@@ -775,7 +777,7 @@ nm_setting_802_1x_get_client_cert_scheme (NMSetting8021x *setting)
  * when EAP-TLS is used as either the "phase 1" or "phase 2" 802.1x
  * authentication method.
  *
- * Returns: the client certificate data
+ * Returns: (transfer none): the client certificate data
  **/
 GBytes *
 nm_setting_802_1x_get_client_cert_blob (NMSetting8021x *setting)
@@ -820,7 +822,7 @@ nm_setting_802_1x_get_client_cert_path (NMSetting8021x *setting)
  * @setting: the #NMSetting8021x
  * @cert_path: when @scheme is set to either %NM_SETTING_802_1X_CK_SCHEME_PATH
  *   or %NM_SETTING_802_1X_CK_SCHEME_BLOB, pass the path of the client
- *   certificate file (PEM, DER, or PKCS#12 format).  The path must be UTF-8
+ *   certificate file (PEM, DER, or PKCS#<!-- -->12 format).  The path must be UTF-8
  *   encoded; use g_filename_to_utf8() to convert if needed.  Passing %NULL with
  *   any @scheme clears the client certificate.
  * @scheme: desired storage scheme for the certificate
@@ -1041,7 +1043,7 @@ nm_setting_802_1x_get_phase2_ca_cert_scheme (NMSetting8021x *setting)
  * reduces security by allowing man-in-the-middle attacks, because the identity
  * of the network cannot be confirmed by the client.
  *
- * Returns: the "phase 2" CA certificate data
+ * Returns: (transfer none): the "phase 2" CA certificate data
  **/
 GBytes *
 nm_setting_802_1x_get_phase2_ca_cert_blob (NMSetting8021x *setting)
@@ -1358,7 +1360,7 @@ nm_setting_802_1x_get_phase2_client_cert_scheme (NMSetting8021x *setting)
  * when EAP-TLS is used as either the "phase 1" or "phase 2" 802.1x
  * authentication method.
  *
- * Returns: the "phase 2" client certificate data
+ * Returns: (transfer none): the "phase 2" client certificate data
  **/
 GBytes *
 nm_setting_802_1x_get_phase2_client_cert_blob (NMSetting8021x *setting)
@@ -1403,7 +1405,7 @@ nm_setting_802_1x_get_phase2_client_cert_path (NMSetting8021x *setting)
  * @setting: the #NMSetting8021x
  * @cert_path: when @scheme is set to either %NM_SETTING_802_1X_CK_SCHEME_PATH
  *   or %NM_SETTING_802_1X_CK_SCHEME_BLOB, pass the path of the "phase2" client
- *   certificate file (PEM, DER, or PKCS#12 format).  The path must be UTF-8
+ *   certificate file (PEM, DER, or PKCS#<!-- -->12 format).  The path must be UTF-8
  *   encoded; use g_filename_to_utf8() to convert if needed.  Passing %NULL with
  *   any @scheme clears the "phase2" client certificate.
  * @scheme: desired storage scheme for the certificate
@@ -1528,7 +1530,7 @@ nm_setting_802_1x_get_password_flags (NMSetting8021x *setting)
  * nm_setting_802_1x_get_password_raw:
  * @setting: the #NMSetting8021x
  *
- * Returns: the password used by the authentication method as a
+ * Returns: (transfer none): the password used by the authentication method as a
  * UTF-8-encoded array of bytes, as specified by the
  * #NMSetting8021x:password-raw property
  **/
@@ -1617,7 +1619,7 @@ nm_setting_802_1x_get_private_key_scheme (NMSetting8021x *setting)
  * unencrypted private key data may be readable by unprivileged users.  Private
  * keys should always be encrypted with a private key password.
  *
- * Returns: the private key data
+ * Returns: (transfer none): the private key data
  **/
 GBytes *
 nm_setting_802_1x_get_private_key_blob (NMSetting8021x *setting)
@@ -1678,8 +1680,9 @@ file_to_secure_bytes (const char *filename)
 		g_byte_array_append (array, (guint8 *) contents, length);
 		g_assert (array->len == length);
 		g_free (contents);
+		return g_bytes_new_with_free_func (array->data, array->len, free_secure_bytes, array);
 	}
-	return g_bytes_new_with_free_func (array->data, array->len, free_secure_bytes, array);
+	return NULL;
 }
 
 /**
@@ -1687,7 +1690,7 @@ file_to_secure_bytes (const char *filename)
  * @setting: the #NMSetting8021x
  * @key_path: when @scheme is set to either %NM_SETTING_802_1X_CK_SCHEME_PATH or
  *   %NM_SETTING_802_1X_CK_SCHEME_BLOB, pass the path of the private key file
- *   (PEM, DER, or PKCS#12 format).  The path must be UTF-8 encoded; use
+ *   (PEM, DER, or PKCS#<!-- -->12 format).  The path must be UTF-8 encoded; use
  *   g_filename_to_utf8() to convert if needed.  Passing %NULL with any @scheme
  *   clears the private key.
  * @password: password used to decrypt the private key, or %NULL if the password
@@ -1750,7 +1753,7 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *setting,
 	 * given, that it decrypts the private key.
 	 */
 	if (key_path) {
-		format = crypto_verify_private_key (key_path, password, &local_err);
+		format = crypto_verify_private_key (key_path, password, NULL, &local_err);
 		if (format == NM_CRYPTO_FILE_FORMAT_UNKNOWN) {
 			g_set_error_literal (error,
 			                     NM_CONNECTION_ERROR,
@@ -1869,18 +1872,19 @@ nm_setting_802_1x_get_private_key_format (NMSetting8021x *setting)
 	switch (nm_setting_802_1x_get_private_key_scheme (setting)) {
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
 		if (crypto_is_pkcs12_data (g_bytes_get_data (priv->private_key, NULL),
-		                           g_bytes_get_size (priv->private_key)))
+		                           g_bytes_get_size (priv->private_key),
+		                           NULL))
 			return NM_SETTING_802_1X_CK_FORMAT_PKCS12;
 		return NM_SETTING_802_1X_CK_FORMAT_RAW_KEY;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		path = nm_setting_802_1x_get_private_key_path (setting);
 		if (crypto_is_pkcs12_file (path, &error))
 			return NM_SETTING_802_1X_CK_FORMAT_PKCS12;
-		if (error) {
-			/* Couldn't read the file or something */
+		if (error && error->domain == G_FILE_ERROR) {
 			g_error_free (error);
 			return NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
 		}
+		g_error_free (error);
 		return NM_SETTING_802_1X_CK_FORMAT_RAW_KEY;
 	default:
 		break;
@@ -1952,7 +1956,7 @@ nm_setting_802_1x_get_phase2_private_key_scheme (NMSetting8021x *setting)
  * unencrypted private key data may be readable by unprivileged users.  Private
  * keys should always be encrypted with a private key password.
  *
- * Returns: the "phase 2" private key data
+ * Returns: (transfer none): the "phase 2" private key data
  **/
 GBytes *
 nm_setting_802_1x_get_phase2_private_key_blob (NMSetting8021x *setting)
@@ -1997,7 +2001,7 @@ nm_setting_802_1x_get_phase2_private_key_path (NMSetting8021x *setting)
  * @setting: the #NMSetting8021x
  * @key_path: when @scheme is set to either %NM_SETTING_802_1X_CK_SCHEME_PATH or
  *   %NM_SETTING_802_1X_CK_SCHEME_BLOB, pass the path of the "phase2" private
- *   key file (PEM, DER, or PKCS#12 format).  The path must be UTF-8 encoded;
+ *   key file (PEM, DER, or PKCS#<!-- -->12 format).  The path must be UTF-8 encoded;
  *   use g_filename_to_utf8() to convert if needed.  Passing %NULL with any
  *   @scheme clears the private key.
  * @password: password used to decrypt the private key, or %NULL if the password
@@ -2060,7 +2064,7 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *setting,
 	 * given, that it decrypts the private key.
 	 */
 	if (key_path) {
-		format = crypto_verify_private_key (key_path, password, &local_err);
+		format = crypto_verify_private_key (key_path, password, NULL, &local_err);
 		if (format == NM_CRYPTO_FILE_FORMAT_UNKNOWN) {
 			g_set_error_literal (error,
 			                     NM_CONNECTION_ERROR,
@@ -2149,18 +2153,19 @@ nm_setting_802_1x_get_phase2_private_key_format (NMSetting8021x *setting)
 	switch (nm_setting_802_1x_get_phase2_private_key_scheme (setting)) {
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
 		if (crypto_is_pkcs12_data (g_bytes_get_data (priv->phase2_private_key, NULL),
-		                           g_bytes_get_size (priv->phase2_private_key)))
+		                           g_bytes_get_size (priv->phase2_private_key),
+		                           NULL))
 			return NM_SETTING_802_1X_CK_FORMAT_PKCS12;
 		return NM_SETTING_802_1X_CK_FORMAT_RAW_KEY;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		path = nm_setting_802_1x_get_phase2_private_key_path (setting);
 		if (crypto_is_pkcs12_file (path, &error))
 			return NM_SETTING_802_1X_CK_FORMAT_PKCS12;
-		if (error) {
-			/* Couldn't read the file or something */
+		if (error && error->domain == G_FILE_ERROR) {
 			g_error_free (error);
 			return NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
 		}
+		g_error_free (error);
 		return NM_SETTING_802_1X_CK_FORMAT_RAW_KEY;
 	default:
 		break;
@@ -2204,11 +2209,11 @@ need_private_key_password (GBytes *blob,
 	/* Private key password is required */
 	if (password) {
 		if (path)
-			format = crypto_verify_private_key (path, password, NULL);
+			format = crypto_verify_private_key (path, password, NULL, NULL);
 		else if (blob)
 			format = crypto_verify_private_key_data (g_bytes_get_data (blob, NULL),
 			                                         g_bytes_get_size (blob),
-			                                         password, NULL);
+			                                         password, NULL, NULL);
 		else
 			g_warning ("%s: unknown private key password scheme", __func__);
 	}
@@ -2298,7 +2303,8 @@ verify_tls (NMSetting8021x *self, gboolean phase2, GError **error)
 
 		/* If the private key is PKCS#12, check that it matches the client cert */
 		if (crypto_is_pkcs12_data (g_bytes_get_data (priv->phase2_private_key, NULL),
-		                           g_bytes_get_size (priv->phase2_private_key))) {
+		                           g_bytes_get_size (priv->phase2_private_key),
+		                           NULL)) {
 			if (!g_bytes_equal (priv->phase2_private_key, priv->phase2_client_cert)) {
 				g_set_error (error,
 				             NM_CONNECTION_ERROR,
@@ -2345,7 +2351,8 @@ verify_tls (NMSetting8021x *self, gboolean phase2, GError **error)
 
 		/* If the private key is PKCS#12, check that it matches the client cert */
 		if (crypto_is_pkcs12_data (g_bytes_get_data (priv->private_key, NULL),
-		                           g_bytes_get_size (priv->private_key))) {
+		                           g_bytes_get_size (priv->private_key),
+		                           NULL)) {
 			if (!g_bytes_equal (priv->private_key, priv->client_cert)) {
 				g_set_error (error,
 				             NM_CONNECTION_ERROR,
@@ -3076,7 +3083,6 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
 	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
-	GError *error = NULL;
 
 	g_type_class_add_private (setting_class, sizeof (NMSetting8021xPrivate));
 
@@ -3099,6 +3105,14 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * properties of this setting; refer to wpa_supplicant documentation for the
 	 * allowed combinations.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: eap
+	 * variable: IEEE_8021X_EAP_METHODS(+)
+	 * values: "LEAP", "PWD", "TLS", "PEAP", "TTLS", "FAST"
+	 * description: EAP method for 802.1X authentication.
+	 * example: IEEE_8021X_EAP_METHODS=PEAP
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_EAP,
 		 g_param_spec_boxed (NM_SETTING_802_1X_EAP, "", "",
@@ -3112,6 +3126,13 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * Identity string for EAP authentication methods.  Often the user's user or
 	 * login name.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: identity
+	 * variable: IEEE_8021X_IDENTITY(+)
+	 * description: Identity for EAP authentication methods.
+	 * example: IEEE_8021X_IDENTITY=itsme
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_IDENTITY,
 		 g_param_spec_string (NM_SETTING_802_1X_IDENTITY, "", "",
@@ -3126,6 +3147,12 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * unencrypted identity with EAP types that support different tunneled
 	 * identity like EAP-TTLS.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: anonymous-identity
+	 * variable: IEEE_8021X_ANON_IDENTITY(+)
+	 * description: Anonymous identity for EAP authentication methods.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_ANONYMOUS_IDENTITY,
 		 g_param_spec_string (NM_SETTING_802_1X_ANONYMOUS_IDENTITY, "", "",
@@ -3138,6 +3165,13 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 *
 	 * UTF-8 encoded file path containing PAC for EAP-FAST.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: pac-file
+	 * variable: IEEE_8021X_PAC_FILE(+)
+	 * description: File with PAC (Protected Access Credential) for EAP-FAST.
+	 * example: IEEE_8021X_PAC_FILE=/home/joe/my-fast.pac
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_PAC_FILE,
 		 g_param_spec_string (NM_SETTING_802_1X_PAC_FILE, "", "",
@@ -3163,16 +3197,19 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * Setting this property directly is discouraged; use the
 	 * nm_setting_802_1x_set_ca_cert() function instead.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: ca-cert
+	 * variable: IEEE_8021X_CA_CERT(+)
+	 * description: CA certificate for EAP.
+	 * example: IEEE_8021X_CA_CERT=/home/joe/cacert.crt
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_CA_CERT,
 		 g_param_spec_boxed (NM_SETTING_802_1X_CA_CERT, "", "",
 		                     G_TYPE_BYTES,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_802_1X_CA_CERT,
-	                                      G_VARIANT_TYPE_BYTESTRING,
-	                                      _nm_utils_bytes_to_dbus,
-	                                      _nm_utils_bytes_from_dbus);
 
 	/**
 	 * NMSetting8021x:ca-path:
@@ -3181,6 +3218,12 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * certificates to be added to the verification chain in addition to the
 	 * certificate specified in the #NMSetting8021x:ca-cert property.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: ca-path
+	 * variable: (none)
+	 * description: The property is not handled by ifcfg-rh plugin.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_CA_PATH,
 		 g_param_spec_string (NM_SETTING_802_1X_CA_PATH, "", "",
@@ -3195,6 +3238,13 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * by the authentication server. When unset, no verification of the
 	 * authentication server certificate's subject is performed.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: subject-match
+	 * variable: IEEE_8021X_SUBJECT_MATCH(+)
+	 * description: Substring to match subject of server certificate against.
+	 * example: IEEE_8021X_SUBJECT_MATCH="Red Hat"
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_SUBJECT_MATCH,
 		 g_param_spec_string (NM_SETTING_802_1X_SUBJECT_MATCH, "", "",
@@ -3209,6 +3259,13 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * certificate presented by the authentication server. If the list is empty,
 	 * no verification of the server certificate's altSubjectName is performed.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: altsubject-matches
+	 * variable: IEEE_8021X_ALTSUBJECT_MATCHES(+)
+	 * description: List of strings to be matched against the altSubjectName.
+	 * example: IEEE_8021X_ALTSUBJECT_MATCHES="s1.domain.cc"
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_ALTSUBJECT_MATCHES,
 		 g_param_spec_boxed (NM_SETTING_802_1X_ALTSUBJECT_MATCHES, "", "",
@@ -3232,16 +3289,19 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * Setting this property directly is discouraged; use the
 	 * nm_setting_802_1x_set_client_cert() function instead.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: client-cert
+	 * variable: IEEE_8021X_CLIENT_CERT(+)
+	 * description: Client certificate for EAP.
+	 * example: IEEE_8021X_CLIENT_CERT=/home/joe/mycert.crt
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_CLIENT_CERT,
 		 g_param_spec_boxed (NM_SETTING_802_1X_CLIENT_CERT, "", "",
 		                     G_TYPE_BYTES,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_802_1X_CLIENT_CERT,
-	                                      G_VARIANT_TYPE_BYTESTRING,
-	                                      _nm_utils_bytes_to_dbus,
-	                                      _nm_utils_bytes_from_dbus);
 
 	/**
 	 * NMSetting8021x:phase1-peapver:
@@ -3253,6 +3313,13 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * so, this property may be set to "0" or "1" to force that specific PEAP
 	 * version.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: phase1-peapver
+	 * variable: IEEE_8021X_PEAP_VERSION(+)
+	 * values: 0, 1
+	 * description: Use to force a specific PEAP version.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_PHASE1_PEAPVER,
 		 g_param_spec_string (NM_SETTING_802_1X_PHASE1_PEAPVER, "", "",
@@ -3268,6 +3335,14 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * PEAPv1.  Set to "1" to force use of the new PEAP label.  See the
 	 * wpa_supplicant documentation for more details.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: phase1-peaplabel
+	 * variable: IEEE_8021X_PEAP_FORCE_NEW_LABEL(+)
+	 * values: yes, no
+	 * default: no
+	 * description: Use to force the new PEAP label during key derivation.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_PHASE1_PEAPLABEL,
 		 g_param_spec_string (NM_SETTING_802_1X_PHASE1_PEAPLABEL, "", "",
@@ -3285,6 +3360,14 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * both authenticated and unauthenticated provisioning).  See the
 	 * wpa_supplicant documentation for more details.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: phase1-fast-provisioning
+	 * variable: IEEE_8021X_FAST_PROVISIONING(+)
+	 * values: space-separated list of these values [allow-auth, allow-unauth]
+	 * description: Enable in-line provisioning of EAP-FAST credentials.
+	 * example: IEEE_8021X_FAST_PROVISIONING="allow-auth allow-unauth"
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_PHASE1_FAST_PROVISIONING,
 		 g_param_spec_string (NM_SETTING_802_1X_PHASE1_FAST_PROVISIONING, "", "",
@@ -3302,6 +3385,15 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * Each "phase 2" inner method requires specific parameters for successful
 	 * authentication; see the wpa_supplicant documentation for more details.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: phase2-auth
+	 * variable: IEEE_8021X_INNER_AUTH_METHODS(+)
+	 * values: "PAP", "CHAP", "MSCHAP", "MSCHAPV2", "GTC", "OTP", "MD5" and "TLS"
+	 * description: Inner non-EAP authentication methods. IEEE_8021X_INNER_AUTH_METHODS
+	 *   can contain values both for 'phase2-auth' and 'phase2-autheap' properties.
+	 * example: IEEE_8021X_INNER_AUTH_METHODS=PAP
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_PHASE2_AUTH,
 		 g_param_spec_string (NM_SETTING_802_1X_PHASE2_AUTH, "", "",
@@ -3319,6 +3411,15 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * requires specific parameters for successful authentication; see the
 	 * wpa_supplicant documentation for more details.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: phase2-autheap
+	 * variable: IEEE_8021X_INNER_AUTH_METHODS(+)
+	 * values: "EAP-MD5", "EAP-MSCHAPV2", "EAP-GTC", "EAP-OTP" and "EAP-TLS"
+	 * description: Inner EAP-based authentication methods. Note that
+	 *   IEEE_8021X_INNER_AUTH_METHODS is also used for 'phase2-auth' values.
+	 * example: IEEE_8021X_INNER_AUTH_METHODS="MSCHAPV2 EAP-TLS"
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_PHASE2_AUTHEAP,
 		 g_param_spec_string (NM_SETTING_802_1X_PHASE2_AUTHEAP, "", "",
@@ -3351,10 +3452,6 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		                     G_TYPE_BYTES,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_802_1X_PHASE2_CA_CERT,
-	                                      G_VARIANT_TYPE_BYTESTRING,
-	                                      _nm_utils_bytes_to_dbus,
-	                                      _nm_utils_bytes_from_dbus);
 
 	/**
 	 * NMSetting8021x:phase2-ca-path:
@@ -3378,6 +3475,13 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * authentication. When unset, no verification of the authentication server
 	 * certificate's subject is performed.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: phase2-subject-match
+	 * variable: IEEE_8021X_PHASE2_SUBJECT_MATCH(+)
+	 * description: Substring to match subject of server certificate against.
+	 * example: IEEE_8021X_PHASE2_SUBJECT_MATCH="Red Hat"
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_PHASE2_SUBJECT_MATCH,
 		 g_param_spec_string (NM_SETTING_802_1X_PHASE2_SUBJECT_MATCH, "", "",
@@ -3393,6 +3497,11 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * "phase 2" authentication. If the list is empty, no verification of the
 	 * server certificate's altSubjectName is performed.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: phase2-altsubject-matches
+	 * variable: IEEE_8021X_PHASE2_ALTSUBJECT_MATCHES(+)
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_PHASE2_ALTSUBJECT_MATCHES,
 		 g_param_spec_boxed (NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES, "", "",
@@ -3419,16 +3528,19 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * Setting this property directly is discouraged; use the
 	 * nm_setting_802_1x_set_phase2_client_cert() function instead.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: phase2-client-cert
+	 * variable: IEEE_8021X_INNER_CLIENT_CERT(+)
+	 * description: Client certificate for inner EAP method.
+	 * example: IEEE_8021X_INNER_CLIENT_CERT=/home/joe/mycert.crt
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_PHASE2_CLIENT_CERT,
 		 g_param_spec_boxed (NM_SETTING_802_1X_PHASE2_CLIENT_CERT, "", "",
 		                     G_TYPE_BYTES,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_802_1X_PHASE2_CLIENT_CERT,
-	                                      G_VARIANT_TYPE_BYTESTRING,
-	                                      _nm_utils_bytes_to_dbus,
-	                                      _nm_utils_bytes_from_dbus);
 
 	/**
 	 * NMSetting8021x:password:
@@ -3437,6 +3549,13 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * #NMSetting8021x:password property and the #NMSetting8021x:password-raw
 	 * property are specified, #NMSetting8021x:password is preferred.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: password
+	 * variable: IEEE_8021X_PASSWORD(+)
+	 * description: UTF-8 encoded password used for EAP. It can also go to "key-"
+	 *   lookaside file, or it can be owned by a secret agent.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_PASSWORD,
 		 g_param_spec_string (NM_SETTING_802_1X_PASSWORD, "", "",
@@ -3450,6 +3569,13 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 *
 	 * Flags indicating how to handle the #NMSetting8021x:password property.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: password-flags
+	 * variable: IEEE_8021X_PASSWORD_FLAGS(+)
+	 * format: NMSettingSecretFlags
+	 * description: Password flags for IEEE_8021X_PASSWORD password.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_PASSWORD_FLAGS,
 		 g_param_spec_flags (NM_SETTING_802_1X_PASSWORD_FLAGS, "", "",
@@ -3466,6 +3592,12 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * #NMSetting8021x:password property and the #NMSetting8021x:password-raw
 	 * property are specified, #NMSetting8021x:password is preferred.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: password-raw
+	 * variable: (none)
+	 * description: The property is not handled by ifcfg-rh plugin.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_PASSWORD_RAW,
 		 g_param_spec_boxed (NM_SETTING_802_1X_PASSWORD_RAW, "", "",
@@ -3473,16 +3605,18 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		                     G_PARAM_READWRITE |
 		                     NM_SETTING_PARAM_SECRET |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_802_1X_PASSWORD_RAW,
-	                                      G_VARIANT_TYPE_BYTESTRING,
-	                                      _nm_utils_bytes_to_dbus,
-	                                      _nm_utils_bytes_from_dbus);
 
 	/**
 	 * NMSetting8021x:password-raw-flags:
 	 *
 	 * Flags indicating how to handle the #NMSetting8021x:password-raw property.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: password-raw-flags
+	 * variable: (none)
+	 * description: The property is not handled by ifcfg-rh plugin.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_PASSWORD_RAW_FLAGS,
 		 g_param_spec_flags (NM_SETTING_802_1X_PASSWORD_RAW_FLAGS, "", "",
@@ -3502,15 +3636,16 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * should be set to the key's encrypted PEM encoded data. When using private
 	 * keys with the path scheme, this property should be set to the full UTF-8
 	 * encoded path of the key, prefixed with the string "file://" and ending
-	 * with a terminating NUL byte. When using PKCS#12 format private keys and
-	 * the blob scheme, this property should be set to the PKCS#12 data and the
-	 * #NMSetting8021x:private-key-password property must be set to password
-	 * used to decrypt the PKCS#12 certificate and key. When using PKCS#12 files
-	 * and the path scheme, this property should be set to the full UTF-8
-	 * encoded path of the key, prefixed with the string "file://" and and
-	 * ending with a terminating NUL byte, and as with the blob scheme the
-	 * "private-key-password" property must be set to the password used to
-	 * decode the PKCS#12 private key and certificate.
+	 * with a terminating NUL byte. When using PKCS#<!-- -->12 format private
+	 * keys and the blob scheme, this property should be set to the
+	 * PKCS#<!-- -->12 data and the #NMSetting8021x:private-key-password
+	 * property must be set to password used to decrypt the PKCS#<!-- -->12
+	 * certificate and key. When using PKCS#<!-- -->12 files and the path
+	 * scheme, this property should be set to the full UTF-8 encoded path of the
+	 * key, prefixed with the string "file://" and and ending with a terminating
+	 * NUL byte, and as with the blob scheme the "private-key-password" property
+	 * must be set to the password used to decode the PKCS#<!-- -->12 private
+	 * key and certificate.
 	 *
 	 * Setting this property directly is discouraged; use the
 	 * nm_setting_802_1x_set_private_key() function instead.
@@ -3521,27 +3656,37 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * private key password to prevent unauthorized access to unencrypted
 	 * private key data.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: private-key
+	 * variable: IEEE_8021X_PRIVATE_KEY(+)
+	 * description: Private key for EAP-TLS.
+	 * example: IEEE_8021X_PRIVATE_KEY=/home/joe/mykey.p12
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_PRIVATE_KEY,
 		 g_param_spec_boxed (NM_SETTING_802_1X_PRIVATE_KEY, "", "",
 		                     G_TYPE_BYTES,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_802_1X_PRIVATE_KEY,
-	                                      G_VARIANT_TYPE_BYTESTRING,
-	                                      _nm_utils_bytes_to_dbus,
-	                                      _nm_utils_bytes_from_dbus);
 
 	/**
 	 * NMSetting8021x:private-key-password:
 	 *
 	 * The password used to decrypt the private key specified in the
 	 * #NMSetting8021x:private-key property when the private key either uses the
-	 * path scheme, or if the private key is a PKCS#12 format key.  Setting this
+	 * path scheme, or if the private key is a PKCS#<!-- -->12 format key.  Setting this
 	 * property directly is not generally necessary except when returning
 	 * secrets to NetworkManager; it is generally set automatically when setting
 	 * the private key by the nm_setting_802_1x_set_private_key() function.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: private-key-password
+	 * variable: IEEE_8021X_PRIVATE_KEY_PASSWORD(+)
+	 * description: Password for IEEE_8021X_PRIVATE_KEY. It can also go to "key-"
+	 *   lookaside file, or it can be owned by a secret agent.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_PRIVATE_KEY_PASSWORD,
 		 g_param_spec_string (NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD, "", "",
@@ -3556,6 +3701,13 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * Flags indicating how to handle the #NMSetting8021x:private-key-password
 	 * property.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: private-key-password-flags
+	 * variable: IEEE_8021X_PRIVATE_KEY_PASSWORD_FLAGS(+)
+	 * format: NMSettingSecretFlags
+	 * description: Password flags for IEEE_8021X_PRIVATE_KEY_PASSWORD password.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_PRIVATE_KEY_PASSWORD_FLAGS,
 		 g_param_spec_flags (NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD_FLAGS, "", "",
@@ -3576,40 +3728,51 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * should be set to the key's encrypted PEM encoded data. When using private
 	 * keys with the path scheme, this property should be set to the full UTF-8
 	 * encoded path of the key, prefixed with the string "file://" and ending
-	 * with a terminating NUL byte. When using PKCS#12 format private keys and
-	 * the blob scheme, this property should be set to the PKCS#12 data and the
-	 * #NMSetting8021x:phase2-private-key-password property must be set to
-	 * password used to decrypt the PKCS#12 certificate and key. When using
-	 * PKCS#12 files and the path scheme, this property should be set to the
-	 * full UTF-8 encoded path of the key, prefixed with the string "file://"
-	 * and and ending with a terminating NUL byte, and as with the blob scheme
-	 * the #NMSetting8021x:phase2-private-key-password property must be set to
-	 * the password used to decode the PKCS#12 private key and certificate.
+	 * with a terminating NUL byte. When using PKCS#<!-- -->12 format private
+	 * keys and the blob scheme, this property should be set to the
+	 * PKCS#<!-- -->12 data and the #NMSetting8021x:phase2-private-key-password
+	 * property must be set to password used to decrypt the PKCS#<!-- -->12
+	 * certificate and key. When using PKCS#<!-- -->12 files and the path
+	 * scheme, this property should be set to the full UTF-8 encoded path of the
+	 * key, prefixed with the string "file://" and and ending with a terminating
+	 * NUL byte, and as with the blob scheme the
+	 * #NMSetting8021x:phase2-private-key-password property must be set to the
+	 * password used to decode the PKCS#<!-- -->12 private key and certificate.
 	 *
 	 * Setting this property directly is discouraged; use the
 	 * nm_setting_802_1x_set_phase2_private_key() function instead.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: phase2-private-key
+	 * variable: IEEE_8021X_INNER_PRIVATE_KEY(+)
+	 * description: Private key for inner authentication method for EAP-TLS.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_PHASE2_PRIVATE_KEY,
 		 g_param_spec_boxed (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY, "", "",
 		                     G_TYPE_BYTES,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
-	                                      G_VARIANT_TYPE_BYTESTRING,
-	                                      _nm_utils_bytes_to_dbus,
-	                                      _nm_utils_bytes_from_dbus);
 
 	/**
 	 * NMSetting8021x:phase2-private-key-password:
 	 *
 	 * The password used to decrypt the "phase 2" private key specified in the
 	 * #NMSetting8021x:phase2-private-key property when the private key either
-	 * uses the path scheme, or is a PKCS#12 format key.  Setting this property
-	 * directly is not generally necessary except when returning secrets to
-	 * NetworkManager; it is generally set automatically when setting the
-	 * private key by the nm_setting_802_1x_set_phase2_private_key() function.
+	 * uses the path scheme, or is a PKCS#<!-- -->12 format key.  Setting this
+	 * property directly is not generally necessary except when returning
+	 * secrets to NetworkManager; it is generally set automatically when setting
+	 * the private key by the nm_setting_802_1x_set_phase2_private_key()
+	 * function.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: phase2-private-key-password
+	 * variable: IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD(+)
+	 * description: Password for IEEE_8021X_INNER_PRIVATE_KEY. It can also go to "key-"
+	 *   lookaside file, or it can be owned by a secret agent.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_PHASE2_PRIVATE_KEY_PASSWORD,
 		 g_param_spec_string (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD, "", "",
@@ -3624,6 +3787,13 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * Flags indicating how to handle the
 	 * #NMSetting8021x:phase2-private-key-password property.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: phase2-private-key-password-flags
+	 * variable: IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD_FLAGS(+)
+	 * format: NMSettingSecretFlags
+	 * description: Password flags for IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD password.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS,
 		 g_param_spec_flags (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS, "", "",
@@ -3637,6 +3807,12 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 *
 	 * PIN used for EAP authentication methods.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: pin
+	 * variable: (none)
+	 * description: The property is not handled by ifcfg-rh plugin.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_PIN,
 		 g_param_spec_string (NM_SETTING_802_1X_PIN, "", "",
@@ -3650,6 +3826,12 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 *
 	 * Flags indicating how to handle the #NMSetting8021x:pin property.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: pin-flags
+	 * variable: (none)
+	 * description: The property is not handled by ifcfg-rh plugin.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_PIN_FLAGS,
 		 g_param_spec_flags (NM_SETTING_802_1X_PIN_FLAGS, "", "",
@@ -3668,6 +3850,12 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * addition to any certificates specified by the #NMSetting8021x:ca-cert and
 	 * #NMSetting8021x:phase2-ca-cert properties.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: system-ca-certs
+	 * variable: (none)
+	 * description: The property is not handled by ifcfg-rh plugin.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_SYSTEM_CA_CERTS,
 		 g_param_spec_boolean (NM_SETTING_802_1X_SYSTEM_CA_CERTS, "", "",
@@ -3675,11 +3863,4 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		                       G_PARAM_READWRITE |
 		                       G_PARAM_CONSTRUCT |
 		                       G_PARAM_STATIC_STRINGS));
-
-	/* Initialize crypto lbrary. */
-	if (!nm_utils_init (&error)) {
-		g_warning ("Couldn't initilize nm-utils/crypto system: %d %s",
-		           error->code, error->message);
-		g_error_free (error);
-	}
 }

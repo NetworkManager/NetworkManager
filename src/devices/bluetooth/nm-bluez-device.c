@@ -19,6 +19,8 @@
  * Copyright (C) 2013 Intel Corporation.
  */
 
+#include "config.h"
+
 #include <glib.h>
 #include <glib/gi18n.h>
 #include <gio/gio.h>
@@ -30,8 +32,11 @@
 #include "nm-bluez-device.h"
 #include "nm-logging.h"
 #include "nm-settings-connection.h"
-#include "nm-bluez5-dun.h"
 #include "NetworkManagerUtils.h"
+
+#if WITH_BLUEZ5_DUN
+#include "nm-bluez5-dun.h"
+#endif
 
 G_DEFINE_TYPE (NMBluezDevice, nm_bluez_device, G_TYPE_OBJECT)
 
@@ -59,7 +64,9 @@ typedef struct {
 	gboolean connected;
 
 	char *b4_iface;
+#if WITH_BLUEZ5_DUN
 	NMBluez5DunContext *b5_dun_context;
+#endif
 
 	NMConnectionProvider *provider;
 	GSList *connections;
@@ -211,16 +218,16 @@ pan_connection_check_create (NMBluezDevice *self)
 	/* Setting: IPv4 */
 	setting = nm_setting_ip4_config_new ();
 	g_object_set (G_OBJECT (setting),
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
-	              NM_SETTING_IP4_CONFIG_MAY_FAIL, FALSE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, FALSE,
 	              NULL);
 	nm_connection_add_setting (connection, setting);
 
 	/* Setting: IPv6 */
 	setting = nm_setting_ip6_config_new ();
 	g_object_set (G_OBJECT (setting),
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 	nm_connection_add_setting (connection, setting);
 
@@ -427,7 +434,11 @@ nm_bluez_device_disconnect (NMBluezDevice *self)
 			args = g_variant_new ("(s)", priv->b4_iface),
 			dbus_iface = BLUEZ4_SERIAL_INTERFACE;
 		} else if (priv->bluez_version == 5) {
+#if WITH_BLUEZ5_DUN
 			nm_bluez5_dun_cleanup (priv->b5_dun_context);
+#else
+			g_assert_not_reached ();
+#endif
 			priv->connected = FALSE;
 			goto out;
 		}
@@ -491,6 +502,7 @@ bluez_connect_cb (GDBusConnection *dbus_connection,
 	g_object_unref (result_object);
 }
 
+#if WITH_BLUEZ5_DUN
 static void
 bluez5_dun_connect_cb (NMBluez5DunContext *context,
                    const char *device,
@@ -510,6 +522,7 @@ bluez5_dun_connect_cb (NMBluez5DunContext *context,
 	g_simple_async_result_complete (result);
 	g_object_unref (result);
 }
+#endif
 
 void
 nm_bluez_device_connect_async (NMBluezDevice *self,
@@ -541,9 +554,13 @@ nm_bluez_device_connect_async (NMBluezDevice *self,
 		if (priv->bluez_version == 4)
 			dbus_iface = BLUEZ4_SERIAL_INTERFACE;
 		else if (priv->bluez_version == 5) {
+#if WITH_BLUEZ5_DUN
 			if (priv->b5_dun_context == NULL)
 				priv->b5_dun_context = nm_bluez5_dun_new (priv->adapter_address, priv->address);
 			nm_bluez5_dun_connect (priv->b5_dun_context, bluez5_dun_connect_cb, simple);
+#else
+			g_assert_not_reached ();
+#endif
 			return;
 		}
 	} else
@@ -1089,10 +1106,12 @@ dispose (GObject *object)
 		priv->pan_connection = NULL;
 	}
 
+#if WITH_BLUEZ5_DUN
 	if (priv->b5_dun_context) {
 		nm_bluez5_dun_free (priv->b5_dun_context);
 		priv->b5_dun_context = NULL;
 	}
+#endif
 
 	g_signal_handlers_disconnect_by_func (priv->provider, cp_connection_added, self);
 	g_signal_handlers_disconnect_by_func (priv->provider, cp_connection_removed, self);

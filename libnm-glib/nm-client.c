@@ -19,6 +19,8 @@
  * Copyright 2007 - 2013 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <dbus/dbus-glib.h>
 #include <string.h>
 #include <nm-utils.h>
@@ -358,9 +360,9 @@ client_recheck_permissions (DBusGProxy *proxy, gpointer user_data)
  * @client: a #NMClient
  *
  * Gets all the known network devices.  Use nm_device_get_type() or the
- * NM_IS_DEVICE_XXXX() functions to determine what kind of device member of the
- * returned array is, and then you may use device-specific methods such as
- * nm_device_ethernet_get_hw_address().
+ * <literal>NM_IS_DEVICE_XXXX</literal> functions to determine what kind of
+ * device member of the returned array is, and then you may use device-specific
+ * methods such as nm_device_ethernet_get_hw_address().
  *
  * Returns: (transfer none) (element-type NMDevice): a #GPtrArray
  * containing all the #NMDevices.  The returned array is owned by the
@@ -1546,7 +1548,7 @@ nm_client_check_connectivity_async (NMClient *client,
 	g_return_if_fail (NM_IS_CLIENT (client));
 	priv = NM_CLIENT_GET_PRIVATE (client);
 
-	ccd = g_slice_new (CheckConnectivityData);
+	ccd = g_slice_new0 (CheckConnectivityData);
 	ccd->client = client;
 
 	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,

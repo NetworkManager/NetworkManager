@@ -9,10 +9,12 @@ EXTRA_DIST = \
 	ifcfg-test-wired-static-bootproto \
 	ifcfg-test-wired-dhcp \
 	ifcfg-test-wired-dhcp-plus-ip \
+	ifcfg-test-wired-shared-plus-ip \
 	ifcfg-test-wired-dhcp-send-hostname \
 	ifcfg-test-wired-dhcp6-only \
 	ifcfg-test-wired-global-gateway \
 	network-test-wired-global-gateway \
+	ifcfg-test-wired-obsolete-gateway-n \
 	ifcfg-test-wired-never-default \
 	network-test-wired-never-default \
 	ifcfg-test-wired-defroute-no \
@@ -106,6 +108,7 @@ EXTRA_DIST = \
 	ifcfg-test-bond-main \
 	ifcfg-test-bond-slave \
 	ifcfg-test-bond-slave-ib \
+	ifcfg-test-bond-mode-numeric \
 	ifcfg-test-dcb \
 	ifcfg-test-dcb-default-app-priorities \
 	ifcfg-test-dcb-bad-booleans \
@@ -119,7 +122,8 @@ EXTRA_DIST = \
 	ifcfg-test-fcoe-vn2vn \
 	ifcfg-test-team-master \
 	ifcfg-test-team-port \
-	ifcfg-test-team-port-empty-config
+	ifcfg-test-team-port-empty-config \
+	ifcfg-test-vlan-trailing-spaces
 
 # make target dependencies can't have colons in their names, which ends up
 # meaning that we can't add the alias files to EXTRA_DIST

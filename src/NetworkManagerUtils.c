@@ -22,6 +22,7 @@
 #include "config.h"
 
 #include <glib.h>
+#include <gio/gio.h>
 #include <glib/gi18n.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -35,6 +36,7 @@
 #include <linux/if_infiniband.h>
 
 #include "NetworkManagerUtils.h"
+#include "nm-platform.h"
 #include "nm-utils.h"
 #include "nm-core-internal.h"
 #include "nm-logging.h"
@@ -45,8 +47,8 @@
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-auth-utils.h"
-#include "nm-posix-signals.h"
 #include "nm-dbus-glib-types.h"
+#include "gsystem-local-alloc.h"
 
 /*
  * Some toolchains (E.G. uClibc 0.9.33 and earlier) don't export
@@ -165,13 +167,49 @@ nm_spawn_process (const char *args)
 		return -1;
 	}
 
-	if (!g_spawn_sync ("/", argv, NULL, 0, nm_unblock_posix_signals, NULL, NULL, NULL, &status, &error)) {
+	if (!g_spawn_sync ("/", argv, NULL, 0, NULL, NULL, NULL, NULL, &status, &error)) {
 		nm_log_warn (LOGD_CORE, "could not spawn process '%s': %s", args, error->message);
 		g_error_free (error);
 	}
 
 	g_strfreev (argv);
 	return status;
+}
+
+int
+nm_utils_modprobe (GError **error, const char *arg1, ...)
+{
+	gs_unref_ptrarray GPtrArray *argv = NULL;
+	int exit_status;
+	gs_free char *_log_str = NULL;
+#define ARGV_TO_STR(argv)   (_log_str ? _log_str : (_log_str = g_strjoinv (" ", (char **) argv->pdata)))
+	GError *local = NULL;
+	va_list ap;
+
+	g_return_val_if_fail (!error || !*error, -1);
+	g_return_val_if_fail (arg1, -1);
+
+	/* construct the argument list */
+	argv = g_ptr_array_sized_new (4);
+	g_ptr_array_add (argv, "/sbin/modprobe");
+	g_ptr_array_add (argv, (char *) arg1);
+
+	va_start (ap, arg1);
+	while ((arg1 = va_arg (ap, const char *)))
+		g_ptr_array_add (argv, (char *) arg1);
+	va_end (ap);
+
+	g_ptr_array_add (argv, NULL);
+
+	nm_log_dbg (LOGD_CORE, "modprobe: '%s'", ARGV_TO_STR (argv));
+	if (!g_spawn_sync (NULL, (char **) argv->pdata, NULL, 0, NULL, NULL, NULL, NULL, &exit_status, &local)) {
+		nm_log_err (LOGD_CORE, "modprobe: '%s' failed: %s", ARGV_TO_STR (argv), local->message);
+		g_propagate_error (error, local);
+		return -1;
+	} else if (exit_status != 0)
+		nm_log_err (LOGD_CORE, "modprobe: '%s' exited with error %d", ARGV_TO_STR (argv), exit_status);
+
+	return exit_status;
 }
 
 /**
@@ -484,6 +522,17 @@ nm_utils_kill_child_async (pid_t pid, int sig, guint64 log_domain,
 	g_child_watch_add (pid, _kc_cb_watch_child, data);
 }
 
+static inline gulong
+_sleep_duration_convert_ms_to_us (guint32 sleep_duration_msec)
+{
+	if (sleep_duration_msec > 0) {
+		guint64 x = (gint64) sleep_duration_msec * (guint64) 1000L;
+
+		return x < G_MAXULONG ? (gulong) x : G_MAXULONG;
+	}
+	return G_USEC_PER_SEC / 20;
+}
+
 /* nm_utils_kill_child_sync:
  * @pid: process id to kill
  * @sig: signal to sent initially. If 0, no signal is sent. If %SIGKILL, the
@@ -567,7 +616,7 @@ nm_utils_kill_child_sync (pid_t pid, int sig, guint64 log_domain, const char *lo
 		gulong sleep_time, sleep_duration_usec;
 		int loop_count = 0;
 
-		sleep_duration_usec = (sleep_duration_msec <= 0) ? (G_USEC_PER_SEC / 20) : MIN (G_MAXULONG, ((gint64) sleep_duration_msec) * 1000L);
+		sleep_duration_usec = _sleep_duration_convert_ms_to_us (sleep_duration_msec);
 		wait_until = wait_before_kill_msec <= 0 ? 0 : wait_start_us + (((gint64) wait_before_kill_msec) * 1000L);
 
 		while (TRUE) {
@@ -721,7 +770,7 @@ nm_utils_kill_process_sync (pid_t pid, guint64 start_time, int sig, guint64 log_
 
 	wait_start_us = nm_utils_get_monotonic_timestamp_us ();
 
-	sleep_duration_usec = (sleep_duration_msec == 0) ? (G_USEC_PER_SEC / 20) : MIN (G_MAXULONG, ((gulong) sleep_duration_msec) * 1000UL);
+	sleep_duration_usec = _sleep_duration_convert_ms_to_us (sleep_duration_msec);
 	wait_until = wait_start_us + (((gint64) wait_before_kill_msec) * 1000L);
 
 	while (TRUE) {
@@ -795,107 +844,119 @@ nm_utils_kill_process_sync (pid_t pid, guint64 start_time, int sig, guint64 log_
 #undef LOG_NAME_PROCESS_FMT
 #undef LOG_NAME_ARGS
 
-/**
- * nm_utils_find_helper:
- * @progname: the helper program name, like "iptables"
- * @try_first: a custom path to try first before searching
- * @error: on failure, a "not found" error using @error_domain and @error_code
- *
- * Searches for the @progname in common system paths.
- *
- * Returns: the full path to the helper, if found, or %NULL if not found.
- */
+const char *const NM_PATHS_DEFAULT[] = {
+	PREFIX "/sbin/",
+	PREFIX "/bin/",
+	"/sbin/",
+	"/usr/sbin/",
+	"/usr/local/sbin/",
+	"/bin/",
+	"/usr/bin/",
+	"/usr/local/bin/",
+	NULL,
+};
+
 const char *
-nm_utils_find_helper (const char *progname,
-                      const char *try_first,
-                      GError **error)
+nm_utils_find_helper(const char *progname, const char *try_first, GError **error)
 {
-	static const char *paths[] = {
-		PREFIX "/sbin/",
-		PREFIX "/bin/",
-		"/sbin/",
-		"/usr/sbin/",
-		"/usr/local/sbin/",
-		"/usr/bin/",
-		"/usr/local/bin/",
-	};
-	guint i;
-	GString *tmp;
-	const char *ret;
-
-	if (error)
-		g_return_val_if_fail (*error == NULL, NULL);
-
-	if (try_first && try_first[0] && g_file_test (try_first, G_FILE_TEST_EXISTS))
-		return g_intern_string (try_first);
-
-	tmp = g_string_sized_new (50);
-	for (i = 0; i < G_N_ELEMENTS (paths); i++) {
-		g_string_append_printf (tmp, "%s%s", paths[i], progname);
-		if (g_file_test (tmp->str, G_FILE_TEST_EXISTS)) {
-			ret = g_intern_string (tmp->str);
-			g_string_free (tmp, TRUE);
-			return ret;
-		}
-		g_string_set_size (tmp, 0);
-	}
-	g_string_free (tmp, TRUE);
-
-	g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, "Could not find %s binary", progname);
-	return NULL;
+	return nm_utils_file_search_in_paths (progname, try_first, NM_PATHS_DEFAULT, G_FILE_TEST_IS_EXECUTABLE, NULL, NULL, error);
 }
 
 /******************************************************************************************/
 
-gboolean
-nm_match_spec_string (const GSList *specs, const char *match)
+#define MAC_TAG "mac:"
+#define INTERFACE_NAME_TAG "interface-name:"
+#define SUBCHAN_TAG "s390-subchannels:"
+#define EXCEPT_TAG "except:"
+
+static const char *
+_match_except (const char *spec_str, gboolean *out_except)
 {
-	const GSList *iter;
-
-	for (iter = specs; iter; iter = g_slist_next (iter)) {
-		if (!g_ascii_strcasecmp ((const char *) iter->data, match))
-			return TRUE;
-	}
-
-	return FALSE;
+	if (!g_ascii_strncasecmp (spec_str, EXCEPT_TAG, STRLEN (EXCEPT_TAG))) {
+		spec_str += STRLEN (EXCEPT_TAG);
+		*out_except = TRUE;
+	} else
+		*out_except = FALSE;
+	return spec_str;
 }
 
-gboolean
+NMMatchSpecMatchType
 nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr)
 {
 	const GSList *iter;
+	NMMatchSpecMatchType match = NM_MATCH_SPEC_NO_MATCH;
 
-	g_return_val_if_fail (hwaddr != NULL, FALSE);
+	g_return_val_if_fail (hwaddr != NULL, NM_MATCH_SPEC_NO_MATCH);
 
 	for (iter = specs; iter; iter = g_slist_next (iter)) {
 		const char *spec_str = iter->data;
+		gboolean except;
 
-		if (   !g_ascii_strncasecmp (spec_str, "mac:", 4)
-		    && nm_utils_hwaddr_matches (spec_str + 4, -1, hwaddr, -1))
-			return TRUE;
+		if (!spec_str || !*spec_str)
+			continue;
 
-		if (nm_utils_hwaddr_matches (spec_str, -1, hwaddr, -1))
-			return TRUE;
+		spec_str = _match_except (spec_str, &except);
+
+		if (   !g_ascii_strncasecmp (spec_str, INTERFACE_NAME_TAG, STRLEN (INTERFACE_NAME_TAG))
+		    || !g_ascii_strncasecmp (spec_str, SUBCHAN_TAG, STRLEN (SUBCHAN_TAG)))
+			continue;
+
+		if (!g_ascii_strncasecmp (spec_str, MAC_TAG, STRLEN (MAC_TAG)))
+			spec_str += STRLEN (MAC_TAG);
+		else if (except)
+			continue;
+
+		if (nm_utils_hwaddr_matches (spec_str, -1, hwaddr, -1)) {
+			if (except)
+				return NM_MATCH_SPEC_NEG_MATCH;
+			match = NM_MATCH_SPEC_MATCH;
+		}
 	}
-
-	return FALSE;
+	return match;
 }
 
-gboolean
+NMMatchSpecMatchType
 nm_match_spec_interface_name (const GSList *specs, const char *interface_name)
 {
-	char *iface_match;
-	gboolean matched;
+	const GSList *iter;
+	NMMatchSpecMatchType match = NM_MATCH_SPEC_NO_MATCH;
 
-	g_return_val_if_fail (interface_name != NULL, FALSE);
+	g_return_val_if_fail (interface_name != NULL, NM_MATCH_SPEC_NO_MATCH);
 
-	if (nm_match_spec_string (specs, interface_name))
-		return TRUE;
+	for (iter = specs; iter; iter = g_slist_next (iter)) {
+		const char *spec_str = iter->data;
+		gboolean use_pattern = FALSE;
+		gboolean except;
 
-	iface_match = g_strdup_printf ("interface-name:%s", interface_name);
-	matched = nm_match_spec_string (specs, iface_match);
-	g_free (iface_match);
-	return matched;
+		if (!spec_str || !*spec_str)
+			continue;
+
+		spec_str = _match_except (spec_str, &except);
+
+		if (   !g_ascii_strncasecmp (spec_str, MAC_TAG, STRLEN (MAC_TAG))
+		    || !g_ascii_strncasecmp (spec_str, SUBCHAN_TAG, STRLEN (SUBCHAN_TAG)))
+			continue;
+
+		if (!g_ascii_strncasecmp (spec_str, INTERFACE_NAME_TAG, STRLEN (INTERFACE_NAME_TAG))) {
+			spec_str += STRLEN (INTERFACE_NAME_TAG);
+			if (spec_str[0] == '=')
+				spec_str += 1;
+			else {
+				if (spec_str[0] == '~')
+					spec_str += 1;
+				use_pattern=TRUE;
+			}
+		} else if (except)
+			continue;
+
+		if (   !strcmp (spec_str, interface_name)
+		    || (use_pattern && g_pattern_match_simple (spec_str, interface_name))) {
+			if (except)
+				return NM_MATCH_SPEC_NEG_MATCH;
+			match = NM_MATCH_SPEC_MATCH;
+		}
+	}
+	return match;
 }
 
 #define BUFSIZE 10
@@ -964,33 +1025,108 @@ parse_subchannels (const char *subchannels, guint32 *a, guint32 *b, guint32 *c)
 	return TRUE;
 }
 
-#define SUBCHAN_TAG "s390-subchannels:"
-
-gboolean
+NMMatchSpecMatchType
 nm_match_spec_s390_subchannels (const GSList *specs, const char *subchannels)
 {
 	const GSList *iter;
 	guint32 a = 0, b = 0, c = 0;
 	guint32 spec_a = 0, spec_b = 0, spec_c = 0;
+	NMMatchSpecMatchType match = NM_MATCH_SPEC_NO_MATCH;
 
-	g_return_val_if_fail (subchannels != NULL, FALSE);
+	g_return_val_if_fail (subchannels != NULL, NM_MATCH_SPEC_NO_MATCH);
 
 	if (!parse_subchannels (subchannels, &a, &b, &c))
-		return FALSE;
+		return NM_MATCH_SPEC_NO_MATCH;
 
 	for (iter = specs; iter; iter = g_slist_next (iter)) {
-		const char *spec = iter->data;
+		const char *spec_str = iter->data;
+		gboolean except;
 
-		if (!strncmp (spec, SUBCHAN_TAG, strlen (SUBCHAN_TAG))) {
-			spec += strlen (SUBCHAN_TAG);
-			if (parse_subchannels (spec, &spec_a, &spec_b, &spec_c)) {
-				if (a == spec_a && b == spec_b && c == spec_c)
-					return TRUE;
+		if (!spec_str || !*spec_str)
+			continue;
+
+		spec_str = _match_except (spec_str, &except);
+
+		if (!g_ascii_strncasecmp (spec_str, SUBCHAN_TAG, STRLEN (SUBCHAN_TAG))) {
+			spec_str += STRLEN (SUBCHAN_TAG);
+			if (parse_subchannels (spec_str, &spec_a, &spec_b, &spec_c)) {
+				if (a == spec_a && b == spec_b && c == spec_c) {
+					if (except)
+						return NM_MATCH_SPEC_NEG_MATCH;
+					match = NM_MATCH_SPEC_MATCH;
+				}
 			}
 		}
 	}
+	return match;
+}
 
-	return FALSE;
+GSList *
+nm_match_spec_split (const char *value)
+{
+	char *string_value, *p, *q0, *q;
+	GSList *pieces = NULL;
+
+	if (!value || !*value)
+		return NULL;
+
+	/* Copied from glibs g_key_file_parse_value_as_string() function
+	 * and adjusted. */
+
+	string_value = g_new (gchar, strlen (value) + 1);
+
+	p = (gchar *) value;
+	q0 = q = string_value;
+	while (*p) {
+		if (*p == '\\') {
+			p++;
+
+			switch (*p) {
+			case 's':
+				*q = ' ';
+				break;
+			case 'n':
+				*q = '\n';
+				break;
+			case 't':
+				*q = '\t';
+				break;
+			case 'r':
+				*q = '\r';
+				break;
+			case '\\':
+				*q = '\\';
+				break;
+			case '\0':
+				break;
+			default:
+				if (NM_IN_SET (*p, ',', ';'))
+					*q = *p;
+				else {
+					*q++ = '\\';
+					*q = *p;
+				}
+				break;
+			}
+		} else {
+			*q = *p;
+			if (NM_IN_SET (*p, ',', ';')) {
+				if (q0 < q)
+					pieces = g_slist_prepend (pieces, g_strndup (q0, q - q0));
+				q0 = q + 1;
+			}
+		}
+		if (*p == '\0')
+			break;
+		q++;
+		p++;
+	}
+
+	*q = '\0';
+	if (q0 < q)
+		pieces = g_slist_prepend (pieces, g_strndup (q0, q - q0));
+	g_free (string_value);
+	return g_slist_reverse (pieces);
 }
 
 const char *
@@ -1212,8 +1348,7 @@ nm_utils_get_ip_config_method (NMConnection *connection,
                                GType         ip_setting_type)
 {
 	NMSettingConnection *s_con;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4, *s_ip6;
 	const char *method;
 
 	s_con = nm_connection_get_setting_connection (connection);
@@ -1226,7 +1361,7 @@ nm_utils_get_ip_config_method (NMConnection *connection,
 		else {
 			s_ip4 = nm_connection_get_setting_ip4_config (connection);
 			g_return_val_if_fail (s_ip4 != NULL, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
-			method = nm_setting_ip4_config_get_method (s_ip4);
+			method = nm_setting_ip_config_get_method (s_ip4);
 			g_return_val_if_fail (method != NULL, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 
 			return method;
@@ -1240,7 +1375,7 @@ nm_utils_get_ip_config_method (NMConnection *connection,
 		else {
 			s_ip6 = nm_connection_get_setting_ip6_config (connection);
 			g_return_val_if_fail (s_ip6 != NULL, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
-			method = nm_setting_ip6_config_get_method (s_ip6);
+			method = nm_setting_ip_config_get_method (s_ip6);
 			g_return_val_if_fail (method != NULL, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
 
 			return method;
@@ -1387,12 +1522,12 @@ check_ip6_method (NMConnection *orig,
 {
 	GHashTable *props;
 	const char *orig_ip6_method, *candidate_ip6_method;
-	NMSettingIP6Config *candidate_ip6;
+	NMSettingIPConfig *candidate_ip6;
 	gboolean allow = FALSE;
 
 	props = check_property_in_hash (settings,
 	                                NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	                                NM_SETTING_IP6_CONFIG_METHOD);
+	                                NM_SETTING_IP_CONFIG_METHOD);
 	if (!props)
 		return TRUE;
 
@@ -1408,7 +1543,7 @@ check_ip6_method (NMConnection *orig,
 
 	if (   strcmp (orig_ip6_method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0
 	    && strcmp (candidate_ip6_method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0
-	    && (!candidate_ip6 || nm_setting_ip6_config_get_may_fail (candidate_ip6))) {
+	    && (!candidate_ip6 || nm_setting_ip_config_get_may_fail (candidate_ip6))) {
 		allow = TRUE;
 	}
 
@@ -1425,7 +1560,7 @@ check_ip6_method (NMConnection *orig,
 	if (allow) {
 		remove_from_hash (settings, props,
 		                  NM_SETTING_IP6_CONFIG_SETTING_NAME,
-		                  NM_SETTING_IP6_CONFIG_METHOD);
+		                  NM_SETTING_IP_CONFIG_METHOD);
 	}
 	return allow;
 }
@@ -1438,11 +1573,11 @@ check_ip4_method (NMConnection *orig,
 {
 	GHashTable *props;
 	const char *orig_ip4_method, *candidate_ip4_method;
-	NMSettingIP4Config *candidate_ip4;
+	NMSettingIPConfig *candidate_ip4;
 
 	props = check_property_in_hash (settings,
 	                                NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	                                NM_SETTING_IP4_CONFIG_METHOD);
+	                                NM_SETTING_IP_CONFIG_METHOD);
 	if (!props)
 		return TRUE;
 
@@ -1457,11 +1592,11 @@ check_ip4_method (NMConnection *orig,
 
 	if (   strcmp (orig_ip4_method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0
 	    && strcmp (candidate_ip4_method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0
-	    && (!candidate_ip4 || nm_setting_ip4_config_get_may_fail (candidate_ip4))
+	    && (!candidate_ip4 || nm_setting_ip_config_get_may_fail (candidate_ip4))
 	    && (device_has_carrier == FALSE)) {
 		remove_from_hash (settings, props,
 		                  NM_SETTING_IP4_CONFIG_SETTING_NAME,
-		                  NM_SETTING_IP4_CONFIG_METHOD);
+		                  NM_SETTING_IP_CONFIG_METHOD);
 		return TRUE;
 	}
 	return FALSE;
@@ -1738,6 +1873,49 @@ nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 max
 	return v;
 }
 
+/**
+ * nm_utils_uuid_generate_from_strings:
+ * @string1: a variadic list of strings. Must be NULL terminated.
+ *
+ * Returns a variant3 UUID based on the concatenated C strings.
+ * It does not simply concatenate them, but also includes the
+ * terminating '\0' character. For example "a", "b", gives
+ * "a\0b\0".
+ *
+ * This has the advantage, that the following invocations
+ * all give different UUIDs: (NULL), (""), ("",""), ("","a"), ("a",""),
+ * ("aa"), ("aa", ""), ("", "aa"), ...
+ */
+char *
+nm_utils_uuid_generate_from_strings (const char *string1, ...)
+{
+	GString *str;
+	va_list args;
+	const char *s;
+	char *uuid;
+
+	if (!string1)
+		return nm_utils_uuid_generate_from_string (NULL, 0, NM_UTILS_UUID_TYPE_VARIANT3, NM_UTILS_UUID_NS);
+
+	str = g_string_sized_new (120); /* effectively allocates power of 2 (128)*/
+
+	g_string_append_len (str, string1, strlen (string1) + 1);
+
+	va_start (args, string1);
+	s = va_arg (args, const char *);
+	while (s) {
+		g_string_append_len (str, s, strlen (s) + 1);
+		s = va_arg (args, const char *);
+	}
+	va_end (args);
+
+	uuid = nm_utils_uuid_generate_from_string (str->str, str->len, NM_UTILS_UUID_TYPE_VARIANT3, NM_UTILS_UUID_NS);
+
+	g_string_free (str, TRUE);
+	return uuid;
+}
+
+/**************************************************************************/
 
 static gint64 monotonic_timestamp_offset_sec;
 
@@ -1819,7 +1997,7 @@ monotonic_timestamp_get (struct timespec *tp)
 gint64
 nm_utils_get_monotonic_timestamp_ns (void)
 {
-	struct timespec tp;
+	struct timespec tp = { 0 };
 
 	monotonic_timestamp_get (&tp);
 
@@ -1846,7 +2024,7 @@ nm_utils_get_monotonic_timestamp_ns (void)
 gint64
 nm_utils_get_monotonic_timestamp_us (void)
 {
-	struct timespec tp;
+	struct timespec tp = { 0 };
 
 	monotonic_timestamp_get (&tp);
 
@@ -1873,7 +2051,7 @@ nm_utils_get_monotonic_timestamp_us (void)
 gint64
 nm_utils_get_monotonic_timestamp_ms (void)
 {
-	struct timespec tp;
+	struct timespec tp = { 0 };
 
 	monotonic_timestamp_get (&tp);
 
@@ -1900,7 +2078,7 @@ nm_utils_get_monotonic_timestamp_ms (void)
 gint32
 nm_utils_get_monotonic_timestamp_s (void)
 {
-	struct timespec tp;
+	struct timespec tp = { 0 };
 
 	monotonic_timestamp_get (&tp);
 	return (((gint64) tp.tv_sec) + monotonic_timestamp_offset_sec);
@@ -1972,9 +2150,9 @@ _log_connection_sort_names_fcn (gconstpointer a, gconstpointer b)
 	/* we want to first show the items, that disappeared, then the one that changed and
 	 * then the ones that were added. */
 
-	if ((v1->diff_result & NM_SETTING_DIFF_RESULT_IN_A) != (v1->diff_result & NM_SETTING_DIFF_RESULT_IN_A))
+	if ((v1->diff_result & NM_SETTING_DIFF_RESULT_IN_A) != (v2->diff_result & NM_SETTING_DIFF_RESULT_IN_A))
 		return (v1->diff_result & NM_SETTING_DIFF_RESULT_IN_A) ? -1 : 1;
-	if ((v1->diff_result & NM_SETTING_DIFF_RESULT_IN_B) != (v1->diff_result & NM_SETTING_DIFF_RESULT_IN_B))
+	if ((v1->diff_result & NM_SETTING_DIFF_RESULT_IN_B) != (v2->diff_result & NM_SETTING_DIFF_RESULT_IN_B))
 		return (v1->diff_result & NM_SETTING_DIFF_RESULT_IN_B) ? 1 : -1;
 	return strcmp (v1->item_name, v2->item_name);
 }
@@ -2068,9 +2246,9 @@ nm_utils_log_connection_diff (NMConnection *connection, NMConnection *diff_base,
 	connection_diff_are_same = nm_connection_diff (connection, diff_base, NM_SETTING_COMPARE_FLAG_EXACT | NM_SETTING_COMPARE_FLAG_DIFF_RESULT_NO_DEFAULT, &connection_diff);
 	if (connection_diff_are_same) {
 		if (diff_base)
-			nm_log (level, domain, "%sconnection '%s' (%p and %p): no difference", prefix, name, connection, diff_base);
+			nm_log (level, domain, "%sconnection '%s' (%p/%s and %p/%s): no difference", prefix, name, connection, G_OBJECT_TYPE_NAME (connection), diff_base, G_OBJECT_TYPE_NAME (diff_base));
 		else
-			nm_log (level, domain, "%sconnection '%s' (%p): no properties set", prefix, name, connection);
+			nm_log (level, domain, "%sconnection '%s' (%p/%s): no properties set", prefix, name, connection, G_OBJECT_TYPE_NAME (connection));
 		g_assert (!connection_diff);
 		return;
 	}
@@ -2105,9 +2283,9 @@ nm_utils_log_connection_diff (NMConnection *connection, NMConnection *diff_base,
 				GError *err_verify = NULL;
 
 				if (diff_base)
-					nm_log (level, domain, "%sconnection '%s' (%p < %p):", prefix, name, connection, diff_base);
+					nm_log (level, domain, "%sconnection '%s' (%p/%s < %p/%s):", prefix, name, connection, G_OBJECT_TYPE_NAME (connection), diff_base, G_OBJECT_TYPE_NAME (diff_base));
 				else
-					nm_log (level, domain, "%sconnection '%s' (%p):", prefix, name, connection);
+					nm_log (level, domain, "%sconnection '%s' (%p/%s):", prefix, name, connection, G_OBJECT_TYPE_NAME (connection));
 				print_header = FALSE;
 
 				if (!nm_connection_verify (connection, &err_verify)) {
@@ -2155,6 +2333,32 @@ out:
 }
 
 
+#define IPV6_PROPERTY_DIR "/proc/sys/net/ipv6/conf/"
+#define IPV4_PROPERTY_DIR "/proc/sys/net/ipv4/conf/"
+G_STATIC_ASSERT (sizeof (IPV4_PROPERTY_DIR) == sizeof (IPV6_PROPERTY_DIR));
+
+static const char *
+_get_property_path (const char *ifname,
+                    const char *property,
+                    gboolean ipv6)
+{
+	static char path[sizeof (IPV6_PROPERTY_DIR) + IFNAMSIZ + 32];
+	int len;
+
+	ifname = ASSERT_VALID_PATH_COMPONENT (ifname);
+	property = ASSERT_VALID_PATH_COMPONENT (property);
+
+	len = g_snprintf (path,
+	                  sizeof (path),
+	                  "%s%s/%s",
+	                  ipv6 ? IPV6_PROPERTY_DIR : IPV4_PROPERTY_DIR,
+	                  ifname,
+	                  property);
+	g_assert (len < sizeof (path) - 1);
+
+	return path;
+}
+
 /**
  * nm_utils_ip6_property_path:
  * @ifname: an interface name
@@ -2166,18 +2370,21 @@ out:
 const char *
 nm_utils_ip6_property_path (const char *ifname, const char *property)
 {
-#define IPV6_PROPERTY_DIR "/proc/sys/net/ipv6/conf/"
-	static char path[sizeof (IPV6_PROPERTY_DIR) + IFNAMSIZ + 32];
-	int len;
+	return _get_property_path (ifname, property, TRUE);
+}
 
-	ifname = ASSERT_VALID_PATH_COMPONENT (ifname);
-	property = ASSERT_VALID_PATH_COMPONENT (property);
-
-	len = g_snprintf (path, sizeof (path), IPV6_PROPERTY_DIR "%s/%s",
-	                  ifname, property);
-	g_assert (len < sizeof (path) - 1);
-
-	return path;
+/**
+ * nm_utils_ip4_property_path:
+ * @ifname: an interface name
+ * @property: a property name
+ *
+ * Returns the path to IPv4 property @property on @ifname. Note that
+ * this uses a static buffer.
+ */
+const char *
+nm_utils_ip4_property_path (const char *ifname, const char *property)
+{
+	return _get_property_path (ifname, property, FALSE);
 }
 
 const char *
@@ -2391,19 +2598,25 @@ nm_utils_ip4_routes_from_gvalue (const GValue *value)
 	routes = (GPtrArray *) g_value_get_boxed (value);
 	for (i = 0; routes && (i < routes->len); i++) {
 		GArray *array = (GArray *) g_ptr_array_index (routes, i);
-		NMIP4Route *route;
+		guint32 *array_val = (guint32 *) array->data;
+		NMIPRoute *route;
+		GError *error = NULL;
 
 		if (array->len < 4) {
 			g_warning ("Ignoring invalid IP4 route");
 			continue;
 		}
 
-		route = nm_ip4_route_new ();
-		nm_ip4_route_set_dest (route, g_array_index (array, guint32, 0));
-		nm_ip4_route_set_prefix (route, g_array_index (array, guint32, 1));
-		nm_ip4_route_set_next_hop (route, g_array_index (array, guint32, 2));
-		nm_ip4_route_set_metric (route, g_array_index (array, guint32, 3));
-		list = g_slist_prepend (list, route);
+		route = nm_ip_route_new_binary (AF_INET,
+		                                &array_val[0], array_val[1],
+		                                &array_val[2], array_val[3],
+		                                &error);
+		if (route)
+			list = g_slist_prepend (list, route);
+		else {
+			g_warning ("Ignoring invalid IP4 route: %s", error->message);
+			g_clear_error (&error);
+		}
 	}
 
 	return g_slist_reverse (list);
@@ -2445,7 +2658,8 @@ nm_utils_ip6_routes_from_gvalue (const GValue *value)
 		GValueArray *route_values = (GValueArray *) g_ptr_array_index (routes, i);
 		GByteArray *dest, *next_hop;
 		guint prefix, metric;
-		NMIP6Route *route;
+		NMIPRoute *route;
+		GError *error = NULL;
 
 		if (!_nm_utils_gvalue_array_validate (route_values, 4,
 		                                      DBUS_TYPE_G_UCHAR_ARRAY,
@@ -2474,13 +2688,35 @@ nm_utils_ip6_routes_from_gvalue (const GValue *value)
 
 		metric = g_value_get_uint (g_value_array_get_nth (route_values, 3));
 
-		route = nm_ip6_route_new ();
-		nm_ip6_route_set_dest (route, (struct in6_addr *)dest->data);
-		nm_ip6_route_set_prefix (route, prefix);
-		nm_ip6_route_set_next_hop (route, (struct in6_addr *)next_hop->data);
-		nm_ip6_route_set_metric (route, metric);
-		list = g_slist_prepend (list, route);
+		route = nm_ip_route_new_binary (AF_INET6,
+		                                dest->data, prefix,
+		                                next_hop->data, metric,
+		                                &error);
+		if (route)
+			list = g_slist_prepend (list, route);
+		else {
+			g_warning ("Ignoring invalid IP6 route: %s", error->message);
+			g_clear_error (&error);
+		}
 	}
 
 	return g_slist_reverse (list);
+}
+
+/**
+ * nm_utils_setpgid:
+ * @unused: unused
+ *
+ * This can be passed as a child setup function to the g_spawn*() family
+ * of functions, to ensure that the child is in its own process group
+ * (and thus, in some situations, will not be killed when NetworkManager
+ * is killed).
+ */
+void
+nm_utils_setpgid (gpointer unused G_GNUC_UNUSED)
+{
+	pid_t pid;
+
+	pid = getpid ();
+	setpgid (pid, pid);
 }

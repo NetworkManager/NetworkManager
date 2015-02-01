@@ -24,6 +24,7 @@ libnm_core_headers =				\
 	$(core)/nm-setting-generic.h		\
 	$(core)/nm-setting-gsm.h		\
 	$(core)/nm-setting-infiniband.h		\
+	$(core)/nm-setting-ip-config.h		\
 	$(core)/nm-setting-ip4-config.h		\
 	$(core)/nm-setting-ip6-config.h		\
 	$(core)/nm-setting-olpc-mesh.h		\
@@ -69,6 +70,7 @@ libnm_core_sources =				\
 	$(core)/nm-setting-generic.c		\
 	$(core)/nm-setting-gsm.c		\
 	$(core)/nm-setting-infiniband.c		\
+	$(core)/nm-setting-ip-config.c		\
 	$(core)/nm-setting-ip4-config.c		\
 	$(core)/nm-setting-ip6-config.c		\
 	$(core)/nm-setting-olpc-mesh.c		\

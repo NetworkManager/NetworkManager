@@ -18,6 +18,8 @@
  * Copyright (C) 2012 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <stdlib.h>
 #include <errno.h>
 #include <unistd.h>
@@ -26,6 +28,7 @@
 #include <string.h>
 #include <netlink/route/addr.h>
 
+#include "gsystem-local-alloc.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-platform.h"
@@ -745,6 +748,31 @@ nm_platform_link_uses_arp (int ifindex)
 }
 
 /**
+ * nm_platform_link_get_ipv6_token:
+ * @ifindex: Interface index
+ * @iid: Tokenized interface identifier
+ *
+ * Returns IPv6 tokenized interface identifier. If the platform or OS doesn't
+ * support IPv6 tokenized interface identifiers, or the token is not set
+ * this call will fail and return %FALSE.
+ *
+ * Returns: %TRUE a tokenized identifier was available
+ */
+gboolean
+nm_platform_link_get_ipv6_token (int ifindex, NMUtilsIPv6IfaceId *iid)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex >= 0, FALSE);
+	g_return_val_if_fail (iid, FALSE);
+
+	if (klass->link_get_ipv6_token)
+		return klass->link_get_ipv6_token (platform, ifindex, iid);
+	return FALSE;
+}
+
+
+/**
  * nm_platform_link_get_user_ip6vll_enabled:
  * @ifindex: Interface index
  *
@@ -1396,6 +1424,22 @@ nm_platform_wifi_set_mode (int ifindex, NM80211Mode mode)
 	klass->wifi_set_mode (platform, ifindex, mode);
 }
 
+static void
+wifi_set_powersave (NMPlatform *p, int ifindex, guint32 powersave)
+{
+	/* empty */
+}
+
+void
+nm_platform_wifi_set_powersave (int ifindex, guint32 powersave)
+{
+	reset_error ();
+
+	g_return_if_fail (ifindex > 0);
+
+	klass->wifi_set_powersave (platform, ifindex, powersave);
+}
+
 guint32
 nm_platform_wifi_find_frequency (int ifindex, const guint32 *freqs)
 {
@@ -1703,6 +1747,11 @@ _address_get_lifetime (const NMPlatformIPAddress *address, guint32 now, guint32 
 	if (address->lifetime == 0) {
 		*out_lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
 		*out_preferred = NM_PLATFORM_LIFETIME_PERMANENT;
+
+		/* We treat lifetime==0 as permanent addresses to allow easy creation of such addresses
+		 * (without requiring to set the lifetime fields to NM_PLATFORM_LIFETIME_PERMANENT).
+		 * In that case we also expect that the other fields (timestamp and preferred) are left unset. */
+		g_return_val_if_fail (address->timestamp == 0 && address->preferred == 0, TRUE);
 	} else {
 		lifetime = _rebase_relative_time_on_now (address->timestamp, address->lifetime, now, padding);
 		if (!lifetime)
@@ -1724,10 +1773,31 @@ _address_get_lifetime (const NMPlatformIPAddress *address, guint32 now, guint32 
 	return TRUE;
 }
 
+gboolean
+nm_platform_ip4_check_reinstall_device_route (int ifindex, const NMPlatformIP4Address *address, guint32 device_route_metric)
+{
+	g_return_val_if_fail (address, FALSE);
+
+	if (   ifindex <= 0
+	    || address->plen <= 0
+	    || address->plen >= 32)
+		return FALSE;
+
+	if (device_route_metric == NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE) {
+		/* The automatically added route would be already our desired priority.
+		 * Nothing to do. */
+		return FALSE;
+	}
+
+	return klass->ip4_check_reinstall_device_route (platform, ifindex, address, device_route_metric);
+}
+
 /**
  * nm_platform_ip4_address_sync:
  * @ifindex: Interface index
  * @known_addresses: List of addresses
+ * @device_route_metric: the route metric for adding subnet routes (replaces
+ *   the kernel added routes).
  *
  * A convenience function to synchronize addresses for a specific interface
  * with the least possible disturbance. It simply removes addresses that are
@@ -1736,7 +1806,7 @@ _address_get_lifetime (const NMPlatformIPAddress *address, guint32 now, guint32 
  * Returns: %TRUE on success.
  */
 gboolean
-nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresses)
+nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresses, guint32 device_route_metric)
 {
 	GArray *addresses;
 	NMPlatformIP4Address *address;
@@ -1760,13 +1830,34 @@ nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresses)
 	for (i = 0; i < known_addresses->len; i++) {
 		const NMPlatformIP4Address *known_address = &g_array_index (known_addresses, NMPlatformIP4Address, i);
 		guint32 lifetime, preferred;
+		guint32 network;
+		gboolean reinstall_device_route = FALSE;
 
 		/* add a padding of 5 seconds to avoid potential races. */
 		if (!_address_get_lifetime ((NMPlatformIPAddress *) known_address, now, 5, &lifetime, &preferred))
 			continue;
 
+		if (nm_platform_ip4_check_reinstall_device_route (ifindex, known_address, device_route_metric))
+			reinstall_device_route = TRUE;
+
 		if (!nm_platform_ip4_address_add (ifindex, known_address->address, known_address->peer_address, known_address->plen, lifetime, preferred, known_address->label))
 			return FALSE;
+
+		if (reinstall_device_route) {
+			/* Kernel automatically adds a device route for us with metric 0. That is not what we want.
+			 * Remove it, and re-add it.
+			 *
+			 * In face of having the same subnets on two different interfaces with the same metric,
+			 * this is a problem. Surprisingly, kernel is able to add two routes for the same subnet/prefix,metric
+			 * to different interfaces. We cannot. Adding one, would replace the other. This is avoided
+			 * by the above nm_platform_ip4_check_reinstall_device_route() check.
+			 */
+			network = nm_utils_ip4_address_clear_host_address (known_address->address, known_address->plen);
+			(void) nm_platform_ip4_route_add (ifindex, NM_IP_CONFIG_SOURCE_KERNEL, network, known_address->plen,
+			                                  0, known_address->address, device_route_metric, 0);
+			(void) nm_platform_ip4_route_delete (ifindex, network, known_address->plen,
+			                                     NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE);
+		}
 	}
 
 	return TRUE;
@@ -1776,6 +1867,7 @@ nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresses)
  * nm_platform_ip6_address_sync:
  * @ifindex: Interface index
  * @known_addresses: List of addresses
+ * @keep_link_local: Don't remove link-local address
  *
  * A convenience function to synchronize addresses for a specific interface
  * with the least possible disturbance. It simply removes addresses that are
@@ -1784,7 +1876,7 @@ nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresses)
  * Returns: %TRUE on success.
  */
 gboolean
-nm_platform_ip6_address_sync (int ifindex, const GArray *known_addresses)
+nm_platform_ip6_address_sync (int ifindex, const GArray *known_addresses, gboolean keep_link_local)
 {
 	GArray *addresses;
 	NMPlatformIP6Address *address;
@@ -1797,7 +1889,7 @@ nm_platform_ip6_address_sync (int ifindex, const GArray *known_addresses)
 		address = &g_array_index (addresses, NMPlatformIP6Address, i);
 
 		/* Leave link local address management to the kernel */
-		if (IN6_IS_ADDR_LINKLOCAL (&address->address))
+		if (keep_link_local && IN6_IS_ADDR_LINKLOCAL (&address->address))
 			continue;
 
 		if (!array_contains_ip6_address (known_addresses, address))
@@ -1829,49 +1921,49 @@ nm_platform_ip6_address_sync (int ifindex, const GArray *known_addresses)
 gboolean
 nm_platform_address_flush (int ifindex)
 {
-	return nm_platform_ip4_address_sync (ifindex, NULL)
-			&& nm_platform_ip6_address_sync (ifindex, NULL);
+	return nm_platform_ip4_address_sync (ifindex, NULL, 0)
+			&& nm_platform_ip6_address_sync (ifindex, NULL, FALSE);
 }
 
 /******************************************************************/
 
 GArray *
-nm_platform_ip4_route_get_all (int ifindex, gboolean include_default)
+nm_platform_ip4_route_get_all (int ifindex, NMPlatformGetRouteMode mode)
 {
 	reset_error ();
 
-	g_return_val_if_fail (ifindex > 0, NULL);
+	g_return_val_if_fail (ifindex >= 0, NULL);
 	g_return_val_if_fail (klass->ip4_route_get_all, NULL);
 
-	return klass->ip4_route_get_all (platform, ifindex, include_default);
+	return klass->ip4_route_get_all (platform, ifindex, mode);
 }
 
 GArray *
-nm_platform_ip6_route_get_all (int ifindex, gboolean include_default)
+nm_platform_ip6_route_get_all (int ifindex, NMPlatformGetRouteMode mode)
 {
 	reset_error ();
 
-	g_return_val_if_fail (ifindex > 0, NULL);
+	g_return_val_if_fail (ifindex >= 0, NULL);
 	g_return_val_if_fail (klass->ip6_route_get_all, NULL);
 
-	return klass->ip6_route_get_all (platform, ifindex, include_default);
+	return klass->ip6_route_get_all (platform, ifindex, mode);
 }
 
 gboolean
 nm_platform_ip4_route_add (int ifindex, NMIPConfigSource source,
                            in_addr_t network, int plen,
-                           in_addr_t gateway, int metric, int mss)
+                           in_addr_t gateway, guint32 pref_src,
+                           guint32 metric, guint32 mss)
 {
 	reset_error ();
 
 	g_return_val_if_fail (platform, FALSE);
 	g_return_val_if_fail (0 <= plen && plen <= 32, FALSE);
-	g_return_val_if_fail (metric >= 0, FALSE);
-	g_return_val_if_fail (mss >= 0, FALSE);
 	g_return_val_if_fail (klass->ip4_route_add, FALSE);
 
 	if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
 		NMPlatformIP4Route route = { 0 };
+		char pref_src_buf[NM_UTILS_INET_ADDRSTRLEN];
 
 		route.ifindex = ifindex;
 		route.source = source;
@@ -1881,20 +1973,21 @@ nm_platform_ip4_route_add (int ifindex, NMIPConfigSource source,
 		route.metric = metric;
 		route.mss = mss;
 
-		debug ("route: adding or updating IPv4 route: %s", nm_platform_ip4_route_to_string (&route));
+		debug ("route: adding or updating IPv4 route: %s%s%s%s", nm_platform_ip4_route_to_string (&route),
+		       pref_src ? " (src: " : "",
+		       pref_src ? nm_utils_inet4_ntop (pref_src, pref_src_buf) : "",
+		       pref_src ? ")" : "");
 	}
-	return klass->ip4_route_add (platform, ifindex, source, network, plen, gateway, metric, mss);
+	return klass->ip4_route_add (platform, ifindex, source, network, plen, gateway, pref_src, metric, mss);
 }
 
 gboolean
 nm_platform_ip6_route_add (int ifindex, NMIPConfigSource source,
                            struct in6_addr network, int plen, struct in6_addr gateway,
-                           int metric, int mss)
+                           guint32 metric, guint32 mss)
 {
 	g_return_val_if_fail (platform, FALSE);
 	g_return_val_if_fail (0 <= plen && plen <= 128, FALSE);
-	g_return_val_if_fail (metric >= 0, FALSE);
-	g_return_val_if_fail (mss >= 0, FALSE);
 	g_return_val_if_fail (klass->ip6_route_add, FALSE);
 
 	if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
@@ -1914,7 +2007,7 @@ nm_platform_ip6_route_add (int ifindex, NMIPConfigSource source,
 }
 
 gboolean
-nm_platform_ip4_route_delete (int ifindex, in_addr_t network, int plen, int metric)
+nm_platform_ip4_route_delete (int ifindex, in_addr_t network, int plen, guint32 metric)
 {
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
 
@@ -1923,14 +2016,14 @@ nm_platform_ip4_route_delete (int ifindex, in_addr_t network, int plen, int metr
 	g_return_val_if_fail (platform, FALSE);
 	g_return_val_if_fail (klass->ip4_route_delete, FALSE);
 
-	debug ("route: deleting IPv4 route %s/%d, metric=%d, ifindex %d%s",
+	debug ("route: deleting IPv4 route %s/%d, metric=%"G_GUINT32_FORMAT", ifindex %d%s",
 	       nm_utils_inet4_ntop (network, NULL), plen, metric, ifindex,
 	       _to_string_dev (ifindex, str_dev, sizeof (str_dev)));
 	return klass->ip4_route_delete (platform, ifindex, network, plen, metric);
 }
 
 gboolean
-nm_platform_ip6_route_delete (int ifindex, struct in6_addr network, int plen, int metric)
+nm_platform_ip6_route_delete (int ifindex, struct in6_addr network, int plen, guint32 metric)
 {
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
 
@@ -1939,14 +2032,14 @@ nm_platform_ip6_route_delete (int ifindex, struct in6_addr network, int plen, in
 	g_return_val_if_fail (platform, FALSE);
 	g_return_val_if_fail (klass->ip6_route_delete, FALSE);
 
-	debug ("route: deleting IPv6 route %s/%d, metric=%d, ifindex %d%s",
+	debug ("route: deleting IPv6 route %s/%d, metric=%"G_GUINT32_FORMAT", ifindex %d%s",
 	       nm_utils_inet6_ntop (&network, NULL), plen, metric, ifindex,
 	       _to_string_dev (ifindex, str_dev, sizeof (str_dev)));
 	return klass->ip6_route_delete (platform, ifindex, network, plen, metric);
 }
 
 gboolean
-nm_platform_ip4_route_exists (int ifindex, in_addr_t network, int plen, int metric)
+nm_platform_ip4_route_exists (int ifindex, in_addr_t network, int plen, guint32 metric)
 {
 	reset_error ();
 
@@ -1957,7 +2050,7 @@ nm_platform_ip4_route_exists (int ifindex, in_addr_t network, int plen, int metr
 }
 
 gboolean
-nm_platform_ip6_route_exists (int ifindex, struct in6_addr network, int plen, int metric)
+nm_platform_ip6_route_exists (int ifindex, struct in6_addr network, int plen, guint32 metric)
 {
 	reset_error ();
 
@@ -1965,198 +2058,6 @@ nm_platform_ip6_route_exists (int ifindex, struct in6_addr network, int plen, in
 	g_return_val_if_fail (klass->ip6_route_exists, FALSE);
 
 	return klass->ip6_route_exists (platform, ifindex, network, plen, metric);
-}
-
-static gboolean
-array_contains_ip4_route (const GArray *routes, const NMPlatformIP4Route *route)
-{
-	guint len = routes ? routes->len : 0;
-	guint i;
-
-	for (i = 0; i < len; i++) {
-		NMPlatformIP4Route *c = &g_array_index (routes, NMPlatformIP4Route, i);
-
-		if (route->network == c->network &&
-		    route->plen == c->plen &&
-		    route->gateway == c->gateway &&
-		    route->metric == c->metric)
-			return TRUE;
-	}
-
-	return FALSE;
-}
-
-static gboolean
-array_contains_ip6_route (const GArray *routes, const NMPlatformIP6Route *route)
-{
-	guint len = routes ? routes->len : 0;
-	guint i;
-
-	for (i = 0; i < len; i++) {
-		NMPlatformIP6Route *c = &g_array_index (routes, NMPlatformIP6Route, i);
-
-		if (IN6_ARE_ADDR_EQUAL (&route->network, &c->network) &&
-		    route->plen == c->plen &&
-		    IN6_ARE_ADDR_EQUAL (&route->gateway, &c->gateway) &&
-		    route->metric == c->metric)
-			return TRUE;
-	}
-
-	return FALSE;
-}
-
-/**
- * nm_platform_ip4_route_sync:
- * @ifindex: Interface index
- * @known_routes: List of routes
- *
- * A convenience function to synchronize routes for a specific interface
- * with the least possible disturbance. It simply removes routes that are
- * not listed and adds routes that are.
- *
- * @known_routes should not contain a default route; if it does, it will be
- * ignored.
- *
- * Returns: %TRUE on success.
- */
-gboolean
-nm_platform_ip4_route_sync (int ifindex, const GArray *known_routes)
-{
-	GArray *routes;
-	NMPlatformIP4Route *route;
-	const NMPlatformIP4Route *known_route;
-	gboolean success;
-	int i, i_type;
-
-	/* Delete unknown routes */
-	routes = nm_platform_ip4_route_get_all (ifindex, FALSE);
-	for (i = 0; i < routes->len; i++) {
-		route = &g_array_index (routes, NMPlatformIP4Route, i);
-
-		if (!array_contains_ip4_route (known_routes, route))
-			nm_platform_ip4_route_delete (ifindex, route->network, route->plen, route->metric);
-	}
-
-	if (!known_routes) {
-		g_array_free (routes, TRUE);
-		return TRUE;
-	}
-
-	/* Add missing routes */
-	for (i_type = 0, success = TRUE; i_type < 2 && success; i_type++) {
-		for (i = 0; i < known_routes->len && success; i++) {
-			known_route = &g_array_index (known_routes, NMPlatformIP4Route, i);
-
-			if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (known_route))
-				continue;
-
-			if ((known_route->gateway == 0) ^ (i_type != 0)) {
-				/* Make two runs over the list of routes. On the first, only add
-				 * device routes, on the second the others (gateway routes). */
-				continue;
-			}
-
-			/* Ignore routes that already exist */
-			if (!array_contains_ip4_route (routes, known_route)) {
-				success = nm_platform_ip4_route_add (ifindex,
-				                                     known_route->source,
-				                                     known_route->network,
-				                                     known_route->plen,
-				                                     known_route->gateway,
-				                                     known_route->metric,
-				                                     known_route->mss);
-				if (!success && known_route->source < NM_IP_CONFIG_SOURCE_USER) {
-					nm_log_dbg (LOGD_PLATFORM, "ignore error adding IPv4 route to kernel: %s",
-					                           nm_platform_ip4_route_to_string (known_route));
-					success = TRUE;
-				}
-			}
-		}
-	}
-
-	g_array_free (routes, TRUE);
-	return success;
-}
-
-/**
- * nm_platform_ip6_route_sync:
- * @ifindex: Interface index
- * @known_routes: List of routes
- *
- * A convenience function to synchronize routes for a specific interface
- * with the least possible disturbance. It simply removes routes that are
- * not listed and adds routes that are.
- *
- * @known_routes should not contain a default route; if it does, it will be
- * ignored.
- *
- * Returns: %TRUE on success.
- */
-gboolean
-nm_platform_ip6_route_sync (int ifindex, const GArray *known_routes)
-{
-	GArray *routes;
-	NMPlatformIP6Route *route;
-	const NMPlatformIP6Route *known_route;
-	gboolean success;
-	int i, i_type;
-
-	/* Delete unknown routes */
-	routes = nm_platform_ip6_route_get_all (ifindex, FALSE);
-	for (i = 0; i < routes->len; i++) {
-		route = &g_array_index (routes, NMPlatformIP6Route, i);
-		route->ifindex = 0;
-
-		if (!array_contains_ip6_route (known_routes, route))
-			nm_platform_ip6_route_delete (ifindex, route->network, route->plen, route->metric);
-	}
-
-	if (!known_routes) {
-		g_array_free (routes, TRUE);
-		return TRUE;
-	}
-
-	/* Add missing routes */
-	for (i_type = 0, success = TRUE; i_type < 2 && success; i_type++) {
-		for (i = 0; i < known_routes->len && success; i++) {
-			known_route = &g_array_index (known_routes, NMPlatformIP6Route, i);
-
-			if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (known_route))
-				continue;
-
-			if (IN6_IS_ADDR_UNSPECIFIED (&known_route->gateway) ^ (i_type != 0)) {
-				/* Make two runs over the list of routes. On the first, only add
-				 * device routes, on the second the others (gateway routes). */
-				continue;
-			}
-
-			/* Ignore routes that already exist */
-			if (!array_contains_ip6_route (routes, known_route)) {
-				success = nm_platform_ip6_route_add (ifindex,
-				                                     known_route->source,
-				                                     known_route->network,
-				                                     known_route->plen,
-				                                     known_route->gateway,
-				                                     known_route->metric,
-				                                     known_route->mss);
-				if (!success && known_route->source < NM_IP_CONFIG_SOURCE_USER) {
-					nm_log_dbg (LOGD_PLATFORM, "ignore error adding IPv6 route to kernel: %s",
-					                           nm_platform_ip6_route_to_string (known_route));
-					success = TRUE;
-				}
-			}
-		}
-	}
-
-	g_array_free (routes, TRUE);
-	return success;
-}
-
-gboolean
-nm_platform_route_flush (int ifindex)
-{
-	return nm_platform_ip4_route_sync (ifindex, NULL)
-			&& nm_platform_ip6_route_sync (ifindex, NULL);
 }
 
 /******************************************************************/
@@ -2427,7 +2328,7 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route)
 
 	_to_string_dev (route->ifindex, str_dev, sizeof (str_dev));
 
-	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%s/%d via %s%s metric %u mss %u src %s",
+	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%s/%d via %s%s metric %"G_GUINT32_FORMAT" mss %"G_GUINT32_FORMAT" src %s",
 	            s_network, route->plen, s_gateway,
 	            str_dev,
 	            route->metric, route->mss,
@@ -2460,7 +2361,7 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route)
 
 	_to_string_dev (route->ifindex, str_dev, sizeof (str_dev));
 
-	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%s/%d via %s%s metric %u mss %u src %s",
+	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%s/%d via %s%s metric %"G_GUINT32_FORMAT" mss %"G_GUINT32_FORMAT" src %s",
 	            s_network, route->plen, s_gateway,
 	            str_dev,
 	            route->metric, route->mss,
@@ -2705,6 +2606,8 @@ static void
 nm_platform_class_init (NMPlatformClass *platform_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (platform_class);
+
+	platform_class->wifi_set_powersave = wifi_set_powersave;
 
 	/* Signals */
 	SIGNAL (SIGNAL_LINK_CHANGED, log_link)

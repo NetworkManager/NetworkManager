@@ -48,8 +48,8 @@ if __name__ == "__main__":
         sys.exit('Usage: %s <connection name or UUID> [new zone]' % sys.argv[0])
 
     main_loop = GLib.MainLoop()
-    settings = NM.RemoteSettings.new(None)
-    connections = settings.list_connections()
+    client = NM.Client.new(None)
+    connections = client.get_connections()
 
     con_name = sys.argv[1]
     if len(sys.argv) == 3:

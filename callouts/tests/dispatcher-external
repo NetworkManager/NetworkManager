@@ -1,0 +1,33 @@
+[main]
+action=up
+expected-iface=virbr0
+uuid=92bbc2fb-7304-46be-8ebb-6093dbe19a6a
+id=virbr0
+external=1
+
+[device]
+state=100
+ip-interface=virbr0
+type=13
+interface=virbr0
+path=/org/freedesktop/NetworkManager/Devices/0
+
+[ip4]
+addresses=192.168.122.1/24 0.0.0.0
+domains=
+gateway=0.0.0.0
+
+[env]
+PATH=
+CONNECTION_UUID=92bbc2fb-7304-46be-8ebb-6093dbe19a6a
+CONNECTION_DBUS_PATH=/org/freedesktop/NetworkManager/Connections/5
+CONNECTION_FILENAME=/callouts/tests/dispatcher-external
+CONNECTION_ID=virbr0
+CONNECTION_EXTERNAL=1
+DEVICE_IFACE=virbr0
+DEVICE_IP_IFACE=virbr0
+IP4_NUM_ADDRESSES=1
+IP4_ADDRESS_0=192.168.122.1/24 0.0.0.0
+IP4_GATEWAY=0.0.0.0
+IP4_NUM_ROUTES=0
+

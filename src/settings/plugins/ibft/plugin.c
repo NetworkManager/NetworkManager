@@ -18,7 +18,8 @@
  * Copyright 2014 Red Hat, Inc.
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>

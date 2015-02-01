@@ -26,7 +26,10 @@
 #include <netinet/ether.h>
 #include <linux/if_infiniband.h>
 #include <uuid/uuid.h>
+#include <libintl.h>
 #include <gmodule.h>
+#include <gio/gio.h>
+#include <glib/gi18n-lib.h>
 
 #include "nm-utils.h"
 #include "nm-utils-private.h"
@@ -34,6 +37,10 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-setting-private.h"
 #include "crypto.h"
+#include "nm-utils-internal.h"
+
+/* Embed the commit id in the build binary */
+static const char *const __nm_git_sha = STRLEN (NM_GIT_SHA) > 0 ? "NM_GIT_SHA:"NM_GIT_SHA : "";
 
 /**
  * SECTION:nm-utils
@@ -221,18 +228,21 @@ static gboolean initialized = FALSE;
  * nm_utils_init:
  * @error: location to store error, or %NULL
  *
- * Initializes libnm-util; should be called when starting and program that
- * uses libnm-util.  Sets up an atexit() handler to ensure de-initialization
- * is performed, but calling nm_utils_deinit() to explicitly deinitialize
- * libnm-util can also be done.  This function can be called more than once.
+ * Initializes libnm-util; should be called when starting any program that
+ * uses libnm-util.  This function can be called more than once.
  *
  * Returns: %TRUE if the initialization was successful, %FALSE on failure.
  **/
 gboolean
 nm_utils_init (GError **error)
 {
+	(void) __nm_git_sha;
+
 	if (!initialized) {
 		initialized = TRUE;
+
+		bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
+		bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
 
 		if (!crypto_init (error))
 			return FALSE;
@@ -245,18 +255,12 @@ nm_utils_init (GError **error)
 /**
  * nm_utils_deinit:
  *
- * Frees all resources used internally by libnm-util.  This function is called
- * from an atexit() handler, set up by nm_utils_init(), but is safe to be called
- * more than once.  Subsequent calls have no effect until nm_utils_init() is
- * called again.
+ * No-op. Although this function still exists for ABI compatibility reasons, it
+ * does not have any effect, and does not ever need to be called.
  **/
 void
 nm_utils_deinit (void)
 {
-	if (initialized) {
-		crypto_deinit ();
-		initialized = FALSE;
-	}
 }
 
 /* ssid helpers */
@@ -1491,8 +1495,10 @@ char *
 nm_utils_uuid_generate_from_string (const char *s)
 {
 	GError *error = NULL;
-	uuid_t *uuid;
+	uuid_t uuid;
 	char *buf = NULL;
+
+	g_return_val_if_fail (s && *s, NULL);
 
 	if (!nm_utils_init (&error)) {
 		g_warning ("error initializing crypto: (%d) %s",
@@ -1503,21 +1509,18 @@ nm_utils_uuid_generate_from_string (const char *s)
 		return NULL;
 	}
 
-	uuid = g_malloc0 (sizeof (*uuid));
-	if (!crypto_md5_hash (NULL, 0, s, strlen (s), (char *) uuid, sizeof (*uuid), &error)) {
+	if (!crypto_md5_hash (NULL, 0, s, strlen (s), (char *) uuid, sizeof (uuid), &error)) {
 		g_warning ("error generating UUID: (%d) %s",
 		           error ? error->code : 0,
 		           error ? error->message : "unknown");
 		if (error)
 			g_error_free (error);
-		goto out;
+		return NULL;
 	}
 
 	buf = g_malloc0 (37);
-	uuid_unparse_lower (*uuid, &buf[0]);
+	uuid_unparse_lower (uuid, &buf[0]);
 
-out:
-	g_free (uuid);
 	return buf;
 }
 
@@ -1727,15 +1730,91 @@ nm_utils_rsa_key_encrypt_aes (const GByteArray *data,
  * nm_utils_file_is_pkcs12:
  * @filename: name of the file to test
  *
- * Utility function to find out if the @filename is in PKCS#12 format.
+ * Utility function to find out if the @filename is in PKCS#<!-- -->12 format.
  *
- * Returns: %TRUE if the file is PKCS#12, %FALSE if it is not
+ * Returns: %TRUE if the file is PKCS#<!-- -->12, %FALSE if it is not
  **/
 gboolean
 nm_utils_file_is_pkcs12 (const char *filename)
 {
 	return crypto_is_pkcs12_file (filename, NULL);
 }
+
+/**********************************************************************************************/
+
+/**
+ * nm_utils_file_search_in_paths:
+ * @progname: the helper program name, like "iptables"
+ *   Must be a non-empty string, without path separator (/).
+ * @try_first: (allow-none): a custom path to try first before searching.
+ *   It is silently ignored if it is empty or not an absolute path.
+ * @paths: (allow-none): a %NULL terminated list of search paths.
+ *   Can be empty or %NULL, in which case only @try_first is checked.
+ * @file_test_flags: the flags passed to g_file_test() when searching
+ *   for @progname. Set it to 0 to skip the g_file_test().
+ * @predicate: (scope call): if given, pass the file name to this function
+ *   for additional checks. This check is performed after the check for
+ *   @file_test_flags. You cannot omit both @file_test_flags and @predicate.
+ * @user_data: (closure): (allow-none): user data for @predicate function.
+ * @error: (allow-none): on failure, set a "not found" error %G_IO_ERROR %G_IO_ERROR_NOT_FOUND.
+ *
+ * Searches for a @progname file in a list of search @paths.
+ *
+ * Returns: (transfer none): the full path to the helper, if found, or %NULL if not found.
+ *   The returned string is not owned by the caller, but later
+ *   invocations of the function might overwrite it.
+ */
+const char *
+nm_utils_file_search_in_paths (const char *progname,
+                               const char *try_first,
+                               const char *const *paths,
+                               GFileTest file_test_flags,
+                               NMUtilsFileSearchInPathsPredicate predicate,
+                               gpointer user_data,
+                               GError **error)
+{
+	GString *tmp;
+	const char *ret;
+
+	g_return_val_if_fail (!error || !*error, NULL);
+	g_return_val_if_fail (progname && progname[0] && !strchr (progname, '/'), NULL);
+	g_return_val_if_fail (file_test_flags || predicate, NULL);
+
+	/* Only consider @try_first if it is a valid, absolute path. This makes
+	 * it simpler to pass in a path from configure checks. */
+	if (   try_first
+	    && try_first[0] == '/'
+	    && (file_test_flags == 0 || g_file_test (try_first, file_test_flags))
+	    && (!predicate || predicate (try_first, user_data)))
+		return g_intern_string (try_first);
+
+	if (!paths || !*paths)
+		goto NOT_FOUND;
+
+	tmp = g_string_sized_new (50);
+	for (; *paths; paths++) {
+		if (!*paths)
+			continue;
+		g_string_append (tmp, *paths);
+		if (tmp->str[tmp->len - 1] != '/')
+			g_string_append_c (tmp, '/');
+		g_string_append (tmp, progname);
+		if (   (file_test_flags == 0 || g_file_test (tmp->str, file_test_flags))
+		    && (!predicate || predicate (tmp->str, user_data))) {
+			ret = g_intern_string (tmp->str);
+			g_string_free (tmp, TRUE);
+			return ret;
+		}
+		g_string_set_size (tmp, 0);
+	}
+	g_string_free (tmp, TRUE);
+
+NOT_FOUND:
+	g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, _("Could not find \"%s\" binary"), progname);
+	return NULL;
+}
+
+/**********************************************************************************************/
 
 /* Band, channel/frequency stuff for wireless */
 struct cf_pair {
@@ -1948,7 +2027,8 @@ nm_utils_wifi_is_channel_valid (guint32 channel, const char *band)
 
 /**
  * nm_utils_hwaddr_len:
- * @type: the type of address; either %ARPHRD_ETHER or %ARPHRD_INFINIBAND
+ * @type: the type of address; either <literal>ARPHRD_ETHER</literal> or
+ *   <literal>ARPHRD_INFINIBAND</literal>
  *
  * Returns the length in octets of a hardware address of type @type.
  *
@@ -1969,11 +2049,12 @@ nm_utils_hwaddr_len (int type)
  * nm_utils_hwaddr_type:
  * @len: the length of hardware address in bytes
  *
- * Returns the type (either %ARPHRD_ETHER or %ARPHRD_INFINIBAND) of
- * the raw address given its length.
+ * Returns the type (either <literal>ARPHRD_ETHER</literal> or
+ * <literal>ARPHRD_INFINIBAND</literal>) of the raw address given its length.
  *
- * Return value: the type, either %ARPHRD_ETHER or %ARPHRD_INFINIBAND.
- * If the length is unexpected, return -1 (unsupported type/length).
+ * Return value: the type, either <literal>ARPHRD_ETHER</literal> or
+ * <literal>ARPHRD_INFINIBAND</literal>.  If the length is unexpected, return -1
+ * (unsupported type/length).
  *
  * Deprecated: This could not be extended to cover other types, since
  * there is not a one-to-one mapping between types and lengths. This
@@ -1998,7 +2079,8 @@ nm_utils_hwaddr_type (int len)
 /**
  * nm_utils_hwaddr_aton:
  * @asc: the ASCII representation of a hardware address
- * @type: the type of address; either %ARPHRD_ETHER or %ARPHRD_INFINIBAND
+ * @type: the type of address; either <literal>ARPHRD_ETHER</literal> or
+ *   <literal>ARPHRD_INFINIBAND</literal>
  * @buffer: buffer to store the result into
  *
  * Parses @asc and converts it to binary form in @buffer. See
@@ -2025,7 +2107,8 @@ nm_utils_hwaddr_aton (const char *asc, int type, gpointer buffer)
 /**
  * nm_utils_hwaddr_atoba:
  * @asc: the ASCII representation of a hardware address
- * @type: the type of address; either %ARPHRD_ETHER or %ARPHRD_INFINIBAND
+ * @type: the type of address; either <literal>ARPHRD_ETHER</literal> or
+ *   <literal>ARPHRD_INFINIBAND</literal>
  *
  * Parses @asc and converts it to binary form in a #GByteArray. See
  * nm_utils_hwaddr_aton() if you don't want a #GByteArray.
@@ -2057,7 +2140,8 @@ nm_utils_hwaddr_atoba (const char *asc, int type)
 /**
  * nm_utils_hwaddr_ntoa:
  * @addr: a binary hardware address
- * @type: the type of address; either %ARPHRD_ETHER or %ARPHRD_INFINIBAND
+ * @type: the type of address; either <literal>ARPHRD_ETHER</literal> or
+ *   <literal>ARPHRD_INFINIBAND</literal>
  *
  * Converts @addr to textual form.
  *
@@ -2390,13 +2474,14 @@ static char _nm_utils_inet_ntop_buffer[NM_UTILS_INET_ADDRSTRLEN];
 /**
  * nm_utils_inet4_ntop: (skip)
  * @inaddr: the address that should be converted to string.
- * @dst: the destination buffer, it must contain at least %INET_ADDRSTRLEN
- *  or %NM_UTILS_INET_ADDRSTRLEN characters. If set to %NULL, it will return
- *  a pointer to an internal, static buffer (shared with nm_utils_inet6_ntop()).
- *  Beware, that the internal buffer will be overwritten with ever new call
- *  of nm_utils_inet4_ntop() or nm_utils_inet6_ntop() that does not provied it's
- *  own @dst buffer. Also, using the internal buffer is not thread safe. When
- *  in doubt, pass your own @dst buffer to avoid these issues.
+ * @dst: the destination buffer, it must contain at least
+ *  <literal>INET_ADDRSTRLEN</literal> or %NM_UTILS_INET_ADDRSTRLEN
+ *  characters. If set to %NULL, it will return a pointer to an internal, static
+ *  buffer (shared with nm_utils_inet6_ntop()).  Beware, that the internal
+ *  buffer will be overwritten with ever new call of nm_utils_inet4_ntop() or
+ *  nm_utils_inet6_ntop() that does not provied it's own @dst buffer. Also,
+ *  using the internal buffer is not thread safe. When in doubt, pass your own
+ *  @dst buffer to avoid these issues.
  *
  * Wrapper for inet_ntop.
  *
@@ -2415,13 +2500,14 @@ nm_utils_inet4_ntop (in_addr_t inaddr, char *dst)
 /**
  * nm_utils_inet6_ntop: (skip)
  * @in6addr: the address that should be converted to string.
- * @dst: the destination buffer, it must contain at least %INET6_ADDRSTRLEN
- *  or %NM_UTILS_INET_ADDRSTRLEN characters. If set to %NULL, it will return
- *  a pointer to an internal, static buffer (shared with nm_utils_inet4_ntop()).
- *  Beware, that the internal buffer will be overwritten with ever new call
- *  of nm_utils_inet4_ntop() or nm_utils_inet6_ntop() that does not provied it's
- *  own @dst buffer. Also, using the internal buffer is not thread safe. When
- *  in doubt, pass your own @dst buffer to avoid these issues.
+ * @dst: the destination buffer, it must contain at least
+ *  <literal>INET6_ADDRSTRLEN</literal> or %NM_UTILS_INET_ADDRSTRLEN
+ *  characters. If set to %NULL, it will return a pointer to an internal, static
+ *  buffer (shared with nm_utils_inet4_ntop()).  Beware, that the internal
+ *  buffer will be overwritten with ever new call of nm_utils_inet4_ntop() or
+ *  nm_utils_inet6_ntop() that does not provied it's own @dst buffer. Also,
+ *  using the internal buffer is not thread safe. When in doubt, pass your own
+ *  @dst buffer to avoid these issues.
  *
  * Wrapper for inet_ntop.
  *

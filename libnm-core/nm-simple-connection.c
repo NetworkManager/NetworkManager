@@ -19,6 +19,8 @@
  * Copyright 2007 - 2014 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include "nm-simple-connection.h"
 #include "nm-setting-private.h"
 
@@ -71,7 +73,7 @@ nm_simple_connection_new_from_dbus (GVariant *dict, GError **error)
 
 	connection = nm_simple_connection_new ();
 	if (   !nm_connection_replace_settings (connection, dict, error)
-	    || !nm_connection_verify (connection, error))
+	    || !nm_connection_normalize (connection, NULL, NULL, error))
 		g_clear_object (&connection);
 	return connection;
 }

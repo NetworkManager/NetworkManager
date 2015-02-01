@@ -18,7 +18,7 @@
  * Copyright (C) 2009 - 2013 Red Hat, Inc.
  */
 
-#include <config.h>
+#include "config.h"
 
 #include <string.h>
 #include <gudev/gudev.h>

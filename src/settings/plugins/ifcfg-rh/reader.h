@@ -27,15 +27,18 @@
 #include "shvar.h"
 
 NMConnection *connection_from_file (const char *filename,
-                                    const char *network_file,  /* for unit tests only */
-                                    const char *test_type,     /* for unit tests only */
                                     char **out_unhandled,
-                                    char **out_keyfile,
-                                    char **out_routefile,
-                                    char **out_route6file,
-                                    GError **error,
-                                    gboolean *out_ignore_error);
+                                    GError **error);
 
 char *uuid_from_file (const char *filename);
+
+guint devtimeout_from_file (const char *filename);
+
+/* for test-ifcfg-rh */
+NMConnection *connection_from_file_test (const char *filename,
+                                         const char *network_file,
+                                         const char *test_type,
+                                         char **out_unhandled,
+                                         GError **error);
 
 #endif  /* __READER_H__ */

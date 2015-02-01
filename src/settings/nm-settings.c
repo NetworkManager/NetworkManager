@@ -34,6 +34,7 @@
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
 
+#include "gsystem-local-alloc.h"
 #include <nm-dbus-interface.h>
 #include <nm-connection.h>
 #include <nm-setting-8021x.h>
@@ -150,6 +151,8 @@ typedef struct {
 	GSList *unmanaged_specs;
 	GSList *unrecognized_specs;
 	GSList *get_connections_cache;
+
+	gboolean startup_complete;
 } NMSettingsPrivate;
 
 #define NM_SETTINGS_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTINGS, NMSettingsPrivate))
@@ -174,9 +177,41 @@ enum {
 	PROP_HOSTNAME,
 	PROP_CAN_MODIFY,
 	PROP_CONNECTIONS,
+	PROP_STARTUP_COMPLETE,
 
 	LAST_PROP
 };
+
+static void
+check_startup_complete (NMSettings *self)
+{
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	GHashTableIter iter;
+	NMSettingsConnection *conn;
+
+	if (priv->startup_complete)
+		return;
+
+	g_hash_table_iter_init (&iter, priv->connections);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &conn)) {
+		if (!nm_settings_connection_get_ready (conn))
+			return;
+	}
+
+	priv->startup_complete = TRUE;
+	g_object_notify (G_OBJECT (self), NM_SETTINGS_STARTUP_COMPLETE);
+}
+
+static void
+connection_ready_changed (NMSettingsConnection *conn,
+                          GParamSpec *pspec,
+                          gpointer user_data)
+{
+	NMSettings *self = NM_SETTINGS (user_data);
+
+	if (nm_settings_connection_get_ready (conn))
+		check_startup_complete (self);
+}
 
 static void
 plugin_connection_added (NMSystemConfigInterface *config,
@@ -305,7 +340,6 @@ impl_settings_get_connection_by_uuid (NMSettings *self,
 	}
 
 	if (!nm_auth_is_subject_in_acl (NM_CONNECTION (connection),
-	                                nm_session_monitor_get (),
 	                                subject,
 	                                &error_desc)) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
@@ -771,6 +805,7 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_updated), self);
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_updated_by_user), self);
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_visibility_changed), self);
+	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_ready_changed), self);
 
 	/* Forget about the connection internally */
 	g_hash_table_remove (NM_SETTINGS_GET_PRIVATE (user_data)->connections,
@@ -782,6 +817,8 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 	/* Re-emit for listeners like NMPolicy */
 	g_signal_emit_by_name (self, NM_CP_SIGNAL_CONNECTION_REMOVED, connection);
 	g_object_notify (G_OBJECT (self), NM_SETTINGS_CONNECTIONS);
+
+	check_startup_complete (self);
 
 	g_object_unref (connection);
 }
@@ -849,6 +886,7 @@ claim_connection (NMSettings *self,
 	GHashTableIter iter;
 	gpointer data;
 	char *path;
+	NMSettingsConnection *existing;
 
 	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (connection));
 	g_return_if_fail (nm_connection_get_path (NM_CONNECTION (connection)) == NULL);
@@ -864,6 +902,23 @@ claim_connection (NMSettings *self,
 		nm_log_warn (LOGD_SETTINGS, "plugin provided invalid connection: %s",
 		             error->message);
 		g_error_free (error);
+		return;
+	}
+
+	existing = nm_settings_get_connection_by_uuid (self, nm_connection_get_uuid (NM_CONNECTION (connection)));
+	if (existing) {
+		/* Cannot add duplicate connections per UUID. Just return without action and
+		 * log a warning.
+		 *
+		 * This means, that plugins must not provide duplicate connections (UUID).
+		 * In fact, none of the plugins currently would do that.
+		 *
+		 * But globaly, over different setting plugins, there could be duplicates
+		 * without the individual plugins being aware. Don't handle that at all, just
+		 * error out. That should not happen unless the admin misconfigured the system
+		 * to create conflicting connections. */
+		nm_log_warn (LOGD_SETTINGS, "plugin provided duplicate connection with UUID %s",
+		             nm_connection_get_uuid (NM_CONNECTION (connection)));
 		return;
 	}
 
@@ -888,6 +943,11 @@ claim_connection (NMSettings *self,
 	g_signal_connect (connection, "notify::" NM_SETTINGS_CONNECTION_VISIBLE,
 	                  G_CALLBACK (connection_visibility_changed),
 	                  self);
+	if (!priv->startup_complete) {
+		g_signal_connect (connection, "notify::" NM_SETTINGS_CONNECTION_READY,
+		                  G_CALLBACK (connection_ready_changed),
+		                  self);
+	}
 
 	/* Export the connection over D-Bus */
 	g_warn_if_fail (nm_connection_get_path (NM_CONNECTION (connection)) == NULL);
@@ -1182,7 +1242,6 @@ nm_settings_add_connection_dbus (NMSettings *self,
 	 * or that the permissions is empty (ie, visible by everyone).
 	 */
 	if (!nm_auth_is_subject_in_acl (connection,
-	                                nm_session_monitor_get (),
 	                                subject,
 	                                &error_desc)) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
@@ -1610,7 +1669,7 @@ default_wired_clear_tag (NMSettings *self,
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (default_wired_connection_updated_by_user_cb), self);
 
 	if (add_to_no_auto_default)
-		nm_config_set_ethernet_no_auto_default (NM_SETTINGS_GET_PRIVATE (self)->config, device);
+		nm_config_set_no_auto_default_for_device (NM_SETTINGS_GET_PRIVATE (self)->config, device);
 }
 
 void
@@ -1779,6 +1838,16 @@ cp_get_connection_by_uuid (NMConnectionProvider *provider, const char *uuid)
 
 /***************************************************************/
 
+gboolean
+nm_settings_get_startup_complete (NMSettings *self)
+{
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+
+	return priv->startup_complete;
+}
+
+/***************************************************************/
+
 NMSettings *
 nm_settings_new (GError **error)
 {
@@ -1799,6 +1868,7 @@ nm_settings_new (GError **error)
 	}
 
 	load_connections (self);
+	check_startup_complete (self);
 
 	nm_dbus_manager_register_object (priv->dbus_mgr, NM_DBUS_PATH_SETTINGS, self);
 	return self;
@@ -1825,7 +1895,7 @@ nm_settings_init (NMSettings *self)
 	 * transient, and we don't want the agent manager to get destroyed and
 	 * recreated often.
 	 */
-	priv->agent_mgr = nm_agent_manager_get ();
+	priv->agent_mgr = g_object_ref (nm_agent_manager_get ());
 
 	g_signal_connect (priv->agent_mgr, "agent-registered", G_CALLBACK (secret_agent_registered), self);
 }
@@ -1898,6 +1968,9 @@ get_property (GObject *object, guint prop_id,
 		while (g_hash_table_iter_next (&citer, (gpointer) &path, NULL))
 			g_ptr_array_add (array, g_strdup (path));
 		g_value_take_boxed (value, array);
+		break;
+	case PROP_STARTUP_COMPLETE:
+		g_value_set_boolean (value, nm_settings_get_startup_complete (self));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);

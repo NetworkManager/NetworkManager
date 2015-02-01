@@ -74,12 +74,6 @@
 		g_clear_object (&c); \
 	}
 
-const char *_nm_setting_ip4_config_get_address_label      (NMSettingIP4Config *setting,
-                                                           guint32             i);
-gboolean    _nm_setting_ip4_config_add_address_with_label (NMSettingIP4Config *setting,
-                                                           NMIP4Address       *address,
-                                                           const char         *label);
-
 /* NM_SETTING_COMPARE_FLAG_INFERRABLE: check whether a device-generated
  * connection can be replaced by a already-defined connection. This flag only
  * takes into account properties marked with the %NM_SETTING_PARAM_INFERRABLE
@@ -119,6 +113,23 @@ GPtrArray *_nm_utils_copy_object_array (const GPtrArray *array);
 gboolean    _nm_utils_string_in_list   (const char *str,
                                         const char **valid_strings);
 
+char **     _nm_utils_strsplit_set (const char *str,
+                                    const char *delimiters,
+                                    int max_tokens);
+
+#define NM_UTILS_UUID_TYPE_LEGACY            0
+#define NM_UTILS_UUID_TYPE_VARIANT3          1
+
+char *nm_utils_uuid_generate_from_string (const char *s, gssize slen, int uuid_type, gpointer type_args);
+
 void _nm_dbus_errors_init (void);
+
+extern gboolean _nm_utils_is_manager_process;
+
+GByteArray *nm_utils_rsa_key_encrypt (const guint8 *data,
+                                      gsize len,
+                                      const char *in_password,
+                                      char **out_password,
+                                      GError **error);
 
 #endif

@@ -18,6 +18,8 @@
  * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <unistd.h>
@@ -108,8 +110,8 @@ test_wifi_open (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
-	NMSettingIP4Config *s_ip4;
-	NMSupplicantConfig *config;
+	NMSettingIPConfig *s_ip4;
+	gs_unref_object NMSupplicantConfig *config = NULL;
 	GHashTable *hash;
 	char *uuid;
 	gboolean success;
@@ -149,10 +151,10 @@ test_wifi_open (void)
 	g_bytes_unref (ssid);
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
 	        "wifi-open", "failed to verify connection: %s",
@@ -189,6 +191,7 @@ test_wifi_open (void)
 	validate_opt ("wifi-open", hash, "bssid", TYPE_KEYWORD, bssid_str, -1);
 	validate_opt ("wifi-open", hash, "key_mgmt", TYPE_KEYWORD, "NONE", -1);
 
+	g_hash_table_unref (hash);
 	g_object_unref (connection);
 }
 
@@ -203,8 +206,8 @@ test_wifi_wep_key (const char *detail,
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
-	NMSettingIP4Config *s_ip4;
-	NMSupplicantConfig *config;
+	NMSettingIPConfig *s_ip4;
+	gs_unref_object NMSupplicantConfig *config = NULL;
 	GHashTable *hash;
 	char *uuid;
 	gboolean success;
@@ -254,10 +257,10 @@ test_wifi_wep_key (const char *detail,
 	nm_setting_wireless_security_set_wep_key (s_wsec, 0, key_data);	
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
 	        detail, "failed to verify connection: %s",
@@ -303,6 +306,7 @@ test_wifi_wep_key (const char *detail,
 	validate_opt (detail, hash, "wep_tx_keyidx", TYPE_INT, GINT_TO_POINTER (0), -1);
 	validate_opt (detail, hash, "wep_key0", TYPE_BYTES, expected, expected_size);
 
+	g_hash_table_unref (hash);
 	g_object_unref (connection);
 }
 
@@ -340,8 +344,8 @@ test_wifi_wpa_psk (const char *detail,
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
-	NMSettingIP4Config *s_ip4;
-	NMSupplicantConfig *config;
+	NMSettingIPConfig *s_ip4;
+	gs_unref_object NMSupplicantConfig *config = NULL;
 	GHashTable *hash;
 	char *uuid;
 	gboolean success;
@@ -397,10 +401,10 @@ test_wifi_wpa_psk (const char *detail,
 	nm_setting_wireless_security_add_group (s_wsec, "ccmp");
 
 	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
 	        detail, "failed to verify connection: %s",
@@ -452,6 +456,7 @@ test_wifi_wpa_psk (const char *detail,
 	validate_opt (detail, hash, "group", TYPE_KEYWORD, "TKIP CCMP", -1);
 	validate_opt (detail, hash, "psk", key_type, expected, expected_size);
 
+	g_hash_table_unref (hash);
 	g_object_unref (connection);
 }
 

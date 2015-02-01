@@ -10,6 +10,7 @@ AM_CPPFLAGS= \
 	-I$(top_srcdir)/libnm \
 	-I$(top_builddir)/libnm \
 	-I$(srcdir)/newt \
+	-I$(top_srcdir)/clients/common \
 	$(GLIB_CFLAGS) \
 	$(NEWT_CFLAGS) \
 	$(GUDEV_CFLAGS) \
@@ -54,8 +55,14 @@ nmtui_SOURCES = \
 	nmt-device-entry.h \
 	nmt-edit-connection-list.c \
 	nmt-edit-connection-list.h \
+	nmt-editor-grid.c \
+	nmt-editor-grid.h \
 	nmt-editor-page.c \
 	nmt-editor-page.h \
+	nmt-editor-page-device.c \
+	nmt-editor-page-device.h \
+	nmt-editor-section.c \
+	nmt-editor-section.h \
 	nmt-editor.c \
 	nmt-editor.h \
 	nmt-ip-entry.c \
@@ -70,22 +77,16 @@ nmtui_SOURCES = \
 	nmt-page-bridge.h \
 	nmt-page-bridge-port.c \
 	nmt-page-bridge-port.h \
-	nmt-page-device.c \
-	nmt-page-device.h \
 	nmt-page-dsl.c \
 	nmt-page-dsl.h \
 	nmt-page-ethernet.c \
 	nmt-page-ethernet.h \
-	nmt-page-grid.c \
-	nmt-page-grid.h \
 	nmt-page-infiniband.c \
 	nmt-page-infiniband.h \
 	nmt-page-ip4.c \
 	nmt-page-ip4.h \
 	nmt-page-ip6.c \
 	nmt-page-ip6.h \
-	nmt-page-main.c \
-	nmt-page-main.h \
 	nmt-page-ppp.c \
 	nmt-page-ppp.h \
 	nmt-page-team.c \
@@ -106,14 +107,14 @@ nmtui_SOURCES = \
 	nmt-route-entry.h \
 	nmt-route-table.c \
 	nmt-route-table.h \
-	nmt-secret-agent.c \
-	nmt-secret-agent.h \
 	nmt-slave-list.c \
 	nmt-slave-list.h \
 	nmt-utils.c \
 	nmt-utils.h \
 	nmt-widget-list.c \
 	nmt-widget-list.h \
+	$(srcdir)/../common/nm-secret-agent-simple.c \
+	$(srcdir)/../common/nm-secret-agent-simple.h \
 	$(NULL)
 
 nmtui_LDADD = \

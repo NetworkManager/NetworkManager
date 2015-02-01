@@ -19,10 +19,13 @@
  *
  */
 
+#include "config.h"
+
 #include <glib.h>
 #include <string.h>
 
 #include <nm-utils.h>
+#include "gsystem-local-alloc.h"
 
 #include "nm-setting-private.h"
 #include "nm-utils.h"
@@ -323,159 +326,330 @@ test_setting_vpn_modify_during_foreach (void)
 static void
 test_setting_ip4_config_labels (void)
 {
-	NMSettingIP4Config *s_ip4;
-	NMIP4Address *addr;
-	const char *label;
+	NMSettingIPConfig *s_ip4;
+	NMIPAddress *addr;
+	GVariant *label;
 	GPtrArray *addrs;
 	char **labels;
+	NMConnection *conn;
+	GVariant *dict, *dict2, *setting_dict, *value;
 	GError *error = NULL;
 
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	g_object_set (G_OBJECT (s_ip4),
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
 	              NULL);
 
 	/* addr 1 */
-	addr = nm_ip4_address_new ();
-	nm_ip4_address_set_address (addr, 0x01010101);
-	nm_ip4_address_set_prefix (addr, 24);
-
-	nm_setting_ip4_config_add_address (s_ip4, addr);
-	nm_ip4_address_unref (addr);
-	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
+	addr = nm_ip_address_new (AF_INET, "1.2.3.4", 24, &error);
 	g_assert_no_error (error);
 
-	label = _nm_setting_ip4_config_get_address_label (s_ip4, 0);
-	g_assert_cmpstr (label, ==, "");
+	nm_setting_ip_config_add_address (s_ip4, addr);
+	nm_ip_address_unref (addr);
+	nmtst_assert_setting_verifies (NM_SETTING (s_ip4));
+
+	addr = nm_setting_ip_config_get_address (s_ip4, 0);
+	label = nm_ip_address_get_attribute (addr, "label");
+	g_assert (label == NULL);
+
+	/* The 'address-labels' property should be omitted from the serialization if
+	 * there are no non-NULL labels.
+	 */
+	conn = nmtst_create_minimal_connection ("label test", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+	nm_connection_add_setting (conn, nm_setting_duplicate (NM_SETTING (s_ip4)));
+	dict = nm_connection_to_dbus (conn, NM_CONNECTION_SERIALIZE_ALL);
+	g_object_unref (conn);
+
+	setting_dict = g_variant_lookup_value (dict, NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
+	g_assert (setting_dict != NULL);
+
+	value = g_variant_lookup_value (setting_dict, "address-labels", NULL);
+	g_assert (value == NULL);
+
+	g_variant_unref (setting_dict);
+	g_variant_unref (dict);
+
+	/* Now back to constructing the original s_ip4... */
 
 	/* addr 2 */
-	addr = nm_ip4_address_new ();
-	nm_ip4_address_set_address (addr, 0x02020202);
-	nm_ip4_address_set_prefix (addr, 24);
-
-	_nm_setting_ip4_config_add_address_with_label (s_ip4, addr, "eth0:1");
-	nm_ip4_address_unref (addr);
-	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
+	addr = nm_ip_address_new (AF_INET, "2.3.4.5", 24, &error);
 	g_assert_no_error (error);
+	nm_ip_address_set_attribute (addr, "label", g_variant_new_string ("eth0:1"));
 
-	label = _nm_setting_ip4_config_get_address_label (s_ip4, 1);
-	g_assert_cmpstr (label, ==, "eth0:1");
+	nm_setting_ip_config_add_address (s_ip4, addr);
+	nm_ip_address_unref (addr);
+	nmtst_assert_setting_verifies (NM_SETTING (s_ip4));
+
+	addr = nm_setting_ip_config_get_address (s_ip4, 1);
+	label = nm_ip_address_get_attribute (addr, "label");
+	g_assert (label != NULL);
+	g_assert_cmpstr (g_variant_get_string (label, NULL), ==, "eth0:1");
 
 	/* addr 3 */
-	addr = nm_ip4_address_new ();
-	nm_ip4_address_set_address (addr, 0x03030303);
-	nm_ip4_address_set_prefix (addr, 24);
-
-	_nm_setting_ip4_config_add_address_with_label (s_ip4, addr, "");
-	nm_ip4_address_unref (addr);
-	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
+	addr = nm_ip_address_new (AF_INET, "3.4.5.6", 24, &error);
 	g_assert_no_error (error);
+	nm_ip_address_set_attribute (addr, "label", NULL);
 
-	label = _nm_setting_ip4_config_get_address_label (s_ip4, 2);
-	g_assert_cmpstr (label, ==, "");
+	nm_setting_ip_config_add_address (s_ip4, addr);
+	nm_ip_address_unref (addr);
+	nmtst_assert_setting_verifies (NM_SETTING (s_ip4));
+
+	addr = nm_setting_ip_config_get_address (s_ip4, 2);
+	label = nm_ip_address_get_attribute (addr, "label");
+	g_assert (label == NULL);
 
 	/* Remove addr 1 and re-verify remaining addresses */
-	nm_setting_ip4_config_remove_address (s_ip4, 0);
-	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
+	nm_setting_ip_config_remove_address (s_ip4, 0);
+	nmtst_assert_setting_verifies (NM_SETTING (s_ip4));
+
+	addr = nm_setting_ip_config_get_address (s_ip4, 0);
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "2.3.4.5");
+	label = nm_ip_address_get_attribute (addr, "label");
+	g_assert (label != NULL);
+	g_assert_cmpstr (g_variant_get_string (label, NULL), ==, "eth0:1");
+
+	addr = nm_setting_ip_config_get_address (s_ip4, 1);
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "3.4.5.6");
+	label = nm_ip_address_get_attribute (addr, "label");
+	g_assert (label == NULL);
+
+	/* If we serialize as the daemon, the labels should appear in the D-Bus
+	 * serialization under both 'address-labels' and 'address-data'.
+	 */
+	conn = nmtst_create_minimal_connection ("label test", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+	nm_connection_add_setting (conn, NM_SETTING (s_ip4));
+	_nm_utils_is_manager_process = TRUE;
+	dict = nm_connection_to_dbus (conn, NM_CONNECTION_SERIALIZE_ALL);
+	_nm_utils_is_manager_process = FALSE;
+	g_object_unref (conn);
+
+	setting_dict = g_variant_lookup_value (dict, NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
+	g_assert (setting_dict != NULL);
+
+	value = g_variant_lookup_value (setting_dict, "address-labels", G_VARIANT_TYPE_STRING_ARRAY);
+	g_assert (value != NULL);
+	g_variant_get (value, "^as", &labels);
+	g_assert_cmpint (g_strv_length (labels), ==, 2);
+	g_assert_cmpstr (labels[0], ==, "eth0:1");
+	g_assert_cmpstr (labels[1], ==, "");
+	g_variant_unref (value);
+	g_strfreev (labels);
+
+	value = g_variant_lookup_value (setting_dict, "address-data", G_VARIANT_TYPE ("aa{sv}"));
+	addrs = nm_utils_ip_addresses_from_variant (value, AF_INET);
+	g_variant_unref (value);
+	g_assert (addrs != NULL);
+	g_assert_cmpint (addrs->len, ==, 2);
+	addr = addrs->pdata[0];
+	label = nm_ip_address_get_attribute (addr, "label");
+	g_assert (label != NULL);
+	g_assert_cmpstr (g_variant_get_string (label, NULL), ==, "eth0:1");
+	addr = addrs->pdata[1];
+	label = nm_ip_address_get_attribute (addr, "label");
+	g_assert (label == NULL);
+	g_ptr_array_unref (addrs);
+
+	g_variant_unref (setting_dict);
+
+	/* We should be able to deserialize the labels from either 'address-labels'
+	 * or 'address-data'.
+	 */
+	dict2 = g_variant_ref (dict);
+
+	NMTST_VARIANT_EDITOR (dict,
+	                      NMTST_VARIANT_DROP_PROPERTY (NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	                                                   "address-data");
+	                      );
+	conn = nm_simple_connection_new_from_dbus (dict, &error);
 	g_assert_no_error (error);
+	g_variant_unref (dict);
 
-	addr = nm_setting_ip4_config_get_address (s_ip4, 0);
-	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x02020202);
-	label = _nm_setting_ip4_config_get_address_label (s_ip4, 0);
-	g_assert_cmpstr (label, ==, "eth0:1");
+	s_ip4 = nm_connection_get_setting_ip4_config (conn);
 
-	addr = nm_setting_ip4_config_get_address (s_ip4, 1);
-	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x03030303);
-	label = _nm_setting_ip4_config_get_address_label (s_ip4, 1);
-	g_assert_cmpstr (label, ==, "");
+	addr = nm_setting_ip_config_get_address (s_ip4, 0);
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "2.3.4.5");
+	label = nm_ip_address_get_attribute (addr, "label");
+	g_assert (label != NULL);
+	g_assert_cmpstr (g_variant_get_string (label, NULL), ==, "eth0:1");
 
+	addr = nm_setting_ip_config_get_address (s_ip4, 1);
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "3.4.5.6");
+	label = nm_ip_address_get_attribute (addr, "label");
+	g_assert (label == NULL);
+
+	g_object_unref (conn);
+
+	NMTST_VARIANT_EDITOR (dict2,
+	                      NMTST_VARIANT_DROP_PROPERTY (NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	                                                   "address-labels");
+	                      );
+	conn = nm_simple_connection_new_from_dbus (dict2, &error);
+	g_assert_no_error (error);
+	g_variant_unref (dict2);
+
+	s_ip4 = nm_connection_get_setting_ip4_config (conn);
+
+	addr = nm_setting_ip_config_get_address (s_ip4, 0);
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "2.3.4.5");
+	label = nm_ip_address_get_attribute (addr, "label");
+	g_assert_cmpstr (g_variant_get_string (label, NULL), ==, "eth0:1");
+
+	addr = nm_setting_ip_config_get_address (s_ip4, 1);
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "3.4.5.6");
+	label = nm_ip_address_get_attribute (addr, "label");
+	g_assert (label == NULL);
 
 	/* Test explicit property assignment */
 	g_object_get (G_OBJECT (s_ip4),
-	              NM_SETTING_IP4_CONFIG_ADDRESSES, &addrs,
-	              "address-labels", &labels,
+	              NM_SETTING_IP_CONFIG_ADDRESSES, &addrs,
 	              NULL);
 
-	nm_setting_ip4_config_clear_addresses (s_ip4);
-	g_assert_cmpint (nm_setting_ip4_config_get_num_addresses (s_ip4), ==, 0);
+	nm_setting_ip_config_clear_addresses (s_ip4);
+	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip4), ==, 0);
 
-	/* Setting addrs but not labels will result in empty labels */
 	g_object_set (G_OBJECT (s_ip4),
-	              NM_SETTING_IP4_CONFIG_ADDRESSES, addrs,
+	              NM_SETTING_IP_CONFIG_ADDRESSES, addrs,
 	              NULL);
 	g_ptr_array_unref (addrs);
-	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
-	g_assert_no_error (error);
-	g_assert_cmpint (nm_setting_ip4_config_get_num_addresses (s_ip4), ==, 2);
+	nmtst_assert_setting_verifies (NM_SETTING (s_ip4));
+	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip4), ==, 2);
 
-	addr = nm_setting_ip4_config_get_address (s_ip4, 0);
-	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x02020202);
-	label = _nm_setting_ip4_config_get_address_label (s_ip4, 0);
-	g_assert_cmpstr (label, ==, "");
+	addr = nm_setting_ip_config_get_address (s_ip4, 0);
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "2.3.4.5");
+	label = nm_ip_address_get_attribute (addr, "label");
+	g_assert (label != NULL);
+	g_assert_cmpstr (g_variant_get_string (label, NULL), ==, "eth0:1");
 
-	addr = nm_setting_ip4_config_get_address (s_ip4, 1);
-	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x03030303);
-	label = _nm_setting_ip4_config_get_address_label (s_ip4, 1);
-	g_assert_cmpstr (label, ==, "");
+	addr = nm_setting_ip_config_get_address (s_ip4, 1);
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "3.4.5.6");
+	label = nm_ip_address_get_attribute (addr, "label");
+	g_assert (label == NULL);
 
-	/* Setting labels now will leave addresses untouched */
+	g_object_unref (conn);
+}
+
+static void
+test_setting_ip4_config_address_data (void)
+{
+	NMSettingIPConfig *s_ip4;
+	NMIPAddress *addr;
+	GPtrArray *addrs;
+	NMConnection *conn;
+	GVariant *dict, *setting_dict, *value;
+	GError *error = NULL;
+
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	g_object_set (G_OBJECT (s_ip4),
-	              "address-labels", labels,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
 	              NULL);
-	g_strfreev (labels);
-	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
+
+	/* addr 1 */
+	addr = nm_ip_address_new (AF_INET, "1.2.3.4", 24, &error);
 	g_assert_no_error (error);
-	g_assert_cmpint (nm_setting_ip4_config_get_num_addresses (s_ip4), ==, 2);
+	nm_ip_address_set_attribute (addr, "one", g_variant_new_string ("foo"));
+	nm_ip_address_set_attribute (addr, "two", g_variant_new_int32 (42));
 
-	addr = nm_setting_ip4_config_get_address (s_ip4, 0);
-	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x02020202);
-	label = _nm_setting_ip4_config_get_address_label (s_ip4, 0);
-	g_assert_cmpstr (label, ==, "eth0:1");
+	nm_setting_ip_config_add_address (s_ip4, addr);
+	nm_ip_address_unref (addr);
+	nmtst_assert_setting_verifies (NM_SETTING (s_ip4));
 
-	addr = nm_setting_ip4_config_get_address (s_ip4, 1);
-	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x03030303);
-	label = _nm_setting_ip4_config_get_address_label (s_ip4, 1);
-	g_assert_cmpstr (label, ==, "");
+	/* addr 2 */
+	addr = nm_ip_address_new (AF_INET, "2.3.4.5", 24, &error);
+	g_assert_no_error (error);
 
-	/* Setting labels to a value that's too short or too long will result in
-	 * the setting not verifying.
+	nm_setting_ip_config_add_address (s_ip4, addr);
+	nm_ip_address_unref (addr);
+	nmtst_assert_setting_verifies (NM_SETTING (s_ip4));
+
+	/* The client-side D-Bus serialization should include the attributes in
+	 * "address-data", and should not have an "addresses" property.
 	 */
-	labels = g_strsplit ("eth0:2", ",", -1);
-	g_object_set (G_OBJECT (s_ip4),
-	              "address-labels", labels,
-	              NULL);
-	g_strfreev (labels);
+	conn = nmtst_create_minimal_connection ("address-data test", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+	nm_connection_add_setting (conn, NM_SETTING (s_ip4));
+	dict = nm_connection_to_dbus (conn, NM_CONNECTION_SERIALIZE_ALL);
 
-	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
-	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
-	g_assert (g_str_has_prefix (error->message, "ipv4.address-labels:"));
-	g_clear_error (&error);
+	setting_dict = g_variant_lookup_value (dict, NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
+	g_assert (setting_dict != NULL);
 
-	labels = g_strsplit ("eth0:2,eth0:3", ",", -1);
-	g_object_set (G_OBJECT (s_ip4),
-	              "address-labels", labels,
-	              NULL);
-	g_strfreev (labels);
-	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
+	value = g_variant_lookup_value (setting_dict, "addresses", NULL);
+	g_assert (value == NULL);
+
+	value = g_variant_lookup_value (setting_dict, "address-data", G_VARIANT_TYPE ("aa{sv}"));
+	addrs = nm_utils_ip_addresses_from_variant (value, AF_INET);
+	g_variant_unref (value);
+	g_assert (addrs != NULL);
+	g_assert_cmpint (addrs->len, ==, 2);
+
+	addr = addrs->pdata[0];
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "1.2.3.4");
+	value = nm_ip_address_get_attribute (addr, "one");
+	g_assert (value != NULL);
+	g_assert_cmpstr (g_variant_get_string (value, NULL), ==, "foo");
+	value = nm_ip_address_get_attribute (addr, "two");
+	g_assert (value != NULL);
+	g_assert_cmpint (g_variant_get_int32 (value), ==, 42);
+
+	g_ptr_array_unref (addrs);
+	g_variant_unref (setting_dict);
+	g_variant_unref (dict);
+
+	/* The daemon-side serialization should include both 'addresses' and 'address-data' */
+	_nm_utils_is_manager_process = TRUE;
+	dict = nm_connection_to_dbus (conn, NM_CONNECTION_SERIALIZE_ALL);
+	_nm_utils_is_manager_process = FALSE;
+
+	setting_dict = g_variant_lookup_value (dict, NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
+	g_assert (setting_dict != NULL);
+
+	value = g_variant_lookup_value (setting_dict, "addresses", G_VARIANT_TYPE ("aau"));
+	g_assert (value != NULL);
+	g_variant_unref (value);
+
+	value = g_variant_lookup_value (setting_dict, "address-data", G_VARIANT_TYPE ("aa{sv}"));
+	g_assert (value != NULL);
+	g_variant_unref (value);
+
+	g_variant_unref (setting_dict);
+	g_object_unref (conn);
+
+	/* When we reserialize that dictionary as a client, 'address-data' will be preferred. */
+	conn = nm_simple_connection_new_from_dbus (dict, &error);
 	g_assert_no_error (error);
 
-	labels = g_strsplit ("eth0:2,eth0:3,eth0:4", ",", -1);
-	g_object_set (G_OBJECT (s_ip4),
-	              "address-labels", labels,
-	              NULL);
-	g_strfreev (labels);
-	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
-	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
-	g_assert (g_str_has_prefix (error->message, "ipv4.address-labels:"));
-	g_clear_error (&error);
+	s_ip4 = nm_connection_get_setting_ip4_config (conn);
 
-	g_object_unref (s_ip4);
+	addr = nm_setting_ip_config_get_address (s_ip4, 0);
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "1.2.3.4");
+	value = nm_ip_address_get_attribute (addr, "one");
+	g_assert (value != NULL);
+	g_assert_cmpstr (g_variant_get_string (value, NULL), ==, "foo");
+	value = nm_ip_address_get_attribute (addr, "two");
+	g_assert (value != NULL);
+	g_assert_cmpint (g_variant_get_int32 (value), ==, 42);
+
+	/* But on the server side, 'addresses' will have precedence. */
+	_nm_utils_is_manager_process = TRUE;
+	conn = nm_simple_connection_new_from_dbus (dict, &error);
+	_nm_utils_is_manager_process = FALSE;
+	g_assert_no_error (error);
+	g_variant_unref (dict);
+
+	s_ip4 = nm_connection_get_setting_ip4_config (conn);
+
+	addr = nm_setting_ip_config_get_address (s_ip4, 0);
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "1.2.3.4");
+	value = nm_ip_address_get_attribute (addr, "one");
+	g_assert (value == NULL);
+	value = nm_ip_address_get_attribute (addr, "two");
+	g_assert (value == NULL);
+
+	g_object_unref (conn);
 }
 
 static void
 test_setting_gsm_apn_spaces (void)
 {
-	NMSettingGsm *s_gsm;
+	gs_unref_object NMSettingGsm *s_gsm = NULL;
 	const char *tmp;
 
 	s_gsm = (NMSettingGsm *) nm_setting_gsm_new ();
@@ -503,7 +677,7 @@ test_setting_gsm_apn_spaces (void)
 static void
 test_setting_gsm_apn_bad_chars (void)
 {
-	NMSettingGsm *s_gsm;
+	gs_unref_object NMSettingGsm *s_gsm = NULL;
 
 	s_gsm = (NMSettingGsm *) nm_setting_gsm_new ();
 	ASSERT (s_gsm != NULL,
@@ -541,9 +715,7 @@ test_setting_gsm_apn_bad_chars (void)
 static void
 test_setting_gsm_apn_underscore (void)
 {
-	NMSettingGsm *s_gsm;
-	GError *error = NULL;
-	gboolean success;
+	gs_unref_object NMSettingGsm *s_gsm = NULL;
 
 	s_gsm = (NMSettingGsm *) nm_setting_gsm_new ();
 	g_assert (s_gsm);
@@ -552,30 +724,23 @@ test_setting_gsm_apn_underscore (void)
 
 	/* 65-character long */
 	g_object_set (s_gsm, NM_SETTING_GSM_APN, "foobar_baz", NULL);
-	success = nm_setting_verify (NM_SETTING (s_gsm), NULL, &error);
-	g_assert_no_error (error);
-	g_assert (success == TRUE);
+	nmtst_assert_setting_verifies (NM_SETTING (s_gsm));
 }
 
 static void
 test_setting_gsm_without_number (void)
 {
-	NMSettingGsm *s_gsm;
-	GError *error = NULL;
-	gboolean success;
+	gs_unref_object NMSettingGsm *s_gsm = NULL;
 
 	s_gsm = (NMSettingGsm *) nm_setting_gsm_new ();
 	g_assert (s_gsm);
 
 	g_object_set (s_gsm, NM_SETTING_GSM_NUMBER, NULL, NULL);
-	success = nm_setting_verify (NM_SETTING (s_gsm), NULL, &error);
-	g_assert_no_error (error);
-	g_assert (success == TRUE);
+	nmtst_assert_setting_verifies (NM_SETTING (s_gsm));
 
 	g_object_set (s_gsm, NM_SETTING_GSM_NUMBER, "", NULL);
-	success = nm_setting_verify (NM_SETTING (s_gsm), NULL, &error);
-	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
-	g_error_free (error);
+	nmtst_assert_setting_verify_fails (NM_SETTING (s_gsm), NM_CONNECTION_ERROR,
+	                                   NM_CONNECTION_ERROR_INVALID_PROPERTY);
 }
 
 static NMSettingWirelessSecurity *
@@ -976,6 +1141,183 @@ test_setting_new_from_dbus_enum (void)
 	g_object_unref (s_serial);
 }
 
+static void
+test_setting_new_from_dbus_bad (void)
+{
+	NMSetting *setting;
+	NMConnection *conn;
+	GBytes *ssid;
+	GPtrArray *addrs;
+	GVariant *orig_dict, *dict;
+	GError *error = NULL;
+
+	/* We want to test:
+	 * - ordinary scalar properties
+	 * - string properties
+	 * - GBytes-valued properties (which are handled specially by set_property_from_dbus())
+	 * - enum/flags-valued properties
+	 * - overridden properties
+	 * - transformed properties
+	 *
+	 * No single setting class has examples of all of these, so we need two settings.
+	 */
+
+	conn = nm_simple_connection_new ();
+
+	setting = nm_setting_connection_new ();
+	g_object_set (setting,
+	              NM_SETTING_CONNECTION_ID, "test",
+	              NM_SETTING_CONNECTION_UUID, "83c5a841-1759-4cdb-bfce-8d4087956497",
+	              NULL);
+	nm_connection_add_setting (conn, setting);
+
+	setting = nm_setting_wireless_new ();
+	ssid = g_bytes_new ("my-ssid", 7);
+	g_object_set (setting,
+	              /* scalar */
+	              NM_SETTING_WIRELESS_RATE, 100,
+	              /* string */
+	              NM_SETTING_WIRELESS_MODE, NM_SETTING_WIRELESS_MODE_INFRA,
+	              /* GBytes */
+	              NM_SETTING_WIRELESS_SSID, ssid,
+	              /* transformed */
+	              NM_SETTING_WIRELESS_BSSID, "00:11:22:33:44:55",
+	              NULL);
+	g_bytes_unref (ssid);
+	nm_connection_add_setting (conn, setting);
+
+	setting = nm_setting_ip6_config_new ();
+	addrs = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_address_unref);
+	g_ptr_array_add (addrs, nm_ip_address_new (AF_INET6, "1234::5678", 64, NULL));
+	g_object_set (setting,
+	              /* enum */
+	              NM_SETTING_IP6_CONFIG_IP6_PRIVACY, NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR,
+	              /* overridden */
+	              NM_SETTING_IP_CONFIG_ADDRESSES, addrs,
+	              /* (needed in order to verify()) */
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+	              NULL);
+	g_ptr_array_unref (addrs);
+	nm_connection_add_setting (conn, setting);
+
+	orig_dict = nm_connection_to_dbus (conn, NM_CONNECTION_SERIALIZE_ALL);
+	g_object_unref (conn);
+
+	/* sanity-check */
+	conn = nm_simple_connection_new_from_dbus (orig_dict, &error);
+	g_assert_no_error (error);
+	g_assert (conn);
+	g_object_unref (conn);
+
+	/* Compatible mismatches */
+
+	dict = g_variant_ref (orig_dict);
+	NMTST_VARIANT_EDITOR (dict,
+	                      NMTST_VARIANT_CHANGE_PROPERTY (NM_SETTING_WIRELESS_SETTING_NAME,
+	                                                     NM_SETTING_WIRELESS_RATE,
+	                                                     "i", 10);
+	                      );
+	conn = nm_simple_connection_new_from_dbus (dict, &error);
+	g_assert (conn);
+	g_assert_no_error (error);
+	setting = nm_connection_get_setting (conn, NM_TYPE_SETTING_WIRELESS);
+	g_assert (setting);
+	g_assert_cmpint (nm_setting_wireless_get_rate (NM_SETTING_WIRELESS (setting)), ==, 10);
+	g_object_unref (conn);
+	g_variant_unref (dict);
+
+	dict = g_variant_ref (orig_dict);
+	NMTST_VARIANT_EDITOR (dict,
+	                      NMTST_VARIANT_CHANGE_PROPERTY (NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	                                                     NM_SETTING_IP6_CONFIG_IP6_PRIVACY,
+	                                                     "i", NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR);
+	                      );
+	conn = nm_simple_connection_new_from_dbus (dict, &error);
+	g_assert (conn);
+	g_assert_no_error (error);
+	setting = nm_connection_get_setting (conn, NM_TYPE_SETTING_IP6_CONFIG);
+	g_assert (setting);
+	g_assert_cmpint (nm_setting_ip6_config_get_ip6_privacy (NM_SETTING_IP6_CONFIG (setting)), ==, NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR);
+	g_object_unref (conn);
+	g_variant_unref (dict);
+
+	/* Incompatible mismatches */
+
+	dict = g_variant_ref (orig_dict);
+	NMTST_VARIANT_EDITOR (dict,
+	                      NMTST_VARIANT_CHANGE_PROPERTY (NM_SETTING_WIRELESS_SETTING_NAME,
+	                                                     NM_SETTING_WIRELESS_RATE,
+	                                                     "s", "ten");
+	                      );
+	conn = nm_simple_connection_new_from_dbus (dict, &error);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
+	g_assert (g_str_has_prefix (error->message, "802-11-wireless.rate:"));
+	g_clear_error (&error);
+	g_variant_unref (dict);
+
+	dict = g_variant_ref (orig_dict);
+	NMTST_VARIANT_EDITOR (dict,
+	                      NMTST_VARIANT_CHANGE_PROPERTY (NM_SETTING_WIRELESS_SETTING_NAME,
+	                                                     NM_SETTING_WIRELESS_MODE,
+	                                                     "b", FALSE);
+	                      );
+	conn = nm_simple_connection_new_from_dbus (dict, &error);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
+	g_assert (g_str_has_prefix (error->message, "802-11-wireless.mode:"));
+	g_clear_error (&error);
+	g_variant_unref (dict);
+
+	dict = g_variant_ref (orig_dict);
+	NMTST_VARIANT_EDITOR (dict,
+	                      NMTST_VARIANT_CHANGE_PROPERTY (NM_SETTING_WIRELESS_SETTING_NAME,
+	                                                     NM_SETTING_WIRELESS_SSID,
+	                                                     "s", "fred");
+	                      );
+	conn = nm_simple_connection_new_from_dbus (dict, &error);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
+	g_assert (g_str_has_prefix (error->message, "802-11-wireless.ssid:"));
+	g_clear_error (&error);
+	g_variant_unref (dict);
+
+	dict = g_variant_ref (orig_dict);
+	NMTST_VARIANT_EDITOR (dict,
+	                      NMTST_VARIANT_CHANGE_PROPERTY (NM_SETTING_WIRELESS_SETTING_NAME,
+	                                                     NM_SETTING_WIRELESS_BSSID,
+	                                                     "i", 42);
+	                      );
+	conn = nm_simple_connection_new_from_dbus (dict, &error);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
+	g_assert (g_str_has_prefix (error->message, "802-11-wireless.bssid:"));
+	g_clear_error (&error);
+	g_variant_unref (dict);
+
+	dict = g_variant_ref (orig_dict);
+	NMTST_VARIANT_EDITOR (dict,
+	                      NMTST_VARIANT_CHANGE_PROPERTY (NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	                                                     NM_SETTING_IP6_CONFIG_IP6_PRIVACY,
+	                                                     "s", "private");
+	                      );
+	conn = nm_simple_connection_new_from_dbus (dict, &error);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
+	g_assert (g_str_has_prefix (error->message, "ipv6.ip6-privacy:"));
+	g_clear_error (&error);
+	g_variant_unref (dict);
+
+	dict = g_variant_ref (orig_dict);
+	NMTST_VARIANT_EDITOR (dict,
+	                      NMTST_VARIANT_CHANGE_PROPERTY (NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	                                                     NM_SETTING_IP_CONFIG_ADDRESSES,
+	                                                     "s", "1234::5678");
+	                      );
+	conn = nm_simple_connection_new_from_dbus (dict, &error);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
+	g_assert (g_str_has_prefix (error->message, "ipv6.addresses:"));
+	g_clear_error (&error);
+	g_variant_unref (dict);
+
+	g_variant_unref (orig_dict);
+}
+
 static NMConnection *
 new_test_connection (void)
 {
@@ -1005,8 +1347,8 @@ new_test_connection (void)
 
 	setting = nm_setting_ip4_config_new ();
 	g_object_set (G_OBJECT (setting),
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
-	              NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME, "eyeofthetiger",
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, "eyeofthetiger",
 	              NULL);
 	nm_connection_add_setting (connection, setting);
 
@@ -1054,7 +1396,7 @@ new_connection_dict (char **out_uuid,
 	/* IP6 */
 	g_variant_builder_init (&setting_builder, NM_VARIANT_TYPE_SETTING);
 	g_variant_builder_add (&setting_builder, "{sv}",
-	                       NM_SETTING_IP6_CONFIG_METHOD,
+	                       NM_SETTING_IP_CONFIG_METHOD,
 	                       g_variant_new_string (*out_expected_ip6_method));
 	g_variant_builder_add (&conn_builder, "{sa{sv}}",
 	                       NM_SETTING_IP6_CONFIG_SETTING_NAME,
@@ -1071,7 +1413,7 @@ test_connection_replace_settings (void)
 	GError *error = NULL;
 	gboolean success;
 	NMSettingConnection *s_con;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip6;
 	char *uuid = NULL;
 	const char *expected_id = NULL, *expected_method = NULL;
 
@@ -1095,7 +1437,7 @@ test_connection_replace_settings (void)
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);
-	g_assert_cmpstr (nm_setting_ip6_config_get_method (s_ip6), ==, expected_method);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, expected_method);
 
 	g_free (uuid);
 	g_variant_unref (new_settings);
@@ -1210,6 +1552,7 @@ test_connection_replace_settings_bad (void)
 	connection = new_test_connection ();
 	success = nm_connection_replace_settings (connection, new_settings, &error);
 	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_SETTING);
+	g_clear_error (&error);
 	g_assert (!success);
 
 	g_assert (nm_connection_verify (connection, NULL));
@@ -1226,7 +1569,7 @@ test_connection_new_from_dbus (void)
 	GVariant *new_settings;
 	GError *error = NULL;
 	NMSettingConnection *s_con;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip6;
 	char *uuid = NULL;
 	const char *expected_id = NULL, *expected_method = NULL;
 
@@ -1244,11 +1587,11 @@ test_connection_new_from_dbus (void)
 	g_assert_cmpstr (nm_setting_connection_get_uuid (s_con), ==, uuid);
 
 	g_assert (nm_connection_get_setting_wired (connection));
-	g_assert (!nm_connection_get_setting_ip4_config (connection));
+	g_assert (nm_connection_get_setting_ip4_config (connection));
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);
-	g_assert_cmpstr (nm_setting_ip6_config_get_method (s_ip6), ==, expected_method);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, expected_method);
 
 	g_free (uuid);
 	g_variant_unref (new_settings);
@@ -1639,19 +1982,20 @@ test_connection_diff_a_only (void)
 			{ NULL, NM_SETTING_DIFF_RESULT_UNKNOWN },
 		} },
 		{ NM_SETTING_IP4_CONFIG_SETTING_NAME, {
-			{ NM_SETTING_IP4_CONFIG_METHOD,             NM_SETTING_DIFF_RESULT_IN_A },
-			{ NM_SETTING_IP4_CONFIG_DNS,                NM_SETTING_DIFF_RESULT_IN_A },
-			{ NM_SETTING_IP4_CONFIG_DNS_SEARCH,         NM_SETTING_DIFF_RESULT_IN_A },
-			{ NM_SETTING_IP4_CONFIG_ADDRESSES,          NM_SETTING_DIFF_RESULT_IN_A },
-			{ "address-labels",                         NM_SETTING_DIFF_RESULT_IN_A },
-			{ NM_SETTING_IP4_CONFIG_ROUTES,             NM_SETTING_DIFF_RESULT_IN_A },
-			{ NM_SETTING_IP4_CONFIG_IGNORE_AUTO_ROUTES, NM_SETTING_DIFF_RESULT_IN_A },
-			{ NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS,    NM_SETTING_DIFF_RESULT_IN_A },
-			{ NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID,     NM_SETTING_DIFF_RESULT_IN_A },
-			{ NM_SETTING_IP4_CONFIG_DHCP_SEND_HOSTNAME, NM_SETTING_DIFF_RESULT_IN_A },
-			{ NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME,      NM_SETTING_DIFF_RESULT_IN_A },
-			{ NM_SETTING_IP4_CONFIG_NEVER_DEFAULT,      NM_SETTING_DIFF_RESULT_IN_A },
-			{ NM_SETTING_IP4_CONFIG_MAY_FAIL,           NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP_CONFIG_METHOD,             NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP_CONFIG_DNS,                NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP_CONFIG_DNS_SEARCH,         NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP_CONFIG_ADDRESSES,          NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP_CONFIG_GATEWAY,            NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP_CONFIG_ROUTES,             NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP_CONFIG_ROUTE_METRIC,       NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES, NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS,    NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID,    NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME, NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP_CONFIG_DHCP_HOSTNAME,      NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP_CONFIG_NEVER_DEFAULT,      NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP_CONFIG_MAY_FAIL,           NM_SETTING_DIFF_RESULT_IN_A },
 			{ NULL, NM_SETTING_DIFF_RESULT_UNKNOWN },
 		} },
 	};
@@ -1691,11 +2035,11 @@ test_connection_diff_different (void)
 {
 	NMConnection *a, *b;
 	GHashTable *out_diffs = NULL;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	gboolean same;
 	const DiffSetting settings[] = {
 		{ NM_SETTING_IP4_CONFIG_SETTING_NAME, {
-			{ NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_DIFF_RESULT_IN_A | NM_SETTING_DIFF_RESULT_IN_B },
+			{ NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_DIFF_RESULT_IN_A | NM_SETTING_DIFF_RESULT_IN_B },
 			{ NULL, NM_SETTING_DIFF_RESULT_UNKNOWN },
 		} },
 	};
@@ -1705,7 +2049,7 @@ test_connection_diff_different (void)
 	s_ip4 = nm_connection_get_setting_ip4_config (a);
 	g_assert (s_ip4);
 	g_object_set (G_OBJECT (s_ip4),
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
 	              NULL);
 
 	same = nm_connection_diff (a, b, NM_SETTING_COMPARE_FLAG_EXACT, &out_diffs);
@@ -1776,7 +2120,7 @@ test_connection_diff_inferrable (void)
 	gboolean same;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	char *uuid;
 	const DiffSetting settings[] = {
 		{ NM_SETTING_CONNECTION_SETTING_NAME, {
@@ -1804,7 +2148,7 @@ test_connection_diff_inferrable (void)
 
 	s_ip4 = nm_connection_get_setting_ip4_config (a);
 	g_assert (s_ip4);
-	g_object_set (G_OBJECT (s_ip4), NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS, TRUE, NULL);
+	g_object_set (G_OBJECT (s_ip4), NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, TRUE, NULL);
 
 	/* Make sure the diff returns no results as secrets are ignored */
 	same = nm_connection_diff (a, b, NM_SETTING_COMPARE_FLAG_INFERRABLE, &out_diffs);
@@ -1846,11 +2190,11 @@ add_generic_settings (NMConnection *connection, const char *ctype)
 	g_free (uuid);
 
 	setting = nm_setting_ip4_config_new ();
-	g_object_set (setting, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (setting, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 	nm_connection_add_setting (connection, setting);
 
 	setting = nm_setting_ip6_config_new ();
-	g_object_set (setting, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (setting, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO, NULL);
 	nm_connection_add_setting (connection, setting);
 }
 
@@ -2046,7 +2390,7 @@ test_connection_bad_base_types (void)
 static void
 test_setting_compare_id (void)
 {
-	NMSetting *old, *new;
+	gs_unref_object NMSetting *old = NULL, *new = NULL;
 	gboolean success;
 
 	old = nm_setting_connection_new ();
@@ -2064,6 +2408,31 @@ test_setting_compare_id (void)
 	g_assert (success == FALSE);
 
 	success = nm_setting_compare (old, new, NM_SETTING_COMPARE_FLAG_IGNORE_ID);
+	g_assert (success);
+}
+
+static void
+test_setting_compare_timestamp (void)
+{
+	gs_unref_object NMSetting *old = NULL, *new = NULL;
+	gboolean success;
+
+	old = nm_setting_connection_new ();
+	g_object_set (old,
+	              NM_SETTING_CONNECTION_ID, "ignore timestamp connection",
+	              NM_SETTING_CONNECTION_UUID, "b047a198-0e0a-4f0e-a653-eea09bb35e40",
+	              NM_SETTING_CONNECTION_AUTOCONNECT, FALSE,
+	              NM_SETTING_CONNECTION_TIMESTAMP, (guint64) 1234567890,
+	              NULL);
+
+	new = nm_setting_duplicate (old);
+	g_object_set (new, NM_SETTING_CONNECTION_TIMESTAMP, (guint64) 1416316539, NULL);
+
+	/* First make sure they are different */
+	success = nm_setting_compare (old, new, NM_SETTING_COMPARE_FLAG_EXACT);
+	g_assert (success == FALSE);
+
+	success = nm_setting_compare (old, new, NM_SETTING_COMPARE_FLAG_IGNORE_TIMESTAMP);
 	g_assert (success);
 }
 
@@ -2090,7 +2459,7 @@ static void
 test_setting_compare_secrets (gconstpointer test_data)
 {
 	const TestDataCompareSecrets *data = test_data;
-	NMSetting *old, *new;
+	gs_unref_object NMSetting *old = NULL, *new = NULL;
 	gboolean success;
 
 	/* Make sure that a connection with transient/unsaved secrets compares
@@ -2121,7 +2490,7 @@ static void
 test_setting_compare_vpn_secrets (gconstpointer test_data)
 {
 	const TestDataCompareSecrets *data = test_data;
-	NMSetting *old, *new;
+	gs_unref_object NMSetting *old = NULL, *new = NULL;
 	gboolean success;
 
 	/* Make sure that a connection with transient/unsaved secrets compares
@@ -2397,7 +2766,7 @@ test_setting_connection_changed_signal (void)
 	NMConnection *connection;
 	gboolean changed = FALSE;
 	NMSettingConnection *s_con;
-	char *uuid;
+	gs_free char *uuid = NULL;
 
 	connection = nm_simple_connection_new ();
 	g_signal_connect (connection,
@@ -2456,9 +2825,10 @@ test_setting_ip4_changed_signal (void)
 {
 	NMConnection *connection;
 	gboolean changed = FALSE;
-	NMSettingIP4Config *s_ip4;
-	NMIP4Address *addr;
-	NMIP4Route *route;
+	NMSettingIPConfig *s_ip4;
+	NMIPAddress *addr;
+	NMIPRoute *route;
+	GError *error = NULL;
 
 	connection = nm_simple_connection_new ();
 	g_signal_connect (connection,
@@ -2466,58 +2836,56 @@ test_setting_ip4_changed_signal (void)
 	                  (GCallback) test_connection_changed_cb,
 	                  &changed);
 
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	ASSERT_CHANGED (nm_setting_ip4_config_add_dns (s_ip4, "11.22.0.0"));
-	ASSERT_CHANGED (nm_setting_ip4_config_remove_dns (s_ip4, 0));
+	ASSERT_CHANGED (nm_setting_ip_config_add_dns (s_ip4, "11.22.0.0"));
+	ASSERT_CHANGED (nm_setting_ip_config_remove_dns (s_ip4, 0));
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*elt != NULL*");
-	ASSERT_UNCHANGED (nm_setting_ip4_config_remove_dns (s_ip4, 1));
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*i < priv->dns->len*");
+	ASSERT_UNCHANGED (nm_setting_ip_config_remove_dns (s_ip4, 1));
 	g_test_assert_expected_messages ();
 
-	nm_setting_ip4_config_add_dns (s_ip4, "33.44.0.0");
-	ASSERT_CHANGED (nm_setting_ip4_config_clear_dns (s_ip4));
+	nm_setting_ip_config_add_dns (s_ip4, "33.44.0.0");
+	ASSERT_CHANGED (nm_setting_ip_config_clear_dns (s_ip4));
 
-	ASSERT_CHANGED (nm_setting_ip4_config_add_dns_search (s_ip4, "foobar.com"));
-	ASSERT_CHANGED (nm_setting_ip4_config_remove_dns_search (s_ip4, 0));
+	ASSERT_CHANGED (nm_setting_ip_config_add_dns_search (s_ip4, "foobar.com"));
+	ASSERT_CHANGED (nm_setting_ip_config_remove_dns_search (s_ip4, 0));
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*elt != NULL*");
-	ASSERT_UNCHANGED (nm_setting_ip4_config_remove_dns_search (s_ip4, 1));
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*i < priv->dns_search->len*");
+	ASSERT_UNCHANGED (nm_setting_ip_config_remove_dns_search (s_ip4, 1));
 	g_test_assert_expected_messages ();
 
-	ASSERT_CHANGED (nm_setting_ip4_config_add_dns_search (s_ip4, "foobar.com"));
-	ASSERT_CHANGED (nm_setting_ip4_config_clear_dns_searches (s_ip4));
+	ASSERT_CHANGED (nm_setting_ip_config_add_dns_search (s_ip4, "foobar.com"));
+	ASSERT_CHANGED (nm_setting_ip_config_clear_dns_searches (s_ip4));
 
-	addr = nm_ip4_address_new ();
-	nm_ip4_address_set_address (addr, 0x2233);
-	nm_ip4_address_set_prefix (addr, 24);
-	ASSERT_CHANGED (nm_setting_ip4_config_add_address (s_ip4, addr));
-	ASSERT_CHANGED (nm_setting_ip4_config_remove_address (s_ip4, 0));
+	addr = nm_ip_address_new (AF_INET, "22.33.0.0", 24, &error);
+	g_assert_no_error (error);
+	ASSERT_CHANGED (nm_setting_ip_config_add_address (s_ip4, addr));
+	ASSERT_CHANGED (nm_setting_ip_config_remove_address (s_ip4, 0));
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*addr != NULL && label != NULL*");
-	ASSERT_UNCHANGED (nm_setting_ip4_config_remove_address (s_ip4, 1));
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*i < priv->addresses->len*");
+	ASSERT_UNCHANGED (nm_setting_ip_config_remove_address (s_ip4, 1));
 	g_test_assert_expected_messages ();
 
-	nm_setting_ip4_config_add_address (s_ip4, addr);
-	ASSERT_CHANGED (nm_setting_ip4_config_clear_addresses (s_ip4));
+	nm_setting_ip_config_add_address (s_ip4, addr);
+	ASSERT_CHANGED (nm_setting_ip_config_clear_addresses (s_ip4));
 
-	route = nm_ip4_route_new ();
-	nm_ip4_route_set_dest (route, 0x2233);
-	nm_ip4_route_set_prefix (route, 24);
+	route = nm_ip_route_new (AF_INET, "22.33.0.0", 24, NULL, 0, &error);
+	g_assert_no_error (error);
 
-	ASSERT_CHANGED (nm_setting_ip4_config_add_route (s_ip4, route));
-	ASSERT_CHANGED (nm_setting_ip4_config_remove_route (s_ip4, 0));
+	ASSERT_CHANGED (nm_setting_ip_config_add_route (s_ip4, route));
+	ASSERT_CHANGED (nm_setting_ip_config_remove_route (s_ip4, 0));
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*elt != NULL*");
-	ASSERT_UNCHANGED (nm_setting_ip4_config_remove_route (s_ip4, 1));
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*i < priv->routes->len*");
+	ASSERT_UNCHANGED (nm_setting_ip_config_remove_route (s_ip4, 1));
 	g_test_assert_expected_messages ();
 
-	nm_setting_ip4_config_add_route (s_ip4, route);
-	ASSERT_CHANGED (nm_setting_ip4_config_clear_routes (s_ip4));
+	nm_setting_ip_config_add_route (s_ip4, route);
+	ASSERT_CHANGED (nm_setting_ip_config_clear_routes (s_ip4));
 
-	nm_ip4_address_unref (addr);
-	nm_ip4_route_unref (route);
+	nm_ip_address_unref (addr);
+	nm_ip_route_unref (route);
 	g_object_unref (connection);
 }
 
@@ -2526,10 +2894,10 @@ test_setting_ip6_changed_signal (void)
 {
 	NMConnection *connection;
 	gboolean changed = FALSE;
-	NMSettingIP6Config *s_ip6;
-	NMIP6Address *addr;
-	NMIP6Route *route;
-	const struct in6_addr t = { { { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 } } };
+	NMSettingIPConfig *s_ip6;
+	NMIPAddress *addr;
+	NMIPRoute *route;
+	GError *error = NULL;
 
 	connection = nm_simple_connection_new ();
 	g_signal_connect (connection,
@@ -2537,59 +2905,57 @@ test_setting_ip6_changed_signal (void)
 	                  (GCallback) test_connection_changed_cb,
 	                  &changed);
 
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
-	ASSERT_CHANGED (nm_setting_ip6_config_add_dns (s_ip6, "1:2:3::4:5:6"));
-	ASSERT_CHANGED (nm_setting_ip6_config_remove_dns (s_ip6, 0));
+	ASSERT_CHANGED (nm_setting_ip_config_add_dns (s_ip6, "1:2:3::4:5:6"));
+	ASSERT_CHANGED (nm_setting_ip_config_remove_dns (s_ip6, 0));
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*elt != NULL*");
-	ASSERT_UNCHANGED (nm_setting_ip6_config_remove_dns (s_ip6, 1));
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*i < priv->dns->len*");
+	ASSERT_UNCHANGED (nm_setting_ip_config_remove_dns (s_ip6, 1));
 	g_test_assert_expected_messages ();
 
-	nm_setting_ip6_config_add_dns (s_ip6, "1:2:3::4:5:6");
-	ASSERT_CHANGED (nm_setting_ip6_config_clear_dns (s_ip6));
+	nm_setting_ip_config_add_dns (s_ip6, "1:2:3::4:5:6");
+	ASSERT_CHANGED (nm_setting_ip_config_clear_dns (s_ip6));
 
-	ASSERT_CHANGED (nm_setting_ip6_config_add_dns_search (s_ip6, "foobar.com"));
-	ASSERT_CHANGED (nm_setting_ip6_config_remove_dns_search (s_ip6, 0));
+	ASSERT_CHANGED (nm_setting_ip_config_add_dns_search (s_ip6, "foobar.com"));
+	ASSERT_CHANGED (nm_setting_ip_config_remove_dns_search (s_ip6, 0));
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*elt != NULL*");
-	ASSERT_UNCHANGED (nm_setting_ip6_config_remove_dns_search (s_ip6, 1));
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*i < priv->dns_search->len*");
+	ASSERT_UNCHANGED (nm_setting_ip_config_remove_dns_search (s_ip6, 1));
 	g_test_assert_expected_messages ();
 
-	nm_setting_ip6_config_add_dns_search (s_ip6, "foobar.com");
-	ASSERT_CHANGED (nm_setting_ip6_config_clear_dns_searches (s_ip6));
+	nm_setting_ip_config_add_dns_search (s_ip6, "foobar.com");
+	ASSERT_CHANGED (nm_setting_ip_config_clear_dns_searches (s_ip6));
 
-	addr = nm_ip6_address_new ();
-	nm_ip6_address_set_address (addr, &t);
-	nm_ip6_address_set_prefix (addr, 64);
+	addr = nm_ip_address_new (AF_INET6, "1:2:3::4:5:6", 64, &error);
+	g_assert_no_error (error);
 
-	ASSERT_CHANGED (nm_setting_ip6_config_add_address (s_ip6, addr));
-	ASSERT_CHANGED (nm_setting_ip6_config_remove_address (s_ip6, 0));
+	ASSERT_CHANGED (nm_setting_ip_config_add_address (s_ip6, addr));
+	ASSERT_CHANGED (nm_setting_ip_config_remove_address (s_ip6, 0));
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*elt != NULL*");
-	ASSERT_UNCHANGED (nm_setting_ip6_config_remove_address (s_ip6, 1));
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*i < priv->addresses->len*");
+	ASSERT_UNCHANGED (nm_setting_ip_config_remove_address (s_ip6, 1));
 	g_test_assert_expected_messages ();
 
-	nm_setting_ip6_config_add_address (s_ip6, addr);
-	ASSERT_CHANGED (nm_setting_ip6_config_clear_addresses (s_ip6));
+	nm_setting_ip_config_add_address (s_ip6, addr);
+	ASSERT_CHANGED (nm_setting_ip_config_clear_addresses (s_ip6));
 
-	route = nm_ip6_route_new ();
-	nm_ip6_route_set_dest (route, &t);
-	nm_ip6_route_set_prefix (route, 128);
+	route = nm_ip_route_new (AF_INET6, "1:2:3::4:5:6", 128, NULL, 0, &error);
+	g_assert_no_error (error);
 
-	ASSERT_CHANGED (nm_setting_ip6_config_add_route (s_ip6, route));
-	ASSERT_CHANGED (nm_setting_ip6_config_remove_route (s_ip6, 0));
+	ASSERT_CHANGED (nm_setting_ip_config_add_route (s_ip6, route));
+	ASSERT_CHANGED (nm_setting_ip_config_remove_route (s_ip6, 0));
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*elt != NULL*");
-	ASSERT_UNCHANGED (nm_setting_ip6_config_remove_route (s_ip6, 1));
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*i < priv->routes->len*");
+	ASSERT_UNCHANGED (nm_setting_ip_config_remove_route (s_ip6, 1));
 	g_test_assert_expected_messages ();
 
-	nm_setting_ip6_config_add_route (s_ip6, route);
-	ASSERT_CHANGED (nm_setting_ip6_config_clear_routes (s_ip6));
+	nm_setting_ip_config_add_route (s_ip6, route);
+	ASSERT_CHANGED (nm_setting_ip_config_clear_routes (s_ip6));
 
-	nm_ip6_address_unref (addr);
-	nm_ip6_route_unref (route);
+	nm_ip_address_unref (addr);
+	nm_ip_route_unref (route);
 	g_object_unref (connection);
 }
 
@@ -2806,9 +3172,7 @@ test_setting_802_1x_changed_signal (void)
 static void
 test_setting_old_uuid (void)
 {
-	GError *error = NULL;
-	NMSetting *setting;
-	gboolean success;
+	gs_unref_object NMSetting *setting = NULL;
 
 	/* NetworkManager-0.9.4.0 generated 40-character UUIDs with no dashes,
 	 * like this one. Test that we maintain compatibility. */
@@ -2821,10 +3185,27 @@ test_setting_old_uuid (void)
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
 	              NULL);
 
-	success = nm_setting_verify (NM_SETTING (setting), NULL, &error);
-	g_assert_no_error (error);
-	g_assert (success == TRUE);
+	nmtst_assert_setting_verifies (NM_SETTING (setting));
 }
+
+/******************************************************************************/
+
+static void
+test_connection_normalize_uuid (void)
+{
+	gs_unref_object NMConnection *con = NULL;
+
+	con = nmtst_create_minimal_connection ("test1", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+
+	nmtst_assert_connection_verifies_and_normalizable (con);
+
+	g_object_set (nm_connection_get_setting_connection (con),
+	              NM_SETTING_CONNECTION_UUID, NULL,
+	              NULL);
+	nmtst_assert_connection_verifies_after_normalization (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_PROPERTY);
+}
+
+/******************************************************************************/
 
 /*
  * Test normalization of interface-name
@@ -2847,12 +3228,12 @@ test_connection_normalize_virtual_iface_name (void)
 
 	nm_connection_add_setting (con,
 	    g_object_new (NM_TYPE_SETTING_IP4_CONFIG,
-	                  NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	                  NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
 	                  NULL));
 
 	nm_connection_add_setting (con,
 	    g_object_new (NM_TYPE_SETTING_IP6_CONFIG,
-	                  NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	                  NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
 	                  NULL));
 
 	s_vlan = nm_connection_get_setting_vlan (con);
@@ -3349,6 +3730,316 @@ test_connection_normalize_infiniband_mtu (void)
 	g_assert_cmpint (65520, ==, nm_setting_infiniband_get_mtu (s_infini));
 }
 
+static void
+test_setting_ip4_gateway (void)
+{
+	NMConnection *conn;
+	NMSettingIPConfig *s_ip4;
+	NMIPAddress *addr;
+	GVariant *conn_dict, *ip4_dict, *value;
+	GVariantIter iter;
+	GVariant *addr_var;
+	guint32 addr_vals_0[] = { htonl (0xc0a8010a), 0x00000018, htonl (0x00000000) };
+	guint32 addr_vals_1[] = { htonl (0xc0a8010b), 0x00000018, htonl (0xc0a80101) };
+	GVariantBuilder addrs_builder;
+	GError *error = NULL;
+
+	g_assert_cmpstr (nm_utils_inet4_ntop (addr_vals_0[0], NULL), ==, "192.168.1.10");
+
+	/* When serializing on the daemon side, ipv4.gateway is copied to the first
+	 * entry of ipv4.addresses
+	 */
+	conn = nmtst_create_minimal_connection ("test_setting_ip4_gateway", NULL,
+	                                        NM_SETTING_WIRED_SETTING_NAME, NULL);
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
+	g_object_set (s_ip4,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "192.168.1.1",
+	              NULL);
+	nm_connection_add_setting (conn, NM_SETTING (s_ip4));
+
+	addr = nm_ip_address_new (AF_INET, "192.168.1.10", 24, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_address (s_ip4, addr);
+	nm_ip_address_unref (addr);
+
+	_nm_utils_is_manager_process = TRUE;
+	conn_dict = nm_connection_to_dbus (conn, NM_CONNECTION_SERIALIZE_ALL);
+	_nm_utils_is_manager_process = FALSE;
+	g_object_unref (conn);
+
+	ip4_dict = g_variant_lookup_value (conn_dict, NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
+	g_assert (ip4_dict != NULL);
+
+	value = g_variant_lookup_value (ip4_dict, NM_SETTING_IP_CONFIG_GATEWAY, G_VARIANT_TYPE_STRING);
+	g_assert (value != NULL);
+	g_assert_cmpstr (g_variant_get_string (value, NULL), ==, "192.168.1.1");
+	g_variant_unref (value);
+
+	value = g_variant_lookup_value (ip4_dict, NM_SETTING_IP_CONFIG_ADDRESSES, G_VARIANT_TYPE ("aau"));
+	g_assert (value != NULL);
+
+	g_variant_iter_init (&iter, value);
+	while (g_variant_iter_next (&iter, "@au", &addr_var)) {
+		const guint32 *addr_array;
+		gsize length;
+
+		addr_array = g_variant_get_fixed_array (addr_var, &length, sizeof (guint32));
+		g_assert_cmpint (length, ==, 3);
+		g_assert_cmpstr (nm_utils_inet4_ntop (addr_array[2], NULL), ==, "192.168.1.1");
+		g_variant_unref (addr_var);
+	}
+	g_variant_unref (value);
+
+	g_variant_unref (ip4_dict);
+
+	/* When deserializing an old-style connection, the first non-0 gateway in
+	 * ipv4.addresses is copied to :gateway.
+	 */
+	NMTST_VARIANT_EDITOR (conn_dict,
+	                      NMTST_VARIANT_DROP_PROPERTY (NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	                                                   NM_SETTING_IP_CONFIG_GATEWAY);
+	                      NMTST_VARIANT_DROP_PROPERTY (NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	                                                   "address-data");
+	                      );
+
+	conn = nm_simple_connection_new_from_dbus (conn_dict, &error);
+	g_assert_no_error (error);
+
+	s_ip4 = (NMSettingIPConfig *) nm_connection_get_setting_ip4_config (conn);
+	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, "192.168.1.1");
+
+	g_object_unref (conn);
+
+	/* Try again with the gateway in the second address. */
+	g_variant_builder_init (&addrs_builder, G_VARIANT_TYPE ("aau"));
+	g_variant_builder_add (&addrs_builder, "@au",
+	                       g_variant_new_fixed_array (G_VARIANT_TYPE_UINT32,
+	                                                  addr_vals_0, 3, 4));
+	g_variant_builder_add (&addrs_builder, "@au",
+	                       g_variant_new_fixed_array (G_VARIANT_TYPE_UINT32,
+	                                                  addr_vals_1, 3, 4));
+
+	NMTST_VARIANT_EDITOR (conn_dict,
+	                      NMTST_VARIANT_CHANGE_PROPERTY (NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	                                                     "addresses", "aau", &addrs_builder);
+	                      );
+
+	conn = nm_simple_connection_new_from_dbus (conn_dict, &error);
+	g_assert_no_error (error);
+	g_variant_unref (conn_dict);
+
+	s_ip4 = (NMSettingIPConfig *) nm_connection_get_setting_ip4_config (conn);
+	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, "192.168.1.1");
+
+	g_object_unref (conn);
+}
+
+static void
+test_setting_ip6_gateway (void)
+{
+	NMConnection *conn;
+	NMSettingIPConfig *s_ip6;
+	NMIPAddress *addr;
+	GVariant *conn_dict, *ip6_dict, *value;
+	GVariantIter iter;
+	GVariant *gateway_var;
+	GVariantBuilder addrs_builder;
+	guint8 addr_bytes_0[] = { 0xab, 0xcd, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	                          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0a };
+	guint8 addr_bytes_1[] = { 0xab, 0xcd, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	                          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0b };
+	guint8 gateway_bytes_1[] = { 0xab, 0xcd, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	                             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 };
+	GError *error = NULL;
+
+	/* When serializing on the daemon side, ipv6.gateway is copied to the first
+	 * entry of ipv6.addresses
+	 */
+	conn = nmtst_create_minimal_connection ("test_setting_ip6_gateway", NULL,
+	                                        NM_SETTING_WIRED_SETTING_NAME, NULL);
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
+	g_object_set (s_ip6,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "abcd::1",
+	              NULL);
+	nm_connection_add_setting (conn, NM_SETTING (s_ip6));
+
+	addr = nm_ip_address_new (AF_INET6, "abcd::10", 64, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_address (s_ip6, addr);
+	nm_ip_address_unref (addr);
+
+	_nm_utils_is_manager_process = TRUE;
+	conn_dict = nm_connection_to_dbus (conn, NM_CONNECTION_SERIALIZE_ALL);
+	_nm_utils_is_manager_process = FALSE;
+	g_object_unref (conn);
+
+	ip6_dict = g_variant_lookup_value (conn_dict, NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
+	g_assert (ip6_dict != NULL);
+
+	value = g_variant_lookup_value (ip6_dict, NM_SETTING_IP_CONFIG_GATEWAY, G_VARIANT_TYPE_STRING);
+	g_assert (value != NULL);
+	g_assert_cmpstr (g_variant_get_string (value, NULL), ==, "abcd::1");
+	g_variant_unref (value);
+
+	value = g_variant_lookup_value (ip6_dict, NM_SETTING_IP_CONFIG_ADDRESSES, G_VARIANT_TYPE ("a(ayuay)"));
+	g_assert (value != NULL);
+
+	g_variant_iter_init (&iter, value);
+	while (g_variant_iter_next (&iter, "(@ayu@ay)", NULL, NULL, &gateway_var)) {
+		const guint8 *gateway_bytes;
+		gsize length;
+
+		gateway_bytes = g_variant_get_fixed_array (gateway_var, &length, 1);
+		g_assert_cmpint (length, ==, 16);
+		g_assert_cmpstr (nm_utils_inet6_ntop ((struct in6_addr *) gateway_bytes, NULL), ==, "abcd::1");
+		g_variant_unref (gateway_var);
+	}
+	g_variant_unref (value);
+
+	g_variant_unref (ip6_dict);
+
+	/* When deserializing an old-style connection, the first non-0 gateway in
+	 * ipv6.addresses is copied to :gateway.
+	 */
+	NMTST_VARIANT_EDITOR (conn_dict,
+	                      NMTST_VARIANT_DROP_PROPERTY (NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	                                                   NM_SETTING_IP_CONFIG_GATEWAY);
+	                      NMTST_VARIANT_DROP_PROPERTY (NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	                                                   "address-data");
+	                      );
+
+	conn = nm_simple_connection_new_from_dbus (conn_dict, &error);
+	g_assert_no_error (error);
+
+	s_ip6 = (NMSettingIPConfig *) nm_connection_get_setting_ip6_config (conn);
+	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip6), ==, "abcd::1");
+
+	g_object_unref (conn);
+
+	/* Try again with the gateway in the second address. */
+	g_variant_builder_init (&addrs_builder, G_VARIANT_TYPE ("a(ayuay)"));
+	g_variant_builder_add (&addrs_builder, "(@ayu@ay)",
+	                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
+	                                                  addr_bytes_0, 16, 1),
+	                       64,
+	                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
+	                                                  &in6addr_any, 16, 1));
+	g_variant_builder_add (&addrs_builder, "(@ayu@ay)",
+	                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
+	                                                  addr_bytes_1, 16, 1),
+	                       64,
+	                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
+	                                                  gateway_bytes_1, 16, 1));
+
+	NMTST_VARIANT_EDITOR (conn_dict,
+	                      NMTST_VARIANT_CHANGE_PROPERTY (NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	                                                     "addresses", "a(ayuay)", &addrs_builder);
+	                      );
+
+	conn = nm_simple_connection_new_from_dbus (conn_dict, &error);
+	g_assert_no_error (error);
+	g_variant_unref (conn_dict);
+
+	s_ip6 = (NMSettingIPConfig *) nm_connection_get_setting_ip6_config (conn);
+	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip6), ==, "abcd::1");
+
+	g_object_unref (conn);
+}
+
+typedef struct {
+	const char *str;
+	const guint8 expected[20];
+	const guint expected_len;
+} HexItem;
+
+static void
+test_hexstr2bin (void)
+{
+	static const HexItem items[] = {
+		{ "aaBBCCddDD10496a",     { 0xaa, 0xbb, 0xcc, 0xdd, 0xdd, 0x10, 0x49, 0x6a }, 8 },
+		{ "aa:bb:cc:dd:10:49:6a", { 0xaa, 0xbb, 0xcc, 0xdd, 0x10, 0x49, 0x6a },       7 },
+		{ "0xccddeeff",           { 0xcc, 0xdd, 0xee, 0xff },                         4 },
+		{ "1:2:66:77:80",         { 0x01, 0x02, 0x66, 0x77, 0x80 },                   5 },
+		{ "e",                    { 0x0e },                                           1 },
+		{ "aabb1199:" },
+		{ ":aabb1199" },
+		{ "aabb$$dd" },
+		{ "aab:ccc:ddd" },
+		{ "aab::ccc:ddd" },
+	};
+	GBytes *b;
+	guint i;
+
+	for (i = 0; i < G_N_ELEMENTS (items); i++) {
+		b = nm_utils_hexstr2bin (items[i].str);
+		if (items[i].expected_len) {
+			g_assert (b);
+			g_assert_cmpint (g_bytes_get_size (b), ==, items[i].expected_len);
+			g_assert (memcmp (g_bytes_get_data (b, NULL), items[i].expected, g_bytes_get_size (b)) == 0);
+			g_bytes_unref (b);
+		} else
+			g_assert (b == NULL);
+	}
+}
+
+/******************************************************************************/
+
+#define UUID_NIL        "00000000-0000-0000-0000-000000000000"
+#define UUID_NS_DNS     "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+
+static void
+_test_uuid (int uuid_type, const char *expected_uuid, const char *str, gssize slen, gpointer type_args)
+{
+	gs_free char *uuid_test = NULL;
+
+	uuid_test = nm_utils_uuid_generate_from_string (str, slen, uuid_type, type_args);
+
+	g_assert (uuid_test);
+	g_assert (nm_utils_is_uuid (uuid_test));
+
+	if (strcmp (uuid_test, expected_uuid)) {
+		g_error ("UUID test failed: type=%d; text=%s, len=%lld, uuid=%s, expected=%s", uuid_type,
+		         str, (long long) slen, uuid_test, expected_uuid);
+	}
+
+	if (slen < 0) {
+		/* also test that passing slen==-1 yields the same result as passing strlen(str). */
+		_test_uuid (uuid_type, expected_uuid, str, strlen (str), type_args);
+	} else if (str && slen == 0) {
+		/* also test if we accept NULL for slen==0 */
+		_test_uuid (uuid_type, expected_uuid, NULL, 0, type_args);
+	}
+
+	if (uuid_type == NM_UTILS_UUID_TYPE_VARIANT3 && !type_args) {
+		/* For NM_UTILS_UUID_TYPE_VARIANT3, a missing @type_args is equal to UUID_NIL */
+		_test_uuid (uuid_type, expected_uuid, str, slen, UUID_NIL);
+	}
+}
+
+static void
+test_nm_utils_uuid_generate_from_string (void)
+{
+	_test_uuid (NM_UTILS_UUID_TYPE_LEGACY, "d41d8cd9-8f00-b204-e980-0998ecf8427e", "", -1, NULL);
+	_test_uuid (NM_UTILS_UUID_TYPE_LEGACY, "0cc175b9-c0f1-b6a8-31c3-99e269772661", "a", -1, NULL);
+	_test_uuid (NM_UTILS_UUID_TYPE_LEGACY, "098f6bcd-4621-d373-cade-4e832627b4f6", "test", -1, NULL);
+	_test_uuid (NM_UTILS_UUID_TYPE_LEGACY, "70350f60-27bc-e371-3f6b-76473084309b", "a\0b", 3, NULL);
+	_test_uuid (NM_UTILS_UUID_TYPE_LEGACY, "59c0547b-7fe2-1c15-2cce-e328e8bf6742", "/etc/NetworkManager/system-connections/em1", -1, NULL);
+
+	_test_uuid (NM_UTILS_UUID_TYPE_VARIANT3, "4ae71336-e44b-39bf-b9d2-752e234818a5", "", -1, NULL);
+	_test_uuid (NM_UTILS_UUID_TYPE_VARIANT3, "0531103a-d8fc-3dd4-b972-d98e4750994e", "a", -1, NULL);
+	_test_uuid (NM_UTILS_UUID_TYPE_VARIANT3, "96e17d7a-ac89-38cf-95e1-bf5098da34e1", "test", -1, NULL);
+	_test_uuid (NM_UTILS_UUID_TYPE_VARIANT3, "8156568e-4ae6-3f34-a93e-18e2c6cbbf78", "a\0b", 3, NULL);
+
+	_test_uuid (NM_UTILS_UUID_TYPE_VARIANT3, "c87ee674-4ddc-3efe-a74e-dfe25da5d7b3", "", -1, UUID_NS_DNS);
+	_test_uuid (NM_UTILS_UUID_TYPE_VARIANT3, "4c104dd0-4821-30d5-9ce3-0e7a1f8b7c0d", "a", -1, UUID_NS_DNS);
+	_test_uuid (NM_UTILS_UUID_TYPE_VARIANT3, "45a113ac-c7f2-30b0-90a5-a399ab912716", "test", -1, UUID_NS_DNS);
+	_test_uuid (NM_UTILS_UUID_TYPE_VARIANT3, "002a0ada-f547-375a-bab5-896a11d1927e", "a\0b", 3, UUID_NS_DNS);
+}
+
+/******************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -3360,6 +4051,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_setting_vpn_update_secrets", test_setting_vpn_update_secrets);
 	g_test_add_func ("/core/general/test_setting_vpn_modify_during_foreach", test_setting_vpn_modify_during_foreach);
 	g_test_add_func ("/core/general/test_setting_ip4_config_labels", test_setting_ip4_config_labels);
+	g_test_add_func ("/core/general/test_setting_ip4_config_address_data", test_setting_ip4_config_address_data);
 	g_test_add_func ("/core/general/test_setting_gsm_apn_spaces", test_setting_gsm_apn_spaces);
 	g_test_add_func ("/core/general/test_setting_gsm_apn_bad_chars", test_setting_gsm_apn_bad_chars);
 	g_test_add_func ("/core/general/test_setting_gsm_apn_underscore", test_setting_gsm_apn_underscore);
@@ -3370,6 +4062,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_setting_to_dbus_transform", test_setting_to_dbus_transform);
 	g_test_add_func ("/core/general/test_setting_to_dbus_enum", test_setting_to_dbus_enum);
 	g_test_add_func ("/core/general/test_setting_compare_id", test_setting_compare_id);
+	g_test_add_func ("/core/general/test_setting_compare_timestamp", test_setting_compare_timestamp);
 #define ADD_FUNC(func, secret_flags, comp_flags, remove_secret) \
 	g_test_add_data_func_full ("/core/general/" G_STRINGIFY (func), \
 	                           test_data_compare_secrets_new (secret_flags, comp_flags, remove_secret), \
@@ -3389,11 +4082,13 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_setting_new_from_dbus", test_setting_new_from_dbus);
 	g_test_add_func ("/core/general/test_setting_new_from_dbus_transform", test_setting_new_from_dbus_transform);
 	g_test_add_func ("/core/general/test_setting_new_from_dbus_enum", test_setting_new_from_dbus_enum);
+	g_test_add_func ("/core/general/test_setting_new_from_dbus_bad", test_setting_new_from_dbus_bad);
 	g_test_add_func ("/core/general/test_connection_replace_settings", test_connection_replace_settings);
 	g_test_add_func ("/core/general/test_connection_replace_settings_from_connection", test_connection_replace_settings_from_connection);
 	g_test_add_func ("/core/general/test_connection_replace_settings_bad", test_connection_replace_settings_bad);
 	g_test_add_func ("/core/general/test_connection_new_from_dbus", test_connection_new_from_dbus);
 	g_test_add_func ("/core/general/test_connection_normalize_virtual_iface_name", test_connection_normalize_virtual_iface_name);
+	g_test_add_func ("/core/general/test_connection_normalize_uuid", test_connection_normalize_uuid);
 	g_test_add_func ("/core/general/test_connection_normalize_type", test_connection_normalize_type);
 	g_test_add_func ("/core/general/test_connection_normalize_slave_type_1", test_connection_normalize_slave_type_1);
 	g_test_add_func ("/core/general/test_connection_normalize_slave_type_2", test_connection_normalize_slave_type_2);
@@ -3437,6 +4132,11 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_setting_wireless_changed_signal", test_setting_wireless_changed_signal);
 	g_test_add_func ("/core/general/test_setting_wireless_security_changed_signal", test_setting_wireless_security_changed_signal);
 	g_test_add_func ("/core/general/test_setting_802_1x_changed_signal", test_setting_802_1x_changed_signal);
+	g_test_add_func ("/core/general/test_setting_ip4_gateway", test_setting_ip4_gateway);
+	g_test_add_func ("/core/general/test_setting_ip6_gateway", test_setting_ip6_gateway);
+
+	g_test_add_func ("/core/general/hexstr2bin", test_hexstr2bin);
+	g_test_add_func ("/core/general/test_nm_utils_uuid_generate_from_string", test_nm_utils_uuid_generate_from_string);
 
 	return g_test_run ();
 }

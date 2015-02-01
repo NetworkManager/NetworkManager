@@ -63,21 +63,21 @@ GQuark nm_agent_manager_error_quark (void);
  *   was attempted on a non-secret property
  * @NM_CONNECTION_ERROR_MISSING_SETTING: the #NMConnection object is missing an
  *   #NMSetting which is required for its configuration. The error message will
- *   always be prefixed with "<setting-name>: ", where "<setting-name>" is the
+ *   always be prefixed with "&lt;setting-name>: ", where "&lt;setting-name>" is the
  *   name of the setting that is missing.
  * @NM_CONNECTION_ERROR_INVALID_SETTING: the #NMConnection object contains an
  *   invalid or inappropriate #NMSetting. The error message will always be
- *   prefixed with "<setting-name>: ", where "<setting-name>" is the name of the
+ *   prefixed with "&lt;setting-name>: ", where "&lt;setting-name>" is the name of the
  *   setting that is invalid.
  * @NM_CONNECTION_ERROR_MISSING_PROPERTY: the #NMConnection object is invalid
  *   because it is missing a required property. The error message will always be
- *   prefixed with "<setting-name>.<property-name>: ", where "<setting-name>" is
- *   the name of the setting with the missing property, and "<property-name>" is
+ *   prefixed with "&lt;setting-name>.&lt;property-name>: ", where "&lt;setting-name>" is
+ *   the name of the setting with the missing property, and "&lt;property-name>" is
  *   the property that is missing.
  * @NM_CONNECTION_ERROR_INVALID_PROPERTY: the #NMConnection object is invalid
  *   because a property has an invalid value. The error message will always be
- *   prefixed with "<setting-name>.<property-name>: ", where "<setting-name>" is
- *   the name of the setting with the invalid property, and "<property-name>" is
+ *   prefixed with "&lt;setting-name>.&lt;property-name>: ", where "&lt;setting-name>" is
+ *   the name of the setting with the invalid property, and "&lt;property-name>" is
  *   the property that is invalid.
  *
  * Describes errors that may result from operations involving a #NMConnection

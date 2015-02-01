@@ -19,6 +19,8 @@
  *
  */
 
+#include "config.h"
+
 #include <glib.h>
 #include <dbus/dbus-glib.h>
 #include <string.h>
@@ -28,6 +30,7 @@
 #include <sys/resource.h>
 
 #include <nm-utils.h>
+#include "gsystem-local-alloc.h"
 
 #include "nm-setting-private.h"
 #include "nm-setting-connection.h"
@@ -308,6 +311,13 @@ test_setting_vpn_modify_during_foreach (void)
 	g_object_unref (s_vpn);
 }
 
+static void
+_g_value_array_free (void *ptr)
+{
+	if (ptr)
+		g_value_array_free ((GValueArray *) ptr);
+}
+
 #define OLD_DBUS_TYPE_G_IP6_ADDRESS (dbus_g_type_get_struct ("GValueArray", DBUS_TYPE_G_UCHAR_ARRAY, G_TYPE_UINT, G_TYPE_INVALID))
 #define OLD_DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS (dbus_g_type_get_collection ("GPtrArray", OLD_DBUS_TYPE_G_IP6_ADDRESS))
 
@@ -336,7 +346,7 @@ test_setting_ip6_config_old_address_array (void)
 
 	g_value_init (&written_value, OLD_DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS);
 
-	addresses = g_ptr_array_new ();
+	addresses = g_ptr_array_new_full (0, _g_value_array_free);
 	array = g_value_array_new (3);
 
 	/* IP address */
@@ -396,6 +406,7 @@ test_setting_ip6_config_old_address_array (void)
 	ASSERT (memcmp (ba->data, &gw[0], sizeof (gw)) == 0,
 	        "ip6-old-addr", "unexpected failure comparing gateways");
 
+	g_ptr_array_unref (addresses);
 	g_value_unset (&written_value);
 	g_value_unset (&read_value);
 	g_object_unref (s_ip6);
@@ -404,7 +415,7 @@ test_setting_ip6_config_old_address_array (void)
 static void
 test_setting_gsm_apn_spaces (void)
 {
-	NMSettingGsm *s_gsm;
+	gs_unref_object NMSettingGsm *s_gsm = NULL;
 	const char *tmp;
 
 	s_gsm = (NMSettingGsm *) nm_setting_gsm_new ();
@@ -432,7 +443,7 @@ test_setting_gsm_apn_spaces (void)
 static void
 test_setting_gsm_apn_bad_chars (void)
 {
-	NMSettingGsm *s_gsm;
+	gs_unref_object NMSettingGsm *s_gsm = NULL;
 
 	s_gsm = (NMSettingGsm *) nm_setting_gsm_new ();
 	ASSERT (s_gsm != NULL,
@@ -470,7 +481,7 @@ test_setting_gsm_apn_bad_chars (void)
 static void
 test_setting_gsm_apn_underscore (void)
 {
-	NMSettingGsm *s_gsm;
+	gs_unref_object NMSettingGsm *s_gsm = NULL;
 	GError *error = NULL;
 	gboolean success;
 
@@ -489,7 +500,7 @@ test_setting_gsm_apn_underscore (void)
 static void
 test_setting_gsm_without_number (void)
 {
-	NMSettingGsm *s_gsm;
+	gs_unref_object NMSettingGsm *s_gsm = NULL;
 	GError *error = NULL;
 	gboolean success;
 
@@ -1268,6 +1279,7 @@ test_connection_diff_a_only (void)
 			{ NM_SETTING_IP4_CONFIG_DNS_SEARCH,         NM_SETTING_DIFF_RESULT_IN_A },
 			{ NM_SETTING_IP4_CONFIG_ADDRESSES,          NM_SETTING_DIFF_RESULT_IN_A },
 			{ NM_SETTING_IP4_CONFIG_ROUTES,             NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP4_CONFIG_ROUTE_METRIC,       NM_SETTING_DIFF_RESULT_IN_A },
 			{ NM_SETTING_IP4_CONFIG_IGNORE_AUTO_ROUTES, NM_SETTING_DIFF_RESULT_IN_A },
 			{ NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS,    NM_SETTING_DIFF_RESULT_IN_A },
 			{ NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID,     NM_SETTING_DIFF_RESULT_IN_A },
@@ -1570,6 +1582,7 @@ test_connection_good_base_types (void)
 	              NM_SETTING_GSM_APN, "metered.billing.sucks",
 	              NULL);
 	nm_connection_add_setting (connection, setting);
+	g_clear_object (&connection);
 
 	/* CDMA connection */
 	connection = nm_connection_new ();
@@ -1668,7 +1681,7 @@ test_connection_bad_base_types (void)
 static void
 test_setting_compare_id (void)
 {
-	NMSetting *old, *new;
+	gs_unref_object NMSetting *old = NULL, *new = NULL;
 	gboolean success;
 
 	old = nm_setting_connection_new ();
@@ -1694,7 +1707,7 @@ test_setting_compare_secrets (NMSettingSecretFlags secret_flags,
                               NMSettingCompareFlags comp_flags,
                               gboolean remove_secret)
 {
-	NMSetting *old, *new;
+	gs_unref_object NMSetting *old = NULL, *new = NULL;
 	gboolean success;
 
 	/* Make sure that a connection with transient/unsaved secrets compares
@@ -1726,7 +1739,7 @@ test_setting_compare_vpn_secrets (NMSettingSecretFlags secret_flags,
                                   NMSettingCompareFlags comp_flags,
                                   gboolean remove_secret)
 {
-	NMSetting *old, *new;
+	gs_unref_object NMSetting *old = NULL, *new = NULL;
 	gboolean success;
 
 	/* Make sure that a connection with transient/unsaved secrets compares
@@ -1905,7 +1918,7 @@ test_setting_connection_changed_signal (void)
 	NMConnection *connection;
 	gboolean changed = FALSE;
 	NMSettingConnection *s_con;
-	char *uuid;
+	gs_free char *uuid = NULL;
 
 	connection = nm_connection_new ();
 	g_signal_connect (connection,
@@ -2315,7 +2328,7 @@ static void
 test_setting_old_uuid (void)
 {
 	GError *error = NULL;
-	NMSetting *setting;
+	gs_unref_object NMSetting *setting = NULL;
 	gboolean success;
 
 	/* NetworkManager-0.9.4.0 generated 40-character UUIDs with no dashes,
@@ -2487,6 +2500,48 @@ test_libnm_linking (void)
 	g_free (err);
 }
 
+/******************************************************************************/
+
+static void
+_test_uuid (const char *expected_uuid, const char *str)
+{
+	gs_free char *uuid_test = NULL;
+
+	g_assert (str);
+
+	uuid_test = nm_utils_uuid_generate_from_string (str);
+
+	g_assert (uuid_test);
+	g_assert (nm_utils_is_uuid (uuid_test));
+
+	if (strcmp (uuid_test, expected_uuid)) {
+		g_error ("UUID test failed: text=%s, uuid=%s, expected=%s",
+		         str, uuid_test, expected_uuid);
+	}
+}
+
+static void
+test_nm_utils_uuid_generate_from_string (void)
+{
+	gs_free char *uuid_test = NULL;
+
+	_test_uuid ("0cc175b9-c0f1-b6a8-31c3-99e269772661", "a");
+	_test_uuid ("098f6bcd-4621-d373-cade-4e832627b4f6", "test");
+	_test_uuid ("59c0547b-7fe2-1c15-2cce-e328e8bf6742", "/etc/NetworkManager/system-connections/em1");
+
+	g_test_expect_message ("libnm-util", G_LOG_LEVEL_CRITICAL, "*nm_utils_uuid_generate_from_string*: *s && *s*");
+	uuid_test = nm_utils_uuid_generate_from_string ("");
+	g_assert (uuid_test == NULL);
+	g_test_assert_expected_messages ();
+
+	g_test_expect_message ("libnm-util", G_LOG_LEVEL_CRITICAL, "*nm_utils_uuid_generate_from_string*: *s && *s*");
+	uuid_test = nm_utils_uuid_generate_from_string (NULL);
+	g_assert (uuid_test == NULL);
+	g_test_assert_expected_messages ();
+}
+
+/******************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -2563,6 +2618,8 @@ int main (int argc, char **argv)
 	test_setting_802_1x_changed_signal ();
 
 	test_libnm_linking ();
+
+	test_nm_utils_uuid_generate_from_string ();
 
 	base = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", base);

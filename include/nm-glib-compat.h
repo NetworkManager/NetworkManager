@@ -59,23 +59,22 @@ __g_type_ensure (GType type)
 
 #if !GLIB_CHECK_VERSION(2,34,0)
 
-#define g_clear_pointer(pp, destroy)	  \
-	G_STMT_START { \
-		G_STATIC_ASSERT (sizeof *(pp) == sizeof (gpointer)); \
-		/* Only one access, please */ \
-		gpointer *_pp = (gpointer *) (pp); \
-		gpointer _p; \
-		/* This assignment is needed to avoid a gcc warning */ \
-		GDestroyNotify _destroy = (GDestroyNotify) (destroy); \
-	  \
-		(void) (0 ? (gpointer) *(pp) : 0); \
-		do \
-			_p = g_atomic_pointer_get (_pp); \
-		while G_UNLIKELY (!g_atomic_pointer_compare_and_exchange (_pp, _p, NULL)); \
-	  \
-		if (_p) \
-			_destroy (_p); \
-	} G_STMT_END
+#define g_clear_pointer(pp, destroy) \
+    G_STMT_START {                                                                 \
+        G_STATIC_ASSERT (sizeof *(pp) == sizeof (gpointer));                       \
+        /* Only one access, please */                                              \
+        gpointer *_pp = (gpointer *) (pp);                                         \
+        gpointer _p;                                                               \
+        /* This assignment is needed to avoid a gcc warning */                     \
+        GDestroyNotify _destroy = (GDestroyNotify) (destroy);                      \
+                                                                                   \
+        _p = *_pp;                                                                 \
+        if (_p)                                                                    \
+        {                                                                          \
+            *_pp = NULL;                                                           \
+            _destroy (_p);                                                         \
+        }                                                                          \
+    } G_STMT_END
 
 /* These are used to clean up the output of test programs; we can just let
  * them no-op in older glib.

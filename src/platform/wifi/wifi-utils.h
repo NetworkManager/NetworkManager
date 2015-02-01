@@ -29,7 +29,7 @@
 
 typedef struct WifiData WifiData;
 
-gboolean wifi_utils_is_wifi (const char *iface, const char *sysfs_path);
+gboolean wifi_utils_is_wifi (const char *iface, const char *sysfs_path, const char *devtype);
 
 WifiData *wifi_utils_init (const char *iface, int ifindex, gboolean check_scan);
 
@@ -64,6 +64,8 @@ gboolean wifi_utils_indicate_addressing_running (WifiData *data, gboolean runnin
 
 /* Returns true if WoWLAN is enabled on device */
 gboolean wifi_utils_get_wowlan (WifiData *data);
+
+gboolean wifi_utils_set_powersave (WifiData *data, guint32 powersave);
 
 
 /* OLPC Mesh-only functions */

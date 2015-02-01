@@ -20,9 +20,11 @@
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 #include <net/ethernet.h>
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 
 #include "nm-setting-wireless.h"
 #include "nm-dbus-interface.h"
@@ -58,6 +60,7 @@ typedef struct {
 	guint32 mtu;
 	GSList *seen_bssids;
 	gboolean hidden;
+	guint32 powersave;
 } NMSettingWirelessPrivate;
 
 enum {
@@ -75,6 +78,7 @@ enum {
 	PROP_MTU,
 	PROP_SEEN_BSSIDS,
 	PROP_HIDDEN,
+	PROP_POWERSAVE,
 
 	LAST_PROP
 };
@@ -293,7 +297,7 @@ nm_setting_wireless_new (void)
  * nm_setting_wireless_get_ssid:
  * @setting: the #NMSettingWireless
  *
- * Returns: the #NMSettingWireless:ssid property of the setting
+ * Returns: (transfer none): the #NMSettingWireless:ssid property of the setting
  **/
 GBytes *
 nm_setting_wireless_get_ssid (NMSettingWireless *setting)
@@ -597,6 +601,22 @@ nm_setting_wireless_get_hidden (NMSettingWireless *setting)
 	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), FALSE);
 
 	return NM_SETTING_WIRELESS_GET_PRIVATE (setting)->hidden;
+}
+
+/**
+ * nm_setting_wireless_get_powersave:
+ * @setting: the #NMSettingWireless
+ *
+ * Returns: the #NMSettingWireless:powersave property of the setting
+ *
+ * Since: 1.2
+ **/
+guint32
+nm_setting_wireless_get_powersave (NMSettingWireless *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), 0);
+
+	return NM_SETTING_WIRELESS_GET_PRIVATE (setting)->powersave;
 }
 
 /**
@@ -914,6 +934,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_HIDDEN:
 		priv->hidden = g_value_get_boolean (value);
 		break;
+	case PROP_POWERSAVE:
+		priv->powersave = g_value_get_uint (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -967,6 +990,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_HIDDEN:
 		g_value_set_boolean (value, nm_setting_wireless_get_hidden (setting));
 		break;
+	case PROP_POWERSAVE:
+		g_value_set_uint (value, nm_setting_wireless_get_powersave (setting));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -993,16 +1019,25 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 *
 	 * SSID of the Wi-Fi network. Must be specified.
 	 **/
+	/* ---keyfile---
+	 * property: ssid
+	 * format: string (or decimal-byte list - obsolete)
+	 * description: SSID of Wi-Fi network.
+	 * example: ssid=Quick Net
+	 * ---end---
+	 * ---ifcfg-rh---
+	 * property: ssid
+	 * variable: ESSID
+	 * description: SSID of Wi-Fi network.
+	 * example: ESSID="Quick Net"
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_SSID,
 		 g_param_spec_boxed (NM_SETTING_WIRELESS_SSID, "", "",
 		                     G_TYPE_BYTES,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_WIRELESS_SSID,
-	                                      G_VARIANT_TYPE_BYTESTRING,
-	                                      _nm_utils_bytes_to_dbus,
-	                                      _nm_utils_bytes_from_dbus);
 
 	/**
 	 * NMSettingWireless:mode:
@@ -1010,6 +1045,13 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 * Wi-Fi network mode; one of "infrastructure", "adhoc" or "ap".  If blank,
 	 * infrastructure is assumed.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: mode
+	 * variable: MODE
+	 * values: Ad-Hoc, Managed (Auto)  [case insensitive]
+	 * description: Wi-Fi network mode.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_MODE,
 		 g_param_spec_string (NM_SETTING_WIRELESS_MODE, "", "",
@@ -1027,6 +1069,15 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 * settings are compatible.  This setting depends on specific driver
 	 * capability and may not work with all drivers.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: band
+	 * variable: BAND(+)
+	 * values: a, bg
+	 * description: BAND alone is honored, but CHANNEL overrides BAND since it
+	 *   implies a band.
+	 * example: BAND=bg
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_BAND,
 		 g_param_spec_string (NM_SETTING_WIRELESS_BAND, "", "",
@@ -1042,6 +1093,15 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 * channel.  Because channel numbers overlap between bands, this property
 	 * also requires the "band" property to be set.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: channel
+	 * variable: CHANNEL
+	 * description: Channel used for the Wi-Fi communication.
+	 *   Channels greater than 14 mean "a" band, otherwise the
+	 *   band is "bg".
+	 * example: CHANNEL=6
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_CHANNEL,
 		 g_param_spec_uint (NM_SETTING_WIRELESS_CHANNEL, "", "",
@@ -1058,6 +1118,13 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 * all devices.  Note: this property does not control the BSSID used when
 	 * creating an Ad-Hoc network and is unlikely to in the future.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: bssid
+	 * variable: BSSID(+)
+	 * description: Restricts association only to a single AP.
+	 * example: BSSID=00:1E:BD:64:83:21
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_BSSID,
 		 g_param_spec_string (NM_SETTING_WIRELESS_BSSID, "", "",
@@ -1077,6 +1144,12 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 * Mbit/s.  This property is highly driver dependent and not all devices
 	 * support setting a static bitrate.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: rate
+	 * variable: (none)
+	 * description: This property is not handled by ifcfg-rh plugin.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_RATE,
 		 g_param_spec_uint (NM_SETTING_WIRELESS_RATE, "", "",
@@ -1093,6 +1166,12 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 * Units are dBm.  This property is highly driver dependent and not all
 	 * devices support setting a static transmit power.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: tx-power
+	 * variable: (none)
+	 * description: This property is not handled by ifcfg-rh plugin.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_TX_POWER,
 		 g_param_spec_uint (NM_SETTING_WIRELESS_TX_POWER, "", "",
@@ -1109,6 +1188,20 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 * permanent MAC address matches. This property does not change the MAC
 	 * address of the device (i.e. MAC spoofing).
 	 **/
+	/* ---keyfile---
+	 * property: mac-address
+	 * format: ususal hex-digits-and-colons notation
+	 * description: MAC address in traditional hex-digits-and-colons notation
+	 *   (e.g. 00:22:68:12:79:A2), or semicolon separated list of 6 bytes (obsolete)
+	 *   (e.g. 0;34;104;18;121;162).
+	 * ---end---
+	 * ---ifcfg-rh---
+	 * property: mac-address
+	 * variable: HWADDR
+	 * description: Hardware address of the device in traditional hex-digits-and-colons
+	 *    notation (e.g. 00:22:68:14:5A:05).
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,
 		 g_param_spec_string (NM_SETTING_WIRELESS_MAC_ADDRESS, "", "",
@@ -1126,6 +1219,20 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 * If specified, request that the Wi-Fi device use this MAC address instead
 	 * of its permanent MAC address.  This is known as MAC cloning or spoofing.
 	 **/
+	/* ---keyfile---
+	 * property: cloned-mac-address
+	 * format: ususal hex-digits-and-colons notation
+	 * description: Cloned MAC address in traditional hex-digits-and-colons notation
+	 *   (e.g. 00:22:68:12:79:B2), or semicolon separated list of 6 bytes (obsolete)
+	 *   (e.g. 0;34;104;18;121;178).
+	 * ---end---
+	 * ---ifcfg-rh---
+	 * property: cloned-mac-address
+	 * variable: MACADDR
+	 * description: Cloned (spoofed) MAC address in traditional hex-digits-and-colons
+	 *    notation (e.g. 00:22:68:14:5A:99).
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_CLONED_MAC_ADDRESS,
 		 g_param_spec_string (NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, "", "",
@@ -1144,6 +1251,19 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 * connection should never apply.  Each MAC address should be given in the
 	 * standard hex-digits-and-colons notation (eg "00:11:22:33:44:55").
 	 **/
+	/* ---keyfile---
+	 * property: mac-address-blacklist
+	 * format: list of MACs (separated with semicolons)
+	 * description: MAC address blacklist.
+	 * example: mac-address-blacklist= 00:22:68:12:79:A6;00:22:68:12:79:78
+	 * ---end---
+	 * ---ifcfg-rh---
+	 * property: mac-address-blacklist
+	 * variable: HWADDR_BLACKLIST(+)
+	 * description: It denies usage of the connection for any device whose address
+	 *   is listed.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS_BLACKLIST,
 		 g_param_spec_boxed (NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST, "", "",
@@ -1162,6 +1282,12 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 * NetworkManager. The changes you make to this property will not be
 	 * preserved.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: seen-bssids
+	 * variable: (none)
+	 * description: This property is not handled by ifcfg-rh plugin.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_SEEN_BSSIDS,
 		 g_param_spec_boxed (NM_SETTING_WIRELESS_SEEN_BSSIDS, "", "",
@@ -1176,6 +1302,12 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 * If non-zero, only transmit packets of the specified size or smaller,
 	 * breaking larger packets up into multiple Ethernet frames.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: mtu
+	 * variable: MTU
+	 * description: MTU of the wireless interface.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_MTU,
 		 g_param_spec_uint (NM_SETTING_WIRELESS_MTU, "", "",
@@ -1194,6 +1326,12 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 * these workarounds expose inherent insecurities with hidden SSID networks,
 	 * and thus hidden SSID networks should be used with caution.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: hidden
+	 * variable: SSID_HIDDEN(+)
+	 * description: Whether the network hides the SSID.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_HIDDEN,
 		 g_param_spec_boolean (NM_SETTING_WIRELESS_HIDDEN, "", "",
@@ -1201,7 +1339,37 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 		                       G_PARAM_READWRITE |
 		                       G_PARAM_STATIC_STRINGS));
 
+	/**
+	 * NMSettingWireless:powersave:
+	 *
+	 * If set to %FALSE, Wi-Fi power saving behavior is disabled.  If set to
+	 * %TRUE, Wi-Fi power saving behavior is enabled.  All other values are
+	 * reserved.  Note that even though only boolean values are allowed, the
+	 * property type is an unsigned integer to allow for future expansion.
+	 *
+	 * Since: 1.2
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_POWERSAVE,
+		 g_param_spec_uint (NM_SETTING_WIRELESS_POWERSAVE, "", "",
+		                    0, G_MAXUINT32, 0,
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS));
+
 	/* Compatibility for deprecated property */
+	/* ---ifcfg-rh---
+	 * property: security
+	 * variable: (none)
+	 * description: This property is deprecated and not handled by ifcfg-rh-plugin.
+	 * ---end---
+	 * ---dbus---
+	 * property: security
+	 * description: This property is deprecated, but can be set to the value
+	 *   '802-11-wireless-security' when a wireless security setting is also
+	 *   present in the connection dictionary, for compatibility with very old
+	 *   NetworkManager daemons.
+	 * ---end---
+	 */
 	_nm_setting_class_add_dbus_only_property (parent_class, "security",
 	                                          G_VARIANT_TYPE_STRING,
 	                                          nm_setting_wireless_get_security, NULL);

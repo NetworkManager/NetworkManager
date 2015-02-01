@@ -20,8 +20,10 @@
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 
 #include "nm-utils.h"
 #include "nm-utils-private.h"
@@ -775,14 +777,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (!priv->uuid) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
-		                     _("property is missing"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_UUID);
-		return FALSE;
-	} else if (!nm_utils_is_uuid (priv->uuid)) {
+	if (priv->uuid && !nm_utils_is_uuid (priv->uuid)) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -872,10 +867,10 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 
 	if (is_slave) {
 		if (!priv->master) {
-			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
-			                     _("Slave connections need a valid '" NM_SETTING_CONNECTION_MASTER "' property"));
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_MISSING_PROPERTY,
+			             _("Slave connections need a valid '%s' property"), NM_SETTING_CONNECTION_MASTER);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_MASTER);
 			return FALSE;
 		}
@@ -893,10 +888,11 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 				normerr_missing_slave_type = slave_type;
 				normerr_missing_slave_type_port = nm_setting_get_name (s_port);
 			} else {
-				g_set_error_literal (error,
-				                     NM_CONNECTION_ERROR,
-				                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
-				                     _("Cannot set '" NM_SETTING_CONNECTION_MASTER "' without '" NM_SETTING_CONNECTION_SLAVE_TYPE "'"));
+				g_set_error (error,
+				             NM_CONNECTION_ERROR,
+				             NM_CONNECTION_ERROR_MISSING_PROPERTY,
+				             _("Cannot set '%s' without '%s'"),
+				             NM_SETTING_CONNECTION_MASTER, NM_SETTING_CONNECTION_SLAVE_TYPE);
 				g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);
 				return FALSE;
 			}
@@ -904,6 +900,15 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	}
 
 	/* *** errors above here should be always fatal, below NORMALIZABLE_ERROR *** */
+
+	if (!priv->uuid) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
+		                     _("property is missing"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_UUID);
+		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
+	}
 
 	if (normerr_base_type) {
 		g_set_error (error,
@@ -934,8 +939,9 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_MISSING_PROPERTY,
-		             _("Detect a slave connection with '" NM_SETTING_CONNECTION_MASTER "' set and a port type '%s'. '" NM_SETTING_CONNECTION_SLAVE_TYPE "' should be set to '%s'"),
-		             normerr_missing_slave_type_port, normerr_missing_slave_type);
+		             _("Detect a slave connection with '%s' set and a port type '%s'. '%s' should be set to '%s'"),
+		             NM_SETTING_CONNECTION_MASTER, normerr_missing_slave_type_port,
+		             NM_SETTING_CONNECTION_SLAVE_TYPE, normerr_missing_slave_type);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);
 		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
 	}
@@ -962,8 +968,9 @@ find_virtual_interface_name (GVariant *connection_dict)
 
 	/* All of the deprecated virtual interface name properties were named "interface-name". */
 	if (!g_variant_lookup (setting_dict, "interface-name", "&s", &interface_name))
-		return NULL;
+		interface_name = NULL;
 
+	g_variant_unref (setting_dict);
 	return interface_name;
 }
 
@@ -1010,6 +1017,11 @@ compare_property (NMSetting *setting,
 	/* Handle ignore ID */
 	if (   (flags & NM_SETTING_COMPARE_FLAG_IGNORE_ID)
 	    && g_strcmp0 (prop_spec->name, NM_SETTING_CONNECTION_ID) == 0)
+		return TRUE;
+
+	/* Handle ignore timestamp */
+	if (   (flags & NM_SETTING_COMPARE_FLAG_IGNORE_TIMESTAMP)
+	    && g_strcmp0 (prop_spec->name, NM_SETTING_CONNECTION_TIMESTAMP) == 0)
 		return TRUE;
 
 	/* Otherwise chain up to parent to handle generic compare */
@@ -1216,6 +1228,12 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * A human readable unique identifier for the connection, like "Work Wi-Fi"
 	 * or "T-Mobile 3G".
 	 **/
+	/* ---ifcfg-rh---
+	 * property: id
+	 * variable: NAME(+)
+	 * description: User friendly name for the connection profile.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_ID,
 		 g_param_spec_string (NM_SETTING_CONNECTION_ID, "", "",
@@ -1240,6 +1258,13 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * be generated by nm_utils_uuid_generate() or
 	 * nm_utils_uuid_generate_from_string().
 	 **/
+	/* ---ifcfg-rh---
+	 * property: uuid
+	 * variable: UUID(+)
+	 * description: UUID for the connection profile. When missing, NetworkManager
+	 *   creates the UUID itself (by hashing the file).
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_UUID,
 		 g_param_spec_string (NM_SETTING_CONNECTION_UUID, "", "",
@@ -1263,6 +1288,14 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * can be used with, and if interface names change or are reordered the
 	 * connection may be applied to the wrong interface.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: interface-name
+	 * variable: DEVICE
+	 * description: Interface name of the device this profile is bound to. The variable
+	 *   can be left out when the profile should apply for more devices. Note that DEVICE
+	 *   can be required for some connection types.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_INTERFACE_NAME,
 		 g_param_spec_string (NM_SETTING_CONNECTION_INTERFACE_NAME, "", "",
@@ -1285,6 +1318,15 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * non-hardware dependent connections like VPN or otherwise, should contain
 	 * the setting name of that setting type (ie, "vpn" or "bridge", etc).
 	 **/
+	/* ---ifcfg-rh---
+	 * property: type
+	 * variable: TYPE (DEVICETYPE, DEVICE)
+	 * values: Ethernet, Wireless, InfiniBand, Bridge, Bond, Vlan, Team, TeamPort
+	 * description: Base type of the connection. DEVICETYPE is used for teaming
+	 *   connections.
+	 * example: TYPE=Ethernet; TYPE=Bond; TYPE=Bridge; DEVICETYPE=TeamPort
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_TYPE,
 		 g_param_spec_string (NM_SETTING_CONNECTION_TYPE, "", "",
@@ -1308,6 +1350,14 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * [reserved] information present must be ignored and is reserved for future
 	 * use.  All of [type], [id], and [reserved] must be valid UTF-8.
 	 */
+	/* ---ifcfg-rh---
+	 * property: permissions
+	 * variable: USERS(+)
+	 * description: USERS restrict the access for this conenction to certain
+	 *   users only.
+	 * example: USERS="joe bob"
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_PERMISSIONS,
 		 g_param_spec_boxed (NM_SETTING_CONNECTION_PERMISSIONS, "", "",
@@ -1323,6 +1373,13 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * %TRUE to automatically activate the connection, %FALSE to require manual
 	 * intervention to activate the connection.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: autoconnect
+	 * variable: ONBOOT
+	 * default: yes
+	 * description: Whether the connection should be autoconnected (not only while booting).
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_AUTOCONNECT,
 		 g_param_spec_boolean (NM_SETTING_CONNECTION_AUTOCONNECT, "", "",
@@ -1339,6 +1396,16 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * connections with higher priority will be preferred. Defaults to 0.
 	 * The higher number means higher priority.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: autoconnect-priority
+	 * variable: AUTOCONNECT_PRIORITY(+)
+	 * values: -999 to 999
+	 * default: 0
+	 * description: Connection priority for automatic activation. Connections with
+	 *  higher numbers are preferred when selecting profiles for automatic activation.
+	 * example: AUTOCONNECT_PRIORITY=20
+	 * ---end---
+	 */
 	g_object_class_install_property
 	    (object_class, PROP_AUTOCONNECT_PRIORITY,
 	     g_param_spec_int (NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY, "", "",
@@ -1394,6 +1461,14 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * the connection will be placed in the default zone as defined by the
 	 * firewall.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: zone
+	 * variable: ZONE(+)
+	 * description: Trust level of this connection. The string is usually used
+	 *   for a firewall.
+	 * example: ZONE=Work
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_ZONE,
 		 g_param_spec_string (NM_SETTING_CONNECTION_ZONE, "", "",
@@ -1408,6 +1483,13 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 *
 	 * Interface name of the master device or UUID of the master connection.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: master
+	 * variable: MASTER, TEAM_MASTER, BRIDGE
+	 * description: Reference to master connection. The variable used depends on
+	 *   the connection type.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_MASTER,
 		 g_param_spec_string (NM_SETTING_CONNECTION_MASTER, "", "",
@@ -1424,6 +1506,14 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * %NM_SETTING_BOND_SETTING_NAME), or %NULL if this connection is not a
 	 * slave.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: slave-type
+	 * variable: MASTER, TEAM_MASTER, DEVICETYPE, BRIDGE
+	 * description: Slave type doesn't map directly to a variable, but it is
+	 *   recognized using different variables.  MASTER for bonding,
+	 *   TEAM_MASTER and DEVICETYPE for teaming, BRIDGE for bridging.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_SLAVE_TYPE,
 		 g_param_spec_string (NM_SETTING_CONNECTION_SLAVE_TYPE, "", "",
@@ -1440,6 +1530,13 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * connection itself is activated. Currently only VPN connections are
 	 * supported.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: secondaries
+	 * variable: SECONDARY_UUIDS(+)
+	 * description: UUID of VPN connections that should be activated
+	 *   together with this connection.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_SECONDARIES,
 		 g_param_spec_boxed (NM_SETTING_CONNECTION_SECONDARIES, "", "",
@@ -1454,6 +1551,15 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * If greater than zero, delay success of IP addressing until either the
 	 * timeout is reached, or an IP gateway replies to a ping.
 	 **/
+	/* ---ifcfg-rh---
+	 * property: gateway-ping-timeout
+	 * variable: GATEWAY_PING_TIMEOUT(+)
+	 * default: 0
+	 * description: If greater than zero, the IP connectivity will be checked by
+	 *   pinging the gateway and waiting for the specified timeout (in seconds).
+	 * example: GATEWAY_PING_TIMEOUT=5
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_GATEWAY_PING_TIMEOUT,
 		 g_param_spec_uint (NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT, "", "",

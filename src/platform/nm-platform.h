@@ -28,7 +28,6 @@
 #include <linux/if_addr.h>
 
 #include <nm-dbus-interface.h>
-#include "gsystem-local-alloc.h"
 #include "nm-types.h"
 
 #define NM_TYPE_PLATFORM            (nm_platform_get_type ())
@@ -70,51 +69,11 @@ typedef enum {
 	/* Event came from the kernel. */
 	NM_PLATFORM_REASON_EXTERNAL,
 	/* Event is a result of cache checking and cleanups. */
-	NM_PLATFORM_REASON_CACHE_CHECK
+	NM_PLATFORM_REASON_CACHE_CHECK,
+
+	/* Internal reason to suppress announcing change events */
+	_NM_PLATFORM_REASON_CACHE_CHECK_INTERNAL,
 } NMPlatformReason;
-
-typedef enum {
-	/* Please don't interpret type numbers outside nm-platform and use functions
-	 * like nm_platform_link_is_software() and nm_platform_supports_slaves().
-	 *
-	 * type & 0x10000 -> Software device type
-	 * type & 0x20000 -> Type supports slaves
-	 */
-
-	/* No type, used as error value */
-	NM_LINK_TYPE_NONE,
-
-	/* Unknown type  */
-	NM_LINK_TYPE_UNKNOWN,
-
-	/* Hardware types */
-	NM_LINK_TYPE_ETHERNET,
-	NM_LINK_TYPE_INFINIBAND,
-	NM_LINK_TYPE_OLPC_MESH,
-	NM_LINK_TYPE_WIFI,
-	NM_LINK_TYPE_WWAN_ETHERNET,   /* WWAN pseudo-ethernet */
-	NM_LINK_TYPE_WIMAX,
-
-	/* Software types */
-	NM_LINK_TYPE_DUMMY = 0x10000,
-	NM_LINK_TYPE_GRE,
-	NM_LINK_TYPE_GRETAP,
-	NM_LINK_TYPE_IFB,
-	NM_LINK_TYPE_LOOPBACK,
-	NM_LINK_TYPE_MACVLAN,
-	NM_LINK_TYPE_MACVTAP,
-	NM_LINK_TYPE_OPENVSWITCH,
-	NM_LINK_TYPE_TAP,
-	NM_LINK_TYPE_TUN,
-	NM_LINK_TYPE_VETH,
-	NM_LINK_TYPE_VLAN,
-	NM_LINK_TYPE_VXLAN,
-
-	/* Software types with slaves */
-	NM_LINK_TYPE_BRIDGE = 0x10000 | 0x20000,
-	NM_LINK_TYPE_BOND,
-	NM_LINK_TYPE_TEAM,
-} NMLinkType;
 
 #define __NMPlatformObject_COMMON \
 	int ifindex; \
@@ -142,6 +101,12 @@ typedef enum {
 } NMPlatformSignalChangeType;
 
 #define NM_PLATFORM_LIFETIME_PERMANENT G_MAXUINT32
+
+typedef enum {
+	NM_PLATFORM_GET_ROUTE_MODE_ALL,
+	NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT,
+	NM_PLATFORM_GET_ROUTE_MODE_ONLY_DEFAULT,
+} NMPlatformGetRouteMode;
 
 typedef struct {
 	__NMPlatformObject_COMMON;
@@ -213,19 +178,35 @@ struct _NMPlatformIP6Address {
 };
 G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPAddress, address_ptr) == G_STRUCT_OFFSET (NMPlatformIP6Address, address));
 
+typedef union {
+	NMPlatformIPAddress  ax;
+	NMPlatformIP4Address a4;
+	NMPlatformIP6Address a6;
+} NMPlatformIPXAddress;
+
 #undef __NMPlatformIPAddress_COMMON
 
 
-/* Adding an IPv6 route with metric 0, kernel translates to IP6_RT_PRIO_USER (1024).
- * Thus, the value is not choosen arbitraily, but matches kernel IPv6 default. */
-#define NM_PLATFORM_ROUTE_METRIC_DEFAULT 1024
+/* Default value for adding an IPv4 route. This is also what iproute2 does.
+ * Note that contrary to IPv6, you can add routes with metric 0 and it is even
+ * the default.
+ */
+#define NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP4 0
+
+/* Default value for adding an IPv6 route. This is also what iproute2 does.
+ * Adding an IPv6 route with metric 0, kernel translates to IP6_RT_PRIO_USER (1024). */
+#define NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6 1024
+
+/* For IPv4, kernel adds a device route (subnet routes) with metric 0 when user
+ * configures addresses. */
+#define NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE 0
 
 #define __NMPlatformIPRoute_COMMON \
 	__NMPlatformObject_COMMON; \
 	NMIPConfigSource source; \
 	int plen; \
-	guint metric; \
-	guint mss; \
+	guint32 metric; \
+	guint32 mss; \
 	;
 
 typedef struct {
@@ -252,6 +233,12 @@ struct _NMPlatformIP6Route {
 	struct in6_addr gateway;
 };
 G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPRoute, network_ptr) == G_STRUCT_OFFSET (NMPlatformIP6Route, network));
+
+typedef union {
+	NMPlatformIPRoute  rx;
+	NMPlatformIP4Route r4;
+	NMPlatformIP6Route r6;
+} NMPlatformIPXRoute;
 
 #undef __NMPlatformIPRoute_COMMON
 
@@ -375,6 +362,8 @@ typedef struct {
 	gboolean (*link_is_connected) (NMPlatform *, int ifindex);
 	gboolean (*link_uses_arp) (NMPlatform *, int ifindex);
 
+	gboolean (*link_get_ipv6_token) (NMPlatform *, int ifindex, NMUtilsIPv6IfaceId *iid);
+
 	gboolean (*link_get_user_ipv6ll_enabled) (NMPlatform *, int ifindex);
 	gboolean (*link_set_user_ipv6ll_enabled) (NMPlatform *, int ifindex, gboolean enabled);
 
@@ -418,6 +407,7 @@ typedef struct {
 	guint32     (*wifi_get_rate)         (NMPlatform *, int ifindex);
 	NM80211Mode (*wifi_get_mode)         (NMPlatform *, int ifindex);
 	void        (*wifi_set_mode)         (NMPlatform *, int ifindex, NM80211Mode mode);
+	void        (*wifi_set_powersave)    (NMPlatform *, int ifindex, guint32 powersave);
 	guint32     (*wifi_find_frequency)   (NMPlatform *, int ifindex, const guint32 *freqs);
 	void        (*wifi_indicate_addressing_running) (NMPlatform *, int ifindex, gboolean running);
 
@@ -439,18 +429,20 @@ typedef struct {
 	gboolean (*ip4_address_exists) (NMPlatform *, int ifindex, in_addr_t address, int plen);
 	gboolean (*ip6_address_exists) (NMPlatform *, int ifindex, struct in6_addr address, int plen);
 
-	GArray * (*ip4_route_get_all) (NMPlatform *, int ifindex, gboolean include_default);
-	GArray * (*ip6_route_get_all) (NMPlatform *, int ifindex, gboolean include_default);
+	gboolean (*ip4_check_reinstall_device_route) (NMPlatform *, int ifindex, const NMPlatformIP4Address *address, guint32 device_route_metric);
+
+	GArray * (*ip4_route_get_all) (NMPlatform *, int ifindex, NMPlatformGetRouteMode mode);
+	GArray * (*ip6_route_get_all) (NMPlatform *, int ifindex, NMPlatformGetRouteMode mode);
 	gboolean (*ip4_route_add) (NMPlatform *, int ifindex, NMIPConfigSource source,
 	                           in_addr_t network, int plen, in_addr_t gateway,
-	                           int prio, int mss);
+	                           guint32 pref_src, guint32 metric, guint32 mss);
 	gboolean (*ip6_route_add) (NMPlatform *, int ifindex, NMIPConfigSource source,
 	                           struct in6_addr network, int plen, struct in6_addr gateway,
-	                           int prio, int mss);
-	gboolean (*ip4_route_delete) (NMPlatform *, int ifindex, in_addr_t network, int plen, int metric);
-	gboolean (*ip6_route_delete) (NMPlatform *, int ifindex, struct in6_addr network, int plen, int metric);
-	gboolean (*ip4_route_exists) (NMPlatform *, int ifindex, in_addr_t network, int plen, int metric);
-	gboolean (*ip6_route_exists) (NMPlatform *, int ifindex, struct in6_addr network, int plen, int metric);
+	                           guint32 metric, guint32 mss);
+	gboolean (*ip4_route_delete) (NMPlatform *, int ifindex, in_addr_t network, int plen, guint32 metric);
+	gboolean (*ip6_route_delete) (NMPlatform *, int ifindex, struct in6_addr network, int plen, guint32 metric);
+	gboolean (*ip4_route_exists) (NMPlatform *, int ifindex, in_addr_t network, int plen, guint32 metric);
+	gboolean (*ip6_route_exists) (NMPlatform *, int ifindex, struct in6_addr network, int plen, guint32 metric);
 
 	gboolean (*check_support_kernel_extended_ifa_flags) (NMPlatform *);
 	gboolean (*check_support_user_ipv6ll) (NMPlatform *);
@@ -519,6 +511,8 @@ gboolean nm_platform_link_is_up (int ifindex);
 gboolean nm_platform_link_is_connected (int ifindex);
 gboolean nm_platform_link_uses_arp (int ifindex);
 
+gboolean nm_platform_link_get_ipv6_token (int ifindex, NMUtilsIPv6IfaceId *iid);
+
 gboolean nm_platform_link_get_user_ipv6ll_enabled (int ifindex);
 gboolean nm_platform_link_set_user_ipv6ll_enabled (int ifindex, gboolean enabled);
 
@@ -562,6 +556,7 @@ int         nm_platform_wifi_get_quality      (int ifindex);
 guint32     nm_platform_wifi_get_rate         (int ifindex);
 NM80211Mode nm_platform_wifi_get_mode         (int ifindex);
 void        nm_platform_wifi_set_mode         (int ifindex, NM80211Mode mode);
+void        nm_platform_wifi_set_powersave    (int ifindex, guint32 powersave);
 guint32     nm_platform_wifi_find_frequency   (int ifindex, const guint32 *freqs);
 void        nm_platform_wifi_indicate_addressing_running (int ifindex, gboolean running);
 
@@ -582,26 +577,24 @@ gboolean nm_platform_ip4_address_delete (int ifindex, in_addr_t address, int ple
 gboolean nm_platform_ip6_address_delete (int ifindex, struct in6_addr address, int plen);
 gboolean nm_platform_ip4_address_exists (int ifindex, in_addr_t address, int plen);
 gboolean nm_platform_ip6_address_exists (int ifindex, struct in6_addr address, int plen);
-gboolean nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresses);
-gboolean nm_platform_ip6_address_sync (int ifindex, const GArray *known_addresses);
+gboolean nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresses, guint32 device_route_metric);
+gboolean nm_platform_ip6_address_sync (int ifindex, const GArray *known_addresses, gboolean keep_link_local);
 gboolean nm_platform_address_flush (int ifindex);
 
-GArray *nm_platform_ip4_route_get_all (int ifindex, gboolean include_default);
-GArray *nm_platform_ip6_route_get_all (int ifindex, gboolean include_default);
-gboolean nm_platform_route_set_metric (int ifindex, int metric);
+gboolean nm_platform_ip4_check_reinstall_device_route (int ifindex, const NMPlatformIP4Address *address, guint32 device_route_metric);
+
+GArray *nm_platform_ip4_route_get_all (int ifindex, NMPlatformGetRouteMode mode);
+GArray *nm_platform_ip6_route_get_all (int ifindex, NMPlatformGetRouteMode mode);
 gboolean nm_platform_ip4_route_add (int ifindex, NMIPConfigSource source,
                                     in_addr_t network, int plen, in_addr_t gateway,
-                                    int metric, int mss);
+                                    guint32 pref_src, guint32 metric, guint32 mss);
 gboolean nm_platform_ip6_route_add (int ifindex, NMIPConfigSource source,
                                     struct in6_addr network, int plen, struct in6_addr gateway,
-                                    int metric, int mss);
-gboolean nm_platform_ip4_route_delete (int ifindex, in_addr_t network, int plen, int metric);
-gboolean nm_platform_ip6_route_delete (int ifindex, struct in6_addr network, int plen, int metric);
-gboolean nm_platform_ip4_route_exists (int ifindex, in_addr_t network, int plen, int metric);
-gboolean nm_platform_ip6_route_exists (int ifindex, struct in6_addr network, int plen, int metric);
-gboolean nm_platform_ip4_route_sync (int ifindex, const GArray *known_routes);
-gboolean nm_platform_ip6_route_sync (int ifindex, const GArray *known_routes);
-gboolean nm_platform_route_flush (int ifindex);
+                                    guint32 metric, guint32 mss);
+gboolean nm_platform_ip4_route_delete (int ifindex, in_addr_t network, int plen, guint32 metric);
+gboolean nm_platform_ip6_route_delete (int ifindex, struct in6_addr network, int plen, guint32 metric);
+gboolean nm_platform_ip4_route_exists (int ifindex, in_addr_t network, int plen, guint32 metric);
+gboolean nm_platform_ip6_route_exists (int ifindex, struct in6_addr network, int plen, guint32 metric);
 
 const char *nm_platform_link_to_string (const NMPlatformLink *link);
 const char *nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address);

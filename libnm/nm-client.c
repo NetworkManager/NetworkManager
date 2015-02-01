@@ -19,6 +19,8 @@
  * Copyright 2007 - 2014 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 #include <nm-utils.h>
 
@@ -700,9 +702,9 @@ nm_client_save_hostname_finish (NMClient *client,
  * @client: a #NMClient
  *
  * Gets all the known network devices.  Use nm_device_get_type() or the
- * NM_IS_DEVICE_XXXX() functions to determine what kind of device member of the
- * returned array is, and then you may use device-specific methods such as
- * nm_device_ethernet_get_hw_address().
+ * <literal>NM_IS_DEVICE_XXXX</literal> functions to determine what kind of
+ * device member of the returned array is, and then you may use device-specific
+ * methods such as nm_device_ethernet_get_hw_address().
  *
  * Returns: (transfer none) (element-type NMDevice): a #GPtrArray
  * containing all the #NMDevices.  The returned array is owned by the
@@ -1786,13 +1788,6 @@ init_async (GAsyncInitable *initable, int io_priority,
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (initable);
 	NMClientInitData *init_data;
-	GError *error = NULL;
-
-	if (!nm_utils_init (&error)) {
-		g_simple_async_report_take_gerror_in_idle (G_OBJECT (initable),
-		                                           callback, user_data, error);
-		return;
-	}
 
 	init_data = g_slice_new0 (NMClientInitData);
 	init_data->client = NM_CLIENT (initable);
@@ -1825,8 +1820,14 @@ dispose (GObject *object)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
 
-	g_clear_object (&priv->manager);
-	g_clear_object (&priv->settings);
+	if (priv->manager) {
+		g_signal_handlers_disconnect_by_data (priv->manager, object);
+		g_clear_object (&priv->manager);
+	}
+	if (priv->settings) {
+		g_signal_handlers_disconnect_by_data (priv->settings, object);
+		g_clear_object (&priv->settings);
+	}
 
 	G_OBJECT_CLASS (nm_client_parent_class)->dispose (object);
 }

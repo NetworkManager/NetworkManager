@@ -20,7 +20,8 @@
  * Copyright (C) 2011 Intel Corporation. All rights reserved.
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <errno.h>
 #include <string.h>
 #include <sys/ioctl.h>
@@ -260,6 +261,24 @@ wifi_nl80211_set_mode (WifiData *data, const NM80211Mode mode)
 	return err ? FALSE : TRUE;
 
  nla_put_failure:
+	nlmsg_free (msg);
+	return FALSE;
+}
+
+static gboolean
+wifi_nl80211_set_powersave (WifiData *data, guint32 powersave)
+{
+	WifiDataNl80211 *nl80211 = (WifiDataNl80211 *) data;
+	struct nl_msg *msg;
+	int err;
+
+	msg = nl80211_alloc_msg (nl80211, NL80211_CMD_SET_POWER_SAVE, 0);
+	NLA_PUT_U32 (msg, NL80211_ATTR_PS_STATE,
+	             powersave == 1 ? NL80211_PS_ENABLED : NL80211_PS_DISABLED);
+	err = nl80211_send_and_recv (nl80211, msg, NULL, NULL);
+	return err ? FALSE : TRUE;
+
+nla_put_failure:
 	nlmsg_free (msg);
 	return FALSE;
 }
@@ -841,6 +860,7 @@ wifi_nl80211_init (const char *iface, int ifindex)
 	nl80211 = wifi_data_new (iface, ifindex, sizeof (*nl80211));
 	nl80211->parent.get_mode = wifi_nl80211_get_mode;
 	nl80211->parent.set_mode = wifi_nl80211_set_mode;
+	nl80211->parent.set_powersave = wifi_nl80211_set_powersave;
 	nl80211->parent.get_freq = wifi_nl80211_get_freq;
 	nl80211->parent.find_freq = wifi_nl80211_find_freq;
 	nl80211->parent.get_ssid = wifi_nl80211_get_ssid;
@@ -931,50 +951,5 @@ wifi_nl80211_init (const char *iface, int ifindex)
 error:
 	wifi_utils_deinit ((WifiData *) nl80211);
 	return NULL;
-}
-
-gboolean
-wifi_nl80211_is_wifi (const char *iface)
-{
-	struct nl_sock *nl_sock;
-	struct nl_cb *nl_cb = NULL;
-	struct nl_msg *msg = NULL;
-	int id, ifindex;
-	struct nl80211_iface_info iface_info = {
-		.mode = NM_802_11_MODE_UNKNOWN,
-	};
-	gboolean is_wifi = FALSE;
-
-	nl_sock = nl_socket_alloc ();
-	if (nl_sock == NULL)
-		return FALSE;
-
-	if (genl_connect (nl_sock))
-		goto error;
-
-	ifindex = nm_platform_link_get_ifindex (iface);
-	if (ifindex < 0)
-		goto error;
-
-	id = genl_ctrl_resolve (nl_sock, "nl80211");
-	if (id < 0)
-		goto error;
-
-	nl_cb = nl_cb_alloc (NL_CB_DEFAULT);
-	if (nl_cb) {
-		msg = _nl80211_alloc_msg (id, ifindex, -1, NL80211_CMD_GET_INTERFACE, 0);
-		if (_nl80211_send_and_recv (nl_sock,
-			                        nl_cb,
-			                        msg,
-			                        nl80211_iface_info_handler,
-			                        &iface_info) >= 0)
-			is_wifi = (iface_info.mode != NM_802_11_MODE_UNKNOWN);
-	}
-
- error:
-	if (nl_cb)
-		nl_cb_put (nl_cb);
-	nl_socket_free (nl_sock);
-	return is_wifi;
 }
 

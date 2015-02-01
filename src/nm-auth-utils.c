@@ -18,7 +18,8 @@
  * Copyright (C) 2010 Red Hat, Inc.
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <string.h>
 #include <gio/gio.h>
 
@@ -157,17 +158,18 @@ nm_auth_chain_steal_data (NMAuthChain *self, const char *tag)
 {
 	ChainData *tmp;
 	gpointer value = NULL;
+	void *orig_key;
 
 	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (tag != NULL, NULL);
 
-	tmp = g_hash_table_lookup (self->data, tag);
-	if (tmp) {
+	if (g_hash_table_lookup_extended (self->data, tag, &orig_key, (gpointer)&tmp)) {
 		g_hash_table_steal (self->data, tag);
 		value = tmp->data;
 		/* Make sure the destroy handler isn't called when freeing */
 		tmp->destroy = NULL;
 		free_data (tmp);
+		g_free (orig_key);
 	}
 	return value;
 }
@@ -418,17 +420,14 @@ nm_auth_chain_unref (NMAuthChain *self)
 
 gboolean
 nm_auth_is_subject_in_acl (NMConnection *connection,
-                           NMSessionMonitor *smon,
                            NMAuthSubject *subject,
                            char **out_error_desc)
 {
 	NMSettingConnection *s_con;
 	const char *user = NULL;
-	GError *local = NULL;
 	gulong uid;
 
 	g_return_val_if_fail (connection != NULL, FALSE);
-	g_return_val_if_fail (smon != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_AUTH_SUBJECT (subject), FALSE);
 	g_return_val_if_fail (nm_auth_subject_is_internal (subject) || nm_auth_subject_is_unix_process (subject), FALSE);
 
@@ -441,18 +440,7 @@ nm_auth_is_subject_in_acl (NMConnection *connection,
 	if (0 == uid)
 		return TRUE;
 
-	/* Reject the request if the request comes from no session at all */
-	if (!nm_session_monitor_uid_has_session (smon, uid, &user, &local)) {
-		if (out_error_desc) {
-			*out_error_desc = g_strdup_printf ("No session found for uid %lu (%s)",
-			                                   uid,
-			                                   local && local->message ? local->message : "unknown");
-		}
-		g_clear_error (&local);
-		return FALSE;
-	}
-
-	if (!user) {
+	if (!nm_session_monitor_uid_to_user (uid, &user)) {
 		if (out_error_desc)
 			*out_error_desc = g_strdup_printf ("Could not determine username for uid %lu", uid);
 		return FALSE;

@@ -38,26 +38,16 @@ G_BEGIN_DECLS
 
 typedef struct _NMSessionMonitorClass    NMSessionMonitorClass;
 
-GType             nm_session_monitor_get_type     (void) G_GNUC_CONST;
-NMSessionMonitor *nm_session_monitor_get          (void);
+typedef void (*NMSessionCallback) (NMSessionMonitor *monitor, gpointer user_data);
 
-gboolean          nm_session_monitor_user_has_session (NMSessionMonitor *monitor,
-                                                       const char *username,
-                                                       uid_t *out_uid,
-                                                       GError **error);
+GType             nm_session_monitor_get_type       (void) G_GNUC_CONST;
 
-gboolean          nm_session_monitor_uid_has_session  (NMSessionMonitor *monitor,
-                                                       uid_t uid,
-                                                       const char **out_user,
-                                                       GError **error);
+gulong            nm_session_monitor_connect        (NMSessionCallback callback, gpointer user_data);
+void              nm_session_monitor_disconnect     (gulong handler_id);
 
-gboolean          nm_session_monitor_user_active      (NMSessionMonitor *monitor,
-                                                       const char *username,
-                                                       GError **error);
-
-gboolean          nm_session_monitor_uid_active       (NMSessionMonitor *monitor,
-                                                       uid_t uid,
-                                                       GError **error);
+gboolean          nm_session_monitor_uid_to_user    (uid_t uid, const char **out_user);
+gboolean          nm_session_monitor_user_to_uid    (const char *user, uid_t *out_uid);
+gboolean          nm_session_monitor_session_exists (uid_t uid, gboolean active);
 
 G_END_DECLS
 

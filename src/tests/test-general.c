@@ -18,6 +18,8 @@
  *
  */
 
+#include "config.h"
+
 #include <glib.h>
 #include <string.h>
 #include <errno.h>
@@ -288,8 +290,7 @@ _match_connection_new (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4, *s_ip6;
 	char *uuid;
 
 	connection = nm_simple_connection_new ();
@@ -308,16 +309,16 @@ _match_connection_new (void)
 	s_wired = (NMSettingWired *) nm_setting_wired_new ();
 	nm_connection_add_setting (connection, (NMSetting *) s_wired);
 
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, (NMSetting *) s_ip4);
 	g_object_set (G_OBJECT (s_ip4),
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
 	              NULL);
 
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, (NMSetting *) s_ip6);
 	g_object_set (G_OBJECT (s_ip6),
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
 	              NULL);
 
 	return connection;
@@ -328,7 +329,7 @@ test_connection_match_basic (void)
 {
 	NMConnection *orig, *copy, *matched;
 	GSList *connections = NULL;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 
 	orig = _match_connection_new ();
 	copy = nm_simple_connection_new_clone (orig);
@@ -341,7 +342,7 @@ test_connection_match_basic (void)
 	s_ip4 = nm_connection_get_setting_ip4_config (orig);
 	g_assert (s_ip4);
 	g_object_set (G_OBJECT (s_ip4),
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
 	              NULL);
 	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
 	g_assert (matched == NULL);
@@ -356,7 +357,7 @@ test_connection_match_ip6_method (void)
 {
 	NMConnection *orig, *copy, *matched;
 	GSList *connections = NULL;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip6;
 
 	orig = _match_connection_new ();
 	copy = nm_simple_connection_new_clone (orig);
@@ -369,14 +370,14 @@ test_connection_match_ip6_method (void)
 	s_ip6 = nm_connection_get_setting_ip6_config (orig);
 	g_assert (s_ip6);
 	g_object_set (G_OBJECT (s_ip6),
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
 	              NULL);
 
 	s_ip6 = nm_connection_get_setting_ip6_config (copy);
 	g_assert (s_ip6);
 	g_object_set (G_OBJECT (s_ip6),
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
@@ -392,7 +393,7 @@ test_connection_match_ip6_method_ignore (void)
 {
 	NMConnection *orig, *copy, *matched;
 	GSList *connections = NULL;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip6;
 
 	orig = _match_connection_new ();
 	copy = nm_simple_connection_new_clone (orig);
@@ -404,13 +405,13 @@ test_connection_match_ip6_method_ignore (void)
 	s_ip6 = nm_connection_get_setting_ip6_config (orig);
 	g_assert (s_ip6);
 	g_object_set (G_OBJECT (s_ip6),
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
 	              NULL);
 
 	s_ip6 = nm_connection_get_setting_ip6_config (copy);
 	g_assert (s_ip6);
 	g_object_set (G_OBJECT (s_ip6),
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
 	              NULL);
 
 	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
@@ -426,7 +427,7 @@ test_connection_match_ip6_method_ignore_auto (void)
 {
 	NMConnection *orig, *copy, *matched;
 	GSList *connections = NULL;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip6;
 
 	orig = _match_connection_new ();
 	copy = nm_simple_connection_new_clone (orig);
@@ -438,13 +439,13 @@ test_connection_match_ip6_method_ignore_auto (void)
 	s_ip6 = nm_connection_get_setting_ip6_config (orig);
 	g_assert (s_ip6);
 	g_object_set (G_OBJECT (s_ip6),
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
 	              NULL);
 
 	s_ip6 = nm_connection_get_setting_ip6_config (copy);
 	g_assert (s_ip6);
 	g_object_set (G_OBJECT (s_ip6),
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
 	              NULL);
 
 	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
@@ -461,7 +462,7 @@ test_connection_match_ip4_method (void)
 {
 	NMConnection *orig, *copy, *matched;
 	GSList *connections = NULL;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 
 	orig = _match_connection_new ();
 	copy = nm_simple_connection_new_clone (orig);
@@ -474,14 +475,14 @@ test_connection_match_ip4_method (void)
 	s_ip4 = nm_connection_get_setting_ip4_config (orig);
 	g_assert (s_ip4);
 	g_object_set (G_OBJECT (s_ip4),
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
 	              NULL);
 
 	s_ip4 = nm_connection_get_setting_ip4_config (copy);
 	g_assert (s_ip4);
 	g_object_set (G_OBJECT (s_ip4),
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
-	              NM_SETTING_IP4_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
 	matched = nm_utils_match_connection (connections, orig, FALSE, NULL, NULL);
@@ -537,13 +538,12 @@ test_connection_match_wired (void)
 	GSList *connections = NULL;
 	NMSettingWired *s_wired;
 	char *subchan_arr[] = { "0.0.8000", "0.0.8001", "0.0.8002", NULL };
-	GByteArray *mac;
+	const char *mac = "52:54:00:ab:db:23";
 
 	orig = _match_connection_new ();
 	copy = nm_simple_connection_new_clone (orig);
 	connections = g_slist_append (connections, copy);
 
-	mac = nm_utils_hwaddr_atoba ("52:54:00:ab:db:23", ETH_ALEN);
 	s_wired = nm_connection_get_setting_wired (orig);
 	g_assert (s_wired);
 	g_object_set (G_OBJECT (s_wired),
@@ -552,7 +552,6 @@ test_connection_match_wired (void)
 	              NM_SETTING_WIRED_S390_SUBCHANNELS, subchan_arr,
 	              NM_SETTING_WIRED_S390_NETTYPE, "qeth",
 	              NULL);
-	g_byte_array_free (mac, TRUE);
 
 	s_wired = nm_connection_get_setting_wired (copy);
 	g_assert (s_wired);
@@ -574,10 +573,9 @@ test_connection_no_match_ip4_addr (void)
 {
 	NMConnection *orig, *copy, *matched;
 	GSList *connections = NULL;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
-	NMIP4Address *nm_addr;
-	guint32 addr, gw;
+	NMSettingIPConfig *s_ip4, *s_ip6;
+	NMIPAddress *nm_addr;
+	GError *error = NULL;
 
 	orig = _match_connection_new ();
 	copy = nm_simple_connection_new_clone (orig);
@@ -589,43 +587,37 @@ test_connection_no_match_ip4_addr (void)
 	s_ip6 = nm_connection_get_setting_ip6_config (orig);
 	g_assert (s_ip6);
 	g_object_set (G_OBJECT (s_ip6),
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
 	              NULL);
 
 	s_ip6 = nm_connection_get_setting_ip6_config (copy);
 	g_assert (s_ip6);
 	g_object_set (G_OBJECT (s_ip6),
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
 	              NULL);
 
 
 	s_ip4 = nm_connection_get_setting_ip4_config (orig);
 	g_assert (s_ip4);
 	g_object_set (G_OBJECT (s_ip4),
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "1.1.1.254",
 	              NULL);
-	nm_addr = nm_ip4_address_new ();
-	inet_pton (AF_INET, "1.1.1.4", &addr);
-	inet_pton (AF_INET, "1.1.1.254", &gw);
-	nm_ip4_address_set_address (nm_addr, addr);
-	nm_ip4_address_set_prefix (nm_addr, 24);
-	nm_ip4_address_set_gateway (nm_addr, gw);
-	nm_setting_ip4_config_add_address (s_ip4, nm_addr);
-	nm_ip4_address_unref (nm_addr);
+	nm_addr = nm_ip_address_new (AF_INET, "1.1.1.4", 24, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_address (s_ip4, nm_addr);
+	nm_ip_address_unref (nm_addr);
 
 	s_ip4 = nm_connection_get_setting_ip4_config (copy);
 	g_assert (s_ip4);
 	g_object_set (G_OBJECT (s_ip4),
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "2.2.2.254",
 	              NULL);
-	nm_addr = nm_ip4_address_new ();
-	inet_pton (AF_INET, "2.2.2.4", &addr);
-	inet_pton (AF_INET, "2.2.2.254", &gw);
-	nm_ip4_address_set_address (nm_addr, addr);
-	nm_ip4_address_set_prefix (nm_addr, 24);
-	nm_ip4_address_set_gateway (nm_addr, gw);
-	nm_setting_ip4_config_add_address (s_ip4, nm_addr);
-	nm_ip4_address_unref (nm_addr);
+	nm_addr = nm_ip_address_new (AF_INET, "2.2.2.4", 24, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_address (s_ip4, nm_addr);
+	nm_ip_address_unref (nm_addr);
 
 	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
 	g_assert (matched != copy);
@@ -735,6 +727,165 @@ test_connection_sort_autoconnect_priority (void)
 
 /*******************************************/
 
+static void
+__test_uuid (const char *expected_uuid, const char *str, gssize slen, char *uuid_test)
+{
+	g_assert (uuid_test);
+	g_assert (nm_utils_is_uuid (uuid_test));
+
+	if (strcmp (uuid_test, expected_uuid)) {
+		g_error ("UUID test failed (1): text=%s, len=%lld, expected=%s, uuid_test=%s",
+		         str, (long long) slen, expected_uuid, uuid_test);
+	}
+	g_free (uuid_test);
+
+	uuid_test = nm_utils_uuid_generate_from_string (str, slen, NM_UTILS_UUID_TYPE_VARIANT3, NM_UTILS_UUID_NS);
+
+	g_assert (uuid_test);
+	g_assert (nm_utils_is_uuid (uuid_test));
+
+	if (strcmp (uuid_test, expected_uuid)) {
+		g_error ("UUID test failed (2): text=%s; len=%lld, expected=%s, uuid2=%s",
+		         str, (long long) slen, expected_uuid, uuid_test);
+	}
+	g_free (uuid_test);
+}
+
+#define _test_uuid(expected_uuid, str, strlen, ...) __test_uuid (expected_uuid, str, strlen, nm_utils_uuid_generate_from_strings(__VA_ARGS__, NULL))
+
+static void
+test_nm_utils_uuid_generate_from_strings (void)
+{
+	_test_uuid ("b07c334a-399b-32de-8d50-58e4e08f98e3", "",         0, NULL);
+	_test_uuid ("b8a426cb-bcb5-30a3-bd8f-6786fea72df9", "\0",       1, "");
+	_test_uuid ("12a4a982-7aae-39e1-951e-41aeb1250959", "a\0",      2, "a");
+	_test_uuid ("69e22c7e-f89f-3a43-b239-1cb52ed8db69", "aa\0",     3, "aa");
+	_test_uuid ("59829fd3-5ad5-3d90-a7b0-4911747e4088", "\0\0",     2, "",   "");
+	_test_uuid ("01ad0e06-6c50-3384-8d86-ddab81421425", "a\0\0",    3, "a",  "");
+	_test_uuid ("e1ed8647-9ed3-3ec8-8c6d-e8204524d71d", "aa\0\0",   4, "aa", "");
+	_test_uuid ("fb1c7cd6-275c-3489-9382-83b900da8af0", "\0a\0",    3, "",   "a");
+	_test_uuid ("5d79494e-c4ba-31a6-80a2-d6016ccd7e17", "a\0a\0",   4, "a",  "a");
+	_test_uuid ("fd698d86-1b60-3ebe-855f-7aada9950a8d", "aa\0a\0",  5, "aa", "a");
+	_test_uuid ("8c573b48-0f01-30ba-bb94-c5f59f4fe517", "\0aa\0",   4, "",   "aa");
+	_test_uuid ("2bdd3d46-eb83-3c53-a41b-a724d04b5544", "a\0aa\0",  5, "a",  "aa");
+	_test_uuid ("13d4b780-07c1-3ba7-b449-81c4844ef039", "aa\0aa\0", 6, "aa", "aa");
+	_test_uuid ("dd265bf7-c05a-3037-9939-b9629858a477", "a\0b\0",   4, "a",  "b");
+}
+
+/*******************************************/
+
+static const char *_test_match_spec_all[] = {
+	"e",
+	"em",
+	"em*",
+	"em\\",
+	"em\\*",
+	"em\\1",
+	"em\\11",
+	"em\\2",
+	"em1",
+	"em11",
+	"em2",
+	"=em*",
+	NULL
+};
+
+static gboolean
+_test_match_spec_contains (const char **matches, const char *match)
+{
+	guint i;
+
+	for (i = 0; matches && matches[i]; i++) {
+		if (strcmp (match, matches[i]) == 0)
+			return TRUE;
+	}
+	return FALSE;
+}
+
+static void
+test_match_spec_ifname (const char *spec_str, const char **matches, const char **neg_matches)
+{
+	const char *m;
+	GSList *specs, *specs_reverse = NULL;
+	guint i;
+
+	g_assert (spec_str);
+
+	specs = nm_match_spec_split (spec_str);
+	specs_reverse = g_slist_reverse (g_slist_copy (specs));
+
+	for (i = 0; matches && matches[i]; i++) {
+		g_assert (nm_match_spec_interface_name (specs, matches[i]) == NM_MATCH_SPEC_MATCH);
+		g_assert (nm_match_spec_interface_name (specs_reverse, matches[i]) == NM_MATCH_SPEC_MATCH);
+	}
+	for (i = 0; neg_matches && neg_matches[i]; i++) {
+		g_assert (nm_match_spec_interface_name (specs, neg_matches[i]) == NM_MATCH_SPEC_NEG_MATCH);
+		g_assert (nm_match_spec_interface_name (specs_reverse, neg_matches[i]) == NM_MATCH_SPEC_NEG_MATCH);
+	}
+	for (i = 0; (m = _test_match_spec_all[i]); i++) {
+		if (_test_match_spec_contains (matches, m))
+			continue;
+		if (_test_match_spec_contains (neg_matches, m))
+			continue;
+		g_assert (nm_match_spec_interface_name (specs, m) == NM_MATCH_SPEC_NO_MATCH);
+		g_assert (nm_match_spec_interface_name (specs_reverse, m) == NM_MATCH_SPEC_NO_MATCH);
+	}
+
+	g_slist_free (specs_reverse);
+	g_slist_free_full (specs, g_free);
+}
+
+static void
+test_nm_match_spec_interface_name (void)
+{
+#define S(...) ((const char *[]) { __VA_ARGS__, NULL } )
+	test_match_spec_ifname ("em1",
+	                        S ("em1"),
+	                        NULL);
+	test_match_spec_ifname ("em1,em2",
+	                        S ("em1", "em2"),
+	                        NULL);
+	test_match_spec_ifname ("em1,em2,interface-name:em2",
+	                        S ("em1", "em2"),
+	                        NULL);
+	test_match_spec_ifname ("interface-name:em1",
+	                        S ("em1"),
+	                        NULL);
+	test_match_spec_ifname ("interface-name:em*",
+	                        S ("em", "em*", "em\\", "em\\*", "em\\1", "em\\11", "em\\2", "em1", "em11", "em2", "em3"),
+	                        NULL);
+	test_match_spec_ifname ("interface-name:em\\*",
+	                        S ("em\\", "em\\*", "em\\1", "em\\11", "em\\2"),
+	                        NULL);
+	test_match_spec_ifname ("interface-name:~em\\*",
+	                        S ("em\\", "em\\*", "em\\1", "em\\11", "em\\2"),
+	                        NULL);
+	test_match_spec_ifname ("interface-name:=em*",
+	                        S ("em*"),
+	                        NULL);
+	test_match_spec_ifname ("interface-name:em*,except:interface-name:em1*",
+	                        S ("em", "em*", "em\\", "em\\*", "em\\1", "em\\11", "em\\2", "em2", "em3"),
+	                        S ("em1", "em11"));
+	test_match_spec_ifname ("interface-name:em*,except:interface-name:=em*",
+	                        S ("em", "em\\", "em\\*", "em\\1", "em\\11", "em\\2", "em1", "em11", "em2", "em3"),
+	                        S ("em*"));
+	test_match_spec_ifname ("aa,bb,cc\\,dd,e,,",
+	                        S ("aa", "bb", "cc,dd", "e"),
+	                        NULL);
+	test_match_spec_ifname ("aa;bb;cc\\;dd;e,;",
+	                        S ("aa", "bb", "cc;dd", "e"),
+	                        NULL);
+	test_match_spec_ifname ("interface-name:em\\;1,em\\,2,\\,,\\\\,,em\\\\x",
+	                        S ("em;1", "em,2", ",", "\\", "em\\x"),
+	                        NULL);
+	test_match_spec_ifname ("  , interface-name:a, ,",
+	                        S ("  ", " ", " interface-name:a"),
+	                        NULL);
+#undef S
+}
+
+/*******************************************/
+
 NMTST_DEFINE ();
 
 int
@@ -756,6 +907,9 @@ main (int argc, char **argv)
 	g_test_add_func ("/general/connection-match/no-match-ip4-addr", test_connection_no_match_ip4_addr);
 
 	g_test_add_func ("/general/connection-sort/autoconnect-priority", test_connection_sort_autoconnect_priority);
+
+	g_test_add_func ("/general/nm_utils_uuid_generate_from_strings", test_nm_utils_uuid_generate_from_strings);
+	g_test_add_func ("/general/nm_match_spec_interface_name", test_nm_match_spec_interface_name);
 
 	return g_test_run ();
 }

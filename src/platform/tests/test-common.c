@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include "test-common.h"
 
 #include "nm-test-utils.h"
@@ -121,6 +123,113 @@ link_callback (NMPlatform *platform, int ifindex, NMPlatformLink *received, NMPl
 
 	if (data->change_type != NM_PLATFORM_SIGNAL_REMOVED)
 		g_error ("Added/changed link not found in the local cache.");
+}
+
+gboolean
+ip4_route_exists (const char *ifname, guint32 network, int plen, guint32 metric)
+{
+	gs_free char *arg_network = NULL;
+	const char *argv[] = {
+		NULL,
+		"route",
+		"list",
+		"dev",
+		ifname,
+		"exact",
+		NULL,
+		NULL,
+	};
+	int exit_status;
+	gs_free char *std_out = NULL, *std_err = NULL;
+	char *out;
+	gboolean success;
+	gs_free_error GError *error = NULL;
+	gs_free char *metric_pattern = NULL;
+
+	g_assert (ifname && nm_utils_iface_valid_name (ifname));
+	g_assert (!strstr (ifname, " metric "));
+	g_assert (plen >= 0 && plen <= 32);
+
+	if (!NM_IS_LINUX_PLATFORM (nm_platform_get ())) {
+		/* If we don't test against linux-platform, we don't actually configure any
+		 * routes in the system. */
+		return -1;
+	}
+
+	argv[0] = nm_utils_file_search_in_paths ("ip", NULL,
+	                                         (const char *[]) { "/sbin", "/usr/sbin", NULL },
+	                                         G_FILE_TEST_IS_EXECUTABLE, NULL, NULL, NULL);
+	argv[6] = arg_network = g_strdup_printf ("%s/%d", nm_utils_inet4_ntop (network, NULL), plen);
+
+	if (!argv[0]) {
+		/* Hm. There is no 'ip' binary. Return *unknown* */
+		return -1;
+	}
+
+	success = g_spawn_sync (NULL,
+	                        (char **) argv,
+	                        (char *[]) { NULL },
+	                        0,
+	                        NULL,
+	                        NULL,
+	                        &std_out,
+	                        &std_err,
+	                        &exit_status,
+	                        &error);
+	g_assert_no_error (error);
+	g_assert (success);
+	g_assert_cmpstr (std_err, ==, "");
+	g_assert (std_out);
+
+	metric_pattern = g_strdup_printf (" metric %u", metric);
+	out = std_out;
+	while (out) {
+		char *eol = strchr (out, '\n');
+		gs_free char *line = eol ? g_strndup (out, eol - out) : g_strdup (out);
+		const char *p;
+
+		out = eol ? &eol[1] : NULL;
+		if (!line[0])
+			continue;
+
+		if (metric == 0) {
+			if (!strstr (line, " metric "))
+				return TRUE;
+		}
+		p = strstr (line, metric_pattern);
+		if (p && NM_IN_SET (p[strlen (metric_pattern)], ' ', '\0'))
+			return TRUE;
+	}
+	return FALSE;
+}
+
+void
+_assert_ip4_route_exists (const char *file, guint line, const char *func, gboolean exists, const char *ifname, guint32 network, int plen, guint32 metric)
+{
+	int ifindex;
+	gboolean exists_checked;
+
+	/* Check for existance of the route by spawning iproute2. Do this because platform
+	 * code might be entirely borked, but we expect ip-route to give a correct result.
+	 * If the ip command cannot be found, we accept this as success. */
+	exists_checked = ip4_route_exists (ifname, network, plen, metric);
+	if (exists_checked != -1 && !exists_checked != !exists) {
+		g_error ("[%s:%u] %s(): We expect the ip4 route %s/%d metric %u %s, but it %s",
+		         file, line, func,
+		         nm_utils_inet4_ntop (network, NULL), plen, metric,
+		         exists ? "to exist" : "not to exist",
+		         exists ? "doesn't" : "does");
+	}
+
+	ifindex = nm_platform_link_get_ifindex (ifname);
+	g_assert (ifindex > 0);
+	if (!nm_platform_ip4_route_exists (ifindex, network, plen, metric) != !exists) {
+		g_error ("[%s:%u] %s(): The ip4 route %s/%d metric %u %s, but platform thinks %s",
+		         file, line, func,
+		         nm_utils_inet4_ntop (network, NULL), plen, metric,
+		         exists ? "exists" : "does not exist",
+		         exists ? "it doesn't" : "it does");
+	}
 }
 
 void

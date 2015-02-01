@@ -1,0 +1,45 @@
+# A list of packages useful/needed to build and develop
+# NetworkManager on Fedora and RHEL.
+#
+# Not all of these packages are available, depending
+# on your distribution/release. But yum will happily
+# skip them.
+#
+# Not all of these packages are strictly speaking necessary.
+# This is a generous list of related packages.
+
+yum install \
+    git \
+    bzip2 \
+    intltool \
+    bash-completion \
+    cscope \
+    gtk-doc \
+    libnl3-devel \
+    libndp-devel \
+    libtool \
+    autopoint \
+    gettext-devel \
+    dbus-devel \
+    dbus-glib-devel \
+    libgudev1-devel \
+    libuuid-devel \
+    nss-devel \
+    ppp-devel \
+    valgrind \
+    systemd-devel \
+    ModemManager-devel \
+    ModemManager-glib-devel \
+    newt-devel \
+    vala-devel \
+    vala-tools \
+    dbus-x11 \
+    wireless-tools-devel \
+    polkit-devel \
+    wimax-devel \
+    libsoup-devel \
+    readline-devel \
+    teamd-devel \
+    rpm-build \
+    perl-YAML-LibYAM \
+

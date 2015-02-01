@@ -23,6 +23,7 @@
 #define __NETWORKMANAGER_DEVICE_H__
 
 #include <glib-object.h>
+#include <gio/gio.h>
 #include <dbus/dbus-glib.h>
 #include <netinet/in.h>
 
@@ -85,9 +86,36 @@ G_BEGIN_DECLS
 
 typedef enum NMActStageReturn NMActStageReturn;
 
+/* These flags affect whether a connection is considered available on a device
+ * (check_connection_available()). The flags should have the meaning of relaxing
+ * a condition, so that adding a flag might make a connection available that would
+ * not be available otherwise. Adding a flag should never make a connection
+ * not available if it would be available otherwise. */
+typedef enum { /*< skip >*/
+	NM_DEVICE_CHECK_CON_AVAILABLE_NONE                                  = 0,
+
+	_NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER     = (1L << 0),
+	_NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP           = (1L << 1),
+	NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST                      = _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER
+	                                                                    | _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP,
+
+	__NM_DEVICE_CHECK_CON_AVAILABLE_ALL,
+	NM_DEVICE_CHECK_CON_AVAILABLE_ALL                                   = (((__NM_DEVICE_CHECK_CON_AVAILABLE_ALL - 1) << 1) - 1),
+} NMDeviceCheckConAvailableFlags;
+
 struct _NMDevice {
 	GObject parent;
 };
+
+/* The flags have an relaxing meaning, that means, specifying more flags, can make
+ * a device appear more available. It can never make a device less available. */
+typedef enum { /*< skip >*/
+	NM_DEVICE_CHECK_DEV_AVAILABLE_NONE                                  = 0,
+	NM_DEVICE_CHECK_DEV_AVAILABLE_IGNORE_CARRIER                        = (1L << 0),
+
+	__NM_DEVICE_CHECK_DEV_AVAILABLE_ALL,
+	NM_DEVICE_CHECK_DEV_AVAILABLE_ALL                                   = (((__NM_DEVICE_CHECK_DEV_AVAILABLE_ALL - 1) << 1) - 1),
+} NMDeviceCheckDevAvailableFlags;
 
 typedef struct {
 	GObjectClass parent;
@@ -116,7 +144,7 @@ typedef struct {
 
 	guint32		(* get_generic_capabilities)	(NMDevice *self);
 
-	gboolean	(* is_available) (NMDevice *self);
+	gboolean	(* is_available) (NMDevice *self, NMDeviceCheckDevAvailableFlags flags);
 
 	gboolean    (* get_enabled) (NMDevice *self);
 
@@ -136,18 +164,17 @@ typedef struct {
 	 * including any live network information like scan lists.  The connection
 	 * is checked against the object defined by @specific_object, if given.
 	 * Returns TRUE if the connection is available; FALSE if not.
+	 *
+	 * The passed @flags affect whether a connection is considered
+	 * available or not. Adding more flags, means the connection is
+	 * *more* available.
+	 *
+	 * Specifying @specific_object can only reduce the availability of a connection.
 	 */
 	gboolean    (* check_connection_available) (NMDevice *self,
 	                                            NMConnection *connection,
+	                                            NMDeviceCheckConAvailableFlags flags,
 	                                            const char *specific_object);
-
-	/* Same as check_connection_available() but called if the connection
-	 * is not present in the activating-connections array during activation,
-	 * to give the device a chance to allow/deny the activation.  This is a
-	 * hack only meant for hidden WiFi networks.
-	 */
-	gboolean    (* check_connection_available_wifi_hidden) (NMDevice *self,
-	                                                        NMConnection *connection);
 
 	gboolean    (* complete_connection)         (NMDevice *self,
 	                                             NMConnection *connection,
@@ -174,9 +201,19 @@ typedef struct {
 	void                (* ip4_config_pre_commit) (NMDevice *self, NMIP4Config *config);
 	void                (* ip6_config_pre_commit) (NMDevice *self, NMIP6Config *config);
 
+	/* Async deactivating (in the DEACTIVATING phase) */
+	void            (* deactivate_async)        (NMDevice *self,
+	                                             GCancellable *cancellable,
+	                                             GAsyncReadyCallback callback,
+	                                             gpointer user_data);
+	gboolean        (* deactivate_async_finish) (NMDevice *self,
+	                                             GAsyncResult *res,
+	                                             GError **error);
+
+	/* Sync deactivating (in the DISCONNECTED phase) */
 	void			(* deactivate)			(NMDevice *self);
 
-	gboolean        (* spec_match_list)     (NMDevice *self, const GSList *specs);
+	NMMatchSpecMatchType (* spec_match_list)   (NMDevice *self, const GSList *specs);
 
 	/* Update the connection with currently configured L2 settings */
 	void            (* update_connection) (NMDevice *device, NMConnection *connection);
@@ -216,6 +253,8 @@ GType nm_device_get_type (void);
 const char *    nm_device_get_path (NMDevice *dev);
 void            nm_device_dbus_export   (NMDevice *device);
 
+void            nm_device_finish_init   (NMDevice *device);
+
 const char *	nm_device_get_udi		(NMDevice *dev);
 const char *	nm_device_get_iface		(NMDevice *dev);
 int             nm_device_get_ifindex	(NMDevice *dev);
@@ -228,6 +267,8 @@ const char *	nm_device_get_type_desc (NMDevice *dev);
 NMDeviceType	nm_device_get_device_type	(NMDevice *dev);
 
 int			nm_device_get_priority (NMDevice *dev);
+guint32     nm_device_get_ip4_route_metric (NMDevice *dev);
+guint32     nm_device_get_ip6_route_metric (NMDevice *dev);
 
 const char *    nm_device_get_hw_address   (NMDevice *dev);
 
@@ -251,7 +292,9 @@ NMDevice *      nm_device_get_master        (NMDevice *dev);
 NMActRequest *	nm_device_get_act_request	(NMDevice *dev);
 NMConnection *  nm_device_get_connection	(NMDevice *dev);
 
-gboolean        nm_device_is_available   (NMDevice *dev);
+void            nm_device_removed        (NMDevice *dev);
+
+gboolean        nm_device_is_available   (NMDevice *dev, NMDeviceCheckDevAvailableFlags flags);
 gboolean        nm_device_has_carrier    (NMDevice *dev);
 
 NMConnection * nm_device_generate_connection (NMDevice *self, NMDevice *master);
@@ -272,6 +315,8 @@ gboolean nm_device_complete_connection (NMDevice *device,
                                         GError **error);
 
 gboolean nm_device_check_connection_compatible (NMDevice *device, NMConnection *connection);
+
+gboolean nm_device_uses_assumed_connection (NMDevice *device);
 
 gboolean nm_device_can_assume_active_connection (NMDevice *device);
 
@@ -295,16 +340,21 @@ RfKillType nm_device_get_rfkill_type (NMDevice *device);
  * @NM_UNMANAGED_INTERNAL: %TRUE when unmanaged by internal decision (ie,
  *   because NM is sleeping or not managed for some other reason)
  * @NM_UNMANAGED_USER: %TRUE when unmanaged by user decision (via unmanaged-specs)
+ * @NM_UNMANAGED_PARENT: %TRUE when unmanaged due to parent device being unmanaged
+ * @NM_UNMANAGED_EXTERNAL_DOWN: %TRUE when unmanaged because !IFF_UP and not created by NM
  */
 typedef enum {
-	NM_UNMANAGED_NONE     = 0x00,
-	NM_UNMANAGED_DEFAULT  = 0x01,
-	NM_UNMANAGED_INTERNAL = 0x02,
-	NM_UNMANAGED_USER     = 0x04,
+	NM_UNMANAGED_NONE          = 0x00,
+	NM_UNMANAGED_DEFAULT       = 0x01,
+	NM_UNMANAGED_INTERNAL      = 0x02,
+	NM_UNMANAGED_USER          = 0x04,
+	NM_UNMANAGED_PARENT        = 0x08,
+	NM_UNMANAGED_EXTERNAL_DOWN = 0x10,
 
 	/* Boundary value */
 	__NM_UNMANAGED_LAST,
-	NM_UNMANAGED_LAST     = __NM_UNMANAGED_LAST - 1,
+	NM_UNMANAGED_LAST          = __NM_UNMANAGED_LAST - 1,
+	NM_UNMANAGED_ALL           = ((NM_UNMANAGED_LAST << 1) - 1),
 } NMUnmanagedFlags;
 
 gboolean nm_device_get_managed (NMDevice *device);
@@ -348,15 +398,21 @@ gboolean nm_device_has_pending_action    (NMDevice *device);
 GPtrArray *nm_device_get_available_connections (NMDevice *device,
                                                 const char *specific_object);
 
-gboolean   nm_device_connection_is_available (NMDevice *device,
-                                              NMConnection *connection,
-                                              gboolean allow_device_override);
+gboolean   nm_device_check_connection_available (NMDevice *device,
+                                                 NMConnection *connection,
+                                                 NMDeviceCheckConAvailableFlags flags,
+                                                 const char *specific_object);
 
 gboolean nm_device_notify_component_added (NMDevice *device, GObject *component);
 
 gboolean nm_device_owns_iface (NMDevice *device, const char *iface);
 
 NMConnection *nm_device_new_default_connection (NMDevice *self);
+
+const NMPlatformIP4Route *nm_device_get_ip4_default_route (NMDevice *self, gboolean *out_is_assumed);
+const NMPlatformIP6Route *nm_device_get_ip6_default_route (NMDevice *self, gboolean *out_is_assumed);
+
+void nm_device_spawn_iface_helper (NMDevice *self);
 
 G_END_DECLS
 

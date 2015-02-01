@@ -19,6 +19,8 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
+#include "nm-sd-adapt.h"
+
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
@@ -277,6 +279,7 @@ char **strv_split_newlines(const char *s) {
         return l;
 }
 
+#if 0 /* NM_IGNORED */
 int strv_split_quoted(char ***t, const char *s, bool relax) {
         size_t n = 0, allocated = 0;
         _cleanup_strv_free_ char **l = NULL;
@@ -311,6 +314,7 @@ int strv_split_quoted(char ***t, const char *s, bool relax) {
 
         return 0;
 }
+#endif /* NM_IGNORED */
 
 char *strv_join(char **l, const char *separator) {
         char *r, *e;

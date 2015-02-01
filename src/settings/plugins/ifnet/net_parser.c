@@ -19,6 +19,8 @@
  * Copyright (C) 1999-2010 Gentoo Foundation, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 #include <stdio.h>
 #include <sys/ioctl.h>
@@ -394,7 +396,11 @@ ifnet_init (gchar * config_file)
 const char *
 ifnet_get_data (const char *conn_name, const char *key)
 {
-	GHashTable *conn = g_hash_table_lookup (conn_table, conn_name);
+	GHashTable *conn;
+
+	g_return_val_if_fail (conn_name && key, NULL);
+
+	conn = g_hash_table_lookup (conn_table, conn_name);
 
 	if (conn)
 		return g_hash_table_lookup (conn, key);

@@ -183,6 +183,7 @@ global:
 	nm_device_vlan_error_quark;
 	nm_device_vlan_get_carrier;
 	nm_device_vlan_get_hw_address;
+	nm_device_vlan_get_parent;
 	nm_device_vlan_get_type;
 	nm_device_vlan_get_vlan_id;
 	nm_device_vlan_new;

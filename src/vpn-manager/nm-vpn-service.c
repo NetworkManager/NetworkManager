@@ -19,7 +19,8 @@
  * Copyright (C) 2005 - 2008 Novell, Inc.
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <glib.h>
 #include <string.h>
 #include <sys/types.h>
@@ -30,7 +31,6 @@
 #include "nm-vpn-service.h"
 #include "nm-dbus-manager.h"
 #include "nm-logging.h"
-#include "nm-posix-signals.h"
 #include "nm-vpn-manager.h"
 #include "nm-glib-compat.h"
 
@@ -53,7 +53,7 @@ typedef struct {
 
 #define VPN_CONNECTION_GROUP "VPN Connection"
 
-static gboolean start_pending_vpn (NMVpnService *self);
+static gboolean start_pending_vpn (NMVpnService *self, GError **error);
 
 NMVpnService *
 nm_vpn_service_new (const char *namefile, GError **error)
@@ -129,7 +129,7 @@ connection_vpn_state_changed (NMVpnConnection *connection,
 		g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_vpn_state_changed), self);
 		if (connection == priv->active) {
 			priv->active = NULL;
-			start_pending_vpn (self);
+			start_pending_vpn (self, NULL);
 		} else
 			priv->pending = g_slist_remove (priv->pending, connection);
 		g_object_unref (connection);
@@ -166,20 +166,6 @@ nm_vpn_service_stop_connections (NMVpnService *service,
 	g_clear_pointer (&priv->pending, g_slist_free);
 }
 
-static void
-_daemon_setup (gpointer user_data G_GNUC_UNUSED)
-{
-	/* We are in the child process at this point */
-	pid_t pid = getpid ();
-	setpgid (pid, pid);
-
-	/*
-	 * We blocked signals in main(). We need to restore original signal
-	 * mask for VPN service here so that it can receive signals.
-	 */
-	nm_unblock_posix_signals (NULL);
-}
-
 static gboolean
 _daemon_exec_timeout (gpointer data)
 {
@@ -206,7 +192,7 @@ nm_vpn_service_daemon_exec (NMVpnService *service, GError **error)
 	vpn_argv[0] = priv->program;
 	vpn_argv[1] = NULL;
 
-	success = g_spawn_async (NULL, vpn_argv, NULL, 0, _daemon_setup, NULL, &pid, &spawn_error);
+	success = g_spawn_async (NULL, vpn_argv, NULL, 0, nm_utils_setpgid, NULL, &pid, &spawn_error);
 	if (success) {
 		nm_log_info (LOGD_VPN, "VPN service '%s' started (%s), PID %ld",
 		             priv->name, priv->dbus_service, (long int) pid);
@@ -252,7 +238,7 @@ start_active_vpn (NMVpnService *self, GError **error)
 }
 
 static gboolean
-start_pending_vpn (NMVpnService *self)
+start_pending_vpn (NMVpnService *self, GError **error)
 {
 	NMVpnServicePrivate *priv = NM_VPN_SERVICE_GET_PRIVATE (self);
 
@@ -265,7 +251,7 @@ start_pending_vpn (NMVpnService *self)
 	priv->active = g_slist_nth_data (priv->pending, 0);
 	priv->pending = g_slist_remove (priv->pending, priv->active);
 
-	return start_active_vpn (self, NULL);
+	return start_active_vpn (self, error);
 }
 
 gboolean
@@ -299,7 +285,7 @@ nm_vpn_service_activate (NMVpnService *service,
 	}
 
 	/* Otherwise start the next VPN */
-	return start_pending_vpn (service);
+	return start_pending_vpn (service, error);
 }
 
 static void

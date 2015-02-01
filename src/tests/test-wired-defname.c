@@ -18,12 +18,15 @@
  *
  */
 
+#include "config.h"
+
 #include <glib.h>
 #include <glib-object.h>
 
 #include <nm-simple-connection.h>
 #include <nm-setting-connection.h>
 #include "nm-device-ethernet-utils.h"
+#include "gsystem-local-alloc.h"
 
 static NMConnection *
 _new_connection (const char *id)
@@ -43,7 +46,7 @@ _new_connection (const char *id)
 static void
 test_defname_no_connections (void)
 {
-	char *name;
+	gs_free char *name = NULL;
 
 	name = nm_device_ethernet_utils_get_default_wired_name (NULL);
 	g_assert_cmpstr (name, ==, "Wired connection 1");
@@ -55,7 +58,7 @@ static void
 test_defname_no_conflict (void)
 {
 	GSList *list = NULL;
-	char *name;
+	gs_free char *name = NULL;
 
 	list = g_slist_append (list, _new_connection ("asdfasdfasdfadf"));
 	list = g_slist_append (list, _new_connection ("work wifi"));
@@ -73,7 +76,7 @@ static void
 test_defname_conflict (void)
 {
 	GSList *list = NULL;
-	char *name;
+	gs_free char *name = NULL;
 
 	list = g_slist_append (list, _new_connection ("asdfasdfasdfadf"));
 	list = g_slist_append (list, _new_connection ("Wired connection 1"));
@@ -91,7 +94,7 @@ static void
 test_defname_multiple_conflicts (void)
 {
 	GSList *list = NULL;
-	char *name;
+	gs_free char *name = NULL;
 
 	list = g_slist_append (list, _new_connection ("random gsm connection"));
 	list = g_slist_append (list, _new_connection ("home wifi"));

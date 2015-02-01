@@ -6,6 +6,7 @@ AM_CPPFLAGS = \
 	-I${top_srcdir} \
 	-I${top_srcdir}/include \
 	-DG_LOG_DOMAIN=\""libnm-util"\" \
+	-DLOCALEDIR=\"$(datadir)/locale\" \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
@@ -114,7 +115,7 @@ libnm_util_la_LIBADD = $(GLIB_LIBS) $(DBUS_LIBS) $(UUID_LIBS)
 SYMBOL_VIS_FILE=$(srcdir)/libnm-util.ver
 
 libnm_util_la_LDFLAGS = -Wl,--version-script=$(SYMBOL_VIS_FILE) \
-	-version-info "8:0:6"
+	-version-info "9:0:7"
 
 if WITH_GNUTLS
 libnm_util_la_SOURCES += crypto_gnutls.c
@@ -185,28 +186,6 @@ typelib_DATA = $(INTROSPECTION_GIRS:.gir=.typelib)
 CLEANFILES += $(gir_DATA) $(typelib_DATA)
 
 endif
-
-if BUILD_SETTING_DOCS
-
-noinst_DATA = nm-setting-docs.xml nm-keyfile-docs.xml nm-ifcfg-rh-docs.xml
-
-nm-setting-docs.xml: generate-setting-docs.py NetworkManager-1.0.gir NetworkManager-1.0.typelib libnm-util.la
-	export GI_TYPELIB_PATH=$(abs_builddir)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}; \
-	export LD_LIBRARY_PATH=$(abs_builddir)/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}; \
-	$(srcdir)/generate-setting-docs.py \
-		--gir $(builddir)/NetworkManager-1.0.gir \
-		--output $@
-
-nm-keyfile-docs.xml: generate-plugin-docs.pl $(libnm_util_la_csources)
-	$(srcdir)/generate-plugin-docs.pl keyfile $(srcdir) $@
-nm-ifcfg-rh-docs.xml: generate-plugin-docs.pl $(libnm_util_la_csources)
-	$(srcdir)/generate-plugin-docs.pl ifcfg-rh $(srcdir) $@
-
-endif
-
-DISTCLEANFILES += nm-setting-docs.xml nm-keyfile-docs.xml nm-ifcfg-rh-docs.xml
-
-EXTRA_DIST += generate-setting-docs.py generate-plugin-docs.pl
 
 if ENABLE_TESTS
 

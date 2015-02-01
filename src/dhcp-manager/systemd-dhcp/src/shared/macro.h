@@ -21,6 +21,8 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
+#include "nm-sd-adapt.h"
+
 #include <assert.h>
 #include <sys/param.h>
 #include <sys/types.h>
@@ -397,11 +399,11 @@ do {                                                                    \
 #define IN_SET(x, y, ...)                                               \
         ({                                                              \
                 const typeof(y) _y = (y);                               \
-                const typeof(_y) _x = (x);                              \
+                typeof(_y) _x = (x);                                    \
                 unsigned _i;                                            \
                 bool _found = false;                                    \
-                for (_i = 0; _i < 1 + sizeof((const typeof(_x)[]) { __VA_ARGS__ })/sizeof(const typeof(_x)); _i++) \
-                        if (((const typeof(_x)[]) { _y, __VA_ARGS__ })[_i] == _x) { \
+                for (_i = 0; _i < 1 + sizeof((typeof(_x)[]) { __VA_ARGS__ })/sizeof(typeof(_x)); _i++) \
+                        if (((typeof(_x)[]) { _y, __VA_ARGS__ })[_i] == _x) { \
                                 _found = true;                          \
                                 break;                                  \
                         }                                               \
@@ -423,6 +425,7 @@ do {                                                                    \
 #define CONF_DIR_SPLIT_USR(n)
 #endif
 
+#if 0 /* NM_IGNORED */
 /* Define C11 thread_local attribute even on older gcc compiler
  * version */
 #ifndef thread_local
@@ -459,3 +462,4 @@ do {                                                                    \
         struct __useless_struct_to_allow_trailing_semicolon__
 
 #include "log.h"
+#endif /* NM_IGNORED */

@@ -61,6 +61,7 @@ GQuark nm_setting_ip6_config_error_quark (void);
 #define NM_SETTING_IP6_CONFIG_DNS_SEARCH         "dns-search"
 #define NM_SETTING_IP6_CONFIG_ADDRESSES          "addresses"
 #define NM_SETTING_IP6_CONFIG_ROUTES             "routes"
+#define NM_SETTING_IP6_CONFIG_ROUTE_METRIC       "route-metric"
 #define NM_SETTING_IP6_CONFIG_IGNORE_AUTO_ROUTES "ignore-auto-routes"
 #define NM_SETTING_IP6_CONFIG_IGNORE_AUTO_DNS    "ignore-auto-dns"
 #define NM_SETTING_IP6_CONFIG_NEVER_DEFAULT      "never-default"
@@ -244,6 +245,9 @@ NM_AVAILABLE_IN_0_9_10
 gboolean               nm_setting_ip6_config_remove_route_by_value  (NMSettingIP6Config *setting, NMIP6Route *route);
 void                   nm_setting_ip6_config_clear_routes           (NMSettingIP6Config *setting);
 gboolean               nm_setting_ip6_config_get_ignore_auto_routes (NMSettingIP6Config *setting);
+
+NM_AVAILABLE_IN_1_0
+gint64                 nm_setting_ip6_config_get_route_metric       (NMSettingIP6Config *setting);
 
 gboolean               nm_setting_ip6_config_get_ignore_auto_dns    (NMSettingIP6Config *setting);
 const char *           nm_setting_ip6_config_get_dhcp_hostname      (NMSettingIP6Config *setting);

@@ -19,6 +19,8 @@
  * Copyright 2007 - 2008 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <signal.h>
 #include "nm-glib-compat.h"
 #include "nm-vpn-plugin.h"

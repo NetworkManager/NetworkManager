@@ -17,6 +17,11 @@ LDADD = \
 
 noinst_PROGRAMS = $(TESTS)
 
+if WITH_VALGRIND
+@VALGRIND_RULES@ --launch-dbus
+else
+TESTS_ENVIRONMENT = $(srcdir)/libnm-test-launch.sh
+endif
 TESTS = test-nm-client test-remote-settings-client test-secret-agent
 
 test_nm_client_SOURCES = \
@@ -33,9 +38,6 @@ test_secret_agent_SOURCES = \
 	common.c \
 	common.h \
 	test-secret-agent.c
-
-TESTS_ENVIRONMENT = $(srcdir)/libnm-test-launch.sh
-
 endif
 
 EXTRA_DIST = libnm-test-launch.sh

@@ -16,6 +16,8 @@
  * (C) Copyright 2011 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 #include <glib.h>
 #include <glib/gi18n.h>

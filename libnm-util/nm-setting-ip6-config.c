@@ -19,9 +19,11 @@
  * Copyright 2007 - 2014 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <string.h>
 #include <dbus/dbus-glib.h>
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 
 #include "nm-setting-ip6-config.h"
 #include "nm-param-spec-specialized.h"
@@ -75,6 +77,7 @@ typedef struct {
 	GSList *dns_search; /* list of strings */
 	GSList *addresses;  /* array of NMIP6Address */
 	GSList *routes;     /* array of NMIP6Route */
+	gint64  route_metric;
 	gboolean ignore_auto_routes;
 	gboolean ignore_auto_dns;
 	gboolean never_default;
@@ -91,6 +94,7 @@ enum {
 	PROP_DNS_SEARCH,
 	PROP_ADDRESSES,
 	PROP_ROUTES,
+	PROP_ROUTE_METRIC,
 	PROP_IGNORE_AUTO_ROUTES,
 	PROP_IGNORE_AUTO_DNS,
 	PROP_NEVER_DEFAULT,
@@ -709,6 +713,26 @@ nm_setting_ip6_config_clear_routes (NMSettingIP6Config *setting)
 }
 
 /**
+ * nm_setting_ip6_config_get_route_metric:
+ * @setting: the #NMSettingIP6Config
+ *
+ * Returns the value contained in the #NMSettingIP6Config:route-metric
+ * property.
+ *
+ * Returns: the route metric that is used for IPv6 routes that don't explicitly
+ * specify a metric. See #NMSettingIP6Config:route-metric for more details.
+ *
+ * Since: 1.0
+ **/
+gint64
+nm_setting_ip6_config_get_route_metric (NMSettingIP6Config *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), -1);
+
+	return NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->route_metric;
+}
+
+/**
  * nm_setting_ip6_config_get_ignore_auto_routes:
  * @setting: the #NMSettingIP6Config
  *
@@ -927,6 +951,9 @@ set_property (GObject *object, guint prop_id,
 		g_slist_free_full (priv->routes, g_free);
 		priv->routes = nm_utils_ip6_routes_from_gvalue (value);
 		break;
+	case PROP_ROUTE_METRIC:
+		priv->route_metric = g_value_get_int64 (value);
+		break;
 	case PROP_IGNORE_AUTO_ROUTES:
 		priv->ignore_auto_routes = g_value_get_boolean (value);
 		break;
@@ -973,6 +1000,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_ROUTES:
 		nm_utils_ip6_routes_to_gvalue (priv->routes, value);
+		break;
+	case PROP_ROUTE_METRIC:
+		g_value_set_int64 (value, priv->route_metric);
 		break;
 	case PROP_IGNORE_AUTO_ROUTES:
 		g_value_set_boolean (value, priv->ignore_auto_routes);
@@ -1027,15 +1057,6 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * not done. This property must be set.  Note: the "shared" method is not
 	 * yet supported.
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: method
-	 * variable: IPV6INIT, IPV6FORWARDING, IPV6_AUTOCONF, DHCPV6C
-	 * default:  IPV6INIT=yes; IPV6FORWARDING=no; IPV6_AUTOCONF=!IPV6FORWARDING, DHCPV6=no
-	 * description: Method used for IPv4 protocol configuration.
-	 *   ignore ~ IPV6INIT=no; auto ~ IPV6_AUTOCONF=yes; dhcp ~ IPV6_AUTOCONF=no and DHCPV6C=yes
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_METHOD,
 		 g_param_spec_string (NM_SETTING_IP6_CONFIG_METHOD, "", "",
@@ -1052,13 +1073,6 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 *
 	 * Since: 0.9.8
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: dhcp-hostname
-	 * variable: DHCP_HOSTNAME
-	 * description: Hostname to send the DHCP server.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_DHCP_HOSTNAME,
 		 g_param_spec_string (NM_SETTING_IP6_CONFIG_DHCP_HOSTNAME, "", "",
@@ -1077,21 +1091,6 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * other methods, these DNS servers are used as the only DNS servers for
 	 * this connection.
 	 **/
-	/* plugins docs
-	 * ---keyfile---
-	 * property: dns
-	 * format: list of DNS IP addresses
-	 * description: List of DNS servers.
-	 * example: dns=2001:4860:4860::8888;2001:4860:4860::8844;
-	 * ---end---
-	 * ---ifcfg-rh---
-	 * property: dns
-	 * variable: DNS1, DNS2, ...
-	 * format:   string
-	 * description: List of DNS servers. NetworkManager uses the variables both
-	 *   for IPv4 and IPv6.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_DNS,
 		 _nm_param_spec_specialized (NM_SETTING_IP6_CONFIG_DNS, "", "",
@@ -1129,20 +1128,6 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * "shared" or "link-local" methods as the interface is automatically
 	 * assigned an address with these methods.
 	 **/
-	/* plugins docs
-	 * ---keyfile---
-	 * property: addresses
-	 * variable: address1, address2, ...
-	 * format: address/plen[,gateway]
-	 * description: List of static IP addresses.
-	 * example: address1=abbe::cafe/96,abbe::1
-	 * ---end---
-	 * ---ifcfg-rh---
-	 * property: addresses
-	 * variable: IPV6ADDR, IPV6_DEFAULTGW, IPV6ADDR_SECONDARIES
-	 * description: List of static IP addresses.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_ADDRESSES,
 		 _nm_param_spec_specialized (NM_SETTING_IP6_CONFIG_ADDRESSES, "", "",
@@ -1163,21 +1148,6 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * automatic configuration.  Routes cannot be used with the "shared" or
 	 * "link-local" methods because there is no upstream network.
 	 **/
-	/* plugins docs
-	 * ---keyfile---
-	 * property: routes
-	 * variable: route1, route2, ...
-	 * format: route/plen[,gateway,metric]
-	 * description: List of IP routes.
-	 * example: route1=2001:4860:4860::/64,2620:52:0:2219:222:68ff:fe11:5403
-	 * ---end---
-	 * ---ifcfg-rh---
-	 * property: routes
-	 * variable: (none)
-	 * description: List of static routes. They are not stored in ifcfg-* file,
-	 *   but in route6-* file instead in the form of command line for 'ip route add'.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_ROUTES,
 		 _nm_param_spec_specialized (NM_SETTING_IP6_CONFIG_ROUTES, "", "",
@@ -1187,20 +1157,34 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 		                             G_PARAM_STATIC_STRINGS));
 
 	/**
+	 * NMSettingIP6Config:route-metric:
+	 *
+	 * The default metric for routes that don't explicitly specify a metric.
+	 * The default value -1 means that the metric is choosen automatically
+	 * based on the device type.
+	 * The metric applies to dynamic routes, manual (static) routes that
+	 * don't have an explicit metric setting, address prefix routes, and
+	 * the default route.
+	 * As the linux kernel replaces zero (0) by 1024 (user-default), setting
+	 * this property to 0 means effectively setting it to 1024.
+	 *
+	 * Since: 1.0
+	 **/
+	g_object_class_install_property
+	    (object_class, PROP_ROUTE_METRIC,
+	     g_param_spec_int64 (NM_SETTING_IP6_CONFIG_ROUTE_METRIC, "", "",
+	                         -1, G_MAXUINT32, -1,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_CONSTRUCT |
+	                         G_PARAM_STATIC_STRINGS));
+
+	/**
 	 * NMSettingIP6Config:ignore-auto-routes:
 	 *
 	 * When the method is set to "auto" or "dhcp" and this property is set to
 	 * %TRUE, automatically configured routes are ignored and only routes
 	 * specified in the #NMSettingIP6Config:routes property, if any, are used.
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: ignore-auto-routes
-	 * variable: IPV6_PEERROUTES(+)
-	 * default: yes
-	 * description: IPV6_PEERROUTES has the opposite meaning as 'ignore-auto-routes' property.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_IGNORE_AUTO_ROUTES,
 		 g_param_spec_boolean (NM_SETTING_IP6_CONFIG_IGNORE_AUTO_ROUTES, "", "",
@@ -1218,14 +1202,6 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * #NMSettingIP6Config:dns and #NMSettingIP6Config:dns-search properties, if
 	 * any, are used.
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: ignore-auto-dns
-	 * variable: IPV6_PEERDNS(+)
-	 * default: yes
-	 * description: IPV6_PEERDNS has the opposite meaning as 'ignore-auto-dns' property.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_IGNORE_AUTO_DNS,
 		 g_param_spec_boolean (NM_SETTING_IP6_CONFIG_IGNORE_AUTO_DNS, "", "",
@@ -1241,16 +1217,6 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * meaning it will never be assigned the default IPv6 route by
 	 * NetworkManager.
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: never-default
-	 * variable: IPV6_DEFROUTE(+), (and IPV6_DEFAULTGW, IPV6_DEFAULTDEV in /etc/sysconfig/network)
-	 * default: IPV6_DEFROUTE=yes (when no variable specified)
-	 * description: IPV6_DEFROUTE=no tells NetworkManager that this connection
-	 *   should not be assigned the default IPv6 route. IPV6_DEFROUTE has the opposite
-	 *   meaning as 'never-default' property.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_NEVER_DEFAULT,
 		 g_param_spec_boolean (NM_SETTING_IP6_CONFIG_NEVER_DEFAULT, "", "",
@@ -1269,14 +1235,6 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * network configuration to succeed if IPv6 configuration fails but IPv4
 	 * configuration completes successfully.
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: may-fail
-	 * variable: IPV6_FAILURE_FATAL(+)
-	 * default: no
-	 * description: IPV6_FAILURE_FATAL has the opposite meaning as 'may-fail' property.
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_MAY_FAIL,
 		 g_param_spec_boolean (NM_SETTING_IP6_CONFIG_MAY_FAIL, "", "",
@@ -1296,13 +1254,6 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * 1: enabled (prefer public address), 2: enabled (prefer temporary
 	 * addresses).
 	 **/
-	/* plugins docs
-	 * ---ifcfg-rh---
-	 * property: ip6-privacy
-	 * variable: IPV6_PRIVACY, IPV6_PRIVACY_PREFER_PUBLIC_IP(+)
-	 * description: Configure IPv6 Privacy Extensions for SLAAC (RFC4941).
-	 * ---end---
-	 */
 	g_object_class_install_property
 		(object_class, PROP_IP6_PRIVACY,
 		 g_param_spec_int (NM_SETTING_IP6_CONFIG_IP6_PRIVACY, "", "",

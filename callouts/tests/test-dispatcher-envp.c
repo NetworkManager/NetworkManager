@@ -18,7 +18,8 @@
  *
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <arpa/inet.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,6 +34,7 @@
 
 static gboolean
 parse_main (GKeyFile *kf,
+            const char *filename,
             GVariant **out_con_dict,
             GVariant **out_con_props,
             char **out_expected_iface,
@@ -79,8 +81,21 @@ parse_main (GKeyFile *kf,
 
 	g_variant_builder_init (&props, G_VARIANT_TYPE ("a{sv}"));
 	g_variant_builder_add (&props, "{sv}",
-	                       "connection-path",
+	                       NMD_CONNECTION_PROPS_PATH,
 	                       g_variant_new_object_path ("/org/freedesktop/NetworkManager/Connections/5"));
+
+	/* Strip out the non-fixed portion of the filename */
+	filename = strstr (filename, "/callouts");
+	g_variant_builder_add (&props, "{sv}",
+	                       "filename",
+	                       g_variant_new_string (filename));
+
+	if (g_key_file_get_boolean (kf, "main", "external", NULL)) {
+		g_variant_builder_add (&props, "{sv}",
+		                       "external",
+		                       g_variant_new_boolean (TRUE));
+	}
+
 	*out_con_props = g_variant_builder_end (&props);
 
 	return TRUE;
@@ -183,6 +198,7 @@ parse_ip4 (GKeyFile *kf, GVariant **out_props, const char *section, GError **err
 	char *tmp;
 	char **split, **iter;
 	GPtrArray *addresses, *routes;
+	const char *gateway = NULL;
 
 	g_variant_builder_init (&props, G_VARIANT_TYPE ("a{sv}"));
 
@@ -196,12 +212,12 @@ parse_ip4 (GKeyFile *kf, GVariant **out_props, const char *section, GError **err
 	split = g_strsplit_set (tmp, " ", -1);
 	g_free (tmp);
 
-	if (g_strv_length (split) > 0) {
+	if (split && g_strv_length (split) > 0) {
 		for (iter = split; iter && *iter; iter++)
 			g_strstrip (*iter);
 		g_variant_builder_add (&props, "{sv}", "domains", g_variant_new_strv ((gpointer) split, -1));
-		g_strfreev (split);
 	}
+	g_strfreev (split);
 
 	/* nameservers */
 	if (!add_uint_array (kf, &props, "ip4", "nameservers", error))
@@ -217,38 +233,37 @@ parse_ip4 (GKeyFile *kf, GVariant **out_props, const char *section, GError **err
 	split = g_strsplit_set (tmp, ",", -1);
 	g_free (tmp);
 
-	if (g_strv_length (split) > 0) {
-		addresses = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip4_address_unref);
+	if (split && g_strv_length (split) > 0) {
+		addresses = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_address_unref);
 		for (iter = split; iter && *iter; iter++) {
-			NMIP4Address *addr;
-			guint32 a;
-			char *p;
+			NMIPAddress *addr;
+			char *ip, *prefix;
 
 			if (strlen (g_strstrip (*iter)) == 0)
 				continue;
 
-			addr = nm_ip4_address_new ();
+			ip = *iter;
 
-			p = strchr (*iter, '/');
-			g_assert (p);
-			*p++ = '\0';
+			prefix = strchr (ip, '/');
+			g_assert (prefix);
+			*prefix++ = '\0';
 
-			g_assert_cmpint (inet_pton (AF_INET, *iter, &a), ==, 1);
-			nm_ip4_address_set_address (addr, a);
-			nm_ip4_address_set_prefix (addr, (guint) atoi (p));
+			if (addresses->len == 0) {
+				gateway = strchr (prefix, ' ');
+				g_assert (gateway);
+				gateway++;
+			}
 
-			p = strchr (p, ' ');
-			g_assert (p);
-			p++;
-
-			g_assert_cmpint (inet_pton (AF_INET, p, &a), ==, 1);
-			nm_ip4_address_set_gateway (addr, a);
-
+			addr = nm_ip_address_new (AF_INET, ip, (guint) atoi (prefix), error);
+			if (!addr) {
+				g_ptr_array_unref (addresses);
+				return FALSE;
+			}
 			g_ptr_array_add (addresses, addr);
 		}
 
 		g_variant_builder_add (&props, "{sv}", "addresses",
-		                       nm_utils_ip4_addresses_to_variant (addresses));
+		                       nm_utils_ip4_addresses_to_variant (addresses, gateway));
 		g_ptr_array_unref (addresses);
 	}
 	g_strfreev (split);
@@ -260,38 +275,37 @@ parse_ip4 (GKeyFile *kf, GVariant **out_props, const char *section, GError **err
 		split = g_strsplit_set (tmp, ",", -1);
 		g_free (tmp);
 
-		if (g_strv_length (split) > 0) {
-			routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip4_route_unref);
+		if (split && g_strv_length (split) > 0) {
+			routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_route_unref);
 			for (iter = split; iter && *iter; iter++) {
-				NMIP4Route *route;
-				guint32 a;
-				char *p;
+				NMIPRoute *route;
+				char *dest, *prefix, *next_hop, *metric;
 
 				if (strlen (g_strstrip (*iter)) == 0)
 					continue;
 
-				route = nm_ip4_route_new ();
+				dest = *iter;
 
-				p = strchr (*iter, '/');
-				g_assert (p);
-				*p++ = '\0';
+				prefix = strchr (dest, '/');
+				g_assert (prefix);
+				*prefix++ = '\0';
 
-				g_assert_cmpint (inet_pton (AF_INET, *iter, &a), ==, 1);
-				nm_ip4_route_set_dest (route, a);
-				nm_ip4_route_set_prefix (route, (guint) atoi (p));
+				next_hop = strchr (prefix, ' ');
+				g_assert (next_hop);
+				next_hop++;
 
-				p = strchr (p, ' ');
-				g_assert (p);
-				p++;
+				metric = strchr (next_hop, ' ');
+				g_assert (metric);
+				metric++;
 
-				g_assert_cmpint (inet_pton (AF_INET, p, &a), ==, 1);
-				nm_ip4_route_set_next_hop (route, a);
-
-				p = strchr (p, ' ');
-				g_assert (p);
-				p++;
-				nm_ip4_route_set_metric (route, (guint) atoi (p));
-
+				route = nm_ip_route_new (AF_INET,
+				                         dest, (guint) atoi (prefix),
+				                         next_hop, (guint) atoi (metric),
+				                         error);
+				if (!route) {
+					g_ptr_array_unref (routes);
+					return FALSE;
+				}
 				g_ptr_array_add (routes, route);
 			}
 
@@ -322,11 +336,15 @@ parse_dhcp (GKeyFile *kf,
 	g_variant_builder_init (&props, G_VARIANT_TYPE ("a{sv}"));
 	for (iter = keys; iter && *iter; iter++) {
 		val = g_key_file_get_string (kf, group_name, *iter, error);
-		if (!val)
+		if (!val) {
+			g_strfreev (keys);
+			g_variant_builder_clear (&props);
 			return FALSE;
+		}
 		g_variant_builder_add (&props, "{sv}", *iter, g_variant_new_string (val));
 		g_free (val);
 	}
+	g_strfreev (keys);
 
 	*out_props = g_variant_builder_end (&props);
 	return TRUE;
@@ -353,11 +371,27 @@ get_dispatcher_file (const char *file,
 	gboolean success = FALSE;
 	char **keys, **iter, *val;
 
+	g_assert (!error || !*error);
+	g_assert (out_con_dict && !*out_con_dict);
+	g_assert (out_con_props && !*out_con_props);
+	g_assert (out_device_props && !*out_device_props);
+	g_assert (out_device_ip4_props && !*out_device_ip4_props);
+	g_assert (out_device_ip6_props && !*out_device_ip6_props);
+	g_assert (out_device_dhcp4_props && !*out_device_dhcp4_props);
+	g_assert (out_device_dhcp6_props && !*out_device_dhcp6_props);
+	g_assert (out_vpn_ip_iface && !*out_vpn_ip_iface);
+	g_assert (out_vpn_ip4_props && !*out_vpn_ip4_props);
+	g_assert (out_vpn_ip6_props && !*out_vpn_ip6_props);
+	g_assert (out_expected_iface && !*out_expected_iface);
+	g_assert (out_action && !*out_action);
+	g_assert (out_env && !*out_env);
+
 	kf = g_key_file_new ();
 	if (!g_key_file_load_from_file (kf, file, G_KEY_FILE_NONE, error))
 		return FALSE;
 
 	if (!parse_main (kf,
+	                 file,
 	                 out_con_dict,
 	                 out_con_props,
 	                 out_expected_iface,
@@ -380,7 +414,7 @@ get_dispatcher_file (const char *file,
 	}
 
 	if (g_key_file_has_group (kf, "dhcp6")) {
-		if (!parse_dhcp (kf, "dhcp6", out_device_dhcp4_props, error))
+		if (!parse_dhcp (kf, "dhcp6", out_device_dhcp6_props, error))
 			goto out;
 	}
 
@@ -505,6 +539,7 @@ test_generic (const char *file, const char *override_vpn_ip_iface)
 
 	g_assert_cmpstr (expected_iface, ==, out_iface);
 
+	g_strfreev (denv);
 	g_free (out_iface);
 	g_free (vpn_ip_iface);
 	g_free (expected_iface);
@@ -530,27 +565,33 @@ test_generic (const char *file, const char *override_vpn_ip_iface)
 /*******************************************/
 
 static void
-test_old_up (void)
+test_up (void)
 {
-	test_generic ("dispatcher-old-up", NULL);
+	test_generic ("dispatcher-up", NULL);
 }
 
 static void
-test_old_down (void)
+test_down (void)
 {
-	test_generic ("dispatcher-old-down", NULL);
+	test_generic ("dispatcher-down", NULL);
 }
 
 static void
-test_old_vpn_up (void)
+test_vpn_up (void)
 {
-	test_generic ("dispatcher-old-vpn-up", NULL);
+	test_generic ("dispatcher-vpn-up", NULL);
 }
 
 static void
-test_old_vpn_down (void)
+test_vpn_down (void)
 {
-	test_generic ("dispatcher-old-vpn-down", NULL);
+	test_generic ("dispatcher-vpn-down", NULL);
+}
+
+static void
+test_external (void)
+{
+	test_generic ("dispatcher-external", NULL);
 }
 
 static void
@@ -559,7 +600,7 @@ test_up_empty_vpn_iface (void)
 	/* Test that an empty VPN iface variable, like is passed through D-Bus
 	 * from NM, is ignored by the dispatcher environment construction code.
 	 */
-	test_generic ("dispatcher-old-up", "");
+	test_generic ("dispatcher-up", "");
 }
 
 /*******************************************/
@@ -573,10 +614,11 @@ main (int argc, char **argv)
 	g_type_init ();
 #endif
 
-	g_test_add_func ("/dispatcher/old_up", test_old_up);
-	g_test_add_func ("/dispatcher/old_down", test_old_down);
-	g_test_add_func ("/dispatcher/old_vpn_up", test_old_vpn_up);
-	g_test_add_func ("/dispatcher/old_vpn_down", test_old_vpn_down);
+	g_test_add_func ("/dispatcher/up", test_up);
+	g_test_add_func ("/dispatcher/down", test_down);
+	g_test_add_func ("/dispatcher/vpn_up", test_vpn_up);
+	g_test_add_func ("/dispatcher/vpn_down", test_vpn_down);
+	g_test_add_func ("/dispatcher/external", test_external);
 
 	g_test_add_func ("/dispatcher/up_empty_vpn_iface", test_up_empty_vpn_iface);
 

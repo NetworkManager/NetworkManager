@@ -16,24 +16,22 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2012 - 2014 Red Hat, Inc.
+ * Copyright 2012 - 2014 Red Hat, Inc.
  */
 
 #ifndef NMC_COMMON_H
 #define NMC_COMMON_H
 
 #include "nmcli.h"
+#include "nm-secret-agent-simple.h"
 
-gboolean print_ip4_config (NMIP4Config *cfg4, NmCli *nmc, const char *group_prefix, const char *one_field);
-gboolean print_ip6_config (NMIP6Config *cfg6, NmCli *nmc, const char *group_prefix, const char *one_field);
-gboolean print_dhcp4_config (NMDhcp4Config *dhcp4, NmCli *nmc, const char *group_prefix, const char *one_field);
-gboolean print_dhcp6_config (NMDhcp6Config *dhcp6, NmCli *nmc, const char *group_prefix, const char *one_field);
+gboolean print_ip4_config (NMIPConfig *cfg4, NmCli *nmc, const char *group_prefix, const char *one_field);
+gboolean print_ip6_config (NMIPConfig *cfg6, NmCli *nmc, const char *group_prefix, const char *one_field);
+gboolean print_dhcp4_config (NMDhcpConfig *dhcp4, NmCli *nmc, const char *group_prefix, const char *one_field);
+gboolean print_dhcp6_config (NMDhcpConfig *dhcp6, NmCli *nmc, const char *group_prefix, const char *one_field);
 
-NMIP4Address *nmc_parse_and_build_ip4_address (const char *ip_str, const char *gw_str, GError **error);
-NMIP6Address *nmc_parse_and_build_ip6_address (const char *ip_str, const char *gw_str, GError **error);
-
-NMIP4Route *nmc_parse_and_build_ip4_route (const char *first, const char *second, const char *third, GError **error);
-NMIP6Route *nmc_parse_and_build_ip6_route (const char *first, const char *second, const char *third, GError **error);
+NMIPAddress *nmc_parse_and_build_address (int family, const char *ip_str, GError **error);
+NMIPRoute *nmc_parse_and_build_route (int family, const char *first, const char *second, const char *third, GError **error);
 
 const char * nmc_device_state_to_string (NMDeviceState state);
 const char * nmc_device_reason_to_string (NMDeviceStateReason reason);
@@ -51,10 +49,21 @@ NMConnection *nmc_find_connection (const GPtrArray *connections,
                                    const char *filter_val,
                                    int *start);
 
+void nmc_secrets_requested (NMSecretAgentSimple *agent,
+                            const char          *request_id,
+                            const char          *title,
+                            const char          *msg,
+                            GPtrArray           *secrets,
+                            gpointer             user_data);
+
 void nmc_cleanup_readline (void);
 char *nmc_readline (const char *prompt_fmt, ...) G_GNUC_PRINTF (1, 2);
 char *nmc_rl_gen_func_basic (const char *text, int state, const char **words);
 gboolean nmc_get_in_readline (void);
 void nmc_set_in_readline (gboolean in_readline);
+
+/* for pre-filling a string to readline prompt */
+extern char *nmc_rl_pre_input_deftext;
+int nmc_rl_set_deftext (void);
 
 #endif /* NMC_COMMON_H */

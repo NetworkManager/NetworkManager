@@ -104,6 +104,9 @@ static const LogDesc domain_descs[] = {
 	{ 0, NULL }
 };
 
+/* We have more then 32 logging domains. Assert that it compiles to a 64 bit sized enum */
+G_STATIC_ASSERT (sizeof (NMLogDomain) >= sizeof (guint64));
+
 /* Combined domains */
 #define LOGD_ALL_STRING     "ALL"
 #define LOGD_DEFAULT_STRING "DEFAULT"
@@ -357,10 +360,12 @@ nm_logging_enabled (NMLogLevel level, NMLogDomain domain)
 }
 
 void
-_nm_log (const char *loc,
+_nm_log (const char *file,
+         guint line,
          const char *func,
          NMLogLevel level,
          NMLogDomain domain,
+         int error,
          const char *fmt,
          ...)
 {
@@ -378,6 +383,10 @@ _nm_log (const char *loc,
 	if (!(logging[level] & domain))
 		return;
 
+	/* Make sure that %m maps to the specified error */
+	if (error != 0)
+		errno = error;
+
 	va_start (args, fmt);
 	msg = g_strdup_vprintf (fmt, args);
 	va_end (args);
@@ -387,13 +396,13 @@ _nm_log (const char *loc,
 		g_get_current_time (&tv);
 		syslog_level = LOG_DEBUG;
 		g_log_level = G_LOG_LEVEL_DEBUG;
-		fullmsg = g_strdup_printf ("<trace> [%ld.%06ld] [%s] %s(): %s", tv.tv_sec, tv.tv_usec, loc, func, msg);
+		fullmsg = g_strdup_printf ("<trace> [%ld.%06ld] [%s:%u] %s(): %s", tv.tv_sec, tv.tv_usec, file, line, func, msg);
 		break;
 	case LOGL_DEBUG:
 		g_get_current_time (&tv);
 		syslog_level = LOG_INFO;
 		g_log_level = G_LOG_LEVEL_DEBUG;
-		fullmsg = g_strdup_printf ("<debug> [%ld.%06ld] [%s] %s(): %s", tv.tv_sec, tv.tv_usec, loc, func, msg);
+		fullmsg = g_strdup_printf ("<debug> [%ld.%06ld] [%s:%u] %s(): %s", tv.tv_sec, tv.tv_usec, file, line, func, msg);
 		break;
 	case LOGL_INFO:
 		syslog_level = LOG_INFO;
@@ -410,7 +419,7 @@ _nm_log (const char *loc,
 		/* g_log_level is still WARNING, because ERROR is fatal */
 		g_log_level = G_LOG_LEVEL_WARNING;
 		g_get_current_time (&tv);
-		fullmsg = g_strdup_printf ("<error> [%ld.%06ld] [%s] %s(): %s", tv.tv_sec, tv.tv_usec, loc, func, msg);
+		fullmsg = g_strdup_printf ("<error> [%ld.%06ld] [%s:%u] %s(): %s", tv.tv_sec, tv.tv_usec, file, line, func, msg);
 		break;
 	default:
 		g_assert_not_reached ();

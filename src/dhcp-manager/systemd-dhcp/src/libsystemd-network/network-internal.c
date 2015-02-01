@@ -19,20 +19,29 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
+#include "nm-sd-adapt.h"
+
 #include <netinet/ether.h>
 #include <linux/if.h>
 #include <arpa/inet.h>
 
+#if 0 /* NM_IGNORED */
 #include "strv.h"
 #include "siphash24.h"
+#endif /* NM_IGNORED */
 #include "dhcp-lease-internal.h"
+#if 0 /* NM_IGNORED */
 #include "log.h"
 #include "utf8.h"
+#endif /* NM_IGNORED */
 #include "util.h"
+#if 0 /* NM_IGNORED */
 #include "conf-parser.h"
 #include "condition.h"
+#endif /* NM_IGNORED */
 #include "network-internal.h"
 
+#if 0 /* NM_IGNORED */
 const char *net_get_name(struct udev_device *device) {
         const char *name, *field;
 
@@ -334,6 +343,7 @@ int config_parse_hwaddr(const char *unit,
 
         return 0;
 }
+#endif /* NM_IGNORED */
 
 void serialize_in_addrs(FILE *f, const struct in_addr *addresses, size_t size) {
         unsigned i;

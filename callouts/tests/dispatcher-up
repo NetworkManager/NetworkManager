@@ -1,0 +1,59 @@
+[main]
+action=up
+expected-iface=wlan0
+uuid=3fd2a33a-d81b-423f-ae99-e6baba742311
+id=Random Connection
+
+[device]
+state=100
+ip-interface=wlan0
+type=2
+interface=wlan0
+path=/org/freedesktop/NetworkManager/Devices/0
+
+[dhcp4]
+netbios_name_servers=0.0.0.0
+domain_name_servers=68.87.77.134 68.87.72.134 192.168.1.1
+dhcp_lease_time=86400
+network_number=192.168.1.0
+domain_name=hsd1.mn.comcast.net.
+ip_address=192.168.1.119
+dhcp_message_type=5
+dhcp_server_identifier=192.168.1.1
+routers=192.168.1.1
+broadcast_address=192.168.1.255
+subnet_mask=255.255.255.0
+expiry=1304300446
+
+[ip4]
+addresses=192.168.1.119/24 192.168.1.1
+nameservers=68.87.77.134 68.87.72.134 192.168.1.1
+domains=hsd1.mn.comcast.net.
+
+[env]
+PATH=
+CONNECTION_UUID=3fd2a33a-d81b-423f-ae99-e6baba742311
+CONNECTION_DBUS_PATH=/org/freedesktop/NetworkManager/Connections/5
+CONNECTION_ID=Random Connection
+CONNECTION_FILENAME=/callouts/tests/dispatcher-up
+DEVICE_IFACE=wlan0
+DEVICE_IP_IFACE=wlan0
+IP4_ADDRESS_0=192.168.1.119/24 192.168.1.1
+IP4_NUM_ADDRESSES=1
+IP4_NAMESERVERS=68.87.77.134 68.87.72.134 192.168.1.1
+IP4_GATEWAY=192.168.1.1
+IP4_DOMAINS=hsd1.mn.comcast.net.
+IP4_NUM_ROUTES=0
+DHCP4_NETBIOS_NAME_SERVERS=0.0.0.0
+DHCP4_DOMAIN_NAME_SERVERS=68.87.77.134 68.87.72.134 192.168.1.1
+DHCP4_DHCP_LEASE_TIME=86400
+DHCP4_NETWORK_NUMBER=192.168.1.0
+DHCP4_DOMAIN_NAME=hsd1.mn.comcast.net.
+DHCP4_IP_ADDRESS=192.168.1.119
+DHCP4_DHCP_MESSAGE_TYPE=5
+DHCP4_DHCP_SERVER_IDENTIFIER=192.168.1.1
+DHCP4_ROUTERS=192.168.1.1
+DHCP4_BROADCAST_ADDRESS=192.168.1.255
+DHCP4_SUBNET_MASK=255.255.255.0
+DHCP4_EXPIRY=1304300446
+

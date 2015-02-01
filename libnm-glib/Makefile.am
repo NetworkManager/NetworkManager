@@ -151,7 +151,7 @@ libnm_glib_la_LIBADD = \
 SYMBOL_VIS_FILE=$(srcdir)/libnm-glib.ver
 
 libnm_glib_la_LDFLAGS = -Wl,--version-script=$(SYMBOL_VIS_FILE) \
-	-version-info "12:0:8"
+	-version-info "13:0:9"
 
 noinst_PROGRAMS = libnm-glib-test
 

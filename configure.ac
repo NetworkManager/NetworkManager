@@ -1,12 +1,11 @@
 AC_PREREQ([2.63])
 
 dnl The NM version number
-m4_define([nm_major_version], [0])
-m4_define([nm_minor_version], [9])
-m4_define([nm_micro_version], [11])
-m4_define([nm_nano_version],  [0])
+m4_define([nm_major_version], [1])
+m4_define([nm_minor_version], [1])
+m4_define([nm_micro_version], [0])
 m4_define([nm_version],
-          [nm_major_version.nm_minor_version.nm_micro_version.nm_nano_version])
+          [nm_major_version.nm_minor_version.nm_micro_version])
 m4_define([nm_git_sha], [m4_esyscmd([ ( [ -d ./.git/ ] && [ "$(readlink -f ./.git/)" = "$(readlink -f "$(git rev-parse --git-dir 2>/dev/null)" 2>/dev/null)" ] && git rev-parse --verify -q HEAD 2>/dev/null ) || true ])])
 
 AC_INIT([NetworkManager], [nm_version],
@@ -60,6 +59,7 @@ AC_SUBST(NM_MAJOR_VERSION)
 AC_SUBST(NM_MINOR_VERSION)
 AC_SUBST(NM_MICRO_VERSION)
 AC_SUBST(NM_VERSION)
+AC_DEFINE_UNQUOTED(NM_GIT_SHA,"$NM_GIT_SHA",[git commit id of the original source code version])
 
 dnl
 dnl Checks for typedefs, structures, and compiler characteristics.
@@ -145,11 +145,26 @@ if ! test x"$ac_distver" = x""; then
   AC_DEFINE_UNQUOTED(NM_DIST_VERSION, "$ac_distver", [Define the distribution version string])
 fi
 
+AC_ARG_ENABLE(wifi, AS_HELP_STRING([--enable-wifi], [enable Wi-Fi support]))
+if test "${enable_wifi}" != "no"; then
+	enable_wifi='yes'
+	AC_DEFINE(WITH_WIFI, 1, [Define if you have Wi-Fi support])
+else
+	AC_DEFINE(WITH_WIFI, 0, [Define if you have Wi-Fi support])
+fi
+AM_CONDITIONAL(WITH_WIFI, test "${enable_wifi}" = "yes")
+
 dnl
 dnl Default to using WEXT but allow it to be disabled
 dnl
-AC_ARG_WITH(wext, AS_HELP_STRING([--with-wext=yes], [Enable or disable Linux Wireless Extensions]), ac_with_wext=$withval, ac_with_wext="yes")
+AC_ARG_WITH(wext, AS_HELP_STRING([--with-wext=yes], [Enable or disable Linux Wireless Extensions]), ac_with_wext=$withval, ac_with_wext="$enable_wifi")
+if test "$ac_with_wext" != 'no'; then
+	ac_with_wext='yes'
+fi
 if test x"$ac_with_wext" = x"yes"; then
+	if test "$enable_wifi" != "yes"; then
+		AC_MSG_ERROR(Enabling WEXT support and disabling Wi-Fi makes no sense)
+	fi
 	AC_MSG_CHECKING([Linux kernel WEXT headers])
 	AC_COMPILE_IFELSE(
 		[AC_LANG_PROGRAM(
@@ -193,20 +208,24 @@ if test "$ac_have_nl80211" = no; then
 	AC_MSG_ERROR(Linux kernel development header linux/nl80211.h not installed or not functional)
 fi
 
-AC_MSG_CHECKING([Linux kernel nl80211 Critical Protocol Start/Stop])
-AC_COMPILE_IFELSE(
-	[AC_LANG_PROGRAM(
-              [[#ifndef __user
-                #define __user
-                #endif
-                #include <sys/types.h>
-                #include <linux/types.h>
-                #include <sys/socket.h>
-                #include <linux/nl80211.h>]],
-              [[unsigned int a = NL80211_CMD_CRIT_PROTOCOL_START; a++;]])],
-        [ac_have_nl80211_critproto=yes],
-        [ac_have_nl80211_critproto=no])
-AC_MSG_RESULT($ac_have_nl80211_critproto)
+if test "$with_wifi" = "yes"; then
+	AC_MSG_CHECKING([Linux kernel nl80211 Critical Protocol Start/Stop])
+	AC_COMPILE_IFELSE(
+		[AC_LANG_PROGRAM(
+                  [[#ifndef __user
+                    #define __user
+                    #endif
+                    #include <sys/types.h>
+                    #include <linux/types.h>
+                    #include <sys/socket.h>
+                    #include <linux/nl80211.h>]],
+                  [[unsigned int a = NL80211_CMD_CRIT_PROTOCOL_START; a++;]])],
+		[ac_have_nl80211_critproto=yes],
+		[ac_have_nl80211_critproto=no])
+	AC_MSG_RESULT($ac_have_nl80211_critproto)
+else
+	ac_have_nl80211_critproto='no'
+fi
 if test "$ac_have_nl80211_critproto" = yes; then
 	AC_DEFINE(HAVE_NL80211_CRITICAL_PROTOCOL_CMDS, 1, [Define if nl80211 has critical protocol support])
 else
@@ -302,7 +321,7 @@ AM_CONDITIONAL(WITH_QT, test "${enable_qt}" = "yes")
 
 AC_ARG_WITH(udev-dir, AS_HELP_STRING([--with-udev-dir=DIR], [Absolute path of the udev base directory. Set to 'no' not to install the udev rules]), [], [with_udev_dir="yes"])
 if (test "$with_udev_dir" != 'no'); then
-	if (test "$with_udev_dir" != 'yes' && echo -n "$with_udev_dir" | grep -v -q '^/'); then
+	if (test "$with_udev_dir" != 'yes' && printf '%s' "$with_udev_dir" | grep -v -q '^/'); then
 		AC_MSG_ERROR([--with-udev-dir must be an absolute path or 'yes' or 'no'. Instead it is '$with_udev_dir'])
 	fi
 	if (test "$with_udev_dir" = 'yes'); then
@@ -332,30 +351,40 @@ fi
 PKG_CHECK_MODULES(SYSTEMD_200, [systemd >= 200], [have_systemd_200=yes],[have_systemd_200=no])
 AM_CONDITIONAL(HAVE_SYSTEMD_200, test "${have_systemd_200}" = "yes")
 
-# session tracking support
-AC_MSG_CHECKING([Session tracking support])
+# Session tracking support
+AC_ARG_WITH(systemd-logind, AS_HELP_STRING([--with-systemd-logind=yes|no],
+	[Support systemd session tracking]))
+AC_ARG_WITH(consolekit, AS_HELP_STRING([--with-consolekit=yes|no],
+	[Support consolekit session tracking]))
 AC_ARG_WITH(session-tracking, AS_HELP_STRING([--with-session-tracking=systemd|consolekit|no],
-	[Select session tracking support (default: consolekit)]))
-# default to consolekit
-AS_IF([test -z "$with_session_tracking"], with_session_tracking=consolekit)
-AS_IF([test "$with_session_tracking" = "ck"], with_session_tracking=consolekit)
-AS_IF([test "$with_session_tracking" = "none"], with_session_tracking=no)
-# check value
-AS_IF([! (echo "$with_session_tracking" | grep -q -E "^(systemd|consolekit|no)$")],
-	AC_MSG_ERROR([--with-session-tracking must be systemd/consolekit/no, not $with_session_tracking]))
-# add conditionals and subtitutions
-AM_CONDITIONAL(SESSION_TRACKING_CK, test "$with_session_tracking" = "consolekit")
-AM_CONDITIONAL(SESSION_TRACKING_SYSTEMD, test "$with_session_tracking" = "systemd")
-if test "$with_session_tracking" = "systemd"; then
-	PKG_CHECK_MODULES(SYSTEMD_LOGIN, [libsystemd],,
-	                  [PKG_CHECK_MODULES(SYSTEMD_LOGIN, [libsystemd-login])])
+	[Compatibility option to choose one session tracking module]))
+# backwards compatibility
+AS_IF([test "$with_session_tracking" = "ck"], [use_consolekit="yes" use_systemd_logind="no"])
+AS_IF([test "$with_session_tracking" = "consolekit"], [use_consolekit="yes" use_systemd_logind="no"])
+AS_IF([test "$with_session_tracking" = "systemd"], [use_consolekit="no" use_systemd_logind="yes"])
+AS_IF([test "$with_session_tracking" = "no"], [use_consolekit="no" use_systemd_logind="no"])
+AS_IF([test "$with_session_tracking" = "none"], [use_consolekit="no" use_systemd_logind="no"])
+# current options
+AS_IF([test -n "$with_systemd_logind" ], [use_systemd_logind="$with_systemd_logind"])
+AS_IF([test -n "$with_consolekit" ], [use_consolekit="$with_consolekit"])
+# defaults
+AS_IF([test -z "$use_systemd_logind"], [use_systemd_logind="yes"])
+AS_IF([test -z "$use_consolekit"], [use_consolekit="yes"])
+# output
+session_tracking=
+if test "$use_systemd_logind" = "yes"; then
+	PKG_CHECK_MODULES(SYSTEMD_LOGIN, [libsystemd-login])
 	AC_SUBST(SYSTEMD_LOGIN_CFLAGS)
 	AC_SUBST(SYSTEMD_LOGIN_LIBS)
+	AC_DEFINE([SESSION_TRACKING_SYSTEMD], 1, [Define to 1 if libsystemd-login is available])
+	session_tracking="$session_tracking, systemd-logind"
 fi
-if test "$with_session_tracking" = "consolekit"; then
-	AC_SUBST(CKDB_PATH, /var/run/ConsoleKit/database)
+if test "$use_consolekit" = "yes"; then
+	AC_DEFINE([SESSION_TRACKING_CONSOLEKIT], 1, [Define to 1 if ConsoleKit is available])
+	AC_DEFINE([CKDB_PATH], "/var/run/ConsoleKit/database", [Path to ConsoleKit database])
+	session_tracking="$session_tracking, consolekit"
 fi
-AC_MSG_RESULT($with_session_tracking)
+session_tracking="$(printf '%s' "${session_tracking}" | sed 's/^, //')"
 
 AC_ARG_WITH(suspend-resume, AS_HELP_STRING([--with-suspend-resume=upower|systemd], [Build NetworkManager with specific suspend/resume support]))
 if test "z$with_suspend_resume" = "z"; then
@@ -419,10 +448,21 @@ AC_COMPILE_IFELSE(
                 #endif
                 #include <linux/if_link.h>]],
               [[int a = IN6_ADDR_GEN_MODE_EUI64; a++;]])],
-        [ac_have_kernel_gen_mode="1"],
-        [ac_have_kernel_gen_mode="0"])
-AC_DEFINE_UNQUOTED(HAVE_KERNEL_INET6_ADDR_GEN_MODE,
-	$ac_have_kernel_gen_mode, [Define if the kernel has IN6_ADDR_GEN_MODE_*])
+        [ac_have_kernel_gen_mode=yes],
+        [ac_have_kernel_gen_mode=no])
+AC_MSG_RESULT($ac_have_kernel_gen_mode)
+if test "$ac_have_kernel_gen_mode" = yes; then
+	AC_DEFINE(HAVE_KERNEL_INET6_ADDR_GEN_MODE, 1, [Define if the kernel has IN6_ADDR_GEN_MODE_*])
+else
+	AC_DEFINE(HAVE_KERNEL_INET6_ADDR_GEN_MODE, 0, [Define if the kernel has IN6_ADDR_GEN_MODE_*])
+fi
+
+# IPv6 tokenized identifiers support in libnl
+AC_CHECK_LIB([nl-route-3], [rtnl_link_inet6_get_token],
+	ac_have_ipv6_token="1",
+	ac_have_ipv6_token="0")
+AC_DEFINE_UNQUOTED(HAVE_LIBNL_INET6_TOKEN,
+	$ac_have_ipv6_token, [Define if libnl has rtnl_link_inet6_get_token()])
 
 # uuid library
 PKG_CHECK_MODULES(UUID, uuid)
@@ -497,6 +537,22 @@ else
 	AC_DEFINE(WITH_POLKIT, 0, [whether to compile polkit support])
 fi
 AC_SUBST(NM_CONFIG_DEFAULT_AUTH_POLKIT_TEXT)
+
+PKG_CHECK_MODULES(POLKIT, [polkit-agent-1 >= 0.97], [have_pk_agent=yes],[have_pk_agent=no])
+AC_ARG_ENABLE(polkit-agent, AS_HELP_STRING([--enable-polkit-agent], [enable polkit agent for clients]),
+                     [enable_polkit_agent=${enableval}], [enable_polkit_agent=${have_pk_agent}])
+if (test "${enable_polkit_agent}" = "yes"); then
+	if test x"$have_pk_agent" = x"no"; then
+		AC_MSG_ERROR(Polkit agent is required)
+	fi
+
+	AC_SUBST(POLKIT_CFLAGS)
+	AC_SUBST(POLKIT_LIBS)
+	AC_DEFINE(WITH_POLKIT_AGENT, 1, [Define if you have polkit agent])
+else
+	AC_DEFINE(WITH_POLKIT_AGENT, 0, [Define if you have polkit agent])
+fi
+AM_CONDITIONAL(WITH_POLKIT_AGENT, test "${enable_polkit_agent}" = "yes")
 
 AC_ARG_ENABLE(modify-system,
               AS_HELP_STRING([--enable-modify-system], [Allow users to modify system connections]))
@@ -642,7 +698,7 @@ if (test "${enable_bluez5_dun}" = "yes"); then
 	fi
 	AC_DEFINE(WITH_BLUEZ5_DUN, 1, [Define if you have Bluez 5 libraries])
 else
-	AC_DEFINE(HAVE_BLUEZ5_DUN, 0, [Define if you have Bluez 5 libraries])
+	AC_DEFINE(WITH_BLUEZ5_DUN, 0, [Define if you have Bluez 5 libraries])
 fi
 AM_CONDITIONAL(WITH_BLUEZ5_DUN, test "${enable_bluez5_dun}" = "yes")
 
@@ -665,10 +721,10 @@ fi
 if test "$with_dhcpcd" = "yes"; then
 	AC_PATH_PROGS(with_dhcpcd, dhcpcd, no, /sbin:/usr/sbin:/usr/local/sbin)
 	if test "$with_dhcpcd" != "no"; then
-		if ! $with_dhcpcd --version 2>&1 | grep -q "^dhcpcd [[456789]]\."; then
+		if ! $with_dhcpcd --version 2>&1 | grep -q "^dhcpcd [456789]\."; then
 			AC_MSG_WARN([Cannot use dhcpcd, version 4.x or higher is required])
 			with_dhcpcd=no
-		elif $with_dhcpcd --version 2>&1 | grep -q "^dhcpcd [[6789]]\."; then
+		elif $with_dhcpcd --version 2>&1 | grep -q "^dhcpcd [6789]\."; then
 			AC_DEFINE(DHCPCD_SUPPORTS_IPV6, 1, [Define if dhcpcd supports IPv6 (6.x+)])
 		fi
 	fi
@@ -801,6 +857,14 @@ AM_CONDITIONAL(BUILD_NMTUI, test "$build_nmtui" = yes)
 
 NM_COMPILER_WARNINGS
 
+AC_ARG_ENABLE(lto, AS_HELP_STRING([--enable-lto], [Enable Link Time Optimization for smaller size (default: no)]))
+if (test "${enable_lto}" = "yes"); then
+    CFLAGS="-flto $CFLAGS"
+else
+    enable_lto='no'
+fi
+
+
 dnl -------------------------
 dnl Vala bindings
 dnl -------------------------
@@ -809,13 +873,13 @@ VAPIGEN_CHECK(0.17.1.24)
 
 # Tests, utilities and documentation
 AC_ARG_ENABLE(tests, AS_HELP_STRING([--enable-tests=root|yes|no], [Build NetworkManager tests (default: yes)]))
-AC_ARG_WITH(valgrind, AS_HELP_STRING([--with-valgrind=yes|no|path], [Use valgrind to memory-check the tests (default: yes)]))
+AC_ARG_WITH(valgrind, AS_HELP_STRING([--with-valgrind=yes|no|path], [Use valgrind to memory-check the tests (default: no)]))
 # Fallback to --with-tests
 AC_ARG_WITH(tests, AS_HELP_STRING([--with-tests], [Build NetworkManager tests (deprecated)]))
 AS_IF([test -n "$with_tests"], enable_tests="$with_tests")
-# Default to --enable-tests --with-valgrind
+# Default to --enable-tests --with-valgrind=no
 AS_IF([test -z "$enable_tests"], enable_tests="yes")
-AS_IF([test -z "$with_valgrind"], with_valgrind="yes")
+AS_IF([test -z "$with_valgrind"], with_valgrind="no")
 # Normalize values
 AS_IF([test "$enable_tests" != "yes" -a "$enable_tests" != "root"], enable_tests="no")
 # Search for tools
@@ -827,6 +891,7 @@ AM_CONDITIONAL(REQUIRE_ROOT_TESTS, test "$enable_tests" == "root")
 AS_IF([test "$with_valgrind" != "no"],
 	AC_SUBST(VALGRIND_RULES, 'TESTS_ENVIRONMENT = "$(top_srcdir)/tools/run-test-valgrind.sh" "$(LIBTOOL)" "$(with_valgrind)" "$(top_srcdir)/valgrind.suppressions"'),
 	AC_SUBST(VALGRIND_RULES, []))
+AM_CONDITIONAL(WITH_VALGRIND, test "${with_valgrind}" != "no")
 
 GTK_DOC_CHECK(1.0)
 
@@ -877,7 +942,7 @@ if test "$build_setting_docs" != "yes" \
 	-a -f man/nm-settings-keyfile.xml \
 	-a -f man/nm-settings-ifcfg-rh.xml \
 	-a -f docs/api/settings-spec.xml \
-	-a -f cli/src/settings-docs.c; then
+	-a -f clients/cli/settings-docs.c; then
     AC_DEFINE(HAVE_SETTING_DOCS, [1], [Define if you have pre-built settings docs])
     have_setting_docs=yes
 fi
@@ -933,7 +998,6 @@ libnm-util/libnm-util.pc
 libnm-util/nm-version.h
 libnm-util/Makefile
 libnm-util/tests/Makefile
-libnm-util/tests/certs/Makefile
 libnm-glib/libnm-glib.pc
 libnm-glib/libnm-glib-vpn.pc
 libnm-glib/Makefile
@@ -959,6 +1023,7 @@ man/NetworkManager.conf.xml
 man/nm-system-settings.conf.5
 man/nm-online.1
 man/nmcli.1
+man/nmtui.1
 po/Makefile.in
 policy/Makefile
 policy/org.freedesktop.NetworkManager.policy.in
@@ -979,6 +1044,8 @@ examples/python/Makefile
 examples/python/dbus/Makefile
 examples/python/gi/Makefile
 examples/ruby/Makefile
+examples/lua/Makefile
+examples/lua/lgi/Makefile
 examples/C/Makefile
 examples/C/glib/Makefile
 examples/C/qt/Makefile
@@ -1002,7 +1069,7 @@ echo "  nmrundir: $nmrundir"
 echo
 
 echo "Platform:"
-echo "  session tracking: $with_session_tracking"
+echo "  session tracking: $session_tracking"
 echo "  suspend/resume: $with_suspend_resume"
 if test "${enable_polkit}" = "yes"; then
 	if test "${enable_modify_system}" = "yes"; then
@@ -1013,11 +1080,13 @@ if test "${enable_polkit}" = "yes"; then
 else
 	echo  "  policykit: no"
 fi
+echo "  polkit agent: ${enable_polkit_agent}"
 echo "  selinux: $have_selinux"
 echo
 
 echo "Features:"
 echo "  wext: $ac_with_wext"
+echo "  wifi: $enable_wifi"
 echo "  wimax: $enable_wimax"
 echo "  ppp: $enable_ppp"
 echo "  modemmanager-1: $with_modem_manager_1"
@@ -1049,4 +1118,5 @@ echo "  documentation: $enable_gtk_doc"
 echo "  tests: $enable_tests"
 echo "  valgrind: $with_valgrind"
 echo "  code coverage: $enable_code_coverage"
+echo "  LTO: $enable_lto"
 echo

@@ -27,6 +27,7 @@
 #include <fcntl.h>
 #include <resolv.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 
@@ -41,7 +42,6 @@
 #include "nm-ip6-config.h"
 #include "nm-logging.h"
 #include "NetworkManagerUtils.h"
-#include "nm-posix-signals.h"
 #include "nm-config.h"
 
 #include "nm-dns-plugin.h"
@@ -84,6 +84,8 @@ typedef struct {
 
 	NMDnsManagerResolvConfMode resolv_conf_mode;
 	NMDnsPlugin *plugin;
+
+	NMConfig *config;
 
 	gboolean dns_touched;
 } NMDnsManagerPrivate;
@@ -223,19 +225,6 @@ merge_one_ip6_config (NMResolvConfData *rc, NMIP6Config *src)
 /**********************************/
 /* SUSE */
 
-static void
-netconfig_child_setup (gpointer user_data G_GNUC_UNUSED)
-{
-	pid_t pid = getpid ();
-	setpgid (pid, pid);
-
-	/*
-	 * We blocked signals in main(). We need to restore original signal
-	 * mask for netconfig here so that it can receive signals.
-	 */
-	nm_unblock_posix_signals (NULL);
-}
-
 static GPid
 run_netconfig (GError **error, gint *stdin_fd)
 {
@@ -253,7 +242,7 @@ run_netconfig (GError **error, gint *stdin_fd)
 	nm_log_dbg (LOGD_DNS, "spawning '%s'", tmp);
 	g_free (tmp);
 
-	if (!g_spawn_async_with_pipes (NULL, argv, NULL, 0, netconfig_child_setup,
+	if (!g_spawn_async_with_pipes (NULL, argv, NULL, 0, NULL,
 	                               NULL, &pid, stdin_fd, NULL, NULL, error))
 		return -1;
 
@@ -436,53 +425,28 @@ dispatch_resolvconf (char **searches,
 }
 #endif
 
+#define MY_RESOLV_CONF NMRUNDIR "/resolv.conf"
+#define MY_RESOLV_CONF_TMP MY_RESOLV_CONF ".tmp"
+#define RESOLV_CONF_TMP "/etc/.resolv.conf.NetworkManager"
+
 static gboolean
 update_resolv_conf (char **searches,
                     char **nameservers,
                     GError **error)
 {
-	char *tmp_resolv_conf;
-	char *tmp_resolv_conf_realpath;
-	char *resolv_conf_realpath;
 	FILE *f;
-	int do_rename = 1;
-	int old_errno = 0;
+	struct stat st;
 
 	g_return_val_if_fail (error != NULL, FALSE);
 
-	/* Find the real path of resolv.conf; it could be a symlink to something */
-	resolv_conf_realpath = realpath (_PATH_RESCONF, NULL);
-	if (!resolv_conf_realpath)
-		resolv_conf_realpath = strdup (_PATH_RESCONF);
-
-	/* Build up the real path for the temp resolv.conf that we're about to
-	 * write out.
-	 */
-	tmp_resolv_conf = g_strdup_printf ("%s.tmp", resolv_conf_realpath);
-	tmp_resolv_conf_realpath = realpath (tmp_resolv_conf, NULL);
-	if (!tmp_resolv_conf_realpath)
-		tmp_resolv_conf_realpath = strdup (tmp_resolv_conf);
-	g_free (tmp_resolv_conf);
-	tmp_resolv_conf = NULL;
-
-	if ((f = fopen (tmp_resolv_conf_realpath, "w")) == NULL) {
-		do_rename = 0;
-		old_errno = errno;
-		if ((f = fopen (_PATH_RESCONF, "w")) == NULL) {
-			g_set_error (error,
-			             NM_MANAGER_ERROR,
-			             NM_MANAGER_ERROR_FAILED,
-			             "Could not open %s: %s\nCould not open %s: %s\n",
-			             tmp_resolv_conf_realpath,
-			             g_strerror (old_errno),
-			             _PATH_RESCONF,
-			             g_strerror (errno));
-			goto out;
-		}
-		/* Update tmp_resolv_conf_realpath so the error message on fclose()
-		 * failure will be correct.
-		 */
-		strcpy (tmp_resolv_conf_realpath, _PATH_RESCONF);
+	if ((f = fopen (MY_RESOLV_CONF_TMP, "w")) == NULL) {
+		g_set_error (error,
+		             NM_MANAGER_ERROR,
+		             NM_MANAGER_ERROR_FAILED,
+		             "Could not open %s: %s\n",
+		             MY_RESOLV_CONF_TMP,
+		             g_strerror (errno));
+		return FALSE;
 	}
 
 	write_resolv_conf (f, searches, nameservers, error);
@@ -496,28 +460,90 @@ update_resolv_conf (char **searches,
 			             NM_MANAGER_ERROR,
 			             NM_MANAGER_ERROR_FAILED,
 			             "Could not close %s: %s\n",
-			             tmp_resolv_conf_realpath,
+			             MY_RESOLV_CONF_TMP,
 			             g_strerror (errno));
 		}
 	}
 
-	/* Don't rename the tempfile over top of the existing resolv.conf if there
-	 * was an error writing it out.
-	 */
-	if (*error == NULL && do_rename) {
-		if (rename (tmp_resolv_conf_realpath, resolv_conf_realpath) < 0) {
-			g_set_error (error,
-			             NM_MANAGER_ERROR,
-			             NM_MANAGER_ERROR_FAILED,
-			             "Could not replace " _PATH_RESCONF ": %s\n",
-			             g_strerror (errno));
-		}
+	if (*error)
+		return FALSE;
+
+	if (rename (MY_RESOLV_CONF_TMP, MY_RESOLV_CONF) < 0) {
+		g_set_error (error,
+		             NM_MANAGER_ERROR,
+		             NM_MANAGER_ERROR_FAILED,
+		             "Could not replace %s: %s\n",
+		             MY_RESOLV_CONF,
+		             g_strerror (errno));
+		return FALSE;
 	}
 
-out:
-	free (tmp_resolv_conf_realpath);
-	free (resolv_conf_realpath);
-	return *error ? FALSE : TRUE;
+	/* Don't overwrite a symbolic link unless it points to MY_RESOLV_CONF. */
+	if (lstat (_PATH_RESCONF, &st) != -1) {
+		/* Don't overwrite a symbolic link. */
+		if (S_ISLNK (st.st_mode)) {
+			if (stat (_PATH_RESCONF, &st) != -1) {
+				char *path = g_file_read_link (_PATH_RESCONF, NULL);
+				gboolean not_ours = g_strcmp0 (path, MY_RESOLV_CONF) != 0;
+
+				g_free (path);
+				if (not_ours)
+					return TRUE;
+			} else {
+				if (errno != ENOENT)
+					return TRUE;
+				g_set_error (error,
+				             NM_MANAGER_ERROR,
+				             NM_MANAGER_ERROR_FAILED,
+				             "Could not stat %s: %s\n",
+				             _PATH_RESCONF,
+				             g_strerror (errno));
+				return FALSE;
+			}
+		}
+	} else if (errno != ENOENT) {
+		g_set_error (error,
+		             NM_MANAGER_ERROR,
+		             NM_MANAGER_ERROR_FAILED,
+		             "Could not lstat %s: %s\n",
+		             _PATH_RESCONF,
+		             g_strerror (errno));
+		return FALSE;
+	}
+
+	if (unlink (RESOLV_CONF_TMP) == -1 && errno != ENOENT) {
+		g_set_error (error,
+		             NM_MANAGER_ERROR,
+		             NM_MANAGER_ERROR_FAILED,
+		             "Could not unlink %s: %s\n",
+		             RESOLV_CONF_TMP,
+		             g_strerror (errno));
+		return FALSE;
+	}
+
+	if (symlink (MY_RESOLV_CONF, RESOLV_CONF_TMP) == -1) {
+		g_set_error (error,
+		             NM_MANAGER_ERROR,
+		             NM_MANAGER_ERROR_FAILED,
+		             "Could not create symlink %s pointing to %s: %s\n",
+		             RESOLV_CONF_TMP,
+		             MY_RESOLV_CONF,
+		             g_strerror (errno));
+		return FALSE;
+	}
+
+	if (rename (RESOLV_CONF_TMP, _PATH_RESCONF) == -1) {
+		g_set_error (error,
+		             NM_MANAGER_ERROR,
+		             NM_MANAGER_ERROR_FAILED,
+		             "Could not rename %s to %s: %s\n",
+		             RESOLV_CONF_TMP,
+		             _PATH_RESCONF,
+		             g_strerror (errno));
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 static void
@@ -1042,18 +1068,7 @@ nm_dns_manager_end_updates (NMDnsManager *mgr, const char *func)
 
 /******************************************************************/
 
-NMDnsManager *
-nm_dns_manager_get (void)
-{
-	static NMDnsManager * singleton = NULL;
-
-	if (!singleton) {
-		singleton = NM_DNS_MANAGER (g_object_new (NM_TYPE_DNS_MANAGER, NULL));
-		g_assert (singleton);
-	}
-
-	return singleton;
-}
+NM_DEFINE_SINGLETON_GETTER (NMDnsManager, nm_dns_manager_get, NM_TYPE_DNS_MANAGER);
 
 static void
 init_resolv_conf_mode (NMDnsManager *self)
@@ -1061,6 +1076,8 @@ init_resolv_conf_mode (NMDnsManager *self)
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 	const char *mode;
 	int fd, flags;
+
+	g_clear_object (&priv->plugin);
 
 	fd = open (_PATH_RESCONF, O_RDONLY);
 	if (fd != -1) {
@@ -1075,7 +1092,7 @@ init_resolv_conf_mode (NMDnsManager *self)
 		}
 	}
 
-	mode = nm_config_get_dns_mode (nm_config_get ());
+	mode = nm_config_data_get_dns_mode (nm_config_get_data (priv->config));
 	if (!g_strcmp0 (mode, "none")) {
 		priv->resolv_conf_mode = NM_DNS_MANAGER_RESOLV_CONF_UNMANAGED;
 		nm_log_info (LOGD_DNS, "DNS: not managing " _PATH_RESCONF);
@@ -1090,6 +1107,31 @@ init_resolv_conf_mode (NMDnsManager *self)
 		if (mode && g_strcmp0 (mode, "default") != 0)
 			nm_log_warn (LOGD_DNS, "Unknown DNS mode '%s'", mode);
 	}
+
+	if (priv->plugin) {
+		nm_log_info (LOGD_DNS, "DNS: loaded plugin %s", nm_dns_plugin_get_name (priv->plugin));
+		g_signal_connect (priv->plugin, NM_DNS_PLUGIN_FAILED, G_CALLBACK (plugin_failed), self);
+	}
+}
+
+static void
+config_changed_cb (NMConfig *config,
+                   NMConfigData *config_data,
+                   NMConfigChangeFlags changes,
+                   NMConfigData *old_data,
+                   NMDnsManager *self)
+{
+	GError *error = NULL;
+
+	if (!(changes & NM_CONFIG_CHANGE_DNS_MODE))
+		return;
+
+	init_resolv_conf_mode (self);
+	if (!update_dns (self, TRUE, &error)) {
+		nm_log_warn (LOGD_DNS, "could not commit DNS changes: (%d) %s",
+		             error->code, error->message);
+		g_clear_error (&error);
+	}
 }
 
 static void
@@ -1100,12 +1142,12 @@ nm_dns_manager_init (NMDnsManager *self)
 	/* Set the initial hash */
 	compute_hash (self, NM_DNS_MANAGER_GET_PRIVATE (self)->hash);
 
+	priv->config = g_object_ref (nm_config_get ());
+	g_signal_connect (G_OBJECT (priv->config),
+	                  NM_CONFIG_SIGNAL_CONFIG_CHANGED,
+	                  G_CALLBACK (config_changed_cb),
+	                  self);
 	init_resolv_conf_mode (self);
-
-	if (priv->plugin) {
-		nm_log_info (LOGD_DNS, "DNS: loaded plugin %s", nm_dns_plugin_get_name (priv->plugin));
-		g_signal_connect (priv->plugin, NM_DNS_PLUGIN_FAILED, G_CALLBACK (plugin_failed), self);
-	}
 }
 
 static void
@@ -1128,6 +1170,11 @@ dispose (GObject *object)
 		             error && error->message ? error->message : "(unknown)");
 		g_clear_error (&error);
 		priv->dns_touched = FALSE;
+	}
+
+	if (priv->config) {
+		g_signal_handlers_disconnect_by_func (priv->config, config_changed_cb, self);
+		g_clear_object (&priv->config);
 	}
 
 	g_slist_free_full (priv->configs, g_object_unref);

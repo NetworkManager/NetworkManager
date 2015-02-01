@@ -143,9 +143,16 @@ typedef struct {
 
 	void (*set_mm_enabled)                     (NMModem *self, gboolean enabled);
 
-	void (*disconnect)                         (NMModem *self, gboolean warn);
+	void     (*disconnect)                     (NMModem *self,
+	                                            gboolean warn,
+	                                            GCancellable *cancellable,
+	                                            GAsyncReadyCallback callback,
+	                                            gpointer user_data);
+	gboolean (*disconnect_finish)              (NMModem *self,
+	                                            GAsyncResult *res,
+	                                            GError **error);
 
-	void (*deactivate)                         (NMModem *self, NMDevice *device);
+	void     (*deactivate_cleanup)             (NMModem *self, NMDevice *device);
 
 	gboolean (*owns_port)                      (NMModem *self, const char *iface);
 
@@ -218,6 +225,15 @@ gboolean nm_modem_get_secrets (NMModem *modem,
 
 void nm_modem_deactivate (NMModem *modem, NMDevice *device);
 
+void     nm_modem_deactivate_async        (NMModem *self,
+                                           NMDevice *device,
+                                           GCancellable *cancellable,
+                                           GAsyncReadyCallback callback,
+                                           gpointer user_data);
+gboolean nm_modem_deactivate_async_finish (NMModem *self,
+                                           GAsyncResult *res,
+                                           GError **error);
+
 void nm_modem_device_state_changed (NMModem *modem,
                                     NMDeviceState new_state,
                                     NMDeviceState old_state,
@@ -237,7 +253,7 @@ NMModemIPType nm_modem_get_supported_ip_types (NMModem *self);
 /* For the modem-manager only */
 void          nm_modem_emit_removed (NMModem *self);
 
-NMModemIPType nm_modem_get_connection_ip_type (NMModem *self,
+GArray       *nm_modem_get_connection_ip_type (NMModem *self,
                                                NMConnection *connection,
                                                GError **error);
 
@@ -245,6 +261,8 @@ NMModemIPType nm_modem_get_connection_ip_type (NMModem *self,
 void nm_modem_emit_ip6_config_result (NMModem *self,
                                       NMIP6Config *config,
                                       GError *error);
+
+const gchar *nm_modem_ip_type_to_string (NMModemIPType ip_type);
 
 G_END_DECLS
 

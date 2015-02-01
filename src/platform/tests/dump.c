@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <arpa/inet.h>
@@ -83,8 +85,8 @@ dump_interface (NMPlatformLink *link)
 	g_array_unref (ip4_addresses);
 	g_array_unref (ip6_addresses);
 
-	ip4_routes = nm_platform_ip4_route_get_all (link->ifindex, TRUE);
-	ip6_routes = nm_platform_ip6_route_get_all (link->ifindex, TRUE);
+	ip4_routes = nm_platform_ip4_route_get_all (link->ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
+	ip6_routes = nm_platform_ip6_route_get_all (link->ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
 
 	g_assert (ip4_routes);
 	g_assert (ip6_routes);

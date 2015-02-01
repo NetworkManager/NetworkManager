@@ -25,6 +25,4 @@
 
 WifiData *wifi_nl80211_init (const char *iface, int ifindex);
 
-gboolean wifi_nl80211_is_wifi (const char *iface);
-
 #endif  /* __WIFI_UTILS_NL80211_H__ */

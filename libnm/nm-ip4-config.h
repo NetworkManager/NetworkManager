@@ -22,11 +22,7 @@
 #ifndef __NM_IP4_CONFIG_H__
 #define __NM_IP4_CONFIG_H__
 
-#if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
-#error "Only <NetworkManager.h> can be included directly."
-#endif
-
-#include <nm-object.h>
+#include <nm-ip-config.h>
 
 G_BEGIN_DECLS
 
@@ -37,34 +33,18 @@ G_BEGIN_DECLS
 #define NM_IS_IP4_CONFIG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_IP4_CONFIG))
 #define NM_IP4_CONFIG_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_IP4_CONFIG, NMIP4ConfigClass))
 
-struct _NMIP4Config {
-	NMObject parent;
-};
+typedef struct {
+	NMIPConfig parent;
+} NMIP4Config;
 
 typedef struct {
-	NMObjectClass parent;
+	NMIPConfigClass parent;
 
 	/*< private >*/
 	gpointer padding[4];
 } NMIP4ConfigClass;
 
-#define NM_IP4_CONFIG_GATEWAY "gateway"
-#define NM_IP4_CONFIG_ADDRESSES "addresses"
-#define NM_IP4_CONFIG_ROUTES "routes"
-#define NM_IP4_CONFIG_NAMESERVERS "nameservers"
-#define NM_IP4_CONFIG_DOMAINS "domains"
-#define NM_IP4_CONFIG_SEARCHES "searches"
-#define NM_IP4_CONFIG_WINS_SERVERS "wins-servers"
-
 GType nm_ip4_config_get_type (void);
-
-const char *        nm_ip4_config_get_gateway      (NMIP4Config *config);
-GPtrArray *         nm_ip4_config_get_addresses    (NMIP4Config *config);
-GPtrArray *         nm_ip4_config_get_routes       (NMIP4Config *config);
-const char * const *nm_ip4_config_get_nameservers  (NMIP4Config *config);
-const char * const *nm_ip4_config_get_domains      (NMIP4Config *config);
-const char * const *nm_ip4_config_get_searches     (NMIP4Config *config);
-const char * const *nm_ip4_config_get_wins_servers (NMIP4Config *config);
 
 G_END_DECLS
 

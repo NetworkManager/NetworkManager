@@ -37,10 +37,11 @@
 #define NM_IS_SETTINGS_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_SETTINGS))
 #define NM_SETTINGS_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_SETTINGS, NMSettingsClass))
 
-#define NM_SETTINGS_UNMANAGED_SPECS "unmanaged-specs"
-#define NM_SETTINGS_HOSTNAME        "hostname"
-#define NM_SETTINGS_CAN_MODIFY      "can-modify"
-#define NM_SETTINGS_CONNECTIONS     "connections"
+#define NM_SETTINGS_UNMANAGED_SPECS  "unmanaged-specs"
+#define NM_SETTINGS_HOSTNAME         "hostname"
+#define NM_SETTINGS_CAN_MODIFY       "can-modify"
+#define NM_SETTINGS_CONNECTIONS      "connections"
+#define NM_SETTINGS_STARTUP_COMPLETE "connections"
 
 #define NM_SETTINGS_SIGNAL_CONNECTION_ADDED              "connection-added"
 #define NM_SETTINGS_SIGNAL_CONNECTION_UPDATED            "connection-updated"
@@ -119,5 +120,7 @@ void nm_settings_device_added (NMSettings *self, NMDevice *device);
 void nm_settings_device_removed (NMSettings *self, NMDevice *device, gboolean quitting);
 
 gint nm_settings_sort_connections (gconstpointer a, gconstpointer b);
+
+gboolean nm_settings_get_startup_complete (NMSettings *self);
 
 #endif  /* __NM_SETTINGS_H__ */

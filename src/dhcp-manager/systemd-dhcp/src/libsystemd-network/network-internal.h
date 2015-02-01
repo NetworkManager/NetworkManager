@@ -21,8 +21,11 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
+#include "nm-sd-adapt.h"
+
 #include <stdbool.h>
 
+#if 0 /* NM_IGNORED */
 #include "udev.h"
 #include "condition.h"
 
@@ -64,6 +67,7 @@ int config_parse_ifalias(const char *unit, const char *filename, unsigned line,
 
 int net_get_unique_predictable_data(struct udev_device *device, uint8_t result[8]);
 const char *net_get_name(struct udev_device *device);
+#endif /* NM_IGNORED */
 
 void serialize_in_addrs(FILE *f, const struct in_addr *addresses, size_t size);
 int deserialize_in_addrs(struct in_addr **addresses, const char *string);
