@@ -111,8 +111,6 @@ typedef struct {
 	gint32                last_scan; /* timestamp as returned by nm_utils_get_monotonic_timestamp_s() */
 
 	NMSupplicantConfig *  cfg;
-
-	gboolean              disposed;
 } NMSupplicantInterfacePrivate;
 
 static void
@@ -1412,49 +1410,47 @@ dispose (GObject *object)
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (object);
 
-	if (priv->disposed) {
-		G_OBJECT_CLASS (nm_supplicant_interface_parent_class)->dispose (object);
-		return;
-	}
-	priv->disposed = TRUE;
-
 	/* Cancel pending calls before unrefing the dbus manager */
-	nm_call_store_clear (priv->other_pcalls);
-	nm_call_store_destroy (priv->other_pcalls);
+	if (priv->other_pcalls) {
+		nm_call_store_clear (priv->other_pcalls);
+		nm_call_store_destroy (priv->other_pcalls);
+		priv->other_pcalls = NULL;
+	}
 
-	nm_call_store_clear (priv->assoc_pcalls);
-	nm_call_store_destroy (priv->assoc_pcalls);
+	if (priv->assoc_pcalls) {
+		nm_call_store_clear (priv->assoc_pcalls);
+		nm_call_store_destroy (priv->assoc_pcalls);
+		priv->assoc_pcalls = NULL;
+	}
 
-	if (priv->props_proxy)
-		g_object_unref (priv->props_proxy);
-
-	if (priv->iface_proxy)
-		g_object_unref (priv->iface_proxy);
+	g_clear_object (&priv->props_proxy);
+	g_clear_object (&priv->iface_proxy);
+	g_clear_object (&priv->introspect_proxy);
+	g_clear_object (&priv->wpas_proxy);
 
 	g_free (priv->net_path);
+	priv->net_path = NULL;
 
-	if (priv->introspect_proxy)
-		g_object_unref (priv->introspect_proxy);
-
-	if (priv->wpas_proxy)
-		g_object_unref (priv->wpas_proxy);
-
-	g_hash_table_destroy (priv->bss_proxies);
+	if (priv->bss_proxies) {
+		g_hash_table_destroy (priv->bss_proxies);
+		priv->bss_proxies = NULL;
+	}
 
 	if (priv->smgr) {
 		if (priv->smgr_avail_id)
 			g_signal_handler_disconnect (priv->smgr, priv->smgr_avail_id);
-		g_object_unref (priv->smgr);
+		g_clear_object (&priv->smgr);
 	}
 
 	g_free (priv->dev);
+	priv->dev = NULL;
 
 	priv->dbus_mgr = NULL;
 
-	if (priv->cfg)
-		g_object_unref (priv->cfg);
+	g_clear_object (&priv->cfg);
 
 	g_free (priv->object_path);
+	priv->object_path = NULL;
 
 	/* Chain up to the parent class */
 	G_OBJECT_CLASS (nm_supplicant_interface_parent_class)->dispose (object);
