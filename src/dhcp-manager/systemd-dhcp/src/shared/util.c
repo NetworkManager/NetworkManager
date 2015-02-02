@@ -3694,7 +3694,7 @@ char *ellipsize(const char *s, size_t length, unsigned percent) {
 }
 
 int touch_file(const char *path, bool parents, usec_t stamp, uid_t uid, gid_t gid, mode_t mode) {
-        _cleanup_close_ int fd = -1;
+        _cleanup_close_ int fd;
         int r;
 
         assert(path);
