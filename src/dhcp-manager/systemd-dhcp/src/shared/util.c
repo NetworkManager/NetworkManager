@@ -1732,7 +1732,7 @@ bool fstype_is_network(const char *fstype) {
 }
 
 int chvt(int vt) {
-        _cleanup_close_ int fd = -1;
+        _cleanup_close_ int fd;
 
         fd = open_terminal("/dev/tty0", O_RDWR|O_NOCTTY|O_CLOEXEC);
         if (fd < 0)
@@ -4438,7 +4438,7 @@ int terminal_vhangup_fd(int fd) {
 }
 
 int terminal_vhangup(const char *name) {
-        _cleanup_close_ int fd = -1;
+        _cleanup_close_ int fd;
 
         fd = open_terminal(name, O_RDWR|O_NOCTTY|O_CLOEXEC);
         if (fd < 0)
