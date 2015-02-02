@@ -87,8 +87,11 @@ nm_supplicant_manager_iface_get (NMSupplicantManager * self,
 		                                     priv->fast_supported,
 		                                     priv->ap_support,
 		                                     start_now);
-		if (iface)
-			g_hash_table_insert (priv->ifaces, g_strdup (ifname), iface);
+		if (iface) {
+			g_hash_table_insert (priv->ifaces,
+			                     (char *) nm_supplicant_interface_get_ifname (iface),
+			                     iface);
+		}
 	} else {
 		nm_log_dbg (LOGD_SUPPLICANT, "(%s): returning existing supplicant interface", ifname);
 	}
@@ -190,12 +193,13 @@ static void
 availability_changed (NMSupplicantManager *self, gboolean available)
 {
 	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
-	NMSupplicantInterface *iface;
-	GHashTableIter iter;
+	GList *ifaces, *iter;
 
-	g_hash_table_iter_init (&iter, priv->ifaces);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &iface))
-		nm_supplicant_interface_set_supplicant_available (iface, available);
+	/* priv->ifaces may be modified if availability changes; can't use GHashTableIter */
+	ifaces = g_hash_table_get_values (priv->ifaces);
+	for (iter = ifaces; iter; iter = iter->next)
+		nm_supplicant_interface_set_supplicant_available (NM_SUPPLICANT_INTERFACE (iter->data), available);
+	g_list_free (ifaces);
 }
 
 static gboolean
@@ -333,7 +337,7 @@ nm_supplicant_manager_init (NMSupplicantManager *self)
 {
 	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
 
-	priv->ifaces = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
+	priv->ifaces = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
 
 	priv->cancellable = g_cancellable_new ();
 	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
