@@ -260,65 +260,44 @@ nm_supplicant_config_fast_required (NMSupplicantConfig *self)
 	return NM_SUPPLICANT_CONFIG_GET_PRIVATE (self)->fast_required;
 }
 
-static void
-get_hash_cb (gpointer key, gpointer value, gpointer user_data)
-{
-	ConfigOption *opt = (ConfigOption *) value;
-	GValue *variant;
-	GByteArray *array;
-
-	variant = g_slice_new0 (GValue);
-
-	switch (opt->type) {
-	case TYPE_INT:
-		g_value_init (variant, G_TYPE_INT);
-		g_value_set_int (variant, atoi (opt->value));
-		break;
-	case TYPE_BYTES:
-	case TYPE_UTF8:
-		array = g_byte_array_sized_new (opt->len);
-		g_byte_array_append (array, (const guint8 *) opt->value, opt->len);
-		g_value_init (variant, DBUS_TYPE_G_UCHAR_ARRAY);
-		g_value_set_boxed (variant, array);
-		g_byte_array_free (array, TRUE);
-		break;
-	case TYPE_KEYWORD:
-	case TYPE_STRING:
-		g_value_init (variant, G_TYPE_STRING);
-		g_value_set_string (variant, opt->value);
-		break;
-	default:
-		g_slice_free (GValue, variant);
-		return;
-	}
-
-	g_hash_table_insert ((GHashTable *) user_data, g_strdup (key), variant);
-}
-
-static void
-destroy_hash_value (gpointer data)
-{
-	GValue *value = (GValue *) data;
-
-	g_value_unset (value);
-	g_slice_free (GValue, value);
-}
-
-GHashTable *
-nm_supplicant_config_get_hash (NMSupplicantConfig * self)
+GVariant *
+nm_supplicant_config_to_variant (NMSupplicantConfig *self)
 {
 	NMSupplicantConfigPrivate *priv;
-	GHashTable *hash;
+	GVariantBuilder builder;
+	GHashTableIter iter;
+	ConfigOption *option;
+	const char *key;
 
 	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), NULL);
 
-	hash = g_hash_table_new_full (g_str_hash, g_str_equal,
-	                              (GDestroyNotify) g_free,
-	                              destroy_hash_value);
-
 	priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE (self);
-	g_hash_table_foreach (priv->config, get_hash_cb, hash);
-	return hash;
+
+	g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
+
+	g_hash_table_iter_init (&iter, priv->config);
+	while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &option)) {
+		switch (option->type) {
+		case TYPE_INT:
+			g_variant_builder_add (&builder, "{sv}", key, g_variant_new_int32 (atoi (option->value)));
+			break;
+		case TYPE_BYTES:
+		case TYPE_UTF8:
+			g_variant_builder_add (&builder, "{sv}",
+			                       key,
+			                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
+			                                                  option->value, option->len, 1));
+			break;
+		case TYPE_KEYWORD:
+		case TYPE_STRING:
+			g_variant_builder_add (&builder, "{sv}", key, g_variant_new_string (option->value));
+			break;
+		default:
+			break;
+		}
+	}
+
+	return g_variant_builder_end (&builder);
 }
 
 GHashTable *
