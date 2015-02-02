@@ -410,7 +410,6 @@ do {                                                                    \
                 _found;                                                 \
         })
 
-#if 0 /* NM_IGNORED */
 /* Return a nulstr for a standard cascade of configuration directories,
  * suitable to pass to conf_files_list_nulstr or config_parse_many. */
 #define CONF_DIRS_NULSTR(n) \
@@ -440,6 +439,7 @@ do {                                                                    \
 #endif
 #endif
 
+#if 0 /* NM_IGNORED */
 /* Define C11 noreturn without <stdnoreturn.h> and even on older gcc
  * compiler versions */
 #ifndef noreturn

@@ -19,6 +19,8 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
+#include "nm-sd-adapt.h"
+
 #include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -27,6 +29,7 @@
 #include "macro.h"
 #include "sd-id128.h"
 
+#if 0 /* NM_IGNORED */
 _public_ char *sd_id128_to_string(sd_id128_t id, char s[33]) {
         unsigned n;
 
@@ -102,6 +105,7 @@ static sd_id128_t make_v4_uuid(sd_id128_t id) {
 
         return id;
 }
+#endif
 
 _public_ int sd_id128_get_machine(sd_id128_t *ret) {
         static thread_local sd_id128_t saved_machine_id;
@@ -152,6 +156,7 @@ _public_ int sd_id128_get_machine(sd_id128_t *ret) {
         return 0;
 }
 
+#if 0 /* NM_IGNORED */
 _public_ int sd_id128_get_boot(sd_id128_t *ret) {
         static thread_local sd_id128_t saved_boot_id;
         static thread_local bool saved_boot_id_valid = false;
@@ -227,3 +232,4 @@ _public_ int sd_id128_randomize(sd_id128_t *ret) {
         *ret = make_v4_uuid(t);
         return 0;
 }
+#endif /* NM_IGNORED */
