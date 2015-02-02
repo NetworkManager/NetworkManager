@@ -14,6 +14,7 @@
 
    (Minimal changes made by Lennart Poettering, to make clean for inclusion in systemd)
 */
+
 #include "nm-sd-adapt.h"
 
 #include <stdint.h>

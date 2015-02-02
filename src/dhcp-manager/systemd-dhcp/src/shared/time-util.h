@@ -21,13 +21,13 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
+#include "nm-sd-adapt.h"
+
 #include <stdio.h>
 #include <inttypes.h>
 
 typedef uint64_t usec_t;
 typedef uint64_t nsec_t;
-
-#include "nm-sd-adapt.h"
 
 #define NSEC_FMT "%" PRIu64
 #define USEC_FMT "%" PRIu64

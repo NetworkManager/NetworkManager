@@ -21,6 +21,8 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
+#include "nm-sd-adapt.h"
+
 #include <stdint.h>
 
 static inline uint16_t unaligned_read_be16(const void *_u) {
