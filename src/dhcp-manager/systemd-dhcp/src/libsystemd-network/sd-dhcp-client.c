@@ -415,8 +415,6 @@ static int client_message_init(sd_dhcp_client *client, DHCPPacket **ret,
         assert(_optoffset);
         assert(type == DHCP_DISCOVER || type == DHCP_REQUEST);
 
-        /* See RFC2131 section 4.4.1 */
-
         optlen = DHCP_MIN_OPTIONS_SIZE;
         size = sizeof(DHCPPacket) + optlen;
 
