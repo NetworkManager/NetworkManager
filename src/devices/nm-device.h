@@ -389,6 +389,8 @@ void nm_device_queue_state   (NMDevice *self,
 
 gboolean nm_device_get_firmware_missing (NMDevice *self);
 
+void nm_device_steal_connection (NMDevice *device, NMConnection *connection);
+
 void nm_device_queue_activation (NMDevice *device, NMActRequest *req);
 
 gboolean nm_device_supports_vlans (NMDevice *device);

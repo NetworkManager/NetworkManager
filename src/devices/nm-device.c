@@ -5836,6 +5836,26 @@ _carrier_wait_check_act_request_must_queue (NMDevice *self, NMActRequest *req)
 }
 
 void
+nm_device_steal_connection (NMDevice *self, NMConnection *connection)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	_LOGW (LOGD_DEVICE, "disconnecting connection '%s' for new activation request.",
+	       nm_connection_get_id (connection));
+
+	if (   priv->queued_act_request
+	    && connection == nm_active_connection_get_connection (NM_ACTIVE_CONNECTION (priv->queued_act_request)))
+		_clear_queued_act_request (priv);
+
+	if (   priv->act_request
+	    && connection == nm_active_connection_get_connection (NM_ACTIVE_CONNECTION (priv->act_request))
+	    && priv->state < NM_DEVICE_STATE_DEACTIVATING)
+		nm_device_state_changed (self,
+		                         NM_DEVICE_STATE_DEACTIVATING,
+		                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
+}
+
+void
 nm_device_queue_activation (NMDevice *self, NMActRequest *req)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
@@ -5856,8 +5876,8 @@ nm_device_queue_activation (NMDevice *self, NMActRequest *req)
 
 	_LOGD (LOGD_DEVICE, "queue activation request waiting for %s", must_queue ? "carrier" : "currently active connection to disconnect");
 
+	/* Deactivate existing activation request first */
 	if (priv->act_request) {
-		/* Deactivate existing activation request first */
 		_LOGI (LOGD_DEVICE, "disconnecting for new activation request.");
 		nm_device_state_changed (self,
 		                         NM_DEVICE_STATE_DEACTIVATING,
@@ -7280,16 +7300,29 @@ _cleanup_ip_pre (NMDevice *self, gboolean deconfigure)
 }
 
 static void
-_cleanup_generic_pre (NMDevice *self, gboolean deconfigure)
+_cancel_activation (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMConnection *connection;
 
 	/* Clean up when device was deactivated during call to firewall */
 	if (priv->fw_call) {
 		nm_firewall_manager_cancel_call (nm_firewall_manager_get (), priv->fw_call);
 		priv->fw_call = NULL;
 	}
+
+	ip_check_gw_ping_cleanup (self);
+
+	/* Break the activation chain */
+	activation_source_clear (self, TRUE, AF_INET);
+	activation_source_clear (self, TRUE, AF_INET6);
+}
+
+static void
+_cleanup_generic_pre (NMDevice *self, gboolean deconfigure)
+{
+	NMConnection *connection;
+
+	_cancel_activation (self);
 
 	connection = nm_device_get_connection (self);
 	if (   deconfigure
@@ -7299,12 +7332,6 @@ _cleanup_generic_pre (NMDevice *self, gboolean deconfigure)
 		                                      nm_device_get_ip_iface (self),
 		                                      NULL);
 	}
-
-	ip_check_gw_ping_cleanup (self);
-
-	/* Break the activation chain */
-	activation_source_clear (self, TRUE, AF_INET);
-	activation_source_clear (self, TRUE, AF_INET6);
 
 	/* Clear any queued transitions */
 	nm_device_queued_state_clear (self);
@@ -7842,6 +7869,8 @@ _set_state_full (NMDevice *self,
 		}
 		break;
 	case NM_DEVICE_STATE_DEACTIVATING:
+		_cancel_activation (self);
+
 		if (quitting) {
 			nm_dispatcher_call_sync (DISPATCHER_ACTION_PRE_DOWN,
 			                         nm_act_request_get_connection (req),
