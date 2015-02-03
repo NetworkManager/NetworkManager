@@ -2266,6 +2266,17 @@ nm_manager_get_devices (NMManager *manager)
 	return NM_MANAGER_GET_PRIVATE (manager)->devices;
 }
 
+static NMDevice *
+nm_manager_get_connection_device (NMManager *self,
+                                  NMConnection *connection)
+{
+	NMActiveConnection *ac = find_ac_for_connection (self, connection);
+	if (ac == NULL)
+		return NULL;
+
+	return nm_active_connection_get_device (ac);
+}
+
 static gboolean
 impl_manager_get_devices (NMManager *manager, GPtrArray **devices, GError **err)
 {
@@ -3101,7 +3112,10 @@ validate_activation_request (NMManager *self,
 			                     "Device not found");
 			goto error;
 		}
-	} else {
+	} else
+		device = nm_manager_get_connection_device (self, connection);
+
+	if (!device) {
 		gboolean is_software = nm_connection_is_virtual (connection);
 
 		/* VPN and software-device connections don't need a device yet */
