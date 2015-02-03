@@ -2277,6 +2277,29 @@ nm_manager_get_connection_device (NMManager *self,
 	return nm_active_connection_get_device (ac);
 }
 
+static NMDevice *
+nm_manager_get_best_device_for_connection (NMManager *self,
+                                           NMConnection *connection)
+{
+	const GSList *devices, *iter;
+	NMDevice *act_device = nm_manager_get_connection_device (self, connection);
+
+	if (act_device)
+		return act_device;
+
+	/* Pick the first device that's compatible with the connection. */
+	devices = nm_manager_get_devices (self);
+	for (iter = devices; iter; iter = g_slist_next (iter)) {
+		NMDevice *device = NM_DEVICE (iter->data);
+
+		if (nm_device_check_connection_available (device, connection, NM_DEVICE_CHECK_CON_AVAILABLE_NONE, NULL))
+			return device;
+	}
+
+	/* No luck. :( */
+	return NULL;
+}
+
 static gboolean
 impl_manager_get_devices (NMManager *manager, GPtrArray **devices, GError **err)
 {
@@ -3113,7 +3136,7 @@ validate_activation_request (NMManager *self,
 			goto error;
 		}
 	} else
-		device = nm_manager_get_connection_device (self, connection);
+		device = nm_manager_get_best_device_for_connection (self, connection);
 
 	if (!device) {
 		gboolean is_software = nm_connection_is_virtual (connection);
