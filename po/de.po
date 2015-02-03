@@ -14,22 +14,22 @@
 # Wolfgang Stöggl <c72578@yahoo.de>, 2012, 2013.
 # Christian Kirbach <christian.kirbach@gmail.com>, 2009-2014.
 # Benjamin Steinwender <b@stbe.at>, 2014.
-# Hedda Peters <hpeters@redhat.com>, 2014.
+# Hedda Peters <hpeters@redhat.com>, 2014, 2015.
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager HEAD\n"
-"Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?"
-"product=NetworkManager&keywords=I18N+L10N&component=Translations\n"
+"Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug."
+"cgi?product=NetworkManager&keywords=I18N+L10N&component=Translations\n"
 "POT-Creation-Date: 2014-08-01 22:08+0000\n"
-"PO-Revision-Date: 2014-07-27 17:44+0100\n"
-"Last-Translator: Benjamin Steinwender <b@stbe.at>\n"
-"Language-Team: Deutsch <gnome-de@gnome.org>\n"
+"PO-Revision-Date: 2015-02-03 16:15+0000\n"
+"Last-Translator: \n"
+"Language-Team: American English <kde-i18n-doc@kde.org>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 1.6.7\n"
+"X-Generator: Lokalize 1.0\n"
 
 #: ../clients/cli/common.c:38 ../clients/cli/common.c:50
 #: ../clients/cli/common.c:58 ../clients/cli/common.c:69
@@ -3015,7 +3015,7 @@ msgstr "IP-IFACE"
 #. 2
 #: ../clients/cli/devices.c:70 ../clients/cli/devices.c:98
 msgid "IS-SOFTWARE"
-msgstr ""
+msgstr "IS-SOFTWARE"
 
 #. 14
 #: ../clients/cli/devices.c:71
@@ -4730,12 +4730,13 @@ msgstr "Die Eigenschaft enthält nicht die EAP-Methode »%s«"
 #: ../clients/cli/settings.c:2585
 #, c-format
 msgid "the property doesn't contain alternative subject match '%s'"
-msgstr "die Eigenschaft enthält kein alternative Themen passend zu »%s«"
+msgstr "die Eigenschaft enthält keine alternativen Themen passend zu »%s«"
 
 #: ../clients/cli/settings.c:2614
-#, fuzzy, c-format
+#, c-format
 msgid "the property doesn't contain \"phase2\" alternative subject match '%s'"
-msgstr "die Eigenschaft enthält nicht die Berechtigung »%s«"
+msgstr ""
+"die Eigenschaft enthält nicht »phase2«, alternative Themen passend zu »%s«"
 
 #: ../clients/cli/settings.c:2640
 msgid ""
@@ -6102,10 +6103,10 @@ msgid "Could not parse arguments"
 msgstr "Parameter konnten nicht verarbeitet werden"
 
 #: ../clients/tui/nmtui.c:248 ../clients/tui/nmtui.c:259
-#, fuzzy, c-format
+#, c-format
 #| msgid "Could not activate connection: %s"
 msgid "Could not contact NetworkManager: %s.\n"
-msgstr "Verbindungen konnte nicht aktiviert werden: %s"
+msgstr "NetworkManager konnte nicht erreicht werden: %s.\n"
 
 #: ../clients/tui/nmtui.c:253
 msgid "NetworkManager is not running."
@@ -6710,16 +6711,14 @@ msgstr "Unbekannter Sklaventyp »%s«"
 
 #: ../libnm-core/nm-setting-connection.c:869
 #: ../libnm-util/nm-setting-connection.c:886
-#, fuzzy
 #| msgid "Shared connection service failed"
 msgid "Slave connections need a valid '"
-msgstr "Es muss ein gültiger Server-Pfad eingegeben werden"
+msgstr "Slave-Verbindungen benötigen eine gültige '"
 
 #: ../libnm-core/nm-setting-connection.c:878
 #: ../libnm-util/nm-setting-connection.c:895
-#, fuzzy
 msgid "Cannot set '"
-msgstr "  ' kann nicht gesetzt werden"
+msgstr "' kann nicht gesetzt werden"
 
 #: ../libnm-core/nm-setting-dcb.c:544 ../libnm-util/nm-setting-dcb.c:593
 msgid "flags invalid"
@@ -7005,13 +7004,12 @@ msgstr "Durch D-Bus getrennt"
 
 #: ../libnm/nm-object.c:149
 msgid "Caller did not specify D-Bus path for object"
-msgstr ""
+msgstr "Aufrufer gab keinen D-Bus-Pfad für Objekt an"
 
 #: ../libnm/nm-vpn-plugin.c:751
-#, fuzzy
 #| msgid "Error: No interface specified."
 msgid "No service name specified"
-msgstr "Fehler: Es muss eine Schnittstelle angegeben werden."
+msgstr "Kein Dienstname angegeben"
 
 #: ../policy/org.freedesktop.NetworkManager.policy.in.in.h:1
 msgid "Enable or disable system networking"
