@@ -40,9 +40,7 @@
 static gboolean
 sighup_handler (gpointer user_data)
 {
-	/* Reread config stuff like system config files, VPN service files, etc */
-	nm_log_info (LOGD_CORE, "caught SIGHUP, not supported yet.");
-
+	nm_main_config_reload ();
 	return G_SOURCE_CONTINUE;
 }
 
@@ -177,7 +175,8 @@ nm_main_utils_early_setup (const char *progname,
                            char **argv[],
                            int *argc,
                            GOptionEntry *options,
-                           GOptionEntry *more_options,
+                           void (*option_context_hook) (gpointer user_data, GOptionContext *opt_ctx),
+                           gpointer option_context_hook_data,
                            const char *summary)
 {
 	GOptionContext *opt_ctx = NULL;
@@ -220,9 +219,9 @@ nm_main_utils_early_setup (const char *progname,
 	g_option_context_set_ignore_unknown_options (opt_ctx, FALSE);
 	g_option_context_set_help_enabled (opt_ctx, TRUE);
 	g_option_context_add_main_entries (opt_ctx, options, NULL);
-	if (more_options)
-		g_option_context_add_main_entries (opt_ctx, more_options, NULL);
 	g_option_context_set_summary (opt_ctx, summary);
+	if (option_context_hook)
+		option_context_hook (option_context_hook_data, opt_ctx);
 
 	success = g_option_context_parse (opt_ctx, argc, argv, &error);
 	if (!success) {

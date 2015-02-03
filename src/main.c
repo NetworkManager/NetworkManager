@@ -175,6 +175,19 @@ _init_nm_debug (const char *debug)
 	}
 }
 
+void
+nm_main_config_reload ()
+{
+	nm_log_info (LOGD_CORE, "reload configuration...");
+	/* The signal handler thread is only installed after
+	 * creating NMConfig instance, and on shut down we
+	 * no longer run the mainloop (to reach this point).
+	 *
+	 * Hence, a NMConfig singleton instance must always be
+	 * available. */
+	nm_config_reload (nm_config_get ());
+}
+
 static void
 manager_configure_quit (NMManager *manager, gpointer user_data)
 {
@@ -204,6 +217,7 @@ main (int argc, char *argv[])
 	GError *error = NULL;
 	gboolean wrote_pidfile = FALSE;
 	char *bad_domains = NULL;
+	NMConfigCmdLineOptions *config_cli;
 
 	GOptionEntry options[] = {
 		{ "version", 'V', 0, G_OPTION_ARG_NONE, &show_version, N_("Print NetworkManager version and exit"), NULL },
@@ -224,11 +238,13 @@ main (int argc, char *argv[])
 
 	main_loop = g_main_loop_new (NULL, FALSE);
 
+	config_cli = nm_config_cmd_line_options_new ();
 	if (!nm_main_utils_early_setup ("NetworkManager",
 	                                &argv,
 	                                &argc,
 	                                options,
-	                                nm_config_get_options (),
+	                                (void (*)(gpointer, GOptionContext *)) nm_config_cmd_line_options_add_to_entries,
+	                                config_cli,
 	                                _("NetworkManager monitors all network connections and automatically\nchooses the best connection to use.  It also allows the user to\nspecify wireless access points which wireless cards in the computer\nshould associate with.")))
 		exit (1);
 
@@ -290,7 +306,9 @@ main (int argc, char *argv[])
 		exit (1);
 
 	/* Read the config file and CLI overrides */
-	config = nm_config_new (&error);
+	config = nm_config_setup (config_cli, &error);
+	nm_config_cmd_line_options_free (config_cli);
+	config_cli = NULL;
 	if (config == NULL) {
 		fprintf (stderr, _("Failed to read configuration: (%d) %s\n"),
 		         error ? error->code : -1,
@@ -369,7 +387,7 @@ main (int argc, char *argv[])
 	nm_log_info (LOGD_CORE, "NetworkManager (version " NM_DIST_VERSION ") is starting...");
 	success = FALSE;
 
-	nm_log_info (LOGD_CORE, "Read config: %s", nm_config_get_description (config));
+	nm_log_info (LOGD_CORE, "Read config: %s", nm_config_data_get_config_description (nm_config_get_data (config)));
 	nm_log_info (LOGD_CORE, "WEXT support is %s",
 #if HAVE_WEXT
 	             "enabled"

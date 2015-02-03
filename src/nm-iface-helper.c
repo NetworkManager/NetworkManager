@@ -315,6 +315,7 @@ main (int argc, char *argv[])
 	                                &argc,
 	                                options,
 	                                NULL,
+	                                NULL,
 	                                _("nm-iface-helper is a small, standalone process that manages a single network interface.")))
 		exit (1);
 
@@ -479,6 +480,12 @@ main (int argc, char *argv[])
 
 /*******************************************************/
 /* Stub functions */
+
+void
+nm_main_config_reload ()
+{
+	nm_log_info (LOGD_CORE, "reloading configuration not supported");
+}
 
 gconstpointer nm_config_get (void);
 const char *nm_config_get_dhcp_client (gpointer unused);

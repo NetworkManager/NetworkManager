@@ -1669,7 +1669,7 @@ default_wired_clear_tag (NMSettings *self,
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (default_wired_connection_updated_by_user_cb), self);
 
 	if (add_to_no_auto_default)
-		nm_config_set_ethernet_no_auto_default (NM_SETTINGS_GET_PRIVATE (self)->config, device);
+		nm_config_set_no_auto_default_for_device (NM_SETTINGS_GET_PRIVATE (self)->config, device);
 }
 
 void

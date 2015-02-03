@@ -33,7 +33,13 @@ gboolean nm_main_utils_early_setup (const char *progname,
                                     char **argv[],
                                     int *argc,
                                     GOptionEntry *options,
-                                    GOptionEntry *more_options,
+                                    void (*option_context_hook) (gpointer user_data, GOptionContext *opt_ctx),
+                                    gpointer option_context_hook_data,
                                     const char *summary);
+
+/* The following functions are not implemented inside nm-main-utils.c, instead
+ * main.c and nm-iface-helper.c */
+
+void nm_main_config_reload (void);
 
 #endif /* __MAIN_UTILS_H__ */
