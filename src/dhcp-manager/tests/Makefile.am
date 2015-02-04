@@ -21,6 +21,7 @@ test_dhcp_dhclient_SOURCES = \
 test_dhcp_dhclient_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la
 
+@VALGRIND_RULES@
 TESTS = test-dhcp-dhclient
 
 EXTRA_DIST = \

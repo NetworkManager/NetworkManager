@@ -14,6 +14,7 @@ AM_CPPFLAGS = \
 
 noinst_PROGRAMS = $(TESTS)
 
+#@VALGRIND_RULES@
 TESTS = test-nm-client test-remote-settings-client
 
 TESTS_ENVIRONMENT = $(srcdir)/libnm-glib-test-launch.sh

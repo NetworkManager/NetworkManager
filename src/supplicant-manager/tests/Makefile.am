@@ -19,4 +19,5 @@ test_supplicant_config_SOURCES = \
 test_supplicant_config_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la
 
+@VALGRIND_RULES@
 TESTS = test-supplicant-config

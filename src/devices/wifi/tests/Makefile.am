@@ -24,5 +24,6 @@ test_wifi_ap_utils_SOURCES = \
 
 test_wifi_ap_utils_LDADD = $(top_builddir)/src/libNetworkManager.la
 
+@VALGRIND_RULES@
 TESTS = test-wifi-ap-utils
 

@@ -57,6 +57,7 @@ test_ifcfg_rh_utils_SOURCES = \
 test_ifcfg_rh_utils_LDADD = \
 	$(AM_LDADD)
 
+@VALGRIND_RULES@
 TESTS = test-ifcfg-rh-utils test-ifcfg-rh
 
 EXTRA_DIST = \

@@ -13,6 +13,7 @@ AM_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
 	-DTEST_CERT_DIR=\"$(top_srcdir)/libnm-util/tests/certs/\"
 
+@VALGRIND_RULES@
 noinst_PROGRAMS = \
 	test-settings-defaults \
 	test-crypto \
