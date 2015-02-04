@@ -17,6 +17,7 @@ LDADD = \
 
 noinst_PROGRAMS = $(TESTS)
 
+#@VALGRIND_RULES@
 TESTS = test-nm-client test-remote-settings-client test-secret-agent
 
 test_nm_client_SOURCES = \

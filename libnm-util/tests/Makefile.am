@@ -10,6 +10,7 @@ AM_CPPFLAGS = \
 	-DBUILD_DIR=\"$(abs_builddir)\" \
 	-DTEST_CERT_DIR=\"$(top_srcdir)/libnm-core/tests/certs/\"
 
+@VALGRIND_RULES@
 TESTS = \
 	test-settings-defaults \
 	test-crypto \

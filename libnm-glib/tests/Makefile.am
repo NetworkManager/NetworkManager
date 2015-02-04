@@ -12,6 +12,7 @@ AM_CPPFLAGS = \
 
 noinst_PROGRAMS = $(TESTS)
 
+#@VALGRIND_RULES@
 TESTS = test-nm-client test-remote-settings-client
 
 ####### NMClient and non-settings tests #######

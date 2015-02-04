@@ -34,6 +34,7 @@ test_keyfile_LDADD = \
 	$(DBUS_LIBS) \
 	$(CODE_COVERAGE_LDFLAGS)
 
+@VALGRIND_RULES@
 TESTS = test-keyfile
 
 endif

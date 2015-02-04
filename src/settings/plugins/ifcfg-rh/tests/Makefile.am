@@ -47,6 +47,7 @@ test_ifcfg_rh_utils_SOURCES = \
 test_ifcfg_rh_utils_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la
 
+@VALGRIND_RULES@
 TESTS = test-ifcfg-rh-utils test-ifcfg-rh
 
 endif
