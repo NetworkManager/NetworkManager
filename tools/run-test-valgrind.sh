@@ -19,7 +19,7 @@ $LIBTOOL --mode=execute "$VALGRIND" \
 	"$TEST"
 RESULT=$?
 
-if [ $RESULT -ne 0 ]; then
+if [ $RESULT -ne 0 -a $RESULT -ne 77 ]; then
 	echo "Don't forget to check the valgrind log at '`realpath $LOGFILE`'." >&2
 fi
 
