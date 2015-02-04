@@ -32,6 +32,7 @@ test_ibft_SOURCES = \
 test_ibft_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la
 
+@VALGRIND_RULES@
 TESTS = test-ibft
 
 endif

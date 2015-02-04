@@ -86,6 +86,7 @@ EXTRA_DIST = test-secret-agent.py
 
 ###########################################
 
+@VALGRIND_RULES@
 TESTS = \
 	test-ip4-config \
 	test-ip6-config \
