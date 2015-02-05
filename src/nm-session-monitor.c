@@ -372,7 +372,9 @@ nm_session_monitor_user_to_uid (const char *user, uid_t *out_uid)
 gboolean
 nm_session_monitor_session_exists (uid_t uid, gboolean active)
 {
+#if defined(SESSION_TRACKING_SYSTEMD) || defined(SESSION_TRACKING_CONSOLEKIT)
 	NMSessionMonitor *monitor = nm_session_monitor_get ();
+#endif
 
 #ifdef SESSION_TRACKING_SYSTEMD
 	if (sd_session_exists (monitor, uid, active))
