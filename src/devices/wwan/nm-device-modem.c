@@ -295,6 +295,9 @@ modem_state_cb (NMModem *modem,
 		 * device's enabled/disabled state.
 		 */
 		nm_modem_set_mm_enabled (priv->modem, priv->rf_enabled);
+
+		/* Now allow connections without a PIN to be available */
+		nm_device_recheck_available_connections (device);
 	}
 
 	if ((dev_state >= NM_DEVICE_STATE_DISCONNECTED) && !nm_device_is_available (device)) {
