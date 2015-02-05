@@ -395,7 +395,7 @@ get_dispatcher_file (const char *file,
 	}
 
 	if (g_key_file_has_group (kf, "dhcp6")) {
-		if (!parse_dhcp (kf, "dhcp6", out_device_dhcp4_props, error))
+		if (!parse_dhcp (kf, "dhcp6", out_device_dhcp6_props, error))
 			goto out;
 	}
 
