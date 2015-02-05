@@ -129,3 +129,19 @@
    match-leak-kinds: possible
    fun:calloc
 }
+
+
+{
+   _glib_sigaction
+   Memcheck:Param
+   rt_sigaction(act->sa_flags)
+   fun:__libc_sigaction
+   fun:unref_unix_signal_handler_unlocked
+   fun:g_child_watch_finalize
+   fun:g_source_unref_internal
+   fun:g_main_context_dispatch
+   fun:g_main_context_iterate.isra.24
+   fun:g_main_loop_run
+   ...
+}
+
