@@ -270,11 +270,12 @@ parse_ip4 (GKeyFile *kf, GHashTable **out_props, const char *section, GError **e
 	split = g_strsplit_set (tmp, " ", -1);
 	g_free (tmp);
 
-	if (g_strv_length (split) > 0) {
+	if (split && g_strv_length (split) > 0) {
 		for (iter = split; iter && *iter; iter++)
 			g_strstrip (*iter);
 		value_hash_add_strv (*out_props, "domains", split);
-	}
+	} else
+		g_strfreev (split);
 
 	/* nameservers */
 	if (!add_uint_array (kf, *out_props, "ip4", "nameservers", error))
@@ -290,7 +291,7 @@ parse_ip4 (GKeyFile *kf, GHashTable **out_props, const char *section, GError **e
 	split = g_strsplit_set (tmp, ",", -1);
 	g_free (tmp);
 
-	if (g_strv_length (split) > 0) {
+	if (split && g_strv_length (split) > 0) {
 		list = NULL;
 		for (iter = split; iter && *iter; iter++) {
 			NMIP4Address *addr;
@@ -334,7 +335,7 @@ parse_ip4 (GKeyFile *kf, GHashTable **out_props, const char *section, GError **e
 		split = g_strsplit_set (tmp, ",", -1);
 		g_free (tmp);
 
-		if (g_strv_length (split) > 0) {
+		if (split && g_strv_length (split) > 0) {
 			list = NULL;
 			for (iter = split; iter && *iter; iter++) {
 				NMIP4Route *route;
@@ -395,11 +396,15 @@ parse_dhcp (GKeyFile *kf,
 	*out_props = value_hash_create ();
 	for (iter = keys; iter && *iter; iter++) {
 		val = g_key_file_get_string (kf, group_name, *iter, error);
-		if (!val)
+		if (!val) {
+			g_strfreev (keys);
+			g_hash_table_unref (*out_props);
 			return FALSE;
+		}
 		value_hash_add_string (*out_props, *iter, val);
 		g_free (val);
 	}
+	g_strfreev (keys);
 
 	return TRUE;
 }
@@ -424,6 +429,21 @@ get_dispatcher_file (const char *file,
 	GKeyFile *kf;
 	gboolean success = FALSE;
 	char **keys, **iter, *val;
+
+	g_assert (!error || !*error);
+	g_assert (out_con_hash && !*out_con_hash);
+	g_assert (out_con_props && !*out_con_props);
+	g_assert (out_device_props && !*out_device_props);
+	g_assert (out_device_ip4_props && !*out_device_ip4_props);
+	g_assert (out_device_ip6_props && !*out_device_ip6_props);
+	g_assert (out_device_dhcp4_props && !*out_device_dhcp4_props);
+	g_assert (out_device_dhcp6_props && !*out_device_dhcp6_props);
+	g_assert (out_vpn_ip_iface && !*out_vpn_ip_iface);
+	g_assert (out_vpn_ip4_props && !*out_vpn_ip4_props);
+	g_assert (out_vpn_ip6_props && !*out_vpn_ip6_props);
+	g_assert (out_expected_iface && !*out_expected_iface);
+	g_assert (out_action && !*out_action);
+	g_assert (out_env && !*out_env);
 
 	kf = g_key_file_new ();
 	if (!g_key_file_load_from_file (kf, file, G_KEY_FILE_NONE, error))
@@ -577,6 +597,7 @@ test_generic (const char *path, const char *file, const char *override_vpn_ip_if
 
 	g_assert_cmpstr (expected_iface, ==, out_iface);
 
+	g_strfreev (denv);
 	g_free (out_iface);
 	g_free (vpn_ip_iface);
 	g_free (expected_iface);
