@@ -1054,8 +1054,8 @@ typedef enum {
 					g_variant_builder_add (&__setting_builder, "{sv}", \
 					                       __cur_property_name, \
 					                       __property_val); \
-				} else \
-					g_variant_unref (__property_val); \
+				} \
+				g_variant_unref (__property_val); \
 			} \
 			 \
 			if (__cur_setting_name) \

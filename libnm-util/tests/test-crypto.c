@@ -96,7 +96,7 @@ out:
 static void
 test_cert (gconstpointer test_data)
 {
-	char *path;
+	gs_free char *path;
 	GByteArray *array;
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 	GError *error = NULL;
@@ -153,6 +153,7 @@ test_load_private_key (const char *path,
 		        "unexpected failure determining private key file '%s' "
 		        "type with invalid password (expected %d, got %d)",
 		        path, NM_CRYPTO_KEY_TYPE_UNKNOWN, key_type);
+		g_clear_error (&error);
 		return;
 	}
 
@@ -183,6 +184,7 @@ test_load_private_key (const char *path,
 		g_byte_array_free (decrypted, TRUE);
 	}
 
+	g_clear_error (&error);
 	g_byte_array_free (array, TRUE);
 }
 
@@ -207,6 +209,7 @@ test_load_pkcs12 (const char *path,
 			    "%d): %d %s",
 			    path, NM_CRYPTO_FILE_FORMAT_PKCS12, format, error->code, error->message);
 	}
+	g_clear_error (&error);
 }
 
 static void
