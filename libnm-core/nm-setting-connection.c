@@ -968,8 +968,9 @@ find_virtual_interface_name (GVariant *connection_dict)
 
 	/* All of the deprecated virtual interface name properties were named "interface-name". */
 	if (!g_variant_lookup (setting_dict, "interface-name", "&s", &interface_name))
-		return NULL;
+		interface_name = NULL;
 
+	g_variant_unref (setting_dict);
 	return interface_name;
 }
 
