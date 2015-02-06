@@ -176,6 +176,7 @@ test_need_tls_secrets_path (void)
 			"need-tls-secrets-path-key-password",
 			"expected to require private key password, but it wasn't");
 
+	g_ptr_array_free (hints, TRUE);
 	g_object_unref (connection);
 }
 
@@ -219,6 +220,7 @@ test_need_tls_secrets_blob (void)
 			"need-tls-secrets-blob-key-password",
 			"expected to require private key password, but it wasn't");
 
+	g_ptr_array_free (hints, TRUE);
 	g_object_unref (connection);
 }
 
@@ -345,6 +347,7 @@ test_need_tls_phase2_secrets_path (void)
 			"need-tls-phase2-secrets-path-key-password",
 			"expected to require private key password, but it wasn't");
 
+	g_ptr_array_free (hints, TRUE);
 	g_object_unref (connection);
 }
 
@@ -389,6 +392,7 @@ test_need_tls_phase2_secrets_blob (void)
 			"need-tls-phase2-secrets-blob-key-password",
 			"expected to require private key password, but it wasn't");
 
+	g_ptr_array_free (hints, TRUE);
 	g_object_unref (connection);
 }
 
@@ -559,8 +563,8 @@ test_update_secrets_wifi_bad_setting_name (void)
 	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_SETTING_NOT_FOUND);
 	g_assert (success == FALSE);
 
+	g_clear_error (&error);
 	g_variant_unref (secrets);
-
 	g_object_unref (connection);
 }
 
@@ -668,6 +672,7 @@ test_update_secrets_whole_connection_bad_setting (void)
 	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_SETTING_NOT_FOUND);
 	g_assert (success == FALSE);
 
+	g_clear_error (&error);
 	g_variant_unref (copy);
 	g_object_unref (connection);
 }
