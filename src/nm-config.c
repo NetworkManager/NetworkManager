@@ -47,6 +47,7 @@ struct NMConfigCmdLineOptions {
 	char *config_dir;
 	char *no_auto_default_file;
 	char *plugins;
+	gboolean configure_and_quit;
 	char *connectivity_uri;
 
 	/* We store interval as signed internally to track whether it's
@@ -327,6 +328,7 @@ _nm_config_cmd_line_options_clear (NMConfigCmdLineOptions *cli)
 	g_clear_pointer (&cli->config_dir, g_free);
 	g_clear_pointer (&cli->no_auto_default_file, g_free);
 	g_clear_pointer (&cli->plugins, g_free);
+	cli->configure_and_quit = FALSE;
 	g_clear_pointer (&cli->connectivity_uri, g_free);
 	g_clear_pointer (&cli->connectivity_response, g_free);
 	cli->connectivity_interval = -1;
@@ -344,6 +346,7 @@ _nm_config_cmd_line_options_copy (const NMConfigCmdLineOptions *cli, NMConfigCmd
 	dst->config_main_file = g_strdup (cli->config_main_file);
 	dst->no_auto_default_file = g_strdup (cli->no_auto_default_file);
 	dst->plugins = g_strdup (cli->plugins);
+	dst->configure_and_quit = cli->configure_and_quit;
 	dst->connectivity_uri = g_strdup (cli->connectivity_uri);
 	dst->connectivity_response = g_strdup (cli->connectivity_response);
 	dst->connectivity_interval = cli->connectivity_interval;
@@ -380,6 +383,7 @@ nm_config_cmd_line_options_add_to_entries (NMConfigCmdLineOptions *cli,
 			{ "config-dir", 0, 0, G_OPTION_ARG_FILENAME, &cli->config_dir, N_("Config directory location"), N_("/path/to/config/dir") },
 			{ "no-auto-default", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_FILENAME, &cli->no_auto_default_file, "no-auto-default.state location", NULL },
 			{ "plugins", 0, 0, G_OPTION_ARG_STRING, &cli->plugins, N_("List of plugins separated by ','"), N_("plugin1,plugin2") },
+			{ "configure-and-quit", 0, 0, G_OPTION_ARG_NONE, &cli->configure_and_quit, N_("Quit after initial configuration"), NULL },
 
 				/* These three are hidden for now, and should eventually just go away. */
 			{ "connectivity-uri", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_STRING, &cli->connectivity_uri, N_("An http(s) address for checking internet connectivity"), "http://example.com" },
@@ -645,6 +649,9 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 			g_key_file_set_value (keyfile, "main", "plugins", CONFIG_PLUGINS_DEFAULT);
 	} else
 		g_strfreev (plugins_tmp);
+
+	if (cli && cli->configure_and_quit)
+		g_key_file_set_value (keyfile, "main", "configure-and-quit", "true");
 
 	if (cli && cli->connectivity_uri && cli->connectivity_uri[0])
 		g_key_file_set_value (keyfile, "connectivity", "uri", cli->connectivity_uri);
