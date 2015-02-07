@@ -536,8 +536,6 @@ read_route_file_legacy (const char *filename, NMSettingIPConfig *s_ip4, GError *
 	char **lines = NULL, **iter;
 	GRegex *regex_to1, *regex_to2, *regex_via, *regex_metric;
 	GMatchInfo *match_info;
-	NMIPRoute *route = NULL;
-	char *dest = NULL, *prefix = NULL, *next_hop = NULL, *metric = NULL;
 	gint64 prefix_int, metric_int;
 	gboolean success = FALSE;
 
@@ -568,6 +566,9 @@ read_route_file_legacy (const char *filename, NMSettingIPConfig *s_ip4, GError *
 	/* Iterate through file lines */
 	lines = g_strsplit_set (contents, "\n\r", -1);
 	for (iter = lines; iter && *iter; iter++) {
+		gs_free char *next_hop = NULL, *dest = NULL;
+		char *prefix, *metric;
+		NMIPRoute *route;
 
 		/* Skip empty lines */
 		if (g_regex_match_simple (pattern_empty, *iter, 0, 0))
@@ -587,11 +588,10 @@ read_route_file_legacy (const char *filename, NMSettingIPConfig *s_ip4, GError *
 		}
 		dest = g_match_info_fetch (match_info, 1);
 		if (!strcmp (dest, "default"))
-			strcpy (dest, "0.0.0.0");
+			strcpy (dest,  "0.0.0.0");
 		if (!nm_utils_ipaddr_valid (AF_INET, dest)) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid IP4 route destination address '%s'", dest);
-			g_free (dest);
 			g_match_info_free (match_info);
 			goto error;
 		}
@@ -606,7 +606,6 @@ read_route_file_legacy (const char *filename, NMSettingIPConfig *s_ip4, GError *
 			if (errno || prefix_int <= 0 || prefix_int > 32) {
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				             "Invalid IP4 route destination prefix '%s'", prefix);
-				g_free (dest);
 				g_free (prefix);
 				goto error;
 			}
@@ -622,13 +621,10 @@ read_route_file_legacy (const char *filename, NMSettingIPConfig *s_ip4, GError *
 				             "Invalid IP4 route gateway address '%s'",
 				             next_hop);
 				g_match_info_free (match_info);
-				g_free (dest);
-				g_free (next_hop);
 				goto error;
 			}
 		} else {
 			/* we don't make distinction between missing GATEWAY IP and 0.0.0.0 */
-			next_hop = NULL;
 		}
 		g_match_info_free (match_info);
 
@@ -643,8 +639,6 @@ read_route_file_legacy (const char *filename, NMSettingIPConfig *s_ip4, GError *
 				g_match_info_free (match_info);
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				             "Invalid IP4 route metric '%s'", metric);
-				g_free (dest);
-				g_free (next_hop);
 				g_free (metric);
 				goto error;
 			}
@@ -653,13 +647,11 @@ read_route_file_legacy (const char *filename, NMSettingIPConfig *s_ip4, GError *
 		g_match_info_free (match_info);
 
 		route = nm_ip_route_new (AF_INET, dest, prefix_int, next_hop, metric_int, error);
-		if (!route) {
-			g_free (dest);
-			g_free (next_hop);
+		if (!route)
 			goto error;
-		}
 		if (!nm_setting_ip_config_add_route (s_ip4, route))
 			PARSE_WARNING ("duplicate IP4 route");
+		nm_ip_route_unref (route);
 	}
 
 	success = TRUE;
@@ -667,8 +659,6 @@ read_route_file_legacy (const char *filename, NMSettingIPConfig *s_ip4, GError *
 error:
 	g_free (contents);
 	g_strfreev (lines);
-	if (route)
-		nm_ip_route_unref (route);
 	g_regex_unref (regex_to1);
 	g_regex_unref (regex_to2);
 	g_regex_unref (regex_via);
@@ -743,7 +733,6 @@ read_route6_file (const char *filename, NMSettingIPConfig *s_ip6, GError **error
 	char **lines = NULL, **iter;
 	GRegex *regex_to1, *regex_to2, *regex_via, *regex_metric;
 	GMatchInfo *match_info;
-	NMIPRoute *route = NULL;
 	char *dest = NULL, *prefix = NULL, *next_hop = NULL, *metric = NULL;
 	gint64 prefix_int, metric_int;
 	gboolean success = FALSE;
@@ -775,6 +764,7 @@ read_route6_file (const char *filename, NMSettingIPConfig *s_ip6, GError **error
 	/* Iterate through file lines */
 	lines = g_strsplit_set (contents, "\n\r", -1);
 	for (iter = lines; iter && *iter; iter++) {
+		NMIPRoute *route;
 
 		/* Skip empty lines */
 		if (g_regex_match_simple (pattern_empty, *iter, 0, 0))
@@ -864,6 +854,7 @@ read_route6_file (const char *filename, NMSettingIPConfig *s_ip6, GError **error
 			goto error;
 		if (!nm_setting_ip_config_add_route (s_ip6, route))
 			PARSE_WARNING ("duplicate IP6 route");
+		nm_ip_route_unref (route);
 	}
 
 	success = TRUE;
@@ -871,8 +862,6 @@ read_route6_file (const char *filename, NMSettingIPConfig *s_ip6, GError **error
 error:
 	g_free (contents);
 	g_strfreev (lines);
-	if (route)
-		nm_ip_route_unref (route);
 	g_regex_unref (regex_to1);
 	g_regex_unref (regex_to2);
 	g_regex_unref (regex_via);
@@ -4465,6 +4454,7 @@ make_vlan_setting (shvarFile *ifcfg,
 		goto error;
 	}
 	g_object_set (s_vlan, NM_SETTING_VLAN_PARENT, parent, NULL);
+	g_clear_pointer (&parent, g_free);
 
 	if (svTrueValue (ifcfg, "REORDER_HDR", FALSE))
 		vlan_flags |= NM_VLAN_FLAG_REORDER_HEADERS;
@@ -4482,6 +4472,8 @@ make_vlan_setting (shvarFile *ifcfg,
 
 	parse_prio_map_list (s_vlan, ifcfg, "VLAN_INGRESS_PRIORITY_MAP", NM_VLAN_INGRESS_MAP);
 	parse_prio_map_list (s_vlan, ifcfg, "VLAN_EGRESS_PRIORITY_MAP", NM_VLAN_EGRESS_MAP);
+
+	g_free (iface_name);
 
 	return (NMSetting *) s_vlan;
 
@@ -4656,7 +4648,8 @@ connection_from_file_full (const char *filename,
 {
 	NMConnection *connection = NULL;
 	shvarFile *parsed;
-	char *type, *devtype, *bootproto;
+	gs_free char *type = NULL;
+	char *devtype, *bootproto;
 	NMSetting *s_ip4, *s_ip6, *s_port, *s_dcb = NULL;
 	const char *ifcfg_name = NULL;
 
@@ -4699,8 +4692,6 @@ connection_from_file_full (const char *filename,
 		goto done;
 	}
 	g_free (bootproto);
-
-	type = NULL;
 
 	devtype = svGetValue (parsed, "DEVICETYPE", FALSE);
 	if (devtype) {
@@ -4789,7 +4780,6 @@ connection_from_file_full (const char *filename,
 			PARSE_WARNING ("connection type was unrecognized but device was not uniquely identified; device may be managed");
 		goto done;
 	}
-	g_free (type);
 
 	if (!connection)
 		goto done;
