@@ -1884,6 +1884,7 @@ nm_setting_802_1x_get_private_key_format (NMSetting8021x *setting)
 			g_error_free (error);
 			return NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
 		}
+		g_error_free (error);
 		return NM_SETTING_802_1X_CK_FORMAT_RAW_KEY;
 	default:
 		break;
@@ -2164,6 +2165,7 @@ nm_setting_802_1x_get_phase2_private_key_format (NMSetting8021x *setting)
 			g_error_free (error);
 			return NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
 		}
+		g_error_free (error);
 		return NM_SETTING_802_1X_CK_FORMAT_RAW_KEY;
 	default:
 		break;
