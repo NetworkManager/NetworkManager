@@ -57,6 +57,7 @@
 #include "nm-posix-signals.h"
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
+#include "gsystem-local-alloc.h"
 
 #include "common.h"
 #include "shvar.h"
@@ -839,10 +840,6 @@ read_route_file_legacy (const char *filename, NMSettingIP4Config *s_ip4, GError 
 	char **lines = NULL, **iter;
 	GRegex *regex_to1, *regex_to2, *regex_via, *regex_metric;
 	GMatchInfo *match_info;
-	NMIP4Route *route;
-	guint32 ip4_addr;
-	char *dest = NULL, *prefix = NULL, *metric = NULL;
-	long int prefix_int, metric_int;
 	gboolean success = FALSE;
 
 	const char *pattern_empty = "^\\s*(\\#.*)?$";
@@ -870,12 +867,13 @@ read_route_file_legacy (const char *filename, NMSettingIP4Config *s_ip4, GError 
 	regex_via = g_regex_new (pattern_via, 0, 0, NULL);
 	regex_metric = g_regex_new (pattern_metric, 0, 0, NULL);
 
-	/* New NMIP4Route structure */
-	route = nm_ip4_route_new ();
-
 	/* Iterate through file lines */
 	lines = g_strsplit_set (contents, "\n\r", -1);
 	for (iter = lines; iter && *iter; iter++) {
+		gs_free char *next_hop = NULL, *dest = NULL, *prefix = NULL, *metric = NULL;
+		guint32 dest_addr, next_hop_addr;
+		long int prefix_int = 32, metric_int = 0;
+		NMIP4Route *route;
 
 		/* Skip empty lines */
 		if (g_regex_match_simple (pattern_empty, *iter, 0, 0))
@@ -896,55 +894,45 @@ read_route_file_legacy (const char *filename, NMSettingIP4Config *s_ip4, GError 
 		dest = g_match_info_fetch (match_info, 1);
 		if (!strcmp (dest, "default"))
 			strcpy (dest, "0.0.0.0");
-		if (inet_pton (AF_INET, dest, &ip4_addr) != 1) {
+		if (inet_pton (AF_INET, dest, &dest_addr) != 1) {
 			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 				     "Invalid IP4 route destination address '%s'", dest);
-			g_free (dest);
+			g_match_info_free (match_info);
 			goto error;
 		}
-		nm_ip4_route_set_dest (route, ip4_addr);
-		g_free (dest);
 
 		/* Prefix - is optional; 32 if missing */
 		prefix = g_match_info_fetch (match_info, 2);
 		g_match_info_free (match_info);
-		prefix_int = 32;
 		if (prefix) {
 			errno = 0;
 			prefix_int = strtol (prefix, NULL, 10);
 			if (errno || prefix_int <= 0 || prefix_int > 32) {
 				g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 					     "Invalid IP4 route destination prefix '%s'", prefix);
-				g_free (prefix);
 				goto error;
 			}
 		}
-		nm_ip4_route_set_prefix (route, (guint32) prefix_int);
-		g_free (prefix);
 
 		/* Next hop */
 		g_regex_match (regex_via, *iter, 0, &match_info);
 		if (g_match_info_matches (match_info)) {
-			char *next_hop = g_match_info_fetch (match_info, 1);
-			if (inet_pton (AF_INET, next_hop, &ip4_addr) != 1) {
+			next_hop = g_match_info_fetch (match_info, 1);
+			if (inet_pton (AF_INET, next_hop, &next_hop_addr) != 1) {
 				g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 				             "Invalid IP4 route gateway address '%s'",
 				             next_hop);
 				g_match_info_free (match_info);
-				g_free (next_hop);
 				goto error;
 			}
-			g_free (next_hop);
 		} else {
 			/* we don't make distinction between missing GATEWAY IP and 0.0.0.0 */
-			ip4_addr = 0;
+			next_hop_addr = 0;
 		}
-		nm_ip4_route_set_next_hop (route, ip4_addr);
 		g_match_info_free (match_info);
 
 		/* Metric */
 		g_regex_match (regex_metric, *iter, 0, &match_info);
-		metric_int = 0;
 		if (g_match_info_matches (match_info)) {
 			metric = g_match_info_fetch (match_info, 1);
 			errno = 0;
@@ -953,18 +941,22 @@ read_route_file_legacy (const char *filename, NMSettingIP4Config *s_ip4, GError 
 				g_match_info_free (match_info);
 				g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 				             "Invalid IP4 route metric '%s'", metric);
-				g_free (metric);
 				goto error;
 			}
-			g_free (metric);
 		}
-
-		nm_ip4_route_set_metric (route, (guint32) metric_int);
 		g_match_info_free (match_info);
 
+		route = nm_ip4_route_new ();
+		if (!route)
+			goto error;
+		
+		nm_ip4_route_set_dest (route, dest_addr);
+		nm_ip4_route_set_prefix (route, (guint32) prefix_int);
+		nm_ip4_route_set_next_hop (route, next_hop_addr);
+		nm_ip4_route_set_metric (route, (guint32) metric_int);
 		if (!nm_setting_ip4_config_add_route (s_ip4, route))
 			PARSE_WARNING ("duplicate IP4 route");
-
+		nm_ip4_route_unref (route);
 	}
 
 	success = TRUE;
@@ -972,7 +964,6 @@ read_route_file_legacy (const char *filename, NMSettingIP4Config *s_ip4, GError 
 error:
 	g_free (contents);
 	g_strfreev (lines);
-	nm_ip4_route_unref (route);
 	g_regex_unref (regex_to1);
 	g_regex_unref (regex_to2);
 	g_regex_unref (regex_via);
@@ -1095,10 +1086,6 @@ read_route6_file (const char *filename, NMSettingIP6Config *s_ip6, GError **erro
 	char **lines = NULL, **iter;
 	GRegex *regex_to1, *regex_to2, *regex_via, *regex_metric;
 	GMatchInfo *match_info;
-	NMIP6Route *route;
-	struct in6_addr ip6_addr;
-	char *dest = NULL, *prefix = NULL, *metric = NULL;
-	long int prefix_int, metric_int;
 	gboolean success = FALSE;
 
 	const char *pattern_empty = "^\\s*(\\#.*)?$";
@@ -1126,12 +1113,13 @@ read_route6_file (const char *filename, NMSettingIP6Config *s_ip6, GError **erro
 	regex_via = g_regex_new (pattern_via, 0, 0, NULL);
 	regex_metric = g_regex_new (pattern_metric, 0, 0, NULL);
 
-	/* New NMIP6Route structure */
-	route = nm_ip6_route_new ();
-
 	/* Iterate through file lines */
 	lines = g_strsplit_set (contents, "\n\r", -1);
 	for (iter = lines; iter && *iter; iter++) {
+		char *dest = NULL, *prefix = NULL, *next_hop = NULL, *metric = NULL;
+		long int prefix_int = 128, metric_int = 0;
+		struct in6_addr dest_addr, next_hop_addr;
+		NMIP6Route *route;
 
 		/* Skip empty lines */
 		if (g_regex_match_simple (pattern_empty, *iter, 0, 0))
@@ -1149,63 +1137,53 @@ read_route6_file (const char *filename, NMSettingIP6Config *s_ip6, GError **erro
 				goto error;
 			}
 		}
+
 		dest = g_match_info_fetch (match_info, 1);
 		if (!g_strcmp0 (dest, "default")) {
 			/* Ignore default route - NM handles it internally */
-			g_free (dest);
 			g_match_info_free (match_info);
 			PARSE_WARNING ("ignoring manual default route: '%s' (%s)", *iter, filename);
 			continue;
 		}
-		if (inet_pton (AF_INET6, dest, &ip6_addr) != 1) {
+		if (inet_pton (AF_INET6, dest, &dest_addr) != 1) {
 			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 				     "Invalid IP6 route destination address '%s'", dest);
-			g_free (dest);
+			g_match_info_free (match_info);
 			goto error;
 		}
-		nm_ip6_route_set_dest (route, &ip6_addr);
-		g_free (dest);
 
 		/* Prefix - is optional; 128 if missing */
 		prefix = g_match_info_fetch (match_info, 2);
 		g_match_info_free (match_info);
-		prefix_int = 128;
 		if (prefix) {
 			errno = 0;
 			prefix_int = strtol (prefix, NULL, 10);
 			if (errno || prefix_int <= 0 || prefix_int > 128) {
 				g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 					     "Invalid IP6 route destination prefix '%s'", prefix);
-				g_free (prefix);
 				goto error;
 			}
 		}
-		nm_ip6_route_set_prefix (route, (guint32) prefix_int);
-		g_free (prefix);
 
 		/* Next hop */
 		g_regex_match (regex_via, *iter, 0, &match_info);
 		if (g_match_info_matches (match_info)) {
-			char *next_hop = g_match_info_fetch (match_info, 1);
-			if (inet_pton (AF_INET6, next_hop, &ip6_addr) != 1) {
+			next_hop = g_match_info_fetch (match_info, 1);
+			if (inet_pton (AF_INET6, next_hop, &next_hop_addr) != 1) {
 				g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 				             "Invalid IPv6 route nexthop address '%s'",
 				             next_hop);
 				g_match_info_free (match_info);
-				g_free (next_hop);
 				goto error;
 			}
-			g_free (next_hop);
 		} else {
 			/* Missing "via" is taken as :: */
-			ip6_addr = in6addr_any;
+			next_hop_addr = in6addr_any;
 		}
-		nm_ip6_route_set_next_hop (route, &ip6_addr);
 		g_match_info_free (match_info);
 
 		/* Metric */
 		g_regex_match (regex_metric, *iter, 0, &match_info);
-		metric_int = 0;
 		if (g_match_info_matches (match_info)) {
 			metric = g_match_info_fetch (match_info, 1);
 			errno = 0;
@@ -1214,17 +1192,22 @@ read_route6_file (const char *filename, NMSettingIP6Config *s_ip6, GError **erro
 				g_match_info_free (match_info);
 				g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 				             "Invalid IP6 route metric '%s'", metric);
-				g_free (metric);
 				goto error;
 			}
-			g_free (metric);
 		}
-
-		nm_ip6_route_set_metric (route, (guint32) metric_int);
 		g_match_info_free (match_info);
+
+		route = nm_ip6_route_new ();
+		if (!route)
+			goto error;
+		nm_ip6_route_set_dest (route, &dest_addr);
+		nm_ip6_route_set_prefix (route, (guint32) prefix_int);
+		nm_ip6_route_set_next_hop (route, &next_hop_addr);
+		nm_ip6_route_set_metric (route, (guint32) metric_int);
 
 		if (!nm_setting_ip6_config_add_route (s_ip6, route))
 			PARSE_WARNING ("duplicate IP6 route");
+		nm_ip6_route_unref (route);
 	}
 
 	success = TRUE;
@@ -1232,7 +1215,6 @@ read_route6_file (const char *filename, NMSettingIP6Config *s_ip6, GError **erro
 error:
 	g_free (contents);
 	g_strfreev (lines);
-	nm_ip6_route_unref (route);
 	g_regex_unref (regex_to1);
 	g_regex_unref (regex_to2);
 	g_regex_unref (regex_via);
@@ -4874,6 +4856,7 @@ make_vlan_setting (shvarFile *ifcfg,
 		goto error;
 	}
 	g_object_set (s_vlan, NM_SETTING_VLAN_PARENT, parent, NULL);
+	g_clear_pointer (&parent, g_free);
 
 	if (svTrueValue (ifcfg, "REORDER_HDR", FALSE))
 		vlan_flags |= NM_VLAN_FLAG_REORDER_HEADERS;
@@ -4892,8 +4875,11 @@ make_vlan_setting (shvarFile *ifcfg,
 	parse_prio_map_list (s_vlan, ifcfg, "VLAN_INGRESS_PRIORITY_MAP", NM_VLAN_INGRESS_MAP);
 	parse_prio_map_list (s_vlan, ifcfg, "VLAN_EGRESS_PRIORITY_MAP", NM_VLAN_EGRESS_MAP);
 
+	g_free (iface_name);
+
 	if (out_master)
 		*out_master = svGetValue (ifcfg, "MASTER", FALSE);
+
 	return (NMSetting *) s_vlan;
 
 error:
@@ -5083,7 +5069,8 @@ connection_from_file (const char *filename,
 {
 	NMConnection *connection = NULL;
 	shvarFile *parsed;
-	char *type, *devtype, *bootproto;
+	gs_free char *type = NULL;
+	char *devtype, *bootproto;
 	NMSetting *s_ip4, *s_ip6, *s_port, *s_dcb = NULL;
 	const char *ifcfg_name = NULL;
 
@@ -5123,8 +5110,6 @@ connection_from_file (const char *filename,
 			PARSE_WARNING ("NM_CONTROLLED was false but device was not uniquely identified; device will be managed");
 		goto done;
 	}
-
-	type = NULL;
 
 	devtype = svGetValue (parsed, "DEVICETYPE", FALSE);
 	if (devtype) {
@@ -5213,7 +5198,6 @@ connection_from_file (const char *filename,
 			PARSE_WARNING ("connection type was unrecognized but device was not uniquely identified; device may be managed");
 		goto done;
 	}
-	g_free (type);
 
 	if (!connection)
 		goto done;

@@ -31,6 +31,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/src/posix-signals \
 	-I$(top_srcdir)/src/config \
+	-I${top_srcdir}/libgsystem \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
 	-I$(top_srcdir)/libnm-glib \
