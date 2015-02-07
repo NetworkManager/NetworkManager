@@ -372,10 +372,12 @@ svSetValue (shvarFile *s, const char *key, const char *value, gboolean verbatim)
 		if (oldval) {
 			/* delete line */
 			s->lineList = g_list_remove_link (s->lineList, s->current);
+			g_free (s->current->data);
 			g_list_free_1 (s->current);
 			s->modified = TRUE;
 		}
-		goto bail; /* do not need keyValue */
+		g_free (keyValue);
+		goto end;
 	}
 
 	if (!oldval) {
@@ -387,21 +389,19 @@ svSetValue (shvarFile *s, const char *key, const char *value, gboolean verbatim)
 
 	if (strcmp (oldval, newval) != 0) {
 		/* change line */
-		if (s->current)
+		if (s->current) {
+			g_free (s->current->data);
 			s->current->data = keyValue;
-		else
+		} else
 			s->lineList = g_list_append (s->lineList, keyValue);
 		s->modified = TRUE;
-	}
+	} else
+		g_free (keyValue);
 
  end:
 	g_free (newval);
 	g_free (oldval);
 	return;
-
- bail:
-	g_free (keyValue);
-	goto end;
 }
 
 /* Write the current contents iff modified.  Returns FALSE on error
