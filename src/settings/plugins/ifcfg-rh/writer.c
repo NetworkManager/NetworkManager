@@ -44,6 +44,7 @@
 #include <nm-utils.h>
 
 #include "nm-logging.h"
+#include "gsystem-local-alloc.h"
 #include "common.h"
 #include "shvar.h"
 #include "reader.h"
@@ -2112,13 +2113,16 @@ static void
 write_ip4_aliases (NMConnection *connection, char *base_ifcfg_path)
 {
 	NMSettingIPConfig *s_ip4;
-	char *base_ifcfg_dir, *base_ifcfg_name, *base_name;
+	gs_free char *base_ifcfg_dir = NULL, *base_ifcfg_name = NULL;
+	const char*base_name;
 	int i, num, base_ifcfg_name_len, base_name_len;
 	GDir *dir;
 
 	base_ifcfg_dir = g_path_get_dirname (base_ifcfg_path);
 	base_ifcfg_name = g_path_get_basename (base_ifcfg_path);
 	base_ifcfg_name_len = strlen (base_ifcfg_name);
+	if (!g_str_has_prefix (base_ifcfg_name, IFCFG_TAG))
+		g_return_if_reached ();
 	base_name = base_ifcfg_name + strlen (IFCFG_TAG);
 	base_name_len = strlen (base_name);
 
@@ -2190,9 +2194,6 @@ write_ip4_aliases (NMConnection *connection, char *base_ifcfg_path)
 		svWriteFile (ifcfg, 0644, NULL);
 		svCloseFile (ifcfg);
 	}
-
-	g_free (base_ifcfg_name);
-	g_free (base_ifcfg_dir);
 }
 
 static gboolean
