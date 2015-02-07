@@ -650,20 +650,22 @@ test_update_secrets_whole_connection_bad_setting (void)
 	secrets = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ALL);
 	wsec_hash = g_hash_table_lookup (secrets, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
 	g_assert (wsec_hash);
-	g_hash_table_insert (wsec_hash, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, string_to_gvalue (wepkey));
+	g_hash_table_insert (wsec_hash, g_strdup (NM_SETTING_WIRELESS_SECURITY_WEP_KEY0), string_to_gvalue (wepkey));
 
 	/* Steal the wsec setting hash so it's not deallocated, and stuff it back
 	 * in with a different name so we ensure libnm-util is returning the right
 	 * error when it finds an entry in the connection hash that doesn't match
 	 * any setting in the connection.
 	 */
-	g_hash_table_steal (secrets, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
-	g_hash_table_insert (secrets, "asdfasdfasdfasdf", wsec_hash);
+	g_hash_table_ref (wsec_hash);
+	g_hash_table_remove (secrets, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	g_hash_table_insert (secrets, g_strdup ("asdfasdfasdfasdf"), wsec_hash);
 
 	success = nm_connection_update_secrets (connection, NULL, secrets, &error);
 	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_SETTING_NOT_FOUND);
 	g_assert (success == FALSE);
 
+	g_hash_table_destroy (secrets);
 	g_object_unref (connection);
 }
 
