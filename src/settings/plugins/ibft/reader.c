@@ -178,6 +178,7 @@ done:
 	if (lines)
 		g_strfreev (lines);
 	g_free (out);
+	g_free (err);
 	if (success)
 		*out_blocks = blocks;
 	else
