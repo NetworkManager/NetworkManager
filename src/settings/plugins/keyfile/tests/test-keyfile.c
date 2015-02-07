@@ -1515,6 +1515,7 @@ test_write_intlike_ssid (void)
 	g_assert_no_error (error);
 	g_assert (tmp);
 	g_assert_cmpstr (tmp, ==, "101");
+	g_free (tmp);
 
 	g_key_file_free (keyfile);
 
@@ -1601,6 +1602,7 @@ test_write_intlike_ssid_2 (void)
 	g_assert_no_error (error);
 	g_assert (tmp);
 	g_assert_cmpstr (tmp, ==, "11\\;12\\;13\\;");
+	g_free (tmp);
 
 	g_key_file_free (keyfile);
 
@@ -2511,6 +2513,7 @@ test_write_wired_8021x_tls_connection_path (void)
 	tmp2 = g_path_get_dirname (testfile);
 	if (g_strcmp0 (tmp2, TEST_KEYFILES_DIR) == 0)
 		relative = TRUE;
+	g_free (tmp2);
 
 	/* CA cert */
 	tmp = g_key_file_get_string (keyfile,
@@ -3098,6 +3101,7 @@ test_write_new_wired_group_name (void)
 	unlink (testfile);
 	g_free (testfile);
 
+	g_key_file_unref (kf);
 	g_object_unref (reread);
 	g_object_unref (connection);
 }
@@ -3236,6 +3240,7 @@ test_write_new_wireless_group_names (void)
 	unlink (testfile);
 	g_free (testfile);
 
+	g_key_file_unref (kf);
 	g_object_unref (reread);
 	g_object_unref (connection);
 }
