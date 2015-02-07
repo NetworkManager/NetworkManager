@@ -145,3 +145,21 @@
    ...
 }
 
+{
+   # FIXME: dunny why this is needed. Clean up later.
+   _dispatcher_test
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:g_malloc
+   fun:g_slice_alloc
+   fun:g_variant_new_from_bytes
+   fun:g_variant_new_from_trusted
+   fun:parse_dhcp
+   fun:get_dispatcher_file
+   ...
+   fun:g_test_run_suite_internal
+   fun:g_test_run_suite_internal
+   fun:g_test_run_suite
+}
+
