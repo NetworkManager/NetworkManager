@@ -3073,7 +3073,8 @@ make_wpa_setting (shvarFile *ifcfg,
 			if (psk) {
 				g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_PSK, psk, NULL);
 				g_free (psk);
-			}
+			} else if (error)
+				goto error;
 		}
 
 		if (adhoc)
