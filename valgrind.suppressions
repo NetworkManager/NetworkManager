@@ -163,3 +163,183 @@
    fun:g_test_run_suite
 }
 
+{
+   _gdbus_1
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:g_malloc
+   fun:g_slice_alloc
+   fun:g_slice_alloc0
+   fun:get_dispatch
+   fun:g_main_context_dispatch
+   fun:g_main_context_iterate.isra.24
+   fun:g_main_loop_run
+   fun:gdbus_shared_thread_func
+   fun:g_thread_proxy
+   fun:start_thread
+   fun:clone
+}
+
+{
+   _gdbus_2
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:g_malloc
+   fun:g_slice_alloc
+   fun:g_slice_alloc0
+   fun:g_main_context_push_thread_default
+   fun:gdbus_shared_thread_func
+   fun:g_thread_proxy
+   fun:start_thread
+   fun:clone
+}
+
+{
+   _gdbus_3
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   fun:g_malloc0
+   fun:_g_socket_read_with_control_messages
+   fun:_g_dbus_worker_do_read_unlocked
+   fun:_g_dbus_worker_do_read_cb
+   fun:g_simple_async_result_complete
+   fun:complete_in_idle_cb
+   fun:g_main_context_dispatch
+   fun:g_main_context_iterate.isra.24
+   fun:g_main_loop_run
+   fun:gdbus_shared_thread_func
+   fun:g_thread_proxy
+}
+
+{
+   _gdbus_4
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   fun:g_malloc0
+   fun:thread_memory_from_self.part.12
+   fun:g_slice_alloc
+   fun:g_slice_alloc0
+   fun:g_main_context_push_thread_default
+   fun:gdbus_shared_thread_func
+   fun:g_thread_proxy
+   fun:start_thread
+   fun:clone
+}
+
+{
+   _gdbus_5
+   Memcheck:Leak
+   match-leak-kinds: definite
+   ...
+   fun:g_dbus_message_new_from_blob
+   ...
+}
+
+{
+   _gdbus_9
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:g_malloc
+   fun:g_slice_alloc
+   fun:g_slice_alloc0
+   fun:get_dispatch
+   fun:g_main_current_source
+   fun:g_task_return
+   fun:g_task_thread_pool_thread
+   fun:g_thread_pool_thread_proxy
+   fun:g_thread_proxy
+   fun:start_thread
+   fun:clone
+}
+
+{
+   _gdbus_10
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:g_malloc
+   fun:g_slice_alloc
+   fun:g_slice_alloc0
+   fun:g_system_thread_new
+   fun:g_thread_new_internal
+   fun:g_thread_pool_start_thread.part.0
+   fun:g_thread_pool_push
+   fun:g_task_start_task_thread
+   fun:g_task_run_in_thread
+   fun:g_async_initable_real_init_async
+   fun:g_bus_get
+}
+
+{
+   _gdbus_11
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   fun:g_malloc0
+   fun:thread_memory_from_self.part.12
+   fun:g_slice_alloc
+   fun:g_slice_alloc0
+   fun:get_dispatch
+   fun:g_main_current_source
+   fun:g_task_return
+   fun:g_task_thread_pool_thread
+   fun:g_thread_pool_thread_proxy
+   fun:g_thread_proxy
+   fun:start_thread
+}
+
+{
+   _gdbus_12
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:g_malloc
+   fun:g_slice_alloc
+   fun:g_error_new_valist
+   fun:g_error_new
+   fun:g_dbus_error_new_for_dbus_error
+   fun:g_dbus_error_set_dbus_error
+   fun:g_dbus_message_to_gerror
+   fun:decode_method_reply
+   fun:g_dbus_connection_call_sync_internal
+   fun:g_dbus_proxy_call_sync_internal
+   fun:g_dbus_proxy_call_sync
+}
+
+{
+   _gdbus_15
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:g_malloc
+   fun:g_slice_alloc
+   fun:g_hash_table_new_full
+   fun:demarshal_map
+   fun:_dbus_gvalue_demarshal
+   fun:dbus_g_proxy_end_call_internal
+   fun:dbus_g_proxy_end_call
+   fun:get_permissions_reply
+   fun:complete_pending_call_and_unlock
+   fun:dbus_connection_dispatch
+   fun:message_queue_dispatch
+}
+
+{
+   _gdbus_16
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   fun:g_malloc0
+   fun:_g_dbus_worker_send_message
+   fun:g_dbus_connection_send_message_unlocked
+   fun:unsubscribe_id_internal
+   fun:g_dbus_connection_signal_unsubscribe
+   fun:g_dbus_proxy_finalize
+   ...
+}
+
