@@ -349,6 +349,7 @@ _nm_dbus_bind_properties (gpointer object, gpointer skeleton)
 		                        skeleton, properties[i]->name,
 		                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 	}
+	g_free (properties);
 }
 
 static char *
