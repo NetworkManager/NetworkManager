@@ -61,12 +61,6 @@ dispose (GObject *object)
 	g_object_class->dispose (object);
 }
 
-static void
-finalize (GObject *object)
-{
-	g_object_class->finalize (object);
-}
-
 static guint32
 get_generic_capabilities (NMDevice *device)
 {
@@ -84,7 +78,6 @@ nm_test_device_class_init (NMTestDeviceClass *klass)
 	object_class->constructor = constructor;
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
-	object_class->finalize = finalize;
 
 	device_class->get_generic_capabilities = get_generic_capabilities;
 }
