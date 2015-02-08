@@ -6488,6 +6488,7 @@ nmc_setting_get_valid_properties (NMSetting *setting)
 			valid_props[i++] = g_strdup (key_name);
 	}
 	valid_props[i] = NULL;
+	g_free (props);
 
 	return valid_props;
 }
