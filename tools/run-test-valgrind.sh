@@ -27,6 +27,11 @@ $LIBTOOL --mode=execute "$VALGRIND" \
 	"$TEST"
 RESULT=$?
 
+if [ $RESULT -eq 0 -a "$(wc -c "$LOGFILE" | awk '{print$1}')" -ne 0 ]; then
+	echo "valgrind succeeded, but log is not empty: $LOGFILE"
+	exit 1
+fi
+
 if [ $RESULT -ne 0 -a $RESULT -ne 77 ]; then
 	echo "Don't forget to check the valgrind log at '`realpath $LOGFILE`'." >&2
 fi
