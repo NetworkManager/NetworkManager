@@ -12,7 +12,11 @@ AM_CPPFLAGS = \
 
 noinst_PROGRAMS = $(TESTS)
 
-#@VALGRIND_RULES@
+if WITH_VALGRIND
+@VALGRIND_RULES@ --launch-dbus
+else
+TESTS_ENVIRONMENT = $(srcdir)/libnm-test-launch.sh
+endif
 TESTS = test-nm-client test-remote-settings-client
 
 ####### NMClient and non-settings tests #######
@@ -42,8 +46,6 @@ test_remote_settings_client_LDADD = \
 	$(DBUS_LIBS)
 
 ###########################################
-
-TESTS_ENVIRONMENT = $(srcdir)/libnm-glib-test-launch.sh
 
 endif
 
