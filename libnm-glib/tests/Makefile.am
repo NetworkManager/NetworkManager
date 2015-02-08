@@ -6,6 +6,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_builddir)/libnm-util \
 	-I$(top_srcdir)/libnm-glib \
+	-I$(top_srcdir)/libgsystem \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	-DTEST_NM_BIN=\"$(abs_srcdir)/test-fake-nm.py\" \
 	-DTEST_RSS_BIN=\"$(abs_srcdir)/test-remote-settings-service.py\" \

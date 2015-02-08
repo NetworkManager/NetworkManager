@@ -33,6 +33,7 @@
 #include <nm-utils.h>
 
 #include "nm-remote-settings.h"
+#include "gsystem-local-alloc.h"
 
 static GPid spid = 0;
 static NMRemoteSettings *settings = NULL;
@@ -78,7 +79,7 @@ add_cb (NMRemoteSettings *s,
 static void
 test_add_connection (void)
 {
-	NMConnection *connection;
+	gs_unref_object NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	char *uuid;
@@ -273,6 +274,7 @@ test_make_visible (void)
 			break;
 		}
 	}
+	g_slist_free (list);
 	test_assert (found == TRUE);
 
 	g_free (path);
@@ -317,6 +319,7 @@ test_remove_connection (void)
 	test_assert (g_slist_length (list) > 0);
 
 	connection = NM_REMOTE_CONNECTION (list->data);
+	g_slist_free (list);
 	g_assert (connection);
 	g_assert (remote == connection);
 	path = g_strdup (nm_connection_get_path (NM_CONNECTION (connection)));
@@ -348,6 +351,7 @@ test_remove_connection (void)
 		test_assert ((gpointer) connection != (gpointer) candidate);
 		test_assert (strcmp (path, nm_connection_get_path (candidate)) != 0);
 	}
+	g_slist_free (list);
 
 	g_free (path);
 	g_object_unref (proxy);
