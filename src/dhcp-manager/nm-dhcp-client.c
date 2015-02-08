@@ -917,6 +917,7 @@ process_dhclient_rfc3442_route (const char **octets, NMPlatformIP4Route *route, 
 			g_free (str_addr);
 			goto error;
 		}
+		g_free (str_addr);
 		tmp_addr &= nm_utils_ip4_prefix_to_netmask ((guint32) tmp);
 		route->network = tmp_addr;
 	}
