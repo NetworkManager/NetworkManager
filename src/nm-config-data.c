@@ -286,6 +286,8 @@ finalize (GObject *gobject)
 	g_slist_free (priv->no_auto_default.specs);
 	g_strfreev (priv->no_auto_default.arr);
 
+	g_key_file_unref (priv->keyfile);
+
 	G_OBJECT_CLASS (nm_config_data_parent_class)->finalize (gobject);
 }
 
