@@ -407,8 +407,8 @@ read_config (NMConfig *config, const char *path, GError **error)
 
 			if (keys[k][len - 1] == '+') {
 				char *base_key = g_strndup (keys[k], len - 1);
-				const char *old_val = g_key_file_get_value (priv->keyfile, groups[g], base_key, NULL);
-				const char *new_val = g_key_file_get_value (kf, groups[g], keys[k], NULL);
+				char *old_val = g_key_file_get_value (priv->keyfile, groups[g], base_key, NULL);
+				char *new_val = g_key_file_get_value (kf, groups[g], keys[k], NULL);
 
 				if (old_val && *old_val) {
 					char *combined = g_strconcat (old_val, ",", new_val, NULL);
@@ -419,6 +419,8 @@ read_config (NMConfig *config, const char *path, GError **error)
 					g_key_file_set_value (priv->keyfile, groups[g], base_key, new_val);
 
 				g_free (base_key);
+				g_free (old_val);
+				g_free (new_val);
 				continue;
 			}
 
