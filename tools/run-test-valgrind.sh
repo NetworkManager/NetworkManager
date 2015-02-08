@@ -3,6 +3,14 @@
 LIBTOOL="$1"; shift
 VALGRIND="$1"; shift
 SUPPRESSIONS="$1"; shift
+if [ "$1" = "--launch-dbus" ]; then
+    # Spawn DBus if there's none
+    if [ -z "$DBUS_SESSION_BUS_ADDRESS" ]; then
+        eval `dbus-launch --sh-syntax`
+        trap "kill $DBUS_SESSION_BUS_PID" EXIT
+    fi
+    shift
+fi
 TEST="$1"; shift
 
 LOGFILE="valgrind-`echo "$TEST" | tr -cd '[:alpha:]-'`.log"
