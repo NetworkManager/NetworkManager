@@ -415,7 +415,7 @@ test_setting_ip6_config_old_address_array (void)
 static void
 test_setting_gsm_apn_spaces (void)
 {
-	gs_unref_object NMSettingGsm *s_gsm;
+	gs_unref_object NMSettingGsm *s_gsm = NULL;
 	const char *tmp;
 
 	s_gsm = (NMSettingGsm *) nm_setting_gsm_new ();
@@ -443,7 +443,7 @@ test_setting_gsm_apn_spaces (void)
 static void
 test_setting_gsm_apn_bad_chars (void)
 {
-	gs_unref_object NMSettingGsm *s_gsm;
+	gs_unref_object NMSettingGsm *s_gsm = NULL;
 
 	s_gsm = (NMSettingGsm *) nm_setting_gsm_new ();
 	ASSERT (s_gsm != NULL,
@@ -481,7 +481,7 @@ test_setting_gsm_apn_bad_chars (void)
 static void
 test_setting_gsm_apn_underscore (void)
 {
-	gs_unref_object NMSettingGsm *s_gsm;
+	gs_unref_object NMSettingGsm *s_gsm = NULL;
 	GError *error = NULL;
 	gboolean success;
 
@@ -500,7 +500,7 @@ test_setting_gsm_apn_underscore (void)
 static void
 test_setting_gsm_without_number (void)
 {
-	gs_unref_object NMSettingGsm *s_gsm;
+	gs_unref_object NMSettingGsm *s_gsm = NULL;
 	GError *error = NULL;
 	gboolean success;
 
@@ -1681,7 +1681,7 @@ test_connection_bad_base_types (void)
 static void
 test_setting_compare_id (void)
 {
-	gs_unref_object NMSetting *old, *new;
+	gs_unref_object NMSetting *old = NULL, *new = NULL;
 	gboolean success;
 
 	old = nm_setting_connection_new ();
@@ -1707,7 +1707,7 @@ test_setting_compare_secrets (NMSettingSecretFlags secret_flags,
                               NMSettingCompareFlags comp_flags,
                               gboolean remove_secret)
 {
-	gs_unref_object NMSetting *old, *new;
+	gs_unref_object NMSetting *old = NULL, *new = NULL;
 	gboolean success;
 
 	/* Make sure that a connection with transient/unsaved secrets compares
@@ -1739,7 +1739,7 @@ test_setting_compare_vpn_secrets (NMSettingSecretFlags secret_flags,
                                   NMSettingCompareFlags comp_flags,
                                   gboolean remove_secret)
 {
-	gs_unref_object NMSetting *old, *new;
+	gs_unref_object NMSetting *old = NULL, *new = NULL;
 	gboolean success;
 
 	/* Make sure that a connection with transient/unsaved secrets compares
@@ -1918,7 +1918,7 @@ test_setting_connection_changed_signal (void)
 	NMConnection *connection;
 	gboolean changed = FALSE;
 	NMSettingConnection *s_con;
-	gs_free char *uuid;
+	gs_free char *uuid = NULL;
 
 	connection = nm_connection_new ();
 	g_signal_connect (connection,
@@ -2328,7 +2328,7 @@ static void
 test_setting_old_uuid (void)
 {
 	GError *error = NULL;
-	gs_unref_object NMSetting *setting;
+	gs_unref_object NMSetting *setting = NULL;
 	gboolean success;
 
 	/* NetworkManager-0.9.4.0 generated 40-character UUIDs with no dashes,
