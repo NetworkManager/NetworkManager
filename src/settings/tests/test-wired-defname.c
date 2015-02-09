@@ -45,7 +45,7 @@ static void
 test_defname_no_connections (void)
 {
 	GHashTable *hash;
-	gs_free char *name;
+	gs_free char *name = NULL;
 
 	hash = g_hash_table_new (g_direct_hash, g_direct_equal);
 
@@ -61,7 +61,7 @@ static void
 test_defname_no_conflict (void)
 {
 	GHashTable *hash;
-	gs_free char *name;
+	gs_free char *name = NULL;
 
 	hash = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify) g_object_unref);
 
@@ -81,7 +81,7 @@ static void
 test_defname_conflict (void)
 {
 	GHashTable *hash;
-	gs_free char *name;
+	gs_free char *name = NULL;
 
 	hash = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify) g_object_unref);
 
@@ -101,7 +101,7 @@ static void
 test_defname_multiple_conflicts (void)
 {
 	GHashTable *hash;
-	gs_free char *name;
+	gs_free char *name = NULL;
 
 	hash = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify) g_object_unref);
 

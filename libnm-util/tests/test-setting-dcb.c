@@ -33,7 +33,7 @@
 static void
 test_dcb_flags_valid (void)
 {
-	gs_unref_object NMSettingDcb *s_dcb;
+	gs_unref_object NMSettingDcb *s_dcb = NULL;
 	GError *error = NULL;
 	gboolean success;
 	guint i;
@@ -86,7 +86,7 @@ test_dcb_flags_valid (void)
 static void
 test_dcb_flags_invalid (void)
 {
-	gs_unref_object NMSettingDcb *s_dcb;
+	gs_unref_object NMSettingDcb *s_dcb = NULL;
 	GError *error = NULL;
 	gboolean success;
 
@@ -145,7 +145,7 @@ test_dcb_flags_invalid (void)
 static void
 test_dcb_app_priorities (void)
 {
-	gs_unref_object NMSettingDcb *s_dcb;
+	gs_unref_object NMSettingDcb *s_dcb = NULL;
 	GError *error = NULL;
 	gboolean success;
 
@@ -207,7 +207,7 @@ test_dcb_app_priorities (void)
 static void
 test_dcb_priorities_valid (void)
 {
-	gs_unref_object NMSettingDcb *s_dcb;
+	gs_unref_object NMSettingDcb *s_dcb = NULL;
 	GError *error = NULL;
 	gboolean success;
 	guint i;
@@ -266,7 +266,7 @@ test_dcb_priorities_valid (void)
 static void
 test_dcb_bandwidth_sums (void)
 {
-	gs_unref_object NMSettingDcb *s_dcb;
+	gs_unref_object NMSettingDcb *s_dcb = NULL;
 	GError *error = NULL;
 	gboolean success;
 

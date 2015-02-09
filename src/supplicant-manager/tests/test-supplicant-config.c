@@ -117,7 +117,7 @@ test_wifi_open (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	NMSettingIP4Config *s_ip4;
-	gs_unref_object NMSupplicantConfig *config;
+	gs_unref_object NMSupplicantConfig *config = NULL;
 	GHashTable *hash;
 	char *uuid;
 	gboolean success;
@@ -219,7 +219,7 @@ test_wifi_wep_key (const char *detail,
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIP4Config *s_ip4;
-	gs_unref_object NMSupplicantConfig *config;
+	gs_unref_object NMSupplicantConfig *config = NULL;
 	GHashTable *hash;
 	char *uuid;
 	gboolean success;
@@ -363,7 +363,7 @@ test_wifi_wpa_psk (const char *detail,
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIP4Config *s_ip4;
-	gs_unref_object NMSupplicantConfig *config;
+	gs_unref_object NMSupplicantConfig *config = NULL;
 	GHashTable *hash;
 	char *uuid;
 	gboolean success;
