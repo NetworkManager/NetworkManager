@@ -15,7 +15,7 @@ noinst_PROGRAMS = $(TESTS)
 if WITH_VALGRIND
 @VALGRIND_RULES@ --launch-dbus
 else
-TESTS_ENVIRONMENT = $(srcdir)/libnm-test-launch.sh
+TESTS_ENVIRONMENT = $(srcdir)/libnm-glib-test-launch.sh
 endif
 TESTS = test-nm-client test-remote-settings-client
 
