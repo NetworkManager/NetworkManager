@@ -32,6 +32,7 @@
 #include "NetworkManagerUtils.h"
 #include "gsystem-local-alloc.h"
 #include "nm-enum-types.h"
+#include "nm-core-internal.h"
 
 #include <gio/gio.h>
 #include <glib/gi18n.h>
@@ -74,7 +75,7 @@ typedef struct {
 
 	char *debug;
 
-	char **ignore_carrier;
+	GSList *ignore_carrier;
 
 	gboolean configure_and_quit;
 } NMConfigPrivate;
@@ -227,21 +228,10 @@ nm_config_get_configure_and_quit (NMConfig *config)
 gboolean
 nm_config_get_ignore_carrier (NMConfig *config, NMDevice *device)
 {
-	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (config);
-	GSList *specs = NULL;
-	int i;
-	gboolean match;
+	g_return_val_if_fail (NM_IS_CONFIG (config), FALSE);
+	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
-	if (!priv->ignore_carrier)
-		return FALSE;
-
-	for (i = 0; priv->ignore_carrier[i]; i++)
-		specs = g_slist_prepend (specs, priv->ignore_carrier[i]);
-
-	match = nm_device_spec_match_list (device, specs);
-
-	g_slist_free (specs);
-	return match;
+	return nm_device_spec_match_list (device, NM_CONFIG_GET_PRIVATE (config)->ignore_carrier);
 }
 
 /************************************************************************/
@@ -679,6 +669,15 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 	return keyfile;
 }
 
+GSList *
+nm_config_get_device_match_spec (const GKeyFile *keyfile, const char *group, const char *key)
+{
+	gs_free char *value = NULL;
+
+	value = g_key_file_get_string ((GKeyFile *) keyfile, group, key, NULL);
+	return nm_match_spec_split (value);
+}
+
 /************************************************************************/
 
 void
@@ -805,7 +804,8 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	char *config_main_file = NULL;
 	char *config_description = NULL;
 	char **no_auto_default;
-	char **no_auto_default_orig;
+	GSList *no_auto_default_orig_list;
+	GPtrArray *no_auto_default_orig;
 
 	if (priv->config_dir) {
 		/* Object is already initialized. */
@@ -850,17 +850,22 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 
 	priv->debug = g_key_file_get_value (keyfile, "main", "debug", NULL);
 
-	priv->ignore_carrier = g_key_file_get_string_list (keyfile, "main", "ignore-carrier", NULL, NULL);
+	priv->ignore_carrier = nm_config_get_device_match_spec (keyfile, "main", "ignore-carrier");
 
 	priv->configure_and_quit = _get_bool_value (keyfile, "main", "configure-and-quit", FALSE);
 
-	no_auto_default_orig = g_key_file_get_string_list (keyfile, "main", "no-auto-default", NULL, NULL);
-	no_auto_default = no_auto_default_merge_from_file (priv->no_auto_default_file, (const char *const *) no_auto_default_orig);
+	no_auto_default_orig_list = nm_config_get_device_match_spec (keyfile, "main", "no-auto-default");
+
+	no_auto_default_orig = _nm_utils_copy_slist_to_array (no_auto_default_orig_list, NULL, NULL);
+	g_ptr_array_add (no_auto_default_orig, NULL);
+	no_auto_default = no_auto_default_merge_from_file (priv->no_auto_default_file, (const char *const *) no_auto_default_orig->pdata);
+	g_ptr_array_unref (no_auto_default_orig);
+
+	g_slist_free_full (no_auto_default_orig_list, g_free);
 
 	priv->config_data_orig = nm_config_data_new (config_main_file, config_description, (const char *const*) no_auto_default, keyfile);
 
 	g_strfreev (no_auto_default);
-	g_strfreev (no_auto_default_orig);
 
 	priv->config_data = g_object_ref (priv->config_data_orig);
 
@@ -900,7 +905,7 @@ finalize (GObject *gobject)
 	g_free (priv->log_level);
 	g_free (priv->log_domains);
 	g_free (priv->debug);
-	g_strfreev (priv->ignore_carrier);
+	g_slist_free_full (priv->ignore_carrier, g_free);
 
 	_nm_config_cmd_line_options_clear (&priv->cli);
 

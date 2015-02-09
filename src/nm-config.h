@@ -91,6 +91,7 @@ NMConfig *nm_config_setup (const NMConfigCmdLineOptions *cli, GError **error);
 void nm_config_reload (NMConfig *config);
 
 GKeyFile *nm_config_create_keyfile (void);
+GSList *nm_config_get_device_match_spec (const GKeyFile *keyfile, const char *group, const char *key);
 
 G_END_DECLS
 
