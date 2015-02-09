@@ -806,17 +806,13 @@ static void
 test_match_spec_ifname (const char *spec_str, const char **matches, const char **neg_matches)
 {
 	const char *m;
-	char **spec_str_split;
 	GSList *specs, *specs_reverse = NULL;
 	guint i;
 
 	g_assert (spec_str);
-	spec_str_split = g_strsplit_set (spec_str, ";,", -1);
-	for (i = 0; spec_str_split[i]; i++) {
-		if (spec_str_split[i])
-			specs_reverse = g_slist_prepend (specs_reverse, spec_str_split[i]);
-	}
-	specs = g_slist_reverse (g_slist_copy (specs_reverse));
+
+	specs = nm_match_spec_split (spec_str);
+	specs_reverse = g_slist_reverse (g_slist_copy (specs));
 
 	for (i = 0; matches && matches[i]; i++) {
 		g_assert (nm_match_spec_interface_name (specs, matches[i]) == NM_MATCH_SPEC_MATCH);
@@ -836,8 +832,7 @@ test_match_spec_ifname (const char *spec_str, const char **matches, const char *
 	}
 
 	g_slist_free (specs_reverse);
-	g_slist_free (specs);
-	g_strfreev (spec_str_split);
+	g_slist_free_full (specs, g_free);
 }
 
 static void
@@ -874,6 +869,18 @@ test_nm_match_spec_interface_name (void)
 	test_match_spec_ifname ("interface-name:em*,except:interface-name:=em*",
 	                        S ("em", "em\\", "em\\*", "em\\1", "em\\11", "em\\2", "em1", "em11", "em2", "em3"),
 	                        S ("em*"));
+	test_match_spec_ifname ("aa,bb,cc\\,dd,e,,",
+	                        S ("aa", "bb", "cc,dd", "e"),
+	                        NULL);
+	test_match_spec_ifname ("aa;bb;cc\\;dd;e,;",
+	                        S ("aa", "bb", "cc;dd", "e"),
+	                        NULL);
+	test_match_spec_ifname ("interface-name:em\\;1,em\\,2,\\,,\\\\,,em\\\\x",
+	                        S ("em;1", "em,2", ",", "\\", "em\\x"),
+	                        NULL);
+	test_match_spec_ifname ("  , interface-name:a, ,",
+	                        S ("  ", " ", " interface-name:a"),
+	                        NULL);
 #undef S
 }
 

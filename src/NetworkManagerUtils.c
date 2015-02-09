@@ -1027,6 +1027,74 @@ nm_match_spec_s390_subchannels (const GSList *specs, const char *subchannels)
 	return match;
 }
 
+GSList *
+nm_match_spec_split (const char *value)
+{
+	char *string_value, *p, *q0, *q;
+	GSList *pieces = NULL;
+
+	if (!value || !*value)
+		return NULL;
+
+	/* Copied from glibs g_key_file_parse_value_as_string() function
+	 * and adjusted. */
+
+	string_value = g_new (gchar, strlen (value) + 1);
+
+	p = (gchar *) value;
+	q0 = q = string_value;
+	while (*p) {
+		if (*p == '\\') {
+			p++;
+
+			switch (*p) {
+			case 's':
+				*q = ' ';
+				break;
+			case 'n':
+				*q = '\n';
+				break;
+			case 't':
+				*q = '\t';
+				break;
+			case 'r':
+				*q = '\r';
+				break;
+			case '\\':
+				*q = '\\';
+				break;
+			case '\0':
+				break;
+			default:
+				if (NM_IN_SET (*p, ',', ';'))
+					*q = *p;
+				else {
+					*q++ = '\\';
+					*q = *p;
+				}
+				break;
+			}
+		} else {
+			*q = *p;
+			if (NM_IN_SET (*p, ',', ';')) {
+				if (q0 < q)
+					pieces = g_slist_prepend (pieces, g_strndup (q0, q - q0));
+				q0 = q + 1;
+			}
+		}
+		if (*p == '\0')
+			break;
+		q++;
+		p++;
+	}
+
+	*q = '\0';
+	if (q0 < q)
+		pieces = g_slist_prepend (pieces, g_strndup (q0, q - q0));
+	g_free (string_value);
+	return g_slist_reverse (pieces);
+}
+
 const char *
 nm_utils_get_shared_wifi_permission (NMConnection *connection)
 {
