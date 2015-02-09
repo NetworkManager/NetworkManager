@@ -869,6 +869,7 @@ parity_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const cha
 				int_val = 'X';
 			}
 		}
+		g_free (str_val);
 	}
 
 	if (!int_val)

@@ -186,6 +186,7 @@ test_phase2_private_key_import (const char *path,
 		g_object_get (s_8021x, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY, &tmp_key, NULL);
 		ASSERT (tmp_key != NULL, "phase2-private-key-import", "missing private key value");
 		check_scheme_path (tmp_key, path);
+		g_bytes_unref (tmp_key);
 	} else
 		g_assert_not_reached ();
 
@@ -245,6 +246,7 @@ test_wrong_password_keeps_data (const char *path, const char *password)
 	        "wrong-password-keeps-data", "unexpected missing error");
 	ASSERT (format == NM_SETTING_802_1X_CK_FORMAT_UNKNOWN,
 	        "wrong-password-keeps-data", "unexpected success reading private key format");
+	g_clear_error (&error);
 
 	/* Make sure the password hasn't changed */
 	pw = nm_setting_802_1x_get_private_key_password (s_8021x);
@@ -342,6 +344,7 @@ test_wrong_phase2_password_keeps_data (const char *path, const char *password)
 	        "wrong-phase2-password-keeps-data", "unexpected missing error");
 	ASSERT (format == NM_SETTING_802_1X_CK_FORMAT_UNKNOWN,
 	        "wrong-phase2-password-keeps-data", "unexpected success reading private key format");
+	g_clear_error (&error);
 
 	/* Make sure the password hasn't changed */
 	pw = nm_setting_802_1x_get_phase2_private_key_password (s_8021x);

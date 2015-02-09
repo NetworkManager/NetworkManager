@@ -212,12 +212,12 @@ parse_ip4 (GKeyFile *kf, GVariant **out_props, const char *section, GError **err
 	split = g_strsplit_set (tmp, " ", -1);
 	g_free (tmp);
 
-	if (g_strv_length (split) > 0) {
+	if (split && g_strv_length (split) > 0) {
 		for (iter = split; iter && *iter; iter++)
 			g_strstrip (*iter);
 		g_variant_builder_add (&props, "{sv}", "domains", g_variant_new_strv ((gpointer) split, -1));
-		g_strfreev (split);
 	}
+	g_strfreev (split);
 
 	/* nameservers */
 	if (!add_uint_array (kf, &props, "ip4", "nameservers", error))
@@ -233,7 +233,7 @@ parse_ip4 (GKeyFile *kf, GVariant **out_props, const char *section, GError **err
 	split = g_strsplit_set (tmp, ",", -1);
 	g_free (tmp);
 
-	if (g_strv_length (split) > 0) {
+	if (split && g_strv_length (split) > 0) {
 		addresses = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_address_unref);
 		for (iter = split; iter && *iter; iter++) {
 			NMIPAddress *addr;
@@ -275,7 +275,7 @@ parse_ip4 (GKeyFile *kf, GVariant **out_props, const char *section, GError **err
 		split = g_strsplit_set (tmp, ",", -1);
 		g_free (tmp);
 
-		if (g_strv_length (split) > 0) {
+		if (split && g_strv_length (split) > 0) {
 			routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_route_unref);
 			for (iter = split; iter && *iter; iter++) {
 				NMIPRoute *route;
@@ -336,11 +336,15 @@ parse_dhcp (GKeyFile *kf,
 	g_variant_builder_init (&props, G_VARIANT_TYPE ("a{sv}"));
 	for (iter = keys; iter && *iter; iter++) {
 		val = g_key_file_get_string (kf, group_name, *iter, error);
-		if (!val)
+		if (!val) {
+			g_strfreev (keys);
+			g_variant_builder_clear (&props);
 			return FALSE;
+		}
 		g_variant_builder_add (&props, "{sv}", *iter, g_variant_new_string (val));
 		g_free (val);
 	}
+	g_strfreev (keys);
 
 	*out_props = g_variant_builder_end (&props);
 	return TRUE;
@@ -366,6 +370,21 @@ get_dispatcher_file (const char *file,
 	GKeyFile *kf;
 	gboolean success = FALSE;
 	char **keys, **iter, *val;
+
+	g_assert (!error || !*error);
+	g_assert (out_con_dict && !*out_con_dict);
+	g_assert (out_con_props && !*out_con_props);
+	g_assert (out_device_props && !*out_device_props);
+	g_assert (out_device_ip4_props && !*out_device_ip4_props);
+	g_assert (out_device_ip6_props && !*out_device_ip6_props);
+	g_assert (out_device_dhcp4_props && !*out_device_dhcp4_props);
+	g_assert (out_device_dhcp6_props && !*out_device_dhcp6_props);
+	g_assert (out_vpn_ip_iface && !*out_vpn_ip_iface);
+	g_assert (out_vpn_ip4_props && !*out_vpn_ip4_props);
+	g_assert (out_vpn_ip6_props && !*out_vpn_ip6_props);
+	g_assert (out_expected_iface && !*out_expected_iface);
+	g_assert (out_action && !*out_action);
+	g_assert (out_env && !*out_env);
 
 	kf = g_key_file_new ();
 	if (!g_key_file_load_from_file (kf, file, G_KEY_FILE_NONE, error))
@@ -520,6 +539,7 @@ test_generic (const char *file, const char *override_vpn_ip_iface)
 
 	g_assert_cmpstr (expected_iface, ==, out_iface);
 
+	g_strfreev (denv);
 	g_free (out_iface);
 	g_free (vpn_ip_iface);
 	g_free (expected_iface);

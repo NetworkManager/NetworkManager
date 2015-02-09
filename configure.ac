@@ -891,6 +891,7 @@ AM_CONDITIONAL(REQUIRE_ROOT_TESTS, test "$enable_tests" == "root")
 AS_IF([test "$with_valgrind" != "no"],
 	AC_SUBST(VALGRIND_RULES, 'TESTS_ENVIRONMENT = "$(top_srcdir)/tools/run-test-valgrind.sh" "$(LIBTOOL)" "$(with_valgrind)" "$(top_srcdir)/valgrind.suppressions"'),
 	AC_SUBST(VALGRIND_RULES, []))
+AM_CONDITIONAL(WITH_VALGRIND, test "${with_valgrind}" != "no")
 
 GTK_DOC_CHECK(1.0)
 

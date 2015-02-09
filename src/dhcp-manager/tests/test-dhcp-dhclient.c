@@ -430,6 +430,9 @@ test_one_duid (const char *escaped, const guint8 *unescaped, guint len)
 	g_assert (w);
 	g_assert_cmpint (strlen (escaped), ==, strlen (w));
 	g_assert_cmpstr (escaped, ==, w);
+
+	g_byte_array_free (t, TRUE);
+	g_free (w);
 }
 
 static void

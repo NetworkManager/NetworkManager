@@ -130,6 +130,7 @@ set_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_CONFIG:
+		g_free (priv->config);
 		priv->config = g_value_dup_string (value);
 		break;
 	default:
@@ -155,6 +156,16 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
+finalize (GObject *object)
+{
+	NMSettingTeamPortPrivate *priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (object);
+
+	g_free (priv->config);
+
+	G_OBJECT_CLASS (nm_setting_team_port_parent_class)->finalize (object);
+}
+
+static void
 nm_setting_team_port_class_init (NMSettingTeamPortClass *setting_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
@@ -165,6 +176,7 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *setting_class)
 	/* virtual methods */
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->finalize = finalize;
 	parent_class->verify       = verify;
 
 	/* Properties */

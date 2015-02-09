@@ -176,6 +176,7 @@ test_need_tls_secrets_path (void)
 			"need-tls-secrets-path-key-password",
 			"expected to require private key password, but it wasn't");
 
+	g_ptr_array_free (hints, TRUE);
 	g_object_unref (connection);
 }
 
@@ -219,6 +220,7 @@ test_need_tls_secrets_blob (void)
 			"need-tls-secrets-blob-key-password",
 			"expected to require private key password, but it wasn't");
 
+	g_ptr_array_free (hints, TRUE);
 	g_object_unref (connection);
 }
 
@@ -345,6 +347,7 @@ test_need_tls_phase2_secrets_path (void)
 			"need-tls-phase2-secrets-path-key-password",
 			"expected to require private key password, but it wasn't");
 
+	g_ptr_array_free (hints, TRUE);
 	g_object_unref (connection);
 }
 
@@ -389,6 +392,7 @@ test_need_tls_phase2_secrets_blob (void)
 			"need-tls-phase2-secrets-blob-key-password",
 			"expected to require private key password, but it wasn't");
 
+	g_ptr_array_free (hints, TRUE);
 	g_object_unref (connection);
 }
 
@@ -507,6 +511,7 @@ test_update_secrets_wifi_single_setting (void)
 	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 0);
 	g_assert_cmpstr (tmp, ==, wepkey);
 
+	g_hash_table_unref (secrets);
 	g_object_unref (connection);
 }
 
@@ -547,6 +552,7 @@ test_update_secrets_wifi_full_hash (void)
 	tmp = nm_setting_wireless_security_get_wep_key (s_wsec, 0);
 	g_assert_cmpstr (tmp, ==, wepkey);
 
+	g_hash_table_unref (all);
 	g_object_unref (connection);
 }
 
@@ -577,6 +583,8 @@ test_update_secrets_wifi_bad_setting_name (void)
 	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_SETTING_NOT_FOUND);
 	g_assert (success == FALSE);
 
+	g_clear_error (&error);
+	g_hash_table_unref (secrets);
 	g_object_unref (connection);
 }
 
@@ -600,7 +608,7 @@ test_update_secrets_whole_connection (void)
 	secrets = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ALL);
 	wsec_hash = g_hash_table_lookup (secrets, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
 	g_assert (wsec_hash);
-	g_hash_table_insert (wsec_hash, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, string_to_gvalue (wepkey));
+	g_hash_table_insert (wsec_hash, g_strdup (NM_SETTING_WIRELESS_SECURITY_WEP_KEY0), string_to_gvalue (wepkey));
 
 	success = nm_connection_update_secrets (connection, NULL, secrets, &error);
 	g_assert_no_error (error);
@@ -610,6 +618,7 @@ test_update_secrets_whole_connection (void)
 	g_assert (s_wsec);
 	g_assert_cmpstr (nm_setting_wireless_security_get_wep_key (s_wsec, 0), ==, wepkey);
 
+	g_hash_table_unref (secrets);
 	g_object_unref (connection);
 }
 
@@ -629,6 +638,7 @@ test_update_secrets_whole_connection_empty_hash (void)
 	g_assert_no_error (error);
 	g_assert (success == TRUE);
 	g_object_unref (connection);
+	g_hash_table_unref (secrets);
 }
 
 static void
@@ -650,20 +660,23 @@ test_update_secrets_whole_connection_bad_setting (void)
 	secrets = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ALL);
 	wsec_hash = g_hash_table_lookup (secrets, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
 	g_assert (wsec_hash);
-	g_hash_table_insert (wsec_hash, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, string_to_gvalue (wepkey));
+	g_hash_table_insert (wsec_hash, g_strdup (NM_SETTING_WIRELESS_SECURITY_WEP_KEY0), string_to_gvalue (wepkey));
 
 	/* Steal the wsec setting hash so it's not deallocated, and stuff it back
 	 * in with a different name so we ensure libnm-util is returning the right
 	 * error when it finds an entry in the connection hash that doesn't match
 	 * any setting in the connection.
 	 */
-	g_hash_table_steal (secrets, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
-	g_hash_table_insert (secrets, "asdfasdfasdfasdf", wsec_hash);
+	g_hash_table_ref (wsec_hash);
+	g_hash_table_remove (secrets, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	g_hash_table_insert (secrets, g_strdup ("asdfasdfasdfasdf"), wsec_hash);
 
 	success = nm_connection_update_secrets (connection, NULL, secrets, &error);
 	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_SETTING_NOT_FOUND);
 	g_assert (success == FALSE);
 
+	g_clear_error (&error);
+	g_hash_table_destroy (secrets);
 	g_object_unref (connection);
 }
 
@@ -716,6 +729,7 @@ test_update_secrets_null_setting_name_with_setting_hash (void)
 	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_SETTING_NOT_FOUND);
 	g_assert (!success);
 
+	g_clear_error (&error);
 	g_hash_table_destroy (secrets);
 	g_object_unref (connection);
 }
