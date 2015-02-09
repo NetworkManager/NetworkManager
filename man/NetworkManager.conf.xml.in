@@ -148,7 +148,7 @@ Copyright 2010 - 2014 Red Hat, Inc.
       </varlistentry>
       <varlistentry>
 	<term><varname>no-auto-default</varname></term>
-	<listitem><para>Comma-separated list of devices for which
+	<listitem><para>Specify devices for which
 	NetworkManager shouldn't create default wired connection
 	(Auto eth0).  By default, NetworkManager creates a temporary
 	wired connection for any Ethernet device that is managed and
@@ -162,11 +162,15 @@ Copyright 2010 - 2014 Red Hat, Inc.
 	<filename>/var/run/NetworkManager/no-auto-default.state</filename>
 	to prevent creating the default connection for that device
 	again.</para>
+	<para>See <xref linkend="device-spec"/> for the syntax how to
+	specify a device.
+	</para>
 	<para>
+	  Example:
 	  <programlisting>
-	    no-auto-default=00:22:68:5c:5d:c4,00:1e:65:ff:aa:ee
-	    no-auto-default=eth0,eth1
-	    no-auto-default=*
+no-auto-default=00:22:68:5c:5d:c4,00:1e:65:ff:aa:ee
+no-auto-default=eth0,eth1
+no-auto-default=*
 	  </programlisting>
 	</para>
 	</listitem>
@@ -176,8 +180,8 @@ Copyright 2010 - 2014 Red Hat, Inc.
 	<term><varname>ignore-carrier</varname></term>
 	<listitem>
 	  <para>
-	    Comma-separated list of devices for which NetworkManager
-	    will (partially) ignore the carrier state. Normally, for
+	    Specify devices for which NetworkManager will (partially)
+	    ignore the carrier state. Normally, for
 	    device types that support carrier-detect, such as Ethernet
 	    and InfiniBand, NetworkManager will only allow a
 	    connection to be activated on the device if carrier is
@@ -194,13 +198,12 @@ Copyright 2010 - 2014 Red Hat, Inc.
 	    the device when carrier is lost.
 	  </para>
 	  <para>
-	    May have the special value <literal>*</literal> to apply
-	    to all devices.
-	  </para>
-	  <para>
 	    Note that the "carrier" property of NMDevices and device D-Bus
 	    interfaces will still reflect the actual device state; it's just
 	    that NetworkManager will not make use of that information.
+	  </para>
+	  <para>See <xref linkend="device-spec"/> for the syntax how to
+	   specify a device.
 	  </para>
 	</listitem>
       </varlistentry>
@@ -287,17 +290,11 @@ Copyright 2010 - 2014 Red Hat, Inc.
 	<varlistentry>
 	  <term><varname>unmanaged-devices</varname></term>
 	  <listitem><para>Set devices that should be ignored by
-	  NetworkManager when using the <literal>keyfile</literal>
-	  plugin. Devices are specified in the following
-	  format:</para>
-	  <para><literal>mac:&lt;hwaddr&gt;</literal> or
-	  <literal>interface-name:&lt;ifname&gt;</literal>.  Here
-	  <literal>hwaddr</literal> is the MAC address of the device
-	  to be ignored, in hex-digits-and-colons notation.
-	  <literal>ifname</literal> is the interface name of the
-	  ignored device.</para>
-	  <para>Multiple entries are separated with semicolons. No
-	  spaces are allowed in the value.</para>
+	   NetworkManager.
+	  </para>
+	  <para>See <xref linkend="device-spec"/> for the syntax how to
+	   specify a device.
+	  </para>
 	  <para>
 	    Example:
 	    <programlisting>
@@ -551,6 +548,77 @@ unmanaged-devices=mac:00:22:68:1c:59:b1;mac:00:1E:65:30:D1:C4;interface-name:eth
       </varlistentry>
 
     </variablelist>
+  </refsect1>
+
+  <refsect1>
+    <title>Appendix</title>
+    <refsect2 id="device-spec">
+      <title>Device List Format</title>
+      <para>
+          The configuration options <literal>main.no-auto-default</literal>, <literal>main.ignore-carrier</literal>,
+          and <literal>keyfile.unmanaged-devices</literal> select devices based on a list of matchings.
+          Devices can be specified using the following format:
+      </para>
+      <para>
+      <variablelist>
+        <varlistentry>
+          <term>*</term>
+          <listitem><para>Matches every device.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>IFNAME</term>
+          <listitem><para>Case sensitive match of interface name of the device. Globbing is not supported.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>HWADDR</term>
+          <listitem><para>Match the MAC address of the device. Globbing is not supported</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>interface-name:IFNAME</term>
+          <term>interface-name:~IFNAME</term>
+          <listitem><para>Case sensitive match of interface name of the device. Simple globbing is supported with
+             <literal>*</literal> and <literal>?</literal>. Ranges and escaping is not supported.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>interface-name:=IFNAME</term>
+          <listitem><para>Case sensitive match of interface name of the device. Globbing is disabled and <literal>IFNAME</literal>
+             is taken literally.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>mac:HWADDR</term>
+          <listitem><para>Match the MAC address of the device. Globbing is not supported</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>s390-subchannels:HWADDR</term>
+          <listitem><para>Match the device based on the subchannel address. Globbing is not supported</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>except:SPEC</term>
+          <listitem><para>Negative match of a device. <literal>SPEC</literal> must be explicitly qualified with
+             a prefix such as <literal>interface-name:</literal>. A negative match has higher priority then the positive
+             matches above.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>SPEC[,;]SPEC</term>
+          <listitem><para>Multiple specs can be concatenated with comman or semicolon. The order does not matter as
+             matches are either positive (inclusive) or negative, with negative matches having higher priority.</para>
+            <para>Backslash is supported to escape the separators ';' and ',', and to express special
+            characters such as newline ('\n'), tabulator ('\t'), whitespace ('\s') and backslash ('\\'). The globbing of
+            interface names cannot be escaped. Whitespace is taken literally so usually the specs will be concatenated
+            without spaces.</para></listitem>
+        </varlistentry>
+      </variablelist>
+      </para>
+      <para>
+        Example:
+        <programlisting>
+interface-name:em4
+mac:00:22:68:1c:59:b1;mac:00:1E:65:30:D1:C4;interface-name:eth2
+interface-name:vboxnet*,except:interface-name:vboxnet2
+*,except:mac:00:22:68:1c:59:b1
+        </programlisting>
+      </para>
+    </refsect2>
   </refsect1>
 
   <refsect1>
