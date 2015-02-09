@@ -24,6 +24,7 @@ LDADD = \
 	$(top_builddir)/libnm-core/libnm-core.la \
 	$(GLIB_LIBS)
 
+@VALGRIND_RULES@
 TESTS = $(noinst_PROGRAMS)
 
 endif

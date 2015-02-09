@@ -23,6 +23,7 @@ test_config_SOURCES = \
 test_config_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la
 
+@VALGRIND_RULES@
 TESTS = test-config
 
 EXTRA_DIST = \

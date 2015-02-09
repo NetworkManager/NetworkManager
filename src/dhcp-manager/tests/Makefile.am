@@ -37,6 +37,7 @@ test_dhcp_utils_LDADD = \
 
 #################################
 
+@VALGRIND_RULES@
 TESTS = test-dhcp-dhclient test-dhcp-utils
 
 EXTRA_DIST = \

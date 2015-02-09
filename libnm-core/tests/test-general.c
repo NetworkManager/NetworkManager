@@ -25,6 +25,7 @@
 #include <string.h>
 
 #include <nm-utils.h>
+#include "gsystem-local-alloc.h"
 
 #include "nm-setting-private.h"
 #include "nm-utils.h"
@@ -648,7 +649,7 @@ test_setting_ip4_config_address_data (void)
 static void
 test_setting_gsm_apn_spaces (void)
 {
-	NMSettingGsm *s_gsm;
+	gs_unref_object NMSettingGsm *s_gsm;
 	const char *tmp;
 
 	s_gsm = (NMSettingGsm *) nm_setting_gsm_new ();
@@ -676,7 +677,7 @@ test_setting_gsm_apn_spaces (void)
 static void
 test_setting_gsm_apn_bad_chars (void)
 {
-	NMSettingGsm *s_gsm;
+	gs_unref_object NMSettingGsm *s_gsm;
 
 	s_gsm = (NMSettingGsm *) nm_setting_gsm_new ();
 	ASSERT (s_gsm != NULL,
@@ -714,7 +715,7 @@ test_setting_gsm_apn_bad_chars (void)
 static void
 test_setting_gsm_apn_underscore (void)
 {
-	NMSettingGsm *s_gsm;
+	gs_unref_object NMSettingGsm *s_gsm;
 
 	s_gsm = (NMSettingGsm *) nm_setting_gsm_new ();
 	g_assert (s_gsm);
@@ -729,7 +730,7 @@ test_setting_gsm_apn_underscore (void)
 static void
 test_setting_gsm_without_number (void)
 {
-	NMSettingGsm *s_gsm;
+	gs_unref_object NMSettingGsm *s_gsm;
 
 	s_gsm = (NMSettingGsm *) nm_setting_gsm_new ();
 	g_assert (s_gsm);
@@ -1551,6 +1552,7 @@ test_connection_replace_settings_bad (void)
 	connection = new_test_connection ();
 	success = nm_connection_replace_settings (connection, new_settings, &error);
 	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_SETTING);
+	g_clear_error (&error);
 	g_assert (!success);
 
 	g_assert (nm_connection_verify (connection, NULL));
@@ -2388,7 +2390,7 @@ test_connection_bad_base_types (void)
 static void
 test_setting_compare_id (void)
 {
-	NMSetting *old, *new;
+	gs_unref_object NMSetting *old, *new;
 	gboolean success;
 
 	old = nm_setting_connection_new ();
@@ -2412,7 +2414,7 @@ test_setting_compare_id (void)
 static void
 test_setting_compare_timestamp (void)
 {
-	NMSetting *old, *new;
+	gs_unref_object NMSetting *old, *new;
 	gboolean success;
 
 	old = nm_setting_connection_new ();
@@ -2457,7 +2459,7 @@ static void
 test_setting_compare_secrets (gconstpointer test_data)
 {
 	const TestDataCompareSecrets *data = test_data;
-	NMSetting *old, *new;
+	gs_unref_object NMSetting *old, *new;
 	gboolean success;
 
 	/* Make sure that a connection with transient/unsaved secrets compares
@@ -2488,7 +2490,7 @@ static void
 test_setting_compare_vpn_secrets (gconstpointer test_data)
 {
 	const TestDataCompareSecrets *data = test_data;
-	NMSetting *old, *new;
+	gs_unref_object NMSetting *old, *new;
 	gboolean success;
 
 	/* Make sure that a connection with transient/unsaved secrets compares
@@ -2764,7 +2766,7 @@ test_setting_connection_changed_signal (void)
 	NMConnection *connection;
 	gboolean changed = FALSE;
 	NMSettingConnection *s_con;
-	char *uuid;
+	gs_free char *uuid;
 
 	connection = nm_simple_connection_new ();
 	g_signal_connect (connection,
@@ -3170,7 +3172,7 @@ test_setting_802_1x_changed_signal (void)
 static void
 test_setting_old_uuid (void)
 {
-	NMSetting *setting;
+	gs_unref_object NMSetting *setting;
 
 	/* NetworkManager-0.9.4.0 generated 40-character UUIDs with no dashes,
 	 * like this one. Test that we maintain compatibility. */
@@ -3879,6 +3881,7 @@ test_setting_ip6_gateway (void)
 	value = g_variant_lookup_value (ip6_dict, NM_SETTING_IP_CONFIG_GATEWAY, G_VARIANT_TYPE_STRING);
 	g_assert (value != NULL);
 	g_assert_cmpstr (g_variant_get_string (value, NULL), ==, "abcd::1");
+	g_variant_unref (value);
 
 	value = g_variant_lookup_value (ip6_dict, NM_SETTING_IP_CONFIG_ADDRESSES, G_VARIANT_TYPE ("a(ayuay)"));
 	g_assert (value != NULL);
@@ -3975,6 +3978,7 @@ test_hexstr2bin (void)
 			g_assert (b);
 			g_assert_cmpint (g_bytes_get_size (b), ==, items[i].expected_len);
 			g_assert (memcmp (g_bytes_get_data (b, NULL), items[i].expected, g_bytes_get_size (b)) == 0);
+			g_bytes_unref (b);
 		} else
 			g_assert (b == NULL);
 	}

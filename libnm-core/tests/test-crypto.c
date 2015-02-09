@@ -98,7 +98,7 @@ out:
 static void
 test_cert (gconstpointer test_data)
 {
-	char *path;
+	gs_free char *path;
 	GByteArray *array;
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 	GError *error = NULL;
@@ -226,6 +226,7 @@ test_is_pkcs12 (const char *path, gboolean expect_fail)
 	if (expect_fail) {
 		g_assert_error (error, NM_CRYPTO_ERROR, NM_CRYPTO_ERROR_INVALID_DATA);
 		g_assert (!is_pkcs12);
+		g_clear_error (&error);
 	} else {
 		g_assert_no_error (error);
 		g_assert (is_pkcs12);

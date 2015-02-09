@@ -8356,7 +8356,7 @@ dispose (GObject *object)
 
 	_cleanup_generic_post (self, FALSE);
 
-	g_clear_pointer (&priv->ip6_saved_properties, g_hash_table_unref);
+	g_hash_table_remove_all (priv->ip6_saved_properties);
 
 	if (priv->recheck_assume_id) {
 		g_source_remove (priv->recheck_assume_id);
@@ -8372,8 +8372,7 @@ dispose (GObject *object)
 		priv->con_provider = NULL;
 	}
 
-	g_hash_table_unref (priv->available_connections);
-	priv->available_connections = NULL;
+	g_hash_table_remove_all (priv->available_connections);
 
 	if (priv->carrier_wait_id) {
 		g_source_remove (priv->carrier_wait_id);
@@ -8409,6 +8408,9 @@ finalize (GObject *object)
 	g_free (priv->firmware_version);
 	g_free (priv->type_desc);
 	g_free (priv->dhcp_anycast_address);
+
+	g_hash_table_unref (priv->ip6_saved_properties);
+	g_hash_table_unref (priv->available_connections);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->finalize (object);
 }

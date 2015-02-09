@@ -354,7 +354,7 @@ connection_activated_none_cb (GObject *c,
 {
 	TestSecretAgentData *sadata = user_data;
 	NMActiveConnection *ac;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 
 	ac = nm_client_activate_connection_finish (sadata->client, result, &error);
 	g_assert_error (error, NM_AGENT_MANAGER_ERROR, NM_AGENT_MANAGER_ERROR_NO_SECRETS);
@@ -399,8 +399,8 @@ connection_activated_no_secrets_cb (GObject *c,
                                     gpointer user_data)
 {
 	TestSecretAgentData *sadata = user_data;
-	NMActiveConnection *ac;
-	GError *error = NULL;
+	gs_unref_object NMActiveConnection *ac = NULL;
+	gs_free_error GError *error = NULL;
 
 	ac = nm_client_activate_connection_finish (sadata->client, result, &error);
 	g_assert_error (error, NM_AGENT_MANAGER_ERROR, NM_AGENT_MANAGER_ERROR_NO_SECRETS);
@@ -434,8 +434,8 @@ connection_activated_cancel_cb (GObject *c,
                                 gpointer user_data)
 {
 	TestSecretAgentData *sadata = user_data;
-	NMActiveConnection *ac;
-	GError *error = NULL;
+	gs_unref_object NMActiveConnection *ac;
+	gs_free_error GError *error = NULL;
 
 	ac = nm_client_activate_connection_finish (sadata->client, result, &error);
 	g_assert_error (error, NM_AGENT_MANAGER_ERROR, NM_AGENT_MANAGER_ERROR_USER_CANCELED);

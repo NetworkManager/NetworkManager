@@ -1241,7 +1241,7 @@ nm_connection_to_hash (NMConnection *connection, NMSettingHashFlags flags)
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	ret = g_hash_table_new_full (g_str_hash, g_str_equal,
-	                             g_free, (GDestroyNotify) g_hash_table_destroy);
+	                             g_free, (GDestroyNotify) g_hash_table_unref);
 
 	priv = NM_CONNECTION_GET_PRIVATE (connection);
 

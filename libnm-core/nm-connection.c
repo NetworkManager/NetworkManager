@@ -304,6 +304,8 @@ nm_connection_replace_settings (NMConnection *connection,
 	for (s = settings; s; s = s->next)
 		_nm_connection_add_setting (connection, s->data);
 
+	g_slist_free (settings);
+
 	if (changed)
 		g_signal_emit (connection, signals[CHANGED], 0);
 	return TRUE;
