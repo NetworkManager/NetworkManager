@@ -13,6 +13,11 @@ if [ "$1" = "--launch-dbus" ]; then
 fi
 TEST="$1"; shift
 
+if [ "$NMTST_NO_VALGRIND" != "" ]; then
+	"$TEST"
+	exit $?
+fi
+
 LOGFILE="valgrind-`echo "$TEST" | tr -cd '[:alpha:]-'`.log"
 
 export G_SLICE=always-malloc
