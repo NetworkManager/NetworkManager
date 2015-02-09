@@ -98,7 +98,7 @@ out:
 static void
 test_cert (gconstpointer test_data)
 {
-	gs_free char *path;
+	gs_free char *path = NULL;
 	GByteArray *array;
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 	GError *error = NULL;

@@ -434,7 +434,7 @@ connection_activated_cancel_cb (GObject *c,
                                 gpointer user_data)
 {
 	TestSecretAgentData *sadata = user_data;
-	gs_unref_object NMActiveConnection *ac;
+	gs_unref_object NMActiveConnection *ac = NULL;
 	gs_free_error GError *error = NULL;
 
 	ac = nm_client_activate_connection_finish (sadata->client, result, &error);
