@@ -4006,6 +4006,7 @@ complete_connection_by_type (NMConnection *connection,
                              GError **error)
 {
 	NMSettingConnection *s_con;
+	NMSettingGeneric *s_generic;
 	NMSettingWired *s_wired;
 	NMSettingInfiniband *s_infiniband;
 	NMSettingWireless *s_wifi;
@@ -5232,6 +5233,10 @@ cleanup_olpc:
 		if (!success)
 			return FALSE;
 
+	} else if (!strcmp (con_type, NM_SETTING_GENERIC_SETTING_NAME)) {
+		/* Add 'generic' setting */
+		s_generic = (NMSettingGeneric *) nm_setting_generic_new ();
+		nm_connection_add_setting (connection, NM_SETTING (s_generic));
 	} else {
 		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 		             _("Error: '%s' is not a valid connection type."),
