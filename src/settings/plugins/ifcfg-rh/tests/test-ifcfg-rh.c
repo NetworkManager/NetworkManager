@@ -12951,6 +12951,8 @@ test_write_vlan (void)
 	g_free (keyfile);
 	g_free (routefile);
 	g_free (route6file);
+
+	g_object_unref (connection);
 }
 
 static void
