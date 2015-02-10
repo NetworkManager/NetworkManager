@@ -217,9 +217,10 @@ merge_no_auto_default_state (NMConfig *config)
 					break;
 			}
 			if (j == updated->len)
-				g_ptr_array_add (updated, list[i]);
+				g_ptr_array_add (updated, g_strdup (list[i]));
 		}
-		g_free (list);
+		if (list)
+			g_strfreev (list);
 		g_free (data);
 	}
 
