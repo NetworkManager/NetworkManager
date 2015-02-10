@@ -10808,6 +10808,7 @@ test_write_vlan (void)
 	unlink (written);
 	g_free (written);
 
+	g_object_unref (connection);
 }
 
 static void
