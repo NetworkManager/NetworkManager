@@ -1116,7 +1116,7 @@ read_route6_file (const char *filename, NMSettingIP6Config *s_ip6, GError **erro
 	/* Iterate through file lines */
 	lines = g_strsplit_set (contents, "\n\r", -1);
 	for (iter = lines; iter && *iter; iter++) {
-		char *dest = NULL, *prefix = NULL, *next_hop = NULL, *metric = NULL;
+		gs_free char *dest = NULL, *prefix = NULL, *next_hop = NULL, *metric = NULL;
 		long int prefix_int = 128, metric_int = 0;
 		struct in6_addr dest_addr, next_hop_addr;
 		NMIP6Route *route;
