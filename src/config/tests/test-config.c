@@ -113,6 +113,7 @@ test_config_non_existent (void)
 	config = nm_config_new (&error);
 	g_assert (!config);
 	g_assert_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND);
+	g_error_free (error);
 }
 
 static void
@@ -125,6 +126,7 @@ test_config_parse_error (void)
 	config = nm_config_new (&error);
 	g_assert (!config);
 	g_assert_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_PARSE);
+	g_error_free (error);
 }
 
 static void
@@ -276,6 +278,7 @@ test_config_confdir_parse_error (void)
 	config = nm_config_new (&error);
 	g_assert (!config);
 	g_assert_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_PARSE);
+	g_error_free (error);
 }
 
 int
