@@ -11063,7 +11063,6 @@ test_write_wifi_wpa_then_wep_with_perms (void)
 
 	unlink (keyfile);
 	unlink (testfile);
-	g_free (keyfile);
 
 	g_free (testfile);
 	g_free (unmanaged);
