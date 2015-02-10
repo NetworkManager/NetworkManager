@@ -11617,6 +11617,7 @@ test_read_ibft_malformed (const char *name, const char *iscsiadm_path, gboolean 
 		g_test_assert_expected_messages ();
 	ASSERT (connection == NULL,
 	        name, "unexpectedly able to read %s", TEST_IFCFG_IBFT_STATIC);
+	g_clear_error (&error);
 
 	g_free (unmanaged);
 	g_free (keyfile);
