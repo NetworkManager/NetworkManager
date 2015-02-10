@@ -3,4 +3,5 @@ EXTRA_DIST = \
 	list-connections.lua \
 	list-devices.lua \
 	show-wifi-networks.lua \
-	get-basic-nm-info.lua
+	get-basic-nm-info.lua \
+	get-ips.lua
