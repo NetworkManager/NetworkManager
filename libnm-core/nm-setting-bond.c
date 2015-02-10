@@ -977,13 +977,11 @@ nm_setting_bond_class_init (NMSettingBondClass *setting_class)
 
 	/* Properties */
 	/**
-	 * NMSettingBond:options:
+	 * NMSettingBond:options: (type GHashTable(utf8,utf8)):
 	 *
 	 * Dictionary of key/value pairs of bonding options.  Both keys and values
 	 * must be strings. Option names must contain only alphanumeric characters
 	 * (ie, [a-zA-Z0-9]).
-	 *
-	 * Type: GHashTable(utf8,utf8)
 	 **/
 	/* ---ifcfg-rh---
 	 * property: options

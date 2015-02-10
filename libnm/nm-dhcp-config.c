@@ -154,11 +154,9 @@ nm_dhcp_config_class_init (NMDhcpConfigClass *config_class)
 		                   G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMDhcpConfig:options:
+	 * NMDhcpConfig:options: (type GHashTable(utf8,utf8)):
 	 *
 	 * The #GHashTable containing options of the configuration.
-	 *
-	 * Type: GLib.HashTable(utf8,utf8)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_OPTIONS,
