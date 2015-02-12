@@ -43,6 +43,7 @@ G_BEGIN_DECLS
 #define NM_CONFIG_DATA_CONNECTIVITY_INTERVAL "connectivity-interval"
 #define NM_CONFIG_DATA_CONNECTIVITY_RESPONSE "connectivity-response"
 #define NM_CONFIG_DATA_NO_AUTO_DEFAULT       "no-auto-default"
+#define NM_CONFIG_DATA_DNS_MODE              "dns"
 
 typedef enum { /*< flags >*/
 	NM_CONFIG_CHANGE_NONE                      = 0,
@@ -50,6 +51,7 @@ typedef enum { /*< flags >*/
 	NM_CONFIG_CHANGE_VALUES                    = (1L << 1),
 	NM_CONFIG_CHANGE_CONNECTIVITY              = (1L << 2),
 	NM_CONFIG_CHANGE_NO_AUTO_DEFAULT           = (1L << 3),
+	NM_CONFIG_CHANGE_DNS_MODE                  = (1L << 4),
 
 	_NM_CONFIG_CHANGE_LAST,
 	NM_CONFIG_CHANGE_ALL                       = ((_NM_CONFIG_CHANGE_LAST - 1) << 1) - 1,
@@ -84,6 +86,8 @@ const char *nm_config_data_get_connectivity_response (const NMConfigData *config
 
 const char *const*nm_config_data_get_no_auto_default (const NMConfigData *config_data);
 const GSList *    nm_config_data_get_no_auto_default_list (const NMConfigData *config_data);
+
+const char *nm_config_data_get_dns_mode (const NMConfigData *self);
 
 G_END_DECLS
 

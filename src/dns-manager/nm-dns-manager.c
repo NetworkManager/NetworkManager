@@ -1088,7 +1088,7 @@ init_resolv_conf_mode (NMDnsManager *self)
 		}
 	}
 
-	mode = nm_config_get_dns_mode (nm_config_get ());
+	mode = nm_config_data_get_dns_mode (nm_config_get_data (nm_config_get ()));
 	if (!g_strcmp0 (mode, "none")) {
 		priv->resolv_conf_mode = NM_DNS_MANAGER_RESOLV_CONF_UNMANAGED;
 		nm_log_info (LOGD_DNS, "DNS: not managing " _PATH_RESCONF);
