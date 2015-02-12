@@ -763,10 +763,8 @@ find_active_connection (const GPtrArray *active_cons,
 }
 
 static void
-fill_output_connection (gpointer data, gpointer user_data, gboolean active_only)
+fill_output_connection (NMConnection *connection, NmCli *nmc, gboolean active_only)
 {
-	NMConnection *connection = (NMConnection *) data;
-	NmCli *nmc = (NmCli *) user_data;
 	NMSettingConnection *s_con;
 	guint64 timestamp;
 	time_t timestamp_real;
