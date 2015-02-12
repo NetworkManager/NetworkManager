@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2010 - 2014 Red Hat, Inc.
+ * Copyright 2010 - 2015 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -826,8 +826,9 @@ fill_output_connection_for_invisible (NMActiveConnection *ac, NmCli *nmc)
 	NmcOutputField *arr;
 	const char *ac_path = NULL;
 	const char *ac_state = NULL;
-	char *ac_dev = NULL;
+	char *name, *ac_dev = NULL;
 
+	name = g_strdup_printf ("<invisible> %s", nm_active_connection_get_id (ac));
 	ac_path = nm_object_get_path (NM_OBJECT (ac));
 	ac_state = active_connection_state_to_string (nm_active_connection_get_state (ac));
 	ac_dev = get_ac_device_string (ac);
@@ -835,7 +836,8 @@ fill_output_connection_for_invisible (NMActiveConnection *ac, NmCli *nmc)
 	arr = nmc_dup_fields_array (nmc_fields_con_show,
 	                            sizeof (nmc_fields_con_show),
 	                            0);
-	set_val_strc (arr, 0, nm_active_connection_get_id (ac));
+
+	set_val_str  (arr, 0, name);
 	set_val_strc (arr, 1, nm_active_connection_get_uuid (ac));
 	set_val_strc (arr, 2, nm_active_connection_get_connection_type (ac));
 	set_val_strc (arr, 3, NULL);
@@ -923,36 +925,6 @@ fill_output_active_connection (NMActiveConnection *active,
 	g_ptr_array_add (nmc->output_data, arr);
 
 	g_string_free (dev_str, FALSE);
-}
-
-static void
-fill_output_for_all_invisible (NmCli *nmc)
-{
-	const GPtrArray *acons;
-	int a, c;
-
-	g_return_if_fail (nmc != NULL);
-
-	acons = nm_client_get_active_connections (nmc->client);
-	for (a = 0; a < acons->len; a++) {
-		gboolean found = FALSE;
-		NMActiveConnection *acon = g_ptr_array_index (acons, a);
-		const char *a_uuid = nm_active_connection_get_uuid (acon);
-
-		for (c = 0; c < nmc->connections->len; c++) {
-			NMConnection *con = g_ptr_array_index (nmc->connections, c);
-			const char *c_uuid = nm_connection_get_uuid (con);
-
-			if (strcmp (a_uuid, c_uuid) == 0) {
-				found = TRUE;
-				break;
-			}
-		}
-
-		/* Active connection is not in connections list */
-		if (!found)
-			fill_output_connection_for_invisible (acon, nmc);
-	}
 }
 
 typedef struct {
@@ -1338,12 +1310,137 @@ split_required_fields_for_con_show (const char *input,
 	return success;
 }
 
+typedef enum {
+	NMC_SORT_ACTIVE,
+	NMC_SORT_NAME,
+	NMC_SORT_TYPE,
+	NMC_SORT_PATH,
+} NmcSortOrder;
+
+static int
+compare_connections (gconstpointer a, gconstpointer b, gpointer user_data)
+{
+	NMConnection *ca = *(NMConnection **)a;
+	NMConnection *cb = *(NMConnection **)b;
+	NMActiveConnection *aca, *acb;
+	NmCli *nmc = (NmCli *) user_data;
+	int cmp, i;
+	const char *tmp1, *tmp2;
+	unsigned long tmp1_int, tmp2_int;
+	NmcSortOrder default_order[] = {
+		NMC_SORT_ACTIVE,
+		NMC_SORT_NAME,
+		NMC_SORT_PATH,
+	};
+
+	for (i = 0; i < G_N_ELEMENTS (default_order); i++) {
+		switch (default_order[i]) {
+		case NMC_SORT_ACTIVE:
+			aca = get_ac_for_connection (nm_client_get_active_connections (nmc->client), ca);
+			acb = get_ac_for_connection (nm_client_get_active_connections (nmc->client), cb);
+			cmp = (aca && !acb) ? -1 : (!aca && acb) ? 1 : 0;
+			break;
+		case NMC_SORT_TYPE:
+			cmp = g_strcmp0 (nm_connection_get_connection_type (ca),
+			                 nm_connection_get_connection_type (cb));
+			break;
+		case NMC_SORT_NAME:
+			cmp = g_strcmp0 (nm_connection_get_id (ca),
+			                 nm_connection_get_id (cb));
+			break;
+		case NMC_SORT_PATH:
+			tmp1 = nm_connection_get_path (ca);
+			tmp2 = nm_connection_get_path (cb);
+			tmp1 = tmp1 ? strrchr (tmp1, '/') : "0";
+			tmp2 = tmp2 ? strrchr (tmp2, '/') : "0";
+			nmc_string_to_uint (tmp1 ? tmp1+1 : "0", FALSE, 0, 0, &tmp1_int);
+			nmc_string_to_uint (tmp2 ? tmp2+1 : "0", FALSE, 0, 0, &tmp2_int);
+			cmp = (int) tmp1_int - tmp2_int;
+			break;
+		default:
+			cmp = 0;
+			break;
+		}
+		if (cmp != 0)
+			return cmp;
+	}
+	return 0;
+}
+
+static GPtrArray *
+sort_connections (const GPtrArray *cons, NmCli *nmc)
+{
+	GPtrArray *sorted;
+	int i;
+
+	sorted = g_ptr_array_sized_new (cons->len);
+	for (i = 0; cons && i < cons->len; i++)
+		g_ptr_array_add (sorted, cons->pdata[i]);
+	g_ptr_array_sort_with_data (sorted, compare_connections, nmc);
+	return sorted;
+}
+
+static int
+compare_ac_connections (gconstpointer a, gconstpointer b, gpointer user_data)
+{
+	NMActiveConnection *ca = *(NMActiveConnection **)a;
+	NMActiveConnection *cb = *(NMActiveConnection **)b;
+	int cmp;
+
+	/* Sort states first */
+	cmp = nm_active_connection_get_state (cb) - nm_active_connection_get_state (ca);
+	if (cmp != 0)
+		return cmp;
+
+	cmp = g_strcmp0 (nm_active_connection_get_id (ca),
+	                 nm_active_connection_get_id (cb));
+	if (cmp != 0)
+		return cmp;
+
+	return g_strcmp0 (nm_active_connection_get_connection_type (ca),
+	                  nm_active_connection_get_connection_type (cb));
+}
+
+static GPtrArray *
+get_invisible_active_connections (NmCli *nmc)
+{
+	const GPtrArray *acons;
+	GPtrArray *invisibles;
+	int a, c;
+
+	g_return_val_if_fail (nmc != NULL, NULL);
+
+	invisibles = g_ptr_array_new ();
+	acons = nm_client_get_active_connections (nmc->client);
+	for (a = 0; a < acons->len; a++) {
+		gboolean found = FALSE;
+		NMActiveConnection *acon = g_ptr_array_index (acons, a);
+		const char *a_uuid = nm_active_connection_get_uuid (acon);
+
+		for (c = 0; c < nmc->connections->len; c++) {
+			NMConnection *con = g_ptr_array_index (nmc->connections, c);
+			const char *c_uuid = nm_connection_get_uuid (con);
+
+			if (strcmp (a_uuid, c_uuid) == 0) {
+				found = TRUE;
+				break;
+			}
+		}
+		/* Active connection is not in connections array, add it to  */
+		if (!found)
+			g_ptr_array_add (invisibles, acon);
+	}
+	g_ptr_array_sort_with_data (invisibles, compare_ac_connections, NULL);
+	return invisibles;
+}
+
 static NMCResultCode
 do_connections_show (NmCli *nmc, gboolean active_only, gboolean show_secrets,
                      int argc, char **argv)
 {
 	GError *err = NULL;
 	char *profile_flds = NULL, *active_flds = NULL;
+	GPtrArray *invisibles, *sorted_cons;
 
 	nmc->should_wait = FALSE;
 
@@ -1377,13 +1474,19 @@ do_connections_show (NmCli *nmc, gboolean active_only, gboolean show_secrets,
 		arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
 		g_ptr_array_add (nmc->output_data, arr);
 
-		/* Add values */
-		for (i = 0; i < nmc->connections->len; i++) {
-			NMConnection *con = NM_CONNECTION (nmc->connections->pdata[i]);
-			fill_output_connection (con, nmc, active_only);
-		}
-		/* Some active connections may not be in connection list, show them here. */
-		fill_output_for_all_invisible (nmc);
+		/* There might be active connections not present in connection list
+		 * (e.g. private connections of a different user). Show them as well. */
+		invisibles = get_invisible_active_connections (nmc);
+		for (i = 0; i < invisibles->len; i++)
+			fill_output_connection_for_invisible (invisibles->pdata[i], nmc);
+		g_ptr_array_free (invisibles, FALSE);
+
+		/* Sort the connections and fill the output data */
+		sorted_cons = sort_connections (nmc->connections, nmc);
+		for (i = 0; i < sorted_cons->len; i++)
+			fill_output_connection (sorted_cons->pdata[i], nmc, active_only);
+		g_ptr_array_free (sorted_cons, FALSE);
+
 		print_data (nmc);  /* Print all data */
 	} else {
 		gboolean new_line = FALSE;
