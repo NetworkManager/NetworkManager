@@ -85,6 +85,8 @@ typedef struct {
 	NMDnsManagerResolvConfMode resolv_conf_mode;
 	NMDnsPlugin *plugin;
 
+	NMConfig *config;
+
 	gboolean dns_touched;
 } NMDnsManagerPrivate;
 
@@ -1075,6 +1077,8 @@ init_resolv_conf_mode (NMDnsManager *self)
 	const char *mode;
 	int fd, flags;
 
+	g_clear_object (&priv->plugin);
+
 	fd = open (_PATH_RESCONF, O_RDONLY);
 	if (fd != -1) {
 		if (ioctl (fd, FS_IOC_GETFLAGS, &flags) == -1)
@@ -1088,7 +1092,7 @@ init_resolv_conf_mode (NMDnsManager *self)
 		}
 	}
 
-	mode = nm_config_data_get_dns_mode (nm_config_get_data (nm_config_get ()));
+	mode = nm_config_data_get_dns_mode (nm_config_get_data (priv->config));
 	if (!g_strcmp0 (mode, "none")) {
 		priv->resolv_conf_mode = NM_DNS_MANAGER_RESOLV_CONF_UNMANAGED;
 		nm_log_info (LOGD_DNS, "DNS: not managing " _PATH_RESCONF);
@@ -1103,6 +1107,31 @@ init_resolv_conf_mode (NMDnsManager *self)
 		if (mode && g_strcmp0 (mode, "default") != 0)
 			nm_log_warn (LOGD_DNS, "Unknown DNS mode '%s'", mode);
 	}
+
+	if (priv->plugin) {
+		nm_log_info (LOGD_DNS, "DNS: loaded plugin %s", nm_dns_plugin_get_name (priv->plugin));
+		g_signal_connect (priv->plugin, NM_DNS_PLUGIN_FAILED, G_CALLBACK (plugin_failed), self);
+	}
+}
+
+static void
+config_changed_cb (NMConfig *config,
+                   NMConfigData *config_data,
+                   NMConfigChangeFlags changes,
+                   NMConfigData *old_data,
+                   NMDnsManager *self)
+{
+	GError *error = NULL;
+
+	if (!(changes & NM_CONFIG_CHANGE_DNS_MODE))
+		return;
+
+	init_resolv_conf_mode (self);
+	if (!update_dns (self, TRUE, &error)) {
+		nm_log_warn (LOGD_DNS, "could not commit DNS changes: (%d) %s",
+		             error->code, error->message);
+		g_clear_error (&error);
+	}
 }
 
 static void
@@ -1113,12 +1142,12 @@ nm_dns_manager_init (NMDnsManager *self)
 	/* Set the initial hash */
 	compute_hash (self, NM_DNS_MANAGER_GET_PRIVATE (self)->hash);
 
+	priv->config = g_object_ref (nm_config_get ());
+	g_signal_connect (G_OBJECT (priv->config),
+	                  NM_CONFIG_SIGNAL_CONFIG_CHANGED,
+	                  G_CALLBACK (config_changed_cb),
+	                  self);
 	init_resolv_conf_mode (self);
-
-	if (priv->plugin) {
-		nm_log_info (LOGD_DNS, "DNS: loaded plugin %s", nm_dns_plugin_get_name (priv->plugin));
-		g_signal_connect (priv->plugin, NM_DNS_PLUGIN_FAILED, G_CALLBACK (plugin_failed), self);
-	}
 }
 
 static void
@@ -1141,6 +1170,11 @@ dispose (GObject *object)
 		             error && error->message ? error->message : "(unknown)");
 		g_clear_error (&error);
 		priv->dns_touched = FALSE;
+	}
+
+	if (priv->config) {
+		g_signal_handlers_disconnect_by_func (priv->config, config_changed_cb, self);
+		g_clear_object (&priv->config);
 	}
 
 	g_slist_free_full (priv->configs, g_object_unref);
