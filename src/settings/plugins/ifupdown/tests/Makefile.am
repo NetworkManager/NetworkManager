@@ -30,6 +30,8 @@ test_ifupdown_LDADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(DBUS_LIBS)
 
+# TODO: enable valgrind for ifupdown. Currently it fails.
+#@VALGRIND_RULES@
 TESTS = test-ifupdown
 
 EXTRA_DIST = \

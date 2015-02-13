@@ -7,11 +7,13 @@ AM_CPPFLAGS = \
 	-I$(top_builddir)/include \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_builddir)/libnm-util \
+	-I$(top_srcdir)/libgsystem \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	-DTEST_CERT_DIR=\"$(top_srcdir)/libnm-util/tests/certs/\"
 
+@VALGRIND_RULES@
 noinst_PROGRAMS = \
 	test-settings-defaults \
 	test-crypto \

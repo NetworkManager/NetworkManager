@@ -26,6 +26,7 @@ test_dispatcher_envp_LDADD = \
 
 ###########################################
 
+@VALGRIND_RULES@
 check-local: test-dispatcher-envp
 	$(abs_builddir)/test-dispatcher-envp $(abs_srcdir)
 

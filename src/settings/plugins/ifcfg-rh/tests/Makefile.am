@@ -18,6 +18,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/platform \
 	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/src/posix-signals \
+	-I${top_srcdir}/libgsystem \
 	-I$(srcdir)/../ \
 	-DG_LOG_DOMAIN=\""NetworkManager-ifcfg-rh"\" \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
@@ -56,6 +57,7 @@ test_ifcfg_rh_utils_SOURCES = \
 test_ifcfg_rh_utils_LDADD = \
 	$(AM_LDADD)
 
+@VALGRIND_RULES@
 TESTS = test-ifcfg-rh-utils test-ifcfg-rh
 
 EXTRA_DIST = \

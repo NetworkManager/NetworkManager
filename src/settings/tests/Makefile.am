@@ -1,6 +1,7 @@
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
+	-I$(top_srcdir)/libgsystem \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_srcdir)/src/settings \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \

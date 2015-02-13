@@ -41,6 +41,7 @@
 
 #include "nm-supplicant-config.h"
 #include "nm-supplicant-settings-verify.h"
+#include "gsystem-local-alloc.h"
 
 #include "nm-test-utils.h"
 
@@ -116,7 +117,7 @@ test_wifi_open (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	NMSettingIP4Config *s_ip4;
-	NMSupplicantConfig *config;
+	gs_unref_object NMSupplicantConfig *config = NULL;
 	GHashTable *hash;
 	char *uuid;
 	gboolean success;
@@ -202,6 +203,7 @@ test_wifi_open (void)
 	validate_opt ("wifi-open", hash, "bssid", TYPE_KEYWORD, bssid_str, -1);
 	validate_opt ("wifi-open", hash, "key_mgmt", TYPE_KEYWORD, "NONE", -1);
 
+	g_hash_table_unref (hash);
 	g_object_unref (connection);
 }
 
@@ -217,7 +219,7 @@ test_wifi_wep_key (const char *detail,
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIP4Config *s_ip4;
-	NMSupplicantConfig *config;
+	gs_unref_object NMSupplicantConfig *config = NULL;
 	GHashTable *hash;
 	char *uuid;
 	gboolean success;
@@ -322,6 +324,7 @@ test_wifi_wep_key (const char *detail,
 	validate_opt (detail, hash, "wep_tx_keyidx", TYPE_INT, GINT_TO_POINTER (0), -1);
 	validate_opt (detail, hash, "wep_key0", TYPE_BYTES, expected, expected_size);
 
+	g_hash_table_unref (hash);
 	g_object_unref (connection);
 }
 
@@ -360,7 +363,7 @@ test_wifi_wpa_psk (const char *detail,
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIP4Config *s_ip4;
-	NMSupplicantConfig *config;
+	gs_unref_object NMSupplicantConfig *config = NULL;
 	GHashTable *hash;
 	char *uuid;
 	gboolean success;
@@ -477,6 +480,7 @@ test_wifi_wpa_psk (const char *detail,
 	validate_opt (detail, hash, "group", TYPE_KEYWORD, "TKIP CCMP", -1);
 	validate_opt (detail, hash, "psk", key_type, expected, expected_size);
 
+	g_hash_table_unref (hash);
 	g_object_unref (connection);
 }
 

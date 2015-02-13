@@ -217,9 +217,10 @@ merge_no_auto_default_state (NMConfig *config)
 					break;
 			}
 			if (j == updated->len)
-				g_ptr_array_add (updated, list[i]);
+				g_ptr_array_add (updated, g_strdup (list[i]));
 		}
-		g_free (list);
+		if (list)
+			g_strfreev (list);
 		g_free (data);
 	}
 
@@ -239,7 +240,7 @@ void
 nm_config_set_ethernet_no_auto_default (NMConfig *config, NMConfigDevice *device)
 {
 	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (config);
-	char *current;
+	char *current, *hwaddr;
 	GString *updated;
 	GError *error = NULL;
 
@@ -254,7 +255,9 @@ nm_config_set_ethernet_no_auto_default (NMConfig *config, NMConfigDevice *device
 			g_string_append_c (updated, '\n');
 	}
 
-	g_string_append (updated, nm_config_device_get_hwaddr (device));
+	hwaddr = nm_config_device_get_hwaddr (device);
+	g_string_append (updated, hwaddr);
+	g_free (hwaddr);
 	g_string_append_c (updated, '\n');
 
 	if (!g_file_set_contents (priv->no_auto_default_file, updated->str, updated->len, &error)) {
@@ -329,10 +332,12 @@ read_config (NMConfig *config, const char *path, GError **error)
 			continue;
 		for (k = 0; keys[k]; k++) {
 			int len = strlen (keys[k]);
+			char *tmp;
+
 			if (keys[k][len - 1] == '+') {
 				char *base_key = g_strndup (keys[k], len - 1);
-				const char *old_val = g_key_file_get_value (priv->keyfile, groups[g], base_key, NULL);
-				const char *new_val = g_key_file_get_value (kf, groups[g], keys[k], NULL);
+				char *old_val = g_key_file_get_value (priv->keyfile, groups[g], base_key, NULL);
+				char *new_val = g_key_file_get_value (kf, groups[g], keys[k], NULL);
 
 				if (old_val && *old_val) {
 					char *combined = g_strconcat (old_val, ",", new_val, NULL);
@@ -343,13 +348,18 @@ read_config (NMConfig *config, const char *path, GError **error)
 					g_key_file_set_value (priv->keyfile, groups[g], base_key, new_val);
 
 				g_free (base_key);
+				g_free (old_val);
+				g_free (new_val);
 				continue;
 			}
 
-			g_key_file_set_value (priv->keyfile, groups[g], keys[k],
-			                      g_key_file_get_value (kf, groups[g], keys[k], NULL));
+			tmp = g_key_file_get_value (kf, groups[g], keys[k], NULL);
+			g_key_file_set_value (priv->keyfile, groups[g], keys[k], tmp);
+			g_free (tmp);
 		}
+		g_strfreev (keys);
 	}
+	g_strfreev (groups);
 	g_key_file_free (kf);
 
 	return TRUE;

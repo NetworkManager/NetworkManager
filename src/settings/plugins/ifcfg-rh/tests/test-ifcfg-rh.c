@@ -56,6 +56,7 @@
 #include "utils.h"
 #include "nm-logging.h"
 
+#include "gsystem-local-alloc.h"
 #include "nm-test-utils.h"
 
 #if 0
@@ -329,7 +330,7 @@ test_read_unmanaged_unrecognized (void)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
-	char *unhandled_spec = NULL;
+	gs_free char *unhandled_spec = NULL;
 	GError *error = NULL;
 	const char *expected_id = "PigeonNet";
 	guint64 expected_timestamp = 0;
@@ -360,7 +361,7 @@ test_read_unrecognized (void)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
-	char *unhandled_spec = NULL;
+	gs_free char *unhandled_spec = NULL;
 	GError *error = NULL;
 	const char *expected_id = "U Can't Touch This";
 	guint64 expected_timestamp = 0;
@@ -6315,6 +6316,7 @@ test_read_wifi_band_a_channel_mismatch (void)
 	                                   NULL, TYPE_WIRELESS, NULL, NULL, NULL, NULL, NULL, &error, NULL);
 	g_assert (connection == NULL);
 	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
+	g_clear_error (&error);
 }
 
 static void
@@ -6327,6 +6329,7 @@ test_read_wifi_band_bg_channel_mismatch (void)
 	                                   NULL, TYPE_WIRELESS, NULL, NULL, NULL, NULL, NULL, &error, NULL);
 	g_assert (connection == NULL);
 	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
+	g_clear_error (&error);
 }
 
 #define TEST_IFCFG_WIRED_QETH_STATIC TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-qeth-static"
@@ -11614,6 +11617,7 @@ test_read_ibft_malformed (const char *name, const char *iscsiadm_path, gboolean 
 		g_test_assert_expected_messages ();
 	ASSERT (connection == NULL,
 	        name, "unexpectedly able to read %s", TEST_IFCFG_IBFT_STATIC);
+	g_clear_error (&error);
 
 	g_free (unmanaged);
 	g_free (keyfile);
@@ -12205,6 +12209,7 @@ test_write_wired_pppoe (void)
 	        "wired-pppoe-write", "unexpected success writing connection to disk");
 
 	g_object_unref (connection);
+	g_clear_error (&error);
 }
 
 static void
@@ -12267,6 +12272,7 @@ test_write_vpn (void)
 	        "vpn-write", "unexpected success writing connection to disk");
 
 	g_object_unref (connection);
+	g_clear_error (&error);
 }
 
 static void
@@ -12349,6 +12355,7 @@ test_write_mobile_broadband (gboolean gsm)
 	        "mobile-broadband-write", "unexpected success writing connection to disk");
 
 	g_object_unref (connection);
+	g_clear_error (&error);
 }
 
 #define TEST_IFCFG_BRIDGE_MAIN TEST_IFCFG_DIR"/network-scripts/ifcfg-test-bridge-main"
@@ -12944,6 +12951,8 @@ test_write_vlan (void)
 	g_free (keyfile);
 	g_free (routefile);
 	g_free (route6file);
+
+	g_object_unref (connection);
 }
 
 static void
@@ -14064,6 +14073,7 @@ test_read_dcb_bad_booleans (void)
 	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
 	g_assert (strstr (error->message, "invalid boolean digit"));
 	g_assert (connection == NULL);
+	g_clear_error (&error);
 }
 
 static void
@@ -14081,6 +14091,7 @@ test_read_dcb_short_booleans (void)
 	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
 	g_assert (strstr (error->message, "boolean array must be 8 characters"));
 	g_assert (connection == NULL);
+	g_clear_error (&error);
 }
 
 static void
@@ -14098,6 +14109,7 @@ test_read_dcb_bad_uints (void)
 	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
 	g_assert (strstr (error->message, "invalid uint digit"));
 	g_assert (connection == NULL);
+	g_clear_error (&error);
 }
 
 static void
@@ -14115,6 +14127,7 @@ test_read_dcb_short_uints (void)
 	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
 	g_assert (strstr (error->message, "uint array must be 8 characters"));
 	g_assert (connection == NULL);
+	g_clear_error (&error);
 }
 
 static void
@@ -14132,6 +14145,7 @@ test_read_dcb_bad_percent (void)
 	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
 	g_assert (strstr (error->message, "invalid percent element"));
 	g_assert (connection == NULL);
+	g_clear_error (&error);
 }
 
 static void
@@ -14149,6 +14163,7 @@ test_read_dcb_short_percent (void)
 	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
 	g_assert (strstr (error->message, "percent array must be 8 elements"));
 	g_assert (connection == NULL);
+	g_clear_error (&error);
 }
 
 static void
@@ -14166,6 +14181,7 @@ test_read_dcb_pgpct_not_100 (void)
 	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
 	g_assert (strstr (error->message, "invalid percentage sum"));
 	g_assert (connection == NULL);
+	g_clear_error (&error);
 }
 
 static void
@@ -14504,6 +14520,7 @@ test_write_team_port (void)
 	val = svGetValue (f, "TEAM_PORT_CONFIG", TRUE);
 	g_assert (val);
 	g_assert_cmpstr (val, ==, escaped_expected_config);
+	g_free (val);
 	val = svGetValue (f, "TEAM_MASTER", TRUE);
 	g_assert (val);
 	g_assert_cmpstr (val, ==, "team0");
