@@ -6329,11 +6329,8 @@ nmcli_editor_tab_completion (const char *text, int start, int end)
 {
 	char **match_array = NULL;
 	const char *line = rl_line_buffer;
-	const char *prompt = rl_prompt;
 	rl_compentry_func_t *generator_func = NULL;
-	gboolean copy_char;
-	const char *p1;
-	char *p2, *prompt_tmp;
+	char *prompt_tmp;
 	char *word = NULL;
 	size_t n1;
 	int num;
@@ -6351,19 +6348,7 @@ nmcli_editor_tab_completion (const char *text, int start, int end)
 	rl_complete_with_tilde_expansion = 1;
 
 	/* Filter out possible ANSI color escape sequences */
-	p1 = prompt;
-	p2 = prompt_tmp = g_strdup (prompt);
-	copy_char = TRUE;
-	while (*p1) {
-		if (*p1 == '\33')
-			copy_char = FALSE;
-		if (copy_char)
-			*p2++ = *p1;
-		if (!copy_char && *p1 == 'm')
-			copy_char = TRUE;
-		p1++;
-	}
-	*p2 = '\0';
+	prompt_tmp = nmc_filter_out_colors ((const char *) rl_prompt);
 
 	/* Find the first non-space character */
 	n1 = strspn (line, " \t");

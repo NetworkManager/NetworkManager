@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 - 2014 Red Hat, Inc.
+ * Copyright 2010 - 2015 Red Hat, Inc.
  */
 
 /* Generated configuration file */
@@ -327,6 +327,45 @@ nmc_colorize (NmcTermColor color, const char *fmt, ...)
 	colored = g_strdup_printf ("%s%s%s", ansi_color, str, color_end);
 	g_free (str);
 	return colored;
+}
+
+/* Filter out possible ANSI color escape sequences */
+/* It directly modifies the passed string @str. */
+void
+nmc_filter_out_colors_inplace (char *str)
+{
+	const char *p1;
+	char *p2;
+	gboolean copy_char = TRUE;
+
+	if (!str)
+		return;
+
+	p1 = p2 = str;
+	while (*p1) {
+		if (*p1 == '\33' && *(p1+1) == '[')
+			copy_char = FALSE;
+		if (copy_char)
+			*p2++ = *p1;
+		if (!copy_char && *p1 == 'm')
+			copy_char = TRUE;
+		p1++;
+	}
+	*p2 = '\0';
+}
+
+/* Filter out possible ANSI color escape sequences */
+char *
+nmc_filter_out_colors (const char *str)
+{
+	char *filtered;
+
+	if (!str)
+		return NULL;
+
+	filtered = g_strdup (str);
+	nmc_filter_out_colors_inplace (filtered);
+	return filtered;
 }
 
 /*

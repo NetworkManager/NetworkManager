@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2010 - 2014 Red Hat, Inc.
+ * Copyright 2010 - 2015 Red Hat, Inc.
  */
 
 #ifndef NMC_UTILS_H
@@ -68,6 +68,8 @@ void nmc_terminal_erase_line (void);
 void nmc_terminal_show_progress (const char *str);
 const char *nmc_term_color_sequence (NmcTermColor color);
 char *nmc_colorize (NmcTermColor color, const char * fmt, ...);
+void nmc_filter_out_colors_inplace (char *str);
+char *nmc_filter_out_colors (const char *str);
 char *nmc_get_user_input (const char *ask_str);
 int nmc_string_to_arg_array (const char *line, const char *delim, char ***argv, int *argc);
 const char *nmc_string_is_valid (const char *input, const char **allowed, GError **error);
