@@ -329,6 +329,32 @@ nmc_colorize (NmcTermColor color, const char *fmt, ...)
 	return colored;
 }
 
+/*
+ * Count characters belonging to terminal color escape sequences.
+ * @start points to beginning of the string, @end points to the end,
+ * or NULL if the string is nul-terminated.
+ */
+static int
+nmc_count_color_escape_chars (const char *start, const char *end)
+{
+	int num = 0;
+	gboolean inside = FALSE;
+
+	if (end == NULL)
+		end = start + strlen (start);
+
+	while (start < end) {
+		if (*start == '\33' && *(start+1) == '[')
+			inside = TRUE;
+		if (inside)
+			num++;
+		if (*start == 'm') 
+			inside = FALSE;
+		start++;
+	}
+	return num;
+}
+
 /* Filter out possible ANSI color escape sequences */
 /* It directly modifies the passed string @str. */
 void
@@ -627,21 +653,24 @@ nmc_strsplit_set (const char *str, const char *delimiter, int max_tokens)
 }
 
 /*
- * Find out how many columns an UTF-8 string occupies on the screen
+ * Find out how many columns an UTF-8 string occupies on the screen.
  */
 int
 nmc_string_screen_width (const char *start, const char *end)
 {
 	int width = 0;
+	const char *p = start;
 
 	if (end == NULL)
 		end = start + strlen (start);
 
-	while (start < end) {
-		width += g_unichar_iswide (g_utf8_get_char (start)) ? 2 : g_unichar_iszerowidth (g_utf8_get_char (start)) ? 0 : 1;
-		start = g_utf8_next_char (start);
+	while (p < end) {
+		width += g_unichar_iswide (g_utf8_get_char (p)) ? 2 : g_unichar_iszerowidth (g_utf8_get_char (p)) ? 0 : 1;
+		p = g_utf8_next_char (p);
 	}
-	return width;
+
+	/* Subtract color escape sequences as they don't occupy space. */
+	return width - nmc_count_color_escape_chars (start, NULL);
 }
 
 void
