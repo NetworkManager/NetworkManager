@@ -81,6 +81,7 @@ void set_val_str  (NmcOutputField fields_array[], guint32 index, char *value);
 void set_val_strc (NmcOutputField fields_array[], guint32 index, const char *value);
 void set_val_arr  (NmcOutputField fields_array[], guint32 index, char **value);
 void set_val_arrc (NmcOutputField fields_array[], guint32 index, const char **value);
+void set_val_color_all (NmcOutputField fields_array[], NmcTermColor color);
 void nmc_free_output_field_values (NmcOutputField fields_array[]);
 GArray *parse_output_fields (const char *fields_str,
                              const NmcOutputField fields_array[],

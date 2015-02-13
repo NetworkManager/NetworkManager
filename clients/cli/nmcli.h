@@ -69,6 +69,18 @@ typedef enum {
 } NMCResultCode;
 
 typedef enum {
+	NMC_TERM_COLOR_NORMAL  = 0,
+	NMC_TERM_COLOR_BLACK   = 1,
+	NMC_TERM_COLOR_RED     = 2,
+	NMC_TERM_COLOR_GREEN   = 3,
+	NMC_TERM_COLOR_YELLOW  = 4,
+	NMC_TERM_COLOR_BLUE    = 5,
+	NMC_TERM_COLOR_MAGENTA = 6,
+	NMC_TERM_COLOR_CYAN    = 7,
+	NMC_TERM_COLOR_WHITE   = 8
+} NmcTermColor;
+
+typedef enum {
 	NMC_PRINT_TERSE = 0,
 	NMC_PRINT_NORMAL = 1,
 	NMC_PRINT_PRETTY = 2
@@ -90,6 +102,7 @@ typedef struct _NmcOutputField {
 	gboolean value_is_array;        /* Whether value is char** instead of char* */
 	gboolean free_value;            /* Whether to free the value */
 	guint32 flags;                  /* Flags - whether and how to print values/field names/headers */
+	NmcTermColor color;             /* Use this color to print value */
 } NmcOutputField;
 
 typedef struct {
@@ -97,18 +110,6 @@ typedef struct {
 	char *header_name;    /* Name of the output */
 	int indent;           /* Indent by this number of spaces */
 } NmcPrintFields;
-
-typedef enum {
-	NMC_TERM_COLOR_NORMAL  = 0,
-	NMC_TERM_COLOR_BLACK   = 1,
-	NMC_TERM_COLOR_RED     = 2,
-	NMC_TERM_COLOR_GREEN   = 3,
-	NMC_TERM_COLOR_YELLOW  = 4,
-	NMC_TERM_COLOR_BLUE    = 5,
-	NMC_TERM_COLOR_MAGENTA = 6,
-	NMC_TERM_COLOR_CYAN    = 7,
-	NMC_TERM_COLOR_WHITE   = 8
-} NmcTermColor;
 
 /* NmCli - main structure */
 typedef struct _NmCli {
