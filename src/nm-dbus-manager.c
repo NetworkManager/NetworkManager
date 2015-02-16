@@ -84,15 +84,17 @@ NM_DEFINE_SINGLETON_WEAK_REF (NMDBusManager);
 NMDBusManager *
 nm_dbus_manager_get (void)
 {
-	static gsize once = 0;
+	if (G_UNLIKELY (!singleton_instance)) {
+		static char already_created = FALSE;
 
-	if (g_once_init_enter (&once)) {
-		singleton_instance = (NMDBusManager *) g_object_new (NM_TYPE_DBUS_MANAGER, NULL);
+		g_assert (!already_created);
+		already_created = TRUE;
+		singleton_instance = g_object_new (NM_TYPE_DBUS_MANAGER, NULL);
 		g_assert (singleton_instance);
 		nm_singleton_instance_weak_ref_register ();
+		nm_log_dbg (LOGD_CORE, "create %s singleton (%p)", "NMDBusManager", singleton_instance);
 		if (!nm_dbus_manager_init_bus (singleton_instance))
 			start_reconnection_timeout (singleton_instance);
-		g_once_init_leave (&once, 1);
 	}
 	return singleton_instance;
 }
