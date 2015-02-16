@@ -73,6 +73,7 @@ typedef struct {
 GType nm_dbus_manager_get_type (void);
 
 NMDBusManager * nm_dbus_manager_get       (void);
+void            nm_dbus_manager_setup     (NMDBusManager *instance);
 
 char * nm_dbus_manager_get_name_owner     (NMDBusManager *self,
                                            const char *name,
