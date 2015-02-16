@@ -289,12 +289,31 @@ active if a device is using that connection profile. Without a parameter, all
 profiles are listed. When --active option is specified, only the active profiles
 are shown.
 .TP
-.B show [--active] [--show-secrets] [ id | uuid | path | apath ] <ID> ...
+.B show [--active] [--order <order spec>] [--show-secrets] [ id | uuid | path | apath ] <ID> ...
 .br
 Show details for specified connections. By default, both static configuration
 and active connection data are displayed.  When --active option is specified,
 only the active profiles are taken into account. When --show-secrets option is
 specified, secrets associated with the profile will be revealed too.
+.sp
+Ordering:
+.br
+The --order option can be used to get custom ordering of connections. The
+connections can be ordered by active status, name, type or D-Bus path. If
+connections are equal according to a sort order category, an additional
+category can be specified.
+The default sorting order is equivalent to "--order active:name:path".
+.sp
+<order spec> := category:category:...
+.br
+categogy := [+-]active | [+-]name | [+-]type | [+-]path
+.br
+\fI+\fP or no prefix means sorting in ascending order (alphabetically or in numbers).
+.br
+\fI-\fP means reverse (descending) order.
+.br
+The category names can be abbreviated (e.g. --order -a:na)
+.sp
 \fIid\fP, \fIuuid\fP, \fIpath\fP and \fIapath\fP keywords can be used if
 \fI<ID>\fP is ambiguous.
 .RS
