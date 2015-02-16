@@ -289,27 +289,17 @@ test_config_confdir_parse_error (void)
 
 NMTST_DEFINE ();
 
-
-static void
-ignore_log (const gchar *log_domain,
-            GLogLevelFlags log_level,
-            const gchar *message,
-            gpointer user_data)
-{
-}
-
 int
 main (int argc, char **argv)
 {
-	/* Initialize the DBus manager singleton in advance, ignoring the warnings.
-	 * Otherwise it would attempt to initialize as soon as nm_test_device_new()
-	 * would cause NMDevice class to register its type on the bus. We don't care
-	 * about that and the warnings would mess up with the testing.
-	 * */
-	g_log_set_default_handler (ignore_log, NULL);
-	nm_dbus_manager_get ();
-
 	nmtst_init_assert_logging (&argc, &argv);
+
+	/* Initialize the DBus manager singleton explicitly, because it is accessed by
+	 * the class initializer of NMDevice (used by the NMTestDevice stub).
+	 * This way, we skip calling nm_dbus_manager_init_bus() which would
+	 * either fail and/or cause unexpected actions in the test.
+	 * */
+	nm_dbus_manager_setup (g_object_new (NM_TYPE_DBUS_MANAGER, NULL));
 
 	nm_fake_platform_setup ();
 
