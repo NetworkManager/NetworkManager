@@ -776,6 +776,7 @@ fill_output_connection (NMConnection *connection, NmCli *nmc, gboolean active_on
 	NMActiveConnection *ac = NULL;
 	const char *ac_path = NULL;
 	const char *ac_state = NULL;
+	NMActiveConnectionState ac_state_int;
 	char *ac_dev = NULL;
 
 	s_con = nm_connection_get_setting_connection (connection);
@@ -787,7 +788,8 @@ fill_output_connection (NMConnection *connection, NmCli *nmc, gboolean active_on
 
 	if (ac) {
 		ac_path = nm_object_get_path (NM_OBJECT (ac));
-		ac_state = active_connection_state_to_string (nm_active_connection_get_state (ac));
+		ac_state_int = nm_active_connection_get_state (ac);
+		ac_state = active_connection_state_to_string (ac_state_int);
 		ac_dev = get_ac_device_string (ac);
 	}
 
@@ -804,6 +806,16 @@ fill_output_connection (NMConnection *connection, NmCli *nmc, gboolean active_on
 	arr = nmc_dup_fields_array (nmc_fields_con_show,
 	                            sizeof (nmc_fields_con_show),
 	                            0);
+	/* Show active connections in color */
+	if (ac) {
+		if (ac_state_int == NM_ACTIVE_CONNECTION_STATE_ACTIVATING)
+			set_val_color_all (arr, NMC_TERM_COLOR_YELLOW);
+		else if (ac_state_int == NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
+			set_val_color_all (arr, NMC_TERM_COLOR_GREEN);
+		else if (ac_state_int > NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
+			set_val_color_all (arr, NMC_TERM_COLOR_RED);
+	}
+
 	set_val_strc (arr, 0, nm_setting_connection_get_id (s_con));
 	set_val_strc (arr, 1, nm_setting_connection_get_uuid (s_con));
 	set_val_strc (arr, 2, nm_setting_connection_get_connection_type (s_con));
@@ -851,6 +863,8 @@ fill_output_connection_for_invisible (NMActiveConnection *ac, NmCli *nmc)
 	set_val_str  (arr, 10, ac_dev);
 	set_val_strc (arr, 11, ac_state);
 	set_val_strc (arr, 12, ac_path);
+
+	set_val_color_fmt_all (arr, NMC_TERM_FORMAT_DIM);
 
 	g_ptr_array_add (nmc->output_data, arr);
 }
