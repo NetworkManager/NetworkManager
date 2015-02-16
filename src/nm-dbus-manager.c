@@ -202,6 +202,7 @@ private_server_new (const char *path,
 		nm_log_warn (LOGD_CORE, "(%s) failed to set up private socket %s: %s",
 		             tag, address, error.message);
 		dbus_error_free (&error);
+		g_free (address);
 		return NULL;
 	}
 
