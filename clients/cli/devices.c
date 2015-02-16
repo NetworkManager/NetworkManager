@@ -1188,15 +1188,27 @@ static void
 fill_output_device_status (NMDevice *device, NmCli *nmc)
 {
 	NMActiveConnection *ac;
+	NMDeviceState state;
 	NmcOutputField *arr = nmc_dup_fields_array (nmc_fields_dev_status,
 	                                            sizeof (nmc_fields_dev_status),
 	                                            0);
 
+	state = nm_device_get_state (device);
 	ac = nm_device_get_active_connection (device);
+
+	/* Show devices in color */
+	if (state <= NM_DEVICE_STATE_UNAVAILABLE)
+		set_val_color_fmt_all (arr, NMC_TERM_FORMAT_DIM);
+	else if (state == NM_DEVICE_STATE_DISCONNECTED)
+		set_val_color_all (arr, NMC_TERM_COLOR_RED);
+	else if (state >= NM_DEVICE_STATE_PREPARE && state <= NM_DEVICE_STATE_SECONDARIES)
+		set_val_color_all (arr, NMC_TERM_COLOR_YELLOW);
+	else if (state == NM_DEVICE_STATE_ACTIVATED)
+		set_val_color_all (arr, NMC_TERM_COLOR_GREEN);
 
 	set_val_strc (arr, 0, nm_device_get_iface (device));
 	set_val_strc (arr, 1, nm_device_get_type_description (device));
-	set_val_strc (arr, 2, nmc_device_state_to_string (nm_device_get_state (device)));
+	set_val_strc (arr, 2, nmc_device_state_to_string (state));
 	set_val_strc (arr, 3, nm_object_get_path (NM_OBJECT (device)));
 	set_val_strc (arr, 4, get_active_connection_id (device));
 	set_val_strc (arr, 5, ac ? nm_active_connection_get_uuid (ac) : NULL);
