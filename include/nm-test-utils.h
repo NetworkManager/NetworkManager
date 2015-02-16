@@ -281,6 +281,18 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 		 * This transforms g_test_expect_message() into a NOP, but we also have to relax
 		 * g_log_set_always_fatal(), which was set by g_test_init(). */
 		g_log_set_always_fatal (G_LOG_FATAL_MASK);
+#ifdef __NETWORKMANAGER_LOGGING_H__
+		if (c_log_domains || c_log_level) {
+			/* Normally, tests with assert_logging do not overwrite the logging level/domains because
+			 * the logging statements are part of the assertions. But if the test is run with
+			 * no-expect-message *and* the logging is set explicitly via environment variables,
+			 * we still reset the logging. */
+			gboolean success;
+
+			success = nm_logging_setup (log_level, log_domains, NULL, NULL);
+			g_assert (success);
+		}
+#endif
 	} else {
 #if GLIB_CHECK_VERSION(2,34,0)
 		/* We were called not to set logging levels. This means, that the user
