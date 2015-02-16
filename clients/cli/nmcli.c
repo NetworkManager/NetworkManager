@@ -16,7 +16,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2010 - 2014 Red Hat, Inc.
+ * Copyright 2010 - 2015 Red Hat, Inc.
  */
 
 /* Generated configuration file */
@@ -89,6 +89,7 @@ usage (const char *prog_name)
 	              "  -t[erse]                                   terse output\n"
 	              "  -p[retty]                                  pretty output\n"
 	              "  -m[ode] tabular|multiline                  output mode\n"
+	              "  -c[olors] auto|yes|no                      whether to use colors in output\n"
 	              "  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
 	              "  -e[scape] yes|no                           escape columns separators in values\n"
 	              "  -n[ocheck]                                 don't check nmcli and NetworkManager versions\n"
@@ -205,6 +206,24 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 				nmc->multiline_output = FALSE;
 			else if (matches (argv[1], "multiline") == 0)
 				nmc->multiline_output = TRUE;
+			else {
+		 		g_string_printf (nmc->return_text, _("Error: '%s' is not valid argument for '%s' option."), argv[1], opt);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return nmc->return_value;
+			}
+		} else if (matches (opt, "-colors") == 0) {
+			next_arg (&argc, &argv);
+			if (argc <= 1) {
+		 		g_string_printf (nmc->return_text, _("Error: missing argument for '%s' option."), opt);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				return nmc->return_value;
+			}
+			if (matches (argv[1], "auto") == 0)
+				nmc->use_colors = NMC_USE_COLOR_AUTO;
+			else if (matches (argv[1], "yes") == 0)
+				nmc->use_colors = NMC_USE_COLOR_YES;
+			else if (matches (argv[1], "no") == 0)
+				nmc->use_colors = NMC_USE_COLOR_NO;
 			else {
 		 		g_string_printf (nmc->return_text, _("Error: '%s' is not valid argument for '%s' option."), argv[1], opt);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
@@ -526,6 +545,7 @@ nmc_init (NmCli *nmc)
 	memset (&nmc->print_fields, '\0', sizeof (NmcPrintFields));
 	nmc->nocheck_ver = FALSE;
 	nmc->ask = FALSE;
+	nmc->use_colors = NMC_USE_COLOR_AUTO;
 	nmc->in_editor = FALSE;
 	nmc->editor_status_line = FALSE;
 	nmc->editor_save_confirmation = TRUE;

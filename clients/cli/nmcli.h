@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2010 - 2014 Red Hat, Inc.
+ * Copyright 2010 - 2015 Red Hat, Inc.
  */
 
 #ifndef NMC_NMCLI_H
@@ -122,6 +122,12 @@ typedef struct {
 	int indent;           /* Indent by this number of spaces */
 } NmcPrintFields;
 
+typedef enum {
+	NMC_USE_COLOR_AUTO,
+	NMC_USE_COLOR_YES,
+	NMC_USE_COLOR_NO,
+} NmcColorOption;
+
 /* NmCli - main structure */
 typedef struct _NmCli {
 	NMClient *client;                                 /* Pointer to NMClient of libnm */
@@ -143,6 +149,7 @@ typedef struct _NmCli {
 	NMCPrintOutput print_output;                      /* Output mode */
 	gboolean multiline_output;                        /* Multiline output instead of default tabular */
 	gboolean mode_specified;                          /* Whether tabular/multiline mode was specified via '--mode' option */
+	NmcColorOption use_colors;                        /* Whether to use colors for output: option '--color' */
 	gboolean escape_values;                           /* Whether to escape ':' and '\' in terse tabular mode */
 	char *required_fields;                            /* Required fields in output: '--fields' option */
 	GPtrArray *output_data;                           /* GPtrArray of arrays of NmcOutputField structs - accumulates data for output */

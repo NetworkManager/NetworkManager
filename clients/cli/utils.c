@@ -1058,7 +1058,9 @@ print_required_fields (NmCli *nmc, const NmcOutputField field_values[])
 		return;
 
 	/* Only show colors if the output is a terminal */
-	colorize = isatty (fileno (stdout));
+	colorize = nmc->use_colors == NMC_USE_COLOR_YES ? TRUE :
+	             nmc->use_colors == NMC_USE_COLOR_NO ? FALSE :
+	               isatty (fileno (stdout));
 
 	if (multiline) {
 	/* --- Multiline mode --- */
