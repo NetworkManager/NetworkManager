@@ -85,18 +85,26 @@ NMDBusManager *
 nm_dbus_manager_get (void)
 {
 	if (G_UNLIKELY (!singleton_instance)) {
-		static char already_created = FALSE;
-
-		g_assert (!already_created);
-		already_created = TRUE;
-		singleton_instance = g_object_new (NM_TYPE_DBUS_MANAGER, NULL);
-		g_assert (singleton_instance);
-		nm_singleton_instance_weak_ref_register ();
-		nm_log_dbg (LOGD_CORE, "create %s singleton (%p)", "NMDBusManager", singleton_instance);
+		nm_dbus_manager_setup (g_object_new (NM_TYPE_DBUS_MANAGER, NULL));
 		if (!nm_dbus_manager_init_bus (singleton_instance))
 			start_reconnection_timeout (singleton_instance);
 	}
 	return singleton_instance;
+}
+
+void
+nm_dbus_manager_setup (NMDBusManager *instance)
+{
+	static char already_setup = FALSE;
+
+	g_assert (NM_IS_DBUS_MANAGER (instance));
+	g_assert (!already_setup);
+	g_assert (!singleton_instance);
+
+	already_setup = TRUE;
+	singleton_instance = instance;
+	nm_singleton_instance_weak_ref_register ();
+	nm_log_dbg (LOGD_CORE, "create %s singleton (%p)", "NMDBusManager", singleton_instance);
 }
 
 /**************************************************************/
