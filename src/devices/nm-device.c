@@ -5816,7 +5816,7 @@ nm_device_queue_activation (NMDevice *self, NMActRequest *req)
 		_LOGI (LOGD_DEVICE, "disconnecting for new activation request.");
 		nm_device_state_changed (self,
 		                         NM_DEVICE_STATE_DEACTIVATING,
-		                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
+		                         NM_DEVICE_STATE_REASON_NEW_ACTIVATION);
 	}
 }
 
