@@ -127,7 +127,7 @@ typedef struct {
 	 *     to indicate that the ifindex is managed but has no default-route.
 	 *     Missing entries also indicate that a certain ifindex has no default-route.
 	 *     The difference is that missing entries are considered assumed while on
-	 *     (synced && never_default) entires the absence of the default route
+	 *     (synced && never_default) entries the absence of the default route
 	 *     is enforced. NMDefaultRouteManager will actively remove any default
 	 *     route on such ifindexes.
 	 *     Also, for VPN sources in addition we track them so that a never-default
@@ -301,7 +301,7 @@ _platform_route_sync_flush (const VTableIP *vtable, NMDefaultRouteManager *self,
 
 		route = _vt_route_index (vtable, routes, i);
 
-		/* look at all entires and see if the route for this ifindex pair is
+		/* look at all entries and see if the route for this ifindex pair is
 		 * a known entry. */
 		for (j = 0; j < entries->len; j++) {
 			Entry *e = g_ptr_array_index (entries, j);
