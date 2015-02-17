@@ -67,7 +67,8 @@ char *nmc_ip6_address_as_string (const struct in6_addr *ip, GError **error);
 void nmc_terminal_erase_line (void);
 void nmc_terminal_show_progress (const char *str);
 const char *nmc_term_color_sequence (NmcTermColor color);
-char *nmc_colorize (NmcTermColor color, const char * fmt, ...);
+const char *nmc_term_format_sequence (NmcTermFormat format);
+char *nmc_colorize (NmcTermColor color, NmcTermFormat format, const char * fmt, ...);
 void nmc_filter_out_colors_inplace (char *str);
 char *nmc_filter_out_colors (const char *str);
 char *nmc_get_user_input (const char *ask_str);
@@ -82,6 +83,7 @@ void set_val_strc (NmcOutputField fields_array[], guint32 index, const char *val
 void set_val_arr  (NmcOutputField fields_array[], guint32 index, char **value);
 void set_val_arrc (NmcOutputField fields_array[], guint32 index, const char **value);
 void set_val_color_all (NmcOutputField fields_array[], NmcTermColor color);
+void set_val_color_fmt_all (NmcOutputField fields_array[], NmcTermFormat format);
 void nmc_free_output_field_values (NmcOutputField fields_array[]);
 GArray *parse_output_fields (const char *fields_str,
                              const NmcOutputField fields_array[],

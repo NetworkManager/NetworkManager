@@ -81,6 +81,16 @@ typedef enum {
 } NmcTermColor;
 
 typedef enum {
+	NMC_TERM_FORMAT_NORMAL,
+	NMC_TERM_FORMAT_BOLD,
+	NMC_TERM_FORMAT_DIM,
+	NMC_TERM_FORMAT_UNDERLINE,
+	NMC_TERM_FORMAT_BLINK,
+	NMC_TERM_FORMAT_REVERSE,
+	NMC_TERM_FORMAT_HIDDEN,
+} NmcTermFormat;
+
+typedef enum {
 	NMC_PRINT_TERSE = 0,
 	NMC_PRINT_NORMAL = 1,
 	NMC_PRINT_PRETTY = 2
@@ -103,6 +113,7 @@ typedef struct _NmcOutputField {
 	gboolean free_value;            /* Whether to free the value */
 	guint32 flags;                  /* Flags - whether and how to print values/field names/headers */
 	NmcTermColor color;             /* Use this color to print value */
+	NmcTermFormat color_fmt;        /* Use this terminal format to print value */
 } NmcOutputField;
 
 typedef struct {
