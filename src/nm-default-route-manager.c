@@ -44,6 +44,14 @@ typedef struct {
 		gboolean has_v4_changes;
 		gboolean has_v6_changes;
 	} resync;
+
+	/* During disposing, we unref the sources of all entries. This happens usually
+	 * during shutdown, which might call the final deletion of the object. That
+	 * again might cause calls back into NMDefaultRouteManager, which finds dangling
+	 * pointers.
+	 * Guard every publicly accessible function to return early if the instance
+	 * is already disposing. */
+	gboolean disposed;
 } NMDefaultRouteManagerPrivate;
 
 #define NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEFAULT_ROUTE_MANAGER, NMDefaultRouteManagerPrivate))
@@ -651,6 +659,11 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 	gboolean synced = FALSE;
 
 	g_return_if_fail (NM_IS_DEFAULT_ROUTE_MANAGER (self));
+
+	priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
+	if (priv->disposed)
+		return;
+
 	if (NM_IS_DEVICE (source))
 		device = source;
 	else if (NM_IS_VPN_CONNECTION (source))
@@ -670,8 +683,6 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 				ip_ifindex = nm_device_get_ip_ifindex (parent);
 		}
 	}
-
-	priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
 
 	entries = vtable->get_entries (priv);
 	entry = _entry_find_by_source (entries, source, &entry_idx);
@@ -881,6 +892,8 @@ _ipx_get_best_device (const VTableIP *vtable, NMDefaultRouteManager *self, const
 		return NULL;
 
 	priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
+	if (priv->disposed)
+		return NULL;
 	entries = vtable->get_entries (priv);
 
 	for (i = 0; i < entries->len; i++) {
@@ -935,6 +948,8 @@ _ipx_get_best_activating_device (const VTableIP *vtable, NMDefaultRouteManager *
 	g_return_val_if_fail (NM_IS_DEFAULT_ROUTE_MANAGER (self), NULL);
 
 	priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
+	if (priv->disposed)
+		return NULL;
 
 	best_activated_device = _ipx_get_best_device (vtable, self, devices);
 
@@ -1028,6 +1043,8 @@ _ipx_get_best_config (const VTableIP *vtable,
 		*out_vpn = NULL;
 
 	priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
+	if (priv->disposed)
+		return NULL;
 
 	g_return_val_if_fail (NM_IS_DEFAULT_ROUTE_MANAGER (self), NULL);
 
@@ -1353,6 +1370,12 @@ dispose (GObject *object)
 	NMDefaultRouteManager *self = NM_DEFAULT_ROUTE_MANAGER (object);
 	NMDefaultRouteManagerPrivate *priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
 
+	priv->disposed = TRUE;
+
+	g_signal_handlers_disconnect_by_data (nm_platform_get (), self);
+
+	_resync_idle_cancel (self);
+
 	if (priv->entries_ip4) {
 		g_ptr_array_free (priv->entries_ip4, TRUE);
 		priv->entries_ip4 = NULL;
@@ -1361,10 +1384,6 @@ dispose (GObject *object)
 		g_ptr_array_free (priv->entries_ip6, TRUE);
 		priv->entries_ip6 = NULL;
 	}
-
-	_resync_idle_cancel (self);
-
-	g_signal_handlers_disconnect_by_data (nm_platform_get (), self);
 
 	G_OBJECT_CLASS (nm_default_route_manager_parent_class)->dispose (object);
 }
