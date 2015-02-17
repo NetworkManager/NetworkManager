@@ -1380,6 +1380,13 @@ dispose (GObject *object)
 
 	_resync_idle_cancel (self);
 
+	/* g_ptr_array_free() invokes the free function for all entries without actually
+	 * removing them and having dangling pointers in the process. _entry_free()
+	 * will unref the source, which might cause the destruction of the object, which
+	 * might trigger calling into @self again. This is guarded by priv->dispose.
+	 * If you remove priv->dispose, you must refactor the lines below to remove enties
+	 * one-by-one.
+	 */
 	if (priv->entries_ip4) {
 		g_ptr_array_free (priv->entries_ip4, TRUE);
 		priv->entries_ip4 = NULL;
