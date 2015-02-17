@@ -658,7 +658,7 @@ static_stage3_done (NMModemBroadband *self)
 
 	/* DNS servers */
 	dns = mm_bearer_ip_config_get_dns (self->priv->ipv4_config);
-	for (i = 0; dns[i]; i++) {
+	for (i = 0; dns && dns[i]; i++) {
 		if (   ip_string_to_network_address (dns[i], &address_network)
 		    && address_network > 0) {
 			nm_ip4_config_add_nameserver (config, address_network);
