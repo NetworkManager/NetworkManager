@@ -52,6 +52,8 @@ typedef struct {
 	 * Guard every publicly accessible function to return early if the instance
 	 * is already disposing. */
 	gboolean disposed;
+
+	NMPlatform *platform;
 } NMDefaultRouteManagerPrivate;
 
 #define NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEFAULT_ROUTE_MANAGER, NMDefaultRouteManagerPrivate))
@@ -1352,16 +1354,15 @@ static void
 nm_default_route_manager_init (NMDefaultRouteManager *self)
 {
 	NMDefaultRouteManagerPrivate *priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
-	NMPlatform *platform;
 
 	priv->entries_ip4 = g_ptr_array_new_full (0, (GDestroyNotify) _entry_free);
 	priv->entries_ip6 = g_ptr_array_new_full (0, (GDestroyNotify) _entry_free);
 
-	platform = nm_platform_get ();
-	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED, G_CALLBACK (_platform_ip4_address_changed_cb), self);
-	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED, G_CALLBACK (_platform_ip6_address_changed_cb), self);
-	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, G_CALLBACK (_platform_ip4_route_changed_cb), self);
-	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, G_CALLBACK (_platform_ip6_route_changed_cb), self);
+	priv->platform = g_object_ref (nm_platform_get ());
+	g_signal_connect (priv->platform, NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED, G_CALLBACK (_platform_ip4_address_changed_cb), self);
+	g_signal_connect (priv->platform, NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED, G_CALLBACK (_platform_ip6_address_changed_cb), self);
+	g_signal_connect (priv->platform, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, G_CALLBACK (_platform_ip4_route_changed_cb), self);
+	g_signal_connect (priv->platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, G_CALLBACK (_platform_ip6_route_changed_cb), self);
 }
 
 static void
@@ -1372,7 +1373,10 @@ dispose (GObject *object)
 
 	priv->disposed = TRUE;
 
-	g_signal_handlers_disconnect_by_data (nm_platform_get (), self);
+	if (priv->platform) {
+		g_signal_handlers_disconnect_by_data (priv->platform, self);
+		g_clear_object (&priv->platform);
+	}
 
 	_resync_idle_cancel (self);
 
