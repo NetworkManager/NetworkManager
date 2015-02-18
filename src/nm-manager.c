@@ -5032,6 +5032,7 @@ dispose (GObject *object)
 	}
 
 	g_clear_object (&priv->settings);
+	g_free (priv->state_file);
 	g_clear_object (&priv->vpn_manager);
 
 	/* Unregister property filter */
