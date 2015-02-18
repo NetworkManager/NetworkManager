@@ -48,6 +48,9 @@ libnm_core_private_headers =			\
 	$(core)/crypto.h			\
 	$(core)/nm-connection-private.h		\
 	$(core)/nm-core-internal.h		\
+	$(core)/nm-keyfile-reader.h         \
+	$(core)/nm-keyfile-utils.h          \
+	$(core)/nm-keyfile-writer.h         \
 	$(core)/nm-property-compare.h		\
 	$(core)/nm-setting-private.h		\
 	$(core)/nm-utils-private.h
@@ -57,6 +60,9 @@ libnm_core_sources =				\
 	$(core)/crypto.c			\
 	$(core)/nm-connection.c			\
 	$(core)/nm-errors.c			\
+	$(core)/nm-keyfile-reader.c         \
+	$(core)/nm-keyfile-utils.c          \
+	$(core)/nm-keyfile-writer.c         \
 	$(core)/nm-property-compare.c		\
 	$(core)/nm-setting-8021x.c		\
 	$(core)/nm-setting-adsl.c		\

@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2008 Novell, Inc.
- * Copyright (C) 2008 - 2012 Red Hat, Inc.
+ * Copyright (C) 2008 - 2015 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -26,26 +26,34 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <errno.h>
-
-#include <nm-setting.h>
-#include <nm-setting-connection.h>
-#include <nm-setting-ip4-config.h>
-#include <nm-setting-ip6-config.h>
-#include <nm-setting-vpn.h>
-#include <nm-setting-wired.h>
-#include <nm-setting-wireless.h>
-#include <nm-setting-ip4-config.h>
-#include <nm-setting-bluetooth.h>
-#include <nm-setting-8021x.h>
-#include <nm-utils.h>
-#include <string.h>
 #include <arpa/inet.h>
+#include <string.h>
+#include <glib/gi18n-lib.h>
+
+#include "nm-setting.h"
+#include "nm-setting-connection.h"
+#include "nm-setting-ip4-config.h"
+#include "nm-setting-ip6-config.h"
+#include "nm-setting-vpn.h"
+#include "nm-setting-wired.h"
+#include "nm-setting-wireless.h"
+#include "nm-setting-ip4-config.h"
+#include "nm-setting-bluetooth.h"
+#include "nm-setting-8021x.h"
+#include "nm-utils.h"
 
 #include "nm-glib-compat.h"
-#include "nm-logging.h"
-#include "writer.h"
-#include "common.h"
-#include "utils.h"
+#include "nm-keyfile-writer.h"
+#include "nm-keyfile-utils.h"
+
+typedef struct {
+	NMConnection *connection;
+	GKeyFile *keyfile;
+	GError *error;
+	NMKeyfileWriteHandler handler;
+	void *user_data;
+} KeyfileWriterInfo;
+
 
 /* Some setting properties also contain setting names, such as
  * NMSettingConnection's 'type' property (which specifies the base type of the
@@ -55,9 +63,7 @@
  * from the real setting name to the more-readable alias.
  */
 static void
-setting_alias_writer (GKeyFile *file,
-                      const char *keyfile_dir,
-                      const char *uuid,
+setting_alias_writer (KeyfileWriterInfo *info,
                       NMSetting *setting,
                       const char *key,
                       const GValue *value)
@@ -66,13 +72,13 @@ setting_alias_writer (GKeyFile *file,
 
 	str = g_value_get_string (value);
 	alias = nm_keyfile_plugin_get_alias_for_setting_name (str);
-	nm_keyfile_plugin_kf_set_string (file,
+	nm_keyfile_plugin_kf_set_string (info->keyfile,
 	                                 nm_setting_get_name (setting),
 	                                 key,
 	                                 alias ? alias : str);
 }
 
-static gboolean
+static void
 write_array_of_uint (GKeyFile *file,
                      NMSetting *setting,
                      const char *key,
@@ -84,7 +90,7 @@ write_array_of_uint (GKeyFile *file,
 
 	array = (GArray *) g_value_get_boxed (value);
 	if (!array || !array->len)
-		return TRUE;
+		return;
 
 	tmp_array = g_new (gint, array->len);
 	for (i = 0; i < array->len; i++)
@@ -92,13 +98,10 @@ write_array_of_uint (GKeyFile *file,
 
 	nm_keyfile_plugin_kf_set_integer_list (file, nm_setting_get_name (setting), key, tmp_array, array->len);
 	g_free (tmp_array);
-	return TRUE;
 }
 
 static void
-dns_writer (GKeyFile *file,
-            const char *keyfile_dir,
-            const char *uuid,
+dns_writer (KeyfileWriterInfo *info,
             NMSetting *setting,
             const char *key,
             const GValue *value)
@@ -107,7 +110,7 @@ dns_writer (GKeyFile *file,
 
 	list = g_value_get_boxed (value);
 	if (list && list[0]) {
-		nm_keyfile_plugin_kf_set_string_list (file, nm_setting_get_name (setting), key,
+		nm_keyfile_plugin_kf_set_string_list (info->keyfile, nm_setting_get_name (setting), key,
 		                                      (const char **) list, g_strv_length (list));
 	}
 }
@@ -178,9 +181,7 @@ write_ip_values (GKeyFile *file,
 }
 
 static void
-addr_writer (GKeyFile *file,
-             const char *keyfile_dir,
-             const char *uuid,
+addr_writer (KeyfileWriterInfo *info,
              NMSetting *setting,
              const char *key,
              const GValue *value)
@@ -191,13 +192,11 @@ addr_writer (GKeyFile *file,
 
 	array = (GPtrArray *) g_value_get_boxed (value);
 	if (array && array->len)
-		write_ip_values (file, setting_name, array, gateway, FALSE);
+		write_ip_values (info->keyfile, setting_name, array, gateway, FALSE);
 }
 
 static void
-ip4_addr_label_writer (GKeyFile *file,
-                       const char *keyfile_dir,
-                       const char *uuid,
+ip4_addr_label_writer (KeyfileWriterInfo *info,
                        NMSetting *setting,
                        const char *key,
                        const GValue *value)
@@ -206,9 +205,7 @@ ip4_addr_label_writer (GKeyFile *file,
 }
 
 static void
-gateway_writer (GKeyFile *file,
-                const char *keyfile_dir,
-                const char *uuid,
+gateway_writer (KeyfileWriterInfo *info,
                 NMSetting *setting,
                 const char *key,
                 const GValue *value)
@@ -217,9 +214,7 @@ gateway_writer (GKeyFile *file,
 }
 
 static void
-route_writer (GKeyFile *file,
-              const char *keyfile_dir,
-              const char *uuid,
+route_writer (KeyfileWriterInfo *info,
               NMSetting *setting,
               const char *key,
               const GValue *value)
@@ -229,7 +224,7 @@ route_writer (GKeyFile *file,
 
 	array = (GPtrArray *) g_value_get_boxed (value);
 	if (array && array->len)
-		write_ip_values (file, setting_name, array, NULL, TRUE);
+		write_ip_values (info->keyfile, setting_name, array, NULL, TRUE);
 }
 
 static void
@@ -271,9 +266,7 @@ write_hash_of_string (GKeyFile *file,
 }
 
 static void
-ssid_writer (GKeyFile *file,
-             const char *keyfile_dir,
-             const char *uuid,
+ssid_writer (KeyfileWriterInfo *info,
              NMSetting *setting,
              const char *key,
              const GValue *value)
@@ -323,21 +316,19 @@ ssid_writer (GKeyFile *file,
 				ssid[j++] = ssid_data[i];
 			}
 		}
-		nm_keyfile_plugin_kf_set_string (file, setting_name, key, ssid);
+		nm_keyfile_plugin_kf_set_string (info->keyfile, setting_name, key, ssid);
 		g_free (ssid);
 	} else {
 		tmp_array = g_new (gint, ssid_len);
 		for (i = 0; i < ssid_len; i++)
 			tmp_array[i] = (int) ssid_data[i];
-		nm_keyfile_plugin_kf_set_integer_list (file, setting_name, key, tmp_array, ssid_len);
+		nm_keyfile_plugin_kf_set_integer_list (info->keyfile, setting_name, key, tmp_array, ssid_len);
 		g_free (tmp_array);
 	}
 }
 
 static void
-password_raw_writer (GKeyFile *file,
-                     const char *keyfile_dir,
-                     const char *uuid,
+password_raw_writer (KeyfileWriterInfo *info,
                      NMSetting *setting,
                      const char *key,
                      const GValue *value)
@@ -360,7 +351,7 @@ password_raw_writer (GKeyFile *file,
 	tmp_array = g_new (gint, len);
 	for (i = 0; i < len; i++)
 		tmp_array[i] = (int) data[i];
-	nm_keyfile_plugin_kf_set_integer_list (file, setting_name, key, tmp_array, len);
+	nm_keyfile_plugin_kf_set_integer_list (info->keyfile, setting_name, key, tmp_array, len);
 	g_free (tmp_array);
 }
 
@@ -419,83 +410,15 @@ static const ObjectType objtypes[10] = {
 	{ NULL },
 };
 
-static gboolean
-write_cert_key_file (const char *path,
-                     const guint8 *data,
-                     gsize data_len,
-                     GError **error)
-{
-	char *tmppath;
-	int fd = -1, written;
-	gboolean success = FALSE;
-
-	tmppath = g_malloc0 (strlen (path) + 10);
-	g_assert (tmppath);
-	memcpy (tmppath, path, strlen (path));
-	strcat (tmppath, ".XXXXXX");
-
-	errno = 0;
-	fd = mkstemp (tmppath);
-	if (fd < 0) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "Could not create temporary file for '%s': %d",
-		             path, errno);
-		goto out;
-	}
-
-	/* Only readable by root */
-	errno = 0;
-	if (fchmod (fd, S_IRUSR | S_IWUSR) != 0) {
-		close (fd);
-		unlink (tmppath);
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "Could not set permissions for temporary file '%s': %d",
-		             path, errno);
-		goto out;
-	}
-
-	errno = 0;
-	written = write (fd, data, data_len);
-	if (written != data_len) {
-		close (fd);
-		unlink (tmppath);
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "Could not write temporary file for '%s': %d",
-		             path, errno);
-		goto out;
-	}
-	close (fd);
-
-	/* Try to rename */
-	errno = 0;
-	if (rename (tmppath, path) == 0)
-		success = TRUE;
-	else {
-		unlink (tmppath);
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "Could not rename temporary file to '%s': %d",
-		             path, errno);
-	}
-
-out:
-	g_free (tmppath);
-	return success;
-}
-
 static void
-cert_writer (GKeyFile *file,
-             const char *keyfile_dir,
-             const char *uuid,
+cert_writer (KeyfileWriterInfo *info,
              NMSetting *setting,
              const char *key,
              const GValue *value)
 {
-	const char *setting_name = nm_setting_get_name (setting);
-	NMSetting8021xCKScheme scheme;
-	NMSetting8021xCKFormat format;
-	const char *path = NULL, *ext = "pem";
 	const ObjectType *objtype = NULL;
-	int i;
+	guint i;
+	NMKeyfileWriteTypeDataCert type_data = { 0 };
 
 	for (i = 0; i < G_N_ELEMENTS (objtypes) && objtypes[i].key; i++) {
 		if (g_strcmp0 (objtypes[i].key, key) == 0) {
@@ -503,82 +426,48 @@ cert_writer (GKeyFile *file,
 			break;
 		}
 	}
-	if (!objtype) {
-		g_return_if_fail (objtype);
-		return;
-	}
-
-	scheme = objtype->scheme_func (NM_SETTING_802_1X (setting));
-	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
-		path = objtype->path_func (NM_SETTING_802_1X (setting));
-		g_assert (path);
-
-		/* If the path is rooted in the keyfile directory, just use a
-		 * relative path instead of an absolute one.
-		 */
-		if (g_str_has_prefix (path, keyfile_dir)) {
-			path += strlen (keyfile_dir);
-			while (*path == '/')
-				path++;
-		}
-
-		nm_keyfile_plugin_kf_set_string (file, setting_name, key, path);
-	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
-		GBytes *blob;
-		const guint8 *blob_data;
-		gsize blob_len;
-		gboolean success;
-		GError *error = NULL;
-		char *new_path;
-
-		blob = objtype->blob_func (NM_SETTING_802_1X (setting));
-		g_assert (blob);
-		blob_data = g_bytes_get_data (blob, &blob_len);
-
-		if (objtype->format_func) {
-			/* Get the extension for a private key */
-			format = objtype->format_func (NM_SETTING_802_1X (setting));
-			if (format == NM_SETTING_802_1X_CK_FORMAT_PKCS12)
-				ext = "p12";
-		} else {
-			/* DER or PEM format certificate? */
-			if (blob_len > 2 && blob_data[0] == 0x30 && blob_data[1] == 0x82)
-				ext = "der";
-		}
-
-		/* Write the raw data out to the standard file so that we can use paths
-		 * from now on instead of pushing around the certificate data.
-		 */
-		new_path = g_strdup_printf ("%s/%s-%s.%s", keyfile_dir, uuid, objtype->suffix, ext);
-		g_assert (new_path);
-
-		success = write_cert_key_file (new_path, blob_data, blob_len, &error);
-		if (success) {
-			/* Write the path value to the keyfile */
-			nm_keyfile_plugin_kf_set_string (file, setting_name, key, new_path);
-		} else {
-			nm_log_warn (LOGD_SETTINGS, "Failed to write certificate/key %s: %s",
-			             new_path, error->message);
-			g_error_free (error);
-		}
-		g_free (new_path);
-	} else {
-		/* scheme_func() returns UNKNOWN in all other cases. The only valid case
-		 * where a scheme is allowed to be UNKNOWN, is unsetting the value. In this
-		 * case, we don't expect the writer to be called, because the default value
-		 * will not be serialized.
-		 * The only other reason for the scheme to be UNKNOWN is an invalid cert.
-		 * But our connection verifies, so that cannot happen either. */
+	if (!objtype)
 		g_return_if_reached ();
+
+	if (!info->handler)
+		goto out_unhandled;
+
+	type_data.setting = NM_SETTING_802_1X (setting);
+	type_data.property_name = key;
+	type_data.suffix = objtype->suffix;
+	type_data.scheme_func = objtype->scheme_func;
+	type_data.format_func = objtype->format_func;
+	type_data.path_func = objtype->path_func;
+	type_data.blob_func = objtype->blob_func;
+
+	if (info->handler (info->connection,
+	                   info->keyfile,
+	                   NM_KEYFILE_WRITE_TYPE_CERT,
+	                   &type_data,
+	                   info->user_data,
+	                   &info->error))
+		return;
+
+out_unhandled:
+
+	/* scheme_func() would not return UNKNOWN, because UNKNOWN happens only
+	 * if the cert is unset (1) or if the cert is invalid (2).
+	 * (1) cannot happen, because we only reach cert_writer() for non-default
+	 * properties. (2) cannot happen, because we verified the connection.
+	 *
+	 * Hence, at this point we do have a certifiacte, but no default implementation
+	 * to write it. The handler *must* do something with these certifications. */
+	if (!info->error) {
+		g_set_error (&info->error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+		             _("Failed to write unhandled certificate property %s.%s"),
+		             nm_setting_get_name (setting), key);
 	}
 }
 
 typedef struct {
 	const char *setting_name;
 	const char *key;
-	void (*writer) (GKeyFile *keyfile,
-	                const char *keyfile_dir,
-	                const char *uuid,
+	void (*writer) (KeyfileWriterInfo *info,
 	                NMSetting *setting,
 	                const char *key,
 	                const GValue *value);
@@ -648,12 +537,6 @@ static KeyWriter key_writers[] = {
 	{ NULL, NULL, NULL }
 };
 
-typedef struct {
-	GKeyFile *keyfile;
-	const char *keyfile_dir;
-	const char *uuid;
-} WriteInfo;
-
 static void
 write_setting_value (NMSetting *setting,
                      const char *key,
@@ -661,11 +544,14 @@ write_setting_value (NMSetting *setting,
                      GParamFlags flag,
                      gpointer user_data)
 {
-	WriteInfo *info = user_data;
+	KeyfileWriterInfo *info = user_data;
 	const char *setting_name;
 	GType type = G_VALUE_TYPE (value);
 	KeyWriter *writer = &key_writers[0];
 	GParamSpec *pspec;
+
+	if (info->error)
+		return;
 
 	/* Setting name gets picked up from the keyfile's section name instead */
 	if (!strcmp (key, NM_SETTING_NAME))
@@ -704,7 +590,7 @@ write_setting_value (NMSetting *setting,
 	/* Look through the list of handlers for non-standard format key values */
 	while (writer->setting_name) {
 		if (!strcmp (writer->setting_name, setting_name) && !strcmp (writer->key, key)) {
-			(*writer->writer) (info->keyfile, info->keyfile_dir, info->uuid, setting, key, value);
+			(*writer->writer) (info, setting, key, value);
 			return;
 		}
 		writer++;
@@ -763,184 +649,42 @@ write_setting_value (NMSetting *setting,
 	} else if (type == G_TYPE_HASH_TABLE) {
 		write_hash_of_string (info->keyfile, setting, key, value);
 	} else if (type == G_TYPE_ARRAY) {
-		if (!write_array_of_uint (info->keyfile, setting, key, value)) {
-			nm_log_warn (LOGD_SETTINGS, "Unhandled setting property type (write) '%s/%s' : '%s'", 
-			             setting_name, key, g_type_name (type));
-		}
+		write_array_of_uint (info->keyfile, setting, key, value);
 	} else if (G_VALUE_HOLDS_FLAGS (value)) {
 		/* Flags are guint but GKeyFile has no uint reader, just uint64 */
 		nm_keyfile_plugin_kf_set_uint64 (info->keyfile, setting_name, key, (guint64) g_value_get_flags (value));
 	} else if (G_VALUE_HOLDS_ENUM (value))
 		nm_keyfile_plugin_kf_set_integer (info->keyfile, setting_name, key, (gint) g_value_get_enum (value));
-	else {
-		nm_log_warn (LOGD_SETTINGS, "Unhandled setting property type (write) '%s/%s' : '%s'", 
-		             setting_name, key, g_type_name (type));
-	}
+	else
+		g_warn_if_reached ();
 }
 
-static gboolean
-_internal_write_connection (NMConnection *connection,
-                            const char *keyfile_dir,
-                            uid_t owner_uid,
-                            pid_t owner_grp,
-                            const char *existing_path,
-                            char **out_path,
-                            GError **error)
+GKeyFile *
+nm_keyfile_write (NMConnection *connection,
+                  NMKeyfileWriteHandler handler,
+                  void *user_data,
+                  GError **error)
 {
-	GKeyFile *key_file;
-	char *data;
-	gsize len;
-	gboolean success = FALSE;
-	char *path;
-	const char *id;
-	WriteInfo info;
-	GError *local_err = NULL;
+	KeyfileWriterInfo info = { 0 };
 
-	g_return_val_if_fail (!out_path || !*out_path, FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+	g_return_val_if_fail (!error || !*error, NULL);
 
 	if (!nm_connection_verify (connection, error))
-		g_return_val_if_reached (FALSE);
+		return NULL;
 
-	id = nm_connection_get_id (connection);
-	g_assert (id && *id);
-
-	info.keyfile = key_file = g_key_file_new ();
-	info.keyfile_dir = keyfile_dir;
-	info.uuid = nm_connection_get_uuid (connection);
-	g_assert (info.uuid);
+	info.connection = connection;
+	info.keyfile = g_key_file_new ();
+	info.error = NULL;
+	info.handler = handler;
+	info.user_data = user_data;
 	nm_connection_for_each_setting_value (connection, write_setting_value, &info);
-	data = g_key_file_to_data (key_file, &len, error);
-	if (!data)
-		goto out;
 
-	/* If we have existing file path, use it. Else generate one from
-	 * connection's ID.
-	 */
-	if (existing_path != NULL) {
-		path = g_strdup (existing_path);
-	} else {
-		char *filename_escaped = nm_keyfile_plugin_utils_escape_filename (id);
-
-		path = g_build_filename (keyfile_dir, filename_escaped, NULL);
-		g_free (filename_escaped);
+	if (info.error) {
+		g_propagate_error (error, info.error);
+		g_key_file_unref (info.keyfile);
+		return NULL;
 	}
-
-	/* If a file with this path already exists (but isn't the existing path
-	 * of the connection) then we need another name.  Multiple connections
-	 * can have the same ID (ie if two connections with the same ID are visible
-	 * to different users) but of course can't have the same path.  Yeah,
-	 * there's a race here, but there's not a lot we can do about it, and
-	 * we shouldn't get more than one connection with the same UUID either.
-	 */
-	if (g_strcmp0 (path, existing_path) != 0 && g_file_test (path, G_FILE_TEST_EXISTS)) {
-		guint i;
-		gboolean name_found = FALSE;
-
-		/* A keyfile with this connection's ID already exists. Pick another name. */
-		for (i = 0; i < 100; i++) {
-			char *filename, *filename_escaped;
-
-			if (i == 0)
-				filename = g_strdup_printf ("%s-%s", id, nm_connection_get_uuid (connection));
-			else
-				filename = g_strdup_printf ("%s-%s-%u", id, nm_connection_get_uuid (connection), i);
-
-			filename_escaped = nm_keyfile_plugin_utils_escape_filename (filename);
-
-			g_free (path);
-			path = g_strdup_printf ("%s/%s", keyfile_dir, filename_escaped);
-			g_free (filename);
-			g_free (filename_escaped);
-			if (g_strcmp0 (path, existing_path) == 0 || !g_file_test (path, G_FILE_TEST_EXISTS)) {
-				name_found = TRUE;
-				break;
-			}
-		}
-		if (!name_found) {
-			if (existing_path == NULL) {
-				/* this really should not happen, we tried hard to find an unused name... bail out. */
-				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-				                    "could not find suitable keyfile file name (%s already used)", path);
-				g_free (path);
-				goto out;
-			}
-			/* Both our preferred path based on connection id and id-uuid are taken.
-			 * Fallback to @existing_path */
-			g_free (path);
-			path = g_strdup (existing_path);
-		}
-	}
-
-	/* In case of updating the connection and changing the file path,
-	 * we need to remove the old one, not to end up with two connections.
-	 */
-	if (existing_path != NULL && strcmp (path, existing_path) != 0)
-		unlink (existing_path);
-
-	g_file_set_contents (path, data, len, &local_err);
-	if (local_err) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "%s.%d: error writing to file '%s': %s", __FILE__, __LINE__,
-		             path, local_err->message);
-		g_error_free (local_err);
-		g_free (path);
-		goto out;
-	}
-
-	if (chown (path, owner_uid, owner_grp) < 0) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "%s.%d: error chowning '%s': %d", __FILE__, __LINE__,
-		             path, errno);
-		unlink (path);
-	} else {
-		if (chmod (path, S_IRUSR | S_IWUSR) < 0) {
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-			             "%s.%d: error setting permissions on '%s': %d", __FILE__,
-			             __LINE__, path, errno);
-			unlink (path);
-		} else {
-			if (out_path && g_strcmp0 (existing_path, path)) {
-				*out_path = path;  /* pass path out to caller */
-				path = NULL;
-			}
-			success = TRUE;
-		}
-	}
-	g_free (path);
-
-out:
-	g_free (data);
-	g_key_file_free (key_file);
-	return success;
-}
-
-gboolean
-nm_keyfile_plugin_write_connection (NMConnection *connection,
-                                    const char *existing_path,
-                                    char **out_path,
-                                    GError **error)
-{
-	return _internal_write_connection (connection,
-	                                   KEYFILE_DIR,
-	                                   0, 0,
-	                                   existing_path,
-	                                   out_path,
-	                                   error);
-}
-
-gboolean
-nm_keyfile_plugin_write_test_connection (NMConnection *connection,
-                                         const char *keyfile_dir,
-                                         uid_t owner_uid,
-                                         pid_t owner_grp,
-                                         char **out_path,
-                                         GError **error)
-{
-	return _internal_write_connection (connection,
-	                                   keyfile_dir,
-	                                   owner_uid, owner_grp,
-	                                   NULL,
-	                                   out_path,
-	                                   error);
+	return info.keyfile;
 }
 

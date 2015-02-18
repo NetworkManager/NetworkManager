@@ -16,15 +16,70 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2008 Novell, Inc.
- * Copyright (C) 2008 Red Hat, Inc.
+ * Copyright (C) 2015 Red Hat, Inc.
  */
 
-#ifndef _KEYFILE_PLUGIN_READER_H
-#define _KEYFILE_PLUGIN_READER_H
+#ifndef __NM_KEYFILE_READER_H__
+#define __NM_KEYFILE_READER_H__
 
 #include <glib.h>
-#include <nm-connection.h>
 
-NMConnection *nm_keyfile_plugin_connection_from_file (const char *filename, GError **error);
+#include "nm-connection.h"
 
-#endif /* _KEYFILE_PLUGIN_READER_H */
+
+typedef enum {
+	NM_KEYFILE_READ_TYPE_WARN               = 1,
+}  NMKeyfileReadType;
+
+/**
+ * NMKeyfileReadHandler:
+ *
+ * Hook to nm_keyfile_read(). The user might fail the reading by setting
+ * @error.
+ *
+ * Returns: should return TRUE, if the reading was handled. Otherwise,
+ * a default action will be performed that depends on the @type.
+ * For %NM_KEYFILE_READ_TYPE_WARN type, the default action is doing nothing.
+ */
+typedef gboolean (*NMKeyfileReadHandler) (GKeyFile *keyfile,
+                                          NMConnection *connection,
+                                          NMKeyfileReadType type,
+                                          void *type_data,
+                                          void *user_data,
+                                          GError **error);
+
+typedef enum {
+	NM_KEYFILE_WARN_SEVERITY_DEBUG                  = 1000,
+	NM_KEYFILE_WARN_SEVERITY_INFO                   = 2000,
+	NM_KEYFILE_WARN_SEVERITY_WARN                   = 3000,
+} NMKeyfileWarnSeverity;
+
+/**
+ * NMKeyfileReadTypeDataWarn:
+ *
+ * this struct is passed as @type_data for the @NMKeyfileReadHandler of
+ * type %NM_KEYFILE_READ_TYPE_WARN.
+ */
+typedef struct {
+	/* might be %NULL, if the warning is not about a group. */
+	const char *group;
+
+	/* might be %NULL, if the warning is not about a setting. */
+	NMSetting *setting;
+
+	/* might be %NULL, if the warning is not about a property. */
+	const char *property_name;
+
+	NMKeyfileWarnSeverity severity;
+	const char *message;
+} NMKeyfileReadTypeDataWarn;
+
+
+NMConnection *nm_keyfile_read (GKeyFile *keyfile,
+                               const char *keyfile_name,
+                               const char *base_dir,
+                               NMKeyfileReadHandler handler,
+                               void *user_data,
+                               GError **error);
+
+#endif /* __NM_KEYFILE_READER_H__ */
