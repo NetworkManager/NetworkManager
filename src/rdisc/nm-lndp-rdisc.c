@@ -720,6 +720,7 @@ dispose (GObject *object)
 	g_clear_pointer (&priv->event_channel, g_io_channel_unref);
 
 	if (priv->ndp) {
+		ndp_msgrcv_handler_unregister (priv->ndp, receive_ra, NDP_MSG_RA, NM_RDISC (rdisc)->ifindex, rdisc);
 		ndp_close (priv->ndp);
 		priv->ndp = NULL;
 	}
