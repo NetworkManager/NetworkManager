@@ -15,25 +15,15 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 Red Hat, Inc.
+ * (C) Copyright 2010-2015 Red Hat, Inc.
  */
 
-#ifndef _UTILS_H_
-#define _UTILS_H_
+#ifndef __NM_KEYFILE_UTILS_H__
+#define __NM_KEYFILE_UTILS_H__
 
 #include <glib.h>
-#include "common.h"
-#include "NetworkManagerUtils.h"
 
-#define NM_KEYFILE_CONNECTION_LOG_PATH(path)  str_if_set (path,"in-memory")
-#define NM_KEYFILE_CONNECTION_LOG_FMT         "%s (%s,\"%s\")"
-#define NM_KEYFILE_CONNECTION_LOG_ARG(con)    NM_KEYFILE_CONNECTION_LOG_PATH (nm_settings_connection_get_filename ((NMSettingsConnection *) (con))), nm_connection_get_uuid ((NMConnection *) (con)), nm_connection_get_id ((NMConnection *) (con))
-#define NM_KEYFILE_CONNECTION_LOG_FMTD        "%s (%s,\"%s\",%p)"
-#define NM_KEYFILE_CONNECTION_LOG_ARGD(con)   NM_KEYFILE_CONNECTION_LOG_PATH (nm_settings_connection_get_filename ((NMSettingsConnection *) (con))), nm_connection_get_uuid ((NMConnection *) (con)), nm_connection_get_id ((NMConnection *) (con)), (con)
-
-gboolean nm_keyfile_plugin_utils_should_ignore_file (const char *filename);
-
-char *nm_keyfile_plugin_utils_escape_filename (const char *filename);
+#define VPN_SECRETS_GROUP "vpn-secrets"
 
 const char *nm_keyfile_plugin_get_alias_for_setting_name (const char *setting_name);
 
@@ -85,5 +75,5 @@ gboolean nm_keyfile_plugin_kf_has_key     (GKeyFile *kf,
                                            const char *key,
                                            GError **error);
 
-#endif  /* _UTILS_H_ */
+#endif  /* __NM_KEYFILE_UTILS_H__ */
 
