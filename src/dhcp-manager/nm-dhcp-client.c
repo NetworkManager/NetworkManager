@@ -884,6 +884,8 @@ dispose (GObject *object)
 	timeout_cleanup (self);
 
 	g_clear_pointer (&priv->iface, g_free);
+	g_clear_pointer (&priv->hostname, g_free);
+	g_clear_pointer (&priv->uuid, g_free);
 
 	if (priv->hwaddr) {
 		g_byte_array_free (priv->hwaddr, TRUE);

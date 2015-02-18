@@ -873,13 +873,13 @@ VAPIGEN_CHECK(0.17.1.24)
 
 # Tests, utilities and documentation
 AC_ARG_ENABLE(tests, AS_HELP_STRING([--enable-tests=root|yes|no], [Build NetworkManager tests (default: yes)]))
-AC_ARG_WITH(valgrind, AS_HELP_STRING([--with-valgrind=yes|no|path], [Use valgrind to memory-check the tests (default: yes)]))
+AC_ARG_WITH(valgrind, AS_HELP_STRING([--with-valgrind=yes|no|path], [Use valgrind to memory-check the tests (default: no)]))
 # Fallback to --with-tests
 AC_ARG_WITH(tests, AS_HELP_STRING([--with-tests], [Build NetworkManager tests (deprecated)]))
 AS_IF([test -n "$with_tests"], enable_tests="$with_tests")
-# Default to --enable-tests --with-valgrind
+# Default to --enable-tests --with-valgrind=no
 AS_IF([test -z "$enable_tests"], enable_tests="yes")
-AS_IF([test -z "$with_valgrind"], with_valgrind="yes")
+AS_IF([test -z "$with_valgrind"], with_valgrind="no")
 # Normalize values
 AS_IF([test "$enable_tests" != "yes" -a "$enable_tests" != "root"], enable_tests="no")
 # Search for tools
