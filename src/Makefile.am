@@ -269,8 +269,6 @@ nm_sources = \
 	supplicant-manager/nm-supplicant-settings-verify.c \
 	supplicant-manager/nm-supplicant-settings-verify.h \
 	supplicant-manager/nm-supplicant-types.h \
-	supplicant-manager/nm-call-store.c \
-	supplicant-manager/nm-call-store.h \
 	\
 	vpn-manager/nm-vpn-connection.c \
 	vpn-manager/nm-vpn-connection.h \
