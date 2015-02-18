@@ -1603,6 +1603,7 @@ dispose (GObject *object)
 		priv->options = NULL;
 	}
 	g_clear_pointer (&priv->iface, g_free);
+	g_clear_pointer (&priv->uuid, g_free);
 
 	if (priv->hwaddr) {
 		g_byte_array_free (priv->hwaddr, TRUE);
