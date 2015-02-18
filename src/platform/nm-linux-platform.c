@@ -1008,7 +1008,7 @@ init_link (NMPlatform *platform, NMPlatformLink *info, struct rtnl_link *rtnllin
 	if (udev_device) {
 		info->driver = udev_get_driver (platform, udev_device, info->ifindex);
 		if (!info->driver)
-			info->driver = rtnl_link_get_type (rtnllink);
+			info->driver = g_intern_string (rtnl_link_get_type (rtnllink));
 		if (!info->driver)
 			info->driver = ethtool_get_driver (info->name);
 		if (!info->driver)
