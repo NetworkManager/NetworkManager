@@ -29,7 +29,6 @@
 #include "nm-supplicant-interface.h"
 #include "nm-logging.h"
 #include "nm-supplicant-config.h"
-#include "nm-call-store.h"
 #include "nm-glib-compat.h"
 #include "gsystem-local-alloc.h"
 #include "nm-core-internal.h"
