@@ -2567,9 +2567,21 @@ test_write_wired_8021x_tls_connection_blob (void)
 	char *new_priv_key;
 	const char *uuid;
 	GError *error = NULL;
+	GBytes *password_raw = NULL;
+#define PASSWORD_RAW "password-raw\0test"
 
 	connection = create_wired_tls_connection (NM_SETTING_802_1X_CK_SCHEME_BLOB);
 	g_assert (connection != NULL);
+
+	s_8021x = nm_connection_get_setting_802_1x (connection);
+	g_assert (s_8021x);
+
+	password_raw = g_bytes_new (PASSWORD_RAW, STRLEN (PASSWORD_RAW));
+	g_object_set (s_8021x,
+	              NM_SETTING_802_1X_PASSWORD_RAW,
+	              password_raw,
+	              NULL);
+	g_bytes_unref (password_raw);
 
 	/* Write out the connection */
 	success = nm_keyfile_plugin_write_test_connection (connection, TEST_SCRATCH_DIR, geteuid (), getegid (), &testfile, &error);
@@ -2612,6 +2624,11 @@ test_write_wired_8021x_tls_connection_blob (void)
 	g_assert (nm_setting_802_1x_get_ca_cert_scheme (s_8021x) == NM_SETTING_802_1X_CK_SCHEME_PATH);
 	g_assert (nm_setting_802_1x_get_client_cert_scheme (s_8021x) == NM_SETTING_802_1X_CK_SCHEME_PATH);
 	g_assert (nm_setting_802_1x_get_private_key_scheme (s_8021x) == NM_SETTING_802_1X_CK_SCHEME_PATH);
+
+	password_raw = nm_setting_802_1x_get_password_raw (s_8021x);
+	g_assert (password_raw);
+	g_assert (g_bytes_get_size (password_raw) == STRLEN (PASSWORD_RAW));
+	g_assert (!memcmp (g_bytes_get_data (password_raw, NULL), PASSWORD_RAW, STRLEN (PASSWORD_RAW)));
 
 	unlink (testfile);
 	g_free (testfile);
