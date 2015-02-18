@@ -158,17 +158,18 @@ nm_auth_chain_steal_data (NMAuthChain *self, const char *tag)
 {
 	ChainData *tmp;
 	gpointer value = NULL;
+	void *orig_key;
 
 	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (tag != NULL, NULL);
 
-	tmp = g_hash_table_lookup (self->data, tag);
-	if (tmp) {
+	if (g_hash_table_lookup_extended (self->data, tag, &orig_key, (gpointer)&tmp)) {
 		g_hash_table_steal (self->data, tag);
 		value = tmp->data;
 		/* Make sure the destroy handler isn't called when freeing */
 		tmp->destroy = NULL;
 		free_data (tmp);
+		g_free (orig_key);
 	}
 	return value;
 }
