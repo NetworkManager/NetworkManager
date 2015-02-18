@@ -2314,6 +2314,8 @@ dispose (GObject *object)
 	}
 	g_clear_object (&priv->agent_mgr);
 
+	g_clear_pointer (&priv->filename, g_free);
+
 	G_OBJECT_CLASS (nm_settings_connection_parent_class)->dispose (object);
 }
 
