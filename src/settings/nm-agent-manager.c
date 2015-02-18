@@ -318,6 +318,7 @@ impl_agent_manager_register_with_capabilities (NMAgentManager *self,
 
 		priv->chains = g_slist_append (priv->chains, chain);
 	} else {
+		g_object_unref (agent);
 		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
 		                             NM_AGENT_MANAGER_ERROR_FAILED,
 		                             "Unable to start agent authentication.");
@@ -585,11 +586,12 @@ request_next_agent (Request *req)
 {
 	GError *error = NULL;
 
+	req->current_call_id = NULL;
+	if (req->current)
+		g_object_unref (req->current);
+
 	if (req->pending) {
 		/* Send the request to the next agent */
-		req->current_call_id = NULL;
-		if (req->current)
-			g_object_unref (req->current);
 		req->current = req->pending->data;
 		req->pending = g_slist_remove (req->pending, req->current);
 
@@ -599,7 +601,6 @@ request_next_agent (Request *req)
 
 		req->next_callback (req);
 	} else {
-		req->current_call_id = NULL;
 		req->current = NULL;
 
 		/* No more secret agents are available to fulfill this secrets request */
