@@ -150,6 +150,7 @@ nm_connectivity_check_cb (SoupSession *session, SoupMessage *msg, gpointer user_
 
 	g_simple_async_result_set_op_res_gssize (simple, new_state);
 	g_simple_async_result_complete (simple);
+	g_object_unref (simple);
 }
 
 static void
@@ -256,6 +257,7 @@ nm_connectivity_check_async (NMConnectivity      *self,
 
 	g_simple_async_result_set_op_res_gssize (simple, priv->state);
 	g_simple_async_result_complete_in_idle (simple);
+	g_object_unref (simple);
 }
 
 NMConnectivityState
