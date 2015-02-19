@@ -43,6 +43,8 @@ G_BEGIN_DECLS
 /* Signals */
 #define NM_CONFIG_SIGNAL_CONFIG_CHANGED             "config-changed"
 
+#define NM_CONFIG_DEFAULT_CONNECTIVITY_INTERVAL 300
+
 typedef struct NMConfigCmdLineOptions NMConfigCmdLineOptions;
 
 struct _NMConfig {

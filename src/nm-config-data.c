@@ -25,6 +25,7 @@
 
 #include "nm-config.h"
 #include "gsystem-local-alloc.h"
+#include "NetworkManagerUtils.h"
 
 typedef struct {
 	char *config_main_file;
@@ -316,13 +317,18 @@ constructed (GObject *object)
 {
 	NMConfigData *self = NM_CONFIG_DATA (object);
 	NMConfigDataPrivate *priv = NM_CONFIG_DATA_GET_PRIVATE (self);
-	int interval;
+	char *interval;
 
 	priv->connectivity.uri = g_key_file_get_value (priv->keyfile, "connectivity", "uri", NULL);
 	priv->connectivity.response = g_key_file_get_value (priv->keyfile, "connectivity", "response", NULL);
 
-	interval = g_key_file_get_integer (priv->keyfile, "connectivity", "interval", NULL);
-	priv->connectivity.interval = MAX (0, interval);
+	/* On missing config value, fallback to 300. On invalid value, disable connectivity checking by setting
+	 * the interval to zero. */
+	interval = g_key_file_get_value (priv->keyfile, "connectivity", "interval", NULL);
+	priv->connectivity.interval = interval
+	    ? nm_utils_ascii_str_to_int64 (interval, 10, 0, G_MAXUINT, 0)
+	    : NM_CONFIG_DEFAULT_CONNECTIVITY_INTERVAL;
+	g_free (interval);
 
 	priv->dns_mode = g_key_file_get_value (priv->keyfile, "main", "dns", NULL);
 
