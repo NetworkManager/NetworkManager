@@ -1545,6 +1545,9 @@ done:
 static gboolean
 match_connection_filter (NMConnection *connection, gpointer user_data)
 {
+	if (nm_settings_connection_get_nm_generated_assumed (NM_SETTINGS_CONNECTION (connection)))
+		return FALSE;
+
 	return nm_device_check_connection_compatible (NM_DEVICE (user_data), connection);
 }
 
