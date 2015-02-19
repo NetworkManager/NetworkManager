@@ -38,6 +38,7 @@ This is a bugfix release of NetworkManager 0.9.10.  Notable changes include:
 * Static IPv6 configuration is now added before SLAAC is started
 * Allow shared connections to be started without a carrier
 * A crash when disconnecting older Nokia phones has been fixed
+* Layer 2-only connections (those without IP configuration) are now allowed
 
 
 ==============================================
