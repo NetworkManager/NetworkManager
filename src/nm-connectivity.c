@@ -27,6 +27,7 @@
 #endif
 
 #include "nm-connectivity.h"
+#include "nm-config.h"
 #include "nm-logging.h"
 
 G_DEFINE_TYPE (NMConnectivity, nm_connectivity, G_TYPE_OBJECT)
@@ -499,7 +500,7 @@ nm_connectivity_class_init (NMConnectivityClass *klass)
 	g_object_class_install_property
 	    (object_class, PROP_INTERVAL,
 	     g_param_spec_uint (NM_CONNECTIVITY_INTERVAL, "", "",
-	                        0, G_MAXUINT, 300,
+	                        0, G_MAXUINT, NM_CONFIG_DEFAULT_CONNECTIVITY_INTERVAL,
 	                        G_PARAM_READWRITE |
 	                        G_PARAM_CONSTRUCT |
 	                        G_PARAM_STATIC_STRINGS));
