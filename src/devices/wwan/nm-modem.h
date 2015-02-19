@@ -253,7 +253,7 @@ NMModemIPType nm_modem_get_supported_ip_types (NMModem *self);
 /* For the modem-manager only */
 void          nm_modem_emit_removed (NMModem *self);
 
-NMModemIPType nm_modem_get_connection_ip_type (NMModem *self,
+GArray       *nm_modem_get_connection_ip_type (NMModem *self,
                                                NMConnection *connection,
                                                GError **error);
 
@@ -261,6 +261,8 @@ NMModemIPType nm_modem_get_connection_ip_type (NMModem *self,
 void nm_modem_emit_ip6_config_result (NMModem *self,
                                       NMIP6Config *config,
                                       GError *error);
+
+const gchar *nm_modem_ip_type_to_string (NMModemIPType ip_type);
 
 G_END_DECLS
 

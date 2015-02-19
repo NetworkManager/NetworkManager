@@ -221,17 +221,49 @@ nm_modem_get_supported_ip_types (NMModem *self)
 	return NM_MODEM_GET_PRIVATE (self)->ip_types;
 }
 
+typedef struct {
+	NMModemIPType ip_type;
+	const gchar *name;
+} IpTypeTable;
+
+static const IpTypeTable ip_types[] = {
+	{ NM_MODEM_IP_TYPE_IPV4,    "ipv4" },
+	{ NM_MODEM_IP_TYPE_IPV6,    "ipv6" },
+	{ NM_MODEM_IP_TYPE_IPV4V6,  "ipv4v6" },
+	{ NM_MODEM_IP_TYPE_UNKNOWN, "unknown" },
+};
+
+const gchar *
+nm_modem_ip_type_to_string (NMModemIPType ip_type)
+{
+	guint i;
+
+	for (i = 0; i < G_N_ELEMENTS (ip_types); i++) {
+		if (ip_type == ip_types[i].ip_type)
+			return ip_types[i].name;
+	}
+
+	g_return_val_if_reached (NM_MODEM_IP_TYPE_UNKNOWN);
+}
+
+static GArray *
+build_single_ip_type_array (NMModemIPType type)
+{
+	return g_array_append_val (g_array_sized_new (FALSE, FALSE, sizeof (NMModemIPType), 1), type);
+}
+
 /**
  * nm_modem_get_connection_ip_type:
  * @self: the #NMModem
  * @connection: the #NMConnection to determine IP type to use
  *
- * Given a modem and a connection, determine which NMModemIpType to use
+ * Given a modem and a connection, determine which #NMModemIPTypes to use
  * when connecting.
  *
- * Returns: a single %NMModemIpType value
+ * Returns: an array of #NMModemIpType values, in the order in which they
+ * should be tried.
  */
-NMModemIPType
+GArray *
 nm_modem_get_connection_ip_type (NMModem *self,
                                  NMConnection *connection,
                                  GError **error)
@@ -265,9 +297,9 @@ nm_modem_get_connection_ip_type (NMModem *self,
 			                     NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
 			                     "Connection requested IPv4 but IPv4 is "
 			                     "unsuported by the modem.");
-			return NM_MODEM_IP_TYPE_UNKNOWN;
+			return NULL;
 		}
-		return NM_MODEM_IP_TYPE_IPV4;
+		return build_single_ip_type_array (NM_MODEM_IP_TYPE_IPV4);
 	}
 
 	if (ip6 && !ip4) {
@@ -277,38 +309,54 @@ nm_modem_get_connection_ip_type (NMModem *self,
 			                     NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
 			                     "Connection requested IPv6 but IPv6 is "
 			                     "unsuported by the modem.");
-			return NM_MODEM_IP_TYPE_UNKNOWN;
+			return NULL;
 		}
-		return NM_MODEM_IP_TYPE_IPV6;
+		return build_single_ip_type_array (NM_MODEM_IP_TYPE_IPV6);
 	}
 
 	if (ip4 && ip6) {
-		/* Modem supports dual-stack */
-		if (priv->ip_types & NM_MODEM_IP_TYPE_IPV4V6)
-			return NM_MODEM_IP_TYPE_IPV4V6;
+		NMModemIPType type;
+		GArray *out;
 
-		/* Both IPv4 and IPv6 requested, but modem doesn't support dual-stack;
-		 * if one method is marked "may-fail" then use the other.
-		 */
-		if (ip6_may_fail)
-			return NM_MODEM_IP_TYPE_IPV4;
-		else if (ip4_may_fail)
-			return NM_MODEM_IP_TYPE_IPV6;
+		out = g_array_sized_new (FALSE, FALSE, sizeof (NMModemIPType), 3);
 
+		/* Modem supports dual-stack? */
+		if (priv->ip_types & NM_MODEM_IP_TYPE_IPV4V6) {
+			type = NM_MODEM_IP_TYPE_IPV4V6;
+			g_array_append_val (out, type);
+		}
+
+		/* If IPv6 may-fail=false, we should NOT try IPv4 as fallback */
+		if ((priv->ip_types & NM_MODEM_IP_TYPE_IPV4) && ip6_may_fail) {
+			type = NM_MODEM_IP_TYPE_IPV4;
+			g_array_append_val (out, type);
+		}
+
+		/* If IPv4 may-fail=false, we should NOT try IPv6 as fallback */
+		if ((priv->ip_types & NM_MODEM_IP_TYPE_IPV6) && ip4_may_fail) {
+			type = NM_MODEM_IP_TYPE_IPV6;
+			g_array_append_val (out, type);
+		}
+
+		if (out->len > 0)
+			return out;
+
+		/* Error... */
+		g_array_unref (out);
 		g_set_error_literal (error,
 		                     NM_DEVICE_ERROR,
 		                     NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
 		                     "Connection requested both IPv4 and IPv6 "
 		                     "but dual-stack addressing is unsupported "
 		                     "by the modem.");
-		return NM_MODEM_IP_TYPE_UNKNOWN;
+		return NULL;
 	}
 
 	g_set_error_literal (error,
 	                     NM_DEVICE_ERROR,
 	                     NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
 	                     "Connection specified no IP configuration!");
-	return NM_MODEM_IP_TYPE_UNKNOWN;
+	return NULL;
 }
 
 /*****************************************************************************/
