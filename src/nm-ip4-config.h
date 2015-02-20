@@ -41,6 +41,7 @@ typedef struct {
 	GObjectClass parent;
 } NMIP4ConfigClass;
 
+#define NM_IP4_CONFIG_IFINDEX "ifindex"
 #define NM_IP4_CONFIG_ADDRESS_DATA "address-data"
 #define NM_IP4_CONFIG_ROUTE_DATA "route-data"
 #define NM_IP4_CONFIG_GATEWAY "gateway"
@@ -56,8 +57,7 @@ typedef struct {
 GType nm_ip4_config_get_type (void);
 
 
-NMIP4Config * nm_ip4_config_new (void);
-void nm_ip4_config_set_ifindex (NMIP4Config *config, int ifindex);
+NMIP4Config * nm_ip4_config_new (int ifindex);
 
 /* D-Bus integration */
 void nm_ip4_config_export (NMIP4Config *config);

@@ -571,6 +571,7 @@ lease_validity_span (const char *str_expire, GDateTime *now)
 /**
  * nm_dhcp_dhclient_read_lease_ip_configs:
  * @iface: the interface name to match leases with
+ * @ifindex: interface index of @iface
  * @contents: the contents of a dhclient leasefile
  * @ipv6: whether to read IPv4 or IPv6 leases
  * @now: the current UTC date/time; pass %NULL to automatically use current
@@ -584,6 +585,7 @@ lease_validity_span (const char *str_expire, GDateTime *now)
  */
 GSList *
 nm_dhcp_dhclient_read_lease_ip_configs (const char *iface,
+                                        int ifindex,
                                         const char *contents,
                                         gboolean ipv6,
                                         GDateTime *now)
@@ -691,7 +693,7 @@ nm_dhcp_dhclient_read_lease_ip_configs (const char *iface,
 		address.lifetime = address.preferred = expiry;
 		address.source = NM_IP_CONFIG_SOURCE_DHCP;
 
-		ip4 = nm_ip4_config_new ();
+		ip4 = nm_ip4_config_new (ifindex);
 		nm_ip4_config_add_address (ip4, &address);
 		nm_ip4_config_set_gateway (ip4, gw);
 

@@ -2613,8 +2613,7 @@ aipd_get_ip4_config (NMDevice *self, guint32 lla)
 	NMPlatformIP4Address address;
 	NMPlatformIP4Route route;
 
-	config = nm_ip4_config_new ();
-	nm_ip4_config_set_ifindex (config, nm_device_get_ifindex (self));
+	config = nm_ip4_config_new (nm_device_get_ip_ifindex (self));
 	g_assert (config);
 
 	memset (&address, 0, sizeof (address));
@@ -2862,6 +2861,7 @@ static void
 ensure_con_ipx_config (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	int ip_ifindex = nm_device_get_ip_ifindex (self);
 	NMConnection *connection;
 
 	g_assert (!!priv->con_ip4_config == !!priv->con_ip6_config);
@@ -2873,10 +2873,9 @@ ensure_con_ipx_config (NMDevice *self)
 	if (!connection)
 		return;
 
-	priv->con_ip4_config = nm_ip4_config_new ();
+	priv->con_ip4_config = nm_ip4_config_new (ip_ifindex);
 	priv->con_ip6_config = nm_ip6_config_new ();
 
-	nm_ip4_config_set_ifindex (priv->con_ip4_config, nm_device_get_ifindex (self));
 	nm_ip6_config_set_ifindex (priv->con_ip6_config, nm_device_get_ifindex (self));
 
 	nm_ip4_config_merge_setting (priv->con_ip4_config,
@@ -2945,8 +2944,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 		priv->dev_ip4_config = g_object_ref (config);
 	}
 
-	composite = nm_ip4_config_new ();
-	nm_ip4_config_set_ifindex (composite, nm_device_get_ifindex (self));
+	composite = nm_ip4_config_new (nm_device_get_ip_ifindex (self));
 
 	ensure_con_ipx_config (self);
 
@@ -3300,8 +3298,7 @@ shared4_new_config (NMDevice *self, NMConnection *connection, NMDeviceStateReaso
 		return NULL;
 	}
 
-	config = nm_ip4_config_new ();
-	nm_ip4_config_set_ifindex (config, nm_device_get_ifindex (self));
+	config = nm_ip4_config_new (nm_device_get_ip_ifindex (self));
 	address.source = NM_IP_CONFIG_SOURCE_SHARED;
 	nm_ip4_config_add_address (config, &address);
 
@@ -3461,8 +3458,7 @@ act_stage3_ip4_config_start (NMDevice *self,
 		ret = aipd_start (self, reason);
 	else if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) == 0) {
 		/* Use only IPv4 config from the connection data */
-		*out_config = nm_ip4_config_new ();
-		nm_ip4_config_set_ifindex (*out_config, nm_device_get_ifindex (self));
+		*out_config = nm_ip4_config_new (nm_device_get_ip_ifindex (self));
 		g_assert (*out_config);
 		ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	} else if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED) == 0) {
@@ -5910,13 +5906,19 @@ nm_device_set_ip4_config (NMDevice *self,
 	gboolean has_changes = FALSE;
 	gboolean success = TRUE;
 	NMDeviceStateReason reason_local = NM_DEVICE_STATE_REASON_NONE;
-	int ip_ifindex;
+	int ip_ifindex, config_ifindex;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	ip_iface = nm_device_get_ip_iface (self);
 	ip_ifindex = nm_device_get_ip_ifindex (self);
+
+	if (new_config) {
+		config_ifindex = nm_ip4_config_get_ifindex (new_config);
+		if (config_ifindex > 0)
+			g_return_val_if_fail (ip_ifindex == config_ifindex, FALSE);
+	}
 
 	old_config = priv->ip4_config;
 
@@ -6578,7 +6580,7 @@ find_ip4_lease_config (NMDevice *self,
                        NMIP4Config *ext_ip4_config)
 {
 	const char *ip_iface = nm_device_get_ip_iface (self);
-	int ifindex = nm_device_get_ifindex (self);
+	int ip_ifindex = nm_device_get_ip_ifindex (self);
 	GSList *leases, *liter;
 	NMIP4Config *found = NULL;
 
@@ -6587,6 +6589,7 @@ find_ip4_lease_config (NMDevice *self,
 
 	leases = nm_dhcp_manager_get_lease_ip_configs (nm_dhcp_manager_get (),
 	                                               ip_iface,
+	                                               ip_ifindex,
 	                                               nm_connection_get_uuid (connection),
 	                                               FALSE,
 	                                               nm_device_get_ip4_route_metric (self));
@@ -6601,7 +6604,6 @@ find_ip4_lease_config (NMDevice *self,
 		if (gateway != nm_ip4_config_get_gateway (ext_ip4_config))
 			continue;
 		found = g_object_ref (lease_config);
-		nm_ip4_config_set_ifindex (found, ifindex);
 	}
 
 	g_slist_free_full (leases, g_object_unref);

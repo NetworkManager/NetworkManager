@@ -715,6 +715,7 @@ static_stage3_ip4_done (NMModemBroadband *self)
 {
 	GError *error = NULL;
 	NMIP4Config *config = NULL;
+	const char *data_port;
 	const gchar *address_string;
 	const gchar *gw_string;
 	guint32 address_network;
@@ -724,6 +725,7 @@ static_stage3_ip4_done (NMModemBroadband *self)
 	guint i;
 
 	g_assert (self->priv->ipv4_config);
+	g_assert (self->priv->bearer);
 
 	nm_log_info (LOGD_MB, "(%s): IPv4 static configuration:",
 	             nm_modem_get_uid (NM_MODEM (self)));
@@ -743,7 +745,9 @@ static_stage3_ip4_done (NMModemBroadband *self)
 	gw_string = mm_bearer_ip_config_get_gateway (self->priv->ipv4_config);
 	ip4_string_to_num (gw_string, &gw);
 
-	config = nm_ip4_config_new ();
+	data_port = mm_bearer_get_interface (self->priv->bearer);
+	g_assert (data_port);
+	config = nm_ip4_config_new (nm_platform_link_get_ifindex (data_port));
 
 	memset (&address, 0, sizeof (address));
 	address.address = address_network;

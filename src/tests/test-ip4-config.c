@@ -71,8 +71,7 @@ build_test_config (void)
 	NMPlatformIP4Route route;
 
 	/* Build up the config to subtract */
-	config = nm_ip4_config_new ();
-	nm_ip4_config_set_ifindex (config, 1);
+	config = nm_ip4_config_new (1);
 
 	addr_init (&addr, "192.168.1.10", "1.2.3.4", 24);
 	nm_ip4_config_add_address (config, &addr);
@@ -192,10 +191,8 @@ test_compare_with_source (void)
 	NMPlatformIP4Address addr;
 	NMPlatformIP4Route route;
 
-	a = nm_ip4_config_new ();
-	nm_ip4_config_set_ifindex (a, 1);
-	b = nm_ip4_config_new ();
-	nm_ip4_config_set_ifindex (b, 2);
+	a = nm_ip4_config_new (1);
+	b = nm_ip4_config_new (2);
 
 	/* Address */
 	addr_init (&addr, "1.2.3.4", NULL, 24);
@@ -227,8 +224,7 @@ test_add_address_with_source (void)
 	NMPlatformIP4Address addr;
 	const NMPlatformIP4Address *test_addr;
 
-	a = nm_ip4_config_new ();
-	nm_ip4_config_set_ifindex (a, 1);
+	a = nm_ip4_config_new (1);
 
 	/* Test that a higher priority source is not overwritten */
 	addr_init (&addr, "1.2.3.4", NULL, 24);
@@ -268,8 +264,7 @@ test_add_route_with_source (void)
 	NMPlatformIP4Route route;
 	const NMPlatformIP4Route *test_route;
 
-	a = nm_ip4_config_new ();
-	nm_ip4_config_set_ifindex (a, 1);
+	a = nm_ip4_config_new (1);
 
 	/* Test that a higher priority source is not overwritten */
 	route_new (&route, "1.2.3.4", 24, "1.2.3.1");
