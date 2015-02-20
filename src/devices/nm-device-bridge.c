@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2011 - 2012 Red Hat, Inc.
+ * Copyright 2011 - 2015 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -158,6 +158,7 @@ static const Option master_options[] = {
 	{ NM_SETTING_BRIDGE_HELLO_TIME, "hello_time", TRUE, TRUE },
 	{ NM_SETTING_BRIDGE_MAX_AGE, "max_age", TRUE, TRUE },
 	{ NM_SETTING_BRIDGE_AGEING_TIME, "ageing_time", TRUE, TRUE },
+	{ NM_SETTING_BRIDGE_MULTICAST_SNOOPING, "multicast_snooping", FALSE, FALSE },
 	{ NULL, NULL }
 };
 
