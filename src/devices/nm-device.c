@@ -5623,6 +5623,15 @@ disconnect_cb (NMDevice *self,
 }
 
 static void
+_clear_queued_act_request (NMDevicePrivate *priv)
+{
+	if (priv->queued_act_request) {
+		nm_active_connection_set_state ((NMActiveConnection *) priv->queued_act_request, NM_ACTIVE_CONNECTION_STATE_DEACTIVATED);
+		g_clear_object (&priv->queued_act_request);
+	}
+}
+
+static void
 impl_device_disconnect (NMDevice *self, DBusGMethodInvocation *context)
 {
 	NMConnection *connection;
@@ -5736,7 +5745,7 @@ nm_device_queue_activation (NMDevice *self, NMActRequest *req)
 	}
 
 	/* supercede any already-queued request */
-	g_clear_object (&priv->queued_act_request);
+	_clear_queued_act_request (priv);
 	priv->queued_act_request = g_object_ref (req);
 
 	/* Deactivate existing activation request first */
@@ -7633,7 +7642,7 @@ _set_state_full (NMDevice *self,
 
 	if (state <= NM_DEVICE_STATE_UNAVAILABLE) {
 		_clear_available_connections (self, TRUE);
-		g_clear_object (&priv->queued_act_request);
+		_clear_queued_act_request (priv);
 	}
 
 	/* Update the available connections list when a device first becomes available */
@@ -8350,7 +8359,7 @@ dispose (GObject *object)
 		priv->carrier_wait_id = 0;
 	}
 
-	g_clear_object (&priv->queued_act_request);
+	_clear_queued_act_request (priv);
 
 	platform = nm_platform_get ();
 	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (device_ip_changed), self);
