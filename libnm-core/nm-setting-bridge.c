@@ -53,6 +53,7 @@ typedef struct {
 	guint16  hello_time;
 	guint16  max_age;
 	guint32  ageing_time;
+	gboolean multicast_snooping;
 } NMSettingBridgePrivate;
 
 enum {
@@ -64,6 +65,7 @@ enum {
 	PROP_HELLO_TIME,
 	PROP_MAX_AGE,
 	PROP_AGEING_TIME,
+	PROP_MULTICAST_SNOOPING,
 	LAST_PROP
 };
 
@@ -176,6 +178,22 @@ nm_setting_bridge_get_ageing_time (NMSettingBridge *setting)
 	g_return_val_if_fail (NM_IS_SETTING_BRIDGE (setting), 0);
 
 	return NM_SETTING_BRIDGE_GET_PRIVATE (setting)->ageing_time;
+}
+
+/**
+ * nm_setting_bridge_get_multicast_snooping:
+ * @setting: the #NMSettingBridge
+ *
+ * Returns: the #NMSettingBridge:multicast-snooping property of the setting
+ *
+ * Since: 1.2
+ **/
+gboolean
+nm_setting_bridge_get_multicast_snooping (NMSettingBridge *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_BRIDGE (setting), FALSE);
+
+	return NM_SETTING_BRIDGE_GET_PRIVATE (setting)->multicast_snooping;
 }
 
 /* IEEE 802.1D-1998 timer values */
@@ -309,6 +327,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_AGEING_TIME:
 		priv->ageing_time = g_value_get_uint (value);
 		break;
+	case PROP_MULTICAST_SNOOPING:
+		priv->multicast_snooping = g_value_get_boolean (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -343,6 +364,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_AGEING_TIME:
 		g_value_set_uint (value, priv->ageing_time);
+		break;
+	case PROP_MULTICAST_SNOOPING:
+		g_value_set_boolean (value, priv->multicast_snooping);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -532,6 +556,33 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 		                    G_PARAM_CONSTRUCT |
 		                    NM_SETTING_PARAM_INFERRABLE |
 		                    G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingBridge:multicast-snooping:
+	 *
+	 * Controls whether IGMP snooping is enabled for this bridge.
+	 * Note that if snooping was automatically disabled due to hash collisions,
+	 * the system may refuse to enable the feature until the collisions are
+	 * resolved.
+	 *
+	 * Since: 1.2
+	 **/
+	/* ---ifcfg-rh---
+	 * property: multicast-snooping
+	 * variable: BRIDGING_OPTS: multicast_snooping=
+	 * values: 0 or 1
+	 * default: 1
+	 * description: IGMP snooping support.
+	 * ---end---
+	 */
+	g_object_class_install_property
+		(object_class, PROP_MULTICAST_SNOOPING,
+		 g_param_spec_boolean (NM_SETTING_BRIDGE_MULTICAST_SNOOPING, "", "",
+		                       TRUE,
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT |
+		                       NM_SETTING_PARAM_INFERRABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/* ---dbus---
 	 * property: interface-name

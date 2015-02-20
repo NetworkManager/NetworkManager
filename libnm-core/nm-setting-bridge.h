@@ -16,7 +16,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2011 - 2012 Red Hat, Inc.
+ * Copyright 2011 - 2015 Red Hat, Inc.
  */
 
 #ifndef __NM_SETTING_BRIDGE_H__
@@ -46,6 +46,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_BRIDGE_HELLO_TIME     "hello-time"
 #define NM_SETTING_BRIDGE_MAX_AGE        "max-age"
 #define NM_SETTING_BRIDGE_AGEING_TIME    "ageing-time"
+#define NM_SETTING_BRIDGE_MULTICAST_SNOOPING "multicast-snooping"
 
 struct _NMSettingBridge {
 	NMSetting parent;
@@ -75,6 +76,8 @@ guint16      nm_setting_bridge_get_hello_time     (NMSettingBridge *setting);
 guint16      nm_setting_bridge_get_max_age        (NMSettingBridge *setting);
 
 guint32      nm_setting_bridge_get_ageing_time    (NMSettingBridge *setting);
+
+gboolean     nm_setting_bridge_get_multicast_snooping (NMSettingBridge *setting);
 
 G_END_DECLS
 
