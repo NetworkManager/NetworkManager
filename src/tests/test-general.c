@@ -598,53 +598,6 @@ test_connection_sort_autoconnect_priority (void)
 
 /*******************************************/
 
-static void
-__test_uuid (const char *expected_uuid, const char *str, gssize slen, char *uuid_test)
-{
-	g_assert (uuid_test);
-	g_assert (nm_utils_is_uuid (uuid_test));
-
-	if (strcmp (uuid_test, expected_uuid)) {
-		g_error ("UUID test failed (1): text=%s, len=%lld, expected=%s, uuid_test=%s",
-		         str, (long long) slen, expected_uuid, uuid_test);
-	}
-	g_free (uuid_test);
-
-	uuid_test = nm_utils_uuid_generate_from_string (str, slen, NM_UTILS_UUID_TYPE_VARIANT3, NM_UTILS_UUID_NS);
-
-	g_assert (uuid_test);
-	g_assert (nm_utils_is_uuid (uuid_test));
-
-	if (strcmp (uuid_test, expected_uuid)) {
-		g_error ("UUID test failed (2): text=%s; len=%lld, expected=%s, uuid2=%s",
-		         str, (long long) slen, expected_uuid, uuid_test);
-	}
-	g_free (uuid_test);
-}
-
-#define _test_uuid(expected_uuid, str, strlen, ...) __test_uuid (expected_uuid, str, strlen, _nm_utils_uuid_generate_from_strings(__VA_ARGS__, NULL))
-
-static void
-test_nm_utils_uuid_generate_from_strings (void)
-{
-	_test_uuid ("b07c334a-399b-32de-8d50-58e4e08f98e3", "",         0, NULL);
-	_test_uuid ("b8a426cb-bcb5-30a3-bd8f-6786fea72df9", "\0",       1, "");
-	_test_uuid ("12a4a982-7aae-39e1-951e-41aeb1250959", "a\0",      2, "a");
-	_test_uuid ("69e22c7e-f89f-3a43-b239-1cb52ed8db69", "aa\0",     3, "aa");
-	_test_uuid ("59829fd3-5ad5-3d90-a7b0-4911747e4088", "\0\0",     2, "",   "");
-	_test_uuid ("01ad0e06-6c50-3384-8d86-ddab81421425", "a\0\0",    3, "a",  "");
-	_test_uuid ("e1ed8647-9ed3-3ec8-8c6d-e8204524d71d", "aa\0\0",   4, "aa", "");
-	_test_uuid ("fb1c7cd6-275c-3489-9382-83b900da8af0", "\0a\0",    3, "",   "a");
-	_test_uuid ("5d79494e-c4ba-31a6-80a2-d6016ccd7e17", "a\0a\0",   4, "a",  "a");
-	_test_uuid ("fd698d86-1b60-3ebe-855f-7aada9950a8d", "aa\0a\0",  5, "aa", "a");
-	_test_uuid ("8c573b48-0f01-30ba-bb94-c5f59f4fe517", "\0aa\0",   4, "",   "aa");
-	_test_uuid ("2bdd3d46-eb83-3c53-a41b-a724d04b5544", "a\0aa\0",  5, "a",  "aa");
-	_test_uuid ("13d4b780-07c1-3ba7-b449-81c4844ef039", "aa\0aa\0", 6, "aa", "aa");
-	_test_uuid ("dd265bf7-c05a-3037-9939-b9629858a477", "a\0b\0",   4, "a",  "b");
-}
-
-/*******************************************/
-
 static const char *_test_match_spec_all[] = {
 	"e",
 	"em",
@@ -778,7 +731,6 @@ main (int argc, char **argv)
 
 	g_test_add_func ("/general/connection-sort/autoconnect-priority", test_connection_sort_autoconnect_priority);
 
-	g_test_add_func ("/general/_nm_utils_uuid_generate_from_strings", test_nm_utils_uuid_generate_from_strings);
 	g_test_add_func ("/general/nm_match_spec_interface_name", test_nm_match_spec_interface_name);
 
 	return g_test_run ();
