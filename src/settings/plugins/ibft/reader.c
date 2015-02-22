@@ -439,7 +439,7 @@ is_ibft_vlan_device (const GPtrArray *block)
 		/* VLAN 0 is normally a valid VLAN ID, but in the iBFT case it
 		 * means "no VLAN".
 		 */
-		if (nm_utils_ascii_str_to_int64 (s_vlan_id, 10, 1, 4095, -1) != -1)
+		if (_nm_utils_ascii_str_to_int64 (s_vlan_id, 10, 1, 4095, -1) != -1)
 			return TRUE;
 	}
 	return FALSE;
@@ -466,7 +466,7 @@ vlan_setting_add_from_block (const GPtrArray *block,
 	g_assert (vlan_id_str);
 
 	/* VLAN 0 is normally a valid VLAN ID, but in the iBFT case it means "no VLAN" */
-	vlan_id = nm_utils_ascii_str_to_int64 (vlan_id_str, 10, 1, 4095, -1);
+	vlan_id = _nm_utils_ascii_str_to_int64 (vlan_id_str, 10, 1, 4095, -1);
 	if (vlan_id == -1) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Invalid VLAN_ID '%s'", vlan_id_str);

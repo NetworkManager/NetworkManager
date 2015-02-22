@@ -1135,7 +1135,7 @@ read_one_setting_value (NMSetting *setting,
 		gint64 int_val;
 
 		tmp_str = nm_keyfile_plugin_kf_get_value (info->keyfile, setting_name, key, NULL);
-		int_val = nm_utils_ascii_str_to_int64 (tmp_str, 10, G_MININT64, G_MAXINT64, 0);
+		int_val = _nm_utils_ascii_str_to_int64 (tmp_str, 10, G_MININT64, G_MAXINT64, 0);
 		errsv = errno;
 		if (errsv)
 			nm_log_warn (LOGD_SETTINGS, "Invalid int64 value (%s)", tmp_str);

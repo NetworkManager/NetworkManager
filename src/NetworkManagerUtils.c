@@ -1803,7 +1803,7 @@ nm_utils_cmp_connection_by_autoconnect_priority (NMConnection **a, NMConnection 
 	return 0;
 }
 
-/* nm_utils_ascii_str_to_int64:
+/* _nm_utils_ascii_str_to_int64:
  *
  * A wrapper for g_ascii_strtoll, that checks whether the whole string
  * can be successfully converted to a number and is within a given
@@ -1818,7 +1818,7 @@ nm_utils_cmp_connection_by_autoconnect_priority (NMConnection **a, NMConnection 
  * white space.
  **/
 gint64
-nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 max, gint64 fallback)
+_nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 max, gint64 fallback)
 {
 	gint64 v;
 	size_t len;

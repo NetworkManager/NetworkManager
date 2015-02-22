@@ -507,7 +507,7 @@ read_one_ip4_route (shvarFile *ifcfg,
 	/* Metric */
 	value = svGetValue (ifcfg, metric_tag, FALSE);
 	if (value) {
-		metric = nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXUINT32, -1);
+		metric = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXUINT32, -1);
 		if (metric < 0) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid IP4 route metric '%s'", value);
@@ -3351,7 +3351,7 @@ make_wireless_setting (shvarFile *ifcfg,
 	value = svGetValue (ifcfg, "CHANNEL", FALSE);
 	if (value) {
 		errno = 0;
-		chan = nm_utils_ascii_str_to_int64 (value, 10, 1, 196, 0);
+		chan = _nm_utils_ascii_str_to_int64 (value, 10, 1, 196, 0);
 		if (errno || (chan == 0)) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid wireless channel '%s'", value);
@@ -4885,7 +4885,7 @@ devtimeout_from_file (const char *filename)
 
 	devtimeout_str = svGetValue (ifcfg, "DEVTIMEOUT", FALSE);
 	if (devtimeout_str) {
-		devtimeout = nm_utils_ascii_str_to_int64 (devtimeout_str, 10, 0, G_MAXUINT, 0);
+		devtimeout = _nm_utils_ascii_str_to_int64 (devtimeout_str, 10, 0, G_MAXUINT, 0);
 		g_free (devtimeout_str);
 	} else
 		devtimeout = 0;

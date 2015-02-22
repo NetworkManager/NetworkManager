@@ -132,7 +132,7 @@ handle_event (DBusGProxy *proxy,
 	}
 
 	pid_str = get_option (options, "pid");
-	pid = nm_utils_ascii_str_to_int64 (pid_str, 10, 0, G_MAXINT32, -1);
+	pid = _nm_utils_ascii_str_to_int64 (pid_str, 10, 0, G_MAXINT32, -1);
 	if (pid == -1) {
 		nm_log_warn (LOGD_DHCP, "DHCP event: couldn't convert PID '%s' to an integer", pid_str ? pid_str : "(null)");
 		goto out;

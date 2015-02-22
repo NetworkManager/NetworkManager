@@ -351,7 +351,7 @@ constructed (GObject *object)
 	 * the interval to zero. */
 	interval = g_key_file_get_value (priv->keyfile, "connectivity", "interval", NULL);
 	priv->connectivity.interval = interval
-	    ? nm_utils_ascii_str_to_int64 (interval, 10, 0, G_MAXUINT, 0)
+	    ? _nm_utils_ascii_str_to_int64 (interval, 10, 0, G_MAXUINT, 0)
 	    : NM_CONFIG_DEFAULT_CONNECTIVITY_INTERVAL;
 	g_free (interval);
 
