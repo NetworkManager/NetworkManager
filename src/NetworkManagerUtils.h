@@ -155,10 +155,6 @@ int nm_utils_cmp_connection_by_autoconnect_priority (NMConnection **a, NMConnect
 
 void nm_utils_log_connection_diff (NMConnection *connection, NMConnection *diff_base, guint32 level, guint64 domain, const char *name, const char *prefix);
 
-#define NM_UTILS_UUID_NS "b425e9fb-7598-44b4-9e3b-5a2e3aaa4905"
-
-char *_nm_utils_uuid_generate_from_strings (const char *string1, ...) G_GNUC_NULL_TERMINATED;
-
 #define NM_UTILS_NS_PER_SECOND  ((gint64) 1000000000)
 gint64 nm_utils_get_monotonic_timestamp_ns (void);
 gint64 nm_utils_get_monotonic_timestamp_us (void);
