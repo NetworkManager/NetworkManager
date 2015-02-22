@@ -1996,7 +1996,7 @@ nm_utils_cmp_connection_by_autoconnect_priority (NMConnection **a, NMConnection 
 }
 
 /**
- * nm_utils_uuid_generate_from_strings:
+ * _nm_utils_uuid_generate_from_strings:
  * @string1: a variadic list of strings. Must be NULL terminated.
  *
  * Returns a variant3 UUID based on the concatenated C strings.
@@ -2009,7 +2009,7 @@ nm_utils_cmp_connection_by_autoconnect_priority (NMConnection **a, NMConnection 
  * ("aa"), ("aa", ""), ("", "aa"), ...
  */
 char *
-nm_utils_uuid_generate_from_strings (const char *string1, ...)
+_nm_utils_uuid_generate_from_strings (const char *string1, ...)
 {
 	GString *str;
 	va_list args;

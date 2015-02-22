@@ -622,7 +622,7 @@ __test_uuid (const char *expected_uuid, const char *str, gssize slen, char *uuid
 	g_free (uuid_test);
 }
 
-#define _test_uuid(expected_uuid, str, strlen, ...) __test_uuid (expected_uuid, str, strlen, nm_utils_uuid_generate_from_strings(__VA_ARGS__, NULL))
+#define _test_uuid(expected_uuid, str, strlen, ...) __test_uuid (expected_uuid, str, strlen, _nm_utils_uuid_generate_from_strings(__VA_ARGS__, NULL))
 
 static void
 test_nm_utils_uuid_generate_from_strings (void)
@@ -778,7 +778,7 @@ main (int argc, char **argv)
 
 	g_test_add_func ("/general/connection-sort/autoconnect-priority", test_connection_sort_autoconnect_priority);
 
-	g_test_add_func ("/general/nm_utils_uuid_generate_from_strings", test_nm_utils_uuid_generate_from_strings);
+	g_test_add_func ("/general/_nm_utils_uuid_generate_from_strings", test_nm_utils_uuid_generate_from_strings);
 	g_test_add_func ("/general/nm_match_spec_interface_name", test_nm_match_spec_interface_name);
 
 	return g_test_run ();
