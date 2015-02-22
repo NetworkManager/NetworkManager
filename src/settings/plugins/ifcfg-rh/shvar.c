@@ -36,7 +36,7 @@
 
 #include "shvar.h"
 
-#include "NetworkManagerUtils.h"
+#include "nm-core-internal.h"
 #include "nm-logging.h"
 
 #define PARSE_WARNING(msg...) nm_log_warn (LOGD_SETTINGS, "    " msg)

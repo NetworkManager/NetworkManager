@@ -26,7 +26,7 @@
 #include "nm-config.h"
 #include "nm-device.h"
 #include "gsystem-local-alloc.h"
-#include "NetworkManagerUtils.h"
+#include "nm-core-internal.h"
 
 typedef struct {
 	char *config_main_file;

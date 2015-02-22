@@ -136,4 +136,6 @@ GByteArray *nm_utils_rsa_key_encrypt (const guint8 *data,
 int nm_utils_bond_mode_string_to_int (const char *mode);
 const char *nm_utils_bond_mode_int_to_string (int mode);
 
+gint64 _nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 max, gint64 fallback);
+
 #endif

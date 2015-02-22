@@ -55,6 +55,7 @@
 #endif
 
 #include "gsystem-local-alloc.h"
+#include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 #include "nm-linux-platform.h"
 #include "NetworkManagerUtils.h"
