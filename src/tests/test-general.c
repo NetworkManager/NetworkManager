@@ -38,7 +38,7 @@ test_nm_utils_ascii_str_to_int64_check (const char *str, guint base, gint64 min,
 	gint64 v;
 
 	errno = 1;
-	v = nm_utils_ascii_str_to_int64 (str, base, min, max, fallback);
+	v = _nm_utils_ascii_str_to_int64 (str, base, min, max, fallback);
 	g_assert_cmpint (errno, ==, exp_errno);
 	g_assert_cmpint (v, ==, exp_val);
 }
@@ -893,7 +893,7 @@ main (int argc, char **argv)
 {
 	nmtst_init_with_logging (&argc, &argv, NULL, "ALL");
 
-	g_test_add_func ("/general/nm_utils_ascii_str_to_int64", test_nm_utils_ascii_str_to_int64);
+	g_test_add_func ("/general/_nm_utils_ascii_str_to_int64", test_nm_utils_ascii_str_to_int64);
 	g_test_add_func ("/general/nm_utils_ip6_address_clear_host_address", test_nm_utils_ip6_address_clear_host_address);
 	g_test_add_func ("/general/nm_utils_log_connection_diff", test_nm_utils_log_connection_diff);
 

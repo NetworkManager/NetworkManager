@@ -3025,7 +3025,7 @@ tun_get_properties (NMPlatform *platform, int ifindex, NMPlatformTunProperties *
 	val = nm_platform_sysctl_get (path);
 	g_free (path);
 	if (val) {
-		props->owner = nm_utils_ascii_str_to_int64 (val, 10, -1, G_MAXINT64, -1);
+		props->owner = _nm_utils_ascii_str_to_int64 (val, 10, -1, G_MAXINT64, -1);
 		if (errno)
 			success = FALSE;
 		g_free (val);
@@ -3036,7 +3036,7 @@ tun_get_properties (NMPlatform *platform, int ifindex, NMPlatformTunProperties *
 	val = nm_platform_sysctl_get (path);
 	g_free (path);
 	if (val) {
-		props->group = nm_utils_ascii_str_to_int64 (val, 10, -1, G_MAXINT64, -1);
+		props->group = _nm_utils_ascii_str_to_int64 (val, 10, -1, G_MAXINT64, -1);
 		if (errno)
 			success = FALSE;
 		g_free (val);
@@ -3049,7 +3049,7 @@ tun_get_properties (NMPlatform *platform, int ifindex, NMPlatformTunProperties *
 	if (val) {
 		gint64 flags;
 
-		flags = nm_utils_ascii_str_to_int64 (val, 16, 0, G_MAXINT64, 0);
+		flags = _nm_utils_ascii_str_to_int64 (val, 16, 0, G_MAXINT64, 0);
 		if (!errno) {
 #ifndef IFF_MULTI_QUEUE
 			const int IFF_MULTI_QUEUE = 0x0100;

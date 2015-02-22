@@ -321,7 +321,7 @@ svTrueValue (shvarFile *s, const char *key, gboolean def)
  * @max: the maximum for range-check
  * @fallback: the fallback value in any error case
  *
- * Reads a value @key and converts it to an integer using nm_utils_ascii_str_to_int64().
+ * Reads a value @key and converts it to an integer using _nm_utils_ascii_str_to_int64().
  * In case of error, @errno will be set and @fallback returned. */
 gint64
 svGetValueInt64 (shvarFile *s, const char *key, guint base, gint64 min, gint64 max, gint64 fallback)
@@ -336,7 +336,7 @@ svGetValueInt64 (shvarFile *s, const char *key, guint base, gint64 min, gint64 m
 		return fallback;
 	}
 
-	result = nm_utils_ascii_str_to_int64 (tmp, base, min, max, fallback);
+	result = _nm_utils_ascii_str_to_int64 (tmp, base, min, max, fallback);
 	errsv = errno;
 	if (errsv != 0)
 		PARSE_WARNING ("Error reading '%s' value '%s' as integer (%d)", key, tmp, errsv);
