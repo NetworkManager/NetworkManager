@@ -35,6 +35,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
 #include "nm-enum-types.h"
+#include "nm-core-internal.h"
 
 #define debug(...) nm_log_dbg (LOGD_PLATFORM, __VA_ARGS__)
 

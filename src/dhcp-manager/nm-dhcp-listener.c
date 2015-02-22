@@ -31,6 +31,7 @@
 #include <unistd.h>
 
 #include "nm-dhcp-listener.h"
+#include "nm-core-internal.h"
 #include "nm-logging.h"
 #include "nm-dbus-manager.h"
 #include "nm-dbus-glib-types.h"
