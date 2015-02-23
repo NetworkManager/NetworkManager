@@ -778,26 +778,6 @@ write_setting_value (NMSetting *setting,
 	}
 }
 
-static char *
-_writer_id_to_filename (const char *id)
-{
-	char *filename, *f;
-	const char *i = id;
-
-	f = filename = g_malloc0 (strlen (id) + 1);
-
-	/* Convert '/' to '*' */
-	while (*i) {
-		if (*i == '/')
-			*f++ = '*';
-		else
-			*f++ = *i;
-		i++;
-	}
-
-	return filename;
-}
-
 static gboolean
 _internal_write_connection (NMConnection *connection,
                             const char *keyfile_dir,
@@ -811,7 +791,7 @@ _internal_write_connection (NMConnection *connection,
 	char *data;
 	gsize len;
 	gboolean success = FALSE;
-	char *filename = NULL, *path;
+	char *path;
 	const char *id;
 	WriteInfo info;
 	GError *local_err = NULL;
@@ -839,8 +819,10 @@ _internal_write_connection (NMConnection *connection,
 	if (existing_path != NULL) {
 		path = g_strdup (existing_path);
 	} else {
-		filename = _writer_id_to_filename (id);
-		path = g_build_filename (keyfile_dir, filename, NULL);
+		char *filename_escaped = nm_keyfile_plugin_utils_escape_filename (id);
+
+		path = g_build_filename (keyfile_dir, filename_escaped, NULL);
+		g_free (filename_escaped);
 	}
 
 	/* If a file with this path already exists (but isn't the existing path
@@ -856,27 +838,35 @@ _internal_write_connection (NMConnection *connection,
 
 		/* A keyfile with this connection's ID already exists. Pick another name. */
 		for (i = 0; i < 100; i++) {
-			g_free (path);
+			char *filename, *filename_escaped;
+
 			if (i == 0)
-				path = g_strdup_printf ("%s/%s-%s", keyfile_dir, filename, nm_connection_get_uuid (connection));
+				filename = g_strdup_printf ("%s-%s", id, nm_connection_get_uuid (connection));
 			else
-				path = g_strdup_printf ("%s/%s-%s-%u", keyfile_dir, filename, nm_connection_get_uuid (connection), i);
+				filename = g_strdup_printf ("%s-%s-%u", id, nm_connection_get_uuid (connection), i);
+
+			filename_escaped = nm_keyfile_plugin_utils_escape_filename (filename);
+
+			g_free (path);
+			path = g_strdup_printf ("%s/%s", keyfile_dir, filename_escaped);
+			g_free (filename);
+			g_free (filename_escaped);
 			if (g_strcmp0 (path, existing_path) == 0 || !g_file_test (path, G_FILE_TEST_EXISTS)) {
 				name_found = TRUE;
 				break;
 			}
 		}
 		if (!name_found) {
-			g_free (path);
 			if (existing_path == NULL) {
 				/* this really should not happen, we tried hard to find an unused name... bail out. */
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-				                    "%s.%d: could not find suitable keyfile file name (%s/%s already used)",
-				                    __FILE__, __LINE__, keyfile_dir, filename);
+				                    "could not find suitable keyfile file name (%s already used)", path);
+				g_free (path);
 				goto out;
 			}
 			/* Both our preferred path based on connection id and id-uuid are taken.
 			 * Fallback to @existing_path */
+			g_free (path);
 			path = g_strdup (existing_path);
 		}
 	}
@@ -919,7 +909,6 @@ _internal_write_connection (NMConnection *connection,
 	g_free (path);
 
 out:
-	g_free (filename);
 	g_free (data);
 	g_key_file_free (key_file);
 	return success;

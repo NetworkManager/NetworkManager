@@ -23,6 +23,7 @@
 #include <glib.h>
 #include <stdlib.h>
 #include <string.h>
+#include "gsystem-local-alloc.h"
 #include "utils.h"
 #include <nm-setting-wired.h>
 #include <nm-setting-wireless.h>
@@ -59,7 +60,7 @@ check_prefix (const char *base, const char *tag)
 
 	len = strlen (base);
 	tag_len = strlen (tag);
-	if ((len > tag_len) && !strncasecmp (base, tag, tag_len))
+	if ((len > tag_len) && !g_ascii_strncasecmp (base, tag, tag_len))
 		return TRUE;
 	return FALSE;
 }
@@ -74,7 +75,7 @@ check_suffix (const char *base, const char *tag)
 
 	len = strlen (base);
 	tag_len = strlen (tag);
-	if ((len > tag_len) && !strcasecmp (base + len - tag_len, tag))
+	if ((len > tag_len) && !g_ascii_strcasecmp (base + len - tag_len, tag))
 		return TRUE;
 	return FALSE;
 }
@@ -87,27 +88,64 @@ check_suffix (const char *base, const char *tag)
 gboolean
 nm_keyfile_plugin_utils_should_ignore_file (const char *filename)
 {
-	char *base;
-	gboolean ignore = FALSE;
+	gs_free char *base = NULL;
 
 	g_return_val_if_fail (filename != NULL, TRUE);
 
 	base = g_path_get_basename (filename);
 	g_return_val_if_fail (base != NULL, TRUE);
 
-	/* Ignore files with certain patterns */
-	if (   (check_prefix (base, ".") && check_suffix (base, SWP_TAG))   /* vim temporary files: .filename.swp */
-	    || (check_prefix (base, ".") && check_suffix (base, SWPX_TAG))  /* vim temporary files: .filename.swpx */
-	    || check_suffix (base, PEM_TAG)                                 /* 802.1x certificates and keys */
-	    || check_suffix (base, DER_TAG)                                 /* 802.1x certificates and keys */
-	    || check_mkstemp_suffix (base)                                  /* temporary files created by mkstemp() */
-	    || check_prefix (base, ".#")                                    /* Emacs locking file (link) */
-	    || base[strlen (base) - 1] == '~')
-		ignore = TRUE;
+	/* Ignore hidden and backup files */
+	/* should_ignore_file() must mirror escape_filename() */
+	if (check_prefix (base, ".") || check_suffix (base, "~"))
+		return TRUE;
+	/* Ignore temporary files */
+	if (check_mkstemp_suffix (base))
+		return TRUE;
+	/* Ignore 802.1x certificates and keys */
+	if (check_suffix (base, PEM_TAG) || check_suffix (base, DER_TAG))
+		return TRUE;
 
-	g_free (base);
-	return ignore;
+	return FALSE;
 }
+
+char *
+nm_keyfile_plugin_utils_escape_filename (const char *filename)
+{
+	GString *str;
+	const char *f = filename;
+	const char ESCAPE_CHAR = '*';
+
+	/* keyfile used to escape with '*', do not change that behavior.
+	 * But for newly added escapings, use '_' instead. */
+	const char ESCAPE_CHAR2 = '_';
+
+	g_return_val_if_fail (filename && filename[0], NULL);
+
+	str = g_string_sized_new (60);
+
+	/* Convert '/' to ESCAPE_CHAR */
+	for (f = filename; f[0]; f++) {
+		if (f[0] == '/')
+			g_string_append_c (str, ESCAPE_CHAR);
+		else
+			g_string_append_c (str, f[0]);
+	}
+
+	/* escape_filename() must avoid anything that should_ignore_file() would reject.
+	 * We can escape here more aggressivly then what we would read back. */
+	if (check_prefix (str->str, "."))
+		str->str[0] = ESCAPE_CHAR2;
+	if (check_suffix (str->str, "~"))
+		str->str[str->len - 1] = ESCAPE_CHAR2;
+	if (   check_mkstemp_suffix (str->str)
+	    || check_suffix (str->str, PEM_TAG)
+	    || check_suffix (str->str, DER_TAG))
+		g_string_append_c (str, ESCAPE_CHAR2);
+
+	return g_string_free (str, FALSE);;
+}
+
 
 typedef struct {
 	const char *setting;
