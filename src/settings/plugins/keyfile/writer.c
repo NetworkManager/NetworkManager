@@ -569,8 +569,15 @@ cert_writer (GKeyFile *file,
 			g_error_free (error);
 		}
 		g_free (new_path);
-	} else
-		g_assert_not_reached ();
+	} else {
+		/* scheme_func() returns UNKNOWN in all other cases. The only valid case
+		 * where a scheme is allowed to be UNKNOWN, is unsetting the value. In this
+		 * case, we don't expect the writer to be called, because the default value
+		 * will not be serialized.
+		 * The only other reason for the scheme to be UNKNOWN is an invalid cert.
+		 * But our connection verifies, so that cannot happen either. */
+		g_return_if_reached ();
+	}
 }
 
 typedef struct {
