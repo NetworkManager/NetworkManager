@@ -33,7 +33,7 @@
 #include "nm-core-internal.h"
 #include "gsystem-local-alloc.h"
 #include "nm-glib-compat.h"
-#include "nm-keyfile-reader.h"
+#include "nm-keyfile-internal.h"
 #include "nm-keyfile-utils.h"
 
 

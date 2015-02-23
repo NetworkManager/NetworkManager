@@ -43,7 +43,7 @@
 #include "nm-utils.h"
 
 #include "nm-glib-compat.h"
-#include "nm-keyfile-writer.h"
+#include "nm-keyfile-internal.h"
 #include "nm-keyfile-utils.h"
 
 typedef struct {

@@ -19,17 +19,21 @@
  * Copyright (C) 2015 Red Hat, Inc.
  */
 
-#ifndef __NM_KEYFILE_READER_H__
-#define __NM_KEYFILE_READER_H__
+#ifndef __NM_KEYFILE_INTERNAL_H__
+#define __NM_KEYFILE_INTERNAL_H__
 
 #include <glib.h>
+#include <sys/types.h>
 
 #include "nm-connection.h"
+#include "nm-setting-8021x.h"
 
+
+/*********************************************************/
 
 typedef enum {
 	NM_KEYFILE_READ_TYPE_WARN               = 1,
-}  NMKeyfileReadType;
+} NMKeyfileReadType;
 
 /**
  * NMKeyfileReadHandler:
@@ -82,4 +86,65 @@ NMConnection *nm_keyfile_read (GKeyFile *keyfile,
                                void *user_data,
                                GError **error);
 
-#endif /* __NM_KEYFILE_READER_H__ */
+/*********************************************************/
+
+typedef enum {
+	NM_KEYFILE_WRITE_TYPE_CERT              = 1,
+} NMKeyfileWriteType;
+
+/**
+ * NMKeyfileWriteHandler:
+ *
+ * This is a hook to tweak the serialization.
+ *
+ * Handler for certain properties or events that are not entirely contained
+ * within the keyfile or that might be serialized differently. The @type and
+ * @type_data arguments tell which kind of argument we have at hand.
+ *
+ * Currently only the type %NM_KEYFILE_WRITE_TYPE_CERT is supported, which provides
+ * @type_data as %NMKeyfileWriteTypeDataCert. However, this handler should be generic enough
+ * to support other types as well.
+ *
+ * This don't have to be only "properties". For example, nm_keyfile_read() uses
+ * a similar handler to push warnings to the caller.
+ *
+ * If the handler raises an error, it should set the @error value. This causes
+ * the an overall failure.
+ *
+ * Returns: whether the issue was handled. If the type was unhandled,
+ * a default action will be performed. This might be raise an error,
+ * do some fallback parsing, or do nothing.
+ */
+typedef gboolean (*NMKeyfileWriteHandler) (NMConnection *connection,
+                                           GKeyFile *keyfile,
+                                           NMKeyfileWriteType type,
+                                           void *type_data,
+                                           void *user_data,
+                                           GError **error);
+
+/**
+ * NMKeyfileWriteTypeDataCert:
+ *
+ * this struct is passed as @type_data for the @NMKeyfileWriteHandler of
+ * type %NM_KEYFILE_WRITE_TYPE_CERT.
+ */
+typedef struct {
+	NMSetting8021x *setting;
+	const char *property_name;
+
+	/* The following functions are helpers that simplify the implementation
+	 * of the handler. */
+	const char *suffix;
+	NMSetting8021xCKScheme (*scheme_func) (NMSetting8021x *setting);
+	NMSetting8021xCKFormat (*format_func) (NMSetting8021x *setting);
+	const char *           (*path_func)   (NMSetting8021x *setting);
+	GBytes *               (*blob_func)   (NMSetting8021x *setting);
+} NMKeyfileWriteTypeDataCert;
+
+
+GKeyFile *nm_keyfile_write (NMConnection *connection,
+                            NMKeyfileWriteHandler handler,
+                            void *user_data,
+                            GError **error);
+
+#endif /* __NM_KEYFILE_INTERNAL_H__ */
