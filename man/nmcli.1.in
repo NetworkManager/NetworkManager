@@ -19,9 +19,9 @@
 .\" with this manual; if not, write to the Free Software Foundation, Inc.,
 .\" 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 .\"
-.\" Copyright 2010 - 2014 Red Hat, Inc.
+.\" Copyright 2010 - 2015 Red Hat, Inc.
 .\"
-.TH NMCLI "1" "3 December 2014"
+.TH NMCLI "1" "19 February 2015"
 
 .SH NAME
 nmcli \- command\(hyline tool for controlling NetworkManager
@@ -44,6 +44,8 @@ nmcli \- command\(hyline tool for controlling NetworkManager
 \fB\-p\fR[\fIretty\fR]
 .br
 \fB\-m\fR[\fImode\fR] tabular | multiline
+.br
+\fB\-c\fR[\fIcolors\fR] auto | yes | no
 .br
 \fB\-f\fR[\fIields\fR] <field1,field2,...> | all | common
 .br
@@ -105,6 +107,11 @@ Columns define particular properties of the entry.
 .br
 \fImultiline\fP \(en Each entry comprises multiple lines, each property on its own
 line. The values are prefixed with the property name.
+.TP
+.B \-c, \-\-colors auto|yes|no
+This option controls color output (using terminal escape sequences). \fIyes\fP
+enables colors, \fIno\fP disables them, \fIauto\fP only produces colors when
+standard output is directed to a terminal. The default value is \fIauto\fP.
 .TP
 .B \-f, \-\-fields <field1,field2,...> | all | common
 This option is used to specify what fields (column names) should be printed.
@@ -289,12 +296,31 @@ active if a device is using that connection profile. Without a parameter, all
 profiles are listed. When --active option is specified, only the active profiles
 are shown.
 .TP
-.B show [--active] [--show-secrets] [ id | uuid | path | apath ] <ID> ...
+.B show [--active] [--order <order spec>] [--show-secrets] [ id | uuid | path | apath ] <ID> ...
 .br
 Show details for specified connections. By default, both static configuration
 and active connection data are displayed.  When --active option is specified,
 only the active profiles are taken into account. When --show-secrets option is
 specified, secrets associated with the profile will be revealed too.
+.sp
+Ordering:
+.br
+The --order option can be used to get custom ordering of connections. The
+connections can be ordered by active status, name, type or D-Bus path. If
+connections are equal according to a sort order category, an additional
+category can be specified.
+The default sorting order is equivalent to "--order active:name:path".
+.sp
+<order spec> := category:category:...
+.br
+categogy := [+-]active | [+-]name | [+-]type | [+-]path
+.br
+\fI+\fP or no prefix means sorting in ascending order (alphabetically or in numbers).
+.br
+\fI-\fP means reverse (descending) order.
+.br
+The category names can be abbreviated (e.g. --order -a:na)
+.sp
 \fIid\fP, \fIuuid\fP, \fIpath\fP and \fIapath\fP keywords can be used if
 \fI<ID>\fP is ambiguous.
 .RS

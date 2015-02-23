@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2010 - 2014 Red Hat, Inc.
+ * Copyright 2010 - 2015 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -250,7 +250,8 @@ usage (void)
 {
 	g_printerr (_("Usage: nmcli connection { COMMAND | help }\n\n"
 	              "COMMAND := { show | up | down | add | modify | edit | delete | reload | load }\n\n"
-	              "  show [--active] [[--show-secrets] [id | uuid | path | apath] <ID>] ...\n\n"
+	              "  show [--active] [--order <order spec>]\n"
+	              "  show [--active] [--show-secrets] [id | uuid | path | apath] <ID> ...\n\n"
 #if WITH_WIMAX
 	              "  up [[id | uuid | path] <ID>] [ifname <ifname>] [ap <BSSID>] [nsp <name>] [passwd-file <file with passwords>]\n\n"
 #else
@@ -271,12 +272,12 @@ usage_connection_show (void)
 {
 	g_printerr (_("Usage: nmcli connection show { ARGUMENTS | help }\n"
 	              "\n"
-	              "ARGUMENTS := [--active]\n"
+	              "ARGUMENTS := [--active] [--order <order spec>]\n"
 	              "\n"
 	              "List in-memory and on-disk connection profiles, some of which may also be\n"
 	              "active if a device is using that connection profile. Without a parameter, all\n"
 	              "profiles are listed. When --active option is specified, only the active\n"
-	              "profiles are shown.\n"
+	              "profiles are shown. --order allows custom connection ordering (see manual page).\n"
 	              "\n"
 	              "ARGUMENTS := [--active] [--show-secrets] [id | uuid | path | apath] <ID> ...\n"
 	              "\n"
@@ -763,10 +764,8 @@ find_active_connection (const GPtrArray *active_cons,
 }
 
 static void
-fill_output_connection (gpointer data, gpointer user_data, gboolean active_only)
+fill_output_connection (NMConnection *connection, NmCli *nmc, gboolean active_only)
 {
-	NMConnection *connection = (NMConnection *) data;
-	NmCli *nmc = (NmCli *) user_data;
 	NMSettingConnection *s_con;
 	guint64 timestamp;
 	time_t timestamp_real;
@@ -777,6 +776,7 @@ fill_output_connection (gpointer data, gpointer user_data, gboolean active_only)
 	NMActiveConnection *ac = NULL;
 	const char *ac_path = NULL;
 	const char *ac_state = NULL;
+	NMActiveConnectionState ac_state_int;
 	char *ac_dev = NULL;
 
 	s_con = nm_connection_get_setting_connection (connection);
@@ -788,7 +788,8 @@ fill_output_connection (gpointer data, gpointer user_data, gboolean active_only)
 
 	if (ac) {
 		ac_path = nm_object_get_path (NM_OBJECT (ac));
-		ac_state = active_connection_state_to_string (nm_active_connection_get_state (ac));
+		ac_state_int = nm_active_connection_get_state (ac);
+		ac_state = active_connection_state_to_string (ac_state_int);
 		ac_dev = get_ac_device_string (ac);
 	}
 
@@ -805,6 +806,16 @@ fill_output_connection (gpointer data, gpointer user_data, gboolean active_only)
 	arr = nmc_dup_fields_array (nmc_fields_con_show,
 	                            sizeof (nmc_fields_con_show),
 	                            0);
+	/* Show active connections in color */
+	if (ac) {
+		if (ac_state_int == NM_ACTIVE_CONNECTION_STATE_ACTIVATING)
+			set_val_color_all (arr, NMC_TERM_COLOR_YELLOW);
+		else if (ac_state_int == NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
+			set_val_color_all (arr, NMC_TERM_COLOR_GREEN);
+		else if (ac_state_int > NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
+			set_val_color_all (arr, NMC_TERM_COLOR_RED);
+	}
+
 	set_val_strc (arr, 0, nm_setting_connection_get_id (s_con));
 	set_val_strc (arr, 1, nm_setting_connection_get_uuid (s_con));
 	set_val_strc (arr, 2, nm_setting_connection_get_connection_type (s_con));
@@ -828,8 +839,9 @@ fill_output_connection_for_invisible (NMActiveConnection *ac, NmCli *nmc)
 	NmcOutputField *arr;
 	const char *ac_path = NULL;
 	const char *ac_state = NULL;
-	char *ac_dev = NULL;
+	char *name, *ac_dev = NULL;
 
+	name = g_strdup_printf ("<invisible> %s", nm_active_connection_get_id (ac));
 	ac_path = nm_object_get_path (NM_OBJECT (ac));
 	ac_state = active_connection_state_to_string (nm_active_connection_get_state (ac));
 	ac_dev = get_ac_device_string (ac);
@@ -837,7 +849,8 @@ fill_output_connection_for_invisible (NMActiveConnection *ac, NmCli *nmc)
 	arr = nmc_dup_fields_array (nmc_fields_con_show,
 	                            sizeof (nmc_fields_con_show),
 	                            0);
-	set_val_strc (arr, 0, nm_active_connection_get_id (ac));
+
+	set_val_str  (arr, 0, name);
 	set_val_strc (arr, 1, nm_active_connection_get_uuid (ac));
 	set_val_strc (arr, 2, nm_active_connection_get_connection_type (ac));
 	set_val_strc (arr, 3, NULL);
@@ -850,6 +863,8 @@ fill_output_connection_for_invisible (NMActiveConnection *ac, NmCli *nmc)
 	set_val_str  (arr, 10, ac_dev);
 	set_val_strc (arr, 11, ac_state);
 	set_val_strc (arr, 12, ac_path);
+
+	set_val_color_fmt_all (arr, NMC_TERM_FORMAT_DIM);
 
 	g_ptr_array_add (nmc->output_data, arr);
 }
@@ -925,36 +940,6 @@ fill_output_active_connection (NMActiveConnection *active,
 	g_ptr_array_add (nmc->output_data, arr);
 
 	g_string_free (dev_str, FALSE);
-}
-
-static void
-fill_output_for_all_invisible (NmCli *nmc)
-{
-	const GPtrArray *acons;
-	int a, c;
-
-	g_return_if_fail (nmc != NULL);
-
-	acons = nm_client_get_active_connections (nmc->client);
-	for (a = 0; a < acons->len; a++) {
-		gboolean found = FALSE;
-		NMActiveConnection *acon = g_ptr_array_index (acons, a);
-		const char *a_uuid = nm_active_connection_get_uuid (acon);
-
-		for (c = 0; c < nmc->connections->len; c++) {
-			NMConnection *con = g_ptr_array_index (nmc->connections, c);
-			const char *c_uuid = nm_connection_get_uuid (con);
-
-			if (strcmp (a_uuid, c_uuid) == 0) {
-				found = TRUE;
-				break;
-			}
-		}
-
-		/* Active connection is not in connections list */
-		if (!found)
-			fill_output_connection_for_invisible (acon, nmc);
-	}
 }
 
 typedef struct {
@@ -1340,12 +1325,174 @@ split_required_fields_for_con_show (const char *input,
 	return success;
 }
 
+typedef enum {
+	NMC_SORT_ACTIVE     =  1,
+	NMC_SORT_ACTIVE_INV = -1,
+	NMC_SORT_NAME       =  2,
+	NMC_SORT_NAME_INV   = -2,
+	NMC_SORT_TYPE       =  3,
+	NMC_SORT_TYPE_INV   = -3,
+	NMC_SORT_PATH       =  4,
+	NMC_SORT_PATH_INV   = -4,
+} NmcSortOrder;
+
+typedef struct {
+	NmCli *nmc;
+	const GArray *order;
+} NmcSortInfo;
+
+static int
+compare_connections (gconstpointer a, gconstpointer b, gpointer user_data)
+{
+	NMConnection *ca = *(NMConnection **)a;
+	NMConnection *cb = *(NMConnection **)b;
+	NMActiveConnection *aca, *acb;
+	NmcSortInfo *info = (NmcSortInfo *) user_data;
+	GArray *default_order = NULL;
+	const GArray *order;
+	NmcSortOrder item;
+	int cmp = 0, i;
+	const char *tmp1, *tmp2;
+	unsigned long tmp1_int, tmp2_int;
+
+	if (info->order )
+		order = info->order;
+	else {
+		NmcSortOrder def[] = { NMC_SORT_ACTIVE, NMC_SORT_NAME, NMC_SORT_PATH };
+		int num = G_N_ELEMENTS (def);
+		default_order = g_array_sized_new (FALSE, FALSE, sizeof (NmcSortOrder), num);
+		g_array_append_vals (default_order, def, num);
+		order = default_order;
+	}
+
+	for (i = 0; i < order->len; i++) {
+		item = g_array_index (order, NmcSortOrder, i); 
+		switch (item) {
+		case NMC_SORT_ACTIVE:
+		case NMC_SORT_ACTIVE_INV:
+			aca = get_ac_for_connection (nm_client_get_active_connections (info->nmc->client), ca);
+			acb = get_ac_for_connection (nm_client_get_active_connections (info->nmc->client), cb);
+			cmp = (aca && !acb) ? -1 : (!aca && acb) ? 1 : 0;
+			if (item == NMC_SORT_ACTIVE_INV)
+				cmp = -(cmp);
+			break;
+		case NMC_SORT_TYPE:
+		case NMC_SORT_TYPE_INV:
+			cmp = g_strcmp0 (nm_connection_get_connection_type (ca),
+			                 nm_connection_get_connection_type (cb));
+			if (item == NMC_SORT_TYPE_INV)
+				cmp = -(cmp);
+			break;
+		case NMC_SORT_NAME:
+		case NMC_SORT_NAME_INV:
+			cmp = g_strcmp0 (nm_connection_get_id (ca),
+			                 nm_connection_get_id (cb));
+			if (item == NMC_SORT_NAME_INV)
+				cmp = -(cmp);
+			break;
+		case NMC_SORT_PATH:
+		case NMC_SORT_PATH_INV:
+			tmp1 = nm_connection_get_path (ca);
+			tmp2 = nm_connection_get_path (cb);
+			tmp1 = tmp1 ? strrchr (tmp1, '/') : "0";
+			tmp2 = tmp2 ? strrchr (tmp2, '/') : "0";
+			nmc_string_to_uint (tmp1 ? tmp1+1 : "0", FALSE, 0, 0, &tmp1_int);
+			nmc_string_to_uint (tmp2 ? tmp2+1 : "0", FALSE, 0, 0, &tmp2_int);
+			cmp = (int) tmp1_int - tmp2_int;
+			if (item == NMC_SORT_PATH_INV)
+				cmp = -(cmp);
+			break;
+		default:
+			cmp = 0;
+			break;
+		}
+		if (cmp != 0)
+			goto end;
+	}
+end:
+	if (default_order)
+		g_array_unref (default_order);
+	return cmp;
+}
+
+static GPtrArray *
+sort_connections (const GPtrArray *cons, NmCli *nmc, const GArray *order)
+{
+	GPtrArray *sorted;
+	int i;
+	NmcSortInfo compare_info;
+
+	compare_info.nmc = nmc;
+	compare_info.order = order;
+
+	sorted = g_ptr_array_sized_new (cons->len);
+	for (i = 0; cons && i < cons->len; i++)
+		g_ptr_array_add (sorted, cons->pdata[i]);
+	g_ptr_array_sort_with_data (sorted, compare_connections, &compare_info);
+	return sorted;
+}
+
+static int
+compare_ac_connections (gconstpointer a, gconstpointer b, gpointer user_data)
+{
+	NMActiveConnection *ca = *(NMActiveConnection **)a;
+	NMActiveConnection *cb = *(NMActiveConnection **)b;
+	int cmp;
+
+	/* Sort states first */
+	cmp = nm_active_connection_get_state (cb) - nm_active_connection_get_state (ca);
+	if (cmp != 0)
+		return cmp;
+
+	cmp = g_strcmp0 (nm_active_connection_get_id (ca),
+	                 nm_active_connection_get_id (cb));
+	if (cmp != 0)
+		return cmp;
+
+	return g_strcmp0 (nm_active_connection_get_connection_type (ca),
+	                  nm_active_connection_get_connection_type (cb));
+}
+
+static GPtrArray *
+get_invisible_active_connections (NmCli *nmc)
+{
+	const GPtrArray *acons;
+	GPtrArray *invisibles;
+	int a, c;
+
+	g_return_val_if_fail (nmc != NULL, NULL);
+
+	invisibles = g_ptr_array_new ();
+	acons = nm_client_get_active_connections (nmc->client);
+	for (a = 0; a < acons->len; a++) {
+		gboolean found = FALSE;
+		NMActiveConnection *acon = g_ptr_array_index (acons, a);
+		const char *a_uuid = nm_active_connection_get_uuid (acon);
+
+		for (c = 0; c < nmc->connections->len; c++) {
+			NMConnection *con = g_ptr_array_index (nmc->connections, c);
+			const char *c_uuid = nm_connection_get_uuid (con);
+
+			if (strcmp (a_uuid, c_uuid) == 0) {
+				found = TRUE;
+				break;
+			}
+		}
+		/* Active connection is not in connections array, add it to  */
+		if (!found)
+			g_ptr_array_add (invisibles, acon);
+	}
+	g_ptr_array_sort_with_data (invisibles, compare_ac_connections, NULL);
+	return invisibles;
+}
+
 static NMCResultCode
 do_connections_show (NmCli *nmc, gboolean active_only, gboolean show_secrets,
-                     int argc, char **argv)
+                     const GArray *order, int argc, char **argv)
 {
 	GError *err = NULL;
 	char *profile_flds = NULL, *active_flds = NULL;
+	GPtrArray *invisibles, *sorted_cons;
 
 	nmc->should_wait = FALSE;
 
@@ -1379,13 +1526,19 @@ do_connections_show (NmCli *nmc, gboolean active_only, gboolean show_secrets,
 		arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
 		g_ptr_array_add (nmc->output_data, arr);
 
-		/* Add values */
-		for (i = 0; i < nmc->connections->len; i++) {
-			NMConnection *con = NM_CONNECTION (nmc->connections->pdata[i]);
-			fill_output_connection (con, nmc, active_only);
-		}
-		/* Some active connections may not be in connection list, show them here. */
-		fill_output_for_all_invisible (nmc);
+		/* There might be active connections not present in connection list
+		 * (e.g. private connections of a different user). Show them as well. */
+		invisibles = get_invisible_active_connections (nmc);
+		for (i = 0; i < invisibles->len; i++)
+			fill_output_connection_for_invisible (invisibles->pdata[i], nmc);
+		g_ptr_array_free (invisibles, FALSE);
+
+		/* Sort the connections and fill the output data */
+		sorted_cons = sort_connections (nmc->connections, nmc, order);
+		for (i = 0; i < sorted_cons->len; i++)
+			fill_output_connection (sorted_cons->pdata[i], nmc, active_only);
+		g_ptr_array_free (sorted_cons, FALSE);
+
 		print_data (nmc);  /* Print all data */
 	} else {
 		gboolean new_line = FALSE;
@@ -6190,11 +6343,8 @@ nmcli_editor_tab_completion (const char *text, int start, int end)
 {
 	char **match_array = NULL;
 	const char *line = rl_line_buffer;
-	const char *prompt = rl_prompt;
 	rl_compentry_func_t *generator_func = NULL;
-	gboolean copy_char;
-	const char *p1;
-	char *p2, *prompt_tmp;
+	char *prompt_tmp;
 	char *word = NULL;
 	size_t n1;
 	int num;
@@ -6212,19 +6362,7 @@ nmcli_editor_tab_completion (const char *text, int start, int end)
 	rl_complete_with_tilde_expansion = 1;
 
 	/* Filter out possible ANSI color escape sequences */
-	p1 = prompt;
-	p2 = prompt_tmp = g_strdup (prompt);
-	copy_char = TRUE;
-	while (*p1) {
-		if (*p1 == '\33')
-			copy_char = FALSE;
-		if (copy_char)
-			*p2++ = *p1;
-		if (!copy_char && *p1 == 'm')
-			copy_char = TRUE;
-		p1++;
-	}
-	*p2 = '\0';
+	prompt_tmp = nmc_filter_out_colors ((const char *) rl_prompt);
 
 	/* Find the first non-space character */
 	n1 = strspn (line, " \t");
@@ -7020,7 +7158,8 @@ property_edit_submenu (NmCli *nmc,
 	gboolean temp_changes;
 	gboolean removed;
 
-	prompt = nmc_colorize (nmc->editor_prompt_color, "nmcli %s.%s> ",
+	prompt = nmc_colorize (nmc->editor_prompt_color, NMC_TERM_FORMAT_NORMAL,
+	                       "nmcli %s.%s> ",
 	                       nm_setting_get_name (curr_setting), prop_name);
 
 	while (cmd_property_loop) {
@@ -7368,7 +7507,7 @@ menu_switch_to_level0 (NmcEditorMenuContext *menu_ctx,
 {
 	menu_ctx->level = 0;
 	g_free (menu_ctx->main_prompt);
-	menu_ctx->main_prompt = nmc_colorize (prompt_color, "%s", prompt);
+	menu_ctx->main_prompt = nmc_colorize (prompt_color, NMC_TERM_FORMAT_NORMAL, "%s", prompt);
 	menu_ctx->curr_setting = NULL;
 	g_strfreev (menu_ctx->valid_props);
 	menu_ctx->valid_props = NULL;
@@ -7384,7 +7523,8 @@ menu_switch_to_level1 (NmcEditorMenuContext *menu_ctx,
 {
 	menu_ctx->level = 1;
 	g_free (menu_ctx->main_prompt);
-	menu_ctx->main_prompt = nmc_colorize (prompt_color, "nmcli %s> ", setting_name);
+	menu_ctx->main_prompt = nmc_colorize (prompt_color, NMC_TERM_FORMAT_NORMAL,
+	                                      "nmcli %s> ", setting_name);
 	menu_ctx->curr_setting = setting;
 	g_strfreev (menu_ctx->valid_props);
 	menu_ctx->valid_props = nmc_setting_get_valid_properties (menu_ctx->curr_setting);
@@ -7418,7 +7558,8 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 	g_print (_("You may edit the following settings: %s\n"), valid_settings_str);
 
 	menu_ctx.level = 0;
-	menu_ctx.main_prompt = nmc_colorize (nmc->editor_prompt_color, BASE_PROMPT);
+	menu_ctx.main_prompt = nmc_colorize (nmc->editor_prompt_color, NMC_TERM_FORMAT_NORMAL,
+	                                     BASE_PROMPT);
 	menu_ctx.curr_setting = NULL;
 	menu_ctx.valid_props = NULL;
 	menu_ctx.valid_props_str = NULL;
@@ -8054,9 +8195,11 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					nmc->editor_prompt_color = color;
 					g_free (menu_ctx.main_prompt);
 					if (menu_ctx.level == 0)
-						menu_ctx.main_prompt = nmc_colorize (nmc->editor_prompt_color, BASE_PROMPT);
+						menu_ctx.main_prompt = nmc_colorize (nmc->editor_prompt_color, NMC_TERM_FORMAT_NORMAL,
+						                                     BASE_PROMPT);
 					else
-						menu_ctx.main_prompt = nmc_colorize (nmc->editor_prompt_color, "nmcli %s> ",
+						menu_ctx.main_prompt = nmc_colorize (nmc->editor_prompt_color, NMC_TERM_FORMAT_NORMAL,
+						                                     "nmcli %s> ",
 						                                     nm_setting_get_name (menu_ctx.curr_setting));
 				}
 			} else if (!cmd_arg_p) {
@@ -8918,6 +9061,67 @@ nmcli_con_tab_completion (const char *text, int start, int end)
 	return match_array;
 }
 
+static GArray *
+parse_preferred_connection_order (const char *order, GError **error)
+{
+	char **strv, **iter;
+	const char *str;
+	GArray *order_arr;
+	NmcSortOrder val;
+	gboolean inverse;
+	int i;
+
+	strv = nmc_strsplit_set (order, ":", -1);
+	if (!strv || !*strv) {
+		g_set_error (error, NMCLI_ERROR, 0,
+		             _("incorrect string '%s' of '--order' option"), order);
+		g_strfreev (strv);
+		return NULL;
+	}
+
+	order_arr = g_array_sized_new (FALSE, FALSE, sizeof (NmcSortOrder), 4);
+	for (iter = strv; iter && *iter; iter++) {
+		str = *iter;
+		inverse = FALSE;
+		if (str[0] == '-')
+			inverse = TRUE;
+		if (str[0] == '+' || str[0] == '-')
+			str++;
+
+		if (matches (str, "active") == 0)
+			val = inverse ? NMC_SORT_ACTIVE_INV : NMC_SORT_ACTIVE;
+		else if (matches (str, "name") == 0)
+			val = inverse ? NMC_SORT_NAME_INV : NMC_SORT_NAME;
+		else if (matches (str, "type") == 0)
+			val = inverse ? NMC_SORT_TYPE_INV : NMC_SORT_TYPE;
+		else if (matches (str, "path") == 0)
+			val = inverse ? NMC_SORT_PATH_INV : NMC_SORT_PATH;
+		else {
+			g_array_unref (order_arr);
+			order_arr = NULL;
+			g_set_error (error, NMCLI_ERROR, 0,
+			             _("incorrect item '%s' in '--order' option"), *iter);
+			break;
+		}
+		/* Check duplicates*/
+		for (i = 0; i < order_arr->len; i++) {
+			if (abs (g_array_index (order_arr, NmcSortOrder, i)) - abs (val) == 0) {
+				g_array_unref (order_arr);
+				order_arr = NULL;
+				g_set_error (error, NMCLI_ERROR, 0,
+				             _("'%s' repeats in '--order' option"), str);
+				goto end;
+			}
+		}
+
+		/* Value is ok and unique, add it to the array */
+		g_array_append_val (order_arr, val);
+	}
+end:
+	g_strfreev (strv);
+	return order_arr;
+}
+
 /* Entry point function for connections-related commands: 'nmcli connection' */
 NMCResultCode
 do_connections (NmCli *nmc, int argc, char **argv)
@@ -8960,16 +9164,17 @@ do_connections (NmCli *nmc, int argc, char **argv)
 	if (argc == 0) {
 		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
 			goto opt_error;
-		nmc->return_value = do_connections_show (nmc, FALSE, FALSE, argc, argv);
+		nmc->return_value = do_connections_show (nmc, FALSE, FALSE, NULL, argc, argv);
 	} else {
 		if (matches (*argv, "show") == 0) {
 			gboolean active = FALSE;
 			gboolean show_secrets = FALSE;
+			GArray *order = NULL;
 			int i;
 
 			next_arg (&argc, &argv);
 			/* check connection show options [--active] [--show-secrets] */
-			for (i = 0; i < 2; i++) {
+			for (i = 0; i < 3; i++) {
 				if (!active && nmc_arg_is_option (*argv, "active")) {
 					active = TRUE;
 					next_arg (&argc, &argv);
@@ -8978,8 +9183,21 @@ do_connections (NmCli *nmc, int argc, char **argv)
 					show_secrets = TRUE;
 					next_arg (&argc, &argv);
 				}
+				if (!order && nmc_arg_is_option (*argv, "order")) {
+					if (next_arg (&argc, &argv) != 0) {
+						g_set_error_literal (&error, NMCLI_ERROR, 0,
+						                     _("'--order' argument is missing"));
+						goto opt_error;
+					}
+					order = parse_preferred_connection_order (*argv, &error);
+					if (error)
+						goto opt_error;
+					next_arg (&argc, &argv);
+				}
 			}
-			nmc->return_value = do_connections_show (nmc, active, show_secrets, argc, argv);
+			nmc->return_value = do_connections_show (nmc, active, show_secrets, order, argc, argv);
+			if (order)
+				g_array_unref (order);
 		} else if (matches(*argv, "up") == 0) {
 			nmc->return_value = do_connection_up (nmc, argc-1, argv+1);
 		} else if (matches(*argv, "down") == 0) {
