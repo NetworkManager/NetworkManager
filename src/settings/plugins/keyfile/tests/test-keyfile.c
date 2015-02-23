@@ -100,33 +100,33 @@ test_read_valid_wired_connection (void)
 	const char *expected6_dnssearch3 = "gnu.org";
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*ipv4.addresses1*semicolon at the end*");
+	                       "*ipv4.addresses:*semicolon at the end*addresses1*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*ipv4.addresses2*semicolon at the end*");
+	                       "*ipv4.addresses:*semicolon at the end*addresses2*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
-	                       "*Missing prefix length*ipv4.address4*");
+	                       "*missing prefix length*address4*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
-	                       "*Missing prefix length*ipv4.address5*");
+	                       "*missing prefix length*address5*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*ipv4.routes2*semicolon at the end*");
+	                       "*ipv4.routes*semicolon at the end*routes2*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*ipv4.routes3*semicolon at the end*");
+	                       "*ipv4.routes*semicolon at the end*routes3*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*ipv4.routes5*semicolon at the end*");
+	                       "*ipv4.routes*semicolon at the end*routes5*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*ipv4.routes8*semicolon at the end*");
+	                       "*ipv4.routes*semicolon at the end*routes8*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
-	                       "*Missing prefix length*ipv6.address4*");
+	                       "*missing prefix length*address4*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*ipv6.address5*semicolon at the end*");
+	                       "*ipv6.address*semicolon at the end*address5*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
-	                       "*Missing prefix length*ipv6.address5*");
+	                       "*missing prefix length*address5*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*ipv6.address7*semicolon at the end*");
+	                       "*ipv6.address*semicolon at the end*address7*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*ipv6.routes1*semicolon at the end*");
+	                       "*ipv6.routes*semicolon at the end*routes1*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*ipv6.route6*semicolon at the end*");
+	                       "*ipv6.route*semicolon at the end*route6*");
 	connection = nm_keyfile_plugin_connection_from_file (TEST_WIRED_FILE, NULL);
 	g_test_assert_expected_messages ();
 	ASSERT (connection != NULL,
@@ -773,11 +773,11 @@ test_read_wired_mac_case (void)
 	const char *expected_uuid = "4e80a56d-c99f-4aad-a6dd-b449bc398c57";
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*ipv4.addresses1*semicolon at the end*");
+	                       "*ipv4.addresses*semicolon at the end*addresses1*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*ipv4.addresses2*semicolon at the end*");
+	                       "*ipv4.addresses*semicolon at the end*addresses2*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*ipv6.routes1*semicolon at the end*");
+	                       "*ipv6.routes*semicolon at the end*routes1*");
 	connection = nm_keyfile_plugin_connection_from_file (TEST_WIRED_MAC_CASE_FILE, NULL);
 	g_test_assert_expected_messages ();
 	ASSERT (connection != NULL,

@@ -28,7 +28,5 @@
 
 #define KEYFILE_DIR NMCONFDIR "/system-connections"
 
-#define VPN_SECRETS_GROUP "vpn-secrets"
-
 #endif  /* __COMMON_H__ */
 
