@@ -57,7 +57,6 @@ typedef struct {
 	ApSupport       ap_support;
 	guint           die_count_reset_id;
 	guint           die_count;
-	gboolean        disposed;
 } NMSupplicantManagerPrivate;
 
 /********************************************************************/
@@ -372,29 +371,23 @@ dispose (GObject *object)
 {
 	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (object);
 
-	if (priv->disposed)
-		goto out;
-	priv->disposed = TRUE;
-
-	if (priv->die_count_reset_id)
+	if (priv->die_count_reset_id) {
 		g_source_remove (priv->die_count_reset_id);
+		priv->die_count_reset_id = 0;
+	}
 
 	if (priv->dbus_mgr) {
-		if (priv->name_owner_id)
+		if (priv->name_owner_id) {
 			g_signal_handler_disconnect (priv->dbus_mgr, priv->name_owner_id);
+			priv->name_owner_id = 0;
+		}
 		priv->dbus_mgr = NULL;
 	}
 
-	g_hash_table_destroy (priv->ifaces);
+	g_clear_pointer (&priv->ifaces, g_hash_table_unref);
+	g_clear_object (&priv->proxy);
+	g_clear_object (&priv->props_proxy);
 
-	if (priv->proxy)
-		g_object_unref (priv->proxy);
-
-	if (priv->props_proxy)
-		g_object_unref (priv->props_proxy);
-
-out:
-	/* Chain up to the parent class */
 	G_OBJECT_CLASS (nm_supplicant_manager_parent_class)->dispose (object);
 }
 
