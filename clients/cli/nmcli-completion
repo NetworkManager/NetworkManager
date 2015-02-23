@@ -197,6 +197,13 @@ _nmcli_compl_OPTIONS()
                 fi
                 _nmcli_array_delete_at words 0 1
                 ;;
+            colors)
+                if [[ "${#words[@]}" -eq 2 ]]; then
+                    _nmcli_list "yes no auto"
+                   return 0
+                fi
+                _nmcli_array_delete_at words 0 1
+                ;;
             fields)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     _nmcli_list "all common
@@ -683,7 +690,7 @@ _nmcli()
     local COMMAND_CONNECTION_ACTIVE=""
 
     HELP_ONLY_AS_FIRST=
-    local LONG_OPTIONS=(terse pretty mode fields escape nocheck ask wait version help)
+    local LONG_OPTIONS=(terse pretty mode fields colors escape nocheck ask wait version help)
     _nmcli_compl_OPTIONS
     i=$?
 
