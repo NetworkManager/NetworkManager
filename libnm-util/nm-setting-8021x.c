@@ -33,6 +33,7 @@
 #include "crypto.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
+#include "nm-macros-internal.h"
 
 /**
  * SECTION:nm-setting-8021x
@@ -430,9 +431,20 @@ get_cert_scheme (GByteArray *array)
 	if (!array || !array->len)
 		return NM_SETTING_802_1X_CK_SCHEME_UNKNOWN;
 
-	if (   (array->len > strlen (SCHEME_PATH))
-	    && !memcmp (array->data, SCHEME_PATH, strlen (SCHEME_PATH)))
-		return NM_SETTING_802_1X_CK_SCHEME_PATH;
+	/* interpret the blob as PATH if it starts with "file://". */
+	if (   array->len >= STRLEN (SCHEME_PATH)
+	    && !memcmp (array->data, SCHEME_PATH, STRLEN (SCHEME_PATH))) {
+		/* But it must also be NUL terminated, contain at least
+		 * one non-NUL character, and contain only one trailing NUL
+		 * chracter.
+		 * And ensure it's UTF-8 valid too so we can pass it through
+		 * D-Bus and stuff like that. */
+		if (   array->len > STRLEN (SCHEME_PATH) + 1
+		    && array->data[array->len - 1] == '\0'
+		    && g_utf8_validate ((const char *) &array->data[STRLEN (SCHEME_PATH)], array->len - (STRLEN (SCHEME_PATH) + 1), NULL))
+			return NM_SETTING_802_1X_CK_SCHEME_PATH;
+		return NM_SETTING_802_1X_CK_SCHEME_UNKNOWN;
+	}
 
 	return NM_SETTING_802_1X_CK_SCHEME_BLOB;
 }
@@ -2604,25 +2616,9 @@ need_secrets (NMSetting *setting)
 static gboolean
 verify_cert (GByteArray *array, const char *prop_name, GError **error)
 {
-	if (!array)
+	if (   !array
+	    || get_cert_scheme (array) != NM_SETTING_802_1X_CK_SCHEME_UNKNOWN)
 		return TRUE;
-
-	switch (get_cert_scheme (array)) {
-	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-		return TRUE;
-	case NM_SETTING_802_1X_CK_SCHEME_PATH:
-		/* For path-based schemes, verify that the path is zero-terminated */
-		if (array->data[array->len - 1] == '\0') {
-			/* And ensure it's UTF-8 valid too so we can pass it through
-			 * D-Bus and stuff like that.
-			 */
-			if (g_utf8_validate ((const char *) (array->data + strlen (SCHEME_PATH)), -1, NULL))
-				return TRUE;
-		}
-		break;
-	default:
-		break;
-	}
 
 	g_set_error_literal (error,
 	                     NM_SETTING_802_1X_ERROR,

@@ -31,6 +31,7 @@
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
 #include "nm-core-enum-types.h"
+#include "nm-macros-internal.h"
 
 /**
  * SECTION:nm-setting-8021x
@@ -400,21 +401,64 @@ nm_setting_802_1x_get_system_ca_certs (NMSetting8021x *setting)
 }
 
 static NMSetting8021xCKScheme
-get_cert_scheme (GBytes *bytes)
+get_cert_scheme (GBytes *bytes, GError **error)
 {
-	gconstpointer data;
+	const char *data;
 	gsize length;
 
-	if (!bytes)
+	if (!bytes) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("data missing"));
 		return NM_SETTING_802_1X_CK_SCHEME_UNKNOWN;
+	}
 
 	data = g_bytes_get_data (bytes, &length);
-	if (!length)
+	if (!length) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("binary data missing"));
 		return NM_SETTING_802_1X_CK_SCHEME_UNKNOWN;
+	}
 
-	if (   (length > strlen (SCHEME_PATH))
-	    && !memcmp (data, SCHEME_PATH, strlen (SCHEME_PATH)))
+	/* interpret the blob as PATH if it starts with "file://". */
+	if (   length >= STRLEN (SCHEME_PATH)
+	    && !memcmp (data, SCHEME_PATH, STRLEN (SCHEME_PATH))) {
+		/* But it must also be NUL terminated, contain at least
+		 * one non-NUL character, and contain only one trailing NUL
+		 * chracter.
+		 * And ensure it's UTF-8 valid too so we can pass it through
+		 * D-Bus and stuff like that. */
+
+		if (data[length - 1] != '\0') {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("file:// URI not NUL terminated"));
+			return NM_SETTING_802_1X_CK_SCHEME_UNKNOWN;
+		}
+		length--;
+
+		if (length <= STRLEN (SCHEME_PATH)) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("file:// URI is empty"));
+			return NM_SETTING_802_1X_CK_SCHEME_UNKNOWN;
+		}
+
+		if (!g_utf8_validate (data + STRLEN (SCHEME_PATH), length - STRLEN (SCHEME_PATH), NULL)) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("file:// URI is not valid UTF-8"));
+			return NM_SETTING_802_1X_CK_SCHEME_UNKNOWN;
+		}
+
 		return NM_SETTING_802_1X_CK_SCHEME_PATH;
+	}
 
 	return NM_SETTING_802_1X_CK_SCHEME_BLOB;
 }
@@ -434,7 +478,7 @@ nm_setting_802_1x_get_ca_cert_scheme (NMSetting8021x *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NM_SETTING_802_1X_CK_SCHEME_UNKNOWN);
 
-	return get_cert_scheme (NM_SETTING_802_1X_GET_PRIVATE (setting)->ca_cert);
+	return get_cert_scheme (NM_SETTING_802_1X_GET_PRIVATE (setting)->ca_cert, NULL);
 }
 
 /**
@@ -766,7 +810,7 @@ nm_setting_802_1x_get_client_cert_scheme (NMSetting8021x *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NM_SETTING_802_1X_CK_SCHEME_UNKNOWN);
 
-	return get_cert_scheme (NM_SETTING_802_1X_GET_PRIVATE (setting)->client_cert);
+	return get_cert_scheme (NM_SETTING_802_1X_GET_PRIVATE (setting)->client_cert, NULL);
 }
 
 /**
@@ -1029,7 +1073,7 @@ nm_setting_802_1x_get_phase2_ca_cert_scheme (NMSetting8021x *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NM_SETTING_802_1X_CK_SCHEME_UNKNOWN);
 
-	return get_cert_scheme (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_ca_cert);
+	return get_cert_scheme (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_ca_cert, NULL);
 }
 
 /**
@@ -1349,7 +1393,7 @@ nm_setting_802_1x_get_phase2_client_cert_scheme (NMSetting8021x *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NM_SETTING_802_1X_CK_SCHEME_UNKNOWN);
 
-	return get_cert_scheme (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_client_cert);
+	return get_cert_scheme (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_client_cert, NULL);
 }
 
 /**
@@ -1604,7 +1648,7 @@ nm_setting_802_1x_get_private_key_scheme (NMSetting8021x *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NM_SETTING_802_1X_CK_SCHEME_UNKNOWN);
 
-	return get_cert_scheme (NM_SETTING_802_1X_GET_PRIVATE (setting)->private_key);
+	return get_cert_scheme (NM_SETTING_802_1X_GET_PRIVATE (setting)->private_key, NULL);
 }
 
 /**
@@ -1941,7 +1985,7 @@ nm_setting_802_1x_get_phase2_private_key_scheme (NMSetting8021x *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NM_SETTING_802_1X_CK_SCHEME_UNKNOWN);
 
-	return get_cert_scheme (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_private_key);
+	return get_cert_scheme (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_private_key, NULL);
 }
 
 /**
@@ -2575,35 +2619,18 @@ need_secrets (NMSetting *setting)
 static gboolean
 verify_cert (GBytes *bytes, const char *prop_name, GError **error)
 {
-	gconstpointer data;
-	gsize length;
+	GError *local = NULL;
 
-	if (!bytes)
+	if (   !bytes
+	    || get_cert_scheme (bytes, &local) != NM_SETTING_802_1X_CK_SCHEME_UNKNOWN)
 		return TRUE;
 
-	switch (get_cert_scheme (bytes)) {
-	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-		return TRUE;
-	case NM_SETTING_802_1X_CK_SCHEME_PATH:
-		/* For path-based schemes, verify that the path is zero-terminated */
-		data = g_bytes_get_data (bytes, &length);
-		if (((const guchar *)data)[length - 1] == '\0') {
-			/* And ensure it's UTF-8 valid too so we can pass it through
-			 * D-Bus and stuff like that.
-			 */
-			if (g_utf8_validate ((const char *)data + strlen (SCHEME_PATH), -1, NULL))
-				return TRUE;
-		}
-		break;
-	default:
-		break;
-	}
-
-	g_set_error_literal (error,
-	                     NM_CONNECTION_ERROR,
-	                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-	                     _("property is invalid"));
+	g_set_error (error,
+	             NM_CONNECTION_ERROR,
+	             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+	             _("certificate is invalid: %s"), local->message);
 	g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, prop_name);
+	g_error_free (local);
 	return FALSE;
 }
 
