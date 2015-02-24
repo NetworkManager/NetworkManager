@@ -66,7 +66,7 @@ get_generic_capabilities (NMDevice *dev)
 }
 
 static gboolean
-is_available (NMDevice *dev)
+is_available (NMDevice *dev, NMDeviceCheckDevAvailableFlags flags)
 {
 	if (NM_DEVICE_GET_CLASS (dev)->is_up)
 		return NM_DEVICE_GET_CLASS (dev)->is_up (dev);
@@ -76,6 +76,7 @@ is_available (NMDevice *dev)
 static gboolean
 check_connection_available (NMDevice *device,
                             NMConnection *connection,
+                            NMDeviceCheckConAvailableFlags flags,
                             const char *specific_object)
 {
 	/* Connections are always available because the carrier state is determined
