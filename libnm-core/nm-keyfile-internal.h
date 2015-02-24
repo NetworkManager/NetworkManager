@@ -31,6 +31,9 @@
 
 /*********************************************************/
 
+#define NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB "data:;base64,"
+#define NM_KEYFILE_CERT_SCHEME_PREFIX_PATH "file://"
+
 typedef enum {
 	NM_KEYFILE_READ_TYPE_WARN               = 1,
 } NMKeyfileReadType;

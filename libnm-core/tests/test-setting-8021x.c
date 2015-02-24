@@ -57,15 +57,13 @@ compare_blob_data (const char *test,
 	g_free (contents);
 }
 
-#define SCHEME_PATH "file://"
-
 static void
 check_scheme_path (GBytes *value, const char *path)
 {
 	const guint8 *p = g_bytes_get_data (value, NULL);
 
-	g_assert (memcmp (p, SCHEME_PATH, strlen (SCHEME_PATH)) == 0);
-	p += strlen (SCHEME_PATH);
+	g_assert (memcmp (p, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, strlen (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH)) == 0);
+	p += strlen (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH);
 	g_assert (memcmp (p, path, strlen (path)) == 0);
 	p += strlen (path);
 	g_assert (*p == '\0');

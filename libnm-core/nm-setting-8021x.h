@@ -31,6 +31,8 @@
 
 G_BEGIN_DECLS
 
+#define NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH "file://"
+
 /**
  * NMSetting8021xCKFormat:
  * @NM_SETTING_802_1X_CK_FORMAT_UNKNOWN: unknown file format
