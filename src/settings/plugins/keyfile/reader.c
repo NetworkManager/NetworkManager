@@ -618,6 +618,9 @@ get_bytes (GKeyFile *keyfile,
 	gsize length;
 	int i;
 
+	if (!nm_keyfile_plugin_kf_has_key (keyfile, setting_name, key, NULL))
+		return NULL;
+
 	/* New format: just a string
 	 * Old format: integer list; e.g. 11;25;38;
 	 */
@@ -647,6 +650,11 @@ get_bytes (GKeyFile *keyfile,
 	if (!array) {
 		/* Old format; list of ints */
 		tmp_list = nm_keyfile_plugin_kf_get_integer_list (keyfile, setting_name, key, &length, NULL);
+		if (!tmp_list) {
+			nm_log_warn (LOGD_SETTINGS, "%s: %s / %s ignoring invalid binary property",
+			                            __func__, setting_name, key);
+			return NULL;
+		}
 		array = g_byte_array_sized_new (length);
 		for (i = 0; i < length; i++) {
 			int val = tmp_list[i];
