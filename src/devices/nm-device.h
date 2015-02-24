@@ -86,9 +86,36 @@ G_BEGIN_DECLS
 
 typedef enum NMActStageReturn NMActStageReturn;
 
+/* These flags affect whether a connection is considered available on a device
+ * (check_connection_available()). The flags should have the meaning of relaxing
+ * a condition, so that adding a flag might make a connection available that would
+ * not be available otherwise. Adding a flag should never make a connection
+ * not available if it would be available otherwise. */
+typedef enum {
+	NM_DEVICE_CHECK_CON_AVAILABLE_NONE                                  = 0,
+
+	_NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER     = (1L << 0),
+	_NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP           = (1L << 1),
+	NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST                      = _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER
+	                                                                    | _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP,
+
+	__NM_DEVICE_CHECK_CON_AVAILABLE_ALL,
+	NM_DEVICE_CHECK_CON_AVAILABLE_ALL                                   = (((__NM_DEVICE_CHECK_CON_AVAILABLE_ALL - 1) << 1) - 1),
+} NMDeviceCheckConAvailableFlags;
+
 struct _NMDevice {
 	GObject parent;
 };
+
+/* The flags have an relaxing meaning, that means, specifying more flags, can make
+ * a device appear more available. It can never make a device less available. */
+typedef enum {
+	NM_DEVICE_CHECK_DEV_AVAILABLE_NONE                                  = 0,
+	NM_DEVICE_CHECK_DEV_AVAILABLE_IGNORE_CARRIER                        = (1L << 0),
+
+	__NM_DEVICE_CHECK_DEV_AVAILABLE_ALL,
+	NM_DEVICE_CHECK_DEV_AVAILABLE_ALL                                   = (((__NM_DEVICE_CHECK_DEV_AVAILABLE_ALL - 1) << 1) - 1),
+} NMDeviceCheckDevAvailableFlags;
 
 typedef struct {
 	GObjectClass parent;
@@ -117,7 +144,7 @@ typedef struct {
 
 	guint32		(* get_generic_capabilities)	(NMDevice *self);
 
-	gboolean	(* is_available) (NMDevice *self);
+	gboolean	(* is_available) (NMDevice *self, NMDeviceCheckDevAvailableFlags flags);
 
 	gboolean    (* get_enabled) (NMDevice *self);
 
@@ -137,18 +164,17 @@ typedef struct {
 	 * including any live network information like scan lists.  The connection
 	 * is checked against the object defined by @specific_object, if given.
 	 * Returns TRUE if the connection is available; FALSE if not.
+	 *
+	 * The passed @flags affect whether a connection is considered
+	 * available or not. Adding more flags, means the connection is
+	 * *more* available.
+	 *
+	 * Specifying @specific_object can only reduce the availability of a connection.
 	 */
 	gboolean    (* check_connection_available) (NMDevice *self,
 	                                            NMConnection *connection,
+	                                            NMDeviceCheckConAvailableFlags flags,
 	                                            const char *specific_object);
-
-	/* Same as check_connection_available() but called if the connection
-	 * is not present in the activating-connections array during activation,
-	 * to give the device a chance to allow/deny the activation.  This is a
-	 * hack only meant for hidden WiFi networks.
-	 */
-	gboolean    (* check_connection_available_wifi_hidden) (NMDevice *self,
-	                                                        NMConnection *connection);
 
 	gboolean    (* complete_connection)         (NMDevice *self,
 	                                             NMConnection *connection,
@@ -268,7 +294,7 @@ NMConnection *  nm_device_get_connection	(NMDevice *dev);
 
 void            nm_device_removed        (NMDevice *dev);
 
-gboolean        nm_device_is_available   (NMDevice *dev);
+gboolean        nm_device_is_available   (NMDevice *dev, NMDeviceCheckDevAvailableFlags flags);
 gboolean        nm_device_has_carrier    (NMDevice *dev);
 
 NMConnection * nm_device_generate_connection (NMDevice *self, NMDevice *master);
@@ -327,7 +353,8 @@ typedef enum {
 
 	/* Boundary value */
 	__NM_UNMANAGED_LAST,
-	NM_UNMANAGED_LAST     = __NM_UNMANAGED_LAST - 1,
+	NM_UNMANAGED_LAST          = __NM_UNMANAGED_LAST - 1,
+	NM_UNMANAGED_ALL           = ((NM_UNMANAGED_LAST << 1) - 1),
 } NMUnmanagedFlags;
 
 gboolean nm_device_get_managed (NMDevice *device);
@@ -371,9 +398,10 @@ gboolean nm_device_has_pending_action    (NMDevice *device);
 GPtrArray *nm_device_get_available_connections (NMDevice *device,
                                                 const char *specific_object);
 
-gboolean   nm_device_connection_is_available (NMDevice *device,
-                                              NMConnection *connection,
-                                              gboolean allow_device_override);
+gboolean   nm_device_check_connection_available (NMDevice *device,
+                                                 NMConnection *connection,
+                                                 NMDeviceCheckConAvailableFlags flags,
+                                                 const char *specific_object);
 
 gboolean nm_device_notify_component_added (NMDevice *device, GObject *component);
 

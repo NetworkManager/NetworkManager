@@ -300,14 +300,14 @@ modem_state_cb (NMModem *modem,
 		nm_device_recheck_available_connections (device);
 	}
 
-	if ((dev_state >= NM_DEVICE_STATE_DISCONNECTED) && !nm_device_is_available (device)) {
+	if ((dev_state >= NM_DEVICE_STATE_DISCONNECTED) && !nm_device_is_available (device, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE)) {
 		nm_device_state_changed (device,
 		                         NM_DEVICE_STATE_UNAVAILABLE,
 		                         NM_DEVICE_STATE_REASON_MODEM_FAILED);
 		return;
 	}
 
-	if ((dev_state == NM_DEVICE_STATE_UNAVAILABLE) && nm_device_is_available (device)) {
+	if ((dev_state == NM_DEVICE_STATE_UNAVAILABLE) && nm_device_is_available (device, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE)) {
 		nm_device_state_changed (device,
 		                         NM_DEVICE_STATE_DISCONNECTED,
 		                         NM_DEVICE_STATE_REASON_MODEM_AVAILABLE);
@@ -394,6 +394,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 static gboolean
 check_connection_available (NMDevice *device,
                             NMConnection *connection,
+                            NMDeviceCheckConAvailableFlags flags,
                             const char *specific_object)
 {
 	NMDeviceModem *self = NM_DEVICE_MODEM (device);
@@ -583,24 +584,19 @@ set_enabled (NMDevice *device, gboolean enabled)
 }
 
 static gboolean
-is_available (NMDevice *device)
+is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 {
 	NMDeviceModem *self = NM_DEVICE_MODEM (device);
-	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
+	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (self);
 	NMModemState modem_state;
 
-	if (!priv->rf_enabled) {
-		_LOGD (LOGD_MB, "not available because WWAN airplane mode is on");
+	if (!priv->rf_enabled)
 		return FALSE;
-	}
 
 	g_assert (priv->modem);
 	modem_state = nm_modem_get_state (priv->modem);
-	if (modem_state <= NM_MODEM_STATE_INITIALIZING) {
-		_LOGD (LOGD_MB, "not available because modem is not ready (%s)",
-		       nm_modem_state_to_string (modem_state));
+	if (modem_state <= NM_MODEM_STATE_INITIALIZING)
 		return FALSE;
-	}
 
 	return TRUE;
 }

@@ -864,10 +864,10 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 
 
 static gboolean
-_internal_check_connection_available (NMDevice *device,
-                                      NMConnection *connection,
-                                      const char *specific_object,
-                                      gboolean ignore_ap_list)
+check_connection_available (NMDevice *device,
+                            NMConnection *connection,
+                            NMDeviceCheckConAvailableFlags flags,
+                            const char *specific_object)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
 	NMSettingWireless *s_wifi;
@@ -876,6 +876,9 @@ _internal_check_connection_available (NMDevice *device,
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_return_val_if_fail (s_wifi, FALSE);
+
+	/* a connection that is available for a certain @specific_object, MUST
+	 * also be available in general (without @specific_object). */
 
 	if (specific_object) {
 		NMAccessPoint *ap;
@@ -892,8 +895,15 @@ _internal_check_connection_available (NMDevice *device,
 	    || g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_AP) == 0)
 		return TRUE;
 
-	/* Hidden SSIDs obviously don't always appear in the scan list either */
-	if (nm_setting_wireless_get_hidden (s_wifi) || ignore_ap_list)
+	/* Hidden SSIDs obviously don't always appear in the scan list either.
+	 *
+	 * For an explict user-activation-request, a connection is considered
+	 * available because for hidden Wi-Fi, clients didn't consistently
+	 * set the 'hidden' property to indicate hidden SSID networks.  If
+	 * activating but the network isn't available let the device recheck
+	 * availability.
+	 */
+	if (nm_setting_wireless_get_hidden (s_wifi) || NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP))
 		return TRUE;
 
 	/* check if its visible */
@@ -903,24 +913,6 @@ _internal_check_connection_available (NMDevice *device,
 	}
 
 	return FALSE;
-}
-
-static gboolean
-check_connection_available (NMDevice *device,
-                            NMConnection *connection,
-                            const char *specific_object)
-{
-	return _internal_check_connection_available (device, connection, specific_object, FALSE);
-}
-
-/* FIXME: remove this function when we require the 'hidden' property to be
- * set before a hidden connection can be activated.
- */
-static gboolean
-check_connection_available_wifi_hidden (NMDevice *device,
-                                        NMConnection *connection)
-{
-	return _internal_check_connection_available (device, connection, NULL, TRUE);
 }
 
 /*
@@ -1144,28 +1136,22 @@ complete_connection (NMDevice *device,
 }
 
 static gboolean
-is_available (NMDevice *device)
+is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	guint32 state;
 
-	if (!priv->enabled) {
-		_LOGD (LOGD_WIFI, "not available because not enabled");
+	if (!priv->enabled)
 		return FALSE;
-	}
 
-	if (!priv->sup_iface) {
-		_LOGD (LOGD_WIFI, "not available because supplicant not running");
+	if (!priv->sup_iface)
 		return FALSE;
-	}
 
 	state = nm_supplicant_interface_get_state (priv->sup_iface);
 	if (   state < NM_SUPPLICANT_INTERFACE_STATE_READY
-	    || state > NM_SUPPLICANT_INTERFACE_STATE_COMPLETED) {
-		_LOGD (LOGD_WIFI, "not available because supplicant interface not ready");
+	    || state > NM_SUPPLICANT_INTERFACE_STATE_COMPLETED)
 		return FALSE;
-	}
 
 	return TRUE;
 }
@@ -2170,7 +2156,7 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 		/* If the interface can now be activated because the supplicant is now
 		 * available, transition to DISCONNECTED.
 		 */
-		if ((devstate == NM_DEVICE_STATE_UNAVAILABLE) && nm_device_is_available (device)) {
+		if ((devstate == NM_DEVICE_STATE_UNAVAILABLE) && nm_device_is_available (device, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE)) {
 			nm_device_state_changed (device,
 			                         NM_DEVICE_STATE_DISCONNECTED,
 			                         NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE);
@@ -3341,7 +3327,6 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	parent_class->is_available = is_available;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->check_connection_available = check_connection_available;
-	parent_class->check_connection_available_wifi_hidden = check_connection_available_wifi_hidden;
 	parent_class->complete_connection = complete_connection;
 	parent_class->set_enabled = set_enabled;
 

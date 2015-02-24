@@ -239,7 +239,7 @@ update_availability (NMDeviceWimax *self, gboolean old_available)
 	NMDeviceState state;
 	gboolean new_available, changed = FALSE;
 
-	new_available = nm_device_is_available (device);
+	new_available = nm_device_is_available (device, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE);
 	if (new_available == old_available)
 		return FALSE;
 
@@ -281,7 +281,7 @@ set_enabled (NMDevice *device, gboolean enabled)
 	if (priv->enabled == enabled)
 		return;
 
-	old_available = nm_device_is_available (NM_DEVICE (device));
+	old_available = nm_device_is_available (NM_DEVICE (device), NM_DEVICE_CHECK_DEV_AVAILABLE_NONE);
 	priv->enabled = enabled;
 
 	nm_log_dbg (LOGD_WIMAX, "(%s): radio now %s",
@@ -334,11 +334,15 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 static gboolean
 check_connection_available (NMDevice *device,
                             NMConnection *connection,
+                            NMDeviceCheckConAvailableFlags flags,
                             const char *specific_object)
 {
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (device);
 	const GSList *ns_iter = NULL;
 	NMWimaxNsp *nsp;
+
+	/* a connection that is available for a certain @specific_object, MUST
+	 * also be available in general (without @specific_object). */
 
 	if (specific_object) {
 		nsp = get_nsp_by_path (NM_DEVICE_WIMAX (device), specific_object);
@@ -484,30 +488,21 @@ can_auto_connect (NMDevice *device,
 }
 
 static gboolean
-is_available (NMDevice *device)
+is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 {
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (device);
-	const char *iface = nm_device_get_iface (device);
 
-	if (!priv->enabled) {
-		nm_log_dbg (LOGD_WIMAX, "(%s): not available because not enabled", iface);
+	if (!priv->enabled)
 		return FALSE;
-	}
 
-	if (!priv->wimaxd_enabled) {
-		nm_log_dbg (LOGD_WIMAX, "(%s): not available because not enabled in wimaxd", iface);
+	if (!priv->wimaxd_enabled)
 		return FALSE;
-	}
 
-	if (!nm_wimax_util_sdk_is_initialized ()) {
-		nm_log_dbg (LOGD_WIMAX, "(%s): not available because WiMAX SDK not initialized", iface);
+	if (!nm_wimax_util_sdk_is_initialized ())
 		return FALSE;
-	}
 
-	if (!priv->sdk) {
-		nm_log_dbg (LOGD_WIMAX, "(%s): not available because not known to WiMAX SDK", iface);
+	if (!priv->sdk)
 		return FALSE;
-	}
 
 	return iwmxsdk_status_get (priv->sdk) >= WIMAX_API_DEVICE_STATUS_Ready;
 }
@@ -712,7 +707,7 @@ wmx_state_change_cb (struct wmxsdk *wmxsdk,
 		return;
 
 	state = nm_device_get_state (NM_DEVICE (self));
-	old_available = nm_device_is_available (NM_DEVICE (self));
+	old_available = nm_device_is_available (NM_DEVICE (self), NM_DEVICE_CHECK_DEV_AVAILABLE_NONE);
 
 	priv->status = new_status;
 	if (priv->current_nsp)
@@ -1153,7 +1148,7 @@ static gboolean
 sdk_action_defer_cb (gpointer user_data)
 {
 	NMDeviceWimax *self = NM_DEVICE_WIMAX (user_data);
-	gboolean old_available = nm_device_is_available (NM_DEVICE (self));
+	gboolean old_available = nm_device_is_available (NM_DEVICE (self), NM_DEVICE_CHECK_DEV_AVAILABLE_NONE);
 
 	NM_DEVICE_WIMAX_GET_PRIVATE (self)->sdk_action_defer_id = 0;
 	update_availability (self, old_available);
