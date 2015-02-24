@@ -9068,7 +9068,7 @@ parse_preferred_connection_order (const char *order, GError **error)
 	const char *str;
 	GArray *order_arr;
 	NmcSortOrder val;
-	gboolean inverse;
+	gboolean inverse, unique;
 	int i;
 
 	strv = nmc_strsplit_set (order, ":", -1);
@@ -9103,21 +9103,20 @@ parse_preferred_connection_order (const char *order, GError **error)
 			             _("incorrect item '%s' in '--order' option"), *iter);
 			break;
 		}
-		/* Check duplicates*/
+		/* Check for duplicates and ignore them. */
+		unique = TRUE;
 		for (i = 0; i < order_arr->len; i++) {
 			if (abs (g_array_index (order_arr, NmcSortOrder, i)) - abs (val) == 0) {
-				g_array_unref (order_arr);
-				order_arr = NULL;
-				g_set_error (error, NMCLI_ERROR, 0,
-				             _("'%s' repeats in '--order' option"), str);
-				goto end;
+				unique = FALSE;
+				break;
 			}
 		}
 
 		/* Value is ok and unique, add it to the array */
-		g_array_append_val (order_arr, val);
+		if (unique)
+			g_array_append_val (order_arr, val);
 	}
-end:
+
 	g_strfreev (strv);
 	return order_arr;
 }
