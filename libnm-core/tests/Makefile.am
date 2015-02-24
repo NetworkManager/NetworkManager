@@ -15,6 +15,7 @@ noinst_PROGRAMS =		\
 	test-compare		\
 	test-crypto		\
 	test-general		\
+	test-keyfile		\
 	test-secrets		\
 	test-setting-8021x	\
 	test-setting-dcb	\
@@ -49,8 +50,10 @@ EXTRA_DIST =                            \
 	certs/test-aes-key.pem              \
 	certs/test_ca_cert.der              \
 	certs/test_ca_cert.pem              \
+	certs/test-ca-cert.pem              \
 	certs/test-cert.p12                 \
 	certs/test_key_and_cert.pem         \
+	certs/test-key-and-cert.pem         \
 	certs/test-key-only-decrypted.der   \
 	certs/test-key-only-decrypted.pem   \
 	certs/test-key-only.pem

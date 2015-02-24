@@ -70,6 +70,8 @@ _handler_read (GKeyFile *keyfile,
 			level = LOGL_ERR;
 		else if (warn_data->severity >= NM_KEYFILE_WARN_SEVERITY_WARN)
 			level = LOGL_WARN;
+		else if (warn_data->severity == NM_KEYFILE_WARN_SEVERITY_INFO_MISSING_FILE)
+			level = LOGL_WARN;
 		else
 			level = LOGL_INFO;
 

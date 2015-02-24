@@ -116,24 +116,47 @@ cert_writer (NMConnection *connection,
 
 	scheme = cert_data->scheme_func (cert_data->setting);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
+		char *tmp = NULL;
+		const char *accepted_path = NULL;
+
 		path = cert_data->path_func (cert_data->setting);
 		g_assert (path);
 
-		/* If the path is rooted in the keyfile directory, just use a
-		 * relative path instead of an absolute one.
-		 */
 		if (g_str_has_prefix (path, info->keyfile_dir)) {
 			const char *p = path + strlen (info->keyfile_dir);
 
+			/* If the path is rooted in the keyfile directory, just use a
+			 * relative path instead of an absolute one.
+			 */
 			if (*p == '/') {
 				while (*p == '/')
 					p++;
-				if (p[0])
-					path = p;
+				if (p[0]) {
+					/* If @p looks like an integer list, the following detection will fail too and
+					 * we will file:// qualify the path below. We thus avoid writing a path string
+					 * that would be interpreted as legacy binary format by reader. */
+					tmp = nm_keyfile_detect_unqualified_path_scheme (info->keyfile_dir, p, -1, FALSE, NULL);
+					if (tmp) {
+						g_clear_pointer (&tmp, g_free);
+						accepted_path = p;
+					}
+				}
+			}
+		}
+		if (!accepted_path) {
+			/* What we are about to write, must also be understood by the reader.
+			 * Otherwise, add a file:// prefix */
+			tmp = nm_keyfile_detect_unqualified_path_scheme (info->keyfile_dir, path, -1, FALSE, NULL);
+			if (tmp) {
+				g_clear_pointer (&tmp, g_free);
+				accepted_path = path;
 			}
 		}
 
-		nm_keyfile_plugin_kf_set_string (file, setting_name, cert_data->property_name, path);
+		if (!accepted_path)
+			accepted_path = tmp = g_strconcat (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH, path, NULL);
+		nm_keyfile_plugin_kf_set_string (file, setting_name, cert_data->property_name, accepted_path);
+		g_free (tmp);
 	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
 		GBytes *blob;
 		const guint8 *blob_data;
@@ -165,8 +188,9 @@ cert_writer (NMConnection *connection,
 
 		success = write_cert_key_file (new_path, blob_data, blob_len, &local);
 		if (success) {
-			/* Write the path value to the keyfile */
-			nm_keyfile_plugin_kf_set_string (file, setting_name, cert_data->property_name, new_path);
+			/* Write the path value to the keyfile.
+			 * We know, that basename(new_path) starts with a UUID, hence no conflict with "data:;base64,"  */
+			nm_keyfile_plugin_kf_set_string (file, setting_name, cert_data->property_name, strrchr (new_path, '/') + 1);
 		} else {
 			nm_log_warn (LOGD_SETTINGS, "keyfile: %s.%s: failed to write certificate to file %s: %s",
 			             setting_name, cert_data->property_name, new_path, local->message);

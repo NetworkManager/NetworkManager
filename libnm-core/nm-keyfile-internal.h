@@ -34,6 +34,12 @@
 #define NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB "data:;base64,"
 #define NM_KEYFILE_CERT_SCHEME_PREFIX_PATH "file://"
 
+char *nm_keyfile_detect_unqualified_path_scheme (const char *base_dir,
+                                                 gconstpointer pdata,
+                                                 gsize data_len,
+                                                 gboolean consider_exists,
+                                                 gboolean *out_exists);
+
 typedef enum {
 	NM_KEYFILE_READ_TYPE_WARN               = 1,
 } NMKeyfileReadType;
@@ -58,6 +64,7 @@ typedef gboolean (*NMKeyfileReadHandler) (GKeyFile *keyfile,
 typedef enum {
 	NM_KEYFILE_WARN_SEVERITY_DEBUG                  = 1000,
 	NM_KEYFILE_WARN_SEVERITY_INFO                   = 2000,
+	NM_KEYFILE_WARN_SEVERITY_INFO_MISSING_FILE      = 2901,
 	NM_KEYFILE_WARN_SEVERITY_WARN                   = 3000,
 } NMKeyfileWarnSeverity;
 
