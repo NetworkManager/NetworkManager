@@ -823,8 +823,6 @@ get_cert_path (const char *base_dir, const guint8 *cert_path, gsize cert_path_le
 	return tmp;
 }
 
-#define SCHEME_PATH "file://"
-
 static const char *certext[] = { ".pem", ".cert", ".crt", ".cer", ".p12", ".der", ".key" };
 
 static gboolean
@@ -848,8 +846,8 @@ handle_as_scheme (GBytes *bytes, NMSetting *setting, const char *key)
 	data = g_bytes_get_data (bytes, &data_len);
 
 	/* It's the PATH scheme, can just set plain data */
-	if (   (data_len > strlen (SCHEME_PATH))
-	    && g_str_has_prefix ((const char *) data, SCHEME_PATH)
+	if (   (data_len > strlen (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH))
+	    && g_str_has_prefix ((const char *) data, NM_KEYFILE_CERT_SCHEME_PREFIX_PATH)
 	    && (data[data_len - 1] == '\0')) {
 		g_object_set (setting, key, bytes, NULL);
 		return TRUE;
@@ -899,8 +897,8 @@ handle_as_path (KeyfileReaderInfo *info,
 		GBytes *val;
 
 		/* Construct the proper value as required for the PATH scheme */
-		tmp = g_byte_array_sized_new (strlen (SCHEME_PATH) + strlen (path) + 1);
-		g_byte_array_append (tmp, (const guint8 *) SCHEME_PATH, strlen (SCHEME_PATH));
+		tmp = g_byte_array_sized_new (strlen (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH) + strlen (path) + 1);
+		g_byte_array_append (tmp, (const guint8 *) NM_KEYFILE_CERT_SCHEME_PREFIX_PATH, strlen (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH));
 		g_byte_array_append (tmp, (const guint8 *) path, strlen (path));
 		g_byte_array_append (tmp, (const guint8 *) "\0", 1);
 		val = g_byte_array_free_to_bytes (tmp);

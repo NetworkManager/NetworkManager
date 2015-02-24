@@ -62,8 +62,6 @@
  *       ISBN: 978-1587051548
  **/
 
-#define SCHEME_PATH "file://"
-
 G_DEFINE_TYPE_WITH_CODE (NMSetting8021x, nm_setting_802_1x, NM_TYPE_SETTING,
                          _nm_register_setting (802_1X, 2))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_802_1X)
@@ -450,8 +448,8 @@ nm_setting_802_1x_check_cert_scheme (gconstpointer pdata, gsize length, GError *
 	}
 
 	/* interpret the blob as PATH if it starts with "file://". */
-	if (   length >= STRLEN (SCHEME_PATH)
-	    && !memcmp (data, SCHEME_PATH, STRLEN (SCHEME_PATH))) {
+	if (   length >= STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH)
+	    && !memcmp (data, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH))) {
 		/* But it must also be NUL terminated, contain at least
 		 * one non-NUL character, and contain only one trailing NUL
 		 * chracter.
@@ -467,7 +465,7 @@ nm_setting_802_1x_check_cert_scheme (gconstpointer pdata, gsize length, GError *
 		}
 		length--;
 
-		if (length <= STRLEN (SCHEME_PATH)) {
+		if (length <= STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH)) {
 			g_set_error_literal (error,
 			                     NM_CONNECTION_ERROR,
 			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -475,7 +473,7 @@ nm_setting_802_1x_check_cert_scheme (gconstpointer pdata, gsize length, GError *
 			return NM_SETTING_802_1X_CK_SCHEME_UNKNOWN;
 		}
 
-		if (!g_utf8_validate (data + STRLEN (SCHEME_PATH), length - STRLEN (SCHEME_PATH), NULL)) {
+		if (!g_utf8_validate (data + STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH), length - STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH), NULL)) {
 			g_set_error_literal (error,
 			                     NM_CONNECTION_ERROR,
 			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -587,7 +585,7 @@ nm_setting_802_1x_get_ca_cert_path (NMSetting8021x *setting)
 	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH, NULL);
 
 	data = g_bytes_get_data (NM_SETTING_802_1X_GET_PRIVATE (setting)->ca_cert, NULL);
-	return (const char *)data + strlen (SCHEME_PATH);
+	return (const char *)data + strlen (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH);
 }
 
 static GBytes *
@@ -601,8 +599,8 @@ path_to_scheme_value (const char *path)
 	len = strlen (path);
 
 	/* Add the path scheme tag to the front, then the filename */
-	array = g_byte_array_sized_new (len + strlen (SCHEME_PATH) + 1);
-	g_byte_array_append (array, (const guint8 *) SCHEME_PATH, strlen (SCHEME_PATH));
+	array = g_byte_array_sized_new (len + strlen (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH) + 1);
+	g_byte_array_append (array, (const guint8 *) NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, strlen (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH));
 	g_byte_array_append (array, (const guint8 *) path, len);
 	g_byte_array_append (array, (const guint8 *) "\0", 1);
 
@@ -916,7 +914,7 @@ nm_setting_802_1x_get_client_cert_path (NMSetting8021x *setting)
 	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH, NULL);
 
 	data = g_bytes_get_data (NM_SETTING_802_1X_GET_PRIVATE (setting)->client_cert, NULL);
-	return (const char *)data + strlen (SCHEME_PATH);
+	return (const char *)data + strlen (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH);
 }
 
 /**
@@ -1185,7 +1183,7 @@ nm_setting_802_1x_get_phase2_ca_cert_path (NMSetting8021x *setting)
 	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH, NULL);
 
 	data = g_bytes_get_data (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_ca_cert, NULL);
-	return (const char *)data + strlen (SCHEME_PATH);
+	return (const char *)data + strlen (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH);
 }
 
 /**
@@ -1499,7 +1497,7 @@ nm_setting_802_1x_get_phase2_client_cert_path (NMSetting8021x *setting)
 	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH, NULL);
 
 	data = g_bytes_get_data (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_client_cert, NULL);
-	return (const char *)data + strlen (SCHEME_PATH);
+	return (const char *)data + strlen (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH);
 }
 
 /**
@@ -1758,7 +1756,7 @@ nm_setting_802_1x_get_private_key_path (NMSetting8021x *setting)
 	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH, NULL);
 
 	data = g_bytes_get_data (NM_SETTING_802_1X_GET_PRIVATE (setting)->private_key, NULL);
-	return (const char *)data + strlen (SCHEME_PATH);
+	return (const char *)data + strlen (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH);
 }
 
 static void
@@ -2096,7 +2094,7 @@ nm_setting_802_1x_get_phase2_private_key_path (NMSetting8021x *setting)
 	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH, NULL);
 
 	data = g_bytes_get_data (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_private_key, NULL);
-	return (const char *)data + strlen (SCHEME_PATH);
+	return (const char *)data + strlen (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH);
 }
 
 /**
