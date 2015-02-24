@@ -39,8 +39,8 @@
 #define HOSTNAME4_TAG    "send host-name"
 #define HOSTNAME4_FORMAT HOSTNAME4_TAG " \"%s\"; # added by NetworkManager"
 
-#define HOSTNAME6_TAG    "send fqdn.fqdn"
-#define HOSTNAME6_FORMAT HOSTNAME6_TAG " \"%s\"; # added by NetworkManager"
+#define FQDN_TAG    "send fqdn.fqdn"
+#define FQDN_FORMAT FQDN_TAG " \"%s\"; # added by NetworkManager"
 
 #define ALSOREQ_TAG "also request "
 
@@ -57,7 +57,7 @@ add_also_request (GPtrArray *array, const char *item)
 }
 
 static void
-add_hostname (GString *str, const char *format, const char *hostname)
+add_hostname4 (GString *str, const char *format, const char *hostname)
 {
 	char *plain_hostname, *dot;
 
@@ -109,7 +109,7 @@ add_ip4_config (GString *str, GBytes *client_id, const char *hostname)
 		g_string_append (str, "; # added by NetworkManager\n");
 	}
 
-	add_hostname (str, HOSTNAME4_FORMAT "\n", hostname);
+	add_hostname4 (str, HOSTNAME4_FORMAT "\n", hostname);
 
 	g_string_append_c (str, '\n');
 
@@ -125,13 +125,18 @@ add_ip4_config (GString *str, GBytes *client_id, const char *hostname)
 }
 
 static void
-add_ip6_config (GString *str, const char *hostname)
+add_hostname6 (GString *str, const char *hostname)
 {
-	add_hostname (str, HOSTNAME6_FORMAT "\n", hostname);
-	g_string_append (str,
-	                 "send fqdn.encoded on;\n"
-	                 "send fqdn.no-client-update on;\n"
-	                 "send fqdn.server-update on;\n");
+	/* dhclient only supports the fqdn.fqdn for DHCPv6 and requires a fully-
+	 * qualified name for this option, so we must require one here too.
+	 */
+	if (hostname && strchr (hostname, '.')) {
+		g_string_append_printf (str, FQDN_FORMAT "\n", hostname);
+		g_string_append (str,
+		                 "send fqdn.encoded on;\n"
+		                 "send fqdn.server-update on;\n");
+		g_string_append_c (str, '\n');
+	}
 }
 
 static GBytes *
@@ -232,7 +237,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
 			if (hostname) {
 				if (strncmp (p, HOSTNAME4_TAG, strlen (HOSTNAME4_TAG)) == 0)
 					continue;
-				if (strncmp (p, HOSTNAME6_TAG, strlen (HOSTNAME6_TAG)) == 0)
+				if (strncmp (p, FQDN_TAG, strlen (FQDN_TAG)) == 0)
 					continue;
 			}
 
@@ -290,7 +295,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
 		g_string_append_c (new_contents, '\n');
 
 	if (is_ip6) {
-		add_ip6_config (new_contents, hostname);
+		add_hostname6 (new_contents, hostname);
 		add_also_request (alsoreq, "dhcp6.name-servers");
 		add_also_request (alsoreq, "dhcp6.domain-search");
 		add_also_request (alsoreq, "dhcp6.client-id");
