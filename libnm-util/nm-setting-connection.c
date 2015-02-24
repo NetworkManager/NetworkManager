@@ -882,19 +882,21 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (is_slave) {
 		if (!priv->master) {
-			g_set_error_literal (error,
-			                     NM_SETTING_CONNECTION_ERROR,
-			                     NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
-			                     _("Slave connections need a valid '" NM_SETTING_CONNECTION_MASTER "' property"));
+			g_set_error (error,
+			             NM_SETTING_CONNECTION_ERROR,
+			             NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
+			             _("Slave connections need a valid '%s' property"),
+			             NM_SETTING_CONNECTION_MASTER);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_MASTER);
 			return NM_SETTING_VERIFY_ERROR;
 		}
 	} else {
 		if (priv->master) {
-			g_set_error_literal (error,
-			                     NM_SETTING_CONNECTION_ERROR,
-			                     NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
-			                     _("Cannot set '" NM_SETTING_CONNECTION_MASTER "' without '" NM_SETTING_CONNECTION_SLAVE_TYPE "'"));
+			g_set_error (error,
+			             NM_SETTING_CONNECTION_ERROR,
+			             NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
+			             _("Cannot set '%s' without '%s'"),
+			             NM_SETTING_CONNECTION_MASTER, NM_SETTING_CONNECTION_SLAVE_TYPE);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);
 			return NM_SETTING_VERIFY_ERROR;
 		}
