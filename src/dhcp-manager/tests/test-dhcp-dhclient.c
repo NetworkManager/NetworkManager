@@ -31,6 +31,7 @@
 static void
 test_config (const char *orig,
              const char *expected,
+             gboolean ipv6,
              const char *hostname,
              const char *dhcp_client_id,
              const char *iface,
@@ -39,7 +40,7 @@ test_config (const char *orig,
 	char *new;
 
 	new = nm_dhcp_dhclient_create_config (iface,
-	                                      FALSE,
+	                                      ipv6,
 	                                      dhcp_client_id,
 	                                      anycast_addr,
 	                                      hostname,
@@ -83,7 +84,7 @@ static void
 test_orig_missing (void)
 {
 	test_config (NULL, orig_missing_expected,
-	             NULL,
+	             FALSE, NULL,
 	             NULL,
 	             "eth0",
 	             NULL);
@@ -115,7 +116,7 @@ static void
 test_override_client_id (void)
 {
 	test_config (override_client_id_orig, override_client_id_expected,
-	             NULL,
+	             FALSE, NULL,
 	             "11:22:33:44:55:66",
 	             "eth0",
 	             NULL);
@@ -143,7 +144,7 @@ static void
 test_quote_client_id (void)
 {
 	test_config (NULL, quote_client_id_expected,
-	             NULL,
+	             FALSE, NULL,
 	             "1234",
 	             "eth0",
 	             NULL);
@@ -171,7 +172,7 @@ static void
 test_ascii_client_id (void)
 {
 	test_config (NULL, ascii_client_id_expected,
-	             NULL,
+	             FALSE, NULL,
 	             "qb:cd:ef:12:34:56",
 	             "eth0",
 	             NULL);
@@ -203,7 +204,56 @@ static void
 test_override_hostname (void)
 {
 	test_config (override_hostname_orig, override_hostname_expected,
-	             "blahblah",
+	             FALSE, "blahblah",
+	             NULL,
+	             "eth0",
+	             NULL);
+}
+
+/*******************************************/
+
+static const char *override_hostname6_orig = \
+	"send fqdn.fqdn \"foobar\";\n";
+
+static const char *override_hostname6_expected = \
+	"# Created by NetworkManager\n"
+	"# Merged from /path/to/dhclient.conf\n"
+	"\n"
+	"send fqdn.fqdn \"blahblah.local\"; # added by NetworkManager\n"
+	"send fqdn.encoded on;\n"
+	"send fqdn.server-update on;\n"
+	"\n"
+	"also request dhcp6.name-servers;\n"
+	"also request dhcp6.domain-search;\n"
+	"also request dhcp6.client-id;\n"
+	"\n";
+
+static void
+test_override_hostname6 (void)
+{
+	test_config (override_hostname6_orig, override_hostname6_expected,
+	             TRUE, "blahblah.local",
+	             NULL,
+	             "eth0",
+	             NULL);
+}
+
+/*******************************************/
+
+static const char *nonfqdn_hostname6_expected = \
+	"# Created by NetworkManager\n"
+	"\n"
+	"also request dhcp6.name-servers;\n"
+	"also request dhcp6.domain-search;\n"
+	"also request dhcp6.client-id;\n"
+	"\n";
+
+static void
+test_nonfqdn_hostname6 (void)
+{
+	/* Non-FQDN hostname can't be used with dhclient */
+	test_config (NULL, nonfqdn_hostname6_expected,
+	             TRUE, "blahblah",
 	             NULL,
 	             "eth0",
 	             NULL);
@@ -237,7 +287,7 @@ static void
 test_existing_alsoreq (void)
 {
 	test_config (existing_alsoreq_orig, existing_alsoreq_expected,
-	             NULL,
+	             FALSE, NULL,
 	             NULL,
 	             "eth0",
 	             NULL);
@@ -275,7 +325,7 @@ static void
 test_existing_multiline_alsoreq (void)
 {
 	test_config (existing_multiline_alsoreq_orig, existing_multiline_alsoreq_expected,
-	             NULL,
+	             FALSE, NULL,
 	             NULL,
 	             "eth0",
 	             NULL);
@@ -589,6 +639,8 @@ main (int argc, char **argv)
 	g_test_add_func ("/dhcp/dhclient/quote_client_id", test_quote_client_id);
 	g_test_add_func ("/dhcp/dhclient/ascii_client_id", test_ascii_client_id);
 	g_test_add_func ("/dhcp/dhclient/override_hostname", test_override_hostname);
+	g_test_add_func ("/dhcp/dhclient/override_hostname6", test_override_hostname6);
+	g_test_add_func ("/dhcp/dhclient/nonfqdn_hostname6", test_nonfqdn_hostname6);
 	g_test_add_func ("/dhcp/dhclient/existing_alsoreq", test_existing_alsoreq);
 	g_test_add_func ("/dhcp/dhclient/existing_multiline_alsoreq", test_existing_multiline_alsoreq);
 	g_test_add_func ("/dhcp/dhclient/duids", test_duids);
