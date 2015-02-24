@@ -619,8 +619,8 @@ set_power_state_low_ready (MMModem *modem,
 	if (!mm_modem_set_power_state_finish (modem, result, &error)) {
 		/* Log but ignore errors; not all modems support low power state */
 		nm_log_dbg (LOGD_MB, "(%s): failed to set modem low power state: %s",
-		             nm_modem_get_uid (NM_MODEM (self)),
-		             error && error->message ? error->message : "(unknown)");
+		            nm_modem_get_uid (NM_MODEM (self)),
+		            error && error->message ? error->message : "(unknown)");
 		g_clear_error (&error);
 	}
 
@@ -813,9 +813,9 @@ stage3_ip6_done (NMModemBroadband *self)
 		/* DHCP/SLAAC is allowed to skip addresses; other methods require it */
 		if (ip_method != NM_MODEM_IP_METHOD_AUTO) {
 			error = g_error_new (NM_DEVICE_ERROR,
-				                 NM_DEVICE_ERROR_INVALID_CONNECTION,
-				                 "(%s) retrieving IPv6 configuration failed: no address given",
-				                 nm_modem_get_uid (NM_MODEM (self)));
+			                     NM_DEVICE_ERROR_INVALID_CONNECTION,
+			                     "(%s) retrieving IPv6 configuration failed: no address given",
+			                     nm_modem_get_uid (NM_MODEM (self)));
 		}
 		goto out;
 	}
@@ -844,10 +844,10 @@ stage3_ip6_done (NMModemBroadband *self)
 	if (address_string) {
 		if (!inet_pton (AF_INET6, address_string, (void *) &(address.address))) {
 			error = g_error_new (NM_DEVICE_ERROR,
-				                 NM_DEVICE_ERROR_INVALID_CONNECTION,
-				                 "(%s) retrieving IPv6 configuration failed: invalid gateway given '%s'",
-				                 nm_modem_get_uid (NM_MODEM (self)),
-				                 address_string);
+			                     NM_DEVICE_ERROR_INVALID_CONNECTION,
+			                     "(%s) retrieving IPv6 configuration failed: invalid gateway given '%s'",
+			                     nm_modem_get_uid (NM_MODEM (self)),
+			                     address_string);
 			goto out;
 		}
 		nm_log_info (LOGD_MB, "  gateway %s", address_string);
@@ -1156,7 +1156,7 @@ nm_modem_broadband_init (NMModemBroadband *self)
 static void
 set_property (GObject *object,
               guint prop_id,
-			  const GValue *value,
+              const GValue *value,
               GParamSpec *pspec)
 {
 	NMModemBroadband *self = NM_MODEM_BROADBAND (object);
@@ -1189,7 +1189,7 @@ set_property (GObject *object,
 static void
 get_property (GObject *object,
               guint prop_id,
-			  GValue *value,
+              GValue *value,
               GParamSpec *pspec)
 {
 	NMModemBroadband *self = NM_MODEM_BROADBAND (object);

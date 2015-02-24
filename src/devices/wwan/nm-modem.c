@@ -391,9 +391,9 @@ set_data_port (NMModem *self, const char *new_data_port)
 
 static void
 ppp_ip4_config (NMPPPManager *ppp_manager,
-				const char *iface,
-				NMIP4Config *config,
-				gpointer user_data)
+                const char *iface,
+                NMIP4Config *config,
+                gpointer user_data)
 {
 	NMModem *self = NM_MODEM (user_data);
 	guint32 i, num;
@@ -464,9 +464,9 @@ ppp_ip6_config (NMPPPManager *ppp_manager,
 
 static void
 ppp_stats (NMPPPManager *ppp_manager,
-		   guint32 in_bytes,
-		   guint32 out_bytes,
-		   gpointer user_data)
+           guint32 in_bytes,
+           guint32 out_bytes,
+           gpointer user_data)
 {
 	NMModem *self = NM_MODEM (user_data);
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
@@ -513,7 +513,7 @@ ppp_stage3_ip_config_start (NMModem *self,
 	 * use the default one (30s) */
 	if (priv->mm_ip_timeout > 0) {
 		nm_log_info (LOGD_PPP, "(%s): using modem-specified IP timeout: %u seconds",
-					 nm_modem_get_uid (self),
+		             nm_modem_get_uid (self),
 		             priv->mm_ip_timeout);
 		ip_timeout = priv->mm_ip_timeout;
 	}
@@ -536,7 +536,7 @@ ppp_stage3_ip_config_start (NMModem *self,
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	} else {
 		nm_log_err (LOGD_PPP, "(%s): error starting PPP: (%d) %s",
-					nm_modem_get_uid (self),
+		            nm_modem_get_uid (self),
 		            error ? error->code : -1,
 		            error && error->message ? error->message : "(unknown)");
 		g_error_free (error);
@@ -1067,7 +1067,7 @@ deactivate_step (DeactivateContext *ctx)
 
 	case DEACTIVATE_CONTEXT_STEP_LAST:
 		nm_log_dbg (LOGD_MB, "(%s): modem deactivation finished",
-					nm_modem_get_uid (ctx->self));
+		            nm_modem_get_uid (ctx->self));
 		deactivate_context_complete (ctx);
 		return;
 	}
@@ -1250,8 +1250,8 @@ nm_modem_init (NMModem *self)
 
 static GObject*
 constructor (GType type,
-			 guint n_construct_params,
-			 GObjectConstructParam *construct_params)
+             guint n_construct_params,
+             GObjectConstructParam *construct_params)
 {
 	GObject *object;
 	NMModemPrivate *priv;
@@ -1276,7 +1276,7 @@ constructor (GType type,
 
 	return object;
 
- err:
+err:
 	g_object_unref (object);
 	return NULL;
 }
