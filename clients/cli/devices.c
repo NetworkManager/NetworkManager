@@ -436,6 +436,29 @@ get_devices_sorted (NMClient *client)
 	return sorted;
 }
 
+typedef struct {
+	NmcTermColor color;
+	NmcTermFormat color_fmt;
+} ColorInfo;
+
+static ColorInfo
+wifi_signal_to_color (guint8 strength)
+{
+	ColorInfo color_info = { NMC_TERM_COLOR_NORMAL, NMC_TERM_FORMAT_NORMAL };
+
+	if (strength > 80)
+		color_info.color = NMC_TERM_COLOR_GREEN;
+	else if (strength > 55)
+		color_info.color = NMC_TERM_COLOR_YELLOW;
+	else if (strength > 30)
+		color_info.color = NMC_TERM_COLOR_MAGENTA;
+	else if (strength > 5)
+		color_info.color = NMC_TERM_COLOR_CYAN;
+	else
+		color_info.color_fmt = NMC_TERM_FORMAT_DIM;
+	return color_info;
+}
+
 static char *
 ap_wpa_rsn_flags_to_string (NM80211ApSecurityFlags flags)
 {
@@ -505,6 +528,7 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	GString *security_str;
 	char *ap_name;
 	const char *sig_bars;
+	ColorInfo color_info;
 
 	if (info->active_bssid) {
 		const char *current_bssid = nm_access_point_get_bssid (ap);
@@ -589,6 +613,13 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	set_val_strc (arr, 14, active ? _("yes") : _("no"));
 	set_val_strc (arr, 15, active ? "*" : " ");
 	set_val_strc (arr, 16, nm_object_get_path (NM_OBJECT (ap)));
+
+	/* Set colors */
+	color_info = wifi_signal_to_color (strength);
+	set_val_color_all (arr, color_info.color);
+	set_val_color_fmt_all (arr, color_info.color_fmt);
+	if (active)
+		arr[15].color = NMC_TERM_COLOR_GREEN;
 
 	g_ptr_array_add (info->nmc->output_data, arr);
 
