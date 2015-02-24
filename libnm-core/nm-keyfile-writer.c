@@ -42,6 +42,7 @@
 #include "nm-setting-8021x.h"
 #include "nm-utils.h"
 
+#include "gsystem-local-alloc.h"
 #include "nm-glib-compat.h"
 #include "nm-keyfile-internal.h"
 #include "nm-keyfile-utils.h"
@@ -410,6 +411,76 @@ static const ObjectType objtypes[10] = {
 	{ NULL },
 };
 
+/**************************************************************************/
+
+static void
+cert_writer_default (NMConnection *connection,
+                     GKeyFile *file,
+                     NMKeyfileWriteTypeDataCert *cert_data)
+{
+	const char *setting_name = nm_setting_get_name (NM_SETTING (cert_data->setting));
+	NMSetting8021xCKScheme scheme;
+
+	scheme = cert_data->scheme_func (cert_data->setting);
+	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
+		const char *path;
+		char *path_free = NULL, *tmp;
+		gs_free char *base_dir = NULL;
+
+		path = cert_data->path_func (cert_data->setting);
+		g_assert (path);
+
+		/* If the path is relative, make it an absolute path.
+		 * Relative paths make a keyfile not easily usable in another
+		 * context. */
+		if (path[0] && path[0] != '/') {
+			base_dir = g_get_current_dir ();
+			path = path_free = g_strconcat (base_dir, "/", path, NULL);
+		} else
+			base_dir = g_path_get_dirname (path);
+
+		/* path cannot start with "file://" or "data:;base64,", because it is an absolute path.
+		 * Still, make sure that a prefix-less path will be recognized. This can happen
+		 * for example if the path is longer then 500 chars. */
+		tmp = nm_keyfile_detect_unqualified_path_scheme (base_dir, path, -1, FALSE, NULL);
+		if (tmp)
+			g_clear_pointer (&tmp, g_free);
+		else
+			path = tmp = g_strconcat (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH, path, NULL);
+
+		/* Path contains at least a '/', hence it cannot be recognized as the old
+		 * binary format consisting of a list of integers. */
+
+		nm_keyfile_plugin_kf_set_string (file, setting_name, cert_data->property_name, path);
+		g_free (tmp);
+		g_free (path_free);
+	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+		GBytes *blob;
+		const guint8 *blob_data;
+		gsize blob_len;
+		char *blob_base64, *val;
+
+		blob = cert_data->blob_func (cert_data->setting);
+		g_assert (blob);
+		blob_data = g_bytes_get_data (blob, &blob_len);
+
+		blob_base64 = g_base64_encode (blob_data, blob_len);
+		val = g_strconcat (NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB, blob_base64, NULL);
+
+		nm_keyfile_plugin_kf_set_string (file, setting_name, cert_data->property_name, val);
+		g_free (val);
+		g_free (blob_base64);
+	} else {
+		/* scheme_func() returns UNKNOWN in all other cases. The only valid case
+		 * where a scheme is allowed to be UNKNOWN, is unsetting the value. In this
+		 * case, we don't expect the writer to be called, because the default value
+		 * will not be serialized.
+		 * The only other reason for the scheme to be UNKNOWN is an invalid cert.
+		 * But our connection verifies, so that cannot happen either. */
+		g_return_if_reached ();
+	}
+}
+
 static void
 cert_writer (KeyfileWriterInfo *info,
              NMSetting *setting,
@@ -429,9 +500,6 @@ cert_writer (KeyfileWriterInfo *info,
 	if (!objtype)
 		g_return_if_reached ();
 
-	if (!info->handler)
-		goto out_unhandled;
-
 	type_data.setting = NM_SETTING_802_1X (setting);
 	type_data.property_name = key;
 	type_data.suffix = objtype->suffix;
@@ -440,29 +508,22 @@ cert_writer (KeyfileWriterInfo *info,
 	type_data.path_func = objtype->path_func;
 	type_data.blob_func = objtype->blob_func;
 
-	if (info->handler (info->connection,
-	                   info->keyfile,
-	                   NM_KEYFILE_WRITE_TYPE_CERT,
-	                   &type_data,
-	                   info->user_data,
-	                   &info->error))
-		return;
-
-out_unhandled:
-
-	/* scheme_func() would not return UNKNOWN, because UNKNOWN happens only
-	 * if the cert is unset (1) or if the cert is invalid (2).
-	 * (1) cannot happen, because we only reach cert_writer() for non-default
-	 * properties. (2) cannot happen, because we verified the connection.
-	 *
-	 * Hence, at this point we do have a certifiacte, but no default implementation
-	 * to write it. The handler *must* do something with these certifications. */
-	if (!info->error) {
-		g_set_error (&info->error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             _("Failed to write unhandled certificate property %s.%s"),
-		             nm_setting_get_name (setting), key);
+	if (info->handler) {
+		if (info->handler (info->connection,
+		                   info->keyfile,
+		                   NM_KEYFILE_WRITE_TYPE_CERT,
+		                   &type_data,
+		                   info->user_data,
+		                   &info->error))
+			return;
+		if (info->error)
+			return;
 	}
+
+	cert_writer_default (info->connection, info->keyfile, &type_data);
 }
+
+/**************************************************************************/
 
 typedef struct {
 	const char *setting_name;

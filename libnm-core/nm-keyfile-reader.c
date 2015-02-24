@@ -31,10 +31,12 @@
 #include <glib/gi18n-lib.h>
 
 #include "nm-core-internal.h"
+#include "nm-macros-internal.h"
 #include "gsystem-local-alloc.h"
 #include "nm-glib-compat.h"
 #include "nm-keyfile-internal.h"
 #include "nm-keyfile-utils.h"
+#include "nm-setting-private.h"
 
 
 typedef struct {
@@ -838,21 +840,177 @@ has_cert_ext (const char *path)
 }
 
 static gboolean
-handle_as_scheme (GBytes *bytes, NMSetting *setting, const char *key)
+handle_as_scheme (KeyfileReaderInfo *info, GBytes *bytes, NMSetting *setting, const char *key)
 {
-	const guint8 *data;
-	gsize data_len;
+	const char *data;
+	gsize data_len, bin_len;
 
 	data = g_bytes_get_data (bytes, &data_len);
 
-	/* It's the PATH scheme, can just set plain data */
-	if (   (data_len > strlen (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH))
-	    && g_str_has_prefix ((const char *) data, NM_KEYFILE_CERT_SCHEME_PREFIX_PATH)
-	    && (data[data_len - 1] == '\0')) {
-		g_object_set (setting, key, bytes, NULL);
+	g_return_val_if_fail (data && data_len > 0, FALSE);
+
+	/* to be a scheme, @data must be a zero terminated string, which is counted by @data_len */
+	if (data[data_len - 1] != '\0')
+		return FALSE;
+	data_len--;
+
+	/* It's the PATH scheme, can just set plain data.
+	 * In this case, @data_len includes */
+	if (   data_len >= STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH)
+	    && g_str_has_prefix (data, NM_KEYFILE_CERT_SCHEME_PREFIX_PATH)) {
+		if (nm_setting_802_1x_check_cert_scheme (data, data_len + 1, NULL) == NM_SETTING_802_1X_CK_SCHEME_PATH) {
+			const char *path = &data[STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH)];
+			gs_free char *path_free = NULL;
+
+			if (path[0] != '/') {
+				/* we want to read absolute paths because we use keyfile as exchange
+				 * between different processes which might not have the same cwd. */
+				path = path_free = get_cert_path (info->base_dir, (const guint8 *) path,
+				                                  data_len - STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH));
+			}
+
+			g_object_set (setting, key, bytes, NULL);
+			if (!g_file_test (path, G_FILE_TEST_EXISTS)) {
+				handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_INFO_MISSING_FILE,
+				             _("certificate or key file '%s' does not exist"),
+				             path);
+			}
+		} else {
+			handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
+			             _("invalid key/cert value path \"%s\""), data);
+		}
+		return TRUE;
+	}
+	if (   data_len > STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB)
+	    && g_str_has_prefix (data, NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB)) {
+		const char *cdata = data + STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB);
+		guchar *bin;
+		GBytes *bytes2;
+		gsize i;
+		gboolean valid_base64;
+
+		data_len -= STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB);
+
+		/* Let's be strict here. We expect valid base64, no funny stuff!!
+		 * We didn't write such invalid data ourselfes and refuse to read it as blob. */
+		if ((valid_base64 = (data_len % 4 == 0))) {
+			for (i = 0; i < data_len; i++) {
+				char c = cdata[i];
+
+				if (!(   (c >= 'a' && c <= 'z')
+				      || (c >= 'A' && c <= 'Z')
+				      || (c >= '0' && c <= '9')
+				      || (c == '+' || c == '/'))) {
+					if (c != '=' || i < data_len - 2)
+						valid_base64 = FALSE;
+					else {
+						for (; i < data_len; i++) {
+							if (cdata[i] != '=')
+								valid_base64 = FALSE;
+						}
+					}
+					break;
+				}
+			}
+		}
+		if (!valid_base64) {
+			handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
+			             _("invalid key/cert value data:;base64, is not base64"));
+			return TRUE;
+		}
+
+		bin = g_base64_decode (cdata, &bin_len);
+
+		g_return_val_if_fail (bin_len > 0, FALSE);
+		if (nm_setting_802_1x_check_cert_scheme (bin, bin_len, NULL) != NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+			/* The blob probably starts with "file://". Setting the cert data will confuse NMSetting8021x.
+			 * In fact this is a limitation of NMSetting8021x which does not support setting blobs that start
+			 * with file://. Just warn and return TRUE to signal that we ~handled~ the setting. */
+			g_free (bin);
+			handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
+			             _("invalid key/cert value data:;base64,file://"));
+		} else {
+			bytes2 = g_bytes_new_take (bin, bin_len);
+			g_object_set (setting, key, bytes2, NULL);
+			g_bytes_unref (bytes2);
+		}
 		return TRUE;
 	}
 	return FALSE;
+}
+
+char *
+nm_keyfile_detect_unqualified_path_scheme (const char *base_dir,
+                                           gconstpointer pdata,
+                                           gsize data_len,
+                                           gboolean consider_exists,
+                                           gboolean *out_exists)
+{
+	const char *data = pdata;
+	gboolean exists = FALSE;
+	gboolean success = FALSE;
+	gsize validate_len;
+	char *path;
+	GByteArray *tmp;
+
+	g_return_val_if_fail (base_dir && base_dir[0] == '/', NULL);
+
+	if (!pdata)
+		return NULL;
+	if (data_len == -1)
+		data_len = strlen (data);
+	if (data_len > 500 || data_len < 1)
+		return NULL;
+
+	/* If there's a trailing zero tell g_utf8_validate() to validate until the zero */
+	if (data[data_len - 1] == '\0') {
+		/* setting it to -1, would mean we accept data to contain NUL characters before the
+		 * end. Don't accept any NUL in [0 .. data_len-1[ . */
+		validate_len = data_len - 1;
+	} else
+		validate_len = data_len;
+	if (   validate_len == 0
+	    || g_utf8_validate ((const char *) data, validate_len, NULL) == FALSE)
+		 return NULL;
+
+	/* Might be a bare path without the file:// prefix; in that case
+	 * if it's an absolute path, use that, otherwise treat it as a
+	 * relative path to the current directory.
+	 */
+
+	path = get_cert_path (base_dir, (const guint8 *) data, data_len);
+	if (   !memchr (data, '/', data_len)
+	    && !has_cert_ext (path)) {
+		if (!consider_exists)
+			goto out;
+		exists = g_file_test (path, G_FILE_TEST_EXISTS);
+		if (!exists)
+			goto out;
+	} else if (out_exists)
+		exists = g_file_test (path, G_FILE_TEST_EXISTS);
+
+	/* Construct the proper value as required for the PATH scheme */
+	tmp = g_byte_array_sized_new (strlen (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH) + strlen (path) + 1);
+	g_byte_array_append (tmp, (const guint8 *) NM_KEYFILE_CERT_SCHEME_PREFIX_PATH, strlen (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH));
+	g_byte_array_append (tmp, (const guint8 *) path, strlen (path) + 1);
+	if (nm_setting_802_1x_check_cert_scheme (tmp->data, tmp->len, NULL) == NM_SETTING_802_1X_CK_SCHEME_PATH) {
+		g_free (path);
+		path = (char *) g_byte_array_free (tmp, FALSE);
+		/* when returning TRUE, we must also be sure that @data_len does not look like
+		 * the deprecated format of list of integers. With this implementation that is the
+		 * case, as long as @consider_exists is FALSE. */
+		success = TRUE;
+	} else
+		g_byte_array_unref (tmp);
+
+out:
+	if (!success) {
+		g_free (path);
+		return NULL;
+	}
+	if (out_exists)
+		*out_exists = exists;
+	return path;
 }
 
 static gboolean
@@ -863,89 +1021,67 @@ handle_as_path (KeyfileReaderInfo *info,
 {
 	const guint8 *data;
 	gsize data_len;
-	gsize validate_len;
 	char *path;
-	gboolean exists, success = FALSE;
+	gboolean exists = FALSE;
+	GBytes *val;
 
 	data = g_bytes_get_data (bytes, &data_len);
-	if (data_len > 500 || data_len < 1)
+
+	path = nm_keyfile_detect_unqualified_path_scheme (info->base_dir, data, data_len, TRUE, &exists);
+	if (!path)
 		return FALSE;
 
-	/* If there's a trailing zero tell g_utf8_validate() to validate until the zero */
-	if (data[data_len - 1] == '\0') {
-		/* setting it to -1, would mean we accept data to contain NUL characters before the
-		 * end. Don't accept any NUL in [0 .. data_len-1[ . */
-		validate_len = data_len - 1;
-	} else
-		validate_len = data_len;
+	/* Construct the proper value as required for the PATH scheme */
+	val = g_bytes_new_take (path, strlen (path) + 1);
+	g_object_set (setting, key, val, NULL);
 
-	if (   validate_len == 0
-	    || g_utf8_validate ((const char *) data, validate_len, NULL) == FALSE)
-		 return FALSE;
-
-	/* Might be a bare path without the file:// prefix; in that case
-	 * if it's an absolute path, use that, otherwise treat it as a
-	 * relative path to the current directory.
-	 */
-
-	path = get_cert_path (info->base_dir, data, data_len);
-	exists = g_file_test (path, G_FILE_TEST_EXISTS);
-	if (   exists
-	    || memchr (data, '/', data_len)
-	    || has_cert_ext (path)) {
-		GByteArray *tmp;
-		GBytes *val;
-
-		/* Construct the proper value as required for the PATH scheme */
-		tmp = g_byte_array_sized_new (strlen (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH) + strlen (path) + 1);
-		g_byte_array_append (tmp, (const guint8 *) NM_KEYFILE_CERT_SCHEME_PREFIX_PATH, strlen (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH));
-		g_byte_array_append (tmp, (const guint8 *) path, strlen (path));
-		g_byte_array_append (tmp, (const guint8 *) "\0", 1);
-		val = g_byte_array_free_to_bytes (tmp);
-		g_object_set (setting, key, val, NULL);
-		g_bytes_unref (val);
-		success = TRUE;
-
-		/* Warn if the certificate didn't exist */
-		if (exists == FALSE)
-			handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
-			             _("certificate or key '%s' does not exist"),
-			             path);
+	/* Warn if the certificate didn't exist */
+	if (!exists) {
+		handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_INFO_MISSING_FILE,
+		             _("certificate or key file '%s' does not exist"),
+		             path);
 	}
-	g_free (path);
+	g_bytes_unref (val);
 
-	return success;
+	return TRUE;
 }
 
 static void
 cert_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
 	const char *setting_name = nm_setting_get_name (setting);
-	GBytes *bytes;
-	gboolean success = FALSE;
+	gs_unref_bytes GBytes *bytes = NULL;
+	gsize bin_len;
+	const char *bin;
 
 	bytes = get_bytes (info, setting_name, key, TRUE, FALSE);
 	if (bytes) {
 		/* Try as a path + scheme (ie, starts with "file://") */
-		success = handle_as_scheme (bytes, setting, key);
+		if (handle_as_scheme (info, bytes, setting, key))
+			return;
+		if (info->error)
+			return;
 
 		/* If not, it might be a plain path */
-		if (success == FALSE)
-			success = handle_as_path (info, bytes, setting, key);
+		if (handle_as_path (info, bytes, setting, key))
+			return;
 		if (info->error)
-			goto out_error;
+			return;
 
-		/* If neither of those two, assume blob with certificate data */
-		if (success == FALSE)
+		bin = g_bytes_get_data (bytes, &bin_len);
+		if (nm_setting_802_1x_check_cert_scheme (bin, bin_len, NULL) != NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+			/* The blob probably starts with "file://" but contains invalid characters for a path.
+			 * Setting the cert data will confuse NMSetting8021x.
+			 * In fact, NMSetting8021x does not support setting such binary data, so just warn and
+			 * continue. */
+			handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
+			             _("invalid key/cert value is not a valid blob"));
+		} else
 			g_object_set (setting, key, bytes, NULL);
 	} else if (!info->error) {
 		handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
 		             _("invalid key/cert value"));
 	}
-
-out_error:
-	if (bytes)
-		g_bytes_unref (bytes);
 }
 
 static void

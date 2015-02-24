@@ -2127,6 +2127,10 @@ test_read_wired_8021x_tls_blob_connection (void)
 	gboolean success;
 	GBytes *blob;
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*<warn>  keyfile: 802-1x.client-cert: certificate or key file '/CASA/dcbw/Desktop/certinfra/client.pem' does not exist*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*<warn>  keyfile: 802-1x.private-key: certificate or key file '/CASA/dcbw/Desktop/certinfra/client.pem' does not exist*");
 	connection = nm_keyfile_plugin_connection_from_file (TEST_WIRED_TLS_BLOB_FILE, &error);
 	if (connection == NULL) {
 		g_assert (error);
@@ -2174,10 +2178,10 @@ test_read_wired_8021x_tls_blob_connection (void)
 	g_assert_cmpint (g_bytes_get_size (blob), ==, 568);
 
 	tmp = nm_setting_802_1x_get_client_cert_path (s_8021x);
-	g_assert_cmpstr (tmp, ==, "/home/dcbw/Desktop/certinfra/client.pem");
+	g_assert_cmpstr (tmp, ==, "/CASA/dcbw/Desktop/certinfra/client.pem");
 
 	tmp = nm_setting_802_1x_get_private_key_path (s_8021x);
-	g_assert_cmpstr (tmp, ==, "/home/dcbw/Desktop/certinfra/client.pem");
+	g_assert_cmpstr (tmp, ==, "/CASA/dcbw/Desktop/certinfra/client.pem");
 
 	g_object_unref (connection);
 }
@@ -2259,6 +2263,12 @@ test_read_wired_8021x_tls_old_connection (void)
 	const char *tmp;
 	gboolean success;
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*<warn>  keyfile: 802-1x.ca-cert: certificate or key file '/CASA/dcbw/Desktop/certinfra/CA/eaptest_ca_cert.pem' does not exist*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*<warn>  keyfile: 802-1x.client-cert: certificate or key file '/CASA/dcbw/Desktop/certinfra/client.pem' does not exist*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*<warn>  keyfile: 802-1x.private-key: certificate or key file '/CASA/dcbw/Desktop/certinfra/client.pem' does not exist*");
 	connection = nm_keyfile_plugin_connection_from_file (TEST_WIRED_TLS_OLD_FILE, &error);
 	if (connection == NULL) {
 		g_assert (error);
@@ -2292,13 +2302,13 @@ test_read_wired_8021x_tls_old_connection (void)
 	g_assert (g_strcmp0 (tmp, "12345testing") == 0);
 
 	tmp = nm_setting_802_1x_get_ca_cert_path (s_8021x);
-	g_assert (g_strcmp0 (tmp, "/home/dcbw/Desktop/certinfra/CA/eaptest_ca_cert.pem") == 0);
+	g_assert (g_strcmp0 (tmp, "/CASA/dcbw/Desktop/certinfra/CA/eaptest_ca_cert.pem") == 0);
 
 	tmp = nm_setting_802_1x_get_client_cert_path (s_8021x);
-	g_assert (g_strcmp0 (tmp, "/home/dcbw/Desktop/certinfra/client.pem") == 0);
+	g_assert (g_strcmp0 (tmp, "/CASA/dcbw/Desktop/certinfra/client.pem") == 0);
 
 	tmp = nm_setting_802_1x_get_private_key_path (s_8021x);
-	g_assert (g_strcmp0 (tmp, "/home/dcbw/Desktop/certinfra/client.pem") == 0);
+	g_assert (g_strcmp0 (tmp, "/CASA/dcbw/Desktop/certinfra/client.pem") == 0);
 
 	g_object_unref (connection);
 }
