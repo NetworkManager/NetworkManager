@@ -91,7 +91,7 @@ typedef enum NMActStageReturn NMActStageReturn;
  * a condition, so that adding a flag might make a connection available that would
  * not be available otherwise. Adding a flag should never make a connection
  * not available if it would be available otherwise. */
-typedef enum {
+typedef enum { /*< skip >*/
 	NM_DEVICE_CHECK_CON_AVAILABLE_NONE                                  = 0,
 
 	_NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER     = (1L << 0),
@@ -109,7 +109,7 @@ struct _NMDevice {
 
 /* The flags have an relaxing meaning, that means, specifying more flags, can make
  * a device appear more available. It can never make a device less available. */
-typedef enum {
+typedef enum { /*< skip >*/
 	NM_DEVICE_CHECK_DEV_AVAILABLE_NONE                                  = 0,
 	NM_DEVICE_CHECK_DEV_AVAILABLE_IGNORE_CARRIER                        = (1L << 0),
 
