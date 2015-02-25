@@ -254,7 +254,6 @@ gboolean
 nm_ip4_config_commit (const NMIP4Config *config, int ifindex, guint32 default_route_metric)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
-	guint32 mtu = nm_ip4_config_get_mtu (config);
 	int i;
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
@@ -288,10 +287,6 @@ nm_ip4_config_commit (const NMIP4Config *config, int ifindex, guint32 default_ro
 		if (!success)
 			return FALSE;
 	}
-
-	/* MTU */
-	if (mtu && mtu != nm_platform_link_get_mtu (ifindex))
-		nm_platform_link_set_mtu (ifindex, mtu);
 
 	return TRUE;
 }
