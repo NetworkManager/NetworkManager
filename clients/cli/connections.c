@@ -776,7 +776,7 @@ fill_output_connection (NMConnection *connection, NmCli *nmc, gboolean active_on
 	NMActiveConnection *ac = NULL;
 	const char *ac_path = NULL;
 	const char *ac_state = NULL;
-	NMActiveConnectionState ac_state_int;
+	NMActiveConnectionState ac_state_int = NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
 	char *ac_dev = NULL;
 
 	s_con = nm_connection_get_setting_connection (connection);
