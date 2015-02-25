@@ -712,7 +712,7 @@ nmtst_ip6_config_clone (NMIP6Config *config)
 
 #endif
 
-#ifdef __NM_SIMPLE_CONNECTION_H__
+#if defined(__NM_SIMPLE_CONNECTION_H__) && defined(__NM_SETTING_CONNECTION_H__)
 
 inline static NMConnection *
 nmtst_create_minimal_connection (const char *id, const char *uuid, const char *type, NMSettingConnection **out_s_con)
