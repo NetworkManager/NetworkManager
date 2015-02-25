@@ -777,14 +777,17 @@ handle_as_path (GBytes *bytes,
 	if (data_len > 500 || data_len < 1)
 		return FALSE;
 
-	/* If there's a trailing NULL tell g_utf8_validate() to to until the NULL */
-	if (data[data_len - 1] == '\0')
-		validate_len = -1;
-	else
+	/* If there's a trailing zero tell g_utf8_validate() to validate until the zero */
+	if (data[data_len - 1] == '\0') {
+		/* setting it to -1, would mean we accept data to contain NUL characters before the
+		 * end. Don't accept any NUL in [0 .. data_len-1[ . */
+		validate_len = data_len - 1;
+	} else
 		validate_len = data_len;
 
-	if (g_utf8_validate ((const char *) data, validate_len, NULL) == FALSE)
-		return FALSE;
+	if (   validate_len == 0
+	    || g_utf8_validate ((const char *) data, validate_len, NULL) == FALSE)
+		 return FALSE;
 
 	/* Might be a bare path without the file:// prefix; in that case
 	 * if it's an absolute path, use that, otherwise treat it as a
