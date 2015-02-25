@@ -4080,6 +4080,14 @@ print_support_extended_ifa_flags (NMSettingIP6ConfigPrivacy use_tempaddr)
 }
 
 static void
+nm_device_set_mtu (NMDevice *self, guint32 mtu)
+{
+        /* MTU */
+        if (mtu && mtu != nm_platform_link_get_mtu (ifindex))
+                nm_platform_link_set_mtu (ifindex, mtu);
+}
+
+static void
 nm_device_ipv6_set_mtu (NMDevice *self, guint32 mtu)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
@@ -5927,6 +5935,8 @@ nm_device_set_ip4_config (NMDevice *self,
 	/* Always commit to nm-platform to update lifetimes */
 	if (commit && new_config) {
 		gboolean assumed = nm_device_uses_assumed_connection (self);
+
+		nm_device_set_mtu (self, nm_ip4_config_get_mtu (new_config));
 
 		/* for assumed devices we set the device_route_metric to the default which will
 		 * stop nm_platform_ip4_address_sync() to replace the device routes. */
