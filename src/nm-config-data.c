@@ -42,6 +42,8 @@ typedef struct {
 		char **arr;
 		GSList *specs;
 	} no_auto_default;
+
+	char *dns_mode;
 } NMConfigDataPrivate;
 
 
@@ -128,6 +130,14 @@ nm_config_data_get_no_auto_default_list (const NMConfigData *self)
 	return NM_CONFIG_DATA_GET_PRIVATE (self)->no_auto_default.specs;
 }
 
+const char *
+nm_config_data_get_dns_mode (const NMConfigData *self)
+{
+	g_return_val_if_fail (self, NULL);
+
+	return NM_CONFIG_DATA_GET_PRIVATE (self)->dns_mode;
+}
+
 /************************************************************************/
 
 static gboolean
@@ -191,6 +201,9 @@ nm_config_data_diff (NMConfigData *old_data, NMConfigData *new_data)
 	}
 	if (spec_old || spec_new)
 		changes |= NM_CONFIG_CHANGE_NO_AUTO_DEFAULT;
+
+	if (g_strcmp0 (nm_config_data_get_dns_mode (old_data), nm_config_data_get_dns_mode (new_data)))
+		changes |= NM_CONFIG_CHANGE_DNS_MODE;
 
 	return changes;
 }
@@ -286,6 +299,8 @@ finalize (GObject *gobject)
 	g_slist_free (priv->no_auto_default.specs);
 	g_strfreev (priv->no_auto_default.arr);
 
+	g_free (priv->dns_mode);
+
 	g_key_file_unref (priv->keyfile);
 
 	G_OBJECT_CLASS (nm_config_data_parent_class)->finalize (gobject);
@@ -308,6 +323,8 @@ constructed (GObject *object)
 
 	interval = g_key_file_get_integer (priv->keyfile, "connectivity", "interval", NULL);
 	priv->connectivity.interval = MAX (0, interval);
+
+	priv->dns_mode = g_key_file_get_value (priv->keyfile, "main", "dns", NULL);
 
 	G_OBJECT_CLASS (nm_config_data_parent_class)->constructed (object);
 }
