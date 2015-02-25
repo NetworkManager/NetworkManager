@@ -284,6 +284,7 @@ typedef struct {
 	NMIP6Config *  ext_ip6_config; /* Stuff added outside NM */
 	gboolean       ext_ip6_config_had_any_addresses;
 	gboolean       nm_ipv6ll; /* TRUE if NM handles the device's IPv6LL address */
+	guint32        ip6_mtu;
 
 	NMRDisc *      rdisc;
 	gulong         rdisc_changed_id;
@@ -4032,6 +4033,18 @@ print_support_extended_ifa_flags (NMSettingIP6ConfigPrivacy use_tempaddr)
 }
 
 static void
+nm_device_ipv6_set_mtu (NMDevice *self, guint32 mtu)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	char val[16];
+
+	if (mtu) {
+		g_snprintf (val, sizeof (val), "%d", mtu);
+		nm_device_ipv6_sysctl_set (self, "mtu", val);
+	}
+}
+
+static void
 rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
@@ -4171,12 +4184,8 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *self)
 	if (changed & NM_RDISC_CONFIG_HOP_LIMIT)
 		nm_platform_sysctl_set_ip6_hop_limit_safe (nm_device_get_ip_iface (self), rdisc->hop_limit);
 
-	if (changed & NM_RDISC_CONFIG_MTU) {
-		char val[16];
-
-		g_snprintf (val, sizeof (val), "%d", rdisc->mtu);
-		nm_device_ipv6_sysctl_set (self, "mtu", val);
-	}
+	if (changed & NM_RDISC_CONFIG_MTU)
+		priv->ip6_mtu = rdisc->mtu;
 
 	nm_device_activate_schedule_ip6_config_result (self);
 }
@@ -6014,6 +6023,7 @@ nm_device_set_ip6_config (NMDevice *self,
 
 	/* Always commit to nm-platform to update lifetimes */
 	if (commit && new_config) {
+		nm_device_ipv6_set_mtu (self, priv->ip6_mtu);
 		success = nm_ip6_config_commit (new_config, ip_ifindex);
 		if (!success)
 			reason_local = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
