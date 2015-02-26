@@ -847,6 +847,7 @@ local:
 
 libnm_1_2_0 {
 global:
+	nm_setting_802_1x_check_cert_scheme;
 	nm_setting_bridge_get_multicast_snooping;
 	nm_setting_wireless_get_powersave;
 	nm_utils_bond_mode_int_to_string;
