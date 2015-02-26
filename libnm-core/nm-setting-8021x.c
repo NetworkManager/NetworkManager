@@ -1755,7 +1755,7 @@ file_to_secure_bytes (const char *filename)
 	if (g_file_get_contents (filename, &contents, &length, NULL)) {
 		array = g_byte_array_sized_new (length);
 		g_byte_array_append (array, (guint8 *) contents, length);
-		g_assert (array->len == length);
+		memset (contents, 0, length);
 		g_free (contents);
 		return g_bytes_new_with_free_func (array->data, array->len, free_secure_bytes, array);
 	}
