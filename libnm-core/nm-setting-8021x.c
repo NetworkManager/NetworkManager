@@ -416,7 +416,30 @@ get_cert_scheme (GBytes *bytes, GError **error)
 	}
 
 	data = g_bytes_get_data (bytes, &length);
-	if (!length) {
+	return nm_setting_802_1x_check_cert_scheme (data, length, error);
+}
+
+/**
+ * nm_setting_802_1x_check_cert_scheme:
+ * @pdata: (allow-none): the data pointer
+ * @length: the length of the data
+ * @error: (allow-none): (out): validation reason
+ *
+ * Determines and verifies the blob type.
+ * When setting certificate properties of NMSetting8021x
+ * the blob must be not UNKNOWN (or NULL).
+ *
+ * Returns: the scheme of the blob or %NM_SETTING_802_1X_CK_SCHEME_UNKNOWN.
+ * For NULL it also returns NM_SETTING_802_1X_CK_SCHEME_UNKNOWN.
+ **/
+NMSetting8021xCKScheme
+nm_setting_802_1x_check_cert_scheme (gconstpointer pdata, gsize length, GError **error)
+{
+	const char *data = pdata;
+
+	g_return_val_if_fail (!length || data, NM_SETTING_802_1X_CK_SCHEME_UNKNOWN);
+
+	if (!length || !data) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -484,11 +507,8 @@ load_and_verify_certificate (const char *cert_path,
 		 * file://.
 		 * If that's the case, coerce the format to UNKNOWN. The callers will take care
 		 * of that and not set the blob. */
-		GBytes *bytes = g_bytes_new_static (array->data, array->len);
-
-		if (get_cert_scheme (bytes, NULL) != NM_SETTING_802_1X_CK_SCHEME_BLOB)
+		if (nm_setting_802_1x_check_cert_scheme (array->data, array->len, NULL) != NM_SETTING_802_1X_CK_SCHEME_BLOB)
 			format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
-		g_bytes_unref (bytes);
 	}
 
 	if (out_file_format)
