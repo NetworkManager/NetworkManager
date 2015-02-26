@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2010 - 2014 Red Hat, Inc.
+ * Copyright 2010 - 2015 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -578,6 +578,7 @@ NmcOutputField nmc_fields_setting_bridge[] = {
 	SETTING_FIELD (NM_SETTING_BRIDGE_HELLO_TIME, 6),                   /* 5 */
 	SETTING_FIELD (NM_SETTING_BRIDGE_MAX_AGE, 6),                      /* 6 */
 	SETTING_FIELD (NM_SETTING_BRIDGE_AGEING_TIME, 6),                  /* 7 */
+	SETTING_FIELD (NM_SETTING_BRIDGE_MULTICAST_SNOOPING, 6),           /* 8 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_BRIDGE_ALL    "name"","\
@@ -587,7 +588,8 @@ NmcOutputField nmc_fields_setting_bridge[] = {
                                          NM_SETTING_BRIDGE_FORWARD_DELAY","\
                                          NM_SETTING_BRIDGE_HELLO_TIME","\
                                          NM_SETTING_BRIDGE_MAX_AGE","\
-                                         NM_SETTING_BRIDGE_AGEING_TIME
+                                         NM_SETTING_BRIDGE_AGEING_TIME","\
+                                         NM_SETTING_BRIDGE_MULTICAST_SNOOPING
 #define NMC_FIELDS_SETTING_BRIDGE_COMMON NMC_FIELDS_SETTING_BRIDGE_ALL
 
 /* Available fields for NM_SETTING_BRIDGE_PORT_SETTING_NAME */
@@ -996,6 +998,7 @@ DEFINE_GETTER (nmc_property_bridge_get_forward_delay, NM_SETTING_BRIDGE_FORWARD_
 DEFINE_GETTER (nmc_property_bridge_get_hello_time, NM_SETTING_BRIDGE_HELLO_TIME)
 DEFINE_GETTER (nmc_property_bridge_get_max_age, NM_SETTING_BRIDGE_MAX_AGE)
 DEFINE_GETTER (nmc_property_bridge_get_ageing_time, NM_SETTING_BRIDGE_AGEING_TIME)
+DEFINE_GETTER (nmc_property_bridge_get_multicast_snooping, NM_SETTING_BRIDGE_MULTICAST_SNOOPING)
 
 /* --- NM_SETTING_BRIDGE_PORT_SETTING_NAME property get functions --- */
 DEFINE_GETTER (nmc_property_bridge_port_get_priority, NM_SETTING_BRIDGE_PORT_PRIORITY)
@@ -5146,6 +5149,14 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL);
 
+	nmc_add_prop_funcs (GLUE (BRIDGE, MULTICAST_SNOOPING),
+	                    nmc_property_bridge_get_multicast_snooping,
+	                    nmc_property_set_bool,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+
 	/* Add editable properties for NM_SETTING_BRIDGE_PORT_SETTING_NAME */
 	nmc_add_prop_funcs (GLUE (BRIDGE_PORT, PRIORITY),
 	                    nmc_property_bridge_port_get_priority,
@@ -7350,6 +7361,7 @@ setting_bridge_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, g
 	set_val_str (arr, 5, nmc_property_bridge_get_hello_time (setting));
 	set_val_str (arr, 6, nmc_property_bridge_get_max_age (setting));
 	set_val_str (arr, 7, nmc_property_bridge_get_ageing_time (setting));
+	set_val_str (arr, 8, nmc_property_bridge_get_multicast_snooping (setting));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */

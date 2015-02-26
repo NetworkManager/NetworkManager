@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2009 - 2014 Red Hat, Inc.
+ * Copyright 2009 - 2015 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -1317,7 +1317,7 @@ write_team_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 }
 
 static guint32
-get_setting_default (NMSetting *setting, const char *prop)
+get_setting_default_uint (NMSetting *setting, const char *prop)
 {
 	GParamSpec *pspec;
 	GValue val = G_VALUE_INIT;
@@ -1334,11 +1334,29 @@ get_setting_default (NMSetting *setting, const char *prop)
 }
 
 static gboolean
+get_setting_default_boolean (NMSetting *setting, const char *prop)
+{
+	GParamSpec *pspec;
+	GValue val = G_VALUE_INIT;
+	gboolean ret = 0;
+
+	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), prop);
+	g_assert (pspec);
+	g_value_init (&val, pspec->value_type);
+	g_param_value_set_default (pspec, &val);
+	g_assert (G_VALUE_HOLDS_BOOLEAN (&val));
+	ret = g_value_get_boolean (&val);
+	g_value_unset (&val);
+	return ret;
+}
+
+static gboolean
 write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 {
 	NMSettingBridge *s_bridge;
 	const char *iface;
 	guint32 i;
+	gboolean b;
 	GString *opts;
 	const char *mac;
 	char *s;
@@ -1372,7 +1390,7 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, GError **error
 		svSetValue (ifcfg, "STP", "yes", FALSE);
 
 		i = nm_setting_bridge_get_forward_delay (s_bridge);
-		if (i != get_setting_default (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_FORWARD_DELAY)) {
+		if (i != get_setting_default_uint (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_FORWARD_DELAY)) {
 			s = g_strdup_printf ("%u", i);
 			svSetValue (ifcfg, "DELAY", s, FALSE);
 			g_free (s);
@@ -1381,14 +1399,14 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, GError **error
 		g_string_append_printf (opts, "priority=%u", nm_setting_bridge_get_priority (s_bridge));
 
 		i = nm_setting_bridge_get_hello_time (s_bridge);
-		if (i != get_setting_default (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_HELLO_TIME)) {
+		if (i != get_setting_default_uint (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_HELLO_TIME)) {
 			if (opts->len)
 				g_string_append_c (opts, ' ');
 			g_string_append_printf (opts, "hello_time=%u", i);
 		}
 
 		i = nm_setting_bridge_get_max_age (s_bridge);
-		if (i != get_setting_default (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MAX_AGE)) {
+		if (i != get_setting_default_uint (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MAX_AGE)) {
 			if (opts->len)
 				g_string_append_c (opts, ' ');
 			g_string_append_printf (opts, "max_age=%u", i);
@@ -1396,10 +1414,17 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, GError **error
 	}
 
 	i = nm_setting_bridge_get_ageing_time (s_bridge);
-	if (i != get_setting_default (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_AGEING_TIME)) {
+	if (i != get_setting_default_uint (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_AGEING_TIME)) {
 		if (opts->len)
 			g_string_append_c (opts, ' ');
 		g_string_append_printf (opts, "ageing_time=%u", i);
+	}
+
+	b = nm_setting_bridge_get_multicast_snooping (s_bridge);
+	if (b != get_setting_default_boolean (NM_SETTING (s_bridge), NM_SETTING_BRIDGE_MULTICAST_SNOOPING)) {
+		if (opts->len)
+			g_string_append_c (opts, ' ');
+		g_string_append_printf (opts, "multicast_snooping=%u", (guint32) b);
 	}
 
 	if (opts->len)
@@ -1428,11 +1453,11 @@ write_bridge_port_setting (NMConnection *connection, shvarFile *ifcfg, GError **
 	opts = g_string_sized_new (32);
 
 	i = nm_setting_bridge_port_get_priority (s_port);
-	if (i != get_setting_default (NM_SETTING (s_port), NM_SETTING_BRIDGE_PORT_PRIORITY))
+	if (i != get_setting_default_uint (NM_SETTING (s_port), NM_SETTING_BRIDGE_PORT_PRIORITY))
 		g_string_append_printf (opts, "priority=%u", i);
 
 	i = nm_setting_bridge_port_get_path_cost (s_port);
-	if (i != get_setting_default (NM_SETTING (s_port), NM_SETTING_BRIDGE_PORT_PATH_COST)) {
+	if (i != get_setting_default_uint (NM_SETTING (s_port), NM_SETTING_BRIDGE_PORT_PATH_COST)) {
 		if (opts->len)
 			g_string_append_c (opts, ' ');
 		g_string_append_printf (opts, "path_cost=%u", i);

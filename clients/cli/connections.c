@@ -386,6 +386,7 @@ usage_connection_add (void)
 	              "                  [hello-time <1-10>]\n"
 	              "                  [max-age <6-40>]\n"
 	              "                  [ageing-time <0-1000000>]\n"
+	              "                  [multicast-snooping yes|no]\n"
 	              "                  [mac <MAC address>]\n\n"
 	              "    bridge-slave: master <master (ifname, or connection UUID or name)>\n"
 	              "                  [priority <0-63>]\n"
@@ -3811,14 +3812,14 @@ do_questionnaire_team_slave (char **config)
 
 static void
 do_questionnaire_bridge (char **stp, char **priority, char **fwd_delay, char **hello_time,
-                         char **max_age, char **ageing_time, char **mac)
+                         char **max_age, char **ageing_time, char **mcast_snoop, char **mac)
 {
 	unsigned long tmp;
 	gboolean once_more;
 	GError *error = NULL;
 
 	/* Ask for optional 'bridge' arguments. */
-	if (!want_provide_opt_args (_("bridge"), 7))
+	if (!want_provide_opt_args (_("bridge"), 8))
 		return;
 
 	if (!*stp) {
@@ -3893,6 +3894,20 @@ do_questionnaire_bridge (char **stp, char **priority, char **fwd_delay, char **h
 				g_print (_("Error: 'ageing-time': '%s' is not a valid number <0-1000000>.\n"),
 				         *ageing_time);
 				g_free (*ageing_time);
+			}
+		} while (once_more);
+	}
+	if (!*mcast_snoop) {
+		gboolean mcast_snoop_bool;
+		do {
+			*mcast_snoop = nmc_readline (_("Enable IGMP snooping %s"), prompt_yes_no (TRUE, ":"));
+			*mcast_snoop = *mcast_snoop ? *mcast_snoop : g_strdup ("yes");
+			normalize_yes_no (mcast_snoop);
+			once_more = !nmc_string_to_bool (*mcast_snoop, &mcast_snoop_bool, &error);
+			if (once_more) {
+				g_print (_("Error: 'multicast-snooping': %s.\n"), error->message);
+				g_clear_error (&error);
+				g_free (*mcast_snoop);
 			}
 		} while (once_more);
 	}
@@ -5045,7 +5060,9 @@ cleanup_team_slave:
 		char *max_age = NULL;
 		const char *ageing_time_c = NULL;
 		char *ageing_time = NULL;
-		gboolean stp_bool;
+		const char *mcast_snoop_c = NULL;
+		char *mcast_snoop = NULL;
+		gboolean stp_bool, mcast_snoop_bool;
 		unsigned long stp_prio_int, fwd_delay_int, hello_time_int,
 		              max_age_int, ageing_time_int;
 		const char *mac_c = NULL;
@@ -5056,6 +5073,7 @@ cleanup_team_slave:
 		                         {"hello-time",    TRUE, &hello_time_c,  FALSE},
 		                         {"max-age",       TRUE, &max_age_c,     FALSE},
 		                         {"ageing-time",   TRUE, &ageing_time_c, FALSE},
+		                         {"multicast-snooping", TRUE, &mcast_snoop_c, FALSE},
 		                         {"mac",           TRUE, &mac_c,         FALSE},
 		                         {NULL} };
 
@@ -5069,10 +5087,11 @@ cleanup_team_slave:
 		hello_time = g_strdup (hello_time_c);
 		max_age = g_strdup (max_age_c);
 		ageing_time = g_strdup (ageing_time_c);
+		mcast_snoop = g_strdup (mcast_snoop_c);
 		mac = g_strdup (mac_c);
 		if (ask)
 			do_questionnaire_bridge (&stp, &priority, &fwd_delay, &hello_time,
-			                         &max_age, &ageing_time, &mac);
+			                         &max_age, &ageing_time, &mcast_snoop, &mac);
 
 		/* Generate ifname if conneciton doesn't have one */
 		ifname = nm_setting_connection_get_interface_name (s_con);
@@ -5090,6 +5109,15 @@ cleanup_team_slave:
 			if (!nmc_string_to_bool (stp, &stp_bool, &tmp_err)) {
 				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 				             _("Error: 'stp': %s."), tmp_err->message);
+				g_clear_error (&tmp_err);
+				goto cleanup_bridge;
+			}
+		}
+		if (mcast_snoop) {
+			GError *tmp_err = NULL;
+			if (!nmc_string_to_bool (mcast_snoop, &mcast_snoop_bool, &tmp_err)) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("Error: 'multicast-snooping': %s."), tmp_err->message);
 				g_clear_error (&tmp_err);
 				goto cleanup_bridge;
 			}
@@ -5136,6 +5164,8 @@ cleanup_team_slave:
 			g_object_set (s_bridge, NM_SETTING_BRIDGE_MAX_AGE, max_age_int, NULL);
 		if (ageing_time)
 			g_object_set (s_bridge, NM_SETTING_BRIDGE_AGEING_TIME, ageing_time_int, NULL);
+		if (mcast_snoop)
+			g_object_set (s_bridge, NM_SETTING_BRIDGE_MULTICAST_SNOOPING, mcast_snoop_bool, NULL);
 		if (mac)
 			g_object_set (s_bridge, NM_SETTING_BRIDGE_MAC_ADDRESS, mac, NULL);
 
@@ -5147,6 +5177,7 @@ cleanup_bridge:
 		g_free (hello_time);
 		g_free (max_age);
 		g_free (ageing_time);
+		g_free (mcast_snoop);
 		g_free (mac);
 		if (!success)
 			return FALSE;

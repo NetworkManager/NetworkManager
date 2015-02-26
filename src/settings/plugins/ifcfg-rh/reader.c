@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2008 - 2014 Red Hat, Inc.
+ * Copyright 2008 - 2015 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -4092,6 +4092,12 @@ handle_bridge_option (NMSetting *setting,
 			g_object_set (setting, NM_SETTING_BRIDGE_AGEING_TIME, u, NULL);
 		else
 			PARSE_WARNING ("invalid ageing_time value '%s'", value);
+	} else if (!strcmp (key, "multicast_snooping")) {
+		if (get_uint (value, &u))
+			g_object_set (setting, NM_SETTING_BRIDGE_MULTICAST_SNOOPING,
+			              (gboolean) u, NULL);
+		else
+			PARSE_WARNING ("invalid multicast_snooping value '%s'", value);
 	} else
 			PARSE_WARNING ("unhandled bridge option '%s'", key);
 }

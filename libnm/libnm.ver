@@ -848,6 +848,7 @@ local:
 
 libnm_1_2_0 {
 global:
+	nm_setting_bridge_get_multicast_snooping;
 	nm_utils_bond_mode_int_to_string;
 	nm_utils_bond_mode_string_to_int;
 } libnm_1_0_0;

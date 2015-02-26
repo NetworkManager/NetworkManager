@@ -2811,6 +2811,7 @@ test_read_bridge_main (void)
 	g_assert_cmpuint (nm_setting_bridge_get_hello_time (s_bridge), ==, 7);
 	g_assert_cmpuint (nm_setting_bridge_get_max_age (s_bridge), ==, 39);
 	g_assert_cmpuint (nm_setting_bridge_get_ageing_time (s_bridge), ==, 235352);
+	g_assert_cmpuint (nm_setting_bridge_get_multicast_snooping (s_bridge), ==, FALSE);
 
 	g_object_unref (connection);
 }
