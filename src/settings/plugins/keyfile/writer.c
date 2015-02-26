@@ -367,7 +367,6 @@ password_raw_writer (GKeyFile *file,
 typedef struct ObjectType {
 	const char *key;
 	const char *suffix;
-	const char *privkey_pw_prop;
 	NMSetting8021xCKScheme (*scheme_func) (NMSetting8021x *setting);
 	NMSetting8021xCKFormat (*format_func) (NMSetting8021x *setting);
 	const char *           (*path_func)   (NMSetting8021x *setting);
@@ -377,7 +376,6 @@ typedef struct ObjectType {
 static const ObjectType objtypes[10] = {
 	{ NM_SETTING_802_1X_CA_CERT,
 	  "ca-cert",
-	  NULL,
 	  nm_setting_802_1x_get_ca_cert_scheme,
 	  NULL,
 	  nm_setting_802_1x_get_ca_cert_path,
@@ -385,7 +383,6 @@ static const ObjectType objtypes[10] = {
 
 	{ NM_SETTING_802_1X_PHASE2_CA_CERT,
 	  "inner-ca-cert",
-	  NULL,
 	  nm_setting_802_1x_get_phase2_ca_cert_scheme,
 	  NULL,
 	  nm_setting_802_1x_get_phase2_ca_cert_path,
@@ -393,7 +390,6 @@ static const ObjectType objtypes[10] = {
 
 	{ NM_SETTING_802_1X_CLIENT_CERT,
 	  "client-cert",
-	  NULL,
 	  nm_setting_802_1x_get_client_cert_scheme,
 	  NULL,
 	  nm_setting_802_1x_get_client_cert_path,
@@ -401,7 +397,6 @@ static const ObjectType objtypes[10] = {
 
 	{ NM_SETTING_802_1X_PHASE2_CLIENT_CERT,
 	  "inner-client-cert",
-	  NULL,
 	  nm_setting_802_1x_get_phase2_client_cert_scheme,
 	  NULL,
 	  nm_setting_802_1x_get_phase2_client_cert_path,
@@ -409,7 +404,6 @@ static const ObjectType objtypes[10] = {
 
 	{ NM_SETTING_802_1X_PRIVATE_KEY,
 	  "private-key",
-	  NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD,
 	  nm_setting_802_1x_get_private_key_scheme,
 	  nm_setting_802_1x_get_private_key_format,
 	  nm_setting_802_1x_get_private_key_path,
@@ -417,7 +411,6 @@ static const ObjectType objtypes[10] = {
 
 	{ NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
 	  "inner-private-key",
-	  NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD,
 	  nm_setting_802_1x_get_phase2_private_key_scheme,
 	  nm_setting_802_1x_get_phase2_private_key_format,
 	  nm_setting_802_1x_get_phase2_private_key_path,
