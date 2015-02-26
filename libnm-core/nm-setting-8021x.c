@@ -1870,7 +1870,8 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *setting,
 
 	priv->private_key_password = g_strdup (password);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
-		/* Shouldn't fail this since we just verified the private key above */
+		/* FIXME: potential race after verifying the private key above */
+		/* FIXME: ensure blob doesn't start with file:// */
 		priv->private_key = file_to_secure_bytes (key_path);
 		g_assert (priv->private_key);
 	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
@@ -2181,7 +2182,8 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *setting,
 
 	priv->phase2_private_key_password = g_strdup (password);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
-		/* Shouldn't fail this since we just verified the private key above */
+		/* FIXME: potential race after verifying the private key above */
+		/* FIXME: ensure blob doesn't start with file:// */
 		priv->phase2_private_key = file_to_secure_bytes (key_path);
 		g_assert (priv->phase2_private_key);
 	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
