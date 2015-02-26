@@ -551,14 +551,16 @@ static GByteArray *
 path_to_scheme_value (const char *path)
 {
 	GByteArray *array;
+	gsize len;
 
-	g_return_val_if_fail (path != NULL, NULL);
+	g_return_val_if_fail (path != NULL && path[0], NULL);
 
-	/* Add the path scheme tag to the front, then the fielname */
-	array = g_byte_array_sized_new (strlen (path) + strlen (SCHEME_PATH) + 1);
-	g_assert (array);
+	len = strlen (path);
+
+	/* Add the path scheme tag to the front, then the filename */
+	array = g_byte_array_sized_new (len + strlen (SCHEME_PATH) + 1);
 	g_byte_array_append (array, (const guint8 *) SCHEME_PATH, strlen (SCHEME_PATH));
-	g_byte_array_append (array, (const guint8 *) path, strlen (path));
+	g_byte_array_append (array, (const guint8 *) path, len);
 	g_byte_array_append (array, (const guint8 *) "\0", 1);
 	return array;
 }
