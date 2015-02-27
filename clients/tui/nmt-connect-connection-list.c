@@ -503,9 +503,11 @@ nmt_connect_connection_list_rebuild (NmtConnectConnectionList *list)
 	for (diter = nmt_devices; diter; diter = diter->next) {
 		nmtdev = diter->data;
 
-		if (diter != nmt_devices)
-			nmt_newt_listbox_append (listbox, "", NULL);
-		nmt_newt_listbox_append (listbox, nmtdev->name, NULL);
+		if (nmtdev->conns) {
+			if (diter != nmt_devices)
+				nmt_newt_listbox_append (listbox, "", NULL);
+			nmt_newt_listbox_append (listbox, nmtdev->name, NULL);
+		}
 
 		for (citer = nmtdev->conns; citer; citer = citer->next) {
 			nmtconn = citer->data;
