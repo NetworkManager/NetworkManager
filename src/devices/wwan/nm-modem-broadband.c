@@ -800,6 +800,7 @@ stage3_ip6_done (NMModemBroadband *self)
 {
 	GError *error = NULL;
 	NMIP6Config *config = NULL;
+	const char *data_port;
 	const gchar *address_string;
 	NMPlatformIP6Address address;
 	NMModemIPMethod ip_method;
@@ -837,7 +838,9 @@ stage3_ip6_done (NMModemBroadband *self)
 	nm_log_info (LOGD_MB, "(%s): IPv6 base configuration:",
 	             nm_modem_get_uid (NM_MODEM (self)));
 
-	config = nm_ip6_config_new ();
+	data_port = mm_bearer_get_interface (self->priv->bearer);
+	g_assert (data_port);
+	config = nm_ip6_config_new (nm_platform_link_get_ifindex (data_port));
 
 	address.plen = mm_bearer_ip_config_get_prefix (self->priv->ipv6_config);
 	nm_ip6_config_add_address (config, &address);

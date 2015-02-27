@@ -702,7 +702,7 @@ nmtst_ip4_config_clone (NMIP4Config *config)
 inline static NMIP6Config *
 nmtst_ip6_config_clone (NMIP6Config *config)
 {
-	NMIP6Config *copy = nm_ip6_config_new ();
+	NMIP6Config *copy = nm_ip6_config_new (-1);
 
 	g_assert (copy);
 	g_assert (config);

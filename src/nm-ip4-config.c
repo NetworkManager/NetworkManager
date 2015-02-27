@@ -83,6 +83,7 @@ static GParamSpec *obj_properties[LAST_PROP] = { NULL, };
 NMIP4Config *
 nm_ip4_config_new (int ifindex)
 {
+	g_return_val_if_fail (ifindex >= -1, NULL);
 	return (NMIP4Config *) g_object_new (NM_TYPE_IP4_CONFIG,
 	                                     NM_IP4_CONFIG_IFINDEX, ifindex,
 	                                     NULL);
@@ -106,6 +107,12 @@ nm_ip4_config_get_dbus_path (const NMIP4Config *config)
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 
 	return priv->path;
+}
+
+int
+nm_ip4_config_get_ifindex (const NMIP4Config *config)
+{
+	return NM_IP4_CONFIG_GET_PRIVATE (config)->ifindex;
 }
 
 static gboolean

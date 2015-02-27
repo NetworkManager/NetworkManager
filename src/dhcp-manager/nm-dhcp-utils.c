@@ -617,8 +617,7 @@ nm_dhcp_utils_ip6_config_from_options (int ifindex,
 		            iface, (const char *) key, (const char *) value);
 	}
 
-	ip6_config = nm_ip6_config_new ();
-	nm_ip6_config_set_ifindex (ip6_config, ifindex);
+	ip6_config = nm_ip6_config_new (ifindex);
 
 	str = g_hash_table_lookup (options, "max_life");
 	if (str) {
