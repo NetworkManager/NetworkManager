@@ -2,17 +2,15 @@ include $(GLIB_MAKEFILE)
 
 @GNOME_CODE_COVERAGE_RULES@
 
-SUBDIRS =				\
-	.				\
-	devices/adsl			\
-	dhcp-manager			\
-	ppp-manager			\
-	settings/plugins
+SUBDIRS = \
+	. \
+	dhcp-manager \
+	ppp-manager \
+	settings/plugins \
+	devices/adsl
 
 if WITH_MODEM_MANAGER_1
-SUBDIRS +=				\
-	devices/wwan			\
-	devices/bluetooth
+SUBDIRS += devices/wwan	devices/bluetooth
 endif
 
 if WITH_WIFI
