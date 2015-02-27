@@ -46,24 +46,24 @@ test_ip6_config_LDADD = \
 
 test_route_manager_fake_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
-	-I$(top_builddir)/src/platform/tests \
+	-I$(top_srcdir)/src/platform/tests \
 	-DSETUP=nm_fake_platform_setup \
 	-DKERNEL_HACKS=0
 
 test_route_manager_fake_SOURCES = \
-	../platform/tests/test-common.c \
+	$(top_srcdir)/src/platform/tests/test-common.c \
 	test-route-manager.c
 
 test_route_manager_fake_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la
 
 test_route_manager_linux_SOURCES = \
-	../platform/tests/test-common.c \
+	$(top_srcdir)/src/platform/tests/test-common.c \
 	test-route-manager.c
 
 test_route_manager_linux_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
-	-I$(top_builddir)/src/platform/tests \
+	-I$(top_srcdir)/src/platform/tests \
 	-DSETUP=nm_linux_platform_setup \
 	-DKERNEL_HACKS=1
 
