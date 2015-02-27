@@ -345,6 +345,13 @@ test_8021x_cert_read (void)
 	gs_unref_object NMConnection *con = NULL;
 	NMSetting8021x *s_8021x;
 
+	con = nmtst_create_connection_from_keyfile (
+	      "[connection]\n"
+	      "type=ethernet",
+	      "/test_8021x_cert_read/test0", NULL);
+	CLEAR (&con, &keyfile);
+
+
 	keyfile = _keyfile_load_from_data (
 	          "[connection]\n"
 	          "type=ethernet"
