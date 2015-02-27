@@ -69,6 +69,7 @@
 #include "nm-dns-manager.h"
 #include "nm-core-internal.h"
 #include "nm-default-route-manager.h"
+#include "nm-route-manager.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF (NMDevice);
@@ -2612,7 +2613,7 @@ aipd_get_ip4_config (NMDevice *self, guint32 lla)
 	NMPlatformIP4Address address;
 	NMPlatformIP4Route route;
 
-	config = nm_ip4_config_new ();
+	config = nm_ip4_config_new (nm_device_get_ip_ifindex (self));
 	g_assert (config);
 
 	memset (&address, 0, sizeof (address));
@@ -2860,6 +2861,7 @@ static void
 ensure_con_ipx_config (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	int ip_ifindex = nm_device_get_ip_ifindex (self);
 	NMConnection *connection;
 
 	g_assert (!!priv->con_ip4_config == !!priv->con_ip6_config);
@@ -2871,8 +2873,8 @@ ensure_con_ipx_config (NMDevice *self)
 	if (!connection)
 		return;
 
-	priv->con_ip4_config = nm_ip4_config_new ();
-	priv->con_ip6_config = nm_ip6_config_new ();
+	priv->con_ip4_config = nm_ip4_config_new (ip_ifindex);
+	priv->con_ip6_config = nm_ip6_config_new (ip_ifindex);
 
 	nm_ip4_config_merge_setting (priv->con_ip4_config,
 	                             nm_connection_get_setting_ip4_config (connection),
@@ -2940,7 +2942,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 		priv->dev_ip4_config = g_object_ref (config);
 	}
 
-	composite = nm_ip4_config_new ();
+	composite = nm_ip4_config_new (nm_device_get_ip_ifindex (self));
 
 	ensure_con_ipx_config (self);
 
@@ -3294,7 +3296,7 @@ shared4_new_config (NMDevice *self, NMConnection *connection, NMDeviceStateReaso
 		return NULL;
 	}
 
-	config = nm_ip4_config_new ();
+	config = nm_ip4_config_new (nm_device_get_ip_ifindex (self));
 	address.source = NM_IP_CONFIG_SOURCE_SHARED;
 	nm_ip4_config_add_address (config, &address);
 
@@ -3454,7 +3456,7 @@ act_stage3_ip4_config_start (NMDevice *self,
 		ret = aipd_start (self, reason);
 	else if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) == 0) {
 		/* Use only IPv4 config from the connection data */
-		*out_config = nm_ip4_config_new ();
+		*out_config = nm_ip4_config_new (nm_device_get_ip_ifindex (self));
 		g_assert (*out_config);
 		ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	} else if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED) == 0) {
@@ -3517,9 +3519,10 @@ ip6_config_merge_and_apply (NMDevice *self,
 	const struct in6_addr *gateway;
 
 	/* If no config was passed in, create a new one */
-	composite = nm_ip6_config_new ();
+	composite = nm_ip6_config_new (nm_device_get_ip_ifindex (self));
 
 	ensure_con_ipx_config (self);
+	g_assert (composite);
 
 	/* Merge all the IP configs into the composite config */
 	if (priv->ac_ip6_config)
@@ -4107,7 +4110,7 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *self)
 	g_return_if_fail (priv->act_request);
 
 	if (!priv->ac_ip6_config)
-		priv->ac_ip6_config = nm_ip6_config_new ();
+		priv->ac_ip6_config = nm_ip6_config_new (nm_device_get_ip_ifindex (self));
 
 	if (changed & NM_RDISC_CONFIG_GATEWAYS) {
 		/* Use the first gateway as ordered in router discovery cache. */
@@ -4611,7 +4614,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 		ret = linklocal6_start (self);
 		if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
 			/* New blank config; LL address is already in priv->ext_ip6_config */
-			*out_config = nm_ip6_config_new ();
+			*out_config = nm_ip6_config_new (nm_device_get_ip_ifindex (self));
 			g_assert (*out_config);
 		}
 	} else if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_DHCP) == 0) {
@@ -4623,7 +4626,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 			ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	} else if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_MANUAL) == 0) {
 		/* New blank config */
-		*out_config = nm_ip6_config_new ();
+		*out_config = nm_ip6_config_new (nm_device_get_ip_ifindex (self));
 		g_assert (*out_config);
 
 		ret = NM_ACT_STAGE_RETURN_SUCCESS;
@@ -5896,13 +5899,19 @@ nm_device_set_ip4_config (NMDevice *self,
 	gboolean has_changes = FALSE;
 	gboolean success = TRUE;
 	NMDeviceStateReason reason_local = NM_DEVICE_STATE_REASON_NONE;
-	int ip_ifindex;
+	int ip_ifindex, config_ifindex;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	ip_iface = nm_device_get_ip_iface (self);
 	ip_ifindex = nm_device_get_ip_ifindex (self);
+
+	if (new_config) {
+		config_ifindex = nm_ip4_config_get_ifindex (new_config);
+		if (config_ifindex > 0)
+			g_return_val_if_fail (ip_ifindex == config_ifindex, FALSE);
+	}
 
 	old_config = priv->ip4_config;
 
@@ -6026,13 +6035,19 @@ nm_device_set_ip6_config (NMDevice *self,
 	gboolean has_changes = FALSE;
 	gboolean success = TRUE;
 	NMDeviceStateReason reason_local = NM_DEVICE_STATE_REASON_NONE;
-	int ip_ifindex;
+	int ip_ifindex, config_ifindex;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	ip_iface = nm_device_get_ip_iface (self);
 	ip_ifindex = nm_device_get_ip_ifindex (self);
+
+	if (new_config) {
+		config_ifindex = nm_ip6_config_get_ifindex (new_config);
+		if (config_ifindex > 0)
+			g_return_val_if_fail (ip_ifindex == config_ifindex, FALSE);
+	}
 
 	old_config = priv->ip6_config;
 
@@ -6564,6 +6579,7 @@ find_ip4_lease_config (NMDevice *self,
                        NMIP4Config *ext_ip4_config)
 {
 	const char *ip_iface = nm_device_get_ip_iface (self);
+	int ip_ifindex = nm_device_get_ip_ifindex (self);
 	GSList *leases, *liter;
 	NMIP4Config *found = NULL;
 
@@ -6572,6 +6588,7 @@ find_ip4_lease_config (NMDevice *self,
 
 	leases = nm_dhcp_manager_get_lease_ip_configs (nm_dhcp_manager_get (),
 	                                               ip_iface,
+	                                               ip_ifindex,
 	                                               nm_connection_get_uuid (connection),
 	                                               FALSE,
 	                                               nm_device_get_ip4_route_metric (self));
@@ -7415,7 +7432,7 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason)
 	/* Take out any entries in the routing table and any IP address the device had. */
 	ifindex = nm_device_get_ip_ifindex (self);
 	if (ifindex > 0) {
-		nm_platform_route_flush (ifindex);
+		nm_route_manager_route_flush (nm_route_manager_get (), ifindex);
 		nm_platform_address_flush (ifindex);
 	}
 

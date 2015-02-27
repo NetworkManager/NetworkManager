@@ -44,6 +44,7 @@
 #include "nm-agent-manager.h"
 #include "nm-core-internal.h"
 #include "nm-default-route-manager.h"
+#include "nm-route-manager.h"
 
 #include "nm-vpn-connection-glue.h"
 
@@ -233,7 +234,7 @@ vpn_cleanup (NMVpnConnection *connection, NMDevice *parent_dev)
 
 	if (priv->ip_ifindex) {
 		nm_platform_link_set_down (priv->ip_ifindex);
-		nm_platform_route_flush (priv->ip_ifindex);
+		nm_route_manager_route_flush (nm_route_manager_get (), priv->ip_ifindex);
 		nm_platform_address_flush (priv->ip_ifindex);
 	}
 
@@ -893,9 +894,9 @@ apply_parent_device_config (NMVpnConnection *connection)
 	NMIP6Config *vpn6_parent_config = NULL;
 
 	if (priv->ip4_config)
-		vpn4_parent_config = nm_ip4_config_new ();
+		vpn4_parent_config = nm_ip4_config_new (priv->ip_ifindex);
 	if (priv->ip6_config)
-		vpn6_parent_config = nm_ip6_config_new ();
+		vpn6_parent_config = nm_ip6_config_new (priv->ip_ifindex);
 
 	if (priv->ip_ifindex <= 0) {
 		/* If the VPN didn't return a network interface, it is a route-based
@@ -1189,7 +1190,7 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 		priv->has_ip6 = FALSE;
 	}
 
-	config = nm_ip4_config_new ();
+	config = nm_ip4_config_new (priv->ip_ifindex);
 
 	memset (&address, 0, sizeof (address));
 	address.plen = 24;
@@ -1334,7 +1335,7 @@ nm_vpn_connection_ip6_config_get (DBusGProxy *proxy,
 		return;
 	}
 
-	config = nm_ip6_config_new ();
+	config = nm_ip6_config_new (priv->ip_ifindex);
 
 	memset (&address, 0, sizeof (address));
 	address.plen = 128;

@@ -125,6 +125,7 @@ get_dhclient_leasefile (const char *iface,
 
 static GSList *
 nm_dhcp_dhclient_get_lease_ip_configs (const char *iface,
+                                       int ifindex,
                                        const char *uuid,
                                        gboolean ipv6,
                                        guint32 default_route_metric)
@@ -141,7 +142,7 @@ nm_dhcp_dhclient_get_lease_ip_configs (const char *iface,
 	    && g_file_get_contents (leasefile, &contents, NULL, NULL)
 	    && contents
 	    && contents[0])
-		leases = nm_dhcp_dhclient_read_lease_ip_configs (iface, contents, ipv6, NULL);
+		leases = nm_dhcp_dhclient_read_lease_ip_configs (iface, ifindex, contents, ipv6, NULL);
 
 	g_free (leasefile);
 	g_free (contents);

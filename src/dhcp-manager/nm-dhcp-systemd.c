@@ -206,7 +206,9 @@ G_STMT_START { \
 } G_STMT_END
 
 static NMIP4Config *
-lease_to_ip4_config (sd_dhcp_lease *lease,
+lease_to_ip4_config (const char *iface,
+                     int ifindex,
+                     sd_dhcp_lease *lease,
                      GHashTable *options,
                      guint32 default_priority,
                      gboolean log_lease,
@@ -227,7 +229,7 @@ lease_to_ip4_config (sd_dhcp_lease *lease,
 
 	g_return_val_if_fail (lease != NULL, NULL);
 
-	ip4_config = nm_ip4_config_new ();
+	ip4_config = nm_ip4_config_new (ifindex);
 
 	/* Address */
 	sd_dhcp_lease_get_address (lease, &tmp_addr);
@@ -371,6 +373,7 @@ get_leasefile_path (const char *iface, const char *uuid, gboolean ipv6)
 
 static GSList *
 nm_dhcp_systemd_get_lease_ip_configs (const char *iface,
+                                      int ifindex,
                                       const char *uuid,
                                       gboolean ipv6,
                                       guint32 default_route_metric)
@@ -387,7 +390,7 @@ nm_dhcp_systemd_get_lease_ip_configs (const char *iface,
 	path = get_leasefile_path (iface, uuid, FALSE);
 	r = sd_dhcp_lease_load (&lease, path);
 	if (r == 0 && lease) {
-		ip4_config = lease_to_ip4_config (lease, NULL, default_route_metric, FALSE, NULL);
+		ip4_config = lease_to_ip4_config (iface, ifindex, lease, NULL, default_route_metric, FALSE, NULL);
 		if (ip4_config)
 			leases = g_slist_append (leases, ip4_config);
 	}
@@ -440,7 +443,9 @@ bound4_handle (NMDhcpSystemd *self)
 	}
 
 	options = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
-	ip4_config = lease_to_ip4_config (lease,
+	ip4_config = lease_to_ip4_config (iface,
+	                                  nm_dhcp_client_get_ifindex (NM_DHCP_CLIENT (self)),
+	                                  lease,
 	                                  options,
 	                                  nm_dhcp_client_get_priority (NM_DHCP_CLIENT (self)),
 	                                  TRUE,

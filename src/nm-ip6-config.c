@@ -32,6 +32,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-ip6-config-glue.h"
+#include "nm-route-manager.h"
 #include "NetworkManagerUtils.h"
 
 G_DEFINE_TYPE (NMIP6Config, nm_ip6_config, G_TYPE_OBJECT)
@@ -49,11 +50,13 @@ typedef struct {
 	GPtrArray *domains;
 	GPtrArray *searches;
 	guint32 mss;
+	int ifindex;
 } NMIP6ConfigPrivate;
 
 
 enum {
 	PROP_0,
+	PROP_IFINDEX,
 	PROP_ADDRESS_DATA,
 	PROP_ADDRESSES,
 	PROP_ROUTE_DATA,
@@ -70,9 +73,12 @@ static GParamSpec *obj_properties[LAST_PROP] = { NULL, };
 
 
 NMIP6Config *
-nm_ip6_config_new (void)
+nm_ip6_config_new (int ifindex)
 {
-	return (NMIP6Config *) g_object_new (NM_TYPE_IP6_CONFIG, NULL);
+	g_return_val_if_fail (ifindex >= -1, NULL);
+	return (NMIP6Config *) g_object_new (NM_TYPE_IP6_CONFIG,
+	                                     NM_IP6_CONFIG_IFINDEX, ifindex,
+	                                     NULL);
 }
 
 void
@@ -93,6 +99,12 @@ nm_ip6_config_get_dbus_path (const NMIP6Config *config)
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
 	return priv->path;
+}
+
+int
+nm_ip6_config_get_ifindex (const NMIP6Config *config)
+{
+	return NM_IP6_CONFIG_GET_PRIVATE (config)->ifindex;
 }
 
 /******************************************************************/
@@ -301,7 +313,7 @@ nm_ip6_config_capture (int ifindex, gboolean capture_resolv_conf, NMSettingIP6Co
 	if (nm_platform_link_get_master (ifindex) > 0)
 		return NULL;
 
-	config = nm_ip6_config_new ();
+	config = nm_ip6_config_new (ifindex);
 	priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
 	g_array_unref (priv->addresses);
@@ -396,7 +408,7 @@ nm_ip6_config_commit (const NMIP6Config *config, int ifindex)
 			g_array_append_vals (routes, route, 1);
 		}
 
-		success = nm_platform_ip6_route_sync (ifindex, routes);
+		success = nm_route_manager_ip6_route_sync (nm_route_manager_get (), ifindex, routes);
 		g_array_unref (routes);
 	}
 
@@ -888,6 +900,12 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 
 	g_object_freeze_notify (G_OBJECT (dst));
 
+	/* ifindex */
+	if (src_priv->ifindex != dst_priv->ifindex) {
+		dst_priv->ifindex = src_priv->ifindex;
+		has_minor_changes = TRUE;
+	}
+
 	/* never_default */
 	if (src_priv->never_default != dst_priv->never_default) {
 		dst_priv->never_default = src_priv->never_default;
@@ -1259,6 +1277,7 @@ nm_ip6_config_add_route (NMIP6Config *config, const NMPlatformIP6Route *new)
 
 	g_return_if_fail (new != NULL);
 	g_return_if_fail (new->plen > 0);
+	g_assert (priv->ifindex);
 
 	for (i = 0; i < priv->routes->len; i++ ) {
 		NMPlatformIP6Route *item = &g_array_index (priv->routes, NMPlatformIP6Route, i);
@@ -1275,6 +1294,7 @@ nm_ip6_config_add_route (NMIP6Config *config, const NMPlatformIP6Route *new)
 	}
 
 	g_array_append_val (priv->routes, *new);
+	g_array_index (priv->routes, NMPlatformIP6Route, priv->routes->len - 1).ifindex = priv->ifindex;
 NOTIFY:
 	_NOTIFY (config, PROP_ROUTE_DATA);
 	_NOTIFY (config, PROP_ROUTES);
@@ -1726,6 +1746,9 @@ get_property (GObject *object, guint prop_id,
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (object);
 
 	switch (prop_id) {
+	case PROP_IFINDEX:
+		g_value_set_int (value, priv->ifindex);
+		break;
 	case PROP_ADDRESS_DATA:
 		{
 			GPtrArray *addresses = g_ptr_array_new ();
@@ -1909,6 +1932,24 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
+set_property (GObject *object,
+              guint prop_id,
+              const GValue *value,
+              GParamSpec *pspec)
+{
+	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (object);
+
+	switch (prop_id) {
+	case PROP_IFINDEX:
+		priv->ifindex = g_value_get_int (value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
 nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (config_class);
@@ -1917,9 +1958,16 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 
 	/* virtual methods */
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize = finalize;
 
 	/* properties */
+	obj_properties[PROP_IFINDEX] =
+		 g_param_spec_int (NM_IP6_CONFIG_IFINDEX, "", "",
+		                   -1, G_MAXINT, -1,
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_CONSTRUCT_ONLY |
+		                   G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_ADDRESS_DATA] =
 	    g_param_spec_boxed (NM_IP6_CONFIG_ADDRESS_DATA, "", "",
 	                        DBUS_TYPE_NM_IP_ADDRESSES,

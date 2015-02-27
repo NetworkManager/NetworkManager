@@ -101,6 +101,7 @@ GType nm_dhcp_client_get_type (void);
 typedef const char *(*NMDhcpClientGetPathFunc) (void);
 
 typedef GSList *    (*NMDhcpClientGetLeaseConfigsFunc) (const char *iface,
+                                                        int ifindex,
                                                         const char *uuid,
                                                         gboolean ipv6,
                                                         guint32 default_route_metric);

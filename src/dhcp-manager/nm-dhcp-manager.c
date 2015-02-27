@@ -353,6 +353,7 @@ nm_dhcp_manager_set_default_hostname (NMDhcpManager *manager, const char *hostna
 GSList *
 nm_dhcp_manager_get_lease_ip_configs (NMDhcpManager *self,
                                       const char *iface,
+                                      int ifindex,
                                       const char *uuid,
                                       gboolean ipv6,
                                       guint32 default_route_metric)
@@ -361,11 +362,12 @@ nm_dhcp_manager_get_lease_ip_configs (NMDhcpManager *self,
 
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
 	g_return_val_if_fail (iface != NULL, NULL);
+	g_return_val_if_fail (ifindex >= -1, NULL);
 	g_return_val_if_fail (uuid != NULL, NULL);
 
 	desc = find_client_desc (NULL, NM_DHCP_MANAGER_GET_PRIVATE (self)->client_type);
 	if (desc && desc->get_lease_configs_func)
-		return desc->get_lease_configs_func (iface, uuid, ipv6, default_route_metric);
+		return desc->get_lease_configs_func (iface, ifindex, uuid, ipv6, default_route_metric);
 	return NULL;
 }
 

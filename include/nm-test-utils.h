@@ -686,7 +686,7 @@ nmtst_platform_ip6_routes_equal (const NMPlatformIP6Route *a, const NMPlatformIP
 inline static NMIP4Config *
 nmtst_ip4_config_clone (NMIP4Config *config)
 {
-	NMIP4Config *copy = nm_ip4_config_new ();
+	NMIP4Config *copy = nm_ip4_config_new (-1);
 
 	g_assert (copy);
 	g_assert (config);
@@ -702,7 +702,7 @@ nmtst_ip4_config_clone (NMIP4Config *config)
 inline static NMIP6Config *
 nmtst_ip6_config_clone (NMIP6Config *config)
 {
-	NMIP6Config *copy = nm_ip6_config_new ();
+	NMIP6Config *copy = nm_ip6_config_new (-1);
 
 	g_assert (copy);
 	g_assert (config);
