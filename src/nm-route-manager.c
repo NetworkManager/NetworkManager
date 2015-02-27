@@ -37,8 +37,6 @@ typedef struct {
 
 G_DEFINE_TYPE (NMRouteManager, nm_route_manager, G_TYPE_OBJECT)
 
-static NMRouteManager *_instance;
-
 static const NMPlatformIP4Route *
 array_get_ip4_route (const GArray *routes, int ifindex, const NMPlatformIP4Route *route)
 {
@@ -344,15 +342,7 @@ nm_route_manager_route_flush (NMRouteManager *self, int ifindex)
 	       && nm_route_manager_ip6_route_sync (self, ifindex, NULL);
 }
 
-NMRouteManager *
-nm_route_manager_get ()
-{
-	if (G_UNLIKELY (!_instance)) {
-		_instance = NM_ROUTE_MANAGER (g_object_new (NM_TYPE_ROUTE_MANAGER, NULL));
-		g_object_add_weak_pointer (G_OBJECT (_instance), (gpointer *) &_instance);
-	}
-	return _instance;
-}
+NM_DEFINE_SINGLETON_GETTER (NMRouteManager, nm_route_manager_get, NM_TYPE_ROUTE_MANAGER);
 
 static void
 nm_route_manager_init (NMRouteManager *self)
