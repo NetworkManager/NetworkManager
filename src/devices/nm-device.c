@@ -5046,6 +5046,7 @@ disconnect_cb (NMDevice *device,
 	}
 }
 
+static void
 _clear_queued_act_request (NMDevicePrivate *priv)
 {
 	if (priv->queued_act_request) {
