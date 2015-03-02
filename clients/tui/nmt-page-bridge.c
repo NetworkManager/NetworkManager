@@ -91,6 +91,12 @@ nmt_page_bridge_constructed (GObject *object)
 	label = nmt_newt_label_new (_("seconds"));
 	nmt_editor_grid_append (grid, _("Aging time"), widget, label);
 
+	widget = stp = nmt_newt_checkbox_new (_("Enable IGMP snooping"));
+	g_object_bind_property (s_bridge, NM_SETTING_BRIDGE_MULTICAST_SNOOPING,
+	                        widget, "active",
+	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+	nmt_editor_grid_append (grid, NULL, widget, NULL);
+
 	widget = stp = nmt_newt_checkbox_new (_("Enable STP (Spanning Tree Protocol)"));
 	g_object_bind_property (s_bridge, NM_SETTING_BRIDGE_STP,
 	                        widget, "active",
