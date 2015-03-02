@@ -2,7 +2,9 @@ include $(GLIB_MAKEFILE)
 
 @GNOME_CODE_COVERAGE_RULES@
 
+if ENABLE_TESTS
 SUBDIRS=. tests
+endif
 
 AM_CPPFLAGS = \
 	-I${top_srcdir}/src \
