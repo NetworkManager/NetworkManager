@@ -384,7 +384,7 @@ if test "$use_consolekit" = "yes"; then
 	AC_DEFINE([CKDB_PATH], "/var/run/ConsoleKit/database", [Path to ConsoleKit database])
 	session_tracking="$session_tracking, consolekit"
 fi
-session_tracking=${session_tracking:2}
+session_tracking="$(printf '%s' "${session_tracking}" | sed 's/^, //')"
 
 AC_ARG_WITH(suspend-resume, AS_HELP_STRING([--with-suspend-resume=upower|systemd], [Build NetworkManager with specific suspend/resume support]))
 if test "z$with_suspend_resume" = "z"; then
