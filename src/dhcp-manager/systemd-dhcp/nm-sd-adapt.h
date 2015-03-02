@@ -36,6 +36,8 @@
 #include <unistd.h>
 #include <sys/syscall.h>
 
+#include <net/if_arp.h>
+
 #include "nm-logging.h"
 
 /*****************************************************************************/
