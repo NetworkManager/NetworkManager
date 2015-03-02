@@ -19,8 +19,6 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
-#include "config.h"
-
 #include "nm-sd-adapt.h"
 
 #include <assert.h>
@@ -90,7 +88,7 @@
 #include "gunicode.h"
 #include "virt.h"
 #include "def.h"
-#endif
+#endif /* NM_IGNORED */
 
 #if 0 /* NM_IGNORED */
 int saved_argc = 0;
@@ -112,7 +110,7 @@ size_t page_size(void) {
         pgsz = (size_t) r;
         return pgsz;
 }
-#endif
+#endif /* NM_IGNORED */
 
 bool streq_ptr(const char *a, const char *b) {
 
@@ -311,7 +309,7 @@ int parse_uid(const char *s, uid_t* ret_uid) {
         *ret_uid = uid;
         return 0;
 }
-#endif
+#endif /* NM_IGNORED */
 
 int safe_atou(const char *s, unsigned *ret_u) {
         char *x = NULL;
@@ -466,7 +464,7 @@ int safe_atod(const char *s, double *ret_d) {
         *ret_d = (double) d;
         return 0;
 }
-#endif
+#endif /* NM_IGNORED */
 
 static size_t strcspn_escaped(const char *s, const char *reject) {
         bool escaped = false;
@@ -617,7 +615,7 @@ int get_starttime_of_pid(pid_t pid, unsigned long long *st) {
 
         return 0;
 }
-#endif
+#endif /* NM_IGNORED */
 
 int fchmod_umask(int fd, mode_t m) {
         mode_t u;
@@ -875,7 +873,7 @@ int get_process_gid(pid_t pid, gid_t *gid) {
         assert_cc(sizeof(uid_t) == sizeof(gid_t));
         return get_process_id(pid, "Gid:", gid);
 }
-#endif
+#endif /* NM_IGNORED */
 
 char *strnappend(const char *s, const char *suffix, size_t b) {
         size_t a;
@@ -1049,7 +1047,7 @@ int reset_signal_mask(void) {
 
         return 0;
 }
-#endif
+#endif /* NM_IGNORED */
 
 char *strstrip(char *s) {
         char *e;
@@ -1158,7 +1156,7 @@ int rmdir_parents(const char *path, const char *stop) {
 
         return 0;
 }
-#endif
+#endif /* NM_IGNORED */
 
 char hexchar(int x) {
         static const char table[16] = "0123456789abcdef";
@@ -1646,7 +1644,7 @@ int close_all_fds(const int except[], unsigned n_except) {
 
         return r;
 }
-#endif
+#endif /* NM_IGNORED */
 
 bool chars_intersect(const char *a, const char *b) {
         const char *p;
@@ -2269,7 +2267,7 @@ void safe_close_pair(int p[]) {
         p[0] = safe_close(p[0]);
         p[1] = safe_close(p[1]);
 }
-#endif
+#endif /* NM_IGNORED */
 
 ssize_t loop_read(int fd, void *buf, size_t nbytes, bool do_poll) {
         uint8_t *p = buf;
@@ -2551,7 +2549,7 @@ char* dirname_malloc(const char *path) {
 
         return dir;
 }
-#endif
+#endif /* NM_IGNORED */
 
 int dev_urandom(void *p, size_t n) {
 #if 0 /* NM_IGNORED */
@@ -2597,7 +2595,7 @@ int dev_urandom(void *p, size_t n) {
 #else /* NM IGNORED */
         int fd;
         ssize_t k;
-#endif
+#endif /* NM_IGNORED */
 
         fd = open("/dev/urandom", O_RDONLY|O_CLOEXEC|O_NOCTTY);
         if (fd < 0)
@@ -3342,7 +3340,6 @@ fail:
         return NULL;
 }
 
-#if 0 /* NM_IGNORED */
 char **replace_env_argv(char **argv, char **env) {
         char **ret, **i;
         unsigned k = 0, l = 0;
@@ -3407,7 +3404,6 @@ char **replace_env_argv(char **argv, char **env) {
         ret[k] = NULL;
         return ret;
 }
-#endif
 
 int fd_columns(int fd) {
         struct winsize ws = {};
@@ -4171,7 +4167,7 @@ char* strshorten(char *s, size_t l) {
 
         return s;
 }
-#endif
+#endif /* NM_IGNORED */
 
 static bool hostname_valid_char(char c) {
         return
@@ -4274,7 +4270,7 @@ int pipe_eof(int fd) {
 
         return pollfd.revents & POLLHUP;
 }
-#endif
+#endif /* NM_IGNORED */
 
 int fd_wait_for_event(int fd, int event, usec_t t) {
 
@@ -4807,7 +4803,7 @@ int get_files_in_directory(const char *path, char ***list) {
 
         return n;
 }
-#endif
+#endif /* NM_IGNORED */
 
 char *strjoin(const char *x, ...) {
         va_list ap;
@@ -5174,7 +5170,7 @@ finish:
         return buf;
 
 }
-#endif
+#endif /* NM_IGNORED */
 
 void* memdup(const void *p, size_t l) {
         void *r;
@@ -5621,7 +5617,7 @@ bool string_is_safe(const char *p) {
 
         return true;
 }
-#endif
+#endif /* NM_IGNORED */
 
 /**
  * Check if a string contains control characters. If 'ok' is non-NULL
@@ -6124,7 +6120,7 @@ char *strrep(const char *s, unsigned n) {
         *p = 0;
         return r;
 }
-#endif
+#endif /* NM_IGNORED */
 
 void* greedy_realloc(void **p, size_t *allocated, size_t need, size_t size) {
         size_t a, newalloc;
@@ -6540,7 +6536,7 @@ int getpeersec(int fd, char **ret) {
         *ret = s;
         return 0;
 }
-#endif
+#endif /* NM_IGNORED */
 
 /* This is much like like mkostemp() but is subject to umask(). */
 int mkostemp_safe(char *pattern, int flags) {
@@ -6945,7 +6941,7 @@ int bind_remount_recursive(const char *prefix, bool ro) {
                 }
         }
 }
-#endif
+#endif /* NM_IGNORED */
 
 int fflush_and_check(FILE *f) {
         assert(f);
@@ -7007,7 +7003,7 @@ char *tempfn_random(const char *p) {
 
         return t;
 }
-#endif
+#endif /* NM_IGNORED */
 
 /* make sure the hostname is not "localhost" */
 bool is_localhost(const char *hostname) {
@@ -7346,5 +7342,5 @@ int sethostname_idempotent(const char *s) {
 
         return 1;
 }
-#endif
+#endif /* NM_IGNORED */
 

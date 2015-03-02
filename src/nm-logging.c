@@ -365,6 +365,7 @@ _nm_log (const char *file,
          const char *func,
          NMLogLevel level,
          NMLogDomain domain,
+         int error,
          const char *fmt,
          ...)
 {
@@ -381,6 +382,10 @@ _nm_log (const char *file,
 
 	if (!(logging[level] & domain))
 		return;
+
+	/* Make sure that %m maps to the specified error */
+	if (error != 0)
+		errno = error;
 
 	va_start (args, fmt);
 	msg = g_strdup_vprintf (fmt, args);

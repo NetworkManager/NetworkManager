@@ -19,8 +19,6 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
-#include "config.h"
-
 #include "nm-sd-adapt.h"
 
 #include <netinet/ether.h>
@@ -32,17 +30,17 @@
 #include "strv.h"
 #include "siphash24.h"
 #include "libudev-private.h"
-#endif
+#endif /* NM_IGNORED */
 #include "dhcp-lease-internal.h"
 #if 0 /* NM_IGNORED */
 #include "log.h"
 #include "utf8.h"
-#endif
+#endif /* NM_IGNORED */
 #include "util.h"
 #if 0 /* NM_IGNORED */
 #include "conf-parser.h"
 #include "condition.h"
-#endif
+#endif /* NM_IGNORED */
 #include "network-internal.h"
 
 #if 0 /* NM_IGNORED */
@@ -306,7 +304,7 @@ int config_parse_hwaddr(const char *unit,
 
         return 0;
 }
-#endif
+#endif /* NM_IGNORED */
 
 void serialize_in_addrs(FILE *f, const struct in_addr *addresses, size_t size) {
         unsigned i;

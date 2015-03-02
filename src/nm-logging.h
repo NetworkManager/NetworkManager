@@ -105,7 +105,7 @@ typedef enum  { /*< skip >*/
 #define nm_log(level, domain, ...) \
     G_STMT_START { \
         if (nm_logging_enabled ((level), (domain))) { \
-            _nm_log (__FILE__, __LINE__, G_STRFUNC, (level), (domain), __VA_ARGS__); \
+            _nm_log (__FILE__, __LINE__, G_STRFUNC, (level), (domain), 0, __VA_ARGS__); \
         } \
     } G_STMT_END
 
@@ -139,8 +139,9 @@ void _nm_log (const char *file,
               const char *func,
               NMLogLevel level,
               NMLogDomain domain,
+              int error,
               const char *fmt,
-              ...) __attribute__((__format__ (__printf__, 6, 7)));
+              ...) __attribute__((__format__ (__printf__, 7, 8)));
 
 const char *nm_logging_level_to_string (void);
 const char *nm_logging_domains_to_string (void);

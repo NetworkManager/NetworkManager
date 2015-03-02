@@ -19,7 +19,7 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
-#include "config.h"
+#include "nm-sd-adapt.h"
 
 #include <unistd.h>
 

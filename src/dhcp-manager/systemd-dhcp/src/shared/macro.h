@@ -21,6 +21,8 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
+#include "nm-sd-adapt.h"
+
 #include <assert.h>
 #include <sys/param.h>
 #include <sys/types.h>
@@ -410,4 +412,4 @@ do {                                                                    \
 #endif
 
 #include "log.h"
-#endif
+#endif /* NM_IGNORED */
