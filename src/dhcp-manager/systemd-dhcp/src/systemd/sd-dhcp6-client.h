@@ -54,7 +54,6 @@ int sd_dhcp6_client_set_information_request(sd_dhcp6_client *client,
                                             bool enabled);
 int sd_dhcp6_client_get_information_request(sd_dhcp6_client *client,
                                             bool *enabled);
-int sd_dhcp6_client_set_ifname(sd_dhcp6_client *client, const char *ifname);
 int sd_dhcp6_client_set_request_option(sd_dhcp6_client *client,
                                        uint16_t option);
 

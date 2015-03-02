@@ -52,7 +52,6 @@ struct sd_dhcp6_client {
         uint8_t mac_addr[MAX_MAC_ADDR_LEN];
         size_t mac_addr_len;
         uint16_t arp_type;
-        char ifname[IFNAMSIZ];
         DHCP6IA ia_na;
         be32_t transaction_id;
         usec_t transaction_start;
@@ -1248,19 +1247,6 @@ int sd_dhcp6_client_new(sd_dhcp6_client **ret)
         *ret = client;
         client = NULL;
 
-        return 0;
-}
-
-/*******************************************/
-/* NetworkManager additions */
-
-int sd_dhcp6_client_set_ifname(sd_dhcp6_client *client, const char *ifname)
-{
-        assert_return(client, -EINVAL);
-        assert_return(ifname, -EINVAL);
-        assert_return(strlen (ifname) < sizeof (client->ifname), -EINVAL);
-
-        strcpy(client->ifname, ifname);
         return 0;
 }
 

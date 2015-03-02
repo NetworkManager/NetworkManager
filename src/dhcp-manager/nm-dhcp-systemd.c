@@ -746,12 +746,6 @@ ip6_start (NMDhcpClient *client,
 		goto error;
 	}
 
-	r = sd_dhcp6_client_set_ifname (priv->client6, iface);
-	if (r < 0) {
-		nm_log_warn (LOGD_DHCP6, "(%s): failed to set DHCP ifname (%d)", iface, r);
-		goto error;
-	}
-
 	r = sd_dhcp6_client_set_callback (priv->client6, dhcp6_event_cb, client);
 	if (r < 0) {
 		nm_log_warn (LOGD_DHCP6, "(%s): failed to set DHCP callback (%d)", iface, r);
