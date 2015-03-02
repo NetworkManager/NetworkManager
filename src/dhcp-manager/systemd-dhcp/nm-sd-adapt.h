@@ -37,6 +37,7 @@
 #include <sys/syscall.h>
 
 #include <net/if_arp.h>
+#include <sys/resource.h>
 
 #include "nm-logging.h"
 
