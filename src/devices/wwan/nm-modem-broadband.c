@@ -948,10 +948,11 @@ simple_disconnect_ready (MMModemSimple *modem_iface,
 	GError *error = NULL;
 
 	if (!mm_modem_simple_disconnect_finish (modem_iface, res, &error)) {
-		if (ctx->warn)
+		if (ctx->warn && !g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SERVICE_UNKNOWN)) {
 			nm_log_warn (LOGD_MB, "(%s) failed to disconnect modem: %s",
 			             nm_modem_get_uid (NM_MODEM (ctx->self)),
 			             error->message);
+		}
 		g_simple_async_result_take_error (ctx->result, error);
 	}
 
