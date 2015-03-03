@@ -1790,6 +1790,7 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 	nm_device_set_initial_unmanaged_flag (device, NM_UNMANAGED_INTERNAL, sleeping);
 
 	nm_device_dbus_export (device);
+	nm_device_finish_init (device);
 
 	/* Don't generate a connection e.g. for devices NM just created, or
 	 * for the loopback, or when we're sleeping. */
