@@ -30,6 +30,7 @@
 #include "nm-utils.h"
 #include "nm-logging.h"
 #include "nm-dbus-manager.h"
+#include "nm-core-internal.h"
 
 #include "nm-setting-wireless.h"
 #include "nm-glib-compat.h"
@@ -330,163 +331,131 @@ nm_ap_new (void)
 }
 
 static NM80211ApSecurityFlags
-pair_to_flags (const char *str)
+security_from_vardict (GVariant *security)
 {
-	g_return_val_if_fail (str != NULL, NM_802_11_AP_SEC_NONE);
-
-	if (strcmp (str, "tkip") == 0)
-		return NM_802_11_AP_SEC_PAIR_TKIP;
-	if (strcmp (str, "ccmp") == 0)
-		return NM_802_11_AP_SEC_PAIR_CCMP;
-	return NM_802_11_AP_SEC_NONE;
-}
-
-static NM80211ApSecurityFlags
-group_to_flags (const char *str)
-{
-	g_return_val_if_fail (str != NULL, NM_802_11_AP_SEC_NONE);
-
-	if (strcmp (str, "wep40") == 0)
-		return NM_802_11_AP_SEC_GROUP_WEP40;
-	if (strcmp (str, "wep104") == 0)
-		return NM_802_11_AP_SEC_GROUP_WEP104;
-	if (strcmp (str, "tkip") == 0)
-		return NM_802_11_AP_SEC_GROUP_TKIP;
-	if (strcmp (str, "ccmp") == 0)
-		return NM_802_11_AP_SEC_GROUP_CCMP;
-	return NM_802_11_AP_SEC_NONE;
-}
-
-static NM80211ApSecurityFlags
-security_from_dict (GHashTable *security)
-{
-	GValue *value;
 	NM80211ApSecurityFlags flags = NM_802_11_AP_SEC_NONE;
-	const char **items, **iter;
+	const char **array, *tmp;
 
-	value = g_hash_table_lookup (security, "KeyMgmt");
-	if (value) {
-		items = g_value_get_boxed (value);
-		for (iter = items; iter && *iter; iter++) {
-			if (strcmp (*iter, "wpa-psk") == 0)
-				flags |= NM_802_11_AP_SEC_KEY_MGMT_PSK;
-			else if (strcmp (*iter, "wpa-eap") == 0)
-				flags |= NM_802_11_AP_SEC_KEY_MGMT_802_1X;
-		}
+	g_return_val_if_fail (g_variant_is_of_type (security, G_VARIANT_TYPE_VARDICT), NM_802_11_AP_SEC_NONE);
+
+	if (g_variant_lookup (security, "KeyMgmt", "^a&s", &array)) {
+		if (_nm_utils_string_in_list ("wpa-psk", array))
+			flags |= NM_802_11_AP_SEC_KEY_MGMT_PSK;
+		if (_nm_utils_string_in_list ("wpa-eap", array))
+			flags |= NM_802_11_AP_SEC_KEY_MGMT_802_1X;
+		g_free (array);
 	}
 
-	value = g_hash_table_lookup (security, "Pairwise");
-	if (value) {
-		items = g_value_get_boxed (value);
-		for (iter = items; iter && *iter; iter++)
-			flags |= pair_to_flags (*iter);
+	if (g_variant_lookup (security, "Pairwise", "^a&s", &array)) {
+		if (_nm_utils_string_in_list ("tkip", array))
+			flags |= NM_802_11_AP_SEC_PAIR_TKIP;
+		if (_nm_utils_string_in_list ("ccmp", array))
+			flags |= NM_802_11_AP_SEC_PAIR_CCMP;
+		g_free (array);
 	}
 
-	value = g_hash_table_lookup (security, "Group");
-	if (value)
-		flags |= group_to_flags (g_value_get_string (value));
+	if (g_variant_lookup (security, "Group", "&s", &tmp)) {
+		if (strcmp (tmp, "wep40") == 0)
+			flags |= NM_802_11_AP_SEC_GROUP_WEP40;
+		if (strcmp (tmp, "wep104") == 0)
+			flags |= NM_802_11_AP_SEC_GROUP_WEP104;
+		if (strcmp (tmp, "tkip") == 0)
+			flags |= NM_802_11_AP_SEC_GROUP_TKIP;
+		if (strcmp (tmp, "ccmp") == 0)
+			flags |= NM_802_11_AP_SEC_GROUP_CCMP;
+	}
 
 	return flags;
 }
 
-static void
-foreach_property_cb (gpointer key, gpointer value, gpointer user_data)
-{
-	GValue *variant = (GValue *) value;
-	NMAccessPoint *ap = (NMAccessPoint *) user_data;
-
-	if (G_VALUE_HOLDS_BOXED (variant)) {
-		GArray *array = g_value_get_boxed (variant);
-
-		if (!strcmp (key, "SSID")) {
-			guint32 len = MIN (32, array->len);
-
-			/* Stupid ieee80211 layer uses <hidden> */
-			if (((len == 8) || (len == 9))
-				&& (memcmp (array->data, "<hidden>", 8) == 0))
-				return;
-
-			if (nm_utils_is_empty_ssid ((const guint8 *) array->data, len))
-				return;
-
-			nm_ap_set_ssid (ap, (const guint8 *) array->data, len);
-		} else if (!strcmp (key, "BSSID")) {
-			char *addr;
-
-			if (array->len != ETH_ALEN)
-				return;
-			addr = nm_utils_hwaddr_ntoa (array->data, array->len);
-			nm_ap_set_address (ap, addr);
-			g_free (addr);
-		} else if (!strcmp (key, "Rates")) {
-			guint32 maxrate = 0;
-			int i;
-
-			/* Find the max AP rate */
-			for (i = 0; i < array->len; i++) {
-				guint32 r = g_array_index (array, guint32, i);
-
-				if (r > maxrate) {
-					maxrate = r;
-					nm_ap_set_max_bitrate (ap, r / 1000);
-				}
-			}
-		} else if (!strcmp (key, "WPA")) {
-			NM80211ApSecurityFlags flags = nm_ap_get_wpa_flags (ap);
-
-			flags |= security_from_dict (g_value_get_boxed (variant));
-			nm_ap_set_wpa_flags (ap, flags);
-		} else if (!strcmp (key, "RSN")) {
-			NM80211ApSecurityFlags flags = nm_ap_get_rsn_flags (ap);
-
-			flags |= security_from_dict (g_value_get_boxed (variant));
-			nm_ap_set_rsn_flags (ap, flags);
-		}
-	} else if (G_VALUE_HOLDS_UINT (variant)) {
-		guint32 val = g_value_get_uint (variant);
-
-		if (!strcmp (key, "Frequency"))
-			nm_ap_set_freq (ap, val);
-	} else if (G_VALUE_HOLDS_INT (variant)) {
-		gint val = g_value_get_int (variant);
-
-		if (!strcmp (key, "Signal"))
-			nm_ap_set_strength (ap, nm_ap_utils_level_to_quality (val));
-	} else if (G_VALUE_HOLDS_STRING (variant)) {
-		const char *val = g_value_get_string (variant);
-
-		if (val && !strcmp (key, "Mode")) {
-			if (strcmp (val, "infrastructure") == 0)
-				nm_ap_set_mode (ap, NM_802_11_MODE_INFRA);
-			else if (strcmp (val, "ad-hoc") == 0)
-				nm_ap_set_mode (ap, NM_802_11_MODE_ADHOC);
-		}
-	} else if (G_VALUE_HOLDS_BOOLEAN (variant)) {
-		gboolean val = g_value_get_boolean (variant);
-
-		if (strcmp (key, "Privacy") == 0) {
-			if (val) {
-				NM80211ApFlags flags = nm_ap_get_flags (ap);
-				nm_ap_set_flags (ap, flags | NM_802_11_AP_FLAGS_PRIVACY);
-			}
-		}
-	}
-}
-
 NMAccessPoint *
-nm_ap_new_from_properties (const char *supplicant_path, GHashTable *properties)
+nm_ap_new_from_properties (const char *supplicant_path, GVariant *properties)
 {
-	NMAccessPoint *ap;
-	const char *addr;
 	const char bad_bssid1[ETH_ALEN] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 	const char bad_bssid2[ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+	const char *addr;
+	const guint8 *bytes;
+	NMAccessPoint *ap;
+	GVariant *v;
+	gsize len;
+	gboolean b = FALSE;
+	const char *s;
+	gint16 i16;
+	guint16 u16;
 
 	g_return_val_if_fail (properties != NULL, NULL);
 
 	ap = nm_ap_new ();
 
 	g_object_freeze_notify (G_OBJECT (ap));
-	g_hash_table_foreach (properties, foreach_property_cb, ap);
+
+	if (g_variant_lookup (properties, "Privacy", "b", &b) && b)
+		nm_ap_set_flags (ap, nm_ap_get_flags (ap) | NM_802_11_AP_FLAGS_PRIVACY);
+
+	if (g_variant_lookup (properties, "Mode", "&s", &s)) {
+		if (!g_strcmp0 (s, "infrastructure"))
+			nm_ap_set_mode (ap, NM_802_11_MODE_INFRA);
+		else if (!g_strcmp0 (s, "ad-hoc"))
+			nm_ap_set_mode (ap, NM_802_11_MODE_ADHOC);
+	}
+
+	if (g_variant_lookup (properties, "Signal", "n", &i16))
+		nm_ap_set_strength (ap, nm_ap_utils_level_to_quality (i16));
+
+	if (g_variant_lookup (properties, "Frequency", "q", &u16))
+		nm_ap_set_freq (ap, u16);
+
+	v = g_variant_lookup_value (properties, "SSID", G_VARIANT_TYPE_BYTESTRING);
+	if (v) {
+		bytes = g_variant_get_fixed_array (v, &len, 1);
+		len = MIN (32, len);
+
+		/* Stupid ieee80211 layer uses <hidden> */
+		if (   bytes && len
+		    && !(((len == 8) || (len == 9)) && !memcmp (bytes, "<hidden>", 8))
+		    && !nm_utils_is_empty_ssid (bytes, len))
+			nm_ap_set_ssid (ap, bytes, len);
+
+		g_variant_unref (v);
+	}
+
+	v = g_variant_lookup_value (properties, "BSSID", G_VARIANT_TYPE_BYTESTRING);
+	if (v) {
+		bytes = g_variant_get_fixed_array (v, &len, 1);
+		if (len == ETH_ALEN) {
+			addr = nm_utils_hwaddr_ntoa (bytes, len);
+			nm_ap_set_address (ap, addr);
+		}
+		g_variant_unref (v);
+	}
+
+	v = g_variant_lookup_value (properties, "Rates", G_VARIANT_TYPE ("au")); 
+	if (v) {
+		const guint32 *rates = g_variant_get_fixed_array (v, &len, sizeof (guint32));
+		guint32 maxrate = 0;
+		int i;
+
+		/* Find the max AP rate */
+		for (i = 0; i < len; i++) {
+			if (rates[i] > maxrate) {
+				maxrate = rates[i];
+				nm_ap_set_max_bitrate (ap, rates[i] / 1000);
+			}
+		}
+		g_variant_unref (v);
+	}
+
+	v = g_variant_lookup_value (properties, "WPA", G_VARIANT_TYPE_VARDICT);
+	if (v) {
+		nm_ap_set_wpa_flags (ap, nm_ap_get_wpa_flags (ap) | security_from_vardict (v));
+		g_variant_unref (v);
+	}
+
+	v = g_variant_lookup_value (properties, "RSN", G_VARIANT_TYPE_VARDICT);
+	if (v) {
+		nm_ap_set_wpa_flags (ap, nm_ap_get_rsn_flags (ap) | security_from_vardict (v));
+		g_variant_unref (v);
+	}
 
 	nm_ap_set_supplicant_path (ap, supplicant_path);
 

@@ -165,7 +165,7 @@ static void supplicant_iface_state_cb (NMSupplicantInterface *iface,
 
 static void supplicant_iface_new_bss_cb (NMSupplicantInterface * iface,
                                          const char *object_path,
-                                         GHashTable *properties,
+                                         GVariant *properties,
                                          NMDeviceWifi * self);
 
 static void supplicant_iface_bss_updated_cb (NMSupplicantInterface *iface,
@@ -1830,7 +1830,7 @@ schedule_scanlist_cull (NMDeviceWifi *self)
 static void
 supplicant_iface_new_bss_cb (NMSupplicantInterface *iface,
                              const char *object_path,
-                             GHashTable *properties,
+                             GVariant *properties,
                              NMDeviceWifi *self)
 {
 	NMDeviceState state;

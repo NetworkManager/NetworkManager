@@ -56,7 +56,7 @@ typedef struct {
 GType nm_ap_get_type (void);
 
 NMAccessPoint * nm_ap_new_from_properties (const char *supplicant_path,
-                                           GHashTable *properties);
+                                           GVariant *properties);
 NMAccessPoint * nm_ap_new_fake_from_connection (NMConnection *connection);
 void            nm_ap_export_to_dbus    (NMAccessPoint *ap);
 
