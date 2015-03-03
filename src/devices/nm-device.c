@@ -6909,7 +6909,10 @@ _set_state_full (NMDevice *device,
 			                         nm_act_request_get_connection (req),
 			                         device);
 		} else {
-			priv->dispatcher.post_state = NM_DEVICE_STATE_DISCONNECTED;
+			if (nm_device_is_available (device))
+				priv->dispatcher.post_state = NM_DEVICE_STATE_DISCONNECTED;
+			else
+				priv->dispatcher.post_state = NM_DEVICE_STATE_UNAVAILABLE;
 			priv->dispatcher.post_state_reason = reason;
 			if (!nm_dispatcher_call (DISPATCHER_ACTION_PRE_DOWN,
 			                         nm_act_request_get_connection (req),
