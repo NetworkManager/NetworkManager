@@ -26,11 +26,6 @@
 #include "nm-supplicant-types.h"
 #include "nm-device.h"
 
-#define WPAS_DBUS_SERVICE	"fi.w1.wpa_supplicant1"
-#define WPAS_DBUS_PATH		"/fi/w1/wpa_supplicant1"
-#define WPAS_DBUS_INTERFACE	"fi.w1.wpa_supplicant1"
-
-
 G_BEGIN_DECLS
 
 #define NM_TYPE_SUPPLICANT_MANAGER				(nm_supplicant_manager_get_type ())
@@ -39,8 +34,6 @@ G_BEGIN_DECLS
 #define NM_IS_SUPPLICANT_MANAGER(obj)			(G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_SUPPLICANT_MANAGER))
 #define NM_IS_SUPPLICANT_MANAGER_CLASS(klass)	(G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_SUPPLICANT_MANAGER))
 #define NM_SUPPLICANT_MANAGER_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_SUPPLICANT_MANAGER, NMSupplicantManagerClass))
-
-#define NM_SUPPLICANT_MANAGER_AVAILABLE "available"
 
 struct _NMSupplicantManager
 {
@@ -62,7 +55,5 @@ NMSupplicantInterface *nm_supplicant_manager_iface_get (NMSupplicantManager *mgr
 
 void nm_supplicant_manager_iface_release (NMSupplicantManager *mgr,
                                           NMSupplicantInterface *iface);
-
-gboolean nm_supplicant_manager_available (NMSupplicantManager *mgr);
 
 #endif /* __NETWORKMANAGER_SUPPLICANT_MANAGER_H__ */
