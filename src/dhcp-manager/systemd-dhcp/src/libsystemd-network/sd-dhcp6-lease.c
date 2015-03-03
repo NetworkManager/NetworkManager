@@ -112,8 +112,10 @@ int dhcp6_lease_set_preference(sd_dhcp6_lease *lease, uint8_t preference) {
 }
 
 int dhcp6_lease_get_preference(sd_dhcp6_lease *lease, uint8_t *preference) {
-        assert_return(lease, -EINVAL);
         assert_return(preference, -EINVAL);
+
+        if (!lease)
+                return -EINVAL;
 
         *preference = lease->preference;
 
@@ -146,10 +148,9 @@ int dhcp6_lease_get_iaid(sd_dhcp6_lease *lease, be32_t *iaid) {
         return 0;
 }
 
-int sd_dhcp6_lease_get_next_address(sd_dhcp6_lease *lease,
-                                    struct in6_addr *addr,
-                                    uint32_t *lifetime_preferred,
-                                    uint32_t *lifetime_valid) {
+int sd_dhcp6_lease_get_address(sd_dhcp6_lease *lease, struct in6_addr *addr,
+                               uint32_t *lifetime_preferred,
+                               uint32_t *lifetime_valid) {
         assert_return(lease, -EINVAL);
         assert_return(addr, -EINVAL);
         assert_return(lifetime_preferred, -EINVAL);
@@ -169,22 +170,9 @@ int sd_dhcp6_lease_get_next_address(sd_dhcp6_lease *lease,
         return 0;
 }
 
-int sd_dhcp6_lease_get_first_address(sd_dhcp6_lease *lease,
-                                     struct in6_addr *addr,
-                                     uint32_t *lifetime_preferred,
-                                     uint32_t *lifetime_valid) {
-        assert_return(lease, -EINVAL);
-        assert_return(addr, -EINVAL);
-        assert_return(lifetime_preferred, -EINVAL);
-        assert_return(lifetime_valid, -EINVAL);
-
-        if (!lease->ia.addresses)
-                return -ENOMSG;
-
-        lease->addr_iter = lease->ia.addresses;
-
-        return sd_dhcp6_lease_get_next_address(lease, addr, lifetime_preferred,
-                                               lifetime_valid);
+void sd_dhcp6_lease_reset_address_iter(sd_dhcp6_lease *lease) {
+        if (lease)
+                lease->addr_iter = lease->ia.addresses;
 }
 
 sd_dhcp6_lease *sd_dhcp6_lease_ref(sd_dhcp6_lease *lease) {
@@ -195,7 +183,7 @@ sd_dhcp6_lease *sd_dhcp6_lease_ref(sd_dhcp6_lease *lease) {
 }
 
 sd_dhcp6_lease *sd_dhcp6_lease_unref(sd_dhcp6_lease *lease) {
-        if (lease && REFCNT_DEC(lease->n_ref) <= 0) {
+        if (lease && REFCNT_DEC(lease->n_ref) == 0) {
                 free(lease->serverid);
                 dhcp6_lease_free_ia(&lease->ia);
 

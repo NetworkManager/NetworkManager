@@ -26,21 +26,19 @@
 #include <net/ethernet.h>
 #include <net/if_arp.h>
 #include <linux/if_infiniband.h>
-#include <netinet/ether.h>
-#include <sys/param.h>
 #include <sys/ioctl.h>
 
 #include "util.h"
-#include "list.h"
 #include "refcnt.h"
 #include "async.h"
 
 #include "dhcp-protocol.h"
 #include "dhcp-internal.h"
 #include "dhcp-lease-internal.h"
+#include "dhcp-identifier.h"
 #include "sd-dhcp-client.h"
 
-#define MAX_CLIENT_ID_LEN 64  /* Arbitrary limit */
+#define MAX_CLIENT_ID_LEN (sizeof(uint32_t) + MAX_DUID_LEN)  /* Arbitrary limit */
 #define MAX_MAC_ADDR_LEN INFINIBAND_ALEN
 
 struct sd_dhcp_client {
@@ -62,29 +60,31 @@ struct sd_dhcp_client {
         uint8_t mac_addr[MAX_MAC_ADDR_LEN];
         size_t mac_addr_len;
         uint16_t arp_type;
-        union {
-                struct {
-                        uint8_t type; /* 0: Generic (non-LL) (RFC 2132) */
-                        uint8_t data[MAX_CLIENT_ID_LEN];
-                } _packed_ gen;
-                struct {
-                        uint8_t type; /* 1: Ethernet Link-Layer (RFC 2132) */
-                        uint8_t haddr[ETH_ALEN];
-                } _packed_ eth;
-                struct {
-                        uint8_t type; /* 2 - 254: ARP/Link-Layer (RFC 2132) */
-                        uint8_t haddr[0];
-                } _packed_ ll;
-                struct {
-                        uint8_t type; /* 255: Node-specific (RFC 4361) */
-                        uint8_t iaid[4];
-                        uint8_t duid[MAX_CLIENT_ID_LEN - 4];
-                } _packed_ ns;
-                struct {
-                        uint8_t type;
-                        uint8_t data[MAX_CLIENT_ID_LEN];
-                } _packed_ raw;
-        } client_id;
+        struct {
+                uint8_t type;
+                union {
+                        struct {
+                                /* 0: Generic (non-LL) (RFC 2132) */
+                                uint8_t data[MAX_CLIENT_ID_LEN];
+                        } _packed_ gen;
+                        struct {
+                                /* 1: Ethernet Link-Layer (RFC 2132) */
+                                uint8_t haddr[ETH_ALEN];
+                        } _packed_ eth;
+                        struct {
+                                /* 2 - 254: ARP/Link-Layer (RFC 2132) */
+                                uint8_t haddr[0];
+                        } _packed_ ll;
+                        struct {
+                                /* 255: Node-specific (RFC 4361) */
+                                uint32_t iaid;
+                                struct duid duid;
+                        } _packed_ ns;
+                        struct {
+                                uint8_t data[MAX_CLIENT_ID_LEN];
+                        } _packed_ raw;
+                };
+        } _packed_ client_id;
         size_t client_id_len;
         char *hostname;
         char *vendor_class_identifier;
@@ -241,10 +241,9 @@ int sd_dhcp_client_get_client_id(sd_dhcp_client *client, uint8_t *type,
         *data = NULL;
         *data_len = 0;
         if (client->client_id_len) {
-                *type = client->client_id.raw.type;
+                *type = client->client_id.type;
                 *data = client->client_id.raw.data;
-                *data_len = client->client_id_len -
-                        sizeof (client->client_id.raw.type);
+                *data_len = client->client_id_len - sizeof(client->client_id.type);
         }
 
         return 0;
@@ -272,8 +271,8 @@ int sd_dhcp_client_set_client_id(sd_dhcp_client *client, uint8_t type,
                 break;
         }
 
-        if (client->client_id_len == data_len + sizeof (client->client_id.raw.type) &&
-            client->client_id.raw.type == type &&
+        if (client->client_id_len == data_len + sizeof(client->client_id.type) &&
+            client->client_id.type == type &&
             memcmp(&client->client_id.raw.data, data, data_len) == 0)
                 return 0;
 
@@ -284,9 +283,9 @@ int sd_dhcp_client_set_client_id(sd_dhcp_client *client, uint8_t type,
                 client_stop(client, DHCP_EVENT_STOP);
         }
 
-        client->client_id.raw.type = type;
+        client->client_id.type = type;
         memcpy(&client->client_id.raw.data, data, data_len);
-        client->client_id_len = data_len + sizeof (client->client_id.raw.type);
+        client->client_id_len = data_len + sizeof (client->client_id.type);
 
         if (need_restart && client->state != DHCP_STATE_STOPPED)
                 sd_dhcp_client_start(client);
@@ -402,7 +401,7 @@ static void client_stop(sd_dhcp_client *client, int error) {
 
 static int client_message_init(sd_dhcp_client *client, DHCPPacket **ret,
                                uint8_t type, size_t *_optlen, size_t *_optoffset) {
-        _cleanup_free_ DHCPPacket *packet = NULL;
+        _cleanup_free_ DHCPPacket *packet;
         size_t optlen, optoffset, size;
         be16_t max_size;
         usec_t time_now;
@@ -415,8 +414,6 @@ static int client_message_init(sd_dhcp_client *client, DHCPPacket **ret,
         assert(_optlen);
         assert(_optoffset);
         assert(type == DHCP_DISCOVER || type == DHCP_REQUEST);
-
-        /* See RFC2131 section 4.4.1 */
 
         optlen = DHCP_MIN_OPTIONS_SIZE;
         size = sizeof(DHCPPacket) + optlen;
@@ -465,12 +462,21 @@ static int client_message_init(sd_dhcp_client *client, DHCPPacket **ret,
         if (client->arp_type == ARPHRD_ETHER)
                 memcpy(&packet->dhcp.chaddr, &client->mac_addr, ETH_ALEN);
 
-        /* If no client identifier exists, construct one from an ethernet
-           address if present */
-        if (client->client_id_len == 0 && client->arp_type == ARPHRD_ETHER) {
-                client->client_id.eth.type = ARPHRD_ETHER;
-                memcpy(&client->client_id.eth.haddr, &client->mac_addr, ETH_ALEN);
-                client->client_id_len = sizeof (client->client_id.eth);
+        /* If no client identifier exists, construct an RFC 4361-compliant one */
+        if (client->client_id_len == 0) {
+                size_t duid_len;
+
+                client->client_id.type = 255;
+
+                r = dhcp_identifier_set_iaid(client->index, client->mac_addr, client->mac_addr_len, &client->client_id.ns.iaid);
+                if (r < 0)
+                        return r;
+
+                r = dhcp_identifier_set_duid_en(&client->client_id.ns.duid, &duid_len);
+                if (r < 0)
+                        return r;
+
+                client->client_id_len = sizeof(client->client_id.type) + sizeof(client->client_id.ns.iaid) + duid_len;
         }
 
         /* Some DHCP servers will refuse to issue an DHCP lease if the Client
@@ -479,7 +485,7 @@ static int client_message_init(sd_dhcp_client *client, DHCPPacket **ret,
                 r = dhcp_option_append(&packet->dhcp, optlen, &optoffset, 0,
                                        DHCP_OPTION_CLIENT_IDENTIFIER,
                                        client->client_id_len,
-                                       &client->client_id.raw);
+                                       &client->client_id);
                 if (r < 0)
                         return r;
         }
@@ -504,7 +510,7 @@ static int client_message_init(sd_dhcp_client *client, DHCPPacket **ret,
 
            Note (from ConnMan): Some DHCP servers will send bigger DHCP packets
            than the defined default size unless the Maximum Messge Size option
-           is explicitely set
+           is explicitly set
 
            RFC3442 "Requirements to Avoid Sizing Constraints":
            Because a full routing table can be quite large, the standard 576
@@ -1035,7 +1041,7 @@ static int client_handle_offer(sd_dhcp_client *client, DHCPMessage *offer,
 
         if (client->client_id_len) {
                 r = dhcp_lease_set_client_id(lease,
-                                             (uint8_t *) &client->client_id.raw,
+                                             (uint8_t *) &client->client_id,
                                              client->client_id_len);
                 if (r < 0)
                         return r;
@@ -1102,7 +1108,7 @@ static int client_handle_ack(sd_dhcp_client *client, DHCPMessage *ack,
 
         if (client->client_id_len) {
                 r = dhcp_lease_set_client_id(lease,
-                                             (uint8_t *) &client->client_id.raw,
+                                             (uint8_t *) &client->client_id,
                                              client->client_id_len);
                 if (r < 0)
                         return r;
@@ -1386,8 +1392,10 @@ static int client_handle_message(sd_dhcp_client *client, DHCPMessage *message,
                         client->last_addr = client->lease->address;
 
                         r = client_set_lease_timeouts(client);
-                        if (r < 0)
+                        if (r < 0) {
+                                log_dhcp_client(client, "could not set lease timeouts");
                                 goto error;
+                        }
 
                         r = dhcp_network_bind_udp_socket(client->lease->address,
                                                          DHCP_PORT_CLIENT);
@@ -1615,7 +1623,7 @@ int sd_dhcp_client_start(sd_dhcp_client *client) {
 
         r = client_start(client);
         if (r >= 0)
-                log_dhcp_client(client, "STARTED on ifindex %u", client->index);
+                log_dhcp_client(client, "STARTED on ifindex %i", client->index);
 
         return r;
 }
@@ -1674,7 +1682,7 @@ sd_dhcp_client *sd_dhcp_client_ref(sd_dhcp_client *client) {
 }
 
 sd_dhcp_client *sd_dhcp_client_unref(sd_dhcp_client *client) {
-        if (client && REFCNT_DEC(client->n_ref) <= 0) {
+        if (client && REFCNT_DEC(client->n_ref) == 0) {
                 log_dhcp_client(client, "FREE");
 
                 client_initialize(client);

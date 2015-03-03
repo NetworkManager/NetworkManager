@@ -20,7 +20,6 @@
 #include "nm-sd-adapt.h"
 
 #include <errno.h>
-#include <sys/types.h>
 #include <sys/socket.h>
 #include <string.h>
 #include <linux/if_packet.h>
@@ -28,7 +27,6 @@
 #include <net/ethernet.h>
 #include <net/if_arp.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <linux/filter.h>
 
 #include "socket-util.h"
@@ -65,7 +63,7 @@ static int _bind_raw_socket(int ifindex, union sockaddr_union *link,
                 BPF_STMT(BPF_LD + BPF_B + BPF_ABS, offsetof(DHCPPacket, dhcp.htype)),  /* A <- DHCP header type */
                 BPF_JUMP(BPF_JMP + BPF_JEQ + BPF_K, arp_type, 1, 0),                   /* header type == arp_type ? */
                 BPF_STMT(BPF_RET + BPF_K, 0),                                          /* ignore */
-                BPF_STMT(BPF_LD + BPF_B + BPF_ABS, offsetof(DHCPPacket, dhcp.hlen)),   /* A <- mac address length */
+                BPF_STMT(BPF_LD + BPF_B + BPF_ABS, offsetof(DHCPPacket, dhcp.hlen)),   /* A <- MAC address length */
                 BPF_JUMP(BPF_JMP + BPF_JEQ + BPF_K, dhcp_hlen, 1, 0),                  /* address length == dhcp_hlen ? */
                 BPF_STMT(BPF_RET + BPF_K, 0),                                          /* ignore */
                 BPF_STMT(BPF_LD + BPF_W + BPF_ABS, offsetof(DHCPPacket, dhcp.xid)),    /* A <- client identifier */

@@ -507,8 +507,9 @@ int parse_timestamp(const char *t, usec_t *usec) {
                 return parse_sec(t + 1, usec);
 
         else if (endswith(t, " ago")) {
-                _cleanup_free_ char *z = strndup(t, strlen(t) - 4);
+                _cleanup_free_ char *z;
 
+                z = strndup(t, strlen(t) - 4);
                 if (!z)
                         return -ENOMEM;
 
@@ -518,8 +519,9 @@ int parse_timestamp(const char *t, usec_t *usec) {
 
                 goto finish;
         } else if (endswith(t, " left")) {
-                _cleanup_free_ char *z = strndup(t, strlen(t) - 4);
+                _cleanup_free_ char *z;
 
+                z = strndup(t, strlen(t) - 4);
                 if (!z)
                         return -ENOMEM;
 
@@ -791,7 +793,7 @@ int parse_nsec(const char *t, nsec_t *nsec) {
         s = startswith(p, "infinity");
         if (s) {
                 s += strspn(s, WHITESPACE);
-                if (!*s != 0)
+                if (*s != 0)
                         return -EINVAL;
 
                 *nsec = NSEC_INFINITY;
@@ -970,7 +972,7 @@ bool timezone_is_valid(const char *name) {
         if (slash)
                 return false;
 
-        t = strappenda("/usr/share/zoneinfo/", name);
+        t = strjoina("/usr/share/zoneinfo/", name);
         if (stat(t, &st) < 0)
                 return false;
 
@@ -998,4 +1000,3 @@ clockid_t clock_boottime_or_monotonic(void) {
 
         return clock;
 }
-

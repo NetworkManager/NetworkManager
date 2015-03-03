@@ -36,14 +36,20 @@
 #include <unistd.h>
 #include <sys/syscall.h>
 
+#include <net/if_arp.h>
+#include <sys/resource.h>
+
 #include "nm-logging.h"
 
-static inline guint32
+/*****************************************************************************/
+
+static inline NMLogLevel
 _slog_level_to_nm (int slevel)
 {
     switch (slevel) {
     case LOG_DEBUG:   return LOGL_DEBUG;
 	case LOG_WARNING: return LOGL_WARN;
+	case LOG_CRIT:
 	case LOG_ERR:     return LOGL_ERR;
 	case LOG_INFO:
 	case LOG_NOTICE:
@@ -51,39 +57,37 @@ _slog_level_to_nm (int slevel)
 	}
 }
 
-#define log_meta(level, file, line, func, format, ...) \
-G_STMT_START { \
-	guint32 _l = _slog_level_to_nm ((level)); \
-	if (nm_logging_enabled (_l, LOGD_DHCP)) { \
-		const char *_location = strrchr (file "", '/'); \
+#define log_internal(level, error, file, line, func, format, ...) \
+({ \
+	int _nm_e = (error); \
+	NMLogLevel _nm_l = _slog_level_to_nm ((level)); \
+	if (nm_logging_enabled (_nm_l, LOGD_DHCP)) { \
+		const char *_nm_location = strrchr ((""file), '/'); \
 		\
-		_nm_log (_location ? _location + 1 : file, line, func, _l, LOGD_DHCP, 0, format, ## __VA_ARGS__); \
+		_nm_log (_nm_location ? _nm_location + 1 : (""file), (line), (func), _nm_l, LOGD_DHCP, _nm_e, ("%s"format), "sd-dhcp: ", ## __VA_ARGS__); \
 	} \
-} G_STMT_END
+	(_nm_e > 0 ? -_nm_e : _nm_e); \
+})
 
-#define log_debug(...)       log_full(LOG_DEBUG, __VA_ARGS__)
-#define log_error(...)       log_full(LOG_ERR, __VA_ARGS__)
-#define log_full(level, ...) log_meta((level), __FILE__, __LINE__, __func__, __VA_ARGS__);
+#define log_full_errno(level, error, ...) \
+({ \
+	log_internal(level, error, __FILE__, __LINE__, __func__, __VA_ARGS__); \
+})
 
-#define log_dhcp_client(client, fmt, ...) \
-	log_meta(LOG_DEBUG, __FILE__, __LINE__, __func__, "DHCP CLIENT (0x%x): " fmt, client->xid, ##__VA_ARGS__)
-
-#define log_assert_failed(e, file, line, func) \
+#define log_assert_failed(text, file, line, func) \
 G_STMT_START { \
-	nm_log_err (LOGD_DHCP, #file ":" #line "(" #func "): assertion failed: " # e); \
-	g_assert (FALSE); \
-} G_STMT_END
-
-#define log_assert_failed_unreachable(t, file, line, func) \
-G_STMT_START { \
-	nm_log_err (LOGD_DHCP, #file ":" #line "(" #func "): assert unreachable: " # t); \
+	log_internal (LOG_CRIT, 0, file, line, func, "Assertion '%s' failed at %s:%u, function %s(). Aborting.", text, file, line, func); \
 	g_assert_not_reached (); \
 } G_STMT_END
 
-#define log_assert_failed_return(e, file, line, func) \
-	nm_log_err (LOGD_DHCP, #file ":" #line "(" #func "): assert return: " # e); \
+#define log_assert_failed_return(text, file, line, func) \
+G_STMT_START { \
+	log_internal (LOG_DEBUG, 0, file, line, func, "Assertion '%s' failed at %s:%u, function %s(). Ignoring.", text, file, line, func); \
+	g_return_if_fail_warning (G_LOG_DOMAIN, G_STRFUNC, text); \
+} G_STMT_END
 
-#define log_oom nm_log_err(LOGD_CORE, "%s:%s/%s: OOM", __FILE__, __LINE__, __func__)
+
+/*****************************************************************************/
 
 /* Can't include both net/if.h and linux/if.h; so have to define this here */
 #ifndef IFNAMSIZ

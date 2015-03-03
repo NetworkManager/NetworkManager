@@ -21,7 +21,6 @@
 
 #include "nm-sd-adapt.h"
 
-#include <assert.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
@@ -71,7 +70,7 @@ char *strv_find_startswith(char **l, const char *name) {
         return NULL;
 }
 
-void strv_free(char **l) {
+void strv_clear(char **l) {
         char **k;
 
         if (!l)
@@ -80,6 +79,11 @@ void strv_free(char **l) {
         for (k = l; *k; k++)
                 free(*k);
 
+        *l = NULL;
+}
+
+void strv_free(char **l) {
+        strv_clear(l);
         free(l);
 }
 
@@ -392,7 +396,7 @@ int strv_push(char ***l, char *value) {
 
         n = strv_length(*l);
 
-        /* increase and check for overflow */
+        /* Increase and check for overflow */
         m = n + 2;
         if (m < n)
                 return -ENOMEM;
@@ -403,6 +407,34 @@ int strv_push(char ***l, char *value) {
 
         c[n] = value;
         c[n+1] = NULL;
+
+        *l = c;
+        return 0;
+}
+
+int strv_push_pair(char ***l, char *a, char *b) {
+        char **c;
+        unsigned n, m;
+
+        if (!a && !b)
+                return 0;
+
+        n = strv_length(*l);
+
+        /* increase and check for overflow */
+        m = n + !!a + !!b + 1;
+        if (m < n)
+                return -ENOMEM;
+
+        c = realloc_multiply(*l, sizeof(char*), m);
+        if (!c)
+                return -ENOMEM;
+
+        if (a)
+                c[n++] = a;
+        if (b)
+                c[n++] = b;
+        c[n] = NULL;
 
         *l = c;
         return 0;
@@ -448,6 +480,18 @@ int strv_consume(char ***l, char *value) {
         return r;
 }
 
+int strv_consume_pair(char ***l, char *a, char *b) {
+        int r;
+
+        r = strv_push_pair(l, a, b);
+        if (r < 0) {
+                free(a);
+                free(b);
+        }
+
+        return r;
+}
+
 int strv_consume_prepend(char ***l, char *value) {
         int r;
 
@@ -481,6 +525,16 @@ char **strv_uniq(char **l) {
                 strv_remove(i+1, *i);
 
         return l;
+}
+
+bool strv_is_uniq(char **l) {
+        char **i;
+
+        STRV_FOREACH(i, l)
+                if (strv_find(i+1, *i))
+                        return false;
+
+        return true;
 }
 
 char **strv_remove(char **l, const char *s) {
@@ -591,6 +645,17 @@ char **strv_sort(char **l) {
         return l;
 }
 
+bool strv_equal(char **a, char **b) {
+        if (!a || !b)
+                return a == b;
+
+        for ( ; *a || *b; ++a, ++b)
+                if (!streq_ptr(*a, *b))
+                        return false;
+
+        return true;
+}
+
 void strv_print(char **l) {
         char **s;
 
@@ -611,4 +676,32 @@ int strv_extendf(char ***l, const char *format, ...) {
                 return -ENOMEM;
 
         return strv_consume(l, x);
+}
+
+char **strv_reverse(char **l) {
+        unsigned n, i;
+
+        n = strv_length(l);
+        if (n <= 1)
+                return l;
+
+        for (i = 0; i < n / 2; i++) {
+                char *t;
+
+                t = l[i];
+                l[i] = l[n-1-i];
+                l[n-1-i] = t;
+        }
+
+        return l;
+}
+
+bool strv_fnmatch(char* const* patterns, const char *s, int flags) {
+        char* const* p;
+
+        STRV_FOREACH(p, patterns)
+                if (fnmatch(*p, s, 0) == 0)
+                        return true;
+
+        return false;
 }

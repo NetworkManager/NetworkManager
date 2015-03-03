@@ -24,12 +24,10 @@
 #include <netinet/ether.h>
 #include <linux/if.h>
 #include <arpa/inet.h>
-#include <fnmatch.h>
 
 #if 0 /* NM_IGNORED */
 #include "strv.h"
 #include "siphash24.h"
-#include "libudev-private.h"
 #endif /* NM_IGNORED */
 #include "dhcp-lease-internal.h"
 #if 0 /* NM_IGNORED */
@@ -92,10 +90,10 @@ int net_get_unique_predictable_data(struct udev_device *device, uint8_t result[8
 }
 
 bool net_match_config(const struct ether_addr *match_mac,
-                      const char *match_path,
-                      const char *match_driver,
-                      const char *match_type,
-                      const char *match_name,
+                      char * const *match_paths,
+                      char * const *match_drivers,
+                      char * const *match_types,
+                      char * const *match_names,
                       Condition *match_host,
                       Condition *match_virt,
                       Condition *match_kernel,
@@ -108,37 +106,37 @@ bool net_match_config(const struct ether_addr *match_mac,
                       const char *dev_name) {
 
         if (match_host && !condition_test(match_host))
-                return 0;
+                return false;
 
         if (match_virt && !condition_test(match_virt))
-                return 0;
+                return false;
 
         if (match_kernel && !condition_test(match_kernel))
-                return 0;
+                return false;
 
         if (match_arch && !condition_test(match_arch))
-                return 0;
+                return false;
 
         if (match_mac && (!dev_mac || memcmp(match_mac, dev_mac, ETH_ALEN)))
-                return 0;
+                return false;
 
-        if (match_path && (!dev_path || fnmatch(match_path, dev_path, 0)))
-                return 0;
+        if (!strv_isempty(match_paths) &&
+            (!dev_path || !strv_fnmatch(match_paths, dev_path, 0)))
+                return false;
 
-        if (match_driver) {
-                if (dev_parent_driver && !streq(match_driver, dev_parent_driver))
-                        return 0;
-                else if (!streq_ptr(match_driver, dev_driver))
-                        return 0;
-        }
+        if (!strv_isempty(match_drivers) &&
+            (!dev_driver || !strv_fnmatch(match_drivers, dev_driver, 0)))
+                return false;
 
-        if (match_type && !streq_ptr(match_type, dev_type))
-                return 0;
+        if (!strv_isempty(match_types) &&
+            (!dev_type || !strv_fnmatch_or_empty(match_types, dev_type, 0)))
+                return false;
 
-        if (match_name && (!dev_name || fnmatch(match_name, dev_name, 0)))
-                return 0;
+        if (!strv_isempty(match_names) &&
+            (!dev_name || !strv_fnmatch_or_empty(match_names, dev_name, 0)))
+                return false;
 
-        return 1;
+        return true;
 }
 
 int config_parse_net_condition(const char *unit,
@@ -221,6 +219,49 @@ int config_parse_ifname(const char *unit,
         return 0;
 }
 
+int config_parse_ifnames(const char *unit,
+                        const char *filename,
+                        unsigned line,
+                        const char *section,
+                        unsigned section_line,
+                        const char *lvalue,
+                        int ltype,
+                        const char *rvalue,
+                        void *data,
+                        void *userdata) {
+
+        char ***sv = data;
+        const char *word, *state;
+        size_t l;
+        int r;
+
+        assert(filename);
+        assert(lvalue);
+        assert(rvalue);
+        assert(data);
+
+        FOREACH_WORD(word, l, rvalue, state) {
+                char *n;
+
+                n = strndup(word, l);
+                if (!n)
+                        return log_oom();
+
+                if (!ascii_is_valid(n) || strlen(n) >= IFNAMSIZ) {
+                        log_syntax(unit, LOG_ERR, filename, line, EINVAL,
+                                   "Interface name is not ASCII clean or is too long, ignoring assignment: %s", rvalue);
+                        free(n);
+                        return 0;
+                }
+
+                r = strv_consume(sv, n);
+                if (r < 0)
+                        return log_oom();
+        }
+
+        return 0;
+}
+
 int config_parse_ifalias(const char *unit,
                          const char *filename,
                          unsigned line,
@@ -233,7 +274,7 @@ int config_parse_ifalias(const char *unit,
                          void *userdata) {
 
         char **s = data;
-        char *n;
+        _cleanup_free_ char *n = NULL;
 
         assert(filename);
         assert(lvalue);
@@ -247,17 +288,15 @@ int config_parse_ifalias(const char *unit,
         if (!ascii_is_valid(n) || strlen(n) >= IFALIASZ) {
                 log_syntax(unit, LOG_ERR, filename, line, EINVAL,
                            "Interface alias is not ASCII clean or is too long, ignoring assignment: %s", rvalue);
-                free(n);
                 return 0;
         }
 
         free(*s);
-        if (*n)
+        if (*n) {
                 *s = n;
-        else {
-                free(n);
+                n = NULL;
+        } else
                 *s = NULL;
-        }
 
         return 0;
 }

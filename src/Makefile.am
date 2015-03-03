@@ -65,6 +65,9 @@ SYSTEMD_DHCP_CFLAGS = \
 	-I$(top_srcdir)/src/dhcp-manager/systemd-dhcp
 
 libsystemd_dhcp_la_SOURCES = \
+	dhcp-manager/systemd-dhcp/src/libsystemd/sd-id128/sd-id128.c \
+	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp-identifier.c \
+	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp-identifier.h \
 	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp-network.c \
 	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp-packet.c \
 	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp-internal.h \
@@ -96,8 +99,11 @@ libsystemd_dhcp_la_SOURCES = \
 	dhcp-manager/systemd-dhcp/src/shared/util.h \
 	dhcp-manager/systemd-dhcp/src/shared/in-addr-util.h \
 	dhcp-manager/systemd-dhcp/src/shared/list.h \
+	dhcp-manager/systemd-dhcp/src/shared/log.h \
 	dhcp-manager/systemd-dhcp/src/shared/fileio.h \
 	dhcp-manager/systemd-dhcp/src/shared/fileio.c \
+	dhcp-manager/systemd-dhcp/src/shared/path-util.c \
+	dhcp-manager/systemd-dhcp/src/shared/path-util.h \
 	dhcp-manager/systemd-dhcp/src/shared/strv.h \
 	dhcp-manager/systemd-dhcp/src/shared/strv.c \
 	dhcp-manager/systemd-dhcp/src/shared/unaligned.h \
