@@ -8145,6 +8145,7 @@ int syslog_parse_priority(const char **p, int *priority, bool with_facility) {
         *p += k;
         return 1;
 }
+#endif /* NM_IGNORED */
 
 ssize_t string_table_lookup(const char * const *table, size_t len, const char *key) {
         size_t i;
@@ -8159,6 +8160,7 @@ ssize_t string_table_lookup(const char * const *table, size_t len, const char *k
         return -1;
 }
 
+#if 0 /* NM_IGNORED */
 void cmsg_close_all(struct msghdr *mh) {
         struct cmsghdr *cmsg;
 
