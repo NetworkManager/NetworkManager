@@ -222,29 +222,19 @@ nm_modem_get_supported_ip_types (NMModem *self)
 	return NM_MODEM_GET_PRIVATE (self)->ip_types;
 }
 
-typedef struct {
-	NMModemIPType ip_type;
-	const gchar *name;
-} IpTypeTable;
-
-static const IpTypeTable ip_types[] = {
-	{ NM_MODEM_IP_TYPE_IPV4,    "ipv4" },
-	{ NM_MODEM_IP_TYPE_IPV6,    "ipv6" },
-	{ NM_MODEM_IP_TYPE_IPV4V6,  "ipv4v6" },
-	{ NM_MODEM_IP_TYPE_UNKNOWN, "unknown" },
-};
-
 const gchar *
 nm_modem_ip_type_to_string (NMModemIPType ip_type)
 {
-	guint i;
-
-	for (i = 0; i < G_N_ELEMENTS (ip_types); i++) {
-		if (ip_type == ip_types[i].ip_type)
-			return ip_types[i].name;
+	switch (ip_type) {
+	case NM_MODEM_IP_TYPE_IPV4:
+		return "ipv4";
+	case NM_MODEM_IP_TYPE_IPV6:
+		return "ipv6";
+	case NM_MODEM_IP_TYPE_IPV4V6:
+		return "ipv4v6";
+	default:
+		g_return_val_if_reached ("unknown");
 	}
-
-	g_return_val_if_reached (NM_MODEM_IP_TYPE_UNKNOWN);
 }
 
 static GArray *
