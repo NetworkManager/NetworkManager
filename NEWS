@@ -40,6 +40,8 @@ This is a bugfix release of NetworkManager 0.9.10.  Notable changes include:
 * A crash when disconnecting older Nokia phones has been fixed
 * Layer 2-only connections (those without IP configuration) are now allowed
 * Sending a DDNS hostname via DHCPv6 is now more reliable
+* Connections are now assumed for slave interfaces
+* Assumed connections are no longer disconnected automatically
 
 
 ==============================================
