@@ -40,6 +40,7 @@
 #include "nm-enum-types.h"
 #include "nm-team-enum-types.h"
 #include "nm-core-internal.h"
+#include "gsystem-local-alloc.h"
 
 #include "nm-device-team-glue.h"
 
@@ -64,6 +65,8 @@ enum {
 
 	LAST_PROP
 };
+
+static gboolean teamd_start (NMDevice *device, NMSettingTeam *s_team);
 
 /******************************************************************/
 
@@ -270,7 +273,7 @@ teamd_timeout_remove (NMDevice *device)
 }
 
 static void
-teamd_cleanup (NMDevice *device, gboolean device_state_failed)
+teamd_cleanup (NMDevice *device)
 {
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (device);
 
@@ -291,12 +294,6 @@ teamd_cleanup (NMDevice *device, gboolean device_state_failed)
 	}
 
 	teamd_timeout_remove (device);
-
-	if (device_state_failed) {
-		if (nm_device_is_activating (device) ||
-		    (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED))
-			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
-	}
 }
 
 static gboolean
@@ -309,7 +306,10 @@ teamd_timeout_cb (gpointer user_data)
 	g_return_val_if_fail (priv->teamd_timeout, FALSE);
 
 	_LOGI (LOGD_TEAM, "teamd timed out.");
-	teamd_cleanup (device, TRUE);
+	teamd_cleanup (device);
+
+	g_warn_if_fail (nm_device_is_activating (device));
+	nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
 
 	return FALSE;
 }
@@ -331,24 +331,28 @@ teamd_dbus_appeared (GDBusConnection *connection,
 	teamd_timeout_remove (device);
 	nm_device_queue_recheck_assume (device);
 
+	/* Grab a teamd control handle even if we aren't going to use it
+	 * immediately.  But if we are, and grabbing it failed, fail the
+	 * device activation.
+	 */
 	success = ensure_teamd_connection (device);
 	if (nm_device_get_state (device) == NM_DEVICE_STATE_PREPARE) {
 		if (success)
 			nm_device_activate_schedule_stage2_device_config (device);
 		else if (!nm_device_uses_assumed_connection (device))
 			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
-		return;
 	}
 }
 
 static void
-teamd_dbus_vanished (GDBusConnection *connection,
+teamd_dbus_vanished (GDBusConnection *dbus_connection,
                      const gchar *name,
                      gpointer user_data)
 {
 	NMDeviceTeam *self = NM_DEVICE_TEAM (user_data);
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (self);
 	NMDevice *device = NM_DEVICE (self);
+	NMDeviceState state = nm_device_get_state (device);
 
 	g_return_if_fail (priv->teamd_dbus_watch);
 
@@ -362,7 +366,16 @@ teamd_dbus_vanished (GDBusConnection *connection,
 	}
 
 	_LOGI (LOGD_TEAM, "teamd vanished from D-Bus");
-	teamd_cleanup (device, TRUE);
+	teamd_cleanup (device);
+
+	/* Attempt to respawn teamd */
+	if (state >= NM_DEVICE_STATE_PREPARE && state <= NM_DEVICE_STATE_ACTIVATED) {
+		NMConnection *connection = nm_device_get_connection (device);
+
+		g_assert (connection);
+		if (!teamd_start (device, nm_connection_get_setting_team (connection)))
+			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
+	}
 }
 
 static void
@@ -377,26 +390,32 @@ teamd_process_watch_cb (GPid pid, gint status, gpointer user_data)
 	_LOGI (LOGD_TEAM, "teamd died with status %d", status);
 	priv->teamd_process_watch = 0;
 	priv->teamd_pid = 0;
-	teamd_cleanup (device, TRUE);
+	teamd_cleanup (device);
 }
 
-static void
-nm_device_team_watch_dbus (NMDeviceTeam *self)
+static gboolean
+teamd_kill (NMDeviceTeam *self, const char *teamd_binary, GError **error)
 {
-	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (self);
-	const char *iface = nm_device_get_ip_iface (NM_DEVICE (self));
-	char *tmp_str = NULL;
+	gs_unref_ptrarray GPtrArray *argv = NULL;
+	gs_free char *tmp_str = NULL;
 
-	/* Register D-Bus name watcher */
-	tmp_str = g_strdup_printf ("org.libteam.teamd.%s", iface);
-	priv->teamd_dbus_watch = g_bus_watch_name (G_BUS_TYPE_SYSTEM,
-	                                           tmp_str,
-	                                           G_BUS_NAME_WATCHER_FLAGS_NONE,
-	                                           teamd_dbus_appeared,
-	                                           teamd_dbus_vanished,
-	                                           NM_DEVICE (self),
-	                                           NULL);
-	g_free (tmp_str);
+	if (!teamd_binary) {
+		teamd_binary = nm_utils_find_helper ("teamd", NULL, NULL);
+		if (!teamd_binary) {
+			_LOGW (LOGD_TEAM, "Activation: (team) failed to start teamd: teamd binary not found");
+			return FALSE;
+		}
+	}
+
+	argv = g_ptr_array_new ();
+	g_ptr_array_add (argv, (gpointer) teamd_binary);
+	g_ptr_array_add (argv, (gpointer) "-k");
+	g_ptr_array_add (argv, (gpointer) "-t");
+	g_ptr_array_add (argv, (gpointer) nm_device_get_iface (NM_DEVICE (self)));
+	g_ptr_array_add (argv, NULL);
+
+	_LOGD (LOGD_TEAM, "running: %s", (tmp_str = g_strjoinv (" ", (gchar **) argv->pdata)));
+	return g_spawn_sync ("/", (char **) argv->pdata, NULL, 0, NULL, NULL, NULL, NULL, NULL, error);
 }
 
 static gboolean
@@ -411,17 +430,6 @@ teamd_start (NMDevice *device, NMSettingTeam *s_team)
 	GPtrArray *argv;
 	GError *error = NULL;
 	gboolean ret;
-	int status;
-
-	if (priv->teamd_process_watch ||
-	    priv->teamd_pid > 0 ||
-	    priv->tdc ||
-	    priv->teamd_timeout)
-	{
-		/* FIXME g_assert that this never hits. For now, be more reluctant, and try to recover. */
-		g_warn_if_reached ();
-		teamd_cleanup (device, FALSE);
-	}
 
 	teamd_binary = nm_utils_find_helper ("teamd", NULL, NULL);
 	if (!teamd_binary) {
@@ -429,20 +437,16 @@ teamd_start (NMDevice *device, NMSettingTeam *s_team)
 		return FALSE;
 	}
 
-	/* Kill teamd for same named device first if it is there */
-	argv = g_ptr_array_new ();
-	g_ptr_array_add (argv, (gpointer) teamd_binary);
-	g_ptr_array_add (argv, (gpointer) "-k");
-	g_ptr_array_add (argv, (gpointer) "-t");
-	g_ptr_array_add (argv, (gpointer) iface);
-	g_ptr_array_add (argv, NULL);
-
-	_LOGD (LOGD_TEAM, "running: %s",
-	       (tmp_str = g_strjoinv (" ", (gchar **) argv->pdata)));
-	g_clear_pointer (&tmp_str, g_free);
-
-	ret = g_spawn_sync ("/", (char **) argv->pdata, NULL, 0, NULL, NULL, NULL, NULL, &status, &error);
-	g_ptr_array_free (argv, TRUE);
+	if (priv->teamd_process_watch ||
+	    priv->teamd_pid > 0 ||
+	    priv->tdc ||
+	    priv->teamd_timeout)
+	{
+		g_warn_if_reached ();
+		if (!priv->teamd_pid)
+			teamd_kill (self, teamd_binary, NULL);
+		teamd_cleanup (device);
+	}
 
 	/* Start teamd now */
 	argv = g_ptr_array_new ();
@@ -478,7 +482,7 @@ teamd_start (NMDevice *device, NMSettingTeam *s_team)
 	if (!ret) {
 		_LOGW (LOGD_TEAM, "Activation: (team) failed to start teamd: %s", error->message);
 		g_clear_error (&error);
-		teamd_cleanup (device, FALSE);
+		teamd_cleanup (device);
 		return FALSE;
 	}
 
@@ -491,46 +495,67 @@ teamd_start (NMDevice *device, NMSettingTeam *s_team)
 	return TRUE;
 }
 
-static void
-teamd_stop (NMDevice *device)
-{
-	NMDeviceTeam *self = NM_DEVICE_TEAM (device);
-	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (self);
-
-	if (priv->teamd_pid > 0)
-		_LOGI (LOGD_TEAM, "Deactivation: stopping teamd...");
-	else
-		_LOGD (LOGD_TEAM, "Deactivation: stopping teamd (not started)...");
-	teamd_cleanup (device, FALSE);
-}
-
 static NMActStageReturn
 act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 {
+	NMDeviceTeam *self = NM_DEVICE_TEAM (device);
+	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (self);
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
+	gs_free_error GError *error = NULL;
 	NMConnection *connection;
 	NMSettingTeam *s_team;
+	const char *cfg;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
 	ret = NM_DEVICE_CLASS (nm_device_team_parent_class)->act_stage1_prepare (device, reason);
-	if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
-		connection = nm_device_get_connection (device);
-		g_assert (connection);
-		s_team = nm_connection_get_setting_team (connection);
-		g_assert (s_team);
-		if (teamd_start (device, s_team))
-			ret = NM_ACT_STAGE_RETURN_POSTPONE;
-		else
-			ret = NM_ACT_STAGE_RETURN_FAILURE;
+	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
+		return ret;
+
+	connection = nm_device_get_connection (device);
+	g_assert (connection);
+	s_team = nm_connection_get_setting_team (connection);
+	g_assert (s_team);
+
+	if (priv->tdc) {
+		/* If the existing teamd config is the same as we're about to use,
+		 * then we can proceed.  If it's not the same, and we have a PID,
+		 * kill it so we can respawn it with the right config.  If we don't
+		 * have a PID, then we must fail.
+		 */
+		cfg = teamdctl_config_get_raw (priv->tdc);
+		if (cfg && strcmp (cfg,  nm_setting_team_get_config (s_team)) == 0) {
+			_LOGD (LOGD_TEAM, "using existing matching teamd config");
+			return NM_ACT_STAGE_RETURN_SUCCESS;
+		}
+
+		if (!priv->teamd_pid) {
+			_LOGD (LOGD_TEAM, "existing teamd config mismatch; killing existing via teamdctl");
+			if (!teamd_kill (self, NULL, &error)) {
+				_LOGW (LOGD_TEAM, "existing teamd config mismatch; failed to kill existing teamd: %s", error->message);
+				*reason = NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED;
+				return NM_ACT_STAGE_RETURN_FAILURE;
+			}
+		}
+
+		_LOGD (LOGD_TEAM, "existing teamd config mismatch; respawning...");
+		teamd_cleanup (device);
 	}
-	return ret;
+
+	return teamd_start (device, s_team) ?
+		NM_ACT_STAGE_RETURN_POSTPONE : NM_ACT_STAGE_RETURN_FAILURE;
 }
 
 static void
 deactivate (NMDevice *device)
 {
-	teamd_stop (device);
+	NMDeviceTeam *self = NM_DEVICE_TEAM (device);
+
+	_LOGI (LOGD_TEAM, "deactivation: stopping teamd...");
+
+	if (!NM_DEVICE_TEAM_GET_PRIVATE (self)->teamd_pid)
+		teamd_kill (self, NULL, NULL);
+	teamd_cleanup (device);
 }
 
 static gboolean
@@ -678,11 +703,22 @@ nm_device_team_init (NMDeviceTeam * self)
 static void
 constructed (GObject *object)
 {
-	NMDeviceTeam *self = NM_DEVICE_TEAM (object);
+	NMDevice *device = NM_DEVICE (object);
+	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (object);
+	char *tmp_str = NULL;
 
 	G_OBJECT_CLASS (nm_device_team_parent_class)->constructed (object);
 
-	nm_device_team_watch_dbus (self);
+	/* Register D-Bus name watcher */
+	tmp_str = g_strdup_printf ("org.libteam.teamd.%s", nm_device_get_ip_iface (device));
+	priv->teamd_dbus_watch = g_bus_watch_name (G_BUS_TYPE_SYSTEM,
+	                                           tmp_str,
+	                                           G_BUS_NAME_WATCHER_FLAGS_NONE,
+	                                           teamd_dbus_appeared,
+	                                           teamd_dbus_vanished,
+	                                           NM_DEVICE (device),
+	                                           NULL);
+	g_free (tmp_str);
 }
 
 static void
@@ -730,7 +766,7 @@ dispose (GObject *object)
 		priv->teamd_dbus_watch = 0;
 	}
 
-	teamd_cleanup (NM_DEVICE (object), FALSE);
+	teamd_cleanup (NM_DEVICE (object));
 
 	G_OBJECT_CLASS (nm_device_team_parent_class)->dispose (object);
 }
