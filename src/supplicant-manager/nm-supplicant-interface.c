@@ -424,7 +424,6 @@ iface_check_netreply_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	NMSupplicantInterfacePrivate *priv;
 	gs_unref_variant GVariant *variant = NULL;
 	gs_free_error GError *error = NULL;
-	gs_free char *dbus_err = NULL;
 
 	/* We know NetworkReply is supported if the NetworkReply method returned
 	 * successfully (which is unexpected since we sent a bogus network
