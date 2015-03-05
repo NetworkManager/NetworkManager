@@ -6,4 +6,5 @@ EXTRA_DIST = \
 	get_ips.py \
 	add_connection.py \
 	get-active-connections.py \
-	update-ip4-method.py
+	update-ip4-method.py \
+	deactivate-all.py
