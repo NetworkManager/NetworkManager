@@ -5,4 +5,5 @@ EXTRA_DIST = \
 	show-wifi-networks.lua \
 	get-basic-nm-info.lua \
 	get-ips.lua \
-	change-vpn-username.lua
+	change-vpn-username.lua \
+	deactivate-all.lua
