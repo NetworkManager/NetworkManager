@@ -183,7 +183,8 @@ nm_route_manager_ip4_route_sync (NMRouteManager *self, int ifindex, const GArray
 			if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (known_route))
 				continue;
 
-			if ((known_route->gateway == 0) ^ (i_type == 0)) {
+			if (   (i_type == 0 && known_route->gateway != 0)
+			    || (i_type == 1 && known_route->gateway == 0)) {
 				/* Make two runs over the list of routes. On the first, only add
 				 * device routes, on the second the others (gateway routes). */
 				continue;
@@ -304,7 +305,8 @@ nm_route_manager_ip6_route_sync (NMRouteManager *self, int ifindex, const GArray
 			if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (known_route))
 				continue;
 
-			if (IN6_IS_ADDR_UNSPECIFIED (&known_route->gateway) ^ (i_type == 0)) {
+			if (   (i_type == 0 && !IN6_IS_ADDR_UNSPECIFIED (&known_route->gateway))
+			    || (i_type == 1 && IN6_IS_ADDR_UNSPECIFIED (&known_route->gateway))) {
 				/* Make two runs over the list of routes. On the first, only add
 				 * device routes, on the second the others (gateway routes). */
 				continue;
