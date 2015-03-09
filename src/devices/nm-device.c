@@ -283,6 +283,7 @@ typedef struct {
 	NMIP6Config *  wwan_ip6_config;
 	NMIP6Config *  ext_ip6_config; /* Stuff added outside NM */
 	gboolean       nm_ipv6ll; /* TRUE if NM handles the device's IPv6LL address */
+	guint32        ip6_mtu;
 
 	NMRDisc *      rdisc;
 	gulong         rdisc_changed_id;
@@ -461,6 +462,12 @@ gboolean
 nm_device_ipv6_sysctl_set (NMDevice *self, const char *property, const char *value)
 {
 	return nm_platform_sysctl_set (nm_utils_ip6_property_path (nm_device_get_ip_iface (self), property), value);
+}
+
+static guint32
+nm_device_ipv6_sysctl_get_int32 (NMDevice *self, const char *property, gint32 fallback)
+{
+	return nm_platform_sysctl_get_int32 (nm_utils_ip6_property_path (nm_device_get_ip_iface (self), property), fallback);
 }
 
 static gboolean
@@ -4078,6 +4085,58 @@ print_support_extended_ifa_flags (NMSettingIP6ConfigPrivacy use_tempaddr)
 	warn = 2;
 }
 
+static void nm_device_ipv6_set_mtu (NMDevice *self, guint32 mtu);
+
+static void
+nm_device_set_mtu (NMDevice *self, guint32 mtu)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	int ifindex = nm_device_get_ifindex (self);
+
+	if (mtu)
+		priv->mtu = mtu;
+
+	/* Ensure the IPv6 MTU is still alright. */
+	if (priv->ip6_mtu)
+		nm_device_ipv6_set_mtu (self, priv->ip6_mtu);
+
+	if (priv->mtu != nm_platform_link_get_mtu (ifindex))
+		nm_platform_link_set_mtu (ifindex, priv->mtu);
+}
+
+static void
+nm_device_ipv6_set_mtu (NMDevice *self, guint32 mtu)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	guint32 plat_mtu = nm_device_ipv6_sysctl_get_int32 (self, "mtu", priv->mtu);
+	char val[16];
+
+	priv->ip6_mtu = mtu ?: plat_mtu;
+
+	if (priv->ip6_mtu && priv->mtu < priv->ip6_mtu) {
+		_LOGW (LOGD_DEVICE | LOGD_IP6, "Lowering IPv6 MTU (%d) to match device MTU (%d)",
+		       priv->ip6_mtu, priv->mtu);
+		priv->ip6_mtu = priv->mtu;
+	}
+
+	if (priv->ip6_mtu < 1280) {
+		_LOGW (LOGD_DEVICE | LOGD_IP6, "IPv6 MTU (%d) smaller than 1280, adjusting",
+		       priv->ip6_mtu);
+		priv->ip6_mtu = 1280;
+	}
+
+	if (priv->mtu < priv->ip6_mtu) {
+		_LOGW (LOGD_DEVICE | LOGD_IP6, "Raising device MTU (%d) to match IPv6 MTU (%d)",
+		       priv->mtu, priv->ip6_mtu);
+		nm_device_set_mtu (self, priv->ip6_mtu);
+	}
+
+	if (priv->ip6_mtu != plat_mtu) {
+		g_snprintf (val, sizeof (val), "%d", mtu);
+		nm_device_ipv6_sysctl_set (self, "mtu", val);
+	}
+}
+
 static void
 rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *self)
 {
@@ -4224,12 +4283,8 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *self)
 		nm_device_ipv6_sysctl_set (self, "hop_limit", val);
 	}
 
-	if (changed & NM_RDISC_CONFIG_MTU) {
-		char val[16];
-
-		g_snprintf (val, sizeof (val), "%d", rdisc->mtu);
-		nm_device_ipv6_sysctl_set (self, "mtu", val);
-	}
+	if (changed & NM_RDISC_CONFIG_MTU)
+		priv->ip6_mtu = rdisc->mtu;
 
 	nm_device_activate_schedule_ip6_config_result (self);
 }
@@ -4580,6 +4635,13 @@ act_stage3_ip6_config_start (NMDevice *self,
 		}
 		return NM_ACT_STAGE_RETURN_STOP;
 	}
+
+	/* Ensure the MTU makes sense. If it was below 1280 the kernel would not
+	 * expose any ipv6 sysctls or allow presence of any addresses on the interface,
+	 * including LL, which * would make it impossible to autoconfigure MTU to a
+	 * correct value. */
+	if (!nm_device_uses_assumed_connection (self))
+		nm_device_ipv6_set_mtu (self, priv->ip6_mtu);
 
 	/* Any method past this point requires an IPv6LL address. Use NM-controlled
 	 * IPv6LL if this is not an assumed connection, since assumed connections
@@ -5919,6 +5981,8 @@ nm_device_set_ip4_config (NMDevice *self,
 	if (commit && new_config) {
 		gboolean assumed = nm_device_uses_assumed_connection (self);
 
+		nm_device_set_mtu (self, nm_ip4_config_get_mtu (new_config));
+
 		/* for assumed devices we set the device_route_metric to the default which will
 		 * stop nm_platform_ip4_address_sync() to replace the device routes. */
 		success = nm_ip4_config_commit (new_config, ip_ifindex,
@@ -6053,6 +6117,7 @@ nm_device_set_ip6_config (NMDevice *self,
 
 	/* Always commit to nm-platform to update lifetimes */
 	if (commit && new_config) {
+		nm_device_ipv6_set_mtu (self, priv->ip6_mtu);
 		success = nm_ip6_config_commit (new_config, ip_ifindex);
 		if (!success)
 			reason_local = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
