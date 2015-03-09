@@ -625,7 +625,7 @@ typedef struct {
 	GObject **objects;
 	int length, remaining;
 
-	gboolean array;
+	GPtrArray *array;
 	const char *property_name;
 } ObjectCreatedData;
 
@@ -671,7 +671,8 @@ object_property_complete (ObjectCreatedData *odata)
 	gboolean different = TRUE;
 
 	if (odata->array) {
-		GPtrArray *old = *((GPtrArray **) pi->field);
+		GPtrArray *pi_old = *((GPtrArray **) pi->field);
+		GPtrArray *old = odata->array;
 		GPtrArray *new;
 		int i;
 
@@ -684,16 +685,11 @@ object_property_complete (ObjectCreatedData *odata)
 			GPtrArray *added = g_ptr_array_sized_new (3);
 			GPtrArray *removed = g_ptr_array_sized_new (3);
 
-			if (old) {
-				/* Find objects in 'old' that do not exist in 'new' */
-				array_diff (old, new, removed);
+			/* Find objects in 'old' that do not exist in 'new' */
+			array_diff (old, new, removed);
 
-				/* Find objects in 'new' that do not exist in old */
-				array_diff (new, old, added);
-			} else {
-				for (i = 0; i < new->len; i++)
-					g_ptr_array_add (added, g_ptr_array_index (new, i));
-			}
+			/* Find objects in 'new' that do not exist in old */
+			array_diff (new, old, added);
 
 			*((GPtrArray **) pi->field) = new;
 
@@ -726,8 +722,8 @@ object_property_complete (ObjectCreatedData *odata)
 		/* Free old array last since it will release references, thus freeing
 		 * any objects in the 'removed' array.
 		 */
-		if (old)
-			g_ptr_array_unref (old);
+		if (pi_old)
+			g_ptr_array_unref (pi_old);
 	} else {
 		GObject **obj_p = pi->field;
 
@@ -745,6 +741,8 @@ object_property_complete (ObjectCreatedData *odata)
 
 	g_object_unref (self);
 	g_free (odata->objects);
+	if (odata->array)
+		g_ptr_array_unref (odata->array);
 	g_slice_free (ObjectCreatedData, odata);
 }
 
@@ -781,7 +779,7 @@ handle_object_property (NMObject *self, const char *property_name, GVariant *val
 	odata->pi = pi;
 	odata->objects = g_new (GObject *, 1);
 	odata->length = odata->remaining = 1;
-	odata->array = FALSE;
+	odata->array = NULL;
 	odata->property_name = property_name;
 
 	priv->reload_remaining++;
@@ -820,6 +818,7 @@ handle_object_array_property (NMObject *self, const char *property_name, GVarian
 	GPtrArray **array = pi->field;
 	const char *path;
 	ObjectCreatedData *odata;
+	guint i, len = *array ? (*array)->len : 0;
 
 	npaths = g_variant_n_children (value);
 
@@ -828,8 +827,12 @@ handle_object_array_property (NMObject *self, const char *property_name, GVarian
 	odata->pi = pi;
 	odata->objects = g_new0 (GObject *, npaths);
 	odata->length = odata->remaining = npaths;
-	odata->array = TRUE;
 	odata->property_name = property_name;
+
+	/* Objects known at this point. */
+	odata->array = g_ptr_array_new_full (len, g_object_unref);
+	for (i = 0; i < len; i++)
+		g_ptr_array_add (odata->array, g_object_ref (g_ptr_array_index (*array, i)));
 
 	priv->reload_remaining++;
 
