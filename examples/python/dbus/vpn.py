@@ -106,7 +106,7 @@ def activate_connection(connection_path, device_path):
         sys.exit(0)
 
     def error_handler(*args):
-        print "Error activating device: %s" % args
+        sys.stderr.write("Error activating device: %s\n" % args)
         sys.exit(1)
 
     bus = dbus.SystemBus()

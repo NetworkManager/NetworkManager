@@ -80,6 +80,6 @@ if __name__ == "__main__":
             c.commit_changes(True, None)
             print("The connection profile has been updated.")
         except Exception, e:
-            print("Error: %s" % e)
+            sys.stderr.write("Error: %s\n" % e)
         break
 

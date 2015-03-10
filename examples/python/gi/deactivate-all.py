@@ -77,5 +77,5 @@ if __name__ == "__main__":
                 client.deactivate_connection(ac, None)
                 sys.stdout.write("\033[32m  -> succeeded\033[0m\n")
             except Exception, e:
-               sys.stdout.write("\033[31m  -> failed\033[0m (%s)\n" % e.message)
+               sys.stderr.write("\033[31m  -> failed\033[0m (%s)\n" % e.message)
 
