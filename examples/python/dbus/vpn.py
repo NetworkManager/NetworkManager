@@ -102,11 +102,11 @@ def get_wifi_device_path():
 def activate_connection(connection_path, device_path):
 
     def reply_handler(opath):
-    	print "Success: device activating"
+        print "Success: device activating"
         sys.exit(0)
 
     def error_handler(*args):
-    	print "Error activating device: %s" % args
+        print "Error activating device: %s" % args
         sys.exit(1)
 
     bus = dbus.SystemBus()
