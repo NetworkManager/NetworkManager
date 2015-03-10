@@ -453,7 +453,7 @@ nm_ap_new_from_properties (const char *supplicant_path, GVariant *properties)
 
 	v = g_variant_lookup_value (properties, "RSN", G_VARIANT_TYPE_VARDICT);
 	if (v) {
-		nm_ap_set_wpa_flags (ap, nm_ap_get_rsn_flags (ap) | security_from_vardict (v));
+		nm_ap_set_rsn_flags (ap, nm_ap_get_rsn_flags (ap) | security_from_vardict (v));
 		g_variant_unref (v);
 	}
 
