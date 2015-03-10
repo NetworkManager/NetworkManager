@@ -1285,6 +1285,8 @@ dispose (GObject *object)
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (object);
 
+	if (priv->iface_proxy)
+		g_signal_handlers_disconnect_by_data (priv->iface_proxy, NM_SUPPLICANT_INTERFACE (object));
 	g_clear_object (&priv->iface_proxy);
 
 	if (priv->init_cancellable)
