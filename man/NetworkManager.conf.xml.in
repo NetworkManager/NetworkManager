@@ -212,7 +212,7 @@ no-auto-default=*
 	<term><varname>configure-and-quit</varname></term>
 	<listitem>
 	  <para>
-	    When set to <literal>true</literal>, NetworkManager quits after
+	    When set to '<literal>true</literal>', NetworkManager quits after
 	    performing initial network configuration but spawns small helpers
 	    to preserve DHCP leases and IPv6 addresses.  This is useful in
 	    environments where network setup is more or less static or it is
@@ -222,10 +222,12 @@ no-auto-default=*
 	    interfaces cannot be preserved due to their use of external
 	    services, and these devices will be deconfigured when NetworkManager
 	    quits even though other interface's configuration may be preserved.
-	    The default value is <literal>false</literal>, meaning that
-	    NetworkManager will continue running after initial network
-	    configuration and continue responding to system and hardware events,
-	    D-Bus requests, and user commands.
+	    Also, to preserve DHCP addresses the '<literal>dhcp</literal>' option
+	    must be set to '<literal>internal</literal>'. The default value of
+	    the '<literal>configure-and-quit</literal>' option is
+	    '<literal>false</literal>', meaning that NetworkManager will continue
+	    running after initial network configuration and continue responding
+	    to system and hardware events, D-Bus requests, and user commands.
 	  </para>
 	</listitem>
       </varlistentry>
