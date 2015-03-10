@@ -707,6 +707,39 @@ __nmtst_spawn_sync (const char *working_directory, char **standard_out, char **s
 
 /*******************************************************************************/
 
+inline static char *
+nmtst_file_resolve_relative_path (const char *rel, const char *cwd)
+{
+	gs_free char *cwd_free = NULL;
+
+	g_assert (rel && *rel);
+
+	if (g_path_is_absolute (rel))
+		return g_strdup (rel);
+
+	if (!cwd)
+		cwd = cwd_free = g_get_current_dir ();
+	return g_build_filename (cwd, rel, NULL);
+}
+
+inline static void
+_nmtst_assert_resolve_relative_path_equals (const char *f1, const char *f2, const char *file, int line)
+{
+	gs_free char *p1 = NULL, *p2 = NULL;
+
+	p1 = nmtst_file_resolve_relative_path (f1, NULL);
+	p2 = nmtst_file_resolve_relative_path (f2, NULL);
+	g_assert (p1 && *p1);
+
+	/* Fixme: later we might need to coalesce repeated '/', "./", and "../".
+	 * For now, it's good enough. */
+	if (g_strcmp0 (p1, p2) != 0)
+		g_error ("%s:%d : filenames don't match \"%s\" vs. \"%s\" // \"%s\" - \"%s\"", file, line, f1, f2, p1, p2);
+}
+#define nmtst_assert_resolve_relative_path_equals(f1, f2) _nmtst_assert_resolve_relative_path_equals (f1, f2, __FILE__, __LINE__);
+
+/*******************************************************************************/
+
 #ifdef __NETWORKMANAGER_PLATFORM_H__
 
 inline static NMPlatformIP6Address *
