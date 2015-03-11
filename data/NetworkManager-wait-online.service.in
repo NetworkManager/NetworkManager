@@ -10,4 +10,4 @@ Type=oneshot
 ExecStart=@bindir@/nm-online -s -q --timeout=30
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=network-online.target
