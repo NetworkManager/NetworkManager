@@ -1218,10 +1218,14 @@ _nmcli()
                         fi
                         ;;
                     sh|sho|show| \
-                    c|co|con|conn|conne|connec|connect| \
+                    c|co|con|conn|conne|connec|connect)
+                        if [[ ${#words[@]} -eq 3 ]]; then
+                            _nmcli_compl_COMMAND_nl "${words[2]}" "$(_nmcli_dev_status DEVICE)"
+                        fi
+                        ;;
                     d|di|dis|disc|disco|discon|disconn|disconne|disconnec|disconnect| \
                     de|del|dele|delet|delete)
-                        if [[ ${#words[@]} -eq 3 ]]; then
+                        if [[ ${#words[@]} -ge 3 ]]; then
                             _nmcli_compl_COMMAND_nl "${words[2]}" "$(_nmcli_dev_status DEVICE)"
                         fi
                         ;;

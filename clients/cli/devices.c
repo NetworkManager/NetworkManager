@@ -35,7 +35,8 @@
 #include "devices.h"
 
 /* define some prompts */
-#define PROMPT_INTERFACE _("Interface: ")
+#define PROMPT_INTERFACE  _("Interface: ")
+#define PROMPT_INTERFACES _("Interface(s): ")
 
 /* Available fields for 'device status' */
 static NmcOutputField nmc_fields_dev_status[] = {
@@ -270,8 +271,8 @@ usage (void)
 	              "  status\n\n"
 	              "  show [<ifname>]\n\n"
 	              "  connect <ifname>\n\n"
-	              "  disconnect <ifname>\n\n"
-	              "  delete <ifname>\n\n"
+	              "  disconnect <ifname> ...\n\n"
+	              "  delete <ifname> ...\n\n"
 	              "  wifi [list [ifname <ifname>] [bssid <BSSID>]]\n\n"
 	              "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] [ifname <ifname>]\n"
 	              "                         [bssid <BSSID>] [name <name>] [private yes|no]\n\n"
@@ -325,9 +326,9 @@ usage_device_disconnect (void)
 {
 	g_printerr (_("Usage: nmcli device disconnect { ARGUMENTS | help }\n"
 	              "\n"
-	              "ARGUMENTS := <ifname>\n"
+	              "ARGUMENTS := <ifname> ...\n"
 	              "\n"
-	              "Disconnect the device.\n"
+	              "Disconnect devices.\n"
 	              "The command disconnects the device and prevents it from auto-activating\n"
 	              "further connections without user/manual intervention.\n\n"));
 }
@@ -337,10 +338,10 @@ usage_device_delete (void)
 {
 	g_printerr (_("Usage: nmcli device delete { ARGUMENTS | help }\n"
 	              "\n"
-	              "ARGUMENTS := <ifname>\n"
+	              "ARGUMENTS := <ifname> ...\n"
 	              "\n"
-	              "Deletes the software device.\n"
-	              "The command removes the interface. It only works for software devices\n"
+	              "Delete the software devices.\n"
+	              "The command removes the interfaces. It only works for software devices\n"
 	              "(like bonds, bridges, etc.). Hardware devices cannot be deleted by the\n"
 	              "command.\n\n"));
 }
@@ -1638,28 +1639,85 @@ error:
 	return nmc->return_value;
 }
 
-static void
-disconnect_state_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
+typedef struct {
+	NmCli *nmc;
+	GSList *queue;
+	guint timeout_id;
+	gboolean cmd_disconnect;
+} DeviceCbInfo;
+
+static void device_cb_info_finish (DeviceCbInfo *info, NMDevice *device);
+
+static gboolean
+device_op_timeout_cb (gpointer user_data)
 {
-	NMDeviceState state;
+	DeviceCbInfo *info = user_data;
 
-	state = nm_device_get_state (device);
+	timeout_cb (info->nmc);
+	device_cb_info_finish (info, NULL);
+	return G_SOURCE_REMOVE;
+}
 
-	if (state <= NM_DEVICE_STATE_DISCONNECTED) {
-		g_signal_handlers_disconnect_by_data (device, user_data);
+static void
+device_removed_cb (NMClient *client, NMDevice *device, DeviceCbInfo *info)
+{
+	/* Success: device has been removed.
+	 * It can also happen when disconnecting a software device.
+	 */
+	if (!g_slist_find (info->queue, device))
+		return;
+
+	if (info->cmd_disconnect)
 		g_print (_("Device '%s' successfully disconnected.\n"),
 		         nm_device_get_iface (device));
-		quit ();
+	else
+		g_print (_("Device '%s' successfully removed.\n"),
+		         nm_device_get_iface (device));
+	device_cb_info_finish (info, device);
+}
+
+static void
+disconnect_state_cb (NMDevice *device, GParamSpec *pspec, DeviceCbInfo *info)
+{
+	if (!g_slist_find (info->queue, device))
+		return;
+
+	if (nm_device_get_state (device) <= NM_DEVICE_STATE_DISCONNECTED) {
+		g_print (_("Device '%s' successfully disconnected.\n"),
+		         nm_device_get_iface (device));
+		device_cb_info_finish (info, device);
 	}
 }
 
 static void
-device_removed_cb (NMClient *client, NMDevice *device, gpointer user_data)
+destroy_queue_element (gpointer data)
 {
-	/* Success: device has been removed. It happens when disconnecting a software device. */
-	g_signal_handlers_disconnect_by_data (client, user_data);
-	g_print (_("Device '%s' successfully disconnected.\n"),
-	         nm_device_get_iface (device));
+	g_signal_handlers_disconnect_matched (data, G_SIGNAL_MATCH_FUNC, 0, 0, 0,
+	                                      disconnect_state_cb, NULL);
+	g_object_unref (data);
+}
+
+static void
+device_cb_info_finish (DeviceCbInfo *info, NMDevice *device)
+{
+	if (device) {
+		GSList *elem = g_slist_find (info->queue, device);
+		if (!elem)
+			return;
+		info->queue = g_slist_delete_link (info->queue, elem);
+		destroy_queue_element (device);
+	} else {
+		g_slist_free_full (info->queue, destroy_queue_element);
+		info->queue = NULL;
+	}
+
+	if (info->queue)
+		return;
+
+	if (info->timeout_id)
+		g_source_remove (info->timeout_id);
+	g_signal_handlers_disconnect_by_func (info->nmc->client, device_removed_cb, info);
+	g_slice_free (DeviceCbInfo, info);
 	quit ();
 }
 
@@ -1667,18 +1725,20 @@ static void
 disconnect_device_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (object);
-	NmCli *nmc = (NmCli *) user_data;
+	DeviceCbInfo *info = (DeviceCbInfo *) user_data;
+	NmCli *nmc = info->nmc;
 	NMDeviceState state;
 	GError *error = NULL;
 
 	if (!nm_device_disconnect_finish (device, result, &error)) {
-		g_string_printf (nmc->return_text, _("Error: Device '%s' (%s) disconnecting failed: %s"),
-		                 nm_device_get_iface (device),
-		                 nm_object_get_path (NM_OBJECT (device)),
-		                 error->message);
+		g_string_printf (nmc->return_text, _("Error: not all devices disconnected."));
+		g_printerr (_("Error: Device '%s' (%s) disconnecting failed: %s\n"),
+		            nm_device_get_iface (device),
+		            nm_object_get_path (NM_OBJECT (device)),
+		            error->message);
 		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_DEV_DISCONNECT;
-		quit ();
+		device_cb_info_finish (info, device);
 	} else {
 		state = nm_device_get_state (device);
 
@@ -1687,16 +1747,11 @@ disconnect_device_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 			if (state <= NM_DEVICE_STATE_DISCONNECTED) {
 				if (nmc->print_output == NMC_PRINT_PRETTY)
 					nmc_terminal_erase_line ();
-				g_print (_("Device '%s' has been disconnected.\n"), nm_device_get_iface (device));
+				g_print (_("Device '%s' successfully disconnected.\n"),
+				         nm_device_get_iface (device));
 			}
-			quit ();
-		} else {
-			g_signal_connect (device, "notify::state", G_CALLBACK (disconnect_state_cb), nmc);
-			g_signal_connect (nmc->client, NM_CLIENT_DEVICE_REMOVED, G_CALLBACK (device_removed_cb), nmc);
-			/* Start timer not to loop forever if "notify::state" signal is not issued */
-			g_timeout_add_seconds (nmc->timeout, timeout_cb, nmc);
+			device_cb_info_finish (info, device);
 		}
-
 	}
 }
 
@@ -1704,9 +1759,12 @@ static NMCResultCode
 do_device_disconnect (NmCli *nmc, int argc, char **argv)
 {
 	NMDevice **devices;
-	NMDevice *device = NULL;
-	const char *ifname = NULL;
-	char *ifname_ask = NULL;
+	NMDevice *device;
+	DeviceCbInfo *info = NULL;
+	GSList *queue = NULL, *iter;
+	char **arg_arr = NULL;
+	char **arg_ptr = argv;
+	int arg_num = argc;
 	int i;
 
 	/* Set default timeout for disconnect operation. */
@@ -1714,59 +1772,78 @@ do_device_disconnect (NmCli *nmc, int argc, char **argv)
 		nmc->timeout = 10;
 
 	if (argc == 0) {
-		if (nmc->ask)
-			ifname = ifname_ask = nmc_readline (PROMPT_INTERFACE);
-
-		if (!ifname_ask) {
+		if (nmc->ask) {
+			char *line = nmc_readline (PROMPT_INTERFACES);
+			nmc_string_to_arg_array (line, NULL, FALSE, &arg_arr, &arg_num);
+			g_free (line);
+			arg_ptr = arg_arr;
+		}
+		if (arg_num == 0) {
 			g_string_printf (nmc->return_text, _("Error: No interface specified."));
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 			goto error;
 		}
-	} else {
-		ifname = *argv;
-	}
-
-	if (!ifname) {
-		g_string_printf (nmc->return_text, _("Error: No interface specified."));
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		goto error;
-	}
-
-	if (next_arg (&argc, &argv) == 0) {
-		g_string_printf (nmc->return_text, _("Error: extra argument not allowed: '%s'."), *argv);
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		goto error;
 	}
 
 	devices = get_devices_sorted (nmc->client);
-	for (i = 0; devices[i]; i++) {
-		NMDevice *candidate = devices[i];
-		const char *dev_iface = nm_device_get_iface (candidate);
+	while (arg_num > 0) {
+		device = NULL;
+		for (i = 0; devices[i]; i++) {
+			if (!g_strcmp0 (nm_device_get_iface (devices[i]), *arg_ptr)) {
+				device = devices[i];
+				break;
+			}
+		}
 
-		if (!g_strcmp0 (dev_iface, ifname))
-			device = candidate;
+		if (device) {
+			if (!g_slist_find (queue, device))
+				queue = g_slist_prepend (queue, device);
+			else
+				g_printerr (_("Warning: argument '%s' is duplicated.\n"), *arg_ptr);
+		} else {
+			g_printerr (_("Error: Device '%s' not found.\n"), *arg_ptr);
+			g_string_printf (nmc->return_text, _("Error: not all devices found."));
+			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
+		}
+
+		/* Take next argument */
+		next_arg (&arg_num, &arg_ptr);
 	}
 	g_free (devices);
 
-	if (!device) {
-		g_string_printf (nmc->return_text, _("Error: Device '%s' not found."), ifname);
+	if (!queue) {
+		g_string_printf (nmc->return_text, _("Error: no valid device provided."));
 		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
 		goto error;
 	}
+	queue = g_slist_reverse (queue);
 
-	/*
-	 * Use nowait_flag instead of should_wait, because exiting has to be postponed
-	 * till disconnect_device_cb() is called, giving NM time to check our permissions.
-	 */
+	info = g_slice_new0 (DeviceCbInfo);
+	info->nmc = nmc;
+	info->cmd_disconnect = TRUE;
+	if (nmc->timeout > 0)
+		info->timeout_id = g_timeout_add_seconds (nmc->timeout, device_op_timeout_cb, info);
+
+	g_signal_connect (nmc->client, NM_CLIENT_DEVICE_REMOVED,
+	                  G_CALLBACK (device_removed_cb), info);
+
 	nmc->nowait_flag = (nmc->timeout == 0);
 	nmc->should_wait = TRUE;
-	nm_device_disconnect_async (device, NULL, disconnect_device_cb, nmc);
 
-	/* Start progress indication */
-	if (nmc->print_output == NMC_PRINT_PRETTY)
-		progress_id = g_timeout_add (120, progress_cb, device);
+	for (iter = queue; iter; iter = g_slist_next (iter)) {
+		device = iter->data;
+
+		info->queue = g_slist_prepend (info->queue, g_object_ref (device));
+		g_signal_connect (device, "notify::" NM_DEVICE_STATE,
+		                  G_CALLBACK (disconnect_state_cb), info);
+
+		/* Now disconnect the device */
+		nm_device_disconnect_async (device, NULL, disconnect_device_cb, info);
+	}
 
 error:
+	g_strfreev (arg_arr);
+	g_slist_free (queue);
 	return nmc->return_value;
 }
 
@@ -1774,27 +1851,35 @@ static void
 delete_device_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (object);
-	NmCli *nmc = (NmCli *) user_data;
+	DeviceCbInfo *info = (DeviceCbInfo *) user_data;
+	NmCli *nmc = info->nmc;
 	GError *error = NULL;
 
 	if (!nm_device_delete_finish (device, result, &error)) {
-		g_string_printf (nmc->return_text, _("Error: Device '%s' (%s) deletion failed: %s"),
-		                 nm_device_get_iface (device),
-		                 nm_object_get_path (NM_OBJECT (device)),
-		                 error->message);
+		g_string_printf (nmc->return_text, _("Error: not all devices deleted."));
+		g_printerr (_("Error: Device '%s' (%s) deletion failed: %s\n"),
+		            nm_device_get_iface (device),
+		            nm_object_get_path (NM_OBJECT (device)),
+		            error->message);
 		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		device_cb_info_finish (info, device);
+	} else {
+		if (nmc->nowait_flag)
+			device_cb_info_finish (info, device);
 	}
-	quit ();
 }
 
 static NMCResultCode
 do_device_delete (NmCli *nmc, int argc, char **argv)
 {
 	NMDevice **devices;
-	NMDevice *device = NULL;
-	const char *ifname = NULL;
-	char *ifname_ask = NULL;
+	NMDevice *device;
+	DeviceCbInfo *info = NULL;
+	GSList *queue = NULL, *iter;
+	char **arg_arr = NULL;
+	char **arg_ptr = argv;
+	int arg_num = argc;
 	int i;
 
 	/* Set default timeout for delete operation. */
@@ -1802,64 +1887,82 @@ do_device_delete (NmCli *nmc, int argc, char **argv)
 		nmc->timeout = 10;
 
 	if (argc == 0) {
-		if (nmc->ask)
-			ifname = ifname_ask = nmc_readline (PROMPT_INTERFACE);
-
-		if (!ifname_ask) {
+		if (nmc->ask) {
+			char *line = nmc_readline (PROMPT_INTERFACES);
+			nmc_string_to_arg_array (line, NULL, FALSE, &arg_arr, &arg_num);
+			g_free (line);
+			arg_ptr = arg_arr;
+		}
+		if (arg_num == 0) {
 			g_string_printf (nmc->return_text, _("Error: No interface specified."));
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 			goto error;
 		}
-	} else
-		ifname = *argv;
-
-	if (!ifname) {
-		g_string_printf (nmc->return_text, _("Error: No interface specified."));
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		goto error;
-	}
-
-	if (next_arg (&argc, &argv) == 0) {
-		g_string_printf (nmc->return_text, _("Error: extra argument not allowed: '%s'."), *argv);
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		goto error;
 	}
 
 	devices = get_devices_sorted (nmc->client);
-	for (i = 0; devices[i]; i++) {
-		NMDevice *candidate = devices[i];
-		const char *dev_iface = nm_device_get_iface (candidate);
+	while (arg_num > 0) {
+		device = NULL;
+		for (i = 0; devices[i]; i++) {
+			if (!g_strcmp0 (nm_device_get_iface (devices[i]), *arg_ptr)) {
+				device = devices[i];
+				break;
+			}
+		}
 
-		if (!g_strcmp0 (dev_iface, ifname))
-			device = candidate;
+		if (device) {
+			if (!g_slist_find (queue, device)) {
+				if (nm_device_is_software (device))
+					queue = g_slist_prepend (queue, device);
+				else {
+					g_printerr (_("Error: Device '%s' is a hardware device. It can't be deleted.\n"),
+					            *arg_ptr);
+					g_string_printf (nmc->return_text, _("Error: not all devices valid."));
+					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				}
+			} else
+				g_printerr (_("Warning: argument '%s' is duplicated.\n"), *arg_ptr);
+		} else {
+			g_printerr (_("Error: Device '%s' not found.\n"), *arg_ptr);
+			g_string_printf (nmc->return_text, _("Error: not all devices found."));
+			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
+		}
+
+		/* Take next argument */
+		next_arg (&arg_num, &arg_ptr);
 	}
 	g_free (devices);
 
-	if (!device) {
-		g_string_printf (nmc->return_text, _("Error: Device '%s' not found."), ifname);
+	if (!queue) {
+		g_string_printf (nmc->return_text, _("Error: no valid device provided."));
 		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
 		goto error;
 	}
+	queue = g_slist_reverse (queue);
 
-	if (!nm_device_is_software (device)) {
-		g_string_printf (nmc->return_text, _("Error: Device '%s' is a hardware device. It can't be deleted."), ifname);
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		goto error;
-	}
+	info = g_slice_new0 (DeviceCbInfo);
+	info->nmc = nmc;
+	if (nmc->timeout > 0)
+		info->timeout_id = g_timeout_add_seconds (nmc->timeout, device_op_timeout_cb, info);
 
-	/*
-	 * Use nowait_flag instead of should_wait, because exiting has to be postponed
-	 * till delete_device_cb() is called, giving NM time to check our permissions.
-	 */
+	g_signal_connect (nmc->client, NM_CLIENT_DEVICE_REMOVED,
+	                  G_CALLBACK (device_removed_cb), info);
+
 	nmc->nowait_flag = (nmc->timeout == 0);
 	nmc->should_wait = TRUE;
-	nm_device_delete_async (device, NULL, delete_device_cb, nmc);
 
-	/* Start progress indication */
-	if (nmc->print_output == NMC_PRINT_PRETTY)
-		progress_id = g_timeout_add (120, progress_cb, device);
+	for (iter = queue; iter; iter = g_slist_next (iter)) {
+		device = iter->data;
+
+		info->queue = g_slist_prepend (info->queue, g_object_ref (device));
+
+		/* Now delete the device */
+		nm_device_delete_async (device, NULL, delete_device_cb, info);
+	}
 
 error:
+	g_strfreev (arg_arr);
+	g_slist_free (queue);
 	return nmc->return_value;
 }
 
@@ -2789,7 +2892,7 @@ extern NmCli nm_cli;
 static char *
 gen_func_ifnames (const char *text, int state)
 {
-	int i, j = 0;
+	int i;
 	const GPtrArray *devices;
 	const char **ifnames;
 	char *ret;
@@ -2803,9 +2906,9 @@ gen_func_ifnames (const char *text, int state)
 	for (i = 0; i < devices->len; i++) {
 		NMDevice *dev = g_ptr_array_index (devices, i);
 		const char *ifname = nm_device_get_iface (dev);
-		ifnames[j++] = ifname;
+		ifnames[i] = ifname;
 	}
-	ifnames[j] = NULL;
+	ifnames[i] = NULL;
 
 	ret = nmc_rl_gen_func_basic (text, state, ifnames);
 
@@ -2822,14 +2925,17 @@ nmcli_device_tab_completion (const char *text, int start, int end)
 	/* Disable readline's default filename completion */
 	rl_attempted_completion_over = 1;
 
-	/* Disable appending space after completion */
-	rl_completion_append_character = '\0';
+	if (g_strcmp0 (rl_prompt, PROMPT_INTERFACE) == 0) {
+		/* Disable appending space after completion */
+		rl_completion_append_character = '\0';
 
-	if (!is_single_word (rl_line_buffer))
-		return NULL;
+		if (!is_single_word (rl_line_buffer))
+			return NULL;
 
-	if (g_strcmp0 (rl_prompt, PROMPT_INTERFACE) == 0)
 		generator_func = gen_func_ifnames;
+	} else if (g_strcmp0 (rl_prompt, PROMPT_INTERFACES) == 0) {
+		generator_func = gen_func_ifnames;
+	}
 
 	if (generator_func)
 		match_array = rl_completion_matches (text, generator_func);

@@ -734,14 +734,15 @@ will be activated. It will also consider connections that are not set to auto co
 .br
 If '--wait' option is not specified, the default timeout will be 90 seconds.
 .TP
-.B disconnect <ifname>
+.B disconnect <ifname> ...
 .br
 Disconnect a device and prevent the device from automatically activating further
-connections without user/manual intervention.
+connections without user/manual intervention. Note that disconnecting software
+devices may mean that the devices will disappear.
 .br
 If '--wait' option is not specified, the default timeout will be 10 seconds.
 .TP
-.B delete <ifname>
+.B delete <ifname> ...
 .br
 Delete a device. The command removes the interface from the system. Note that
 this only works for software devices like bonds, bridges, teams, etc.
