@@ -7,6 +7,22 @@ die() {
 	exit 1
 }
 
+containsElement () {
+    local e
+    local name="$1"
+    shift
+    local i=0
+
+    for e in "${@:2}"; do
+        if [[ "$e" == "$1" ]]; then
+            eval "$name=$i"
+            return 0;
+        fi
+        i=$((i+1))
+    done
+    return 1
+}
+
 srcdir="$(readlink -f "$(git rev-parse --show-toplevel 2>/dev/null)")"
 [[ "x$srcdir" != x ]] || die "Could not detect dist-git directory (are you inside the git working directory?)"
 cd "$srcdir" || die "Could not switch to dist-git directory"
@@ -369,6 +385,14 @@ EOF
 
         # parse the list of patches
         IFS=$'\n' read -rd '' -a PATCH_LIST <<<"$(sed -n 's/^Patch\([0-9]\+\): \+\(.*\)$/\1 \2/p' ../"$SPEC" | sort -n)"
+
+        if [[ "$BUILD_TYPE" == "NetworkManager" ]]; then
+            if containsElement idx "69 rh558983-bridging.patch" "${PATCH_LIST[@]}"; then
+                # for rhel-6, NetworkManager contains some patches that break the script. In this
+                # case, truncate the list of what we would normally revert.
+                PATCH_LIST=("${PATCH_LIST[@]:$((idx+1))}")
+            fi
+        fi
 
         # truncate the list of patches to revert/reapply
         if [[ "$REVERT_COUNT" == "" || "$REVERT_COUNT" -gt ${#PATCH_LIST[@]} ]]; then
