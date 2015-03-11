@@ -65,6 +65,7 @@
 #define NM_DEFAULT_SYSTEM_STATE_FILE NMSTATEDIR "/NetworkManager.state"
 
 static GMainLoop *main_loop = NULL;
+static gboolean configure_and_quit = FALSE;
 
 static gboolean
 parse_state_file (const char *filename,
@@ -193,6 +194,7 @@ manager_configure_quit (NMManager *manager, gpointer user_data)
 {
 	nm_log_info (LOGD_CORE, "quitting now that startup is complete");
 	g_main_loop_quit (main_loop);
+	configure_and_quit = TRUE;
 }
 
 /*
@@ -457,7 +459,8 @@ main (int argc, char *argv[])
 
 	success = TRUE;
 
-	g_main_loop_run (main_loop);
+	if (configure_and_quit == FALSE)
+		g_main_loop_run (main_loop);
 
 	nm_manager_stop (manager);
 
