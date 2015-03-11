@@ -34,10 +34,28 @@ device_states = { 0: "Unknown",
                  110: "Deactivating",
                  120: "Failed" }
 
+connectivity_states = { 0: "Unknown",
+                        1: "Activating",
+                        2: "Activated",
+                        3: "Deactivating",
+                        4: "Deactivated" }
+
+nm_state = { 0: "Unknown",
+            10: "Asleep",
+            20: "Disconnected",
+            30: "Disconnecting",
+            40: "Connecting",
+            50: "Connected-Local",
+            60: "Connected-Site",
+            70: "Connected-Global" }
+
 bus = dbus.SystemBus()
 
 proxy = bus.get_object("org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager")
 manager = dbus.Interface(proxy, "org.freedesktop.NetworkManager")
+
+# Get overall NM connection state
+print("NetworkManager state is: '%s'" % nm_state[manager.state()])
 
 # Get device-specific state
 devices = manager.GetDevices()
@@ -73,9 +91,4 @@ for a in active:
     con_details = con_iface.GetSettings()
     con_name = con_details['connection']['id']
 
-    if state == 2:   # activated
-        print "Connection '%s' is activated" % con_name
-    else:
-        print "Connection '%s' is activating" % con_name
-
-
+    print "Connection '%s' is %s" % (con_name, connectivity_states[state].lower())
