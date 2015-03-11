@@ -69,6 +69,7 @@
 #define NM_DEFAULT_SYSTEM_STATE_FILE NMSTATEDIR "/NetworkManager.state"
 
 static GMainLoop *main_loop = NULL;
+static gboolean quit_early = FALSE;
 
 static gboolean
 parse_state_file (const char *filename,
@@ -184,6 +185,7 @@ manager_configure_quit (NMManager *manager, gpointer user_data)
 {
 	nm_log_info (LOGD_CORE, "quitting now that startup is complete");
 	g_main_loop_quit (main_loop);
+	quit_early = TRUE;
 }
 
 /*
@@ -215,7 +217,6 @@ main (int argc, char *argv[])
 	GError *error = NULL;
 	gboolean wrote_pidfile = FALSE;
 	char *bad_domains = NULL;
-	gboolean quit_early = FALSE;
 
 	GOptionEntry options[] = {
 		{ "version", 'V', 0, G_OPTION_ARG_NONE, &show_version, N_("Print NetworkManager version and exit"), NULL },
