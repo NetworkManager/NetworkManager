@@ -49,7 +49,8 @@
 #define PROMPT_BOND_MASTER _("Bond master: ")
 #define PROMPT_TEAM_MASTER _("Team master: ")
 #define PROMPT_BRIDGE_MASTER _("Bridge master: ")
-#define PROMPT_CONNECTION _("Connection (name, UUID, or path): ")
+#define PROMPT_CONNECTION  _("Connection (name, UUID, or path): ")
+#define PROMPT_CONNECTIONS _("Connection(s) (name, UUID, or path): ")
 
 static const char *nmc_known_vpns[] =
 	{ "openvpn", "vpnc", "pptp", "openconnect", "openswan", "libreswan",
@@ -2333,8 +2334,8 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 
 	if (argc == 0) {
 		if (nmc->ask) {
-			line = nmc_readline (PROMPT_CONNECTION);
-			nmc_string_to_arg_array (line, "", TRUE, &arg_arr, &arg_num);
+			line = nmc_readline (PROMPT_CONNECTIONS);
+			nmc_string_to_arg_array (line, NULL, TRUE, &arg_arr, &arg_num);
 			g_free (line);
 			arg_ptr = arg_arr;
 		}
@@ -8833,8 +8834,8 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 
 	if (argc == 0) {
 		if (nmc->ask) {
-			char *line = nmc_readline (PROMPT_CONNECTION);
-			nmc_string_to_arg_array (line, "", TRUE, &arg_arr, &arg_num);
+			char *line = nmc_readline (PROMPT_CONNECTIONS);
+			nmc_string_to_arg_array (line, NULL, TRUE, &arg_arr, &arg_num);
 			g_free (line);
 			arg_ptr = arg_arr;
 		}
@@ -9027,7 +9028,7 @@ gen_func_connection_names (const char *text, int state)
 	for (i = 0; i < nm_cli.connections->len; i++) {
 		NMConnection *con = NM_CONNECTION (nm_cli.connections->pdata[i]);
 		const char *id = nm_connection_get_id (con);
-		connections[i++] = id;
+		connections[i] = id;
 	}
 	connections[i] = NULL;
 
@@ -9046,14 +9047,17 @@ nmcli_con_tab_completion (const char *text, int start, int end)
 	/* Disable readline's default filename completion */
 	rl_attempted_completion_over = 1;
 
-	/* Disable appending space after completion */
-	rl_completion_append_character = '\0';
+	if (g_strcmp0 (rl_prompt, PROMPT_CONNECTION) == 0) {
+		/* Disable appending space after completion */
+		rl_completion_append_character = '\0';
 
-	if (!is_single_word (rl_line_buffer))
-		return NULL;
+		if (!is_single_word (rl_line_buffer))
+			return NULL;
 
-	if (g_strcmp0 (rl_prompt, PROMPT_CONNECTION) == 0)
 		generator_func = gen_func_connection_names;
+	} else if (g_strcmp0 (rl_prompt, PROMPT_CONNECTIONS) == 0) {
+		generator_func = gen_func_connection_names;
+	}
 
 	if (generator_func)
 		match_array = rl_completion_matches (text, generator_func);
