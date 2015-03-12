@@ -7602,7 +7602,7 @@ nm_device_spawn_iface_helper (NMDevice *self)
 		}
 
 		hostname = nm_dhcp_client_get_hostname (priv->dhcp4_client);
-		if (client_id) {
+		if (hostname) {
 			g_ptr_array_add (argv, g_strdup ("--dhcp4-hostname"));
 			g_ptr_array_add (argv, g_strdup (hostname));
 		}
