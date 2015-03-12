@@ -170,6 +170,8 @@ nm_route_manager_ip4_route_sync (NMRouteManager *self, int ifindex, const GArray
 		}
 	}
 
+	g_array_unref (plat_routes);
+
 	if (!known_routes)
 		return TRUE;
 
@@ -291,6 +293,8 @@ nm_route_manager_ip6_route_sync (NMRouteManager *self, int ifindex, const GArray
 			                              route.metric);
 		}
 	}
+
+	g_array_unref (plat_routes);
 
 	if (!known_routes)
 		return TRUE;
