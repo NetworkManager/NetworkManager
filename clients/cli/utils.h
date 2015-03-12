@@ -69,7 +69,8 @@ void nmc_terminal_show_progress (const char *str);
 const char *nmc_term_color_sequence (NmcTermColor color);
 char *nmc_colorize (NmcTermColor color, const char * fmt, ...);
 char *nmc_get_user_input (const char *ask_str);
-int nmc_string_to_arg_array (const char *line, const char *delim, char ***argv, int *argc);
+int nmc_string_to_arg_array (const char *line, const char *delim, gboolean unquote,
+                             char ***argv, int *argc);
 const char *nmc_string_is_valid (const char *input, const char **allowed, GError **error);
 GSList *nmc_util_strv_to_slist (char **strv);
 char * nmc_util_strv_for_display (const char **strv, gboolean brackets);

@@ -454,17 +454,34 @@ nmc_get_user_input (const char *ask_str)
  * Split string in 'line' according to 'delim' to (argument) array.
  */
 int
-nmc_string_to_arg_array (const char *line, const char *delim, char ***argv, int *argc)
+nmc_string_to_arg_array (const char *line, const char *delim, gboolean unquote,
+                         char ***argv, int *argc)
 {
-	int i = 0;
 	char **arr;
 
-	arr = g_strsplit_set (line ? line : "", delim ? delim : " \t", 0);
-	while (arr && arr[i])
-		i++;
+	arr = nmc_strsplit_set (line ? line : "", delim ? delim : " \t", 0);
 
-	*argc = i;
+	if (unquote) {
+		int i = 0;
+		char *s;
+		size_t l;
+		const char *quotes = "\"'";
+
+		while (arr && arr[i]) {
+			s = arr[i];
+			l = strlen (s);
+			if (l >= 2) {
+				if (strchr (quotes, s[0]) && s[l-1] == s[0]) {
+					memmove (s, s+1, l-2);
+					s[l-2] = '\0';
+				}
+			}
+			i++;
+		}
+	}
+
 	*argv = arr;
+	*argc = g_strv_length (arr);
 
 	return 0;
 }
