@@ -5625,6 +5625,7 @@ nm_device_activate_schedule_ip4_config_result (NMDevice *self, NMIP4Config *conf
 	if (config)
 		priv->dev_ip4_config = g_object_ref (config);
 
+	nm_device_queued_ip_config_change_clear (self);
 	activation_source_schedule (self, nm_device_activate_ip4_config_commit, AF_INET);
 
 	_LOGD (LOGD_DEVICE | LOGD_IP4, "Activation: Stage 5 of 5 (IPv4 Configure Commit) scheduled...");
