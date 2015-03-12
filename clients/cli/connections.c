@@ -2472,7 +2472,7 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 	if (argc == 0) {
 		if (nmc->ask) {
 			line = nmc_readline (PROMPT_CONNECTION);
-			nmc_string_to_arg_array (line, "", &arg_arr, &arg_num);
+			nmc_string_to_arg_array (line, "", TRUE, &arg_arr, &arg_num);
 			arg_ptr = arg_arr;
 		}
 		if (arg_num == 0) {
@@ -8869,7 +8869,7 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 	if (argc == 0) {
 		if (nmc->ask) {
 			line = nmc_readline (PROMPT_CONNECTION);
-			nmc_string_to_arg_array (line, "", &arg_arr, &arg_num);
+			nmc_string_to_arg_array (line, "", TRUE, &arg_arr, &arg_num);
 			arg_ptr = arg_arr;
 		}
 		if (arg_num == 0) {
