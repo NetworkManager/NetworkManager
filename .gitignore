@@ -150,6 +150,7 @@ test-*.trs
 /libnm-core/tests/test-crypto
 /libnm-core/tests/test-settings-defaults
 /libnm-core/tests/test-general
+/libnm-core/tests/test-keyfile
 /libnm-core/tests/test-need-secrets
 /libnm-core/tests/test-secrets
 /libnm-core/tests/test-setting-8021x

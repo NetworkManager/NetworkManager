@@ -397,13 +397,13 @@ connection_setting_add (const GPtrArray *block,
 	                      prefix ? prefix : "",
 	                      iface);
 
-	uuid = nm_utils_uuid_generate_from_strings ("ibft",
-	                                            s_hwaddr,
-	                                            s_vlanid ? "V" : "v",
-	                                            s_vlanid ? s_vlanid : "",
-	                                            s_ip4addr ? "A" : "DHCP",
-	                                            s_ip4addr ? s_ip4addr : "",
-	                                            NULL);
+	uuid = _nm_utils_uuid_generate_from_strings ("ibft",
+	                                             s_hwaddr,
+	                                             s_vlanid ? "V" : "v",
+	                                             s_vlanid ? s_vlanid : "",
+	                                             s_ip4addr ? "A" : "DHCP",
+	                                             s_ip4addr ? s_ip4addr : "",
+	                                             NULL);
 
 	s_con = nm_setting_connection_new ();
 	g_object_set (s_con,

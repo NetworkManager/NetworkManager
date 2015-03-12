@@ -2042,6 +2042,8 @@ nm_utils_ip_routes_from_variant (GVariant *value,
 	return routes;
 }
 
+/**********************************************************************************************/
+
 /**
  * nm_utils_uuid_generate:
  *
@@ -2113,6 +2115,50 @@ nm_utils_uuid_generate_from_string (const char *s, gssize slen, int uuid_type, g
 
 	return buf;
 }
+
+/**
+ * _nm_utils_uuid_generate_from_strings:
+ * @string1: a variadic list of strings. Must be NULL terminated.
+ *
+ * Returns a variant3 UUID based on the concatenated C strings.
+ * It does not simply concatenate them, but also includes the
+ * terminating '\0' character. For example "a", "b", gives
+ * "a\0b\0".
+ *
+ * This has the advantage, that the following invocations
+ * all give different UUIDs: (NULL), (""), ("",""), ("","a"), ("a",""),
+ * ("aa"), ("aa", ""), ("", "aa"), ...
+ */
+char *
+_nm_utils_uuid_generate_from_strings (const char *string1, ...)
+{
+	GString *str;
+	va_list args;
+	const char *s;
+	char *uuid;
+
+	if (!string1)
+		return nm_utils_uuid_generate_from_string (NULL, 0, NM_UTILS_UUID_TYPE_VARIANT3, NM_UTILS_UUID_NS);
+
+	str = g_string_sized_new (120); /* effectively allocates power of 2 (128)*/
+
+	g_string_append_len (str, string1, strlen (string1) + 1);
+
+	va_start (args, string1);
+	s = va_arg (args, const char *);
+	while (s) {
+		g_string_append_len (str, s, strlen (s) + 1);
+		s = va_arg (args, const char *);
+	}
+	va_end (args);
+
+	uuid = nm_utils_uuid_generate_from_string (str->str, str->len, NM_UTILS_UUID_TYPE_VARIANT3, NM_UTILS_UUID_NS);
+
+	g_string_free (str, TRUE);
+	return uuid;
+}
+
+/**********************************************************************************************/
 
 /**
  * nm_utils_rsa_key_encrypt:

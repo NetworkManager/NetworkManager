@@ -100,33 +100,33 @@ test_read_valid_wired_connection (void)
 	const char *expected6_dnssearch3 = "gnu.org";
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*ipv4.addresses1*semicolon at the end*");
+	                       "*ipv4.addresses:*semicolon at the end*addresses1*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*ipv4.addresses2*semicolon at the end*");
+	                       "*ipv4.addresses:*semicolon at the end*addresses2*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
-	                       "*Missing prefix length*ipv4.address4*");
+	                       "*missing prefix length*address4*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
-	                       "*Missing prefix length*ipv4.address5*");
+	                       "*missing prefix length*address5*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*ipv4.routes2*semicolon at the end*");
+	                       "*ipv4.routes*semicolon at the end*routes2*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*ipv4.routes3*semicolon at the end*");
+	                       "*ipv4.routes*semicolon at the end*routes3*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*ipv4.routes5*semicolon at the end*");
+	                       "*ipv4.routes*semicolon at the end*routes5*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*ipv4.routes8*semicolon at the end*");
+	                       "*ipv4.routes*semicolon at the end*routes8*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
-	                       "*Missing prefix length*ipv6.address4*");
+	                       "*missing prefix length*address4*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*ipv6.address5*semicolon at the end*");
+	                       "*ipv6.address*semicolon at the end*address5*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
-	                       "*Missing prefix length*ipv6.address5*");
+	                       "*missing prefix length*address5*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*ipv6.address7*semicolon at the end*");
+	                       "*ipv6.address*semicolon at the end*address7*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*ipv6.routes1*semicolon at the end*");
+	                       "*ipv6.routes*semicolon at the end*routes1*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*ipv6.route6*semicolon at the end*");
+	                       "*ipv6.route*semicolon at the end*route6*");
 	connection = nm_keyfile_plugin_connection_from_file (TEST_WIRED_FILE, NULL);
 	g_test_assert_expected_messages ();
 	ASSERT (connection != NULL,
@@ -773,11 +773,11 @@ test_read_wired_mac_case (void)
 	const char *expected_uuid = "4e80a56d-c99f-4aad-a6dd-b449bc398c57";
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*ipv4.addresses1*semicolon at the end*");
+	                       "*ipv4.addresses*semicolon at the end*addresses1*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*ipv4.addresses2*semicolon at the end*");
+	                       "*ipv4.addresses*semicolon at the end*addresses2*");
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*ipv6.routes1*semicolon at the end*");
+	                       "*ipv6.routes*semicolon at the end*routes1*");
 	connection = nm_keyfile_plugin_connection_from_file (TEST_WIRED_MAC_CASE_FILE, NULL);
 	g_test_assert_expected_messages ();
 	ASSERT (connection != NULL,
@@ -2127,6 +2127,10 @@ test_read_wired_8021x_tls_blob_connection (void)
 	gboolean success;
 	GBytes *blob;
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*<warn>  keyfile: 802-1x.client-cert: certificate or key file '/CASA/dcbw/Desktop/certinfra/client.pem' does not exist*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*<warn>  keyfile: 802-1x.private-key: certificate or key file '/CASA/dcbw/Desktop/certinfra/client.pem' does not exist*");
 	connection = nm_keyfile_plugin_connection_from_file (TEST_WIRED_TLS_BLOB_FILE, &error);
 	if (connection == NULL) {
 		g_assert (error);
@@ -2174,10 +2178,10 @@ test_read_wired_8021x_tls_blob_connection (void)
 	g_assert_cmpint (g_bytes_get_size (blob), ==, 568);
 
 	tmp = nm_setting_802_1x_get_client_cert_path (s_8021x);
-	g_assert_cmpstr (tmp, ==, "/home/dcbw/Desktop/certinfra/client.pem");
+	g_assert_cmpstr (tmp, ==, "/CASA/dcbw/Desktop/certinfra/client.pem");
 
 	tmp = nm_setting_802_1x_get_private_key_path (s_8021x);
-	g_assert_cmpstr (tmp, ==, "/home/dcbw/Desktop/certinfra/client.pem");
+	g_assert_cmpstr (tmp, ==, "/CASA/dcbw/Desktop/certinfra/client.pem");
 
 	g_object_unref (connection);
 }
@@ -2259,6 +2263,12 @@ test_read_wired_8021x_tls_old_connection (void)
 	const char *tmp;
 	gboolean success;
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*<warn>  keyfile: 802-1x.ca-cert: certificate or key file '/CASA/dcbw/Desktop/certinfra/CA/eaptest_ca_cert.pem' does not exist*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*<warn>  keyfile: 802-1x.client-cert: certificate or key file '/CASA/dcbw/Desktop/certinfra/client.pem' does not exist*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*<warn>  keyfile: 802-1x.private-key: certificate or key file '/CASA/dcbw/Desktop/certinfra/client.pem' does not exist*");
 	connection = nm_keyfile_plugin_connection_from_file (TEST_WIRED_TLS_OLD_FILE, &error);
 	if (connection == NULL) {
 		g_assert (error);
@@ -2292,13 +2302,13 @@ test_read_wired_8021x_tls_old_connection (void)
 	g_assert (g_strcmp0 (tmp, "12345testing") == 0);
 
 	tmp = nm_setting_802_1x_get_ca_cert_path (s_8021x);
-	g_assert (g_strcmp0 (tmp, "/home/dcbw/Desktop/certinfra/CA/eaptest_ca_cert.pem") == 0);
+	g_assert (g_strcmp0 (tmp, "/CASA/dcbw/Desktop/certinfra/CA/eaptest_ca_cert.pem") == 0);
 
 	tmp = nm_setting_802_1x_get_client_cert_path (s_8021x);
-	g_assert (g_strcmp0 (tmp, "/home/dcbw/Desktop/certinfra/client.pem") == 0);
+	g_assert (g_strcmp0 (tmp, "/CASA/dcbw/Desktop/certinfra/client.pem") == 0);
 
 	tmp = nm_setting_802_1x_get_private_key_path (s_8021x);
-	g_assert (g_strcmp0 (tmp, "/home/dcbw/Desktop/certinfra/client.pem") == 0);
+	g_assert (g_strcmp0 (tmp, "/CASA/dcbw/Desktop/certinfra/client.pem") == 0);
 
 	g_object_unref (connection);
 }

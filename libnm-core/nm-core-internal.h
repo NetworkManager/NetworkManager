@@ -128,6 +128,10 @@ char **     _nm_utils_strsplit_set (const char *str,
 
 char *nm_utils_uuid_generate_from_string (const char *s, gssize slen, int uuid_type, gpointer type_args);
 
+#define NM_UTILS_UUID_NS "b425e9fb-7598-44b4-9e3b-5a2e3aaa4905"
+
+char *_nm_utils_uuid_generate_from_strings (const char *string1, ...) G_GNUC_NULL_TERMINATED;
+
 void _nm_dbus_errors_init (void);
 
 extern gboolean _nm_utils_is_manager_process;

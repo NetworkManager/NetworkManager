@@ -31,6 +31,8 @@
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
 #include "nm-core-enum-types.h"
+#include "nm-macros-internal.h"
+#include "gsystem-local-alloc.h"
 
 /**
  * SECTION:nm-setting-8021x
@@ -59,8 +61,6 @@
  *       Authors: Krishna Sankar, Sri Sundaralingam, Darrin Miller, and Andrew Balinsky
  *       ISBN: 978-1587051548
  **/
-
-#define SCHEME_PATH "file://"
 
 G_DEFINE_TYPE_WITH_CODE (NMSetting8021x, nm_setting_802_1x, NM_TYPE_SETTING,
                          _nm_register_setting (802_1X, 2))
@@ -400,23 +400,118 @@ nm_setting_802_1x_get_system_ca_certs (NMSetting8021x *setting)
 }
 
 static NMSetting8021xCKScheme
-get_cert_scheme (GBytes *bytes)
+get_cert_scheme (GBytes *bytes, GError **error)
 {
-	gconstpointer data;
+	const char *data;
 	gsize length;
 
-	if (!bytes)
+	if (!bytes) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("data missing"));
 		return NM_SETTING_802_1X_CK_SCHEME_UNKNOWN;
+	}
 
 	data = g_bytes_get_data (bytes, &length);
-	if (!length)
-		return NM_SETTING_802_1X_CK_SCHEME_UNKNOWN;
+	return nm_setting_802_1x_check_cert_scheme (data, length, error);
+}
 
-	if (   (length > strlen (SCHEME_PATH))
-	    && !memcmp (data, SCHEME_PATH, strlen (SCHEME_PATH)))
+/**
+ * nm_setting_802_1x_check_cert_scheme:
+ * @pdata: (allow-none): the data pointer
+ * @length: the length of the data
+ * @error: (allow-none): (out): validation reason
+ *
+ * Determines and verifies the blob type.
+ * When setting certificate properties of NMSetting8021x
+ * the blob must be not UNKNOWN (or NULL).
+ *
+ * Returns: the scheme of the blob or %NM_SETTING_802_1X_CK_SCHEME_UNKNOWN.
+ * For NULL it also returns NM_SETTING_802_1X_CK_SCHEME_UNKNOWN.
+ **/
+NMSetting8021xCKScheme
+nm_setting_802_1x_check_cert_scheme (gconstpointer pdata, gsize length, GError **error)
+{
+	const char *data = pdata;
+
+	g_return_val_if_fail (!length || data, NM_SETTING_802_1X_CK_SCHEME_UNKNOWN);
+
+	if (!length || !data) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("binary data missing"));
+		return NM_SETTING_802_1X_CK_SCHEME_UNKNOWN;
+	}
+
+	/* interpret the blob as PATH if it starts with "file://". */
+	if (   length >= STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH)
+	    && !memcmp (data, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH))) {
+		/* But it must also be NUL terminated, contain at least
+		 * one non-NUL character, and contain only one trailing NUL
+		 * chracter.
+		 * And ensure it's UTF-8 valid too so we can pass it through
+		 * D-Bus and stuff like that. */
+
+		if (data[length - 1] != '\0') {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("file:// URI not NUL terminated"));
+			return NM_SETTING_802_1X_CK_SCHEME_UNKNOWN;
+		}
+		length--;
+
+		if (length <= STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH)) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("file:// URI is empty"));
+			return NM_SETTING_802_1X_CK_SCHEME_UNKNOWN;
+		}
+
+		if (!g_utf8_validate (data + STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH), length - STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH), NULL)) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("file:// URI is not valid UTF-8"));
+			return NM_SETTING_802_1X_CK_SCHEME_UNKNOWN;
+		}
+
 		return NM_SETTING_802_1X_CK_SCHEME_PATH;
+	}
 
 	return NM_SETTING_802_1X_CK_SCHEME_BLOB;
+}
+
+static GByteArray *
+load_and_verify_certificate (const char *cert_path,
+                             NMSetting8021xCKScheme scheme,
+                             NMCryptoFileFormat *out_file_format,
+                             GError **error)
+{
+	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+	GByteArray *array;
+
+	array = crypto_load_and_verify_certificate (cert_path, &format, error);
+
+	if (!array || !array->len || format == NM_CRYPTO_FILE_FORMAT_UNKNOWN) {
+		/* the array is empty or the format is already unknown. */
+		format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+		/* If we load the file as blob, we must ensure that the binary data does not
+		 * start with file://. NMSetting8021x cannot represent blobs that start with
+		 * file://.
+		 * If that's the case, coerce the format to UNKNOWN. The callers will take care
+		 * of that and not set the blob. */
+		if (nm_setting_802_1x_check_cert_scheme (array->data, array->len, NULL) != NM_SETTING_802_1X_CK_SCHEME_BLOB)
+			format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+	}
+
+	if (out_file_format)
+		*out_file_format = format;
+	return array;
 }
 
 /**
@@ -434,7 +529,7 @@ nm_setting_802_1x_get_ca_cert_scheme (NMSetting8021x *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NM_SETTING_802_1X_CK_SCHEME_UNKNOWN);
 
-	return get_cert_scheme (NM_SETTING_802_1X_GET_PRIVATE (setting)->ca_cert);
+	return get_cert_scheme (NM_SETTING_802_1X_GET_PRIVATE (setting)->ca_cert, NULL);
 }
 
 /**
@@ -488,20 +583,23 @@ nm_setting_802_1x_get_ca_cert_path (NMSetting8021x *setting)
 	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH, NULL);
 
 	data = g_bytes_get_data (NM_SETTING_802_1X_GET_PRIVATE (setting)->ca_cert, NULL);
-	return (const char *)data + strlen (SCHEME_PATH);
+	return (const char *)data + strlen (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH);
 }
 
 static GBytes *
 path_to_scheme_value (const char *path)
 {
 	GByteArray *array;
+	gsize len;
 
-	g_return_val_if_fail (path != NULL, NULL);
+	g_return_val_if_fail (path != NULL && path[0], NULL);
 
-	/* Add the path scheme tag to the front, then the fielname */
-	array = g_byte_array_sized_new (strlen (path) + strlen (SCHEME_PATH) + 1);
-	g_byte_array_append (array, (const guint8 *) SCHEME_PATH, strlen (SCHEME_PATH));
-	g_byte_array_append (array, (const guint8 *) path, strlen (path));
+	len = strlen (path);
+
+	/* Add the path scheme tag to the front, then the filename */
+	array = g_byte_array_sized_new (len + strlen (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH) + 1);
+	g_byte_array_append (array, (const guint8 *) NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, strlen (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH));
+	g_byte_array_append (array, (const guint8 *) path, len);
 	g_byte_array_append (array, (const guint8 *) "\0", 1);
 
 	return g_byte_array_free_to_bytes (array);
@@ -558,7 +656,7 @@ nm_setting_802_1x_set_ca_cert (NMSetting8021x *setting,
 		return TRUE;
 	}
 
-	data = crypto_load_and_verify_certificate (cert_path, &format, error);
+	data = load_and_verify_certificate (cert_path, scheme, &format, error);
 	if (data) {
 		/* wpa_supplicant can only use raw x509 CA certs */
 		if (format == NM_CRYPTO_FILE_FORMAT_X509) {
@@ -766,7 +864,7 @@ nm_setting_802_1x_get_client_cert_scheme (NMSetting8021x *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NM_SETTING_802_1X_CK_SCHEME_UNKNOWN);
 
-	return get_cert_scheme (NM_SETTING_802_1X_GET_PRIVATE (setting)->client_cert);
+	return get_cert_scheme (NM_SETTING_802_1X_GET_PRIVATE (setting)->client_cert, NULL);
 }
 
 /**
@@ -814,7 +912,7 @@ nm_setting_802_1x_get_client_cert_path (NMSetting8021x *setting)
 	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH, NULL);
 
 	data = g_bytes_get_data (NM_SETTING_802_1X_GET_PRIVATE (setting)->client_cert, NULL);
-	return (const char *)data + strlen (SCHEME_PATH);
+	return (const char *)data + strlen (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH);
 }
 
 /**
@@ -872,7 +970,7 @@ nm_setting_802_1x_set_client_cert (NMSetting8021x *setting,
 		return TRUE;
 	}
 
-	data = crypto_load_and_verify_certificate (cert_path, &format, error);
+	data = load_and_verify_certificate (cert_path, scheme, &format, error);
 	if (data) {
 		gboolean valid = FALSE;
 
@@ -1029,7 +1127,7 @@ nm_setting_802_1x_get_phase2_ca_cert_scheme (NMSetting8021x *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NM_SETTING_802_1X_CK_SCHEME_UNKNOWN);
 
-	return get_cert_scheme (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_ca_cert);
+	return get_cert_scheme (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_ca_cert, NULL);
 }
 
 /**
@@ -1083,7 +1181,7 @@ nm_setting_802_1x_get_phase2_ca_cert_path (NMSetting8021x *setting)
 	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH, NULL);
 
 	data = g_bytes_get_data (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_ca_cert, NULL);
-	return (const char *)data + strlen (SCHEME_PATH);
+	return (const char *)data + strlen (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH);
 }
 
 /**
@@ -1137,7 +1235,7 @@ nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *setting,
 		return TRUE;
 	}
 
-	data = crypto_load_and_verify_certificate (cert_path, &format, error);
+	data = load_and_verify_certificate (cert_path, scheme, &format, error);
 	if (data) {
 		/* wpa_supplicant can only use raw x509 CA certs */
 		if (format == NM_CRYPTO_FILE_FORMAT_X509) {
@@ -1349,7 +1447,7 @@ nm_setting_802_1x_get_phase2_client_cert_scheme (NMSetting8021x *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NM_SETTING_802_1X_CK_SCHEME_UNKNOWN);
 
-	return get_cert_scheme (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_client_cert);
+	return get_cert_scheme (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_client_cert, NULL);
 }
 
 /**
@@ -1397,7 +1495,7 @@ nm_setting_802_1x_get_phase2_client_cert_path (NMSetting8021x *setting)
 	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH, NULL);
 
 	data = g_bytes_get_data (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_client_cert, NULL);
-	return (const char *)data + strlen (SCHEME_PATH);
+	return (const char *)data + strlen (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH);
 }
 
 /**
@@ -1455,7 +1553,7 @@ nm_setting_802_1x_set_phase2_client_cert (NMSetting8021x *setting,
 		return TRUE;
 	}
 
-	data = crypto_load_and_verify_certificate (cert_path, &format, error);
+	data = load_and_verify_certificate (cert_path, scheme, &format, error);
 	if (data) {
 		gboolean valid = FALSE;
 
@@ -1604,7 +1702,7 @@ nm_setting_802_1x_get_private_key_scheme (NMSetting8021x *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NM_SETTING_802_1X_CK_SCHEME_UNKNOWN);
 
-	return get_cert_scheme (NM_SETTING_802_1X_GET_PRIVATE (setting)->private_key);
+	return get_cert_scheme (NM_SETTING_802_1X_GET_PRIVATE (setting)->private_key, NULL);
 }
 
 /**
@@ -1656,7 +1754,7 @@ nm_setting_802_1x_get_private_key_path (NMSetting8021x *setting)
 	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH, NULL);
 
 	data = g_bytes_get_data (NM_SETTING_802_1X_GET_PRIVATE (setting)->private_key, NULL);
-	return (const char *)data + strlen (SCHEME_PATH);
+	return (const char *)data + strlen (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH);
 }
 
 static void
@@ -1678,7 +1776,7 @@ file_to_secure_bytes (const char *filename)
 	if (g_file_get_contents (filename, &contents, &length, NULL)) {
 		array = g_byte_array_sized_new (length);
 		g_byte_array_append (array, (guint8 *) contents, length);
-		g_assert (array->len == length);
+		memset (contents, 0, length);
 		g_free (contents);
 		return g_bytes_new_with_free_func (array->data, array->len, free_secure_bytes, array);
 	}
@@ -1790,7 +1888,8 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *setting,
 
 	priv->private_key_password = g_strdup (password);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
-		/* Shouldn't fail this since we just verified the private key above */
+		/* FIXME: potential race after verifying the private key above */
+		/* FIXME: ensure blob doesn't start with file:// */
 		priv->private_key = file_to_secure_bytes (key_path);
 		g_assert (priv->private_key);
 	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
@@ -1941,7 +2040,7 @@ nm_setting_802_1x_get_phase2_private_key_scheme (NMSetting8021x *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NM_SETTING_802_1X_CK_SCHEME_UNKNOWN);
 
-	return get_cert_scheme (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_private_key);
+	return get_cert_scheme (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_private_key, NULL);
 }
 
 /**
@@ -1993,7 +2092,7 @@ nm_setting_802_1x_get_phase2_private_key_path (NMSetting8021x *setting)
 	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH, NULL);
 
 	data = g_bytes_get_data (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_private_key, NULL);
-	return (const char *)data + strlen (SCHEME_PATH);
+	return (const char *)data + strlen (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH);
 }
 
 /**
@@ -2101,7 +2200,8 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *setting,
 
 	priv->phase2_private_key_password = g_strdup (password);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
-		/* Shouldn't fail this since we just verified the private key above */
+		/* FIXME: potential race after verifying the private key above */
+		/* FIXME: ensure blob doesn't start with file:// */
 		priv->phase2_private_key = file_to_secure_bytes (key_path);
 		g_assert (priv->phase2_private_key);
 	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
@@ -2575,35 +2675,18 @@ need_secrets (NMSetting *setting)
 static gboolean
 verify_cert (GBytes *bytes, const char *prop_name, GError **error)
 {
-	gconstpointer data;
-	gsize length;
+	GError *local = NULL;
 
-	if (!bytes)
+	if (   !bytes
+	    || get_cert_scheme (bytes, &local) != NM_SETTING_802_1X_CK_SCHEME_UNKNOWN)
 		return TRUE;
 
-	switch (get_cert_scheme (bytes)) {
-	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-		return TRUE;
-	case NM_SETTING_802_1X_CK_SCHEME_PATH:
-		/* For path-based schemes, verify that the path is zero-terminated */
-		data = g_bytes_get_data (bytes, &length);
-		if (((const guchar *)data)[length - 1] == '\0') {
-			/* And ensure it's UTF-8 valid too so we can pass it through
-			 * D-Bus and stuff like that.
-			 */
-			if (g_utf8_validate ((const char *)data + strlen (SCHEME_PATH), -1, NULL))
-				return TRUE;
-		}
-		break;
-	default:
-		break;
-	}
-
-	g_set_error_literal (error,
-	                     NM_CONNECTION_ERROR,
-	                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-	                     _("property is invalid"));
+	g_set_error (error,
+	             NM_CONNECTION_ERROR,
+	             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+	             _("certificate is invalid: %s"), local->message);
 	g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, prop_name);
+	g_error_free (local);
 	return FALSE;
 }
 

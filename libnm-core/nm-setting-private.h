@@ -155,4 +155,6 @@ gboolean _nm_setting_use_legacy_property (NMSetting *setting,
 
 GPtrArray  *_nm_setting_need_secrets (NMSetting *setting);
 
+NMSetting8021xCKScheme nm_setting_802_1x_check_cert_scheme (gconstpointer pdata, gsize length, GError **error);
+
 #endif  /* NM_SETTING_PRIVATE_H */

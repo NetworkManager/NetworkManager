@@ -2705,13 +2705,12 @@ nmc_property_connection_describe_secondaries (NMSetting *setting, const char *pr
 	static gboolean \
 	def_func (NMSetting *setting, const char *prop, const char *val, GError **error) \
 	{ \
-		const char *SCHEME_PATH = "file://"; \
 		char *val_strip = g_strstrip (g_strdup (val)); \
 		char *p = val_strip; \
 		gboolean success; \
 		\
-		if (strncmp (val_strip, SCHEME_PATH, strlen (SCHEME_PATH)) == 0) \
-			p += strlen (SCHEME_PATH); \
+		if (strncmp (val_strip, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH)) == 0) \
+			p += STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH); \
 		\
 		success = set_func (NM_SETTING_802_1X (setting), \
 		                    p, \
@@ -2727,14 +2726,13 @@ nmc_property_connection_describe_secondaries (NMSetting *setting, const char *pr
 	def_func (NMSetting *setting, const char *prop, const char *val, GError **error) \
 	{ \
 		char **strv = NULL; \
-		const char *SCHEME_PATH = "file://"; \
 		char *val_strip = g_strstrip (g_strdup (val)); \
 		char *p = val_strip; \
 		const char *path, *password; \
 		gboolean success; \
 		\
-		if (strncmp (val_strip, SCHEME_PATH, strlen (SCHEME_PATH)) == 0) \
-			p += strlen (SCHEME_PATH); \
+		if (strncmp (val_strip, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH)) == 0) \
+			p += STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH); \
 		\
 		strv = nmc_strsplit_set (p, " \t,", 2); \
 		path = strv[0]; \
