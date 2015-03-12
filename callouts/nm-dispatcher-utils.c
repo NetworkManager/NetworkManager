@@ -210,6 +210,7 @@ construct_device_dhcp4_items (GSList *items, GVariant *dhcp4_config)
 		tmp = g_variant_get_string (val, NULL);
 		items = g_slist_prepend (items, g_strdup_printf ("DHCP4_%s=%s", ucased, tmp));
 		g_free (ucased);
+		g_variant_unref (val);
 	}
 	return items;
 }
