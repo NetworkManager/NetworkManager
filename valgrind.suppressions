@@ -207,6 +207,7 @@
    fun:_g_dbus_worker_do_read_cb
    fun:g_simple_async_result_complete
    fun:complete_in_idle_cb
+   ...
    fun:g_main_context_dispatch
    ...
    fun:g_main_loop_run
