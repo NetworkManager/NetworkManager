@@ -15,6 +15,7 @@ noinst_PROGRAMS =		\
 	test-compare		\
 	test-crypto		\
 	test-general		\
+	test-keyfile		\
 	test-secrets		\
 	test-setting-8021x	\
 	test-setting-dcb	\
@@ -38,20 +39,22 @@ endif
 #	-name "test-pkcs12" \
 #	-out test-cert.p12
 
-EXTRA_DIST =                              \
-	certs/test_ca_cert.pem            \
-	certs/test_ca_cert.der            \
-	certs/test_key_and_cert.pem       \
-	certs/test-cert.p12               \
-	certs/test2_ca_cert.pem           \
-	certs/test2_key_and_cert.pem      \
-	certs/test2-cert.p12              \
-	certs/ca-no-ending-newline.pem    \
-	certs/test-key-only.pem           \
-	certs/test-key-only-decrypted.der \
-	certs/test-key-only-decrypted.pem \
-	certs/pkcs8-enc-key.pem           \
-	certs/pkcs8-noenc-key.pem         \
-	certs/pkcs8-decrypted.der         \
-	certs/test-aes-key.pem
+EXTRA_DIST =                            \
+	certs/ca-no-ending-newline.pem      \
+	certs/pkcs8-decrypted.der           \
+	certs/pkcs8-enc-key.pem             \
+	certs/pkcs8-noenc-key.pem           \
+	certs/test2_ca_cert.pem             \
+	certs/test2-cert.p12                \
+	certs/test2_key_and_cert.pem        \
+	certs/test-aes-key.pem              \
+	certs/test_ca_cert.der              \
+	certs/test_ca_cert.pem              \
+	certs/test-ca-cert.pem              \
+	certs/test-cert.p12                 \
+	certs/test_key_and_cert.pem         \
+	certs/test-key-and-cert.pem         \
+	certs/test-key-only-decrypted.der   \
+	certs/test-key-only-decrypted.pem   \
+	certs/test-key-only.pem
 

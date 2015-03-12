@@ -31,6 +31,8 @@
 
 G_BEGIN_DECLS
 
+#define NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH "file://"
+
 /**
  * NMSetting8021xCKFormat:
  * @NM_SETTING_802_1X_CK_FORMAT_UNKNOWN: unknown file format
@@ -146,6 +148,9 @@ typedef struct {
 GType nm_setting_802_1x_get_type (void);
 
 NMSetting *nm_setting_802_1x_new (void);
+
+NM_AVAILABLE_IN_1_2
+NMSetting8021xCKScheme nm_setting_802_1x_check_cert_scheme (gconstpointer pdata, gsize length, GError **error);
 
 guint32           nm_setting_802_1x_get_num_eap_methods              (NMSetting8021x *setting);
 const char *      nm_setting_802_1x_get_eap_method                   (NMSetting8021x *setting, guint32 i);

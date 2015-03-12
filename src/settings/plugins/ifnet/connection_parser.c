@@ -706,13 +706,13 @@ make_ip4_setting (NMConnection *connection,
 		GError *local = NULL;
 
 		if ((metric_str = ifnet_get_data (conn_name, "metric")) != NULL) {
-			metric = nm_utils_ascii_str_to_int64 (metric_str, 10, 0, G_MAXUINT32, -1);
+			metric = _nm_utils_ascii_str_to_int64 (metric_str, 10, 0, G_MAXUINT32, -1);
 		} else {
 			metric_str = ifnet_get_global_data ("metric");
 			if (metric_str) {
 				stripped = g_strdup (metric_str);
 				strip_string (stripped, '"');
-				metric = nm_utils_ascii_str_to_int64 (metric_str, 10, 0, G_MAXUINT32, -1);
+				metric = _nm_utils_ascii_str_to_int64 (metric_str, 10, 0, G_MAXUINT32, -1);
 				g_free (stripped);
 			} else
 				metric = -1;
@@ -846,13 +846,13 @@ make_ip6_setting (NMConnection *connection,
 		/* metric is not per routes configuration right now
 		 * global metric is also supported (metric="x") */
 		if ((metric_str = ifnet_get_data (conn_name, "metric")) != NULL)
-			metric = nm_utils_ascii_str_to_int64 (metric_str, 10, 0, G_MAXUINT32, -1);
+			metric = _nm_utils_ascii_str_to_int64 (metric_str, 10, 0, G_MAXUINT32, -1);
 		else {
 			metric_str = ifnet_get_global_data ("metric");
 			if (metric_str) {
 				stripped = g_strdup (metric_str);
 				strip_string (stripped, '"');
-				metric = nm_utils_ascii_str_to_int64 (metric_str, 10, 0, G_MAXUINT32, -1);
+				metric = _nm_utils_ascii_str_to_int64 (metric_str, 10, 0, G_MAXUINT32, -1);
 				g_free (stripped);
 			} else
 				metric = 1;
