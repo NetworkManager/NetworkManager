@@ -5527,6 +5527,18 @@ out:
 	return FALSE;
 }
 
+static void
+nm_device_queued_ip_config_change_clear (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->queued_ip_config_id) {
+		_LOGD (LOGD_DEVICE, "clearing queued IP config change");
+		g_source_remove (priv->queued_ip_config_id);
+		priv->queued_ip_config_id = 0;
+	}
+}
+
 void
 nm_device_activate_schedule_ip4_config_result (NMDevice *self, NMIP4Config *config)
 {
@@ -6995,18 +7007,6 @@ device_ip_changed (NMPlatform *platform,
 			priv->queued_ip_config_id = g_idle_add (queued_ip_config_change, self);
 			_LOGD (LOGD_DEVICE, "queued IP config change");
 		}
-	}
-}
-
-static void
-nm_device_queued_ip_config_change_clear (NMDevice *self)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	if (priv->queued_ip_config_id) {
-		_LOGD (LOGD_DEVICE, "clearing queued IP config change");
-		g_source_remove (priv->queued_ip_config_id);
-		priv->queued_ip_config_id = 0;
 	}
 }
 
