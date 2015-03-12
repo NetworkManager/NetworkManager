@@ -398,6 +398,8 @@ If <ID> is ambiguous, a keyword \fIid\fP, \fIuuid\fP, \fIpath\fP or
 \fIapath\fP can be used.
 .br
 See \fBconnection show\fP above for the description of the <ID>-specifying keywords.
+.br
+If '--wait' option is not specified, the default timeout will be 10 seconds.
 .TP
 .B add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS
 .br
@@ -686,6 +688,8 @@ its name, UUID or D-Bus path. If <ID> is ambiguous, a keyword \fIid\fP,
 \fIuuid\fP or \fIpath\fP can be used.
 .br
 See \fBconnection show\fP above for the description of the <ID>-specifying keywords.
+.br
+If '--wait' option is not specified, the default timeout will be 10 seconds.
 .TP
 .B reload
 .br

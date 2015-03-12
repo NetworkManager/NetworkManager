@@ -2240,25 +2240,26 @@ typedef struct {
 	NmCli *nmc;
 	GSList *queue;
 	guint timeout_id;
-} DeactivateConnectionInfo;
+} ConnectionCbInfo;
 
-static void deactivate_connection_info_finish (DeactivateConnectionInfo *info,
-                                               NMActiveConnection *active);
+static void connection_cb_info_finish (ConnectionCbInfo *info,
+                                       gpointer connection);
 
-static gboolean
-down_timeout_cb (gpointer user_data)
+static void
+connection_removed_cb (NMClient *client, NMConnection *connection, ConnectionCbInfo *info)
 {
-	DeactivateConnectionInfo *info = user_data;
-
-	timeout_cb (info->nmc);
-	deactivate_connection_info_finish (info, NULL);
-	return G_SOURCE_REMOVE;
+	if (!g_slist_find (info->queue, connection))
+		return;
+	g_print (_("Connection '%s' (%s) successfully deleted.\n"),
+	         nm_connection_get_id (connection),
+	         nm_connection_get_uuid (connection));
+	connection_cb_info_finish (info, connection);
 }
 
 static void
 down_active_connection_state_cb (NMActiveConnection *active,
                                  GParamSpec *pspec,
-                                 DeactivateConnectionInfo *info)
+                                 ConnectionCbInfo *info)
 {
 	if (nm_active_connection_get_state (active) < NM_ACTIVE_CONNECTION_STATE_DEACTIVATED)
 		return;
@@ -2268,7 +2269,20 @@ down_active_connection_state_cb (NMActiveConnection *active,
 	g_print (_("Connection '%s' successfully deactivated (D-Bus active path: %s)\n"),
 	         nm_active_connection_get_id (active), nm_object_get_path (NM_OBJECT (active)));
 
-	deactivate_connection_info_finish (info, active);
+	g_signal_handlers_disconnect_by_func (G_OBJECT (active),
+	                                      down_active_connection_state_cb,
+	                                      info);
+	connection_cb_info_finish (info, active);
+}
+
+static gboolean
+connection_op_timeout_cb (gpointer user_data)
+{
+	ConnectionCbInfo *info = user_data;
+
+	timeout_cb (info->nmc);
+	connection_cb_info_finish (info, NULL);
+	return G_SOURCE_REMOVE;
 }
 
 static void
@@ -2280,15 +2294,11 @@ destroy_queue_element (gpointer data)
 }
 
 static void
-deactivate_connection_info_finish (DeactivateConnectionInfo *info,
-                                   NMActiveConnection *active)
+connection_cb_info_finish (ConnectionCbInfo *info, gpointer connection)
 {
-	if (active) {
-		info->queue = g_slist_remove (info->queue, active);
-		g_signal_handlers_disconnect_by_func (active,
-		                                      down_active_connection_state_cb,
-		                                      info);
-		g_object_unref (active);
+	if (connection) {
+		info->queue = g_slist_remove (info->queue, connection);
+		g_object_unref (G_OBJECT (connection));
 	} else {
 		g_slist_free_full (info->queue, destroy_queue_element);
 		info->queue = NULL;
@@ -2299,7 +2309,8 @@ deactivate_connection_info_finish (DeactivateConnectionInfo *info,
 
 	if (info->timeout_id)
 		g_source_remove (info->timeout_id);
-	g_slice_free (DeactivateConnectionInfo, info);
+	g_signal_handlers_disconnect_by_func (info->nmc->client, connection_removed_cb, info);
+	g_slice_free (ConnectionCbInfo, info);
 	quit ();
 }
 
@@ -2307,7 +2318,7 @@ static NMCResultCode
 do_connection_down (NmCli *nmc, int argc, char **argv)
 {
 	NMActiveConnection *active;
-	DeactivateConnectionInfo *info = NULL;
+	ConnectionCbInfo *info = NULL;
 	const GPtrArray *active_cons;
 	GSList *queue = NULL, *iter;
 	char *line = NULL;
@@ -2315,6 +2326,9 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 	char **arg_ptr = argv;
 	int arg_num = argc;
 	int idx = 0;
+
+	if (nmc->timeout == -1)
+		nmc->timeout = 10;
 
 	if (argc == 0) {
 		if (nmc->ask) {
@@ -2329,9 +2343,6 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 			goto error;
 		}
 	}
-
-	if (nmc->timeout == -1)
-		nmc->timeout = 10;
 
 	/* Get active connections */
 	active_cons = nm_client_get_active_connections (nmc->client);
@@ -2352,9 +2363,13 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 		}
 
 		active = find_active_connection (active_cons, nmc->connections, selector, *arg_ptr, &idx);
-		if (active)
-			queue = g_slist_prepend (queue, active);
-		else {
+		if (active) {
+			/* Check if the connection is unique. */
+			/* Calling down for the same connection repeatedly would result in
+			 * NM responding for the last D-Bus call only and we would stall. */
+			if (!g_slist_find (queue, active))
+				queue = g_slist_prepend (queue, g_object_ref (active));
+		} else {
 			g_printerr (_("Error: '%s' is not an active connection.\n"), *arg_ptr);
 			g_string_printf (nmc->return_text, _("Error: not all active connections found."));
 			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
@@ -2369,27 +2384,25 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
 		goto error;
 	}
-
 	queue = g_slist_reverse (queue);
 
 	if (nmc->timeout > 0) {
 		nmc->should_wait = TRUE;
 
-		info = g_slice_new0 (DeactivateConnectionInfo);
+		info = g_slice_new0 (ConnectionCbInfo);
 		info->nmc = nmc;
-		info->timeout_id = g_timeout_add_seconds (nmc->timeout, down_timeout_cb, info);
+		info->queue = queue;
+		info->timeout_id = g_timeout_add_seconds (nmc->timeout, connection_op_timeout_cb, info);
 	}
 
 	for (iter = queue; iter; iter = g_slist_next (iter)) {
 		active = iter->data;
 
-		if (info) {
-			info->queue = g_slist_prepend (info->queue, g_object_ref (active));
+		if (info)
 			g_signal_connect (active,
 			                  "notify::" NM_ACTIVE_CONNECTION_STATE,
 			                  G_CALLBACK (down_active_connection_state_cb),
 			                  info);
-		}
 
 		/* Now deactivate the connection */
 		nm_client_deactivate_connection (nmc->client, active, NULL, NULL);
@@ -2397,7 +2410,6 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 
 error:
 	g_strfreev (arg_arr);
-	g_slist_free (queue);
 	return nmc->return_value;
 }
 
@@ -8647,51 +8659,43 @@ finish:
 	return nmc->return_value;
 }
 
-
-typedef struct {
-	NmCli *nmc;
-	int counter;
-} DeleteStateInfo;
-
 static void
 delete_cb (GObject *con, GAsyncResult *result, gpointer user_data)
 {
-	DeleteStateInfo *info = (DeleteStateInfo *) user_data;
+	ConnectionCbInfo *info = (ConnectionCbInfo *) user_data;
 	GError *error = NULL;
 
 	if (!nm_remote_connection_delete_finish (NM_REMOTE_CONNECTION (con), result, &error)) {
-		g_string_printf (info->nmc->return_text, _("Error: Connection deletion failed: %s"),
-		                 error->message);
+		g_string_printf (info->nmc->return_text, _("Error: not all connections deleted."));
+		g_printerr (_("Error: Connection deletion failed: %s"),
+		            error->message);
 		g_error_free (error);
 		info->nmc->return_value = NMC_RESULT_ERROR_CON_DEL;
-	}
-
-	info->counter--;
-	if (info->counter == 0) {
-		g_free (info);
-		quit ();
+		connection_cb_info_finish (info, con);
+	} else {
+		if (info->nmc->nowait_flag)
+			connection_cb_info_finish (info, con);
 	}
 }
 
 static NMCResultCode
 do_connection_delete (NmCli *nmc, int argc, char **argv)
 {
-	NMConnection *connection = NULL;
-	DeleteStateInfo *del_info = NULL;
-	char *line = NULL;
+	NMConnection *connection;
+	ConnectionCbInfo *info = NULL;
+	GSList *queue = NULL, *iter;
 	char **arg_arr = NULL;
 	char **arg_ptr = argv;
 	int arg_num = argc;
 	GString *invalid_cons = NULL;
-	gboolean del_info_free = FALSE;
 	int pos = 0;
 
-	nmc->return_value = NMC_RESULT_SUCCESS;
-	nmc->should_wait = FALSE;
+	if (nmc->timeout == -1)
+		nmc->timeout = 10;
 
 	if (argc == 0) {
 		if (nmc->ask) {
-			line = nmc_readline (PROMPT_CONNECTION);
+			char *line = nmc_readline (PROMPT_CONNECTION);
 			nmc_string_to_arg_array (line, "", &arg_arr, &arg_num);
 			g_free (line);
 			arg_ptr = arg_arr;
@@ -8702,11 +8706,6 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 			goto finish;
 		}
 	}
-
-	del_info = g_malloc0 (sizeof (DeleteStateInfo));
-	del_info->nmc = nmc;
-	del_info->counter = 0;
-	del_info_free = TRUE;
 
 	while (arg_num > 0) {
 		const char *selector = NULL;
@@ -8723,43 +8722,50 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 		}
 
 		connection = nmc_find_connection (nmc->connections, selector, *arg_ptr, &pos);
-		if (!connection) {
-			if (nmc->print_output != NMC_PRINT_TERSE)
-				g_print (_("Error: unknown connection: %s\n"), *arg_ptr);
-
+		if (connection) {
+			/* Check if the connection is unique. */
+			/* Calling delete for the same connection repeatedly would result in
+			 * NM responding for the last D-Bus call only and we would stall. */
+			if (!g_slist_find (queue, connection))
+				queue = g_slist_prepend (queue, g_object_ref (connection));
+		} else {
+			g_printerr (_("Error: unknown connection '%s'\n"), *arg_ptr);
+			g_string_printf (nmc->return_text, _("Error: not all active connections found."));
+			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
 			if (!invalid_cons)
 				invalid_cons = g_string_new (NULL);
 			g_string_append_printf (invalid_cons, "'%s', ", *arg_ptr);
-
-			/* take the next argument and continue */
-			next_arg (&arg_num, &arg_ptr);
-			continue;
 		}
-
-		/* We need to wait a bit so that nmcli's permissions can be checked.
-		 * We will exit when D-Bus return (error) messages are received.
-		 */
-		nmc->should_wait = TRUE;
-
-		/* del_info deallocation is handled in delete_cb() */
-		del_info_free = FALSE;
-
-		del_info->counter++;
-
-		/* Delete the connection */
-		nm_remote_connection_delete_async (NM_REMOTE_CONNECTION (connection),
-		                                   NULL, delete_cb, del_info);
 
 		/* Take next argument (if there's no other connection of the same name) */
 		if (!pos)
 			next_arg (&arg_num, &arg_ptr);
 	}
 
-finish:
-	if (del_info_free)
-		g_free (del_info);
-	g_strfreev (arg_arr);
+	if (!queue) {
+		g_string_printf (nmc->return_text, _("Error: no connection provided."));
+		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
+		goto finish;
+	}
+	queue = g_slist_reverse (queue);
 
+	info = g_slice_new0 (ConnectionCbInfo);
+	info->nmc = nmc;
+	info->queue = queue;
+	info->timeout_id = g_timeout_add_seconds (nmc->timeout, connection_op_timeout_cb, info);
+
+	nmc->nowait_flag = (nmc->timeout == 0);
+	nmc->should_wait = TRUE;
+
+	g_signal_connect (nmc->client, NM_CLIENT_CONNECTION_REMOVED,
+	                  G_CALLBACK (connection_removed_cb), info);
+
+	/* Now delete the connections */
+	for (iter = queue; iter; iter = g_slist_next (iter))
+		nm_remote_connection_delete_async (NM_REMOTE_CONNECTION (iter->data),
+		                                   NULL, delete_cb, info);
+
+finish:
 	if (invalid_cons) {
 		g_string_truncate (invalid_cons, invalid_cons->len-2);  /* truncate trailing ", " */
 		g_string_printf (nmc->return_text, _("Error: cannot delete unknown connection(s): %s."),
@@ -8767,6 +8773,7 @@ finish:
 		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
 		g_string_free (invalid_cons, TRUE);
 	}
+	g_strfreev (arg_arr);
 	return nmc->return_value;
 }
 
