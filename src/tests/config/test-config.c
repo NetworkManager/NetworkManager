@@ -112,7 +112,7 @@ static void
 test_config_non_existent (void)
 {
 	NMConfig *config;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 
 	setup_config (SRCDIR "/no-such-file", "/no/such/dir", NULL);
 	config = nm_config_new (&error);
@@ -124,7 +124,7 @@ static void
 test_config_parse_error (void)
 {
 	NMConfig *config;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 
 	setup_config (SRCDIR "/bad.conf", "/no/such/dir", NULL);
 	config = nm_config_new (&error);
@@ -274,7 +274,7 @@ static void
 test_config_confdir_parse_error (void)
 {
 	NMConfig *config;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 
 	/* Using SRCDIR as the conf dir will pick up bad.conf */
 	setup_config (SRCDIR "/NetworkManager.conf", SRCDIR, NULL);
