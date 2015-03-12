@@ -140,7 +140,7 @@
    fun:g_child_watch_finalize
    fun:g_source_unref_internal
    fun:g_main_context_dispatch
-   fun:g_main_context_iterate.isra.24
+   ...
    fun:g_main_loop_run
    ...
 }
@@ -173,7 +173,7 @@
    fun:g_slice_alloc0
    fun:get_dispatch
    fun:g_main_context_dispatch
-   fun:g_main_context_iterate.isra.24
+   ...
    fun:g_main_loop_run
    fun:gdbus_shared_thread_func
    fun:g_thread_proxy
@@ -208,7 +208,7 @@
    fun:g_simple_async_result_complete
    fun:complete_in_idle_cb
    fun:g_main_context_dispatch
-   fun:g_main_context_iterate.isra.24
+   ...
    fun:g_main_loop_run
    fun:gdbus_shared_thread_func
    fun:g_thread_proxy
@@ -220,7 +220,7 @@
    match-leak-kinds: definite
    fun:calloc
    fun:g_malloc0
-   fun:thread_memory_from_self.part.12
+   fun:thread_memory_from_self
    fun:g_slice_alloc
    fun:g_slice_alloc0
    fun:g_main_context_push_thread_default
@@ -267,7 +267,7 @@
    fun:g_slice_alloc0
    fun:g_system_thread_new
    fun:g_thread_new_internal
-   fun:g_thread_pool_start_thread.part.0
+   ...
    fun:g_thread_pool_push
    fun:g_task_start_task_thread
    fun:g_task_run_in_thread
@@ -281,7 +281,7 @@
    match-leak-kinds: definite
    fun:calloc
    fun:g_malloc0
-   fun:thread_memory_from_self.part.12
+   ...
    fun:g_slice_alloc
    fun:g_slice_alloc0
    fun:get_dispatch
@@ -341,5 +341,40 @@
    fun:g_dbus_connection_signal_unsubscribe
    fun:g_dbus_proxy_finalize
    ...
+}
+
+{
+   _gdbus_17
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   fun:g_malloc0
+   fun:thread_memory_from_self
+   fun:g_slice_alloc
+   fun:g_slice_alloc0
+   fun:g_main_context_push_thread_default
+   fun:gdbus_shared_thread_func
+   fun:g_thread_proxy
+   fun:start_thread
+   fun:clone
+}
+
+{
+   _gdbus_18
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:g_malloc
+   fun:g_slice_alloc
+   fun:g_slice_alloc0
+   fun:get_dispatch
+   fun:g_main_dispatch
+   fun:g_main_context_dispatch
+   ...
+   fun:g_main_loop_run
+   fun:gdbus_shared_thread_func
+   fun:g_thread_proxy
+   fun:start_thread
+   fun:clone
 }
 
