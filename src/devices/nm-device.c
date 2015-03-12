@@ -730,14 +730,21 @@ guint32
 nm_device_get_ip4_route_metric (NMDevice *self)
 {
 	NMConnection *connection;
+	NMSettingIPConfig *s_ip = NULL;
 	gint64 route_metric = -1;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), G_MAXUINT32);
 
 	connection = nm_device_get_connection (self);
-
 	if (connection)
-		route_metric = nm_setting_ip_config_get_route_metric (nm_connection_get_setting_ip4_config (connection));
+		s_ip = nm_connection_get_setting_ip4_config (connection);
+
+	/* Slave interfaces don't have IP settings, but we may get here when
+	 * external changes are made or when noticing IP changes when starting
+	 * the slave connection.
+	 */
+	if (s_ip)
+		route_metric = nm_setting_ip_config_get_route_metric (s_ip);
 
 	return route_metric >= 0 ? route_metric : nm_device_get_priority (self);
 }
@@ -746,14 +753,21 @@ guint32
 nm_device_get_ip6_route_metric (NMDevice *self)
 {
 	NMConnection *connection;
+	NMSettingIPConfig *s_ip = NULL;
 	gint64 route_metric = -1;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), G_MAXUINT32);
 
 	connection = nm_device_get_connection (self);
-
 	if (connection)
-		route_metric = nm_setting_ip_config_get_route_metric (nm_connection_get_setting_ip6_config (connection));
+		s_ip = nm_connection_get_setting_ip6_config (connection);
+
+	/* Slave interfaces don't have IP settings, but we may get here when
+	 * external changes are made or when noticing IP changes when starting
+	 * the slave connection.
+	 */
+	if (s_ip)
+		route_metric = nm_setting_ip_config_get_route_metric (s_ip);
 
 	return route_metric >= 0 ? route_metric : nm_device_get_priority (self);
 }
