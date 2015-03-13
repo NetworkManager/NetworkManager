@@ -67,6 +67,20 @@
 static GMainLoop *main_loop = NULL;
 static gboolean configure_and_quit = FALSE;
 
+static struct {
+	gboolean show_version;
+	gboolean become_daemon;
+	gboolean debug;
+	gboolean g_fatal_warnings;
+	gboolean run_from_build_dir;
+	char *opt_log_level;
+	char *opt_log_domains;
+	char *pidfile;
+	char *state_file;
+} global_opt = {
+	.become_daemon = TRUE,
+};
+
 static gboolean
 parse_state_file (const char *filename,
                   gboolean *net_enabled,
@@ -204,15 +218,8 @@ manager_configure_quit (NMManager *manager, gpointer user_data)
 int
 main (int argc, char *argv[])
 {
-	char *opt_log_level = NULL;
-	char *opt_log_domains = NULL;
-	gboolean become_daemon = TRUE, run_from_build_dir = FALSE;
-	gboolean debug = FALSE;
-	gboolean g_fatal_warnings = FALSE;
-	gs_free char *pidfile = NULL;
-	gs_free char *state_file = NULL;
 	gboolean wifi_enabled = TRUE, net_enabled = TRUE, wwan_enabled = TRUE, wimax_enabled = TRUE;
-	gboolean success, show_version = FALSE;
+	gboolean success;
 	NMManager *manager = NULL;
 	gs_unref_object NMSettings *settings = NULL;
 	NMConfig *config;
@@ -222,17 +229,17 @@ main (int argc, char *argv[])
 	NMConfigCmdLineOptions *config_cli;
 
 	GOptionEntry options[] = {
-		{ "version", 'V', 0, G_OPTION_ARG_NONE, &show_version, N_("Print NetworkManager version and exit"), NULL },
-		{ "no-daemon", 'n', G_OPTION_FLAG_REVERSE, G_OPTION_ARG_NONE, &become_daemon, N_("Don't become a daemon"), NULL },
-		{ "debug", 'd', 0, G_OPTION_ARG_NONE, &debug, N_("Don't become a daemon, and log to stderr"), NULL },
-		{ "log-level", 0, 0, G_OPTION_ARG_STRING, &opt_log_level, N_("Log level: one of [%s]"), "INFO" },
-		{ "log-domains", 0, 0, G_OPTION_ARG_STRING, &opt_log_domains,
+		{ "version", 'V', 0, G_OPTION_ARG_NONE, &global_opt.show_version, N_("Print NetworkManager version and exit"), NULL },
+		{ "no-daemon", 'n', G_OPTION_FLAG_REVERSE, G_OPTION_ARG_NONE, &global_opt.become_daemon, N_("Don't become a daemon"), NULL },
+		{ "debug", 'd', 0, G_OPTION_ARG_NONE, &global_opt.debug, N_("Don't become a daemon, and log to stderr"), NULL },
+		{ "log-level", 0, 0, G_OPTION_ARG_STRING, &global_opt.opt_log_level, N_("Log level: one of [%s]"), "INFO" },
+		{ "log-domains", 0, 0, G_OPTION_ARG_STRING, &global_opt.opt_log_domains,
 		  N_("Log domains separated by ',': any combination of [%s]"),
 		  "PLATFORM,RFKILL,WIFI" },
-		{ "g-fatal-warnings", 0, 0, G_OPTION_ARG_NONE, &g_fatal_warnings, N_("Make all warnings fatal"), NULL },
-		{ "pid-file", 'p', 0, G_OPTION_ARG_FILENAME, &pidfile, N_("Specify the location of a PID file"), N_("filename") },
-		{ "state-file", 0, 0, G_OPTION_ARG_FILENAME, &state_file, N_("State file location"), N_("/path/to/state.file") },
-		{ "run-from-build-dir", 0, 0, G_OPTION_ARG_NONE, &run_from_build_dir, "Run from build directory", NULL },
+		{ "g-fatal-warnings", 0, 0, G_OPTION_ARG_NONE, &global_opt.g_fatal_warnings, N_("Make all warnings fatal"), NULL },
+		{ "pid-file", 'p', 0, G_OPTION_ARG_FILENAME, &global_opt.pidfile, N_("Specify the location of a PID file"), N_("filename") },
+		{ "state-file", 0, 0, G_OPTION_ARG_FILENAME, &global_opt.state_file, N_("State file location"), N_("/path/to/state.file") },
+		{ "run-from-build-dir", 0, 0, G_OPTION_ARG_NONE, &global_opt.run_from_build_dir, "Run from build directory", NULL },
 		{NULL}
 	};
 
@@ -250,13 +257,13 @@ main (int argc, char *argv[])
 	                                _("NetworkManager monitors all network connections and automatically\nchooses the best connection to use.  It also allows the user to\nspecify wireless access points which wireless cards in the computer\nshould associate with.")))
 		exit (1);
 
-	if (show_version) {
+	if (global_opt.show_version) {
 		fprintf (stdout, NM_DIST_VERSION "\n");
 		exit (0);
 	}
 
-	if (!nm_logging_setup (opt_log_level,
-	                       opt_log_domains,
+	if (!nm_logging_setup (global_opt.opt_log_level,
+	                       global_opt.opt_log_domains,
 	                       &bad_domains,
 	                       &error)) {
 		fprintf (stderr,
@@ -272,7 +279,7 @@ main (int argc, char *argv[])
 
 	/* When running from the build directory, determine our build directory
 	 * base and set helper paths in the build tree */
-	if (run_from_build_dir) {
+	if (global_opt.run_from_build_dir) {
 		char *path, *slash;
 		int g;
 
@@ -300,11 +307,11 @@ main (int argc, char *argv[])
 		exit (1);
 	}
 
-	pidfile = pidfile ? pidfile : g_strdup (NM_DEFAULT_PID_FILE);
-	state_file = state_file ? state_file : g_strdup (NM_DEFAULT_SYSTEM_STATE_FILE);
+	global_opt.pidfile = global_opt.pidfile ? global_opt.pidfile : g_strdup (NM_DEFAULT_PID_FILE);
+	global_opt.state_file = global_opt.state_file ? global_opt.state_file : g_strdup (NM_DEFAULT_SYSTEM_STATE_FILE);
 
 	/* check pid file */
-	if (nm_main_utils_check_pidfile (pidfile, "NetworkManager"))
+	if (nm_main_utils_check_pidfile (global_opt.pidfile, "NetworkManager"))
 		exit (1);
 
 	/* Read the config file and CLI overrides */
@@ -321,7 +328,7 @@ main (int argc, char *argv[])
 	/* Initialize logging from config file *only* if not explicitly
 	 * specified by commandline.
 	 */
-	if (opt_log_level == NULL && opt_log_domains == NULL) {
+	if (global_opt.opt_log_level == NULL && global_opt.opt_log_domains == NULL) {
 		if (!nm_logging_setup (nm_config_get_log_level (config),
 		                       nm_config_get_log_domains (config),
 		                       &bad_domains,
@@ -338,16 +345,16 @@ main (int argc, char *argv[])
 	}
 
 	/* Parse the state file */
-	if (!parse_state_file (state_file, &net_enabled, &wifi_enabled, &wwan_enabled, &wimax_enabled, &error)) {
+	if (!parse_state_file (global_opt.state_file, &net_enabled, &wifi_enabled, &wwan_enabled, &wimax_enabled, &error)) {
 		fprintf (stderr, _("State file %s parsing failed: (%d) %s\n"),
-		         state_file,
+		         global_opt.state_file,
 		         error ? error->code : -1,
 		         (error && error->message) ? error->message : _("unknown"));
 		/* Not a hard failure */
 	}
 	g_clear_error (&error);
 
-	if (become_daemon && !debug) {
+	if (global_opt.become_daemon && !global_opt.debug) {
 		if (daemon (0, 0) < 0) {
 			int saved_errno;
 
@@ -357,7 +364,7 @@ main (int argc, char *argv[])
 			         saved_errno);
 			exit (1);
 		}
-		wrote_pidfile = nm_main_utils_write_pidfile (pidfile);
+		wrote_pidfile = nm_main_utils_write_pidfile (global_opt.pidfile);
 	}
 
 	_init_nm_debug (nm_config_get_debug (config));
@@ -365,7 +372,7 @@ main (int argc, char *argv[])
 	/* Set up unix signal handling - before creating threads, but after daemonizing! */
 	nm_main_utils_setup_signals (main_loop);
 
-	if (g_fatal_warnings) {
+	if (global_opt.g_fatal_warnings) {
 		GLogLevelFlags fatal_mask;
 
 		fatal_mask = g_log_set_always_fatal (G_LOG_FATAL_MASK);
@@ -373,7 +380,7 @@ main (int argc, char *argv[])
 		g_log_set_always_fatal (fatal_mask);
 	}
 
-	nm_logging_syslog_openlog (debug);
+	nm_logging_syslog_openlog (global_opt.debug);
 
 #if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
@@ -413,7 +420,7 @@ main (int argc, char *argv[])
 	}
 
 	manager = nm_manager_new (settings,
-	                          state_file,
+	                          global_opt.state_file,
 	                          net_enabled,
 	                          wifi_enabled,
 	                          wwan_enabled,
@@ -469,8 +476,8 @@ done:
 
 	nm_logging_syslog_closelog ();
 
-	if (pidfile && wrote_pidfile)
-		unlink (pidfile);
+	if (global_opt.pidfile && wrote_pidfile)
+		unlink (global_opt.pidfile);
 
 	nm_log_info (LOGD_CORE, "exiting (%s)", success ? "success" : "error");
 	exit (success ? 0 : 1);
