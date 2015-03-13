@@ -871,18 +871,21 @@ nmtst_assert_connection_equals (NMConnection *a, gboolean normalize_a, NMConnect
 		b = b2 = nmtst_connection_duplicate_and_normalize (b);
 
 	compare = nm_connection_diff (a, b, NM_SETTING_COMPARE_FLAG_EXACT, &out_settings);
-	if (!compare && out_settings) {
+	if (!compare || out_settings) {
 		const char *name, *pname;
 		GHashTable *setting;
 		GHashTableIter iter, iter2;
 
-		g_hash_table_iter_init (&iter, out_settings);
-		while (g_hash_table_iter_next (&iter, (gpointer *) &name, (gpointer *) &setting)) {
-			__NMTST_LOG (g_message, ">>> differences in setting '%s':", name);
+		__NMTST_LOG (g_message, ">>> ASSERTION nmtst_assert_connection_equals() fails");
+		if (out_settings) {
+			g_hash_table_iter_init (&iter, out_settings);
+			while (g_hash_table_iter_next (&iter, (gpointer *) &name, (gpointer *) &setting)) {
+				__NMTST_LOG (g_message, ">>> differences in setting '%s':", name);
 
-			g_hash_table_iter_init (&iter2, out_settings);
-			while (g_hash_table_iter_next (&iter2, (gpointer *) &pname, NULL))
-				__NMTST_LOG (g_message, ">>> differences in setting '%s.%s':", name, pname);
+				g_hash_table_iter_init (&iter2, setting);
+				while (g_hash_table_iter_next (&iter2, (gpointer *) &pname, NULL))
+					__NMTST_LOG (g_message, ">>> differences in setting '%s.%s'", name, pname);
+			}
 		}
 	}
 	g_assert (compare);
