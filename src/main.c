@@ -215,7 +215,7 @@ main (int argc, char *argv[])
 	gboolean success, show_version = FALSE;
 	NMManager *manager = NULL;
 	gs_unref_object NMSettings *settings = NULL;
-	gs_unref_object NMConfig *config = NULL;
+	NMConfig *config;
 	GError *error = NULL;
 	gboolean wrote_pidfile = FALSE;
 	char *bad_domains = NULL;
