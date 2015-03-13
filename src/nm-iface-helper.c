@@ -311,6 +311,10 @@ do_early_setup (int *argc, char **argv[])
 		{NULL}
 	};
 
+#if !GLIB_CHECK_VERSION (2, 35, 0)
+	g_type_init ();
+#endif
+
 	setpgid (getpid (), getpid ());
 
 	if (!nm_main_utils_early_setup ("nm-iface-helper",
@@ -407,10 +411,6 @@ main (int argc, char *argv[])
 	}
 
 	nm_logging_syslog_openlog (global_opt.debug);
-
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
 
 	nm_log_info (LOGD_CORE, "nm-iface-helper (version " NM_DIST_VERSION ") is starting...");
 
