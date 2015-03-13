@@ -51,6 +51,7 @@
 #define PROMPT_BRIDGE_MASTER _("Bridge master: ")
 #define PROMPT_CONNECTION  _("Connection (name, UUID, or path): ")
 #define PROMPT_CONNECTIONS _("Connection(s) (name, UUID, or path): ")
+#define PROMPT_ACTIVE_CONNECTIONS _("Connection(s) (name, UUID, path or apath): ")
 
 static const char *nmc_known_vpns[] =
 	{ "openvpn", "vpnc", "pptp", "openconnect", "openswan", "libreswan",
@@ -2464,7 +2465,6 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 	DeactivateConnectionInfo *info = NULL;
 	const GPtrArray *active_cons;
 	GSList *queue = NULL, *iter;
-	char *line = NULL;
 	char **arg_arr = NULL;
 	char **arg_ptr = argv;
 	int arg_num = argc;
@@ -2472,7 +2472,7 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 
 	if (argc == 0) {
 		if (nmc->ask) {
-			line = nmc_readline (PROMPT_CONNECTIONS);
+			char *line = nmc_readline (PROMPT_ACTIVE_CONNECTIONS);
 			nmc_string_to_arg_array (line, NULL, TRUE, &arg_arr, &arg_num);
 			g_free (line);
 			arg_ptr = arg_arr;
@@ -9071,6 +9071,32 @@ gen_func_connection_names (const char *text, int state)
 	return ret;
 }
 
+static char *
+gen_func_active_connection_names (const char *text, int state)
+{
+	int i;
+	const GPtrArray *acs;
+	const char **connections;
+	char *ret;
+
+	if (!nm_cli.client)
+		return NULL;
+
+	acs = nm_client_get_active_connections (nm_cli.client);
+	if (!acs || acs->len == 0)
+		return NULL;
+
+	connections = g_new (const char *, acs->len + 1);
+	for (i = 0; i < acs->len; i++)
+		connections[i] = nm_active_connection_get_id (acs->pdata[i]);
+	connections[i] = NULL;
+
+	ret = nmc_rl_gen_func_basic (text, state, connections);
+
+	g_free (connections);
+	return ret;
+}
+
 static char **
 nmcli_con_tab_completion (const char *text, int start, int end)
 {
@@ -9090,6 +9116,8 @@ nmcli_con_tab_completion (const char *text, int start, int end)
 		generator_func = gen_func_connection_names;
 	} else if (g_strcmp0 (rl_prompt, PROMPT_CONNECTIONS) == 0) {
 		generator_func = gen_func_connection_names;
+	} else if (g_strcmp0 (rl_prompt, PROMPT_ACTIVE_CONNECTIONS) == 0) {
+		generator_func = gen_func_active_connection_names;
 	}
 
 	if (generator_func)
