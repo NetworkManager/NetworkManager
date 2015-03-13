@@ -254,6 +254,10 @@ main (int argc, char *argv[])
 	gboolean wrote_pidfile = FALSE;
 	char *bad_domains = NULL;
 
+#if !GLIB_CHECK_VERSION (2, 35, 0)
+	g_type_init ();
+#endif
+
 	_nm_utils_is_manager_process = TRUE;
 
 	main_loop = g_main_loop_new (NULL, FALSE);
@@ -380,10 +384,6 @@ main (int argc, char *argv[])
 	}
 
 	nm_logging_syslog_openlog (global_opt.debug);
-
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
 
 	dbus_threads_init_default ();
 

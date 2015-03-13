@@ -349,6 +349,10 @@ main (int argc, char *argv[])
 	gconstpointer tmp;
 	gs_free NMUtilsIPv6IfaceId *iid = NULL;
 
+#if !GLIB_CHECK_VERSION (2, 35, 0)
+	g_type_init ();
+#endif
+
 	setpgid (getpid (), getpid ());
 
 	do_early_setup (&argc, &argv);
@@ -410,10 +414,6 @@ main (int argc, char *argv[])
 	}
 
 	nm_logging_syslog_openlog (global_opt.debug);
-
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
 
 	nm_log_info (LOGD_CORE, "nm-iface-helper (version " NM_DIST_VERSION ") is starting...");
 
