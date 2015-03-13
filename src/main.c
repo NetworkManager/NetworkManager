@@ -412,6 +412,21 @@ main (int argc, char *argv[])
 #endif
 	             );
 
+	if (!nm_dbus_manager_get_connection (nm_dbus_manager_get ())) {
+#if HAVE_DBUS_GLIB_100
+		nm_log_warn (LOGD_CORE, "Failed to connect to D-Bus; only private bus is available");
+#else
+		nm_log_err (LOGD_CORE, "Failed to connect to D-Bus, exiting...");
+		goto done;
+#endif
+	} else {
+		/* Start our DBus service */
+		if (!nm_dbus_manager_start_service (nm_dbus_manager_get ())) {
+			nm_log_err (LOGD_CORE, "failed to start the dbus service.");
+			goto done;
+		}
+	}
+
 	/* Set up platform interaction layer */
 	nm_linux_platform_setup ();
 
@@ -437,21 +452,6 @@ main (int argc, char *argv[])
 		nm_log_err (LOGD_CORE, "failed to initialize the network manager: %s",
 		            error && error->message ? error->message : "(unknown)");
 		goto done;
-	}
-
-	if (!nm_dbus_manager_get_connection (nm_dbus_manager_get ())) {
-#if HAVE_DBUS_GLIB_100
-		nm_log_warn (LOGD_CORE, "Failed to connect to D-Bus; only private bus is available");
-#else
-		nm_log_err (LOGD_CORE, "Failed to connect to D-Bus, exiting...");
-		goto done;
-#endif
-	} else {
-		/* Start our DBus service */
-		if (!nm_dbus_manager_start_service (nm_dbus_manager_get ())) {
-			nm_log_err (LOGD_CORE, "failed to start the dbus service.");
-			goto done;
-		}
 	}
 
 	g_signal_connect (manager, NM_MANAGER_CONFIGURE_QUIT, G_CALLBACK (manager_configure_quit), config);
