@@ -25,6 +25,8 @@
 
 void     nm_main_utils_setup_signals (GMainLoop *main_loop);
 
+void     nm_main_utils_ensure_rundir (void);
+
 gboolean nm_main_utils_write_pidfile (const char *pidfile);
 
 gboolean nm_main_utils_check_pidfile (const char *pidfile, const char *name);

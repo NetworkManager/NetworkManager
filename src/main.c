@@ -316,6 +316,8 @@ main (int argc, char *argv[])
 		exit (1);
 	}
 
+	nm_main_utils_ensure_rundir ();
+
 	/* check pid file */
 	if (nm_main_utils_check_pidfile (global_opt.pidfile, "NetworkManager"))
 		exit (1);

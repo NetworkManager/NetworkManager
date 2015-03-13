@@ -375,6 +375,8 @@ main (int argc, char *argv[])
 		g_clear_pointer (&bad_domains, g_free);
 	}
 
+	nm_main_utils_ensure_rundir ();
+
 	pidfile = g_strdup_printf (NMIH_PID_FILE_FMT, ifindex);
 	g_assert (pidfile);
 
