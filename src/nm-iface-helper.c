@@ -321,8 +321,8 @@ main (int argc, char *argv[])
 	setpgid (getpid (), getpid ());
 
 	if (!nm_main_utils_early_setup ("nm-iface-helper",
-	                                &argv,
 	                                &argc,
+	                                &argv,
 	                                options,
 	                                NULL,
 	                                _("nm-iface-helper is a small, standalone process that manages a single network interface.")))

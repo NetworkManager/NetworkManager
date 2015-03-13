@@ -237,8 +237,8 @@ main (int argc, char *argv[])
 	main_loop = g_main_loop_new (NULL, FALSE);
 
 	if (!nm_main_utils_early_setup ("NetworkManager",
-	                                &argv,
 	                                &argc,
+	                                &argv,
 	                                options,
 	                                nm_config_get_options (),
 	                                _("NetworkManager monitors all network connections and automatically\nchooses the best connection to use.  It also allows the user to\nspecify wireless access points which wireless cards in the computer\nshould associate with.")))

@@ -216,8 +216,8 @@ done:
 
 gboolean
 nm_main_utils_early_setup (const char *progname,
-                           char **argv[],
                            int *argc,
+                           char **argv[],
                            GOptionEntry *options,
                            GOptionEntry *more_options,
                            const char *summary)
