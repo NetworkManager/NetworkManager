@@ -250,7 +250,7 @@ int
 main (int argc, char *argv[])
 {
 	gboolean wifi_enabled = TRUE, net_enabled = TRUE, wwan_enabled = TRUE, wimax_enabled = TRUE;
-	gboolean success;
+	gboolean success = FALSE;
 	NMManager *manager = NULL;
 	gs_unref_object NMSettings *settings = NULL;
 	NMConfig *config;
@@ -384,6 +384,8 @@ main (int argc, char *argv[])
 
 	nm_logging_syslog_openlog (global_opt.debug);
 
+	nm_log_info (LOGD_CORE, "NetworkManager (version " NM_DIST_VERSION ") is starting...");
+
 	/* Parse the state file */
 	if (!parse_state_file (global_opt.state_file, &net_enabled, &wifi_enabled, &wwan_enabled, &wimax_enabled, &error)) {
 		nm_log_err (LOGD_CORE, "State file %s parsing failed: (%d) %s",
@@ -400,9 +402,6 @@ main (int argc, char *argv[])
 	 * introspection 'access' permissions are respected.
 	 */
 	dbus_glib_global_set_disable_legacy_property_access ();
-
-	nm_log_info (LOGD_CORE, "NetworkManager (version " NM_DIST_VERSION ") is starting...");
-	success = FALSE;
 
 	nm_log_info (LOGD_CORE, "Read config: %s", nm_config_data_get_config_description (nm_config_get_data (config)));
 	nm_log_info (LOGD_CORE, "WEXT support is %s",
