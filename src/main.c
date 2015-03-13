@@ -335,6 +335,8 @@ main (int argc, char *argv[])
 		exit (1);
 	}
 
+	_init_nm_debug (nm_config_get_debug (config));
+
 	/* Initialize logging from config file *only* if not explicitly
 	 * specified by commandline.
 	 */
@@ -376,8 +378,6 @@ main (int argc, char *argv[])
 		}
 		wrote_pidfile = nm_main_utils_write_pidfile (global_opt.pidfile);
 	}
-
-	_init_nm_debug (nm_config_get_debug (config));
 
 	/* Set up unix signal handling - before creating threads, but after daemonizing! */
 	if (!nm_main_utils_setup_signals (main_loop, &quit_early))
