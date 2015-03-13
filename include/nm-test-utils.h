@@ -887,6 +887,24 @@ nmtst_assert_connection_equals (NMConnection *a, gboolean normalize_a, NMConnect
 					__NMTST_LOG (g_message, ">>> differences in setting '%s.%s'", name, pname);
 			}
 		}
+
+#ifdef __NM_KEYFILE_INTERNAL_H__
+		{
+			gs_unref_keyfile GKeyFile *kf_a = NULL, *kf_b = NULL;
+			gs_free char *str_a = NULL, *str_b = NULL;
+
+			kf_a = nm_keyfile_write (a, NULL, NULL, NULL);
+			kf_b = nm_keyfile_write (b, NULL, NULL, NULL);
+
+			if (kf_a)
+				str_a = g_key_file_to_data (kf_a, NULL, NULL);
+			if (kf_b)
+				str_b = g_key_file_to_data (kf_b, NULL, NULL);
+
+			__NMTST_LOG (g_message, ">>> Connection A as kf (*WARNING: keyfile representation might not show the difference*):\n%s", str_a);
+			__NMTST_LOG (g_message, ">>> Connection B as kf (*WARNING: keyfile representation might not show the difference*):\n%s", str_b);
+		}
+#endif
 	}
 	g_assert (compare);
 	g_assert (!out_settings);
