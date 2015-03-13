@@ -358,16 +358,6 @@ main (int argc, char *argv[])
 		}
 	}
 
-	/* Parse the state file */
-	if (!parse_state_file (global_opt.state_file, &net_enabled, &wifi_enabled, &wwan_enabled, &wimax_enabled, &error)) {
-		fprintf (stderr, _("State file %s parsing failed: (%d) %s\n"),
-		         global_opt.state_file,
-		         error ? error->code : -1,
-		         (error && error->message) ? error->message : _("unknown"));
-		/* Not a hard failure */
-	}
-	g_clear_error (&error);
-
 	if (global_opt.become_daemon && !global_opt.debug) {
 		if (daemon (0, 0) < 0) {
 			int saved_errno;
@@ -386,6 +376,16 @@ main (int argc, char *argv[])
 		exit (1);
 
 	nm_logging_syslog_openlog (global_opt.debug);
+
+	/* Parse the state file */
+	if (!parse_state_file (global_opt.state_file, &net_enabled, &wifi_enabled, &wwan_enabled, &wimax_enabled, &error)) {
+		nm_log_err (LOGD_CORE, "State file %s parsing failed: (%d) %s",
+		            global_opt.state_file,
+		            error ? error->code : -1,
+		            (error && error->message) ? error->message : _("unknown"));
+		/* Not a hard failure */
+	}
+	g_clear_error (&error);
 
 	dbus_threads_init_default ();
 
