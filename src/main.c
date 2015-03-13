@@ -318,9 +318,7 @@ main (int argc, char *argv[])
 
 	nm_main_utils_ensure_rundir ();
 
-	/* check pid file */
-	if (nm_main_utils_check_pidfile (global_opt.pidfile, "NetworkManager"))
-		exit (1);
+	nm_main_utils_ensure_not_running_pidfile (global_opt.pidfile);
 
 	/* Read the config file and CLI overrides */
 	config = nm_config_setup (config_cli, &error);

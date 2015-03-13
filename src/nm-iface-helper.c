@@ -378,11 +378,7 @@ main (int argc, char *argv[])
 	nm_main_utils_ensure_rundir ();
 
 	pidfile = g_strdup_printf (NMIH_PID_FILE_FMT, ifindex);
-	g_assert (pidfile);
-
-	/* check pid file */
-	if (nm_main_utils_check_pidfile (pidfile, "nm-iface-helper"))
-		exit (1);
+	nm_main_utils_ensure_not_running_pidfile (pidfile);
 
 	if (global_opt.become_daemon && !global_opt.debug) {
 		if (daemon (0, 0) < 0) {

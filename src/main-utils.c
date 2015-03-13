@@ -34,6 +34,7 @@
 #include <glib-unix.h>
 #include <gmodule.h>
 
+#include "gsystem-local-alloc.h"
 #include "main-utils.h"
 #include "nm-logging.h"
 
@@ -119,59 +120,56 @@ nm_main_utils_ensure_rundir ()
 }
 
 /**
- * nm_main_utils_check_pidfile:
+ * nm_main_utils_ensure_not_running_pidfile:
  * @pidfile: the pid file
- * @name: the process name
  *
  * Checks whether the pidfile already exists and contains PID of a running
  * process.
  *
- * Returns: %TRUE if the specified pidfile already exists and contains the PID
- *  of a running process named @name, or %FALSE if not
+ * Exits with code 1 if a conflicting process is running.
  */
-gboolean
-nm_main_utils_check_pidfile (const char *pidfile, const char *name)
+void
+nm_main_utils_ensure_not_running_pidfile (const char *pidfile)
 {
-	char *contents = NULL;
+	gs_free char *contents = NULL;
+	gs_free char *proc_cmdline = NULL;
 	gsize len = 0;
 	glong pid;
-	char *proc_cmdline = NULL;
-	gboolean nm_running = FALSE;
 	const char *process_name;
+	const char *prgname = g_get_prgname ();
+
+	g_return_if_fail (prgname);
+
+	if (!pidfile || !*pidfile)
+		return;
 
 	if (!g_file_get_contents (pidfile, &contents, &len, NULL))
-		return FALSE;
-
+		return;
 	if (len <= 0)
-		goto done;
+		return;
 
 	errno = 0;
 	pid = strtol (contents, NULL, 10);
 	if (pid <= 0 || pid > 65536 || errno)
-		goto done;
+		return;
 
-	g_free (contents);
+	g_clear_pointer (&contents, g_free);
 	proc_cmdline = g_strdup_printf ("/proc/%ld/cmdline", pid);
 	if (!g_file_get_contents (proc_cmdline, &contents, &len, NULL))
-		goto done;
+		return;
 
 	process_name = strrchr (contents, '/');
 	if (process_name)
 		process_name++;
 	else
 		process_name = contents;
-	if (strcmp (process_name, name) == 0) {
+	if (strcmp (process_name, prgname) == 0) {
 		/* Check that the process exists */
 		if (kill (pid, 0) == 0) {
-			fprintf (stderr, _("%s is already running (pid %ld)\n"), name, pid);
-			nm_running = TRUE;
+			fprintf (stderr, _("%s is already running (pid %ld)\n"), prgname, pid);
+			exit (1);
 		}
 	}
-
-done:
-	g_free (proc_cmdline);
-	g_free (contents);
-	return nm_running;
 }
 
 gboolean
