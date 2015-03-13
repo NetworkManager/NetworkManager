@@ -370,7 +370,7 @@ add_remove_cb (GObject *s,
 {
 	NMRemoteConnection *connection;
 	gboolean *done = user_data;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 
 	connection = nm_client_add_connection_finish (client, result, &error);
 	g_assert_error (error, NM_CLIENT_ERROR, NM_CLIENT_ERROR_OBJECT_CREATION_FAILED);
@@ -426,7 +426,7 @@ add_bad_cb (GObject *s,
             gpointer user_data)
 {
 	gboolean *done = user_data;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 
 	remote = nm_client_add_connection_finish (client, result, &error);
 	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
@@ -469,7 +469,7 @@ save_hostname_cb (GObject *s,
                   gpointer user_data)
 {
 	gboolean *done = user_data;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 
 	nm_client_save_hostname_finish (client, result, &error);
 	g_assert_no_error (error);

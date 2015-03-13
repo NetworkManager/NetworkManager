@@ -377,7 +377,7 @@ test_read_unmanaged_unrecognized (void)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
-	char *unhandled_spec = NULL;
+	gs_free char *unhandled_spec = NULL;
 	GError *error = NULL;
 	const char *expected_id = "PigeonNet";
 	guint64 expected_timestamp = 0;
@@ -408,7 +408,7 @@ test_read_unrecognized (void)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
-	char *unhandled_spec = NULL;
+	gs_free char *unhandled_spec = NULL;
 	GError *error = NULL;
 	const char *expected_id = "U Can't Touch This";
 	guint64 expected_timestamp = 0;
@@ -5341,6 +5341,7 @@ test_read_wifi_band_a_channel_mismatch (void)
 	                                        NULL, TYPE_WIRELESS, NULL, &error);
 	g_assert (connection == NULL);
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
+	g_clear_error (&error);
 }
 
 static void
@@ -5353,6 +5354,7 @@ test_read_wifi_band_bg_channel_mismatch (void)
 	                                        NULL, TYPE_WIRELESS, NULL, &error);
 	g_assert (connection == NULL);
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
+	g_clear_error (&error);
 }
 
 #define TEST_IFCFG_WIRED_QETH_STATIC TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-qeth-static"
@@ -9528,6 +9530,7 @@ test_write_wifi_wpa_then_wep_with_perms (void)
 	keyfile = utils_get_keys_path (testfile);
 	unlink (keyfile);
 	unlink (testfile);
+	g_free (keyfile);
 
 	g_free (testfile);
 	g_object_unref (reread);
@@ -10198,6 +10201,7 @@ test_write_wired_pppoe (void)
 	        "wired-pppoe-write", "unexpected success writing connection to disk");
 
 	g_object_unref (connection);
+	g_clear_error (&error);
 }
 
 static void
@@ -10260,6 +10264,7 @@ test_write_vpn (void)
 	        "vpn-write", "unexpected success writing connection to disk");
 
 	g_object_unref (connection);
+	g_clear_error (&error);
 }
 
 static void
@@ -10342,6 +10347,7 @@ test_write_mobile_broadband (gboolean gsm)
 	        "mobile-broadband-write", "unexpected success writing connection to disk");
 
 	g_object_unref (connection);
+	g_clear_error (&error);
 }
 
 #define TEST_IFCFG_BRIDGE_MAIN TEST_IFCFG_DIR"/network-scripts/ifcfg-test-bridge-main"
@@ -10802,6 +10808,7 @@ test_write_vlan (void)
 	unlink (written);
 	g_free (written);
 
+	g_object_unref (connection);
 }
 
 static void
@@ -10970,6 +10977,7 @@ test_read_ibft_ignored (void)
 	                                        NULL, &error);
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 	g_assert (connection == NULL);
+	g_clear_error (&error);
 }
 
 #define TEST_IFCFG_BOND_MAIN TEST_IFCFG_DIR"/network-scripts/ifcfg-test-bond-main"
@@ -11769,6 +11777,7 @@ test_read_dcb_bad_booleans (void)
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 	g_assert (strstr (error->message, "invalid boolean digit"));
 	g_assert (connection == NULL);
+	g_clear_error (&error);
 }
 
 static void
@@ -11786,6 +11795,7 @@ test_read_dcb_short_booleans (void)
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 	g_assert (strstr (error->message, "boolean array must be 8 characters"));
 	g_assert (connection == NULL);
+	g_clear_error (&error);
 }
 
 static void
@@ -11803,6 +11813,7 @@ test_read_dcb_bad_uints (void)
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 	g_assert (strstr (error->message, "invalid uint digit"));
 	g_assert (connection == NULL);
+	g_clear_error (&error);
 }
 
 static void
@@ -11820,6 +11831,7 @@ test_read_dcb_short_uints (void)
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 	g_assert (strstr (error->message, "uint array must be 8 characters"));
 	g_assert (connection == NULL);
+	g_clear_error (&error);
 }
 
 static void
@@ -11837,6 +11849,7 @@ test_read_dcb_bad_percent (void)
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 	g_assert (strstr (error->message, "invalid percent element"));
 	g_assert (connection == NULL);
+	g_clear_error (&error);
 }
 
 static void
@@ -11854,6 +11867,7 @@ test_read_dcb_short_percent (void)
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 	g_assert (strstr (error->message, "percent array must be 8 elements"));
 	g_assert (connection == NULL);
+	g_clear_error (&error);
 }
 
 static void
@@ -11871,6 +11885,7 @@ test_read_dcb_pgpct_not_100 (void)
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 	g_assert (strstr (error->message, "invalid percentage sum"));
 	g_assert (connection == NULL);
+	g_clear_error (&error);
 }
 
 static void
@@ -12226,6 +12241,7 @@ test_write_team_port (void)
 	val = svGetValue (f, "TEAM_PORT_CONFIG", TRUE);
 	g_assert (val);
 	g_assert_cmpstr (val, ==, escaped_expected_config);
+	g_free (val);
 	val = svGetValue (f, "TEAM_MASTER", TRUE);
 	g_assert (val);
 	g_assert_cmpstr (val, ==, "team0");

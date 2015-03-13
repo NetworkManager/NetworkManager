@@ -1802,6 +1802,7 @@ nm_utils_ip_addresses_from_variant (GVariant *value,
 			g_variant_unref (attr_val);
 		}
 
+		g_variant_unref (addr_var);
 		g_ptr_array_add (addresses, addr);
 	}
 

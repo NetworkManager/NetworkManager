@@ -37,7 +37,7 @@
         if (nm_logging_enabled ((level), (domain))) { \
             char __prefix[30] = "auth"; \
             \
-            if ((self) != _instance) \
+            if ((self) != singleton_instance) \
                 g_snprintf (__prefix, sizeof (__prefix), "auth[%p]", (self)); \
             nm_log ((level), (domain), \
                     "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
@@ -76,7 +76,7 @@ typedef struct {
 #endif
 } NMAuthManagerPrivate;
 
-static NMAuthManager *_instance = NULL;
+static NMAuthManager *singleton_instance = NULL;
 
 G_DEFINE_TYPE (NMAuthManager, nm_auth_manager, G_TYPE_OBJECT)
 
@@ -485,9 +485,9 @@ _dbus_new_proxy_cb (GObject *source_object,
 NMAuthManager *
 nm_auth_manager_get ()
 {
-	g_return_val_if_fail (_instance, NULL);
+	g_return_val_if_fail (singleton_instance, NULL);
 
-	return _instance;
+	return singleton_instance;
 }
 
 NMAuthManager *
@@ -495,14 +495,14 @@ nm_auth_manager_setup (gboolean polkit_enabled)
 {
 	NMAuthManager *self;
 
-	g_return_val_if_fail (!_instance, _instance);
+	g_return_val_if_fail (!singleton_instance, singleton_instance);
 
 	self = g_object_new (NM_TYPE_AUTH_MANAGER,
 	                     NM_AUTH_MANAGER_POLKIT_ENABLED, polkit_enabled,
 	                     NULL);
 	_LOGD ("set instance");
 
-	return (_instance = self);
+	return (singleton_instance = self);
 }
 
 /*****************************************************************************/
@@ -616,8 +616,8 @@ finalize (GObject *object)
 
 	G_OBJECT_CLASS (nm_auth_manager_parent_class)->finalize (object);
 
-	if (self == _instance) {
-		_instance = NULL;
+	if (self == singleton_instance) {
+		singleton_instance = NULL;
 		_LOGD ("unset instance");
 	}
 }

@@ -27,6 +27,10 @@
 #include <nm-config.h>
 #include "nm-test-device.h"
 #include "nm-fake-platform.h"
+#include "nm-logging.h"
+#include "nm-dbus-manager.h"
+
+#include "nm-test-utils.h"
 
 static void
 setup_config (const char *config_file, const char *config_dir, ...)
@@ -108,7 +112,7 @@ static void
 test_config_non_existent (void)
 {
 	NMConfig *config;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 
 	setup_config (SRCDIR "/no-such-file", "/no/such/dir", NULL);
 	config = nm_config_new (&error);
@@ -120,7 +124,7 @@ static void
 test_config_parse_error (void)
 {
 	NMConfig *config;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 
 	setup_config (SRCDIR "/bad.conf", "/no/such/dir", NULL);
 	config = nm_config_new (&error);
@@ -270,7 +274,7 @@ static void
 test_config_confdir_parse_error (void)
 {
 	NMConfig *config;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 
 	/* Using SRCDIR as the conf dir will pick up bad.conf */
 	setup_config (SRCDIR "/NetworkManager.conf", SRCDIR, NULL);
@@ -279,14 +283,19 @@ test_config_confdir_parse_error (void)
 	g_assert_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_PARSE);
 }
 
+NMTST_DEFINE ();
+
 int
 main (int argc, char **argv)
 {
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
+	nmtst_init_assert_logging (&argc, &argv);
 
-	g_test_init (&argc, &argv, NULL);
+	/* Initialize the DBus manager singleton explicitly, because it is accessed by
+	 * the class initializer of NMDevice (used by the NMTestDevice stub).
+	 * This way, we skip calling nm_dbus_manager_init_bus() which would
+	 * either fail and/or cause unexpected actions in the test.
+	 * */
+	nm_dbus_manager_setup (g_object_new (NM_TYPE_DBUS_MANAGER, NULL));
 
 	nm_fake_platform_setup ();
 

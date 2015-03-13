@@ -434,27 +434,24 @@ nm_setting_wired_get_s390_option (NMSettingWired *setting,
                                   const char **out_key,
                                   const char **out_value)
 {
-	NMSettingWiredPrivate *priv;
-	guint32 num_keys;
-	GList *keys;
-	const char *_key = NULL, *_value = NULL;
+	const char *_key, *_value;
+	GHashTableIter iter;
+	guint i = 0;
 
 	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), FALSE);
 
-	priv = NM_SETTING_WIRED_GET_PRIVATE (setting);
-
-	num_keys = nm_setting_wired_get_num_s390_options (setting);
-	g_return_val_if_fail (idx < num_keys, FALSE);
-
-	keys = g_hash_table_get_keys (priv->s390_options);
-	_key = g_list_nth_data (keys, idx);
-	_value = g_hash_table_lookup (priv->s390_options, _key);
-
-	if (out_key)
-		*out_key = _key;
-	if (out_value)
-		*out_value = _value;
-	return TRUE;
+	g_hash_table_iter_init (&iter, NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_options);
+	while (g_hash_table_iter_next (&iter, (gpointer) &_key, (gpointer) &_value)) {
+		if (i == idx) {
+			if (out_key)
+				*out_key = _key;
+			if (out_value)
+				*out_value = _value;
+			return TRUE;
+		}
+		i++;
+	}
+	g_return_val_if_reached (FALSE);
 }
 
 /**

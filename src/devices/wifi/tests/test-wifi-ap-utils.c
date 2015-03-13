@@ -785,6 +785,7 @@ test_priv_ap_leap_connection_1 (gconstpointer add_wifi)
 	COMPARE (src, expected, success, error, 0, 0);
 
 	g_object_unref (src);
+	g_object_unref (expected);
 }
 
 /*******************************************/
@@ -866,6 +867,7 @@ test_priv_ap_dynamic_wep_1 (void)
 	COMPARE (src, expected, success, error, 0, 0);
 
 	g_object_unref (src);
+	g_object_unref (expected);
 }
 
 /*******************************************/
@@ -913,6 +915,7 @@ test_priv_ap_dynamic_wep_2 (void)
 	COMPARE (src, expected, success, error, 0, 0);
 
 	g_object_unref (src);
+	g_object_unref (expected);
 }
 
 /*******************************************/

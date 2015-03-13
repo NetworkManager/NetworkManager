@@ -275,14 +275,18 @@ merge_no_auto_default_state (NMConfig *config)
 	if (g_file_get_contents (priv->no_auto_default_file, &data, NULL, NULL)) {
 		list = g_strsplit (data, "\n", -1);
 		for (i = 0; list[i]; i++) {
-			if (!*list[i])
+			if (!*list[i]) {
+				g_free (list[i]);
 				continue;
+			}
 			for (j = 0; j < updated->len; j++) {
 				if (!strcmp (list[i], updated->pdata[j]))
 					break;
 			}
 			if (j == updated->len)
 				g_ptr_array_add (updated, list[i]);
+			else
+				g_free (list[i]);
 		}
 		g_free (list);
 		g_free (data);
@@ -407,8 +411,8 @@ read_config (NMConfig *config, const char *path, GError **error)
 
 			if (keys[k][len - 1] == '+') {
 				char *base_key = g_strndup (keys[k], len - 1);
-				const char *old_val = g_key_file_get_value (priv->keyfile, groups[g], base_key, NULL);
-				const char *new_val = g_key_file_get_value (kf, groups[g], keys[k], NULL);
+				char *old_val = g_key_file_get_value (priv->keyfile, groups[g], base_key, NULL);
+				char *new_val = g_key_file_get_value (kf, groups[g], keys[k], NULL);
 
 				if (old_val && *old_val) {
 					char *combined = g_strconcat (old_val, ",", new_val, NULL);
@@ -419,6 +423,8 @@ read_config (NMConfig *config, const char *path, GError **error)
 					g_key_file_set_value (priv->keyfile, groups[g], base_key, new_val);
 
 				g_free (base_key);
+				g_free (old_val);
+				g_free (new_val);
 				continue;
 			}
 
