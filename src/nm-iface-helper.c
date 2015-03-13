@@ -367,6 +367,8 @@ main (int argc, char *argv[])
 		exit (0);
 	}
 
+	nm_main_utils_ensure_root ();
+
 	if (!global_opt.ifname || !global_opt.uuid) {
 		fprintf (stderr, _("An interface name and UUID are required\n"));
 		exit (1);

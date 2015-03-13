@@ -23,6 +23,8 @@
 
 #include <glib.h>
 
+void     nm_main_utils_ensure_root (void);
+
 void     nm_main_utils_setup_signals (GMainLoop *main_loop);
 
 void     nm_main_utils_ensure_rundir (void);

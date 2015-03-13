@@ -283,6 +283,8 @@ main (int argc, char *argv[])
 		exit (0);
 	}
 
+	nm_main_utils_ensure_root ();
+
 	if (!nm_logging_setup (global_opt.opt_log_level,
 	                       global_opt.opt_log_domains,
 	                       &bad_domains,

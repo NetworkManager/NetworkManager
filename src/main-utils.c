@@ -36,6 +36,7 @@
 
 #include "gsystem-local-alloc.h"
 #include "main-utils.h"
+#include "NetworkManagerUtils.h"
 #include "nm-logging.h"
 
 static gboolean
@@ -172,6 +173,15 @@ nm_main_utils_ensure_not_running_pidfile (const char *pidfile)
 	}
 }
 
+void
+nm_main_utils_ensure_root ()
+{
+	if (getuid () != 0) {
+		fprintf (stderr, _("You must be root to run %s!\n"), str_if_set (g_get_prgname (), ""));
+		exit (1);
+	}
+}
+
 gboolean
 nm_main_utils_early_setup (const char *progname,
                            int *argc,
@@ -204,11 +214,6 @@ nm_main_utils_early_setup (const char *progname,
 	/* Ensure gettext() gets the right environment (bgo #666516) */
 	setlocale (LC_ALL, "");
 	textdomain (GETTEXT_PACKAGE);
-
-	if (getuid () != 0) {
-		fprintf (stderr, _("You must be root to run %s!\n"), progname);
-		exit (1);
-	}
 
 	for (i = 0; options[i].long_name; i++) {
 		if (!strcmp (options[i].long_name, "log-level")) {
