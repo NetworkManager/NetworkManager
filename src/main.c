@@ -242,8 +242,8 @@ main (int argc, char *argv[])
 
 	config_cli = nm_config_cmd_line_options_new ();
 	if (!nm_main_utils_early_setup ("NetworkManager",
-	                                &argv,
 	                                &argc,
+	                                &argv,
 	                                options,
 	                                (void (*)(gpointer, GOptionContext *)) nm_config_cmd_line_options_add_to_entries,
 	                                config_cli,
