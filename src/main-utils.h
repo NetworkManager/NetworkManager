@@ -29,7 +29,7 @@ void     nm_main_utils_ensure_rundir (void);
 
 gboolean nm_main_utils_write_pidfile (const char *pidfile);
 
-gboolean nm_main_utils_check_pidfile (const char *pidfile, const char *name);
+void     nm_main_utils_ensure_not_running_pidfile (const char *pidfile);
 
 gboolean nm_main_utils_early_setup (const char *progname,
                                     int *argc,
