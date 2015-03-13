@@ -30,6 +30,7 @@
 #include "nm-utils.h"
 #include "nm-setting-private.h"
 #include "nm-core-internal.h"
+#include "gsystem-local-alloc.h"
 
 /**
  * SECTION:nm-connection
@@ -1306,6 +1307,19 @@ nm_connection_is_type (NMConnection *connection, const char *type)
 	return (g_strcmp0 (type2, type) == 0);
 }
 
+static int
+_for_each_sort (NMSetting **p_a, NMSetting **p_b, void *unused)
+{
+	NMSetting *a = *p_a;
+	NMSetting *b = *p_b;
+	int c;
+
+	c = _nm_setting_compare_priority (a, b);
+	if (c != 0)
+		return c;
+	return strcmp (nm_setting_get_name (a), nm_setting_get_name (b));
+}
+
 /**
  * nm_connection_for_each_setting_value:
  * @connection: the #NMConnection
@@ -1320,15 +1334,39 @@ nm_connection_for_each_setting_value (NMConnection *connection,
                                       NMSettingValueIterFn func,
                                       gpointer user_data)
 {
+	NMConnectionPrivate *priv;
+	gs_free NMSetting **arr_free = NULL;
+	NMSetting *arr_temp[20], **arr;
 	GHashTableIter iter;
 	gpointer value;
+	guint i, size;
 
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 	g_return_if_fail (func != NULL);
 
-	g_hash_table_iter_init (&iter, NM_CONNECTION_GET_PRIVATE (connection)->settings);
-	while (g_hash_table_iter_next (&iter, NULL, &value))
-		nm_setting_enumerate_values (NM_SETTING (value), func, user_data);
+	priv = NM_CONNECTION_GET_PRIVATE (connection);
+
+	size = g_hash_table_size (priv->settings);
+	if (!size)
+		return;
+
+	if (size > G_N_ELEMENTS (arr_temp))
+		arr = arr_free = g_new (NMSetting *, size);
+	else
+		arr = arr_temp;
+
+	g_hash_table_iter_init (&iter, priv->settings);
+	for (i = 0; g_hash_table_iter_next (&iter, NULL, &value); i++)
+		arr[i] = NM_SETTING (value);
+	g_assert (i == size);
+
+	/* sort the settings. This has an effect on the order in which keyfile
+	 * prints them. */
+	if (size > 1)
+		g_qsort_with_data (arr, size, sizeof (NMSetting *), (GCompareDataFunc) _for_each_sort, NULL);
+
+	for (i = 0; i < size; i++)
+		nm_setting_enumerate_values (arr[i], func, user_data);
 }
 
 /**
