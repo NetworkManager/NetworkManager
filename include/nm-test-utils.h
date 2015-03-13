@@ -32,6 +32,7 @@
 #include <errno.h>
 
 #include "nm-utils.h"
+#include "nm-utils-internal.h"
 #include "nm-glib-compat.h"
 #include "gsystem-local-alloc.h"
 
@@ -91,13 +92,13 @@ nmtst_initialized (void)
 	return !!__nmtst_internal.rand0;
 }
 
-#define __NMTST_LOG(cmd, fmt, ...) \
+#define __NMTST_LOG(cmd, ...) \
 	G_STMT_START { \
 		g_assert (nmtst_initialized ()); \
 		if (!__nmtst_internal.assert_logging || __nmtst_internal.no_expect_message) { \
-			cmd (fmt, __VA_ARGS__); \
+			cmd (__VA_ARGS__); \
 		} else { \
-			printf (fmt "\n", __VA_ARGS__); \
+			printf (_NM_UTILS_MACRO_FIRST (__VA_ARGS__) "\n" _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
 		} \
 	} G_STMT_END
 
