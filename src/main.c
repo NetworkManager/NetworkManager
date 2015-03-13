@@ -211,6 +211,37 @@ manager_configure_quit (NMManager *manager, gpointer user_data)
 	configure_and_quit = TRUE;
 }
 
+static void
+do_early_setup (int *argc, char **argv[], NMConfigCmdLineOptions *config_cli)
+{
+	GOptionEntry options[] = {
+		{ "version", 'V', 0, G_OPTION_ARG_NONE, &global_opt.show_version, N_("Print NetworkManager version and exit"), NULL },
+		{ "no-daemon", 'n', G_OPTION_FLAG_REVERSE, G_OPTION_ARG_NONE, &global_opt.become_daemon, N_("Don't become a daemon"), NULL },
+		{ "debug", 'd', 0, G_OPTION_ARG_NONE, &global_opt.debug, N_("Don't become a daemon, and log to stderr"), NULL },
+		{ "log-level", 0, 0, G_OPTION_ARG_STRING, &global_opt.opt_log_level, N_("Log level: one of [%s]"), "INFO" },
+		{ "log-domains", 0, 0, G_OPTION_ARG_STRING, &global_opt.opt_log_domains,
+		  N_("Log domains separated by ',': any combination of [%s]"),
+		  "PLATFORM,RFKILL,WIFI" },
+		{ "g-fatal-warnings", 0, 0, G_OPTION_ARG_NONE, &global_opt.g_fatal_warnings, N_("Make all warnings fatal"), NULL },
+		{ "pid-file", 'p', 0, G_OPTION_ARG_FILENAME, &global_opt.pidfile, N_("Specify the location of a PID file"), N_("filename") },
+		{ "state-file", 0, 0, G_OPTION_ARG_FILENAME, &global_opt.state_file, N_("State file location"), N_("/path/to/state.file") },
+		{ "run-from-build-dir", 0, 0, G_OPTION_ARG_NONE, &global_opt.run_from_build_dir, "Run from build directory", NULL },
+		{NULL}
+	};
+
+	if (!nm_main_utils_early_setup ("NetworkManager",
+	                                argc,
+	                                argv,
+	                                options,
+	                                (void (*)(gpointer, GOptionContext *)) nm_config_cmd_line_options_add_to_entries,
+	                                config_cli,
+	                                _("NetworkManager monitors all network connections and automatically\nchooses the best connection to use.  It also allows the user to\nspecify wireless access points which wireless cards in the computer\nshould associate with.")))
+		exit (1);
+
+	global_opt.pidfile = global_opt.pidfile ? global_opt.pidfile : g_strdup (NM_DEFAULT_PID_FILE);
+	global_opt.state_file = global_opt.state_file ? global_opt.state_file : g_strdup (NM_DEFAULT_SYSTEM_STATE_FILE);
+}
+
 /*
  * main
  *
@@ -228,34 +259,12 @@ main (int argc, char *argv[])
 	char *bad_domains = NULL;
 	NMConfigCmdLineOptions *config_cli;
 
-	GOptionEntry options[] = {
-		{ "version", 'V', 0, G_OPTION_ARG_NONE, &global_opt.show_version, N_("Print NetworkManager version and exit"), NULL },
-		{ "no-daemon", 'n', G_OPTION_FLAG_REVERSE, G_OPTION_ARG_NONE, &global_opt.become_daemon, N_("Don't become a daemon"), NULL },
-		{ "debug", 'd', 0, G_OPTION_ARG_NONE, &global_opt.debug, N_("Don't become a daemon, and log to stderr"), NULL },
-		{ "log-level", 0, 0, G_OPTION_ARG_STRING, &global_opt.opt_log_level, N_("Log level: one of [%s]"), "INFO" },
-		{ "log-domains", 0, 0, G_OPTION_ARG_STRING, &global_opt.opt_log_domains,
-		  N_("Log domains separated by ',': any combination of [%s]"),
-		  "PLATFORM,RFKILL,WIFI" },
-		{ "g-fatal-warnings", 0, 0, G_OPTION_ARG_NONE, &global_opt.g_fatal_warnings, N_("Make all warnings fatal"), NULL },
-		{ "pid-file", 'p', 0, G_OPTION_ARG_FILENAME, &global_opt.pidfile, N_("Specify the location of a PID file"), N_("filename") },
-		{ "state-file", 0, 0, G_OPTION_ARG_FILENAME, &global_opt.state_file, N_("State file location"), N_("/path/to/state.file") },
-		{ "run-from-build-dir", 0, 0, G_OPTION_ARG_NONE, &global_opt.run_from_build_dir, "Run from build directory", NULL },
-		{NULL}
-	};
-
 	_nm_utils_is_manager_process = TRUE;
 
 	main_loop = g_main_loop_new (NULL, FALSE);
 
 	config_cli = nm_config_cmd_line_options_new ();
-	if (!nm_main_utils_early_setup ("NetworkManager",
-	                                &argc,
-	                                &argv,
-	                                options,
-	                                (void (*)(gpointer, GOptionContext *)) nm_config_cmd_line_options_add_to_entries,
-	                                config_cli,
-	                                _("NetworkManager monitors all network connections and automatically\nchooses the best connection to use.  It also allows the user to\nspecify wireless access points which wireless cards in the computer\nshould associate with.")))
-		exit (1);
+	do_early_setup (&argc, &argv, config_cli);
 
 	if (global_opt.show_version) {
 		fprintf (stdout, NM_DIST_VERSION "\n");
@@ -306,9 +315,6 @@ main (int argc, char *argv[])
 		nm_log_err (LOGD_CORE, "Cannot create '%s': %s", NMSTATEDIR, strerror (errno));
 		exit (1);
 	}
-
-	global_opt.pidfile = global_opt.pidfile ? global_opt.pidfile : g_strdup (NM_DEFAULT_PID_FILE);
-	global_opt.state_file = global_opt.state_file ? global_opt.state_file : g_strdup (NM_DEFAULT_SYSTEM_STATE_FILE);
 
 	/* check pid file */
 	if (nm_main_utils_check_pidfile (global_opt.pidfile, "NetworkManager"))
