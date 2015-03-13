@@ -52,8 +52,6 @@
 
 static GMainLoop *main_loop = NULL;
 static int ifindex = -1;
-static guint32 priority_v4 = NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP4;
-static guint32 priority_v6 = NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6;
 
 static struct {
 	gboolean slaac;
@@ -72,12 +70,12 @@ static struct {
 	char *iid_str;
 	char *opt_log_level;
 	char *opt_log_domains;
-	gint64 priority64_v4;
-	gint64 priority64_v6;
+	guint32 priority_v4;
+	guint32 priority_v6;
 } global_opt = {
 	.tempaddr = NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
-	.priority64_v4 = -1,
-	.priority64_v6 = -1,
+	.priority_v4 = NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP4,
+	.priority_v6 = NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6,
 };
 
 static void
@@ -102,7 +100,7 @@ dhcp4_state_changed (NMDhcpClient *client,
 			nm_ip4_config_subtract (existing, last_config);
 
 		nm_ip4_config_merge (existing, ip4_config);
-		if (!nm_ip4_config_commit (existing, ifindex, priority_v4))
+		if (!nm_ip4_config_commit (existing, ifindex, global_opt.priority_v4))
 			nm_log_warn (LOGD_DHCP4, "(%s): failed to apply DHCPv4 config", global_opt.ifname);
 
 		if (last_config) {
@@ -214,7 +212,7 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, gpointer user_da
 				route.plen = discovered_route->plen;
 				route.gateway = discovered_route->gateway;
 				route.source = NM_IP_CONFIG_SOURCE_RDISC;
-				route.metric = priority_v6;
+				route.metric = global_opt.priority_v6;
 
 				nm_ip6_config_add_route (ip6_config, &route);
 			}
@@ -289,6 +287,52 @@ setup_signals (gboolean *quit_early_ptr)
 	g_unix_signal_add (SIGTERM, quit_handler, quit_early_ptr);
 }
 
+static void
+do_early_setup (int *argc, char **argv[])
+{
+	gint64 priority64_v4 = -1;
+	gint64 priority64_v6 = -1;
+	GOptionEntry options[] = {
+		/* Interface/IP config */
+		{ "ifname", 'i', 0, G_OPTION_ARG_STRING, &global_opt.ifname, N_("The interface to manage"), N_("eth0") },
+		{ "uuid", 'u', 0, G_OPTION_ARG_STRING, &global_opt.uuid, N_("Connection UUID"), N_("661e8cd0-b618-46b8-9dc9-31a52baaa16b") },
+		{ "slaac", 's', 0, G_OPTION_ARG_NONE, &global_opt.slaac, N_("Whether to manage IPv6 SLAAC"), NULL },
+		{ "slaac-required", '6', 0, G_OPTION_ARG_NONE, &global_opt.slaac_required, N_("Whether SLAAC must be successful"), NULL },
+		{ "slaac-tempaddr", 't', 0, G_OPTION_ARG_INT, &global_opt.tempaddr, N_("Use an IPv6 temporary privacy address"), NULL },
+		{ "dhcp4", 'd', 0, G_OPTION_ARG_STRING, &global_opt.dhcp4_address, N_("Current DHCPv4 address"), NULL },
+		{ "dhcp4-required", '4', 0, G_OPTION_ARG_NONE, &global_opt.dhcp4_required, N_("Whether DHCPv4 must be successful"), NULL },
+		{ "dhcp4-clientid", 'c', 0, G_OPTION_ARG_STRING, &global_opt.dhcp4_clientid, N_("Hex-encoded DHCPv4 client ID"), NULL },
+		{ "dhcp4-hostname", 'h', 0, G_OPTION_ARG_STRING, &global_opt.dhcp4_hostname, N_("Hostname to send to DHCP server"), N_("barbar") },
+		{ "priority4", '\0', 0, G_OPTION_ARG_INT64, &priority64_v4, N_("Route priority for IPv4"), N_("0") },
+		{ "priority6", '\0', 0, G_OPTION_ARG_INT64, &priority64_v6, N_("Route priority for IPv6"), N_("1024") },
+		{ "iid", 'e', 0, G_OPTION_ARG_STRING, &global_opt.iid_str, N_("Hex-encoded Interface Identifier"), N_("") },
+
+		/* Logging/debugging */
+		{ "version", 'V', 0, G_OPTION_ARG_NONE, &global_opt.show_version, N_("Print NetworkManager version and exit"), NULL },
+		{ "no-daemon", 'n', G_OPTION_FLAG_REVERSE, G_OPTION_ARG_NONE, &global_opt.become_daemon, N_("Don't become a daemon"), NULL },
+		{ "debug", 'b', 0, G_OPTION_ARG_NONE, &global_opt.debug, N_("Don't become a daemon, and log to stderr"), NULL },
+		{ "log-level", 0, 0, G_OPTION_ARG_STRING, &global_opt.opt_log_level, N_("Log level: one of [%s]"), "INFO" },
+		{ "log-domains", 0, 0, G_OPTION_ARG_STRING, &global_opt.opt_log_domains,
+		  N_("Log domains separated by ',': any combination of [%s]"),
+		  "PLATFORM,RFKILL,WIFI" },
+		{ "g-fatal-warnings", 0, 0, G_OPTION_ARG_NONE, &global_opt.g_fatal_warnings, N_("Make all warnings fatal"), NULL },
+		{NULL}
+	};
+
+	if (!nm_main_utils_early_setup ("nm-iface-helper",
+	                                argc,
+	                                argv,
+	                                options,
+	                                NULL,
+	                                _("nm-iface-helper is a small, standalone process that manages a single network interface.")))
+		exit (1);
+
+	if (priority64_v4 >= 0 && priority64_v4 <= G_MAXUINT32)
+		global_opt.priority_v4 = (guint32) priority64_v4;
+	if (priority64_v6 >= 0 && priority64_v6 <= G_MAXUINT32)
+		global_opt.priority_v6 = (guint32) priority64_v6;
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -305,42 +349,9 @@ main (int argc, char *argv[])
 	gconstpointer tmp;
 	gs_free NMUtilsIPv6IfaceId *iid = NULL;
 
-	GOptionEntry options[] = {
-		/* Interface/IP config */
-		{ "ifname", 'i', 0, G_OPTION_ARG_STRING, &global_opt.ifname, N_("The interface to manage"), N_("eth0") },
-		{ "uuid", 'u', 0, G_OPTION_ARG_STRING, &global_opt.uuid, N_("Connection UUID"), N_("661e8cd0-b618-46b8-9dc9-31a52baaa16b") },
-		{ "slaac", 's', 0, G_OPTION_ARG_NONE, &global_opt.slaac, N_("Whether to manage IPv6 SLAAC"), NULL },
-		{ "slaac-required", '6', 0, G_OPTION_ARG_NONE, &global_opt.slaac_required, N_("Whether SLAAC must be successful"), NULL },
-		{ "slaac-tempaddr", 't', 0, G_OPTION_ARG_INT, &global_opt.tempaddr, N_("Use an IPv6 temporary privacy address"), NULL },
-		{ "dhcp4", 'd', 0, G_OPTION_ARG_STRING, &global_opt.dhcp4_address, N_("Current DHCPv4 address"), NULL },
-		{ "dhcp4-required", '4', 0, G_OPTION_ARG_NONE, &global_opt.dhcp4_required, N_("Whether DHCPv4 must be successful"), NULL },
-		{ "dhcp4-clientid", 'c', 0, G_OPTION_ARG_STRING, &global_opt.dhcp4_clientid, N_("Hex-encoded DHCPv4 client ID"), NULL },
-		{ "dhcp4-hostname", 'h', 0, G_OPTION_ARG_STRING, &global_opt.dhcp4_hostname, N_("Hostname to send to DHCP server"), N_("barbar") },
-		{ "priority4", '\0', 0, G_OPTION_ARG_INT64, &global_opt.priority64_v4, N_("Route priority for IPv4"), N_("0") },
-		{ "priority6", '\0', 0, G_OPTION_ARG_INT64, &global_opt.priority64_v6, N_("Route priority for IPv6"), N_("1024") },
-		{ "iid", 'e', 0, G_OPTION_ARG_STRING, &global_opt.iid_str, N_("Hex-encoded Interface Identifier"), N_("") },
-
-		/* Logging/debugging */
-		{ "version", 'V', 0, G_OPTION_ARG_NONE, &global_opt.show_version, N_("Print NetworkManager version and exit"), NULL },
-		{ "no-daemon", 'n', G_OPTION_FLAG_REVERSE, G_OPTION_ARG_NONE, &global_opt.become_daemon, N_("Don't become a daemon"), NULL },
-		{ "debug", 'b', 0, G_OPTION_ARG_NONE, &global_opt.debug, N_("Don't become a daemon, and log to stderr"), NULL },
-		{ "log-level", 0, 0, G_OPTION_ARG_STRING, &global_opt.opt_log_level, N_("Log level: one of [%s]"), "INFO" },
-		{ "log-domains", 0, 0, G_OPTION_ARG_STRING, &global_opt.opt_log_domains,
-		  N_("Log domains separated by ',': any combination of [%s]"),
-		  "PLATFORM,RFKILL,WIFI" },
-		{ "g-fatal-warnings", 0, 0, G_OPTION_ARG_NONE, &global_opt.g_fatal_warnings, N_("Make all warnings fatal"), NULL },
-		{NULL}
-	};
-
 	setpgid (getpid (), getpid ());
 
-	if (!nm_main_utils_early_setup ("nm-iface-helper",
-	                                &argc,
-	                                &argv,
-	                                options,
-	                                NULL,
-	                                _("nm-iface-helper is a small, standalone process that manages a single network interface.")))
-		exit (1);
+	do_early_setup (&argc, &argv);
 
 	if (global_opt.show_version) {
 		fprintf (stdout, NM_DIST_VERSION "\n");
@@ -435,12 +446,6 @@ main (int argc, char *argv[])
 		iid = g_bytes_unref_to_data (bytes, &ignored);
 	}
 
-	if (global_opt.priority64_v4 >= 0 && global_opt.priority64_v4 <= G_MAXUINT32)
-		priority_v4 = (guint32) global_opt.priority64_v4;
-
-	if (global_opt.priority64_v6 >= 0 && global_opt.priority64_v6 <= G_MAXUINT32)
-		priority_v6 = (guint32) global_opt.priority64_v6;
-
 	if (global_opt.dhcp4_address) {
 		nm_platform_sysctl_set (nm_utils_ip4_property_path (global_opt.ifname, "promote_secondaries"), "1");
 
@@ -453,7 +458,7 @@ main (int argc, char *argv[])
 		                                          ifindex,
 		                                          hwaddr,
 		                                          global_opt.uuid,
-		                                          priority_v4,
+		                                          global_opt.priority_v4,
 		                                          !!global_opt.dhcp4_hostname,
 		                                          global_opt.dhcp4_hostname,
 		                                          global_opt.dhcp4_clientid,
