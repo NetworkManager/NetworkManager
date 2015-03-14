@@ -381,6 +381,14 @@ main (int argc, char *argv[])
 		exit (1);
 	}
 
+	ifindex = if_nametoindex (global_opt.ifname);
+	if (ifindex <= 0) {
+		fprintf (stderr, _("Failed to find interface index for %s (%s)\n"), global_opt.ifname, strerror (errno));
+		exit (1);
+	}
+	pidfile = g_strdup_printf (NMIH_PID_FILE_FMT, ifindex);
+	nm_main_utils_ensure_not_running_pidfile (pidfile);
+
 	if (!nm_logging_setup (global_opt.opt_log_level,
 	                       global_opt.opt_log_domains,
 	                       &bad_domains,
@@ -397,14 +405,6 @@ main (int argc, char *argv[])
 	}
 
 	nm_main_utils_ensure_rundir ();
-
-	ifindex = if_nametoindex (global_opt.ifname);
-	if (ifindex <= 0) {
-		fprintf (stderr, _("Failed to find interface index for %s (%s)\n"), global_opt.ifname, strerror (errno));
-		exit (1);
-	}
-	pidfile = g_strdup_printf (NMIH_PID_FILE_FMT, ifindex);
-	nm_main_utils_ensure_not_running_pidfile (pidfile);
 
 	if (global_opt.become_daemon && !global_opt.debug) {
 		if (daemon (0, 0) < 0) {
