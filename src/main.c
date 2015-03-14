@@ -285,6 +285,8 @@ main (int argc, char *argv[])
 
 	nm_main_utils_ensure_root ();
 
+	nm_main_utils_ensure_not_running_pidfile (global_opt.pidfile);
+
 	if (!nm_logging_setup (global_opt.opt_log_level,
 	                       global_opt.opt_log_domains,
 	                       &bad_domains,
@@ -331,8 +333,6 @@ main (int argc, char *argv[])
 	}
 
 	nm_main_utils_ensure_rundir ();
-
-	nm_main_utils_ensure_not_running_pidfile (global_opt.pidfile);
 
 	/* Read the config file and CLI overrides */
 	config = nm_config_setup (config_cli, &error);
