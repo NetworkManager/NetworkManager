@@ -34,6 +34,10 @@
 #include <sys/stat.h>
 #include <signal.h>
 
+/* Cannot include <net/if.h> due to conflict with <linux/if.h>.
+ * Forward declare if_nametoindex. */
+extern unsigned int if_nametoindex (const char *__ifname);
+
 #include "gsystem-local-alloc.h"
 #include "NetworkManagerUtils.h"
 #include "nm-linux-platform.h"
@@ -391,6 +395,11 @@ main (int argc, char *argv[])
 
 	nm_main_utils_ensure_rundir ();
 
+	ifindex = if_nametoindex (global_opt.ifname);
+	if (ifindex <= 0) {
+		fprintf (stderr, _("Failed to find interface index for %s (%s)\n"), global_opt.ifname, strerror (errno));
+		exit (1);
+	}
 	pidfile = g_strdup_printf (NMIH_PID_FILE_FMT, ifindex);
 	nm_main_utils_ensure_not_running_pidfile (pidfile);
 
@@ -418,12 +427,6 @@ main (int argc, char *argv[])
 
 	/* Set up platform interaction layer */
 	nm_linux_platform_setup ();
-
-	ifindex = nm_platform_link_get_ifindex (global_opt.ifname);
-	if (ifindex <= 0) {
-		fprintf (stderr, _("Failed to find interface index for %s\n"), global_opt.ifname);
-		exit (1);
-	}
 
 	tmp = nm_platform_link_get_address (ifindex, &hwaddr_len);
 	if (tmp) {
