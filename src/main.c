@@ -287,6 +287,14 @@ main (int argc, char *argv[])
 
 	nm_main_utils_ensure_not_running_pidfile (global_opt.pidfile);
 
+	/* Ensure state directory exists */
+	if (g_mkdir_with_parents (NMSTATEDIR, 0755) != 0) {
+		fprintf (stderr, "Cannot create '%s': %s", NMSTATEDIR, strerror (errno));
+		exit (1);
+	}
+
+	nm_main_utils_ensure_rundir ();
+
 	if (!nm_logging_setup (global_opt.opt_log_level,
 	                       global_opt.opt_log_domains,
 	                       &bad_domains,
@@ -325,14 +333,6 @@ main (int argc, char *argv[])
 
 		g_free (path);
 	}
-
-	/* Ensure state directory exists */
-	if (g_mkdir_with_parents (NMSTATEDIR, 0755) != 0) {
-		nm_log_err (LOGD_CORE, "Cannot create '%s': %s", NMSTATEDIR, strerror (errno));
-		exit (1);
-	}
-
-	nm_main_utils_ensure_rundir ();
 
 	/* Read the config file and CLI overrides */
 	config = nm_config_setup (config_cli, &error);

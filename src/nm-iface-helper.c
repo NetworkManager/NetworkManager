@@ -386,6 +386,8 @@ main (int argc, char *argv[])
 	pidfile = g_strdup_printf (NMIH_PID_FILE_FMT, ifindex);
 	nm_main_utils_ensure_not_running_pidfile (pidfile);
 
+	nm_main_utils_ensure_rundir ();
+
 	if (!nm_logging_setup (global_opt.opt_log_level,
 	                       global_opt.opt_log_domains,
 	                       &bad_domains,
@@ -400,8 +402,6 @@ main (int argc, char *argv[])
 		         bad_domains);
 		g_clear_pointer (&bad_domains, g_free);
 	}
-
-	nm_main_utils_ensure_rundir ();
 
 	if (global_opt.become_daemon && !global_opt.debug) {
 		if (daemon (0, 0) < 0) {
