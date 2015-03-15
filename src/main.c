@@ -295,21 +295,6 @@ main (int argc, char *argv[])
 
 	nm_main_utils_ensure_rundir ();
 
-	if (!nm_logging_setup (global_opt.opt_log_level,
-	                       global_opt.opt_log_domains,
-	                       &bad_domains,
-	                       &error)) {
-		fprintf (stderr,
-		         _("%s.  Please use --help to see a list of valid options.\n"),
-		         error->message);
-		exit (1);
-	} else if (bad_domains) {
-		fprintf (stderr,
-		         _("Ignoring unrecognized log domain(s) '%s' passed on command line.\n"),
-		         bad_domains);
-		g_clear_pointer (&bad_domains, g_free);
-	}
-
 	/* When running from the build directory, determine our build directory
 	 * base and set helper paths in the build tree */
 	if (global_opt.run_from_build_dir) {
@@ -332,6 +317,21 @@ main (int argc, char *argv[])
 		nm_device_autoipd_helper_path = g_strdup_printf ("%s/callouts/nm-avahi-autoipd.action", path);
 
 		g_free (path);
+	}
+
+	if (!nm_logging_setup (global_opt.opt_log_level,
+	                       global_opt.opt_log_domains,
+	                       &bad_domains,
+	                       &error)) {
+		fprintf (stderr,
+		         _("%s.  Please use --help to see a list of valid options.\n"),
+		         error->message);
+		exit (1);
+	} else if (bad_domains) {
+		fprintf (stderr,
+		         _("Ignoring unrecognized log domain(s) '%s' passed on command line.\n"),
+		         bad_domains);
+		g_clear_pointer (&bad_domains, g_free);
 	}
 
 	/* Read the config file and CLI overrides */
