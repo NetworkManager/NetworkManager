@@ -247,6 +247,8 @@ nm_connectivity_check_async (NMConnectivity      *self,
 	if (priv->uri && priv->interval) {
 		msg = soup_message_new ("GET", priv->uri);
 		soup_message_set_flags (msg, SOUP_MESSAGE_NO_REDIRECT);
+		/* Disable HTTP/1.1 keepalive; the connection should not persist */
+		soup_message_headers_append (msg->request_headers, "Connection", "close");
 		soup_session_queue_message (priv->soup_session,
 		                            msg,
 		                            nm_connectivity_check_cb,
