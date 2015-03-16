@@ -221,7 +221,7 @@
    match-leak-kinds: definite
    fun:calloc
    fun:g_malloc0
-   fun:thread_memory_from_self
+   ...
    fun:g_slice_alloc
    fun:g_slice_alloc0
    fun:g_main_context_push_thread_default
