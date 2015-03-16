@@ -681,6 +681,8 @@ object_property_complete (ObjectCreatedData *odata)
 		for (i = 0; i < odata->length; i++)
 			add_to_object_array_unique (new, odata->objects[i]);
 
+		*((GPtrArray **) pi->field) = new;
+
 		if (pi->signal_prefix) {
 			GPtrArray *added = g_ptr_array_sized_new (3);
 			GPtrArray *removed = g_ptr_array_sized_new (3);
@@ -690,8 +692,6 @@ object_property_complete (ObjectCreatedData *odata)
 
 			/* Find objects in 'new' that do not exist in old */
 			array_diff (new, old, added);
-
-			*((GPtrArray **) pi->field) = new;
 
 			/* Emit added & removed */
 			for (i = 0; i < removed->len; i++) {
@@ -715,7 +715,6 @@ object_property_complete (ObjectCreatedData *odata)
 			/* No added/removed signals to send, just replace the property with
 			 * the new values.
 			 */
-			*((GPtrArray **) pi->field) = new;
 			different = TRUE;
 		}
 
