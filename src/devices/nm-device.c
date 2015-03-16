@@ -7475,7 +7475,7 @@ _cleanup_generic_post (NMDevice *self, gboolean deconfigure)
  *
  */
 static void
-nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason)
+nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, gboolean deconfigure)
 {
 	NMDevicePrivate *priv;
 	int ifindex;
@@ -7490,12 +7490,14 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason)
 	/* Save whether or not we tried IPv6 for later */
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	_cleanup_generic_pre (self, TRUE);
+	_cleanup_generic_pre (self, deconfigure);
 
 	/* Turn off kernel IPv6 */
-	set_disable_ipv6 (self, "1");
-	nm_device_ipv6_sysctl_set (self, "accept_ra", "0");
-	nm_device_ipv6_sysctl_set (self, "use_tempaddr", "0");
+	if (deconfigure) {
+		set_disable_ipv6 (self, "1");
+		nm_device_ipv6_sysctl_set (self, "accept_ra", "0");
+		nm_device_ipv6_sysctl_set (self, "use_tempaddr", "0");
+	}
 
 	/* Call device type-specific deactivation */
 	if (NM_DEVICE_GET_CLASS (self)->deactivate)
@@ -7516,7 +7518,7 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason)
 		nm_platform_address_flush (ifindex);
 	}
 
-	_cleanup_generic_post (self, TRUE);
+	_cleanup_generic_post (self, deconfigure);
 }
 
 static char *
@@ -7844,12 +7846,16 @@ _set_state_full (NMDevice *self,
 	case NM_DEVICE_STATE_UNMANAGED:
 		nm_device_set_firmware_missing (self, FALSE);
 		if (old_state > NM_DEVICE_STATE_UNMANAGED) {
-			/* Clean up if the device is now unmanaged but was activated */
-			if (nm_device_get_act_request (self))
-				nm_device_cleanup (self, reason);
-			nm_device_take_down (self, TRUE);
-			set_nm_ipv6ll (self, FALSE);
-			restore_ip6_properties (self);
+			if (reason == NM_DEVICE_STATE_REASON_REMOVED) {
+				nm_device_cleanup (self, reason, FALSE);
+			} else {
+				/* Clean up if the device is now unmanaged but was activated */
+				if (nm_device_get_act_request (self))
+					nm_device_cleanup (self, reason, TRUE);
+				nm_device_take_down (self, TRUE);
+				set_nm_ipv6ll (self, FALSE);
+				restore_ip6_properties (self);
+			}
 		}
 		break;
 	case NM_DEVICE_STATE_UNAVAILABLE:
@@ -7874,7 +7880,7 @@ _set_state_full (NMDevice *self,
 			 * Note that we "deactivate" the device even when coming from
 			 * UNMANAGED, to ensure that it's in a clean state.
 			 */
-			nm_device_cleanup (self, reason);
+			nm_device_cleanup (self, reason, TRUE);
 		}
 		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
@@ -7884,7 +7890,7 @@ _set_state_full (NMDevice *self,
 			 */
 			set_nm_ipv6ll (self, TRUE);
 
-			nm_device_cleanup (self, reason);
+			nm_device_cleanup (self, reason, TRUE);
 		} else if (old_state < NM_DEVICE_STATE_DISCONNECTED) {
 			if (reason != NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED) {
 				/* Ensure IPv6 is set up as it may not have been done when
