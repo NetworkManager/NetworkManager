@@ -297,6 +297,8 @@ nm_connectivity_check_async (NMConnectivity      *self,
 
 		msg = soup_message_new ("GET", priv->uri);
 		soup_message_set_flags (msg, SOUP_MESSAGE_NO_REDIRECT);
+		/* Disable HTTP/1.1 keepalive; the connection should not persist */
+		soup_message_headers_append (msg->request_headers, "Connection", "close");
 		cb_data->simple = simple;
 		cb_data->uri = g_strdup (priv->uri);
 		cb_data->response = g_strdup (priv->response);
