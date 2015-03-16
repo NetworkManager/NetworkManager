@@ -4607,7 +4607,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 	connection = nm_device_get_connection (self);
 	g_assert (connection);
 
-	if (   connection_ip4_method_requires_carrier (connection, NULL)
+	if (   connection_ip6_method_requires_carrier (connection, NULL)
 	    && priv->is_master
 	    && !priv->carrier) {
 		_LOGI (LOGD_IP6 | LOGD_DEVICE,
@@ -6168,7 +6168,7 @@ nm_device_set_ip6_config (NMDevice *self,
 				nm_ip6_config_export (new_config);
 			}
 
-			_LOGD (LOGD_IP4, "set IP6Config instance (%s)",
+			_LOGD (LOGD_IP6, "set IP6Config instance (%s)",
 			       nm_ip6_config_get_dbus_path (new_config));
 		}
 	} else if (old_config) {
