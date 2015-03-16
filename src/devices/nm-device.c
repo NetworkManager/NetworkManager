@@ -3870,7 +3870,7 @@ dhcp6_start (NMDevice *self, gboolean wait_for_ll, NMDeviceStateReason *reason)
 		}
 
 		/* success; already have the LL address; kick off DHCP */
-		g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);
+		g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS || ret == NM_ACT_STAGE_RETURN_FINISH);
 	}
 
 	if (!dhcp6_start_with_link_ready (self, connection)) {
@@ -4035,7 +4035,7 @@ linklocal6_start (NMDevice *self)
 	linklocal6_cleanup (self);
 
 	if (have_ip6_address (priv->ip6_config, TRUE))
-		return NM_ACT_STAGE_RETURN_SUCCESS;
+		return NM_ACT_STAGE_RETURN_FINISH;
 
 	connection = nm_device_get_connection (self);
 	g_assert (connection);
@@ -4402,7 +4402,7 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 	}
 
 	/* success; already have the LL address; kick off router discovery */
-	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);
+	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS || ret == NM_ACT_STAGE_RETURN_FINISH);
 	return addrconf6_start_with_link_ready (self);
 }
 
@@ -4688,7 +4688,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 			ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	} else if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0) {
 		ret = linklocal6_start (self);
-		if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
+		if (ret == NM_ACT_STAGE_RETURN_FINISH) {
 			/* New blank config; LL address is already in priv->ext_ip6_config */
 			*out_config = nm_ip6_config_new (nm_device_get_ip_ifindex (self));
 			g_assert (*out_config);
@@ -4795,8 +4795,11 @@ nm_device_activate_stage3_ip6_start (NMDevice *self)
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
 		return FALSE;
 	} else if (ret == NM_ACT_STAGE_RETURN_STOP) {
-		/* Early finish */
+		/* Activation not wanted */
 		priv->ip6_state = IP_FAIL;
+	} else if (ret == NM_ACT_STAGE_RETURN_FINISH) {
+		/* Early finish, nothing more to do */
+		priv->ip6_state = IP_DONE;
 	} else if (ret == NM_ACT_STAGE_RETURN_WAIT) {
 		/* Wait for something to try IP config again */
 		priv->ip6_state = IP_WAIT;
