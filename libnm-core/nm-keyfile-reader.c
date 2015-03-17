@@ -1444,7 +1444,7 @@ read_one_setting_value (NMSetting *setting,
 				g_object_set (setting, key, (guint) uint_val, NULL);
 			else {
 				if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
-				                  _("too large FLAGS property '%s' (%lld)"),
+				                  _("too large FLAGS property '%s' (%llu)"),
 				                  G_VALUE_TYPE_NAME (value), (long long unsigned) uint_val))
 					goto out_error;
 			}
