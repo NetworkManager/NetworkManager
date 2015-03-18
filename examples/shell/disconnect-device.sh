@@ -61,7 +61,7 @@ disconnect_device ()
     fi
   done
 
-  echo "Device with interface '$1' not found."
+  echo "Device with interface '$1' not found." >&2
   return 1
 }
 
@@ -70,7 +70,7 @@ disconnect_device ()
 if [ ! -n "$1" ]; then
   echo "Usage: `basename $0` <interface name>"
   exit 2
-fi 
+fi
 
 # disconnect device
 disconnect_device $1
