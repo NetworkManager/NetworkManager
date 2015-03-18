@@ -76,7 +76,7 @@ show_active_ssids()
         BSSID=`get_property $ACTIVE_AP $ACCESS_POINT_IFACE "HwAddress"`
         echo "Device '$INTERFACE' is connected to '$SSID' (BSSID=$BSSID)"
       else
-        echo "No active AP on device '$INTERFACE'"
+        echo "No active AP on device '$INTERFACE'" >&2
       fi
     fi
   done
