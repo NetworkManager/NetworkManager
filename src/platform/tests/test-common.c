@@ -257,6 +257,7 @@ main (int argc, char **argv)
 
 	nmtst_init_with_logging (&argc, &argv, NULL, "ALL");
 
+	NM_PRAGMA_WARNING_DISABLE("-Wtautological-compare")
 	if (SETUP == nm_linux_platform_setup && getuid() != 0) {
 		/* Try to exec as sudo, this function does not return, if a sudo-cmd is set. */
 		nmtst_reexec_sudo ();
@@ -269,6 +270,7 @@ main (int argc, char **argv)
 		return 77;
 #endif
 	}
+	NM_PRAGMA_WARNING_REENABLE
 
 	SETUP ();
 

@@ -116,11 +116,13 @@ typedef enum  { /*< skip >*/
 /* log a message for an object (with providing a generic @self pointer) */
 #define nm_log_ptr(level, domain, self, ...) \
     G_STMT_START { \
+        NM_PRAGMA_WARNING_DISABLE("-Wtautological-compare") \
         if ((level) <= LOGL_DEBUG) { \
             _nm_log_ptr ((level), (domain), (self), __VA_ARGS__); \
         } else { \
             nm_log ((level), (domain), __VA_ARGS__); \
         } \
+        NM_PRAGMA_WARNING_REENABLE \
     } G_STMT_END
 
 
