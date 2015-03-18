@@ -1420,7 +1420,7 @@ nm_client_get_connectivity (NMClient *client)
 {
 	NMClientPrivate *priv;
 
-	g_return_val_if_fail (NM_IS_CLIENT (client), NM_STATE_UNKNOWN);
+	g_return_val_if_fail (NM_IS_CLIENT (client), NM_CONNECTIVITY_UNKNOWN);
 	priv = NM_CLIENT_GET_PRIVATE (client);
 
 	_nm_object_ensure_inited (NM_OBJECT (client));
