@@ -471,7 +471,7 @@ nm_client_get_permission_result (NMClient *client, NMClientPermission permission
 NMConnectivityState
 nm_client_get_connectivity (NMClient *client)
 {
-	g_return_val_if_fail (NM_IS_CLIENT (client), NM_STATE_UNKNOWN);
+	g_return_val_if_fail (NM_IS_CLIENT (client), NM_CONNECTIVITY_UNKNOWN);
 
 	return nm_manager_get_connectivity (NM_CLIENT_GET_PRIVATE (client)->manager);
 }

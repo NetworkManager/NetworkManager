@@ -777,7 +777,7 @@ nm_ap_set_ssid (NMAccessPoint *ap, const guint8 *ssid, gsize len)
 NM80211ApFlags
 nm_ap_get_flags (NMAccessPoint *ap)
 {
-	g_return_val_if_fail (NM_IS_AP (ap), NM_802_11_AP_SEC_NONE);
+	g_return_val_if_fail (NM_IS_AP (ap), NM_802_11_AP_FLAGS_NONE);
 
 	return NM_AP_GET_PRIVATE (ap)->flags;
 }

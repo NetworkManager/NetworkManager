@@ -568,7 +568,7 @@ nm_manager_get_permission_result (NMManager *manager, NMClientPermission permiss
 NMConnectivityState
 nm_manager_get_connectivity (NMManager *manager)
 {
-	g_return_val_if_fail (NM_IS_MANAGER (manager), NM_STATE_UNKNOWN);
+	g_return_val_if_fail (NM_IS_MANAGER (manager), NM_CONNECTIVITY_UNKNOWN);
 
 	return NM_MANAGER_GET_PRIVATE (manager)->connectivity;
 }
