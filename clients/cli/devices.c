@@ -122,9 +122,11 @@ static NmcOutputField nmc_fields_dev_show_wifi_prop[] = {
 	{"CCMP",       N_("CCMP"),    6},  /* 5 */
 	{"AP",         N_("AP"),      6},  /* 6 */
 	{"ADHOC",      N_("ADHOC"),   6},  /* 7 */
+	{"2GHZ",       N_("2GHZ"),   10},  /* 8 */
+	{"5GHZ",       N_("5GHZ"),   10},  /* 9 */
 	{NULL,         NULL,          0}
 };
-#define NMC_FIELDS_DEV_SHOW_WIFI_PROP_ALL     "NAME,WEP,WPA,WPA2,TKIP,CCMP,AP,ADHOC"
+#define NMC_FIELDS_DEV_SHOW_WIFI_PROP_ALL     "NAME,WEP,WPA,WPA2,TKIP,CCMP,AP,ADHOC,2GHZ,5GHZ"
 #define NMC_FIELDS_DEV_SHOW_WIFI_PROP_COMMON  "NAME,WEP,WPA,WPA2,TKIP,CCMP,AP,ADHOC"
 
 /* Available fields for 'device show' - wimax properties part */
@@ -979,6 +981,10 @@ show_device_info (NMDevice *device, NmCli *nmc)
 				set_val_strc (arr, 5, (wcaps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP) ? _("yes") : _("no"));
 				set_val_strc (arr, 6, (wcaps & NM_WIFI_DEVICE_CAP_AP) ? _("yes") : _("no"));
 				set_val_strc (arr, 7, (wcaps & NM_WIFI_DEVICE_CAP_ADHOC) ? _("yes") : _("no"));
+				set_val_strc (arr, 8, !(wcaps & NM_WIFI_DEVICE_CAP_FREQ_VALID) ? _("unknown") :
+				                      ((wcaps & NM_WIFI_DEVICE_CAP_FREQ_2GHZ) ? _("yes") : _("no")));
+				set_val_strc (arr, 9, !(wcaps & NM_WIFI_DEVICE_CAP_FREQ_VALID) ? _("unknown") :
+				                      ((wcaps & NM_WIFI_DEVICE_CAP_FREQ_5GHZ) ? _("yes") : _("no")));
 				g_ptr_array_add (nmc->output_data, arr);
 
 				print_data (nmc);  /* Print all data */
