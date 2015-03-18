@@ -365,12 +365,14 @@ test_bridge (void)
 static void
 test_bond (void)
 {
+	NM_PRAGMA_WARNING_DISABLE("-Wtautological-compare")
 	if (SETUP == nm_linux_platform_setup &&
 	    !g_file_test ("/proc/1/net/bonding", G_FILE_TEST_IS_DIR) &&
 	    system("modprobe --show bonding") != 0) {
 		g_test_skip ("Skipping test for bonding: bonding module not available");
 		return;
 	}
+	NM_PRAGMA_WARNING_REENABLE
 
 	test_software (NM_LINK_TYPE_BOND, "bond");
 }
