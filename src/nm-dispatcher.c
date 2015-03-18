@@ -372,7 +372,7 @@ static const char *action_table[] = {
 static const char *
 action_to_string (DispatcherAction action)
 {
-	g_assert (action >= 0 && action < G_N_ELEMENTS (action_table));
+	g_assert ((gsize) action < G_N_ELEMENTS (action_table));
 	return action_table[action];
 }
 
