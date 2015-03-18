@@ -44,7 +44,8 @@ gboolean wifi_utils_set_mode (WifiData *data, const NM80211Mode mode);
 /* Returns frequency in MHz */
 guint32 wifi_utils_get_freq (WifiData *data);
 
-/* Return the first supported frequency in the zero-terminated list */
+/* Return the first supported frequency in the zero-terminated list.
+ * Frequencies are specified in MHz. */
 guint32 wifi_utils_find_freq (WifiData *data, const guint32 *freqs);
 
 /* Caller must free returned byte array */

@@ -738,6 +738,7 @@ static int nl80211_wiphy_info_handler (struct nl_msg *msg, void *arg)
 		}
 	}
 
+	/* Find number of supported frequencies */
 	info->num_freqs = 0;
 
 	nla_for_each_nested (nl_band, tb[NL80211_ATTR_WIPHY_BANDS], rem_band) {
@@ -757,6 +758,7 @@ static int nl80211_wiphy_info_handler (struct nl_msg *msg, void *arg)
 		}
 	}
 
+	/* Read supported frequencies */
 	info->freqs = g_malloc0 (sizeof (guint32) * info->num_freqs);
 
 	freq_idx = 0;
@@ -775,10 +777,19 @@ static int nl80211_wiphy_info_handler (struct nl_msg *msg, void *arg)
 
 			info->freqs[freq_idx] =
 				nla_get_u32 (tb_freq[NL80211_FREQUENCY_ATTR_FREQ]);
+
+			info->caps |= NM_WIFI_DEVICE_CAP_FREQ_VALID;
+
+			if (info->freqs[freq_idx] > 2400 && info->freqs[freq_idx] < 2500)
+				info->caps |= NM_WIFI_DEVICE_CAP_FREQ_2GHZ;
+			if (info->freqs[freq_idx] > 4900 && info->freqs[freq_idx] < 6000)
+				info->caps |= NM_WIFI_DEVICE_CAP_FREQ_5GHZ;
+
 			freq_idx++;
 		}
 	}
 
+	/* Read security/encryption support */
 	if (tb[NL80211_ATTR_CIPHER_SUITES]) {
 		int num;
 		int i;
