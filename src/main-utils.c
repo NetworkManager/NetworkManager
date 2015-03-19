@@ -183,6 +183,8 @@ nm_main_utils_early_setup (const char *progname,
 	GError *error = NULL;
 	gboolean success = FALSE;
 	int i;
+	const char *opt_fmt_log_level = NULL, *opt_fmt_log_domains = NULL;
+	const char **opt_loc_log_level = NULL, **opt_loc_log_domains = NULL;
 
 	/* Make GIO ignore the remote VFS service; otherwise it tries to use the
 	 * session bus to contact the remote service, and NM shouldn't ever be
@@ -207,10 +209,15 @@ nm_main_utils_early_setup (const char *progname,
 	}
 
 	for (i = 0; options[i].long_name; i++) {
-		if (!strcmp (options[i].long_name, "log-level"))
+		if (!strcmp (options[i].long_name, "log-level")) {
+			opt_fmt_log_level = options[i].description;
+			opt_loc_log_level = &options[i].description;
 			options[i].description = g_strdup_printf (options[i].description, nm_logging_all_levels_to_string ());
-		else if (!strcmp (options[i].long_name, "log-domains"))
+		} else if (!strcmp (options[i].long_name, "log-domains")) {
+			opt_fmt_log_domains = options[i].description;
+			opt_loc_log_domains = &options[i].description;
 			options[i].description = g_strdup_printf (options[i].description, nm_logging_all_domains_to_string ());
+		}
 	}
 
 	/* Parse options */
@@ -230,6 +237,15 @@ nm_main_utils_early_setup (const char *progname,
 		g_clear_error (&error);
 	}
 	g_option_context_free (opt_ctx);
+
+	if (opt_loc_log_level) {
+		g_free ((char *) *opt_loc_log_level);
+		*opt_loc_log_level = opt_fmt_log_level;
+	}
+	if (opt_loc_log_domains) {
+		g_free ((char *) *opt_loc_log_domains);
+		*opt_loc_log_domains = opt_fmt_log_domains;
+	}
 
 	return success;
 }
