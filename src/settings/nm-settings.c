@@ -603,7 +603,7 @@ add_plugin (NMSettings *self, NMSystemConfigInterface *plugin)
 
 	priv->plugins = g_slist_append (priv->plugins, g_object_ref (plugin));
 
-	g_signal_connect (plugin, "notify::hostname", G_CALLBACK (hostname_changed), self);
+	g_signal_connect (plugin, "notify::"NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME, G_CALLBACK (hostname_changed), self);
 
 	nm_system_config_interface_init (plugin, NULL);
 
