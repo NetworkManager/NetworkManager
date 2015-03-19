@@ -77,6 +77,9 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 	dnl https://bugzilla.gnome.org/show_bug.cgi?id=745821
 	NM_COMPILER_WARNING([unknown-attributes], [#include <glib.h>])
 
+	dnl https://bugzilla.gnome.org/show_bug.cgi?id=744473
+	NM_COMPILER_WARNING([typedef-redefinition], [#include <gio/gio.h>])
+
 	dnl https://llvm.org/bugs/show_bug.cgi?id=21614
 	NM_COMPILER_WARNING([array-bounds],
 		[#include <string.h>]
