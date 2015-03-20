@@ -34,6 +34,10 @@
 #include <sys/stat.h>
 #include <signal.h>
 
+/* Cannot include <net/if.h> due to conflict with <linux/if.h>.
+ * Forward declare if_nametoindex. */
+extern unsigned int if_nametoindex (const char *__ifname);
+
 #include "gsystem-local-alloc.h"
 #include "NetworkManagerUtils.h"
 #include "nm-linux-platform.h"
@@ -51,13 +55,32 @@
 #define NMIH_PID_FILE_FMT NMRUNDIR "/nm-iface-helper-%d.pid"
 
 static GMainLoop *main_loop = NULL;
-static char *ifname = NULL;
 static int ifindex = -1;
-static gboolean slaac_required = FALSE;
-static gboolean dhcp4_required = FALSE;
-static int tempaddr = NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
-static guint32 priority_v4 = NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP4;
-static guint32 priority_v6 = NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6;
+
+static struct {
+	gboolean slaac;
+	gboolean show_version;
+	gboolean become_daemon;
+	gboolean debug;
+	gboolean g_fatal_warnings;
+	gboolean slaac_required;
+	gboolean dhcp4_required;
+	int tempaddr;
+	char *ifname;
+	char *uuid;
+	char *dhcp4_address;
+	char *dhcp4_clientid;
+	char *dhcp4_hostname;
+	char *iid_str;
+	char *opt_log_level;
+	char *opt_log_domains;
+	guint32 priority_v4;
+	guint32 priority_v6;
+} global_opt = {
+	.tempaddr = NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
+	.priority_v4 = NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP4,
+	.priority_v6 = NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6,
+};
 
 static void
 dhcp4_state_changed (NMDhcpClient *client,
@@ -71,7 +94,7 @@ dhcp4_state_changed (NMDhcpClient *client,
 
 	g_return_if_fail (!ip4_config || NM_IS_IP4_CONFIG (ip4_config));
 
-	nm_log_dbg (LOGD_DHCP4, "(%s): new DHCPv4 client state %d", ifname, state);
+	nm_log_dbg (LOGD_DHCP4, "(%s): new DHCPv4 client state %d", global_opt.ifname, state);
 
 	switch (state) {
 	case NM_DHCP_STATE_BOUND:
@@ -81,8 +104,8 @@ dhcp4_state_changed (NMDhcpClient *client,
 			nm_ip4_config_subtract (existing, last_config);
 
 		nm_ip4_config_merge (existing, ip4_config);
-		if (!nm_ip4_config_commit (existing, ifindex, priority_v4))
-			nm_log_warn (LOGD_DHCP4, "(%s): failed to apply DHCPv4 config", ifname);
+		if (!nm_ip4_config_commit (existing, ifindex, global_opt.priority_v4))
+			nm_log_warn (LOGD_DHCP4, "(%s): failed to apply DHCPv4 config", global_opt.ifname);
 
 		if (last_config) {
 			g_object_unref (last_config);
@@ -93,11 +116,11 @@ dhcp4_state_changed (NMDhcpClient *client,
 	case NM_DHCP_STATE_TIMEOUT:
 	case NM_DHCP_STATE_DONE:
 	case NM_DHCP_STATE_FAIL:
-		if (dhcp4_required) {
-			nm_log_warn (LOGD_DHCP4, "(%s): DHCPv4 timed out or failed, quitting...", ifname);
+		if (global_opt.dhcp4_required) {
+			nm_log_warn (LOGD_DHCP4, "(%s): DHCPv4 timed out or failed, quitting...", global_opt.ifname);
 			g_main_loop_quit (main_loop);
 		} else
-			nm_log_warn (LOGD_DHCP4, "(%s): DHCPv4 timed out or failed", ifname);
+			nm_log_warn (LOGD_DHCP4, "(%s): DHCPv4 timed out or failed", global_opt.ifname);
 		break;
 	default:
 		break;
@@ -128,8 +151,8 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, gpointer user_da
 
 	if (system_support)
 		ifa_flags = IFA_F_NOPREFIXROUTE;
-	if (tempaddr == NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR
-	    || tempaddr == NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR)
+	if (global_opt.tempaddr == NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR
+	    || global_opt.tempaddr == NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR)
 	{
 		/* without system_support, this flag will be ignored. Still set it, doesn't seem to do any harm. */
 		ifa_flags |= IFA_F_MANAGETEMPADDR;
@@ -193,7 +216,7 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, gpointer user_da
 				route.plen = discovered_route->plen;
 				route.gateway = discovered_route->gateway;
 				route.source = NM_IP_CONFIG_SOURCE_RDISC;
-				route.metric = priority_v6;
+				route.metric = global_opt.priority_v6;
 
 				nm_ip6_config_add_route (ip6_config, &route);
 			}
@@ -210,23 +233,23 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, gpointer user_da
 		char val[16];
 
 		g_snprintf (val, sizeof (val), "%d", rdisc->hop_limit);
-		nm_platform_sysctl_set (nm_utils_ip6_property_path (ifname, "hop_limit"), val);
+		nm_platform_sysctl_set (nm_utils_ip6_property_path (global_opt.ifname, "hop_limit"), val);
 	}
 
 	if (changed & NM_RDISC_CONFIG_MTU) {
 		char val[16];
 
 		g_snprintf (val, sizeof (val), "%d", rdisc->mtu);
-		nm_platform_sysctl_set (nm_utils_ip6_property_path (ifname, "mtu"), val);
+		nm_platform_sysctl_set (nm_utils_ip6_property_path (global_opt.ifname, "mtu"), val);
 	}
 
-	existing = nm_ip6_config_capture (ifindex, FALSE, tempaddr);
+	existing = nm_ip6_config_capture (ifindex, FALSE, global_opt.tempaddr);
 	if (last_config)
 		nm_ip6_config_subtract (existing, last_config);
 
 	nm_ip6_config_merge (existing, ip6_config);
 	if (!nm_ip6_config_commit (existing, ifindex))
-		nm_log_warn (LOGD_IP6, "(%s): failed to apply IPv6 config", ifname);
+		nm_log_warn (LOGD_IP6, "(%s): failed to apply IPv6 config", global_opt.ifname);
 
 	if (last_config) {
 		g_object_unref (last_config);
@@ -238,11 +261,11 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, gpointer user_da
 static void
 rdisc_ra_timeout (NMRDisc *rdisc, gpointer user_data)
 {
-	if (slaac_required) {
-		nm_log_warn (LOGD_IP6, "(%s): IPv6 timed out or failed, quitting...", ifname);
+	if (global_opt.slaac_required) {
+		nm_log_warn (LOGD_IP6, "(%s): IPv6 timed out or failed, quitting...", global_opt.ifname);
 		g_main_loop_quit (main_loop);
 	} else
-		nm_log_warn (LOGD_IP6, "(%s): IPv6 timed out or failed", ifname);
+		nm_log_warn (LOGD_IP6, "(%s): IPv6 timed out or failed", global_opt.ifname);
 }
 
 static gboolean
@@ -260,15 +283,63 @@ setup_signals (void)
 	g_unix_signal_add (SIGTERM, quit_handler, NULL);
 }
 
+static void
+do_early_setup (int *argc, char **argv[])
+{
+	gint64 priority64_v4 = -1;
+	gint64 priority64_v6 = -1;
+	GOptionEntry options[] = {
+		/* Interface/IP config */
+		{ "ifname", 'i', 0, G_OPTION_ARG_STRING, &global_opt.ifname, N_("The interface to manage"), N_("eth0") },
+		{ "uuid", 'u', 0, G_OPTION_ARG_STRING, &global_opt.uuid, N_("Connection UUID"), N_("661e8cd0-b618-46b8-9dc9-31a52baaa16b") },
+		{ "slaac", 's', 0, G_OPTION_ARG_NONE, &global_opt.slaac, N_("Whether to manage IPv6 SLAAC"), NULL },
+		{ "slaac-required", '6', 0, G_OPTION_ARG_NONE, &global_opt.slaac_required, N_("Whether SLAAC must be successful"), NULL },
+		{ "slaac-tempaddr", 't', 0, G_OPTION_ARG_INT, &global_opt.tempaddr, N_("Use an IPv6 temporary privacy address"), NULL },
+		{ "dhcp4", 'd', 0, G_OPTION_ARG_STRING, &global_opt.dhcp4_address, N_("Current DHCPv4 address"), NULL },
+		{ "dhcp4-required", '4', 0, G_OPTION_ARG_NONE, &global_opt.dhcp4_required, N_("Whether DHCPv4 must be successful"), NULL },
+		{ "dhcp4-clientid", 'c', 0, G_OPTION_ARG_STRING, &global_opt.dhcp4_clientid, N_("Hex-encoded DHCPv4 client ID"), NULL },
+		{ "dhcp4-hostname", 'h', 0, G_OPTION_ARG_STRING, &global_opt.dhcp4_hostname, N_("Hostname to send to DHCP server"), N_("barbar") },
+		{ "priority4", '\0', 0, G_OPTION_ARG_INT64, &priority64_v4, N_("Route priority for IPv4"), N_("0") },
+		{ "priority6", '\0', 0, G_OPTION_ARG_INT64, &priority64_v6, N_("Route priority for IPv6"), N_("1024") },
+		{ "iid", 'e', 0, G_OPTION_ARG_STRING, &global_opt.iid_str, N_("Hex-encoded Interface Identifier"), N_("") },
+
+		/* Logging/debugging */
+		{ "version", 'V', 0, G_OPTION_ARG_NONE, &global_opt.show_version, N_("Print NetworkManager version and exit"), NULL },
+		{ "no-daemon", 'n', G_OPTION_FLAG_REVERSE, G_OPTION_ARG_NONE, &global_opt.become_daemon, N_("Don't become a daemon"), NULL },
+		{ "debug", 'b', 0, G_OPTION_ARG_NONE, &global_opt.debug, N_("Don't become a daemon, and log to stderr"), NULL },
+		{ "log-level", 0, 0, G_OPTION_ARG_STRING, &global_opt.opt_log_level, N_("Log level: one of [%s]"), "INFO" },
+		{ "log-domains", 0, 0, G_OPTION_ARG_STRING, &global_opt.opt_log_domains,
+		  N_("Log domains separated by ',': any combination of [%s]"),
+		  "PLATFORM,RFKILL,WIFI" },
+		{ "g-fatal-warnings", 0, 0, G_OPTION_ARG_NONE, &global_opt.g_fatal_warnings, N_("Make all warnings fatal"), NULL },
+		{NULL}
+	};
+
+#if !GLIB_CHECK_VERSION (2, 35, 0)
+	g_type_init ();
+#endif
+
+	setpgid (getpid (), getpid ());
+
+	if (!nm_main_utils_early_setup ("nm-iface-helper",
+	                                argc,
+	                                argv,
+	                                options,
+	                                NULL,
+	                                NULL,
+	                                _("nm-iface-helper is a small, standalone process that manages a single network interface.")))
+		exit (1);
+
+	if (priority64_v4 >= 0 && priority64_v4 <= G_MAXUINT32)
+		global_opt.priority_v4 = (guint32) priority64_v4;
+	if (priority64_v6 >= 0 && priority64_v6 <= G_MAXUINT32)
+		global_opt.priority_v6 = (guint32) priority64_v6;
+}
+
 int
 main (int argc, char *argv[])
 {
-	char *opt_log_level = NULL;
-	char *opt_log_domains = NULL;
-	gboolean debug = FALSE, g_fatal_warnings = FALSE, become_daemon = FALSE;
-	gboolean show_version = FALSE, slaac = FALSE;
-	char *bad_domains = NULL, *dhcp4_hostname = NULL, *uuid = NULL;
-	char *iid_str = NULL, *dhcp4_clientid = NULL, *dhcp4_address = NULL;
+	char *bad_domains = NULL;
 	GError *error = NULL;
 	gboolean wrote_pidfile = FALSE;
 	gs_free char *pidfile = NULL;
@@ -278,59 +349,47 @@ main (int argc, char *argv[])
 	size_t hwaddr_len = 0;
 	gconstpointer tmp;
 	gs_free NMUtilsIPv6IfaceId *iid = NULL;
-	gint64 priority64_v4 = -1;
-	gint64 priority64_v6 = -1;
 
-	GOptionEntry options[] = {
-		/* Interface/IP config */
-		{ "ifname", 'i', 0, G_OPTION_ARG_STRING, &ifname, N_("The interface to manage"), N_("eth0") },
-		{ "uuid", 'u', 0, G_OPTION_ARG_STRING, &uuid, N_("Connection UUID"), N_("661e8cd0-b618-46b8-9dc9-31a52baaa16b") },
-		{ "slaac", 's', 0, G_OPTION_ARG_NONE, &slaac, N_("Whether to manage IPv6 SLAAC"), NULL },
-		{ "slaac-required", '6', 0, G_OPTION_ARG_NONE, &slaac_required, N_("Whether SLAAC must be successful"), NULL },
-		{ "slaac-tempaddr", 't', 0, G_OPTION_ARG_INT, &tempaddr, N_("Use an IPv6 temporary privacy address"), NULL },
-		{ "dhcp4", 'd', 0, G_OPTION_ARG_STRING, &dhcp4_address, N_("Current DHCPv4 address"), NULL },
-		{ "dhcp4-required", '4', 0, G_OPTION_ARG_NONE, &dhcp4_required, N_("Whether DHCPv4 must be successful"), NULL },
-		{ "dhcp4-clientid", 'c', 0, G_OPTION_ARG_STRING, &dhcp4_clientid, N_("Hex-encoded DHCPv4 client ID"), NULL },
-		{ "dhcp4-hostname", 'h', 0, G_OPTION_ARG_STRING, &dhcp4_hostname, N_("Hostname to send to DHCP server"), N_("barbar") },
-		{ "priority4", '\0', 0, G_OPTION_ARG_INT64, &priority64_v4, N_("Route priority for IPv4"), N_("0") },
-		{ "priority6", '\0', 0, G_OPTION_ARG_INT64, &priority64_v6, N_("Route priority for IPv6"), N_("1024") },
-		{ "iid", 'e', 0, G_OPTION_ARG_STRING, &iid_str, N_("Hex-encoded Interface Identifier"), N_("") },
-
-		/* Logging/debugging */
-		{ "version", 'V', 0, G_OPTION_ARG_NONE, &show_version, N_("Print NetworkManager version and exit"), NULL },
-		{ "no-daemon", 'n', G_OPTION_FLAG_REVERSE, G_OPTION_ARG_NONE, &become_daemon, N_("Don't become a daemon"), NULL },
-		{ "debug", 'b', 0, G_OPTION_ARG_NONE, &debug, N_("Don't become a daemon, and log to stderr"), NULL },
-		{ "log-level", 0, 0, G_OPTION_ARG_STRING, &opt_log_level, N_("Log level: one of [%s]"), "INFO" },
-		{ "log-domains", 0, 0, G_OPTION_ARG_STRING, &opt_log_domains,
-		  N_("Log domains separated by ',': any combination of [%s]"),
-		  "PLATFORM,RFKILL,WIFI" },
-		{ "g-fatal-warnings", 0, 0, G_OPTION_ARG_NONE, &g_fatal_warnings, N_("Make all warnings fatal"), NULL },
-		{NULL}
-	};
+#if !GLIB_CHECK_VERSION (2, 35, 0)
+	g_type_init ();
+#endif
 
 	setpgid (getpid (), getpid ());
 
-	if (!nm_main_utils_early_setup ("nm-iface-helper",
-	                                &argv,
-	                                &argc,
-	                                options,
-	                                NULL,
-	                                NULL,
-	                                _("nm-iface-helper is a small, standalone process that manages a single network interface.")))
-		exit (1);
+	do_early_setup (&argc, &argv);
 
-	if (show_version) {
+	if (global_opt.g_fatal_warnings) {
+		GLogLevelFlags fatal_mask;
+
+		fatal_mask = g_log_set_always_fatal (G_LOG_FATAL_MASK);
+		fatal_mask |= G_LOG_LEVEL_WARNING | G_LOG_LEVEL_CRITICAL;
+		g_log_set_always_fatal (fatal_mask);
+	}
+
+	if (global_opt.show_version) {
 		fprintf (stdout, NM_DIST_VERSION "\n");
 		exit (0);
 	}
 
-	if (!ifname || !uuid) {
+	nm_main_utils_ensure_root ();
+
+	if (!global_opt.ifname || !global_opt.uuid) {
 		fprintf (stderr, _("An interface name and UUID are required\n"));
 		exit (1);
 	}
 
-	if (!nm_logging_setup (opt_log_level,
-	                       opt_log_domains,
+	ifindex = if_nametoindex (global_opt.ifname);
+	if (ifindex <= 0) {
+		fprintf (stderr, _("Failed to find interface index for %s (%s)\n"), global_opt.ifname, strerror (errno));
+		exit (1);
+	}
+	pidfile = g_strdup_printf (NMIH_PID_FILE_FMT, ifindex);
+	nm_main_utils_ensure_not_running_pidfile (pidfile);
+
+	nm_main_utils_ensure_rundir ();
+
+	if (!nm_logging_setup (global_opt.opt_log_level,
+	                       global_opt.opt_log_domains,
 	                       &bad_domains,
 	                       &error)) {
 		fprintf (stderr,
@@ -344,14 +403,7 @@ main (int argc, char *argv[])
 		g_clear_pointer (&bad_domains, g_free);
 	}
 
-	pidfile = g_strdup_printf (NMIH_PID_FILE_FMT, ifindex);
-	g_assert (pidfile);
-
-	/* check pid file */
-	if (nm_main_utils_check_pidfile (pidfile, "nm-iface-helper"))
-		exit (1);
-
-	if (become_daemon && !debug) {
+	if (global_opt.become_daemon && !global_opt.debug) {
 		if (daemon (0, 0) < 0) {
 			int saved_errno;
 
@@ -369,30 +421,12 @@ main (int argc, char *argv[])
 	main_loop = g_main_loop_new (NULL, FALSE);
 	setup_signals ();
 
-	if (g_fatal_warnings) {
-		GLogLevelFlags fatal_mask;
-
-		fatal_mask = g_log_set_always_fatal (G_LOG_FATAL_MASK);
-		fatal_mask |= G_LOG_LEVEL_WARNING | G_LOG_LEVEL_CRITICAL;
-		g_log_set_always_fatal (fatal_mask);
-	}
-
-	nm_logging_syslog_openlog (debug);
-
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
+	nm_logging_syslog_openlog (global_opt.debug);
 
 	nm_log_info (LOGD_CORE, "nm-iface-helper (version " NM_DIST_VERSION ") is starting...");
 
 	/* Set up platform interaction layer */
 	nm_linux_platform_setup ();
-
-	ifindex = nm_platform_link_get_ifindex (ifname);
-	if (ifindex <= 0) {
-		fprintf (stderr, _("Failed to find interface index for %s\n"), ifname);
-		exit (1);
-	}
 
 	tmp = nm_platform_link_get_address (ifindex, &hwaddr_len);
 	if (tmp) {
@@ -400,39 +434,33 @@ main (int argc, char *argv[])
 		g_byte_array_append (hwaddr, tmp, hwaddr_len);
 	}
 
-	if (iid_str) {
+	if (global_opt.iid_str) {
 		GBytes *bytes;
 		gsize ignored = 0;
 
-		bytes = nm_utils_hexstr2bin (iid_str);
+		bytes = nm_utils_hexstr2bin (global_opt.iid_str);
 		if (!bytes || g_bytes_get_size (bytes) != sizeof (*iid)) {
-			fprintf (stderr, _("(%s): Invalid IID %s\n"), ifname, iid_str);
+			fprintf (stderr, _("(%s): Invalid IID %s\n"), global_opt.ifname, global_opt.iid_str);
 			exit (1);
 		}
 		iid = g_bytes_unref_to_data (bytes, &ignored);
 	}
 
-	if (priority64_v4 >= 0 && priority64_v4 <= G_MAXUINT32)
-		priority_v4 = (guint32) priority64_v4;
-
-	if (priority64_v6 >= 0 && priority64_v6 <= G_MAXUINT32)
-		priority_v6 = (guint32) priority64_v6;
-
-	if (dhcp4_address) {
-		nm_platform_sysctl_set (nm_utils_ip4_property_path (ifname, "promote_secondaries"), "1");
+	if (global_opt.dhcp4_address) {
+		nm_platform_sysctl_set (nm_utils_ip4_property_path (global_opt.ifname, "promote_secondaries"), "1");
 
 		dhcp4_client = nm_dhcp_manager_start_ip4 (nm_dhcp_manager_get (),
-		                                          ifname,
+		                                          global_opt.ifname,
 		                                          ifindex,
 		                                          hwaddr,
-		                                          uuid,
-		                                          priority_v4,
-		                                          !!dhcp4_hostname,
-		                                          dhcp4_hostname,
-		                                          dhcp4_clientid,
+		                                          global_opt.uuid,
+		                                          global_opt.priority_v4,
+		                                          !!global_opt.dhcp4_hostname,
+		                                          global_opt.dhcp4_hostname,
+		                                          global_opt.dhcp4_clientid,
 		                                          45,
 		                                          NULL,
-		                                          dhcp4_address);
+		                                          global_opt.dhcp4_address);
 		g_assert (dhcp4_client);
 		g_signal_connect (dhcp4_client,
 		                  NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED,
@@ -440,19 +468,19 @@ main (int argc, char *argv[])
 		                  NULL);
 	}
 
-	if (slaac) {
+	if (global_opt.slaac) {
 		nm_platform_link_set_user_ipv6ll_enabled (ifindex, TRUE);
 
-		rdisc = nm_lndp_rdisc_new (ifindex, ifname);
+		rdisc = nm_lndp_rdisc_new (ifindex, global_opt.ifname);
 		g_assert (rdisc);
 
 		if (iid)
 			nm_rdisc_set_iid (rdisc, *iid);
 
-		nm_platform_sysctl_set (nm_utils_ip6_property_path (ifname, "accept_ra"), "1");
-		nm_platform_sysctl_set (nm_utils_ip6_property_path (ifname, "accept_ra_defrtr"), "0");
-		nm_platform_sysctl_set (nm_utils_ip6_property_path (ifname, "accept_ra_pinfo"), "0");
-		nm_platform_sysctl_set (nm_utils_ip6_property_path (ifname, "accept_ra_rtr_pref"), "0");
+		nm_platform_sysctl_set (nm_utils_ip6_property_path (global_opt.ifname, "accept_ra"), "1");
+		nm_platform_sysctl_set (nm_utils_ip6_property_path (global_opt.ifname, "accept_ra_defrtr"), "0");
+		nm_platform_sysctl_set (nm_utils_ip6_property_path (global_opt.ifname, "accept_ra_pinfo"), "0");
+		nm_platform_sysctl_set (nm_utils_ip6_property_path (global_opt.ifname, "accept_ra_rtr_pref"), "0");
 
 		g_signal_connect (rdisc,
 		                  NM_RDISC_CONFIG_CHANGED,

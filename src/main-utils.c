@@ -34,7 +34,9 @@
 #include <glib-unix.h>
 #include <gmodule.h>
 
+#include "gsystem-local-alloc.h"
 #include "main-utils.h"
+#include "NetworkManagerUtils.h"
 #include "nm-logging.h"
 
 static gboolean
@@ -108,72 +110,82 @@ nm_main_utils_write_pidfile (const char *pidfile)
 	return success;
 }
 
+void
+nm_main_utils_ensure_rundir ()
+{
+	/* Setup runtime directory */
+	if (g_mkdir_with_parents (NMRUNDIR, 0755) != 0) {
+		fprintf (stderr, _("Cannot create '%s': %s"), NMRUNDIR, strerror (errno));
+		exit (1);
+	}
+}
+
 /**
- * nm_main_utils_check_pidfile:
+ * nm_main_utils_ensure_not_running_pidfile:
  * @pidfile: the pid file
- * @name: the process name
  *
  * Checks whether the pidfile already exists and contains PID of a running
  * process.
  *
- * Returns: %TRUE if the specified pidfile already exists and contains the PID
- *  of a running process named @name, or %FALSE if not
+ * Exits with code 1 if a conflicting process is running.
  */
-gboolean
-nm_main_utils_check_pidfile (const char *pidfile, const char *name)
+void
+nm_main_utils_ensure_not_running_pidfile (const char *pidfile)
 {
-	char *contents = NULL;
+	gs_free char *contents = NULL;
+	gs_free char *proc_cmdline = NULL;
 	gsize len = 0;
 	glong pid;
-	char *proc_cmdline = NULL;
-	gboolean nm_running = FALSE;
 	const char *process_name;
+	const char *prgname = g_get_prgname ();
 
-	/* Setup runtime directory */
-	if (g_mkdir_with_parents (NMRUNDIR, 0755) != 0) {
-		nm_log_err (LOGD_CORE, "Cannot create '%s': %s", NMRUNDIR, strerror (errno));
-		exit (1);
-	}
+	g_return_if_fail (prgname);
+
+	if (!pidfile || !*pidfile)
+		return;
 
 	if (!g_file_get_contents (pidfile, &contents, &len, NULL))
-		return FALSE;
-
+		return;
 	if (len <= 0)
-		goto done;
+		return;
 
 	errno = 0;
 	pid = strtol (contents, NULL, 10);
 	if (pid <= 0 || pid > 65536 || errno)
-		goto done;
+		return;
 
-	g_free (contents);
+	g_clear_pointer (&contents, g_free);
 	proc_cmdline = g_strdup_printf ("/proc/%ld/cmdline", pid);
 	if (!g_file_get_contents (proc_cmdline, &contents, &len, NULL))
-		goto done;
+		return;
 
 	process_name = strrchr (contents, '/');
 	if (process_name)
 		process_name++;
 	else
 		process_name = contents;
-	if (strcmp (process_name, name) == 0) {
+	if (strcmp (process_name, prgname) == 0) {
 		/* Check that the process exists */
 		if (kill (pid, 0) == 0) {
-			fprintf (stderr, _("%s is already running (pid %ld)\n"), name, pid);
-			nm_running = TRUE;
+			fprintf (stderr, _("%s is already running (pid %ld)\n"), prgname, pid);
+			exit (1);
 		}
 	}
+}
 
-done:
-	g_free (proc_cmdline);
-	g_free (contents);
-	return nm_running;
+void
+nm_main_utils_ensure_root ()
+{
+	if (getuid () != 0) {
+		fprintf (stderr, _("You must be root to run %s!\n"), str_if_set (g_get_prgname (), ""));
+		exit (1);
+	}
 }
 
 gboolean
 nm_main_utils_early_setup (const char *progname,
-                           char **argv[],
                            int *argc,
+                           char **argv[],
                            GOptionEntry *options,
                            void (*option_context_hook) (gpointer user_data, GOptionContext *opt_ctx),
                            gpointer option_context_hook_data,
@@ -183,6 +195,8 @@ nm_main_utils_early_setup (const char *progname,
 	GError *error = NULL;
 	gboolean success = FALSE;
 	int i;
+	const char *opt_fmt_log_level = NULL, *opt_fmt_log_domains = NULL;
+	const char **opt_loc_log_level = NULL, **opt_loc_log_domains = NULL;
 
 	/* Make GIO ignore the remote VFS service; otherwise it tries to use the
 	 * session bus to contact the remote service, and NM shouldn't ever be
@@ -201,16 +215,16 @@ nm_main_utils_early_setup (const char *progname,
 	setlocale (LC_ALL, "");
 	textdomain (GETTEXT_PACKAGE);
 
-	if (getuid () != 0) {
-		fprintf (stderr, _("You must be root to run %s!\n"), progname);
-		exit (1);
-	}
-
 	for (i = 0; options[i].long_name; i++) {
-		if (!strcmp (options[i].long_name, "log-level"))
+		if (!strcmp (options[i].long_name, "log-level")) {
+			opt_fmt_log_level = options[i].description;
+			opt_loc_log_level = &options[i].description;
 			options[i].description = g_strdup_printf (options[i].description, nm_logging_all_levels_to_string ());
-		else if (!strcmp (options[i].long_name, "log-domains"))
+		} else if (!strcmp (options[i].long_name, "log-domains")) {
+			opt_fmt_log_domains = options[i].description;
+			opt_loc_log_domains = &options[i].description;
 			options[i].description = g_strdup_printf (options[i].description, nm_logging_all_domains_to_string ());
+		}
 	}
 
 	/* Parse options */
@@ -230,6 +244,15 @@ nm_main_utils_early_setup (const char *progname,
 		g_clear_error (&error);
 	}
 	g_option_context_free (opt_ctx);
+
+	if (opt_loc_log_level) {
+		g_free ((char *) *opt_loc_log_level);
+		*opt_loc_log_level = opt_fmt_log_level;
+	}
+	if (opt_loc_log_domains) {
+		g_free ((char *) *opt_loc_log_domains);
+		*opt_loc_log_domains = opt_fmt_log_domains;
+	}
 
 	return success;
 }
