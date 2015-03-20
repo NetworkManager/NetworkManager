@@ -319,8 +319,6 @@ do_early_setup (int *argc, char **argv[])
 	g_type_init ();
 #endif
 
-	setpgid (getpid (), getpid ());
-
 	if (!nm_main_utils_early_setup ("nm-iface-helper",
 	                                argc,
 	                                argv,
