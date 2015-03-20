@@ -23,15 +23,19 @@
 
 #include <glib.h>
 
+void     nm_main_utils_ensure_root (void);
+
 gboolean nm_main_utils_setup_signals (GMainLoop *main_loop, gboolean *quit_early_ptr);
+
+void     nm_main_utils_ensure_rundir (void);
 
 gboolean nm_main_utils_write_pidfile (const char *pidfile);
 
-gboolean nm_main_utils_check_pidfile (const char *pidfile, const char *name);
+void     nm_main_utils_ensure_not_running_pidfile (const char *pidfile);
 
 gboolean nm_main_utils_early_setup (const char *progname,
-                                    char **argv[],
                                     int *argc,
+                                    char **argv[],
                                     GOptionEntry *options,
                                     GOptionEntry *more_options,
                                     const char *summary);
