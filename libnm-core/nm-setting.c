@@ -1314,6 +1314,33 @@ nm_setting_diff (NMSetting *a,
 	return !(*results);
 }
 
+#define CMP_AND_RETURN(n_a, n_b, name) \
+	G_STMT_START { \
+		gboolean _is = (strcmp (n_a, ""name) == 0); \
+		\
+		if (_is || (strcmp (n_b, ""name) == 0)) \
+			return _is ? -1 : 1; \
+	} G_STMT_END;
+
+static int
+_enumerate_values_sort (GParamSpec **p_a, GParamSpec **p_b, GType *p_type)
+{
+	const char *n_a = (*p_a)->name;
+	const char *n_b = (*p_b)->name;
+	int c = strcmp (n_a, n_b);
+
+	if (c) {
+		if (*p_type == NM_TYPE_SETTING_CONNECTION) {
+			/* for [connection], report first id, uuid, type in that order. */
+			CMP_AND_RETURN (n_a, n_b, NM_SETTING_CONNECTION_ID);
+			CMP_AND_RETURN (n_a, n_b, NM_SETTING_CONNECTION_UUID);
+			CMP_AND_RETURN (n_a, n_b, NM_SETTING_CONNECTION_TYPE);
+		}
+	}
+	return c;
+}
+#undef CMP_AND_RETURN
+
 /**
  * nm_setting_enumerate_values:
  * @setting: the #NMSetting
@@ -1331,11 +1358,19 @@ nm_setting_enumerate_values (NMSetting *setting,
 	GParamSpec **property_specs;
 	guint n_property_specs;
 	int i;
+	GType type;
 
 	g_return_if_fail (NM_IS_SETTING (setting));
 	g_return_if_fail (func != NULL);
 
 	property_specs = g_object_class_list_properties (G_OBJECT_GET_CLASS (setting), &n_property_specs);
+
+	/* sort the properties. This has an effect on the order in which keyfile
+	 * prints them. */
+	type = G_OBJECT_TYPE (setting);
+	g_qsort_with_data (property_specs, n_property_specs, sizeof (gpointer),
+	                   (GCompareDataFunc) _enumerate_values_sort, &type);
+
 	for (i = 0; i < n_property_specs; i++) {
 		GParamSpec *prop_spec = property_specs[i];
 		GValue value = G_VALUE_INIT;

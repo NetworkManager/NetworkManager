@@ -114,6 +114,46 @@ _keyfile_equals (GKeyFile *kf_a, GKeyFile *kf_b)
 	return _keyfile_a_contains_all_in_b (kf_a, kf_b) && _keyfile_a_contains_all_in_b (kf_b, kf_a);
 }
 
+static GKeyFile *
+_nm_keyfile_write (NMConnection *connection,
+                   NMKeyfileWriteHandler handler,
+                   void *user_data)
+{
+	GError *error = NULL;
+	GKeyFile *kf;
+
+	g_assert (NM_IS_CONNECTION (connection));
+
+	kf = nm_keyfile_write (connection, handler, user_data, &error);
+	g_assert_no_error (error);
+	g_assert (kf);
+	return kf;
+}
+
+static NMConnection *
+_nm_keyfile_read (GKeyFile *keyfile,
+                  const char *keyfile_name,
+                  const char *base_dir,
+                  NMKeyfileReadHandler read_handler,
+                  void *read_data,
+                  gboolean needs_normalization)
+{
+	GError *error = NULL;
+	NMConnection *con;
+
+	g_assert (keyfile);
+
+	con = nm_keyfile_read (keyfile, keyfile_name, base_dir, read_handler, read_data, &error);
+	g_assert_no_error (error);
+	g_assert (NM_IS_CONNECTION (con));
+	if (needs_normalization)
+		nmtst_assert_connection_verifies_after_normalization (con, 0, 0);
+	else
+		nmtst_assert_connection_verifies_without_normalization (con);
+	return con;
+}
+
+
 static void
 _keyfile_convert (NMConnection **con,
                   GKeyFile **keyfile,
@@ -125,10 +165,10 @@ _keyfile_convert (NMConnection **con,
                   void *write_data,
                   gboolean needs_normalization)
 {
-	NMConnection *c, *c2;
-	GKeyFile *k, *k2;
-	GError *error = NULL;
-	NMSetting8021x *s1, *s2;
+	NMConnection *c0;
+	GKeyFile *k0;
+	gs_unref_object NMConnection *c0_k1_c2 = NULL, *k0_c1 = NULL, *k0_c1_k2_c3 = NULL;
+	gs_unref_keyfile GKeyFile *k0_c1_k2 = NULL, *c0_k1 = NULL, *c0_k1_c2_k3 = NULL;
 
 	/* convert from @con to @keyfile and check that we can make
 	 * full round trips and obtaining the same result. */
@@ -137,64 +177,79 @@ _keyfile_convert (NMConnection **con,
 	g_assert (keyfile);
 	g_assert (*con || *keyfile);
 
-	if (!*keyfile) {
-		k = nm_keyfile_write (*con, write_handler, read_data, &error);
-		g_assert_no_error (error);
-		g_assert (k);
-		*keyfile = k;
-	} else
-		k = *keyfile;
-	if (!*con) {
-		c = nm_keyfile_read (*keyfile, keyfile_name, base_dir, read_handler, read_data, &error);
-		g_assert_no_error (error);
-		g_assert (c);
-		if (needs_normalization)
-			nmtst_assert_connection_verifies_after_normalization (c, 0, 0);
-		else
-			nmtst_assert_connection_verifies_without_normalization (c);
-		*con = c;
-	} else
-		c = *con;
+	c0 = *con;
+	k0 = *keyfile;
 
-	k2 = nm_keyfile_write (c, write_handler, read_data, &error);
-	g_assert_no_error (error);
-	g_assert (k2);
+	if (c0) {
+		c0_k1 = _nm_keyfile_write (c0, write_handler, write_data);
+		c0_k1_c2 = _nm_keyfile_read (c0_k1, keyfile_name, base_dir, read_handler, read_data, FALSE);
+		c0_k1_c2_k3 = _nm_keyfile_write (c0_k1_c2, write_handler, write_data);
 
-	c2 = nm_keyfile_read (k, keyfile_name, base_dir, read_handler, read_data, &error);
-	g_assert_no_error (error);
-	g_assert (c2);
-	if (needs_normalization)
-		nmtst_assert_connection_verifies_after_normalization (c2, 0, 0);
-	else
-		nmtst_assert_connection_verifies_without_normalization (c2);
+		_keyfile_equals (c0_k1, c0_k1_c2_k3);
+	}
+	if (k0) {
+		NMSetting8021x *s1, *s2;
 
-	s1 = nm_connection_get_setting_802_1x (*con);
-	s2 = nm_connection_get_setting_802_1x (c2);
-	if (s1 || s2) {
-		g_assert_cmpint (nm_setting_802_1x_get_ca_cert_scheme (s1), ==, nm_setting_802_1x_get_ca_cert_scheme (s2));
-		switch (nm_setting_802_1x_get_ca_cert_scheme (s1)) {
-		case NM_SETTING_802_1X_CK_SCHEME_PATH:
-			nmtst_assert_resolve_relative_path_equals (nm_setting_802_1x_get_ca_cert_path (s1), nm_setting_802_1x_get_ca_cert_path (s2));
-			break;
-		case NM_SETTING_802_1X_CK_SCHEME_BLOB: {
-			GBytes *b1, *b2;
+		k0_c1 = _nm_keyfile_read (k0, keyfile_name, base_dir, read_handler, read_data, needs_normalization);
+		k0_c1_k2 = _nm_keyfile_write (k0_c1, write_handler, write_data);
+		k0_c1_k2_c3 = _nm_keyfile_read (k0_c1_k2, keyfile_name, base_dir, read_handler, read_data, FALSE);
 
-			b1 = nm_setting_802_1x_get_ca_cert_blob (s1);
-			b2 = nm_setting_802_1x_get_ca_cert_blob (s2);
-			g_assert_cmpint (g_bytes_get_size (b1), ==, g_bytes_get_size (b2));
-			g_assert (memcmp (g_bytes_get_data (b1, NULL), g_bytes_get_data (b2, NULL), g_bytes_get_size (b1)) == 0);
-			break;
+		/* It is a expeced behavior, that if @k0 contains a relative path ca-cert, @k0_c1 will
+		 * contain that path as relative. But @k0_c1_k2 and @k0_c1_k2_c3 will have absolute paths.
+		 * In this case, hack up @k0_c1_k2_c3 to contain the same relative path. */
+		s1 = nm_connection_get_setting_802_1x (k0_c1);
+		s2 = nm_connection_get_setting_802_1x (k0_c1_k2_c3);
+		if (s1 || s2) {
+			g_assert_cmpint (nm_setting_802_1x_get_ca_cert_scheme (s1), ==, nm_setting_802_1x_get_ca_cert_scheme (s2));
+			switch (nm_setting_802_1x_get_ca_cert_scheme (s1)) {
+			case NM_SETTING_802_1X_CK_SCHEME_PATH:
+				{
+					const char *p1 = nm_setting_802_1x_get_ca_cert_path (s1);
+					const char *p2 = nm_setting_802_1x_get_ca_cert_path (s2);
+
+					nmtst_assert_resolve_relative_path_equals (p1, p2);
+					if (strcmp (p1, p2) != 0) {
+						gs_free char *puri = NULL;
+						gs_unref_bytes GBytes *pfile = NULL;
+
+						g_assert (p1[0] != '/' && p2[0] == '/');
+
+						/* one of the paths is a relative path and the other is absolute. This is an
+						 * expected difference.
+						 * Make the paths of s2 identical to s1... */
+						puri = g_strconcat (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, p1, NULL);
+						pfile = g_bytes_new (puri, strlen (puri) + 1);
+						g_object_set (s2, NM_SETTING_802_1X_CA_CERT, pfile, NULL);
+					}
+				}
+				break;
+			case NM_SETTING_802_1X_CK_SCHEME_BLOB: {
+				GBytes *b1, *b2;
+
+				b1 = nm_setting_802_1x_get_ca_cert_blob (s1);
+				b2 = nm_setting_802_1x_get_ca_cert_blob (s2);
+				g_assert_cmpint (g_bytes_get_size (b1), ==, g_bytes_get_size (b2));
+				g_assert (memcmp (g_bytes_get_data (b1, NULL), g_bytes_get_data (b2, NULL), g_bytes_get_size (b1)) == 0);
+				break;
+			}
+			default:
+				break;
+			}
 		}
-		default:
-			break;
-		}
+
+		nmtst_assert_connection_equals (k0_c1, FALSE, k0_c1_k2_c3, FALSE);
 	}
 
-	nmtst_assert_connection_equals (c2, FALSE, *con, FALSE);
-	_keyfile_equals (k2, *keyfile);
-
-	g_object_unref (c2);
-	g_key_file_unref (k2);
+	if (!k0)
+		*keyfile = g_key_file_ref (c0_k1);
+	else if (!c0)
+		*con = g_object_ref (k0_c1);
+	else {
+		/* finally, if both a keyfile and a connection are given, assert that they are equal
+		 * after a round of conversion. */
+		_keyfile_equals (c0_k1, k0_c1_k2);
+		nmtst_assert_connection_equals (k0_c1, FALSE, c0_k1_c2, FALSE);
+	}
 }
 
 /******************************************************************************/
