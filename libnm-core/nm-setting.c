@@ -1320,7 +1320,7 @@ nm_setting_diff (NMSetting *a,
 		\
 		if (_is || (strcmp (n_b, ""name) == 0)) \
 			return _is ? -1 : 1; \
-	} G_STMT_END;
+	} G_STMT_END
 
 static int
 _enumerate_values_sort (GParamSpec **p_a, GParamSpec **p_b, GType *p_type)
