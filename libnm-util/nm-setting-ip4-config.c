@@ -959,16 +959,6 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		NMIP4Route *route = (NMIP4Route *) iter->data;
 		guint32 prefix = nm_ip4_route_get_prefix (route);
 
-		if (!nm_ip4_route_get_dest (route)) {
-			g_set_error (error,
-			             NM_SETTING_IP4_CONFIG_ERROR,
-			             NM_SETTING_IP4_CONFIG_ERROR_INVALID_PROPERTY,
-			             _("%d. route is invalid"),
-			             i+1);
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_SETTING_IP4_CONFIG_ROUTES);
-			return FALSE;
-		}
-
 		if (!prefix || prefix > 32) {
 			g_set_error (error,
 			             NM_SETTING_IP4_CONFIG_ERROR,

@@ -825,6 +825,8 @@ static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	NMSettingIP6ConfigPrivate *priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
+	GSList *iter;
+	int i;
 
 	if (!priv->method) {
 		g_set_error_literal (error,
@@ -897,6 +899,48 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		                     _("property is missing"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_DHCP_HOSTNAME);
 		return FALSE;
+	}
+
+	/* Validate addresses */
+	for (iter = priv->addresses, i = 0; iter; iter = g_slist_next (iter), i++) {
+		NMIP6Address *addr = (NMIP6Address *) iter->data;
+		guint32 prefix = nm_ip6_address_get_prefix (addr);
+
+		if (IN6_IS_ADDR_UNSPECIFIED (nm_ip6_address_get_address (addr))) {
+			g_set_error (error,
+			             NM_SETTING_IP6_CONFIG_ERROR,
+			             NM_SETTING_IP6_CONFIG_ERROR_INVALID_PROPERTY,
+			             _("%d. IPv6 address is invalid"),
+			             i+1);
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_ADDRESSES);
+			return FALSE;
+		}
+
+		if (!prefix || prefix > 128) {
+			g_set_error (error,
+			             NM_SETTING_IP6_CONFIG_ERROR,
+			             NM_SETTING_IP6_CONFIG_ERROR_INVALID_PROPERTY,
+			             _("%d. IPv6 address has invalid prefix"),
+			             i+1);
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_ADDRESSES);
+			return FALSE;
+		}
+	}
+
+	/* Validate routes */
+	for (iter = priv->routes, i = 0; iter; iter = g_slist_next (iter), i++) {
+		NMIP6Route *route = (NMIP6Route *) iter->data;
+		guint32 prefix = nm_ip6_route_get_prefix (route);
+
+		if (!prefix || prefix > 128) {
+			g_set_error (error,
+			             NM_SETTING_IP6_CONFIG_ERROR,
+			             NM_SETTING_IP6_CONFIG_ERROR_INVALID_PROPERTY,
+			             _("%d. route has invalid prefix"),
+			             i+1);
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_ROUTES);
+			return FALSE;
+		}
 	}
 
 	return TRUE;
