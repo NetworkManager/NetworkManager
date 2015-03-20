@@ -999,9 +999,13 @@ nm_utils_wep_key_valid (const char *key, NMWepKeyType wep_type)
 	if (!key)
 		return FALSE;
 
+	if (wep_type == NM_WEP_KEY_TYPE_UNKNOWN) {
+		return nm_utils_wep_key_valid (key, NM_WEP_KEY_TYPE_KEY) ||
+		       nm_utils_wep_key_valid (key, NM_WEP_KEY_TYPE_PASSPHRASE);
+	}
+
 	keylen = strlen (key);
-	if (   wep_type == NM_WEP_KEY_TYPE_KEY
-	    || wep_type == NM_WEP_KEY_TYPE_UNKNOWN) {
+	if (wep_type == NM_WEP_KEY_TYPE_KEY) {
 		if (keylen == 10 || keylen == 26) {
 			/* Hex key */
 			for (i = 0; i < keylen; i++) {
@@ -1016,7 +1020,6 @@ nm_utils_wep_key_valid (const char *key, NMWepKeyType wep_type)
 			}
 		} else
 			return FALSE;
-
 	} else if (wep_type == NM_WEP_KEY_TYPE_PASSPHRASE) {
 		if (!keylen || keylen > 64)
 			return FALSE;

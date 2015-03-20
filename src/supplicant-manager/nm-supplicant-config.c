@@ -526,6 +526,13 @@ add_wep_key (NMSupplicantConfig *self,
 	if (!key || !key_len)
 		return TRUE;
 
+	if (wep_type == NM_WEP_KEY_TYPE_UNKNOWN) {
+		if (nm_utils_wep_key_valid (key, NM_WEP_KEY_TYPE_KEY))
+			wep_type = NM_WEP_KEY_TYPE_KEY;
+		else if (nm_utils_wep_key_valid (key, NM_WEP_KEY_TYPE_PASSPHRASE))
+			wep_type = NM_WEP_KEY_TYPE_PASSPHRASE;
+	}
+
 	if (   (wep_type == NM_WEP_KEY_TYPE_UNKNOWN)
 	    || (wep_type == NM_WEP_KEY_TYPE_KEY)) {
 		if ((key_len == 10) || (key_len == 26)) {
