@@ -199,15 +199,6 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (priv->password && !strlen (priv->password)) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     _("property is empty"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_ADSL_SETTING_NAME, NM_SETTING_ADSL_PASSWORD);
-		return FALSE;
-	}
-
 	if (   !priv->protocol
 	    || (   strcmp (priv->protocol, NM_SETTING_ADSL_PROTOCOL_PPPOA)
 	        && strcmp (priv->protocol, NM_SETTING_ADSL_PROTOCOL_PPPOE)
@@ -242,7 +233,7 @@ need_secrets (NMSetting *setting)
 	NMSettingAdslPrivate *priv = NM_SETTING_ADSL_GET_PRIVATE (setting);
 	GPtrArray *secrets = NULL;
 
-	if (priv->password)
+	if (priv->password && *priv->password)
 		return NULL;
 
 	if (!(priv->password_flags & NM_SETTING_SECRET_FLAG_NOT_REQUIRED)) {

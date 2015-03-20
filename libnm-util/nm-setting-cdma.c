@@ -181,15 +181,6 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->password && !strlen (priv->password)) {
-		g_set_error_literal (error,
-		                     NM_SETTING_CDMA_ERROR,
-		                     NM_SETTING_CDMA_ERROR_INVALID_PROPERTY,
-		                     _("property is empty"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_CDMA_SETTING_NAME, NM_SETTING_CDMA_PASSWORD);
-		return FALSE;
-	}
-
 	return TRUE;
 }
 
@@ -199,7 +190,7 @@ need_secrets (NMSetting *setting)
 	NMSettingCdmaPrivate *priv = NM_SETTING_CDMA_GET_PRIVATE (setting);
 	GPtrArray *secrets = NULL;
 
-	if (priv->password)
+	if (priv->password && *priv->password)
 		return NULL;
 
 	if (priv->username) {

@@ -696,9 +696,15 @@ write_wireless_security_setting (NMConnection *connection,
 				 * keys.
 				 */
 				key_type = nm_setting_wireless_security_get_wep_key_type (s_wsec);
+				if (key_type == NM_WEP_KEY_TYPE_UNKNOWN) {
+					if (nm_utils_wep_key_valid (key, NM_WEP_KEY_TYPE_KEY))
+						key_type = NM_WEP_KEY_TYPE_KEY;
+					else if (nm_utils_wep_key_valid (key, NM_WEP_KEY_TYPE_PASSPHRASE))
+						key_type = NM_WEP_KEY_TYPE_PASSPHRASE;
+				}
 				if (key_type == NM_WEP_KEY_TYPE_PASSPHRASE)
 					tmp = g_strdup_printf ("KEY_PASSPHRASE%d", i + 1);
-				else {
+				else if (key_type == NM_WEP_KEY_TYPE_KEY) {
 					tmp = g_strdup_printf ("KEY%d", i + 1);
 
 					/* Add 's:' prefix for ASCII keys */
@@ -706,7 +712,8 @@ write_wireless_security_setting (NMConnection *connection,
 						ascii_key = g_strdup_printf ("s:%s", key);
 						key = ascii_key;
 					}
-				}
+				} else
+					key = NULL;
 
 				set_secret (ifcfg,
 				            tmp,

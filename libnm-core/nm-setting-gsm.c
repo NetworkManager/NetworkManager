@@ -285,15 +285,6 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (priv->password && !strlen (priv->password)) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     _("property is empty"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_GSM_SETTING_NAME, NM_SETTING_GSM_PASSWORD);
-		return FALSE;
-	}
-
 	if (priv->network_id) {
 		guint32 nid_len = strlen (priv->network_id);
 		guint32 i;
@@ -331,7 +322,7 @@ need_secrets (NMSetting *setting)
 	NMSettingGsmPrivate *priv = NM_SETTING_GSM_GET_PRIVATE (setting);
 	GPtrArray *secrets = NULL;
 
-	if (priv->password)
+	if (priv->password && *priv->password)
 		return NULL;
 
 	if (priv->username) {
