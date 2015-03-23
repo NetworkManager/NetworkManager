@@ -98,6 +98,10 @@ EXPORT(nm_settings_connection_replace_settings)
 EXPORT(nm_settings_connection_replace_and_commit)
 /* END LINKER CRACKROCK */
 
+#define HOSTNAMED_SERVICE_NAME      "org.freedesktop.hostname1"
+#define HOSTNAMED_SERVICE_PATH      "/org/freedesktop/hostname1"
+#define HOSTNAMED_SERVICE_INTERFACE "org.freedesktop.hostname1"
+
 #define HOSTNAME_FILE_DEFAULT   "/etc/hostname"
 #define HOSTNAME_FILE_SUSE      "/etc/HOSTNAME"
 #define HOSTNAME_FILE_GENTOO    "/etc/conf.d/hostname"
@@ -178,6 +182,7 @@ typedef struct {
 		GFileMonitor *dhcp_monitor;
 		guint monitor_id;
 		guint dhcp_monitor_id;
+		GDBusProxy *hostnamed_proxy;
 	} hostname;
 } NMSettingsPrivate;
 
@@ -599,6 +604,11 @@ nm_settings_get_hostname (NMSettings *self)
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	char *hostname = NULL;
 
+	if (priv->hostname.hostnamed_proxy) {
+		hostname = g_strdup (priv->hostname.value);
+		goto out;
+	}
+
 #if defined(HOSTNAME_PERSIST_GENTOO)
 	hostname = read_hostname_gentoo (priv->hostname.file);
 #else
@@ -612,6 +622,7 @@ nm_settings_get_hostname (NMSettings *self)
 
 #endif /* HOSTNAME_PERSIST_GENTOO */
 
+out:
 	if (hostname && !hostname[0]) {
 		g_free (hostname);
 		hostname = NULL;
@@ -1523,11 +1534,28 @@ write_hostname (NMSettingsPrivate *priv, const char *hostname)
 	gboolean ret;
 	gs_free_error GError *error = NULL;
 	const char *file = priv->hostname.file;
+	gs_unref_variant GVariant *var = NULL;
 #if HAVE_SELINUX
 	security_context_t se_ctx_prev = NULL, se_ctx = NULL;
 	struct stat file_stat = { .st_mode = 0 };
 	mode_t st_mode = 0;
+#endif
 
+	if (priv->hostname.hostnamed_proxy) {
+		var = g_dbus_proxy_call_sync (priv->hostname.hostnamed_proxy,
+		                              "SetStaticHostname",
+		                              g_variant_new ("(sb)", hostname, FALSE),
+		                              G_DBUS_CALL_FLAGS_NONE,
+		                              -1,
+		                              NULL,
+		                              &error);
+		if (error)
+			nm_log_warn (LOGD_SETTINGS, "Could not set hostname: %s", error->message);
+
+		return !error;
+	}
+
+#if HAVE_SELINUX
 	/* Get default context for hostname file and set it for fscreate */
 	if (stat (file, &file_stat) == 0)
 		st_mode = file_stat.st_mode;
@@ -2005,6 +2033,34 @@ nm_settings_get_startup_complete (NMSettings *self)
 /***************************************************************/
 
 static void
+hostnamed_properties_changed (GDBusProxy *proxy,
+                              GVariant *changed_properties,
+                              char **invalidated_properties,
+                              gpointer user_data)
+{
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (user_data);
+	GVariant *v_hostname;
+	const char *hostname;
+
+	v_hostname = g_dbus_proxy_get_cached_property (priv->hostname.hostnamed_proxy,
+	                                               "StaticHostname");
+	if (!v_hostname)
+		return;
+
+	hostname = g_variant_get_string (v_hostname, NULL);
+
+	if (g_strcmp0 (priv->hostname.value, hostname) != 0) {
+		nm_log_info (LOGD_SETTINGS, "hostname changed from '%s' to '%s'",
+		             priv->hostname.value, hostname);
+		g_free (priv->hostname.value);
+		priv->hostname.value = g_strdup (hostname);
+		g_object_notify (G_OBJECT (user_data), NM_SETTINGS_HOSTNAME);
+	}
+
+	g_variant_unref (v_hostname);
+}
+
+static void
 setup_hostname_file_monitors (NMSettings *self)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
@@ -2046,6 +2102,9 @@ nm_settings_new (GError **error)
 {
 	NMSettings *self;
 	NMSettingsPrivate *priv;
+	GDBusProxy *proxy;
+	GVariant *variant;
+	GError *local_error = NULL;
 
 	self = g_object_new (NM_TYPE_SETTINGS, NULL);
 
@@ -2062,7 +2121,31 @@ nm_settings_new (GError **error)
 
 	load_connections (self);
 	check_startup_complete (self);
-	setup_hostname_file_monitors (self);
+
+	proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM, 0, NULL,
+	                                       HOSTNAMED_SERVICE_NAME, HOSTNAMED_SERVICE_PATH,
+	                                       HOSTNAMED_SERVICE_INTERFACE, NULL, &local_error);
+	if (proxy) {
+		variant = g_dbus_proxy_get_cached_property (proxy, "StaticHostname");
+		if (variant) {
+			nm_log_info (LOGD_SETTINGS, "hostname: using hostnamed");
+			priv->hostname.hostnamed_proxy = proxy;
+			g_signal_connect (proxy, "g-properties-changed",
+			                  G_CALLBACK (hostnamed_properties_changed), self);
+			hostnamed_properties_changed (proxy, NULL, NULL, self);
+			g_variant_unref (variant);
+		} else {
+			nm_log_info (LOGD_SETTINGS, "hostname: couldn't get property from hostnamed");
+			g_object_unref (proxy);
+		}
+	} else {
+		nm_log_info (LOGD_SETTINGS, "hostname: hostnamed not used as proxy creation failed with: %s",
+		             local_error->message);
+		g_clear_error (&local_error);
+	}
+
+	if (!priv->hostname.hostnamed_proxy)
+		setup_hostname_file_monitors (self);
 
 	nm_dbus_manager_register_object (priv->dbus_mgr, NM_DBUS_PATH_SETTINGS, self);
 	return self;
@@ -2106,6 +2189,13 @@ dispose (GObject *object)
 	priv->dbus_mgr = NULL;
 
 	g_object_unref (priv->agent_mgr);
+
+	if (priv->hostname.hostnamed_proxy) {
+		g_signal_handlers_disconnect_by_func (priv->hostname.hostnamed_proxy,
+		                                      G_CALLBACK (hostnamed_properties_changed),
+		                                      self);
+		g_clear_object (&priv->hostname.hostnamed_proxy);
+	}
 
 	if (priv->hostname.monitor) {
 		if (priv->hostname.monitor_id)
