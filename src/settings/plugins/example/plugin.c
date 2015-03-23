@@ -42,7 +42,6 @@
 #include "common.h"
 #include "nm-example-connection.h"
 
-static char *plugin_get_hostname (SCPluginExample *plugin);
 static void system_config_interface_init (NMSystemConfigInterface *system_config_interface_class);
 
 /* GObject object definition.  This actually defines the object and tells
@@ -105,13 +104,6 @@ typedef struct {
 	GFileMonitor *conf_file_monitor;
 	guint conf_file_monitor_id;
 
-	/* Persistent hostname if the plugin supports hostnames.  Normally used
-	 * for distro plugins; ie Red Hat uses /etc/sysconfig/hostname while
-	 * Debian uses /etc/hostname.  Plugins can abstract the storage location
-	 * and just tell NM what the persisten hostname is and when its backing
-	 * file has changed.  NM handles actually setting the hostname.
-	 */
-	char *hostname;
 } SCPluginExamplePrivate;
 
 static NMSettingsConnection *
@@ -387,8 +379,6 @@ conf_file_changed (GFileMonitor *monitor,
 				   gpointer data)
 {
 	SCPluginExample *self = SC_PLUGIN_EXAMPLE (data);
-	SCPluginExamplePrivate *priv = SC_PLUGIN_EXAMPLE_GET_PRIVATE (self);
-	char *tmp;
 
 	switch (event_type) {
 	case G_FILE_MONITOR_EVENT_DELETED:
@@ -399,18 +389,6 @@ conf_file_changed (GFileMonitor *monitor,
 		 * updated specs we'll re-read the config file then.
 		 */
 		g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
-
-		/* Hostname may also have changed; read it and if it did actually
-		 * change, notify NM.
-		 */
-		tmp = plugin_get_hostname (self);
-		if (g_strcmp0 (tmp, priv->hostname) != 0) {
-			g_free (priv->hostname);
-			priv->hostname = tmp;
-			tmp = NULL;
-			g_object_notify (G_OBJECT (self), NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME);
-		}
-		g_free (tmp);
 		break;
 	default:
 		break;
@@ -449,8 +427,7 @@ setup_monitoring (NMSystemConfigInterface *config)
 	}
 
 	/* Set up a watch on our configuration file, basically just for watching
-	 * whether the user has changed the unmanaged devices option or the
-	 * persistent hostname.
+	 * whether the user has changed the unmanaged devices option
 	 */
 	if (priv->conf_file) {
 		file = g_file_new_for_path (priv->conf_file);
@@ -575,83 +552,6 @@ out:
 	return specs;
 }
 
-
-static char *
-plugin_get_hostname (SCPluginExample *plugin)
-{
-	SCPluginExamplePrivate *priv = SC_PLUGIN_EXAMPLE_GET_PRIVATE (plugin);
-	GKeyFile *key_file;
-	char *hostname = NULL;
-	GError *error = NULL;
-
-	if (!priv->conf_file)
-		return NULL;
-
-	/* Read the persistent hostname out of backing storage, which happens
-	 * to be the NM config file.  Other plugins (like distro-specific ones)
-	 * should read it from the distro-specific location like /etc/hostname.
-	 */
-	key_file = g_key_file_new ();
-	if (g_key_file_load_from_file (key_file, priv->conf_file, G_KEY_FILE_NONE, &error))
-		hostname = g_key_file_get_value (key_file, "keyfile", "hostname", NULL);
-	else {
-		nm_log_warn (LOGD_SETTINGS, "Error parsing file '%s': %s", priv->conf_file, error->message);
-		g_error_free (error);
-	}
-
-	g_key_file_free (key_file);
-	return hostname;
-}
-
-static gboolean
-plugin_set_hostname (SCPluginExample *plugin, const char *hostname)
-{
-	SCPluginExamplePrivate *priv = SC_PLUGIN_EXAMPLE_GET_PRIVATE (plugin);
-	GKeyFile *key_file;
-	GError *error = NULL;
-	gboolean success = FALSE;
-	char *data;
-	gsize len;
-
-	if (!priv->conf_file) {
-		nm_log_warn (LOGD_SETTINGS, "Error saving hostname: no config file");
-		return FALSE;
-	}
-
-	/* This just saves the hostname to the NM config file in a section
-	 * private to this plugin.
-	 */
-	key_file = g_key_file_new ();
-	if (!g_key_file_load_from_file (key_file, priv->conf_file, G_KEY_FILE_NONE, &error)) {
-		nm_log_warn (LOGD_SETTINGS, "Error parsing file '%s': %s", priv->conf_file, error->message);
-		g_error_free (error);
-		goto out;
-	}
-
-	g_key_file_set_string (key_file, "example", "hostname", hostname);
-
-	data = g_key_file_to_data (key_file, &len, &error);
-	if (data) {
-		/* Save updated file to disk */
-		g_file_set_contents (priv->conf_file, data, len, &error);
-		g_free (data);
-
-		/* Update internal copy of hostname */
-		g_free (priv->hostname);
-		priv->hostname = g_strdup (hostname);
-		success = TRUE;
-	}
-
-	if (error) {
-		nm_log_warn (LOGD_SETTINGS, "Error saving hostname: %s", error->message);
-		g_error_free (error);
-	}
-
-out:
-	g_key_file_free (key_file);
-	return success;
-}
-
 /* GObject */
 
 static void
@@ -676,18 +576,11 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, EXAMPLE_PLUGIN_INFO);
 		break;
 	case NM_SYSTEM_CONFIG_INTERFACE_PROP_CAPABILITIES:
-		/* Return capabilities to NM; this plugin supports changing connections
-		 * as well as being capable of saving the hostname to persistent storage.
+		/* Return capabilities to NM; this plugin supports changing connections.
 		 * If the plugin can't write out updated configuration, then obviously
-		 * it shouldn't advertise that capability.  If it can't save hostnames
-		 * to persistent storage, it shouldn't advertise that capability either.
+		 * it shouldn't advertise that capability.
 		 */
-		g_value_set_uint (value, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS | 
-						  NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME);
-		break;
-	case NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME:
-		/* Return the hostname we've read from persistent storage */
-		g_value_set_string (value, SC_PLUGIN_EXAMPLE_GET_PRIVATE (object)->hostname);
+		g_value_set_uint (value, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -699,19 +592,7 @@ static void
 set_property (GObject *object, guint prop_id,
 			  const GValue *value, GParamSpec *pspec)
 {
-	const char *hostname;
-
 	switch (prop_id) {
-	case NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME:
-		/* We'll get here when the user has changed the hostname via NM's
-		 * D-Bus interface and we're requested to save this hostname to
-		 * persistent storage.
-		 */
-		hostname = g_value_get_string (value);
-		if (hostname && strlen (hostname) < 1)
-			hostname = NULL;
-		plugin_set_hostname (SC_PLUGIN_EXAMPLE (object), hostname);
-		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -763,9 +644,6 @@ dispose (GObject *object)
 		priv->connections = NULL;
 	}
 
-	g_free (priv->hostname);
-	priv->hostname = NULL;
-
 	/* Chain up to the superclass */
 	G_OBJECT_CLASS (sc_plugin_example_parent_class)->dispose (object);
 }
@@ -809,10 +687,6 @@ sc_plugin_example_class_init (SCPluginExampleClass *req_class)
 	g_object_class_override_property (object_class,
 	                                  NM_SYSTEM_CONFIG_INTERFACE_PROP_CAPABILITIES,
 	                                  NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES);
-
-	g_object_class_override_property (object_class,
-	                                  NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME,
-	                                  NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME);
 }
 
 static void

@@ -52,18 +52,10 @@ interface_init (gpointer g_iface)
 		(g_iface,
 		 g_param_spec_uint (NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES, "", "",
 		                    NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE,
-		                    (  NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS
-		                    | NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME),
+		                    NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS,
 		                    NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE,
 		                    G_PARAM_READABLE |
 		                    G_PARAM_STATIC_STRINGS));
-
-	g_object_interface_install_property
-		(g_iface,
-		 g_param_spec_string (NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
 
 	/* Signals */
 	g_signal_new (NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED,

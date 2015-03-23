@@ -53,7 +53,6 @@
 #include "NetworkManagerUtils.h"
 
 #include "nm-ifcfg-connection.h"
-#include "nm-inotify-helper.h"
 #include "shvar.h"
 #include "reader.h"
 #include "writer.h"
@@ -110,13 +109,7 @@ G_DEFINE_TYPE_EXTENDED (SCPluginIfcfg, sc_plugin_ifcfg, G_TYPE_OBJECT, 0,
 
 typedef struct {
 	GHashTable *connections;  /* uuid::connection */
-
 	gboolean initialized;
-	gulong ih_event_id;
-	int sc_network_wd;
-	GFileMonitor *hostname_monitor;
-	guint hostname_monitor_id;
-	char *hostname;
 
 	GFileMonitor *ifcfg_monitor;
 	guint ifcfg_monitor_id;
@@ -707,139 +700,6 @@ add_connection (NMSystemConfigInterface *config,
 	return NM_SETTINGS_CONNECTION (update_connection (self, connection, path, NULL, FALSE, NULL, error));
 }
 
-#define SC_NETWORK_FILE "/etc/sysconfig/network"
-#define HOSTNAME_FILE   "/etc/hostname"
-
-static char *
-plugin_get_hostname (SCPluginIfcfg *plugin)
-{
-	shvarFile *network;
-	char *hostname;
-	gboolean ignore_localhost;
-
-	if (g_file_get_contents (HOSTNAME_FILE, &hostname, NULL, NULL)) {
-		g_strchomp (hostname);
-		return hostname;
-	}
-
-	network = svOpenFile (SC_NETWORK_FILE, NULL);
-	if (!network) {
-		_LOGW ("Could not get hostname: failed to read " SC_NETWORK_FILE);
-		return NULL;
-	}
-
-	hostname = svGetValue (network, "HOSTNAME", FALSE);
-	ignore_localhost = svTrueValue (network, "NM_IGNORE_HOSTNAME_LOCALHOST", FALSE);
-	if (ignore_localhost) {
-		/* Ignore a default hostname ('localhost[6]' or 'localhost[6].localdomain[6]')
-		 * to preserve 'network' service behavior.
-		 */
-		if (hostname && !nm_utils_is_specific_hostname (hostname)) {
-			g_free (hostname);
-			hostname = NULL;
-		}
-	}
-
-	svCloseFile (network);
-	return hostname;
-}
-
-static gboolean
-plugin_set_hostname (SCPluginIfcfg *plugin, const char *hostname)
-{
-	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
-	shvarFile *network;
-	char *hostname_eol;
-	gboolean ret;
-#if HAVE_SELINUX
-	security_context_t se_ctx_prev = NULL, se_ctx = NULL;
-	struct stat file_stat = { .st_mode = 0 };
-	mode_t st_mode = 0;
-
-	/* Get default context for HOSTNAME_FILE and set it for fscreate */
-	if (stat (HOSTNAME_FILE, &file_stat) == 0)
-		st_mode = file_stat.st_mode;
-	matchpathcon (HOSTNAME_FILE, st_mode, &se_ctx);
-	matchpathcon_fini ();
-	getfscreatecon (&se_ctx_prev);
-	setfscreatecon (se_ctx);
-#endif
-
-	hostname_eol = g_strdup_printf ("%s\n", hostname);
-	ret = g_file_set_contents (HOSTNAME_FILE, hostname_eol, -1, NULL);
-
-#if HAVE_SELINUX
-	/* Restore previous context and cleanup */
-	setfscreatecon (se_ctx_prev);
-	freecon (se_ctx);
-	freecon (se_ctx_prev);
-#endif
-
-	if (!ret) {
-		_LOGW ("Could not save hostname: failed to create/open " HOSTNAME_FILE);
-		g_free (hostname_eol);
-		return FALSE;
-	}
-
-	g_free (priv->hostname);
-	priv->hostname = g_strdup (hostname);
-	g_free (hostname_eol);
-
-	/* Remove "HOSTNAME" from SC_NETWORK_FILE, if present */
-	network = svOpenFile (SC_NETWORK_FILE, NULL);
-	if (network) {
-		svSetValue (network, "HOSTNAME", NULL, FALSE);
-		svWriteFile (network, 0644, NULL);
-		svCloseFile (network);
-	}
-
-	return TRUE;
-}
-
-static void
-hostname_maybe_changed (SCPluginIfcfg *plugin)
-{
-	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
-	char *new_hostname;
-
-	new_hostname = plugin_get_hostname (plugin);
-	if (   (new_hostname && !priv->hostname)
-	    || (!new_hostname && priv->hostname)
-	    || (priv->hostname && new_hostname && strcmp (priv->hostname, new_hostname))) {
-		g_free (priv->hostname);
-		priv->hostname = new_hostname;
-		g_object_notify (G_OBJECT (plugin), NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME);
-	} else
-		g_free (new_hostname);
-}
-
-static void
-sc_network_changed_cb (NMInotifyHelper *ih,
-                       struct inotify_event *evt,
-                       const char *path,
-                       gpointer user_data)
-{
-	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (user_data);
-	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
-
-	if (evt->wd != priv->sc_network_wd)
-		return;
-
-	hostname_maybe_changed (plugin);
-}
-
-static void
-hostname_changed_cb (GFileMonitor *monitor,
-                     GFile *file,
-                     GFile *other_file,
-                     GFileMonitorEvent event_type,
-                     gpointer user_data)
-{
-	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (user_data);
-
-	hostname_maybe_changed (plugin);
-}
-
 static gboolean
 impl_ifcfgrh_get_ifcfg_details (SCPluginIfcfg *plugin,
                                 const char *in_ifcfg,
@@ -913,35 +773,10 @@ static void
 sc_plugin_ifcfg_init (SCPluginIfcfg *plugin)
 {
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
-	NMInotifyHelper *ih;
 	GError *error = NULL;
 	gboolean success = FALSE;
-	GFile *file;
-	GFileMonitor *monitor;
 
 	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
-
-	/* We watch SC_NETWORK_FILE via NMInotifyHelper (which doesn't track file creation but
-	 * *does* track modifications made via other hard links), since we expect it to always
-	 * exist. But we watch HOSTNAME_FILE via GFileMonitor (which has the opposite
-	 * semantics), since /etc/hostname might not exist, but is unlikely to have hard
-	 * links. bgo 532815 is the bug for being able to just use GFileMonitor for both.
-	 */
-
-	ih = nm_inotify_helper_get ();
-	priv->ih_event_id = g_signal_connect (ih, "event", G_CALLBACK (sc_network_changed_cb), plugin);
-	priv->sc_network_wd = nm_inotify_helper_add_watch (ih, SC_NETWORK_FILE);
-
-	file = g_file_new_for_path (HOSTNAME_FILE);
-	monitor = g_file_monitor_file (file, G_FILE_MONITOR_NONE, NULL, NULL);
-	g_object_unref (file);
-	if (monitor) {
-		priv->hostname_monitor_id =
-			g_signal_connect (monitor, "changed", G_CALLBACK (hostname_changed_cb), plugin);
-		priv->hostname_monitor = monitor;
-	}
-
-	priv->hostname = plugin_get_hostname (plugin);
 
 	priv->bus = dbus_g_bus_get (DBUS_BUS_SYSTEM, &error);
 	if (!priv->bus) {
@@ -987,32 +822,11 @@ dispose (GObject *object)
 {
 	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (object);
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
-	NMInotifyHelper *ih;
 
 	if (priv->bus) {
 		dbus_g_connection_unref (priv->bus);
 		priv->bus = NULL;
 	}
-
-	if (priv->ih_event_id) {
-		ih = nm_inotify_helper_get ();
-
-		g_signal_handler_disconnect (ih, priv->ih_event_id);
-		priv->ih_event_id = 0;
-
-		if (priv->sc_network_wd >= 0)
-			nm_inotify_helper_remove_watch (ih, priv->sc_network_wd);
-	}
-
-	if (priv->hostname_monitor) {
-		if (priv->hostname_monitor_id)
-			g_signal_handler_disconnect (priv->hostname_monitor, priv->hostname_monitor_id);
-
-		g_file_monitor_cancel (priv->hostname_monitor);
-		g_object_unref (priv->hostname_monitor);
-	}
-
-	g_free (priv->hostname);
 
 	if (priv->connections) {
 		g_hash_table_destroy (priv->connections);
@@ -1034,8 +848,6 @@ static void
 get_property (GObject *object, guint prop_id,
 			  GValue *value, GParamSpec *pspec)
 {
-	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (object);
-
 	switch (prop_id) {
 	case NM_SYSTEM_CONFIG_INTERFACE_PROP_NAME:
 		g_value_set_string (value, IFCFG_PLUGIN_NAME);
@@ -1044,10 +856,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, IFCFG_PLUGIN_INFO);
 		break;
 	case NM_SYSTEM_CONFIG_INTERFACE_PROP_CAPABILITIES:
-		g_value_set_uint (value, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS | NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME);
-		break;
-	case NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME:
-		g_value_set_string (value, priv->hostname);
+		g_value_set_uint (value, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1059,15 +868,7 @@ static void
 set_property (GObject *object, guint prop_id,
 			  const GValue *value, GParamSpec *pspec)
 {
-	const char *hostname;
-
 	switch (prop_id) {
-	case NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME:
-		hostname = g_value_get_string (value);
-		if (hostname && strlen (hostname) < 1)
-			hostname = NULL;
-		plugin_set_hostname (SC_PLUGIN_IFCFG (object), hostname);
-		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -1096,10 +897,6 @@ sc_plugin_ifcfg_class_init (SCPluginIfcfgClass *req_class)
 	g_object_class_override_property (object_class,
 	                                  NM_SYSTEM_CONFIG_INTERFACE_PROP_CAPABILITIES,
 	                                  NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES);
-
-	g_object_class_override_property (object_class,
-	                                  NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME,
-	                                  NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME);
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (req_class),
 									 &dbus_glib_nm_ifcfg_rh_object_info);

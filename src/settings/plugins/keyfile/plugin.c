@@ -47,7 +47,6 @@
 #include "utils.h"
 #include "gsystem-local-alloc.h"
 
-static char *plugin_get_hostname (SCPluginKeyfile *plugin);
 static void system_config_interface_init (NMSystemConfigInterface *system_config_interface_class);
 
 G_DEFINE_TYPE_EXTENDED (SCPluginKeyfile, sc_plugin_keyfile, G_TYPE_OBJECT, 0,
@@ -66,8 +65,6 @@ typedef struct {
 	const char *conf_file;
 	GFileMonitor *conf_file_monitor;
 	guint conf_file_monitor_id;
-
-	char *hostname;
 
 	gboolean disposed;
 } SCPluginKeyfilePrivate;
@@ -329,29 +326,12 @@ conf_file_changed (GFileMonitor *monitor,
 				   gpointer data)
 {
 	SCPluginKeyfile *self = SC_PLUGIN_KEYFILE (data);
-	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (self);
-	char *tmp;
 
 	switch (event_type) {
 	case G_FILE_MONITOR_EVENT_DELETED:
 	case G_FILE_MONITOR_EVENT_CREATED:
 	case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
 		g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
-
-		/* hostname */
-		tmp = plugin_get_hostname (self);
-		if ((tmp && !priv->hostname)
-			|| (!tmp && priv->hostname)
-			|| (priv->hostname && tmp && strcmp (priv->hostname, tmp))) {
-
-			g_free (priv->hostname);
-			priv->hostname = tmp;
-			tmp = NULL;
-			g_object_notify (G_OBJECT (self), NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME);
-		}
-
-		g_free (tmp);
-
 		break;
 	default:
 		break;
@@ -602,82 +582,6 @@ get_unmanaged_specs (NMSystemConfigInterface *config)
 	return specs;
 }
 
-static char *
-plugin_get_hostname (SCPluginKeyfile *plugin)
-{
-	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (plugin);
-	GKeyFile *key_file;
-	char *hostname = NULL;
-	GError *error = NULL;
-
-	if (!priv->conf_file)
-		return NULL;
-
-	key_file = g_key_file_new ();
-	if (!parse_key_file_allow_none (priv, key_file, &error))
-		goto out;
-
-	hostname = g_key_file_get_value (key_file, "keyfile", "hostname", NULL);
-
- out:
-	if (error) {
-		nm_log_warn (LOGD_SETTINGS, "keyfile: error getting hostname: %s", error->message);
-		g_error_free (error);
-	}
-	if (key_file)
-		g_key_file_free (key_file);
-
-	return hostname;
-}
-
-static gboolean
-plugin_set_hostname (SCPluginKeyfile *plugin, const char *hostname)
-{
-	gboolean ret = FALSE;
-	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (plugin);
-	GKeyFile *key_file = NULL;
-	GError *error = NULL;
-	char *data = NULL;
-	gsize len;
-
-	if (!priv->conf_file) {
-		g_set_error (&error, G_IO_ERROR, G_IO_ERROR_FAILED,
-		             "Error saving hostname: no config file");
-		goto out;
-	}
-
-	g_free (priv->hostname);
-	priv->hostname = g_strdup (hostname);
-
-	key_file = g_key_file_new ();
-	if (!parse_key_file_allow_none (priv, key_file, &error))
-		goto out;
-
-	g_key_file_set_string (key_file, "keyfile", "hostname", hostname);
-
-	data = g_key_file_to_data (key_file, &len, &error);
-	if (!data)
-		goto out;
-
-	if (!g_file_set_contents (priv->conf_file, data, len, &error)) {
-		g_prefix_error (&error, "Error saving hostname: ");
-		goto out;
-	}
-
-	ret = TRUE;
-
- out:
-	if (error) {
-		nm_log_warn (LOGD_SETTINGS, "keyfile: error setting hostname: %s", error->message);
-		g_error_free (error);
-	}
-	g_free (data);
-	if (key_file)
-		g_key_file_free (key_file);
-
-	return ret;
-}
-
 /* GObject */
 
 static void
@@ -700,11 +604,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, KEYFILE_PLUGIN_INFO);
 		break;
 	case NM_SYSTEM_CONFIG_INTERFACE_PROP_CAPABILITIES:
-		g_value_set_uint (value, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS | 
-						  NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME);
-		break;
-	case NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME:
-		g_value_set_string (value, SC_PLUGIN_KEYFILE_GET_PRIVATE (object)->hostname);
+		g_value_set_uint (value, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -716,15 +616,7 @@ static void
 set_property (GObject *object, guint prop_id,
 			  const GValue *value, GParamSpec *pspec)
 {
-	const char *hostname;
-
 	switch (prop_id) {
-	case NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME:
-		hostname = g_value_get_string (value);
-		if (hostname && strlen (hostname) < 1)
-			hostname = NULL;
-		plugin_set_hostname (SC_PLUGIN_KEYFILE (object), hostname);
-		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -757,8 +649,6 @@ dispose (GObject *object)
 		g_object_unref (priv->conf_file_monitor);
 	}
 
-	g_free (priv->hostname);
-
 	if (priv->connections) {
 		g_hash_table_destroy (priv->connections);
 		priv->connections = NULL;
@@ -790,10 +680,6 @@ sc_plugin_keyfile_class_init (SCPluginKeyfileClass *req_class)
 	g_object_class_override_property (object_class,
 	                                  NM_SYSTEM_CONFIG_INTERFACE_PROP_CAPABILITIES,
 	                                  NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES);
-
-	g_object_class_override_property (object_class,
-	                                  NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME,
-	                                  NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME);
 }
 
 static void
@@ -812,15 +698,19 @@ nm_settings_keyfile_plugin_new (void)
 {
 	static SCPluginKeyfile *singleton = NULL;
 	SCPluginKeyfilePrivate *priv;
+	char *value;
 
 	if (!singleton) {
 		singleton = SC_PLUGIN_KEYFILE (g_object_new (SC_TYPE_PLUGIN_KEYFILE, NULL));
 		priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (singleton);
 
 		priv->conf_file = nm_config_data_get_config_main_file (nm_config_get_data (nm_config_get ()));
-
-		/* plugin_set_hostname() has to be called *after* priv->conf_file is set */
-		priv->hostname = plugin_get_hostname (singleton);
+		value = nm_config_data_get_value (nm_config_get_data (nm_config_get ()),
+		                                  "keyfile", "hostname", NULL);
+		if (value) {
+			nm_log_warn (LOGD_SETTINGS, "keyfile: 'hostname' option is deprecated and has no effect");
+			g_free (value);
+		}
 	} else
 		g_object_ref (singleton);
 

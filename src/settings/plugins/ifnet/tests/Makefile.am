@@ -40,7 +40,6 @@ TESTS = test-ifnet
 endif
 
 EXTRA_DIST = \
-	hostname \
 	net \
 	net.all \
 	nm-system-settings.conf \

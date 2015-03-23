@@ -45,16 +45,13 @@
 
 #define IFNET_PLUGIN_NAME_PRINT "ifnet"
 #define IFNET_PLUGIN_INFO "(C) 1999-2010 Gentoo Foundation, Inc. To report bugs please use bugs.gentoo.org with [networkmanager] or [qiaomuf] prefix."
-#define IFNET_SYSTEM_HOSTNAME_FILE "/etc/conf.d/hostname"
 #define IFNET_MANAGE_WELL_KNOWN_DEFAULT TRUE
 #define IFNET_KEY_FILE_KEY_MANAGED "managed"
 
 typedef struct {
 	GHashTable *connections;  /* uuid::connection */
-	gchar *hostname;
 	gboolean unmanaged_well_known;
 
-	GFileMonitor *hostname_monitor;
 	GFileMonitor *net_monitor;
 	GFileMonitor *wpa_monitor;
 
@@ -81,42 +78,6 @@ ignore_cb(NMSettingsConnectionInterface * connection,
 {
 }
 */
-static const char *
-get_hostname (NMSystemConfigInterface * config)
-{
-	return SC_PLUGIN_IFNET_GET_PRIVATE (config)->hostname;
-}
-
-static void
-update_system_hostname (gpointer config)
-{
-	SCPluginIfnetPrivate *priv = SC_PLUGIN_IFNET_GET_PRIVATE (config);
-
-	if (priv->hostname)
-		g_free (priv->hostname);
-	priv->hostname = read_hostname (IFNET_SYSTEM_HOSTNAME_FILE);
-
-	g_object_notify (G_OBJECT (config),
-			 NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME);
-	nm_log_info (LOGD_SETTINGS, "Hostname updated to: %s", priv->hostname);
-}
-
-static void
-write_system_hostname (NMSystemConfigInterface * config,
-		       const gchar * newhostname)
-{
-	SCPluginIfnetPrivate *priv = SC_PLUGIN_IFNET_GET_PRIVATE (config);
-
-	g_return_if_fail (newhostname);
-	nm_log_info (LOGD_SETTINGS, "Write system hostname: %s", newhostname);
-	if (write_hostname (IFNET_SYSTEM_HOSTNAME_FILE, newhostname)) {
-		g_free (priv->hostname);
-		priv->hostname = g_strdup (newhostname);
-		g_object_notify (G_OBJECT (config),
-				 NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME);
-	} else
-		nm_log_warn (LOGD_SETTINGS, "Write system hostname: %s failed", newhostname);
-}
 
 static gboolean
 is_managed_plugin (void)
@@ -189,9 +150,6 @@ setup_monitors (NMIfnetConnection * connection, gpointer user_data)
 	SCPluginIfnet *self = SC_PLUGIN_IFNET (user_data);
 	SCPluginIfnetPrivate *priv = SC_PLUGIN_IFNET_GET_PRIVATE (self);
 
-	priv->hostname_monitor =
-	    monitor_file_changes (IFNET_SYSTEM_HOSTNAME_FILE,
-	                          update_system_hostname, user_data);
 	if (nm_config_get_monitor_connection_files (nm_config_get ())) {
 		priv->net_monitor =
 			monitor_file_changes (CONF_NET_FILE, (FileChangedFn) reload_connections,
@@ -208,10 +166,6 @@ cancel_monitors (NMIfnetConnection * connection, gpointer user_data)
 	SCPluginIfnet *self = SC_PLUGIN_IFNET (user_data);
 	SCPluginIfnetPrivate *priv = SC_PLUGIN_IFNET_GET_PRIVATE (self);
 
-	if (priv->hostname_monitor) {
-		g_file_monitor_cancel (priv->hostname_monitor);
-		g_object_unref (priv->hostname_monitor);
-	}
 	if (priv->net_monitor) {
 		g_file_monitor_cancel (priv->net_monitor);
 		g_object_unref (priv->net_monitor);
@@ -444,7 +398,6 @@ init (NMSystemConfigInterface *config)
 
 	setup_monitors (NULL, config);
 	reload_connections (config);
-	update_system_hostname (self);
 
 	nm_log_info (LOGD_SETTINGS, "Initialzation complete!");
 }
@@ -490,8 +443,6 @@ static void
 get_property (GObject * object, guint prop_id, GValue * value,
 	      GParamSpec * pspec)
 {
-	NMSystemConfigInterface *self = NM_SYSTEM_CONFIG_INTERFACE (object);
-
 	switch (prop_id) {
 	case NM_SYSTEM_CONFIG_INTERFACE_PROP_NAME:
 		g_value_set_string (value, IFNET_PLUGIN_NAME_PRINT);
@@ -501,12 +452,7 @@ get_property (GObject * object, guint prop_id, GValue * value,
 		break;
 	case NM_SYSTEM_CONFIG_INTERFACE_PROP_CAPABILITIES:
 		g_value_set_uint (value,
-				  NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS
-				  |
-				  NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME);
-		break;
-	case NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME:
-		g_value_set_string (value, get_hostname (self));
+		                  NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -519,15 +465,6 @@ set_property (GObject * object, guint prop_id, const GValue * value,
 	      GParamSpec * pspec)
 {
 	switch (prop_id) {
-	case NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME:{
-			const gchar *hostname = g_value_get_string (value);
-
-			if (hostname && strlen (hostname) < 1)
-				hostname = NULL;
-			write_system_hostname (NM_SYSTEM_CONFIG_INTERFACE
-					       (object), hostname);
-			break;
-		}
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -545,9 +482,6 @@ dispose (GObject * object)
 		g_hash_table_destroy (priv->connections);
 		priv->connections = NULL;
 	}
-
-	g_free (priv->hostname);
-	priv->hostname = NULL;
 
 	ifnet_destroy ();
 	wpa_parser_destroy ();
@@ -576,10 +510,6 @@ sc_plugin_ifnet_class_init (SCPluginIfnetClass * req_class)
 	g_object_class_override_property (object_class,
 					  NM_SYSTEM_CONFIG_INTERFACE_PROP_CAPABILITIES,
 					  NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES);
-
-	g_object_class_override_property (object_class,
-					  NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME,
-					  NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME);
 }
 
 G_MODULE_EXPORT GObject *

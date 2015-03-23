@@ -313,7 +313,10 @@ no-auto-default=*
       <variablelist>
 	<varlistentry>
 	  <term><varname>hostname</varname></term>
-	  <listitem><para>Set a persistent hostname.</para></listitem>
+	  <listitem><para>This key is deprecated and has no effect
+	  since the hostname is now stored in /etc/hostname or other
+	  system configuration files according to build options.
+	  </para></listitem>
 	</varlistentry>
 	<varlistentry>
 	  <term><varname>unmanaged-devices</varname></term>

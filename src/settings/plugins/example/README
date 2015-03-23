@@ -3,9 +3,8 @@ Plugins generally have three components:
 1) plugin object: manages the individual "connections", which are
   just objects wrapped around on-disk config data.  The plugin handles requests
   to add new connections via the NM D-Bus API, and also watches config
-  directories for changes to configuration data.  It also handles reading and
-  writing the persistent hostname, if the plugin supports hostnames.  Plugins
-  implement the NMSystemConfigInterface interface.  See plugin.c.
+  directories for changes to configuration data.  Plugins implement the
+  NMSystemConfigInterface interface.  See plugin.c.
 
 2) "connections": subclasses of NMSettingsConnection.  They handle updates to
   configuration data, deletion, etc.  See NMExampleConnection.c.
@@ -27,9 +26,8 @@ entry points into the plugin:  nm_system_config_factory() and
 the NMSystemConfigInterface methods.
 
 The plugin also emits various signals (defined by NMSystemConfigInterface)
-which NetworkManager listens for.  These include persistent hostname changes
-(if something modified the file in which the persistent hostname is stored)
-and notifications of new connections if they were created via changes to
-the on-disk files.  The "connection" objects can also emit signals
-(defined by the NMSettingsConnection and NMConnection superclasses) when the
-connections' backing storage gets changed or deleted. 
+which NetworkManager listens for.  These include notifications of new
+connections if they were created via changes to the on-disk files.  The
+"connection" objects can also emit signals (defined by the NMSettingsConnection
+and NMConnection superclasses) when the connections' backing storage gets
+changed or deleted.
