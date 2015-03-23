@@ -780,41 +780,6 @@ link_type_from_udev (NMPlatform *platform, int ifindex, const char *ifname, int 
 	return_type (NM_LINK_TYPE_UNKNOWN, "unknown");
 }
 
-static gboolean
-link_is_software (struct rtnl_link *rtnllink)
-{
-	const char *type;
-
-	/* FIXME: replace somehow with NMLinkType or nm_platform_is_software(), but
-	 * solve the infinite callstack problems that getting the type of a TUN/TAP
-	 * device causes.
-	 */
-
-	if (   rtnl_link_get_arptype (rtnllink) == ARPHRD_INFINIBAND
-	    && strchr (rtnl_link_get_name (rtnllink), '.'))
-		return TRUE;
-
-	type = rtnl_link_get_type (rtnllink);
-	if (type == NULL)
-		return FALSE;
-
-	if (!strcmp (type, "dummy") ||
-	    !strcmp (type, "gre") ||
-	    !strcmp (type, "gretap") ||
-	    !strcmp (type, "macvlan") ||
-	    !strcmp (type, "macvtap") ||
-	    !strcmp (type, "tun") ||
-	    !strcmp (type, "veth") ||
-	    !strcmp (type, "vlan") ||
-	    !strcmp (type, "vxlan") ||
-	    !strcmp (type, "bridge") ||
-	    !strcmp (type, "bond") ||
-	    !strcmp (type, "team"))
-		return TRUE;
-
-	return FALSE;
-}
-
 static const char *
 ethtool_get_driver (const char *ifname)
 {
@@ -836,10 +801,6 @@ static gboolean
 link_is_announceable (NMPlatform *platform, struct rtnl_link *rtnllink)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-
-	/* Software devices are always visible outside the platform */
-	if (link_is_software (rtnllink))
-		return TRUE;
 
 	/* Hardware devices must be found by udev so rules get run and tags set */
 	if (g_hash_table_lookup (priv->udev_devices,
@@ -1585,7 +1546,7 @@ announce_object (NMPlatform *platform, const struct nl_object *object, NMPlatfor
 			if (!init_link (platform, &device, rtnl_link))
 				return;
 
-			/* Skip hardware devices not yet discovered by udev. They will be
+			/* Skip devices not yet discovered by udev. They will be
 			 * announced by udev_device_added(). This doesn't apply to removed
 			 * devices, as those come either from udev_device_removed(),
 			 * event_notification() or link_delete() which block the announcment
@@ -1594,7 +1555,7 @@ announce_object (NMPlatform *platform, const struct nl_object *object, NMPlatfor
 			switch (change_type) {
 			case NM_PLATFORM_SIGNAL_ADDED:
 			case NM_PLATFORM_SIGNAL_CHANGED:
-				if (!link_is_software (rtnl_link) && !device.driver)
+				if (!device.driver)
 					return;
 				break;
 			default:
@@ -2437,6 +2398,20 @@ link_get_type_name (NMPlatform *platform, int ifindex)
 
 	link_extract_type (platform, rtnllink, &type);
 	return type;
+}
+
+static gboolean
+link_get_unmanaged (NMPlatform *platform, int ifindex, gboolean *managed)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	GUdevDevice *udev_device = g_hash_table_lookup (priv->udev_devices, GINT_TO_POINTER (ifindex));
+
+	if (g_udev_device_get_property (udev_device, "NM_UNMANAGED")) {
+		*managed = g_udev_device_get_property_as_boolean (udev_device, "NM_UNMANAGED");
+		return TRUE;
+	}
+
+	return FALSE;
 }
 
 static guint32
@@ -4557,7 +4532,12 @@ setup (NMPlatform *platform)
 	/* And read initial device list */
 	enumerator = g_udev_enumerator_new (priv->udev_client);
 	g_udev_enumerator_add_match_subsystem (enumerator, "net");
-	g_udev_enumerator_add_match_is_initialized (enumerator);
+
+	/* Demand that the device is initialized (udev rules ran,
+	 * device has a stable name now) in case udev is running
+	 * (not in a container). */
+	if (access ("/sys", W_OK) == 0)
+		g_udev_enumerator_add_match_is_initialized (enumerator);
 
 	devices = g_udev_enumerator_execute (enumerator);
 	for (iter = devices; iter; iter = g_list_next (iter)) {
@@ -4625,6 +4605,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_get_name = link_get_name;
 	platform_class->link_get_type = link_get_type;
 	platform_class->link_get_type_name = link_get_type_name;
+	platform_class->link_get_unmanaged = link_get_unmanaged;
 
 	platform_class->link_refresh = link_refresh;
 

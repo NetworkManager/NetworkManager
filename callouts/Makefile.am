@@ -87,11 +87,6 @@ libtest_dispatcher_envp_la_LIBADD = \
 	$(GLIB_LIBS)
 
 
-if WITH_UDEV_DIR
-udevrulesdir = $(UDEV_DIR)/rules.d
-udevrules_DATA = 77-nm-olpc-mesh.rules
-endif
-
 dbusactivationdir = $(datadir)/dbus-1/system-services
 dbusactivation_in_files = org.freedesktop.nm_dispatcher.service.in
 dbusactivation_DATA = $(dbusactivation_in_files:.service.in=.service)
@@ -115,7 +110,6 @@ CLEANFILES = $(nodist_libnmdbus_dispatcher_la_SOURCES) $(dbusactivation_DATA)
 
 EXTRA_DIST = \
 	$(dbusservice_DATA) \
-	$(udevrules_DATA) \
 	$(dbusactivation_in_files) \
 	nm-dispatcher.xml
 

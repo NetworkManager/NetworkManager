@@ -494,6 +494,9 @@ make check
 
 
 %post
+/usr/bin/udevadm control --reload-rules || :
+/usr/bin/udevadm trigger --subsystem-match=net || :
+
 %systemd_post NetworkManager.service NetworkManager-wait-online.service NetworkManager-dispatcher.service
 
 %preun
@@ -507,6 +510,9 @@ fi
 %systemd_preun NetworkManager-wait-online.service NetworkManager-dispatcher.service
 
 %postun
+/usr/bin/udevadm control --reload-rules || :
+/usr/bin/udevadm trigger --subsystem-match=net || :
+
 %systemd_postun
 
 
