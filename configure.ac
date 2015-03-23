@@ -119,6 +119,13 @@ if test -z "$config_plugins_default" -o "$config_plugins_default" = no; then
     test "$enable_config_plugin_ibft" = "yes" && config_plugins_default="$config_plugins_default,ibft"
     config_plugins_default="${config_plugins_default#,}"
 fi
+
+test "$enable_ifcfg_rh" = "yes"           && distro_plugins="$distro_plugins,ifcfg-rh"
+test "$enable_ifcfg_suse" = "yes"         && distro_plugins="$distro_plugins,ifcfg-suse"
+test "$enable_ifupdown" = "yes"           && distro_plugins="$distro_plugins,ifupdown"
+test "$enable_ifnet" = "yes"              && distro_plugins="$distro_plugins,ifnet"
+distro_plugins="${distro_plugins#,}"
+
 AC_DEFINE_UNQUOTED(CONFIG_PLUGINS_DEFAULT, "$config_plugins_default", [Default configuration option for main.plugins setting])
 
 if test "$enable_ifcfg_rh" = "yes"; then
@@ -346,6 +353,24 @@ fi
 
 PKG_CHECK_MODULES(SYSTEMD_200, [systemd >= 200], [have_systemd_200=yes],[have_systemd_200=no])
 AM_CONDITIONAL(HAVE_SYSTEMD_200, test "${have_systemd_200}" = "yes")
+
+# Hostname persist mode
+AC_ARG_WITH(hostname-persist, AS_HELP_STRING([--with-hostname-persist=default|suse|gentoo],
+	[Hostname persist method]))
+
+AS_IF([test "$with_hostname_persist" = "suse"], hostname_persist=suse)
+AS_IF([test "$with_hostname_persist" = "gentoo"], hostname_persist=gentoo)
+AS_IF([test "$with_hostname_persist" = "default"], hostname_persist=default)
+# if the method was not explicitly set, try to guess it from the enabled plugins
+AS_IF([test -z "$hostname_persist" -a "$distro_plugins" = "ifcfg-suse"], hostname_persist=suse)
+AS_IF([test -z "$hostname_persist" -a "$distro_plugins" = "ifnet"], hostname_persist=gentoo)
+AS_IF([test -z "$hostname_persist"], hostname_persist=default)
+
+if test "$hostname_persist" = suse; then
+	AC_DEFINE(HOSTNAME_PERSIST_SUSE, 1, [Enable SuSE hostname persist method])
+elif test "$hostname_persist" = gentoo; then
+	AC_DEFINE(HOSTNAME_PERSIST_GENTOO, 1, [Enable Gentoo hostname persist method])
+fi
 
 # Session tracking support
 AC_ARG_WITH(systemd-logind, AS_HELP_STRING([--with-systemd-logind=yes|no],
@@ -1063,6 +1088,7 @@ else
 fi
 echo "  polkit agent: ${enable_polkit_agent}"
 echo "  selinux: $have_selinux"
+echo "  hostname persist: ${hostname_persist}"
 echo
 
 echo "Features:"
