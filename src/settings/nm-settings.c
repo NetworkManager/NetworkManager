@@ -2004,29 +2004,12 @@ nm_settings_get_startup_complete (NMSettings *self)
 
 /***************************************************************/
 
-NMSettings *
-nm_settings_new (GError **error)
+static void
+setup_hostname_file_monitors (NMSettings *self)
 {
-	NMSettings *self;
-	NMSettingsPrivate *priv;
-	GFile *file;
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	GFileMonitor *monitor;
-
-	self = g_object_new (NM_TYPE_SETTINGS, NULL);
-
-	priv = NM_SETTINGS_GET_PRIVATE (self);
-
-	priv->config = nm_config_get ();
-	priv->dbus_mgr = nm_dbus_manager_get ();
-
-	/* Load the plugins; fail if a plugin is not found. */
-	if (!load_plugins (self, nm_config_get_plugins (priv->config), error)) {
-		g_object_unref (self);
-		return NULL;
-	}
-
-	load_connections (self);
-	check_startup_complete (self);
+	GFile *file;
 
 	priv->hostname.file = HOSTNAME_FILE;
 	priv->hostname.value = nm_settings_get_hostname (self);
@@ -2056,6 +2039,31 @@ nm_settings_new (GError **error)
 #endif
 
 	hostname_maybe_changed (self);
+}
+
+NMSettings *
+nm_settings_new (GError **error)
+{
+	NMSettings *self;
+	NMSettingsPrivate *priv;
+
+	self = g_object_new (NM_TYPE_SETTINGS, NULL);
+
+	priv = NM_SETTINGS_GET_PRIVATE (self);
+
+	priv->config = nm_config_get ();
+	priv->dbus_mgr = nm_dbus_manager_get ();
+
+	/* Load the plugins; fail if a plugin is not found. */
+	if (!load_plugins (self, nm_config_get_plugins (priv->config), error)) {
+		g_object_unref (self);
+		return NULL;
+	}
+
+	load_connections (self);
+	check_startup_complete (self);
+	setup_hostname_file_monitors (self);
+
 	nm_dbus_manager_register_object (priv->dbus_mgr, NM_DBUS_PATH_SETTINGS, self);
 	return self;
 }
