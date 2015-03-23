@@ -38,7 +38,6 @@
 #include "nm-dhcp-dhcpcd.h"
 #include "nm-dhcp-systemd.h"
 #include "nm-config.h"
-#include "nm-dbus-glib-types.h"
 #include "NetworkManagerUtils.h"
 
 #define DHCP_TIMEOUT 45 /* default DHCP timeout, in seconds */
@@ -180,7 +179,7 @@ get_client_type (const char *client, GError **error)
 static void client_state_changed (NMDhcpClient *client,
                                   NMDhcpState state,
                                   GObject *ip_config,
-                                  GHashTable *options,
+                                  GVariant *options,
                                   NMDhcpManager *self);
 
 static void
@@ -200,7 +199,7 @@ static void
 client_state_changed (NMDhcpClient *client,
                       NMDhcpState state,
                       GObject *ip_config,
-                      GHashTable *options,
+                      GVariant *options,
                       NMDhcpManager *self)
 {
 	if (state >= NM_DHCP_STATE_TIMEOUT)

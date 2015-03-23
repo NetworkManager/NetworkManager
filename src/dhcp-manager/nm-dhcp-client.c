@@ -31,7 +31,6 @@
 #include "nm-default.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
-#include "nm-dbus-glib-types.h"
 #include "nm-dhcp-client.h"
 #include "nm-dhcp-utils.h"
 #include "nm-platform.h"
@@ -648,21 +647,25 @@ nm_dhcp_client_stop (NMDhcpClient *self, gboolean release)
 /********************************************/
 
 static char *
-garray_to_string (GArray *array, const char *key)
+bytearray_variant_to_string (GVariant *value, const char *key)
 {
+	const guint8 *array;
+	gsize length;
 	GString *str;
 	int i;
 	unsigned char c;
 	char *converted = NULL;
 
-	g_return_val_if_fail (array != NULL, NULL);
+	g_return_val_if_fail (value != NULL, NULL);
+
+	array = g_variant_get_fixed_array (value, &length, 1);
 
 	/* Since the DHCP options come through environment variables, they should
 	 * already be UTF-8 safe, but just make sure.
 	 */
-	str = g_string_sized_new (array->len);
-	for (i = 0; i < array->len; i++) {
-		c = array->data[i];
+	str = g_string_sized_new (length);
+	for (i = 0; i < length; i++) {
+		c = array[i];
 
 		/* Convert NULLs to spaces and non-ASCII characters to ? */
 		if (c == '\0')
@@ -684,11 +687,10 @@ garray_to_string (GArray *array, const char *key)
 #define NEW_TAG "new_"
 
 static void
-copy_option (const char * key,
-             GValue *value,
-             gpointer user_data)
+maybe_add_option (GHashTable *hash,
+                  const char *key,
+                  GVariant *value)
 {
-	GHashTable *hash = user_data;
 	char *str_value = NULL;
 	const char **p;
 	static const char *ignored_keys[] = {
@@ -699,10 +701,7 @@ copy_option (const char * key,
 		NULL
 	};
 
-	if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_UCHAR_ARRAY)) {
-		nm_log_warn (LOGD_DHCP, "key %s value type was not DBUS_TYPE_G_UCHAR_ARRAY", key);
-		return;
-	}
+	g_return_if_fail (g_variant_is_of_type (value, G_VARIANT_TYPE_BYTESTRING));
 
 	if (g_str_has_prefix (key, OLD_TAG))
 		return;
@@ -718,7 +717,7 @@ copy_option (const char * key,
 	if (!key[0])
 		return;
 
-	str_value = garray_to_string ((GArray *) g_value_get_boxed (value), key);
+	str_value = bytearray_variant_to_string (value, key);
 	if (str_value)
 		g_hash_table_insert (hash, g_strdup (key), str_value);
 }
@@ -727,7 +726,7 @@ gboolean
 nm_dhcp_client_handle_event (gpointer unused,
                              const char *iface,
                              gint pid,
-                             GHashTable *options,
+                             GVariant *options,
                              const char *reason,
                              NMDhcpClient *self)
 {
@@ -740,7 +739,7 @@ nm_dhcp_client_handle_event (gpointer unused,
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), FALSE);
 	g_return_val_if_fail (iface != NULL, FALSE);
 	g_return_val_if_fail (pid > 0, FALSE);
-	g_return_val_if_fail (options != NULL, FALSE);
+	g_return_val_if_fail (g_variant_is_of_type (options, G_VARIANT_TYPE_VARDICT), FALSE);
 	g_return_val_if_fail (reason != NULL, FALSE);
 
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
@@ -756,9 +755,17 @@ nm_dhcp_client_handle_event (gpointer unused,
 	            iface, reason, state_to_string (new_state));
 
 	if (new_state == NM_DHCP_STATE_BOUND) {
+		GVariantIter iter;
+		const char *name;
+		GVariant *value;
+
 		/* Copy options */
 		str_options = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
-		g_hash_table_foreach (options, (GHFunc) copy_option, str_options);
+		g_variant_iter_init (&iter, options);
+		while (g_variant_iter_next (&iter, "{&sv}", &name, &value)) {
+			maybe_add_option (str_options, name, value);
+			g_variant_unref (value);
+		}
 
 		/* Create the IP config */
 		g_warn_if_fail (g_hash_table_size (str_options));
