@@ -100,6 +100,9 @@
 #include "sparse-endian.h"
 #endif /* NM_IGNORED */
 
+/* Put this test here for a lack of better place */
+assert_cc(EAGAIN == EWOULDBLOCK);
+
 #if 0 /* NM_IGNORED */
 int saved_argc = 0;
 char **saved_argv = NULL;
@@ -2350,6 +2353,17 @@ ssize_t loop_read(int fd, void *buf, size_t nbytes, bool do_poll) {
         return n;
 }
 
+int loop_read_exact(int fd, void *buf, size_t nbytes, bool do_poll) {
+        ssize_t n;
+
+        n = loop_read(fd, buf, nbytes, do_poll);
+        if (n < 0)
+                return n;
+        if ((size_t) n != nbytes)
+                return -EIO;
+        return 0;
+}
+
 #if 0 /* NM_IGNORED */
 int loop_write(int fd, const void *buf, size_t nbytes, bool do_poll) {
         const uint8_t *p = buf;
@@ -2607,8 +2621,9 @@ char* dirname_malloc(const char *path) {
 int dev_urandom(void *p, size_t n) {
 #if 0 /* NM_IGNORED */
         static int have_syscall = -1;
-        int r, fd;
-        ssize_t k;
+
+        _cleanup_close_ int fd = -1;
+        int r;
 
         /* Gathers some randomness from the kernel. This call will
          * never block, and will always return some data from the
@@ -2643,26 +2658,17 @@ int dev_urandom(void *p, size_t n) {
                                 return -errno;
                 } else
                         /* too short read? */
-                        return -EIO;
+                        return -ENODATA;
         }
 #else /* NM IGNORED */
-        int fd;
-        ssize_t k;
+        _cleanup_close_ int fd = -1;
 #endif /* NM_IGNORED */
 
         fd = open("/dev/urandom", O_RDONLY|O_CLOEXEC|O_NOCTTY);
         if (fd < 0)
                 return errno == ENOENT ? -ENOSYS : -errno;
 
-        k = loop_read(fd, p, n, true);
-        safe_close(fd);
-
-        if (k < 0)
-                return (int) k;
-        if ((size_t) k != n)
-                return -EIO;
-
-        return 0;
+        return loop_read_exact(fd, p, n, true);
 }
 
 void initialize_srand(void) {
@@ -2951,30 +2957,29 @@ int get_ctty(pid_t pid, dev_t *_devnr, char **r) {
 
                 /* This is an ugly hack */
                 if (major(devnr) == 136) {
-                        asprintf(&b, "pts/%u", minor(devnr));
-                        goto finish;
+                        if (asprintf(&b, "pts/%u", minor(devnr)) < 0)
+                                return -ENOMEM;
+                } else {
+                        /* Probably something like the ptys which have no
+                         * symlink in /dev/char. Let's return something
+                         * vaguely useful. */
+
+                        b = strdup(fn + 5);
+                        if (!b)
+                                return -ENOMEM;
                 }
+        } else {
+                if (startswith(s, "/dev/"))
+                        p = s + 5;
+                else if (startswith(s, "../"))
+                        p = s + 3;
+                else
+                        p = s;
 
-                /* Probably something like the ptys which have no
-                 * symlink in /dev/char. Let's return something
-                 * vaguely useful. */
-
-                b = strdup(fn + 5);
-                goto finish;
+                b = strdup(p);
+                if (!b)
+                        return -ENOMEM;
         }
-
-        if (startswith(s, "/dev/"))
-                p = s + 5;
-        else if (startswith(s, "../"))
-                p = s + 3;
-        else
-                p = s;
-
-        b = strdup(p);
-
-finish:
-        if (!b)
-                return -ENOMEM;
 
         *r = b;
         if (_devnr)
@@ -4147,8 +4152,7 @@ static int do_execute(char **directories, usec_t timeout, char *argv[]) {
                         if (null_or_empty_path(path)) {
                                 log_debug("%s is empty (a mask).", path);
                                 continue;
-                        } else
-                                log_debug("%s will be executed.", path);
+                        }
 
                         pid = fork();
                         if (pid < 0) {
@@ -6710,7 +6714,7 @@ int getpeersec(int fd, char **ret) {
 
         if (isempty(s)) {
                 free(s);
-                return -ENOTSUP;
+                return -EOPNOTSUPP;
         }
 
         *ret = s;
@@ -7890,6 +7894,28 @@ int chattr_path(const char *p, bool b, unsigned mask) {
         return chattr_fd(fd, b, mask);
 }
 
+int change_attr_fd(int fd, unsigned value, unsigned mask) {
+        unsigned old_attr, new_attr;
+
+        assert(fd >= 0);
+
+        if (mask == 0)
+                return 0;
+
+        if (ioctl(fd, FS_IOC_GETFLAGS, &old_attr) < 0)
+                return -errno;
+
+        new_attr = (old_attr & ~mask) |(value & mask);
+
+        if (new_attr == old_attr)
+                return 0;
+
+        if (ioctl(fd, FS_IOC_SETFLAGS, &new_attr) < 0)
+                return -errno;
+
+        return 0;
+}
+
 int read_attr_fd(int fd, unsigned *ret) {
         assert(fd >= 0);
 
@@ -8171,5 +8197,46 @@ void cmsg_close_all(struct msghdr *mh) {
         for (cmsg = CMSG_FIRSTHDR(mh); cmsg; cmsg = CMSG_NXTHDR(mh, cmsg))
                 if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_RIGHTS)
                         close_many((int*) CMSG_DATA(cmsg), (cmsg->cmsg_len - CMSG_LEN(0)) / sizeof(int));
+}
+
+int rename_noreplace(int olddirfd, const char *oldpath, int newdirfd, const char *newpath) {
+        struct stat buf;
+        int ret;
+
+        ret = renameat2(olddirfd, oldpath, newdirfd, newpath, RENAME_NOREPLACE);
+        if (ret >= 0)
+                return 0;
+
+        /* Even though renameat2() exists since Linux 3.15, btrfs added
+         * support for it later. If it is not implemented, fallback to another
+         * method. */
+        if (errno != EINVAL)
+                return -errno;
+
+        /* The link()/unlink() fallback does not work on directories. But
+         * renameat() without RENAME_NOREPLACE gives the same semantics on
+         * directories, except when newpath is an *empty* directory. This is
+         * good enough. */
+        ret = fstatat(olddirfd, oldpath, &buf, AT_SYMLINK_NOFOLLOW);
+        if (ret >= 0 && S_ISDIR(buf.st_mode)) {
+                ret = renameat(olddirfd, oldpath, newdirfd, newpath);
+                return ret >= 0 ? 0 : -errno;
+        }
+
+        /* If it is not a directory, use the link()/unlink() fallback. */
+        ret = linkat(olddirfd, oldpath, newdirfd, newpath, 0);
+        if (ret < 0)
+                return -errno;
+
+        ret = unlinkat(olddirfd, oldpath, 0);
+        if (ret < 0) {
+                /* backup errno before the following unlinkat() alters it */
+                ret = errno;
+                (void) unlinkat(newdirfd, newpath, 0);
+                errno = ret;
+                return -errno;
+        }
+
+        return 0;
 }
 #endif /* NM_IGNORED */

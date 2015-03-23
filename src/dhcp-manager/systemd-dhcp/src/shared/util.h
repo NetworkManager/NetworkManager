@@ -438,6 +438,7 @@ int sigaction_many(const struct sigaction *sa, ...);
 int fopen_temporary(const char *path, FILE **_f, char **_temp_path);
 
 ssize_t loop_read(int fd, void *buf, size_t nbytes, bool do_poll);
+int loop_read_exact(int fd, void *buf, size_t nbytes, bool do_poll);
 int loop_write(int fd, const void *buf, size_t nbytes, bool do_poll);
 
 bool is_device_path(const char *path);
@@ -1062,6 +1063,7 @@ int same_fd(int a, int b);
 
 int chattr_fd(int fd, bool b, unsigned mask);
 int chattr_path(const char *p, bool b, unsigned mask);
+int change_attr_fd(int fd, unsigned value, unsigned mask);
 
 int read_attr_fd(int fd, unsigned *ret);
 int read_attr_path(const char *p, unsigned *ret);
@@ -1090,3 +1092,5 @@ void sigkill_wait(pid_t *pid);
 int syslog_parse_priority(const char **p, int *priority, bool with_facility);
 
 void cmsg_close_all(struct msghdr *mh);
+
+int rename_noreplace(int olddirfd, const char *oldpath, int newdirfd, const char *newpath);

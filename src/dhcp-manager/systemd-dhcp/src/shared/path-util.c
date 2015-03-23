@@ -407,12 +407,18 @@ char* path_startswith(const char *path, const char *prefix) {
         }
 }
 
-bool path_equal(const char *a, const char *b) {
+int path_compare(const char *a, const char *b) {
+        int d;
+
         assert(a);
         assert(b);
 
-        if ((a[0] == '/') != (b[0] == '/'))
-                return false;
+        /* A relative path and an abolute path must not compare as equal.
+         * Which one is sorted before the other does not really matter.
+         * Here a relative path is ordered before an absolute path. */
+        d = (a[0] == '/') - (b[0] == '/');
+        if (d)
+                return d;
 
         for (;;) {
                 size_t j, k;
@@ -421,23 +427,34 @@ bool path_equal(const char *a, const char *b) {
                 b += strspn(b, "/");
 
                 if (*a == 0 && *b == 0)
-                        return true;
+                        return 0;
 
-                if (*a == 0 || *b == 0)
-                        return false;
+                /* Order prefixes first: "/foo" before "/foo/bar" */
+                if (*a == 0)
+                        return -1;
+                if (*b == 0)
+                        return 1;
 
                 j = strcspn(a, "/");
                 k = strcspn(b, "/");
 
-                if (j != k)
-                        return false;
+                /* Alphabetical sort: "/foo/aaa" before "/foo/b" */
+                d = memcmp(a, b, MIN(j, k));
+                if (d)
+                        return (d > 0) - (d < 0); /* sign of d */
 
-                if (memcmp(a, b, j) != 0)
-                        return false;
+                /* Sort "/foo/a" before "/foo/aaa" */
+                d = (j > k) - (j < k);  /* sign of (j - k) */
+                if (d)
+                        return d;
 
                 a += j;
                 b += k;
         }
+}
+
+bool path_equal(const char *a, const char *b) {
+        return path_compare(a, b) == 0;
 }
 
 bool path_equal_or_files_same(const char *a, const char *b) {
@@ -464,9 +481,9 @@ int path_is_mount_point(const char *t, bool allow_symlink) {
 
         union file_handle_union h = FILE_HANDLE_INIT;
         int mount_id = -1, mount_id_parent = -1;
-        _cleanup_free_ char *parent = NULL;
         struct stat a, b;
         int r;
+        _cleanup_close_ int fd = -1;
         bool nosupp = false;
 
         /* We are not actually interested in the file handles, but
@@ -476,7 +493,15 @@ int path_is_mount_point(const char *t, bool allow_symlink) {
         if (path_equal(t, "/"))
                 return 1;
 
-        r = name_to_handle_at(AT_FDCWD, t, &h.handle, &mount_id, allow_symlink ? AT_SYMLINK_FOLLOW : 0);
+        fd = openat(AT_FDCWD, t, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC|(allow_symlink ? 0 : O_PATH));
+        if (fd < 0) {
+                if (errno == ENOENT)
+                        return 0;
+
+                return -errno;
+        }
+
+        r = name_to_handle_at(fd, "", &h.handle, &mount_id, AT_EMPTY_PATH);
         if (r < 0) {
                 if (errno == ENOSYS)
                         /* This kernel does not support name_to_handle_at()
@@ -493,12 +518,9 @@ int path_is_mount_point(const char *t, bool allow_symlink) {
                         return -errno;
         }
 
-        r = path_get_parent(t, &parent);
-        if (r < 0)
-                return r;
 
         h.handle.handle_bytes = MAX_HANDLE_SZ;
-        r = name_to_handle_at(AT_FDCWD, parent, &h.handle, &mount_id_parent, AT_SYMLINK_FOLLOW);
+        r = name_to_handle_at(fd, "..", &h.handle, &mount_id_parent, 0);
         if (r < 0)
                 if (errno == EOPNOTSUPP)
                         if (nosupp)
@@ -517,10 +539,7 @@ int path_is_mount_point(const char *t, bool allow_symlink) {
                 return mount_id != mount_id_parent;
 
 fallback:
-        if (allow_symlink)
-                r = stat(t, &a);
-        else
-                r = lstat(t, &a);
+        r = fstatat(fd, "", &a, AT_EMPTY_PATH);
 
         if (r < 0) {
                 if (errno == ENOENT)
@@ -529,14 +548,8 @@ fallback:
                 return -errno;
         }
 
-        free(parent);
-        parent = NULL;
 
-        r = path_get_parent(t, &parent);
-        if (r < 0)
-                return r;
-
-        r = stat(parent, &b);
+        r = fstatat(fd, "..", &b, 0);
         if (r < 0)
                 return -errno;
 
