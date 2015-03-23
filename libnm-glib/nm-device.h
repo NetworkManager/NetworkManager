@@ -127,6 +127,8 @@ NM_AVAILABLE_IN_0_9_10
 const char *         nm_device_get_hw_address       (NMDevice *device);
 NMDeviceCapabilities nm_device_get_capabilities     (NMDevice *device);
 gboolean             nm_device_get_managed          (NMDevice *device);
+NM_AVAILABLE_IN_1_2
+void                 nm_device_set_managed          (NMDevice *device, gboolean managed);
 gboolean             nm_device_get_autoconnect      (NMDevice *device);
 void                 nm_device_set_autoconnect      (NMDevice *device, gboolean autoconnect);
 gboolean             nm_device_get_firmware_missing (NMDevice *device);

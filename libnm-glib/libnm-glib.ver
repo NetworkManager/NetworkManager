@@ -173,6 +173,7 @@ global:
 	nm_device_olpc_mesh_get_type;
 	nm_device_olpc_mesh_new;
 	nm_device_set_autoconnect;
+	nm_device_set_managed;
 	nm_device_team_error_get_type;
 	nm_device_team_error_quark;
 	nm_device_team_get_carrier;
