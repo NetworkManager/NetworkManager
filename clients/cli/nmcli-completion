@@ -491,6 +491,7 @@ _nmcli_compl_ARGS()
                     return 0
                 fi
                 ;;
+            managed| \
             autoconnect| \
             stp| \
             hairpin| \
@@ -1251,7 +1252,7 @@ _nmcli()
             ;;
         d|de|dev|devi|devic|device)
             if [[ ${#words[@]} -eq 2 ]]; then
-                _nmcli_compl_COMMAND "$command" status show connect disconnect delete wifi
+                _nmcli_compl_COMMAND "$command" status show connect disconnect delete wifi set
             elif [[ ${#words[@]} -gt 2 ]]; then
                 case "$command" in
                     s|st|sta|stat|statu|status)
@@ -1269,6 +1270,15 @@ _nmcli()
                     de|del|dele|delet|delete)
                         if [[ ${#words[@]} -ge 3 ]]; then
                             _nmcli_compl_COMMAND_nl "${words[2]}" "$(_nmcli_dev_status DEVICE)"
+                        fi
+                        ;;
+                    se|set)
+                        if [[ ${#words[@]} -eq 3 ]]; then
+                            _nmcli_compl_COMMAND_nl "${words[2]}" "$(_nmcli_dev_status DEVICE)"
+                        else
+                            _nmcli_array_delete_at words 0 2
+                            OPTIONS=(autoconnect managed)
+                            _nmcli_compl_ARGS
                         fi
                         ;;
                     w|wi|wif|wifi)

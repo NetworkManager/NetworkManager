@@ -259,6 +259,7 @@ usage (void)
 	              "COMMAND := { status | show | connect | disconnect | delete | wifi }\n\n"
 	              "  status\n\n"
 	              "  show [<ifname>]\n\n"
+	              "  set <ifname> [autoconnect yes|no] [managed yes|no]\n\n"
 	              "  connect <ifname>\n\n"
 	              "  disconnect <ifname> ...\n\n"
 	              "  delete <ifname> ...\n\n"
@@ -330,6 +331,18 @@ usage_device_delete (void)
 	              "The command removes the interfaces. It only works for software devices\n"
 	              "(like bonds, bridges, etc.). Hardware devices cannot be deleted by the\n"
 	              "command.\n\n"));
+}
+
+static void
+usage_device_set (void)
+{
+	g_printerr (_("Usage: nmcli device set { ARGUMENTS | help }\n"
+	              "\n"
+	              "ARGUMENTS := <ifname> { PROPERTY [ PROPERTY ... ] }\n"
+	              "PROPERTY  := { autoconnect { yes | no } |\n"
+	              "             { managed { yes | no }\n"
+	              "\n"
+	              "Modify device properties.\n\n"));
 }
 
 static void
@@ -1895,6 +1908,119 @@ error:
 	return nmc->return_value;
 }
 
+static NMCResultCode
+do_device_set (NmCli *nmc, int argc, char **argv)
+{
+#define DEV_SET_AUTOCONNECT 0
+#define DEV_SET_MANAGED     1
+	NMDevice **devices;
+	NMDevice *device = NULL;
+	const char *ifname = NULL;
+	int i;
+	struct {
+		int idx;
+		gboolean value;
+	} values[2] = {
+		[DEV_SET_AUTOCONNECT] = { -1 },
+		[DEV_SET_MANAGED]     = { -1 },
+	};
+
+	if (argc == 0) {
+		g_string_printf (nmc->return_text, _("Error: No interface specified."));
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		goto error;
+	} else
+		ifname = *argv;
+
+	if (!ifname) {
+		g_string_printf (nmc->return_text, _("Error: No interface specified."));
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		goto error;
+	}
+
+	devices = get_devices_sorted (nmc->client);
+	for (i = 0; devices[i]; i++) {
+		NMDevice *candidate = devices[i];
+		const char *dev_iface = nm_device_get_iface (candidate);
+
+		if (!g_strcmp0 (dev_iface, ifname))
+			device = candidate;
+	}
+	g_free (devices);
+
+	if (!device) {
+		g_string_printf (nmc->return_text, _("Error: Device '%s' not found."), ifname);
+		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
+		goto error;
+	}
+
+        if (argc == 1) {
+		g_string_printf (nmc->return_text, _("Error: No property specified."));
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		goto error;
+	}
+
+	i = 0;
+	while (next_arg (&argc, &argv) == 0) {
+		gboolean flag;
+		gs_free_error GError *tmp_err = NULL;
+
+		if (matches (*argv, "managed") == 0) {
+			if (next_arg (&argc, &argv) != 0) {
+				g_string_printf (nmc->return_text, _("Error: Agrument missing."));
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
+			if (!nmc_string_to_bool (*argv, &flag, &tmp_err)) {
+				g_string_printf (nmc->return_text, _("Error: 'managed': %s."),
+				                 tmp_err->message);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
+			values[DEV_SET_MANAGED].idx = ++i;
+			values[DEV_SET_MANAGED].value = flag;
+		}
+		else if (matches (*argv, "autoconnect") == 0) {
+			if (next_arg (&argc, &argv) != 0) {
+				g_string_printf (nmc->return_text, _("Error: Agrument missing."));
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
+			if (!nmc_string_to_bool (*argv, &flag, &tmp_err)) {
+				g_string_printf (nmc->return_text, _("Error: 'autoconnect': %s."),
+				                 tmp_err->message);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
+			values[DEV_SET_AUTOCONNECT].idx = ++i;
+			values[DEV_SET_AUTOCONNECT].value = flag;
+		}
+		else {
+			usage_device_set ();
+			g_string_printf (nmc->return_text, _("Error: property '%s' is not known."), *argv);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto error;
+		}
+	}
+
+	/* when multiple properties are specified, set them in the order as they
+	 * are specified on the command line. */
+	if (   values[DEV_SET_AUTOCONNECT].idx >= 0
+	    && values[DEV_SET_MANAGED].idx >= 0
+	    && values[DEV_SET_MANAGED].idx < values[DEV_SET_AUTOCONNECT].idx) {
+		nm_device_set_managed (device, values[DEV_SET_MANAGED].value);
+		values[DEV_SET_MANAGED].idx = -1;
+	}
+	if (values[DEV_SET_AUTOCONNECT].idx >= 0)
+		nm_device_set_autoconnect (device, values[DEV_SET_AUTOCONNECT].value);
+	if (values[DEV_SET_MANAGED].idx >= 0)
+		nm_device_set_autoconnect (device, values[DEV_SET_MANAGED].value);
+
+error:
+	quit ();
+	return nmc->return_value;
+}
+
 static void
 show_access_point_info (NMDevice *device, NmCli *nmc)
 {
@@ -2812,6 +2938,13 @@ do_devices (NmCli *nmc, int argc, char **argv)
 				goto usage_exit;
 			}
 			nmc->return_value = do_device_delete (nmc, argc-1, argv+1);
+		}
+		else if (matches (*argv, "set") == 0) {
+			if (nmc_arg_is_help (*(argv+1))) {
+				usage_device_set ();
+				goto usage_exit;
+			}
+			nmc->return_value = do_device_set (nmc, argc-1, argv+1);
 		}
 		else if (matches (*argv, "wifi") == 0) {
 			if (nmc_arg_is_help (*(argv+1))) {
