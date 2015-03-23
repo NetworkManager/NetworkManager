@@ -34,6 +34,13 @@ endif
 examplesdir = $(docdir)/examples
 examples_DATA = server.conf
 
+if WITH_UDEV_DIR
+udevrulesdir = $(UDEV_DIR)/rules.d
+udevrules_DATA = \
+	85-nm-unmanaged.rules \
+	77-nm-olpc-mesh.rules
+endif
+
 server.conf: server.conf.in
 	$(edit) $< >$@
 
@@ -51,6 +58,8 @@ EXTRA_DIST = \
 	NetworkManager-wait-online-systemd-pre200.service.in \
 	NetworkManager-dispatcher.service.in \
 	org.freedesktop.NetworkManager.service.in \
+	85-nm-unmanaged.rules \
+	77-nm-olpc-mesh.rules \
 	server.conf.in
 
 CLEANFILES = \
