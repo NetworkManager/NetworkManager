@@ -198,6 +198,7 @@ struct _NMUtilsIPv6IfaceId {
 gboolean nm_utils_get_ipv6_interface_identifier (NMLinkType link_type,
                                                  const guint8 *hwaddr,
                                                  guint len,
+                                                 guint dev_id,
                                                  NMUtilsIPv6IfaceId *out_iid);
 
 void nm_utils_ipv6_addr_set_interface_identfier (struct in6_addr *addr,

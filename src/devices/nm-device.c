@@ -201,6 +201,7 @@ typedef struct {
 	char *        hw_addr;
 	guint         hw_addr_len;
 	char *        physical_port_id;
+	guint         dev_id;
 
 	NMUnmanagedFlags        unmanaged_flags;
 	gboolean                is_nm_owned; /* whether the device is a device owned and created by NM */
@@ -600,6 +601,7 @@ nm_device_set_ip_iface (NMDevice *self, const char *iface)
 static gboolean
 get_ip_iface_identifier (NMDevice *self, NMUtilsIPv6IfaceId *out_iid)
 {
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMLinkType link_type;
 	const guint8 *hwaddr = NULL;
 	size_t hwaddr_len = 0;
@@ -620,6 +622,7 @@ get_ip_iface_identifier (NMDevice *self, NMUtilsIPv6IfaceId *out_iid)
 	success = nm_utils_get_ipv6_interface_identifier (link_type,
 	                                                  hwaddr,
 	                                                  hwaddr_len,
+	                                                  priv->dev_id,
 	                                                  out_iid);
 	if (!success) {
 		_LOGW (LOGD_HW, "failed to generate interface identifier "
@@ -8472,6 +8475,7 @@ constructed (GObject *object)
 	if (priv->ifindex > 0) {
 		priv->is_software = nm_platform_link_is_software (priv->ifindex);
 		priv->physical_port_id = nm_platform_link_get_physical_port_id (priv->ifindex);
+		priv->dev_id = nm_platform_link_get_dev_id (priv->ifindex);
 		priv->mtu = nm_platform_link_get_mtu (priv->ifindex);
 	}
 	/* Indicate software device in capabilities. */

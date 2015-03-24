@@ -2351,6 +2351,7 @@ get_gre_eui64_u_bit (guint32 addr)
  * @link_type: the hardware link type
  * @hwaddr: the hardware address of the interface
  * @hwaddr_len: the length (in bytes) of @hwaddr
+ * @dev_id: the device identifier, if any
  * @out_iid: on success, filled with the interface identifier; on failure
  * zeroed out
  *
@@ -2365,6 +2366,7 @@ gboolean
 nm_utils_get_ipv6_interface_identifier (NMLinkType link_type,
                                         const guint8 *hwaddr,
                                         guint hwaddr_len,
+                                        guint dev_id,
                                         NMUtilsIPv6IfaceId *out_iid)
 {
 	guint32 addr;
@@ -2399,13 +2401,20 @@ nm_utils_get_ipv6_interface_identifier (NMLinkType link_type,
 	default:
 		if (hwaddr_len == ETH_ALEN) {
 			/* Translate 48-bit MAC address to a 64-bit Modified EUI-64.  See
-			 * http://tools.ietf.org/html/rfc4291#appendix-A
+			 * http://tools.ietf.org/html/rfc4291#appendix-A and the Linux
+			 * kernel's net/ipv6/addrconf.c::ipv6_generate_eui64() function.
 			 */
-			out_iid->id_u8[0] = hwaddr[0] ^ 0x02;
+			out_iid->id_u8[0] = hwaddr[0];
 			out_iid->id_u8[1] = hwaddr[1];
 			out_iid->id_u8[2] = hwaddr[2];
-			out_iid->id_u8[3] = 0xff;
-			out_iid->id_u8[4] = 0xfe;
+			if (dev_id) {
+				out_iid->id_u8[3] = (dev_id >> 8) & 0xff;
+				out_iid->id_u8[4] = dev_id & 0xff;
+			} else {
+				out_iid->id_u8[0] ^= 0x02;
+				out_iid->id_u8[3] = 0xff;
+				out_iid->id_u8[4] = 0xfe;
+			}
 			out_iid->id_u8[5] = hwaddr[3];
 			out_iid->id_u8[6] = hwaddr[4];
 			out_iid->id_u8[7] = hwaddr[5];
