@@ -1008,8 +1008,14 @@ nm_platform_link_get_mtu (int ifindex)
 }
 
 /**
- * nm_platform_link_get_mtu:
+ * nm_platform_link_get_physical_port_id:
  * @ifindex: Interface index
+ *
+ * The physical port ID, if present, indicates some unique identifier of
+ * the parent interface (eg, the physical port of which this link is a child).
+ * Two links that report the same physical port ID can be assumed to be
+ * children of the same physical port and may share resources that limit
+ * their abilities.
  *
  * Returns: physical port ID for the interface, or %NULL on error
  * or if the interface has no physical port ID.
