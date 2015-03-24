@@ -1032,6 +1032,28 @@ nm_platform_link_get_physical_port_id (int ifindex)
 }
 
 /**
+ * nm_platform_link_get_dev_id:
+ * @ifindex: Interface index
+ *
+ * In contrast to the physical device ID (which indicates which parent a
+ * child has) the device ID differentiates sibling devices that may share
+ * the same MAC address.
+ *
+ * Returns: device ID for the interface, or 0 on error or if the
+ * interface has no device ID.
+ */
+guint
+nm_platform_link_get_dev_id (int ifindex)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex >= 0, 0);
+	g_return_val_if_fail (klass->link_get_dev_id, 0);
+
+	return klass->link_get_dev_id (platform, ifindex);
+}
+
+/**
  * nm_platform_link_get_wake_onlan:
  * @ifindex: Interface index
  *

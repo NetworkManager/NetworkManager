@@ -2744,6 +2744,30 @@ link_get_physical_port_id (NMPlatform *platform, int ifindex)
 	return id;
 }
 
+static guint
+link_get_dev_id (NMPlatform *platform, int ifindex)
+{
+	const char *ifname;
+	gs_free char *path = NULL, *id = NULL;
+	gint64 int_val;
+
+	ifname = nm_platform_link_get_name (ifindex);
+	if (!ifname)
+		return 0;
+
+	ifname = ASSERT_VALID_PATH_COMPONENT (ifname);
+
+	path = g_strdup_printf ("/sys/class/net/%s/dev_id", ifname);
+	id = sysctl_get (platform, path);
+	if (!id || !*id)
+		return 0;
+
+	/* Value is reported as hex */
+	int_val = _nm_utils_ascii_str_to_int64 (id, 16, 0, G_MAXUINT16, 0);
+
+	return errno ? 0 : (int) int_val;
+}
+
 static int
 vlan_add (NMPlatform *platform, const char *name, int parent, int vlan_id, guint32 vlan_flags)
 {
@@ -4608,6 +4632,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_set_mtu = link_set_mtu;
 
 	platform_class->link_get_physical_port_id = link_get_physical_port_id;
+	platform_class->link_get_dev_id = link_get_dev_id;
 	platform_class->link_get_wake_on_lan = link_get_wake_on_lan;
 
 	platform_class->link_supports_carrier_detect = link_supports_carrier_detect;
