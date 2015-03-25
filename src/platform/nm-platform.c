@@ -2637,6 +2637,97 @@ log_ip6_route (NMPlatform *p, int ifindex, NMPlatformIP6Route *route, NMPlatform
 
 /******************************************************************/
 
+static gboolean
+_vtr_v4_route_add (int ifindex, const NMPlatformIPXRoute *route, guint32 v4_pref_src)
+{
+	return nm_platform_ip4_route_add (ifindex > 0 ? ifindex : route->rx.ifindex,
+	                                  route->rx.source,
+	                                  route->r4.network,
+	                                  route->rx.plen,
+	                                  route->r4.gateway,
+	                                  v4_pref_src,
+	                                  route->rx.metric,
+	                                  route->rx.mss);
+}
+
+static gboolean
+_vtr_v6_route_add (int ifindex, const NMPlatformIPXRoute *route, guint32 v4_pref_src)
+{
+	return nm_platform_ip6_route_add (ifindex > 0 ? ifindex : route->rx.ifindex,
+	                                  route->rx.source,
+	                                  route->r6.network,
+	                                  route->rx.plen,
+	                                  route->r6.gateway,
+	                                  route->rx.metric,
+	                                  route->rx.mss);
+}
+
+static gboolean
+_vtr_v4_route_delete (int ifindex, const NMPlatformIPXRoute *route)
+{
+	return nm_platform_ip4_route_delete (ifindex > 0 ? ifindex : route->rx.ifindex,
+	                                     route->r4.network,
+	                                     route->rx.plen,
+	                                     route->rx.metric);
+}
+
+static gboolean
+_vtr_v6_route_delete (int ifindex, const NMPlatformIPXRoute *route)
+{
+	return nm_platform_ip6_route_delete (ifindex > 0 ? ifindex : route->rx.ifindex,
+	                                     route->r6.network,
+	                                     route->rx.plen,
+	                                     route->rx.metric);
+}
+
+static guint32
+_vtr_v4_metric_normalize (guint32 metric)
+{
+	return metric;
+}
+
+static gboolean
+_vtr_v4_route_delete_default (int ifindex, guint32 metric)
+{
+	return nm_platform_ip4_route_delete (ifindex, 0, 0, metric);
+}
+
+static gboolean
+_vtr_v6_route_delete_default (int ifindex, guint32 metric)
+{
+	return nm_platform_ip6_route_delete (ifindex, in6addr_any, 0, metric);
+}
+
+/******************************************************************/
+
+const NMPlatformVTableRoute nm_platform_vtable_route_v4 = {
+	.is_ip4                         = TRUE,
+	.addr_family                    = AF_INET,
+	.sizeof_route                   = sizeof (NMPlatformIP4Route),
+	.route_cmp                      = (int (*) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b)) nm_platform_ip4_route_cmp,
+	.route_to_string                = (const char *(*) (const NMPlatformIPXRoute *route)) nm_platform_ip4_route_to_string,
+	.route_get_all                  = nm_platform_ip4_route_get_all,
+	.route_add                      = _vtr_v4_route_add,
+	.route_delete                   = _vtr_v4_route_delete,
+	.route_delete_default           = _vtr_v4_route_delete_default,
+	.metric_normalize               = _vtr_v4_metric_normalize,
+};
+
+const NMPlatformVTableRoute nm_platform_vtable_route_v6 = {
+	.is_ip4                         = FALSE,
+	.addr_family                    = AF_INET6,
+	.sizeof_route                   = sizeof (NMPlatformIP6Route),
+	.route_cmp                      = (int (*) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b)) nm_platform_ip6_route_cmp,
+	.route_to_string                = (const char *(*) (const NMPlatformIPXRoute *route)) nm_platform_ip6_route_to_string,
+	.route_get_all                  = nm_platform_ip6_route_get_all,
+	.route_add                      = _vtr_v6_route_add,
+	.route_delete                   = _vtr_v6_route_delete,
+	.route_delete_default           = _vtr_v6_route_delete_default,
+	.metric_normalize               = nm_utils_ip6_route_metric_normalize,
+};
+
+/******************************************************************/
+
 static void
 nm_platform_init (NMPlatform *object)
 {
