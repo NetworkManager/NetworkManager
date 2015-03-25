@@ -883,7 +883,7 @@ get_properties_cb_4 (GObject *source_object, GAsyncResult *res, gpointer user_da
 	GVariant *v_properties, *v_dict;
 
 	v_properties = _nm_dbus_proxy_call_finish (priv->proxy, res,
-	                                           G_VARIANT_TYPE ("(@a{sv})"),
+	                                           G_VARIANT_TYPE ("(a{sv})"),
 	                                           &err);
 	if (!v_properties) {
 		nm_log_warn (LOGD_BT, "bluez[%s] error getting device properties: %s",

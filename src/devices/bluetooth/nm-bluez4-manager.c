@@ -24,24 +24,20 @@
 #include <signal.h>
 #include <string.h>
 #include <stdlib.h>
-#include <dbus/dbus-glib.h>
 
 #include "nm-logging.h"
-#include "nm-dbus-glib-types.h"
 #include "nm-bluez-manager.h"
 #include "nm-bluez4-manager.h"
 #include "nm-bluez4-adapter.h"
-#include "nm-dbus-manager.h"
 #include "nm-bluez-common.h"
-
+#include "nm-core-internal.h"
 
 typedef struct {
-	NMDBusManager *dbus_mgr;
 	gulong name_owner_changed_id;
 
 	NMConnectionProvider *provider;
 
-	DBusGProxy *proxy;
+	GDBusProxy *proxy;
 
 	NMBluez4Adapter *adapter;
 } NMBluez4ManagerPrivate;
@@ -120,7 +116,7 @@ adapter_initialized (NMBluez4Adapter *adapter, gboolean success, gpointer user_d
 }
 
 static void
-adapter_removed (DBusGProxy *proxy, const char *path, NMBluez4Manager *self)
+adapter_removed (GDBusProxy *proxy, const char *path, NMBluez4Manager *self)
 {
 	NMBluez4ManagerPrivate *priv = NM_BLUEZ4_MANAGER_GET_PRIVATE (self);
 
@@ -140,7 +136,7 @@ adapter_removed (DBusGProxy *proxy, const char *path, NMBluez4Manager *self)
 }
 
 static void
-default_adapter_changed (DBusGProxy *proxy, const char *path, NMBluez4Manager *self)
+default_adapter_changed (GDBusProxy *proxy, const char *path, NMBluez4Manager *self)
 {
 	NMBluez4ManagerPrivate *priv = NM_BLUEZ4_MANAGER_GET_PRIVATE (self);
 	const char *cur_path = NULL;
@@ -166,128 +162,63 @@ default_adapter_changed (DBusGProxy *proxy, const char *path, NMBluez4Manager *s
 }
 
 static void
-default_adapter_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
+default_adapter_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 {
 	NMBluez4Manager *self = NM_BLUEZ4_MANAGER (user_data);
 	NMBluez4ManagerPrivate *priv = NM_BLUEZ4_MANAGER_GET_PRIVATE (self);
-	const char *default_adapter = NULL;
+	GVariant *ret;
 	GError *err = NULL;
 
-	if (!dbus_g_proxy_end_call (proxy, call, &err,
-	                            DBUS_TYPE_G_OBJECT_PATH, &default_adapter,
-	                            G_TYPE_INVALID)) {
+	ret = _nm_dbus_proxy_call_finish (G_DBUS_PROXY (proxy), result,
+	                                  G_VARIANT_TYPE ("(o)"), &err);
+	if (ret) {
+		const char *default_adapter;
+
+		g_variant_get (ret, "(&o)", &default_adapter);
+		default_adapter_changed (priv->proxy, default_adapter, self);
+		g_variant_unref (ret);
+	} else {
 		/* Ignore "No such adapter" errors; just means bluetooth isn't active */
-		if (   !dbus_g_error_has_name (err, "org.bluez.Error.NoSuchAdapter")
-		    && !dbus_g_error_has_name (err, "org.freedesktop.systemd1.LoadFailed")
-		    && !g_error_matches (err, DBUS_GERROR, DBUS_GERROR_SERVICE_UNKNOWN)) {
+		if (   !_nm_dbus_error_has_name (err, "org.bluez.Error.NoSuchAdapter")
+		    && !_nm_dbus_error_has_name (err, "org.freedesktop.systemd1.LoadFailed")
+		    && !g_error_matches (err, G_DBUS_ERROR, G_DBUS_ERROR_SERVICE_UNKNOWN)) {
+			g_dbus_error_strip_remote_error (err);
 			nm_log_warn (LOGD_BT, "bluez error getting default adapter: %s",
-			             err && err->message ? err->message : "(unknown)");
+			             err->message);
 		}
 		g_error_free (err);
-		return;
 	}
-
-	default_adapter_changed (priv->proxy, default_adapter, self);
 }
 
 static void
 query_default_adapter (NMBluez4Manager *self)
 {
 	NMBluez4ManagerPrivate *priv = NM_BLUEZ4_MANAGER_GET_PRIVATE (self);
-	DBusGProxyCall *call;
 
-	call = dbus_g_proxy_begin_call (priv->proxy, "DefaultAdapter",
-	                                default_adapter_cb,
-	                                self,
-	                                NULL, G_TYPE_INVALID);
-	if (!call)
-		nm_log_warn (LOGD_BT, "failed to request default Bluetooth adapter.");
+	g_dbus_proxy_call (priv->proxy, "DefaultAdapter",
+	                   NULL,
+	                   G_DBUS_CALL_FLAGS_NONE, -1,
+	                   NULL,
+	                   default_adapter_cb, self);
 }
 
 static void
-bluez_connect (NMBluez4Manager *self)
-{
-	NMBluez4ManagerPrivate *priv = NM_BLUEZ4_MANAGER_GET_PRIVATE (self);
-	DBusGConnection *connection;
-
-	g_return_if_fail (priv->proxy == NULL);
-
-	connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
-	if (!connection)
-		return;
-
-	priv->proxy = dbus_g_proxy_new_for_name (connection,
-	                                         BLUEZ_SERVICE,
-	                                         BLUEZ_MANAGER_PATH,
-	                                         BLUEZ4_MANAGER_INTERFACE);
-
-	dbus_g_proxy_add_signal (priv->proxy, "AdapterRemoved",
-	                         DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->proxy, "AdapterRemoved",
-	                             G_CALLBACK (adapter_removed), self, NULL);
-
-	dbus_g_proxy_add_signal (priv->proxy, "DefaultAdapterChanged",
-	                         DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->proxy, "DefaultAdapterChanged",
-	                             G_CALLBACK (default_adapter_changed), self, NULL);
-
-	query_default_adapter (self);
-}
-
-static void
-name_owner_changed_cb (NMDBusManager *dbus_mgr,
-                       const char *name,
-                       const char *old_owner,
-                       const char *new_owner,
+name_owner_changed_cb (GObject *object,
+                       GParamSpec *pspec,
                        gpointer user_data)
 {
 	NMBluez4Manager *self = NM_BLUEZ4_MANAGER (user_data);
 	NMBluez4ManagerPrivate *priv = NM_BLUEZ4_MANAGER_GET_PRIVATE (self);
-	gboolean old_owner_good = (old_owner && strlen (old_owner));
-	gboolean new_owner_good = (new_owner && strlen (new_owner));
+	char *owner;
 
-	/* Can't handle the signal if its not from the Bluez */
-	if (strcmp (BLUEZ_SERVICE, name))
-		return;
-
-	if (!old_owner_good && new_owner_good)
+	owner = g_dbus_proxy_get_name_owner (priv->proxy);
+	if (owner) {
 		query_default_adapter (self);
-	else if (old_owner_good && !new_owner_good) {
+		g_free (owner);
+	} else {
 		/* Throwing away the adapter removes all devices too */
-		if (priv->adapter) {
-			g_object_unref (priv->adapter);
-			priv->adapter = NULL;
-		}
+		g_clear_object (&priv->adapter);
 	}
-}
-
-static void
-bluez_cleanup (NMBluez4Manager *self, gboolean do_signal)
-{
-	NMBluez4ManagerPrivate *priv = NM_BLUEZ4_MANAGER_GET_PRIVATE (self);
-
-	if (priv->proxy) {
-		g_object_unref (priv->proxy);
-		priv->proxy = NULL;
-	}
-
-	if (priv->adapter) {
-		g_object_unref (priv->adapter);
-		priv->adapter = NULL;
-	}
-}
-
-static void
-dbus_connection_changed_cb (NMDBusManager *dbus_mgr,
-                            DBusGConnection *connection,
-                            gpointer user_data)
-{
-	NMBluez4Manager *self = NM_BLUEZ4_MANAGER (user_data);
-
-	if (!connection)
-		bluez_cleanup (self, TRUE);
-	else
-		bluez_connect (self);
 }
 
 /****************************************************************/
@@ -307,20 +238,21 @@ nm_bluez4_manager_init (NMBluez4Manager *self)
 {
 	NMBluez4ManagerPrivate *priv = NM_BLUEZ4_MANAGER_GET_PRIVATE (self);
 
-	priv->dbus_mgr = nm_dbus_manager_get ();
-	g_assert (priv->dbus_mgr);
+	priv->proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
+	                                             G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
+	                                             NULL,
+	                                             BLUEZ_SERVICE,
+	                                             BLUEZ_MANAGER_PATH,
+	                                             BLUEZ4_MANAGER_INTERFACE,
+	                                             NULL, NULL);
+	_nm_dbus_signal_connect (priv->proxy, "AdapterRemoved", G_VARIANT_TYPE ("(o)"),
+	                         G_CALLBACK (adapter_removed), self);
+	_nm_dbus_signal_connect (priv->proxy, "DefaultAdapterChanged", G_VARIANT_TYPE ("(o)"),
+	                         G_CALLBACK (default_adapter_changed), self);
+	g_signal_connect (priv->proxy, "notify::g-name-owner",
+	                  G_CALLBACK (name_owner_changed_cb), self);
 
-	g_signal_connect (priv->dbus_mgr,
-	                  NM_DBUS_MANAGER_NAME_OWNER_CHANGED,
-	                  G_CALLBACK (name_owner_changed_cb),
-	                  self);
-
-	g_signal_connect (priv->dbus_mgr,
-	                  NM_DBUS_MANAGER_DBUS_CONNECTION_CHANGED,
-	                  G_CALLBACK (dbus_connection_changed_cb),
-	                  self);
-
-	bluez_connect (self);
+	query_default_adapter (self);
 }
 
 static void
@@ -329,13 +261,8 @@ dispose (GObject *object)
 	NMBluez4Manager *self = NM_BLUEZ4_MANAGER (object);
 	NMBluez4ManagerPrivate *priv = NM_BLUEZ4_MANAGER_GET_PRIVATE (self);
 
-	bluez_cleanup (self, FALSE);
-
-	if (priv->dbus_mgr) {
-		g_signal_handlers_disconnect_by_func (priv->dbus_mgr, name_owner_changed_cb, self);
-		g_signal_handlers_disconnect_by_func (priv->dbus_mgr, dbus_connection_changed_cb, self);
-		priv->dbus_mgr = NULL;
-	}
+	g_clear_object (&priv->proxy);
+	g_clear_object (&priv->adapter);
 
 	G_OBJECT_CLASS (nm_bluez4_manager_parent_class)->dispose (object);
 }
