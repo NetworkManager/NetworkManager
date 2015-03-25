@@ -35,12 +35,17 @@
 #include "nm-device.h"
 #include "nm-dhcp4-config.h"
 #include "nm-dhcp6-config.h"
+#include "nm-ip4-config.h"
+#include "nm-ip6-config.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
 #include "nm-settings-connection.h"
+#include "nm-platform.h"
+#include "nm-core-internal.h"
 
 #define CALL_TIMEOUT (1000 * 60 * 10)  /* 10 minutes for all scripts */
 
+static GDBusProxy *dispatcher_proxy;
 static GHashTable *requests = NULL;
 
 typedef struct {
@@ -80,24 +85,145 @@ _get_monitor_by_action (DispatcherAction action)
 }
 
 static void
-dump_object_to_props (GObject *object, GHashTable *hash)
+dump_ip4_to_props (NMIP4Config *ip4, GVariantBuilder *builder)
 {
-	GParamSpec **pspecs;
-	guint len = 0, i;
+	GVariantBuilder int_builder;
+	guint n, i;
+	const NMPlatformIP4Address *addr;
+	const NMPlatformIP4Route *route;
+	guint32 array[4];
 
-	pspecs = g_object_class_list_properties (G_OBJECT_GET_CLASS (object), &len);
-	for (i = 0; i < len; i++) {
-		value_hash_add_object_property (hash,
-		                                pspecs[i]->name,
-		                                object,
-		                                pspecs[i]->name,
-		                                pspecs[i]->value_type);
+	/* Addresses */
+	g_variant_builder_init (&int_builder, G_VARIANT_TYPE ("aau"));
+	n = nm_ip4_config_get_num_addresses (ip4);
+	for (i = 0; i < n; i++) {
+		addr = nm_ip4_config_get_address (ip4, i);
+		array[0] = addr->address;
+		array[1] = addr->plen;
+		array[2] = (i == 0) ? nm_ip4_config_get_gateway (ip4) : 0;
+		g_variant_builder_add (&int_builder, "@au",
+		                       g_variant_new_fixed_array (G_VARIANT_TYPE_UINT32,
+		                                                  array, 3, sizeof (guint32)));
 	}
-	g_free (pspecs);
+	g_variant_builder_add (builder, "{sv}",
+	                       "addresses",
+	                       g_variant_builder_end (&int_builder));
+
+	/* DNS servers */
+	g_variant_builder_init (&int_builder, G_VARIANT_TYPE ("au"));
+	n = nm_ip4_config_get_num_nameservers (ip4);
+	for (i = 0; i < n; i++)
+		g_variant_builder_add (&int_builder, "u", nm_ip4_config_get_nameserver (ip4, i));
+	g_variant_builder_add (builder, "{sv}",
+	                       "nameservers",
+	                       g_variant_builder_end (&int_builder));
+
+	/* Search domains */
+	g_variant_builder_init (&int_builder, G_VARIANT_TYPE ("as"));
+	n = nm_ip4_config_get_num_domains (ip4);
+	for (i = 0; i < n; i++)
+		g_variant_builder_add (&int_builder, "s", nm_ip4_config_get_domain (ip4, i));
+	g_variant_builder_add (builder, "{sv}",
+	                       "domains",
+	                       g_variant_builder_end (&int_builder));
+
+	/* WINS servers */
+	g_variant_builder_init (&int_builder, G_VARIANT_TYPE ("au"));
+	n = nm_ip4_config_get_num_wins (ip4);
+	for (i = 0; i < n; i++)
+		g_variant_builder_add (&int_builder, "u", nm_ip4_config_get_wins (ip4, i));
+	g_variant_builder_add (builder, "{sv}",
+	                       "wins-servers",
+	                       g_variant_builder_end (&int_builder));
+
+	/* Static routes */
+	g_variant_builder_init (&int_builder, G_VARIANT_TYPE ("aau"));
+	n = nm_ip4_config_get_num_routes (ip4);
+	for (i = 0; i < n; i++) {
+		route = nm_ip4_config_get_route (ip4, i);
+		array[0] = route->network;
+		array[1] = route->plen;
+		array[2] = route->gateway;
+		array[3] = route->metric;
+		g_variant_builder_add (&int_builder, "@au",
+		                       g_variant_new_fixed_array (G_VARIANT_TYPE_UINT32,
+		                                                  array, 4, sizeof (guint32)));
+	}
+	g_variant_builder_add (builder, "{sv}",
+	                       "routes",
+	                       g_variant_builder_end (&int_builder));
 }
 
 static void
-dump_dhcp4_to_props (NMDhcp4Config *config, GHashTable *hash)
+dump_ip6_to_props (NMIP6Config *ip6, GVariantBuilder *builder)
+{
+	GVariantBuilder int_builder;
+	guint n, i;
+	const NMPlatformIP6Address *addr;
+	const struct in6_addr *gw_bytes;
+	const NMPlatformIP6Route *route;
+	GVariant *ip, *gw;
+
+	/* Addresses */
+	g_variant_builder_init (&int_builder, G_VARIANT_TYPE ("a(ayuay)"));
+	n = nm_ip6_config_get_num_addresses (ip6);
+	for (i = 0; i < n; i++) {
+		addr = nm_ip6_config_get_address (ip6, i);
+		gw_bytes = nm_ip6_config_get_gateway (ip6);
+		ip = g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
+		                                &addr->address,
+		                                sizeof (struct in6_addr), 1);
+		gw = g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
+		                                (i == 0 && gw_bytes) ? gw_bytes : &in6addr_any,
+		                                sizeof (struct in6_addr), 1);
+		g_variant_builder_add (&int_builder, "(@ayu@ay)", ip, addr->plen, gw);
+	}
+	g_variant_builder_add (builder, "{sv}",
+	                       "addresses",
+	                       g_variant_builder_end (&int_builder));
+
+	/* DNS servers */
+	g_variant_builder_init (&int_builder, G_VARIANT_TYPE ("aay"));
+	n = nm_ip6_config_get_num_nameservers (ip6);
+	for (i = 0; i < n; i++) {
+		ip = g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
+		                                nm_ip6_config_get_nameserver (ip6, i),
+		                                sizeof (struct in6_addr), 1);
+		g_variant_builder_add (&int_builder, "@ay", ip);
+	}
+	g_variant_builder_add (builder, "{sv}",
+	                       "nameservers",
+	                       g_variant_builder_end (&int_builder));
+
+	/* Search domains */
+	g_variant_builder_init (&int_builder, G_VARIANT_TYPE ("as"));
+	n = nm_ip6_config_get_num_domains (ip6);
+	for (i = 0; i < n; i++)
+		g_variant_builder_add (&int_builder, "s", nm_ip6_config_get_domain (ip6, i));
+	g_variant_builder_add (builder, "{sv}",
+	                       "domains",
+	                       g_variant_builder_end (&int_builder));
+
+	/* Static routes */
+	g_variant_builder_init (&int_builder, G_VARIANT_TYPE ("a(ayuayu)"));
+	n = nm_ip6_config_get_num_routes (ip6);
+	for (i = 0; i < n; i++) {
+		route = nm_ip6_config_get_route (ip6, i);
+		ip = g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
+		                                &route->network,
+		                                sizeof (struct in6_addr), 1);
+		gw = g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
+		                                &route->gateway,
+		                                sizeof (struct in6_addr), 1);
+		g_variant_builder_add (&int_builder, "(@ayu@ayu)", ip, route->plen, gw, route->metric);
+	}
+	g_variant_builder_add (builder, "{sv}",
+	                       "routes",
+	                       g_variant_builder_end (&int_builder));
+}
+
+static void
+dump_dhcp4_to_props (NMDhcp4Config *config, GVariantBuilder *builder)
 {
 	GSList *options, *iter;
 
@@ -107,13 +233,13 @@ dump_dhcp4_to_props (NMDhcp4Config *config, GHashTable *hash)
 		const char *val;
 
 		val = nm_dhcp4_config_get_option (config, option);
-		value_hash_add_str (hash, option, val);
+		g_variant_builder_add (builder, "{sv}", option, g_variant_new_string (val));
 	}
 	g_slist_free (options);
 }
 
 static void
-dump_dhcp6_to_props (NMDhcp6Config *config, GHashTable *hash)
+dump_dhcp6_to_props (NMDhcp6Config *config, GVariantBuilder *builder)
 {
 	GSList *options, *iter;
 
@@ -123,18 +249,18 @@ dump_dhcp6_to_props (NMDhcp6Config *config, GHashTable *hash)
 		const char *val;
 
 		val = nm_dhcp6_config_get_option (config, option);
-		value_hash_add_str (hash, option, val);
+		g_variant_builder_add (builder, "{sv}", option, g_variant_new_string (val));
 	}
 	g_slist_free (options);
 }
 
 static void
 fill_device_props (NMDevice *device,
-                   GHashTable *dev_hash,
-                   GHashTable *ip4_hash,
-                   GHashTable *ip6_hash,
-                   GHashTable *dhcp4_hash,
-                   GHashTable *dhcp6_hash)
+                   GVariantBuilder *dev_builder,
+                   GVariantBuilder *ip4_builder,
+                   GVariantBuilder *ip6_builder,
+                   GVariantBuilder *dhcp4_builder,
+                   GVariantBuilder *dhcp6_builder)
 {
 	NMIP4Config *ip4_config;
 	NMIP6Config *ip6_config;
@@ -142,39 +268,44 @@ fill_device_props (NMDevice *device,
 	NMDhcp6Config *dhcp6_config;
 
 	/* If the action is for a VPN, send the VPN's IP interface instead of the device's */
-	value_hash_add_str (dev_hash, NMD_DEVICE_PROPS_IP_INTERFACE, nm_device_get_ip_iface (device));
-	value_hash_add_str (dev_hash, NMD_DEVICE_PROPS_INTERFACE, nm_device_get_iface (device));
-	value_hash_add_uint (dev_hash, NMD_DEVICE_PROPS_TYPE, nm_device_get_device_type (device));
-	value_hash_add_uint (dev_hash, NMD_DEVICE_PROPS_STATE, nm_device_get_state (device));
-	value_hash_add_object_path (dev_hash, NMD_DEVICE_PROPS_PATH, nm_device_get_path (device));
+	g_variant_builder_add (dev_builder, "{sv}", NMD_DEVICE_PROPS_IP_INTERFACE,
+	                       g_variant_new_string (nm_device_get_ip_iface (device)));
+	g_variant_builder_add (dev_builder, "{sv}", NMD_DEVICE_PROPS_INTERFACE,
+	                       g_variant_new_string (nm_device_get_iface (device)));
+	g_variant_builder_add (dev_builder, "{sv}", NMD_DEVICE_PROPS_TYPE,
+	                       g_variant_new_uint32 (nm_device_get_device_type (device)));
+	g_variant_builder_add (dev_builder, "{sv}", NMD_DEVICE_PROPS_STATE,
+	                       g_variant_new_uint32 (nm_device_get_state (device)));
+	g_variant_builder_add (dev_builder, "{sv}", NMD_DEVICE_PROPS_PATH,
+	                       g_variant_new_object_path (nm_device_get_path (device)));
 
 	ip4_config = nm_device_get_ip4_config (device);
 	if (ip4_config)
-		dump_object_to_props (G_OBJECT (ip4_config), ip4_hash);
+		dump_ip4_to_props (ip4_config, ip4_builder);
 
 	ip6_config = nm_device_get_ip6_config (device);
 	if (ip6_config)
-		dump_object_to_props (G_OBJECT (ip6_config), ip6_hash);
+		dump_ip6_to_props (ip6_config, ip6_builder);
 
 	dhcp4_config = nm_device_get_dhcp4_config (device);
 	if (dhcp4_config)
-		dump_dhcp4_to_props (dhcp4_config, dhcp4_hash);
+		dump_dhcp4_to_props (dhcp4_config, dhcp4_builder);
 
 	dhcp6_config = nm_device_get_dhcp6_config (device);
 	if (dhcp6_config)
-		dump_dhcp6_to_props (dhcp6_config, dhcp6_hash);
+		dump_dhcp6_to_props (dhcp6_config, dhcp6_builder);
 }
 
 static void
 fill_vpn_props (NMIP4Config *ip4_config,
                 NMIP6Config *ip6_config,
-                GHashTable *ip4_hash,
-                GHashTable *ip6_hash)
+                GVariantBuilder *ip4_builder,
+                GVariantBuilder *ip6_builder)
 {
 	if (ip4_config)
-		dump_object_to_props (G_OBJECT (ip4_config), ip4_hash);
+		dump_ip4_to_props (ip4_config, ip4_builder);
 	if (ip6_config)
-		dump_object_to_props (G_OBJECT (ip6_config), ip6_hash);
+		dump_ip6_to_props (ip6_config, ip6_builder);
 }
 
 typedef struct {
@@ -228,51 +359,25 @@ dispatch_result_to_string (DispatchResult result)
 	g_assert_not_reached ();
 }
 
-static gboolean
-validate_element (guint request_id, GValue *val, GType expected_type, guint idx, guint eltnum)
-{
-	if (G_VALUE_TYPE (val) != expected_type) {
-		nm_log_dbg (LOGD_DISPATCH, "(%u) result %d element %d invalid type %s",
-		            request_id, idx, eltnum, G_VALUE_TYPE_NAME (val));
-		return FALSE;
-	}
-	return TRUE;
-}
-
 static void
-dispatcher_results_process (guint request_id, DispatcherAction action, GPtrArray *results)
+dispatcher_results_process (guint request_id, DispatcherAction action, GVariantIter *results)
 {
-	guint i;
+	const char *script, *err;
+	guint32 result;
 	const Monitor *monitor = _get_monitor_by_action (action);
 
 	g_return_if_fail (results != NULL);
 
-	if (results->len == 0) {
+	if (g_variant_iter_n_children (results) == 0) {
 		nm_log_dbg (LOGD_DISPATCH, "(%u) succeeded but no scripts invoked",
 		            request_id);
 		return;
 	}
 
-	for (i = 0; i < results->len; i++) {
-		GValueArray *item = g_ptr_array_index (results, i);
-		GValue *tmp;
-		const char *script, *err;
-		DispatchResult result;
+	while (g_variant_iter_next (results, "(&su&s)", &script, &result, &err)) {
 		const char *script_validation_msg = "";
 
-		if (item->n_values != 3) {
-			nm_log_dbg (LOGD_DISPATCH, "(%u) unexpected number of items in "
-			            "dispatcher result (got %d, expected 3)",
-			            request_id, item->n_values);
-			continue;
-		}
-
-		/* Script */
-		tmp = g_value_array_get_nth (item, 0);
-		if (!validate_element (request_id, tmp, G_TYPE_STRING, i, 0))
-			continue;
-		script = g_value_get_string (tmp);
-		if (!script) {
+		if (!*script) {
 			script_validation_msg = " (path is NULL)";
 			script = "(unknown)";
 		} else if (!strncmp (script, monitor->dir, monitor->dir_len)            /* check: prefixed by script directory */
@@ -284,20 +389,6 @@ dispatcher_results_process (guint request_id, DispatcherAction action, GPtrArray
 		} else
 			script_validation_msg = " (unexpected path)";
 
-
-		/* Result */
-		tmp = g_value_array_get_nth (item, 1);
-		if (!validate_element (request_id, tmp, G_TYPE_UINT, i, 1))
-			continue;
-		result = g_value_get_uint (tmp);
-
-		/* Error */
-		tmp = g_value_array_get_nth (item, 2);
-		if (!validate_element (request_id, tmp, G_TYPE_STRING, i, 2))
-			continue;
-		err = g_value_get_string (tmp);
-
-
 		if (result == DISPATCH_RESULT_SUCCESS) {
 			nm_log_dbg (LOGD_DISPATCH, "(%u) %s succeeded%s",
 			            request_id,
@@ -307,52 +398,43 @@ dispatcher_results_process (guint request_id, DispatcherAction action, GPtrArray
 			             request_id,
 			             script,
 			             dispatch_result_to_string (result),
-			             err ? err : "", script_validation_msg);
+			             err, script_validation_msg);
 		}
 	}
 }
 
 static void
-free_results (GPtrArray *results)
-{
-	g_return_if_fail (results != NULL);
-	g_ptr_array_foreach (results, (GFunc) g_value_array_free, NULL);
-	g_ptr_array_free (results, TRUE);
-}
-
-static void
-dispatcher_done_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
+dispatcher_done_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 {
 	DispatchInfo *info = user_data;
+	GVariant *ret;
+	GVariantIter *results;
 	GError *error = NULL;
-	GPtrArray *results = NULL;
 
-	if (dbus_g_proxy_end_call (proxy, call, &error,
-	                           DISPATCHER_TYPE_RESULT_ARRAY, &results,
-	                           G_TYPE_INVALID)) {
+	ret = _nm_dbus_proxy_call_finish (G_DBUS_PROXY (proxy), result,
+	                                  G_VARIANT_TYPE ("(a(sus))"),
+	                                  &error);
+	if (ret) {
+		g_variant_get (ret, "(a(sus))", &results);
 		dispatcher_results_process (info->request_id, info->action, results);
-		free_results (results);
+		g_variant_iter_free (results);
+		g_variant_unref (ret);
 	} else {
-		g_assert (error);
-
-		if (!g_error_matches (error, DBUS_GERROR, DBUS_GERROR_REMOTE_EXCEPTION)) {
-			nm_log_warn (LOGD_DISPATCH, "(%u) failed to call dispatcher scripts: (%s:%d) %s",
-			             info->request_id, g_quark_to_string (error->domain),
-			             error->code, error->message);
-		} else if (!dbus_g_error_has_name (error, "org.freedesktop.systemd1.LoadFailed")) {
-			nm_log_warn (LOGD_DISPATCH, "(%u) failed to call dispatcher scripts: (%s) %s",
-			             info->request_id, dbus_g_error_get_name (error), error->message);
+		if (_nm_dbus_error_has_name (error, "org.freedesktop.systemd1.LoadFailed")) {
+			g_dbus_error_strip_remote_error (error);
+			nm_log_warn (LOGD_DISPATCH, "(%u) failed to call dispatcher scripts: %s",
+			             info->request_id, error->message);
 		} else {
-			nm_log_dbg (LOGD_DISPATCH, "(%u) failed to call dispatcher scripts: (%s) %s",
-			            info->request_id, dbus_g_error_get_name (error), error->message);
+			nm_log_dbg (LOGD_DISPATCH, "(%u) failed to call dispatcher scripts: %s",
+			            info->request_id, error->message);
 		}
+		g_clear_error (&error);
 	}
 
 	if (info->callback)
 		info->callback (info->request_id, info->user_data);
 
-	g_clear_error (&error);
-	g_object_unref (proxy);
+	dispatcher_info_cleanup (info);
 }
 
 static const char *action_table[] = {
@@ -400,22 +482,23 @@ _dispatcher_call (DispatcherAction action,
                   gpointer user_data,
                   guint *out_call_id)
 {
-	DBusGProxy *proxy;
-	DBusGConnection *g_connection;
-	GHashTable *connection_hash;
-	GHashTable *connection_props;
-	GHashTable *device_props;
-	GHashTable *device_ip4_props;
-	GHashTable *device_ip6_props;
-	GHashTable *device_dhcp4_props;
-	GHashTable *device_dhcp6_props;
-	GHashTable *vpn_ip4_props;
-	GHashTable *vpn_ip6_props;
+	GVariant *connection_dict;
+	GVariantBuilder connection_props;
+	GVariantBuilder device_props;
+	GVariantBuilder device_ip4_props;
+	GVariantBuilder device_ip6_props;
+	GVariantBuilder device_dhcp4_props;
+	GVariantBuilder device_dhcp6_props;
+	GVariantBuilder vpn_ip4_props;
+	GVariantBuilder vpn_ip6_props;
 	DispatchInfo *info = NULL;
 	gboolean success = FALSE;
 	GError *error = NULL;
 	static guint request_counter = 0;
 	guint reqid = ++request_counter;
+
+	if (!dispatcher_proxy)
+		return FALSE;
 
 	/* Wrapping protection */
 	if (G_UNLIKELY (!reqid))
@@ -463,92 +546,87 @@ _dispatcher_call (DispatcherAction action,
 		goto done;
 	}
 
-	g_connection = nm_dbus_manager_get_connection (nm_dbus_manager_get ());
-	proxy = dbus_g_proxy_new_for_name (g_connection,
-	                                   NM_DISPATCHER_DBUS_SERVICE,
-	                                   NM_DISPATCHER_DBUS_PATH,
-	                                   NM_DISPATCHER_DBUS_INTERFACE);
-	if (!proxy) {
-		nm_log_err (LOGD_DISPATCH, "(%u) could not get dispatcher proxy!", reqid);
-		return FALSE;
-	}
-
 	if (connection) {
-		GVariant *connection_dict;
 		const char *filename;
 
 		connection_dict = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_NO_SECRETS);
-		connection_hash = nm_utils_connection_dict_to_hash (connection_dict);
-		g_variant_unref (connection_dict);
 
-		connection_props = value_hash_create ();
-		value_hash_add_object_path (connection_props,
-		                            NMD_CONNECTION_PROPS_PATH,
-		                            nm_connection_get_path (connection));
+		g_variant_builder_init (&connection_props, G_VARIANT_TYPE_VARDICT);
+		g_variant_builder_add (&connection_props, "{sv}",
+		                       NMD_CONNECTION_PROPS_PATH,
+		                       g_variant_new_object_path (nm_connection_get_path (connection)));
 		filename = nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection));
 		if (filename) {
-			value_hash_add_str (connection_props,
-			                    NMD_CONNECTION_PROPS_FILENAME,
-			                    filename);
+			g_variant_builder_add (&connection_props, "{sv}",
+			                       NMD_CONNECTION_PROPS_FILENAME,
+			                       g_variant_new_string (filename));
 		}
 		if (nm_settings_connection_get_nm_generated_assumed (NM_SETTINGS_CONNECTION (connection))) {
-			value_hash_add_bool (connection_props,
-			                     NMD_CONNECTION_PROPS_EXTERNAL,
-			                     TRUE);
+			g_variant_builder_add (&connection_props, "{sv}",
+			                       NMD_CONNECTION_PROPS_EXTERNAL,
+			                       g_variant_new_boolean (TRUE));
 		}
 	} else {
-		connection_hash = value_hash_create ();
-		connection_props = value_hash_create ();
+		connection_dict = g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
+		g_variant_builder_init (&connection_props, G_VARIANT_TYPE_VARDICT);
 	}
 
-	device_props = value_hash_create ();
-	device_ip4_props = value_hash_create ();
-	device_ip6_props = value_hash_create ();
-	device_dhcp4_props = value_hash_create ();
-	device_dhcp6_props = value_hash_create ();
-	vpn_ip4_props = value_hash_create ();
-	vpn_ip6_props = value_hash_create ();
+	g_variant_builder_init (&device_props, G_VARIANT_TYPE_VARDICT);
+	g_variant_builder_init (&device_ip4_props, G_VARIANT_TYPE_VARDICT);
+	g_variant_builder_init (&device_ip6_props, G_VARIANT_TYPE_VARDICT);
+	g_variant_builder_init (&device_dhcp4_props, G_VARIANT_TYPE_VARDICT);
+	g_variant_builder_init (&device_dhcp6_props, G_VARIANT_TYPE_VARDICT);
+	g_variant_builder_init (&vpn_ip4_props, G_VARIANT_TYPE_VARDICT);
+	g_variant_builder_init (&vpn_ip6_props, G_VARIANT_TYPE_VARDICT);
 
 	/* hostname actions only send the hostname */
 	if (action != DISPATCHER_ACTION_HOSTNAME) {
 		fill_device_props (device,
-		                   device_props,
-		                   device_ip4_props,
-		                   device_ip6_props,
-		                   device_dhcp4_props,
-		                   device_dhcp6_props);
-		if (vpn_ip4_config || vpn_ip6_config)
-			fill_vpn_props (vpn_ip4_config, vpn_ip6_config, vpn_ip4_props, vpn_ip6_props);
+		                   &device_props,
+		                   &device_ip4_props,
+		                   &device_ip6_props,
+		                   &device_dhcp4_props,
+		                   &device_dhcp6_props);
+		if (vpn_ip4_config || vpn_ip6_config) {
+			fill_vpn_props (vpn_ip4_config,
+			                vpn_ip6_config,
+			                &vpn_ip4_props,
+			                &vpn_ip6_props);
+		}
 	}
 
 	/* Send the action to the dispatcher */
 	if (blocking) {
-		GPtrArray *results = NULL;
+		GVariant *ret;
+		GVariantIter *results;
 
-		success = dbus_g_proxy_call_with_timeout (proxy, "Action",
-		                                          CALL_TIMEOUT,
-		                                          &error,
-		                                          G_TYPE_STRING, action_to_string (action),
-		                                          DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, connection_hash,
-		                                          DBUS_TYPE_G_MAP_OF_VARIANT, connection_props,
-		                                          DBUS_TYPE_G_MAP_OF_VARIANT, device_props,
-		                                          DBUS_TYPE_G_MAP_OF_VARIANT, device_ip4_props,
-		                                          DBUS_TYPE_G_MAP_OF_VARIANT, device_ip6_props,
-		                                          DBUS_TYPE_G_MAP_OF_VARIANT, device_dhcp4_props,
-		                                          DBUS_TYPE_G_MAP_OF_VARIANT, device_dhcp6_props,
-		                                          G_TYPE_STRING, vpn_iface ? vpn_iface : "",
-		                                          DBUS_TYPE_G_MAP_OF_VARIANT, vpn_ip4_props,
-		                                          DBUS_TYPE_G_MAP_OF_VARIANT, vpn_ip6_props,
-		                                          G_TYPE_BOOLEAN, nm_logging_enabled (LOGL_DEBUG, LOGD_DISPATCH),
-		                                          G_TYPE_INVALID,
-		                                          DISPATCHER_TYPE_RESULT_ARRAY, &results,
-		                                          G_TYPE_INVALID);
-		if (success) {
+		ret = _nm_dbus_proxy_call_sync (dispatcher_proxy, "Action",
+		                                g_variant_new ("(s@a{sa{sv}}a{sv}a{sv}a{sv}a{sv}a{sv}a{sv}sa{sv}a{sv}b)",
+		                                               action_to_string (action),
+		                                               connection_dict,
+		                                               &connection_props,
+		                                               &device_props,
+		                                               &device_ip4_props,
+		                                               &device_ip6_props,
+		                                               &device_dhcp4_props,
+		                                               &device_dhcp6_props,
+		                                               vpn_iface ? vpn_iface : "",
+		                                               &vpn_ip4_props,
+		                                               &vpn_ip6_props,
+		                                               nm_logging_enabled (LOGL_DEBUG, LOGD_DISPATCH)),
+		                                G_VARIANT_TYPE ("(a(sus))"),
+		                                G_DBUS_CALL_FLAGS_NONE, CALL_TIMEOUT,
+		                                NULL, &error);
+		if (ret) {
+			g_variant_get (ret, "(a(sus))", &results);
 			dispatcher_results_process (reqid, action, results);
-			free_results (results);
+			g_variant_iter_free (results);
+			g_variant_unref (ret);
+			success = TRUE;
 		} else {
-			nm_log_warn (LOGD_DISPATCH, "(%u) failed: (%d) %s", reqid, error->code, error->message);
-			g_error_free (error);
+			nm_log_warn (LOGD_DISPATCH, "(%u) failed: %s", reqid, error->message);
+			g_clear_error (&error);
+			success = FALSE;
 		}
 	} else {
 		info = g_malloc0 (sizeof (*info));
@@ -556,36 +634,24 @@ _dispatcher_call (DispatcherAction action,
 		info->request_id = reqid;
 		info->callback = callback;
 		info->user_data = user_data;
-		dbus_g_proxy_begin_call_with_timeout (proxy, "Action",
-		                                      dispatcher_done_cb,
-		                                      info,
-		                                      (GDestroyNotify) dispatcher_info_cleanup,
-		                                      CALL_TIMEOUT,
-		                                      G_TYPE_STRING, action_to_string (action),
-		                                      DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, connection_hash,
-		                                      DBUS_TYPE_G_MAP_OF_VARIANT, connection_props,
-		                                      DBUS_TYPE_G_MAP_OF_VARIANT, device_props,
-		                                      DBUS_TYPE_G_MAP_OF_VARIANT, device_ip4_props,
-		                                      DBUS_TYPE_G_MAP_OF_VARIANT, device_ip6_props,
-		                                      DBUS_TYPE_G_MAP_OF_VARIANT, device_dhcp4_props,
-		                                      DBUS_TYPE_G_MAP_OF_VARIANT, device_dhcp6_props,
-		                                      G_TYPE_STRING, vpn_iface ? vpn_iface : "",
-		                                      DBUS_TYPE_G_MAP_OF_VARIANT, vpn_ip4_props,
-		                                      DBUS_TYPE_G_MAP_OF_VARIANT, vpn_ip6_props,
-		                                      G_TYPE_BOOLEAN, nm_logging_enabled (LOGL_DEBUG, LOGD_DISPATCH),
-		                                      G_TYPE_INVALID);
+		g_dbus_proxy_call (dispatcher_proxy, "Action",
+		                   g_variant_new ("(s@a{sa{sv}}a{sv}a{sv}a{sv}a{sv}a{sv}a{sv}sa{sv}a{sv}b)",
+		                                  action_to_string (action),
+		                                  connection_dict,
+		                                  &connection_props,
+		                                  &device_props,
+		                                  &device_ip4_props,
+		                                  &device_ip6_props,
+		                                  &device_dhcp4_props,
+		                                  &device_dhcp6_props,
+		                                  vpn_iface ? vpn_iface : "",
+		                                  &vpn_ip4_props,
+		                                  &vpn_ip6_props,
+		                                  nm_logging_enabled (LOGL_DEBUG, LOGD_DISPATCH)),
+		                   G_DBUS_CALL_FLAGS_NONE, CALL_TIMEOUT,
+		                   NULL, dispatcher_done_cb, info);
 		success = TRUE;
 	}
-
-	g_hash_table_destroy (connection_hash);
-	g_hash_table_destroy (connection_props);
-	g_hash_table_destroy (device_props);
-	g_hash_table_destroy (device_ip4_props);
-	g_hash_table_destroy (device_ip6_props);
-	g_hash_table_destroy (device_dhcp4_props);
-	g_hash_table_destroy (device_dhcp6_props);
-	g_hash_table_destroy (vpn_ip4_props);
-	g_hash_table_destroy (vpn_ip6_props);
 
 done:
 	if (success && info) {
@@ -777,6 +843,7 @@ nm_dispatcher_init (void)
 {
 	GFile *file;
 	guint i;
+	GError *error = NULL;
 
 	for (i = 0; i < G_N_ELEMENTS (monitors); i++) {
 		file = g_file_new_for_path (monitors[i].dir);
@@ -786,6 +853,19 @@ nm_dispatcher_init (void)
 			dispatcher_dir_changed (monitors[i].monitor, file, NULL, 0, &monitors[i]);
 		}
 		g_object_unref (file);
+	}
+
+	dispatcher_proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
+	                                                  G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES |
+	                                                      G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS,
+	                                                  NULL,
+	                                                  NM_DISPATCHER_DBUS_SERVICE,
+	                                                  NM_DISPATCHER_DBUS_PATH,
+	                                                  NM_DISPATCHER_DBUS_INTERFACE,
+	                                                  NULL, &error);
+	if (!dispatcher_proxy) {
+		nm_log_err (LOGD_DISPATCH, "could not get dispatcher proxy! %s", error->message);
+		g_clear_error (&error);
 	}
 }
 
