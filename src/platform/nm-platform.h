@@ -247,6 +247,23 @@ typedef union {
 
 
 typedef struct {
+	gboolean is_ip4;
+	int addr_family;
+	gsize sizeof_route;
+	int (*route_cmp) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b);
+	const char *(*route_to_string) (const NMPlatformIPXRoute *route);
+	GArray *(*route_get_all) (int ifindex, NMPlatformGetRouteMode mode);
+	gboolean (*route_add) (int ifindex, const NMPlatformIPXRoute *route, guint32 v4_pref_src);
+	gboolean (*route_delete) (int ifindex, const NMPlatformIPXRoute *route);
+	gboolean (*route_delete_default) (int ifindex, guint32 metric);
+	guint32 (*metric_normalize) (guint32 metric);
+} NMPlatformVTableRoute;
+
+extern const NMPlatformVTableRoute nm_platform_vtable_route_v4;
+extern const NMPlatformVTableRoute nm_platform_vtable_route_v6;
+
+
+typedef struct {
 	int peer;
 } NMPlatformVethProperties;
 
