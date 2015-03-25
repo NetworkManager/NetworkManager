@@ -128,7 +128,7 @@ _nl_get_vtable (void)
 	if (G_UNLIKELY (!vtable.f_nl_has_capability)) {
 		void *handle;
 
-		handle = dlopen ("libnl-3.so", RTLD_LAZY | RTLD_NOLOAD);
+		handle = dlopen ("libnl-3.so.200", RTLD_LAZY | RTLD_NOLOAD);
 		if (handle) {
 			vtable.handle = handle;
 			vtable.f_nl_has_capability = dlsym (handle, "nl_has_capability");
