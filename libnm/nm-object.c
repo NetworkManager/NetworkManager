@@ -1010,7 +1010,9 @@ properties_changed (GDBusProxy *proxy,
 	G_STMT_START { \
 		if (g_variant_is_of_type (value, vtype)) { \
 			ctype *param = (ctype *) field; \
-			*param = getter (value); \
+			ctype newval = getter (value); \
+			different = *param != newval; \
+			*param = newval; \
 		} else { \
 			success = FALSE; \
 			goto done; \
@@ -1024,20 +1026,29 @@ demarshal_generic (NMObject *object,
                    gpointer field)
 {
 	gboolean success = TRUE;
+	gboolean different = FALSE;
 
 	if (pspec->value_type == G_TYPE_STRING) {
 		if (g_variant_is_of_type (value, G_VARIANT_TYPE_STRING)) {
 			char **param = (char **) field;
-			g_free (*param);
-			*param = g_variant_dup_string (value, NULL);
+			const char *newval = g_variant_get_string (value, NULL);
+
+			different = !!g_strcmp0 (*param, newval);
+			if (different) {
+				g_free (*param);
+				*param = g_strdup (newval);
+			}
 		} else if (g_variant_is_of_type (value, G_VARIANT_TYPE_OBJECT_PATH)) {
 			char **param = (char **) field;
-			g_free (*param);
-			*param = g_variant_dup_string (value, NULL);
+			const char *newval = g_variant_get_string (value, NULL);
+
 			/* Handle "NULL" object paths */
-			if (g_strcmp0 (*param, "/") == 0) {
+			if (g_strcmp0 (newval, "/") == 0)
+				newval = NULL;
+			different = !!g_strcmp0 (*param, newval);
+			if (different) {
 				g_free (*param);
-				*param = NULL;
+				*param = g_strdup (newval);
 			}
 		} else {
 			success = FALSE;
@@ -1045,50 +1056,78 @@ demarshal_generic (NMObject *object,
 		}
 	} else if (pspec->value_type == G_TYPE_STRV) {
 		char ***param = (char ***)field;
-		if (*param)
-			g_strfreev (*param);
-		*param = g_variant_dup_strv (value, NULL);
+		const char **newval;
+		gsize i;
+
+		newval = g_variant_get_strv (value, NULL);
+		if (!*param)
+			different = TRUE;
+		else {
+			if (!_nm_utils_strv_equal ((char **) newval, *param)) {
+				different = TRUE;
+				g_strfreev (*param);
+			}
+		}
+		if (different) {
+			for (i = 0; newval[i]; i++)
+				newval[i] = g_strdup (newval[i]);
+			*param = (char **) newval;
+		} else
+			g_free (newval);
 	} else if (pspec->value_type == G_TYPE_BYTES) {
 		GBytes **param = (GBytes **)field;
-		gconstpointer val;
-		gsize length;
+		gconstpointer val, old_val = NULL;
+		gsize length, old_length = 0;
+
+		val = g_variant_get_fixed_array (value, &length, 1);
 
 		if (*param)
-			g_bytes_unref (*param);
-		val = g_variant_get_fixed_array (value, &length, 1);
-		if (length)
-			*param = g_bytes_new (val, length);
-		else
-			*param = NULL;
+			old_val = g_bytes_get_data (*param, &old_length);
+		different =    old_length != length
+		            || (   length > 0
+		                && memcmp (old_val, val, length) != 0);
+		if (different) {
+			if (*param)
+				g_bytes_unref (*param);
+			*param = length > 0 ? g_bytes_new (val, length) : NULL;
+		}
 	} else if (G_IS_PARAM_SPEC_ENUM (pspec)) {
 		int *param = (int *) field;
+		int newval = 0;
 
 		if (g_variant_is_of_type (value, G_VARIANT_TYPE_INT32))
-			*param = g_variant_get_int32 (value);
+			newval = g_variant_get_int32 (value);
 		else if (g_variant_is_of_type (value, G_VARIANT_TYPE_UINT32))
-			*param = g_variant_get_uint32 (value);
+			newval = g_variant_get_uint32 (value);
 		else {
 			success = FALSE;
 			goto done;
 		}
+		different = *param != newval;
+		*param = newval;
 	} else if (G_IS_PARAM_SPEC_FLAGS (pspec)) {
 		guint *param = (guint *) field;
+		guint newval = 0;
 
 		if (g_variant_is_of_type (value, G_VARIANT_TYPE_INT32))
-			*param = g_variant_get_int32 (value);
+			newval = g_variant_get_int32 (value);
 		else if (g_variant_is_of_type (value, G_VARIANT_TYPE_UINT32))
-			*param = g_variant_get_uint32 (value);
+			newval = g_variant_get_uint32 (value);
 		else {
 			success = FALSE;
 			goto done;
 		}
+		different = *param != newval;
+		*param = newval;
 	} else if (pspec->value_type == G_TYPE_BOOLEAN)
 		HANDLE_TYPE (G_VARIANT_TYPE_BOOLEAN, gboolean, g_variant_get_boolean);
 	else if (pspec->value_type == G_TYPE_UCHAR)
 		HANDLE_TYPE (G_VARIANT_TYPE_BYTE, guchar, g_variant_get_byte);
-	else if (pspec->value_type == G_TYPE_DOUBLE)
+	else if (pspec->value_type == G_TYPE_DOUBLE) {
+		NM_PRAGMA_WARNING_DISABLE("-Wfloat-equal")
 		HANDLE_TYPE (G_VARIANT_TYPE_DOUBLE, gdouble, g_variant_get_double);
-	else if (pspec->value_type == G_TYPE_INT)
+		NM_PRAGMA_WARNING_REENABLE
+	} else if (pspec->value_type == G_TYPE_INT)
 		HANDLE_TYPE (G_VARIANT_TYPE_INT32, gint, g_variant_get_int32);
 	else if (pspec->value_type == G_TYPE_UINT)
 		HANDLE_TYPE (G_VARIANT_TYPE_UINT32, guint, g_variant_get_uint32);
@@ -1111,7 +1150,8 @@ demarshal_generic (NMObject *object,
 
 done:
 	if (success) {
-		_nm_object_queue_notify (object, pspec->name);
+		if (different)
+			_nm_object_queue_notify (object, pspec->name);
 	} else {
 		dbgmsg ("%s: %s:%s (type %s) couldn't be set from D-Bus type %s.",
 		        __func__, G_OBJECT_TYPE_NAME (object), pspec->name,
