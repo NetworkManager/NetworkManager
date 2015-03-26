@@ -28,6 +28,8 @@
 #include <resolv.h>
 #include <stdlib.h>
 #include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include <linux/fs.h>
@@ -279,10 +281,10 @@ dispatch_netconfig (char **searches,
                     char **nis_servers,
                     GError **error)
 {
-	char *str, *tmp;
+	char *str;
 	GPid pid;
 	gint fd;
-	int ret;
+	int ret = 1;
 
 	pid = run_netconfig (error, &fd);
 	if (pid < 0)
@@ -331,6 +333,7 @@ dispatch_netconfig (char **searches,
 			g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
 			             "Error waiting for netconfig to exit: %s",
 			             strerror (errno));
+			ret = 0;
 		}
 	}
 
