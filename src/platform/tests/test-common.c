@@ -263,10 +263,10 @@ main (int argc, char **argv)
 		nmtst_reexec_sudo ();
 
 #ifdef REQUIRE_ROOT_TESTS
-		g_message ("Fail test: requires root privileges (%s)", program);
+		g_print ("Fail test: requires root privileges (%s)\n", program);
 		return EXIT_FAILURE;
 #else
-		g_message ("Skipping test: requires root privileges (%s)", program);
+		g_print ("Skipping test: requires root privileges (%s)\n", program);
 		return 77;
 #endif
 	}
