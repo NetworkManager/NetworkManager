@@ -12443,7 +12443,7 @@ NMTST_DEFINE ();
 
 int main (int argc, char **argv)
 {
-	nmtst_init_assert_logging (&argc, &argv);
+	nmtst_init_assert_logging (&argc, &argv, "INFO", "DEFAULT");
 
 	g_test_add_func (TPATH "svUnescape", test_svUnescape);
 	g_test_add_func (TPATH "vlan-trailing-spaces", test_read_vlan_trailing_spaces);

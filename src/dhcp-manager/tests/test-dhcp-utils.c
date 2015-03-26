@@ -694,8 +694,7 @@ NMTST_DEFINE ();
 
 int main (int argc, char **argv)
 {
-	nmtst_init_assert_logging (&argc, &argv);
-	nm_logging_setup ("WARN", "DEFAULT", NULL, NULL);
+	nmtst_init_assert_logging (&argc, &argv, "WARN", "DEFAULT");
 
 	g_test_add_func ("/dhcp/generic-options", test_generic_options);
 	g_test_add_func ("/dhcp/wins-options", test_wins_options);

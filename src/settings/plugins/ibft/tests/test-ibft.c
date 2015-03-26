@@ -276,7 +276,7 @@ NMTST_DEFINE ();
 
 int main (int argc, char **argv)
 {
-	nmtst_init_assert_logging (&argc, &argv);
+	nmtst_init_assert_logging (&argc, &argv, "INFO", "DEFAULT");
 
 	g_test_add_func (TPATH "ibft/dhcp", test_read_ibft_dhcp);
 	g_test_add_func (TPATH "ibft/static", test_read_ibft_static);
