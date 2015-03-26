@@ -356,8 +356,20 @@ nmc_term_format_sequence (NmcTermFormat format)
 	}
 }
 
+static gboolean
+use_colors (NmCli *nmc)
+{
+	if (nmc == NULL)
+		return FALSE;
+
+	if (nmc->use_colors == NMC_USE_COLOR_AUTO)
+		nmc->use_colors = isatty (fileno (stdout)) ? NMC_USE_COLOR_YES : NMC_USE_COLOR_NO;
+
+	return nmc->use_colors == NMC_USE_COLOR_YES;
+}
+
 char *
-nmc_colorize (NmcTermColor color, NmcTermFormat format, const char *fmt, ...)
+nmc_colorize (NmCli *nmc, NmcTermColor color, NmcTermFormat format, const char *fmt, ...)
 {
 	va_list args;
 	char *str, *colored;
@@ -367,6 +379,9 @@ nmc_colorize (NmcTermColor color, NmcTermFormat format, const char *fmt, ...)
 	va_start (args, fmt);
 	str = g_strdup_vprintf (fmt, args);
 	va_end (args);
+
+	if (!use_colors (nmc))
+		return str;
 
 	ansi_color = nmc_term_color_sequence (color);
 	ansi_fmt = nmc_term_format_sequence (format);
@@ -1047,7 +1062,7 @@ nmc_empty_output_fields (NmCli *nmc)
 }
 
 static char *
-colorize_string (gboolean colorize,
+colorize_string (NmCli *nmc,
                  NmcTermColor color,
                  NmcTermFormat color_fmt,
                  const char *str,
@@ -1055,9 +1070,9 @@ colorize_string (gboolean colorize,
 {
 	char *out;
 
-	if (   colorize
+	if (   use_colors (nmc)
 	    && (color != NMC_TERM_COLOR_NORMAL || color_fmt != NMC_TERM_FORMAT_NORMAL)) {
-		out = nmc_colorize (color, color_fmt, str);
+		out = nmc_colorize (nmc, color, color_fmt, str);
 		*dealloc = TRUE;
 	} else {
 		out = (char *) str;
@@ -1067,11 +1082,11 @@ colorize_string (gboolean colorize,
 }
 
 static char *
-get_value_to_print (NmcOutputField *field,
+get_value_to_print (NmCli *nmc,
+                    NmcOutputField *field,
                     gboolean field_name,
                     const char *not_set_str,
-                    gboolean *dealloc,
-                    gboolean colorize)
+                    gboolean *dealloc)
 {
 	gboolean is_array = field->value_is_array;
 	char *value, *out;
@@ -1087,7 +1102,7 @@ get_value_to_print (NmcOutputField *field,
 	free_value = field->value && is_array && !field_name;
 
 	/* colorize the value */
-	out = colorize_string (colorize, field->color, field->color_fmt, value, &free_out);
+	out = colorize_string (nmc, field->color, field->color_fmt, value, &free_out);
 	if (free_out) {
 		if (free_value)
 			g_free (value);
@@ -1125,18 +1140,12 @@ print_required_fields (NmCli *nmc, const NmcOutputField field_values[])
 	gboolean field_names = field_values[0].flags & NMC_OF_FLAG_FIELD_NAMES;
 	gboolean section_prefix = field_values[0].flags & NMC_OF_FLAG_SECTION_PREFIX;
 	gboolean main_header = main_header_add || main_header_only;
-	gboolean colorize;
 
 	/* No headers are printed in terse mode:
 	 * - neither main header nor field (column) names
 	 */
 	if ((main_header_only || field_names) && terse)
 		return;
-
-	/* Only show colors if the output is a terminal */
-	colorize = nmc->use_colors == NMC_USE_COLOR_YES ? TRUE :
-	             nmc->use_colors == NMC_USE_COLOR_NO ? FALSE :
-	               isatty (fileno (stdout));
 
 	if (multiline) {
 	/* --- Multiline mode --- */
@@ -1178,7 +1187,7 @@ print_required_fields (NmCli *nmc, const NmcOutputField field_values[])
 
 					for (p = (const char **) field_values[idx].value, j = 1; p && *p; p++, j++) {
 						val = *p ? *p : not_set_str;
-						print_val = colorize_string (colorize, field_values[idx].color, field_values[idx].color_fmt,
+						print_val = colorize_string (nmc, field_values[idx].color, field_values[idx].color_fmt,
 						                             val, &free_print_val);
 						tmp = g_strdup_printf ("%s%s%s[%d]:",
 						                       section_prefix ? (const char*) field_values[0].value : "",
@@ -1199,7 +1208,7 @@ print_required_fields (NmCli *nmc, const NmcOutputField field_values[])
 					char *print_val;
 
 					val = val ? val : not_set_str;
-					print_val = colorize_string (colorize, field_values[idx].color, field_values[idx].color_fmt,
+					print_val = colorize_string (nmc, field_values[idx].color, field_values[idx].color_fmt,
 					                             val, &free_print_val);
 					tmp = g_strdup_printf ("%s%s%s:",
 					                       section_prefix ? hdr_name : "",
@@ -1228,8 +1237,8 @@ print_required_fields (NmCli *nmc, const NmcOutputField field_values[])
 	for (i = 0; i < fields.indices->len; i++) {
 		int idx = g_array_index (fields.indices, int, i);
 		gboolean dealloc;
-		char *value = get_value_to_print ((NmcOutputField *) field_values+idx, field_names,
-		                                   not_set_str, &dealloc, colorize);
+		char *value = get_value_to_print (nmc, (NmcOutputField *) field_values+idx, field_names,
+		                                  not_set_str, &dealloc);
 
 		if (terse) {
 			if (escape) {
@@ -1327,7 +1336,7 @@ print_data (NmCli *nmc)
 			char *value;
 			row = g_ptr_array_index (nmc->output_data, j);
 			field_names = row[0].flags & NMC_OF_FLAG_FIELD_NAMES;
-			value = get_value_to_print (row+i, field_names, "--", &dealloc, FALSE);
+			value = get_value_to_print (NULL, row+i, field_names, "--", &dealloc);
 			len = nmc_string_screen_width (value, NULL);
 			max_width = len > max_width ? len : max_width;
 			if (dealloc)
