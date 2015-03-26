@@ -552,16 +552,19 @@ global:
 	nm_setting_ip6_config_privacy_get_type;
 	nm_setting_ip_config_add_address;
 	nm_setting_ip_config_add_dns;
+	nm_setting_ip_config_add_dns_option;
 	nm_setting_ip_config_add_dns_search;
 	nm_setting_ip_config_add_route;
 	nm_setting_ip_config_clear_addresses;
 	nm_setting_ip_config_clear_dns;
+	nm_setting_ip_config_clear_dns_options;
 	nm_setting_ip_config_clear_dns_searches;
 	nm_setting_ip_config_clear_routes;
 	nm_setting_ip_config_get_address;
 	nm_setting_ip_config_get_dhcp_hostname;
 	nm_setting_ip_config_get_dhcp_send_hostname;
 	nm_setting_ip_config_get_dns;
+	nm_setting_ip_config_get_dns_option;
 	nm_setting_ip_config_get_dns_search;
 	nm_setting_ip_config_get_gateway;
 	nm_setting_ip_config_get_ignore_auto_dns;
@@ -571,6 +574,7 @@ global:
 	nm_setting_ip_config_get_never_default;
 	nm_setting_ip_config_get_num_addresses;
 	nm_setting_ip_config_get_num_dns;
+	nm_setting_ip_config_get_num_dns_options;
 	nm_setting_ip_config_get_num_dns_searches;
 	nm_setting_ip_config_get_num_routes;
 	nm_setting_ip_config_get_route;
@@ -580,6 +584,8 @@ global:
 	nm_setting_ip_config_remove_address_by_value;
 	nm_setting_ip_config_remove_dns;
 	nm_setting_ip_config_remove_dns_by_value;
+	nm_setting_ip_config_remove_dns_option;
+	nm_setting_ip_config_remove_dns_option_by_value;
 	nm_setting_ip_config_remove_dns_search;
 	nm_setting_ip_config_remove_dns_search_by_value;
 	nm_setting_ip_config_remove_route;

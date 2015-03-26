@@ -1985,6 +1985,7 @@ test_connection_diff_a_only (void)
 			{ NM_SETTING_IP_CONFIG_METHOD,             NM_SETTING_DIFF_RESULT_IN_A },
 			{ NM_SETTING_IP_CONFIG_DNS,                NM_SETTING_DIFF_RESULT_IN_A },
 			{ NM_SETTING_IP_CONFIG_DNS_SEARCH,         NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP_CONFIG_DNS_OPTIONS,        NM_SETTING_DIFF_RESULT_IN_A },
 			{ NM_SETTING_IP_CONFIG_ADDRESSES,          NM_SETTING_DIFF_RESULT_IN_A },
 			{ NM_SETTING_IP_CONFIG_GATEWAY,            NM_SETTING_DIFF_RESULT_IN_A },
 			{ NM_SETTING_IP_CONFIG_ROUTES,             NM_SETTING_DIFF_RESULT_IN_A },
@@ -2883,6 +2884,13 @@ test_setting_ip4_changed_signal (void)
 
 	nm_setting_ip_config_add_route (s_ip4, route);
 	ASSERT_CHANGED (nm_setting_ip_config_clear_routes (s_ip4));
+
+	ASSERT_CHANGED (nm_setting_ip_config_add_dns_option (s_ip4, "debug"));
+	ASSERT_CHANGED (nm_setting_ip_config_remove_dns_option (s_ip4, 0));
+
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*i < priv->dns_options->len*");
+	ASSERT_UNCHANGED (nm_setting_ip_config_remove_dns_option (s_ip4, 1));
+	g_test_assert_expected_messages ();
 
 	nm_ip_address_unref (addr);
 	nm_ip_route_unref (route);
