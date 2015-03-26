@@ -1184,11 +1184,28 @@ show_device_info (NMDevice *device, NmCli *nmc)
 	return TRUE;
 }
 
+static ColorInfo
+device_state_to_color (NMDeviceState state)
+{
+	ColorInfo color_info = { NMC_TERM_COLOR_NORMAL, NMC_TERM_FORMAT_NORMAL };
+
+	if (state <= NM_DEVICE_STATE_UNAVAILABLE)
+		color_info.color_fmt= NMC_TERM_FORMAT_DIM;
+	else if (state == NM_DEVICE_STATE_DISCONNECTED)
+		color_info.color = NMC_TERM_COLOR_RED;
+	else if (state >= NM_DEVICE_STATE_PREPARE && state <= NM_DEVICE_STATE_SECONDARIES)
+		color_info.color = NMC_TERM_COLOR_YELLOW;
+	else if (state == NM_DEVICE_STATE_ACTIVATED)
+		color_info.color = NMC_TERM_COLOR_GREEN;
+	return color_info;
+}
+
 static void
 fill_output_device_status (NMDevice *device, NmCli *nmc)
 {
 	NMActiveConnection *ac;
 	NMDeviceState state;
+	ColorInfo color_info;
 	NmcOutputField *arr = nmc_dup_fields_array (nmc_fields_dev_status,
 	                                            sizeof (nmc_fields_dev_status),
 	                                            0);
@@ -1197,14 +1214,9 @@ fill_output_device_status (NMDevice *device, NmCli *nmc)
 	ac = nm_device_get_active_connection (device);
 
 	/* Show devices in color */
-	if (state <= NM_DEVICE_STATE_UNAVAILABLE)
-		set_val_color_fmt_all (arr, NMC_TERM_FORMAT_DIM);
-	else if (state == NM_DEVICE_STATE_DISCONNECTED)
-		set_val_color_all (arr, NMC_TERM_COLOR_RED);
-	else if (state >= NM_DEVICE_STATE_PREPARE && state <= NM_DEVICE_STATE_SECONDARIES)
-		set_val_color_all (arr, NMC_TERM_COLOR_YELLOW);
-	else if (state == NM_DEVICE_STATE_ACTIVATED)
-		set_val_color_all (arr, NMC_TERM_COLOR_GREEN);
+	color_info = device_state_to_color (state);
+	set_val_color_all (arr, color_info.color);
+	set_val_color_fmt_all (arr, color_info.color_fmt);
 
 	set_val_strc (arr, 0, nm_device_get_iface (device));
 	set_val_strc (arr, 1, nm_device_get_type_description (device));
