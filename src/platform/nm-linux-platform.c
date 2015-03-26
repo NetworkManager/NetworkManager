@@ -1737,10 +1737,6 @@ add_object (NMPlatform *platform, struct nl_object *obj)
 	auto_nl_object struct nl_object *object = obj;
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	int nle;
-	struct nl_dump_params dp = {
-		.dp_type = NL_DUMP_DETAILS,
-		.dp_fd = stderr,
-	};
 
 	g_return_val_if_fail (object, FALSE);
 
@@ -1756,7 +1752,18 @@ add_object (NMPlatform *platform, struct nl_object *obj)
 		break;
 	default:
 		error ("Netlink error adding %s: %s", to_string_object (platform, object),  nl_geterror (nle));
-		nl_object_dump (object, &dp);
+		if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
+			char buf[256];
+			struct nl_dump_params dp = {
+				.dp_type = NL_DUMP_DETAILS,
+				.dp_buf = buf,
+				.dp_buflen = sizeof (buf),
+			};
+
+			nl_object_dump (object, &dp);
+			buf[sizeof (buf) - 1] = '\0';
+			debug ("netlink object:\n%s", buf);
+		}
 		return FALSE;
 	}
 
