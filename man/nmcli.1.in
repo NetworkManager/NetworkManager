@@ -988,6 +988,10 @@ a connection.
 .IP
 shows details for wlan0 interface; only GENERAL and WIFI\-PROPERTIES sections will be shown.
 
+.IP "\fB\f(CWnmcli \-f CONNECTIONS device show wlp3s0\fP\fP"
+.IP
+shows all available connection profiles for your Wi-Fi interface wlp3s0.
+
 .IP "\fB\f(CWnmcli dev wifi\fP\fP"
 .IP
 lists available Wi\(hyFi access points known to NetworkManager.
