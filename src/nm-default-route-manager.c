@@ -64,10 +64,11 @@ NM_DEFINE_SINGLETON_GETTER (NMDefaultRouteManager, nm_default_route_manager_get,
 
 #define _LOG(level, addr_family, ...) \
     G_STMT_START { \
-        int __addr_family = (addr_family); \
-        guint64 __domain = __addr_family == AF_INET ? LOGD_IP4 : LOGD_IP6; \
+        const int __addr_family = (addr_family); \
+        const NMLogLevel __level = (level); \
+        const NMLogDomain __domain = __addr_family == AF_INET ? LOGD_IP4 : (__addr_family == AF_INET6 ? LOGD_IP6 : LOGD_IP); \
         \
-        if (nm_logging_enabled ((level), (__domain))) { \
+        if (nm_logging_enabled (__level, __domain)) { \
             char __ch = __addr_family == AF_INET ? '4' : (__addr_family == AF_INET6 ? '6' : '-'); \
             char __prefix[30] = "default-route"; \
             \
@@ -75,7 +76,7 @@ NM_DEFINE_SINGLETON_GETTER (NMDefaultRouteManager, nm_default_route_manager_get,
                 g_snprintf (__prefix, sizeof (__prefix), "default-route%c[%p]", __ch, (self)); \
             else \
                 __prefix[STRLEN ("default-route")] = __ch; \
-            nm_log ((level), (__domain), \
+            nm_log (__level, __domain, \
                     "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
                     __prefix _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
         } \
