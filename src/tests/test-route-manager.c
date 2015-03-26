@@ -674,6 +674,12 @@ fixture_teardown (test_fixture *fixture, gconstpointer user_data)
 }
 
 void
+init_tests (int *argc, char ***argv)
+{
+	nmtst_init_with_logging (argc, argv, NULL, "ALL");
+}
+
+void
 setup_tests (void)
 {
 	g_test_add ("/route-manager/ip4", test_fixture, NULL, fixture_setup, test_ip4, fixture_teardown);
