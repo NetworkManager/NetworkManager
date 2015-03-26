@@ -540,6 +540,12 @@ test_external (void)
 }
 
 void
+init_tests (int *argc, char ***argv)
+{
+	nmtst_init_with_logging (argc, argv, NULL, "ALL");
+}
+
+void
 setup_tests (void)
 {
 	nm_platform_link_delete (nm_platform_link_get_ifindex (DEVICE_NAME));

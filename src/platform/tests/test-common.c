@@ -255,7 +255,7 @@ main (int argc, char **argv)
 	int result;
 	const char *program = *argv;
 
-	nmtst_init_with_logging (&argc, &argv, NULL, "ALL");
+	init_tests (&argc, &argv);
 
 	NM_PRAGMA_WARNING_DISABLE("-Wtautological-compare")
 	if (SETUP == nm_linux_platform_setup && getuid() != 0) {
