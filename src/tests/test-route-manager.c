@@ -692,7 +692,7 @@ fixture_teardown (test_fixture *fixture, gconstpointer user_data)
 void
 init_tests (int *argc, char ***argv)
 {
-	nmtst_init_with_logging (argc, argv, NULL, "ALL");
+	nmtst_init_assert_logging (argc, argv, "WARN", "ALL");
 }
 
 void
