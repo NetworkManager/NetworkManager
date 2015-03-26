@@ -43,6 +43,13 @@
     <property name="Searches" type="as" access="read">
       <tp:docstring>A list of dns searches.</tp:docstring>
     </property>
+    <property name="DnsOptions" type="as" access="read">
+      <tp:docstring>
+	A list of DNS options that modify the behavior of the DNS
+	resolver. See resolv.conf(5) manual page for the list of
+	supported options.
+      </tp:docstring>
+    </property>
 
     <signal name="PropertiesChanged">
       <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">

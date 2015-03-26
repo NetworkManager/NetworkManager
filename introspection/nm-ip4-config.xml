@@ -49,6 +49,13 @@
     <property name="Searches" type="as" access="read">
       <tp:docstring>A list of dns searches.</tp:docstring>
     </property>
+    <property name="DnsOptions" type="as" access="read">
+      <tp:docstring>
+	A list of DNS options that modify the behavior of the DNS
+	resolver. See resolv.conf(5) manual page for the list of
+	supported options.
+      </tp:docstring>
+    </property>
     <property name="WinsServers" type="au" access="read">
       <tp:docstring>The Windows Internet Name Service servers associated with the connection.  Each address is in network byte order.</tp:docstring>
     </property>

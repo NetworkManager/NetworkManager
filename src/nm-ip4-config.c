@@ -49,6 +49,7 @@ typedef struct {
 	GArray *nameservers;
 	GPtrArray *domains;
 	GPtrArray *searches;
+	GPtrArray *dns_options;
 	guint32 mss;
 	GArray *nis;
 	char *nis_domain;
@@ -73,6 +74,7 @@ enum {
 	PROP_NAMESERVERS,
 	PROP_DOMAINS,
 	PROP_SEARCHES,
+	PROP_DNS_OPTIONS,
 	PROP_WINS_SERVERS,
 
 	LAST_PROP
@@ -388,6 +390,12 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIPConfig *setting, gu
 	for (i = 0; i < nsearches; i++)
 		nm_ip4_config_add_search (config, nm_setting_ip_config_get_dns_search (setting, i));
 
+	i = 0;
+	while ((i = nm_setting_ip_config_next_valid_dns_option (setting, i)) >= 0) {
+		nm_ip4_config_add_dns_option (config, nm_setting_ip_config_get_dns_option (setting, i));
+		i++;
+	}
+
 	g_object_thaw_notify (G_OBJECT (config));
 }
 
@@ -396,7 +404,7 @@ nm_ip4_config_create_setting (const NMIP4Config *config)
 {
 	NMSettingIPConfig *s_ip4;
 	guint32 gateway;
-	guint naddresses, nroutes, nnameservers, nsearches;
+	guint naddresses, nroutes, nnameservers, nsearches, noptions;
 	const char *method = NULL;
 	int i;
 
@@ -414,6 +422,7 @@ nm_ip4_config_create_setting (const NMIP4Config *config)
 	nroutes = nm_ip4_config_get_num_routes (config);
 	nnameservers = nm_ip4_config_get_num_nameservers (config);
 	nsearches = nm_ip4_config_get_num_searches (config);
+	noptions = nm_ip4_config_get_num_dns_options (config);
 
 	/* Addresses */
 	for (i = 0; i < naddresses; i++) {
@@ -484,6 +493,12 @@ nm_ip4_config_create_setting (const NMIP4Config *config)
 		nm_setting_ip_config_add_dns_search (s_ip4, search);
 	}
 
+	for (i = 0; i < noptions; i++) {
+		const char *option = nm_ip4_config_get_dns_option (config, i);
+
+		nm_setting_ip_config_add_dns_option (s_ip4, option);
+	}
+
 	return NM_SETTING (s_ip4);
 }
 
@@ -522,6 +537,10 @@ nm_ip4_config_merge (NMIP4Config *dst, const NMIP4Config *src)
 	/* dns searches */
 	for (i = 0; i < nm_ip4_config_get_num_searches (src); i++)
 		nm_ip4_config_add_search (dst, nm_ip4_config_get_search (src, i));
+
+	/* dns options */
+	for (i = 0; i < nm_ip4_config_get_num_dns_options (src); i++)
+		nm_ip4_config_add_dns_option (dst, nm_ip4_config_get_dns_option (src, i));
 
 	/* MSS */
 	if (!nm_ip4_config_get_mss (dst))
@@ -626,6 +645,21 @@ _searches_get_index (const NMIP4Config *self, const char *search)
 }
 
 static int
+_dns_options_get_index (const NMIP4Config *self, const char *option)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
+	guint i;
+
+	for (i = 0; i < priv->dns_options->len; i++) {
+		const char *s = g_ptr_array_index (priv->dns_options, i);
+
+		if (g_strcmp0 (option, s) == 0)
+			return (int) i;
+	}
+	return -1;
+}
+
+static int
 _nis_servers_get_index (const NMIP4Config *self, guint32 nis_server)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
@@ -717,6 +751,13 @@ nm_ip4_config_subtract (NMIP4Config *dst, const NMIP4Config *src)
 			nm_ip4_config_del_search (dst, idx);
 	}
 
+	/* dns options */
+	for (i = 0; i < nm_ip4_config_get_num_dns_options (src); i++) {
+		idx = _dns_options_get_index (dst, nm_ip4_config_get_dns_option (src, i));
+		if (idx >= 0)
+			nm_ip4_config_del_dns_option (dst, idx);
+	}
+
 	/* MSS */
 	if (nm_ip4_config_get_mss (src) == nm_ip4_config_get_mss (dst))
 		nm_ip4_config_set_mss (dst, 0);
@@ -783,6 +824,7 @@ nm_ip4_config_intersect (NMIP4Config *dst, const NMIP4Config *src)
 
 	/* ignore domains */
 	/* ignore dns searches */
+	/* ignore dns options */
 	/* ignore NIS */
 	/* ignore WINS */
 
@@ -949,6 +991,25 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 		has_relevant_changes = TRUE;
 	}
 
+	/* dns options */
+	num = nm_ip4_config_get_num_dns_options (src);
+	are_equal = num == nm_ip4_config_get_num_dns_options (dst);
+	if (are_equal) {
+		for (i = 0; i < num; i++ ) {
+			if (g_strcmp0 (nm_ip4_config_get_dns_option (src, i),
+			               nm_ip4_config_get_dns_option (dst, i))) {
+				are_equal = FALSE;
+				break;
+			}
+		}
+	}
+	if (!are_equal) {
+		nm_ip4_config_reset_dns_options (dst);
+		for (i = 0; i < num; i++)
+			nm_ip4_config_add_dns_option (dst, nm_ip4_config_get_dns_option (src, i));
+		has_relevant_changes = TRUE;
+	}
+
 	/* mss */
 	if (src_priv->mss != dst_priv->mss) {
 		nm_ip4_config_set_mss (dst, src_priv->mss);
@@ -1054,6 +1115,11 @@ nm_ip4_config_dump (const NMIP4Config *config, const char *detail)
 	/* dns searches */
 	for (i = 0; i < nm_ip4_config_get_num_searches (config); i++)
 		g_message (" search: %s", nm_ip4_config_get_search (config, i));
+
+	/* dns options */
+	for (i = 0; i < nm_ip4_config_get_num_dns_options (config); i++)
+		g_message (" dnsopt: %s", nm_ip4_config_get_dns_option (config, i));
+
 
 	g_message ("    mss: %"G_GUINT32_FORMAT, nm_ip4_config_get_mss (config));
 	g_message ("    mtu: %"G_GUINT32_FORMAT, nm_ip4_config_get_mtu (config));
@@ -1553,6 +1619,63 @@ nm_ip4_config_get_search (const NMIP4Config *config, guint i)
 /******************************************************************/
 
 void
+nm_ip4_config_reset_dns_options (NMIP4Config *config)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+
+	if (priv->dns_options->len != 0) {
+		g_ptr_array_set_size (priv->dns_options, 0);
+		_NOTIFY (config, PROP_DNS_OPTIONS);
+	}
+}
+
+void
+nm_ip4_config_add_dns_option (NMIP4Config *config, const char *new)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+	int i;
+
+	g_return_if_fail (new != NULL);
+	g_return_if_fail (new[0] != '\0');
+
+	for (i = 0; i < priv->dns_options->len; i++)
+		if (!g_strcmp0 (g_ptr_array_index (priv->dns_options, i), new))
+			return;
+
+	g_ptr_array_add (priv->dns_options, g_strdup (new));
+	_NOTIFY (config, PROP_DNS_OPTIONS);
+}
+
+void
+nm_ip4_config_del_dns_option(NMIP4Config *config, guint i)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+
+	g_return_if_fail (i < priv->dns_options->len);
+
+	g_ptr_array_remove_index (priv->dns_options, i);
+	_NOTIFY (config, PROP_DNS_OPTIONS);
+}
+
+guint32
+nm_ip4_config_get_num_dns_options (const NMIP4Config *config)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+
+	return priv->dns_options->len;
+}
+
+const char *
+nm_ip4_config_get_dns_option (const NMIP4Config *config, guint i)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+
+	return g_ptr_array_index (priv->dns_options, i);
+}
+
+/******************************************************************/
+
+void
 nm_ip4_config_set_mss (NMIP4Config *config, guint32 mss)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
@@ -1778,6 +1901,12 @@ nm_ip4_config_hash (const NMIP4Config *config, GChecksum *sum, gboolean dns_only
 		s = nm_ip4_config_get_search (config, i);
 		g_checksum_update (sum, (const guint8 *) s, strlen (s));
 	}
+
+	for (i = 0; i < nm_ip4_config_get_num_dns_options (config); i++) {
+		s = nm_ip4_config_get_dns_option (config, i);
+		g_checksum_update (sum, (const guint8 *) s, strlen (s));
+	}
+
 }
 
 /**
@@ -1832,6 +1961,7 @@ nm_ip4_config_init (NMIP4Config *config)
 	priv->nameservers = g_array_new (FALSE, FALSE, sizeof (guint32));
 	priv->domains = g_ptr_array_new_with_free_func (g_free);
 	priv->searches = g_ptr_array_new_with_free_func (g_free);
+	priv->dns_options = g_ptr_array_new_with_free_func (g_free);
 	priv->nis = g_array_new (FALSE, TRUE, sizeof (guint32));
 	priv->wins = g_array_new (FALSE, TRUE, sizeof (guint32));
 }
@@ -1848,6 +1978,7 @@ finalize (GObject *object)
 	g_array_unref (priv->nameservers);
 	g_ptr_array_unref (priv->domains);
 	g_ptr_array_unref (priv->searches);
+	g_ptr_array_unref (priv->dns_options);
 	g_array_unref (priv->nis);
 	g_free (priv->nis_domain);
 	g_array_unref (priv->wins);
@@ -2015,6 +2146,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_SEARCHES:
 		g_value_set_boxed (value, priv->searches);
 		break;
+	case PROP_DNS_OPTIONS:
+		g_value_set_boxed (value, priv->dns_options);
+		break;
 	case PROP_WINS_SERVERS:
 		g_value_set_boxed (value, priv->wins);
 		break;
@@ -2099,6 +2233,12 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 		                     DBUS_TYPE_G_ARRAY_OF_STRING,
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_DNS_OPTIONS] =
+		 g_param_spec_boxed (NM_IP4_CONFIG_DNS_OPTIONS, "", "",
+		                     DBUS_TYPE_G_ARRAY_OF_STRING,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS);
+
 	obj_properties[PROP_WINS_SERVERS] =
 		 g_param_spec_boxed (NM_IP4_CONFIG_WINS_SERVERS, "", "",
 		                     DBUS_TYPE_G_UINT_ARRAY,
