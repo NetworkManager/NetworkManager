@@ -1152,7 +1152,7 @@ ip4_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 	route.source = NM_IP_CONFIG_SOURCE_KERNEL;
 	route.ifindex = ifindex;
 	route.source = source;
-	route.network = network;
+	route.network = nm_utils_ip4_address_clear_host_address (network, plen);
 	route.plen = plen;
 	route.gateway = gateway;
 	route.metric = metric;
@@ -1217,7 +1217,7 @@ ip6_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 	route.source = NM_IP_CONFIG_SOURCE_KERNEL;
 	route.ifindex = ifindex;
 	route.source = source;
-	route.network = network;
+	nm_utils_ip6_address_clear_host_address (&route.network, &network, plen);
 	route.plen = plen;
 	route.gateway = gateway;
 	route.metric = metric;
