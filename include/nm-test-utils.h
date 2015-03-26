@@ -686,13 +686,27 @@ nmtst_platform_ip6_route_full (const char *network, guint plen, const char *gate
 	return route;
 }
 
+inline static int
+_nmtst_platform_ip4_routes_equal_sort (gconstpointer a, gconstpointer b, gpointer user_data)
+{
+	return nm_platform_ip4_route_cmp ((const NMPlatformIP4Route *) a, (const NMPlatformIP4Route *) b);
+}
+
 inline static void
-nmtst_platform_ip4_routes_equal (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b, gsize len)
+nmtst_platform_ip4_routes_equal (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b, gsize len, gboolean ignore_order)
 {
 	gsize i;
+	gs_free const NMPlatformIP4Route *c_a = NULL, *c_b = NULL;
 
 	g_assert (a);
 	g_assert (b);
+
+	if (ignore_order) {
+		a = c_a = g_memdup (a, sizeof (NMPlatformIP4Route) * len);
+		b = c_b = g_memdup (b, sizeof (NMPlatformIP4Route) * len);
+		g_qsort_with_data (c_a, len, sizeof (NMPlatformIP4Route), _nmtst_platform_ip4_routes_equal_sort, NULL);
+		g_qsort_with_data (c_b, len, sizeof (NMPlatformIP4Route), _nmtst_platform_ip4_routes_equal_sort, NULL);
+	}
 
 	for (i = 0; i < len; i++) {
 		if (nm_platform_ip4_route_cmp (&a[i], &b[i]) != 0) {
@@ -707,13 +721,27 @@ nmtst_platform_ip4_routes_equal (const NMPlatformIP4Route *a, const NMPlatformIP
 	}
 }
 
+inline static int
+_nmtst_platform_ip6_routes_equal_sort (gconstpointer a, gconstpointer b, gpointer user_data)
+{
+	return nm_platform_ip6_route_cmp ((const NMPlatformIP6Route *) a, (const NMPlatformIP6Route *) b);
+}
+
 inline static void
-nmtst_platform_ip6_routes_equal (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b, gsize len)
+nmtst_platform_ip6_routes_equal (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b, gsize len, gboolean ignore_order)
 {
 	gsize i;
+	gs_free const NMPlatformIP6Route *c_a = NULL, *c_b = NULL;
 
 	g_assert (a);
 	g_assert (b);
+
+	if (ignore_order) {
+		a = c_a = g_memdup (a, sizeof (NMPlatformIP6Route) * len);
+		b = c_b = g_memdup (b, sizeof (NMPlatformIP6Route) * len);
+		g_qsort_with_data (c_a, len, sizeof (NMPlatformIP6Route), _nmtst_platform_ip6_routes_equal_sort, NULL);
+		g_qsort_with_data (c_b, len, sizeof (NMPlatformIP6Route), _nmtst_platform_ip6_routes_equal_sort, NULL);
+	}
 
 	for (i = 0; i < len; i++) {
 		if (nm_platform_ip6_route_cmp (&a[i], &b[i]) != 0) {

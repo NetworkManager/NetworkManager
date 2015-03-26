@@ -254,7 +254,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 	 * 8.0.0.0/8 could not be added. */
 	routes = ip4_routes (fixture);
 	g_assert_cmpint (routes->len, ==, G_N_ELEMENTS (state1));
-	nmtst_platform_ip4_routes_equal ((NMPlatformIP4Route *) routes->data, state1, routes->len);
+	nmtst_platform_ip4_routes_equal ((NMPlatformIP4Route *) routes->data, state1, routes->len, TRUE);
 	g_array_free (routes, TRUE);
 
 	setup_dev1_ip4 (fixture->ifindex1);
@@ -265,7 +265,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 	/* Ensure nothing changed. */
 	routes = ip4_routes (fixture);
 	g_assert_cmpint (routes->len, ==, G_N_ELEMENTS (state1));
-	nmtst_platform_ip4_routes_equal ((NMPlatformIP4Route *) routes->data, state1, routes->len);
+	nmtst_platform_ip4_routes_equal ((NMPlatformIP4Route *) routes->data, state1, routes->len, TRUE);
 	g_array_free (routes, TRUE);
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*error adding 8.0.0.0/8 via 6.6.6.2 dev nm-test-device1 *");
@@ -275,7 +275,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 	/* 7.0.0.0/8 on dev0 was updated for gateway removal*/
 	routes = ip4_routes (fixture);
 	g_assert_cmpint (routes->len, ==, G_N_ELEMENTS (state2));
-	nmtst_platform_ip4_routes_equal ((NMPlatformIP4Route *) routes->data, state2, routes->len);
+	nmtst_platform_ip4_routes_equal ((NMPlatformIP4Route *) routes->data, state2, routes->len, TRUE);
 	g_array_free (routes, TRUE);
 
 	nm_route_manager_route_flush (nm_route_manager_get (), fixture->ifindex0);
@@ -286,7 +286,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 	 * No dev0 routes left. */
 	routes = ip4_routes (fixture);
 	g_assert_cmpint (routes->len, ==, G_N_ELEMENTS (state3));
-	nmtst_platform_ip4_routes_equal ((NMPlatformIP4Route *) routes->data, state3, routes->len);
+	nmtst_platform_ip4_routes_equal ((NMPlatformIP4Route *) routes->data, state3, routes->len, TRUE);
 	g_array_free (routes, TRUE);
 
 	nm_route_manager_route_flush (nm_route_manager_get (), fixture->ifindex1);
@@ -592,7 +592,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 	 * 2001:db8:abad:c0de::/64 routes did not clash */
 	routes = ip6_routes (fixture);
 	g_assert_cmpint (routes->len, ==, G_N_ELEMENTS (state1));
-	nmtst_platform_ip6_routes_equal ((NMPlatformIP6Route *) routes->data, state1, routes->len);
+	nmtst_platform_ip6_routes_equal ((NMPlatformIP6Route *) routes->data, state1, routes->len, TRUE);
 	g_array_free (routes, TRUE);
 
 	setup_dev1_ip6 (fixture->ifindex1);
@@ -603,7 +603,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 	/* Ensure nothing changed. */
 	routes = ip6_routes (fixture);
 	g_assert_cmpint (routes->len, ==, G_N_ELEMENTS (state1));
-	nmtst_platform_ip6_routes_equal ((NMPlatformIP6Route *) routes->data, state1, routes->len);
+	nmtst_platform_ip6_routes_equal ((NMPlatformIP6Route *) routes->data, state1, routes->len, TRUE);
 	g_array_free (routes, TRUE);
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*error adding 2001:db8:d34d::/64 via 2001:db8:8086::2 dev nm-test-device1 *");
@@ -613,7 +613,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 	/* 2001:db8:abad:c0de::/64 on dev0 was updated for gateway removal*/
 	routes = ip6_routes (fixture);
 	g_assert_cmpint (routes->len, ==, G_N_ELEMENTS (state2));
-	nmtst_platform_ip6_routes_equal ((NMPlatformIP6Route *) routes->data, state2, routes->len);
+	nmtst_platform_ip6_routes_equal ((NMPlatformIP6Route *) routes->data, state2, routes->len, TRUE);
 	g_array_free (routes, TRUE);
 
 	nm_route_manager_route_flush (nm_route_manager_get (), fixture->ifindex0);
@@ -625,7 +625,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 	 * No dev0 routes left. */
 	routes = ip6_routes (fixture);
 	g_assert_cmpint (routes->len, ==, G_N_ELEMENTS (state3));
-	nmtst_platform_ip6_routes_equal ((NMPlatformIP6Route *) routes->data, state3, routes->len);
+	nmtst_platform_ip6_routes_equal ((NMPlatformIP6Route *) routes->data, state3, routes->len, TRUE);
 	g_array_free (routes, TRUE);
 
 	nm_route_manager_route_flush (nm_route_manager_get (), fixture->ifindex1);
