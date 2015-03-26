@@ -338,9 +338,7 @@ NMTST_DEFINE ();
 int
 main (int argc, char **argv)
 {
-	nmtst_init_assert_logging (&argc, &argv);
-
-	nm_logging_setup ("DEBUG", "DEFAULT", NULL, NULL);
+	nmtst_init_assert_logging (&argc, &argv, "DEBUG", "DEFAULT");
 
 	g_test_add_func ("/general/nm_utils_kill_child", test_nm_utils_kill_child);
 

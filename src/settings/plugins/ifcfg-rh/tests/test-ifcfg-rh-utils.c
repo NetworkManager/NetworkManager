@@ -121,7 +121,7 @@ int main (int argc, char **argv)
 {
 	char *base;
 
-	nmtst_init_assert_logging (&argc, &argv);
+	nmtst_init_assert_logging (&argc, &argv, "INFO", "DEFAULT");
 
 	/* The tests */
 	test_get_ifcfg_name ("get-ifcfg-name-bad", "/foo/bar/adfasdfadf", FALSE, NULL);

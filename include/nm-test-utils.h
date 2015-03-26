@@ -162,7 +162,7 @@ nmtst_free (void)
 }
 
 inline static void
-__nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_level, const char *log_domains)
+__nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_level, const char *log_domains, gboolean *out_set_logging)
 {
 	static gsize atexit_registered = 0;
 	const char *nmtst_debug;
@@ -172,6 +172,11 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 	GArray *debug_messages = g_array_new (TRUE, FALSE, sizeof (char *));
 	int i;
 	gboolean no_expect_message = FALSE;
+	gboolean _out_set_logging;
+
+	if (!out_set_logging)
+		out_set_logging = &_out_set_logging;
+	*out_set_logging = FALSE;
 
 	g_assert (!nmtst_initialized ());
 
@@ -269,6 +274,7 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 		gboolean success = TRUE;
 #ifdef __NETWORKMANAGER_LOGGING_H__
 		success = nm_logging_setup (log_level, log_domains, NULL, NULL);
+		*out_set_logging = TRUE;
 #endif
 		g_assert (success);
 	} else if (__nmtst_internal.no_expect_message) {
@@ -285,6 +291,7 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 			gboolean success;
 
 			success = nm_logging_setup (log_level, log_domains, NULL, NULL);
+			*out_set_logging = TRUE;
 			g_assert (success);
 		}
 #endif
@@ -335,18 +342,27 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 inline static void
 nmtst_init_with_logging (int *argc, char ***argv, const char *log_level, const char *log_domains)
 {
-	__nmtst_init (argc, argv, FALSE, log_level, log_domains);
+	__nmtst_init (argc, argv, FALSE, log_level, log_domains, NULL);
 }
 inline static void
-nmtst_init_assert_logging (int *argc, char ***argv)
+nmtst_init_assert_logging (int *argc, char ***argv, const char *log_level, const char *log_domains)
 {
-	__nmtst_init (argc, argv, TRUE, NULL, NULL);
+	gboolean set_logging;
+
+	__nmtst_init (argc, argv, TRUE, NULL, NULL, &set_logging);
+
+	if (!set_logging) {
+		gboolean success;
+
+		success = nm_logging_setup (log_level, log_domains, NULL, NULL);
+		g_assert (success);
+	}
 }
 #else
 inline static void
 nmtst_init (int *argc, char ***argv, gboolean assert_logging)
 {
-	__nmtst_init (argc, argv, assert_logging, NULL, NULL);
+	__nmtst_init (argc, argv, assert_logging, NULL, NULL, NULL);
 }
 #endif
 
