@@ -151,4 +151,18 @@ gulong _nm_dbus_signal_connect_data (GDBusProxy *proxy,
 #define _nm_dbus_signal_connect(proxy, name, signature, handler, data) \
 	_nm_dbus_signal_connect_data (proxy, name, signature, handler, data, NULL, (GConnectFlags) 0)
 
+GVariant *_nm_dbus_proxy_call_finish (GDBusProxy           *proxy,
+                                      GAsyncResult         *res,
+                                      const GVariantType   *reply_type,
+                                      GError              **error);
+
+GVariant *_nm_dbus_proxy_call_sync   (GDBusProxy           *proxy,
+                                      const gchar          *method_name,
+                                      GVariant             *parameters,
+                                      const GVariantType   *reply_type,
+                                      GDBusCallFlags        flags,
+                                      gint                  timeout_msec,
+                                      GCancellable         *cancellable,
+                                      GError              **error);
+
 #endif

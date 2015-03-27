@@ -22,6 +22,7 @@
 
 #include <string.h>
 #include <gio/gio.h>
+#include <glib/gi18n-lib.h>
 
 #include "nm-core-internal.h"
 
@@ -174,3 +175,90 @@ _nm_dbus_signal_connect_data (GDBusProxy *proxy,
  *
  * Returns: the signal handler ID, as with _nm_signal_connect_data().
  */
+
+
+static void
+typecheck_response (GVariant           **response,
+                    const GVariantType  *reply_type,
+                    GError             **error)
+{
+	if (*response && reply_type && !g_variant_is_of_type (*response, reply_type)) {
+		/* This is the same error code that g_dbus_connection_call() returns if
+		 * @reply_type doesn't match.
+		 */
+		g_set_error (error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT,
+		             _("Method returned type '%s', but expected '%s'"),
+		             g_variant_get_type_string (*response),
+		             g_variant_type_peek_string (reply_type));
+		g_clear_pointer (response, g_variant_unref);
+	}
+}
+
+/**
+ * _nm_dbus_proxy_call_finish:
+ * @proxy: A #GDBusProxy.
+ * @res: A #GAsyncResult obtained from the #GAsyncReadyCallback passed to
+ *   g_dbus_proxy_call().
+ * @reply_type: (allow-none): the expected type of the reply, or %NULL
+ * @error: Return location for error or %NULL.
+ *
+ * Finishes an operation started with g_dbus_proxy_call(), as with
+ * g_dbus_proxy_call_finish(), except thatif @reply_type is non-%NULL, then it
+ * will also check that the response matches that type signature, and return
+ * an error if not.
+ *
+ * Returns: %NULL if @error is set. Otherwise a #GVariant tuple with
+ * return values. Free with g_variant_unref().
+ */
+GVariant *
+_nm_dbus_proxy_call_finish (GDBusProxy          *proxy,
+                            GAsyncResult        *res,
+                            const GVariantType  *reply_type,
+                            GError             **error)
+{
+	GVariant *ret;
+
+	ret = g_dbus_proxy_call_finish (proxy, res, error);
+	typecheck_response (&ret, reply_type, error);
+	return ret;
+}
+
+/**
+ * _nm_dbus_proxy_call_sync:
+ * @proxy: A #GDBusProxy.
+ * @method_name: Name of method to invoke.
+ * @parameters: (allow-none): A #GVariant tuple with parameters for the signal
+ *   or %NULL if not passing parameters.
+ * @reply_type: (allow-none): the expected type of the reply, or %NULL
+ * @flags: Flags from the #GDBusCallFlags enumeration.
+ * @timeout_msec: The timeout in milliseconds (with %G_MAXINT meaning
+ *   "infinite") or -1 to use the proxy default timeout.
+ * @cancellable: (allow-none): A #GCancellable or %NULL.
+ * @error: Return location for error or %NULL.
+ *
+ * Synchronously invokes the @method_name method on @proxy, as with
+ * g_dbus_proxy_call_sync(), except that if @reply_type is non-%NULL, then the
+ * reply to the call will be checked against it, and an error returned if it
+ * does not match.
+ *
+ * Returns: %NULL if @error is set. Otherwise a #GVariant tuple with
+ * return values. Free with g_variant_unref().
+ */
+GVariant *
+_nm_dbus_proxy_call_sync (GDBusProxy          *proxy,
+                          const gchar         *method_name,
+                          GVariant            *parameters,
+                          const GVariantType  *reply_type,
+                          GDBusCallFlags       flags,
+                          gint                 timeout_msec,
+                          GCancellable        *cancellable,
+                          GError             **error)
+{
+	GVariant *ret;
+
+	ret = g_dbus_proxy_call_sync (proxy, method_name, parameters,
+	                              flags, timeout_msec,
+	                              cancellable, error);
+	typecheck_response (&ret, reply_type, error);
+	return ret;
+}
