@@ -306,7 +306,7 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 	}
 
 	if ((!__nmtst_internal.assert_logging || (__nmtst_internal.assert_logging && __nmtst_internal.no_expect_message)) &&
-	    (is_debug || (log_level && !g_ascii_strcasecmp (log_level, "DEBUG"))) &&
+	    (is_debug || (c_log_level && (!g_ascii_strcasecmp (c_log_level, "DEBUG") || !g_ascii_strcasecmp (c_log_level, "TRACE")))) &&
 	    !g_getenv ("G_MESSAGES_DEBUG"))
 	{
 		/* if we are @is_debug or @log_level=="DEBUG" and
