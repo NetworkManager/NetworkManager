@@ -532,7 +532,7 @@ nmc_init (NmCli *nmc)
 	nmc->pwds_hash = NULL;
 	nmc->pk_listener = NULL;
 
-	nmc->should_wait = FALSE;
+	nmc->should_wait = 0;
 	nmc->nowait_flag = TRUE;
 	nmc->print_output = NMC_PRINT_NORMAL;
 	nmc->multiline_output = FALSE;

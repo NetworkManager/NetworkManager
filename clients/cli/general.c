@@ -619,7 +619,7 @@ do_general (NmCli *nmc, int argc, char **argv)
 				if (next_arg (&argc, &argv) == 0)
 					g_print ("Warning: ignoring extra garbage after '%s' hostname\n", hostname);
 
-				nmc->should_wait = TRUE;
+				nmc->should_wait++;
 				nmc->get_client (nmc); /* create NMClient */
 				nm_client_save_hostname_async (nmc->client, hostname, NULL, save_hostname_cb, nmc);
 			}

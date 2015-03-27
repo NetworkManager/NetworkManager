@@ -144,7 +144,7 @@ typedef struct _NmCli {
 	GHashTable *pwds_hash;                            /* Hash table with passwords in passwd-file */
 	NMPolkitListener *pk_listener ;                   /* polkit agent listener */
 
-	gboolean should_wait;                             /* Indication that nmcli should not end yet */
+	int should_wait;                                  /* Semaphore indicating whether nmcli should not end or not yet */
 	gboolean nowait_flag;                             /* '--nowait' option; used for passing to callbacks */
 	NMCPrintOutput print_output;                      /* Output mode */
 	gboolean multiline_output;                        /* Multiline output instead of default tabular */
