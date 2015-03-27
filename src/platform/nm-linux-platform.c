@@ -2406,7 +2406,7 @@ link_get_unmanaged (NMPlatform *platform, int ifindex, gboolean *managed)
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	GUdevDevice *udev_device = g_hash_table_lookup (priv->udev_devices, GINT_TO_POINTER (ifindex));
 
-	if (g_udev_device_get_property (udev_device, "NM_UNMANAGED")) {
+	if (udev_device && g_udev_device_get_property (udev_device, "NM_UNMANAGED")) {
 		*managed = g_udev_device_get_property_as_boolean (udev_device, "NM_UNMANAGED");
 		return TRUE;
 	}
