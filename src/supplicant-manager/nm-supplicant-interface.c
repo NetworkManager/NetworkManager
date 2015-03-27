@@ -404,19 +404,6 @@ nm_supplicant_interface_credentials_reply (NMSupplicantInterface *self,
 	return !!reply;
 }
 
-static gboolean
-_dbus_error_has_name (GError *error, const char *dbus_error_name)
-{
-	gs_free char *error_name = NULL;
-	gboolean is_error = FALSE;
-
-	if (error && g_dbus_error_is_remote_error (error)) {
-		error_name = g_dbus_error_get_remote_error (error);
-		is_error = !g_strcmp0 (error_name, dbus_error_name);
-	}
-	return is_error;
-}
-
 static void
 iface_check_netreply_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 {
@@ -439,7 +426,7 @@ iface_check_netreply_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	self = NM_SUPPLICANT_INTERFACE (user_data);
 	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
-	if (variant || _dbus_error_has_name (error, "fi.w1.wpa_supplicant1.InvalidArgs"))
+	if (variant || _nm_dbus_error_has_name (error, "fi.w1.wpa_supplicant1.InvalidArgs"))
 		priv->has_credreq = TRUE;
 
 	nm_log_dbg (LOGD_SUPPLICANT, "Supplicant %s network credentials requests",
@@ -734,7 +721,7 @@ interface_add_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	if (variant) {
 		g_variant_get (variant, "(&o)", &path);
 		interface_add_done (self, path);
-	} else if (_dbus_error_has_name (error, WPAS_ERROR_EXISTS_ERROR)) {
+	} else if (_nm_dbus_error_has_name (error, WPAS_ERROR_EXISTS_ERROR)) {
 		/* Interface already added, just get its object path */
 		g_dbus_proxy_call (priv->wpas_proxy,
 		                   "GetInterface",
