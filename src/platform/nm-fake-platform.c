@@ -488,6 +488,15 @@ link_get_physical_port_id (NMPlatform *platform, int ifindex)
 	return NULL;
 }
 
+static guint
+link_get_dev_id (NMPlatform *platform, int ifindex)
+{
+	/* We call link_get just to cause an error to be set if @ifindex is bad. */
+	link_get (platform, ifindex);
+
+	return 0;
+}
+
 static gboolean
 link_get_wake_on_lan (NMPlatform *platform, int ifindex)
 {
@@ -1406,6 +1415,7 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->link_set_mtu = link_set_mtu;
 
 	platform_class->link_get_physical_port_id = link_get_physical_port_id;
+	platform_class->link_get_dev_id = link_get_dev_id;
 	platform_class->link_get_wake_on_lan = link_get_wake_on_lan;
 
 	platform_class->link_supports_carrier_detect = link_supports_carrier_detect;

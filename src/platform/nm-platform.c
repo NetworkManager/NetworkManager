@@ -1008,8 +1008,14 @@ nm_platform_link_get_mtu (int ifindex)
 }
 
 /**
- * nm_platform_link_get_mtu:
+ * nm_platform_link_get_physical_port_id:
  * @ifindex: Interface index
+ *
+ * The physical port ID, if present, indicates some unique identifier of
+ * the parent interface (eg, the physical port of which this link is a child).
+ * Two links that report the same physical port ID can be assumed to be
+ * children of the same physical port and may share resources that limit
+ * their abilities.
  *
  * Returns: physical port ID for the interface, or %NULL on error
  * or if the interface has no physical port ID.
@@ -1023,6 +1029,28 @@ nm_platform_link_get_physical_port_id (int ifindex)
 	g_return_val_if_fail (klass->link_get_physical_port_id, NULL);
 
 	return klass->link_get_physical_port_id (platform, ifindex);
+}
+
+/**
+ * nm_platform_link_get_dev_id:
+ * @ifindex: Interface index
+ *
+ * In contrast to the physical device ID (which indicates which parent a
+ * child has) the device ID differentiates sibling devices that may share
+ * the same MAC address.
+ *
+ * Returns: device ID for the interface, or 0 on error or if the
+ * interface has no device ID.
+ */
+guint
+nm_platform_link_get_dev_id (int ifindex)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex >= 0, 0);
+	g_return_val_if_fail (klass->link_get_dev_id, 0);
+
+	return klass->link_get_dev_id (platform, ifindex);
 }
 
 /**
