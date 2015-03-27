@@ -278,7 +278,7 @@ be saved as two connections which both apply to eth0, one for DHCP (called
 connected to the DHCP-enabled network the user would run "nmcli con up default"
 , and when connected to the static network the user would run "nmcli con up testing".
 .TP
-.SS \fICOMMAND\fP := { show | up | down | add | edit | modify | delete | reload | load }
+.SS \fICOMMAND\fP := { show | up | down | add | edit | modify | delete | monitor | reload | load }
 .sp
 .RS
 .TP
@@ -778,6 +778,18 @@ its name, UUID or D-Bus path. If <ID> is ambiguous, a keyword \fIid\fP,
 See \fBconnection show\fP above for the description of the <ID>-specifying keywords.
 .br
 If '--wait' option is not specified, the default timeout will be 10 seconds.
+.TP
+.B monitor [ id | uuid | path ] <ID> ...
+.br
+Monitor connection profile activity. This command prints a line whenever the
+specified connection changes. The connection to be monitored is identified by
+its name, UUID or D-Bus path. If <ID> is ambiguous, a keyword \fIid\fP,
+\fIuuid\fP or \fIpath\fP can be used.
+.br
+See \fBconnection show\fP above for the description of the <ID>-specifying keywords.
+.br
+Monitors all connection profiles in case none is specified. The command terminates
+when all monitored connections disappear.
 .TP
 .B reload
 .br

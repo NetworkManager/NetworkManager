@@ -261,7 +261,7 @@ static void
 usage (void)
 {
 	g_printerr (_("Usage: nmcli connection { COMMAND | help }\n\n"
-	              "COMMAND := { show | up | down | add | modify | edit | delete | reload | load }\n\n"
+	              "COMMAND := { show | up | down | add | modify | edit | delete | monitor | reload | load }\n\n"
 	              "  show [--active] [--order <order spec>]\n"
 	              "  show [--active] [--show-secrets] [id | uuid | path | apath] <ID> ...\n\n"
 	              "  up [[id | uuid | path] <ID>] [ifname <ifname>] [ap <BSSID>] [passwd-file <file with passwords>]\n\n"
@@ -272,6 +272,7 @@ usage (void)
 	              "  edit [id | uuid | path] <ID>\n"
 	              "  edit [type <new_con_type>] [con-name <new_con_name>]\n\n"
 	              "  delete [id | uuid | path] <ID>\n\n"
+	              "  monitor [id | uuid | path] <ID> ...\n\n"
 	              "  reload\n\n"
 	              "  load <filename> [ <filename>... ]\n\n"));
 }
@@ -490,6 +491,18 @@ usage_connection_delete (void)
 }
 
 static void
+usage_connection_monitor (void)
+{
+	g_printerr (_("Usage: nmcli connection monitor { ARGUMENTS | help }\n"
+	              "\n"
+	              "ARGUMENTS := [id | uuid | path] <ID> ...\n"
+	              "\n"
+	              "Monitor connection profile activity.\n"
+	              "This command prints a line whenever the specified connection changes.\n"
+	              "Monitors all connection profiles in case none is specified.\n\n"));
+}
+
+static void
 usage_connection_reload (void)
 {
 	g_printerr (_("Usage: nmcli connection reload { help }\n"
@@ -530,6 +543,8 @@ usage_connection_second_level (const char *cmd)
 		usage_connection_edit ();
 	else if (matches (cmd, "delete") == 0)
 		usage_connection_delete ();
+	else if (matches (cmd, "monitor") == 0)
+		usage_connection_monitor ();
 	else if (matches (cmd, "reload") == 0)
 		usage_connection_reload ();
 	else if (matches (cmd, "load") == 0)
@@ -9801,6 +9816,102 @@ finish:
 	return nmc->return_value;
 }
 
+static void
+connection_changed (NMConnection *connection, NmCli *nmc)
+{
+	g_print (_("%s: connection profile changed\n"), nm_connection_get_id (connection));
+}
+
+static void
+connection_watch (NmCli *nmc, NMConnection *connection)
+{
+	nmc->should_wait++;
+	g_signal_connect (connection, NM_CONNECTION_CHANGED, G_CALLBACK (connection_changed), nmc);
+}
+
+static void
+connection_unwatch (NmCli *nmc, NMConnection *connection)
+{
+	if (g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_changed), nmc))
+		nmc->should_wait--;
+
+	/* Terminate if all the watched connections disappeared. */
+	if (!nmc->should_wait)
+		quit ();
+}
+
+static void
+connection_added (NMClient *client, NMRemoteConnection *con, NmCli *nmc)
+{
+	NMConnection *connection = NM_CONNECTION (con);
+
+	g_print (_("%s: connection profile created\n"), nm_connection_get_id (connection));
+	connection_watch (nmc, connection);
+}
+
+static void
+connection_removed (NMClient *client, NMRemoteConnection *con, NmCli *nmc)
+{
+	NMConnection *connection = NM_CONNECTION (con);
+
+	g_print (_("%s: connection profile removed\n"), nm_connection_get_id (connection));
+	connection_unwatch (nmc, connection);
+}
+
+static NMCResultCode
+do_connection_monitor (NmCli *nmc, int argc, char **argv)
+{
+	if (argc == 0) {
+		/* No connections specified. Monitor all. */
+		int i;
+
+		nmc->connections = nm_client_get_connections (nmc->client);
+		for (i = 0; i < nmc->connections->len; i++)
+			connection_watch (nmc, g_ptr_array_index (nmc->connections, i));
+
+		/* We'll watch the connection additions too, never exit. */
+		nmc->should_wait++;
+		g_signal_connect (nmc->client, NM_CLIENT_CONNECTION_ADDED, G_CALLBACK (connection_added), nmc);
+	} else {
+		/* Look up the specified connections and watch them. */
+		NMConnection *connection;
+		char **arg_ptr = argv;
+		int arg_num = argc;
+		int pos = 0;
+
+		do {
+			const char *selector = NULL;
+
+			if (   strcmp (*arg_ptr, "id") == 0
+			    || strcmp (*arg_ptr, "uuid") == 0
+			    || strcmp (*arg_ptr, "path") == 0) {
+				selector = *arg_ptr;
+				if (next_arg (&arg_num, &arg_ptr) != 0) {
+					g_string_printf (nmc->return_text, _("Error: %s argument is missing."), selector);
+					return NMC_RESULT_ERROR_USER_INPUT;
+				}
+			}
+
+			connection = nmc_find_connection (nmc->connections, selector, *arg_ptr, &pos);
+			if (connection) {
+				connection_watch (nmc, connection);
+			} else {
+				g_printerr (_("Error: unknown connection '%s'\n"), *arg_ptr);
+				g_string_printf (nmc->return_text, _("Error: not all connections found."));
+				return NMC_RESULT_ERROR_NOT_FOUND;
+			}
+
+			/* Take next argument (if there's no other connection of the same name) */
+			if (!pos)
+				next_arg (&arg_num, &arg_ptr);
+		} while (arg_num > 0);
+	}
+
+	g_signal_connect (nmc->client, NM_CLIENT_CONNECTION_REMOVED, G_CALLBACK (connection_removed), nmc);
+
+	return NMC_RESULT_SUCCESS;
+}
+
 static NMCResultCode
 do_connection_reload (NmCli *nmc, int argc, char **argv)
 {
@@ -10115,6 +10226,8 @@ do_connections (NmCli *nmc, int argc, char **argv)
 			g_thread_unref (editor_thread);
 		} else if (matches(*argv, "delete") == 0) {
 			nmc->return_value = do_connection_delete (nmc, argc-1, argv+1);
+		} else if (matches(*argv, "monitor") == 0) {
+			nmc->return_value = do_connection_monitor (nmc, argc-1, argv+1);
 		} else if (matches(*argv, "reload") == 0) {
 			nmc->return_value = do_connection_reload (nmc, argc-1, argv+1);
 		} else if (matches(*argv, "load") == 0) {
