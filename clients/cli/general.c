@@ -27,6 +27,9 @@
 #include "utils.h"
 #include "general.h"
 
+#include "devices.h"
+#include "connections.h"
+
 /* Available fields for 'general status' */
 static NmcOutputField nmc_fields_nm_status[] = {
 	{"RUNNING",      N_("RUNNING")},       /* 0 */
@@ -205,6 +208,15 @@ usage_radio_wwan (void)
 	              "ARGUMENTS := [on | off]\n"
 	              "\n"
 	              "Get status of mobile broadband radio switch, or turn it on/off.\n\n"));
+}
+
+static void
+usage_monitor (void)
+{
+	g_printerr (_("Usage: nmcli monitor\n"
+	              "\n"
+	              "Monitor NetworkManager changes.\n"
+	              "Prints a line whenever a change occurs in NetworkManager\n\n"));
 }
 
 /* quit main loop */
@@ -889,3 +901,88 @@ finish:
 	return nmc->return_value;
 }
 
+static void
+client_hostname (NMClient *client, GParamSpec *param, NmCli *nmc)
+{
+	const char *hostname;
+
+	g_object_get (client, NM_CLIENT_HOSTNAME, &hostname, NULL);
+	g_print (_("Hostname set to '%s'\n"), hostname);
+}
+
+static void
+client_primary_connection (NMClient *client, GParamSpec *param, NmCli *nmc)
+{
+	NMConnection *primary;
+	const char *id;
+
+	g_object_get (client, NM_CLIENT_PRIMARY_CONNECTION, &primary, NULL);
+	if (primary) {
+		id = nm_connection_get_id (primary);
+		if (!id)
+			id = nm_connection_get_uuid (primary);
+
+		g_print (_("'%s' is now the primary connection\n"), id);
+	} else {
+		g_print (_("There's no primary connection\n"));
+	}
+}
+
+static void
+client_connectivity (NMClient *client, GParamSpec *param, NmCli *nmc)
+{
+	NMConnectivityState connectivity;
+	char *str;
+
+	g_object_get (client, NM_CLIENT_CONNECTIVITY, &connectivity, NULL);
+	str = nmc_colorize (nmc, connectivity_to_color (connectivity), NMC_TERM_FORMAT_NORMAL,
+	                    _("Connectivity is now '%s'\n"), nm_connectivity_to_string (connectivity));
+	g_print ("%s", str);
+	g_free (str);
+}
+
+static void
+client_state (NMClient *client, GParamSpec *param, NmCli *nmc)
+{
+	NMState state;
+	char *str;
+
+	g_object_get (client, NM_CLIENT_STATE, &state, NULL);
+	str = nmc_colorize (nmc, state_to_color (state), NMC_TERM_FORMAT_NORMAL,
+	                    _("Networkmanager is now in the '%s' state\n"),
+	                    nm_state_to_string (state));
+	g_print ("%s", str);
+	g_free (str);
+}
+
+NMCResultCode
+do_monitor (NmCli *nmc, int argc, char **argv)
+{
+	if (argc > 0) {
+		if (!nmc_arg_is_help (*argv)) {
+			g_string_printf (nmc->return_text, _("Error: 'monitor' command '%s' is not valid."), *argv);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		}
+
+		usage_monitor ();
+		return nmc->return_value;
+	}
+
+	nmc->get_client (nmc); /* create NMClient */
+
+	g_signal_connect (nmc->client, "notify::" NM_CLIENT_HOSTNAME,
+	                  G_CALLBACK (client_hostname), nmc);
+	g_signal_connect (nmc->client, "notify::" NM_CLIENT_PRIMARY_CONNECTION,
+	                  G_CALLBACK (client_primary_connection), nmc);
+	g_signal_connect (nmc->client, "notify::" NM_CLIENT_CONNECTIVITY,
+	                  G_CALLBACK (client_connectivity), nmc);
+	g_signal_connect (nmc->client, "notify::" NM_CLIENT_STATE,
+	                  G_CALLBACK (client_state), nmc);
+
+	nmc->should_wait++;
+
+	monitor_devices (nmc);
+	monitor_connections (nmc);
+
+	return NMC_RESULT_SUCCESS;
+}

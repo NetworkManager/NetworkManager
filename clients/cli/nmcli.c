@@ -103,6 +103,7 @@ usage (const char *prog_name)
 	              "  c[onnection]    NetworkManager's connections\n"
 	              "  d[evice]        devices managed by NetworkManager\n"
 	              "  a[gent]         NetworkManager secret agent or polkit agent\n"
+	              "  m[monitor]      monitor NetworkManager changes\n"
 	              "\n"),
 	            prog_name);
 }
@@ -119,6 +120,7 @@ static const struct cmd {
 	NMCResultCode (*func) (NmCli *nmc, int argc, char **argv);
 } nmcli_cmds[] = {
 	{ "general",    do_general },
+	{ "monitor",    do_monitor },
 	{ "networking", do_networking },
 	{ "radio",      do_radio },
 	{ "connection", do_connections },

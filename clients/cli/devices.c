@@ -3657,3 +3657,9 @@ opt_error:
 	g_error_free (error);
 	return nmc->return_value;
 }
+
+void
+monitor_devices (NmCli *nmc)
+{
+	do_device_monitor (nmc, 0, NULL);
+}

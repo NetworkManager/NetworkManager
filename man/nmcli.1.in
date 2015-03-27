@@ -33,7 +33,7 @@ nmcli \- command\(hyline tool for controlling NetworkManager
 .sp
 
 .IR OBJECT " := { "
-.BR general " | " networking " | " radio " | " connection " | " device " | " agent
+.BR general " | " networking " | " radio " | " connection " | " device " | " agent " | " monitor
 .RI " }"
 .sp
 
@@ -257,6 +257,16 @@ are supplied, mobile broadband status is printed; \fIon\fP enables mobile broadb
 .B all [ on | off ]
 .br
 Show or set all previously mentioned radio switches at the same time.
+.RE
+
+.TP
+.B monitor \- monitor NetworkManager
+.br
+Use this object to observe NetworkManager activity. Watches for changes
+in connectivity state, devices or connection profiles.
+.br
+See also \fImonitor\fP command of \fIconnection\fP or \fIdevice\fP object
+to watch for changes in certain objects or object classes.
 .RE
 
 .TP
@@ -789,7 +799,8 @@ its name, UUID or D-Bus path. If <ID> is ambiguous, a keyword \fIid\fP,
 See \fBconnection show\fP above for the description of the <ID>-specifying keywords.
 .br
 Monitors all connection profiles in case none is specified. The command terminates
-when all monitored connections disappear.
+when all monitored connections disappear. If you want to monitor connection creation
+consider using the global monitor with \fInmcli monitor\fP command.
 .TP
 .B reload
 .br
@@ -861,7 +872,8 @@ Monitor device activity. This command prints a line whenever the specified devic
 change state.
 .br
 Monitors all devices in case no interface is specified. The monitor terminates when
-all specified devices disappear. 
+all specified devices disappear. If you want to monitor device addition consider
+using the global monitor with \fInmcli monitor\fP command.
 .TP
 .B wifi [list [ifname <ifname>] [bssid <BSSID>]]
 .br

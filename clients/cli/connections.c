@@ -10265,3 +10265,9 @@ opt_error:
 	g_error_free (error);
 	return nmc->return_value;
 }
+
+void
+monitor_connections (NmCli *nmc)
+{
+	do_connection_monitor (nmc, 0, NULL);
+}
