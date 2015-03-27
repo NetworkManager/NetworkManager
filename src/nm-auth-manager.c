@@ -24,6 +24,7 @@
 
 #include "nm-logging.h"
 #include "nm-errors.h"
+#include "nm-core-internal.h"
 
 #define POLKIT_SERVICE                      "org.freedesktop.PolicyKit1"
 #define POLKIT_OBJECT_PATH                  "/org/freedesktop/PolicyKit1/Authority"
@@ -394,21 +395,16 @@ _dbus_on_name_owner_notify_cb (GObject    *object,
 }
 
 static void
-_dbus_on_g_signal_cb (GDBusProxy   *proxy,
-                      const gchar  *sender_name,
-                      const gchar  *signal_name,
-                      GVariant     *parameters,
-                      gpointer      user_data)
+_dbus_on_changed_signal_cb (GDBusProxy *proxy,
+                            gpointer    user_data)
 {
 	NMAuthManager *self = user_data;
 	NMAuthManagerPrivate *priv = NM_AUTH_MANAGER_GET_PRIVATE (self);
 
 	g_return_if_fail (priv->proxy == proxy);
 
-	_LOGD ("dbus signal: \"%s\"", signal_name ? signal_name : "(null)");
-
-	if (g_strcmp0 (signal_name, "Changed") == 0)
-		_emit_changed_signal (self);
+	_LOGD ("dbus signal: \"Changed\"");
+	_emit_changed_signal (self);
 }
 
 static void
@@ -463,10 +459,9 @@ _dbus_new_proxy_cb (GObject *source_object,
 	                  "notify::g-name-owner",
 	                  G_CALLBACK (_dbus_on_name_owner_notify_cb),
 	                  self);
-	g_signal_connect (priv->proxy,
-	                  "g-signal",
-	                  G_CALLBACK (_dbus_on_g_signal_cb),
-	                  self);
+	_nm_dbus_signal_connect (priv->proxy, "Changed", NULL,
+	                         G_CALLBACK (_dbus_on_changed_signal_cb),
+	                         self);
 
 	_log_name_owner (self, NULL);
 
@@ -604,8 +599,7 @@ dispose (GObject *object)
 	}
 
 	if (priv->proxy) {
-		g_signal_handlers_disconnect_by_func (priv->proxy, _dbus_on_name_owner_notify_cb, self);
-		g_signal_handlers_disconnect_by_func (priv->proxy, _dbus_on_g_signal_cb, self);
+		g_signal_handlers_disconnect_by_data (priv->proxy, self);
 		g_clear_object (&priv->proxy);
 	}
 #endif

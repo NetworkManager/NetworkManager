@@ -1580,44 +1580,74 @@ really_activate (NMVpnConnection *self, const char *username)
 	_set_vpn_state (self, STATE_CONNECT, NM_VPN_CONNECTION_STATE_REASON_NONE, FALSE);
 }
 
-#define MATCH_SIGNAL(s, n, v, t) (!strcmp (s, n) && g_variant_is_of_type (v, t))
+static void
+failure_cb (GDBusProxy *proxy,
+            guint32     reason,
+            gpointer    user_data)
+{
+	NMVpnConnection *self = NM_VPN_CONNECTION (user_data);
+
+	plugin_failed (self, reason);
+}
 
 static void
-signal_cb (GDBusProxy  *proxy,
-           const gchar *sender,
-           const gchar *signal,
-           GVariant    *args,
-           gpointer     user_data)
+state_changed_cb (GDBusProxy *proxy,
+                  guint32     new_service_state,
+                  gpointer    user_data)
+{
+	NMVpnConnection *self = NM_VPN_CONNECTION (user_data);
+
+	plugin_state_changed (self, new_service_state);
+}
+
+static void
+secrets_required_cb (GDBusProxy  *proxy,
+                     const char  *message,
+                     const char **secrets,
+                     gpointer     user_data)
+{
+	NMVpnConnection *self = NM_VPN_CONNECTION (user_data);
+
+	plugin_interactive_secrets_required (self, message, secrets);
+}
+
+static void
+config_cb (GDBusProxy *proxy,
+           GVariant   *dict,
+           gpointer    user_data)
 {
 	NMVpnConnection *self = NM_VPN_CONNECTION (user_data);
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
-	const char *message, **secrets;
-	gs_unref_variant GVariant *dict = NULL;
-	guint u32;
 
-	if (MATCH_SIGNAL (signal, "Failure", args, G_VARIANT_TYPE ("(u)"))) {
-		g_variant_get (args, "(u)", &u32);
-		plugin_failed (self, u32);
-	} else if (MATCH_SIGNAL (signal, "StateChanged", args, G_VARIANT_TYPE ("(u)"))) {
-		g_variant_get (args, "(u)", &u32);
-		plugin_state_changed (self, u32);
-	} else if (MATCH_SIGNAL (signal, "SecretsRequired", args, G_VARIANT_TYPE ("(sas)"))) {
-		g_variant_get (args, "(&s^a&s)", &message, &secrets);
-		plugin_interactive_secrets_required (self, message, secrets);
-		g_free (secrets);
-	} else if (priv->vpn_state >= STATE_NEED_AUTH) {
-		/* Only list to these signals during and after connection */
-		if (MATCH_SIGNAL (signal, "Config", args, G_VARIANT_TYPE ("(a{sv})"))) {
-			g_variant_get (args, "(@a{sv})", &dict);
-			nm_vpn_connection_config_get (self, dict);
-		} else if (MATCH_SIGNAL (signal, "Ip4Config", args, G_VARIANT_TYPE ("(a{sv})"))) {
-			g_variant_get (args, "(@a{sv})", &dict);
-			nm_vpn_connection_ip4_config_get (self, dict);
-		} else if (MATCH_SIGNAL (signal, "Ip6Config", args, G_VARIANT_TYPE ("(a{sv})"))) {
-			g_variant_get (args, "(@a{sv})", &dict);
-			nm_vpn_connection_ip6_config_get (self, dict);
-		}
-	}
+	/* Only list to this signals during and after connection */
+	if (priv->vpn_state >= STATE_NEED_AUTH)
+		nm_vpn_connection_config_get (self, dict);
+}
+
+static void
+ip4_config_cb (GDBusProxy *proxy,
+               GVariant   *dict,
+               gpointer    user_data)
+{
+	NMVpnConnection *self = NM_VPN_CONNECTION (user_data);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
+
+	/* Only list to this signals during and after connection */
+	if (priv->vpn_state >= STATE_NEED_AUTH)
+		nm_vpn_connection_ip4_config_get (self, dict);
+}
+
+static void
+ip6_config_cb (GDBusProxy *proxy,
+               GVariant   *dict,
+               gpointer    user_data)
+{
+	NMVpnConnection *self = NM_VPN_CONNECTION (user_data);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
+
+	/* Only list to this signals during and after connection */
+	if (priv->vpn_state >= STATE_NEED_AUTH)
+		nm_vpn_connection_ip6_config_get (self, dict);
 }
 
 static void
@@ -1648,7 +1678,18 @@ on_proxy_acquired (GObject *object, GAsyncResult *result, gpointer user_data)
 	}
 
 	priv->proxy = proxy;
-	g_signal_connect (priv->proxy, "g-signal", G_CALLBACK (signal_cb), self);
+	_nm_dbus_signal_connect (priv->proxy, "Failure", G_VARIANT_TYPE ("(u)"),
+	                         G_CALLBACK (failure_cb), self);
+	_nm_dbus_signal_connect (priv->proxy, "StateChanged", G_VARIANT_TYPE ("(u)"),
+	                         G_CALLBACK (state_changed_cb), self);
+	_nm_dbus_signal_connect (priv->proxy, "SecretsRequired", G_VARIANT_TYPE ("(sas)"),
+	                         G_CALLBACK (secrets_required_cb), self);
+	_nm_dbus_signal_connect (priv->proxy, "Config", G_VARIANT_TYPE ("(a{sv})"),
+	                         G_CALLBACK (config_cb), self);
+	_nm_dbus_signal_connect (priv->proxy, "Ip4Config", G_VARIANT_TYPE ("(a{sv})"),
+	                         G_CALLBACK (ip4_config_cb), self);
+	_nm_dbus_signal_connect (priv->proxy, "Ip6Config", G_VARIANT_TYPE ("(a{sv})"),
+	                         G_CALLBACK (ip6_config_cb), self);
 
 	_set_vpn_state (self, STATE_NEED_AUTH, NM_VPN_CONNECTION_STATE_REASON_NONE, FALSE);
 

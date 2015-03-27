@@ -493,41 +493,59 @@ iface_check_ap_mode_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_d
 	iface_check_ready (self);
 }
 
-#define MATCH_SIGNAL(s, n, v, t) (!strcmp (s, n) && g_variant_is_of_type (v, t))
-
 static void
-signal_cb (GDBusProxy  *proxy,
-           const gchar *sender,
-           const gchar *signal,
-           GVariant    *args,
-           gpointer     user_data)
+wpas_iface_scan_done (GDBusProxy *proxy,
+                      gboolean success,
+                      gpointer user_data)
 {
 	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-	const char *path, *field, *message;
-	gboolean success;
 
-	if (MATCH_SIGNAL (signal, "ScanDone", args, G_VARIANT_TYPE ("(b)"))) {
-		/* Cache last scan completed time */
+	/* Cache last scan completed time */
+	priv->last_scan = nm_utils_get_monotonic_timestamp_s ();
+
+	g_signal_emit (self, signals[SCAN_DONE], 0, success);
+}
+
+static void
+wpas_iface_bss_added (GDBusProxy *proxy,
+                      const char *path,
+                      GVariant *props,
+                      gpointer user_data)
+{
+	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	if (priv->scanning)
 		priv->last_scan = nm_utils_get_monotonic_timestamp_s ();
 
-		g_variant_get (args, "(b)", &success);
-		g_signal_emit (self, signals[SCAN_DONE], 0, success);
-	} else if (MATCH_SIGNAL (signal, "BSSAdded", args, G_VARIANT_TYPE ("(oa{sv})"))) {
-		if (priv->scanning)
-			priv->last_scan = nm_utils_get_monotonic_timestamp_s ();
+	handle_new_bss (self, path);
+}
 
-		g_variant_get (args, "(&oa{sv})", &path, NULL);
-		handle_new_bss (self, path);
-	} else if (MATCH_SIGNAL (signal, "BSSRemoved", args, G_VARIANT_TYPE ("(o)"))) {
-		g_variant_get (args, "(&o)", &path);
-		g_signal_emit (self, signals[BSS_REMOVED], 0, path);
-		g_hash_table_remove (priv->bss_proxies, path);
-	} else if (MATCH_SIGNAL (signal, "NetworkRequest", args, G_VARIANT_TYPE ("(oss)"))) {
-		g_variant_get (args, "(&o&s&s)", &path, &field, &message);
-		if (priv->has_credreq && priv->net_path && !g_strcmp0 (path, priv->net_path))
-			g_signal_emit (self, signals[CREDENTIALS_REQUEST], 0, field, message);
-	}
+static void
+wpas_iface_bss_removed (GDBusProxy *proxy,
+                        const char *path,
+                        gpointer user_data)
+{
+	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	g_signal_emit (self, signals[BSS_REMOVED], 0, path);
+	g_hash_table_remove (priv->bss_proxies, path);
+}
+
+static void
+wpas_iface_network_request (GDBusProxy *proxy,
+                            const char *path,
+                            const char *field,
+                            const char *message,
+                            gpointer user_data)
+{
+	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	if (priv->has_credreq && priv->net_path && !g_strcmp0 (path, priv->net_path))
+		g_signal_emit (self, signals[CREDENTIALS_REQUEST], 0, field, message);
 }
 
 static void
@@ -602,7 +620,14 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	self = NM_SUPPLICANT_INTERFACE (user_data);
 	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
-	g_signal_connect (priv->iface_proxy, "g-signal", G_CALLBACK (signal_cb), self);
+	_nm_dbus_signal_connect (priv->iface_proxy, "ScanDone", G_VARIANT_TYPE ("(b)"),
+	                         G_CALLBACK (wpas_iface_scan_done), self);
+	_nm_dbus_signal_connect (priv->iface_proxy, "BSSAdded", G_VARIANT_TYPE ("(oa{sv})"),
+	                         G_CALLBACK (wpas_iface_bss_added), self);
+	_nm_dbus_signal_connect (priv->iface_proxy, "BSSRemoved", G_VARIANT_TYPE ("(o)"),
+	                         G_CALLBACK (wpas_iface_bss_removed), self);
+	_nm_dbus_signal_connect (priv->iface_proxy, "NetworkRequest", G_VARIANT_TYPE ("(oss)"),
+	                         G_CALLBACK (wpas_iface_network_request), self);
 
 	/* Check whether NetworkReply and AP mode are supported */
 	priv->ready_count = 1;

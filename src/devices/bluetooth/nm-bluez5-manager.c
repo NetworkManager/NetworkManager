@@ -34,6 +34,7 @@
 #include "nm-bluez-common.h"
 
 #include "nm-dbus-manager.h"
+#include "nm-core-internal.h"
 
 typedef struct {
 	NMDBusManager *dbus_mgr;
@@ -170,39 +171,23 @@ device_removed (GDBusProxy *proxy, const gchar *path, NMBluez5Manager *self)
 }
 
 static void
-object_manager_g_signal (GDBusProxy     *proxy,
-                         gchar          *sender_name,
-                         gchar          *signal_name,
-                         GVariant       *parameters,
-                         NMBluez5Manager *self)
+object_manager_interfaces_added (GDBusProxy      *proxy,
+                                 const char      *path,
+                                 GVariant        *dict,
+                                 NMBluez5Manager *self)
 {
-	GVariant *variant;
-	const gchar *path;
+	if (g_variant_lookup (dict, BLUEZ5_DEVICE_INTERFACE, "a{sv}", NULL))
+		device_added (proxy, path, self);
+}
 
-	if (!strcmp (signal_name, "InterfacesRemoved")) {
-		const gchar **ifaces;
-		gsize i, length;
-
-		g_variant_get (parameters, "(&o*)", &path, &variant);
-
-		ifaces = g_variant_get_strv (variant, &length);
-
-		for (i = 0; i < length; i++) {
-			if (!strcmp (ifaces[i], BLUEZ5_DEVICE_INTERFACE)) {
-				device_removed (proxy, path, self);
-				break;
-			}
-		}
-
-		g_free (ifaces);
-
-	} else if (!strcmp (signal_name, "InterfacesAdded")) {
-		g_variant_get (parameters, "(&o*)", &path, &variant);
-
-		if (g_variant_lookup_value (variant, BLUEZ5_DEVICE_INTERFACE,
-		                            G_VARIANT_TYPE_DICTIONARY))
-			device_added (proxy, path, self);
-	}
+static void
+object_manager_interfaces_removed (GDBusProxy       *proxy,
+                                   const char       *path,
+                                   const char      **ifaces,
+                                   NMBluez5Manager  *self)
+{
+	if (_nm_utils_string_in_list (BLUEZ5_DEVICE_INTERFACE, ifaces))
+		device_removed (proxy, path, self);
 }
 
 static void
@@ -264,8 +249,10 @@ on_proxy_acquired (GObject *object,
 	                   (GAsyncReadyCallback) get_managed_objects_cb,
 	                   self);
 
-	g_signal_connect (priv->proxy, "g-signal",
-	                  G_CALLBACK (object_manager_g_signal), self);
+	_nm_dbus_signal_connect (priv->proxy, "InterfacesAdded", G_VARIANT_TYPE ("(oa{sa{sv}})"),
+	                         G_CALLBACK (object_manager_interfaces_added), self);
+	_nm_dbus_signal_connect (priv->proxy, "InterfacesRemoved", G_VARIANT_TYPE ("(oas)"),
+	                         G_CALLBACK (object_manager_interfaces_removed), self);
 }
 
 static void

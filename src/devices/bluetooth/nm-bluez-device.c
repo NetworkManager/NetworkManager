@@ -864,21 +864,14 @@ properties_changed (GDBusProxy *proxy,
 
 static void
 bluez4_property_changed (GDBusProxy *proxy,
-                         const char *sender,
-                         const char *signal_name,
-                         GVariant   *parameters,
-                         gpointer user_data)
+                         const char *property,
+                         GVariant   *v,
+                         gpointer    user_data)
 {
 	NMBluezDevice *self = NM_BLUEZ_DEVICE (user_data);
 
-	if (g_strcmp0 (signal_name, "PropertyChanged") == 0) {
-		const char *property = NULL;
-		GVariant *v = NULL;
-
-		g_variant_get (parameters, "(&sv)", &property, &v);
-		_take_one_variant_property (self, property, v);
-		check_emit_usable (self);
-	}
+	_take_one_variant_property (self, property, v);
+	check_emit_usable (self);
 }
 
 static void
@@ -985,8 +978,8 @@ on_proxy_acquired (GObject *object, GAsyncResult *res, NMBluezDevice *self)
 		                  G_CALLBACK (properties_changed), self);
 		if (priv->bluez_version == 4) {
 			/* Watch for custom Bluez4 PropertyChanged signals */
-			g_signal_connect (priv->proxy, "g-signal",
-			                  G_CALLBACK (bluez4_property_changed), self);
+			_nm_dbus_signal_connect (priv->proxy, "PropertyChanged", G_VARIANT_TYPE ("(sv)"),
+			                         G_CALLBACK (bluez4_property_changed), self);
 		}
 
 		query_properties (self);

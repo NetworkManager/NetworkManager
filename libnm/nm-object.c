@@ -34,6 +34,7 @@
 #include "nm-glib-compat.h"
 #include "nm-dbus-helpers.h"
 #include "nm-client.h"
+#include "nm-core-internal.h"
 
 static gboolean debug = FALSE;
 #define dbgmsg(f,...) if (G_UNLIKELY (debug)) { g_message (f, ## __VA_ARGS__ ); }
@@ -961,20 +962,11 @@ process_properties_changed (NMObject *self, GVariant *properties, gboolean synch
 }
 
 static void
-property_proxy_signal (GDBusProxy *proxy,
-                       const char *sender_name,
-                       const char *signal_name,
-                       GVariant   *parameters,
-                       gpointer    user_data)
+properties_changed (GDBusProxy *proxy,
+                    GVariant   *properties,
+                    gpointer    user_data)
 {
-	GVariant *properties;
-
-	if (strcmp (signal_name, "PropertiesChanged") != 0)
-		return;
-
-	g_variant_get (parameters, "(@a{sv})", &properties);
 	process_properties_changed (NM_OBJECT (user_data), properties, FALSE);
-	g_variant_unref (properties);
 }
 
 #define HANDLE_TYPE(vtype, ctype, getter) \
@@ -1117,8 +1109,8 @@ _nm_object_register_properties (NMObject *object,
 	proxy = _nm_object_get_proxy (object, interface);
 	g_return_if_fail (proxy != NULL);
 
-	g_signal_connect (proxy, "g-signal",
-	                  G_CALLBACK (property_proxy_signal), object);
+	_nm_dbus_signal_connect (proxy, "PropertiesChanged", G_VARIANT_TYPE ("(a{sv})"),
+	                         G_CALLBACK (properties_changed), object);
 
 	instance = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 	priv->property_tables = g_slist_prepend (priv->property_tables, instance);
