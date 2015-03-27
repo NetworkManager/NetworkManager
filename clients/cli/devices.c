@@ -484,6 +484,63 @@ get_devices_sorted (NMClient *client)
 	return sorted;
 }
 
+static GSList *
+device_list (NmCli *nmc, int argc, char **argv)
+{
+	int arg_num = argc;
+	char **arg_arr = NULL;
+	char **arg_ptr = argv;
+	NMDevice **devices;
+	GSList *queue = NULL;
+	NMDevice *device;
+	int i;
+
+	if (argc == 0) {
+		if (nmc->ask) {
+			char *line = nmc_readline (PROMPT_INTERFACES);
+			nmc_string_to_arg_array (line, NULL, FALSE, &arg_arr, &arg_num);
+			g_free (line);
+			arg_ptr = arg_arr;
+		}
+		if (arg_num == 0) {
+			g_string_printf (nmc->return_text, _("Error: No interface specified."));
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto error;
+		}
+	}
+
+	devices = get_devices_sorted (nmc->client);
+	while (arg_num > 0) {
+		device = NULL;
+		for (i = 0; devices[i]; i++) {
+			if (!g_strcmp0 (nm_device_get_iface (devices[i]), *arg_ptr)) {
+				device = devices[i];
+				break;
+			}
+		}
+
+		if (device) {
+			if (!g_slist_find (queue, device))
+				queue = g_slist_prepend (queue, device);
+			else
+				g_printerr (_("Warning: argument '%s' is duplicated.\n"), *arg_ptr);
+		} else {
+			g_printerr (_("Error: Device '%s' not found.\n"), *arg_ptr);
+			g_string_printf (nmc->return_text, _("Error: not all devices found."));
+			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
+		}
+
+		/* Take next argument */
+		next_arg (&arg_num, &arg_ptr);
+	}
+	g_free (devices);
+
+error:
+	g_strfreev (arg_arr);
+
+	return queue;
+}
+
 static int
 compare_aps (gconstpointer a, gconstpointer b, gpointer user_data)
 {
@@ -1782,64 +1839,17 @@ disconnect_device_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 static NMCResultCode
 do_device_disconnect (NmCli *nmc, int argc, char **argv)
 {
-	NMDevice **devices;
 	NMDevice *device;
 	DeviceCbInfo *info = NULL;
-	GSList *queue = NULL, *iter;
-	char **arg_arr = NULL;
-	char **arg_ptr = argv;
-	int arg_num = argc;
-	int i;
+	GSList *queue, *iter;
 
 	/* Set default timeout for disconnect operation. */
 	if (nmc->timeout == -1)
 		nmc->timeout = 10;
 
-	if (argc == 0) {
-		if (nmc->ask) {
-			char *line = nmc_readline (PROMPT_INTERFACES);
-			nmc_string_to_arg_array (line, NULL, FALSE, &arg_arr, &arg_num);
-			g_free (line);
-			arg_ptr = arg_arr;
-		}
-		if (arg_num == 0) {
-			g_string_printf (nmc->return_text, _("Error: No interface specified."));
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto error;
-		}
-	}
-
-	devices = get_devices_sorted (nmc->client);
-	while (arg_num > 0) {
-		device = NULL;
-		for (i = 0; devices[i]; i++) {
-			if (!g_strcmp0 (nm_device_get_iface (devices[i]), *arg_ptr)) {
-				device = devices[i];
-				break;
-			}
-		}
-
-		if (device) {
-			if (!g_slist_find (queue, device))
-				queue = g_slist_prepend (queue, device);
-			else
-				g_printerr (_("Warning: argument '%s' is duplicated.\n"), *arg_ptr);
-		} else {
-			g_printerr (_("Error: Device '%s' not found.\n"), *arg_ptr);
-			g_string_printf (nmc->return_text, _("Error: not all devices found."));
-			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
-		}
-
-		/* Take next argument */
-		next_arg (&arg_num, &arg_ptr);
-	}
-	g_free (devices);
-
-	if (!queue) {
-		g_string_printf (nmc->return_text, _("Error: no valid device provided."));
-		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
+	queue = device_list (nmc, argc, argv);
+	if (!queue)
 		goto error;
-	}
 	queue = g_slist_reverse (queue);
 
 	info = g_slice_new0 (DeviceCbInfo);
@@ -1866,7 +1876,6 @@ do_device_disconnect (NmCli *nmc, int argc, char **argv)
 	}
 
 error:
-	g_strfreev (arg_arr);
 	g_slist_free (queue);
 	return nmc->return_value;
 }
@@ -1897,71 +1906,17 @@ delete_device_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 static NMCResultCode
 do_device_delete (NmCli *nmc, int argc, char **argv)
 {
-	NMDevice **devices;
 	NMDevice *device;
 	DeviceCbInfo *info = NULL;
-	GSList *queue = NULL, *iter;
-	char **arg_arr = NULL;
-	char **arg_ptr = argv;
-	int arg_num = argc;
-	int i;
+	GSList *queue, *iter;
 
 	/* Set default timeout for delete operation. */
 	if (nmc->timeout == -1)
 		nmc->timeout = 10;
 
-	if (argc == 0) {
-		if (nmc->ask) {
-			char *line = nmc_readline (PROMPT_INTERFACES);
-			nmc_string_to_arg_array (line, NULL, FALSE, &arg_arr, &arg_num);
-			g_free (line);
-			arg_ptr = arg_arr;
-		}
-		if (arg_num == 0) {
-			g_string_printf (nmc->return_text, _("Error: No interface specified."));
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto error;
-		}
-	}
-
-	devices = get_devices_sorted (nmc->client);
-	while (arg_num > 0) {
-		device = NULL;
-		for (i = 0; devices[i]; i++) {
-			if (!g_strcmp0 (nm_device_get_iface (devices[i]), *arg_ptr)) {
-				device = devices[i];
-				break;
-			}
-		}
-
-		if (device) {
-			if (!g_slist_find (queue, device)) {
-				if (nm_device_is_software (device))
-					queue = g_slist_prepend (queue, device);
-				else {
-					g_printerr (_("Error: Device '%s' is a hardware device. It can't be deleted.\n"),
-					            *arg_ptr);
-					g_string_printf (nmc->return_text, _("Error: not all devices valid."));
-					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				}
-			} else
-				g_printerr (_("Warning: argument '%s' is duplicated.\n"), *arg_ptr);
-		} else {
-			g_printerr (_("Error: Device '%s' not found.\n"), *arg_ptr);
-			g_string_printf (nmc->return_text, _("Error: not all devices found."));
-			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
-		}
-
-		/* Take next argument */
-		next_arg (&arg_num, &arg_ptr);
-	}
-	g_free (devices);
-
-	if (!queue) {
-		g_string_printf (nmc->return_text, _("Error: no valid device provided."));
-		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
+	queue = device_list (nmc, argc, argv);
+	if (!queue)
 		goto error;
-	}
 	queue = g_slist_reverse (queue);
 
 	info = g_slice_new0 (DeviceCbInfo);
@@ -1985,7 +1940,6 @@ do_device_delete (NmCli *nmc, int argc, char **argv)
 	}
 
 error:
-	g_strfreev (arg_arr);
 	g_slist_free (queue);
 	return nmc->return_value;
 }
