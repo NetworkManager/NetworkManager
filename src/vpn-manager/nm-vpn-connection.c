@@ -1851,7 +1851,7 @@ plugin_need_secrets_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_d
 	gs_free_error GError *error = NULL;
 	const char *setting_name;
 
-	reply = g_dbus_proxy_call_finish (proxy, result, &error);
+	reply = _nm_dbus_proxy_call_finish (proxy, result, G_VARIANT_TYPE ("(s)"), &error);
 	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
 

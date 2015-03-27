@@ -35,8 +35,7 @@
 #include "nm-bluez-common.h"
 #include "nm-connection-provider.h"
 #include "nm-device-bt.h"
-
-#include "nm-dbus-manager.h"
+#include "nm-core-internal.h"
 
 typedef struct {
 	int bluez_version;
@@ -276,8 +275,8 @@ check_bluez_and_try_setup_do_introspect (GObject *source_object,
 
 	g_clear_object (&priv->async_cancellable);
 
-	result = g_dbus_proxy_call_finish (priv->introspect_proxy, res, &error);
-
+	result = _nm_dbus_proxy_call_finish (priv->introspect_proxy, res,
+	                                     G_VARIANT_TYPE ("(s)"), &error);
 	if (!result) {
 		char *reason2 = g_strdup_printf ("introspect failed with %s", error->message);
 		check_bluez_and_try_setup_final_step (self, 0, reason2);

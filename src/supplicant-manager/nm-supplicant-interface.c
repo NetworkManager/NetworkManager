@@ -477,14 +477,16 @@ iface_check_ap_mode_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_d
 	const char *data;
 
 	/* The ProbeRequest method only exists if AP mode has been enabled */
-	variant = g_dbus_proxy_call_finish (proxy, result, &error);
+	variant = _nm_dbus_proxy_call_finish (proxy, result,
+	                                      G_VARIANT_TYPE ("(s)"),
+	                                      &error);
 	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
 
 	self = NM_SUPPLICANT_INTERFACE (user_data);
 	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
-	if (variant && g_variant_is_of_type (variant, G_VARIANT_TYPE ("(s)"))) {
+	if (variant) {
 		g_variant_get (variant, "(&s)", &data);
 		if (strstr (data, "ProbeRequest"))
 			priv->ap_support = AP_SUPPORT_YES;
@@ -691,19 +693,20 @@ interface_get_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	NMSupplicantInterfacePrivate *priv;
 	gs_unref_variant GVariant *variant = NULL;
 	gs_free_error GError *error = NULL;
-	char *path;
+	const char *path;
 
-	variant = g_dbus_proxy_call_finish (proxy, result, &error);
+	variant = _nm_dbus_proxy_call_finish (proxy, result,
+	                                      G_VARIANT_TYPE ("(o)"),
+	                                      &error);
 	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
 
 	self = NM_SUPPLICANT_INTERFACE (user_data);
 	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
-	if (variant && g_variant_is_of_type (variant, G_VARIANT_TYPE ("(o)"))) {
-		g_variant_get (variant, "(o)", &path);
+	if (variant) {
+		g_variant_get (variant, "(&o)", &path);
 		interface_add_done (self, path);
-		g_free (path);
 	} else {
 		nm_log_err (LOGD_SUPPLICANT, "(%s): error getting interface: %s", priv->dev, error->message);
 		set_state (self, NM_SUPPLICANT_INTERFACE_STATE_DOWN);
@@ -717,19 +720,20 @@ interface_add_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	NMSupplicantInterfacePrivate *priv;
 	gs_free_error GError *error = NULL;
 	gs_unref_variant GVariant *variant = NULL;
-	char *path;
+	const char *path;
 
-	variant = g_dbus_proxy_call_finish (proxy, result, &error);
+	variant = _nm_dbus_proxy_call_finish (proxy, result,
+	                                      G_VARIANT_TYPE ("(o)"),
+	                                      &error);
 	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
 
 	self = NM_SUPPLICANT_INTERFACE (user_data);
 	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
-	if (variant && g_variant_is_of_type (variant, G_VARIANT_TYPE ("(o)"))) {
-		g_variant_get (variant, "(o)", &path);
+	if (variant) {
+		g_variant_get (variant, "(&o)", &path);
 		interface_add_done (self, path);
-		g_free (path);
 	} else if (_dbus_error_has_name (error, WPAS_ERROR_EXISTS_ERROR)) {
 		/* Interface already added, just get its object path */
 		g_dbus_proxy_call (priv->wpas_proxy,
@@ -988,18 +992,14 @@ add_network_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	const char *blob_name;
 	GByteArray *blob_data;
 
-	reply = g_dbus_proxy_call_finish (proxy, result, &error);
+	reply = _nm_dbus_proxy_call_finish (proxy, result,
+	                                    G_VARIANT_TYPE ("(o)"),
+	                                    &error);
 	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
 
 	self = NM_SUPPLICANT_INTERFACE (user_data);
 	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	if (reply && !g_variant_is_of_type (reply, G_VARIANT_TYPE ("(o)"))) {
-		error = g_error_new (NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
-		                     "Unexpected AddNetwork reply type %s",
-		                     g_variant_get_type_string (reply));
-	}
 
 	g_free (priv->net_path);
 	priv->net_path = NULL;
@@ -1011,7 +1011,6 @@ add_network_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	}
 
 	g_variant_get (reply, "(o)", &priv->net_path);
-	g_assert (priv->net_path);
 
 	/* Send blobs first; otherwise jump to selecting the network */
 	blobs = nm_supplicant_config_get_blobs (priv->cfg);

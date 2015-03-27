@@ -881,27 +881,21 @@ get_properties_cb_4 (GObject *source_object, GAsyncResult *res, gpointer user_da
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 	GError *err = NULL;
 	GVariant *v_properties, *v_dict;
-	GVariantType *v_type;
 
-	v_properties = g_dbus_proxy_call_finish (priv->proxy, res, &err);
+	v_properties = _nm_dbus_proxy_call_finish (priv->proxy, res,
+	                                           G_VARIANT_TYPE ("(@a{sv})"),
+	                                           &err);
 	if (!v_properties) {
 		nm_log_warn (LOGD_BT, "bluez[%s] error getting device properties: %s",
-		             priv->path, err && err->message ? err->message : "(unknown)");
+		             priv->path, err->message);
 		g_error_free (err);
 		g_signal_emit (self, signals[INITIALIZED], 0, FALSE);
 		goto END;
 	}
 
-	v_type = g_variant_type_new ("(a{sv})");
-	if (g_variant_is_of_type (v_properties, v_type)) {
-		v_dict = g_variant_get_child_value (v_properties, 0);
-		_set_properties (self, v_dict);
-		g_variant_unref (v_dict);
-	} else {
-		nm_log_warn (LOGD_BT, "bluez[%s] GetProperties returns unexpected result of type %s", priv->path, g_variant_get_type_string (v_properties));
-	}
-	g_variant_type_free (v_type);
-
+	v_dict = g_variant_get_child_value (v_properties, 0);
+	_set_properties (self, v_dict);
+	g_variant_unref (v_dict);
 	g_variant_unref (v_properties);
 
 	/* Check if any connections match this device */
@@ -909,7 +903,6 @@ get_properties_cb_4 (GObject *source_object, GAsyncResult *res, gpointer user_da
 
 	priv->initialized = TRUE;
 	g_signal_emit (self, signals[INITIALIZED], 0, TRUE);
-
 
 	check_emit_usable (self);
 

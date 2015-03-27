@@ -512,7 +512,8 @@ create_async_got_property (GObject *proxy, GAsyncResult *result, gpointer user_d
 	GError *error = NULL;
 	GType type;
 
-	ret = g_dbus_proxy_call_finish (G_DBUS_PROXY (proxy), result, &error);
+	ret = _nm_dbus_proxy_call_finish (G_DBUS_PROXY (proxy), result,
+	                                  G_VARIANT_TYPE ("(v)"), &error);
 	if (ret) {
 		g_variant_get (ret, "(v)", &value);
 		type = type_data->type_func (value);
@@ -520,8 +521,8 @@ create_async_got_property (GObject *proxy, GAsyncResult *result, gpointer user_d
 		g_variant_unref (ret);
 	} else {
 		dbgmsg ("Could not fetch property '%s' of interface '%s' on %s: %s\n",
-		           type_data->property, type_data->interface, async_data->path,
-		           error->message);
+		        type_data->property, type_data->interface, async_data->path,
+		        error->message);
 		g_clear_error (&error);
 		type = G_TYPE_INVALID;
 	}
@@ -1148,11 +1149,12 @@ _nm_object_reload_properties (NMObject *object, GError **error)
 
 	g_hash_table_iter_init (&iter, priv->proxies);
 	while (g_hash_table_iter_next (&iter, (gpointer *) &interface, (gpointer *) &proxy)) {
-		ret = g_dbus_proxy_call_sync (priv->properties_proxy,
-		                              "GetAll",
-		                              g_variant_new ("(s)", interface),
-		                              G_DBUS_CALL_FLAGS_NONE, -1,
-		                              NULL, error);
+		ret = _nm_dbus_proxy_call_sync (priv->properties_proxy,
+		                                "GetAll",
+		                                g_variant_new ("(s)", interface),
+		                                G_VARIANT_TYPE ("(a{sv})"),
+		                                G_DBUS_CALL_FLAGS_NONE, -1,
+		                                NULL, error);
 		if (!ret) {
 			if (error && *error)
 				g_dbus_error_strip_remote_error (*error);
@@ -1195,11 +1197,12 @@ _nm_object_reload_property (NMObject *object,
 	if (!NM_OBJECT_GET_PRIVATE (object)->nm_running)
 		return;
 
-	ret = g_dbus_proxy_call_sync (NM_OBJECT_GET_PRIVATE (object)->properties_proxy,
-	                              "Get",
-	                              g_variant_new ("(ss)", interface, prop_name),
-	                              G_DBUS_CALL_FLAGS_NONE, 15000,
-	                              NULL, &err);
+	ret = _nm_dbus_proxy_call_sync (NM_OBJECT_GET_PRIVATE (object)->properties_proxy,
+	                                "Get",
+	                                g_variant_new ("(ss)", interface, prop_name),
+	                                G_VARIANT_TYPE ("(v)"),
+	                                G_DBUS_CALL_FLAGS_NONE, 15000,
+	                                NULL, &err);
 	if (!ret) {
 		dbgmsg ("%s: Error getting '%s' for %s: (%d) %s\n",
 		        __func__,
@@ -1297,7 +1300,9 @@ reload_got_properties (GObject *proxy,
 	GVariant *ret, *props;
 	GError *error = NULL;
 
-	ret = g_dbus_proxy_call_finish (G_DBUS_PROXY (proxy), result, &error);
+	ret = _nm_dbus_proxy_call_finish (G_DBUS_PROXY (proxy), result,
+	                                  G_VARIANT_TYPE ("(a{sv})"),
+	                                  &error);
 	if (ret) {
 		g_variant_get (ret, "(@a{sv})", &props);
 		process_properties_changed (object, props, FALSE);
