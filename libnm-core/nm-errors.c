@@ -85,6 +85,6 @@ _nm_dbus_errors_init (void)
 	                       NM_DBUS_INTERFACE_SETTINGS,
 	                       NM_TYPE_SETTINGS_ERROR);
 	register_error_domain (NM_VPN_PLUGIN_ERROR,
-	                       NM_VPN_DBUS_PLUGIN_INTERFACE,
+	                       NM_DBUS_VPN_ERROR_PREFIX,
 	                       NM_TYPE_VPN_PLUGIN_ERROR);
 }
