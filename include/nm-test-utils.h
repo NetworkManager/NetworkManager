@@ -394,7 +394,7 @@ nmtst_get_rand (void)
 			gint64 i;
 
 			i = g_ascii_strtoll (str, &s, 0);
-			g_assert (s[0] == '\0' && i >= 0 && i < G_MAXINT32);
+			g_assert (s[0] == '\0' && i >= 0 && i < G_MAXUINT32);
 
 			seed = i;
 			__nmtst_internal.rand = g_rand_new_with_seed (seed);
