@@ -23,11 +23,10 @@
 #include <string.h>
 #include <glib.h>
 #include <gio/gio.h>
-#include <dbus/dbus.h>
 
 #include "nm-firewall-manager.h"
-#include "nm-dbus-manager.h"
 #include "nm-logging.h"
+#include "gsystem-local-alloc.h"
 
 #define NM_FIREWALL_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
                                               NM_TYPE_FIREWALL_MANAGER, \
@@ -43,9 +42,7 @@ enum {
 };
 
 typedef struct {
-	NMDBusManager * dbus_mgr;
-	guint           name_owner_id;
-	DBusGProxy *    proxy;
+	GDBusProxy *    proxy;
 	gboolean        running;
 
 	GSList         *pending_calls;
@@ -73,14 +70,12 @@ typedef struct {
 	gboolean completed;
 
 	guint idle_id;
-	DBusGProxyCall *dbus_call;
+	GCancellable *cancellable;
 } CBInfo;
 
 static void
 _cb_info_free (CBInfo *info)
 {
-	NMFirewallManagerPrivate *priv;
-
 	g_return_if_fail (info != NULL);
 
 	if (!info->completed) {
@@ -95,11 +90,7 @@ _cb_info_free (CBInfo *info)
 		}
 	}
 	g_free (info->iface);
-
-	priv = NM_FIREWALL_MANAGER_GET_PRIVATE (info->self);
-	priv->pending_calls = g_slist_remove (priv->pending_calls, info);
-	g_object_unref (info->self);
-
+	g_object_unref (info->cancellable);
 	g_slice_free (CBInfo, info);
 }
 
@@ -117,6 +108,7 @@ _cb_info_create (NMFirewallManager *self, const char *iface, FwAddToZoneFunc cal
 	info->id = id;
 	info->iface = g_strdup (iface);
 	info->completed = FALSE;
+	info->cancellable = g_cancellable_new ();
 	info->callback = callback;
 	info->user_data = user_data;
 
@@ -130,7 +122,7 @@ add_or_change_idle_cb (gpointer user_data)
 	CBInfo *info = user_data;
 
 	if (info->idle_id == 0) {
-		/* operation was cancelled. _cb_info_free will invoke callback. */
+		/* operation was cancelled. */
 	} else {
 		nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone call pretends success [%u]",
 		            info->iface, info->id);
@@ -145,33 +137,34 @@ add_or_change_idle_cb (gpointer user_data)
 }
 
 static void
-add_or_change_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
+add_or_change_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 {
 	CBInfo *info = user_data;
 	GError *error = NULL;
-	char *zone = NULL;
+	GVariant *ret;
 
-	if (!dbus_g_proxy_end_call (proxy, call_id, &error,
-	                            G_TYPE_STRING, &zone,
-	                            G_TYPE_INVALID)) {
-		g_assert (error);
-		if (g_strcmp0 (error->message, "ZONE_ALREADY_SET") != 0) {
-			nm_log_warn (LOGD_FIREWALL, "(%s) firewall zone add/change failed [%u]: (%d) %s",
-			             info->iface, info->id, error->code, error->message);
-		} else {
-			nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone add/change failed [%u]: (%d) %s",
-			            info->iface, info->id, error->code, error->message);
-		}
-	} else {
+	ret = g_dbus_proxy_call_finish (G_DBUS_PROXY (proxy), result, &error);
+	if (ret) {
 		nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone add/change succeeded [%u]",
 		            info->iface, info->id);
+		g_variant_unref (ret);
+	} else {
+		g_dbus_error_strip_remote_error (error);
+		if (   !strcmp (error->message, "ZONE_ALREADY_SET")
+		    || g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+			nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone add/change failed [%u]: (%d) %s",
+			            info->iface, info->id, error->code, error->message);
+		} else {
+			nm_log_warn (LOGD_FIREWALL, "(%s) firewall zone add/change failed [%u]: (%d) %s",
+			             info->iface, info->id, error->code, error->message);
+		}
 	}
 
 	if (info->callback)
 		info->callback (error, info->user_data);
 
 	info->completed = TRUE;
-	g_free (zone);
+	_cb_info_free (info);
 	g_clear_error (&error);
 }
 
@@ -203,44 +196,40 @@ nm_firewall_manager_add_or_change_zone (NMFirewallManager *self,
 
 	nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone %s -> %s%s%s [%u]", iface, add ? "add" : "change",
 	                           zone?"\"":"", zone ? zone : "default", zone?"\"":"", info->id);
-	info->dbus_call = dbus_g_proxy_begin_call_with_timeout (priv->proxy,
-	                                                        add ? "addInterface" : "changeZone",
-	                                                        add_or_change_cb,
-	                                                        info,
-	                                                        (GDestroyNotify) _cb_info_free,
-	                                                        10000,      /* timeout */
-	                                                        G_TYPE_STRING, zone ? zone : "",
-	                                                        G_TYPE_STRING, iface,
-	                                                        G_TYPE_INVALID);
-	return PENDING_CALL_FROM_INFO (info);
+	g_dbus_proxy_call (priv->proxy,
+	                   add ? "addInterface" : "changeZone",
+	                   g_variant_new ("(ss)", zone ? zone : "", iface),
+	                   G_DBUS_CALL_FLAGS_NONE, 10000,
+	                   info->cancellable,
+	                   add_or_change_cb, info);
+	return (NMFirewallPendingCall) info;
 }
 
 static void
-remove_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
+remove_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 {
 	CBInfo *info = user_data;
 	GError *error = NULL;
-	char * zone = NULL;
+	GVariant *ret;
 
-	if (!dbus_g_proxy_end_call (proxy, call_id, &error,
-	                            G_TYPE_STRING, &zone,
-	                            G_TYPE_INVALID)) {
-		g_assert (error);
-		/* ignore UNKNOWN_INTERFACE errors */
-		if (error->message && !strstr (error->message, "UNKNOWN_INTERFACE")) {
-			nm_log_warn (LOGD_FIREWALL, "(%s) firewall zone remove failed [%u]: (%d) %s",
-			             info->iface, info->id, error->code, error->message);
-		} else {
-			nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone remove failed [%u]: (%d) %s",
-			            info->iface, info->id, error->code, error->message);
-		}
-	} else {
+	ret = g_dbus_proxy_call_finish (G_DBUS_PROXY (proxy), result, &error);
+	if (ret) {
 		nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone remove succeeded [%u]",
 		            info->iface, info->id);
+		g_variant_unref (ret);
+	} else {
+		if (   strstr (error->message, "UNKNOWN_INTERFACE")
+		    || g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+			nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone remove failed [%u]: (%d) %s",
+			            info->iface, info->id, error->code, error->message);
+		} else {
+			nm_log_warn (LOGD_FIREWALL, "(%s) firewall zone remove failed [%u]: (%d) %s",
+			             info->iface, info->id, error->code, error->message);
+		}
 	}
 
 	info->completed = TRUE;
-	g_free (zone);
+	_cb_info_free (info);
 	g_clear_error (&error);
 }
 
@@ -261,42 +250,25 @@ nm_firewall_manager_remove_from_zone (NMFirewallManager *self,
 
 	nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone remove -> %s%s%s [%u]", iface,
 	                           zone?"\"":"", zone ? zone : "*", zone?"\"":"", info->id);
-	info->dbus_call = dbus_g_proxy_begin_call_with_timeout (priv->proxy,
-	                                                        "removeInterface",
-	                                                        remove_cb,
-	                                                        info,
-	                                                        (GDestroyNotify) _cb_info_free,
-	                                                        10000,      /* timeout */
-	                                                        G_TYPE_STRING, zone ? zone : "",
-	                                                        G_TYPE_STRING, iface,
-	                                                        G_TYPE_INVALID);
-	return PENDING_CALL_FROM_INFO (info);
+	g_dbus_proxy_call (priv->proxy,
+	                   "removeInterface",
+	                   g_variant_new ("(ss)", zone ? zone : "", iface),
+	                   G_DBUS_CALL_FLAGS_NONE, 10000,
+	                   info->cancellable,
+	                   remove_cb, info);
+	return (NMFirewallPendingCall) info;
 }
 
-void nm_firewall_manager_cancel_call (NMFirewallManager *self, NMFirewallPendingCall call)
+void
+nm_firewall_manager_cancel_call (NMFirewallManager *self, NMFirewallPendingCall call)
 {
-	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
-	GSList *pending;
-	CBInfo *info;
+	CBInfo *info = (CBInfo *) call;
 
 	g_return_if_fail (NM_IS_FIREWALL_MANAGER (self));
 
-	if (call == PENDING_CALL_DUMMY)
-		return;
-
-	pending = g_slist_find (priv->pending_calls, call);
-
-	if (!pending)
-		return;
-	priv->pending_calls = g_slist_remove_link (priv->pending_calls, pending);
-
-	info = (CBInfo *) call;
-	if (info->idle_id)
-		info->idle_id = 0;
-	else {
-		dbus_g_proxy_cancel_call (NM_FIREWALL_MANAGER_GET_PRIVATE (self)->proxy,
-		                          info->dbus_call);
-	}
+	info->callback = NULL;
+	info->idle_id = 0;
+	g_cancellable_cancel (info->cancellable);
 }
 
 static void
@@ -311,25 +283,19 @@ set_running (NMFirewallManager *self, gboolean now_running)
 }
 
 static void
-name_owner_changed (NMDBusManager *dbus_mgr,
-                    const char *name,
-                    const char *old_owner,
-                    const char *new_owner,
-                    gpointer user_data)
+name_owner_changed (GObject    *object,
+                    GParamSpec *pspec,
+                    gpointer    user_data)
 {
 	NMFirewallManager *self = NM_FIREWALL_MANAGER (user_data);
-	gboolean old_owner_good = (old_owner && strlen (old_owner));
-	gboolean new_owner_good = (new_owner && strlen (new_owner));
+	gs_free char *owner = NULL;
 
-	/* We only care about the firewall here */
-	if (strcmp (FIREWALL_DBUS_SERVICE, name) != 0)
-		return;
-
-	if (!old_owner_good && new_owner_good) {
+	owner = g_dbus_proxy_get_name_owner (G_DBUS_PROXY (object));
+	if (owner) {
 		nm_log_dbg (LOGD_FIREWALL, "firewall started");
 		set_running (self, TRUE);
 		g_signal_emit (self, signals[STARTED], 0);
-	} else if (old_owner_good && !new_owner_good) {
+	} else {
 		nm_log_dbg (LOGD_FIREWALL, "firewall stopped");
 		set_running (self, FALSE);
 	}
@@ -343,21 +309,23 @@ static void
 nm_firewall_manager_init (NMFirewallManager * self)
 {
 	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
-	DBusGConnection *bus;
+	gs_free char *owner = NULL;
 
-	priv->dbus_mgr = g_object_ref (nm_dbus_manager_get ());
-	priv->name_owner_id = g_signal_connect (priv->dbus_mgr,
-	                                        NM_DBUS_MANAGER_NAME_OWNER_CHANGED,
-	                                        G_CALLBACK (name_owner_changed),
-	                                        self);
-	priv->running = nm_dbus_manager_name_has_owner (priv->dbus_mgr, FIREWALL_DBUS_SERVICE);
+	priv->proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
+	                                             G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES |
+	                                                 G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS,
+	                                             NULL,
+	                                             FIREWALL_DBUS_SERVICE,
+	                                             FIREWALL_DBUS_PATH,
+	                                             FIREWALL_DBUS_INTERFACE_ZONE,
+	                                             NULL, NULL);
+
+	g_signal_connect (priv->proxy, "notify::g-name-owner",
+	                  G_CALLBACK (name_owner_changed), self);
+	owner = g_dbus_proxy_get_name_owner (priv->proxy);
+	priv->running = (owner != NULL);
 	nm_log_dbg (LOGD_FIREWALL, "firewall %s running", priv->running ? "is" : "is not" );
 
-	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
-	priv->proxy = dbus_g_proxy_new_for_name (bus,
-	                                         FIREWALL_DBUS_SERVICE,
-	                                         FIREWALL_DBUS_PATH,
-	                                         FIREWALL_DBUS_INTERFACE_ZONE);
 }
 
 static void
@@ -385,12 +353,6 @@ dispose (GObject *object)
 	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (object);
 
 	g_assert (priv->pending_calls == NULL);
-
-	if (priv->dbus_mgr) {
-		g_signal_handler_disconnect (priv->dbus_mgr, priv->name_owner_id);
-		priv->name_owner_id = 0;
-		g_clear_object (&priv->dbus_mgr);
-	}
 
 	g_clear_object (&priv->proxy);
 
