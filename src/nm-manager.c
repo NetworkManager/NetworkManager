@@ -3865,14 +3865,14 @@ impl_manager_sleep (NMManager *self,
 }
 
 static void
-sleeping_cb (DBusGProxy *proxy, gpointer user_data)
+sleeping_cb (NMSleepMonitor *monitor, gpointer user_data)
 {
 	nm_log_dbg (LOGD_SUSPEND, "Received sleeping signal");
 	_internal_sleep (NM_MANAGER (user_data), TRUE);
 }
 
 static void
-resuming_cb (DBusGProxy *proxy, gpointer user_data)
+resuming_cb (NMSleepMonitor *monitor, gpointer user_data)
 {
 	nm_log_dbg (LOGD_SUSPEND, "Received resuming signal");
 	_internal_sleep (NM_MANAGER (user_data), FALSE);

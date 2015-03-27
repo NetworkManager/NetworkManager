@@ -32,23 +32,23 @@
 #define UPOWER_DBUS_SERVICE "org.freedesktop.UPower"
 
 struct _NMSleepMonitor {
-        GObject parent_instance;
+	GObject parent_instance;
 
-        DBusGProxy *upower_proxy;
+	DBusGProxy *upower_proxy;
 };
 
 struct _NMSleepMonitorClass {
-        GObjectClass parent_class;
+	GObjectClass parent_class;
 
-        void (*sleeping) (NMSleepMonitor *monitor);
-        void (*resuming) (NMSleepMonitor *monitor);
+	void (*sleeping) (NMSleepMonitor *monitor);
+	void (*resuming) (NMSleepMonitor *monitor);
 };
 
 
 enum {
-        SLEEPING,
-        RESUMING,
-        LAST_SIGNAL,
+	SLEEPING,
+	RESUMING,
+	LAST_SIGNAL,
 };
 static guint signals[LAST_SIGNAL] = {0};
 
@@ -59,78 +59,78 @@ G_DEFINE_TYPE (NMSleepMonitor, nm_sleep_monitor, G_TYPE_OBJECT);
 static void
 upower_sleeping_cb (DBusGProxy *proxy, gpointer user_data)
 {
-        nm_log_dbg (LOGD_SUSPEND, "Received UPower sleeping signal");
-        g_signal_emit (user_data, signals[SLEEPING], 0);
+	nm_log_dbg (LOGD_SUSPEND, "Received UPower sleeping signal");
+	g_signal_emit (user_data, signals[SLEEPING], 0);
 }
 
 static void
 upower_resuming_cb (DBusGProxy *proxy, gpointer user_data)
 {
-        nm_log_dbg (LOGD_SUSPEND, "Received UPower resuming signal");
-        g_signal_emit (user_data, signals[RESUMING], 0);
+	nm_log_dbg (LOGD_SUSPEND, "Received UPower resuming signal");
+	g_signal_emit (user_data, signals[RESUMING], 0);
 }
 
 static void
 nm_sleep_monitor_init (NMSleepMonitor *self)
 {
-        DBusGConnection *bus;
+	DBusGConnection *bus;
 
-        bus = nm_dbus_manager_get_connection (nm_dbus_manager_get ());
-        self->upower_proxy = dbus_g_proxy_new_for_name (bus,
-                                                        UPOWER_DBUS_SERVICE,
-                                                        "/org/freedesktop/UPower",
-                                                        "org.freedesktop.UPower");
-        if (self->upower_proxy) {
-                dbus_g_proxy_add_signal (self->upower_proxy, "Sleeping", G_TYPE_INVALID);
-                dbus_g_proxy_connect_signal (self->upower_proxy, "Sleeping",
-                                             G_CALLBACK (upower_sleeping_cb),
-                                             self, NULL);
+	bus = nm_dbus_manager_get_connection (nm_dbus_manager_get ());
+	self->upower_proxy = dbus_g_proxy_new_for_name (bus,
+	                                                UPOWER_DBUS_SERVICE,
+	                                                "/org/freedesktop/UPower",
+	                                                "org.freedesktop.UPower");
+	if (self->upower_proxy) {
+		dbus_g_proxy_add_signal (self->upower_proxy, "Sleeping", G_TYPE_INVALID);
+		dbus_g_proxy_connect_signal (self->upower_proxy, "Sleeping",
+		                             G_CALLBACK (upower_sleeping_cb),
+		                             self, NULL);
 
-                dbus_g_proxy_add_signal (self->upower_proxy, "Resuming", G_TYPE_INVALID);
-                dbus_g_proxy_connect_signal (self->upower_proxy, "Resuming",
-                                             G_CALLBACK (upower_resuming_cb),
-                                             self, NULL);
-        } else
-                nm_log_warn (LOGD_SUSPEND, "could not initialize UPower D-Bus proxy");
+		dbus_g_proxy_add_signal (self->upower_proxy, "Resuming", G_TYPE_INVALID);
+		dbus_g_proxy_connect_signal (self->upower_proxy, "Resuming",
+		                             G_CALLBACK (upower_resuming_cb),
+		                             self, NULL);
+	} else
+		nm_log_warn (LOGD_SUSPEND, "could not initialize UPower D-Bus proxy");
 }
 
 static void
 finalize (GObject *object)
 {
-        NMSleepMonitor *self = NM_SLEEP_MONITOR (object);
+	NMSleepMonitor *self = NM_SLEEP_MONITOR (object);
 
-        if (self->upower_proxy)
-                g_object_unref (self->upower_proxy);
+	if (self->upower_proxy)
+		g_object_unref (self->upower_proxy);
 
-        if (G_OBJECT_CLASS (nm_sleep_monitor_parent_class)->finalize != NULL)
-                G_OBJECT_CLASS (nm_sleep_monitor_parent_class)->finalize (object);
+	if (G_OBJECT_CLASS (nm_sleep_monitor_parent_class)->finalize != NULL)
+		G_OBJECT_CLASS (nm_sleep_monitor_parent_class)->finalize (object);
 }
 
 static void
 nm_sleep_monitor_class_init (NMSleepMonitorClass *klass)
 {
-        GObjectClass *gobject_class;
+	GObjectClass *gobject_class;
 
-        gobject_class = G_OBJECT_CLASS (klass);
+	gobject_class = G_OBJECT_CLASS (klass);
 
-        gobject_class->finalize = finalize;
+	gobject_class->finalize = finalize;
 
-        signals[SLEEPING] = g_signal_new (NM_SLEEP_MONITOR_SLEEPING,
-                                          NM_TYPE_SLEEP_MONITOR,
-                                          G_SIGNAL_RUN_LAST,
-                                          G_STRUCT_OFFSET (NMSleepMonitorClass, sleeping),
-                                          NULL,                   /* accumulator      */
-                                          NULL,                   /* accumulator data */
-                                          g_cclosure_marshal_VOID__VOID,
-                                          G_TYPE_NONE, 0);
-        signals[RESUMING] = g_signal_new (NM_SLEEP_MONITOR_RESUMING,
-                                          NM_TYPE_SLEEP_MONITOR,
-                                          G_SIGNAL_RUN_LAST,
-                                          G_STRUCT_OFFSET (NMSleepMonitorClass, resuming),
-                                          NULL,                   /* accumulator      */
-                                          NULL,                   /* accumulator data */
-                                          g_cclosure_marshal_VOID__VOID,
-                                          G_TYPE_NONE, 0);
+	signals[SLEEPING] = g_signal_new (NM_SLEEP_MONITOR_SLEEPING,
+	                                  NM_TYPE_SLEEP_MONITOR,
+	                                  G_SIGNAL_RUN_LAST,
+	                                  G_STRUCT_OFFSET (NMSleepMonitorClass, sleeping),
+	                                  NULL,                   /* accumulator      */
+	                                  NULL,                   /* accumulator data */
+	                                  g_cclosure_marshal_VOID__VOID,
+	                                  G_TYPE_NONE, 0);
+	signals[RESUMING] = g_signal_new (NM_SLEEP_MONITOR_RESUMING,
+	                                  NM_TYPE_SLEEP_MONITOR,
+	                                  G_SIGNAL_RUN_LAST,
+	                                  G_STRUCT_OFFSET (NMSleepMonitorClass, resuming),
+	                                  NULL,                   /* accumulator      */
+	                                  NULL,                   /* accumulator data */
+	                                  g_cclosure_marshal_VOID__VOID,
+	                                  G_TYPE_NONE, 0);
 }
 
 NM_DEFINE_SINGLETON_GETTER (NMSleepMonitor, nm_sleep_monitor_get, NM_TYPE_SLEEP_MONITOR);
