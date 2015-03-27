@@ -331,6 +331,104 @@ test_nm_utils_kill_child (void)
 	g_test_assert_expected_messages ();
 }
 
+/*******************************************/
+
+static void
+_remove_at_indexes_init_random_idx (GArray *idx, guint array_len, guint idx_len)
+{
+	GRand *rand = nmtst_get_rand ();
+	gs_free char *mask = NULL;
+	guint i, max_test_idx;
+
+	g_assert (idx);
+	g_assert (array_len > 0);
+	g_assert (idx_len >= 1 && idx_len <= array_len);
+
+	mask = g_new0 (char, array_len);
+
+	max_test_idx = array_len - 1;
+	for (i = 0; i < idx_len; i++) {
+		guint itest;
+
+		/* find a index itest that is not yet taken */
+		if (max_test_idx == 0)
+			itest = 0;
+		else
+			itest = g_rand_int_range (rand, 0, max_test_idx);
+		while (itest < array_len && mask[itest])
+			itest++;
+		g_assert (itest <= max_test_idx);
+		g_assert (!mask[itest]);
+
+		mask[itest] = TRUE;
+		if (itest == max_test_idx) {
+			g_assert (max_test_idx > 0 || i == idx_len - 1);
+
+			if (max_test_idx == 0)
+				g_assert_cmpint (i, ==, idx_len - 1);
+			else {
+				max_test_idx--;
+				while (max_test_idx > 0 && mask[max_test_idx])
+					max_test_idx--;
+				if (mask[max_test_idx])
+					g_assert_cmpint (i, ==, idx_len - 1);
+			}
+		}
+	}
+
+	g_array_set_size (idx, 0);
+	for (i = 0; i < array_len; i++) {
+		if (mask[i])
+			g_array_append_val (idx, i);
+	}
+	g_assert_cmpint (idx->len, ==, idx_len);
+}
+
+static void
+test_nm_utils_array_remove_at_indexes ()
+{
+	gs_unref_array GArray *idx = NULL, *array = NULL;
+	gs_unref_hashtable GHashTable *unique = NULL;
+	guint i_len, i_idx_len, i_rnd, i;
+
+	idx = g_array_new (FALSE, FALSE, sizeof (guint));
+	array = g_array_new (FALSE, FALSE, sizeof (gssize));
+	unique = g_hash_table_new (NULL, NULL);
+	for (i_len = 1; i_len < 20; i_len++) {
+		for (i_idx_len = 1; i_idx_len <= i_len; i_idx_len++) {
+			for (i_rnd = 0; i_rnd < 20; i_rnd++) {
+
+				_remove_at_indexes_init_random_idx (idx, i_len, i_idx_len);
+				g_array_set_size (array, i_len);
+				for (i = 0; i < i_len; i++)
+					g_array_index (array, gssize, i) = i;
+
+				nm_utils_array_remove_at_indexes (array, &g_array_index (idx, guint, 0), i_idx_len);
+
+				g_hash_table_remove_all (unique);
+				/* ensure that all the indexes are still unique */
+				for (i = 0; i < array->len; i++)
+					g_hash_table_add (unique, GUINT_TO_POINTER (g_array_index (array, gssize, i)));
+				g_assert_cmpint (g_hash_table_size (unique), ==, array->len);
+
+				for (i = 0; i < idx->len; i++)
+					g_hash_table_add (unique, GUINT_TO_POINTER (g_array_index (idx, guint, i)));
+				g_assert_cmpint (g_hash_table_size (unique), ==, i_len);
+
+				/* ensure proper sort order in array */
+				for (i = 0; i < array->len; i++) {
+					gssize i1 = g_array_index (array, gssize, i);
+
+					g_assert (i1 >= 0 && i1 < i_len);
+					if (i > 0) {
+						gsize i0 = g_array_index (array, gssize, i - 1);
+						g_assert_cmpint (i0, <, i1);
+					}
+				}
+			}
+		}
+	}
+}
 
 /*******************************************/
 
@@ -727,6 +825,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/general/nm_utils_kill_child", test_nm_utils_kill_child);
 	g_test_add_func ("/general/nm_ethernet_address_is_valid", test_nm_ethernet_address_is_valid);
 	g_test_add_func ("/general/nm_multi_index", test_nm_multi_index);
+	g_test_add_func ("/general/nm_utils_array_remove_at_indexes", test_nm_utils_array_remove_at_indexes);
 
 	return g_test_run ();
 }
