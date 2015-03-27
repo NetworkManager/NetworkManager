@@ -68,9 +68,7 @@ get_generic_capabilities (NMDevice *dev)
 static gboolean
 is_available (NMDevice *dev, NMDeviceCheckDevAvailableFlags flags)
 {
-	if (NM_DEVICE_GET_CLASS (dev)->is_up)
-		return NM_DEVICE_GET_CLASS (dev)->is_up (dev);
-	return FALSE;
+	return TRUE;
 }
 
 static gboolean
