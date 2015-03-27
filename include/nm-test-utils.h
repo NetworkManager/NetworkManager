@@ -406,7 +406,7 @@ nmtst_get_rand (void)
 		}
 		__nmtst_internal.rand_seed = seed;
 
-		__NMTST_LOG (g_message, ">> initialize nmtst_get_rand() with seed=%u", seed);
+		__NMTST_LOG (g_message, ">> initialize nmtst_get_rand() with NMTST_SEED_RAND=%u", seed);
 	}
 	return __nmtst_internal.rand;
 }
