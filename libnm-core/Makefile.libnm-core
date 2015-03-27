@@ -58,6 +58,7 @@ libnm_core_sources =				\
 	$(core_build)/nm-core-enum-types.c	\
 	$(core)/crypto.c			\
 	$(core)/nm-connection.c			\
+	$(core)/nm-dbus-utils.c			\
 	$(core)/nm-errors.c			\
 	$(core)/nm-keyfile-reader.c         \
 	$(core)/nm-keyfile-utils.c          \
