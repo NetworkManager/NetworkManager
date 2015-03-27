@@ -282,13 +282,14 @@ static void
 usage (void)
 {
 	g_printerr (_("Usage: nmcli device { COMMAND | help }\n\n"
-	              "COMMAND := { status | show | connect | disconnect | delete | wifi | lldp }\n\n"
+	              "COMMAND := { status | show | connect | disconnect | delete | monitor | wifi | lldp }\n\n"
 	              "  status\n\n"
 	              "  show [<ifname>]\n\n"
 	              "  set [ifname] <ifname> [autoconnect yes|no] [managed yes|no]\n\n"
 	              "  connect <ifname>\n\n"
 	              "  disconnect <ifname> ...\n\n"
 	              "  delete <ifname> ...\n\n"
+	              "  monitor <ifname> ...\n\n"
 	              "  wifi [list [ifname <ifname>] [bssid <BSSID>]]\n\n"
 	              "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] [ifname <ifname>]\n"
 	              "                         [bssid <BSSID>] [name <name>] [private yes|no] [hidden yes|no]\n\n"
@@ -373,6 +374,18 @@ usage_device_set (void)
 	              "             { managed { yes | no }\n"
 	              "\n"
 	              "Modify device properties.\n\n"));
+}
+
+static void
+usage_device_monitor (void)
+{
+	g_printerr (_("Usage: nmcli device monitor { ARGUMENTS | help }\n"
+	              "\n"
+	              "ARGUMENTS := [<ifname>] ...\n"
+	              "\n"
+	              "Monitor device activity.\n"
+	              "This command prints a line whenever the specified devices change state.\n"
+	              "Monitors all devices in case no interface is specified.\n\n"));
 }
 
 static void
@@ -2063,6 +2076,97 @@ error:
 }
 
 static void
+device_state (NMDevice *device, GParamSpec *pspec, NmCli *nmc)
+{
+	NMDeviceState state = nm_device_get_state (device);
+	ColorInfo color = device_state_to_color (state);
+	char *str = nmc_colorize (nmc, color.color, color.color_fmt, "%s: %s\n",
+	                          nm_device_get_iface (device),
+	                          nmc_device_state_to_string (state));
+
+	g_print ("%s", str);
+	g_free (str);
+}
+
+static void
+device_ac (NMDevice *device, GParamSpec *pspec, NmCli *nmc)
+{
+	NMActiveConnection *ac = nm_device_get_active_connection (device);
+	const char *id = ac ? nm_active_connection_get_id (ac) : NULL;
+
+	if (!id)
+		return;
+
+	g_print (_("%s: using connection '%s'\n"), nm_device_get_iface (device), id);
+}
+
+static void
+device_watch (NmCli *nmc, NMDevice *device)
+{
+	nmc->should_wait++;
+	g_signal_connect (device, "notify::" NM_DEVICE_STATE, G_CALLBACK (device_state), nmc);
+	g_signal_connect (device, "notify::" NM_DEVICE_ACTIVE_CONNECTION, G_CALLBACK (device_ac), nmc);
+}
+
+static void
+device_unwatch (NmCli *nmc, NMDevice *device)
+{
+	g_signal_handlers_disconnect_by_func (device, device_state, nmc);
+	if (g_signal_handlers_disconnect_by_func (device, device_ac, nmc))
+		nmc->should_wait--;
+
+	/* Terminate if all the watched devices disappeared. */
+	if (!nmc->should_wait)
+		quit ();
+}
+
+static void
+device_added (NMClient *client, NMDevice *device, NmCli *nmc)
+{
+	g_print (_("%s: device created\n"), nm_device_get_iface (device));
+	device_watch (nmc, NM_DEVICE (device));
+}
+
+static void
+device_removed (NMClient *client, NMDevice *device, NmCli *nmc)
+{
+	g_print (_("%s: device removed\n"), nm_device_get_iface (device));
+	device_unwatch (nmc, device);
+}
+
+static NMCResultCode
+do_device_monitor (NmCli *nmc, int argc, char **argv)
+{
+	if (argc == 0) {
+		/* No devices specified. Monitor all. */
+		const GPtrArray *devices = nm_client_get_devices (nmc->client);
+		int i;
+
+		for (i = 0; i < devices->len; i++)
+			device_watch (nmc, g_ptr_array_index (devices, i));
+
+		/* We'll watch the device additions too, never exit. */
+		nmc->should_wait++;
+		g_signal_connect (nmc->client, NM_CLIENT_DEVICE_ADDED, G_CALLBACK (device_added), nmc);
+	} else {
+		/* Monitor just the specified devices. */
+		GSList *queue = device_list (nmc, argc, argv);
+		GSList *iter;
+
+		if (!queue)
+			return nmc->return_value;
+
+		for (iter = queue; iter; iter = g_slist_next (iter))
+			device_watch (nmc, NM_DEVICE (iter->data));
+		g_slist_free (queue);
+	}
+
+	g_signal_connect (nmc->client, NM_CLIENT_DEVICE_REMOVED, G_CALLBACK (device_removed), nmc);
+
+	return NMC_RESULT_SUCCESS;
+}
+
+static void
 show_access_point_info (NMDevice *device, NmCli *nmc)
 {
 	NMAccessPoint *active_ap = NULL;
@@ -3509,6 +3613,13 @@ do_devices (NmCli *nmc, int argc, char **argv)
 				goto usage_exit;
 			}
 			nmc->return_value = do_device_set (nmc, argc-1, argv+1);
+		}
+		else if (matches (*argv, "monitor") == 0) {
+			if (nmc_arg_is_help (*(argv+1))) {
+				usage_device_monitor ();
+				goto usage_exit;
+			}
+			nmc->return_value = do_device_monitor (nmc, argc-1, argv+1);
 		}
 		else if (matches (*argv, "wifi") == 0) {
 			if (nmc_arg_is_help (*(argv+1))) {

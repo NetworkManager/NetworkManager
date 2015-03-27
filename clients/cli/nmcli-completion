@@ -798,7 +798,7 @@ _nmcli()
             # (if the current word starts with a dash) or the OBJECT list
             # otherwise.
             if [[ "${words[0]:0:1}" != '-' ]]; then
-                OPTIONS=(help general networking radio connection device agent)
+                OPTIONS=(help general networking radio connection device agent monitor)
             elif [[ "${words[0]:1:1}" == '-' ||  "${words[0]}" == "-" ]]; then
                 OPTIONS=("${LONG_OPTIONS[@]/#/--}")
             else
@@ -870,7 +870,7 @@ _nmcli()
             ;;
         c|co|con|conn|conne|connec|connect|connecti|connectio|connection)
             if [[ ${#words[@]} -eq 2 ]]; then
-                _nmcli_compl_COMMAND "$command" show up down add modify clone edit delete reload load
+                _nmcli_compl_COMMAND "$command" show up down add modify clone edit delete monitor reload load
             elif [[ ${#words[@]} -gt 2 ]]; then
                 case "$command" in
                     s|sh|sho|show)
@@ -1280,7 +1280,8 @@ _nmcli()
                         fi
                         ;;
 
-                    de|del|dele|delet|delete)
+                    de|del|dele|delet|delete| \
+                    m|mo|mon|moni|monit|monito|monitor)
                         if [[ ${#words[@]} -eq 3 ]]; then
                             _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_show NAME)")"
                         elif [[ ${#words[@]} -gt 3 ]]; then
@@ -1319,7 +1320,7 @@ _nmcli()
             ;;
         d|de|dev|devi|devic|device)
             if [[ ${#words[@]} -eq 2 ]]; then
-                _nmcli_compl_COMMAND "$command" status show connect disconnect delete wifi set lldp
+                _nmcli_compl_COMMAND "$command" status show connect disconnect delete monitor wifi set lldp
             elif [[ ${#words[@]} -gt 2 ]]; then
                 case "$command" in
                     s|st|sta|stat|statu|status)
@@ -1334,7 +1335,8 @@ _nmcli()
                         fi
                         ;;
                     d|di|dis|disc|disco|discon|disconn|disconne|disconnec|disconnect| \
-                    de|del|dele|delet|delete)
+                    de|del|dele|delet|delete| \
+                    m|mo|mon|moni|monit|monito|monitor)
                         if [[ ${#words[@]} -ge 3 ]]; then
                             _nmcli_compl_COMMAND_nl "${words[2]}" "$(_nmcli_dev_status DEVICE)"
                         fi
@@ -1407,6 +1409,8 @@ _nmcli()
             if [[ ${#words[@]} -eq 2 ]]; then
                 _nmcli_compl_COMMAND "$command" secret polkit all
             fi
+            ;;
+        m|mo|mon|moni|monit|monito|monitor)
             ;;
     esac
 
