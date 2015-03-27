@@ -165,4 +165,6 @@ GVariant *_nm_dbus_proxy_call_sync   (GDBusProxy           *proxy,
                                       GCancellable         *cancellable,
                                       GError              **error);
 
+gboolean _nm_dbus_error_has_name (GError     *error,
+                                  const char *dbus_error_name);
 #endif

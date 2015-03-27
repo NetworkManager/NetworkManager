@@ -262,3 +262,29 @@ _nm_dbus_proxy_call_sync (GDBusProxy          *proxy,
 	typecheck_response (&ret, reply_type, error);
 	return ret;
 }
+
+/**
+ * _nm_dbus_error_has_name:
+ * @error: (allow-none): a #GError, or %NULL
+ * @dbus_error_name: a D-Bus error name
+ *
+ * Checks if @error is set and corresponds to the D-Bus error @dbus_error_name.
+ *
+ * Returns: %TRUE or %FALSE
+ */
+gboolean
+_nm_dbus_error_has_name (GError     *error,
+                         const char *dbus_error_name)
+{
+	gboolean has_name = FALSE;
+
+	if (error && g_dbus_error_is_remote_error (error)) {
+		char *error_name;
+
+		error_name = g_dbus_error_get_remote_error (error);
+		has_name = !g_strcmp0 (error_name, dbus_error_name);
+		g_free (error_name);
+	}
+
+	return has_name;
+}
