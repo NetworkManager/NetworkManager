@@ -33,9 +33,9 @@ libnm_core_la_LIBADD =			\
 	$(UUID_LIBS)
 
 if WITH_GNUTLS
-AM_CPPFLAGS += $(LIBGCRYPT_CFLAGS) $(GNUTLS_CFLAGS)
+AM_CPPFLAGS += $(GNUTLS_CFLAGS)
 libnm_core_la_SOURCES += crypto_gnutls.c
-libnm_core_la_LIBADD += $(LIBGCRYPT_LIBS) $(GNUTLS_LIBS)
+libnm_core_la_LIBADD += $(GNUTLS_LIBS)
 endif
 
 if WITH_NSS

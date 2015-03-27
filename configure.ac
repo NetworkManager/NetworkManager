@@ -581,18 +581,11 @@ if test x"$ac_crypto" = xnss; then
   AC_DEFINE(HAVE_NSS, 1, [Define if you have NSS])
   with_nss=yes
 elif test x"$ac_crypto" = xgnutls; then
-  PKG_CHECK_MODULES(GNUTLS, [gnutls >= 1.2])
-  AC_PATH_PROG(LIBGCRYPT_CONFIG, libgcrypt-config, no)
-  if test x"$LIBGCRYPT_CONFIG" = xno; then
-    AC_MSG_ERROR([gnutls explicitly requested but gcrypt not found on system])
-  else
-    AC_DEFINE(HAVE_GNUTLS, 1, [Define if you have libgnutls])
-    LIBGCRYPT_CFLAGS=`$LIBGCRYPT_CONFIG --cflags`
-    LIBGCRYPT_LIBS=`$LIBGCRYPT_CONFIG --libs`
-    AC_SUBST(LIBGCRYPT_CFLAGS)
-    AC_SUBST(LIBGCRYPT_LIBS)
-    with_gnutls=yes
-  fi
+  PKG_CHECK_MODULES(GNUTLS, [gnutls >= 2.12])
+  AC_DEFINE(HAVE_GNUTLS, 1, [Define if you have libgnutls])
+  AC_SUBST(GNUTLS_CFLAGS)
+  AC_SUBST(GNUTLS_LIBS)
+  with_gnutls=yes
 else
   AC_MSG_ERROR([Please choose either 'nss' or 'gnutls' for certificate and crypto operations])
 fi

@@ -13,7 +13,7 @@ AM_CPPFLAGS = \
 	$(UUID_CFLAGS)
 
 if WITH_GNUTLS
-AM_CPPFLAGS += $(LIBGCRYPT_CFLAGS) $(GNUTLS_CFLAGS)
+AM_CPPFLAGS += $(GNUTLS_CFLAGS)
 endif
 
 if WITH_NSS
@@ -119,7 +119,7 @@ libnm_util_la_LDFLAGS = -Wl,--version-script=$(SYMBOL_VIS_FILE) \
 
 if WITH_GNUTLS
 libnm_util_la_SOURCES += crypto_gnutls.c
-libnm_util_la_LIBADD += $(LIBGCRYPT_LIBS) $(GNUTLS_LIBS)
+libnm_util_la_LIBADD += $(GNUTLS_LIBS)
 endif
 
 if WITH_NSS
@@ -143,7 +143,7 @@ libtest_crypto_la_LIBADD = \
 
 if WITH_GNUTLS
 libtest_crypto_la_SOURCES += crypto_gnutls.c
-libtest_crypto_la_LIBADD += $(LIBGCRYPT_LIBS) $(GNUTLS_LIBS)
+libtest_crypto_la_LIBADD += $(GNUTLS_LIBS)
 endif
 
 if WITH_NSS

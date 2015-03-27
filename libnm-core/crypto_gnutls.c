@@ -18,7 +18,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2007 - 2009 Red Hat, Inc.
+ * Copyright 2007 - 2015 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -26,8 +26,8 @@
 #include <glib.h>
 #include <glib/gi18n-lib.h>
 
-#include <gcrypt.h>
 #include <gnutls/gnutls.h>
+#include <gnutls/crypto.h>
 #include <gnutls/x509.h>
 #include <gnutls/pkcs12.h>
 
@@ -68,8 +68,9 @@ crypto_decrypt (const char *cipher,
                 gsize *out_len,
                 GError **error)
 {
-	gcry_cipher_hd_t ctx;
-	gcry_error_t err;
+	gnutls_cipher_hd_t ctx;
+	gnutls_datum_t key_dt, iv_dt;
+	int err;
 	int cipher_mech, i;
 	char *output = NULL;
 	gboolean success = FALSE;
@@ -79,13 +80,13 @@ crypto_decrypt (const char *cipher,
 		return NULL;
 
 	if (!strcmp (cipher, CIPHER_DES_EDE3_CBC)) {
-		cipher_mech = GCRY_CIPHER_3DES;
+		cipher_mech = GNUTLS_CIPHER_3DES_CBC;
 		real_iv_len = SALT_LEN;
 	} else if (!strcmp (cipher, CIPHER_DES_CBC)) {
-		cipher_mech = GCRY_CIPHER_DES;
+		cipher_mech = GNUTLS_CIPHER_DES_CBC;
 		real_iv_len = SALT_LEN;
 	} else if (!strcmp (cipher, CIPHER_AES_CBC)) {
-		cipher_mech = GCRY_CIPHER_AES;
+		cipher_mech = GNUTLS_CIPHER_AES_128_CBC;
 		real_iv_len = 16;
 	} else {
 		g_set_error (error, NM_CRYPTO_ERROR,
@@ -105,39 +106,26 @@ crypto_decrypt (const char *cipher,
 
 	output = g_malloc0 (data_len);
 
-	err = gcry_cipher_open (&ctx, cipher_mech, GCRY_CIPHER_MODE_CBC, 0);
-	if (err) {
+	key_dt.data = (unsigned char *) key;
+	key_dt.size = key_len;
+	iv_dt.data = (unsigned char *) iv;
+	iv_dt.size = iv_len;
+
+	err = gnutls_cipher_init (&ctx, cipher_mech, &key_dt, &iv_dt);
+	if (err < 0) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERROR_DECRYPTION_FAILED,
-		             _("Failed to initialize the decryption cipher context: %s / %s."),
-		             gcry_strsource (err), gcry_strerror (err));
+		             _("Failed to initialize the decryption cipher context: %s (%s)"),
+		             gnutls_strerror_name (err), gnutls_strerror (err));
 		goto out;
 	}
 
-	err = gcry_cipher_setkey (ctx, key, key_len);
-	if (err) {
+	err = gnutls_cipher_decrypt2 (ctx, data, data_len, output, data_len);
+	if (err < 0) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERROR_DECRYPTION_FAILED,
-		             _("Failed to set symmetric key for decryption: %s / %s."),
-		             gcry_strsource (err), gcry_strerror (err));
-		goto out;
-	}
-
-	err = gcry_cipher_setiv (ctx, iv, iv_len);
-	if (err) {
-		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERROR_DECRYPTION_FAILED,
-		             _("Failed to set IV for decryption: %s / %s."),
-		             gcry_strsource (err), gcry_strerror (err));
-		goto out;
-	}
-
-	err = gcry_cipher_decrypt (ctx, output, data_len, data, data_len);
-	if (err) {
-		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERROR_DECRYPTION_FAILED,
-		             _("Failed to decrypt the private key: %s / %s."),
-		             gcry_strsource (err), gcry_strerror (err));
+		             _("Failed to decrypt the private key: %s (%s)"),
+		             gnutls_strerror_name (err), gnutls_strerror (err));
 		goto out;
 	}
 	pad_len = output[data_len - 1];
@@ -174,7 +162,7 @@ out:
 			output = NULL;
 		}
 	}
-	gcry_cipher_close (ctx);
+	gnutls_cipher_deinit (ctx);
 	return output;
 }
 
@@ -189,8 +177,9 @@ crypto_encrypt (const char *cipher,
                 gsize *out_len,
                 GError **error)
 {
-	gcry_cipher_hd_t ctx;
-	gcry_error_t err;
+	gnutls_cipher_hd_t ctx;
+	gnutls_datum_t key_dt, iv_dt;
+	int err;
 	int cipher_mech;
 	char *output = NULL;
 	gboolean success = FALSE;
@@ -203,10 +192,10 @@ crypto_encrypt (const char *cipher,
 		return NULL;
 
 	if (!strcmp (cipher, CIPHER_DES_EDE3_CBC)) {
-		cipher_mech = GCRY_CIPHER_3DES;
+		cipher_mech = GNUTLS_CIPHER_3DES_CBC;
 		salt_len = SALT_LEN;
 	} else if (!strcmp (cipher, CIPHER_AES_CBC)) {
-		cipher_mech = GCRY_CIPHER_AES;
+		cipher_mech = GNUTLS_CIPHER_AES_128_CBC;
 		salt_len = iv_len;
 	} else {
 		g_set_error (error, NM_CRYPTO_ERROR,
@@ -229,40 +218,26 @@ crypto_encrypt (const char *cipher,
 
 	output = g_malloc0 (output_len);
 
-	err = gcry_cipher_open (&ctx, cipher_mech, GCRY_CIPHER_MODE_CBC, 0);
-	if (err) {
+	key_dt.data = (unsigned char *) key;
+	key_dt.size = key_len;
+	iv_dt.data = (unsigned char *) iv;
+	iv_dt.size = iv_len;
+
+	err = gnutls_cipher_init (&ctx, cipher_mech, &key_dt, &iv_dt);
+	if (err < 0) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERROR_ENCRYPTION_FAILED,
-		             _("Failed to initialize the encryption cipher context: %s / %s."),
-		             gcry_strsource (err), gcry_strerror (err));
+		             _("Failed to initialize the encryption cipher context: %s (%s)"),
+		             gnutls_strerror_name (err), gnutls_strerror (err));
 		goto out;
 	}
 
-	err = gcry_cipher_setkey (ctx, key, key_len);
-	if (err) {
+	err = gnutls_cipher_encrypt2 (ctx, padded_buf, padded_buf_len, output, output_len);
+	if (err < 0) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERROR_ENCRYPTION_FAILED,
-		             _("Failed to set symmetric key for encryption: %s / %s."),
-		             gcry_strsource (err), gcry_strerror (err));
-		goto out;
-	}
-
-	/* gcrypt only wants 8 bytes of the IV (same as the DES block length) */
-	err = gcry_cipher_setiv (ctx, iv, salt_len);
-	if (err) {
-		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERROR_ENCRYPTION_FAILED,
-		             _("Failed to set IV for encryption: %s / %s."),
-		             gcry_strsource (err), gcry_strerror (err));
-		goto out;
-	}
-
-	err = gcry_cipher_encrypt (ctx, output, output_len, padded_buf, padded_buf_len);
-	if (err) {
-		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERROR_ENCRYPTION_FAILED,
-		             _("Failed to encrypt the data: %s / %s."),
-		             gcry_strsource (err), gcry_strerror (err));
+		             _("Failed to encrypt the data: %s (%s)"),
+		             gnutls_strerror_name (err), gnutls_strerror (err));
 		goto out;
 	}
 
@@ -284,7 +259,7 @@ out:
 			output = NULL;
 		}
 	}
-	gcry_cipher_close (ctx);
+	gnutls_cipher_deinit (ctx);
 	return output;
 }
 
@@ -449,6 +424,6 @@ crypto_randomize (void *buffer, gsize buffer_len, GError **error)
 	if (!crypto_init (error))
 		return FALSE;
 
-	gcry_randomize (buffer, buffer_len, GCRY_STRONG_RANDOM);
+	gnutls_rnd (GNUTLS_RND_RANDOM, buffer, buffer_len);
 	return TRUE;
 }
