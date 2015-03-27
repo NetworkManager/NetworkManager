@@ -37,7 +37,7 @@ typedef struct {
 } test_fixture;
 
 static void
-setup_dev0_ip4 (int ifindex)
+setup_dev0_ip4 (int ifindex, guint mss_of_first_route, guint32 metric_of_second_route)
 {
 	GArray *routes = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP4Route));
 	NMPlatformIP4Route route;
@@ -50,13 +50,15 @@ setup_dev0_ip4 (int ifindex)
 	route.plen = 24;
 	route.gateway = INADDR_ANY;
 	route.metric = 20;
+	route.mss = mss_of_first_route;
 	g_array_append_val (routes, route);
 
 	route.source = NM_IP_CONFIG_SOURCE_USER;
 	inet_pton (AF_INET, "7.0.0.0", &route.network);
 	route.plen = 8;
 	inet_pton (AF_INET, "6.6.6.1", &route.gateway);
-	route.metric = 21;
+	route.metric = metric_of_second_route;
+	route.mss = 0;
 	g_array_append_val (routes, route);
 
 	nm_route_manager_ip4_route_sync (nm_route_manager_get (), ifindex, routes);
@@ -166,7 +168,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.ifindex = fixture->ifindex0,
 			.gateway = INADDR_ANY,
 			.metric = 20,
-			.mss = 0,
+			.mss = 1000,
 			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_LINK),
 		},
 		{
@@ -175,7 +177,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.plen = 8,
 			.ifindex = fixture->ifindex0,
 			.gateway = nmtst_inet4_from_string ("6.6.6.1"),
-			.metric = 21,
+			.metric = 21021,
 			.mss = 0,
 			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_UNIVERSE),
 		},
@@ -247,7 +249,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 		},
 	};
 
-	setup_dev0_ip4 (fixture->ifindex0);
+	setup_dev0_ip4 (fixture->ifindex0, 1000, 21021);
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*failure adding ip4-route '*: 8.0.0.0/8 22': *");
 	setup_dev1_ip4 (fixture->ifindex1);
 	g_test_assert_expected_messages ();
@@ -264,11 +266,13 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 	setup_dev1_ip4 (fixture->ifindex1);
 	g_test_assert_expected_messages ();
 
-	setup_dev0_ip4 (fixture->ifindex0);
+	setup_dev0_ip4 (fixture->ifindex0, 0, 21);
 
 	/* Ensure nothing changed. */
 	routes = ip4_routes (fixture);
 	g_assert_cmpint (routes->len, ==, G_N_ELEMENTS (state1));
+	state1[0].mss = 0;
+	state1[1].metric = 21;
 	nmtst_platform_ip4_routes_equal ((NMPlatformIP4Route *) routes->data, state1, routes->len, TRUE);
 	g_array_free (routes, TRUE);
 
