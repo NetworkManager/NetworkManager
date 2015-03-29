@@ -4140,11 +4140,6 @@ endif
 data/NetworkManager-dispatcher.service: $(srcdir)/data/NetworkManager-dispatcher.service.in
 	$(AM_V_GEN) $(data_edit) $< >$@
 
-data/org.freedesktop.NetworkManager.service: $(srcdir)/data/org.freedesktop.NetworkManager.service.in
-	$(AM_V_GEN) $(data_edit) $< >$@
-
-service_DATA += data/org.freedesktop.NetworkManager.service
-
 endif
 
 examples_DATA += data/server.conf
@@ -4166,7 +4161,6 @@ EXTRA_DIST += \
 	data/NetworkManager-wait-online.service.in \
 	data/NetworkManager-wait-online-systemd-pre200.service.in \
 	data/NetworkManager-dispatcher.service.in \
-	data/org.freedesktop.NetworkManager.service.in \
 	data/84-nm-drivers.rules \
 	data/85-nm-unmanaged.rules \
 	data/90-nm-thunderbolt.rules \
@@ -4177,7 +4171,6 @@ CLEANFILES += \
 	data/NetworkManager.service \
 	data/NetworkManager-wait-online.service \
 	data/NetworkManager-dispatcher.service \
-	data/org.freedesktop.NetworkManager.service \
 	data/server.conf
 
 ###############################################################################

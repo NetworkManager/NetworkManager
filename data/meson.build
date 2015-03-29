@@ -18,23 +18,22 @@ configure_file(
 
 if install_systemd_unit_dir
   services = [
-    ['NetworkManager-dispatcher.service', systemd_system_unit_dir],
-    ['NetworkManager.service', systemd_system_unit_dir],
-    ['org.freedesktop.NetworkManager.service', dbus_sys_dir]
+    'NetworkManager-dispatcher.service',
+    'NetworkManager.service',
   ]
 
   if have_systemd_200
-    services += [['NetworkManager-wait-online.service', systemd_system_unit_dir]]
+    services += ['NetworkManager-wait-online.service']
   else
-    services += [['NetworkManager-wait-online-systemd-pre200.service', systemd_system_unit_dir]]
+    services += ['NetworkManager-wait-online-systemd-pre200.service']
   endif
 
   foreach service: services
     configure_file(
-      input: service[0] + '.in',
-      output: service[0],
+      input: service + '.in',
+      output: service,
       install: true,
-      install_dir: service[1],
+      install_dir: systemd_system_unit_dir,
       configuration: data_conf
     )
   endforeach
