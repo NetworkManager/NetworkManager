@@ -160,11 +160,23 @@ parse_state_file (const char *filename,
 }
 
 static void
+_set_g_fatal_warnings ()
+{
+	GLogLevelFlags fatal_mask;
+
+	fatal_mask = g_log_set_always_fatal (G_LOG_FATAL_MASK);
+	fatal_mask |= G_LOG_LEVEL_WARNING | G_LOG_LEVEL_CRITICAL;
+	g_log_set_always_fatal (fatal_mask);
+}
+
+static void
 _init_nm_debug (const char *debug)
 {
 	const guint D_RLIMIT_CORE = 1;
+	const guint D_FATAL_WARNINGS = 2;
 	GDebugKey keys[] = {
 		{ "RLIMIT_CORE", D_RLIMIT_CORE },
+		{ "fatal-warnings", D_FATAL_WARNINGS },
 	};
 	guint flags = 0;
 	const char *env = getenv ("NM_DEBUG");
@@ -178,7 +190,7 @@ _init_nm_debug (const char *debug)
 	if (debug && strcasecmp (debug, "help") != 0)
 		flags |= g_parse_debug_string (debug,  keys, G_N_ELEMENTS (keys));
 
-	if (flags & D_RLIMIT_CORE) {
+	if (NM_FLAGS_HAS (flags, D_RLIMIT_CORE)) {
 		/* only enable this, if explicitly requested, because it might
 		 * expose sensitive data. */
 
@@ -188,6 +200,8 @@ _init_nm_debug (const char *debug)
 		};
 		setrlimit (RLIMIT_CORE, &limit);
 	}
+	if (NM_FLAGS_HAS (flags, D_FATAL_WARNINGS))
+		_set_g_fatal_warnings ();
 }
 
 void
@@ -270,13 +284,8 @@ main (int argc, char *argv[])
 	config_cli = nm_config_cmd_line_options_new ();
 	do_early_setup (&argc, &argv, config_cli);
 
-	if (global_opt.g_fatal_warnings) {
-		GLogLevelFlags fatal_mask;
-
-		fatal_mask = g_log_set_always_fatal (G_LOG_FATAL_MASK);
-		fatal_mask |= G_LOG_LEVEL_WARNING | G_LOG_LEVEL_CRITICAL;
-		g_log_set_always_fatal (fatal_mask);
-	}
+	if (global_opt.g_fatal_warnings)
+		_set_g_fatal_warnings ();
 
 	if (global_opt.show_version) {
 		fprintf (stdout, NM_DIST_VERSION "\n");

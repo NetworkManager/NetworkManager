@@ -261,7 +261,13 @@ no-auto-default=*
         values are supported:</para>
         <para>
           <literal>RLIMIT_CORE</literal>: set ulimit -c unlimited
-          to write out core dumps.
+          to write out core dumps. Beware, that a core dump can contain
+          sensitive information such as passwords or configuration settings.
+        </para>
+        <para>
+          <literal>fatal-warnings</literal>: set g_log_set_always_fatal()
+          to core dump on warning messages from glib. This is equivalent
+          to the --g-fatal-warnings command line option.
         </para>
         </listitem>
       </varlistentry>
