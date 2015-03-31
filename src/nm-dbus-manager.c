@@ -240,6 +240,7 @@ private_server_free (gpointer ptr)
 	unlink (s->address);
 	g_free (s->address);
 	g_hash_table_destroy (s->connections);
+	dbus_server_disconnect (s->server);
 	dbus_server_unref (s->server);
 	memset (s, 0, sizeof (*s));
 	g_free (s);
