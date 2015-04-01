@@ -317,11 +317,9 @@ dispatch_netconfig (char **searches,
 			/* child already exited */
 			ret = pid;
 		} else {
-			g_set_error_literal (error,
-			                     NM_MANAGER_ERROR,
-			                     NM_MANAGER_ERROR_FAILED,
-			                     "Error waiting for netconfig to exit: %s",
-			                     strerror (errno));
+			g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
+			             "Error waiting for netconfig to exit: %s",
+			             strerror (errno));
 		}
 	}
 
