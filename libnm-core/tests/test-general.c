@@ -29,6 +29,7 @@
 
 #include "nm-setting-private.h"
 #include "nm-utils.h"
+#include "nm-utils-private.h"
 #include "nm-core-internal.h"
 
 #include "nm-setting-8021x.h"
@@ -4226,6 +4227,90 @@ test_nm_utils_ascii_str_to_int64 (void)
 
 /******************************************************************************/
 
+static void
+test_nm_utils_dns_option_validate_do (char *option, gboolean ipv6, const DNSOptionDesc *descs,
+                                      gboolean exp_result, char *exp_name, gboolean exp_value)
+{
+	char *name;
+	long value = 0;
+	gboolean result;
+
+	result = _nm_utils_dns_option_validate (option, &name, &value, ipv6, descs);
+
+	g_assert (result == exp_result);
+	g_assert_cmpstr (name, ==, exp_name);
+	g_assert (value == exp_value);
+
+	g_free (name);
+}
+
+static const DNSOptionDesc opt_descs[] = {
+	/* name                   num      ipv6 */
+	{ "opt1",                 FALSE,   FALSE },
+	{ "opt2",                 TRUE,    FALSE },
+	{ "opt3",                 FALSE,   TRUE  },
+	{ "opt4",                 TRUE,    TRUE  },
+	{ NULL,                   FALSE,   FALSE }
+};
+
+static void
+test_nm_utils_dns_option_validate (void)
+{
+	/*                                    opt            ipv6    descs        result name       value */
+	test_nm_utils_dns_option_validate_do ("",            FALSE,  NULL,        FALSE, NULL,      -1);
+	test_nm_utils_dns_option_validate_do (":",           FALSE,  NULL,        FALSE, NULL,      -1);
+	test_nm_utils_dns_option_validate_do (":1",          FALSE,  NULL,        FALSE, NULL,      -1);
+	test_nm_utils_dns_option_validate_do (":val",        FALSE,  NULL,        FALSE, NULL,      -1);
+	test_nm_utils_dns_option_validate_do ("opt",         FALSE,  NULL,        TRUE,  "opt",     -1);
+	test_nm_utils_dns_option_validate_do ("opt:",        FALSE,  NULL,        FALSE, NULL,      -1);
+	test_nm_utils_dns_option_validate_do ("opt:12",      FALSE,  NULL,        TRUE,  "opt",     12);
+	test_nm_utils_dns_option_validate_do ("opt:12 ",     FALSE,  NULL,        FALSE, NULL,      -1);
+	test_nm_utils_dns_option_validate_do ("opt:val",     FALSE,  NULL,        FALSE, NULL,      -1);
+	test_nm_utils_dns_option_validate_do ("opt:2val",    FALSE,  NULL,        FALSE, NULL,      -1);
+	test_nm_utils_dns_option_validate_do ("opt:2:3",     FALSE,  NULL,        FALSE, NULL,      -1);
+	test_nm_utils_dns_option_validate_do ("opt-6",       FALSE,  NULL,        TRUE,  "opt-6",   -1);
+
+	test_nm_utils_dns_option_validate_do ("opt1",        FALSE,  opt_descs,   TRUE,  "opt1",    -1);
+	test_nm_utils_dns_option_validate_do ("opt1",        TRUE,   opt_descs,   TRUE,  "opt1",    -1);
+	test_nm_utils_dns_option_validate_do ("opt1:3",      FALSE,  opt_descs,   FALSE,  NULL,     -1);
+
+	test_nm_utils_dns_option_validate_do ("opt2",        FALSE,  opt_descs,   FALSE, NULL,      -1);
+	test_nm_utils_dns_option_validate_do ("opt2:5",      FALSE,  opt_descs,   TRUE,  "opt2",    5);
+
+	test_nm_utils_dns_option_validate_do ("opt3",        FALSE,  opt_descs,   FALSE, NULL,      -1);
+	test_nm_utils_dns_option_validate_do ("opt3",        TRUE,   opt_descs,   TRUE,  "opt3",    -1);
+
+	test_nm_utils_dns_option_validate_do ("opt4",        FALSE,  opt_descs,   FALSE, NULL,      -1);
+	test_nm_utils_dns_option_validate_do ("opt4",        TRUE,   opt_descs,   FALSE, NULL,      -1);
+	test_nm_utils_dns_option_validate_do ("opt4:40",     FALSE,  opt_descs,   FALSE, NULL,      -1);
+	test_nm_utils_dns_option_validate_do ("opt4:40",     TRUE,   opt_descs,   TRUE,  "opt4",    40);
+}
+
+static void
+test_nm_utils_dns_option_find_idx (void)
+{
+	GPtrArray *options;
+
+	options = g_ptr_array_new ();
+
+	g_ptr_array_add (options, "debug");
+	g_ptr_array_add (options, "timeout:5");
+	g_ptr_array_add (options, "edns0");
+
+	g_assert_cmpint (_nm_utils_dns_option_find_idx (options, "debug"),      ==, 0);
+	g_assert_cmpint (_nm_utils_dns_option_find_idx (options, "debug:1"),    ==, 0);
+	g_assert_cmpint (_nm_utils_dns_option_find_idx (options, "timeout"),    ==, 1);
+	g_assert_cmpint (_nm_utils_dns_option_find_idx (options, "timeout:5"),  ==, 1);
+	g_assert_cmpint (_nm_utils_dns_option_find_idx (options, "timeout:2"),  ==, 1);
+	g_assert_cmpint (_nm_utils_dns_option_find_idx (options, "edns0"),      ==, 2);
+	g_assert_cmpint (_nm_utils_dns_option_find_idx (options, "rotate"),     ==, -1);
+	g_assert_cmpint (_nm_utils_dns_option_find_idx (options, ""),           ==, -1);
+
+	g_ptr_array_free (options, TRUE);
+}
+
+/******************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -4326,6 +4411,9 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/_nm_utils_uuid_generate_from_strings", test_nm_utils_uuid_generate_from_strings);
 
 	g_test_add_func ("/core/general/_nm_utils_ascii_str_to_int64", test_nm_utils_ascii_str_to_int64);
+
+	g_test_add_func ("/core/general/_nm_utils_dns_option_validate", test_nm_utils_dns_option_validate);
+	g_test_add_func ("/core/general/_nm_utils_dns_option_find_idx", test_nm_utils_dns_option_find_idx);
 
 	return g_test_run ();
 }
