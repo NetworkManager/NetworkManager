@@ -4803,6 +4803,8 @@ nm_device_activate_stage3_ip6_start (NMDevice *self)
 	} else if (ret == NM_ACT_STAGE_RETURN_FINISH) {
 		/* Early finish, nothing more to do */
 		priv->ip6_state = IP_DONE;
+		if (nm_device_get_state (self) == NM_DEVICE_STATE_IP_CONFIG)
+			nm_device_state_changed (self, NM_DEVICE_STATE_IP_CHECK, NM_DEVICE_STATE_REASON_NONE);
 	} else if (ret == NM_ACT_STAGE_RETURN_WAIT) {
 		/* Wait for something to try IP config again */
 		priv->ip6_state = IP_WAIT;
