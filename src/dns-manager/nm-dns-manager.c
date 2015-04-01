@@ -145,7 +145,7 @@ add_string_item (GPtrArray *array, const char *str)
 static void
 merge_one_ip4_config (NMResolvConfData *rc, NMIP4Config *src)
 {
-	guint32 num, i;
+	guint32 num, num_domains, num_searches, i;
 
 	num = nm_ip4_config_get_num_nameservers (src);
 	for (i = 0; i < num; i++) {
@@ -153,24 +153,27 @@ merge_one_ip4_config (NMResolvConfData *rc, NMIP4Config *src)
 		                 nm_utils_inet4_ntop (nm_ip4_config_get_nameserver (src, i), NULL));
 	}
 
-	num = nm_ip4_config_get_num_domains (src);
-	for (i = 0; i < num; i++) {
-		const char *domain;
+	num_domains = nm_ip4_config_get_num_domains (src);
+	num_searches = nm_ip4_config_get_num_searches (src);
 
-		domain = nm_ip4_config_get_domain (src, i);
-		if (!DOMAIN_IS_VALID (domain))
-			continue;
-		add_string_item (rc->searches, domain);
-	}
-
-	num = nm_ip4_config_get_num_searches (src);
-	for (i = 0; i < num; i++) {
+	for (i = 0; i < num_searches; i++) {
 		const char *search;
 
 		search = nm_ip4_config_get_search (src, i);
 		if (!DOMAIN_IS_VALID (search))
 			continue;
 		add_string_item (rc->searches, search);
+	}
+
+	if (num_domains > 1 || !num_searches) {
+		for (i = 0; i < num_domains; i++) {
+			const char *domain;
+
+			domain = nm_ip4_config_get_domain (src, i);
+			if (!DOMAIN_IS_VALID (domain))
+				continue;
+			add_string_item (rc->searches, domain);
+		}
 	}
 
 	/* NIS stuff */
@@ -190,7 +193,7 @@ merge_one_ip4_config (NMResolvConfData *rc, NMIP4Config *src)
 static void
 merge_one_ip6_config (NMResolvConfData *rc, NMIP6Config *src)
 {
-	guint32 num, i;
+	guint32 num, num_domains, num_searches, i;
 	const char *iface;
 
 	iface = g_object_get_data (G_OBJECT (src), IP_CONFIG_IFACE_TAG);
@@ -215,24 +218,27 @@ merge_one_ip6_config (NMResolvConfData *rc, NMIP6Config *src)
 		add_string_item (rc->nameservers, buf);
 	}
 
-	num = nm_ip6_config_get_num_domains (src);
-	for (i = 0; i < num; i++) {
-		const char *domain;
+	num_domains = nm_ip6_config_get_num_domains (src);
+	num_searches = nm_ip6_config_get_num_searches (src);
 
-		domain = nm_ip6_config_get_domain (src, i);
-		if (!DOMAIN_IS_VALID (domain))
-			continue;
-		add_string_item (rc->searches, domain);
-	}
-
-	num = nm_ip6_config_get_num_searches (src);
-	for (i = 0; i < num; i++) {
+	for (i = 0; i < num_searches; i++) {
 		const char *search;
 
 		search = nm_ip6_config_get_search (src, i);
 		if (!DOMAIN_IS_VALID (search))
 			continue;
 		add_string_item (rc->searches, search);
+	}
+
+	if (num_domains > 1 || !num_searches) {
+		for (i = 0; i < num_domains; i++) {
+			const char *domain;
+
+			domain = nm_ip6_config_get_domain (src, i);
+			if (!DOMAIN_IS_VALID (domain))
+				continue;
+			add_string_item (rc->searches, domain);
+		}
 	}
 }
 
