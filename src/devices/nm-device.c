@@ -7019,12 +7019,12 @@ nm_device_set_unmanaged_quitting (NMDevice *self)
 
 	/* It's OK to block here because we're quitting */
 	if (nm_device_is_activating (self) || priv->state == NM_DEVICE_STATE_ACTIVATED)
-		_set_state_full (self, NM_DEVICE_STATE_DEACTIVATING, NM_DEVICE_STATE_REASON_REMOVED, TRUE);
+		_set_state_full (self, NM_DEVICE_STATE_DEACTIVATING, NM_DEVICE_STATE_REASON_NOW_UNMANAGED, TRUE);
 
 	nm_device_set_unmanaged (self,
 	                         NM_UNMANAGED_INTERNAL,
 	                         TRUE,
-	                         NM_DEVICE_STATE_REASON_REMOVED);
+	                         NM_DEVICE_STATE_REASON_NOW_UNMANAGED);
 }
 
 /**
