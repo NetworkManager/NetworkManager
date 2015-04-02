@@ -67,28 +67,48 @@ typedef struct {
 	FwAddToZoneFunc callback;
 	gpointer user_data;
 	guint id;
-	gboolean completed;
 
 	guint idle_id;
 	GCancellable *cancellable;
 } CBInfo;
 
 static void
-_cb_info_free (CBInfo *info)
+_cb_info_complete_and_free (CBInfo *info,
+                            const char *tag,
+                            const char *debug_error_match,
+                            GError *error)
 {
+	gs_free_error GError *local = NULL;
+
 	g_return_if_fail (info != NULL);
+	g_return_if_fail (tag != NULL);
 
-	if (!info->completed) {
-		nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone call cancelled [%u]", info->iface, info->id);
-		if (info->callback) {
-			GError *error;
-
-			error = g_error_new_literal (G_IO_ERROR, G_IO_ERROR_CANCELLED,
-			                             "Operation was cancelled");
-			info->callback (error, info->user_data);
-			g_error_free (error);
-		}
+	/* A cancelled idle call won't set the error; catch that here */
+	if (!error && g_cancellable_is_cancelled (info->cancellable)) {
+		error = local = g_error_new_literal (G_IO_ERROR, G_IO_ERROR_CANCELLED,
+		                                     "Operation was cancelled");
 	}
+
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+		nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone %s call cancelled [%u]",
+		            info->iface, tag, info->id);
+	} else if (error) {
+		g_dbus_error_strip_remote_error (error);
+		if (!g_strcmp0 (error->message, debug_error_match)) {
+			nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone %s failed [%u]: %s",
+			            info->iface, tag, info->id, error->message);
+		} else {
+			nm_log_warn (LOGD_FIREWALL, "(%s) firewall zone %s failed [%u]: %s",
+			             info->iface, tag, info->id, error->message);
+		}
+	} else {
+		nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone %s succeeded [%u]",
+		            info->iface, tag, info->id);
+	}
+
+	if (info->callback)
+		info->callback (error, info->user_data);
+
 	g_free (info->iface);
 	g_object_unref (info->cancellable);
 	g_slice_free (CBInfo, info);
@@ -98,16 +118,13 @@ static CBInfo *
 _cb_info_create (NMFirewallManager *self, const char *iface, FwAddToZoneFunc callback, gpointer user_data)
 {
 	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
-	static guint id;
+	static guint id = 1;
 	CBInfo *info;
 
 	info = g_slice_new0 (CBInfo);
-	if (++id == 0)
-		++id;
 	info->self = g_object_ref (self);
-	info->id = id;
+	info->id = id++;
 	info->iface = g_strdup (iface);
-	info->completed = FALSE;
 	info->cancellable = g_cancellable_new ();
 	info->callback = callback;
 	info->user_data = user_data;
@@ -121,18 +138,8 @@ add_or_change_idle_cb (gpointer user_data)
 {
 	CBInfo *info = user_data;
 
-	if (info->idle_id == 0) {
-		/* operation was cancelled. */
-	} else {
-		nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone call pretends success [%u]",
-		            info->iface, info->id);
-		if (info->callback)
-			info->callback (NULL, info->user_data);
-		info->completed = TRUE;
-		info->idle_id = 0;
-	}
-
-	_cb_info_free (info);
+	info->idle_id = 0;
+	_cb_info_complete_and_free (info, "idle call", NULL, NULL);
 	return G_SOURCE_REMOVE;
 }
 
@@ -140,32 +147,11 @@ static void
 add_or_change_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 {
 	CBInfo *info = user_data;
-	GError *error = NULL;
-	GVariant *ret;
+	gs_free_error GError *error = NULL;
+	gs_unref_variant GVariant *ret = NULL;
 
 	ret = g_dbus_proxy_call_finish (G_DBUS_PROXY (proxy), result, &error);
-	if (ret) {
-		nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone add/change succeeded [%u]",
-		            info->iface, info->id);
-		g_variant_unref (ret);
-	} else {
-		g_dbus_error_strip_remote_error (error);
-		if (   !strcmp (error->message, "ZONE_ALREADY_SET")
-		    || g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
-			nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone add/change failed [%u]: (%d) %s",
-			            info->iface, info->id, error->code, error->message);
-		} else {
-			nm_log_warn (LOGD_FIREWALL, "(%s) firewall zone add/change failed [%u]: (%d) %s",
-			             info->iface, info->id, error->code, error->message);
-		}
-	}
-
-	if (info->callback)
-		info->callback (error, info->user_data);
-
-	info->completed = TRUE;
-	_cb_info_free (info);
-	g_clear_error (&error);
+	_cb_info_complete_and_free (info, "add/change", "ZONE_ALREADY_SET", error);
 }
 
 NMFirewallPendingCall
@@ -209,28 +195,11 @@ static void
 remove_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 {
 	CBInfo *info = user_data;
-	GError *error = NULL;
-	GVariant *ret;
+	gs_free_error GError *error = NULL;
+	gs_unref_variant GVariant *ret = NULL;
 
 	ret = g_dbus_proxy_call_finish (G_DBUS_PROXY (proxy), result, &error);
-	if (ret) {
-		nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone remove succeeded [%u]",
-		            info->iface, info->id);
-		g_variant_unref (ret);
-	} else {
-		if (   strstr (error->message, "UNKNOWN_INTERFACE")
-		    || g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
-			nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone remove failed [%u]: (%d) %s",
-			            info->iface, info->id, error->code, error->message);
-		} else {
-			nm_log_warn (LOGD_FIREWALL, "(%s) firewall zone remove failed [%u]: (%d) %s",
-			             info->iface, info->id, error->code, error->message);
-		}
-	}
-
-	info->completed = TRUE;
-	_cb_info_free (info);
-	g_clear_error (&error);
+	_cb_info_complete_and_free (info, "remove", "UNKNOWN_INTERFACE", error);
 }
 
 NMFirewallPendingCall
