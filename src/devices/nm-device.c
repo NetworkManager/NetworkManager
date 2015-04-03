@@ -388,6 +388,7 @@ state_to_string (NMDeviceState state)
 }
 
 static const char *reason_table[] = {
+	[NM_DEVICE_STATE_REASON_UNKNOWN]                  = "unknown",
 	[NM_DEVICE_STATE_REASON_NONE]                     = "none",
 	[NM_DEVICE_STATE_REASON_NOW_MANAGED]              = "managed",
 	[NM_DEVICE_STATE_REASON_NOW_UNMANAGED]            = "unmanaged",
