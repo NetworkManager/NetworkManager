@@ -475,18 +475,14 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-	GPtrArray *slaves;
-	GSList *list, *iter;
+	GSList *list;
 
 	switch (prop_id) {
 		break;
 	case PROP_SLAVES:
-		slaves = g_ptr_array_new ();
 		list = nm_device_master_get_slaves (NM_DEVICE (object));
-		for (iter = list; iter; iter = iter->next)
-			g_ptr_array_add (slaves, g_strdup (nm_device_get_path (NM_DEVICE (iter->data))));
+		nm_utils_g_value_set_object_path_array (value, list);
 		g_slist_free (list);
-		g_value_take_boxed (value, slaves);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);

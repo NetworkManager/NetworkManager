@@ -45,8 +45,6 @@ GType nm_dhcp4_config_get_type (void);
 
 NMDhcp4Config *nm_dhcp4_config_new (void);
 
-const char *nm_dhcp4_config_get_dbus_path (NMDhcp4Config *config);
-
 void nm_dhcp4_config_add_option (NMDhcp4Config *config,
                                  const char *key,
                                  const char *option);

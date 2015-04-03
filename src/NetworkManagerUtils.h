@@ -262,4 +262,7 @@ gboolean nm_utils_get_testing_initialized (void);
 NMUtilsTestFlags nm_utils_get_testing (void);
 void _nm_utils_set_testing (NMUtilsTestFlags flags);
 
+void nm_utils_g_value_set_object_path (GValue *value, gpointer object);
+void nm_utils_g_value_set_object_path_array (GValue *value, GSList *objects);
+
 #endif /* __NETWORKMANAGER_UTILS_H__ */

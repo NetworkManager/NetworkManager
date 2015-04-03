@@ -24,11 +24,18 @@
 
 #include "nm-exported-object.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-dbus-manager.h"
 #include "nm-logging.h"
 
-G_DEFINE_ABSTRACT_TYPE (NMExportedObject, nm_exported_object, G_TYPE_OBJECT)
+static GHashTable *prefix_counters;
+
+G_DEFINE_ABSTRACT_TYPE_WITH_CODE (NMExportedObject, nm_exported_object, G_TYPE_OBJECT,
+                                  prefix_counters = g_hash_table_new (g_str_hash, g_str_equal);
+                                  )
 
 typedef struct {
+	char *path;
+
 	GHashTable *pending_notifies;
 	guint notify_idle_id;
 } NMExportedObjectPrivate;
@@ -108,6 +115,107 @@ nm_exported_object_class_add_interface (NMExportedObjectClass *object_class,
 			                     (char *) dbus_name);
 		}
 	}
+}
+
+/**
+ * nm_exported_object_export:
+ * @self: an #NMExportedObject
+ *
+ * Exports @self on all active and future D-Bus connections.
+ *
+ * The path to export @self on is taken from its #NMObjectClass's %export_path
+ * member. If the %export_path contains "%u", then it will be replaced with a
+ * monotonically increasing integer ID (with each distinct %export_path having
+ * its own counter). Otherwise, %export_path will be used literally (implying
+ * that @self must be a singleton).
+ *
+ * Returns: the path @self was exported under
+ */
+const char *
+nm_exported_object_export (NMExportedObject *self)
+{
+	NMExportedObjectPrivate *priv;
+	const char *class_export_path, *p;
+
+	g_return_val_if_fail (NM_IS_EXPORTED_OBJECT (self), NULL);
+	priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
+
+	g_return_val_if_fail (priv->path == NULL, priv->path);
+
+	class_export_path = NM_EXPORTED_OBJECT_GET_CLASS (self)->export_path;
+	p = strchr (class_export_path, '%');
+	if (p) {
+		guint *counter;
+
+		g_return_val_if_fail (p[1] == 'u', NULL);
+		g_return_val_if_fail (strchr (p + 1, '%') == NULL, NULL);
+
+		counter = g_hash_table_lookup (prefix_counters, class_export_path);
+		if (!counter) {
+			counter = g_new0 (guint, 1);
+			g_hash_table_insert (prefix_counters, g_strdup (class_export_path), counter);
+		}
+
+		priv->path = g_strdup_printf (class_export_path, (*counter)++);
+	} else
+		priv->path = g_strdup (class_export_path);
+
+	nm_dbus_manager_register_object (nm_dbus_manager_get (), priv->path, self);
+
+	return priv->path;
+}
+
+/**
+ * nm_exported_object_get_path:
+ * @self: an #NMExportedObject
+ *
+ * Gets @self's D-Bus path.
+ *
+ * Returns: @self's D-Bus path, or %NULL if @self is not exported.
+ */
+const char *
+nm_exported_object_get_path (NMExportedObject *self)
+{
+	g_return_val_if_fail (NM_IS_EXPORTED_OBJECT (self), NULL);
+
+	return NM_EXPORTED_OBJECT_GET_PRIVATE (self)->path;
+}
+
+/**
+ * nm_exported_object_is_exported:
+ * @self: an #NMExportedObject
+ *
+ * Checks if @self is exported
+ *
+ * Returns: %TRUE if @self is exported
+ */
+gboolean
+nm_exported_object_is_exported (NMExportedObject *self)
+{
+	g_return_val_if_fail (NM_IS_EXPORTED_OBJECT (self), FALSE);
+
+	return NM_EXPORTED_OBJECT_GET_PRIVATE (self)->path != NULL;
+}
+
+/**
+ * nm_exported_object_unexport:
+ * @self: an #NMExportedObject
+ *
+ * Unexports @self on all active D-Bus connections (and prevents it from being
+ * auto-exported on future connections).
+ */
+void
+nm_exported_object_unexport (NMExportedObject *self)
+{
+	NMExportedObjectPrivate *priv;
+
+	g_return_if_fail (NM_IS_EXPORTED_OBJECT (self));
+	priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
+
+	g_return_if_fail (priv->path != NULL);
+
+	g_clear_pointer (&priv->path, g_free);
+	nm_dbus_manager_unregister_object (nm_dbus_manager_get (), self);
 }
 
 static void
@@ -210,6 +318,9 @@ static void
 nm_exported_object_dispose (GObject *object)
 {
 	NMExportedObjectPrivate *priv = NM_EXPORTED_OBJECT_GET_PRIVATE (object);
+
+	if (priv->path)
+		nm_exported_object_unexport (NM_EXPORTED_OBJECT (object));
 
 	g_hash_table_remove_all (priv->pending_notifies);
 	nm_clear_g_source (&priv->notify_idle_id);

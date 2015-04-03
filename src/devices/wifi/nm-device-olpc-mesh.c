@@ -475,10 +475,7 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_COMPANION:
-		if (priv->companion)
-			g_value_set_boxed (value, nm_device_get_path (priv->companion));
-		else
-			g_value_set_boxed (value, "/");
+		nm_utils_g_value_set_object_path (value, priv->companion);
 		break;
 	case PROP_ACTIVE_CHANNEL:
 		g_value_set_uint (value, nm_platform_mesh_get_channel (NM_PLATFORM_GET, nm_device_get_ifindex (NM_DEVICE (device))));

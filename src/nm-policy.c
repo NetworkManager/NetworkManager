@@ -34,7 +34,6 @@
 #include "nm-logging.h"
 #include "nm-device.h"
 #include "nm-default-route-manager.h"
-#include "nm-dbus-manager.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-connection.h"
 #include "nm-platform.h"
@@ -770,7 +769,7 @@ process_secondaries (NMPolicy *policy,
 			if (connected) {
 				nm_log_dbg (LOGD_DEVICE, "Secondary connection '%s' SUCCEEDED; active path '%s'",
 				            nm_active_connection_get_id (active),
-				            nm_active_connection_get_path (active));
+				            nm_exported_object_get_path (NM_EXPORTED_OBJECT (active)));
 
 				/* Secondary connection activated */
 				secondary_data->secondaries = g_slist_remove (secondary_data->secondaries, secondary_active);
@@ -786,7 +785,7 @@ process_secondaries (NMPolicy *policy,
 			} else {
 				nm_log_dbg (LOGD_DEVICE, "Secondary connection '%s' FAILED; active path '%s'",
 				            nm_active_connection_get_id (active),
-				            nm_active_connection_get_path (active));
+				            nm_exported_object_get_path (NM_EXPORTED_OBJECT (active)));
 
 				/* Secondary connection failed -> do not watch other connections */
 				priv->pending_secondaries = g_slist_remove (priv->pending_secondaries, secondary_data);
@@ -1063,7 +1062,7 @@ activate_secondary_connections (NMPolicy *policy,
 		            nm_connection_get_id (connection), nm_connection_get_uuid (connection));
 		ac = nm_manager_activate_connection (priv->manager,
 		                                     NM_CONNECTION (settings_con),
-		                                     nm_active_connection_get_path (NM_ACTIVE_CONNECTION (req)),
+		                                     nm_exported_object_get_path (NM_EXPORTED_OBJECT (req)),
 		                                     device,
 		                                     nm_active_connection_get_subject (NM_ACTIVE_CONNECTION (req)),
 		                                     &error);
@@ -1686,7 +1685,7 @@ _deactivate_if_active (NMManager *manager, NMConnection *connection)
 		if (nm_active_connection_get_connection (ac) == connection &&
 		    (state <= NM_ACTIVE_CONNECTION_STATE_ACTIVATED)) {
 			if (!nm_manager_deactivate_connection (manager,
-			                                       nm_active_connection_get_path (ac),
+			                                       nm_exported_object_get_path (NM_EXPORTED_OBJECT (ac)),
 			                                       NM_DEVICE_STATE_REASON_CONNECTION_REMOVED,
 			                                       &error)) {
 				nm_log_warn (LOGD_DEVICE, "Connection '%s' disappeared, but error deactivating it: (%d) %s",

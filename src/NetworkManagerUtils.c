@@ -2904,3 +2904,46 @@ nm_utils_setpgid (gpointer unused G_GNUC_UNUSED)
 	pid = getpid ();
 	setpgid (pid, pid);
 }
+
+/**
+ * nm_utils_g_value_set_object_path:
+ * @value: a #GValue, initialized to store an object path
+ * @object: (allow-none): an #NMExportedObject
+ *
+ * Sets @value to @object's object path. If @object is %NULL, or not
+ * exported, @value is set to "/".
+ */
+void
+nm_utils_g_value_set_object_path (GValue *value, gpointer object)
+{
+	g_return_if_fail (!object || NM_IS_EXPORTED_OBJECT (object));
+
+	if (object && nm_exported_object_is_exported (object))
+		g_value_set_boxed (value, nm_exported_object_get_path (object));
+	else
+		g_value_set_boxed (value, "/");
+}
+
+/**
+ * nm_utils_g_value_set_object_path_array:
+ * @value: a #GValue, initialized to store an object path
+ * @objects: a #GSList of #NMExportedObjects
+ *
+ * Sets @value to an array of object paths of the objects in @objects.
+ */
+void
+nm_utils_g_value_set_object_path_array (GValue *value, GSList *objects)
+{
+	GPtrArray *paths;
+	GSList *iter;
+
+	paths = g_ptr_array_new ();
+	for (iter = objects; iter; iter = iter->next) {
+		NMExportedObject *object = iter->data;
+
+		if (!nm_exported_object_is_exported (object))
+			continue;
+		g_ptr_array_add (paths, g_strdup (nm_exported_object_get_path (object)));
+	}
+	g_value_take_boxed (value, paths);
+}

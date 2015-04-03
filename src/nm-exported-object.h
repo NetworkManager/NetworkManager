@@ -41,12 +41,19 @@ typedef struct {
 
 typedef struct {
 	GObjectClass parent;
+
+	const char *export_path;
 } NMExportedObjectClass;
 
 GType nm_exported_object_get_type (void);
 
 void nm_exported_object_class_add_interface (NMExportedObjectClass *object_class,
                                              const DBusGObjectInfo *info);
+
+const char *nm_exported_object_export      (NMExportedObject *self);
+const char *nm_exported_object_get_path    (NMExportedObject *self);
+gboolean    nm_exported_object_is_exported (NMExportedObject *self);
+void        nm_exported_object_unexport    (NMExportedObject *self);
 
 G_END_DECLS
 

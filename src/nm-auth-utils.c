@@ -27,7 +27,6 @@
 #include "nm-setting-connection.h"
 #include "nm-auth-utils.h"
 #include "nm-logging.h"
-#include "nm-dbus-manager.h"
 #include "nm-auth-subject.h"
 #include "nm-auth-manager.h"
 #include "nm-session-monitor.h"

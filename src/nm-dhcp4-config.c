@@ -24,7 +24,6 @@
 
 #include "nm-glib.h"
 #include "nm-dbus-interface.h"
-#include "nm-dbus-manager.h"
 #include "nm-dhcp4-config.h"
 #include "nm-dhcp4-config-glue.h"
 #include "nm-dbus-glib-types.h"
@@ -35,7 +34,6 @@ G_DEFINE_TYPE (NMDhcp4Config, nm_dhcp4_config, NM_TYPE_EXPORTED_OBJECT)
 #define NM_DHCP4_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP4_CONFIG, NMDhcp4ConfigPrivate))
 
 typedef struct {
-	char *dbus_path;
 	GHashTable *options;
 } NMDhcp4ConfigPrivate;
 
@@ -110,14 +108,6 @@ nm_dhcp4_config_list_options (NMDhcp4Config *self)
 	return list;
 }
 
-const char *
-nm_dhcp4_config_get_dbus_path (NMDhcp4Config *self)
-{
-	g_return_val_if_fail (NM_IS_DHCP4_CONFIG (self), NULL);
-
-	return NM_DHCP4_CONFIG_GET_PRIVATE (self)->dbus_path;
-}
-
 static void
 nm_gvalue_destroy (gpointer data)
 {
@@ -131,10 +121,8 @@ static void
 nm_dhcp4_config_init (NMDhcp4Config *self)
 {
 	NMDhcp4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (self);
-	static guint32 counter = 0;
 
-	priv->dbus_path = g_strdup_printf (NM_DBUS_PATH "/DHCP4Config/%d", counter++);
-	nm_dbus_manager_register_object (nm_dbus_manager_get (), priv->dbus_path, self);
+	nm_exported_object_export (NM_EXPORTED_OBJECT (self));
 
 	priv->options = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, nm_gvalue_destroy);
 }
@@ -144,7 +132,6 @@ finalize (GObject *object)
 {
 	NMDhcp4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (object);
 
-	g_free (priv->dbus_path);
 	g_hash_table_destroy (priv->options);
 
 	G_OBJECT_CLASS (nm_dhcp4_config_parent_class)->finalize (object);
@@ -170,8 +157,11 @@ static void
 nm_dhcp4_config_class_init (NMDhcp4ConfigClass *config_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (config_class);
+	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (config_class);
 
 	g_type_class_add_private (config_class, sizeof (NMDhcp4ConfigPrivate));
+
+	exported_object_class->export_path = NM_DBUS_PATH "/DHCP4Config/%u";
 
 	/* virtual methods */
 	object_class->get_property = get_property;

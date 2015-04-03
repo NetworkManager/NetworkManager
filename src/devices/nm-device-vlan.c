@@ -514,7 +514,7 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_PARENT:
-		g_value_set_boxed (value, priv->parent ? nm_device_get_path (priv->parent) : "/");
+		nm_utils_g_value_set_object_path (value, priv->parent);
 		break;
 	case PROP_INT_PARENT_DEVICE:
 		g_value_set_object (value, priv->parent);

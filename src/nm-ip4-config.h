@@ -63,10 +63,6 @@ NMIP4Config * nm_ip4_config_new (int ifindex);
 
 int nm_ip4_config_get_ifindex (const NMIP4Config *config);
 
-/* D-Bus integration */
-void nm_ip4_config_export (NMIP4Config *config);
-const char * nm_ip4_config_get_dbus_path (const NMIP4Config *config);
-
 /* Integration with nm-platform and nm-setting */
 NMIP4Config *nm_ip4_config_capture (int ifindex, gboolean capture_resolv_conf);
 gboolean nm_ip4_config_commit (const NMIP4Config *config, int ifindex, gboolean routes_full_sync, gint64 default_route_metric);

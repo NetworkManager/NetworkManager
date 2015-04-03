@@ -507,6 +507,7 @@ gboolean nm_config_get_configure_and_quit (gpointer unused);
 gconstpointer nm_dbus_manager_get (void);
 void nm_dbus_manager_register_exported_type (gpointer unused, GType gtype, gconstpointer unused2);
 void nm_dbus_manager_register_object (gpointer unused, const char *path, gpointer object);
+void nm_dbus_manager_unregister_object (gpointer unused, gpointer object);
 
 gconstpointer
 nm_config_get (void)
@@ -539,6 +540,11 @@ nm_dbus_manager_register_exported_type (gpointer unused, GType gtype, gconstpoin
 
 void
 nm_dbus_manager_register_object (gpointer unused, const char *path, gpointer object)
+{
+}
+
+void
+nm_dbus_manager_unregister_object (gpointer unused, gpointer object)
 {
 }
 

@@ -1553,7 +1553,7 @@ constructed (GObject *object)
 	priv->dbus_mgr = g_object_ref (nm_dbus_manager_get ());
 	priv->auth_mgr = g_object_ref (nm_auth_manager_get ());
 
-	nm_dbus_manager_register_object (priv->dbus_mgr, NM_DBUS_PATH_AGENT_MANAGER, object);
+	nm_exported_object_export (NM_EXPORTED_OBJECT (object));
 
 	g_signal_connect (priv->dbus_mgr,
 	                  NM_DBUS_MANAGER_NAME_OWNER_CHANGED,
@@ -1593,7 +1593,7 @@ dispose (GObject *object)
 		g_signal_handlers_disconnect_by_func (priv->dbus_mgr,
 		                                      G_CALLBACK (name_owner_changed_cb),
 		                                      object);
-		nm_dbus_manager_unregister_object (priv->dbus_mgr, object);
+		nm_exported_object_unexport (NM_EXPORTED_OBJECT (object));
 		g_clear_object (&priv->dbus_mgr);
 	}
 
@@ -1604,8 +1604,11 @@ static void
 nm_agent_manager_class_init (NMAgentManagerClass *agent_manager_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (agent_manager_class);
+	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (agent_manager_class);
 
 	g_type_class_add_private (agent_manager_class, sizeof (NMAgentManagerPrivate));
+
+	exported_object_class->export_path = NM_DBUS_PATH_AGENT_MANAGER;
 
 	/* virtual methods */
 	object_class->constructed = constructed;

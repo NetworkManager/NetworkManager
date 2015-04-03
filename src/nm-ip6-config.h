@@ -64,10 +64,6 @@ NMIP6Config * nm_ip6_config_new (int ifindex);
 
 int nm_ip6_config_get_ifindex (const NMIP6Config *config);
 
-/* D-Bus integration */
-void nm_ip6_config_export (NMIP6Config *config);
-const char * nm_ip6_config_get_dbus_path (const NMIP6Config *config);
-
 /* Integration with nm-platform and nm-setting */
 NMIP6Config *nm_ip6_config_capture (int ifindex, gboolean capture_resolv_conf, NMSettingIP6ConfigPrivacy use_temporary);
 gboolean nm_ip6_config_commit (const NMIP6Config *config, int ifindex, gboolean routes_full_sync);

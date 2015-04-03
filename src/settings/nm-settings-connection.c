@@ -29,7 +29,6 @@
 #include "nm-glib.h"
 #include "nm-settings-connection.h"
 #include "nm-session-monitor.h"
-#include "nm-dbus-manager.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-logging.h"
 #include "nm-auth-utils.h"
@@ -1790,10 +1789,10 @@ nm_settings_connection_signal_remove (NMSettingsConnection *self)
 	/* Emit removed first */
 	g_signal_emit_by_name (self, NM_SETTINGS_CONNECTION_REMOVED);
 
-	/* And unregistered last to ensure the removed signal goes out before
+	/* And unregister last to ensure the removed signal goes out before
 	 * we take the connection off the bus.
 	 */
-	nm_dbus_manager_unregister_object (nm_dbus_manager_get (), G_OBJECT (self));
+	nm_exported_object_unexport (NM_EXPORTED_OBJECT (self));
 }
 
 gboolean
@@ -2430,8 +2429,11 @@ static void
 nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (class);
+	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (class);
 
 	g_type_class_add_private (class, sizeof (NMSettingsConnectionPrivate));
+
+	exported_object_class->export_path = NM_DBUS_PATH_SETTINGS "/%u";
 
 	/* Virtual methods */
 	object_class->constructed = constructed;

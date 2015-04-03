@@ -136,7 +136,7 @@ get_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_PEER:
 		peer = get_peer (self);
-		g_value_set_boxed (value, peer ? nm_device_get_path (peer) : "/");
+		nm_utils_g_value_set_object_path (value, peer);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);

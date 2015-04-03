@@ -29,7 +29,6 @@
 
 #include "nm-utils.h"
 #include "nm-platform.h"
-#include "nm-dbus-manager.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-ip6-config-glue.h"
 #include "nm-route-manager.h"
@@ -41,8 +40,6 @@ G_DEFINE_TYPE (NMIP6Config, nm_ip6_config, NM_TYPE_EXPORTED_OBJECT)
 #define NM_IP6_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_IP6_CONFIG, NMIP6ConfigPrivate))
 
 typedef struct {
-	char *path;
-
 	gboolean never_default;
 	struct in6_addr gateway;
 	GArray *addresses;
@@ -83,26 +80,6 @@ nm_ip6_config_new (int ifindex)
 	return (NMIP6Config *) g_object_new (NM_TYPE_IP6_CONFIG,
 	                                     NM_IP6_CONFIG_IFINDEX, ifindex,
 	                                     NULL);
-}
-
-void
-nm_ip6_config_export (NMIP6Config *config)
-{
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
-	static guint32 counter = 0;
-
-	if (!priv->path) {
-		priv->path = g_strdup_printf (NM_DBUS_PATH "/IP6Config/%d", counter++);
-		nm_dbus_manager_register_object (nm_dbus_manager_get (), priv->path, config);
-	}
-}
-
-const char *
-nm_ip6_config_get_dbus_path (const NMIP6Config *config)
-{
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
-
-	return priv->path;
 }
 
 int
@@ -1167,7 +1144,7 @@ nm_ip6_config_dump (const NMIP6Config *config, const char *detail)
 
 	g_message ("--------- NMIP6Config %p (%s)", config, detail);
 
-	str = nm_ip6_config_get_dbus_path (config);
+	str = nm_exported_object_get_path (NM_EXPORTED_OBJECT (config));
 	if (str)
 		g_message ("   path: %s", str);
 
@@ -1892,8 +1869,6 @@ finalize (GObject *object)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (object);
 
-	g_free (priv->path);
-
 	g_array_unref (priv->addresses);
 	g_array_unref (priv->routes);
 	g_array_unref (priv->nameservers);
@@ -2152,8 +2127,11 @@ static void
 nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (config_class);
+	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (config_class);
 
 	g_type_class_add_private (config_class, sizeof (NMIP6ConfigPrivate));
+
+	exported_object_class->export_path = NM_DBUS_PATH "/IP6Config/%u";
 
 	/* virtual methods */
 	object_class->get_property = get_property;

@@ -973,11 +973,10 @@ static void
 claim_connection (NMSettings *self, NMSettingsConnection *connection)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	static guint32 ec_counter = 0;
 	GError *error = NULL;
 	GHashTableIter iter;
 	gpointer data;
-	char *path;
+	const char *path;
 	NMSettingsConnection *existing;
 
 	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (connection));
@@ -1043,10 +1042,8 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 
 	/* Export the connection over D-Bus */
 	g_warn_if_fail (nm_connection_get_path (NM_CONNECTION (connection)) == NULL);
-	path = g_strdup_printf ("%s/%u", NM_DBUS_PATH_SETTINGS, ec_counter++);
+	path = nm_exported_object_export (NM_EXPORTED_OBJECT (connection));
 	nm_connection_set_path (NM_CONNECTION (connection), path);
-	nm_dbus_manager_register_object (priv->dbus_mgr, path, G_OBJECT (connection));
-	g_free (path);
 
 	g_hash_table_insert (priv->connections,
 	                     (gpointer) nm_connection_get_path (NM_CONNECTION (connection)),
@@ -2141,7 +2138,7 @@ nm_settings_new (GError **error)
 	if (!priv->hostname.hostnamed_proxy)
 		setup_hostname_file_monitors (self);
 
-	nm_dbus_manager_register_object (priv->dbus_mgr, NM_DBUS_PATH_SETTINGS, self);
+	nm_exported_object_export (NM_EXPORTED_OBJECT (self));
 	return self;
 }
 
@@ -2279,8 +2276,11 @@ static void
 nm_settings_class_init (NMSettingsClass *class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (class);
+	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (class);
 
 	g_type_class_add_private (class, sizeof (NMSettingsPrivate));
+
+	exported_object_class->export_path = NM_DBUS_PATH_SETTINGS;
 
 	/* virtual methods */
 	object_class->get_property = get_property;

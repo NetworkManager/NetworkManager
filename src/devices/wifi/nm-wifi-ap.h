@@ -58,7 +58,6 @@ GType nm_ap_get_type (void);
 NMAccessPoint *   nm_ap_new_from_properties      (const char *supplicant_path,
                                                   GVariant *properties);
 NMAccessPoint *   nm_ap_new_fake_from_connection (NMConnection *connection);
-void              nm_ap_export_to_dbus           (NMAccessPoint *ap);
 
 void              nm_ap_update_from_properties   (NMAccessPoint *ap,
                                                   const char *supplicant_path,
@@ -72,7 +71,6 @@ gboolean          nm_ap_complete_connection      (NMAccessPoint *self,
                                                   gboolean lock_bssid,
                                                   GError **error);
 
-const char *      nm_ap_get_dbus_path            (NMAccessPoint *ap);
 const char *      nm_ap_get_supplicant_path      (NMAccessPoint *ap);
 guint32           nm_ap_get_id                   (NMAccessPoint *ap);
 const GByteArray *nm_ap_get_ssid                 (const NMAccessPoint *ap);

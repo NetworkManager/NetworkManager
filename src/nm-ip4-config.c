@@ -28,7 +28,6 @@
 
 #include "nm-utils.h"
 #include "nm-platform.h"
-#include "nm-dbus-manager.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-ip4-config-glue.h"
 #include "NetworkManagerUtils.h"
@@ -42,8 +41,6 @@ G_DEFINE_TYPE (NMIP4Config, nm_ip4_config, NM_TYPE_EXPORTED_OBJECT)
 #define NM_IP4_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_IP4_CONFIG, NMIP4ConfigPrivate))
 
 typedef struct {
-	char *path;
-
 	gboolean never_default;
 	guint32 gateway;
 	gboolean has_gateway;
@@ -94,26 +91,6 @@ nm_ip4_config_new (int ifindex)
 	return (NMIP4Config *) g_object_new (NM_TYPE_IP4_CONFIG,
 	                                     NM_IP4_CONFIG_IFINDEX, ifindex,
 	                                     NULL);
-}
-
-void
-nm_ip4_config_export (NMIP4Config *config)
-{
-	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
-	static guint32 counter = 0;
-
-	if (!priv->path) {
-		priv->path = g_strdup_printf (NM_DBUS_PATH "/IP4Config/%d", counter++);
-		nm_dbus_manager_register_object (nm_dbus_manager_get (), priv->path, config);
-	}
-}
-
-const char *
-nm_ip4_config_get_dbus_path (const NMIP4Config *config)
-{
-	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
-
-	return priv->path;
 }
 
 int
@@ -1197,7 +1174,7 @@ nm_ip4_config_dump (const NMIP4Config *config, const char *detail)
 
 	g_message ("--------- NMIP4Config %p (%s)", config, detail);
 
-	str = nm_ip4_config_get_dbus_path (config);
+	str = nm_exported_object_get_path (NM_EXPORTED_OBJECT (config));
 	if (str)
 		g_message ("   path: %s", str);
 
@@ -2134,8 +2111,6 @@ finalize (GObject *object)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (object);
 
-	g_free (priv->path);
-
 	g_array_unref (priv->addresses);
 	g_array_unref (priv->routes);
 	g_array_unref (priv->nameservers);
@@ -2343,8 +2318,11 @@ static void
 nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (config_class);
+	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (config_class);
 
 	g_type_class_add_private (config_class, sizeof (NMIP4ConfigPrivate));
+
+	exported_object_class->export_path = NM_DBUS_PATH "/IP4Config/%u";
 
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;

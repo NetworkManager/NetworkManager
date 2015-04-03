@@ -1360,7 +1360,7 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 
 	g_clear_object (&priv->ip4_config);
 	priv->ip4_config = config;
-	nm_ip4_config_export (config);
+	nm_exported_object_export (NM_EXPORTED_OBJECT (config));
 	g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_IP4_CONFIG);
 	nm_vpn_connection_config_maybe_complete (self, TRUE);
 }
@@ -1497,7 +1497,7 @@ next:
 
 	g_clear_object (&priv->ip6_config);
 	priv->ip6_config = config;
-	nm_ip6_config_export (config);
+	nm_exported_object_export (NM_EXPORTED_OBJECT (config));
 	g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_IP6_CONFIG);
 	nm_vpn_connection_config_maybe_complete (self, TRUE);
 }
@@ -2278,20 +2278,14 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, priv->banner ? priv->banner : "");
 		break;
 	case PROP_IP4_CONFIG:
-		if (ip_config_valid (priv->vpn_state) && priv->ip4_config)
-			g_value_set_boxed (value, nm_ip4_config_get_dbus_path (priv->ip4_config));
-		else
-			g_value_set_boxed (value, "/");
+		nm_utils_g_value_set_object_path (value, ip_config_valid (priv->vpn_state) ? priv->ip4_config : NULL);
 		break;
 	case PROP_IP6_CONFIG:
-		if (ip_config_valid (priv->vpn_state) && priv->ip6_config)
-			g_value_set_boxed (value, nm_ip6_config_get_dbus_path (priv->ip6_config));
-		else
-			g_value_set_boxed (value, "/");
+		nm_utils_g_value_set_object_path (value, ip_config_valid (priv->vpn_state) ? priv->ip6_config : NULL);
 		break;
 	case PROP_MASTER:
 		parent_dev = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (object));
-		g_value_set_boxed (value, parent_dev ? nm_device_get_path (parent_dev) : "/");
+		nm_utils_g_value_set_object_path (value, parent_dev);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);

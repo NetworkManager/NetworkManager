@@ -75,7 +75,6 @@ static void _ppp_kill (NMPPPManager *manager);
 
 typedef struct {
 	GPid pid;
-	char *dbus_path;
 
 	char *parent_iface;
 
@@ -123,13 +122,7 @@ nm_ppp_manager_init (NMPPPManager *manager)
 static void
 constructed (GObject *object)
 {
-	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (object);
-	DBusGConnection *connection;
-	static guint32 counter = 0;
-
-	priv->dbus_path = g_strdup_printf (NM_DBUS_PATH "/PPP/%d", counter++);
-	connection = nm_dbus_manager_get_connection (nm_dbus_manager_get ());
-	dbus_g_connection_register_g_object (connection, priv->dbus_path, object);
+	nm_exported_object_export (NM_EXPORTED_OBJECT (object));
 
 	G_OBJECT_CLASS (nm_ppp_manager_parent_class)->constructed (object);
 }
@@ -618,8 +611,11 @@ static void
 nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (manager_class);
+	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (manager_class);
 
 	g_type_class_add_private (manager_class, sizeof (NMPPPManagerPrivate));
+
+	exported_object_class->export_path = NM_DBUS_PATH "/PPP";
 
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
@@ -1001,7 +997,7 @@ create_pppd_cmd_line (NMPPPManager *self,
 	nm_cmd_line_add_int (cmd, 0);
 
 	nm_cmd_line_add_string (cmd, "ipparam");
-	nm_cmd_line_add_string (cmd, priv->dbus_path);
+	nm_cmd_line_add_string (cmd, nm_exported_object_get_path (NM_EXPORTED_OBJECT (self)));
 
 	nm_cmd_line_add_string (cmd, "plugin");
 	nm_cmd_line_add_string (cmd, NM_PPPD_PLUGIN);

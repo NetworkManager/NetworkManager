@@ -45,8 +45,6 @@ GType nm_dhcp6_config_get_type (void);
 
 NMDhcp6Config *nm_dhcp6_config_new (void);
 
-const char *nm_dhcp6_config_get_dbus_path (NMDhcp6Config *config);
-
 void nm_dhcp6_config_add_option (NMDhcp6Config *config,
                                  const char *key,
                                  const char *option);

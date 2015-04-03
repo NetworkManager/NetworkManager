@@ -27,7 +27,6 @@
 
 #include "nm-glib.h"
 #include "nm-logging.h"
-#include "nm-dbus-manager.h"
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 
