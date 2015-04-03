@@ -33,6 +33,8 @@
  * and some test programs.
  **/
 
+#include <gio/gio.h>
+
 #include "nm-connection.h"
 #include "nm-core-enum-types.h"
 #include "nm-dbus-interface.h"
@@ -139,4 +141,30 @@ GByteArray *nm_utils_rsa_key_encrypt (const guint8 *data,
 
 gint64 _nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 max, gint64 fallback);
 
+gulong _nm_dbus_signal_connect_data (GDBusProxy *proxy,
+                                     const char *signal_name,
+                                     const GVariantType *signature,
+                                     GCallback c_handler,
+                                     gpointer data,
+                                     GClosureNotify destroy_data,
+                                     GConnectFlags connect_flags);
+#define _nm_dbus_signal_connect(proxy, name, signature, handler, data) \
+	_nm_dbus_signal_connect_data (proxy, name, signature, handler, data, NULL, (GConnectFlags) 0)
+
+GVariant *_nm_dbus_proxy_call_finish (GDBusProxy           *proxy,
+                                      GAsyncResult         *res,
+                                      const GVariantType   *reply_type,
+                                      GError              **error);
+
+GVariant *_nm_dbus_proxy_call_sync   (GDBusProxy           *proxy,
+                                      const gchar          *method_name,
+                                      GVariant             *parameters,
+                                      const GVariantType   *reply_type,
+                                      GDBusCallFlags        flags,
+                                      gint                  timeout_msec,
+                                      GCancellable         *cancellable,
+                                      GError              **error);
+
+gboolean _nm_dbus_error_has_name (GError     *error,
+                                  const char *dbus_error_name);
 #endif

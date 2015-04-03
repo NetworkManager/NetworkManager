@@ -109,33 +109,6 @@ GSList *nm_match_spec_split (const char *value);
 
 const char *nm_utils_get_shared_wifi_permission (NMConnection *connection);
 
-GHashTable *value_hash_create          (void);
-void        value_hash_add             (GHashTable *hash,
-										const char *key,
-										GValue *value);
-
-void        value_hash_add_str         (GHashTable *hash,
-										const char *key,
-										const char *str);
-
-void        value_hash_add_object_path (GHashTable *hash,
-										const char *key,
-										const char *op);
-
-void        value_hash_add_uint        (GHashTable *hash,
-										const char *key,
-										guint32 val);
-
-void        value_hash_add_bool        (GHashTable *hash,
-					                    const char *key,
-					                    gboolean val);
-
-void        value_hash_add_object_property (GHashTable *hash,
-                                            const char *key,
-                                            GObject *object,
-                                            const char *prop,
-                                            GType val_type);
-
 const char *nm_utils_get_ip_config_method (NMConnection *connection,
                                            GType         ip_setting_type);
 

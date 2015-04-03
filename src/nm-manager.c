@@ -190,7 +190,7 @@ typedef struct {
 
 	NMVpnManager *vpn_manager;
 
-	DBusGProxy *aipd_proxy;
+	GDBusProxy *aipd_proxy;
 	NMSleepMonitor *sleep_monitor;
 
 	GSList *auth_chains;
@@ -801,7 +801,7 @@ device_removed_cb (NMDevice *device, gpointer user_data)
 }
 
 static void
-aipd_handle_event (DBusGProxy *proxy,
+aipd_handle_event (GDBusProxy *proxy,
                    const char *event,
                    const char *iface,
                    const char *address,
@@ -811,11 +811,6 @@ aipd_handle_event (DBusGProxy *proxy,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	GSList *iter;
 	gboolean handled = FALSE;
-
-	if (!event || !iface) {
-		nm_log_warn (LOGD_AUTOIP4, "incomplete message received from avahi-autoipd");
-		return;
-	}
 
 	if (   (strcmp (event, "BIND") != 0)
 	    && (strcmp (event, "CONFLICT") != 0)
@@ -3865,14 +3860,14 @@ impl_manager_sleep (NMManager *self,
 }
 
 static void
-sleeping_cb (DBusGProxy *proxy, gpointer user_data)
+sleeping_cb (NMSleepMonitor *monitor, gpointer user_data)
 {
 	nm_log_dbg (LOGD_SUSPEND, "Received sleeping signal");
 	_internal_sleep (NM_MANAGER (user_data), TRUE);
 }
 
 static void
-resuming_cb (DBusGProxy *proxy, gpointer user_data)
+resuming_cb (NMSleepMonitor *monitor, gpointer user_data)
 {
 	nm_log_dbg (LOGD_SUSPEND, "Received resuming signal");
 	_internal_sleep (NM_MANAGER (user_data), FALSE);
@@ -4870,9 +4865,9 @@ static void
 nm_manager_init (NMManager *manager)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	DBusGConnection *g_connection;
 	guint i;
 	GFile *file;
+	GError *error = NULL;
 
 	/* Initialize rfkill structures and states */
 	memset (priv->radio_states, 0, sizeof (priv->radio_states));
@@ -4913,30 +4908,22 @@ nm_manager_init (NMManager *manager)
 
 	priv->vpn_manager = g_object_ref (nm_vpn_manager_get ());
 
-	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
-
 	/* avahi-autoipd stuff */
-	priv->aipd_proxy = dbus_g_proxy_new_for_name (g_connection,
-	                                              NM_AUTOIP_DBUS_SERVICE,
-	                                              "/",
-	                                              NM_AUTOIP_DBUS_IFACE);
+	priv->aipd_proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
+	                                                  G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
+	                                                  NULL,
+	                                                  NM_AUTOIP_DBUS_SERVICE,
+	                                                  "/",
+	                                                  NM_AUTOIP_DBUS_IFACE,
+	                                                  NULL, &error);
 	if (priv->aipd_proxy) {
-		dbus_g_object_register_marshaller (g_cclosure_marshal_generic,
-		                                   G_TYPE_NONE,
-		                                   G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
-		                                   G_TYPE_INVALID);
-
-		dbus_g_proxy_add_signal (priv->aipd_proxy,
-		                         "Event",
-		                         G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
-		                         G_TYPE_INVALID);
-
-		dbus_g_proxy_connect_signal (priv->aipd_proxy, "Event",
-		                             G_CALLBACK (aipd_handle_event),
-		                             manager,
-		                             NULL);
-	} else
-		nm_log_warn (LOGD_AUTOIP4, "could not initialize avahi-autoipd D-Bus proxy");
+		_nm_dbus_signal_connect (priv->aipd_proxy, "Event", G_VARIANT_TYPE ("(sss)"),
+		                         G_CALLBACK (aipd_handle_event), manager);
+	} else {
+		nm_log_warn (LOGD_AUTOIP4, "could not initialize avahi-autoipd D-Bus proxy: %s",
+		             error->message);
+		g_clear_error (&error);
+	}
 
 	/* sleep/wake handling */
 	priv->sleep_monitor = g_object_ref (nm_sleep_monitor_get ());

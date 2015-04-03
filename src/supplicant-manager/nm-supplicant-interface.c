@@ -404,19 +404,6 @@ nm_supplicant_interface_credentials_reply (NMSupplicantInterface *self,
 	return !!reply;
 }
 
-static gboolean
-_dbus_error_has_name (GError *error, const char *dbus_error_name)
-{
-	gs_free char *error_name = NULL;
-	gboolean is_error = FALSE;
-
-	if (error && g_dbus_error_is_remote_error (error)) {
-		error_name = g_dbus_error_get_remote_error (error);
-		is_error = !g_strcmp0 (error_name, dbus_error_name);
-	}
-	return is_error;
-}
-
 static void
 iface_check_netreply_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 {
@@ -439,7 +426,7 @@ iface_check_netreply_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	self = NM_SUPPLICANT_INTERFACE (user_data);
 	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
-	if (variant || _dbus_error_has_name (error, "fi.w1.wpa_supplicant1.InvalidArgs"))
+	if (variant || _nm_dbus_error_has_name (error, "fi.w1.wpa_supplicant1.InvalidArgs"))
 		priv->has_credreq = TRUE;
 
 	nm_log_dbg (LOGD_SUPPLICANT, "Supplicant %s network credentials requests",
@@ -477,14 +464,16 @@ iface_check_ap_mode_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_d
 	const char *data;
 
 	/* The ProbeRequest method only exists if AP mode has been enabled */
-	variant = g_dbus_proxy_call_finish (proxy, result, &error);
+	variant = _nm_dbus_proxy_call_finish (proxy, result,
+	                                      G_VARIANT_TYPE ("(s)"),
+	                                      &error);
 	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
 
 	self = NM_SUPPLICANT_INTERFACE (user_data);
 	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
-	if (variant && g_variant_is_of_type (variant, G_VARIANT_TYPE ("(s)"))) {
+	if (variant) {
 		g_variant_get (variant, "(&s)", &data);
 		if (strstr (data, "ProbeRequest"))
 			priv->ap_support = AP_SUPPORT_YES;
@@ -493,41 +482,59 @@ iface_check_ap_mode_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_d
 	iface_check_ready (self);
 }
 
-#define MATCH_SIGNAL(s, n, v, t) (!strcmp (s, n) && g_variant_is_of_type (v, t))
-
 static void
-signal_cb (GDBusProxy  *proxy,
-           const gchar *sender,
-           const gchar *signal,
-           GVariant    *args,
-           gpointer     user_data)
+wpas_iface_scan_done (GDBusProxy *proxy,
+                      gboolean success,
+                      gpointer user_data)
 {
 	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-	const char *path, *field, *message;
-	gboolean success;
 
-	if (MATCH_SIGNAL (signal, "ScanDone", args, G_VARIANT_TYPE ("(b)"))) {
-		/* Cache last scan completed time */
+	/* Cache last scan completed time */
+	priv->last_scan = nm_utils_get_monotonic_timestamp_s ();
+
+	g_signal_emit (self, signals[SCAN_DONE], 0, success);
+}
+
+static void
+wpas_iface_bss_added (GDBusProxy *proxy,
+                      const char *path,
+                      GVariant *props,
+                      gpointer user_data)
+{
+	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	if (priv->scanning)
 		priv->last_scan = nm_utils_get_monotonic_timestamp_s ();
 
-		g_variant_get (args, "(b)", &success);
-		g_signal_emit (self, signals[SCAN_DONE], 0, success);
-	} else if (MATCH_SIGNAL (signal, "BSSAdded", args, G_VARIANT_TYPE ("(oa{sv})"))) {
-		if (priv->scanning)
-			priv->last_scan = nm_utils_get_monotonic_timestamp_s ();
+	handle_new_bss (self, path);
+}
 
-		g_variant_get (args, "(&oa{sv})", &path, NULL);
-		handle_new_bss (self, path);
-	} else if (MATCH_SIGNAL (signal, "BSSRemoved", args, G_VARIANT_TYPE ("(o)"))) {
-		g_variant_get (args, "(&o)", &path);
-		g_signal_emit (self, signals[BSS_REMOVED], 0, path);
-		g_hash_table_remove (priv->bss_proxies, path);
-	} else if (MATCH_SIGNAL (signal, "NetworkRequest", args, G_VARIANT_TYPE ("(oss)"))) {
-		g_variant_get (args, "(&o&s&s)", &path, &field, &message);
-		if (priv->has_credreq && priv->net_path && !g_strcmp0 (path, priv->net_path))
-			g_signal_emit (self, signals[CREDENTIALS_REQUEST], 0, field, message);
-	}
+static void
+wpas_iface_bss_removed (GDBusProxy *proxy,
+                        const char *path,
+                        gpointer user_data)
+{
+	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	g_signal_emit (self, signals[BSS_REMOVED], 0, path);
+	g_hash_table_remove (priv->bss_proxies, path);
+}
+
+static void
+wpas_iface_network_request (GDBusProxy *proxy,
+                            const char *path,
+                            const char *field,
+                            const char *message,
+                            gpointer user_data)
+{
+	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	if (priv->has_credreq && priv->net_path && !g_strcmp0 (path, priv->net_path))
+		g_signal_emit (self, signals[CREDENTIALS_REQUEST], 0, field, message);
 }
 
 static void
@@ -602,7 +609,14 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	self = NM_SUPPLICANT_INTERFACE (user_data);
 	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
-	g_signal_connect (priv->iface_proxy, "g-signal", G_CALLBACK (signal_cb), self);
+	_nm_dbus_signal_connect (priv->iface_proxy, "ScanDone", G_VARIANT_TYPE ("(b)"),
+	                         G_CALLBACK (wpas_iface_scan_done), self);
+	_nm_dbus_signal_connect (priv->iface_proxy, "BSSAdded", G_VARIANT_TYPE ("(oa{sv})"),
+	                         G_CALLBACK (wpas_iface_bss_added), self);
+	_nm_dbus_signal_connect (priv->iface_proxy, "BSSRemoved", G_VARIANT_TYPE ("(o)"),
+	                         G_CALLBACK (wpas_iface_bss_removed), self);
+	_nm_dbus_signal_connect (priv->iface_proxy, "NetworkRequest", G_VARIANT_TYPE ("(oss)"),
+	                         G_CALLBACK (wpas_iface_network_request), self);
 
 	/* Check whether NetworkReply and AP mode are supported */
 	priv->ready_count = 1;
@@ -666,19 +680,20 @@ interface_get_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	NMSupplicantInterfacePrivate *priv;
 	gs_unref_variant GVariant *variant = NULL;
 	gs_free_error GError *error = NULL;
-	char *path;
+	const char *path;
 
-	variant = g_dbus_proxy_call_finish (proxy, result, &error);
+	variant = _nm_dbus_proxy_call_finish (proxy, result,
+	                                      G_VARIANT_TYPE ("(o)"),
+	                                      &error);
 	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
 
 	self = NM_SUPPLICANT_INTERFACE (user_data);
 	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
-	if (variant && g_variant_is_of_type (variant, G_VARIANT_TYPE ("(o)"))) {
-		g_variant_get (variant, "(o)", &path);
+	if (variant) {
+		g_variant_get (variant, "(&o)", &path);
 		interface_add_done (self, path);
-		g_free (path);
 	} else {
 		nm_log_err (LOGD_SUPPLICANT, "(%s): error getting interface: %s", priv->dev, error->message);
 		set_state (self, NM_SUPPLICANT_INTERFACE_STATE_DOWN);
@@ -692,20 +707,21 @@ interface_add_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	NMSupplicantInterfacePrivate *priv;
 	gs_free_error GError *error = NULL;
 	gs_unref_variant GVariant *variant = NULL;
-	char *path;
+	const char *path;
 
-	variant = g_dbus_proxy_call_finish (proxy, result, &error);
+	variant = _nm_dbus_proxy_call_finish (proxy, result,
+	                                      G_VARIANT_TYPE ("(o)"),
+	                                      &error);
 	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
 
 	self = NM_SUPPLICANT_INTERFACE (user_data);
 	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
-	if (variant && g_variant_is_of_type (variant, G_VARIANT_TYPE ("(o)"))) {
-		g_variant_get (variant, "(o)", &path);
+	if (variant) {
+		g_variant_get (variant, "(&o)", &path);
 		interface_add_done (self, path);
-		g_free (path);
-	} else if (_dbus_error_has_name (error, WPAS_ERROR_EXISTS_ERROR)) {
+	} else if (_nm_dbus_error_has_name (error, WPAS_ERROR_EXISTS_ERROR)) {
 		/* Interface already added, just get its object path */
 		g_dbus_proxy_call (priv->wpas_proxy,
 		                   "GetInterface",
@@ -963,18 +979,14 @@ add_network_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	const char *blob_name;
 	GByteArray *blob_data;
 
-	reply = g_dbus_proxy_call_finish (proxy, result, &error);
+	reply = _nm_dbus_proxy_call_finish (proxy, result,
+	                                    G_VARIANT_TYPE ("(o)"),
+	                                    &error);
 	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
 
 	self = NM_SUPPLICANT_INTERFACE (user_data);
 	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	if (reply && !g_variant_is_of_type (reply, G_VARIANT_TYPE ("(o)"))) {
-		error = g_error_new (NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
-		                     "Unexpected AddNetwork reply type %s",
-		                     g_variant_get_type_string (reply));
-	}
 
 	g_free (priv->net_path);
 	priv->net_path = NULL;
@@ -986,7 +998,6 @@ add_network_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	}
 
 	g_variant_get (reply, "(o)", &priv->net_path);
-	g_assert (priv->net_path);
 
 	/* Send blobs first; otherwise jump to selecting the network */
 	blobs = nm_supplicant_config_get_blobs (priv->cfg);

@@ -28,6 +28,7 @@
 
 #include "nm-logging.h"
 #include "nm-dbus-manager.h"
+#include "nm-core-internal.h"
 
 #include "nm-sleep-monitor.h"
 
@@ -123,19 +124,12 @@ take_inhibitor (NMSleepMonitor *self)
 }
 
 static void
-signal_cb (GDBusProxy  *proxy,
-           const gchar *sendername,
-           const gchar *signalname,
-           GVariant    *args,
-           gpointer     data)
+prepare_for_sleep_cb (GDBusProxy  *proxy,
+                      gboolean     is_about_to_suspend,
+                      gpointer     data)
 {
 	NMSleepMonitor *self = data;
-	gboolean is_about_to_suspend;
 
-	if (strcmp (signalname, "PrepareForSleep") != 0)
-		return;
-
-	g_variant_get (args, "(b)", &is_about_to_suspend);
 	nm_log_dbg (LOGD_SUSPEND, "Received PrepareForSleep signal: %d", is_about_to_suspend);
 
 	if (is_about_to_suspend) {
@@ -182,7 +176,8 @@ on_proxy_acquired (GObject *object,
 	}
 
 	g_signal_connect (self->sd_proxy, "notify::g-name-owner", G_CALLBACK (name_owner_cb), self);
-	g_signal_connect (self->sd_proxy, "g-signal", G_CALLBACK (signal_cb), self);
+	_nm_dbus_signal_connect (self->sd_proxy, "PrepareForSleep", G_VARIANT_TYPE ("(b)"),
+	                         G_CALLBACK (prepare_for_sleep_cb), self);
 
 	owner = g_dbus_proxy_get_name_owner (self->sd_proxy);
 	if (owner)
