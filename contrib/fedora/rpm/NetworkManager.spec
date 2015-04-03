@@ -107,7 +107,6 @@ Requires: dhclient >= 12:4.1.0
 Requires: libnl3 >= %{libnl3_version}
 Requires: %{name}-libnm%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: ppp = %{ppp_version}
-Requires: avahi-autoipd
 Requires: dnsmasq
 Requires: udev
 Requires: iptables
@@ -519,7 +518,6 @@ fi
 %defattr(-,root,root,0755)
 %doc COPYING NEWS AUTHORS README CONTRIBUTING TODO
 %{_sysconfdir}/dbus-1/system.d/org.freedesktop.NetworkManager.conf
-%{_sysconfdir}/dbus-1/system.d/nm-avahi-autoipd.conf
 %{_sysconfdir}/dbus-1/system.d/nm-dispatcher.conf
 %{_sysconfdir}/dbus-1/system.d/nm-ifcfg-rh.conf
 %{_sbindir}/%{name}
@@ -536,7 +534,6 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/NetworkManager.conf
 %{_bindir}/nm-online
 %{_libexecdir}/nm-dhcp-helper
-%{_libexecdir}/nm-avahi-autoipd.action
 %{_libexecdir}/nm-dispatcher
 %{_libexecdir}/nm-iface-helper
 %dir %{_libdir}/NetworkManager
