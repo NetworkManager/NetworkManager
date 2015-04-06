@@ -1277,6 +1277,7 @@ source_to_rtprot (NMIPConfigSource source)
 	case NM_IP_CONFIG_SOURCE_UNKNOWN:
 		return RTPROT_UNSPEC;
 	case NM_IP_CONFIG_SOURCE_KERNEL:
+	case _NM_IP_CONFIG_SOURCE_RTPROT_KERNEL:
 		return RTPROT_KERNEL;
 	case NM_IP_CONFIG_SOURCE_DHCP:
 		return RTPROT_DHCP;
@@ -1289,13 +1290,16 @@ source_to_rtprot (NMIPConfigSource source)
 }
 
 static NMIPConfigSource
-rtprot_to_source (guint rtprot)
+rtprot_to_source (guint rtprot, gboolean preserve_rtprot)
 {
 	switch (rtprot) {
 	case RTPROT_UNSPEC:
 		return NM_IP_CONFIG_SOURCE_UNKNOWN;
-	case RTPROT_REDIRECT:
 	case RTPROT_KERNEL:
+		if (preserve_rtprot)
+			return _NM_IP_CONFIG_SOURCE_RTPROT_KERNEL;
+		/* fall through */
+	case RTPROT_REDIRECT:
 		return NM_IP_CONFIG_SOURCE_KERNEL;
 	case RTPROT_RA:
 		return NM_IP_CONFIG_SOURCE_RDISC;
@@ -1352,7 +1356,7 @@ init_ip4_route (NMPlatformIP4Route *route, struct rtnl_route *rtnlroute)
 	}
 	route->metric = rtnl_route_get_priority (rtnlroute);
 	rtnl_route_get_metric (rtnlroute, RTAX_ADVMSS, &route->mss);
-	route->source = rtprot_to_source (rtnl_route_get_protocol (rtnlroute));
+	route->source = rtprot_to_source (rtnl_route_get_protocol (rtnlroute), FALSE);
 	route->scope_inv = nm_platform_route_scope_inv (rtnl_route_get_scope (rtnlroute));
 
 	return TRUE;
@@ -1393,7 +1397,7 @@ init_ip6_route (NMPlatformIP6Route *route, struct rtnl_route *rtnlroute)
 	}
 	route->metric = rtnl_route_get_priority (rtnlroute);
 	rtnl_route_get_metric (rtnlroute, RTAX_ADVMSS, &route->mss);
-	route->source = rtprot_to_source (rtnl_route_get_protocol (rtnlroute));
+	route->source = rtprot_to_source (rtnl_route_get_protocol (rtnlroute), FALSE);
 
 	return TRUE;
 }
