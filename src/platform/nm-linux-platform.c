@@ -332,7 +332,7 @@ nm_linux_platform_setup (void)
 /******************************************************************/
 
 static ObjectType
-object_type_from_nl_object (const struct nl_object *object)
+_nlo_get_object_type (const struct nl_object *object)
 {
 	const char *type_str;
 
@@ -366,7 +366,7 @@ object_type_from_nl_object (const struct nl_object *object)
 static void
 _nl_link_family_unset (struct nl_object *obj, int *family)
 {
-	if (!obj || object_type_from_nl_object (obj) != OBJECT_TYPE_LINK)
+	if (!obj || _nlo_get_object_type (obj) != OBJECT_TYPE_LINK)
 		*family = AF_UNSPEC;
 	else {
 		*family = rtnl_link_get_family ((struct rtnl_link *) obj);
@@ -409,7 +409,7 @@ static struct nl_object *
 get_kernel_object (struct nl_sock *sock, struct nl_object *needle)
 {
 	struct nl_object *object = NULL;
-	ObjectType type = object_type_from_nl_object (needle);
+	ObjectType type = _nlo_get_object_type (needle);
 
 	switch (type) {
 	case OBJECT_TYPE_LINK:
@@ -485,7 +485,7 @@ get_kernel_object (struct nl_sock *sock, struct nl_object *needle)
 static int
 add_kernel_object (struct nl_sock *sock, struct nl_object *object)
 {
-	switch (object_type_from_nl_object (object)) {
+	switch (_nlo_get_object_type (object)) {
 	case OBJECT_TYPE_LINK:
 		return rtnl_link_add (sock, (struct rtnl_link *) object, NLM_F_CREATE);
 	case OBJECT_TYPE_IP4_ADDRESS:
@@ -1430,7 +1430,7 @@ to_string_object_with_type (NMPlatform *platform, struct nl_object *obj, ObjectT
 static const char *
 to_string_object (NMPlatform *platform, struct nl_object *obj)
 {
-	return to_string_object_with_type (platform, obj, object_type_from_nl_object (obj));
+	return to_string_object_with_type (platform, obj, _nlo_get_object_type (obj));
 }
 
 #undef SET_AND_RETURN_STRING_BUFFER
@@ -1470,13 +1470,13 @@ choose_cache_by_type (NMPlatform *platform, ObjectType object_type)
 static struct nl_cache *
 choose_cache (NMPlatform *platform, struct nl_object *object)
 {
-	return choose_cache_by_type (platform, object_type_from_nl_object (object));
+	return choose_cache_by_type (platform, _nlo_get_object_type (object));
 }
 
 static gboolean
 object_has_ifindex (struct nl_object *object, int ifindex)
 {
-	switch (object_type_from_nl_object (object)) {
+	switch (_nlo_get_object_type (object)) {
 	case OBJECT_TYPE_IP4_ADDRESS:
 	case OBJECT_TYPE_IP6_ADDRESS:
 		return ifindex == rtnl_addr_get_ifindex ((struct rtnl_addr *) object);
@@ -1524,7 +1524,7 @@ static void
 announce_object (NMPlatform *platform, const struct nl_object *object, NMPlatformSignalChangeType change_type, NMPlatformReason reason)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	ObjectType object_type = object_type_from_nl_object (object);
+	ObjectType object_type = _nlo_get_object_type (object);
 	const char *sig = signal_by_type_and_status[object_type];
 
 	switch (object_type) {
@@ -1693,7 +1693,7 @@ refresh_object (NMPlatform *platform, struct nl_object *object, gboolean removed
 			return FALSE;
 
 		/* Unsupported object types should never have reached the caches */
-		type = object_type_from_nl_object (kernel_object);
+		type = _nlo_get_object_type (kernel_object);
 		g_assert (type != OBJECT_TYPE_UNKNOWN);
 
 		hack_empty_master_iff_lower_up (platform, kernel_object);
@@ -1779,7 +1779,7 @@ delete_object (NMPlatform *platform, struct nl_object *object, gboolean do_refre
 	int nle;
 	gboolean result = FALSE;
 
-	object_type = object_type_from_nl_object (object);
+	object_type = _nlo_get_object_type (object);
 	g_return_val_if_fail (object_type != OBJECT_TYPE_UNKNOWN, FALSE);
 
 	switch (object_type) {
@@ -1950,7 +1950,7 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 	nl_msg_parse (msg, ref_object, &object);
 	g_return_val_if_fail (object, NL_OK);
 
-	type = object_type_from_nl_object (object);
+	type = _nlo_get_object_type (object);
 
 	if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
 		if (type == OBJECT_TYPE_LINK) {
@@ -4155,7 +4155,7 @@ cache_announce_changes (NMPlatform *platform, struct nl_cache *new, struct nl_ca
 		struct nl_object *cached_object = nm_nl_cache_search (old, object);
 
 		if (cached_object) {
-			ObjectType type = object_type_from_nl_object (object);
+			ObjectType type = _nlo_get_object_type (object);
 			if (nm_nl_object_diff (type, object, cached_object))
 				announce_object (platform, object, NM_PLATFORM_SIGNAL_CHANGED, NM_PLATFORM_REASON_EXTERNAL);
 			nl_object_put (cached_object);
@@ -4182,7 +4182,7 @@ cache_remove_unknown (struct nl_cache *cache)
 	struct nl_object *object;
 
 	for (object = nl_cache_get_first (cache); object; object = nl_cache_get_next (object)) {
-		if (object_type_from_nl_object (object) == OBJECT_TYPE_UNKNOWN) {
+		if (_nlo_get_object_type (object) == OBJECT_TYPE_UNKNOWN) {
 			if (!objects_to_remove)
 				objects_to_remove = g_ptr_array_new_with_free_func ((GDestroyNotify) nl_object_put);
 			nl_object_get (object);
