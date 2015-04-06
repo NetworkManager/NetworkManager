@@ -66,6 +66,8 @@ const char *nm_ap_get_supplicant_path (NMAccessPoint *ap);
 void        nm_ap_set_supplicant_path (NMAccessPoint *ap,
                                        const char *path);
 
+guint32     nm_ap_get_id (NMAccessPoint *ap);
+
 const GByteArray *nm_ap_get_ssid (const NMAccessPoint * ap);
 void              nm_ap_set_ssid (NMAccessPoint * ap, const guint8 * ssid, gsize len);
 
@@ -112,8 +114,8 @@ gboolean nm_ap_complete_connection (NMAccessPoint *self,
                                     gboolean lock_bssid,
                                     GError **error);
 
-NMAccessPoint *     nm_ap_match_in_list (NMAccessPoint *find_ap,
-                                         GSList *ap_list,
+NMAccessPoint *     nm_ap_match_in_hash (NMAccessPoint *find_ap,
+                                         GHashTable *hash,
                                          gboolean strict_match);
 
 void                nm_ap_dump (NMAccessPoint *ap, const char *prefix);

@@ -44,6 +44,7 @@ typedef struct
 {
 	char *dbus_path;
 	char *supplicant_path;   /* D-Bus object path of this AP from wpa_supplicant */
+	guint32 id;              /* ID for stable sorting of APs */
 
 	/* Scanned or cached values */
 	GByteArray *	ssid;
@@ -314,7 +315,8 @@ nm_ap_export_to_dbus (NMAccessPoint *ap)
 		return;
 	}
 
-	priv->dbus_path = g_strdup_printf (NM_DBUS_PATH_ACCESS_POINT "/%d", counter++);
+	priv->id = counter++;
+	priv->dbus_path = g_strdup_printf (NM_DBUS_PATH_ACCESS_POINT "/%d", priv->id);
 	nm_dbus_manager_register_object (nm_dbus_manager_get (), priv->dbus_path, ap);
 }
 
@@ -721,6 +723,14 @@ nm_ap_get_supplicant_path (NMAccessPoint *ap)
 	g_return_val_if_fail (NM_IS_AP (ap), NULL);
 
 	return NM_AP_GET_PRIVATE (ap)->supplicant_path;
+}
+
+guint32
+nm_ap_get_id (NMAccessPoint *ap)
+{
+	g_return_val_if_fail (NM_IS_AP (ap), 0);
+
+	return NM_AP_GET_PRIVATE (ap)->id;
 }
 
 void
@@ -1186,16 +1196,17 @@ capabilities_compatible (NM80211ApSecurityFlags a_flags, NM80211ApSecurityFlags 
 }
 
 NMAccessPoint *
-nm_ap_match_in_list (NMAccessPoint *find_ap,
-                     GSList *ap_list,
+nm_ap_match_in_hash (NMAccessPoint *find_ap,
+                     GHashTable *hash,
                      gboolean strict_match)
 {
-	GSList *iter;
+	GHashTableIter iter;
+	NMAccessPoint *list_ap;
 
 	g_return_val_if_fail (find_ap != NULL, NULL);
 
-	for (iter = ap_list; iter; iter = g_slist_next (iter)) {
-		NMAccessPoint * list_ap = NM_AP (iter->data);
+	g_hash_table_iter_init (&iter, hash);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &list_ap)) {
 		const GByteArray * list_ssid = nm_ap_get_ssid (list_ap);
 		const char * list_addr = nm_ap_get_address (list_ap);
 
