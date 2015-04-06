@@ -51,6 +51,10 @@ typedef struct _NMSleepMonitor       NMSleepMonitor;
 typedef enum {
 	/* In priority order; higher number == higher priority */
 	NM_IP_CONFIG_SOURCE_UNKNOWN,
+
+	/* platform internal flag used to mark routes with protocol RTPROT_KERNEL. */
+	_NM_IP_CONFIG_SOURCE_RTPROT_KERNEL,
+
 	NM_IP_CONFIG_SOURCE_KERNEL,
 	NM_IP_CONFIG_SOURCE_SHARED,
 	NM_IP_CONFIG_SOURCE_IP4LL,

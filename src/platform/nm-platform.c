@@ -2391,6 +2391,8 @@ static const char *
 source_to_string (NMIPConfigSource source)
 {
 	switch (source) {
+	case _NM_IP_CONFIG_SOURCE_RTPROT_KERNEL:
+		return "rtprot-kernel";
 	case NM_IP_CONFIG_SOURCE_KERNEL:
 		return "kernel";
 	case NM_IP_CONFIG_SOURCE_SHARED:
