@@ -1067,6 +1067,16 @@ nm_ap_set_last_seen (NMAccessPoint *ap, gint32 last_seen)
 	NM_AP_GET_PRIVATE (ap)->last_seen = last_seen;
 }
 
+static guint
+freq_to_band (guint32 freq)
+{
+	if (freq >= 4915 && freq <= 5825)
+		return 5;
+	else if (freq >= 2412 && freq <= 2484)
+		return 2;
+	return 0;
+}
+
 gboolean
 nm_ap_check_compatible (NMAccessPoint *self,
                         NMConnection *connection)
@@ -1117,13 +1127,12 @@ nm_ap_check_compatible (NMAccessPoint *self,
 
 	band = nm_setting_wireless_get_band (s_wireless);
 	if (band) {
-		if (!strcmp (band, "a")) {
-			if (priv->freq < 4915 || priv->freq > 5825)
-				return FALSE;
-		} else if (!strcmp (band, "bg")) {
-			if (priv->freq < 2412 || priv->freq > 2484)
-				return FALSE;
-		}
+		guint ap_band = freq_to_band (priv->freq);
+
+		if (!strcmp (band, "a") && ap_band != 5)
+			return FALSE;
+		else if (!strcmp (band, "bg") && ap_band != 2)
+			return FALSE;
 	}
 
 	channel = nm_setting_wireless_get_channel (s_wireless);
@@ -1169,7 +1178,7 @@ NMAccessPoint *
 nm_ap_match_in_hash (NMAccessPoint *find_ap, GHashTable *hash)
 {
 	GHashTableIter iter;
-	NMAccessPoint *list_ap;
+	NMAccessPoint *list_ap, *band_match = NULL;
 
 	g_return_val_if_fail (find_ap != NULL, NULL);
 
@@ -1177,9 +1186,11 @@ nm_ap_match_in_hash (NMAccessPoint *find_ap, GHashTable *hash)
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &list_ap)) {
 		const GByteArray * list_ssid = nm_ap_get_ssid (list_ap);
 		const char * list_addr = nm_ap_get_address (list_ap);
+		const guint32 list_freq = nm_ap_get_freq (list_ap);
 
 		const GByteArray * find_ssid = nm_ap_get_ssid (find_ap);
 		const char * find_addr = nm_ap_get_address (find_ap);
+		const guint32 find_freq = nm_ap_get_freq (find_ap);
 
 		/* SSID match; if both APs are hiding their SSIDs,
 		 * let matching continue on BSSID and other properties
@@ -1203,10 +1214,6 @@ nm_ap_match_in_hash (NMAccessPoint *find_ap, GHashTable *hash)
 		if (nm_ap_get_mode (list_ap) != nm_ap_get_mode (find_ap))
 			continue;
 
-		/* Frequency match */
-		if (nm_ap_get_freq (list_ap) != nm_ap_get_freq (find_ap))
-			continue;
-
 		/* AP flags */
 		if (nm_ap_get_flags (list_ap) != nm_ap_get_flags (find_ap))
 			continue;
@@ -1217,9 +1224,16 @@ nm_ap_match_in_hash (NMAccessPoint *find_ap, GHashTable *hash)
 		if (nm_ap_get_rsn_flags (list_ap) != nm_ap_get_rsn_flags (find_ap))
 			continue;
 
+		if (list_freq != find_freq) {
+			/* Must be last check to ensure all other properties match */
+			if (freq_to_band (list_freq) == freq_to_band (find_freq))
+				band_match = list_ap;
+			continue;
+		}
+
 		return list_ap;
 	}
 
-	return NULL;
+	return band_match;
 }
 
