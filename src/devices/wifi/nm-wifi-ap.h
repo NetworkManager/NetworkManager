@@ -60,6 +60,10 @@ NMAccessPoint * nm_ap_new_from_properties (const char *supplicant_path,
 NMAccessPoint * nm_ap_new_fake_from_connection (NMConnection *connection);
 void            nm_ap_export_to_dbus    (NMAccessPoint *ap);
 
+void            nm_ap_update_from_properties (NMAccessPoint *ap,
+                                              const char *supplicant_path,
+                                              GVariant *properties);
+
 const char *nm_ap_get_dbus_path (NMAccessPoint *ap);
 
 const char *nm_ap_get_supplicant_path (NMAccessPoint *ap);
