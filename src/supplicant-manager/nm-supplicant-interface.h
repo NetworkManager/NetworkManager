@@ -54,6 +54,10 @@ enum {
 #define NM_IS_SUPPLICANT_INTERFACE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_SUPPLICANT_INTERFACE))
 #define NM_SUPPLICANT_INTERFACE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_SUPPLICANT_INTERFACE, NMSupplicantInterfaceClass))
 
+/* Properties */
+#define NM_SUPPLICANT_INTERFACE_CURRENT_BSS      "current-bss"
+
+/* Signals */
 #define NM_SUPPLICANT_INTERFACE_STATE            "state"
 #define NM_SUPPLICANT_INTERFACE_REMOVED          "removed"
 #define NM_SUPPLICANT_INTERFACE_NEW_BSS          "new-bss"
@@ -144,6 +148,8 @@ guint32 nm_supplicant_interface_get_state (NMSupplicantInterface * self);
 const char *nm_supplicant_interface_state_to_string (guint32 state);
 
 gboolean nm_supplicant_interface_get_scanning (NMSupplicantInterface *self);
+
+const char *nm_supplicant_interface_get_current_bss (NMSupplicantInterface *self);
 
 gint32 nm_supplicant_interface_get_last_scan_time (NMSupplicantInterface *self);
 

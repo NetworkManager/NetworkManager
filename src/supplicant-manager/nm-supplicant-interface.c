@@ -64,6 +64,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 enum {
 	PROP_0 = 0,
 	PROP_SCANNING,
+	PROP_CURRENT_BSS,
 	LAST_PROP
 };
 
@@ -91,6 +92,7 @@ typedef struct {
 	char *         net_path;
 	guint32        blobs_left;
 	GHashTable *   bss_proxies;
+	char *         current_bss;
 
 	gint32         last_scan; /* timestamp as returned by nm_utils_get_monotonic_timestamp_s() */
 
@@ -318,6 +320,17 @@ nm_supplicant_interface_get_scanning (NMSupplicantInterface *self)
 	if (priv->state == NM_SUPPLICANT_INTERFACE_STATE_SCANNING)
 		return TRUE;
 	return FALSE;
+}
+
+const char *
+nm_supplicant_interface_get_current_bss (NMSupplicantInterface *self)
+{
+	NMSupplicantInterfacePrivate *priv;
+
+	g_return_val_if_fail (self != NULL, FALSE);
+
+	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	return priv->state >= NM_SUPPLICANT_INTERFACE_STATE_READY ? priv->current_bss : NULL;
 }
 
 gint32
@@ -550,6 +563,8 @@ props_changed_cb (GDBusProxy *proxy,
 	gint32 i32;
 	GVariant *v;
 
+	g_object_freeze_notify (G_OBJECT (self));
+
 	if (g_variant_lookup (changed_properties, "Scanning", "b", &b))
 		set_scanning (self, b);
 
@@ -568,6 +583,16 @@ props_changed_cb (GDBusProxy *proxy,
 		while (*iter)
 			handle_new_bss (self, *iter++);
 		g_free (array);
+	}
+
+	if (g_variant_lookup (changed_properties, "CurrentBSS", "&o", &s)) {
+		if (strcmp (s, "/") == 0)
+			s = NULL;
+		if (g_strcmp0 (s, priv->current_bss) != 0) {
+			g_free (priv->current_bss);
+			priv->current_bss = g_strdup (s);
+			g_object_notify (G_OBJECT (self), NM_SUPPLICANT_INTERFACE_CURRENT_BSS);
+		}
 	}
 
 	v = g_variant_lookup_value (changed_properties, "Capabilities", G_VARIANT_TYPE_VARDICT);
@@ -589,6 +614,8 @@ props_changed_cb (GDBusProxy *proxy,
 				         priv->disconnect_reason);
 		}
 	}
+
+	g_object_thaw_notify (G_OBJECT (self));
 }
 
 static void
@@ -1268,11 +1295,7 @@ set_property (GObject *object,
               const GValue *value,
               GParamSpec *pspec)
 {
-	switch (prop_id) {
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+	G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 }
 
 static void
@@ -1281,9 +1304,14 @@ get_property (GObject *object,
               GValue *value,
               GParamSpec *pspec)
 {
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (object);
+
 	switch (prop_id) {
 	case PROP_SCANNING:
-		g_value_set_boolean (value, NM_SUPPLICANT_INTERFACE_GET_PRIVATE (object)->scanning);
+		g_value_set_boolean (value, priv->scanning);
+		break;
+	case PROP_CURRENT_BSS:
+		g_value_set_string (value, priv->current_bss);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1314,6 +1342,7 @@ dispose (GObject *object)
 	g_clear_pointer (&priv->net_path, g_free);
 	g_clear_pointer (&priv->dev, g_free);
 	g_clear_pointer (&priv->object_path, g_free);
+	g_clear_pointer (&priv->current_bss, g_free);
 
 	g_clear_object (&priv->cfg);
 
@@ -1339,6 +1368,13 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 		                       FALSE,
 		                       G_PARAM_READABLE |
 		                       G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property
+		(object_class, PROP_CURRENT_BSS,
+		 g_param_spec_string (NM_SUPPLICANT_INTERFACE_CURRENT_BSS, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/* Signals */
 	signals[STATE] =
