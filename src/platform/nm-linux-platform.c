@@ -327,6 +327,7 @@ typedef enum {
 	OBJECT_TYPE_IP4_ROUTE,
 	OBJECT_TYPE_IP6_ROUTE,
 	__OBJECT_TYPE_LAST,
+	OBJECT_TYPE_MAX = __OBJECT_TYPE_LAST - 1,
 } ObjectType;
 
 static ObjectType
@@ -1437,7 +1438,7 @@ to_string_object (NMPlatform *platform, struct nl_object *obj)
 
 /* Object and cache manipulation */
 
-static const char *signal_by_type_and_status[__OBJECT_TYPE_LAST] = {
+static const char *signal_by_type_and_status[OBJECT_TYPE_MAX + 1] = {
 	[OBJECT_TYPE_LINK]        = NM_PLATFORM_SIGNAL_LINK_CHANGED,
 	[OBJECT_TYPE_IP4_ADDRESS] = NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED,
 	[OBJECT_TYPE_IP6_ADDRESS] = NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED,
