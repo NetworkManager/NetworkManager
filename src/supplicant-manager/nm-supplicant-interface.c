@@ -888,8 +888,10 @@ log_result_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	gs_free_error GError *error = NULL;
 
 	reply = g_dbus_proxy_call_finish (proxy, result, &error);
-	if (!reply && !g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
-		nm_log_warn (LOGD_SUPPLICANT, "Failed to %s: %s.", error->message, (char *) user_data);
+	if (   !reply
+	    && !g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)
+	    && !strstr (error->message, "fi.w1.wpa_supplicant1.NotConnected"))
+		nm_log_warn (LOGD_SUPPLICANT, "Failed to %s: %s.", (char *) user_data, error->message);
 }
 
 void
