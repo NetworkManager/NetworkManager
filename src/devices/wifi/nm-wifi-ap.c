@@ -62,7 +62,6 @@ typedef struct
 	/* Non-scanned attributes */
 	gboolean			fake;	/* Whether or not the AP is from a scan */
 	gboolean            hotspot;    /* Whether the AP is a local device's hotspot network */
-	gboolean			broadcast;	/* Whether or not the AP is broadcasting (hidden) */
 	gint32              last_seen;  /* Timestamp when the AP was seen lastly (obtained via nm_utils_get_monotonic_timestamp_s()) */
 } NMAccessPointPrivate;
 
@@ -94,7 +93,6 @@ nm_ap_init (NMAccessPoint *ap)
 	priv->flags = NM_802_11_AP_FLAGS_NONE;
 	priv->wpa_flags = NM_802_11_AP_SEC_NONE;
 	priv->rsn_flags = NM_802_11_AP_SEC_NONE;
-	priv->broadcast = TRUE;
 }
 
 static void
@@ -419,9 +417,6 @@ nm_ap_update_from_properties (NMAccessPoint *ap,
 
 		g_variant_unref (v);
 	}
-
-	if (!nm_ap_get_ssid (ap))
-		nm_ap_set_broadcast (ap, FALSE);
 
 	v = g_variant_lookup_value (properties, "BSSID", G_VARIANT_TYPE_BYTESTRING);
 	if (v) {
@@ -1050,26 +1045,6 @@ void nm_ap_set_fake (NMAccessPoint *ap, gboolean fake)
 
 	NM_AP_GET_PRIVATE (ap)->fake = fake;
 }
-
-
-/*
- * Get/Set functions to indicate whether an AP broadcasts its SSID.
- */
-gboolean nm_ap_get_broadcast (NMAccessPoint *ap)
-{
-	g_return_val_if_fail (NM_IS_AP (ap), TRUE);
-
-	return NM_AP_GET_PRIVATE (ap)->broadcast;
-}
-
-
-void nm_ap_set_broadcast (NMAccessPoint *ap, gboolean broadcast)
-{
-	g_return_if_fail (NM_IS_AP (ap));
-
-	NM_AP_GET_PRIVATE (ap)->broadcast = broadcast;
-}
-
 
 /*
  * Get/Set functions for how long ago the AP was last seen in a scan.
