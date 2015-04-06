@@ -1190,31 +1190,8 @@ nm_ap_complete_connection (NMAccessPoint *self,
 	                                        error);
 }
 
-static gboolean
-capabilities_compatible (NM80211ApSecurityFlags a_flags, NM80211ApSecurityFlags b_flags)
-{
-	if (a_flags == b_flags)
-		return TRUE;
-
-	/* Make sure there's a common key management method */
-	if (!((a_flags & 0x300) & (b_flags & 0x300)))
-		return FALSE;
-
-	/* Ensure common pairwise ciphers */
-	if (!((a_flags & 0xF) & (b_flags & 0xF)))
-		return FALSE;
-
-	/* Ensure common group ciphers */
-	if (!((a_flags & 0xF0) & (b_flags & 0xF0)))
-		return FALSE;
-
-	return TRUE;
-}
-
 NMAccessPoint *
-nm_ap_match_in_hash (NMAccessPoint *find_ap,
-                     GHashTable *hash,
-                     gboolean strict_match)
+nm_ap_match_in_hash (NMAccessPoint *find_ap, GHashTable *hash)
 {
 	GHashTableIter iter;
 	NMAccessPoint *list_ap;
@@ -1243,8 +1220,7 @@ nm_ap_match_in_hash (NMAccessPoint *find_ap,
 			continue;
 
 		/* BSSID match */
-		if (   (strict_match || nm_ethernet_address_is_valid (find_addr, -1))
-		    && nm_ethernet_address_is_valid (list_addr, -1)
+		if (   nm_ethernet_address_is_valid (list_addr, -1)
 		    && !nm_utils_hwaddr_matches (list_addr, -1, find_addr, -1))
 			continue;
 
@@ -1260,23 +1236,11 @@ nm_ap_match_in_hash (NMAccessPoint *find_ap,
 		if (nm_ap_get_flags (list_ap) != nm_ap_get_flags (find_ap))
 			continue;
 
-		if (strict_match) {
-			if (nm_ap_get_wpa_flags (list_ap) != nm_ap_get_wpa_flags (find_ap))
-				continue;
+		if (nm_ap_get_wpa_flags (list_ap) != nm_ap_get_wpa_flags (find_ap))
+			continue;
 
-			if (nm_ap_get_rsn_flags (list_ap) != nm_ap_get_rsn_flags (find_ap))
-				continue;
-		} else {
-			NM80211ApSecurityFlags list_wpa_flags = nm_ap_get_wpa_flags (list_ap);
-			NM80211ApSecurityFlags find_wpa_flags = nm_ap_get_wpa_flags (find_ap);
-			NM80211ApSecurityFlags list_rsn_flags = nm_ap_get_rsn_flags (list_ap);
-			NM80211ApSecurityFlags find_rsn_flags = nm_ap_get_rsn_flags (find_ap);
-
-			/* Just ensure that there is overlap in the capabilities */
-			if (   !capabilities_compatible (list_wpa_flags, find_wpa_flags)
-			    && !capabilities_compatible (list_rsn_flags, find_rsn_flags))
-				continue;
-		}
+		if (nm_ap_get_rsn_flags (list_ap) != nm_ap_get_rsn_flags (find_ap))
+			continue;
 
 		return list_ap;
 	}

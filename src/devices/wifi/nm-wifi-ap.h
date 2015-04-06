@@ -118,9 +118,7 @@ gboolean nm_ap_complete_connection (NMAccessPoint *self,
                                     gboolean lock_bssid,
                                     GError **error);
 
-NMAccessPoint *     nm_ap_match_in_hash (NMAccessPoint *find_ap,
-                                         GHashTable *hash,
-                                         gboolean strict_match);
+NMAccessPoint *     nm_ap_match_in_hash (NMAccessPoint *find_ap, GHashTable *hash);
 
 void                nm_ap_dump (NMAccessPoint *ap, const char *prefix);
 

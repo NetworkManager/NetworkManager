@@ -1483,27 +1483,16 @@ try_fill_ssid_for_hidden_ap (NMAccessPoint *ap)
 	}
 }
 
-/*
- * merge_scanned_ap
- *
- * If there is already an entry that matches the BSSID and ESSID of the
- * AP to merge, replace that entry with the scanned AP.  Otherwise, add
- * the scanned AP to the list.
- *
- * TODO: possibly need to differentiate entries based on security too; i.e. if
- * there are two scan results with the same BSSID and SSID but different
- * security options?
- *
- */
 static void
 merge_scanned_ap (NMDeviceWifi *self,
-                  NMAccessPoint *merge_ap)
+                  NMAccessPoint *merge_ap,
+                  const char *supplicant_path,
+                  GVariant *properties)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMAccessPoint *found_ap = NULL;
 	const GByteArray *ssid;
 	const char *bssid;
-	gboolean strict_match = TRUE;
 
 	/* Let the manager try to fill in the SSID from seen-bssids lists */
 	bssid = nm_ap_get_address (merge_ap);
@@ -1525,18 +1514,9 @@ merge_scanned_ap (NMDeviceWifi *self,
 		}
 	}
 
-	/* If the incoming scan result matches the hidden AP that NM is currently
-	 * connected to but hasn't been seen in the scan list yet, don't use
-	 * strict matching.  Because the capabilities of the fake AP have to be
-	 * constructed from the NMConnection of the activation request, they won't
-	 * always be the same as the capabilities of the real AP from the scan.
-	 */
-	if (priv->current_ap && nm_ap_get_fake (priv->current_ap))
-		strict_match = FALSE;
-
-	found_ap = get_ap_by_supplicant_path (self, nm_ap_get_supplicant_path (merge_ap));
+	found_ap = get_ap_by_supplicant_path (self, supplicant_path);
 	if (!found_ap)
-		found_ap = nm_ap_match_in_hash (merge_ap, priv->aps, strict_match);
+		found_ap = nm_ap_match_in_hash (merge_ap, priv->aps);
 	if (found_ap) {
 		_LOGD (LOGD_WIFI_SCAN, "merging AP '%s' %s (%p) with existing (%p)",
 		            ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
@@ -1544,19 +1524,7 @@ merge_scanned_ap (NMDeviceWifi *self,
 		            merge_ap,
 		            found_ap);
 
-		nm_ap_set_supplicant_path (found_ap, nm_ap_get_supplicant_path (merge_ap));
-		nm_ap_set_flags (found_ap, nm_ap_get_flags (merge_ap));
-		nm_ap_set_wpa_flags (found_ap, nm_ap_get_wpa_flags (merge_ap));
-		nm_ap_set_rsn_flags (found_ap, nm_ap_get_rsn_flags (merge_ap));
-		nm_ap_set_strength (found_ap, nm_ap_get_strength (merge_ap));
-		nm_ap_set_last_seen (found_ap, nm_ap_get_last_seen (merge_ap));
-		nm_ap_set_broadcast (found_ap, nm_ap_get_broadcast (merge_ap));
-		nm_ap_set_freq (found_ap, nm_ap_get_freq (merge_ap));
-		nm_ap_set_max_bitrate (found_ap, nm_ap_get_max_bitrate (merge_ap));
-
-		/* If the AP is noticed in a scan, it's automatically no longer
-		 * fake, since it clearly exists somewhere.
-		 */
+		nm_ap_update_from_properties (found_ap, supplicant_path, properties);
 		nm_ap_set_fake (found_ap, FALSE);
 		g_object_set_data (G_OBJECT (found_ap), WPAS_REMOVED_TAG, NULL);
 	} else {
@@ -1673,7 +1641,7 @@ supplicant_iface_new_bss_cb (NMSupplicantInterface *iface,
 		nm_ap_dump (ap, "New AP: ");
 
 		/* Add the AP to the device's AP list */
-		merge_scanned_ap (self, ap);
+		merge_scanned_ap (self, ap, object_path, properties);
 		g_object_unref (ap);
 
 		/* Update the current AP if the supplicant notified a current BSS change
