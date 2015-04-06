@@ -1741,7 +1741,7 @@ supplicant_iface_bss_removed_cb (NMSupplicantInterface *iface,
 		 */
 		nm_ap_set_last_seen (ap, MAX (last_seen, now - SCAN_INTERVAL_MAX));
 		g_object_set_data (G_OBJECT (ap), WPAS_REMOVED_TAG, GUINT_TO_POINTER (TRUE));
-}
+	}
 }
 
 static void
