@@ -1371,7 +1371,7 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, bss_updated),
 		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_POINTER);
+		              G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_VARIANT);
 
 	signals[BSS_REMOVED] =
 		g_signal_new (NM_SUPPLICANT_INTERFACE_BSS_REMOVED,

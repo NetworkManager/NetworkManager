@@ -90,12 +90,12 @@ typedef struct {
 	/* interface saw a new BSS */
 	void (*new_bss)          (NMSupplicantInterface *iface,
 	                          const char *object_path,
-	                          GHashTable *props);
+	                          GVariant *props);
 
 	/* a BSS property changed */
 	void (*bss_updated)      (NMSupplicantInterface *iface,
 	                          const char *object_path,
-	                          GHashTable *props);
+	                          GVariant *props);
 
 	/* supplicant removed a BSS from its scan list */
 	void (*bss_removed)      (NMSupplicantInterface *iface,
