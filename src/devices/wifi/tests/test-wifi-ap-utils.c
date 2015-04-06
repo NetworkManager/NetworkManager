@@ -20,9 +20,9 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <string.h>
 
+#include "nm-glib.h"
 #include "nm-wifi-ap-utils.h"
 #include "nm-dbus-glib-types.h"
 

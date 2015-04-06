@@ -19,8 +19,8 @@
  * Copyright (C) 2007 - 2013 Red Hat, Inc.
  */
 
-#include <glib-object.h>
 
+#include "nm-glib.h"
 #include "nm-types.h"
 
 #ifndef __NETWORKMANAGER_RFKILL_MANAGER_H__

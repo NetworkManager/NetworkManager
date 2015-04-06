@@ -21,13 +21,12 @@
 #ifndef __NETWORKMANAGER_PLATFORM_H__
 #define __NETWORKMANAGER_PLATFORM_H__
 
-#include <glib-object.h>
-#include "nm-glib-compat.h"
 #include <netinet/in.h>
 #include <linux/if.h>
 #include <linux/if_addr.h>
 
 #include <nm-dbus-interface.h>
+#include "nm-glib.h"
 #include "nm-types.h"
 #include "NetworkManagerUtils.h"
 

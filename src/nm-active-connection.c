@@ -20,8 +20,8 @@
 
 #include "config.h"
 
-#include <glib.h>
 
+#include "nm-glib.h"
 #include "nm-types.h"
 #include "nm-active-connection.h"
 #include "nm-dbus-interface.h"
@@ -35,7 +35,6 @@
 #include "NetworkManagerUtils.h"
 #include "gsystem-local-alloc.h"
 #include "nm-active-connection-glue.h"
-#include "nm-glib-compat.h"
 
 /* Base class for anything implementing the Connection.Active D-Bus interface */
 G_DEFINE_ABSTRACT_TYPE (NMActiveConnection, nm_active_connection, G_TYPE_OBJECT)

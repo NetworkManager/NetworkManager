@@ -22,7 +22,7 @@
 #ifndef _NM_PROPERTIES_CHANGED_SIGNAL_H_
 #define _NM_PROPERTIES_CHANGED_SIGNAL_H_
 
-#include <glib-object.h>
+#include "nm-glib.h"
 
 void nm_properties_changed_signal_add_property (GType       type,
                                                 const char *dbus_property_name,

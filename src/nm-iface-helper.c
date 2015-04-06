@@ -20,7 +20,6 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <glib-unix.h>
 #include <getopt.h>
 #include <locale.h>
@@ -38,6 +37,7 @@
  * Forward declare if_nametoindex. */
 extern unsigned int if_nametoindex (const char *__ifname);
 
+#include "nm-glib.h"
 #include "gsystem-local-alloc.h"
 #include "NetworkManagerUtils.h"
 #include "nm-linux-platform.h"

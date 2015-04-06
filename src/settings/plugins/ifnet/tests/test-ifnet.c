@@ -24,12 +24,12 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <glib.h>
 #include <arpa/inet.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <nm-utils.h>
 
+#include "nm-glib.h"
 #include "nm-linux-platform.h"
 #include "nm-logging.h"
 

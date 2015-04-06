@@ -42,8 +42,8 @@
 #include <linux/if.h>
 #include <linux/if_ppp.h>
 
+#include "nm-glib.h"
 #include "NetworkManagerUtils.h"
-#include "nm-glib-compat.h"
 #include "nm-ppp-manager.h"
 #include "nm-dbus-manager.h"
 #include "nm-logging.h"

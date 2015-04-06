@@ -22,10 +22,8 @@
 #ifndef __NETWORKMANAGER_PPP_MANAGER_H__
 #define __NETWORKMANAGER_PPP_MANAGER_H__
 
-#include <glib.h>
-#include <glib-object.h>
-#include <gio/gio.h>
 
+#include "nm-glib.h"
 #include "nm-ppp-status.h"
 #include "nm-activation-request.h"
 #include "nm-connection.h"

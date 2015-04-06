@@ -21,11 +21,11 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <string.h>
 
 #include <nm-utils.h>
 
+#include "nm-glib.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-8021x.h"
 

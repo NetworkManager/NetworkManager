@@ -31,9 +31,9 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-#include <glib.h>
 #include <glib/gi18n.h>
 
+#include "nm-glib.h"
 #include "nm-core-internal.h"
 #include "nm-platform.h"
 #include "NetworkManagerUtils.h"

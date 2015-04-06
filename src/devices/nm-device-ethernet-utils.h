@@ -19,7 +19,7 @@
 #ifndef __NETWORKMANAGER_DEVICE_ETHERNET_UTILS_H__
 #define __NETWORKMANAGER_DEVICE_ETHERNET_UTILS_H__
 
-#include <glib.h>
+#include "nm-glib.h"
 
 char *nm_device_ethernet_utils_get_default_wired_name (const GSList *connections);
 

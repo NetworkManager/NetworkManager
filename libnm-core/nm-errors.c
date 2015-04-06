@@ -21,10 +21,9 @@
 #include "config.h"
 
 #include <string.h>
-#include <gio/gio.h>
 
+#include "nm-glib.h"
 #include "nm-errors.h"
-#include "nm-glib-compat.h"
 #include "nm-dbus-interface.h"
 #include "nm-vpn-dbus-interface.h"
 #include "nm-core-internal.h"

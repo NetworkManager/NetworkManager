@@ -21,7 +21,7 @@
 #ifndef __NETWORKMANAGER_ACTIVE_CONNECTION_H__
 #define __NETWORKMANAGER_ACTIVE_CONNECTION_H__
 
-#include <glib-object.h>
+#include "nm-glib.h"
 #include "nm-types.h"
 #include "nm-connection.h"
 

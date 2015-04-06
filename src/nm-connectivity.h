@@ -21,10 +21,8 @@
 #ifndef __NETWORKMANAGER_CONNECTIVITY_H__
 #define __NETWORKMANAGER_CONNECTIVITY_H__
 
-#include <glib.h>
-#include <glib-object.h>
-#include <gio/gio.h>
 
+#include "nm-glib.h"
 #include "nm-dbus-interface.h"
 #include "nm-types.h"
 

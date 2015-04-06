@@ -19,8 +19,7 @@
 #ifndef __NETWORKMANAGER_DNS_PLUGIN_H__
 #define __NETWORKMANAGER_DNS_PLUGIN_H__
 
-#include <glib.h>
-#include <glib-object.h>
+#include "nm-glib.h"
 
 #define NM_TYPE_DNS_PLUGIN            (nm_dns_plugin_get_type ())
 #define NM_DNS_PLUGIN(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DNS_PLUGIN, NMDnsPlugin))

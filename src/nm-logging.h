@@ -26,9 +26,8 @@
 #error nm-test-utils.h must be included as last header
 #endif
 
-#include <glib.h>
-#include <glib-object.h>
 
+#include "nm-glib.h"
 #include "nm-macros-internal.h"
 
 /* Log domains */

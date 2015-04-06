@@ -20,13 +20,13 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <string.h>
 #include <sys/types.h>
 #include <signal.h>
 
 #include <NetworkManager.h>
 
+#include "nm-glib.h"
 #include "common.h"
 
 #include "nm-test-utils.h"

@@ -21,18 +21,17 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <signal.h>
 #include <unistd.h>
 
+#include "nm-glib.h"
 #include "nm-vpn-service.h"
 #include "nm-dbus-manager.h"
 #include "nm-logging.h"
 #include "nm-vpn-manager.h"
-#include "nm-glib-compat.h"
 
 G_DEFINE_TYPE (NMVpnService, nm_vpn_service, G_TYPE_OBJECT)
 

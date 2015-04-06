@@ -86,14 +86,12 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <glib.h>
-#include <glib-object.h>
 #include <string.h>
 #include <errno.h>
 
+#include "nm-glib.h"
 #include "nm-utils.h"
 #include "nm-macros-internal.h"
-#include "nm-glib-compat.h"
 #include "gsystem-local-alloc.h"
 
 #ifdef __NETWORKMANAGER_LOGGING_H__

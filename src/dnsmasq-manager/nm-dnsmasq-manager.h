@@ -21,9 +21,8 @@
 #ifndef __NETWORKMANAGER_DNSMASQ_MANAGER_H__
 #define __NETWORKMANAGER_DNSMASQ_MANAGER_H__
 
-#include <glib.h>
-#include <glib-object.h>
 
+#include "nm-glib.h"
 #include "nm-ip4-config.h"
 
 #define NM_TYPE_DNSMASQ_MANAGER            (nm_dnsmasq_manager_get_type ())

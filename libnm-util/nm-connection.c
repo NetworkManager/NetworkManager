@@ -22,10 +22,10 @@
 
 #include "config.h"
 
-#include <glib-object.h>
 #include <glib/gi18n-lib.h>
 #include <dbus/dbus-glib.h>
 #include <string.h>
+#include "nm-glib.h"
 #include "nm-connection.h"
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"

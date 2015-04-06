@@ -21,11 +21,10 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <glib/gi18n.h>
-#include <gio/gio.h>
 #include <string.h>
 
+#include "nm-glib.h"
 #include "nm-core-internal.h"
 
 #include "nm-bt-error.h"

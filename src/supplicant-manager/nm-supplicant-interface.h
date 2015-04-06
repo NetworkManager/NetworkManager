@@ -22,7 +22,7 @@
 #ifndef __NETWORKMANAGER_SUPPLICANT_INTERFACE_H__
 #define __NETWORKMANAGER_SUPPLICANT_INTERFACE_H__
 
-#include <glib-object.h>
+#include "nm-glib.h"
 #include "nm-supplicant-types.h"
 
 /*
@@ -119,7 +119,6 @@ typedef struct {
 	                             const char *field,
 	                             const char *message);
 } NMSupplicantInterfaceClass;
-
 
 GType nm_supplicant_interface_get_type (void);
 

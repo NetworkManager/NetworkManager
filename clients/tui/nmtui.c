@@ -30,11 +30,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <glib.h>
 #include <glib/gi18n-lib.h>
 
 #include <NetworkManager.h>
 
+#include "nm-glib.h"
 #include "nmt-newt.h"
 #include "nm-editor-bindings.h"
 

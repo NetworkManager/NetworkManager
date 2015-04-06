@@ -32,11 +32,10 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <gio/gio.h>
 
+#include "nm-glib.h"
 #include "nm-dbus-manager.h"
 #include "nm-enum-types.h"
-#include "nm-glib-compat.h"
 #include "NetworkManagerUtils.h"
 #include "gsystem-local-alloc.h"
 

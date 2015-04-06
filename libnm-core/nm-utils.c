@@ -31,9 +31,9 @@
 #include <gmodule.h>
 #include <glib/gi18n-lib.h>
 
+#include "nm-glib.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
-#include "nm-glib-compat.h"
 #include "nm-setting-private.h"
 #include "crypto.h"
 #include "gsystem-local-alloc.h"

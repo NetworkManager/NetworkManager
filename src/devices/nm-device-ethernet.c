@@ -21,7 +21,6 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <glib/gi18n.h>
 #include <netinet/in.h>
 #include <string.h>
@@ -31,7 +30,7 @@
 
 #include <gudev/gudev.h>
 
-#include "nm-glib-compat.h"
+#include "nm-glib.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-private.h"
 #include "nm-activation-request.h"

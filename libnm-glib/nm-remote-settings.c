@@ -25,12 +25,12 @@
 #include <NetworkManager.h>
 #include <nm-connection.h>
 
+#include "nm-glib.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-remote-settings.h"
 #include "nm-remote-connection-private.h"
 #include "nm-object-private.h"
 #include "nm-dbus-helpers-private.h"
-#include "nm-glib-compat.h"
 #include "nm-object-private.h"
 
 /**

@@ -21,10 +21,9 @@
 #ifndef __NETWORKMANAGER_SECRET_AGENT_H__
 #define __NETWORKMANAGER_SECRET_AGENT_H__
 
-#include <glib.h>
-#include <glib-object.h>
 
 #include <nm-connection.h>
+#include "nm-glib.h"
 #include "nm-types.h"
 
 #define NM_TYPE_SECRET_AGENT            (nm_secret_agent_get_type ())

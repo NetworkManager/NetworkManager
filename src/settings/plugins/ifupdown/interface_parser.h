@@ -24,7 +24,7 @@
 #ifndef _INTERFACE_PARSER_H
 #define _INTERFACE_PARSER_H
 
-#include <glib.h>
+#include "nm-glib.h"
 
 typedef struct _if_data
 {

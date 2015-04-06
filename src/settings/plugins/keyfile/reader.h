@@ -22,8 +22,9 @@
 #ifndef _KEYFILE_PLUGIN_READER_H
 #define _KEYFILE_PLUGIN_READER_H
 
-#include <glib.h>
 #include <nm-connection.h>
+
+#include "nm-glib.h"
 
 NMConnection *nm_keyfile_plugin_connection_from_file (const char *filename, GError **error);
 

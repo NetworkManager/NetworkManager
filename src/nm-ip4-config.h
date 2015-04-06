@@ -21,8 +21,8 @@
 #ifndef __NETWORKMANAGER_IP4_CONFIG_H__
 #define __NETWORKMANAGER_IP4_CONFIG_H__
 
-#include <glib-object.h>
 
+#include "nm-glib.h"
 #include "nm-types.h"
 #include "nm-setting-ip4-config.h"
 

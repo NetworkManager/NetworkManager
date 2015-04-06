@@ -24,8 +24,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <gmodule.h>
-#include <gio/gio.h>
 
+#include "nm-glib.h"
 #include "nm-logging.h"
 #include "nm-bluez-manager.h"
 #include "nm-device-factory.h"

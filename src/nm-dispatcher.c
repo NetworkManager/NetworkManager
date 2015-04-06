@@ -21,11 +21,10 @@
 
 #include "config.h"
 
-#include <glib.h>
-#include <gio/gio.h>
 #include <string.h>
 #include <errno.h>
 
+#include "nm-glib.h"
 #include "nm-dispatcher.h"
 #include "nm-dispatcher-api.h"
 #include "NetworkManagerUtils.h"
@@ -38,7 +37,6 @@
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-glib-compat.h"
 #include "nm-settings-connection.h"
 #include "nm-platform.h"
 #include "nm-core-internal.h"

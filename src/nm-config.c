@@ -24,19 +24,18 @@
 #include <string.h>
 #include <stdio.h>
 
+#include <glib/gi18n.h>
+
+#include "nm-glib.h"
 #include "nm-config.h"
 #include "nm-logging.h"
 #include "nm-utils.h"
-#include "nm-glib-compat.h"
 #include "nm-device.h"
 #include "NetworkManagerUtils.h"
 #include "gsystem-local-alloc.h"
 #include "nm-enum-types.h"
 #include "nm-core-internal.h"
 #include "nm-keyfile-internal.h"
-
-#include <gio/gio.h>
-#include <glib/gi18n.h>
 
 #define DEFAULT_CONFIG_MAIN_FILE        NMCONFDIR "/NetworkManager.conf"
 #define DEFAULT_CONFIG_DIR              NMCONFDIR "/conf.d"

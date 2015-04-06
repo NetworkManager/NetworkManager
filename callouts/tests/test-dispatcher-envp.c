@@ -23,9 +23,8 @@
 #include <arpa/inet.h>
 #include <stdlib.h>
 #include <string.h>
-#include <glib.h>
-#include <glib-object.h>
 
+#include "nm-glib.h"
 #include "nm-core-internal.h"
 #include "nm-dispatcher-utils.h"
 #include "nm-dispatcher-api.h"

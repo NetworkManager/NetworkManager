@@ -21,7 +21,7 @@
 #ifndef NM_SETTING_PRIVATE_H
 #define NM_SETTING_PRIVATE_H
 
-#include "nm-glib-compat.h"
+#include "nm-glib.h"
 
 #define NM_SETTING_SECRET_FLAGS_ALL \
 	(NM_SETTING_SECRET_FLAG_NONE | \

@@ -23,10 +23,10 @@
 #define __NM_DBUS_MANAGER_H__
 
 #include <config.h>
-#include <glib-object.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
 
+#include "nm-glib.h"
 #include "nm-types.h"
 
 G_BEGIN_DECLS

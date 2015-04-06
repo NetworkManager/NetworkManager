@@ -23,9 +23,9 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <glib/gi18n.h>
-#include <gio/gio.h>
 #include <gio/gunixfdlist.h>
 
+#include "nm-glib.h"
 #include "nm-logging.h"
 #include "nm-dbus-manager.h"
 #include "nm-core-internal.h"

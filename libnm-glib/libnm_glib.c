@@ -26,13 +26,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <glib.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
+#include "nm-glib.h"
 #include "NetworkManager.h"
 #include "libnm_glib.h"
-
-#include "nm-glib-compat.h"
 
 #define	DBUS_NO_SERVICE_ERROR			"org.freedesktop.DBus.Error.ServiceDoesNotExist"
 

@@ -21,8 +21,8 @@
 #include "config.h"
 
 #include <string.h>
-#include <glib.h>
 
+#include "nm-glib.h"
 #include "nm-device-modem.h"
 #include "nm-modem.h"
 #include "nm-device-private.h"

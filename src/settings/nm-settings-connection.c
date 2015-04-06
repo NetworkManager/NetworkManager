@@ -26,6 +26,7 @@
 #include <nm-dbus-interface.h>
 #include <dbus/dbus-glib-lowlevel.h>
 
+#include "nm-glib.h"
 #include "nm-settings-connection.h"
 #include "nm-session-monitor.h"
 #include "nm-dbus-manager.h"
@@ -37,7 +38,6 @@
 #include "NetworkManagerUtils.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-core-internal.h"
-#include "nm-glib-compat.h"
 #include "gsystem-local-alloc.h"
 
 #define SETTINGS_TIMESTAMPS_FILE  NMSTATEDIR "/timestamps"

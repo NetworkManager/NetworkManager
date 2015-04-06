@@ -26,8 +26,8 @@
 #include <errno.h>
 #include <netdb.h>
 
-#include <gio/gio.h>
 
+#include "nm-glib.h"
 #include "nm-policy.h"
 #include "NetworkManagerUtils.h"
 #include "nm-activation-request.h"
@@ -45,7 +45,6 @@
 #include "nm-dispatcher.h"
 #include "nm-utils.h"
 #include "nm-core-internal.h"
-#include "nm-glib-compat.h"
 #include "nm-manager.h"
 #include "nm-settings.h"
 #include "nm-settings-connection.h"

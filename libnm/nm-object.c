@@ -22,16 +22,15 @@
 #include "config.h"
 
 #include <string.h>
-#include <gio/gio.h>
 #include <glib/gi18n-lib.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <nm-utils.h>
+#include "nm-glib.h"
 #include "nm-dbus-interface.h"
 #include "nm-object.h"
 #include "nm-object-cache.h"
 #include "nm-object-private.h"
-#include "nm-glib-compat.h"
 #include "nm-dbus-helpers.h"
 #include "nm-client.h"
 #include "nm-core-internal.h"

@@ -21,7 +21,6 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <dbus/dbus-glib.h>
 #include <string.h>
 #include <netinet/ether.h>
@@ -30,6 +29,7 @@
 #include <sys/resource.h>
 
 #include <nm-utils.h>
+#include "nm-glib.h"
 #include "gsystem-local-alloc.h"
 
 #include "nm-setting-private.h"

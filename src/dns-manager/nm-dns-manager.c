@@ -35,10 +35,9 @@
 
 #include <linux/fs.h>
 
-#include <glib.h>
-#include <gio/gio.h>
 #include <glib/gi18n.h>
 
+#include "nm-glib.h"
 #include "nm-utils.h"
 #include "nm-core-internal.h"
 #include "nm-dns-manager.h"

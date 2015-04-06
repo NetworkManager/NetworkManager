@@ -23,9 +23,9 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <glib/gi18n-lib.h>
 
+#include "nm-glib.h"
 #include "nmt-page-team.h"
 
 #include "nmt-slave-list.h"

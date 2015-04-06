@@ -20,11 +20,11 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <glib/gi18n.h>
 
 #include <sys/socket.h>
 
+#include "nm-glib.h"
 #include "nm-device-vlan.h"
 #include "nm-manager.h"
 #include "nm-logging.h"

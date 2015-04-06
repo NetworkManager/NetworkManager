@@ -21,9 +21,10 @@
 #ifndef NM_DBUS_HELPERS_PRIVATE_H
 #define NM_DBUS_HELPERS_PRIVATE_H
 
-#include <gio/gio.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
+
+#include "nm-glib.h"
 
 DBusGConnection *_nm_dbus_new_connection (GError **error);
 

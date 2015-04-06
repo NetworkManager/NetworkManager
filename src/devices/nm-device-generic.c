@@ -24,7 +24,6 @@
 #include "nm-device-private.h"
 #include "nm-enum-types.h"
 #include "nm-platform.h"
-#include "nm-glib-compat.h"
 #include "nm-dbus-manager.h"
 #include "nm-core-internal.h"
 

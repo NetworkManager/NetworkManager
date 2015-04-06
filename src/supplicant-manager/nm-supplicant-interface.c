@@ -23,13 +23,12 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <glib.h>
 
+#include "nm-glib.h"
 #include "NetworkManagerUtils.h"
 #include "nm-supplicant-interface.h"
 #include "nm-logging.h"
 #include "nm-supplicant-config.h"
-#include "nm-glib-compat.h"
 #include "gsystem-local-alloc.h"
 #include "nm-core-internal.h"
 #include "nm-dbus-compat.h"

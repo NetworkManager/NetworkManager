@@ -32,13 +32,11 @@
 #include <errno.h>
 #include <arpa/inet.h>
 
-#include <glib.h>
 #include <glib-unix.h>
 
-
+#include "nm-glib.h"
 #include "nm-dispatcher-api.h"
 #include "nm-dispatcher-utils.h"
-#include "nm-glib-compat.h"
 
 #include "nmdbus-dispatcher.h"
 

@@ -21,8 +21,8 @@
 #include "config.h"
 
 #include <string.h>
-#include <gio/gio.h>
 
+#include "nm-glib.h"
 #include "gsystem-local-alloc.h"
 #include "nm-setting-connection.h"
 #include "nm-auth-utils.h"

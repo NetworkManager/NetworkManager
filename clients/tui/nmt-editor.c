@@ -27,10 +27,10 @@
 
 #include "nmt-editor.h"
 
-#include <glib.h>
 #include <glib/gi18n-lib.h>
 #include <nm-utils.h>
 
+#include "nm-glib.h"
 #include "nmtui.h"
 
 #include "nm-editor-utils.h"

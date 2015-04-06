@@ -22,8 +22,7 @@
 #ifndef __NM_MACROS_INTERNAL_H__
 #define __NM_MACROS_INTERNAL_H__
 
-
-#include <glib.h>
+#include "nm-glib.h"
 
 /********************************************************/
 

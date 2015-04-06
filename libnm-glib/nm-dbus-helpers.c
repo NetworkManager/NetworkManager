@@ -21,9 +21,9 @@
 #include "config.h"
 
 #include <string.h>
-#include <gio/gio.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
+#include "nm-glib.h"
 #include "nm-dbus-helpers-private.h"
 #include "NetworkManager.h"
 

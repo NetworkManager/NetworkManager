@@ -26,11 +26,11 @@
 #include <arpa/inet.h>
 #include <glib/gi18n-lib.h>
 
+#include "nm-glib.h"
 #include "nm-setting-ip-config.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
 #include "nm-utils.h"
-#include "nm-glib-compat.h"
 #include "nm-setting-private.h"
 #include "nm-utils-private.h"
 

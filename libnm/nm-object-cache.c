@@ -21,7 +21,7 @@
 #include "config.h"
 
 #include <string.h>
-#include <glib.h>
+#include "nm-glib.h"
 #include "nm-object-cache.h"
 #include "nm-object.h"
 

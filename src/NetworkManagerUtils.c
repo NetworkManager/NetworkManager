@@ -21,8 +21,6 @@
 
 #include "config.h"
 
-#include <glib.h>
-#include <gio/gio.h>
 #include <glib/gi18n.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -35,6 +33,7 @@
 #include <linux/if.h>
 #include <linux/if_infiniband.h>
 
+#include "nm-glib.h"
 #include "NetworkManagerUtils.h"
 #include "nm-platform.h"
 #include "nm-utils.h"

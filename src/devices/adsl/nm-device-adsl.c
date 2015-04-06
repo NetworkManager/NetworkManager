@@ -29,11 +29,11 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <glib.h>
 #include <glib/gi18n.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "nm-glib.h"
 #include "nm-device-adsl.h"
 #include "nm-device-private.h"
 #include "NetworkManagerUtils.h"

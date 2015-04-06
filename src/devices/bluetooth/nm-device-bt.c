@@ -24,9 +24,8 @@
 #include <string.h>
 
 #include <glib/gi18n.h>
-#include <gio/gio.h>
 
-#include "nm-glib-compat.h"
+#include "nm-glib.h"
 #include "nm-bluez-common.h"
 #include "nm-bluez-device.h"
 #include "nm-dbus-manager.h"

@@ -21,8 +21,6 @@
 #ifndef __NETWORKMANAGER_DEVICE_GRE_H__
 #define __NETWORKMANAGER_DEVICE_GRE_H__
 
-#include <glib-object.h>
-
 #include "nm-device-generic.h"
 
 G_BEGIN_DECLS

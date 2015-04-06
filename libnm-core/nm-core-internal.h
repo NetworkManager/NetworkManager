@@ -33,8 +33,8 @@
  * and some test programs.
  **/
 
-#include <gio/gio.h>
 
+#include "nm-glib.h"
 #include "nm-connection.h"
 #include "nm-core-enum-types.h"
 #include "nm-dbus-interface.h"

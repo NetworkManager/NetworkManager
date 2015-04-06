@@ -18,8 +18,6 @@
 #ifndef __NETWORKMANAGER_DNS_UNBOUND_H__
 #define __NETWORKMANAGER_DNS_UNBOUND_H__
 
-#include <glib-object.h>
-
 #include "nm-dns-plugin.h"
 
 #define NM_TYPE_DNS_UNBOUND            (nm_dns_unbound_get_type ())

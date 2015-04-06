@@ -19,9 +19,6 @@
 #ifndef __NETWORKMANAGER_DHCP_DHCPCD_H__
 #define __NETWORKMANAGER_DHCP_DHCPCD_H__
 
-#include <glib.h>
-#include <glib-object.h>
-
 #include "nm-dhcp-client.h"
 
 #define NM_TYPE_DHCP_DHCPCD            (nm_dhcp_dhcpcd_get_type ())

@@ -22,9 +22,9 @@
 #ifndef __NETWORKMANAGER_DISPATCHER_H__
 #define __NETWORKMANAGER_DISPATCHER_H__
 
-#include <glib.h>
 #include <stdio.h>
 
+#include "nm-glib.h"
 #include "nm-types.h"
 #include "nm-connection.h"
 

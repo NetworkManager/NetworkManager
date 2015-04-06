@@ -21,7 +21,7 @@
 #ifndef NM_OBJECT_PRIVATE_H
 #define NM_OBJECT_PRIVATE_H
 
-#include <gio/gio.h>
+#include "nm-glib.h"
 #include "nm-object.h"
 
 void _nm_object_ensure_inited (NMObject *object);

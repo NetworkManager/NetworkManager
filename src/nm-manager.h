@@ -22,9 +22,8 @@
 #ifndef __NETWORKMANAGER_MANAGER_H__
 #define __NETWORKMANAGER_MANAGER_H__
 
-#include <glib.h>
-#include <glib-object.h>
 
+#include "nm-glib.h"
 #include "nm-types.h"
 #include "nm-connection.h"
 

@@ -20,10 +20,10 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <string.h>
 #include <arpa/inet.h>
 
+#include "nm-glib.h"
 #include "nm-ip6-config.h"
 
 #include "nm-logging.h"

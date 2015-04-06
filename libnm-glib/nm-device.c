@@ -26,6 +26,7 @@
 #include <glib/gi18n-lib.h>
 #include <gudev/gudev.h>
 
+#include "nm-glib.h"
 #include "NetworkManager.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-adsl.h"
@@ -47,7 +48,6 @@
 #include "nm-remote-connection.h"
 #include "nm-types.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-glib-compat.h"
 #include "nm-utils.h"
 #include "nm-dbus-helpers-private.h"
 

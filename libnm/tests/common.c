@@ -20,9 +20,9 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <string.h>
 
+#include "nm-glib.h"
 #include "NetworkManager.h"
 #include "nm-dbus-compat.h"
 

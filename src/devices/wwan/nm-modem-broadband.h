@@ -21,7 +21,6 @@
 #ifndef __NETWORKMANAGER_MODEM_BROADBAND_H__
 #define __NETWORKMANAGER_MODEM_BROADBAND_H__
 
-#include <glib-object.h>
 #include "nm-modem.h"
 
 G_BEGIN_DECLS

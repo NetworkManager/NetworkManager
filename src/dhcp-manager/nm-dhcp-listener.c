@@ -19,7 +19,6 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <glib/gi18n.h>
 #include <dbus/dbus.h>
 #include <sys/socket.h>
@@ -30,12 +29,12 @@
 #include <errno.h>
 #include <unistd.h>
 
+#include "nm-glib.h"
 #include "nm-dhcp-listener.h"
 #include "nm-core-internal.h"
 #include "nm-logging.h"
 #include "nm-dbus-manager.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-glib-compat.h"
 #include "NetworkManagerUtils.h"
 
 #define NM_DHCP_CLIENT_DBUS_IFACE "org.freedesktop.nm_dhcp_client"

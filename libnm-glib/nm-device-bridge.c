@@ -23,12 +23,11 @@
 #include <string.h>
 #include <netinet/ether.h>
 
-#include "nm-glib-compat.h"
-
 #include <nm-setting-connection.h>
 #include <nm-setting-bridge.h>
 #include <nm-utils.h>
 
+#include "nm-glib.h"
 #include "nm-device-bridge.h"
 #include "nm-device-private.h"
 #include "nm-object-private.h"

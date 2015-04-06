@@ -22,11 +22,10 @@
 #ifndef __NETWORKMANAGER_DEVICE_H__
 #define __NETWORKMANAGER_DEVICE_H__
 
-#include <glib-object.h>
-#include <gio/gio.h>
 #include <dbus/dbus-glib.h>
 #include <netinet/in.h>
 
+#include "nm-glib.h"
 #include "nm-dbus-interface.h"
 #include "nm-types.h"
 #include "nm-connection.h"

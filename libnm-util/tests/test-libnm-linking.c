@@ -21,10 +21,9 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <nm-utils.h>
 
-#include "nm-glib-compat.h"
+#include "nm-glib.h"
 
 extern GType nm_state_get_type (void);
 

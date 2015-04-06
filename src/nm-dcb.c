@@ -23,7 +23,7 @@
 #include <sys/wait.h>
 #include <string.h>
 
-#include <glib.h>
+#include "nm-glib.h"
 #include "nm-dcb.h"
 #include "nm-platform.h"
 #include "NetworkManagerUtils.h"

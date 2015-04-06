@@ -19,6 +19,7 @@
 #ifndef NMT_PAGE_TEAM_H
 #define NMT_PAGE_TEAM_H
 
+#include "nm-glib.h"
 #include "nmt-editor-page-device.h"
 
 G_BEGIN_DECLS

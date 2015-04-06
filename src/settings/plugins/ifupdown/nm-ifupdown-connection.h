@@ -25,6 +25,7 @@
 #define __NETWORKMANAGER_IFUPDOWN_CONNECTION_H__
 
 #include <nm-settings-connection.h>
+#include "nm-glib.h"
 #include "interface_parser.h"
 
 G_BEGIN_DECLS

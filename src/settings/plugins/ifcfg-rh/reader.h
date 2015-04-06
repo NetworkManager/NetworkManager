@@ -21,9 +21,9 @@
 #ifndef __READER_H__
 #define __READER_H__
 
-#include <glib.h>
 #include <nm-connection.h>
 
+#include "nm-glib.h"
 #include "shvar.h"
 
 NMConnection *connection_from_file (const char *filename,

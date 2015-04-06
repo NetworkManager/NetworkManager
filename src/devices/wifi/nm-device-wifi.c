@@ -21,7 +21,6 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <glib/gi18n.h>
 #include <dbus/dbus.h>
 #include <netinet/in.h>
@@ -29,7 +28,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include "nm-glib-compat.h"
+#include "nm-glib.h"
 #include "nm-dbus-manager.h"
 #include "nm-device.h"
 #include "nm-device-wifi.h"
@@ -56,7 +55,6 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-wifi-enum-types.h"
 #include "nm-connection-provider.h"
-
 
 static gboolean impl_device_get_access_points (NMDeviceWifi *device,
                                                GPtrArray **aps,

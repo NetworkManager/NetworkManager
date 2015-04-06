@@ -22,8 +22,8 @@
 
 #include "config.h"
 
+#include "nm-glib.h"
 #include "nm-param-spec-specialized.h"
-#include "nm-glib-compat.h"
 
 struct _NMParamSpecSpecialized {
 	GParamSpec parent;

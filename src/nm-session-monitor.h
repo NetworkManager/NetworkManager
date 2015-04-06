@@ -21,8 +21,8 @@
 #ifndef __NETWORKMANAGER_SESSION_MONITOR_H__
 #define __NETWORKMANAGER_SESSION_MONITOR_H__
 
-#include <glib-object.h>
 
+#include "nm-glib.h"
 #include "nm-types.h"
 
 G_BEGIN_DECLS

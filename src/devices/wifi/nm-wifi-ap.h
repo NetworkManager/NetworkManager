@@ -22,8 +22,7 @@
 #ifndef __NETWORKMANAGER_ACCESS_POINT_H__
 #define __NETWORKMANAGER_ACCESS_POINT_H__
 
-#include <glib.h>
-#include <glib-object.h>
+#include "nm-glib.h"
 #include "nm-dbus-interface.h"
 #include "nm-connection.h"
 

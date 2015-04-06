@@ -24,9 +24,9 @@
 #include <string.h>
 #include <arpa/inet.h>
 
+#include "nm-glib.h"
 #include "nm-ip6-config.h"
 
-#include "nm-glib-compat.h"
 #include "nm-utils.h"
 #include "nm-platform.h"
 #include "nm-dbus-manager.h"

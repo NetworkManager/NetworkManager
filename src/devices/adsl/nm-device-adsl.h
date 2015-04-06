@@ -22,9 +22,8 @@
 #ifndef __NETWORKMANAGER_DEVICE_ADSL_H__
 #define __NETWORKMANAGER_DEVICE_ADSL_H__
 
-#include <glib-object.h>
-
 // Parent class
+#include "nm-glib.h"
 #include "nm-device.h"
 
 G_BEGIN_DECLS

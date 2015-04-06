@@ -21,9 +21,8 @@
 #ifndef __NETWORKMANAGER_AGENT_MANAGER_H__
 #define __NETWORKMANAGER_AGENT_MANAGER_H__
 
-#include <glib.h>
-#include <glib-object.h>
 #include <nm-connection.h>
+#include "nm-glib.h"
 #include "nm-secret-agent.h"
 #include "nm-types.h"
 

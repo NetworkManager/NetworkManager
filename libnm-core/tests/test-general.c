@@ -23,10 +23,10 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <string.h>
 
 #include <nm-utils.h>
+#include "nm-glib.h"
 #include "gsystem-local-alloc.h"
 
 #include "nm-setting-private.h"
@@ -62,7 +62,6 @@
 #include "nm-setting-wireless-security.h"
 #include "nm-simple-connection.h"
 #include "nm-keyfile-internal.h"
-#include "nm-glib-compat.h"
 
 #include "nm-test-utils.h"
 #include "test-general-enums.h"

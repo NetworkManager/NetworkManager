@@ -28,6 +28,7 @@
 
 #include <nm-connection.h>
 
+#include "nm-glib.h"
 #include "nm-types.h"
 
 #define NM_TYPE_SETTINGS            (nm_settings_get_type ())

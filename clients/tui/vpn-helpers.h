@@ -19,11 +19,12 @@
 #ifndef _VPN_HELPERS_H_
 #define _VPN_HELPERS_H_
 
-#include <glib.h>
 #include <nm-connection.h>
 
 #define NM_VPN_API_SUBJECT_TO_CHANGE
 #include <nm-vpn-plugin-ui-interface.h>
+
+#include "nm-glib.h"
 
 GHashTable *vpn_get_plugins (GError **error);
 

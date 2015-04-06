@@ -21,9 +21,8 @@
 #ifndef __NETWORKMANAGER_DHCP6_CONFIG_H__
 #define __NETWORKMANAGER_DHCP6_CONFIG_H__
 
-#include <glib.h>
-#include <glib-object.h>
 
+#include "nm-glib.h"
 #include "nm-types.h"
 
 #define NM_TYPE_DHCP6_CONFIG            (nm_dhcp6_config_get_type ())

@@ -22,9 +22,9 @@
 
 #include <unistd.h>
 
-#include <glib.h>
 
 #include <nm-config.h>
+#include "nm-glib.h"
 #include "nm-test-device.h"
 #include "nm-fake-platform.h"
 #include "nm-logging.h"

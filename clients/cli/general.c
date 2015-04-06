@@ -22,13 +22,12 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <glib.h>
 #include <glib/gi18n.h>
 
+#include "nm-glib.h"
 #include "polkit-agent.h"
 #include "utils.h"
 #include "general.h"
-
 
 /* Available fields for 'general status' */
 static NmcOutputField nmc_fields_nm_status[] = {

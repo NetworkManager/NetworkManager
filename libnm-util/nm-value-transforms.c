@@ -23,10 +23,10 @@
 
 #include <string.h>
 
+#include "nm-glib.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-glib-compat.h"
 
 static void
 _nm_utils_convert_op_to_string (const GValue *src_value, GValue *dest_value)

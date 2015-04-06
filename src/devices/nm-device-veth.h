@@ -21,8 +21,6 @@
 #ifndef __NETWORKMANAGER_DEVICE_VETH_H__
 #define __NETWORKMANAGER_DEVICE_VETH_H__
 
-#include <glib-object.h>
-
 #include "nm-device-ethernet.h"
 
 G_BEGIN_DECLS

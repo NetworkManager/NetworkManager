@@ -18,8 +18,8 @@
  * Copyright (C) 2014 Red Hat, Inc.
  */
 
-#include <glib-object.h>
 
+#include "nm-glib.h"
 #include "nm-connection.h"
 #include "nm-types.h"
 

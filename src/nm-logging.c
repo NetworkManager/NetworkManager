@@ -39,7 +39,7 @@
 #include <systemd/sd-journal.h>
 #endif
 
-#include "nm-glib-compat.h"
+#include "nm-glib.h"
 #include "nm-logging.h"
 #include "nm-errors.h"
 #include "gsystem-local-alloc.h"

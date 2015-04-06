@@ -27,9 +27,7 @@
 #include <string.h>
 
 #include <gmodule.h>
-#include <glib.h>
 #include <glib/gstdio.h>
-#include <gio/gio.h>
 
 #include <nm-connection.h>
 #include <nm-setting.h>
@@ -37,6 +35,7 @@
 #include <nm-utils.h>
 #include <nm-config.h>
 #include <nm-logging.h>
+#include "nm-glib.h"
 #include "nm-core-internal.h"
 
 #include "plugin.h"

@@ -23,9 +23,9 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <glib.h>
 #include <dbus/dbus-glib.h>
 
+#include "nm-glib.h"
 #include "nm-supplicant-config.h"
 #include "nm-supplicant-settings-verify.h"
 #include "nm-logging.h"

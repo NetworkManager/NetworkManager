@@ -19,6 +19,7 @@
 #ifndef NMT_MAC_ENTRY_H
 #define NMT_MAC_ENTRY_H
 
+#include "nm-glib.h"
 #include "nm-utils.h"
 #include "nmt-newt.h"
 

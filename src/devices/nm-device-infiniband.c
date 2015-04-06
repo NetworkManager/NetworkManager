@@ -20,11 +20,11 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <glib/gi18n.h>
 
 #include <linux/if_infiniband.h>
 
+#include "nm-glib.h"
 #include "nm-device-infiniband.h"
 #include "nm-logging.h"
 #include "NetworkManagerUtils.h"
@@ -38,7 +38,6 @@
 #include "nm-core-internal.h"
 
 #include "nm-device-infiniband-glue.h"
-
 
 G_DEFINE_TYPE (NMDeviceInfiniband, nm_device_infiniband, NM_TYPE_DEVICE)
 

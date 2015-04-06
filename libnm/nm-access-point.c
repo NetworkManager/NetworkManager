@@ -23,14 +23,13 @@
 
 #include <string.h>
 
-#include "nm-glib-compat.h"
-
 #include <nm-connection.h>
 #include <nm-setting-connection.h>
 #include <nm-setting-wireless.h>
 #include <nm-setting-wireless-security.h>
 #include <nm-utils.h>
 
+#include "nm-glib.h"
 #include "nm-access-point.h"
 #include "nm-dbus-interface.h"
 #include "nm-object-private.h"

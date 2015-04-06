@@ -24,7 +24,7 @@
 #ifndef _PLUGIN_H_
 #define _PLUGIN_H_
 
-#include <glib-object.h>
+#include "nm-glib.h"
 
 #define PLUGIN_NAME "ifupdown"
 

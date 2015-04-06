@@ -22,9 +22,8 @@
 #ifndef __NETWORKMANAGER_CONFIG_H__
 #define __NETWORKMANAGER_CONFIG_H__
 
-#include <glib.h>
-#include <glib-object.h>
 
+#include "nm-glib.h"
 #include "nm-types.h"
 #include "nm-config-data.h"
 

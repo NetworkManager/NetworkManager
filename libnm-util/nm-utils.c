@@ -28,12 +28,11 @@
 #include <uuid/uuid.h>
 #include <libintl.h>
 #include <gmodule.h>
-#include <gio/gio.h>
 #include <glib/gi18n-lib.h>
 
+#include "nm-glib.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
-#include "nm-glib-compat.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-setting-private.h"
 #include "crypto.h"

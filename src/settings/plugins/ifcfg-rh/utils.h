@@ -21,8 +21,8 @@
 #ifndef _UTILS_H_
 #define _UTILS_H_
 
-#include <glib.h>
 #include <nm-connection.h>
+#include "nm-glib.h"
 #include "shvar.h"
 #include "common.h"
 #include "nm-logging.h"

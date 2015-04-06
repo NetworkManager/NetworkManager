@@ -23,10 +23,10 @@
 #include <string.h>
 #include <pwd.h>
 
-#include <glib.h>
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-lowlevel.h>
 
+#include "nm-glib.h"
 #include "nm-dbus-interface.h"
 #include "nm-logging.h"
 #include "nm-agent-manager.h"

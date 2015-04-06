@@ -19,13 +19,13 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string.h>
 
 #include <nm-utils.h>
 
+#include "nm-glib.h"
 #include "nm-dhcp-utils.h"
 #include "nm-logging.h"
 #include "nm-platform.h"

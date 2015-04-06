@@ -20,9 +20,9 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <arpa/inet.h>
 
+#include "nm-glib.h"
 #include "nm-dnsmasq-utils.h"
 #include "nm-logging.h"
 

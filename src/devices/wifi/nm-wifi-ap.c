@@ -24,6 +24,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "nm-glib.h"
 #include "nm-wifi-ap.h"
 #include "nm-wifi-ap-utils.h"
 #include "NetworkManagerUtils.h"
@@ -33,7 +34,6 @@
 #include "nm-core-internal.h"
 
 #include "nm-setting-wireless.h"
-#include "nm-glib-compat.h"
 #include "gsystem-local-alloc.h"
 
 #include "nm-access-point-glue.h"

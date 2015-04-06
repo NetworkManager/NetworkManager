@@ -23,9 +23,9 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/inotify.h>
-#include <glib.h>
 #include <errno.h>
 
+#include "nm-glib.h"
 #include "nm-inotify-helper.h"
 #include "nm-logging.h"
 #include "NetworkManagerUtils.h"

@@ -21,9 +21,8 @@
 #ifndef __NETWORKMANAGER_BLUEZ4_ADAPTER_H__
 #define __NETWORKMANAGER_BLUEZ4_ADAPTER_H__
 
-#include <glib.h>
-#include <glib-object.h>
 
+#include "nm-glib.h"
 #include "nm-bluez-device.h"
 #include "nm-connection-provider.h"
 

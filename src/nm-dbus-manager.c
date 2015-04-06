@@ -26,9 +26,9 @@
 #include <sys/types.h>
 #include <errno.h>
 
+#include "nm-glib.h"
 #include "nm-dbus-interface.h"
 #include "nm-dbus-manager.h"
-#include "nm-glib-compat.h"
 #include "nm-properties-changed-signal.h"
 
 #include <dbus/dbus.h>

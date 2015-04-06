@@ -21,11 +21,11 @@
 #ifndef __NETWORKMANAGER_RDISC_H__
 #define __NETWORKMANAGER_RDISC_H__
 
-#include <glib-object.h>
 
 #include <stdlib.h>
 #include <netinet/in.h>
 
+#include "nm-glib.h"
 #include "NetworkManagerUtils.h"
 
 #define NM_TYPE_RDISC            (nm_rdisc_get_type ())

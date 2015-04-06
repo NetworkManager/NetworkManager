@@ -22,10 +22,10 @@
 #ifndef __NETWORKMANAGER_UTILS_H__
 #define __NETWORKMANAGER_UTILS_H__
 
-#include <glib.h>
 #include <stdio.h>
 #include <arpa/inet.h>
 
+#include "nm-glib.h"
 #include "nm-connection.h"
 #include "nm-types.h"
 

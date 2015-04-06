@@ -30,7 +30,7 @@
 #include <nm-system-config-interface.h>
 #include <nm-logging.h>
 #include <nm-config.h>
-#include <gio/gio.h>
+#include "nm-glib.h"
 #include "net_utils.h"
 #include "wpa_parser.h"
 #include "net_parser.h"

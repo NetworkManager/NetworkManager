@@ -23,8 +23,8 @@
 #define __WIFI_UTILS_H__
 
 #include <net/ethernet.h>
-#include <glib.h>
 
+#include "nm-glib.h"
 #include "nm-dbus-interface.h"
 
 typedef struct WifiData WifiData;

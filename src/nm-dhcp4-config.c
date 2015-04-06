@@ -20,16 +20,15 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <string.h>
 
+#include "nm-glib.h"
 #include "nm-dbus-interface.h"
 #include "nm-dbus-manager.h"
 #include "nm-dhcp4-config.h"
 #include "nm-dhcp4-config-glue.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-utils.h"
-
 
 G_DEFINE_TYPE (NMDhcp4Config, nm_dhcp4_config, G_TYPE_OBJECT)
 

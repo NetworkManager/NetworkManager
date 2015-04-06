@@ -26,7 +26,6 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <glib/gi18n.h>
 #include <dbus/dbus.h>
 #include <netinet/in.h>
@@ -38,6 +37,7 @@
 #include <sys/ioctl.h>
 #include <errno.h>
 
+#include "nm-glib.h"
 #include "nm-device.h"
 #include "nm-device-wifi.h"
 #include "nm-device-olpc-mesh.h"
@@ -56,7 +56,6 @@
 
 /* This is a bug; but we can't really change API now... */
 #include "nm-vpn-dbus-interface.h"
-
 
 #include "nm-device-olpc-mesh-glue.h"
 

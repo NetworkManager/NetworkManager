@@ -24,12 +24,11 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/wait.h>
-#include <glib.h>
 #include <glib/gi18n.h>
-#include <gio/gio.h>
 #include <teamdctl.h>
 #include <stdlib.h>
 
+#include "nm-glib.h"
 #include "nm-device-team.h"
 #include "nm-logging.h"
 #include "NetworkManagerUtils.h"

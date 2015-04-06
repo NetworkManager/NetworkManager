@@ -22,11 +22,10 @@
 #define __NETWORKMANAGER_AUTH_SUBJECT_H__
 
 #include <config.h>
-#include <glib.h>
-#include <glib-object.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
 
+#include "nm-glib.h"
 #include "nm-types.h"
 
 #define NM_TYPE_AUTH_SUBJECT            (nm_auth_subject_get_type ())

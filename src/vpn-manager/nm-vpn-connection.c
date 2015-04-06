@@ -21,7 +21,6 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -29,6 +28,7 @@
 #include <errno.h>
 #include <stdlib.h>
 
+#include "nm-glib.h"
 #include "nm-vpn-connection.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
@@ -38,7 +38,6 @@
 #include "nm-active-connection.h"
 #include "nm-dbus-glib-types.h"
 #include "NetworkManagerUtils.h"
-#include "nm-glib-compat.h"
 #include "settings/nm-settings-connection.h"
 #include "nm-dispatcher.h"
 #include "nm-agent-manager.h"

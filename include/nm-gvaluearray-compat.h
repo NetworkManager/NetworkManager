@@ -20,10 +20,6 @@
 #ifndef __NM_GVALUEARRAY_COMPAT_H__
 #define __NM_GVALUEARRAY_COMPAT_H__
 
-#include <glib.h>
-
-#include "nm-glib-compat.h"
-
 #define g_value_array_get_type() \
   G_GNUC_EXTENSION ({ \
     G_GNUC_BEGIN_IGNORE_DEPRECATIONS \

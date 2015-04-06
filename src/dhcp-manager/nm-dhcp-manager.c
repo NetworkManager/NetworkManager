@@ -22,7 +22,6 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <glib/gi18n.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
@@ -34,6 +33,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 
+#include "nm-glib.h"
 #include "nm-dhcp-manager.h"
 #include "nm-dhcp-dhclient.h"
 #include "nm-dhcp-dhcpcd.h"
@@ -41,7 +41,6 @@
 #include "nm-logging.h"
 #include "nm-config.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-glib-compat.h"
 #include "NetworkManagerUtils.h"
 
 #define DHCP_TIMEOUT 45 /* default DHCP timeout, in seconds */

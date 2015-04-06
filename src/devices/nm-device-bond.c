@@ -20,12 +20,12 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <glib/gi18n.h>
 
 #include <errno.h>
 #include <stdlib.h>
 
+#include "nm-glib.h"
 #include "gsystem-local-alloc.h"
 #include "nm-device-bond.h"
 #include "nm-logging.h"

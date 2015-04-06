@@ -21,7 +21,7 @@
 #ifndef __NETWORKMANAGER_TEAM_FACTORY_H__
 #define __NETWORKMANAGER_TEAM_FACTORY_H__
 
-#include <glib-object.h>
+#include "nm-glib.h"
 
 #define NM_TYPE_TEAM_FACTORY (nm_team_factory_get_type ())
 #define NM_TEAM_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_TEAM_FACTORY, NMTeamFactory))

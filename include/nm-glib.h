@@ -17,14 +17,12 @@
  * Copyright 2008 - 2011 Red Hat, Inc.
  */
 
-#ifndef __NM_GLIB_COMPAT_H__
-#define __NM_GLIB_COMPAT_H__
+#ifndef __NM_GLIB_H__
+#define __NM_GLIB_H__
 
 
-#include <glib.h>
-#include <glib-object.h>
+#include <gio/gio.h>
 #include <string.h>
-
 
 #ifdef __clang__
 
@@ -42,7 +40,6 @@
 
 
 #include "nm-gvaluearray-compat.h"
-
 
 static inline void
 __g_type_ensure (GType type)
@@ -261,4 +258,4 @@ _g_key_file_save_to_file (GKeyFile     *key_file,
 #endif
 
 
-#endif  /* __NM_GLIB_COMPAT_H__ */
+#endif  /* __NM_GLIB_H__ */

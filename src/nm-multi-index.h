@@ -21,7 +21,7 @@
 #ifndef __NM_MULTI_INDEX__
 #define __NM_MULTI_INDEX__
 
-#include <glib.h>
+#include "nm-glib.h"
 
 G_BEGIN_DECLS
 

@@ -21,9 +21,9 @@
 #ifndef __NETWORKMANAGER_IP6_CONFIG_H__
 #define __NETWORKMANAGER_IP6_CONFIG_H__
 
-#include <glib-object.h>
 #include <netinet/in.h>
 
+#include "nm-glib.h"
 #include "nm-types.h"
 #include "nm-setting-ip6-config.h"
 

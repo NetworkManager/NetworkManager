@@ -21,8 +21,8 @@
 #ifndef __NM_DBUS_HELPERS_PRIVATE_H__
 #define __NM_DBUS_HELPERS_PRIVATE_H__
 
-#include <gio/gio.h>
 
+#include "nm-glib.h"
 #include "nm-dbus-compat.h"
 
 GBusType _nm_dbus_bus_type (void);

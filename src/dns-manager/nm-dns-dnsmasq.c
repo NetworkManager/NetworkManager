@@ -27,9 +27,9 @@
 #include <arpa/inet.h>
 #include <sys/stat.h>
 
-#include <glib.h>
 #include <glib/gi18n.h>
 
+#include "nm-glib.h"
 #include "nm-dns-dnsmasq.h"
 #include "nm-utils.h"
 #include "nm-logging.h"

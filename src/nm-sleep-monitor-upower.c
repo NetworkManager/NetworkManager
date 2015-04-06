@@ -22,7 +22,7 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <gio/gio.h>
+#include "nm-glib.h"
 #include "nm-logging.h"
 #include "nm-core-internal.h"
 

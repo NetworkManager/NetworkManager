@@ -21,8 +21,9 @@
 #ifndef __READER_H__
 #define __READER_H__
 
-#include <glib.h>
 #include <nm-connection.h>
+
+#include "nm-glib.h"
 
 gboolean read_ibft_blocks (const char *iscsiadm_path,
                            GSList **out_blocks,
