@@ -448,6 +448,7 @@ static const char *reason_table[] = {
 	[NM_DEVICE_STATE_REASON_MODEM_FAILED]             = "modem-failed",
 	[NM_DEVICE_STATE_REASON_MODEM_AVAILABLE]          = "modem-available",
 	[NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT]        = "sim-pin-incorrect",
+	[NM_DEVICE_STATE_REASON_NEW_ACTIVATION]           = "new-activation",
 };
 
 static const char *

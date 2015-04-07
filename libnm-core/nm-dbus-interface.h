@@ -460,6 +460,7 @@ typedef enum {
  * @NM_DEVICE_STATE_REASON_MODEM_FAILED: Modem failed or no longer available
  * @NM_DEVICE_STATE_REASON_MODEM_AVAILABLE: Modem now ready and available
  * @NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT: SIM PIN was incorrect
+ * @NM_DEVICE_STATE_REASON_NEW_ACTIVATION: New connection activation was enqueued
  *
  * Device state change reason codes
  *
@@ -526,6 +527,7 @@ typedef enum {
 	NM_DEVICE_STATE_REASON_MODEM_FAILED = 57,
 	NM_DEVICE_STATE_REASON_MODEM_AVAILABLE = 58,
 	NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT = 59,
+	NM_DEVICE_STATE_REASON_NEW_ACTIVATION = 60,
 } NMDeviceStateReason;
 
 
