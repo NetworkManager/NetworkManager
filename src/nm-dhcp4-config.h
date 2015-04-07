@@ -45,14 +45,11 @@ GType nm_dhcp4_config_get_type (void);
 
 NMDhcp4Config *nm_dhcp4_config_new (void);
 
-void nm_dhcp4_config_add_option (NMDhcp4Config *config,
-                                 const char *key,
-                                 const char *option);
-
-void nm_dhcp4_config_reset (NMDhcp4Config *config);
+void nm_dhcp4_config_set_options (NMDhcp4Config *config,
+                                  GHashTable *options);
 
 const char *nm_dhcp4_config_get_option (NMDhcp4Config *config, const char *option);
 
-GSList *nm_dhcp4_config_list_options (NMDhcp4Config *config);
+GVariant *nm_dhcp4_config_get_options (NMDhcp4Config *config);
 
 #endif /* __NETWORKMANAGER_DHCP4_CONFIG_H__ */

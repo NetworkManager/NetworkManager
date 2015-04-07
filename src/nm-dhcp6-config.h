@@ -45,14 +45,11 @@ GType nm_dhcp6_config_get_type (void);
 
 NMDhcp6Config *nm_dhcp6_config_new (void);
 
-void nm_dhcp6_config_add_option (NMDhcp6Config *config,
-                                 const char *key,
-                                 const char *option);
-
-void nm_dhcp6_config_reset (NMDhcp6Config *config);
+void nm_dhcp6_config_set_options (NMDhcp6Config *config,
+                                  GHashTable *options);
 
 const char *nm_dhcp6_config_get_option (NMDhcp6Config *config, const char *option);
 
-GSList *nm_dhcp6_config_list_options (NMDhcp6Config *self);
+GVariant *nm_dhcp6_config_get_options (NMDhcp6Config *self);
 
 #endif /* __NETWORKMANAGER_DHCP6_CONFIG_H__ */

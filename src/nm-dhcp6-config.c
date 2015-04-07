@@ -34,7 +34,7 @@ G_DEFINE_TYPE (NMDhcp6Config, nm_dhcp6_config, NM_TYPE_EXPORTED_OBJECT)
 #define NM_DHCP6_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP6_CONFIG, NMDhcp6ConfigPrivate))
 
 typedef struct {
-	GHashTable *options;
+	GVariant *options;
 } NMDhcp6ConfigPrivate;
 
 
@@ -53,68 +53,50 @@ nm_dhcp6_config_new (void)
 }
 
 void
-nm_dhcp6_config_add_option (NMDhcp6Config *self,
-                            const char *key,
-                            const char *option)
+nm_dhcp6_config_set_options (NMDhcp6Config *self,
+                             GHashTable *options)
 {
-	GValue *svalue;
+	NMDhcp6ConfigPrivate *priv = NM_DHCP6_CONFIG_GET_PRIVATE (self);
+	GHashTableIter iter;
+	const char *key, *value;
+	GVariantBuilder builder;
 
 	g_return_if_fail (NM_IS_DHCP6_CONFIG (self));
-	g_return_if_fail (key != NULL);
-	g_return_if_fail (option != NULL);
+	g_return_if_fail (options != NULL);
 
-	svalue = g_slice_new0 (GValue);
-	g_value_init (svalue, G_TYPE_STRING);
-	g_value_set_string (svalue, option);
-	g_hash_table_insert (NM_DHCP6_CONFIG_GET_PRIVATE (self)->options, g_strdup (key), svalue);
-	g_object_notify (G_OBJECT (self), NM_DHCP6_CONFIG_OPTIONS);
-}
+	g_variant_unref (priv->options);
 
-void
-nm_dhcp6_config_reset (NMDhcp6Config *self)
-{
-	g_return_if_fail (NM_IS_DHCP6_CONFIG (self));
+	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
+	g_hash_table_iter_init (&iter, options);
+	while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &value))
+		g_variant_builder_add (&builder, "{sv}", key, g_variant_new_string (value));
 
-	g_hash_table_remove_all (NM_DHCP6_CONFIG_GET_PRIVATE (self)->options);
+	priv->options = g_variant_builder_end (&builder);
+	g_variant_ref_sink (priv->options);
 	g_object_notify (G_OBJECT (self), NM_DHCP6_CONFIG_OPTIONS);
 }
 
 const char *
 nm_dhcp6_config_get_option (NMDhcp6Config *self, const char *key)
 {
-	GValue *value;
+	NMDhcp6ConfigPrivate *priv = NM_DHCP6_CONFIG_GET_PRIVATE (self);
+	const char *value;
 
 	g_return_val_if_fail (NM_IS_DHCP6_CONFIG (self), NULL);
 	g_return_val_if_fail (key != NULL, NULL);
 
-	value = g_hash_table_lookup (NM_DHCP6_CONFIG_GET_PRIVATE (self)->options, key);
-	return value ? g_value_get_string (value) : NULL;
+	if (g_variant_lookup (priv->options, key, "&s", &value))
+		return value;
+	else
+		return NULL;
 }
 
-/* Caller owns the list, but not the values in the list */
-GSList *
-nm_dhcp6_config_list_options (NMDhcp6Config *self)
+GVariant *
+nm_dhcp6_config_get_options (NMDhcp6Config *self)
 {
-	GHashTableIter iter;
-	const char *option = NULL;
-	GSList *list = NULL;
-
 	g_return_val_if_fail (NM_IS_DHCP6_CONFIG (self), NULL);
 
-	g_hash_table_iter_init (&iter, NM_DHCP6_CONFIG_GET_PRIVATE (self)->options);
-	while (g_hash_table_iter_next (&iter, (gpointer) &option, NULL))
-		list = g_slist_prepend (list, (gpointer) option);
-
-	return list;
-}
-
-static void
-nm_gvalue_destroy (gpointer data)
-{
-	GValue *value = (GValue *) data;
-
-	g_value_unset (value);
-	g_slice_free (GValue, value);
+	return g_variant_ref (NM_DHCP6_CONFIG_GET_PRIVATE (self)->options);
 }
 
 static void
@@ -124,7 +106,8 @@ nm_dhcp6_config_init (NMDhcp6Config *self)
 
 	nm_exported_object_export (NM_EXPORTED_OBJECT (self));
 
-	priv->options = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, nm_gvalue_destroy);
+	priv->options = g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
+	g_variant_ref_sink (priv->options);
 }
 
 static void
@@ -132,7 +115,7 @@ finalize (GObject *object)
 {
 	NMDhcp6ConfigPrivate *priv = NM_DHCP6_CONFIG_GET_PRIVATE (object);
 
-	g_hash_table_destroy (priv->options);
+	g_variant_unref (priv->options);
 
 	G_OBJECT_CLASS (nm_dhcp6_config_parent_class)->finalize (object);
 }
@@ -145,7 +128,11 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_OPTIONS:
-		g_value_set_boxed (value, priv->options);
+		/* dbus_g_value_parse_g_variant() will call g_value_init(), but
+		 * @value is already inited.
+		 */
+		g_value_unset (value);
+		dbus_g_value_parse_g_variant (priv->options, value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);

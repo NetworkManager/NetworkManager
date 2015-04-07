@@ -3418,22 +3418,6 @@ dhcp4_fail (NMDevice *self, gboolean timeout)
 }
 
 static void
-dhcp4_update_config (NMDevice *self, NMDhcp4Config *config, GHashTable *options)
-{
-	GHashTableIter iter;
-	const char *key, *value;
-
-	/* Update the DHCP4 config object with new DHCP options */
-	nm_dhcp4_config_reset (config);
-
-	g_hash_table_iter_init (&iter, options);
-	while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &value))
-		nm_dhcp4_config_add_option (config, key, value);
-
-	g_object_notify (G_OBJECT (self), NM_DEVICE_DHCP4_CONFIG);
-}
-
-static void
 dhcp4_state_changed (NMDhcpClient *client,
                      NMDhcpState state,
                      NMIP4Config *ip4_config,
@@ -3458,7 +3442,8 @@ dhcp4_state_changed (NMDhcpClient *client,
 			break;
 		}
 
-		dhcp4_update_config (self, priv->dhcp4_config, options);
+		nm_dhcp4_config_set_options (priv->dhcp4_config, options);
+		g_object_notify (G_OBJECT (self), NM_DEVICE_DHCP4_CONFIG);
 
 		if (priv->ip4_state == IP_CONF)
 			nm_device_activate_schedule_ip4_config_result (self, ip4_config);
@@ -4074,22 +4059,6 @@ dhcp6_timeout (NMDevice *self, NMDhcpClient *client)
 }
 
 static void
-dhcp6_update_config (NMDevice *self, NMDhcp6Config *config, GHashTable *options)
-{
-	GHashTableIter iter;
-	const char *key, *value;
-
-	/* Update the DHCP6 config object with new DHCP options */
-	nm_dhcp6_config_reset (config);
-
-	g_hash_table_iter_init (&iter, options);
-	while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &value))
-		nm_dhcp6_config_add_option (config, key, value);
-
-	g_object_notify (G_OBJECT (self), NM_DEVICE_DHCP6_CONFIG);
-}
-
-static void
 dhcp6_state_changed (NMDhcpClient *client,
                      NMDhcpState state,
                      NMIP6Config *ip6_config,
@@ -4109,7 +4078,8 @@ dhcp6_state_changed (NMDhcpClient *client,
 		g_clear_object (&priv->dhcp6_ip6_config);
 		if (ip6_config) {
 			priv->dhcp6_ip6_config = g_object_ref (ip6_config);
-			dhcp6_update_config (self, priv->dhcp6_config, options);
+			nm_dhcp6_config_set_options (priv->dhcp6_config, options);
+			g_object_notify (G_OBJECT (self), NM_DEVICE_DHCP6_CONFIG);
 		}
 
 		if (priv->ip6_state == IP_CONF) {
