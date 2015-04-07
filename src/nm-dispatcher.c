@@ -567,7 +567,7 @@ _dispatcher_call (DispatcherAction action,
 			                       g_variant_new_boolean (TRUE));
 		}
 	} else {
-		connection_dict = g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
+		connection_dict = g_variant_new_array (G_VARIANT_TYPE ("{sa{sv}}"), NULL, 0);
 		g_variant_builder_init (&connection_props, G_VARIANT_TYPE_VARDICT);
 	}
 
