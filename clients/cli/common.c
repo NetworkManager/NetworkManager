@@ -705,6 +705,9 @@ nmc_device_reason_to_string (NMDeviceStateReason reason)
 	case NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT:
 		return _("SIM PIN was incorrect");
 
+	case NM_DEVICE_STATE_REASON_NEW_ACTIVATION:
+		return _("New connection activation was enqueued");
+
 	default:
 		/* TRANSLATORS: Unknown reason for a device state change (NMDeviceStateReason) */
 		return _("Unknown");
