@@ -1082,8 +1082,15 @@ nm_device_release_one_slave (NMDevice *self, NMDevice *slave, gboolean configure
 	return success;
 }
 
+/**
+ * can_unmanaged_external_down:
+ * @self: the device
+ *
+ * Check whether the device should stay NM_UNMANAGED_EXTERNAL_DOWN unless
+ * IFF_UP-ed externally.
+ */
 static gboolean
-is_software_external (NMDevice *self)
+can_unmanaged_external_down (NMDevice *self)
 {
 	return   nm_device_is_software (self)
 	      && !nm_device_get_is_nm_owned (self);
@@ -1105,7 +1112,7 @@ nm_device_finish_init (NMDevice *self)
 	g_assert (priv->initialized == FALSE);
 
 	/* Do not manage externally created software devices until they are IFF_UP */
-	if (   is_software_external (self)
+	if (   NM_DEVICE_GET_CLASS (self)->can_unmanaged_external_down (self)
 	    && !nm_platform_link_is_up (NM_PLATFORM_GET, priv->ifindex)
 	    && priv->ifindex > 0)
 		nm_device_set_initial_unmanaged_flag (self, NM_UNMANAGED_EXTERNAL_DOWN, TRUE);
@@ -1417,7 +1424,7 @@ device_link_changed (NMDevice *self)
 
 		/* Manage externally-created software interfaces only when they are IFF_UP */
 		g_assert (priv->ifindex > 0);
-		if (is_software_external (self)) {
+		if (NM_DEVICE_GET_CLASS (self)->can_unmanaged_external_down (self)) {
 			gboolean external_down = nm_device_get_unmanaged_flag (self, NM_UNMANAGED_EXTERNAL_DOWN);
 
 			if (external_down && NM_FLAGS_HAS (info.flags, IFF_UP)) {
@@ -9311,6 +9318,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->can_auto_connect = can_auto_connect;
 	klass->check_connection_compatible = check_connection_compatible;
 	klass->check_connection_available = check_connection_available;
+	klass->can_unmanaged_external_down = can_unmanaged_external_down;
 	klass->is_up = is_up;
 	klass->bring_up = bring_up;
 	klass->take_down = take_down;

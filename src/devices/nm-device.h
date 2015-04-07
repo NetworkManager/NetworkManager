@@ -130,9 +130,10 @@ typedef struct {
 	void            (* link_changed) (NMDevice *self, NMPlatformLink *info);
 
 	/* Hardware state (IFF_UP) */
-	gboolean        (*is_up)      (NMDevice *self);
-	gboolean        (*bring_up)   (NMDevice *self, gboolean *no_firmware);
-	gboolean        (*take_down)  (NMDevice *self);
+	gboolean        (*can_unmanaged_external_down)  (NMDevice *self);
+	gboolean        (*is_up)                        (NMDevice *self);
+	gboolean        (*bring_up)                     (NMDevice *self, gboolean *no_firmware);
+	gboolean        (*take_down)                    (NMDevice *self);
 
 	/* Carrier state (IFF_LOWER_UP) */
 	void            (*carrier_changed) (NMDevice *, gboolean carrier);
