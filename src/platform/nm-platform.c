@@ -258,6 +258,38 @@ nm_platform_sysctl_set (const char *path, const char *value)
 	return klass->sysctl_set (platform, path, value);
 }
 
+gboolean
+nm_platform_sysctl_set_ip6_hop_limit_safe (const char *iface, int value)
+{
+	const char *path;
+	gint64 cur;
+
+	/* the hop-limit provided via RA is uint8. */
+	if (value > 0xFF)
+		return FALSE;
+
+	/* don't allow unreasonable small values */
+	if (value < 10)
+		return FALSE;
+
+	path = nm_utils_ip6_property_path (iface, "hop_limit");
+	cur = nm_platform_sysctl_get_int_checked (path, 10, 1, G_MAXINT32, -1);
+
+	/* only allow increasing the hop-limit to avoid DOS by an attacker
+	 * setting a low hop-limit (CVE-2015-2924, rh#1209902) */
+
+	if (value < cur)
+		return FALSE;
+	if (value != cur) {
+		char svalue[20];
+
+		sprintf (svalue, "%d", value);
+		nm_platform_sysctl_set (path, svalue);
+	}
+
+	return TRUE;
+}
+
 /**
  * nm_platform_sysctl_get:
  * @path: Absolute path to sysctl
