@@ -448,8 +448,7 @@ main (int argc, char **argv)
 
 	nm_linux_platform_setup ();
 
-	nmtst_init_assert_logging (&argc, &argv);
-	nm_logging_setup ("WARN", "DEFAULT", NULL, NULL);
+	nmtst_init_assert_logging (&argc, &argv, "WARN", "DEFAULT");
 
 	f = g_build_filename (argv[1], "net", NULL);
 	ifnet_init (f);

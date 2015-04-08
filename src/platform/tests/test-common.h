@@ -9,6 +9,8 @@
 #include "nm-fake-platform.h"
 #include "nm-linux-platform.h"
 
+#include "nm-test-utils.h"
+
 #define DEVICE_NAME "nm-test-device"
 
 #define debug(...) nm_log_dbg (LOGD_PLATFORM, __VA_ARGS__)
@@ -43,5 +45,6 @@ void link_callback (NMPlatform *platform, int ifindex, NMPlatformLink *received,
 
 void run_command (const char *format, ...);
 
+void init_tests (int *argc, char ***argv);
 void setup_tests (void);
 

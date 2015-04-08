@@ -292,7 +292,7 @@ NMTST_DEFINE ();
 int
 main (int argc, char **argv)
 {
-	nmtst_init_assert_logging (&argc, &argv);
+	nmtst_init_assert_logging (&argc, &argv, "INFO", "DEFAULT");
 
 	/* Initialize the DBus manager singleton explicitly, because it is accessed by
 	 * the class initializer of NMDevice (used by the NMTestDevice stub).

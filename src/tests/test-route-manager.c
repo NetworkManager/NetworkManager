@@ -36,7 +36,7 @@ typedef struct {
 } test_fixture;
 
 static void
-setup_dev0_ip4 (int ifindex)
+setup_dev0_ip4 (int ifindex, guint mss_of_first_route, guint32 metric_of_second_route)
 {
 	GArray *routes = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP4Route));
 	NMPlatformIP4Route route;
@@ -49,13 +49,15 @@ setup_dev0_ip4 (int ifindex)
 	route.plen = 24;
 	route.gateway = INADDR_ANY;
 	route.metric = 20;
+	route.mss = mss_of_first_route;
 	g_array_append_val (routes, route);
 
 	route.source = NM_IP_CONFIG_SOURCE_USER;
 	inet_pton (AF_INET, "7.0.0.0", &route.network);
 	route.plen = 8;
 	inet_pton (AF_INET, "6.6.6.1", &route.gateway);
-	route.metric = 21;
+	route.metric = metric_of_second_route;
+	route.mss = 0;
 	g_array_append_val (routes, route);
 
 	nm_route_manager_ip4_route_sync (nm_route_manager_get (), ifindex, routes);
@@ -162,7 +164,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.ifindex = fixture->ifindex0,
 			.gateway = INADDR_ANY,
 			.metric = 20,
-			.mss = 0,
+			.mss = 1000,
 		},
 		{
 			.source = NM_IP_CONFIG_SOURCE_USER,
@@ -170,7 +172,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.plen = 8,
 			.ifindex = fixture->ifindex0,
 			.gateway = nmtst_inet4_from_string ("6.6.6.1"),
-			.metric = 21,
+			.metric = 21021,
 			.mss = 0,
 		},
 		{
@@ -233,19 +235,10 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.metric = 20,
 			.mss = 0,
 		},
-		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
-			.network = nmtst_inet4_from_string ("8.0.0.0"),
-			.plen = 8,
-			.ifindex = fixture->ifindex1,
-			.gateway = nmtst_inet4_from_string ("6.6.6.2"),
-			.metric = 22,
-			.mss = 0,
-		},
 	};
 
-	setup_dev0_ip4 (fixture->ifindex0);
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*error adding*");
+	setup_dev0_ip4 (fixture->ifindex0, 1000, 21021);
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*error adding 8.0.0.0/8 via 6.6.6.2 dev nm-test-device1 *");
 	setup_dev1_ip4 (fixture->ifindex1);
 	g_test_assert_expected_messages ();
 
@@ -254,28 +247,29 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 	 * 8.0.0.0/8 could not be added. */
 	routes = ip4_routes (fixture);
 	g_assert_cmpint (routes->len, ==, G_N_ELEMENTS (state1));
-	nmtst_platform_ip4_routes_equal ((NMPlatformIP4Route *) routes->data, state1, routes->len);
+	nmtst_platform_ip4_routes_equal ((NMPlatformIP4Route *) routes->data, state1, routes->len, TRUE);
 	g_array_free (routes, TRUE);
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*error adding 8.0.0.0/8 via 6.6.6.2 dev nm-test-device1 *");
 	setup_dev1_ip4 (fixture->ifindex1);
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*error adding*");
-	setup_dev0_ip4 (fixture->ifindex0);
 	g_test_assert_expected_messages ();
+
+	setup_dev0_ip4 (fixture->ifindex0, 0, 21);
 
 	/* Ensure nothing changed. */
 	routes = ip4_routes (fixture);
 	g_assert_cmpint (routes->len, ==, G_N_ELEMENTS (state1));
-	nmtst_platform_ip4_routes_equal ((NMPlatformIP4Route *) routes->data, state1, routes->len);
+	state1[0].mss = 0;
+	state1[1].metric = 21;
+	nmtst_platform_ip4_routes_equal ((NMPlatformIP4Route *) routes->data, state1, routes->len, TRUE);
 	g_array_free (routes, TRUE);
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*error adding*");
 	update_dev0_ip4 (fixture->ifindex0);
-	g_test_assert_expected_messages ();
 
 	/* 7.0.0.0/8 on dev0 was updated for gateway removal*/
 	routes = ip4_routes (fixture);
 	g_assert_cmpint (routes->len, ==, G_N_ELEMENTS (state2));
-	nmtst_platform_ip4_routes_equal ((NMPlatformIP4Route *) routes->data, state2, routes->len);
+	nmtst_platform_ip4_routes_equal ((NMPlatformIP4Route *) routes->data, state2, routes->len, TRUE);
 	g_array_free (routes, TRUE);
 
 	nm_route_manager_route_flush (nm_route_manager_get (), fixture->ifindex0);
@@ -286,7 +280,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 	 * No dev0 routes left. */
 	routes = ip4_routes (fixture);
 	g_assert_cmpint (routes->len, ==, G_N_ELEMENTS (state3));
-	nmtst_platform_ip4_routes_equal ((NMPlatformIP4Route *) routes->data, state3, routes->len);
+	nmtst_platform_ip4_routes_equal ((NMPlatformIP4Route *) routes->data, state3, routes->len, TRUE);
 	g_array_free (routes, TRUE);
 
 	nm_route_manager_route_flush (nm_route_manager_get (), fixture->ifindex1);
@@ -570,19 +564,10 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 			.metric = 1024,
 			.mss = 0,
 		},
-		{
-			.source = NM_IP_CONFIG_SOURCE_USER,
-			.network = *nmtst_inet6_from_string ("2001:db8:d34d::"),
-			.plen = 64,
-			.ifindex = fixture->ifindex1,
-			.gateway = *nmtst_inet6_from_string ("2001:db8:8086::2"),
-			.metric = 20,
-			.mss = 0,
-		},
 	};
 
 	setup_dev0_ip6 (fixture->ifindex0);
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*error adding*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*error adding 2001:db8:d34d::/64 via 2001:db8:8086::2 dev nm-test-device1 *");
 	setup_dev1_ip6 (fixture->ifindex1);
 	g_test_assert_expected_messages ();
 
@@ -592,28 +577,27 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 	 * 2001:db8:abad:c0de::/64 routes did not clash */
 	routes = ip6_routes (fixture);
 	g_assert_cmpint (routes->len, ==, G_N_ELEMENTS (state1));
-	nmtst_platform_ip6_routes_equal ((NMPlatformIP6Route *) routes->data, state1, routes->len);
+	nmtst_platform_ip6_routes_equal ((NMPlatformIP6Route *) routes->data, state1, routes->len, TRUE);
 	g_array_free (routes, TRUE);
 
+
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*error adding 2001:db8:d34d::/64 via 2001:db8:8086::2 dev nm-test-device1 *");
 	setup_dev1_ip6 (fixture->ifindex1);
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*error adding*");
-	setup_dev0_ip6 (fixture->ifindex0);
 	g_test_assert_expected_messages ();
+	setup_dev0_ip6 (fixture->ifindex0);
 
 	/* Ensure nothing changed. */
 	routes = ip6_routes (fixture);
 	g_assert_cmpint (routes->len, ==, G_N_ELEMENTS (state1));
-	nmtst_platform_ip6_routes_equal ((NMPlatformIP6Route *) routes->data, state1, routes->len);
+	nmtst_platform_ip6_routes_equal ((NMPlatformIP6Route *) routes->data, state1, routes->len, TRUE);
 	g_array_free (routes, TRUE);
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*error adding*");
 	update_dev0_ip6 (fixture->ifindex0);
-	g_test_assert_expected_messages ();
 
 	/* 2001:db8:abad:c0de::/64 on dev0 was updated for gateway removal*/
 	routes = ip6_routes (fixture);
 	g_assert_cmpint (routes->len, ==, G_N_ELEMENTS (state2));
-	nmtst_platform_ip6_routes_equal ((NMPlatformIP6Route *) routes->data, state2, routes->len);
+	nmtst_platform_ip6_routes_equal ((NMPlatformIP6Route *) routes->data, state2, routes->len, TRUE);
 	g_array_free (routes, TRUE);
 
 	nm_route_manager_route_flush (nm_route_manager_get (), fixture->ifindex0);
@@ -625,7 +609,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 	 * No dev0 routes left. */
 	routes = ip6_routes (fixture);
 	g_assert_cmpint (routes->len, ==, G_N_ELEMENTS (state3));
-	nmtst_platform_ip6_routes_equal ((NMPlatformIP6Route *) routes->data, state3, routes->len);
+	nmtst_platform_ip6_routes_equal ((NMPlatformIP6Route *) routes->data, state3, routes->len, TRUE);
 	g_array_free (routes, TRUE);
 
 	nm_route_manager_route_flush (nm_route_manager_get (), fixture->ifindex1);
@@ -671,6 +655,12 @@ fixture_teardown (test_fixture *fixture, gconstpointer user_data)
 {
 	nm_platform_link_delete (fixture->ifindex0);
 	nm_platform_link_delete (fixture->ifindex1);
+}
+
+void
+init_tests (int *argc, char ***argv)
+{
+	nmtst_init_assert_logging (argc, argv, "WARN", "ALL");
 }
 
 void

@@ -169,7 +169,7 @@ nmtst_free (void)
 }
 
 inline static void
-__nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_level, const char *log_domains)
+__nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_level, const char *log_domains, gboolean *out_set_logging)
 {
 	const char *nmtst_debug;
 	gboolean is_debug = FALSE;
@@ -178,6 +178,11 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 	GArray *debug_messages = g_array_new (TRUE, FALSE, sizeof (char *));
 	int i;
 	gboolean no_expect_message = FALSE;
+	gboolean _out_set_logging;
+
+	if (!out_set_logging)
+		out_set_logging = &_out_set_logging;
+	*out_set_logging = FALSE;
 
 	g_assert (!nmtst_initialized ());
 
@@ -275,6 +280,7 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 		gboolean success = TRUE;
 #ifdef __NETWORKMANAGER_LOGGING_H__
 		success = nm_logging_setup (log_level, log_domains, NULL, NULL);
+		*out_set_logging = TRUE;
 #endif
 		g_assert (success);
 	} else if (__nmtst_internal.no_expect_message) {
@@ -291,6 +297,7 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 			gboolean success;
 
 			success = nm_logging_setup (log_level, log_domains, NULL, NULL);
+			*out_set_logging = TRUE;
 			g_assert (success);
 		}
 #endif
@@ -306,7 +313,7 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 	}
 
 	if ((!__nmtst_internal.assert_logging || (__nmtst_internal.assert_logging && __nmtst_internal.no_expect_message)) &&
-	    (is_debug || (log_level && !g_ascii_strcasecmp (log_level, "DEBUG"))) &&
+	    (is_debug || (c_log_level && (!g_ascii_strcasecmp (c_log_level, "DEBUG") || !g_ascii_strcasecmp (c_log_level, "TRACE")))) &&
 	    !g_getenv ("G_MESSAGES_DEBUG"))
 	{
 		/* if we are @is_debug or @log_level=="DEBUG" and
@@ -336,18 +343,27 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 inline static void
 nmtst_init_with_logging (int *argc, char ***argv, const char *log_level, const char *log_domains)
 {
-	__nmtst_init (argc, argv, FALSE, log_level, log_domains);
+	__nmtst_init (argc, argv, FALSE, log_level, log_domains, NULL);
 }
 inline static void
-nmtst_init_assert_logging (int *argc, char ***argv)
+nmtst_init_assert_logging (int *argc, char ***argv, const char *log_level, const char *log_domains)
 {
-	__nmtst_init (argc, argv, TRUE, NULL, NULL);
+	gboolean set_logging;
+
+	__nmtst_init (argc, argv, TRUE, NULL, NULL, &set_logging);
+
+	if (!set_logging) {
+		gboolean success;
+
+		success = nm_logging_setup (log_level, log_domains, NULL, NULL);
+		g_assert (success);
+	}
 }
 #else
 inline static void
 nmtst_init (int *argc, char ***argv, gboolean assert_logging)
 {
-	__nmtst_init (argc, argv, assert_logging, NULL, NULL);
+	__nmtst_init (argc, argv, assert_logging, NULL, NULL, NULL);
 }
 #endif
 
@@ -394,7 +410,7 @@ nmtst_get_rand (void)
 			gint64 i;
 
 			i = g_ascii_strtoll (str, &s, 0);
-			g_assert (s[0] == '\0' && i >= 0 && i < G_MAXINT32);
+			g_assert (s[0] == '\0' && i >= 0 && i < G_MAXUINT32);
 
 			seed = i;
 			__nmtst_internal.rand = g_rand_new_with_seed (seed);
@@ -406,7 +422,7 @@ nmtst_get_rand (void)
 		}
 		__nmtst_internal.rand_seed = seed;
 
-		__NMTST_LOG (g_message, ">> initialize nmtst_get_rand() with seed=%u", seed);
+		__NMTST_LOG (g_message, ">> initialize nmtst_get_rand() with NMTST_SEED_RAND=%u", seed);
 	}
 	return __nmtst_internal.rand;
 }
@@ -670,13 +686,27 @@ nmtst_platform_ip6_route_full (const char *network, guint plen, const char *gate
 	return route;
 }
 
+inline static int
+_nmtst_platform_ip4_routes_equal_sort (gconstpointer a, gconstpointer b, gpointer user_data)
+{
+	return nm_platform_ip4_route_cmp ((const NMPlatformIP4Route *) a, (const NMPlatformIP4Route *) b);
+}
+
 inline static void
-nmtst_platform_ip4_routes_equal (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b, gsize len)
+nmtst_platform_ip4_routes_equal (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b, gsize len, gboolean ignore_order)
 {
 	gsize i;
+	gs_free const NMPlatformIP4Route *c_a = NULL, *c_b = NULL;
 
 	g_assert (a);
 	g_assert (b);
+
+	if (ignore_order) {
+		a = c_a = g_memdup (a, sizeof (NMPlatformIP4Route) * len);
+		b = c_b = g_memdup (b, sizeof (NMPlatformIP4Route) * len);
+		g_qsort_with_data (c_a, len, sizeof (NMPlatformIP4Route), _nmtst_platform_ip4_routes_equal_sort, NULL);
+		g_qsort_with_data (c_b, len, sizeof (NMPlatformIP4Route), _nmtst_platform_ip4_routes_equal_sort, NULL);
+	}
 
 	for (i = 0; i < len; i++) {
 		if (nm_platform_ip4_route_cmp (&a[i], &b[i]) != 0) {
@@ -691,13 +721,27 @@ nmtst_platform_ip4_routes_equal (const NMPlatformIP4Route *a, const NMPlatformIP
 	}
 }
 
+inline static int
+_nmtst_platform_ip6_routes_equal_sort (gconstpointer a, gconstpointer b, gpointer user_data)
+{
+	return nm_platform_ip6_route_cmp ((const NMPlatformIP6Route *) a, (const NMPlatformIP6Route *) b);
+}
+
 inline static void
-nmtst_platform_ip6_routes_equal (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b, gsize len)
+nmtst_platform_ip6_routes_equal (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b, gsize len, gboolean ignore_order)
 {
 	gsize i;
+	gs_free const NMPlatformIP6Route *c_a = NULL, *c_b = NULL;
 
 	g_assert (a);
 	g_assert (b);
+
+	if (ignore_order) {
+		a = c_a = g_memdup (a, sizeof (NMPlatformIP6Route) * len);
+		b = c_b = g_memdup (b, sizeof (NMPlatformIP6Route) * len);
+		g_qsort_with_data (c_a, len, sizeof (NMPlatformIP6Route), _nmtst_platform_ip6_routes_equal_sort, NULL);
+		g_qsort_with_data (c_b, len, sizeof (NMPlatformIP6Route), _nmtst_platform_ip6_routes_equal_sort, NULL);
+	}
 
 	for (i = 0; i < len; i++) {
 		if (nm_platform_ip6_route_cmp (&a[i], &b[i]) != 0) {

@@ -255,7 +255,7 @@ main (int argc, char **argv)
 	int result;
 	const char *program = *argv;
 
-	nmtst_init_with_logging (&argc, &argv, NULL, "ALL");
+	init_tests (&argc, &argv);
 
 	NM_PRAGMA_WARNING_DISABLE("-Wtautological-compare")
 	if (SETUP == nm_linux_platform_setup && getuid() != 0) {
@@ -263,10 +263,10 @@ main (int argc, char **argv)
 		nmtst_reexec_sudo ();
 
 #ifdef REQUIRE_ROOT_TESTS
-		g_message ("Fail test: requires root privileges (%s)", program);
+		g_print ("Fail test: requires root privileges (%s)\n", program);
 		return EXIT_FAILURE;
 #else
-		g_message ("Skipping test: requires root privileges (%s)", program);
+		g_print ("Skipping test: requires root privileges (%s)\n", program);
 		return 77;
 #endif
 	}

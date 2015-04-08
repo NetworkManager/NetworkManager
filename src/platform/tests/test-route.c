@@ -197,7 +197,7 @@ test_ip4_route (void)
 	rts[2].mss = mss;
 	g_assert_cmpint (routes->len, ==, 3);
 	g_assert (!memcmp (routes->data, rts, sizeof (rts)));
-	nmtst_platform_ip4_routes_equal ((NMPlatformIP4Route *) routes->data, rts, routes->len);
+	nmtst_platform_ip4_routes_equal ((NMPlatformIP4Route *) routes->data, rts, routes->len, TRUE);
 	g_array_unref (routes);
 
 	/* Remove route */
@@ -293,7 +293,7 @@ test_ip6_route (void)
 	rts[2].mss = mss;
 	g_assert_cmpint (routes->len, ==, 3);
 	g_assert (!memcmp (routes->data, rts, sizeof (rts)));
-	nmtst_platform_ip6_routes_equal ((NMPlatformIP6Route *) routes->data, rts, routes->len);
+	nmtst_platform_ip6_routes_equal ((NMPlatformIP6Route *) routes->data, rts, routes->len, TRUE);
 	g_array_unref (routes);
 
 	/* Remove route */
@@ -309,6 +309,12 @@ test_ip6_route (void)
 	free_signal (route_added);
 	free_signal (route_changed);
 	free_signal (route_removed);
+}
+
+void
+init_tests (int *argc, char ***argv)
+{
+	nmtst_init_with_logging (argc, argv, NULL, "ALL");
 }
 
 void

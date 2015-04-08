@@ -1152,7 +1152,7 @@ ip4_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 	route.source = NM_IP_CONFIG_SOURCE_KERNEL;
 	route.ifindex = ifindex;
 	route.source = source;
-	route.network = network;
+	route.network = nm_utils_ip4_address_clear_host_address (network, plen);
 	route.plen = plen;
 	route.gateway = gateway;
 	route.metric = metric;
@@ -1169,8 +1169,8 @@ ip4_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 				break;
 		}
 		if (i == priv->ip4_routes->len) {
-			g_warning ("Fake platform: error adding %s: Network Unreachable",
-			           nm_platform_ip4_route_to_string (&route));
+			nm_log_warn (LOGD_PLATFORM, "Fake platform: error adding %s: Network Unreachable",
+			             nm_platform_ip4_route_to_string (&route));
 			return FALSE;
 		}
 	}
@@ -1217,7 +1217,7 @@ ip6_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 	route.source = NM_IP_CONFIG_SOURCE_KERNEL;
 	route.ifindex = ifindex;
 	route.source = source;
-	route.network = network;
+	nm_utils_ip6_address_clear_host_address (&route.network, &network, plen);
 	route.plen = plen;
 	route.gateway = gateway;
 	route.metric = metric;
@@ -1236,8 +1236,8 @@ ip6_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 				break;
 		}
 		if (i == priv->ip6_routes->len) {
-			g_warning ("Fake platform: error adding %s: Network Unreachable",
-			           nm_platform_ip6_route_to_string (&route));
+			nm_log_warn (LOGD_PLATFORM, "Fake platform: error adding %s: Network Unreachable",
+			             nm_platform_ip6_route_to_string (&route));
 			return FALSE;
 		}
 	}
