@@ -394,9 +394,9 @@ gboolean nm_device_has_capability (NMDevice *self, NMDeviceCapabilities caps);
 
 gboolean nm_device_get_autoconnect (NMDevice *device);
 
-void nm_device_handle_autoip4_event (NMDevice *self,
-                                     const char *event,
-                                     const char *address);
+void nm_device_handle_ipv4ll_event (NMDevice *self,
+                                    const char *event,
+                                    const char *address);
 
 void nm_device_state_changed (NMDevice *device,
                               NMDeviceState state,

@@ -850,7 +850,7 @@ aipd_handle_event (GDBusProxy *proxy,
 		NMDevice *candidate = NM_DEVICE (iter->data);
 
 		if (!strcmp (nm_device_get_iface (candidate), iface)) {
-			nm_device_handle_autoip4_event (candidate, event, address);
+			nm_device_handle_ipv4ll_event (candidate, event, address);
 			handled = TRUE;
 			break;
 		}

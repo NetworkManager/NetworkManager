@@ -279,10 +279,10 @@ typedef struct {
 	/* Firewall */
 	NMFirewallPendingCall fw_call;
 
-	/* avahi-autoipd stuff */
-	GPid    aipd_pid;
-	guint   aipd_watch;
-	guint   aipd_timeout;
+	/* IPv4LL stuff */
+	GPid    ipv4ll_pid;
+	guint   ipv4ll_watch;
+	guint   ipv4ll_timeout;
 
 	/* IP6 configuration info */
 	NMIP6Config *  ip6_config;
@@ -2696,39 +2696,39 @@ nm_device_activate_schedule_stage2_device_config (NMDevice *self)
 }
 
 /*********************************************/
-/* avahi-autoipd stuff */
+/* IPv4LL stuff */
 
 static void
-aipd_timeout_remove (NMDevice *self)
+ipv4ll_timeout_remove (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->aipd_timeout) {
-		g_source_remove (priv->aipd_timeout);
-		priv->aipd_timeout = 0;
+	if (priv->ipv4ll_timeout) {
+		g_source_remove (priv->ipv4ll_timeout);
+		priv->ipv4ll_timeout = 0;
 	}
 }
 
 static void
-aipd_cleanup (NMDevice *self)
+ipv4ll_cleanup (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->aipd_watch) {
-		g_source_remove (priv->aipd_watch);
-		priv->aipd_watch = 0;
+	if (priv->ipv4ll_watch) {
+		g_source_remove (priv->ipv4ll_watch);
+		priv->ipv4ll_watch = 0;
 	}
 
-	if (priv->aipd_pid > 0) {
-		nm_utils_kill_child_sync (priv->aipd_pid, SIGKILL, LOGD_AUTOIP4, "avahi-autoipd", NULL, 0, 0);
-		priv->aipd_pid = -1;
+	if (priv->ipv4ll_pid > 0) {
+		nm_utils_kill_child_sync (priv->ipv4ll_pid, SIGKILL, LOGD_AUTOIP4, "avahi-autoipd", NULL, 0, 0);
+		priv->ipv4ll_pid = -1;
 	}
 
-	aipd_timeout_remove (self);
+	ipv4ll_timeout_remove (self);
 }
 
 static NMIP4Config *
-aipd_get_ip4_config (NMDevice *self, guint32 lla)
+ipv4ll_get_ip4_config (NMDevice *self, guint32 lla)
 {
 	NMIP4Config *config = NULL;
 	NMPlatformIP4Address address;
@@ -2758,9 +2758,9 @@ aipd_get_ip4_config (NMDevice *self, guint32 lla)
 #define IPV4LL_NETMASK (htonl (0xFFFF0000L))
 
 void
-nm_device_handle_autoip4_event (NMDevice *self,
-                                const char *event,
-                                const char *address)
+nm_device_handle_ipv4ll_event (NMDevice *self,
+                               const char *event,
+                               const char *address)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *connection = NULL;
@@ -2796,15 +2796,15 @@ nm_device_handle_autoip4_event (NMDevice *self,
 			return;
 		}
 
-		config = aipd_get_ip4_config (self, lla);
+		config = ipv4ll_get_ip4_config (self, lla);
 		if (config == NULL) {
-			_LOGE (LOGD_AUTOIP4, "failed to get autoip config");
+			_LOGE (LOGD_AUTOIP4, "failed to get IPv4LL config");
 			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
 			return;
 		}
 
 		if (priv->ip4_state == IP_CONF) {
-			aipd_timeout_remove (self);
+			ipv4ll_timeout_remove (self);
 			nm_device_activate_schedule_ip4_config_result (self, config);
 		} else if (priv->ip4_state == IP_DONE) {
 			if (!ip4_config_merge_and_apply (self, config, TRUE, &reason)) {
@@ -2816,7 +2816,7 @@ nm_device_handle_autoip4_event (NMDevice *self,
 
 		g_object_unref (config);
 	} else {
-		_LOGW (LOGD_AUTOIP4, "autoip address %s no longer valid because '%s'.", address, event);
+		_LOGW (LOGD_AUTOIP4, "IPv4LL address %s no longer valid because '%s'.", address, event);
 
 		/* The address is gone; terminate the connection or fail activation */
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
@@ -2824,15 +2824,15 @@ nm_device_handle_autoip4_event (NMDevice *self,
 }
 
 static void
-aipd_watch_cb (GPid pid, gint status, gpointer user_data)
+ipv4ll_watch_cb (GPid pid, gint status, gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMDeviceState state;
 
-	if (!priv->aipd_watch)
+	if (!priv->ipv4ll_watch)
 		return;
-	priv->aipd_watch = 0;
+	priv->ipv4ll_watch = 0;
 
 	if (WIFEXITED (status))
 		_LOGD (LOGD_AUTOIP4, "avahi-autoipd exited with error code %d", WEXITSTATUS (status));
@@ -2843,7 +2843,7 @@ aipd_watch_cb (GPid pid, gint status, gpointer user_data)
 	else
 		_LOGW (LOGD_AUTOIP4, "avahi-autoipd died from an unknown cause");
 
-	aipd_cleanup (self);
+	ipv4ll_cleanup (self);
 
 	state = nm_device_get_state (self);
 	if (nm_device_is_activating (self) || (state == NM_DEVICE_STATE_ACTIVATED))
@@ -2851,15 +2851,15 @@ aipd_watch_cb (GPid pid, gint status, gpointer user_data)
 }
 
 static gboolean
-aipd_timeout_cb (gpointer user_data)
+ipv4ll_timeout_cb (gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->aipd_timeout) {
+	if (priv->ipv4ll_timeout) {
 		_LOGI (LOGD_AUTOIP4, "avahi-autoipd timed out.");
-		priv->aipd_timeout = 0;
-		aipd_cleanup (self);
+		priv->ipv4ll_timeout = 0;
+		ipv4ll_cleanup (self);
 
 		if (priv->ip4_state == IP_CONF)
 			nm_device_activate_schedule_ip4_config_timeout (self);
@@ -2872,7 +2872,7 @@ aipd_timeout_cb (gpointer user_data)
 const char *nm_device_autoipd_helper_path = LIBEXECDIR "/nm-avahi-autoipd.action";
 
 static NMActStageReturn
-aipd_start (NMDevice *self, NMDeviceStateReason *reason)
+ipv4ll_start (NMDevice *self, NMDeviceStateReason *reason)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	const char *argv[6];
@@ -2881,7 +2881,7 @@ aipd_start (NMDevice *self, NMDeviceStateReason *reason)
 	int i = 0;
 	GError *error = NULL;
 
-	aipd_cleanup (self);
+	ipv4ll_cleanup (self);
 
 	/* Find avahi-autoipd */
 	aipd_binary = nm_utils_find_helper ("avahi-autoipd", NULL, NULL);
@@ -2907,13 +2907,13 @@ aipd_start (NMDevice *self, NMDeviceStateReason *reason)
 	g_free (cmdline);
 
 	if (!g_spawn_async ("/", (char **) argv, NULL, G_SPAWN_DO_NOT_REAP_CHILD,
-	                    nm_utils_setpgid, NULL, &(priv->aipd_pid), &error)) {
+	                    nm_utils_setpgid, NULL, &(priv->ipv4ll_pid), &error)) {
 		_LOGW (LOGD_DEVICE | LOGD_AUTOIP4,
 		       "Activation: Stage 3 of 5 (IP Configure Start) failed"
 		       " to start avahi-autoipd: %s",
 		       error && error->message ? error->message : "(unknown)");
 		g_clear_error (&error);
-		aipd_cleanup (self);
+		ipv4ll_cleanup (self);
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
@@ -2922,10 +2922,10 @@ aipd_start (NMDevice *self, NMDeviceStateReason *reason)
 	       " avahi-autoipd...");
 
 	/* Monitor the child process so we know when it dies */
-	priv->aipd_watch = g_child_watch_add (priv->aipd_pid, aipd_watch_cb, self);
+	priv->ipv4ll_watch = g_child_watch_add (priv->ipv4ll_pid, ipv4ll_watch_cb, self);
 
 	/* Start a timeout to bound the address attempt */
-	priv->aipd_timeout = g_timeout_add_seconds (20, aipd_timeout_cb, self);
+	priv->ipv4ll_timeout = g_timeout_add_seconds (20, ipv4ll_timeout_cb, self);
 
 	return NM_ACT_STAGE_RETURN_POSTPONE;
 }
@@ -3574,7 +3574,7 @@ act_stage3_ip4_config_start (NMDevice *self,
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0)
 		ret = dhcp4_start (self, connection, reason);
 	else if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL) == 0)
-		ret = aipd_start (self, reason);
+		ret = ipv4ll_start (self, reason);
 	else if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) == 0) {
 		/* Use only IPv4 config from the connection data */
 		*out_config = nm_ip4_config_new (nm_device_get_ip_ifindex (self));
@@ -7518,7 +7518,7 @@ _cleanup_ip_pre (NMDevice *self, gboolean deconfigure)
 	linklocal6_cleanup (self);
 	addrconf6_cleanup (self);
 	dnsmasq_cleanup (self);
-	aipd_cleanup (self);
+	ipv4ll_cleanup (self);
 }
 
 static void
