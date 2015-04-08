@@ -4303,14 +4303,8 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *self)
 		}
 	}
 
-	/* hop_limit == 0 is a special value "unspecified", so do not touch
-	 * in this case */
-	if (changed & NM_RDISC_CONFIG_HOP_LIMIT && rdisc->hop_limit > 0) {
-		char val[16];
-
-		g_snprintf (val, sizeof (val), "%d", rdisc->hop_limit);
-		nm_device_ipv6_sysctl_set (self, "hop_limit", val);
-	}
+	if (changed & NM_RDISC_CONFIG_HOP_LIMIT)
+		nm_platform_sysctl_set_ip6_hop_limit_safe (NM_PLATFORM_GET, nm_device_get_ip_iface (self), rdisc->hop_limit);
 
 	if (changed & NM_RDISC_CONFIG_MTU)
 		priv->ip6_mtu = rdisc->mtu;
