@@ -101,18 +101,9 @@ test_defaults (GType type, const char *name)
 	g_object_unref (setting);
 }
 
-int main (int argc, char **argv)
+static void
+defaults (void)
 {
-	GError *error = NULL;
-	char *base;
-
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
-
-	if (!nm_utils_init (&error))
-		FAIL ("nm-utils-init", "failed to initialize libnm-util: %s", error->message);
-
 	/* The tests */
 	test_defaults (NM_TYPE_SETTING_CONNECTION, NM_SETTING_CONNECTION_SETTING_NAME);
 	test_defaults (NM_TYPE_SETTING_802_1X, NM_SETTING_802_1X_SETTING_NAME);
@@ -127,10 +118,16 @@ int main (int argc, char **argv)
 	test_defaults (NM_TYPE_SETTING_WIRED, NM_SETTING_WIRED_SETTING_NAME);
 	test_defaults (NM_TYPE_SETTING_WIRELESS, NM_SETTING_WIRELESS_SETTING_NAME);
 	test_defaults (NM_TYPE_SETTING_WIRELESS_SECURITY, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
-
-	base = g_path_get_basename (argv[0]);
-	fprintf (stdout, "%s: SUCCESS\n", base);
-	g_free (base);
-	return 0;
 }
 
+NMTST_DEFINE ();
+
+int
+main (int argc, char **argv)
+{
+	nmtst_init (&argc, &argv, TRUE);
+
+	g_test_add_func ("/libnm/defaults", defaults);
+
+	return g_test_run ();
+}
