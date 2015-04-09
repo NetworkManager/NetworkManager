@@ -859,8 +859,16 @@ AS_IF([test "$with_valgrind" == "yes"],
 # Add conditionals and substitutions
 AM_CONDITIONAL(ENABLE_TESTS, test "$enable_tests" != "no")
 AM_CONDITIONAL(REQUIRE_ROOT_TESTS, test "$enable_tests" == "root")
+AC_ARG_WITH(valgrind-suppressions, AS_HELP_STRING([--with-valgrind-suppressions=path], [Use specific valgrind suppression file]))
+if test "$with_valgrind" == no; then
+	with_valgrind_suppressions=
+else
+	if test  "$with_valgrind_suppressions" == ""; then
+		with_valgrind_suppressions='$(top_srcdir)/valgrind.suppressions'
+	fi
+fi
 AS_IF([test "$with_valgrind" != "no"],
-	AC_SUBST(VALGRIND_RULES, 'TESTS_ENVIRONMENT = "$(top_srcdir)/tools/run-test-valgrind.sh" "$(LIBTOOL)" "$(with_valgrind)" "$(top_srcdir)/valgrind.suppressions"'),
+	AC_SUBST(VALGRIND_RULES, 'TESTS_ENVIRONMENT = "$(top_srcdir)/tools/run-test-valgrind.sh" "$(LIBTOOL)" "$(with_valgrind)" '"$with_valgrind_suppressions"),
 	AC_SUBST(VALGRIND_RULES, []))
 AM_CONDITIONAL(WITH_VALGRIND, test "${with_valgrind}" != "no")
 
@@ -1084,7 +1092,7 @@ echo
 echo "Miscellaneous:"
 echo "  documentation: $enable_gtk_doc"
 echo "  tests: $enable_tests"
-echo "  valgrind: $with_valgrind"
+echo "  valgrind: $with_valgrind   $with_valgrind_suppressions"
 echo "  code coverage: $enable_code_coverage"
 echo "  LTO: $enable_lto"
 echo
