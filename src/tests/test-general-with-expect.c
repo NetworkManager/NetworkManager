@@ -29,6 +29,7 @@
 
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
+#include "nm-multi-index.h"
 
 #include "nm-test-utils.h"
 
@@ -545,6 +546,362 @@ test_nm_ethernet_address_is_valid (void)
 
 /*******************************************/
 
+typedef struct {
+	union {
+		NMMultiIndexId id_base;
+		guint bucket;
+	};
+} NMMultiIndexIdTest;
+
+typedef struct {
+	guint64 buckets;
+	gpointer ptr_value;
+} NMMultiIndexTestValue;
+
+static gboolean
+_mi_value_bucket_has (const NMMultiIndexTestValue *value, guint bucket)
+{
+	g_assert (value);
+	g_assert (bucket < 64);
+
+	return (value->buckets & (((guint64) 0x01) << bucket)) != 0;
+}
+
+static gboolean
+_mi_value_bucket_set (NMMultiIndexTestValue *value, guint bucket)
+{
+	g_assert (value);
+	g_assert (bucket < 64);
+
+	if (_mi_value_bucket_has (value, bucket))
+		return FALSE;
+
+	value->buckets |= (((guint64) 0x01) << bucket);
+	return TRUE;
+}
+
+static gboolean
+_mi_value_bucket_unset (NMMultiIndexTestValue *value, guint bucket)
+{
+	g_assert (value);
+	g_assert (bucket < 64);
+
+	if (!_mi_value_bucket_has (value, bucket))
+		return FALSE;
+
+	value->buckets &= ~(((guint64) 0x01) << bucket);
+	return TRUE;
+}
+
+static guint
+_mi_idx_hash (const NMMultiIndexIdTest *id)
+{
+	g_assert (id && id->bucket < 64);
+	return id->bucket;
+}
+
+static gboolean
+_mi_idx_equal (const NMMultiIndexIdTest *a, const NMMultiIndexIdTest *b)
+{
+	g_assert (a && a->bucket < 64);
+	g_assert (b && b->bucket < 64);
+
+	return a->bucket == b->bucket;
+}
+
+static NMMultiIndexIdTest *
+_mi_idx_clone (const NMMultiIndexIdTest *id)
+{
+	NMMultiIndexIdTest *n;
+
+	g_assert (id && id->bucket < 64);
+
+	n = g_new0 (NMMultiIndexIdTest, 1);
+	n->bucket = id->bucket;
+	return n;
+}
+
+static void
+_mi_idx_destroy (NMMultiIndexIdTest *id)
+{
+	g_assert (id && id->bucket < 64);
+	g_free (id);
+}
+
+static NMMultiIndexTestValue *
+_mi_create_array (guint num_values)
+{
+	NMMultiIndexTestValue *array = g_new0 (NMMultiIndexTestValue, num_values);
+	guint i;
+
+	g_assert (num_values > 0);
+
+	for (i = 0; i < num_values; i++) {
+		array[i].buckets = 0;
+		array[i].ptr_value = GUINT_TO_POINTER (i + 1);
+	}
+	return array;
+}
+
+typedef struct {
+	guint num_values;
+	guint num_buckets;
+	NMMultiIndexTestValue *array;
+	int test_idx;
+} NMMultiIndexAssertData;
+
+static gboolean
+_mi_assert_index_equals_array_cb (const NMMultiIndexIdTest *id, void *const* values, guint len, NMMultiIndexAssertData *data)
+{
+	guint i;
+	gboolean has_test_idx = FALSE;
+
+	g_assert (id && id->bucket < 64);
+	g_assert (data);
+	g_assert (values);
+	g_assert (len > 0);
+	g_assert (values[len] == NULL);
+	g_assert (data->test_idx >= -1 || data->test_idx < data->num_buckets);
+
+	g_assert (id->bucket < data->num_buckets);
+
+	for (i = 0; i < data->num_values; i++)
+		g_assert (!_mi_value_bucket_has (&data->array[i], id->bucket));
+
+	for (i = 0; i < len; i++) {
+		guint vi = GPOINTER_TO_UINT (values[i]);
+
+		g_assert (vi >= 1);
+		g_assert (vi <= data->num_values);
+		vi--;
+		if (data->test_idx == vi)
+			has_test_idx = TRUE;
+		g_assert (data->array[vi].ptr_value == values[i]);
+		if (!_mi_value_bucket_set (&data->array[vi], id->bucket))
+			g_assert_not_reached ();
+	}
+	g_assert ((data->test_idx == -1 && !has_test_idx) || has_test_idx);
+	return TRUE;
+}
+
+static void
+_mi_assert_index_equals_array (guint num_values, guint num_buckets, int test_idx, const NMMultiIndexTestValue *array, const NMMultiIndex *index)
+{
+	NMMultiIndexAssertData data = {
+		.num_values = num_values,
+		.num_buckets = num_buckets,
+		.test_idx = test_idx,
+	};
+	NMMultiIndexIter iter;
+	const NMMultiIndexIdTest *id;
+	void *const* values;
+	guint len;
+	NMMultiIndexTestValue *v;
+
+	data.array = _mi_create_array (num_values);
+	v = test_idx >= 0 ? data.array[test_idx].ptr_value : NULL;
+	nm_multi_index_foreach (index, v, (NMMultiIndexFuncForeach) _mi_assert_index_equals_array_cb, &data);
+	if (test_idx >= 0)
+		g_assert (memcmp (&data.array[test_idx], &array[test_idx], sizeof (NMMultiIndexTestValue)) == 0);
+	else
+		g_assert (memcmp (data.array, array, sizeof (NMMultiIndexTestValue) * num_values) == 0);
+	g_free (data.array);
+
+
+	data.array = _mi_create_array (num_values);
+	v = test_idx >= 0 ? data.array[test_idx].ptr_value : NULL;
+	nm_multi_index_iter_init (&iter, index, v);
+	while (nm_multi_index_iter_next (&iter, (gpointer) &id, &values, &len))
+		_mi_assert_index_equals_array_cb (id, values, len, &data);
+	if (test_idx >= 0)
+		g_assert (memcmp (&data.array[test_idx], &array[test_idx], sizeof (NMMultiIndexTestValue)) == 0);
+	else
+		g_assert (memcmp (data.array, array, sizeof (NMMultiIndexTestValue) * num_values) == 0);
+	g_free (data.array);
+}
+
+typedef enum {
+	MI_OP_ADD,
+	MI_OP_REMOVE,
+	MI_OP_MOVE,
+} NMMultiIndexOperation;
+
+static void
+_mi_rebucket (GRand *rand, guint num_values, guint num_buckets, NMMultiIndexOperation op, guint bucket, guint bucket_old, guint array_idx, NMMultiIndexTestValue *array, NMMultiIndex *index)
+{
+	NMMultiIndexTestValue *v;
+	NMMultiIndexIdTest id, id_old;
+	const NMMultiIndexIdTest *id_reverse;
+	guint64 buckets_old;
+	guint i;
+	gboolean had_bucket, had_bucket_old;
+
+	g_assert (array_idx < num_values);
+	g_assert (bucket < (int) num_buckets);
+
+	v = &array[array_idx];
+
+	buckets_old = v->buckets;
+	if (op == MI_OP_MOVE)
+		had_bucket_old = _mi_value_bucket_has (v, bucket_old);
+	else
+		had_bucket_old = FALSE;
+	had_bucket = _mi_value_bucket_has (v, bucket);
+
+	switch (op) {
+
+	case MI_OP_ADD:
+		_mi_value_bucket_set (v, bucket);
+		id.bucket = bucket;
+		if (nm_multi_index_add (index, &id.id_base, v->ptr_value))
+			g_assert (!had_bucket);
+		else
+			g_assert (had_bucket);
+		break;
+
+	case MI_OP_REMOVE:
+		_mi_value_bucket_unset (v, bucket);
+		id.bucket = bucket;
+		if (nm_multi_index_remove (index, &id.id_base, v->ptr_value))
+			g_assert (had_bucket);
+		else
+			g_assert (!had_bucket);
+		break;
+
+	case MI_OP_MOVE:
+
+		_mi_value_bucket_unset (v, bucket_old);
+		_mi_value_bucket_set (v, bucket);
+
+		id.bucket = bucket;
+		id_old.bucket = bucket_old;
+
+		if (nm_multi_index_move (index, &id_old.id_base, &id.id_base, v->ptr_value)) {
+			if (bucket == bucket_old)
+				g_assert (had_bucket_old && had_bucket);
+			else
+				g_assert (had_bucket_old && !had_bucket);
+		} else {
+			if (bucket == bucket_old)
+				g_assert (!had_bucket_old && !had_bucket);
+			else
+				g_assert (!had_bucket_old || had_bucket);
+		}
+		break;
+
+	default:
+		g_assert_not_reached ();
+	}
+
+#if 0
+	g_print (">>> rebucket: idx=%3u, op=%3s, bucket=%3i%c -> %3i%c, buckets=%08llx -> %08llx %s\n", array_idx,
+	         op == MI_OP_ADD ? "ADD" : (op == MI_OP_REMOVE ? "REM" : "MOV"),
+	         bucket_old, had_bucket_old ? '*' : ' ',
+	         bucket, had_bucket ? '*' : ' ',
+	         (long long unsigned) buckets_old, (long long unsigned) v->buckets,
+	         buckets_old != v->buckets ? "(changed)" : "(unchanged)");
+#endif
+
+	id_reverse = (const NMMultiIndexIdTest *) nm_multi_index_lookup_first_by_value (index, v->ptr_value);
+	if (id_reverse)
+		g_assert (_mi_value_bucket_has (v, id_reverse->bucket));
+	else
+		g_assert (v->buckets == 0);
+
+	for (i = 0; i < 64; i++) {
+		id.bucket = i;
+		if (nm_multi_index_contains (index, &id.id_base, v->ptr_value))
+			g_assert (_mi_value_bucket_has (v, i));
+		else
+			g_assert (!_mi_value_bucket_has (v, i));
+	}
+
+	_mi_assert_index_equals_array (num_values, num_buckets, -1, array, index);
+	_mi_assert_index_equals_array (num_values, num_buckets, array_idx, array, index);
+	_mi_assert_index_equals_array (num_values, num_buckets, g_rand_int_range (rand, 0, num_values), array, index);
+}
+
+static void
+_mi_test_run (guint num_values, guint num_buckets)
+{
+	NMMultiIndex *index = nm_multi_index_new ((NMMultiIndexFuncHash) _mi_idx_hash,
+	                                          (NMMultiIndexFuncEqual) _mi_idx_equal,
+	                                          (NMMultiIndexFuncClone) _mi_idx_clone,
+	                                          (NMMultiIndexFuncDestroy) _mi_idx_destroy);
+	gs_free NMMultiIndexTestValue *array = _mi_create_array (num_values);
+	GRand *rand = nmtst_get_rand ();
+	guint i, i_rd, i_idx, i_bucket;
+	guint num_buckets_all = num_values * num_buckets;
+
+	g_assert (array[0].ptr_value == GUINT_TO_POINTER (1));
+
+	_mi_assert_index_equals_array (num_values, num_buckets, -1, array, index);
+
+	_mi_rebucket (rand, num_values, num_buckets, MI_OP_ADD, 0, 0, 0, array, index);
+	_mi_rebucket (rand, num_values, num_buckets, MI_OP_REMOVE, 0, 0, 0, array, index);
+
+	if (num_buckets >= 3) {
+		_mi_rebucket (rand, num_values, num_buckets, MI_OP_ADD, 0, 0, 0, array, index);
+		_mi_rebucket (rand, num_values, num_buckets, MI_OP_MOVE, 2, 0, 0, array, index);
+		_mi_rebucket (rand, num_values, num_buckets, MI_OP_REMOVE, 2, 0, 0, array, index);
+	}
+
+	g_assert (nm_multi_index_get_num_groups (index) == 0);
+
+	/* randomly change the bucket of entries. */
+	for (i = 0; i < 5 * num_values; i++) {
+		guint array_idx = g_rand_int_range (rand, 0, num_values);
+		guint bucket = g_rand_int_range (rand, 0, num_buckets);
+		NMMultiIndexOperation op = g_rand_int_range (rand, 0, MI_OP_MOVE + 1);
+		guint bucket_old = 0;
+
+		if (op == MI_OP_MOVE) {
+			if ((g_rand_int (rand) % 2) && array[array_idx].buckets != 0) {
+				guint64 b;
+
+				/* choose the highest (existing) bucket. */
+				bucket_old = 0;
+				for (b = array[array_idx].buckets; b; b >>= 1)
+					bucket_old++;
+			} else {
+				/* choose a random bucket (even if the item is currently not in that bucket). */
+				bucket_old = g_rand_int_range (rand, 0, num_buckets);
+			}
+		}
+
+		_mi_rebucket (rand, num_values, num_buckets, op, bucket, bucket_old, array_idx, array, index);
+	}
+
+	/* remove all elements from all buckets */
+	i_rd = g_rand_int (rand);
+	for (i = 0; i < num_buckets_all; i++) {
+		i_rd = (i_rd + 101) % num_buckets_all;
+		i_idx = i_rd / num_buckets;
+		i_bucket = i_rd % num_buckets;
+
+		if (_mi_value_bucket_has (&array[i_idx], i_bucket))
+			_mi_rebucket (rand, num_values, num_buckets, MI_OP_REMOVE, i_bucket, 0, i_idx, array, index);
+	}
+
+	g_assert (nm_multi_index_get_num_groups (index) == 0);
+	nm_multi_index_free (index);
+}
+
+static void
+test_nm_multi_index (void)
+{
+	guint i, j;
+
+	for (i = 1; i < 7; i++) {
+		for (j = 1; j < 6; j++)
+			_mi_test_run (i, j);
+	}
+	_mi_test_run (50, 3);
+	_mi_test_run (50, 18);
+}
+
+/*******************************************/
+
 NMTST_DEFINE ();
 
 int
@@ -557,6 +914,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/general/nm_utils_kill_child", test_nm_utils_kill_child);
 	g_test_add_func ("/general/nm_utils_array_remove_at_indexes", test_nm_utils_array_remove_at_indexes);
 	g_test_add_func ("/general/nm_ethernet_address_is_valid", test_nm_ethernet_address_is_valid);
+	g_test_add_func ("/general/nm_multi_index", test_nm_multi_index);
 
 	return g_test_run ();
 }

@@ -331,6 +331,8 @@ nm_sources = \
 	nm-auth-utils.h \
 	nm-manager.c \
 	nm-manager.h \
+	nm-multi-index.c \
+	nm-multi-index.h \
 	nm-policy.c \
 	nm-policy.h \
 	nm-properties-changed-signal.c \
@@ -498,6 +500,8 @@ libnm_iface_helper_la_SOURCES = \
 	nm-enum-types.h \
 	nm-logging.c \
 	nm-logging.h \
+	nm-multi-index.c \
+	nm-multi-index.h \
 	NetworkManagerUtils.c \
 	NetworkManagerUtils.h
 
