@@ -135,8 +135,9 @@ struct __nmtst_internal __nmtst_internal = { 0 }; \
 __attribute__ ((destructor)) static void \
 _nmtst_exit (void) \
 { \
-	nmtst_free (); \
+	__nmtst_internal.assert_logging = FALSE; \
 	g_test_assert_expected_messages (); \
+	nmtst_free (); \
 }
 
 
@@ -434,12 +435,23 @@ nmtst_is_debug (void)
 	G_STMT_START { \
 		g_assert (nmtst_initialized ()); \
 		if (__nmtst_internal.assert_logging && __nmtst_internal.no_expect_message) { \
-			g_debug ("nmtst: swallow g_test_expect_message %s", G_STRINGIFY ((__VA_ARGS__))); \
+			g_debug ("nmtst: assert-logging: g_test_expect_message %s", G_STRINGIFY ((__VA_ARGS__))); \
 		} else { \
 			G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
 			g_test_expect_message (__VA_ARGS__); \
 			G_GNUC_END_IGNORE_DEPRECATIONS \
 		} \
+	} G_STMT_END
+#undef g_test_assert_expected_messages_internal
+#define g_test_assert_expected_messages_internal(domain, file, line, func) \
+	G_STMT_START { \
+		g_assert (nmtst_initialized ()); \
+		if (__nmtst_internal.assert_logging && __nmtst_internal.no_expect_message) \
+			g_debug ("nmtst: assert-logging: g_test_assert_expected_messages(%s, %s:%d, %s)", domain, file, line, func); \
+		\
+		G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
+		g_test_assert_expected_messages_internal (domain, file, line, func); \
+		G_GNUC_END_IGNORE_DEPRECATIONS \
 	} G_STMT_END
 #endif
 
