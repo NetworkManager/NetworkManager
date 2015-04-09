@@ -35,6 +35,7 @@
 typedef struct {
 	int solicitations_left;
 	guint send_rs_id;
+	gint64 last_rs;
 	guint ra_timeout_id;  /* first RA timeout */
 	guint timeout_id;   /* prefix/dns/etc lifetime timeout */
 } NMRDiscPrivate;
@@ -285,6 +286,7 @@ send_rs (NMRDisc *rdisc)
 	if (klass->send_rs (rdisc))
 		priv->solicitations_left--;
 
+	priv->last_rs = nm_utils_get_monotonic_timestamp_s ();
 	if (priv->solicitations_left > 0) {
 		debug ("(%s): scheduling router solicitation retry in %d seconds.",
 		       rdisc->ifname, rdisc->rtr_solicitation_interval);
@@ -303,11 +305,16 @@ static void
 solicit (NMRDisc *rdisc)
 {
 	NMRDiscPrivate *priv = NM_RDISC_GET_PRIVATE (rdisc);
+	guint32 now = nm_utils_get_monotonic_timestamp_s ();
+	gint64 next;
 
 	if (!priv->send_rs_id) {
-		debug ("(%s): scheduling router solicitation.", rdisc->ifname);
-		priv->send_rs_id = g_idle_add ((GSourceFunc) send_rs, rdisc);
 		priv->solicitations_left = rdisc->rtr_solicitations;
+
+		next = CLAMP (priv->last_rs + rdisc->rtr_solicitation_interval - now, 0, G_MAXINT32);
+		debug ("(%s): scheduling explicit router solicitation request in %" G_GINT64_FORMAT " seconds.",
+		       rdisc->ifname, next);
+		priv->send_rs_id = g_timeout_add_seconds ((guint32) next, (GSourceFunc) send_rs, rdisc);
 	}
 }
 
@@ -590,6 +597,8 @@ dns_domain_free (gpointer data)
 static void
 nm_rdisc_init (NMRDisc *rdisc)
 {
+	NMRDiscPrivate *priv = NM_RDISC_GET_PRIVATE (rdisc);
+
 	rdisc->gateways = g_array_new (FALSE, FALSE, sizeof (NMRDiscGateway));
 	rdisc->addresses = g_array_new (FALSE, FALSE, sizeof (NMRDiscAddress));
 	rdisc->routes = g_array_new (FALSE, FALSE, sizeof (NMRDiscRoute));
@@ -597,6 +606,11 @@ nm_rdisc_init (NMRDisc *rdisc)
 	rdisc->dns_domains = g_array_new (FALSE, FALSE, sizeof (NMRDiscDNSDomain));
 	g_array_set_clear_func (rdisc->dns_domains, dns_domain_free);
 	rdisc->hop_limit = 64;
+
+	/* Start at very low number so that last_rs - rtr_solicitation_interval
+	 * is much lower than nm_utils_get_monotonic_timestamp_s() at startup.
+	 */
+	priv->last_rs = G_MININT32;
 }
 
 static void
