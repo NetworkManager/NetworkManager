@@ -24,6 +24,7 @@
 #include <arpa/inet.h>
 
 #include "nm-fake-rdisc.h"
+#include "nm-rdisc-private.h"
 
 #include "nm-logging.h"
 
@@ -31,9 +32,115 @@
 #define warning(...) nm_log_warn (LOGD_IP6, __VA_ARGS__)
 #define error(...) nm_log_err (LOGD_IP6, __VA_ARGS__)
 
+typedef struct {
+	guint ra_received_id;
+} NMFakeRDiscPrivate;
+
 #define NM_FAKE_RDISC_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_FAKE_RDISC, NMFakeRDiscPrivate))
 
 G_DEFINE_TYPE (NMFakeRDisc, nm_fake_rdisc, NM_TYPE_RDISC)
+
+/******************************************************************/
+
+static gboolean
+ra_received (gpointer user_data)
+{
+	NMFakeRDisc *self = NM_FAKE_RDISC (user_data);
+	NMRDisc *rdisc = NM_RDISC (self);
+	NMRDiscConfigMap changed = 0;
+	guint32 now = nm_utils_get_monotonic_timestamp_s ();
+	NMRDiscGateway gateway;
+	NMRDiscAddress address;
+	NMRDiscRoute route;
+	NMRDiscDNSServer dns_server;
+	NMRDiscDNSDomain dns_domain;
+
+	NM_FAKE_RDISC_GET_PRIVATE (self)->ra_received_id = 0;
+
+	debug ("(%s): received router advertisement at %u", NM_RDISC (self)->ifname, now);
+
+	rdisc->dhcp_level = NM_RDISC_DHCP_LEVEL_NONE;
+
+	memset (&gateway, 0, sizeof (gateway));
+	inet_pton (AF_INET6, "fe80::1", &gateway.address);
+	if (nm_rdisc_add_gateway (rdisc, &gateway))
+		changed |= NM_RDISC_CONFIG_GATEWAYS;
+	inet_pton (AF_INET6, "fe80::2", &gateway.address);
+	if (nm_rdisc_add_gateway (rdisc, &gateway))
+		changed |= NM_RDISC_CONFIG_GATEWAYS;
+	inet_pton (AF_INET6, "fe80::3", &gateway.address);
+	if (nm_rdisc_add_gateway (rdisc, &gateway))
+		changed |= NM_RDISC_CONFIG_GATEWAYS;
+
+	memset (&address, 0, sizeof (address));
+	inet_pton (AF_INET6, "2001:db8:a:a::1", &address.address);
+	if (nm_rdisc_add_address (rdisc, &address))
+		changed |= NM_RDISC_CONFIG_ADDRESSES;
+	inet_pton (AF_INET6, "2001:db8:a:a::2", &address.address);
+	if (nm_rdisc_add_address (rdisc, &address))
+		changed |= NM_RDISC_CONFIG_ADDRESSES;
+	inet_pton (AF_INET6, "2001:db8:f:f::1", &address.address);
+	if (nm_rdisc_add_address (rdisc, &address))
+		changed |= NM_RDISC_CONFIG_ADDRESSES;
+
+	memset (&route, 0, sizeof (route));
+	route.plen = 64;
+	inet_pton (AF_INET6, "2001:db8:a:a::", &route.network);
+	if (nm_rdisc_add_route (rdisc, &route))
+		changed |= NM_RDISC_CONFIG_ROUTES;
+	inet_pton (AF_INET6, "2001:db8:b:b::", &route.network);
+	if (nm_rdisc_add_route (rdisc, &route))
+		changed |= NM_RDISC_CONFIG_ROUTES;
+
+	memset (&dns_server, 0, sizeof (dns_server));
+	inet_pton (AF_INET6, "2001:db8:c:c::1", &dns_server.address);
+	if (nm_rdisc_add_dns_server (rdisc, &dns_server))
+		changed |= NM_RDISC_CONFIG_DNS_SERVERS;
+	inet_pton (AF_INET6, "2001:db8:c:c::2", &dns_server.address);
+	if (nm_rdisc_add_dns_server (rdisc, &dns_server))
+		changed |= NM_RDISC_CONFIG_DNS_SERVERS;
+	inet_pton (AF_INET6, "2001:db8:c:c::3", &dns_server.address);
+	if (nm_rdisc_add_dns_server (rdisc, &dns_server))
+		changed |= NM_RDISC_CONFIG_DNS_SERVERS;
+	inet_pton (AF_INET6, "2001:db8:c:c::4", &dns_server.address);
+	if (nm_rdisc_add_dns_server (rdisc, &dns_server))
+		changed |= NM_RDISC_CONFIG_DNS_SERVERS;
+	inet_pton (AF_INET6, "2001:db8:c:c::5", &dns_server.address);
+	if (nm_rdisc_add_dns_server (rdisc, &dns_server))
+		changed |= NM_RDISC_CONFIG_DNS_SERVERS;
+
+	memset (&dns_domain, 0, sizeof (dns_domain));
+	dns_domain.domain = g_strdup ("example.net");
+	if (nm_rdisc_add_dns_domain (rdisc, &dns_domain))
+		changed |= NM_RDISC_CONFIG_DNS_DOMAINS;
+	dns_domain.domain = g_strdup ("example.com");
+	if (nm_rdisc_add_dns_domain (rdisc, &dns_domain))
+		changed |= NM_RDISC_CONFIG_DNS_DOMAINS;
+	dns_domain.domain = g_strdup ("example.org");
+	if (nm_rdisc_add_dns_domain (rdisc, &dns_domain))
+		changed |= NM_RDISC_CONFIG_DNS_DOMAINS;
+
+	nm_rdisc_ra_received (NM_RDISC (self), now, changed);
+	return G_SOURCE_REMOVE;
+}
+
+static gboolean
+send_rs (NMRDisc *rdisc)
+{
+	NMFakeRDiscPrivate *priv = NM_FAKE_RDISC_GET_PRIVATE (rdisc);
+
+	if (priv->ra_received_id)
+		g_source_remove (priv->ra_received_id);
+	priv->ra_received_id = g_timeout_add_seconds (3, ra_received, rdisc);
+
+	return TRUE;
+}
+
+static void
+start (NMRDisc *rdisc)
+{
+	nm_rdisc_solicit (rdisc);
+}
 
 /******************************************************************/
 
@@ -52,85 +159,32 @@ nm_fake_rdisc_new (int ifindex, const char *ifname)
 }
 
 static void
-delayed_start (NMRDisc *rdisc)
-{
-	int changed =
-		NM_RDISC_CONFIG_GATEWAYS | NM_RDISC_CONFIG_ADDRESSES | NM_RDISC_CONFIG_ROUTES |
-		NM_RDISC_CONFIG_DNS_SERVERS | NM_RDISC_CONFIG_DNS_DOMAINS;
-	debug ("%d", rdisc->dhcp_level);
-
-	g_signal_emit_by_name (
-			rdisc, NM_RDISC_CONFIG_CHANGED, changed);
-}
-
-static void
-start (NMRDisc *rdisc)
-{
-	g_idle_add ((GSourceFunc) (delayed_start), rdisc);
-}
-
-/******************************************************************/
-
-static void
 nm_fake_rdisc_init (NMFakeRDisc *fake_rdisc)
 {
-	NMRDisc *rdisc = NM_RDISC (fake_rdisc);
-	NMRDiscGateway gateway;
-	NMRDiscAddress address;
-	NMRDiscRoute route;
-	NMRDiscDNSServer dns_server;
-	NMRDiscDNSDomain dns_domain;
+}
 
-	rdisc->dhcp_level = NM_RDISC_DHCP_LEVEL_NONE;
+static void
+dispose (GObject *object)
+{
+	NMFakeRDiscPrivate *priv = NM_FAKE_RDISC_GET_PRIVATE (object);
 
-	memset (&gateway, 0, sizeof (gateway));
-	inet_pton (AF_INET6, "fe80::1", &gateway.address);
-	g_array_append_val (rdisc->gateways, gateway);
-	inet_pton (AF_INET6, "fe80::2", &gateway.address);
-	g_array_append_val (rdisc->gateways, gateway);
-	inet_pton (AF_INET6, "fe80::3", &gateway.address);
-	g_array_append_val (rdisc->gateways, gateway);
+	if (priv->ra_received_id) {
+		g_source_remove (priv->ra_received_id);
+		priv->ra_received_id = 0;
+	}
 
-	memset (&address, 0, sizeof (address));
-	inet_pton (AF_INET6, "2001:db8:a:a::1", &address.address);
-	g_array_append_val (rdisc->addresses, address);
-	inet_pton (AF_INET6, "2001:db8:a:a::2", &address.address);
-	g_array_append_val (rdisc->addresses, address);
-	inet_pton (AF_INET6, "2001:db8:f:f::1", &address.address);
-	g_array_append_val (rdisc->addresses, address);
-
-	memset (&route, 0, sizeof (route));
-	route.plen = 64;
-	inet_pton (AF_INET6, "2001:db8:a:a::", &route.network);
-	g_array_append_val (rdisc->routes, route);
-	inet_pton (AF_INET6, "2001:db8:b:b::", &route.network);
-	g_array_append_val (rdisc->routes, route);
-
-	memset (&dns_server, 0, sizeof (dns_server));
-	inet_pton (AF_INET6, "2001:db8:c:c::1", &dns_server.address);
-	g_array_append_val (rdisc->dns_servers, dns_server);
-	inet_pton (AF_INET6, "2001:db8:c:c::2", &dns_server.address);
-	g_array_append_val (rdisc->dns_servers, dns_server);
-	inet_pton (AF_INET6, "2001:db8:c:c::3", &dns_server.address);
-	g_array_append_val (rdisc->dns_servers, dns_server);
-	inet_pton (AF_INET6, "2001:db8:c:c::4", &dns_server.address);
-	g_array_append_val (rdisc->dns_servers, dns_server);
-	inet_pton (AF_INET6, "2001:db8:c:c::5", &dns_server.address);
-	g_array_append_val (rdisc->dns_servers, dns_server);
-
-	memset (&dns_domain, 0, sizeof (dns_domain));
-	dns_domain.domain = g_strdup ("example.net");
-	g_array_append_val (rdisc->dns_domains, dns_domain);
-	dns_domain.domain = g_strdup ("example.com");
-	g_array_append_val (rdisc->dns_domains, dns_domain);
-	dns_domain.domain = g_strdup ("example.org");
-	g_array_append_val (rdisc->dns_domains, dns_domain);
+	G_OBJECT_CLASS (nm_fake_rdisc_parent_class)->dispose (object);
 }
 
 static void
 nm_fake_rdisc_class_init (NMFakeRDiscClass *klass)
 {
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMRDiscClass *rdisc_class = NM_RDISC_CLASS (klass);
 
+	g_type_class_add_private (klass, sizeof (NMFakeRDiscPrivate));
+
+	object_class->dispose = dispose;
 	rdisc_class->start = start;
+	rdisc_class->send_rs = send_rs;
 }
