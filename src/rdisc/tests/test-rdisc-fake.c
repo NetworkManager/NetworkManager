@@ -262,6 +262,88 @@ test_everything (void)
 	g_main_loop_unref (data.loop);
 }
 
+static void
+test_preference_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, TestData *data)
+{
+	if (data->counter == 1) {
+		g_assert_cmpint (changed, ==, NM_RDISC_CONFIG_GATEWAYS |
+			                          NM_RDISC_CONFIG_ADDRESSES |
+			                          NM_RDISC_CONFIG_ROUTES);
+		g_assert_cmpint (rdisc->gateways->len, ==, 2);
+		match_gateway (rdisc->gateways, 0, "fe80::2", data->timestamp1 + 1, 10, NM_RDISC_PREFERENCE_MEDIUM);
+		match_gateway (rdisc->gateways, 1, "fe80::1", data->timestamp1, 10, NM_RDISC_PREFERENCE_LOW);
+		g_assert_cmpint (rdisc->addresses->len, ==, 2);
+		match_address (rdisc->addresses, 0, "2001:db8:a:a::1", data->timestamp1, 10, 10);
+		match_address (rdisc->addresses, 1, "2001:db8:a:a::2", data->timestamp1 + 1, 10, 10);
+		g_assert_cmpint (rdisc->routes->len, ==, 2);
+		match_route (rdisc->routes, 0, "2001:db8:a:b::", 64, "fe80::2", data->timestamp1 + 1, 10, 10);
+		match_route (rdisc->routes, 1, "2001:db8:a:a::", 64, "fe80::1", data->timestamp1, 10, 5);
+	} else if (data->counter == 2) {
+		g_assert_cmpint (changed, ==, NM_RDISC_CONFIG_GATEWAYS |
+			                          NM_RDISC_CONFIG_ADDRESSES |
+			                          NM_RDISC_CONFIG_ROUTES);
+
+		g_assert_cmpint (rdisc->gateways->len, ==, 2);
+		match_gateway (rdisc->gateways, 0, "fe80::1", data->timestamp1 + 2, 10, NM_RDISC_PREFERENCE_HIGH);
+		match_gateway (rdisc->gateways, 1, "fe80::2", data->timestamp1 + 1, 10, NM_RDISC_PREFERENCE_MEDIUM);
+		g_assert_cmpint (rdisc->addresses->len, ==, 2);
+		match_address (rdisc->addresses, 0, "2001:db8:a:a::1", data->timestamp1 + 2, 10, 10);
+		match_address (rdisc->addresses, 1, "2001:db8:a:a::2", data->timestamp1 + 1, 10, 10);
+		g_assert_cmpint (rdisc->routes->len, ==, 2);
+		match_route (rdisc->routes, 0, "2001:db8:a:a::", 64, "fe80::1", data->timestamp1 + 2, 10, 15);
+		match_route (rdisc->routes, 1, "2001:db8:a:b::", 64, "fe80::2", data->timestamp1 + 1, 10, 10);
+
+		g_assert (nm_fake_rdisc_done (NM_FAKE_RDISC (rdisc)));
+		g_main_loop_quit (data->loop);
+	}
+
+	data->counter++;
+}
+
+static void
+test_preference (void)
+{
+	NMFakeRDisc *rdisc = rdisc_new ();
+	guint32 now = nm_utils_get_monotonic_timestamp_s ();
+	TestData data = { g_main_loop_new (NULL, FALSE), 0, 0, now };
+	guint id;
+
+	/* Test that when a low-preference and medium gateway send advertisements,
+	 * that if the low-preference gateway switches to high-preference, we do
+	 * not get duplicates in the gateway list.
+	 */
+
+	id = nm_fake_rdisc_add_ra (rdisc, 1, NM_RDISC_DHCP_LEVEL_NONE, 4, 1500);
+	g_assert (id);
+	nm_fake_rdisc_add_gateway (rdisc, id, "fe80::1", now, 10, NM_RDISC_PREFERENCE_LOW);
+	nm_fake_rdisc_add_address (rdisc, id, "2001:db8:a:a::1", now, 10, 10);
+	nm_fake_rdisc_add_route (rdisc, id, "2001:db8:a:a::", 64, "fe80::1", now, 10, 5);
+
+	id = nm_fake_rdisc_add_ra (rdisc, 1, NM_RDISC_DHCP_LEVEL_NONE, 4, 1500);
+	g_assert (id);
+	nm_fake_rdisc_add_gateway (rdisc, id, "fe80::2", ++now, 10, NM_RDISC_PREFERENCE_MEDIUM);
+	nm_fake_rdisc_add_address (rdisc, id, "2001:db8:a:a::2", now, 10, 10);
+	nm_fake_rdisc_add_route (rdisc, id, "2001:db8:a:b::", 64, "fe80::2", now, 10, 10);
+
+	id = nm_fake_rdisc_add_ra (rdisc, 1, NM_RDISC_DHCP_LEVEL_NONE, 4, 1500);
+	g_assert (id);
+	nm_fake_rdisc_add_gateway (rdisc, id, "fe80::1", ++now, 10, NM_RDISC_PREFERENCE_HIGH);
+	nm_fake_rdisc_add_address (rdisc, id, "2001:db8:a:a::1", now, 10, 10);
+	nm_fake_rdisc_add_route (rdisc, id, "2001:db8:a:a::", 64, "fe80::1", now, 10, 15);
+
+	g_signal_connect (rdisc,
+	                  NM_RDISC_CONFIG_CHANGED,
+	                  G_CALLBACK (test_preference_changed),
+	                  &data);
+
+	nm_rdisc_start (NM_RDISC (rdisc));
+	g_main_loop_run (data.loop);
+	g_assert_cmpint (data.counter, ==, 3);
+
+	g_object_unref (rdisc);
+	g_main_loop_unref (data.loop);
+}
+
 NMTST_DEFINE ();
 
 int
@@ -278,6 +360,7 @@ main (int argc, char **argv)
 
 	g_test_add_func ("/rdisc/simple", test_simple);
 	g_test_add_func ("/rdisc/everything-changed", test_everything);
+	g_test_add_func ("/rdisc/preference-changed", test_preference);
 
 	return g_test_run ();
 }
