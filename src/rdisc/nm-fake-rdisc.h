@@ -87,6 +87,8 @@ void nm_fake_rdisc_add_dns_domain (NMFakeRDisc *self,
                                    guint32 timestamp,
                                    guint32 lifetime);
 
+void nm_fake_rdisc_emit_new_ras (NMFakeRDisc *self);
+
 gboolean nm_fake_rdisc_done (NMFakeRDisc *self);
 
 #endif /* __NETWORKMANAGER_FAKE_RDISC_H__ */

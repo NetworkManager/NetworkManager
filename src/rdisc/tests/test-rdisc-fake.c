@@ -107,6 +107,8 @@ typedef struct {
 	guint counter;
 	guint rs_counter;
 	guint32 timestamp1;
+	guint32 first_solicit;
+	guint32 timeout_id;
 } TestData;
 
 static void
@@ -344,6 +346,90 @@ test_preference (void)
 	g_main_loop_unref (data.loop);
 }
 
+static void
+test_dns_solicit_loop_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, TestData *data)
+{
+	data->counter++;
+}
+
+static gboolean
+success_timeout (TestData *data)
+{
+	data->timeout_id = 0;
+	g_main_loop_quit (data->loop);
+	return G_SOURCE_REMOVE;
+}
+
+static void
+test_dns_solicit_loop_rs_sent (NMFakeRDisc *rdisc, TestData *data)
+{
+	guint32 now = nm_utils_get_monotonic_timestamp_s ();
+	guint id;
+
+	if (data->rs_counter > 0 && data->rs_counter < 6) {
+		if (data->rs_counter == 1) {
+			data->first_solicit = now;
+			/* Kill the test after 10 seconds if it hasn't failed yet */
+			data->timeout_id = g_timeout_add_seconds (10, (GSourceFunc) success_timeout, data);
+		}
+
+		/* On all but the first solicitation, which should be triggered by the
+		 * DNS servers reaching 1/2 lifetime, emit a new RA without the DNS
+		 * servers again.
+		 */
+		id = nm_fake_rdisc_add_ra (rdisc, 0, NM_RDISC_DHCP_LEVEL_NONE, 4, 1500);
+		g_assert (id);
+		nm_fake_rdisc_add_gateway (rdisc, id, "fe80::1", now, 10, NM_RDISC_PREFERENCE_MEDIUM);
+		nm_fake_rdisc_add_address (rdisc, id, "2001:db8:a:a::1", now, 10, 10);
+
+		nm_fake_rdisc_emit_new_ras (rdisc);
+	} else if (data->rs_counter >= 6) {
+		/* Fail if we've sent too many solicitations in the past 4 seconds */
+		g_assert_cmpint (now - data->first_solicit, >, 4);
+		g_source_remove (data->timeout_id);
+		g_main_loop_quit (data->loop);
+	}
+	data->rs_counter++;
+}
+
+static void
+test_dns_solicit_loop (void)
+{
+	NMFakeRDisc *rdisc = rdisc_new ();
+	guint32 now = nm_utils_get_monotonic_timestamp_s ();
+	TestData data = { g_main_loop_new (NULL, FALSE), 0, 0, now, 0 };
+	guint id;
+
+	/* Ensure that no solicitation loop happens when DNS servers or domains
+	 * stop being sent in advertisements.  This can happen if two routers
+	 * send RAs, but the one sending DNS info stops responding, or if one
+	 * router removes the DNS info from the RA without zero-lifetiming them
+	 * first.
+	 */
+
+	id = nm_fake_rdisc_add_ra (rdisc, 1, NM_RDISC_DHCP_LEVEL_NONE, 4, 1500);
+	g_assert (id);
+	nm_fake_rdisc_add_gateway (rdisc, id, "fe80::1", now, 10, NM_RDISC_PREFERENCE_LOW);
+	nm_fake_rdisc_add_address (rdisc, id, "2001:db8:a:a::1", now, 10, 10);
+	nm_fake_rdisc_add_dns_server (rdisc, id, "2001:db8:c:c::1", now, 6);
+
+	g_signal_connect (rdisc,
+	                  NM_RDISC_CONFIG_CHANGED,
+	                  G_CALLBACK (test_dns_solicit_loop_changed),
+	                  &data);
+	g_signal_connect (rdisc,
+	                  NM_FAKE_RDISC_RS_SENT,
+	                  G_CALLBACK (test_dns_solicit_loop_rs_sent),
+	                  &data);
+
+	nm_rdisc_start (NM_RDISC (rdisc));
+	g_main_loop_run (data.loop);
+	g_assert_cmpint (data.counter, ==, 3);
+
+	g_object_unref (rdisc);
+	g_main_loop_unref (data.loop);
+}
+
 NMTST_DEFINE ();
 
 int
@@ -361,6 +447,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/rdisc/simple", test_simple);
 	g_test_add_func ("/rdisc/everything-changed", test_everything);
 	g_test_add_func ("/rdisc/preference-changed", test_preference);
+	g_test_add_func ("/rdisc/dns-solicit-loop", test_dns_solicit_loop);
 
 	return g_test_run ();
 }

@@ -333,6 +333,13 @@ start (NMRDisc *rdisc)
 	priv->receive_ra_id = g_timeout_add_seconds (ra->when, receive_ra, rdisc);
 }
 
+void
+nm_fake_rdisc_emit_new_ras (NMFakeRDisc *self)
+{
+	if (!NM_FAKE_RDISC_GET_PRIVATE (self)->receive_ra_id)
+		start (NM_RDISC (self));
+}
+
 /******************************************************************/
 
 NMRDisc *
