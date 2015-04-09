@@ -503,7 +503,6 @@ clean_dns_domains (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap *changed, guint
 			continue;
 
 		if (now >= expiry) {
-			g_free (item->domain);
 			g_array_remove_index (rdisc->dns_domains, i--);
 			*changed |= NM_RDISC_CONFIG_DNS_DOMAINS;
 		} else if (now >= refresh)
@@ -564,6 +563,12 @@ nm_rdisc_ra_received (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap changed)
 /******************************************************************/
 
 static void
+dns_domain_free (gpointer data)
+{
+	g_free (((NMRDiscDNSDomain *)(data))->domain);
+}
+
+static void
 nm_rdisc_init (NMRDisc *rdisc)
 {
 	rdisc->gateways = g_array_new (FALSE, FALSE, sizeof (NMRDiscGateway));
@@ -571,6 +576,7 @@ nm_rdisc_init (NMRDisc *rdisc)
 	rdisc->routes = g_array_new (FALSE, FALSE, sizeof (NMRDiscRoute));
 	rdisc->dns_servers = g_array_new (FALSE, FALSE, sizeof (NMRDiscDNSServer));
 	rdisc->dns_domains = g_array_new (FALSE, FALSE, sizeof (NMRDiscDNSDomain));
+	g_array_set_clear_func (rdisc->dns_domains, dns_domain_free);
 	rdisc->hop_limit = 64;
 }
 
