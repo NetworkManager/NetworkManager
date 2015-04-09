@@ -21,6 +21,60 @@
 #ifndef __NM_TEST_UTILS_H__
 #define __NM_TEST_UTILS_H__
 
+/*******************************************************************************
+ * HOWTO run tests.
+ *
+ * Our tests (make check) include this header-only file nm-test-utils.h.
+ *
+ * Logging:
+ *   In tests, nm-logging redirects to glib logging. By default, glib suppresses all debug
+ *   messages unless you set G_MESSAGES_DEBUG. To enable debug logging, you can explicitly set
+ *   G_MESSAGES_DEBUG. Otherwise, nm-test will set G_MESSAGES_DEBUG=all in debug mode (see below).
+ *   For nm-logging, you can configure the log-level and domains via NMTST_DEBUG environment
+ *   variable.
+ *
+ * Assert-logging:
+ *   Some tests assert against logged messages (g_test_expect_message()).
+ *   By specifying no-expect-message in NMTST_DEBUG, you can disable assert logging
+ *   and g_test_assert_expected_messages() will not fail.
+ *
+ * NMTST_SEED_RAND environment variable:
+ *   Tests that use random numbers from nmtst_get_rand() get seeded randomly at each start.
+ *   You can specify the seed by setting NMTST_SEED_RAND. Also, tests will print the seed
+ *   to stdout, so that you know the choosen seed.
+ *
+ *
+ * NMTST_DEBUG environment variable:
+ *
+ * "debug", "no-debug": when at test is run in debug mode, it might behave differently,
+ *   depending on the test. See nmtst_is_debug().
+ *   Known differences:
+ *    - a test might leave the logging level unspecified. In this case, running in
+ *      debug mode, will turn on DEBUG logging, otherwise WARN logging only.
+ *    - if G_MESSAGES_DEBUG is unset, nm-test will set G_MESSAGES_DEBUG=all
+ *      for tests that don't do assert-logging.
+ *   Debug mode is determined as follows (highest priority first):
+ *    - command line option --debug/--no-debug
+ *    - NMTST_DEBUG=debug/no-debug
+ *    - setting NMTST_DEBUG implies debugging turned on
+ *    - g_test_verbose()
+ *
+ * "no-expect-message": for tests that would assert against log messages, disable
+ *   those asserts.
+ *
+ * "log-level=LEVEL", "log-domains=DOMAIN": reset the log level and domain for tests.
+ *    It only has an effect for nm-logging messages.
+ *    This has no effect if the test asserts against logging (unless no-expect-message),
+ *    otherwise, changing the logging would break tests.
+ *    If you set the level to DEBUG or TRACE, it also sets G_MESSAGES_DEBUG=all (unless
+ *    in assert-logging mode and unless G_MESSAGES_DEBUG is already defined).
+ *
+ * "sudo-cmd=PATH": when running root tests as normal user, the test will execute
+ *   itself by invoking sudo at PATH.
+ *   For example
+ *     NMTST_DEBUG="sudo-cmd=$PWD/tools/test-sudo-wrapper.sh" make -C src/platform/tests/ check
+ *
+ *******************************************************************************/
 
 #include <arpa/inet.h>
 #include <stdio.h>
