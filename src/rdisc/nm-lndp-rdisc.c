@@ -724,6 +724,8 @@ dispose (GObject *object)
 		ndp_close (priv->ndp);
 		priv->ndp = NULL;
 	}
+
+	G_OBJECT_CLASS (nm_lndp_rdisc_parent_class)->dispose (object);
 }
 
 static void

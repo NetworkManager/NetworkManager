@@ -195,6 +195,8 @@ nm_rdisc_finalize (GObject *object)
 	g_array_unref (rdisc->routes);
 	g_array_unref (rdisc->dns_servers);
 	g_array_unref (rdisc->dns_domains);
+
+	G_OBJECT_CLASS (nm_rdisc_parent_class)->finalize (object);
 }
 
 static void
