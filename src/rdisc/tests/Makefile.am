@@ -20,11 +20,18 @@ AM_LDFLAGS = \
 
 @GNOME_CODE_COVERAGE_RULES@
 
-noinst_PROGRAMS = \
-	rdisc
+noinst_PROGRAMS = test-rdisc-linux test-rdisc-fake
 
-rdisc_SOURCES = \
-	rdisc.c
-rdisc_LDADD = \
+test_rdisc_linux_SOURCES = \
+	test-rdisc-linux.c
+test_rdisc_linux_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la
+
+test_rdisc_fake_SOURCES = \
+	test-rdisc-fake.c
+test_rdisc_fake_LDADD = \
+	$(top_builddir)/src/libNetworkManager.la
+
+@VALGRIND_RULES@
+TESTS = test-rdisc-fake
 
