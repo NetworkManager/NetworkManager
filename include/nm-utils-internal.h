@@ -102,6 +102,14 @@
 
 /*****************************************************************************/
 
+#ifdef NM_MORE_ASSERTS
+#define nm_assert(cond) G_STMT_START { g_assert (cond); } G_STMT_END
+#else
+#define nm_assert(cond) G_STMT_START { (void) 0; } G_STMT_END
+#endif
+
+/*****************************************************************************/
+
 #define NM_DEFINE_SINGLETON_INSTANCE(TYPE) \
 static TYPE *singleton_instance
 
