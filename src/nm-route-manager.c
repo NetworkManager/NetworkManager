@@ -28,8 +28,6 @@
 #include "gsystem-local-alloc.h"
 #include "NetworkManagerUtils.h"
 
-//#define DEBUG_ROUTE_MANAGER
-
 typedef struct {
 	guint len;
 	NMPlatformIPXRoute *entries[1];
@@ -110,7 +108,7 @@ static const VTableIP vtable_v4, vtable_v6;
         nm_logging_enabled (__level, __domain); \
     })
 
-#ifdef DEBUG_ROUTE_MANAGER
+#ifdef NM_MORE_LOGGING
 #define _LOGT_ENABLED(addr_family)   _LOG_LEVEL_ENABLED (LOGL_TRACE, addr_family)
 #define _LOGT(addr_family, ...)      _LOG (LOGL_TRACE, addr_family, __VA_ARGS__)
 #else
@@ -125,7 +123,7 @@ static const VTableIP vtable_v4, vtable_v6;
 
 /*********************************************************************************************/
 
-#if defined (DEBUG_ROUTE_MANAGER) && !defined (G_DISABLE_ASSERT)
+#if defined (NM_MORE_ASSERTS) && !defined (G_DISABLE_ASSERT)
 inline static void
 ASSERT_route_index_valid (const VTableIP *vtable, const GArray *entries, const RouteIndex *index, gboolean unique_ifindexes)
 {

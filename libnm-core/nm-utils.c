@@ -3396,11 +3396,9 @@ _nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 ma
 		memcpy (s, str, len);
 		s[len] = 0;
 
-		/*
-		g_assert (len > 0 && len < strlen (str) && len == strlen (s));
-		g_assert (!g_ascii_isspace (str[len-1]) && g_ascii_isspace (str[len]));
-		g_assert (strncmp (str, s, len) == 0);
-		*/
+		nm_assert (len > 0 && len < strlen (str) && len == strlen (s));
+		nm_assert (!g_ascii_isspace (str[len-1]) && g_ascii_isspace (str[len]));
+		nm_assert (strncmp (str, s, len) == 0);
 
 		str = s;
 	}
