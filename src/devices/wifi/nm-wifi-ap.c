@@ -34,6 +34,7 @@
 
 #include "nm-setting-wireless.h"
 #include "nm-glib-compat.h"
+#include "gsystem-local-alloc.h"
 
 #include "nm-access-point-glue.h"
 
@@ -44,6 +45,7 @@ typedef struct
 {
 	char *dbus_path;
 	char *supplicant_path;   /* D-Bus object path of this AP from wpa_supplicant */
+	guint32 id;              /* ID for stable sorting of APs */
 
 	/* Scanned or cached values */
 	GByteArray *	ssid;
@@ -60,7 +62,6 @@ typedef struct
 	/* Non-scanned attributes */
 	gboolean			fake;	/* Whether or not the AP is from a scan */
 	gboolean            hotspot;    /* Whether the AP is a local device's hotspot network */
-	gboolean			broadcast;	/* Whether or not the AP is broadcasting (hidden) */
 	gint32              last_seen;  /* Timestamp when the AP was seen lastly (obtained via nm_utils_get_monotonic_timestamp_s()) */
 } NMAccessPointPrivate;
 
@@ -92,7 +93,6 @@ nm_ap_init (NMAccessPoint *ap)
 	priv->flags = NM_802_11_AP_FLAGS_NONE;
 	priv->wpa_flags = NM_802_11_AP_SEC_NONE;
 	priv->rsn_flags = NM_802_11_AP_SEC_NONE;
-	priv->broadcast = TRUE;
 }
 
 static void
@@ -314,7 +314,8 @@ nm_ap_export_to_dbus (NMAccessPoint *ap)
 		return;
 	}
 
-	priv->dbus_path = g_strdup_printf (NM_DBUS_PATH_ACCESS_POINT "/%d", counter++);
+	priv->id = counter++;
+	priv->dbus_path = g_strdup_printf (NM_DBUS_PATH_ACCESS_POINT "/%d", priv->id);
 	nm_dbus_manager_register_object (nm_dbus_manager_get (), priv->dbus_path, ap);
 }
 
@@ -368,14 +369,13 @@ security_from_vardict (GVariant *security)
 	return flags;
 }
 
-NMAccessPoint *
-nm_ap_new_from_properties (const char *supplicant_path, GVariant *properties)
+void
+nm_ap_update_from_properties (NMAccessPoint *ap,
+                              const char *supplicant_path,
+                              GVariant *properties)
 {
-	const char bad_bssid1[ETH_ALEN] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-	const char bad_bssid2[ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 	const char *addr;
 	const guint8 *bytes;
-	NMAccessPoint *ap;
 	GVariant *v;
 	gsize len;
 	gboolean b = FALSE;
@@ -383,9 +383,8 @@ nm_ap_new_from_properties (const char *supplicant_path, GVariant *properties)
 	gint16 i16;
 	guint16 u16;
 
-	g_return_val_if_fail (properties != NULL, NULL);
-
-	ap = nm_ap_new ();
+	g_return_if_fail (ap != NULL);
+	g_return_if_fail (properties != NULL);
 
 	g_object_freeze_notify (G_OBJECT (ap));
 
@@ -457,7 +456,28 @@ nm_ap_new_from_properties (const char *supplicant_path, GVariant *properties)
 		g_variant_unref (v);
 	}
 
-	nm_ap_set_supplicant_path (ap, supplicant_path);
+	if (!nm_ap_get_supplicant_path (ap))
+		nm_ap_set_supplicant_path (ap, supplicant_path);
+
+	nm_ap_set_last_seen (ap, nm_utils_get_monotonic_timestamp_s ());
+
+	g_object_thaw_notify (G_OBJECT (ap));
+}
+
+NMAccessPoint *
+nm_ap_new_from_properties (const char *supplicant_path, GVariant *properties)
+{
+	const char bad_bssid1[ETH_ALEN] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+	const char bad_bssid2[ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+	NMAccessPoint *ap;
+	const char *addr;
+
+	g_return_val_if_fail (supplicant_path != NULL, NULL);
+	g_return_val_if_fail (properties != NULL, NULL);
+
+	ap = nm_ap_new ();
+
+	nm_ap_update_from_properties (ap, supplicant_path, properties);
 
 	/* ignore APs with invalid BSSIDs */
 	addr = nm_ap_get_address (ap);
@@ -466,13 +486,6 @@ nm_ap_new_from_properties (const char *supplicant_path, GVariant *properties)
 		g_object_unref (ap);
 		return NULL;
 	}
-
-	nm_ap_set_last_seen (ap, nm_utils_get_monotonic_timestamp_s ());
-
-	if (!nm_ap_get_ssid (ap))
-		nm_ap_set_broadcast (ap, FALSE);
-
-	g_object_thaw_notify (G_OBJECT (ap));
 
 	return ap;
 }
@@ -721,6 +734,14 @@ nm_ap_get_supplicant_path (NMAccessPoint *ap)
 	g_return_val_if_fail (NM_IS_AP (ap), NULL);
 
 	return NM_AP_GET_PRIVATE (ap)->supplicant_path;
+}
+
+guint32
+nm_ap_get_id (NMAccessPoint *ap)
+{
+	g_return_val_if_fail (NM_IS_AP (ap), 0);
+
+	return NM_AP_GET_PRIVATE (ap)->id;
 }
 
 void
@@ -1025,26 +1046,6 @@ void nm_ap_set_fake (NMAccessPoint *ap, gboolean fake)
 	NM_AP_GET_PRIVATE (ap)->fake = fake;
 }
 
-
-/*
- * Get/Set functions to indicate whether an AP broadcasts its SSID.
- */
-gboolean nm_ap_get_broadcast (NMAccessPoint *ap)
-{
-	g_return_val_if_fail (NM_IS_AP (ap), TRUE);
-
-	return NM_AP_GET_PRIVATE (ap)->broadcast;
-}
-
-
-void nm_ap_set_broadcast (NMAccessPoint *ap, gboolean broadcast)
-{
-	g_return_if_fail (NM_IS_AP (ap));
-
-	NM_AP_GET_PRIVATE (ap)->broadcast = broadcast;
-}
-
-
 /*
  * Get/Set functions for how long ago the AP was last seen in a scan.
  * APs older than a certain date are dropped from the list.
@@ -1064,6 +1065,16 @@ nm_ap_set_last_seen (NMAccessPoint *ap, gint32 last_seen)
 	g_return_if_fail (NM_IS_AP (ap));
 
 	NM_AP_GET_PRIVATE (ap)->last_seen = last_seen;
+}
+
+static guint
+freq_to_band (guint32 freq)
+{
+	if (freq >= 4915 && freq <= 5825)
+		return 5;
+	else if (freq >= 2412 && freq <= 2484)
+		return 2;
+	return 0;
 }
 
 gboolean
@@ -1116,13 +1127,12 @@ nm_ap_check_compatible (NMAccessPoint *self,
 
 	band = nm_setting_wireless_get_band (s_wireless);
 	if (band) {
-		if (!strcmp (band, "a")) {
-			if (priv->freq < 4915 || priv->freq > 5825)
-				return FALSE;
-		} else if (!strcmp (band, "bg")) {
-			if (priv->freq < 2412 || priv->freq > 2484)
-				return FALSE;
-		}
+		guint ap_band = freq_to_band (priv->freq);
+
+		if (!strcmp (band, "a") && ap_band != 5)
+			return FALSE;
+		else if (!strcmp (band, "bg") && ap_band != 2)
+			return FALSE;
 	}
 
 	channel = nm_setting_wireless_get_channel (s_wireless);
@@ -1164,43 +1174,23 @@ nm_ap_complete_connection (NMAccessPoint *self,
 	                                        error);
 }
 
-static gboolean
-capabilities_compatible (NM80211ApSecurityFlags a_flags, NM80211ApSecurityFlags b_flags)
-{
-	if (a_flags == b_flags)
-		return TRUE;
-
-	/* Make sure there's a common key management method */
-	if (!((a_flags & 0x300) & (b_flags & 0x300)))
-		return FALSE;
-
-	/* Ensure common pairwise ciphers */
-	if (!((a_flags & 0xF) & (b_flags & 0xF)))
-		return FALSE;
-
-	/* Ensure common group ciphers */
-	if (!((a_flags & 0xF0) & (b_flags & 0xF0)))
-		return FALSE;
-
-	return TRUE;
-}
-
 NMAccessPoint *
-nm_ap_match_in_list (NMAccessPoint *find_ap,
-                     GSList *ap_list,
-                     gboolean strict_match)
+nm_ap_match_in_hash (NMAccessPoint *find_ap, GHashTable *hash)
 {
-	GSList *iter;
+	GHashTableIter iter;
+	NMAccessPoint *list_ap, *band_match = NULL;
 
 	g_return_val_if_fail (find_ap != NULL, NULL);
 
-	for (iter = ap_list; iter; iter = g_slist_next (iter)) {
-		NMAccessPoint * list_ap = NM_AP (iter->data);
+	g_hash_table_iter_init (&iter, hash);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &list_ap)) {
 		const GByteArray * list_ssid = nm_ap_get_ssid (list_ap);
 		const char * list_addr = nm_ap_get_address (list_ap);
+		const guint32 list_freq = nm_ap_get_freq (list_ap);
 
 		const GByteArray * find_ssid = nm_ap_get_ssid (find_ap);
 		const char * find_addr = nm_ap_get_address (find_ap);
+		const guint32 find_freq = nm_ap_get_freq (find_ap);
 
 		/* SSID match; if both APs are hiding their SSIDs,
 		 * let matching continue on BSSID and other properties
@@ -1216,8 +1206,7 @@ nm_ap_match_in_list (NMAccessPoint *find_ap,
 			continue;
 
 		/* BSSID match */
-		if (   (strict_match || nm_ethernet_address_is_valid (find_addr, -1))
-		    && nm_ethernet_address_is_valid (list_addr, -1)
+		if (   nm_ethernet_address_is_valid (list_addr, -1)
 		    && !nm_utils_hwaddr_matches (list_addr, -1, find_addr, -1))
 			continue;
 
@@ -1225,35 +1214,26 @@ nm_ap_match_in_list (NMAccessPoint *find_ap,
 		if (nm_ap_get_mode (list_ap) != nm_ap_get_mode (find_ap))
 			continue;
 
-		/* Frequency match */
-		if (nm_ap_get_freq (list_ap) != nm_ap_get_freq (find_ap))
-			continue;
-
 		/* AP flags */
 		if (nm_ap_get_flags (list_ap) != nm_ap_get_flags (find_ap))
 			continue;
 
-		if (strict_match) {
-			if (nm_ap_get_wpa_flags (list_ap) != nm_ap_get_wpa_flags (find_ap))
-				continue;
+		if (nm_ap_get_wpa_flags (list_ap) != nm_ap_get_wpa_flags (find_ap))
+			continue;
 
-			if (nm_ap_get_rsn_flags (list_ap) != nm_ap_get_rsn_flags (find_ap))
-				continue;
-		} else {
-			NM80211ApSecurityFlags list_wpa_flags = nm_ap_get_wpa_flags (list_ap);
-			NM80211ApSecurityFlags find_wpa_flags = nm_ap_get_wpa_flags (find_ap);
-			NM80211ApSecurityFlags list_rsn_flags = nm_ap_get_rsn_flags (list_ap);
-			NM80211ApSecurityFlags find_rsn_flags = nm_ap_get_rsn_flags (find_ap);
+		if (nm_ap_get_rsn_flags (list_ap) != nm_ap_get_rsn_flags (find_ap))
+			continue;
 
-			/* Just ensure that there is overlap in the capabilities */
-			if (   !capabilities_compatible (list_wpa_flags, find_wpa_flags)
-			    && !capabilities_compatible (list_rsn_flags, find_rsn_flags))
-				continue;
+		if (list_freq != find_freq) {
+			/* Must be last check to ensure all other properties match */
+			if (freq_to_band (list_freq) == freq_to_band (find_freq))
+				band_match = list_ap;
+			continue;
 		}
 
 		return list_ap;
 	}
 
-	return NULL;
+	return band_match;
 }
 

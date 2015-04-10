@@ -60,11 +60,17 @@ NMAccessPoint * nm_ap_new_from_properties (const char *supplicant_path,
 NMAccessPoint * nm_ap_new_fake_from_connection (NMConnection *connection);
 void            nm_ap_export_to_dbus    (NMAccessPoint *ap);
 
+void            nm_ap_update_from_properties (NMAccessPoint *ap,
+                                              const char *supplicant_path,
+                                              GVariant *properties);
+
 const char *nm_ap_get_dbus_path (NMAccessPoint *ap);
 
 const char *nm_ap_get_supplicant_path (NMAccessPoint *ap);
 void        nm_ap_set_supplicant_path (NMAccessPoint *ap,
                                        const char *path);
+
+guint32     nm_ap_get_id (NMAccessPoint *ap);
 
 const GByteArray *nm_ap_get_ssid (const NMAccessPoint * ap);
 void              nm_ap_set_ssid (NMAccessPoint * ap, const guint8 * ssid, gsize len);
@@ -98,9 +104,6 @@ void    nm_ap_set_max_bitrate (NMAccessPoint *ap, guint32 bitrate);
 gboolean nm_ap_get_fake (const NMAccessPoint *ap);
 void     nm_ap_set_fake (NMAccessPoint *ap, gboolean fake);
 
-gboolean nm_ap_get_broadcast (NMAccessPoint *ap);
-void     nm_ap_set_broadcast (NMAccessPoint *ap, gboolean broadcast);
-
 gint32   nm_ap_get_last_seen (const NMAccessPoint *ap);
 void     nm_ap_set_last_seen (NMAccessPoint *ap, gint32 last_seen);
 
@@ -112,9 +115,7 @@ gboolean nm_ap_complete_connection (NMAccessPoint *self,
                                     gboolean lock_bssid,
                                     GError **error);
 
-NMAccessPoint *     nm_ap_match_in_list (NMAccessPoint *find_ap,
-                                         GSList *ap_list,
-                                         gboolean strict_match);
+NMAccessPoint *     nm_ap_match_in_hash (NMAccessPoint *find_ap, GHashTable *hash);
 
 void                nm_ap_dump (NMAccessPoint *ap, const char *prefix);
 
