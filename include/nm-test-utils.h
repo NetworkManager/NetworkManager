@@ -493,7 +493,7 @@ nmtst_get_rand (void)
 		}
 		__nmtst_internal.rand_seed = seed;
 
-		__NMTST_LOG (g_message, ">> initialize nmtst_get_rand() with NMTST_SEED_RAND=%u", seed);
+		g_print ("\nnmtst: initialize nmtst_get_rand() with NMTST_SEED_RAND=%u\n", seed);
 	}
 	return __nmtst_internal.rand;
 }
