@@ -602,6 +602,8 @@ updated_get_settings_cb (GObject *proxy,
 		priv->visible = visible;
 		g_object_notify (G_OBJECT (self), NM_REMOTE_CONNECTION_VISIBLE);
 	}
+
+	g_object_unref (self);
 }
 
 static void
@@ -613,7 +615,8 @@ updated_cb (NMDBusSettingsConnection *proxy, gpointer user_data)
 	/* The connection got updated; request the replacement settings */
 	nmdbus_settings_connection_call_get_settings (priv->proxy,
 	                                              NULL,
-	                                              updated_get_settings_cb, self);
+	                                              updated_get_settings_cb,
+	                                              g_object_ref (self));
 }
 
 /****************************************************************/
