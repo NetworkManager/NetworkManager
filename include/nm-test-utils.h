@@ -445,12 +445,17 @@ nmtst_is_debug (void)
 #undef g_test_assert_expected_messages_internal
 #define g_test_assert_expected_messages_internal(domain, file, line, func) \
 	G_STMT_START { \
+		const char *_domain = (domain); \
+		const char *_file = (file); \
+		const char *_func = (func); \
+		int _line = (line); \
+		\
 		g_assert (nmtst_initialized ()); \
 		if (__nmtst_internal.assert_logging && __nmtst_internal.no_expect_message) \
-			g_debug ("nmtst: assert-logging: g_test_assert_expected_messages(%s, %s:%d, %s)", domain, file, line, func); \
+			g_debug ("nmtst: assert-logging: g_test_assert_expected_messages(%s, %s:%d, %s)", _domain?:"", _file?:"", _line, _func?:""); \
 		\
 		G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
-		g_test_assert_expected_messages_internal (domain, file, line, func); \
+		g_test_assert_expected_messages_internal (_domain, _file, _line, _func); \
 		G_GNUC_END_IGNORE_DEPRECATIONS \
 	} G_STMT_END
 #endif
