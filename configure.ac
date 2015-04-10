@@ -834,6 +834,12 @@ if test "${enable_more_asserts}" = "yes"; then
     AC_DEFINE(NM_MORE_ASSERTS, [1], [Define if more asserts are enabled])
 fi
 
+AC_ARG_ENABLE(more-logging,
+              AS_HELP_STRING([--enable-more-logging], [Enable more debug logging (default: no)]))
+if test "${enable_more_logging}" = "yes"; then
+    AC_DEFINE(NM_MORE_LOGGING, [1], [Define if more asserts are enabled])
+fi
+
 AC_ARG_ENABLE(lto, AS_HELP_STRING([--enable-lto], [Enable Link Time Optimization for smaller size (default: no)]))
 if (test "${enable_lto}" = "yes"); then
     CFLAGS="-flto $CFLAGS"
