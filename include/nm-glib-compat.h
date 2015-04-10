@@ -180,4 +180,36 @@ nm_g_hash_table_replace (GHashTable *hash, gpointer key, gpointer value)
 }
 
 
+#if !GLIB_CHECK_VERSION(2, 40, 0) || defined (NM_GLIB_COMPAT_H_TEST)
+static inline void
+_nm_g_ptr_array_insert (GPtrArray *array,
+                        gint       index_,
+                        gpointer   data)
+{
+	g_return_if_fail (array);
+	g_return_if_fail (index_ >= -1);
+	g_return_if_fail (index_ <= (gint) array->len);
+
+	g_ptr_array_add (array, data);
+
+	if (index_ != -1 && index_ != (gint) (array->len - 1)) {
+		memmove (&(array->pdata[index_ + 1]),
+		         &(array->pdata[index_]),
+		         (array->len - index_ - 1) * sizeof (gpointer));
+		array->pdata[index_] = data;
+	}
+}
+#endif
+#if !GLIB_CHECK_VERSION(2, 40, 0)
+#define g_ptr_array_insert(array, index, data) G_STMT_START { _nm_g_ptr_array_insert (array, index, data); } G_STMT_END
+#else
+#define g_ptr_array_insert(array, index, data) \
+	G_STMT_START { \
+		G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
+		g_ptr_array_insert (array, index, data); \
+		G_GNUC_END_IGNORE_DEPRECATIONS \
+	} G_STMT_END
+#endif
+
+
 #endif  /* __NM_GLIB_COMPAT_H__ */
