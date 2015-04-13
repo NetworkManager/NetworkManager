@@ -222,6 +222,11 @@ typedef struct {
 	gpointer        act_source6_func;
 	guint           recheck_assume_id;
 	struct {
+		guint       		call_id;
+		NMDeviceStateReason available_reason;
+		NMDeviceStateReason unavailable_reason;
+	}               recheck_available;
+	struct {
 		guint               call_id;
 		NMDeviceState       post_state;
 		NMDeviceStateReason post_state_reason;
@@ -2295,6 +2300,47 @@ nm_device_queue_recheck_assume (NMDevice *self)
 
 	if (nm_device_can_assume_connections (self) && !priv->recheck_assume_id)
 		priv->recheck_assume_id = g_idle_add (nm_device_emit_recheck_assume, self);
+}
+
+static gboolean
+recheck_available (gpointer user_data)
+{
+	NMDevice *self = NM_DEVICE (user_data);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	gboolean now_available = nm_device_is_available (self, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE);
+	NMDeviceState state = nm_device_get_state (self);
+	NMDeviceState new_state = NM_DEVICE_STATE_UNKNOWN;
+
+	priv->recheck_available.call_id = 0;
+
+	if (state == NM_DEVICE_STATE_UNAVAILABLE && now_available) {
+		new_state = NM_DEVICE_STATE_DISCONNECTED;
+		nm_device_queue_state (self, new_state, priv->recheck_available.available_reason);
+	} else if (state >= NM_DEVICE_STATE_DISCONNECTED && !now_available) {
+		new_state = NM_DEVICE_STATE_UNAVAILABLE;
+		nm_device_queue_state (self, new_state, priv->recheck_available.unavailable_reason);
+	}
+	_LOGD (LOGD_DEVICE, "device is %savailable, %s %s",
+	       now_available ? "" : "not ",
+	       new_state == NM_DEVICE_STATE_UNAVAILABLE ? "no change required for" : "will transition to",
+	       state_to_string (new_state == NM_DEVICE_STATE_UNAVAILABLE ? state : new_state));
+
+	priv->recheck_available.available_reason = NM_DEVICE_STATE_REASON_NONE;
+	priv->recheck_available.unavailable_reason = NM_DEVICE_STATE_REASON_NONE;
+	return G_SOURCE_REMOVE;
+}
+
+void
+nm_device_queue_recheck_available (NMDevice *self,
+                                   NMDeviceStateReason available_reason,
+                                   NMDeviceStateReason unavailable_reason)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	priv->recheck_available.available_reason = available_reason;
+	priv->recheck_available.unavailable_reason = unavailable_reason;
+	if (!priv->recheck_available.call_id)
+		priv->recheck_available.call_id = g_idle_add (recheck_available, self);
 }
 
 void
@@ -7982,8 +8028,9 @@ _set_state_full (NMDevice *self,
 		 * reasons.
 		 */
 		if (nm_device_is_available (self, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE)) {
-			_LOGD (LOGD_DEVICE, "device is available, will transition to DISCONNECTED");
-			nm_device_queue_state (self, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_NONE);
+			nm_device_queue_recheck_available (self,
+			                                   NM_DEVICE_STATE_REASON_NONE,
+			                                   NM_DEVICE_STATE_REASON_NONE);
 		} else {
 			if (old_state == NM_DEVICE_STATE_UNMANAGED)
 				_LOGD (LOGD_DEVICE, "device not yet available for transition to DISCONNECTED");
@@ -8588,6 +8635,11 @@ dispose (GObject *object)
 	if (priv->recheck_assume_id) {
 		g_source_remove (priv->recheck_assume_id);
 		priv->recheck_assume_id = 0;
+	}
+
+	if (priv->recheck_available.call_id) {
+		g_source_remove (priv->recheck_available.call_id);
+		priv->recheck_available.call_id = 0;
 	}
 
 	link_disconnect_action_cancel (self);
