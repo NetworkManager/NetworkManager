@@ -96,6 +96,15 @@ get_peer (NMDeviceVeth *self)
 	return priv->peer;
 }
 
+static gboolean
+can_unmanaged_external_down (NMDevice *self)
+{
+	/* Unless running in a container, an udev rule causes these to be
+	 * unmanaged. If there's no udev then we're probably in a container
+	 * and should IFF_UP and configure the veth ourselves even if we
+	 * didn't create it. */
+	return FALSE;
+}
 
 /**************************************************************/
 
@@ -140,11 +149,14 @@ static void
 nm_device_veth_class_init (NMDeviceVethClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	g_type_class_add_private (klass, sizeof (NMDeviceVethPrivate));
 
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
+
+	device_class->can_unmanaged_external_down = can_unmanaged_external_down;
 
 	/* properties */
 	g_object_class_install_property
