@@ -887,19 +887,6 @@ type_to_string (NMLinkType type)
 	}
 }
 
-static gboolean
-link_is_announceable (NMPlatform *platform, struct rtnl_link *rtnllink)
-{
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-
-	/* Hardware devices must be found by udev so rules get run and tags set */
-	if (g_hash_table_lookup (priv->udev_devices,
-	                         GINT_TO_POINTER (rtnl_link_get_ifindex (rtnllink))))
-		return TRUE;
-
-	return FALSE;
-}
-
 #define DEVTYPE_PREFIX "DEVTYPE="
 
 static char *
@@ -1058,14 +1045,16 @@ init_link (NMPlatform *platform, NMPlatformLink *info, struct rtnl_link *rtnllin
 	udev_device = g_hash_table_lookup (priv->udev_devices, GINT_TO_POINTER (info->ifindex));
 	if (udev_device) {
 		info->driver = udev_get_driver (udev_device, info->ifindex);
-		if (!info->driver)
-			info->driver = g_intern_string (rtnl_link_get_type (rtnllink));
-		if (!info->driver)
-			info->driver = ethtool_get_driver (info->name);
-		if (!info->driver)
-			info->driver = "unknown";
 		info->udi = g_udev_device_get_sysfs_path (udev_device);
+		info->initialized = TRUE;
 	}
+
+	if (!info->driver)
+		info->driver = g_intern_string (rtnl_link_get_type (rtnllink));
+	if (!info->driver)
+		info->driver = ethtool_get_driver (info->name);
+	if (!info->driver)
+		info->driver = "unknown";
 
 	return TRUE;
 }
@@ -1624,22 +1613,6 @@ announce_object (NMPlatform *platform, const struct nl_object *object, NMPlatfor
 			if (!init_link (platform, &device, rtnl_link))
 				return;
 
-			/* Skip devices not yet discovered by udev. They will be
-			 * announced by udev_device_added(). This doesn't apply to removed
-			 * devices, as those come either from udev_device_removed(),
-			 * event_notification() or link_delete() which block the announcment
-			 * themselves when appropriate.
-			 */
-			switch (change_type) {
-			case NM_PLATFORM_SIGNAL_ADDED:
-			case NM_PLATFORM_SIGNAL_CHANGED:
-				if (!device.driver)
-					return;
-				break;
-			default:
-				break;
-			}
-
 			/* Link deletion or setting down is sometimes accompanied by address
 			 * and/or route deletion.
 			 *
@@ -2067,15 +2040,12 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 			return NL_OK;
 
 		nl_cache_remove (cached_object);
-		/* Don't announce removed interfaces that are not recognized by
-		 * udev. They were either not yet discovered or they have been
-		 * already removed and announced.
-		 */
-		if (event == RTM_DELLINK) {
-			if (!link_is_announceable (platform, (struct rtnl_link *) cached_object))
-				return NL_OK;
-		}
 		announce_object (platform, cached_object, NM_PLATFORM_SIGNAL_REMOVED, NM_PLATFORM_REASON_EXTERNAL);
+		if (event == RTM_DELLINK) {
+			int ifindex = rtnl_link_get_ifindex ((struct rtnl_link *) cached_object);
+
+			g_hash_table_remove (priv->udev_devices, GINT_TO_POINTER (ifindex));
+		}
 
 		return NL_OK;
 	case RTM_NEWLINK:
@@ -2303,12 +2273,8 @@ link_get_all (NMPlatform *platform)
 	struct nl_object *object;
 
 	for (object = nl_cache_get_first (priv->link_cache); object; object = nl_cache_get_next (object)) {
-		struct rtnl_link *rtnl_link = (struct rtnl_link *) object;
-
-		if (link_is_announceable (platform, rtnl_link)) {
-			if (init_link (platform, &device, rtnl_link))
-				g_array_append_val (links, device);
-		}
+		if (init_link (platform, &device, (struct rtnl_link *) object))
+			g_array_append_val (links, device);
 	}
 
 	return links;
@@ -2321,13 +2287,7 @@ _nm_platform_link_get (NMPlatform *platform, int ifindex, NMPlatformLink *l)
 	auto_nl_object struct rtnl_link *rtnllink = NULL;
 
 	rtnllink = rtnl_link_get (priv->link_cache, ifindex);
-	if (rtnllink) {
-		if (link_is_announceable (platform, rtnllink)) {
-			if (init_link (platform, l, rtnllink))
-				return TRUE;
-		}
-	}
-	return FALSE;
+	return (rtnllink && init_link (platform, l, rtnllink));
 }
 
 static struct nl_object *
@@ -2383,13 +2343,6 @@ link_get (NMPlatform *platform, int ifindex)
 
 	if (!rtnllink) {
 		platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
-		return NULL;
-	}
-
-	/* physical interfaces must be found by udev before they can be used */
-	if (!link_is_announceable (platform, rtnllink)) {
-		platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
-		rtnl_link_put (rtnllink);
 		return NULL;
 	}
 
@@ -4432,7 +4385,6 @@ udev_device_added (NMPlatform *platform,
 	auto_nl_object struct rtnl_link *rtnllink = NULL;
 	const char *ifname;
 	int ifindex;
-	gboolean was_announceable = FALSE;
 
 	ifname = g_udev_device_get_name (udev_device);
 	if (!ifname) {
@@ -4457,15 +4409,15 @@ udev_device_added (NMPlatform *platform,
 	}
 
 	rtnllink = rtnl_link_get (priv->link_cache, ifindex);
-	if (rtnllink)
-		was_announceable = link_is_announceable (platform, rtnllink);
+	if (!rtnllink) {
+		warning ("(%s): udev-add: interface not known via netlink; ignoring...", ifname);
+		return;
+	}
 
 	g_hash_table_insert (priv->udev_devices, GINT_TO_POINTER (ifindex),
 	                     g_object_ref (udev_device));
 
-	/* Announce devices only if they also have been discovered via Netlink. */
-	if (rtnllink && link_is_announceable (platform, rtnllink))
-		announce_object (platform, (struct nl_object *) rtnllink, was_announceable ? NM_PLATFORM_SIGNAL_CHANGED : NM_PLATFORM_SIGNAL_ADDED, NM_PLATFORM_REASON_EXTERNAL);
+	announce_object (platform, (struct nl_object *) rtnllink, NM_PLATFORM_SIGNAL_CHANGED, NM_PLATFORM_REASON_EXTERNAL);
 }
 
 static void
@@ -4473,9 +4425,7 @@ udev_device_removed (NMPlatform *platform,
                      GUdevDevice *udev_device)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	auto_nl_object struct rtnl_link *rtnllink = NULL;
 	int ifindex = 0;
-	gboolean was_announceable = FALSE;
 
 	if (g_udev_device_get_property (udev_device, "IFINDEX"))
 		ifindex = g_udev_device_get_property_as_int (udev_device, "IFINDEX");
@@ -4500,15 +4450,7 @@ udev_device_removed (NMPlatform *platform,
 	if (ifindex <= 0)
 		return;
 
-	rtnllink = rtnl_link_get (priv->link_cache, ifindex);
-	if (rtnllink)
-		was_announceable = link_is_announceable (platform, rtnllink);
-
 	g_hash_table_remove (priv->udev_devices, GINT_TO_POINTER (ifindex));
-
-	/* Announce device removal if it is no longer announceable. */
-	if (was_announceable && !link_is_announceable (platform, rtnllink))
-		announce_object (platform, (struct nl_object *) rtnllink, NM_PLATFORM_SIGNAL_REMOVED, NM_PLATFORM_REASON_EXTERNAL);
 }
 
 static void
@@ -4553,8 +4495,6 @@ constructed (GObject *_object)
 	NMPlatform *platform = NM_PLATFORM (_object);
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	const char *udev_subsys[] = { "net", NULL };
-	GUdevEnumerator *enumerator;
-	GList *devices, *iter;
 	int channel_flags;
 	gboolean status;
 	int nle;
@@ -4614,6 +4554,24 @@ constructed (GObject *_object)
 	g_signal_connect (priv->udev_client, "uevent", G_CALLBACK (handle_udev_event), platform);
 	priv->udev_devices = g_hash_table_new_full (NULL, NULL, NULL, g_object_unref);
 
+	/* request all IPv6 addresses (hopeing that there is at least one), to check for
+	 * the IFA_FLAGS attribute. */
+	nle = nl_rtgen_request (priv->nlh_event, RTM_GETADDR, AF_INET6, NLM_F_DUMP);
+	if (nle < 0)
+		nm_log_warn (LOGD_PLATFORM, "Netlink error: requesting RTM_GETADDR failed with %s", nl_geterror (nle));
+
+	priv->wifi_data = g_hash_table_new_full (NULL, NULL, NULL, (GDestroyNotify) wifi_utils_deinit);
+
+	G_OBJECT_CLASS (nm_linux_platform_parent_class)->constructed (_object);
+}
+
+static void
+setup_devices (NMPlatform *platform)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	GUdevEnumerator *enumerator;
+	GList *devices, *iter;
+
 	/* And read initial device list */
 	enumerator = g_udev_enumerator_new (priv->udev_client);
 	g_udev_enumerator_add_match_subsystem (enumerator, "net");
@@ -4631,16 +4589,6 @@ constructed (GObject *_object)
 	}
 	g_list_free (devices);
 	g_object_unref (enumerator);
-
-	/* request all IPv6 addresses (hopeing that there is at least one), to check for
-	 * the IFA_FLAGS attribute. */
-	nle = nl_rtgen_request (priv->nlh_event, RTM_GETADDR, AF_INET6, NLM_F_DUMP);
-	if (nle < 0)
-		nm_log_warn (LOGD_PLATFORM, "Netlink error: requesting RTM_GETADDR failed with %s", nl_geterror (nle));
-
-	priv->wifi_data = g_hash_table_new_full (NULL, NULL, NULL, (GDestroyNotify) wifi_utils_deinit);
-
-	G_OBJECT_CLASS (nm_linux_platform_parent_class)->constructed (_object);
 }
 
 static void
@@ -4677,6 +4625,8 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	/* virtual methods */
 	object_class->constructed = constructed;
 	object_class->finalize = nm_linux_platform_finalize;
+
+	platform_class->setup_devices = setup_devices;
 
 	platform_class->sysctl_set = sysctl_set;
 	platform_class->sysctl_get = sysctl_get;

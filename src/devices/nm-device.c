@@ -176,6 +176,7 @@ typedef struct {
 typedef struct {
 	gboolean in_state_changed;
 	gboolean initialized;
+	gboolean platform_link_initialized;
 
 	NMDeviceState state;
 	NMDeviceStateReason state_reason;
@@ -1051,6 +1052,7 @@ void
 nm_device_finish_init (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	gboolean platform_unmanaged = FALSE;
 
 	g_assert (priv->initialized == FALSE);
 
@@ -1062,6 +1064,20 @@ nm_device_finish_init (NMDevice *self)
 
 	if (priv->master)
 		nm_device_enslave_slave (priv->master, self, NULL);
+
+	if (priv->ifindex > 0) {
+		if (priv->platform_link_initialized || (priv->is_nm_owned && priv->is_software)) {
+			nm_platform_link_get_unmanaged (NM_PLATFORM_GET, priv->ifindex, &platform_unmanaged);
+			nm_device_set_initial_unmanaged_flag (self, NM_UNMANAGED_DEFAULT, platform_unmanaged);
+		} else {
+			/* Hardware and externally-created software links stay unmanaged
+			 * until they are fully initialized by the platform. NM created
+			 * links must be available for activation immediately and thus
+			 * do not get the PLATFORM_INIT unmanaged flag set.
+			 */
+			nm_device_set_initial_unmanaged_flag (self, NM_UNMANAGED_PLATFORM_INIT, TRUE);
+		}
+	}
 
 	priv->initialized = TRUE;
 }
@@ -1255,12 +1271,20 @@ device_link_changed (NMDevice *self, NMPlatformLink *info)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMUtilsIPv6IfaceId token_iid;
 	gboolean ip_ifname_changed = FALSE;
+	gboolean platform_unmanaged = FALSE;
 
 	if (info->udi && g_strcmp0 (info->udi, priv->udi)) {
 		/* Update UDI to what udev gives us */
 		g_free (priv->udi);
 		priv->udi = g_strdup (info->udi);
 		g_object_notify (G_OBJECT (self), NM_DEVICE_UDI);
+	}
+
+	if (g_strcmp0 (info->driver, priv->driver)) {
+		/* Update driver to what udev gives us */
+		g_free (priv->driver);
+		priv->driver = g_strdup (info->driver);
+		g_object_notify (G_OBJECT (self), NM_DEVICE_DRIVER);
 	}
 
 	/* Update MTU if it has changed. */
@@ -1354,6 +1378,22 @@ device_link_changed (NMDevice *self, NMPlatformLink *info)
 				                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
 			}
 		}
+	}
+
+	if (priv->ifindex > 0 && !priv->platform_link_initialized && info->initialized) {
+		priv->platform_link_initialized = TRUE;
+
+		if (nm_platform_link_get_unmanaged (NM_PLATFORM_GET, priv->ifindex, &platform_unmanaged)) {
+			nm_device_set_unmanaged (self,
+			                         NM_UNMANAGED_DEFAULT,
+			                         platform_unmanaged,
+			                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
+		}
+
+		nm_device_set_unmanaged (self,
+		                         NM_UNMANAGED_PLATFORM_INIT,
+		                         FALSE,
+		                         NM_DEVICE_STATE_REASON_NOW_MANAGED);
 	}
 }
 
@@ -7088,7 +7128,7 @@ nm_device_set_unmanaged (NMDevice *self,
 
 		if (unmanaged)
 			nm_device_state_changed (self, NM_DEVICE_STATE_UNMANAGED, reason);
-		else
+		else if (nm_device_get_state (self) == NM_DEVICE_STATE_UNMANAGED)
 			nm_device_state_changed (self, NM_DEVICE_STATE_UNAVAILABLE, reason);
 	}
 }
@@ -8716,6 +8756,7 @@ set_property (GObject *object, guint prop_id,
 			priv->up = platform_device->up;
 			g_free (priv->driver);
 			priv->driver = g_strdup (platform_device->driver);
+			priv->platform_link_initialized = platform_device->initialized;
 		}
 		break;
 	case PROP_UDI:

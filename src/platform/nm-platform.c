@@ -405,6 +405,10 @@ nm_platform_query_devices (NMPlatform *self)
 		               NM_PLATFORM_REASON_INTERNAL);
 	}
 	g_array_unref (links_array);
+
+	/* Platform specific device setup. */
+	if (klass->setup_devices)
+		klass->setup_devices (self);
 }
 
 /**
@@ -2608,6 +2612,12 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route)
             return (((a)->field) < ((b)->field)) ? -1 : 1;  \
     } G_STMT_END
 
+#define _CMP_FIELD_BOOL(a, b, field)                        \
+    G_STMT_START {                                          \
+        if ((!((a)->field)) != (!((b)->field)))                 \
+            return ((!((a)->field)) < (!((b)->field))) ? -1 : 1; \
+    } G_STMT_END
+
 #define _CMP_FIELD_STR(a, b, field)                         \
     G_STMT_START {                                          \
         int c = strcmp ((a)->field, (b)->field);            \
@@ -2643,6 +2653,7 @@ nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 	_CMP_FIELD (a, b, arp);
 	_CMP_FIELD (a, b, mtu);
 	_CMP_FIELD_STR0 (a, b, type_name);
+	_CMP_FIELD_BOOL (a, b, initialized);
 	_CMP_FIELD_STR0 (a, b, udi);
 	_CMP_FIELD_STR0 (a, b, driver);
 	return 0;
