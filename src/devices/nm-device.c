@@ -55,7 +55,6 @@
 #include "nm-dhcp6-config.h"
 #include "nm-rfkill-manager.h"
 #include "nm-firewall-manager.h"
-#include "nm-properties-changed-signal.h"
 #include "nm-enum-types.h"
 #include "nm-settings-connection.h"
 #include "nm-connection-provider.h"
@@ -79,7 +78,7 @@ static void ip_check_ping_watch_cb (GPid pid, gint status, gpointer user_data);
 
 #include "nm-device-glue.h"
 
-G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, G_TYPE_OBJECT)
+G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, NM_TYPE_EXPORTED_OBJECT)
 
 #define NM_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE, NMDevicePrivate))
 
@@ -526,6 +525,7 @@ nm_device_dbus_export (NMDevice *self)
 
 	priv->path = g_strdup_printf ("/org/freedesktop/NetworkManager/Devices/%d", devcount++);
 	_LOGD (LOGD_DEVICE, "exported as %s", priv->path);
+
 	nm_dbus_manager_register_object (nm_dbus_manager_get (), priv->path, self);
 }
 
@@ -9766,10 +9766,8 @@ nm_device_class_init (NMDeviceClass *klass)
 		              0, NULL, NULL, NULL,
 		              G_TYPE_NONE, 0);
 
-	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
-	                                        G_TYPE_FROM_CLASS (klass),
+	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        &dbus_glib_nm_device_object_info);
 
 	dbus_g_error_domain_register (NM_DEVICE_ERROR, NULL, NM_TYPE_DEVICE_ERROR);
 }
-

@@ -21,9 +21,7 @@
 #ifndef __NETWORKMANAGER_DHCP4_CONFIG_H__
 #define __NETWORKMANAGER_DHCP4_CONFIG_H__
 
-
-#include "nm-glib.h"
-#include "nm-types.h"
+#include "nm-exported-object.h"
 
 #define NM_TYPE_DHCP4_CONFIG            (nm_dhcp4_config_get_type ())
 #define NM_DHCP4_CONFIG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DHCP4_CONFIG, NMDhcp4Config))
@@ -33,11 +31,11 @@
 #define NM_DHCP4_CONFIG_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DHCP4_CONFIG, NMDhcp4ConfigClass))
 
 struct _NMDhcp4Config {
-	GObject parent;
+	NMExportedObject parent;
 };
 
 typedef struct {
-	GObjectClass parent;
+	NMExportedObjectClass parent;
 
 } NMDhcp4ConfigClass;
 

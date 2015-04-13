@@ -43,7 +43,7 @@
 #include "nm-simple-connection.h"
 #include "NetworkManagerUtils.h"
 
-G_DEFINE_TYPE (NMAgentManager, nm_agent_manager, G_TYPE_OBJECT)
+G_DEFINE_TYPE (NMAgentManager, nm_agent_manager, NM_TYPE_EXPORTED_OBJECT)
 
 #define NM_AGENT_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
                                          NM_TYPE_AGENT_MANAGER, \
@@ -1622,8 +1622,8 @@ nm_agent_manager_class_init (NMAgentManagerClass *agent_manager_class)
 		              G_TYPE_NONE, 1,
 		              G_TYPE_OBJECT);
 
-	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (agent_manager_class),
-	                                 &dbus_glib_nm_agent_manager_object_info);
+	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (agent_manager_class),
+	                                        &dbus_glib_nm_agent_manager_object_info);
 
 	dbus_g_error_domain_register (NM_AGENT_MANAGER_ERROR,
 	                              NM_DBUS_INTERFACE_AGENT_MANAGER,

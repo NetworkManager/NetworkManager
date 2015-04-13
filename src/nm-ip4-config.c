@@ -37,7 +37,7 @@
 #include "nm-core-internal.h"
 #include "gsystem-local-alloc.h"
 
-G_DEFINE_TYPE (NMIP4Config, nm_ip4_config, G_TYPE_OBJECT)
+G_DEFINE_TYPE (NMIP4Config, nm_ip4_config, NM_TYPE_EXPORTED_OBJECT)
 
 #define NM_IP4_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_IP4_CONFIG, NMIP4ConfigPrivate))
 
@@ -2410,7 +2410,6 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 
 	g_object_class_install_properties (object_class, LAST_PROP, obj_properties);
 
-	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
-	                                        G_TYPE_FROM_CLASS (config_class),
+	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (config_class),
 	                                        &dbus_glib_nm_ip4_config_object_info);
 }

@@ -25,7 +25,6 @@
 
 #include "nm-device-gre.h"
 #include "nm-device-private.h"
-#include "nm-dbus-manager.h"
 #include "nm-logging.h"
 #include "nm-manager.h"
 #include "nm-platform.h"
@@ -256,8 +255,7 @@ nm_device_gre_class_init (NMDeviceGreClass *klass)
 		                       G_PARAM_READABLE |
 		                       G_PARAM_STATIC_STRINGS));
 
-	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
-	                                        G_TYPE_FROM_CLASS (klass),
+	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        &dbus_glib_nm_device_gre_object_info);
 }
 

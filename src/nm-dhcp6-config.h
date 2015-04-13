@@ -21,9 +21,7 @@
 #ifndef __NETWORKMANAGER_DHCP6_CONFIG_H__
 #define __NETWORKMANAGER_DHCP6_CONFIG_H__
 
-
-#include "nm-glib.h"
-#include "nm-types.h"
+#include "nm-exported-object.h"
 
 #define NM_TYPE_DHCP6_CONFIG            (nm_dhcp6_config_get_type ())
 #define NM_DHCP6_CONFIG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DHCP6_CONFIG, NMDhcp6Config))
@@ -33,11 +31,11 @@
 #define NM_DHCP6_CONFIG_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DHCP6_CONFIG, NMDhcp6ConfigClass))
 
 struct _NMDhcp6Config {
-	GObject parent;
+	NMExportedObject parent;
 };
 
 typedef struct {
-	GObjectClass parent;
+	NMExportedObjectClass parent;
 
 } NMDhcp6ConfigClass;
 

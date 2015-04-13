@@ -21,8 +21,7 @@
 #ifndef __NETWORKMANAGER_ACTIVE_CONNECTION_H__
 #define __NETWORKMANAGER_ACTIVE_CONNECTION_H__
 
-#include "nm-glib.h"
-#include "nm-types.h"
+#include "nm-exported-object.h"
 #include "nm-connection.h"
 
 #define NM_TYPE_ACTIVE_CONNECTION            (nm_active_connection_get_type ())
@@ -61,11 +60,11 @@
 #define NM_ACTIVE_CONNECTION_DEVICE_METERED_CHANGED  "device-metered-changed"
 
 struct _NMActiveConnection {
-	GObject parent;
+	NMExportedObject parent;
 };
 
 typedef struct {
-	GObjectClass parent;
+	NMExportedObjectClass parent;
 
 	/* re-emits device state changes as a convenience for subclasses for
 	 * device states >= DISCONNECTED.

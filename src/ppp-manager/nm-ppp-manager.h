@@ -23,7 +23,7 @@
 #define __NETWORKMANAGER_PPP_MANAGER_H__
 
 
-#include "nm-glib.h"
+#include "nm-exported-object.h"
 #include "nm-ppp-status.h"
 #include "nm-activation-request.h"
 #include "nm-connection.h"
@@ -42,11 +42,11 @@
 #define NM_PPP_MANAGER_PARENT_IFACE "parent-iface"
 
 typedef struct {
-	GObject parent;
+	NMExportedObject parent;
 } NMPPPManager;
 
 typedef struct {
-	GObjectClass parent;
+	NMExportedObjectClass parent;
 
 	/* Signals */
 	void (*state_changed) (NMPPPManager *manager, NMPPPStatus status);

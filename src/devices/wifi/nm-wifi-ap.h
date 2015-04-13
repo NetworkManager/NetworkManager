@@ -22,7 +22,7 @@
 #ifndef __NETWORKMANAGER_ACCESS_POINT_H__
 #define __NETWORKMANAGER_ACCESS_POINT_H__
 
-#include "nm-glib.h"
+#include "nm-exported-object.h"
 #include "nm-dbus-interface.h"
 #include "nm-connection.h"
 
@@ -45,11 +45,11 @@
 #define NM_AP_LAST_SEEN "last-seen"
 
 typedef struct {
-	GObject parent;
+	NMExportedObject parent;
 } NMAccessPoint;
 
 typedef struct {
-	GObjectClass parent;
+	NMExportedObjectClass parent;
 
 } NMAccessPointClass;
 

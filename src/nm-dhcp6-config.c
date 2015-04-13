@@ -30,7 +30,7 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-utils.h"
 
-G_DEFINE_TYPE (NMDhcp6Config, nm_dhcp6_config, G_TYPE_OBJECT)
+G_DEFINE_TYPE (NMDhcp6Config, nm_dhcp6_config, NM_TYPE_EXPORTED_OBJECT)
 
 #define NM_DHCP6_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP6_CONFIG, NMDhcp6ConfigPrivate))
 
@@ -185,7 +185,6 @@ nm_dhcp6_config_class_init (NMDhcp6ConfigClass *config_class)
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
 
-	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
-	                                        G_TYPE_FROM_CLASS (config_class),
+	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (config_class),
 	                                        &dbus_glib_nm_dhcp6_config_object_info);
 }

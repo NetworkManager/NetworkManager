@@ -32,7 +32,6 @@
 #include "nm-vpn-connection.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
-#include "nm-dbus-manager.h"
 #include "nm-platform.h"
 #include "nm-logging.h"
 #include "nm-active-connection.h"
@@ -2362,8 +2361,7 @@ nm_vpn_connection_class_init (NMVpnConnectionClass *connection_class)
 		              0, NULL, NULL, NULL,
 		              G_TYPE_NONE, 0);
 
-	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
-	                                        G_TYPE_FROM_CLASS (object_class),
+	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (connection_class),
 	                                        &dbus_glib_nm_vpn_connection_object_info);
 }
 

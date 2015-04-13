@@ -104,10 +104,6 @@ gboolean nm_dbus_manager_get_caller_info_from_message (NMDBusManager *self,
                                                        gulong *out_uid,
                                                        gulong *out_pid);
 
-void nm_dbus_manager_register_exported_type (NMDBusManager         *self,
-                                             GType                  object_type,
-                                             const DBusGObjectInfo *info);
-
 void nm_dbus_manager_register_object (NMDBusManager *self,
                                       const char *path,
                                       gpointer object);

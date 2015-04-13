@@ -95,7 +95,7 @@ typedef struct {
 
 #define NM_PPP_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_PPP_MANAGER, NMPPPManagerPrivate))
 
-G_DEFINE_TYPE (NMPPPManager, nm_ppp_manager, G_TYPE_OBJECT)
+G_DEFINE_TYPE (NMPPPManager, nm_ppp_manager, NM_TYPE_EXPORTED_OBJECT)
 
 enum {
 	STATE_CHANGED,
@@ -672,8 +672,8 @@ nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
 		              G_TYPE_NONE, 2,
 		              G_TYPE_UINT, G_TYPE_UINT);
 
-	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (manager_class),
-	                                 &dbus_glib_nm_ppp_manager_object_info);
+	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (manager_class),
+	                                        &dbus_glib_nm_ppp_manager_object_info);
 }
 
 /*******************************************/

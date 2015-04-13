@@ -22,9 +22,7 @@
 #ifndef __NETWORKMANAGER_MANAGER_H__
 #define __NETWORKMANAGER_MANAGER_H__
 
-
-#include "nm-glib.h"
-#include "nm-types.h"
+#include "nm-exported-object.h"
 #include "nm-connection.h"
 
 #define NM_TYPE_MANAGER            (nm_manager_get_type ())
@@ -63,11 +61,11 @@
 
 
 struct _NMManager {
-	GObject parent;
+	NMExportedObject parent;
 };
 
 typedef struct {
-	GObjectClass parent;
+	NMExportedObjectClass parent;
 
 	/* Signals */
 	void (*device_added) (NMManager *manager, NMDevice *device);

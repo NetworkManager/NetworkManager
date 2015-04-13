@@ -29,7 +29,6 @@
 #include <errno.h>
 
 #include "nm-glib.h"
-#include "nm-dbus-manager.h"
 #include "nm-device.h"
 #include "nm-device-wifi.h"
 #include "nm-device-private.h"
@@ -3062,8 +3061,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 		              scanning_allowed_accumulator, NULL, NULL,
 		              G_TYPE_BOOLEAN, 0);
 
-	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
-	                                        G_TYPE_FROM_CLASS (klass),
+	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        &dbus_glib_nm_device_wifi_object_info);
 }
 

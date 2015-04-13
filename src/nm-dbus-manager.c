@@ -29,7 +29,6 @@
 #include "nm-glib.h"
 #include "nm-dbus-interface.h"
 #include "nm-dbus-manager.h"
-#include "nm-properties-changed-signal.h"
 
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
@@ -852,33 +851,6 @@ static void
 object_destroyed (NMDBusManager *self, gpointer object)
 {
 	g_hash_table_remove (NM_DBUS_MANAGER_GET_PRIVATE (self)->exported, object);
-}
-
-void
-nm_dbus_manager_register_exported_type (NMDBusManager         *self,
-                                        GType                  object_type,
-                                        const DBusGObjectInfo *info)
-{
-	const char *properties_info, *dbus_name, *gobject_name, *tmp_access;
-
-	dbus_g_object_type_install_info (object_type, info);
-	if (!info->exported_properties)
-		return;
-
-	properties_info = info->exported_properties;
-	while (*properties_info) {
-		/* The format is: "interface\0DBusPropertyName\0gobject_property_name\0access\0" */
-		dbus_name = strchr (properties_info, '\0') + 1;
-		gobject_name = strchr (dbus_name, '\0') + 1;
-		tmp_access = strchr (gobject_name, '\0') + 1;
-		properties_info = strchr (tmp_access, '\0') + 1;
-
-		/* Note that nm-properties-changed-signal takes advantage of the
-		 * fact that @dbus_name and @gobject_name are static data that won't
-		 * ever be freed.
-		 */
-		nm_properties_changed_signal_add_property (object_type, dbus_name, gobject_name);
-	}
 }
 
 void

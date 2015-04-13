@@ -36,7 +36,6 @@
 #include "nm-auth-subject.h"
 #include "nm-agent-manager.h"
 #include "NetworkManagerUtils.h"
-#include "nm-properties-changed-signal.h"
 #include "nm-core-internal.h"
 #include "gsystem-local-alloc.h"
 
@@ -113,7 +112,7 @@ static void impl_settings_connection_clear_secrets (NMSettingsConnection *self,
 
 static void nm_settings_connection_connection_interface_init (NMConnectionInterface *iface);
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingsConnection, nm_settings_connection, G_TYPE_OBJECT,
+G_DEFINE_TYPE_WITH_CODE (NMSettingsConnection, nm_settings_connection, NM_TYPE_EXPORTED_OBJECT,
                          G_IMPLEMENT_INTERFACE (NM_TYPE_CONNECTION, nm_settings_connection_connection_interface_init)
                          )
 
@@ -2513,8 +2512,7 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 		              g_cclosure_marshal_VOID__VOID,
 		              G_TYPE_NONE, 0);
 
-	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
-	                                        G_TYPE_FROM_CLASS (class),
+	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (class),
 	                                        &dbus_glib_nm_settings_connection_object_info);
 }
 

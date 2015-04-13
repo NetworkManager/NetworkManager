@@ -67,7 +67,7 @@ typedef struct
 
 #define NM_AP_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_AP, NMAccessPointPrivate))
 
-G_DEFINE_TYPE (NMAccessPoint, nm_ap, G_TYPE_OBJECT)
+G_DEFINE_TYPE (NMAccessPoint, nm_ap, NM_TYPE_EXPORTED_OBJECT)
 
 enum {
 	PROP_0,
@@ -1074,8 +1074,7 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
 	                       -1, G_MAXINT, -1,
 	                        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
-	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
-	                                        G_TYPE_FROM_CLASS (ap_class),
+	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (ap_class),
 	                                        &dbus_glib_nm_access_point_object_info);
 }
 

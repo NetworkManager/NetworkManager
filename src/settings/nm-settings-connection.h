@@ -24,6 +24,7 @@
 
 #include <net/ethernet.h>
 
+#include "nm-exported-object.h"
 #include <nm-connection.h>
 #include "nm-types.h"
 
@@ -95,11 +96,11 @@ typedef void (*NMSettingsConnectionDeleteFunc) (NMSettingsConnection *self,
                                                 gpointer user_data);
 
 struct _NMSettingsConnection {
-	GObject parent;
+	NMExportedObject parent;
 };
 
 struct _NMSettingsConnectionClass {
-	GObjectClass parent;
+	NMExportedObjectClass parent;
 
 	/* virtual methods */
 	void (*replace_and_commit) (NMSettingsConnection *self,

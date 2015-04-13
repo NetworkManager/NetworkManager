@@ -23,8 +23,7 @@
 
 #include <netinet/in.h>
 
-#include "nm-glib.h"
-#include "nm-types.h"
+#include "nm-exported-object.h"
 #include "nm-setting-ip6-config.h"
 
 #define NM_TYPE_IP6_CONFIG (nm_ip6_config_get_type ())
@@ -35,11 +34,11 @@
 #define NM_IP6_CONFIG_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_IP6_CONFIG, NMIP6ConfigClass))
 
 struct _NMIP6Config {
-	GObject parent;
+	NMExportedObject parent;
 };
 
 typedef struct {
-	GObjectClass parent;
+	NMExportedObjectClass parent;
 } NMIP6ConfigClass;
 
 /* internal */

@@ -37,7 +37,7 @@
 #include "nm-active-connection-glue.h"
 
 /* Base class for anything implementing the Connection.Active D-Bus interface */
-G_DEFINE_ABSTRACT_TYPE (NMActiveConnection, nm_active_connection, G_TYPE_OBJECT)
+G_DEFINE_ABSTRACT_TYPE (NMActiveConnection, nm_active_connection, NM_TYPE_EXPORTED_OBJECT)
 
 #define NM_ACTIVE_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
                                              NM_TYPE_ACTIVE_CONNECTION, \
@@ -1066,8 +1066,7 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 1, G_TYPE_UINT);
 
-	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
-	                                        G_TYPE_FROM_CLASS (ac_class),
+	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (ac_class),
 	                                        &dbus_glib_nm_active_connection_object_info);
 }
 

@@ -21,9 +21,7 @@
 #ifndef __NETWORKMANAGER_IP4_CONFIG_H__
 #define __NETWORKMANAGER_IP4_CONFIG_H__
 
-
-#include "nm-glib.h"
-#include "nm-types.h"
+#include "nm-exported-object.h"
 #include "nm-setting-ip4-config.h"
 
 #define NM_TYPE_IP4_CONFIG (nm_ip4_config_get_type ())
@@ -34,11 +32,11 @@
 #define NM_IP4_CONFIG_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_IP4_CONFIG, NMIP4ConfigClass))
 
 struct _NMIP4Config {
-	GObject parent;
+	NMExportedObject parent;
 };
 
 typedef struct {
-	GObjectClass parent;
+	NMExportedObjectClass parent;
 } NMIP4ConfigClass;
 
 /* internal */

@@ -25,7 +25,7 @@
 #include <dbus/dbus-glib.h>
 #include <netinet/in.h>
 
-#include "nm-glib.h"
+#include "nm-exported-object.h"
 #include "nm-dbus-interface.h"
 #include "nm-types.h"
 #include "nm-connection.h"
@@ -104,7 +104,7 @@ typedef enum { /*< skip >*/
 } NMDeviceCheckConAvailableFlags;
 
 struct _NMDevice {
-	GObject parent;
+	NMExportedObject parent;
 };
 
 /* The flags have an relaxing meaning, that means, specifying more flags, can make
@@ -118,7 +118,7 @@ typedef enum { /*< skip >*/
 } NMDeviceCheckDevAvailableFlags;
 
 typedef struct {
-	GObjectClass parent;
+	NMExportedObjectClass parent;
 
 	const char *connection_type;
 

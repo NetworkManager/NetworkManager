@@ -98,7 +98,7 @@ static NMIfcfgConnection *update_connection (SCPluginIfcfg *plugin,
 
 static void system_config_interface_init (NMSystemConfigInterface *system_config_interface_class);
 
-G_DEFINE_TYPE_EXTENDED (SCPluginIfcfg, sc_plugin_ifcfg, G_TYPE_OBJECT, 0,
+G_DEFINE_TYPE_EXTENDED (SCPluginIfcfg, sc_plugin_ifcfg, NM_TYPE_EXPORTED_OBJECT, 0,
 						G_IMPLEMENT_INTERFACE (NM_TYPE_SYSTEM_CONFIG_INTERFACE,
 											   system_config_interface_init))
 
@@ -897,8 +897,8 @@ sc_plugin_ifcfg_class_init (SCPluginIfcfgClass *req_class)
 	                                  NM_SYSTEM_CONFIG_INTERFACE_PROP_CAPABILITIES,
 	                                  NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES);
 
-	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (req_class),
-									 &dbus_glib_nm_ifcfg_rh_object_info);
+	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (req_class),
+	                                        &dbus_glib_nm_ifcfg_rh_object_info);
 }
 
 static void
