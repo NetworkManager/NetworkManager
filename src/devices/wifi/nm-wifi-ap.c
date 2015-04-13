@@ -374,7 +374,7 @@ nm_ap_update_from_properties (NMAccessPoint *ap,
                               const char *supplicant_path,
                               GVariant *properties)
 {
-	const char *addr;
+	char *addr;
 	const guint8 *bytes;
 	GVariant *v;
 	gsize len;
@@ -424,6 +424,7 @@ nm_ap_update_from_properties (NMAccessPoint *ap,
 		if (len == ETH_ALEN) {
 			addr = nm_utils_hwaddr_ntoa (bytes, len);
 			nm_ap_set_address (ap, addr);
+			g_free (addr);
 		}
 		g_variant_unref (v);
 	}
