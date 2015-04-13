@@ -173,7 +173,7 @@ constructed (GObject *object)
 	if (G_OBJECT_CLASS (nm_object_parent_class)->constructed)
 		G_OBJECT_CLASS (nm_object_parent_class)->constructed (object);
 
-	priv->properties_proxy = _nm_object_new_proxy (self, NULL, "org.freedesktop.DBus.Properties");
+	priv->properties_proxy = _nm_object_new_proxy (self, NULL, DBUS_INTERFACE_PROPERTIES);
 
 	if (_nm_object_is_connection_private (self))
 		priv->nm_running = TRUE;

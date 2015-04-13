@@ -59,9 +59,8 @@
 #include "utils.h"
 #include "gsystem-local-alloc.h"
 
-#define DBUS_SERVICE_NAME "com.redhat.ifcfgrh1"
-#define DBUS_OBJECT_PATH "/com/redhat/ifcfgrh1"
-
+#define IFCFGRH1_DBUS_SERVICE_NAME "com.redhat.ifcfgrh1"
+#define IFCFGRH1_DBUS_OBJECT_PATH "/com/redhat/ifcfgrh1"
 
 #define _LOG_DEFAULT_DOMAIN  LOGD_SETTINGS
 
@@ -792,12 +791,12 @@ sc_plugin_ifcfg_init (SCPluginIfcfg *plugin)
 		dbus_connection_set_exit_on_disconnect (tmp, FALSE);
 
 		proxy = dbus_g_proxy_new_for_name (priv->bus,
-		                                   "org.freedesktop.DBus",
-		                                   "/org/freedesktop/DBus",
-		                                   "org.freedesktop.DBus");
+		                                   DBUS_SERVICE_DBUS,
+		                                   DBUS_PATH_DBUS,
+		                                   DBUS_INTERFACE_DBUS);
 
 		if (!dbus_g_proxy_call (proxy, "RequestName", &error,
-		                        G_TYPE_STRING, DBUS_SERVICE_NAME,
+		                        G_TYPE_STRING, IFCFGRH1_DBUS_SERVICE_NAME,
 		                        G_TYPE_UINT, DBUS_NAME_FLAG_DO_NOT_QUEUE,
 		                        G_TYPE_INVALID,
 		                        G_TYPE_UINT, &result,
@@ -927,9 +926,9 @@ nm_system_config_factory (void)
 		priv = SC_PLUGIN_IFCFG_GET_PRIVATE (singleton);
 		if (priv->bus)
 			dbus_g_connection_register_g_object (priv->bus,
-			                                     DBUS_OBJECT_PATH,
+			                                     IFCFGRH1_DBUS_OBJECT_PATH,
 			                                     G_OBJECT (singleton));
-		_LOGD ("Acquired D-Bus service %s", DBUS_SERVICE_NAME);
+		_LOGD ("Acquired D-Bus service %s", IFCFGRH1_DBUS_SERVICE_NAME);
 	} else
 		g_object_ref (singleton);
 

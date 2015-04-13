@@ -1215,7 +1215,7 @@ constructed (GObject *object)
 	/* D-Bus properties proxy */
 	priv->props_proxy = _nm_dbus_new_proxy_for_connection (priv->bus,
 	                                                       NM_DBUS_PATH_SETTINGS,
-	                                                       "org.freedesktop.DBus.Properties");
+	                                                       DBUS_INTERFACE_PROPERTIES);
 	g_assert (priv->props_proxy);
 
 	/* Monitor properties */

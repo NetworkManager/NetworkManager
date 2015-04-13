@@ -769,9 +769,9 @@ nm_dbus_manager_init_bus (NMDBusManager *self)
 	dbus_connection_set_exit_on_disconnect (priv->connection, FALSE);
 
 	priv->proxy = dbus_g_proxy_new_for_name (priv->g_connection,
-	                                         "org.freedesktop.DBus",
-	                                         "/org/freedesktop/DBus",
-	                                         "org.freedesktop.DBus");
+	                                         DBUS_SERVICE_DBUS,
+	                                         DBUS_PATH_DBUS,
+	                                         DBUS_INTERFACE_DBUS);
 
 	priv->proxy_destroy_id = g_signal_connect (priv->proxy, "destroy",
 	                                           G_CALLBACK (destroy_cb), self);

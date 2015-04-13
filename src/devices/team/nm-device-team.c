@@ -332,9 +332,9 @@ teamd_dbus_appeared (GDBusConnection *connection,
 		guint32 pid;
 
 		ret = g_dbus_connection_call_sync (connection,
-		                                   "org.freedesktop.DBus",
-		                                   "/org/freedesktop/DBus",
-		                                   "org.freedesktop.DBus",
+		                                   DBUS_SERVICE_DBUS,
+		                                   DBUS_PATH_DBUS,
+		                                   DBUS_INTERFACE_DBUS,
 		                                   "GetConnectionUnixProcessID",
 		                                   g_variant_new ("(s)", name_owner),
 		                                   NULL,

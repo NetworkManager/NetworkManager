@@ -32,6 +32,7 @@
 #include "nm-glib-compat.h"
 #include "gsystem-local-alloc.h"
 #include "nm-core-internal.h"
+#include "nm-dbus-compat.h"
 
 #define WPAS_DBUS_IFACE_INTERFACE   WPAS_DBUS_INTERFACE ".Interface"
 #define WPAS_DBUS_IFACE_BSS         WPAS_DBUS_INTERFACE ".BSS"
@@ -691,7 +692,7 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 		 */
 		priv->ready_count++;
 		g_dbus_proxy_call (priv->iface_proxy,
-		                   "org.freedesktop.DBus.Introspectable.Introspect",
+		                   DBUS_INTERFACE_INTROSPECTABLE ".Introspect",
 		                   NULL,
 		                   G_DBUS_CALL_FLAGS_NONE,
 		                   -1,
@@ -1133,7 +1134,7 @@ nm_supplicant_interface_set_config (NMSupplicantInterface *self,
 	if (cfg) {
 		priv->cfg = g_object_ref (cfg);
 		g_dbus_proxy_call (priv->iface_proxy,
-		                   "org.freedesktop.DBus.Properties.Set",
+		                   DBUS_INTERFACE_PROPERTIES ".Set",
 		                   g_variant_new ("(ssv)",
 		                                  WPAS_DBUS_IFACE_INTERFACE,
 		                                  "ApScan",

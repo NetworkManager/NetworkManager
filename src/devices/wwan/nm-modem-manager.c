@@ -265,7 +265,7 @@ modem_manager_poke (NMModemManager *self)
 	g_dbus_connection_call (self->priv->dbus_connection,
 	                        "org.freedesktop.ModemManager1",
 	                        "/org/freedesktop/ModemManager1",
-	                        "org.freedesktop.DBus.Peer",
+	                        DBUS_INTERFACE_PEER,
 	                        "Ping",
 	                        NULL, /* inputs */
 	                        NULL, /* outputs */
