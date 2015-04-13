@@ -1776,6 +1776,18 @@ device_ip_iface_changed (NMDevice *device,
 	}
 }
 
+static gboolean
+notify_component_added (NMManager *self, GObject *component)
+{
+	GSList *iter;
+
+	for (iter = NM_MANAGER_GET_PRIVATE (self)->devices; iter; iter = iter->next) {
+		if (nm_device_notify_component_added (NM_DEVICE (iter->data), component))
+			return TRUE;
+	}
+	return FALSE;
+}
+
 /**
  * add_device:
  * @self: the #NMManager
@@ -1893,6 +1905,8 @@ add_device (NMManager *self, NMDevice *device, gboolean try_assume)
 	g_signal_emit (self, signals[DEVICE_ADDED], 0, device);
 	g_object_notify (G_OBJECT (self), NM_MANAGER_DEVICES);
 
+	notify_component_added (self, G_OBJECT (device));
+
 	/* New devices might be master interfaces for virtual interfaces; so we may
 	 * need to create new virtual interfaces now.
 	 */
@@ -1929,14 +1943,7 @@ factory_component_added_cb (NMDeviceFactory *factory,
                             GObject *component,
                             gpointer user_data)
 {
-	NMManager *self = NM_MANAGER (user_data);
-	GSList *iter;
-
-	for (iter = NM_MANAGER_GET_PRIVATE (self)->devices; iter; iter = iter->next) {
-		if (nm_device_notify_component_added (NM_DEVICE (iter->data), component))
-			return TRUE;
-	}
-	return FALSE;
+	return notify_component_added (NM_MANAGER (user_data), component);
 }
 
 #define PLUGIN_PREFIX "libnm-device-plugin-"

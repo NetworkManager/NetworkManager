@@ -648,6 +648,16 @@
           A new connection activation was enqueued.
         </tp:docstring>
       </tp:enumvalue>
+      <tp:enumvalue suffix="PARENT_CHANGED" value="61">
+        <tp:docstring>
+          The device's parent changed.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="PARENT_MANAGED_CHANGED" value="62">
+        <tp:docstring>
+          The device parent's management changed.
+        </tp:docstring>
+      </tp:enumvalue>
     </tp:enum>
 
     <tp:struct name="NM_DEVICE_STATE_REASON_STRUCT">

@@ -237,6 +237,21 @@ typedef struct {
 	gboolean        (* have_any_ready_slaves) (NMDevice *self,
 	                                           const GSList *slaves);
 
+	/**
+	 * component_added:
+	 * @self: the #NMDevice
+	 * @component: the component (device, modem, etc) which was added
+	 *
+	 * Notifies @self that a new component was added to the Manager.  This
+	 * may include any kind of %GObject subclass, and the device is expected
+	 * to match only specific components they care about, like %NMModem objects
+	 * or %NMDevice objects.
+	 *
+	 * Returns: %TRUE if the component was claimed exclusively and no further
+	 * devices should be notified of the new component.  %FALSE to indicate
+	 * that the component was not exclusively claimed and other devices should
+	 * be notified.
+	 */
 	gboolean        (* component_added) (NMDevice *self, GObject *component);
 
 	gboolean        (* owns_iface) (NMDevice *self, const char *iface);
