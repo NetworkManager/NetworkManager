@@ -423,8 +423,11 @@ nm_ap_new_from_properties (const char *supplicant_path, GVariant *properties)
 	if (v) {
 		bytes = g_variant_get_fixed_array (v, &len, 1);
 		if (len == ETH_ALEN) {
-			addr = nm_utils_hwaddr_ntoa (bytes, len);
-			nm_ap_set_address (ap, addr);
+			char *a;
+
+			a = nm_utils_hwaddr_ntoa (bytes, len);
+			nm_ap_set_address (ap, a);
+			g_free (a);
 		}
 		g_variant_unref (v);
 	}
