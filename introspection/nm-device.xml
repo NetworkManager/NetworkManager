@@ -637,6 +637,11 @@
           The SIM PIN was incorrect.
         </tp:docstring>
       </tp:enumvalue>
+      <tp:enumvalue suffix="NEW_ACTIVATION" value="60">
+        <tp:docstring>
+          A new connection activation was enqueued.
+        </tp:docstring>
+      </tp:enumvalue>
     </tp:enum>
 
     <tp:struct name="NM_DEVICE_STATE_REASON_STRUCT">
