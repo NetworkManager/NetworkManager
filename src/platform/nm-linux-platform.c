@@ -328,6 +328,47 @@ _rtnl_addr_hack_lifetimes_rel_to_abs (struct rtnl_addr *rtnladdr)
 	rtnl_addr_set_preferred_lifetime (rtnladdr, _get_expiry (now, a_preferred));
 }
 
+/******************************************************************/
+
+#if HAVE_LIBNL_INET6_ADDR_GEN_MODE
+static int _support_user_ipv6ll = 0;
+#endif
+
+static gboolean
+_support_user_ipv6ll_get ()
+{
+#if HAVE_LIBNL_INET6_ADDR_GEN_MODE
+	if (G_UNLIKELY (_support_user_ipv6ll == 0)) {
+		_support_user_ipv6ll = -1;
+		nm_log_warn (LOGD_PLATFORM, "kernel support for IFLA_INET6_ADDR_GEN_MODE %s", "failed to detect; assume no support");
+	} else
+		return _support_user_ipv6ll > 0;
+#endif
+
+	return FALSE;
+}
+
+static void
+_support_user_ipv6ll_detect (const struct rtnl_link *rtnl_link)
+{
+#if HAVE_LIBNL_INET6_ADDR_GEN_MODE
+	/* If we ever see a link with valid IPv6 link-local address
+	 * generation modes, the kernel supports it.
+	 */
+	if (G_UNLIKELY (_support_user_ipv6ll == 0)) {
+		uint8_t mode;
+
+		if (rtnl_link_inet6_get_addr_gen_mode ((struct rtnl_link *) rtnl_link, &mode) == 0) {
+			_support_user_ipv6ll = 1;
+			nm_log_dbg (LOGD_PLATFORM, "kernel support for IFLA_INET6_ADDR_GEN_MODE %s", "detected");
+		} else {
+			_support_user_ipv6ll = -1;
+			nm_log_dbg (LOGD_PLATFORM, "kernel support for IFLA_INET6_ADDR_GEN_MODE %s", "not detected");
+		}
+	}
+#endif
+}
+
 /******************************************************************
  * ethtool
  ******************************************************************/
@@ -516,7 +557,6 @@ typedef struct {
 	GHashTable *wifi_data;
 
 	int support_kernel_extended_ifa_flags;
-	int support_user_ipv6ll;
 } NMLinuxPlatformPrivate;
 
 #define NM_LINUX_PLATFORM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_LINUX_PLATFORM, NMLinuxPlatformPrivate))
@@ -625,6 +665,7 @@ get_kernel_object (struct nl_sock *sock, struct nl_object *needle)
 			nle = rtnl_link_get_kernel (sock, ifindex, name, (struct rtnl_link **) &object);
 			switch (nle) {
 			case -NLE_SUCCESS:
+				_support_user_ipv6ll_detect ((struct rtnl_link *) object);
 				if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
 					name = rtnl_link_get_name ((struct rtnl_link *) object);
 					debug ("get_kernel_object for link: %s (%d, family %d)",
@@ -829,20 +870,10 @@ check_support_kernel_extended_ifa_flags (NMPlatform *platform)
 static gboolean
 check_support_user_ipv6ll (NMPlatform *platform)
 {
-	NMLinuxPlatformPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_LINUX_PLATFORM (platform), FALSE);
 
-	priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-
-	if (priv->support_user_ipv6ll == 0) {
-		nm_log_warn (LOGD_PLATFORM, "Unable to detect kernel support for IFLA_INET6_ADDR_GEN_MODE. Assume no kernel support.");
-		priv->support_user_ipv6ll = -1;
-	}
-
-	return priv->support_user_ipv6ll > 0;
+	return _support_user_ipv6ll_get ();
 }
-
 
 /* Object type specific utilities */
 
@@ -1581,18 +1612,6 @@ announce_object (NMPlatform *platform, const struct nl_object *object, NMPlatfor
 			struct rtnl_link *rtnl_link = (struct rtnl_link *) object;
 			NMPlatformLink device;
 
-#if HAVE_LIBNL_INET6_ADDR_GEN_MODE
-			/* If we ever see a link with valid IPv6 link-local address
-			 * generation modes, the kernel supports it.
-			 */
-			if (priv->support_user_ipv6ll == 0) {
-				uint8_t mode;
-
-				if (rtnl_link_inet6_get_addr_gen_mode (rtnl_link, &mode) == 0)
-					priv->support_user_ipv6ll = 1;
-			}
-#endif
-
 			if (!init_link (platform, &device, rtnl_link))
 				return;
 
@@ -2000,6 +2019,9 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 		return NL_OK;
 
 	type = _nlo_get_object_type (object);
+
+	if (type == OBJECT_TYPE_LINK)
+		_support_user_ipv6ll_detect ((struct rtnl_link *) object);
 
 	if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
 		if (type == OBJECT_TYPE_LINK) {
@@ -2582,9 +2604,7 @@ static gboolean
 link_get_user_ipv6ll_enabled (NMPlatform *platform, int ifindex)
 {
 #if HAVE_LIBNL_INET6_ADDR_GEN_MODE
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-
-	if (priv->support_user_ipv6ll > 0) {
+	if (_support_user_ipv6ll_get ()) {
 		auto_nl_object struct rtnl_link *rtnllink = link_get (platform, ifindex);
 		uint8_t mode = 0;
 
@@ -2604,7 +2624,7 @@ static gboolean
 link_set_user_ipv6ll_enabled (NMPlatform *platform, int ifindex, gboolean enabled)
 {
 #if HAVE_LIBNL_INET6_ADDR_GEN_MODE
-	if (check_support_user_ipv6ll (platform)) {
+	if (_support_user_ipv6ll_get ()) {
 		auto_nl_object struct rtnl_link *change = _nm_rtnl_link_alloc (ifindex, NULL);
 		guint8 mode = enabled ? IN6_ADDR_GEN_MODE_NONE : IN6_ADDR_GEN_MODE_EUI64;
 		char buf[32];
@@ -4519,9 +4539,6 @@ constructed (GObject *_object)
 	int channel_flags;
 	gboolean status;
 	int nle;
-#if HAVE_LIBNL_INET6_ADDR_GEN_MODE
-	struct nl_object *object;
-#endif
 
 	/* Initialize netlink socket for requests */
 	priv->nlh = setup_socket (FALSE, platform);
@@ -4560,21 +4577,17 @@ constructed (GObject *_object)
 	cache_repopulate_all (platform);
 
 #if HAVE_LIBNL_INET6_ADDR_GEN_MODE
-	/* Initial check for user IPv6LL support once the link cache is allocated
-	 * and filled.  If there are no links in the cache yet then we'll check
-	 * when a new link shows up in announce_object().
-	 */
-	object = nl_cache_get_first (priv->link_cache);
-	if (object) {
-		uint8_t mode;
+	if (G_UNLIKELY (_support_user_ipv6ll == 0)) {
+		struct nl_object *object;
 
-		if (rtnl_link_inet6_get_addr_gen_mode ((struct rtnl_link *) object, &mode) == 0)
-			priv->support_user_ipv6ll = 1;
-		else
-			priv->support_user_ipv6ll = -1;
+		/* Initial check for user IPv6LL support once the link cache is allocated
+		 * and filled.  If there are no links in the cache yet then we'll check
+		 * when a new link shows up in announce_object().
+		 */
+		object = nl_cache_get_first (priv->link_cache);
+		if (object)
+			_support_user_ipv6ll_detect ((struct rtnl_link *) object);
 	}
-#else
-	priv->support_user_ipv6ll = -1;
 #endif
 
 	/* Set up udev monitoring */
