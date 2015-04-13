@@ -53,10 +53,14 @@ typedef struct {
 	gpointer padding[4];
 } NMSettingWimaxClass;
 
+NM_DEPRECATED_IN_1_2
 GType nm_setting_wimax_get_type (void);
 
+NM_DEPRECATED_IN_1_2
 NMSetting        *nm_setting_wimax_new              (void);
+NM_DEPRECATED_IN_1_2
 const char       *nm_setting_wimax_get_network_name (NMSettingWimax *setting);
+NM_DEPRECATED_IN_1_2
 const char       *nm_setting_wimax_get_mac_address  (NMSettingWimax *setting);
 
 G_END_DECLS

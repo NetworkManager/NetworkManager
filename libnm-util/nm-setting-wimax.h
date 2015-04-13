@@ -49,6 +49,7 @@ typedef enum {
 } NMSettingWimaxError;
 
 #define NM_SETTING_WIMAX_ERROR nm_setting_wimax_error_quark ()
+NM_DEPRECATED_IN_1_2
 GQuark nm_setting_wimax_error_quark (void);
 
 #define NM_SETTING_WIMAX_NETWORK_NAME "network-name"
@@ -62,10 +63,14 @@ typedef struct {
 	NMSettingClass parent;
 } NMSettingWimaxClass;
 
+NM_DEPRECATED_IN_1_2
 GType nm_setting_wimax_get_type (void);
 
+NM_DEPRECATED_IN_1_2
 NMSetting        *nm_setting_wimax_new              (void);
+NM_DEPRECATED_IN_1_2
 const char       *nm_setting_wimax_get_network_name (NMSettingWimax *setting);
+NM_DEPRECATED_IN_1_2
 const GByteArray *nm_setting_wimax_get_mac_address  (NMSettingWimax *setting);
 
 G_END_DECLS

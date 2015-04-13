@@ -472,31 +472,6 @@ AC_SUBST(UUID_LIBS)
 dnl Checks for readline library - used by nmcli
 AX_LIB_READLINE
 
-# Intel WiMAX SDK checks
-PKG_CHECK_MODULES(IWMX_SDK, [libiWmxSdk-0 >= 1.5.1], [have_wimax=yes],[have_wimax=no])
-AC_ARG_ENABLE(wimax, AS_HELP_STRING([--enable-wimax], [enable WiMAX support]),
-                     [enable_wimax=${enableval}], [enable_wimax=${have_wimax}])
-if (test "${enable_wimax}" = "yes"); then
-	if test x"$have_wimax" = x"no"; then
-		AC_MSG_ERROR(Intel WiMAX SDK is required)
-	fi
-
-	# Ensure the WiMAX stack is built with libnl3; otherwise crashes happen
-	# due to symbol conflicts
-	WMX_LIB_PATH=`$PKG_CONFIG --variable=libdir libiWmxSdk-0`
-	FOO=`ldd $WMX_LIB_PATH/libiWmxSdk.so.0.0.0 | grep libnl-3 2>&1`
-	if test "$?" != "0"; then
-		AC_MSG_ERROR([Intel WiMAX stack built with incompatible libnl version!])
-	fi
-
-	AC_SUBST(IWMX_SDK_CFLAGS)
-	AC_SUBST(IWMX_SDK_LIBS)
-	AC_DEFINE(WITH_WIMAX, 1, [Define if you have WiMAX support])
-else
-	AC_DEFINE(WITH_WIMAX, 0, [Define if you have WiMAX support])
-fi
-AM_CONDITIONAL(WITH_WIMAX, test "${enable_wimax}" = "yes")
-
 # Teamd control checks
 PKG_CHECK_MODULES(LIBTEAMDCTL, [libteamdctl >= 1.9], [have_teamdctl=yes],[have_teamdctl=no])
 AC_ARG_ENABLE(teamdctl, AS_HELP_STRING([--enable-teamdctl], [enable Teamd control support]),
@@ -995,7 +970,6 @@ src/platform/tests/Makefile
 src/rdisc/Makefile
 src/rdisc/tests/Makefile
 src/devices/adsl/Makefile
-src/devices/wimax/Makefile
 src/devices/bluetooth/Makefile
 src/devices/team/Makefile
 src/devices/wifi/Makefile
@@ -1100,7 +1074,6 @@ echo
 echo "Features:"
 echo "  wext: $ac_with_wext"
 echo "  wifi: $enable_wifi"
-echo "  wimax: $enable_wimax"
 echo "  ppp: $enable_ppp"
 echo "  modemmanager-1: $with_modem_manager_1"
 echo "  concheck: $enable_concheck"

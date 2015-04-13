@@ -17,10 +17,6 @@ if WITH_WIFI
 SUBDIRS += devices/wifi
 endif
 
-if WITH_WIMAX
-SUBDIRS += devices/wimax
-endif
-
 if WITH_TEAMDCTL
 SUBDIRS += devices/team
 endif
@@ -359,11 +355,6 @@ GLIB_GENERATED = nm-enum-types.h nm-enum-types.c
 GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM --fhead '\#include <nm-core-enum-types.h>\n'
 GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
 nm_enum_types_sources = $(nm_sources)
-
-if WITH_WIMAX
-nm_enum_types_sources += devices/wimax/nm-device-wimax.h
-AM_CPPFLAGS += -I$(top_srcdir)/src/devices/wimax
-endif
 
 BUILT_SOURCES = $(GLIB_GENERATED)
 

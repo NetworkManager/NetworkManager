@@ -46,15 +46,9 @@ static NmcOutputField nmc_fields_nm_status[] = {
 	{"WIMAX",        N_("WIMAX"),        10},  /* 11 */
 	{NULL,           NULL,                0}
 };
-#if WITH_WIMAX
-#define NMC_FIELDS_NM_STATUS_ALL     "RUNNING,VERSION,STATE,STARTUP,CONNECTIVITY,NETWORKING,WIFI-HW,WIFI,WWAN-HW,WWAN,WIMAX-HW,WIMAX"
-#define NMC_FIELDS_NM_STATUS_SWITCH  "NETWORKING,WIFI-HW,WIFI,WWAN-HW,WWAN,WIMAX-HW,WIMAX"
-#define NMC_FIELDS_NM_STATUS_RADIO   "WIFI-HW,WIFI,WWAN-HW,WWAN,WIMAX-HW,WIMAX"
-#else
 #define NMC_FIELDS_NM_STATUS_ALL     "RUNNING,VERSION,STATE,STARTUP,CONNECTIVITY,NETWORKING,WIFI-HW,WIFI,WWAN-HW,WWAN"
 #define NMC_FIELDS_NM_STATUS_SWITCH  "NETWORKING,WIFI-HW,WIFI,WWAN-HW,WWAN"
 #define NMC_FIELDS_NM_STATUS_RADIO   "WIFI-HW,WIFI,WWAN-HW,WWAN"
-#endif
 #define NMC_FIELDS_NM_STATUS_COMMON  "STATE,CONNECTIVITY,WIFI-HW,WIFI,WWAN-HW,WWAN"
 #define NMC_FIELDS_NM_NETWORKING     "NETWORKING"
 #define NMC_FIELDS_NM_WIFI           "WIFI"
@@ -181,13 +175,8 @@ static void
 usage_radio (void)
 {
 	g_printerr (_("Usage: nmcli radio { COMMAND | help }\n\n"
-#if WITH_WIMAX
-	              "COMMAND := { all | wifi | wwan | wimax }\n\n"
-	              "  all | wifi | wwan | wimax [ on | off ]\n\n"
-#else
 	              "COMMAND := { all | wifi | wwan }\n\n"
 	              "  all | wifi | wwan [ on | off ]\n\n"
-#endif
 	              ));
 }
 
@@ -220,18 +209,6 @@ usage_radio_wwan (void)
 	              "\n"
 	              "Get status of mobile broadband radio switch, or turn it on/off.\n\n"));
 }
-
-#if WITH_WIMAX
-static void
-usage_radio_wimax (void)
-{
-	g_printerr (_("Usage: nmcli radio wimax { ARGUMENTS | help }\n"
-	              "\n"
-	              "ARGUMENTS := [on | off]\n"
-	              "\n"
-	              "Get status of WiMAX radio switch, or turn it on/off.\n\n"));
-}
-#endif
 
 /* quit main loop */
 static void
@@ -327,9 +304,6 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 	gboolean net_enabled;
 	gboolean wireless_hw_enabled, wireless_enabled;
 	gboolean wwan_hw_enabled, wwan_enabled;
-#if WITH_WIMAX
-	gboolean wimax_hw_enabled, wimax_enabled;
-#endif
 	GError *error = NULL;
 	const char *fields_str;
 	const char *fields_all =    print_flds ? print_flds : NMC_FIELDS_NM_STATUS_ALL;
@@ -374,10 +348,6 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 	wireless_enabled = nm_client_wireless_get_enabled (nmc->client);
 	wwan_hw_enabled = nm_client_wwan_hardware_get_enabled (nmc->client);
 	wwan_enabled = nm_client_wwan_get_enabled (nmc->client);
-#if WITH_WIMAX
-	wimax_hw_enabled = nm_client_wimax_hardware_get_enabled (nmc->client);
-	wimax_enabled = nm_client_wimax_get_enabled (nmc->client);
-#endif
 
 	nmc->print_fields.header_name = pretty_header_name ? (char *) pretty_header_name : _("NetworkManager status");
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
@@ -394,10 +364,6 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 	set_val_strc (arr, 7, wireless_enabled ? _("enabled") : _("disabled"));
 	set_val_strc (arr, 8, wwan_hw_enabled ? _("enabled") : _("disabled"));
 	set_val_strc (arr, 9, wwan_enabled ? _("enabled") : _("disabled"));
-#if WITH_WIMAX
-	set_val_strc (arr, 10, wimax_hw_enabled ? _("enabled") : _("disabled"));
-	set_val_strc (arr, 11, wimax_enabled ? _("enabled") : _("disabled"));
-#endif
 
 	/* Set colors */
 	arr[2].color = state_to_color (state);
@@ -408,10 +374,6 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 	arr[7].color = wireless_enabled ? NMC_TERM_COLOR_GREEN : NMC_TERM_COLOR_RED;
 	arr[8].color = wwan_hw_enabled ? NMC_TERM_COLOR_GREEN : NMC_TERM_COLOR_RED;
 	arr[9].color = wwan_enabled ? NMC_TERM_COLOR_GREEN : NMC_TERM_COLOR_RED;
-#if WITH_WIMAX
-	arr[10].color = wimax_hw_enabled ? NMC_TERM_COLOR_GREEN : NMC_TERM_COLOR_RED;
-	arr[11].color = wimax_enabled ? NMC_TERM_COLOR_GREEN : NMC_TERM_COLOR_RED;
-#endif
 
 	g_ptr_array_add (nmc->output_data, arr);
 
@@ -918,24 +880,6 @@ do_radio (NmCli *nmc, int argc, char **argv)
 				nm_client_wwan_set_enabled (nmc->client, enable_flag);
 			}
 		}
-#if WITH_WIMAX
-		else if (matches (*argv, "wimax") == 0) {
-			if (nmc_arg_is_help (*(argv+1))) {
-				usage_radio_wimax ();
-				goto finish;
-			}
-			if (next_arg (&argc, &argv) != 0) {
-				/* no argument, show current WiMAX state */
-				nmc_switch_show (nmc, NMC_FIELDS_NM_WIMAX, _("WiMAX radio switch"));
-			} else {
-				if (!nmc_switch_parse_on_off (nmc, *(argv-1), *argv, &enable_flag))
-					goto finish;
-
-				nmc->get_client (nmc); /* create NMClient */
-				nm_client_wimax_set_enabled (nmc->client, enable_flag);
-			}
-		}
-#endif
 		else {
 			usage_radio ();
 			g_string_printf (nmc->return_text, _("Error: 'radio' command '%s' is not valid."), *argv);

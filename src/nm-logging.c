@@ -89,7 +89,6 @@ static const LogDesc domain_descs[] = {
 	{ LOGD_CORE,      "CORE" },
 	{ LOGD_DEVICE,    "DEVICE" },
 	{ LOGD_OLPC,      "OLPC" },
-	{ LOGD_WIMAX,     "WIMAX" },
 	{ LOGD_INFINIBAND,"INFINIBAND" },
 	{ LOGD_FIREWALL,  "FIREWALL" },
 	{ LOGD_ADSL,      "ADSL" },
@@ -206,6 +205,8 @@ nm_logging_setup (const char  *level,
 		/* Check for compatibility domains */
 		else if (!g_ascii_strcasecmp (*iter, "HW"))
 			bits = LOGD_PLATFORM;
+		else if (!g_ascii_strcasecmp (*iter, "WIMAX"))
+			continue;
 
 		else {
 			for (diter = &domain_descs[0]; diter->name; diter++) {

@@ -51,6 +51,7 @@ typedef enum {
 } NMDeviceWimaxError;
 
 #define NM_DEVICE_WIMAX_ERROR nm_device_wimax_error_quark ()
+NM_DEPRECATED_IN_1_2
 GQuark nm_device_wimax_error_quark (void);
 
 #define NM_DEVICE_WIMAX_HW_ADDRESS       "hw-address"
@@ -74,22 +75,33 @@ typedef struct {
 	void (*nsp_removed) (NMDeviceWimax *self, NMWimaxNsp *nsp);
 } NMDeviceWimaxClass;
 
+NM_DEPRECATED_IN_1_2
 GType nm_device_wimax_get_type (void);
 
+NM_DEPRECATED_IN_1_2
 GObject         *nm_device_wimax_new             (DBusGConnection *connection,
                                                   const char *path);
 
+NM_DEPRECATED_IN_1_2
 const char      *nm_device_wimax_get_hw_address  (NMDeviceWimax *wimax);
+NM_DEPRECATED_IN_1_2
 NMWimaxNsp      *nm_device_wimax_get_active_nsp  (NMDeviceWimax *wimax);
+NM_DEPRECATED_IN_1_2
 NMWimaxNsp      *nm_device_wimax_get_nsp_by_path (NMDeviceWimax *wimax,
                                                   const char *path);
 
+NM_DEPRECATED_IN_1_2
 const GPtrArray *nm_device_wimax_get_nsps        (NMDeviceWimax *wimax);
 
+NM_DEPRECATED_IN_1_2
 guint            nm_device_wimax_get_center_frequency (NMDeviceWimax *self);
+NM_DEPRECATED_IN_1_2
 gint             nm_device_wimax_get_rssi        (NMDeviceWimax *self);
+NM_DEPRECATED_IN_1_2
 gint             nm_device_wimax_get_cinr        (NMDeviceWimax *self);
+NM_DEPRECATED_IN_1_2
 gint             nm_device_wimax_get_tx_power    (NMDeviceWimax *self);
+NM_DEPRECATED_IN_1_2
 const char *     nm_device_wimax_get_bsid        (NMDeviceWimax *self);
 
 G_END_DECLS

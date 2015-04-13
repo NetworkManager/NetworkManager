@@ -347,9 +347,9 @@ connection process.
 the best route to go for desktop use-cases as well.  Instead of bringing all
 available connections up, only bring up the "best" connection at any given
 time based on the current priority list (which is rougly Ethernet > WiFi >
-3G/Bluetooth/WiMAX).  However, to ensure seamless connectivity, when one
-connection begins to degrade, the next-best connection should be started before
-the current one is terminated, such that there is a small amount of overlap.
+3G/Bluetooth).  However, to ensure seamless connectivity, when one connection
+begins to degrade, the next-best connection should be started before the
+current one is terminated, such that there is a small amount of overlap.
 Consequently the same behavior should be used when a better connection becomes
 available.  This behavior should be suspended when special connections like
 Internet Connection Sharing ones are started, where clearly the priorities

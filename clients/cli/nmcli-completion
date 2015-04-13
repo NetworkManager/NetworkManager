@@ -796,10 +796,10 @@ _nmcli()
             ;;
         r|ra|rad|radi|radio)
             if [[ ${#words[@]} -eq 2 ]]; then
-                _nmcli_compl_COMMAND "$command" all wifi wwan wimax
+                _nmcli_compl_COMMAND "$command" all wifi wwan
             elif [[ ${#words[@]} -eq 3 ]]; then
                 case "$command" in
-                    a|al|all | w|wi|wif|wifi | ww|wwa|wwan | wim|wima|wimax)
+                    a|al|all | w|wi|wif|wifi | ww|wwa|wwan)
                         _nmcli_compl_COMMAND "${words[2]}" "on off"
                         ;;
                 esac
@@ -1243,7 +1243,7 @@ _nmcli()
             ;;
         d|de|dev|devi|devic|device)
             if [[ ${#words[@]} -eq 2 ]]; then
-                _nmcli_compl_COMMAND "$command" status show connect disconnect delete wifi wimax
+                _nmcli_compl_COMMAND "$command" status show connect disconnect delete wifi
             elif [[ ${#words[@]} -gt 2 ]]; then
                 case "$command" in
                     s|st|sta|stat|statu|status)
@@ -1289,19 +1289,6 @@ _nmcli()
                                 r|re|res|resc|resca|rescan)
                                     _nmcli_array_delete_at words 0 2
                                     OPTIONS=(ifname)
-                                    _nmcli_compl_ARGS
-                                    ;;
-                            esac
-                        fi
-                        ;;
-                    wim|wima|wimax)
-                        if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_compl_COMMAND "${words[2]}" list
-                        else
-                            case "${words[2]}" in
-                                l|li|lis|list)
-                                    _nmcli_array_delete_at words 0 2
-                                    OPTIONS=(ifname nsp)
                                     _nmcli_compl_ARGS
                                     ;;
                             esac

@@ -57,18 +57,17 @@ typedef enum  { /*< skip >*/
 	LOGD_CORE       = (1LL << 20), /* Core daemon and policy stuff */
 	LOGD_DEVICE     = (1LL << 21), /* Device state and activation */
 	LOGD_OLPC       = (1LL << 22),
-	LOGD_WIMAX      = (1LL << 23),
-	LOGD_INFINIBAND = (1LL << 24),
-	LOGD_FIREWALL   = (1LL << 25),
-	LOGD_ADSL       = (1LL << 26),
-	LOGD_BOND       = (1LL << 27),
-	LOGD_VLAN       = (1LL << 28),
-	LOGD_BRIDGE     = (1LL << 29),
-	LOGD_DBUS_PROPS = (1LL << 30),
-	LOGD_TEAM       = (1LL << 31),
-	LOGD_CONCHECK   = (1LL << 32),
-	LOGD_DCB        = (1LL << 33), /* Data Center Bridging */
-	LOGD_DISPATCH   = (1LL << 34),
+	LOGD_INFINIBAND = (1LL << 23),
+	LOGD_FIREWALL   = (1LL << 24),
+	LOGD_ADSL       = (1LL << 25),
+	LOGD_BOND       = (1LL << 26),
+	LOGD_VLAN       = (1LL << 27),
+	LOGD_BRIDGE     = (1LL << 28),
+	LOGD_DBUS_PROPS = (1LL << 29),
+	LOGD_TEAM       = (1LL << 30),
+	LOGD_CONCHECK   = (1LL << 31),
+	LOGD_DCB        = (1LL << 32), /* Data Center Bridging */
+	LOGD_DISPATCH   = (1LL << 33),
 
 	__LOGD_MAX,
 	LOGD_ALL       = ((__LOGD_MAX - 1LL) << 1) - 1LL,

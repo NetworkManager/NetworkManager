@@ -532,15 +532,15 @@
         <text
            xml:space="preserve"
            style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans;-inkscape-font-specification:Bitstream Vera Sans"
-           x="338.79584"
+           x="330"
            y="680.04895"
            id="text3755-3-5-1-7"
            sodipodi:linespacing="125%"><tspan
              sodipodi:role="line"
              id="tspan3757-8-00-3-1"
-             x="338.79584"
+             x="330"
              y="680.04895"
-             style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;font-family:Bitstream Vera Sans;-inkscape-font-specification:Bitstream Vera Sans">NMDeviceWimax</tspan></text>
+             style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;font-family:Bitstream Vera Sans;-inkscape-font-specification:Bitstream Vera Sans">NMDeviceInfiniband</tspan></text>
       </g>
       <g
          transform="translate(278.7818,-37.820326)"

@@ -38,6 +38,10 @@
  *
  * The #NMSettingWimax object is a #NMSetting subclass that describes properties
  * necessary for connection to 802.16e Mobile WiMAX networks.
+ *
+ * NetworkManager no longer supports WiMAX; while this API remains available for
+ * backward-compatibility reasons, it serves no real purpose, since WiMAX
+ * connections cannot be activated.
  **/
 
 /**
@@ -46,6 +50,8 @@
  * Registers an error quark for #NMSettingWimax if necessary.
  *
  * Returns: the error quark used for #NMSettingWimax errors.
+ *
+ * Deprecated: 1.2: WiMAX is no longer supported.
  **/
 GQuark
 nm_setting_wimax_error_quark (void)
@@ -86,6 +92,8 @@ enum {
  * Creates a new #NMSettingWimax object with default values.
  *
  * Returns: the new empty #NMSettingWimax object
+ *
+ * Deprecated: 1.2: WiMAX is no longer supported.
  **/
 NMSetting *
 nm_setting_wimax_new (void)
@@ -101,6 +109,8 @@ nm_setting_wimax_new (void)
  * specific WiMAX network this setting describes a connection to.
  *
  * Returns: the WiMAX NSP name
+ *
+ * Deprecated: 1.2: WiMAX is no longer supported.
  **/
 const char *
 nm_setting_wimax_get_network_name (NMSettingWimax *setting)
@@ -118,6 +128,8 @@ nm_setting_wimax_get_network_name (NMSettingWimax *setting)
  * to.
  *
  * Returns: the MAC address
+ *
+ * Deprecated: 1.2: WiMAX is no longer supported.
  **/
 const GByteArray *
 nm_setting_wimax_get_mac_address (NMSettingWimax *setting)
@@ -240,6 +252,8 @@ nm_setting_wimax_class_init (NMSettingWimaxClass *setting_class)
 	 *
 	 * Network Service Provider (NSP) name of the WiMAX network this connection
 	 * should use.
+	 *
+	 * Deprecated: 1.2: WiMAX is no longer supported.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_NETWORK_NAME,
@@ -254,6 +268,8 @@ nm_setting_wimax_class_init (NMSettingWimaxClass *setting_class)
 	 * If specified, this connection will only apply to the WiMAX device whose
 	 * MAC address matches. This property does not change the MAC address of the
 	 * device (known as MAC spoofing).
+	 *
+	 * Deprecated: 1.2: WiMAX is no longer supported.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,

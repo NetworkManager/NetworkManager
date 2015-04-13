@@ -183,8 +183,8 @@ file in most distributions. For example, systemd-hostnamed service uses the term
 .B permissions
 .br
 Show the permissions a caller has for various authenticated operations that
-NetworkManager provides, like enable and disable networking, changing Wi\(hyFi,
-WWAN, and WiMAX state, modifying connections, etc.
+NetworkManager provides, like enable and disable networking, changing Wi\(hyFi
+and WWAN state, modifying connections, etc.
 .TP
 .B logging [level <log level>] [domains <log domains>]
 .br
@@ -239,7 +239,7 @@ Possible states are:
 Use this object to show radio switches status, or enable and disable
 the switches.
 .TP
-.SS \fICOMMAND\fP := { all | wifi | wwan | wimax }
+.SS \fICOMMAND\fP := { all | wifi | wwan }
 .sp
 .RS
 .TP
@@ -253,13 +253,6 @@ Wi\(hyFi status is printed; \fIon\fP enables Wi\(hyFi; \fIoff\fP disables Wi\(hy
 Show or set status of WWAN (mobile broadband) in NetworkManager. If no arguments
 are supplied, mobile broadband status is printed; \fIon\fP enables mobile broadband,
 \fIoff\fP disables it.
-.TP
-.B wimax [ on | off ]
-.br
-Show or set status of WiMAX in NetworkManager. If no arguments are supplied,
-WiMAX status is printed; \fIon\fP enables WiMAX; \fIoff\fP disables WiMAX.  Note:
-WiMAX support is a compile\(hytime decision, so it may be unavailable on some
-installations.
 .TP
 .B all [ on | off ]
 .br
@@ -355,10 +348,10 @@ When no command is given to the \fIconnection\fP object, the default action
 is 'nmcli connection show'.
 .RE
 .TP
-.B up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [nsp <name>] [passwd <file with passwords>]
+.B up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [passwd <file with passwords>]
 .RE
 .RS
-.B up ifname <ifname> [ap <BSSID>] [nsp <name>] [passwd <file with passwords>]
+.B up ifname <ifname> [ap <BSSID>] [passwd <file with passwords>]
 .RS
 .br
 Activate a connection.  The connection is identified by its name, UUID or D-Bus
@@ -381,8 +374,6 @@ Available options are:
 \(en interface that will be used for activation
 .IP \fIap\fP 13
 \(en BSSID of the AP which the command should connect to (for Wi\(hyFi connections)
-.IP \fInsp\fP 13
-\(en NSP (Network Service Provider) which the command should connect to (for WiMAX connections)
 .IP \fIpasswd-file\fP 13
 \(en some networks may require credentials during activation. You can give these
 credentials using this option.
@@ -739,7 +730,7 @@ of its latest state.
 .B device - show and manage network interfaces
 .br
 .TP
-.SS \fICOMMAND\fP := { status | show | connect | disconnect | delete | wifi | wimax }
+.SS \fICOMMAND\fP := { status | show | connect | disconnect | delete | wifi }
 .sp
 .RS
 .TP
@@ -820,13 +811,6 @@ Request that \fINetworkManager\fP immediately re-scan for available access point
 NetworkManager scans Wi\(hyFi networks periodically, but in some cases it can be
 useful to start scanning manually (e.g. after resuming the computer).
 This command does not show the APs, use 'nmcli device wifi list' for that.
-.TP
-.B wimax [list [ifname <ifname>] [nsp <name>]]
-.br
-List available WiMAX NSP. The \fIifname\fP and \fInsp\fP options
-can be used to list networks for a particular interface or with a specific
-NSP, respectively.
-.RE
 
 .TP
 .B agent \- run nmcli as a NetworkManager secret agent, or polkit agent

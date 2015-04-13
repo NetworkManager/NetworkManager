@@ -161,12 +161,7 @@ static NmcOutputField nmc_fields_settings_names[] = {
                                          NM_SETTING_TEAM_SETTING_NAME","\
                                          NM_SETTING_TEAM_PORT_SETTING_NAME"," \
                                          NM_SETTING_DCB_SETTING_NAME
-#if WITH_WIMAX
-#define NMC_FIELDS_SETTINGS_NAMES_ALL    NMC_FIELDS_SETTINGS_NAMES_ALL_X","\
-                                         NM_SETTING_WIMAX_SETTING_NAME
-#else
 #define NMC_FIELDS_SETTINGS_NAMES_ALL    NMC_FIELDS_SETTINGS_NAMES_ALL_X
-#endif
 
 /* Active connection data */
 /* Available fields for GENERAL group */
@@ -254,11 +249,7 @@ usage (void)
 	              "COMMAND := { show | up | down | add | modify | edit | delete | reload | load }\n\n"
 	              "  show [--active] [--order <order spec>]\n"
 	              "  show [--active] [--show-secrets] [id | uuid | path | apath] <ID> ...\n\n"
-#if WITH_WIMAX
-	              "  up [[id | uuid | path] <ID>] [ifname <ifname>] [ap <BSSID>] [nsp <name>] [passwd-file <file with passwords>]\n\n"
-#else
 	              "  up [[id | uuid | path] <ID>] [ifname <ifname>] [ap <BSSID>] [passwd-file <file with passwords>]\n\n"
-#endif
 	              "  down [id | uuid | path | apath] <ID> ...\n\n"
 	              "  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n\n"
 	              "  modify [--temporary] [id | uuid | path] <ID> ([+|-]<setting>.<property> <value>)+\n\n"
@@ -1793,26 +1784,6 @@ find_device_for_connection (NmCli *nmc,
 				g_free (bssid_up);
 			}
 
-#if WITH_WIMAX
-			if (   found_device
-			    && nsp
-			    && !strcmp (con_type, NM_SETTING_WIMAX_SETTING_NAME)
-			    && NM_IS_DEVICE_WIMAX (dev)) {
-				const GPtrArray *nsps = nm_device_wimax_get_nsps (NM_DEVICE_WIMAX (dev));
-				found_device = NULL;  /* Mark as not found; set to the device again later, only if NSP matches */
-
-				for (j = 0; j < nsps->len; j++) {
-					NMWimaxNsp *candidate_nsp = g_ptr_array_index (nsps, j);
-					const char *candidate_name = nm_wimax_nsp_get_name (candidate_nsp);
-
-					if (!strcmp (nsp, candidate_name)) {
-						found_device = dev;
-						*spec_object = nm_object_get_path (NM_OBJECT (candidate_nsp));
-						break;
-					}
-				}
-			}
-#endif
 		}
 
 		if (found_device) {
@@ -2337,17 +2308,6 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 
 			ap = *argv;
 		}
-#if WITH_WIMAX
-		else if (strcmp (*argv, "nsp") == 0) {
-			if (next_arg (&argc, &argv) != 0) {
-				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto error;
-			}
-
-			nsp = *argv;
-		}
-#endif
 		else if (strcmp (*argv, "passwd-file") == 0) {
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
