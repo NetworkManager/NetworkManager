@@ -452,12 +452,31 @@ dispatch_resolvconf (char **searches,
 static gboolean
 update_resolv_conf (char **searches,
                     char **nameservers,
-                    GError **error)
+                    GError **error,
+                    gboolean install_etc)
 {
 	FILE *f;
 	struct stat st;
 
 	g_return_val_if_fail (error != NULL, FALSE);
+
+	/* If we are not managing /etc/resolv.conf and it points to
+	 * MY_RESOLV_CONF, don't write the private DNS configuration to
+	 * MY_RESOLV_CONF otherwise we would overwrite the changes done by
+	 * some external application.
+	 */
+	if (!install_etc) {
+		char *path = g_file_read_link (_PATH_RESCONF, NULL);
+		gboolean ours = !g_strcmp0 (path, MY_RESOLV_CONF);
+
+		g_free (path);
+
+		if (ours) {
+			nm_log_dbg (LOGD_DNS, "not updating " MY_RESOLV_CONF
+			            " since it points to " _PATH_RESCONF);
+			return FALSE;
+		}
+	}
 
 	if ((f = fopen (MY_RESOLV_CONF_TMP, "w")) == NULL) {
 		g_set_error (error,
@@ -497,6 +516,9 @@ update_resolv_conf (char **searches,
 		             g_strerror (errno));
 		return FALSE;
 	}
+
+	if (!install_etc)
+		return TRUE;
 
 	/* Don't overwrite a symbolic link unless it points to MY_RESOLV_CONF. */
 	if (lstat (_PATH_RESCONF, &st) != -1) {
@@ -654,18 +676,20 @@ update_dns (NMDnsManager *self,
 	char **nameservers = NULL;
 	char **nis_servers = NULL;
 	int num, i, len;
-	gboolean success = FALSE, caching = FALSE;
+	gboolean success = FALSE, caching = FALSE, update = TRUE;
 
 	g_return_val_if_fail (!error || !*error, FALSE);
 
 	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 
-	if (priv->resolv_conf_mode == NM_DNS_MANAGER_RESOLV_CONF_UNMANAGED)
-		return TRUE;
-
-	priv->dns_touched = TRUE;
-
-	nm_log_dbg (LOGD_DNS, "updating resolv.conf");
+	if (priv->resolv_conf_mode == NM_DNS_MANAGER_RESOLV_CONF_UNMANAGED) {
+		update = FALSE;
+		success = TRUE;
+		nm_log_dbg (LOGD_DNS, "not updating resolv.conf");
+	} else {
+		priv->dns_touched = TRUE;
+		nm_log_dbg (LOGD_DNS, "updating resolv.conf");
+	}
 
 	/* Update hash with config we're applying */
 	compute_hash (self, priv->hash);
@@ -754,7 +778,7 @@ update_dns (NMDnsManager *self,
 	nis_domain = rc.nis_domain;
 
 	/* Let any plugins do their thing first */
-	if (priv->plugin) {
+	if (update && priv->plugin) {
 		NMDnsPlugin *plugin = priv->plugin;
 		const char *plugin_name = nm_dns_plugin_get_name (plugin);
 		GSList *vpn_configs = NULL, *dev_configs = NULL, *other_configs = NULL;
@@ -802,22 +826,28 @@ update_dns (NMDnsManager *self,
 		nameservers[0] = g_strdup ("127.0.0.1");
 	}
 
+	if (update) {
 #ifdef RESOLVCONF_PATH
-	success = dispatch_resolvconf (searches, nameservers, error);
+		success = dispatch_resolvconf (searches, nameservers, error);
 #endif
 
 #ifdef NETCONFIG_PATH
-	if (success == FALSE) {
-		success = dispatch_netconfig (searches, nameservers,
-		                              nis_domain, nis_servers, error);
-	}
+		if (success == FALSE) {
+			success = dispatch_netconfig (searches, nameservers,
+			                              nis_domain, nis_servers, error);
+		}
 #endif
+	}
 
-	if (success == FALSE)
-		success = update_resolv_conf (searches, nameservers, error);
+	if (update && !success) {
+		success = update_resolv_conf (searches, nameservers, error, TRUE);
+	} else {
+		/* Only update private resolv.conf in NMRUNDIR, ignore errors */
+		update_resolv_conf (searches, nameservers, error, FALSE);
+	}
 
 	/* signal that resolv.conf was changed */
-	if (success)
+	if (update && success)
 		g_signal_emit (self, signals[CONFIG_CHANGED], 0);
 
 	if (searches)
