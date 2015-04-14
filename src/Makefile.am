@@ -227,6 +227,8 @@ nm_sources = \
 	platform/nm-platform.h \
 	platform/nm-platform-utils.c \
 	platform/nm-platform-utils.h \
+	platform/nmp-object.c \
+	platform/nmp-object.h \
 	platform/wifi/wifi-utils-nl80211.c \
 	platform/wifi/wifi-utils-nl80211.h \
 	platform/wifi/wifi-utils-private.h \
@@ -475,6 +477,8 @@ libnm_iface_helper_la_SOURCES = \
 	platform/nm-platform.h \
 	platform/nm-platform-utils.c \
 	platform/nm-platform-utils.h \
+	platform/nmp-object.c \
+	platform/nmp-object.h \
 	platform/wifi/wifi-utils-nl80211.c \
 	platform/wifi/wifi-utils-nl80211.h \
 	platform/wifi/wifi-utils-private.h \
