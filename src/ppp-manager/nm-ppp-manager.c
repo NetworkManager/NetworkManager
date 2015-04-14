@@ -191,68 +191,6 @@ get_property (GObject *object, guint prop_id,
 	}
 }
 
-static void
-nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
-{
-	GObjectClass *object_class = G_OBJECT_CLASS (manager_class);
-
-	g_type_class_add_private (manager_class, sizeof (NMPPPManagerPrivate));
-
-	object_class->constructed = constructed;
-	object_class->dispose = dispose;
-	object_class->finalize = finalize;
-	object_class->get_property = get_property;
-	object_class->set_property = set_property;
-
-	/* Properties */
-	g_object_class_install_property
-		(object_class, PROP_PARENT_IFACE,
-		 g_param_spec_string (NM_PPP_MANAGER_PARENT_IFACE, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
-
-	/* signals */
-	signals[STATE_CHANGED] =
-		g_signal_new ("state-changed",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMPPPManagerClass, state_changed),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 1,
-		              G_TYPE_UINT);
-
-	signals[IP4_CONFIG] =
-		g_signal_new ("ip4-config",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMPPPManagerClass, ip4_config),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 2,
-		              G_TYPE_STRING,
-		              G_TYPE_OBJECT);
-
-	signals[IP6_CONFIG] =
-		g_signal_new ("ip6-config",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMPPPManagerClass, ip6_config),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 3, G_TYPE_STRING, G_TYPE_POINTER, G_TYPE_OBJECT);
-
-	signals[STATS] =
-		g_signal_new ("stats",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMPPPManagerClass, stats),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 2,
-		              G_TYPE_UINT, G_TYPE_UINT);
-
-	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (manager_class),
-	                                 &dbus_glib_nm_ppp_manager_object_info);
-}
-
 NMPPPManager *
 nm_ppp_manager_new (const char *iface)
 {
@@ -674,6 +612,68 @@ impl_ppp_manager_set_ip6_config (NMPPPManager *manager,
 
 	g_object_unref (config);
 	return TRUE;
+}
+
+static void
+nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (manager_class);
+
+	g_type_class_add_private (manager_class, sizeof (NMPPPManagerPrivate));
+
+	object_class->constructed = constructed;
+	object_class->dispose = dispose;
+	object_class->finalize = finalize;
+	object_class->get_property = get_property;
+	object_class->set_property = set_property;
+
+	/* Properties */
+	g_object_class_install_property
+		(object_class, PROP_PARENT_IFACE,
+		 g_param_spec_string (NM_PPP_MANAGER_PARENT_IFACE, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
+
+	/* signals */
+	signals[STATE_CHANGED] =
+		g_signal_new ("state-changed",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMPPPManagerClass, state_changed),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 1,
+		              G_TYPE_UINT);
+
+	signals[IP4_CONFIG] =
+		g_signal_new ("ip4-config",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMPPPManagerClass, ip4_config),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 2,
+		              G_TYPE_STRING,
+		              G_TYPE_OBJECT);
+
+	signals[IP6_CONFIG] =
+		g_signal_new ("ip6-config",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMPPPManagerClass, ip6_config),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 3, G_TYPE_STRING, G_TYPE_POINTER, G_TYPE_OBJECT);
+
+	signals[STATS] =
+		g_signal_new ("stats",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMPPPManagerClass, stats),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 2,
+		              G_TYPE_UINT, G_TYPE_UINT);
+
+	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (manager_class),
+	                                 &dbus_glib_nm_ppp_manager_object_info);
 }
 
 /*******************************************/
