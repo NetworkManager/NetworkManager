@@ -71,6 +71,12 @@
 #define warning(...) nm_log_warn (LOGD_PLATFORM, __VA_ARGS__)
 #define error(...) nm_log_err (LOGD_PLATFORM, __VA_ARGS__)
 
+#define return_type(t, name) \
+	G_STMT_START { \
+		if (out_name) \
+			*out_name = name; \
+		return t; \
+	} G_STMT_END
 
 /******************************************************************
  * libnl unility functions and wrappers
@@ -324,6 +330,35 @@ udev_get_driver (GUdevDevice *device, int ifindex)
 	g_clear_object (&grandparent);
 
 	return driver;
+}
+
+static NMLinkType
+udev_detect_link_type_from_device (GUdevDevice *udev_device, const char *ifname, int arptype, const char **out_name)
+{
+	const char *prop, *sysfs_path;
+
+	g_assert (ifname);
+
+	if (!udev_device)
+		return_type (NM_LINK_TYPE_UNKNOWN, "unknown");
+
+	if (   g_udev_device_get_property (udev_device, "ID_NM_OLPC_MESH")
+	    || g_udev_device_get_sysfs_attr (udev_device, "anycast_mask"))
+		return_type (NM_LINK_TYPE_OLPC_MESH, "olpc-mesh");
+
+	prop = g_udev_device_get_property (udev_device, "DEVTYPE");
+	sysfs_path = g_udev_device_get_sysfs_path (udev_device);
+	if (wifi_utils_is_wifi (ifname, sysfs_path, prop))
+		return_type (NM_LINK_TYPE_WIFI, "wifi");
+	else if (g_strcmp0 (prop, "wwan") == 0)
+		return_type (NM_LINK_TYPE_WWAN_ETHERNET, "wwan");
+	else if (g_strcmp0 (prop, "wimax") == 0)
+		return_type (NM_LINK_TYPE_WIMAX, "wimax");
+
+	if (arptype == ARPHRD_ETHER)
+		return_type (NM_LINK_TYPE_ETHERNET, "ethernet");
+
+	return_type (NM_LINK_TYPE_UNKNOWN, "unknown");
 }
 
 /******************************************************************
@@ -787,42 +822,6 @@ type_to_string (NMLinkType type)
 		g_warning ("Wrong type: %d", type);
 		return NULL;
 	}
-}
-
-#define return_type(t, name) \
-	G_STMT_START { \
-		if (out_name) \
-			*out_name = name; \
-		return t; \
-	} G_STMT_END
-
-static NMLinkType
-udev_detect_link_type_from_device (GUdevDevice *udev_device, const char *ifname, int arptype, const char **out_name)
-{
-	const char *prop, *sysfs_path;
-
-	g_assert (ifname);
-
-	if (!udev_device)
-		return_type (NM_LINK_TYPE_UNKNOWN, "unknown");
-
-	if (   g_udev_device_get_property (udev_device, "ID_NM_OLPC_MESH")
-	    || g_udev_device_get_sysfs_attr (udev_device, "anycast_mask"))
-		return_type (NM_LINK_TYPE_OLPC_MESH, "olpc-mesh");
-
-	prop = g_udev_device_get_property (udev_device, "DEVTYPE");
-	sysfs_path = g_udev_device_get_sysfs_path (udev_device);
-	if (wifi_utils_is_wifi (ifname, sysfs_path, prop))
-		return_type (NM_LINK_TYPE_WIFI, "wifi");
-	else if (g_strcmp0 (prop, "wwan") == 0)
-		return_type (NM_LINK_TYPE_WWAN_ETHERNET, "wwan");
-	else if (g_strcmp0 (prop, "wimax") == 0)
-		return_type (NM_LINK_TYPE_WIMAX, "wimax");
-
-	if (arptype == ARPHRD_ETHER)
-		return_type (NM_LINK_TYPE_ETHERNET, "ethernet");
-
-	return_type (NM_LINK_TYPE_UNKNOWN, "unknown");
 }
 
 static const char *
