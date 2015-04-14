@@ -797,15 +797,12 @@ type_to_string (NMLinkType type)
 	} G_STMT_END
 
 static NMLinkType
-link_type_from_udev (NMPlatform *platform, int ifindex, const char *ifname, int arptype, const char **out_name)
+udev_detect_link_type_from_device (GUdevDevice *udev_device, const char *ifname, int arptype, const char **out_name)
 {
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	GUdevDevice *udev_device;
 	const char *prop, *sysfs_path;
 
 	g_assert (ifname);
 
-	udev_device = g_hash_table_lookup (priv->udev_devices, GINT_TO_POINTER (ifindex));
 	if (!udev_device)
 		return_type (NM_LINK_TYPE_UNKNOWN, "unknown");
 
@@ -872,6 +869,7 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink, const char 
 		int arptype = rtnl_link_get_arptype (rtnllink);
 		const char *driver;
 		const char *ifname;
+		GUdevDevice *udev_device = NULL;
 
 		if (arptype == ARPHRD_LOOPBACK)
 			return_type (NM_LINK_TYPE_LOOPBACK, "loopback");
@@ -894,11 +892,14 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink, const char 
 		if (!g_strcmp0 (driver, "openvswitch"))
 			return_type (NM_LINK_TYPE_OPENVSWITCH, "openvswitch");
 
-		return link_type_from_udev (platform,
-		                            rtnl_link_get_ifindex (rtnllink),
-		                            ifname,
-		                            arptype,
-		                            out_name);
+		if (platform) {
+			udev_device = g_hash_table_lookup (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->udev_devices,
+			                                   GINT_TO_POINTER (rtnl_link_get_ifindex (rtnllink)));
+		}
+		return udev_detect_link_type_from_device (udev_device,
+		                                          ifname,
+		                                          arptype,
+		                                          out_name);
 	} else if (!strcmp (type, "dummy"))
 		return_type (NM_LINK_TYPE_DUMMY, "dummy");
 	else if (!strcmp (type, "gre"))
