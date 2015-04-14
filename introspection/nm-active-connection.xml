@@ -2,6 +2,7 @@
 
 <node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
   <interface name="org.freedesktop.NetworkManager.Connection.Active">
+    <annotation name="org.gtk.GDBus.C.Name" value="ActiveConnection"/>
     <tp:docstring>
       Objects that implement the Connection.Active interface represent an attempt
       to connect to a network using the details provided by a Connection object.

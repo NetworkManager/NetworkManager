@@ -2,6 +2,7 @@
 
 <node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
     <interface name="org.freedesktop.NetworkManager.DHCP6Config">
+        <annotation name="org.gtk.GDBus.C.Name" value="Dhcp6Config"/>
         <tp:docstring>
             Options and configuration returned by the IPv6 DHCP server.
         </tp:docstring>

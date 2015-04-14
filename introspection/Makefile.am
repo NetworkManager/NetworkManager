@@ -17,6 +17,8 @@ nodist_libnmdbus_la_SOURCES = \
 	nmdbus-active-connection.h \
 	nmdbus-agent-manager.c \
 	nmdbus-agent-manager.h \
+	nmdbus-device-adsl.c \
+	nmdbus-device-adsl.h \
 	nmdbus-device-bond.c \
 	nmdbus-device-bond.h \
 	nmdbus-device-bridge.c \
@@ -35,6 +37,12 @@ nodist_libnmdbus_la_SOURCES = \
 	nmdbus-device-infiniband.h \
 	nmdbus-device-macvlan.c \
 	nmdbus-device-macvlan.h \
+	nmdbus-device-modem.c \
+	nmdbus-device-modem.h \
+	nmdbus-device-olpc-mesh.c \
+	nmdbus-device-olpc-mesh.h \
+	nmdbus-device-team.c \
+	nmdbus-device-team.h \
 	nmdbus-device-tun.c \
 	nmdbus-device-tun.h \
 	nmdbus-device-veth.c \
