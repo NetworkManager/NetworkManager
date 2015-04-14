@@ -91,8 +91,10 @@ struct _NMPlatformLink {
 	/* NMPlatform initializes this field with a static string. */
 	const char *kind;
 
-	/* Beware: NMPlatform initializes this string with an allocated string.
-	 * Handle it properly (i.e. don't keep a reference to it). */
+	/* Beware: NMPlatform initializes this string with an allocated string
+	 * (NMRefString). Handle it properly (i.e. don't keep a reference to it
+	 * without incrementing the ref-counter).
+	 * This property depends on @initialized. */
 	const char *udi;
 
 	/* NMPlatform initializes this field with a static string. */
