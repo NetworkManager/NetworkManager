@@ -287,6 +287,87 @@ _rtnl_addr_hack_lifetimes_rel_to_abs (struct rtnl_addr *rtnladdr)
 }
 
 /******************************************************************
+ * ethtool
+ ******************************************************************/
+
+static gboolean
+ethtool_get (const char *name, gpointer edata)
+{
+	struct ifreq ifr;
+	int fd;
+
+	memset (&ifr, 0, sizeof (ifr));
+	strncpy (ifr.ifr_name, name, IFNAMSIZ);
+	ifr.ifr_data = edata;
+
+	fd = socket (PF_INET, SOCK_DGRAM, 0);
+	if (fd < 0) {
+		error ("ethtool: Could not open socket.");
+		return FALSE;
+	}
+
+	if (ioctl (fd, SIOCETHTOOL, &ifr) < 0) {
+		debug ("ethtool: Request failed: %s", strerror (errno));
+		close (fd);
+		return FALSE;
+	}
+
+	close (fd);
+	return TRUE;
+}
+
+static int
+ethtool_get_stringset_index (const char *ifname, int stringset_id, const char *string)
+{
+	gs_free struct ethtool_sset_info *info = NULL;
+	gs_free struct ethtool_gstrings *strings = NULL;
+	guint32 len, i;
+
+	info = g_malloc0 (sizeof (*info) + sizeof (guint32));
+	info->cmd = ETHTOOL_GSSET_INFO;
+	info->reserved = 0;
+	info->sset_mask = 1ULL << stringset_id;
+
+	if (!ethtool_get (ifname, info))
+		return -1;
+	if (!info->sset_mask)
+		return -1;
+
+	len = info->data[0];
+
+	strings = g_malloc0 (sizeof (*strings) + len * ETH_GSTRING_LEN);
+	strings->cmd = ETHTOOL_GSTRINGS;
+	strings->string_set = stringset_id;
+	strings->len = len;
+	if (!ethtool_get (ifname, strings))
+		return -1;
+
+	for (i = 0; i < len; i++) {
+		if (!strcmp ((char *) &strings->data[i * ETH_GSTRING_LEN], string))
+			return i;
+	}
+
+	return -1;
+}
+
+static const char *
+ethtool_get_driver (const char *ifname)
+{
+	struct ethtool_drvinfo drvinfo = { 0 };
+
+	g_return_val_if_fail (ifname != NULL, NULL);
+
+	drvinfo.cmd = ETHTOOL_GDRVINFO;
+	if (!ethtool_get (ifname, &drvinfo))
+		return NULL;
+
+	if (!*drvinfo.driver)
+		return NULL;
+
+	return g_intern_string (drvinfo.driver);
+}
+
+/******************************************************************
  * udev
  ******************************************************************/
 
@@ -665,68 +746,6 @@ nm_rtnl_link_parse_info_data (struct nl_sock *sk, int ifindex,
 
 /******************************************************************/
 
-static gboolean
-ethtool_get (const char *name, gpointer edata)
-{
-	struct ifreq ifr;
-	int fd;
-
-	memset (&ifr, 0, sizeof (ifr));
-	strncpy (ifr.ifr_name, name, IFNAMSIZ);
-	ifr.ifr_data = edata;
-
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
-	if (fd < 0) {
-		error ("ethtool: Could not open socket.");
-		return FALSE;
-	}
-
-	if (ioctl (fd, SIOCETHTOOL, &ifr) < 0) {
-		debug ("ethtool: Request failed: %s", strerror (errno));
-		close (fd);
-		return FALSE;
-	}
-
-	close (fd);
-	return TRUE;
-}
-
-static int
-ethtool_get_stringset_index (const char *ifname, int stringset_id, const char *string)
-{
-	gs_free struct ethtool_sset_info *info = NULL;
-	gs_free struct ethtool_gstrings *strings = NULL;
-	guint32 len, i;
-
-	info = g_malloc0 (sizeof (*info) + sizeof (guint32));
-	info->cmd = ETHTOOL_GSSET_INFO;
-	info->reserved = 0;
-	info->sset_mask = 1ULL << stringset_id;
-
-	if (!ethtool_get (ifname, info))
-		return -1;
-	if (!info->sset_mask)
-		return -1;
-
-	len = info->data[0];
-
-	strings = g_malloc0 (sizeof (*strings) + len * ETH_GSTRING_LEN);
-	strings->cmd = ETHTOOL_GSTRINGS;
-	strings->string_set = stringset_id;
-	strings->len = len;
-	if (!ethtool_get (ifname, strings))
-		return -1;
-
-	for (i = 0; i < len; i++) {
-		if (!strcmp ((char *) &strings->data[i * ETH_GSTRING_LEN], string))
-			return i;
-	}
-
-	return -1;
-}
-
-/******************************************************************/
-
 static void
 _check_support_kernel_extended_ifa_flags_init (NMLinuxPlatformPrivate *priv, struct nl_msg *msg)
 {
@@ -822,23 +841,6 @@ type_to_string (NMLinkType type)
 		g_warning ("Wrong type: %d", type);
 		return NULL;
 	}
-}
-
-static const char *
-ethtool_get_driver (const char *ifname)
-{
-	struct ethtool_drvinfo drvinfo = { 0 };
-
-	g_return_val_if_fail (ifname != NULL, NULL);
-
-	drvinfo.cmd = ETHTOOL_GDRVINFO;
-	if (!ethtool_get (ifname, &drvinfo))
-		return NULL;
-
-	if (!*drvinfo.driver)
-		return NULL;
-
-	return g_intern_string (drvinfo.driver);
 }
 
 static gboolean
