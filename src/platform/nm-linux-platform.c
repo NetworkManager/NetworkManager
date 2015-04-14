@@ -60,6 +60,7 @@
 #include "nm-logging.h"
 #include "wifi/wifi-utils.h"
 #include "wifi/wifi-utils-wext.h"
+#include "nmp-object.h"
 
 /* This is only included for the translation of VLAN flags */
 #include "nm-setting-vlan.h"
@@ -403,19 +404,6 @@ _support_kernel_extended_ifa_flags_get (void)
 /******************************************************************
  * NMPlatform types and functions
  ******************************************************************/
-
-typedef enum {
-	OBJECT_TYPE_UNKNOWN,
-	OBJECT_TYPE_LINK,
-	OBJECT_TYPE_IP4_ADDRESS,
-	OBJECT_TYPE_IP6_ADDRESS,
-	OBJECT_TYPE_IP4_ROUTE,
-	OBJECT_TYPE_IP6_ROUTE,
-	__OBJECT_TYPE_LAST,
-	OBJECT_TYPE_MAX = __OBJECT_TYPE_LAST - 1,
-} ObjectType;
-
-/******************************************************************/
 
 typedef struct {
 	struct nl_sock *nlh;
