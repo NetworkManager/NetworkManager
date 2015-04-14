@@ -2156,6 +2156,7 @@ platform_link_added (NMManager *self,
 	NMDevice *device = NULL;
 	GSList *iter;
 	GError *error = NULL;
+	gboolean nm_plugin_missing = FALSE;
 
 	g_return_if_fail (ifindex > 0);
 
@@ -2205,6 +2206,7 @@ platform_link_added (NMManager *self,
 		case NM_LINK_TYPE_WIFI:
 			nm_log_info (LOGD_HW, "(%s): '%s' plugin not available; creating generic device",
 			             plink->name, plink->type_name);
+			nm_plugin_missing = TRUE;
 			/* fall through */
 		default:
 			device = nm_device_generic_new (plink);
@@ -2213,6 +2215,8 @@ platform_link_added (NMManager *self,
 	}
 
 	if (device) {
+		if (nm_plugin_missing)
+			nm_device_set_nm_plugin_missing (device, TRUE);
 		add_device (self, device, plink->type != NM_LINK_TYPE_LOOPBACK);
 		g_object_unref (device);
 	}
