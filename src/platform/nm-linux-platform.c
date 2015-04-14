@@ -1069,15 +1069,18 @@ _timestamp_nl_to_ms (guint32 timestamp_nl, gint64 monotonic_ms)
 }
 
 static guint32
-_rtnl_addr_last_update_time_to_nm (const struct rtnl_addr *rtnladdr)
+_rtnl_addr_last_update_time_to_nm (const struct rtnl_addr *rtnladdr, gint32 *out_now_nm)
 {
 	guint32 last_update_time = rtnl_addr_get_last_update_time ((struct rtnl_addr *) rtnladdr);
 	struct timespec tp;
 	gint64 now_nl, now_nm, result;
 
 	/* timestamp is unset. Default to 1. */
-	if (!last_update_time)
+	if (!last_update_time) {
+		if (out_now_nm)
+			*out_now_nm = 0;
 		return 1;
+	}
 
 	/* do all the calculations in milliseconds scale */
 
@@ -1087,6 +1090,9 @@ _rtnl_addr_last_update_time_to_nm (const struct rtnl_addr *rtnladdr)
 	         (tp.tv_nsec / (NM_UTILS_NS_PER_SECOND/1000));
 
 	result = now_nm - (now_nl - _timestamp_nl_to_ms (last_update_time, now_nl));
+
+	if (out_now_nm)
+		*out_now_nm = now_nm / 1000;
 
 	/* converting the last_update_time into nm_utils_get_monotonic_timestamp_ms() scale is
 	 * a good guess but fails in the following situations:
@@ -1143,7 +1149,7 @@ _init_ip_address_lifetime (NMPlatformIPAddress *address, const struct rtnl_addr 
 	 * timestamp to have any meaning beyond anchoring the relative durations
 	 * @lifetime and @preferred.
 	 */
-	address->timestamp = _rtnl_addr_last_update_time_to_nm (rtnladdr);
+	address->timestamp = _rtnl_addr_last_update_time_to_nm (rtnladdr, NULL);
 
 	/* We would expect @timestamp to be less then @a_valid. Just to be sure,
 	 * fix it up. */
