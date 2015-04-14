@@ -281,6 +281,52 @@ _rtnl_addr_hack_lifetimes_rel_to_abs (struct rtnl_addr *rtnladdr)
 }
 
 /******************************************************************
+ * udev
+ ******************************************************************/
+
+static const char *
+udev_get_driver (GUdevDevice *device, int ifindex)
+{
+	GUdevDevice *parent = NULL, *grandparent = NULL;
+	const char *driver, *subsys;
+
+	driver = g_udev_device_get_driver (device);
+	if (driver)
+		return driver;
+
+	/* Try the parent */
+	parent = g_udev_device_get_parent (device);
+	if (parent) {
+		driver = g_udev_device_get_driver (parent);
+		if (!driver) {
+			/* Try the grandparent if it's an ibmebus device or if the
+			 * subsys is NULL which usually indicates some sort of
+			 * platform device like a 'gadget' net interface.
+			 */
+			subsys = g_udev_device_get_subsystem (parent);
+			if (   (g_strcmp0 (subsys, "ibmebus") == 0)
+			    || (subsys == NULL)) {
+				grandparent = g_udev_device_get_parent (parent);
+				if (grandparent) {
+					driver = g_udev_device_get_driver (grandparent);
+				}
+			}
+		}
+	}
+
+	/* Intern the string so we don't have to worry about memory
+	 * management in NMPlatformLink.
+	 */
+	if (driver)
+		driver = g_intern_string (driver);
+
+	g_clear_object (&parent);
+	g_clear_object (&grandparent);
+
+	return driver;
+}
+
+/******************************************************************
  * NMPlatform types and functions
  ******************************************************************/
 
@@ -898,48 +944,6 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink, const char 
 		return_type (NM_LINK_TYPE_TEAM, "team");
 
 	return_type (NM_LINK_TYPE_UNKNOWN, type);
-}
-
-static const char *
-udev_get_driver (GUdevDevice *device, int ifindex)
-{
-	GUdevDevice *parent = NULL, *grandparent = NULL;
-	const char *driver, *subsys;
-
-	driver = g_udev_device_get_driver (device);
-	if (driver)
-		return driver;
-
-	/* Try the parent */
-	parent = g_udev_device_get_parent (device);
-	if (parent) {
-		driver = g_udev_device_get_driver (parent);
-		if (!driver) {
-			/* Try the grandparent if it's an ibmebus device or if the
-			 * subsys is NULL which usually indicates some sort of
-			 * platform device like a 'gadget' net interface.
-			 */
-			subsys = g_udev_device_get_subsystem (parent);
-			if (   (g_strcmp0 (subsys, "ibmebus") == 0)
-			    || (subsys == NULL)) {
-				grandparent = g_udev_device_get_parent (parent);
-				if (grandparent) {
-					driver = g_udev_device_get_driver (grandparent);
-				}
-			}
-		}
-	}
-
-	/* Intern the string so we don't have to worry about memory
-	 * management in NMPlatformLink.
-	 */
-	if (driver)
-		driver = g_intern_string (driver);
-
-	g_clear_object (&parent);
-	g_clear_object (&grandparent);
-
-	return driver;
 }
 
 static gboolean
