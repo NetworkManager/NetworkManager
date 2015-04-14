@@ -25,5 +25,15 @@
 
 #include "nm-platform.h"
 
+typedef enum { /*< skip >*/
+	OBJECT_TYPE_UNKNOWN,
+	OBJECT_TYPE_LINK,
+	OBJECT_TYPE_IP4_ADDRESS,
+	OBJECT_TYPE_IP6_ADDRESS,
+	OBJECT_TYPE_IP4_ROUTE,
+	OBJECT_TYPE_IP6_ROUTE,
+	__OBJECT_TYPE_LAST,
+	OBJECT_TYPE_MAX = __OBJECT_TYPE_LAST - 1,
+} ObjectType;
 
 #endif /* __NMP_OBJECT_H__ */
