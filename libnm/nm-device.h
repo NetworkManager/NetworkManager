@@ -48,6 +48,7 @@ G_BEGIN_DECLS
 #define NM_DEVICE_MANAGED "managed"
 #define NM_DEVICE_AUTOCONNECT "autoconnect"
 #define NM_DEVICE_FIRMWARE_MISSING "firmware-missing"
+#define NM_DEVICE_NM_PLUGIN_MISSING "nm-plugin-missing"
 #define NM_DEVICE_IP4_CONFIG "ip4-config"
 #define NM_DEVICE_DHCP4_CONFIG "dhcp4-config"
 #define NM_DEVICE_IP6_CONFIG "ip6-config"
@@ -104,6 +105,8 @@ gboolean             nm_device_get_managed          (NMDevice *device);
 gboolean             nm_device_get_autoconnect      (NMDevice *device);
 void                 nm_device_set_autoconnect      (NMDevice *device, gboolean autoconnect);
 gboolean             nm_device_get_firmware_missing (NMDevice *device);
+NM_AVAILABLE_IN_1_2
+gboolean             nm_device_get_nm_plugin_missing (NMDevice *device);
 NMIPConfig *         nm_device_get_ip4_config       (NMDevice *device);
 NMDhcpConfig *       nm_device_get_dhcp4_config     (NMDevice *device);
 NMIPConfig *         nm_device_get_ip6_config       (NMDevice *device);
