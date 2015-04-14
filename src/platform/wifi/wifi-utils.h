@@ -29,7 +29,7 @@
 
 typedef struct WifiData WifiData;
 
-gboolean wifi_utils_is_wifi (const char *iface, const char *sysfs_path, const char *devtype);
+gboolean wifi_utils_is_wifi (const char *iface, const char *sysfs_path);
 
 WifiData *wifi_utils_init (const char *iface, int ifindex, gboolean check_scan);
 
