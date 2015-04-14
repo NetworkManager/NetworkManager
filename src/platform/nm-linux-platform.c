@@ -1996,7 +1996,8 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 	}
 
 	nl_msg_parse (msg, ref_object, &object);
-	g_return_val_if_fail (object, NL_OK);
+	if (!object)
+		return NL_OK;
 
 	type = _nlo_get_object_type (object);
 
