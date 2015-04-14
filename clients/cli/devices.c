@@ -74,15 +74,16 @@ static NmcOutputField nmc_fields_dev_show_general[] = {
 	{"NM-MANAGED",        N_("NM-MANAGED"),        15},  /* 16 */
 	{"AUTOCONNECT",       N_("AUTOCONNECT"),       15},  /* 17 */
 	{"FIRMWARE-MISSING",  N_("FIRMWARE-MISSING"),  18},  /* 18 */
-	{"PHYS-PORT-ID",      N_("PHYS-PORT-ID"),      18},  /* 19 */
-	{"CONNECTION",        N_("CONNECTION"),        20},  /* 20 */
-	{"CON-UUID",          N_("CON-UUID"),          38},  /* 21 */
-	{"CON-PATH",          N_("CON-PATH"),          51},  /* 22 */
+	{"NM-PLUGIN-MISSING", N_("NM-PLUGIN-MISSING"), 18},  /* 19 */
+	{"PHYS-PORT-ID",      N_("PHYS-PORT-ID"),      18},  /* 20 */
+	{"CONNECTION",        N_("CONNECTION"),        20},  /* 21 */
+	{"CON-UUID",          N_("CON-UUID"),          38},  /* 22 */
+	{"CON-PATH",          N_("CON-PATH"),          51},  /* 23 */
 	{NULL, NULL, 0}
 };
 #define NMC_FIELDS_DEV_SHOW_GENERAL_ALL     "NAME,DEVICE,TYPE,NM-TYPE,VENDOR,PRODUCT,DRIVER,DRIVER-VERSION,FIRMWARE-VERSION,HWADDR,MTU,"\
-                                            "STATE,REASON,UDI,IP-IFACE,IS-SOFTWARE,NM-MANAGED,AUTOCONNECT,FIRMWARE-MISSING,PHYS-PORT-ID,"\
-                                            "CONNECTION,CON-UUID,CON-PATH"
+                                            "STATE,REASON,UDI,IP-IFACE,IS-SOFTWARE,NM-MANAGED,AUTOCONNECT,FIRMWARE-MISSING,NM-PLUGIN-MISSING,"\
+                                            "PHYS-PORT-ID,CONNECTION,CON-UUID,CON-PATH"
 #define NMC_FIELDS_DEV_SHOW_GENERAL_COMMON  "NAME,DEVICE,TYPE,VENDOR,PRODUCT,DRIVER,HWADDR,STATE"
 
 /* Available fields for 'device show' - CONNECTIONS part */
@@ -839,10 +840,11 @@ show_device_info (NMDevice *device, NmCli *nmc)
 			set_val_strc (arr, 16, nm_device_get_managed (device) ? _("yes") : _("no"));
 			set_val_strc (arr, 17, nm_device_get_autoconnect (device) ? _("yes") : _("no"));
 			set_val_strc (arr, 18, nm_device_get_firmware_missing (device) ? _("yes") : _("no"));
-			set_val_strc (arr, 19, nm_device_get_physical_port_id (device));
-			set_val_strc (arr, 20, get_active_connection_id (device));
-			set_val_strc (arr, 21, acon ? nm_active_connection_get_uuid (acon) : NULL);
-			set_val_strc (arr, 22, acon ? nm_object_get_path (NM_OBJECT (acon)) : NULL);
+			set_val_strc (arr, 19, nm_device_get_nm_plugin_missing (device) ? _("yes") : _("no"));
+			set_val_strc (arr, 20, nm_device_get_physical_port_id (device));
+			set_val_strc (arr, 21, get_active_connection_id (device));
+			set_val_strc (arr, 22, acon ? nm_active_connection_get_uuid (acon) : NULL);
+			set_val_strc (arr, 23, acon ? nm_object_get_path (NM_OBJECT (acon)) : NULL);
 			g_ptr_array_add (nmc->output_data, arr);
 
 			print_data (nmc);  /* Print all data */
