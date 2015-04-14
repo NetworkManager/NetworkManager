@@ -901,7 +901,7 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink, const char 
 }
 
 static const char *
-udev_get_driver (NMPlatform *platform, GUdevDevice *device, int ifindex)
+udev_get_driver (GUdevDevice *device, int ifindex)
 {
 	GUdevDevice *parent = NULL, *grandparent = NULL;
 	const char *driver, *subsys;
@@ -969,7 +969,7 @@ init_link (NMPlatform *platform, NMPlatformLink *info, struct rtnl_link *rtnllin
 
 	udev_device = g_hash_table_lookup (priv->udev_devices, GINT_TO_POINTER (info->ifindex));
 	if (udev_device) {
-		info->driver = udev_get_driver (platform, udev_device, info->ifindex);
+		info->driver = udev_get_driver (udev_device, info->ifindex);
 		if (!info->driver)
 			info->driver = g_intern_string (rtnl_link_get_type (rtnllink));
 		if (!info->driver)
