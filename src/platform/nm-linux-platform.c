@@ -4666,6 +4666,12 @@ constructed (GObject *_object)
 }
 
 static void
+dispose (GObject *object)
+{
+	G_OBJECT_CLASS (nm_linux_platform_parent_class)->dispose (object);
+}
+
+static void
 nm_linux_platform_finalize (GObject *object)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (object);
@@ -4698,6 +4704,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 
 	/* virtual methods */
 	object_class->constructed = constructed;
+	object_class->dispose = dispose;
 	object_class->finalize = nm_linux_platform_finalize;
 
 	platform_class->sysctl_set = sysctl_set;
