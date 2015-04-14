@@ -120,6 +120,7 @@ enum {
 	PROP_MANAGED,
 	PROP_AUTOCONNECT,
 	PROP_FIRMWARE_MISSING,
+	PROP_NM_PLUGIN_MISSING,
 	PROP_TYPE_DESC,
 	PROP_RFKILL_TYPE,
 	PROP_IFINDEX,
@@ -197,6 +198,7 @@ typedef struct {
 	char *        firmware_version;
 	RfKillType    rfkill_type;
 	gboolean      firmware_missing;
+	gboolean      nm_plugin_missing;
 	GHashTable *  available_connections;
 	char *        hw_addr;
 	guint         hw_addr_len;
@@ -6691,6 +6693,26 @@ nm_device_get_firmware_missing (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->firmware_missing;
 }
 
+void
+nm_device_set_nm_plugin_missing (NMDevice *self, gboolean new_missing)
+{
+	NMDevicePrivate *priv;
+
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	if (priv->nm_plugin_missing != new_missing) {
+		priv->nm_plugin_missing = new_missing;
+		g_object_notify (G_OBJECT (self), NM_DEVICE_NM_PLUGIN_MISSING);
+	}
+}
+
+gboolean
+nm_device_get_nm_plugin_missing (NMDevice *self)
+{
+	return NM_DEVICE_GET_PRIVATE (self)->nm_plugin_missing;
+}
+
 static NMIP4Config *
 find_ip4_lease_config (NMDevice *self,
                        NMConnection *connection,
@@ -8690,6 +8712,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_FIRMWARE_MISSING:
 		priv->firmware_missing = g_value_get_boolean (value);
 		break;
+	case PROP_NM_PLUGIN_MISSING:
+		priv->nm_plugin_missing = g_value_get_boolean (value);
+		break;
 	case PROP_DEVICE_TYPE:
 		g_return_if_fail (priv->type == NM_DEVICE_TYPE_UNKNOWN);
 		priv->type = g_value_get_uint (value);
@@ -8834,6 +8859,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_FIRMWARE_MISSING:
 		g_value_set_boolean (value, priv->firmware_missing);
+		break;
+	case PROP_NM_PLUGIN_MISSING:
+		g_value_set_boolean (value, priv->nm_plugin_missing);
 		break;
 	case PROP_TYPE_DESC:
 		g_value_set_string (value, priv->type_desc);
@@ -9056,6 +9084,13 @@ nm_device_class_init (NMDeviceClass *klass)
 	g_object_class_install_property
 		(object_class, PROP_FIRMWARE_MISSING,
 		 g_param_spec_boolean (NM_DEVICE_FIRMWARE_MISSING, "", "",
+		                       FALSE,
+		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                       G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property
+		(object_class, PROP_NM_PLUGIN_MISSING,
+		 g_param_spec_boolean (NM_DEVICE_NM_PLUGIN_MISSING, "", "",
 		                       FALSE,
 		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
 		                       G_PARAM_STATIC_STRINGS));
