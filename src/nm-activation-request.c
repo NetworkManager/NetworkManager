@@ -461,7 +461,7 @@ get_property (GObject *object, guint prop_id,
 
 	device = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (object));
 	if (!device) {
-		g_value_set_boxed (value, "/");
+		g_value_set_string (value, "/");
 		return;
 	}
 

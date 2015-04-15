@@ -24,13 +24,13 @@
 #include "nm-default.h"
 #include "nm-active-connection.h"
 #include "nm-dbus-interface.h"
-#include "nm-dbus-glib-types.h"
 #include "nm-device.h"
 #include "nm-settings-connection.h"
 #include "nm-auth-utils.h"
 #include "nm-auth-subject.h"
 #include "NetworkManagerUtils.h"
-#include "nm-active-connection-glue.h"
+
+#include "nmdbus-active-connection.h"
 
 /* Base class for anything implementing the Connection.Active D-Bus interface */
 G_DEFINE_ABSTRACT_TYPE (NMActiveConnection, nm_active_connection, NM_TYPE_EXPORTED_OBJECT)
@@ -586,7 +586,7 @@ nm_active_connection_get_assumed (NMActiveConnection *self)
 static void
 auth_done (NMAuthChain *chain,
            GError *error,
-           DBusGMethodInvocation *unused,
+           GDBusMethodInvocation *unused,
            gpointer user_data)
 {
 	NMActiveConnection *self = NM_ACTIVE_CONNECTION (user_data);
@@ -720,10 +720,10 @@ set_property (GObject *object, guint prop_id,
 		nm_active_connection_set_master (NM_ACTIVE_CONNECTION (object), g_value_get_object (value));
 		break;
 	case PROP_SPECIFIC_OBJECT:
-		tmp = g_value_get_boxed (value);
+		tmp = g_value_get_string (value);
 		/* NM uses "/" to mean NULL */
 		if (g_strcmp0 (tmp, "/") != 0)
-			priv->specific_object = g_value_dup_boxed (value);
+			priv->specific_object = g_strdup (tmp);
 		break;
 	case PROP_DEFAULT:
 		priv->is_default = !!g_value_get_boolean (value);
@@ -752,7 +752,7 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_CONNECTION:
-		g_value_set_boxed (value, nm_connection_get_path (priv->connection));
+		g_value_set_string (value, nm_connection_get_path (priv->connection));
 		break;
 	case PROP_ID:
 		g_value_set_string (value, nm_connection_get_id (priv->connection));
@@ -764,13 +764,14 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, nm_connection_get_connection_type (priv->connection));
 		break;
 	case PROP_SPECIFIC_OBJECT:
-		g_value_set_boxed (value, priv->specific_object ? priv->specific_object : "/");
+		g_value_set_string (value, priv->specific_object ? priv->specific_object : "/");
 		break;
 	case PROP_DEVICES:
-		devices = g_ptr_array_sized_new (1);
+		devices = g_ptr_array_sized_new (2);
 		if (priv->device && priv->state < NM_ACTIVE_CONNECTION_STATE_DEACTIVATED)
 			g_ptr_array_add (devices, g_strdup (nm_exported_object_get_path (NM_EXPORTED_OBJECT (priv->device))));
-		g_value_take_boxed (value, devices);
+		g_ptr_array_add (devices, NULL);
+		g_value_take_boxed (value, (char **) g_ptr_array_free (devices, FALSE));
 		break;
 	case PROP_STATE:
 		if (priv->state_set)
@@ -787,19 +788,19 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_IP4_CONFIG:
 		/* The IP and DHCP config properties may be overridden by a subclass */
-		g_value_set_boxed (value, "/");
+		g_value_set_string (value, "/");
 		break;
 	case PROP_DHCP4_CONFIG:
-		g_value_set_boxed (value, "/");
+		g_value_set_string (value, "/");
 		break;
 	case PROP_DEFAULT6:
 		g_value_set_boolean (value, priv->is_default6);
 		break;
 	case PROP_IP6_CONFIG:
-		g_value_set_boxed (value, "/");
+		g_value_set_string (value, "/");
 		break;
 	case PROP_DHCP6_CONFIG:
-		g_value_set_boxed (value, "/");
+		g_value_set_string (value, "/");
 		break;
 	case PROP_VPN:
 		g_value_set_boolean (value, priv->vpn);
@@ -888,10 +889,10 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 	/* D-Bus exported properties */
 	g_object_class_install_property
 		(object_class, PROP_CONNECTION,
-		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_CONNECTION, "", "",
-		                     DBUS_TYPE_G_OBJECT_PATH,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+		 g_param_spec_string (NM_ACTIVE_CONNECTION_CONNECTION, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_ID,
@@ -916,15 +917,15 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 
 	g_object_class_install_property
 		(object_class, PROP_SPECIFIC_OBJECT,
-		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT, "", "",
-		                     DBUS_TYPE_G_OBJECT_PATH,
-		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                     G_PARAM_STATIC_STRINGS));
+		 g_param_spec_string (NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_DEVICES,
 		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_DEVICES, "", "",
-		                     DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
+		                     G_TYPE_STRV,
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
 
@@ -946,17 +947,17 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 
 	g_object_class_install_property
 		(object_class, PROP_IP4_CONFIG,
-		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_IP4_CONFIG, "", "",
-		                     DBUS_TYPE_G_OBJECT_PATH,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+		 g_param_spec_string (NM_ACTIVE_CONNECTION_IP4_CONFIG, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_DHCP4_CONFIG,
-		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_DHCP4_CONFIG, "", "",
-		                     DBUS_TYPE_G_OBJECT_PATH,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+		 g_param_spec_string (NM_ACTIVE_CONNECTION_DHCP4_CONFIG, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_DEFAULT6,
@@ -967,17 +968,17 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 
 	g_object_class_install_property
 		(object_class, PROP_IP6_CONFIG,
-		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_IP6_CONFIG, "", "",
-		                     DBUS_TYPE_G_OBJECT_PATH,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+		 g_param_spec_string (NM_ACTIVE_CONNECTION_IP6_CONFIG, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_DHCP6_CONFIG,
-		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_DHCP6_CONFIG, "", "",
-		                     DBUS_TYPE_G_OBJECT_PATH,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+		 g_param_spec_string (NM_ACTIVE_CONNECTION_DHCP6_CONFIG, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_VPN,
@@ -988,10 +989,10 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 
 	g_object_class_install_property
 		(object_class, PROP_MASTER,
-		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_MASTER, "", "",
-		                     DBUS_TYPE_G_OBJECT_PATH,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+		 g_param_spec_string (NM_ACTIVE_CONNECTION_MASTER, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/* Internal properties */
 	g_object_class_install_property
@@ -1045,6 +1046,7 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 		              G_TYPE_NONE, 1, G_TYPE_UINT);
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (ac_class),
-	                                        &dbus_glib_nm_active_connection_object_info);
+	                                        NMDBUS_TYPE_ACTIVE_CONNECTION_SKELETON,
+	                                        NULL);
 }
 

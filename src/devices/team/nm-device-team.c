@@ -32,12 +32,12 @@
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
 #include "nm-platform.h"
-#include "nm-dbus-glib-types.h"
 #include "nm-enum-types.h"
 #include "nm-team-enum-types.h"
 #include "nm-core-internal.h"
+#include "nm-dbus-compat.h"
 
-#include "nm-device-team-glue.h"
+#include "nmdbus-device-team.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceTeam);
@@ -809,11 +809,12 @@ nm_device_team_class_init (NMDeviceTeamClass *klass)
 	g_object_class_install_property
 		(object_class, PROP_SLAVES,
 		 g_param_spec_boxed (NM_DEVICE_TEAM_SLAVES, "", "",
-		                     DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
+		                     G_TYPE_STRV,
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
 
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        &dbus_glib_nm_device_team_object_info);
+	                                        NMDBUS_TYPE_DEVICE_TEAM_SKELETON,
+	                                        NULL);
 }

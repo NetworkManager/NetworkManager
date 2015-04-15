@@ -7,13 +7,13 @@ AM_CPPFLAGS = \
 	-I${top_builddir}/src \
 	-I${top_srcdir}/src/devices \
 	-I${top_srcdir}/src/platform \
+	-I${top_builddir}/introspection \
 	-I${top_srcdir}/include \
 	-I${top_builddir}/libnm-core \
 	-I${top_srcdir}/libnm-core \
 	-DG_LOG_DOMAIN=\""NetworkManager-adsl"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
-	$(DBUS_CFLAGS) \
 	$(GUDEV_CFLAGS)
 
 GLIB_GENERATED = nm-adsl-enum-types.h nm-adsl-enum-types.c
@@ -21,10 +21,7 @@ GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM
 GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
 nm_adsl_enum_types_sources = $(srcdir)/nm-device-adsl.h
 
-nm-device-adsl-glue.h: $(top_srcdir)/introspection/nm-device-adsl.xml
-	dbus-binding-tool --prefix=nm_device_adsl --mode=glib-server --output=$@ $<
-
-BUILT_SOURCES = $(GLIB_GENERATED) nm-device-adsl-glue.h
+BUILT_SOURCES = $(GLIB_GENERATED)
 
 pkglib_LTLIBRARIES = libnm-device-plugin-adsl.la
 
@@ -43,7 +40,7 @@ libnm_device_plugin_adsl_la_LDFLAGS = \
 	-Wl,--version-script=$(SYMBOL_VIS_FILE)
 
 libnm_device_plugin_adsl_la_LIBADD = \
-	$(DBUS_LIBS) \
+	$(top_builddir)/introspection/libnmdbus.la \
 	$(GUDEV_LIBS)
 
 CLEANFILES = $(BUILT_SOURCES)

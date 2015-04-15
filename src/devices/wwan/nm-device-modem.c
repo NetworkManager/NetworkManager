@@ -35,11 +35,11 @@
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceModem);
 
+#include "nmdbus-device-modem.h"
+
 G_DEFINE_TYPE (NMDeviceModem, nm_device_modem, NM_TYPE_DEVICE)
 
 #define NM_DEVICE_MODEM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_MODEM, NMDeviceModemPrivate))
-
-#include "nm-device-modem-glue.h"
 
 typedef struct {
 	NMModem *modem;
@@ -794,5 +794,6 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 		                    G_PARAM_STATIC_STRINGS));
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (mclass),
-	                                        &dbus_glib_nm_device_modem_object_info);
+	                                        NMDBUS_TYPE_DEVICE_MODEM_SKELETON,
+	                                        NULL);
 }

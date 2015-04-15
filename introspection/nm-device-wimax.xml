@@ -3,7 +3,6 @@
 <node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
   <interface name="org.freedesktop.NetworkManager.Device.WiMax">
     <method name="GetNspList">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_get_nsp_list"/>
       <arg name="nsps" type="ao" direction="out">
         <tp:docstring>
           List of NSP object paths

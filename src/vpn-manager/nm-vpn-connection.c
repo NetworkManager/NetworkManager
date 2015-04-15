@@ -34,7 +34,6 @@
 #include "nm-ip6-config.h"
 #include "nm-platform.h"
 #include "nm-active-connection.h"
-#include "nm-dbus-glib-types.h"
 #include "NetworkManagerUtils.h"
 #include "settings/nm-settings-connection.h"
 #include "nm-dispatcher.h"
@@ -44,7 +43,7 @@
 #include "nm-route-manager.h"
 #include "nm-firewall-manager.h"
 
-#include "nm-vpn-connection-glue.h"
+#include "nmdbus-vpn-connection.h"
 
 G_DEFINE_TYPE (NMVpnConnection, nm_vpn_connection, NM_TYPE_ACTIVE_CONNECTION)
 
@@ -2354,6 +2353,7 @@ nm_vpn_connection_class_init (NMVpnConnectionClass *connection_class)
 		              G_TYPE_NONE, 0);
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (connection_class),
-	                                        &dbus_glib_nm_vpn_connection_object_info);
+	                                        NMDBUS_TYPE_VPN_CONNECTION_SKELETON,
+	                                        NULL);
 }
 

@@ -8,13 +8,14 @@ AM_CPPFLAGS = \
 	-I${top_srcdir}/src/devices \
 	-I${top_srcdir}/src/settings \
 	-I${top_srcdir}/src/platform \
+	-I${top_builddir}/introspection \
 	-I${top_srcdir}/include \
 	-I${top_builddir}/libnm-core \
 	-I${top_srcdir}/libnm-core \
 	-DG_LOG_DOMAIN=\""NetworkManager-wwan"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
-	$(DBUS_CFLAGS) \
+	$(GLIB_CFLAGS) \
 	$(MM_GLIB_CFLAGS)
 
 BUILT_SOURCES = $(null)
@@ -45,14 +46,12 @@ WWAN_SYMBOL_VIS_FILE=$(srcdir)/wwan-exports.ver
 libnm_wwan_la_LDFLAGS = \
 	-avoid-version \
 	-Wl,--version-script=$(WWAN_SYMBOL_VIS_FILE)
-libnm_wwan_la_LIBADD = $(DBUS_LIBS) $(MM_GLIB_LIBS)
+libnm_wwan_la_LIBADD = \
+	$(top_builddir)/introspection/libnmdbus.la \
+	$(GLIB_LIBS) \
+	$(MM_GLIB_LIBS)
 
 ###########################################################
-
-nm-device-modem-glue.h: $(top_srcdir)/introspection/nm-device-modem.xml
-	dbus-binding-tool --prefix=nm_device_modem --mode=glib-server --output=$@ $<
-
-BUILT_SOURCES += nm-device-modem-glue.h
 
 SYMBOL_VIS_FILE=$(srcdir)/exports.ver
 
@@ -60,16 +59,16 @@ libnm_device_plugin_wwan_la_SOURCES = \
 	nm-wwan-factory.c \
 	nm-wwan-factory.h \
 	nm-device-modem.c \
-	nm-device-modem.h \
-	nm-device-modem-glue.h
+	nm-device-modem.h
 
 libnm_device_plugin_wwan_la_LDFLAGS = \
 	-module -avoid-version \
 	-Wl,--version-script=$(SYMBOL_VIS_FILE)
 
 libnm_device_plugin_wwan_la_LIBADD = \
+	$(top_builddir)/introspection/libnmdbus.la \
 	libnm-wwan.la \
-	$(DBUS_LIBS)
+	$(GLIB_LIBS)
 
 ###########################################################
 

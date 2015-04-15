@@ -153,16 +153,12 @@
     </property>
 
     <method name="Disconnect">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_disconnect"/>
-      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <tp:docstring>
         Disconnects a device and prevents the device from automatically activating further connections without user intervention.
       </tp:docstring>
     </method>
 
     <method name="Delete">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_delete"/>
-      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <tp:docstring>
         Deletes a software device from NetworkManager and removes the interface from the system.
         The method returns an error when called for a hardware device.

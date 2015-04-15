@@ -21,7 +21,6 @@
 
 #include "config.h"
 
-#include <dbus/dbus.h>
 #include <netinet/in.h>
 #include <string.h>
 #include <unistd.h>
@@ -48,23 +47,10 @@
 #include "nm-auth-utils.h"
 #include "nm-settings-connection.h"
 #include "nm-enum-types.h"
-#include "nm-dbus-glib-types.h"
 #include "nm-wifi-enum-types.h"
 #include "nm-connection-provider.h"
 
-static gboolean impl_device_get_access_points (NMDeviceWifi *device,
-                                               GPtrArray **aps,
-                                               GError **err);
-
-static gboolean impl_device_get_all_access_points (NMDeviceWifi *device,
-                                                   GPtrArray **aps,
-                                                   GError **err);
-
-static void impl_device_request_scan (NMDeviceWifi *device,
-                                      GHashTable *options,
-                                      DBusGMethodInvocation *context);
-
-#include "nm-device-wifi-glue.h"
+#include "nmdbus-device-wifi.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceWifi);
@@ -1017,102 +1003,108 @@ get_sorted_ap_list (NMDeviceWifi *self)
 	return g_slist_sort (sorted, (GCompareFunc) ap_id_compare);
 }
 
-static gboolean
-impl_device_get_access_points (NMDeviceWifi *self,
-                               GPtrArray **aps,
-                               GError **err)
+static void
+impl_device_wifi_get_access_points (NMDeviceWifi *self,
+                                    GDBusMethodInvocation *context)
 {
 	GSList *sorted, *iter;
+	GPtrArray *paths;
 
-	*aps = g_ptr_array_new ();
+	paths = g_ptr_array_new ();
 	sorted = get_sorted_ap_list (self);
 	for (iter = sorted; iter; iter = iter->next) {
 		NMAccessPoint *ap = NM_AP (iter->data);
 
 		if (nm_ap_get_ssid (ap))
-			g_ptr_array_add (*aps, g_strdup (nm_exported_object_get_path (NM_EXPORTED_OBJECT (ap))));
+			g_ptr_array_add (paths, g_strdup (nm_exported_object_get_path (NM_EXPORTED_OBJECT (ap))));
 	}
+	g_ptr_array_add (paths, NULL);
 	g_slist_free (sorted);
-	return TRUE;
+
+	g_dbus_method_invocation_return_value (context, g_variant_new ("(^ao)", (char **) paths->pdata));
+	g_ptr_array_unref (paths);
 }
 
-static gboolean
-impl_device_get_all_access_points (NMDeviceWifi *self,
-                                   GPtrArray **aps,
-                                   GError **err)
+static void
+impl_device_wifi_get_all_access_points (NMDeviceWifi *self,
+                                        GDBusMethodInvocation *context)
 {
 	GSList *sorted, *iter;
+	GPtrArray *paths;
 
-	*aps = g_ptr_array_new ();
+	paths = g_ptr_array_new ();
 	sorted = get_sorted_ap_list (self);
 	for (iter = sorted; iter; iter = iter->next)
-		g_ptr_array_add (*aps, g_strdup (nm_exported_object_get_path (NM_EXPORTED_OBJECT (iter->data))));
+		g_ptr_array_add (paths, g_strdup (nm_exported_object_get_path (NM_EXPORTED_OBJECT (iter->data))));
+	g_ptr_array_add (paths, NULL);
 	g_slist_free (sorted);
-	return TRUE;
+
+	g_dbus_method_invocation_return_value (context, g_variant_new ("(^ao)", (char **) paths->pdata));
+	g_ptr_array_unref (paths);
 }
 
 static void
 request_scan_cb (NMDevice *device,
-                 DBusGMethodInvocation *context,
+                 GDBusMethodInvocation *context,
                  NMAuthSubject *subject,
                  GError *error,
                  gpointer user_data)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
-	GError *local = NULL;
 
 	if (error) {
-		dbus_g_method_return_error (context, error);
+		g_dbus_method_invocation_return_gerror (context, error);
 		return;
 	}
 
 	if (!check_scanning_allowed (self)) {
-		local = g_error_new_literal (NM_DEVICE_ERROR,
-		                             NM_DEVICE_ERROR_NOT_ALLOWED,
-		                             "Scanning not allowed at this time");
-		dbus_g_method_return_error (context, local);
-		g_error_free (local);
+		g_dbus_method_invocation_return_error_literal (context,
+		                                               NM_DEVICE_ERROR,
+		                                               NM_DEVICE_ERROR_NOT_ALLOWED,
+		                                               "Scanning not allowed at this time");
 		return;
 	}
 
 	cancel_pending_scan (self);
 	request_wireless_scan (self);
-	dbus_g_method_return (context);
+	g_dbus_method_invocation_return_value (context, NULL);
 }
 
 static void
-impl_device_request_scan (NMDeviceWifi *self,
-                          GHashTable *options,
-                          DBusGMethodInvocation *context)
+impl_device_wifi_request_scan (NMDeviceWifi *self,
+                               GDBusMethodInvocation *context,
+                               GVariant *options)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMDevice *device = NM_DEVICE (self);
 	gint32 last_scan;
-	GError *error;
 
 	if (   !priv->enabled
 	    || !priv->sup_iface
 	    || nm_device_get_state (device) < NM_DEVICE_STATE_DISCONNECTED
 	    || nm_device_is_activating (device)) {
-		error = g_error_new_literal (NM_DEVICE_ERROR,
-		                             NM_DEVICE_ERROR_NOT_ALLOWED,
-		                             "Scanning not allowed while unavailable or activating");
-		goto error;
+		g_dbus_method_invocation_return_error_literal (context,
+		                                               NM_DEVICE_ERROR,
+		                                               NM_DEVICE_ERROR_NOT_ALLOWED,
+		                                               "Scanning not allowed while unavailable or activating");
+		return;
 	}
 
 	if (nm_supplicant_interface_get_scanning (priv->sup_iface)) {
-		error = g_error_new_literal (NM_DEVICE_ERROR,
-		                             NM_DEVICE_ERROR_NOT_ALLOWED,
-		                             "Scanning not allowed while already scanning");
-		goto error;
+		g_dbus_method_invocation_return_error_literal (context,
+		                                               NM_DEVICE_ERROR,
+		                                               NM_DEVICE_ERROR_NOT_ALLOWED,
+		                                               "Scanning not allowed while already scanning");
+		return;
 	}
 
 	last_scan = nm_supplicant_interface_get_last_scan_time (priv->sup_iface);
 	if (last_scan && (nm_utils_get_monotonic_timestamp_s () - last_scan) < 10) {
-		error = g_error_new_literal (NM_DEVICE_ERROR,
-		                             NM_DEVICE_ERROR_NOT_ALLOWED,
-		                             "Scanning not allowed immediately following previous scan");
-		goto error;
+		g_dbus_method_invocation_return_error_literal (context,
+		                                               NM_DEVICE_ERROR,
+		                                               NM_DEVICE_ERROR_NOT_ALLOWED,
+		                                               "Scanning not allowed immediately following previous scan");
+		return;
 	}
 
 	/* Ask the manager to authenticate this request for us */
@@ -1124,11 +1116,6 @@ impl_device_request_scan (NMDeviceWifi *self,
 	                       TRUE,
 	                       request_scan_cb,
 	                       NULL);
-	return;
-
-error:
-	dbus_g_method_return_error (context, error);
-	g_error_free (error);
 }
 
 static gboolean
@@ -2922,11 +2909,12 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, priv->capabilities);
 		break;
 	case PROP_ACCESS_POINTS:
-		array = g_ptr_array_sized_new (g_hash_table_size (priv->aps));
+		array = g_ptr_array_sized_new (g_hash_table_size (priv->aps) + 1);
 		g_hash_table_iter_init (&iter, priv->aps);
 		while (g_hash_table_iter_next (&iter, (gpointer) &dbus_path, NULL))
 			g_ptr_array_add (array, g_strdup (dbus_path));
-		g_value_take_boxed (value, array);
+		g_ptr_array_add (array, NULL);
+		g_value_take_boxed (value, (char **) g_ptr_array_free (array, FALSE));
 		break;
 	case PROP_ACTIVE_ACCESS_POINT:
 		nm_utils_g_value_set_object_path (value, priv->current_ap);
@@ -3011,16 +2999,16 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	g_object_class_install_property
 		(object_class, PROP_ACCESS_POINTS,
 		 g_param_spec_boxed (NM_DEVICE_WIFI_ACCESS_POINTS, "", "",
-		                     DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
+		                     G_TYPE_STRV,
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_ACTIVE_ACCESS_POINT,
-		 g_param_spec_boxed (NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT, "", "",
-		                     DBUS_TYPE_G_OBJECT_PATH,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+		 g_param_spec_string (NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_CAPABILITIES,
@@ -3044,7 +3032,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 		              G_STRUCT_OFFSET (NMDeviceWifiClass, access_point_added),
 		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 1,
-		              G_TYPE_OBJECT);
+		              NM_TYPE_AP);
 
 	signals[ACCESS_POINT_REMOVED] =
 		g_signal_new ("access-point-removed",
@@ -3053,7 +3041,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 		              0,
 		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 1,
-		              G_TYPE_OBJECT);
+		              NM_TYPE_AP);
 
 	signals[SCANNING_ALLOWED] =
 		g_signal_new ("scanning-allowed",
@@ -3064,7 +3052,11 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 		              G_TYPE_BOOLEAN, 0);
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        &dbus_glib_nm_device_wifi_object_info);
+	                                        NMDBUS_TYPE_DEVICE_WIFI_SKELETON,
+	                                        "GetAccessPoints", impl_device_wifi_get_access_points,
+	                                        "GetAllAccessPoints", impl_device_wifi_get_all_access_points,
+	                                        "RequestScan", impl_device_wifi_request_scan,
+	                                        NULL);
 }
 
 

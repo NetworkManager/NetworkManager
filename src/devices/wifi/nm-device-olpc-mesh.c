@@ -26,7 +26,6 @@
 
 #include "config.h"
 
-#include <dbus/dbus.h>
 #include <netinet/in.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -54,7 +53,7 @@
 /* This is a bug; but we can't really change API now... */
 #include "nm-vpn-dbus-interface.h"
 
-#include "nm-device-olpc-mesh-glue.h"
+#include "nmdbus-device-olpc-mesh.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceOlpcMesh);
@@ -531,10 +530,10 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 	/* Properties */
 	g_object_class_install_property
 		(object_class, PROP_COMPANION,
-		 g_param_spec_boxed (NM_DEVICE_OLPC_MESH_COMPANION, "", "",
-		                     DBUS_TYPE_G_OBJECT_PATH,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+		 g_param_spec_string (NM_DEVICE_OLPC_MESH_COMPANION, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_ACTIVE_CHANNEL,
@@ -544,6 +543,7 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 		                    G_PARAM_STATIC_STRINGS));
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        &dbus_glib_nm_device_olpc_mesh_object_info);
+	                                        NMDBUS_TYPE_DEVICE_OLPC_MESH_SKELETON,
+	                                        NULL);
 }
 

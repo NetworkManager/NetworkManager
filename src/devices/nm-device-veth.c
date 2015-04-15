@@ -34,7 +34,7 @@
 #include "nm-platform.h"
 #include "nm-device-factory.h"
 
-#include "nm-device-veth-glue.h"
+#include "nmdbus-device-veth.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceVeth);
@@ -160,13 +160,14 @@ nm_device_veth_class_init (NMDeviceVethClass *klass)
 	/* properties */
 	g_object_class_install_property
 		(object_class, PROP_PEER,
-		 g_param_spec_boxed (NM_DEVICE_VETH_PEER, "", "",
-		                     DBUS_TYPE_G_OBJECT_PATH,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+		 g_param_spec_string (NM_DEVICE_VETH_PEER, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        &dbus_glib_nm_device_veth_object_info);
+	                                        NMDBUS_TYPE_DEVICE_VETH_SKELETON,
+	                                        NULL);
 }
 
 /*************************************************************/

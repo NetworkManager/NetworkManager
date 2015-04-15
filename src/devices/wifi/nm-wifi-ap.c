@@ -33,7 +33,7 @@
 
 #include "nm-setting-wireless.h"
 
-#include "nm-access-point-glue.h"
+#include "nmdbus-access-point.h"
 
 /*
  * Encapsulates Access Point information
@@ -46,7 +46,7 @@ typedef struct
 	GByteArray *	ssid;
 	char *          address;
 	NM80211Mode		mode;
-	gint8			strength;
+	guint8			strength;
 	guint32			freq;		/* Frequency in MHz; ie 2412 (== 2.412 GHz) */
 	guint32			max_bitrate;/* Maximum bitrate of the AP in Kbit/s (ie 54000 Kb/s == 54Mbit/s) */
 
@@ -902,9 +902,7 @@ get_property (GObject *object, guint prop_id,
 			  GValue *value, GParamSpec *pspec)
 {
 	NMAccessPointPrivate *priv = NM_AP_GET_PRIVATE (object);
-	GArray * ssid;
-	int len;
-	int i;
+	GVariant *ssid;
 
 	switch (prop_id) {
 	case PROP_FLAGS:
@@ -917,12 +915,12 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, priv->rsn_flags);
 		break;
 	case PROP_SSID:
-		len = priv->ssid ? priv->ssid->len : 0;
-		ssid = g_array_sized_new (FALSE, TRUE, sizeof (unsigned char), len);
-		for (i = 0; i < len; i++)
-			g_array_append_val (ssid, priv->ssid->data[i]);
-		g_value_set_boxed (value, ssid);
-		g_array_free (ssid, TRUE);
+		if (priv->ssid) {
+			ssid = g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
+			                                  priv->ssid->data, priv->ssid->len, 1);
+		} else
+			ssid = g_variant_new_array (G_VARIANT_TYPE_BYTE, NULL, 0);
+		g_value_take_variant (value, ssid);
 		break;
 	case PROP_FREQUENCY:
 		g_value_set_uint (value, priv->freq);
@@ -937,7 +935,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, priv->max_bitrate);
 		break;
 	case PROP_STRENGTH:
-		g_value_set_schar (value, priv->strength);
+		g_value_set_uchar (value, priv->strength);
 		break;
 	case PROP_LAST_SEEN:
 		g_value_set_int (value,
@@ -1004,9 +1002,10 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
 
 	g_object_class_install_property
 	    (object_class, PROP_SSID,
-	     g_param_spec_boxed (NM_AP_SSID, "", "",
-	                         DBUS_TYPE_G_UCHAR_ARRAY,
-	                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+	     g_param_spec_variant (NM_AP_SSID, "", "",
+	                           G_VARIANT_TYPE ("ay"),
+	                           NULL,
+	                           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 	    (object_class, PROP_FREQUENCY,
@@ -1034,9 +1033,9 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
 
 	g_object_class_install_property
 	    (object_class, PROP_STRENGTH,
-	     g_param_spec_char (NM_AP_STRENGTH, "", "",
-	                        G_MININT8, G_MAXINT8, 0,
-	                        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+	     g_param_spec_uchar (NM_AP_STRENGTH, "", "",
+	                         0, G_MAXINT8, 0,
+	                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 	    (object_class, PROP_LAST_SEEN,
@@ -1045,6 +1044,7 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
 	                        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (ap_class),
-	                                        &dbus_glib_nm_access_point_object_info);
+	                                        NMDBUS_TYPE_ACCESS_POINT_SKELETON,
+	                                        NULL);
 }
 
