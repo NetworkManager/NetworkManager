@@ -87,14 +87,14 @@ void nm_settings_for_each_connection (NMSettings *settings,
 typedef void (*NMSettingsAddCallback) (NMSettings *settings,
                                        NMSettingsConnection *connection,
                                        GError *error,
-                                       DBusGMethodInvocation *context,
+                                       GDBusMethodInvocation *context,
                                        NMAuthSubject *subject,
                                        gpointer user_data);
 
 void nm_settings_add_connection_dbus (NMSettings *self,
                                       NMConnection *connection,
                                       gboolean save_to_disk,
-                                      DBusGMethodInvocation *context,
+                                      GDBusMethodInvocation *context,
                                       NMSettingsAddCallback callback,
                                       gpointer user_data);
 

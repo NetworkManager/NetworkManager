@@ -15,8 +15,6 @@
             stored in persistent storage or sent to a Secret Agent for storage,
             depending on the flags associated with each secret.
           </tp:docstring>
-          <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_connection_update"/>
-          <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
           <arg name="properties" type="a{sa{sv}}" direction="in">
             <tp:docstring>
               New connection settings, properties, and (optionally) secrets.
@@ -37,8 +35,6 @@
             reloaded from disk (either automatically on file change or
             due to an explicit ReloadConnections call).
           </tp:docstring>
-          <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_connection_update_unsaved"/>
-          <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
           <arg name="properties" type="a{sa{sv}}" direction="in">
             <tp:docstring>
               New connection settings, properties, and (optionally) secrets.
@@ -50,8 +46,6 @@
           <tp:docstring>
             Delete the connection.
           </tp:docstring>
-          <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_connection_delete"/>
-          <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
         </method>
 
         <method name="GetSettings">
@@ -61,8 +55,6 @@
                 to the network, as those are often protected.  Secrets must
                 be requested separately using the GetSecrets() call.
             </tp:docstring>
-            <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_connection_get_settings"/>
-            <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
             <arg name="settings" type="a{sa{sv}}" direction="out" tp:type="String_String_Variant_Map_Map">
                 <tp:docstring>
                     The nested settings maps describing this object.
@@ -77,8 +69,6 @@
                 the requestor's session will be returned.  The user will never
                 be prompted for secrets as a result of this request.
             </tp:docstring>
-            <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_connection_get_secrets"/>
-            <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
             <arg name="setting_name" type="s" direction="in">
                 <tp:docstring>
                     Name of the setting to return secrets for.  If empty, all
@@ -97,8 +87,6 @@
           <tp:docstring>
             Clear the secrets belonging to this network connection profile.
           </tp:docstring>
-          <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_connection_clear_secrets"/>
-          <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
         </method>
 
         <method name="Save">
@@ -106,8 +94,6 @@
                 Saves a "dirty" connection (that had previously been
                 updated with UpdateUnsaved) to persistent storage.
             </tp:docstring>
-            <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_connection_save"/>
-            <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
         </method>
 
         <signal name="Updated">
