@@ -246,6 +246,7 @@ test-*.trs
 /src/rdisc/tests/test-rdisc-fake
 /src/rdisc/tests/test-rdisc-linux
 /src/settings/plugins/ibft/tests/test-ibft
+/src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.[ch]
 /src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh
 /src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh-utils
 /src/settings/plugins/ifnet/tests/test-ifnet
