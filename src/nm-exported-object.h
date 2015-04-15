@@ -21,9 +21,8 @@
 #ifndef NM_EXPORTED_OBJECT_H
 #define NM_EXPORTED_OBJECT_H
 
-#include <dbus/dbus-glib.h>
-
 #include "nm-default.h"
+#include "nm-types.h"
 
 G_BEGIN_DECLS
 
@@ -47,7 +46,8 @@ typedef struct {
 GType nm_exported_object_get_type (void);
 
 void nm_exported_object_class_add_interface (NMExportedObjectClass *object_class,
-                                             const DBusGObjectInfo *info);
+                                             GType                  dbus_skeleton_type,
+                                             ...) G_GNUC_NULL_TERMINATED;
 
 const char *nm_exported_object_export      (NMExportedObject *self);
 const char *nm_exported_object_get_path    (NMExportedObject *self);
