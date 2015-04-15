@@ -25,9 +25,9 @@
 #include "nm-default.h"
 #include "nm-dbus-interface.h"
 #include "nm-dhcp4-config.h"
-#include "nm-dhcp4-config-glue.h"
-#include "nm-dbus-glib-types.h"
 #include "nm-utils.h"
+
+#include "nmdbus-dhcp4-config.h"
 
 G_DEFINE_TYPE (NMDhcp4Config, nm_dhcp4_config, NM_TYPE_EXPORTED_OBJECT)
 
@@ -128,11 +128,7 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_OPTIONS:
-		/* dbus_g_value_parse_g_variant() will call g_value_init(), but
-		 * @value is already inited.
-		 */
-		g_value_unset (value);
-		dbus_g_value_parse_g_variant (priv->options, value);
+		g_value_set_variant (value, priv->options);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -157,11 +153,13 @@ nm_dhcp4_config_class_init (NMDhcp4ConfigClass *config_class)
 	/* properties */
 	g_object_class_install_property
 		(object_class, PROP_OPTIONS,
-		 g_param_spec_boxed (NM_DHCP4_CONFIG_OPTIONS, "", "",
-		                     DBUS_TYPE_G_MAP_OF_VARIANT,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+		 g_param_spec_variant (NM_DHCP4_CONFIG_OPTIONS, "", "",
+		                       G_VARIANT_TYPE ("a{sv}"),
+		                       NULL,
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (config_class),
-	                                        &dbus_glib_nm_dhcp4_config_object_info);
+	                                        NMDBUS_TYPE_DHCP4_CONFIG_SKELETON,
+	                                        NULL);
 }

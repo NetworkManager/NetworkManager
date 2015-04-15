@@ -35,6 +35,10 @@
       </tp:docstring>
     </property>
     <property name="Nameservers" type="aay" access="read">
+      <!-- gdbus-codegen assumes that "aay" means "array of non-UTF-8
+	   string" and so would make this a char **.
+      -->
+      <annotation name="org.gtk.GDBus.C.ForceGVariant" value="1"/>
       <tp:docstring>The nameservers in use.</tp:docstring>
     </property>
     <property name="Domains" type="as" access="read">

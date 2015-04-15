@@ -2991,3 +2991,24 @@ nm_utils_g_value_set_object_path_array (GValue *value, GSList *objects)
 	}
 	g_value_take_boxed (value, paths);
 }
+
+/**
+ * nm_utils_g_value_set_strv:
+ * @value: a #GValue, initialized to store a #G_TYPE_STRV
+ * @strings: a #GPtrArray of strings
+ *
+ * Converts @strings to a #GStrv and stores it in @value.
+ */
+void
+nm_utils_g_value_set_strv (GValue *value, GPtrArray *strings)
+{
+	char **strv;
+	int i;
+
+	strv = g_new (char *, strings->len + 1);
+	for (i = 0; i < strings->len; i++)
+		strv[i] = g_strdup (strings->pdata[i]);
+	strv[i] = NULL;
+
+	g_value_take_boxed (value, strv);
+}

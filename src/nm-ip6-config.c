@@ -29,12 +29,12 @@
 
 #include "nm-utils.h"
 #include "nm-platform.h"
-#include "nm-dbus-glib-types.h"
-#include "nm-ip6-config-glue.h"
 #include "nm-route-manager.h"
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 #include "nm-macros-internal.h"
+
+#include "nmdbus-ip6-config.h"
 
 G_DEFINE_TYPE (NMIP6Config, nm_ip6_config, NM_TYPE_EXPORTED_OBJECT)
 
@@ -1891,31 +1891,21 @@ finalize (GObject *object)
 static void
 nameservers_to_gvalue (GArray *array, GValue *value)
 {
-	GPtrArray *dns;
+	GVariantBuilder builder;
 	guint i = 0;
 
-	dns = g_ptr_array_new ();
+	g_variant_builder_init (&builder, G_VARIANT_TYPE ("aay"));
 
 	while (array && (i < array->len)) {
 		struct in6_addr *addr;
-		GByteArray *bytearray;
-		addr = &g_array_index (array, struct in6_addr, i++);
 
-		bytearray = g_byte_array_sized_new (16);
-		g_byte_array_append (bytearray, (guint8 *) addr->s6_addr, 16);
-		g_ptr_array_add (dns, bytearray);
+		addr = &g_array_index (array, struct in6_addr, i++);
+		g_variant_builder_add (&builder, "@ay",
+		                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
+		                                                  &addr, 16, 1));
 	}
 
-	g_value_take_boxed (value, dns);
-}
-
-static void
-gvalue_destroy (gpointer data)
-{
-	GValue *value = (GValue *) data;
-
-	g_value_unset (value);
-	g_slice_free (GValue, value);
+	g_value_take_variant (value, g_variant_builder_end (&builder));
 }
 
 static void
@@ -1931,163 +1921,109 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_ADDRESS_DATA:
 		{
-			GPtrArray *addresses = g_ptr_array_new ();
+			GVariantBuilder array_builder, addr_builder;
 			int naddr = nm_ip6_config_get_num_addresses (config);
 			int i;
 
+			g_variant_builder_init (&array_builder, G_VARIANT_TYPE ("aa{sv}"));
 			for (i = 0; i < naddr; i++) {
 				const NMPlatformIP6Address *address = nm_ip6_config_get_address (config, i);
-				GHashTable *addr_hash;
-				GValue *val;
 
-				addr_hash = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, gvalue_destroy);
+				g_variant_builder_init (&addr_builder, G_VARIANT_TYPE ("a{sv}"));
+				g_variant_builder_add (&addr_builder, "{sv}",
+				                       "address",
+				                       g_variant_new_string (nm_utils_inet6_ntop (&address->address, NULL)));
+				g_variant_builder_add (&addr_builder, "{sv}",
+				                       "prefix",
+				                       g_variant_new_uint32 (address->plen));
 
-				val = g_slice_new0 (GValue);
-				g_value_init (val, G_TYPE_STRING);
-				g_value_set_string (val, nm_utils_inet6_ntop (&address->address, NULL));
-				g_hash_table_insert (addr_hash, "address", val);
-
-				val = g_slice_new0 (GValue);
-				g_value_init (val, G_TYPE_UINT);
-				g_value_set_uint (val, address->plen);
-				g_hash_table_insert (addr_hash, "prefix", val);
-
-				g_ptr_array_add (addresses, addr_hash);
+				g_variant_builder_add (&array_builder, "a{sv}", &addr_builder);
 			}
 
-			g_value_take_boxed (value, addresses);
+			g_value_take_variant (value, g_variant_builder_end (&array_builder));
 		}
 		break;
 	case PROP_ADDRESSES:
 		{
-			GPtrArray *addresses = g_ptr_array_new ();
+			GVariantBuilder array_builder;
 			const struct in6_addr *gateway = nm_ip6_config_get_gateway (config);
 			int naddr = nm_ip6_config_get_num_addresses (config);
 			int i;
 
+			g_variant_builder_init (&array_builder, G_VARIANT_TYPE ("a(ayuay)"));
 			for (i = 0; i < naddr; i++) {
 				const NMPlatformIP6Address *address = nm_ip6_config_get_address (config, i);
 
-				GValueArray *array = g_value_array_new (3);
-				GValue element = G_VALUE_INIT;
-				GByteArray *ba;
-
-				/* IP address */
-				g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
-				ba = g_byte_array_new ();
-				g_byte_array_append (ba, (guint8 *) &address->address, 16);
-				g_value_take_boxed (&element, ba);
-				g_value_array_append (array, &element);
-				g_value_unset (&element);
-
-				/* Prefix */
-				g_value_init (&element, G_TYPE_UINT);
-				g_value_set_uint (&element, address->plen);
-				g_value_array_append (array, &element);
-				g_value_unset (&element);
-
-				/* Gateway */
-				g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
-				ba = g_byte_array_new ();
-				g_byte_array_append (ba, (guint8 *) (i == 0 && gateway ? gateway : &in6addr_any), sizeof (*gateway));
-				g_value_take_boxed (&element, ba);
-				g_value_array_append (array, &element);
-				g_value_unset (&element);
-
-				g_ptr_array_add (addresses, array);
+				g_variant_builder_add (&array_builder, "(@ayu@ay)",
+				                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
+				                                                  &address->address, 16, 1),
+				                       address->plen,
+				                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
+				                                                  (i == 0 && gateway ? gateway : &in6addr_any),
+				                                                  16, 1));
 			}
 
-			g_value_take_boxed (value, addresses);
+			g_value_take_variant (value, g_variant_builder_end (&array_builder));
 		}
 		break;
 	case PROP_ROUTE_DATA:
 		{
-			GPtrArray *routes = g_ptr_array_new ();
+			GVariantBuilder array_builder, route_builder;
 			guint nroutes = nm_ip6_config_get_num_routes (config);
 			int i;
 
+			g_variant_builder_init (&array_builder, G_VARIANT_TYPE ("aa{sv}"));
 			for (i = 0; i < nroutes; i++) {
 				const NMPlatformIP6Route *route = nm_ip6_config_get_route (config, i);
-				GHashTable *route_hash;
-				GValue *val;
 
-				route_hash = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, gvalue_destroy);
-
-				val = g_slice_new0 (GValue);
-				g_value_init (val, G_TYPE_STRING);
-				g_value_set_string (val, nm_utils_inet6_ntop (&route->network, NULL));
-				g_hash_table_insert (route_hash, "dest", val);
-
-				val = g_slice_new0 (GValue);
-				g_value_init (val, G_TYPE_UINT);
-				g_value_set_uint (val, route->plen);
-				g_hash_table_insert (route_hash, "prefix", val);
-
+				g_variant_builder_init (&route_builder, G_VARIANT_TYPE ("a{sv}"));
+				g_variant_builder_add (&route_builder, "{sv}",
+				                       "dest",
+				                       g_variant_new_string (nm_utils_inet6_ntop (&route->network, NULL)));
+				g_variant_builder_add (&route_builder, "{sv}",
+				                       "prefix",
+				                       g_variant_new_uint32 (route->plen));
 				if (!IN6_IS_ADDR_UNSPECIFIED (&route->gateway)) {
-					val = g_slice_new0 (GValue);
-					g_value_init (val, G_TYPE_STRING);
-					g_value_set_string (val, nm_utils_inet6_ntop (&route->gateway, NULL));
-					g_hash_table_insert (route_hash, "next-hop", val);
+					g_variant_builder_add (&route_builder, "{sv}",
+					                       "next-hop",
+					                       g_variant_new_string (nm_utils_inet6_ntop (&route->gateway, NULL)));
 				}
 
-				val = g_slice_new0 (GValue);
-				g_value_init (val, G_TYPE_UINT);
-				g_value_set_uint (val, route->metric);
-				g_hash_table_insert (route_hash, "metric", val);
+				g_variant_builder_add (&route_builder, "{sv}",
+				                       "metric",
+				                       g_variant_new_uint32 (route->metric));
 
-				g_ptr_array_add (routes, route_hash);
+				g_variant_builder_add (&array_builder, "a{sv}", &route_builder);
 			}
 
-			g_value_take_boxed (value, routes);
+			g_value_take_variant (value, g_variant_builder_end (&array_builder));
 		}
 		break;
 	case PROP_ROUTES:
 		{
-			GPtrArray *routes = g_ptr_array_new ();
+			GVariantBuilder array_builder;
 			int nroutes = nm_ip6_config_get_num_routes (config);
 			int i;
 
+			g_variant_builder_init (&array_builder, G_VARIANT_TYPE ("a(ayuayu)"));
 			for (i = 0; i < nroutes; i++) {
-				GValueArray *array;
 				const NMPlatformIP6Route *route = nm_ip6_config_get_route (config, i);
-				GByteArray *ba;
-				GValue element = G_VALUE_INIT;
 
 				/* legacy versions of nm_ip6_route_set_prefix() in libnm-util assert that the
 				 * plen is positive. Skip the default routes not to break older clients. */
 				if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route))
 					continue;
 
-				array = g_value_array_new (4);
-
-				g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
-				ba = g_byte_array_new ();
-				g_byte_array_append (ba, (guint8 *) &route->network, sizeof (route->network));
-				g_value_take_boxed (&element, ba);
-				g_value_array_append (array, &element);
-				g_value_unset (&element);
-
-				g_value_init (&element, G_TYPE_UINT);
-				g_value_set_uint (&element, route->plen);
-				g_value_array_append (array, &element);
-				g_value_unset (&element);
-
-				g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
-				ba = g_byte_array_new ();
-				g_byte_array_append (ba, (guint8 *) &route->gateway, sizeof (route->gateway));
-				g_value_take_boxed (&element, ba);
-				g_value_array_append (array, &element);
-				g_value_unset (&element);
-
-				g_value_init (&element, G_TYPE_UINT);
-				g_value_set_uint (&element, route->metric);
-				g_value_array_append (array, &element);
-				g_value_unset (&element);
-
-				g_ptr_array_add (routes, array);
+				g_variant_builder_add (&array_builder, "(@ayu@ayu)",
+				                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
+				                                                  &route->network, 16, 1),
+				                       g_variant_new_uint32 (route->plen),
+				                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
+				                                                  &route->gateway, 16, 1),
+				                       g_variant_new_uint32 (route->metric));
 			}
 
-			g_value_take_boxed (value, routes);
+			g_value_take_variant (value, g_variant_builder_end (&array_builder));
 		}
 		break;
 	case PROP_GATEWAY:
@@ -2100,13 +2036,13 @@ get_property (GObject *object, guint prop_id,
 		nameservers_to_gvalue (priv->nameservers, value);
 		break;
 	case PROP_DOMAINS:
-		g_value_set_boxed (value, priv->domains);
+		nm_utils_g_value_set_strv (value, priv->domains);
 		break;
 	case PROP_SEARCHES:
-		g_value_set_boxed (value, priv->searches);
+		nm_utils_g_value_set_strv (value, priv->searches);
 		break;
 	case PROP_DNS_OPTIONS:
-		g_value_set_boxed (value, priv->dns_options);
+		nm_utils_g_value_set_strv (value, priv->dns_options);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -2149,59 +2085,65 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 
 	/* properties */
 	obj_properties[PROP_IFINDEX] =
-		 g_param_spec_int (NM_IP6_CONFIG_IFINDEX, "", "",
-		                   -1, G_MAXINT, -1,
-		                   G_PARAM_READWRITE |
-		                   G_PARAM_CONSTRUCT_ONLY |
-		                   G_PARAM_STATIC_STRINGS);
+		g_param_spec_int (NM_IP6_CONFIG_IFINDEX, "", "",
+		                  -1, G_MAXINT, -1,
+		                  G_PARAM_READWRITE |
+		                  G_PARAM_CONSTRUCT_ONLY |
+		                  G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_ADDRESS_DATA] =
-	    g_param_spec_boxed (NM_IP6_CONFIG_ADDRESS_DATA, "", "",
-	                        DBUS_TYPE_NM_IP_ADDRESSES,
-	                        G_PARAM_READABLE |
-	                        G_PARAM_STATIC_STRINGS);
+		g_param_spec_variant (NM_IP6_CONFIG_ADDRESS_DATA, "", "",
+		                      G_VARIANT_TYPE ("aa{sv}"),
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_ADDRESSES] =
-		g_param_spec_boxed (NM_IP6_CONFIG_ADDRESSES, "", "",
-		                    DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS);
+		g_param_spec_variant (NM_IP6_CONFIG_ADDRESSES, "", "",
+		                      G_VARIANT_TYPE ("a(ayuay)"),
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_ROUTE_DATA] =
-		g_param_spec_boxed (NM_IP6_CONFIG_ROUTE_DATA, "", "",
-		                    DBUS_TYPE_NM_IP_ROUTES,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS);
+		g_param_spec_variant (NM_IP6_CONFIG_ROUTE_DATA, "", "",
+		                      G_VARIANT_TYPE ("aa{sv}"),
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_ROUTES] =
-	    g_param_spec_boxed (NM_IP6_CONFIG_ROUTES, "", "",
-	                        DBUS_TYPE_G_ARRAY_OF_IP6_ROUTE,
-	                        G_PARAM_READABLE |
-	                        G_PARAM_STATIC_STRINGS);
+		g_param_spec_variant (NM_IP6_CONFIG_ROUTES, "", "",
+		                      G_VARIANT_TYPE ("a(ayuayu)"),
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_GATEWAY] =
 		g_param_spec_string (NM_IP6_CONFIG_GATEWAY, "", "",
 		                     NULL,
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_NAMESERVERS] =
-	    g_param_spec_boxed (NM_IP6_CONFIG_NAMESERVERS, "", "",
-	                        DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UCHAR,
-	                        G_PARAM_READABLE |
-	                        G_PARAM_STATIC_STRINGS);
+		g_param_spec_variant (NM_IP6_CONFIG_NAMESERVERS, "", "",
+		                      G_VARIANT_TYPE ("aay"),
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_DOMAINS] =
-	    g_param_spec_boxed (NM_IP6_CONFIG_DOMAINS, "", "",
-	                        DBUS_TYPE_G_ARRAY_OF_STRING,
-	                        G_PARAM_READABLE |
-	                        G_PARAM_STATIC_STRINGS);
+		g_param_spec_boxed (NM_IP6_CONFIG_DOMAINS, "", "",
+		                    G_TYPE_STRV,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_SEARCHES] =
-	    g_param_spec_boxed (NM_IP6_CONFIG_SEARCHES, "", "",
-	                        DBUS_TYPE_G_ARRAY_OF_STRING,
-	                        G_PARAM_READABLE |
-	                        G_PARAM_STATIC_STRINGS);
+		g_param_spec_boxed (NM_IP6_CONFIG_SEARCHES, "", "",
+		                    G_TYPE_STRV,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_DNS_OPTIONS] =
-	    g_param_spec_boxed (NM_IP6_CONFIG_DNS_OPTIONS, "", "",
-	                        DBUS_TYPE_G_ARRAY_OF_STRING,
-	                        G_PARAM_READABLE |
-	                        G_PARAM_STATIC_STRINGS);
+		g_param_spec_boxed (NM_IP6_CONFIG_DNS_OPTIONS, "", "",
+		                    G_TYPE_STRV,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, LAST_PROP, obj_properties);
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (config_class),
-	                                        &dbus_glib_nm_ip6_config_object_info);
+	                                        NMDBUS_TYPE_IP6_CONFIG_SKELETON,
+	                                        NULL);
 }

@@ -29,13 +29,13 @@
 #include "nm-default.h"
 #include "nm-utils.h"
 #include "nm-platform.h"
-#include "nm-dbus-glib-types.h"
-#include "nm-ip4-config-glue.h"
 #include "NetworkManagerUtils.h"
 #include "nm-core-internal.h"
 #include "nm-route-manager.h"
 #include "nm-core-internal.h"
 #include "nm-macros-internal.h"
+
+#include "nmdbus-ip4-config.h"
 
 G_DEFINE_TYPE (NMIP4Config, nm_ip4_config, NM_TYPE_EXPORTED_OBJECT)
 
@@ -2140,15 +2140,6 @@ finalize (GObject *object)
 }
 
 static void
-gvalue_destroy (gpointer data)
-{
-	GValue *value = (GValue *) data;
-
-	g_value_unset (value);
-	g_slice_free (GValue, value);
-}
-
-static void
 get_property (GObject *object, guint prop_id,
 			  GValue *value, GParamSpec *pspec)
 {
@@ -2161,127 +2152,116 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_ADDRESS_DATA:
 		{
-			GPtrArray *addresses = g_ptr_array_new ();
+			GVariantBuilder array_builder, addr_builder;
 			int naddr = nm_ip4_config_get_num_addresses (config);
 			int i;
 
+			g_variant_builder_init (&array_builder, G_VARIANT_TYPE ("aa{sv}"));
 			for (i = 0; i < naddr; i++) {
 				const NMPlatformIP4Address *address = nm_ip4_config_get_address (config, i);
-				GHashTable *addr_hash;
-				GValue *val;
 
-				addr_hash = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, gvalue_destroy);
-
-				val = g_slice_new0 (GValue);
-				g_value_init (val, G_TYPE_STRING);
-				g_value_set_string (val, nm_utils_inet4_ntop (address->address, NULL));
-				g_hash_table_insert (addr_hash, "address", val);
-
-				val = g_slice_new0 (GValue);
-				g_value_init (val, G_TYPE_UINT);
-				g_value_set_uint (val, address->plen);
-				g_hash_table_insert (addr_hash, "prefix", val);
+				g_variant_builder_init (&addr_builder, G_VARIANT_TYPE ("a{sv}"));
+				g_variant_builder_add (&addr_builder, "{sv}",
+				                       "address",
+				                       g_variant_new_string (nm_utils_inet4_ntop (address->address, NULL)));
+				g_variant_builder_add (&addr_builder, "{sv}",
+				                       "prefix",
+				                       g_variant_new_uint32 (address->plen));
 
 				if (*address->label) {
-					val = g_slice_new0 (GValue);
-					g_value_init (val, G_TYPE_STRING);
-					g_value_set_string (val, address->label);
-					g_hash_table_insert (addr_hash, "label", val);
+					g_variant_builder_add (&addr_builder, "{sv}",
+					                       "label",
+					                       g_variant_new_string (address->label));
 				}
 
-				g_ptr_array_add (addresses, addr_hash);
+				g_variant_builder_add (&array_builder, "a{sv}", &addr_builder);
 			}
 
-			g_value_take_boxed (value, addresses);
+			g_value_take_variant (value, g_variant_builder_end (&array_builder));
 		}
 		break;
 	case PROP_ADDRESSES:
 		{
-			GPtrArray *addresses = g_ptr_array_new ();
+			GVariantBuilder array_builder;
 			int naddr = nm_ip4_config_get_num_addresses (config);
 			int i;
 
+			g_variant_builder_init (&array_builder, G_VARIANT_TYPE ("aau"));
 			for (i = 0; i < naddr; i++) {
 				const NMPlatformIP4Address *address = nm_ip4_config_get_address (config, i);
-				GArray *array = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);
-				guint32 gateway = i == 0 ? priv->gateway : 0;
+				guint32 dbus_addr[3];
 
-				g_array_append_val (array, address->address);
-				g_array_append_val (array, address->plen);
-				g_array_append_val (array, gateway);
+				dbus_addr[0] = address->address;
+				dbus_addr[1] = address->plen;
+				dbus_addr[2] = i == 0 ? priv->gateway : 0;
 
-				g_ptr_array_add (addresses, array);
+				g_variant_builder_add (&array_builder, "@au",
+				                       g_variant_new_fixed_array (G_VARIANT_TYPE_UINT32,
+				                                                  dbus_addr, 3, sizeof (guint32)));
 			}
 
-			g_value_take_boxed (value, addresses);
+			g_value_take_variant (value, g_variant_builder_end (&array_builder));
 		}
 		break;
 	case PROP_ROUTE_DATA:
 		{
-			GPtrArray *routes = g_ptr_array_new ();
+			GVariantBuilder array_builder, route_builder;
 			guint nroutes = nm_ip4_config_get_num_routes (config);
 			int i;
 
+			g_variant_builder_init (&array_builder, G_VARIANT_TYPE ("aa{sv}"));
 			for (i = 0; i < nroutes; i++) {
 				const NMPlatformIP4Route *route = nm_ip4_config_get_route (config, i);
-				GHashTable *route_hash;
-				GValue *val;
 
-				route_hash = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, gvalue_destroy);
-
-				val = g_slice_new0 (GValue);
-				g_value_init (val, G_TYPE_STRING);
-				g_value_set_string (val, nm_utils_inet4_ntop (route->network, NULL));
-				g_hash_table_insert (route_hash, "dest", val);
-
-				val = g_slice_new0 (GValue);
-				g_value_init (val, G_TYPE_UINT);
-				g_value_set_uint (val, route->plen);
-				g_hash_table_insert (route_hash, "prefix", val);
-
+				g_variant_builder_init (&route_builder, G_VARIANT_TYPE ("a{sv}"));
+				g_variant_builder_add (&route_builder, "{sv}",
+				                       "dest",
+				                       g_variant_new_string (nm_utils_inet4_ntop (route->network, NULL)));
+				g_variant_builder_add (&route_builder, "{sv}",
+				                       "prefix",
+				                       g_variant_new_uint32 (route->plen));
 				if (route->gateway) {
-					val = g_slice_new0 (GValue);
-					g_value_init (val, G_TYPE_STRING);
-					g_value_set_string (val, nm_utils_inet4_ntop (route->gateway, NULL));
-					g_hash_table_insert (route_hash, "next-hop", val);
+					g_variant_builder_add (&route_builder, "{sv}",
+					                       "next-hop",
+					                       g_variant_new_string (nm_utils_inet4_ntop (route->gateway, NULL)));
 				}
+				g_variant_builder_add (&route_builder, "{sv}",
+				                       "metric",
+				                       g_variant_new_uint32 (route->metric));
 
-				val = g_slice_new0 (GValue);
-				g_value_init (val, G_TYPE_UINT);
-				g_value_set_uint (val, route->metric);
-				g_hash_table_insert (route_hash, "metric", val);
-
-				g_ptr_array_add (routes, route_hash);
+				g_variant_builder_add (&array_builder, "a{sv}", &route_builder);
 			}
 
-			g_value_take_boxed (value, routes);
+			g_value_take_variant (value, g_variant_builder_end (&array_builder));
 		}
 		break;
 	case PROP_ROUTES:
 		{
-			GPtrArray *routes = g_ptr_array_new ();
+			GVariantBuilder array_builder;
 			guint nroutes = nm_ip4_config_get_num_routes (config);
 			int i;
 
+			g_variant_builder_init (&array_builder, G_VARIANT_TYPE ("aau"));
 			for (i = 0; i < nroutes; i++) {
 				const NMPlatformIP4Route *route = nm_ip4_config_get_route (config, i);
-				GArray *array;
+				guint32 dbus_route[4];
 
 				/* legacy versions of nm_ip4_route_set_prefix() in libnm-util assert that the
 				 * plen is positive. Skip the default routes not to break older clients. */
 				if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route))
 					continue;
 
-				array = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 4);
-				g_array_append_val (array, route->network);
-				g_array_append_val (array, route->plen);
-				g_array_append_val (array, route->gateway);
-				g_array_append_val (array, route->metric);
+				dbus_route[0] = route->network;
+				dbus_route[1] = route->plen;
+				dbus_route[2] = route->gateway;
+				dbus_route[3] = route->metric;
 
-				g_ptr_array_add (routes, array);
+				g_variant_builder_add (&array_builder, "@au",
+				                       g_variant_new_fixed_array (G_VARIANT_TYPE_UINT32,
+				                                                  dbus_route, 4, sizeof (guint32)));
 			}
 
-			g_value_take_boxed (value, routes);
+			g_value_take_variant (value, g_variant_builder_end (&array_builder));
 		}
 		break;
 	case PROP_GATEWAY:
@@ -2291,19 +2271,27 @@ get_property (GObject *object, guint prop_id,
 			g_value_set_string (value, NULL);
 		break;
 	case PROP_NAMESERVERS:
-		g_value_set_boxed (value, priv->nameservers);
+		g_value_take_variant (value,
+		                      g_variant_new_fixed_array (G_VARIANT_TYPE_UINT32,
+		                                                 priv->nameservers->data,
+		                                                 priv->nameservers->len,
+		                                                 sizeof (guint32)));
 		break;
 	case PROP_DOMAINS:
-		g_value_set_boxed (value, priv->domains);
+		nm_utils_g_value_set_strv (value, priv->domains);
 		break;
 	case PROP_SEARCHES:
-		g_value_set_boxed (value, priv->searches);
+		nm_utils_g_value_set_strv (value, priv->searches);
 		break;
 	case PROP_DNS_OPTIONS:
-		g_value_set_boxed (value, priv->dns_options);
+		nm_utils_g_value_set_strv (value, priv->dns_options);
 		break;
 	case PROP_WINS_SERVERS:
-		g_value_set_boxed (value, priv->wins);
+		g_value_take_variant (value,
+		                      g_variant_new_fixed_array (G_VARIANT_TYPE_UINT32,
+		                                                 priv->wins->data,
+		                                                 priv->wins->len,
+		                                                 sizeof (guint32)));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -2344,65 +2332,72 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 	object_class->finalize = finalize;
 
 	obj_properties[PROP_IFINDEX] =
-		 g_param_spec_int (NM_IP4_CONFIG_IFINDEX, "", "",
-		                   -1, G_MAXINT, -1,
-		                   G_PARAM_READWRITE |
-		                   G_PARAM_CONSTRUCT_ONLY |
-		                   G_PARAM_STATIC_STRINGS);
+		g_param_spec_int (NM_IP4_CONFIG_IFINDEX, "", "",
+		                  -1, G_MAXINT, -1,
+		                  G_PARAM_READWRITE |
+		                  G_PARAM_CONSTRUCT_ONLY |
+		                  G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_ADDRESS_DATA] =
-		 g_param_spec_boxed (NM_IP4_CONFIG_ADDRESS_DATA, "", "",
-		                     DBUS_TYPE_NM_IP_ADDRESSES,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS);
+		g_param_spec_variant (NM_IP4_CONFIG_ADDRESS_DATA, "", "",
+		                      G_VARIANT_TYPE ("aa{sv}"),
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_ADDRESSES] =
-		g_param_spec_boxed (NM_IP4_CONFIG_ADDRESSES, "", "",
-		                    DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS);
+		g_param_spec_variant (NM_IP4_CONFIG_ADDRESSES, "", "",
+		                      G_VARIANT_TYPE ("aau"),
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_ROUTE_DATA] =
-		 g_param_spec_boxed (NM_IP4_CONFIG_ROUTE_DATA, "", "",
-		                     DBUS_TYPE_NM_IP_ROUTES,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS);
+		g_param_spec_variant (NM_IP4_CONFIG_ROUTE_DATA, "", "",
+		                      G_VARIANT_TYPE ("aa{sv}"),
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_ROUTES] =
-		g_param_spec_boxed (NM_IP4_CONFIG_ROUTES, "", "",
-		                    DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS);
+		g_param_spec_variant (NM_IP4_CONFIG_ROUTES, "", "",
+		                      G_VARIANT_TYPE ("aau"),
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_GATEWAY] =
 		g_param_spec_string (NM_IP4_CONFIG_GATEWAY, "", "",
 		                     NULL,
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_NAMESERVERS] =
-		 g_param_spec_boxed (NM_IP4_CONFIG_NAMESERVERS, "", "",
-		                     DBUS_TYPE_G_UINT_ARRAY,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS);
+		g_param_spec_variant (NM_IP4_CONFIG_NAMESERVERS, "", "",
+		                      G_VARIANT_TYPE ("au"),
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_DOMAINS] =
-		 g_param_spec_boxed (NM_IP4_CONFIG_DOMAINS, "", "",
-		                     DBUS_TYPE_G_ARRAY_OF_STRING,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS);
+		g_param_spec_boxed (NM_IP4_CONFIG_DOMAINS, "", "",
+		                    G_TYPE_STRV,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_SEARCHES] =
-		 g_param_spec_boxed (NM_IP4_CONFIG_SEARCHES, "", "",
-		                     DBUS_TYPE_G_ARRAY_OF_STRING,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS);
+		g_param_spec_boxed (NM_IP4_CONFIG_SEARCHES, "", "",
+		                    G_TYPE_STRV,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_DNS_OPTIONS] =
 		 g_param_spec_boxed (NM_IP4_CONFIG_DNS_OPTIONS, "", "",
-		                     DBUS_TYPE_G_ARRAY_OF_STRING,
+		                     G_TYPE_STRV,
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_WINS_SERVERS] =
-		 g_param_spec_boxed (NM_IP4_CONFIG_WINS_SERVERS, "", "",
-		                     DBUS_TYPE_G_UINT_ARRAY,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS);
+		g_param_spec_variant (NM_IP4_CONFIG_WINS_SERVERS, "", "",
+		                      G_VARIANT_TYPE ("au"),
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, LAST_PROP, obj_properties);
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (config_class),
-	                                        &dbus_glib_nm_ip4_config_object_info);
+	                                        NMDBUS_TYPE_IP4_CONFIG_SKELETON,
+	                                        NULL);
 }
