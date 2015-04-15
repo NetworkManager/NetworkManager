@@ -26,8 +26,6 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
-#include <dbus/dbus-glib-lowlevel.h>
-#include <dbus/dbus-glib.h>
 
 #include "nm-default.h"
 #include "nm-manager.h"
@@ -35,7 +33,6 @@
 #include "nm-vpn-manager.h"
 #include "nm-device.h"
 #include "nm-device-generic.h"
-#include "nm-dbus-glib-types.h"
 #include "nm-platform.h"
 #include "nm-rfkill-manager.h"
 #include "nm-dhcp-manager.h"
@@ -55,60 +52,9 @@
 #include "nm-core-internal.h"
 #include "nm-config.h"
 #include "nm-audit-manager.h"
+#include "nm-dbus-compat.h"
 
-static gboolean impl_manager_get_devices (NMManager *manager,
-                                          GPtrArray **devices,
-                                          GError **err);
-
-static gboolean impl_manager_get_device_by_ip_iface (NMManager *self,
-                                                     const char *iface,
-                                                     char **out_object_path,
-                                                     GError **error);
-
-static void impl_manager_activate_connection (NMManager *manager,
-                                              const char *connection_path,
-                                              const char *device_path,
-                                              const char *specific_object_path,
-                                              DBusGMethodInvocation *context);
-
-static void impl_manager_add_and_activate_connection (NMManager *manager,
-                                                      GHashTable *settings,
-                                                      const char *device_path,
-                                                      const char *specific_object_path,
-                                                      DBusGMethodInvocation *context);
-
-static void impl_manager_deactivate_connection (NMManager *manager,
-                                                const char *connection_path,
-                                                DBusGMethodInvocation *context);
-
-static void impl_manager_sleep (NMManager *manager,
-                                gboolean do_sleep,
-                                DBusGMethodInvocation *context);
-
-static void impl_manager_enable (NMManager *manager,
-                                 gboolean enable,
-                                 DBusGMethodInvocation *context);
-
-static void impl_manager_get_permissions (NMManager *manager,
-                                          DBusGMethodInvocation *context);
-
-static gboolean impl_manager_get_state (NMManager *manager,
-                                        guint32 *state,
-                                        GError **error);
-
-static void impl_manager_set_logging (NMManager *manager,
-                                      const char *level,
-                                      const char *domains,
-                                      DBusGMethodInvocation *context);
-
-static void impl_manager_get_logging (NMManager *manager,
-                                      char **level,
-                                      char **domains);
-
-static void impl_manager_check_connectivity (NMManager *manager,
-                                             DBusGMethodInvocation *context);
-
-#include "nm-manager-glue.h"
+#include "nmdbus-manager.h"
 
 static void add_device (NMManager *self, NMDevice *device, gboolean try_assume);
 
@@ -165,6 +111,7 @@ typedef struct {
 	NMPolicy *policy;
 
 	NMBusManager  *dbus_mgr;
+	guint          prop_filter;
 	NMRfkillManager *rfkill_mgr;
 
 	NMSettings *settings;
@@ -1344,7 +1291,7 @@ nm_manager_rfkill_update (NMManager *self, RfKillType rtype)
 static void
 device_auth_done_cb (NMAuthChain *chain,
                      GError *auth_error,
-                     DBusGMethodInvocation *context,
+                     GDBusMethodInvocation *context,
                      gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
@@ -1399,7 +1346,7 @@ device_auth_done_cb (NMAuthChain *chain,
 
 static void
 device_auth_request_cb (NMDevice *device,
-                        DBusGMethodInvocation *context,
+                        GDBusMethodInvocation *context,
                         NMConnection *connection,
                         const char *permission,
                         gboolean allow_interaction,
@@ -2063,43 +2010,46 @@ nm_manager_get_best_device_for_connection (NMManager *self,
 	return NULL;
 }
 
-static gboolean
-impl_manager_get_devices (NMManager *manager, GPtrArray **devices, GError **err)
+static void
+impl_manager_get_devices (NMManager *self,
+                          GDBusMethodInvocation *context)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GPtrArray *paths;
 	GSList *iter;
 
-	*devices = g_ptr_array_sized_new (g_slist_length (priv->devices));
+	paths = g_ptr_array_sized_new (g_slist_length (priv->devices) + 1);
 
 	for (iter = priv->devices; iter; iter = iter->next)
-		g_ptr_array_add (*devices, g_strdup (nm_exported_object_get_path (NM_EXPORTED_OBJECT (iter->data))));
-	return TRUE;
+		g_ptr_array_add (paths, g_strdup (nm_exported_object_get_path (NM_EXPORTED_OBJECT (iter->data))));
+	g_ptr_array_add (paths, NULL);
+
+	g_dbus_method_invocation_return_value (context,
+	                                       g_variant_new ("(^ao)", (char **) paths->pdata));
+	g_ptr_array_unref (paths);
 }
 
-static gboolean
+static void
 impl_manager_get_device_by_ip_iface (NMManager *self,
-                                     const char *iface,
-                                     char **out_object_path,
-                                     GError **error)
+                                     GDBusMethodInvocation *context,
+                                     const char *iface)
 {
 	NMDevice *device;
 	const char *path = NULL;
 
 	device = find_device_by_ip_iface (self, iface);
-	if (device) {
+	if (device)
 		path = nm_exported_object_get_path (NM_EXPORTED_OBJECT (device));
-		if (path)
-			*out_object_path = g_strdup (path);
-	}
 
 	if (path == NULL) {
-		g_set_error_literal (error,
-		                     NM_MANAGER_ERROR,
-		                     NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-		                     "No device found for the requested iface.");
+		g_dbus_method_invocation_return_error (context,
+		                                       NM_MANAGER_ERROR,
+		                                       NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+		                                       "No device found for the requested iface.");
+	} else {
+		g_dbus_method_invocation_return_value (context,
+		                                       g_variant_new ("(o)", path));
 	}
-
-	return path ? TRUE : FALSE;
 }
 
 static gboolean
@@ -2972,7 +2922,7 @@ nm_manager_activate_connection (NMManager *self,
 
 static NMAuthSubject *
 validate_activation_request (NMManager *self,
-                             DBusGMethodInvocation *context,
+                             GDBusMethodInvocation *context,
                              NMConnection *connection,
                              const char *device_path,
                              NMDevice **out_device,
@@ -3088,7 +3038,7 @@ _activation_auth_done (NMActiveConnection *active,
                        gpointer user_data2)
 {
 	NMManager *self = user_data1;
-	DBusGMethodInvocation *context = user_data2;
+	GDBusMethodInvocation *context = user_data2;
 	GError *error = NULL;
 	NMAuthSubject *subject;
 	NMConnection *connection;
@@ -3098,7 +3048,9 @@ _activation_auth_done (NMActiveConnection *active,
 
 	if (success) {
 		if (_internal_activate_generic (self, active, &error)) {
-			dbus_g_method_return (context, nm_exported_object_get_path (NM_EXPORTED_OBJECT (active)));
+			g_dbus_method_invocation_return_value (
+				context,
+				g_variant_new ("(o)", nm_exported_object_get_path (NM_EXPORTED_OBJECT (active))));
 			nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ACTIVATE, connection, TRUE,
 			                            subject, NULL);
 			g_object_unref (active);
@@ -3111,21 +3063,20 @@ _activation_auth_done (NMActiveConnection *active,
 	}
 
 	g_assert (error);
-	dbus_g_method_return_error (context, error);
 	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ACTIVATE, connection, FALSE,
 	                            subject, error->message);
 	_internal_activation_failed (self, active, error->message);
 
 	g_object_unref (active);
-	g_error_free (error);
+	g_dbus_method_invocation_take_error (context, error);
 }
 
 static void
 impl_manager_activate_connection (NMManager *self,
+                                  GDBusMethodInvocation *context,
                                   const char *connection_path,
                                   const char *device_path,
-                                  const char *specific_object_path,
-                                  DBusGMethodInvocation *context)
+                                  const char *specific_object_path)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMActiveConnection *active = NULL;
@@ -3230,8 +3181,7 @@ error:
 	g_clear_object (&subject);
 
 	g_assert (error);
-	dbus_g_method_return_error (context, error);
-	g_error_free (error);
+	g_dbus_method_invocation_take_error (context, error);
 }
 
 /***********************************************************************/
@@ -3245,7 +3195,7 @@ static void
 activation_add_done (NMSettings *self,
                      NMSettingsConnection *new_connection,
                      GError *error,
-                     DBusGMethodInvocation *context,
+                     GDBusMethodInvocation *context,
                      NMAuthSubject *subject,
                      gpointer user_data)
 {
@@ -3259,9 +3209,11 @@ activation_add_done (NMSettings *self,
 			nm_settings_connection_commit_changes (new_connection,
 			                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION | NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED,
 			                                       NULL, NULL);
-			dbus_g_method_return (context,
-			                      nm_connection_get_path (NM_CONNECTION (new_connection)),
-			                      nm_exported_object_get_path (NM_EXPORTED_OBJECT (info->active)));
+			g_dbus_method_invocation_return_value (
+				context,
+				g_variant_new ("(oo)",
+				               nm_connection_get_path (NM_CONNECTION (new_connection)),
+				               nm_exported_object_get_path (NM_EXPORTED_OBJECT (info->active))));
 			nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD_ACTIVATE,
 			                            nm_active_connection_get_connection (info->active),
 			                            TRUE,
@@ -3275,7 +3227,7 @@ activation_add_done (NMSettings *self,
 	g_assert (error);
 	_internal_activation_failed (info->manager, info->active, error->message);
 	nm_settings_connection_delete (new_connection, NULL, NULL);
-	dbus_g_method_return_error (context, error);
+	g_dbus_method_invocation_return_gerror (context, error);
 	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD_ACTIVATE,
 	                            nm_active_connection_get_connection (info->active),
 	                            FALSE,
@@ -3297,7 +3249,7 @@ _add_and_activate_auth_done (NMActiveConnection *active,
 {
 	NMManager *self = user_data1;
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	DBusGMethodInvocation *context = user_data2;
+	GDBusMethodInvocation *context = user_data2;
 	AddAndActivateInfo *info;
 	GError *error = NULL;
 
@@ -3318,13 +3270,12 @@ _add_and_activate_auth_done (NMActiveConnection *active,
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                             error_desc);
-		dbus_g_method_return_error (context, error);
 		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD_ACTIVATE,
 		                            nm_active_connection_get_connection (active),
 		                            FALSE,
 		                            nm_active_connection_get_subject (active),
 		                            error->message);
-		g_error_free (error);
+		g_dbus_method_invocation_take_error (context, error);
 	}
 
 	g_object_unref (active);
@@ -3332,10 +3283,10 @@ _add_and_activate_auth_done (NMActiveConnection *active,
 
 static void
 impl_manager_add_and_activate_connection (NMManager *self,
-                                          GHashTable *settings,
+                                          GDBusMethodInvocation *context,
+                                          GVariant *settings,
                                           const char *device_path,
-                                          const char *specific_object_path,
-                                          DBusGMethodInvocation *context)
+                                          const char *specific_object_path)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMConnection *connection = NULL;
@@ -3360,12 +3311,8 @@ impl_manager_add_and_activate_connection (NMManager *self,
 	 * validate_activation_request()).
 	 */
 	connection = nm_simple_connection_new ();
-	if (settings && g_hash_table_size (settings)) {
-		GVariant *settings_dict = nm_utils_connection_hash_to_dict (settings);
-
-		nm_connection_replace_settings (connection, settings_dict, NULL);
-		g_variant_unref (settings_dict);
-	}
+	if (settings && g_variant_n_children (settings))
+		nm_connection_replace_settings (connection, settings, NULL);
 
 	subject = validate_activation_request (self,
 	                                       context,
@@ -3437,8 +3384,7 @@ error:
 	g_clear_object (&active);
 
 	g_assert (error);
-	dbus_g_method_return_error (context, error);
-	g_error_free (error);
+	g_dbus_method_invocation_take_error (context, error);
 }
 
 /***********************************************************************/
@@ -3487,7 +3433,7 @@ nm_manager_deactivate_connection (NMManager *manager,
 static void
 deactivate_net_auth_done_cb (NMAuthChain *chain,
                              GError *auth_error,
-                             DBusGMethodInvocation *context,
+                             GDBusMethodInvocation *context,
                              gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
@@ -3524,11 +3470,6 @@ deactivate_net_auth_done_cb (NMAuthChain *chain,
 			g_assert (error);
 	}
 
-	if (error)
-		dbus_g_method_return_error (context, error);
-	else
-		dbus_g_method_return (context);
-
 	if (active) {
 		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_DEACTIVATE,
 		                            nm_active_connection_get_connection (active),
@@ -3537,14 +3478,18 @@ deactivate_net_auth_done_cb (NMAuthChain *chain,
 		                            error ? error->message : NULL);
 	}
 
-	g_clear_error (&error);
+	if (error)
+		g_dbus_method_invocation_take_error (context, error);
+	else
+		g_dbus_method_invocation_return_value (context, NULL);
+
 	nm_auth_chain_unref (chain);
 }
 
 static void
 impl_manager_deactivate_connection (NMManager *self,
-                                    const char *active_path,
-                                    DBusGMethodInvocation *context)
+                                    GDBusMethodInvocation *context,
+                                    const char *active_path)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMConnection *connection = NULL;
@@ -3606,14 +3551,13 @@ impl_manager_deactivate_connection (NMManager *self,
 
 done:
 	if (error) {
-		dbus_g_method_return_error (context, error);
 		if (connection) {
 			nm_audit_log_connection_op (NM_AUDIT_OP_CONN_DEACTIVATE, connection, FALSE,
 			                            subject, error->message);
 		}
+		g_dbus_method_invocation_take_error (context, error);
 	}
 	g_clear_object (&subject);
-	g_clear_error (&error);
 }
 
 static gboolean
@@ -3730,7 +3674,7 @@ _internal_sleep (NMManager *self, gboolean do_sleep)
 static void
 sleep_auth_done_cb (NMAuthChain *chain,
                     GError *error,
-                    DBusGMethodInvocation *context,
+                    GDBusMethodInvocation *context,
                     gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
@@ -3748,19 +3692,17 @@ sleep_auth_done_cb (NMAuthChain *chain,
 		                         NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                         "Sleep/wake request failed: %s",
 		                         error->message);
-		dbus_g_method_return_error (context, ret_error);
-		g_error_free (ret_error);
+		g_dbus_method_invocation_take_error (context, ret_error);
 	} else if (result != NM_AUTH_CALL_RESULT_YES) {
 		ret_error = g_error_new_literal (NM_MANAGER_ERROR,
 		                                 NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                                 "Not authorized to sleep/wake");
-		dbus_g_method_return_error (context, ret_error);
-		g_error_free (ret_error);
+		g_dbus_method_invocation_take_error (context, ret_error);
 	} else {
 		/* Auth success */
 		do_sleep = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "sleep"));
 		_internal_sleep (self, do_sleep);
-		dbus_g_method_return (context);
+		g_dbus_method_invocation_return_value (context, NULL);
 	}
 
 	nm_auth_chain_unref (chain);
@@ -3769,8 +3711,8 @@ sleep_auth_done_cb (NMAuthChain *chain,
 
 static void
 impl_manager_sleep (NMManager *self,
-                    gboolean do_sleep,
-                    DBusGMethodInvocation *context)
+                    GDBusMethodInvocation *context,
+                    gboolean do_sleep)
 {
 	NMManagerPrivate *priv;
 	GError *error = NULL;
@@ -3789,10 +3731,9 @@ impl_manager_sleep (NMManager *self,
 		error = g_error_new (NM_MANAGER_ERROR,
 		                     NM_MANAGER_ERROR_ALREADY_ASLEEP_OR_AWAKE,
 		                     "Already %s", do_sleep ? "asleep" : "awake");
-		dbus_g_method_return_error (context, error);
 		nm_audit_log_control_op (NM_AUDIT_OP_SLEEP_CONTROL, do_sleep ? "on" : "off", FALSE, subject,
 		                         error->message);
-		g_error_free (error);
+		g_dbus_method_invocation_take_error (context, error);
 		return;
 	}
 
@@ -3806,7 +3747,7 @@ impl_manager_sleep (NMManager *self,
 	 */
 	_internal_sleep (self, do_sleep);
 	nm_audit_log_control_op (NM_AUDIT_OP_SLEEP_CONTROL, do_sleep ? "on" : "off", TRUE, subject, NULL);
-	dbus_g_method_return (context);
+	g_dbus_method_invocation_return_value (context, NULL);
 	return;
 
 #if 0
@@ -3819,8 +3760,7 @@ impl_manager_sleep (NMManager *self,
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                             error_desc);
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
+		g_dbus_method_invocation_take_error (context, error);
 	}
 #endif
 }
@@ -3874,7 +3814,7 @@ _internal_enable (NMManager *self, gboolean enable)
 static void
 enable_net_done_cb (NMAuthChain *chain,
                     GError *error,
-                    DBusGMethodInvocation *context,
+                    GDBusMethodInvocation *context,
                     gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
@@ -3904,16 +3844,15 @@ enable_net_done_cb (NMAuthChain *chain,
 	} else {
 		/* Auth success */
 		_internal_enable (self, enable);
-		dbus_g_method_return (context);
+		g_dbus_method_invocation_return_value (context, NULL);
 		nm_audit_log_control_op (NM_AUDIT_OP_NET_CONTROL, enable ? "on" : "off", TRUE,
 		                         subject, NULL);
 	}
 
 	if (ret_error) {
-		dbus_g_method_return_error (context, ret_error);
 		nm_audit_log_control_op (NM_AUDIT_OP_NET_CONTROL, enable ? "on" : "off", FALSE,
 		                         subject, ret_error->message);
-		g_error_free (ret_error);
+		g_dbus_method_invocation_take_error (context, ret_error);
 	}
 
 	nm_auth_chain_unref (chain);
@@ -3921,8 +3860,8 @@ enable_net_done_cb (NMAuthChain *chain,
 
 static void
 impl_manager_enable (NMManager *self,
-                     gboolean enable,
-                     DBusGMethodInvocation *context)
+                     GDBusMethodInvocation *context,
+                     gboolean enable)
 {
 	NMManagerPrivate *priv;
 	NMAuthChain *chain;
@@ -3953,24 +3892,23 @@ impl_manager_enable (NMManager *self,
 
 done:
 	if (error)
-		dbus_g_method_return_error (context, error);
-	g_clear_error (&error);
+		g_dbus_method_invocation_take_error (context, error);
 }
 
 /* Permissions */
 
 static void
-get_perm_add_result (NMAuthChain *chain, GHashTable *results, const char *permission)
+get_perm_add_result (NMAuthChain *chain, GVariantBuilder *results, const char *permission)
 {
 	NMAuthCallResult result;
 
 	result = nm_auth_chain_get_result (chain, permission);
 	if (result == NM_AUTH_CALL_RESULT_YES)
-		g_hash_table_insert (results, (char *) permission, "yes");
+		g_variant_builder_add (results, "{ss}", permission, "yes");
 	else if (result == NM_AUTH_CALL_RESULT_NO)
-		g_hash_table_insert (results, (char *) permission, "no");
+		g_variant_builder_add (results, "{ss}", permission, "no");
 	else if (result == NM_AUTH_CALL_RESULT_AUTH)
-		g_hash_table_insert (results, (char *) permission, "auth");
+		g_variant_builder_add (results, "{ss}", permission, "auth");
 	else {
 		nm_log_dbg (LOGD_CORE, "unknown auth chain result %d", result);
 	}
@@ -3979,13 +3917,13 @@ get_perm_add_result (NMAuthChain *chain, GHashTable *results, const char *permis
 static void
 get_permissions_done_cb (NMAuthChain *chain,
                          GError *error,
-                         DBusGMethodInvocation *context,
+                         GDBusMethodInvocation *context,
                          gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GError *ret_error;
-	GHashTable *results;
+	GVariantBuilder results;
 
 	g_assert (context);
 
@@ -3996,25 +3934,24 @@ get_permissions_done_cb (NMAuthChain *chain,
 		                         NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                         "Permissions request failed: %s",
 		                         error->message);
-		dbus_g_method_return_error (context, ret_error);
-		g_error_free (ret_error);
+		g_dbus_method_invocation_take_error (context, ret_error);
 	} else {
-		results = g_hash_table_new (g_str_hash, g_str_equal);
+		g_variant_builder_init (&results, G_VARIANT_TYPE ("a{ss}"));
 
-		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK);
-		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_SLEEP_WAKE);
-		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI);
-		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN);
-		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX);
-		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_NETWORK_CONTROL);
-		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED);
-		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN);
-		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM);
-		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN);
-		get_perm_add_result (chain, results, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME);
+		get_perm_add_result (chain, &results, NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK);
+		get_perm_add_result (chain, &results, NM_AUTH_PERMISSION_SLEEP_WAKE);
+		get_perm_add_result (chain, &results, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI);
+		get_perm_add_result (chain, &results, NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN);
+		get_perm_add_result (chain, &results, NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX);
+		get_perm_add_result (chain, &results, NM_AUTH_PERMISSION_NETWORK_CONTROL);
+		get_perm_add_result (chain, &results, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED);
+		get_perm_add_result (chain, &results, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN);
+		get_perm_add_result (chain, &results, NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM);
+		get_perm_add_result (chain, &results, NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN);
+		get_perm_add_result (chain, &results, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME);
 
-		dbus_g_method_return (context, results);
-		g_hash_table_destroy (results);
+		g_dbus_method_invocation_return_value (context,
+		                                       g_variant_new ("(a{ss})", &results));
 	}
 
 	nm_auth_chain_unref (chain);
@@ -4022,7 +3959,7 @@ get_permissions_done_cb (NMAuthChain *chain,
 
 static void
 impl_manager_get_permissions (NMManager *self,
-                              DBusGMethodInvocation *context)
+                              GDBusMethodInvocation *context)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMAuthChain *chain;
@@ -4033,8 +3970,7 @@ impl_manager_get_permissions (NMManager *self,
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                             "Unable to authenticate request.");
-		dbus_g_method_return_error (context, error);
-		g_clear_error (&error);
+		g_dbus_method_invocation_take_error (context, error);
 		return;
 	}
 
@@ -4052,21 +3988,22 @@ impl_manager_get_permissions (NMManager *self,
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME, FALSE);
 }
 
-static gboolean
-impl_manager_get_state (NMManager *manager, guint32 *state, GError **error)
+static void
+impl_manager_get_state (NMManager *self,
+                        GDBusMethodInvocation *context)
 {
-	nm_manager_update_state (manager);
-	*state = NM_MANAGER_GET_PRIVATE (manager)->state;
-	return TRUE;
+	nm_manager_update_state (self);
+	g_dbus_method_invocation_return_value (context,
+	                                       g_variant_new ("(u)", NM_MANAGER_GET_PRIVATE (self)->state));
 }
 
 static void
-impl_manager_set_logging (NMManager *manager,
+impl_manager_set_logging (NMManager *self,
+                          GDBusMethodInvocation *context,
                           const char *level,
-                          const char *domains,
-                          DBusGMethodInvocation *context)
+                          const char *domains)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GError *error = NULL;
 	gulong caller_uid = G_MAXULONG;
 
@@ -4090,20 +4027,20 @@ impl_manager_set_logging (NMManager *manager,
 	}
 
 done:
-	if (error) {
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
-	} else
-		dbus_g_method_return (context);
+	if (error)
+		g_dbus_method_invocation_take_error (context, error);
+	else
+		g_dbus_method_invocation_return_value (context, NULL);
 }
 
 static void
 impl_manager_get_logging (NMManager *manager,
-                          char **level,
-                          char **domains)
+                          GDBusMethodInvocation *context)
 {
-	*level = g_strdup (nm_logging_level_to_string ());
-	*domains = g_strdup (nm_logging_domains_to_string ());
+	g_dbus_method_invocation_return_value (context,
+	                                       g_variant_new ("(ss)",
+	                                                      nm_logging_level_to_string (),
+	                                                      nm_logging_domains_to_string ()));
 }
 
 static void
@@ -4111,23 +4048,24 @@ connectivity_check_done (GObject *object,
                          GAsyncResult *result,
                          gpointer user_data)
 {
-	DBusGMethodInvocation *context = user_data;
+	GDBusMethodInvocation *context = user_data;
 	NMConnectivityState state;
 	GError *error = NULL;
 
 	state = nm_connectivity_check_finish (NM_CONNECTIVITY (object), result, &error);
-	if (error) {
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
-	} else
-		dbus_g_method_return (context, state);
+	if (error)
+		g_dbus_method_invocation_take_error (context, error);
+	else {
+		g_dbus_method_invocation_return_value (context,
+		                                       g_variant_new ("(u)", state));
+	}
 }
 
 
 static void
 check_connectivity_auth_done_cb (NMAuthChain *chain,
                                  GError *auth_error,
-                                 DBusGMethodInvocation *context,
+                                 GDBusMethodInvocation *context,
                                  gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
@@ -4156,29 +4094,26 @@ check_connectivity_auth_done_cb (NMAuthChain *chain,
 		                             context);
 	}
 
-	if (error) {
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
-	}
+	if (error)
+		g_dbus_method_invocation_take_error (context, error);
 	nm_auth_chain_unref (chain);
 }
 
 static void
-impl_manager_check_connectivity (NMManager *manager,
-                                 DBusGMethodInvocation *context)
+impl_manager_check_connectivity (NMManager *self,
+                                 GDBusMethodInvocation *context)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMAuthChain *chain;
 	GError *error = NULL;
 
 	/* Validate the request */
-	chain = nm_auth_chain_new_context (context, check_connectivity_auth_done_cb, manager);
+	chain = nm_auth_chain_new_context (context, check_connectivity_auth_done_cb, self);
 	if (!chain) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                             "Unable to authenticate request.");
-		dbus_g_method_return_error (context, error);
-		g_clear_error (&error);
+		g_dbus_method_invocation_take_error (context, error);
 		return;
 	}
 
@@ -4421,170 +4356,195 @@ policy_activating_device_changed (GObject *object, GParamSpec *pspec, gpointer u
 }
 
 #define NM_PERM_DENIED_ERROR "org.freedesktop.NetworkManager.PermissionDenied"
-#define DEV_PERM_DENIED_ERROR "org.freedesktop.NetworkManager.Device.PermissionDenied"
+
+typedef struct {
+	NMManager *self;
+	GDBusConnection *connection;
+	GDBusMessage *message;
+	NMAuthSubject *subject;
+	const char *permission;
+	const char *audit_op;
+	GObject *object;
+	const char *property;
+	gboolean set_enable;
+} PropertyFilterData;
+
+static void
+free_property_filter_data (PropertyFilterData *pfd)
+{
+	g_object_unref (pfd->self);
+	g_object_unref (pfd->connection);
+	g_object_unref (pfd->message);
+	g_object_unref (pfd->subject);
+	g_object_unref (pfd->object);
+	g_free (pfd);
+}
 
 static void
 prop_set_auth_done_cb (NMAuthChain *chain,
                        GError *error,
-                       DBusGMethodInvocation *context,
+                       GDBusMethodInvocation *context, /* NULL */
                        gpointer user_data)
 {
-	NMManager *self = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	DBusConnection *connection;
+	PropertyFilterData *pfd = user_data;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (pfd->self);
 	NMAuthCallResult result;
-	DBusMessage *reply = NULL, *message;
-	const char *permission, *prop, *audit_op;
-	GObject *obj;
-	gboolean set_enabled = TRUE;
-	NMAuthSubject *subject;
 	gs_free char *prop_value = NULL;
+	GDBusMessage *reply;
+
+	prop_value = g_strdup_printf ("%s:%d", pfd->property, pfd->set_enable);
 
 	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
-
-	message = nm_auth_chain_get_data (chain, "message");
-	permission = nm_auth_chain_get_data (chain, "permission");
-	prop = nm_auth_chain_get_data (chain, "prop");
-	set_enabled = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "enabled"));
-	obj = nm_auth_chain_get_data (chain, "object");
-	audit_op = nm_auth_chain_get_data (chain, "audit-op");
-
-	prop_value = g_strdup_printf ("%s:%d", prop, set_enabled);
-
-	result = nm_auth_chain_get_result (chain, permission);
-	subject = nm_auth_chain_get_subject (chain);
+	result = nm_auth_chain_get_result (chain, pfd->permission);
 	if (error || (result != NM_AUTH_CALL_RESULT_YES)) {
-		reply = dbus_message_new_error (message,
-		                                NM_IS_DEVICE (obj) ? DEV_PERM_DENIED_ERROR : NM_PERM_DENIED_ERROR,
-		                                "Not authorized to perform this operation");
-		nm_audit_log_control_op (audit_op, prop_value, FALSE, subject, error ? error->message : NULL);
+		reply = g_dbus_message_new_method_error (pfd->message,
+		                                         NM_PERM_DENIED_ERROR,
+		                                         "Not authorized to perform this operation");
+		nm_audit_log_control_op (pfd->audit_op, prop_value, FALSE, pfd->subject, error ? error->message : NULL);
 	} else {
-		g_object_set (obj, prop, set_enabled, NULL);
-		reply = dbus_message_new_method_return (message);
-		nm_audit_log_control_op (audit_op, prop_value, TRUE, subject, NULL);
+		g_object_set (pfd->object, pfd->property, pfd->set_enable, NULL);
+		reply = g_dbus_message_new_method_reply (pfd->message);
+		g_dbus_message_set_body (reply, g_variant_new_tuple (NULL, 0));
+		nm_audit_log_control_op (pfd->audit_op, prop_value, TRUE, pfd->subject, NULL);
 	}
 
-	g_assert (reply);
-	connection = nm_auth_chain_get_data (chain, "connection");
-	g_assert (connection);
-	dbus_connection_send (connection, reply, NULL);
-	dbus_message_unref (reply);
-
+	g_dbus_connection_send_message (pfd->connection, reply,
+	                                G_DBUS_SEND_MESSAGE_FLAGS_NONE,
+	                                NULL, NULL);
+	g_object_unref (reply);
 	nm_auth_chain_unref (chain);
+
+	free_property_filter_data (pfd);
 }
 
-static DBusHandlerResult
-prop_filter (DBusConnection *connection,
-             DBusMessage *message,
-             void *user_data)
+static gboolean
+do_set_property_check (gpointer user_data)
 {
-	NMManager *self = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	DBusMessageIter iter;
-	DBusMessageIter sub;
-	const char *propiface = NULL;
-	const char *propname = NULL;
-	const char *glib_propname = NULL, *permission = NULL;
-	DBusMessage *reply = NULL;
-	gboolean set_enabled = FALSE;
-	NMAuthSubject *subject = NULL;
+	PropertyFilterData *pfd = user_data;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (pfd->self);
+	GDBusMessage *reply = NULL;
 	NMAuthChain *chain;
-	GObject *obj;
-	const char *audit_op = NULL;
 
-	/* The sole purpose of this function is to validate property accesses
-	 * on the NMManager object since dbus-glib doesn't yet give us this
-	 * functionality.
-	 */
-
-	if (!dbus_message_is_method_call (message, DBUS_INTERFACE_PROPERTIES, "Set"))
-		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-
-	dbus_message_iter_init (message, &iter);
-
-	/* Get the D-Bus interface of the property to set */
-	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING)
-		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-	dbus_message_iter_get_basic (&iter, &propiface);
-	if (!propiface || (strcmp (propiface, NM_DBUS_INTERFACE) && strcmp (propiface, NM_DBUS_INTERFACE_DEVICE)))
-		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-	dbus_message_iter_next (&iter);
-
-	/* Get the property name that's going to be set */
-	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING)
-		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-	dbus_message_iter_get_basic (&iter, &propname);
-	dbus_message_iter_next (&iter);
-
-	if (!strcmp (propname, "WirelessEnabled")) {
-		glib_propname = NM_MANAGER_WIRELESS_ENABLED;
-		permission = NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI;
-		audit_op = NM_AUDIT_OP_RADIO_CONTROL;
-	} else if (!strcmp (propname, "WwanEnabled")) {
-		glib_propname = NM_MANAGER_WWAN_ENABLED;
-		permission = NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN;
-		audit_op = NM_AUDIT_OP_RADIO_CONTROL;
-	} else if (!strcmp (propname, "WimaxEnabled")) {
-		glib_propname = NM_MANAGER_WIMAX_ENABLED;
-		permission = NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX;
-		audit_op = NM_AUDIT_OP_RADIO_CONTROL;
-	} else if (!strcmp (propname, "Autoconnect")) {
-		glib_propname = NM_DEVICE_AUTOCONNECT;
-		permission = NM_AUTH_PERMISSION_NETWORK_CONTROL;
-		audit_op = NM_AUDIT_OP_DEVICE_AUTOCONNECT;
-	} else
-		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-
-	/* Get the new value for the property */
-	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_VARIANT)
-		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-	dbus_message_iter_recurse (&iter, &sub);
-	if (dbus_message_iter_get_arg_type (&sub) != DBUS_TYPE_BOOLEAN)
-		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-	dbus_message_iter_get_basic (&sub, &set_enabled);
-
-	/* Make sure the object exists */
-	obj = dbus_g_connection_lookup_g_object (dbus_connection_get_g_connection (connection),
-	                                         dbus_message_get_path (message));
-	if (!obj) {
-		reply = dbus_message_new_error (message, NM_PERM_DENIED_ERROR,
-		                                "Object does not exist");
-		goto out;
-	}
-
-	subject = nm_auth_subject_new_unix_process_from_message (connection, message);
-	if (!subject) {
-		reply = dbus_message_new_error (message, NM_PERM_DENIED_ERROR,
-		                                "Could not determine request UID.");
+	pfd->subject = nm_auth_subject_new_unix_process_from_message (pfd->connection, pfd->message);
+	if (!pfd->subject) {
+		reply = g_dbus_message_new_method_error (pfd->message,
+		                                         NM_PERM_DENIED_ERROR,
+		                                         "Could not determine request UID.");
 		goto out;
 	}
 
 	/* Validate the user request */
-	chain = nm_auth_chain_new_subject (subject, NULL, prop_set_auth_done_cb, self);
+	chain = nm_auth_chain_new_subject (pfd->subject, NULL, prop_set_auth_done_cb, pfd);
 	if (!chain) {
-		reply = dbus_message_new_error (message, NM_PERM_DENIED_ERROR,
-		                                "Could not authenticate request.");
+		reply = g_dbus_message_new_method_error (pfd->message,
+		                                         NM_PERM_DENIED_ERROR,
+		                                         "Could not authenticate request.");
 		goto out;
 	}
 
 	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
-	nm_auth_chain_set_data (chain, "prop", g_strdup (glib_propname), g_free);
-	nm_auth_chain_set_data (chain, "permission", g_strdup (permission), g_free);
-	nm_auth_chain_set_data (chain, "enabled", GUINT_TO_POINTER (set_enabled), NULL);
-	nm_auth_chain_set_data (chain, "message", dbus_message_ref (message), (GDestroyNotify) dbus_message_unref);
-	nm_auth_chain_set_data (chain, "connection", dbus_connection_ref (connection), (GDestroyNotify) dbus_connection_unref);
-	nm_auth_chain_set_data (chain, "object", g_object_ref (obj), (GDestroyNotify) g_object_unref);
-	nm_auth_chain_set_data (chain, "audit-op", (char *) audit_op, NULL);
-	nm_auth_chain_add_call (chain, permission, TRUE);
+	nm_auth_chain_add_call (chain, pfd->permission, TRUE);
 
 out:
 	if (reply) {
-		dbus_connection_send (connection, reply, NULL);
-		dbus_message_unref (reply);
+		g_dbus_connection_send_message (pfd->connection, reply,
+		                                G_DBUS_SEND_MESSAGE_FLAGS_NONE,
+		                                NULL, NULL);
+		g_object_unref (reply);
+		free_property_filter_data (pfd);
 	}
-	g_clear_object (&subject);
 
-	return DBUS_HANDLER_RESULT_HANDLED;
+	return FALSE;
+}
+
+static GDBusMessage *
+prop_filter (GDBusConnection *connection,
+             GDBusMessage *message,
+             gboolean incoming,
+             gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	GVariant *args, *value = NULL;
+	const char *propiface = NULL;
+	const char *propname = NULL;
+	const char *glib_propname = NULL, *permission = NULL;
+	const char *audit_op = NULL;
+	gboolean set_enable;
+	gpointer obj;
+	PropertyFilterData *pfd;
+
+	/* The sole purpose of this function is to validate property accesses on the
+	 * NMManager object since gdbus doesn't give us this functionality.
+	 */
+
+	/* Only filter org.freedesktop.DBus.Properties.Set calls */
+	if (   !incoming
+	    || g_dbus_message_get_message_type (message) != G_DBUS_MESSAGE_TYPE_METHOD_CALL
+	    || strcmp (g_dbus_message_get_interface (message), DBUS_INTERFACE_PROPERTIES) != 0
+	    || strcmp (g_dbus_message_get_member (message), "Set") != 0)
+		return message;
+
+	/* Only filter calls with correct arguments (all filtered properties are boolean) */
+	args = g_dbus_message_get_body (message);
+	if (!g_variant_is_of_type (args, G_VARIANT_TYPE ("(ssv)")))
+		return message;
+	g_variant_get (args, "(&s&sv)", &propiface, &propname, &value);
+	if (!g_variant_is_of_type (value, G_VARIANT_TYPE_BOOLEAN)) {
+		g_variant_unref (value);
+		return message;
+	}
+	set_enable = g_variant_get_boolean (value);
+	g_variant_unref (value);
+
+	/* Only filter calls to filtered properties, on existing objects */
+	if (!strcmp (propiface, NM_DBUS_INTERFACE)) {
+		if (!strcmp (propname, "WirelessEnabled")) {
+			glib_propname = NM_MANAGER_WIRELESS_ENABLED;
+			permission = NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI;
+			audit_op = NM_AUDIT_OP_RADIO_CONTROL;
+		} else if (!strcmp (propname, "WwanEnabled")) {
+			glib_propname = NM_MANAGER_WWAN_ENABLED;
+			permission = NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN;
+			audit_op = NM_AUDIT_OP_RADIO_CONTROL;
+		} else if (!strcmp (propname, "WimaxEnabled")) {
+			glib_propname = NM_MANAGER_WIMAX_ENABLED;
+			permission = NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX;
+			audit_op = NM_AUDIT_OP_RADIO_CONTROL;
+		} else
+			return message;
+
+		obj = self;
+	} else if (!strcmp (propiface, NM_DBUS_INTERFACE_DEVICE)) {
+		if (!strcmp (propname, "Autoconnect")) {
+			glib_propname = NM_DEVICE_AUTOCONNECT;
+			permission = NM_AUTH_PERMISSION_NETWORK_CONTROL;
+			audit_op = NM_AUDIT_OP_DEVICE_AUTOCONNECT;
+		} else
+			return message;
+
+		obj = nm_bus_manager_get_registered_object (nm_bus_manager_get (),
+		                                            g_dbus_message_get_path (message));
+		if (!obj)
+			return message;
+	} else
+		return message;
+
+	/* This filter function is called from a gdbus worker thread which we can't
+	 * make other D-Bus calls from. In particular, we cannot call
+	 * org.freedesktop.DBus.GetConnectionUnixUser to find the remote UID.
+	 */
+	pfd = g_new0 (PropertyFilterData, 1);
+	pfd->self = g_object_ref (self);
+	pfd->connection = g_object_ref (connection);
+	pfd->message = message;
+	pfd->permission = permission;
+	pfd->object = g_object_ref (obj);
+	pfd->property = glib_propname;
+	pfd->set_enable = set_enable;
+	pfd->audit_op = audit_op;
+	g_idle_add (do_set_property_check, pfd);
+
+	return NULL;
 }
 
 static void
@@ -4733,17 +4693,14 @@ periodic_update_active_connection_timestamps (gpointer user_data)
 
 static void
 dbus_connection_changed_cb (NMBusManager *dbus_mgr,
-                            DBusConnection *dbus_connection,
+                            GDBusConnection *connection,
                             gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
-	gboolean success;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 
-	if (dbus_connection) {
-		/* Only fails on ENOMEM */
-		success = dbus_connection_add_filter (dbus_connection, prop_filter, self, NULL);
-		g_assert (success);
-	}
+	if (connection)
+		priv->prop_filter = g_dbus_connection_add_filter (connection, prop_filter, self, NULL);
 }
 
 /**********************************************************************/
@@ -4774,7 +4731,7 @@ nm_manager_setup (const char *state_file,
 {
 	NMManager *self;
 	NMManagerPrivate *priv;
-	DBusConnection *dbus_connection;
+	GDBusConnection *bus;
 	NMConfigData *config_data;
 
 	/* Can only be called once */
@@ -4784,14 +4741,9 @@ nm_manager_setup (const char *state_file,
 
 	priv = NM_MANAGER_GET_PRIVATE (self);
 
-	dbus_connection = nm_bus_manager_get_dbus_connection (priv->dbus_mgr);
-	if (dbus_connection) {
-		gboolean success;
-
-		/* Only fails on ENOMEM */
-		success = dbus_connection_add_filter (dbus_connection, prop_filter, self, NULL);
-		g_assert (success);
-	}
+	bus = nm_bus_manager_get_connection (priv->dbus_mgr);
+	if (bus)
+		priv->prop_filter = g_dbus_connection_add_filter (bus, prop_filter, self, NULL);
 
 	priv->settings = nm_settings_new ();
 	g_signal_connect (priv->settings, "notify::" NM_SETTINGS_STARTUP_COMPLETE,
@@ -5059,7 +5011,7 @@ dispose (GObject *object)
 {
 	NMManager *manager = NM_MANAGER (object);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	DBusConnection *dbus_connection;
+	GDBusConnection *bus;
 
 	g_slist_free_full (priv->auth_chains, (GDestroyNotify) nm_auth_chain_unref);
 	priv->auth_chains = NULL;
@@ -5104,9 +5056,11 @@ dispose (GObject *object)
 
 	/* Unregister property filter */
 	if (priv->dbus_mgr) {
-		dbus_connection = nm_bus_manager_get_dbus_connection (priv->dbus_mgr);
-		if (dbus_connection)
-			dbus_connection_remove_filter (dbus_connection, prop_filter, manager);
+		bus = nm_bus_manager_get_connection (priv->dbus_mgr);
+		if (bus && priv->prop_filter) {
+			g_dbus_connection_remove_filter (bus, priv->prop_filter);
+			priv->prop_filter = 0;
+		}
 		g_signal_handlers_disconnect_by_func (priv->dbus_mgr, dbus_connection_changed_cb, manager);
 		priv->dbus_mgr = NULL;
 	}
@@ -5228,7 +5182,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 	g_object_class_install_property
 		(object_class, PROP_ACTIVE_CONNECTIONS,
 		 g_param_spec_boxed (NM_MANAGER_ACTIVE_CONNECTIONS, "", "",
-		                     DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
+		                     G_TYPE_STRV,
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
 
@@ -5241,10 +5195,10 @@ nm_manager_class_init (NMManagerClass *manager_class)
 
 	g_object_class_install_property
 		(object_class, PROP_PRIMARY_CONNECTION,
-		 g_param_spec_boxed (NM_MANAGER_PRIMARY_CONNECTION, "", "",
-		                     DBUS_TYPE_G_OBJECT_PATH,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+		 g_param_spec_string (NM_MANAGER_PRIMARY_CONNECTION, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_PRIMARY_CONNECTION_TYPE,
@@ -5256,10 +5210,10 @@ nm_manager_class_init (NMManagerClass *manager_class)
 
 	g_object_class_install_property
 		(object_class, PROP_ACTIVATING_CONNECTION,
-		 g_param_spec_boxed (NM_MANAGER_ACTIVATING_CONNECTION, "", "",
-		                     DBUS_TYPE_G_OBJECT_PATH,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+		 g_param_spec_string (NM_MANAGER_ACTIVATING_CONNECTION, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/* Hostname is not exported over D-Bus */
 	g_object_class_install_property
@@ -5280,7 +5234,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 	g_object_class_install_property
 		(object_class, PROP_DEVICES,
 		 g_param_spec_boxed (NM_MANAGER_DEVICES, "", "",
-		                     DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
+		                     G_TYPE_STRV,
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
 
@@ -5305,7 +5259,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMManagerClass, device_added),
 		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 1, G_TYPE_OBJECT);
+		              G_TYPE_NONE, 1, NM_TYPE_DEVICE);
 
 	signals[DEVICE_REMOVED] =
 		g_signal_new ("device-removed",
@@ -5313,7 +5267,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMManagerClass, device_removed),
 		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 1, G_TYPE_OBJECT);
+		              G_TYPE_NONE, 1, NM_TYPE_DEVICE);
 
 	signals[STATE_CHANGED] =
 		g_signal_new ("state-changed",
@@ -5342,14 +5296,14 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              0, NULL, NULL, NULL,
-		              G_TYPE_NONE, 1, G_TYPE_OBJECT);
+		              G_TYPE_NONE, 1, NM_TYPE_ACTIVE_CONNECTION);
 
 	signals[ACTIVE_CONNECTION_REMOVED] =
 		g_signal_new (NM_MANAGER_ACTIVE_CONNECTION_REMOVED,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              0, NULL, NULL, NULL,
-		              G_TYPE_NONE, 1, G_TYPE_OBJECT);
+		              G_TYPE_NONE, 1, NM_TYPE_ACTIVE_CONNECTION);
 
 	signals[CONFIGURE_QUIT] =
 		g_signal_new (NM_MANAGER_CONFIGURE_QUIT,
@@ -5359,8 +5313,19 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		              G_TYPE_NONE, 0);
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (manager_class),
-	                                        &dbus_glib_nm_manager_object_info);
-
-	dbus_g_error_domain_register (NM_MANAGER_ERROR, NM_DBUS_INTERFACE, NM_TYPE_MANAGER_ERROR);
+	                                        NMDBUS_TYPE_MANAGER_SKELETON,
+	                                        "GetDevices", impl_manager_get_devices,
+	                                        "GetDeviceByIpIface", impl_manager_get_device_by_ip_iface,
+	                                        "ActivateConnection", impl_manager_activate_connection,
+	                                        "AddAndActivateConnection", impl_manager_add_and_activate_connection,
+	                                        "DeactivateConnection", impl_manager_deactivate_connection,
+	                                        "Sleep", impl_manager_sleep,
+	                                        "Enable", impl_manager_enable,
+	                                        "GetPermissions", impl_manager_get_permissions,
+	                                        "SetLogging", impl_manager_set_logging,
+	                                        "GetLogging", impl_manager_get_logging,
+	                                        "CheckConnectivity", impl_manager_check_connectivity,
+	                                        "state", impl_manager_get_state,
+	                                        NULL);
 }
 
