@@ -48,22 +48,7 @@
 #include "nm-platform.h"
 #include "nm-core-internal.h"
 
-static void impl_ppp_manager_need_secrets (NMPPPManager *manager,
-                                           DBusGMethodInvocation *context);
-
-static gboolean impl_ppp_manager_set_state (NMPPPManager *manager,
-                                            guint32 state,
-                                            GError **err);
-
-static gboolean impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
-                                                 GHashTable *config,
-                                                 GError **err);
-
-static gboolean impl_ppp_manager_set_ip6_config (NMPPPManager *manager,
-                                                 GHashTable *config,
-                                                 GError **err);
-
-#include "nm-ppp-manager-glue.h"
+#include "nmdbus-ppp-manager.h"
 
 static void _ppp_cleanup  (NMPPPManager *manager);
 static void _ppp_kill (NMPPPManager *manager);
@@ -77,7 +62,7 @@ typedef struct {
 	char *parent_iface;
 
 	NMActRequest *act_req;
-	DBusGMethodInvocation *pending_secrets_context;
+	GDBusMethodInvocation *pending_secrets_context;
 	guint32 secrets_id;
 	const char *secrets_setting_name;
 
@@ -341,14 +326,13 @@ ppp_secrets_cb (NMActRequest *req,
 
 	if (error) {
 		nm_log_warn (LOGD_PPP, "%s", error->message);
-		dbus_g_method_return_error (priv->pending_secrets_context, error);
+		g_dbus_method_invocation_return_gerror (priv->pending_secrets_context, error);
 		goto out;
 	}
 
 	if (!extract_details_from_connection (connection, priv->secrets_setting_name, &username, &password, &local)) {
 		nm_log_warn (LOGD_PPP, "%s", local->message);
-		dbus_g_method_return_error (priv->pending_secrets_context, local);
-		g_clear_error (&local);
+		g_dbus_method_invocation_take_error (priv->pending_secrets_context, local);
 		goto out;
 	}
 
@@ -358,7 +342,9 @@ ppp_secrets_cb (NMActRequest *req,
 	 * against libnm just to parse this. So instead, let's just send what
 	 * it needs.
 	 */
-	dbus_g_method_return (priv->pending_secrets_context, username, password);
+	g_dbus_method_invocation_return_value (
+		priv->pending_secrets_context,
+		g_variant_new ("(ss)", username, password));
 
  out:
 	priv->pending_secrets_context = NULL;
@@ -368,7 +354,7 @@ ppp_secrets_cb (NMActRequest *req,
 
 static void
 impl_ppp_manager_need_secrets (NMPPPManager *manager,
-                               DBusGMethodInvocation *context)
+                               GDBusMethodInvocation *context)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
 	NMConnection *connection;
@@ -391,8 +377,7 @@ impl_ppp_manager_need_secrets (NMPPPManager *manager,
 			ppp_secrets_cb (priv->act_req, priv->secrets_id, connection, NULL, manager);
 		} else {
 			nm_log_warn (LOGD_PPP, "%s", error->message);
-			dbus_g_method_return_error (priv->pending_secrets_context, error);
-			g_clear_error (&error);
+			g_dbus_method_invocation_take_error (priv->pending_secrets_context, error);
 		}
 		return;
 	}
@@ -418,33 +403,33 @@ impl_ppp_manager_need_secrets (NMPPPManager *manager,
 		g_ptr_array_free (hints, TRUE);
 }
 
-static gboolean impl_ppp_manager_set_state (NMPPPManager *manager,
-                                            guint32 state,
-                                            GError **err)
+static void
+impl_ppp_manager_set_state (NMPPPManager *manager,
+                            GDBusMethodInvocation *context,
+                            guint32 state)
 {
 	g_signal_emit (manager, signals[STATE_CHANGED], 0, state);
 
-	return TRUE;
+	g_dbus_method_invocation_return_value (context, NULL);
 }
 
 static gboolean
 set_ip_config_common (NMPPPManager *self,
-                      GHashTable *hash,
+                      GVariant *config_dict,
                       const char *iface_prop,
                       guint32 *out_mtu)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (self);
 	NMConnection *connection;
 	NMSettingPpp *s_ppp;
-	GValue *val;
+	const char *iface;
 
-	val = g_hash_table_lookup (hash, iface_prop);
-	if (!val || !G_VALUE_HOLDS_STRING (val)) {
+	if (!g_variant_lookup (config_dict, iface_prop, "&s", &iface)) {
 		nm_log_err (LOGD_PPP, "no interface received!");
 		return FALSE;
 	}
 	if (priv->ip_iface == NULL)
-		priv->ip_iface = g_value_dup_string (val);
+		priv->ip_iface = g_strdup (iface);
 
 	/* Got successful IP config; obviously the secrets worked */
 	connection = nm_act_request_get_connection (priv->act_req);
@@ -460,17 +445,16 @@ set_ip_config_common (NMPPPManager *self,
 	return TRUE;
 }
 
-static gboolean
+static void
 impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
-                                 GHashTable *config_hash,
-                                 GError **err)
+                                 GDBusMethodInvocation *context,
+                                 GVariant *config_dict)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
 	NMIP4Config *config;
 	NMPlatformIP4Address address;
-	GValue *val;
-	int i;
-	guint32 mtu = 0;
+	guint32 u32;
+	GVariantIter *iter;
 
 	nm_log_info (LOGD_PPP, "PPP manager (IPv4 Config Get) reply received.");
 
@@ -481,19 +465,16 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 	memset (&address, 0, sizeof (address));
 	address.plen = 32;
 
-	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_GATEWAY);
-	if (val) {
-		nm_ip4_config_set_gateway (config, g_value_get_uint (val));
-		address.peer_address = g_value_get_uint (val);
+	if (g_variant_lookup (config_dict, NM_PPP_IP4_CONFIG_GATEWAY, "u", &u32)) {
+		nm_ip4_config_set_gateway (config, u32);
+		address.peer_address = u32;
 	}
 
-	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_ADDRESS);
-	if (val)
-		address.address = g_value_get_uint (val);
+	if (g_variant_lookup (config_dict, NM_PPP_IP4_CONFIG_ADDRESS, "u", &u32))
+		address.address = u32;
 
-	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_PREFIX);
-	if (val)
-		address.plen = g_value_get_uint (val);
+	if (g_variant_lookup (config_dict, NM_PPP_IP4_CONFIG_PREFIX, "u", &u32))
+		address.plen = u32;
 
 	if (address.address && address.plen) {
 		address.source = NM_IP_CONFIG_SOURCE_PPP;
@@ -503,55 +484,47 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 		goto out;
 	}
 
-	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_DNS);
-	if (val) {
-		GArray *dns = (GArray *) g_value_get_boxed (val);
-
-		for (i = 0; i < dns->len; i++)
-			nm_ip4_config_add_nameserver (config, g_array_index (dns, guint, i));
+	if (g_variant_lookup (config_dict, NM_PPP_IP4_CONFIG_DNS, "au", &iter)) {
+		while (g_variant_iter_next (iter, "u", &u32))
+			nm_ip4_config_add_nameserver (config, u32);
+		g_variant_iter_free (iter);
 	}
 
-	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_WINS);
-	if (val) {
-		GArray *wins = (GArray *) g_value_get_boxed (val);
-
-		for (i = 0; i < wins->len; i++)
-			nm_ip4_config_add_wins (config, g_array_index (wins, guint, i));
+	if (g_variant_lookup (config_dict, NM_PPP_IP4_CONFIG_WINS, "au", &iter)) {
+		while (g_variant_iter_next (iter, "u", &u32))
+			nm_ip4_config_add_wins (config, u32);
+		g_variant_iter_free (iter);
 	}
 
-	if (!set_ip_config_common (manager, config_hash, NM_PPP_IP4_CONFIG_INTERFACE, &mtu))
+	if (!set_ip_config_common (manager, config_dict, NM_PPP_IP4_CONFIG_INTERFACE, &u32))
 		goto out;
 
-	if (mtu)
-		nm_ip4_config_set_mtu (config, mtu, NM_IP_CONFIG_SOURCE_PPP);
+	if (u32)
+		nm_ip4_config_set_mtu (config, u32, NM_IP_CONFIG_SOURCE_PPP);
 
 	/* Push the IP4 config up to the device */
 	g_signal_emit (manager, signals[IP4_CONFIG], 0, priv->ip_iface, config);
 
 out:
 	g_object_unref (config);
-	return TRUE;
+	g_dbus_method_invocation_return_value (context, NULL);
 }
 
 /* Converts the named Interface Identifier item to an IPv6 LL address and
  * returns the IID.
  */
 static gboolean
-iid_value_to_ll6_addr (GHashTable *hash,
+iid_value_to_ll6_addr (GVariant *dict,
                        const char *prop,
                        struct in6_addr *out_addr,
                        NMUtilsIPv6IfaceId *out_iid)
 {
-	GValue *val;
 	guint64 iid;
 
-	val = g_hash_table_lookup (hash, prop);
-	if (!val || !G_VALUE_HOLDS (val, G_TYPE_UINT64)) {
+	if (!g_variant_lookup (dict, prop, "t", &iid)) {
 		nm_log_dbg (LOGD_PPP, "pppd plugin property '%s' missing or not a uint64", prop);
 		return FALSE;
 	}
-
-	iid = g_value_get_uint64 (val);
 	g_return_val_if_fail (iid != 0, FALSE);
 
 	/* Construct an IPv6 LL address from the interface identifier.  See
@@ -566,10 +539,10 @@ iid_value_to_ll6_addr (GHashTable *hash,
 	return TRUE;
 }
 
-static gboolean
+static void
 impl_ppp_manager_set_ip6_config (NMPPPManager *manager,
-                                 GHashTable *hash,
-                                 GError **err)
+                                 GDBusMethodInvocation *context,
+                                 GVariant *config_dict)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
 	NMIP6Config *config;
@@ -586,15 +559,15 @@ impl_ppp_manager_set_ip6_config (NMPPPManager *manager,
 	memset (&addr, 0, sizeof (addr));
 	addr.plen = 64;
 
-	if (iid_value_to_ll6_addr (hash, NM_PPP_IP6_CONFIG_PEER_IID, &a, NULL)) {
+	if (iid_value_to_ll6_addr (config_dict, NM_PPP_IP6_CONFIG_PEER_IID, &a, NULL)) {
 		nm_ip6_config_set_gateway (config, &a);
 		addr.peer_address = a;
 	}
 
-	if (iid_value_to_ll6_addr (hash, NM_PPP_IP6_CONFIG_OUR_IID, &addr.address, &iid)) {
+	if (iid_value_to_ll6_addr (config_dict, NM_PPP_IP6_CONFIG_OUR_IID, &addr.address, &iid)) {
 		nm_ip6_config_add_address (config, &addr);
 
-		if (set_ip_config_common (manager, hash, NM_PPP_IP6_CONFIG_INTERFACE, NULL)) {
+		if (set_ip_config_common (manager, config_dict, NM_PPP_IP6_CONFIG_INTERFACE, NULL)) {
 			/* Push the IPv6 config and interface identifier up to the device */
 			g_signal_emit (manager, signals[IP6_CONFIG], 0, priv->ip_iface, &iid, config);
 		}
@@ -602,7 +575,7 @@ impl_ppp_manager_set_ip6_config (NMPPPManager *manager,
 		nm_log_err (LOGD_PPP, "invalid IPv6 address received!");
 
 	g_object_unref (config);
-	return TRUE;
+	g_dbus_method_invocation_return_value (context, NULL);
 }
 
 static void
@@ -667,7 +640,12 @@ nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
 		              G_TYPE_UINT, G_TYPE_UINT);
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (manager_class),
-	                                        &dbus_glib_nm_ppp_manager_object_info);
+	                                        NMDBUS_TYPE_PPP_MANAGER_SKELETON,
+	                                        "NeedSecrets", impl_ppp_manager_need_secrets,
+	                                        "SetIp4Config", impl_ppp_manager_set_ip4_config,
+	                                        "SetIp6Config", impl_ppp_manager_set_ip6_config,
+	                                        "SetState", impl_ppp_manager_set_state,
+	                                        NULL);
 }
 
 /*******************************************/
