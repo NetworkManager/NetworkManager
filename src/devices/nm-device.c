@@ -4711,8 +4711,10 @@ set_nm_ipv6ll (NMDevice *self, gboolean enable)
 	}
 }
 
+/************************************************************************/
+
 static NMSettingIP6ConfigPrivacy
-use_tempaddr_clamp (NMSettingIP6ConfigPrivacy use_tempaddr)
+_ip6_privacy_clamp (NMSettingIP6ConfigPrivacy use_tempaddr)
 {
 	switch (use_tempaddr) {
 	case NM_SETTING_IP6_CONFIG_PRIVACY_DISABLED:
@@ -4728,7 +4730,7 @@ use_tempaddr_clamp (NMSettingIP6ConfigPrivacy use_tempaddr)
  * /lib/sysctl.d/sysctl.conf
  */
 static NMSettingIP6ConfigPrivacy
-ip6_use_tempaddr (void)
+_ip6_privacy_sysctl (void)
 {
 	char *contents = NULL;
 	const char *group_name = "[forged_group]\n";
@@ -4752,7 +4754,7 @@ ip6_use_tempaddr (void)
 
 	tmp = g_key_file_get_integer (keyfile, "forged_group", "net.ipv6.conf.default.use_tempaddr", &error);
 	if (error == NULL)
-		ret = use_tempaddr_clamp (tmp);
+		ret = _ip6_privacy_clamp (tmp);
 
 done:
 	g_free (contents);
@@ -4762,6 +4764,74 @@ done:
 
 	return ret;
 }
+
+static NMSettingIP6ConfigPrivacy
+_ip6_privacy_get (NMDevice *self)
+{
+	NMSettingIP6ConfigPrivacy ip6_privacy;
+	gs_free char *value = NULL;
+	NMConnection *connection;
+
+	g_return_val_if_fail (self, NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
+
+	value = nm_config_data_get_connection_default (nm_config_get_data (nm_config_get ()),
+	                                               "ipv6.ip6-privacy", self);
+
+	/* 1.) If (and only if) the default value is not configured, check _ip6_privacy_sysctl()
+	 * first. This is to preserve backward compatibility. In this case -- having no
+	 * default value in global configuration, but use_tempaddr configured in /etc/sysctl --
+	 * the per-connection setting is always ignored. */
+	if (!value) {
+		ip6_privacy = _ip6_privacy_sysctl ();
+		if (ip6_privacy != NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN)
+			return ip6_privacy;
+	}
+
+	/* 2.) Next we always look at the per-connection setting. If it is not -1 (unknown),
+	 * use it. */
+	connection = nm_device_get_connection (self);
+	if (connection) {
+		NMSettingIPConfig *s_ip6 = nm_connection_get_setting_ip6_config (connection);
+
+		if (s_ip6) {
+			ip6_privacy = nm_setting_ip6_config_get_ip6_privacy (NM_SETTING_IP6_CONFIG (s_ip6));
+			ip6_privacy = _ip6_privacy_clamp (ip6_privacy);
+			if (ip6_privacy != NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN)
+				return ip6_privacy;
+		}
+	}
+
+	/* 3.) All options (per-connection, global, sysctl) are unset/default.
+	 * Return UNKNOWN. Skip step 5.) because that would be a change in behavior
+	 * compared to older versions. */
+	if (!value)
+		return NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
+
+	/* 4.) use the default value from the configuration. */
+	ip6_privacy = _nm_utils_ascii_str_to_int64 (value, 10,
+	                                            NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
+	                                            NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
+	                                            NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
+	if (ip6_privacy != NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN)
+		return ip6_privacy;
+
+	/* 5.) A default-value is configured, but it is invalid/unknown. Fallback to sysctl reading.
+	 *
+	 * _ip6_privacy_sysctl() only reads two files from /etc and does not support the complexity
+	 * of parsing all files. Also, it only considers "net.ipv6.conf.default.use_tempaddr",
+	 * not the per-interface values. This is kinda unexpected, but we do it in 1.) to preserve
+	 * old behavior.
+	 *
+	 * Now, the user actively configured a default value to "unknown" and we can introduce new
+	 * behavior without changing old behavior (step 1.).
+	 * Instead of reading static config files in /etc, just read the current sysctl value.
+	 * This works as NM only writes to "/proc/sys/net/ipv6/conf/IFNAME/use_tempaddr", but leaves
+	 * the "default" entry untouched. */
+	ip6_privacy = nm_platform_sysctl_get_int32 (NM_PLATFORM_GET, "/proc/sys/net/ipv6/conf/default/use_tempaddr", NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
+	return _ip6_privacy_clamp (ip6_privacy);
+}
+
+/****************************************************************/
 
 static gboolean
 ip6_requires_slaves (NMConnection *connection)
@@ -4861,18 +4931,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 	/* Re-enable IPv6 on the interface */
 	set_disable_ipv6 (self, "0");
 
-	/* Enable/disable IPv6 Privacy Extensions.
-	 * If a global value is configured by sysadmin (e.g. /etc/sysctl.conf),
-	 * use that value instead of per-connection value.
-	 */
-	ip6_privacy = ip6_use_tempaddr ();
-	if (ip6_privacy == NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN) {
-		NMSettingIPConfig *s_ip6 = nm_connection_get_setting_ip6_config (connection);
-
-		if (s_ip6)
-			ip6_privacy = nm_setting_ip6_config_get_ip6_privacy (NM_SETTING_IP6_CONFIG (s_ip6));
-	}
-	ip6_privacy = use_tempaddr_clamp (ip6_privacy);
+	ip6_privacy = _ip6_privacy_get (self);
 
 	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0) {
 		if (!addrconf6_start (self, ip6_privacy)) {
