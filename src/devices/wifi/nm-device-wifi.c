@@ -127,6 +127,7 @@ struct _NMDeviceWifiPrivate {
 	guint32           rate;
 	gboolean          enabled; /* rfkilled or not */
 
+	gint32            last_scan;
 	gint32            scheduled_scan_time;
 	guint8            scan_interval; /* seconds */
 	guint             pending_scan_id;
@@ -1021,24 +1022,6 @@ get_sorted_ap_list (NMDeviceWifi *self)
 	return g_slist_sort (sorted, (GCompareFunc) ap_id_compare);
 }
 
-static void
-ap_list_dump (NMDeviceWifi *self)
-{
-	GSList *sorted, *iter;
-
-	g_return_if_fail (NM_IS_DEVICE_WIFI (self));
-
-	if (!nm_logging_enabled (LOGL_DEBUG, LOGD_WIFI_SCAN))
-		return;
-
-	_LOGD (LOGD_WIFI_SCAN, "Current AP list:");
-	sorted = get_sorted_ap_list (self);
-	for (iter = sorted; iter; iter = iter->next)
-		nm_ap_dump (NM_AP (iter->data), "List AP: ", nm_device_get_iface (NM_DEVICE (self)));
-	g_slist_free (sorted);
-	_LOGD (LOGD_WIFI_SCAN, "Current AP list: done");
-}
-
 static gboolean
 impl_device_get_access_points (NMDeviceWifi *self,
                                GPtrArray **aps,
@@ -1434,6 +1417,7 @@ supplicant_iface_scan_done_cb (NMSupplicantInterface *iface,
 
 	_LOGD (LOGD_WIFI_SCAN, "scan %s", success ? "successful" : "failed");
 
+	priv->last_scan = nm_utils_get_monotonic_timestamp_s ();
 	schedule_scan (self, success);
 
 	/* Ensure that old APs get removed, which otherwise only
@@ -1451,6 +1435,25 @@ supplicant_iface_scan_done_cb (NMSupplicantInterface *iface,
  * WPA Supplicant control stuff
  *
  */
+
+static void
+ap_list_dump (NMDeviceWifi *self)
+{
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	GSList *sorted, *iter;
+
+	if (!nm_logging_enabled (LOGL_DEBUG, LOGD_WIFI_SCAN))
+		return;
+
+	_LOGD (LOGD_WIFI_SCAN, "APs: [now:%u last:%u next:%u]",
+	       nm_utils_get_monotonic_timestamp_s (),
+	       priv->last_scan,
+	       priv->scheduled_scan_time);
+	sorted = get_sorted_ap_list (self);
+	for (iter = sorted; iter; iter = iter->next)
+		nm_ap_dump (NM_AP (iter->data), "  ", nm_device_get_iface (NM_DEVICE (self)));
+	g_slist_free (sorted);
+}
 
 #define WPAS_REMOVED_TAG "supplicant-removed"
 
