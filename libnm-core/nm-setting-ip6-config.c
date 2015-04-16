@@ -504,9 +504,13 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
 	 * enabled, it makes the kernel generate a temporary IPv6 address in
 	 * addition to the public one generated from MAC address via modified
 	 * EUI-64.  This enhances privacy, but could cause problems in some
-	 * applications, on the other hand.  The permitted values are: 0: disabled,
-	 * 1: enabled (prefer public address), 2: enabled (prefer temporary
+	 * applications, on the other hand.  The permitted values are: -1: unknown,
+	 * 0: disabled, 1: enabled (prefer public address), 2: enabled (prefer temporary
 	 * addresses).
+	 *
+	 * This per-connection value is ignored when setting
+	 * "net.ipv6.conf.default.use_tempaddr" in /etc/sysctl.conf or
+	 * /lib/sysctl.d/sysctl.conf to either "0", "1", or "2".
 	 **/
 	/* ---ifcfg-rh---
 	 * property: ip6-privacy
