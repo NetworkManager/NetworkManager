@@ -117,8 +117,7 @@ nm_settings_plugin_get_type (void)
 }
 
 void
-nm_settings_plugin_init (NMSettingsPlugin *config,
-                         gpointer unused)
+nm_settings_plugin_init (NMSettingsPlugin *config)
 {
 	g_return_if_fail (config != NULL);
 

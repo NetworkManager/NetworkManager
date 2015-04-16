@@ -140,8 +140,7 @@ struct _NMSettingsPlugin {
 
 GType nm_settings_plugin_get_type (void);
 
-void nm_settings_plugin_init (NMSettingsPlugin *config,
-                              gpointer unused);
+void nm_settings_plugin_init (NMSettingsPlugin *config);
 
 GSList *nm_settings_plugin_get_connections (NMSettingsPlugin *config);
 
