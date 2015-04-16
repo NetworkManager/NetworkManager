@@ -395,7 +395,7 @@ class UploadFile_ParseWebsite(UploadFile):
         pass
 
 class UploadFileJenkins(UploadFile_ParseWebsite):
-    jenkins_base_url = 'http://10.34.131.51:8080/job/NetworkManager/'
+    jenkins_base_url = 'http://10.34.130.105:8080/job/NetworkManager/'
     def __init__(self, uri):
         UploadFile_ParseWebsite.__init__(self, uri)
     def parse_uri(self):

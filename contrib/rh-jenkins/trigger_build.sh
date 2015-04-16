@@ -213,7 +213,7 @@ for _BRANCH in "${REFS[@]}"; do
     if [[ -n "$CAUSE" ]]; then
         URL_CAUSE="&cause=`url_encode "$CAUSE"`"
     fi
-    _URL="http://10.34.131.51:8080/job/NetworkManager/buildWithParameters?token=`url_encode "$_TOKEN"`$URL_CAUSE&BRANCH=`url_encode "$_B"`&RPM=$_RPM&NO_CHECK=$_NO_CHECK&OUT_OF_TREE_BUILD=$_OUT_OF_TREE_BUILD&DIST=$_DIST&DISTCHECK=$_DISTCHECK"
+    _URL="http://10.34.130.105:8080/job/NetworkManager/buildWithParameters?token=`url_encode "$_TOKEN"`$URL_CAUSE&BRANCH=`url_encode "$_B"`&RPM=$_RPM&NO_CHECK=$_NO_CHECK&OUT_OF_TREE_BUILD=$_OUT_OF_TREE_BUILD&DIST=$_DIST&DISTCHECK=$_DISTCHECK"
     echo
     echo "BRANCH[$i0]  : \"$_BRANCH\" ($_B)"
     echo "CAUSE[$i0]   : \"$CAUSE\""
@@ -224,4 +224,4 @@ for _BRANCH in "${REFS[@]}"; do
 done
 
 echo
-echo "http://10.34.131.51:8080/job/NetworkManager"
+echo "http://10.34.130.105:8080/job/NetworkManager"
