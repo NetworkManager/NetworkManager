@@ -44,11 +44,11 @@
 #include "common.h"
 #include "utils.h"
 
-static void settings_plugin_init (NMSettingsPlugin *settings_plugin_class);
+static void settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface);
 
 G_DEFINE_TYPE_EXTENDED (SettingsPluginKeyfile, settings_plugin_keyfile, G_TYPE_OBJECT, 0,
-				    G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_PLUGIN,
-									  settings_plugin_init))
+                        G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_PLUGIN,
+                                               settings_plugin_interface_init))
 
 #define SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), SETTINGS_TYPE_PLUGIN_KEYFILE, SettingsPluginKeyfilePrivate))
 
@@ -634,14 +634,14 @@ settings_plugin_keyfile_class_init (SettingsPluginKeyfileClass *req_class)
 }
 
 static void
-settings_plugin_init (NMSettingsPlugin *settings_plugin_class)
+settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface)
 {
 	/* interface implementation */
-	settings_plugin_class->get_connections = get_connections;
-	settings_plugin_class->load_connection = load_connection;
-	settings_plugin_class->reload_connections = reload_connections;
-	settings_plugin_class->add_connection = add_connection;
-	settings_plugin_class->get_unmanaged_specs = get_unmanaged_specs;
+	plugin_iface->get_connections = get_connections;
+	plugin_iface->load_connection = load_connection;
+	plugin_iface->reload_connections = reload_connections;
+	plugin_iface->add_connection = add_connection;
+	plugin_iface->get_unmanaged_specs = get_unmanaged_specs;
 }
 
 GObject *

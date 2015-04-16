@@ -124,10 +124,10 @@ static void claim_connection (NMSettings *self,
 static void unmanaged_specs_changed (NMSettingsPlugin *config, gpointer user_data);
 static void unrecognized_specs_changed (NMSettingsPlugin *config, gpointer user_data);
 
-static void connection_provider_init (NMConnectionProvider *cp_class);
+static void connection_provider_iface_init (NMConnectionProviderInterface *cp_iface);
 
 G_DEFINE_TYPE_EXTENDED (NMSettings, nm_settings, NM_TYPE_EXPORTED_OBJECT, 0,
-                        G_IMPLEMENT_INTERFACE (NM_TYPE_CONNECTION_PROVIDER, connection_provider_init))
+                        G_IMPLEMENT_INTERFACE (NM_TYPE_CONNECTION_PROVIDER, connection_provider_iface_init))
 
 
 typedef struct {
@@ -2152,12 +2152,12 @@ nm_settings_start (NMSettings *self, GError **error)
 }
 
 static void
-connection_provider_init (NMConnectionProvider *cp_class)
+connection_provider_iface_init (NMConnectionProviderInterface *cp_iface)
 {
-    cp_class->get_best_connections = get_best_connections;
-    cp_class->get_connections = get_connections;
-    cp_class->add_connection = _nm_connection_provider_add_connection;
-    cp_class->get_connection_by_uuid = cp_get_connection_by_uuid;
+    cp_iface->get_best_connections = get_best_connections;
+    cp_iface->get_connections = get_connections;
+    cp_iface->add_connection = _nm_connection_provider_add_connection;
+    cp_iface->get_connection_by_uuid = cp_get_connection_by_uuid;
 }
 
 static void

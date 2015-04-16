@@ -53,13 +53,13 @@ typedef NMDeviceFactory * (*NMDeviceFactoryCreateFunc) (GError **error);
 #define NM_TYPE_DEVICE_FACTORY               (nm_device_factory_get_type ())
 #define NM_DEVICE_FACTORY(obj)               (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DEVICE_FACTORY, NMDeviceFactory))
 #define NM_IS_DEVICE_FACTORY(obj)            (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DEVICE_FACTORY))
-#define NM_DEVICE_FACTORY_GET_INTERFACE(obj) (G_TYPE_INSTANCE_GET_INTERFACE ((obj), NM_TYPE_DEVICE_FACTORY, NMDeviceFactory))
+#define NM_DEVICE_FACTORY_GET_INTERFACE(obj) (G_TYPE_INSTANCE_GET_INTERFACE ((obj), NM_TYPE_DEVICE_FACTORY, NMDeviceFactoryInterface))
 
 /* signals */
 #define NM_DEVICE_FACTORY_COMPONENT_ADDED "component-added"
 #define NM_DEVICE_FACTORY_DEVICE_ADDED    "device-added"
 
-struct _NMDeviceFactory {
+typedef struct {
 	GTypeInterface g_iface;
 
 	/**
@@ -164,7 +164,7 @@ struct _NMDeviceFactory {
 	 * Returns: %TRUE if the component was claimed by a device, %FALSE if not
 	 */
 	gboolean   (*component_added) (NMDeviceFactory *factory, GObject *component);
-};
+} NMDeviceFactoryInterface;
 
 GType      nm_device_factory_get_type    (void);
 
@@ -223,7 +223,7 @@ extern const char *_nm_device_factory_no_default_settings[];
 	typedef GObjectClass NM##mixed##FactoryClass; \
  \
 	static GType nm_##lower##_factory_get_type (void); \
-	static void device_factory_interface_init (NMDeviceFactory *factory_iface); \
+	static void device_factory_interface_init (NMDeviceFactoryInterface *factory_iface); \
  \
 	G_DEFINE_TYPE_EXTENDED (NM##mixed##Factory, nm_##lower##_factory, G_TYPE_OBJECT, 0, \
 	                        G_IMPLEMENT_INTERFACE (NM_TYPE_DEVICE_FACTORY, device_factory_interface_init) \
@@ -243,7 +243,7 @@ extern const char *_nm_device_factory_no_default_settings[];
 	NM_DEVICE_FACTORY_DECLARE_TYPES(st_code) \
  \
 	static void \
-	device_factory_interface_init (NMDeviceFactory *factory_iface) \
+	device_factory_interface_init (NMDeviceFactoryInterface *factory_iface) \
 	{ \
 		factory_iface->get_supported_types = get_supported_types; \
 		dfi_code \

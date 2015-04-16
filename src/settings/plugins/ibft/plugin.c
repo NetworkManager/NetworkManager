@@ -36,11 +36,11 @@
 #include "reader.h"
 #include "nm-ibft-connection.h"
 
-static void settings_plugin_init (NMSettingsPlugin *settings_plugin_class);
+static void settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface);
 
 G_DEFINE_TYPE_EXTENDED (SettingsPluginIbft, settings_plugin_ibft, G_TYPE_OBJECT, 0,
                         G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_PLUGIN,
-                                               settings_plugin_init))
+                                               settings_plugin_interface_init))
 
 #define SETTINGS_PLUGIN_IBFT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), SETTINGS_TYPE_PLUGIN_IBFT, SettingsPluginIbftPrivate))
 
@@ -184,11 +184,11 @@ settings_plugin_ibft_class_init (SettingsPluginIbftClass *req_class)
 }
 
 static void
-settings_plugin_init (NMSettingsPlugin *settings_plugin_class)
+settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface)
 {
 	/* interface implementation */
-	settings_plugin_class->get_connections = get_connections;
-	settings_plugin_class->init = init;
+	plugin_iface->get_connections = get_connections;
+	plugin_iface->init = init;
 }
 
 G_MODULE_EXPORT GObject *

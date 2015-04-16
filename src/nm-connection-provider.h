@@ -20,10 +20,10 @@
 
 #include "nm-default.h"
 
-#define NM_TYPE_CONNECTION_PROVIDER      (nm_connection_provider_get_type ())
-#define NM_CONNECTION_PROVIDER(obj)      (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_CONNECTION_PROVIDER, NMConnectionProvider))
-#define NM_IS_CONNECTION_PROVIDER(obj)   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_CONNECTION_PROVIDER))
-#define NM_CONNECTION_PROVIDER_GET_INTERFACE(obj) (G_TYPE_INSTANCE_GET_INTERFACE ((obj), NM_TYPE_CONNECTION_PROVIDER, NMConnectionProvider))
+#define NM_TYPE_CONNECTION_PROVIDER               (nm_connection_provider_get_type ())
+#define NM_CONNECTION_PROVIDER(obj)               (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_CONNECTION_PROVIDER, NMConnectionProvider))
+#define NM_IS_CONNECTION_PROVIDER(obj)            (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_CONNECTION_PROVIDER))
+#define NM_CONNECTION_PROVIDER_GET_INTERFACE(obj) (G_TYPE_INSTANCE_GET_INTERFACE ((obj), NM_TYPE_CONNECTION_PROVIDER, NMConnectionProviderInterface))
 
 #define NM_CP_SIGNAL_CONNECTION_ADDED        "cp-connection-added"
 #define NM_CP_SIGNAL_CONNECTION_UPDATED      "cp-connection-updated"
@@ -43,7 +43,7 @@ typedef gboolean (*NMConnectionFilterFunc) (NMConnectionProvider *provider,
                                             gpointer func_data);
 
 
-struct _NMConnectionProvider {
+typedef struct {
 	GTypeInterface g_iface;
 
 	/* Methods */
@@ -71,7 +71,7 @@ struct _NMConnectionProvider {
 
 	void (*connection_removed) (NMConnectionProvider *self, NMConnection *connection);
 
-};
+} NMConnectionProviderInterface;
 
 GType nm_connection_provider_get_type (void);
 

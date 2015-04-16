@@ -76,11 +76,11 @@ static NMIfcfgConnection *update_connection (SettingsPluginIfcfg *plugin,
                                              GHashTable *protected_connections,
                                              GError **error);
 
-static void settings_plugin_init (NMSettingsPlugin *settings_plugin_class);
+static void settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface);
 
 G_DEFINE_TYPE_EXTENDED (SettingsPluginIfcfg, settings_plugin_ifcfg, NM_TYPE_EXPORTED_OBJECT, 0,
 						G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_PLUGIN,
-											   settings_plugin_init))
+											   settings_plugin_interface_init))
 
 #define SETTINGS_PLUGIN_IFCFG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), SETTINGS_TYPE_PLUGIN_IFCFG, SettingsPluginIfcfgPrivate))
 
@@ -883,16 +883,16 @@ settings_plugin_ifcfg_class_init (SettingsPluginIfcfgClass *req_class)
 }
 
 static void
-settings_plugin_init (NMSettingsPlugin *settings_plugin_class)
+settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface)
 {
 	/* interface implementation */
-	settings_plugin_class->get_connections = get_connections;
-	settings_plugin_class->add_connection = add_connection;
-	settings_plugin_class->load_connection = load_connection;
-	settings_plugin_class->reload_connections = reload_connections;
-	settings_plugin_class->get_unmanaged_specs = get_unmanaged_specs;
-	settings_plugin_class->get_unrecognized_specs = get_unrecognized_specs;
-	settings_plugin_class->init = init;
+	plugin_iface->get_connections = get_connections;
+	plugin_iface->add_connection = add_connection;
+	plugin_iface->load_connection = load_connection;
+	plugin_iface->reload_connections = reload_connections;
+	plugin_iface->get_unmanaged_specs = get_unmanaged_specs;
+	plugin_iface->get_unrecognized_specs = get_unrecognized_specs;
+	plugin_iface->init = init;
 }
 
 G_MODULE_EXPORT GObject *

@@ -20,12 +20,12 @@ is nm_settings_plugin_factory().  That function creates and returns a singleton
 instance of the plugin's main object, which implements NMSettingsPlugin.
 That interface is implemented via the object definition in G_DEFINE_TYPE_EXTENDED
 in plugin.c, which registers the interface setup function
-settings_plugin_init(), which when called actually sets up the vtables
-for the functions defined by NMSettingsPlugin.  Thus there are two
+settings_plugin_interface_init(), which when called actually sets up the vtables
+for the functions defined by NMSettingsPluginInterface.  Thus there are two
 entry points into the plugin:  nm_settings_plugin_factory() and
-the NMSettingsPlugin methods.
+the NMSettingsPluginInterface methods.
 
-The plugin also emits various signals (defined by NMSettingsPlugin)
+The plugin also emits various signals (defined by NMSettingsPluginInterface)
 which NetworkManager listens for.  These include notifications of new
 connections if they were created via changes to the on-disk files.  The
 "connection" objects can also emit signals (defined by the NMSettingsConnection

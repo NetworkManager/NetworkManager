@@ -62,12 +62,13 @@ typedef struct {
 	gpointer user_data;
 } FileMonitorInfo;
 
-static void settings_plugin_init (NMSettingsPlugin *class);
+static void settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface);
 
 static void reload_connections (NMSettingsPlugin *config);
 
 G_DEFINE_TYPE_EXTENDED (SettingsPluginIfnet, settings_plugin_ifnet, G_TYPE_OBJECT, 0,
-                        G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_PLUGIN, settings_plugin_init))
+                        G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_PLUGIN,
+                                               settings_plugin_interface_init))
 #define SETTINGS_PLUGIN_IFNET_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), SETTINGS_TYPE_PLUGIN_IFNET, SettingsPluginIfnetPrivate))
 
 static SettingsPluginIfnet *settings_plugin_ifnet_get (void);
@@ -407,13 +408,13 @@ get_connections (NMSettingsPlugin *config)
 }
 
 static void
-settings_plugin_init (NMSettingsPlugin *class)
+settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface)
 {
-	class->init = init;
-	class->get_connections = get_connections;
-	class->get_unmanaged_specs = get_unmanaged_specs;
-	class->add_connection = add_connection;
-	class->reload_connections = reload_connections;
+	plugin_iface->init = init;
+	plugin_iface->get_connections = get_connections;
+	plugin_iface->get_unmanaged_specs = get_unmanaged_specs;
+	plugin_iface->add_connection = add_connection;
+	plugin_iface->reload_connections = reload_connections;
 }
 
 static void

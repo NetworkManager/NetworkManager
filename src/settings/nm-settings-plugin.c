@@ -24,8 +24,10 @@
 #include "nm-settings-plugin.h"
 #include "nm-settings-connection.h"
 
+G_DEFINE_INTERFACE (NMSettingsPlugin, nm_settings_plugin, G_TYPE_OBJECT)
+
 static void
-interface_init (gpointer g_iface)
+nm_settings_plugin_default_init (NMSettingsPluginInterface *g_iface)
 {
 	GType iface_type = G_TYPE_FROM_INTERFACE (g_iface);
 	static gboolean initialized = FALSE;
@@ -61,7 +63,7 @@ interface_init (gpointer g_iface)
 	g_signal_new (NM_SETTINGS_PLUGIN_CONNECTION_ADDED,
 	              iface_type,
 	              G_SIGNAL_RUN_FIRST,
-	              G_STRUCT_OFFSET (NMSettingsPlugin, connection_added),
+	              G_STRUCT_OFFSET (NMSettingsPluginInterface, connection_added),
 	              NULL, NULL,
 	              g_cclosure_marshal_VOID__OBJECT,
 	              G_TYPE_NONE, 1,
@@ -70,7 +72,7 @@ interface_init (gpointer g_iface)
 	g_signal_new (NM_SETTINGS_PLUGIN_UNMANAGED_SPECS_CHANGED,
 	              iface_type,
 	              G_SIGNAL_RUN_FIRST,
-	              G_STRUCT_OFFSET (NMSettingsPlugin, unmanaged_specs_changed),
+	              G_STRUCT_OFFSET (NMSettingsPluginInterface, unmanaged_specs_changed),
 	              NULL, NULL,
 	              g_cclosure_marshal_VOID__VOID,
 	              G_TYPE_NONE, 0);
@@ -78,42 +80,12 @@ interface_init (gpointer g_iface)
 	g_signal_new (NM_SETTINGS_PLUGIN_UNRECOGNIZED_SPECS_CHANGED,
 	              iface_type,
 	              G_SIGNAL_RUN_FIRST,
-	              G_STRUCT_OFFSET (NMSettingsPlugin, unrecognized_specs_changed),
+	              G_STRUCT_OFFSET (NMSettingsPluginInterface, unrecognized_specs_changed),
 	              NULL, NULL,
 	              g_cclosure_marshal_VOID__VOID,
 	              G_TYPE_NONE, 0);
 
 	initialized = TRUE;
-}
-
-
-GType
-nm_settings_plugin_get_type (void)
-{
-	static GType settings_plugin_type = 0;
-
-	if (!settings_plugin_type) {
-		const GTypeInfo settings_plugin_info = {
-			sizeof (NMSettingsPlugin), /* class_size */
-			interface_init,   /* base_init */
-			NULL,		/* base_finalize */
-			NULL,
-			NULL,		/* class_finalize */
-			NULL,		/* class_data */
-			0,
-			0,              /* n_preallocs */
-			NULL
-		};
-
-		settings_plugin_type = g_type_register_static (G_TYPE_INTERFACE,
-		                                               "NMSettingsPlugin",
-		                                               &settings_plugin_info,
-		                                               0);
-
-		g_type_interface_add_prerequisite (settings_plugin_type, G_TYPE_OBJECT);
-	}
-
-	return settings_plugin_type;
 }
 
 void

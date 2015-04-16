@@ -81,11 +81,11 @@ typedef struct {
 } SettingsPluginIfupdownPrivate;
 
 static void
-settings_plugin_init (NMSettingsPlugin *settings_plugin_class);
+settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface);
 
 G_DEFINE_TYPE_EXTENDED (SettingsPluginIfupdown, settings_plugin_ifupdown, G_TYPE_OBJECT, 0,
                         G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_PLUGIN,
-                                               settings_plugin_init))
+                                               settings_plugin_interface_init))
 
 #define SETTINGS_PLUGIN_IFUPDOWN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), SETTINGS_TYPE_PLUGIN_IFUPDOWN, SettingsPluginIfupdownPrivate))
 
@@ -126,11 +126,11 @@ static void
 GObject__dispose (GObject *object);
 
 static void
-settings_plugin_init (NMSettingsPlugin *settings_plugin_class)
+settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface)
 {
-	settings_plugin_class->init = SettingsPluginIfupdown_init;
-	settings_plugin_class->get_connections = SettingsPluginIfupdown_get_connections;
-	settings_plugin_class->get_unmanaged_specs = SettingsPluginIfupdown_get_unmanaged_specs;
+	plugin_iface->init = SettingsPluginIfupdown_init;
+	plugin_iface->get_connections = SettingsPluginIfupdown_get_connections;
+	plugin_iface->get_unmanaged_specs = SettingsPluginIfupdown_get_unmanaged_specs;
 }
 
 static void

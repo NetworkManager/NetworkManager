@@ -36,7 +36,7 @@ GObject * nm_settings_plugin_factory (void);
 #define NM_TYPE_SETTINGS_PLUGIN               (nm_settings_plugin_get_type ())
 #define NM_SETTINGS_PLUGIN(obj)               (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTINGS_PLUGIN, NMSettingsPlugin))
 #define NM_IS_SETTINGS_PLUGIN(obj)            (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_SETTINGS_PLUGIN))
-#define NM_SETTINGS_PLUGIN_GET_INTERFACE(obj) (G_TYPE_INSTANCE_GET_INTERFACE ((obj), NM_TYPE_SETTINGS_PLUGIN, NMSettingsPlugin))
+#define NM_SETTINGS_PLUGIN_GET_INTERFACE(obj) (G_TYPE_INSTANCE_GET_INTERFACE ((obj), NM_TYPE_SETTINGS_PLUGIN, NMSettingsPluginInterface))
 
 
 #define NM_SETTINGS_PLUGIN_NAME "name"
@@ -67,7 +67,7 @@ typedef enum {
 
 typedef struct _NMSettingsPlugin NMSettingsPlugin;
 
-struct _NMSettingsPlugin {
+typedef struct {
 	GTypeInterface g_iface;
 
 	/* Called when the plugin is loaded to initialize it */
@@ -136,7 +136,7 @@ struct _NMSettingsPlugin {
 
 	/* Emitted when the list of devices with unrecognized connections changes */
 	void (*unrecognized_specs_changed) (NMSettingsPlugin *config);
-};
+} NMSettingsPluginInterface;
 
 GType nm_settings_plugin_get_type (void);
 
