@@ -29,34 +29,34 @@
 #include <nm-setting-connection.h>
 
 #include "nm-default.h"
-#include "nm-system-config-interface.h"
+#include "nm-settings-plugin.h"
 #include "NetworkManagerUtils.h"
 
 #include "plugin.h"
 #include "reader.h"
 #include "nm-ibft-connection.h"
 
-static void system_config_interface_init (NMSystemConfigInterface *system_config_interface_class);
+static void settings_plugin_init (NMSettingsPlugin *settings_plugin_class);
 
-G_DEFINE_TYPE_EXTENDED (SCPluginIbft, sc_plugin_ibft, G_TYPE_OBJECT, 0,
-                        G_IMPLEMENT_INTERFACE (NM_TYPE_SYSTEM_CONFIG_INTERFACE,
-                                               system_config_interface_init))
+G_DEFINE_TYPE_EXTENDED (SettingsPluginIbft, settings_plugin_ibft, G_TYPE_OBJECT, 0,
+                        G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_PLUGIN,
+                                               settings_plugin_init))
 
-#define SC_PLUGIN_IBFT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), SC_TYPE_PLUGIN_IBFT, SCPluginIbftPrivate))
+#define SETTINGS_PLUGIN_IBFT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), SETTINGS_TYPE_PLUGIN_IBFT, SettingsPluginIbftPrivate))
 
 
 typedef struct {
 	GHashTable *connections;  /* uuid::connection */
 	gboolean initialized;
-} SCPluginIbftPrivate;
+} SettingsPluginIbftPrivate;
 
-static SCPluginIbft *sc_plugin_ibft_get (void);
-NM_DEFINE_SINGLETON_GETTER (SCPluginIbft, sc_plugin_ibft_get, SC_TYPE_PLUGIN_IBFT);
+static SettingsPluginIbft *settings_plugin_ibft_get (void);
+NM_DEFINE_SINGLETON_GETTER (SettingsPluginIbft, settings_plugin_ibft_get, SETTINGS_TYPE_PLUGIN_IBFT);
 
 static void
-read_connections (SCPluginIbft *self)
+read_connections (SettingsPluginIbft *self)
 {
-	SCPluginIbftPrivate *priv = SC_PLUGIN_IBFT_GET_PRIVATE (self);
+	SettingsPluginIbftPrivate *priv = SETTINGS_PLUGIN_IBFT_GET_PRIVATE (self);
 	GSList *blocks = NULL, *iter;
 	GError *error = NULL;
 	NMIbftConnection *connection;
@@ -85,10 +85,10 @@ read_connections (SCPluginIbft *self)
 }
 
 static GSList *
-get_connections (NMSystemConfigInterface *config)
+get_connections (NMSettingsPlugin *config)
 {
-	SCPluginIbft *self = SC_PLUGIN_IBFT (config);
-	SCPluginIbftPrivate *priv = SC_PLUGIN_IBFT_GET_PRIVATE (self);
+	SettingsPluginIbft *self = SETTINGS_PLUGIN_IBFT (config);
+	SettingsPluginIbftPrivate *priv = SETTINGS_PLUGIN_IBFT_GET_PRIVATE (self);
 	GSList *list = NULL;
 	GHashTableIter iter;
 	NMIbftConnection *connection;
@@ -106,14 +106,14 @@ get_connections (NMSystemConfigInterface *config)
 }
 
 static void
-init (NMSystemConfigInterface *config)
+init (NMSettingsPlugin *config)
 {
 }
 
 static void
-sc_plugin_ibft_init (SCPluginIbft *self)
+settings_plugin_ibft_init (SettingsPluginIbft *self)
 {
-	SCPluginIbftPrivate *priv = SC_PLUGIN_IBFT_GET_PRIVATE (self);
+	SettingsPluginIbftPrivate *priv = SETTINGS_PLUGIN_IBFT_GET_PRIVATE (self);
 
 	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
 }
@@ -121,15 +121,15 @@ sc_plugin_ibft_init (SCPluginIbft *self)
 static void
 dispose (GObject *object)
 {
-	SCPluginIbft *self = SC_PLUGIN_IBFT (object);
-	SCPluginIbftPrivate *priv = SC_PLUGIN_IBFT_GET_PRIVATE (self);
+	SettingsPluginIbft *self = SETTINGS_PLUGIN_IBFT (object);
+	SettingsPluginIbftPrivate *priv = SETTINGS_PLUGIN_IBFT_GET_PRIVATE (self);
 
 	if (priv->connections) {
 		g_hash_table_destroy (priv->connections);
 		priv->connections = NULL;
 	}
 
-	G_OBJECT_CLASS (sc_plugin_ibft_parent_class)->dispose (object);
+	G_OBJECT_CLASS (settings_plugin_ibft_parent_class)->dispose (object);
 }
 
 static void
@@ -137,14 +137,14 @@ get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
 	switch (prop_id) {
-	case NM_SYSTEM_CONFIG_INTERFACE_PROP_NAME:
+	case NM_SETTINGS_PLUGIN_PROP_NAME:
 		g_value_set_string (value, "iBFT");
 		break;
-	case NM_SYSTEM_CONFIG_INTERFACE_PROP_INFO:
+	case NM_SETTINGS_PLUGIN_PROP_INFO:
 		g_value_set_string (value, "(c) 2014 Red Hat, Inc.  To report bugs please use the NetworkManager mailing list.");
 		break;
-	case NM_SYSTEM_CONFIG_INTERFACE_PROP_CAPABILITIES:
-		g_value_set_uint (value, NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE);
+	case NM_SETTINGS_PLUGIN_PROP_CAPABILITIES:
+		g_value_set_uint (value, NM_SETTINGS_PLUGIN_CAP_NONE);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -160,39 +160,39 @@ set_property (GObject *object, guint prop_id,
 }
 
 static void
-sc_plugin_ibft_class_init (SCPluginIbftClass *req_class)
+settings_plugin_ibft_class_init (SettingsPluginIbftClass *req_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (req_class);
 
-	g_type_class_add_private (req_class, sizeof (SCPluginIbftPrivate));
+	g_type_class_add_private (req_class, sizeof (SettingsPluginIbftPrivate));
 
 	object_class->dispose = dispose;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 
 	g_object_class_override_property (object_class,
-	                                  NM_SYSTEM_CONFIG_INTERFACE_PROP_NAME,
-	                                  NM_SYSTEM_CONFIG_INTERFACE_NAME);
+	                                  NM_SETTINGS_PLUGIN_PROP_NAME,
+	                                  NM_SETTINGS_PLUGIN_NAME);
 
 	g_object_class_override_property (object_class,
-	                                  NM_SYSTEM_CONFIG_INTERFACE_PROP_INFO,
-	                                  NM_SYSTEM_CONFIG_INTERFACE_INFO);
+	                                  NM_SETTINGS_PLUGIN_PROP_INFO,
+	                                  NM_SETTINGS_PLUGIN_INFO);
 
 	g_object_class_override_property (object_class,
-	                                  NM_SYSTEM_CONFIG_INTERFACE_PROP_CAPABILITIES,
-	                                  NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES);
+	                                  NM_SETTINGS_PLUGIN_PROP_CAPABILITIES,
+	                                  NM_SETTINGS_PLUGIN_CAPABILITIES);
 }
 
 static void
-system_config_interface_init (NMSystemConfigInterface *system_config_interface_class)
+settings_plugin_init (NMSettingsPlugin *settings_plugin_class)
 {
 	/* interface implementation */
-	system_config_interface_class->get_connections = get_connections;
-	system_config_interface_class->init = init;
+	settings_plugin_class->get_connections = get_connections;
+	settings_plugin_class->init = init;
 }
 
 G_MODULE_EXPORT GObject *
-nm_system_config_factory (void)
+nm_settings_plugin_factory (void)
 {
-	return g_object_ref (sc_plugin_ibft_get ());
+	return g_object_ref (settings_plugin_ibft_get ());
 }

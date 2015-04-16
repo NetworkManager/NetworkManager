@@ -28,7 +28,7 @@
 #include <nm-utils.h>
 
 #include "nm-default.h"
-#include "nm-system-config-interface.h"
+#include "nm-settings-plugin.h"
 #include "nm-keyfile-connection.h"
 #include "reader.h"
 #include "writer.h"

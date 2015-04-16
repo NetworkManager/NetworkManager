@@ -27,7 +27,7 @@
 #include <nm-utils.h>
 #include <nm-setting-wireless-security.h>
 #include <nm-settings-connection.h>
-#include <nm-system-config-interface.h>
+#include <nm-settings-plugin.h>
 #include "nm-default.h"
 #include "nm-ifnet-connection.h"
 #include "connection_parser.h"
@@ -50,7 +50,7 @@ static guint signals[IFNET_LAST_SIGNAL] = { 0 };
 
 typedef struct {
 	gchar *conn_name;
-	NMSystemConfigInterface *config;
+	NMSettingsPlugin *config;
 } NMIfnetConnectionPrivate;
 
 NMIfnetConnection *

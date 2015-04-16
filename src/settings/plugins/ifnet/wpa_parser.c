@@ -23,7 +23,7 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <nm-system-config-interface.h>
+#include <nm-settings-plugin.h>
 #include "nm-default.h"
 #include "wpa_parser.h"
 #include "net_parser.h"

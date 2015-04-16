@@ -25,23 +25,23 @@
 
 #include "nm-default.h"
 
-#define SC_TYPE_PLUGIN_IFNET            (sc_plugin_ifnet_get_type ())
-#define SC_PLUGIN_IFNET(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), SC_TYPE_PLUGIN_IFNET, SCPluginIfnet))
-#define SC_PLUGIN_IFNET_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), SC_TYPE_PLUGIN_IFNET, SCPluginIfnetClass))
-#define SC_IS_PLUGIN_IFNET(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), SC_TYPE_PLUGIN_IFNET))
-#define SC_IS_PLUGIN_IFNET_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), SC_TYPE_PLUGIN_IFNET))
-#define SC_PLUGIN_IFNET_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), SC_TYPE_PLUGIN_IFNET, SCPluginIfnetClass))
+#define SETTINGS_TYPE_PLUGIN_IFNET            (settings_plugin_ifnet_get_type ())
+#define SETTINGS_PLUGIN_IFNET(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), SETTINGS_TYPE_PLUGIN_IFNET, SettingsPluginIfnet))
+#define SETTINGS_PLUGIN_IFNET_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), SETTINGS_TYPE_PLUGIN_IFNET, SettingsPluginIfnetClass))
+#define SETTINGS_IS_PLUGIN_IFNET(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), SETTINGS_TYPE_PLUGIN_IFNET))
+#define SETTINGS_IS_PLUGIN_IFNET_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), SETTINGS_TYPE_PLUGIN_IFNET))
+#define SETTINGS_PLUGIN_IFNET_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), SETTINGS_TYPE_PLUGIN_IFNET, SettingsPluginIfnetClass))
 
-typedef struct _SCPluginIfnet SCPluginIfnet;
-typedef struct _SCPluginIfnetClass SCPluginIfnetClass;
+typedef struct _SettingsPluginIfnet SettingsPluginIfnet;
+typedef struct _SettingsPluginIfnetClass SettingsPluginIfnetClass;
 
-struct _SCPluginIfnet {
+struct _SettingsPluginIfnet {
 	GObject parent;
 };
 
-struct _SCPluginIfnetClass {
+struct _SettingsPluginIfnetClass {
 	GObjectClass parent;
 };
 
-GType sc_plugin_ifnet_get_type (void);
+GType settings_plugin_ifnet_get_type (void);
 #endif

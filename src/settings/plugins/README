@@ -4,7 +4,7 @@ Plugins generally have three components:
   just objects wrapped around on-disk config data.  The plugin handles requests
   to add new connections via the NM D-Bus API, and also watches config
   directories for changes to configuration data.  Plugins implement the
-  NMSystemConfigInterface interface.  See plugin.c.
+  NMSettingsPlugin interface.  See plugin.c.
 
 2) "connections": subclasses of NMSettingsConnection.  They handle updates to
   configuration data, deletion, etc.  See NMKeyfileConnection.
@@ -16,16 +16,16 @@ Plugins generally have three components:
   out appropriate configuration data to disk.
 
 NM will first call the "factory" function that every module must provide, which
-is nm_system_config_factory().  That function creates and returns a singleton
-instance of the plugin's main object, which implements NMSystemConfigInterface.
+is nm_settings_plugin_factory().  That function creates and returns a singleton
+instance of the plugin's main object, which implements NMSettingsPlugin.
 That interface is implemented via the object definition in G_DEFINE_TYPE_EXTENDED
 in plugin.c, which registers the interface setup function
-system_config_interface_init(), which when called actually sets up the vtables
-for the functions defined by NMSystemConfigInterface.  Thus there are two
-entry points into the plugin:  nm_system_config_factory() and
-the NMSystemConfigInterface methods.
+settings_plugin_init(), which when called actually sets up the vtables
+for the functions defined by NMSettingsPlugin.  Thus there are two
+entry points into the plugin:  nm_settings_plugin_factory() and
+the NMSettingsPlugin methods.
 
-The plugin also emits various signals (defined by NMSystemConfigInterface)
+The plugin also emits various signals (defined by NMSettingsPlugin)
 which NetworkManager listens for.  These include notifications of new
 connections if they were created via changes to the on-disk files.  The
 "connection" objects can also emit signals (defined by the NMSettingsConnection

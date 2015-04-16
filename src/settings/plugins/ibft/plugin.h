@@ -23,25 +23,25 @@
 
 #include "nm-default.h"
 
-#define SC_TYPE_PLUGIN_IBFT            (sc_plugin_ibft_get_type ())
-#define SC_PLUGIN_IBFT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), SC_TYPE_PLUGIN_IBFT, SCPluginIbft))
-#define SC_PLUGIN_IBFT_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), SC_TYPE_PLUGIN_IBFT, SCPluginIbftClass))
-#define SC_IS_PLUGIN_IBFT(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), SC_TYPE_PLUGIN_IBFT))
-#define SC_IS_PLUGIN_IBFT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), SC_TYPE_PLUGIN_IBFT))
-#define SC_PLUGIN_IBFT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), SC_TYPE_PLUGIN_IBFT, SCPluginIbftClass))
+#define SETTINGS_TYPE_PLUGIN_IBFT            (settings_plugin_ibft_get_type ())
+#define SETTINGS_PLUGIN_IBFT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), SETTINGS_TYPE_PLUGIN_IBFT, SettingsPluginIbft))
+#define SETTINGS_PLUGIN_IBFT_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), SETTINGS_TYPE_PLUGIN_IBFT, SettingsPluginIbftClass))
+#define SETTINGS_IS_PLUGIN_IBFT(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), SETTINGS_TYPE_PLUGIN_IBFT))
+#define SETTINGS_IS_PLUGIN_IBFT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), SETTINGS_TYPE_PLUGIN_IBFT))
+#define SETTINGS_PLUGIN_IBFT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), SETTINGS_TYPE_PLUGIN_IBFT, SettingsPluginIbftClass))
 
-typedef struct _SCPluginIbft SCPluginIbft;
-typedef struct _SCPluginIbftClass SCPluginIbftClass;
+typedef struct _SettingsPluginIbft SettingsPluginIbft;
+typedef struct _SettingsPluginIbftClass SettingsPluginIbftClass;
 
-struct _SCPluginIbft {
+struct _SettingsPluginIbft {
 	GObject parent;
 };
 
-struct _SCPluginIbftClass {
+struct _SettingsPluginIbftClass {
 	GObjectClass parent;
 };
 
-GType sc_plugin_ibft_get_type (void);
+GType settings_plugin_ibft_get_type (void);
 
 #endif	/* _PLUGIN_H_ */
 
