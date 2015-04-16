@@ -645,6 +645,30 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 	_nm_dbus_signal_connect (priv->iface_proxy, "NetworkRequest", G_VARIANT_TYPE ("(oss)"),
 	                         G_CALLBACK (wpas_iface_network_request), self);
 
+	/* Scan result aging parameters */
+	g_dbus_proxy_call (priv->iface_proxy,
+	                   "org.freedesktop.DBus.Properties.Set",
+	                   g_variant_new ("(ssv)",
+	                                  WPAS_DBUS_IFACE_INTERFACE,
+	                                  "BSSExpireAge",
+	                                  g_variant_new_uint32 (250)),
+	                   G_DBUS_CALL_FLAGS_NONE,
+	                   -1,
+	                   priv->init_cancellable,
+	                   NULL,
+	                   NULL);
+	g_dbus_proxy_call (priv->iface_proxy,
+	                   "org.freedesktop.DBus.Properties.Set",
+	                   g_variant_new ("(ssv)",
+	                                  WPAS_DBUS_IFACE_INTERFACE,
+	                                  "BSSExpireCount",
+	                                  g_variant_new_uint32 (2)),
+	                   G_DBUS_CALL_FLAGS_NONE,
+	                   -1,
+	                   priv->init_cancellable,
+	                   NULL,
+	                   NULL);
+
 	/* Check whether NetworkReply and AP mode are supported */
 	priv->ready_count = 1;
 	g_dbus_proxy_call (priv->iface_proxy,
