@@ -5,6 +5,24 @@ of Red Hat to run tests of NetworkManager.
 ./bkr.py:
 =========
 
+Quick-Setup:
+
+yum install kobo python-nitrate python-termcolor
+yum install beaker-client
+
+$ cat ~/.nitrate
+[nitrate]
+url = https://tcms.engineering.redhat.com/xmlrpc/
+
+$ cat ~/.beaker_client/config
+HUB_URL = "https://beaker.engineering.redhat.com"
+AUTH_METHOD = "krbv"
+
+Find $DISTRO_NAME at
+  https://beaker.engineering.redhat.com/distrotrees/?simplesearch=RHEL-7.1
+
+
+
 Examples:
 
   kinit
