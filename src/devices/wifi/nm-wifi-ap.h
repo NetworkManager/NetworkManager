@@ -118,6 +118,8 @@ gboolean nm_ap_complete_connection (NMAccessPoint *self,
 
 NMAccessPoint *     nm_ap_match_in_hash (NMAccessPoint *find_ap, GHashTable *hash);
 
-void                nm_ap_dump (NMAccessPoint *ap, const char *prefix);
+void                nm_ap_dump (NMAccessPoint *self,
+                                const char *prefix,
+                                const char *ifname);
 
 #endif /* __NETWORKMANAGER_ACCESS_POINT_H__ */

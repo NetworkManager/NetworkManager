@@ -711,28 +711,51 @@ error:
 	return NULL;
 }
 
+static char
+mode_to_char (NMAccessPoint *self)
+{
+	NMAccessPointPrivate *priv = NM_AP_GET_PRIVATE (self);
+
+	if (priv->mode == NM_802_11_MODE_ADHOC)
+		return '*';
+	if (priv->hotspot)
+		return '#';
+	if (priv->fake)
+		return '-';
+	return ' ';
+}
+
 void
-nm_ap_dump (NMAccessPoint *ap, const char *prefix)
+nm_ap_dump (NMAccessPoint *self,
+            const char *prefix,
+            const char *ifname)
 {
 	NMAccessPointPrivate *priv;
+	const char *supplicant_id = "-";
+	guint32 chan;
 
-	g_return_if_fail (NM_IS_AP (ap));
+	g_return_if_fail (NM_IS_AP (self));
 
-	priv = NM_AP_GET_PRIVATE (ap);
+	priv = NM_AP_GET_PRIVATE (self);
+	chan = nm_utils_wifi_freq_to_channel (priv->freq);
+	if (priv->supplicant_path)
+		supplicant_id = strrchr (priv->supplicant_path, '/');
 
-	nm_log_dbg (LOGD_WIFI_SCAN, "%s'%s' (%p)",
+	nm_log_dbg (LOGD_WIFI_SCAN, "%s[%s%c] %-32s[%s%u %s%u%% %c W:%04X R:%04X] [%3u] %s%s",
 	            prefix,
+	            str_if_set (priv->address, "(none)"),
+	            mode_to_char (self),
 	            priv->ssid ? nm_utils_escape_ssid (priv->ssid->data, priv->ssid->len) : "(none)",
-	            ap);
-	nm_log_dbg (LOGD_WIFI_SCAN, "    BSSID     %s", str_if_set (priv->address, "(none)"));
-	nm_log_dbg (LOGD_WIFI_SCAN, "    mode      %d", priv->mode);
-	nm_log_dbg (LOGD_WIFI_SCAN, "    flags     0x%X", priv->flags);
-	nm_log_dbg (LOGD_WIFI_SCAN, "    wpa flags 0x%X", priv->wpa_flags);
-	nm_log_dbg (LOGD_WIFI_SCAN, "    rsn flags 0x%X", priv->rsn_flags);
-	nm_log_dbg (LOGD_WIFI_SCAN, "    quality   %d", priv->strength);
-	nm_log_dbg (LOGD_WIFI_SCAN, "    frequency %d", priv->freq);
-	nm_log_dbg (LOGD_WIFI_SCAN, "    max rate  %d", priv->max_bitrate);
-	nm_log_dbg (LOGD_WIFI_SCAN, "    last-seen %d", (int) priv->last_seen);
+	            chan > 99 ? "" : (chan > 9 ? " " : "  "),
+	            chan,
+	            priv->strength < 100 ? " " : "",
+	            priv->strength,
+	            priv->flags & NM_802_11_AP_FLAGS_PRIVACY ? 'P' : ' ',
+	            priv->wpa_flags & 0xFFFF,
+	            priv->rsn_flags & 0xFFFF,
+	            priv->last_seen > 0 ? (nm_utils_get_monotonic_timestamp_s () - priv->last_seen) : -1,
+	            ifname,
+	            supplicant_id);
 }
 
 const char *
