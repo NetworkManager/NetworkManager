@@ -67,7 +67,7 @@
 #include "nm-settings-connection.h"
 #include "nm-system-config-interface.h"
 #include "nm-logging.h"
-#include "nm-dbus-manager.h"
+#include "nm-bus-manager.h"
 #include "nm-auth-utils.h"
 #include "nm-auth-subject.h"
 #include "nm-session-monitor.h"
@@ -161,7 +161,7 @@ G_DEFINE_TYPE_EXTENDED (NMSettings, nm_settings, NM_TYPE_EXPORTED_OBJECT, 0,
 
 
 typedef struct {
-	NMDBusManager *dbus_mgr;
+	NMBusManager *dbus_mgr;
 
 	NMAgentManager *agent_mgr;
 
@@ -1435,13 +1435,13 @@ impl_settings_add_connection_unsaved (NMSettings *self,
 }
 
 static gboolean
-ensure_root (NMDBusManager         *dbus_mgr,
+ensure_root (NMBusManager          *dbus_mgr,
              DBusGMethodInvocation *context)
 {
 	gulong caller_uid;
 	GError *error = NULL;
 
-	if (!nm_dbus_manager_get_caller_info (dbus_mgr, context, NULL, &caller_uid, NULL)) {
+	if (!nm_bus_manager_get_caller_info (dbus_mgr, context, NULL, &caller_uid, NULL)) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
 		                             "Unable to determine request UID.");
@@ -2102,7 +2102,7 @@ nm_settings_new (GError **error)
 	priv = NM_SETTINGS_GET_PRIVATE (self);
 
 	priv->config = nm_config_get ();
-	priv->dbus_mgr = nm_dbus_manager_get ();
+	priv->dbus_mgr = nm_bus_manager_get ();
 
 	/* Load the plugins; fail if a plugin is not found. */
 	if (!load_plugins (self, nm_config_get_plugins (priv->config), error)) {

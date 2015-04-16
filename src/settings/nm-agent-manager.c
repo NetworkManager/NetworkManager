@@ -38,7 +38,7 @@
 #include "nm-setting-connection.h"
 #include "nm-enum-types.h"
 #include "nm-auth-manager.h"
-#include "nm-dbus-manager.h"
+#include "nm-bus-manager.h"
 #include "nm-session-monitor.h"
 #include "nm-simple-connection.h"
 #include "NetworkManagerUtils.h"
@@ -355,11 +355,11 @@ impl_agent_manager_unregister (NMAgentManager *self,
 	GError *error = NULL;
 	char *sender = NULL;
 
-	if (!nm_dbus_manager_get_caller_info (nm_dbus_manager_get (),
-	                                      context,
-	                                      &sender,
-	                                      NULL,
-	                                      NULL)) {
+	if (!nm_bus_manager_get_caller_info (nm_bus_manager_get (),
+	                                     context,
+	                                     &sender,
+	                                     NULL,
+	                                     NULL)) {
 		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
 		                             NM_AGENT_MANAGER_ERROR_PERMISSION_DENIED,
 		                             "Unable to determine request sender.");

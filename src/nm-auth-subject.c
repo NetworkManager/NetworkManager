@@ -34,7 +34,7 @@
 #include <stdlib.h>
 
 #include "nm-glib.h"
-#include "nm-dbus-manager.h"
+#include "nm-bus-manager.h"
 #include "nm-enum-types.h"
 #include "NetworkManagerUtils.h"
 #include "gsystem-local-alloc.h"
@@ -180,18 +180,18 @@ _new_unix_process (DBusGMethodInvocation *context,
 	g_return_val_if_fail (context || (connection && message), NULL);
 
 	if (context) {
-		success = nm_dbus_manager_get_caller_info (nm_dbus_manager_get (),
-		                                           context,
-		                                           &dbus_sender,
-		                                           &uid,
-		                                           &pid);
+		success = nm_bus_manager_get_caller_info (nm_bus_manager_get (),
+		                                          context,
+		                                          &dbus_sender,
+		                                          &uid,
+		                                          &pid);
 	} else if (message) {
-		success = nm_dbus_manager_get_caller_info_from_message (nm_dbus_manager_get (),
-		                                                        connection,
-		                                                        message,
-		                                                        &dbus_sender,
-		                                                        &uid,
-		                                                        &pid);
+		success = nm_bus_manager_get_caller_info_from_message (nm_bus_manager_get (),
+		                                                       connection,
+		                                                       message,
+		                                                       &dbus_sender,
+		                                                       &uid,
+		                                                       &pid);
 	} else
 		g_assert_not_reached ();
 

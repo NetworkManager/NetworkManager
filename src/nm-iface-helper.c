@@ -504,10 +504,9 @@ nm_main_config_reload (int signal)
 gconstpointer nm_config_get (void);
 const char *nm_config_get_dhcp_client (gpointer unused);
 gboolean nm_config_get_configure_and_quit (gpointer unused);
-gconstpointer nm_dbus_manager_get (void);
-void nm_dbus_manager_register_exported_type (gpointer unused, GType gtype, gconstpointer unused2);
-void nm_dbus_manager_register_object (gpointer unused, const char *path, gpointer object);
-void nm_dbus_manager_unregister_object (gpointer unused, gpointer object);
+gconstpointer nm_bus_manager_get (void);
+void nm_bus_manager_register_object (gpointer unused, const char *path, gpointer object);
+void nm_bus_manager_unregister_object (gpointer unused, gpointer object);
 
 gconstpointer
 nm_config_get (void)
@@ -528,23 +527,18 @@ nm_config_get_configure_and_quit (gpointer unused)
 }
 
 gconstpointer
-nm_dbus_manager_get (void)
+nm_bus_manager_get (void)
 {
 	return GUINT_TO_POINTER (1);
 }
 
 void
-nm_dbus_manager_register_exported_type (gpointer unused, GType gtype, gconstpointer unused2)
+nm_bus_manager_register_object (gpointer unused, const char *path, gpointer object)
 {
 }
 
 void
-nm_dbus_manager_register_object (gpointer unused, const char *path, gpointer object)
-{
-}
-
-void
-nm_dbus_manager_unregister_object (gpointer unused, gpointer object)
+nm_bus_manager_unregister_object (gpointer unused, gpointer object)
 {
 }
 

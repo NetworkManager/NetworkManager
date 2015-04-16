@@ -34,7 +34,7 @@
 #include "gsystem-local-alloc.h"
 #include "nm-manager.h"
 #include "nm-logging.h"
-#include "nm-dbus-manager.h"
+#include "nm-bus-manager.h"
 #include "nm-vpn-manager.h"
 #include "nm-device.h"
 #include "nm-device-generic.h"
@@ -166,7 +166,7 @@ typedef struct {
 
 	NMPolicy *policy;
 
-	NMDBusManager *dbus_mgr;
+	NMBusManager  *dbus_mgr;
 	gboolean       prop_filter_added;
 	NMRfkillManager *rfkill_mgr;
 
@@ -3992,7 +3992,7 @@ impl_manager_set_logging (NMManager *manager,
 	GError *error = NULL;
 	gulong caller_uid = G_MAXULONG;
 
-	if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr, context, NULL, &caller_uid, NULL)) {
+	if (!nm_bus_manager_get_caller_info (priv->dbus_mgr, context, NULL, &caller_uid, NULL)) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                             "Failed to get request UID.");
@@ -4626,7 +4626,7 @@ periodic_update_active_connection_timestamps (gpointer user_data)
 }
 
 static void
-dbus_connection_changed_cb (NMDBusManager *dbus_mgr,
+dbus_connection_changed_cb (NMBusManager *dbus_mgr,
                             DBusConnection *dbus_connection,
                             gpointer user_data)
 {
@@ -4686,7 +4686,7 @@ nm_manager_new (NMSettings *settings,
 
 	priv = NM_MANAGER_GET_PRIVATE (singleton);
 
-	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
+	bus = nm_bus_manager_get_connection (priv->dbus_mgr);
 	if (!bus) {
 		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
 		                     "Failed to initialize D-Bus connection");
@@ -4817,9 +4817,9 @@ nm_manager_init (NMManager *manager)
 	priv->state = NM_STATE_DISCONNECTED;
 	priv->startup = TRUE;
 
-	priv->dbus_mgr = nm_dbus_manager_get ();
+	priv->dbus_mgr = nm_bus_manager_get ();
 	g_signal_connect (priv->dbus_mgr,
-	                  NM_DBUS_MANAGER_DBUS_CONNECTION_CHANGED,
+	                  NM_BUS_MANAGER_DBUS_CONNECTION_CHANGED,
 	                  G_CALLBACK (dbus_connection_changed_cb),
 	                  manager);
 
@@ -5027,7 +5027,7 @@ dispose (GObject *object)
 
 	/* Unregister property filter */
 	if (priv->dbus_mgr) {
-		bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
+		bus = nm_bus_manager_get_connection (priv->dbus_mgr);
 		if (bus) {
 			dbus_connection = dbus_g_connection_get_connection (bus);
 			if (dbus_connection && priv->prop_filter_added) {

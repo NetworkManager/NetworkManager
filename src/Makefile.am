@@ -300,6 +300,8 @@ nm_sources = \
 	nm-activation-request.h \
 	nm-active-connection.c \
 	nm-active-connection.h \
+	nm-bus-manager.c \
+	nm-bus-manager.h \
 	nm-config.c \
 	nm-config.h \
 	nm-config-data.c \
@@ -308,8 +310,6 @@ nm_sources = \
 	nm-connection-provider.h \
 	nm-connectivity.c \
 	nm-connectivity.h \
-	nm-dbus-manager.c \
-	nm-dbus-manager.h \
 	nm-dcb.c \
 	nm-dcb.h \
 	nm-route-manager.c \

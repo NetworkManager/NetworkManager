@@ -29,7 +29,7 @@
 #include "nm-glib.h"
 #include "nm-dbus-interface.h"
 #include "nm-secret-agent.h"
-#include "nm-dbus-manager.h"
+#include "nm-bus-manager.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-logging.h"
 #include "nm-auth-subject.h"
@@ -460,7 +460,7 @@ nm_secret_agent_delete_secrets (NMSecretAgent *self,
 static void proxy_cleanup (NMSecretAgent *self);
 
 static void
-name_owner_changed_cb (NMDBusManager *dbus_mgr,
+name_owner_changed_cb (NMBusManager *dbus_mgr,
                        const char *name,
                        const char *old_owner,
                        const char *new_owner,
@@ -482,7 +482,7 @@ proxy_cleanup (NMSecretAgent *self)
 		g_signal_handlers_disconnect_by_func (priv->proxy, proxy_cleanup, self);
 		g_clear_object (&priv->proxy);
 
-		g_signal_handlers_disconnect_by_func (nm_dbus_manager_get (), name_owner_changed_cb, self);
+		g_signal_handlers_disconnect_by_func (nm_bus_manager_get (), name_owner_changed_cb, self);
 		g_clear_pointer (&priv->dbus_owner, g_free);
 
 		g_signal_emit (self, signals[DISCONNECTED], 0);
@@ -524,16 +524,16 @@ nm_secret_agent_new (DBusGMethodInvocation *context,
 	priv->hash = g_str_hash (hash_str);
 	g_free (hash_str);
 
-	priv->proxy = nm_dbus_manager_new_proxy (nm_dbus_manager_get (),
-	                                         context,
-	                                         priv->dbus_owner,
-	                                         NM_DBUS_PATH_SECRET_AGENT,
-	                                         NM_DBUS_INTERFACE_SECRET_AGENT);
+	priv->proxy = nm_bus_manager_new_proxy (nm_bus_manager_get (),
+	                                        context,
+	                                        priv->dbus_owner,
+	                                        NM_DBUS_PATH_SECRET_AGENT,
+	                                        NM_DBUS_INTERFACE_SECRET_AGENT);
 	g_assert (priv->proxy);
 	g_signal_connect_swapped (priv->proxy, "destroy",
 	                          G_CALLBACK (proxy_cleanup), self);
-	g_signal_connect (nm_dbus_manager_get (),
-	                  NM_DBUS_MANAGER_NAME_OWNER_CHANGED,
+	g_signal_connect (nm_bus_manager_get (),
+	                  NM_BUS_MANAGER_NAME_OWNER_CHANGED,
 	                  G_CALLBACK (name_owner_changed_cb),
 	                  self);
 

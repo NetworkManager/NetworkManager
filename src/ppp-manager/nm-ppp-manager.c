@@ -45,7 +45,6 @@
 #include "nm-glib.h"
 #include "NetworkManagerUtils.h"
 #include "nm-ppp-manager.h"
-#include "nm-dbus-manager.h"
 #include "nm-logging.h"
 #include "nm-platform.h"
 #include "nm-core-internal.h"

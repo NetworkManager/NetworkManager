@@ -46,7 +46,7 @@
 #include "main-utils.h"
 #include "nm-manager.h"
 #include "nm-linux-platform.h"
-#include "nm-dbus-manager.h"
+#include "nm-bus-manager.h"
 #include "nm-device.h"
 #include "nm-dhcp-manager.h"
 #include "nm-logging.h"
@@ -422,7 +422,7 @@ main (int argc, char *argv[])
 #endif
 	             );
 
-	if (!nm_dbus_manager_get_connection (nm_dbus_manager_get ())) {
+	if (!nm_bus_manager_get_connection (nm_bus_manager_get ())) {
 #if HAVE_DBUS_GLIB_100
 		nm_log_warn (LOGD_CORE, "Failed to connect to D-Bus; only private bus is available");
 #else
@@ -431,7 +431,7 @@ main (int argc, char *argv[])
 #endif
 	} else {
 		/* Start our DBus service */
-		if (!nm_dbus_manager_start_service (nm_dbus_manager_get ())) {
+		if (!nm_bus_manager_start_service (nm_bus_manager_get ())) {
 			nm_log_err (LOGD_CORE, "failed to start the dbus service.");
 			goto done;
 		}

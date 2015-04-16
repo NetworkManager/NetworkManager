@@ -24,7 +24,7 @@
 
 #include "nm-exported-object.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-dbus-manager.h"
+#include "nm-bus-manager.h"
 #include "nm-logging.h"
 
 static GHashTable *prefix_counters;
@@ -160,7 +160,7 @@ nm_exported_object_export (NMExportedObject *self)
 	} else
 		priv->path = g_strdup (class_export_path);
 
-	nm_dbus_manager_register_object (nm_dbus_manager_get (), priv->path, self);
+	nm_bus_manager_register_object (nm_bus_manager_get (), priv->path, self);
 
 	return priv->path;
 }
@@ -215,7 +215,7 @@ nm_exported_object_unexport (NMExportedObject *self)
 	g_return_if_fail (priv->path != NULL);
 
 	g_clear_pointer (&priv->path, g_free);
-	nm_dbus_manager_unregister_object (nm_dbus_manager_get (), self);
+	nm_bus_manager_unregister_object (nm_bus_manager_get (), self);
 }
 
 static void
