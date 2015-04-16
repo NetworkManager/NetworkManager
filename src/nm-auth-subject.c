@@ -167,9 +167,9 @@ nm_auth_subject_get_unix_process_dbus_sender (NMAuthSubject *subject)
 /**************************************************************/
 
 static NMAuthSubject *
-_new_unix_process (DBusGMethodInvocation *context,
-                   DBusConnection *connection,
-                   DBusMessage *message)
+_new_unix_process (GDBusMethodInvocation *context,
+                   GDBusConnection *connection,
+                   GDBusMessage *message)
 {
 	NMAuthSubject *self;
 	gboolean success = FALSE;
@@ -221,14 +221,14 @@ _new_unix_process (DBusGMethodInvocation *context,
 }
 
 NMAuthSubject *
-nm_auth_subject_new_unix_process_from_context (DBusGMethodInvocation *context)
+nm_auth_subject_new_unix_process_from_context (GDBusMethodInvocation *context)
 {
 	return _new_unix_process (context, NULL, NULL);
 }
 
 NMAuthSubject *
-nm_auth_subject_new_unix_process_from_message (DBusConnection *connection,
-                                               DBusMessage *message)
+nm_auth_subject_new_unix_process_from_message (GDBusConnection *connection,
+                                               GDBusMessage *message)
 {
 	return _new_unix_process (NULL, connection, message);
 }

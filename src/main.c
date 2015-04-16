@@ -21,9 +21,6 @@
 
 #include "config.h"
 
-#include <dbus/dbus.h>
-#include <dbus/dbus-glib-lowlevel.h>
-#include <dbus/dbus-glib.h>
 #include <getopt.h>
 #include <locale.h>
 #include <errno.h>
@@ -401,13 +398,6 @@ main (int argc, char *argv[])
 	}
 	g_clear_error (&error);
 
-	dbus_threads_init_default ();
-
-	/* Ensure that non-exported properties don't leak out, and that the
-	 * introspection 'access' permissions are respected.
-	 */
-	dbus_glib_global_set_disable_legacy_property_access ();
-
 	nm_log_info (LOGD_CORE, "Read config: %s", nm_config_data_get_config_description (nm_config_get_data (config)));
 	nm_config_data_log (nm_config_get_data (config), "CONFIG: ");
 	nm_log_dbg (LOGD_CORE, "WEXT support is %s",
@@ -427,12 +417,7 @@ main (int argc, char *argv[])
 	                            wimax_enabled);
 
 	if (!nm_bus_manager_get_connection (nm_bus_manager_get ())) {
-#if HAVE_DBUS_GLIB_100
 		nm_log_warn (LOGD_CORE, "Failed to connect to D-Bus; only private bus is available");
-#else
-		nm_log_err (LOGD_CORE, "Failed to connect to D-Bus, exiting...");
-		goto done;
-#endif
 	} else {
 		/* Start our DBus service */
 		if (!nm_bus_manager_start_service (nm_bus_manager_get ())) {

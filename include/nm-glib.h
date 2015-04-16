@@ -38,9 +38,6 @@
 
 #endif
 
-
-#include "nm-gvaluearray-compat.h"
-
 static inline void
 __g_type_ensure (GType type)
 {

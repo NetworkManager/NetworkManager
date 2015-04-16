@@ -29,7 +29,6 @@
 
 #include "nm-default.h"
 #include "nm-system-config-interface.h"
-#include "nm-dbus-glib-types.h"
 #include "nm-keyfile-connection.h"
 #include "reader.h"
 #include "writer.h"

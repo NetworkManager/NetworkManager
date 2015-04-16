@@ -62,9 +62,11 @@ nodist_libnm_util_include_HEADERS = \
 
 libnm_util_la_private_headers = \
 	crypto.h			\
+	nm-dbus-glib-types.h		\
+	nm-gvaluearray-compat.h		\
 	nm-param-spec-specialized.h	\
-	nm-utils-private.h		\
-	nm-setting-private.h
+	nm-setting-private.h		\
+	nm-utils-private.h
 
 libnm_util_la_csources = \
 	crypto.c			\

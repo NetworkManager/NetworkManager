@@ -30,8 +30,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include <dbus/dbus-glib.h>
-
 #include "nm-core-internal.h"
 
 #include "nm-supplicant-config.h"

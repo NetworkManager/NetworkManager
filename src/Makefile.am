@@ -33,6 +33,7 @@ endif
 
 AM_CPPFLAGS =				\
 	-I$(top_srcdir)/include		\
+	-I$(top_builddir)/introspection	\
 	-I$(top_srcdir)/libnm-core	\
 	-I$(top_builddir)/libnm-core	\
 	-I$(top_srcdir)/callouts	\
@@ -190,7 +191,7 @@ nm_dhcp_client_headers = \
 	dhcp-manager/nm-dhcp-dhcpcd.h \
 	dhcp-manager/nm-dhcp-systemd.h
 
-nm_sources = \
+libNetworkManager_la_SOURCES = \
 	$(nm_device_headers) \
 	$(nm_dhcp_client_headers) \
 	devices/nm-device.c \
@@ -362,14 +363,14 @@ nm_sources = \
 
 
 if SUSPEND_RESUME_UPOWER
-nm_sources += nm-sleep-monitor-upower.c
+libNetworkManager_la_SOURCES += nm-sleep-monitor-upower.c
 else
 # systemd/consolekit suspend/resume used whenever upower is not enabled
-nm_sources += nm-sleep-monitor-systemd.c
+libNetworkManager_la_SOURCES += nm-sleep-monitor-systemd.c
 endif
 
 if WITH_WEXT
-nm_sources += \
+libNetworkManager_la_SOURCES += \
 	platform/wifi/wifi-utils-wext.c \
 	platform/wifi/wifi-utils-wext.h
 endif
@@ -378,45 +379,11 @@ endif
 GLIB_GENERATED = nm-enum-types.h nm-enum-types.c
 GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM --fhead '\#include <nm-core-enum-types.h>\n'
 GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
-nm_enum_types_sources = $(nm_sources)
+nm_enum_types_sources = $(libNetworkManager_la_SOURCES)
 
 BUILT_SOURCES = $(GLIB_GENERATED)
 
-
-glue_sources = \
-	nm-access-point-glue.h \
-	nm-active-connection-glue.h \
-	nm-agent-manager-glue.h \
-	nm-device-bond-glue.h \
-	nm-device-bridge-glue.h \
-	nm-device-ethernet-glue.h \
-	nm-device-generic-glue.h \
-	nm-device-glue.h \
-	nm-device-gre-glue.h \
-	nm-device-infiniband-glue.h \
-	nm-device-macvlan-glue.h \
-	nm-device-tun-glue.h \
-	nm-device-veth-glue.h \
-	nm-device-vlan-glue.h \
-	nm-device-vxlan-glue.h \
-	nm-dhcp4-config-glue.h \
-	nm-dhcp6-config-glue.h \
-	nm-ip4-config-glue.h \
-	nm-ip6-config-glue.h \
-	nm-manager-glue.h \
-	nm-ppp-manager-glue.h \
-	nm-settings-connection-glue.h \
-	nm-settings-glue.h \
-	nm-vpn-connection-glue.h
-
-BUILT_SOURCES += $(glue_sources)
-
-%-glue.h: $(top_srcdir)/introspection/%.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=$(subst -,_,$(subst -glue.h,,$@)) --mode=glib-server --output=$@ $<
-
-
 AM_CPPFLAGS += \
-	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(GUDEV_CFLAGS) \
 	$(LIBNL_CFLAGS) \
@@ -450,14 +417,10 @@ AM_CPPFLAGS += \
 	\
 	$(NULL)
 
-libNetworkManager_la_SOURCES = \
-	$(nm_sources) \
-	$(glue_sources)
-
 libNetworkManager_la_LIBADD = \
 	$(top_builddir)/libnm-core/libnm-core.la \
+	$(top_builddir)/introspection/libnmdbus.la \
 	libsystemd-nm.la \
-	$(DBUS_LIBS) \
 	$(GLIB_LIBS) \
 	$(GUDEV_LIBS) \
 	$(LIBNL_LIBS) \
@@ -533,8 +496,8 @@ endif
 
 libnm_iface_helper_la_LIBADD = \
 	$(top_builddir)/libnm-core/libnm-core.la \
+	$(top_builddir)/introspection/libnmdbus.la \
 	libsystemd-nm.la \
-	$(DBUS_LIBS) \
 	$(GLIB_LIBS) \
 	$(GUDEV_LIBS) \
 	$(LIBNL_LIBS) \
@@ -555,7 +518,6 @@ nm_iface_helper_LDADD = \
 	$(top_builddir)/libnm-core/libnm-core.la \
 	libsystemd-nm.la \
 	libnm-iface-helper.la \
-	$(DBUS_LIBS) \
 	$(GLIB_LIBS) \
 	$(GUDEV_LIBS) \
 	$(SYSTEMD_JOURNAL_LIBS) \
@@ -582,8 +544,4 @@ install-data-hook:
 	$(mkinstalldirs) -m 0755 $(DESTDIR)$(pkglibdir)
 
 CLEANFILES = \
-	$(BUILT_SOURCES) \
-	settings/*-glue.h \
-	devices/*-glue.h \
-	devices/*/*-glue.h
-
+	$(BUILT_SOURCES)

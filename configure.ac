@@ -273,20 +273,6 @@ dnl Checks for dbus-glib
 dnl
 PKG_CHECK_MODULES(DBUS, dbus-1 >= 1.1 dbus-glib-1 >= 0.94)
 
-AC_CHECK_LIB([dbus-glib-1], [dbus_g_method_invocation_get_g_connection], ac_have_gmi_get_con="1", ac_have_gmi_get_con="0")
-AC_DEFINE_UNQUOTED(HAVE_DBUS_GLIB_GMI_GET_CONNECTION, $ac_have_gmi_get_con, [Define if you have a dbus-glib with dbus_g_method_invocation_get_g_connection()])
-
-dnl
-dnl Only dbus-glib >= 0.100 can use private dbus connections
-dnl
-PKG_CHECK_MODULES(DBUS_GLIB_100, [dbus-glib-1 >= 0.100], [have_dbus_glib_100=yes],[have_dbus_glib_100=no])
-if (test "${have_dbus_glib_100}" = "yes"); then
-	AC_DEFINE(HAVE_DBUS_GLIB_100, 1, [Define if you have dbus-glib >= 0.100])
-else
-	AC_DEFINE(HAVE_DBUS_GLIB_100, 0, [Define if you have dbus-glib >= 0.100])
-fi
-AM_CONDITIONAL(HAVE_DBUS_GLIB_100, test "${have_dbus_glib_100}" = "yes")
-
 PKG_CHECK_MODULES(GLIB, [gio-unix-2.0 >= 2.37.6 gmodule-2.0],
 	[AC_SUBST(LOG_DRIVER, '$(top_srcdir)/build-aux/tap-driver.sh'),
 	 AC_SUBST(AM_TESTS_FD_REDIRECT, '--tap')],
