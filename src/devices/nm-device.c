@@ -8593,7 +8593,7 @@ constructed (GObject *object)
 
 	/* Have to call update_initial_hw_address() before calling get_ignore_carrier() */
 	if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
-		priv->ignore_carrier = nm_config_get_ignore_carrier (nm_config_get (), self);
+		priv->ignore_carrier = nm_config_data_get_ignore_carrier (nm_config_get_data_orig (nm_config_get ()), self);
 
 		check_carrier (self);
 		_LOGD (LOGD_HW,

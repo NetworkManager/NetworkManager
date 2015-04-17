@@ -73,8 +73,6 @@ const char *nm_config_get_log_domains (NMConfig *config);
 const char *nm_config_get_debug (NMConfig *config);
 gboolean nm_config_get_configure_and_quit (NMConfig *config);
 
-gboolean nm_config_get_ignore_carrier (NMConfig *config, NMDevice *device);
-
 /* for main.c only */
 NMConfigCmdLineOptions *nm_config_cmd_line_options_new (void);
 void                    nm_config_cmd_line_options_free (NMConfigCmdLineOptions *cli);
