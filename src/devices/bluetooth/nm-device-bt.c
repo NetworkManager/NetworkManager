@@ -124,7 +124,7 @@ get_connection_bt_type (NMConnection *connection)
 	return NM_BT_CAPABILITY_NONE;
 }
 
-static guint32
+static NMDeviceCapabilities
 get_generic_capabilities (NMDevice *device)
 {
 	return NM_DEVICE_CAP_IS_NON_KERNEL;

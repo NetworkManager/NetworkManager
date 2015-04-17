@@ -84,7 +84,7 @@ update_initial_hw_address (NMDevice *dev)
 	_LOGD (LOGD_DEVICE | LOGD_VLAN, "read initial MAC address %s", priv->initial_hw_addr);
 }
 
-static guint32
+static NMDeviceCapabilities
 get_generic_capabilities (NMDevice *dev)
 {
 	/* We assume VLAN interfaces always support carrier detect */
