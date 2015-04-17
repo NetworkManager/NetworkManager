@@ -473,8 +473,8 @@ nm_device_ipv6_sysctl_get_int32 (NMDevice *self, const char *property, gint32 fa
 	return nm_platform_sysctl_get_int32 (nm_utils_ip6_property_path (nm_device_get_ip_iface (self), property), fallback);
 }
 
-static gboolean
-device_has_capability (NMDevice *self, NMDeviceCapabilities caps)
+gboolean
+nm_device_has_capability (NMDevice *self, NMDeviceCapabilities caps)
 {
 	return NM_FLAGS_ANY (NM_DEVICE_GET_PRIVATE (self)->capabilities, caps);
 }
@@ -1394,8 +1394,8 @@ static void
 link_changed (NMDevice *self, NMPlatformLink *info)
 {
 	/* Update carrier from link event if applicable. */
-	if (   device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)
-	    && !device_has_capability (self, NM_DEVICE_CAP_NONSTANDARD_CARRIER))
+	if (   nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)
+	    && !nm_device_has_capability (self, NM_DEVICE_CAP_NONSTANDARD_CARRIER))
 		nm_device_set_carrier (self, info->connected);
 }
 
@@ -6587,7 +6587,7 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 	 * complete (via a pending action) until either the carrier turns on, or
 	 * a timeout is reached.
 	 */
-	if (device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
+	if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
 		if (priv->carrier_wait_id)
 			g_source_remove (priv->carrier_wait_id);
 		else
@@ -6607,7 +6607,7 @@ check_carrier (NMDevice *self)
 {
 	int ifindex = nm_device_get_ip_ifindex (self);
 
-	if (!device_has_capability (self, NM_DEVICE_CAP_NONSTANDARD_CARRIER))
+	if (!nm_device_has_capability (self, NM_DEVICE_CAP_NONSTANDARD_CARRIER))
 		nm_device_set_carrier (self, nm_platform_link_is_connected (ifindex));
 }
 
@@ -6628,7 +6628,7 @@ bring_up (NMDevice *self, gboolean *no_firmware)
 		*no_firmware = nm_platform_get_error () == NM_PLATFORM_ERROR_NO_FIRMWARE;
 
 	/* Store carrier immediately. */
-	if (result && device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT))
+	if (result && nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT))
 		check_carrier (self);
 
 	return result;
@@ -8453,7 +8453,7 @@ constructor (GType type,
 	if (NM_DEVICE_GET_CLASS (self)->get_generic_capabilities)
 		priv->capabilities |= NM_DEVICE_GET_CLASS (self)->get_generic_capabilities (self);
 
-	if (priv->ifindex <= 0 && !device_has_capability (self, NM_DEVICE_CAP_IS_NON_KERNEL))
+	if (priv->ifindex <= 0 && !nm_device_has_capability (self, NM_DEVICE_CAP_IS_NON_KERNEL))
 		_LOGW (LOGD_HW, "failed to look up interface index");
 
 	device_get_driver_info (self, priv->iface, &priv->driver_version, &priv->firmware_version);
@@ -8499,7 +8499,7 @@ constructed (GObject *object)
 		NM_DEVICE_GET_CLASS (self)->update_initial_hw_address (self);
 
 	/* Have to call update_initial_hw_address() before calling get_ignore_carrier() */
-	if (device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
+	if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
 		priv->ignore_carrier = nm_config_get_ignore_carrier (nm_config_get (), self);
 
 		check_carrier (self);

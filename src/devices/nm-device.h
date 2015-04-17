@@ -372,6 +372,8 @@ void nm_device_set_initial_unmanaged_flag (NMDevice *device,
 gboolean nm_device_get_is_nm_owned (NMDevice *device);
 void     nm_device_set_nm_owned    (NMDevice *device);
 
+gboolean nm_device_has_capability (NMDevice *self, NMDeviceCapabilities caps);
+
 gboolean nm_device_get_autoconnect (NMDevice *device);
 
 void nm_device_handle_autoip4_event (NMDevice *self,
