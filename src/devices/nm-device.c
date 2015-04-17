@@ -493,7 +493,7 @@ nm_device_dbus_export (NMDevice *self)
 	g_return_if_fail (priv->path == NULL);
 
 	priv->path = g_strdup_printf ("/org/freedesktop/NetworkManager/Devices/%d", devcount++);
-	_LOGI (LOGD_DEVICE, "exported as %s", priv->path);
+	_LOGD (LOGD_DEVICE, "exported as %s", priv->path);
 	nm_dbus_manager_register_object (nm_dbus_manager_get (), priv->path, self);
 }
 
@@ -7528,9 +7528,9 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, gboolean deconfig
 	g_return_if_fail (NM_IS_DEVICE (self));
 
 	if (reason == NM_DEVICE_STATE_REASON_NOW_MANAGED)
-		_LOGI (LOGD_DEVICE, "preparing device");
+		_LOGD (LOGD_DEVICE, "preparing device");
 	else
-		_LOGI (LOGD_DEVICE, "deactivating device (reason '%s') [%d]", reason_to_string (reason), reason);
+		_LOGD (LOGD_DEVICE, "deactivating device (reason '%s') [%d]", reason_to_string (reason), reason);
 
 	/* Save whether or not we tried IPv6 for later */
 	priv = NM_DEVICE_GET_PRIVATE (self);
@@ -8504,7 +8504,7 @@ constructed (GObject *object)
 		priv->ignore_carrier = nm_config_get_ignore_carrier (nm_config_get (), self);
 
 		check_carrier (self);
-		_LOGI (LOGD_HW,
+		_LOGD (LOGD_HW,
 		       "carrier is %s%s",
 		       priv->carrier ? "ON" : "OFF",
 		       priv->ignore_carrier ? " (but ignored)" : "");
