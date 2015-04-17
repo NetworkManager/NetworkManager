@@ -1108,6 +1108,9 @@ nm_match_spec_s390_subchannels (const GSList *specs, const char *subchannels)
 
 	g_return_val_if_fail (subchannels != NULL, NM_MATCH_SPEC_NO_MATCH);
 
+	if (!specs)
+		return NM_MATCH_SPEC_NO_MATCH;
+
 	if (!parse_subchannels (subchannels, &a, &b, &c))
 		return NM_MATCH_SPEC_NO_MATCH;
 
