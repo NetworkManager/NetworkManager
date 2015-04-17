@@ -191,7 +191,7 @@ typedef struct {
 	int           ip_ifindex;
 	NMDeviceType  type;
 	char *        type_desc;
-	guint32       capabilities;
+	NMDeviceCapabilities capabilities;
 	char *        driver;
 	char *        driver_version;
 	char *        firmware_version;
@@ -476,7 +476,7 @@ nm_device_ipv6_sysctl_get_int32 (NMDevice *self, const char *property, gint32 fa
 static gboolean
 device_has_capability (NMDevice *self, NMDeviceCapabilities caps)
 {
-	return !!(NM_DEVICE_GET_PRIVATE (self)->capabilities & caps);
+	return NM_FLAGS_ANY (NM_DEVICE_GET_PRIVATE (self)->capabilities, caps);
 }
 
 /***********************************************************/

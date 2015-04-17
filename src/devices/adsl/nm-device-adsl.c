@@ -73,7 +73,7 @@ typedef struct {
 
 /**************************************************************/
 
-static guint32
+static NMDeviceCapabilities
 get_generic_capabilities (NMDevice *dev)
 {
 	return (  NM_DEVICE_CAP_CARRIER_DETECT

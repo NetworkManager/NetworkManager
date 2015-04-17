@@ -143,7 +143,7 @@ typedef struct {
 
 	gboolean    (* get_ip_iface_identifier) (NMDevice *self, NMUtilsIPv6IfaceId *out_iid);
 
-	guint32		(* get_generic_capabilities)	(NMDevice *self);
+	NMDeviceCapabilities (* get_generic_capabilities) (NMDevice *self);
 
 	gboolean	(* is_available) (NMDevice *self, NMDeviceCheckDevAvailableFlags flags);
 

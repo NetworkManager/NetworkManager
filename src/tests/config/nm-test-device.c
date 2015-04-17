@@ -61,7 +61,7 @@ dispose (GObject *object)
 	g_object_class->dispose (object);
 }
 
-static guint32
+static NMDeviceCapabilities
 get_generic_capabilities (NMDevice *device)
 {
 	return NM_DEVICE_CAP_IS_NON_KERNEL;
