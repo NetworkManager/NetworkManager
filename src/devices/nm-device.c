@@ -5834,8 +5834,9 @@ _device_activate (NMDevice *self, NMActRequest *req)
 	connection = nm_act_request_get_connection (req);
 	g_assert (connection);
 
-	_LOGI (LOGD_DEVICE, "Activation: starting connection '%s'",
-	       nm_connection_get_id (connection));
+	_LOGI (LOGD_DEVICE, "Activation: starting connection '%s' (%s)",
+	       nm_connection_get_id (connection),
+	       nm_connection_get_uuid (connection));
 
 	delete_on_deactivate_unschedule (self);
 
