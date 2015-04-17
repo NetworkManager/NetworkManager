@@ -571,6 +571,7 @@ _get_config_dir_files (const char *config_main_file,
 	GPtrArray *confs;
 	GString *config_description;
 	const char *name;
+	guint i;
 
 	g_return_val_if_fail (config_main_file, NULL);
 	g_return_val_if_fail (config_dir, NULL);
@@ -583,21 +584,27 @@ _get_config_dir_files (const char *config_main_file,
 	if (direnum) {
 		while ((info = g_file_enumerator_next_file (direnum, NULL, NULL))) {
 			name = g_file_info_get_name (info);
-			if (g_str_has_suffix (name, ".conf")) {
-				g_ptr_array_add (confs, g_build_filename (config_dir, name, NULL));
-				if (confs->len == 1)
-					g_string_append (config_description, " and conf.d: ");
-				else
-					g_string_append (config_description, ", ");
-				g_string_append (config_description, name);
-			}
+			if (g_str_has_suffix (name, ".conf"))
+				g_ptr_array_add (confs, g_strdup (name));
 			g_object_unref (info);
 		}
 		g_object_unref (direnum);
 	}
 	g_object_unref (dir);
 
-	g_ptr_array_sort (confs, sort_asciibetically);
+	if (confs->len > 0) {
+		g_ptr_array_sort (confs, sort_asciibetically);
+		g_string_append (config_description, " and conf.d: ");
+		for (i = 0; i < confs->len; i++) {
+			char *n = confs->pdata[i];
+
+			if (i > 0)
+				g_string_append (config_description, ", ");
+			g_string_append (config_description, n);
+			confs->pdata[i] = g_build_filename (config_dir, n, NULL);
+			g_free (n);
+		}
+	}
 
 	*out_config_description = g_string_free (config_description, FALSE);
 	return confs;
