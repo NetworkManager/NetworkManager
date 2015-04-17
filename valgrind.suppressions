@@ -1,3 +1,9 @@
+# IMPORTANT: these suppressions strongly depend on the used library version.
+# They probably don't work out-of-the-box on anything but Fedora, where they
+# are mainly tested.
+#
+# Make sure to install debug information, otherwise the suppression trace might
+# not match. On Fedora, try 'debuginfo-install dbus-glib glib libnl3'.
 {
   NSS_NoDB_Init
   Memcheck:Leak
