@@ -384,4 +384,15 @@
    fun:start_thread
    fun:clone
 }
+{
+   _gdbus_f21_1
+   Memcheck:Leak
+   match-leak-kinds: definite
+   ...
+   fun:_g_dbus_worker_send_message
+   fun:g_dbus_connection_send_message_unlocked
+   ...
+   fun:g_dbus_proxy_finalize
+   ...
+}
 
