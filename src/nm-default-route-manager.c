@@ -540,7 +540,7 @@ _resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *c
 		} else {
 			if (!_vt_routes_has_entry (vtable, routes, entry)) {
 				g_array_append_val (changed_metrics, entry->effective_metric);
-				_LOGD (vtable->vt->addr_family, LOG_ENTRY_FMT": readd route %s (%u -> %u)", LOG_ENTRY_ARGS (i, entry),
+				_LOGD (vtable->vt->addr_family, LOG_ENTRY_FMT": read route %s (%u -> %u)", LOG_ENTRY_ARGS (i, entry),
 				       vtable->vt->route_to_string (&entry->route), (guint) entry->effective_metric,
 				       (guint) entry->effective_metric);
 			}
@@ -1229,10 +1229,10 @@ _resync_idle_reschedule (NMDefaultRouteManager *self)
 {
 	NMDefaultRouteManagerPrivate *priv = NM_DEFAULT_ROUTE_MANAGER_GET_PRIVATE (self);
 
-	/* since we react on external changes and readd/remove default routes for
-	 * the interfaces we manage, there could be the erronous situation where two applications
+	/* since we react on external changes and read/remove default routes for
+	 * the interfaces we manage, there could be the erroneous situation where two applications
 	 * fight over a certain default route.
-	 * Avoid this, by increasingly wait longer to touch the system (backoff wait time). */
+	 * Avoid this, by increasingly wait longer to touch tehe system (backoff wait time). */
 
 	if (priv->resync.backoff_wait_time_ms == 0) {
 		/* for scheduling idle, always reschedule (to process all other events first) */
