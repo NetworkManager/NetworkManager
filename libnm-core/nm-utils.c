@@ -1576,7 +1576,7 @@ nm_utils_ip6_addresses_from_variant (GVariant *value, char **out_gateway)
 					*out_gateway = g_strdup (nm_utils_inet6_ntop (gateway_bytes, NULL));
 			}
 		} else {
-			g_warning ("Ignoring invalid IP4 address: %s", error->message);
+			g_warning ("Ignoring invalid IP6 address: %s", error->message);
 			g_clear_error (&error);
 		}
 

@@ -76,7 +76,7 @@ valid_ip (int family, const char *ip, GError **error)
 {
 	if (!nm_utils_ipaddr_valid (family, ip)) {
 		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
-		             family == AF_INET ? _("Invalid IPv4 address '%s'") : _("Invalid IPv6 address '%s"),
+		             family == AF_INET ? _("Invalid IPv4 address '%s'") : _("Invalid IPv6 address '%s'"),
 		             ip);
 		return FALSE;
 	} else
@@ -90,7 +90,7 @@ valid_prefix (int family, guint prefix, GError **error, gboolean allow_zero_pref
 	    || (family == AF_INET6 && prefix > 128)
 	    || (!allow_zero_prefix && prefix == 0)) {
 		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
-		             family == AF_INET ? _("Invalid IPv4 address prefix '%u'") : _("Invalid IPv6 address prefix '%u"),
+		             family == AF_INET ? _("Invalid IPv4 address prefix '%u'") : _("Invalid IPv6 address prefix '%u'"),
 		             prefix);
 		return FALSE;
 	}
