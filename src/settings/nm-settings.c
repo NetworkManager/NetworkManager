@@ -612,7 +612,7 @@ add_plugin (NMSettings *self, NMSystemConfigInterface *plugin)
 	              NM_SYSTEM_CONFIG_INTERFACE_INFO, &pinfo,
 	              NULL);
 
-	nm_log_info (LOGD_SETTINGS, "Loaded plugin %s: %s", pname, pinfo);
+	nm_log_info (LOGD_SETTINGS, "Loaded settings plugin %s: %s", pname, pinfo);
 	g_free (pname);
 	g_free (pinfo);
 }
