@@ -8082,6 +8082,12 @@ _set_state_full (NMDevice *self,
 	case NM_DEVICE_STATE_DEACTIVATING:
 		_cancel_activation (self);
 
+		if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
+			/* We cache the ignore_carrier state to not react on config-reloads while the connection
+			 * is active. But on deactivating, reset the ignore-carrier flag to the current state. */
+			priv->ignore_carrier = nm_config_data_get_ignore_carrier (nm_config_get_data (nm_config_get ()), self);
+		}
+
 		if (quitting) {
 			nm_dispatcher_call_sync (DISPATCHER_ACTION_PRE_DOWN,
 			                         nm_act_request_get_connection (req),
@@ -8447,6 +8453,20 @@ spec_match_list (NMDevice *self, const GSList *specs)
 	return matched;
 }
 
+static void
+config_changed_update_ignore_carrier (NMConfig *config,
+                                      NMConfigData *config_data,
+                                      NMConfigChangeFlags changes,
+                                      NMConfigData *old_data,
+                                      NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (   priv->state <= NM_DEVICE_STATE_DISCONNECTED
+	    || priv->state > NM_DEVICE_STATE_ACTIVATED)
+		priv->ignore_carrier = nm_config_data_get_ignore_carrier (config_data, self);
+}
+
 /***********************************************************/
 
 #define DEFAULT_AUTOCONNECT TRUE
@@ -8593,7 +8613,13 @@ constructed (GObject *object)
 
 	/* Have to call update_initial_hw_address() before calling get_ignore_carrier() */
 	if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
-		priv->ignore_carrier = nm_config_data_get_ignore_carrier (nm_config_get_data_orig (nm_config_get ()), self);
+		NMConfig *config = nm_config_get ();
+
+		priv->ignore_carrier = nm_config_data_get_ignore_carrier (nm_config_get_data (config), self);
+		g_signal_connect (G_OBJECT (config),
+		                  NM_CONFIG_SIGNAL_CONFIG_CHANGED,
+		                  G_CALLBACK (config_changed_update_ignore_carrier),
+		                  self);
 
 		check_carrier (self);
 		_LOGD (LOGD_HW,
@@ -8657,6 +8683,8 @@ dispose (GObject *object)
 	NMPlatform *platform;
 
 	_LOGD (LOGD_DEVICE, "dispose(): %s", G_OBJECT_TYPE_NAME (self));
+
+	g_signal_handlers_disconnect_by_func (nm_config_get (), config_changed_update_ignore_carrier, self);
 
 	dispatcher_cleanup (self);
 
