@@ -4,7 +4,7 @@
 		$ARGV $ARGV_PROFILE
 	</whiteboard>
 	<recipeSet priority="Normal">
-		<recipe kernel_options="" kernel_options_post="" ks_meta="" role="None" whiteboard="$WHITEBOARD $UUID">
+		<recipe kernel_options="$SELINUX_DISABLED" kernel_options_post="" ks_meta="" role="None" whiteboard="$WHITEBOARD $UUID">
 			<autopick random="true"/>
 			<watchdog panic="None"/>
 			<packages/>

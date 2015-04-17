@@ -477,6 +477,7 @@ class CmdSubmit(CmdBase):
         self.parser.add_argument('--job', '-j', help='beaker xml job file')
         self.parser.add_argument('--verbose', '-v', action='count', help='print more information')
         self.parser.add_argument('--reservesys', '-R', action='store_true', help='add task /distribution/reservesys')
+        self.parser.add_argument('--disable-selinux', action='store_true', help='add kernel option selinux=0 to disable AVC checks ($SELINUX_DISABLED)')
         self.parser.add_argument('--var', '-V', action='append', help='Set template replacements (alternative to setting via environment variables')
         self.parser.add_argument('--hosttype', help='The host type. Known values are \'veth\', \'dcb\', \'infiniband\', and \'wifi\'. Anything else uses the default. This determines the $HOSTREQUIRES template')
         self.parser.add_argument('--jobtype', help='The job type. Known values are \'rhel70\'. Anything else uses the default to create a retention=scratch job. This determines the $JOBTYPE template')
@@ -640,6 +641,14 @@ class CmdSubmit(CmdBase):
             return ""
         return '<reservesys duration="86400"/>'
 
+    def _process_line_get_SELINUX_DISABLED(self, key, replacement, index=None, none=None):
+        v = self._get_default('SELINUX_DISABLED')
+        if v is not None:
+            return v
+        if self.options.disable_selinux:
+            return 'selinux=0'
+        return ''
+
     DefaultReplacements = {
             'WHITEBOARD'        : 'Test NetworkManager',
             'DISTRO_FAMILY'     : 'RedHatEnterpriseLinux7',
@@ -653,6 +662,7 @@ class CmdSubmit(CmdBase):
             'GIT_TARGETBRANCH'  : _process_line_get_GIT_TARGETBRANCH,
             'UUID'              : str(uuid.uuid4()),
             'RESERVESYS'        : _process_line_get_RESERVESYS,
+            'SELINUX_DISABLED'  : _process_line_get_SELINUX_DISABLED,
         }
     def _process_line_get(self, key, replacement, index=None, none=None):
         if key in replacement:
