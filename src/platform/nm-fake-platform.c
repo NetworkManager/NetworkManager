@@ -63,7 +63,7 @@ G_DEFINE_TYPE (NMFakePlatform, nm_fake_platform, NM_TYPE_PLATFORM)
 void
 nm_fake_platform_setup (void)
 {
-	nm_platform_setup (NM_TYPE_FAKE_PLATFORM);
+	nm_platform_setup (g_object_new (NM_TYPE_FAKE_PLATFORM, NULL));
 }
 
 /******************************************************************/
