@@ -191,7 +191,7 @@ typedef struct {
 	int           ip_ifindex;
 	NMDeviceType  type;
 	char *        type_desc;
-	guint32       capabilities;
+	NMDeviceCapabilities capabilities;
 	char *        driver;
 	char *        driver_version;
 	char *        firmware_version;
@@ -473,10 +473,10 @@ nm_device_ipv6_sysctl_get_int32 (NMDevice *self, const char *property, gint32 fa
 	return nm_platform_sysctl_get_int32 (nm_utils_ip6_property_path (nm_device_get_ip_iface (self), property), fallback);
 }
 
-static gboolean
-device_has_capability (NMDevice *self, NMDeviceCapabilities caps)
+gboolean
+nm_device_has_capability (NMDevice *self, NMDeviceCapabilities caps)
 {
-	return !!(NM_DEVICE_GET_PRIVATE (self)->capabilities & caps);
+	return NM_FLAGS_ANY (NM_DEVICE_GET_PRIVATE (self)->capabilities, caps);
 }
 
 /***********************************************************/
@@ -493,7 +493,7 @@ nm_device_dbus_export (NMDevice *self)
 	g_return_if_fail (priv->path == NULL);
 
 	priv->path = g_strdup_printf ("/org/freedesktop/NetworkManager/Devices/%d", devcount++);
-	_LOGI (LOGD_DEVICE, "exported as %s", priv->path);
+	_LOGD (LOGD_DEVICE, "exported as %s", priv->path);
 	nm_dbus_manager_register_object (nm_dbus_manager_get (), priv->path, self);
 }
 
@@ -1394,8 +1394,8 @@ static void
 link_changed (NMDevice *self, NMPlatformLink *info)
 {
 	/* Update carrier from link event if applicable. */
-	if (   device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)
-	    && !device_has_capability (self, NM_DEVICE_CAP_NONSTANDARD_CARRIER))
+	if (   nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)
+	    && !nm_device_has_capability (self, NM_DEVICE_CAP_NONSTANDARD_CARRIER))
 		nm_device_set_carrier (self, info->connected);
 }
 
@@ -2453,7 +2453,7 @@ nm_device_activate_stage1_device_prepare (gpointer user_data)
 	/* Notify the new ActiveConnection along with the state change */
 	g_object_notify (G_OBJECT (self), NM_DEVICE_ACTIVE_CONNECTION);
 
-	_LOGI (LOGD_DEVICE, "Activation: Stage 1 of 5 (Device Prepare) started...");
+	_LOGD (LOGD_DEVICE, "Activation: Stage 1 of 5 (Device Prepare) started...");
 	nm_device_state_changed (self, NM_DEVICE_STATE_PREPARE, NM_DEVICE_STATE_REASON_NONE);
 
 	/* Assumed connections were already set up outside NetworkManager */
@@ -2487,7 +2487,7 @@ nm_device_activate_stage1_device_prepare (gpointer user_data)
 		nm_device_activate_schedule_stage2_device_config (self);
 
 out:
-	_LOGI (LOGD_DEVICE, "Activation: Stage 1 of 5 (Device Prepare) complete.");
+	_LOGD (LOGD_DEVICE, "Activation: Stage 1 of 5 (Device Prepare) complete.");
 	return FALSE;
 }
 
@@ -2510,7 +2510,7 @@ nm_device_activate_schedule_stage1_device_prepare (NMDevice *self)
 
 	activation_source_schedule (self, nm_device_activate_stage1_device_prepare, 0);
 
-	_LOGI (LOGD_DEVICE, "Activation: Stage 1 of 5 (Device Prepare) scheduled...");
+	_LOGD (LOGD_DEVICE, "Activation: Stage 1 of 5 (Device Prepare) scheduled...");
 }
 
 static NMActStageReturn
@@ -2541,7 +2541,7 @@ nm_device_activate_stage2_device_config (gpointer user_data)
 	/* Clear the activation source ID now that this stage has run */
 	activation_source_clear (self, FALSE, 0);
 
-	_LOGI (LOGD_DEVICE, "Activation: Stage 2 of 5 (Device Configure) starting...");
+	_LOGD (LOGD_DEVICE, "Activation: Stage 2 of 5 (Device Configure) starting...");
 	nm_device_state_changed (self, NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_REASON_NONE);
 
 	/* Assumed connections were already set up outside NetworkManager */
@@ -2576,12 +2576,12 @@ nm_device_activate_stage2_device_config (gpointer user_data)
 			nm_device_queue_recheck_assume (info->slave);
 	}
 
-	_LOGI (LOGD_DEVICE, "Activation: Stage 2 of 5 (Device Configure) successful.");
+	_LOGD (LOGD_DEVICE, "Activation: Stage 2 of 5 (Device Configure) successful.");
 
 	nm_device_activate_schedule_stage3_ip_config_start (self);
 
 out:
-	_LOGI (LOGD_DEVICE, "Activation: Stage 2 of 5 (Device Configure) complete.");
+	_LOGD (LOGD_DEVICE, "Activation: Stage 2 of 5 (Device Configure) complete.");
 	return FALSE;
 }
 
@@ -2604,7 +2604,7 @@ nm_device_activate_schedule_stage2_device_config (NMDevice *self)
 
 	activation_source_schedule (self, nm_device_activate_stage2_device_config, 0);
 
-	_LOGI (LOGD_DEVICE, "Activation: Stage 2 of 5 (Device Configure) scheduled...");
+	_LOGD (LOGD_DEVICE, "Activation: Stage 2 of 5 (Device Configure) scheduled...");
 }
 
 /*********************************************/
@@ -2829,7 +2829,7 @@ aipd_start (NMDevice *self, NMDeviceStateReason *reason)
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
-	_LOGI (LOGD_DEVICE | LOGD_AUTOIP4,
+	_LOGD (LOGD_DEVICE | LOGD_AUTOIP4,
 	       "Activation: Stage 3 of 5 (IP Configure Start) started"
 	       " avahi-autoipd...");
 
@@ -4289,7 +4289,7 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *self)
 		if (priv->dhcp6_mode != NM_RDISC_DHCP_LEVEL_NONE) {
 			NMDeviceStateReason reason;
 
-			_LOGI (LOGD_DEVICE | LOGD_DHCP6,
+			_LOGD (LOGD_DEVICE | LOGD_DHCP6,
 			       "Activation: Stage 3 of 5 (IP Configure Start) starting DHCPv6"
 			       " as requested by IPv6 router...");
 			if (!dhcp6_start (self, FALSE, &reason)) {
@@ -4878,7 +4878,7 @@ nm_device_activate_stage3_ip_config_start (gpointer user_data)
 
 	priv->ip4_state = priv->ip6_state = IP_WAIT;
 
-	_LOGI (LOGD_DEVICE, "Activation: Stage 3 of 5 (IP Configure Start) started...");
+	_LOGD (LOGD_DEVICE, "Activation: Stage 3 of 5 (IP Configure Start) started...");
 	nm_device_state_changed (self, NM_DEVICE_STATE_IP_CONFIG, NM_DEVICE_STATE_REASON_NONE);
 
 	/* Device should be up before we can do anything with it */
@@ -4916,7 +4916,7 @@ nm_device_activate_stage3_ip_config_start (gpointer user_data)
 	nm_device_check_ip_failed (self, TRUE);
 
 out:
-	_LOGI (LOGD_DEVICE, "Activation: Stage 3 of 5 (IP Configure Start) complete.");
+	_LOGD (LOGD_DEVICE, "Activation: Stage 3 of 5 (IP Configure Start) complete.");
 	return FALSE;
 }
 
@@ -4940,7 +4940,7 @@ fw_change_zone_cb (GError *error, gpointer user_data)
 	}
 
 	activation_source_schedule (self, nm_device_activate_stage3_ip_config_start, 0);
-	_LOGI (LOGD_DEVICE, "Activation: Stage 3 of 5 (IP Configure Start) scheduled.");
+	_LOGD (LOGD_DEVICE, "Activation: Stage 3 of 5 (IP Configure Start) scheduled.");
 }
 
 /*
@@ -4973,7 +4973,7 @@ nm_device_activate_schedule_stage3_ip_config_start (NMDevice *self)
 	if (nm_device_uses_assumed_connection (self)) {
 		_LOGD (LOGD_DEVICE, "Activation: skip setting firewall zone '%s' for assumed device", zone ? zone : "default");
 		activation_source_schedule (self, nm_device_activate_stage3_ip_config_start, 0);
-		_LOGI (LOGD_DEVICE, "Activation: Stage 3 of 5 (IP Configure Start) scheduled.");
+		_LOGD (LOGD_DEVICE, "Activation: Stage 3 of 5 (IP Configure Start) scheduled.");
 		return;
 	}
 
@@ -5014,8 +5014,7 @@ nm_device_activate_ip4_config_timeout (gpointer user_data)
 	/* Clear the activation source ID now that this stage has run */
 	activation_source_clear (self, FALSE, AF_INET);
 
-	_LOGI (LOGD_DEVICE | LOGD_IP4,
-	       "Activation: Stage 4 of 5 (IPv4 Configure Timeout) started...");
+	_LOGD (LOGD_DEVICE | LOGD_IP4, "Activation: Stage 4 of 5 (IPv4 Configure Timeout) started...");
 
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage4_ip4_config_timeout (self, &reason);
 	if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
@@ -5031,8 +5030,7 @@ nm_device_activate_ip4_config_timeout (gpointer user_data)
 	nm_device_check_ip_failed (self, FALSE);
 
 out:
-	_LOGI (LOGD_DEVICE | LOGD_IP4,
-	       "Activation: Stage 4 of 5 (IPv4 Configure Timeout) complete.");
+	_LOGD (LOGD_DEVICE | LOGD_IP4, "Activation: Stage 4 of 5 (IPv4 Configure Timeout) complete.");
 	return FALSE;
 }
 
@@ -5055,8 +5053,7 @@ nm_device_activate_schedule_ip4_config_timeout (NMDevice *self)
 
 	activation_source_schedule (self, nm_device_activate_ip4_config_timeout, AF_INET);
 
-	_LOGI (LOGD_DEVICE | LOGD_IP4,
-	       "Activation: Stage 4 of 5 (IPv4 Configure Timeout) scheduled...");
+	_LOGD (LOGD_DEVICE | LOGD_IP4, "Activation: Stage 4 of 5 (IPv4 Configure Timeout) scheduled...");
 }
 
 
@@ -5089,8 +5086,7 @@ nm_device_activate_ip6_config_timeout (gpointer user_data)
 	/* Clear the activation source ID now that this stage has run */
 	activation_source_clear (self, FALSE, AF_INET6);
 
-	_LOGI (LOGD_DEVICE | LOGD_IP6,
-	       "Activation: Stage 4 of 5 (IPv6 Configure Timeout) started...");
+	_LOGD (LOGD_DEVICE | LOGD_IP6, "Activation: Stage 4 of 5 (IPv6 Configure Timeout) started...");
 
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage4_ip6_config_timeout (self, &reason);
 	if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
@@ -5106,8 +5102,7 @@ nm_device_activate_ip6_config_timeout (gpointer user_data)
 	nm_device_check_ip_failed (self, FALSE);
 
 out:
-	_LOGI (LOGD_DEVICE | LOGD_IP6,
-	       "Activation: Stage 4 of 5 (IPv6 Configure Timeout) complete.");
+	_LOGD (LOGD_DEVICE | LOGD_IP6, "Activation: Stage 4 of 5 (IPv6 Configure Timeout) complete.");
 	return FALSE;
 }
 
@@ -5130,8 +5125,7 @@ nm_device_activate_schedule_ip6_config_timeout (NMDevice *self)
 
 	activation_source_schedule (self, nm_device_activate_ip6_config_timeout, AF_INET6);
 
-	_LOGI (LOGD_DEVICE | LOGD_IP6,
-	       "Activation: Stage 4 of 5 (IPv6 Configure Timeout) scheduled...");
+	_LOGD (LOGD_DEVICE | LOGD_IP6, "Activation: Stage 4 of 5 (IPv6 Configure Timeout) scheduled...");
 }
 
 static gboolean
@@ -5351,7 +5345,7 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 	/* Clear the activation source ID now that this stage has run */
 	activation_source_clear (self, FALSE, AF_INET);
 
-	_LOGI (LOGD_DEVICE, "Activation: Stage 5 of 5 (IPv4 Commit) started...");
+	_LOGD (LOGD_DEVICE, "Activation: Stage 5 of 5 (IPv4 Commit) started...");
 
 	req = nm_device_get_act_request (self);
 	g_assert (req);
@@ -5368,8 +5362,7 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 
 	/* NULL to use the existing priv->dev_ip4_config */
 	if (!ip4_config_merge_and_apply (self, NULL, TRUE, &reason)) {
-		_LOGI (LOGD_DEVICE | LOGD_IP4,
-		       "Activation: Stage 5 of 5 (IPv4 Commit) failed");
+		_LOGD (LOGD_DEVICE | LOGD_IP4, "Activation: Stage 5 of 5 (IPv4 Commit) failed");
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
 		goto out;
 	}
@@ -5411,7 +5404,7 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 		nm_device_state_changed (self, NM_DEVICE_STATE_IP_CHECK, NM_DEVICE_STATE_REASON_NONE);
 
 out:
-	_LOGI (LOGD_DEVICE, "Activation: Stage 5 of 5 (IPv4 Commit) complete.");
+	_LOGD (LOGD_DEVICE, "Activation: Stage 5 of 5 (IPv4 Commit) complete.");
 
 	return FALSE;
 }
@@ -5443,8 +5436,7 @@ nm_device_activate_schedule_ip4_config_result (NMDevice *self, NMIP4Config *conf
 	nm_device_queued_ip_config_change_clear (self);
 	activation_source_schedule (self, nm_device_activate_ip4_config_commit, AF_INET);
 
-	_LOGI (LOGD_DEVICE | LOGD_IP4,
-	       "Activation: Stage 5 of 5 (IPv4 Configure Commit) scheduled...");
+	_LOGD (LOGD_DEVICE | LOGD_IP4, "Activation: Stage 5 of 5 (IPv4 Configure Commit) scheduled...");
 }
 
 gboolean
@@ -5466,7 +5458,6 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	guint level = (priv->ip6_state == IP_DONE) ? LOGL_DEBUG : LOGL_INFO;
 	NMActRequest *req;
 	NMConnection *connection;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
@@ -5475,7 +5466,7 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 	/* Clear the activation source ID now that this stage has run */
 	activation_source_clear (self, FALSE, AF_INET6);
 
-	_LOG (level, LOGD_DEVICE, "Activation: Stage 5 of 5 (IPv6 Commit) started...");
+	_LOGD (LOGD_DEVICE, "Activation: Stage 5 of 5 (IPv6 Commit) started...");
 
 	req = nm_device_get_act_request (self);
 	g_assert (req);
@@ -5515,12 +5506,11 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 		if (nm_device_get_state (self) == NM_DEVICE_STATE_IP_CONFIG)
 			nm_device_state_changed (self, NM_DEVICE_STATE_IP_CHECK, NM_DEVICE_STATE_REASON_NONE);
 	} else {
-		_LOGW (LOGD_DEVICE | LOGD_IP6,
-		       "Activation: Stage 5 of 5 (IPv6 Commit) failed");
+		_LOGW (LOGD_DEVICE | LOGD_IP6, "Activation: Stage 5 of 5 (IPv6 Commit) failed");
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
 	}
 
-	_LOG (level, LOGD_DEVICE, "Activation: Stage 5 of 5 (IPv6 Commit) complete.");
+	_LOGD (LOGD_DEVICE, "Activation: Stage 5 of 5 (IPv6 Commit) complete.");
 
 	return FALSE;
 }
@@ -5529,7 +5519,6 @@ void
 nm_device_activate_schedule_ip6_config_result (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	guint level = (priv->ip6_state == IP_DONE) ? LOGL_DEBUG : LOGL_INFO;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
@@ -5541,8 +5530,7 @@ nm_device_activate_schedule_ip6_config_result (NMDevice *self)
 
 	activation_source_schedule (self, nm_device_activate_ip6_config_commit, AF_INET6);
 
-	_LOG (level, LOGD_DEVICE | LOGD_IP6,
-	      "Activation: Stage 5 of 5 (IPv6 Commit) scheduled...");
+	_LOGD (LOGD_DEVICE | LOGD_IP6, "Activation: Stage 5 of 5 (IPv6 Commit) scheduled...");
 }
 
 gboolean
@@ -5834,8 +5822,9 @@ _device_activate (NMDevice *self, NMActRequest *req)
 	connection = nm_act_request_get_connection (req);
 	g_assert (connection);
 
-	_LOGI (LOGD_DEVICE, "Activation: starting connection '%s'",
-	       nm_connection_get_id (connection));
+	_LOGI (LOGD_DEVICE, "Activation: starting connection '%s' (%s)",
+	       nm_connection_get_id (connection),
+	       nm_connection_get_uuid (connection));
 
 	delete_on_deactivate_unschedule (self);
 
@@ -6587,7 +6576,7 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 	 * complete (via a pending action) until either the carrier turns on, or
 	 * a timeout is reached.
 	 */
-	if (device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
+	if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
 		if (priv->carrier_wait_id)
 			g_source_remove (priv->carrier_wait_id);
 		else
@@ -6607,7 +6596,7 @@ check_carrier (NMDevice *self)
 {
 	int ifindex = nm_device_get_ip_ifindex (self);
 
-	if (!device_has_capability (self, NM_DEVICE_CAP_NONSTANDARD_CARRIER))
+	if (!nm_device_has_capability (self, NM_DEVICE_CAP_NONSTANDARD_CARRIER))
 		nm_device_set_carrier (self, nm_platform_link_is_connected (ifindex));
 }
 
@@ -6628,7 +6617,7 @@ bring_up (NMDevice *self, gboolean *no_firmware)
 		*no_firmware = nm_platform_get_error () == NM_PLATFORM_ERROR_NO_FIRMWARE;
 
 	/* Store carrier immediately. */
-	if (result && device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT))
+	if (result && nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT))
 		check_carrier (self);
 
 	return result;
@@ -7527,9 +7516,9 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, gboolean deconfig
 	g_return_if_fail (NM_IS_DEVICE (self));
 
 	if (reason == NM_DEVICE_STATE_REASON_NOW_MANAGED)
-		_LOGI (LOGD_DEVICE, "preparing device");
+		_LOGD (LOGD_DEVICE, "preparing device");
 	else
-		_LOGI (LOGD_DEVICE, "deactivating device (reason '%s') [%d]", reason_to_string (reason), reason);
+		_LOGD (LOGD_DEVICE, "deactivating device (reason '%s') [%d]", reason_to_string (reason), reason);
 
 	/* Save whether or not we tried IPv6 for later */
 	priv = NM_DEVICE_GET_PRIVATE (self);
@@ -8453,7 +8442,7 @@ constructor (GType type,
 	if (NM_DEVICE_GET_CLASS (self)->get_generic_capabilities)
 		priv->capabilities |= NM_DEVICE_GET_CLASS (self)->get_generic_capabilities (self);
 
-	if (priv->ifindex <= 0 && !device_has_capability (self, NM_DEVICE_CAP_IS_NON_KERNEL))
+	if (priv->ifindex <= 0 && !nm_device_has_capability (self, NM_DEVICE_CAP_IS_NON_KERNEL))
 		_LOGW (LOGD_HW, "failed to look up interface index");
 
 	device_get_driver_info (self, priv->iface, &priv->driver_version, &priv->firmware_version);
@@ -8499,11 +8488,11 @@ constructed (GObject *object)
 		NM_DEVICE_GET_CLASS (self)->update_initial_hw_address (self);
 
 	/* Have to call update_initial_hw_address() before calling get_ignore_carrier() */
-	if (device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
+	if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
 		priv->ignore_carrier = nm_config_get_ignore_carrier (nm_config_get (), self);
 
 		check_carrier (self);
-		_LOGI (LOGD_HW,
+		_LOGD (LOGD_HW,
 		       "carrier is %s%s",
 		       priv->carrier ? "ON" : "OFF",
 		       priv->ignore_carrier ? " (but ignored)" : "");

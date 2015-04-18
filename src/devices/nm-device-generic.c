@@ -45,7 +45,7 @@ enum {
 	LAST_PROP
 };
 
-static guint32
+static NMDeviceCapabilities
 get_generic_capabilities (NMDevice *dev)
 {
 	if (nm_platform_link_supports_carrier_detect (nm_device_get_ifindex (dev)))

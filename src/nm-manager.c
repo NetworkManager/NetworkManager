@@ -1859,8 +1859,12 @@ add_device (NMManager *self, NMDevice *device, gboolean try_assume)
 	driver = nm_device_get_driver (device);
 	if (!driver)
 		driver = "unknown";
-	nm_log_info (LOGD_HW, "(%s): new %s device (driver: '%s' ifindex: %d)",
-	             iface, type_desc, driver, nm_device_get_ifindex (device));
+	nm_log_info (LOGD_HW, "(%s): new %s device (carrier: %s, driver: '%s', ifindex: %d)",
+	             iface, type_desc,
+	             nm_device_has_capability (device, NM_DEVICE_CAP_CARRIER_DETECT)
+	                ? (nm_device_has_carrier (device) ? "ON" : "OFF")
+	                : "UNKNOWN",
+	             driver, nm_device_get_ifindex (device));
 
 	unmanaged_specs = nm_settings_get_unmanaged_specs (priv->settings);
 	user_unmanaged = nm_device_spec_match_list (device, unmanaged_specs);

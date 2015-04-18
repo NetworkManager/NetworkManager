@@ -143,7 +143,7 @@ typedef struct {
 
 	gboolean    (* get_ip_iface_identifier) (NMDevice *self, NMUtilsIPv6IfaceId *out_iid);
 
-	guint32		(* get_generic_capabilities)	(NMDevice *self);
+	NMDeviceCapabilities (* get_generic_capabilities) (NMDevice *self);
 
 	gboolean	(* is_available) (NMDevice *self, NMDeviceCheckDevAvailableFlags flags);
 
@@ -371,6 +371,8 @@ void nm_device_set_initial_unmanaged_flag (NMDevice *device,
 
 gboolean nm_device_get_is_nm_owned (NMDevice *device);
 void     nm_device_set_nm_owned    (NMDevice *device);
+
+gboolean nm_device_has_capability (NMDevice *self, NMDeviceCapabilities caps);
 
 gboolean nm_device_get_autoconnect (NMDevice *device);
 

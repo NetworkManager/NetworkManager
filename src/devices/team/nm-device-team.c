@@ -70,7 +70,7 @@ static gboolean teamd_start (NMDevice *device, NMSettingTeam *s_team);
 
 /******************************************************************/
 
-static guint32
+static NMDeviceCapabilities
 get_generic_capabilities (NMDevice *device)
 {
 	return NM_DEVICE_CAP_CARRIER_DETECT;
