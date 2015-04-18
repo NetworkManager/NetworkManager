@@ -124,6 +124,12 @@ nm_platform_get ()
 	return singleton_instance;
 }
 
+NMPlatform *
+nm_platform_try_get (void)
+{
+	return singleton_instance;
+}
+
 /******************************************************************/
 
 /**
