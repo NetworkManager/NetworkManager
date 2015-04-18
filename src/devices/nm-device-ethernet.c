@@ -370,7 +370,7 @@ update_initial_hw_address (NMDevice *dev)
 	_LOGD (LOGD_DEVICE | LOGD_ETHER, "read initial MAC address %s", priv->initial_hw_addr);
 }
 
-static guint32
+static NMDeviceCapabilities
 get_generic_capabilities (NMDevice *device)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);

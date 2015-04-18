@@ -1139,7 +1139,7 @@ nm_system_config_factory (void)
 			dbus_g_connection_register_g_object (priv->bus,
 			                                     DBUS_OBJECT_PATH,
 			                                     G_OBJECT (singleton));
-		_LOGI ("Acquired D-Bus service %s", DBUS_SERVICE_NAME);
+		_LOGD ("Acquired D-Bus service %s", DBUS_SERVICE_NAME);
 	} else
 		g_object_ref (singleton);
 
