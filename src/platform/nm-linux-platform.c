@@ -488,7 +488,7 @@ static gboolean _route_match (struct rtnl_route *rtnlroute, int family, int ifin
 void
 nm_linux_platform_setup (void)
 {
-	nm_platform_setup (NM_TYPE_LINUX_PLATFORM);
+	nm_platform_setup (g_object_new (NM_TYPE_LINUX_PLATFORM, NULL));
 }
 
 /******************************************************************/

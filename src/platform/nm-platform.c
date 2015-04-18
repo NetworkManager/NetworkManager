@@ -82,11 +82,7 @@ static NMPlatform *singleton_instance = NULL;
 
 /**
  * nm_platform_setup:
- * @type: The #GType for a subclass of #NMPlatform
- *
- * Do not use this function directly, it is intended to be called by
- * NMPlatform subclasses. For the linux platform initialization use
- * nm_linux_platform_setup() instead.
+ * @instance: the #NMPlatform instance
  *
  * Failing to set up #NMPlatform singleton results in a fatal error,
  * as well as trying to initialize it multiple times without freeing
@@ -98,14 +94,14 @@ static NMPlatform *singleton_instance = NULL;
  * nm_*_platform_setup().
  */
 void
-nm_platform_setup (GType type)
+nm_platform_setup (NMPlatform *instance)
 {
 	NMPlatformClass *klass;
 
-	g_assert (singleton_instance == NULL);
+	g_return_if_fail (NM_IS_PLATFORM (instance));
+	g_return_if_fail (!singleton_instance);
 
-	singleton_instance = g_object_new (type, NULL);
-	g_assert (NM_IS_PLATFORM (singleton_instance));
+	singleton_instance = instance;
 
 	klass = NM_PLATFORM_GET_CLASS (singleton_instance);
 
