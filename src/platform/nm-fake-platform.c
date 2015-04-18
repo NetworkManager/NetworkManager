@@ -60,14 +60,6 @@ G_DEFINE_TYPE (NMFakePlatform, nm_fake_platform, NM_TYPE_PLATFORM)
 
 /******************************************************************/
 
-void
-nm_fake_platform_setup (void)
-{
-	nm_platform_setup (g_object_new (NM_TYPE_FAKE_PLATFORM, NULL));
-}
-
-/******************************************************************/
-
 static gboolean
 sysctl_set (NMPlatform *platform, const char *path, const char *value)
 {
@@ -1336,9 +1328,15 @@ nm_fake_platform_init (NMFakePlatform *fake_platform)
 	priv->ip6_routes = g_array_new (TRUE, TRUE, sizeof (NMPlatformIP6Route));
 }
 
-static gboolean
-setup (NMPlatform *platform)
+void
+nm_fake_platform_setup (void)
 {
+	NMPlatform *platform;
+
+	platform = g_object_new (NM_TYPE_FAKE_PLATFORM, NULL);
+
+	nm_platform_setup (platform);
+
 	/* skip zero element */
 	link_add (platform, NULL, NM_LINK_TYPE_NONE, NULL, 0);
 
@@ -1349,8 +1347,6 @@ setup (NMPlatform *platform)
 	link_add (platform, "eth0", NM_LINK_TYPE_ETHERNET, NULL, 0);
 	link_add (platform, "eth1", NM_LINK_TYPE_ETHERNET, NULL, 0);
 	link_add (platform, "eth2", NM_LINK_TYPE_ETHERNET, NULL, 0);
-
-	return TRUE;
 }
 
 static void
@@ -1385,8 +1381,6 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 
 	/* virtual methods */
 	object_class->finalize = nm_fake_platform_finalize;
-
-	platform_class->setup = setup;
 
 	platform_class->sysctl_set = sysctl_set;
 	platform_class->sysctl_get = sysctl_get;
