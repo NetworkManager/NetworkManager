@@ -4476,9 +4476,10 @@ nm_linux_platform_init (NMLinuxPlatform *platform)
 {
 }
 
-static gboolean
-setup (NMPlatform *platform)
+static void
+constructed (GObject *_object)
 {
+	NMPlatform *platform = NM_PLATFORM (_object);
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	const char *udev_subsys[] = { "net", NULL };
 	GUdevEnumerator *enumerator;
@@ -4575,7 +4576,7 @@ setup (NMPlatform *platform)
 
 	priv->wifi_data = g_hash_table_new_full (NULL, NULL, NULL, (GDestroyNotify) wifi_utils_deinit);
 
-	return TRUE;
+	G_OBJECT_CLASS (nm_linux_platform_parent_class)->constructed (_object);
 }
 
 static void
@@ -4610,9 +4611,8 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	g_type_class_add_private (klass, sizeof (NMLinuxPlatformPrivate));
 
 	/* virtual methods */
+	object_class->constructed = constructed;
 	object_class->finalize = nm_linux_platform_finalize;
-
-	platform_class->setup = setup;
 
 	platform_class->sysctl_set = sysctl_set;
 	platform_class->sysctl_get = sysctl_get;

@@ -100,7 +100,6 @@ static NMPlatform *singleton_instance = NULL;
 void
 nm_platform_setup (GType type)
 {
-	gboolean status;
 	NMPlatformClass *klass;
 
 	g_assert (singleton_instance == NULL);
@@ -109,10 +108,11 @@ nm_platform_setup (GType type)
 	g_assert (NM_IS_PLATFORM (singleton_instance));
 
 	klass = NM_PLATFORM_GET_CLASS (singleton_instance);
-	g_assert (klass->setup);
 
-	status = klass->setup (singleton_instance);
-	g_assert (status);
+	if (klass->setup) {
+		if (!klass->setup (singleton_instance))
+			g_assert_not_reached ();
+	}
 }
 
 /**
