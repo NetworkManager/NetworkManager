@@ -489,7 +489,6 @@ GType nm_platform_get_type (void);
 
 void nm_platform_setup (NMPlatform *instance);
 NMPlatform *nm_platform_get (void);
-void nm_platform_free (void);
 
 #define NM_PLATFORM_GET (nm_platform_get ())
 
