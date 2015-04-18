@@ -71,7 +71,7 @@ update_properties (NMDevice *device)
 	GObject *object = G_OBJECT (device);
 	NMPlatformGreProperties props;
 
-	if (!nm_platform_gre_get_properties (nm_device_get_ifindex (device), &props)) {
+	if (!nm_platform_gre_get_properties (NM_PLATFORM_GET, nm_device_get_ifindex (device), &props)) {
 		_LOGW (LOGD_HW, "could not read gre properties");
 		return;
 	}

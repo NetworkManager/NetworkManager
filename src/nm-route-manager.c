@@ -358,7 +358,7 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 	NMPlatformIPXRoute *cur_ipx_route;
 
 	ipx_routes = vtable->vt->is_ip4 ? &priv->ip4_routes : &priv->ip6_routes;
-	plat_routes = vtable->vt->route_get_all (ifindex, NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT);
+	plat_routes = vtable->vt->route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT);
 	plat_routes_idx = _route_index_create (vtable, plat_routes);
 	known_routes_idx = _route_index_create (vtable, known_routes);
 
@@ -494,7 +494,7 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 
 		/* if @cur_ipx_route is not equal to @plat_route, the route must be deleted. */
 		if (!(cur_ipx_route && route_id_cmp_result == 0))
-			vtable->vt->route_delete (ifindex, cur_plat_route);
+			vtable->vt->route_delete (NM_PLATFORM_GET, ifindex, cur_plat_route);
 
 		cur_plat_route = _get_next_plat_route (plat_routes_idx, FALSE, &i_plat_routes);
 	}
@@ -515,7 +515,7 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 					 * device routes, on the second the others (gateway routes). */
 					continue;
 				}
-				vtable->vt->route_add (0, rest_route, 0);
+				vtable->vt->route_add (NM_PLATFORM_GET, 0, rest_route, 0);
 			}
 		}
 		g_array_unref (to_restore_routes);
@@ -560,7 +560,7 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 			    || !_route_equals_ignoring_ifindex (vtable, cur_plat_route, cur_ipx_route)) {
 				gboolean s;
 
-				s = vtable->vt->route_add (ifindex, cur_ipx_route, 0);
+				s = vtable->vt->route_add (NM_PLATFORM_GET, ifindex, cur_ipx_route, 0);
 				if (!s && cur_ipx_route->rx.source < NM_IP_CONFIG_SOURCE_USER) {
 					_LOGD (vtable->vt->addr_family, "ignore error adding IPv%c route to kernel: %s",
 					       vtable->vt->is_ip4 ? '4' : '6',

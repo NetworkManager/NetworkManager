@@ -219,7 +219,8 @@ constructor (GType type,
 	self = NM_DEVICE_WIFI (object);
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
-	if (!nm_platform_wifi_get_capabilities (nm_device_get_ifindex (NM_DEVICE (self)),
+	if (!nm_platform_wifi_get_capabilities (NM_PLATFORM_GET,
+	                                        nm_device_get_ifindex (NM_DEVICE (self)),
 	                                        &priv->capabilities)) {
 		_LOGW (LOGD_HW | LOGD_WIFI, "failed to initialize WiFi driver");
 		g_object_unref (object);
@@ -439,14 +440,14 @@ periodic_update (NMDeviceWifi *self)
 
 	if (priv->current_ap) {
 		/* Smooth out the strength to work around crappy drivers */
-		percent = nm_platform_wifi_get_quality (ifindex);
+		percent = nm_platform_wifi_get_quality (NM_PLATFORM_GET, ifindex);
 		if (percent >= 0 || ++priv->invalid_strength_counter > 3) {
 			nm_ap_set_strength (priv->current_ap, (gint8) percent);
 			priv->invalid_strength_counter = 0;
 		}
 	}
 
-	new_rate = nm_platform_wifi_get_rate (ifindex);
+	new_rate = nm_platform_wifi_get_rate (NM_PLATFORM_GET, ifindex);
 	if (new_rate != priv->rate) {
 		priv->rate = new_rate;
 		g_object_notify (G_OBJECT (self), NM_DEVICE_WIFI_BITRATE);
@@ -533,20 +534,20 @@ deactivate (NMDevice *device)
 	set_current_ap (self, NULL, TRUE, FALSE);
 
 	/* Clear any critical protocol notification in the Wi-Fi stack */
-	nm_platform_wifi_indicate_addressing_running (ifindex, FALSE);
+	nm_platform_wifi_indicate_addressing_running (NM_PLATFORM_GET, ifindex, FALSE);
 
 	/* Reset MAC address back to initial address */
 	if (priv->initial_hw_addr)
 		nm_device_set_hw_addr (device, priv->initial_hw_addr, "reset", LOGD_WIFI);
 
-	nm_platform_wifi_set_powersave (ifindex, 0);
+	nm_platform_wifi_set_powersave (NM_PLATFORM_GET, ifindex, 0);
 
 	/* Ensure we're in infrastructure mode after deactivation; some devices
 	 * (usually older ones) don't scan well in adhoc mode.
 	 */
-	if (nm_platform_wifi_get_mode (ifindex) != NM_802_11_MODE_INFRA) {
+	if (nm_platform_wifi_get_mode (NM_PLATFORM_GET, ifindex) != NM_802_11_MODE_INFRA) {
 		nm_device_take_down (NM_DEVICE (self), TRUE);
-		nm_platform_wifi_set_mode (ifindex, NM_802_11_MODE_INFRA);
+		nm_platform_wifi_set_mode (NM_PLATFORM_GET, ifindex, NM_802_11_MODE_INFRA);
 		nm_device_bring_up (NM_DEVICE (self), TRUE, NULL);
 	}
 
@@ -2513,9 +2514,9 @@ ensure_hotspot_frequency (NMDeviceWifi *self,
 		return;
 
 	if (g_strcmp0 (band, "a") == 0)
-		freq = nm_platform_wifi_find_frequency (nm_device_get_ifindex (NM_DEVICE (self)), a_freqs);
+		freq = nm_platform_wifi_find_frequency (NM_PLATFORM_GET, nm_device_get_ifindex (NM_DEVICE (self)), a_freqs);
 	else
-		freq = nm_platform_wifi_find_frequency (nm_device_get_ifindex (NM_DEVICE (self)), bg_freqs);
+		freq = nm_platform_wifi_find_frequency (NM_PLATFORM_GET, nm_device_get_ifindex (NM_DEVICE (self)), bg_freqs);
 
 	if (!freq)
 		freq = (g_strcmp0 (band, "a") == 0) ? 5180 : 2462;
@@ -2589,7 +2590,8 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 		ensure_hotspot_frequency (self, s_wireless, ap);
 
 	if (nm_ap_get_mode (ap) == NM_802_11_MODE_INFRA) {
-		nm_platform_wifi_set_powersave (nm_device_get_ifindex (device),
+		nm_platform_wifi_set_powersave (NM_PLATFORM_GET,
+		                                nm_device_get_ifindex (device),
 		                                nm_setting_wireless_get_powersave (s_wireless));
 	}
 
@@ -2654,7 +2656,7 @@ act_stage3_ip4_config_start (NMDevice *device,
 
 	/* Indicate that a critical protocol is about to start */
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0)
-		nm_platform_wifi_indicate_addressing_running (nm_device_get_ifindex (device), TRUE);
+		nm_platform_wifi_indicate_addressing_running (NM_PLATFORM_GET, nm_device_get_ifindex (device), TRUE);
 
 	return NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage3_ip4_config_start (device, out_config, reason);
 }
@@ -2677,7 +2679,7 @@ act_stage3_ip6_config_start (NMDevice *device,
 	/* Indicate that a critical protocol is about to start */
 	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0 ||
 	    strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_DHCP) == 0)
-		nm_platform_wifi_indicate_addressing_running (nm_device_get_ifindex (device), TRUE);
+		nm_platform_wifi_indicate_addressing_running (NM_PLATFORM_GET, nm_device_get_ifindex (device), TRUE);
 
 	return NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage3_ip6_config_start (device, out_config, reason);
 }
@@ -2826,7 +2828,7 @@ activation_success_handler (NMDevice *device)
 	g_assert (connection);
 
 	/* Clear any critical protocol notification in the wifi stack */
-	nm_platform_wifi_indicate_addressing_running (ifindex, FALSE);
+	nm_platform_wifi_indicate_addressing_running (NM_PLATFORM_GET, ifindex, FALSE);
 
 	/* Clear wireless secrets tries on success */
 	g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, NULL);
@@ -2847,16 +2849,16 @@ activation_success_handler (NMDevice *device)
 				guint8 bssid[ETH_ALEN] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
 				gs_free char *bssid_str = NULL;
 
-				if (   nm_platform_wifi_get_bssid (ifindex, bssid)
+				if (   nm_platform_wifi_get_bssid (NM_PLATFORM_GET, ifindex, bssid)
 				    && nm_ethernet_address_is_valid (bssid, ETH_ALEN)) {
 					bssid_str = nm_utils_hwaddr_ntoa (bssid, ETH_ALEN);
 					nm_ap_set_address (priv->current_ap, bssid_str);
 				}
 			}
 			if (!nm_ap_get_freq (priv->current_ap))
-				nm_ap_set_freq (priv->current_ap, nm_platform_wifi_get_frequency (ifindex));
+				nm_ap_set_freq (priv->current_ap, nm_platform_wifi_get_frequency (NM_PLATFORM_GET, ifindex));
 			if (!nm_ap_get_max_bitrate (priv->current_ap))
-				nm_ap_set_max_bitrate (priv->current_ap, nm_platform_wifi_get_rate (ifindex));
+				nm_ap_set_max_bitrate (priv->current_ap, nm_platform_wifi_get_rate (NM_PLATFORM_GET, ifindex));
 		}
 
 		nm_active_connection_set_specific_object (NM_ACTIVE_CONNECTION (req), nm_ap_get_dbus_path (priv->current_ap));
@@ -2880,7 +2882,7 @@ activation_failure_handler (NMDevice *device)
 	g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, NULL);
 
 	/* Clear any critical protocol notification in the wifi stack */
-	nm_platform_wifi_indicate_addressing_running (nm_device_get_ifindex (device), FALSE);
+	nm_platform_wifi_indicate_addressing_running (NM_PLATFORM_GET, nm_device_get_ifindex (device), FALSE);
 }
 
 static void
@@ -2930,7 +2932,7 @@ device_state_changed (NMDevice *device,
 		break;
 	case NM_DEVICE_STATE_IP_CHECK:
 		/* Clear any critical protocol notification in the wifi stack */
-		nm_platform_wifi_indicate_addressing_running (nm_device_get_ifindex (device), FALSE);
+		nm_platform_wifi_indicate_addressing_running (NM_PLATFORM_GET, nm_device_get_ifindex (device), FALSE);
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
 		activation_success_handler (device);

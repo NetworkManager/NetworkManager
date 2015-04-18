@@ -75,7 +75,8 @@ setup_dev1_ip4 (int ifindex)
 
 	/* Add some route outside of route manager. The route manager
 	 * should get rid of it upon sync. */
-	nm_platform_ip4_route_add (route.ifindex,
+	nm_platform_ip4_route_add (NM_PLATFORM_GET,
+	                           route.ifindex,
 	                           NM_IP_CONFIG_SOURCE_USER,
 	                           nmtst_inet4_from_string ("9.0.0.0"),
 	                           8,
@@ -140,9 +141,11 @@ update_dev0_ip4 (int ifindex)
 static GArray *
 ip4_routes (test_fixture *fixture)
 {
-	GArray *routes = nm_platform_ip4_route_get_all (fixture->ifindex0,
+	GArray *routes = nm_platform_ip4_route_get_all (NM_PLATFORM_GET,
+	                                                fixture->ifindex0,
 	                                                NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT);
-	GArray *routes1 = nm_platform_ip4_route_get_all (fixture->ifindex1,
+	GArray *routes1 = nm_platform_ip4_route_get_all (NM_PLATFORM_GET,
+	                                                 fixture->ifindex1,
 	                                                 NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT);
 
 	g_array_append_vals (routes, routes1->data, routes1->len);
@@ -238,7 +241,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 	};
 
 	setup_dev0_ip4 (fixture->ifindex0, 1000, 21021);
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*error adding 8.0.0.0/8 via 6.6.6.2 dev nm-test-device1 *");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*error adding 8.0.0.0/8 via 6.6.6.2 dev *");
 	setup_dev1_ip4 (fixture->ifindex1);
 	g_test_assert_expected_messages ();
 
@@ -250,7 +253,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 	nmtst_platform_ip4_routes_equal ((NMPlatformIP4Route *) routes->data, state1, routes->len, TRUE);
 	g_array_free (routes, TRUE);
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*error adding 8.0.0.0/8 via 6.6.6.2 dev nm-test-device1 *");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*error adding 8.0.0.0/8 via 6.6.6.2 dev *");
 	setup_dev1_ip4 (fixture->ifindex1);
 	g_test_assert_expected_messages ();
 
@@ -298,7 +301,8 @@ setup_dev0_ip6 (int ifindex)
 	NMPlatformIP6Route *route;
 
 	/* Add an address so that a route to the gateway below gets added. */
-	nm_platform_ip6_address_add (ifindex,
+	nm_platform_ip6_address_add (NM_PLATFORM_GET,
+	                             ifindex,
 	                             *nmtst_inet6_from_string ("2001:db8:8086::2"),
 	                             in6addr_any,
 	                             64,
@@ -345,7 +349,8 @@ setup_dev1_ip6 (int ifindex)
 
 	/* Add some route outside of route manager. The route manager
 	 * should get rid of it upon sync. */
-	nm_platform_ip6_route_add (ifindex,
+	nm_platform_ip6_route_add (NM_PLATFORM_GET,
+	                           ifindex,
 	                           NM_IP_CONFIG_SOURCE_USER,
 	                           *nmtst_inet6_from_string ("2001:db8:8088::"),
 	                           48,
@@ -400,7 +405,8 @@ update_dev0_ip6 (int ifindex)
 	NMPlatformIP6Route *route;
 
 	/* Add an address so that a route to the gateway below gets added. */
-	nm_platform_ip6_address_add (ifindex,
+	nm_platform_ip6_address_add (NM_PLATFORM_GET,
+	                             ifindex,
 	                             *nmtst_inet6_from_string ("2001:db8:8086::2"),
 	                             in6addr_any,
 	                             64,
@@ -442,9 +448,11 @@ update_dev0_ip6 (int ifindex)
 static GArray *
 ip6_routes (test_fixture *fixture)
 {
-	GArray *routes = nm_platform_ip6_route_get_all (fixture->ifindex0,
+	GArray *routes = nm_platform_ip6_route_get_all (NM_PLATFORM_GET,
+	                                                fixture->ifindex0,
 	                                                NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT);
-	GArray *routes1 = nm_platform_ip6_route_get_all (fixture->ifindex1,
+	GArray *routes1 = nm_platform_ip6_route_get_all (NM_PLATFORM_GET,
+	                                                 fixture->ifindex1,
 	                                                 NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT);
 
 	g_array_append_vals (routes, routes1->data, routes1->len);
@@ -567,7 +575,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 	};
 
 	setup_dev0_ip6 (fixture->ifindex0);
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*error adding 2001:db8:d34d::/64 via 2001:db8:8086::2 dev nm-test-device1 *");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*error adding 2001:db8:d34d::/64 via 2001:db8:8086::2 dev *");
 	setup_dev1_ip6 (fixture->ifindex1);
 	g_test_assert_expected_messages ();
 
@@ -581,7 +589,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 	g_array_free (routes, TRUE);
 
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*error adding 2001:db8:d34d::/64 via 2001:db8:8086::2 dev nm-test-device1 *");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*error adding 2001:db8:d34d::/64 via 2001:db8:8086::2 dev *");
 	setup_dev1_ip6 (fixture->ifindex1);
 	g_test_assert_expected_messages ();
 	setup_dev0_ip6 (fixture->ifindex0);
@@ -629,32 +637,32 @@ fixture_setup (test_fixture *fixture, gconstpointer user_data)
 	                                NM_PLATFORM_SIGNAL_ADDED,
 	                                link_callback,
 	                                "nm-test-device0");
-	nm_platform_link_delete (nm_platform_link_get_ifindex ("nm-test-device0"));
-	g_assert (!nm_platform_link_exists ("nm-test-device0"));
-	g_assert (nm_platform_dummy_add ("nm-test-device0"));
+	nm_platform_link_delete (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, "nm-test-device0"));
+	g_assert (!nm_platform_link_exists (NM_PLATFORM_GET, "nm-test-device0"));
+	g_assert (nm_platform_dummy_add (NM_PLATFORM_GET, "nm-test-device0"));
 	wait_signal (link_added);
 	free_signal (link_added);
-	fixture->ifindex0 = nm_platform_link_get_ifindex ("nm-test-device0");
-	g_assert (nm_platform_link_set_up (fixture->ifindex0));
+	fixture->ifindex0 = nm_platform_link_get_ifindex (NM_PLATFORM_GET, "nm-test-device0");
+	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, fixture->ifindex0));
 
 	link_added = add_signal_ifname (NM_PLATFORM_SIGNAL_LINK_CHANGED,
 	                                NM_PLATFORM_SIGNAL_ADDED,
 	                                link_callback,
 	                                "nm-test-device1");
-	nm_platform_link_delete (nm_platform_link_get_ifindex ("nm-test-device1"));
-	g_assert (!nm_platform_link_exists ("nm-test-device1"));
-	g_assert (nm_platform_dummy_add ("nm-test-device1"));
+	nm_platform_link_delete (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, "nm-test-device1"));
+	g_assert (!nm_platform_link_exists (NM_PLATFORM_GET, "nm-test-device1"));
+	g_assert (nm_platform_dummy_add (NM_PLATFORM_GET, "nm-test-device1"));
 	wait_signal (link_added);
 	free_signal (link_added);
-	fixture->ifindex1 = nm_platform_link_get_ifindex ("nm-test-device1");
-	g_assert (nm_platform_link_set_up (fixture->ifindex1));
+	fixture->ifindex1 = nm_platform_link_get_ifindex (NM_PLATFORM_GET, "nm-test-device1");
+	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, fixture->ifindex1));
 }
 
 static void
 fixture_teardown (test_fixture *fixture, gconstpointer user_data)
 {
-	nm_platform_link_delete (fixture->ifindex0);
-	nm_platform_link_delete (fixture->ifindex1);
+	nm_platform_link_delete (NM_PLATFORM_GET, fixture->ifindex0);
+	nm_platform_link_delete (NM_PLATFORM_GET, fixture->ifindex1);
 }
 
 void

@@ -146,7 +146,7 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, gpointer user_da
 		 * from adding a prefix route for this address.
 		 **/
 		system_support = nm_platform_check_support_libnl_extended_ifa_flags () &&
-		                 nm_platform_check_support_kernel_extended_ifa_flags ();
+		                 nm_platform_check_support_kernel_extended_ifa_flags (NM_PLATFORM_GET);
 	}
 
 	if (system_support)
@@ -233,14 +233,14 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, gpointer user_da
 		char val[16];
 
 		g_snprintf (val, sizeof (val), "%d", rdisc->hop_limit);
-		nm_platform_sysctl_set (nm_utils_ip6_property_path (global_opt.ifname, "hop_limit"), val);
+		nm_platform_sysctl_set (NM_PLATFORM_GET, nm_utils_ip6_property_path (global_opt.ifname, "hop_limit"), val);
 	}
 
 	if (changed & NM_RDISC_CONFIG_MTU) {
 		char val[16];
 
 		g_snprintf (val, sizeof (val), "%d", rdisc->mtu);
-		nm_platform_sysctl_set (nm_utils_ip6_property_path (global_opt.ifname, "mtu"), val);
+		nm_platform_sysctl_set (NM_PLATFORM_GET, nm_utils_ip6_property_path (global_opt.ifname, "mtu"), val);
 	}
 
 	existing = nm_ip6_config_capture (ifindex, FALSE, global_opt.tempaddr);
@@ -426,7 +426,7 @@ main (int argc, char *argv[])
 	/* Set up platform interaction layer */
 	nm_linux_platform_setup ();
 
-	tmp = nm_platform_link_get_address (ifindex, &hwaddr_len);
+	tmp = nm_platform_link_get_address (NM_PLATFORM_GET, ifindex, &hwaddr_len);
 	if (tmp) {
 		hwaddr = g_byte_array_sized_new (hwaddr_len);
 		g_byte_array_append (hwaddr, tmp, hwaddr_len);
@@ -445,7 +445,7 @@ main (int argc, char *argv[])
 	}
 
 	if (global_opt.dhcp4_address) {
-		nm_platform_sysctl_set (nm_utils_ip4_property_path (global_opt.ifname, "promote_secondaries"), "1");
+		nm_platform_sysctl_set (NM_PLATFORM_GET, nm_utils_ip4_property_path (global_opt.ifname, "promote_secondaries"), "1");
 
 		dhcp4_client = nm_dhcp_manager_start_ip4 (nm_dhcp_manager_get (),
 		                                          global_opt.ifname,
@@ -467,7 +467,7 @@ main (int argc, char *argv[])
 	}
 
 	if (global_opt.slaac) {
-		nm_platform_link_set_user_ipv6ll_enabled (ifindex, TRUE);
+		nm_platform_link_set_user_ipv6ll_enabled (NM_PLATFORM_GET, ifindex, TRUE);
 
 		rdisc = nm_lndp_rdisc_new (ifindex, global_opt.ifname);
 		g_assert (rdisc);
@@ -475,10 +475,10 @@ main (int argc, char *argv[])
 		if (iid)
 			nm_rdisc_set_iid (rdisc, *iid);
 
-		nm_platform_sysctl_set (nm_utils_ip6_property_path (global_opt.ifname, "accept_ra"), "1");
-		nm_platform_sysctl_set (nm_utils_ip6_property_path (global_opt.ifname, "accept_ra_defrtr"), "0");
-		nm_platform_sysctl_set (nm_utils_ip6_property_path (global_opt.ifname, "accept_ra_pinfo"), "0");
-		nm_platform_sysctl_set (nm_utils_ip6_property_path (global_opt.ifname, "accept_ra_rtr_pref"), "0");
+		nm_platform_sysctl_set (NM_PLATFORM_GET, nm_utils_ip6_property_path (global_opt.ifname, "accept_ra"), "1");
+		nm_platform_sysctl_set (NM_PLATFORM_GET, nm_utils_ip6_property_path (global_opt.ifname, "accept_ra_defrtr"), "0");
+		nm_platform_sysctl_set (NM_PLATFORM_GET, nm_utils_ip6_property_path (global_opt.ifname, "accept_ra_pinfo"), "0");
+		nm_platform_sysctl_set (NM_PLATFORM_GET, nm_utils_ip6_property_path (global_opt.ifname, "accept_ra_rtr_pref"), "0");
 
 		g_signal_connect (rdisc,
 		                  NM_RDISC_CONFIG_CHANGED,

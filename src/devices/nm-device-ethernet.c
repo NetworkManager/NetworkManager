@@ -210,7 +210,7 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 		           || !strcmp (item, "portno")) {
 			char *path, *value;
 			path = g_strdup_printf ("%s/%s", parent_path, item);
-			value = nm_platform_sysctl_get (path);
+			value = nm_platform_sysctl_get (NM_PLATFORM_GET, path);
 			if (value && *value)
 				g_hash_table_insert (priv->s390_options, g_strdup (item), g_strdup (value));
 			else
@@ -263,7 +263,7 @@ constructor (GType type,
 	if (object) {
 #ifndef G_DISABLE_ASSERT
 		int ifindex = nm_device_get_ifindex (NM_DEVICE (object));
-		NMLinkType link_type = nm_platform_link_get_type (ifindex);
+		NMLinkType link_type = nm_platform_link_get_type (NM_PLATFORM_GET, ifindex);
 
 		g_assert (   link_type == NM_LINK_TYPE_ETHERNET
 		          || link_type == NM_LINK_TYPE_VETH
@@ -375,7 +375,7 @@ get_generic_capabilities (NMDevice *device)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
 
-	if (nm_platform_link_supports_carrier_detect (nm_device_get_ifindex (device)))
+	if (nm_platform_link_supports_carrier_detect (NM_PLATFORM_GET, nm_device_get_ifindex (device)))
 	    return NM_DEVICE_CAP_CARRIER_DETECT;
 	else {
 		_LOGI (LOGD_HW, "driver '%s' does not support carrier detection.",
@@ -1160,7 +1160,7 @@ dcb_state (NMDevice *device, gboolean timeout)
 	g_return_if_fail (nm_device_get_state (device) == NM_DEVICE_STATE_CONFIG);
 
 
-	carrier = nm_platform_link_is_connected (nm_device_get_ifindex (device));
+	carrier = nm_platform_link_is_connected (NM_PLATFORM_GET, nm_device_get_ifindex (device));
 	_LOGD (LOGD_DCB, "dcb_state() wait %d carrier %d timeout %d", priv->dcb_wait, carrier, timeout);
 
 	switch (priv->dcb_wait) {
@@ -1278,7 +1278,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	s_dcb = (NMSettingDcb *) device_get_setting (device, NM_TYPE_SETTING_DCB);
 	if (s_dcb) {
 		/* lldpad really really wants the carrier to be up */
-		if (nm_platform_link_is_connected (nm_device_get_ifindex (device))) {
+		if (nm_platform_link_is_connected (NM_PLATFORM_GET, nm_device_get_ifindex (device))) {
 			if (!dcb_enable (device)) {
 				*reason = NM_DEVICE_STATE_REASON_DCB_FCOE_FAILED;
 				return NM_ACT_STAGE_RETURN_FAILURE;

@@ -65,7 +65,7 @@ reload_tun_properties (NMDeviceTun *self)
 	GObject *object = G_OBJECT (self);
 	NMPlatformTunProperties props;
 
-	if (!nm_platform_tun_get_properties (nm_device_get_ifindex (NM_DEVICE (self)), &props)) {
+	if (!nm_platform_tun_get_properties (NM_PLATFORM_GET, nm_device_get_ifindex (NM_DEVICE (self)), &props)) {
 		_LOGD (LOGD_HW, "could not read tun properties");
 		return;
 	}
@@ -123,7 +123,7 @@ constructed (GObject *object)
 	gboolean properties_read;
 	NMDeviceTunPrivate *priv = NM_DEVICE_TUN_GET_PRIVATE (self);
 
-	properties_read = nm_platform_tun_get_properties (nm_device_get_ifindex (NM_DEVICE (self)), &priv->props);
+	properties_read = nm_platform_tun_get_properties (NM_PLATFORM_GET, nm_device_get_ifindex (NM_DEVICE (self)), &priv->props);
 
 	G_OBJECT_CLASS (nm_device_tun_parent_class)->constructed (object);
 

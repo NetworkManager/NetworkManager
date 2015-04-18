@@ -174,9 +174,9 @@ init_block_by_line (gchar * buf)
 			/* ignored connection */
 			conn = add_new_connection_config ("ignore", pos);
 		} else {
-			int ifindex = nm_platform_link_get_ifindex (pos);
+			int ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, pos);
 
-			if (ifindex && nm_platform_link_get_type (ifindex) != NM_LINK_TYPE_WIFI)
+			if (ifindex && nm_platform_link_get_type (NM_PLATFORM_GET, ifindex) != NM_LINK_TYPE_WIFI)
 				/* wired connection */
 				conn = add_new_connection_config ("wired", pos);
 			else

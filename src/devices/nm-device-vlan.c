@@ -281,7 +281,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 		nm_connection_add_setting (connection, (NMSetting *) s_vlan);
 	}
 
-	if (!nm_platform_vlan_get_info (ifindex, &parent_ifindex, &vlan_id)) {
+	if (!nm_platform_vlan_get_info (NM_PLATFORM_GET, ifindex, &parent_ifindex, &vlan_id)) {
 		_LOGW (LOGD_VLAN, "failed to get VLAN interface info while updating connection.");
 		return;
 	}
@@ -353,12 +353,12 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 		num = nm_setting_vlan_get_num_priorities (s_vlan, NM_VLAN_INGRESS_MAP);
 		for (i = 0; i < num; i++) {
 			if (nm_setting_vlan_get_priority (s_vlan, NM_VLAN_INGRESS_MAP, i, &from, &to))
-				nm_platform_vlan_set_ingress_map (ifindex, from, to);
+				nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, ifindex, from, to);
 		}
 		num = nm_setting_vlan_get_num_priorities (s_vlan, NM_VLAN_EGRESS_MAP);
 		for (i = 0; i < num; i++) {
 			if (nm_setting_vlan_get_priority (s_vlan, NM_VLAN_EGRESS_MAP, i, &from, &to))
-				nm_platform_vlan_set_egress_map (ifindex, from, to);
+				nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, ifindex, from, to);
 		}
 	}
 
@@ -437,14 +437,14 @@ constructed (GObject *object)
 		return;
 	}
 
-	itype = nm_platform_link_get_type (ifindex);
+	itype = nm_platform_link_get_type (NM_PLATFORM_GET, ifindex);
 	if (itype != NM_LINK_TYPE_VLAN) {
 		_LOGE (LOGD_VLAN, "failed to get VLAN interface type.");
 		priv->invalid = TRUE;
 		return;
 	}
 
-	if (!nm_platform_vlan_get_info (ifindex, &parent_ifindex, &vlan_id)) {
+	if (!nm_platform_vlan_get_info (NM_PLATFORM_GET, ifindex, &parent_ifindex, &vlan_id)) {
 		_LOGW (LOGD_VLAN, "failed to get VLAN interface info.");
 		priv->invalid = TRUE;
 		return;
@@ -603,7 +603,7 @@ new_link (NMDeviceFactory *factory, NMPlatformLink *plink, GError **error)
 		return NULL;
 
 	/* Have to find the parent device */
-	if (!nm_platform_vlan_get_info (plink->ifindex, &parent_ifindex, NULL)) {
+	if (!nm_platform_vlan_get_info (NM_PLATFORM_GET, plink->ifindex, &parent_ifindex, NULL)) {
 		nm_log_err (LOGD_HW, "(%s): failed to get VLAN parent ifindex", plink->name);
 		return NULL;
 	}
@@ -662,11 +662,12 @@ create_virtual_device_for_connection (NMDeviceFactory *factory,
 		                                nm_setting_vlan_get_id (s_vlan));
 	}
 
-	if (   !nm_platform_vlan_add (iface,
+	if (   !nm_platform_vlan_add (NM_PLATFORM_GET,
+	                              iface,
 	                              nm_device_get_ifindex (parent),
 	                              nm_setting_vlan_get_id (s_vlan),
 	                              nm_setting_vlan_get_flags (s_vlan))
-	    && nm_platform_get_error () != NM_PLATFORM_ERROR_EXISTS) {
+	    && nm_platform_get_error (NM_PLATFORM_GET) != NM_PLATFORM_ERROR_EXISTS) {
 		nm_log_warn (LOGD_DEVICE | LOGD_VLAN, "(%s) failed to add VLAN interface for '%s'",
 		             iface, nm_connection_get_id (connection));
 		g_free (iface);

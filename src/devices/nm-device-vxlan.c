@@ -76,7 +76,7 @@ update_properties (NMDevice *device)
 	GObject *object = G_OBJECT (device);
 	NMPlatformVxlanProperties props;
 
-	if (!nm_platform_vxlan_get_properties (nm_device_get_ifindex (device), &props)) {
+	if (!nm_platform_vxlan_get_properties (NM_PLATFORM_GET, nm_device_get_ifindex (device), &props)) {
 		_LOGW (LOGD_HW, "could not read vxlan properties");
 		return;
 	}

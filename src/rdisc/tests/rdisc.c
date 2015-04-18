@@ -60,10 +60,10 @@ main (int argc, char **argv)
 
 	if (argv[0]) {
 		ifname = argv[0];
-		ifindex = nm_platform_link_get_ifindex (ifname);
+		ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, ifname);
 	} else {
 		ifindex = 1;
-		ifname = nm_platform_link_get_name (ifindex);
+		ifname = nm_platform_link_get_name (NM_PLATFORM_GET, ifindex);
 	}
 
 	rdisc = new (ifindex, ifname);

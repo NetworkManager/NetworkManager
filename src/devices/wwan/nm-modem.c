@@ -616,7 +616,7 @@ nm_modem_ip4_pre_commit (NMModem *modem,
 
 		g_assert (address);
 		if (address->plen == 32)
-			nm_platform_link_set_noarp (nm_device_get_ip_ifindex (device));
+			nm_platform_link_set_noarp (NM_PLATFORM_GET, nm_device_get_ip_ifindex (device));
 	}
 }
 
@@ -914,8 +914,8 @@ deactivate_cleanup (NMModem *self, NMDevice *device)
 			ifindex = nm_device_get_ip_ifindex (device);
 			if (ifindex > 0) {
 				nm_route_manager_route_flush (nm_route_manager_get (), ifindex);
-				nm_platform_address_flush (ifindex);
-				nm_platform_link_set_down (ifindex);
+				nm_platform_address_flush (NM_PLATFORM_GET, ifindex);
+				nm_platform_link_set_down (NM_PLATFORM_GET, ifindex);
 			}
 		}
 	}

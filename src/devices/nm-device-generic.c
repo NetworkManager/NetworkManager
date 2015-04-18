@@ -48,7 +48,7 @@ enum {
 static NMDeviceCapabilities
 get_generic_capabilities (NMDevice *dev)
 {
-	if (nm_platform_link_supports_carrier_detect (nm_device_get_ifindex (dev)))
+	if (nm_platform_link_supports_carrier_detect (NM_PLATFORM_GET, nm_device_get_ifindex (dev)))
 		return NM_DEVICE_CAP_CARRIER_DETECT;
 	else
 		return NM_DEVICE_CAP_NONE;
@@ -117,7 +117,7 @@ constructed (GObject *object)
 		int ifindex = nm_device_get_ip_ifindex (NM_DEVICE (self));
 
 		if (ifindex != 0)
-			priv->type_description = g_strdup (nm_platform_link_get_type_name (ifindex));
+			priv->type_description = g_strdup (nm_platform_link_get_type_name (NM_PLATFORM_GET, ifindex));
 	}
 
 	G_OBJECT_CLASS (nm_device_generic_parent_class)->constructed (object);
