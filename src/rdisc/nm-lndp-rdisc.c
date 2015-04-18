@@ -298,7 +298,7 @@ start (NMRDisc *rdisc)
 static inline gint32
 ipv6_sysctl_get (const char *ifname, const char *property, gint32 defval)
 {
-	return nm_platform_sysctl_get_int32 (nm_utils_ip6_property_path (ifname, property), defval);
+	return nm_platform_sysctl_get_int32 (NM_PLATFORM_GET, nm_utils_ip6_property_path (ifname, property), defval);
 }
 
 NMRDisc *

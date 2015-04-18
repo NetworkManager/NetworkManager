@@ -232,9 +232,9 @@ vpn_cleanup (NMVpnConnection *connection, NMDevice *parent_dev)
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 
 	if (priv->ip_ifindex) {
-		nm_platform_link_set_down (priv->ip_ifindex);
-		nm_platform_route_flush (priv->ip_ifindex);
-		nm_platform_address_flush (priv->ip_ifindex);
+		nm_platform_link_set_down (NM_PLATFORM_GET, priv->ip_ifindex);
+		nm_platform_route_flush (NM_PLATFORM_GET, priv->ip_ifindex);
+		nm_platform_address_flush (NM_PLATFORM_GET, priv->ip_ifindex);
 	}
 
 	nm_device_set_vpn4_config (parent_dev, NULL);
@@ -933,7 +933,7 @@ nm_vpn_connection_apply_config (NMVpnConnection *connection)
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 
 	if (priv->ip_ifindex > 0) {
-		nm_platform_link_set_up (priv->ip_ifindex);
+		nm_platform_link_set_up (NM_PLATFORM_GET, priv->ip_ifindex);
 
 		if (priv->ip4_config) {
 			if (!nm_ip4_config_commit (priv->ip4_config, priv->ip_ifindex,
@@ -1027,7 +1027,7 @@ process_generic_config (NMVpnConnection *connection,
 
 	if (priv->ip_iface) {
 		/* Grab the interface index for address/routing operations */
-		priv->ip_ifindex = nm_platform_link_get_ifindex (priv->ip_iface);
+		priv->ip_ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, priv->ip_iface);
 		if (!priv->ip_ifindex) {
 			nm_log_err (LOGD_VPN, "(%s): failed to look up VPN interface index", priv->ip_iface);
 			nm_vpn_connection_config_maybe_complete (connection, FALSE);

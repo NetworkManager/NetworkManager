@@ -355,7 +355,7 @@ carrier_wait (const char *iface, guint secs, gboolean up)
 
 	g_return_if_fail (iface != NULL);
 
-	ifindex = nm_platform_link_get_ifindex (iface);
+	ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, iface);
 	if (ifindex > 0) {
 		/* To work around driver quirks and lldpad handling of carrier status,
 		 * we must wait a short period of time to see if the carrier goes
@@ -366,9 +366,9 @@ carrier_wait (const char *iface, guint secs, gboolean up)
 		nm_log_dbg (LOGD_DCB, "(%s): cleanup waiting for carrier %s",
 		            iface, up ? "up" : "down");
 		g_usleep (G_USEC_PER_SEC / 4);
-		while (nm_platform_link_is_connected (ifindex) != up && count-- > 0) {
+		while (nm_platform_link_is_connected (NM_PLATFORM_GET, ifindex) != up && count-- > 0) {
 			g_usleep (G_USEC_PER_SEC / 10);
-			nm_platform_link_refresh (ifindex);
+			nm_platform_link_refresh (NM_PLATFORM_GET, ifindex);
 		}
 	}
 }

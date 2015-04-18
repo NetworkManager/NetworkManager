@@ -113,7 +113,7 @@ link_callback (NMPlatform *platform, int ifindex, NMPlatformLink *received, NMPl
 
 	if (data->ifindex && data->ifindex != received->ifindex)
 		return;
-	if (data->ifname && g_strcmp0 (data->ifname, nm_platform_link_get_name (ifindex)) != 0)
+	if (data->ifname && g_strcmp0 (data->ifname, nm_platform_link_get_name (NM_PLATFORM_GET, ifindex)) != 0)
 		return;
 	if (change_type != data->change_type)
 		return;
@@ -127,13 +127,13 @@ link_callback (NMPlatform *platform, int ifindex, NMPlatformLink *received, NMPl
 	debug ("Received signal '%s-%s' ifindex %d ifname '%s' %dth time.", data->name, _change_type_to_string (data->change_type), ifindex, received->name, data->received_count);
 
 	if (change_type == NM_PLATFORM_SIGNAL_REMOVED)
-		g_assert (!nm_platform_link_get_name (ifindex));
+		g_assert (!nm_platform_link_get_name (NM_PLATFORM_GET, ifindex));
 	else
-		g_assert (nm_platform_link_get_name (ifindex));
+		g_assert (nm_platform_link_get_name (NM_PLATFORM_GET, ifindex));
 
 	/* Check the data */
 	g_assert (received->ifindex > 0);
-	links = nm_platform_link_get_all ();
+	links = nm_platform_link_get_all (NM_PLATFORM_GET);
 	for (i = 0; i < links->len; i++) {
 		cached = &g_array_index (links, NMPlatformLink, i);
 		if (cached->ifindex == received->ifindex) {
@@ -247,9 +247,9 @@ _assert_ip4_route_exists (const char *file, guint line, const char *func, gboole
 		         exists ? "doesn't" : "does");
 	}
 
-	ifindex = nm_platform_link_get_ifindex (ifname);
+	ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, ifname);
 	g_assert (ifindex > 0);
-	if (!nm_platform_ip4_route_exists (ifindex, network, plen, metric) != !exists) {
+	if (!nm_platform_ip4_route_exists (NM_PLATFORM_GET, ifindex, network, plen, metric) != !exists) {
 		g_error ("[%s:%u] %s(): The ip4 route %s/%d metric %u %s, but platform thinks %s",
 		         file, line, func,
 		         nm_utils_inet4_ntop (network, NULL), plen, metric,
@@ -302,7 +302,7 @@ main (int argc, char **argv)
 
 	result = g_test_run ();
 
-	nm_platform_link_delete (nm_platform_link_get_ifindex (DEVICE_NAME));
+	nm_platform_link_delete (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME));
 
 	nm_platform_free ();
 	return result;

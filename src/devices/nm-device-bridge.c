@@ -213,9 +213,9 @@ commit_option (NMDevice *device, NMSetting *setting, const Option *option, gbool
 
 	value = g_strdup_printf ("%u", uval);
 	if (slave)
-		nm_platform_slave_set_option (ifindex, option->sysname, value);
+		nm_platform_slave_set_option (NM_PLATFORM_GET, ifindex, option->sysname, value);
 	else
-		nm_platform_master_set_option (ifindex, option->sysname, value);
+		nm_platform_master_set_option (NM_PLATFORM_GET, ifindex, option->sysname, value);
 }
 
 static void
@@ -259,7 +259,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 	}
 
 	for (option = master_options; option->name; option++) {
-		gs_free char *str = nm_platform_master_get_option (ifindex, option->sysname);
+		gs_free char *str = nm_platform_master_get_option (NM_PLATFORM_GET, ifindex, option->sysname);
 		int value;
 
 		if (str) {
@@ -298,7 +298,7 @@ master_update_slave_connection (NMDevice *device,
 	}
 
 	for (option = slave_options; option->name; option++) {
-		gs_free char *str = nm_platform_slave_get_option (ifindex_slave, option->sysname);
+		gs_free char *str = nm_platform_slave_get_option (NM_PLATFORM_GET, ifindex_slave, option->sysname);
 		int value;
 
 		if (str) {
@@ -346,7 +346,7 @@ enslave_slave (NMDevice *device,
 	NMDeviceBridge *self = NM_DEVICE_BRIDGE (device);
 
 	if (configure) {
-		if (!nm_platform_link_enslave (nm_device_get_ip_ifindex (device), nm_device_get_ip_ifindex (slave)))
+		if (!nm_platform_link_enslave (NM_PLATFORM_GET, nm_device_get_ip_ifindex (device), nm_device_get_ip_ifindex (slave)))
 			return FALSE;
 
 		commit_slave_options (slave, nm_connection_get_setting_bridge_port (connection));
@@ -372,7 +372,8 @@ release_slave (NMDevice *device,
 	gboolean success = TRUE;
 
 	if (configure) {
-		success = nm_platform_link_release (nm_device_get_ip_ifindex (device),
+		success = nm_platform_link_release (NM_PLATFORM_GET,
+		                                    nm_device_get_ip_ifindex (device),
 		                                    nm_device_get_ip_ifindex (slave));
 
 		if (success) {
@@ -519,13 +520,14 @@ create_virtual_device_for_connection (NMDeviceFactory *factory,
 			mac_address_str = NULL;
 	}
 
-	if (   !nm_platform_bridge_add (iface,
+	if (   !nm_platform_bridge_add (NM_PLATFORM_GET,
+	                                iface,
 	                                mac_address_str ? mac_address : NULL,
 	                                mac_address_str ? ETH_ALEN : 0)
-	    && nm_platform_get_error () != NM_PLATFORM_ERROR_EXISTS) {
+	    && nm_platform_get_error (NM_PLATFORM_GET) != NM_PLATFORM_ERROR_EXISTS) {
 		nm_log_warn (LOGD_DEVICE | LOGD_BRIDGE, "(%s): failed to create bridge master interface for '%s': %s",
 		             iface, nm_connection_get_id (connection),
-		             nm_platform_get_error_msg ());
+		             nm_platform_get_error_msg (NM_PLATFORM_GET));
 		return NULL;
 	}
 

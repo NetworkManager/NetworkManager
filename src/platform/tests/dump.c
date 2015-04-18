@@ -44,21 +44,21 @@ dump_interface (NMPlatformLink *link)
 	if (link->driver)
 		printf ("    driver: %s\n", link->driver);
 	printf ("    UDI: %s\n", link->udi);
-	if (!nm_platform_vlan_get_info (link->ifindex, &vlan_parent, &vlan_id))
+	if (!nm_platform_vlan_get_info (NM_PLATFORM_GET, link->ifindex, &vlan_parent, &vlan_id))
 		g_assert_not_reached ();
 	if (vlan_parent)
 		printf ("    vlan parent %d id %d\n", vlan_parent, vlan_id);
 
-	if (nm_platform_link_is_software (link->ifindex))
+	if (nm_platform_link_is_software (NM_PLATFORM_GET, link->ifindex))
 		printf ("    class software\n");
-	if (nm_platform_link_supports_slaves (link->ifindex))
+	if (nm_platform_link_supports_slaves (NM_PLATFORM_GET, link->ifindex))
 		printf ("    class supports-slaves\n");
-	if (nm_platform_link_supports_carrier_detect (link->ifindex))
+	if (nm_platform_link_supports_carrier_detect (NM_PLATFORM_GET, link->ifindex))
 		printf ("    feature carrier-detect\n");
-	if (nm_platform_link_supports_vlans (link->ifindex))
+	if (nm_platform_link_supports_vlans (NM_PLATFORM_GET, link->ifindex))
 		printf ("    feature vlans\n");
 
-	address = nm_platform_link_get_address (link->ifindex, &addrlen);
+	address = nm_platform_link_get_address (NM_PLATFORM_GET, link->ifindex, &addrlen);
 	if (address) {
 		printf ("    link-address ");
 		for (i = 0; i < addrlen; i++)
@@ -66,8 +66,8 @@ dump_interface (NMPlatformLink *link)
 		printf ("\n");
 	}
 
-	ip4_addresses = nm_platform_ip4_address_get_all (link->ifindex);
-	ip6_addresses = nm_platform_ip6_address_get_all (link->ifindex);
+	ip4_addresses = nm_platform_ip4_address_get_all (NM_PLATFORM_GET, link->ifindex);
+	ip6_addresses = nm_platform_ip6_address_get_all (NM_PLATFORM_GET, link->ifindex);
 
 	g_assert (ip4_addresses);
 	g_assert (ip6_addresses);
@@ -85,8 +85,8 @@ dump_interface (NMPlatformLink *link)
 	g_array_unref (ip4_addresses);
 	g_array_unref (ip6_addresses);
 
-	ip4_routes = nm_platform_ip4_route_get_all (link->ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
-	ip6_routes = nm_platform_ip6_route_get_all (link->ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
+	ip4_routes = nm_platform_ip4_route_get_all (NM_PLATFORM_GET, link->ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
+	ip6_routes = nm_platform_ip6_route_get_all (NM_PLATFORM_GET, link->ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
 
 	g_assert (ip4_routes);
 	g_assert (ip6_routes);
@@ -112,7 +112,7 @@ dump_interface (NMPlatformLink *link)
 static void
 dump_all (void)
 {
-	GArray *links = nm_platform_link_get_all ();
+	GArray *links = nm_platform_link_get_all (NM_PLATFORM_GET);
 	int i;
 
 	for (i = 0; i < links->len; i++)

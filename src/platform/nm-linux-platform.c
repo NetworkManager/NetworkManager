@@ -917,7 +917,7 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink, const char 
 		NMPlatformTunProperties props;
 		guint flags;
 
-		if (nm_platform_tun_get_properties (rtnl_link_get_ifindex (rtnllink), &props)) {
+		if (nm_platform_tun_get_properties (platform, rtnl_link_get_ifindex (rtnllink), &props)) {
 			if (!g_strcmp0 (props.mode, "tap"))
 				return_type (NM_LINK_TYPE_TAP, "tap");
 			if (!g_strcmp0 (props.mode, "tun"))
@@ -2630,7 +2630,7 @@ supports_mii_carrier_detect (const char *ifname)
 static gboolean
 link_supports_carrier_detect (NMPlatform *platform, int ifindex)
 {
-	const char *name = nm_platform_link_get_name (ifindex);
+	const char *name = nm_platform_link_get_name (platform, ifindex);
 
 	if (!name)
 		return FALSE;
@@ -2646,7 +2646,7 @@ static gboolean
 link_supports_vlans (NMPlatform *platform, int ifindex)
 {
 	auto_nl_object struct rtnl_link *rtnllink = link_get (platform, ifindex);
-	const char *name = nm_platform_link_get_name (ifindex);
+	const char *name = nm_platform_link_get_name (platform, ifindex);
 	gs_free struct ethtool_gfeatures *features = NULL;
 	int idx, block, bit, size;
 
@@ -2744,7 +2744,7 @@ link_get_physical_port_id (NMPlatform *platform, int ifindex)
 	const char *ifname;
 	char *path, *id;
 
-	ifname = nm_platform_link_get_name (ifindex);
+	ifname = nm_platform_link_get_name (platform, ifindex);
 	if (!ifname)
 		return NULL;
 
@@ -2764,7 +2764,7 @@ link_get_dev_id (NMPlatform *platform, int ifindex)
 	gs_free char *path = NULL, *id = NULL;
 	gint64 int_val;
 
-	ifname = nm_platform_link_get_name (ifindex);
+	ifname = nm_platform_link_get_name (platform, ifindex);
 	if (!ifname)
 		return 0;
 
@@ -2877,10 +2877,10 @@ link_get_master (NMPlatform *platform, int slave)
 }
 
 static char *
-link_option_path (int master, const char *category, const char *option)
+link_option_path (NMPlatform *platform, int master, const char *category, const char *option)
 {
-	const char *name = nm_platform_link_get_name (master);
-   
+	const char *name = nm_platform_link_get_name (platform, master);
+
 	if (!name || !category || !option)
 		return NULL;
 
@@ -2891,19 +2891,19 @@ link_option_path (int master, const char *category, const char *option)
 }
 
 static gboolean
-link_set_option (int master, const char *category, const char *option, const char *value)
+link_set_option (NMPlatform *platform, int master, const char *category, const char *option, const char *value)
 {
-	gs_free char *path = link_option_path (master, category, option);
+	gs_free char *path = link_option_path (platform, master, category, option);
 
-	return path && nm_platform_sysctl_set (path, value);
+	return path && nm_platform_sysctl_set (platform, path, value);
 }
 
 static char *
-link_get_option (int master, const char *category, const char *option)
+link_get_option (NMPlatform *platform, int master, const char *category, const char *option)
 {
-	gs_free char *path = link_option_path (master, category, option);
+	gs_free char *path = link_option_path (platform, master, category, option);
 
-	return path ? nm_platform_sysctl_get (path) : NULL;
+	return path ? nm_platform_sysctl_get (platform, path) : NULL;
 }
 
 static const char *
@@ -2942,25 +2942,25 @@ slave_category (NMPlatform *platform, int slave)
 static gboolean
 master_set_option (NMPlatform *platform, int master, const char *option, const char *value)
 {
-	return link_set_option (master, master_category (platform, master), option, value);
+	return link_set_option (platform, master, master_category (platform, master), option, value);
 }
 
 static char *
 master_get_option (NMPlatform *platform, int master, const char *option)
 {
-	return link_get_option (master, master_category (platform, master), option);
+	return link_get_option (platform, master, master_category (platform, master), option);
 }
 
 static gboolean
 slave_set_option (NMPlatform *platform, int slave, const char *option, const char *value)
 {
-	return link_set_option (slave, slave_category (platform, slave), option, value);
+	return link_set_option (platform, slave, slave_category (platform, slave), option, value);
 }
 
 static char *
 slave_get_option (NMPlatform *platform, int slave, const char *option)
 {
-	return link_get_option (slave, slave_category (platform, slave), option);
+	return link_get_option (platform, slave, slave_category (platform, slave), option);
 }
 
 static gboolean
@@ -2970,12 +2970,12 @@ infiniband_partition_add (NMPlatform *platform, int parent, int p_key)
 	char *path, *id;
 	gboolean success;
 
-	parent_name = nm_platform_link_get_name (parent);
+	parent_name = nm_platform_link_get_name (platform, parent);
 	g_return_val_if_fail (parent_name != NULL, FALSE);
 
 	path = g_strdup_printf ("/sys/class/net/%s/create_child", ASSERT_VALID_PATH_COMPONENT (parent_name));
 	id = g_strdup_printf ("0x%04x", p_key);
-	success = nm_platform_sysctl_set (path, id);
+	success = nm_platform_sysctl_set (platform, path, id);
 	g_free (id);
 	g_free (path);
 
@@ -2996,7 +2996,7 @@ veth_get_properties (NMPlatform *platform, int ifindex, NMPlatformVethProperties
 	gs_free struct ethtool_stats *stats = NULL;
 	int peer_ifindex_stat;
 
-	ifname = nm_platform_link_get_name (ifindex);
+	ifname = nm_platform_link_get_name (platform, ifindex);
 	if (!ifname)
 		return FALSE;
 
@@ -3029,13 +3029,13 @@ tun_get_properties (NMPlatform *platform, int ifindex, NMPlatformTunProperties *
 	props->owner = -1;
 	props->group = -1;
 
-	ifname = nm_platform_link_get_name (ifindex);
+	ifname = nm_platform_link_get_name (platform, ifindex);
 	if (!ifname || !nm_utils_iface_valid_name (ifname))
 		return FALSE;
 	ifname = ASSERT_VALID_PATH_COMPONENT (ifname);
 
 	path = g_strdup_printf ("/sys/class/net/%s/owner", ifname);
-	val = nm_platform_sysctl_get (path);
+	val = nm_platform_sysctl_get (platform, path);
 	g_free (path);
 	if (val) {
 		props->owner = _nm_utils_ascii_str_to_int64 (val, 10, -1, G_MAXINT64, -1);
@@ -3046,7 +3046,7 @@ tun_get_properties (NMPlatform *platform, int ifindex, NMPlatformTunProperties *
 		success = FALSE;
 
 	path = g_strdup_printf ("/sys/class/net/%s/group", ifname);
-	val = nm_platform_sysctl_get (path);
+	val = nm_platform_sysctl_get (platform, path);
 	g_free (path);
 	if (val) {
 		props->group = _nm_utils_ascii_str_to_int64 (val, 10, -1, G_MAXINT64, -1);
@@ -3057,7 +3057,7 @@ tun_get_properties (NMPlatform *platform, int ifindex, NMPlatformTunProperties *
 		success = FALSE;
 
 	path = g_strdup_printf ("/sys/class/net/%s/tun_flags", ifname);
-	val = nm_platform_sysctl_get (path);
+	val = nm_platform_sysctl_get (platform, path);
 	g_free (path);
 	if (val) {
 		gint64 flags;

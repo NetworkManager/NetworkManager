@@ -213,7 +213,8 @@ constructor (GType type,
 	self = NM_DEVICE_WIFI (object);
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
-	if (!nm_platform_wifi_get_capabilities (nm_device_get_ifindex (NM_DEVICE (self)),
+	if (!nm_platform_wifi_get_capabilities (NM_PLATFORM_GET,
+	                                        nm_device_get_ifindex (NM_DEVICE (self)),
 	                                        &priv->capabilities)) {
 		_LOGW (LOGD_HW | LOGD_WIFI, "failed to initialize WiFi driver");
 		g_object_unref (object);
@@ -362,21 +363,21 @@ find_active_ap (NMDeviceWifi *self,
 	NM80211Mode devmode;
 	guint32 devfreq;
 
-	nm_platform_wifi_get_bssid (ifindex, bssid);
+	nm_platform_wifi_get_bssid (NM_PLATFORM_GET, ifindex, bssid);
 	_LOGD (LOGD_WIFI, "active BSSID: %02x:%02x:%02x:%02x:%02x:%02x",
 	       bssid[0], bssid[1], bssid[2], bssid[3], bssid[4], bssid[5]);
 
 	if (!nm_ethernet_address_is_valid (bssid, ETH_ALEN))
 		return NULL;
 
-	ssid = nm_platform_wifi_get_ssid (ifindex);
+	ssid = nm_platform_wifi_get_ssid (NM_PLATFORM_GET, ifindex);
 	_LOGD (LOGD_WIFI, "active SSID: %s%s%s",
 	       ssid ? "'" : "",
 	       ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
 	       ssid ? "'" : "");
 
-	devmode = nm_platform_wifi_get_mode (ifindex);
-	devfreq = nm_platform_wifi_get_frequency (ifindex);
+	devmode = nm_platform_wifi_get_mode (NM_PLATFORM_GET, ifindex);
+	devfreq = nm_platform_wifi_get_frequency (NM_PLATFORM_GET, ifindex);
 
 	/* When matching hidden APs, do a second pass that ignores the SSID check,
 	 * because NM might not yet know the SSID of the hidden AP in the scan list
@@ -591,7 +592,7 @@ periodic_update (NMDeviceWifi *self, NMAccessPoint *ignore_ap)
 	if (priv->current_ap && (nm_ap_get_mode (priv->current_ap) == NM_802_11_MODE_ADHOC)) {
 		guint8 bssid[ETH_ALEN] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
 
-		nm_platform_wifi_get_bssid (ifindex, bssid);
+		nm_platform_wifi_get_bssid (NM_PLATFORM_GET, ifindex, bssid);
 		/* 0x02 means "locally administered" and should be OR-ed into
 		 * the first byte of IBSS BSSIDs.
 		 */
@@ -607,7 +608,7 @@ periodic_update (NMDeviceWifi *self, NMAccessPoint *ignore_ap)
 		/* Try to smooth out the strength.  Atmel cards, for example, will give no strength
 		 * one second and normal strength the next.
 		 */
-		percent = nm_platform_wifi_get_quality (ifindex);
+		percent = nm_platform_wifi_get_quality (NM_PLATFORM_GET, ifindex);
 		if (percent >= 0 || ++priv->invalid_strength_counter > 3) {
 			nm_ap_set_strength (new_ap, (gint8) percent);
 			priv->invalid_strength_counter = 0;
@@ -639,7 +640,7 @@ periodic_update (NMDeviceWifi *self, NMAccessPoint *ignore_ap)
 		set_current_ap (self, new_ap, TRUE, FALSE);
 	}
 
-	new_rate = nm_platform_wifi_get_rate (ifindex);
+	new_rate = nm_platform_wifi_get_rate (NM_PLATFORM_GET, ifindex);
 	if (new_rate != priv->rate) {
 		priv->rate = new_rate;
 		g_object_notify (G_OBJECT (self), NM_DEVICE_WIFI_BITRATE);
@@ -738,7 +739,7 @@ deactivate (NMDevice *device)
 	set_current_ap (self, NULL, TRUE, FALSE);
 
 	/* Clear any critical protocol notification in the Wi-Fi stack */
-	nm_platform_wifi_indicate_addressing_running (ifindex, FALSE);
+	nm_platform_wifi_indicate_addressing_running (NM_PLATFORM_GET, ifindex, FALSE);
 
 	/* Reset MAC address back to initial address */
 	if (priv->initial_hw_addr)
@@ -747,9 +748,9 @@ deactivate (NMDevice *device)
 	/* Ensure we're in infrastructure mode after deactivation; some devices
 	 * (usually older ones) don't scan well in adhoc mode.
 	 */
-	if (nm_platform_wifi_get_mode (ifindex) != NM_802_11_MODE_INFRA) {
+	if (nm_platform_wifi_get_mode (NM_PLATFORM_GET, ifindex) != NM_802_11_MODE_INFRA) {
 		nm_device_take_down (NM_DEVICE (self), TRUE);
-		nm_platform_wifi_set_mode (ifindex, NM_802_11_MODE_INFRA);
+		nm_platform_wifi_set_mode (NM_PLATFORM_GET, ifindex, NM_802_11_MODE_INFRA);
 		nm_device_bring_up (NM_DEVICE (self), TRUE, NULL);
 	}
 
@@ -2687,9 +2688,9 @@ ensure_hotspot_frequency (NMDeviceWifi *self,
 		return;
 
 	if (g_strcmp0 (band, "a") == 0)
-		freq = nm_platform_wifi_find_frequency (nm_device_get_ifindex (NM_DEVICE (self)), a_freqs);
+		freq = nm_platform_wifi_find_frequency (NM_PLATFORM_GET, nm_device_get_ifindex (NM_DEVICE (self)), a_freqs);
 	else
-		freq = nm_platform_wifi_find_frequency (nm_device_get_ifindex (NM_DEVICE (self)), bg_freqs);
+		freq = nm_platform_wifi_find_frequency (NM_PLATFORM_GET, nm_device_get_ifindex (NM_DEVICE (self)), bg_freqs);
 
 	if (!freq)
 		freq = (g_strcmp0 (band, "a") == 0) ? 5180 : 2462;
@@ -2823,7 +2824,7 @@ act_stage3_ip4_config_start (NMDevice *device,
 
 	/* Indicate that a critical protocol is about to start */
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0)
-		nm_platform_wifi_indicate_addressing_running (nm_device_get_ifindex (device), TRUE);
+		nm_platform_wifi_indicate_addressing_running (NM_PLATFORM_GET, nm_device_get_ifindex (device), TRUE);
 
 	return NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage3_ip4_config_start (device, out_config, reason);
 }
@@ -2846,7 +2847,7 @@ act_stage3_ip6_config_start (NMDevice *device,
 	/* Indicate that a critical protocol is about to start */
 	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0 ||
 	    strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_DHCP) == 0)
-		nm_platform_wifi_indicate_addressing_running (nm_device_get_ifindex (device), TRUE);
+		nm_platform_wifi_indicate_addressing_running (NM_PLATFORM_GET, nm_device_get_ifindex (device), TRUE);
 
 	return NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage3_ip6_config_start (device, out_config, reason);
 }
@@ -2998,7 +2999,7 @@ activation_success_handler (NMDevice *device)
 	g_assert (connection);
 
 	/* Clear any critical protocol notification in the wifi stack */
-	nm_platform_wifi_indicate_addressing_running (ifindex, FALSE);
+	nm_platform_wifi_indicate_addressing_running (NM_PLATFORM_GET, ifindex, FALSE);
 
 	/* Clear wireless secrets tries on success */
 	g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, NULL);
@@ -3017,16 +3018,16 @@ activation_success_handler (NMDevice *device)
 	 * But if activation was successful, the card will know the BSSID.  Grab
 	 * the BSSID off the card and fill in the BSSID of the activation AP.
 	 */
-	nm_platform_wifi_get_bssid (ifindex, bssid);
+	nm_platform_wifi_get_bssid (NM_PLATFORM_GET, ifindex, bssid);
 	if (!nm_ap_get_address (ap)) {
 		char *bssid_str = nm_utils_hwaddr_ntoa (bssid, ETH_ALEN);
 		nm_ap_set_address (ap, bssid_str);
 		g_free (bssid_str);
 	}
 	if (!nm_ap_get_freq (ap))
-		nm_ap_set_freq (ap, nm_platform_wifi_get_frequency (ifindex));
+		nm_ap_set_freq (ap, nm_platform_wifi_get_frequency (NM_PLATFORM_GET, ifindex));
 	if (!nm_ap_get_max_bitrate (ap))
-		nm_ap_set_max_bitrate (ap, nm_platform_wifi_get_rate (ifindex));
+		nm_ap_set_max_bitrate (ap, nm_platform_wifi_get_rate (NM_PLATFORM_GET, ifindex));
 
 	tmp_ap = find_active_ap (self, ap, TRUE);
 	if (tmp_ap) {
@@ -3076,7 +3077,7 @@ activation_failure_handler (NMDevice *device)
 	g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, NULL);
 
 	/* Clear any critical protocol notification in the wifi stack */
-	nm_platform_wifi_indicate_addressing_running (nm_device_get_ifindex (device), FALSE);
+	nm_platform_wifi_indicate_addressing_running (NM_PLATFORM_GET, nm_device_get_ifindex (device), FALSE);
 }
 
 static void
@@ -3126,7 +3127,7 @@ device_state_changed (NMDevice *device,
 		break;
 	case NM_DEVICE_STATE_IP_CHECK:
 		/* Clear any critical protocol notification in the wifi stack */
-		nm_platform_wifi_indicate_addressing_running (nm_device_get_ifindex (device), FALSE);
+		nm_platform_wifi_indicate_addressing_running (NM_PLATFORM_GET, nm_device_get_ifindex (device), FALSE);
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
 		activation_success_handler (device);

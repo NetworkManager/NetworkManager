@@ -638,7 +638,8 @@ enslave_slave (NMDevice *device,
 				}
 			}
 		}
-		success = nm_platform_link_enslave (nm_device_get_ip_ifindex (device),
+		success = nm_platform_link_enslave (NM_PLATFORM_GET,
+		                                    nm_device_get_ip_ifindex (device),
 		                                    nm_device_get_ip_ifindex (slave));
 		nm_device_bring_up (slave, TRUE, &no_firmware);
 
@@ -663,7 +664,8 @@ release_slave (NMDevice *device,
 	gboolean success = TRUE, no_firmware = FALSE;
 
 	if (configure) {
-		success = nm_platform_link_release (nm_device_get_ip_ifindex (device),
+		success = nm_platform_link_release (NM_PLATFORM_GET,
+		                                    nm_device_get_ip_ifindex (device),
 		                                    nm_device_get_ip_ifindex (slave));
 
 		if (success)
@@ -715,14 +717,14 @@ nm_device_team_new_for_connection (NMConnection *connection, GError **error)
 	iface = nm_connection_get_interface_name (connection);
 	g_return_val_if_fail (iface != NULL, NULL);
 
-	if (   !nm_platform_team_add (iface)
-	    && nm_platform_get_error () != NM_PLATFORM_ERROR_EXISTS) {
+	if (   !nm_platform_team_add (NM_PLATFORM_GET, iface)
+	    && nm_platform_get_error (NM_PLATFORM_GET) != NM_PLATFORM_ERROR_EXISTS) {
 		g_set_error (error,
 		             NM_DEVICE_ERROR,
 		             NM_DEVICE_ERROR_CREATION_FAILED,
 		             "failed to create team master interface '%s' for connection '%s': %s",
 		             iface, nm_connection_get_id (connection),
-		             nm_platform_get_error_msg ());
+		             nm_platform_get_error_msg (NM_PLATFORM_GET));
 		return NULL;
 	}
 

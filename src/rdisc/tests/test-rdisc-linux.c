@@ -54,7 +54,7 @@ main (int argc, char **argv)
 
 	if (argv[1]) {
 		ifname = argv[1];
-		ifindex = nm_platform_link_get_ifindex (ifname);
+		ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, ifname);
 	} else {
 		g_print ("Missing command line argument \"interface-name\"\n");
 		return EXIT_FAILURE;
