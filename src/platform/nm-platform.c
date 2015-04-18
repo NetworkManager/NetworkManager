@@ -96,19 +96,10 @@ static NMPlatform *singleton_instance = NULL;
 void
 nm_platform_setup (NMPlatform *instance)
 {
-	NMPlatformClass *klass;
-
 	g_return_if_fail (NM_IS_PLATFORM (instance));
 	g_return_if_fail (!singleton_instance);
 
 	singleton_instance = instance;
-
-	klass = NM_PLATFORM_GET_CLASS (singleton_instance);
-
-	if (klass->setup) {
-		if (!klass->setup (singleton_instance))
-			g_assert_not_reached ();
-	}
 }
 
 /**
