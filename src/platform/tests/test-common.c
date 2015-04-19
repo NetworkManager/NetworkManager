@@ -1,5 +1,8 @@
 #include "config.h"
 
+#include <sys/mount.h>
+#include <sched.h>
+
 #include "test-common.h"
 
 #include "nm-test-utils.h"
@@ -277,6 +280,41 @@ main (int argc, char **argv)
 		g_print ("Skipping test: requires root privileges (%s)\n", program);
 		return EXIT_SKIP;
 #endif
+	}
+
+	if (nmtst_platform_is_root_test () && !g_getenv ("NMTST_NO_UNSHARE")) {
+		int errsv;
+
+		if (unshare (CLONE_NEWNET | CLONE_NEWNS) != 0) {
+			errsv = errno;
+			g_error ("unshare(CLONE_NEWNET|CLONE_NEWNS) failed with %s (%d)", strerror (errsv), errsv);
+		}
+
+		/* Mount our /sys instance, so that gudev sees only our devices.
+		 * Needs to be read-only, because we don't run udev. */
+		if (mount (NULL, "/sys", NULL, MS_SLAVE, NULL) != 0) {
+			errsv = errno;
+			g_error ("mount(\"/\", MS_SLAVE) failed with %s (%d)", strerror (errsv), errsv);
+		}
+		if (mount ("sys", "/sys", "sysfs", MS_RDONLY, NULL) != 0) {
+			errsv = errno;
+			g_error ("mount(\"/sys\") failed with %s (%d)", strerror (errsv), errsv);
+		}
+
+		/* Create a writable /sys/devices tree. This makes it possible to run tests
+		 * that modify values via sysfs (such as bridge forward delay). */
+		if (mount ("sys", "/sys/devices", "sysfs", 0, NULL) != 0) {
+			errsv = errno;
+			g_error ("mount(\"/sys/devices\") failed with %s (%d)", strerror (errsv), errsv);
+		}
+		if (mount (NULL, "/sys/devices", "sysfs", MS_REMOUNT, NULL) != 0) {
+			errsv = errno;
+			g_error ("remount(\"/sys/devices\") failed with  %s (%d)", strerror (errsv), errsv);
+		}
+		if (mount ("/sys/devices/devices", "/sys/devices", NULL, MS_BIND, NULL) != 0) {
+			errsv = errno;
+			g_error ("mount(\"/sys\") failed with %s (%d)", strerror (errsv), errsv);
+		}
 	}
 
 	SETUP ();
