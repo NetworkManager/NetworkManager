@@ -4,6 +4,15 @@
 
 #include "nm-test-utils.h"
 
+
+gboolean
+nmtst_platform_is_root_test ()
+{
+	NM_PRAGMA_WARNING_DISABLE("-Wtautological-compare")
+	return (SETUP == nm_linux_platform_setup);
+	NM_PRAGMA_WARNING_REENABLE
+}
+
 SignalData *
 add_signal_full (const char *name, NMPlatformSignalChangeType change_type, GCallback callback, int ifindex, const char *ifname)
 {
@@ -257,8 +266,7 @@ main (int argc, char **argv)
 
 	init_tests (&argc, &argv);
 
-	NM_PRAGMA_WARNING_DISABLE("-Wtautological-compare")
-	if (SETUP == nm_linux_platform_setup && getuid() != 0) {
+	if (nmtst_platform_is_root_test ()  && getuid() != 0) {
 		/* Try to exec as sudo, this function does not return, if a sudo-cmd is set. */
 		nmtst_reexec_sudo ();
 
@@ -270,7 +278,6 @@ main (int argc, char **argv)
 		return 77;
 #endif
 	}
-	NM_PRAGMA_WARNING_REENABLE
 
 	SETUP ();
 
