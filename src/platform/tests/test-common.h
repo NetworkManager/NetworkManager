@@ -28,6 +28,8 @@ typedef struct {
 	const char *ifname;
 } SignalData;
 
+gboolean nmtst_platform_is_root_test (void);
+
 SignalData *add_signal_full (const char *name, NMPlatformSignalChangeType change_type, GCallback callback, int ifindex, const char *ifname);
 #define add_signal(name, change_type, callback) add_signal_full (name, change_type, (GCallback) callback, 0, NULL)
 #define add_signal_ifindex(name, change_type, callback, ifindex) add_signal_full (name, change_type, (GCallback) callback, ifindex, NULL)
