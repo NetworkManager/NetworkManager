@@ -684,7 +684,6 @@ update_dns (NMDnsManager *self,
 
 	if (priv->resolv_conf_mode == NM_DNS_MANAGER_RESOLV_CONF_UNMANAGED) {
 		update = FALSE;
-		success = TRUE;
 		nm_log_dbg (LOGD_DNS, "not updating resolv.conf");
 	} else {
 		priv->dns_touched = TRUE;
@@ -827,24 +826,18 @@ update_dns (NMDnsManager *self,
 	}
 
 	if (update) {
-#ifdef RESOLVCONF_PATH
+#if defined(RESOLVCONF_PATH)
 		success = dispatch_resolvconf (searches, nameservers, error);
-#endif
-
-#ifdef NETCONFIG_PATH
-		if (success == FALSE) {
-			success = dispatch_netconfig (searches, nameservers,
-			                              nis_domain, nis_servers, error);
-		}
-#endif
-	}
-
-	if (update && !success) {
+#elif defined(NETCONFIG_PATH)
+		success = dispatch_netconfig (searches, nameservers, nis_domain,
+		                              nis_servers, error);
+#else
 		success = update_resolv_conf (searches, nameservers, error, TRUE);
-	} else {
-		/* Only update private resolv.conf in NMRUNDIR, ignore errors */
-		update_resolv_conf (searches, nameservers, error, FALSE);
+#endif
 	}
+
+	/* Only update private resolv.conf in NMRUNDIR, ignore errors */
+	update_resolv_conf (searches, nameservers, error, FALSE);
 
 	/* signal that resolv.conf was changed */
 	if (update && success)
@@ -857,7 +850,7 @@ update_dns (NMDnsManager *self,
 	if (nis_servers)
 		g_strfreev (nis_servers);
 
-	return success;
+	return !update || success;
 }
 
 static void
