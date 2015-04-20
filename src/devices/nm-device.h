@@ -394,10 +394,6 @@ gboolean nm_device_has_capability (NMDevice *self, NMDeviceCapabilities caps);
 
 gboolean nm_device_get_autoconnect (NMDevice *device);
 
-void nm_device_handle_ipv4ll_event (NMDevice *self,
-                                    const char *event,
-                                    const char *address);
-
 void nm_device_state_changed (NMDevice *device,
                               NMDeviceState state,
                               NMDeviceStateReason reason);
@@ -441,8 +437,5 @@ const NMPlatformIP6Route *nm_device_get_ip6_default_route (NMDevice *self, gbool
 void nm_device_spawn_iface_helper (NMDevice *self);
 
 G_END_DECLS
-
-/* For testing only */
-extern const char* nm_device_autoipd_helper_path;
 
 #endif	/* NM_DEVICE_H */
