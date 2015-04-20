@@ -2695,6 +2695,42 @@ nm_device_activate_schedule_stage2_device_config (NMDevice *self)
 	_LOGD (LOGD_DEVICE, "Activation: Stage 2 of 5 (Device Configure) scheduled...");
 }
 
+/*
+ * nm_device_check_ip_failed
+ *
+ * Progress the device to appropriate state if both IPv4 and IPv6 failed
+ */
+static void
+nm_device_check_ip_failed (NMDevice *self, gboolean may_fail)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDeviceState state;
+
+	if (   priv->ip4_state != IP_FAIL
+	    || priv->ip6_state != IP_FAIL)
+		return;
+
+	if (nm_device_uses_assumed_connection (self)) {
+		/* We have assumed configuration, but couldn't
+		 * redo it. No problem, move to check state. */
+		priv->ip4_state = priv->ip6_state = IP_DONE;
+		state = NM_DEVICE_STATE_IP_CHECK;
+	} else if (   may_fail
+	           && get_ip_config_may_fail (self, AF_INET)
+	           && get_ip_config_may_fail (self, AF_INET6)) {
+		/* Couldn't start either IPv6 and IPv4 autoconfiguration,
+		 * but both are allowed to fail. */
+		state = NM_DEVICE_STATE_SECONDARIES;
+	} else {
+		/* Autoconfiguration attempted without success. */
+		state = NM_DEVICE_STATE_FAILED;
+	}
+
+	nm_device_state_changed (self,
+	                         state,
+	                         NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
+}
+
 /*********************************************/
 /* IPv4LL stuff */
 
@@ -4904,42 +4940,6 @@ nm_device_activate_stage3_ip6_start (NMDevice *self)
 		g_assert (ret == NM_ACT_STAGE_RETURN_POSTPONE);
 
 	return TRUE;
-}
-
-/*
- * nm_device_check_ip_failed
- *
- * Progress the device to appropriate state if both IPv4 and IPv6 failed
- */
-static void
-nm_device_check_ip_failed (NMDevice *self, gboolean may_fail)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMDeviceState state;
-
-	if (   priv->ip4_state != IP_FAIL
-	    || priv->ip6_state != IP_FAIL)
-		return;
-
-	if (nm_device_uses_assumed_connection (self)) {
-		/* We have assumed configuration, but couldn't
-		 * redo it. No problem, move to check state. */
-		priv->ip4_state = priv->ip6_state = IP_DONE;
-		state = NM_DEVICE_STATE_IP_CHECK;
-	} else if (   may_fail
-	           && get_ip_config_may_fail (self, AF_INET)
-	           && get_ip_config_may_fail (self, AF_INET6)) {
-		/* Couldn't start either IPv6 and IPv4 autoconfiguration,
-		 * but both are allowed to fail. */
-		state = NM_DEVICE_STATE_SECONDARIES;
-	} else {
-		/* Autoconfiguration attempted without success. */
-		state = NM_DEVICE_STATE_FAILED;
-	}
-
-	nm_device_state_changed (self,
-	                         state,
-	                         NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
 }
 
 /*
