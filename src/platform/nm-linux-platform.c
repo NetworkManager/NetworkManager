@@ -954,16 +954,15 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink, const char 
 		if (!ifname)
 			return_type (NM_LINK_TYPE_UNKNOWN, type);
 
+		driver = ethtool_get_driver (ifname);
 		if (arptype == 256) {
 			/* Some s390 CTC-type devices report 256 for the encapsulation type
-			 * for some reason, but we need to call them Ethernet. FIXME: use
-			 * something other than interface name to detect CTC here.
+			 * for some reason, but we need to call them Ethernet.
 			 */
-			if (g_str_has_prefix (ifname, "ctc"))
+			if (!g_strcmp0 (driver, "ctcm"))
 				return_type (NM_LINK_TYPE_ETHERNET, "ethernet");
 		}
 
-		driver = ethtool_get_driver (ifname);
 		if (!g_strcmp0 (driver, "openvswitch"))
 			return_type (NM_LINK_TYPE_OPENVSWITCH, "openvswitch");
 
