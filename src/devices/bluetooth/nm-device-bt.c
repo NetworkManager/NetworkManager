@@ -28,7 +28,6 @@
 #include "nm-glib.h"
 #include "nm-bluez-common.h"
 #include "nm-bluez-device.h"
-#include "nm-dbus-manager.h"
 #include "nm-device-bt.h"
 #include "nm-device-private.h"
 #include "nm-logging.h"
@@ -46,7 +45,9 @@
 #include "nm-bt-error.h"
 #include "nm-bt-enum-types.h"
 
-#define MM_DBUS_SERVICE  "org.freedesktop.ModemManager1"
+#define MM_DBUS_SERVICE   "org.freedesktop.ModemManager1"
+#define MM_DBUS_PATH      "/org/freedesktop/ModemManager1"
+#define MM_DBUS_INTERFACE "org.freedesktop.ModemManager1"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceBt);
@@ -58,8 +59,7 @@ G_DEFINE_TYPE (NMDeviceBt, nm_device_bt, NM_TYPE_DEVICE)
 static gboolean modem_stage1 (NMDeviceBt *self, NMModem *modem, NMDeviceStateReason *reason);
 
 typedef struct {
-	NMDBusManager *dbus_mgr;
-	guint mm_watch_id;
+	GDBusProxy *mm_proxy;
 	gboolean mm_running;
 
 	NMBluezDevice *bt_device;
@@ -966,25 +966,17 @@ set_mm_running (NMDeviceBt *self, gboolean running)
 }
 
 static void
-mm_name_owner_changed (NMDBusManager *dbus_mgr,
-                       const char *name,
-                       const char *old_owner,
-                       const char *new_owner,
+mm_name_owner_changed (GObject *object,
+                       GParamSpec *pspec,
                        NMDeviceBt *self)
 {
-	gboolean old_owner_good;
-	gboolean new_owner_good;
+	char *owner;
 
-	/* Can't handle the signal if its not from the modem service */
-	if (strcmp (MM_DBUS_SERVICE, name) != 0)
-		return;
-
-	old_owner_good = (old_owner && strlen (old_owner));
-	new_owner_good = (new_owner && strlen (new_owner));
-
-	if (!old_owner_good && new_owner_good)
+	owner = g_dbus_proxy_get_name_owner (G_DBUS_PROXY (object));
+	if (owner) {
 		set_mm_running (self, TRUE);
-	else if (old_owner_good && !new_owner_good)
+		g_free (owner);
+	} else
 		set_mm_running (self, FALSE);
 }
 
@@ -1020,18 +1012,27 @@ static void
 nm_device_bt_init (NMDeviceBt *self)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (self);
-	gboolean mm_running;
+	GError *error = NULL;
 
-	priv->dbus_mgr = nm_dbus_manager_get ();
-
-	priv->mm_watch_id = g_signal_connect (priv->dbus_mgr,
-	                                      NM_DBUS_MANAGER_NAME_OWNER_CHANGED,
-	                                      G_CALLBACK (mm_name_owner_changed),
-	                                      self);
-
-	/* Initial check to see if ModemManager is running */
-	mm_running = nm_dbus_manager_name_has_owner (priv->dbus_mgr, MM_DBUS_SERVICE);
-	set_mm_running (self, mm_running);
+	priv->mm_proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
+	                                                G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES |
+	                                                    G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS |
+	                                                    G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
+	                                                NULL,
+	                                                MM_DBUS_SERVICE,
+	                                                MM_DBUS_PATH,
+	                                                MM_DBUS_INTERFACE,
+	                                                NULL, &error);
+	if (priv->mm_proxy) {
+		g_signal_connect (priv->mm_proxy, "notify::g-name-owner",
+		                  G_CALLBACK (mm_name_owner_changed),
+		                  self);
+		mm_name_owner_changed (G_OBJECT (priv->mm_proxy), NULL, self);
+	} else {
+		_LOGW (LOGD_MB, "Could not create proxy for '%s': %s",
+		       MM_DBUS_SERVICE, error->message);
+		g_clear_error (&error);
+	}
 }
 
 static void
@@ -1112,11 +1113,10 @@ dispose (GObject *object)
 
 	g_signal_handlers_disconnect_matched (priv->bt_device, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, object);
 
-	if (priv->dbus_mgr && priv->mm_watch_id) {
-		g_signal_handler_disconnect (priv->dbus_mgr, priv->mm_watch_id);
-		priv->mm_watch_id = 0;
+	if (priv->mm_proxy) {
+		g_signal_handlers_disconnect_by_func (priv->mm_proxy, G_CALLBACK (mm_name_owner_changed), object);
+		g_clear_object (&priv->mm_proxy);
 	}
-	priv->dbus_mgr = NULL;
 
 	modem_cleanup (NM_DEVICE_BT (object));
 	g_clear_object (&priv->bt_device);

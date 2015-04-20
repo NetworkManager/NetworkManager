@@ -29,7 +29,6 @@
 
 #include "nm-glib.h"
 #include "nm-vpn-service.h"
-#include "nm-dbus-manager.h"
 #include "nm-logging.h"
 #include "nm-vpn-manager.h"
 
@@ -45,6 +44,7 @@ typedef struct {
 	GSList *pending;
 
 	guint start_timeout;
+	GDBusProxy *proxy;
 	gboolean service_running;
 } NMVpnServicePrivate;
 
@@ -53,6 +53,8 @@ typedef struct {
 #define VPN_CONNECTION_GROUP "VPN Connection"
 
 static gboolean start_pending_vpn (NMVpnService *self, GError **error);
+
+static void _name_owner_changed (GObject *object, GParamSpec *pspec, gpointer user_data);
 
 NMVpnService *
 nm_vpn_service_new (const char *namefile, GError **error)
@@ -86,7 +88,21 @@ nm_vpn_service_new (const char *namefile, GError **error)
 	if (!priv->name)
 		goto error;
 
-	priv->service_running = nm_dbus_manager_name_has_owner (nm_dbus_manager_get (), priv->dbus_service);
+	priv->proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
+	                                             G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES |
+	                                                 G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS |
+	                                                 G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
+	                                             NULL,
+	                                             priv->dbus_service,
+	                                             NM_VPN_DBUS_PLUGIN_PATH,
+	                                             NM_VPN_DBUS_PLUGIN_INTERFACE,
+	                                             NULL, error);
+	if (!priv->proxy)
+		goto error;
+
+	g_signal_connect (priv->proxy, "notify::g-name-owner",
+	                  G_CALLBACK (_name_owner_changed), self);
+	_name_owner_changed (G_OBJECT (priv->proxy), NULL, self);
 
 	g_key_file_free (kf);
 	return self;
@@ -288,18 +304,16 @@ nm_vpn_service_activate (NMVpnService *service,
 }
 
 static void
-_name_owner_changed (NMDBusManager *mgr,
-                     const char *name,
-                     const char *old,
-                     const char *new,
+_name_owner_changed (GObject *object,
+                     GParamSpec *pspec,
                      gpointer user_data)
 {
 	NMVpnService *service = NM_VPN_SERVICE (user_data);
 	NMVpnServicePrivate *priv = NM_VPN_SERVICE_GET_PRIVATE (service);
-	gboolean old_owner_good, new_owner_good, success;
+	gboolean success;
+	char *owner;
 
-	if (strcmp (name, priv->dbus_service))
-		return;
+	owner = g_dbus_proxy_get_name_owner (G_DBUS_PROXY (object));
 
 	/* Service changed, no need to wait for the timeout any longer */
 	if (priv->start_timeout) {
@@ -307,22 +321,21 @@ _name_owner_changed (NMDBusManager *mgr,
 		priv->start_timeout = 0;
 	}
 
-	old_owner_good = (old && old[0]);
-	new_owner_good = (new && new[0]);
-
-	if (!old_owner_good && new_owner_good) {
+	if (owner && !priv->service_running) {
 		/* service appeared */
 		priv->service_running = TRUE;
 		nm_log_info (LOGD_VPN, "VPN service '%s' appeared; activating connections", priv->name);
 		/* Expect success because the VPN service has already appeared */
 		success = start_active_vpn (service, NULL);
 		g_warn_if_fail (success);
-	} else if (old_owner_good && !new_owner_good) {
+	} else if (!owner && priv->service_running) {
 		/* service went away */
 		priv->service_running = FALSE;
 		nm_log_info (LOGD_VPN, "VPN service '%s' disappeared", priv->name);
 		nm_vpn_service_stop_connections (service, FALSE, NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED);
 	}
+
+	g_free (owner);
 }
 
 /******************************************************************************/
@@ -330,10 +343,6 @@ _name_owner_changed (NMDBusManager *mgr,
 static void
 nm_vpn_service_init (NMVpnService *self)
 {
-	g_signal_connect (nm_dbus_manager_get (),
-	                  NM_DBUS_MANAGER_NAME_OWNER_CHANGED,
-	                  G_CALLBACK (_name_owner_changed),
-	                  self);
 }
 
 static void
@@ -351,9 +360,12 @@ dispose (GObject *object)
 	g_assert (priv->active == NULL);
 	g_assert (priv->pending == NULL);
 
-	g_signal_handlers_disconnect_by_func (nm_dbus_manager_get (),
-	                                      G_CALLBACK (_name_owner_changed),
-	                                      self);
+	if (priv->proxy) {
+		g_signal_handlers_disconnect_by_func (priv->proxy,
+		                                      G_CALLBACK (_name_owner_changed),
+		                                      self);
+		g_clear_object (&priv->proxy);
+	}
 
 	G_OBJECT_CLASS (nm_vpn_service_parent_class)->dispose (object);
 }
