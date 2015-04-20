@@ -94,16 +94,6 @@ nm_ap_get_supplicant_path (NMAccessPoint *ap)
 	return NM_AP_GET_PRIVATE (ap)->supplicant_path;
 }
 
-void
-nm_ap_set_supplicant_path (NMAccessPoint *ap, const char *path)
-{
-	g_return_if_fail (NM_IS_AP (ap));
-	g_return_if_fail (path != NULL);
-
-	g_free (NM_AP_GET_PRIVATE (ap)->supplicant_path);
-	NM_AP_GET_PRIVATE (ap)->supplicant_path = g_strdup (path);
-}
-
 const char *
 nm_ap_get_dbus_path (NMAccessPoint *ap)
 {
@@ -156,16 +146,7 @@ nm_ap_set_ssid (NMAccessPoint *ap, const guint8 *ssid, gsize len)
 	g_object_notify (G_OBJECT (ap), NM_AP_SSID);
 }
 
-NM80211ApFlags
-nm_ap_get_flags (NMAccessPoint *ap)
-{
-	g_return_val_if_fail (NM_IS_AP (ap), NM_802_11_AP_FLAGS_NONE);
-
-	return NM_AP_GET_PRIVATE (ap)->flags;
-}
-
-
-void
+static void
 nm_ap_set_flags (NMAccessPoint *ap, NM80211ApFlags flags)
 {
 	NMAccessPointPrivate *priv;
@@ -180,16 +161,7 @@ nm_ap_set_flags (NMAccessPoint *ap, NM80211ApFlags flags)
 	}
 }
 
-NM80211ApSecurityFlags
-nm_ap_get_wpa_flags (NMAccessPoint *ap)
-{
-	g_return_val_if_fail (NM_IS_AP (ap), NM_802_11_AP_SEC_NONE);
-
-	return NM_AP_GET_PRIVATE (ap)->wpa_flags;
-}
-
-
-void
+static void
 nm_ap_set_wpa_flags (NMAccessPoint *ap, NM80211ApSecurityFlags flags)
 {
 	NMAccessPointPrivate *priv;
@@ -203,16 +175,7 @@ nm_ap_set_wpa_flags (NMAccessPoint *ap, NM80211ApSecurityFlags flags)
 	}
 }
 
-NM80211ApSecurityFlags
-nm_ap_get_rsn_flags (NMAccessPoint *ap)
-{
-	g_return_val_if_fail (NM_IS_AP (ap), NM_802_11_AP_SEC_NONE);
-
-	return NM_AP_GET_PRIVATE (ap)->rsn_flags;
-}
-
-
-void
+static void
 nm_ap_set_rsn_flags (NMAccessPoint *ap, NM80211ApSecurityFlags flags)
 {
 	NMAccessPointPrivate *priv;
@@ -264,7 +227,7 @@ nm_ap_get_mode (NMAccessPoint *ap)
 	return mode;
 }
 
-void
+static void
 nm_ap_set_mode (NMAccessPoint *ap, const NM80211Mode mode)
 {
 	NMAccessPointPrivate *priv;
@@ -387,15 +350,7 @@ nm_ap_set_fake (NMAccessPoint *ap, gboolean fake)
 	NM_AP_GET_PRIVATE (ap)->fake = fake;
 }
 
-gint32
-nm_ap_get_last_seen (const NMAccessPoint *ap)
-{
-	g_return_val_if_fail (NM_IS_AP (ap), FALSE);
-
-	return NM_AP_GET_PRIVATE (ap)->last_seen;
-}
-
-void
+static void
 nm_ap_set_last_seen (NMAccessPoint *ap, gint32 last_seen)
 {
 	NMAccessPointPrivate *priv;
@@ -409,7 +364,6 @@ nm_ap_set_last_seen (NMAccessPoint *ap, gint32 last_seen)
 		g_object_notify (G_OBJECT (ap), NM_AP_LAST_SEEN);
 	}
 }
-
 
 /*****************************************************************/
 
@@ -473,7 +427,7 @@ nm_ap_update_from_properties (NMAccessPoint *ap,
 	g_object_freeze_notify (G_OBJECT (ap));
 
 	if (g_variant_lookup (properties, "Privacy", "b", &b) && b)
-		nm_ap_set_flags (ap, nm_ap_get_flags (ap) | NM_802_11_AP_FLAGS_PRIVACY);
+		nm_ap_set_flags (ap, priv->flags | NM_802_11_AP_FLAGS_PRIVACY);
 
 	if (g_variant_lookup (properties, "Mode", "&s", &s)) {
 		if (!g_strcmp0 (s, "infrastructure"))
@@ -531,18 +485,18 @@ nm_ap_update_from_properties (NMAccessPoint *ap,
 
 	v = g_variant_lookup_value (properties, "WPA", G_VARIANT_TYPE_VARDICT);
 	if (v) {
-		nm_ap_set_wpa_flags (ap, nm_ap_get_wpa_flags (ap) | security_from_vardict (v));
+		nm_ap_set_wpa_flags (ap, priv->wpa_flags | security_from_vardict (v));
 		g_variant_unref (v);
 	}
 
 	v = g_variant_lookup_value (properties, "RSN", G_VARIANT_TYPE_VARDICT);
 	if (v) {
-		nm_ap_set_rsn_flags (ap, nm_ap_get_rsn_flags (ap) | security_from_vardict (v));
+		nm_ap_set_rsn_flags (ap, priv->rsn_flags | security_from_vardict (v));
 		g_variant_unref (v);
 	}
 
-	if (!nm_ap_get_supplicant_path (ap))
-		nm_ap_set_supplicant_path (ap, supplicant_path);
+	if (!priv->supplicant_path)
+		priv->supplicant_path = g_strdup (supplicant_path);
 
 	nm_ap_set_last_seen (ap, nm_utils_get_monotonic_timestamp_s ());
 	priv->fake = FALSE;
@@ -597,6 +551,7 @@ has_proto (NMSettingWirelessSecurity *sec, const char *proto)
 static void
 add_pair_ciphers (NMAccessPoint *ap, NMSettingWirelessSecurity *sec)
 {
+	NMAccessPointPrivate *priv = NM_AP_GET_PRIVATE (ap);
 	guint32 num = nm_setting_wireless_security_get_num_pairwise (sec);
 	NM80211ApSecurityFlags flags = NM_802_11_AP_SEC_NONE;
 	guint32 i;
@@ -616,14 +571,15 @@ add_pair_ciphers (NMAccessPoint *ap, NMSettingWirelessSecurity *sec)
 	}
 
 	if (has_proto (sec, PROTO_WPA))
-		nm_ap_set_wpa_flags (ap, nm_ap_get_wpa_flags (ap) | flags);
+		nm_ap_set_wpa_flags (ap, priv->wpa_flags | flags);
 	if (has_proto (sec, PROTO_RSN))
-		nm_ap_set_rsn_flags (ap, nm_ap_get_rsn_flags (ap) | flags);
+		nm_ap_set_rsn_flags (ap, priv->rsn_flags | flags);
 }
 
 static void
 add_group_ciphers (NMAccessPoint *ap, NMSettingWirelessSecurity *sec)
 {
+	NMAccessPointPrivate *priv = NM_AP_GET_PRIVATE (ap);
 	guint32 num = nm_setting_wireless_security_get_num_groups (sec);
 	NM80211ApSecurityFlags flags = NM_802_11_AP_SEC_NONE;
 	guint32 i;
@@ -647,15 +603,16 @@ add_group_ciphers (NMAccessPoint *ap, NMSettingWirelessSecurity *sec)
 	}
 
 	if (has_proto (sec, PROTO_WPA))
-		nm_ap_set_wpa_flags (ap, nm_ap_get_wpa_flags (ap) | flags);
+		nm_ap_set_wpa_flags (ap, priv->wpa_flags | flags);
 	if (has_proto (sec, PROTO_RSN))
-		nm_ap_set_rsn_flags (ap, nm_ap_get_rsn_flags (ap) | flags);
+		nm_ap_set_rsn_flags (ap, priv->rsn_flags | flags);
 }
 
 NMAccessPoint *
 nm_ap_new_fake_from_connection (NMConnection *connection)
 {
 	NMAccessPoint *ap;
+	NMAccessPointPrivate *priv;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wireless_sec;
 	GBytes *ssid;
@@ -674,7 +631,8 @@ nm_ap_new_fake_from_connection (NMConnection *connection)
 	g_return_val_if_fail (g_bytes_get_size (ssid) > 0, NULL);
 
 	ap = (NMAccessPoint *) g_object_new (NM_TYPE_AP, NULL);
-	nm_ap_set_fake (ap, TRUE);
+	priv = NM_AP_GET_PRIVATE (ap);
+	priv->fake = TRUE;
 	nm_ap_set_ssid (ap, g_bytes_get_data (ssid, NULL), g_bytes_get_size (ssid));
 
 	// FIXME: bssid too?
@@ -714,7 +672,7 @@ nm_ap_new_fake_from_connection (NMConnection *connection)
 	key_mgmt = nm_setting_wireless_security_get_key_mgmt (s_wireless_sec);
 
 	/* Everything below here uses encryption */
-	nm_ap_set_flags (ap, nm_ap_get_flags (ap) | NM_802_11_AP_FLAGS_PRIVACY);
+	nm_ap_set_flags (ap, priv->flags | NM_802_11_AP_FLAGS_PRIVACY);
 
 	/* Static & Dynamic WEP */
 	if (!strcmp (key_mgmt, "none") || !strcmp (key_mgmt, "ieee8021x"))
@@ -724,13 +682,11 @@ nm_ap_new_fake_from_connection (NMConnection *connection)
 	eap = !strcmp (key_mgmt, "wpa-eap");
 	if (psk || eap) {
 		if (has_proto (s_wireless_sec, PROTO_WPA)) {
-			flags = nm_ap_get_wpa_flags (ap);
-			flags |= eap ? NM_802_11_AP_SEC_KEY_MGMT_802_1X : NM_802_11_AP_SEC_KEY_MGMT_PSK;
+			flags = priv->wpa_flags | (eap ? NM_802_11_AP_SEC_KEY_MGMT_802_1X : NM_802_11_AP_SEC_KEY_MGMT_PSK);
 			nm_ap_set_wpa_flags (ap, flags);
 		}
 		if (has_proto (s_wireless_sec, PROTO_RSN)) {
-			flags = nm_ap_get_rsn_flags (ap);
-			flags |= eap ? NM_802_11_AP_SEC_KEY_MGMT_802_1X : NM_802_11_AP_SEC_KEY_MGMT_PSK;
+			flags = priv->rsn_flags | (eap ? NM_802_11_AP_SEC_KEY_MGMT_802_1X : NM_802_11_AP_SEC_KEY_MGMT_PSK);
 			nm_ap_set_rsn_flags (ap, flags);
 		}
 
@@ -743,8 +699,7 @@ nm_ap_new_fake_from_connection (NMConnection *connection)
 		 * group=TKIP/CCMP (but not both).
 		 */
 
-		flags = nm_ap_get_wpa_flags (ap);
-		flags |= NM_802_11_AP_SEC_KEY_MGMT_PSK;
+		flags = priv->wpa_flags | NM_802_11_AP_SEC_KEY_MGMT_PSK;
 
 		/* Clear ciphers; pairwise must be unset anyway, and group gets set below */
 		flags &= ~(  NM_802_11_AP_SEC_PAIR_WEP40
@@ -908,10 +863,10 @@ nm_ap_check_compatible (NMAccessPoint *self,
 
 	return nm_setting_wireless_ap_security_compatible (s_wireless,
 	                                                   s_wireless_sec,
-	                                                   nm_ap_get_flags (self),
-	                                                   nm_ap_get_wpa_flags (self),
-	                                                   nm_ap_get_rsn_flags (self),
-	                                                   nm_ap_get_mode (self));
+	                                                   priv->flags,
+	                                                   priv->wpa_flags,
+	                                                   priv->rsn_flags,
+	                                                   priv->mode);
 }
 
 gboolean

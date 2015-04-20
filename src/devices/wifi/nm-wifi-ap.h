@@ -66,30 +66,16 @@ void            nm_ap_update_from_properties (NMAccessPoint *ap,
                                               GVariant *properties);
 
 const char *nm_ap_get_dbus_path (NMAccessPoint *ap);
-
 const char *nm_ap_get_supplicant_path (NMAccessPoint *ap);
-void        nm_ap_set_supplicant_path (NMAccessPoint *ap,
-                                       const char *path);
-
 guint32     nm_ap_get_id (NMAccessPoint *ap);
 
 const GByteArray *nm_ap_get_ssid (const NMAccessPoint * ap);
 void              nm_ap_set_ssid (NMAccessPoint * ap, const guint8 * ssid, gsize len);
 
-NM80211ApFlags nm_ap_get_flags (NMAccessPoint *ap);
-void           nm_ap_set_flags (NMAccessPoint *ap, NM80211ApFlags flags);
-
-NM80211ApSecurityFlags nm_ap_get_wpa_flags (NMAccessPoint *ap);
-void                   nm_ap_set_wpa_flags (NMAccessPoint *ap, NM80211ApSecurityFlags flags);
-
-NM80211ApSecurityFlags nm_ap_get_rsn_flags (NMAccessPoint *ap);
-void                   nm_ap_set_rsn_flags (NMAccessPoint *ap, NM80211ApSecurityFlags flags);
-
 const char *nm_ap_get_address (const NMAccessPoint *ap);
 void        nm_ap_set_address (NMAccessPoint *ap, const char *addr);
 
 NM80211Mode nm_ap_get_mode (NMAccessPoint *ap);
-void        nm_ap_set_mode (NMAccessPoint *ap, const NM80211Mode mode);
 
 gboolean nm_ap_is_hotspot (NMAccessPoint *ap);
 
@@ -104,9 +90,6 @@ void    nm_ap_set_max_bitrate (NMAccessPoint *ap, guint32 bitrate);
 
 gboolean nm_ap_get_fake (const NMAccessPoint *ap);
 void     nm_ap_set_fake (NMAccessPoint *ap, gboolean fake);
-
-gint32   nm_ap_get_last_seen (const NMAccessPoint *ap);
-void     nm_ap_set_last_seen (NMAccessPoint *ap, gint32 last_seen);
 
 gboolean nm_ap_check_compatible (NMAccessPoint *self,
                                  NMConnection *connection);
