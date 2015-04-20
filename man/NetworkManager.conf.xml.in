@@ -254,6 +254,20 @@ no-auto-default=*
       </varlistentry>
 
       <varlistentry>
+	<term><varname>rc-manager</varname></term>
+	<listitem><para>Set the <filename>resolv.conf</filename>
+	management mode. The default value depends on how NetworkManager
+	was built.</para>
+	<para><literal>none</literal>: NetworkManager will directly
+	write changes to <filename>resolv.conf</filename>.</para>
+	<para><literal>resolvconf</literal>: NetworkManager will run
+	resolvconf to update the DNS configuration.</para>
+	<para><literal>netconfig</literal>: NetworkManager will run
+	netconfig to update the DNS configuration.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
         <term><varname>debug</varname></term>
         <listitem><para>Comma separated list of options to aid
         debugging. This value will be combined with the environment
