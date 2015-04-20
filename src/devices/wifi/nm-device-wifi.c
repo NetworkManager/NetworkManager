@@ -1600,11 +1600,20 @@ supplicant_iface_bss_removed_cb (NMSupplicantInterface *iface,
 
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	ap = get_ap_by_supplicant_path (self, object_path);
-	if (ap && ap != priv->current_ap) {
-		nm_ap_dump (ap, "removed ", nm_device_get_iface (NM_DEVICE (self)));
-		emit_ap_added_removed (self, ACCESS_POINT_REMOVED, ap, TRUE);
-		g_hash_table_remove (priv->aps, nm_ap_get_dbus_path (ap));
-		schedule_ap_list_dump (self);
+	if (ap) {
+		if (ap == priv->current_ap) {
+			/* The current AP cannot be removed (to prevent NM indicating that
+			 * it is connected, but to nothing), but it must be removed later
+			 * when the current AP is changed or cleared.  Set 'fake' to
+			 * indicate that this AP is now unknown to the supplicant.
+			 */
+			nm_ap_set_fake (ap, TRUE);
+		} else {
+			nm_ap_dump (ap, "removed ", nm_device_get_iface (NM_DEVICE (self)));
+			emit_ap_added_removed (self, ACCESS_POINT_REMOVED, ap, TRUE);
+			g_hash_table_remove (priv->aps, nm_ap_get_dbus_path (ap));
+			schedule_ap_list_dump (self);
+		}
 	}
 }
 
