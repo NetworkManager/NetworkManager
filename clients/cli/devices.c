@@ -58,30 +58,32 @@ static NmcOutputField nmc_fields_dev_show_general[] = {
 	{"NAME",              N_("NAME"),              10},  /* 0 */
 	{"DEVICE",            N_("DEVICE"),            10},  /* 1 */
 	{"TYPE",              N_("TYPE"),              17},  /* 2 */
-	{"VENDOR",            N_("VENDOR"),            20},  /* 3 */
-	{"PRODUCT",           N_("PRODUCT"),           50},  /* 4 */
-	{"DRIVER",            N_("DRIVER"),             9},  /* 5 */
-	{"DRIVER-VERSION",    N_("DRIVER-VERSION"),    18},  /* 6 */
-	{"FIRMWARE-VERSION",  N_("FIRMWARE-VERSION"),  18},  /* 7 */
-	{"HWADDR",            N_("HWADDR"),            19},  /* 8 */
-	{"MTU",               N_("MTU"),               10},  /* 9 */
-	{"STATE",             N_("STATE"),             14},  /* 10 */
-	{"REASON",            N_("REASON"),            25},  /* 11 */
-	{"UDI",               N_("UDI"),               64},  /* 12 */
-	{"IP-IFACE",          N_("IP-IFACE"),          10},  /* 13 */
-	{"IS-SOFTWARE",       N_("IS-SOFTWARE"),       15},  /* 14 */
-	{"NM-MANAGED",        N_("NM-MANAGED"),        15},  /* 15 */
-	{"AUTOCONNECT",       N_("AUTOCONNECT"),       15},  /* 16 */
-	{"FIRMWARE-MISSING",  N_("FIRMWARE-MISSING"),  18},  /* 17 */
-	{"PHYS-PORT-ID",      N_("PHYS-PORT-ID"),      18},  /* 18 */
-	{"CONNECTION",        N_("CONNECTION"),        20},  /* 19 */
-	{"CON-UUID",          N_("CON-UUID"),          38},  /* 20 */
-	{"CON-PATH",          N_("CON-PATH"),          51},  /* 21 */
+	{"NM-TYPE",           N_("NM-TYPE"),           17},  /* 3 */
+	{"VENDOR",            N_("VENDOR"),            20},  /* 4 */
+	{"PRODUCT",           N_("PRODUCT"),           50},  /* 5 */
+	{"DRIVER",            N_("DRIVER"),             9},  /* 6 */
+	{"DRIVER-VERSION",    N_("DRIVER-VERSION"),    18},  /* 7 */
+	{"FIRMWARE-VERSION",  N_("FIRMWARE-VERSION"),  18},  /* 8 */
+	{"HWADDR",            N_("HWADDR"),            19},  /* 9 */
+	{"MTU",               N_("MTU"),               10},  /* 10 */
+	{"STATE",             N_("STATE"),             14},  /* 11 */
+	{"REASON",            N_("REASON"),            25},  /* 12 */
+	{"UDI",               N_("UDI"),               64},  /* 13 */
+	{"IP-IFACE",          N_("IP-IFACE"),          10},  /* 14 */
+	{"IS-SOFTWARE",       N_("IS-SOFTWARE"),       15},  /* 15 */
+	{"NM-MANAGED",        N_("NM-MANAGED"),        15},  /* 16 */
+	{"AUTOCONNECT",       N_("AUTOCONNECT"),       15},  /* 17 */
+	{"FIRMWARE-MISSING",  N_("FIRMWARE-MISSING"),  18},  /* 18 */
+	{"NM-PLUGIN-MISSING", N_("NM-PLUGIN-MISSING"), 18},  /* 19 */
+	{"PHYS-PORT-ID",      N_("PHYS-PORT-ID"),      18},  /* 20 */
+	{"CONNECTION",        N_("CONNECTION"),        20},  /* 21 */
+	{"CON-UUID",          N_("CON-UUID"),          38},  /* 22 */
+	{"CON-PATH",          N_("CON-PATH"),          51},  /* 23 */
 	{NULL, NULL, 0}
 };
-#define NMC_FIELDS_DEV_SHOW_GENERAL_ALL     "NAME,DEVICE,TYPE,VENDOR,PRODUCT,DRIVER,DRIVER-VERSION,FIRMWARE-VERSION,HWADDR,MTU,STATE,REASON,"\
-                                            "UDI,IP-IFACE,IS-SOFTWARE,NM-MANAGED,AUTOCONNECT,FIRMWARE-MISSING,PHYS-PORT-ID,"\
-                                            "CONNECTION,CON-UUID,CON-PATH"
+#define NMC_FIELDS_DEV_SHOW_GENERAL_ALL     "NAME,DEVICE,TYPE,NM-TYPE,VENDOR,PRODUCT,DRIVER,DRIVER-VERSION,FIRMWARE-VERSION,HWADDR,MTU,"\
+                                            "STATE,REASON,UDI,IP-IFACE,IS-SOFTWARE,NM-MANAGED,AUTOCONNECT,FIRMWARE-MISSING,NM-PLUGIN-MISSING,"\
+                                            "PHYS-PORT-ID,CONNECTION,CON-UUID,CON-PATH"
 #define NMC_FIELDS_DEV_SHOW_GENERAL_COMMON  "NAME,DEVICE,TYPE,VENDOR,PRODUCT,DRIVER,HWADDR,STATE"
 
 /* Available fields for 'device show' - CONNECTIONS part */
@@ -822,25 +824,27 @@ show_device_info (NMDevice *device, NmCli *nmc)
 			set_val_strc (arr, 0, nmc_fields_dev_show_sections[0].name);  /* "GENERAL"*/
 			set_val_strc (arr, 1, nm_device_get_iface (device));
 			set_val_strc (arr, 2, nm_device_get_type_description (device));
-			set_val_strc (arr, 3, nm_device_get_vendor (device));
-			set_val_strc (arr, 4, nm_device_get_product (device));
-			set_val_strc (arr, 5, nm_device_get_driver (device) ? nm_device_get_driver (device) : _("(unknown)"));
-			set_val_strc (arr, 6, nm_device_get_driver_version (device));
-			set_val_strc (arr, 7, nm_device_get_firmware_version (device));
-			set_val_strc (arr, 8, hwaddr ? hwaddr : _("(unknown)"));
-			set_val_str  (arr, 9, mtu_str);
-			set_val_str  (arr, 10, state_str);
-			set_val_str  (arr, 11, reason_str);
-			set_val_strc (arr, 12, nm_device_get_udi (device));
-			set_val_strc (arr, 13, nm_device_get_ip_iface (device));
-			set_val_strc (arr, 14, nm_device_is_software (device) ? _("yes") : _("no"));
-			set_val_strc (arr, 15, nm_device_get_managed (device) ? _("yes") : _("no"));
-			set_val_strc (arr, 16, nm_device_get_autoconnect (device) ? _("yes") : _("no"));
-			set_val_strc (arr, 17, nm_device_get_firmware_missing (device) ? _("yes") : _("no"));
-			set_val_strc (arr, 18, nm_device_get_physical_port_id (device));
-			set_val_strc (arr, 19, get_active_connection_id (device));
-			set_val_strc (arr, 20, acon ? nm_active_connection_get_uuid (acon) : NULL);
-			set_val_strc (arr, 21, acon ? nm_object_get_path (NM_OBJECT (acon)) : NULL);
+			set_val_strc (arr, 3, G_OBJECT_TYPE_NAME (device));
+			set_val_strc (arr, 4, nm_device_get_vendor (device));
+			set_val_strc (arr, 5, nm_device_get_product (device));
+			set_val_strc (arr, 6, nm_device_get_driver (device) ? nm_device_get_driver (device) : _("(unknown)"));
+			set_val_strc (arr, 7, nm_device_get_driver_version (device));
+			set_val_strc (arr, 8, nm_device_get_firmware_version (device));
+			set_val_strc (arr, 9, hwaddr ? hwaddr : _("(unknown)"));
+			set_val_str  (arr, 10, mtu_str);
+			set_val_str  (arr, 11, state_str);
+			set_val_str  (arr, 12, reason_str);
+			set_val_strc (arr, 13, nm_device_get_udi (device));
+			set_val_strc (arr, 14, nm_device_get_ip_iface (device));
+			set_val_strc (arr, 15, nm_device_is_software (device) ? _("yes") : _("no"));
+			set_val_strc (arr, 16, nm_device_get_managed (device) ? _("yes") : _("no"));
+			set_val_strc (arr, 17, nm_device_get_autoconnect (device) ? _("yes") : _("no"));
+			set_val_strc (arr, 18, nm_device_get_firmware_missing (device) ? _("yes") : _("no"));
+			set_val_strc (arr, 19, nm_device_get_nm_plugin_missing (device) ? _("yes") : _("no"));
+			set_val_strc (arr, 20, nm_device_get_physical_port_id (device));
+			set_val_strc (arr, 21, get_active_connection_id (device));
+			set_val_strc (arr, 22, acon ? nm_active_connection_get_uuid (acon) : NULL);
+			set_val_strc (arr, 23, acon ? nm_object_get_path (NM_OBJECT (acon)) : NULL);
 			g_ptr_array_add (nmc->output_data, arr);
 
 			print_data (nmc);  /* Print all data */
@@ -2043,7 +2047,13 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 				show_access_point_info (device, nmc);
 			}
 		} else {
-			g_string_printf (nmc->return_text, _("Error: Device '%s' is not a Wi-Fi device."), ifname);
+			const char *err_msg;
+			if (   nm_device_get_device_type (device) == NM_DEVICE_TYPE_GENERIC
+			    && g_strcmp0 (nm_device_get_type_description (device), "wifi") == 0)
+				err_msg = _("Error: Device '%s' was not recognized as a Wi-Fi device, check NetworkManager Wi-Fi plugin.");
+			else
+				err_msg = _("Error: Device '%s' is not a Wi-Fi device.");
+			g_string_printf (nmc->return_text, err_msg, ifname);
 			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 			goto error;
 		}
@@ -2523,9 +2533,15 @@ do_device_wifi_rescan (NmCli *nmc, int argc, char **argv)
 	device = find_wifi_device_by_iface (devices, ifname, &devices_idx);
 
 	if (!device) {
-		if (ifname)
-			g_string_printf (nmc->return_text, _("Error: Device '%s' is not a Wi-Fi device."), ifname);
-		else
+		if (ifname) {
+			const char *err_msg;
+			if (   nm_device_get_device_type (device) == NM_DEVICE_TYPE_GENERIC
+			    && g_strcmp0 (nm_device_get_type_description (device), "wifi") == 0)
+				err_msg = _("Error: Device '%s' was not recognized as a Wi-Fi device, check NetworkManager Wi-Fi plugin.");
+			else
+				err_msg = _("Error: Device '%s' is not a Wi-Fi device.");
+			g_string_printf (nmc->return_text, err_msg, ifname);
+		} else
 			g_string_printf (nmc->return_text, _("Error: No Wi-Fi device found."));
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 		goto error;

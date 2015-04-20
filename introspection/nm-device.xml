@@ -116,6 +116,12 @@
         its operation.
       </tp:docstring>
     </property>
+    <property name="NmPluginMissing" type="b" access="read">
+      <tp:docstring>
+        If TRUE, indicates the NetworkManager plugin for the device is likely
+        missing or misconfigured.
+      </tp:docstring>
+    </property>
     <property name="DeviceType" type="u" access="read" tp:type="NM_DEVICE_TYPE">
       <tp:docstring>
         The general type of the network device; ie Ethernet, WiFi, etc.

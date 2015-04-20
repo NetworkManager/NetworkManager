@@ -54,6 +54,7 @@
 #define NM_DEVICE_MANAGED          "managed"
 #define NM_DEVICE_AUTOCONNECT      "autoconnect"
 #define NM_DEVICE_FIRMWARE_MISSING "firmware-missing"
+#define NM_DEVICE_NM_PLUGIN_MISSING "nm-plugin-missing"
 #define NM_DEVICE_AVAILABLE_CONNECTIONS "available-connections"
 #define NM_DEVICE_PHYSICAL_PORT_ID "physical-port-id"
 #define NM_DEVICE_MTU              "mtu"
@@ -389,6 +390,9 @@ void nm_device_queue_state   (NMDevice *self,
                               NMDeviceStateReason reason);
 
 gboolean nm_device_get_firmware_missing (NMDevice *self);
+gboolean nm_device_get_nm_plugin_missing (NMDevice *self);
+void     nm_device_set_nm_plugin_missing (NMDevice *self,
+                                          gboolean missing);
 
 void nm_device_steal_connection (NMDevice *device, NMConnection *connection);
 

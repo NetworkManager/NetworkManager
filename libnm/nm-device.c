@@ -84,6 +84,7 @@ typedef struct {
 	NMDeviceCapabilities capabilities;
 	gboolean managed;
 	gboolean firmware_missing;
+	gboolean nm_plugin_missing;
 	gboolean autoconnect;
 	NMIPConfig *ip4_config;
 	NMDhcpConfig *dhcp4_config;
@@ -116,6 +117,7 @@ enum {
 	PROP_MANAGED,
 	PROP_AUTOCONNECT,
 	PROP_FIRMWARE_MISSING,
+	PROP_NM_PLUGIN_MISSING,
 	PROP_IP4_CONFIG,
 	PROP_DHCP4_CONFIG,
 	PROP_IP6_CONFIG,
@@ -183,6 +185,7 @@ init_dbus (NMObject *object)
 		{ NM_DEVICE_MANAGED,           &priv->managed },
 		{ NM_DEVICE_AUTOCONNECT,       &priv->autoconnect },
 		{ NM_DEVICE_FIRMWARE_MISSING,  &priv->firmware_missing },
+		{ NM_DEVICE_NM_PLUGIN_MISSING, &priv->nm_plugin_missing },
 		{ NM_DEVICE_IP4_CONFIG,        &priv->ip4_config, NULL, NM_TYPE_IP4_CONFIG },
 		{ NM_DEVICE_DHCP4_CONFIG,      &priv->dhcp4_config, NULL, NM_TYPE_DHCP4_CONFIG },
 		{ NM_DEVICE_IP6_CONFIG,        &priv->ip6_config, NULL, NM_TYPE_IP6_CONFIG },
@@ -413,6 +416,9 @@ get_property (GObject *object,
 	case PROP_FIRMWARE_MISSING:
 		g_value_set_boolean (value, nm_device_get_firmware_missing (device));
 		break;
+	case PROP_NM_PLUGIN_MISSING:
+		g_value_set_boolean (value, nm_device_get_nm_plugin_missing (device));
+		break;
 	case PROP_IP4_CONFIG:
 		g_value_set_object (value, nm_device_get_ip4_config (device));
 		break;
@@ -641,6 +647,21 @@ nm_device_class_init (NMDeviceClass *device_class)
 	g_object_class_install_property
 		(object_class, PROP_FIRMWARE_MISSING,
 		 g_param_spec_boolean (NM_DEVICE_FIRMWARE_MISSING, "", "",
+		                       FALSE,
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMDevice:nm-plugin-missing:
+	 *
+	 * When %TRUE indicates that the NetworkManager plugin for the device
+	 * is not installed.
+	 *
+	 * Since: 1.2
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_NM_PLUGIN_MISSING,
+		 g_param_spec_boolean (NM_DEVICE_NM_PLUGIN_MISSING, "", "",
 		                       FALSE,
 		                       G_PARAM_READABLE |
 		                       G_PARAM_STATIC_STRINGS));
@@ -1102,6 +1123,24 @@ nm_device_get_firmware_missing (NMDevice *device)
 	g_return_val_if_fail (NM_IS_DEVICE (device), 0);
 
 	return NM_DEVICE_GET_PRIVATE (device)->firmware_missing;
+}
+
+/**
+ * nm_device_get_nm_plugin_missing:
+ * @device: a #NMDevice
+ *
+ * Indicates that the NetworkManager plugin for the device is not installed.
+ *
+ * Returns: %TRUE if the device plugin not installed.
+ *
+ * Since: 1.2
+ **/
+gboolean
+nm_device_get_nm_plugin_missing (NMDevice *device)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
+
+	return NM_DEVICE_GET_PRIVATE (device)->nm_plugin_missing;
 }
 
 /**
