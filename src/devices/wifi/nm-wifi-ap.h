@@ -56,51 +56,50 @@ typedef struct {
 
 GType nm_ap_get_type (void);
 
-NMAccessPoint * nm_ap_new_from_properties (const char *supplicant_path,
-                                           GVariant *properties);
-NMAccessPoint * nm_ap_new_fake_from_connection (NMConnection *connection);
-void            nm_ap_export_to_dbus    (NMAccessPoint *ap);
+NMAccessPoint *   nm_ap_new_from_properties      (const char *supplicant_path,
+                                                  GVariant *properties);
+NMAccessPoint *   nm_ap_new_fake_from_connection (NMConnection *connection);
+void              nm_ap_export_to_dbus           (NMAccessPoint *ap);
 
-void            nm_ap_update_from_properties (NMAccessPoint *ap,
-                                              const char *supplicant_path,
-                                              GVariant *properties);
+void              nm_ap_update_from_properties   (NMAccessPoint *ap,
+                                                  const char *supplicant_path,
+                                                  GVariant *properties);
 
-const char *nm_ap_get_dbus_path (NMAccessPoint *ap);
-const char *nm_ap_get_supplicant_path (NMAccessPoint *ap);
-guint32     nm_ap_get_id (NMAccessPoint *ap);
+gboolean          nm_ap_check_compatible         (NMAccessPoint *self,
+                                                  NMConnection *connection);
 
-const GByteArray *nm_ap_get_ssid (const NMAccessPoint * ap);
-void              nm_ap_set_ssid (NMAccessPoint * ap, const guint8 * ssid, gsize len);
+gboolean          nm_ap_complete_connection      (NMAccessPoint *self,
+                                                  NMConnection *connection,
+                                                  gboolean lock_bssid,
+                                                  GError **error);
 
-const char *nm_ap_get_address (const NMAccessPoint *ap);
-void        nm_ap_set_address (NMAccessPoint *ap, const char *addr);
+const char *      nm_ap_get_dbus_path            (NMAccessPoint *ap);
+const char *      nm_ap_get_supplicant_path      (NMAccessPoint *ap);
+guint32           nm_ap_get_id                   (NMAccessPoint *ap);
+const GByteArray *nm_ap_get_ssid                 (const NMAccessPoint *ap);
+void              nm_ap_set_ssid                 (NMAccessPoint *ap,
+                                                  const guint8 *ssid,
+                                                  gsize len);
+const char *      nm_ap_get_address              (const NMAccessPoint *ap);
+void              nm_ap_set_address              (NMAccessPoint *ap,
+                                                  const char *addr);
+NM80211Mode       nm_ap_get_mode                 (NMAccessPoint *ap);
+gboolean          nm_ap_is_hotspot               (NMAccessPoint *ap);
+gint8             nm_ap_get_strength             (NMAccessPoint *ap);
+void              nm_ap_set_strength             (NMAccessPoint *ap,
+                                                  gint8 strength);
+guint32           nm_ap_get_freq                 (NMAccessPoint *ap);
+void              nm_ap_set_freq                 (NMAccessPoint *ap,
+                                                  guint32 freq);
+guint32           nm_ap_get_max_bitrate          (NMAccessPoint *ap);
+void              nm_ap_set_max_bitrate          (NMAccessPoint *ap,
+                                                  guint32 bitrate);
+gboolean          nm_ap_get_fake                 (const NMAccessPoint *ap);
+void              nm_ap_set_fake                 (NMAccessPoint *ap,
+                                                  gboolean fake);
 
-NM80211Mode nm_ap_get_mode (NMAccessPoint *ap);
-
-gboolean nm_ap_is_hotspot (NMAccessPoint *ap);
-
-gint8 nm_ap_get_strength (NMAccessPoint *ap);
-void  nm_ap_set_strength (NMAccessPoint *ap, gint8 strength);
-
-guint32 nm_ap_get_freq (NMAccessPoint *ap);
-void    nm_ap_set_freq (NMAccessPoint *ap, guint32 freq);
-
-guint32 nm_ap_get_max_bitrate (NMAccessPoint *ap);
-void    nm_ap_set_max_bitrate (NMAccessPoint *ap, guint32 bitrate);
-
-gboolean nm_ap_get_fake (const NMAccessPoint *ap);
-void     nm_ap_set_fake (NMAccessPoint *ap, gboolean fake);
-
-gboolean nm_ap_check_compatible (NMAccessPoint *self,
-                                 NMConnection *connection);
-
-gboolean nm_ap_complete_connection (NMAccessPoint *self,
-                                    NMConnection *connection,
-                                    gboolean lock_bssid,
-                                    GError **error);
-
-void                nm_ap_dump (NMAccessPoint *self,
-                                const char *prefix,
-                                const char *ifname);
+void              nm_ap_dump                     (NMAccessPoint *self,
+                                                  const char *prefix,
+                                                  const char *ifname);
 
 #endif /* __NETWORKMANAGER_ACCESS_POINT_H__ */
