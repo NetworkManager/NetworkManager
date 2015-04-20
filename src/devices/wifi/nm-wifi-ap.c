@@ -86,6 +86,333 @@ enum {
 
 /*****************************************************************/
 
+const char *
+nm_ap_get_supplicant_path (NMAccessPoint *ap)
+{
+	g_return_val_if_fail (NM_IS_AP (ap), NULL);
+
+	return NM_AP_GET_PRIVATE (ap)->supplicant_path;
+}
+
+void
+nm_ap_set_supplicant_path (NMAccessPoint *ap, const char *path)
+{
+	g_return_if_fail (NM_IS_AP (ap));
+	g_return_if_fail (path != NULL);
+
+	g_free (NM_AP_GET_PRIVATE (ap)->supplicant_path);
+	NM_AP_GET_PRIVATE (ap)->supplicant_path = g_strdup (path);
+}
+
+const char *
+nm_ap_get_dbus_path (NMAccessPoint *ap)
+{
+	g_return_val_if_fail (NM_IS_AP (ap), NULL);
+
+	return NM_AP_GET_PRIVATE (ap)->dbus_path;
+}
+
+guint32
+nm_ap_get_id (NMAccessPoint *ap)
+{
+	g_return_val_if_fail (NM_IS_AP (ap), 0);
+
+	return NM_AP_GET_PRIVATE (ap)->id;
+}
+
+const GByteArray * nm_ap_get_ssid (const NMAccessPoint *ap)
+{
+	g_return_val_if_fail (NM_IS_AP (ap), NULL);
+
+	return NM_AP_GET_PRIVATE (ap)->ssid;
+}
+
+void
+nm_ap_set_ssid (NMAccessPoint *ap, const guint8 *ssid, gsize len)
+{
+	NMAccessPointPrivate *priv;
+
+	g_return_if_fail (NM_IS_AP (ap));
+	g_return_if_fail (ssid == NULL || len > 0);
+
+	priv = NM_AP_GET_PRIVATE (ap);
+
+	/* same SSID */
+	if ((ssid && priv->ssid) && (len == priv->ssid->len)) {
+		if (!memcmp (ssid, priv->ssid->data, len))
+			return;
+	}
+
+	if (priv->ssid) {
+		g_byte_array_free (priv->ssid, TRUE);
+		priv->ssid = NULL;
+	}
+
+	if (ssid) {
+		priv->ssid = g_byte_array_new ();
+		g_byte_array_append (priv->ssid, ssid, len);
+	}
+
+	g_object_notify (G_OBJECT (ap), NM_AP_SSID);
+}
+
+NM80211ApFlags
+nm_ap_get_flags (NMAccessPoint *ap)
+{
+	g_return_val_if_fail (NM_IS_AP (ap), NM_802_11_AP_FLAGS_NONE);
+
+	return NM_AP_GET_PRIVATE (ap)->flags;
+}
+
+
+void
+nm_ap_set_flags (NMAccessPoint *ap, NM80211ApFlags flags)
+{
+	NMAccessPointPrivate *priv;
+
+	g_return_if_fail (NM_IS_AP (ap));
+
+	priv = NM_AP_GET_PRIVATE (ap);
+
+	if (priv->flags != flags) {
+		priv->flags = flags;
+		g_object_notify (G_OBJECT (ap), NM_AP_FLAGS);
+	}
+}
+
+NM80211ApSecurityFlags
+nm_ap_get_wpa_flags (NMAccessPoint *ap)
+{
+	g_return_val_if_fail (NM_IS_AP (ap), NM_802_11_AP_SEC_NONE);
+
+	return NM_AP_GET_PRIVATE (ap)->wpa_flags;
+}
+
+
+void
+nm_ap_set_wpa_flags (NMAccessPoint *ap, NM80211ApSecurityFlags flags)
+{
+	NMAccessPointPrivate *priv;
+
+	g_return_if_fail (NM_IS_AP (ap));
+
+	priv = NM_AP_GET_PRIVATE (ap);
+	if (priv->wpa_flags != flags) {
+		priv->wpa_flags = flags;
+		g_object_notify (G_OBJECT (ap), NM_AP_WPA_FLAGS);
+	}
+}
+
+NM80211ApSecurityFlags
+nm_ap_get_rsn_flags (NMAccessPoint *ap)
+{
+	g_return_val_if_fail (NM_IS_AP (ap), NM_802_11_AP_SEC_NONE);
+
+	return NM_AP_GET_PRIVATE (ap)->rsn_flags;
+}
+
+
+void
+nm_ap_set_rsn_flags (NMAccessPoint *ap, NM80211ApSecurityFlags flags)
+{
+	NMAccessPointPrivate *priv;
+
+	g_return_if_fail (NM_IS_AP (ap));
+
+	priv = NM_AP_GET_PRIVATE (ap);
+	if (priv->rsn_flags != flags) {
+		priv->rsn_flags = flags;
+		g_object_notify (G_OBJECT (ap), NM_AP_RSN_FLAGS);
+	}
+}
+
+const char *
+nm_ap_get_address (const NMAccessPoint *ap)
+{
+	g_return_val_if_fail (NM_IS_AP (ap), NULL);
+
+	return NM_AP_GET_PRIVATE (ap)->address;
+}
+
+void
+nm_ap_set_address (NMAccessPoint *ap, const char *addr)
+{
+	NMAccessPointPrivate *priv;
+
+	g_return_if_fail (NM_IS_AP (ap));
+	g_return_if_fail (addr != NULL);
+	g_return_if_fail (nm_utils_hwaddr_valid (addr, ETH_ALEN));
+
+	priv = NM_AP_GET_PRIVATE (ap);
+
+	if (!priv->address || !nm_utils_hwaddr_matches (addr, -1, priv->address, -1)) {
+		g_free (priv->address);
+		priv->address = g_strdup (addr);
+		g_object_notify (G_OBJECT (ap), NM_AP_HW_ADDRESS);
+	}
+}
+
+NM80211Mode
+nm_ap_get_mode (NMAccessPoint *ap)
+{
+	NM80211Mode mode;
+
+	g_return_val_if_fail (NM_IS_AP (ap), -1);
+
+	g_object_get (ap, NM_AP_MODE, &mode, NULL);
+
+	return mode;
+}
+
+void
+nm_ap_set_mode (NMAccessPoint *ap, const NM80211Mode mode)
+{
+	NMAccessPointPrivate *priv;
+
+	g_return_if_fail (NM_IS_AP (ap));
+	g_return_if_fail (   mode == NM_802_11_MODE_ADHOC
+	                  || mode == NM_802_11_MODE_INFRA);
+
+	priv = NM_AP_GET_PRIVATE (ap);
+
+	if (priv->mode != mode) {
+		priv->mode = mode;
+		g_object_notify (G_OBJECT (ap), NM_AP_MODE);
+	}
+}
+
+gboolean
+nm_ap_is_hotspot (NMAccessPoint *ap)
+{
+	g_return_val_if_fail (NM_IS_AP (ap), FALSE);
+
+	return NM_AP_GET_PRIVATE (ap)->hotspot;
+}
+
+gint8
+nm_ap_get_strength (NMAccessPoint *ap)
+{
+	gint8 strength;
+
+	g_return_val_if_fail (NM_IS_AP (ap), 0);
+
+	g_object_get (ap, NM_AP_STRENGTH, &strength, NULL);
+
+	return strength;
+}
+
+void
+nm_ap_set_strength (NMAccessPoint *ap, const gint8 strength)
+{
+	NMAccessPointPrivate *priv;
+
+	g_return_if_fail (NM_IS_AP (ap));
+
+	priv = NM_AP_GET_PRIVATE (ap);
+
+	if (priv->strength != strength) {
+		priv->strength = strength;
+		g_object_notify (G_OBJECT (ap), NM_AP_STRENGTH);
+	}
+}
+
+guint32
+nm_ap_get_freq (NMAccessPoint *ap)
+{
+	guint32 freq;
+
+	g_return_val_if_fail (NM_IS_AP (ap), 0);
+
+	g_object_get (ap, NM_AP_FREQUENCY, &freq, NULL);
+
+	return freq;
+}
+
+void
+nm_ap_set_freq (NMAccessPoint *ap,
+                const guint32 freq)
+{
+	NMAccessPointPrivate *priv;
+
+	g_return_if_fail (NM_IS_AP (ap));
+
+	priv = NM_AP_GET_PRIVATE (ap);
+
+	if (priv->freq != freq) {
+		priv->freq = freq;
+		g_object_notify (G_OBJECT (ap), NM_AP_FREQUENCY);
+	}
+}
+
+guint32
+nm_ap_get_max_bitrate (NMAccessPoint *ap)
+{
+	guint32 rate;
+
+	g_return_val_if_fail (NM_IS_AP (ap), 0);
+
+	g_object_get (ap, NM_AP_MAX_BITRATE, &rate, NULL);
+
+	return rate;
+}
+
+void
+nm_ap_set_max_bitrate (NMAccessPoint *ap, guint32 bitrate)
+{
+	NMAccessPointPrivate *priv;
+
+	g_return_if_fail (NM_IS_AP (ap));
+
+	priv = NM_AP_GET_PRIVATE (ap);
+
+	if (priv->max_bitrate != bitrate) {
+		priv->max_bitrate = bitrate;
+		g_object_notify (G_OBJECT (ap), NM_AP_MAX_BITRATE);
+	}
+}
+
+gboolean
+nm_ap_get_fake (const NMAccessPoint *ap)
+{
+	g_return_val_if_fail (NM_IS_AP (ap), FALSE);
+
+	return NM_AP_GET_PRIVATE (ap)->fake;
+}
+
+void
+nm_ap_set_fake (NMAccessPoint *ap, gboolean fake)
+{
+	g_return_if_fail (NM_IS_AP (ap));
+
+	NM_AP_GET_PRIVATE (ap)->fake = fake;
+}
+
+gint32
+nm_ap_get_last_seen (const NMAccessPoint *ap)
+{
+	g_return_val_if_fail (NM_IS_AP (ap), FALSE);
+
+	return NM_AP_GET_PRIVATE (ap)->last_seen;
+}
+
+void
+nm_ap_set_last_seen (NMAccessPoint *ap, gint32 last_seen)
+{
+	NMAccessPointPrivate *priv;
+
+	g_return_if_fail (NM_IS_AP (ap));
+
+	priv = NM_AP_GET_PRIVATE (ap);
+
+	if (priv->last_seen != last_seen) {
+		priv->last_seen = last_seen;
+		g_object_notify (G_OBJECT (ap), NM_AP_LAST_SEEN);
+	}
+}
+
+
+/*****************************************************************/
+
 static NM80211ApSecurityFlags
 security_from_vardict (GVariant *security)
 {
@@ -499,360 +826,6 @@ nm_ap_dump (NMAccessPoint *self,
 	            priv->last_seen > 0 ? (nm_utils_get_monotonic_timestamp_s () - priv->last_seen) : -1,
 	            ifname,
 	            supplicant_id);
-}
-
-const char *
-nm_ap_get_dbus_path (NMAccessPoint *ap)
-{
-	g_return_val_if_fail (NM_IS_AP (ap), NULL);
-
-	return NM_AP_GET_PRIVATE (ap)->dbus_path;
-}
-
-const char *
-nm_ap_get_supplicant_path (NMAccessPoint *ap)
-{
-	g_return_val_if_fail (NM_IS_AP (ap), NULL);
-
-	return NM_AP_GET_PRIVATE (ap)->supplicant_path;
-}
-
-guint32
-nm_ap_get_id (NMAccessPoint *ap)
-{
-	g_return_val_if_fail (NM_IS_AP (ap), 0);
-
-	return NM_AP_GET_PRIVATE (ap)->id;
-}
-
-void
-nm_ap_set_supplicant_path (NMAccessPoint *ap, const char *path)
-{
-	g_return_if_fail (NM_IS_AP (ap));
-	g_return_if_fail (path != NULL);
-
-	g_free (NM_AP_GET_PRIVATE (ap)->supplicant_path);
-	NM_AP_GET_PRIVATE (ap)->supplicant_path = g_strdup (path);
-}
-
-/*
- * Get/set functions for ssid
- *
- */
-const GByteArray * nm_ap_get_ssid (const NMAccessPoint *ap)
-{
-	g_return_val_if_fail (NM_IS_AP (ap), NULL);
-
-	return NM_AP_GET_PRIVATE (ap)->ssid;
-}
-
-void
-nm_ap_set_ssid (NMAccessPoint *ap, const guint8 *ssid, gsize len)
-{
-	NMAccessPointPrivate *priv;
-
-	g_return_if_fail (NM_IS_AP (ap));
-	g_return_if_fail (ssid == NULL || len > 0);
-
-	priv = NM_AP_GET_PRIVATE (ap);
-
-	/* same SSID */
-	if ((ssid && priv->ssid) && (len == priv->ssid->len)) {
-		if (!memcmp (ssid, priv->ssid->data, len))
-			return;
-	}
-
-	if (priv->ssid) {
-		g_byte_array_free (priv->ssid, TRUE);
-		priv->ssid = NULL;
-	}
-
-	if (ssid) {
-		priv->ssid = g_byte_array_new ();
-		g_byte_array_append (priv->ssid, ssid, len);
-	}
-
-	g_object_notify (G_OBJECT (ap), NM_AP_SSID);
-}
-
-
-NM80211ApFlags
-nm_ap_get_flags (NMAccessPoint *ap)
-{
-	g_return_val_if_fail (NM_IS_AP (ap), NM_802_11_AP_FLAGS_NONE);
-
-	return NM_AP_GET_PRIVATE (ap)->flags;
-}
-
-
-void
-nm_ap_set_flags (NMAccessPoint *ap, NM80211ApFlags flags)
-{
-	NMAccessPointPrivate *priv;
-
-	g_return_if_fail (NM_IS_AP (ap));
-
-	priv = NM_AP_GET_PRIVATE (ap);
-
-	if (priv->flags != flags) {
-		priv->flags = flags;
-		g_object_notify (G_OBJECT (ap), NM_AP_FLAGS);
-	}
-}
-
-NM80211ApSecurityFlags
-nm_ap_get_wpa_flags (NMAccessPoint *ap)
-{
-	g_return_val_if_fail (NM_IS_AP (ap), NM_802_11_AP_SEC_NONE);
-
-	return NM_AP_GET_PRIVATE (ap)->wpa_flags;
-}
-
-
-void
-nm_ap_set_wpa_flags (NMAccessPoint *ap, NM80211ApSecurityFlags flags)
-{
-	NMAccessPointPrivate *priv;
-
-	g_return_if_fail (NM_IS_AP (ap));
-
-	priv = NM_AP_GET_PRIVATE (ap);
-	if (priv->wpa_flags != flags) {
-		priv->wpa_flags = flags;
-		g_object_notify (G_OBJECT (ap), NM_AP_WPA_FLAGS);
-	}
-}
-
-NM80211ApSecurityFlags
-nm_ap_get_rsn_flags (NMAccessPoint *ap)
-{
-	g_return_val_if_fail (NM_IS_AP (ap), NM_802_11_AP_SEC_NONE);
-
-	return NM_AP_GET_PRIVATE (ap)->rsn_flags;
-}
-
-
-void
-nm_ap_set_rsn_flags (NMAccessPoint *ap, NM80211ApSecurityFlags flags)
-{
-	NMAccessPointPrivate *priv;
-
-	g_return_if_fail (NM_IS_AP (ap));
-
-	priv = NM_AP_GET_PRIVATE (ap);
-	if (priv->rsn_flags != flags) {
-		priv->rsn_flags = flags;
-		g_object_notify (G_OBJECT (ap), NM_AP_RSN_FLAGS);
-	}
-}
-
-/*
- * Get/set functions for address
- *
- */
-const char *
-nm_ap_get_address (const NMAccessPoint *ap)
-{
-	g_return_val_if_fail (NM_IS_AP (ap), NULL);
-
-	return NM_AP_GET_PRIVATE (ap)->address;
-}
-
-void
-nm_ap_set_address (NMAccessPoint *ap, const char *addr)
-{
-	NMAccessPointPrivate *priv;
-
-	g_return_if_fail (NM_IS_AP (ap));
-	g_return_if_fail (addr != NULL);
-	g_return_if_fail (nm_utils_hwaddr_valid (addr, ETH_ALEN));
-
-	priv = NM_AP_GET_PRIVATE (ap);
-
-	if (!priv->address || !nm_utils_hwaddr_matches (addr, -1, priv->address, -1)) {
-		g_free (priv->address);
-		priv->address = g_strdup (addr);
-		g_object_notify (G_OBJECT (ap), NM_AP_HW_ADDRESS);
-	}
-}
-
-
-/*
- * Get/set functions for mode (ie Ad-Hoc, Infrastructure, etc)
- *
- */
-NM80211Mode nm_ap_get_mode (NMAccessPoint *ap)
-{
-	NM80211Mode mode;
-
-	g_return_val_if_fail (NM_IS_AP (ap), -1);
-
-	g_object_get (ap, NM_AP_MODE, &mode, NULL);
-
-	return mode;
-}
-
-void nm_ap_set_mode (NMAccessPoint *ap, const NM80211Mode mode)
-{
-	NMAccessPointPrivate *priv;
-
-	g_return_if_fail (NM_IS_AP (ap));
-	g_return_if_fail (   mode == NM_802_11_MODE_ADHOC
-	                  || mode == NM_802_11_MODE_INFRA);
-
-	priv = NM_AP_GET_PRIVATE (ap);
-
-	if (priv->mode != mode) {
-		priv->mode = mode;
-		g_object_notify (G_OBJECT (ap), NM_AP_MODE);
-	}
-}
-
-gboolean
-nm_ap_is_hotspot (NMAccessPoint *ap)
-{
-	g_return_val_if_fail (NM_IS_AP (ap), FALSE);
-
-	return NM_AP_GET_PRIVATE (ap)->hotspot;
-}
-
-/*
- * Get/set functions for strength
- *
- */
-gint8 nm_ap_get_strength (NMAccessPoint *ap)
-{
-	gint8 strength;
-
-	g_return_val_if_fail (NM_IS_AP (ap), 0);
-
-	g_object_get (ap, NM_AP_STRENGTH, &strength, NULL);
-
-	return strength;
-}
-
-void nm_ap_set_strength (NMAccessPoint *ap, const gint8 strength)
-{
-	NMAccessPointPrivate *priv;
-
-	g_return_if_fail (NM_IS_AP (ap));
-
-	priv = NM_AP_GET_PRIVATE (ap);
-
-	if (priv->strength != strength) {
-		priv->strength = strength;
-		g_object_notify (G_OBJECT (ap), NM_AP_STRENGTH);
-	}
-}
-
-
-/*
- * Get/set functions for frequency
- *
- */
-guint32
-nm_ap_get_freq (NMAccessPoint *ap)
-{
-	guint32 freq;
-
-	g_return_val_if_fail (NM_IS_AP (ap), 0);
-
-	g_object_get (ap, NM_AP_FREQUENCY, &freq, NULL);
-
-	return freq;
-}
-
-void
-nm_ap_set_freq (NMAccessPoint *ap,
-                const guint32 freq)
-{
-	NMAccessPointPrivate *priv;
-
-	g_return_if_fail (NM_IS_AP (ap));
-
-	priv = NM_AP_GET_PRIVATE (ap);
-
-	if (priv->freq != freq) {
-		priv->freq = freq;
-		g_object_notify (G_OBJECT (ap), NM_AP_FREQUENCY);
-	}
-}
-
-
-/*
- * Get/set functions for max bitrate (in kbit/s)
- *
- */
-guint32 nm_ap_get_max_bitrate (NMAccessPoint *ap)
-{
-	guint32 rate;
-
-	g_return_val_if_fail (NM_IS_AP (ap), 0);
-
-	g_object_get (ap, NM_AP_MAX_BITRATE, &rate, NULL);
-
-	return rate;
-}
-
-void
-nm_ap_set_max_bitrate (NMAccessPoint *ap, guint32 bitrate)
-{
-	NMAccessPointPrivate *priv;
-
-	g_return_if_fail (NM_IS_AP (ap));
-
-	priv = NM_AP_GET_PRIVATE (ap);
-
-	if (priv->max_bitrate != bitrate) {
-		priv->max_bitrate = bitrate;
-		g_object_notify (G_OBJECT (ap), NM_AP_MAX_BITRATE);
-	}
-}
-
-/*
- * Get/Set functions to indicate that an access point is 'fake', ie whether
- * or not it was created from scan results
- */
-gboolean nm_ap_get_fake (const NMAccessPoint *ap)
-{
-	g_return_val_if_fail (NM_IS_AP (ap), FALSE);
-
-	return NM_AP_GET_PRIVATE (ap)->fake;
-}
-
-void nm_ap_set_fake (NMAccessPoint *ap, gboolean fake)
-{
-	g_return_if_fail (NM_IS_AP (ap));
-
-	NM_AP_GET_PRIVATE (ap)->fake = fake;
-}
-
-/*
- * Get/Set functions for how long ago the AP was last seen in a scan.
- * APs older than a certain date are dropped from the list.
- *
- */
-gint32
-nm_ap_get_last_seen (const NMAccessPoint *ap)
-{
-	g_return_val_if_fail (NM_IS_AP (ap), 0);
-
-	return NM_AP_GET_PRIVATE (ap)->last_seen;
-}
-
-void
-nm_ap_set_last_seen (NMAccessPoint *ap, gint32 last_seen)
-{
-	NMAccessPointPrivate *priv;
-
-	g_return_if_fail (NM_IS_AP (ap));
-
-	priv = NM_AP_GET_PRIVATE (ap);
-
-	if (priv->last_seen != last_seen) {
-		priv->last_seen = last_seen;
-		g_object_notify (G_OBJECT (ap), NM_AP_LAST_SEEN);
-	}
 }
 
 static guint
