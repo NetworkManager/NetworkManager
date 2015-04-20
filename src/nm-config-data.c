@@ -44,6 +44,7 @@ typedef struct {
 	} no_auto_default;
 
 	char *dns_mode;
+	char *rc_manager;
 } NMConfigDataPrivate;
 
 
@@ -138,6 +139,14 @@ nm_config_data_get_dns_mode (const NMConfigData *self)
 	return NM_CONFIG_DATA_GET_PRIVATE (self)->dns_mode;
 }
 
+const char *
+nm_config_data_get_rc_manager (const NMConfigData *self)
+{
+	g_return_val_if_fail (self, NULL);
+
+	return NM_CONFIG_DATA_GET_PRIVATE (self)->rc_manager;
+}
+
 /************************************************************************/
 
 static gboolean
@@ -204,6 +213,9 @@ nm_config_data_diff (NMConfigData *old_data, NMConfigData *new_data)
 
 	if (g_strcmp0 (nm_config_data_get_dns_mode (old_data), nm_config_data_get_dns_mode (new_data)))
 		changes |= NM_CONFIG_CHANGE_DNS_MODE;
+
+	if (g_strcmp0 (nm_config_data_get_rc_manager (old_data), nm_config_data_get_rc_manager (new_data)))
+		changes |= NM_CONFIG_CHANGE_RC_MANAGER;
 
 	return changes;
 }
@@ -300,6 +312,7 @@ finalize (GObject *gobject)
 	g_strfreev (priv->no_auto_default.arr);
 
 	g_free (priv->dns_mode);
+	g_free (priv->rc_manager);
 
 	g_key_file_unref (priv->keyfile);
 
@@ -325,6 +338,7 @@ constructed (GObject *object)
 	priv->connectivity.interval = MAX (0, interval);
 
 	priv->dns_mode = g_key_file_get_value (priv->keyfile, "main", "dns", NULL);
+	priv->rc_manager = g_key_file_get_value (priv->keyfile, "main", "rc-manager", NULL);
 
 	G_OBJECT_CLASS (nm_config_data_parent_class)->constructed (object);
 }

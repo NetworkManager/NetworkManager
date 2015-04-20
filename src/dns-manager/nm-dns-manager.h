@@ -99,6 +99,22 @@ typedef enum {
 	NM_DNS_MANAGER_RESOLV_CONF_PROXY
 } NMDnsManagerResolvConfMode;
 
+/**
+ * NMDnsManagerResolvConfManager
+ * @NM_DNS_MANAGER_RESOLV_CONF_MAN_NONE: NM directly writes resolv.conf
+ * @NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF: NM is managing resolv.conf
+     through resolvconf
+ * @NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG: NM is managing resolv.conf
+     through netconfig
+ *
+ * NMDnsManager's management of resolv.conf
+ */
+typedef enum {
+	NM_DNS_MANAGER_RESOLV_CONF_MAN_NONE,
+	NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF,
+	NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG,
+} NMDnsManagerResolvConfManager;
+
 NMDnsManagerResolvConfMode nm_dns_manager_get_resolv_conf_mode (NMDnsManager *mgr);
 
 G_END_DECLS

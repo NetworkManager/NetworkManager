@@ -738,6 +738,8 @@ _change_flags_one_to_string (NMConfigChangeFlags flag)
 		return "no-auto-default";
 	case NM_CONFIG_CHANGE_DNS_MODE:
 		return "dns-mode";
+	case NM_CONFIG_CHANGE_RC_MANAGER:
+		return "rc-manager";
 	default:
 		g_return_val_if_reached ("unknown");
 	}
