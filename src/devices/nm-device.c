@@ -6842,7 +6842,7 @@ update_ip_config (NMDevice *self, gboolean initial)
 
 		/* This function was called upon external changes. Remove the configuration
 		 * (addresses,routes) that is no longer present externally from the internal
-		 * config. This way, we don't read addresses that were manually removed
+		 * config. This way, we don't re-add addresses that were manually removed
 		 * by the user. */
 		if (priv->con_ip4_config)
 			nm_ip4_config_intersect (priv->con_ip4_config, priv->ext_ip4_config);
@@ -6881,7 +6881,7 @@ update_ip_config (NMDevice *self, gboolean initial)
 
 		/* This function was called upon external changes. Remove the configuration
 		 * (addresses,routes) that is no longer present externally from the internal
-		 * config. This way, we don't read addresses that were manually removed
+		 * config. This way, we don't re-add addresses that were manually removed
 		 * by the user. */
 		if (priv->con_ip6_config)
 			nm_ip6_config_intersect (priv->con_ip6_config, priv->ext_ip6_config);
