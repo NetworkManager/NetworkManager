@@ -7025,6 +7025,7 @@ queued_ip_config_change (gpointer user_data)
 		return TRUE;
 
 	priv->queued_ip_config_id = 0;
+	g_object_ref (self);
 	update_ip_config (self, FALSE);
 
 	/* If no IPv6 link-local address exists but other addresses do then we
@@ -7034,6 +7035,8 @@ queued_ip_config_change (gpointer user_data)
 	 */
 	if (priv->ip6_config && nm_ip6_config_get_num_addresses (priv->ip6_config))
 		check_and_add_ipv6ll_addr (self);
+
+	g_object_unref (self);
 
 	return FALSE;
 }
