@@ -1288,6 +1288,7 @@ nm_ip4_config_add_route (NMIP4Config *config, const NMPlatformIP4Route *new)
 			memcpy (item, new, sizeof (*item));
 			/* Restore highest priority source */
 			item->source = MAX (old_source, new->source);
+			item->ifindex = priv->ifindex;
 			goto NOTIFY;
 		}
 	}

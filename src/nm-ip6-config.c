@@ -1289,6 +1289,7 @@ nm_ip6_config_add_route (NMIP6Config *config, const NMPlatformIP6Route *new)
 			*item = *new;
 			/* Restore highest priority source */
 			item->source = MAX (old_source, new->source);
+			item->ifindex = priv->ifindex;
 			goto NOTIFY;
 		}
 	}
