@@ -53,7 +53,7 @@
 			</task>
 			<task name="/distribution/command" role="STANDALONE">
 				<params>
-					<param name="CMDS_TO_RUN" value="sed -i '$$s/$$/\n[logging]\n    level=DEBUG\n    domains=ALL\n\n[main]\n    debug=RLIMIT_CORE\n/' /etc/NetworkManager/NetworkManager.conf"/>
+					<param name="CMDS_TO_RUN" value="mkdir -p /etc/NetworkManager/conf.d/; printf '[main]\n    debug=$CONF_DEBUG\n    dhcp=$CONF_DHCP\n\n[logging]\n    level=$CONF_LOGLEVEL\n    domains=ALL\n\n' > /etc/NetworkManager/conf.d/99-test.conf"/>
 				</params>
 			</task>
 			<task name="/distribution/command" role="STANDALONE">

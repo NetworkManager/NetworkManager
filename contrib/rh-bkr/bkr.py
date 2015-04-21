@@ -663,6 +663,9 @@ class CmdSubmit(CmdBase):
             'UUID'              : str(uuid.uuid4()),
             'RESERVESYS'        : _process_line_get_RESERVESYS,
             'SELINUX_DISABLED'  : _process_line_get_SELINUX_DISABLED,
+            'CONF_LOGLEVEL'     : 'DEBUG',
+            'CONF_DHCP'         : 'dhclient',
+            'CONF_DEBUG'        : 'RLIMIT_CORE,fatal-warnings',
         }
     def _process_line_get(self, key, replacement, index=None, none=None):
         if key in replacement:
