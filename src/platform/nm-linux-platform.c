@@ -107,9 +107,9 @@
 #define _LOGW(...)      _LOG (LOGL_WARN , _LOG_DOMAIN, platform, __VA_ARGS__)
 #define _LOGE(...)      _LOG (LOGL_ERR  , _LOG_DOMAIN, platform, __VA_ARGS__)
 
-#define debug(...) nm_log_dbg (LOGD_PLATFORM, __VA_ARGS__)
-#define warning(...) nm_log_warn (LOGD_PLATFORM, __VA_ARGS__)
-#define error(...) nm_log_err (LOGD_PLATFORM, __VA_ARGS__)
+#define debug(...)      _LOG (LOGL_DEBUG, _LOG_DOMAIN, NULL, __VA_ARGS__)
+#define warning(...)    _LOG (LOGL_WARN , _LOG_DOMAIN, NULL, __VA_ARGS__)
+#define error(...)      _LOG (LOGL_ERR  , _LOG_DOMAIN, NULL, __VA_ARGS__)
 
 /******************************************************************/
 
