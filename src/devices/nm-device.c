@@ -2801,7 +2801,6 @@ nm_device_handle_ipv4ll_event (NMDevice *self,
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *connection = NULL;
 	const char *method;
-	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
 	g_return_if_fail (event != NULL);
 
@@ -2822,20 +2821,23 @@ nm_device_handle_ipv4ll_event (NMDevice *self,
 
 		if (inet_pton (AF_INET, address, &lla) <= 0) {
 			_LOGE (LOGD_AUTOIP4, "invalid address %s received from avahi-autoipd.", address);
-			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_AUTOIP_ERROR);
+			priv->ip4_state = IP_FAIL;
+			nm_device_check_ip_failed (self, FALSE);
 			return;
 		}
 
 		if ((lla & IPV4LL_NETMASK) != IPV4LL_NETWORK) {
 			_LOGE (LOGD_AUTOIP4, "invalid address %s received from avahi-autoipd (not link-local).", address);
-			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_AUTOIP_ERROR);
+			priv->ip4_state = IP_FAIL;
+			nm_device_check_ip_failed (self, FALSE);
 			return;
 		}
 
 		config = ipv4ll_get_ip4_config (self, lla);
 		if (config == NULL) {
 			_LOGE (LOGD_AUTOIP4, "failed to get IPv4LL config");
-			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
+			priv->ip4_state = IP_FAIL;
+			nm_device_check_ip_failed (self, FALSE);
 			return;
 		}
 
@@ -2843,9 +2845,10 @@ nm_device_handle_ipv4ll_event (NMDevice *self,
 			ipv4ll_timeout_remove (self);
 			nm_device_activate_schedule_ip4_config_result (self, config);
 		} else if (priv->ip4_state == IP_DONE) {
-			if (!ip4_config_merge_and_apply (self, config, TRUE, &reason)) {
+			if (!ip4_config_merge_and_apply (self, config, TRUE, NULL)) {
 				_LOGE (LOGD_AUTOIP4, "failed to update IP4 config for autoip change.");
-				nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
+				priv->ip4_state = IP_FAIL;
+				nm_device_check_ip_failed (self, FALSE);
 			}
 		} else
 			g_assert_not_reached ();
@@ -2853,9 +2856,8 @@ nm_device_handle_ipv4ll_event (NMDevice *self,
 		g_object_unref (config);
 	} else {
 		_LOGW (LOGD_AUTOIP4, "IPv4LL address %s no longer valid because '%s'.", address, event);
-
-		/* The address is gone; terminate the connection or fail activation */
-		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
+		priv->ip4_state = IP_FAIL;
+		nm_device_check_ip_failed (self, FALSE);
 	}
 }
 
