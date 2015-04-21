@@ -3152,27 +3152,31 @@ _strip_master_prefix (const char *master, const char *(**func)(NMConnection *))
 	return master;
 }
 
-/* verify_master_for_slave:
+/* normalized_master_for_slave:
  * @connections: list af all connections
  * @master: UUID, ifname or ID of the master connection
- * @type: virtual connection type (bond, team, bridge, ...)
+ * @type: virtual connection type (bond, team, bridge, ...) or %NULL
+ * @out_type: type of the connection that matched
  *
- * Check whether master is a valid interface name, UUID or ID of some @type connection.
+ * Check whether master is a valid interface name, UUID or ID of some connection,
+ * possibly of a specified @type.
  * First UUID and ifname are checked. If they don't match, ID is checked
  * and replaced by UUID on a match.
  *
  * Returns: identifier of master connection if found, %NULL otherwise
  */
 static const char *
-verify_master_for_slave (const GPtrArray *connections,
-                         const char *master,
-                         const char *type)
+normalized_master_for_slave (const GPtrArray *connections,
+                             const char *master,
+                             const char *type,
+                             const char **out_type)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
-	const char *con_type, *id, *uuid, *ifname;
+	const char *con_type = NULL, *id, *uuid, *ifname;
 	int i;
 	const char *found_by_id = NULL;
+	const char *out_type_by_id = NULL;
 	const char *out_master = NULL;
 	const char *(*func) (NMConnection *) = NULL;
 
@@ -3185,11 +3189,12 @@ verify_master_for_slave (const GPtrArray *connections,
 		s_con = nm_connection_get_setting_connection (connection);
 		g_assert (s_con);
 		con_type = nm_setting_connection_get_connection_type (s_con);
-		if (g_strcmp0 (con_type, type) != 0)
+		if (type && g_strcmp0 (con_type, type) != 0)
 			continue;
 		if (func) {
 			/* There was a prefix; only compare to that type. */
 			if (g_strcmp0 (master, func (connection)) == 0) {
+				*out_type = con_type;
 				if (func == nm_connection_get_id)
 					out_master = nm_connection_get_uuid (connection);
 				else
@@ -3203,13 +3208,30 @@ verify_master_for_slave (const GPtrArray *connections,
 			if (   g_strcmp0 (master, uuid) == 0
 			    || g_strcmp0 (master, ifname) == 0) {
 				out_master = master;
+				*out_type = con_type;
 				break;
 			}
-			if (!found_by_id && g_strcmp0 (master, id) == 0)
+			if (!found_by_id && g_strcmp0 (master, id) == 0) {
+				out_type_by_id = con_type;
 				found_by_id = uuid;
+			}
 		}
 	}
-	return out_master ? out_master : found_by_id;
+
+	if (!out_master) {
+		out_master = found_by_id;
+		if (out_type)
+			*out_type = out_type_by_id;
+	}
+
+	if (!out_master) {
+		g_print (_("Warning: master='%s' doesn't refer to any existing profile.\n"), master);
+		out_master = master;
+		if (out_type)
+			*out_type = type;
+	}
+
+	return out_master;
 }
 
 static gboolean
@@ -4316,7 +4338,7 @@ complete_slave (NMSettingConnection *s_con,
 			return FALSE;
 		}
 		/* Verify master argument */
-		checked_master = verify_master_for_slave (all_connections, master, slave_type);
+		checked_master = normalized_master_for_slave (all_connections, master, slave_type, NULL);
 		if (!checked_master)
 			g_print (_("Warning: master='%s' doesn't refer to any existing profile.\n"), master);
 
