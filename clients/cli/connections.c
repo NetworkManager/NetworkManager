@@ -47,9 +47,7 @@
 /* define some other prompts */
 #define PROMPT_CON_TYPE    _("Connection type: ")
 #define PROMPT_VPN_TYPE    _("VPN type: ")
-#define PROMPT_BOND_MASTER _("Bond master: ")
-#define PROMPT_TEAM_MASTER _("Team master: ")
-#define PROMPT_BRIDGE_MASTER _("Bridge master: ")
+#define PROMPT_MASTER      _("Master: ")
 #define PROMPT_CONNECTION  _("Connection (name, UUID, or path): ")
 #define PROMPT_CONNECTIONS _("Connection(s) (name, UUID, or path): ")
 #define PROMPT_ACTIVE_CONNECTIONS _("Connection(s) (name, UUID, path or apath): ")
@@ -4285,6 +4283,54 @@ finish:
 }
 
 static gboolean
+complete_slave (NMSettingConnection *s_con,
+                const GPtrArray *all_connections,
+                const char *slave_type,
+                const char *master,
+                const char *type,
+                gboolean ask,
+                GError **error)
+{
+		char *master_ask = NULL;
+		const char *checked_master = NULL;
+
+		if (type)
+			g_print (_("Warning: 'type' is currently ignored. "
+			           "We only support ethernet slaves for now.\n"));
+
+		if (nm_setting_connection_get_master (s_con)) {
+			/* Master already set. */
+			if (master) {
+				g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				                     _("Error: redundant 'master' option."));
+				return FALSE;
+			}
+			return TRUE;
+		}
+
+		if (!master && ask)
+			master = master_ask = nmc_readline (PROMPT_MASTER);
+		if (!master) {
+			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			                     _("Error: 'master' is required."));
+			return FALSE;
+		}
+		/* Verify master argument */
+		checked_master = verify_master_for_slave (all_connections, master, slave_type);
+		if (!checked_master)
+			g_print (_("Warning: master='%s' doesn't refer to any existing profile.\n"), master);
+
+		/* Change properties in 'connection' setting */
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_MASTER, checked_master ? checked_master : _strip_master_prefix (master, NULL),
+		              NULL);
+
+		g_free (master_ask);
+
+		return TRUE;
+}
+
+static gboolean
 complete_connection_by_type (NMConnection *connection,
                              const char *con_type,
                              const GPtrArray *all_connections,
@@ -4311,6 +4357,7 @@ complete_connection_by_type (NMConnection *connection,
 	NMSettingBridgePort *s_bridge_port;
 	NMSettingVpn *s_vpn;
 	NMSettingOlpcMesh *s_olpc_mesh;
+	const char *slave_type;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
@@ -5015,49 +5062,16 @@ cleanup_bond:
 			return FALSE;
 
 	} else if (!strcmp (con_type, "bond-slave")) {
-		/* Build up the settings required for 'bond-slave' */
-		const char *master = NULL;
-		char *master_ask = NULL;
-		const char *checked_master = NULL;
-		const char *type = NULL;
-		nmc_arg_t exp_args[] = { {"master", TRUE, &master, !ask},
-		                         {"type",   TRUE, &type,   FALSE},
-		                         {NULL} };
-
-		/* Set global variables for use in TAB completion */
-		nmc_tab_completion.con_type = NM_SETTING_BOND_SETTING_NAME;
-
-		if (!nmc_parse_args (exp_args, TRUE, &argc, &argv, error))
-			return FALSE;
-
-		if (!master && ask)
-			master = master_ask = nmc_readline (PROMPT_BOND_MASTER);
-		if (!master) {
-			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			                     _("Error: 'master' is required."));
-			return FALSE;
-		}
-		/* Verify master argument */
-		checked_master = verify_master_for_slave (all_connections, master, NM_SETTING_BOND_SETTING_NAME);
-		if (!checked_master)
-			g_print (_("Warning: master='%s' doesn't refer to any existing profile.\n"), master);
-
-		if (type)
-			g_print (_("Warning: 'type' is currently ignored. "
-			           "We only support ethernet slaves for now.\n"));
 
 		/* Change properties in 'connection' setting */
 		g_object_set (s_con,
 		              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
-		              NM_SETTING_CONNECTION_MASTER, checked_master ? checked_master : _strip_master_prefix (master, NULL),
 		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_BOND_SETTING_NAME,
 		              NULL);
 
 		/* Add ethernet setting */
 		s_wired = (NMSettingWired *) nm_setting_wired_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_wired));
-
-		g_free (master_ask);
 
 	} else if (!strcmp (con_type, NM_SETTING_TEAM_SETTING_NAME)) {
 		/* Build up the settings required for 'team' */
@@ -5108,77 +5122,16 @@ cleanup_team:
 			return FALSE;
 
 	} else if (!strcmp (con_type, "team-slave")) {
-		/* Build up the settings required for 'team-slave' */
-		gboolean success = FALSE;
-		const char *master = NULL;
-		char *master_ask = NULL;
-		const char *checked_master = NULL;
-		const char *type = NULL;
-		const char *config_c = NULL;
-		char *config = NULL;
-		char *json = NULL;
-		nmc_arg_t exp_args[] = { {"master", TRUE, &master,   !ask},
-		                         {"type",   TRUE, &type,     FALSE},
-		                         {"config", TRUE, &config_c, FALSE},
-		                         {NULL} };
-
-		/* Set global variables for use in TAB completion */
-		nmc_tab_completion.con_type = NM_SETTING_TEAM_SETTING_NAME;
-
-		if (!nmc_parse_args (exp_args, TRUE, &argc, &argv, error))
-			return FALSE;
-
-		if (!master && ask)
-			master = master_ask = nmc_readline (PROMPT_TEAM_MASTER);
-		if (!master) {
-			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			                     _("Error: 'master' is required."));
-			return FALSE;
-		}
-		/* Verify master argument */
-		checked_master = verify_master_for_slave (all_connections, master, NM_SETTING_TEAM_SETTING_NAME);
-		if (!checked_master)
-			g_print (_("Warning: master='%s' doesn't refer to any existing profile.\n"), master);
-
-		/* Also ask for all optional arguments if '--ask' is specified. */
-		config = g_strdup (config_c);
-		if (ask)
-			do_questionnaire_team_slave (&config);
-
-		if (type)
-			g_print (_("Warning: 'type' is currently ignored. "
-			           "We only support ethernet slaves for now.\n"));
-
-		/* Add 'team-port' setting */
-		s_team_port = (NMSettingTeamPort *) nm_setting_team_port_new ();
-		nm_connection_add_setting (connection, NM_SETTING (s_team_port));
-
-		if (!nmc_team_check_config (config, &json, error)) {
-			g_prefix_error (error, _("Error: "));
-			goto cleanup_team_slave;
-		}
-
-		/* Set team-port options */
-		g_object_set (s_team_port, NM_SETTING_TEAM_PORT_CONFIG, json, NULL);
 
 		/* Change properties in 'connection' setting */
 		g_object_set (s_con,
 		              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
-		              NM_SETTING_CONNECTION_MASTER, checked_master ? checked_master : _strip_master_prefix (master, NULL),
 		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_TEAM_SETTING_NAME,
 		              NULL);
 
 		/* Add ethernet setting */
 		s_wired = (NMSettingWired *) nm_setting_wired_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_wired));
-
-		success = TRUE;
-cleanup_team_slave:
-		g_free (master_ask);
-		g_free (config);
-		g_free (json);
-		if (!success)
-			return FALSE;
 
 	} else if (!strcmp (con_type, NM_SETTING_BRIDGE_SETTING_NAME)) {
 		/* Build up the settings required for 'bridge' */
@@ -5319,105 +5272,16 @@ cleanup_bridge:
 			return FALSE;
 
 	} else if (!strcmp (con_type, "bridge-slave")) {
-		/* Build up the settings required for 'bridge-slave' */
-		gboolean success = FALSE;
-		const char *master = NULL;
-		char *master_ask = NULL;
-		const char *checked_master = NULL;
-		const char *type = NULL;
-		const char *priority_c = NULL;
-		char *priority = NULL;
-		const char *path_cost_c = NULL;
-		char *path_cost = NULL;
-		const char *hairpin_c = NULL;
-		char *hairpin = NULL;
-		unsigned long prio_int, path_cost_int;
-		gboolean hairpin_bool;
-		nmc_arg_t exp_args[] = { {"master",    TRUE, &master,      !ask},
-		                         {"type",      TRUE, &type,        FALSE},
-		                         {"priority",  TRUE, &priority_c,  FALSE},
-		                         {"path-cost", TRUE, &path_cost_c, FALSE},
-		                         {"hairpin",   TRUE, &hairpin_c,   FALSE},
-		                         {NULL} };
-
-		/* Set global variables for use in TAB completion */
-		nmc_tab_completion.con_type = NM_SETTING_BRIDGE_SETTING_NAME;
-
-		if (!nmc_parse_args (exp_args, TRUE, &argc, &argv, error))
-			return FALSE;
-
-		if (!master && ask)
-			master = master_ask = nmc_readline (PROMPT_BRIDGE_MASTER);
-		if (!master) {
-			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			                     _("Error: 'master' is required."));
-			return FALSE;
-		}
-		/* Verify master argument */
-		checked_master = verify_master_for_slave (all_connections, master, NM_SETTING_BRIDGE_SETTING_NAME);
-		if (!checked_master)
-			g_print (_("Warning: master='%s' doesn't refer to any existing profile.\n"), master);
-
-		if (type)
-			g_print (_("Warning: 'type' is currently ignored. "
-			           "We only support ethernet slaves for now.\n"));
-
-		/* Add 'bridge-port' setting */
-		/* Must be done *before* bridge_prop_string_to_uint() so that the type is known */
-		s_bridge_port = (NMSettingBridgePort *) nm_setting_bridge_port_new ();
-		nm_connection_add_setting (connection, NM_SETTING (s_bridge_port));
-
-		/* Also ask for all optional arguments if '--ask' is specified. */
-		priority = g_strdup (priority_c);
-		path_cost = g_strdup (path_cost_c);
-		hairpin = g_strdup (hairpin_c);
-		if (ask)
-			do_questionnaire_bridge_slave (&priority, &path_cost, &hairpin);
-
-		if (priority)
-			if (!bridge_prop_string_to_uint (priority, "priority", NM_TYPE_SETTING_BRIDGE_PORT,
-			                                 NM_SETTING_BRIDGE_PORT_PRIORITY, &prio_int, error))
-				goto cleanup_bridge_slave;
-		if (path_cost)
-			if (!bridge_prop_string_to_uint (path_cost, "path-cost", NM_TYPE_SETTING_BRIDGE_PORT,
-			                                 NM_SETTING_BRIDGE_PORT_PATH_COST, &path_cost_int, error))
-				goto cleanup_bridge_slave;
-		if (hairpin) {
-			GError *tmp_err = NULL;
-			if (!nmc_string_to_bool (hairpin, &hairpin_bool, &tmp_err)) {
-				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-				             _("Error: 'hairpin': %s."), tmp_err->message);
-				g_clear_error (&tmp_err);
-				goto cleanup_bridge_slave;
-			}
-		}
 
 		/* Change properties in 'connection' setting */
 		g_object_set (s_con,
 		              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
-		              NM_SETTING_CONNECTION_MASTER, checked_master ? checked_master : _strip_master_prefix (master, NULL),
 		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_BRIDGE_SETTING_NAME,
 		              NULL);
 
 		/* Add ethernet setting */
 		s_wired = (NMSettingWired *) nm_setting_wired_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_wired));
-
-		if (priority)
-			g_object_set (s_bridge_port, NM_SETTING_BRIDGE_PORT_PRIORITY, prio_int, NULL);
-		if (path_cost)
-			g_object_set (s_bridge_port, NM_SETTING_BRIDGE_PORT_PATH_COST, path_cost_int, NULL);
-		if (hairpin)
-			g_object_set (s_bridge_port, NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, hairpin_bool, NULL);
-
-		success = TRUE;
-cleanup_bridge_slave:
-		g_free (master_ask);
-		g_free (priority);
-		g_free (path_cost);
-		g_free (hairpin);
-		if (!success)
-			return FALSE;
 
 	} else if (!strcmp (con_type, NM_SETTING_VPN_SETTING_NAME)) {
 		/* Build up the settings required for 'vpn' */
@@ -5548,11 +5412,146 @@ cleanup_olpc:
 		return FALSE;
 	}
 
-	/* Read and add IP configuration */
-	if (   strcmp (con_type, "bond-slave") != 0
-	    && strcmp (con_type, "team-slave") != 0
-	    && strcmp (con_type, "bridge-slave") != 0) {
+	slave_type = nm_setting_connection_get_slave_type (s_con);
+	if (slave_type) {
 
+		/* Set global variables for use in TAB completion */
+		nmc_tab_completion.con_type = (char *)slave_type;
+
+		if (!strcmp (slave_type, NM_SETTING_TEAM_SETTING_NAME)) {
+			/* Build up the settings required for 'team-slave' */
+			gboolean success = FALSE;
+			const char *master = NULL;
+			char *master_ask = NULL;
+			const char *type = NULL;
+			const char *config_c = NULL;
+			char *config = NULL;
+			char *json = NULL;
+			nmc_arg_t exp_args[] = { {"master", TRUE, &master,   FALSE},
+						 {"type",   TRUE, &type,     FALSE},
+						 {"config", TRUE, &config_c, FALSE},
+						 {NULL} };
+
+			if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
+				return FALSE;
+
+			if (!complete_slave (s_con, all_connections, slave_type, master, type, ask, error))
+				return FALSE;
+
+			/* Also ask for all optional arguments if '--ask' is specified. */
+			config = g_strdup (config_c);
+			if (ask)
+				do_questionnaire_team_slave (&config);
+
+			/* Add 'team-port' setting */
+			s_team_port = (NMSettingTeamPort *) nm_setting_team_port_new ();
+			nm_connection_add_setting (connection, NM_SETTING (s_team_port));
+
+			if (!nmc_team_check_config (config, &json, error)) {
+				g_prefix_error (error, _("Error: "));
+				goto cleanup_team_slave;
+			}
+
+			/* Set team-port options */
+			g_object_set (s_team_port, NM_SETTING_TEAM_PORT_CONFIG, json, NULL);
+
+			success = TRUE;
+cleanup_team_slave:
+			g_free (master_ask);
+			g_free (config);
+			g_free (json);
+			if (!success)
+				return FALSE;
+
+		} else if (!strcmp (slave_type, NM_SETTING_BRIDGE_SETTING_NAME)) {
+			/* Build up the settings required for 'bridge-slave' */
+			gboolean success = FALSE;
+			const char *master = NULL;
+			char *master_ask = NULL;
+			const char *type = NULL;
+			const char *priority_c = NULL;
+			char *priority = NULL;
+			const char *path_cost_c = NULL;
+			char *path_cost = NULL;
+			const char *hairpin_c = NULL;
+			char *hairpin = NULL;
+			unsigned long prio_int, path_cost_int;
+			gboolean hairpin_bool;
+			nmc_arg_t exp_args[] = { {"master",    TRUE, &master,      FALSE},
+						 {"type",      TRUE, &type,        FALSE},
+						 {"priority",  TRUE, &priority_c,  FALSE},
+						 {"path-cost", TRUE, &path_cost_c, FALSE},
+						 {"hairpin",   TRUE, &hairpin_c,   FALSE},
+						 {NULL} };
+
+			if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
+				return FALSE;
+
+			if (!complete_slave (s_con, all_connections, slave_type, master, type, ask, error))
+				return FALSE;
+
+			/* Add 'bridge-port' setting */
+			/* Must be done *before* bridge_prop_string_to_uint() so that the type is known */
+			s_bridge_port = (NMSettingBridgePort *) nm_setting_bridge_port_new ();
+			nm_connection_add_setting (connection, NM_SETTING (s_bridge_port));
+
+			/* Also ask for all optional arguments if '--ask' is specified. */
+			priority = g_strdup (priority_c);
+			path_cost = g_strdup (path_cost_c);
+			hairpin = g_strdup (hairpin_c);
+			if (ask)
+				do_questionnaire_bridge_slave (&priority, &path_cost, &hairpin);
+
+			if (priority)
+				if (!bridge_prop_string_to_uint (priority, "priority", NM_TYPE_SETTING_BRIDGE_PORT,
+								 NM_SETTING_BRIDGE_PORT_PRIORITY, &prio_int, error))
+					goto cleanup_bridge_slave;
+			if (path_cost)
+				if (!bridge_prop_string_to_uint (path_cost, "path-cost", NM_TYPE_SETTING_BRIDGE_PORT,
+								 NM_SETTING_BRIDGE_PORT_PATH_COST, &path_cost_int, error))
+					goto cleanup_bridge_slave;
+			if (hairpin) {
+				GError *tmp_err = NULL;
+				if (!nmc_string_to_bool (hairpin, &hairpin_bool, &tmp_err)) {
+					g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+						     _("Error: 'hairpin': %s."), tmp_err->message);
+					g_clear_error (&tmp_err);
+					goto cleanup_bridge_slave;
+				}
+			}
+
+			if (priority)
+				g_object_set (s_bridge_port, NM_SETTING_BRIDGE_PORT_PRIORITY, prio_int, NULL);
+			if (path_cost)
+				g_object_set (s_bridge_port, NM_SETTING_BRIDGE_PORT_PATH_COST, path_cost_int, NULL);
+			if (hairpin)
+				g_object_set (s_bridge_port, NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, hairpin_bool, NULL);
+
+			success = TRUE;
+cleanup_bridge_slave:
+			g_free (master_ask);
+			g_free (priority);
+			g_free (path_cost);
+			g_free (hairpin);
+			if (!success)
+				return FALSE;
+		} else {
+			/* Slave types without any specific settings ('bond-slave') */
+			const char *master = NULL;
+			const char *type = NULL;
+			nmc_arg_t exp_args[] = { {"master", TRUE, &master, FALSE},
+						 {"type",   TRUE, &type,   FALSE},
+						 {NULL} };
+
+			if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
+				return FALSE;
+
+			if (!complete_slave (s_con, all_connections, slave_type, master, type, ask, error))
+				return FALSE;
+		}
+
+	} else {
+		/* Read and add IP configuration */
 		NMIPAddress *ip4addr = NULL, *ip6addr = NULL;
 		const char *ip4 = NULL, *gw4 = NULL, *ip6 = NULL, *gw6 = NULL;
 		nmc_arg_t exp_args[] = { {"ip4", TRUE, &ip4, FALSE}, {"gw4", TRUE, &gw4, FALSE},
@@ -5854,9 +5853,7 @@ nmcli_con_add_tab_completion (const char *text, int start, int end)
 		generator_func = gen_connection_types;
 	else if (g_strcmp0 (rl_prompt, PROMPT_VPN_TYPE) == 0)
 		generator_func = gen_func_vpn_types;
-	else if (   g_strcmp0 (rl_prompt, PROMPT_BOND_MASTER) == 0
-	         || g_strcmp0 (rl_prompt, PROMPT_TEAM_MASTER) == 0
-	         || g_strcmp0 (rl_prompt, PROMPT_BRIDGE_MASTER) == 0)
+	else if (g_strcmp0 (rl_prompt, PROMPT_MASTER) == 0)
 		generator_func = gen_func_master_ifnames;
 	else if (   g_str_has_suffix (rl_prompt, prompt_yes_no (TRUE, NULL))
 	         || g_str_has_suffix (rl_prompt, prompt_yes_no (TRUE, ":"))
