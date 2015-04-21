@@ -11,6 +11,7 @@ global:
 	nm_access_point_get_flags;
 	nm_access_point_get_frequency;
 	nm_access_point_get_hw_address;
+	nm_access_point_get_last_seen;
 	nm_access_point_get_max_bitrate;
 	nm_access_point_get_mode;
 	nm_access_point_get_rsn_flags;

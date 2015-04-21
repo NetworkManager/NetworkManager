@@ -43,6 +43,7 @@
 #define NM_AP_MODE "mode"
 #define NM_AP_MAX_BITRATE "max-bitrate"
 #define NM_AP_STRENGTH "strength"
+#define NM_AP_LAST_SEEN "last-seen"
 
 typedef struct {
 	GObject parent;

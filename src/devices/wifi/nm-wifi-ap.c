@@ -80,6 +80,7 @@ enum {
 	PROP_MODE,
 	PROP_MAX_BITRATE,
 	PROP_STRENGTH,
+	PROP_LAST_SEEN,
 	LAST_PROP
 };
 
@@ -195,6 +196,12 @@ get_property (GObject *object, guint prop_id,
 	case PROP_STRENGTH:
 		g_value_set_schar (value, priv->strength);
 		break;
+	case PROP_LAST_SEEN:
+		g_value_set_int (value,
+		                 priv->last_seen > 0
+		                     ? (gint) nm_utils_monotonic_timestamp_as_boottime (priv->last_seen, NM_UTILS_NS_PER_SECOND)
+		                     : -1);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -292,6 +299,13 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
 		 g_param_spec_char (NM_AP_STRENGTH, "", "",
 		                    G_MININT8, G_MAXINT8, 0,
 		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                    G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property
+		(object_class, PROP_LAST_SEEN,
+		 g_param_spec_int (NM_AP_LAST_SEEN, "", "",
+		                   -1, G_MAXINT, -1,
+		                    G_PARAM_READABLE |
 		                    G_PARAM_STATIC_STRINGS));
 
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
@@ -1055,7 +1069,7 @@ void nm_ap_set_fake (NMAccessPoint *ap, gboolean fake)
 gint32
 nm_ap_get_last_seen (const NMAccessPoint *ap)
 {
-	g_return_val_if_fail (NM_IS_AP (ap), FALSE);
+	g_return_val_if_fail (NM_IS_AP (ap), 0);
 
 	return NM_AP_GET_PRIVATE (ap)->last_seen;
 }
@@ -1063,9 +1077,16 @@ nm_ap_get_last_seen (const NMAccessPoint *ap)
 void
 nm_ap_set_last_seen (NMAccessPoint *ap, gint32 last_seen)
 {
+	NMAccessPointPrivate *priv;
+
 	g_return_if_fail (NM_IS_AP (ap));
 
-	NM_AP_GET_PRIVATE (ap)->last_seen = last_seen;
+	priv = NM_AP_GET_PRIVATE (ap);
+
+	if (priv->last_seen != last_seen) {
+		priv->last_seen = last_seen;
+		g_object_notify (G_OBJECT (ap), NM_AP_LAST_SEEN);
+	}
 }
 
 static guint
