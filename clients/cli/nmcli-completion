@@ -387,7 +387,7 @@ _nmcli_compl_ARGS()
                         # user friendly. Only complete them, if the current word already starts with an "8".
                         _nmcli_list "802-3-ethernet 802-11-wireless 802-11-olpc-mesh"
                     else
-                        _nmcli_list "ethernet wifi wimax gsm cdma infiniband bluetooth vpn olpc-mesh vlan bond bond-slave bridge bridge-slave team team-slave pppoe"
+                        _nmcli_list "ethernet wifi wimax gsm cdma infiniband bluetooth vpn olpc-mesh vlan bond bridge team pppoe"
                     fi
                     return 0
                 fi
@@ -934,7 +934,7 @@ _nmcli()
                         ;;
                     a|ad|add)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_compl_COMMAND "${words[2]}" type ifname con-name autoconnect
+                            _nmcli_compl_COMMAND "${words[2]}" type ifname con-name autoconnect master
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             _nmcli_array_delete_at words 0 1
 
@@ -947,14 +947,14 @@ _nmcli()
                                     ;;
                                 1)
                                     if [[ "$HELP_ONLY_AS_FIRST" == 1 ]]; then
-                                        _nmcli_compl_COMMAND "${words[2]}" type ifname con-name autoconnect
+                                        _nmcli_compl_COMMAND "${words[2]}" type ifname con-name autoconnect master
                                     fi
                                     return 0
                                     ;;
                             esac
 
                             OPTIONS_TYPE=
-                            OPTIONS=(type ifname con-name autoconnect save)
+                            OPTIONS=(type ifname con-name autoconnect save master)
                             OPTIONS_MANDATORY=(type ifname)
                             COMMAND_ARGS_WAIT_OPTIONS=1
                             OPTIONS_MANDATORY_IFNAME=1
@@ -1019,31 +1019,13 @@ _nmcli()
                                     OPTIONS_TYPE=bond
                                     OPTIONS_TYPED=(mode miimon downdelay updelay arp-interval arp-ip-target primary lacp-rate)
                                     ;;
-                                bond-|bond-s|bond-sl|bond-sla|bond-slav|bond-slave)
-                                    OPTIONS_TYPE=bond-slave
-                                    OPTIONS_TYPED=(master)
-                                    OPTIONS_MANDATORY=(master)
-                                    OPTIONS_IP=()
-                                    ;;
                                 team)
                                     OPTIONS_TYPE=team
                                     OPTIONS_TYPED=(config)
                                     ;;
-                                team-|team-s|team-sl|team-sla|team-slav|team-slave)
-                                    OPTIONS_TYPE=team-slave
-                                    OPTIONS_TYPED=(master config)
-                                    OPTIONS_MANDATORY=(master)
-                                    OPTIONS_IP=()
-                                    ;;
                                 bridge)
                                     OPTIONS_TYPE=bridge
                                     OPTIONS_TYPED=(stp priority forward-delay hello-time max-age ageing-time mac)
-                                    ;;
-                                bridge-|bridge-s|bridge-sl|bridge-sla|bridge-slav|bridge-slave)
-                                    OPTIONS_TYPE=bridge-slave
-                                    OPTIONS_TYPED=(master priority path-cost hairpin)
-                                    OPTIONS_MANDATORY=(master)
-                                    OPTIONS_IP=()
                                     ;;
                                 vp|vpn)
                                     OPTIONS_TYPE=vpn
