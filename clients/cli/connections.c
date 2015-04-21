@@ -4322,7 +4322,7 @@ complete_slave (NMSettingConnection *s_con,
 
 		/* Change properties in 'connection' setting */
 		g_object_set (s_con,
-		              NM_SETTING_CONNECTION_MASTER, checked_master ? checked_master : _strip_master_prefix (master, NULL),
+		              NM_SETTING_CONNECTION_MASTER, checked_master,
 		              NULL);
 
 		g_free (master_ask);
