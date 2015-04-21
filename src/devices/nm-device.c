@@ -4218,7 +4218,7 @@ static void
 nm_device_set_mtu (NMDevice *self, guint32 mtu)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	int ifindex = nm_device_get_ifindex (self);
+	int ifindex = nm_device_get_ip_ifindex (self);
 
 	if (mtu)
 		priv->mtu = mtu;
