@@ -888,6 +888,7 @@ get_properties_cb_4 (GObject *source_object, GAsyncResult *res, gpointer user_da
 	                                           G_VARIANT_TYPE ("(a{sv})"),
 	                                           &err);
 	if (!v_properties) {
+		g_dbus_error_strip_remote_error (err);
 		nm_log_warn (LOGD_BT, "bluez[%s] error getting device properties: %s",
 		             priv->path, err->message);
 		g_error_free (err);

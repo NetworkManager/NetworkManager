@@ -622,6 +622,7 @@ _dispatcher_call (DispatcherAction action,
 			g_variant_unref (ret);
 			success = TRUE;
 		} else {
+			g_dbus_error_strip_remote_error (error);
 			nm_log_warn (LOGD_DISPATCH, "(%u) failed: %s", reqid, error->message);
 			g_clear_error (&error);
 			success = FALSE;

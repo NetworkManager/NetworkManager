@@ -1547,6 +1547,7 @@ connect_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	self = NM_VPN_CONNECTION (user_data);
 
 	if (error) {
+		g_dbus_error_strip_remote_error (error);
 		nm_log_warn (LOGD_VPN, "VPN connection '%s' failed to connect: '%s'.",
 		             nm_connection_get_id (NM_VPN_CONNECTION_GET_PRIVATE (self)->connection),
 		             error->message);
@@ -1587,6 +1588,7 @@ connect_interactive_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_d
 		                   (GAsyncReadyCallback) connect_cb,
 		                   self);
 	} else if (error) {
+		g_dbus_error_strip_remote_error (error);
 		nm_log_warn (LOGD_VPN, "VPN connection '%s' failed to connect interactively: '%s'.",
 		             nm_connection_get_id (priv->connection), error->message);
 		_set_vpn_state (self, STATE_FAILED, NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_FAILED, FALSE);
@@ -1946,11 +1948,11 @@ plugin_need_secrets_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_d
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
 	if (error) {
-		nm_log_err (LOGD_VPN, "(%s/%s) plugin NeedSecrets request #%d failed: %s %s",
+		g_dbus_error_strip_remote_error (error);
+		nm_log_err (LOGD_VPN, "(%s/%s) plugin NeedSecrets request #%d failed: %s",
 		            nm_connection_get_uuid (priv->connection),
 		            nm_connection_get_id (priv->connection),
 		            priv->secrets_idx + 1,
-		            g_quark_to_string (error->domain),
 		            error->message);
 		_set_vpn_state (self, STATE_FAILED, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS, FALSE);
 		return;
@@ -1997,10 +1999,10 @@ plugin_new_secrets_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_da
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
 	if (error) {
-		nm_log_err (LOGD_VPN, "(%s/%s) sending new secrets to the plugin failed: %s %s",
+		g_dbus_error_strip_remote_error (error);
+		nm_log_err (LOGD_VPN, "(%s/%s) sending new secrets to the plugin failed: %s",
 		            nm_connection_get_uuid (priv->connection),
 		            nm_connection_get_id (priv->connection),
-		            g_quark_to_string (error->domain),
 		            error->message);
 		_set_vpn_state (self, STATE_FAILED, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS, FALSE);
 	} else
