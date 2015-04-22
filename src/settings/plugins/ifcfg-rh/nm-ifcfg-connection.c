@@ -147,6 +147,7 @@ nm_ifcfg_connection_check_devtimeout (NMIfcfgConnection *self)
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (self);
 	NMSettingConnection *s_con;
 	const char *ifname;
+	const char *filename;
 	guint devtimeout;
 
 	s_con = nm_connection_get_setting_connection (NM_CONNECTION (self));
@@ -156,7 +157,10 @@ nm_ifcfg_connection_check_devtimeout (NMIfcfgConnection *self)
 	ifname = nm_setting_connection_get_interface_name (s_con);
 	if (!ifname)
 		return;
-	devtimeout = devtimeout_from_file (nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (self)));
+	filename = nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (self));
+	if (!filename)
+		return;
+	devtimeout = devtimeout_from_file (filename);
 	if (!devtimeout)
 		return;
 
