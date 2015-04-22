@@ -76,9 +76,9 @@ NM_DEFINE_SINGLETON_GETTER (NMDefaultRouteManager, nm_default_route_manager_get,
                 g_snprintf (__prefix, sizeof (__prefix), "default-route%c[%p]", __ch, (self)); \
             else \
                 __prefix[STRLEN ("default-route")] = __ch; \
-            nm_log (__level, __domain, \
-                    "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
-                    __prefix _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+            _nm_log (__level, __domain, 0, \
+                     "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                     __prefix _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
         } \
     } G_STMT_END
 

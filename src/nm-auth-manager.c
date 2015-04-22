@@ -40,9 +40,9 @@
             \
             if ((self) != singleton_instance) \
                 g_snprintf (__prefix, sizeof (__prefix), "auth[%p]", (self)); \
-            nm_log ((level), (domain), \
-                    "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
-                    __prefix _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+            _nm_log ((level), (domain), 0, \
+                     "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                     __prefix _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
         } \
     } G_STMT_END
 

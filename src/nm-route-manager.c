@@ -94,9 +94,9 @@ static const VTableIP vtable_v4, vtable_v6;
                 g_snprintf (__prefix, sizeof (__prefix), "%s%c[%p]", _LOG_PREFIX_NAME, __ch, (self)); \
             else \
                 __prefix[STRLEN (_LOG_PREFIX_NAME)] = __ch; \
-            nm_log ((level), (__domain), \
-                    "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
-                    __prefix _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+            _nm_log ((level), (__domain), 0, \
+                     "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                     __prefix _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
         } \
     } G_STMT_END
 #define _LOG_LEVEL_ENABLED(level, addr_family) \
