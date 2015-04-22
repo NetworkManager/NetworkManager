@@ -287,6 +287,6 @@ main (int argc, char **argv)
 
 	nm_platform_link_delete (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME));
 
-	nm_platform_free ();
+	g_object_unref (nm_platform_get ());
 	return result;
 }

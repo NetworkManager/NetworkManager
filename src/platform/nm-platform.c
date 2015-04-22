@@ -58,7 +58,9 @@ static guint signals[LAST_SIGNAL] = { 0 };
 /******************************************************************/
 
 /* Singleton NMPlatform subclass instance and cached class object */
-static NMPlatform *singleton_instance = NULL;
+NM_DEFINE_SINGLETON_INSTANCE (NMPlatform);
+
+NM_DEFINE_SINGLETON_WEAK_REF (NMPlatform);
 
 /* Just always initialize a @klass instance. NM_PLATFORM_GET_CLASS()
  * is only a plain read on the self instance, which the compiler
@@ -82,11 +84,7 @@ static NMPlatform *singleton_instance = NULL;
 
 /**
  * nm_platform_setup:
- * @type: The #GType for a subclass of #NMPlatform
- *
- * Do not use this function directly, it is intended to be called by
- * NMPlatform subclasses. For the linux platform initialization use
- * nm_linux_platform_setup() instead.
+ * @instance: the #NMPlatform instance
  *
  * Failing to set up #NMPlatform singleton results in a fatal error,
  * as well as trying to initialize it multiple times without freeing
@@ -94,39 +92,19 @@ static NMPlatform *singleton_instance = NULL;
  *
  * NetworkManager will typically use only one platform object during
  * its run. Test programs might want to switch platform implementations,
- * though. This is done with a combination of nm_platform_free() and
- * nm_*_platform_setup().
+ * though.
  */
 void
-nm_platform_setup (GType type)
+nm_platform_setup (NMPlatform *instance)
 {
-	gboolean status;
-	NMPlatformClass *klass;
+	g_return_if_fail (NM_IS_PLATFORM (instance));
+	g_return_if_fail (!singleton_instance);
 
-	g_assert (singleton_instance == NULL);
+	singleton_instance = instance;
 
-	singleton_instance = g_object_new (type, NULL);
-	g_assert (NM_IS_PLATFORM (singleton_instance));
+	nm_singleton_instance_weak_ref_register ();
 
-	klass = NM_PLATFORM_GET_CLASS (singleton_instance);
-	g_assert (klass->setup);
-
-	status = klass->setup (singleton_instance);
-	g_assert (status);
-}
-
-/**
- * nm_platform_free:
- *
- * Free #NMPlatform singleton created by nm_*_platform_setup().
- */
-void
-nm_platform_free (void)
-{
-	g_assert (singleton_instance);
-
-	g_object_unref (singleton_instance);
-	singleton_instance = NULL;
+	nm_log_dbg (LOGD_CORE, "setup NMPlatform singleton (%p, %s)", instance,  G_OBJECT_TYPE_NAME (instance));
 }
 
 /**
@@ -134,8 +112,7 @@ nm_platform_free (void)
  * @self: platform instance
  *
  * Retrieve #NMPlatform singleton. Use this whenever you want to connect to
- * #NMPlatform signals. It is an error to call it before nm_*_platform_setup()
- * or after nm_platform_free().
+ * #NMPlatform signals. It is an error to call it before nm_platform_setup().
  *
  * Returns: (transfer none): The #NMPlatform singleton reference.
  */
@@ -144,6 +121,12 @@ nm_platform_get ()
 {
 	g_assert (singleton_instance);
 
+	return singleton_instance;
+}
+
+NMPlatform *
+nm_platform_try_get (void)
+{
 	return singleton_instance;
 }
 
