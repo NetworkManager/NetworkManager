@@ -285,7 +285,8 @@ active_connection_remove (NMManager *self, NMActiveConnection *active)
 
 		g_object_unref (active);
 
-		if (connection) {
+		if (   connection
+		    && nm_settings_has_connection (priv->settings, connection)) {
 			nm_log_dbg (LOGD_DEVICE, "Assumed connection disconnected. Deleting generated connection '%s' (%s)",
 			            nm_connection_get_id (connection), nm_connection_get_uuid (connection));
 			nm_settings_connection_delete (NM_SETTINGS_CONNECTION (connection), NULL, NULL);
