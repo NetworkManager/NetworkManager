@@ -63,7 +63,7 @@ read_connections (SCPluginIbft *self)
 	NMIbftConnection *connection;
 
 	if (!read_ibft_blocks ("/sbin/iscsiadm", &blocks, &error)) {
-		nm_log_dbg (LOGD_SETTINGS, _("ibft: failed to read iscsiadm records: %s"), error->message);
+		nm_log_dbg (LOGD_SETTINGS, "ibft: failed to read iscsiadm records: %s", error->message);
 		g_error_free (error);
 		return;
 	}
@@ -71,13 +71,13 @@ read_connections (SCPluginIbft *self)
 	for (iter = blocks; iter; iter = iter->next) {
 		connection = nm_ibft_connection_new (iter->data, &error);
 		if (connection) {
-			nm_log_info (LOGD_SETTINGS, _("ibft: read connection '%s'"),
+			nm_log_info (LOGD_SETTINGS, "ibft: read connection '%s'",
 			             nm_connection_get_id (NM_CONNECTION (connection)));
 			g_hash_table_insert (priv->connections,
 			                     g_strdup (nm_connection_get_uuid (NM_CONNECTION (connection))),
 			                     connection);
 		} else {
-			nm_log_warn (LOGD_SETTINGS, _("ibft: failed to read iscsiadm record: %s"), error->message);
+			nm_log_warn (LOGD_SETTINGS, "ibft: failed to read iscsiadm record: %s", error->message);
 			g_clear_error (&error);
 		}
 	}
