@@ -2565,7 +2565,7 @@ nmc_property_con_set_master (NMSetting *setting, const char *prop, const char *v
 static const char *con_valid_slave_types[] = {
 	NM_SETTING_BOND_SETTING_NAME,
 	NM_SETTING_BRIDGE_SETTING_NAME,
-	NM_SETTING_VLAN_SETTING_NAME,
+	NM_SETTING_TEAM_SETTING_NAME,
 	NULL
 };
 
