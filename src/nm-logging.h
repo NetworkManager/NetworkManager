@@ -104,7 +104,7 @@ typedef enum  { /*< skip >*/
 #define nm_log(level, domain, ...) \
     G_STMT_START { \
         if (nm_logging_enabled ((level), (domain))) { \
-            _nm_log (__FILE__, __LINE__, G_STRFUNC, (level), (domain), 0, __VA_ARGS__); \
+            _nm_log (__FILE__, __LINE__, G_STRFUNC, (level), (domain), 0, ""__VA_ARGS__); \
         } \
     } G_STMT_END
 
