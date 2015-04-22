@@ -3017,6 +3017,7 @@ activation_add_done (NMSettings *self,
 		nm_active_connection_set_connection (info->active, NM_CONNECTION (new_connection));
 
 		if (_internal_activate_generic (info->manager, info->active, &local)) {
+			nm_settings_connection_commit_changes (new_connection, NULL, NULL);
 			dbus_g_method_return (context,
 			                      nm_connection_get_path (NM_CONNECTION (new_connection)),
 			                      nm_active_connection_get_path (info->active));
@@ -3027,6 +3028,7 @@ activation_add_done (NMSettings *self,
 
 	g_assert (error);
 	_internal_activation_failed (info->manager, info->active, error->message);
+	nm_settings_connection_delete (new_connection, NULL, NULL);
 	dbus_g_method_return_error (context, error);
 	g_clear_error (&local);
 
@@ -3056,7 +3058,7 @@ _add_and_activate_auth_done (NMActiveConnection *active,
 		/* Basic sender auth checks performed; try to add the connection */
 		nm_settings_add_connection_dbus (priv->settings,
 		                                 nm_active_connection_get_connection (active),
-		                                 TRUE,
+		                                 FALSE,
 		                                 context,
 		                                 activation_add_done,
 		                                 info);
