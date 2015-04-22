@@ -468,6 +468,21 @@ notify (GObject *object, GParamSpec *pspec)
 	g_slice_free (GValue, value);
 }
 
+gboolean
+nm_settings_has_connection (NMSettings *self, NMConnection *connection)
+{
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	GHashTableIter iter;
+	gpointer data;
+
+	g_hash_table_iter_init (&iter, priv->connections);
+	while (g_hash_table_iter_next (&iter, NULL, &data))
+		if (data == connection)
+			return TRUE;
+
+	return FALSE;
+}
+
 const GSList *
 nm_settings_get_unmanaged_specs (NMSettings *self)
 {
