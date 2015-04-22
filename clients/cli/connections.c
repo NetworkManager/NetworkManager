@@ -7614,7 +7614,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				if (menu_ctx.level == 1) {
 					const char *prop_name;
 					char *prop_val_user = NULL;
-					const char *avals;
+					const char **avals;
 					GError *tmp_err = NULL;
 
 					prop_name = ask_check_property (cmd_arg,
@@ -7624,9 +7624,12 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 						break;
 
 					avals = nmc_setting_get_property_allowed_values (menu_ctx.curr_setting, prop_name);
-					if (avals)
-						g_print (_("Allowed values for '%s' property: %s\n"), prop_name, avals);
-
+					if (avals) {
+						char *avals_str = nmc_util_strv_for_display (avals, FALSE);
+						g_print (_("Allowed values for '%s' property: %s\n"),
+						         prop_name, avals_str);
+						g_free (avals_str);
+					}
 					prop_val_user = nmc_readline (_("Enter '%s' value: "), prop_name);
 
 					/* Set property value */
@@ -7678,10 +7681,13 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 
 				/* Ask for value */
 				if (!cmd_arg_v) {
-					const char *avals = nmc_setting_get_property_allowed_values (ss, prop_name);
-					if (avals)
-						g_print (_("Allowed values for '%s' property: %s\n"), prop_name, avals);
-
+					const char **avals = nmc_setting_get_property_allowed_values (ss, prop_name);
+					if (avals) {
+						char *avals_str = nmc_util_strv_for_display (avals, FALSE);
+						g_print (_("Allowed values for '%s' property: %s\n"),
+						         prop_name, avals_str);
+						g_free (avals_str);
+					}
 					cmd_arg_v = nmc_readline (_("Enter '%s' value: "), prop_name);
 				}
 

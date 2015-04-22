@@ -37,7 +37,7 @@ void nmc_setting_connection_connect_handlers (NMSettingConnection *setting, NMCo
 
 char      **nmc_setting_get_valid_properties (NMSetting *setting);
 char       *nmc_setting_get_property_desc (NMSetting *setting, const char *prop);
-const char *nmc_setting_get_property_allowed_values (NMSetting *setting, const char *prop);
+const char **nmc_setting_get_property_allowed_values (NMSetting *setting, const char *prop);
 char       *nmc_setting_get_property (NMSetting *setting,
                                       const char *prop,
                                       GError **error);
