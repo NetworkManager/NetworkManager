@@ -2749,13 +2749,14 @@ nmc_property_connection_describe_secondaries (NMSetting *setting, const char *pr
 	}
 
 /* 'eap' */
+static const char *valid_eap[] = { "leap", "md5", "tls", "peap", "ttls", "sim", "fast", "pwd", NULL };
+
 DEFINE_SETTER_STR_LIST_MULTI (check_and_add_802_1X_eap,
                               NM_SETTING_802_1X,
                               nm_setting_802_1x_add_eap_method)
 static gboolean
 nmc_property_802_1X_set_eap (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
-	const char *valid_eap[] = { "leap", "md5", "tls", "peap", "ttls", "sim", "fast", "pwd", NULL };
 	return check_and_add_802_1X_eap (setting, prop, val, valid_eap, error);
 }
 
@@ -2776,6 +2777,8 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_802_1X_remove_eap,
                                nm_setting_802_1x_get_num_eap_methods,
                                nm_setting_802_1x_remove_eap_method,
                                _validate_and_remove_eap_method)
+
+DEFINE_ALLOWED_VAL_FUNC (nmc_property_802_1X_allowed_eap, valid_eap)
 
 /* 'ca-cert' */
 DEFINE_SETTER_CERT (nmc_property_802_1X_set_ca_cert, nm_setting_802_1x_set_ca_cert)
@@ -4867,7 +4870,7 @@ nmc_properties_init (void)
 	                    nmc_property_802_1X_set_eap,
 	                    nmc_property_802_1X_remove_eap,
 	                    NULL,
-	                    NULL,
+	                    nmc_property_802_1X_allowed_eap,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, IDENTITY),
 	                    nmc_property_802_1X_get_identity,
