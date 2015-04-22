@@ -1148,21 +1148,21 @@ nm_setting_ip_config_get_num_dns (NMSettingIPConfig *setting)
 /**
  * nm_setting_ip_config_get_dns:
  * @setting: the #NMSettingIPConfig
- * @i: index number of the DNS server to return
+ * @idx: index number of the DNS server to return
  *
- * Returns: the IP address of the DNS server at index @i
+ * Returns: the IP address of the DNS server at index @idx
  **/
 const char *
-nm_setting_ip_config_get_dns (NMSettingIPConfig *setting, int i)
+nm_setting_ip_config_get_dns (NMSettingIPConfig *setting, int idx)
 {
 	NMSettingIPConfigPrivate *priv;
 
 	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), NULL);
 
 	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
-	g_return_val_if_fail (i < priv->dns->len, NULL);
+	g_return_val_if_fail (idx < priv->dns->len, NULL);
 
-	return priv->dns->pdata[i];
+	return priv->dns->pdata[idx];
 }
 
 /**
@@ -1204,21 +1204,21 @@ nm_setting_ip_config_add_dns (NMSettingIPConfig *setting, const char *dns)
 /**
  * nm_setting_ip_config_remove_dns:
  * @setting: the #NMSettingIPConfig
- * @i: index number of the DNS server to remove
+ * @idx: index number of the DNS server to remove
  *
- * Removes the DNS server at index @i.
+ * Removes the DNS server at index @idx.
  **/
 void
-nm_setting_ip_config_remove_dns (NMSettingIPConfig *setting, int i)
+nm_setting_ip_config_remove_dns (NMSettingIPConfig *setting, int idx)
 {
 	NMSettingIPConfigPrivate *priv;
 
 	g_return_if_fail (NM_IS_SETTING_IP_CONFIG (setting));
 
 	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
-	g_return_if_fail (i < priv->dns->len);
+	g_return_if_fail (idx < priv->dns->len);
 
-	g_ptr_array_remove_index (priv->dns, i);
+	g_ptr_array_remove_index (priv->dns, idx);
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS);
 }
 
@@ -1292,21 +1292,21 @@ nm_setting_ip_config_get_num_dns_searches (NMSettingIPConfig *setting)
 /**
  * nm_setting_ip_config_get_dns_search:
  * @setting: the #NMSettingIPConfig
- * @i: index number of the DNS search domain to return
+ * @idx: index number of the DNS search domain to return
  *
- * Returns: the DNS search domain at index @i
+ * Returns: the DNS search domain at index @idx
  **/
 const char *
-nm_setting_ip_config_get_dns_search (NMSettingIPConfig *setting, int i)
+nm_setting_ip_config_get_dns_search (NMSettingIPConfig *setting, int idx)
 {
 	NMSettingIPConfigPrivate *priv;
 
 	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), NULL);
 
 	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
-	g_return_val_if_fail (i < priv->dns_search->len, NULL);
+	g_return_val_if_fail (idx < priv->dns_search->len, NULL);
 
-	return priv->dns_search->pdata[i];
+	return priv->dns_search->pdata[idx];
 }
 
 /**
@@ -1344,21 +1344,21 @@ nm_setting_ip_config_add_dns_search (NMSettingIPConfig *setting,
 /**
  * nm_setting_ip_config_remove_dns_search:
  * @setting: the #NMSettingIPConfig
- * @i: index number of the DNS search domain
+ * @idx: index number of the DNS search domain
  *
- * Removes the DNS search domain at index @i.
+ * Removes the DNS search domain at index @idx.
  **/
 void
-nm_setting_ip_config_remove_dns_search (NMSettingIPConfig *setting, int i)
+nm_setting_ip_config_remove_dns_search (NMSettingIPConfig *setting, int idx)
 {
 	NMSettingIPConfigPrivate *priv;
 
 	g_return_if_fail (NM_IS_SETTING_IP_CONFIG (setting));
 
 	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
-	g_return_if_fail (i < priv->dns_search->len);
+	g_return_if_fail (idx < priv->dns_search->len);
 
-	g_ptr_array_remove_index (priv->dns_search, i);
+	g_ptr_array_remove_index (priv->dns_search, idx);
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS_SEARCH);
 }
 
@@ -1432,37 +1432,37 @@ nm_setting_ip_config_get_num_dns_options (NMSettingIPConfig *setting)
 /**
  * nm_setting_ip_config_get_dns_option:
  * @setting: the #NMSettingIPConfig
- * @i: index number of the DNS option
+ * @idx: index number of the DNS option
  *
- * Returns: the DNS option at index @i
+ * Returns: the DNS option at index @idx
  *
  * Since: 1.2
  **/
 const char *
-nm_setting_ip_config_get_dns_option (NMSettingIPConfig *setting, guint i)
+nm_setting_ip_config_get_dns_option (NMSettingIPConfig *setting, guint idx)
 {
 	NMSettingIPConfigPrivate *priv;
 
 	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), NULL);
 
 	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
-	g_return_val_if_fail (i < priv->dns_options->len, NULL);
+	g_return_val_if_fail (idx < priv->dns_options->len, NULL);
 
-	return priv->dns_options->pdata[i];
+	return priv->dns_options->pdata[idx];
 }
 
 /**
  * nm_setting_ip_config_next_valid_dns_option
  * @setting: the #NMSettingIPConfig
- * @i: index to start the search from
+ * @idx: index to start the search from
  *
- * Returns: the index, greater or equal than @i, of the first valid
+ * Returns: the index, greater or equal than @idx, of the first valid
  * DNS option, or -1 if no valid option is found
  *
  * Since: 1.2
  **/
 gint
-nm_setting_ip_config_next_valid_dns_option (NMSettingIPConfig *setting, guint i)
+nm_setting_ip_config_next_valid_dns_option (NMSettingIPConfig *setting, guint idx)
 {
 	NMSettingIPConfigPrivate *priv;
 
@@ -1470,11 +1470,11 @@ nm_setting_ip_config_next_valid_dns_option (NMSettingIPConfig *setting, guint i)
 
 	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
 
-	for (; i < priv->dns_options->len; i++) {
-		if (_nm_utils_dns_option_validate (priv->dns_options->pdata[i], NULL, NULL,
+	for (; idx < priv->dns_options->len; idx++) {
+		if (_nm_utils_dns_option_validate (priv->dns_options->pdata[idx], NULL, NULL,
 		                                   NM_IS_SETTING_IP6_CONFIG (setting),
 		                                   dns_option_descs))
-			return i;
+			return idx;
 	}
 
 	return -1;
@@ -1516,23 +1516,23 @@ nm_setting_ip_config_add_dns_option (NMSettingIPConfig *setting,
 /**
  * nm_setting_ip_config_remove_dns_option:
  * @setting: the #NMSettingIPConfig
- * @i: index number of the DNS option
+ * @idx: index number of the DNS option
  *
- * Removes the DNS option at index @i.
+ * Removes the DNS option at index @idx.
  *
  * Since: 1.2
  **/
 void
-nm_setting_ip_config_remove_dns_option (NMSettingIPConfig *setting, int i)
+nm_setting_ip_config_remove_dns_option (NMSettingIPConfig *setting, int idx)
 {
 	NMSettingIPConfigPrivate *priv;
 
 	g_return_if_fail (NM_IS_SETTING_IP_CONFIG (setting));
 
 	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
-	g_return_if_fail (i < priv->dns_options->len);
+	g_return_if_fail (idx < priv->dns_options->len);
 
-	g_ptr_array_remove_index (priv->dns_options, i);
+	g_ptr_array_remove_index (priv->dns_options, idx);
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS_OPTIONS);
 }
 
@@ -1606,21 +1606,21 @@ nm_setting_ip_config_get_num_addresses (NMSettingIPConfig *setting)
 /**
  * nm_setting_ip_config_get_address:
  * @setting: the #NMSettingIPConfig
- * @i: index number of the address to return
+ * @idx: index number of the address to return
  *
- * Returns: the address at index @i
+ * Returns: the address at index @idx
  **/
 NMIPAddress *
-nm_setting_ip_config_get_address (NMSettingIPConfig *setting, int i)
+nm_setting_ip_config_get_address (NMSettingIPConfig *setting, int idx)
 {
 	NMSettingIPConfigPrivate *priv;
 
 	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), NULL);
 
 	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
-	g_return_val_if_fail (i < priv->addresses->len, NULL);
+	g_return_val_if_fail (idx < priv->addresses->len, NULL);
 
-	return priv->addresses->pdata[i];
+	return priv->addresses->pdata[idx];
 }
 
 /**
@@ -1660,21 +1660,21 @@ nm_setting_ip_config_add_address (NMSettingIPConfig *setting,
 /**
  * nm_setting_ip_config_remove_address:
  * @setting: the #NMSettingIPConfig
- * @i: index number of the address to remove
+ * @idx: index number of the address to remove
  *
- * Removes the address at index @i.
+ * Removes the address at index @idx.
  **/
 void
-nm_setting_ip_config_remove_address (NMSettingIPConfig *setting, int i)
+nm_setting_ip_config_remove_address (NMSettingIPConfig *setting, int idx)
 {
 	NMSettingIPConfigPrivate *priv;
 
 	g_return_if_fail (NM_IS_SETTING_IP_CONFIG (setting));
 
 	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
-	g_return_if_fail (i < priv->addresses->len);
+	g_return_if_fail (idx < priv->addresses->len);
 
-	g_ptr_array_remove_index (priv->addresses, i);
+	g_ptr_array_remove_index (priv->addresses, idx);
 
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_ADDRESSES);
 }
@@ -1758,21 +1758,21 @@ nm_setting_ip_config_get_num_routes (NMSettingIPConfig *setting)
 /**
  * nm_setting_ip_config_get_route:
  * @setting: the #NMSettingIPConfig
- * @i: index number of the route to return
+ * @idx: index number of the route to return
  *
- * Returns: the route at index @i
+ * Returns: the route at index @idx
  **/
 NMIPRoute *
-nm_setting_ip_config_get_route (NMSettingIPConfig *setting, int i)
+nm_setting_ip_config_get_route (NMSettingIPConfig *setting, int idx)
 {
 	NMSettingIPConfigPrivate *priv;
 
 	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), NULL);
 
 	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
-	g_return_val_if_fail (i < priv->routes->len, NULL);
+	g_return_val_if_fail (idx < priv->routes->len, NULL);
 
-	return priv->routes->pdata[i];
+	return priv->routes->pdata[idx];
 }
 
 /**
@@ -1810,21 +1810,21 @@ nm_setting_ip_config_add_route (NMSettingIPConfig *setting,
 /**
  * nm_setting_ip_config_remove_route:
  * @setting: the #NMSettingIPConfig
- * @i: index number of the route
+ * @idx: index number of the route
  *
- * Removes the route at index @i.
+ * Removes the route at index @idx.
  **/
 void
-nm_setting_ip_config_remove_route (NMSettingIPConfig *setting, int i)
+nm_setting_ip_config_remove_route (NMSettingIPConfig *setting, int idx)
 {
 	NMSettingIPConfigPrivate *priv;
 
 	g_return_if_fail (NM_IS_SETTING_IP_CONFIG (setting));
 
 	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
-	g_return_if_fail (i < priv->routes->len);
+	g_return_if_fail (idx < priv->routes->len);
 
-	g_ptr_array_remove_index (priv->routes, i);
+	g_ptr_array_remove_index (priv->routes, idx);
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_ROUTES);
 }
 
