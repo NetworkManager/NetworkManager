@@ -3679,7 +3679,7 @@ do_sleep_wake (NMManager *self, gboolean sleeping_changed)
 	waking_from_suspend = sleeping_changed && !priv->sleeping;
 
 	if (manager_sleeping (self)) {
-		nm_log_info (LOGD_SUSPEND, suspending ? "sleeping..." : "disabling...");
+		nm_log_info (LOGD_SUSPEND, "%s...", suspending ? "sleeping" : "disabling");
 
 		/* FIXME: are there still hardware devices that need to be disabled around
 		 * suspend/resume?
@@ -3697,7 +3697,7 @@ do_sleep_wake (NMManager *self, gboolean sleeping_changed)
 			nm_device_set_unmanaged (device, NM_UNMANAGED_INTERNAL, TRUE, NM_DEVICE_STATE_REASON_SLEEPING);
 		}
 	} else {
-		nm_log_info (LOGD_SUSPEND, waking_from_suspend ? "waking up..." : "re-enabling...");
+		nm_log_info (LOGD_SUSPEND, "%s...", waking_from_suspend ? "waking up" : "re-enabling");
 
 		if (waking_from_suspend) {
 			/* Belatedly take down Wake-on-LAN devices; ideally we wouldn't have to do this
