@@ -97,6 +97,7 @@ struct _NMPlatformLink {
 };
 
 typedef enum {
+	NM_PLATFORM_SIGNAL_NONE,
 	NM_PLATFORM_SIGNAL_ADDED,
 	NM_PLATFORM_SIGNAL_CHANGED,
 	NM_PLATFORM_SIGNAL_REMOVED,
@@ -357,8 +358,6 @@ struct _NMPlatform {
 typedef struct {
 	GObjectClass parent;
 
-	gboolean (*setup) (NMPlatform *);
-
 	gboolean (*sysctl_set) (NMPlatform *, const char *path, const char *value);
 	char * (*sysctl_get) (NMPlatform *, const char *path);
 
@@ -489,9 +488,9 @@ typedef struct {
 
 GType nm_platform_get_type (void);
 
-void nm_platform_setup (GType type);
+void nm_platform_setup (NMPlatform *instance);
 NMPlatform *nm_platform_get (void);
-void nm_platform_free (void);
+NMPlatform *nm_platform_try_get (void);
 
 #define NM_PLATFORM_GET (nm_platform_get ())
 
