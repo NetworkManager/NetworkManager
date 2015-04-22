@@ -2990,7 +2990,7 @@ check_valid_enumeration (char **str,
 	} else {
 		char *options;
 
-		options = nmc_util_strv_for_display (strings);
+		options = nmc_util_strv_for_display (strings, TRUE);
 		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 		             _("Error: '%s': '%s' is not a valid %s %s."),
 		             what, *str, what_desc, options);
