@@ -1435,7 +1435,6 @@ static char to_string_buffer[255];
 #define SET_AND_RETURN_STRING_BUFFER(...) \
 	G_STMT_START { \
 		g_snprintf (to_string_buffer, sizeof (to_string_buffer), ## __VA_ARGS__); \
-		g_return_val_if_reached (to_string_buffer); \
 		return to_string_buffer; \
 	} G_STMT_END
 
