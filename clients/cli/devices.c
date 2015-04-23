@@ -1610,7 +1610,7 @@ disconnect_state_cb (NMDevice *device, GParamSpec *pspec, DeviceCbInfo *info)
 	if (!g_slist_find (info->queue, device))
 		return;
 
-	if (nm_device_get_state (device) == NM_DEVICE_STATE_DISCONNECTED) {
+	if (nm_device_get_state (device) <= NM_DEVICE_STATE_DISCONNECTED) {
 		g_print (_("Device '%s' successfully disconnected.\n"),
 		         nm_device_get_iface (device));
 		device_cb_info_finish (info, device);
@@ -1669,9 +1669,9 @@ disconnect_device_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 		device_cb_info_finish (info, device);
 	} else {
 		state = nm_device_get_state (device);
-		if (nmc->nowait_flag || state == NM_DEVICE_STATE_DISCONNECTED) {
+		if (nmc->nowait_flag || state <= NM_DEVICE_STATE_DISCONNECTED) {
 			/* Don't want to wait or device already disconnected */
-			if (state == NM_DEVICE_STATE_DISCONNECTED) {
+			if (state <= NM_DEVICE_STATE_DISCONNECTED) {
 				if (nmc->print_output == NMC_PRINT_PRETTY)
 					nmc_terminal_erase_line ();
 				g_print (_("Device '%s' successfully disconnected.\n"),
