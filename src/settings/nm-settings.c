@@ -809,6 +809,11 @@ static void
 connection_removed (NMSettingsConnection *connection, gpointer user_data)
 {
 	NMSettings *self = NM_SETTINGS (user_data);
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	const char *cpath = nm_connection_get_path (NM_CONNECTION (connection));
+
+	if (!g_hash_table_lookup (priv->connections, cpath))
+		g_return_if_reached ();
 
 	g_object_ref (connection);
 
@@ -824,8 +829,7 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_ready_changed), self);
 
 	/* Forget about the connection internally */
-	g_hash_table_remove (NM_SETTINGS_GET_PRIVATE (user_data)->connections,
-	                     (gpointer) nm_connection_get_path (NM_CONNECTION (connection)));
+	g_hash_table_remove (priv->connections, (gpointer) cpath);
 
 	/* Notify D-Bus */
 	g_signal_emit (self, signals[CONNECTION_REMOVED], 0, connection);

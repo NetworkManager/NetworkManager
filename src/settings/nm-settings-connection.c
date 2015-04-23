@@ -96,6 +96,8 @@ enum {
 static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
+	gboolean removed;
+
 	NMAgentManager *agent_mgr;
 	NMSessionMonitor *session_monitor;
 	guint session_changed_id;
@@ -1742,6 +1744,12 @@ impl_settings_connection_clear_secrets (NMSettingsConnection *self,
 void
 nm_settings_connection_signal_remove (NMSettingsConnection *self)
 {
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+
+	if (priv->removed)
+		g_return_if_reached ();
+	priv->removed = TRUE;
+
 	/* Emit removed first */
 	g_signal_emit_by_name (self, NM_SETTINGS_CONNECTION_REMOVED);
 
