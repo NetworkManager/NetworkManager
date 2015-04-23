@@ -71,36 +71,36 @@
 gboolean
 nm_ethernet_address_is_valid (gconstpointer addr, gssize len)
 {
-	guint8 invalid_addr1[ETH_ALEN] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-	guint8 invalid_addr2[ETH_ALEN] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-	guint8 invalid_addr3[ETH_ALEN] = {0x44, 0x44, 0x44, 0x44, 0x44, 0x44};
-	guint8 invalid_addr4[ETH_ALEN] = {0x00, 0x30, 0xb4, 0x00, 0x00, 0x00}; /* prism54 dummy MAC */
-	guchar first_octet;
+	guint8 invalid_addr[4][ETH_ALEN] = {
+	    {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+	    {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+	    {0x44, 0x44, 0x44, 0x44, 0x44, 0x44},
+	    {0x00, 0x30, 0xb4, 0x00, 0x00, 0x00}, /* prism54 dummy MAC */
+	};
+	guint8 addr_bin[ETH_ALEN];
+	guint i;
 
-	g_return_val_if_fail (addr != NULL, FALSE);
-	g_return_val_if_fail (len == ETH_ALEN || len == -1, FALSE);
-
-	/* Compare the AP address the card has with invalid ethernet MAC addresses. */
-	if (nm_utils_hwaddr_matches (addr, len, invalid_addr1, ETH_ALEN))
+	if (!addr) {
+		g_return_val_if_fail (len == -1 || len == ETH_ALEN, FALSE);
 		return FALSE;
+	}
 
-	if (nm_utils_hwaddr_matches (addr, len, invalid_addr2, ETH_ALEN))
-		return FALSE;
-
-	if (nm_utils_hwaddr_matches (addr, len, invalid_addr3, ETH_ALEN))
-		return FALSE;
-
-	if (nm_utils_hwaddr_matches (addr, len, invalid_addr4, ETH_ALEN))
-		return FALSE;
+	if (len == -1) {
+		if (!nm_utils_hwaddr_aton (addr, addr_bin, ETH_ALEN))
+			return FALSE;
+		addr = addr_bin;
+	} else if (len != ETH_ALEN)
+		g_return_val_if_reached (FALSE);
 
 	/* Check for multicast address */
-	if (len == -1)
-		first_octet = strtoul (addr, NULL, 16);
-	else
-		first_octet = ((guint8 *)addr)[0];
-	if (first_octet & 0x01)
+	if ((((guint8 *) addr)[0]) & 0x01)
+		return FALSE;
+
+	for (i = 0; i < G_N_ELEMENTS (invalid_addr); i++) {
+		if (nm_utils_hwaddr_matches (addr, ETH_ALEN, invalid_addr[i], ETH_ALEN))
 			return FALSE;
-	
+	}
+
 	return TRUE;
 }
 
