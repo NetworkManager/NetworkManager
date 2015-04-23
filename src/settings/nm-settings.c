@@ -95,8 +95,7 @@ EXPORT(nm_settings_connection_replace_and_commit)
 /* END LINKER CRACKROCK */
 
 static void claim_connection (NMSettings *self,
-                              NMSettingsConnection *connection,
-                              gboolean do_export);
+                              NMSettingsConnection *connection);
 
 static gboolean impl_settings_list_connections (NMSettings *self,
                                                 GPtrArray **connections,
@@ -218,7 +217,7 @@ plugin_connection_added (NMSystemConfigInterface *config,
                          NMSettingsConnection *connection,
                          gpointer user_data)
 {
-	claim_connection (NM_SETTINGS (user_data), connection, TRUE);
+	claim_connection (NM_SETTINGS (user_data), connection);
 }
 
 static void
@@ -239,7 +238,7 @@ load_connections (NMSettings *self)
 		// priority plugin.
 
 		for (elt = plugin_connections; elt; elt = g_slist_next (elt))
-			claim_connection (self, NM_SETTINGS_CONNECTION (elt->data), TRUE);
+			claim_connection (self, NM_SETTINGS_CONNECTION (elt->data));
 
 		g_slist_free (plugin_connections);
 
@@ -896,9 +895,7 @@ openconnect_migrate_hack (NMConnection *connection)
 }
 
 static void
-claim_connection (NMSettings *self,
-                  NMSettingsConnection *connection,
-                  gboolean do_export)
+claim_connection (NMSettings *self, NMSettingsConnection *connection)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	static guint32 ec_counter = 0;
@@ -1049,7 +1046,7 @@ nm_settings_add_connection (NMSettings *self,
 
 		added = nm_system_config_interface_add_connection (plugin, connection, save_to_disk, &add_error);
 		if (added) {
-			claim_connection (self, added, TRUE);
+			claim_connection (self, added);
 			return added;
 		}
 		nm_log_dbg (LOGD_SETTINGS, "Failed to add %s/'%s': %s",
