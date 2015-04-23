@@ -891,8 +891,11 @@ nm_dbus_manager_register_object (NMDBusManager *self,
 
 	g_assert (G_IS_OBJECT (object));
 
-	g_warn_if_fail (g_hash_table_lookup (priv->exported, object) == NULL);
+	if (g_hash_table_lookup (priv->exported, G_OBJECT (object)))
+		g_return_if_reached ();
+
 	g_hash_table_insert (priv->exported, G_OBJECT (object), g_strdup (path));
+	g_object_weak_ref (G_OBJECT (object), (GWeakNotify) object_destroyed, self);
 
 	if (priv->g_connection)
 		dbus_g_connection_register_g_object (priv->g_connection, path, G_OBJECT (object));
@@ -905,8 +908,6 @@ nm_dbus_manager_register_object (NMDBusManager *self,
 			                                     G_OBJECT (object));
 		}
 	}
-
-	g_object_weak_ref (G_OBJECT (object), (GWeakNotify) object_destroyed, self);
 }
 
 void
@@ -918,7 +919,10 @@ nm_dbus_manager_unregister_object (NMDBusManager *self, gpointer object)
 
 	g_assert (G_IS_OBJECT (object));
 
-	g_hash_table_remove (NM_DBUS_MANAGER_GET_PRIVATE (self)->exported, G_OBJECT (object));
+	if (!g_hash_table_lookup (priv->exported, G_OBJECT (object)))
+		g_return_if_reached ();
+
+	g_hash_table_remove (priv->exported, G_OBJECT (object));
 	g_object_weak_unref (G_OBJECT (object), (GWeakNotify) object_destroyed, self);
 
 	if (priv->g_connection)
