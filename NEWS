@@ -1,4 +1,46 @@
 ===============================================
+NetworkManager-1.0.2
+Overview of changes since NetworkManager-1.0
+===============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Wi-Fi devices now indicate support for 2GHz and 5GHz frequencies
+* "nmcli device" output now indicates physical port ID
+* New config items added to the 'ifcfg-rh' plugin:
+  - IPV4_ROUTE_METRIC and IPV6_ROUTE_METRIC
+  - DEVTIMEOUT
+  - IPADDR and PREFIX are now supported for specifying address ranges of
+      shared IPv4 connections
+* Dispatcher scripts now get a CONNECTION_FILENAME variable with the path
+    to the configuration file for the connection
+* An example dispatcher script that is able to apply complex routing rules
+    (such as setting up policy-based routing) for 'ifcfg-rh' connections was
+    added to examples/dispatcher/.
+* 'mode' key of Bond device options property now accepts numeric values
+* Connection attempts for devices without carrier on startup now wait for
+    carrier to appear within a short timeout instead of failing
+    immediately. This makes system startup more robust.
+* Bridge connectivity is now properly restored on resume from suspend
+* The D-Bus name is acquired earlier during the daemon startup. This makes
+    it possible for the systemd service manager to optimize the service
+    startup so that services that require networking are activated sooner
+    contributing to faster system start up time.
+* A lot of memory leak problems were fixed, resulting in reduced memory usage.
+    Many of them were discovered as a result of improvements in use of
+    Valgrind in the testing infrastructure.
+* Management of 'teamd' daemon instances for Team devices is now more robust.
+* The 'dnsmasq' daemon respawns when it terminates and it is configured for
+    management of DNS resolver configuration
+* Hostnames that are not fully qualified are no longer sent to a DHCPv6
+    server for a dynamic DNS update
+* Connection UUIDs are now checked for uniqueness when connection
+    configurations are read
+* Many other bugs were fixed
+* Updates to Telugu, Turkish, Polish, German, Gujarati, Italian and Russian
+    translations
+
+===============================================
 NetworkManager-1.0
 Overview of changes since NetworkManager-0.9.10
 ===============================================
