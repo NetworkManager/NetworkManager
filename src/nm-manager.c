@@ -2971,9 +2971,9 @@ _internal_activation_failed (NMManager *self,
                              NMActiveConnection *active,
                              const char *error_desc)
 {
-	nm_log_warn (LOGD_CORE, "Failed to activate '%s': %s",
-	             nm_connection_get_id (nm_active_connection_get_connection (active)),
-	             error_desc);
+	nm_log_dbg (LOGD_CORE, "Failed to activate '%s': %s",
+	            nm_connection_get_id (nm_active_connection_get_connection (active)),
+	            error_desc);
 
 	if (nm_active_connection_get_state (active) <= NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
 		nm_active_connection_set_state (active, NM_ACTIVE_CONNECTION_STATE_DEACTIVATING);
