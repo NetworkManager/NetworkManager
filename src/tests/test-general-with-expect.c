@@ -431,6 +431,30 @@ test_nm_utils_array_remove_at_indexes ()
 
 /*******************************************/
 
+static void
+test_nm_ethernet_address_is_valid ()
+{
+	g_assert (!nm_ethernet_address_is_valid ("FF:FF:FF:FF:FF:FF", -1));
+	g_assert (!nm_ethernet_address_is_valid ("00:00:00:00:00:00", -1));
+	g_assert (!nm_ethernet_address_is_valid ("44:44:44:44:44:44", -1));
+	g_assert (!nm_ethernet_address_is_valid ("00:30:b4:00:00:00", -1));
+
+	g_assert ( nm_ethernet_address_is_valid ("", -1));
+	g_assert (!nm_ethernet_address_is_valid ("1", -1));
+	g_assert ( nm_ethernet_address_is_valid ("2", -1));
+
+	g_assert (!nm_ethernet_address_is_valid (((guint8[8]) { 0x00,0x30,0xb4,0x00,0x00,0x00 }), ETH_ALEN));
+	g_assert ( nm_ethernet_address_is_valid (((guint8[8]) { 0x00,0x30,0xb4,0x00,0x00,0x01 }), ETH_ALEN));
+
+	/* some Broad cast addresses (with MSB of first octet set). */
+	g_assert (!nm_ethernet_address_is_valid ("57:44:44:44:44:44", -1));
+	g_assert ( nm_ethernet_address_is_valid ("56:44:44:44:44:44", -1));
+	g_assert (!nm_ethernet_address_is_valid (((guint8[8]) { 0x03,0x30,0xb4,0x00,0x00,0x00 }), ETH_ALEN));
+	g_assert ( nm_ethernet_address_is_valid (((guint8[8]) { 0x02,0x30,0xb4,0x00,0x00,0x01 }), ETH_ALEN));
+}
+
+/*******************************************/
+
 NMTST_DEFINE ();
 
 int
@@ -440,6 +464,7 @@ main (int argc, char **argv)
 
 	g_test_add_func ("/general/nm_utils_kill_child", test_nm_utils_kill_child);
 	g_test_add_func ("/general/nm_utils_array_remove_at_indexes", test_nm_utils_array_remove_at_indexes);
+	g_test_add_func ("/general/nm_ethernet_address_is_valid", test_nm_ethernet_address_is_valid);
 
 	return g_test_run ();
 }
