@@ -434,14 +434,17 @@ test_nm_utils_array_remove_at_indexes ()
 static void
 test_nm_ethernet_address_is_valid ()
 {
+	g_assert (!nm_ethernet_address_is_valid (NULL, -1));
+	g_assert (!nm_ethernet_address_is_valid (NULL, ETH_ALEN));
+
 	g_assert (!nm_ethernet_address_is_valid ("FF:FF:FF:FF:FF:FF", -1));
 	g_assert (!nm_ethernet_address_is_valid ("00:00:00:00:00:00", -1));
 	g_assert (!nm_ethernet_address_is_valid ("44:44:44:44:44:44", -1));
 	g_assert (!nm_ethernet_address_is_valid ("00:30:b4:00:00:00", -1));
 
-	g_assert ( nm_ethernet_address_is_valid ("", -1));
+	g_assert (!nm_ethernet_address_is_valid ("", -1));
 	g_assert (!nm_ethernet_address_is_valid ("1", -1));
-	g_assert ( nm_ethernet_address_is_valid ("2", -1));
+	g_assert (!nm_ethernet_address_is_valid ("2", -1));
 
 	g_assert (!nm_ethernet_address_is_valid (((guint8[8]) { 0x00,0x30,0xb4,0x00,0x00,0x00 }), ETH_ALEN));
 	g_assert ( nm_ethernet_address_is_valid (((guint8[8]) { 0x00,0x30,0xb4,0x00,0x00,0x01 }), ETH_ALEN));
