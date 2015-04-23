@@ -1336,7 +1336,9 @@ request_wireless_scan (gpointer user_data)
 
 				for (i = 0; i < ssids->len; i++) {
 					ssid = g_ptr_array_index (ssids, i);
-					foo = nm_utils_ssid_to_utf8 (ssid->data, ssid->len);
+					foo = ssid->len > 0
+					      ? nm_utils_ssid_to_utf8 (ssid->data, ssid->len)
+					      : NULL;
 					_LOGD (LOGD_WIFI_SCAN, "(%d) probe scanning SSID '%s'",
 					            i, foo ? foo : "<hidden>");
 					g_free (foo);
