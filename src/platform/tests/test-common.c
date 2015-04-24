@@ -8,7 +8,7 @@
 #include "nm-test-utils.h"
 
 #define SIGNAL_DATA_FMT "'%s-%s' ifindex %d%s%s%s (%d times received)"
-#define SIGNAL_DATA_ARG(data) (data)->name, _change_type_to_string ((data)->change_type), (data)->ifindex, (data)->ifname ? " ifname '" : "", (data)->ifname ? (data)->ifname : "", (data)->ifname ? "'" : "", (data)->received_count
+#define SIGNAL_DATA_ARG(data) (data)->name, nm_platform_signal_change_type_to_string ((data)->change_type), (data)->ifindex, (data)->ifname ? " ifname '" : "", (data)->ifname ? (data)->ifname : "", (data)->ifname ? "'" : "", (data)->received_count
 
 
 gboolean
@@ -41,21 +41,6 @@ add_signal_full (const char *name, NMPlatformSignalChangeType change_type, GCall
 	g_assert (data->handler_id >= 0);
 
 	return data;
-}
-
-static const char *
-_change_type_to_string (NMPlatformSignalChangeType change_type)
-{
-    switch (change_type) {
-    case NM_PLATFORM_SIGNAL_ADDED:
-        return "added";
-    case NM_PLATFORM_SIGNAL_CHANGED:
-        return "changed";
-    case NM_PLATFORM_SIGNAL_REMOVED:
-        return "removed";
-    default:
-        g_return_val_if_reached ("UNKNOWN");
-    }
 }
 
 void
@@ -134,7 +119,7 @@ link_callback (NMPlatform *platform, int ifindex, NMPlatformLink *received, NMPl
 	}
 
 	data->received_count++;
-	debug ("Received signal '%s-%s' ifindex %d ifname '%s' %dth time.", data->name, _change_type_to_string (data->change_type), ifindex, received->name, data->received_count);
+	debug ("Received signal '%s-%s' ifindex %d ifname '%s' %dth time.", data->name, nm_platform_signal_change_type_to_string (data->change_type), ifindex, received->name, data->received_count);
 
 	if (change_type == NM_PLATFORM_SIGNAL_REMOVED)
 		g_assert (!nm_platform_link_get_name (NM_PLATFORM_GET, ifindex));

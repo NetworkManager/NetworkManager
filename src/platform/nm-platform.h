@@ -515,6 +515,8 @@ typedef struct {
 #define NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED "ip4-route-changed"
 #define NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED "ip6-route-changed"
 
+const char *nm_platform_signal_change_type_to_string (NMPlatformSignalChangeType change_type);
+
 /******************************************************************/
 
 GType nm_platform_get_type (void);

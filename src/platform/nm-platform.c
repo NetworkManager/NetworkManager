@@ -2885,8 +2885,8 @@ nm_platform_ip_address_cmp_expiry (const NMPlatformIPAddress *a, const NMPlatfor
 
 #undef _CMP_POINTER
 
-static const char *
-_change_type_to_string (NMPlatformSignalChangeType change_type)
+const char *
+nm_platform_signal_change_type_to_string (NMPlatformSignalChangeType change_type)
 {
 	switch (change_type) {
 	case NM_PLATFORM_SIGNAL_ADDED:
@@ -2904,31 +2904,31 @@ static void
 log_link (NMPlatform *p, int ifindex, NMPlatformLink *device, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
 
-	debug ("signal: link %7s: %s", _change_type_to_string (change_type), nm_platform_link_to_string (device));
+	debug ("signal: link %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_link_to_string (device));
 }
 
 static void
 log_ip4_address (NMPlatform *p, int ifindex, NMPlatformIP4Address *address, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
-	debug ("signal: address 4 %7s: %s", _change_type_to_string (change_type), nm_platform_ip4_address_to_string (address));
+	debug ("signal: address 4 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip4_address_to_string (address));
 }
 
 static void
 log_ip6_address (NMPlatform *p, int ifindex, NMPlatformIP6Address *address, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
-	debug ("signal: address 6 %7s: %s", _change_type_to_string (change_type), nm_platform_ip6_address_to_string (address));
+	debug ("signal: address 6 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip6_address_to_string (address));
 }
 
 static void
 log_ip4_route (NMPlatform *p, int ifindex, NMPlatformIP4Route *route, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
-	debug ("signal: route   4 %7s: %s", _change_type_to_string (change_type), nm_platform_ip4_route_to_string (route));
+	debug ("signal: route   4 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip4_route_to_string (route));
 }
 
 static void
 log_ip6_route (NMPlatform *p, int ifindex, NMPlatformIP6Route *route, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
-	debug ("signal: route   6 %7s: %s", _change_type_to_string (change_type), nm_platform_ip6_route_to_string (route));
+	debug ("signal: route   6 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip6_route_to_string (route));
 }
 
 /******************************************************************/
