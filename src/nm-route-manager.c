@@ -112,8 +112,8 @@ static const VTableIP vtable_v4, vtable_v6;
 #define _LOGT_ENABLED(addr_family)   _LOG_LEVEL_ENABLED (LOGL_TRACE, addr_family)
 #define _LOGT(addr_family, ...)      _LOG (LOGL_TRACE, addr_family, __VA_ARGS__)
 #else
-#define _LOGT_ENABLED(addr_family)   FALSE
-#define _LOGT(addr_family, ...)      G_STMT_START { (void) 0; } G_STMT_END
+#define _LOGT_ENABLED(addr_family)   (FALSE && _LOG_LEVEL_ENABLED (LOGL_TRACE, addr_family))
+#define _LOGT(addr_family, ...)      G_STMT_START { if (FALSE) { _LOG (LOGL_TRACE, addr_family, __VA_ARGS__); } } G_STMT_END
 #endif
 
 #define _LOGD(addr_family, ...)      _LOG (LOGL_DEBUG, addr_family, __VA_ARGS__)

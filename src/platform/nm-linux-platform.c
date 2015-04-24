@@ -99,7 +99,7 @@
 #define _LOGT(...)          _LOG (LOGL_TRACE, _LOG_DOMAIN, platform, __VA_ARGS__)
 #else
 #define _LOGT_ENABLED()     FALSE
-#define _LOGT(...)          G_STMT_START { (void) 0; } G_STMT_END
+#define _LOGT(...)          G_STMT_START { if (FALSE) { _LOG (LOGL_TRACE, _LOG_DOMAIN, platform, __VA_ARGS__); } } G_STMT_END
 #endif
 
 #define _LOGD(...)      _LOG (LOGL_DEBUG, _LOG_DOMAIN, platform, __VA_ARGS__)
