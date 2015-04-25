@@ -941,9 +941,10 @@ init_link (NMPlatform *platform, NMPlatformLink *info, struct rtnl_link *rtnllin
 		info->name[0] = '\0';
 	info->type = link_extract_type (platform, rtnllink);
 	info->kind = g_intern_string (rtnl_link_get_type (rtnllink));
-	info->up = !!(rtnl_link_get_flags (rtnllink) & IFF_UP);
-	info->connected = !!(rtnl_link_get_flags (rtnllink) & IFF_LOWER_UP);
-	info->arp = !(rtnl_link_get_flags (rtnllink) & IFF_NOARP);
+	info->flags = rtnl_link_get_flags (rtnllink);
+	info->up = NM_FLAGS_HAS (info->flags, IFF_UP);
+	info->connected = NM_FLAGS_HAS (info->flags, IFF_LOWER_UP);
+	info->arp = !NM_FLAGS_HAS (info->flags, IFF_NOARP);
 	info->master = rtnl_link_get_master (rtnllink);
 	info->parent = rtnl_link_get_link (rtnllink);
 	info->mtu = rtnl_link_get_mtu (rtnllink);

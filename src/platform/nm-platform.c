@@ -2440,6 +2440,7 @@ nm_platform_link_to_string (const NMPlatformLink *link)
 {
 	char master[20];
 	char parent[20];
+	char str_flags[64];
 	char *driver, *udi;
 	GString *str;
 
@@ -2455,6 +2456,11 @@ nm_platform_link_to_string (const NMPlatformLink *link)
 		g_string_append (str, "DOWN");
 	if (link->connected)
 		g_string_append (str, ",LOWER_UP");
+
+	if (link->flags) {
+		rtnl_link_flags2str (link->flags, str_flags, sizeof (str_flags));
+		g_string_append_printf (str, ";%s", str_flags);
+	}
 
 	if (link->master)
 		g_snprintf (master, sizeof (master), " master %d", link->master);
@@ -2763,6 +2769,7 @@ nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 	_CMP_FIELD (a, b, master);
 	_CMP_FIELD (a, b, parent);
 	_CMP_FIELD (a, b, up);
+	_CMP_FIELD (a, b, flags);
 	_CMP_FIELD (a, b, connected);
 	_CMP_FIELD (a, b, arp);
 	_CMP_FIELD (a, b, mtu);
