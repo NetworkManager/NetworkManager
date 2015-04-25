@@ -107,11 +107,10 @@ dhcp4_state_changed (NMDhcpClient *client,
 		if (!nm_ip4_config_commit (existing, ifindex, global_opt.priority_v4))
 			nm_log_warn (LOGD_DHCP4, "(%s): failed to apply DHCPv4 config", global_opt.ifname);
 
-		if (last_config) {
+		if (last_config)
 			g_object_unref (last_config);
-			last_config = nm_ip4_config_new (nm_dhcp_client_get_ifindex (client));
-			nm_ip4_config_replace (last_config, ip4_config, NULL);
-		}
+		last_config = nm_ip4_config_new (nm_dhcp_client_get_ifindex (client));
+		nm_ip4_config_replace (last_config, ip4_config, NULL);
 		break;
 	case NM_DHCP_STATE_TIMEOUT:
 	case NM_DHCP_STATE_DONE:
@@ -251,11 +250,10 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, gpointer user_da
 	if (!nm_ip6_config_commit (existing, ifindex))
 		nm_log_warn (LOGD_IP6, "(%s): failed to apply IPv6 config", global_opt.ifname);
 
-	if (last_config) {
+	if (last_config)
 		g_object_unref (last_config);
-		last_config = nm_ip6_config_new (ifindex);
-		nm_ip6_config_replace (last_config, ip6_config, NULL);
-	}
+	last_config = nm_ip6_config_new (ifindex);
+	nm_ip6_config_replace (last_config, ip6_config, NULL);
 }
 
 static void
