@@ -2639,6 +2639,7 @@ nm_platform_link_to_string (const NMPlatformLink *link)
 	char parent[20];
 	char str_flags[64];
 	char *driver, *udi;
+	char str_vlan[16];
 	GString *str;
 
 	if (!link)
@@ -2669,18 +2670,25 @@ nm_platform_link_to_string (const NMPlatformLink *link)
 	else
 		parent[0] = 0;
 
+	if (link->vlan_id)
+		g_snprintf (str_vlan, sizeof (str_vlan), " vlan %u", (guint) link->vlan_id);
+	else
+		str_vlan[0] = '\0';
+
 	driver = link->driver ? g_strdup_printf (" driver '%s'", link->driver) : NULL;
 	udi = link->udi ? g_strdup_printf (" udi '%s'", link->udi) : NULL;
 
 	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%d: %s%s <%s> mtu %d%s "
 	            "%s" /* link->type */
 	            "%s%s" /* kind */
+	            "%s" /* vlan */
 	            "%s%s",
 	            link->ifindex, link->name, parent, str->str,
 	            link->mtu, master,
 	            nm_link_type_to_string (link->type),
 	            link->type != NM_LINK_TYPE_UNKNOWN && link->kind ? " kind " : "",
 	            link->type != NM_LINK_TYPE_UNKNOWN && link->kind ? link->kind : "",
+	            str_vlan,
 	            driver ? driver : "", udi ? udi : "");
 	g_string_free (str, TRUE);
 	g_free (driver);
@@ -2966,6 +2974,7 @@ nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 	_CMP_FIELD (a, b, master);
 	_CMP_FIELD (a, b, parent);
 	_CMP_FIELD (a, b, up);
+	_CMP_FIELD (a, b, vlan_id);
 	_CMP_FIELD (a, b, flags);
 	_CMP_FIELD (a, b, connected);
 	_CMP_FIELD (a, b, arp);

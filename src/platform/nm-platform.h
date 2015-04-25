@@ -101,6 +101,9 @@ struct _NMPlatformLink {
 	int master;
 	int parent;
 
+	/* rtnl_link_vlan_get_id(), IFLA_VLAN_ID */
+	guint16 vlan_id;
+
 	/* IFF_* flags as u32. Note that ifi_flags in 'struct ifinfomsg' is declared as 'unsigned',
 	 * but libnl stores the flag internally as u32.  */
 	guint32 flags;

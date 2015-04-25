@@ -949,6 +949,9 @@ init_link (NMPlatform *platform, NMPlatformLink *info, struct rtnl_link *rtnllin
 	info->parent = rtnl_link_get_link (rtnllink);
 	info->mtu = rtnl_link_get_mtu (rtnllink);
 
+	if (info->type == NM_LINK_TYPE_VLAN)
+		info->vlan_id = rtnl_link_vlan_get_id (rtnllink);
+
 	udev_device = g_hash_table_lookup (priv->udev_devices, GINT_TO_POINTER (info->ifindex));
 	if (udev_device) {
 		info->driver = nmp_utils_udev_get_driver (udev_device);
