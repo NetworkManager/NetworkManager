@@ -100,9 +100,21 @@ struct _NMPlatformLink {
 	gboolean initialized;
 	int master;
 	int parent;
+
+	/* IFF_* flags as u32. Note that ifi_flags in 'struct ifinfomsg' is declared as 'unsigned',
+	 * but libnl stores the flag internally as u32.  */
+	guint32 flags;
+
+	/* FIXME: @up is redundant to (@flags & IFF_UP) */
 	gboolean up;
+
+	/* @connected is mostly identical to (@flags & IFF_UP). Except for bridge/bond masters,
+	 * where we coerce the link as disconnect if it has no slaves. */
 	gboolean connected;
+
+	/* FIXME: @arp is redundant to !(@flags & IFF_NOARP) */
 	gboolean arp;
+
 	guint mtu;
 };
 
