@@ -2435,7 +2435,7 @@ _lifetime_summary_to_string (gint32 now, guint32 timestamp, guint32 preferred, g
 	return buf;
 }
 
-static char _nm_platform_to_string_buffer[256];
+char _nm_platform_to_string_buffer[256];
 
 const char *
 nm_platform_link_to_string (const NMPlatformLink *link)
