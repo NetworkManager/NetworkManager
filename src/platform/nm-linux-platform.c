@@ -949,6 +949,7 @@ init_link (NMPlatform *platform, NMPlatformLink *info, struct rtnl_link *rtnllin
 	info->master = rtnl_link_get_master (rtnllink);
 	info->parent = rtnl_link_get_link (rtnllink);
 	info->mtu = rtnl_link_get_mtu (rtnllink);
+	info->arptype = rtnl_link_get_arptype (rtnllink);
 
 	if (info->type == NM_LINK_TYPE_VLAN)
 		info->vlan_id = rtnl_link_vlan_get_id (rtnllink);
