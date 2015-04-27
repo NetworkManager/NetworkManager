@@ -964,6 +964,15 @@ init_link (NMPlatform *platform, NMPlatformLink *info, struct rtnl_link *rtnllin
 		}
 	}
 
+#if HAVE_LIBNL_INET6_ADDR_GEN_MODE
+	if (_support_user_ipv6ll_get ()) {
+		guint8 mode = 0;
+
+		if (rtnl_link_inet6_get_addr_gen_mode (rtnllink, &mode) == 0)
+			info->inet6_addr_gen_mode_inv = ~mode;
+	}
+#endif
+
 	udev_device = g_hash_table_lookup (priv->udev_devices, GINT_TO_POINTER (info->ifindex));
 	if (udev_device) {
 		info->driver = nmp_utils_udev_get_driver (udev_device);

@@ -107,6 +107,11 @@ struct _NMPlatformLink {
 		guint8 len;
 	} addr;
 
+	/* The bitwise inverse of rtnl_link_inet6_get_addr_gen_mode(). It is inverse
+	 * to have a default of 0 -- meaning: unspecified. That way, a struct
+	 * initialized with memset(0) has and unset value.*/
+	guint8 inet6_addr_gen_mode_inv;
+
 	/* rtnl_link_vlan_get_id(), IFLA_VLAN_ID */
 	guint16 vlan_id;
 
