@@ -47,16 +47,23 @@ typedef struct {
 	NMAuthSubject *subject;
 	char *identifier;
 	char *owner_username;
+	char *dbus_owner;
 	NMSecretAgentCapabilities capabilities;
 	guint32 hash;
 
 	GSList *permissions;
 
 	DBusGProxy *proxy;
-	guint proxy_destroy_id;
 
 	GHashTable *requests;
 } NMSecretAgentPrivate;
+
+enum {
+	DISCONNECTED,
+
+	LAST_SIGNAL
+};
+static guint signals[LAST_SIGNAL] = { 0 };
 
 /*************************************************************/
 
@@ -107,7 +114,7 @@ nm_secret_agent_get_description (NMSecretAgent *agent)
 	priv = NM_SECRET_AGENT_GET_PRIVATE (agent);
 	if (!priv->description) {
 		priv->description = g_strdup_printf ("%s/%s/%lu",
-		                                     nm_auth_subject_get_unix_process_dbus_sender (priv->subject),
+		                                     priv->dbus_owner,
 		                                     priv->identifier,
 		                                     nm_auth_subject_get_unix_process_uid (priv->subject));
 	}
@@ -120,7 +127,7 @@ nm_secret_agent_get_dbus_owner (NMSecretAgent *agent)
 {
 	g_return_val_if_fail (NM_IS_SECRET_AGENT (agent), NULL);
 
-	return nm_auth_subject_get_unix_process_dbus_sender (NM_SECRET_AGENT_GET_PRIVATE (agent)->subject);
+	return NM_SECRET_AGENT_GET_PRIVATE (agent)->dbus_owner;
 }
 
 const char *
@@ -450,15 +457,35 @@ nm_secret_agent_delete_secrets (NMSecretAgent *self,
 	                              callback_data);
 }
 
+static void proxy_cleanup (NMSecretAgent *self);
+
+static void
+name_owner_changed_cb (NMDBusManager *dbus_mgr,
+                       const char *name,
+                       const char *old_owner,
+                       const char *new_owner,
+                       gpointer user_data)
+{
+	NMSecretAgent *self = NM_SECRET_AGENT (user_data);
+	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
+
+	if (!new_owner && !g_strcmp0 (old_owner, priv->dbus_owner))
+		proxy_cleanup (self);
+}
+
 static void
 proxy_cleanup (NMSecretAgent *self)
 {
 	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
 
 	if (priv->proxy) {
-		g_signal_handler_disconnect (priv->proxy, priv->proxy_destroy_id);
-		priv->proxy_destroy_id = 0;
+		g_signal_handlers_disconnect_by_func (priv->proxy, proxy_cleanup, self);
 		g_clear_object (&priv->proxy);
+
+		g_signal_handlers_disconnect_by_func (nm_dbus_manager_get (), name_owner_changed_cb, self);
+		g_clear_pointer (&priv->dbus_owner, g_free);
+
+		g_signal_emit (self, signals[DISCONNECTED], 0);
 	}
 }
 
@@ -472,7 +499,7 @@ nm_secret_agent_new (DBusGMethodInvocation *context,
 {
 	NMSecretAgent *self;
 	NMSecretAgentPrivate *priv;
-	char *hash_str, *username;
+	char *hash_str;
 	struct passwd *pw;
 
 	g_return_val_if_fail (context != NULL, NULL);
@@ -483,13 +510,13 @@ nm_secret_agent_new (DBusGMethodInvocation *context,
 	pw = getpwuid (nm_auth_subject_get_unix_process_uid (subject));
 	g_return_val_if_fail (pw != NULL, NULL);
 	g_return_val_if_fail (pw->pw_name[0] != '\0', NULL);
-	username = g_strdup (pw->pw_name);
 
 	self = (NMSecretAgent *) g_object_new (NM_TYPE_SECRET_AGENT, NULL);
 	priv = NM_SECRET_AGENT_GET_PRIVATE (self);
 
 	priv->identifier = g_strdup (identifier);
-	priv->owner_username = g_strdup (username);
+	priv->owner_username = g_strdup (pw->pw_name);
+	priv->dbus_owner = g_strdup (nm_auth_subject_get_unix_process_dbus_sender (subject));
 	priv->capabilities = capabilities;
 	priv->subject = g_object_ref (subject);
 
@@ -499,14 +526,17 @@ nm_secret_agent_new (DBusGMethodInvocation *context,
 
 	priv->proxy = nm_dbus_manager_new_proxy (nm_dbus_manager_get (),
 	                                         context,
-	                                         nm_auth_subject_get_unix_process_dbus_sender (subject),
+	                                         priv->dbus_owner,
 	                                         NM_DBUS_PATH_SECRET_AGENT,
 	                                         NM_DBUS_INTERFACE_SECRET_AGENT);
 	g_assert (priv->proxy);
-	priv->proxy_destroy_id = g_signal_connect_swapped (priv->proxy, "destroy",
-	                                                   G_CALLBACK (proxy_cleanup), self);
+	g_signal_connect_swapped (priv->proxy, "destroy",
+	                          G_CALLBACK (proxy_cleanup), self);
+	g_signal_connect (nm_dbus_manager_get (),
+	                  NM_DBUS_MANAGER_NAME_OWNER_CHANGED,
+	                  G_CALLBACK (name_owner_changed_cb),
+	                  self);
 
-	g_free (username);
 	return self;
 }
 
@@ -555,5 +585,15 @@ nm_secret_agent_class_init (NMSecretAgentClass *config_class)
 	/* virtual methods */
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
+
+	/* signals */
+	signals[DISCONNECTED] =
+		g_signal_new (NM_SECRET_AGENT_DISCONNECTED,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMSecretAgentClass, disconnected),
+		              NULL, NULL,
+		              g_cclosure_marshal_VOID__VOID,
+		              G_TYPE_NONE, 0);
 }
 

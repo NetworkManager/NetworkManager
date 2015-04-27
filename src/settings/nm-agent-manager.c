@@ -50,7 +50,6 @@ G_DEFINE_TYPE (NMAgentManager, nm_agent_manager, NM_TYPE_EXPORTED_OBJECT)
                                          NMAgentManagerPrivate))
 
 typedef struct {
-	NMDBusManager *dbus_mgr;
 	NMAuthManager *auth_mgr;
 
 	/* Auth chains for checking agent permissions */
@@ -264,6 +263,14 @@ find_agent_by_identifier_and_uid (NMAgentManager *self,
 }
 
 static void
+agent_disconnected_cb (NMSecretAgent *agent, gpointer user_data)
+{
+	/* The agent quit, so remove it and let interested clients know */
+	remove_agent (NM_AGENT_MANAGER (user_data),
+	              nm_secret_agent_get_dbus_owner (agent));
+}
+
+static void
 impl_agent_manager_register_with_capabilities (NMAgentManager *self,
                                                const char *identifier,
                                                NMSecretAgentCapabilities capabilities,
@@ -305,6 +312,8 @@ impl_agent_manager_register_with_capabilities (NMAgentManager *self,
 		                             "Failed to initialize the agent");
 		goto done;
 	}
+	g_signal_connect (agent, NM_SECRET_AGENT_DISCONNECTED,
+	                  G_CALLBACK (agent_disconnected_cb), self);
 
 	nm_log_dbg (LOGD_AGENTS, "(%s) requesting permissions",
 	            nm_secret_agent_get_description (agent));
@@ -343,11 +352,10 @@ static void
 impl_agent_manager_unregister (NMAgentManager *self,
                                DBusGMethodInvocation *context)
 {
-	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
 	GError *error = NULL;
 	char *sender = NULL;
 
-	if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr,
+	if (!nm_dbus_manager_get_caller_info (nm_dbus_manager_get (),
 	                                      context,
 	                                      &sender,
 	                                      NULL,
@@ -1451,19 +1459,6 @@ nm_agent_manager_all_agents_have_capability (NMAgentManager *manager,
 /*************************************************************/
 
 static void
-name_owner_changed_cb (NMDBusManager *dbus_mgr,
-                       const char *name,
-                       const char *old_owner,
-                       const char *new_owner,
-                       gpointer user_data)
-{
-	if (old_owner) {
-		/* The agent quit, so remove it and let interested clients know */
-		remove_agent (NM_AGENT_MANAGER (user_data), old_owner);
-	}
-}
-
-static void
 agent_permissions_changed_done (NMAuthChain *chain,
                                 GError *error,
                                 DBusGMethodInvocation *context,
@@ -1550,15 +1545,9 @@ constructed (GObject *object)
 
 	G_OBJECT_CLASS (nm_agent_manager_parent_class)->constructed (object);
 
-	priv->dbus_mgr = g_object_ref (nm_dbus_manager_get ());
 	priv->auth_mgr = g_object_ref (nm_auth_manager_get ());
 
 	nm_exported_object_export (NM_EXPORTED_OBJECT (object));
-
-	g_signal_connect (priv->dbus_mgr,
-	                  NM_DBUS_MANAGER_NAME_OWNER_CHANGED,
-	                  G_CALLBACK (name_owner_changed_cb),
-	                  object);
 
 	g_signal_connect (priv->auth_mgr,
 	                  NM_AUTH_MANAGER_SIGNAL_CHANGED,
@@ -1589,13 +1578,8 @@ dispose (GObject *object)
 		                                      object);
 		g_clear_object (&priv->auth_mgr);
 	}
-	if (priv->dbus_mgr) {
-		g_signal_handlers_disconnect_by_func (priv->dbus_mgr,
-		                                      G_CALLBACK (name_owner_changed_cb),
-		                                      object);
-		nm_exported_object_unexport (NM_EXPORTED_OBJECT (object));
-		g_clear_object (&priv->dbus_mgr);
-	}
+
+	nm_exported_object_unexport (NM_EXPORTED_OBJECT (object));
 
 	G_OBJECT_CLASS (nm_agent_manager_parent_class)->dispose (object);
 }

@@ -33,12 +33,16 @@
 #define NM_IS_SECRET_AGENT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_SECRET_AGENT))
 #define NM_SECRET_AGENT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_SECRET_AGENT, NMSecretAgentClass))
 
+#define NM_SECRET_AGENT_DISCONNECTED "disconnected"
+
 struct _NMSecretAgent {
 	GObject parent;
 };
 
 typedef struct {
 	GObjectClass parent;
+
+	void (*disconnected) (NMSecretAgent *self);
 } NMSecretAgentClass;
 
 GType nm_secret_agent_get_type (void);
