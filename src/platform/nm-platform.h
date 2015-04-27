@@ -101,6 +101,9 @@ struct _NMPlatformLink {
 	int master;
 	int parent;
 
+	/* rtnl_link_get_arptype(), ifinfomsg.ifi_type. */
+	guint32 arptype;
+
 	/* rtnl_link_get_addr() */
 	struct {
 		guint8 data[20]; /* NM_UTILS_HWADDR_LEN_MAX */

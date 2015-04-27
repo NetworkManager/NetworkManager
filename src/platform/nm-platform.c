@@ -2793,6 +2793,7 @@ nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 	_CMP_FIELD (a, b, arp);
 	_CMP_FIELD (a, b, mtu);
 	_CMP_FIELD_BOOL (a, b, initialized);
+	_CMP_FIELD (a, b, arptype);
 	_CMP_FIELD (a, b, addr.len);
 	_CMP_FIELD (a, b, inet6_addr_gen_mode_inv);
 	_CMP_FIELD_STR_INTERNED (a, b, kind);
