@@ -2435,7 +2435,7 @@ _lifetime_summary_to_string (gint32 now, guint32 timestamp, guint32 preferred, g
 	return buf;
 }
 
-static char to_string_buffer[256];
+static char _nm_platform_to_string_buffer[256];
 
 const char *
 nm_platform_link_to_string (const NMPlatformLink *link)
@@ -2483,7 +2483,7 @@ nm_platform_link_to_string (const NMPlatformLink *link)
 	driver = link->driver ? g_strdup_printf (" driver '%s'", link->driver) : NULL;
 	udi = link->udi ? g_strdup_printf (" udi '%s'", link->udi) : NULL;
 
-	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%d: %s%s <%s> mtu %d%s "
+	g_snprintf (_nm_platform_to_string_buffer, sizeof (_nm_platform_to_string_buffer), "%d: %s%s <%s> mtu %d%s "
 	            "%s" /* link->type */
 	            "%s%s" /* kind */
 	            "%s" /* vlan */
@@ -2498,7 +2498,7 @@ nm_platform_link_to_string (const NMPlatformLink *link)
 	g_string_free (str, TRUE);
 	g_free (driver);
 	g_free (udi);
-	return to_string_buffer;
+	return _nm_platform_to_string_buffer;
 }
 
 /**
@@ -2551,14 +2551,14 @@ nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address)
 	                                      now, str_pref, sizeof (str_pref)) );
 	str_time_p = _lifetime_summary_to_string (now, address->timestamp, address->preferred, address->lifetime, str_time, sizeof (str_time));
 
-	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%s/%d lft %s pref %s%s%s%s%s src %s",
+	g_snprintf (_nm_platform_to_string_buffer, sizeof (_nm_platform_to_string_buffer), "%s/%d lft %s pref %s%s%s%s%s src %s",
 	            s_address, address->plen, str_lft_p, str_pref_p, str_time_p,
 	            str_peer ? str_peer : "",
 	            str_dev,
 	            str_label,
 	            source_to_string (address->source));
 	g_free (str_peer);
-	return to_string_buffer;
+	return _nm_platform_to_string_buffer;
 }
 
 /**
@@ -2635,7 +2635,7 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address)
 	                                      now, str_pref, sizeof (str_pref)) );
 	str_time_p = _lifetime_summary_to_string (now, address->timestamp, address->preferred, address->lifetime, str_time, sizeof (str_time));
 
-	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%s/%d lft %s pref %s%s%s%s%s src %s",
+	g_snprintf (_nm_platform_to_string_buffer, sizeof (_nm_platform_to_string_buffer), "%s/%d lft %s pref %s%s%s%s%s src %s",
 	            s_address, address->plen, str_lft_p, str_pref_p, str_time_p,
 	            str_peer ? str_peer : "",
 	            str_dev,
@@ -2643,7 +2643,7 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address)
 	            source_to_string (address->source));
 	g_free (str_flags);
 	g_free (str_peer);
-	return to_string_buffer;
+	return _nm_platform_to_string_buffer;
 }
 
 /**
@@ -2672,14 +2672,14 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route)
 
 	_to_string_dev (NULL, route->ifindex, str_dev, sizeof (str_dev));
 
-	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%s/%d via %s%s metric %"G_GUINT32_FORMAT" mss %"G_GUINT32_FORMAT" src %s%s%s",
+	g_snprintf (_nm_platform_to_string_buffer, sizeof (_nm_platform_to_string_buffer), "%s/%d via %s%s metric %"G_GUINT32_FORMAT" mss %"G_GUINT32_FORMAT" src %s%s%s",
 	            s_network, route->plen, s_gateway,
 	            str_dev,
 	            route->metric, route->mss,
 	            source_to_string (route->source),
 	            route->scope_inv ? " scope " : "",
 	            route->scope_inv ? (rtnl_scope2str (nm_platform_route_scope_inv (route->scope_inv), str_scope, sizeof (str_scope))) : "");
-	return to_string_buffer;
+	return _nm_platform_to_string_buffer;
 }
 
 /**
@@ -2707,12 +2707,12 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route)
 
 	_to_string_dev (NULL, route->ifindex, str_dev, sizeof (str_dev));
 
-	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%s/%d via %s%s metric %"G_GUINT32_FORMAT" mss %"G_GUINT32_FORMAT" src %s",
+	g_snprintf (_nm_platform_to_string_buffer, sizeof (_nm_platform_to_string_buffer), "%s/%d via %s%s metric %"G_GUINT32_FORMAT" mss %"G_GUINT32_FORMAT" src %s",
 	            s_network, route->plen, s_gateway,
 	            str_dev,
 	            route->metric, route->mss,
 	            source_to_string (route->source));
-	return to_string_buffer;
+	return _nm_platform_to_string_buffer;
 }
 
 #define _CMP_POINTER(a, b)                                  \
