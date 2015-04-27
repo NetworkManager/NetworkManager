@@ -101,6 +101,12 @@ struct _NMPlatformLink {
 	int master;
 	int parent;
 
+	/* rtnl_link_get_addr() */
+	struct {
+		guint8 data[20]; /* NM_UTILS_HWADDR_LEN_MAX */
+		guint8 len;
+	} addr;
+
 	/* rtnl_link_vlan_get_id(), IFLA_VLAN_ID */
 	guint16 vlan_id;
 

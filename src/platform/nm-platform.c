@@ -38,6 +38,8 @@
 #include "nm-enum-types.h"
 #include "nm-core-internal.h"
 
+G_STATIC_ASSERT (sizeof ( ((NMPlatformLink *) NULL)->addr.data ) == NM_UTILS_HWADDR_LEN_MAX);
+
 #define debug(...) nm_log_dbg (LOGD_PLATFORM, __VA_ARGS__)
 
 #define NM_PLATFORM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_PLATFORM, NMPlatformPrivate))
@@ -2759,6 +2761,14 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route)
             return c < 0 ? -1 : 1;                          \
     } G_STMT_END
 
+#define _CMP_FIELD_MEMCMP_LEN(a, b, field, len)             \
+    G_STMT_START {                                          \
+        int c = memcmp (&((a)->field), &((b)->field),       \
+                        MIN (len, sizeof ((a)->field)));    \
+        if (c != 0)                                         \
+            return c < 0 ? -1 : 1;                          \
+    } G_STMT_END
+
 #define _CMP_FIELD_MEMCMP(a, b, field)                      \
     G_STMT_START {                                          \
         int c = memcmp (&((a)->field), &((b)->field),       \
@@ -2783,9 +2793,12 @@ nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 	_CMP_FIELD (a, b, arp);
 	_CMP_FIELD (a, b, mtu);
 	_CMP_FIELD_BOOL (a, b, initialized);
+	_CMP_FIELD (a, b, addr.len);
 	_CMP_FIELD_STR_INTERNED (a, b, kind);
 	_CMP_FIELD_STR0 (a, b, udi);
 	_CMP_FIELD_STR_INTERNED (a, b, driver);
+	if (a->addr.len)
+		_CMP_FIELD_MEMCMP_LEN (a, b, addr.data, a->addr.len);
 	return 0;
 }
 
