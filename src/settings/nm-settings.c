@@ -95,8 +95,7 @@ EXPORT(nm_settings_connection_replace_and_commit)
 /* END LINKER CRACKROCK */
 
 static void claim_connection (NMSettings *self,
-                              NMSettingsConnection *connection,
-                              gboolean do_export);
+                              NMSettingsConnection *connection);
 
 static gboolean impl_settings_list_connections (NMSettings *self,
                                                 GPtrArray **connections,
@@ -218,7 +217,7 @@ plugin_connection_added (NMSystemConfigInterface *config,
                          NMSettingsConnection *connection,
                          gpointer user_data)
 {
-	claim_connection (NM_SETTINGS (user_data), connection, TRUE);
+	claim_connection (NM_SETTINGS (user_data), connection);
 }
 
 static void
@@ -239,7 +238,7 @@ load_connections (NMSettings *self)
 		// priority plugin.
 
 		for (elt = plugin_connections; elt; elt = g_slist_next (elt))
-			claim_connection (self, NM_SETTINGS_CONNECTION (elt->data), TRUE);
+			claim_connection (self, NM_SETTINGS_CONNECTION (elt->data));
 
 		g_slist_free (plugin_connections);
 
@@ -465,6 +464,21 @@ notify (GObject *object, GParamSpec *pspec)
 	g_hash_table_destroy (hash);
 	g_value_unset (value);
 	g_slice_free (GValue, value);
+}
+
+gboolean
+nm_settings_has_connection (NMSettings *self, NMConnection *connection)
+{
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	GHashTableIter iter;
+	gpointer data;
+
+	g_hash_table_iter_init (&iter, priv->connections);
+	while (g_hash_table_iter_next (&iter, NULL, &data))
+		if (data == connection)
+			return TRUE;
+
+	return FALSE;
 }
 
 const GSList *
@@ -793,6 +807,11 @@ static void
 connection_removed (NMSettingsConnection *connection, gpointer user_data)
 {
 	NMSettings *self = NM_SETTINGS (user_data);
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	const char *cpath = nm_connection_get_path (NM_CONNECTION (connection));
+
+	if (!g_hash_table_lookup (priv->connections, cpath))
+		g_return_if_reached ();
 
 	g_object_ref (connection);
 
@@ -808,8 +827,7 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_ready_changed), self);
 
 	/* Forget about the connection internally */
-	g_hash_table_remove (NM_SETTINGS_GET_PRIVATE (user_data)->connections,
-	                     (gpointer) nm_connection_get_path (NM_CONNECTION (connection)));
+	g_hash_table_remove (priv->connections, (gpointer) cpath);
 
 	/* Notify D-Bus */
 	g_signal_emit (self, signals[CONNECTION_REMOVED], 0, connection);
@@ -876,9 +894,7 @@ openconnect_migrate_hack (NMConnection *connection)
 }
 
 static void
-claim_connection (NMSettings *self,
-                  NMSettingsConnection *connection,
-                  gboolean do_export)
+claim_connection (NMSettings *self, NMSettingsConnection *connection)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	static guint32 ec_counter = 0;
@@ -1029,7 +1045,7 @@ nm_settings_add_connection (NMSettings *self,
 
 		added = nm_system_config_interface_add_connection (plugin, connection, save_to_disk, &add_error);
 		if (added) {
-			claim_connection (self, added, TRUE);
+			claim_connection (self, added);
 			return added;
 		}
 		nm_log_dbg (LOGD_SETTINGS, "Failed to add %s/'%s': %s",

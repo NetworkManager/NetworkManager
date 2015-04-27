@@ -1646,6 +1646,39 @@ check_connection_mac_address (NMConnection *orig,
 	return FALSE;
 }
 
+static gboolean
+check_connection_cloned_mac_address (NMConnection *orig,
+                              NMConnection *candidate,
+                              GHashTable *settings)
+{
+	GHashTable *props;
+	const char *orig_mac = NULL, *cand_mac = NULL;
+	NMSettingWired *s_wired_orig, *s_wired_cand;
+
+	props = check_property_in_hash (settings,
+	                                NM_SETTING_WIRED_SETTING_NAME,
+	                                NM_SETTING_WIRED_CLONED_MAC_ADDRESS);
+	if (!props)
+		return TRUE;
+
+	/* If one of the MAC addresses is NULL, we accept that connection */
+	s_wired_orig = nm_connection_get_setting_wired (orig);
+	if (s_wired_orig)
+		orig_mac = nm_setting_wired_get_cloned_mac_address (s_wired_orig);
+
+	s_wired_cand = nm_connection_get_setting_wired (candidate);
+	if (s_wired_cand)
+		cand_mac = nm_setting_wired_get_cloned_mac_address (s_wired_cand);
+
+	if (!orig_mac || !cand_mac) {
+		remove_from_hash (settings, props,
+		                  NM_SETTING_WIRED_SETTING_NAME,
+		                  NM_SETTING_WIRED_CLONED_MAC_ADDRESS);
+		return TRUE;
+	}
+	return FALSE;
+}
+
 static NMConnection *
 check_possible_match (NMConnection *orig,
                       NMConnection *candidate,
@@ -1664,6 +1697,9 @@ check_possible_match (NMConnection *orig,
 		return NULL;
 
 	if (!check_connection_mac_address (orig, candidate, settings))
+		return NULL;
+
+	if (!check_connection_cloned_mac_address (orig, candidate, settings))
 		return NULL;
 
 	if (g_hash_table_size (settings) == 0)
