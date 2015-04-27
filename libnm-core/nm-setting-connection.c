@@ -76,6 +76,7 @@ typedef struct {
 	char *zone;
 	GSList *secondaries; /* secondary connections to activate with the base connection */
 	guint gateway_ping_timeout;
+	NMMetered metered;
 } NMSettingConnectionPrivate;
 
 enum {
@@ -95,6 +96,7 @@ enum {
 	PROP_AUTOCONNECT_SLAVES,
 	PROP_SECONDARIES,
 	PROP_GATEWAY_PING_TIMEOUT,
+	PROP_METERED,
 
 	LAST_PROP
 };
@@ -760,6 +762,23 @@ nm_setting_connection_get_gateway_ping_timeout (NMSettingConnection *setting)
 	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->gateway_ping_timeout;
 }
 
+/**
+ * nm_setting_connection_get_metered:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns: the #NMSettingConnection:metered property of the setting.
+ *
+ * Since: 1.0.6
+ **/
+NMMetered
+nm_setting_connection_get_metered (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting),
+	                      NM_METERED_UNKNOWN);
+
+	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->metered;
+}
+
 static void
 _set_error_missing_base_setting (GError **error, const char *type)
 {
@@ -919,6 +938,18 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 				return FALSE;
 			}
 		}
+	}
+
+	if (priv->metered != NM_METERED_UNKNOWN &&
+	    priv->metered != NM_METERED_YES &&
+	    priv->metered != NM_METERED_NO) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("metered value %d is not valid"), priv->metered);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME,
+		                NM_SETTING_CONNECTION_METERED);
+		return FALSE;
 	}
 
 	/* *** errors above here should be always fatal, below NORMALIZABLE_ERROR *** */
@@ -1154,6 +1185,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_GATEWAY_PING_TIMEOUT:
 		priv->gateway_ping_timeout = g_value_get_uint (value);
 		break;
+	case PROP_METERED:
+		priv->metered = g_value_get_enum (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -1226,6 +1260,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_GATEWAY_PING_TIMEOUT:
 		g_value_set_uint (value, priv->gateway_ping_timeout);
+		break;
+	case PROP_METERED:
+		g_value_set_enum (value, priv->metered);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1625,5 +1662,20 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		                    0, 600, 0,
 		                    G_PARAM_READWRITE |
 		                    G_PARAM_CONSTRUCT |
+		                    G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingConnection:metered:
+	 *
+	 * Whether the connection is metered.
+	 *
+	 * Since: 1.0.6
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_METERED,
+		 g_param_spec_enum (NM_SETTING_CONNECTION_METERED, "", "",
+		                    NM_TYPE_METERED,
+		                    NM_METERED_UNKNOWN,
+		                    G_PARAM_READWRITE |
 		                    G_PARAM_STATIC_STRINGS));
 }

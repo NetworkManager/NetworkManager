@@ -855,5 +855,6 @@ libnm_1_0_6 {
 global:
 	nm_device_get_metered;
 	nm_metered_get_type;
+	nm_setting_connection_get_metered;
 } libnm_1_0_4;
 
