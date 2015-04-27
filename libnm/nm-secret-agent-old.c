@@ -556,7 +556,7 @@ nm_secret_agent_old_register (NMSecretAgentOld *self,
 	 */
 	if (nmdbus_agent_manager_call_register_sync (priv->manager_proxy,
 	                                             priv->identifier,
-	                                             cancellable, NULL))
+	                                             cancellable, error))
 		goto success;
 
 	/* Failure */
