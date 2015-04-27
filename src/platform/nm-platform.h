@@ -29,6 +29,7 @@
 
 #include <nm-dbus-interface.h>
 #include "nm-types.h"
+#include "NetworkManagerUtils.h"
 
 #define NM_TYPE_PLATFORM            (nm_platform_get_type ())
 #define NM_PLATFORM(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_PLATFORM, NMPlatform))
@@ -109,6 +110,12 @@ struct _NMPlatformLink {
 		guint8 data[20]; /* NM_UTILS_HWADDR_LEN_MAX */
 		guint8 len;
 	} addr;
+
+	/* rtnl_link_inet6_get_token() */
+	struct {
+		NMUtilsIPv6IfaceId iid;
+		guint8 is_valid;
+	} inet6_token;
 
 	/* The bitwise inverse of rtnl_link_inet6_get_addr_gen_mode(). It is inverse
 	 * to have a default of 0 -- meaning: unspecified. That way, a struct
