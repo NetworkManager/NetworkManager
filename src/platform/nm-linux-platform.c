@@ -928,6 +928,7 @@ init_link (NMPlatform *platform, NMPlatformLink *info, struct rtnl_link *rtnllin
 	GUdevDevice *udev_device;
 	const char *name;
 	char *tmp;
+	struct nl_addr *nladdr;
 
 	g_return_val_if_fail (rtnllink, FALSE);
 
@@ -951,6 +952,17 @@ init_link (NMPlatform *platform, NMPlatformLink *info, struct rtnl_link *rtnllin
 
 	if (info->type == NM_LINK_TYPE_VLAN)
 		info->vlan_id = rtnl_link_vlan_get_id (rtnllink);
+
+	if ((nladdr = rtnl_link_get_addr (rtnllink))) {
+		unsigned int l = 0;
+
+		l = nl_addr_get_len (nladdr);
+		if (l > 0 && l <= NM_UTILS_HWADDR_LEN_MAX) {
+			G_STATIC_ASSERT (NM_UTILS_HWADDR_LEN_MAX == sizeof (info->addr.data));
+			memcpy (info->addr.data, nl_addr_get_binary_addr (nladdr), l);
+			info->addr.len = l;
+		}
+	}
 
 	udev_device = g_hash_table_lookup (priv->udev_devices, GINT_TO_POINTER (info->ifindex));
 	if (udev_device) {
