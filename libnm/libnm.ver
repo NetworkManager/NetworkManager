@@ -847,6 +847,7 @@ local:
 
 libnm_1_2_0 {
 global:
+	nm_access_point_get_last_seen;
 	nm_device_get_nm_plugin_missing;
 	nm_setting_802_1x_check_cert_scheme;
 	nm_setting_bridge_get_multicast_snooping;
