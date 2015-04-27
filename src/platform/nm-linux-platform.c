@@ -974,6 +974,28 @@ init_link (NMPlatform *platform, NMPlatformLink *info, struct rtnl_link *rtnllin
 	}
 #endif
 
+#if HAVE_LIBNL_INET6_TOKEN
+	if ((rtnl_link_inet6_get_token (rtnllink, &nladdr)) == 0) {
+		if (   nl_addr_get_family (nladdr) == AF_INET6
+		    && nl_addr_get_len (nladdr) == sizeof (struct in6_addr)) {
+			struct in6_addr *addr;
+			NMUtilsIPv6IfaceId *iid = &info->inet6_token.iid;
+
+			addr = nl_addr_get_binary_addr (nladdr);
+			iid->id_u8[7] = addr->s6_addr[15];
+			iid->id_u8[6] = addr->s6_addr[14];
+			iid->id_u8[5] = addr->s6_addr[13];
+			iid->id_u8[4] = addr->s6_addr[12];
+			iid->id_u8[3] = addr->s6_addr[11];
+			iid->id_u8[2] = addr->s6_addr[10];
+			iid->id_u8[1] = addr->s6_addr[9];
+			iid->id_u8[0] = addr->s6_addr[8];
+			info->inet6_token.is_valid = TRUE;
+		}
+		nl_addr_put (nladdr);
+	}
+#endif
+
 	udev_device = g_hash_table_lookup (priv->udev_devices, GINT_TO_POINTER (info->ifindex));
 	if (udev_device) {
 		info->driver = nmp_utils_udev_get_driver (udev_device);
