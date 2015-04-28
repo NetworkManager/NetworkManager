@@ -168,4 +168,17 @@ NM_DEFINE_SINGLETON_DESTRUCTOR(TYPE)
 
 /*****************************************************************************/
 
+static inline gboolean
+nm_clear_g_source (guint *id)
+{
+	if (id && *id) {
+		g_source_remove (*id);
+		*id = 0;
+		return TRUE;
+	}
+	return FALSE;
+}
+
+/*****************************************************************************/
+
 #endif
