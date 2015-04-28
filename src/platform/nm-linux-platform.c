@@ -3863,6 +3863,7 @@ _route_match (struct rtnl_route *rtnlroute, int family, int ifindex, gboolean in
 
 	if (rtnl_route_get_type (rtnlroute) != RTN_UNICAST ||
 	    rtnl_route_get_table (rtnlroute) != RT_TABLE_MAIN ||
+	    rtnl_route_get_tos (rtnlroute) != 0 ||
 	    (!include_proto_kernel && rtnl_route_get_protocol (rtnlroute) == RTPROT_KERNEL) ||
 	    rtnl_route_get_family (rtnlroute) != family ||
 	    rtnl_route_get_nnexthops (rtnlroute) != 1 ||
@@ -4130,8 +4131,8 @@ ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen
 	}
 	rtnl_route_set_scope ((struct rtnl_route *) route, scope);
 
-	if (cached_object)
-		rtnl_route_set_tos ((struct rtnl_route *) route, rtnl_route_get_tos (cached_object));
+	/* we only support routes with TOS zero. As such, delete_route() is also only able to delete
+	 * routes with tos==0. build_rtnl_route() already initializes tos properly. */
 
 	/* The following fields are also relevant when comparing the route, but the default values
 	 * are already as we want them:
