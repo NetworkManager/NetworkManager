@@ -85,7 +85,10 @@ struct _NMPlatformLink {
 	__NMPlatformObject_COMMON;
 	char name[IFNAMSIZ];
 	NMLinkType type;
-	const char *type_name;
+
+	/* rtnl_link_get_type(), IFLA_INFO_KIND */
+	const char *kind;
+
 	const char *udi;
 	const char *driver;
 	gboolean initialized;

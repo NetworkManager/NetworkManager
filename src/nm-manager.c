@@ -2203,7 +2203,7 @@ platform_link_added (NMManager *self,
 		case NM_LINK_TYPE_TEAM:
 		case NM_LINK_TYPE_WIFI:
 			nm_log_info (LOGD_HW, "(%s): '%s' plugin not available; creating generic device",
-			             plink->name, plink->type_name);
+			             plink->name, nm_link_type_to_string (plink->type));
 			nm_plugin_missing = TRUE;
 			/* fall through */
 		default:
