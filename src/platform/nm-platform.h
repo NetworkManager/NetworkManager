@@ -500,6 +500,8 @@ NMPlatform *nm_platform_try_get (void);
 
 /******************************************************************/
 
+const char *nm_link_type_to_string (NMLinkType link_type);
+
 void nm_platform_set_error (NMPlatform *self, NMPlatformError error);
 NMPlatformError nm_platform_get_error (NMPlatform *self);
 const char *nm_platform_get_error_msg (NMPlatform *self);

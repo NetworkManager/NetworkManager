@@ -913,7 +913,7 @@ nm_link_type_to_rtnl_type_string (NMLinkType type)
 	g_return_val_if_reached (NULL);
 }
 
-static const char *
+const char *
 nm_link_type_to_string (NMLinkType type)
 {
 	int i;
