@@ -86,11 +86,17 @@ struct _NMPlatformLink {
 	char name[IFNAMSIZ];
 	NMLinkType type;
 
-	/* rtnl_link_get_type(), IFLA_INFO_KIND */
+	/* rtnl_link_get_type(), IFLA_INFO_KIND. */
+	/* NMPlatform initializes this field with a static string. */
 	const char *kind;
 
+	/* Beware: NMPlatform initializes this string with an allocated string.
+	 * Handle it properly (i.e. don't keep a reference to it). */
 	const char *udi;
+
+	/* NMPlatform initializes this field with a static string. */
 	const char *driver;
+
 	gboolean initialized;
 	int master;
 	int parent;

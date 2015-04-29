@@ -2669,7 +2669,7 @@ nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 	_CMP_FIELD_BOOL (a, b, initialized);
 	_CMP_FIELD_STR_INTERNED (a, b, kind);
 	_CMP_FIELD_STR0 (a, b, udi);
-	_CMP_FIELD_STR0 (a, b, driver);
+	_CMP_FIELD_STR_INTERNED (a, b, driver);
 	return 0;
 }
 
