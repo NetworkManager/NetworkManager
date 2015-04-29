@@ -139,6 +139,12 @@
         The device MTU (maximum transmission unit).
       </tp:docstring>
     </property>
+    <property name="Metered" type="u" access="read" tp:type="NM_METERED">
+      <tp:docstring>
+        Whether the amount of traffic flowing through the device is
+        subject to limitations, for example set by service providers.
+      </tp:docstring>
+    </property>
 
     <method name="Disconnect">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_disconnect"/>
@@ -650,6 +656,34 @@
       <tp:enumvalue suffix="PARENT_MANAGED_CHANGED" value="62">
         <tp:docstring>
           The device parent's management changed.
+        </tp:docstring>
+      </tp:enumvalue>
+    </tp:enum>
+
+    <tp:enum name="NM_METERED" type="u">
+      <tp:enumvalue suffix="UNKNOWN" value="0">
+        <tp:docstring>
+          The device metered status is unknown.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="YES" value="1">
+        <tp:docstring>
+          The device is metered and the value was statically set.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="NO" value="2">
+        <tp:docstring>
+          The device is not metered and the value was statically set.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="GUESS_YES" value="3">
+        <tp:docstring>
+          The device is metered and the value was guessed.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="GUESS_NO" value="4">
+        <tp:docstring>
+          The device is not metered and the value was guessed.
         </tp:docstring>
       </tp:enumvalue>
     </tp:enum>

@@ -58,6 +58,7 @@
 #define NM_DEVICE_PHYSICAL_PORT_ID "physical-port-id"
 #define NM_DEVICE_MTU              "mtu"
 #define NM_DEVICE_HW_ADDRESS       "hw-address"
+#define NM_DEVICE_METERED          "metered"
 
 #define NM_DEVICE_TYPE_DESC        "type-desc"      /* Internal only */
 #define NM_DEVICE_RFKILL_TYPE      "rfkill-type"    /* Internal only */
@@ -73,7 +74,6 @@
 #define NM_DEVICE_REMOVED               "removed"
 #define NM_DEVICE_RECHECK_AUTO_ACTIVATE "recheck-auto-activate"
 #define NM_DEVICE_RECHECK_ASSUME        "recheck-assume"
-
 
 G_BEGIN_DECLS
 
@@ -281,6 +281,7 @@ const char *	nm_device_get_driver_version	(NMDevice *dev);
 const char *	nm_device_get_type_desc (NMDevice *dev);
 const char *	nm_device_get_type_description (NMDevice *dev);
 NMDeviceType	nm_device_get_device_type	(NMDevice *dev);
+NMMetered       nm_device_get_metered	(NMDevice *dev);
 
 int			nm_device_get_priority (NMDevice *dev);
 guint32     nm_device_get_ip4_route_metric (NMDevice *dev);

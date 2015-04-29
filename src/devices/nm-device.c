@@ -128,6 +128,7 @@ enum {
 	PROP_MASTER,
 	PROP_HW_ADDRESS,
 	PROP_HAS_PENDING_ACTION,
+	PROP_METERED,
 	LAST_PROP
 };
 
@@ -337,6 +338,8 @@ typedef struct {
 	/* slave management */
 	gboolean        is_master;
 	GSList *        slaves;    /* list of SlaveInfo */
+
+	NMMetered       metered;
 
 	NMConnectionProvider *con_provider;
 } NMDevicePrivate;
@@ -687,6 +690,21 @@ nm_device_get_device_type (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->type;
 }
 
+/**
+ * nm_device_get_metered:
+ * @setting: the #NMDevice
+ *
+ * Returns: the #NMDevice:metered property of the device.
+ *
+ * Since: 1.0.6
+ **/
+NMMetered
+nm_device_get_metered (NMDevice *self)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (self), NM_METERED_UNKNOWN);
+
+	return NM_DEVICE_GET_PRIVATE (self)->metered;
+}
 
 /**
  * nm_device_get_priority():
@@ -9298,6 +9316,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_HAS_PENDING_ACTION:
 		g_value_set_boolean (value, nm_device_has_pending_action (self));
 		break;
+	case PROP_METERED:
+		g_value_set_uint (value, priv->metered);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -9560,6 +9581,20 @@ nm_device_class_init (NMDeviceClass *klass)
 		                       FALSE,
 		                       G_PARAM_READABLE |
 		                       G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMDevice:metered:
+	 *
+	 * Whether the connection is metered.
+	 *
+	 * Since: 1.0.6
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_METERED,
+		 g_param_spec_uint (NM_DEVICE_METERED, "", "",
+		                    0, G_MAXUINT32, NM_METERED_UNKNOWN,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/* Signals */
 	signals[STATE_CHANGED] =

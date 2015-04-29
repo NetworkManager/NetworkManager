@@ -851,3 +851,9 @@ global:
 	nm_setting_connection_get_autoconnect_slaves;
 } libnm_1_0_0;
 
+libnm_1_0_6 {
+global:
+	nm_device_get_metered;
+	nm_metered_get_type;
+} libnm_1_0_4;
+
