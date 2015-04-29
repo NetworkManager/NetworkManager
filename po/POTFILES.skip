@@ -6,3 +6,5 @@ vpn-daemons/openvpn
 vpn-daemons/pptp
 vpn-daemons/vpnc
 contrib/fedora/rpm/
+# https://bugs.launchpad.net/intltool/+bug/1117944
+sub/policy/org.freedesktop.NetworkManager.policy.in
