@@ -100,12 +100,20 @@ typedef enum  { /*< skip >*/
 #define nm_log_dbg(domain, ...)     nm_log (LOGL_DEBUG, (domain), __VA_ARGS__)
 #define nm_log_trace(domain, ...)   nm_log (LOGL_TRACE, (domain), __VA_ARGS__)
 
+/* A wrapper for the _nm_log_impl() function that adds call site information.
+ * Contrary to nm_log(), it unconditionally calls the function without
+ * checking whether logging for the given level and domain is enabled. */
+#define _nm_log(level, domain, error, ...) \
+    G_STMT_START { \
+        _nm_log_impl (__FILE__, __LINE__, G_STRFUNC, (level), (domain), (error), ""__VA_ARGS__); \
+    } G_STMT_END
+
 /* nm_log() only evaluates it's argument list after checking
  * whether logging for the given level/domain is enabled.  */
 #define nm_log(level, domain, ...) \
     G_STMT_START { \
         if (nm_logging_enabled ((level), (domain))) { \
-            _nm_log (__FILE__, __LINE__, G_STRFUNC, (level), (domain), __VA_ARGS__); \
+            _nm_log (level, domain, 0, __VA_ARGS__); \
         } \
     } G_STMT_END
 
@@ -136,13 +144,14 @@ typedef enum  { /*< skip >*/
     nm_log_ptr ((level), (domain), (self), __VA_ARGS__)
 
 
-void _nm_log (const char *file,
-              guint line,
-              const char *func,
-              NMLogLevel level,
-              NMLogDomain domain,
-              const char *fmt,
-              ...) __attribute__((__format__ (__printf__, 6, 7)));
+void _nm_log_impl (const char *file,
+                   guint line,
+                   const char *func,
+                   NMLogLevel level,
+                   NMLogDomain domain,
+                   int error,
+                   const char *fmt,
+                   ...) __attribute__((__format__ (__printf__, 7, 8)));
 
 const char *nm_logging_level_to_string (void);
 const char *nm_logging_domains_to_string (void);

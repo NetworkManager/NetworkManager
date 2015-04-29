@@ -357,13 +357,14 @@ nm_logging_enabled (NMLogLevel level, NMLogDomain domain)
 }
 
 void
-_nm_log (const char *file,
-         guint line,
-         const char *func,
-         NMLogLevel level,
-         NMLogDomain domain,
-         const char *fmt,
-         ...)
+_nm_log_impl (const char *file,
+              guint line,
+              const char *func,
+              NMLogLevel level,
+              NMLogDomain domain,
+              int error,
+              const char *fmt,
+              ...)
 {
 	va_list args;
 	char *msg;
@@ -378,6 +379,10 @@ _nm_log (const char *file,
 
 	if (!(logging[level] & domain))
 		return;
+
+	/* Make sure that %m maps to the specified error */
+	if (error != 0)
+		errno = error;
 
 	va_start (args, fmt);
 	msg = g_strdup_vprintf (fmt, args);
