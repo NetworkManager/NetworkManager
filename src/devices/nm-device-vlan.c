@@ -107,6 +107,45 @@ bring_up (NMDevice *dev, gboolean *no_firmware)
 
 /******************************************************************/
 
+static void
+parent_state_changed (NMDevice *parent,
+                      NMDeviceState new_state,
+                      NMDeviceState old_state,
+                      NMDeviceStateReason reason,
+                      gpointer user_data)
+{
+	NMDeviceVlan *self = NM_DEVICE_VLAN (user_data);
+
+	/* We'll react to our own carrier state notifications. Ignore the parent's. */
+	if (reason == NM_DEVICE_STATE_REASON_CARRIER)
+		return;
+
+	nm_device_set_unmanaged (NM_DEVICE (self), NM_UNMANAGED_PARENT, !nm_device_get_managed (parent), reason);
+}
+
+static void
+nm_device_vlan_set_parent (NMDeviceVlan *device, NMDevice *parent)
+{
+	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (device);
+
+	if (priv->parent_state_id) {
+		g_signal_handler_disconnect (priv->parent, priv->parent_state_id);
+		priv->parent_state_id = 0;
+	}
+	g_clear_object (&priv->parent);
+
+	if (parent) {
+		priv->parent = g_object_ref (parent);
+		priv->parent_state_id = g_signal_connect (priv->parent,
+		                                          "state-changed",
+		                                          G_CALLBACK (parent_state_changed),
+		                                          device);
+	}
+	g_object_notify (G_OBJECT (device), NM_DEVICE_VLAN_PARENT);
+}
+
+/******************************************************************/
+
 static gboolean
 match_parent (NMDeviceVlan *self, const char *parent)
 {
@@ -239,32 +278,6 @@ complete_connection (NMDevice *device,
 	return TRUE;
 }
 
-static void parent_state_changed (NMDevice *parent, NMDeviceState new_state,
-                                  NMDeviceState old_state,
-                                  NMDeviceStateReason reason,
-                                  gpointer user_data);
-
-static void
-nm_device_vlan_set_parent (NMDeviceVlan *device, NMDevice *parent)
-{
-	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (device);
-
-	if (priv->parent_state_id) {
-		g_signal_handler_disconnect (priv->parent, priv->parent_state_id);
-		priv->parent_state_id = 0;
-	}
-	g_clear_object (&priv->parent);
-
-	if (parent) {
-		priv->parent = g_object_ref (parent);
-		priv->parent_state_id = g_signal_connect (priv->parent,
-		                                          "state-changed",
-		                                          G_CALLBACK (parent_state_changed),
-		                                          device);
-	}
-	g_object_notify (G_OBJECT (device), NM_DEVICE_VLAN_PARENT);
-}
-
 static void
 update_connection (NMDevice *device, NMConnection *connection)
 {
@@ -392,24 +405,6 @@ deactivate (NMDevice *device)
 	/* Reset MAC address back to initial address */
 	if (priv->initial_hw_addr)
 		nm_device_set_hw_addr (device, priv->initial_hw_addr, "reset", LOGD_VLAN);
-}
-
-/******************************************************************/
-
-static void
-parent_state_changed (NMDevice *parent,
-                      NMDeviceState new_state,
-                      NMDeviceState old_state,
-                      NMDeviceStateReason reason,
-                      gpointer user_data)
-{
-	NMDeviceVlan *self = NM_DEVICE_VLAN (user_data);
-
-	/* We'll react to our own carrier state notifications. Ignore the parent's. */
-	if (reason == NM_DEVICE_STATE_REASON_CARRIER)
-		return;
-
-	nm_device_set_unmanaged (NM_DEVICE (self), NM_UNMANAGED_PARENT, !nm_device_get_managed (parent), reason);
 }
 
 /******************************************************************/
