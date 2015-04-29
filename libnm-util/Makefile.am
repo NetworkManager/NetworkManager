@@ -155,7 +155,6 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libnm-util.pc
 
 DISTCLEANFILES = libnm-util.pc
-CLEANFILES = nm-version.h
 
 EXTRA_DIST = libnm-util.pc.in libnm-util.ver nm-version.h.in
 
@@ -183,7 +182,7 @@ gir_DATA = $(INTROSPECTION_GIRS)
 typelibdir = $(libdir)/girepository-1.0
 typelib_DATA = $(INTROSPECTION_GIRS:.gir=.typelib)
 
-CLEANFILES += $(gir_DATA) $(typelib_DATA)
+CLEANFILES = $(gir_DATA) $(typelib_DATA)
 
 endif
 
