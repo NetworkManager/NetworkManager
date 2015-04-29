@@ -34,6 +34,42 @@
 
 /*******************************************/
 
+static void
+test_nm_utils_monotonic_timestamp_as_boottime ()
+{
+	gint64 timestamp_ns_per_tick, now, now_boottime, now_boottime_2, now_boottime_3;
+	struct timespec tp;
+	clockid_t clockid;
+	guint i;
+
+	if (clock_gettime (CLOCK_BOOTTIME, &tp) != 0 && errno == EINVAL)
+		clockid = CLOCK_MONOTONIC;
+	else
+		clockid = CLOCK_BOOTTIME;
+
+	for (i = 0; i < 10; i++) {
+
+		if (clock_gettime (clockid, &tp) != 0)
+			g_assert_not_reached ();
+		now_boottime = ( ((gint64) tp.tv_sec) * NM_UTILS_NS_PER_SECOND ) + ((gint64) tp.tv_nsec);
+
+		now = nm_utils_get_monotonic_timestamp_ns ();
+
+		now_boottime_2 = nm_utils_monotonic_timestamp_as_boottime (now, 1);
+		g_assert_cmpint (now_boottime_2, >=, 0);
+		g_assert_cmpint (now_boottime_2, >=, now_boottime);
+		g_assert_cmpint (now_boottime_2 - now_boottime, <=, NM_UTILS_NS_PER_SECOND / 1000);
+
+		for (timestamp_ns_per_tick = 1; timestamp_ns_per_tick <= NM_UTILS_NS_PER_SECOND; timestamp_ns_per_tick *= 10) {
+			now_boottime_3 = nm_utils_monotonic_timestamp_as_boottime (now / timestamp_ns_per_tick, timestamp_ns_per_tick);
+
+			g_assert_cmpint (now_boottime_2 / timestamp_ns_per_tick, ==, now_boottime_3);
+		}
+	}
+}
+
+/*******************************************/
+
 struct test_nm_utils_kill_child_async_data
 {
 	GMainLoop *loop;
@@ -465,6 +501,7 @@ main (int argc, char **argv)
 {
 	nmtst_init_assert_logging (&argc, &argv, "DEBUG", "DEFAULT");
 
+	g_test_add_func ("/general/nm_utils_monotonic_timestamp_as_boottime", test_nm_utils_monotonic_timestamp_as_boottime);
 	g_test_add_func ("/general/nm_utils_kill_child", test_nm_utils_kill_child);
 	g_test_add_func ("/general/nm_utils_array_remove_at_indexes", test_nm_utils_array_remove_at_indexes);
 	g_test_add_func ("/general/nm_ethernet_address_is_valid", test_nm_ethernet_address_is_valid);

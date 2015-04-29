@@ -53,6 +53,7 @@ typedef struct {
 	NM80211Mode mode;
 	guint32 max_bitrate;
 	guint8 strength;
+	gint last_seen;
 } NMAccessPointPrivate;
 
 enum {
@@ -67,6 +68,7 @@ enum {
 	PROP_MAX_BITRATE,
 	PROP_STRENGTH,
 	PROP_BSSID,
+	PROP_LAST_SEEN,
 
 	LAST_PROP
 };
@@ -266,6 +268,27 @@ nm_access_point_get_strength (NMAccessPoint *ap)
 }
 
 /**
+ * nm_access_point_get_last_seen:
+ * @ap: a #NMAccessPoint
+ *
+ * Returns the timestamp (in CLOCK_BOOTTIME seconds) for the last time the
+ * access point was found in scan results.  A value of -1 means the access
+ * point has not been found in a scan.
+ *
+ * Returns: the last seen time in seconds
+ *
+ * Since: 1.2
+ **/
+gint
+nm_access_point_get_last_seen (NMAccessPoint *ap)
+{
+	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), -1);
+
+	_nm_object_ensure_inited (NM_OBJECT (ap));
+	return NM_ACCESS_POINT_GET_PRIVATE (ap)->last_seen;
+}
+
+/**
  * nm_access_point_connection_valid:
  * @ap: an #NMAccessPoint to validate @connection against
  * @connection: an #NMConnection to validate against @ap
@@ -416,6 +439,7 @@ nm_access_point_filter_connections (NMAccessPoint *ap, const GSList *connections
 static void
 nm_access_point_init (NMAccessPoint *ap)
 {
+	NM_ACCESS_POINT_GET_PRIVATE (ap)->last_seen = -1;
 }
 
 static void
@@ -482,6 +506,9 @@ get_property (GObject *object,
 	case PROP_STRENGTH:
 		g_value_set_uchar (value, nm_access_point_get_strength (ap));
 		break;
+	case PROP_LAST_SEEN:
+		g_value_set_int (value, nm_access_point_get_last_seen (ap));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -512,6 +539,7 @@ register_properties (NMAccessPoint *ap)
 		{ NM_ACCESS_POINT_MODE,        &priv->mode },
 		{ NM_ACCESS_POINT_MAX_BITRATE, &priv->max_bitrate },
 		{ NM_ACCESS_POINT_STRENGTH,    &priv->strength },
+		{ NM_ACCESS_POINT_LAST_SEEN,   &priv->last_seen },
 		{ NULL },
 	};
 
@@ -671,4 +699,20 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 		                     0, G_MAXUINT8, 0,
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMAccessPoint:last-seen:
+	 *
+	 * The timestamp (in CLOCK_BOOTTIME seconds) for the last time the
+	 * access point was found in scan results.  A value of -1 means the
+	 * access point has not been found in a scan.
+	 *
+	 * Since: 1.2
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_LAST_SEEN,
+		 g_param_spec_int (NM_ACCESS_POINT_LAST_SEEN, "", "",
+		                   -1, G_MAXINT, -1,
+		                   G_PARAM_READABLE |
+		                   G_PARAM_STATIC_STRINGS));
 }
