@@ -455,7 +455,7 @@ udev_get_driver (GUdevDevice *device, int ifindex)
 
 	driver = g_udev_device_get_driver (device);
 	if (driver)
-		return driver;
+		goto out;
 
 	/* Try the parent */
 	parent = g_udev_device_get_parent (device);
@@ -470,23 +470,18 @@ udev_get_driver (GUdevDevice *device, int ifindex)
 			if (   (g_strcmp0 (subsys, "ibmebus") == 0)
 			    || (subsys == NULL)) {
 				grandparent = g_udev_device_get_parent (parent);
-				if (grandparent) {
+				if (grandparent)
 					driver = g_udev_device_get_driver (grandparent);
-				}
 			}
 		}
 	}
-
-	/* Intern the string so we don't have to worry about memory
-	 * management in NMPlatformLink.
-	 */
-	if (driver)
-		driver = g_intern_string (driver);
-
 	g_clear_object (&parent);
 	g_clear_object (&grandparent);
 
-	return driver;
+out:
+	/* Intern the string so we don't have to worry about memory
+	 * management in NMPlatformLink. */
+	return g_intern_string (driver);
 }
 
 /******************************************************************
