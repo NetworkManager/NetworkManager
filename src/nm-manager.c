@@ -127,8 +127,6 @@ static NMActiveConnection *_new_active_connection (NMManager *self,
 
 static void policy_activating_device_changed (GObject *object, GParamSpec *pspec, gpointer user_data);
 
-static NMDevice *find_device_by_ip_iface (NMManager *self, const gchar *iface);
-
 static void rfkill_change (const char *desc, RfKillType rtype, gboolean enabled);
 
 static gboolean find_master (NMManager *self,
@@ -515,6 +513,43 @@ nm_manager_get_device_by_ifindex (NMManager *manager, int ifindex)
 	return NULL;
 }
 
+static NMDevice *
+get_device_from_hwaddr (NMManager *self, const char *setting_mac)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	const char *device_mac;
+	GSList *iter;
+
+	if (!setting_mac)
+		return NULL;
+
+	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
+		NMDevice *device = iter->data;
+
+		device_mac = nm_device_get_hw_address (iter->data);
+		if (!device_mac)
+			continue;
+		if (nm_utils_hwaddr_matches (setting_mac, -1, device_mac, -1))
+			return device;
+	}
+	return NULL;
+}
+
+static NMDevice *
+find_device_by_ip_iface (NMManager *self, const gchar *iface)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GSList *iter;
+
+	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
+		NMDevice *candidate = iter->data;
+
+		if (g_strcmp0 (nm_device_get_ip_iface (candidate), iface) == 0)
+			return candidate;
+	}
+	return NULL;
+}
+
 static gboolean
 manager_sleeping (NMManager *self)
 {
@@ -841,28 +876,6 @@ nm_manager_get_state (NMManager *manager)
 /*******************************************************************/
 /* Settings stuff via NMSettings                                   */
 /*******************************************************************/
-
-static NMDevice *
-get_device_from_hwaddr (NMManager *self, const char *setting_mac)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	const char *device_mac;
-	GSList *iter;
-
-	if (!setting_mac)
-		return NULL;
-
-	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		NMDevice *device = iter->data;
-
-		device_mac = nm_device_get_hw_address (iter->data);
-		if (!device_mac)
-			continue;
-		if (nm_utils_hwaddr_matches (setting_mac, -1, device_mac, -1))
-			return device;
-	}
-	return NULL;
-}
 
 static NMDevice *
 find_vlan_parent (NMManager *self,
@@ -1895,21 +1908,6 @@ add_device (NMManager *self, NMDevice *device, gboolean try_assume)
 	 * need to create new virtual interfaces now.
 	 */
 	system_create_virtual_devices (self);
-}
-
-static NMDevice *
-find_device_by_ip_iface (NMManager *self, const gchar *iface)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GSList *iter;
-
-	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		NMDevice *candidate = iter->data;
-
-		if (g_strcmp0 (nm_device_get_ip_iface (candidate), iface) == 0)
-			return candidate;
-	}
-	return NULL;
 }
 
 /*******************************************************************/
