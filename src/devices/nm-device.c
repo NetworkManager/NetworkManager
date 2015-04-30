@@ -75,6 +75,7 @@ _LOG_DECLARE_SELF (NMDevice);
 static void impl_device_disconnect (NMDevice *self, DBusGMethodInvocation *context);
 static void impl_device_delete     (NMDevice *self, DBusGMethodInvocation *context);
 static void ip_check_ping_watch_cb (GPid pid, gint status, gpointer user_data);
+static void nm_device_update_metered (NMDevice *self);
 
 #include "nm-device-glue.h"
 
@@ -3468,8 +3469,10 @@ dhcp4_state_changed (NMDhcpClient *client,
 
 		if (priv->ip4_state == IP_CONF)
 			nm_device_activate_schedule_ip4_config_result (self, ip4_config);
-		else if (priv->ip4_state == IP_DONE)
+		else if (priv->ip4_state == IP_DONE) {
 			dhcp4_lease_change (self, ip4_config);
+			nm_device_update_metered (self);
+		}
 		break;
 	case NM_DHCP_STATE_TIMEOUT:
 		dhcp4_fail (self, TRUE);
@@ -7515,6 +7518,59 @@ nm_device_set_dhcp_anycast_address (NMDevice *self, const char *addr)
 	priv->dhcp_anycast_address = g_strdup (addr);
 }
 
+static void
+nm_device_update_metered (NMDevice *self)
+{
+#define NM_METERED_INVALID ((NMMetered) -1)
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMSettingConnection *setting;
+	NMMetered conn_value, value = NM_METERED_INVALID;
+	NMConnection *connection = NULL;
+	NMDeviceState state;
+
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	state = nm_device_get_state (self);
+	if (   state <= NM_DEVICE_STATE_DISCONNECTED
+	    || state > NM_DEVICE_STATE_ACTIVATED)
+		value = NM_METERED_UNKNOWN;
+
+	if (value == NM_METERED_INVALID) {
+		connection = nm_device_get_connection (self);
+		if (connection) {
+			setting = nm_connection_get_setting_connection (connection);
+			if (setting) {
+				conn_value = nm_setting_connection_get_metered (setting);
+				if (conn_value != NM_METERED_UNKNOWN)
+					value = conn_value;
+			}
+		}
+	}
+
+	/* Try to guess a value using the metered flag in IP configuration */
+	if (value == NM_METERED_INVALID) {
+		if (   priv->ip4_config
+		    && priv->ip4_state == IP_DONE
+		    && nm_ip4_config_get_metered (priv->ip4_config))
+			value = NM_METERED_GUESS_YES;
+	}
+
+	/* Otherwise look at connection type */
+	if (value == NM_METERED_INVALID) {
+		if (   nm_connection_is_type (connection, NM_SETTING_GSM_SETTING_NAME)
+		    || nm_connection_is_type (connection, NM_SETTING_CDMA_SETTING_NAME))
+			value = NM_METERED_GUESS_YES;
+		else
+			value = NM_METERED_GUESS_NO;
+	}
+
+	if (value != priv->metered) {
+		_LOGD (LOGD_DEVICE, "set metered value %d", value);
+		priv->metered = value;
+		g_object_notify (G_OBJECT (self), NM_DEVICE_METERED);
+	}
+}
+
 /**
  * nm_device_check_connection_available():
  * @self: the #NMDevice
@@ -7972,6 +8028,7 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, CleanupType clean
 		nm_platform_address_flush (NM_PLATFORM_GET, ifindex);
 	}
 
+	nm_device_update_metered (self);
 	_cleanup_generic_post (self, cleanup_type);
 }
 
@@ -8444,6 +8501,7 @@ _set_state_full (NMDevice *self,
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
 		_LOGI (LOGD_DEVICE, "Activation: successful, device activated.");
+		nm_device_update_metered (self);
 		nm_dispatcher_call (DISPATCHER_ACTION_UP, nm_act_request_get_connection (req), self, NULL, NULL, NULL);
 		break;
 	case NM_DEVICE_STATE_FAILED:
