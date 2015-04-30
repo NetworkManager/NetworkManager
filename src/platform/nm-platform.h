@@ -590,7 +590,6 @@ gboolean nm_platform_gre_get_properties         (NMPlatform *self, int ifindex, 
 
 gboolean    nm_platform_wifi_get_capabilities (NMPlatform *self, int ifindex, NMDeviceWifiCapabilities *caps);
 gboolean    nm_platform_wifi_get_bssid        (NMPlatform *self, int ifindex, guint8 *bssid);
-GByteArray *nm_platform_wifi_get_ssid         (NMPlatform *self, int ifindex);
 guint32     nm_platform_wifi_get_frequency    (NMPlatform *self, int ifindex);
 int         nm_platform_wifi_get_quality      (NMPlatform *self, int ifindex);
 guint32     nm_platform_wifi_get_rate         (NMPlatform *self, int ifindex);
