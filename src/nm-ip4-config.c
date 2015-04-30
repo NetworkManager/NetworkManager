@@ -56,6 +56,7 @@ typedef struct {
 	GArray *wins;
 	guint32 mtu;
 	NMIPConfigSource mtu_source;
+	gboolean metered;
 } NMIP4ConfigPrivate;
 
 /* internal guint32 are assigned to gobject properties of type uint. Ensure, that uint is large enough */
@@ -574,6 +575,10 @@ nm_ip4_config_merge (NMIP4Config *dst, const NMIP4Config *src)
 	for (i = 0; i < nm_ip4_config_get_num_wins (src); i++)
 		nm_ip4_config_add_wins (dst, nm_ip4_config_get_wins (src, i));
 
+	/* metered flag */
+	nm_ip4_config_set_metered (dst, nm_ip4_config_get_metered (dst) ||
+	                                nm_ip4_config_get_metered (src));
+
 	g_object_thaw_notify (G_OBJECT (dst));
 }
 
@@ -1028,6 +1033,12 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 		has_minor_changes = TRUE;
 	}
 
+	/* metered */
+	if (src_priv->metered != dst_priv->metered) {
+		dst_priv->metered = src_priv->metered;
+		has_minor_changes = TRUE;
+	}
+
 	/* config_equal does not compare *all* the fields, therefore, we might have has_minor_changes
 	 * regardless of config_equal. But config_equal must correspond to has_relevant_changes. */
 	g_assert (config_equal == !has_relevant_changes);
@@ -1098,6 +1109,7 @@ nm_ip4_config_dump (const NMIP4Config *config, const char *detail)
 	}
 
 	g_message (" n-dflt: %d", nm_ip4_config_get_never_default (config));
+	g_message (" mtrd:   %d", (int) nm_ip4_config_get_metered (config));
 }
 
 gboolean
@@ -1740,6 +1752,24 @@ nm_ip4_config_get_mtu_source (const NMIP4Config *config)
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 
 	return priv->mtu_source;
+}
+
+/******************************************************************/
+
+void
+nm_ip4_config_set_metered (NMIP4Config *config, gboolean metered)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+
+	priv->metered = !!metered;
+}
+
+gboolean
+nm_ip4_config_get_metered (const NMIP4Config *config)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+
+	return priv->metered;
 }
 
 /******************************************************************/
