@@ -36,6 +36,8 @@ This is a new stable release of NetworkManager.  Notable changes include:
     server for a dynamic DNS update
 * Connection UUIDs are now checked for uniqueness when connection
     configurations are read
+* Receipt of a NDP Router Advertisement can no longer lower the IPv6 hop
+    limit (CVE-2015-2924)
 * Many other bugs were fixed
 * Updates to Telugu, Turkish, Polish, German, Gujarati, Italian and Russian
     translations
