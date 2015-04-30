@@ -35,6 +35,7 @@ NMIPRoute *nmc_parse_and_build_route (int family, const char *first, const char 
 
 const char * nmc_device_state_to_string (NMDeviceState state);
 const char * nmc_device_reason_to_string (NMDeviceStateReason reason);
+const char * nmc_device_metered_to_string (NMMetered value);
 
 char **
 nmc_vlan_parse_priority_maps (const char *priority_map,
