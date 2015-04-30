@@ -91,6 +91,9 @@
 #include "gsystem-local-alloc.h"
 
 
+/* Analog to EXIT_SUCCESS and EXIT_FAILURE. */
+#define EXIT_SKIP (77)
+
 /*******************************************************************************/
 
 /* general purpose functions that have no dependency on other nmtst functions */
