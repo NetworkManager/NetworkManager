@@ -163,4 +163,21 @@ q_n##_quark (void)                            \
 }
 #endif
 
+
+static inline gboolean
+nm_g_hash_table_replace (GHashTable *hash, gpointer key, gpointer value)
+{
+	/* glib 2.40 added a return value indicating whether the key already existed
+	 * (910191597a6c2e5d5d460e9ce9efb4f47d9cc63c). */
+#if GLIB_CHECK_VERSION(2, 40, 0)
+	return g_hash_table_replace (hash, key, value);
+#else
+	gboolean contained = g_hash_table_contains (hash, key);
+
+	g_hash_table_replace (hash, key, value);
+	return !contained;
+#endif
+}
+
+
 #endif  /* __NM_GLIB_COMPAT_H__ */
