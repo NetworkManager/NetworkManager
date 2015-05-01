@@ -170,19 +170,12 @@ wifi_utils_deinit (WifiData *data)
 }
 
 gboolean
-wifi_utils_is_wifi (const char *iface, const char *sysfs_path, const char *devtype)
+wifi_utils_is_wifi (const char *iface, const char *sysfs_path)
 {
 	char phy80211_path[255];
 	struct stat s;
 
 	g_return_val_if_fail (iface != NULL, FALSE);
-
-	if (g_strcmp0 (devtype, "wlan") == 0) {
-		/* All Wi-Fi drivers should set DEVTYPE=wlan.  Since the kernel's
-		 * cfg80211/nl80211 stack does, this check should match any nl80211
-		 * capable driver (including mac82011-based ones). */
-		return TRUE;
-	}
 
 	if (sysfs_path) {
 		/* Check for nl80211 sysfs paths */

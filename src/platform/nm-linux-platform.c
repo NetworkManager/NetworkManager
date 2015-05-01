@@ -111,14 +111,7 @@
 #define warning(...)    _LOG (LOGL_WARN , _LOG_DOMAIN, NULL, __VA_ARGS__)
 #define error(...)      _LOG (LOGL_ERR  , _LOG_DOMAIN, NULL, __VA_ARGS__)
 
-/******************************************************************/
-
-#define return_type(t, name) \
-	G_STMT_START { \
-		if (out_name) \
-			*out_name = name; \
-		return t; \
-	} G_STMT_END
+static gboolean tun_get_properties_ifname (NMPlatform *platform, const char *ifname, NMPlatformTunProperties *props);
 
 /******************************************************************
  * libnl unility functions and wrappers
@@ -462,7 +455,7 @@ udev_get_driver (GUdevDevice *device, int ifindex)
 
 	driver = g_udev_device_get_driver (device);
 	if (driver)
-		return driver;
+		goto out;
 
 	/* Try the parent */
 	parent = g_udev_device_get_parent (device);
@@ -477,52 +470,18 @@ udev_get_driver (GUdevDevice *device, int ifindex)
 			if (   (g_strcmp0 (subsys, "ibmebus") == 0)
 			    || (subsys == NULL)) {
 				grandparent = g_udev_device_get_parent (parent);
-				if (grandparent) {
+				if (grandparent)
 					driver = g_udev_device_get_driver (grandparent);
-				}
 			}
 		}
 	}
-
-	/* Intern the string so we don't have to worry about memory
-	 * management in NMPlatformLink.
-	 */
-	if (driver)
-		driver = g_intern_string (driver);
-
 	g_clear_object (&parent);
 	g_clear_object (&grandparent);
 
-	return driver;
-}
-
-static NMLinkType
-udev_detect_link_type_from_device (GUdevDevice *udev_device, const char *ifname, int arptype, const char **out_name)
-{
-	const char *prop, *sysfs_path;
-
-	g_assert (ifname);
-
-	if (!udev_device)
-		return_type (NM_LINK_TYPE_UNKNOWN, "unknown");
-
-	if (   g_udev_device_get_property (udev_device, "ID_NM_OLPC_MESH")
-	    || g_udev_device_get_sysfs_attr (udev_device, "anycast_mask"))
-		return_type (NM_LINK_TYPE_OLPC_MESH, "olpc-mesh");
-
-	prop = g_udev_device_get_property (udev_device, "DEVTYPE");
-	sysfs_path = g_udev_device_get_sysfs_path (udev_device);
-	if (wifi_utils_is_wifi (ifname, sysfs_path, prop))
-		return_type (NM_LINK_TYPE_WIFI, "wifi");
-	else if (g_strcmp0 (prop, "wwan") == 0)
-		return_type (NM_LINK_TYPE_WWAN_ETHERNET, "wwan");
-	else if (g_strcmp0 (prop, "wimax") == 0)
-		return_type (NM_LINK_TYPE_WIMAX, "wimax");
-
-	if (arptype == ARPHRD_ETHER)
-		return_type (NM_LINK_TYPE_ETHERNET, "ethernet");
-
-	return_type (NM_LINK_TYPE_UNKNOWN, "unknown");
+out:
+	/* Intern the string so we don't have to worry about memory
+	 * management in NMPlatformLink. */
+	return g_intern_string (driver);
 }
 
 /******************************************************************
@@ -877,148 +836,195 @@ check_support_user_ipv6ll (NMPlatform *platform)
 
 /* Object type specific utilities */
 
+typedef struct {
+	const NMLinkType nm_type;
+	const char *type_string;
+
+	/* IFLA_INFO_KIND / rtnl_link_get_type() where applicable; the rtnl type
+	 * should only be specified if the device type can be created without
+	 * additional parameters, and if the device type can be determined from
+	 * the rtnl_type.  eg, tun/tap should not be specified since both
+	 * tun and tap devices use "tun", and InfiniBand should not be
+	 * specified because a PKey is required at creation. Drivers set this
+	 * value from their 'struct rtnl_link_ops' structure.
+	 */
+	const char *rtnl_type;
+
+	/* uevent DEVTYPE where applicable, from /sys/class/net/<ifname>/uevent;
+	 * drivers set this value from their SET_NETDEV_DEV() call and the
+	 * 'struct device_type' name member.
+	 */
+	const char *devtype;
+} LinkDesc;
+
+static const LinkDesc linktypes[] = {
+	{ NM_LINK_TYPE_NONE,          "none",        NULL,          NULL },
+	{ NM_LINK_TYPE_UNKNOWN,       "unknown",     NULL,          NULL },
+
+	{ NM_LINK_TYPE_ETHERNET,      "ethernet",    NULL,          NULL },
+	{ NM_LINK_TYPE_INFINIBAND,    "infiniband",  NULL,          NULL },
+	{ NM_LINK_TYPE_OLPC_MESH,     "olpc-mesh",   NULL,          NULL },
+	{ NM_LINK_TYPE_WIFI,          "wifi",        NULL,          "wlan" },
+	{ NM_LINK_TYPE_WWAN_ETHERNET, "wwan",        NULL,          "wwan" },
+	{ NM_LINK_TYPE_WIMAX,         "wimax",       "wimax",       "wimax" },
+
+	{ NM_LINK_TYPE_DUMMY,         "dummy",       "dummy",       NULL },
+	{ NM_LINK_TYPE_GRE,           "gre",         "gre",         NULL },
+	{ NM_LINK_TYPE_GRETAP,        "gretap",      "gretap",      NULL },
+	{ NM_LINK_TYPE_IFB,           "ifb",         "ifb",         NULL },
+	{ NM_LINK_TYPE_LOOPBACK,      "loopback",    NULL,          NULL },
+	{ NM_LINK_TYPE_MACVLAN,       "macvlan",     "macvlan",     NULL },
+	{ NM_LINK_TYPE_MACVTAP,       "macvtap",     "macvtap",     NULL },
+	{ NM_LINK_TYPE_OPENVSWITCH,   "openvswitch", "openvswitch", NULL },
+	{ NM_LINK_TYPE_TAP,           "tap",         NULL,          NULL },
+	{ NM_LINK_TYPE_TUN,           "tun",         NULL,          NULL },
+	{ NM_LINK_TYPE_VETH,          "veth",        "veth",        NULL },
+	{ NM_LINK_TYPE_VLAN,          "vlan",        "vlan",        "vlan" },
+	{ NM_LINK_TYPE_VXLAN,         "vxlan",       "vxlan",       "vxlan" },
+
+	{ NM_LINK_TYPE_BRIDGE,        "bridge",      "bridge",      "bridge" },
+	{ NM_LINK_TYPE_BOND,          "bond",        "bond",        "bond" },
+	{ NM_LINK_TYPE_TEAM,          "team",        "team",        NULL },
+};
+
 static const char *
-type_to_string (NMLinkType type)
+nm_link_type_to_rtnl_type_string (NMLinkType type)
 {
-	/* Note that this only has to support virtual types */
-	switch (type) {
-	case NM_LINK_TYPE_DUMMY:
-		return "dummy";
-	case NM_LINK_TYPE_GRE:
-		return "gre";
-	case NM_LINK_TYPE_GRETAP:
-		return "gretap";
-	case NM_LINK_TYPE_IFB:
-		return "ifb";
-	case NM_LINK_TYPE_MACVLAN:
-		return "macvlan";
-	case NM_LINK_TYPE_MACVTAP:
-		return "macvtap";
-	case NM_LINK_TYPE_TAP:
-		return "tap";
-	case NM_LINK_TYPE_TUN:
-		return "tun";
-	case NM_LINK_TYPE_VETH:
-		return "veth";
-	case NM_LINK_TYPE_VLAN:
-		return "vlan";
-	case NM_LINK_TYPE_VXLAN:
-		return "vxlan";
-	case NM_LINK_TYPE_BRIDGE:
-		return "bridge";
-	case NM_LINK_TYPE_BOND:
-		return "bond";
-	case NM_LINK_TYPE_TEAM:
-		return "team";
-	default:
-		g_warning ("Wrong type: %d", type);
-		return NULL;
+	int i;
+
+	for (i = 0; i < G_N_ELEMENTS (linktypes); i++) {
+		if (type == linktypes[i].nm_type)
+			return linktypes[i].rtnl_type;
 	}
+	g_return_val_if_reached (NULL);
 }
 
-static gboolean
-link_is_announceable (NMPlatform *platform, struct rtnl_link *rtnllink)
+const char *
+nm_link_type_to_string (NMLinkType type)
 {
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	int i;
 
-	/* Hardware devices must be found by udev so rules get run and tags set */
-	if (g_hash_table_lookup (priv->udev_devices,
-	                         GINT_TO_POINTER (rtnl_link_get_ifindex (rtnllink))))
-		return TRUE;
+	for (i = 0; i < G_N_ELEMENTS (linktypes); i++) {
+		if (type == linktypes[i].nm_type)
+			return linktypes[i].type_string;
+	}
+	g_return_val_if_reached (NULL);
+}
 
-	return FALSE;
+#define DEVTYPE_PREFIX "DEVTYPE="
+
+static char *
+read_devtype (const char *sysfs_path)
+{
+	gs_free char *uevent = g_strdup_printf ("%s/uevent", sysfs_path);
+	char *contents = NULL;
+	char *cont, *end;
+
+	if (!g_file_get_contents (uevent, &contents, NULL, NULL))
+		return NULL;
+	for (cont = contents; cont; cont = end) {
+		end = strpbrk (cont, "\r\n");
+		if (end)
+			*end++ = '\0';
+		if (strncmp (cont, DEVTYPE_PREFIX, STRLEN (DEVTYPE_PREFIX)) == 0) {
+			cont += STRLEN (DEVTYPE_PREFIX);
+			memmove (contents, cont, strlen (cont) + 1);
+			return contents;
+		}
+	}
+	g_free (contents);
+	return NULL;
 }
 
 static NMLinkType
-link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink, const char **out_name)
+link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink)
 {
-	const char *type;
+	const char *rtnl_type, *ifname;
+	int i, arptype;
 
 	if (!rtnllink)
-		return_type (NM_LINK_TYPE_NONE, NULL);
+		return NM_LINK_TYPE_NONE;
 
-	type = rtnl_link_get_type (rtnllink);
+	rtnl_type = rtnl_link_get_type (rtnllink);
+	if (rtnl_type) {
+		for (i = 0; i < G_N_ELEMENTS (linktypes); i++) {
+			if (g_strcmp0 (rtnl_type, linktypes[i].rtnl_type) == 0)
+				return linktypes[i].nm_type;
+		}
 
-	if (!type) {
-		int arptype = rtnl_link_get_arptype (rtnllink);
-		const char *driver;
-		const char *ifname;
-		GUdevDevice *udev_device = NULL;
+		if (!strcmp (rtnl_type, "tun")) {
+			NMPlatformTunProperties props;
+			guint flags;
 
-		if (arptype == ARPHRD_LOOPBACK)
-			return_type (NM_LINK_TYPE_LOOPBACK, "loopback");
-		else if (arptype == ARPHRD_INFINIBAND)
-			return_type (NM_LINK_TYPE_INFINIBAND, "infiniband");
+			if (tun_get_properties_ifname (platform, rtnl_link_get_name (rtnllink), &props)) {
+				if (!g_strcmp0 (props.mode, "tap"))
+					return NM_LINK_TYPE_TAP;
+				if (!g_strcmp0 (props.mode, "tun"))
+					return NM_LINK_TYPE_TUN;
+			}
+			flags = rtnl_link_get_flags (rtnllink);
 
-		ifname = rtnl_link_get_name (rtnllink);
-		if (!ifname)
-			return_type (NM_LINK_TYPE_UNKNOWN, type);
+			nm_log_dbg (LOGD_PLATFORM, "Failed to read tun properties for interface %d (link flags: %X)",
+			            rtnl_link_get_ifindex (rtnllink), flags);
 
-		driver = ethtool_get_driver (ifname);
+			/* try guessing the type using the link flags instead... */
+			if (flags & IFF_POINTOPOINT)
+				return NM_LINK_TYPE_TUN;
+			return NM_LINK_TYPE_TAP;
+		}
+	}
+
+	arptype = rtnl_link_get_arptype (rtnllink);
+	if (arptype == ARPHRD_LOOPBACK)
+		return NM_LINK_TYPE_LOOPBACK;
+	else if (arptype == ARPHRD_INFINIBAND)
+		return NM_LINK_TYPE_INFINIBAND;
+
+
+	ifname = rtnl_link_get_name (rtnllink);
+	if (ifname) {
+		const char *driver = ethtool_get_driver (ifname);
+		gs_free char *sysfs_path = NULL;
+		gs_free char *anycast_mask = NULL;
+		gs_free char *devtype = NULL;
+
 		if (arptype == 256) {
 			/* Some s390 CTC-type devices report 256 for the encapsulation type
 			 * for some reason, but we need to call them Ethernet.
 			 */
 			if (!g_strcmp0 (driver, "ctcm"))
-				return_type (NM_LINK_TYPE_ETHERNET, "ethernet");
+				return NM_LINK_TYPE_ETHERNET;
 		}
 
+		/* Fallback OVS detection for kernel <= 3.16 */
 		if (!g_strcmp0 (driver, "openvswitch"))
-			return_type (NM_LINK_TYPE_OPENVSWITCH, "openvswitch");
+			return NM_LINK_TYPE_OPENVSWITCH;
 
-		if (platform) {
-			udev_device = g_hash_table_lookup (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->udev_devices,
-			                                   GINT_TO_POINTER (rtnl_link_get_ifindex (rtnllink)));
+		sysfs_path = g_strdup_printf ("/sys/class/net/%s", ifname);
+		anycast_mask = g_strdup_printf ("%s/anycast_mask", sysfs_path);
+		if (g_file_test (anycast_mask, G_FILE_TEST_EXISTS))
+			return NM_LINK_TYPE_OLPC_MESH;
+
+		devtype = read_devtype (sysfs_path);
+		for (i = 0; devtype && i < G_N_ELEMENTS (linktypes); i++) {
+			if (g_strcmp0 (devtype, linktypes[i].devtype) == 0)
+				return linktypes[i].nm_type;
 		}
-		return udev_detect_link_type_from_device (udev_device,
-		                                          ifname,
-		                                          arptype,
-		                                          out_name);
-	} else if (!strcmp (type, "dummy"))
-		return_type (NM_LINK_TYPE_DUMMY, "dummy");
-	else if (!strcmp (type, "gre"))
-		return_type (NM_LINK_TYPE_GRE, "gre");
-	else if (!strcmp (type, "gretap"))
-		return_type (NM_LINK_TYPE_GRETAP, "gretap");
-	else if (!strcmp (type, "ifb"))
-		return_type (NM_LINK_TYPE_IFB, "ifb");
-	else if (!strcmp (type, "macvlan"))
-		return_type (NM_LINK_TYPE_MACVLAN, "macvlan");
-	else if (!strcmp (type, "macvtap"))
-		return_type (NM_LINK_TYPE_MACVTAP, "macvtap");
-	else if (!strcmp (type, "tun")) {
-		NMPlatformTunProperties props;
-		guint flags;
 
-		if (nm_platform_tun_get_properties (platform, rtnl_link_get_ifindex (rtnllink), &props)) {
-			if (!g_strcmp0 (props.mode, "tap"))
-				return_type (NM_LINK_TYPE_TAP, "tap");
-			if (!g_strcmp0 (props.mode, "tun"))
-				return_type (NM_LINK_TYPE_TUN, "tun");
-		}
-		flags = rtnl_link_get_flags (rtnllink);
+		/* Fallback for drivers that don't call SET_NETDEV_DEVTYPE() */
+		if (wifi_utils_is_wifi (ifname, sysfs_path))
+			return NM_LINK_TYPE_WIFI;
 
-		nm_log_dbg (LOGD_PLATFORM, "Failed to read tun properties for interface %d (link flags: %X)",
-		                           rtnl_link_get_ifindex (rtnllink), flags);
+		/* Standard wired ethernet interfaces don't report an rtnl_link_type, so
+		 * only allow fallback to Ethernet if no type is given.  This should
+		 * prevent future virtual network drivers from being treated as Ethernet
+		 * when they should be Generic instead.
+		 */
+		if (arptype == ARPHRD_ETHER && !rtnl_type && !devtype)
+			return NM_LINK_TYPE_ETHERNET;
+	}
 
-		/* try guessing the type using the link flags instead... */
-		if (flags & IFF_POINTOPOINT)
-			return_type (NM_LINK_TYPE_TUN, "tun");
-		return_type (NM_LINK_TYPE_TAP, "tap");
-	} else if (!strcmp (type, "veth"))
-		return_type (NM_LINK_TYPE_VETH, "veth");
-	else if (!strcmp (type, "vlan"))
-		return_type (NM_LINK_TYPE_VLAN, "vlan");
-	else if (!strcmp (type, "vxlan"))
-		return_type (NM_LINK_TYPE_VXLAN, "vxlan");
-	else if (!strcmp (type, "bridge"))
-		return_type (NM_LINK_TYPE_BRIDGE, "bridge");
-	else if (!strcmp (type, "bond"))
-		return_type (NM_LINK_TYPE_BOND, "bond");
-	else if (!strcmp (type, "team"))
-		return_type (NM_LINK_TYPE_TEAM, "team");
-
-	return_type (NM_LINK_TYPE_UNKNOWN, type);
+	return NM_LINK_TYPE_UNKNOWN;
 }
 
 static gboolean
@@ -1038,7 +1044,8 @@ init_link (NMPlatform *platform, NMPlatformLink *info, struct rtnl_link *rtnllin
 		g_strlcpy (info->name, name, sizeof (info->name));
 	else
 		info->name[0] = '\0';
-	info->type = link_extract_type (platform, rtnllink, &info->type_name);
+	info->type = link_extract_type (platform, rtnllink);
+	info->kind = g_intern_string (rtnl_link_get_type (rtnllink));
 	info->up = !!(rtnl_link_get_flags (rtnllink) & IFF_UP);
 	info->connected = !!(rtnl_link_get_flags (rtnllink) & IFF_LOWER_UP);
 	info->arp = !(rtnl_link_get_flags (rtnllink) & IFF_NOARP);
@@ -1049,14 +1056,16 @@ init_link (NMPlatform *platform, NMPlatformLink *info, struct rtnl_link *rtnllin
 	udev_device = g_hash_table_lookup (priv->udev_devices, GINT_TO_POINTER (info->ifindex));
 	if (udev_device) {
 		info->driver = udev_get_driver (udev_device, info->ifindex);
-		if (!info->driver)
-			info->driver = g_intern_string (rtnl_link_get_type (rtnllink));
-		if (!info->driver)
-			info->driver = ethtool_get_driver (info->name);
-		if (!info->driver)
-			info->driver = "unknown";
 		info->udi = g_udev_device_get_sysfs_path (udev_device);
+		info->initialized = TRUE;
 	}
+
+	if (!info->driver)
+		info->driver = info->kind;
+	if (!info->driver)
+		info->driver = ethtool_get_driver (info->name);
+	if (!info->driver)
+		info->driver = "unknown";
 
 	return TRUE;
 }
@@ -1615,22 +1624,6 @@ announce_object (NMPlatform *platform, const struct nl_object *object, NMPlatfor
 			if (!init_link (platform, &device, rtnl_link))
 				return;
 
-			/* Skip devices not yet discovered by udev. They will be
-			 * announced by udev_device_added(). This doesn't apply to removed
-			 * devices, as those come either from udev_device_removed(),
-			 * event_notification() or link_delete() which block the announcment
-			 * themselves when appropriate.
-			 */
-			switch (change_type) {
-			case NM_PLATFORM_SIGNAL_ADDED:
-			case NM_PLATFORM_SIGNAL_CHANGED:
-				if (!device.driver)
-					return;
-				break;
-			default:
-				break;
-			}
-
 			/* Link deletion or setting down is sometimes accompanied by address
 			 * and/or route deletion.
 			 *
@@ -2058,15 +2051,12 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 			return NL_OK;
 
 		nl_cache_remove (cached_object);
-		/* Don't announce removed interfaces that are not recognized by
-		 * udev. They were either not yet discovered or they have been
-		 * already removed and announced.
-		 */
-		if (event == RTM_DELLINK) {
-			if (!link_is_announceable (platform, (struct rtnl_link *) cached_object))
-				return NL_OK;
-		}
 		announce_object (platform, cached_object, NM_PLATFORM_SIGNAL_REMOVED, NM_PLATFORM_REASON_EXTERNAL);
+		if (event == RTM_DELLINK) {
+			int ifindex = rtnl_link_get_ifindex ((struct rtnl_link *) cached_object);
+
+			g_hash_table_remove (priv->udev_devices, GINT_TO_POINTER (ifindex));
+		}
 
 		return NL_OK;
 	case RTM_NEWLINK:
@@ -2294,12 +2284,8 @@ link_get_all (NMPlatform *platform)
 	struct nl_object *object;
 
 	for (object = nl_cache_get_first (priv->link_cache); object; object = nl_cache_get_next (object)) {
-		struct rtnl_link *rtnl_link = (struct rtnl_link *) object;
-
-		if (link_is_announceable (platform, rtnl_link)) {
-			if (init_link (platform, &device, rtnl_link))
-				g_array_append_val (links, device);
-		}
+		if (init_link (platform, &device, (struct rtnl_link *) object))
+			g_array_append_val (links, device);
 	}
 
 	return links;
@@ -2312,13 +2298,7 @@ _nm_platform_link_get (NMPlatform *platform, int ifindex, NMPlatformLink *l)
 	auto_nl_object struct rtnl_link *rtnllink = NULL;
 
 	rtnllink = rtnl_link_get (priv->link_cache, ifindex);
-	if (rtnllink) {
-		if (link_is_announceable (platform, rtnllink)) {
-			if (init_link (platform, l, rtnllink))
-				return TRUE;
-		}
-	}
-	return FALSE;
+	return (rtnllink && init_link (platform, l, rtnllink));
 }
 
 static struct nl_object *
@@ -2329,7 +2309,7 @@ build_rtnl_link (int ifindex, const char *name, NMLinkType type)
 
 	rtnllink = _nm_rtnl_link_alloc (ifindex, name);
 	if (type) {
-		nle = rtnl_link_set_type (rtnllink, type_to_string (type));
+		nle = rtnl_link_set_type (rtnllink, nm_link_type_to_rtnl_type_string (type));
 		g_assert (!nle);
 	}
 	return (struct nl_object *) rtnllink;
@@ -2353,7 +2333,7 @@ link_add (NMPlatform *platform, const char *name, NMLinkType type, const void *a
 	}
 
 	debug ("link: add link '%s' of type '%s' (%d)",
-	       name, type_to_string (type), (int) type);
+	       name, nm_link_type_to_string (type), (int) type);
 
 	l = build_rtnl_link (0, name, type);
 
@@ -2374,13 +2354,6 @@ link_get (NMPlatform *platform, int ifindex)
 
 	if (!rtnllink) {
 		platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
-		return NULL;
-	}
-
-	/* physical interfaces must be found by udev before they can be used */
-	if (!link_is_announceable (platform, rtnllink)) {
-		platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
-		rtnl_link_put (rtnllink);
 		return NULL;
 	}
 
@@ -2460,17 +2433,33 @@ link_get_type (NMPlatform *platform, int ifindex)
 {
 	auto_nl_object struct rtnl_link *rtnllink = link_get (platform, ifindex);
 
-	return link_extract_type (platform, rtnllink, NULL);
+	return link_extract_type (platform, rtnllink);
 }
 
 static const char *
 link_get_type_name (NMPlatform *platform, int ifindex)
 {
 	auto_nl_object struct rtnl_link *rtnllink = link_get (platform, ifindex);
-	const char *type;
+	NMLinkType link_type;
+	const char *l;
 
-	link_extract_type (platform, rtnllink, &type);
-	return type;
+	if (!rtnllink)
+		return NULL;
+
+	link_type = link_extract_type (platform, rtnllink);
+	if (link_type != NM_LINK_TYPE_UNKNOWN) {
+		/* We could detect the @link_type. In this case the function returns
+		 * our internel module names, which differs from rtnl_link_get_type():
+		 *   - NM_LINK_TYPE_INFINIBAND (gives "infiniband", instead of "ipoib")
+		 *   - NM_LINK_TYPE_TAP (gives "tap", instead of "tun").
+		 * Note that this functions is only used by NMDeviceGeneric to
+		 * set type_description. */
+		return nm_link_type_to_string (link_type);
+	}
+
+	/* Link type not detected. Fallback to rtnl_link_get_type()/IFLA_INFO_KIND. */
+	l = rtnl_link_get_type (rtnllink);
+	return l ? g_intern_string (l) : "unknown";
 }
 
 static gboolean
@@ -3080,9 +3069,8 @@ veth_get_properties (NMPlatform *platform, int ifindex, NMPlatformVethProperties
 }
 
 static gboolean
-tun_get_properties (NMPlatform *platform, int ifindex, NMPlatformTunProperties *props)
+tun_get_properties_ifname (NMPlatform *platform, const char *ifname, NMPlatformTunProperties *props)
 {
-	const char *ifname;
 	char *path, *val;
 	gboolean success = TRUE;
 
@@ -3092,7 +3080,6 @@ tun_get_properties (NMPlatform *platform, int ifindex, NMPlatformTunProperties *
 	props->owner = -1;
 	props->group = -1;
 
-	ifname = nm_platform_link_get_name (platform, ifindex);
 	if (!ifname || !nm_utils_iface_valid_name (ifname))
 		return FALSE;
 	ifname = ASSERT_VALID_PATH_COMPONENT (ifname);
@@ -3141,6 +3128,12 @@ tun_get_properties (NMPlatform *platform, int ifindex, NMPlatformTunProperties *
 		success = FALSE;
 
 	return success;
+}
+
+static gboolean
+tun_get_properties (NMPlatform *platform, int ifindex, NMPlatformTunProperties *props)
+{
+	return tun_get_properties_ifname (platform, nm_platform_link_get_name (platform, ifindex), props);
 }
 
 static const struct nla_policy macvlan_info_policy[IFLA_MACVLAN_MAX + 1] = {
@@ -4423,7 +4416,6 @@ udev_device_added (NMPlatform *platform,
 	auto_nl_object struct rtnl_link *rtnllink = NULL;
 	const char *ifname;
 	int ifindex;
-	gboolean was_announceable = FALSE;
 
 	ifname = g_udev_device_get_name (udev_device);
 	if (!ifname) {
@@ -4448,15 +4440,15 @@ udev_device_added (NMPlatform *platform,
 	}
 
 	rtnllink = rtnl_link_get (priv->link_cache, ifindex);
-	if (rtnllink)
-		was_announceable = link_is_announceable (platform, rtnllink);
+	if (!rtnllink) {
+		warning ("(%s): udev-add: interface not known via netlink; ignoring...", ifname);
+		return;
+	}
 
 	g_hash_table_insert (priv->udev_devices, GINT_TO_POINTER (ifindex),
 	                     g_object_ref (udev_device));
 
-	/* Announce devices only if they also have been discovered via Netlink. */
-	if (rtnllink && link_is_announceable (platform, rtnllink))
-		announce_object (platform, (struct nl_object *) rtnllink, was_announceable ? NM_PLATFORM_SIGNAL_CHANGED : NM_PLATFORM_SIGNAL_ADDED, NM_PLATFORM_REASON_EXTERNAL);
+	announce_object (platform, (struct nl_object *) rtnllink, NM_PLATFORM_SIGNAL_CHANGED, NM_PLATFORM_REASON_EXTERNAL);
 }
 
 static void
@@ -4464,9 +4456,7 @@ udev_device_removed (NMPlatform *platform,
                      GUdevDevice *udev_device)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	auto_nl_object struct rtnl_link *rtnllink = NULL;
 	int ifindex = 0;
-	gboolean was_announceable = FALSE;
 
 	if (g_udev_device_get_property (udev_device, "IFINDEX"))
 		ifindex = g_udev_device_get_property_as_int (udev_device, "IFINDEX");
@@ -4491,15 +4481,7 @@ udev_device_removed (NMPlatform *platform,
 	if (ifindex <= 0)
 		return;
 
-	rtnllink = rtnl_link_get (priv->link_cache, ifindex);
-	if (rtnllink)
-		was_announceable = link_is_announceable (platform, rtnllink);
-
 	g_hash_table_remove (priv->udev_devices, GINT_TO_POINTER (ifindex));
-
-	/* Announce device removal if it is no longer announceable. */
-	if (was_announceable && !link_is_announceable (platform, rtnllink))
-		announce_object (platform, (struct nl_object *) rtnllink, NM_PLATFORM_SIGNAL_REMOVED, NM_PLATFORM_REASON_EXTERNAL);
 }
 
 static void
@@ -4544,8 +4526,6 @@ constructed (GObject *_object)
 	NMPlatform *platform = NM_PLATFORM (_object);
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	const char *udev_subsys[] = { "net", NULL };
-	GUdevEnumerator *enumerator;
-	GList *devices, *iter;
 	int channel_flags;
 	gboolean status;
 	int nle;
@@ -4605,6 +4585,24 @@ constructed (GObject *_object)
 	g_signal_connect (priv->udev_client, "uevent", G_CALLBACK (handle_udev_event), platform);
 	priv->udev_devices = g_hash_table_new_full (NULL, NULL, NULL, g_object_unref);
 
+	/* request all IPv6 addresses (hopeing that there is at least one), to check for
+	 * the IFA_FLAGS attribute. */
+	nle = nl_rtgen_request (priv->nlh_event, RTM_GETADDR, AF_INET6, NLM_F_DUMP);
+	if (nle < 0)
+		nm_log_warn (LOGD_PLATFORM, "Netlink error: requesting RTM_GETADDR failed with %s", nl_geterror (nle));
+
+	priv->wifi_data = g_hash_table_new_full (NULL, NULL, NULL, (GDestroyNotify) wifi_utils_deinit);
+
+	G_OBJECT_CLASS (nm_linux_platform_parent_class)->constructed (_object);
+}
+
+static void
+setup_devices (NMPlatform *platform)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	GUdevEnumerator *enumerator;
+	GList *devices, *iter;
+
 	/* And read initial device list */
 	enumerator = g_udev_enumerator_new (priv->udev_client);
 	g_udev_enumerator_add_match_subsystem (enumerator, "net");
@@ -4622,16 +4620,6 @@ constructed (GObject *_object)
 	}
 	g_list_free (devices);
 	g_object_unref (enumerator);
-
-	/* request all IPv6 addresses (hopeing that there is at least one), to check for
-	 * the IFA_FLAGS attribute. */
-	nle = nl_rtgen_request (priv->nlh_event, RTM_GETADDR, AF_INET6, NLM_F_DUMP);
-	if (nle < 0)
-		nm_log_warn (LOGD_PLATFORM, "Netlink error: requesting RTM_GETADDR failed with %s", nl_geterror (nle));
-
-	priv->wifi_data = g_hash_table_new_full (NULL, NULL, NULL, (GDestroyNotify) wifi_utils_deinit);
-
-	G_OBJECT_CLASS (nm_linux_platform_parent_class)->constructed (_object);
 }
 
 static void
@@ -4668,6 +4656,8 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	/* virtual methods */
 	object_class->constructed = constructed;
 	object_class->finalize = nm_linux_platform_finalize;
+
+	platform_class->setup_devices = setup_devices;
 
 	platform_class->sysctl_set = sysctl_set;
 	platform_class->sysctl_get = sysctl_get;

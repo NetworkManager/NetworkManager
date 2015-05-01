@@ -28,7 +28,7 @@ dump_interface (NMPlatformLink *link)
 
 	g_assert (link->up || !link->connected);
 
-	printf ("%d: %s: %s", link->ifindex, link->name, link->type_name);
+	printf ("%d: %s: %s", link->ifindex, link->name, nm_link_type_to_string (link->type));
 	if (link->up)
 		printf (" %s", link->connected ? "CONNECTED" : "DISCONNECTED");
 	else

@@ -176,6 +176,7 @@ typedef struct {
 typedef struct {
 	gboolean in_state_changed;
 	gboolean initialized;
+	gboolean platform_link_initialized;
 
 	NMDeviceState state;
 	NMDeviceStateReason state_reason;
@@ -221,6 +222,11 @@ typedef struct {
 	guint           act_source6_id;
 	gpointer        act_source6_func;
 	guint           recheck_assume_id;
+	struct {
+		guint       		call_id;
+		NMDeviceStateReason available_reason;
+		NMDeviceStateReason unavailable_reason;
+	}               recheck_available;
 	struct {
 		guint               call_id;
 		NMDeviceState       post_state;
@@ -1046,6 +1052,7 @@ void
 nm_device_finish_init (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	gboolean platform_unmanaged = FALSE;
 
 	g_assert (priv->initialized == FALSE);
 
@@ -1057,6 +1064,20 @@ nm_device_finish_init (NMDevice *self)
 
 	if (priv->master)
 		nm_device_enslave_slave (priv->master, self, NULL);
+
+	if (priv->ifindex > 0) {
+		if (priv->platform_link_initialized || (priv->is_nm_owned && priv->is_software)) {
+			nm_platform_link_get_unmanaged (NM_PLATFORM_GET, priv->ifindex, &platform_unmanaged);
+			nm_device_set_initial_unmanaged_flag (self, NM_UNMANAGED_DEFAULT, platform_unmanaged);
+		} else {
+			/* Hardware and externally-created software links stay unmanaged
+			 * until they are fully initialized by the platform. NM created
+			 * links must be available for activation immediately and thus
+			 * do not get the PLATFORM_INIT unmanaged flag set.
+			 */
+			nm_device_set_initial_unmanaged_flag (self, NM_UNMANAGED_PLATFORM_INIT, TRUE);
+		}
+	}
 
 	priv->initialized = TRUE;
 }
@@ -1250,12 +1271,20 @@ device_link_changed (NMDevice *self, NMPlatformLink *info)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMUtilsIPv6IfaceId token_iid;
 	gboolean ip_ifname_changed = FALSE;
+	gboolean platform_unmanaged = FALSE;
 
 	if (info->udi && g_strcmp0 (info->udi, priv->udi)) {
 		/* Update UDI to what udev gives us */
 		g_free (priv->udi);
 		priv->udi = g_strdup (info->udi);
 		g_object_notify (G_OBJECT (self), NM_DEVICE_UDI);
+	}
+
+	if (g_strcmp0 (info->driver, priv->driver)) {
+		/* Update driver to what udev gives us */
+		g_free (priv->driver);
+		priv->driver = g_strdup (info->driver);
+		g_object_notify (G_OBJECT (self), NM_DEVICE_DRIVER);
 	}
 
 	/* Update MTU if it has changed. */
@@ -1349,6 +1378,22 @@ device_link_changed (NMDevice *self, NMPlatformLink *info)
 				                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
 			}
 		}
+	}
+
+	if (priv->ifindex > 0 && !priv->platform_link_initialized && info->initialized) {
+		priv->platform_link_initialized = TRUE;
+
+		if (nm_platform_link_get_unmanaged (NM_PLATFORM_GET, priv->ifindex, &platform_unmanaged)) {
+			nm_device_set_unmanaged (self,
+			                         NM_UNMANAGED_DEFAULT,
+			                         platform_unmanaged,
+			                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
+		}
+
+		nm_device_set_unmanaged (self,
+		                         NM_UNMANAGED_PLATFORM_INIT,
+		                         FALSE,
+		                         NM_DEVICE_STATE_REASON_NOW_MANAGED);
 	}
 }
 
@@ -2295,6 +2340,47 @@ nm_device_queue_recheck_assume (NMDevice *self)
 
 	if (nm_device_can_assume_connections (self) && !priv->recheck_assume_id)
 		priv->recheck_assume_id = g_idle_add (nm_device_emit_recheck_assume, self);
+}
+
+static gboolean
+recheck_available (gpointer user_data)
+{
+	NMDevice *self = NM_DEVICE (user_data);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	gboolean now_available = nm_device_is_available (self, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE);
+	NMDeviceState state = nm_device_get_state (self);
+	NMDeviceState new_state = NM_DEVICE_STATE_UNKNOWN;
+
+	priv->recheck_available.call_id = 0;
+
+	if (state == NM_DEVICE_STATE_UNAVAILABLE && now_available) {
+		new_state = NM_DEVICE_STATE_DISCONNECTED;
+		nm_device_queue_state (self, new_state, priv->recheck_available.available_reason);
+	} else if (state >= NM_DEVICE_STATE_DISCONNECTED && !now_available) {
+		new_state = NM_DEVICE_STATE_UNAVAILABLE;
+		nm_device_queue_state (self, new_state, priv->recheck_available.unavailable_reason);
+	}
+	_LOGD (LOGD_DEVICE, "device is %savailable, %s %s",
+	       now_available ? "" : "not ",
+	       new_state == NM_DEVICE_STATE_UNAVAILABLE ? "no change required for" : "will transition to",
+	       state_to_string (new_state == NM_DEVICE_STATE_UNAVAILABLE ? state : new_state));
+
+	priv->recheck_available.available_reason = NM_DEVICE_STATE_REASON_NONE;
+	priv->recheck_available.unavailable_reason = NM_DEVICE_STATE_REASON_NONE;
+	return G_SOURCE_REMOVE;
+}
+
+void
+nm_device_queue_recheck_available (NMDevice *self,
+                                   NMDeviceStateReason available_reason,
+                                   NMDeviceStateReason unavailable_reason)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	priv->recheck_available.available_reason = available_reason;
+	priv->recheck_available.unavailable_reason = unavailable_reason;
+	if (!priv->recheck_available.call_id)
+		priv->recheck_available.call_id = g_idle_add (recheck_available, self);
 }
 
 void
@@ -7042,7 +7128,7 @@ nm_device_set_unmanaged (NMDevice *self,
 
 		if (unmanaged)
 			nm_device_state_changed (self, NM_DEVICE_STATE_UNMANAGED, reason);
-		else
+		else if (nm_device_get_state (self) == NM_DEVICE_STATE_UNMANAGED)
 			nm_device_state_changed (self, NM_DEVICE_STATE_UNAVAILABLE, reason);
 	}
 }
@@ -7982,8 +8068,9 @@ _set_state_full (NMDevice *self,
 		 * reasons.
 		 */
 		if (nm_device_is_available (self, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE)) {
-			_LOGD (LOGD_DEVICE, "device is available, will transition to DISCONNECTED");
-			nm_device_queue_state (self, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_NONE);
+			nm_device_queue_recheck_available (self,
+			                                   NM_DEVICE_STATE_REASON_NONE,
+			                                   NM_DEVICE_STATE_REASON_NONE);
 		} else {
 			if (old_state == NM_DEVICE_STATE_UNMANAGED)
 				_LOGD (LOGD_DEVICE, "device not yet available for transition to DISCONNECTED");
@@ -8590,6 +8677,11 @@ dispose (GObject *object)
 		priv->recheck_assume_id = 0;
 	}
 
+	if (priv->recheck_available.call_id) {
+		g_source_remove (priv->recheck_available.call_id);
+		priv->recheck_available.call_id = 0;
+	}
+
 	link_disconnect_action_cancel (self);
 
 	if (priv->con_provider) {
@@ -8664,6 +8756,7 @@ set_property (GObject *object, guint prop_id,
 			priv->up = platform_device->up;
 			g_free (priv->driver);
 			priv->driver = g_strdup (platform_device->driver);
+			priv->platform_link_initialized = platform_device->initialized;
 		}
 		break;
 	case PROP_UDI:

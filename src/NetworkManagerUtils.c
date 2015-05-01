@@ -566,7 +566,7 @@ nm_utils_kill_child_async (pid_t pid, int sig, guint64 log_domain,
 
 		/* let's try again with waitpid, probably there was a race... */
 		ret = waitpid (pid, &status, 0);
-		if (ret > 0) {
+		if (ret > 0 || (ret < 0 && errno == ECHILD)) {
 			nm_log_dbg (log_domain, LOG_NAME_FMT ": process %ld already terminated %s",
 			            LOG_NAME_ARGS, (long) ret, _kc_exit_to_string (buf_exit, status));
 			_kc_invoke_callback (pid, log_domain, log_name, callback, user_data, TRUE, status);

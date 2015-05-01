@@ -405,6 +405,10 @@ nm_platform_query_devices (NMPlatform *self)
 		               NM_PLATFORM_REASON_INTERNAL);
 	}
 	g_array_unref (links_array);
+
+	/* Platform specific device setup. */
+	if (klass->setup_devices)
+		klass->setup_devices (self);
 }
 
 /**
@@ -2340,7 +2344,7 @@ nm_platform_link_to_string (const NMPlatformLink *link)
 {
 	char master[20];
 	char parent[20];
-	char *driver, *udi, *type;
+	char *driver, *udi;
 	GString *str;
 
 	if (!link)
@@ -2368,16 +2372,20 @@ nm_platform_link_to_string (const NMPlatformLink *link)
 
 	driver = link->driver ? g_strdup_printf (" driver '%s'", link->driver) : NULL;
 	udi = link->udi ? g_strdup_printf (" udi '%s'", link->udi) : NULL;
-	type = link->type_name ? NULL : g_strdup_printf ("(%d)", link->type);
 
-	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%d: %s%s <%s> mtu %d%s %s%s%s",
+	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%d: %s%s <%s> mtu %d%s "
+	            "%s" /* link->type */
+	            "%s%s" /* kind */
+	            "%s%s",
 	            link->ifindex, link->name, parent, str->str,
-	            link->mtu, master, link->type_name ? link->type_name : type,
+	            link->mtu, master,
+	            nm_link_type_to_string (link->type),
+	            link->type != NM_LINK_TYPE_UNKNOWN && link->kind ? " kind " : "",
+	            link->type != NM_LINK_TYPE_UNKNOWN && link->kind ? link->kind : "",
 	            driver ? driver : "", udi ? udi : "");
 	g_string_free (str, TRUE);
 	g_free (driver);
 	g_free (udi);
-	g_free (type);
 	return to_string_buffer;
 }
 
@@ -2608,11 +2616,27 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route)
             return (((a)->field) < ((b)->field)) ? -1 : 1;  \
     } G_STMT_END
 
+#define _CMP_FIELD_BOOL(a, b, field)                        \
+    G_STMT_START {                                          \
+        if ((!((a)->field)) != (!((b)->field)))                 \
+            return ((!((a)->field)) < (!((b)->field))) ? -1 : 1; \
+    } G_STMT_END
+
 #define _CMP_FIELD_STR(a, b, field)                         \
     G_STMT_START {                                          \
         int c = strcmp ((a)->field, (b)->field);            \
         if (c != 0)                                         \
             return c < 0 ? -1 : 1;                          \
+    } G_STMT_END
+
+#define _CMP_FIELD_STR_INTERNED(a, b, field)                \
+    G_STMT_START {                                          \
+        if (((a)->field) != ((b)->field)) {                 \
+            /* just to be sure, also do a strcmp() if the pointers don't match */ \
+            int c = g_strcmp0 ((a)->field, (b)->field);     \
+            if (c != 0)                                     \
+                return c < 0 ? -1 : 1;                      \
+        } \
     } G_STMT_END
 
 #define _CMP_FIELD_STR0(a, b, field)                        \
@@ -2642,9 +2666,10 @@ nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 	_CMP_FIELD (a, b, connected);
 	_CMP_FIELD (a, b, arp);
 	_CMP_FIELD (a, b, mtu);
-	_CMP_FIELD_STR0 (a, b, type_name);
+	_CMP_FIELD_BOOL (a, b, initialized);
+	_CMP_FIELD_STR_INTERNED (a, b, kind);
 	_CMP_FIELD_STR0 (a, b, udi);
-	_CMP_FIELD_STR0 (a, b, driver);
+	_CMP_FIELD_STR_INTERNED (a, b, driver);
 	return 0;
 }
 

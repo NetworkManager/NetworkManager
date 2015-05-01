@@ -85,9 +85,19 @@ struct _NMPlatformLink {
 	__NMPlatformObject_COMMON;
 	char name[IFNAMSIZ];
 	NMLinkType type;
-	const char *type_name;
+
+	/* rtnl_link_get_type(), IFLA_INFO_KIND. */
+	/* NMPlatform initializes this field with a static string. */
+	const char *kind;
+
+	/* Beware: NMPlatform initializes this string with an allocated string.
+	 * Handle it properly (i.e. don't keep a reference to it). */
 	const char *udi;
+
+	/* NMPlatform initializes this field with a static string. */
 	const char *driver;
+
+	gboolean initialized;
 	int master;
 	int parent;
 	gboolean up;
@@ -358,6 +368,8 @@ struct _NMPlatform {
 typedef struct {
 	GObjectClass parent;
 
+	void (*setup_devices) (NMPlatform *);
+
 	gboolean (*sysctl_set) (NMPlatform *, const char *path, const char *value);
 	char * (*sysctl_get) (NMPlatform *, const char *path);
 
@@ -496,6 +508,8 @@ NMPlatform *nm_platform_try_get (void);
 #define NM_PLATFORM_GET (nm_platform_get ())
 
 /******************************************************************/
+
+const char *nm_link_type_to_string (NMLinkType link_type);
 
 void nm_platform_set_error (NMPlatform *self, NMPlatformError error);
 NMPlatformError nm_platform_get_error (NMPlatform *self);

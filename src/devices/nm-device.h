@@ -344,6 +344,8 @@ RfKillType nm_device_get_rfkill_type (NMDevice *device);
  * @NM_UNMANAGED_USER: %TRUE when unmanaged by user decision (via unmanaged-specs)
  * @NM_UNMANAGED_PARENT: %TRUE when unmanaged due to parent device being unmanaged
  * @NM_UNMANAGED_EXTERNAL_DOWN: %TRUE when unmanaged because !IFF_UP and not created by NM
+ * @NM_UNMANAGED_PLATFORM_INIT: %TRUE when unmanaged because platform link not
+ *   yet initialized
  */
 typedef enum {
 	NM_UNMANAGED_NONE          = 0x00,
@@ -352,6 +354,7 @@ typedef enum {
 	NM_UNMANAGED_USER          = 0x04,
 	NM_UNMANAGED_PARENT        = 0x08,
 	NM_UNMANAGED_EXTERNAL_DOWN = 0x10,
+	NM_UNMANAGED_PLATFORM_INIT = 0x20,
 
 	/* Boundary value */
 	__NM_UNMANAGED_LAST,
