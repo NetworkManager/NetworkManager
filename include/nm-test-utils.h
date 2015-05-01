@@ -74,6 +74,12 @@
  *   For example
  *     NMTST_DEBUG="sudo-cmd=$PWD/tools/test-sudo-wrapper.sh" make -C src/platform/tests/ check
  *
+ * "slow|quick|thorough": enable/disable long-running tests. This sets nmtst_test_quick().
+ *   Whether long-running tests are enabled is determined as follows (highest priority first):
+ *     - specifying the value in NMTST_DEBUG has highest priority
+ *     - respect g_test_quick(), if the command line contains '-mslow', '-mquick', '-mthorough'.
+ *     - use compile time default
+ *
  *******************************************************************************/
 
 #include <arpa/inet.h>
@@ -90,6 +96,9 @@
 #include "nm-glib-compat.h"
 #include "gsystem-local-alloc.h"
 
+
+/* Analog to EXIT_SUCCESS and EXIT_FAILURE. */
+#define EXIT_SKIP (77)
 
 /*******************************************************************************/
 
@@ -123,6 +132,7 @@ struct __nmtst_internal
 	gboolean is_debug;
 	gboolean assert_logging;
 	gboolean no_expect_message;
+	gboolean test_quick;
 	char *sudo_cmd;
 	char **orig_argv;
 };
@@ -234,6 +244,9 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 	int i;
 	gboolean no_expect_message = FALSE;
 	gboolean _out_set_logging;
+	gboolean test_quick = FALSE;
+	gboolean test_quick_set = FALSE;
+	gboolean test_quick_argv = FALSE;
 
 	if (!out_set_logging)
 		out_set_logging = &_out_set_logging;
@@ -298,6 +311,12 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 				sudo_cmd = g_strdup (&debug[strlen ("sudo-cmd=")]);
 			} else if (!g_ascii_strcasecmp (debug, "no-expect-message")) {
 				no_expect_message = TRUE;
+			} else if (!g_ascii_strcasecmp (debug, "slow") || !g_ascii_strcasecmp (debug, "thorough")) {
+				test_quick = FALSE;
+				test_quick_set = TRUE;
+			} else if (!g_ascii_strcasecmp (debug, "quick")) {
+				test_quick = TRUE;
+				test_quick_set = TRUE;
 			} else {
 				char *msg = g_strdup_printf (">>> nmtst: ignore unrecognized NMTST_DEBUG option \"%s\"", debug);
 
@@ -310,14 +329,33 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 	}
 
 	if (argv && *argv) {
-		 char **a = *argv;
+		char **a = *argv;
 
-		 for (; *a; a++) {
+		for (; *a; a++) {
 			if (!g_ascii_strcasecmp (*a, "--debug"))
 				is_debug = TRUE;
 			else if (!g_ascii_strcasecmp (*a, "--no-debug"))
 				is_debug = FALSE;
-		 }
+			else if (   !strcmp (*a, "-mslow")
+			         || !strcmp (*a, "-m=slow")
+			         || !strcmp (*a, "-mthorough")
+			         || !strcmp (*a, "-m=thorough")
+			         || !strcmp (*a, "-mquick")
+			         || !strcmp (*a, "-m=quick"))
+				test_quick_argv = TRUE;
+		}
+	}
+
+	if (test_quick_set)
+		__nmtst_internal.test_quick = test_quick;
+	else if (test_quick_argv)
+		__nmtst_internal.test_quick = g_test_quick ();
+	else {
+#ifdef NMTST_TEST_QUICK
+		__nmtst_internal.test_quick = NMTST_TEST_QUICK;
+#else
+		__nmtst_internal.test_quick = FALSE;
+#endif
 	}
 
 	__nmtst_internal.is_debug = is_debug;
@@ -427,6 +465,13 @@ nmtst_is_debug (void)
 {
 	g_assert (nmtst_initialized ());
 	return __nmtst_internal.is_debug;
+}
+
+inline static gboolean
+nmtst_test_quick (void)
+{
+	g_assert (nmtst_initialized ());
+	return __nmtst_internal.test_quick;
 }
 
 #if GLIB_CHECK_VERSION(2,34,0)

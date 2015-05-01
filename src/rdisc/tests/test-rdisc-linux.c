@@ -24,51 +24,47 @@
 #include <syslog.h>
 
 #include "nm-rdisc.h"
-#include "nm-fake-rdisc.h"
 #include "nm-lndp-rdisc.h"
 #include "nm-logging.h"
 
-#include "nm-fake-platform.h"
 #include "nm-linux-platform.h"
+
+#include "nm-test-utils.h"
+
+NMTST_DEFINE ();
 
 int
 main (int argc, char **argv)
 {
 	GMainLoop *loop;
 	NMRDisc *rdisc;
-	NMRDisc *(*new) (int ifindex, const char *ifname);
 	int ifindex = 1;
 	const char *ifname;
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
+	nmtst_init_with_logging (&argc, &argv, NULL, "DEFAULT");
+
+	if (getuid () != 0) {
+		g_print ("Missing permission: must run as root\n");
+		return EXIT_FAILURE;
+	}
 
 	loop = g_main_loop_new (NULL, FALSE);
-	nm_logging_setup ("debug", "ip6", NULL, NULL);
-	openlog (G_LOG_DOMAIN, LOG_CONS | LOG_PERROR, LOG_DAEMON);
 
-	argv++;
-	if (!g_strcmp0 (argv[0], "--fake")) {
-		new = nm_fake_rdisc_new;
-		nm_fake_platform_setup ();
-		argv++;
-	} else {
-		new = nm_lndp_rdisc_new;
-		nm_linux_platform_setup ();
-	}
+	nm_linux_platform_setup ();
 
-	if (argv[0]) {
-		ifname = argv[0];
+	if (argv[1]) {
+		ifname = argv[1];
 		ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, ifname);
 	} else {
-		ifindex = 1;
-		ifname = nm_platform_link_get_name (NM_PLATFORM_GET, ifindex);
+		g_print ("Missing command line argument \"interface-name\"\n");
+		return EXIT_FAILURE;
 	}
 
-	rdisc = new (ifindex, ifname);
-	if (!rdisc)
+	rdisc = nm_lndp_rdisc_new (ifindex, ifname);
+	if (!rdisc) {
+		g_print ("Failed to create NMRDisc instance\n");
 		return EXIT_FAILURE;
+	}
 
 	nm_rdisc_start (rdisc);
 	g_main_loop_run (loop);
