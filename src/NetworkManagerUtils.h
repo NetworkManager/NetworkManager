@@ -173,7 +173,7 @@ gint64 nm_utils_get_monotonic_timestamp_us (void);
 gint64 nm_utils_get_monotonic_timestamp_ms (void);
 gint32 nm_utils_get_monotonic_timestamp_s (void);
 
-const char *ASSERT_VALID_PATH_COMPONENT (const char *name) G_GNUC_WARN_UNUSED_RESULT;
+const char *ASSERT_VALID_PATH_COMPONENT (const char *name);
 const char *nm_utils_ip6_property_path (const char *ifname, const char *property);
 const char *nm_utils_ip4_property_path (const char *ifname, const char *property);
 

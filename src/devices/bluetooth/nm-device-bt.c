@@ -479,6 +479,13 @@ device_state_changed (NMDevice *device,
 
 	if (priv->modem)
 		nm_modem_device_state_changed (priv->modem, new_state, old_state, reason);
+
+	/* Need to recheck available connections whenever MM appears or disappears,
+	 * since the device could be both DUN and NAP capable and thus may not
+	 * change state (which rechecks available connections) when MM comes and goes.
+	 */
+	if (priv->mm_running && (priv->capabilities & NM_BT_CAPABILITY_DUN))
+	    nm_device_recheck_available_connections (device);
 }
 
 static void
@@ -944,60 +951,19 @@ is_available (NMDevice *dev, NMDeviceCheckDevAvailableFlags flags)
 }
 
 static void
-handle_availability_change (NMDeviceBt *self,
-                            gboolean old_available,
-                            NMDeviceStateReason unavailable_reason)
-{
-	NMDevice *device = NM_DEVICE (self);
-	NMDeviceState state;
-	gboolean available;
-
-	state = nm_device_get_state (device);
-	if (state < NM_DEVICE_STATE_UNAVAILABLE) {
-		_LOGD (LOGD_BT, "availability blocked by UNMANAGED state");
-		return;
-	}
-
-	available = nm_device_is_available (device, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE);
-	if (available == old_available)
-		return;
-
-	if (available) {
-		if (state != NM_DEVICE_STATE_UNAVAILABLE)
-			_LOGW (LOGD_CORE | LOGD_BT, "not in expected unavailable state!");
-
-		nm_device_state_changed (device,
-		                         NM_DEVICE_STATE_DISCONNECTED,
-		                         NM_DEVICE_STATE_REASON_NONE);
-	} else {
-		nm_device_state_changed (device,
-		                         NM_DEVICE_STATE_UNAVAILABLE,
-		                         unavailable_reason);
-	}
-}
-
-static void
 set_mm_running (NMDeviceBt *self, gboolean running)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (self);
-	gboolean old_available;
 
-	if (priv->mm_running == running)
-		return;
+	if (priv->mm_running != running) {
+		_LOGD (LOGD_BT, "ModemManager now %s",
+		       running ? "available" : "unavailable");
 
-	_LOGD (LOGD_BT, "ModemManager now %s",
-	       running ? "available" : "unavailable");
-
-	old_available = nm_device_is_available (NM_DEVICE (self), NM_DEVICE_CHECK_DEV_AVAILABLE_NONE);
-	priv->mm_running = running;
-	handle_availability_change (self, old_available, NM_DEVICE_STATE_REASON_MODEM_MANAGER_UNAVAILABLE);
-
-	/* Need to recheck available connections whenever MM appears or disappears,
-	 * since the device could be both DUN and NAP capable and thus may not
-	 * change state (which rechecks available connections) when MM comes and goes.
-	 */
-	if (priv->capabilities & NM_BT_CAPABILITY_DUN)
-	    nm_device_recheck_available_connections (NM_DEVICE (self));
+		priv->mm_running = running;
+		nm_device_queue_recheck_available (NM_DEVICE (self),
+		                                   NM_DEVICE_STATE_REASON_NONE,
+		                                   NM_DEVICE_STATE_REASON_MODEM_MANAGER_UNAVAILABLE);
+	}
 }
 
 static void

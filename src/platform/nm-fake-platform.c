@@ -49,11 +49,6 @@ typedef struct {
 	int vlan_id;
 } NMFakePlatformLink;
 
-typedef struct {
-	int ifindex;
-	NMPlatform *platform;
-} NMFakePlatformLinkData;
-
 #define NM_FAKE_PLATFORM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_FAKE_PLATFORM, NMFakePlatformPrivate))
 
 G_DEFINE_TYPE (NMFakePlatform, nm_fake_platform, NM_TYPE_PLATFORM)
@@ -113,9 +108,10 @@ link_init (NMFakePlatformLink *device, int ifindex, int type, const char *name)
 
 	device->link.ifindex = name ? ifindex : 0;
 	device->link.type = type;
-	device->link.type_name = type_to_type_name (type);
+	device->link.kind = type_to_type_name (type);
 	device->link.driver = type_to_type_name (type);
 	device->link.udi = device->udi = g_strdup_printf ("fake:%d", ifindex);
+	device->link.initialized = TRUE;
 	if (name)
 		strcpy (device->link.name, name);
 	switch (device->link.type) {
@@ -172,23 +168,6 @@ _nm_platform_link_get (NMPlatform *platform, int ifindex, NMPlatformLink *l)
 }
 
 static gboolean
-_link_announce (NMFakePlatformLinkData *data)
-{
-	NMFakePlatformLink *device = link_get (data->platform, data->ifindex);
-
-	if (device)
-		g_signal_emit_by_name (data->platform,
-				       NM_PLATFORM_SIGNAL_LINK_CHANGED,
-				       device->link.ifindex,
-				       device,
-				       NM_PLATFORM_SIGNAL_ADDED,
-				       NM_PLATFORM_REASON_INTERNAL);
-	g_free (data);
-
-	return FALSE;
-}
-
-static gboolean
 link_add (NMPlatform *platform, const char *name, NMLinkType type, const void *address, size_t address_len)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
@@ -198,12 +177,8 @@ link_add (NMPlatform *platform, const char *name, NMLinkType type, const void *a
 
 	g_array_append_val (priv->links, device);
 
-	if (device.link.ifindex) {
-		NMFakePlatformLinkData *data = g_new (NMFakePlatformLinkData, 1);
-		data->ifindex = device.link.ifindex;
-		data->platform = platform;
-		g_idle_add ((GSourceFunc) _link_announce, data);
-	}
+	if (device.link.ifindex)
+		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_LINK_CHANGED, device.link.ifindex, &device, NM_PLATFORM_SIGNAL_ADDED, NM_PLATFORM_REASON_INTERNAL);
 
 	return TRUE;
 }

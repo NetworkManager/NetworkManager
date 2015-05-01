@@ -1616,6 +1616,17 @@ carrier_changed (NMDevice *device, gboolean carrier)
 }
 
 static void
+link_changed (NMDevice *device, NMPlatformLink *info)
+{
+	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+
+	NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->link_changed (device, info);
+	if (!priv->subchan1 && info->udi)
+		_update_s390_subchannels (self);
+}
+
+static void
 dispose (GObject *object)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (object);
@@ -1714,6 +1725,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	parent_class->spec_match_list = spec_match_list;
 	parent_class->update_connection = update_connection;
 	parent_class->carrier_changed = carrier_changed;
+	parent_class->link_changed = link_changed;
 
 	parent_class->state_changed = device_state_changed;
 

@@ -1797,7 +1797,7 @@ add_device (NMManager *self, NMDevice *device, gboolean try_assume)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	const char *iface, *driver, *type_desc;
 	const GSList *unmanaged_specs;
-	gboolean user_unmanaged, sleeping, platform_unmanaged;
+	gboolean user_unmanaged, sleeping;
 	gboolean enabled = FALSE;
 	RfKillType rtype;
 	GSList *iter, *remove = NULL;
@@ -1876,9 +1876,6 @@ add_device (NMManager *self, NMDevice *device, gboolean try_assume)
 	unmanaged_specs = nm_settings_get_unmanaged_specs (priv->settings);
 	user_unmanaged = nm_device_spec_match_list (device, unmanaged_specs);
 	nm_device_set_initial_unmanaged_flag (device, NM_UNMANAGED_USER, user_unmanaged);
-
-	if (nm_platform_link_get_unmanaged (NM_PLATFORM_GET, nm_device_get_ifindex (device), &platform_unmanaged))
-		nm_device_set_initial_unmanaged_flag (device, NM_UNMANAGED_DEFAULT, platform_unmanaged);
 
 	sleeping = manager_sleeping (self);
 	nm_device_set_initial_unmanaged_flag (device, NM_UNMANAGED_INTERNAL, sleeping);
@@ -2212,7 +2209,7 @@ platform_link_added (NMManager *self,
 		case NM_LINK_TYPE_WIFI:
 		case NM_LINK_TYPE_WIMAX:
 			nm_log_info (LOGD_HW, "(%s): '%s' plugin not available; creating generic device",
-			             plink->name, plink->type_name);
+			             plink->name, nm_link_type_to_string (plink->type));
 			/* fall through */
 		default:
 			device = nm_device_generic_new (plink);
@@ -2978,9 +2975,9 @@ _internal_activation_failed (NMManager *self,
                              NMActiveConnection *active,
                              const char *error_desc)
 {
-	nm_log_warn (LOGD_CORE, "Failed to activate '%s': %s",
-	             nm_connection_get_id (nm_active_connection_get_connection (active)),
-	             error_desc);
+	nm_log_dbg (LOGD_CORE, "Failed to activate '%s': %s",
+	            nm_connection_get_id (nm_active_connection_get_connection (active)),
+	            error_desc);
 
 	if (nm_active_connection_get_state (active) <= NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
 		nm_active_connection_set_state (active, NM_ACTIVE_CONNECTION_STATE_DEACTIVATING);

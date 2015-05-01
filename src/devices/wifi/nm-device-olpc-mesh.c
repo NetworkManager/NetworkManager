@@ -369,9 +369,9 @@ device_added_cb (NMManager *manager, NMDevice *other, gpointer user_data)
 	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
 
 	if (!priv->companion && check_companion (self, other)) {
-		nm_device_state_changed (NM_DEVICE (self),
-		                         NM_DEVICE_STATE_DISCONNECTED,
-		                         NM_DEVICE_STATE_REASON_NONE);
+		nm_device_queue_recheck_available (NM_DEVICE (self),
+		                                   NM_DEVICE_STATE_REASON_NONE,
+		                                   NM_DEVICE_STATE_REASON_NONE);
 		nm_device_remove_pending_action (NM_DEVICE (self), "waiting for companion", TRUE);
 	}
 }
@@ -399,9 +399,9 @@ find_companion (NMDeviceOlpcMesh *self)
 	/* Try to find the companion if it's already known to the NMManager */
 	for (list = nm_manager_get_devices (nm_manager_get ()); list ; list = g_slist_next (list)) {
 		if (check_companion (self, NM_DEVICE (list->data))) {
-			nm_device_queue_state (NM_DEVICE (self),
-			                       NM_DEVICE_STATE_DISCONNECTED,
-			                       NM_DEVICE_STATE_REASON_NONE);
+			nm_device_queue_recheck_available (NM_DEVICE (self),
+			                                   NM_DEVICE_STATE_REASON_NONE,
+			                                   NM_DEVICE_STATE_REASON_NONE);
 			nm_device_remove_pending_action (NM_DEVICE (self), "waiting for companion", TRUE);
 			break;
 		}
