@@ -1937,7 +1937,7 @@ get_secrets_cb (NMSettingsConnection *connection,
 
 	priv->secrets_id = 0;
 
-	if (error) {
+	if (error && priv->secrets_idx >= SECRETS_REQ_NEW) {
 		nm_log_err (LOGD_VPN, "Failed to request VPN secrets #%d: (%d) %s",
 		            priv->secrets_idx + 1, error->code, error->message);
 		_set_vpn_state (self, STATE_FAILED, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS, FALSE);
