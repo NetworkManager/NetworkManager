@@ -58,6 +58,7 @@
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 #include "nm-linux-platform.h"
+#include "nm-platform-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-logging.h"
@@ -477,47 +478,6 @@ ethtool_get_permanent_address (const char *ifname,
 	memcpy (buf, epaddr->data, epaddr->size);
 	*length = epaddr->size;
 	return TRUE;
-}
-
-/******************************************************************
- * udev
- ******************************************************************/
-
-static const char *
-udev_get_driver (GUdevDevice *device, int ifindex)
-{
-	GUdevDevice *parent = NULL, *grandparent = NULL;
-	const char *driver, *subsys;
-
-	driver = g_udev_device_get_driver (device);
-	if (driver)
-		goto out;
-
-	/* Try the parent */
-	parent = g_udev_device_get_parent (device);
-	if (parent) {
-		driver = g_udev_device_get_driver (parent);
-		if (!driver) {
-			/* Try the grandparent if it's an ibmebus device or if the
-			 * subsys is NULL which usually indicates some sort of
-			 * platform device like a 'gadget' net interface.
-			 */
-			subsys = g_udev_device_get_subsystem (parent);
-			if (   (g_strcmp0 (subsys, "ibmebus") == 0)
-			    || (subsys == NULL)) {
-				grandparent = g_udev_device_get_parent (parent);
-				if (grandparent)
-					driver = g_udev_device_get_driver (grandparent);
-			}
-		}
-	}
-	g_clear_object (&parent);
-	g_clear_object (&grandparent);
-
-out:
-	/* Intern the string so we don't have to worry about memory
-	 * management in NMPlatformLink. */
-	return g_intern_string (driver);
 }
 
 /******************************************************************
@@ -1102,7 +1062,7 @@ init_link (NMPlatform *platform, NMPlatformLink *info, struct rtnl_link *rtnllin
 
 	udev_device = g_hash_table_lookup (priv->udev_devices, GINT_TO_POINTER (info->ifindex));
 	if (udev_device) {
-		info->driver = udev_get_driver (udev_device, info->ifindex);
+		info->driver = nmp_utils_udev_get_driver (udev_device);
 		info->udi = g_udev_device_get_sysfs_path (udev_device);
 		info->initialized = TRUE;
 	}
