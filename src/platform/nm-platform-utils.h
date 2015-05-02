@@ -28,6 +28,22 @@
 #include "nm-platform.h"
 
 
+const char *nmp_utils_ethtool_get_driver (const char *ifname);
+gboolean nmp_utils_ethtool_supports_carrier_detect (const char *ifname);
+gboolean nmp_utils_ethtool_supports_vlans (const char *ifname);
+int nmp_utils_ethtool_get_peer_ifindex (const char *ifname);
+gboolean nmp_utils_ethtool_get_wake_on_lan (const char *ifname);
+
+gboolean nmp_utils_ethtool_get_driver_info (const char *ifname,
+                                            char **out_driver_name,
+                                            char **out_driver_version,
+                                            char **out_fw_version);
+
+gboolean  nmp_utils_ethtool_get_permanent_address (const char *ifname,
+                                                   guint8 *buf,
+                                                   size_t *length);
+
+
 const char *nmp_utils_udev_get_driver (GUdevDevice *device);
 
 
