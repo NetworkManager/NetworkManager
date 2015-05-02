@@ -23,7 +23,12 @@
 
 #include "config.h"
 
+#include <gudev/gudev.h>
+
 #include "nm-platform.h"
+
+
+const char *nmp_utils_udev_get_driver (GUdevDevice *device);
 
 
 #endif /* __NM_PLATFORM_UTILS_H__ */
