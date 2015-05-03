@@ -624,13 +624,15 @@ _sleep_duration_convert_ms_to_us (guint32 sleep_duration_msec)
  * sent unless the child already exited. If the child does not exit within @wait_before_kill_msec milliseconds,
  * the function will send %SIGKILL and waits for the child indefinitly. If @wait_before_kill_msec is zero, no
  * %SIGKILL signal will be sent.
+ *
+ * In case of error, errno is preserved to contain the last reason of failure.
  **/
 gboolean
 nm_utils_kill_child_sync (pid_t pid, int sig, guint64 log_domain, const char *log_name,
                           int *child_status, guint32 wait_before_kill_msec,
                           guint32 sleep_duration_msec)
 {
-	int status = 0, errsv;
+	int status = 0, errsv = 0;
 	pid_t ret;
 	gboolean success = FALSE;
 	gboolean was_waiting = FALSE, send_kill = FALSE;
@@ -776,6 +778,7 @@ nm_utils_kill_child_sync (pid_t pid, int sig, guint64 log_domain, const char *lo
 out:
 	if (child_status)
 		*child_status = success ? status : -1;
+	errno = success ? 0 : errsv;
 	return success;
 }
 
