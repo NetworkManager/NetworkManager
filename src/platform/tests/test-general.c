@@ -20,10 +20,23 @@
 
 #include "nm-platform-utils.h"
 
+#include <linux/rtnetlink.h>
+
+#include "nm-linux-platform.h"
 #include "nm-logging.h"
 
 #include "nm-test-utils.h"
 
+
+/******************************************************************/
+
+static void
+test_init_linux_platform ()
+{
+	gs_unref_object NMPlatform *platform = NULL;
+
+	platform = g_object_new (NM_TYPE_LINUX_PLATFORM, NULL);
+}
 
 /******************************************************************/
 
@@ -33,6 +46,8 @@ int
 main (int argc, char **argv)
 {
 	nmtst_init_assert_logging (&argc, &argv, "INFO", "DEFAULT");
+
+	g_test_add_func ("/general/init_linux_platform", test_init_linux_platform);
 
 	return g_test_run ();
 }
