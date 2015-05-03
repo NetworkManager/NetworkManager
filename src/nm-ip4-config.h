@@ -163,7 +163,7 @@ gboolean nm_ip4_config_equal (const NMIP4Config *a, const NMIP4Config *b);
 /******************************************************/
 /* Testing-only functions */
 
-gboolean nm_ip4_config_capture_resolv_conf (GArray *nameservers,
+gboolean nm_ip4_config_capture_resolv_conf (GArray *nameservers, GPtrArray *dns_options,
                                             const char *rc_contents);
 
 #endif /* __NETWORKMANAGER_IP4_CONFIG_H__ */

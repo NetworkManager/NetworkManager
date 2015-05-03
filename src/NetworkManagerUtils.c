@@ -1473,6 +1473,56 @@ nm_utils_read_resolv_conf_nameservers (const char *rc_contents)
 	return nameservers;
 }
 
+/**
+ * nm_utils_read_resolv_conf_dns_options():
+ * @rc_contents: contents of a resolv.conf; or %NULL to read /etc/resolv.conf
+ *
+ * Reads all dns options out of @rc_contents or /etc/resolv.conf and returns
+ * them.
+ *
+ * Returns: a #GPtrArray of 'char *' elements of each option
+ */
+GPtrArray *
+nm_utils_read_resolv_conf_dns_options (const char *rc_contents)
+{
+	GPtrArray *options = NULL;
+	char *contents = NULL;
+	char **lines, **line_iter;
+	char **tokens, **token_iter;
+	char *p;
+
+	if (rc_contents)
+		contents = g_strdup (rc_contents);
+	else {
+		if (!g_file_get_contents (_PATH_RESCONF, &contents, NULL, NULL))
+			return NULL;
+	}
+
+	options = g_ptr_array_new_full (3, g_free);
+
+	lines = g_strsplit_set (contents, "\r\n", -1);
+	for (line_iter = lines; *line_iter; line_iter++) {
+		if (!g_str_has_prefix (*line_iter, "options"))
+			continue;
+		p = *line_iter + strlen ("options");
+		if (!g_ascii_isspace (*p++))
+			continue;
+
+		tokens = g_strsplit (p, " ", 0);
+		for (token_iter = tokens; token_iter && *token_iter; token_iter++) {
+			g_strstrip (*token_iter);
+			if (!*token_iter[0])
+				continue;
+			g_ptr_array_add (options, g_strdup (*token_iter));
+		}
+		g_strfreev (tokens);
+	}
+	g_strfreev (lines);
+	g_free (contents);
+
+	return options;
+}
+
 static GHashTable *
 check_property_in_hash (GHashTable *hash,
                         const char *s_name,

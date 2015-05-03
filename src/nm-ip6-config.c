@@ -33,6 +33,7 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-ip6-config-glue.h"
 #include "nm-route-manager.h"
+#include "nm-utils-private.h"
 #include "NetworkManagerUtils.h"
 
 G_DEFINE_TYPE (NMIP6Config, nm_ip6_config, G_TYPE_OBJECT)
@@ -140,9 +141,10 @@ same_prefix (const struct in6_addr *address1, const struct in6_addr *address2, i
  */
 gboolean
 nm_ip6_config_capture_resolv_conf (GArray *nameservers,
+                                   GPtrArray *dns_options,
                                    const char *rc_contents)
 {
-	GPtrArray *read_ns;
+	GPtrArray *read_ns, *read_options;
 	guint i, j;
 	gboolean changed = FALSE;
 
@@ -172,8 +174,25 @@ nm_ip6_config_capture_resolv_conf (GArray *nameservers,
 			changed = TRUE;
 		}
 	}
-
 	g_ptr_array_unref (read_ns);
+
+	if (dns_options) {
+		read_options = nm_utils_read_resolv_conf_dns_options (rc_contents);
+		if (!read_options)
+			return changed;
+
+		for (i = 0; i < read_options->len; i++) {
+			const char *s = g_ptr_array_index (read_options, i);
+
+			if (_nm_utils_dns_option_validate (s, NULL, NULL, TRUE, dns_option_descs) &&
+				_nm_utils_dns_option_find_idx (dns_options, s) < 0) {
+				g_ptr_array_add (dns_options, g_strdup (s));
+				changed = TRUE;
+			}
+		}
+		g_ptr_array_unref (read_options);
+	}
+
 	return changed;
 }
 
@@ -361,7 +380,9 @@ nm_ip6_config_capture (int ifindex, gboolean capture_resolv_conf, NMSettingIP6Co
 	 * nameservers from /etc/resolv.conf.
 	 */
 	if (priv->addresses->len && has_gateway && capture_resolv_conf)
-		notify_nameservers = nm_ip6_config_capture_resolv_conf (priv->nameservers, NULL);
+		notify_nameservers = nm_ip6_config_capture_resolv_conf (priv->nameservers,
+		                                                        priv->dns_options,
+		                                                        NULL);
 
 	g_array_sort_with_data (priv->addresses, _addresses_sort_cmp, GINT_TO_POINTER (use_temporary));
 
