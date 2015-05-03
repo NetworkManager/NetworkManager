@@ -545,6 +545,22 @@ ethtool_get_peer_ifindex (const char *ifname)
 	return stats->data[peer_ifindex_stat];
 }
 
+static gboolean
+ethtool_get_wake_on_lan (const char *ifname)
+{
+	struct ethtool_wolinfo wol;
+
+	if (!ifname)
+		return FALSE;
+
+	memset (&wol, 0, sizeof (wol));
+	wol.cmd = ETHTOOL_GWOL;
+	if (!ethtool_get (ifname, &wol))
+		return FALSE;
+
+	return wol.wolopts != 0;
+}
+
 /******************************************************************
  * NMPlatform types and functions
  ******************************************************************/
@@ -3786,16 +3802,9 @@ link_get_wake_on_lan (NMPlatform *platform, int ifindex)
 {
 	NMLinkType type = link_get_type (platform, ifindex);
 
-	if (type == NM_LINK_TYPE_ETHERNET) {
-		struct ethtool_wolinfo wol;
-
-		memset (&wol, 0, sizeof (wol));
-		wol.cmd = ETHTOOL_GWOL;
-		if (!ethtool_get (link_get_name (platform, ifindex), &wol))
-			return FALSE;
-
-		return wol.wolopts != 0;
-	} else if (type == NM_LINK_TYPE_WIFI) {
+	if (type == NM_LINK_TYPE_ETHERNET)
+		return ethtool_get_wake_on_lan (link_get_name (platform, ifindex));
+	else if (type == NM_LINK_TYPE_WIFI) {
 		WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
 
 		if (!wifi_data)
