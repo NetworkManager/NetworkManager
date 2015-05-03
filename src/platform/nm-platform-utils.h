@@ -44,6 +44,9 @@ gboolean  nmp_utils_ethtool_get_permanent_address (const char *ifname,
                                                    size_t *length);
 
 
+gboolean nmp_utils_mii_supports_carrier_detect (const char *ifname);
+
+
 const char *nmp_utils_udev_get_driver (GUdevDevice *device);
 
 

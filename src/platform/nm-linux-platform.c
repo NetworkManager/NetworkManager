@@ -31,9 +31,6 @@
 #include <linux/if_link.h>
 #include <linux/if_tun.h>
 #include <linux/if_tunnel.h>
-#include <sys/ioctl.h>
-#include <linux/sockios.h>
-#include <linux/mii.h>
 #include <netlink/netlink.h>
 #include <netlink/object.h>
 #include <netlink/cache.h>
@@ -2584,46 +2581,6 @@ link_set_user_ipv6ll_enabled (NMPlatform *platform, int ifindex, gboolean enable
 }
 
 static gboolean
-supports_mii_carrier_detect (const char *ifname)
-{
-	int fd;
-	struct ifreq ifr;
-	struct mii_ioctl_data *mii;
-	gboolean supports_mii = FALSE;
-
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
-	if (fd < 0) {
-		nm_log_err (LOGD_PLATFORM, "couldn't open control socket.");
-		return FALSE;
-	}
-
-	memset (&ifr, 0, sizeof (struct ifreq));
-	strncpy (ifr.ifr_name, ifname, IFNAMSIZ);
-
-	errno = 0;
-	if (ioctl (fd, SIOCGMIIPHY, &ifr) < 0) {
-		nm_log_dbg (LOGD_PLATFORM, "SIOCGMIIPHY failed: %d", errno);
-		goto out;
-	}
-
-	/* If we can read the BMSR register, we assume that the card supports MII link detection */
-	mii = (struct mii_ioctl_data *) &ifr.ifr_ifru;
-	mii->reg_num = MII_BMSR;
-
-	if (ioctl (fd, SIOCGMIIREG, &ifr) == 0) {
-		nm_log_dbg (LOGD_PLATFORM, "SIOCGMIIREG result 0x%X", mii->val_out);
-		supports_mii = TRUE;
-	} else {
-		nm_log_dbg (LOGD_PLATFORM, "SIOCGMIIREG failed: %d", errno);
-	}
-
- out:
-	close (fd);
-	nm_log_dbg (LOGD_PLATFORM, "MII %s supported", supports_mii ? "is" : "not");
-	return supports_mii;	
-}
-
-static gboolean
 link_supports_carrier_detect (NMPlatform *platform, int ifindex)
 {
 	const char *name = nm_platform_link_get_name (platform, ifindex);
@@ -2635,7 +2592,7 @@ link_supports_carrier_detect (NMPlatform *platform, int ifindex)
 	 * us whether the device actually supports carrier detection in the first
 	 * place. We assume any device that does implements one of these two APIs.
 	 */
-	return nmp_utils_ethtool_supports_carrier_detect (name) || supports_mii_carrier_detect (name);
+	return nmp_utils_ethtool_supports_carrier_detect (name) || nmp_utils_mii_supports_carrier_detect (name);
 }
 
 static gboolean
