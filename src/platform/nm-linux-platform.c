@@ -521,6 +521,30 @@ ethtool_supports_vlans (const char *ifname)
 	return !(features->features[block].active & (1 << bit));
 }
 
+static int
+ethtool_get_peer_ifindex (const char *ifname)
+{
+	gs_free struct ethtool_stats *stats = NULL;
+	int peer_ifindex_stat;
+
+	if (!ifname)
+		return 0;
+
+	peer_ifindex_stat = ethtool_get_stringset_index (ifname, ETH_SS_STATS, "peer_ifindex");
+	if (peer_ifindex_stat == -1) {
+		debug ("%s: peer_ifindex ethtool stat does not exist?", ifname);
+		return FALSE;
+	}
+
+	stats = g_malloc0 (sizeof (*stats) + (peer_ifindex_stat + 1) * sizeof (guint64));
+	stats->cmd = ETHTOOL_GSTATS;
+	stats->n_stats = peer_ifindex_stat + 1;
+	if (!ethtool_get (ifname, stats))
+		return 0;
+
+	return stats->data[peer_ifindex_stat];
+}
+
 /******************************************************************
  * NMPlatform types and functions
  ******************************************************************/
@@ -3254,26 +3278,17 @@ static gboolean
 veth_get_properties (NMPlatform *platform, int ifindex, NMPlatformVethProperties *props)
 {
 	const char *ifname;
-	gs_free struct ethtool_stats *stats = NULL;
-	int peer_ifindex_stat;
+	int peer_ifindex;
 
 	ifname = nm_platform_link_get_name (platform, ifindex);
 	if (!ifname)
 		return FALSE;
 
-	peer_ifindex_stat = ethtool_get_stringset_index (ifname, ETH_SS_STATS, "peer_ifindex");
-	if (peer_ifindex_stat == -1) {
-		debug ("%s: peer_ifindex ethtool stat does not exist?", ifname);
-		return FALSE;
-	}
-
-	stats = g_malloc0 (sizeof (*stats) + (peer_ifindex_stat + 1) * sizeof (guint64));
-	stats->cmd = ETHTOOL_GSTATS;
-	stats->n_stats = peer_ifindex_stat + 1;
-	if (!ethtool_get (ifname, stats))
+	peer_ifindex = ethtool_get_peer_ifindex (ifname);
+	if (peer_ifindex <= 0)
 		return FALSE;
 
-	props->peer = stats->data[peer_ifindex_stat];
+	props->peer = peer_ifindex;
 	return TRUE;
 }
 
