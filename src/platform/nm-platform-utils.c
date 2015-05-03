@@ -26,6 +26,7 @@
 #include <sys/ioctl.h>
 #include <linux/ethtool.h>
 #include <linux/sockios.h>
+#include <linux/mii.h>
 
 #include "gsystem-local-alloc.h"
 #include "nm-utils.h"
@@ -229,6 +230,55 @@ nmp_utils_ethtool_get_wake_on_lan (const char *ifname)
 		return FALSE;
 
 	return wol.wolopts != 0;
+}
+
+/******************************************************************
+ * mii
+ ******************************************************************/
+
+gboolean
+nmp_utils_mii_supports_carrier_detect (const char *ifname)
+{
+	int fd, errsv;
+	struct ifreq ifr;
+	struct mii_ioctl_data *mii;
+	gboolean supports_mii = FALSE;
+
+	if (!ifname)
+		return FALSE;
+
+	fd = socket (PF_INET, SOCK_DGRAM, 0);
+	if (fd < 0) {
+		nm_log_err (LOGD_PLATFORM, "mii: couldn't open control socket (%s)", ifname);
+		return FALSE;
+	}
+
+	memset (&ifr, 0, sizeof (struct ifreq));
+	strncpy (ifr.ifr_name, ifname, IFNAMSIZ);
+
+	errno = 0;
+	if (ioctl (fd, SIOCGMIIPHY, &ifr) < 0) {
+		errsv = errno;
+		nm_log_dbg (LOGD_PLATFORM, "mii: SIOCGMIIPHY failed: %s (%d) (%s)", strerror (errsv), errsv, ifname);
+		goto out;
+	}
+
+	/* If we can read the BMSR register, we assume that the card supports MII link detection */
+	mii = (struct mii_ioctl_data *) &ifr.ifr_ifru;
+	mii->reg_num = MII_BMSR;
+
+	if (ioctl (fd, SIOCGMIIREG, &ifr) == 0) {
+		nm_log_dbg (LOGD_PLATFORM, "mii: SIOCGMIIREG result 0x%X (%s)", mii->val_out, ifname);
+		supports_mii = TRUE;
+	} else {
+		errsv = errno;
+		nm_log_dbg (LOGD_PLATFORM, "mii: SIOCGMIIREG failed: %s (%d) (%s)", strerror (errsv), errsv, ifname);
+	}
+
+out:
+	close (fd);
+	nm_log_dbg (LOGD_PLATFORM, "mii: MII %s supported (%s)", supports_mii ? "is" : "not", ifname);
+	return supports_mii;
 }
 
 /******************************************************************
