@@ -480,6 +480,18 @@ ethtool_get_permanent_address (const char *ifname,
 	return TRUE;
 }
 
+static gboolean
+ethtool_supports_carrier_detect (const char *ifname)
+{
+	struct ethtool_cmd edata = { .cmd = ETHTOOL_GLINK };
+
+	/* We ignore the result. If the ETHTOOL_GLINK call succeeded, then we
+	 * assume the device supports carrier-detect, otherwise we assume it
+	 * doesn't.
+	 */
+	return ethtool_get (ifname, &edata);
+}
+
 /******************************************************************
  * NMPlatform types and functions
  ******************************************************************/
@@ -2702,18 +2714,6 @@ link_set_user_ipv6ll_enabled (NMPlatform *platform, int ifindex, gboolean enable
 }
 
 static gboolean
-supports_ethtool_carrier_detect (const char *ifname)
-{
-	struct ethtool_cmd edata = { .cmd = ETHTOOL_GLINK };
-
-	/* We ignore the result. If the ETHTOOL_GLINK call succeeded, then we
-	 * assume the device supports carrier-detect, otherwise we assume it
-	 * doesn't.
-	 */
-	return ethtool_get (ifname, &edata);
-}
-
-static gboolean
 supports_mii_carrier_detect (const char *ifname)
 {
 	int fd;
@@ -2765,7 +2765,7 @@ link_supports_carrier_detect (NMPlatform *platform, int ifindex)
 	 * us whether the device actually supports carrier detection in the first
 	 * place. We assume any device that does implements one of these two APIs.
 	 */
-	return supports_ethtool_carrier_detect (name) || supports_mii_carrier_detect (name);
+	return ethtool_supports_carrier_detect (name) || supports_mii_carrier_detect (name);
 }
 
 static gboolean
