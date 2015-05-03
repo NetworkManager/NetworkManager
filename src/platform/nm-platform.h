@@ -237,6 +237,10 @@ struct _NMPlatformIP4Route {
 	__NMPlatformIPRoute_COMMON;
 	in_addr_t network;
 	in_addr_t gateway;
+
+	/* The bitwise inverse of the route scope. It is inverted so that the
+	 * default value (RT_SCOPE_NOWHERE) is nul. */
+	guint8 scope_inv;
 };
 G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPRoute, network_ptr) == G_STRUCT_OFFSET (NMPlatformIP4Route, network));
 
@@ -528,6 +532,22 @@ NMPlatform *nm_platform_try_get (void);
 #define NM_PLATFORM_GET (nm_platform_get ())
 
 /******************************************************************/
+
+/**
+ * nm_platform_route_scope_inv:
+ * @scope: the route scope, either its original value, or its inverse.
+ *
+ * This function is useful, because the constants such as RT_SCOPE_NOWHERE
+ * are 'int', so ~scope also gives an 'int'. This function gets the type
+ * casts to guint8 right.
+ *
+ * Returns: the bitwise inverse of the route scope.
+ * */
+static inline guint8
+nm_platform_route_scope_inv (guint8 scope)
+{
+	return (guint8) ~scope;
+}
 
 const char *nm_link_type_to_string (NMLinkType link_type);
 

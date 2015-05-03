@@ -22,6 +22,7 @@
 
 #include <glib.h>
 #include <arpa/inet.h>
+#include <linux/rtnetlink.h>
 
 #include "test-common.h"
 
@@ -168,6 +169,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.gateway = INADDR_ANY,
 			.metric = 20,
 			.mss = 1000,
+			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_LINK),
 		},
 		{
 			.source = NM_IP_CONFIG_SOURCE_USER,
@@ -177,6 +179,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.gateway = nmtst_inet4_from_string ("6.6.6.1"),
 			.metric = 21021,
 			.mss = 0,
+			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_UNIVERSE),
 		},
 		{
 			.source = NM_IP_CONFIG_SOURCE_USER,
@@ -186,6 +189,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.gateway = INADDR_ANY,
 			.metric = 22,
 			.mss = 0,
+			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_LINK),
 		},
 	};
 
@@ -198,6 +202,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.gateway = INADDR_ANY,
 			.metric = 20,
 			.mss = 0,
+			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_LINK),
 		},
 		{
 			.source = NM_IP_CONFIG_SOURCE_USER,
@@ -207,6 +212,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.gateway = INADDR_ANY,
 			.metric = 21,
 			.mss = 0,
+			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_LINK),
 		},
 		{
 			.source = NM_IP_CONFIG_SOURCE_USER,
@@ -216,6 +222,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.gateway = INADDR_ANY,
 			.metric = 22,
 			.mss = 0,
+			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_LINK),
 		},
 	};
 
@@ -228,6 +235,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.gateway = INADDR_ANY,
 			.metric = 22,
 			.mss = 0,
+			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_LINK),
 		},
 		{
 			.source = NM_IP_CONFIG_SOURCE_USER,
@@ -237,6 +245,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.gateway = INADDR_ANY,
 			.metric = 20,
 			.mss = 0,
+			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_LINK),
 		},
 	};
 

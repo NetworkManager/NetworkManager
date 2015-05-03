@@ -27,6 +27,7 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <netlink/route/addr.h>
+#include <netlink/route/rtnl.h>
 
 #include "gsystem-local-alloc.h"
 #include "NetworkManagerUtils.h"
@@ -2646,6 +2647,7 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route)
 {
 	char s_network[INET_ADDRSTRLEN], s_gateway[INET_ADDRSTRLEN];
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
+	char str_scope[30];
 
 	g_return_val_if_fail (route, "(unknown)");
 
@@ -2654,11 +2656,13 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route)
 
 	_to_string_dev (NULL, route->ifindex, str_dev, sizeof (str_dev));
 
-	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%s/%d via %s%s metric %"G_GUINT32_FORMAT" mss %"G_GUINT32_FORMAT" src %s",
+	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%s/%d via %s%s metric %"G_GUINT32_FORMAT" mss %"G_GUINT32_FORMAT" src %s%s%s",
 	            s_network, route->plen, s_gateway,
 	            str_dev,
 	            route->metric, route->mss,
-	            source_to_string (route->source));
+	            source_to_string (route->source),
+	            route->scope_inv ? " scope " : "",
+	            route->scope_inv ? (rtnl_scope2str (nm_platform_route_scope_inv (route->scope_inv), str_scope, sizeof (str_scope))) : "");
 	return to_string_buffer;
 }
 
@@ -2812,6 +2816,7 @@ nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route
 	_CMP_FIELD (a, b, gateway);
 	_CMP_FIELD (a, b, metric);
 	_CMP_FIELD (a, b, mss);
+	_CMP_FIELD (a, b, scope_inv);
 	return 0;
 }
 

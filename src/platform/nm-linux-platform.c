@@ -1305,6 +1305,7 @@ init_ip4_route (NMPlatformIP4Route *route, struct rtnl_route *rtnlroute)
 	route->metric = rtnl_route_get_priority (rtnlroute);
 	rtnl_route_get_metric (rtnlroute, RTAX_ADVMSS, &route->mss);
 	route->source = rtprot_to_source (rtnl_route_get_protocol (rtnlroute));
+	route->scope_inv = nm_platform_route_scope_inv (rtnl_route_get_scope (rtnlroute));
 
 	return TRUE;
 }
@@ -3684,7 +3685,7 @@ build_rtnl_addr (NMPlatform *platform,
 
 	/* Tighten scope (IPv4 only) */
 	if (family == AF_INET && ip4_is_link_local (addr))
-		rtnl_addr_set_scope (rtnladdr, rtnl_str2scope ("link"));
+		rtnl_addr_set_scope (rtnladdr, RT_SCOPE_LINK);
 
 	/* IPv4 Broadcast address */
 	if (family == AF_INET) {
