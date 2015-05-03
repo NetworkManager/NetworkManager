@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <netinet/icmp6.h>
 #include <netinet/in.h>
+#include <linux/rtnetlink.h>
 
 #include "gsystem-local-alloc.h"
 #include "NetworkManagerUtils.h"
@@ -1196,6 +1197,9 @@ ip4_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	NMPlatformIP4Route route;
 	guint i;
+	guint8 scope;
+
+	scope = gateway == 0 ? RT_SCOPE_LINK : RT_SCOPE_UNIVERSE;
 
 	memset (&route, 0, sizeof (route));
 	route.source = NM_IP_CONFIG_SOURCE_KERNEL;
@@ -1206,6 +1210,7 @@ ip4_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 	route.gateway = gateway;
 	route.metric = metric;
 	route.mss = mss;
+	route.scope_inv = nm_platform_route_scope_inv (scope);
 
 	if (gateway) {
 		for (i = 0; i < priv->ip4_routes->len; i++) {
