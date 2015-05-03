@@ -327,6 +327,13 @@ dispatch_netconfig (char **searches,
 		             strerror (errsv));
 		return FALSE;
 	}
+	if (!WIFEXITED (status) || WEXITSTATUS (status) != EXIT_SUCCESS) {
+		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
+		             "Error calling netconfig: %s %d",
+		             WIFEXITED (status) ? "exited with status" : (WIFSIGNALED (status) ? "exited with signal" : "exited with unknown reason"),
+		             WIFEXITED (status) ? WEXITSTATUS (status) : (WIFSIGNALED (status) ? WTERMSIG (status) : status));
+		return FALSE;
+	}
 	return TRUE;
 }
 
