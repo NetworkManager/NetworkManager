@@ -257,7 +257,7 @@ run_netconfig (GError **error, gint *stdin_fd)
 	nm_log_dbg (LOGD_DNS, "spawning '%s'", tmp);
 	g_free (tmp);
 
-	if (!g_spawn_async_with_pipes (NULL, argv, NULL, 0, netconfig_child_setup,
+	if (!g_spawn_async_with_pipes (NULL, argv, NULL, G_SPAWN_DO_NOT_REAP_CHILD, netconfig_child_setup,
 	                               NULL, &pid, stdin_fd, NULL, NULL, error))
 		return -1;
 
@@ -286,10 +286,10 @@ dispatch_netconfig (char **searches,
 	char *str;
 	GPid pid;
 	gint fd;
-	int ret = 1;
+	int status;
 
 	pid = run_netconfig (error, &fd);
-	if (pid < 0)
+	if (pid <= 0)
 		return FALSE;
 
 	/* NM is writing already-merged DNS information to netconfig, so it
@@ -322,24 +322,15 @@ dispatch_netconfig (char **searches,
 	close (fd);
 
 	/* Wait until the process exits */
+	if (!nm_utils_kill_child_sync (pid, 0, LOGD_DNS, "netconfig", &status, 1000, 0)) {
+		int errsv = errno;
 
- again:
-
-	if (waitpid (pid, NULL, 0) < 0) {
-		if (errno == EINTR)
-			goto again;
-		else if (errno == ECHILD) {
-			/* child already exited */
-			ret = pid;
-		} else {
-			g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
-			             "Error waiting for netconfig to exit: %s",
-			             strerror (errno));
-			ret = 0;
-		}
+		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
+		             "Error waiting for netconfig to exit: %s",
+		             strerror (errsv));
+		return FALSE;
 	}
-
-	return ret > 0;
+	return TRUE;
 }
 #endif
 
