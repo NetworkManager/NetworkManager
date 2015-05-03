@@ -492,6 +492,35 @@ ethtool_supports_carrier_detect (const char *ifname)
 	return ethtool_get (ifname, &edata);
 }
 
+static gboolean
+ethtool_supports_vlans (const char *ifname)
+{
+	gs_free struct ethtool_gfeatures *features = NULL;
+	int idx, block, bit, size;
+
+	if (!ifname)
+		return FALSE;
+
+	idx = ethtool_get_stringset_index (ifname, ETH_SS_FEATURES, "vlan-challenged");
+	if (idx == -1) {
+		debug ("vlan-challenged ethtool feature does not exist?");
+		return FALSE;
+	}
+
+	block = idx /  32;
+	bit = idx % 32;
+	size = block + 1;
+
+	features = g_malloc0 (sizeof (*features) + size * sizeof (struct ethtool_get_features_block));
+	features->cmd = ETHTOOL_GFEATURES;
+	features->size = size;
+
+	if (!ethtool_get (ifname, features))
+		return FALSE;
+
+	return !(features->features[block].active & (1 << bit));
+}
+
 /******************************************************************
  * NMPlatform types and functions
  ******************************************************************/
@@ -2772,35 +2801,12 @@ static gboolean
 link_supports_vlans (NMPlatform *platform, int ifindex)
 {
 	auto_nl_object struct rtnl_link *rtnllink = link_get (platform, ifindex);
-	const char *name = nm_platform_link_get_name (platform, ifindex);
-	gs_free struct ethtool_gfeatures *features = NULL;
-	int idx, block, bit, size;
 
 	/* Only ARPHRD_ETHER links can possibly support VLANs. */
 	if (!rtnllink || rtnl_link_get_arptype (rtnllink) != ARPHRD_ETHER)
 		return FALSE;
 
-	if (!name)
-		return FALSE;
-
-	idx = ethtool_get_stringset_index (name, ETH_SS_FEATURES, "vlan-challenged");
-	if (idx == -1) {
-		debug ("vlan-challenged ethtool feature does not exist?");
-		return FALSE;
-	}
-
-	block = idx /  32;
-	bit = idx % 32;
-	size = block + 1;
-
-	features = g_malloc0 (sizeof (*features) + size * sizeof (struct ethtool_get_features_block));
-	features->cmd = ETHTOOL_GFEATURES;
-	features->size = size;
-
-	if (!ethtool_get (name, features))
-		return FALSE;
-
-	return !(features->features[block].active & (1 << bit));
+	return ethtool_supports_vlans (rtnl_link_get_name (rtnllink));
 }
 
 static gboolean
