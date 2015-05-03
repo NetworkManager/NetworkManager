@@ -2767,6 +2767,7 @@ int
 nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 {
 	_CMP_POINTER (a, b);
+	_CMP_FIELD (a, b, ifindex);
 	_CMP_FIELD (a, b, type);
 	_CMP_FIELD_STR (a, b, name);
 	_CMP_FIELD (a, b, master);
