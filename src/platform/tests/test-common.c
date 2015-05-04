@@ -275,7 +275,7 @@ main (int argc, char **argv)
 		return EXIT_FAILURE;
 #else
 		g_print ("Skipping test: requires root privileges (%s)\n", program);
-		return 77;
+		return EXIT_SKIP;
 #endif
 	}
 
