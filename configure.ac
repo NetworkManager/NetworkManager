@@ -733,10 +733,10 @@ if test "$with_netconfig" = "yes"; then
 fi
 # Define resolvconf and netconfig paths
 if test "$with_resolvconf" != "no"; then
-	AC_DEFINE_UNQUOTED(RESOLVCONF_PATH, "$with_resolvconf", [Path to resolvconf (if enabled)])
+	AC_DEFINE_UNQUOTED(RESOLVCONF_PATH, "$with_resolvconf", [Path to resolvconf])
 fi
 if test "$with_netconfig" != "no"; then
-	AC_DEFINE_UNQUOTED(NETCONFIG_PATH, "$with_netconfig", [Path to netconfig (if enabled)])
+	AC_DEFINE_UNQUOTED(NETCONFIG_PATH, "$with_netconfig", [Path to netconfig])
 fi
 
 # iptables path

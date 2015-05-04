@@ -52,6 +52,7 @@ typedef enum { /*< flags >*/
 	NM_CONFIG_CHANGE_CONNECTIVITY              = (1L << 2),
 	NM_CONFIG_CHANGE_NO_AUTO_DEFAULT           = (1L << 3),
 	NM_CONFIG_CHANGE_DNS_MODE                  = (1L << 4),
+	NM_CONFIG_CHANGE_RC_MANAGER                = (1L << 5),
 
 	_NM_CONFIG_CHANGE_LAST,
 	NM_CONFIG_CHANGE_ALL                       = ((_NM_CONFIG_CHANGE_LAST - 1) << 1) - 1,
@@ -88,6 +89,7 @@ const char *const*nm_config_data_get_no_auto_default (const NMConfigData *config
 const GSList *    nm_config_data_get_no_auto_default_list (const NMConfigData *config_data);
 
 const char *nm_config_data_get_dns_mode (const NMConfigData *self);
+const char *nm_config_data_get_rc_manager (const NMConfigData *self);
 
 G_END_DECLS
 
