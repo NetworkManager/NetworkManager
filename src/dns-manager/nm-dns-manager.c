@@ -36,6 +36,7 @@
 #include <linux/fs.h>
 
 #include <glib.h>
+#include <gio/gio.h>
 #include <glib/gi18n.h>
 
 #include "nm-utils.h"
