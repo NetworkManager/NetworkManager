@@ -23,7 +23,7 @@ add_signal_full (const char *name, NMPlatformSignalChangeType change_type, GCall
 
 	data->name = name;
 	data->change_type = change_type;
-	data->received = FALSE;
+	data->received_count = 0;
 	data->handler_id = g_signal_connect (nm_platform_get (), name, callback, data);
 	data->ifindex = ifindex;
 	data->ifname = ifname;
@@ -52,16 +52,33 @@ void
 accept_signal (SignalData *data)
 {
 	debug ("Accepting signal '%s-%s' ifindex %d ifname %s.", data->name, _change_type_to_string (data->change_type), data->ifindex, data->ifname);
-	if (!data->received)
+	if (data->received_count == 0)
 		g_error ("Attemted to accept a non-received signal '%s-%s'.", data->name, _change_type_to_string (data->change_type));
+	if (data->received_count != 1)
+		g_error ("Signal already received %d times: '%s-%s'.", data->received_count, data->name, _change_type_to_string (data->change_type));
 
-	data->received = FALSE;
+	data->received_count = 0;
+}
+
+void
+accept_signals (SignalData *data, int min, int max)
+{
+	if (data->received_count < min || data->received_count > max)
+		g_error ("Expect [%d,%d] signals, but %s signals queued -- '%s-%s' ifindex %d ifname %s.", min, max, data->received_count, data->name, _change_type_to_string (data->change_type), data->ifindex, data->ifname);
+	data->received_count = 0;
+}
+
+void
+ensure_no_signal (SignalData *data)
+{
+	if (data->received_count > 0)
+		g_error ("Unepexted signal '%s-%s'.", data->name, _change_type_to_string (data->change_type));
 }
 
 void
 wait_signal (SignalData *data)
 {
-	if (data->received)
+	if (data->received_count)
 		g_error ("Signal '%s' received before waiting for it.", data->name);
 
 	data->loop = g_main_loop_new (NULL, FALSE);
@@ -74,7 +91,7 @@ wait_signal (SignalData *data)
 void
 free_signal (SignalData *data)
 {
-	if (data->received)
+	if (data->received_count != 0)
 		g_error ("Attempted to free received but not accepted signal '%s-%s'.", data->name, _change_type_to_string (data->change_type));
 
 	g_signal_handler_disconnect (nm_platform_get (), data->handler_id);
@@ -106,11 +123,8 @@ link_callback (NMPlatform *platform, int ifindex, NMPlatformLink *received, NMPl
 		g_main_loop_quit (data->loop);
 	}
 
-	if (data->received)
-		g_error ("Received signal '%s-%s' a second time.", data->name, _change_type_to_string (data->change_type));
-
-	debug ("Received signal '%s-%s' ifindex %d ifname '%s'.", data->name, _change_type_to_string (data->change_type), ifindex, received->name);
-	data->received = TRUE;
+	data->received_count++;
+	debug ("Received signal '%s-%s' ifindex %d ifname '%s' %dth time.", data->name, _change_type_to_string (data->change_type), ifindex, received->name, data->received_count);
 
 	if (change_type == NM_PLATFORM_SIGNAL_REMOVED)
 		g_assert (!nm_platform_link_get_name (NM_PLATFORM_GET, ifindex));

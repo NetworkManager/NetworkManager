@@ -22,10 +22,8 @@ ip4_route_callback (NMPlatform *platform, int ifindex, NMPlatformIP4Route *recei
 	if (data->loop)
 		g_main_loop_quit (data->loop);
 
-	if (data->received)
-		g_error ("Received signal '%s' a second time.", data->name);
-
-	data->received = TRUE;
+	data->received_count++;
+	debug ("Received signal '%s' %dth time.", data->name, data->received_count);
 }
 
 static void
@@ -44,10 +42,8 @@ ip6_route_callback (NMPlatform *platform, int ifindex, NMPlatformIP6Route *recei
 	if (data->loop)
 		g_main_loop_quit (data->loop);
 
-	if (data->received)
-		g_error ("Received signal '%s' a second time.", data->name);
-
-	data->received = TRUE;
+	data->received_count++;
+	debug ("Received signal '%s' %dth time.", data->name, data->received_count);
 }
 
 static void
@@ -77,7 +73,7 @@ test_ip4_route_metric0 (void)
 	/* Deleting route with metric 0 does nothing */
 	g_assert (nm_platform_ip4_route_delete (NM_PLATFORM_GET, ifindex, network, plen, 0));
 	no_error ();
-	g_assert (!route_removed->received);
+	ensure_no_signal (route_removed);
 
 	assert_ip4_route_exists (FALSE, DEVICE_NAME, network, plen, 0);
 	assert_ip4_route_exists (TRUE,  DEVICE_NAME, network, plen, metric);
@@ -101,7 +97,7 @@ test_ip4_route_metric0 (void)
 	/* Delete route with metric 0 again (we expect nothing to happen) */
 	g_assert (nm_platform_ip4_route_delete (NM_PLATFORM_GET, ifindex, network, plen, 0));
 	no_error ();
-	g_assert (!route_removed->received);
+	ensure_no_signal (route_removed);
 
 	assert_ip4_route_exists (FALSE, DEVICE_NAME, network, plen, 0);
 	assert_ip4_route_exists (TRUE,  DEVICE_NAME, network, plen, metric);
