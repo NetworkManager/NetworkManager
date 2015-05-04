@@ -22,7 +22,7 @@ typedef struct {
 	int handler_id;
 	const char *name;
 	NMPlatformSignalChangeType change_type;
-	gboolean received;
+	gint received_count;
 	GMainLoop *loop;
 	int ifindex;
 	const char *ifname;
@@ -35,7 +35,9 @@ SignalData *add_signal_full (const char *name, NMPlatformSignalChangeType change
 #define add_signal_ifindex(name, change_type, callback, ifindex) add_signal_full (name, change_type, (GCallback) callback, ifindex, NULL)
 #define add_signal_ifname(name, change_type, callback, ifname) add_signal_full (name, change_type, (GCallback) callback, 0, ifname)
 void accept_signal (SignalData *data);
+void accept_signals (SignalData *data, int min, int max);
 void wait_signal (SignalData *data);
+void ensure_no_signal (SignalData *data);
 void free_signal (SignalData *data);
 
 gboolean ip4_route_exists (const char *ifname, guint32 network, int plen, guint32 metric);
