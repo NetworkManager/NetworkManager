@@ -3088,7 +3088,7 @@ nmc_property_bond_allowed_options (NMSetting *setting, const char *prop)
 }
 
 /* --- NM_SETTING_INFINIBAND_SETTING_NAME property setter functions --- */
-/* 'mac-addresss' */
+/* 'mac-address' */
 static gboolean
 nmc_property_ib_set_mac (NMSetting *setting, const char *prop, const char *val, GError **error)
 {

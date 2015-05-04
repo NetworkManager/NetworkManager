@@ -166,7 +166,7 @@ build_address (KeyfileReaderInfo *info, int family, const char *address_str, gui
 	addr = nm_ip_address_new (family, address_str, plen, &error);
 	if (!addr) {
 		handle_warn (info, property_name, NM_KEYFILE_WARN_SEVERITY_WARN,
-		             _("ignoring invalid %s addresss: %s"),
+		             _("ignoring invalid %s address: %s"),
 		            family == AF_INET ? "IPv4" : "IPv6", error->message);
 		g_error_free (error);
 	}
