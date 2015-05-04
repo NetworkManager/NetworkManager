@@ -328,20 +328,21 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 		g_free (nmtst_debug_copy);
 	}
 
-	if (argv && *argv) {
-		char **a = *argv;
+	if (__nmtst_internal.orig_argv) {
+		char **a = __nmtst_internal.orig_argv;
 
 		for (; *a; a++) {
 			if (!g_ascii_strcasecmp (*a, "--debug"))
 				is_debug = TRUE;
 			else if (!g_ascii_strcasecmp (*a, "--no-debug"))
 				is_debug = FALSE;
-			else if (   !strcmp (*a, "-mslow")
-			         || !strcmp (*a, "-m=slow")
-			         || !strcmp (*a, "-mthorough")
+			else if (   !strcmp (*a, "-m=slow")
 			         || !strcmp (*a, "-m=thorough")
-			         || !strcmp (*a, "-mquick")
-			         || !strcmp (*a, "-m=quick"))
+			         || !strcmp (*a, "-m=quick")
+			         || (!strcmp (*a, "-m") && *(a+1)
+			                                && (   !strcmp (*(a+1), "quick")
+			                                    || !strcmp (*(a+1), "slow")
+			                                    || !strcmp (*(a+1), "thorough"))))
 				test_quick_argv = TRUE;
 		}
 	}
