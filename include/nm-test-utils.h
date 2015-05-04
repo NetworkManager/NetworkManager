@@ -832,9 +832,6 @@ nmtst_platform_ip4_routes_equal (const NMPlatformIP4Route *a, const NMPlatformIP
 			         nmtst_static_1024_02 (nm_platform_ip4_route_to_string (&b[i])));
 			g_assert_not_reached ();
 		}
-
-		/* also check with memcmp, though this might fail for valid programs (due to field alignment) */
-		g_assert_cmpint (memcmp (&a[i], &b[i], sizeof (a[i])), ==, 0);
 	}
 }
 
@@ -867,9 +864,6 @@ nmtst_platform_ip6_routes_equal (const NMPlatformIP6Route *a, const NMPlatformIP
 			         nmtst_static_1024_02 (nm_platform_ip6_route_to_string (&b[i])));
 			g_assert_not_reached ();
 		}
-
-		/* also check with memcmp, though this might fail for valid programs (due to field alignment) */
-		g_assert_cmpint (memcmp (&a[i], &b[i], sizeof (a[i])), ==, 0);
 	}
 }
 
