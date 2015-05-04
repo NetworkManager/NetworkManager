@@ -117,6 +117,7 @@ TESTS = \
 	test-cleanup-fake \
 	test-cleanup-linux \
 	test-link-fake \
+	test-link-linux \
 	test-route-fake \
 	test-route-linux
 
