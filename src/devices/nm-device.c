@@ -1109,7 +1109,14 @@ nm_device_finish_init (NMDevice *self)
 		nm_device_enslave_slave (priv->master, self, NULL);
 
 	if (priv->ifindex > 0) {
-		if (priv->platform_link_initialized || (priv->is_nm_owned && nm_device_is_software (self))) {
+		if (priv->ifindex == 1) {
+			/* keep 'lo' as default-unmanaged. */
+
+			/* FIXME: either find a better way to unmange 'lo' that cannot be changed
+			 * by user configuration (NM_UNMANGED_LOOPBACK?) or fix managing 'lo'.
+			 * Currently it can happen that NM deletes 127.0.0.1 address. */
+			nm_device_set_initial_unmanaged_flag (self, NM_UNMANAGED_DEFAULT, TRUE);
+		} else if (priv->platform_link_initialized || (priv->is_nm_owned && nm_device_is_software (self))) {
 			nm_platform_link_get_unmanaged (NM_PLATFORM_GET, priv->ifindex, &platform_unmanaged);
 			nm_device_set_initial_unmanaged_flag (self, NM_UNMANAGED_DEFAULT, platform_unmanaged);
 		} else {

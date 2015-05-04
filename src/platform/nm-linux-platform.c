@@ -4774,6 +4774,8 @@ constructed (GObject *_object)
 	int channel_flags;
 	gboolean status;
 	int nle;
+	GUdevEnumerator *enumerator;
+	GList *devices, *iter;
 
 	/* Initialize netlink socket for requests */
 	priv->nlh = setup_socket (FALSE, platform);
@@ -4838,16 +4840,6 @@ constructed (GObject *_object)
 
 	priv->wifi_data = g_hash_table_new_full (NULL, NULL, NULL, (GDestroyNotify) wifi_utils_deinit);
 
-	G_OBJECT_CLASS (nm_linux_platform_parent_class)->constructed (_object);
-}
-
-static void
-setup_devices (NMPlatform *platform)
-{
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	GUdevEnumerator *enumerator;
-	GList *devices, *iter;
-
 	/* And read initial device list */
 	enumerator = g_udev_enumerator_new (priv->udev_client);
 	g_udev_enumerator_add_match_subsystem (enumerator, "net");
@@ -4861,6 +4853,8 @@ setup_devices (NMPlatform *platform)
 	}
 	g_list_free (devices);
 	g_object_unref (enumerator);
+
+	G_OBJECT_CLASS (nm_linux_platform_parent_class)->constructed (_object);
 }
 
 static void
@@ -4897,8 +4891,6 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	/* virtual methods */
 	object_class->constructed = constructed;
 	object_class->finalize = nm_linux_platform_finalize;
-
-	platform_class->setup_devices = setup_devices;
 
 	platform_class->sysctl_set = sysctl_set;
 	platform_class->sysctl_get = sysctl_get;

@@ -405,10 +405,6 @@ nm_platform_query_devices (NMPlatform *self)
 		               NM_PLATFORM_REASON_INTERNAL);
 	}
 	g_array_unref (links_array);
-
-	/* Platform specific device setup. */
-	if (klass->setup_devices)
-		klass->setup_devices (self);
 }
 
 /**
