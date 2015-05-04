@@ -34,11 +34,16 @@ SignalData *add_signal_full (const char *name, NMPlatformSignalChangeType change
 #define add_signal(name, change_type, callback) add_signal_full (name, change_type, (GCallback) callback, 0, NULL)
 #define add_signal_ifindex(name, change_type, callback, ifindex) add_signal_full (name, change_type, (GCallback) callback, ifindex, NULL)
 #define add_signal_ifname(name, change_type, callback, ifname) add_signal_full (name, change_type, (GCallback) callback, 0, ifname)
-void accept_signal (SignalData *data);
-void accept_signals (SignalData *data, int min, int max);
-void wait_signal (SignalData *data);
-void ensure_no_signal (SignalData *data);
-void free_signal (SignalData *data);
+void _accept_signal (const char *file, int line, const char *func, SignalData *data);
+void _accept_signals (const char *file, int line, const char *func, SignalData *data, int min, int max);
+void _wait_signal (const char *file, int line, const char *func, SignalData *data);
+void _ensure_no_signal (const char *file, int line, const char *func, SignalData *data);
+void _free_signal (const char *file, int line, const char *func, SignalData *data);
+#define accept_signal(data) _accept_signal(__FILE__, __LINE__, G_STRFUNC, data)
+#define accept_signals(data, min, max) _accept_signals(__FILE__, __LINE__, G_STRFUNC, data, min, max)
+#define wait_signal(data) _wait_signal(__FILE__, __LINE__, G_STRFUNC, data)
+#define ensure_no_signal(data) _ensure_no_signal(__FILE__, __LINE__, G_STRFUNC, data)
+#define free_signal(data) _free_signal(__FILE__, __LINE__, G_STRFUNC, data)
 
 gboolean ip4_route_exists (const char *ifname, guint32 network, int plen, guint32 metric);
 
