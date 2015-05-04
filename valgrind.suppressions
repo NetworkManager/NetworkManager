@@ -395,4 +395,56 @@
    fun:g_dbus_proxy_finalize
    ...
 }
+{
+   libnl_01
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   fun:nl_object_alloc
+   fun:link_msg_parser
+   fun:__pickup_answer
+   fun:nl_cb_call
+   fun:recvmsgs
+   fun:nl_recvmsgs_report
+   fun:nl_recvmsgs
+   fun:nl_pickup
+   fun:rtnl_link_get_kernel
+   ...
+}
+{
+   libnl_02
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   fun:vlan_alloc
+   fun:rtnl_link_set_type
+   fun:link_msg_parser
+   fun:__pickup_answer
+   fun:nl_cb_call
+   fun:recvmsgs
+   fun:nl_recvmsgs_report
+   fun:nl_recvmsgs
+   fun:nl_pickup
+   fun:rtnl_link_get_kernel
+   ...
+}
+{
+   libnl_03
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   fun:nl_object_alloc
+   fun:link_msg_parser
+   fun:nl_cache_parse
+   fun:update_msg_parser
+   fun:nl_cb_call
+   fun:recvmsgs
+   fun:nl_recvmsgs_report
+   fun:nl_recvmsgs
+   fun:__cache_pickup
+   fun:nl_cache_pickup
+   fun:nl_cache_refill
+   fun:rtnl_link_alloc_cache
+   ...
+}
 
