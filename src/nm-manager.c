@@ -1937,6 +1937,21 @@ platform_link_cb (NMPlatform *platform,
 }
 
 static void
+platform_query_devices (NMManager *self)
+{
+	GArray *links_array;
+	NMPlatformLink *links;
+	int i;
+
+	links_array = nm_platform_link_get_all (NM_PLATFORM_GET);
+	links = (NMPlatformLink *) links_array->data;
+	for (i = 0; i < links_array->len; i++)
+		platform_link_added (self, links[i].ifindex, &links[i], NM_PLATFORM_REASON_INTERNAL);
+
+	g_array_unref (links_array);
+}
+
+static void
 rfkill_manager_rfkill_changed_cb (NMRfkillManager *rfkill_mgr,
                                   RfKillType rtype,
                                   RfKillState udev_state,
@@ -3946,7 +3961,7 @@ nm_manager_start (NMManager *self)
 	/* Start device factories */
 	nm_device_factory_manager_for_each_factory (start_factory, NULL);
 
-	nm_platform_query_devices (NM_PLATFORM_GET);
+	platform_query_devices (self);
 
 	/*
 	 * Connections added before the manager is started do not emit

@@ -382,32 +382,6 @@ nm_platform_sysctl_get_int_checked (NMPlatform *self, const char *path, guint ba
 /******************************************************************/
 
 /**
- * nm_platform_query_devices:
- * self: platform instance
- *
- * Emit #NMPlatform:link-changed ADDED signals for all currently-known links.
- * Should only be called at startup.
- */
-void
-nm_platform_query_devices (NMPlatform *self)
-{
-	GArray *links_array;
-	NMPlatformLink *links;
-	int i;
-
-	_CHECK_SELF_VOID (self, klass);
-
-	links_array = nm_platform_link_get_all (self);
-	links = (NMPlatformLink *) links_array->data;
-	for (i = 0; i < links_array->len; i++) {
-		g_signal_emit (self, signals[SIGNAL_LINK_CHANGED], 0,
-		               links[i].ifindex, &links[i], NM_PLATFORM_SIGNAL_ADDED,
-		               NM_PLATFORM_REASON_INTERNAL);
-	}
-	g_array_unref (links_array);
-}
-
-/**
  * nm_platform_link_get_all:
  * self: platform instance
  *

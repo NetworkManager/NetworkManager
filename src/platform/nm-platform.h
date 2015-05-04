@@ -533,8 +533,6 @@ void nm_platform_set_error (NMPlatform *self, NMPlatformError error);
 NMPlatformError nm_platform_get_error (NMPlatform *self);
 const char *nm_platform_get_error_msg (NMPlatform *self);
 
-void nm_platform_query_devices (NMPlatform *self);
-
 gboolean nm_platform_sysctl_set (NMPlatform *self, const char *path, const char *value);
 char *nm_platform_sysctl_get (NMPlatform *self, const char *path);
 gint32 nm_platform_sysctl_get_int32 (NMPlatform *self, const char *path, gint32 fallback);
