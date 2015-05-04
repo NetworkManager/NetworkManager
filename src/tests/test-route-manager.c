@@ -39,7 +39,7 @@ static void
 setup_dev0_ip4 (int ifindex, guint mss_of_first_route, guint32 metric_of_second_route)
 {
 	GArray *routes = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP4Route));
-	NMPlatformIP4Route route;
+	NMPlatformIP4Route route = { 0 };
 
 	route.ifindex = ifindex;
 	route.mss = 0;
@@ -68,7 +68,7 @@ static void
 setup_dev1_ip4 (int ifindex)
 {
 	GArray *routes = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP4Route));
-	NMPlatformIP4Route route;
+	NMPlatformIP4Route route = { 0 };
 
 	route.ifindex = ifindex;
 	route.mss = 0;
@@ -114,7 +114,7 @@ static void
 update_dev0_ip4 (int ifindex)
 {
 	GArray *routes = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP4Route));
-	NMPlatformIP4Route route;
+	NMPlatformIP4Route route = { 0 };
 
 	route.ifindex = ifindex;
 	route.mss = 0;
