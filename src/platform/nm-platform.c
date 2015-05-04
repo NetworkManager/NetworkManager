@@ -2442,27 +2442,30 @@ nm_platform_link_to_string (const NMPlatformLink *link)
 {
 	char master[20];
 	char parent[20];
-	char str_flags[64];
-	char *driver, *udi;
 	char str_vlan[16];
-	GString *str;
+	GString *str_flags;
+	char str_addrmode[30];
+	gs_free char *str_addr = NULL;
+	gs_free char *str_inet6_token = NULL;
 
 	if (!link)
 		return "(unknown link)";
 
-	str = g_string_new (NULL);
+	str_flags = g_string_new (NULL);
 	if (!link->arp)
-		g_string_append (str, "NOARP,");
+		g_string_append (str_flags, "NOARP,");
 	if (link->up)
-		g_string_append (str, "UP");
+		g_string_append (str_flags, "UP");
 	else
-		g_string_append (str, "DOWN");
+		g_string_append (str_flags, "DOWN");
 	if (link->connected)
-		g_string_append (str, ",LOWER_UP");
+		g_string_append (str_flags, ",LOWER_UP");
 
 	if (link->flags) {
-		rtnl_link_flags2str (link->flags, str_flags, sizeof (str_flags));
-		g_string_append_printf (str, ";%s", str_flags);
+		char str_flags_buf[64];
+
+		rtnl_link_flags2str (link->flags, str_flags_buf, sizeof (str_flags_buf));
+		g_string_append_printf (str_flags, ";%s", str_flags_buf);
 	}
 
 	if (link->master)
@@ -2480,24 +2483,65 @@ nm_platform_link_to_string (const NMPlatformLink *link)
 	else
 		str_vlan[0] = '\0';
 
-	driver = link->driver ? g_strdup_printf (" driver '%s'", link->driver) : NULL;
-	udi = link->udi ? g_strdup_printf (" udi '%s'", link->udi) : NULL;
+	if (link->inet6_addr_gen_mode_inv) {
+		switch ((guint8) ~link->inet6_addr_gen_mode_inv) {
+			case 0:
+				g_snprintf (str_addrmode, sizeof (str_addrmode), " addrgenmode eui64");
+				break;
+			case 1:
+				g_snprintf (str_addrmode, sizeof (str_addrmode), " addrgenmode none");
+				break;
+			default:
+				g_snprintf (str_addrmode, sizeof (str_addrmode), " addrgenmode %d", (int) (guint8) (~link->inet6_addr_gen_mode_inv));
+				break;
+		}
+	} else
+		str_addrmode[0] = '\0';
 
-	g_snprintf (_nm_platform_to_string_buffer, sizeof (_nm_platform_to_string_buffer), "%d: %s%s <%s> mtu %d%s "
-	            "%s" /* link->type */
-	            "%s%s" /* kind */
+	if (link->addr.len)
+		str_addr = nm_utils_hwaddr_ntoa (link->addr.data, MIN (link->addr.len, sizeof (link->addr.data)));
+	if (link->inet6_token.is_valid)
+		str_inet6_token = nm_utils_hwaddr_ntoa (&link->inet6_token.iid, sizeof (link->inet6_token.iid));
+
+	g_snprintf (_nm_platform_to_string_buffer, sizeof (_nm_platform_to_string_buffer),
+	            "%d: " /* ifindex */
+	            "%s" /* name */
+	            "%s" /* parent */
+	            " <%s>" /* flags */
+	            " mtu %d"
+	            "%s" /* master */
 	            "%s" /* vlan */
-	            "%s%s",
-	            link->ifindex, link->name, parent, str->str,
+	            " arp %u" /* arptype */
+	            "%s%s" /* link->type */
+	            "%s%s" /* kind */
+	            "%s" /* is-in-udev */
+	            "%s" /* addr-gen-mode */
+	            "%s%s" /* addr */
+	            "%s%s" /* inet6_token */
+	            "%s%s" /* driver */
+	            "%s%s", /* udi */
+	            link->ifindex,
+	            link->name,
+	            parent,
+	            str_flags->str,
 	            link->mtu, master,
-	            nm_link_type_to_string (link->type),
-	            link->type != NM_LINK_TYPE_UNKNOWN && link->kind ? " kind " : "",
-	            link->type != NM_LINK_TYPE_UNKNOWN && link->kind ? link->kind : "",
 	            str_vlan,
-	            driver ? driver : "", udi ? udi : "");
-	g_string_free (str, TRUE);
-	g_free (driver);
-	g_free (udi);
+	            link->arptype,
+	            nm_link_type_to_string (link->type) ? " " : "",
+	            str_if_set (nm_link_type_to_string (link->type), "???"),
+	            link->kind ? (g_strcmp0 (nm_link_type_to_string (link->type), link->kind) ? "/" : "*") : "",
+	            link->kind && g_strcmp0 (nm_link_type_to_string (link->type), link->kind) ? link->kind : "",
+	            link->initialized ? " init" : " not-init",
+	            str_addrmode,
+	            str_addr ? " addr " : "",
+	            str_addr ? str_addr : "",
+	            str_inet6_token ? " inet6token " : "",
+	            str_inet6_token ? str_inet6_token : "",
+	            link->driver ? " driver " : "",
+	            link->driver ? link->driver : "",
+	            link->udi ? " udi " : "",
+	            link->udi ? link->udi : "");
+	g_string_free (str_flags, TRUE);
 	return _nm_platform_to_string_buffer;
 }
 
