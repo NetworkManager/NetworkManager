@@ -4439,14 +4439,14 @@ udev_device_added (NMPlatform *platform,
 		return;
 	}
 
-	rtnllink = rtnl_link_get (priv->link_cache, ifindex);
-	if (!rtnllink) {
-		warning ("(%s): udev-add: interface not known via netlink; ignoring...", ifname);
-		return;
-	}
-
 	g_hash_table_insert (priv->udev_devices, GINT_TO_POINTER (ifindex),
 	                     g_object_ref (udev_device));
+
+	rtnllink = rtnl_link_get (priv->link_cache, ifindex);
+	if (!rtnllink) {
+		debug ("(%s): udev-add: interface not known via netlink; ignoring ifindex %d...", ifname, ifindex);
+		return;
+	}
 
 	announce_object (platform, (struct nl_object *) rtnllink, NM_PLATFORM_SIGNAL_CHANGED, NM_PLATFORM_REASON_EXTERNAL);
 }
