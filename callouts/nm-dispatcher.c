@@ -294,9 +294,12 @@ script_timeout_cb (gpointer user_data)
 
 	g_warning ("Script '%s' took too long; killing it.", script->script);
 
-	if (kill (script->pid, 0) == 0)
-		kill (script->pid, SIGKILL);
-	(void) waitpid (script->pid, NULL, 0);
+	kill (script->pid, SIGKILL);
+again:
+	if (waitpid (script->pid, NULL, 0) == -1) {
+		if (errno == EINTR)
+			goto again;
+	}
 
 	script->error = g_strdup_printf ("Script '%s' timed out.", script->script);
 	script->result = DISPATCH_RESULT_TIMEOUT;
