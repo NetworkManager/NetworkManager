@@ -120,10 +120,15 @@ software_add (NMLinkType link_type, const char *name)
 
 		{
 			int parent_ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, PARENT_NAME);
+			gboolean was_up = nm_platform_link_is_up (NM_PLATFORM_GET, parent_ifindex);
 
 			parent_changed = add_signal_ifindex (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_CHANGED, link_callback, parent_ifindex);
 			g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, parent_ifindex));
-			accept_signal (parent_changed);
+			if (was_up) {
+				/* when NM is running in the background, it will mess with addrgenmode which might cause additional signals. */
+				accept_signals (parent_changed, 0, 1);
+			} else
+				accept_signal (parent_changed);
 			free_signal (parent_changed);
 
 			return nm_platform_vlan_add (NM_PLATFORM_GET, name, parent_ifindex, VLAN_ID, 0, NULL);
@@ -142,6 +147,9 @@ test_slave (int master, int type, SignalData *master_changed)
 	SignalData *link_added = add_signal_ifname (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_ADDED, link_callback, SLAVE_NAME);
 	SignalData *link_changed, *link_removed;
 	char *value;
+	NMLinkType link_type = nm_platform_link_get_type (NM_PLATFORM_GET, master);
+
+	g_assert (NM_IN_SET (link_type, NM_LINK_TYPE_TEAM, NM_LINK_TYPE_BOND, NM_LINK_TYPE_BRIDGE));
 
 	g_assert (software_add (type, SLAVE_NAME));
 	ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, SLAVE_NAME);
@@ -154,19 +162,28 @@ test_slave (int master, int type, SignalData *master_changed)
 	 *
 	 * See https://bugzilla.redhat.com/show_bug.cgi?id=910348
 	 */
+	g_assert (!nm_platform_link_is_up (NM_PLATFORM_GET, ifindex));
 	g_assert (nm_platform_link_set_down (NM_PLATFORM_GET, ifindex));
 	g_assert (!nm_platform_link_is_up (NM_PLATFORM_GET, ifindex));
-	accept_signal (link_changed);
+	ensure_no_signal (link_changed);
 
 	/* Enslave */
 	link_changed->ifindex = ifindex;
 	g_assert (nm_platform_link_enslave (NM_PLATFORM_GET, master, ifindex)); no_error ();
 	g_assert_cmpint (nm_platform_link_get_master (NM_PLATFORM_GET, ifindex), ==, master); no_error ();
+
 	accept_signal (link_changed);
-	accept_signal (master_changed);
+	accept_signals (master_changed, 0, 1);
+
+	/* enslaveing brings put the slave */
+	if (NM_IN_SET (link_type, NM_LINK_TYPE_BOND, NM_LINK_TYPE_TEAM))
+		g_assert (nm_platform_link_is_up (NM_PLATFORM_GET, ifindex));
+	else
+		g_assert (!nm_platform_link_is_up (NM_PLATFORM_GET, ifindex));
 
 	/* Set master up */
 	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, master));
+	g_assert (nm_platform_link_is_up (NM_PLATFORM_GET, master));
 	accept_signal (master_changed);
 
 	/* Master with a disconnected slave is disconnected
@@ -179,7 +196,7 @@ test_slave (int master, int type, SignalData *master_changed)
 	case NM_LINK_TYPE_TEAM:
 		g_assert (nm_platform_link_set_down (NM_PLATFORM_GET, ifindex));
 		accept_signal (link_changed);
-		accept_signal (master_changed);
+		accept_signals (master_changed, 0, 2);
 		break;
 	default:
 		break;
@@ -206,15 +223,16 @@ test_slave (int master, int type, SignalData *master_changed)
 	g_assert (nm_platform_link_is_connected (NM_PLATFORM_GET, ifindex));
 	g_assert (nm_platform_link_is_connected (NM_PLATFORM_GET, master));
 	accept_signal (link_changed);
-	accept_signal (master_changed);
+	/* NM running, can cause additional change of addrgenmode */
+	accept_signals (master_changed, 1, 2);
 
 	/* Enslave again
 	 *
 	 * Gracefully succeed if already enslaved.
 	 */
 	g_assert (nm_platform_link_enslave (NM_PLATFORM_GET, master, ifindex)); no_error ();
-	accept_signal (link_changed);
-	accept_signal (master_changed);
+	ensure_no_signal (link_changed);
+	ensure_no_signal (master_changed);
 
 	/* Set slave option */
 	switch (type) {
@@ -236,7 +254,10 @@ test_slave (int master, int type, SignalData *master_changed)
 	g_assert (nm_platform_link_release (NM_PLATFORM_GET, master, ifindex));
 	g_assert_cmpint (nm_platform_link_get_master (NM_PLATFORM_GET, ifindex), ==, 0); no_error ();
 	accept_signal (link_changed);
-	accept_signal (master_changed);
+	if (link_type != NM_LINK_TYPE_TEAM)
+		accept_signals (master_changed, 1, 2);
+	else
+		accept_signals (master_changed, 1, 1);
 
 	/* Release again */
 	g_assert (!nm_platform_link_release (NM_PLATFORM_GET, master, ifindex));
@@ -539,6 +560,7 @@ test_external (void)
 
 	run_command ("ip link del %s", DEVICE_NAME);
 	wait_signal (link_removed);
+	accept_signals (link_changed, 0, 1);
 	g_assert (!nm_platform_link_exists (NM_PLATFORM_GET, DEVICE_NAME));
 
 	free_signal (link_added);

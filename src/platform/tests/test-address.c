@@ -75,7 +75,7 @@ test_ip4_address (void)
 	/* Add address again (aka update) */
 	g_assert (nm_platform_ip4_address_add (NM_PLATFORM_GET, ifindex, addr, 0, IP4_PLEN, lifetime, preferred, NULL));
 	no_error ();
-	accept_signal (address_changed);
+	accept_signals (address_changed, 0, 1);
 
 	/* Test address listing */
 	addresses = nm_platform_ip4_address_get_all (NM_PLATFORM_GET, ifindex);
@@ -131,7 +131,7 @@ test_ip6_address (void)
 	/* Add address again (aka update) */
 	g_assert (nm_platform_ip6_address_add (NM_PLATFORM_GET, ifindex, addr, in6addr_any, IP6_PLEN, lifetime, preferred, flags));
 	no_error ();
-	accept_signal (address_changed);
+	accept_signals (address_changed, 0, 1);
 
 	/* Test address listing */
 	addresses = nm_platform_ip6_address_get_all (NM_PLATFORM_GET, ifindex);

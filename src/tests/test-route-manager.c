@@ -250,7 +250,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 	};
 
 	setup_dev0_ip4 (fixture->ifindex0, 1000, 21021);
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*error adding 8.0.0.0/8 via 6.6.6.2 dev *");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*failure adding ip4-route '*: 8.0.0.0/8 22': *");
 	setup_dev1_ip4 (fixture->ifindex1);
 	g_test_assert_expected_messages ();
 
@@ -262,7 +262,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 	nmtst_platform_ip4_routes_equal ((NMPlatformIP4Route *) routes->data, state1, routes->len, TRUE);
 	g_array_free (routes, TRUE);
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*error adding 8.0.0.0/8 via 6.6.6.2 dev *");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*failure adding ip4-route '*: 8.0.0.0/8 22': *");
 	setup_dev1_ip4 (fixture->ifindex1);
 	g_test_assert_expected_messages ();
 
@@ -584,7 +584,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 	};
 
 	setup_dev0_ip6 (fixture->ifindex0);
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*error adding 2001:db8:d34d::/64 via 2001:db8:8086::2 dev *");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*failure adding ip6-route '*: 2001:db8:d34d::/64 20': *");
 	setup_dev1_ip6 (fixture->ifindex1);
 	g_test_assert_expected_messages ();
 
@@ -598,7 +598,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 	g_array_free (routes, TRUE);
 
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*error adding 2001:db8:d34d::/64 via 2001:db8:8086::2 dev *");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*failure adding ip6-route '*: 2001:db8:d34d::/64 20': *");
 	setup_dev1_ip6 (fixture->ifindex1);
 	g_test_assert_expected_messages ();
 	setup_dev0_ip6 (fixture->ifindex0);

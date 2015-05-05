@@ -153,7 +153,7 @@ test_ip4_route (void)
 	/* Add route again */
 	g_assert (nm_platform_ip4_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, gateway, 0, metric, mss));
 	no_error ();
-	accept_signal (route_changed);
+	accept_signals (route_changed, 0, 1);
 
 	/* Add default route */
 	assert_ip4_route_exists (FALSE, DEVICE_NAME, 0, 0, metric);
@@ -167,7 +167,7 @@ test_ip4_route (void)
 	/* Add default route again */
 	g_assert (nm_platform_ip4_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, 0, 0, gateway, 0, metric, mss));
 	no_error ();
-	accept_signal (route_changed);
+	accept_signals (route_changed, 0, 1);
 
 	/* Test route listing */
 	routes = nm_platform_ip4_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
@@ -251,7 +251,7 @@ test_ip6_route (void)
 	/* Add route again */
 	g_assert (nm_platform_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, gateway, metric, mss));
 	no_error ();
-	accept_signal (route_changed);
+	accept_signals (route_changed, 0, 1);
 
 	/* Add default route */
 	g_assert (!nm_platform_ip6_route_exists (NM_PLATFORM_GET, ifindex, in6addr_any, 0, metric));
@@ -265,7 +265,7 @@ test_ip6_route (void)
 	/* Add default route again */
 	g_assert (nm_platform_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, in6addr_any, 0, gateway, metric, mss));
 	no_error ();
-	accept_signal (route_changed);
+	accept_signals (route_changed, 0, 1);
 
 	/* Test route listing */
 	routes = nm_platform_ip6_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
