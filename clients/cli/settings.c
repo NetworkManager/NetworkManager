@@ -4266,13 +4266,14 @@ nmc_property_wifi_sec_set_auth_alg (NMSetting *setting, const char *prop, const 
 	return check_and_set_string (setting, prop, val, wifi_sec_valid_auth_algs, error);
 }
 
-DEFINE_SETTER_STR_LIST_MULTI (check_and_add_wifi_sec_proto,
-                              NM_SETTING_WIRELESS_SECURITY,
-                              nm_setting_wireless_security_add_proto)
 DEFINE_ALLOWED_VAL_FUNC (nmc_property_wifi_sec_allowed_auth_alg, wifi_sec_valid_auth_algs)
 
 /* 'proto' */
 static const char *wifi_sec_valid_protos[] = { "wpa", "rsn", NULL };
+
+DEFINE_SETTER_STR_LIST_MULTI (check_and_add_wifi_sec_proto,
+                              NM_SETTING_WIRELESS_SECURITY,
+                              nm_setting_wireless_security_add_proto)
 
 static gboolean
 nmc_property_wifi_sec_set_proto (NMSetting *setting, const char *prop, const char *val, GError **error)
@@ -4304,13 +4305,14 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_wifi_sec_remove_proto,
                                nm_setting_wireless_security_remove_proto,
                                _validate_and_remove_wifi_sec_proto)
 
-DEFINE_SETTER_STR_LIST_MULTI (check_and_add_wifi_sec_pairwise,
-                              NM_SETTING_WIRELESS_SECURITY,
-                              nm_setting_wireless_security_add_pairwise)
 DEFINE_ALLOWED_VAL_FUNC (nmc_property_wifi_sec_allowed_proto, wifi_sec_valid_protos)
 
 /* 'pairwise' */
 static const char *wifi_sec_valid_pairwises[] = { "tkip", "ccmp", NULL };
+
+DEFINE_SETTER_STR_LIST_MULTI (check_and_add_wifi_sec_pairwise,
+                              NM_SETTING_WIRELESS_SECURITY,
+                              nm_setting_wireless_security_add_pairwise)
 
 static gboolean
 nmc_property_wifi_sec_set_pairwise (NMSetting *setting, const char *prop, const char *val, GError **error)
@@ -4342,13 +4344,14 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_wifi_sec_remove_pairwise,
                                nm_setting_wireless_security_remove_pairwise,
                                _validate_and_remove_wifi_sec_pairwise)
 
-DEFINE_SETTER_STR_LIST_MULTI (check_and_add_wifi_sec_group,
-                              NM_SETTING_WIRELESS_SECURITY,
-                              nm_setting_wireless_security_add_group)
 DEFINE_ALLOWED_VAL_FUNC (nmc_property_wifi_sec_allowed_pairwise, wifi_sec_valid_pairwises)
 
 /* 'group' */
 static const char *wifi_sec_valid_groups[] = { "wep40", "wep104", "tkip", "ccmp", NULL };
+
+DEFINE_SETTER_STR_LIST_MULTI (check_and_add_wifi_sec_group,
+                              NM_SETTING_WIRELESS_SECURITY,
+                              nm_setting_wireless_security_add_group)
 
 static gboolean
 nmc_property_wifi_sec_set_group (NMSetting *setting, const char *prop, const char *val, GError **error)
