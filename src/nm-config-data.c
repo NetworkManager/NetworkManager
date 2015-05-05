@@ -25,6 +25,7 @@
 
 #include "nm-config.h"
 #include "gsystem-local-alloc.h"
+#include "nm-device.h"
 
 typedef struct {
 	char *config_main_file;
@@ -42,6 +43,8 @@ typedef struct {
 		char **arr;
 		GSList *specs;
 	} no_auto_default;
+
+	GSList *ignore_carrier;
 
 	char *dns_mode;
 	char *rc_manager;
@@ -145,6 +148,15 @@ nm_config_data_get_rc_manager (const NMConfigData *self)
 	g_return_val_if_fail (self, NULL);
 
 	return NM_CONFIG_DATA_GET_PRIVATE (self)->rc_manager;
+}
+
+gboolean
+nm_config_data_get_ignore_carrier (const NMConfigData *self, NMDevice *device)
+{
+	g_return_val_if_fail (NM_IS_CONFIG_DATA (self), FALSE);
+	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
+
+	return nm_device_spec_match_list (device, NM_CONFIG_DATA_GET_PRIVATE (self)->ignore_carrier);
 }
 
 /************************************************************************/
@@ -314,6 +326,8 @@ finalize (GObject *gobject)
 	g_free (priv->dns_mode);
 	g_free (priv->rc_manager);
 
+	g_slist_free_full (priv->ignore_carrier, g_free);
+
 	g_key_file_unref (priv->keyfile);
 
 	G_OBJECT_CLASS (nm_config_data_parent_class)->finalize (gobject);
@@ -339,6 +353,8 @@ constructed (GObject *object)
 
 	priv->dns_mode = g_key_file_get_value (priv->keyfile, "main", "dns", NULL);
 	priv->rc_manager = g_key_file_get_value (priv->keyfile, "main", "rc-manager", NULL);
+
+	priv->ignore_carrier = nm_config_get_device_match_spec (priv->keyfile, "main", "ignore-carrier");
 
 	G_OBJECT_CLASS (nm_config_data_parent_class)->constructed (object);
 }

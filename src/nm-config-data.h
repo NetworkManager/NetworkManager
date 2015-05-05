@@ -91,6 +91,8 @@ const GSList *    nm_config_data_get_no_auto_default_list (const NMConfigData *c
 const char *nm_config_data_get_dns_mode (const NMConfigData *self);
 const char *nm_config_data_get_rc_manager (const NMConfigData *self);
 
+gboolean nm_config_data_get_ignore_carrier (const NMConfigData *self, NMDevice *device);
+
 G_END_DECLS
 
 #endif /* NM_CONFIG_DATA_H */

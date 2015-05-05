@@ -76,8 +76,6 @@ typedef struct {
 
 	char *debug;
 
-	GSList *ignore_carrier;
-
 	gboolean configure_and_quit;
 } NMConfigPrivate;
 
@@ -224,15 +222,6 @@ gboolean
 nm_config_get_configure_and_quit (NMConfig *config)
 {
 	return NM_CONFIG_GET_PRIVATE (config)->configure_and_quit;
-}
-
-gboolean
-nm_config_get_ignore_carrier (NMConfig *config, NMDevice *device)
-{
-	g_return_val_if_fail (NM_IS_CONFIG (config), FALSE);
-	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
-
-	return nm_device_spec_match_list (device, NM_CONFIG_GET_PRIVATE (config)->ignore_carrier);
 }
 
 /************************************************************************/
@@ -860,8 +849,6 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 
 	priv->debug = g_key_file_get_value (keyfile, "main", "debug", NULL);
 
-	priv->ignore_carrier = nm_config_get_device_match_spec (keyfile, "main", "ignore-carrier");
-
 	priv->configure_and_quit = _get_bool_value (keyfile, "main", "configure-and-quit", FALSE);
 
 	no_auto_default_orig_list = nm_config_get_device_match_spec (keyfile, "main", "no-auto-default");
@@ -915,7 +902,6 @@ finalize (GObject *gobject)
 	g_free (priv->log_level);
 	g_free (priv->log_domains);
 	g_free (priv->debug);
-	g_slist_free_full (priv->ignore_carrier, g_free);
 
 	_nm_config_cmd_line_options_clear (&priv->cli);
 
