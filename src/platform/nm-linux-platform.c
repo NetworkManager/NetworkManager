@@ -3664,7 +3664,7 @@ build_rtnl_addr (NMPlatform *platform,
                  guint flags,
                  const char *label)
 {
-	auto_nl_addr struct rtnl_addr *rtnladdr = _nm_rtnl_addr_alloc (ifindex);
+	auto_nl_object struct rtnl_addr *rtnladdr = _nm_rtnl_addr_alloc (ifindex);
 	struct rtnl_addr *rtnladdr_copy;
 	int addrlen = family == AF_INET ? sizeof (in_addr_t) : sizeof (struct in6_addr);
 	auto_nl_addr struct nl_addr *nladdr = _nm_nl_addr_build (family, addr, addrlen);
