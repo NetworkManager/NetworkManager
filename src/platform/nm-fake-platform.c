@@ -27,6 +27,7 @@
 #include <linux/rtnetlink.h>
 
 #include "gsystem-local-alloc.h"
+#include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-fake-platform.h"
 #include "nm-logging.h"
@@ -312,19 +313,23 @@ link_changed (NMPlatform *platform, NMFakePlatformLink *device)
 	g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_LINK_CHANGED, device->link.ifindex, &device->link, NM_PLATFORM_SIGNAL_CHANGED, NM_PLATFORM_REASON_INTERNAL);
 
 	if (device->link.master) {
+		gboolean connected = FALSE;
+
 		NMFakePlatformLink *master = link_get (platform, device->link.master);
 
-		g_return_if_fail (master != device);
+		g_return_if_fail (master && master != device);
 
-		master->link.connected = FALSE;
 		for (i = 0; i < priv->links->len; i++) {
 			NMFakePlatformLink *slave = &g_array_index (priv->links, NMFakePlatformLink, i);
 
 			if (slave && slave->link.master == master->link.ifindex && slave->link.connected)
-				master->link.connected = TRUE;
+				connected = TRUE;
 		}
 
-		link_changed (platform, master);
+		if (master->link.connected != connected) {
+			master->link.connected = connected;
+			link_changed (platform, master);
+		}
 	}
 }
 
@@ -332,27 +337,33 @@ static gboolean
 link_set_up (NMPlatform *platform, int ifindex)
 {
 	NMFakePlatformLink *device = link_get (platform, ifindex);
+	gboolean up, connected;
 
 	if (!device)
 		return FALSE;
 
-	device->link.up = TRUE;
+	up = TRUE;
+	connected = TRUE;
 	switch (device->link.type) {
 	case NM_LINK_TYPE_DUMMY:
 	case NM_LINK_TYPE_VLAN:
-		device->link.connected = TRUE;
 		break;
 	case NM_LINK_TYPE_BRIDGE:
 	case NM_LINK_TYPE_BOND:
 	case NM_LINK_TYPE_TEAM:
-		device->link.connected = FALSE;
+		connected = FALSE;
 		break;
 	default:
-		device->link.connected = FALSE;
+		connected = FALSE;
 		g_error ("Unexpected device type: %d", device->link.type);
 	}
 
-	link_changed (platform, device);
+	if (   device->link.up != up
+	    || device->link.connected != connected) {
+		device->link.up = up;
+		device->link.connected = connected;
+		link_changed (platform, device);
+	}
 
 	return TRUE;
 }
@@ -365,10 +376,12 @@ link_set_down (NMPlatform *platform, int ifindex)
 	if (!device)
 		return FALSE;
 
-	device->link.up = FALSE;
-	device->link.connected = FALSE;
+	if (device->link.up || device->link.connected) {
+		device->link.up = FALSE;
+		device->link.connected = FALSE;
 
-	link_changed (platform, device);
+		link_changed (platform, device);
+	}
 
 	return TRUE;
 }
@@ -566,12 +579,21 @@ static gboolean
 link_enslave (NMPlatform *platform, int master, int slave)
 {
 	NMFakePlatformLink *device = link_get (platform, slave);
+	NMFakePlatformLink *master_device = link_get (platform, master);
 
 	g_return_val_if_fail (device, FALSE);
+	g_return_val_if_fail (master_device, FALSE);
 
-	device->link.master = master;
+	if (device->link.master != master) {
+		device->link.master = master;
 
-	link_changed (platform, device);
+		if (NM_IN_SET (master_device->link.type, NM_LINK_TYPE_BOND, NM_LINK_TYPE_TEAM)) {
+			device->link.up = TRUE;
+			device->link.connected = TRUE;
+		}
+
+		link_changed (platform, device);
+	}
 
 	return TRUE;
 }
@@ -1223,8 +1245,8 @@ ip4_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 				break;
 		}
 		if (i == priv->ip4_routes->len) {
-			nm_log_warn (LOGD_PLATFORM, "Fake platform: error adding %s: Network Unreachable",
-			             nm_platform_ip4_route_to_string (&route));
+			nm_log_warn (LOGD_PLATFORM, "Fake platform: failure adding ip4-route '%d: %s/%d %d': Network Unreachable",
+			             route.ifindex, nm_utils_inet4_ntop (route.network, NULL), route.plen, route.metric);
 			return FALSE;
 		}
 	}
@@ -1290,8 +1312,8 @@ ip6_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 				break;
 		}
 		if (i == priv->ip6_routes->len) {
-			nm_log_warn (LOGD_PLATFORM, "Fake platform: error adding %s: Network Unreachable",
-			             nm_platform_ip6_route_to_string (&route));
+			nm_log_warn (LOGD_PLATFORM, "Fake platform: failure adding ip6-route '%d: %s/%d %d': Network Unreachable",
+			             route.ifindex, nm_utils_inet6_ntop (&route.network, NULL), route.plen, route.metric);
 			return FALSE;
 		}
 	}
