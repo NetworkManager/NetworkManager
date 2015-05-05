@@ -254,7 +254,7 @@ run_netconfig (GError **error, gint *stdin_fd)
 	nm_log_dbg (LOGD_DNS, "spawning '%s'", tmp);
 	g_free (tmp);
 
-	if (!g_spawn_async_with_pipes (NULL, argv, NULL, 0, NULL,
+	if (!g_spawn_async_with_pipes (NULL, argv, NULL, G_SPAWN_DO_NOT_REAP_CHILD, NULL,
 	                               NULL, &pid, stdin_fd, NULL, NULL, error))
 		return -1;
 
@@ -283,10 +283,10 @@ dispatch_netconfig (char **searches,
 	char *str;
 	GPid pid;
 	gint fd;
-	int ret = 1;
+	int status;
 
 	pid = run_netconfig (error, &fd);
-	if (pid < 0)
+	if (pid <= 0)
 		return FALSE;
 
 	/* NM is writing already-merged DNS information to netconfig, so it
@@ -319,24 +319,22 @@ dispatch_netconfig (char **searches,
 	close (fd);
 
 	/* Wait until the process exits */
+	if (!nm_utils_kill_child_sync (pid, 0, LOGD_DNS, "netconfig", &status, 1000, 0)) {
+		int errsv = errno;
 
- again:
-
-	if (waitpid (pid, NULL, 0) < 0) {
-		if (errno == EINTR)
-			goto again;
-		else if (errno == ECHILD) {
-			/* child already exited */
-			ret = pid;
-		} else {
-			g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
-			             "Error waiting for netconfig to exit: %s",
-			             strerror (errno));
-			ret = 0;
-		}
+		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
+		             "Error waiting for netconfig to exit: %s",
+		             strerror (errsv));
+		return FALSE;
 	}
-
-	return ret > 0;
+	if (!WIFEXITED (status) || WEXITSTATUS (status) != EXIT_SUCCESS) {
+		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
+		             "Error calling netconfig: %s %d",
+		             WIFEXITED (status) ? "exited with status" : (WIFSIGNALED (status) ? "exited with signal" : "exited with unknown reason"),
+		             WIFEXITED (status) ? WEXITSTATUS (status) : (WIFSIGNALED (status) ? WTERMSIG (status) : status));
+		return FALSE;
+	}
+	return TRUE;
 }
 
 static gboolean
