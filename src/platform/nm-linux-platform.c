@@ -1128,15 +1128,13 @@ source_to_rtprot (NMIPConfigSource source)
 }
 
 static NMIPConfigSource
-rtprot_to_source (guint rtprot, gboolean preserve_rtprot)
+rtprot_to_source (guint rtprot)
 {
 	switch (rtprot) {
 	case RTPROT_UNSPEC:
 		return NM_IP_CONFIG_SOURCE_UNKNOWN;
 	case RTPROT_KERNEL:
-		if (preserve_rtprot)
-			return _NM_IP_CONFIG_SOURCE_RTPROT_KERNEL;
-		/* fall through */
+		return _NM_IP_CONFIG_SOURCE_RTPROT_KERNEL;
 	case RTPROT_REDIRECT:
 		return NM_IP_CONFIG_SOURCE_KERNEL;
 	case RTPROT_RA:
@@ -1199,7 +1197,7 @@ _nmp_vt_cmd_plobj_init_from_nl_ip4_route (NMPlatform *platform, NMPlatformObject
 		 * */
 		obj->source = _NM_IP_CONFIG_SOURCE_RTM_F_CLONED;
 	} else
-		obj->source = rtprot_to_source (rtnl_route_get_protocol (nlo), TRUE);
+		obj->source = rtprot_to_source (rtnl_route_get_protocol (nlo));
 
 	return TRUE;
 }
@@ -1249,7 +1247,7 @@ _nmp_vt_cmd_plobj_init_from_nl_ip6_route (NMPlatform *platform, NMPlatformObject
 	if (rtnl_route_get_flags (nlo) & RTM_F_CLONED)
 		obj->source = _NM_IP_CONFIG_SOURCE_RTM_F_CLONED;
 	else
-		obj->source = rtprot_to_source (rtnl_route_get_protocol (nlo), TRUE);
+		obj->source = rtprot_to_source (rtnl_route_get_protocol (nlo));
 
 	return TRUE;
 }
