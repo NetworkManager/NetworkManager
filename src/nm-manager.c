@@ -2392,6 +2392,127 @@ ensure_master_active_connection (NMManager *self,
 	return NULL;
 }
 
+/**
+ * find_slaves:
+ * @manager: #NMManager object
+ * @connection: the master #NMConnection to find slave connections for
+ * @device: the master #NMDevice for the @connection
+ *
+ * Given an #NMConnection, attempts to find its slaves. If @connection is not
+ * master, or has not any slaves, this will return %NULL.
+ *
+ * Returns: list of slave connections for given master @connection, or %NULL
+ **/
+static GSList *
+find_slaves (NMManager *manager,
+             NMConnection *connection,
+             NMDevice *device)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	GSList *all_connections, *iter;
+	GSList *slaves = NULL;
+	NMSettingConnection *s_con;
+	const char *master;
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	master = nm_setting_connection_get_master (s_con);
+
+	if (master != NULL)
+		return NULL;  /* connection is not master */
+
+	/* Search through all connections, not only inactive ones, because
+	 * even if a slave was already active, it might be deactivated during
+	 * master reactivation.
+	 */
+	all_connections = nm_settings_get_connections (priv->settings);
+	for (iter = all_connections; iter; iter = iter->next) {
+		NMConnection *master_connection = NULL;
+		NMDevice *master_device = NULL;
+		NMConnection *candidate = iter->data;
+
+		find_master (manager, candidate, NULL, &master_connection, &master_device, NULL, NULL);
+		if (   (master_connection && master_connection == connection)
+		    || (master_device && master_device == device)) {
+			slaves = g_slist_prepend (slaves, candidate);
+		}
+	}
+	g_slist_free (all_connections);
+
+	return g_slist_reverse (slaves);
+}
+
+static gboolean
+should_connect_slaves (NMConnection *connection, NMDevice *device)
+{
+	NMSettingConnection *s_con;
+	NMSettingConnectionAutoconnectSlaves autoconnect_slaves;
+	gs_free char *value = NULL;
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+
+	/* Check autoconnect-slaves property */
+	autoconnect_slaves = nm_setting_connection_get_autoconnect_slaves (s_con);
+	if (autoconnect_slaves != NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_DEFAULT)
+		goto out;
+
+	/* Check configuration default for autoconnect-slaves property */
+	value = nm_config_data_get_connection_default (nm_config_get_data (nm_config_get ()),
+	                                               "connection.autoconnect-slaves", device);
+	if (value)
+		autoconnect_slaves = _nm_utils_ascii_str_to_int64 (value, 10, 0, 1, -1);
+
+out:
+	if (autoconnect_slaves == NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_NO)
+		return FALSE;
+	if (autoconnect_slaves == NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_YES)
+		return TRUE;
+	return FALSE;
+}
+
+static gboolean
+autoconnect_slaves (NMManager *manager,
+                    NMConnection *master_connection,
+                    NMDevice *master_device,
+                    NMAuthSubject *subject)
+{
+	GError *local_err = NULL;
+	gboolean ret = FALSE;
+
+	if (should_connect_slaves (master_connection, master_device)) {
+		GSList *slaves, *iter;
+
+		iter = slaves = find_slaves (manager, master_connection, master_device);
+		ret = slaves != NULL;
+
+		while (iter) {
+			NMConnection *slave_connection = iter->data;
+
+			iter = iter->next;
+			nm_log_dbg (LOGD_CORE, "will activate slave connection '%s' (%s) as a dependency for master '%s' (%s)",
+			            nm_connection_get_id (slave_connection),
+			            nm_connection_get_uuid (slave_connection),
+			            nm_connection_get_id (master_connection),
+			            nm_connection_get_uuid (master_connection));
+
+			/* Schedule slave activation */
+			nm_manager_activate_connection (manager,
+			                                slave_connection,
+			                                NULL,
+			                                nm_manager_get_best_device_for_connection (manager, slave_connection),
+			                                subject,
+			                                &local_err);
+			if (local_err) {
+				nm_log_warn (LOGD_CORE, "Slave connection activation failed: %s", local_err->message);
+				g_error_free (local_err);
+			}
+		}
+		g_slist_free (slaves);
+	}
+	return ret;
+}
+
 static gboolean
 _internal_activate_vpn (NMManager *self, NMActiveConnection *active, GError **error)
 {
@@ -2563,6 +2684,9 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 		            nm_connection_get_id (connection),
 		            nm_active_connection_get_path (master_ac));
 	}
+
+	/* Check slaves for master connection and possibly activate them */
+	autoconnect_slaves (self, connection, device, nm_active_connection_get_subject (active));
 
 	/* Disconnect the connection if connected or queued on another device */
 	existing = nm_manager_get_connection_device (self, connection);
