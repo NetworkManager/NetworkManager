@@ -782,13 +782,16 @@ update_dns (NMDnsManager *self,
 
 #ifdef NETCONFIG_PATH
 	if (success == FALSE) {
+		g_clear_error (error);
 		success = dispatch_netconfig (searches, nameservers,
 		                              nis_domain, nis_servers, error);
 	}
 #endif
 
-	if (success == FALSE)
+	if (success == FALSE) {
+		g_clear_error (error);
 		success = update_resolv_conf (searches, nameservers, error);
+	}
 
 	/* signal that resolv.conf was changed */
 	if (success)
