@@ -359,6 +359,47 @@ _support_user_ipv6ll_detect (const struct rtnl_link *rtnl_link)
 #endif
 }
 
+/******************************************************************/
+
+static int _support_kernel_extended_ifa_flags = 0;
+
+#define _support_kernel_extended_ifa_flags_still_undecided() (G_UNLIKELY (_support_kernel_extended_ifa_flags == 0))
+
+static void
+_support_kernel_extended_ifa_flags_detect (struct nl_msg *msg)
+{
+	struct nlmsghdr *msg_hdr = nlmsg_hdr (msg);
+
+	if (!_support_kernel_extended_ifa_flags_still_undecided ())
+		return;
+
+	msg_hdr = nlmsg_hdr (msg);
+	if (msg_hdr->nlmsg_type != RTM_NEWADDR)
+		return;
+
+	/* the extended address flags are only set for AF_INET6 */
+	if (((struct ifaddrmsg *) nlmsg_data (msg_hdr))->ifa_family != AF_INET6)
+		return;
+
+	/* see if the nl_msg contains the IFA_FLAGS attribute. If it does,
+	 * we assume, that the kernel supports extended flags, IFA_F_MANAGETEMPADDR
+	 * and IFA_F_NOPREFIXROUTE (they were added together).
+	 **/
+	_support_kernel_extended_ifa_flags =
+	    nlmsg_find_attr (msg_hdr, sizeof (struct ifaddrmsg), 8 /* IFA_FLAGS */)
+	    ? 1 : -1;
+}
+
+static gboolean
+_support_kernel_extended_ifa_flags_get ()
+{
+	if (_support_kernel_extended_ifa_flags_still_undecided ()) {
+		nm_log_warn (LOGD_PLATFORM, "Unable to detect kernel support for extended IFA_FLAGS. Assume no kernel support.");
+		_support_kernel_extended_ifa_flags = -1;
+	}
+	return _support_kernel_extended_ifa_flags > 0;
+}
+
 /******************************************************************
  * NMPlatform types and functions
  ******************************************************************/
@@ -389,8 +430,6 @@ typedef struct {
 	GHashTable *udev_devices;
 
 	GHashTable *wifi_data;
-
-	int support_kernel_extended_ifa_flags;
 } NMLinuxPlatformPrivate;
 
 #define NM_LINUX_PLATFORM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_LINUX_PLATFORM, NMLinuxPlatformPrivate))
@@ -663,42 +702,12 @@ nm_rtnl_link_parse_info_data (struct nl_sock *sk, int ifindex,
 
 /******************************************************************/
 
-static void
-_check_support_kernel_extended_ifa_flags_init (NMLinuxPlatformPrivate *priv, struct nl_msg *msg)
-{
-	struct nlmsghdr *msg_hdr = nlmsg_hdr (msg);
-
-	g_return_if_fail (priv->support_kernel_extended_ifa_flags == 0);
-	g_return_if_fail (msg_hdr->nlmsg_type == RTM_NEWADDR);
-
-	/* the extended address flags are only set for AF_INET6 */
-	if (((struct ifaddrmsg *) nlmsg_data (msg_hdr))->ifa_family != AF_INET6)
-		return;
-
-	/* see if the nl_msg contains the IFA_FLAGS attribute. If it does,
-	 * we assume, that the kernel supports extended flags, IFA_F_MANAGETEMPADDR
-	 * and IFA_F_NOPREFIXROUTE (they were added together).
-	 **/
-	priv->support_kernel_extended_ifa_flags =
-	    nlmsg_find_attr (msg_hdr, sizeof (struct ifaddrmsg), 8 /* IFA_FLAGS */)
-	    ? 1 : -1;
-}
-
 static gboolean
 check_support_kernel_extended_ifa_flags (NMPlatform *platform)
 {
-	NMLinuxPlatformPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_LINUX_PLATFORM (platform), FALSE);
 
-	priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-
-	if (priv->support_kernel_extended_ifa_flags == 0) {
-		nm_log_warn (LOGD_PLATFORM, "Unable to detect kernel support for extended IFA_FLAGS. Assume no kernel support.");
-		priv->support_kernel_extended_ifa_flags = -1;
-	}
-
-	return priv->support_kernel_extended_ifa_flags > 0;
+	return _support_kernel_extended_ifa_flags_get ();
 }
 
 static gboolean
@@ -1904,12 +1913,8 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 
 	event = nlmsg_hdr (msg)->nlmsg_type;
 
-	if (priv->support_kernel_extended_ifa_flags == 0 && event == RTM_NEWADDR) {
-		/* if kernel support for extended ifa flags is still undecided, use the opportunity
-		 * now and use @msg to decide it. This saves a blocking net link request.
-		 **/
-		_check_support_kernel_extended_ifa_flags_init (priv, msg);
-	}
+	if (_support_kernel_extended_ifa_flags_still_undecided () && event == RTM_NEWADDR)
+		_support_kernel_extended_ifa_flags_detect (msg);
 
 	nl_msg_parse (msg, ref_object, &object);
 	if (!object)
@@ -3710,7 +3715,7 @@ build_rtnl_addr (NMPlatform *platform,
 		rtnl_addr_set_preferred_lifetime (rtnladdr, preferred);
 	}
 	if (flags) {
-		if ((flags & ~0xFF) && !check_support_kernel_extended_ifa_flags (platform)) {
+		if ((flags & ~0xFF) && !_support_kernel_extended_ifa_flags_get ()) {
 			/* Older kernels don't accept unknown netlink attributes.
 			 *
 			 * With commit libnl commit 5206c050504f8676a24854519b9c351470fb7cc6, libnl will only set
