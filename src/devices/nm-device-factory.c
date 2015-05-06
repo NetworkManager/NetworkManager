@@ -81,6 +81,7 @@ nm_device_factory_start (NMDeviceFactory *factory)
 NMDevice *
 nm_device_factory_new_link (NMDeviceFactory *factory,
                             NMPlatformLink *plink,
+                            gboolean *out_ignore,
                             GError **error)
 {
 	NMDeviceFactory *interface;
@@ -114,7 +115,7 @@ nm_device_factory_new_link (NMDeviceFactory *factory,
 		return NULL;
 	}
 
-	return interface->new_link (factory, plink, error);
+	return interface->new_link (factory, plink, out_ignore, error);
 }
 
 NMDevice *

@@ -1905,20 +1905,18 @@ platform_link_added (NMManager *self,
 	if (nm_manager_get_device_by_ifindex (self, ifindex))
 		return;
 
-	/* Ignore Bluetooth PAN interfaces; they are handled by their NMDeviceBt
-	 * parent and don't get a separate interface.
-	 */
-	if (plink->type == NM_LINK_TYPE_BNEP)
-		return;
-
 	/* Try registered device factories */
 	factory = nm_device_factory_manager_find_factory_for_link_type (plink->type);
 	if (factory) {
-		device = nm_device_factory_new_link (factory, plink, &error);
+		gboolean ignore = FALSE;
+
+		device = nm_device_factory_new_link (factory, plink, &ignore, &error);
 		if (!device) {
-			nm_log_warn (LOGD_HW, "%s: factory failed to create device: %s",
-			             plink->name, error->message);
-			g_clear_error (&error);
+			if (!ignore) {
+				nm_log_warn (LOGD_HW, "%s: factory failed to create device: %s",
+				             plink->name, error->message);
+				g_clear_error (&error);
+			}
 			return;
 		}
 	}
@@ -1926,10 +1924,7 @@ platform_link_added (NMManager *self,
 	if (device == NULL) {
 		switch (plink->type) {
 		case NM_LINK_TYPE_WWAN_ETHERNET:
-			/* WWAN pseudo-ethernet interfaces are handled automatically by
-			 * their NMDeviceModem and don't get a separate NMDevice object.
-			 */
-			break;
+		case NM_LINK_TYPE_BNEP:
 		case NM_LINK_TYPE_OLPC_MESH:
 		case NM_LINK_TYPE_TEAM:
 		case NM_LINK_TYPE_WIFI:

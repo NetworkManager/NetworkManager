@@ -628,7 +628,7 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 #define NM_VLAN_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VLAN_FACTORY, NMVlanFactory))
 
 static NMDevice *
-new_link (NMDeviceFactory *factory, NMPlatformLink *plink, GError **error)
+new_link (NMDeviceFactory *factory, NMPlatformLink *plink, gboolean *out_ignore, GError **error)
 {
 	int parent_ifindex = -1;
 	NMDevice *parent, *device;

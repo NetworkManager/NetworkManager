@@ -175,7 +175,7 @@ nm_device_macvlan_class_init (NMDeviceMacvlanClass *klass)
 #define NM_MACVLAN_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_MACVLAN_FACTORY, NMMacvlanFactory))
 
 static NMDevice *
-new_link (NMDeviceFactory *factory, NMPlatformLink *plink, GError **error)
+new_link (NMDeviceFactory *factory, NMPlatformLink *plink, gboolean *out_ignore, GError **error)
 {
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_MACVLAN,
 	                                  NM_DEVICE_PLATFORM_DEVICE, plink,

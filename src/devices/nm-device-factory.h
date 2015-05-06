@@ -93,6 +93,7 @@ struct _NMDeviceFactory {
 	 * new_link:
 	 * @factory: the #NMDeviceFactory
 	 * @plink: the new link
+	 * @out_ignore: on return, %TRUE if the link should be ignored
 	 * @error: error if the link could be claimed but an error occurred
 	 *
 	 * The NetworkManager core was notified of a new link which the plugin
@@ -101,6 +102,9 @@ struct _NMDeviceFactory {
 	 * is supported but the device could not be created, %NULL should be
 	 * returned and @error should be set.
 	 *
+	 * If the plugin cannot create a #NMDevice for the link and wants the
+	 * core to ignore it, set @out_ignore to %TRUE and return no error.
+	 *
 	 * @plink is guaranteed to be one of the types the factory returns in
 	 * get_supported_types().
 	 *
@@ -108,6 +112,7 @@ struct _NMDeviceFactory {
 	 */
 	NMDevice * (*new_link)        (NMDeviceFactory *factory,
 	                               NMPlatformLink *plink,
+	                               gboolean *out_ignore,
 	                               GError **error);
 
 	/**
@@ -201,6 +206,7 @@ void       nm_device_factory_start       (NMDeviceFactory *factory);
 
 NMDevice * nm_device_factory_new_link    (NMDeviceFactory *factory,
                                           NMPlatformLink *plink,
+                                          gboolean *out_ignore,
                                           GError **error);
 
 NMDevice * nm_device_factory_create_virtual_device_for_connection (NMDeviceFactory *factory,

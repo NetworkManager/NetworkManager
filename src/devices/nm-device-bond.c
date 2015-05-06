@@ -553,7 +553,7 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 #define NM_BOND_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_BOND_FACTORY, NMBondFactory))
 
 static NMDevice *
-new_link (NMDeviceFactory *factory, NMPlatformLink *plink, GError **error)
+new_link (NMDeviceFactory *factory, NMPlatformLink *plink, gboolean *out_ignore, GError **error)
 {
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_BOND,
 	                                  NM_DEVICE_PLATFORM_DEVICE, plink,

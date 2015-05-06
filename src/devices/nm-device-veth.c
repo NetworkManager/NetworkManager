@@ -177,7 +177,7 @@ nm_device_veth_class_init (NMDeviceVethClass *klass)
 #define NM_VETH_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VETH_FACTORY, NMVethFactory))
 
 static NMDevice *
-new_link (NMDeviceFactory *factory, NMPlatformLink *plink, GError **error)
+new_link (NMDeviceFactory *factory, NMPlatformLink *plink, gboolean *out_ignore, GError **error)
 {
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_VETH,
 	                                  NM_DEVICE_PLATFORM_DEVICE, plink,
