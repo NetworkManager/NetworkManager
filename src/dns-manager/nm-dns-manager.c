@@ -848,8 +848,10 @@ update_dns (NMDnsManager *self,
 
 	/* Unless we've already done it, update private resolv.conf in NMRUNDIR
 	   ignoring any errors */
-	if (!(update && priv->rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_NONE))
+	if (!(update && priv->rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_NONE)) {
+		g_clear_error (error);
 		update_resolv_conf (searches, nameservers, error, FALSE);
+	}
 
 	/* signal that resolv.conf was changed */
 	if (update && success)
