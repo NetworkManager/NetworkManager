@@ -101,6 +101,7 @@ typedef enum {
 	NM_LINK_TYPE_VETH,
 	NM_LINK_TYPE_VLAN,
 	NM_LINK_TYPE_VXLAN,
+	NM_LINK_TYPE_BNEP,   /* Bluetooth Ethernet emulation */
 
 	/* Software types with slaves */
 	NM_LINK_TYPE_BRIDGE = 0x10000 | 0x20000,

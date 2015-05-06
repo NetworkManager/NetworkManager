@@ -28,8 +28,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
-#include <linux/sockios.h>
-#include <linux/ethtool.h>
 #include <sys/ioctl.h>
 #include <signal.h>
 #include <sys/types.h>
@@ -203,6 +201,8 @@ typedef struct {
 	GHashTable *  available_connections;
 	char *        hw_addr;
 	guint         hw_addr_len;
+	char *        perm_hw_addr;
+	char *        initial_hw_addr;
 	char *        physical_port_id;
 	guint         dev_id;
 
@@ -5891,14 +5891,20 @@ impl_device_delete (NMDevice *self, DBusGMethodInvocation *context)
 	               NULL);
 }
 
-static void
+static gboolean
 _device_activate (NMDevice *self, NMActRequest *req)
 {
 	NMDevicePrivate *priv;
 	NMConnection *connection;
 
-	g_return_if_fail (NM_IS_DEVICE (self));
-	g_return_if_fail (NM_IS_ACT_REQUEST (req));
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
+
+	/* Ensure the activation request is still valid; the master may have
+	 * already failed in which case activation of this device should not proceed.
+	 */
+	if (nm_active_connection_get_state (NM_ACTIVE_CONNECTION (req)) >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING)
+		return FALSE;
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
@@ -5924,6 +5930,7 @@ _device_activate (NMDevice *self, NMActRequest *req)
 	priv->act_request = g_object_ref (req);
 
 	nm_device_activate_schedule_stage1_device_prepare (self);
+	return TRUE;
 }
 
 static void
@@ -6019,7 +6026,8 @@ nm_device_queue_activation (NMDevice *self, NMActRequest *req)
 
 	if (!priv->act_request && !must_queue) {
 		/* Just activate immediately */
-		_device_activate (self, req);
+		if (!_device_activate (self, req))
+			g_assert_not_reached ();
 		return;
 	}
 
@@ -8110,13 +8118,18 @@ _set_state_full (NMDevice *self,
 		if (   priv->queued_act_request
 		    && !priv->queued_act_request_is_waiting_for_carrier) {
 			NMActRequest *queued_req;
+			gboolean success;
 
 			queued_req = priv->queued_act_request;
 			priv->queued_act_request = NULL;
-			_device_activate (self, queued_req);
+			success = _device_activate (self, queued_req);
 			g_object_unref (queued_req);
-		} else if (   old_state > NM_DEVICE_STATE_DISCONNECTED
-		           && nm_device_get_default_unmanaged (self))
+			if (success)
+				break;
+			/* fall through */
+		}
+		if (   old_state > NM_DEVICE_STATE_DISCONNECTED
+		    && nm_device_get_default_unmanaged (self))
 			nm_device_queue_state (self, NM_DEVICE_STATE_UNMANAGED, NM_DEVICE_STATE_REASON_NONE);
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
@@ -8397,6 +8410,22 @@ nm_device_set_hw_addr (NMDevice *self, const char *addr,
 	return success;
 }
 
+const char *
+nm_device_get_permanent_hw_address (NMDevice *self)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
+
+	return NM_DEVICE_GET_PRIVATE (self)->perm_hw_addr;
+}
+
+const char *
+nm_device_get_initial_hw_address (NMDevice *self)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
+
+	return NM_DEVICE_GET_PRIVATE (self)->initial_hw_addr;
+}
+
 /**
  * nm_device_spec_match_list:
  * @self: an #NMDevice
@@ -8491,46 +8520,6 @@ nm_device_init (NMDevice *self)
 	priv->default_route.v6_is_assumed = TRUE;
 }
 
-/*
- * Get driver info from SIOCETHTOOL ioctl() for 'iface'
- * Returns driver and firmware versions to 'driver_version and' 'firmware_version'
- */
-static gboolean
-device_get_driver_info (NMDevice *self, const char *iface, char **driver_version, char **firmware_version)
-{
-	struct ethtool_drvinfo drvinfo;
-	struct ifreq req;
-	int fd;
-
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
-	if (fd < 0) {
-		_LOGW (LOGD_HW, "couldn't open control socket.");
-		return FALSE;
-	}
-
-	/* Get driver and firmware version info */
-	memset (&drvinfo, 0, sizeof (drvinfo));
-	memset (&req, 0, sizeof (struct ifreq));
-	strncpy (req.ifr_name, iface, IFNAMSIZ);
-	drvinfo.cmd = ETHTOOL_GDRVINFO;
-	req.ifr_data = &drvinfo;
-
-	errno = 0;
-	if (ioctl (fd, SIOCETHTOOL, &req) < 0) {
-		_LOGD (LOGD_HW, "SIOCETHTOOL ioctl() failed: cmd=ETHTOOL_GDRVINFO, iface=%s, errno=%d",
-		       iface, errno);
-		close (fd);
-		return FALSE;
-	}
-	if (driver_version)
-		*driver_version = g_strdup (drvinfo.version);
-	if (firmware_version)
-		*firmware_version = g_strdup (drvinfo.fw_version);
-
-	close (fd);
-	return TRUE;
-}
-
 static GObject*
 constructor (GType type,
              guint n_construct_params,
@@ -8566,10 +8555,13 @@ constructor (GType type,
 	if (NM_DEVICE_GET_CLASS (self)->get_generic_capabilities)
 		priv->capabilities |= NM_DEVICE_GET_CLASS (self)->get_generic_capabilities (self);
 
-	if (priv->ifindex <= 0 && !nm_device_has_capability (self, NM_DEVICE_CAP_IS_NON_KERNEL))
-		_LOGW (LOGD_HW, "failed to look up interface index");
-
-	device_get_driver_info (self, priv->iface, &priv->driver_version, &priv->firmware_version);
+	if (priv->ifindex > 0) {
+		nm_platform_link_get_driver_info (NM_PLATFORM_GET,
+		                                  priv->ifindex,
+		                                  NULL,
+		                                  &priv->driver_version,
+		                                  &priv->firmware_version);
+	}
 
 	/* Watch for external IP config changes */
 	platform = nm_platform_get ();
@@ -8605,13 +8597,29 @@ constructed (GObject *object)
 
 	nm_device_update_hw_address (self);
 
-	if (NM_DEVICE_GET_CLASS (self)->update_permanent_hw_address)
-		NM_DEVICE_GET_CLASS (self)->update_permanent_hw_address (self);
+	if (priv->hw_addr_len) {
+		priv->initial_hw_addr = g_strdup (priv->hw_addr);
+		_LOGD (LOGD_DEVICE | LOGD_HW, "read initial MAC address %s", priv->initial_hw_addr);
 
-	if (NM_DEVICE_GET_CLASS (self)->update_initial_hw_address)
-		NM_DEVICE_GET_CLASS (self)->update_initial_hw_address (self);
+		if (priv->ifindex > 0) {
+			guint8 buf[NM_UTILS_HWADDR_LEN_MAX];
+			size_t len = 0;
 
-	/* Have to call update_initial_hw_address() before calling get_ignore_carrier() */
+			if (nm_platform_link_get_permanent_address (NM_PLATFORM_GET, priv->ifindex, buf, &len)) {
+				g_warn_if_fail (len == priv->hw_addr_len);
+				priv->perm_hw_addr = nm_utils_hwaddr_ntoa (buf, priv->hw_addr_len);
+				_LOGD (LOGD_DEVICE | LOGD_HW, "read permanent MAC address %s",
+				       priv->perm_hw_addr);
+			} else {
+				/* Fall back to current address */
+				_LOGD (LOGD_HW | LOGD_ETHER, "unable to read permanent MAC address (error %d)",
+					   nm_platform_get_error (NM_PLATFORM_GET));
+				priv->perm_hw_addr = g_strdup (priv->hw_addr);
+			}
+		}
+	}
+
+	/* Note: initial hardware address must be read before calling get_ignore_carrier() */
 	if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
 		NMConfig *config = nm_config_get ();
 
@@ -8744,6 +8752,8 @@ finalize (GObject *object)
 	_LOGD (LOGD_DEVICE, "finalize(): %s", G_OBJECT_TYPE_NAME (self));
 
 	g_free (priv->hw_addr);
+	g_free (priv->perm_hw_addr);
+	g_free (priv->initial_hw_addr);
 	g_slist_free_full (priv->pending_actions, g_free);
 	g_clear_pointer (&priv->physical_port_id, g_free);
 	g_free (priv->udi);

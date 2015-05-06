@@ -536,10 +536,38 @@ nm_platform_link_get (NMPlatform *self, int ifindex, NMPlatformLink *link)
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
-	g_return_val_if_fail (link, FALSE);
 
 	g_return_val_if_fail (klass->link_get, FALSE);
 	return !!klass->link_get (self, ifindex, link);
+}
+
+/**
+ * nm_platform_link_get_by_address:
+ * @self: platform instance
+ * @address: a pointer to the binary hardware address
+ * @length: the size of @address in bytes
+ * @link: (out): output NMPlatformLink structure.
+ *
+ * If a link with given @address exists, fill the given NMPlatformLink
+ * structure.
+ *
+ * Returns: %TRUE, if such a link exists, %FALSE otherwise.
+ * If the link does not exist, the content of @link is undefined.
+ **/
+gboolean
+nm_platform_link_get_by_address (NMPlatform *self,
+                                 gconstpointer address,
+                                 size_t length,
+                                 NMPlatformLink *link)
+{
+	_CHECK_SELF (self, klass, FALSE);
+
+	g_return_val_if_fail (address != NULL, FALSE);
+	g_return_val_if_fail (length > 0, FALSE);
+	g_return_val_if_fail (link, FALSE);
+
+	g_return_val_if_fail (klass->link_get_by_address, FALSE);
+	return !!klass->link_get_by_address (self, address, length, link);
 }
 
 /**
@@ -549,14 +577,24 @@ nm_platform_link_get (NMPlatform *self, int ifindex, NMPlatformLink *link)
  * @type: Interface type
  * @address: (allow-none): set the mac address of the link
  * @address_len: the length of the @address
+ * @out_link: on success, the link object
  *
- * Add a software interface. Sets self->error to NM_PLATFORM_ERROR_EXISTS
- * if interface is already already exists.  Any link-changed ADDED signal will be
- * emitted directly, before this function finishes.
+ * Add a software interface.  If the interface already exists and is of type
+ * @type, sets platform->error to NM_PLATFORM_ERROR_EXISTS and returns the link
+ * in @out_link.  If the interface already exists and is not of type @type,
+ * sets platform->error to NM_PLATFORM_ERROR_WRONG_TYPE.  Any link-changed ADDED
+ * signal will be emitted directly, before this function finishes.
  */
 static gboolean
-nm_platform_link_add (NMPlatform *self, const char *name, NMLinkType type, const void *address, size_t address_len)
+nm_platform_link_add (NMPlatform *self,
+                      const char *name,
+                      NMLinkType type,
+                      const void *address,
+                      size_t address_len,
+                      NMPlatformLink *out_link)
 {
+	int ifindex;
+
 	_CHECK_SELF (self, klass, FALSE);
 	reset_error (self);
 
@@ -564,29 +602,37 @@ nm_platform_link_add (NMPlatform *self, const char *name, NMLinkType type, const
 	g_return_val_if_fail (klass->link_add, FALSE);
 	g_return_val_if_fail ( (address != NULL) ^ (address_len == 0) , FALSE);
 
-	if (nm_platform_link_exists (self, name)) {
+	ifindex = nm_platform_link_get_ifindex (self, name);
+	if (ifindex > 0) {
 		debug ("link: already exists");
-		self->error = NM_PLATFORM_ERROR_EXISTS;
+		if (nm_platform_link_get_type (self, ifindex) != type)
+			self->error = NM_PLATFORM_ERROR_WRONG_TYPE;
+		else {
+			self->error = NM_PLATFORM_ERROR_EXISTS;
+			(void) nm_platform_link_get (self, ifindex, out_link);
+		}
 		return FALSE;
 	}
 
-	return klass->link_add (self, name, type, address, address_len);
+	reset_error(self);
+	return klass->link_add (self, name, type, address, address_len, out_link);
 }
 
 /**
  * nm_platform_dummy_add:
  * @self: platform instance
  * @name: New interface name
+ * @out_link: on success, the link object
  *
  * Create a software ethernet-like interface
  */
 gboolean
-nm_platform_dummy_add (NMPlatform *self, const char *name)
+nm_platform_dummy_add (NMPlatform *self, const char *name, NMPlatformLink *out_link)
 {
 	g_return_val_if_fail (name, FALSE);
 
 	debug ("link: adding dummy '%s'", name);
-	return nm_platform_link_add (self, name, NM_LINK_TYPE_DUMMY, NULL, 0);
+	return nm_platform_link_add (self, name, NM_LINK_TYPE_DUMMY, NULL, 0, out_link);
 }
 
 /**
@@ -966,7 +1012,8 @@ nm_platform_link_set_address (NMPlatform *self, int ifindex, gconstpointer addre
  * @ifindex: Interface index
  * @length: Pointer to a variable to store address length
  *
- * Saves interface hardware address to @address.
+ * Returns: the interface hardware address as an array of bytes of
+ * length @length.
  */
 gconstpointer
 nm_platform_link_get_address (NMPlatform *self, int ifindex, size_t *length)
@@ -981,6 +1028,34 @@ nm_platform_link_get_address (NMPlatform *self, int ifindex, size_t *length)
 	g_return_val_if_fail (klass->link_get_address, NULL);
 
 	return klass->link_get_address (self, ifindex, length);
+}
+
+/**
+ * nm_platform_link_get_permanent_address:
+ * @self: platform instance
+ * @ifindex: Interface index
+ * @buf: buffer of at least %NM_UTILS_HWADDR_LEN_MAX bytes, on success
+ * the permanent hardware address
+ * @length: Pointer to a variable to store address length
+ *
+ * Returns: %TRUE on success, %FALSE on failure to read the permanent hardware
+ * address.
+ */
+gboolean
+nm_platform_link_get_permanent_address (NMPlatform *self, int ifindex, guint8 *buf, size_t *length)
+{
+	_CHECK_SELF (self, klass, FALSE);
+	reset_error (self);
+
+	if (length)
+		*length = 0;
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_val_if_fail (klass->link_get_permanent_address, FALSE);
+	g_return_val_if_fail (buf, FALSE);
+	g_return_val_if_fail (length, FALSE);
+
+	return klass->link_get_permanent_address (self, ifindex, buf, length);
 }
 
 gboolean
@@ -1196,6 +1271,38 @@ nm_platform_link_get_wake_on_lan (NMPlatform *self, int ifindex)
 }
 
 /**
+ * nm_platform_link_get_driver_info:
+ * @self: platform instance
+ * @ifindex: Interface index
+ * @out_driver_name: (transfer full): on success, the driver name if available
+ * @out_driver_version: (transfer full): on success, the driver version if available
+ * @out_fw_version: (transfer full): on success, the firmware version if available
+ *
+ * Returns: %TRUE on success (though @out_driver_name, @out_driver_version and
+ * @out_fw_version can be %NULL if no information was available), %FALSE on
+ * failure.
+ */
+gboolean
+nm_platform_link_get_driver_info (NMPlatform *self,
+                                  int ifindex,
+                                  char **out_driver_name,
+                                  char **out_driver_version,
+                                  char **out_fw_version)
+{
+	_CHECK_SELF (self, klass, FALSE);
+	reset_error (self);
+
+	g_return_val_if_fail (ifindex >= 0, FALSE);
+	g_return_val_if_fail (klass->link_get_driver_info, FALSE);
+
+	return klass->link_get_driver_info (self,
+	                                    ifindex,
+	                                    out_driver_name,
+	                                    out_driver_version,
+	                                    out_fw_version);
+}
+
+/**
  * nm_platform_link_enslave:
  * @self: platform instance
  * @master: Interface index of the master
@@ -1277,42 +1384,49 @@ nm_platform_link_get_master (NMPlatform *self, int slave)
  * @name: New interface name
  * @address: (allow-none): set the mac address of the new bridge
  * @address_len: the length of the @address
+ * @out_link: on success, the link object
  *
  * Create a software bridge.
  */
 gboolean
-nm_platform_bridge_add (NMPlatform *self, const char *name, const void *address, size_t address_len)
+nm_platform_bridge_add (NMPlatform *self,
+                        const char *name,
+                        const void *address,
+                        size_t address_len,
+                        NMPlatformLink *out_link)
 {
 	debug ("link: adding bridge '%s'", name);
-	return nm_platform_link_add (self, name, NM_LINK_TYPE_BRIDGE, address, address_len);
+	return nm_platform_link_add (self, name, NM_LINK_TYPE_BRIDGE, address, address_len, out_link);
 }
 
 /**
  * nm_platform_bond_add:
  * @self: platform instance
  * @name: New interface name
+ * @out_link: on success, the link object
  *
  * Create a software bonding device.
  */
 gboolean
-nm_platform_bond_add (NMPlatform *self, const char *name)
+nm_platform_bond_add (NMPlatform *self, const char *name, NMPlatformLink *out_link)
 {
 	debug ("link: adding bond '%s'", name);
-	return nm_platform_link_add (self, name, NM_LINK_TYPE_BOND, NULL, 0);
+	return nm_platform_link_add (self, name, NM_LINK_TYPE_BOND, NULL, 0, out_link);
 }
 
 /**
  * nm_platform_team_add:
  * @self: platform instance
  * @name: New interface name
+ * @out_link: on success, the link object
  *
  * Create a software teaming device.
  */
 gboolean
-nm_platform_team_add (NMPlatform *self, const char *name)
+nm_platform_team_add (NMPlatform *self, const char *name, NMPlatformLink *out_link)
 {
 	debug ("link: adding team '%s'", name);
-	return nm_platform_link_add (self, name, NM_LINK_TYPE_TEAM, NULL, 0);
+	return nm_platform_link_add (self, name, NM_LINK_TYPE_TEAM, NULL, 0, out_link);
 }
 
 /**
@@ -1321,11 +1435,17 @@ nm_platform_team_add (NMPlatform *self, const char *name)
  * @name: New interface name
  * @vlanid: VLAN identifier
  * @vlanflags: VLAN flags from libnm
+ * @out_link: on success, the link object
  *
  * Create a software VLAN device.
  */
 gboolean
-nm_platform_vlan_add (NMPlatform *self, const char *name, int parent, int vlanid, guint32 vlanflags)
+nm_platform_vlan_add (NMPlatform *self,
+                      const char *name,
+                      int parent,
+                      int vlanid,
+                      guint32 vlanflags,
+                      NMPlatformLink *out_link)
 {
 	_CHECK_SELF (self, klass, FALSE);
 	reset_error (self);
@@ -1343,7 +1463,7 @@ nm_platform_vlan_add (NMPlatform *self, const char *name, int parent, int vlanid
 
 	debug ("link: adding vlan '%s' parent %d vlanid %d vlanflags %x",
 		name, parent, vlanid, vlanflags);
-	return klass->vlan_add (self, name, parent, vlanid, vlanflags);
+	return klass->vlan_add (self, name, parent, vlanid, vlanflags, out_link);
 }
 
 gboolean
@@ -1444,7 +1564,7 @@ nm_platform_vlan_set_egress_map (NMPlatform *self, int ifindex, int from, int to
 }
 
 gboolean
-nm_platform_infiniband_partition_add (NMPlatform *self, int parent, int p_key)
+nm_platform_infiniband_partition_add (NMPlatform *self, int parent, int p_key, NMPlatformLink *out_link)
 {
 	const char *parent_name;
 	char *name;
@@ -1471,7 +1591,7 @@ nm_platform_infiniband_partition_add (NMPlatform *self, int parent, int p_key)
 	}
 	g_free (name);
 
-	return klass->infiniband_partition_add (self, parent, p_key);
+	return klass->infiniband_partition_add (self, parent, p_key, out_link);
 }
 
 gboolean

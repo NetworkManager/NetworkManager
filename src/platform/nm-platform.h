@@ -374,8 +374,14 @@ typedef struct {
 	char * (*sysctl_get) (NMPlatform *, const char *path);
 
 	gboolean (*link_get) (NMPlatform *platform, int ifindex, NMPlatformLink *link);
+	gboolean (*link_get_by_address) (NMPlatform *platform, gconstpointer address, size_t length, NMPlatformLink *link);
 	GArray *(*link_get_all) (NMPlatform *);
-	gboolean (*link_add) (NMPlatform *, const char *name, NMLinkType type, const void *address, size_t address_len);
+	gboolean (*link_add) (NMPlatform *,
+	                      const char *name,
+	                      NMLinkType type,
+	                      const void *address,
+	                      size_t address_len,
+	                      NMPlatformLink *out_link);
 	gboolean (*link_delete) (NMPlatform *, int ifindex);
 	int (*link_get_ifindex) (NMPlatform *, const char *name);
 	const char *(*link_get_name) (NMPlatform *, int ifindex);
@@ -399,6 +405,10 @@ typedef struct {
 	gboolean (*link_set_user_ipv6ll_enabled) (NMPlatform *, int ifindex, gboolean enabled);
 
 	gconstpointer (*link_get_address) (NMPlatform *, int ifindex, size_t *length);
+	gboolean (*link_get_permanent_address) (NMPlatform *,
+	                                        int ifindex,
+	                                        guint8 *buf,
+	                                        size_t *length);
 	gboolean (*link_set_address) (NMPlatform *, int ifindex, gconstpointer address, size_t length);
 	guint32 (*link_get_mtu) (NMPlatform *, int ifindex);
 	gboolean (*link_set_mtu) (NMPlatform *, int ifindex, guint32 mtu);
@@ -406,6 +416,11 @@ typedef struct {
 	char *   (*link_get_physical_port_id) (NMPlatform *, int ifindex);
 	guint    (*link_get_dev_id) (NMPlatform *, int ifindex);
 	gboolean (*link_get_wake_on_lan) (NMPlatform *, int ifindex);
+	gboolean (*link_get_driver_info) (NMPlatform *,
+	                                  int ifindex,
+	                                  char **out_driver_name,
+	                                  char **out_driver_version,
+	                                  char **out_fw_version);
 
 	gboolean (*link_supports_carrier_detect) (NMPlatform *, int ifindex);
 	gboolean (*link_supports_vlans) (NMPlatform *, int ifindex);
@@ -418,12 +433,12 @@ typedef struct {
 	gboolean (*slave_set_option) (NMPlatform *, int ifindex, const char *option, const char *value);
 	char * (*slave_get_option) (NMPlatform *, int ifindex, const char *option);
 
-	gboolean (*vlan_add) (NMPlatform *, const char *name, int parent, int vlanid, guint32 vlanflags);
+	gboolean (*vlan_add) (NMPlatform *, const char *name, int parent, int vlanid, guint32 vlanflags, NMPlatformLink *out_link);
 	gboolean (*vlan_get_info) (NMPlatform *, int ifindex, int *parent, int *vlan_id);
 	gboolean (*vlan_set_ingress_map) (NMPlatform *, int ifindex, int from, int to);
 	gboolean (*vlan_set_egress_map) (NMPlatform *, int ifindex, int from, int to);
 
-	gboolean (*infiniband_partition_add) (NMPlatform *, int parent, int p_key);
+	gboolean (*infiniband_partition_add) (NMPlatform *, int parent, int p_key, NMPlatformLink *out_link);
 
 	gboolean (*veth_get_properties) (NMPlatform *, int ifindex, NMPlatformVethProperties *properties);
 	gboolean (*tun_get_properties) (NMPlatform *, int ifindex, NMPlatformTunProperties *properties);
@@ -526,10 +541,11 @@ gboolean nm_platform_sysctl_set_ip6_hop_limit_safe (NMPlatform *self, const char
 
 gboolean nm_platform_link_get (NMPlatform *self, int ifindex, NMPlatformLink *link);
 GArray *nm_platform_link_get_all (NMPlatform *self);
-gboolean nm_platform_dummy_add (NMPlatform *self, const char *name);
-gboolean nm_platform_bridge_add (NMPlatform *self, const char *name, const void *address, size_t address_len);
-gboolean nm_platform_bond_add (NMPlatform *self, const char *name);
-gboolean nm_platform_team_add (NMPlatform *self, const char *name);
+gboolean nm_platform_link_get_by_address (NMPlatform *self, gconstpointer address, size_t length, NMPlatformLink *link);
+gboolean nm_platform_dummy_add (NMPlatform *self, const char *name, NMPlatformLink *out_link);
+gboolean nm_platform_bridge_add (NMPlatform *self, const char *name, const void *address, size_t address_len, NMPlatformLink *out_link);
+gboolean nm_platform_bond_add (NMPlatform *self, const char *name, NMPlatformLink *out_link);
+gboolean nm_platform_team_add (NMPlatform *self, const char *name, NMPlatformLink *out_link);
 gboolean nm_platform_link_exists (NMPlatform *self, const char *name);
 gboolean nm_platform_link_delete (NMPlatform *self, int ifindex);
 int nm_platform_link_get_ifindex (NMPlatform *self, const char *name);
@@ -556,6 +572,7 @@ gboolean nm_platform_link_get_user_ipv6ll_enabled (NMPlatform *self, int ifindex
 gboolean nm_platform_link_set_user_ipv6ll_enabled (NMPlatform *self, int ifindex, gboolean enabled);
 
 gconstpointer nm_platform_link_get_address (NMPlatform *self, int ifindex, size_t *length);
+gboolean nm_platform_link_get_permanent_address (NMPlatform *self, int ifindex, guint8 *buf, size_t *length);
 gboolean nm_platform_link_set_address (NMPlatform *self, int ifindex, const void *address, size_t length);
 guint32 nm_platform_link_get_mtu (NMPlatform *self, int ifindex);
 gboolean nm_platform_link_set_mtu (NMPlatform *self, int ifindex, guint32 mtu);
@@ -563,6 +580,11 @@ gboolean nm_platform_link_set_mtu (NMPlatform *self, int ifindex, guint32 mtu);
 char    *nm_platform_link_get_physical_port_id (NMPlatform *self, int ifindex);
 guint    nm_platform_link_get_dev_id (NMPlatform *self, int ifindex);
 gboolean nm_platform_link_get_wake_on_lan (NMPlatform *self, int ifindex);
+gboolean nm_platform_link_get_driver_info (NMPlatform *self,
+                                           int ifindex,
+                                           char **out_driver_name,
+                                           char **out_driver_version,
+                                           char **out_fw_version);
 
 gboolean nm_platform_link_supports_carrier_detect (NMPlatform *self, int ifindex);
 gboolean nm_platform_link_supports_vlans (NMPlatform *self, int ifindex);
@@ -575,12 +597,12 @@ char *nm_platform_master_get_option (NMPlatform *self, int ifindex, const char *
 gboolean nm_platform_slave_set_option (NMPlatform *self, int ifindex, const char *option, const char *value);
 char *nm_platform_slave_get_option (NMPlatform *self, int ifindex, const char *option);
 
-gboolean nm_platform_vlan_add (NMPlatform *self, const char *name, int parent, int vlanid, guint32 vlanflags);
+gboolean nm_platform_vlan_add (NMPlatform *self, const char *name, int parent, int vlanid, guint32 vlanflags, NMPlatformLink *out_link);
 gboolean nm_platform_vlan_get_info (NMPlatform *self, int ifindex, int *parent, int *vlanid);
 gboolean nm_platform_vlan_set_ingress_map (NMPlatform *self, int ifindex, int from, int to);
 gboolean nm_platform_vlan_set_egress_map (NMPlatform *self, int ifindex, int from, int to);
 
-gboolean nm_platform_infiniband_partition_add (NMPlatform *self, int parent, int p_key);
+gboolean nm_platform_infiniband_partition_add (NMPlatform *self, int parent, int p_key, NMPlatformLink *out_link);
 
 gboolean nm_platform_veth_get_properties        (NMPlatform *self, int ifindex, NMPlatformVethProperties *properties);
 gboolean nm_platform_tun_get_properties         (NMPlatform *self, int ifindex, NMPlatformTunProperties *properties);

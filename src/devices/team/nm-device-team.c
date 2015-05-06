@@ -676,8 +676,6 @@ release_slave (NMDevice *device,
 NMDevice *
 nm_device_team_new (NMPlatformLink *platform_device)
 {
-	g_return_val_if_fail (platform_device != NULL, NULL);
-
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_TEAM,
 	                                  NM_DEVICE_PLATFORM_DEVICE, platform_device,
 	                                  NM_DEVICE_DRIVER, "team",
@@ -690,20 +688,16 @@ nm_device_team_new (NMPlatformLink *platform_device)
 NMDevice *
 nm_device_team_new_for_connection (NMConnection *connection, GError **error)
 {
-	const char *iface;
+	const char *iface = nm_connection_get_interface_name (connection);
 
-	g_return_val_if_fail (connection != NULL, NULL);
+	g_assert (iface);
 
-	iface = nm_connection_get_interface_name (connection);
-	g_return_val_if_fail (iface != NULL, NULL);
-
-	if (   !nm_platform_team_add (NM_PLATFORM_GET, iface)
+	if (   !nm_platform_team_add (NM_PLATFORM_GET, iface, NULL)
 	    && nm_platform_get_error (NM_PLATFORM_GET) != NM_PLATFORM_ERROR_EXISTS) {
-		g_set_error (error,
-		             NM_DEVICE_ERROR,
-		             NM_DEVICE_ERROR_CREATION_FAILED,
-		             "failed to create team master interface '%s' for connection '%s': %s",
-		             iface, nm_connection_get_id (connection),
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
+		             "Failed to create team master interface '%s' for '%s': %s",
+		             iface,
+		             nm_connection_get_id (connection),
 		             nm_platform_get_error_msg (NM_PLATFORM_GET));
 		return NULL;
 	}

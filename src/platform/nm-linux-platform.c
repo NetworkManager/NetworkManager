@@ -372,6 +372,9 @@ ethtool_get (const char *name, gpointer edata)
 	struct ifreq ifr;
 	int fd;
 
+	if (!name || !*name)
+		return FALSE;
+
 	memset (&ifr, 0, sizeof (ifr));
 	strncpy (ifr.ifr_name, name, IFNAMSIZ);
 	ifr.ifr_data = edata;
@@ -426,21 +429,54 @@ ethtool_get_stringset_index (const char *ifname, int stringset_id, const char *s
 	return -1;
 }
 
-static const char *
-ethtool_get_driver (const char *ifname)
+static gboolean
+ethtool_get_driver_info (const char *ifname,
+                         char **out_driver_name,
+                         char **out_driver_version,
+                         char **out_fw_version)
 {
 	struct ethtool_drvinfo drvinfo = { 0 };
 
-	g_return_val_if_fail (ifname != NULL, NULL);
+	if (!ifname)
+		return FALSE;
 
 	drvinfo.cmd = ETHTOOL_GDRVINFO;
 	if (!ethtool_get (ifname, &drvinfo))
-		return NULL;
+		return FALSE;
 
-	if (!*drvinfo.driver)
-		return NULL;
+	if (out_driver_name)
+		*out_driver_name = g_strdup (drvinfo.driver);
+	if (out_driver_version)
+		*out_driver_version = g_strdup (drvinfo.version);
+	if (out_fw_version)
+		*out_fw_version = g_strdup (drvinfo.fw_version);
 
-	return g_intern_string (drvinfo.driver);
+	return TRUE;
+}
+
+static gboolean
+ethtool_get_permanent_address (const char *ifname,
+                               guint8 *buf,
+                               size_t *length)
+{
+	gs_free struct ethtool_perm_addr *epaddr = NULL;
+
+	if (!ifname)
+		return FALSE;
+
+	epaddr = g_malloc0 (sizeof (*epaddr) + NM_UTILS_HWADDR_LEN_MAX);
+	epaddr->cmd = ETHTOOL_GPERMADDR;
+	epaddr->size = NM_UTILS_HWADDR_LEN_MAX;
+
+	if (!ethtool_get (ifname, epaddr))
+		return FALSE;
+	if (!nm_ethernet_address_is_valid (epaddr->data, epaddr->size))
+		return FALSE;
+
+	g_assert (epaddr->size <= NM_UTILS_HWADDR_LEN_MAX);
+	memcpy (buf, epaddr->data, epaddr->size);
+	*length = epaddr->size;
+	return TRUE;
 }
 
 /******************************************************************
@@ -881,6 +917,7 @@ static const LinkDesc linktypes[] = {
 	{ NM_LINK_TYPE_VETH,          "veth",        "veth",        NULL },
 	{ NM_LINK_TYPE_VLAN,          "vlan",        "vlan",        "vlan" },
 	{ NM_LINK_TYPE_VXLAN,         "vxlan",       "vxlan",       "vxlan" },
+	{ NM_LINK_TYPE_BNEP,          "bluetooth",   NULL,          "bluetooth" },
 
 	{ NM_LINK_TYPE_BRIDGE,        "bridge",      "bridge",      "bridge" },
 	{ NM_LINK_TYPE_BOND,          "bond",        "bond",        "bond" },
@@ -980,10 +1017,9 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink)
 	else if (arptype == ARPHRD_INFINIBAND)
 		return NM_LINK_TYPE_INFINIBAND;
 
-
 	ifname = rtnl_link_get_name (rtnllink);
 	if (ifname) {
-		const char *driver = ethtool_get_driver (ifname);
+		gs_free char *driver = NULL;
 		gs_free char *sysfs_path = NULL;
 		gs_free char *anycast_mask = NULL;
 		gs_free char *devtype = NULL;
@@ -997,8 +1033,10 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink)
 		}
 
 		/* Fallback OVS detection for kernel <= 3.16 */
-		if (!g_strcmp0 (driver, "openvswitch"))
-			return NM_LINK_TYPE_OPENVSWITCH;
+		if (ethtool_get_driver_info (ifname, &driver, NULL, NULL)) {
+			if (!g_strcmp0 (driver, "openvswitch"))
+				return NM_LINK_TYPE_OPENVSWITCH;
+		}
 
 		sysfs_path = g_strdup_printf ("/sys/class/net/%s", ifname);
 		anycast_mask = g_strdup_printf ("%s/anycast_mask", sysfs_path);
@@ -1007,8 +1045,16 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink)
 
 		devtype = read_devtype (sysfs_path);
 		for (i = 0; devtype && i < G_N_ELEMENTS (linktypes); i++) {
-			if (g_strcmp0 (devtype, linktypes[i].devtype) == 0)
+			if (g_strcmp0 (devtype, linktypes[i].devtype) == 0) {
+				if (linktypes[i].nm_type == NM_LINK_TYPE_BNEP) {
+					/* Both BNEP and 6lowpan use DEVTYPE=bluetooth, so we must
+					 * use arptype to distinguish between them.
+					 */
+					if (arptype != ARPHRD_ETHER)
+						continue;
+				}
 				return linktypes[i].nm_type;
+			}
 		}
 
 		/* Fallback for drivers that don't call SET_NETDEV_DEVTYPE() */
@@ -1033,6 +1079,7 @@ init_link (NMPlatform *platform, NMPlatformLink *info, struct rtnl_link *rtnllin
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	GUdevDevice *udev_device;
 	const char *name;
+	char *tmp;
 
 	g_return_val_if_fail (rtnllink, FALSE);
 
@@ -1062,8 +1109,12 @@ init_link (NMPlatform *platform, NMPlatformLink *info, struct rtnl_link *rtnllin
 
 	if (!info->driver)
 		info->driver = info->kind;
-	if (!info->driver)
-		info->driver = ethtool_get_driver (info->name);
+	if (!info->driver) {
+		if (ethtool_get_driver_info (name, &tmp, NULL, NULL)) {
+			info->driver = g_intern_string (tmp);
+			g_free (tmp);
+		}
+	}
 	if (!info->driver)
 		info->driver = "unknown";
 
@@ -1768,12 +1819,14 @@ refresh_object (NMPlatform *platform, struct nl_object *object, gboolean removed
 
 		announce_object (platform, kernel_object, cached_object ? NM_PLATFORM_SIGNAL_CHANGED : NM_PLATFORM_SIGNAL_ADDED, reason);
 
-		/* Refresh the master device (even on enslave/release) */
 		if (type == OBJECT_TYPE_LINK) {
 			int kernel_master = rtnl_link_get_master ((struct rtnl_link *) kernel_object);
 			int cached_master = cached_object ? rtnl_link_get_master ((struct rtnl_link *) cached_object) : 0;
+			const char *orig_link_type = rtnl_link_get_type ((struct rtnl_link *) object);
+			const char *kernel_link_type = rtnl_link_get_type ((struct rtnl_link *) kernel_object);
 			struct nl_object *master_object;
 
+			/* Refresh the master device (even on enslave/release) */
 			if (kernel_master) {
 				master_object = build_rtnl_link (kernel_master, NULL, NM_LINK_TYPE_NONE);
 				refresh_object (platform, master_object, FALSE, NM_PLATFORM_REASON_INTERNAL);
@@ -1783,6 +1836,12 @@ refresh_object (NMPlatform *platform, struct nl_object *object, gboolean removed
 				master_object = build_rtnl_link (cached_master, NULL, NM_LINK_TYPE_NONE);
 				refresh_object (platform, master_object, FALSE, NM_PLATFORM_REASON_INTERNAL);
 				nl_object_put (master_object);
+			}
+
+			/* Ensure the existing link type matches the refreshed link type */
+			if (orig_link_type && kernel_link_type && strcmp (orig_link_type, kernel_link_type)) {
+				platform->error = NM_PLATFORM_ERROR_WRONG_TYPE;
+				return FALSE;
 			}
 		}
 	}
@@ -2296,9 +2355,34 @@ _nm_platform_link_get (NMPlatform *platform, int ifindex, NMPlatformLink *l)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	auto_nl_object struct rtnl_link *rtnllink = NULL;
+	NMPlatformLink tmp = { 0 };
 
 	rtnllink = rtnl_link_get (priv->link_cache, ifindex);
-	return (rtnllink && init_link (platform, l, rtnllink));
+	return (rtnllink && init_link (platform, l ? l : &tmp, rtnllink));
+}
+
+static gboolean
+_nm_platform_link_get_by_address (NMPlatform *platform,
+                                  gconstpointer address,
+                                  size_t length,
+                                  NMPlatformLink *l)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	struct nl_object *object;
+
+	for (object = nl_cache_get_first (priv->link_cache); object; object = nl_cache_get_next (object)) {
+		struct rtnl_link *rtnl_link = (struct rtnl_link *) object;
+		struct nl_addr *nladdr;
+		gconstpointer hwaddr;
+
+		nladdr = rtnl_link_get_addr (rtnl_link);
+		if (nladdr && (nl_addr_get_len (nladdr) == length)) {
+			hwaddr = nl_addr_get_binary_addr (nladdr);
+			if (hwaddr && memcmp (hwaddr, address, length) == 0)
+				return init_link (platform, l, rtnl_link);
+		}
+	}
+	return FALSE;
 }
 
 static struct nl_object *
@@ -2316,7 +2400,27 @@ build_rtnl_link (int ifindex, const char *name, NMLinkType type)
 }
 
 static gboolean
-link_add (NMPlatform *platform, const char *name, NMLinkType type, const void *address, size_t address_len)
+link_get_by_name (NMPlatform *platform, const char *name, NMPlatformLink *out_link)
+{
+	int ifindex;
+
+	g_return_val_if_fail (name != NULL, FALSE);
+
+	if (out_link) {
+		ifindex = nm_platform_link_get_ifindex (platform, name);
+		g_return_val_if_fail (ifindex > 0, FALSE);
+		return _nm_platform_link_get (platform, ifindex, out_link);
+	}
+	return TRUE;
+}
+
+static gboolean
+link_add (NMPlatform *platform,
+          const char *name,
+          NMLinkType type,
+          const void *address,
+          size_t address_len,
+          NMPlatformLink *out_link)
 {
 	struct nl_object *l;
 
@@ -2343,7 +2447,11 @@ link_add (NMPlatform *platform, const char *name, NMLinkType type, const void *a
 
 		rtnl_link_set_addr ((struct rtnl_link *) l, nladdr);
 	}
-	return add_object (platform, l);
+
+	if (!add_object (platform, l))
+		return FALSE;
+
+	return link_get_by_name (platform, name, out_link);
 }
 
 static struct rtnl_link *
@@ -2772,6 +2880,15 @@ link_get_address (NMPlatform *platform, int ifindex, size_t *length)
 }
 
 static gboolean
+link_get_permanent_address (NMPlatform *platform,
+                            int ifindex,
+                            guint8 *buf,
+                            size_t *length)
+{
+	return ethtool_get_permanent_address (nm_platform_link_get_name (platform, ifindex), buf, length);
+}
+
+static gboolean
 link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 {
 	auto_nl_object struct rtnl_link *change = _nm_rtnl_link_alloc (ifindex, NULL);
@@ -2834,7 +2951,12 @@ link_get_dev_id (NMPlatform *platform, int ifindex)
 }
 
 static int
-vlan_add (NMPlatform *platform, const char *name, int parent, int vlan_id, guint32 vlan_flags)
+vlan_add (NMPlatform *platform,
+          const char *name,
+          int parent,
+          int vlan_id,
+          guint32 vlan_flags,
+          NMPlatformLink *out_link)
 {
 	struct nl_object *object = build_rtnl_link (0, name, NM_LINK_TYPE_VLAN);
 	struct rtnl_link *rtnllink = (struct rtnl_link *) object;
@@ -2855,7 +2977,10 @@ vlan_add (NMPlatform *platform, const char *name, int parent, int vlan_id, guint
 	debug ("link: add vlan '%s', parent %d, vlan id %d, flags %X (native: %X)",
 	       name, parent, vlan_id, (unsigned int) vlan_flags, kernel_flags);
 
-	return add_object (platform, object);
+	if (!add_object (platform, object))
+		return FALSE;
+
+	return link_get_by_name (platform, name, out_link);
 }
 
 static gboolean
@@ -3016,7 +3141,7 @@ slave_get_option (NMPlatform *platform, int slave, const char *option)
 }
 
 static gboolean
-infiniband_partition_add (NMPlatform *platform, int parent, int p_key)
+infiniband_partition_add (NMPlatform *platform, int parent, int p_key, NMPlatformLink *out_link)
 {
 	const char *parent_name;
 	char *path, *id;
@@ -3033,9 +3158,12 @@ infiniband_partition_add (NMPlatform *platform, int parent, int p_key)
 
 	if (success) {
 		gs_free char *ifname = g_strdup_printf ("%s.%04x", parent_name, p_key);
-		auto_nl_object struct rtnl_link *rtnllink = _nm_rtnl_link_alloc (0, ifname);
+		auto_nl_object struct rtnl_link *rtnllink;
 
+		rtnllink = (struct rtnl_link *) build_rtnl_link (0, ifname, NM_LINK_TYPE_INFINIBAND);
 		success = refresh_object (platform, (struct nl_object *) rtnllink, FALSE, NM_PLATFORM_REASON_INTERNAL);
+		if (success)
+			success = link_get_by_name (platform, ifname, out_link);
 	}
 
 	return success;
@@ -3580,6 +3708,19 @@ link_get_wake_on_lan (NMPlatform *platform, int ifindex)
 		return wifi_utils_get_wowlan (wifi_data);
 	} else
 		return FALSE;
+}
+
+static gboolean
+link_get_driver_info (NMPlatform *platform,
+                      int ifindex,
+                      char **out_driver_name,
+                      char **out_driver_version,
+                      char **out_fw_version)
+{
+	return ethtool_get_driver_info (nm_platform_link_get_name (platform, ifindex),
+	                                out_driver_name,
+	                                out_driver_version,
+	                                out_fw_version);
 }
 
 /******************************************************************/
@@ -4653,6 +4794,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->sysctl_get = sysctl_get;
 
 	platform_class->link_get = _nm_platform_link_get;
+	platform_class->link_get_by_address = _nm_platform_link_get_by_address;
 	platform_class->link_get_all = link_get_all;
 	platform_class->link_add = link_add;
 	platform_class->link_delete = link_delete;
@@ -4679,12 +4821,14 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 
 	platform_class->link_get_address = link_get_address;
 	platform_class->link_set_address = link_set_address;
+	platform_class->link_get_permanent_address = link_get_permanent_address;
 	platform_class->link_get_mtu = link_get_mtu;
 	platform_class->link_set_mtu = link_set_mtu;
 
 	platform_class->link_get_physical_port_id = link_get_physical_port_id;
 	platform_class->link_get_dev_id = link_get_dev_id;
 	platform_class->link_get_wake_on_lan = link_get_wake_on_lan;
+	platform_class->link_get_driver_info = link_get_driver_info;
 
 	platform_class->link_supports_carrier_detect = link_supports_carrier_detect;
 	platform_class->link_supports_vlans = link_supports_vlans;

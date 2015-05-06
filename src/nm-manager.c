@@ -26,8 +26,6 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
 #include <gio/gio.h>
@@ -129,8 +127,6 @@ static NMActiveConnection *_new_active_connection (NMManager *self,
 
 static void policy_activating_device_changed (GObject *object, GParamSpec *pspec, gpointer user_data);
 
-static NMDevice *find_device_by_ip_iface (NMManager *self, const gchar *iface);
-
 static void rfkill_change (const char *desc, RfKillType rtype, gboolean enabled);
 
 static gboolean find_master (NMManager *self,
@@ -177,9 +173,6 @@ typedef struct {
 	NMDBusManager *dbus_mgr;
 	gboolean       prop_filter_added;
 	NMRfkillManager *rfkill_mgr;
-
-	/* List of NMDeviceFactoryFunc pointers sorted in priority order */
-	GSList *factories;
 
 	NMSettings *settings;
 	char *hostname;
@@ -520,6 +513,38 @@ nm_manager_get_device_by_ifindex (NMManager *manager, int ifindex)
 	return NULL;
 }
 
+static NMDevice *
+find_device_by_hw_addr (NMManager *manager, const char *hwaddr)
+{
+	GSList *iter;
+	const char *device_addr;
+
+	g_return_val_if_fail (hwaddr != NULL, NULL);
+
+	if (nm_utils_hwaddr_valid (hwaddr, -1)) {
+		for (iter = NM_MANAGER_GET_PRIVATE (manager)->devices; iter; iter = iter->next) {
+			device_addr = nm_device_get_hw_address (NM_DEVICE (iter->data));
+			if (device_addr && nm_utils_hwaddr_matches (hwaddr, -1, device_addr, -1))
+				return NM_DEVICE (iter->data);
+		}
+	}
+	return NULL;
+}
+
+static NMDevice *
+find_device_by_ip_iface (NMManager *self, const gchar *iface)
+{
+	GSList *iter;
+
+	g_return_val_if_fail (iface != NULL, NULL);
+
+	for (iter = NM_MANAGER_GET_PRIVATE (self)->devices; iter; iter = g_slist_next (iter)) {
+		if (g_strcmp0 (nm_device_get_ip_iface (NM_DEVICE (iter->data)), iface) == 0)
+			return NM_DEVICE (iter->data);
+	}
+	return NULL;
+}
+
 static gboolean
 manager_sleeping (NMManager *self)
 {
@@ -843,109 +868,56 @@ nm_manager_get_state (NMManager *manager)
 	return NM_MANAGER_GET_PRIVATE (manager)->state;
 }
 
-/*******************************************************************/
-/* Settings stuff via NMSettings                                   */
-/*******************************************************************/
+/***************************/
 
 static NMDevice *
-get_device_from_hwaddr (NMManager *self, const char *setting_mac)
+find_parent_device_for_connection (NMManager *self, NMConnection *connection)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	const char *device_mac;
+	NMDeviceFactory *factory;
+	const char *parent_name = NULL;
+	NMConnection *parent_connection;
+	NMDevice *parent, *first_compatible = NULL;
 	GSList *iter;
 
-	if (!setting_mac)
+	factory = nm_device_factory_manager_find_factory_for_connection (connection);
+	if (!factory)
 		return NULL;
 
-	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		NMDevice *device = iter->data;
+	parent_name = nm_device_factory_get_connection_parent (factory, connection);
+	if (!parent_name)
+		return NULL;
 
-		device_mac = nm_device_get_hw_address (iter->data);
-		if (!device_mac)
-			continue;
-		if (nm_utils_hwaddr_matches (setting_mac, -1, device_mac, -1))
-			return device;
-	}
-	return NULL;
-}
+	/* Try as an interface name */
+	parent = find_device_by_ip_iface (self, parent_name);
+	if (parent)
+		return parent;
 
-static NMDevice *
-find_vlan_parent (NMManager *self,
-                  NMConnection *connection)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	NMSettingVlan *s_vlan;
-	NMSettingWired *s_wired;
-	NMConnection *parent_connection;
-	const char *parent_iface;
-	NMDevice *parent = NULL;
-	const char *setting_mac;
-	GSList *iter;
+	/* Maybe a hardware address */
+	parent = find_device_by_hw_addr (self, parent_name);
+	if (parent)
+		return parent;
 
-	/* The 'parent' property could be given by an interface name, a
-	 * connection UUID, or the MAC address of an NMSettingWired.
+	/* Maybe a connection UUID */
+	parent_connection = (NMConnection *) nm_settings_get_connection_by_uuid (priv->settings, parent_name);
+	if (!parent_connection)
+		return NULL;
+
+	/* Check if the parent connection is currently activated or is comaptible
+	 * with some known device.
 	 */
-	s_vlan = nm_connection_get_setting_vlan (connection);
-	g_return_val_if_fail (s_vlan != NULL, NULL);
+	for (iter = priv->devices; iter; iter = iter->next) {
+		NMDevice *candidate = iter->data;
 
-	s_wired = nm_connection_get_setting_wired (connection);
-	setting_mac = s_wired ? nm_setting_wired_get_mac_address (s_wired) : NULL;
+		if (nm_device_get_connection (candidate) == parent_connection)
+			return candidate;
 
-	parent_iface = nm_setting_vlan_get_parent (s_vlan);
-	if (parent_iface) {
-		parent = find_device_by_ip_iface (self, parent_iface);
-		if (parent)
-			return parent;
-
-		if (nm_utils_is_uuid (parent_iface)) {
-			/* Try as a connection UUID */
-			parent_connection = (NMConnection *) nm_settings_get_connection_by_uuid (priv->settings, parent_iface);
-			if (parent_connection) {
-				/* Check if the parent connection is activated on some device already */
-				for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-					NMActRequest *req;
-					NMConnection *candidate;
-
-					req = nm_device_get_act_request (NM_DEVICE (iter->data));
-					if (req) {
-						candidate = nm_active_connection_get_connection (NM_ACTIVE_CONNECTION (req));
-						if (candidate == parent_connection)
-							return NM_DEVICE (iter->data);
-					}
-				}
-
-				/* Check the hardware address of the parent connection */
-				return get_device_from_hwaddr (self, setting_mac);
-			}
-			return NULL;
-		}
+		if (   !first_compatible
+		    && nm_device_check_connection_compatible (candidate, parent_connection))
+			first_compatible = candidate;
 	}
 
-	/* Try the hardware address from the VLAN connection's hardware setting */
-	return get_device_from_hwaddr (self, setting_mac);
-}
-
-static NMDevice *
-find_infiniband_parent (NMManager *self,
-                        NMConnection *connection)
-{
-	NMSettingInfiniband *s_infiniband;
-	const char *parent_iface;
-	NMDevice *parent = NULL;
-	const char *setting_mac;
-
-	s_infiniband = nm_connection_get_setting_infiniband (connection);
-	g_return_val_if_fail (s_infiniband != NULL, NULL);
-
-	parent_iface = nm_setting_infiniband_get_parent (s_infiniband);
-	if (parent_iface) {
-		parent = find_device_by_ip_iface (self, parent_iface);
-		if (parent)
-			return parent;
-	}
-
-	setting_mac = nm_setting_infiniband_get_mac_address (s_infiniband);
-	return get_device_from_hwaddr (self, setting_mac);
+	return first_compatible;
 }
 
 /**
@@ -953,85 +925,68 @@ find_infiniband_parent (NMManager *self,
  * @self: the #NMManager
  * @connection: the #NMConnection representing a virtual interface
  * @out_parent: on success, the parent device if any
+ * @error: an error if determining the virtual interface name failed
  *
  * Given @connection, returns the interface name that the connection
- * would represent.  If the interface name is not given by the connection,
- * this may require constructing it based on information in the connection
- * and existing network interfaces.
+ * would represent if it is a virtual connection.  %NULL is returned and
+ * @error is set if the connection is not virtual, or if the name could
+ * not be determined.
  *
  * Returns: the expected interface name (caller takes ownership), or %NULL
  */
 static char *
 get_virtual_iface_name (NMManager *self,
                         NMConnection *connection,
-                        NMDevice **out_parent)
+                        NMDevice **out_parent,
+                        GError **error)
 {
+	NMDeviceFactory *factory;
+	char *iface = NULL;
 	NMDevice *parent = NULL;
-	const char *ifname;
 
 	if (out_parent)
 		*out_parent = NULL;
 
-	if (!nm_connection_is_virtual (connection))
+	if (!nm_connection_is_virtual (connection)) {
+		g_set_error (error,
+		             NM_MANAGER_ERROR,
+		             NM_MANAGER_ERROR_FAILED,
+		             "NetworkManager plugin for '%s' unavailable",
+		             nm_connection_get_connection_type (connection));
 		return NULL;
-
-	ifname = nm_connection_get_interface_name (connection);
-
-	if (nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)) {
-		NMSettingVlan *s_vlan;
-		char *vname;
-
-		s_vlan = nm_connection_get_setting_vlan (connection);
-		g_return_val_if_fail (s_vlan != NULL, NULL);
-
-		parent = find_vlan_parent (self, connection);
-		if (!parent)
-			return NULL;
-
-		if (!nm_device_supports_vlans (parent)) {
-			nm_log_warn (LOGD_DEVICE, "(%s): No support for VLANs on interface %s of type %s",
-			             ifname ? ifname : nm_connection_get_id (connection),
-			             nm_device_get_ip_iface (parent),
-			             nm_device_get_type_desc (parent));
-			return NULL;
-		}
-
-		/* If the connection doesn't specify the interface name for the VLAN
-		 * device, we create one for it using the VLAN ID and the parent
-		 * interface's name.
-		 */
-		if (ifname)
-			vname = g_strdup (ifname);
-		else {
-			vname = nm_utils_new_vlan_name (nm_device_get_ip_iface (parent),
-			                                nm_setting_vlan_get_id (s_vlan));
-		}
-		if (out_parent)
-			*out_parent = parent;
-		return vname;
 	}
 
-	if (nm_connection_is_type (connection, NM_SETTING_INFINIBAND_SETTING_NAME)) {
-		NMSettingInfiniband *s_infiniband;
-
-		parent = find_infiniband_parent (self, connection);
-		if (!parent)
-			return NULL;
-
-		s_infiniband = nm_connection_get_setting_infiniband (connection);
-		if (out_parent)
-			*out_parent = parent;
-		return g_strdup (nm_setting_infiniband_get_virtual_interface_name (s_infiniband));
+	factory = nm_device_factory_manager_find_factory_for_connection (connection);
+	if (!factory) {
+		nm_log_warn (LOGD_DEVICE, "(%s) NetworkManager plugin for '%s' unavailable",
+		             nm_connection_get_id (connection),
+		             nm_connection_get_connection_type (connection));
+		g_set_error (error,
+		             NM_MANAGER_ERROR,
+		             NM_MANAGER_ERROR_FAILED,
+		             "NetworkManager plugin for '%s' unavailable",
+		             nm_connection_get_connection_type (connection));
+		return NULL;
 	}
 
-	/* For any other virtual connection, NMSettingConnection:interface-name is
-	 * the virtual device name.
-	 */
-	g_return_val_if_fail (ifname != NULL, NULL);
-	return g_strdup (ifname);
+	parent = find_parent_device_for_connection (self, connection);
+	iface = nm_device_factory_get_virtual_iface_name (factory,
+	                                                  connection,
+	                                                  parent ? nm_device_get_ip_iface (parent) : NULL);
+	if (!iface) {
+		nm_log_warn (LOGD_DEVICE, "(%s) failed to determine virtual interface name",
+		             nm_connection_get_id (connection));
+		g_set_error_literal (error,
+		                     NM_MANAGER_ERROR,
+		                     NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+		                     "failed to determine virtual interface name");
+		return NULL;
+	}
+
+	if (out_parent)
+		*out_parent = parent;
+	return iface;
 }
-
-/***************************/
 
 /**
  * system_create_virtual_device:
@@ -1048,7 +1003,7 @@ static NMDevice *
 system_create_virtual_device (NMManager *self, NMConnection *connection, GError **error)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GError *local_err = NULL;
+	NMDeviceFactory *factory;
 	GSList *iter;
 	char *iface = NULL;
 	NMDevice *device = NULL, *parent = NULL;
@@ -1058,16 +1013,9 @@ system_create_virtual_device (NMManager *self, NMConnection *connection, GError 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
 
-	iface = get_virtual_iface_name (self, connection, &parent);
-	if (!iface) {
-		nm_log_dbg (LOGD_DEVICE, "(%s) failed to determine virtual interface name",
-		            nm_connection_get_id (connection));
-		g_set_error_literal (error,
-		                     NM_MANAGER_ERROR,
-		                     NM_MANAGER_ERROR_FAILED,
-		                     "failed to determine virtual interface name");
+	iface = get_virtual_iface_name (self, connection, &parent, error);
+	if (!iface)
 		return NULL;
-	}
 
 	/* Make sure we didn't create a device for this connection already */
 	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
@@ -1085,6 +1033,19 @@ system_create_virtual_device (NMManager *self, NMConnection *connection, GError 
 		}
 	}
 
+	factory = nm_device_factory_manager_find_factory_for_connection (connection);
+	if (!factory) {
+		nm_log_err (LOGD_DEVICE, "(%s:%s) NetworkManager plugin for '%s' unavailable",
+		            nm_connection_get_id (connection), iface,
+		            nm_connection_get_connection_type (connection));
+		g_set_error (error,
+		             NM_MANAGER_ERROR,
+		             NM_MANAGER_ERROR_FAILED,
+		             "NetworkManager plugin for '%s' unavailable",
+		             nm_connection_get_connection_type (connection));
+		goto out;
+	}
+
 	/* Block notification of link added since we're creating the device
 	 * explicitly here, otherwise adding the platform/kernel device would
 	 * create it before this function can do the rest of the setup.
@@ -1093,24 +1054,10 @@ system_create_virtual_device (NMManager *self, NMConnection *connection, GError 
 
 	nm_owned = !nm_platform_link_exists (NM_PLATFORM_GET, iface);
 
-	for (iter = priv->factories; iter; iter = iter->next) {
-		device = nm_device_factory_create_virtual_device_for_connection (NM_DEVICE_FACTORY (iter->data),
-		                                                                 connection,
-		                                                                 parent,
-		                                                                 &local_err);
-		if (device || local_err) {
-			if (device)
-				g_assert_no_error (local_err);
-			else {
-				nm_log_err (LOGD_DEVICE, "(%s) failed to create virtual device: %s",
-				            nm_connection_get_id (connection),
-				            local_err ? local_err->message : "(unknown error)");
-				g_propagate_error (error, local_err);
-			}
-			break;
-		}
-	}
-
+	device = nm_device_factory_create_virtual_device_for_connection (factory,
+	                                                                 connection,
+	                                                                 parent,
+	                                                                 error);
 	if (device) {
 		if (nm_owned)
 			nm_device_set_nm_owned (device);
@@ -1121,16 +1068,6 @@ system_create_virtual_device (NMManager *self, NMConnection *connection, GError 
 		add_device (self, device, !nm_owned);
 
 		g_object_unref (device);
-	} else {
-		if (error && !*error)
-			nm_log_err (LOGD_DEVICE, "(%s:%s) NetworkManager plugin for '%s' unavailable",
-			            nm_connection_get_id (connection), iface,
-			            nm_connection_get_connection_type (connection));
-			g_set_error (error,
-			             NM_MANAGER_ERROR,
-			             NM_MANAGER_ERROR_FAILED,
-			             "NetworkManager plugin for '%s' unavailable",
-			             nm_connection_get_connection_type (connection));
 	}
 
 	priv->ignore_link_added_cb--;
@@ -1776,6 +1713,18 @@ device_ip_iface_changed (NMDevice *device,
 	}
 }
 
+static gboolean
+notify_component_added (NMManager *self, GObject *component)
+{
+	GSList *iter;
+
+	for (iter = NM_MANAGER_GET_PRIVATE (self)->devices; iter; iter = iter->next) {
+		if (nm_device_notify_component_added (NM_DEVICE (iter->data), component))
+			return TRUE;
+	}
+	return FALSE;
+}
+
 /**
  * add_device:
  * @self: the #NMManager
@@ -1893,25 +1842,12 @@ add_device (NMManager *self, NMDevice *device, gboolean try_assume)
 	g_signal_emit (self, signals[DEVICE_ADDED], 0, device);
 	g_object_notify (G_OBJECT (self), NM_MANAGER_DEVICES);
 
+	notify_component_added (self, G_OBJECT (device));
+
 	/* New devices might be master interfaces for virtual interfaces; so we may
 	 * need to create new virtual interfaces now.
 	 */
 	system_create_virtual_devices (self);
-}
-
-static NMDevice *
-find_device_by_ip_iface (NMManager *self, const gchar *iface)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GSList *iter;
-
-	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		NMDevice *candidate = iter->data;
-
-		if (g_strcmp0 (nm_device_get_ip_iface (candidate), iface) == 0)
-			return candidate;
-	}
-	return NULL;
 }
 
 /*******************************************************************/
@@ -1929,134 +1865,13 @@ factory_component_added_cb (NMDeviceFactory *factory,
                             GObject *component,
                             gpointer user_data)
 {
+	return notify_component_added (NM_MANAGER (user_data), component);
+}
+
+static void
+_register_device_factory (NMDeviceFactory *factory, gpointer user_data)
+{
 	NMManager *self = NM_MANAGER (user_data);
-	GSList *iter;
-
-	for (iter = NM_MANAGER_GET_PRIVATE (self)->devices; iter; iter = iter->next) {
-		if (nm_device_notify_component_added (NM_DEVICE (iter->data), component))
-			return TRUE;
-	}
-	return FALSE;
-}
-
-#define PLUGIN_PREFIX "libnm-device-plugin-"
-#define PLUGIN_PATH_TAG "NMManager-plugin-path"
-
-struct read_device_factory_paths_data {
-	char *path;
-	struct stat st;
-};
-
-static gint
-read_device_factory_paths_sort_fcn (gconstpointer a, gconstpointer b)
-{
-	const struct read_device_factory_paths_data *da = a;
-	const struct read_device_factory_paths_data *db = b;
-	time_t ta, tb;
-
-	ta = MAX (da->st.st_mtime, da->st.st_ctime);
-	tb = MAX (db->st.st_mtime, db->st.st_ctime);
-
-	if (ta < tb)
-		return 1;
-	if (ta > tb)
-		return -1;
-	return 0;
-}
-
-static char**
-read_device_factory_paths (void)
-{
-	GDir *dir;
-	GError *error = NULL;
-	const char *item;
-	GArray *paths;
-	char **result;
-	guint i;
-
-	dir = g_dir_open (NMPLUGINDIR, 0, &error);
-	if (!dir) {
-		nm_log_warn (LOGD_HW, "device plugin: failed to open directory %s: %s",
-		             NMPLUGINDIR,
-		             (error && error->message) ? error->message : "(unknown)");
-		g_clear_error (&error);
-		return NULL;
-	}
-
-	paths = g_array_new (FALSE, FALSE, sizeof (struct read_device_factory_paths_data));
-
-	while ((item = g_dir_read_name (dir))) {
-		int errsv;
-		struct read_device_factory_paths_data data;
-
-		if (!g_str_has_prefix (item, PLUGIN_PREFIX))
-			continue;
-		if (g_str_has_suffix (item, ".la"))
-			continue;
-
-		data.path = g_build_filename (NMPLUGINDIR, item, NULL);
-
-		if (stat (data.path, &data.st) != 0) {
-			errsv = errno;
-			nm_log_warn (LOGD_HW, "device plugin: skip invalid file %s (error during stat: %s)", data.path, strerror (errsv));
-			goto NEXT;
-		}
-		if (!S_ISREG (data.st.st_mode))
-			goto NEXT;
-		if (data.st.st_uid != 0) {
-			nm_log_warn (LOGD_HW, "device plugin: skip invalid file %s (file must be owned by root)", data.path);
-			goto NEXT;
-		}
-		if (data.st.st_mode & (S_IWGRP | S_IWOTH | S_ISUID)) {
-			nm_log_warn (LOGD_HW, "device plugin: skip invalid file %s (invalid file permissions)", data.path);
-			goto NEXT;
-		}
-
-		g_array_append_val (paths, data);
-		continue;
-NEXT:
-		g_free (data.path);
-	}
-	g_dir_close (dir);
-
-	/* sort filenames by modification time. */
-	g_array_sort (paths, read_device_factory_paths_sort_fcn);
-
-	result = g_new (char *, paths->len + 1);
-	for (i = 0; i < paths->len; i++)
-		result[i] = g_array_index (paths, struct read_device_factory_paths_data, i).path;
-	result[i] = NULL;
-
-	g_array_free (paths, TRUE);
-	return result;
-}
-
-static gboolean
-_register_device_factory (NMManager *self,
-                          NMDeviceFactory *factory,
-                          gboolean duplicate_check,
-                          const char *path,
-                          GError **error)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	NMDeviceType ftype;
-	GSList *iter;
-
-	if (duplicate_check) {
-		/* Make sure we don't double-register factories */
-		ftype = nm_device_factory_get_device_type (factory);
-		for (iter = priv->factories; iter; iter = iter->next) {
-			if (ftype == nm_device_factory_get_device_type (iter->data)) {
-				g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
-				             "multiple plugins for same type (using '%s' instead of '%s')",
-				             (char *) g_object_get_data (G_OBJECT (iter->data), PLUGIN_PATH_TAG),
-				             path);
-				return FALSE;
-			}
-		}
-	}
-
-	priv->factories = g_slist_append (priv->factories, factory);
 
 	g_signal_connect (factory,
 	                  NM_DEVICE_FACTORY_DEVICE_ADDED,
@@ -2066,80 +1881,6 @@ _register_device_factory (NMManager *self,
 	                  NM_DEVICE_FACTORY_COMPONENT_ADDED,
 	                  G_CALLBACK (factory_component_added_cb),
 	                  self);
-	g_object_set_data_full (G_OBJECT (factory), PLUGIN_PATH_TAG,
-	                        g_strdup (path), g_free);
-	return TRUE;
-}
-
-static void
-load_device_factories (NMManager *self)
-{
-	NMDeviceFactory *factory;
-	const GSList *iter;
-	GError *error = NULL;
-	char **path, **paths;
-
-	/* Register internal factories first */
-	for (iter = nm_device_factory_get_internal_factory_types (); iter; iter = iter->next) {
-		GType ftype = (GType) GPOINTER_TO_SIZE (iter->data);
-
-		factory = (NMDeviceFactory *) g_object_new (ftype, NULL);
-		g_assert (factory);
-		if (_register_device_factory (self, factory, FALSE, "internal", &error)) {
-			nm_log_dbg (LOGD_HW, "Loaded device plugin: %s", g_type_name (ftype));
-		} else {
-			nm_log_warn (LOGD_HW, "Loading device plugin failed: %s", error->message);
-			g_object_unref (factory);
-			g_clear_error (&error);
-		}
-	}
-
-	paths = read_device_factory_paths ();
-	if (!paths)
-		return;
-
-	for (path = paths; *path; path++) {
-		GModule *plugin;
-		NMDeviceFactoryCreateFunc create_func;
-		const char *item;
-
-		item = strrchr (*path, '/');
-		g_assert (item);
-
-		plugin = g_module_open (*path, G_MODULE_BIND_LOCAL);
-
-		if (!plugin) {
-			nm_log_warn (LOGD_HW, "(%s): failed to load plugin: %s", item, g_module_error ());
-			continue;
-		}
-
-		if (!g_module_symbol (plugin, "nm_device_factory_create", (gpointer) &create_func)) {
-			nm_log_warn (LOGD_HW, "(%s): failed to find device factory creator: %s", item, g_module_error ());
-			g_module_close (plugin);
-			continue;
-		}
-
-		factory = create_func (&error);
-		if (!factory) {
-			nm_log_warn (LOGD_HW, "(%s): failed to initialize device factory: %s",
-			             item, error ? error->message : "unknown");
-			g_clear_error (&error);
-			g_module_close (plugin);
-			continue;
-		}
-		g_clear_error (&error);
-
-		if (_register_device_factory (self, factory, TRUE, g_module_name (plugin), &error)) {
-			nm_log_info (LOGD_HW, "Loaded device plugin: %s", g_module_name (plugin));
-			g_module_make_resident (plugin);
-		} else {
-			nm_log_warn (LOGD_HW, "Loading device plugin failed: %s", error->message);
-			g_object_unref (factory);
-			g_module_close (plugin);
-			g_clear_error (&error);
-		}
-	}
-	g_strfreev (paths);
 }
 
 /*******************************************************************/
@@ -2151,8 +1892,8 @@ platform_link_added (NMManager *self,
                      NMPlatformReason reason)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMDeviceFactory *factory;
 	NMDevice *device = NULL;
-	GSList *iter;
 	GError *error = NULL;
 	gboolean nm_plugin_missing = FALSE;
 
@@ -2165,40 +1906,25 @@ platform_link_added (NMManager *self,
 		return;
 
 	/* Try registered device factories */
-	for (iter = priv->factories; iter; iter = iter->next) {
-		NMDeviceFactory *factory = NM_DEVICE_FACTORY (iter->data);
+	factory = nm_device_factory_manager_find_factory_for_link_type (plink->type);
+	if (factory) {
+		gboolean ignore = FALSE;
 
-		device = nm_device_factory_new_link (factory, plink, &error);
-		if (device && NM_IS_DEVICE (device)) {
-			g_assert_no_error (error);
-			break;  /* success! */
-		}
-
-		if (error) {
-			nm_log_warn (LOGD_HW, "%s: factory failed to create device: (%d) %s",
-			             plink->udi,
-			             error ? error->code : -1,
-			             error ? error->message : "(unknown)");
-			g_clear_error (&error);
+		device = nm_device_factory_new_link (factory, plink, &ignore, &error);
+		if (!device) {
+			if (!ignore) {
+				nm_log_warn (LOGD_HW, "%s: factory failed to create device: %s",
+				             plink->name, error->message);
+				g_clear_error (&error);
+			}
 			return;
 		}
 	}
 
-	/* Ignore Bluetooth PAN interfaces; they are handled by their NMDeviceBt
-	 * parent and don't get a separate interface.
-	 */
-	if (!strncmp (plink->name, "bnep", STRLEN ("bnep")))
-		return;
-
 	if (device == NULL) {
 		switch (plink->type) {
-
 		case NM_LINK_TYPE_WWAN_ETHERNET:
-			/* WWAN pseudo-ethernet interfaces are handled automatically by
-			 * their NMDeviceModem and don't get a separate NMDevice object.
-			 */
-			break;
-
+		case NM_LINK_TYPE_BNEP:
 		case NM_LINK_TYPE_OLPC_MESH:
 		case NM_LINK_TYPE_TEAM:
 		case NM_LINK_TYPE_WIFI:
@@ -2460,13 +2186,10 @@ find_master (NMManager *self,
 				NMConnection *candidate = iter->data;
 				char *vname;
 
-				if (nm_connection_is_virtual (candidate)) {
-					vname = get_virtual_iface_name (self, candidate, NULL);
-					if (   g_strcmp0 (master, vname) == 0
-					    && is_compatible_with_slave (candidate, connection))
-						master_connection = candidate;
-					g_free (vname);
-				}
+				vname = get_virtual_iface_name (self, connection, NULL, NULL);
+				if (g_strcmp0 (master, vname) == 0 && is_compatible_with_slave (candidate, connection))
+					master_connection = candidate;
+				g_free (vname);
 			}
 			g_slist_free (connections);
 		}
@@ -3148,17 +2871,12 @@ validate_activation_request (NMManager *self,
 		}
 
 		if (is_software) {
-			/* Look for an existing device with the connection's interface name */
 			char *iface;
 
-			iface = get_virtual_iface_name (self, connection, NULL);
-			if (!iface) {
-				g_set_error_literal (error,
-				                     NM_MANAGER_ERROR,
-				                     NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-				                     "Failed to determine connection's virtual interface name");
+			/* Look for an existing device with the connection's interface name */
+			iface = get_virtual_iface_name (self, connection, NULL, error);
+			if (!iface)
 				goto error;
-			}
 
 			device = find_device_by_ip_iface (self, iface);
 			g_free (iface);
@@ -4219,11 +3937,16 @@ impl_manager_check_connectivity (NMManager *manager,
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, TRUE);
 }
 
+static void
+start_factory (NMDeviceFactory *factory, gpointer user_data)
+{
+	nm_device_factory_start (factory);
+}
+
 void
 nm_manager_start (NMManager *self)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GSList *iter;
 	guint i;
 
 	/* Set initial radio enabled/disabled state */
@@ -4255,8 +3978,7 @@ nm_manager_start (NMManager *self)
 	system_hostname_changed_cb (priv->settings, NULL, self);
 
 	/* Start device factories */
-	for (iter = priv->factories; iter; iter = iter->next)
-		nm_device_factory_start (iter->data);
+	nm_device_factory_manager_for_each_factory (start_factory, NULL);
 
 	nm_platform_query_devices (NM_PLATFORM_GET);
 
@@ -4861,7 +4583,7 @@ nm_manager_new (NMSettings *settings,
 	rfkill_change (priv->radio_states[RFKILL_TYPE_WLAN].desc, RFKILL_TYPE_WLAN, initial_wifi_enabled);
 	rfkill_change (priv->radio_states[RFKILL_TYPE_WWAN].desc, RFKILL_TYPE_WWAN, initial_wwan_enabled);
 
-	load_device_factories (singleton);
+	nm_device_factory_manager_load_factories (_register_device_factory, singleton);
 
 	return singleton;
 }
@@ -5088,13 +4810,18 @@ set_property (GObject *object, guint prop_id,
 }
 
 static void
+_deinit_device_factory (NMDeviceFactory *factory, gpointer user_data)
+{
+	g_signal_handlers_disconnect_matched (factory, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, NM_MANAGER (user_data));
+}
+
+static void
 dispose (GObject *object)
 {
 	NMManager *manager = NM_MANAGER (object);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	DBusGConnection *bus;
 	DBusConnection *dbus_connection;
-	GSList *iter;
 
 	g_slist_free_full (priv->auth_chains, (GDestroyNotify) nm_auth_chain_unref);
 	priv->auth_chains = NULL;
@@ -5170,14 +4897,8 @@ dispose (GObject *object)
 		g_clear_object (&priv->fw_monitor);
 	}
 
-	for (iter = priv->factories; iter; iter = iter->next) {
-		NMDeviceFactory *factory = iter->data;
-
-		g_signal_handlers_disconnect_matched (factory, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, manager);
-		g_object_unref (factory);
-	}
-	g_clear_pointer (&priv->factories, g_slist_free);
-
+	nm_device_factory_manager_for_each_factory (_deinit_device_factory, manager);
+	
 	if (priv->timestamp_update_id) {
 		g_source_remove (priv->timestamp_update_id);
 		priv->timestamp_update_id = 0;

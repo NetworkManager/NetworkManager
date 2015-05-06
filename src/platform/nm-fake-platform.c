@@ -162,13 +162,40 @@ _nm_platform_link_get (NMPlatform *platform, int ifindex, NMPlatformLink *l)
 {
 	NMFakePlatformLink *device = link_get (platform, ifindex);
 
-	if (device)
+	if (device && l)
 		*l = device->link;
 	return !!device;
 }
 
 static gboolean
-link_add (NMPlatform *platform, const char *name, NMLinkType type, const void *address, size_t address_len)
+_nm_platform_link_get_by_address (NMPlatform *platform,
+                                  gconstpointer address,
+                                  size_t length,
+                                  NMPlatformLink *l)
+{
+	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
+	guint i;
+
+	for (i = 0; i < priv->links->len; i++) {
+		NMFakePlatformLink *device = &g_array_index (priv->links, NMFakePlatformLink, i);
+
+		if (   device->address
+		    && g_bytes_get_size (device->address) == length
+		    && memcmp (g_bytes_get_data (device->address, NULL), address, length) == 0) {
+			*l = device->link;
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+static gboolean
+link_add (NMPlatform *platform,
+          const char *name,
+          NMLinkType type,
+          const void *address,
+          size_t address_len,
+          NMPlatformLink *out_link)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	NMFakePlatformLink device;
@@ -180,6 +207,8 @@ link_add (NMPlatform *platform, const char *name, NMLinkType type, const void *a
 	if (device.link.ifindex)
 		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_LINK_CHANGED, device.link.ifindex, &device, NM_PLATFORM_SIGNAL_ADDED, NM_PLATFORM_REASON_INTERNAL);
 
+	if (out_link)
+		*out_link = device.link;
 	return TRUE;
 }
 
@@ -426,6 +455,12 @@ link_get_address (NMPlatform *platform, int ifindex, size_t *length)
 }
 
 static gboolean
+link_get_permanent_address (NMPlatform *platform, int ifindex, guint8 *buf, size_t *length)
+{
+	return FALSE;
+}
+
+static gboolean
 link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 {
 	NMFakePlatformLink *device = link_get (platform, ifindex);
@@ -471,6 +506,26 @@ link_get_wake_on_lan (NMPlatform *platform, int ifindex)
 	link_get (platform, ifindex);
 
 	return FALSE;
+}
+
+static gboolean
+link_get_driver_info (NMPlatform *platform,
+                      int ifindex,
+                      char **out_driver_name,
+                      char **out_driver_version,
+                      char **out_fw_version)
+{
+	if (out_driver_name)
+		*out_driver_name = NULL;
+	if (out_driver_version)
+		*out_driver_version = NULL;
+	if (out_fw_version)
+		*out_fw_version = NULL;
+
+	/* We call link_get just to cause an error to be set if @ifindex is bad. */
+	link_get (platform, ifindex);
+
+	return TRUE;
 }
 
 static gboolean
@@ -584,11 +639,11 @@ slave_get_option (NMPlatform *platform, int slave, const char *option)
 }
 
 static gboolean
-vlan_add (NMPlatform *platform, const char *name, int parent, int vlan_id, guint32 vlan_flags)
+vlan_add (NMPlatform *platform, const char *name, int parent, int vlan_id, guint32 vlan_flags, NMPlatformLink *out_link)
 {
 	NMFakePlatformLink *device;
 
-	if (!link_add (platform, name, NM_LINK_TYPE_VLAN, NULL, 0))
+	if (!link_add (platform, name, NM_LINK_TYPE_VLAN, NULL, 0, NULL))
 		return FALSE;
 
 	device = link_get (platform, link_get_ifindex (platform, name));
@@ -598,6 +653,8 @@ vlan_add (NMPlatform *platform, const char *name, int parent, int vlan_id, guint
 	device->vlan_id = vlan_id;
 	device->link.parent = parent;
 
+	if (out_link)
+		*out_link = device->link;
 	return TRUE;
 }
 
@@ -629,7 +686,7 @@ vlan_set_egress_map (NMPlatform *platform, int ifindex, int from, int to)
 }
 
 static gboolean
-infiniband_partition_add (NMPlatform *platform, int parent, int p_key)
+infiniband_partition_add (NMPlatform *platform, int parent, int p_key, NMPlatformLink *out_link)
 {
 	NMFakePlatformLink *parent_device;
 	char *name;
@@ -639,7 +696,7 @@ infiniband_partition_add (NMPlatform *platform, int parent, int p_key)
 	g_return_val_if_fail (parent_device != NULL, FALSE);
 
 	name = g_strdup_printf ("%s.%04x", parent_device->link.name, p_key);
-	success = link_add (platform, name, NM_LINK_TYPE_INFINIBAND, NULL, 0);
+	success = link_add (platform, name, NM_LINK_TYPE_INFINIBAND, NULL, 0, out_link);
 	g_free (name);
 
 	return success;
@@ -1313,15 +1370,15 @@ nm_fake_platform_setup (void)
 	nm_platform_setup (platform);
 
 	/* skip zero element */
-	link_add (platform, NULL, NM_LINK_TYPE_NONE, NULL, 0);
+	link_add (platform, NULL, NM_LINK_TYPE_NONE, NULL, 0, NULL);
 
 	/* add loopback interface */
-	link_add (platform, "lo", NM_LINK_TYPE_LOOPBACK, NULL, 0);
+	link_add (platform, "lo", NM_LINK_TYPE_LOOPBACK, NULL, 0, NULL);
 
 	/* add some ethernets */
-	link_add (platform, "eth0", NM_LINK_TYPE_ETHERNET, NULL, 0);
-	link_add (platform, "eth1", NM_LINK_TYPE_ETHERNET, NULL, 0);
-	link_add (platform, "eth2", NM_LINK_TYPE_ETHERNET, NULL, 0);
+	link_add (platform, "eth0", NM_LINK_TYPE_ETHERNET, NULL, 0, NULL);
+	link_add (platform, "eth1", NM_LINK_TYPE_ETHERNET, NULL, 0, NULL);
+	link_add (platform, "eth2", NM_LINK_TYPE_ETHERNET, NULL, 0, NULL);
 }
 
 static void
@@ -1361,6 +1418,7 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->sysctl_get = sysctl_get;
 
 	platform_class->link_get = _nm_platform_link_get;
+	platform_class->link_get_by_address = _nm_platform_link_get_by_address;
 	platform_class->link_get_all = link_get_all;
 	platform_class->link_add = link_add;
 	platform_class->link_delete = link_delete;
@@ -1380,12 +1438,14 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 
 	platform_class->link_set_address = link_set_address;
 	platform_class->link_get_address = link_get_address;
+	platform_class->link_get_permanent_address = link_get_permanent_address;
 	platform_class->link_get_mtu = link_get_mtu;
 	platform_class->link_set_mtu = link_set_mtu;
 
 	platform_class->link_get_physical_port_id = link_get_physical_port_id;
 	platform_class->link_get_dev_id = link_get_dev_id;
 	platform_class->link_get_wake_on_lan = link_get_wake_on_lan;
+	platform_class->link_get_driver_info = link_get_driver_info;
 
 	platform_class->link_supports_carrier_detect = link_supports_carrier_detect;
 	platform_class->link_supports_vlans = link_supports_vlans;

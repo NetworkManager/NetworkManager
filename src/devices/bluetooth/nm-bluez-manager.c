@@ -29,6 +29,7 @@
 #include "nm-logging.h"
 #include "nm-bluez-manager.h"
 #include "nm-device-factory.h"
+#include "nm-setting-bluetooth.h"
 #include "nm-bluez4-manager.h"
 #include "nm-bluez5-manager.h"
 #include "nm-bluez-device.h"
@@ -36,6 +37,7 @@
 #include "nm-connection-provider.h"
 #include "nm-device-bt.h"
 #include "nm-core-internal.h"
+#include "nm-platform.h"
 
 typedef struct {
 	int bluez_version;
@@ -367,11 +369,10 @@ start (NMDeviceFactory *factory)
 	check_bluez_and_try_setup (NM_BLUEZ_MANAGER (factory));
 }
 
-static NMDeviceType
-get_device_type (NMDeviceFactory *factory)
-{
-	return NM_DEVICE_TYPE_BT;
-}
+NM_DEVICE_FACTORY_DECLARE_TYPES (
+	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES    (NM_LINK_TYPE_BNEP)
+	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_BLUETOOTH_SETTING_NAME)
+)
 
 /*********************************************************************/
 
@@ -404,10 +405,19 @@ nm_bluez_manager_init (NMBluezManager *self)
 	g_assert (priv->provider);
 }
 
+static NMDevice *
+new_link (NMDeviceFactory *factory, NMPlatformLink *plink, gboolean *out_ignore, GError **error)
+{
+	g_warn_if_fail (plink->type == NM_LINK_TYPE_BNEP);
+	*out_ignore = TRUE;
+	return NULL;
+}
+
 static void
 device_factory_interface_init (NMDeviceFactory *factory_iface)
 {
-	factory_iface->get_device_type = get_device_type;
+	factory_iface->get_supported_types = get_supported_types;
+	factory_iface->new_link = new_link;
 	factory_iface->start = start;
 }
 

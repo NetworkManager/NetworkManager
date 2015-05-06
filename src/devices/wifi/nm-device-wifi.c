@@ -26,13 +26,7 @@
 #include <dbus/dbus.h>
 #include <netinet/in.h>
 #include <string.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include <signal.h>
 #include <unistd.h>
-#include <linux/sockios.h>
-#include <linux/ethtool.h>
-#include <sys/ioctl.h>
 #include <errno.h>
 
 #include "nm-glib-compat.h"
@@ -117,9 +111,6 @@ enum {
 static guint signals[LAST_SIGNAL] = { 0 };
 
 struct _NMDeviceWifiPrivate {
-	char *            perm_hw_addr;    /* Permanent MAC address */
-	char *            initial_hw_addr; /* Initial MAC address (as seen when NM starts) */
-
 	gint8             invalid_strength_counter;
 
 	GHashTable *      aps;
@@ -533,8 +524,8 @@ deactivate (NMDevice *device)
 	nm_platform_wifi_indicate_addressing_running (NM_PLATFORM_GET, ifindex, FALSE);
 
 	/* Reset MAC address back to initial address */
-	if (priv->initial_hw_addr)
-		nm_device_set_hw_addr (device, priv->initial_hw_addr, "reset", LOGD_WIFI);
+	if (nm_device_get_initial_hw_address (device))
+		nm_device_set_hw_addr (device, nm_device_get_initial_hw_address (device), "reset", LOGD_WIFI);
 
 	nm_platform_wifi_set_powersave (NM_PLATFORM_GET, ifindex, 0);
 
@@ -600,6 +591,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 	const char * const *mac_blacklist;
 	int i;
 	const char *mode;
+	const char *perm_hw_addr;
 
 	if (!NM_DEVICE_CLASS (nm_device_wifi_parent_class)->check_connection_compatible (device, connection))
 		return FALSE;
@@ -614,21 +606,25 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 	if (!s_wireless)
 		return FALSE;
 
+	perm_hw_addr = nm_device_get_permanent_hw_address (device);
 	mac = nm_setting_wireless_get_mac_address (s_wireless);
-	if (mac && !nm_utils_hwaddr_matches (mac, -1, priv->perm_hw_addr, -1))
-		return FALSE;
-
-	/* Check for MAC address blacklist */
-	mac_blacklist = nm_setting_wireless_get_mac_address_blacklist (s_wireless);
-	for (i = 0; mac_blacklist[i]; i++) {
-		if (!nm_utils_hwaddr_valid (mac_blacklist[i], ETH_ALEN)) {
-			g_warn_if_reached ();
+	if (perm_hw_addr) {
+		if (mac && !nm_utils_hwaddr_matches (mac, -1, perm_hw_addr, -1))
 			return FALSE;
+
+		/* Check for MAC address blacklist */
+		mac_blacklist = nm_setting_wireless_get_mac_address_blacklist (s_wireless);
+		for (i = 0; mac_blacklist[i]; i++) {
+			if (!nm_utils_hwaddr_valid (mac_blacklist[i], ETH_ALEN)) {
+				g_warn_if_reached ();
+				return FALSE;
+			}
+
+			if (nm_utils_hwaddr_matches (mac_blacklist[i], -1, perm_hw_addr, -1))
+				return FALSE;
 		}
-
-		if (nm_utils_hwaddr_matches (mac_blacklist[i], -1, priv->perm_hw_addr, -1))
-			return FALSE;
-	}
+	} else if (mac)
+		return FALSE;
 
 	if (is_adhoc_wpa (connection))
 		return FALSE;
@@ -767,7 +763,6 @@ complete_connection (NMDevice *device,
                      GError **error)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSetting8021x *s_8021x;
@@ -778,6 +773,7 @@ complete_connection (NMDevice *device,
 	GByteArray *tmp_ssid = NULL;
 	GBytes *setting_ssid = NULL;
 	gboolean hidden = FALSE;
+	const char *perm_hw_addr;
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
@@ -908,29 +904,31 @@ complete_connection (NMDevice *device,
 	if (hidden)
 		g_object_set (s_wifi, NM_SETTING_WIRELESS_HIDDEN, TRUE, NULL);
 
-	setting_mac = nm_setting_wireless_get_mac_address (s_wifi);
-	if (setting_mac) {
-		/* Make sure the setting MAC (if any) matches the device's permanent MAC */
-		if (!nm_utils_hwaddr_matches (setting_mac, -1, priv->perm_hw_addr, -1)) {
-			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			                     _("connection does not match device"));
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_MAC_ADDRESS);
-			return FALSE;
-		}
-	} else {
-		guint8 perm_hw_addr[ETH_ALEN];
+	perm_hw_addr = nm_device_get_permanent_hw_address (device);
+	if (perm_hw_addr) {
+		setting_mac = nm_setting_wireless_get_mac_address (s_wifi);
+		if (setting_mac) {
+			/* Make sure the setting MAC (if any) matches the device's permanent MAC */
+			if (!nm_utils_hwaddr_matches (setting_mac, -1, perm_hw_addr, -1)) {
+				g_set_error_literal (error,
+				                     NM_CONNECTION_ERROR,
+				                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				                     _("connection does not match device"));
+				g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_MAC_ADDRESS);
+				return FALSE;
+			}
+		} else {
+			guint8 tmp[ETH_ALEN];
 
-		/* Lock the connection to this device by default if it uses a
-		 * permanent MAC address (ie not a 'locally administered' one)
-		 */
-		nm_utils_hwaddr_aton (priv->perm_hw_addr, perm_hw_addr, ETH_ALEN);
-		if (   !(perm_hw_addr[0] & 0x02)
-		    && !nm_utils_hwaddr_matches (perm_hw_addr, ETH_ALEN, NULL, ETH_ALEN)) {
-			g_object_set (G_OBJECT (s_wifi),
-			              NM_SETTING_WIRELESS_MAC_ADDRESS, priv->perm_hw_addr,
-			              NULL);
+			/* Lock the connection to this device by default if it uses a
+			 * permanent MAC address (ie not a 'locally administered' one)
+			 */
+			nm_utils_hwaddr_aton (perm_hw_addr, tmp, ETH_ALEN);
+			if (!(tmp[0] & 0x02)) {
+				g_object_set (G_OBJECT (s_wifi),
+				              NM_SETTING_WIRELESS_MAC_ADDRESS, perm_hw_addr,
+				              NULL);
+			}
 		}
 	}
 
@@ -2241,62 +2239,6 @@ error:
 
 /****************************************************************************/
 
-static void
-update_permanent_hw_address (NMDevice *device)
-{
-	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	struct ifreq req;
-	struct ethtool_perm_addr *epaddr = NULL;
-	int fd, ret, errsv;
-
-	g_return_if_fail (priv->perm_hw_addr == NULL);
-
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
-	if (fd < 0) {
-		_LOGE (LOGD_HW, "could not open control socket.");
-		return;
-	}
-
-	/* Get permanent MAC address */
-	memset (&req, 0, sizeof (struct ifreq));
-	strncpy (req.ifr_name, nm_device_get_iface (device), IFNAMSIZ);
-
-	epaddr = g_malloc0 (sizeof (struct ethtool_perm_addr) + ETH_ALEN);
-	epaddr->cmd = ETHTOOL_GPERMADDR;
-	epaddr->size = ETH_ALEN;
-	req.ifr_data = (void *) epaddr;
-
-	errno = 0;
-	ret = ioctl (fd, SIOCETHTOOL, &req);
-	errsv = errno;
-	if ((ret < 0) || !nm_ethernet_address_is_valid (epaddr->data, ETH_ALEN)) {
-		_LOGD (LOGD_HW | LOGD_ETHER, "unable to read permanent MAC address (error %d)",
-		       errsv);
-		/* Fall back to current address */
-		nm_utils_hwaddr_aton (nm_device_get_hw_address (device), epaddr->data, ETH_ALEN);
-	}
-
-	priv->perm_hw_addr = nm_utils_hwaddr_ntoa (epaddr->data, ETH_ALEN);
-
-	g_free (epaddr);
-	close (fd);
-}
-
-static void
-update_initial_hw_address (NMDevice *device)
-{
-	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-
-	/* This sets initial MAC address from current MAC address. It should only
-	 * be called from NMDevice constructor() to really get the initial address.
-	 */
-	priv->initial_hw_addr = g_strdup (nm_device_get_hw_address (device));
-
-	_LOGD (LOGD_DEVICE | LOGD_ETHER, "read initial MAC address %s", priv->initial_hw_addr);
-}
-
 static NMActStageReturn
 act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 {
@@ -2950,12 +2892,7 @@ dispose (GObject *object)
 static void
 finalize (GObject *object)
 {
-	NMDeviceWifi *self = NM_DEVICE_WIFI (object);
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-
-	g_free (priv->perm_hw_addr);
-	g_free (priv->initial_hw_addr);
-	g_clear_pointer (&priv->aps, g_hash_table_unref);
+	g_clear_pointer (&NM_DEVICE_WIFI_GET_PRIVATE (object)->aps, g_hash_table_unref);
 
 	G_OBJECT_CLASS (nm_device_wifi_parent_class)->finalize (object);
 }
@@ -2972,7 +2909,7 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_PERM_HW_ADDRESS:
-		g_value_set_string (value, priv->perm_hw_addr);
+		g_value_set_string (value, nm_device_get_permanent_hw_address (NM_DEVICE (device)));
 		break;
 	case PROP_MODE:
 		g_value_set_uint (value, priv->mode);
@@ -3028,8 +2965,6 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	object_class->finalize = finalize;
 
 	parent_class->bring_up = bring_up;
-	parent_class->update_permanent_hw_address = update_permanent_hw_address;
-	parent_class->update_initial_hw_address = update_initial_hw_address;
 	parent_class->can_auto_connect = can_auto_connect;
 	parent_class->is_available = is_available;
 	parent_class->check_connection_compatible = check_connection_compatible;
