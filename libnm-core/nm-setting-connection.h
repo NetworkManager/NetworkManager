@@ -56,9 +56,29 @@ G_BEGIN_DECLS
 #define NM_SETTING_CONNECTION_ZONE           "zone"
 #define NM_SETTING_CONNECTION_MASTER         "master"
 #define NM_SETTING_CONNECTION_SLAVE_TYPE     "slave-type"
+#define NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES "autoconnect-slaves"
 #define NM_SETTING_CONNECTION_SECONDARIES    "secondaries"
 #define NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT "gateway-ping-timeout"
 #define NM_SETTING_CONNECTION_METERED        "metered"
+
+/* Types for property values */
+/**
+ * NMSettingConnectionAutoconnectSlaves:
+ * @NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_DEFAULT: default value
+ * @NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_NO: slaves are not brought up when
+ *   master is activated
+ * @NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_YES: slaves are brought up when
+ *   master is activated
+ *
+ * #NMSettingConnectionAutoconnectSlaves values indicate whether slave connections
+ * should be activated when master is activated.
+ */
+typedef enum {
+	NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_DEFAULT = -1,
+	NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_NO = 0,
+	NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_YES = 1,
+} NMSettingConnectionAutoconnectSlaves;
+
 
 /**
  * NMSettingConnection:
@@ -112,6 +132,8 @@ const char *nm_setting_connection_get_master           (NMSettingConnection *set
 gboolean    nm_setting_connection_is_slave_type        (NMSettingConnection *setting,
                                                         const char *type);
 const char *nm_setting_connection_get_slave_type       (NMSettingConnection *setting);
+NM_AVAILABLE_IN_1_2
+NMSettingConnectionAutoconnectSlaves nm_setting_connection_get_autoconnect_slaves (NMSettingConnection *setting);
 
 guint32     nm_setting_connection_get_num_secondaries  (NMSettingConnection *setting);
 const char *nm_setting_connection_get_secondary        (NMSettingConnection *setting, guint32 idx);
