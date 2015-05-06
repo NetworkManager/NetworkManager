@@ -26,6 +26,9 @@
 
 #include "nm-ip4-config.h"
 #include "nm-platform.h"
+#include "nm-logging.h"
+
+#include "nm-test-utils.h"
 
 static void
 addr_init (NMPlatformIP4Address *a, const char *addr, const char *peer, guint plen)
@@ -338,14 +341,12 @@ test_merge_subtract_mss_mtu (void)
 
 /*******************************************/
 
+NMTST_DEFINE ();
+
 int
 main (int argc, char **argv)
 {
-	g_test_init (&argc, &argv, NULL);
-
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
+	nmtst_init_with_logging (&argc, &argv, NULL, "DEFAULT");
 
 	g_test_add_func ("/ip4-config/subtract", test_subtract);
 	g_test_add_func ("/ip4-config/compare-with-source", test_compare_with_source);

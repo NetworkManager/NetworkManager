@@ -33,6 +33,9 @@
 #include "nm-ip4-config.h"
 #include "nm-platform.h"
 #include "nm-utils-internal.h"
+#include "nm-logging.h"
+
+#include "nm-test-utils.h"
 
 #define DEBUG 1
 
@@ -756,14 +759,12 @@ test_read_lease_ip4_config_expect_failure (gconstpointer user_data)
 
 /*******************************************/
 
+NMTST_DEFINE ();
+
 int
 main (int argc, char **argv)
 {
-	g_test_init (&argc, &argv, NULL);
-
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
+	nmtst_init_with_logging (&argc, &argv, NULL, "DEFAULT");
 
 	g_test_add_func ("/dhcp/dhclient/orig_missing", test_orig_missing);
 	g_test_add_func ("/dhcp/dhclient/override_client_id", test_override_client_id);
