@@ -466,8 +466,10 @@ global:
 	nm_setting_compare_flags_get_type;
 	nm_setting_connection_add_permission;
 	nm_setting_connection_add_secondary;
+	nm_setting_connection_autoconnect_slaves_get_type;
 	nm_setting_connection_get_autoconnect;
 	nm_setting_connection_get_autoconnect_priority;
+	nm_setting_connection_get_autoconnect_slaves;
 	nm_setting_connection_get_connection_type;
 	nm_setting_connection_get_gateway_ping_timeout;
 	nm_setting_connection_get_id;
