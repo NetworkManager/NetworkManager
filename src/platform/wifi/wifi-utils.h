@@ -48,9 +48,6 @@ guint32 wifi_utils_get_freq (WifiData *data);
  * Frequencies are specified in MHz. */
 guint32 wifi_utils_find_freq (WifiData *data, const guint32 *freqs);
 
-/* Caller must free returned byte array */
-GByteArray *wifi_utils_get_ssid (WifiData *data);
-
 /* out_bssid must be ETH_ALEN bytes */
 gboolean wifi_utils_get_bssid (WifiData *data, guint8 *out_bssid);
 

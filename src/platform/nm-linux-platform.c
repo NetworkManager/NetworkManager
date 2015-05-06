@@ -3444,16 +3444,6 @@ wifi_get_bssid (NMPlatform *platform, int ifindex, guint8 *bssid)
 	return wifi_utils_get_bssid (wifi_data, bssid);
 }
 
-static GByteArray *
-wifi_get_ssid (NMPlatform *platform, int ifindex)
-{
-	WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
-
-	if (!wifi_data)
-		return NULL;
-	return wifi_utils_get_ssid (wifi_data);
-}
-
 static guint32
 wifi_get_frequency (NMPlatform *platform, int ifindex)
 {
@@ -4722,7 +4712,6 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 
 	platform_class->wifi_get_capabilities = wifi_get_capabilities;
 	platform_class->wifi_get_bssid = wifi_get_bssid;
-	platform_class->wifi_get_ssid = wifi_get_ssid;
 	platform_class->wifi_get_frequency = wifi_get_frequency;
 	platform_class->wifi_get_quality = wifi_get_quality;
 	platform_class->wifi_get_rate = wifi_get_rate;

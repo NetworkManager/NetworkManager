@@ -1556,17 +1556,6 @@ nm_platform_wifi_get_bssid (NMPlatform *self, int ifindex, guint8 *bssid)
 	return klass->wifi_get_bssid (self, ifindex, bssid);
 }
 
-GByteArray *
-nm_platform_wifi_get_ssid (NMPlatform *self, int ifindex)
-{
-	_CHECK_SELF (self, klass, NULL);
-	reset_error (self);
-
-	g_return_val_if_fail (ifindex > 0, NULL);
-
-	return klass->wifi_get_ssid (self, ifindex);
-}
-
 guint32
 nm_platform_wifi_get_frequency (NMPlatform *self, int ifindex)
 {

@@ -442,24 +442,6 @@ wifi_nl80211_find_freq (WifiData *data, const guint32 *freqs)
 	return 0;
 }
 
-static GByteArray *
-wifi_nl80211_get_ssid (WifiData *data)
-{
-	WifiDataNl80211 *nl80211 = (WifiDataNl80211 *) data;
-	GByteArray *array = NULL;
-	struct nl80211_bss_info bss_info;
-
-	nl80211_get_bss_info (nl80211, &bss_info);
-
-	if (bss_info.valid) {
-		array = g_byte_array_sized_new (bss_info.ssid_len);
-		g_byte_array_append (array, (const guint8 *) bss_info.ssid,
-				     bss_info.ssid_len);
-	}
-
-	return array;
-}
-
 static gboolean
 wifi_nl80211_get_bssid (WifiData *data, guint8 *out_bssid)
 {
@@ -874,7 +856,6 @@ wifi_nl80211_init (const char *iface, int ifindex)
 	nl80211->parent.set_powersave = wifi_nl80211_set_powersave;
 	nl80211->parent.get_freq = wifi_nl80211_get_freq;
 	nl80211->parent.find_freq = wifi_nl80211_find_freq;
-	nl80211->parent.get_ssid = wifi_nl80211_get_ssid;
 	nl80211->parent.get_bssid = wifi_nl80211_get_bssid;
 	nl80211->parent.get_rate = wifi_nl80211_get_rate;
 	nl80211->parent.get_qual = wifi_nl80211_get_qual;

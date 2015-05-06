@@ -223,36 +223,6 @@ wifi_wext_find_freq (WifiData *data, const guint32 *freqs)
 	return 0;
 }
 
-static GByteArray *
-wifi_wext_get_ssid (WifiData *data)
-{
-	WifiDataWext *wext = (WifiDataWext *) data;
-	struct iwreq wrq;
-	char ssid[IW_ESSID_MAX_SIZE + 2];
-	guint32 len;
-	GByteArray *array = NULL;
-
-	memset (ssid, 0, sizeof (ssid));
-	wrq.u.essid.pointer = (caddr_t) &ssid;
-	wrq.u.essid.length = sizeof (ssid);
-	wrq.u.essid.flags = 0;
-	strncpy (wrq.ifr_name, wext->parent.iface, IFNAMSIZ);
-
-	if (ioctl (wext->fd, SIOCGIWESSID, &wrq) < 0) {
-		nm_log_err (LOGD_HW | LOGD_WIFI, "(%s): couldn't get SSID: %d",
-		            wext->parent.iface, errno);
-		return NULL;
-	}
-
-	len = wrq.u.essid.length;
-	if (nm_utils_is_empty_ssid ((guint8 *) ssid, len) == FALSE) {
-		array = g_byte_array_sized_new (len);
-		g_byte_array_append (array, (const guint8 *) ssid, len);
-	}
-
-	return array;
-}
-
 static gboolean
 wifi_wext_get_bssid (WifiData *data, guint8 *out_bssid)
 {
@@ -601,7 +571,6 @@ wifi_wext_init (const char *iface, int ifindex, gboolean check_scan)
 	wext->parent.set_powersave = wifi_wext_set_powersave;
 	wext->parent.get_freq = wifi_wext_get_freq;
 	wext->parent.find_freq = wifi_wext_find_freq;
-	wext->parent.get_ssid = wifi_wext_get_ssid;
 	wext->parent.get_bssid = wifi_wext_get_bssid;
 	wext->parent.get_rate = wifi_wext_get_rate;
 	wext->parent.get_qual = wifi_wext_get_qual;

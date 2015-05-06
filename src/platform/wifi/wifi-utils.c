@@ -121,13 +121,6 @@ wifi_utils_find_freq (WifiData *data, const guint32 *freqs)
 	return data->find_freq (data, freqs);
 }
 
-GByteArray *
-wifi_utils_get_ssid (WifiData *data)
-{
-	g_return_val_if_fail (data != NULL, NULL);
-	return data->get_ssid (data);
-}
-
 gboolean
 wifi_utils_get_bssid (WifiData *data, guint8 *out_bssid)
 {
