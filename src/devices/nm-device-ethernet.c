@@ -99,9 +99,6 @@ typedef enum {
 } DcbWait;
 
 typedef struct {
-	char *              perm_hw_addr;    /* Permanent MAC address */
-	char *              initial_hw_addr; /* Initial MAC address (as seen when NM starts) */
-
 	guint32             speed;
 
 	Supplicant          supplicant;
@@ -310,66 +307,6 @@ nm_device_ethernet_init (NMDeviceEthernet *self)
 	priv->s390_options = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 }
 
-static void
-update_permanent_hw_address (NMDevice *dev)
-{
-	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (dev);
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
-	struct ifreq req;
-	struct ethtool_perm_addr *epaddr = NULL;
-	int fd, ret, errsv;
-	const char *mac;
-
-	g_return_if_fail (priv->perm_hw_addr == NULL);
-
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
-	if (fd < 0) {
-		_LOGW (LOGD_HW, "couldn't open control socket.");
-		return;
-	}
-
-	/* Get permanent MAC address */
-	memset (&req, 0, sizeof (struct ifreq));
-	strncpy (req.ifr_name, nm_device_get_iface (dev), IFNAMSIZ);
-
-	epaddr = g_malloc0 (sizeof (struct ethtool_perm_addr) + ETH_ALEN);
-	epaddr->cmd = ETHTOOL_GPERMADDR;
-	epaddr->size = ETH_ALEN;
-	req.ifr_data = (void *) epaddr;
-
-	errno = 0;
-	ret = ioctl (fd, SIOCETHTOOL, &req);
-	errsv = errno;
-	if ((ret < 0) || !nm_ethernet_address_is_valid (epaddr->data, ETH_ALEN)) {
-		_LOGD (LOGD_HW | LOGD_ETHER, "unable to read permanent MAC address (error %d)", errsv);
-		/* Fall back to current address */
-		mac = nm_device_get_hw_address (dev);
-		if (mac)
-			nm_utils_hwaddr_aton (mac, epaddr->data, ETH_ALEN);
-		else
-			memset (epaddr->data, 0, ETH_ALEN);
-	}
-
-	priv->perm_hw_addr = nm_utils_hwaddr_ntoa (epaddr->data, ETH_ALEN);
-
-	g_free (epaddr);
-	close (fd);
-}
-
-static void
-update_initial_hw_address (NMDevice *dev)
-{
-	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (dev);
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
-
-	/* This sets initial MAC address from current MAC address. It should only
-	 * be called from NMDevice constructor() to really get the initial address.
-	 */
-	priv->initial_hw_addr = g_strdup (nm_device_get_hw_address (dev));
-
-	_LOGD (LOGD_DEVICE | LOGD_ETHER, "read initial MAC address %s", priv->initial_hw_addr);
-}
-
 static NMDeviceCapabilities
 get_generic_capabilities (NMDevice *device)
 {
@@ -421,7 +358,6 @@ static gboolean
 check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	NMSettingWired *s_wired;
 
 	if (!NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->check_connection_compatible (device, connection))
@@ -438,7 +374,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 		return FALSE;
 
 	if (s_wired) {
-		const char *mac;
+		const char *mac, *perm_hw_addr;
 		gboolean try_mac = TRUE;
 		const char * const *mac_blacklist;
 		int i;
@@ -446,21 +382,25 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 		if (!match_subchans (self, s_wired, &try_mac))
 			return FALSE;
 
+		perm_hw_addr = nm_device_get_permanent_hw_address (device);
 		mac = nm_setting_wired_get_mac_address (s_wired);
-		if (try_mac && mac && !nm_utils_hwaddr_matches (mac, -1, priv->perm_hw_addr, -1))
-			return FALSE;
-
-		/* Check for MAC address blacklist */
-		mac_blacklist = nm_setting_wired_get_mac_address_blacklist (s_wired);
-		for (i = 0; mac_blacklist[i]; i++) {
-			if (!nm_utils_hwaddr_valid (mac_blacklist[i], ETH_ALEN)) {
-				g_warn_if_reached ();
+		if (perm_hw_addr) {
+			if (try_mac && mac && !nm_utils_hwaddr_matches (mac, -1, perm_hw_addr, -1))
 				return FALSE;
+
+			/* Check for MAC address blacklist */
+			mac_blacklist = nm_setting_wired_get_mac_address_blacklist (s_wired);
+			for (i = 0; mac_blacklist[i]; i++) {
+				if (!nm_utils_hwaddr_valid (mac_blacklist[i], ETH_ALEN)) {
+					g_warn_if_reached ();
+					return FALSE;
+				}
+
+				if (nm_utils_hwaddr_matches (mac_blacklist[i], -1, perm_hw_addr, -1))
+					return FALSE;
 			}
-
-			if (nm_utils_hwaddr_matches (mac_blacklist[i], -1, priv->perm_hw_addr, -1))
-				return FALSE;
-		}
+		} else if (mac)
+			return FALSE;
 	}
 
 	return TRUE;
@@ -1391,8 +1331,8 @@ deactivate (NMDevice *device)
 		NM_DEVICE_ETHERNET_GET_PRIVATE (device)->last_pppoe_time = nm_utils_get_monotonic_timestamp_s ();
 
 	/* Reset MAC address back to initial address */
-	if (priv->initial_hw_addr)
-		nm_device_set_hw_addr (device, priv->initial_hw_addr, "reset", LOGD_ETHER);
+	if (nm_device_get_initial_hw_address (device))
+		nm_device_set_hw_addr (device, nm_device_get_initial_hw_address (device), "reset", LOGD_ETHER);
 }
 
 static gboolean
@@ -1402,10 +1342,10 @@ complete_connection (NMDevice *device,
                      const GSList *existing_connections,
                      GError **error)
 {
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
 	NMSettingWired *s_wired;
 	NMSettingPppoe *s_pppoe;
 	const char *setting_mac;
+	const char *perm_hw_addr;
 
 	s_pppoe = nm_connection_get_setting_pppoe (connection);
 
@@ -1432,21 +1372,22 @@ complete_connection (NMDevice *device,
 		nm_connection_add_setting (connection, NM_SETTING (s_wired));
 	}
 
-	setting_mac = nm_setting_wired_get_mac_address (s_wired);
-	if (setting_mac) {
-		/* Make sure the setting MAC (if any) matches the device's permanent MAC */
-		if (!nm_utils_hwaddr_matches (setting_mac, -1, priv->perm_hw_addr, -1)) {
-			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			                     _("connection does not match device"));
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_MAC_ADDRESS);
-			return FALSE;
-		}
-	} else {
-		if (!nm_utils_hwaddr_matches (priv->perm_hw_addr, -1, NULL, ETH_ALEN)) {
+	perm_hw_addr = nm_device_get_permanent_hw_address (device);
+	if (perm_hw_addr) {
+		setting_mac = nm_setting_wired_get_mac_address (s_wired);
+		if (setting_mac) {
+			/* Make sure the setting MAC (if any) matches the device's permanent MAC */
+			if (!nm_utils_hwaddr_matches (setting_mac, -1, perm_hw_addr, -1)) {
+				g_set_error_literal (error,
+				                     NM_CONNECTION_ERROR,
+				                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				                     _("connection does not match device"));
+				g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_MAC_ADDRESS);
+				return FALSE;
+			}
+		} else {
 			g_object_set (G_OBJECT (s_wired),
-			              NM_SETTING_WIRED_MAC_ADDRESS, priv->perm_hw_addr,
+			              NM_SETTING_WIRED_MAC_ADDRESS, perm_hw_addr,
 			              NULL);
 		}
 	}
@@ -1515,6 +1456,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
 	NMSettingWired *s_wired = nm_connection_get_setting_wired (connection);
+	const char *perm_hw_addr = nm_device_get_permanent_hw_address (device);
 	const char *mac = nm_device_get_hw_address (device);
 	const char *mac_prop = NM_SETTING_WIRED_MAC_ADDRESS;
 	GHashTableIter iter;
@@ -1528,11 +1470,11 @@ update_connection (NMDevice *device, NMConnection *connection)
 	/* If the device reports a permanent address, use that for the MAC address
 	 * and the current MAC, if different, is the cloned MAC.
 	 */
-	if (!nm_utils_hwaddr_matches (priv->perm_hw_addr, -1, NULL, ETH_ALEN)) {
-		g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, priv->perm_hw_addr, NULL);
+	if (perm_hw_addr) {
+		g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, perm_hw_addr, NULL);
 
 		mac_prop = NULL;
-		if (mac && !nm_utils_hwaddr_matches (priv->perm_hw_addr, -1, mac, -1))
+		if (mac && !nm_utils_hwaddr_matches (perm_hw_addr, -1, mac, -1))
 			mac_prop = NM_SETTING_WIRED_CLONED_MAC_ADDRESS;
 	}
 
@@ -1649,8 +1591,6 @@ finalize (GObject *object)
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (object);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 
-	g_free (priv->perm_hw_addr);
-	g_free (priv->initial_hw_addr);
 	g_clear_object (&priv->supplicant.mgr);
 	g_free (priv->subchan1);
 	g_free (priv->subchan2);
@@ -1671,7 +1611,7 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_PERM_HW_ADDRESS:
-		g_value_set_string (value, priv->perm_hw_addr);
+		g_value_set_string (value, nm_device_get_permanent_hw_address (NM_DEVICE (object)));
 		break;
 	case PROP_SPEED:
 		g_value_set_uint (value, priv->speed);
@@ -1711,8 +1651,6 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	object_class->set_property = set_property;
 
 	parent_class->get_generic_capabilities = get_generic_capabilities;
-	parent_class->update_permanent_hw_address = update_permanent_hw_address;
-	parent_class->update_initial_hw_address = update_initial_hw_address;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;
 	parent_class->new_default_connection = new_default_connection;
@@ -1755,19 +1693,18 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 #define NM_ETHERNET_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_ETHERNET_FACTORY, NMEthernetFactory))
 
 static NMDevice *
-new_link (NMDeviceFactory *factory, NMPlatformLink *plink, GError **error)
+new_link (NMDeviceFactory *factory, NMPlatformLink *plink, gboolean *out_ignore, GError **error)
 {
-	if (plink->type == NM_LINK_TYPE_ETHERNET) {
-		return (NMDevice *) g_object_new (NM_TYPE_DEVICE_ETHERNET,
-		                                  NM_DEVICE_PLATFORM_DEVICE, plink,
-		                                  NM_DEVICE_TYPE_DESC, "Ethernet",
-		                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_ETHERNET,
-		                                  NULL);
-	}
-	return NULL;
+	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_ETHERNET,
+	                                  NM_DEVICE_PLATFORM_DEVICE, plink,
+	                                  NM_DEVICE_TYPE_DESC, "Ethernet",
+	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_ETHERNET,
+	                                  NULL);
 }
 
-DEFINE_DEVICE_FACTORY_INTERNAL(ETHERNET, Ethernet, ethernet, \
-	factory_iface->new_link = new_link; \
+NM_DEVICE_FACTORY_DEFINE_INTERNAL (ETHERNET, Ethernet, ethernet,
+	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES    (NM_LINK_TYPE_ETHERNET)
+	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_PPPOE_SETTING_NAME),
+	factory_iface->new_link = new_link;
 	)
 

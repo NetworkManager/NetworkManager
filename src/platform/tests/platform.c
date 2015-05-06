@@ -93,25 +93,25 @@ do_link_get_all (char **argv)
 static gboolean
 do_dummy_add (char **argv)
 {
-	return nm_platform_dummy_add (NM_PLATFORM_GET, argv[0]);
+	return nm_platform_dummy_add (NM_PLATFORM_GET, argv[0], NULL);
 }
 
 static gboolean
 do_bridge_add (char **argv)
 {
-	return nm_platform_bridge_add (NM_PLATFORM_GET, argv[0], NULL, 0);
+	return nm_platform_bridge_add (NM_PLATFORM_GET, argv[0], NULL, 0, NULL);
 }
 
 static gboolean
 do_bond_add (char **argv)
 {
-	return nm_platform_bond_add (NM_PLATFORM_GET, argv[0]);
+	return nm_platform_bond_add (NM_PLATFORM_GET, argv[0], NULL);
 }
 
 static gboolean
 do_team_add (char **argv)
 {
-	return nm_platform_team_add (NM_PLATFORM_GET, argv[0]);
+	return nm_platform_team_add (NM_PLATFORM_GET, argv[0], NULL);
 }
 
 static gboolean
@@ -122,7 +122,7 @@ do_vlan_add (char **argv)
 	int vlanid = strtol (*argv++, NULL, 10);
 	guint32 vlan_flags = strtol (*argv++, NULL, 10);
 
-	return nm_platform_vlan_add (NM_PLATFORM_GET, name, parent, vlanid, vlan_flags);
+	return nm_platform_vlan_add (NM_PLATFORM_GET, name, parent, vlanid, vlan_flags, NULL);
 }
 
 static gboolean
