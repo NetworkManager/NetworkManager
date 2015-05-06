@@ -177,6 +177,8 @@ make_connection_setting (const char *file,
 	                                      NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_MIN,
 	                                      NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_MAX,
 	                                      NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_DEFAULT),
+	              NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES,
+	              svTrueValue (ifcfg, "AUTOCONNECT_SLAVES", NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_DEFAULT),
 	              NULL);
 
 	value = svGetValue (ifcfg, "USERS", FALSE);
