@@ -56,7 +56,7 @@ nm_device_factory_create (GError **error)
 /**************************************************************************/
 
 static NMDevice *
-new_link (NMDeviceFactory *factory, NMPlatformLink *plink, GError **error)
+new_link (NMDeviceFactory *factory, NMPlatformLink *plink, gboolean *out_ignore, GError **error)
 {
 	/* FIXME: check udev 'DEVTYPE' instead; but since we only support Intel
 	 * WiMAX devices for now this is appropriate.

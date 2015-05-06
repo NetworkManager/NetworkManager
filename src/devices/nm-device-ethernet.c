@@ -1693,7 +1693,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 #define NM_ETHERNET_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_ETHERNET_FACTORY, NMEthernetFactory))
 
 static NMDevice *
-new_link (NMDeviceFactory *factory, NMPlatformLink *plink, GError **error)
+new_link (NMDeviceFactory *factory, NMPlatformLink *plink, gboolean *out_ignore, GError **error)
 {
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_ETHERNET,
 	                                  NM_DEVICE_PLATFORM_DEVICE, plink,
