@@ -881,6 +881,7 @@ static const LinkDesc linktypes[] = {
 	{ NM_LINK_TYPE_VETH,          "veth",        "veth",        NULL },
 	{ NM_LINK_TYPE_VLAN,          "vlan",        "vlan",        "vlan" },
 	{ NM_LINK_TYPE_VXLAN,         "vxlan",       "vxlan",       "vxlan" },
+	{ NM_LINK_TYPE_BNEP,          "bluetooth",   NULL,          "bluetooth" },
 
 	{ NM_LINK_TYPE_BRIDGE,        "bridge",      "bridge",      "bridge" },
 	{ NM_LINK_TYPE_BOND,          "bond",        "bond",        "bond" },
@@ -980,7 +981,6 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink)
 	else if (arptype == ARPHRD_INFINIBAND)
 		return NM_LINK_TYPE_INFINIBAND;
 
-
 	ifname = rtnl_link_get_name (rtnllink);
 	if (ifname) {
 		const char *driver = ethtool_get_driver (ifname);
@@ -1007,8 +1007,16 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink)
 
 		devtype = read_devtype (sysfs_path);
 		for (i = 0; devtype && i < G_N_ELEMENTS (linktypes); i++) {
-			if (g_strcmp0 (devtype, linktypes[i].devtype) == 0)
+			if (g_strcmp0 (devtype, linktypes[i].devtype) == 0) {
+				if (linktypes[i].nm_type == NM_LINK_TYPE_BNEP) {
+					/* Both BNEP and 6lowpan use DEVTYPE=bluetooth, so we must
+					 * use arptype to distinguish between them.
+					 */
+					if (arptype != ARPHRD_ETHER)
+						continue;
+				}
 				return linktypes[i].nm_type;
+			}
 		}
 
 		/* Fallback for drivers that don't call SET_NETDEV_DEVTYPE() */

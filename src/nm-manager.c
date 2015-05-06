@@ -2187,7 +2187,7 @@ platform_link_added (NMManager *self,
 	/* Ignore Bluetooth PAN interfaces; they are handled by their NMDeviceBt
 	 * parent and don't get a separate interface.
 	 */
-	if (!strncmp (plink->name, "bnep", STRLEN ("bnep")))
+	if (plink->type == NM_LINK_TYPE_BNEP)
 		return;
 
 	if (device == NULL) {
