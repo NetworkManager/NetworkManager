@@ -3075,7 +3075,8 @@ ip4_config_merge_and_apply (NMDevice *self,
 
 	composite = nm_ip4_config_new (nm_device_get_ip_ifindex (self));
 
-	ensure_con_ipx_config (self);
+	if (commit)
+		ensure_con_ipx_config (self);
 
 	if (priv->dev_ip4_config)
 		nm_ip4_config_merge (composite, priv->dev_ip4_config);
@@ -3652,7 +3653,8 @@ ip6_config_merge_and_apply (NMDevice *self,
 	/* If no config was passed in, create a new one */
 	composite = nm_ip6_config_new (nm_device_get_ip_ifindex (self));
 
-	ensure_con_ipx_config (self);
+	if (commit)
+		ensure_con_ipx_config (self);
 	g_assert (composite);
 
 	/* Merge all the IP configs into the composite config */
@@ -6901,7 +6903,6 @@ update_ip_config (NMDevice *self, gboolean initial)
 			g_clear_object (&priv->dev_ip4_config);
 			capture_lease_config (self, priv->ext_ip4_config, &priv->dev_ip4_config, NULL, NULL);
 		}
-		ensure_con_ipx_config (self);
 
 		/* This function was called upon external changes. Remove the configuration
 		 * (addresses,routes) that is no longer present externally from the internal
@@ -6939,8 +6940,6 @@ update_ip_config (NMDevice *self, gboolean initial)
 		/* Check this before modifying ext_ip6_config */
 		linklocal6_just_completed = priv->linklocal6_timeout_id &&
 		                            have_ip6_address (priv->ext_ip6_config, TRUE);
-
-		ensure_con_ipx_config (self);
 
 		/* This function was called upon external changes. Remove the configuration
 		 * (addresses,routes) that is no longer present externally from the internal
