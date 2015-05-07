@@ -156,7 +156,7 @@ on_bss_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_da
 	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
 
 	iter = properties = g_dbus_proxy_get_cached_property_names (proxy);
-	while (*iter) {
+	while (iter && *iter) {
 		GVariant *copy = g_dbus_proxy_get_cached_property (proxy, *iter);
 
 		g_variant_builder_add (&builder, "{sv}", *iter++, copy);
