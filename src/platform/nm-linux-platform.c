@@ -3158,7 +3158,7 @@ infiniband_partition_add (NMPlatform *platform, int parent, int p_key, NMPlatfor
 
 	if (success) {
 		gs_free char *ifname = g_strdup_printf ("%s.%04x", parent_name, p_key);
-		auto_nl_object struct rtnl_link *rtnllink;
+		auto_nl_object struct rtnl_link *rtnllink = NULL;
 
 		rtnllink = (struct rtnl_link *) build_rtnl_link (0, ifname, NM_LINK_TYPE_INFINIBAND);
 		success = refresh_object (platform, (struct nl_object *) rtnllink, FALSE, NM_PLATFORM_REASON_INTERNAL);
