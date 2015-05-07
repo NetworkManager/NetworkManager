@@ -277,6 +277,33 @@ nm_rtnl_addr_set_prefixlen (struct rtnl_addr *rtnladdr, int plen)
 
 /******************************************************************/
 
+static int
+_nl_sock_flush_data (struct nl_sock *sk)
+{
+	int nle;
+	struct nl_cb *cb;
+
+	cb = nl_cb_clone (nl_socket_get_cb (sk));
+	if (cb == NULL)
+		return -NLE_NOMEM;
+
+	nl_cb_set (cb, NL_CB_VALID, NL_CB_DEFAULT, NULL, NULL);
+	do {
+		errno = 0;
+
+		nle = nl_recvmsgs (sk, cb);
+
+		/* Work around a libnl bug fixed in 3.2.22 (375a6294) */
+		if (nle == 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
+			nle = -NLE_AGAIN;
+	} while (nle != -NLE_AGAIN);
+
+	nl_cb_put (cb);
+	return nle;
+}
+
+/******************************************************************/
+
 #if HAVE_LIBNL_INET6_ADDR_GEN_MODE
 static int _support_user_ipv6ll = 0;
 #endif
@@ -4360,17 +4387,8 @@ event_handler (GIOChannel *channel,
 			warning ("Too many netlink events. Need to resynchronize platform cache");
 			/* Drain the event queue, we've lost events and are out of sync anyway and we'd
 			 * like to free up some space. We'll read in the status synchronously. */
-			nl_socket_modify_cb (priv->nlh_event, NL_CB_VALID, NL_CB_DEFAULT, NULL, NULL);
-			do {
-				errno = 0;
+			_nl_sock_flush_data (priv->nlh_event);
 
-				nle = nl_recvmsgs_default (priv->nlh_event);
-
-				/* Work around a libnl bug fixed in 3.2.22 (375a6294) */
-				if (nle == 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
-					nle = -NLE_AGAIN;
-			} while (nle != -NLE_AGAIN);
-			nl_socket_modify_cb (priv->nlh_event, NL_CB_VALID, NL_CB_CUSTOM, event_notification, user_data);
 			delayed_action_schedule (platform, DELAYED_ACTION_TYPE_REFRESH_ALL, NULL);
 			delayed_action_handle_all (platform);
 			break;
