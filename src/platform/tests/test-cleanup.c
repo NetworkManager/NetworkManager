@@ -58,7 +58,7 @@ test_cleanup_internal (void)
 	routes6 = nm_platform_ip6_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
 
 	g_assert_cmpint (addresses4->len, ==, 1);
-	g_assert_cmpint (addresses6->len, ==, 1);
+	g_assert_cmpint (addresses6->len, ==, 2); /* also has a IPv6 LL address. */
 	g_assert_cmpint (routes4->len, ==, 3);
 	g_assert_cmpint (routes6->len, ==, 3);
 

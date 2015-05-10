@@ -419,24 +419,6 @@
 
 {
    # fixed by https://github.com/thom311/libnl/commit/d65c32a7205e679c7fc13f0e4565b13e698ba906
-   libnl_rtnl_link_set_type_01
-   Memcheck:Leak
-   match-leak-kinds: definite
-   fun:calloc
-   fun:vlan_alloc
-   fun:rtnl_link_set_type
-   fun:link_msg_parser
-   fun:__pickup_answer
-   fun:nl_cb_call
-   fun:recvmsgs
-   fun:nl_recvmsgs_report
-   fun:nl_recvmsgs
-   fun:nl_pickup
-   fun:rtnl_link_get_kernel
-   ...
-}
-{
-   # fixed by https://github.com/thom311/libnl/commit/d65c32a7205e679c7fc13f0e4565b13e698ba906
    # Same issue as libnl_rtnl_link_set_type_01, but different backtrace by calling nl_msg_parse().
    libnl_rtnl_link_set_type_02
    Memcheck:Leak
