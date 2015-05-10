@@ -172,7 +172,7 @@ test_slave (int master, int type, SignalData *master_changed)
 	g_assert (nm_platform_link_enslave (NM_PLATFORM_GET, master, ifindex)); no_error ();
 	g_assert_cmpint (nm_platform_link_get_master (NM_PLATFORM_GET, ifindex), ==, master); no_error ();
 
-	accept_signal (link_changed);
+	accept_signals (link_changed, 1, 3);
 	accept_signals (master_changed, 0, 1);
 
 	/* enslaveing brings put the slave */
@@ -184,7 +184,7 @@ test_slave (int master, int type, SignalData *master_changed)
 	/* Set master up */
 	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, master));
 	g_assert (nm_platform_link_is_up (NM_PLATFORM_GET, master));
-	accept_signal (master_changed);
+	accept_signals (master_changed, 1, 2);
 
 	/* Master with a disconnected slave is disconnected
 	 *
@@ -222,7 +222,7 @@ test_slave (int master, int type, SignalData *master_changed)
 	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, ifindex)); no_error ();
 	g_assert (nm_platform_link_is_connected (NM_PLATFORM_GET, ifindex));
 	g_assert (nm_platform_link_is_connected (NM_PLATFORM_GET, master));
-	accept_signal (link_changed);
+	accept_signals (link_changed, 1, 3);
 	/* NM running, can cause additional change of addrgenmode */
 	accept_signals (master_changed, 1, 2);
 
@@ -230,8 +230,9 @@ test_slave (int master, int type, SignalData *master_changed)
 	 *
 	 * Gracefully succeed if already enslaved.
 	 */
-	g_assert (nm_platform_link_enslave (NM_PLATFORM_GET, master, ifindex)); no_error ();
 	ensure_no_signal (link_changed);
+	g_assert (nm_platform_link_enslave (NM_PLATFORM_GET, master, ifindex)); no_error ();
+	accept_signals (link_changed, 0, 2);
 	ensure_no_signal (master_changed);
 
 	/* Set slave option */
@@ -251,21 +252,30 @@ test_slave (int master, int type, SignalData *master_changed)
 	}
 
 	/* Release */
+	ensure_no_signal (link_changed);
 	g_assert (nm_platform_link_release (NM_PLATFORM_GET, master, ifindex));
 	g_assert_cmpint (nm_platform_link_get_master (NM_PLATFORM_GET, ifindex), ==, 0); no_error ();
-	accept_signal (link_changed);
+	accept_signals (link_changed, 1, 3);
 	if (link_type != NM_LINK_TYPE_TEAM)
 		accept_signals (master_changed, 1, 2);
 	else
 		accept_signals (master_changed, 1, 1);
 
+	ensure_no_signal (master_changed);
+
 	/* Release again */
+	ensure_no_signal (link_changed);
 	g_assert (!nm_platform_link_release (NM_PLATFORM_GET, master, ifindex));
 	error (NM_PLATFORM_ERROR_NOT_SLAVE);
 
+	ensure_no_signal (master_changed);
+
 	/* Remove */
+	ensure_no_signal (link_changed);
 	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex));
 	no_error ();
+	accept_signals (master_changed, 0, 1);
+	accept_signals (link_changed, 0, 1);
 	accept_signal (link_removed);
 
 	free_signal (link_added);
@@ -309,7 +319,7 @@ test_software (NMLinkType link_type, const char *link_typename)
 	g_assert (nm_platform_link_uses_arp (NM_PLATFORM_GET, ifindex));
 	g_assert (nm_platform_link_set_noarp (NM_PLATFORM_GET, ifindex));
 	g_assert (!nm_platform_link_uses_arp (NM_PLATFORM_GET, ifindex));
-	accept_signal (link_changed);
+	accept_signals (link_changed, 1, 2);
 	g_assert (nm_platform_link_set_arp (NM_PLATFORM_GET, ifindex));
 	g_assert (nm_platform_link_uses_arp (NM_PLATFORM_GET, ifindex));
 	accept_signal (link_changed);
@@ -353,6 +363,7 @@ test_software (NMLinkType link_type, const char *link_typename)
 	default:
 		break;
 	}
+	free_signal (link_changed);
 
 	/* Delete */
 	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex));
@@ -379,7 +390,6 @@ test_software (NMLinkType link_type, const char *link_typename)
 
 	/* No pending signal */
 	free_signal (link_added);
-	free_signal (link_changed);
 	free_signal (link_removed);
 }
 
@@ -543,20 +553,13 @@ test_external (void)
 	wait_signal (link_changed);
 	g_assert (!nm_platform_link_is_up (NM_PLATFORM_GET, ifindex));
 	g_assert (!nm_platform_link_is_connected (NM_PLATFORM_GET, ifindex));
-	/* This test doesn't trigger a netlink event at least on
-	 * 3.8.2-206.fc18.x86_64. Disabling the waiting and checking code
-	 * because of that.
-	 */
+
 	run_command ("ip link set %s arp on", DEVICE_NAME);
-#if 0
 	wait_signal (link_changed);
-	g_assert (nm_platform_link_uses_arp (ifindex));
-#endif
+	g_assert (nm_platform_link_uses_arp (NM_PLATFORM_GET, ifindex));
 	run_command ("ip link set %s arp off", DEVICE_NAME);
-#if 0
 	wait_signal (link_changed);
-	g_assert (!nm_platform_link_uses_arp (ifindex));
-#endif
+	g_assert (!nm_platform_link_uses_arp (NM_PLATFORM_GET, ifindex));
 
 	run_command ("ip link del %s", DEVICE_NAME);
 	wait_signal (link_removed);

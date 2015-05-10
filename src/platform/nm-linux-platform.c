@@ -114,17 +114,33 @@
  ******************************************************************/
 
 typedef enum {
-	DELAYED_ACTION_TYPE_REFRESH_ALL,
-	DELAYED_ACTION_TYPE_REFRESH_LINK,
-	DELAYED_ACTION_TYPE_REFRESH_ADDRESSES_FOR_IFINDEX,
-	DELAYED_ACTION_TYPE_REFRESH_ROUTES_FOR_IFINDEX,
-	DELAYED_ACTION_TYPE_MASTER_CONNECTED,
+	DELAYED_ACTION_TYPE_NONE                        = 0,
+	DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS           = (1LL << 0),
+	DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES   = (1LL << 1),
+	DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES   = (1LL << 2),
+	DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES      = (1LL << 3),
+	DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES      = (1LL << 4),
+	DELAYED_ACTION_TYPE_REFRESH_LINK                = (1LL << 5),
+	DELAYED_ACTION_TYPE_MASTER_CONNECTED            = (1LL << 6),
+	DELAYED_ACTION_TYPE_READ_NETLINK                = (1LL << 7),
+	__DELAYED_ACTION_TYPE_MAX,
+
+	DELAYED_ACTION_TYPE_REFRESH_ALL                 = DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS |
+	                                                  DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES |
+	                                                  DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES |
+	                                                  DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES |
+	                                                  DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES,
+
+	DELAYED_ACTION_TYPE_MAX                         = __DELAYED_ACTION_TYPE_MAX -1,
 } DelayedActionType;
 
 static gboolean tun_get_properties_ifname (NMPlatform *platform, const char *ifname, NMPlatformTunProperties *props);
-static void do_refresh_object (NMPlatform *platform, const NMPObject *obj_needle, NMPlatformReason reason, gboolean handle_all_delayed_actions, const NMPObject **out_obj);
-static void do_refresh_all (NMPlatform *platform, ObjectType obj_type, int ifindex, NMPlatformReason reason);
+static void delayed_action_schedule (NMPlatform *platform, DelayedActionType action_type, gpointer user_data);
+static void do_request_link (NMPlatform *platform, int ifindex, const char *name, gboolean handle_delayed_action);
+static void do_request_all (NMPlatform *platform, DelayedActionType action_type, gboolean handle_delayed_action);
 static void cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMPCacheOpsType ops_type, gpointer user_data);
+static gboolean event_handler_read_netlink_all (NMPlatform *platform, gboolean wait_for_acks);
+static NMPCacheOpsType cache_remove_netlink (NMPlatform *platform, const NMPObject *obj_needle, NMPObject **out_obj_cache, gboolean *out_was_visible, NMPlatformReason reason);
 
 /******************************************************************
  * libnl unility functions and wrappers
@@ -288,6 +304,8 @@ _nl_sock_flush_data (struct nl_sock *sk)
 		return -NLE_NOMEM;
 
 	nl_cb_set (cb, NL_CB_VALID, NL_CB_DEFAULT, NULL, NULL);
+	nl_cb_set (cb, NL_CB_SEQ_CHECK, NL_CB_DEFAULT, NULL, NULL);
+	nl_cb_err (cb, NL_CB_DEFAULT, NULL, NULL);
 	do {
 		errno = 0;
 
@@ -300,6 +318,83 @@ _nl_sock_flush_data (struct nl_sock *sk)
 
 	nl_cb_put (cb);
 	return nle;
+}
+
+static void
+_nl_msg_set_seq (struct nl_sock *sk, struct nl_msg *msg, guint32 *out_seq)
+{
+	guint32 seq;
+
+	/* choose our own sequence number, because libnl does not ensure that
+	 * it isn't zero -- which would confuse our checking for outstanding
+	 * messages. */
+	seq = nl_socket_use_seq (sk);
+	if (seq == 0)
+		seq = nl_socket_use_seq (sk);
+
+	nlmsg_hdr (msg)->nlmsg_seq = seq;
+	if (out_seq)
+		*out_seq = seq;
+}
+
+static int
+_nl_sock_request_link (NMPlatform *platform, struct nl_sock *sk, int ifindex, const char *name, guint32 *out_seq)
+{
+	struct nl_msg *msg = NULL;
+	int err;
+
+	if (name && !name[0])
+		name = NULL;
+
+	g_return_val_if_fail (ifindex > 0 || name, -NLE_INVAL);
+
+	_LOGT ("sock: request-link %d%s%s%s", ifindex, name ? ", \"" : "", name ? name : "", name ? "\"" : "");
+
+	if ((err = rtnl_link_build_get_request (ifindex, name, &msg)) < 0)
+		return err;
+
+	_nl_msg_set_seq (sk, msg, out_seq);
+
+	err = nl_send_auto (sk, msg);
+	nlmsg_free(msg);
+	if (err < 0)
+		return err;
+
+	return 0;
+}
+
+static int
+_nl_sock_request_all (NMPlatform *platform, struct nl_sock *sk, ObjectType obj_type, guint32 *out_seq)
+{
+	const NMPClass *klass;
+	struct rtgenmsg gmsg = { 0 };
+	struct nl_msg *msg;
+	int err;
+
+	klass = nmp_class_from_type (obj_type);
+
+	_LOGT ("sock: request-all-%s", klass->obj_type_name);
+
+	/* reimplement
+	 *   nl_rtgen_request (sk, klass->rtm_gettype, klass->addr_family, NLM_F_DUMP);
+	 * because we need the sequence number.
+	 */
+	msg = nlmsg_alloc_simple (klass->rtm_gettype, NLM_F_DUMP);
+	if (!msg)
+		return -NLE_NOMEM;
+
+	gmsg.rtgen_family = klass->addr_family;
+	err = nlmsg_append (msg, &gmsg, sizeof (gmsg), NLMSG_ALIGNTO);
+	if (err < 0)
+		goto errout;
+
+	_nl_msg_set_seq (sk, msg, out_seq);
+
+	err = nl_send_auto (sk, msg);
+errout:
+	nlmsg_free(msg);
+
+	return err >= 0 ? 0 : err;
 }
 
 /******************************************************************/
@@ -391,16 +486,13 @@ _support_kernel_extended_ifa_flags_get (void)
  * NMPlatform types and functions
  ******************************************************************/
 
-typedef struct {
-	DelayedActionType action_type;
-	gpointer user_data;
-} DelayedActionData;
-
 typedef struct _NMLinuxPlatformPrivate NMLinuxPlatformPrivate;
 
 struct _NMLinuxPlatformPrivate {
 	struct nl_sock *nlh;
 	struct nl_sock *nlh_event;
+	guint32 nlh_seq_expect;
+	guint32 nlh_seq_last;
 	NMPCache *cache;
 	GIOChannel *event_channel;
 	guint event_id;
@@ -408,10 +500,15 @@ struct _NMLinuxPlatformPrivate {
 	GUdevClient *udev_client;
 
 	struct {
-		GArray *list;
+		DelayedActionType flags;
+		GPtrArray *list_master_connected;
+		GPtrArray *list_refresh_link;
 		gint is_handling;
 		guint idle_id;
 	} delayed_action;
+
+	GHashTable *prune_candidates;
+	GHashTable *delayed_deletion;
 
 	GHashTable *wifi_data;
 };
@@ -466,75 +563,6 @@ _nlo_get_object_type (const struct nl_object *object)
 		}
 	} else
 		return OBJECT_TYPE_UNKNOWN;
-}
-
-static NMPObject *
-kernel_get_object (NMPlatform *platform, struct nl_sock *sock, const NMPObject *needle)
-{
-	auto_nl_object struct nl_object *nlo = NULL;
-	struct nl_object *nlo_needle;
-	NMPObject *obj;
-	int nle;
-	struct nl_cache *cache;
-
-	switch (NMP_OBJECT_GET_TYPE (needle)) {
-	case OBJECT_TYPE_LINK:
-		nle = rtnl_link_get_kernel (sock, needle->link.ifindex,
-		                            needle->link.name[0] ? needle->link.name : NULL,
-		                            (struct rtnl_link **) &nlo);
-		switch (nle) {
-		case -NLE_SUCCESS:
-			_support_user_ipv6ll_detect ((struct rtnl_link *) nlo);
-			obj = nmp_object_from_nl (platform, nlo, FALSE, TRUE);
-			_LOGD ("kernel-get-link: succeeds for ifindex=%d, name=%s: %s",
-			       needle->link.ifindex, needle->link.name,
-			       nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
-			return obj;
-		case -NLE_NODEV:
-			_LOGD ("kernel-get-link: succeeds for ifindex=%d, name=%s: NO DEVICE",
-			       needle->link.ifindex, needle->link.name);
-			return NULL;
-		default:
-			_LOGD ("kernel-get-link: fails for ifindex=%d, name=%s: %s (%d)",
-			       needle->link.ifindex, needle->link.name,
-			       nl_geterror (nle), nle);
-			return NULL;
-		}
-	case OBJECT_TYPE_IP4_ADDRESS:
-	case OBJECT_TYPE_IP6_ADDRESS:
-	case OBJECT_TYPE_IP4_ROUTE:
-	case OBJECT_TYPE_IP6_ROUTE:
-		/* FIXME: every time we refresh *one* object, we request an
-		 * entire dump. */
-		nle = nl_cache_alloc_and_fill (nl_cache_ops_lookup (NMP_OBJECT_GET_CLASS (needle)->nl_type),
-		                               sock, &cache);
-		if (nle) {
-			_LOGE ("kernel-get-%s: fails for %s: %s (%d)",
-			       NMP_OBJECT_GET_CLASS (needle)->obj_type_name,
-			       nmp_object_to_string (needle, NMP_OBJECT_TO_STRING_ID, NULL, 0),
-			       nl_geterror (nle), nle);
-			return NULL;
-		}
-
-		nlo_needle = nmp_object_to_nl (platform, needle, TRUE);
-		nlo = nl_cache_search (cache, nlo_needle);
-		nl_object_put (nlo_needle);
-		nl_cache_free (cache);
-
-		if (!nlo) {
-			_LOGD ("kernel-get-%s: had no results for %s",
-			       NMP_OBJECT_GET_CLASS (needle)->obj_type_name,
-			       nmp_object_to_string (needle, NMP_OBJECT_TO_STRING_ID, NULL, 0));
-			return NULL;
-		}
-		obj = nmp_object_from_nl (platform, nlo, FALSE, TRUE);
-		_LOGD ("kernel-get-%s: succeeds: %s",
-		       NMP_OBJECT_GET_CLASS (needle)->obj_type_name,
-		       nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
-		return obj;
-	default:
-		g_return_val_if_reached (NULL);
-	}
 }
 
 /* nm_rtnl_link_parse_info_data(): Re-fetches a link from the kernel
@@ -870,6 +898,9 @@ _nmp_vt_cmd_plobj_init_from_nl_link (NMPlatform *platform, NMPlatformObject *_ob
 	const char *kind;
 
 	nm_assert (memcmp (obj, ((char [sizeof (NMPObjectLink)]) { 0 }), sizeof (NMPObjectLink)) == 0);
+
+	if (_LOGT_ENABLED () && !NM_IN_SET (rtnl_link_get_family (nlo), AF_UNSPEC, AF_BRIDGE))
+		_LOGT ("netlink object for ifindex %d has unusual family %d", rtnl_link_get_ifindex (nlo), rtnl_link_get_family (nlo));
 
 	obj->ifindex = rtnl_link_get_ifindex (nlo);
 
@@ -1349,25 +1380,51 @@ do_emit_signal (NMPlatform *platform, const NMPObject *obj, NMPCacheOpsType cach
 
 /******************************************************************/
 
+static DelayedActionType
+delayed_action_refresh_from_object_type (ObjectType obj_type)
+{
+	switch (obj_type) {
+	case OBJECT_TYPE_LINK:          return DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS;
+	case OBJECT_TYPE_IP4_ADDRESS:   return DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES;
+	case OBJECT_TYPE_IP6_ADDRESS:   return DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES;
+	case OBJECT_TYPE_IP4_ROUTE:     return DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES;
+	case OBJECT_TYPE_IP6_ROUTE:     return DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES;
+	default: g_return_val_if_reached (DELAYED_ACTION_TYPE_NONE);
+	}
+}
+
+static ObjectType
+delayed_action_refresh_to_object_type (DelayedActionType action_type)
+{
+	switch (action_type) {
+	case DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS:             return OBJECT_TYPE_LINK;
+	case DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES:     return OBJECT_TYPE_IP4_ADDRESS;
+	case DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES:     return OBJECT_TYPE_IP6_ADDRESS;
+	case DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES:        return OBJECT_TYPE_IP4_ROUTE;
+	case DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES:        return OBJECT_TYPE_IP6_ROUTE;
+	default: g_return_val_if_reached (OBJECT_TYPE_UNKNOWN);
+	}
+}
+
 static const char *
 delayed_action_to_string (DelayedActionType action_type)
 {
-	static const char *lookup[] = {
-		[DELAYED_ACTION_TYPE_REFRESH_ALL]                       = "refresh-all",
-		[DELAYED_ACTION_TYPE_REFRESH_LINK]                      = "refresh-link",
-		[DELAYED_ACTION_TYPE_REFRESH_ADDRESSES_FOR_IFINDEX]     = "refres-addresses-for-ifindex",
-		[DELAYED_ACTION_TYPE_REFRESH_ROUTES_FOR_IFINDEX]        = "refesh-routes-for-ifindex",
-		[DELAYED_ACTION_TYPE_MASTER_CONNECTED]                  = "master-connected",
-	};
-	if (   ((gssize) action_type) >= 0
-	    && ((gssize) action_type) < G_N_ELEMENTS (lookup)
-	    && lookup[action_type])
-		return lookup[action_type];
-	g_return_val_if_reached ("unknown");
+	switch (action_type) {
+	case DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS              : return "refresh-all-links";
+	case DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES      : return "refresh-all-ip4-addresses";
+	case DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES      : return "refresh-all-ip6-addresses";
+	case DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES         : return "refresh-all-ip4-routes";
+	case DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES         : return "refresh-all-ip6-routes";
+	case DELAYED_ACTION_TYPE_REFRESH_LINK                   : return "refresh-link";
+	case DELAYED_ACTION_TYPE_MASTER_CONNECTED               : return "master-connected";
+	case DELAYED_ACTION_TYPE_READ_NETLINK                   : return "read-netlink";
+	default:
+		return "unknown";
+	}
 }
 
-#define _LOGT_delayed_action(data, operation) \
-    _LOGT ("delayed-action: %s %s (%d) [%p / %d]", ""operation, delayed_action_to_string ((data)->action_type), (int) (data)->action_type, (data)->user_data, GPOINTER_TO_INT ((data)->user_data))
+#define _LOGT_delayed_action(action_type, arg, operation) \
+    _LOGT ("delayed-action: %s %s (%d) [%p / %d]", ""operation, delayed_action_to_string (action_type), (int) action_type, arg, GPOINTER_TO_INT (arg))
 
 static void
 delayed_action_handle_MASTER_CONNECTED (NMPlatform *platform, int master_ifindex)
@@ -1384,76 +1441,28 @@ delayed_action_handle_MASTER_CONNECTED (NMPlatform *platform, int master_ifindex
 static void
 delayed_action_handle_REFRESH_LINK (NMPlatform *platform, int ifindex)
 {
-	NMPObject needle;
-
-	if (ifindex <= 0)
-		return;
-	do_refresh_object (platform, nmp_object_stackinit_id_link (&needle, ifindex), NM_PLATFORM_REASON_INTERNAL, FALSE, NULL);
+	do_request_link (platform, ifindex, NULL, FALSE);
 }
 
 static void
-delayed_action_handle_REFRESH_ADDRESSES_FOR_IFINDEX (NMPlatform *platform, int ifindex)
+delayed_action_handle_REFRESH_ALL (NMPlatform *platform, DelayedActionType flags)
 {
-	if (ifindex > 0)
-		do_refresh_all (platform, OBJECT_TYPE_IP4_ADDRESS, ifindex, NM_PLATFORM_REASON_INTERNAL);
+	do_request_all (platform, flags, FALSE);
 }
 
 static void
-delayed_action_handle_REFRESH_ROUTES_FOR_IFINDEX (NMPlatform *platform, int ifindex)
+delayed_action_handle_READ_NETLINK (NMPlatform *platform)
 {
-	if (ifindex > 0)
-		do_refresh_all (platform, OBJECT_TYPE_IP4_ROUTE, ifindex, NM_PLATFORM_REASON_INTERNAL);
-}
-
-static void
-delayed_action_handle_REFRESH_ALL (NMPlatform *platform)
-{
-	do_refresh_all (platform, OBJECT_TYPE_LINK, 0, NM_PLATFORM_REASON_INTERNAL);
-	do_refresh_all (platform, OBJECT_TYPE_IP4_ADDRESS, 0, NM_PLATFORM_REASON_INTERNAL);
-	do_refresh_all (platform, OBJECT_TYPE_IP4_ROUTE, 0, NM_PLATFORM_REASON_INTERNAL);
-}
-
-static const DelayedActionData *
-delayed_action_find (GArray *array, DelayedActionType action_type, gconstpointer *user_data, gboolean consider_user_data)
-{
-	guint i;
-
-	for (i = 0; i < array->len; i++) {
-		const DelayedActionData *d = &g_array_index (array, DelayedActionData, i);
-
-		if (   d->action_type == action_type
-		    && (!consider_user_data || d->user_data == user_data))
-			return d;
-	}
-	return NULL;
-}
-
-static guint
-delayed_action_prune_all (GArray *array, DelayedActionType action_type, gconstpointer *user_data, gboolean consider_user_data)
-{
-	guint i, pruned = 0;
-
-	for (i = 0; i < array->len; ) {
-		const DelayedActionData *d = &g_array_index (array, DelayedActionData, i);
-
-		if (   action_type == d->action_type
-		    && (!consider_user_data || user_data == d->user_data)) {
-			g_array_remove_index_fast (array, i);
-			pruned++;
-		} else
-			i++;
-	}
-	return pruned;
+	event_handler_read_netlink_all (platform, TRUE);
 }
 
 static gboolean
 delayed_action_handle_one (NMPlatform *platform)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	const DelayedActionData *data, *data2;
-	int ifindex;
+	gpointer user_data;
 
-	if (priv->delayed_action.list->len == 0) {
+	if (priv->delayed_action.flags == DELAYED_ACTION_TYPE_NONE) {
 		nm_clear_g_source (&priv->delayed_action.idle_id);
 		return FALSE;
 	}
@@ -1461,102 +1470,74 @@ delayed_action_handle_one (NMPlatform *platform)
 	/* First process DELAYED_ACTION_TYPE_MASTER_CONNECTED actions.
 	 * This type of action is entirely cache-internal and is here to resolve a
 	 * cache inconsistency. It should be fixed right away. */
-	if ((data = delayed_action_find (priv->delayed_action.list, DELAYED_ACTION_TYPE_MASTER_CONNECTED, NULL, FALSE))) {
-		/* It is possible that we also have a REFREH_LINK action scheduled that would refresh
-		 * this link anyway. Still, handle the potential cache-inconsistency first and possibly
-		 * reload the link later. */
-		_LOGT_delayed_action (data, "handle");
-		ifindex = GPOINTER_TO_INT (data->user_data);
-		delayed_action_prune_all (priv->delayed_action.list, data->action_type, data->user_data, TRUE);
-		delayed_action_handle_MASTER_CONNECTED (platform, ifindex);
+	if (NM_FLAGS_HAS (priv->delayed_action.flags, DELAYED_ACTION_TYPE_MASTER_CONNECTED)) {
+		nm_assert (priv->delayed_action.list_master_connected->len > 0);
+
+		user_data = priv->delayed_action.list_master_connected->pdata[0];
+		g_ptr_array_remove_index_fast (priv->delayed_action.list_master_connected, 0);
+		if (priv->delayed_action.list_master_connected->len == 0)
+			priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_MASTER_CONNECTED;
+		nm_assert (_nm_utils_ptrarray_find_first (priv->delayed_action.list_master_connected->pdata, priv->delayed_action.list_master_connected->len, user_data) < 0);
+
+		_LOGT_delayed_action (DELAYED_ACTION_TYPE_MASTER_CONNECTED, user_data, "handle");
+		delayed_action_handle_MASTER_CONNECTED (platform, GPOINTER_TO_INT (user_data));
+		return TRUE;
+	}
+	nm_assert (priv->delayed_action.list_master_connected->len == 0);
+
+	/* Next we prefer read-netlink, because the buffer size is limited and we want to process events
+	 * from netlink early. */
+	if (NM_FLAGS_HAS (priv->delayed_action.flags, DELAYED_ACTION_TYPE_READ_NETLINK)) {
+		_LOGT_delayed_action (DELAYED_ACTION_TYPE_READ_NETLINK, NULL, "handle");
+		priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_READ_NETLINK;
+		delayed_action_handle_READ_NETLINK (platform);
 		return TRUE;
 	}
 
-	if ((data = delayed_action_find (priv->delayed_action.list, DELAYED_ACTION_TYPE_REFRESH_ALL, NULL, FALSE))) {
-		_LOGT_delayed_action (data, "handle");
+	if (NM_FLAGS_ANY (priv->delayed_action.flags, DELAYED_ACTION_TYPE_REFRESH_ALL)) {
+		DelayedActionType flags, iflags;
 
-		/* all our delayed actions are plain data. We can just flush the array. */
-		g_array_set_size (priv->delayed_action.list, 0);
-		delayed_action_prune_all (priv->delayed_action.list, data->action_type, NULL, FALSE);
-		delayed_action_handle_REFRESH_ALL (platform);
+		flags = priv->delayed_action.flags & DELAYED_ACTION_TYPE_REFRESH_ALL;
+
+		priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_REFRESH_ALL;
+
+		if (_LOGT_ENABLED ()) {
+			for (iflags = (DelayedActionType) 0x1LL; iflags <= DELAYED_ACTION_TYPE_MAX; iflags <<= 1) {
+				if (NM_FLAGS_HAS (flags, iflags))
+					_LOGT_delayed_action (iflags, NULL, "handle");
+			}
+		}
+
+		delayed_action_handle_REFRESH_ALL (platform, flags);
 		return TRUE;
 	}
 
-	data = &g_array_index (priv->delayed_action.list, DelayedActionData, 0);
+	nm_assert (priv->delayed_action.flags == DELAYED_ACTION_TYPE_REFRESH_LINK);
+	nm_assert (priv->delayed_action.list_refresh_link->len > 0);
 
-	switch (data->action_type) {
+	user_data = priv->delayed_action.list_refresh_link->pdata[0];
+	g_ptr_array_remove_index_fast (priv->delayed_action.list_refresh_link, 0);
+	if (priv->delayed_action.list_master_connected->len == 0)
+		priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_REFRESH_LINK;
+	nm_assert (_nm_utils_ptrarray_find_first (priv->delayed_action.list_refresh_link->pdata, priv->delayed_action.list_refresh_link->len, user_data) < 0);
 
-	case DELAYED_ACTION_TYPE_REFRESH_ROUTES_FOR_IFINDEX:
-		ifindex = GPOINTER_TO_INT (data->user_data);
+	_LOGT_delayed_action (DELAYED_ACTION_TYPE_REFRESH_LINK, user_data, "handle");
 
-		/* We should reload routes for @ifindex. Check if we also should reload
-		 * the link too, that has preference. Reloading link can trigger a reloading of routes. */
-		data2 = delayed_action_find (priv->delayed_action.list, DELAYED_ACTION_TYPE_REFRESH_LINK, GINT_TO_POINTER (ifindex), TRUE);
-		if (data2) {
-			_LOGT_delayed_action (data2, "handle");
-			delayed_action_prune_all (priv->delayed_action.list, data2->action_type, data2->user_data, TRUE);
-			delayed_action_handle_REFRESH_LINK (platform, ifindex);
-			break;
-		}
-
-		/* If we should reload routes but also have to reload addresses for the same @ifindex,
-		 * reload the addresses first. Reloading addreses can trigger a reload or routes. */
-		data2 = delayed_action_find (priv->delayed_action.list, DELAYED_ACTION_TYPE_REFRESH_ADDRESSES_FOR_IFINDEX, GINT_TO_POINTER (ifindex), TRUE);
-		if (data2) {
-			_LOGT_delayed_action (data2, "handle");
-			delayed_action_prune_all (priv->delayed_action.list, data2->action_type, data2->user_data, TRUE);
-			delayed_action_handle_REFRESH_ADDRESSES_FOR_IFINDEX (platform, ifindex);
-			break;
-		}
-
-		_LOGT_delayed_action (data, "handle");
-		delayed_action_prune_all (priv->delayed_action.list, data->action_type, data->user_data, TRUE);
-		delayed_action_handle_REFRESH_ROUTES_FOR_IFINDEX (platform, ifindex);
-		break;
-
-
-	case DELAYED_ACTION_TYPE_REFRESH_ADDRESSES_FOR_IFINDEX:
-		ifindex = GPOINTER_TO_INT (data->user_data);
-
-		/* We should reload addresses for @ifindex. Check if we also should reload
-		 * the link too, that has preference. Reloading link can trigger a reloading of addresses. */
-		data2 = delayed_action_find (priv->delayed_action.list, DELAYED_ACTION_TYPE_REFRESH_LINK, GINT_TO_POINTER (ifindex), TRUE);
-		if (data2) {
-			_LOGT_delayed_action (data2, "handle");
-			delayed_action_prune_all (priv->delayed_action.list, data2->action_type, data2->user_data, TRUE);
-			delayed_action_handle_REFRESH_LINK (platform, ifindex);
-			break;
-		}
-
-		_LOGT_delayed_action (data, "handle");
-		delayed_action_prune_all (priv->delayed_action.list, data->action_type, data->user_data, TRUE);
-		delayed_action_handle_REFRESH_ADDRESSES_FOR_IFINDEX (platform, ifindex);
-		break;
-
-
-	case DELAYED_ACTION_TYPE_REFRESH_LINK:
-		_LOGT_delayed_action (data, "handle");
-		ifindex = GPOINTER_TO_INT (data->user_data);
-		delayed_action_prune_all (priv->delayed_action.list, data->action_type, data->user_data, TRUE);
-		delayed_action_handle_REFRESH_LINK (platform, ifindex);
-		break;
-
-
-	default:
-		g_assert_not_reached ();
-	}
+	delayed_action_handle_REFRESH_LINK (platform, GPOINTER_TO_INT (user_data));
 
 	return TRUE;
 }
 
 static gboolean
-delayed_action_handle_all (NMPlatform *platform)
+delayed_action_handle_all (NMPlatform *platform, gboolean read_netlink)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	gboolean any = FALSE;
 
 	nm_clear_g_source (&priv->delayed_action.idle_id);
 	priv->delayed_action.is_handling++;
+	if (read_netlink)
+		delayed_action_schedule (platform, DELAYED_ACTION_TYPE_READ_NETLINK, NULL);
 	while (delayed_action_handle_one (platform))
 		any = TRUE;
 	priv->delayed_action.is_handling--;
@@ -1567,7 +1548,7 @@ static gboolean
 delayed_action_handle_idle (gpointer user_data)
 {
 	NM_LINUX_PLATFORM_GET_PRIVATE (user_data)->delayed_action.idle_id = 0;
-	delayed_action_handle_all (user_data);
+	delayed_action_handle_all (user_data, FALSE);
 	return G_SOURCE_REMOVE;
 }
 
@@ -1575,20 +1556,142 @@ static void
 delayed_action_schedule (NMPlatform *platform, DelayedActionType action_type, gpointer user_data)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	DelayedActionData data = {
-		.action_type = action_type,
-		.user_data = user_data,
-	};
+	DelayedActionType iflags;
 
-	_LOGT_delayed_action (&data, "schedule");
+	nm_assert (action_type != DELAYED_ACTION_TYPE_NONE);
+
+	if (NM_FLAGS_HAS (action_type, DELAYED_ACTION_TYPE_REFRESH_LINK)) {
+		nm_assert (nm_utils_is_power_of_two (action_type));
+		if (_nm_utils_ptrarray_find_first (priv->delayed_action.list_refresh_link->pdata, priv->delayed_action.list_refresh_link->len, user_data) < 0)
+			g_ptr_array_add (priv->delayed_action.list_refresh_link, user_data);
+	} else if (NM_FLAGS_HAS (action_type, DELAYED_ACTION_TYPE_MASTER_CONNECTED)) {
+		nm_assert (nm_utils_is_power_of_two (action_type));
+		if (_nm_utils_ptrarray_find_first (priv->delayed_action.list_master_connected->pdata, priv->delayed_action.list_master_connected->len, user_data) < 0)
+			g_ptr_array_add (priv->delayed_action.list_master_connected, user_data);
+	} else
+		nm_assert (!user_data);
+
+	priv->delayed_action.flags |= action_type;
+
+	if (_LOGT_ENABLED ()) {
+		for (iflags = (DelayedActionType) 0x1LL; iflags <= DELAYED_ACTION_TYPE_MAX; iflags <<= 1) {
+			if (NM_FLAGS_HAS (action_type, iflags))
+				_LOGT_delayed_action (iflags, user_data, "schedule");
+		}
+	}
 
 	if (priv->delayed_action.is_handling == 0 && priv->delayed_action.idle_id == 0)
 		priv->delayed_action.idle_id = g_idle_add (delayed_action_handle_idle, platform);
-
-	g_array_append_val (priv->delayed_action.list, data);
 }
 
 /******************************************************************/
+
+static void
+cache_prune_candidates_record_all (NMPlatform *platform, ObjectType obj_type)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+
+	priv->prune_candidates = nmp_cache_lookup_all_to_hash (priv->cache,
+	                                                       nmp_cache_id_init_object_type (NMP_CACHE_ID_STATIC, obj_type),
+	                                                       priv->prune_candidates);
+	_LOGT ("cache-prune: record %s (now %u candidates)", nmp_class_from_type (obj_type)->obj_type_name,
+	       priv->prune_candidates ? g_hash_table_size (priv->prune_candidates) : 0);
+}
+
+static void
+cache_prune_candidates_record_one (NMPlatform *platform, NMPObject *obj)
+{
+	NMLinuxPlatformPrivate *priv;
+
+	if (!obj)
+		return;
+
+	priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+
+	if (!priv->prune_candidates)
+		priv->prune_candidates = g_hash_table_new_full (NULL, NULL, (GDestroyNotify) nmp_object_unref, NULL);
+
+	if (_LOGT_ENABLED () && !g_hash_table_contains (priv->prune_candidates, obj))
+		_LOGT ("cache-prune: record-one: %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ALL, NULL, 0));
+	g_hash_table_add (priv->prune_candidates, nmp_object_ref (obj));
+}
+
+static void
+cache_prune_candidates_drop (NMPlatform *platform, const NMPObject *obj)
+{
+	NMLinuxPlatformPrivate *priv;
+
+	if (!obj)
+		return;
+
+	priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	if (priv->prune_candidates) {
+		if (_LOGT_ENABLED () && g_hash_table_contains (priv->prune_candidates, obj))
+			_LOGT ("cache-prune: drop-one: %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ALL, NULL, 0));
+		g_hash_table_remove (priv->prune_candidates, obj);
+	}
+}
+
+static void
+cache_prune_candidates_prune (NMPlatform *platform)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	GHashTable *prune_candidates;
+	GHashTableIter iter;
+	const NMPObject *obj;
+	gboolean was_visible;
+	NMPCacheOpsType cache_op;
+
+	if (!priv->prune_candidates)
+		return;
+
+	prune_candidates = priv->prune_candidates;
+	priv->prune_candidates = NULL;
+
+	g_hash_table_iter_init (&iter, prune_candidates);
+	while (g_hash_table_iter_next (&iter, (gpointer *)&obj, NULL)) {
+		auto_nmp_obj NMPObject *obj_cache = NULL;
+
+		_LOGT ("cache-prune: prune %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ALL, NULL, 0));
+		cache_op = nmp_cache_remove (priv->cache, obj, TRUE, &obj_cache, &was_visible, cache_pre_hook, platform);
+		do_emit_signal (platform, obj_cache, cache_op, was_visible, NM_PLATFORM_REASON_INTERNAL);
+	}
+
+	g_hash_table_unref (prune_candidates);
+}
+
+static void
+cache_delayed_deletion_prune (NMPlatform *platform)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	GPtrArray *prune_list = NULL;
+	GHashTableIter iter;
+	guint i;
+	NMPObject *obj;
+
+	if (g_hash_table_size (priv->delayed_deletion) == 0)
+		return;
+
+	g_hash_table_iter_init (&iter, priv->delayed_deletion);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &obj)) {
+		if (obj) {
+			if (!prune_list)
+				prune_list = g_ptr_array_new_full (g_hash_table_size (priv->delayed_deletion), (GDestroyNotify) nmp_object_unref);
+			g_ptr_array_add (prune_list, nmp_object_ref (obj));
+		}
+	}
+
+	g_hash_table_remove_all (priv->delayed_deletion);
+
+	if (prune_list) {
+		for (i = 0; i < prune_list->len; i++) {
+			obj = prune_list->pdata[i];
+			_LOGT ("delayed-deletion: delete %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ID, NULL, 0));
+			cache_remove_netlink (platform, obj, NULL, NULL, NM_PLATFORM_REASON_EXTERNAL);
+		}
+		g_ptr_array_unref (prune_list);
+	}
+}
 
 static void
 cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMPCacheOpsType ops_type, gpointer user_data)
@@ -1654,8 +1757,12 @@ cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMP
 				ifindex = new->link.ifindex;
 
 			if (ifindex > 0) {
-				delayed_action_schedule (platform, DELAYED_ACTION_TYPE_REFRESH_ADDRESSES_FOR_IFINDEX, GINT_TO_POINTER (ifindex));
-				delayed_action_schedule (platform, DELAYED_ACTION_TYPE_REFRESH_ROUTES_FOR_IFINDEX, GINT_TO_POINTER (ifindex));
+				delayed_action_schedule (platform,
+				                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES |
+				                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES |
+				                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES |
+				                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES,
+				                         NULL);
 			}
 		}
 		{
@@ -1664,8 +1771,12 @@ cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMP
 			    && old->_link.netlink.is_in_netlink
 			    && NM_FLAGS_HAS (old->link.flags, IFF_LOWER_UP)
 			    && new->_link.netlink.is_in_netlink
-			    && !NM_FLAGS_HAS (new->link.flags, IFF_LOWER_UP))
-				delayed_action_schedule (platform, DELAYED_ACTION_TYPE_REFRESH_ROUTES_FOR_IFINDEX, GINT_TO_POINTER (new->link.ifindex));
+			    && !NM_FLAGS_HAS (new->link.flags, IFF_LOWER_UP)) {
+				delayed_action_schedule (platform,
+				                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES |
+				                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES,
+				                         NULL);
+			}
 		}
 		{
 			/* on enslave/release, we also refresh the master. */
@@ -1695,12 +1806,11 @@ cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMP
 			/* Address deletion is sometimes accompanied by route deletion. We need to
 			 * check all routes belonging to the same interface. */
 			if (ops_type == NMP_CACHE_OPS_REMOVED) {
-				/* Theoretically, it might suffice to reload only IPv4 or IPv6 separately. Don't
-				 * do that optimizatoin, as our current implementation with nl_cache_alloc_and_fill()
-				 * anyway dumps all addresses. */
 				delayed_action_schedule (platform,
-				                         DELAYED_ACTION_TYPE_REFRESH_ROUTES_FOR_IFINDEX,
-				                         GINT_TO_POINTER (old->ip_address.ifindex));
+				                         (klass->obj_type == OBJECT_TYPE_IP4_ADDRESS)
+				                             ? DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES
+				                             : DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES,
+				                         NULL);
 			}
 		}
 	default:
@@ -1756,188 +1866,91 @@ cache_update_netlink (NMPlatform *platform, NMPObject *obj, NMPObject **out_obj_
 /******************************************************************/
 
 static void
-do_refresh_object (NMPlatform *platform, const NMPObject *obj_needle, NMPlatformReason reason, gboolean handle_all_delayed_actions, const NMPObject **out_obj)
+_new_sequence_number (NMPlatform *platform, guint32 seq)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	auto_nmp_obj NMPObject *obj_kernel = NULL;
-	auto_nmp_obj NMPObject *obj_cache = NULL;
-	NMPCacheOpsType cache_op;
-	const NMPClass *klass;
-	char str_buf[sizeof (_nm_platform_to_string_buffer)];
-	char str_buf2[sizeof (_nm_platform_to_string_buffer)];
 
-	obj_kernel = kernel_get_object (platform, priv->nlh, obj_needle);
+	_LOGT ("_new_sequence_number(): new sequence number %u", seq);
 
-	klass = NMP_OBJECT_GET_CLASS (obj_needle);
-	if (klass->obj_type == OBJECT_TYPE_LINK) {
-		int ifindex = obj_kernel ? obj_kernel->link.ifindex : obj_needle->link.ifindex;
-
-		if (ifindex >= 0)
-			delayed_action_prune_all (priv->delayed_action.list, DELAYED_ACTION_TYPE_REFRESH_LINK, GINT_TO_POINTER (ifindex), TRUE);
-	}
-
-	if (obj_kernel)
-		cache_op = cache_update_netlink (platform, obj_kernel, &obj_cache, NULL, reason);
-	else if (   klass->obj_type != OBJECT_TYPE_LINK
-	         || obj_needle->link.ifindex > 0)
-		cache_op = cache_remove_netlink (platform, obj_needle, &obj_cache, NULL, reason);
-	else {
-		/* The needle has no ifindex and kernel_get_object() could not resolve the instance.
-		 * For example infiniband_partition_add() does this.
-		 *
-		 * We cannot lookup this instance by name. */
-		cache_op = NMP_CACHE_OPS_UNCHANGED;
-	}
-
-	_LOGD ("refresh-%s: refreshed %s: %s",
-	       klass->obj_type_name,
-	       nmp_object_to_string (obj_needle, NMP_OBJECT_TO_STRING_ID, str_buf, sizeof (str_buf)),
-	       nmp_object_to_string (obj_cache, NMP_OBJECT_TO_STRING_PUBLIC, str_buf2, sizeof (str_buf2)));
-
-	if (handle_all_delayed_actions) {
-		if (delayed_action_handle_all (platform)) {
-			/* The object might have changed. Lookup again. */
-			if (out_obj) {
-				/* We only lookup links by ifindex, not ifname. */
-				if (   klass->obj_type != OBJECT_TYPE_LINK
-				    || obj_needle->link.ifindex > 0) {
-					*out_obj = nmp_cache_lookup_obj (priv->cache, obj_needle);
-				} else
-					*out_obj = NULL;
-			}
-			return;
-		}
-	}
-
-	if (out_obj) {
-		/* @out_obj has a somewhat unexpected meaning. It is not the same instance as returned by
-		 * cache_update_netlink(). On the contrary, it is the object inside the cache (if it exists).
-		 *
-		 * As the cache owns the object already, we don't pass ownership (a reference).
-		 *
-		 * The effect is identical to lookup nmp_cache_lookup_obj() after do_refresh_object().
-		 *
-		 * Here we don't do lookup by name. If @obj_needle only has an ifname, but no ifindex,
-		 * the lookup cannot succeed. */
-		if (cache_op == NMP_CACHE_OPS_REMOVED)
-			*out_obj = NULL;
-		else
-			*out_obj = obj_cache;
-	}
+	priv->nlh_seq_expect = seq;
 }
 
 static void
-do_refresh_all (NMPlatform *platform, ObjectType obj_type, int ifindex, NMPlatformReason reason)
+do_request_link (NMPlatform *platform, int ifindex, const char *name, gboolean handle_delayed_action)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	guint i, j, len;
-	gs_unref_hashtable GHashTable *alive_list = NULL;
-	gs_unref_ptrarray GPtrArray *prune_list = NULL;
-	NMPCacheOpsType cache_op;
-	struct nl_object *nlo;
-	struct nl_cache *cache;
-	int nle;
-	const NMPClass *klass;
+	guint32 seq;
 
-	/* we can only reload v4 and v6 together. Coerce the obj_type to v4. */
-	if (obj_type == OBJECT_TYPE_IP6_ADDRESS)
-		obj_type = OBJECT_TYPE_IP4_ADDRESS;
-	else if (obj_type == OBJECT_TYPE_IP6_ROUTE)
-		obj_type = OBJECT_TYPE_IP4_ROUTE;
+	_LOGT ("do_request_link (%d,%s)", ifindex, name ? name : "");
 
-	if (obj_type == OBJECT_TYPE_LINK)
-		ifindex = 0;
+	if (ifindex > 0) {
+		NMPObject *obj;
 
-	if (obj_type == OBJECT_TYPE_IP4_ADDRESS) {
-		if (ifindex > 0)
-			delayed_action_prune_all (priv->delayed_action.list, DELAYED_ACTION_TYPE_REFRESH_ADDRESSES_FOR_IFINDEX, GINT_TO_POINTER (ifindex), TRUE);
-		else
-			delayed_action_prune_all (priv->delayed_action.list, DELAYED_ACTION_TYPE_REFRESH_ADDRESSES_FOR_IFINDEX, NULL, FALSE);
-	} else if (obj_type == OBJECT_TYPE_IP4_ROUTE) {
-		if (ifindex > 0)
-			delayed_action_prune_all (priv->delayed_action.list, DELAYED_ACTION_TYPE_REFRESH_ROUTES_FOR_IFINDEX, GINT_TO_POINTER (ifindex), TRUE);
-		else
-			delayed_action_prune_all (priv->delayed_action.list, DELAYED_ACTION_TYPE_REFRESH_ROUTES_FOR_IFINDEX, NULL, FALSE);
-	} else if (obj_type == OBJECT_TYPE_LINK)
-		delayed_action_prune_all (priv->delayed_action.list, DELAYED_ACTION_TYPE_REFRESH_LINK, NULL, FALSE);
-
-	klass = nmp_class_from_type (obj_type);
-
-	if (obj_type == OBJECT_TYPE_LINK)
-		nle = rtnl_link_alloc_cache (priv->nlh, AF_UNSPEC, &cache);
-	else {
-		nle = nl_cache_alloc_and_fill (nl_cache_ops_lookup (klass->nl_type),
-		                               priv->nlh, &cache);
-	}
-	if (nle || !cache) {
-		error ("refresh-all for %s on interface %d failed: %s (%d)",
-		       klass->obj_type_name,
-		       ifindex,
-		       nl_geterror (nle), nle);
-		return;
+		cache_prune_candidates_record_one (platform,
+		                                   (NMPObject *) nmp_cache_lookup_link (priv->cache, ifindex));
+		obj = nmp_object_new_link (ifindex);
+		_LOGT ("delayed-deletion: protect object %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ID, NULL, 0));
+		g_hash_table_insert (priv->delayed_deletion, obj, NULL);
 	}
 
-	alive_list = g_hash_table_new_full (NULL, NULL, (GDestroyNotify) nmp_object_unref, NULL);
+	event_handler_read_netlink_all (platform, FALSE);
 
-	for (nlo = nl_cache_get_first (cache); nlo; nlo = nl_cache_get_next (nlo)) {
-		auto_nmp_obj NMPObject *obj_kernel = NULL;
-		NMPObject *obj_cache;
+	if (_nl_sock_request_link (platform, priv->nlh_event, ifindex, name, &seq) == 0)
+		_new_sequence_number (platform, seq);
 
-		if (obj_type == OBJECT_TYPE_LINK)
-			_support_user_ipv6ll_detect ((struct rtnl_link *) nlo);
+	event_handler_read_netlink_all (platform, TRUE);
 
-		obj_kernel = nmp_object_from_nl (platform, nlo, FALSE, TRUE);
-		if (!obj_kernel)
-			continue;
+	cache_delayed_deletion_prune (platform);
+	cache_prune_candidates_prune (platform);
 
-		if (ifindex > 0 && obj_kernel->object.ifindex != ifindex)
-			continue;
+	if (handle_delayed_action)
+		delayed_action_handle_all (platform, FALSE);
+}
 
-		cache_op = cache_update_netlink (platform, obj_kernel, &obj_cache, NULL, reason);
-		if (!obj_cache)
-			continue;
+static void
+do_request_one_type (NMPlatform *platform, ObjectType obj_type, gboolean handle_delayed_action)
+{
+	do_request_all (platform, delayed_action_refresh_from_object_type (obj_type), handle_delayed_action);
+}
 
-		if (cache_op == NMP_CACHE_OPS_REMOVED)
-			nmp_object_unref (obj_cache);
-		else
-			g_hash_table_add (alive_list, obj_cache);
+static void
+do_request_all (NMPlatform *platform, DelayedActionType action_type, gboolean handle_delayed_action)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	guint32 seq;
+	DelayedActionType iflags;
+
+	nm_assert (!NM_FLAGS_ANY (action_type, ~DELAYED_ACTION_TYPE_REFRESH_ALL));
+	action_type &= DELAYED_ACTION_TYPE_REFRESH_ALL;
+
+	for (iflags = (DelayedActionType) 0x1LL; iflags <= DELAYED_ACTION_TYPE_MAX; iflags <<= 1) {
+		if (NM_FLAGS_HAS (action_type, iflags))
+			cache_prune_candidates_record_all (platform, delayed_action_refresh_to_object_type (iflags));
 	}
-	nl_cache_free (cache);
 
-	prune_list = g_ptr_array_new_with_free_func ((GDestroyNotify) nmp_object_unref);
+	for (iflags = (DelayedActionType) 0x1LL; iflags <= DELAYED_ACTION_TYPE_MAX; iflags <<= 1) {
+		if (NM_FLAGS_HAS (action_type, iflags)) {
+			ObjectType obj_type = delayed_action_refresh_to_object_type (iflags);
 
-	/* Find all the objects that are not in the alive list and must be pruned. */
-	for (j = 0; j < 2; j++) {
-		NMPCacheId cache_id;
-		const NMPlatformObject *const *list;
-		ObjectType obj_type_j;
+			/* clear any delayed action that request a refresh of this object type. */
+			priv->delayed_action.flags &= ~iflags;
+			if (obj_type == OBJECT_TYPE_LINK) {
+				priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_REFRESH_LINK;
+				g_ptr_array_set_size (priv->delayed_action.list_refresh_link, 0);
+			}
 
-		obj_type_j = obj_type;
-		if (j == 1) {
-			if (obj_type == OBJECT_TYPE_LINK)
-				break;
-			if (obj_type == OBJECT_TYPE_IP4_ADDRESS)
-				obj_type_j = OBJECT_TYPE_IP6_ADDRESS;
-			else
-				obj_type_j = OBJECT_TYPE_IP6_ROUTE;
-		}
+			event_handler_read_netlink_all (platform, FALSE);
 
-		if (ifindex > 0)
-			nmp_cache_id_init_addrroute_by_ifindex (&cache_id, obj_type_j, ifindex);
-		else
-			nmp_cache_id_init_object_type (&cache_id, obj_type_j);
-
-		list = nmp_cache_lookup_multi (priv->cache, &cache_id, &len);
-		for (i = 0; i < len; i++) {
-			NMPObject *o = NMP_OBJECT_UP_CAST (list[i]);
-
-			if (!g_hash_table_lookup (alive_list, o))
-				g_ptr_array_add (prune_list, nmp_object_ref (o));
+			if (_nl_sock_request_all (platform, priv->nlh_event, obj_type, &seq) == 0)
+				_new_sequence_number (platform, seq);
 		}
 	}
+	event_handler_read_netlink_all (platform, TRUE);
 
-	for (i = 0; i < prune_list->len; i++)
-		cache_remove_netlink (platform, prune_list->pdata[i], NULL, NULL, reason);
+	cache_prune_candidates_prune (platform);
+
+	if (handle_delayed_action)
+		delayed_action_handle_all (platform, FALSE);
 }
 
 static gboolean
@@ -2145,6 +2158,44 @@ ref_object (struct nl_object *obj, void *data)
 	*out = obj;
 }
 
+static int
+event_seq_check (struct nl_msg *msg, gpointer user_data)
+{
+	NMPlatform *platform = NM_PLATFORM (user_data);
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (user_data);
+	struct nlmsghdr *hdr;
+
+	hdr = nlmsg_hdr (msg);
+
+	if (hdr->nlmsg_seq == 0)
+		return NL_OK;
+
+	priv->nlh_seq_last = hdr->nlmsg_seq;
+
+	if (priv->nlh_seq_expect == 0)
+		_LOGT ("event_seq_check(): seq %u received (not waited)", hdr->nlmsg_seq);
+	else if (hdr->nlmsg_seq == priv->nlh_seq_expect) {
+		_LOGT ("event_seq_check(): seq %u received", hdr->nlmsg_seq);
+
+		priv->nlh_seq_expect = 0;
+	} else
+		_LOGT ("event_seq_check(): seq %u received (wait for %u)", hdr->nlmsg_seq, priv->nlh_seq_last);
+
+	return NL_OK;
+}
+
+static int
+event_err (struct sockaddr_nl *nla, struct nlmsgerr *nlerr, gpointer user_data)
+{
+	NMPlatform *platform = NM_PLATFORM (user_data);
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (user_data);
+	int errsv = nlerr ? -nlerr->error : 0;
+
+	_LOGT ("event_err(): error from kernel: %s (%d) for request %d", strerror (errsv), errsv, priv->nlh_seq_last);
+
+	return NL_OK;
+}
+
 /* This function does all the magic to avoid race conditions caused
  * by concurrent usage of synchronous commands and an asynchronous cache. This
  * might be a nice future addition to libnl but it requires to do all operations
@@ -2155,28 +2206,66 @@ static int
 event_notification (struct nl_msg *msg, gpointer user_data)
 {
 	NMPlatform *platform = NM_PLATFORM (user_data);
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (user_data);
 	auto_nl_object struct nl_object *nlo = NULL;
 	auto_nmp_obj NMPObject *obj = NULL;
-	int event;
+	struct nlmsghdr *msghdr;
 
-	event = nlmsg_hdr (msg)->nlmsg_type;
+	msghdr = nlmsg_hdr (msg);
 
-	if (_support_kernel_extended_ifa_flags_still_undecided () && event == RTM_NEWADDR)
+	if (_support_kernel_extended_ifa_flags_still_undecided () && msghdr->nlmsg_type == RTM_NEWADDR)
 		_support_kernel_extended_ifa_flags_detect (msg);
 
 	nl_msg_parse (msg, ref_object, &nlo);
 	if (!nlo)
 		return NL_OK;
 
-	obj = nmp_object_from_nl (platform, nlo, FALSE, TRUE);
-
-	if (   (obj && NMP_OBJECT_GET_TYPE (obj) == OBJECT_TYPE_LINK)
-	    || (!obj && _nlo_get_object_type (nlo) == OBJECT_TYPE_LINK))
+	if (_support_user_ipv6ll_still_undecided() && msghdr->nlmsg_type == RTM_NEWLINK)
 		_support_user_ipv6ll_detect ((struct rtnl_link *) nlo);
 
-	_LOGD ("event-notification: type %d: %s", event, nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
-	if (obj)
-		do_refresh_object (platform, obj, NM_PLATFORM_REASON_EXTERNAL, TRUE, NULL);
+	obj = nmp_object_from_nl (platform, nlo, FALSE, TRUE);
+
+	_LOGD ("event-notification: type %d, seq %u: %s", msghdr->nlmsg_type, msghdr->nlmsg_seq, nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+	if (obj) {
+		auto_nmp_obj NMPObject *obj_cache = NULL;
+
+		switch (msghdr->nlmsg_type) {
+
+		case RTM_NEWLINK:
+			if (   NMP_OBJECT_GET_TYPE (obj) == OBJECT_TYPE_LINK
+			    && g_hash_table_lookup (priv->delayed_deletion, obj) != NULL) {
+				/* the object is scheduled for delayed deletion. Replace that object
+				 * by clearing the value from priv->delayed_deletion. */
+				_LOGT ("delayed-deletion: clear delayed deletion of protected object %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ID, NULL, 0));
+				g_hash_table_insert (priv->delayed_deletion, nmp_object_ref (obj), NULL);
+			}
+			/* fall-through */
+		case RTM_NEWADDR:
+		case RTM_NEWROUTE:
+			cache_update_netlink (platform, obj, &obj_cache, NULL, NM_PLATFORM_REASON_EXTERNAL);
+			break;
+
+		case RTM_DELLINK:
+			if (   NMP_OBJECT_GET_TYPE (obj) == OBJECT_TYPE_LINK
+			    && g_hash_table_contains (priv->delayed_deletion, obj)) {
+				/* We sometimes receive spurious RTM_DELLINK events. In this case, we want to delay
+				 * the deletion of the object until later. */
+				_LOGT ("delayed-deletion: delay deletion of protected object %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ID, NULL, 0));
+				g_hash_table_insert (priv->delayed_deletion, nmp_object_ref (obj), nmp_object_ref (obj));
+				break;
+			}
+			/* fall-through */
+		case RTM_DELADDR:
+		case RTM_DELROUTE:
+			cache_remove_netlink (platform, obj, &obj_cache, NULL, NM_PLATFORM_REASON_EXTERNAL);
+			break;
+
+		default:
+			break;
+		}
+
+		cache_prune_candidates_drop (platform, obj_cache);
+	}
 
 	return NL_OK;
 }
@@ -2443,10 +2532,12 @@ _nmp_vt_cmd_plobj_to_nl_link (NMPlatform *platform, const NMPlatformObject *_obj
 }
 
 static gboolean
-do_add_link (NMPlatform *platform, const char *name, const struct rtnl_link *nlo, const NMPObject **out_obj)
+do_add_link (NMPlatform *platform, const char *name, const struct rtnl_link *nlo)
 {
 	NMPObject obj_needle;
 	int nle;
+
+	event_handler_read_netlink_all (platform, FALSE);
 
 	nle = kernel_add_object (platform, OBJECT_TYPE_LINK, (const struct nl_object *) nlo);
 	if (nle < 0) {
@@ -2458,7 +2549,16 @@ do_add_link (NMPlatform *platform, const char *name, const struct rtnl_link *nlo
 	nmp_object_stackinit_id_link (&obj_needle, 0);
 	g_strlcpy (obj_needle.link.name, name, sizeof (obj_needle.link.name));
 
-	do_refresh_object (platform, &obj_needle, NM_PLATFORM_REASON_INTERNAL, TRUE, out_obj);
+	delayed_action_handle_all (platform, TRUE);
+
+	/* FIXME: we add the link object via the second netlink socket. Sometimes,
+	 * the notification is not yet ready via nlh_event, so we have to re-request the
+	 * link so that it is in the cache. A better solution would be to do everything
+	 * via one netlink socket. */
+	if (!nmp_cache_lookup_link_full (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, 0, obj_needle.link.name, FALSE, NM_LINK_TYPE_NONE, NULL, NULL)) {
+		_LOGT ("do-add-link: reload: the added link is not yet ready. Request %s", obj_needle.link.name);
+		do_request_link (platform, 0, obj_needle.link.name, TRUE);
+	}
 
 	/* Return true, because kernel_add_object() succeeded. This doesn't indicate that the
 	 * object is now actuall in the cache, because there could be a race.
@@ -2472,12 +2572,13 @@ do_add_link_with_lookup (NMPlatform *platform, const char *name, const struct rt
 {
 	const NMPObject *obj;
 
-	do_add_link (platform, name, nlo, &obj);
-	if (!obj || (expected_link_type != NM_LINK_TYPE_NONE && expected_link_type != obj->link.type))
-		return FALSE;
-	if (out_link)
+	do_add_link (platform, name, nlo);
+
+	obj = nmp_cache_lookup_link_full (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache,
+	                                  0, name, FALSE, expected_link_type, NULL, NULL);
+	if (out_link && obj)
 		*out_link = obj->link;
-	return TRUE;
+	return !!obj;
 }
 
 static gboolean
@@ -2488,6 +2589,8 @@ do_add_addrroute (NMPlatform *platform, const NMPObject *obj_id, const struct nl
 	nm_assert (NM_IN_SET (NMP_OBJECT_GET_TYPE (obj_id),
 	                      OBJECT_TYPE_IP4_ADDRESS, OBJECT_TYPE_IP6_ADDRESS,
 	                      OBJECT_TYPE_IP4_ROUTE, OBJECT_TYPE_IP6_ROUTE));
+
+	event_handler_read_netlink_all (platform, FALSE);
 
 	nle = kernel_add_object (platform, NMP_OBJECT_GET_CLASS (obj_id)->obj_type, (const struct nl_object *) nlo);
 	if (nle < 0) {
@@ -2500,11 +2603,17 @@ do_add_addrroute (NMPlatform *platform, const NMPObject *obj_id, const struct nl
 	}
 	_LOGD ("do-add-%s: success adding object %s", NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name, nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0));
 
-	do_refresh_object (platform, obj_id, NM_PLATFORM_REASON_INTERNAL, TRUE, NULL);
+	delayed_action_handle_all (platform, TRUE);
+
+	/* FIXME: instead of re-requesting the added object, add it via nlh_event
+	 * so that the events are in sync. */
+	if (!nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, obj_id)) {
+		_LOGT ("do-add-%s: reload: the added object is not yet ready. Request %s", NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name, nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0));
+		do_request_one_type (platform, NMP_OBJECT_GET_TYPE (obj_id), TRUE);
+	}
 
 	/* The return value doesn't say, whether the object is in the platform cache after adding
-	 * it. That would be wrong, because do_refresh_object() is not in sync with kernel_add_object()
-	 * and there could be a race.
+	 * it.
 	 * Instead the return value says, whether kernel_add_object() succeeded. */
 	return TRUE;
 }
@@ -2513,8 +2622,11 @@ do_add_addrroute (NMPlatform *platform, const NMPObject *obj_id, const struct nl
 static gboolean
 do_delete_object (NMPlatform *platform, const NMPObject *obj_id, const struct nl_object *nlo)
 {
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	auto_nl_object struct nl_object *nlo_free = NULL;
 	int nle;
+
+	event_handler_read_netlink_all (platform, FALSE);
 
 	if (!nlo)
 		nlo = nlo_free = nmp_object_to_nl (platform, obj_id, FALSE);
@@ -2525,12 +2637,28 @@ do_delete_object (NMPlatform *platform, const NMPObject *obj_id, const struct nl
 	else
 		_LOGD ("do-delete-%s: success deleting '%s'", NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name, nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0));
 
-	/* also on failure refresh the cache. */
-	do_refresh_object (platform, obj_id, NM_PLATFORM_REASON_INTERNAL, TRUE, NULL);
+	delayed_action_handle_all (platform, TRUE);
 
-	/* This doesn't say, whether the object is still in the platform cache. Since
-	 * our delete operation is not in sync with do_refresh_object(), that would
-	 * be racy. Instead, just return whether kernel_delete_object() succeeded. */
+	/* FIXME: instead of re-requesting the deleted object, add it via nlh_event
+	 * so that the events are in sync. */
+	if (NMP_OBJECT_GET_TYPE (obj_id) == OBJECT_TYPE_LINK) {
+		const NMPObject *obj;
+
+		obj = nmp_cache_lookup_link_full (priv->cache, obj_id->link.ifindex, obj_id->link.ifindex <= 0 && obj_id->link.name[0] ? obj_id->link.name : NULL, FALSE, NM_LINK_TYPE_NONE, NULL, NULL);
+		if (obj && obj->_link.netlink.is_in_netlink) {
+			_LOGT ("do-delete-%s: reload: the deleted object is not yet removed. Request %s", NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name, nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0));
+			do_request_link (platform, obj_id->link.ifindex, obj_id->link.name, TRUE);
+		}
+	} else {
+		if (nmp_cache_lookup_obj (priv->cache, obj_id)) {
+			_LOGT ("do-delete-%s: reload: the deleted object is not yet removed. Request %s", NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name, nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0));
+			do_request_one_type (platform, NMP_OBJECT_GET_TYPE (obj_id), TRUE);
+		}
+	}
+
+	/* The return value doesn't say, whether the object is in the platform cache after adding
+	 * it.
+	 * Instead the return value says, whether kernel_add_object() succeeded. */
 	return nle >= 0;
 }
 
@@ -2539,7 +2667,6 @@ do_change_link (NMPlatform *platform, struct rtnl_link *nlo, gboolean complete_f
 {
 	int nle;
 	int ifindex;
-	NMPObject obj_needle;
 	gboolean complete_from_cache2 = complete_from_cache;
 
 	ifindex = rtnl_link_get_ifindex (nlo);
@@ -2567,7 +2694,9 @@ do_change_link (NMPlatform *platform, struct rtnl_link *nlo, gboolean complete_f
 		return FALSE;
 	}
 
-	do_refresh_object (platform, nmp_object_stackinit_id_link (&obj_needle, ifindex), NM_PLATFORM_REASON_INTERNAL, TRUE, NULL);
+	/* FIXME: as we modify the link via a separate socket, the cache is not in
+	 * sync and we have to refetch the link. */
+	do_request_link (platform, ifindex, NULL, TRUE);
 	return TRUE;
 }
 
@@ -2706,11 +2835,8 @@ link_get_flags (NMPlatform *platform, int ifindex)
 static gboolean
 link_refresh (NMPlatform *platform, int ifindex)
 {
-	NMPObject obj_needle;
-	const NMPObject *obj_cache;
-
-	do_refresh_object (platform, nmp_object_stackinit_id_link (&obj_needle, ifindex), NM_PLATFORM_REASON_EXTERNAL, TRUE, &obj_cache);
-	return !!obj_cache;
+	do_request_link (platform, ifindex, NULL, TRUE);
+	return !!cache_lookup_link (platform, ifindex);
 }
 
 static gboolean
@@ -3153,7 +3279,6 @@ infiniband_partition_add (NMPlatform *platform, int parent, int p_key, NMPlatfor
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	const NMPObject *obj_parent;
 	const NMPObject *obj;
-	NMPObject obj_needle;
 	gs_free char *path = NULL;
 	gs_free char *id = NULL;
 	gs_free char *ifname = NULL;
@@ -3169,17 +3294,13 @@ infiniband_partition_add (NMPlatform *platform, int parent, int p_key, NMPlatfor
 	if (!nm_platform_sysctl_set (platform, path, id))
 		return FALSE;
 
-	nmp_object_stackinit_id_link (&obj_needle, 0);
-	g_strlcpy (obj_needle.link.name, ifname, sizeof (obj_needle.link.name));
+	do_request_link (platform, 0, ifname, TRUE);
 
-	do_refresh_object (platform, &obj_needle, NM_PLATFORM_REASON_INTERNAL, TRUE, &obj);
-
-	if (!obj || obj->link.type != NM_LINK_TYPE_INFINIBAND)
-		return FALSE;
-
-	if (out_link)
+	obj = nmp_cache_lookup_link_full (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache,
+	                                  0, ifname, FALSE, NM_LINK_TYPE_INFINIBAND, NULL, NULL);
+	if (out_link && obj)
 		*out_link = obj->link;
-	return TRUE;
+	return !!obj;
 }
 
 typedef struct {
@@ -4271,14 +4392,32 @@ ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen
 		 * If no route with metric 0 exists, it might delete another route to the same destination.
 		 * For nm_platform_ip4_route_delete() we don't want this semantic.
 		 *
-		 * Instead, re-fetch the route from kernel, and if that fails, there is nothing to do.
-		 * On success, there is still a race that we might end up deleting the wrong route. */
+		 * Instead, make sure that we have the most recent state and process all
+		 * delayed actions (including re-reading data from netlink). */
+		delayed_action_handle_all (platform, TRUE);
+	}
 
-		do_refresh_object (platform, &obj_needle, NM_PLATFORM_REASON_INTERNAL, TRUE, &obj);
+	obj = nmp_cache_lookup_obj (priv->cache, &obj_needle);
+
+	if (metric == 0 && !obj) {
+		/* hmm... we are about to delete an IP4 route with metric 0. We must only
+		 * send the delete request if such a route really exists. Above we refreshed
+		 * the platform cache, still no such route exists.
+		 *
+		 * Be extra careful and reload the routes. We must be sure that such a
+		 * route doesn't exists, because when we add an IPv4 address, we immediately
+		 * afterwards try to delete the kernel-added device route with metric 0.
+		 * It might be, that we didn't yet get the notification about that route.
+		 *
+		 * FIXME: once our ip4_address_add() is sure that upon return we have
+		 * the latest state from in the platform cache, we might save this
+		 * additional expensive cache-resync. */
+		do_request_one_type (platform, OBJECT_TYPE_IP4_ROUTE, TRUE);
+
+		obj = nmp_cache_lookup_obj (priv->cache, &obj_needle);
 		if (!obj)
 			return TRUE;
-	} else
-		obj = nmp_cache_lookup_obj (priv->cache, &obj_needle);
+	}
 
 	if (!_nl_has_capability (1 /* NL_CAPABILITY_ROUTE_BUILD_MSG_SET_SCOPE */)) {
 		/* When searching for a matching IPv4 route to delete, the kernel
@@ -4383,17 +4522,27 @@ event_handler (GIOChannel *channel,
                GIOCondition io_condition,
                gpointer user_data)
 {
-	NMPlatform *platform = NM_PLATFORM (user_data);
+	delayed_action_handle_all (NM_PLATFORM (user_data), TRUE);
+	return TRUE;
+}
+
+static gboolean
+event_handler_read_netlink_one (NMPlatform *platform)
+{
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	int nle;
 
 	nle = nl_recvmsgs_default (priv->nlh_event);
+
+	/* Work around a libnl bug fixed in 3.2.22 (375a6294) */
+	if (nle == 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
+		nle = -NLE_AGAIN;
+
 	if (nle < 0)
 		switch (nle) {
+		case -NLE_AGAIN:
+			return FALSE;
 		case -NLE_DUMP_INTR:
-			/* this most likely happens due to our request (RTM_GETADDR, AF_INET6, NLM_F_DUMP)
-			 * to detect support for support_kernel_extended_ifa_flags. This is not critical
-			 * and can happen easily. */
 			debug ("Uncritical failure to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
 			break;
 		case -NLE_NOMEM:
@@ -4401,15 +4550,85 @@ event_handler (GIOChannel *channel,
 			/* Drain the event queue, we've lost events and are out of sync anyway and we'd
 			 * like to free up some space. We'll read in the status synchronously. */
 			_nl_sock_flush_data (priv->nlh_event);
-
-			delayed_action_schedule (platform, DELAYED_ACTION_TYPE_REFRESH_ALL, NULL);
-			delayed_action_handle_all (platform);
+			priv->nlh_seq_expect = 0;
+			delayed_action_schedule (platform,
+			                         DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS |
+			                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES |
+			                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES |
+			                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES |
+			                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES,
+			                         NULL);
 			break;
 		default:
 			error ("Failed to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
 			break;
 	}
 	return TRUE;
+}
+
+static gboolean
+event_handler_read_netlink_all (NMPlatform *platform, gboolean wait_for_acks)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	int r;
+	struct pollfd pfd;
+	gboolean any = FALSE;
+	gint64 timestamp = 0, now;
+	const int TIMEOUT = 250;
+	int timeout = 0;
+	guint32 wait_for_seq = 0;
+
+	while (TRUE) {
+		while (event_handler_read_netlink_one (platform))
+			any = TRUE;
+
+		if (!wait_for_acks || priv->nlh_seq_expect == 0) {
+			if (wait_for_seq)
+				_LOGT ("read-netlink-all: ACK for sequence number %u received", priv->nlh_seq_expect);
+			return any;
+		}
+
+		now = nm_utils_get_monotonic_timestamp_ms ();
+		if (wait_for_seq != priv->nlh_seq_expect) {
+			/* We are waiting for a new sequence number (or we will wait for the first time).
+			 * Reset/start counting the overall wait time. */
+			_LOGT ("read-netlink-all: wait for ACK for sequence number %u...", priv->nlh_seq_expect);
+			wait_for_seq = priv->nlh_seq_expect;
+			timestamp = now;
+			timeout = TIMEOUT;
+		} else {
+			if ((now - timestamp) >= TIMEOUT) {
+				/* timeout. Don't wait for this sequence number anymore. */
+				break;
+			}
+
+			/* readjust the wait-time. */
+			timeout = TIMEOUT - (now - timestamp);
+		}
+
+		memset (&pfd, 0, sizeof (pfd));
+		pfd.fd = nl_socket_get_fd (priv->nlh_event);
+		pfd.events = POLLIN;
+		r = poll (&pfd, 1, timeout);
+
+		if (r == 0) {
+			/* timeout. */
+			break;
+		}
+		if (r < 0) {
+			int errsv = errno;
+
+			if (errsv != EINTR) {
+				_LOGE ("read-netlink-all: poll failed with %s", strerror (errsv));
+				return any;
+			}
+			/* Continue to read again, even if there might be nothing to read after EINTR. */
+		}
+	}
+
+	_LOGW ("read-netlink-all: timeout waiting for ACK to sequence number %u...", wait_for_seq);
+	priv->nlh_seq_expect = 0;
+	return any;
 }
 
 static struct nl_sock *
@@ -4428,7 +4647,8 @@ setup_socket (gboolean event, gpointer user_data)
 	/* Dispatch event messages (event socket only) */
 	if (event) {
 		nl_socket_modify_cb (sock, NL_CB_VALID, NL_CB_CUSTOM, event_notification, user_data);
-		nl_socket_disable_seq_check (sock);
+		nl_socket_modify_cb (sock, NL_CB_SEQ_CHECK, NL_CB_CUSTOM, event_seq_check, user_data);
+		nl_socket_modify_err_cb (sock, NL_CB_CUSTOM, event_err, user_data);
 	}
 
 	nle = nl_connect (sock, NETLINK_ROUTE);
@@ -4559,8 +4779,13 @@ nm_linux_platform_init (NMLinuxPlatform *self)
 
 	self->priv = priv;
 
+	priv->delayed_deletion = g_hash_table_new_full ((GHashFunc) nmp_object_id_hash,
+	                                                (GEqualFunc) nmp_object_id_equal,
+	                                                (GDestroyNotify) nmp_object_unref,
+	                                                (GDestroyNotify) nmp_object_unref);
 	priv->cache = nmp_cache_new ();
-	priv->delayed_action.list = g_array_new (FALSE, FALSE, sizeof (DelayedActionData));
+	priv->delayed_action.list_master_connected = g_ptr_array_new ();
+	priv->delayed_action.list_refresh_link = g_ptr_array_new ();
 	priv->wifi_data = g_hash_table_new_full (NULL, NULL, NULL, (GDestroyNotify) wifi_utils_deinit);
 }
 
@@ -4620,15 +4845,15 @@ constructed (GObject *_object)
 	G_OBJECT_CLASS (nm_linux_platform_parent_class)->constructed (_object);
 
 	_LOGD ("populate platform cache");
+	delayed_action_schedule (platform,
+	                         DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS |
+	                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES |
+	                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES |
+	                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES |
+	                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES,
+	                         NULL);
 
-	/* request all IPv6 addresses (hopeing that there is at least one), to check for
-	 * the IFA_FLAGS attribute. */
-	nle = nl_rtgen_request (priv->nlh_event, RTM_GETADDR, AF_INET6, NLM_F_DUMP);
-	if (nle < 0)
-		nm_log_warn (LOGD_PLATFORM, "Netlink error: requesting RTM_GETADDR failed with %s", nl_geterror (nle));
-
-	delayed_action_schedule (platform, DELAYED_ACTION_TYPE_REFRESH_ALL, NULL);
-	delayed_action_handle_all (platform);
+	delayed_action_handle_all (platform, FALSE);
 
 	/* And read initial device list */
 	enumerator = g_udev_enumerator_new (priv->udev_client);
@@ -4653,9 +4878,14 @@ dispose (GObject *object)
 
 	_LOGD ("dispose");
 
-	g_array_set_size (priv->delayed_action.list, 0);
+	priv->delayed_action.flags = DELAYED_ACTION_TYPE_NONE;
+	g_ptr_array_set_size (priv->delayed_action.list_master_connected, 0);
+	g_ptr_array_set_size (priv->delayed_action.list_refresh_link, 0);
 
 	nm_clear_g_source (&priv->delayed_action.idle_id);
+
+	g_clear_pointer (&priv->prune_candidates, g_hash_table_unref);
+	g_clear_pointer (&priv->delayed_deletion, g_hash_table_unref);
 
 	G_OBJECT_CLASS (nm_linux_platform_parent_class)->dispose (object);
 }
@@ -4667,7 +4897,8 @@ nm_linux_platform_finalize (GObject *object)
 
 	nmp_cache_free (priv->cache);
 
-	g_array_unref (priv->delayed_action.list);
+	g_ptr_array_unref (priv->delayed_action.list_master_connected);
+	g_ptr_array_unref (priv->delayed_action.list_refresh_link);
 
 	/* Free netlink resources */
 	g_source_remove (priv->event_id);
