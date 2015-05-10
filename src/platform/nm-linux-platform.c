@@ -393,7 +393,9 @@ typedef struct {
 	gpointer user_data;
 } DelayedActionData;
 
-typedef struct {
+typedef struct _NMLinuxPlatformPrivate NMLinuxPlatformPrivate;
+
+struct _NMLinuxPlatformPrivate {
 	struct nl_sock *nlh;
 	struct nl_sock *nlh_event;
 	NMPCache *cache;
@@ -409,9 +411,15 @@ typedef struct {
 	} delayed_action;
 
 	GHashTable *wifi_data;
-} NMLinuxPlatformPrivate;
+};
 
-#define NM_LINUX_PLATFORM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_LINUX_PLATFORM, NMLinuxPlatformPrivate))
+static inline NMLinuxPlatformPrivate *
+NM_LINUX_PLATFORM_GET_PRIVATE (const void *self)
+{
+	nm_assert (NM_IS_LINUX_PLATFORM (self));
+
+	return ((NMLinuxPlatform *) self)->priv;
+}
 
 G_DEFINE_TYPE (NMLinuxPlatform, nm_linux_platform, NM_TYPE_PLATFORM)
 
@@ -4540,9 +4548,11 @@ handle_udev_event (GUdevClient *client,
 /******************************************************************/
 
 static void
-nm_linux_platform_init (NMLinuxPlatform *platform)
+nm_linux_platform_init (NMLinuxPlatform *self)
 {
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	NMLinuxPlatformPrivate *priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_LINUX_PLATFORM, NMLinuxPlatformPrivate);
+
+	self->priv = priv;
 
 	priv->cache = nmp_cache_new ();
 	priv->delayed_action.list = g_array_new (FALSE, FALSE, sizeof (DelayedActionData));
