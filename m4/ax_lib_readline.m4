@@ -87,7 +87,7 @@ AC_DEFUN([AX_LIB_READLINE], [
   ])
 
   if test -z "$ax_cv_lib_readline"; then
-    AC_MSG_ERROR([readline library with terminfo support is required (one of ncurses, curses, or termcap)])
+    AC_MSG_ERROR([readline library with terminfo support is required (one of readline, edit, or editline, AND one of ncurses, curses, or termcap)])
   fi
 
   ORIG_LIBS="$LIBS"
