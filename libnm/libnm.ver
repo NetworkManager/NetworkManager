@@ -874,6 +874,9 @@ global:
 	nm_setting_ip_config_has_dns_options;
 	nm_setting_ip_config_remove_dns_option;
 	nm_setting_ip_config_remove_dns_option_by_value;
+	nm_setting_wired_get_wake_on_lan;
+	nm_setting_wired_get_wake_on_lan_password;
+	nm_setting_wired_wake_on_lan_get_type;
 	nm_setting_wireless_get_powersave;
 	nm_utils_bond_mode_int_to_string;
 	nm_utils_bond_mode_string_to_int;
