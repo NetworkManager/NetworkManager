@@ -7196,9 +7196,16 @@ property_edit_submenu (NmCli *nmc,
 			 *                   ADD adds the new value(s)
 			 * single values:  : both SET and ADD sets the new value
 			 */
-			if (!cmd_property_arg)
+			if (!cmd_property_arg) {
+				const char **avals = nmc_setting_get_property_allowed_values (curr_setting, prop_name);
+				if (avals) {
+					char *avals_str = nmc_util_strv_for_display (avals, FALSE);
+					g_print (_("Allowed values for '%s' property: %s\n"),
+					         prop_name, avals_str);
+					g_free (avals_str);
+				}
 				prop_val_user = nmc_readline (_("Enter '%s' value: "), prop_name);
-			else
+			} else
 				prop_val_user = g_strdup (cmd_property_arg);
 
 			/* nmc_setting_set_property() only adds new value, thus we have to
