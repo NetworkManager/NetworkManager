@@ -306,13 +306,16 @@ _nl_sock_flush_data (struct nl_sock *sk)
 
 #if HAVE_LIBNL_INET6_ADDR_GEN_MODE
 static int _support_user_ipv6ll = 0;
+#define _support_user_ipv6ll_still_undecided() (G_UNLIKELY (_support_user_ipv6ll == 0))
+#else
+#define _support_user_ipv6ll_still_undecided() (FALSE)
 #endif
 
 static gboolean
 _support_user_ipv6ll_get (void)
 {
 #if HAVE_LIBNL_INET6_ADDR_GEN_MODE
-	if (G_UNLIKELY (_support_user_ipv6ll == 0)) {
+	if (_support_user_ipv6ll_still_undecided ()) {
 		_support_user_ipv6ll = -1;
 		nm_log_warn (LOGD_PLATFORM, "kernel support for IFLA_INET6_ADDR_GEN_MODE %s", "failed to detect; assume no support");
 	} else
@@ -329,7 +332,7 @@ _support_user_ipv6ll_detect (const struct rtnl_link *rtnl_link)
 	/* If we ever see a link with valid IPv6 link-local address
 	 * generation modes, the kernel supports it.
 	 */
-	if (G_UNLIKELY (_support_user_ipv6ll == 0)) {
+	if (_support_user_ipv6ll_still_undecided ()) {
 		uint8_t mode;
 
 		if (rtnl_link_inet6_get_addr_gen_mode ((struct rtnl_link *) rtnl_link, &mode) == 0) {
