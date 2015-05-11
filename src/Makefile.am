@@ -237,6 +237,7 @@ nm_sources = \
 	rdisc/nm-lndp-rdisc.h \
 	rdisc/nm-rdisc.c \
 	rdisc/nm-rdisc.h \
+	rdisc/nm-rdisc-private.h \
 	\
 	ppp-manager/nm-ppp-manager.c \
 	ppp-manager/nm-ppp-manager.h \
