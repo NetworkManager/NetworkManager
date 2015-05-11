@@ -292,7 +292,7 @@ main (int argc, char **argv)
 
 		/* Mount our /sys instance, so that gudev sees only our devices.
 		 * Needs to be read-only, because we don't run udev. */
-		if (mount (NULL, "/sys", NULL, MS_SLAVE, NULL) != 0) {
+		if (mount (NULL, "/sys", "sysfs", MS_SLAVE, NULL) != 0) {
 			errsv = errno;
 			g_error ("mount(\"/\", MS_SLAVE) failed with %s (%d)", strerror (errsv), errsv);
 		}
@@ -311,7 +311,7 @@ main (int argc, char **argv)
 			errsv = errno;
 			g_error ("remount(\"/sys/devices\") failed with  %s (%d)", strerror (errsv), errsv);
 		}
-		if (mount ("/sys/devices/devices", "/sys/devices", NULL, MS_BIND, NULL) != 0) {
+		if (mount ("/sys/devices/devices", "/sys/devices", "sysfs", MS_BIND, NULL) != 0) {
 			errsv = errno;
 			g_error ("mount(\"/sys\") failed with %s (%d)", strerror (errsv), errsv);
 		}
