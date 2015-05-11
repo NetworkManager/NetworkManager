@@ -48,79 +48,79 @@ AM_CPPFLAGS += $(foreach d,$(sort $(dir $(libNetworkManager_la_SOURCES))),-I$(to
 noinst_LTLIBRARIES = \
 	libNetworkManager.la \
 	libnm-iface-helper.la \
-	libsystemd-dhcp.la
+	libsystemd-nm.la
 
 ######################
-# libsystemd-dhcp
+# libsystemd-nm
 ######################
 
-SYSTEMD_DHCP_CFLAGS = \
-	-I$(top_srcdir)/src/dhcp-manager/systemd-dhcp/src/systemd \
-	-I$(top_srcdir)/src/dhcp-manager/systemd-dhcp/src/libsystemd-network \
-	-I$(top_srcdir)/src/dhcp-manager/systemd-dhcp/src/shared \
-	-I$(top_srcdir)/src/dhcp-manager/systemd-dhcp
+SYSTEMD_NM_CFLAGS = \
+	-I$(top_srcdir)/src/systemd/src/systemd \
+	-I$(top_srcdir)/src/systemd/src/libsystemd-network \
+	-I$(top_srcdir)/src/systemd/src/shared \
+	-I$(top_srcdir)/src/systemd
 
-libsystemd_dhcp_la_SOURCES = \
-	dhcp-manager/systemd-dhcp/src/libsystemd/sd-id128/sd-id128.c \
-	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp-identifier.c \
-	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp-identifier.h \
-	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp-network.c \
-	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp-packet.c \
-	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp-internal.h \
-	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp6-network.c \
-	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp6-lease-internal.h \
-	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp6-option.c \
-	dhcp-manager/systemd-dhcp/src/libsystemd-network/network-internal.c \
-	dhcp-manager/systemd-dhcp/src/libsystemd-network/sd-dhcp-lease.c \
-	dhcp-manager/systemd-dhcp/src/libsystemd-network/sd-dhcp-client.c \
-	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp-option.c \
-	dhcp-manager/systemd-dhcp/src/libsystemd-network/network-internal.h \
-	dhcp-manager/systemd-dhcp/src/libsystemd-network/sd-dhcp6-lease.c \
-	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp-protocol.h \
-	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp6-internal.h \
-	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp6-protocol.h \
-	dhcp-manager/systemd-dhcp/src/libsystemd-network/dhcp-lease-internal.h \
-	dhcp-manager/systemd-dhcp/src/libsystemd-network/sd-dhcp6-client.c \
-	dhcp-manager/systemd-dhcp/src/shared/async.h \
-	dhcp-manager/systemd-dhcp/src/shared/time-util.h \
-	dhcp-manager/systemd-dhcp/src/shared/siphash24.h \
-	dhcp-manager/systemd-dhcp/src/shared/time-util.c \
-	dhcp-manager/systemd-dhcp/src/shared/socket-util.h \
-	dhcp-manager/systemd-dhcp/src/shared/sparse-endian.h \
-	dhcp-manager/systemd-dhcp/src/shared/macro.h \
-	dhcp-manager/systemd-dhcp/src/shared/refcnt.h \
-	dhcp-manager/systemd-dhcp/src/shared/util.c \
-	dhcp-manager/systemd-dhcp/src/shared/in-addr-util.c \
-	dhcp-manager/systemd-dhcp/src/shared/siphash24.c \
-	dhcp-manager/systemd-dhcp/src/shared/util.h \
-	dhcp-manager/systemd-dhcp/src/shared/in-addr-util.h \
-	dhcp-manager/systemd-dhcp/src/shared/list.h \
-	dhcp-manager/systemd-dhcp/src/shared/log.h \
-	dhcp-manager/systemd-dhcp/src/shared/fileio.h \
-	dhcp-manager/systemd-dhcp/src/shared/fileio.c \
-	dhcp-manager/systemd-dhcp/src/shared/path-util.c \
-	dhcp-manager/systemd-dhcp/src/shared/path-util.h \
-	dhcp-manager/systemd-dhcp/src/shared/strv.h \
-	dhcp-manager/systemd-dhcp/src/shared/strv.c \
-	dhcp-manager/systemd-dhcp/src/shared/unaligned.h \
-	dhcp-manager/systemd-dhcp/src/shared/utf8.h \
-	dhcp-manager/systemd-dhcp/src/shared/utf8.c \
-	dhcp-manager/systemd-dhcp/src/systemd/sd-dhcp-lease.h \
-	dhcp-manager/systemd-dhcp/src/systemd/sd-dhcp-client.h \
-	dhcp-manager/systemd-dhcp/src/systemd/sd-id128.h \
-	dhcp-manager/systemd-dhcp/src/systemd/sd-dhcp6-lease.h \
-	dhcp-manager/systemd-dhcp/src/systemd/sd-dhcp6-client.h \
-	dhcp-manager/systemd-dhcp/src/systemd/sd-event.h \
-	dhcp-manager/systemd-dhcp/src/systemd/_sd-common.h \
-	dhcp-manager/systemd-dhcp/nm-sd-adapt.h \
-	dhcp-manager/systemd-dhcp/nm-sd-adapt.c
+libsystemd_nm_la_SOURCES = \
+	systemd/src/libsystemd/sd-id128/sd-id128.c \
+	systemd/src/libsystemd-network/dhcp-identifier.c \
+	systemd/src/libsystemd-network/dhcp-identifier.h \
+	systemd/src/libsystemd-network/dhcp-network.c \
+	systemd/src/libsystemd-network/dhcp-packet.c \
+	systemd/src/libsystemd-network/dhcp-internal.h \
+	systemd/src/libsystemd-network/dhcp6-network.c \
+	systemd/src/libsystemd-network/dhcp6-lease-internal.h \
+	systemd/src/libsystemd-network/dhcp6-option.c \
+	systemd/src/libsystemd-network/network-internal.c \
+	systemd/src/libsystemd-network/sd-dhcp-lease.c \
+	systemd/src/libsystemd-network/sd-dhcp-client.c \
+	systemd/src/libsystemd-network/dhcp-option.c \
+	systemd/src/libsystemd-network/network-internal.h \
+	systemd/src/libsystemd-network/sd-dhcp6-lease.c \
+	systemd/src/libsystemd-network/dhcp-protocol.h \
+	systemd/src/libsystemd-network/dhcp6-internal.h \
+	systemd/src/libsystemd-network/dhcp6-protocol.h \
+	systemd/src/libsystemd-network/dhcp-lease-internal.h \
+	systemd/src/libsystemd-network/sd-dhcp6-client.c \
+	systemd/src/shared/async.h \
+	systemd/src/shared/time-util.h \
+	systemd/src/shared/siphash24.h \
+	systemd/src/shared/time-util.c \
+	systemd/src/shared/socket-util.h \
+	systemd/src/shared/sparse-endian.h \
+	systemd/src/shared/macro.h \
+	systemd/src/shared/refcnt.h \
+	systemd/src/shared/util.c \
+	systemd/src/shared/in-addr-util.c \
+	systemd/src/shared/siphash24.c \
+	systemd/src/shared/util.h \
+	systemd/src/shared/in-addr-util.h \
+	systemd/src/shared/list.h \
+	systemd/src/shared/log.h \
+	systemd/src/shared/fileio.h \
+	systemd/src/shared/fileio.c \
+	systemd/src/shared/path-util.c \
+	systemd/src/shared/path-util.h \
+	systemd/src/shared/strv.h \
+	systemd/src/shared/strv.c \
+	systemd/src/shared/unaligned.h \
+	systemd/src/shared/utf8.h \
+	systemd/src/shared/utf8.c \
+	systemd/src/systemd/sd-dhcp-lease.h \
+	systemd/src/systemd/sd-dhcp-client.h \
+	systemd/src/systemd/sd-id128.h \
+	systemd/src/systemd/sd-dhcp6-lease.h \
+	systemd/src/systemd/sd-dhcp6-client.h \
+	systemd/src/systemd/sd-event.h \
+	systemd/src/systemd/_sd-common.h \
+	systemd/nm-sd-adapt.h \
+	systemd/nm-sd-adapt.c
 
-libsystemd_dhcp_la_CPPFLAGS = \
+libsystemd_nm_la_CPPFLAGS = \
 	-I$(top_srcdir)/include \
-	$(SYSTEMD_DHCP_CFLAGS) \
+	$(SYSTEMD_NM_CFLAGS) \
 	$(GLIB_CFLAGS)
 
-libsystemd_dhcp_la_LIBADD = \
+libsystemd_nm_la_LIBADD = \
 	$(GLIB_LIBS)
 
 ###########################################
@@ -232,7 +232,6 @@ nm_sources = \
 	rdisc/nm-lndp-rdisc.h \
 	rdisc/nm-rdisc.c \
 	rdisc/nm-rdisc.h \
-	rdisc/nm-rdisc-private.h \
 	\
 	ppp-manager/nm-ppp-manager.c \
 	ppp-manager/nm-ppp-manager.h \
@@ -400,7 +399,7 @@ AM_CPPFLAGS += \
 	$(LIBNDP_CFLAGS) \
 	$(LIBSOUP_CFLAGS) \
 	$(SYSTEMD_LOGIN_CFLAGS) \
-	$(SYSTEMD_DHCP_CFLAGS) \
+	$(SYSTEMD_NM_CFLAGS) \
 	\
 	-DBINDIR=\"$(bindir)\" \
 	-DDATADIR=\"$(datadir)\" \
@@ -428,7 +427,7 @@ libNetworkManager_la_SOURCES = \
 
 libNetworkManager_la_LIBADD = \
 	$(top_builddir)/libnm-core/libnm-core.la \
-	libsystemd-dhcp.la \
+	libsystemd-nm.la \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS) \
 	$(GUDEV_LIBS) \
@@ -494,7 +493,7 @@ endif
 
 libnm_iface_helper_la_LIBADD = \
 	$(top_builddir)/libnm-core/libnm-core.la \
-	libsystemd-dhcp.la \
+	libsystemd-nm.la \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS) \
 	$(GUDEV_LIBS) \
@@ -514,7 +513,7 @@ nm_iface_helper_SOURCES = \
 
 nm_iface_helper_LDADD = \
 	$(top_builddir)/libnm-core/libnm-core.la \
-	libsystemd-dhcp.la \
+	libsystemd-nm.la \
 	libnm-iface-helper.la \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS) \
