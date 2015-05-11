@@ -27,7 +27,6 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <libintl.h>
-#include <locale.h>
 #include <stdio.h>
 #include <syslog.h>
 #include <sched.h>
@@ -1367,12 +1366,132 @@ char *cescape(const char *s) {
         return r;
 }
 
-char *cunescape_length_with_prefix(const char *s, size_t length, const char *prefix) {
+static int cunescape_one(const char *p, size_t length, char *ret) {
+        int r = 1;
+
+        assert(p);
+        assert(*p);
+        assert(ret);
+
+        if (length != (size_t) -1 && length < 1)
+                return -EINVAL;
+
+        switch (p[0]) {
+
+        case 'a':
+                *ret = '\a';
+                break;
+        case 'b':
+                *ret = '\b';
+                break;
+        case 'f':
+                *ret = '\f';
+                break;
+        case 'n':
+                *ret = '\n';
+                break;
+        case 'r':
+                *ret = '\r';
+                break;
+        case 't':
+                *ret = '\t';
+                break;
+        case 'v':
+                *ret = '\v';
+                break;
+        case '\\':
+                *ret = '\\';
+                break;
+        case '"':
+                *ret = '"';
+                break;
+        case '\'':
+                *ret = '\'';
+                break;
+
+        case 's':
+                /* This is an extension of the XDG syntax files */
+                *ret = ' ';
+                break;
+
+        case 'x': {
+                /* hexadecimal encoding */
+                int a, b;
+
+                if (length != (size_t) -1 && length < 3)
+                        return -EINVAL;
+
+                a = unhexchar(p[1]);
+                if (a < 0)
+                        return -EINVAL;
+
+                b = unhexchar(p[2]);
+                if (b < 0)
+                        return -EINVAL;
+
+                /* don't allow NUL bytes */
+                if (a == 0 && b == 0)
+                        return -EINVAL;
+
+                *ret = (char) ((a << 4) | b);
+                r = 3;
+                break;
+        }
+
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7': {
+                /* octal encoding */
+                int a, b, c, m;
+
+                if (length != (size_t) -1 && length < 4)
+                        return -EINVAL;
+
+                a = unoctchar(p[0]);
+                if (a < 0)
+                        return -EINVAL;
+
+                b = unoctchar(p[1]);
+                if (b < 0)
+                        return -EINVAL;
+
+                c = unoctchar(p[2]);
+                if (c < 0)
+                        return -EINVAL;
+
+                /* don't allow NUL bytes */
+                if (a == 0 && b == 0 && c == 0)
+                        return -EINVAL;
+
+                /* Don't allow bytes above 255 */
+                m = (a << 6) | (b << 3) | c;
+                if (m > 255)
+                        return -EINVAL;
+
+                *ret = (char) m;
+                r = 3;
+                break;
+        }
+
+        default:
+                return -EINVAL;
+        }
+
+        return r;
+}
+
+int cunescape_length_with_prefix(const char *s, size_t length, const char *prefix, UnescapeFlags flags, char **ret) {
         char *r, *t;
         const char *f;
         size_t pl;
 
         assert(s);
+        assert(ret);
 
         /* Undoes C style string escaping, and optionally prefixes it. */
 
@@ -1380,136 +1499,62 @@ char *cunescape_length_with_prefix(const char *s, size_t length, const char *pre
 
         r = new(char, pl+length+1);
         if (!r)
-                return NULL;
+                return -ENOMEM;
 
         if (prefix)
                 memcpy(r, prefix, pl);
 
         for (f = s, t = r + pl; f < s + length; f++) {
-                size_t remaining = s + length - f;
+                size_t remaining;
+                int k;
+
+                remaining = s + length - f;
                 assert(remaining > 0);
 
-                if (*f != '\\') {        /* a literal literal */
+                if (*f != '\\') {
+                        /* A literal literal, copy verbatim */
                         *(t++) = *f;
                         continue;
                 }
 
-                if (--remaining == 0) {  /* copy trailing backslash verbatim */
-                        *(t++) = *f;
-                        break;
-                }
-
-                f++;
-
-                switch (*f) {
-
-                case 'a':
-                        *(t++) = '\a';
-                        break;
-                case 'b':
-                        *(t++) = '\b';
-                        break;
-                case 'f':
-                        *(t++) = '\f';
-                        break;
-                case 'n':
-                        *(t++) = '\n';
-                        break;
-                case 'r':
-                        *(t++) = '\r';
-                        break;
-                case 't':
-                        *(t++) = '\t';
-                        break;
-                case 'v':
-                        *(t++) = '\v';
-                        break;
-                case '\\':
-                        *(t++) = '\\';
-                        break;
-                case '"':
-                        *(t++) = '"';
-                        break;
-                case '\'':
-                        *(t++) = '\'';
-                        break;
-
-                case 's':
-                        /* This is an extension of the XDG syntax files */
-                        *(t++) = ' ';
-                        break;
-
-                case 'x': {
-                        /* hexadecimal encoding */
-                        int a = -1, b = -1;
-
-                        if (remaining >= 2) {
-                                a = unhexchar(f[1]);
-                                b = unhexchar(f[2]);
+                if (remaining == 1) {
+                        if (flags & UNESCAPE_RELAX) {
+                                /* A trailing backslash, copy verbatim */
+                                *(t++) = *f;
+                                continue;
                         }
 
-                        if (a < 0 || b < 0 || (a == 0 && b == 0)) {
+                        return -EINVAL;
+                }
+
+                k = cunescape_one(f + 1, remaining - 1, t);
+                if (k < 0) {
+                        if (flags & UNESCAPE_RELAX) {
                                 /* Invalid escape code, let's take it literal then */
                                 *(t++) = '\\';
-                                *(t++) = 'x';
-                        } else {
-                                *(t++) = (char) ((a << 4) | b);
-                                f += 2;
+                                continue;
                         }
 
-                        break;
+                        return k;
                 }
 
-                case '0':
-                case '1':
-                case '2':
-                case '3':
-                case '4':
-                case '5':
-                case '6':
-                case '7': {
-                        /* octal encoding */
-                        int a = -1, b = -1, c = -1;
-
-                        if (remaining >= 3) {
-                                a = unoctchar(f[0]);
-                                b = unoctchar(f[1]);
-                                c = unoctchar(f[2]);
-                        }
-
-                        if (a < 0 || b < 0 || c < 0 || (a == 0 && b == 0 && c == 0)) {
-                                /* Invalid escape code, let's take it literal then */
-                                *(t++) = '\\';
-                                *(t++) = f[0];
-                        } else {
-                                *(t++) = (char) ((a << 6) | (b << 3) | c);
-                                f += 2;
-                        }
-
-                        break;
-                }
-
-                default:
-                        /* Invalid escape code, let's take it literal then */
-                        *(t++) = '\\';
-                        *(t++) = *f;
-                        break;
-                }
+                f += k;
+                t++;
         }
 
         *t = 0;
-        return r;
-}
 
-char *cunescape_length(const char *s, size_t length) {
-        return cunescape_length_with_prefix(s, length, NULL);
+        *ret = r;
+        return t - r;
 }
 
 #if 0 /* NM_IGNORED */
-char *cunescape(const char *s) {
-        assert(s);
+int cunescape_length(const char *s, size_t length, UnescapeFlags flags, char **ret) {
+        return cunescape_length_with_prefix(s, length, NULL, flags, ret);
+}
 
-        return cunescape_length(s, strlen(s));
+int cunescape(const char *s, UnescapeFlags flags, char **ret) {
+        return cunescape_length(s, strlen(s), flags, ret);
 }
 
 char *xescape(const char *s, const char *bad) {
@@ -2882,7 +2927,7 @@ int getttyname_malloc(int fd, char **ret) {
 
 int getttyname_harder(int fd, char **r) {
         int k;
-        char *s;
+        char *s = NULL;
 
         k = getttyname_malloc(fd, &s);
         if (k < 0)
@@ -2988,215 +3033,20 @@ int get_ctty(pid_t pid, dev_t *_devnr, char **r) {
         return 0;
 }
 
-int rm_rf_children_dangerous(int fd, bool only_dirs, bool honour_sticky, struct stat *root_dev) {
-        _cleanup_closedir_ DIR *d = NULL;
-        int ret = 0;
-
-        assert(fd >= 0);
-
-        /* This returns the first error we run into, but nevertheless
-         * tries to go on. This closes the passed fd. */
-
-        d = fdopendir(fd);
-        if (!d) {
-                safe_close(fd);
-
-                return errno == ENOENT ? 0 : -errno;
-        }
-
-        for (;;) {
-                struct dirent *de;
-                bool is_dir, keep_around;
-                struct stat st;
-                int r;
-
-                errno = 0;
-                de = readdir(d);
-                if (!de) {
-                        if (errno != 0 && ret == 0)
-                                ret = -errno;
-                        return ret;
-                }
-
-                if (streq(de->d_name, ".") || streq(de->d_name, ".."))
-                        continue;
-
-                if (de->d_type == DT_UNKNOWN ||
-                    honour_sticky ||
-                    (de->d_type == DT_DIR && root_dev)) {
-                        if (fstatat(fd, de->d_name, &st, AT_SYMLINK_NOFOLLOW) < 0) {
-                                if (ret == 0 && errno != ENOENT)
-                                        ret = -errno;
-                                continue;
-                        }
-
-                        is_dir = S_ISDIR(st.st_mode);
-                        keep_around =
-                                honour_sticky &&
-                                (st.st_uid == 0 || st.st_uid == getuid()) &&
-                                (st.st_mode & S_ISVTX);
-                } else {
-                        is_dir = de->d_type == DT_DIR;
-                        keep_around = false;
-                }
-
-                if (is_dir) {
-                        int subdir_fd;
-
-                        /* if root_dev is set, remove subdirectories only, if device is same as dir */
-                        if (root_dev && st.st_dev != root_dev->st_dev)
-                                continue;
-
-                        subdir_fd = openat(fd, de->d_name,
-                                           O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC|O_NOFOLLOW|O_NOATIME);
-                        if (subdir_fd < 0) {
-                                if (ret == 0 && errno != ENOENT)
-                                        ret = -errno;
-                                continue;
-                        }
-
-                        r = rm_rf_children_dangerous(subdir_fd, only_dirs, honour_sticky, root_dev);
-                        if (r < 0 && ret == 0)
-                                ret = r;
-
-                        if (!keep_around)
-                                if (unlinkat(fd, de->d_name, AT_REMOVEDIR) < 0) {
-                                        if (ret == 0 && errno != ENOENT)
-                                                ret = -errno;
-                                }
-
-                } else if (!only_dirs && !keep_around) {
-
-                        if (unlinkat(fd, de->d_name, 0) < 0) {
-                                if (ret == 0 && errno != ENOENT)
-                                        ret = -errno;
-                        }
-                }
-        }
-}
-
-_pure_ static int is_temporary_fs(struct statfs *s) {
+bool is_temporary_fs(const struct statfs *s) {
         assert(s);
 
         return F_TYPE_EQUAL(s->f_type, TMPFS_MAGIC) ||
                F_TYPE_EQUAL(s->f_type, RAMFS_MAGIC);
 }
 
-int is_fd_on_temporary_fs(int fd) {
+int fd_is_temporary_fs(int fd) {
         struct statfs s;
 
         if (fstatfs(fd, &s) < 0)
                 return -errno;
 
         return is_temporary_fs(&s);
-}
-
-int rm_rf_children(int fd, bool only_dirs, bool honour_sticky, struct stat *root_dev) {
-        struct statfs s;
-
-        assert(fd >= 0);
-
-        if (fstatfs(fd, &s) < 0) {
-                safe_close(fd);
-                return -errno;
-        }
-
-        /* We refuse to clean disk file systems with this call. This
-         * is extra paranoia just to be sure we never ever remove
-         * non-state data */
-        if (!is_temporary_fs(&s)) {
-                log_error("Attempted to remove disk file system, and we can't allow that.");
-                safe_close(fd);
-                return -EPERM;
-        }
-
-        return rm_rf_children_dangerous(fd, only_dirs, honour_sticky, root_dev);
-}
-
-static int file_is_priv_sticky(const char *p) {
-        struct stat st;
-
-        assert(p);
-
-        if (lstat(p, &st) < 0)
-                return -errno;
-
-        return
-                (st.st_uid == 0 || st.st_uid == getuid()) &&
-                (st.st_mode & S_ISVTX);
-}
-
-static int rm_rf_internal(const char *path, bool only_dirs, bool delete_root, bool honour_sticky, bool dangerous) {
-        int fd, r;
-        struct statfs s;
-
-        assert(path);
-
-        /* We refuse to clean the root file system with this
-         * call. This is extra paranoia to never cause a really
-         * seriously broken system. */
-        if (path_equal(path, "/")) {
-                log_error("Attempted to remove entire root file system, and we can't allow that.");
-                return -EPERM;
-        }
-
-        fd = open(path, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC|O_NOFOLLOW|O_NOATIME);
-        if (fd < 0) {
-
-                if (errno != ENOTDIR && errno != ELOOP)
-                        return -errno;
-
-                if (!dangerous) {
-                        if (statfs(path, &s) < 0)
-                                return -errno;
-
-                        if (!is_temporary_fs(&s)) {
-                                log_error("Attempted to remove disk file system, and we can't allow that.");
-                                return -EPERM;
-                        }
-                }
-
-                if (delete_root && !only_dirs)
-                        if (unlink(path) < 0 && errno != ENOENT)
-                                return -errno;
-
-                return 0;
-        }
-
-        if (!dangerous) {
-                if (fstatfs(fd, &s) < 0) {
-                        safe_close(fd);
-                        return -errno;
-                }
-
-                if (!is_temporary_fs(&s)) {
-                        log_error("Attempted to remove disk file system, and we can't allow that.");
-                        safe_close(fd);
-                        return -EPERM;
-                }
-        }
-
-        r = rm_rf_children_dangerous(fd, only_dirs, honour_sticky, NULL);
-        if (delete_root) {
-
-                if (honour_sticky && file_is_priv_sticky(path) > 0)
-                        return r;
-
-                if (rmdir(path) < 0 && errno != ENOENT) {
-                        if (r == 0)
-                                r = -errno;
-                }
-        }
-
-        return r;
-}
-
-int rm_rf(const char *path, bool only_dirs, bool delete_root, bool honour_sticky) {
-        return rm_rf_internal(path, only_dirs, delete_root, honour_sticky, false);
-}
-
-int rm_rf_dangerous(const char *path, bool only_dirs, bool delete_root, bool honour_sticky) {
-        return rm_rf_internal(path, only_dirs, delete_root, honour_sticky, true);
 }
 
 int chmod_and_chown(const char *path, mode_t mode, uid_t uid, gid_t gid) {
@@ -3435,14 +3285,14 @@ char **replace_env_argv(char **argv, char **env) {
                 /* If $FOO appears as single word, replace it by the split up variable */
                 if ((*i)[0] == '$' && (*i)[1] != '{') {
                         char *e;
-                        char **w, **m;
+                        char **w, **m = NULL;
                         unsigned q;
 
                         e = strv_env_get(env, *i+1);
                         if (e) {
                                 int r;
 
-                                r = strv_split_quoted(&m, e, true);
+                                r = strv_split_quoted(&m, e, UNQUOTE_RELAX);
                                 if (r < 0) {
                                         ret[k] = NULL;
                                         strv_free(ret);
@@ -6427,7 +6277,7 @@ int parse_proc_cmdline(int (*parse_item)(const char *key, const char *value)) {
                 _cleanup_free_ char *word = NULL;
                 char *value = NULL;
 
-                r = unquote_first_word(&p, &word, true);
+                r = unquote_first_word(&p, &word, UNQUOTE_RELAX);
                 if (r < 0)
                         return r;
                 if (r == 0)
@@ -6467,7 +6317,7 @@ int get_proc_cmdline_key(const char *key, char **value) {
                 _cleanup_free_ char *word = NULL;
                 const char *e;
 
-                r = unquote_first_word(&p, &word, true);
+                r = unquote_first_word(&p, &word, UNQUOTE_RELAX);
                 if (r < 0)
                         return r;
                 if (r == 0)
@@ -6942,9 +6792,9 @@ int umount_recursive(const char *prefix, int flags) {
                                 continue;
                         }
 
-                        p = cunescape(path);
-                        if (!p)
-                                return -ENOMEM;
+                        r = cunescape(path, UNESCAPE_RELAX, &p);
+                        if (r < 0)
+                                return r;
 
                         if (!path_startswith(p, prefix))
                                 continue;
@@ -7044,9 +6894,9 @@ int bind_remount_recursive(const char *prefix, bool ro) {
                                 continue;
                         }
 
-                        p = cunescape(path);
-                        if (!p)
-                                return -ENOMEM;
+                        r = cunescape(path, UNESCAPE_RELAX, &p);
+                        if (r < 0)
+                                return r;
 
                         /* Let's ignore autofs mounts.  If they aren't
                          * triggered yet, we want to avoid triggering
@@ -7326,9 +7176,10 @@ int is_dir(const char* path, bool follow) {
         return !!S_ISDIR(st.st_mode);
 }
 
-int unquote_first_word(const char **p, char **ret, bool relax) {
+int unquote_first_word(const char **p, char **ret, UnquoteFlags flags) {
         _cleanup_free_ char *s = NULL;
         size_t allocated = 0, sz = 0;
+        int r;
 
         enum {
                 START,
@@ -7386,13 +7237,21 @@ int unquote_first_word(const char **p, char **ret, bool relax) {
 
                 case VALUE_ESCAPE:
                         if (c == 0) {
-                                if (relax)
+                                if (flags & UNQUOTE_RELAX)
                                         goto finish;
                                 return -EINVAL;
                         }
 
                         if (!GREEDY_REALLOC(s, allocated, sz+2))
                                 return -ENOMEM;
+
+                        if (flags & UNQUOTE_CUNESCAPE) {
+                                r = cunescape_one(*p, (size_t) -1, &c);
+                                if (r < 0)
+                                        return -EINVAL;
+
+                                (*p) += r - 1;
+                        }
 
                         s[sz++] = c;
                         state = VALUE;
@@ -7401,7 +7260,7 @@ int unquote_first_word(const char **p, char **ret, bool relax) {
 
                 case SINGLE_QUOTE:
                         if (c == 0) {
-                                if (relax)
+                                if (flags & UNQUOTE_RELAX)
                                         goto finish;
                                 return -EINVAL;
                         } else if (c == '\'')
@@ -7419,13 +7278,21 @@ int unquote_first_word(const char **p, char **ret, bool relax) {
 
                 case SINGLE_QUOTE_ESCAPE:
                         if (c == 0) {
-                                if (relax)
+                                if (flags & UNQUOTE_RELAX)
                                         goto finish;
                                 return -EINVAL;
                         }
 
                         if (!GREEDY_REALLOC(s, allocated, sz+2))
                                 return -ENOMEM;
+
+                        if (flags & UNQUOTE_CUNESCAPE) {
+                                r = cunescape_one(*p, (size_t) -1, &c);
+                                if (r < 0)
+                                        return -EINVAL;
+
+                                (*p) += r - 1;
+                        }
 
                         s[sz++] = c;
                         state = SINGLE_QUOTE;
@@ -7449,13 +7316,21 @@ int unquote_first_word(const char **p, char **ret, bool relax) {
 
                 case DOUBLE_QUOTE_ESCAPE:
                         if (c == 0) {
-                                if (relax)
+                                if (flags & UNQUOTE_RELAX)
                                         goto finish;
                                 return -EINVAL;
                         }
 
                         if (!GREEDY_REALLOC(s, allocated, sz+2))
                                 return -ENOMEM;
+
+                        if (flags & UNQUOTE_CUNESCAPE) {
+                                r = cunescape_one(*p, (size_t) -1, &c);
+                                if (r < 0)
+                                        return -EINVAL;
+
+                                (*p) += r - 1;
+                        }
 
                         s[sz++] = c;
                         state = DOUBLE_QUOTE;
@@ -7486,7 +7361,7 @@ finish:
         return 1;
 }
 
-int unquote_many_words(const char **p, ...) {
+int unquote_many_words(const char **p, UnquoteFlags flags, ...) {
         va_list ap;
         char **l;
         int n = 0, i, c, r;
@@ -7497,7 +7372,7 @@ int unquote_many_words(const char **p, ...) {
         assert(p);
 
         /* Count how many words are expected */
-        va_start(ap, p);
+        va_start(ap, flags);
         for (;;) {
                 if (!va_arg(ap, char **))
                         break;
@@ -7512,7 +7387,7 @@ int unquote_many_words(const char **p, ...) {
         l = newa0(char*, n);
         for (c = 0; c < n; c++) {
 
-                r = unquote_first_word(p, &l[c], false);
+                r = unquote_first_word(p, &l[c], flags);
                 if (r < 0) {
                         int j;
 
@@ -7528,7 +7403,7 @@ int unquote_many_words(const char **p, ...) {
 
         /* If we managed to parse all words, return them in the passed
          * in parameters */
-        va_start(ap, p);
+        va_start(ap, flags);
         for (i = 0; i < n; i++) {
                 char **v;
 

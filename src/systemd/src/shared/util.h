@@ -43,6 +43,7 @@
 #include <locale.h>
 #include <mntent.h>
 #include <sys/inotify.h>
+#include <sys/statfs.h>
 
 #if 0 /* NM_IGNORED */
 #if SIZEOF_PID_T == 4
@@ -316,9 +317,14 @@ char decchar(int x) _const_;
 int undecchar(char c) _const_;
 
 char *cescape(const char *s);
-char *cunescape(const char *s);
-char *cunescape_length(const char *s, size_t length);
-char *cunescape_length_with_prefix(const char *s, size_t length, const char *prefix);
+
+typedef enum UnescapeFlags {
+        UNESCAPE_RELAX = 1,
+} UnescapeFlags;
+
+int cunescape(const char *s, UnescapeFlags flags, char **ret);
+int cunescape_length(const char *s, size_t length, UnescapeFlags flags, char **ret);
+int cunescape_length_with_prefix(const char *s, size_t length, const char *prefix, UnescapeFlags flags, char **ret);
 
 char *xescape(const char *s, const char *bad);
 
@@ -467,12 +473,8 @@ int get_ctty(pid_t, dev_t *_devnr, char **r);
 int chmod_and_chown(const char *path, mode_t mode, uid_t uid, gid_t gid);
 int fchmod_and_fchown(int fd, mode_t mode, uid_t uid, gid_t gid);
 
-int is_fd_on_temporary_fs(int fd);
-
-int rm_rf_children(int fd, bool only_dirs, bool honour_sticky, struct stat *root_dev);
-int rm_rf_children_dangerous(int fd, bool only_dirs, bool honour_sticky, struct stat *root_dev);
-int rm_rf(const char *path, bool only_dirs, bool delete_root, bool honour_sticky);
-int rm_rf_dangerous(const char *path, bool only_dirs, bool delete_root, bool honour_sticky);
+bool is_temporary_fs(const struct statfs *s) _pure_;
+int fd_is_temporary_fs(int fd);
 
 int pipe_eof(int fd);
 
@@ -1027,8 +1029,13 @@ int take_password_lock(const char *root);
 int is_symlink(const char *path);
 int is_dir(const char *path, bool follow);
 
-int unquote_first_word(const char **p, char **ret, bool relax);
-int unquote_many_words(const char **p, ...) _sentinel_;
+typedef enum UnquoteFlags {
+        UNQUOTE_RELAX     = 1,
+        UNQUOTE_CUNESCAPE = 2,
+} UnquoteFlags;
+
+int unquote_first_word(const char **p, char **ret, UnquoteFlags flags);
+int unquote_many_words(const char **p, UnquoteFlags flags, ...) _sentinel_;
 
 int free_and_strdup(char **p, const char *s);
 
