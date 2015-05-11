@@ -95,7 +95,7 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 
 	g_ptr_array_add (argv, (gpointer) "-K");	/* Disable built-in carrier detection */
 
-	g_ptr_array_add (argv, (gpointer) "-L");	/* Disable built-in IPv4LL since we use avahi-autoipd */
+	g_ptr_array_add (argv, (gpointer) "-L");	/* Disable built-in IPv4LL */
 
 	/* --noarp. Don't request or claim the address by ARP; this also disables IPv4LL. */
 	g_ptr_array_add (argv, (gpointer) "-A");

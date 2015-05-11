@@ -59,9 +59,6 @@
 #include "nm-core-internal.h"
 #include "nm-config.h"
 
-#define NM_AUTOIP_DBUS_SERVICE "org.freedesktop.nm_avahi_autoipd"
-#define NM_AUTOIP_DBUS_IFACE   "org.freedesktop.nm_avahi_autoipd"
-
 static gboolean impl_manager_get_devices (NMManager *manager,
                                           GPtrArray **devices,
                                           GError **err);
@@ -183,7 +180,6 @@ typedef struct {
 
 	NMVpnManager *vpn_manager;
 
-	GDBusProxy *aipd_proxy;
 	NMSleepMonitor *sleep_monitor;
 
 	GSList *auth_chains;
@@ -824,40 +820,6 @@ static void
 device_removed_cb (NMDevice *device, gpointer user_data)
 {
 	remove_device (NM_MANAGER (user_data), device, FALSE, TRUE);
-}
-
-static void
-aipd_handle_event (GDBusProxy *proxy,
-                   const char *event,
-                   const char *iface,
-                   const char *address,
-                   gpointer user_data)
-{
-	NMManager *manager = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	GSList *iter;
-	gboolean handled = FALSE;
-
-	if (   (strcmp (event, "BIND") != 0)
-	    && (strcmp (event, "CONFLICT") != 0)
-	    && (strcmp (event, "UNBIND") != 0)
-	    && (strcmp (event, "STOP") != 0)) {
-		nm_log_warn (LOGD_AUTOIP4, "unknown event '%s' received from avahi-autoipd", event);
-		return;
-	}
-
-	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		NMDevice *candidate = NM_DEVICE (iter->data);
-
-		if (!strcmp (nm_device_get_iface (candidate), iface)) {
-			nm_device_handle_autoip4_event (candidate, event, address);
-			handled = TRUE;
-			break;
-		}
-	}
-
-	if (!handled)
-		nm_log_warn (LOGD_AUTOIP4, "(%s): unhandled avahi-autoipd event", iface);
 }
 
 NMState
@@ -4594,7 +4556,6 @@ nm_manager_init (NMManager *manager)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	guint i;
 	GFile *file;
-	GError *error = NULL;
 
 	/* Initialize rfkill structures and states */
 	memset (priv->radio_states, 0, sizeof (priv->radio_states));
@@ -4634,23 +4595,6 @@ nm_manager_init (NMManager *manager)
 	                  manager);
 
 	priv->vpn_manager = g_object_ref (nm_vpn_manager_get ());
-
-	/* avahi-autoipd stuff */
-	priv->aipd_proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
-	                                                  G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
-	                                                  NULL,
-	                                                  NM_AUTOIP_DBUS_SERVICE,
-	                                                  "/",
-	                                                  NM_AUTOIP_DBUS_IFACE,
-	                                                  NULL, &error);
-	if (priv->aipd_proxy) {
-		_nm_dbus_signal_connect (priv->aipd_proxy, "Event", G_VARIANT_TYPE ("(sss)"),
-		                         G_CALLBACK (aipd_handle_event), manager);
-	} else {
-		nm_log_warn (LOGD_AUTOIP4, "could not initialize avahi-autoipd D-Bus proxy: %s",
-		             error->message);
-		g_clear_error (&error);
-	}
 
 	/* sleep/wake handling */
 	priv->sleep_monitor = g_object_ref (nm_sleep_monitor_get ());
@@ -4878,7 +4822,6 @@ dispose (GObject *object)
 		priv->dbus_mgr = NULL;
 	}
 
-	g_clear_object (&priv->aipd_proxy);
 	if (priv->sleep_monitor) {
 		g_signal_handlers_disconnect_by_func (priv->sleep_monitor, sleeping_cb, manager);
 		g_signal_handlers_disconnect_by_func (priv->sleep_monitor, resuming_cb, manager);

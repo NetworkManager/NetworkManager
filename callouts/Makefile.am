@@ -22,20 +22,10 @@ noinst_LTLIBRARIES = \
 
 dbusservicedir = $(DBUS_SYS_DIR)
 dbusservice_DATA = \
-	nm-dispatcher.conf \
-	nm-avahi-autoipd.conf
+	nm-dispatcher.conf
 
 libexec_PROGRAMS = \
-	nm-dispatcher \
-	nm-avahi-autoipd.action
-
-
-nm_avahi_autoipd_action_SOURCES = \
-	nm-avahi-autoipd-action.c
-
-nm_avahi_autoipd_action_LDADD = \
-	$(DBUS_LIBS) \
-	$(GLIB_LIBS)
+	nm-dispatcher
 
 
 nm_dispatcher_SOURCES = \
