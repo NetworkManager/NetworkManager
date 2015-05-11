@@ -1118,6 +1118,12 @@ init_link (NMPlatform *platform, NMPlatformLink *info, struct rtnl_link *rtnllin
 	if (!info->driver)
 		info->driver = "unknown";
 
+	/* Only demand further initialization (udev rules ran, device has
+	 * a stable name now) in case udev is running (not in a container). */
+	if (   !info->initialized
+	    && access ("/sys", W_OK) != 0)
+		info->initialized = TRUE;
+
 	return TRUE;
 }
 
@@ -4738,11 +4744,7 @@ setup_devices (NMPlatform *platform)
 	enumerator = g_udev_enumerator_new (priv->udev_client);
 	g_udev_enumerator_add_match_subsystem (enumerator, "net");
 
-	/* Demand that the device is initialized (udev rules ran,
-	 * device has a stable name now) in case udev is running
-	 * (not in a container). */
-	if (access ("/sys", W_OK) == 0)
-		g_udev_enumerator_add_match_is_initialized (enumerator);
+	g_udev_enumerator_add_match_is_initialized (enumerator);
 
 	devices = g_udev_enumerator_execute (enumerator);
 	for (iter = devices; iter; iter = g_list_next (iter)) {
