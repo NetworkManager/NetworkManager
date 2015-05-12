@@ -4559,6 +4559,7 @@ nm_linux_platform_init (NMLinuxPlatform *self)
 
 	priv->cache = nmp_cache_new ();
 	priv->delayed_action.list = g_array_new (FALSE, FALSE, sizeof (DelayedActionData));
+	priv->wifi_data = g_hash_table_new_full (NULL, NULL, NULL, (GDestroyNotify) wifi_utils_deinit);
 }
 
 static void
@@ -4573,10 +4574,12 @@ constructed (GObject *_object)
 	GUdevEnumerator *enumerator;
 	GList *devices, *iter;
 
+	_LOGD ("create");
+
 	/* Initialize netlink socket for requests */
 	priv->nlh = setup_socket (FALSE, platform);
 	g_assert (priv->nlh);
-	debug ("Netlink socket for requests established: %d", nl_socket_get_local_port (priv->nlh));
+	debug ("Netlink socket for requests established: port=%u, fd=%d", nl_socket_get_local_port (priv->nlh), nl_socket_get_fd (priv->nlh));
 
 	/* Initialize netlink socket for events */
 	priv->nlh_event = setup_socket (TRUE, platform);
@@ -4593,7 +4596,7 @@ constructed (GObject *_object)
 	                                 RTNLGRP_IPV4_ROUTE,  RTNLGRP_IPV6_ROUTE,
 	                                 0);
 	g_assert (!nle);
-	debug ("Netlink socket for events established: %d", nl_socket_get_local_port (priv->nlh_event));
+	debug ("Netlink socket for events established: port=%u, fd=%d", nl_socket_get_local_port (priv->nlh_event), nl_socket_get_fd (priv->nlh_event));
 
 	priv->event_channel = g_io_channel_unix_new (nl_socket_get_fd (priv->nlh_event));
 	g_io_channel_set_encoding (priv->event_channel, NULL, NULL);
@@ -4604,16 +4607,17 @@ constructed (GObject *_object)
 		channel_flags | G_IO_FLAG_NONBLOCK, NULL);
 	g_assert (status);
 	priv->event_id = g_io_add_watch (priv->event_channel,
-		(EVENT_CONDITIONS | ERROR_CONDITIONS | DISCONNECT_CONDITIONS),
-		event_handler, platform);
-
-	_LOGD ("populate platform cache");
-	delayed_action_schedule (platform, DELAYED_ACTION_TYPE_REFRESH_ALL, NULL);
-	delayed_action_handle_all (platform);
+	                                (EVENT_CONDITIONS | ERROR_CONDITIONS | DISCONNECT_CONDITIONS),
+	                                 event_handler, platform);
 
 	/* Set up udev monitoring */
 	priv->udev_client = g_udev_client_new (udev_subsys);
 	g_signal_connect (priv->udev_client, "uevent", G_CALLBACK (handle_udev_event), platform);
+
+	/* complete construction of the GObject instance before populating the cache. */
+	G_OBJECT_CLASS (nm_linux_platform_parent_class)->constructed (_object);
+
+	_LOGD ("populate platform cache");
 
 	/* request all IPv6 addresses (hopeing that there is at least one), to check for
 	 * the IFA_FLAGS attribute. */
@@ -4621,7 +4625,8 @@ constructed (GObject *_object)
 	if (nle < 0)
 		nm_log_warn (LOGD_PLATFORM, "Netlink error: requesting RTM_GETADDR failed with %s", nl_geterror (nle));
 
-	priv->wifi_data = g_hash_table_new_full (NULL, NULL, NULL, (GDestroyNotify) wifi_utils_deinit);
+	delayed_action_schedule (platform, DELAYED_ACTION_TYPE_REFRESH_ALL, NULL);
+	delayed_action_handle_all (platform);
 
 	/* And read initial device list */
 	enumerator = g_udev_enumerator_new (priv->udev_client);
@@ -4636,8 +4641,6 @@ constructed (GObject *_object)
 	}
 	g_list_free (devices);
 	g_object_unref (enumerator);
-
-	G_OBJECT_CLASS (nm_linux_platform_parent_class)->constructed (_object);
 }
 
 static void
@@ -4645,6 +4648,8 @@ dispose (GObject *object)
 {
 	NMPlatform *platform = NM_PLATFORM (object);
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+
+	_LOGD ("dispose");
 
 	g_array_set_size (priv->delayed_action.list, 0);
 
