@@ -160,7 +160,7 @@ typedef struct {
 } SlaveInfo;
 
 typedef struct {
-	guint log_domain;
+	NMLogDomain log_domain;
 	guint timeout;
 	guint watch;
 	GPid pid;
@@ -1625,7 +1625,7 @@ nm_device_master_get_slave_by_ifindex (NMDevice *self, int ifindex)
  */
 void
 nm_device_master_check_slave_physical_port (NMDevice *self, NMDevice *slave,
-                                            guint64 log_domain)
+                                            NMLogDomain log_domain)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	const char *slave_physical_port_id, *existing_physical_port_id;
@@ -6431,7 +6431,7 @@ ip_check_ping_watch_cb (GPid pid, gint status, gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	guint log_domain = priv->gw_ping.log_domain;
+	NMLogDomain log_domain = priv->gw_ping.log_domain;
 
 	if (!priv->gw_ping.watch)
 		return;
@@ -6470,7 +6470,7 @@ ip_check_ping_timeout_cb (gpointer user_data)
 
 static gboolean
 spawn_ping (NMDevice *self,
-            guint log_domain,
+            NMLogDomain log_domain,
             const char *binary,
             const char *address,
             guint timeout)
@@ -6520,7 +6520,7 @@ nm_device_start_ip_check (NMDevice *self)
 	guint timeout = 0;
 	const char *ping_binary = NULL;
 	char buf[INET6_ADDRSTRLEN] = { 0 };
-	guint log_domain = LOGD_IP4;
+	NMLogDomain log_domain = LOGD_IP4;
 
 	/* Shouldn't be any active ping here, since IP_CHECK happens after the
 	 * first IP method completes.  Any subsequently completing IP method doesn't

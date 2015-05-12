@@ -24,6 +24,8 @@
 
 #include "nm-device.h"
 
+#include "nm-logging.h"
+
 /* This file should only be used by subclasses of NMDevice */
 
 #define NM_DEVICE_PLATFORM_DEVICE "platform-device"
@@ -91,7 +93,7 @@ gboolean nm_device_get_enslaved (NMDevice *device);
 NMDevice *nm_device_master_get_slave_by_ifindex (NMDevice *dev, int ifindex);
 
 void nm_device_master_check_slave_physical_port (NMDevice *self, NMDevice *slave,
-                                                 guint64 log_domain);
+                                                 NMLogDomain log_domain);
 
 void nm_device_set_carrier (NMDevice *self, gboolean carrier);
 

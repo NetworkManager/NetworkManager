@@ -354,7 +354,7 @@ nm_utils_get_start_time_for_pid (pid_t pid)
 
 typedef struct {
 	pid_t pid;
-	guint64 log_domain;
+	NMLogDomain log_domain;
 	union {
 		struct {
 			gint64 wait_start_us;
@@ -376,7 +376,7 @@ typedef struct {
 #define LOG_NAME_ARGS log_name,(long)pid
 
 static KillChildAsyncData *
-_kc_async_data_alloc (pid_t pid, guint64 log_domain, const char *log_name, NMUtilsKillChildAsyncCb callback, void *user_data)
+_kc_async_data_alloc (pid_t pid, NMLogDomain log_domain, const char *log_name, NMUtilsKillChildAsyncCb callback, void *user_data)
 {
 	KillChildAsyncData *data;
 	size_t log_name_len;
@@ -491,7 +491,7 @@ _kc_invoke_callback_idle (gpointer user_data)
 }
 
 static void
-_kc_invoke_callback (pid_t pid, guint64 log_domain, const char *log_name, NMUtilsKillChildAsyncCb callback, void *user_data, gboolean success, int child_status)
+_kc_invoke_callback (pid_t pid, NMLogDomain log_domain, const char *log_name, NMUtilsKillChildAsyncCb callback, void *user_data, gboolean success, int child_status)
 {
 	KillChildAsyncData *data;
 
@@ -523,7 +523,7 @@ _kc_invoke_callback (pid_t pid, guint64 log_domain, const char *log_name, NMUtil
  * supports only one watcher per child.
  **/
 void
-nm_utils_kill_child_async (pid_t pid, int sig, guint64 log_domain,
+nm_utils_kill_child_async (pid_t pid, int sig, NMLogDomain log_domain,
                            const char *log_name, guint32 wait_before_kill_msec,
                            NMUtilsKillChildAsyncCb callback, void *user_data)
 {
@@ -628,7 +628,7 @@ _sleep_duration_convert_ms_to_us (guint32 sleep_duration_msec)
  * In case of error, errno is preserved to contain the last reason of failure.
  **/
 gboolean
-nm_utils_kill_child_sync (pid_t pid, int sig, guint64 log_domain, const char *log_name,
+nm_utils_kill_child_sync (pid_t pid, int sig, NMLogDomain log_domain, const char *log_name,
                           int *child_status, guint32 wait_before_kill_msec,
                           guint32 sleep_duration_msec)
 {
@@ -801,7 +801,7 @@ out:
  * process with PID @pid is gone.
  **/
 void
-nm_utils_kill_process_sync (pid_t pid, guint64 start_time, int sig, guint64 log_domain,
+nm_utils_kill_process_sync (pid_t pid, guint64 start_time, int sig, NMLogDomain log_domain,
                             const char *log_name, guint32 wait_before_kill_msec,
                             guint32 sleep_duration_msec)
 {
