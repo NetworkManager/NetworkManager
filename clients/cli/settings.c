@@ -30,6 +30,7 @@
 #include "settings.h"
 #include "nm-glib-compat.h"
 #include "nm-macros-internal.h"
+#include "gsystem-local-alloc.h"
 
 /* Forward declarations */
 static char *wep_key_type_to_string (NMWepKeyType type);
@@ -96,6 +97,8 @@ NmcOutputField nmc_fields_setting_wired[] = {
 	SETTING_FIELD (NM_SETTING_WIRED_S390_SUBCHANNELS, 20),        /* 9 */
 	SETTING_FIELD (NM_SETTING_WIRED_S390_NETTYPE, 15),            /* 10 */
 	SETTING_FIELD (NM_SETTING_WIRED_S390_OPTIONS, 20),            /* 11 */
+	SETTING_FIELD (NM_SETTING_WIRED_WAKE_ON_LAN, 10),             /* 12 */
+	SETTING_FIELD (NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD, 20),    /* 13 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_WIRED_ALL     "name"","\
@@ -109,7 +112,9 @@ NmcOutputField nmc_fields_setting_wired[] = {
                                          NM_SETTING_WIRED_MTU","\
                                          NM_SETTING_WIRED_S390_SUBCHANNELS","\
                                          NM_SETTING_WIRED_S390_NETTYPE","\
-                                         NM_SETTING_WIRED_S390_OPTIONS
+                                         NM_SETTING_WIRED_S390_OPTIONS","\
+                                         NM_SETTING_WIRED_WAKE_ON_LAN","\
+                                         NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD
 #define NMC_FIELDS_SETTING_WIRED_COMMON  NMC_FIELDS_SETTING_WIRED_ALL
 
 /* Available fields for NM_SETTING_802_1X_SETTING_NAME */
@@ -1536,6 +1541,7 @@ DEFINE_GETTER (nmc_property_wired_get_mac_address_blacklist, NM_SETTING_WIRED_MA
 DEFINE_GETTER (nmc_property_wired_get_s390_subchannels, NM_SETTING_WIRED_S390_SUBCHANNELS)
 DEFINE_GETTER (nmc_property_wired_get_s390_nettype, NM_SETTING_WIRED_S390_NETTYPE)
 DEFINE_GETTER (nmc_property_wired_get_s390_options, NM_SETTING_WIRED_S390_OPTIONS)
+DEFINE_GETTER (nmc_property_wired_get_wake_on_lan_password, NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD)
 
 static char *
 nmc_property_wired_get_mtu (NMSetting *setting, NmcPropertyGetType get_type)
@@ -1548,6 +1554,45 @@ nmc_property_wired_get_mtu (NMSetting *setting, NmcPropertyGetType get_type)
 		return g_strdup (_("auto"));
 	else
 		return g_strdup_printf ("%d", mtu);
+}
+
+static char *
+nmc_property_wired_get_wake_on_lan (NMSetting *setting, NmcPropertyGetType get_type)
+{
+	NMSettingWired *s_wired = NM_SETTING_WIRED (setting);
+	NMSettingWiredWakeOnLan wol;
+
+	wol = nm_setting_wired_get_wake_on_lan (s_wired);
+	return nm_utils_enum_to_str (nm_setting_wired_wake_on_lan_get_type (), wol);
+}
+
+static gboolean
+nmc_property_wired_set_wake_on_lan (NMSetting *setting, const char *prop,
+                                    const char *val, GError **error)
+{
+	NMSettingWiredWakeOnLan wol;
+	gs_free char *err_token = NULL;
+	gboolean ret;
+
+	ret = nm_utils_enum_from_str (nm_setting_wired_wake_on_lan_get_type (), val,
+	                              (int *) &wol, &err_token);
+
+	if (!ret) {
+		g_set_error (error, 1, 0, _("invalid option '%s', use  a combination of %s or 'default'"),
+		             err_token,
+		             nm_utils_enum_to_str (nm_setting_wired_wake_on_lan_get_type (),
+		                                   NM_SETTING_WIRED_WAKE_ON_LAN_ALL));
+		return FALSE;
+	}
+
+	if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT) &&
+		NM_FLAGS_ANY (wol, NM_SETTING_WIRED_WAKE_ON_LAN_ALL)) {
+		g_set_error_literal (error, 1, 0, _("'default' is incompatible with other flags"));
+		return FALSE;
+	}
+
+	g_object_set (setting, prop, (guint) wol, NULL);
+	return TRUE;
 }
 
 /* --- NM_SETTING_WIRELESS_SETTING_NAME property get functions --- */
@@ -6376,6 +6421,20 @@ nmc_properties_init (void)
 	                    nmc_property_wired_describe_s390_options,
 	                    nmc_property_wired_allowed_s390_options,
 	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRED, WAKE_ON_LAN),
+	                    nmc_property_wired_get_wake_on_lan,
+	                    nmc_property_wired_set_wake_on_lan,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+	nmc_add_prop_funcs (GLUE (WIRED, WAKE_ON_LAN_PASSWORD),
+	                    nmc_property_wired_get_wake_on_lan_password,
+	                    nmc_property_set_mac,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
 
 	/* Add editable properties for NM_SETTING_WIRELESS_SETTING_NAME */
 	nmc_add_prop_funcs (GLUE (WIRELESS, SSID),
@@ -6966,6 +7025,8 @@ setting_wired_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gb
 	set_val_str (arr, 9, nmc_property_wired_get_s390_subchannels (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 10, nmc_property_wired_get_s390_nettype (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 11, nmc_property_wired_get_s390_options (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 12, nmc_property_wired_get_wake_on_lan (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 13, nmc_property_wired_get_wake_on_lan_password (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
