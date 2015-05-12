@@ -4358,6 +4358,103 @@ test_nm_utils_dns_option_find_idx (void)
 
 /******************************************************************************/
 
+enum TEST_IS_POWER_OF_TWP_ENUM_SIGNED {
+	_DUMMY_1 = -1,
+};
+
+enum TEST_IS_POWER_OF_TWP_ENUM_UNSIGNED {
+	_DUMMY_2,
+};
+
+enum TEST_IS_POWER_OF_TWP_ENUM_SIGNED_64 {
+	_DUMMY_3 = (1LL << 40),
+};
+
+enum TEST_IS_POWER_OF_TWP_ENUM_UNSIGNED_64 {
+	_DUMMY_4a = -1,
+	_DUMMY_4b = (1LL << 40),
+};
+
+#define test_nm_utils_is_power_of_two_do(type, x, expect) \
+	G_STMT_START { \
+		typeof (x) x1 = (x); \
+		type x2 = (type) x1; \
+		\
+		if (((typeof (x1)) x2) == x1 && (x2 > 0 || x2 == 0)) { \
+			/* x2 equals @x, and is positive. Compare to @expect */ \
+			g_assert_cmpint (expect, ==, nm_utils_is_power_of_two (x2)); \
+		} else if (!(x2 > 0) && !(x2 == 0)) { \
+			/* a (signed) negative value is always FALSE. */ \
+			g_assert_cmpint (FALSE, ==, nm_utils_is_power_of_two (x2));\
+		} \
+		g_assert_cmpint (expect, ==, nm_utils_is_power_of_two (x1)); \
+	} G_STMT_END
+
+static void
+test_nm_utils_is_power_of_two ()
+{
+	guint64 xyes, xno;
+	gint i, j;
+	GRand *rand = nmtst_get_rand ();
+	int numbits;
+
+	for (i = -1; i < 64; i++) {
+
+		/* find a (positive) x which is a power of two. */
+		if (i == -1)
+			xyes = 0;
+		else {
+			xyes = (1LL << i);
+			g_assert (xyes != 0);
+		}
+
+		xno = xyes;
+		if (xyes != 0) {
+again:
+			/* Find another @xno, that is not a power of two. Do that,
+			 * by randomly setting bits. */
+			numbits = g_rand_int_range (rand, 1, 65);
+			while (xno != ~((guint64) 0) && numbits > 0) {
+				guint64 v = (1LL << g_rand_int_range (rand, 0, 65));
+
+				if ((xno | v) != xno) {
+					xno |= v;
+					--numbits;
+				}
+			}
+			if (xno == xyes)
+				goto again;
+		}
+
+		for (j = 0; j < 2; j++) {
+			gboolean expect = j == 0;
+			guint64 x = expect ? xyes : xno;
+
+			if (!expect && xno == 0)
+				continue;
+
+			/* check if @x is as @expect, when casted to a certain data type. */
+			test_nm_utils_is_power_of_two_do (gint8, x, expect);
+			test_nm_utils_is_power_of_two_do (guint8, x, expect);
+			test_nm_utils_is_power_of_two_do (gint16, x, expect);
+			test_nm_utils_is_power_of_two_do (guint16, x, expect);
+			test_nm_utils_is_power_of_two_do (gint32, x, expect);
+			test_nm_utils_is_power_of_two_do (guint32, x, expect);
+			test_nm_utils_is_power_of_two_do (gint64, x, expect);
+			test_nm_utils_is_power_of_two_do (guint64, x, expect);
+			test_nm_utils_is_power_of_two_do (char, x, expect);
+			test_nm_utils_is_power_of_two_do (unsigned char, x, expect);
+			test_nm_utils_is_power_of_two_do (signed char, x, expect);
+			test_nm_utils_is_power_of_two_do (enum TEST_IS_POWER_OF_TWP_ENUM_SIGNED, x, expect);
+			test_nm_utils_is_power_of_two_do (enum TEST_IS_POWER_OF_TWP_ENUM_UNSIGNED, x, expect);
+			test_nm_utils_is_power_of_two_do (enum TEST_IS_POWER_OF_TWP_ENUM_SIGNED_64, x, expect);
+			test_nm_utils_is_power_of_two_do (enum TEST_IS_POWER_OF_TWP_ENUM_UNSIGNED_64, x, expect);
+		}
+	}
+}
+
+/******************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -4459,6 +4556,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/_nm_utils_uuid_generate_from_strings", test_nm_utils_uuid_generate_from_strings);
 
 	g_test_add_func ("/core/general/_nm_utils_ascii_str_to_int64", test_nm_utils_ascii_str_to_int64);
+	g_test_add_func ("/core/general/nm_utils_is_power_of_two", test_nm_utils_is_power_of_two);
 
 	g_test_add_func ("/core/general/_nm_utils_dns_option_validate", test_nm_utils_dns_option_validate);
 	g_test_add_func ("/core/general/_nm_utils_dns_option_find_idx", test_nm_utils_dns_option_find_idx);
