@@ -7125,6 +7125,36 @@ extract_setting_and_property (const char *prompt, const char *line,
 		g_free (prop);
 }
 
+static void
+get_setting_and_property (const char *prompt, const char *line,
+                          NMSetting **setting_out, char**property_out)
+{
+	const NameItem *valid_settings_arr;
+	const char *setting_name;
+	NMSetting *setting = NULL;
+	char *property = NULL;
+	char *sett = NULL, *prop = NULL;
+
+	extract_setting_and_property (prompt, line, &sett, &prop);
+	if (sett) {
+		valid_settings_arr = get_valid_settings_array (nmc_tab_completion.con_type);
+		setting_name = check_valid_name (sett, valid_settings_arr, NULL);
+		setting = nmc_setting_new_for_name (setting_name);
+	} else
+		setting = nmc_tab_completion.setting ? g_object_ref (nmc_tab_completion.setting) : NULL;
+
+	if (setting && prop)
+		property = is_property_valid (setting, prop, NULL);
+	else
+		property = g_strdup (nmc_tab_completion.property);
+
+	*setting_out = setting;
+	*property_out = property;
+
+	g_free (sett);
+	g_free (prop);
+}
+
 static gboolean
 _get_and_check_property (const char *prompt,
                          const char *line,
@@ -7181,34 +7211,18 @@ should_complete_vpn_uuids (const char *prompt, const char *line)
 static const char **
 get_allowed_property_values (void)
 {
-	const NameItem *valid_settings_arr;
-	const char *setting_name;
-	NMSetting *setting = NULL;
-	char *property = NULL;
-	char *sett = NULL, *prop = NULL;
+	NMSetting *setting;
+	char *property;
 	const char **avals = NULL;
 
-	extract_setting_and_property (rl_prompt, rl_line_buffer, &sett, &prop);
-	if (sett) {
-		valid_settings_arr = get_valid_settings_array (nmc_tab_completion.con_type);
-		setting_name = check_valid_name (sett, valid_settings_arr, NULL);
-		setting = nmc_setting_new_for_name (setting_name);
-	} else
-		setting = nmc_tab_completion.setting ? g_object_ref (nmc_tab_completion.setting) : NULL;
-
-	if (setting && prop)
-		property = is_property_valid (setting, prop, NULL);
-	else
-		property = g_strdup (nmc_tab_completion.property);
-
+	get_setting_and_property (rl_prompt, rl_line_buffer, &setting, &property);
 	if (setting && property)
 		avals = nmc_setting_get_property_allowed_values (setting, property);
 
-	g_free (sett);
-	g_free (prop);
 	if (setting)
 		g_object_unref (setting);
 	g_free (property);
+
 	return avals;
 }
 
@@ -7231,6 +7245,39 @@ should_complete_property_values (const char *prompt, const char *line, gboolean 
 	};
 	_get_and_check_property (prompt, line, NULL, multi_props, multi);
 	return get_allowed_property_values () != NULL;
+}
+
+//FIXME: this helper should go to libnm later
+static gboolean
+_setting_property_is_boolean (NMSetting *setting, const char *property_name)
+{
+	GParamSpec *pspec;
+
+	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
+	g_return_val_if_fail (property_name, FALSE);
+
+	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), property_name);
+	if (pspec && pspec->value_type == G_TYPE_BOOLEAN)
+		return TRUE;
+	return FALSE;
+}
+
+static gboolean
+should_complete_boolean (const char *prompt, const char *line)
+{
+	NMSetting *setting;
+	char *property;
+	gboolean is_boolean = FALSE;
+
+	get_setting_and_property (prompt, line, &setting, &property);
+	if (setting && property)
+		is_boolean = _setting_property_is_boolean (setting, property);
+
+	if (setting)
+		g_object_unref (setting);
+	g_free (property);
+
+	return is_boolean;
 }
 
 static char *
@@ -7324,7 +7371,8 @@ nmcli_editor_tab_completion (const char *text, int start, int end)
 						} else if (   should_complete_property_values (NULL, line, &multi)
 							   && (num == 3 || multi)) {
 							generator_func = gen_property_values;
-						}
+						} else if (should_complete_boolean (NULL, line) && num == 3)
+							generator_func = gen_func_bool_values;
 					}
 				} else if (  (   should_complete_cmd (line, end, "remove", &num, NULL)
 				              || should_complete_cmd (line, end, "describe", &num, NULL))
@@ -7370,7 +7418,8 @@ nmcli_editor_tab_completion (const char *text, int start, int end)
 					} else if (   should_complete_property_values (prompt_tmp, NULL, &multi)
 						   && (num <= 2 || multi)) {
 						generator_func = gen_property_values;
-					}
+					} else if (should_complete_boolean (prompt_tmp, NULL) && num <= 2)
+						generator_func = gen_func_bool_values;
 				}
 				if (should_complete_cmd (line, end, "print", &num, NULL) && num <= 2)
 					generator_func = gen_cmd_print2;
