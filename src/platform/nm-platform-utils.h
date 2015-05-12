@@ -26,6 +26,7 @@
 #include <gudev/gudev.h>
 
 #include "nm-platform.h"
+#include "nm-setting-wired.h"
 
 
 const char *nmp_utils_ethtool_get_driver (const char *ifname);
@@ -33,6 +34,9 @@ gboolean nmp_utils_ethtool_supports_carrier_detect (const char *ifname);
 gboolean nmp_utils_ethtool_supports_vlans (const char *ifname);
 int nmp_utils_ethtool_get_peer_ifindex (const char *ifname);
 gboolean nmp_utils_ethtool_get_wake_on_lan (const char *ifname);
+gboolean nmp_utils_ethtool_set_wake_on_lan (const char *ifname, NMSettingWiredWakeOnLan wol,
+                                            const char *wol_password);
+
 gboolean nmp_utils_ethtool_get_link_speed (const char *ifname, guint32 *out_speed);
 
 gboolean nmp_utils_ethtool_get_driver_info (const char *ifname,
