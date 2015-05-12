@@ -429,7 +429,9 @@ G_DEFINE_TYPE (NMLinuxPlatform, nm_linux_platform, NM_TYPE_PLATFORM)
 void
 nm_linux_platform_setup (void)
 {
-	nm_platform_setup (g_object_new (NM_TYPE_LINUX_PLATFORM, NULL));
+	g_object_new (NM_TYPE_LINUX_PLATFORM,
+	              NM_PLATFORM_REGISTER_SINGLETON, TRUE,
+	              NULL);
 }
 
 /******************************************************************/
