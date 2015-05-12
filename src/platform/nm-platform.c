@@ -58,6 +58,16 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
+enum {
+	PROP_0,
+	PROP_REGISTER_SINGLETON,
+	LAST_PROP,
+};
+
+typedef struct {
+	gboolean register_singleton;
+} NMPlatformPrivate;
+
 /******************************************************************/
 
 /* Singleton NMPlatform subclass instance and cached class object */
@@ -3120,6 +3130,35 @@ const NMPlatformVTableRoute nm_platform_vtable_route_v6 = {
 /******************************************************************/
 
 static void
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
+{
+	NMPlatformPrivate *priv =  NM_PLATFORM_GET_PRIVATE (object);
+
+	switch (prop_id) {
+	case PROP_REGISTER_SINGLETON:
+		/* construct-only */
+		priv->register_singleton = g_value_get_boolean (value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+constructed (GObject *object)
+{
+	NMPlatform *self = NM_PLATFORM (object);
+	NMPlatformPrivate *priv =  NM_PLATFORM_GET_PRIVATE (self);
+
+	G_OBJECT_CLASS (nm_platform_parent_class)->constructed (object);
+
+	if (priv->register_singleton)
+		nm_platform_setup (self);
+}
+
+static void
 nm_platform_init (NMPlatform *object)
 {
 }
@@ -3137,7 +3176,20 @@ nm_platform_class_init (NMPlatformClass *platform_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (platform_class);
 
+	g_type_class_add_private (object_class, sizeof (NMPlatformPrivate));
+
+	object_class->set_property = set_property;
+	object_class->constructed = constructed;
+
 	platform_class->wifi_set_powersave = wifi_set_powersave;
+
+	g_object_class_install_property
+	 (object_class, PROP_REGISTER_SINGLETON,
+	     g_param_spec_boolean (NM_PLATFORM_REGISTER_SINGLETON, "", "",
+	                           FALSE,
+	                           G_PARAM_WRITABLE |
+	                           G_PARAM_CONSTRUCT_ONLY |
+	                           G_PARAM_STATIC_STRINGS));
 
 	/* Signals */
 	SIGNAL (SIGNAL_LINK_CHANGED, log_link)

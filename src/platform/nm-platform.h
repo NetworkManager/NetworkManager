@@ -40,6 +40,10 @@
 
 /******************************************************************/
 
+#define NM_PLATFORM_REGISTER_SINGLETON "register-singleton"
+
+/******************************************************************/
+
 typedef struct _NMPlatform NMPlatform;
 
 /* workaround for older libnl version, that does not define these flags. */
