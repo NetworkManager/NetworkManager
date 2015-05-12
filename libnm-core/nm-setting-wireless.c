@@ -1349,6 +1349,14 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 *
 	 * Since: 1.2
 	 **/
+	/* ---ifcfg-rh---
+	 * property: powersave
+	 * variable: POWERSAVE(+)
+	 * default: no
+	 * description: Enables or disables Wi-Fi power saving.
+	 * example: POWERSAVE=yes
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_POWERSAVE,
 		 g_param_spec_uint (NM_SETTING_WIRELESS_POWERSAVE, "", "",
