@@ -43,6 +43,7 @@
 #include "nm-core-internal.h"
 #include <nm-utils.h>
 #include "nm-core-internal.h"
+#include "nm-macros-internal.h"
 
 #include "nm-logging.h"
 #include "gsystem-local-alloc.h"
@@ -1050,6 +1051,8 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	const char *const *s390_subchannels;
 	GString *str;
 	const char * const *macaddr_blacklist;
+	NMSettingWiredWakeOnLan wol;
+	const char *wol_password;
 
 	s_wired = nm_connection_get_setting_wired (connection);
 	if (!s_wired) {
@@ -1130,6 +1133,33 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		}
 		if (str->len)
 			svSetValue (ifcfg, "OPTIONS", str->str, FALSE);
+		g_string_free (str, TRUE);
+	}
+
+	svSetValue (ifcfg, "ETHTOOL_OPTS", NULL, FALSE);
+	wol = nm_setting_wired_get_wake_on_lan (s_wired);
+	wol_password = nm_setting_wired_get_wake_on_lan_password (s_wired);
+	if (wol) {
+		str = g_string_sized_new (30);
+		g_string_append (str, "wol ");
+
+		if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_PHY))
+			g_string_append (str, "p");
+		if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_UNICAST))
+			g_string_append (str, "u");
+		if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_MULTICAST))
+			g_string_append (str, "m");
+		if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_BROADCAST))
+			g_string_append (str, "b");
+		if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_ARP))
+			g_string_append (str, "a");
+		if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC))
+			g_string_append (str, "g");
+
+		if (wol_password && NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC))
+			g_string_append_printf (str, "s sopass %s", wol_password);
+
+		svSetValue (ifcfg, "ETHTOOL_OPTS", str->str, FALSE);
 		g_string_free (str, TRUE);
 	}
 
