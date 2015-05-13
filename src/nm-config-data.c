@@ -301,6 +301,8 @@ finalize (GObject *gobject)
 
 	g_free (priv->dns_mode);
 
+	g_key_file_unref (priv->keyfile);
+
 	G_OBJECT_CLASS (nm_config_data_parent_class)->finalize (gobject);
 }
 
