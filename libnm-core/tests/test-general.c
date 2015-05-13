@@ -29,6 +29,7 @@
 
 #include "nm-setting-private.h"
 #include "nm-utils.h"
+#include "nm-utils-private.h"
 #include "nm-core-internal.h"
 
 #include "nm-setting-8021x.h"
@@ -1985,6 +1986,7 @@ test_connection_diff_a_only (void)
 			{ NM_SETTING_IP_CONFIG_METHOD,             NM_SETTING_DIFF_RESULT_IN_A },
 			{ NM_SETTING_IP_CONFIG_DNS,                NM_SETTING_DIFF_RESULT_IN_A },
 			{ NM_SETTING_IP_CONFIG_DNS_SEARCH,         NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP_CONFIG_DNS_OPTIONS,        NM_SETTING_DIFF_RESULT_IN_A },
 			{ NM_SETTING_IP_CONFIG_ADDRESSES,          NM_SETTING_DIFF_RESULT_IN_A },
 			{ NM_SETTING_IP_CONFIG_GATEWAY,            NM_SETTING_DIFF_RESULT_IN_A },
 			{ NM_SETTING_IP_CONFIG_ROUTES,             NM_SETTING_DIFF_RESULT_IN_A },
@@ -2842,7 +2844,7 @@ test_setting_ip4_changed_signal (void)
 	ASSERT_CHANGED (nm_setting_ip_config_add_dns (s_ip4, "11.22.0.0"));
 	ASSERT_CHANGED (nm_setting_ip_config_remove_dns (s_ip4, 0));
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*i < priv->dns->len*");
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*idx < priv->dns->len*");
 	ASSERT_UNCHANGED (nm_setting_ip_config_remove_dns (s_ip4, 1));
 	g_test_assert_expected_messages ();
 
@@ -2852,7 +2854,7 @@ test_setting_ip4_changed_signal (void)
 	ASSERT_CHANGED (nm_setting_ip_config_add_dns_search (s_ip4, "foobar.com"));
 	ASSERT_CHANGED (nm_setting_ip_config_remove_dns_search (s_ip4, 0));
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*i < priv->dns_search->len*");
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*idx < priv->dns_search->len*");
 	ASSERT_UNCHANGED (nm_setting_ip_config_remove_dns_search (s_ip4, 1));
 	g_test_assert_expected_messages ();
 
@@ -2864,7 +2866,7 @@ test_setting_ip4_changed_signal (void)
 	ASSERT_CHANGED (nm_setting_ip_config_add_address (s_ip4, addr));
 	ASSERT_CHANGED (nm_setting_ip_config_remove_address (s_ip4, 0));
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*i < priv->addresses->len*");
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*idx < priv->addresses->len*");
 	ASSERT_UNCHANGED (nm_setting_ip_config_remove_address (s_ip4, 1));
 	g_test_assert_expected_messages ();
 
@@ -2877,12 +2879,19 @@ test_setting_ip4_changed_signal (void)
 	ASSERT_CHANGED (nm_setting_ip_config_add_route (s_ip4, route));
 	ASSERT_CHANGED (nm_setting_ip_config_remove_route (s_ip4, 0));
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*i < priv->routes->len*");
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*idx < priv->routes->len*");
 	ASSERT_UNCHANGED (nm_setting_ip_config_remove_route (s_ip4, 1));
 	g_test_assert_expected_messages ();
 
 	nm_setting_ip_config_add_route (s_ip4, route);
 	ASSERT_CHANGED (nm_setting_ip_config_clear_routes (s_ip4));
+
+	ASSERT_CHANGED (nm_setting_ip_config_add_dns_option (s_ip4, "debug"));
+	ASSERT_CHANGED (nm_setting_ip_config_remove_dns_option (s_ip4, 0));
+
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*idx < priv->dns_options->len*");
+	ASSERT_UNCHANGED (nm_setting_ip_config_remove_dns_option (s_ip4, 1));
+	g_test_assert_expected_messages ();
 
 	nm_ip_address_unref (addr);
 	nm_ip_route_unref (route);
@@ -2911,7 +2920,7 @@ test_setting_ip6_changed_signal (void)
 	ASSERT_CHANGED (nm_setting_ip_config_add_dns (s_ip6, "1:2:3::4:5:6"));
 	ASSERT_CHANGED (nm_setting_ip_config_remove_dns (s_ip6, 0));
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*i < priv->dns->len*");
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*idx < priv->dns->len*");
 	ASSERT_UNCHANGED (nm_setting_ip_config_remove_dns (s_ip6, 1));
 	g_test_assert_expected_messages ();
 
@@ -2921,7 +2930,7 @@ test_setting_ip6_changed_signal (void)
 	ASSERT_CHANGED (nm_setting_ip_config_add_dns_search (s_ip6, "foobar.com"));
 	ASSERT_CHANGED (nm_setting_ip_config_remove_dns_search (s_ip6, 0));
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*i < priv->dns_search->len*");
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*idx < priv->dns_search->len*");
 	ASSERT_UNCHANGED (nm_setting_ip_config_remove_dns_search (s_ip6, 1));
 	g_test_assert_expected_messages ();
 
@@ -2934,7 +2943,7 @@ test_setting_ip6_changed_signal (void)
 	ASSERT_CHANGED (nm_setting_ip_config_add_address (s_ip6, addr));
 	ASSERT_CHANGED (nm_setting_ip_config_remove_address (s_ip6, 0));
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*i < priv->addresses->len*");
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*idx < priv->addresses->len*");
 	ASSERT_UNCHANGED (nm_setting_ip_config_remove_address (s_ip6, 1));
 	g_test_assert_expected_messages ();
 
@@ -2947,7 +2956,7 @@ test_setting_ip6_changed_signal (void)
 	ASSERT_CHANGED (nm_setting_ip_config_add_route (s_ip6, route));
 	ASSERT_CHANGED (nm_setting_ip_config_remove_route (s_ip6, 0));
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*i < priv->routes->len*");
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*idx < priv->routes->len*");
 	ASSERT_UNCHANGED (nm_setting_ip_config_remove_route (s_ip6, 1));
 	g_test_assert_expected_messages ();
 
@@ -4218,6 +4227,90 @@ test_nm_utils_ascii_str_to_int64 (void)
 
 /******************************************************************************/
 
+static void
+test_nm_utils_dns_option_validate_do (char *option, gboolean ipv6, const DNSOptionDesc *descs,
+                                      gboolean exp_result, char *exp_name, gboolean exp_value)
+{
+	char *name;
+	long value = 0;
+	gboolean result;
+
+	result = _nm_utils_dns_option_validate (option, &name, &value, ipv6, descs);
+
+	g_assert (result == exp_result);
+	g_assert_cmpstr (name, ==, exp_name);
+	g_assert (value == exp_value);
+
+	g_free (name);
+}
+
+static const DNSOptionDesc opt_descs[] = {
+	/* name                   num      ipv6 */
+	{ "opt1",                 FALSE,   FALSE },
+	{ "opt2",                 TRUE,    FALSE },
+	{ "opt3",                 FALSE,   TRUE  },
+	{ "opt4",                 TRUE,    TRUE  },
+	{ NULL,                   FALSE,   FALSE }
+};
+
+static void
+test_nm_utils_dns_option_validate (void)
+{
+	/*                                    opt            ipv6    descs        result name       value */
+	test_nm_utils_dns_option_validate_do ("",            FALSE,  NULL,        FALSE, NULL,      -1);
+	test_nm_utils_dns_option_validate_do (":",           FALSE,  NULL,        FALSE, NULL,      -1);
+	test_nm_utils_dns_option_validate_do (":1",          FALSE,  NULL,        FALSE, NULL,      -1);
+	test_nm_utils_dns_option_validate_do (":val",        FALSE,  NULL,        FALSE, NULL,      -1);
+	test_nm_utils_dns_option_validate_do ("opt",         FALSE,  NULL,        TRUE,  "opt",     -1);
+	test_nm_utils_dns_option_validate_do ("opt:",        FALSE,  NULL,        FALSE, NULL,      -1);
+	test_nm_utils_dns_option_validate_do ("opt:12",      FALSE,  NULL,        TRUE,  "opt",     12);
+	test_nm_utils_dns_option_validate_do ("opt:12 ",     FALSE,  NULL,        FALSE, NULL,      -1);
+	test_nm_utils_dns_option_validate_do ("opt:val",     FALSE,  NULL,        FALSE, NULL,      -1);
+	test_nm_utils_dns_option_validate_do ("opt:2val",    FALSE,  NULL,        FALSE, NULL,      -1);
+	test_nm_utils_dns_option_validate_do ("opt:2:3",     FALSE,  NULL,        FALSE, NULL,      -1);
+	test_nm_utils_dns_option_validate_do ("opt-6",       FALSE,  NULL,        TRUE,  "opt-6",   -1);
+
+	test_nm_utils_dns_option_validate_do ("opt1",        FALSE,  opt_descs,   TRUE,  "opt1",    -1);
+	test_nm_utils_dns_option_validate_do ("opt1",        TRUE,   opt_descs,   TRUE,  "opt1",    -1);
+	test_nm_utils_dns_option_validate_do ("opt1:3",      FALSE,  opt_descs,   FALSE,  NULL,     -1);
+
+	test_nm_utils_dns_option_validate_do ("opt2",        FALSE,  opt_descs,   FALSE, NULL,      -1);
+	test_nm_utils_dns_option_validate_do ("opt2:5",      FALSE,  opt_descs,   TRUE,  "opt2",    5);
+
+	test_nm_utils_dns_option_validate_do ("opt3",        FALSE,  opt_descs,   FALSE, NULL,      -1);
+	test_nm_utils_dns_option_validate_do ("opt3",        TRUE,   opt_descs,   TRUE,  "opt3",    -1);
+
+	test_nm_utils_dns_option_validate_do ("opt4",        FALSE,  opt_descs,   FALSE, NULL,      -1);
+	test_nm_utils_dns_option_validate_do ("opt4",        TRUE,   opt_descs,   FALSE, NULL,      -1);
+	test_nm_utils_dns_option_validate_do ("opt4:40",     FALSE,  opt_descs,   FALSE, NULL,      -1);
+	test_nm_utils_dns_option_validate_do ("opt4:40",     TRUE,   opt_descs,   TRUE,  "opt4",    40);
+}
+
+static void
+test_nm_utils_dns_option_find_idx (void)
+{
+	GPtrArray *options;
+
+	options = g_ptr_array_new ();
+
+	g_ptr_array_add (options, "debug");
+	g_ptr_array_add (options, "timeout:5");
+	g_ptr_array_add (options, "edns0");
+
+	g_assert_cmpint (_nm_utils_dns_option_find_idx (options, "debug"),      ==, 0);
+	g_assert_cmpint (_nm_utils_dns_option_find_idx (options, "debug:1"),    ==, 0);
+	g_assert_cmpint (_nm_utils_dns_option_find_idx (options, "timeout"),    ==, 1);
+	g_assert_cmpint (_nm_utils_dns_option_find_idx (options, "timeout:5"),  ==, 1);
+	g_assert_cmpint (_nm_utils_dns_option_find_idx (options, "timeout:2"),  ==, 1);
+	g_assert_cmpint (_nm_utils_dns_option_find_idx (options, "edns0"),      ==, 2);
+	g_assert_cmpint (_nm_utils_dns_option_find_idx (options, "rotate"),     ==, -1);
+	g_assert_cmpint (_nm_utils_dns_option_find_idx (options, ""),           ==, -1);
+
+	g_ptr_array_free (options, TRUE);
+}
+
+/******************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -4318,6 +4411,9 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/_nm_utils_uuid_generate_from_strings", test_nm_utils_uuid_generate_from_strings);
 
 	g_test_add_func ("/core/general/_nm_utils_ascii_str_to_int64", test_nm_utils_ascii_str_to_int64);
+
+	g_test_add_func ("/core/general/_nm_utils_dns_option_validate", test_nm_utils_dns_option_validate);
+	g_test_add_func ("/core/general/_nm_utils_dns_option_find_idx", test_nm_utils_dns_option_find_idx);
 
 	return g_test_run ();
 }

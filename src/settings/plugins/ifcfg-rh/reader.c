@@ -667,6 +667,29 @@ error:
 	return success;
 }
 
+static void
+parse_dns_options (NMSettingIPConfig *ip_config, char *value)
+{
+	char **options = NULL;
+
+	g_return_if_fail (ip_config);
+
+	if (!value)
+		return;
+
+	options = g_strsplit (value, " ", 0);
+	if (options) {
+		char **item;
+		for (item = options; *item; item++) {
+			if (strlen (*item)) {
+				if (!nm_setting_ip_config_add_dns_option (ip_config, *item))
+					PARSE_WARNING ("can't add DNS option '%s'", *item);
+			}
+		}
+		g_strfreev (options);
+	}
+}
+
 static gboolean
 parse_full_ip6_address (shvarFile *ifcfg,
                         const char *network_file,
@@ -880,6 +903,7 @@ make_ip4_setting (shvarFile *ifcfg,
 	char *value = NULL;
 	char *route_path = NULL;
 	char *method;
+	char *dns_options = NULL;
 	gs_free char *gateway = NULL;
 	gint32 i;
 	shvarFile *network_ifcfg;
@@ -903,6 +927,7 @@ make_ip4_setting (shvarFile *ifcfg,
 		/* Get the connection ifcfg device name and the global gateway device */
 		value = svGetValue (ifcfg, "DEVICE", FALSE);
 		gatewaydev = svGetValue (network_ifcfg, "GATEWAYDEV", FALSE);
+		dns_options = svGetValue (network_ifcfg, "RES_OPTIONS", FALSE);
 
 		/* If there was a global gateway device specified, then only connections
 		 * for that device can be the default connection.
@@ -1079,6 +1104,14 @@ make_ip4_setting (shvarFile *ifcfg,
 		g_free (value);
 	}
 
+	/* DNS options */
+	value = svGetValue (ifcfg, "RES_OPTIONS", FALSE);
+	parse_dns_options (s_ip4, value);
+	parse_dns_options (s_ip4, dns_options);
+	g_free (value);
+	g_free (dns_options);
+	dns_options = NULL;
+
 	/* Static routes  - route-<name> file */
 	route_path = utils_get_route_path (ifcfg->fileName);
 
@@ -1135,6 +1168,7 @@ make_ip4_setting (shvarFile *ifcfg,
 	return NM_SETTING (s_ip4);
 
 done:
+	g_free (dns_options);
 	g_free (route_path);
 	g_object_unref (s_ip4);
 	return NULL;
@@ -1251,6 +1285,7 @@ make_ip6_setting (shvarFile *ifcfg,
 	char *value = NULL;
 	char *str_value;
 	char *route6_path = NULL;
+	char *dns_options = NULL;
 	gboolean ipv6init, ipv6forwarding, ipv6_autoconf, dhcp6 = FALSE;
 	char *method = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
 	char *ipv6addr, *ipv6addr_secondaries;
@@ -1284,6 +1319,7 @@ make_ip6_setting (shvarFile *ifcfg,
 		value = svGetValue (ifcfg, "DEVICE", FALSE);
 		ipv6_defaultgw = svGetValue (network_ifcfg, "IPV6_DEFAULTGW", FALSE);
 		ipv6_defaultdev = svGetValue (network_ifcfg, "IPV6_DEFAULTDEV", FALSE);
+		dns_options = svGetValue (network_ifcfg, "RES_OPTIONS", FALSE);
 
 		if (ipv6_defaultgw) {
 			default_dev = strchr (ipv6_defaultgw, '%');
@@ -1480,9 +1516,17 @@ make_ip6_setting (shvarFile *ifcfg,
 		g_free (route6_path);
 	}
 
+	/* DNS options */
+	value = svGetValue (ifcfg, "RES_OPTIONS", FALSE);
+	parse_dns_options (s_ip6, value);
+	parse_dns_options (s_ip6, dns_options);
+	g_free (value);
+	g_free (dns_options);
+
 	return NM_SETTING (s_ip6);
 
 error:
+	g_free (dns_options);
 	g_free (route6_path);
 	g_object_unref (s_ip6);
 	return NULL;

@@ -46,6 +46,24 @@
  * related to IP addressing, routing, and Domain Name Service.
  **/
 
+const DNSOptionDesc dns_option_descs[] = {
+	{ NM_SETTING_DNS_OPTION_DEBUG,                 FALSE,   FALSE },
+	{ NM_SETTING_DNS_OPTION_NDOTS,                 TRUE,    FALSE },
+	{ NM_SETTING_DNS_OPTION_TIMEOUT,               TRUE,    FALSE },
+	{ NM_SETTING_DNS_OPTION_ATTEMPTS,              TRUE,    FALSE },
+	{ NM_SETTING_DNS_OPTION_ROTATE,                FALSE,   FALSE },
+	{ NM_SETTING_DNS_OPTION_NO_CHECK_NAMES,        FALSE,   FALSE },
+	{ NM_SETTING_DNS_OPTION_INET6,                 FALSE,   TRUE },
+	{ NM_SETTING_DNS_OPTION_IP6_BYTESTRING,        FALSE,   TRUE },
+	{ NM_SETTING_DNS_OPTION_IP6_DOTINT,            FALSE,   TRUE },
+	{ NM_SETTING_DNS_OPTION_NO_IP6_DOTINT,         FALSE,   TRUE },
+	{ NM_SETTING_DNS_OPTION_EDNS0,                 FALSE,   FALSE },
+	{ NM_SETTING_DNS_OPTION_SINGLE_REQUEST,        FALSE,   FALSE },
+	{ NM_SETTING_DNS_OPTION_SINGLE_REQUEST_REOPEN, FALSE,   FALSE },
+	{ NM_SETTING_DNS_OPTION_NO_TLD_QUERY,          FALSE,   FALSE },
+	{ NULL,                                        FALSE,   FALSE }
+};
+
 static char *
 canonicalize_ip (int family, const char *ip, gboolean null_any)
 {
@@ -1062,6 +1080,7 @@ typedef struct {
 	char *method;
 	GPtrArray *dns;        /* array of IP address strings */
 	GPtrArray *dns_search; /* array of domain name strings */
+	GPtrArray *dns_options;/* array of DNS options */
 	GPtrArray *addresses;  /* array of NMIPAddress */
 	GPtrArray *routes;     /* array of NMIPRoute */
 	gint64 route_metric;
@@ -1079,6 +1098,7 @@ enum {
 	PROP_METHOD,
 	PROP_DNS,
 	PROP_DNS_SEARCH,
+	PROP_DNS_OPTIONS,
 	PROP_ADDRESSES,
 	PROP_GATEWAY,
 	PROP_ROUTES,
@@ -1128,21 +1148,21 @@ nm_setting_ip_config_get_num_dns (NMSettingIPConfig *setting)
 /**
  * nm_setting_ip_config_get_dns:
  * @setting: the #NMSettingIPConfig
- * @i: index number of the DNS server to return
+ * @idx: index number of the DNS server to return
  *
- * Returns: the IP address of the DNS server at index @i
+ * Returns: the IP address of the DNS server at index @idx
  **/
 const char *
-nm_setting_ip_config_get_dns (NMSettingIPConfig *setting, int i)
+nm_setting_ip_config_get_dns (NMSettingIPConfig *setting, int idx)
 {
 	NMSettingIPConfigPrivate *priv;
 
 	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), NULL);
 
 	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
-	g_return_val_if_fail (i < priv->dns->len, NULL);
+	g_return_val_if_fail (idx < priv->dns->len, NULL);
 
-	return priv->dns->pdata[i];
+	return priv->dns->pdata[idx];
 }
 
 /**
@@ -1184,21 +1204,21 @@ nm_setting_ip_config_add_dns (NMSettingIPConfig *setting, const char *dns)
 /**
  * nm_setting_ip_config_remove_dns:
  * @setting: the #NMSettingIPConfig
- * @i: index number of the DNS server to remove
+ * @idx: index number of the DNS server to remove
  *
- * Removes the DNS server at index @i.
+ * Removes the DNS server at index @idx.
  **/
 void
-nm_setting_ip_config_remove_dns (NMSettingIPConfig *setting, int i)
+nm_setting_ip_config_remove_dns (NMSettingIPConfig *setting, int idx)
 {
 	NMSettingIPConfigPrivate *priv;
 
 	g_return_if_fail (NM_IS_SETTING_IP_CONFIG (setting));
 
 	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
-	g_return_if_fail (i < priv->dns->len);
+	g_return_if_fail (idx < priv->dns->len);
 
-	g_ptr_array_remove_index (priv->dns, i);
+	g_ptr_array_remove_index (priv->dns, idx);
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS);
 }
 
@@ -1272,21 +1292,21 @@ nm_setting_ip_config_get_num_dns_searches (NMSettingIPConfig *setting)
 /**
  * nm_setting_ip_config_get_dns_search:
  * @setting: the #NMSettingIPConfig
- * @i: index number of the DNS search domain to return
+ * @idx: index number of the DNS search domain to return
  *
- * Returns: the DNS search domain at index @i
+ * Returns: the DNS search domain at index @idx
  **/
 const char *
-nm_setting_ip_config_get_dns_search (NMSettingIPConfig *setting, int i)
+nm_setting_ip_config_get_dns_search (NMSettingIPConfig *setting, int idx)
 {
 	NMSettingIPConfigPrivate *priv;
 
 	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), NULL);
 
 	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
-	g_return_val_if_fail (i < priv->dns_search->len, NULL);
+	g_return_val_if_fail (idx < priv->dns_search->len, NULL);
 
-	return priv->dns_search->pdata[i];
+	return priv->dns_search->pdata[idx];
 }
 
 /**
@@ -1324,21 +1344,21 @@ nm_setting_ip_config_add_dns_search (NMSettingIPConfig *setting,
 /**
  * nm_setting_ip_config_remove_dns_search:
  * @setting: the #NMSettingIPConfig
- * @i: index number of the DNS search domain
+ * @idx: index number of the DNS search domain
  *
- * Removes the DNS search domain at index @i.
+ * Removes the DNS search domain at index @idx.
  **/
 void
-nm_setting_ip_config_remove_dns_search (NMSettingIPConfig *setting, int i)
+nm_setting_ip_config_remove_dns_search (NMSettingIPConfig *setting, int idx)
 {
 	NMSettingIPConfigPrivate *priv;
 
 	g_return_if_fail (NM_IS_SETTING_IP_CONFIG (setting));
 
 	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
-	g_return_if_fail (i < priv->dns_search->len);
+	g_return_if_fail (idx < priv->dns_search->len);
 
-	g_ptr_array_remove_index (priv->dns_search, i);
+	g_ptr_array_remove_index (priv->dns_search, idx);
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS_SEARCH);
 }
 
@@ -1394,6 +1414,182 @@ nm_setting_ip_config_clear_dns_searches (NMSettingIPConfig *setting)
 }
 
 /**
+ * nm_setting_ip_config_get_num_dns_options:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Returns: the number of configured DNS options
+ *
+ * Since: 1.2
+ **/
+guint
+nm_setting_ip_config_get_num_dns_options (NMSettingIPConfig *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), 0);
+
+	return NM_SETTING_IP_CONFIG_GET_PRIVATE (setting)->dns_options->len;
+}
+
+/**
+ * nm_setting_ip_config_get_dns_option:
+ * @setting: the #NMSettingIPConfig
+ * @idx: index number of the DNS option
+ *
+ * Returns: the DNS option at index @idx
+ *
+ * Since: 1.2
+ **/
+const char *
+nm_setting_ip_config_get_dns_option (NMSettingIPConfig *setting, guint idx)
+{
+	NMSettingIPConfigPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), NULL);
+
+	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+	g_return_val_if_fail (idx < priv->dns_options->len, NULL);
+
+	return priv->dns_options->pdata[idx];
+}
+
+/**
+ * nm_setting_ip_config_next_valid_dns_option
+ * @setting: the #NMSettingIPConfig
+ * @idx: index to start the search from
+ *
+ * Returns: the index, greater or equal than @idx, of the first valid
+ * DNS option, or -1 if no valid option is found
+ *
+ * Since: 1.2
+ **/
+gint
+nm_setting_ip_config_next_valid_dns_option (NMSettingIPConfig *setting, guint idx)
+{
+	NMSettingIPConfigPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), -1);
+
+	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+
+	for (; idx < priv->dns_options->len; idx++) {
+		if (_nm_utils_dns_option_validate (priv->dns_options->pdata[idx], NULL, NULL,
+		                                   NM_IS_SETTING_IP6_CONFIG (setting),
+		                                   dns_option_descs))
+			return idx;
+	}
+
+	return -1;
+}
+
+/**
+ * nm_setting_ip_config_add_dns_option:
+ * @setting: the #NMSettingIPConfig
+ * @dns_option: the DNS option to add
+ *
+ * Adds a new DNS option to the setting.
+ *
+ * Returns: %TRUE if the DNS option was added; %FALSE otherwise
+ *
+ * Since: 1.2
+ **/
+gboolean
+nm_setting_ip_config_add_dns_option (NMSettingIPConfig *setting,
+                                     const char *dns_option)
+{
+	NMSettingIPConfigPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), FALSE);
+	g_return_val_if_fail (dns_option != NULL, FALSE);
+	g_return_val_if_fail (dns_option[0] != '\0', FALSE);
+
+	if (!_nm_utils_dns_option_validate (dns_option, NULL, NULL, FALSE, NULL))
+		return FALSE;
+
+	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+	if (_nm_utils_dns_option_find_idx (priv->dns_options, dns_option) >= 0)
+		return FALSE;
+
+	g_ptr_array_add (priv->dns_options, g_strdup (dns_option));
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS_OPTIONS);
+	return TRUE;
+}
+
+/**
+ * nm_setting_ip_config_remove_dns_option:
+ * @setting: the #NMSettingIPConfig
+ * @idx: index number of the DNS option
+ *
+ * Removes the DNS option at index @idx.
+ *
+ * Since: 1.2
+ **/
+void
+nm_setting_ip_config_remove_dns_option (NMSettingIPConfig *setting, int idx)
+{
+	NMSettingIPConfigPrivate *priv;
+
+	g_return_if_fail (NM_IS_SETTING_IP_CONFIG (setting));
+
+	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+	g_return_if_fail (idx < priv->dns_options->len);
+
+	g_ptr_array_remove_index (priv->dns_options, idx);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS_OPTIONS);
+}
+
+/**
+ * nm_setting_ip_config_remove_dns_option_by_value:
+ * @setting: the #NMSettingIPConfig
+ * @dns_option: the DNS option to remove
+ *
+ * Removes the DNS option @dns_option.
+ *
+ * Returns: %TRUE if the DNS option was found and removed; %FALSE if it was not.
+ *
+ * Since: 1.2
+ **/
+gboolean
+nm_setting_ip_config_remove_dns_option_by_value (NMSettingIPConfig *setting,
+                                                 const char *dns_option)
+{
+	NMSettingIPConfigPrivate *priv;
+	int i;
+
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), FALSE);
+	g_return_val_if_fail (dns_option != NULL, FALSE);
+	g_return_val_if_fail (dns_option[0] != '\0', FALSE);
+
+	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+	i = _nm_utils_dns_option_find_idx (priv->dns_options, dns_option);
+	if (i >= 0) {
+		g_ptr_array_remove_index (priv->dns_options, i);
+		g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS_OPTIONS);
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
+/**
+ * nm_setting_ip_config_clear_dns_options:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Removes all configured DNS options.
+ *
+ * Since: 1.2
+ **/
+void
+nm_setting_ip_config_clear_dns_options (NMSettingIPConfig *setting)
+{
+	NMSettingIPConfigPrivate *priv;
+
+	g_return_if_fail (NM_IS_SETTING_IP_CONFIG (setting));
+
+	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+	g_ptr_array_set_size (priv->dns_options, 0);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS_OPTIONS);
+}
+
+/**
  * nm_setting_ip_config_get_num_addresses:
  * @setting: the #NMSettingIPConfig
  *
@@ -1410,21 +1606,21 @@ nm_setting_ip_config_get_num_addresses (NMSettingIPConfig *setting)
 /**
  * nm_setting_ip_config_get_address:
  * @setting: the #NMSettingIPConfig
- * @i: index number of the address to return
+ * @idx: index number of the address to return
  *
- * Returns: the address at index @i
+ * Returns: the address at index @idx
  **/
 NMIPAddress *
-nm_setting_ip_config_get_address (NMSettingIPConfig *setting, int i)
+nm_setting_ip_config_get_address (NMSettingIPConfig *setting, int idx)
 {
 	NMSettingIPConfigPrivate *priv;
 
 	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), NULL);
 
 	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
-	g_return_val_if_fail (i < priv->addresses->len, NULL);
+	g_return_val_if_fail (idx < priv->addresses->len, NULL);
 
-	return priv->addresses->pdata[i];
+	return priv->addresses->pdata[idx];
 }
 
 /**
@@ -1464,21 +1660,21 @@ nm_setting_ip_config_add_address (NMSettingIPConfig *setting,
 /**
  * nm_setting_ip_config_remove_address:
  * @setting: the #NMSettingIPConfig
- * @i: index number of the address to remove
+ * @idx: index number of the address to remove
  *
- * Removes the address at index @i.
+ * Removes the address at index @idx.
  **/
 void
-nm_setting_ip_config_remove_address (NMSettingIPConfig *setting, int i)
+nm_setting_ip_config_remove_address (NMSettingIPConfig *setting, int idx)
 {
 	NMSettingIPConfigPrivate *priv;
 
 	g_return_if_fail (NM_IS_SETTING_IP_CONFIG (setting));
 
 	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
-	g_return_if_fail (i < priv->addresses->len);
+	g_return_if_fail (idx < priv->addresses->len);
 
-	g_ptr_array_remove_index (priv->addresses, i);
+	g_ptr_array_remove_index (priv->addresses, idx);
 
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_ADDRESSES);
 }
@@ -1562,21 +1758,21 @@ nm_setting_ip_config_get_num_routes (NMSettingIPConfig *setting)
 /**
  * nm_setting_ip_config_get_route:
  * @setting: the #NMSettingIPConfig
- * @i: index number of the route to return
+ * @idx: index number of the route to return
  *
- * Returns: the route at index @i
+ * Returns: the route at index @idx
  **/
 NMIPRoute *
-nm_setting_ip_config_get_route (NMSettingIPConfig *setting, int i)
+nm_setting_ip_config_get_route (NMSettingIPConfig *setting, int idx)
 {
 	NMSettingIPConfigPrivate *priv;
 
 	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), NULL);
 
 	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
-	g_return_val_if_fail (i < priv->routes->len, NULL);
+	g_return_val_if_fail (idx < priv->routes->len, NULL);
 
-	return priv->routes->pdata[i];
+	return priv->routes->pdata[idx];
 }
 
 /**
@@ -1614,21 +1810,21 @@ nm_setting_ip_config_add_route (NMSettingIPConfig *setting,
 /**
  * nm_setting_ip_config_remove_route:
  * @setting: the #NMSettingIPConfig
- * @i: index number of the route
+ * @idx: index number of the route
  *
- * Removes the route at index @i.
+ * Removes the route at index @idx.
  **/
 void
-nm_setting_ip_config_remove_route (NMSettingIPConfig *setting, int i)
+nm_setting_ip_config_remove_route (NMSettingIPConfig *setting, int idx)
 {
 	NMSettingIPConfigPrivate *priv;
 
 	g_return_if_fail (NM_IS_SETTING_IP_CONFIG (setting));
 
 	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
-	g_return_if_fail (i < priv->routes->len);
+	g_return_if_fail (idx < priv->routes->len);
 
-	g_ptr_array_remove_index (priv->routes, i);
+	g_ptr_array_remove_index (priv->routes, idx);
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_ROUTES);
 }
 
@@ -1959,6 +2155,7 @@ nm_setting_ip_config_init (NMSettingIPConfig *setting)
 
 	priv->dns = g_ptr_array_new_with_free_func (g_free);
 	priv->dns_search = g_ptr_array_new_with_free_func (g_free);
+	priv->dns_options = g_ptr_array_new_with_free_func (g_free);
 	priv->addresses = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_address_unref);
 	priv->routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_route_unref);
 }
@@ -1975,6 +2172,7 @@ finalize (GObject *object)
 
 	g_ptr_array_unref (priv->dns);
 	g_ptr_array_unref (priv->dns_search);
+	g_ptr_array_unref (priv->dns_options);
 	g_ptr_array_unref (priv->addresses);
 	g_ptr_array_unref (priv->routes);
 
@@ -1988,6 +2186,8 @@ set_property (GObject *object, guint prop_id,
 	NMSettingIPConfig *setting = NM_SETTING_IP_CONFIG (object);
 	NMSettingIPConfigPrivate *priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
 	const char *gateway;
+	char **strv;
+	int i;
 
 	switch (prop_id) {
 	case PROP_METHOD:
@@ -2001,6 +2201,16 @@ set_property (GObject *object, guint prop_id,
 	case PROP_DNS_SEARCH:
 		g_ptr_array_unref (priv->dns_search);
 		priv->dns_search = _nm_utils_strv_to_ptrarray (g_value_get_boxed (value));
+		break;
+	case PROP_DNS_OPTIONS:
+		strv = g_value_get_boxed (value);
+		g_ptr_array_unref (priv->dns_options);
+		priv->dns_options = g_ptr_array_new_with_free_func (g_free);
+		for (i = 0; strv && strv[i]; i++) {
+			if (   _nm_utils_dns_option_validate (strv[i], NULL, NULL, FALSE, NULL)
+			    && _nm_utils_dns_option_find_idx (priv->dns_options, strv[i]) < 0)
+				g_ptr_array_add (priv->dns_options, g_strdup (strv[i]));
+		}
 		break;
 	case PROP_ADDRESSES:
 		g_ptr_array_unref (priv->addresses);
@@ -2064,6 +2274,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_DNS_SEARCH:
 		g_value_take_boxed (value, _nm_utils_ptrarray_to_strv (priv->dns_search));
+		break;
+	case PROP_DNS_OPTIONS:
+		g_value_take_boxed (value, _nm_utils_ptrarray_to_strv (priv->dns_options));
 		break;
 	case PROP_ADDRESSES:
 		g_value_take_boxed (value, _nm_utils_copy_array (priv->addresses,
@@ -2180,6 +2393,20 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *setting_class)
 	g_object_class_install_property
 		(object_class, PROP_DNS_SEARCH,
 		 g_param_spec_boxed (NM_SETTING_IP_CONFIG_DNS_SEARCH, "", "",
+		                     G_TYPE_STRV,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingIPConfig:dns-options:
+	 *
+	 * Array of DNS options.
+	 *
+	 * Since: 1.2
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_DNS_OPTIONS,
+		 g_param_spec_boxed (NM_SETTING_IP_CONFIG_DNS_OPTIONS, "", "",
 		                     G_TYPE_STRV,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));

@@ -42,6 +42,7 @@
 #include <nm-setting-team-port.h>
 #include "nm-core-internal.h"
 #include <nm-utils.h>
+#include <nm-utils-private.h>
 
 #include "nm-logging.h"
 #include "gsystem-local-alloc.h"
@@ -2464,6 +2465,61 @@ error:
 	return FALSE;
 }
 
+static void
+add_dns_option (GPtrArray *array, const char *option)
+{
+	if (_nm_utils_dns_option_find_idx (array, option) < 0)
+		g_ptr_array_add (array, (gpointer) option);
+}
+
+static gboolean
+write_res_options (NMConnection *connection, shvarFile *ifcfg, GError **error)
+{
+	NMSettingIPConfig *s_ip6;
+	NMSettingIPConfig *s_ip4;
+	const char *method;
+	int i, num_options;
+	GPtrArray *array;
+	GString *value;
+
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+	array = g_ptr_array_new ();
+
+	if (s_ip4) {
+		method = nm_setting_ip_config_get_method (s_ip4);
+		if (g_strcmp0 (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)) {
+			num_options = nm_setting_ip_config_get_num_dns_options (s_ip4);
+			for (i = 0; i < num_options; i++)
+				add_dns_option (array, nm_setting_ip_config_get_dns_option (s_ip4, i));
+		}
+	}
+
+	if (s_ip6) {
+		method = nm_setting_ip_config_get_method (s_ip6);
+		if (g_strcmp0 (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
+			num_options = nm_setting_ip_config_get_num_dns_options (s_ip6);
+			for (i = 0; i < num_options; i++)
+				add_dns_option (array, nm_setting_ip_config_get_dns_option (s_ip6, i));
+		}
+	}
+
+	if (array->len > 0) {
+		value = g_string_new (NULL);
+		for (i = 0; i < array->len; i++) {
+			if (i > 0)
+				g_string_append_c (value, ' ');
+			g_string_append (value, array->pdata[i]);
+		}
+		svSetValue (ifcfg, "RES_OPTIONS", value->str, FALSE);
+		g_string_free (value, TRUE);
+	} else
+		svSetValue (ifcfg, "RES_OPTIONS", NULL, FALSE);
+
+	g_ptr_array_unref (array);
+	return TRUE;
+}
+
 static char *
 escape_id (const char *id)
 {
@@ -2610,6 +2666,9 @@ write_connection (NMConnection *connection,
 		write_ip4_aliases (connection, ifcfg_name);
 
 		if (!write_ip6_setting (connection, ifcfg, error))
+			goto out;
+
+		if (!write_res_options (connection, ifcfg, error))
 			goto out;
 	}
 

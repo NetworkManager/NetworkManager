@@ -3404,3 +3404,130 @@ _nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 ma
 	return v;
 }
 
+static gboolean
+validate_dns_option (const char *name, gboolean numeric, gboolean ipv6,
+                     const DNSOptionDesc *option_descs)
+{
+	const DNSOptionDesc *desc;
+
+	if (!option_descs)
+		return !!*name;
+
+	for (desc = option_descs; desc->name; desc++) {
+		if (!strcmp (name, desc->name) &&
+		    numeric == desc->numeric &&
+		    (!desc->ipv6_only || ipv6))
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
+/**
+ * _nm_utils_dns_option_validate
+ * @option: option string
+ * @out_name: (out) (allow-none) the option name
+ * @out_value: (out) (allow-none) the option value
+ * @ipv6: whether the option refers to a IPv6 configuration
+ * @option_descs: (allow-none) an array of DNSOptionDesc which describes the
+ * valid options
+ *
+ * Parses a DNS option in the form "name" or "name:number" and, if
+ * @option_descs is not NULL, checks that the option conforms to one
+ * of the provided descriptors. If @option_descs is NULL @ipv6 is
+ * not considered.
+ *
+ * Returns: %TRUE when the parsing was successful and the option is valid,
+ * %FALSE otherwise
+ */
+gboolean
+_nm_utils_dns_option_validate (const char *option, char **out_name,
+                               long *out_value, gboolean ipv6,
+                               const DNSOptionDesc *option_descs)
+{
+	char **tokens, *ptr;
+	gboolean ret = FALSE;
+
+	g_return_val_if_fail (option != NULL, FALSE);
+
+	if (out_name)
+		*out_name = NULL;
+	if (out_value)
+		*out_value = -1;
+
+	if (!option[0])
+		return FALSE;
+
+	tokens = g_strsplit (option, ":", 2);
+
+	if (g_strv_length (tokens) == 1) {
+		ret = validate_dns_option (tokens[0], FALSE, ipv6, option_descs);
+		if (ret && out_name)
+			*out_name = g_strdup (tokens[0]);
+		goto out;
+	}
+
+	if (!tokens[1][0]) {
+		ret = FALSE;
+		goto out;
+	}
+
+	for (ptr = tokens[1]; *ptr; ptr++) {
+		if (!g_ascii_isdigit (*ptr)) {
+			ret = FALSE;
+			goto out;
+		}
+	}
+
+	ret = FALSE;
+	if (validate_dns_option (tokens[0], TRUE, ipv6, option_descs)) {
+		int value = _nm_utils_ascii_str_to_int64 (tokens[1], 10, 0, G_MAXINT32, -1);
+		if (value >= 0) {
+			if (out_name)
+				*out_name = g_strdup (tokens[0]);
+			if (out_value)
+				*out_value = value;
+			ret = TRUE;
+		}
+	}
+out:
+	g_strfreev (tokens);
+	return ret;
+}
+
+/**
+ * _nm_utils_dns_option_find_idx
+ * @array: an array of strings
+ * @option: a dns option string
+ *
+ * Searches for an option in an array of strings. The match is
+ * performed only the option name; the option value is ignored.
+ *
+ * Returns: the index of the option in the array or -1 if was not
+ * found.
+ */
+int _nm_utils_dns_option_find_idx (GPtrArray *array, const char *option)
+{
+	gboolean ret;
+	char *option_name, *tmp_name;
+	int i;
+
+	if (!_nm_utils_dns_option_validate (option, &option_name, NULL, FALSE, NULL))
+		return -1;
+
+	for (i = 0; i < array->len; i++) {
+		if (_nm_utils_dns_option_validate (array->pdata[i], &tmp_name, NULL, FALSE, NULL)) {
+			ret = strcmp (tmp_name, option_name);
+			g_free (tmp_name);
+			if (!ret) {
+				g_free (option_name);
+				return i;
+			}
+		}
+
+	}
+
+	g_free (option_name);
+	return -1;
+}
+

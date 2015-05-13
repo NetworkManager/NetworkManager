@@ -49,6 +49,7 @@ typedef struct {
 #define NM_IP6_CONFIG_NAMESERVERS "nameservers"
 #define NM_IP6_CONFIG_DOMAINS "domains"
 #define NM_IP6_CONFIG_SEARCHES "searches"
+#define NM_IP6_CONFIG_DNS_OPTIONS "dns-options"
 
 /* deprecated */
 #define NM_IP6_CONFIG_ADDRESSES "addresses"
@@ -126,6 +127,13 @@ void nm_ip6_config_del_search (NMIP6Config *config, guint i);
 guint32 nm_ip6_config_get_num_searches (const NMIP6Config *config);
 const char * nm_ip6_config_get_search (const NMIP6Config *config, guint i);
 
+/* DNS options */
+void nm_ip6_config_reset_dns_options (NMIP6Config *config);
+void nm_ip6_config_add_dns_option (NMIP6Config *config, const char *option);
+void nm_ip6_config_del_dns_option (NMIP6Config *config, guint i);
+guint32 nm_ip6_config_get_num_dns_options (const NMIP6Config *config);
+const char * nm_ip6_config_get_dns_option (const NMIP6Config *config, guint i);
+
 /* MSS */
 void nm_ip6_config_set_mss (NMIP6Config *config, guint32 mss);
 guint32 nm_ip6_config_get_mss (const NMIP6Config *config);
@@ -137,6 +145,7 @@ gboolean nm_ip6_config_equal (const NMIP6Config *a, const NMIP6Config *b);
 /* Testing-only functions */
 
 gboolean nm_ip6_config_capture_resolv_conf (GArray *nameservers,
+                                            GPtrArray *dns_options,
                                             const char *rc_contents);
 
 #endif /* __NETWORKMANAGER_IP6_CONFIG_H__ */

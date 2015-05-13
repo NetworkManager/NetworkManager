@@ -2493,6 +2493,165 @@ test_read_wired_aliases_bad_2 (void)
 	test_read_wired_aliases_bad (TEST_IFCFG_ALIASES_BAD_2, "System aliasem2");
 }
 
+#define TEST_IFCFG_DNS_OPTIONS TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dns-options"
+
+static void
+test_read_dns_options (void)
+{
+	NMConnection *connection;
+	NMSettingIPConfig *s_ip4, *s_ip6;
+	char *unmanaged = NULL;
+	const char *option;
+	GError *error = NULL;
+	const char *options[] = { "ndots:3", "single-request-reopen", "inet6" };
+	guint32 i, options_len = sizeof (options) / sizeof (options[0]);
+
+	connection = connection_from_file_test (TEST_IFCFG_DNS_OPTIONS,
+	                                        NULL,
+	                                        TYPE_ETHERNET,
+	                                        &unmanaged,
+	                                        &error);
+	g_assert (connection);
+	g_assert (nm_connection_verify (connection, &error));
+	g_assert_cmpstr (unmanaged, ==, NULL);
+
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	g_assert (s_ip4);
+
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+	g_assert (s_ip6);
+
+	i = nm_setting_ip_config_get_num_dns_options (s_ip4);
+	g_assert_cmpint (i, ==, options_len);
+
+	i = nm_setting_ip_config_get_num_dns_options (s_ip6);
+	g_assert_cmpint (i, ==, options_len);
+
+	for (i = 0; i < options_len; i++) {
+		option = nm_setting_ip_config_get_dns_option (s_ip4, i);
+		g_assert_cmpstr (options[i], ==, option);
+
+		option = nm_setting_ip_config_get_dns_option (s_ip6, i);
+		g_assert_cmpstr (options[i], ==, option);
+	}
+
+	g_object_unref (connection);
+}
+
+static void
+test_write_dns_options (void)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
+	static const char *mac = "31:33:33:37:be:cd";
+	guint32 mtu = 1492;
+	char *uuid;
+	NMIPAddress *addr;
+	NMIPAddress *addr6;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+
+	connection = nm_simple_connection_new ();
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test DNS options",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wired setting */
+	s_wired = (NMSettingWired *) nm_setting_wired_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+	g_object_set (s_wired,
+	              NM_SETTING_WIRED_MAC_ADDRESS, mac,
+	              NM_SETTING_WIRED_MTU, mtu,
+	              NULL);
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "1.1.1.1",
+	              NM_SETTING_IP_CONFIG_ROUTE_METRIC, (gint64) 204,
+	              NULL);
+
+	addr = nm_ip_address_new (AF_INET, "1.1.1.3", 24, &error);
+	nm_setting_ip_config_add_address (s_ip4, addr);
+	nm_ip_address_unref (addr);
+
+	/* IP6 setting */
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+
+	g_object_set (s_ip6,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_ROUTE_METRIC, (gint64) 206,
+	              NULL);
+
+	/* Add addresses */
+	addr6 = nm_ip_address_new (AF_INET6, "1003:1234:abcd::1", 11, &error);
+	nm_setting_ip_config_add_address (s_ip6, addr6);
+	nm_ip_address_unref (addr6);
+
+	nm_setting_ip_config_add_dns_option (s_ip4, "debug");
+	nm_setting_ip_config_add_dns_option (s_ip6, "timeout:3");
+
+	g_assert (nm_connection_verify (connection, &error));
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	g_assert (success);
+	g_assert (testfile);
+
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_connection_normalize (connection, NULL, NULL, NULL);
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_ETHERNET,
+	                                    NULL,
+	                                    &error);
+	unlink (testfile);
+
+	/* RES_OPTIONS is copied to both IPv4 and IPv6 settings */
+	nm_setting_ip_config_clear_dns_options (s_ip4);
+	nm_setting_ip_config_add_dns_option (s_ip4, "debug");
+	nm_setting_ip_config_add_dns_option (s_ip4, "timeout:3");
+
+	nm_setting_ip_config_clear_dns_options (s_ip6);
+	nm_setting_ip_config_add_dns_option (s_ip6, "debug");
+	nm_setting_ip_config_add_dns_option (s_ip6, "timeout:3");
+
+	g_assert (reread);
+	g_assert (nm_connection_verify (reread, &error));
+	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+
+	g_free (testfile);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
 #define TEST_IFCFG_WIFI_OPEN TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open"
 
 static void
@@ -12461,6 +12620,7 @@ int main (int argc, char **argv)
 	g_test_add_data_func (TPATH "static-ip6-only-gw/::", "::", test_write_wired_static_ip6_only_gw);
 	g_test_add_data_func (TPATH "static-ip6-only-gw/2001:db8:8:4::2", "2001:db8:8:4::2", test_write_wired_static_ip6_only_gw);
 	g_test_add_data_func (TPATH "static-ip6-only-gw/::ffff:255.255.255.255", "::ffff:255.255.255.255", test_write_wired_static_ip6_only_gw);
+	g_test_add_func (TPATH "read-dns-options", test_read_dns_options);
 
 	test_read_wired_static (TEST_IFCFG_WIRED_STATIC, "System test-wired-static", TRUE);
 	test_read_wired_static (TEST_IFCFG_WIRED_STATIC_BOOTPROTO, "System test-wired-static-bootproto", FALSE);
@@ -12611,6 +12771,7 @@ int main (int argc, char **argv)
 	test_write_vlan ();
 	test_write_vlan_only_vlanid ();
 	test_write_ethernet_missing_ipv6 ();
+	g_test_add_func (TPATH "write-dns-options", test_write_dns_options);
 
 	/* iSCSI / ibft */
 	g_test_add_func (TPATH "ibft/ignored", test_read_ibft_ignored);
