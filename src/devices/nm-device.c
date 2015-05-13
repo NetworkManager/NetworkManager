@@ -257,9 +257,11 @@ typedef struct {
 	struct {
 		gboolean v4_has;
 		gboolean v4_is_assumed;
+		gboolean v4_configure_first_time;
 		NMPlatformIP4Route v4;
 		gboolean v6_has;
 		gboolean v6_is_assumed;
+		gboolean v6_configure_first_time;
 		NMPlatformIP6Route v6;
 	} default_route;
 
@@ -3065,6 +3067,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 	gboolean has_direct_route;
 	const guint32 default_route_metric = nm_device_get_ip4_route_metric (self);
 	guint32 gateway;
+	gboolean connection_has_default_route, connection_is_never_default;
 
 	/* Merge all the configs into the composite config */
 	if (config) {
@@ -3122,12 +3125,24 @@ ip4_config_merge_and_apply (NMDevice *self,
 	if (nm_device_uses_assumed_connection (self))
 		goto END_ADD_DEFAULT_ROUTE;
 
+	connection_has_default_route
+	    = nm_default_route_manager_ip4_connection_has_default_route (nm_default_route_manager_get (),
+	                                                                 connection, &connection_is_never_default);
+
+	if (   !priv->default_route.v4_configure_first_time
+	    && connection_is_never_default) {
+		/* If the connection is explicitly configured as never-default, we enforce the (absense of the)
+		 * default-route only once. That allows the user to configure a connection as never-default,
+		 * but he can add default routes externally (via a dispatcher script) and NM will not interfere. */
+		goto END_ADD_DEFAULT_ROUTE;
+	}
 
 	/* we are about to commit (for a non-assumed connection). Enforce whatever we have
 	 * configured. */
+	priv->default_route.v4_configure_first_time = FALSE;
 	priv->default_route.v4_is_assumed = FALSE;
 
-	if (!nm_default_route_manager_ip4_connection_has_default_route (nm_default_route_manager_get (), connection, NULL))
+	if (!connection_has_default_route)
 		goto END_ADD_DEFAULT_ROUTE;
 
 	if (!nm_ip4_config_get_num_addresses (composite)) {
@@ -3647,6 +3662,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 	NMIP6Config *composite;
 	gboolean has_direct_route;
 	const struct in6_addr *gateway;
+	gboolean connection_has_default_route, connection_is_never_default;
 
 	/* If no config was passed in, create a new one */
 	composite = nm_ip6_config_new (nm_device_get_ip_ifindex (self));
@@ -3703,12 +3719,24 @@ ip6_config_merge_and_apply (NMDevice *self,
 	if (nm_device_uses_assumed_connection (self))
 		goto END_ADD_DEFAULT_ROUTE;
 
+	connection_has_default_route
+	    = nm_default_route_manager_ip6_connection_has_default_route (nm_default_route_manager_get (),
+	                                                                 connection, &connection_is_never_default);
+
+	if (   !priv->default_route.v6_configure_first_time
+	    && connection_is_never_default) {
+		/* If the connection is explicitly configured as never-default, we enforce the (absence of the)
+		 * default-route only once. That allows the user to configure a connection as never-default,
+		 * but he can add default routes externally (via a dispatcher script) and NM will not interfere. */
+		goto END_ADD_DEFAULT_ROUTE;
+	}
 
 	/* we are about to commit (for a non-assumed connection). Enforce whatever we have
 	 * configured. */
+	priv->default_route.v6_configure_first_time = FALSE;
 	priv->default_route.v6_is_assumed = FALSE;
 
-	if (!nm_default_route_manager_ip6_connection_has_default_route (nm_default_route_manager_get (), connection, NULL))
+	if (!connection_has_default_route)
 		goto END_ADD_DEFAULT_ROUTE;
 
 	if (!nm_ip6_config_get_num_addresses (composite)) {
@@ -7539,8 +7567,10 @@ _cleanup_generic_post (NMDevice *self, gboolean deconfigure)
 
 	priv->default_route.v4_has = FALSE;
 	priv->default_route.v4_is_assumed = TRUE;
+	priv->default_route.v4_configure_first_time = TRUE;
 	priv->default_route.v6_has = FALSE;
 	priv->default_route.v6_is_assumed = TRUE;
+	priv->default_route.v6_configure_first_time = TRUE;
 
 	nm_default_route_manager_ip4_update_default_route (nm_default_route_manager_get (), self);
 	nm_default_route_manager_ip6_update_default_route (nm_default_route_manager_get (), self);
@@ -8490,7 +8520,9 @@ nm_device_init (NMDevice *self)
 	priv->ip6_saved_properties = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
 
 	priv->default_route.v4_is_assumed = TRUE;
+	priv->default_route.v4_configure_first_time = TRUE;
 	priv->default_route.v6_is_assumed = TRUE;
+	priv->default_route.v6_configure_first_time = TRUE;
 }
 
 static GObject*
