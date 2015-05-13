@@ -2511,54 +2511,28 @@ test_read_dns_options (void)
 	                                        TYPE_ETHERNET,
 	                                        &unmanaged,
 	                                        &error);
-	ASSERT (connection != NULL,
-	        "read-dns-options",
-	        "failed to read %s: %s", TEST_IFCFG_DNS_OPTIONS, error->message);
-
-	ASSERT (nm_connection_verify (connection, &error),
-	        "read-dns-options",
-	        "failed to verify %s: %s", TEST_IFCFG_DNS_OPTIONS, error->message);
-
-	ASSERT (unmanaged == NULL,
-	        "read-dns-options",
-	        "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_DNS_OPTIONS);
+	g_assert (connection);
+	g_assert (nm_connection_verify (connection, &error));
+	g_assert_cmpstr (unmanaged, ==, NULL);
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	ASSERT (s_ip4 != NULL,
-	        "read-dns-options",
-	        "failed to verify %s: missing %s setting", TEST_IFCFG_DNS_OPTIONS,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	g_assert (s_ip4);
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
-	ASSERT (s_ip6 != NULL,
-	        "read-dns-options",
-	        "failed to verify %s: missing %s setting", TEST_IFCFG_DNS_OPTIONS,
-	        NM_SETTING_IP6_CONFIG_SETTING_NAME);
+	g_assert (s_ip6);
 
 	i = nm_setting_ip_config_get_num_dns_options (s_ip4);
-	ASSERT (i == options_len,
-	        "read-dns-options",
-	        "failed to verify %s: wrong IPv4 DNS options number %u",
-	        TEST_IFCFG_DNS_OPTIONS, i);
+	g_assert_cmpint (i, ==, options_len);
 
 	i = nm_setting_ip_config_get_num_dns_options (s_ip6);
-	ASSERT (i == options_len,
-	        "read-dns-options",
-	        "failed to verify %s: wrong IPv6 DNS options number %u",
-	        TEST_IFCFG_DNS_OPTIONS, i);
+	g_assert_cmpint (i, ==, options_len);
 
 	for (i = 0; i < options_len; i++) {
 		option = nm_setting_ip_config_get_dns_option (s_ip4, i);
-		ASSERT (strcmp (options[i], option) == 0,
-		        "read-dns-options",
-		        "failed to verify %s: wrong IPv4 DNS option %u '%s'",
-		        TEST_IFCFG_DNS_OPTIONS, i, option);
+		g_assert_cmpstr (options[i], ==, option);
 
 		option = nm_setting_ip_config_get_dns_option (s_ip6, i);
-		ASSERT (strcmp (options[i], option) == 0,
-		        "read-dns-options",
-		        "failed to verify %s: wrong IPv6 DNS option %u '%s'"
-		        TEST_IFCFG_DNS_OPTIONS, i, option);
+		g_assert_cmpstr (options[i], ==, option);
 	}
 
 	g_object_unref (connection);
@@ -2639,24 +2613,15 @@ test_write_dns_options (void)
 	nm_setting_ip_config_add_dns_option (s_ip4, "debug");
 	nm_setting_ip_config_add_dns_option (s_ip6, "timeout:3");
 
-	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        "write-dns-options",
-	        "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	g_assert (nm_connection_verify (connection, &error));
 
 	/* Save the ifcfg */
 	success = writer_new_connection (connection,
 	                                 TEST_SCRATCH_DIR "/network-scripts/",
 	                                 &testfile,
 	                                 &error);
-	ASSERT (success == TRUE,
-	        "write-dns-options",
-	        "failed to write connection to disk: %s",
-	        (error && error->message) ? error->message : "(unknown)");
-
-	ASSERT (testfile != NULL,
-	        "write-dns-options",
-	        "didn't get ifcfg file path back after writing connection");
+	g_assert (success);
+	g_assert (testfile);
 
 	/* reread will be normalized, so we must normalize connection too. */
 	nm_connection_normalize (connection, NULL, NULL, NULL);
@@ -2678,17 +2643,9 @@ test_write_dns_options (void)
 	nm_setting_ip_config_add_dns_option (s_ip6, "debug");
 	nm_setting_ip_config_add_dns_option (s_ip6, "timeout:3");
 
-	ASSERT (reread != NULL,
-	        "write-dns-options",
-	        "failed to read %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_verify (reread, &error),
-	        "write-dns-options",
-	        "failed to verify %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-	        "write-dns-options",
-	        "written and re-read connection weren't the same.");
+	g_assert (reread);
+	g_assert (nm_connection_verify (reread, &error));
+	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
 
 	g_free (testfile);
 	g_object_unref (connection);
@@ -12663,7 +12620,7 @@ int main (int argc, char **argv)
 	g_test_add_data_func (TPATH "static-ip6-only-gw/::", "::", test_write_wired_static_ip6_only_gw);
 	g_test_add_data_func (TPATH "static-ip6-only-gw/2001:db8:8:4::2", "2001:db8:8:4::2", test_write_wired_static_ip6_only_gw);
 	g_test_add_data_func (TPATH "static-ip6-only-gw/::ffff:255.255.255.255", "::ffff:255.255.255.255", test_write_wired_static_ip6_only_gw);
-	test_read_dns_options ();
+	g_test_add_func (TPATH "read-dns-options", test_read_dns_options);
 
 	test_read_wired_static (TEST_IFCFG_WIRED_STATIC, "System test-wired-static", TRUE);
 	test_read_wired_static (TEST_IFCFG_WIRED_STATIC_BOOTPROTO, "System test-wired-static-bootproto", FALSE);
@@ -12814,7 +12771,7 @@ int main (int argc, char **argv)
 	test_write_vlan ();
 	test_write_vlan_only_vlanid ();
 	test_write_ethernet_missing_ipv6 ();
-	test_write_dns_options();
+	g_test_add_func (TPATH "write-dns-options", test_write_dns_options);
 
 	/* iSCSI / ibft */
 	g_test_add_func (TPATH "ibft/ignored", test_read_ibft_ignored);
