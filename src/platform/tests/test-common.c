@@ -7,6 +7,9 @@
 
 #include "nm-test-utils.h"
 
+#define SIGNAL_DATA_FMT "'%s-%s' ifindex %d%s%s%s (%d times received)"
+#define SIGNAL_DATA_ARG(data) (data)->name, _change_type_to_string ((data)->change_type), (data)->ifindex, (data)->ifname ? " ifname '" : "", (data)->ifname ? (data)->ifname : "", (data)->ifname ? "'" : "", (data)->received_count
+
 
 gboolean
 nmtst_platform_is_root_test ()
@@ -23,7 +26,7 @@ add_signal_full (const char *name, NMPlatformSignalChangeType change_type, GCall
 
 	data->name = name;
 	data->change_type = change_type;
-	data->received = FALSE;
+	data->received_count = 0;
 	data->handler_id = g_signal_connect (nm_platform_get (), name, callback, data);
 	data->ifindex = ifindex;
 	data->ifname = ifname;
@@ -49,33 +52,51 @@ _change_type_to_string (NMPlatformSignalChangeType change_type)
 }
 
 void
-accept_signal (SignalData *data)
+_accept_signal (const char *file, int line, const char *func, SignalData *data)
 {
-	debug ("Accepting signal '%s-%s' ifindex %d ifname %s.", data->name, _change_type_to_string (data->change_type), data->ifindex, data->ifname);
-	if (!data->received)
-		g_error ("Attemted to accept a non-received signal '%s-%s'.", data->name, _change_type_to_string (data->change_type));
-
-	data->received = FALSE;
+	debug ("NMPlatformSignalAssert: %s:%d, %s(): Accepting signal one time: "SIGNAL_DATA_FMT, file, line, func, SIGNAL_DATA_ARG (data));
+	if (data->received_count != 1)
+		g_error ("NMPlatformSignalAssert: %s:%d, %s(): failure to accept signal one time: "SIGNAL_DATA_FMT, file, line, func, SIGNAL_DATA_ARG (data));
+	data->received_count = 0;
 }
 
 void
-wait_signal (SignalData *data)
+_accept_signals (const char *file, int line, const char *func, SignalData *data, int min, int max)
 {
-	if (data->received)
-		g_error ("Signal '%s' received before waiting for it.", data->name);
+	debug ("NMPlatformSignalAssert: %s:%d, %s(): Accepting signal [%d,%d] times: "SIGNAL_DATA_FMT, file, line, func, min, max, SIGNAL_DATA_ARG (data));
+	if (data->received_count < min || data->received_count > max)
+		g_error ("NMPlatformSignalAssert: %s:%d, %s(): failure to accept signal [%d,%d] times: "SIGNAL_DATA_FMT, file, line, func, min, max, SIGNAL_DATA_ARG (data));
+	data->received_count = 0;
+}
+
+void
+_ensure_no_signal (const char *file, int line, const char *func, SignalData *data)
+{
+	debug ("NMPlatformSignalAssert: %s:%d, %s(): Accepting signal 0 times: "SIGNAL_DATA_FMT, file, line, func, SIGNAL_DATA_ARG (data));
+	if (data->received_count > 0)
+		g_error ("NMPlatformSignalAssert: %s:%d, %s(): failure to accept signal 0 times: "SIGNAL_DATA_FMT, file, line, func, SIGNAL_DATA_ARG (data));
+}
+
+void
+_wait_signal (const char *file, int line, const char *func, SignalData *data)
+{
+	debug ("NMPlatformSignalAssert: %s:%d, %s(): wait signal: "SIGNAL_DATA_FMT, file, line, func, SIGNAL_DATA_ARG (data));
+	if (data->received_count)
+		g_error ("NMPlatformSignalAssert: %s:%d, %s(): failure to wait for signal: "SIGNAL_DATA_FMT, file, line, func, SIGNAL_DATA_ARG (data));
 
 	data->loop = g_main_loop_new (NULL, FALSE);
 	g_main_loop_run (data->loop);
 	g_clear_pointer (&data->loop, g_main_loop_unref);
 
-	accept_signal (data);
+	_accept_signal (file, line, func, data);
 }
 
 void
-free_signal (SignalData *data)
+_free_signal (const char *file, int line, const char *func, SignalData *data)
 {
-	if (data->received)
-		g_error ("Attempted to free received but not accepted signal '%s-%s'.", data->name, _change_type_to_string (data->change_type));
+	debug ("NMPlatformSignalAssert: %s:%d, %s(): free signal: "SIGNAL_DATA_FMT, file, line, func, SIGNAL_DATA_ARG (data));
+	if (data->received_count != 0)
+		g_error ("NMPlatformSignalAssert: %s:%d, %s(): failure to free non-accepted signal: "SIGNAL_DATA_FMT, file, line, func, SIGNAL_DATA_ARG (data));
 
 	g_signal_handler_disconnect (nm_platform_get (), data->handler_id);
 	g_free (data);
@@ -84,7 +105,6 @@ free_signal (SignalData *data)
 void
 link_callback (NMPlatform *platform, int ifindex, NMPlatformLink *received, NMPlatformSignalChangeType change_type, NMPlatformReason reason, SignalData *data)
 {
-	
 	GArray *links;
 	NMPlatformLink *cached;
 	int i;
@@ -106,11 +126,8 @@ link_callback (NMPlatform *platform, int ifindex, NMPlatformLink *received, NMPl
 		g_main_loop_quit (data->loop);
 	}
 
-	if (data->received)
-		g_error ("Received signal '%s-%s' a second time.", data->name, _change_type_to_string (data->change_type));
-
-	debug ("Received signal '%s-%s' ifindex %d ifname '%s'.", data->name, _change_type_to_string (data->change_type), ifindex, received->name);
-	data->received = TRUE;
+	data->received_count++;
+	debug ("Received signal '%s-%s' ifindex %d ifname '%s' %dth time.", data->name, _change_type_to_string (data->change_type), ifindex, received->name, data->received_count);
 
 	if (change_type == NM_PLATFORM_SIGNAL_REMOVED)
 		g_assert (!nm_platform_link_get_name (NM_PLATFORM_GET, ifindex));

@@ -24,10 +24,8 @@ ip4_address_callback (NMPlatform *platform, int ifindex, NMPlatformIP4Address *r
 	if (data->loop)
 		g_main_loop_quit (data->loop);
 
-	if (data->received)
-		g_error ("Received signal '%s' a second time.", data->name);
-
-	data->received = TRUE;
+	data->received_count++;
+	debug ("Received signal '%s' %dth time.", data->name, data->received_count);
 }
 
 static void
@@ -46,10 +44,8 @@ ip6_address_callback (NMPlatform *platform, int ifindex, NMPlatformIP6Address *r
 	if (data->loop)
 		g_main_loop_quit (data->loop);
 
-	if (data->received)
-		g_error ("Received signal '%s' a second time.", data->name);
-
-	data->received = TRUE;
+	data->received_count++;
+	debug ("Received signal '%s' %dth time.", data->name, data->received_count);
 }
 
 static void
