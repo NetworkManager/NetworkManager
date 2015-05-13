@@ -113,6 +113,12 @@ enum {
 	LAST_SIGNAL
 };
 
+typedef enum {
+	SR_SUCCESS,
+	SR_NOTFOUND,
+	SR_ERROR
+} SpawnResult;
+
 static guint signals[LAST_SIGNAL] = { 0 };
 
 
@@ -303,7 +309,7 @@ write_to_netconfig (gint fd, const char *key, const char *value)
 	g_free (str);
 }
 
-static gboolean
+static SpawnResult
 dispatch_netconfig (char **searches,
                     char **nameservers,
                     const char *nis_domain,
@@ -317,7 +323,7 @@ dispatch_netconfig (char **searches,
 
 	pid = run_netconfig (error, &fd);
 	if (pid <= 0)
-		return FALSE;
+		return SR_NOTFOUND;
 
 	/* NM is writing already-merged DNS information to netconfig, so it
 	 * does not apply to a specific network interface.
@@ -355,16 +361,16 @@ dispatch_netconfig (char **searches,
 		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
 		             "Error waiting for netconfig to exit: %s",
 		             strerror (errsv));
-		return FALSE;
+		return SR_ERROR;
 	}
 	if (!WIFEXITED (status) || WEXITSTATUS (status) != EXIT_SUCCESS) {
 		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
 		             "Error calling netconfig: %s %d",
 		             WIFEXITED (status) ? "exited with status" : (WIFSIGNALED (status) ? "exited with signal" : "exited with unknown reason"),
 		             WIFEXITED (status) ? WEXITSTATUS (status) : (WIFSIGNALED (status) ? WTERMSIG (status) : status));
-		return FALSE;
+		return SR_ERROR;
 	}
-	return TRUE;
+	return SR_SUCCESS;
 }
 
 static gboolean
@@ -436,7 +442,7 @@ write_resolv_conf (FILE *f,
 	return retval;
 }
 
-static gboolean
+static SpawnResult
 dispatch_resolvconf (char **searches,
                      char **nameservers,
                      char **options,
@@ -452,7 +458,7 @@ dispatch_resolvconf (char **searches,
 		                     NM_MANAGER_ERROR,
 		                     NM_MANAGER_ERROR_FAILED,
 		                     RESOLVCONF_PATH " is not executable");
-		return FALSE;
+		return SR_NOTFOUND;
 	}
 
 	if (searches || nameservers) {
@@ -487,14 +493,14 @@ dispatch_resolvconf (char **searches,
 
 	g_free (cmd);
 
-	return retval;
+	return retval ? SR_SUCCESS : SR_ERROR;
 }
 
 #define MY_RESOLV_CONF NMRUNDIR "/resolv.conf"
 #define MY_RESOLV_CONF_TMP MY_RESOLV_CONF ".tmp"
 #define RESOLV_CONF_TMP "/etc/.resolv.conf.NetworkManager"
 
-static gboolean
+static SpawnResult
 update_resolv_conf (char **searches,
                     char **nameservers,
 					char **options,
@@ -519,7 +525,7 @@ update_resolv_conf (char **searches,
 		if (ours) {
 			nm_log_dbg (LOGD_DNS, "not updating " MY_RESOLV_CONF
 			            " since it points to " _PATH_RESCONF);
-			return FALSE;
+			return SR_ERROR;
 		}
 	}
 
@@ -530,7 +536,7 @@ update_resolv_conf (char **searches,
 		             "Could not open %s: %s\n",
 		             MY_RESOLV_CONF_TMP,
 		             g_strerror (errno));
-		return FALSE;
+		return SR_ERROR;
 	}
 
 	ret = write_resolv_conf (f, searches, nameservers, options, error);
@@ -550,7 +556,7 @@ update_resolv_conf (char **searches,
 	}
 
 	if (!ret)
-		return FALSE;
+		return SR_ERROR;
 
 	if (rename (MY_RESOLV_CONF_TMP, MY_RESOLV_CONF) < 0) {
 		g_set_error (error,
@@ -559,11 +565,11 @@ update_resolv_conf (char **searches,
 		             "Could not replace %s: %s\n",
 		             MY_RESOLV_CONF,
 		             g_strerror (errno));
-		return FALSE;
+		return SR_ERROR;
 	}
 
 	if (!install_etc)
-		return TRUE;
+		return SR_SUCCESS;
 
 	/* Don't overwrite a symbolic link unless it points to MY_RESOLV_CONF. */
 	if (lstat (_PATH_RESCONF, &st) != -1) {
@@ -575,17 +581,17 @@ update_resolv_conf (char **searches,
 
 				g_free (path);
 				if (not_ours)
-					return TRUE;
+					return SR_SUCCESS;
 			} else {
 				if (errno != ENOENT)
-					return TRUE;
+					return SR_SUCCESS;
 				g_set_error (error,
 				             NM_MANAGER_ERROR,
 				             NM_MANAGER_ERROR_FAILED,
 				             "Could not stat %s: %s\n",
 				             _PATH_RESCONF,
 				             g_strerror (errno));
-				return FALSE;
+				return SR_ERROR;
 			}
 		}
 	} else if (errno != ENOENT) {
@@ -595,7 +601,7 @@ update_resolv_conf (char **searches,
 		             "Could not lstat %s: %s\n",
 		             _PATH_RESCONF,
 		             g_strerror (errno));
-		return FALSE;
+		return SR_ERROR;
 	}
 
 	if (unlink (RESOLV_CONF_TMP) == -1 && errno != ENOENT) {
@@ -605,7 +611,7 @@ update_resolv_conf (char **searches,
 		             "Could not unlink %s: %s\n",
 		             RESOLV_CONF_TMP,
 		             g_strerror (errno));
-		return FALSE;
+		return SR_ERROR;
 	}
 
 	if (symlink (MY_RESOLV_CONF, RESOLV_CONF_TMP) == -1) {
@@ -616,7 +622,7 @@ update_resolv_conf (char **searches,
 		             RESOLV_CONF_TMP,
 		             MY_RESOLV_CONF,
 		             g_strerror (errno));
-		return FALSE;
+		return SR_ERROR;
 	}
 
 	if (rename (RESOLV_CONF_TMP, _PATH_RESCONF) == -1) {
@@ -627,10 +633,10 @@ update_resolv_conf (char **searches,
 		             RESOLV_CONF_TMP,
 		             _PATH_RESCONF,
 		             g_strerror (errno));
-		return FALSE;
+		return SR_ERROR;
 	}
 
-	return TRUE;
+	return SR_SUCCESS;
 }
 
 static void
@@ -722,7 +728,9 @@ update_dns (NMDnsManager *self,
 	char **nameservers = NULL;
 	char **nis_servers = NULL;
 	int num, i, len;
-	gboolean success = FALSE, caching = FALSE, update = TRUE;
+	gboolean caching = FALSE, update = TRUE;
+	gboolean resolv_conf_updated = FALSE;
+	SpawnResult result = SR_ERROR;
 
 	g_return_val_if_fail (!error || !*error, FALSE);
 
@@ -881,27 +889,35 @@ update_dns (NMDnsManager *self,
 	if (update) {
 		switch (priv->rc_manager) {
 		case NM_DNS_MANAGER_RESOLV_CONF_MAN_NONE:
-			success = update_resolv_conf (searches, nameservers, options, error, TRUE);
+			result = update_resolv_conf (searches, nameservers, options, error, TRUE);
+			resolv_conf_updated = TRUE;
 			break;
 		case NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF:
-			success = dispatch_resolvconf (searches, nameservers, options, error);
+			result = dispatch_resolvconf (searches, nameservers, options, error);
 			break;
 		case NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG:
-			success = dispatch_netconfig (searches, nameservers, nis_domain,
-			                              nis_servers, error);
+			result = dispatch_netconfig (searches, nameservers, nis_domain,
+			                             nis_servers, error);
 			break;
 		default:
 			g_assert_not_reached ();
+		}
+
+		if (result == SR_NOTFOUND) {
+			nm_log_dbg (LOGD_DNS, "program not available, writing to resolv.conf");
+			g_clear_error (error);
+			result = update_resolv_conf (searches, nameservers, options, error, TRUE);
+			resolv_conf_updated = TRUE;
 		}
 	}
 
 	/* Unless we've already done it, update private resolv.conf in NMRUNDIR
 	   ignoring any errors */
-	if (!(update && priv->rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_NONE))
+	if (!resolv_conf_updated)
 		update_resolv_conf (searches, nameservers, options, NULL, FALSE);
 
 	/* signal that resolv.conf was changed */
-	if (update && success)
+	if (update && result == SR_SUCCESS)
 		g_signal_emit (self, signals[CONFIG_CHANGED], 0);
 
 	if (searches)
@@ -913,7 +929,7 @@ update_dns (NMDnsManager *self,
 	if (nis_servers)
 		g_strfreev (nis_servers);
 
-	return !update || success;
+	return !update || result == SR_SUCCESS;
 }
 
 static void
