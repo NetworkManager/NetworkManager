@@ -854,7 +854,7 @@ create_pppd_cmd_line (NMPPPManager *self,
                       GError **err)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (self);
-	const char *pppd_binary = NULL, *pppoe_binary = NULL;
+	const char *pppd_binary = NULL;
 	NMCmdLine *cmd;
 	gboolean ppp_debug;
 
@@ -863,13 +863,6 @@ create_pppd_cmd_line (NMPPPManager *self,
 	pppd_binary = nm_utils_find_helper ("pppd", NULL, err);
 	if (!pppd_binary)
 		return NULL;
-
-	if (   pppoe
-	    || (adsl && strcmp (nm_setting_adsl_get_protocol (adsl), NM_SETTING_ADSL_PROTOCOL_PPPOE))) {
-		pppoe_binary = nm_utils_find_helper ("pppoe", NULL, err);
-		if (!pppoe_binary)
-			return NULL;
-	}
 
 	/* Create pppd command line */
 	cmd = nm_cmd_line_new ();
@@ -898,30 +891,21 @@ create_pppd_cmd_line (NMPPPManager *self,
 	}
 
 	if (pppoe) {
-		GString *pppoe_arg;
+		char *dev_str;
 		const char *pppoe_service;
-		char *quoted;
 
-		g_assert (pppoe_binary != NULL);
-		pppoe_arg = g_string_new (pppoe_binary);
+		nm_cmd_line_add_string (cmd, "plugin");
+		nm_cmd_line_add_string (cmd, "rp-pppoe.so");
 
-		g_string_append (pppoe_arg, " -I ");
-		quoted = g_shell_quote (priv->parent_iface);
-		g_string_append (pppoe_arg, quoted);
-		g_free (quoted);
+		dev_str = g_strdup_printf ("nic-%s", priv->parent_iface);
+		nm_cmd_line_add_string (cmd, dev_str);
+		g_free (dev_str);
 
 		pppoe_service = nm_setting_pppoe_get_service (pppoe);
 		if (pppoe_service) {
-			g_string_append (pppoe_arg, " -S ");
-			quoted = g_shell_quote (pppoe_service);
-			g_string_append (pppoe_arg, quoted);
-			g_free (quoted);
+			nm_cmd_line_add_string (cmd, "rp_pppoe_service");
+			nm_cmd_line_add_string (cmd, pppoe_service);
 		}
-
-		nm_cmd_line_add_string (cmd, "pty");
-		nm_cmd_line_add_string (cmd, pppoe_arg->str);
-
-		g_string_free (pppoe_arg, TRUE);
 	} else if (adsl) {
 		const gchar *protocol = nm_setting_adsl_get_protocol (adsl);
 
@@ -944,14 +928,9 @@ create_pppd_cmd_line (NMPPPManager *self,
 				nm_cmd_line_add_string (cmd, "vc-encaps");
 
 		} else if (!strcmp (protocol, NM_SETTING_ADSL_PROTOCOL_PPPOE)) {
-			char *pppoe_arg;
-
-			g_assert (pppoe_binary != NULL);
-
-			pppoe_arg = g_strdup_printf ("%s -I %s", pppoe_binary, priv->parent_iface);
-			nm_cmd_line_add_string (cmd, "pty");
-			nm_cmd_line_add_string (cmd, pppoe_arg);
-			g_free (pppoe_arg);
+			nm_cmd_line_add_string (cmd, "plugin");
+			nm_cmd_line_add_string (cmd, "rp-pppoe.so");
+			nm_cmd_line_add_string (cmd, priv->parent_iface);
 		}
 
 		nm_cmd_line_add_string (cmd, "noipdefault");

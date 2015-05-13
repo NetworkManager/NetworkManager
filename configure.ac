@@ -619,15 +619,6 @@ fi
 AC_DEFINE_UNQUOTED(PPPD_PATH, "$PPPD_PATH", [Define to path of pppd binary])
 AC_SUBST(PPPD_PATH)
 
-AC_ARG_WITH(pppoe, AS_HELP_STRING([--with-pppoe=/path/to/pppoe], [path to pppoe binary]))
-if test "x${with_pppoe}" = x; then
-  AC_PATH_PROG(PPPOE_PATH, pppoe, [], $PATH:/sbin:/usr/sbin)
-else
-  PPPOE_PATH="$with_pppoe"
-fi
-AC_DEFINE_UNQUOTED(PPPOE_PATH, "$PPPOE_PATH", [Define to path of pppoe binary])
-AC_SUBST(PPPOE_PATH)
-
 # ModemManager1 with libmm-glib
 AC_ARG_WITH(modem-manager-1, AS_HELP_STRING([--with-modem-manager-1], [Enable new ModemManager1 interface support]),,[with_modem_manager_1=auto])
 if (test "${with_modem_manager_1}" != "no"); then
