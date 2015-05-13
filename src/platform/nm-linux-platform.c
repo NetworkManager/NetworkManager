@@ -2516,7 +2516,7 @@ static gboolean
 link_delete (NMPlatform *platform, int ifindex)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	struct rtnl_link *rtnllink = rtnl_link_get (priv->link_cache, ifindex);
+	auto_nl_object struct rtnl_link *rtnllink = rtnl_link_get (priv->link_cache, ifindex);
 
 	if (!rtnllink) {
 		platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
