@@ -1159,7 +1159,7 @@ pk_add_cb (NMAuthChain *chain,
 	callback (self, added, error, context, callback_data);
 
 	/* Send agent-owned secrets to the agents */
-	if (!error && added && nm_settings_has_connection (self, added))
+	if (!error && added && nm_settings_has_connection (self, (NMConnection *) added))
 		send_agent_owned_secrets (self, added, subject);
 
 	g_clear_error (&error);
