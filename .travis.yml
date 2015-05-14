@@ -1,0 +1,10 @@
+language: c
+before_install:
+  - sudo apt-get update
+  - sudo apt-get install autoconf libtool pkg-config intltool libdbus-glib-1-dev libdbus-1-dev libiw-dev libglib2.0-dev libnl-3-dev libnl-route-3-dev libnl-genl-3-dev ppp-dev libpolkit-gobject-1-dev libgnutls28-dev libgcrypt11-dev uuid-dev libudev-dev libgudev-1.0-dev libgirepository1.0-dev gobject-introspection libsoup2.4-dev gtk-doc-tools libglib2.0-doc libreadline-dev libnewt-dev libnss3-dev iptables make python-software-properties python-gi python-dbus dbus dbus-x11
+  - sudo dbus-uuidgen --ensure
+  - sudo apt-add-repository 'deb http://archive.ubuntu.com/ubuntu trusty main'
+  - sudo apt-add-repository 'deb http://archive.ubuntu.com/ubuntu trusty-backports main restricted universe multiverse'
+  - sudo apt-get update
+  - sudo apt-get install libnl-3-dev libndp-dev automake
+script: "sh autogen.sh --with-systemd-logind=no --enable-more-warnings=no && make -j6 && make -k check"
