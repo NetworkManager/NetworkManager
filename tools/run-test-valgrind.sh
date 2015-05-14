@@ -9,7 +9,7 @@ if [ "$1" = "--launch-dbus" ]; then
     trap "kill $DBUS_SESSION_BUS_PID" EXIT
     shift
 fi
-TEST="$1"; shift
+TEST="$1"
 
 if [ "$NMTST_NO_VALGRIND" != "" ]; then
 	"$TEST"
@@ -27,7 +27,7 @@ $LIBTOOL --mode=execute "$VALGRIND" \
 	--gen-suppressions=all \
 	--suppressions="$SUPPRESSIONS" \
 	--log-file="$LOGFILE" \
-	"$TEST"
+	"$@"
 RESULT=$?
 
 if [ $RESULT -eq 0 -a "$(wc -c "$LOGFILE" | awk '{print$1}')" -ne 0 ]; then
