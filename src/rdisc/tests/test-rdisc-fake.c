@@ -439,7 +439,7 @@ main (int argc, char **argv)
 
 	if (nmtst_test_quick ()) {
 		g_print ("Skipping test: don't run long running test %s (NMTST_DEBUG=slow)\n", str_if_set (g_get_prgname (), "test-rdisc-fake"));
-		return EXIT_SKIP;
+		return g_test_run ();
 	}
 
 	nm_fake_platform_setup ();
