@@ -1419,7 +1419,7 @@ _nmcli()
             ;;
         d|de|dev|devi|devic|device)
             if [[ ${#words[@]} -eq 2 ]]; then
-                _nmcli_compl_COMMAND "$command" status show connect disconnect delete monitor wifi set lldp
+                _nmcli_compl_COMMAND "$command" status show connect reapply disconnect delete monitor wifi set lldp
             elif [[ ${#words[@]} -gt 2 ]]; then
                 case "$command" in
                     s|st|sta|stat|statu|status)
@@ -1433,6 +1433,7 @@ _nmcli()
                             _nmcli_compl_COMMAND_nl "${words[2]}" "$(_nmcli_dev_status DEVICE)"
                         fi
                         ;;
+                    r|re|rea|reap|reapp|reappl|reapply| \
                     d|di|dis|disc|disco|discon|disconn|disconne|disconnec|disconnect| \
                     de|del|dele|delet|delete| \
                     m|mo|mon|moni|monit|monito|monitor)
