@@ -39,6 +39,7 @@
 #ifndef aligned_u64
 #define aligned_u64 unsigned long long __attribute__((aligned(8)))
 #endif
+#include <linux/if.h>
 #include <linux/if_ppp.h>
 
 #include "NetworkManagerUtils.h"
