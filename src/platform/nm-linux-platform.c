@@ -4565,10 +4565,9 @@ verify_source (struct nl_msg *msg, gpointer user_data)
 {
 	struct ucred *creds = nlmsg_get_creds (msg);
 
-	if (!creds || creds->pid || creds->uid || creds->gid) {
+	if (!creds || creds->pid) {
 		if (creds)
-			warning ("netlink: received non-kernel message (pid %d uid %d gid %d)",
-					creds->pid, creds->uid, creds->gid);
+			warning ("netlink: received non-kernel message (pid %d)", creds->pid);
 		else
 			warning ("netlink: received message without credentials");
 		return NL_STOP;
