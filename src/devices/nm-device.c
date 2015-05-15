@@ -741,50 +741,63 @@ nm_device_get_priority (NMDevice *self)
 	return 11000;
 }
 
-guint32
-nm_device_get_ip4_route_metric (NMDevice *self)
+static guint32
+_get_ipx_route_metric (NMDevice *self,
+                       gboolean is_v4)
 {
+	char *value;
+	gint64 route_metric;
+	NMSettingIPConfig *s_ip;
 	NMConnection *connection;
-	NMSettingIPConfig *s_ip = NULL;
-	gint64 route_metric = -1;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), G_MAXUINT32);
 
 	connection = nm_device_get_connection (self);
-	if (connection)
-		s_ip = nm_connection_get_setting_ip4_config (connection);
+	if (connection) {
+		s_ip = is_v4
+		       ? nm_connection_get_setting_ip4_config (connection)
+		       : nm_connection_get_setting_ip6_config (connection);
 
-	/* Slave interfaces don't have IP settings, but we may get here when
-	 * external changes are made or when noticing IP changes when starting
-	 * the slave connection.
-	 */
-	if (s_ip)
-		route_metric = nm_setting_ip_config_get_route_metric (s_ip);
+		/* Slave interfaces don't have IP settings, but we may get here when
+		 * external changes are made or when noticing IP changes when starting
+		 * the slave connection.
+		 */
+		if (s_ip) {
+			route_metric = nm_setting_ip_config_get_route_metric (s_ip);
+			if (route_metric >= 0)
+				goto out;
+		}
+	}
 
-	return route_metric >= 0 ? route_metric : nm_device_get_priority (self);
+	/* use the current NMConfigData, which makes this configuration reloadable.
+	 * Note that that means that the route-metric might change between SIGHUP.
+	 * You must cache the returned value if that is a problem. */
+	value = nm_config_data_get_connection_default (nm_config_get_data (nm_config_get ()),
+	                                               is_v4 ? "ipv4.route-metric" : "ipv6.route-metric", self);
+	if (value) {
+		route_metric = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXUINT32, -1);
+		g_free (value);
+
+		if (route_metric >= 0)
+			goto out;
+	}
+	route_metric = nm_device_get_priority (self);
+out:
+	if (!is_v4)
+		route_metric = nm_utils_ip6_route_metric_normalize (route_metric);
+	return route_metric;
+}
+
+guint32
+nm_device_get_ip4_route_metric (NMDevice *self)
+{
+	return _get_ipx_route_metric (self, TRUE);
 }
 
 guint32
 nm_device_get_ip6_route_metric (NMDevice *self)
 {
-	NMConnection *connection;
-	NMSettingIPConfig *s_ip = NULL;
-	gint64 route_metric = -1;
-
-	g_return_val_if_fail (NM_IS_DEVICE (self), G_MAXUINT32);
-
-	connection = nm_device_get_connection (self);
-	if (connection)
-		s_ip = nm_connection_get_setting_ip6_config (connection);
-
-	/* Slave interfaces don't have IP settings, but we may get here when
-	 * external changes are made or when noticing IP changes when starting
-	 * the slave connection.
-	 */
-	if (s_ip)
-		route_metric = nm_setting_ip_config_get_route_metric (s_ip);
-
-	return route_metric >= 0 ? route_metric : nm_device_get_priority (self);
+	return _get_ipx_route_metric (self, FALSE);
 }
 
 const NMPlatformIP4Route *

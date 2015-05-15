@@ -490,7 +490,7 @@ ipv6.ip6-privacy=1
         Note that also "wlan0" gets "ipv6.ip6-privacy=1", because although the section
         "[connection-wifi-wlan0]" matches the device, it does not contain that property
         and the search continues.
-        This is just an example, currently these properties are not overwritable.
+        This is just an example, ipv6.ip6-privacy property is currently not overwritable.
     </para>
 
     <para>
@@ -520,6 +520,12 @@ ipv6.ip6-privacy=1
     <para>
       The following properties are supported to have their default values configured:
       <variablelist>
+        <varlistentry>
+          <term><varname>ipv4.route-metric</varname></term>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>ipv6.route-metric</varname></term>
+        </varlistentry>
       </variablelist>
     </para>
   </refsect1>
