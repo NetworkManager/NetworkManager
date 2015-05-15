@@ -1148,7 +1148,7 @@ def main():
         sys.exit(1)
 
     # Watch stdin; if it closes, assume our parent has crashed, and exit
-    io = GLib.IOChannel.unix_new(0)
+    io = GLib.IOChannel(0)
     io.add_watch(GLib.IOCondition.HUP, stdin_cb)
 
     # also quit after inactivity to ensure we don't stick around if the above fails somehow
