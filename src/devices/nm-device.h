@@ -212,6 +212,8 @@ typedef struct {
 	/* Sync deactivating (in the DISCONNECTED phase) */
 	void			(* deactivate)			(NMDevice *self);
 
+	const char *(*get_type_description) (NMDevice *self);
+
 	NMMatchSpecMatchType (* spec_match_list)   (NMDevice *self, const GSList *specs);
 
 	/* Update the connection with currently configured L2 settings */
@@ -278,6 +280,7 @@ int             nm_device_get_ip_ifindex(NMDevice *dev);
 const char *	nm_device_get_driver	(NMDevice *dev);
 const char *	nm_device_get_driver_version	(NMDevice *dev);
 const char *	nm_device_get_type_desc (NMDevice *dev);
+const char *	nm_device_get_type_description (NMDevice *dev);
 NMDeviceType	nm_device_get_device_type	(NMDevice *dev);
 
 int			nm_device_get_priority (NMDevice *dev);

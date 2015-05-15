@@ -191,6 +191,7 @@ typedef struct {
 	int           ip_ifindex;
 	NMDeviceType  type;
 	char *        type_desc;
+	char *        type_description;
 	NMDeviceCapabilities capabilities;
 	char *        driver;
 	char *        driver_version;
@@ -822,6 +823,34 @@ nm_device_get_type_desc (NMDevice *self)
 	g_return_val_if_fail (self != NULL, NULL);
 
 	return NM_DEVICE_GET_PRIVATE (self)->type_desc;
+}
+
+const char *
+nm_device_get_type_description (NMDevice *self)
+{
+	g_return_val_if_fail (self != NULL, NULL);
+
+	/* Beware: this function should return the same
+	 * value as nm_device_get_type_description() in libnm. */
+
+	return NM_DEVICE_GET_CLASS (self)->get_type_description (self);
+}
+
+static const char *
+get_type_description (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (!priv->type_description) {
+		const char *typename;
+
+		typename = G_OBJECT_TYPE_NAME (self);
+		if (g_str_has_prefix (typename, "NMDevice"))
+			typename += 8;
+		priv->type_description = g_ascii_strdown (typename, -1);
+	}
+
+	return priv->type_description;
 }
 
 gboolean
@@ -8788,6 +8817,7 @@ finalize (GObject *object)
 	g_free (priv->driver_version);
 	g_free (priv->firmware_version);
 	g_free (priv->type_desc);
+	g_free (priv->type_description);
 	g_free (priv->dhcp_anycast_address);
 
 	g_hash_table_unref (priv->ip6_saved_properties);
@@ -8805,7 +8835,7 @@ set_property (GObject *object, guint prop_id,
 	NMPlatformLink *platform_device;
 	const char *hw_addr, *p;
 	guint count;
- 
+
 	switch (prop_id) {
 	case PROP_PLATFORM_DEVICE:
 		platform_device = g_value_get_pointer (value);
@@ -9073,6 +9103,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->act_stage4_ip6_config_timeout = act_stage4_ip6_config_timeout;
 	klass->have_any_ready_slaves = have_any_ready_slaves;
 
+	klass->get_type_description = get_type_description;
 	klass->spec_match_list = spec_match_list;
 	klass->can_auto_connect = can_auto_connect;
 	klass->check_connection_compatible = check_connection_compatible;
