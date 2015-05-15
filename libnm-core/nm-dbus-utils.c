@@ -24,6 +24,7 @@
 #include <gio/gio.h>
 #include <glib/gi18n-lib.h>
 
+#include "nm-glib-compat.h"
 #include "nm-core-internal.h"
 
 typedef struct {

@@ -27,6 +27,8 @@
 #include <errno.h>
 #include <string.h>
 
+#include "nm-glib-compat.h"
+
 #include "nm-logging.h"
 #include "writer.h"
 #include "common.h"

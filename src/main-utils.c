@@ -34,6 +34,8 @@
 #include <glib-unix.h>
 #include <gmodule.h>
 
+#include "nm-glib-compat.h"
+
 #include "gsystem-local-alloc.h"
 #include "main-utils.h"
 #include "NetworkManagerUtils.h"
