@@ -219,12 +219,14 @@ test_slave (int master, int type, SignalData *master_changed)
 	/* Set slave option */
 	switch (type) {
 	case NM_LINK_TYPE_BRIDGE:
-		g_assert (nm_platform_slave_set_option (NM_PLATFORM_GET, ifindex, "priority", "789"));
-		no_error ();
-		value = nm_platform_slave_get_option (NM_PLATFORM_GET, ifindex, "priority");
-		no_error ();
-		g_assert_cmpstr (value, ==, "789");
-		g_free (value);
+		if (nmtst_platform_is_sysfs_writable ()) {
+			g_assert (nm_platform_slave_set_option (NM_PLATFORM_GET, ifindex, "priority", "789"));
+			no_error ();
+			value = nm_platform_slave_get_option (NM_PLATFORM_GET, ifindex, "priority");
+			no_error ();
+			g_assert_cmpstr (value, ==, "789");
+			g_free (value);
+		}
 		break;
 	default:
 		break;
@@ -294,21 +296,25 @@ test_software (NMLinkType link_type, const char *link_typename)
 	/* Set master option */
 	switch (link_type) {
 	case NM_LINK_TYPE_BRIDGE:
-		g_assert (nm_platform_master_set_option (NM_PLATFORM_GET, ifindex, "forward_delay", "789"));
-		no_error ();
-		value = nm_platform_master_get_option (NM_PLATFORM_GET, ifindex, "forward_delay");
-		no_error ();
-		g_assert_cmpstr (value, ==, "789");
-		g_free (value);
+		if (nmtst_platform_is_sysfs_writable ()) {
+			g_assert (nm_platform_master_set_option (NM_PLATFORM_GET, ifindex, "forward_delay", "789"));
+			no_error ();
+			value = nm_platform_master_get_option (NM_PLATFORM_GET, ifindex, "forward_delay");
+			no_error ();
+			g_assert_cmpstr (value, ==, "789");
+			g_free (value);
+		}
 		break;
 	case NM_LINK_TYPE_BOND:
-		g_assert (nm_platform_master_set_option (NM_PLATFORM_GET, ifindex, "mode", "active-backup"));
-		no_error ();
-		value = nm_platform_master_get_option (NM_PLATFORM_GET, ifindex, "mode");
-		no_error ();
-		/* When reading back, the output looks slightly different. */
-		g_assert (g_str_has_prefix (value, "active-backup"));
-		g_free (value);
+		if (nmtst_platform_is_sysfs_writable ()) {
+			g_assert (nm_platform_master_set_option (NM_PLATFORM_GET, ifindex, "mode", "active-backup"));
+			no_error ();
+			value = nm_platform_master_get_option (NM_PLATFORM_GET, ifindex, "mode");
+			no_error ();
+			/* When reading back, the output looks slightly different. */
+			g_assert (g_str_has_prefix (value, "active-backup"));
+			g_free (value);
+		}
 		break;
 	default:
 		break;

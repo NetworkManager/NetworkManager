@@ -19,6 +19,13 @@ nmtst_platform_is_root_test ()
 	NM_PRAGMA_WARNING_REENABLE
 }
 
+gboolean
+nmtst_platform_is_sysfs_writable ()
+{
+	return    !nmtst_platform_is_root_test ()
+	       || (access ("/sys/devices", W_OK) == 0);
+}
+
 SignalData *
 add_signal_full (const char *name, NMPlatformSignalChangeType change_type, GCallback callback, int ifindex, const char *ifname)
 {
@@ -325,12 +332,17 @@ main (int argc, char **argv)
 			g_error ("mount(\"/sys/devices\") failed with %s (%d)", strerror (errsv), errsv);
 		}
 		if (mount (NULL, "/sys/devices", "sysfs", MS_REMOUNT, NULL) != 0) {
-			errsv = errno;
-			g_error ("remount(\"/sys/devices\") failed with  %s (%d)", strerror (errsv), errsv);
-		}
-		if (mount ("/sys/devices/devices", "/sys/devices", "sysfs", MS_BIND, NULL) != 0) {
-			errsv = errno;
-			g_error ("mount(\"/sys\") failed with %s (%d)", strerror (errsv), errsv);
+			/* Read-write remount failed. Never mind, we're probably just a root in
+			 * our user NS. */
+			if (umount ("/sys/devices") != 0) {
+				errsv = errno;
+				g_error ("umount(\"/sys/devices\") failed with  %s (%d)", strerror (errsv), errsv);
+			}
+		} else {
+			if (mount ("/sys/devices/devices", "/sys/devices", "sysfs", MS_BIND, NULL) != 0) {
+				errsv = errno;
+				g_error ("mount(\"/sys\") failed with %s (%d)", strerror (errsv), errsv);
+			}
 		}
 	}
 
