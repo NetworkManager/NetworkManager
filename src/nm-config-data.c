@@ -27,12 +27,29 @@
 #include "gsystem-local-alloc.h"
 #include "nm-device.h"
 #include "nm-core-internal.h"
+#include "nm-macros-internal.h"
+
+typedef struct {
+	char *group_name;
+	gboolean stop_match;
+	struct {
+		/* have a separate boolean field @has, because a @spec with
+		 * value %NULL does not necessarily mean, that the property
+		 * "match-device" was unspecified. */
+		gboolean has;
+		GSList *spec;
+	} match_device;
+} ConnectionInfo;
 
 typedef struct {
 	char *config_main_file;
 	char *config_description;
 
 	GKeyFile *keyfile;
+
+	/* A zero-terminated list of pre-processed information from the
+	 * [connection] sections. This is to speed up lookup. */
+	ConnectionInfo *connection_infos;
 
 	struct {
 		char *uri;
@@ -168,6 +185,100 @@ nm_config_data_get_assume_ipv6ll_only (const NMConfigData *self, NMDevice *devic
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
 	return nm_device_spec_match_list (device, NM_CONFIG_DATA_GET_PRIVATE (self)->assume_ipv6ll_only);
+}
+
+/************************************************************************/
+
+char *
+nm_config_data_get_connection_default (const NMConfigData *self,
+                                       const char *property,
+                                       NMDevice *device)
+{
+	NMConfigDataPrivate *priv;
+	const ConnectionInfo *connection_info;
+
+	g_return_val_if_fail (self, NULL);
+	g_return_val_if_fail (property && *property, NULL);
+	g_return_val_if_fail (strchr (property, '.'), NULL);
+
+	priv = NM_CONFIG_DATA_GET_PRIVATE (self);
+
+	if (!priv->connection_infos)
+		return NULL;
+
+	for (connection_info = &priv->connection_infos[0]; connection_info->group_name; connection_info++) {
+		char *value;
+		gboolean match;
+
+		value = g_key_file_get_value (priv->keyfile, connection_info->group_name, property, NULL);
+		if (!value && !connection_info->stop_match)
+			continue;
+
+		match = TRUE;
+		if (connection_info->match_device.has)
+			match = device && nm_device_spec_match_list (device, connection_info->match_device.spec);
+
+		if (match)
+			return value;
+		g_free (value);
+	}
+	return NULL;
+}
+
+static ConnectionInfo *
+_get_connection_infos (GKeyFile *keyfile)
+{
+	char **groups;
+	guint i;
+	char *connection_tag = NULL;
+	GSList *connection_groups = NULL;
+	ConnectionInfo *connection_infos = NULL;
+
+	/* get the list of existing [connection.\+] sections that we consider
+	 * for nm_config_data_get_connection_default(). Also, get them
+	 * in the right order. */
+	groups = g_key_file_get_groups (keyfile, NULL);
+	for (i = 0; groups && groups[i]; i++) {
+		if (g_str_has_prefix (groups[i], "connection")) {
+			if (strlen (groups[i]) == STRLEN ("connection"))
+				connection_tag = groups[i];
+			else
+				connection_groups = g_slist_prepend (connection_groups, groups[i]);
+		} else
+			g_free (groups[i]);
+	}
+	g_free (groups);
+	if (connection_tag) {
+		/* We want the group "connection" checked at last, so that
+		 * all other "connection.\+" have preference. Those other
+		 * groups are checked in order of appearance. */
+		connection_groups = g_slist_prepend (connection_groups, connection_tag);
+	}
+	if (connection_groups) {
+		guint len = g_slist_length (connection_groups);
+		GSList *iter;
+
+		connection_infos = g_new0 (ConnectionInfo, len + 1);
+		for (iter = connection_groups; iter; iter = iter->next) {
+			ConnectionInfo *connection_info;
+			char *value;
+
+			nm_assert (len >= 1);
+			connection_info = &connection_infos[--len];
+			connection_info->group_name = iter->data;
+
+			value = g_key_file_get_value (keyfile, iter->data, "match-device", NULL);
+			if (value) {
+				connection_info->match_device.has = TRUE;
+				connection_info->match_device.spec = nm_match_spec_split (value);
+				g_free (value);
+			}
+			connection_info->stop_match = nm_config_keyfile_get_boolean (keyfile, iter->data, "stop-match", FALSE);
+		}
+		g_slist_free (connection_groups);
+	}
+
+	return connection_infos;
 }
 
 /************************************************************************/
@@ -324,6 +435,7 @@ static void
 finalize (GObject *gobject)
 {
 	NMConfigDataPrivate *priv = NM_CONFIG_DATA_GET_PRIVATE (gobject);
+	guint i;
 
 	g_free (priv->config_main_file);
 	g_free (priv->config_description);
@@ -339,6 +451,14 @@ finalize (GObject *gobject)
 
 	g_slist_free_full (priv->ignore_carrier, g_free);
 	g_slist_free_full (priv->assume_ipv6ll_only, g_free);
+
+	if (priv->connection_infos) {
+		for (i = 0; priv->connection_infos[i].group_name; i++) {
+			g_free (priv->connection_infos[i].group_name);
+			g_slist_free_full (priv->connection_infos[i].match_device.spec, g_free);
+		}
+		g_free (priv->connection_infos);
+	}
 
 	g_key_file_unref (priv->keyfile);
 
@@ -356,6 +476,8 @@ constructed (GObject *object)
 	NMConfigData *self = NM_CONFIG_DATA (object);
 	NMConfigDataPrivate *priv = NM_CONFIG_DATA_GET_PRIVATE (self);
 	char *interval;
+
+	priv->connection_infos = _get_connection_infos (priv->keyfile);
 
 	priv->connectivity.uri = g_key_file_get_value (priv->keyfile, "connectivity", "uri", NULL);
 	priv->connectivity.response = g_key_file_get_value (priv->keyfile, "connectivity", "response", NULL);

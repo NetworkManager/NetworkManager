@@ -454,6 +454,77 @@ unmanaged-devices=mac:00:22:68:1c:59:b1;mac:00:1E:65:30:D1:C4;interface-name:eth
   </refsect1>
 
   <refsect1>
+    <title><literal>connection</literal> section</title>
+    <para>This section allows to specify default values for
+    connections. Not all properties can be overwritten, only a selected
+    list below. You can have multiple <literal>connection</literal>
+    sections, by having different sections with a name that all start
+    with "connection".</para>
+    <para>
+        Example:
+<programlisting>
+[connection]
+ipv6.ip6-privacy=0
+
+[connection-wifi-wlan0]
+match-device=interface-name:wlan0
+ipv4.route-metric=50
+
+[connection-wifi-other]
+match-device=type:wifi
+ipv4.route-metric=55
+ipv6.ip6-privacy=1
+</programlisting>
+    </para>
+
+    <para>
+        The sections are considered in order of appearance, with the
+        exception that the <literal>[connection]</literal> section is always
+        considered last. In the example above, this order is <literal>[connection-wifi-wlan0]</literal>,
+        <literal>[connection-wlan-other]</literal>, and <literal>[connection]</literal>.
+        When checking for a default configuration value, the section are searched until
+        the requested value is found.
+        In the example above, "ipv4.route-metric" for wlan0 interface is set to 50,
+        and for all other Wi-Fi typed interfaces to 55. Also, Wi-Fi devices would have
+        IPv6 private addresses enabled by default, but other devices would have it disabled.
+        Note that also "wlan0" gets "ipv6.ip6-privacy=1", because although the section
+        "[connection-wifi-wlan0]" matches the device, it does not contain that property
+        and the search continues.
+        This is just an example, currently these properties are not overwritable.
+    </para>
+
+    <para>
+      <variablelist>
+        <varlistentry>
+          <term><varname>match-device</varname></term>
+          <listitem><para>An optional device spec that restricts
+          when the section applies. See <xref linkend="device-spec"/>
+          for the possible values.
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>stop-match</varname></term>
+          <listitem><para>An optional boolean value which defaults to
+          <literal>no</literal>. If the section matches (based on
+          <literal>match-device</literal>), further sections will not be
+          considered even if the property in question is not present. In
+          the example above, if <literal>[connection-wifi-wlan0]</literal> would
+          have <literal>stop-match</literal> set to <literal>yes</literal>,
+          its <literal>ipv6.ip6-privacy</literal> value would be
+          unspecified.
+          </para></listitem>
+        </varlistentry>
+      </variablelist>
+    </para>
+
+    <para>
+      The following properties are supported to have their default values configured:
+      <variablelist>
+      </variablelist>
+    </para>
+  </refsect1>
+
+  <refsect1>
     <title><literal>connectivity</literal> section</title>
     <para>This section controls NetworkManager's optional connectivity
     checking functionality.  This allows NetworkManager to detect

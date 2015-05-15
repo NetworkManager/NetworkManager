@@ -94,6 +94,9 @@ test_config_simple (void)
 	GError *error = NULL;
 	const char **plugins;
 	char *value;
+	gs_unref_object NMDevice *dev50 = nm_test_device_new ("00:00:00:00:00:50");
+	gs_unref_object NMDevice *dev51 = nm_test_device_new ("00:00:00:00:00:51");
+	gs_unref_object NMDevice *dev52 = nm_test_device_new ("00:00:00:00:00:52");
 
 	config = setup_config (NULL, SRCDIR "/NetworkManager.conf", "/no/such/dir", NULL);
 
@@ -121,6 +124,54 @@ test_config_simple (void)
 	g_assert (!value);
 	g_assert_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_GROUP_NOT_FOUND);
 	g_clear_error (&error);
+
+	value = nm_config_data_get_value (nm_config_get_data_orig (config), "connection", "ipv6.ip6_privacy", NULL);
+	g_assert_cmpstr (value, ==, "0");
+	g_free (value);
+
+	value = nm_config_data_get_value (nm_config_get_data_orig (config), "connection.dev51", "ipv4.route-metric", NULL);
+	g_assert_cmpstr (value, ==, "51");
+	g_free (value);
+
+
+	value = nm_config_data_get_connection_default (nm_config_get_data_orig (config), "ipv6.route-metric", NULL);
+	g_assert_cmpstr (value, ==, NULL);
+	g_free (value);
+
+
+	value = nm_config_data_get_connection_default (nm_config_get_data_orig (config), "ipv4.route-metric", NULL);
+	g_assert_cmpstr (value, ==, "50");
+	g_free (value);
+
+	value = nm_config_data_get_connection_default (nm_config_get_data_orig (config), "ipv4.route-metric", dev50);
+	g_assert_cmpstr (value, ==, "50");
+	g_free (value);
+
+	value = nm_config_data_get_connection_default (nm_config_get_data_orig (config), "ipv4.route-metric", dev51);
+	g_assert_cmpstr (value, ==, "51");
+	g_free (value);
+
+	value = nm_config_data_get_connection_default (nm_config_get_data_orig (config), "ipv4.route-metric", dev52);
+	g_assert_cmpstr (value, ==, "52");
+	g_free (value);
+
+
+	value = nm_config_data_get_connection_default (nm_config_get_data_orig (config), "dummy.test1", dev51);
+	g_assert_cmpstr (value, ==, "yes");
+	g_free (value);
+
+	value = nm_config_data_get_connection_default (nm_config_get_data_orig (config), "dummy.test1", dev50);
+	g_assert_cmpstr (value, ==, "no");
+	g_free (value);
+
+	value = nm_config_data_get_connection_default (nm_config_get_data_orig (config), "dummy.test2", dev51);
+	g_assert_cmpstr (value, ==, NULL);
+	g_free (value);
+
+	value = nm_config_data_get_connection_default (nm_config_get_data_orig (config), "dummy.test2", dev50);
+	g_assert_cmpstr (value, ==, "no");
+	g_free (value);
+
 
 	g_object_unref (config);
 }
