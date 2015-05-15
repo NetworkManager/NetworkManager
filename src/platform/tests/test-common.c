@@ -285,6 +285,46 @@ run_command (const char *format, ...)
 
 NMTST_DEFINE();
 
+static gboolean
+unshare_user ()
+{
+	FILE *f;
+	uid_t uid = geteuid ();
+	gid_t gid = getegid ();
+
+	/* Already a root? */
+	if (gid == 0 && uid == 0)
+		return TRUE;
+
+	/* Become a root in new user NS. */
+	if (unshare (CLONE_NEWUSER) != 0)
+		return FALSE;
+
+	/* Since Linux 3.19 we have to disable setgroups() in order to map users.
+	 * Just proceed if the file is not there. */
+	f = fopen ("/proc/self/setgroups", "w");
+	if (f) {
+		fprintf (f, "deny");
+		fclose (f);
+	}
+
+	/* Map current UID to root in NS to be created. */
+	f = fopen ("/proc/self/uid_map", "w");
+	if (!f)
+		return FALSE;
+	fprintf (f, "0 %d 1", uid);
+	fclose (f);
+
+	/* Map current GID to root in NS to be created. */
+	f = fopen ("/proc/self/gid_map", "w");
+	if (!f)
+		return FALSE;
+	fprintf (f, "0 %d 1", gid);
+	fclose (f);
+
+	return TRUE;
+}
+
 int
 main (int argc, char **argv)
 {
@@ -293,17 +333,21 @@ main (int argc, char **argv)
 
 	init_tests (&argc, &argv);
 
-	if (nmtst_platform_is_root_test ()  && getuid() != 0) {
-		/* Try to exec as sudo, this function does not return, if a sudo-cmd is set. */
-		nmtst_reexec_sudo ();
+	if (   nmtst_platform_is_root_test ()
+	    && (geteuid () != 0 || getegid () != 0)) {
+		if (   g_getenv ("NMTST_FORCE_REAL_ROOT")
+		    || !unshare_user ()) {
+			/* Try to exec as sudo, this function does not return, if a sudo-cmd is set. */
+			nmtst_reexec_sudo ();
 
 #ifdef REQUIRE_ROOT_TESTS
-		g_print ("Fail test: requires root privileges (%s)\n", program);
-		return EXIT_FAILURE;
+			g_print ("Fail test: requires root privileges (%s)\n", program);
+			return EXIT_FAILURE;
 #else
-		g_print ("Skipping test: requires root privileges (%s)\n", program);
-		return g_test_run ();
+			g_print ("Skipping test: requires root privileges (%s)\n", program);
+			return g_test_run ();
 #endif
+		}
 	}
 
 	if (nmtst_platform_is_root_test () && !g_getenv ("NMTST_NO_UNSHARE")) {
