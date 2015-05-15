@@ -41,6 +41,11 @@
 
 #include "nm-logging.h"
 
+/* Missing in Linux 3.2.0, in Ubuntu 12.04 */
+#ifndef BPF_XOR
+#define BPF_XOR 0xa0
+#endif
+
 /*****************************************************************************/
 
 static inline NMLogLevel
