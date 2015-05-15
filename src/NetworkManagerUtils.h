@@ -93,6 +93,7 @@ typedef enum {
 	NM_MATCH_SPEC_NEG_MATCH = 2,
 } NMMatchSpecMatchType;
 
+NMMatchSpecMatchType nm_match_spec_device_type (const GSList *specs, const char *device_type);
 NMMatchSpecMatchType nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr);
 NMMatchSpecMatchType nm_match_spec_s390_subchannels (const GSList *specs, const char *subchannels);
 NMMatchSpecMatchType nm_match_spec_interface_name (const GSList *specs, const char *interface_name);

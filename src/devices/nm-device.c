@@ -8531,6 +8531,10 @@ spec_match_list (NMDevice *self, const GSList *specs)
 		m = nm_match_spec_interface_name (specs, nm_device_get_iface (self));
 		matched = MAX (matched, m);
 	}
+	if (matched != NM_MATCH_SPEC_NEG_MATCH) {
+		m = nm_match_spec_device_type (specs, nm_device_get_type_description (self));
+		matched = MAX (matched, m);
+	}
 	return matched;
 }
 
