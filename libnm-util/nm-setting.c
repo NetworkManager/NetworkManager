@@ -99,7 +99,7 @@ _nm_gtype_hash (gconstpointer v)
 	return *((const GType *) v);
 }
 
-static void __attribute__((constructor))
+static void
 _ensure_registered (void)
 {
 	if (G_UNLIKELY (registered_settings == NULL)) {
@@ -110,6 +110,12 @@ _ensure_registered (void)
 		registered_settings = g_hash_table_new (g_str_hash, g_str_equal);
 		registered_settings_by_type = g_hash_table_new (_nm_gtype_hash, _nm_gtype_equal);
 	}
+}
+
+static void __attribute__((constructor))
+_ensure_registered_constructor (void)
+{
+	_ensure_registered ();
 }
 
 #define _ensure_setting_info(self, priv) \
