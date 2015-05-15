@@ -26,6 +26,8 @@
 #include <libsoup/soup.h>
 #endif
 
+#include "nm-glib-compat.h"
+
 #include "nm-connectivity.h"
 #include "nm-config.h"
 #include "nm-logging.h"
