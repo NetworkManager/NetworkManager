@@ -59,7 +59,7 @@ DISTCLEANFILES = intltool-extract intltool-merge intltool-update
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = NetworkManager.pc
 
-ACLOCAL_AMFLAGS = -I m4 ${ACLOCAL_FLAGS}
+DISTCHECK_CONFIGURE_FLAGS = --enable-more-warnings=error
 
 CLEANFILES = cscope.in.out cscope.out cscope.po.out
 
