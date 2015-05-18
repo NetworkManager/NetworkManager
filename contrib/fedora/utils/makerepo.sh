@@ -279,7 +279,7 @@ pushd "$DIRNAME"
     if [[ "$(git remote | grep '^origin$')x" != x && -z "$NO_REMOTE" ]]; then
         git fetch origin
         if [[ -n "$LOCAL_MIRROR" ]]; then
-            git remote remove local-mirror
+            git remote rm local-mirror
         fi
     fi
     git commit --allow-empty -m '*** empty initial commit'  # useful, to rebase the following commit
