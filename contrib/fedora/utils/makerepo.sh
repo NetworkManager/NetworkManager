@@ -387,7 +387,7 @@ EOF
         IFS=$'\n' read -rd '' -a PATCH_LIST <<<"$(sed -n 's/^Patch\([0-9]\+\): \+\(.*\)$/\1 \2/p' ../"$SPEC" | sort -n)"
 
         if [[ "$BUILD_TYPE" == "NetworkManager" ]]; then
-            if containsElement idx "69 rh558983-bridging.patch" "${PATCH_LIST[@]}"; then
+            if containsElement idx "123 rh1085015-applet-translations.patch" "${PATCH_LIST[@]}"; then
                 # for rhel-6, NetworkManager contains some patches that break the script. In this
                 # case, truncate the list of what we would normally revert.
                 PATCH_LIST=("${PATCH_LIST[@]:$((idx+1))}")
