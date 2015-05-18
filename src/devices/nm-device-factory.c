@@ -302,7 +302,9 @@ nm_device_factory_manager_find_factory_for_link_type (NMLinkType link_type)
 {
 	const NMLinkType ltypes[2] = { link_type, NM_LINK_TYPE_NONE };
 
-	g_assert (ltypes[0] > NM_LINK_TYPE_UNKNOWN);
+	if (link_type == NM_LINK_TYPE_UNKNOWN)
+		return NULL;
+	g_return_val_if_fail (link_type > NM_LINK_TYPE_UNKNOWN, NULL);
 	return find_factory (ltypes, NULL);
 }
 
