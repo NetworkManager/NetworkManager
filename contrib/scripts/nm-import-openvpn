@@ -104,17 +104,23 @@ function handle_dev_type(t, option, value)
   t[option] = value[2]
 end
 function handle_remote(t, option, value)
+  local rem
   if not value[2] then io.stderr:write("Warning: ignoring invalid option 'remote'\n") end
-  t[option[1]] = value[2]
+  rem = value[2]
   if tonumber(value[3]) then
-    t[option[2]] = value[3]
+    rem = rem .. ":" .. value[3]
+  end
+  if value[4] == "udp" or value[4] == "tcp" then
+    rem = rem .. ":" .. value[4]
+  end
+  if t[option] then
+    t[option] = t[option] .. " " .. rem
+  else
+    t[option] = rem
   end
   g_switches[value[1]] = true
 end
 function handle_port(t, option, value)
-  -- Port value from 'remote' option takes precedence. So if port is already set
-  -- do not overwrite it
-  if t[option] then return end
   if tonumber(value[2]) then
     t[option] = value[2]
   end
@@ -177,14 +183,15 @@ vpn2nm = {
   ["mssfix"]            = { nm_opt="mssfix",           func=handle_yes },
   ["pkcs12"]            = { nm_opt="client",           func=handle_path },
   ["port"]              = { nm_opt="port",             func=handle_port },
+  ["rport"]             = { nm_opt="port",             func=handle_port },
   ["proto"]             = { nm_opt="proto-tcp",        func=handle_proto },
   ["http-proxy"]        = { nm_opt={"proxy-type", "proxy-server", "proxy-port"}, func=handle_proxy },
   ["http-proxy-retry"]  = { nm_opt="proxy-retry",      func=handle_yes },
   ["socks-proxy"]       = { nm_opt={"proxy-type", "proxy-server", "proxy-port"}, func=handle_proxy },
   ["socks-proxy-retry"] = { nm_opt="proxy-retry",      func=handle_yes },
-  ["remote"]            = { nm_opt={"remote", "port"}, func=handle_remote },
+  ["remote"]            = { nm_opt="remote",           func=handle_remote },
+  ["remote-random"]     = { nm_opt="remote-random",    func=handle_yes },
   ["reneg-sec"]         = { nm_opt="reneg-seconds",    func=handle_generic },
-  ["rport"]             = { nm_opt="port",             func=handle_port },
   ["secret"]            = { nm_opt={"static-key", "static-key-direction"}, func=handle_secret },
   ["tls-auth"]          = { nm_opt={"ta", "ta-dir"},   func=handle_secret },
   ["tls-client"]        = { nm_opt="tls-client=",      func=set_bool },
