@@ -73,7 +73,7 @@ typedef struct {
 
 	gboolean (*need_secrets) (NMVpnPluginOld *plugin,
 	                          NMConnection *connection,
-	                          char **setting_name,
+	                          const char **setting_name,
 	                          GError **error);
 
 	gboolean (*disconnect)   (NMVpnPluginOld   *plugin,

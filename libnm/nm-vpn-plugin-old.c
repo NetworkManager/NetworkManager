@@ -480,7 +480,7 @@ impl_vpn_plugin_old_need_secrets (NMVpnPluginOld *plugin,
                                   gpointer user_data)
 {
 	NMConnection *connection;
-	char *setting_name;
+	const char *setting_name;
 	gboolean needed;
 	GError *error = NULL;
 
@@ -511,7 +511,6 @@ impl_vpn_plugin_old_need_secrets (NMVpnPluginOld *plugin,
 		g_assert (setting_name);
 		g_dbus_method_invocation_return_value (context,
 		                                       g_variant_new ("(s)", setting_name));
-		g_free (setting_name);
 	} else {
 		/* No secrets required */
 		g_dbus_method_invocation_return_value (context,
