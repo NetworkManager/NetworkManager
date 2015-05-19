@@ -100,6 +100,15 @@ G_STMT_START { \
 
 #define noreturn G_GNUC_NORETURN
 
+/*
+ * Some toolchains (E.G. uClibc 0.9.33 and earlier) don't export
+ * CLOCK_BOOTTIME even though the kernel supports it, so provide a
+ * local definition
+ */
+#ifndef CLOCK_BOOTTIME
+#define CLOCK_BOOTTIME 7
+#endif
+
 #include "sd-id128.h"
 #include "sparse-endian.h"
 #include "async.h"
