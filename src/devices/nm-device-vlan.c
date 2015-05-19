@@ -52,12 +52,10 @@ G_DEFINE_TYPE (NMDeviceVlan, nm_device_vlan, NM_TYPE_DEVICE)
 #define NM_DEVICE_VLAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_VLAN, NMDeviceVlanPrivate))
 
 typedef struct {
-	gboolean disposed;
 	gboolean invalid;
 
 	NMDevice *parent;
 	guint parent_state_id;
-
 	int vlan_id;
 } NMDeviceVlanPrivate;
 
@@ -72,38 +70,6 @@ enum {
 };
 
 /******************************************************************/
-
-static NMDeviceCapabilities
-get_generic_capabilities (NMDevice *dev)
-{
-	/* We assume VLAN interfaces always support carrier detect */
-	return NM_DEVICE_CAP_CARRIER_DETECT;
-}
-
-static gboolean
-bring_up (NMDevice *dev, gboolean *no_firmware)
-{
-	gboolean success = FALSE;
-	guint i = 20;
-
-	while (i-- > 0 && !success) {
-		success = NM_DEVICE_CLASS (nm_device_vlan_parent_class)->bring_up (dev, no_firmware);
-		g_usleep (50);
-	}
-
-	return success;
-}
-
-/******************************************************************/
-
-static gboolean
-is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
-{
-	if (!NM_DEVICE_VLAN_GET_PRIVATE (device)->parent)
-		return FALSE;
-
-	return NM_DEVICE_CLASS (nm_device_vlan_parent_class)->is_available (device, flags);
-}
 
 static void
 parent_state_changed (NMDevice *parent,
@@ -161,6 +127,38 @@ nm_device_vlan_set_parent (NMDeviceVlan *self, NMDevice *parent, gboolean constr
 	                                   NM_DEVICE_STATE_REASON_PARENT_CHANGED,
 	                                   NM_DEVICE_STATE_REASON_PARENT_CHANGED);
 	g_object_notify (G_OBJECT (device), NM_DEVICE_VLAN_PARENT);
+}
+
+static NMDeviceCapabilities
+get_generic_capabilities (NMDevice *dev)
+{
+	/* We assume VLAN interfaces always support carrier detect */
+	return NM_DEVICE_CAP_CARRIER_DETECT | NM_DEVICE_CAP_IS_SOFTWARE;
+}
+
+static gboolean
+bring_up (NMDevice *dev, gboolean *no_firmware)
+{
+	gboolean success = FALSE;
+	guint i = 20;
+
+	while (i-- > 0 && !success) {
+		success = NM_DEVICE_CLASS (nm_device_vlan_parent_class)->bring_up (dev, no_firmware);
+		g_usleep (50);
+	}
+
+	return success;
+}
+
+/******************************************************************/
+
+static gboolean
+is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
+{
+	if (!NM_DEVICE_VLAN_GET_PRIVATE (device)->parent)
+		return FALSE;
+
+	return NM_DEVICE_CLASS (nm_device_vlan_parent_class)->is_available (device, flags);
 }
 
 static gboolean
@@ -553,16 +551,7 @@ set_property (GObject *object, guint prop_id,
 static void
 dispose (GObject *object)
 {
-	NMDeviceVlan *self = NM_DEVICE_VLAN (object);
-	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
-
-	if (priv->disposed) {
-		G_OBJECT_CLASS (nm_device_vlan_parent_class)->dispose (object);
-		return;
-	}
-	priv->disposed = TRUE;
-
-	nm_device_vlan_set_parent (self, NULL, FALSE);
+	nm_device_vlan_set_parent (NM_DEVICE_VLAN (object), NULL, FALSE);
 
 	G_OBJECT_CLASS (nm_device_vlan_parent_class)->dispose (object);
 }

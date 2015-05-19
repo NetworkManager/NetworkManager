@@ -3175,6 +3175,115 @@ infiniband_partition_add (NMPlatform *platform, int parent, int p_key, NMPlatfor
 	return success;
 }
 
+typedef struct {
+	int p_key;
+	const char *mode;
+} IpoibInfo;
+
+/* IFLA_IPOIB_* were introduced in the 3.7 kernel, but the kernel headers
+ * we're building against might not have those properties even though the
+ * running kernel might.
+ */
+#define IFLA_IPOIB_UNSPEC 0
+#define IFLA_IPOIB_PKEY   1
+#define IFLA_IPOIB_MODE   2
+#define IFLA_IPOIB_UMCAST 3
+#undef IFLA_IPOIB_MAX
+#define IFLA_IPOIB_MAX IFLA_IPOIB_UMCAST
+
+#define IPOIB_MODE_DATAGRAM  0 /* using unreliable datagram QPs */
+#define IPOIB_MODE_CONNECTED 1 /* using connected QPs */
+
+static const struct nla_policy infiniband_info_policy[IFLA_IPOIB_MAX + 1] = {
+	[IFLA_IPOIB_PKEY]	= { .type = NLA_U16 },
+	[IFLA_IPOIB_MODE]	= { .type = NLA_U16 },
+	[IFLA_IPOIB_UMCAST]	= { .type = NLA_U16 },
+};
+
+static int
+infiniband_info_data_parser (struct nlattr *info_data, gpointer parser_data)
+{
+	IpoibInfo *info = parser_data;
+	struct nlattr *tb[IFLA_MACVLAN_MAX + 1];
+	int err;
+
+	err = nla_parse_nested (tb, IFLA_IPOIB_MAX, info_data,
+	                        (struct nla_policy *) infiniband_info_policy);
+	if (err < 0)
+		return err;
+	if (!tb[IFLA_IPOIB_PKEY] || !tb[IFLA_IPOIB_MODE])
+		return -EINVAL;
+
+	info->p_key = nla_get_u16 (tb[IFLA_IPOIB_PKEY]);
+
+	switch (nla_get_u16 (tb[IFLA_IPOIB_MODE])) {
+	case IPOIB_MODE_DATAGRAM:
+		info->mode = "datagram";
+		break;
+	case IPOIB_MODE_CONNECTED:
+		info->mode = "connected";
+		break;
+	default:
+		return -NLE_PARSE_ERR;
+	}
+
+	return 0;
+}
+
+static gboolean
+infiniband_get_info (NMPlatform *platform, int ifindex, int *parent, int *p_key, const char **mode)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	auto_nl_object struct rtnl_link *rtnllink = NULL;
+	IpoibInfo info = { -1, NULL };
+
+	rtnllink = link_get (platform, ifindex);
+	if (!rtnllink)
+		return FALSE;
+
+	if (parent)
+		*parent = rtnl_link_get_link (rtnllink);
+
+	if (nm_rtnl_link_parse_info_data (priv->nlh,
+	                                  ifindex,
+	                                  infiniband_info_data_parser,
+	                                  &info) != 0) {
+		const char *iface = rtnl_link_get_name (rtnllink);
+		char *path, *contents = NULL;
+
+		/* Fall back to reading sysfs */
+		path = g_strdup_printf ("/sys/class/net/%s/mode", ASSERT_VALID_PATH_COMPONENT (iface));
+		contents = nm_platform_sysctl_get (platform, path);
+		g_free (path);
+		if (!contents)
+			return FALSE;
+
+		if (strstr (contents, "datagram"))
+			info.mode = "datagram";
+		else if (strstr (contents, "connected"))
+			info.mode = "connected";
+		g_free (contents);
+
+		path = g_strdup_printf ("/sys/class/net/%s/pkey", ASSERT_VALID_PATH_COMPONENT (iface));
+		contents = nm_platform_sysctl_get (platform, path);
+		g_free (path);
+		if (!contents)
+			return FALSE;
+
+		info.p_key = (int) _nm_utils_ascii_str_to_int64 (contents, 16, 0, 0xFFFF, -1);
+		g_free (contents);
+
+		if (info.p_key < 0)
+			return FALSE;
+	}
+
+	if (p_key)
+		*p_key = info.p_key;
+	if (mode)
+		*mode = info.mode;
+	return TRUE;
+}
+
 static gboolean
 veth_get_properties (NMPlatform *platform, int ifindex, NMPlatformVethProperties *props)
 {
@@ -4849,6 +4958,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->vlan_set_egress_map = vlan_set_egress_map;
 
 	platform_class->infiniband_partition_add = infiniband_partition_add;
+	platform_class->infiniband_get_info = infiniband_get_info;
 
 	platform_class->veth_get_properties = veth_get_properties;
 	platform_class->tun_get_properties = tun_get_properties;
