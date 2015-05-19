@@ -503,8 +503,7 @@ update_resolv_conf (char **searches,
 {
 	FILE *f;
 	struct stat st;
-
-	g_return_val_if_fail (error != NULL, FALSE);
+	gboolean ret;
 
 	/* If we are not managing /etc/resolv.conf and it points to
 	 * MY_RESOLV_CONF, don't write the private DNS configuration to
@@ -534,10 +533,10 @@ update_resolv_conf (char **searches,
 		return FALSE;
 	}
 
-	write_resolv_conf (f, searches, nameservers, options, error);
+	ret = write_resolv_conf (f, searches, nameservers, options, error);
 
 	if (fclose (f) < 0) {
-		if (*error == NULL) {
+		if (ret) {
 			/* only set an error here if write_resolv_conf() was successful,
 			 * since its error is more important.
 			 */
@@ -550,7 +549,7 @@ update_resolv_conf (char **searches,
 		}
 	}
 
-	if (*error)
+	if (!ret)
 		return FALSE;
 
 	if (rename (MY_RESOLV_CONF_TMP, MY_RESOLV_CONF) < 0) {
