@@ -107,7 +107,7 @@ nm_config_data_get_connectivity_interval (const NMConfigData *self)
 {
 	g_return_val_if_fail (self, 0);
 
-	return MAX (NM_CONFIG_DATA_GET_PRIVATE (self)->connectivity.interval, 0);
+	return NM_CONFIG_DATA_GET_PRIVATE (self)->connectivity.interval;
 }
 
 const char *
