@@ -619,8 +619,7 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 	g_return_val_if_fail (!error || !*error, FALSE);
 
 	/* First read the base config file */
-	if (   cli
-	    && !read_base_config (keyfile, cli->config_main_file, &o_config_main_file, error)) {
+	if (!read_base_config (keyfile, cli ? cli->config_main_file : NULL, &o_config_main_file, error)) {
 		g_key_file_free (keyfile);
 		return NULL;
 	}
