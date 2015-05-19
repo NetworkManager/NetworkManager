@@ -187,7 +187,6 @@ typedef struct {
 	char *        path;
 	char *        iface;   /* may change, could be renamed by user */
 	int           ifindex;
-	gboolean      is_software;
 	char *        ip_iface;
 	int           ip_ifindex;
 	NMDeviceType  type;
@@ -540,9 +539,7 @@ nm_device_get_ifindex (NMDevice *self)
 gboolean
 nm_device_is_software (NMDevice *self)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	return priv->is_software;
+	return NM_FLAGS_HAS (NM_DEVICE_GET_PRIVATE (self)->capabilities, NM_DEVICE_CAP_IS_SOFTWARE);
 }
 
 const char *
@@ -1066,7 +1063,7 @@ nm_device_finish_init (NMDevice *self)
 		nm_device_enslave_slave (priv->master, self, NULL);
 
 	if (priv->ifindex > 0) {
-		if (priv->platform_link_initialized || (priv->is_nm_owned && priv->is_software)) {
+		if (priv->platform_link_initialized || (priv->is_nm_owned && nm_device_is_software (self))) {
 			nm_platform_link_get_unmanaged (NM_PLATFORM_GET, priv->ifindex, &platform_unmanaged);
 			nm_device_set_initial_unmanaged_flag (self, NM_UNMANAGED_DEFAULT, platform_unmanaged);
 		} else {
@@ -8532,12 +8529,21 @@ constructor (GType type,
 		priv->capabilities |= NM_DEVICE_GET_CLASS (self)->get_generic_capabilities (self);
 
 	if (priv->ifindex > 0) {
+		priv->physical_port_id = nm_platform_link_get_physical_port_id (NM_PLATFORM_GET, priv->ifindex);
+		priv->dev_id = nm_platform_link_get_dev_id (NM_PLATFORM_GET, priv->ifindex);
+		if (nm_platform_link_is_software (NM_PLATFORM_GET, priv->ifindex))
+			priv->capabilities |= NM_DEVICE_CAP_IS_SOFTWARE;
+		priv->mtu = nm_platform_link_get_mtu (NM_PLATFORM_GET, priv->ifindex);
+
 		nm_platform_link_get_driver_info (NM_PLATFORM_GET,
 		                                  priv->ifindex,
 		                                  NULL,
 		                                  &priv->driver_version,
 		                                  &priv->firmware_version);
 	}
+
+	if (NM_DEVICE_GET_CLASS (self)->get_generic_capabilities)
+		priv->capabilities |= NM_DEVICE_GET_CLASS (self)->get_generic_capabilities (self);
 
 	/* Watch for external IP config changes */
 	platform = nm_platform_get ();
@@ -8614,16 +8620,6 @@ constructed (GObject *object)
 		/* Fake online link when carrier detection is not available. */
 		priv->carrier = TRUE;
 	}
-
-	if (priv->ifindex > 0) {
-		priv->is_software = nm_platform_link_is_software (NM_PLATFORM_GET, priv->ifindex);
-		priv->physical_port_id = nm_platform_link_get_physical_port_id (NM_PLATFORM_GET, priv->ifindex);
-		priv->dev_id = nm_platform_link_get_dev_id (NM_PLATFORM_GET, priv->ifindex);
-		priv->mtu = nm_platform_link_get_mtu (NM_PLATFORM_GET, priv->ifindex);
-	}
-	/* Indicate software device in capabilities. */
-	if (priv->is_software)
-		priv->capabilities |= NM_DEVICE_CAP_IS_SOFTWARE;
 
 	/* Enslave ourselves */
 	master = nm_platform_link_get_master (NM_PLATFORM_GET, priv->ifindex);

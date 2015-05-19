@@ -439,6 +439,11 @@ typedef struct {
 	gboolean (*vlan_set_egress_map) (NMPlatform *, int ifindex, int from, int to);
 
 	gboolean (*infiniband_partition_add) (NMPlatform *, int parent, int p_key, NMPlatformLink *out_link);
+	gboolean (*infiniband_get_info)      (NMPlatform *,
+	                                      int ifindex,
+	                                      int *parent,
+	                                      int *p_key,
+	                                      const char **mode);
 
 	gboolean (*veth_get_properties) (NMPlatform *, int ifindex, NMPlatformVethProperties *properties);
 	gboolean (*tun_get_properties) (NMPlatform *, int ifindex, NMPlatformTunProperties *properties);
@@ -603,6 +608,7 @@ gboolean nm_platform_vlan_set_ingress_map (NMPlatform *self, int ifindex, int fr
 gboolean nm_platform_vlan_set_egress_map (NMPlatform *self, int ifindex, int from, int to);
 
 gboolean nm_platform_infiniband_partition_add (NMPlatform *self, int parent, int p_key, NMPlatformLink *out_link);
+gboolean nm_platform_infiniband_get_info (NMPlatform *self, int ifindex, int *parent, int *p_key, const char **mode);
 
 gboolean nm_platform_veth_get_properties        (NMPlatform *self, int ifindex, NMPlatformVethProperties *properties);
 gboolean nm_platform_tun_get_properties         (NMPlatform *self, int ifindex, NMPlatformTunProperties *properties);

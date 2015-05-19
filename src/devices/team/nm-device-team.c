@@ -73,7 +73,7 @@ static gboolean teamd_start (NMDevice *device, NMSettingTeam *s_team);
 static NMDeviceCapabilities
 get_generic_capabilities (NMDevice *device)
 {
-	return NM_DEVICE_CAP_CARRIER_DETECT;
+	return NM_DEVICE_CAP_CARRIER_DETECT | NM_DEVICE_CAP_IS_SOFTWARE;
 }
 
 static gboolean
