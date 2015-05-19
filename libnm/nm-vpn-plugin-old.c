@@ -903,8 +903,8 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 
 	ret = g_dbus_proxy_call_sync (proxy,
 	                              "RequestName",
-	                              g_variant_new ("(s)", priv->dbus_service_name),
-	                              G_DBUS_CALL_FLAGS_NONE, 0,
+	                              g_variant_new ("(su)", priv->dbus_service_name, 0),
+	                              G_DBUS_CALL_FLAGS_NONE, -1,
 	                              cancellable, error);
 	g_object_unref (proxy);
 	if (!ret) {
