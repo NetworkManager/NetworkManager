@@ -109,7 +109,8 @@ nm_vpn_plugin_old_set_connection (NMVpnPluginOld *plugin,
 
 	g_clear_object (&priv->connection);
 
-	priv->connection = g_object_ref (connection);
+	if (connection)
+		priv->connection = g_object_ref (connection);
 }
 
 /**
