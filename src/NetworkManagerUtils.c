@@ -59,6 +59,60 @@
 #define CLOCK_BOOTTIME 7
 #endif
 
+G_STATIC_ASSERT (sizeof (NMUtilsTestFlags) <= sizeof (int));
+int _nm_utils_testing = 0;
+
+gboolean
+nm_utils_get_testing_initialized ()
+{
+	NMUtilsTestFlags flags;
+
+	flags = (NMUtilsTestFlags) _nm_utils_testing;
+	if (flags == NM_UTILS_TEST_NONE)
+		flags = (NMUtilsTestFlags) g_atomic_int_get (&_nm_utils_testing);
+	return flags != NM_UTILS_TEST_NONE;
+}
+
+NMUtilsTestFlags
+nm_utils_get_testing ()
+{
+	NMUtilsTestFlags flags;
+
+	flags = (NMUtilsTestFlags) _nm_utils_testing;
+	if (flags != NM_UTILS_TEST_NONE) {
+		/* Flags already initialized. Return them. */
+		return flags & NM_UTILS_TEST_ALL;
+	}
+
+	/* Accessing nm_utils_get_testing() causes us to set the flags to initialized.
+	 * Detecting running tests also based on g_test_initialized(). */
+	flags = _NM_UTILS_TEST_INITIALIZED;
+	if (g_test_initialized ())
+		flags |= _NM_UTILS_TEST_GENERAL;
+
+	if (g_atomic_int_compare_and_exchange (&_nm_utils_testing, 0, (int) flags)) {
+		/* Done. We set it. */
+		return flags & NM_UTILS_TEST_ALL;
+	}
+	/* It changed in the meantime (??). Re-read the value. */
+	return ((NMUtilsTestFlags) _nm_utils_testing) & NM_UTILS_TEST_ALL;
+}
+
+void
+_nm_utils_set_testing (NMUtilsTestFlags flags)
+{
+	g_assert (!NM_FLAGS_ANY (flags, ~NM_UTILS_TEST_ALL));
+
+	/* mask out everything except ALL, and always set GENERAL. */
+	flags = (flags & NM_UTILS_TEST_ALL) | (_NM_UTILS_TEST_GENERAL | _NM_UTILS_TEST_INITIALIZED);
+
+	if (!g_atomic_int_compare_and_exchange (&_nm_utils_testing, 0, (int) flags)) {
+		/* We only allow setting _nm_utils_set_testing() once, before fetching the
+		 * value with nm_utils_get_testing(). */
+		g_return_if_reached ();
+	}
+}
+
 /*
  * nm_ethernet_address_is_valid:
  * @addr: pointer to a binary or ASCII Ethernet address

@@ -36,6 +36,7 @@
 #include <dbus/dbus-glib-lowlevel.h>
 #include <string.h>
 #include "nm-logging.h"
+#include "NetworkManagerUtils.h"
 
 #define PRIV_SOCK_PATH NMRUNDIR "/private"
 #define PRIV_SOCK_TAG  "private"
@@ -491,7 +492,7 @@ private_server_setup (NMDBusManager *self)
 	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
 
 	/* Skip this step if this is just a test program */
-	if (g_test_initialized ())
+	if (nm_utils_get_testing ())
 		return;
 
 	/* Set up our main private DBus socket */

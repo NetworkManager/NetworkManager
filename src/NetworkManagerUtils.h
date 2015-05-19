@@ -189,4 +189,24 @@ void nm_utils_array_remove_at_indexes (GArray *array, const guint *indexes_to_de
 
 void nm_utils_setpgid (gpointer unused);
 
+typedef enum {
+	NM_UTILS_TEST_NONE                              = 0,
+
+	/* Internal flag, marking that either nm_utils_get_testing() or _nm_utils_set_testing() was called. */
+	_NM_UTILS_TEST_INITIALIZED                      = (1LL << 0),
+
+	/* Indicate that test mode is enabled in general. Explicitly calling _nm_utils_set_testing() will always set this flag. */
+	_NM_UTILS_TEST_GENERAL                          = (1LL << 1),
+
+	/* Don't check the owner of keyfiles during testing. */
+	NM_UTILS_TEST_NO_KEYFILE_OWNER_CHECK            = (1LL << 2),
+
+	_NM_UTILS_TEST_LAST,
+	NM_UTILS_TEST_ALL                               = (((_NM_UTILS_TEST_LAST - 1) << 1) - 1) & ~(_NM_UTILS_TEST_INITIALIZED),
+} NMUtilsTestFlags;
+
+gboolean nm_utils_get_testing_initialized (void);
+NMUtilsTestFlags nm_utils_get_testing (void);
+void _nm_utils_set_testing (NMUtilsTestFlags flags);
+
 #endif /* __NETWORKMANAGER_UTILS_H__ */
