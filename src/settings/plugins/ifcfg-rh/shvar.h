@@ -56,6 +56,7 @@ shvarFile *svOpenFile (const char *name, GError **error);
  * be freed by the caller.
  */
 char *svGetValue (shvarFile *s, const char *key, gboolean verbatim);
+char *svGetValueFull (shvarFile *s, const char *key, gboolean verbatim);
 
 /* return TRUE if <key> resolves to any truth value (e.g. "yes", "y", "true")
  * return FALSE if <key> resolves to any non-truth value (e.g. "no", "n", "false")

@@ -257,6 +257,22 @@ svEscape (const char *s, char **to_free)
 char *
 svGetValue (shvarFile *s, const char *key, gboolean verbatim)
 {
+	char *value;
+
+	value = svGetValueFull (s, key, verbatim);
+	if (value && !*value) {
+		g_free (value);
+		return NULL;
+	}
+	return value;
+}
+
+/* svGetValueFull() is identical to svGetValue() except that
+ * svGetValue() will never return an empty value (but %NULL instead).
+ * svGetValueFull() will return empty values if that is the value for the @key. */
+char *
+svGetValueFull (shvarFile *s, const char *key, gboolean verbatim)
+{
 	char *value = NULL;
 	char *line;
 	char *keyString;
@@ -280,12 +296,7 @@ svGetValue (shvarFile *s, const char *key, gboolean verbatim)
 	}
 	g_free (keyString);
 
-	if (value && value[0]) {
-		return value;
-	} else {
-		g_free (value);
-		return NULL;
-	}
+	return value;
 }
 
 /* return TRUE if <key> resolves to any truth value (e.g. "yes", "y", "true")
