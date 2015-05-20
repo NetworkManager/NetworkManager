@@ -1053,13 +1053,15 @@ compare_property (NMSetting *setting,
 	property = nm_setting_class_find_property (NM_SETTING_GET_CLASS (setting), prop_spec->name);
 	g_return_val_if_fail (property != NULL, FALSE);
 
-	value1 = get_property_for_dbus (setting, property, FALSE);
-	value2 = get_property_for_dbus (other, property, FALSE);
+	value1 = get_property_for_dbus (setting, property, TRUE);
+	value2 = get_property_for_dbus (other, property, TRUE);
 
 	cmp = nm_property_compare (value1, value2);
 
-	g_variant_unref (value1);
-	g_variant_unref (value2);
+	if (value1)
+		g_variant_unref (value1);
+	if (value2)
+		g_variant_unref (value2);
 
 	return cmp == 0;
 }
