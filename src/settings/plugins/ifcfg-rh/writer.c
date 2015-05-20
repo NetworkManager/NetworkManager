@@ -2506,14 +2506,16 @@ write_res_options (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		}
 	}
 
-	if (array->len > 0) {
+	if (array->len > 0
+	    || (s_ip4 && nm_setting_ip_config_has_dns_options (s_ip4))
+	    || (s_ip6 && nm_setting_ip_config_has_dns_options (s_ip6))) {
 		value = g_string_new (NULL);
 		for (i = 0; i < array->len; i++) {
 			if (i > 0)
 				g_string_append_c (value, ' ');
 			g_string_append (value, array->pdata[i]);
 		}
-		svSetValue (ifcfg, "RES_OPTIONS", value->str, FALSE);
+		svSetValueFull (ifcfg, "RES_OPTIONS", value->str, FALSE);
 		g_string_free (value, TRUE);
 	} else
 		svSetValue (ifcfg, "RES_OPTIONS", NULL, FALSE);
