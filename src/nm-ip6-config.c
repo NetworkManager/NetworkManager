@@ -184,7 +184,7 @@ nm_ip6_config_capture_resolv_conf (GArray *nameservers,
 		for (i = 0; i < read_options->len; i++) {
 			const char *s = g_ptr_array_index (read_options, i);
 
-			if (_nm_utils_dns_option_validate (s, NULL, NULL, TRUE, dns_option_descs) &&
+			if (_nm_utils_dns_option_validate (s, NULL, NULL, TRUE, _nm_utils_dns_option_descs) &&
 				_nm_utils_dns_option_find_idx (dns_options, s) < 0) {
 				g_ptr_array_add (dns_options, g_strdup (s));
 				changed = TRUE;

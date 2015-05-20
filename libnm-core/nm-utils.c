@@ -3406,9 +3406,9 @@ _nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 ma
 
 static gboolean
 validate_dns_option (const char *name, gboolean numeric, gboolean ipv6,
-                     const DNSOptionDesc *option_descs)
+                     const NMUtilsDNSOptionDesc *option_descs)
 {
-	const DNSOptionDesc *desc;
+	const NMUtilsDNSOptionDesc *desc;
 
 	if (!option_descs)
 		return !!*name;
@@ -3429,7 +3429,7 @@ validate_dns_option (const char *name, gboolean numeric, gboolean ipv6,
  * @out_name: (out) (allow-none) the option name
  * @out_value: (out) (allow-none) the option value
  * @ipv6: whether the option refers to a IPv6 configuration
- * @option_descs: (allow-none) an array of DNSOptionDesc which describes the
+ * @option_descs: (allow-none) an array of NMUtilsDNSOptionDesc which describes the
  * valid options
  *
  * Parses a DNS option in the form "name" or "name:number" and, if
@@ -3443,7 +3443,7 @@ validate_dns_option (const char *name, gboolean numeric, gboolean ipv6,
 gboolean
 _nm_utils_dns_option_validate (const char *option, char **out_name,
                                long *out_value, gboolean ipv6,
-                               const DNSOptionDesc *option_descs)
+                               const NMUtilsDNSOptionDesc *option_descs)
 {
 	char **tokens, *ptr;
 	gboolean ret = FALSE;

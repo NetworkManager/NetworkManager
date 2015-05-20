@@ -46,7 +46,7 @@
  * related to IP addressing, routing, and Domain Name Service.
  **/
 
-const DNSOptionDesc dns_option_descs[] = {
+const NMUtilsDNSOptionDesc _nm_utils_dns_option_descs[] = {
 	{ NM_SETTING_DNS_OPTION_DEBUG,                 FALSE,   FALSE },
 	{ NM_SETTING_DNS_OPTION_NDOTS,                 TRUE,    FALSE },
 	{ NM_SETTING_DNS_OPTION_TIMEOUT,               TRUE,    FALSE },
@@ -1473,7 +1473,7 @@ nm_setting_ip_config_next_valid_dns_option (NMSettingIPConfig *setting, guint id
 	for (; idx < priv->dns_options->len; idx++) {
 		if (_nm_utils_dns_option_validate (priv->dns_options->pdata[idx], NULL, NULL,
 		                                   NM_IS_SETTING_IP6_CONFIG (setting),
-		                                   dns_option_descs))
+		                                   _nm_utils_dns_option_descs))
 			return idx;
 	}
 

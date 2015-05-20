@@ -174,13 +174,13 @@ typedef struct {
 	const char *name;
 	gboolean numeric;
 	gboolean ipv6_only;
-} DNSOptionDesc;
+} NMUtilsDNSOptionDesc;
 
-extern const DNSOptionDesc dns_option_descs[];
+extern const NMUtilsDNSOptionDesc _nm_utils_dns_option_descs[];
 
 gboolean    _nm_utils_dns_option_validate (const char *option, char **out_name,
                                            long *out_value, gboolean ipv6,
-                                           const DNSOptionDesc *option_descs);
+                                           const NMUtilsDNSOptionDesc *option_descs);
 int         _nm_utils_dns_option_find_idx (GPtrArray *array, const char *option);
 
 /***********************************************************/

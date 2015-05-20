@@ -4228,7 +4228,7 @@ test_nm_utils_ascii_str_to_int64 (void)
 /******************************************************************************/
 
 static void
-test_nm_utils_dns_option_validate_do (char *option, gboolean ipv6, const DNSOptionDesc *descs,
+test_nm_utils_dns_option_validate_do (char *option, gboolean ipv6, const NMUtilsDNSOptionDesc *descs,
                                       gboolean exp_result, char *exp_name, gboolean exp_value)
 {
 	char *name;
@@ -4244,7 +4244,7 @@ test_nm_utils_dns_option_validate_do (char *option, gboolean ipv6, const DNSOpti
 	g_free (name);
 }
 
-static const DNSOptionDesc opt_descs[] = {
+static const NMUtilsDNSOptionDesc opt_descs[] = {
 	/* name                   num      ipv6 */
 	{ "opt1",                 FALSE,   FALSE },
 	{ "opt2",                 TRUE,    FALSE },
