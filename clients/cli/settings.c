@@ -1261,7 +1261,7 @@ DEFINE_GETTER (nmc_property_ib_get_parent, NM_SETTING_INFINIBAND_PARENT)
 DEFINE_GETTER (nmc_property_ipv4_get_method, NM_SETTING_IP_CONFIG_METHOD)
 DEFINE_GETTER (nmc_property_ipv4_get_dns, NM_SETTING_IP_CONFIG_DNS)
 DEFINE_GETTER (nmc_property_ipv4_get_dns_search, NM_SETTING_IP_CONFIG_DNS_SEARCH)
-DEFINE_GETTER (nmc_property_ipv4_get_dns_options, NM_SETTING_IP_CONFIG_DNS_OPTIONS)
+DEFINE_GETTER_WITH_DEFAULT (nmc_property_ipv4_get_dns_options, NM_SETTING_IP_CONFIG_DNS_OPTIONS, !nm_setting_ip_config_has_dns_options ((NMSettingIPConfig *) setting))
 
 static char *
 nmc_property_ip_get_addresses (NMSetting *setting, NmcPropertyGetType get_type)
@@ -1359,7 +1359,7 @@ DEFINE_GETTER (nmc_property_ipv4_get_may_fail, NM_SETTING_IP_CONFIG_MAY_FAIL)
 DEFINE_GETTER (nmc_property_ipv6_get_method, NM_SETTING_IP_CONFIG_METHOD)
 DEFINE_GETTER (nmc_property_ipv6_get_dns, NM_SETTING_IP_CONFIG_DNS)
 DEFINE_GETTER (nmc_property_ipv6_get_dns_search, NM_SETTING_IP_CONFIG_DNS_SEARCH)
-DEFINE_GETTER (nmc_property_ipv6_get_dns_options, NM_SETTING_IP_CONFIG_DNS_OPTIONS)
+DEFINE_GETTER_WITH_DEFAULT (nmc_property_ipv6_get_dns_options, NM_SETTING_IP_CONFIG_DNS_OPTIONS, !nm_setting_ip_config_has_dns_options ((NMSettingIPConfig *) setting))
 
 static char *
 nmc_property_ipv6_get_routes (NMSetting *setting, NmcPropertyGetType get_type)
@@ -3319,6 +3319,7 @@ nmc_property_ipv4_set_dns_options (NMSetting *setting, const char *prop, const c
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
+	nm_setting_ip_config_clear_dns_options (NM_SETTING_IP_CONFIG (setting), TRUE);
 	strv = nmc_strsplit_set (val, " \t,", 0);
 	while (strv && strv[i])
 		nm_setting_ip_config_add_dns_option (NM_SETTING_IP_CONFIG (setting), strv[i++]);
@@ -3632,6 +3633,7 @@ nmc_property_ipv6_set_dns_options (NMSetting *setting, const char *prop, const c
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
+	nm_setting_ip_config_clear_dns_options (NM_SETTING_IP_CONFIG (setting), TRUE);
 	strv = nmc_strsplit_set (val, " \t,", 0);
 	while (strv && strv[i])
 		nm_setting_ip_config_add_dns_option (NM_SETTING_IP_CONFIG (setting), strv[i++]);
