@@ -345,7 +345,7 @@ svGetValueInt64 (shvarFile *s, const char *key, guint base, gint64 min, gint64 m
 	gint64 result;
 	int errsv;
 
-	tmp = svGetValue (s, key, FALSE);
+	tmp = svGetValueFull (s, key, FALSE);
 	if (!tmp) {
 		errno = 0;
 		return fallback;
