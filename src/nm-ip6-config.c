@@ -33,7 +33,7 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-ip6-config-glue.h"
 #include "nm-route-manager.h"
-#include "nm-utils-private.h"
+#include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 
 G_DEFINE_TYPE (NMIP6Config, nm_ip6_config, G_TYPE_OBJECT)

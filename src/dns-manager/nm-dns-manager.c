@@ -40,7 +40,7 @@
 #include <glib/gi18n.h>
 
 #include "nm-utils.h"
-#include "nm-utils-private.h"
+#include "nm-core-internal.h"
 #include "nm-dns-manager.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"

@@ -167,4 +167,22 @@ GVariant *_nm_dbus_proxy_call_sync   (GDBusProxy           *proxy,
 
 gboolean _nm_dbus_error_has_name (GError     *error,
                                   const char *dbus_error_name);
+
+/***********************************************************/
+
+typedef struct {
+	const char *name;
+	gboolean numeric;
+	gboolean ipv6_only;
+} DNSOptionDesc;
+
+extern const DNSOptionDesc dns_option_descs[];
+
+gboolean    _nm_utils_dns_option_validate (const char *option, char **out_name,
+                                           long *out_value, gboolean ipv6,
+                                           const DNSOptionDesc *option_descs);
+int         _nm_utils_dns_option_find_idx (GPtrArray *array, const char *option);
+
+/***********************************************************/
+
 #endif

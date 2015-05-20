@@ -27,11 +27,6 @@
 gboolean    _nm_utils_string_slist_validate (GSList *list,
                                              const char **valid_values);
 
-gboolean    _nm_utils_dns_option_validate (const char *option, char **out_name,
-                                           long *out_value, gboolean ipv6,
-                                           const DNSOptionDesc *option_descs);
-int         _nm_utils_dns_option_find_idx (GPtrArray *array, const char *option);
-
 /* D-Bus transform funcs */
 
 GVariant *  _nm_utils_hwaddr_to_dbus   (const GValue *prop_value);

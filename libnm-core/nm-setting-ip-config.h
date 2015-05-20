@@ -145,14 +145,6 @@ void         nm_ip_route_set_attribute       (NMIPRoute   *route,
 #define NM_SETTING_IP_CONFIG_NEVER_DEFAULT      "never-default"
 #define NM_SETTING_IP_CONFIG_MAY_FAIL           "may-fail"
 
-typedef struct {
-	const char *name;
-	gboolean numeric;
-	gboolean ipv6_only;
-} DNSOptionDesc;
-
-extern const DNSOptionDesc dns_option_descs[];
-
 #define NM_SETTING_DNS_OPTION_DEBUG                     "debug"
 #define NM_SETTING_DNS_OPTION_NDOTS                     "ndots"
 #define NM_SETTING_DNS_OPTION_TIMEOUT                   "timeout"

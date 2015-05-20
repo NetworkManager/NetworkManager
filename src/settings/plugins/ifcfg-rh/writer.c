@@ -42,7 +42,7 @@
 #include <nm-setting-team-port.h>
 #include "nm-core-internal.h"
 #include <nm-utils.h>
-#include <nm-utils-private.h>
+#include "nm-core-internal.h"
 
 #include "nm-logging.h"
 #include "gsystem-local-alloc.h"
