@@ -36,6 +36,7 @@
 
 #include "shvar.h"
 
+#include "gsystem-local-alloc.h"
 #include "nm-core-internal.h"
 #include "nm-logging.h"
 
@@ -206,8 +207,8 @@ static const char escapees[] = "\"'\\$~`";		/* must be escaped */
 static const char spaces[] = " \t|&;()<>";		/* only require "" */
 static const char newlines[] = "\n\r";			/* will be removed */
 
-char *
-svEscape (const char *s)
+const char *
+svEscape (const char *s, char **to_free)
 {
 	char *new;
 	int i, j, mangle = 0, space = 0, newline = 0;
@@ -223,8 +224,10 @@ svEscape (const char *s)
 		if (strchr (newlines, s[i]))
 			newline++;
 	}
-	if (!mangle && !space && !newline)
-		return strdup (s);
+	if (!mangle && !space && !newline) {
+		*to_free = NULL;
+		return s;
+	}
 
 	newlen = slen + mangle - newline + 3;	/* 3 is extra ""\0 */
 	new = g_malloc (newlen);
@@ -243,6 +246,7 @@ svEscape (const char *s)
 	new[j++] = '\0';
 	g_assert (j == slen + mangle - newline + 3);
 
+	*to_free = new;
 	return new;
 }
 
@@ -354,17 +358,19 @@ svGetValueInt64 (shvarFile *s, const char *key, guint base, gint64 min, gint64 m
 void
 svSetValue (shvarFile *s, const char *key, const char *value, gboolean verbatim)
 {
-	char *newval = NULL, *oldval = NULL;
+	gs_free char *newval_free = NULL;
+	gs_free char *oldval = NULL;
+	const char *newval;
 	char *keyValue;
 
 	g_return_if_fail (s != NULL);
 	g_return_if_fail (key != NULL);
 	/* value may be NULL */
 
-	if (value)
-		newval = verbatim ? g_strdup (value) : svEscape (value);
-	keyValue = g_strdup_printf ("%s=%s", key, newval ? newval : "");
-
+	if (!value || verbatim)
+		newval = value;
+	else
+		newval = svEscape (value, &newval_free);
 	oldval = svGetValue (s, key, FALSE);
 
 	if (!newval || !newval[0]) {
@@ -376,15 +382,15 @@ svSetValue (shvarFile *s, const char *key, const char *value, gboolean verbatim)
 			g_list_free_1 (s->current);
 			s->modified = TRUE;
 		}
-		g_free (keyValue);
-		goto end;
+		return;
 	}
 
+	keyValue = g_strdup_printf ("%s=%s", key, newval);
 	if (!oldval) {
 		/* append line */
 		s->lineList = g_list_append (s->lineList, keyValue);
 		s->modified = TRUE;
-		goto end;
+		return;
 	}
 
 	if (strcmp (oldval, newval) != 0) {
@@ -397,11 +403,6 @@ svSetValue (shvarFile *s, const char *key, const char *value, gboolean verbatim)
 		s->modified = TRUE;
 	} else
 		g_free (keyValue);
-
- end:
-	g_free (newval);
-	g_free (oldval);
-	return;
 }
 
 /* Write the current contents iff modified.  Returns FALSE on error
