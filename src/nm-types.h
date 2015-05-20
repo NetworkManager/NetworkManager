@@ -21,6 +21,10 @@
 #ifndef __NETWORKMANAGER_TYPES_H__
 #define __NETWORKMANAGER_TYPES_H__
 
+#ifdef __NM_UTILS_PRIVATE_H__
+#error "nm-utils-private.h" must not be used outside of libnm-core/. Do you want "nm-core-internal.h"?
+#endif
+
 /* core */
 typedef struct _NMActiveConnection   NMActiveConnection;
 typedef struct _NMVpnConnection      NMVpnConnection;
