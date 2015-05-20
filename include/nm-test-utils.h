@@ -97,8 +97,10 @@
 #include "gsystem-local-alloc.h"
 
 #ifdef __NETWORKMANAGER_LOGGING_H__
-/* We are running tests under src/ */
+/* We are running tests under src/. Let's include some files by default.
+ * They are useful, and affect how nm-test-utils.h itself behaves. */
 #include "NetworkManagerUtils.h"
+#include "nm-keyfile-internal.h"
 #endif
 
 /* Analog to EXIT_SUCCESS and EXIT_FAILURE. */
