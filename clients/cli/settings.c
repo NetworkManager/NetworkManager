@@ -831,6 +831,31 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 		return s; \
 	}
 
+#define DEFINE_GETTER_WITH_DEFAULT(func_name, property_name, check_is_default) \
+	static char * \
+	func_name (NMSetting *setting, NmcPropertyGetType get_type) \
+	{ \
+		const char *s; \
+		char *s_full; \
+		GValue val = G_VALUE_INIT; \
+		\
+		if ((check_is_default)) { \
+			if (get_type == NMC_PROPERTY_GET_PARSABLE) \
+				return g_strdup (""); \
+			return g_strdup (_("(default)")); \
+		} \
+		\
+		g_value_init (&val, G_TYPE_STRING); \
+		g_object_get_property (G_OBJECT (setting), property_name, &val); \
+		s = g_value_get_string (&val); \
+		if (get_type == NMC_PROPERTY_GET_PARSABLE) \
+			s_full = g_strdup (s && *s ? s : " "); \
+		else \
+			s_full = s ? g_strdup_printf ("\"%s\"", s) : g_strdup (""); \
+		g_value_unset (&val); \
+		return s_full; \
+	}
+
 #define DEFINE_SECRET_FLAGS_GETTER(func_name, property_name) \
 	static char * \
 	func_name (NMSetting *setting, NmcPropertyGetType get_type) \
