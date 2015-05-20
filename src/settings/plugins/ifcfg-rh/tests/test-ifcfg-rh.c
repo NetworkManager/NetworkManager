@@ -2635,11 +2635,11 @@ test_write_dns_options (void)
 	unlink (testfile);
 
 	/* RES_OPTIONS is copied to both IPv4 and IPv6 settings */
-	nm_setting_ip_config_clear_dns_options (s_ip4);
+	nm_setting_ip_config_clear_dns_options (s_ip4, TRUE);
 	nm_setting_ip_config_add_dns_option (s_ip4, "debug");
 	nm_setting_ip_config_add_dns_option (s_ip4, "timeout:3");
 
-	nm_setting_ip_config_clear_dns_options (s_ip6);
+	nm_setting_ip_config_clear_dns_options (s_ip6, TRUE);
 	nm_setting_ip_config_add_dns_option (s_ip6, "debug");
 	nm_setting_ip_config_add_dns_option (s_ip6, "timeout:3");
 
