@@ -46,6 +46,7 @@ typedef struct {
 	} no_auto_default;
 
 	GSList *ignore_carrier;
+	GSList *assume_ipv6ll_only;
 
 	char *dns_mode;
 	char *rc_manager;
@@ -158,6 +159,15 @@ nm_config_data_get_ignore_carrier (const NMConfigData *self, NMDevice *device)
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
 	return nm_device_spec_match_list (device, NM_CONFIG_DATA_GET_PRIVATE (self)->ignore_carrier);
+}
+
+gboolean
+nm_config_data_get_assume_ipv6ll_only (const NMConfigData *self, NMDevice *device)
+{
+	g_return_val_if_fail (NM_IS_CONFIG_DATA (self), FALSE);
+	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
+
+	return nm_device_spec_match_list (device, NM_CONFIG_DATA_GET_PRIVATE (self)->assume_ipv6ll_only);
 }
 
 /************************************************************************/
@@ -328,6 +338,7 @@ finalize (GObject *gobject)
 	g_free (priv->rc_manager);
 
 	g_slist_free_full (priv->ignore_carrier, g_free);
+	g_slist_free_full (priv->assume_ipv6ll_only, g_free);
 
 	g_key_file_unref (priv->keyfile);
 
@@ -361,6 +372,7 @@ constructed (GObject *object)
 	priv->rc_manager = g_key_file_get_value (priv->keyfile, "main", "rc-manager", NULL);
 
 	priv->ignore_carrier = nm_config_get_device_match_spec (priv->keyfile, "main", "ignore-carrier");
+	priv->assume_ipv6ll_only = nm_config_get_device_match_spec (priv->keyfile, "main", "assume-ipv6ll-only");
 
 	G_OBJECT_CLASS (nm_config_data_parent_class)->constructed (object);
 }

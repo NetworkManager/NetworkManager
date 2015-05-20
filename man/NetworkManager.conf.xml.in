@@ -209,6 +209,20 @@ no-auto-default=*
       </varlistentry>
 
       <varlistentry>
+	<term><varname>assume-ipv6ll-only</varname></term>
+	<listitem>
+	  <para>
+	    Specify devices for which NetworkManager will try to
+	    generate a connection based on initial configuration when
+	    the device only has an IPv6 link-local address.
+	  </para>
+	  <para>See <xref linkend="device-spec"/> for the syntax how to
+	   specify a device.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
 	<term><varname>configure-and-quit</varname></term>
 	<listitem>
 	  <para>

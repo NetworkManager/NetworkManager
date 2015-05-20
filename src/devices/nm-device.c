@@ -2172,6 +2172,20 @@ nm_device_generate_connection (NMDevice *self, NMDevice *master)
 		connection = NULL;
 	}
 
+	/* Ignore any IPv6LL-only, not master connections without slaves,
+	 * unless they are in the assume-ipv6ll-only list.
+	 */
+	if (   connection
+	    && g_strcmp0 (ip4_method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0
+	    && g_strcmp0 (ip6_method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0
+	    && !nm_setting_connection_get_master (NM_SETTING_CONNECTION (s_con))
+	    && !priv->slaves
+	    && !nm_config_data_get_assume_ipv6ll_only (nm_config_get_data (nm_config_get ()), self)) {
+		_LOGD (LOGD_DEVICE, "ignoring generated connection (IPv6LL-only and not in master-slave relationship)");
+		g_object_unref (connection);
+		connection = NULL;
+	}
+
 	return connection;
 }
 
