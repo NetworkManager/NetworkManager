@@ -382,7 +382,7 @@ svSetValue (shvarFile *s, const char *key, const char *value, gboolean verbatim)
 		newval = value;
 	else
 		newval = svEscape (value, &newval_free);
-	oldval = svGetValue (s, key, FALSE);
+	oldval = svGetValueFull (s, key, FALSE);
 
 	if (!newval || !newval[0]) {
 		/* delete value */
