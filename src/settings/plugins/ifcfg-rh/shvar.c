@@ -369,6 +369,14 @@ svGetValueInt64 (shvarFile *s, const char *key, guint base, gint64 min, gint64 m
 void
 svSetValue (shvarFile *s, const char *key, const char *value, gboolean verbatim)
 {
+	svSetValueFull (s, key, value && value[0] ? value : NULL, verbatim);
+}
+
+/* Same as svSetValue() but it preserves empty @value -- contrary to
+ * svSetValue() for which "" effectively means to remove the value. */
+void
+svSetValueFull (shvarFile *s, const char *key, const char *value, gboolean verbatim)
+{
 	gs_free char *newval_free = NULL;
 	gs_free char *oldval = NULL;
 	const char *newval;
@@ -384,7 +392,7 @@ svSetValue (shvarFile *s, const char *key, const char *value, gboolean verbatim)
 		newval = svEscape (value, &newval_free);
 	oldval = svGetValueFull (s, key, FALSE);
 
-	if (!newval || !newval[0]) {
+	if (!newval) {
 		/* delete value */
 		if (oldval) {
 			/* delete line */
