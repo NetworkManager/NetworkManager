@@ -889,20 +889,22 @@ write_wireless_setting (NMConnection *connection,
 		svSetValue (ifcfg, "ESSID", str->str, TRUE);
 		g_string_free (str, TRUE);
 	} else {
+		const char *tmp_escaped;
+
 		/* Printable SSIDs always get quoted */
 		memset (buf, 0, sizeof (buf));
 		memcpy (buf, ssid_data, ssid_len);
-		tmp = svEscape (buf);
+		tmp_escaped = svEscape (buf, &tmp);
 
 		/* svEscape will usually quote the string, but just for consistency,
 		 * if svEscape doesn't quote the ESSID, we quote it ourselves.
 		 */
-		if (tmp[0] != '"' && tmp[strlen (tmp) - 1] != '"') {
-			tmp2 = g_strdup_printf ("\"%s\"", tmp);
+		if (tmp_escaped[0] != '"' && tmp_escaped[strlen (tmp_escaped) - 1] != '"') {
+			tmp2 = g_strdup_printf ("\"%s\"", tmp_escaped);
 			svSetValue (ifcfg, "ESSID", tmp2, TRUE);
 			g_free (tmp2);
 		} else
-			svSetValue (ifcfg, "ESSID", tmp, TRUE);
+			svSetValue (ifcfg, "ESSID", tmp_escaped, TRUE);
 		g_free (tmp);
 	}
 
