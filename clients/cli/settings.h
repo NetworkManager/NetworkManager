@@ -41,9 +41,9 @@ const char **nmc_setting_get_property_allowed_values (NMSetting *setting, const 
 char       *nmc_setting_get_property (NMSetting *setting,
                                       const char *prop,
                                       GError **error);
-char       *nmc_setting_get_property_out2in (NMSetting *setting,
-                                             const char *prop,
-                                             GError **error);
+char       *nmc_setting_get_property_parsable (NMSetting *setting,
+                                               const char *prop,
+                                               GError **error);
 gboolean    nmc_setting_set_property (NMSetting *setting,
                                       const char *prop,
                                       const char *val,
