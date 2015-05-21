@@ -315,8 +315,9 @@ pushd "$DIRNAME"
 c4d846f239036c05f516c1c71789e980b64b1e70  2e1c889494d274aca24ce5f6a748e66e *libnl-3.2.22.tar.gz
 0446731124bea8c1b447cc52a5ad5ae5750810ff  636769646f5b81b0caead81eab151b45 *libnl-3.2.25-rc1.tar.gz
 
-# NetworkManager-libreswan, NetworkManager-applet
+# NetworkManager-applet
 5d4f17e205f71972d4143f9760426a366b4129d7  9cc0e383c216d4bc31622a0cfb53aaa7 *network-manager-applet-0.9.9.0.git20140123.5d4f17e.tar.bz2
+36c868498f09eacafcdce9d6b68ca5aeffaae899  3146f3ac3c30996a96cd2c602fbc81e1 *network-manager-applet-0.9.10.3.git20150511.36c8684.tar.bz2
 
 # NetworkManager-libreswan, NetworkManager-openswan
 64c90fd50e57854a3fff3784b92814ffa8159b05  6a373868f85ac3b7c953f7fd6c76e637 *NetworkManager-openswan-0.9.8.0.tar.xz
