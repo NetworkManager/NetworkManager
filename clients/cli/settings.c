@@ -6410,17 +6410,17 @@ nmc_properties_cleanup ()
 static const NmcPropertyFuncs *
 nmc_properties_find (const char *s_name, const char *p_name)
 {
-	NmcPropertyFuncs *item = NULL;
 	char *key;
+	gsize p_l, s_l;
 
-	/* FIXME: maybe it's better to init it globally */
 	nmc_properties_init ();
 
-	key = g_strdup_printf ("%s%s", s_name, p_name);
-	item = (NmcPropertyFuncs *) g_hash_table_lookup (nmc_properties, key);
-	g_free (key);
-
-	return item;
+	s_l = strlen (s_name);
+	p_l = strlen (p_name);
+	key = g_alloca (s_l + p_l + 1);
+	memcpy (&key[  0], s_name, s_l);
+	memcpy (&key[s_l], p_name, p_l + 1);
+	return (NmcPropertyFuncs *) g_hash_table_lookup (nmc_properties, key);
 }
 
 static char *
