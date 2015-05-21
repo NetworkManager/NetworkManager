@@ -4788,13 +4788,13 @@ DEFINE_ALLOWED_VAL_FUNC (nmc_property_dcb_allowed_app_fcoe_modes, _dcb_valid_fco
 /*----------------------------------------------------------------------------*/
 
 static void
-nmc_add_prop_funcs (char *key,
-                    NmcPropertyGetFunc get_func,
-                    NmcPropertySetFunc set_func,
-                    NmcPropertyRemoveFunc remove_func,
-                    NmcPropertyDescribeFunc describe_func,
-                    NmcPropertyValuesFunc values_func,
-                    gpointer dummy)
+_nmc_add_prop_funcs (const char *key,
+                     NmcPropertyGetFunc get_func,
+                     NmcPropertySetFunc set_func,
+                     NmcPropertyRemoveFunc remove_func,
+                     NmcPropertyDescribeFunc describe_func,
+                     NmcPropertyValuesFunc values_func,
+                     gpointer dummy)
 {
 	NmcPropertyFuncs *item = g_malloc0 (sizeof (NmcPropertyFuncs));
 	item->get_func = get_func;
@@ -4803,12 +4803,14 @@ nmc_add_prop_funcs (char *key,
 	item->describe_func = describe_func;
 	item->values_func = values_func;
 
-	g_hash_table_insert (nmc_properties, key, item);
+	g_hash_table_insert (nmc_properties, (gpointer) key, item);
 }
 
+#define nmc_add_prop_funcs(key, ...) _nmc_add_prop_funcs ("" key, __VA_ARGS__)
+
 /* concatenate setting name and property name */
-#define GLUE(A,B) (g_strconcat ((NM_SETTING_##A##_SETTING_NAME),(NM_SETTING_##A##_##B), NULL))
-#define GLUE_IP(A,B) (g_strconcat ((NM_SETTING_IP##A##_CONFIG_SETTING_NAME),(NM_SETTING_IP_CONFIG_##B), NULL))
+#define GLUE(A,B) "" NM_SETTING_##A##_SETTING_NAME "" NM_SETTING_##A##_##B ""
+#define GLUE_IP(A,B) "" NM_SETTING_IP##A##_CONFIG_SETTING_NAME "" NM_SETTING_IP_CONFIG_##B ""
 
 void
 nmc_properties_init (void)
@@ -4817,7 +4819,7 @@ nmc_properties_init (void)
 		return;
 
 	/* create properties hash table */
-	nmc_properties = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+	nmc_properties = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
 
 	/* Add editable properties for NM_SETTING_802_1X_SETTING_NAME */
 	nmc_add_prop_funcs (GLUE (802_1X, EAP),
