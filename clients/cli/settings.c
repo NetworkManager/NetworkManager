@@ -1634,11 +1634,16 @@ typedef	const char *  (*NmcPropertyDescribeFunc) (NMSetting *, const char *);
 typedef	const char ** (*NmcPropertyValuesFunc)   (NMSetting *, const char *);
 
 typedef struct {
-	NmcPropertyGetFunc get_func;           /* func getting property values */
-	NmcPropertySetFunc set_func;           /* func adding/setting property values */
-	NmcPropertyRemoveFunc remove_func;     /* func removing items from container options */
-	NmcPropertyDescribeFunc describe_func; /* func returning property description */
-	NmcPropertyValuesFunc values_func;     /* func returning allowed property values */
+	/* The order of the fields is important as they correspond
+	 * to the order as _nmc_add_prop_funcs() passes the arguments. */
+#define NmcPropertyFuncsFields \
+	NmcPropertyGetFunc get_func;           /* func getting property values */ \
+	NmcPropertySetFunc set_func;           /* func adding/setting property values */ \
+	NmcPropertyRemoveFunc remove_func;     /* func removing items from container options */ \
+	NmcPropertyDescribeFunc describe_func; /* func returning property description */ \
+	NmcPropertyValuesFunc values_func;     /* func returning allowed property values */ \
+	;
+	NmcPropertyFuncsFields
 } NmcPropertyFuncs;
 
 /*
@@ -4787,26 +4792,32 @@ DEFINE_ALLOWED_VAL_FUNC (nmc_property_dcb_allowed_app_fcoe_modes, _dcb_valid_fco
 
 /*----------------------------------------------------------------------------*/
 
-static void
+static inline void
 _nmc_add_prop_funcs (const char *key,
-                     NmcPropertyGetFunc get_func,
-                     NmcPropertySetFunc set_func,
-                     NmcPropertyRemoveFunc remove_func,
-                     NmcPropertyDescribeFunc describe_func,
-                     NmcPropertyValuesFunc values_func,
-                     gpointer dummy)
+                     const NmcPropertyFuncs *item_init)
 {
-	NmcPropertyFuncs *item = g_malloc0 (sizeof (NmcPropertyFuncs));
-	item->get_func = get_func;
-	item->set_func = set_func;
-	item->remove_func = remove_func;
-	item->describe_func = describe_func;
-	item->values_func = values_func;
+	NmcPropertyFuncs *item;
 
+	item = g_malloc (sizeof (NmcPropertyFuncs));
+	*item = *item_init;
 	g_hash_table_insert (nmc_properties, (gpointer) key, item);
 }
 
-#define nmc_add_prop_funcs(key, ...) _nmc_add_prop_funcs ("" key, __VA_ARGS__)
+#define nmc_add_prop_funcs(key, ...) \
+	G_STMT_START { \
+		struct { \
+			NmcPropertyFuncsFields; \
+			/* The _dummy field is here so that the last argument can be always
+			 * NULL. That means every call to nmc_add_prop_funcs() below ends
+			 * with a separate line "NULL);". */ \
+			gpointer _dummy; \
+		} _item_init = { \
+			__VA_ARGS__ \
+		};\
+		\
+		nm_assert (_item_init._dummy == NULL); \
+		_nmc_add_prop_funcs ("" key, (NmcPropertyFuncs *) &_item_init); \
+	} G_STMT_END
 
 /* concatenate setting name and property name */
 #define GLUE(A,B) "" NM_SETTING_##A##_SETTING_NAME "" NM_SETTING_##A##_##B ""
