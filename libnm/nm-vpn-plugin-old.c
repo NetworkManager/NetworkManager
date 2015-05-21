@@ -70,7 +70,7 @@ typedef struct {
 	gboolean has_ip6, got_ip6;
 
 	/* Config stuff copied from config to ip4config */
-	char *banner, *tundev, *gateway, *mtu;
+	GVariant *banner, *tundev, *gateway, *mtu;
 } NMVpnPluginOldPrivate;
 
 #define NM_VPN_PLUGIN_OLD_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_VPN_PLUGIN_OLD, NMVpnPluginOldPrivate))
@@ -300,14 +300,22 @@ nm_vpn_plugin_old_set_config (NMVpnPluginOld *plugin,
 	/* Record the items that need to also be inserted into the
 	 * ip4config, for compatibility with older daemons.
 	 */
-	g_clear_pointer (&priv->banner, g_free);
-	(void) g_variant_lookup (config, NM_VPN_PLUGIN_CONFIG_BANNER, "&s", &priv->banner);
-	g_clear_pointer (&priv->tundev, g_free);
-	(void) g_variant_lookup (config, NM_VPN_PLUGIN_CONFIG_TUNDEV, "&s", &priv->tundev);
-	g_clear_pointer (&priv->gateway, g_free);
-	(void) g_variant_lookup (config, NM_VPN_PLUGIN_CONFIG_EXT_GATEWAY, "&s", &priv->gateway);
-	g_clear_pointer (&priv->mtu, g_free);
-	(void) g_variant_lookup (config, NM_VPN_PLUGIN_CONFIG_MTU, "&s", &priv->mtu);
+	if (priv->banner)
+		g_variant_unref (priv->banner);
+	priv->banner = g_variant_lookup_value (config, NM_VPN_PLUGIN_CONFIG_BANNER,
+	                                       G_VARIANT_TYPE ("s"));
+	if (priv->tundev)
+		g_variant_unref (priv->tundev);
+	priv->tundev = g_variant_lookup_value (config, NM_VPN_PLUGIN_CONFIG_TUNDEV,
+	                                       G_VARIANT_TYPE ("s"));
+	if (priv->gateway)
+		g_variant_unref (priv->gateway);
+	priv->gateway = g_variant_lookup_value (config, NM_VPN_PLUGIN_CONFIG_EXT_GATEWAY,
+	                                        G_VARIANT_TYPE ("u"));
+	if (priv->mtu)
+		g_variant_unref (priv->mtu);
+	priv->mtu = g_variant_lookup_value (config, NM_VPN_PLUGIN_CONFIG_MTU,
+	                                    G_VARIANT_TYPE ("u"));
 
 	g_signal_emit (plugin, signals[CONFIG], 0, config);
 }
@@ -320,7 +328,8 @@ nm_vpn_plugin_old_set_ip4_config (NMVpnPluginOld *plugin,
 	GVariant *combined_config;
 	GVariantBuilder builder;
 	GVariantIter iter;
-	const char *key, *value;
+	const char *key;
+	GVariant *value;
 
 	g_return_if_fail (NM_IS_VPN_PLUGIN_OLD (plugin));
 	g_return_if_fail (ip4_config != NULL);
@@ -340,19 +349,21 @@ nm_vpn_plugin_old_set_ip4_config (NMVpnPluginOld *plugin,
 	 * being emitted. So just copy all of that data into the ip4
 	 * config too.
 	 */
-	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{ss}"));
+	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
 	g_variant_iter_init (&iter, ip4_config);
-	while (g_variant_iter_next (&iter, "{&s&s}", &key, &value))
-		g_variant_builder_add (&builder, "{ss}", key, value);
+	while (g_variant_iter_next (&iter, "{&sv}", &key, &value)) {
+		g_variant_builder_add (&builder, "{sv}", key, value);
+		g_variant_unref (value);
+	}
 
 	if (priv->banner)
-		g_variant_builder_add (&builder, "{ss}", NM_VPN_PLUGIN_IP4_CONFIG_BANNER, &priv->banner);
+		g_variant_builder_add (&builder, "{sv}", NM_VPN_PLUGIN_IP4_CONFIG_BANNER, &priv->banner);
 	if (priv->tundev)
-		g_variant_builder_add (&builder, "{ss}", NM_VPN_PLUGIN_IP4_CONFIG_TUNDEV, &priv->tundev);
+		g_variant_builder_add (&builder, "{sv}", NM_VPN_PLUGIN_IP4_CONFIG_TUNDEV, &priv->tundev);
 	if (priv->gateway)
-		g_variant_builder_add (&builder, "{ss}", NM_VPN_PLUGIN_IP4_CONFIG_EXT_GATEWAY, &priv->gateway);
+		g_variant_builder_add (&builder, "{sv}", NM_VPN_PLUGIN_IP4_CONFIG_EXT_GATEWAY, &priv->gateway);
 	if (priv->mtu)
-		g_variant_builder_add (&builder, "{ss}", NM_VPN_PLUGIN_IP4_CONFIG_MTU, &priv->mtu);
+		g_variant_builder_add (&builder, "{sv}", NM_VPN_PLUGIN_IP4_CONFIG_MTU, &priv->mtu);
 
 	combined_config = g_variant_builder_end (&builder);
 	g_variant_ref_sink (combined_config);
@@ -1026,10 +1037,10 @@ finalize (GObject *object)
 	nm_vpn_plugin_old_set_connection (plugin, NULL);
 	g_free (priv->dbus_service_name);
 
-	g_clear_pointer (&priv->banner, g_free);
-	g_clear_pointer (&priv->tundev, g_free);
-	g_clear_pointer (&priv->gateway, g_free);
-	g_clear_pointer (&priv->mtu, g_free);
+	g_clear_pointer (&priv->banner, g_variant_unref);
+	g_clear_pointer (&priv->tundev, g_variant_unref);
+	g_clear_pointer (&priv->gateway, g_variant_unref);
+	g_clear_pointer (&priv->mtu, g_variant_unref);
 
 	G_OBJECT_CLASS (nm_vpn_plugin_old_parent_class)->finalize (object);
 }
