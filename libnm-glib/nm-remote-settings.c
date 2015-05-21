@@ -469,6 +469,7 @@ connection_inited (GObject *source, GAsyncResult *result, gpointer user_data)
 	AddConnectionInfo *addinfo;
 	const char *path;
 	GError *error = NULL, *local;
+	static gboolean print_once = TRUE;
 
 	path = nm_connection_get_path (NM_CONNECTION (remote));
 	addinfo = add_connection_info_find (self, remote);
@@ -503,6 +504,14 @@ connection_inited (GObject *source, GAsyncResult *result, gpointer user_data)
 		 */
 		if (!dbus_g_error_has_name (error, "org.freedesktop.NetworkManager.Settings.PermissionDenied"))
 			g_hash_table_remove (priv->pending, path);
+
+		if (print_once && error->code == DBUS_GERROR_LIMITS_EXCEEDED) {
+			g_printerr ("Warning: libnm-glib:%s(): a D-Bus limit exceeded: %s. The application might not work properly.\n"
+			            "Consider increasing max_replies_per_connection limit in /etc/dbus-1/system.d/org.freedesktop.NetworkManager.conf "
+			            "like <limit name=\"max_replies_per_connection\">2048</limit>",
+			            __func__, error->message);
+			print_once = FALSE;
+		}
 
 		g_error_free (error);
 	}
