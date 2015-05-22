@@ -202,4 +202,14 @@ int         _nm_utils_dns_option_find_idx (GPtrArray *array, const char *option)
 
 /***********************************************************/
 
+typedef struct _NMUtilsStrStrDictKey NMUtilsStrStrDictKey;
+guint                 _nm_utils_strstrdictkey_hash   (gconstpointer a);
+gboolean              _nm_utils_strstrdictkey_equal  (gconstpointer a, gconstpointer b);
+NMUtilsStrStrDictKey *_nm_utils_strstrdictkey_create (const char *v1, const char *v2);
+
+#define _nm_utils_strstrdictkey_static(v1, v2) \
+    ( (NMUtilsStrStrDictKey *) ("\03" v1 "\0" v2 "") )
+
+/***********************************************************/
+
 #endif
