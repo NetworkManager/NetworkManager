@@ -194,6 +194,26 @@ gboolean _nm_dbus_error_has_name (GError     *error,
 
 /***********************************************************/
 
+gboolean _nm_vpn_plugin_info_check_file (const char *filename,
+                                         gboolean check_absolute,
+                                         gboolean do_validate_filename,
+                                         gint64 check_owner,
+                                         NMUtilsCheckFilePredicate check_file,
+                                         gpointer user_data,
+                                         GError **error);
+
+const char *_nm_vpn_plugin_info_get_default_dir_etc (void);
+const char *_nm_vpn_plugin_info_get_default_dir_lib (void);
+const char *_nm_vpn_plugin_info_get_default_dir_user (void);
+
+GSList *_nm_vpn_plugin_info_list_load_dir (const char *dirname,
+                                           gboolean do_validate_filename,
+                                           gint64 check_owner,
+                                           NMUtilsCheckFilePredicate check_file,
+                                           gpointer user_data);
+
+/***********************************************************/
+
 typedef struct {
 	const char *name;
 	gboolean numeric;

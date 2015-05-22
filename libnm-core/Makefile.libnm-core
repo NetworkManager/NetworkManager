@@ -42,7 +42,8 @@ libnm_core_headers =				\
 	$(core)/nm-setting.h			\
 	$(core)/nm-simple-connection.h		\
 	$(core)/nm-utils.h			\
-	$(core)/nm-vpn-dbus-interface.h
+	$(core)/nm-vpn-dbus-interface.h     \
+	$(core)/nm-vpn-plugin-info.h
 
 libnm_core_private_headers =			\
 	$(core)/crypto.h			\
@@ -93,5 +94,6 @@ libnm_core_sources =				\
 	$(core)/nm-setting-wireless.c		\
 	$(core)/nm-setting.c			\
 	$(core)/nm-simple-connection.c		\
-	$(core)/nm-utils.c
+	$(core)/nm-utils.c                  \
+	$(core)/nm-vpn-plugin-info.c
 

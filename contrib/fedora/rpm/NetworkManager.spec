@@ -440,6 +440,7 @@ make install DESTDIR=$RPM_BUILD_ROOT
 
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/conf.d
 mkdir -p $RPM_BUILD_ROOT%{nmlibdir}/conf.d
+mkdir -p $RPM_BUILD_ROOT%{nmlibdir}/VPN
 %{__cp} %{SOURCE2} $RPM_BUILD_ROOT%{nmlibdir}/conf.d/
 %{__cp} %{SOURCE3} $RPM_BUILD_ROOT%{nmlibdir}/conf.d/
 
@@ -541,6 +542,7 @@ fi
 %dir %{_sysconfdir}/%{name}/conf.d
 %dir %{nmlibdir}
 %dir %{nmlibdir}/conf.d
+%dir %{nmlibdir}/VPN
 %{_mandir}/man1/*
 %{_mandir}/man5/*
 %{_mandir}/man8/*
