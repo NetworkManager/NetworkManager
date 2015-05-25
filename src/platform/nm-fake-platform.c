@@ -136,10 +136,11 @@ link_init (NMFakePlatformLink *device, int ifindex, int type, const char *name)
 		strcpy (device->link.name, name);
 	switch (device->link.type) {
 	case NM_LINK_TYPE_DUMMY:
-		device->link.arp = FALSE;
+		device->link.flags = NM_FLAGS_SET (device->link.flags, IFF_NOARP);
 		break;
 	default:
-		device->link.arp = TRUE;
+		device->link.flags = NM_FLAGS_UNSET (device->link.flags, IFF_NOARP);
+		break;
 	}
 	device->address = NULL;
 }
@@ -386,9 +387,9 @@ link_set_up (NMPlatform *platform, int ifindex)
 		g_error ("Unexpected device type: %d", device->link.type);
 	}
 
-	if (   device->link.up != up
+	if (   NM_FLAGS_HAS (device->link.flags, IFF_UP) != !!up
 	    || device->link.connected != connected) {
-		device->link.up = up;
+		device->link.flags = NM_FLAGS_ASSIGN (device->link.flags, IFF_UP, up);
 		device->link.connected = connected;
 		link_changed (platform, device, TRUE);
 	}
@@ -404,8 +405,8 @@ link_set_down (NMPlatform *platform, int ifindex)
 	if (!device)
 		return FALSE;
 
-	if (device->link.up || device->link.connected) {
-		device->link.up = FALSE;
+	if (NM_FLAGS_HAS (device->link.flags, IFF_UP) || device->link.connected) {
+		device->link.flags = NM_FLAGS_UNSET (device->link.flags, IFF_UP);
 		device->link.connected = FALSE;
 
 		link_changed (platform, device, TRUE);
@@ -422,7 +423,7 @@ link_set_arp (NMPlatform *platform, int ifindex)
 	if (!device)
 		return FALSE;
 
-	device->link.arp = TRUE;
+	device->link.flags = NM_FLAGS_UNSET (device->link.flags, IFF_NOARP);
 
 	link_changed (platform, device, TRUE);
 
@@ -437,7 +438,7 @@ link_set_noarp (NMPlatform *platform, int ifindex)
 	if (!device)
 		return FALSE;
 
-	device->link.arp = FALSE;
+	device->link.flags = NM_FLAGS_SET (device->link.flags, IFF_NOARP);
 
 	link_changed (platform, device, TRUE);
 
@@ -449,7 +450,7 @@ link_is_up (NMPlatform *platform, int ifindex)
 {
 	NMFakePlatformLink *device = link_get (platform, ifindex);
 
-	return device ? device->link.up : FALSE;
+	return device ? NM_FLAGS_HAS (device->link.flags, IFF_UP) : FALSE;
 }
 
 static gboolean
@@ -465,7 +466,7 @@ link_uses_arp (NMPlatform *platform, int ifindex)
 {
 	NMFakePlatformLink *device = link_get (platform, ifindex);
 
-	return device ? device->link.arp : FALSE;
+	return device ? !NM_FLAGS_HAS (device->link.flags, IFF_NOARP) : FALSE;
 }
 
 static gboolean
@@ -616,7 +617,7 @@ link_enslave (NMPlatform *platform, int master, int slave)
 		device->link.master = master;
 
 		if (NM_IN_SET (master_device->link.type, NM_LINK_TYPE_BOND, NM_LINK_TYPE_TEAM)) {
-			device->link.up = TRUE;
+			device->link.flags = NM_FLAGS_SET (device->link.flags, IFF_UP);
 			device->link.connected = TRUE;
 		}
 
