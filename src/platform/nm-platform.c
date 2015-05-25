@@ -2466,9 +2466,9 @@ nm_platform_link_to_string (const NMPlatformLink *link)
 		return "(unknown link)";
 
 	str_flags = g_string_new (NULL);
-	if (!link->arp)
+	if (NM_FLAGS_HAS (link->flags, IFF_NOARP))
 		g_string_append (str_flags, "NOARP,");
-	if (link->up)
+	if (NM_FLAGS_HAS (link->flags, IFF_UP))
 		g_string_append (str_flags, "UP");
 	else
 		g_string_append (str_flags, "DOWN");
@@ -2844,11 +2844,9 @@ nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 	_CMP_FIELD_STR (a, b, name);
 	_CMP_FIELD (a, b, master);
 	_CMP_FIELD (a, b, parent);
-	_CMP_FIELD (a, b, up);
 	_CMP_FIELD (a, b, vlan_id);
 	_CMP_FIELD (a, b, flags);
 	_CMP_FIELD (a, b, connected);
-	_CMP_FIELD (a, b, arp);
 	_CMP_FIELD (a, b, mtu);
 	_CMP_FIELD_BOOL (a, b, initialized);
 	_CMP_FIELD (a, b, arptype);

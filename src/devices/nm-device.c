@@ -1406,15 +1406,15 @@ device_link_changed (NMDevice *self, NMPlatformLink *info)
 	if (ip_ifname_changed)
 		update_for_ip_ifname_change (self);
 
-	if (priv->up != info->up) {
-		priv->up = info->up;
+	if (priv->up != NM_FLAGS_HAS (info->flags, IFF_UP)) {
+		priv->up = NM_FLAGS_HAS (info->flags, IFF_UP);
 
 		/* Manage externally-created software interfaces only when they are IFF_UP */
 		g_assert (priv->ifindex > 0);
 		if (NM_DEVICE_GET_CLASS (self)->can_unmanaged_external_down (self)) {
 			gboolean external_down = nm_device_get_unmanaged_flag (self, NM_UNMANAGED_EXTERNAL_DOWN);
 
-			if (external_down && info->up) {
+			if (external_down && NM_FLAGS_HAS (info->flags, IFF_UP)) {
 				if (nm_device_get_state (self) < NM_DEVICE_STATE_DISCONNECTED) {
 					/* Ensure the assume check is queued before any queued state changes
 					 * from the transition to UNAVAILABLE.
@@ -1437,7 +1437,7 @@ device_link_changed (NMDevice *self, NMPlatformLink *info)
 					 */
 					priv->unmanaged_flags &= ~NM_UNMANAGED_EXTERNAL_DOWN;
 				}
-			} else if (!external_down && !info->up && nm_device_get_state (self) <= NM_DEVICE_STATE_DISCONNECTED) {
+			} else if (!external_down && !NM_FLAGS_HAS (info->flags, IFF_UP) && nm_device_get_state (self) <= NM_DEVICE_STATE_DISCONNECTED) {
 				/* If the device is already disconnected and is set !IFF_UP,
 				 * unmanage it.
 				 */
@@ -8942,7 +8942,7 @@ set_property (GObject *object, guint prop_id,
 			g_free (priv->iface);
 			priv->iface = g_strdup (platform_device->name);
 			priv->ifindex = platform_device->ifindex;
-			priv->up = platform_device->up;
+			priv->up = NM_FLAGS_HAS (platform_device->flags, IFF_UP);
 			g_free (priv->driver);
 			priv->driver = g_strdup (platform_device->driver);
 			priv->platform_link_initialized = platform_device->initialized;

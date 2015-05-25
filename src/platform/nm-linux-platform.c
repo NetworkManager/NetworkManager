@@ -913,9 +913,7 @@ _nmp_vt_cmd_plobj_init_from_nl_link (NMPlatform *platform, NMPlatformObject *_ob
 	obj->type = link_extract_type (platform, nlo, complete_from_cache, &kind);
 	obj->kind = g_intern_string (kind);
 	obj->flags = rtnl_link_get_flags (nlo);
-	obj->up = NM_FLAGS_HAS (obj->flags, IFF_UP);
 	obj->connected = NM_FLAGS_HAS (obj->flags, IFF_LOWER_UP);
-	obj->arp = !NM_FLAGS_HAS (obj->flags, IFF_NOARP);
 	obj->master = rtnl_link_get_master (nlo);
 	obj->parent = rtnl_link_get_link (nlo);
 	obj->mtu = rtnl_link_get_mtu (nlo);
