@@ -25,6 +25,7 @@
 #include "nm-glib.h"
 #include "nm-device.h"
 #include "nm-vpn-connection.h"
+#include "nm-vpn-plugin-info.h"
 
 #define NM_TYPE_VPN_SERVICE            (nm_vpn_service_get_type ())
 #define NM_VPN_SERVICE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VPN_SERVICE, NMVpnService))
@@ -43,13 +44,10 @@ typedef struct {
 
 GType nm_vpn_service_get_type (void);
 
-NMVpnService * nm_vpn_service_new (const char *namefile, GError **error);
+NMVpnService * nm_vpn_service_new (NMVpnPluginInfo *plugin_info, GError **error);
 
 /* Returns the VPN service's D-Bus service name */
 const char *nm_vpn_service_get_dbus_service (NMVpnService *service);
-
-/* Returns the path of the VPN service's .name file */
-const char *nm_vpn_service_get_name_file (NMVpnService *service);
 
 gboolean nm_vpn_service_activate (NMVpnService *service,
                                   NMVpnConnection *vpn,

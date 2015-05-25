@@ -29,42 +29,36 @@
 #include "nm-vpn-connection.h"
 #include "nm-setting-vpn.h"
 #include "nm-vpn-dbus-interface.h"
+#include "nm-core-internal.h"
 #include "nm-enum-types.h"
 #include "nm-logging.h"
-
-#define VPN_NAME_FILES_DIR NMCONFDIR "/VPN"
+#include "gsystem-local-alloc.h"
 
 G_DEFINE_TYPE (NMVpnManager, nm_vpn_manager, G_TYPE_OBJECT)
 
 #define NM_VPN_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_VPN_MANAGER, NMVpnManagerPrivate))
 
 typedef struct {
-	GHashTable *services;
-	GFileMonitor *monitor;
-	guint monitor_id;
+	GSList *services;
+	GFileMonitor *monitor_etc;
+	GFileMonitor *monitor_lib;
+	guint monitor_id_etc;
+	guint monitor_id_lib;
 } NMVpnManagerPrivate;
 
-
 static NMVpnService *
-get_service_by_namefile (NMVpnManager *self, const char *namefile)
+_plugin_info_get_service (NMVpnPluginInfo *plugin_info)
 {
-	NMVpnManagerPrivate *priv = NM_VPN_MANAGER_GET_PRIVATE (self);
-	GHashTableIter iter;
-	gpointer data;
-
-	g_return_val_if_fail (namefile, NULL);
-	g_return_val_if_fail (g_path_is_absolute (namefile), NULL);
-
-	g_hash_table_iter_init (&iter, priv->services);
-	while (g_hash_table_iter_next (&iter, NULL, &data)) {
-		NMVpnService *candidate = NM_VPN_SERVICE (data);
-		const char *service_namefile;
-
-		service_namefile = nm_vpn_service_get_name_file (candidate);
-		if (!strcmp (namefile, service_namefile))
-			return candidate;
-	}
+	if (plugin_info)
+		return NM_VPN_SERVICE (g_object_get_data (G_OBJECT (plugin_info), "service-instance"));
 	return NULL;
+}
+
+static void
+_plugin_info_set_service (NMVpnPluginInfo *plugin_info, NMVpnService *service)
+{
+	g_object_set_data_full (G_OBJECT (plugin_info), "service-instance", service,
+	                        (GDestroyNotify) g_object_unref);
 }
 
 gboolean
@@ -75,6 +69,7 @@ nm_vpn_manager_activate_connection (NMVpnManager *manager,
 	NMConnection *connection;
 	NMSettingVpn *s_vpn;
 	NMVpnService *service;
+	NMVpnPluginInfo *plugin_info;
 	const char *service_name;
 	NMDevice *device;
 
@@ -98,8 +93,8 @@ nm_vpn_manager_activate_connection (NMVpnManager *manager,
 	g_assert (s_vpn);
 
 	service_name = nm_setting_vpn_get_service_type (s_vpn);
-	g_assert (service_name);
-	service = g_hash_table_lookup (NM_VPN_MANAGER_GET_PRIVATE (manager)->services, service_name);
+	plugin_info = nm_vpn_plugin_info_list_find_by_service (NM_VPN_MANAGER_GET_PRIVATE (manager)->services, service_name);
+	service = _plugin_info_get_service (plugin_info);
 	if (!service) {
 		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_NOT_AVAILABLE,
 		             "The VPN service '%s' was not installed.",
@@ -119,33 +114,31 @@ nm_vpn_manager_deactivate_connection (NMVpnManager *self,
 }
 
 static void
-try_add_service (NMVpnManager *self, const char *namefile)
+try_add_service (NMVpnManager *self, NMVpnPluginInfo *plugin_info)
 {
 	NMVpnManagerPrivate *priv = NM_VPN_MANAGER_GET_PRIVATE (self);
 	NMVpnService *service = NULL;
-	GHashTableIter iter;
 	GError *error = NULL;
-	const char *service_name;
 
-	g_return_if_fail (g_path_is_absolute (namefile));
-
-	/* Make sure we don't add dupes */
-	g_hash_table_iter_init (&iter, priv->services);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &service)) {
-		if (g_strcmp0 (namefile, nm_vpn_service_get_name_file (service)) == 0)
-			return;
-	}
+	/* Make sure we don't add dupes.
+	 * We don't really allow reload of the same file. What we do allow is however to
+	 * delete a file and re-add it. */
+	if (nm_vpn_plugin_info_list_find_by_filename (priv->services,
+	                                              nm_vpn_plugin_info_get_filename (plugin_info)))
+		return;
+	if (!nm_vpn_plugin_info_list_add (&priv->services, plugin_info, NULL))
+		return;
 
 	/* New service */
-	service = nm_vpn_service_new (namefile, &error);
+	service = nm_vpn_service_new (plugin_info, &error);
 	if (service) {
-		service_name = nm_vpn_service_get_dbus_service (service);
-		g_hash_table_insert (priv->services, (char *) service_name, service);
-		nm_log_info (LOGD_VPN, "VPN: loaded %s", service_name);
+		_plugin_info_set_service (plugin_info, service);
+		nm_log_info (LOGD_VPN, "VPN: loaded %s - %s",
+		             nm_vpn_plugin_info_get_name (plugin_info),
+		             nm_vpn_service_get_dbus_service (service));
 	} else {
-		nm_log_warn (LOGD_VPN, "failed to load VPN service file %s: (%d) %s",
-		             namefile,
-		             error ? error->code : -1,
+		nm_log_warn (LOGD_VPN, "failed to load VPN service file %s: %s",
+		             nm_vpn_plugin_info_get_filename (plugin_info),
 		             error && error->message ? error->message : "(unknown)");
 		g_clear_error (&error);
 	}
@@ -160,41 +153,65 @@ vpn_dir_changed (GFileMonitor *monitor,
 {
 	NMVpnManager *self = NM_VPN_MANAGER (user_data);
 	NMVpnManagerPrivate *priv = NM_VPN_MANAGER_GET_PRIVATE (self);
+	NMVpnPluginInfo *plugin_info;
 	NMVpnService *service;
-	char *path;
+	gs_free char *path = NULL;
+	GError *error = NULL;
 
 	path = g_file_get_path (file);
-	if (!g_str_has_suffix (path, ".name")) {
-		g_free (path);
+	if (!nm_vpn_plugin_info_validate_filename (path))
 		return;
-	}
 
 	switch (event_type) {
 	case G_FILE_MONITOR_EVENT_DELETED:
-		nm_log_dbg (LOGD_VPN, "service file %s deleted", path);
+		plugin_info = nm_vpn_plugin_info_list_find_by_filename (priv->services, path);
+		if (!plugin_info)
+			break;
 
-		service = get_service_by_namefile (self, path);
+		nm_log_dbg (LOGD_VPN, "vpn: service file %s deleted", path);
+		service = _plugin_info_get_service (plugin_info);
 		if (service) {
-			const char *service_name = nm_vpn_service_get_dbus_service (service);
-
 			/* Stop active VPN connections and destroy the service */
 			nm_vpn_service_stop_connections (service, FALSE,
 			                                 NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED);
-			nm_log_info (LOGD_VPN, "VPN: unloaded %s", service_name);
-			g_hash_table_remove (priv->services, service_name);
+			nm_log_info (LOGD_VPN, "VPN: unloaded %s", nm_vpn_service_get_dbus_service (service));
+
+			_plugin_info_set_service (plugin_info, NULL);
 		}
+		nm_vpn_plugin_info_list_remove (&priv->services, plugin_info);
 		break;
 	case G_FILE_MONITOR_EVENT_CREATED:
 	case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
-		nm_log_dbg (LOGD_VPN, "service file %s created or modified", path);
-		try_add_service (self, path);
+		plugin_info = nm_vpn_plugin_info_list_find_by_filename (priv->services, path);
+		if (plugin_info) {
+			/* we don't support reloading an existing plugin. You can only remove the file
+			 * and re-add it. By reloading we want to support the use case of installing
+			 * a VPN plugin after NM started. No need to burden ourself with a complete
+			 * reload. */
+			break;
+		}
+
+		if (!_nm_vpn_plugin_info_check_file (path, TRUE, TRUE, 0,
+		                                     NULL, NULL, &error)) {
+			nm_log_dbg (LOGD_VPN, "vpn: ignore changed service file %s (%s)", path, error->message);
+			g_clear_error (&error);
+			break;
+		}
+		plugin_info = nm_vpn_plugin_info_new_from_file (path, &error);
+		if (!plugin_info) {
+			nm_log_dbg (LOGD_VPN, "vpn: ignore changed service file %s due to invalid content (%s)", path, error->message);
+			g_clear_error (&error);
+			break;
+		}
+
+		nm_log_dbg (LOGD_VPN, "vpn: service file %s created or modified", path);
+		try_add_service (self, plugin_info);
+		g_object_unref (plugin_info);
 		break;
 	default:
-		nm_log_dbg (LOGD_VPN, "service file %s change event %d", path, event_type);
+		nm_log_dbg (LOGD_VPN, "vpn: service file %s change event %d", path, event_type);
 		break;
 	}
-
-	g_free (path);
 }
 
 /******************************************************************************/
@@ -206,50 +223,40 @@ nm_vpn_manager_init (NMVpnManager *self)
 {
 	NMVpnManagerPrivate *priv = NM_VPN_MANAGER_GET_PRIVATE (self);
 	GFile *file;
-	GDir *dir;
-	const char *fn;
-	char *path;
-
-	priv->services = g_hash_table_new_full (g_str_hash, g_str_equal,
-	                                        NULL, g_object_unref);
+	GSList *infos, *info;
+	const char *conf_dir_etc = _nm_vpn_plugin_info_get_default_dir_etc ();
+	const char *conf_dir_lib = _nm_vpn_plugin_info_get_default_dir_lib ();
 
 	/* Watch the VPN directory for changes */
-	file = g_file_new_for_path (VPN_NAME_FILES_DIR "/");
-	priv->monitor = g_file_monitor_directory (file, G_FILE_MONITOR_NONE, NULL, NULL);
+	file = g_file_new_for_path (conf_dir_lib);
+	priv->monitor_lib = g_file_monitor_directory (file, G_FILE_MONITOR_NONE, NULL, NULL);
 	g_object_unref (file);
-	if (priv->monitor) {
-		priv->monitor_id = g_signal_connect (priv->monitor, "changed",
-		                                     G_CALLBACK (vpn_dir_changed), self);
+	if (priv->monitor_lib) {
+		priv->monitor_id_lib = g_signal_connect (priv->monitor_lib, "changed",
+		                                         G_CALLBACK (vpn_dir_changed), self);
 	}
 
-	/* Load VPN service files */
-	dir = g_dir_open (VPN_NAME_FILES_DIR, 0, NULL);
-	if (dir) {
-		while ((fn = g_dir_read_name (dir))) {
-			/* only parse filenames that end with .name */
-			if (g_str_has_suffix (fn, ".name")) {
-				path = g_build_filename (VPN_NAME_FILES_DIR, fn, NULL);
-				try_add_service (self, path);
-				g_free (path);
-			}
-		}
-		g_dir_close (dir);
+	file = g_file_new_for_path (conf_dir_etc);
+	priv->monitor_etc = g_file_monitor_directory (file, G_FILE_MONITOR_NONE, NULL, NULL);
+	g_object_unref (file);
+	if (priv->monitor_etc) {
+		priv->monitor_id_etc = g_signal_connect (priv->monitor_etc, "changed",
+		                                         G_CALLBACK (vpn_dir_changed), self);
 	}
-}
 
-static void
-stop_all_services (NMVpnManager *self)
-{
-	NMVpnManagerPrivate *priv = NM_VPN_MANAGER_GET_PRIVATE (self);
-	GHashTableIter iter;
-	NMVpnService *service;
+	/* first read conf_dir_lib. The name files are not really user configuration, but
+	 * plugin configuration. Hence we expect ~newer~ plugins to install their files
+	 * in /usr/lib/NetworkManager. We want to prefer those files.
+	 * In case of no-conflict, the order doesn't matter. */
+	infos = _nm_vpn_plugin_info_list_load_dir (conf_dir_lib, TRUE, 0, NULL, NULL);
+	for (info = infos; info; info = info->next)
+		try_add_service (self, info->data);
+	g_slist_free_full (infos, g_object_unref);
 
-	g_hash_table_iter_init (&iter, priv->services);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &service)) {
-		nm_vpn_service_stop_connections (service,
-		                                 TRUE,
-		                                 NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED);
-	}
+	infos = _nm_vpn_plugin_info_list_load_dir (conf_dir_etc, TRUE, 0, NULL, NULL);
+	for (info = infos; info; info = info->next)
+		try_add_service (self, info->data);
+	g_slist_free_full (infos, g_object_unref);
 }
 
 static void
@@ -257,17 +264,29 @@ dispose (GObject *object)
 {
 	NMVpnManagerPrivate *priv = NM_VPN_MANAGER_GET_PRIVATE (object);
 
-	if (priv->monitor) {
-		if (priv->monitor_id)
-			g_signal_handler_disconnect (priv->monitor, priv->monitor_id);
-		g_file_monitor_cancel (priv->monitor);
-		g_clear_object (&priv->monitor);
+	if (priv->monitor_etc) {
+		if (priv->monitor_id_etc)
+			g_signal_handler_disconnect (priv->monitor_etc, priv->monitor_id_etc);
+		g_file_monitor_cancel (priv->monitor_etc);
+		g_clear_object (&priv->monitor_etc);
 	}
 
-	if (priv->services) {
-		stop_all_services (NM_VPN_MANAGER (object));
-		g_hash_table_destroy (priv->services);
-		priv->services = NULL;
+	if (priv->monitor_lib) {
+		if (priv->monitor_id_lib)
+			g_signal_handler_disconnect (priv->monitor_lib, priv->monitor_id_lib);
+		g_file_monitor_cancel (priv->monitor_lib);
+		g_clear_object (&priv->monitor_lib);
+	}
+
+	while (priv->services) {
+		NMVpnPluginInfo *plugin_info = priv->services->data;
+		NMVpnService *service = _plugin_info_get_service (plugin_info);
+
+		if (service) {
+			nm_vpn_service_stop_connections (service, TRUE, NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED);
+			_plugin_info_set_service (plugin_info, NULL);
+		}
+		nm_vpn_plugin_info_list_remove (&priv->services, plugin_info);
 	}
 
 	G_OBJECT_CLASS (nm_vpn_manager_parent_class)->dispose (object);
