@@ -16,6 +16,8 @@ AM_CPPFLAGS= \
 	$(CHECK_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(CODE_COVERAGE_CFLAGS) \
+	-DTEST_IFNET_DIR=\"$(abs_srcdir)\" \
+	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/\" \
 	-DTEST_WPA_SUPPLICANT_CONF='"$(srcdir)/wpa_supplicant.conf"' \
 	-DSYSCONFDIR=\"nonexistent\"
 
@@ -32,8 +34,8 @@ check_ifnet_LDFLAGS = \
 
 check_ifnet_LDADD = $(top_builddir)/src/libNetworkManager.la
 
-check-local: check_ifnet
-	$(abs_builddir)/check_ifnet $(abs_srcdir) $(abs_builddir)
+#@VALGRIND_RULES@
+TESTS = check_ifnet
 
 endif
 

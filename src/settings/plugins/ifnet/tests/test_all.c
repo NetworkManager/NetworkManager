@@ -59,41 +59,33 @@ nm_config_get_dhcp_client (NMConfig *config)
 static void
 test_getdata (void)
 {
-	ASSERT (ifnet_get_data ("eth1", "config")
-		&& strcmp (ifnet_get_data ("eth1", "config"), "( \"dhcp\" )") == 0,
-		"get data", "config_eth1 is not correct");
-	ASSERT (ifnet_get_data ("ppp0", "username")
-		&& strcmp (ifnet_get_data ("ppp0", "username"), "user") == 0,
-		"get data", "config_ppp0 username is not correctly read");
-	ASSERT (ifnet_get_data ("ppp0", "password")
-		&& strcmp (ifnet_get_data ("ppp0", "password"),
-			   "password") == 0, "get data",
-		"config_ppp0 password is not correctly read");
-	ASSERT (ifnet_get_global_data ("modules")
-		&& strcmp ("!wpa_supplicant", ifnet_get_global_data ("modules")) == 0,
-		"get data", "config_eth1 is not correct");
+	g_assert (ifnet_get_data ("eth1", "config") &&
+	          strcmp (ifnet_get_data ("eth1", "config"), "( \"dhcp\" )") == 0);
+	g_assert (ifnet_get_data ("ppp0", "username") &&
+	          strcmp (ifnet_get_data ("ppp0", "username"), "user") == 0);
+	g_assert (ifnet_get_data ("ppp0", "password") &&
+	          strcmp (ifnet_get_data ("ppp0", "password"), "password") == 0);
+	g_assert (ifnet_get_global_data ("modules") &&
+	          strcmp ("!wpa_supplicant", ifnet_get_global_data ("modules")) == 0);
 }
 
 static void
-test_read_hostname (const char *base_path)
+test_read_hostname (void)
 {
-	char *hostname_path, *hostname;
+	char *hostname;
 
-	hostname_path = g_build_filename (base_path, "hostname", NULL);
-	hostname = read_hostname (hostname_path);
-
+	hostname = read_hostname (TEST_IFNET_DIR "/hostname");
 	g_assert_cmpstr (hostname, ==, "gentoo");
 
 	g_free (hostname);
-	g_free (hostname_path);
 }
 
 static void
-test_write_hostname (const char *temp_path)
+test_write_hostname (void)
 {
-	char *hostname_path, *hostname;
+	char *hostname_path = TEST_SCRATCH_DIR "/hostname-test";
+	char *hostname;
 
-	hostname_path = g_build_filename (temp_path, "hostname-test", NULL);
 	write_hostname (hostname_path, "gentoo-nm");
 	hostname = read_hostname (hostname_path);
 
@@ -101,40 +93,30 @@ test_write_hostname (const char *temp_path)
 
 	g_free (hostname);
 	unlink (hostname_path);
-	g_free (hostname_path);
 }
 
 static void
 test_is_static (void)
 {
-	ASSERT (is_static_ip4 ("eth1") == FALSE, "is static",
-		"a dhcp interface is recognized as static");
-	ASSERT (is_static_ip4 ("eth0") == TRUE, "is static",
-		"a static interface is recognized as dhcp");
-	ASSERT (is_static_ip6 ("eth0") == FALSE, "is static",
-		"a dhcp interface is recognized as static");
+	g_assert (!is_static_ip4 ("eth1"));
+	g_assert (is_static_ip4 ("eth0"));
+	g_assert (!is_static_ip6 ("eth0"));
 }
 
 static void
 test_has_default_route (void)
 {
-	ASSERT (has_default_ip4_route ("eth0"),
-		"has default route", "eth0 should have a default ipv4 route");
-	ASSERT (has_default_ip6_route ("eth4"),
-		"has default route", "eth4 should have a default ipv6 route");
-	ASSERT (!has_default_ip4_route ("eth5")
-		&& !has_default_ip6_route ("eth5"),
-		"has default route", "eth5 shouldn't have a default route");
+	g_assert (has_default_ip4_route ("eth0"));
+	g_assert (has_default_ip6_route ("eth4"));
+	g_assert (!has_default_ip4_route ("eth5") &&
+	          !has_default_ip6_route ("eth5"));
 }
 
 static void
 test_has_ip6_address (void)
 {
-	ASSERT (has_ip6_address ("eth2"), "has ip6 address",
-		"eth2 should have a ipv6 address");
-	ASSERT (!has_ip6_address ("eth0"), "has ip6 address",
-		"eth0 shouldn't have a ipv6 address")
-
+	g_assert (has_ip6_address ("eth2"));
+	g_assert (!has_ip6_address ("eth0"));
 }
 
 static void
@@ -144,12 +126,9 @@ test_is_ip4_address (void)
 	gchar *address2 = "192.168.100.{1..254}/24";
 	gchar *address3 = "192.168.4.2555/24";
 
-	ASSERT (is_ip4_address (address1), "is ip4 address",
-		"%s should be a valid address", address1);
-	ASSERT (is_ip4_address (address2), "is ip4 address",
-		"%s should be a valid address", address2);
-	ASSERT (!is_ip4_address (address3), "is ip4 address",
-		"%s should be an invalid address", address3);
+	g_assert (is_ip4_address (address1));
+	g_assert (is_ip4_address (address2));
+	g_assert (!is_ip4_address (address3));
 }
 
 static void
@@ -157,19 +136,15 @@ test_is_ip6_address (void)
 {
 	gchar *address1 = "4321:0:1:2:3:4:567:89ac/24";
 
-	ASSERT (is_ip6_address (address1), "is ip6 address",
-		"%s should be a valid address", address1);
+	g_assert (is_ip6_address (address1));
 }
 
 static void
 check_ip_block (ip_block * iblock, gchar * ip, guint32 prefix, gchar * gateway)
 {
-	ASSERT (strcmp (ip, iblock->ip) == 0, "check ip",
-		"ip expected:%s, find:%s", ip, iblock->ip);
-	ASSERT (prefix == iblock->prefix, "check netmask",
-		"prefix expected:%d, find:%d", prefix, iblock->prefix);
-	ASSERT (g_strcmp0 (gateway, iblock->next_hop) == 0, "check gateway",
-		"gateway expected:%s, find:%s", gateway, iblock->next_hop);
+	g_assert_cmpstr (ip, ==, iblock->ip);
+	g_assert (prefix == iblock->prefix);
+	g_assert_cmpstr (gateway, ==, iblock->next_hop);
 }
 
 static void
@@ -178,13 +153,11 @@ test_convert_ipv4_config_block (void)
 	ip_block *iblock = convert_ip4_config_block ("eth0");
 	ip_block *tmp = iblock;
 
-	ASSERT (iblock != NULL, "convert ipv4 block",
-		"block eth0 should not be NULL");
+	g_assert (iblock != NULL);
 	check_ip_block (iblock, "202.117.16.121", 24, "202.117.16.1");
 	iblock = iblock->next;
 	destroy_ip_block (tmp);
-	ASSERT (iblock != NULL, "convert ipv4 block",
-		"block eth0 should have a second IP address");
+	g_assert (iblock != NULL);
 	check_ip_block (iblock, "192.168.4.121", 24, "202.117.16.1");
 	destroy_ip_block (iblock);
 
@@ -192,17 +165,14 @@ test_convert_ipv4_config_block (void)
 	                       "*Can't handle IPv4 address*202.117.16.1211*");
 	iblock = convert_ip4_config_block ("eth2");
 	g_test_assert_expected_messages ();
-	ASSERT (iblock != NULL
-		&& iblock->next == NULL,
-		"convert error IPv4 address", "should only get one address");
+	g_assert (iblock != NULL && iblock->next == NULL);
 	check_ip_block (iblock, "192.168.4.121", 24, NULL);
 	destroy_ip_block (iblock);
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*missing netmask or prefix*");
 	iblock = convert_ip4_config_block ("eth3");
-	ASSERT (iblock == NULL, "convert config_block",
-		"convert error configuration");
+	g_assert (iblock == NULL);
 }
 
 static void
@@ -211,22 +181,20 @@ test_convert_ipv4_routes_block (void)
 	ip_block *iblock = convert_ip4_routes_block ("eth0");
 	ip_block *tmp = iblock;
 
-	ASSERT (iblock != NULL, "convert ip4 routes", "should get one route");
+	g_assert (iblock != NULL);
 	check_ip_block (iblock, "192.168.4.0", 24, "192.168.4.1");
 	iblock = iblock->next;
 	destroy_ip_block (tmp);
-	ASSERT (iblock == NULL, "convert ip4 routes",
-		"should only get one route");
+	g_assert (iblock == NULL);
 
 	iblock = convert_ip4_routes_block ("eth9");
 	tmp = iblock;
 
-	ASSERT (iblock != NULL, "convert ip4 routes", "should get one route");
+	g_assert (iblock != NULL);
 	check_ip_block (iblock, "10.0.0.0", 8, "192.168.0.1");
 	iblock = iblock->next;
 	destroy_ip_block (tmp);
-	ASSERT (iblock == NULL, "convert ip4 routes",
-		"should only get one route");
+	g_assert (iblock == NULL);
 }
 
 static void
@@ -258,19 +226,15 @@ test_strip_string (void)
 	result = strip_string (result, '(');
 	result = strip_string (result, ')');
 	result = strip_string (result, '"');
-	ASSERT (strcmp (result, "default via     202.117.16.1") ==
-		0, "strip_string",
-		"string isn't stripped, result is: %s", result);
+	g_assert_cmpstr (result, ==, "default via     202.117.16.1");
 	g_free (result_b);
 }
 
 static void
 test_is_unmanaged (void)
 {
-	ASSERT (is_managed ("eth0"), "test_is_unmanaged",
-		"eth0 should be managed");
-	ASSERT (!is_managed ("eth4"), "test_is_unmanaged",
-		"eth4 should be unmanaged");
+	g_assert (is_managed ("eth0"));
+	g_assert (!is_managed ("eth4"));
 }
 
 static void
@@ -285,33 +249,23 @@ test_new_connection (void)
 	                       "*Can't handle IPv6 address*202.117.16.1211*");
 	connection = ifnet_update_connection_from_config_block ("eth2", NULL, &error);
 	g_test_assert_expected_messages ();
-	ASSERT (connection != NULL, "new connection",
-		"new connection failed: %s",
-		error ? error->message : "None");
+	g_assert (connection != NULL);
 	g_object_unref (connection);
 
 	connection = ifnet_update_connection_from_config_block ("qiaomuf", NULL, &error);
-	ASSERT (connection != NULL, "new connection",
-		"new connection failed: %s",
-		error ? error->message : "NONE");
+	g_assert (connection != NULL);
 	g_object_unref (connection);
 
 	connection = ifnet_update_connection_from_config_block ("myxjtu2", NULL, &error);
-	ASSERT (connection != NULL, "new connection",
-		"new connection failed: %s",
-		error ? error->message : "NONE");
+	g_assert (connection != NULL);
 	g_object_unref (connection);
 
 	connection = ifnet_update_connection_from_config_block ("eth9", NULL, &error);
-	ASSERT (connection != NULL, "new connection",
-		"new connection(eth9) failed: %s",
-		error ? error->message : "NONE");
+	g_assert (connection != NULL);
 	g_object_unref (connection);
 
 	connection = ifnet_update_connection_from_config_block ("eth10", NULL, &error);
-	ASSERT (connection != NULL, "new connection",
-		"new connection(eth10) failed: %s",
-		error ? error->message : "NONE");
+	g_assert (connection != NULL);
 	g_object_unref (connection);
 }
 
@@ -329,17 +283,16 @@ kill_backup (char **path)
 #define SUP_GEN_NAME "wpa_supplicant.conf.generate"
 
 static void
-test_update_connection (const char *basepath)
+test_update_connection (void)
 {
 	GError *error = NULL;
 	NMConnection *connection;
 	gboolean success;
 	char *backup = NULL;
+	char *basepath = TEST_IFNET_DIR;
 
 	connection = ifnet_update_connection_from_config_block ("eth0", basepath, &error);
-	ASSERT (connection != NULL, "get connection",
-		"get connection failed: %s",
-		error ? error->message : "None");
+	g_assert (connection != NULL);
 
 	success = ifnet_update_parsers_by_connection (connection, "eth0",
 	                                              NET_GEN_NAME,
@@ -348,12 +301,11 @@ test_update_connection (const char *basepath)
 	                                              &backup,
 	                                              &error);
 	kill_backup (&backup);
-	ASSERT (success, "update connection", "update connection failed %s", "eth0");
+	g_assert (success);
 	g_object_unref (connection);
 
 	connection = ifnet_update_connection_from_config_block ("0xab3ace", basepath, &error);
-	ASSERT (connection != NULL, "get connection", "get connection failed: %s",
-		error ? error->message : "None");
+	g_assert (connection != NULL);
 
 	success = ifnet_update_parsers_by_connection (connection, "0xab3ace",
 	                                              NET_GEN_NAME,
@@ -362,7 +314,7 @@ test_update_connection (const char *basepath)
 	                                              &backup,
 	                                              &error);
 	kill_backup (&backup);
-	ASSERT (success, "update connection", "update connection failed %s", "0xab3ace");
+	g_assert (success);
 	g_object_unref (connection);
 
 	unlink (NET_GEN_NAME);
@@ -370,14 +322,14 @@ test_update_connection (const char *basepath)
 }
 
 static void
-test_add_connection (const char *basepath)
+test_add_connection (void)
 {
 	NMConnection *connection;
 	char *backup = NULL;
+	const char *basepath = TEST_IFNET_DIR;
 
 	connection = ifnet_update_connection_from_config_block ("eth0", basepath, NULL);
-	ASSERT (ifnet_add_new_connection (connection, NET_GEN_NAME, SUP_GEN_NAME, NULL, &backup, NULL),
-	        "add connection", "add connection failed: %s", "eth0");
+	g_assert (ifnet_add_new_connection (connection, NET_GEN_NAME, SUP_GEN_NAME, NULL, &backup, NULL));
 	kill_backup (&backup);
 	g_object_unref (connection);
 
@@ -387,8 +339,7 @@ test_add_connection (const char *basepath)
 	                       "*Can't handle ipv4 address: 202.117.16.255, missing netmask or prefix*");
 	connection = ifnet_update_connection_from_config_block ("myxjtu2", basepath, NULL);
 	g_test_assert_expected_messages ();
-	ASSERT (ifnet_add_new_connection (connection, NET_GEN_NAME, SUP_GEN_NAME, NULL, &backup, NULL),
-	        "add connection", "add connection failed: %s", "myxjtu2");
+	g_assert (ifnet_add_new_connection (connection, NET_GEN_NAME, SUP_GEN_NAME, NULL, &backup, NULL));
 	kill_backup (&backup);
 	g_object_unref (connection);
 
@@ -404,20 +355,14 @@ test_delete_connection (void)
 	char *backup = NULL;
 
 	connection = ifnet_update_connection_from_config_block ("eth7", NULL, &error);
-	ASSERT (connection != NULL, "get connection",
-	        "get connection failed: %s",
-	        error ? error->message : "None");
-	ASSERT (ifnet_delete_connection_in_parsers ("eth7", NET_GEN_NAME, SUP_GEN_NAME, &backup),
-	        "delete connection", "delete connection failed: %s", "eth7");
+	g_assert (connection != NULL);
+	g_assert (ifnet_delete_connection_in_parsers ("eth7", NET_GEN_NAME, SUP_GEN_NAME, &backup));
 	kill_backup (&backup);
 	g_object_unref (connection);
 
 	connection = ifnet_update_connection_from_config_block ("qiaomuf", NULL, &error);
-	ASSERT (connection != NULL, "get connection",
-	        "get connection failed: %s",
-	        error ? error->message : "None");
-	ASSERT (ifnet_delete_connection_in_parsers ("qiaomuf", NET_GEN_NAME, SUP_GEN_NAME, &backup),
-	        "delete connection", "delete connection failed: %s", "qiaomuf");
+	g_assert (connection != NULL);
+	g_assert (ifnet_delete_connection_in_parsers ("qiaomuf", NET_GEN_NAME, SUP_GEN_NAME, &backup));
 	kill_backup (&backup);
 	g_object_unref (connection);
 
@@ -435,54 +380,48 @@ test_missing_config (void)
 	                       "*Unknown config for eth8*");
 	connection = ifnet_update_connection_from_config_block ("eth8", NULL, &error);
 	g_test_assert_expected_messages ();
-	ASSERT (connection == NULL && error != NULL, "get connection",
-	        "get connection should fail with 'Unknown config for eth8'");
+	g_assert (connection == NULL && error != NULL);
 }
 
 NMTST_DEFINE ();
 
+#define TPATH "/settings/plugins/ifnet/"
+
 int
 main (int argc, char **argv)
 {
-	char *f;
+	int ret;
 
 	nm_linux_platform_setup ();
 
 	nmtst_init_assert_logging (&argc, &argv, "WARN", "DEFAULT");
 
-	f = g_build_filename (argv[1], "net", NULL);
-	ifnet_init (f);
-	g_free (f);
+	ifnet_init (TEST_IFNET_DIR "/net");
+	wpa_parser_init (TEST_IFNET_DIR "/wpa_supplicant.conf");
 
-	f = g_build_filename (argv[1], "wpa_supplicant.conf", NULL);
-	wpa_parser_init (f);
-	g_free (f);
+	g_test_add_func (TPATH "strip-string", test_strip_string);
+	g_test_add_func (TPATH "is-static", test_is_static);
+	g_test_add_func (TPATH "has-ip6-address", test_has_ip6_address);
+	g_test_add_func (TPATH "has-default-route", test_has_default_route);
+	g_test_add_func (TPATH "get-data", test_getdata);
+	g_test_add_func (TPATH "read-hostname", test_read_hostname);
+	g_test_add_func (TPATH "write-hostname", test_write_hostname);
+	g_test_add_func (TPATH "is-ip4-address", test_is_ip4_address);
+	g_test_add_func (TPATH "is-ip6-address", test_is_ip6_address);
+	g_test_add_func (TPATH "convert-ip4-config", test_convert_ipv4_config_block);
+	g_test_add_func (TPATH "convert-ip4-routes", test_convert_ipv4_routes_block);
+	g_test_add_func (TPATH "is-unmanaged", test_is_unmanaged);
+	g_test_add_func (TPATH "wpa-parser", test_wpa_parser);
+	g_test_add_func (TPATH "new-connection", test_new_connection);
+	g_test_add_func (TPATH "update-connection", test_update_connection);
+	g_test_add_func (TPATH "add-connection", test_add_connection);
+	g_test_add_func (TPATH "delete-connection", test_delete_connection);
+	g_test_add_func (TPATH "missing-config", test_missing_config);
 
-	test_strip_string ();
-	test_is_static ();
-	test_has_ip6_address ();
-	test_has_default_route ();
-	test_getdata ();
-	test_read_hostname (argv[1]);
-	test_write_hostname (argv[2]);
-	test_is_ip4_address ();
-	test_is_ip6_address ();
-	test_convert_ipv4_config_block ();
-	test_convert_ipv4_routes_block ();
-	test_is_unmanaged ();
-	test_wpa_parser ();
-	test_convert_ipv4_routes_block ();
-	test_new_connection ();
-	test_update_connection (argv[1]);
-	test_add_connection (argv[1]);
-	test_delete_connection ();
-	test_missing_config ();
+	ret = g_test_run ();
 
 	ifnet_destroy ();
 	wpa_parser_destroy ();
 
-	f = g_path_get_basename (argv[0]);
-	fprintf (stdout, "%s: SUCCESS\n", f);
-	g_free (f);
-	return 0;
+	return ret;
 }
