@@ -181,4 +181,14 @@ nm_clear_g_source (guint *id)
 
 /*****************************************************************************/
 
+/* check if @flags has exactly one flag (@check) set. You should call this
+ * only with @check being a compile time constant and a power of two. */
+#define NM_FLAGS_HAS(flags, check)  \
+    ( (G_STATIC_ASSERT_EXPR ( ((check) != 0) && ((check) & ((check)-1)) == 0 )), (NM_FLAGS_ANY ((flags), (check))) )
+
+#define NM_FLAGS_ANY(flags, check)  ( ( ((flags) & (check)) != 0       ) ? TRUE : FALSE )
+#define NM_FLAGS_ALL(flags, check)  ( ( ((flags) & (check)) == (check) ) ? TRUE : FALSE )
+
+/*****************************************************************************/
+
 #endif
