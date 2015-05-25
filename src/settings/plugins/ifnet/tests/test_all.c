@@ -111,7 +111,7 @@ test_is_static (void)
 		"a dhcp interface is recognized as static");
 	ASSERT (is_static_ip4 ("eth0") == TRUE, "is static",
 		"a static interface is recognized as dhcp");
-	ASSERT (!is_static_ip6 ("eth0") == TRUE, "is static",
+	ASSERT (is_static_ip6 ("eth0") == FALSE, "is static",
 		"a dhcp interface is recognized as static");
 }
 
