@@ -36,7 +36,19 @@ if [ $RESULT -eq 0 -a "$(wc -c "$LOGFILE" | awk '{print$1}')" -ne 0 ]; then
 fi
 
 if [ $RESULT -ne 0 -a $RESULT -ne 77 ]; then
-	echo "Don't forget to check the valgrind log at '`realpath $LOGFILE`'." >&2
+	echo "valgrind failed! Check the log at '`realpath $LOGFILE`'." >&2
+	UNRESOLVED=$(awk -F: '/obj:\// {print $NF}' "$LOGFILE" | sort | uniq)
+	if [ -n "$UNRESOLVED" ]; then
+		echo Some addresses could not be resolved into symbols. >&2
+		echo The errors might get suppressed when you install the debuging symbols. >&2
+		if [ -x /usr/bin/dnf ]; then
+			echo Hint: dnf debuginfo-install $UNRESOLVED >&2
+		elif [ -x /usr/bin/debuginfo-install ]; then
+			echo Hint: debuginfo-install $UNRESOLVED >&2
+		else
+			echo Files without debugging symbols: $UNRESOLVED >&2
+		fi
+	fi
 fi
 
 exit $RESULT
