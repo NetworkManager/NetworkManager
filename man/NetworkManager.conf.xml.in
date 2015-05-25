@@ -622,12 +622,9 @@ ipv6.ip6-privacy=1
 	<term><varname>ifcfg-suse</varname></term>
 	<listitem>
 	  <para>
-	    This plugin is only provided for simple backward
-	    compatibility with SUSE and OpenSUSE configuration. Most
-	    setups should be using the <literal>keyfile</literal>
-	    plugin instead. The <literal>ifcfg-suse</literal> plugin
-	    supports reading Ethernet and Wi-Fi connections, but does
-	    not support saving any connection types.
+	    This plugin is deprecated and its selection has no effect.
+	    The <literal>keyfile</literal> plugin should be used
+	    instead.
 	  </para>
 	</listitem>
       </varlistentry>

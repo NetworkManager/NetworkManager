@@ -40,7 +40,6 @@ DISTCHECK_CONFIGURE_FLAGS = \
 	--with-udev-dir=$$dc_install_base/lib/udev \
 	--with-wext=no \
 	--enable-ifcfg-rh \
-	--enable-ifcfg-suse \
 	--enable-ifupdown \
 	--enable-ifnet
 

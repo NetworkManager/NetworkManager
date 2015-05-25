@@ -780,6 +780,11 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 			continue;
 		}
 
+		if (!strcmp (pname, "ifcfg-suse")) {
+			LOG (LOGL_WARN, "skipping deprecated plugin ifcfg-suse");
+			continue;
+		}
+
 		obj = find_plugin (list, pname);
 		if (obj)
 			continue;
