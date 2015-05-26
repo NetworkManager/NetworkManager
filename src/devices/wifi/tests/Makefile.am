@@ -24,7 +24,5 @@ test_wifi_ap_utils_SOURCES = \
 test_wifi_ap_utils_LDADD = $(top_builddir)/src/libNetworkManager.la
 
 @VALGRIND_RULES@
-AM_TESTS_FD_REDIRECT = --tap
-LOG_DRIVER = $(top_srcdir)/build-aux/tap-driver.sh
 TESTS = test-wifi-ap-utils
 
