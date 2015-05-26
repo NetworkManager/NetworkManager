@@ -117,6 +117,8 @@ EXTRA_DIST = test-secret-agent.py
 ###########################################
 
 @VALGRIND_RULES@
+AM_TESTS_FD_REDIRECT = --tap
+LOG_DRIVER = $(top_srcdir)/build-aux/tap-driver.sh
 TESTS = \
 	test-ip4-config \
 	test-ip6-config \

@@ -93,7 +93,8 @@ _nm_dbus_new_connection (GCancellable *cancellable, GError **error)
 	GDBusConnection *connection = NULL;
 
 	/* If running as root try the private bus first */
-	if (0 == geteuid ()) {
+	if (0 == geteuid () && !g_test_initialized ()) {
+
 		GError *local = NULL;
 		GDBusConnection *p;
 
@@ -203,7 +204,7 @@ _nm_dbus_new_connection_async (GCancellable *cancellable,
 	simple = g_simple_async_result_new (NULL, callback, user_data, _nm_dbus_new_connection_async);
 
 	/* If running as root try the private bus first */
-	if (0 == geteuid ()) {
+	if (0 == geteuid () && !g_test_initialized ()) {
 		GDBusConnection *p;
 
 		if (cancellable) {
