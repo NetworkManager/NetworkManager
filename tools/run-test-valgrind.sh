@@ -12,7 +12,7 @@ fi
 TEST="$1"
 
 if [ "$NMTST_NO_VALGRIND" != "" ]; then
-	"$TEST"
+	"$@"
 	exit $?
 fi
 
