@@ -22,8 +22,6 @@ if WITH_VALGRIND
 else
 LOG_COMPILER = $(srcdir)/libnm-test-launch.sh
 endif
-AM_TESTS_FD_REDIRECT = --tap
-LOG_DRIVER = $(top_srcdir)/build-aux/tap-driver.sh
 TESTS = test-nm-client test-remote-settings-client test-secret-agent
 
 test_nm_client_SOURCES = \

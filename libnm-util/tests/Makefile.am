@@ -11,8 +11,6 @@ AM_CPPFLAGS = \
 	-DTEST_CERT_DIR=\"$(top_srcdir)/libnm-core/tests/certs/\"
 
 @VALGRIND_RULES@
-AM_TESTS_FD_REDIRECT = --tap
-LOG_DRIVER = $(top_srcdir)/build-aux/tap-driver.sh
 TESTS = \
 	test-settings-defaults \
 	test-crypto \

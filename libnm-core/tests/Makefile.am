@@ -26,8 +26,6 @@ LDADD = \
 	$(GLIB_LIBS)
 
 @VALGRIND_RULES@
-AM_TESTS_FD_REDIRECT = --tap
-LOG_DRIVER = $(top_srcdir)/build-aux/tap-driver.sh
 TESTS = $(noinst_PROGRAMS)
 
 endif

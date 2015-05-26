@@ -110,8 +110,6 @@ test_cleanup_linux_CPPFLAGS = \
 test_cleanup_linux_LDADD = $(PLATFORM_LDADD)
 
 @VALGRIND_RULES@
-AM_TESTS_FD_REDIRECT = --tap
-LOG_DRIVER = $(top_srcdir)/build-aux/tap-driver.sh
 TESTS = \
 	test-address-fake \
 	test-address-linux \

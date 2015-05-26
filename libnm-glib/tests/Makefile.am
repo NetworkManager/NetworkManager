@@ -17,8 +17,6 @@ if WITH_VALGRIND
 else
 LOG_COMPILER = $(srcdir)/libnm-glib-test-launch.sh
 endif
-AM_TESTS_FD_REDIRECT = --tap
-LOG_DRIVER = $(top_srcdir)/build-aux/tap-driver.sh
 TESTS = test-nm-client test-remote-settings-client
 
 ####### NMClient and non-settings tests #######

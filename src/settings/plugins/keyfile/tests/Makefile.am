@@ -35,8 +35,6 @@ test_keyfile_LDADD = \
 	$(CODE_COVERAGE_LDFLAGS)
 
 @VALGRIND_RULES@
-AM_TESTS_FD_REDIRECT = --tap
-LOG_DRIVER = $(top_srcdir)/build-aux/tap-driver.sh
 TESTS = test-keyfile
 
 endif
