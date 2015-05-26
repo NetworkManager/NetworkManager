@@ -782,8 +782,9 @@ nm_client_deactivate_connection (NMClient *client, NMActiveConnection *active)
 	                        DBUS_TYPE_G_OBJECT_PATH, path,
 	                        G_TYPE_INVALID,
 	                        G_TYPE_INVALID)) {
-		g_warning ("Could not deactivate connection '%s': %s", path, error->message);
-		g_error_free (error);
+		g_warning ("Could not deactivate connection '%s': %s", 
+		           path, error ? error->message : "(unknown)");
+		g_clear_error (&error);
 	}
 }
 
@@ -1094,8 +1095,9 @@ nm_client_networking_set_enabled (NMClient *client, gboolean enable)
 	                        G_TYPE_BOOLEAN, enable,
 	                        G_TYPE_INVALID,
 	                        G_TYPE_INVALID)) {
-		g_warning ("Error enabling/disabling networking: %s", err->message);
-		g_error_free (err);
+		g_warning ("Error enabling/disabling networking: %s",
+		           err ? err->message : "(unknown)");
+		g_clear_error (&err);
 	}
 }
 
