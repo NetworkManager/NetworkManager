@@ -668,10 +668,10 @@ fi
 if test "$with_dhcpcd" = "yes"; then
 	AC_PATH_PROGS(with_dhcpcd, dhcpcd, no, /sbin:/usr/sbin:/usr/local/sbin)
 	if test "$with_dhcpcd" != "no"; then
-		if ! $with_dhcpcd --version 2>&1 | grep -q "^dhcpcd [456789]\."; then
+		if ! $with_dhcpcd --version 2>&1 | grep -q "^dhcpcd [[456789]]\."; then
 			AC_MSG_WARN([Cannot use dhcpcd, version 4.x or higher is required])
 			with_dhcpcd=no
-		elif $with_dhcpcd --version 2>&1 | grep -q "^dhcpcd [6789]\."; then
+		elif $with_dhcpcd --version 2>&1 | grep -q "^dhcpcd [[6789]]\."; then
 			AC_DEFINE(DHCPCD_SUPPORTS_IPV6, 1, [Define if dhcpcd supports IPv6 (6.x+)])
 		fi
 	fi
