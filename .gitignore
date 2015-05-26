@@ -243,7 +243,7 @@ test-*.trs
 /src/settings/plugins/ibft/tests/test-ibft
 /src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh
 /src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh-utils
-/src/settings/plugins/ifnet/tests/check_ifnet
+/src/settings/plugins/ifnet/tests/test-ifnet
 /src/settings/plugins/ifupdown/tests/test-ifupdown
 /src/settings/plugins/keyfile/tests/test-keyfile
 /src/supplicant-manager/tests/test-supplicant-config

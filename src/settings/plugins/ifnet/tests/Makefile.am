@@ -21,21 +21,21 @@ AM_CPPFLAGS= \
 	-DTEST_WPA_SUPPLICANT_CONF='"$(srcdir)/wpa_supplicant.conf"' \
 	-DSYSCONFDIR=\"nonexistent\"
 
-noinst_PROGRAMS = check_ifnet
-check_ifnet_SOURCES = \
-	test_all.c \
+noinst_PROGRAMS = test-ifnet
+test_ifnet_SOURCES = \
+	test-ifnet.c \
 	../connection_parser.c \
 	../net_parser.c \
 	../net_utils.c \
 	../wpa_parser.c
 
-check_ifnet_LDFLAGS = \
+test_ifnet_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS)
 
-check_ifnet_LDADD = $(top_builddir)/src/libNetworkManager.la
+test_ifnet_LDADD = $(top_builddir)/src/libNetworkManager.la
 
 #@VALGRIND_RULES@
-TESTS = check_ifnet
+TESTS = test-ifnet
 
 endif
 
