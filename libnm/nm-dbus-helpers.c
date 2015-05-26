@@ -22,6 +22,8 @@
 
 #include <string.h>
 #include <gio/gio.h>
+
+#include "nm-glib-compat.h"
 #include "nm-dbus-helpers.h"
 #include "nm-dbus-interface.h"
 
