@@ -1519,6 +1519,29 @@ link_changed (NMDevice *self, NMPlatformLink *info)
 		nm_device_set_carrier (self, info->connected);
 }
 
+static void
+config_changed_update_ignore_carrier (NMConfig *config,
+                                      NMConfigData *config_data,
+                                      NMConfigChangeFlags changes,
+                                      NMConfigData *old_data,
+                                      NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (   priv->state <= NM_DEVICE_STATE_DISCONNECTED
+	    || priv->state > NM_DEVICE_STATE_ACTIVATED)
+		priv->ignore_carrier = nm_config_data_get_ignore_carrier (config_data, self);
+}
+
+static void
+check_carrier (NMDevice *self)
+{
+	int ifindex = nm_device_get_ip_ifindex (self);
+
+	if (!nm_device_has_capability (self, NM_DEVICE_CAP_NONSTANDARD_CARRIER))
+		nm_device_set_carrier (self, nm_platform_link_is_connected (NM_PLATFORM_GET, ifindex));
+}
+
 /**
  * nm_device_notify_component_added():
  * @self: the #NMDevice
@@ -6664,15 +6687,6 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 	return TRUE;
 }
 
-static void
-check_carrier (NMDevice *self)
-{
-	int ifindex = nm_device_get_ip_ifindex (self);
-
-	if (!nm_device_has_capability (self, NM_DEVICE_CAP_NONSTANDARD_CARRIER))
-		nm_device_set_carrier (self, nm_platform_link_is_connected (NM_PLATFORM_GET, ifindex));
-}
-
 static gboolean
 bring_up (NMDevice *self, gboolean *no_firmware)
 {
@@ -8420,20 +8434,6 @@ spec_match_list (NMDevice *self, const GSList *specs)
 		matched = MAX (matched, m);
 	}
 	return matched;
-}
-
-static void
-config_changed_update_ignore_carrier (NMConfig *config,
-                                      NMConfigData *config_data,
-                                      NMConfigChangeFlags changes,
-                                      NMConfigData *old_data,
-                                      NMDevice *self)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	if (   priv->state <= NM_DEVICE_STATE_DISCONNECTED
-	    || priv->state > NM_DEVICE_STATE_ACTIVATED)
-		priv->ignore_carrier = nm_config_data_get_ignore_carrier (config_data, self);
 }
 
 /***********************************************************/
