@@ -3134,7 +3134,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 		 * tweak the effective metric).
 		 */
 		if (   !assumed
-		    && nm_default_route_manager_ip4_connection_has_default_route (nm_default_route_manager_get (), connection)) {
+		    && nm_default_route_manager_ip4_connection_has_default_route (nm_default_route_manager_get (), connection, NULL)) {
 			guint32 gateway = 0;
 
 			priv->default_route.v4_is_assumed = FALSE;
@@ -3697,7 +3697,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 		 * tweak the effective metric).
 		 */
 		if (   !assumed
-		    && nm_default_route_manager_ip6_connection_has_default_route (nm_default_route_manager_get (), connection)) {
+		    && nm_default_route_manager_ip6_connection_has_default_route (nm_default_route_manager_get (), connection, NULL)) {
 			const struct in6_addr *gateway = NULL;
 
 			priv->default_route.v6_is_assumed = FALSE;
