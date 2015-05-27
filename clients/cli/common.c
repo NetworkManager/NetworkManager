@@ -708,6 +708,12 @@ nmc_device_reason_to_string (NMDeviceStateReason reason)
 	case NM_DEVICE_STATE_REASON_NEW_ACTIVATION:
 		return _("New connection activation was enqueued");
 
+	case NM_DEVICE_STATE_REASON_PARENT_CHANGED:
+		return _("The device's parent changed");
+
+	case NM_DEVICE_STATE_REASON_PARENT_MANAGED_CHANGED:
+		return _("The device parent's management changed");
+
 	default:
 		/* TRANSLATORS: Unknown reason for a device state change (NMDeviceStateReason) */
 		return _("Unknown");
