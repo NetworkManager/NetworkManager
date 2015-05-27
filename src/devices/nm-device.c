@@ -3127,8 +3127,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 	 * configured. */
 	priv->default_route.v4_is_assumed = FALSE;
 
-	if (   !connection
-	    || !nm_default_route_manager_ip4_connection_has_default_route (nm_default_route_manager_get (), connection))
+	if (!nm_default_route_manager_ip4_connection_has_default_route (nm_default_route_manager_get (), connection, NULL))
 		goto END_ADD_DEFAULT_ROUTE;
 
 	if (!nm_ip4_config_get_num_addresses (composite)) {
@@ -3709,8 +3708,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 	 * configured. */
 	priv->default_route.v6_is_assumed = FALSE;
 
-	if (   !connection
-	    || !nm_default_route_manager_ip6_connection_has_default_route (nm_default_route_manager_get (), connection))
+	if (!nm_default_route_manager_ip6_connection_has_default_route (nm_default_route_manager_get (), connection, NULL))
 		goto END_ADD_DEFAULT_ROUTE;
 
 	if (!nm_ip6_config_get_num_addresses (composite)) {
