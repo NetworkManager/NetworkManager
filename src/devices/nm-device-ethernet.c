@@ -159,6 +159,7 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 	GUdevDevice *parent = NULL;
 	const char *parent_path, *item, *driver;
 	const char *subsystems[] = { "net", NULL };
+	const char *iface;
 	GDir *dir;
 	GError *error = NULL;
 
@@ -168,10 +169,11 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 		return;
 	}
 
-	dev = g_udev_client_query_by_subsystem_and_name (client, "net",
-	                                                 nm_device_get_iface (NM_DEVICE (self)));
+	iface = nm_device_get_iface (NM_DEVICE (self));
+	dev = iface ? g_udev_client_query_by_subsystem_and_name (client, "net", iface) : NULL;
 	if (!dev) {
-		_LOGW (LOGD_DEVICE | LOGD_HW, "failed to find device with udev");
+		_LOGW (LOGD_DEVICE | LOGD_HW, "failed to find device '%s' with udev",
+		       iface ? iface : "(null)");
 		goto out;
 	}
 
