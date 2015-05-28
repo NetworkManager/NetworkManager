@@ -136,6 +136,13 @@ char **     _nm_utils_slist_to_strv (GSList *slist, gboolean deep_copy);
 GPtrArray * _nm_utils_strv_to_ptrarray (char **strv);
 char **     _nm_utils_ptrarray_to_strv (GPtrArray *ptrarray);
 
+gboolean _nm_utils_check_file (const char *filename,
+                               gint64 check_owner,
+                               NMUtilsCheckFilePredicate check_file,
+                               gpointer user_data,
+                               struct stat *out_st,
+                               GError **error);
+
 #define NM_UTILS_UUID_TYPE_LEGACY            0
 #define NM_UTILS_UUID_TYPE_VARIANT3          1
 

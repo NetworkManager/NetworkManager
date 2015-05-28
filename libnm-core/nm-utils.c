@@ -30,6 +30,7 @@
 #include <libintl.h>
 #include <gmodule.h>
 #include <glib/gi18n-lib.h>
+#include <sys/stat.h>
 
 #include "nm-glib.h"
 #include "nm-utils.h"
@@ -2405,6 +2406,76 @@ nm_utils_file_is_pkcs12 (const char *filename)
 	g_return_val_if_fail (filename != NULL, FALSE);
 
 	return crypto_is_pkcs12_file (filename, NULL);
+}
+
+/**********************************************************************************************/
+
+gboolean
+_nm_utils_check_file (const char *filename,
+                      gint64 check_owner,
+                      NMUtilsCheckFilePredicate check_file,
+                      gpointer user_data,
+                      struct stat *out_st,
+                      GError **error)
+{
+	struct stat st_backup;
+
+	if (!out_st)
+		out_st = &st_backup;
+
+	if (stat (filename, out_st) != 0) {
+		int errsv = errno;
+
+		g_set_error (error,
+		             NM_VPN_PLUGIN_ERROR,
+		             NM_VPN_PLUGIN_ERROR_FAILED,
+		             _("failed stat file %s: %s"), filename, strerror (errsv));
+		return FALSE;
+	}
+
+	/* ignore non-files. */
+	if (!S_ISREG (out_st->st_mode)) {
+		g_set_error (error,
+		             NM_VPN_PLUGIN_ERROR,
+		             NM_VPN_PLUGIN_ERROR_FAILED,
+		             _("not a file (%s)"), filename);
+		return FALSE;
+	}
+
+	/* with check_owner enabled, check that the file belongs to the
+	 * owner or root. */
+	if (   check_owner >= 0
+	    && (out_st->st_uid != 0 && (gint64) out_st->st_uid != check_owner)) {
+		g_set_error (error,
+		             NM_VPN_PLUGIN_ERROR,
+		             NM_VPN_PLUGIN_ERROR_FAILED,
+		             _("invalid file owner %d for %s"), out_st->st_uid, filename);
+		return FALSE;
+	}
+
+	/* with check_owner enabled, check that the file cannot be modified
+	 * by other users (except root). */
+	if (   check_owner >= 0
+	    && NM_FLAGS_ANY (out_st->st_mode, S_IWGRP | S_IWOTH | S_ISUID)) {
+		g_set_error (error,
+		             NM_VPN_PLUGIN_ERROR,
+		             NM_VPN_PLUGIN_ERROR_FAILED,
+		             _("file permissions for %s"), filename);
+		return FALSE;
+	}
+
+	if (    check_file
+	    && !check_file (filename, out_st, user_data, error)) {
+		if (error && !*error) {
+			g_set_error (error,
+			             NM_VPN_PLUGIN_ERROR,
+			             NM_VPN_PLUGIN_ERROR_FAILED,
+			             _("reject %s"), filename);
+		}
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 /**********************************************************************************************/
