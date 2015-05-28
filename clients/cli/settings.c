@@ -1627,12 +1627,12 @@ register_nmcli_value_transforms (void)
 
 /* Main hash table storing function pointer for manipulating properties */
 static GHashTable *nmc_properties = NULL;
-typedef	char *       (*NmcPropertyGetFunc)      (NMSetting *);
-typedef	gboolean     (*NmcPropertySetFunc)      (NMSetting *, const char *, const char *, GError **);
-typedef	gboolean     (*NmcPropertyRemoveFunc)   (NMSetting *, const char *, const char *, guint32, GError **);
-typedef	const char * (*NmcPropertyDescribeFunc) (NMSetting *, const char *);
-typedef	const char * (*NmcPropertyValuesFunc)   (NMSetting *, const char *);
-typedef	      char * (*NmcPropertyOut2InFunc)   (const char *);
+typedef	char *        (*NmcPropertyGetFunc)      (NMSetting *);
+typedef	gboolean      (*NmcPropertySetFunc)      (NMSetting *, const char *, const char *, GError **);
+typedef	gboolean      (*NmcPropertyRemoveFunc)   (NMSetting *, const char *, const char *, guint32, GError **);
+typedef	const char *  (*NmcPropertyDescribeFunc) (NMSetting *, const char *);
+typedef	const char ** (*NmcPropertyValuesFunc)   (NMSetting *, const char *);
+typedef	      char *  (*NmcPropertyOut2InFunc)   (const char *);
 
 typedef struct {
 	NmcPropertyGetFunc get_func;           /* func getting property values */
@@ -2177,13 +2177,10 @@ check_and_set_string (NMSetting *setting,
 	}
 
 #define DEFINE_ALLOWED_VAL_FUNC(def_func, valid_values) \
-	static const char * \
+	static const char ** \
 	def_func (NMSetting *setting, const char *prop) \
 	{ \
-		static char *values = NULL; \
-		if (G_UNLIKELY (values == NULL)) \
-			values = g_strjoinv (", ", (char **) valid_values); \
-		return values; \
+		return valid_values; \
 	}
 
 /* --- generic property setter functions --- */
@@ -2752,13 +2749,14 @@ nmc_property_connection_describe_secondaries (NMSetting *setting, const char *pr
 	}
 
 /* 'eap' */
+static const char *valid_eap[] = { "leap", "md5", "tls", "peap", "ttls", "sim", "fast", "pwd", NULL };
+
 DEFINE_SETTER_STR_LIST_MULTI (check_and_add_802_1X_eap,
                               NM_SETTING_802_1X,
                               nm_setting_802_1x_add_eap_method)
 static gboolean
 nmc_property_802_1X_set_eap (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
-	const char *valid_eap[] = { "leap", "md5", "tls", "peap", "ttls", "sim", "fast", "pwd", NULL };
 	return check_and_add_802_1X_eap (setting, prop, val, valid_eap, error);
 }
 
@@ -2779,6 +2777,8 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_802_1X_remove_eap,
                                nm_setting_802_1x_get_num_eap_methods,
                                nm_setting_802_1x_remove_eap_method,
                                _validate_and_remove_eap_method)
+
+DEFINE_ALLOWED_VAL_FUNC (nmc_property_802_1X_allowed_eap, valid_eap)
 
 /* 'ca-cert' */
 DEFINE_SETTER_CERT (nmc_property_802_1X_set_ca_cert, nm_setting_802_1x_set_ca_cert)
@@ -3080,17 +3080,10 @@ nmc_property_bond_describe_options (NMSetting *setting, const char *prop)
 	return desc;
 }
 
-static const char *
+static const char **
 nmc_property_bond_allowed_options (NMSetting *setting, const char *prop)
 {
-	const char **valid_options;
-	static char *allowed_vals = NULL;
-
-	if (G_UNLIKELY (allowed_vals == NULL)) {
-		valid_options = nm_setting_bond_get_valid_options (NM_SETTING_BOND (setting));
-		allowed_vals = g_strjoinv (", ", (char **) valid_options);
-	}
-	return allowed_vals;
+	return nm_setting_bond_get_valid_options (NM_SETTING_BOND (setting));
 }
 
 /* --- NM_SETTING_INFINIBAND_SETTING_NAME property setter functions --- */
@@ -4191,17 +4184,10 @@ DEFINE_REMOVER_OPTION (nmc_property_wired_remove_option_s390_options,
                        NM_SETTING_WIRED,
                        nm_setting_wired_remove_s390_option)
 
-static const char *
+static const char **
 nmc_property_wired_allowed_s390_options (NMSetting *setting, const char *prop)
 {
-	const char **valid_options;
-	static char *allowed_vals = NULL;
-
-	if (G_UNLIKELY (allowed_vals == NULL)) {
-		valid_options = nm_setting_wired_get_valid_s390_options (NM_SETTING_WIRED (setting));
-		allowed_vals = g_strjoinv (", ", (char **) valid_options);
-	}
-	return allowed_vals;
+	return nm_setting_wired_get_valid_s390_options (NM_SETTING_WIRED (setting));
 }
 
 static const char *
@@ -4884,7 +4870,7 @@ nmc_properties_init (void)
 	                    nmc_property_802_1X_set_eap,
 	                    nmc_property_802_1X_remove_eap,
 	                    NULL,
-	                    NULL,
+	                    nmc_property_802_1X_allowed_eap,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, IDENTITY),
 	                    nmc_property_802_1X_get_identity,
@@ -6647,7 +6633,7 @@ nmc_setting_get_valid_properties (NMSetting *setting)
 /*
  * Return allowed values for 'prop' as a string.
  */
-const char *
+const char **
 nmc_setting_get_property_allowed_values (NMSetting *setting, const char *prop)
 {
 

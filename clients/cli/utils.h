@@ -76,7 +76,7 @@ int nmc_string_to_arg_array (const char *line, const char *delim, gboolean unquo
                              char ***argv, int *argc);
 const char *nmc_string_is_valid (const char *input, const char **allowed, GError **error);
 GSList *nmc_util_strv_to_slist (char **strv);
-char * nmc_util_strv_for_display (const char **strv);
+char * nmc_util_strv_for_display (const char **strv, gboolean brackets);
 char **nmc_strsplit_set (const char *str, const char *delimiter, int max_tokens);
 int nmc_string_screen_width (const char *start, const char *end);
 void set_val_str  (NmcOutputField fields_array[], guint32 index, char *value);

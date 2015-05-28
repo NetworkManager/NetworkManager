@@ -234,6 +234,7 @@ typedef struct {
 	char *con_type;
 	NMConnection *connection;
 	NMSetting *setting;
+	const char *property;
 } TabCompletionInfo;
 static TabCompletionInfo nmc_tab_completion = {NULL, NULL, NULL, NULL};
 
@@ -2990,7 +2991,7 @@ check_valid_enumeration (char **str,
 	} else {
 		char *options;
 
-		options = nmc_util_strv_for_display (strings);
+		options = nmc_util_strv_for_display (strings, TRUE);
 		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 		             _("Error: '%s': '%s' is not a valid %s %s."),
 		             what, *str, what_desc, options);
@@ -5895,7 +5896,6 @@ uuid_display_hook (char **array, int len, int max_len)
 	int i, max = 0;
 	char *tmp;
 	const char *id;
-
 	for (i = 1; i <= len; i++) {
 		con = nmc_find_connection (nmc_tab_completion.nmc->connections, "uuid", array[i], NULL);
 		id = con ? nm_connection_get_id (con) : NULL;
@@ -6250,48 +6250,105 @@ should_complete_cmd (const char *line, int end, const char *cmd,
 	return ret;
 }
 
-static char *
-extract_property_name (const char *prompt, const char *line)
+/*
+ * extract_setting_and_property:
+ * prompt: (in) (allow-none): prompt string, or NULL
+ * line: (in) (allow-none): line, or NULL
+ * setting: (out) (transfer full) (array zero-terminated=1):
+ *   return location for setting name
+ * property: (out) (transfer full) (array zero-terminated=1):
+ *   return location for property name
+ *
+ * Extract setting and property names from prompt and/or line.
+ */
+static void
+extract_setting_and_property (const char *prompt, const char *line,
+                              char **setting, char **property)
 {
 	char *prop = NULL;
+	char *sett = NULL;
 
-	/* If prompt is set take the property name from it, else extract it from line */
-	if (!prompt) {
-		const char *p1;
-		size_t num;
-		p1 = strchr (line, '.');
-		if (p1) {
-			p1++;
-		} else {
-			size_t n1, n2, n3;
-			n1 = strspn  (line,    " \t");
-			n2 = strcspn (line+n1, " \t\0") + n1;
-			n3 = strspn  (line+n2, " \t")   + n2;
-			p1 = line + n3;
-		}
-		num = strcspn (p1, " \t\0");
-		prop = g_strndup (p1, num);
-	} else {
-		const char *p1, *dot;
-		size_t num;
+	if (prompt) {
+		/* prompt looks like this:
+		  "nmcli 802-1x>" or "nmcli 802-1x.pac-file>" */
+		const char *p1, *p2, *dot;
+		size_t num1, num2;
 		p1 = strchr (prompt, ' ');
-		/* prompt looks like this: "nmcli 802-1x>" or "nmcli 802-1x.pac-file>" */
 		if (p1) {
-			dot = strchr (p1 + 1, '.');
-			p1 = dot ? dot + 1 : p1;
-			num = strcspn  (p1, ">");
-			prop = g_strndup (p1, num);
+			dot = strchr (++p1, '.');
+			if (dot) {
+				p2 = dot + 1;
+				num1 = strcspn (p1, ".");
+				num2 = strcspn (p2, ">");
+				sett = num1 > 0 ? g_strndup (p1, num1) : NULL;
+				prop = num2 > 0 ? g_strndup (p2, num2) : NULL;
+			} else {
+				num1 = strcspn (p1, ">");
+				sett = num1 > 0 ? g_strndup (p1, num1) : NULL;
+			}
 		}
 	}
 
-	return prop;
+	if (line) {
+		/* line looks like this:
+		  " set 802-1x.pac-file ..." or " set pac-file ..." */
+		const char *p1, *p2, *dot;
+		size_t n1, n2, n3, n4;
+		size_t num1, num2, len;
+		n1 = strspn  (line,    " \t");         /* white-space */
+		n2 = strcspn (line+n1, " \t\0") + n1;  /* command */
+		n3 = strspn  (line+n2, " \t")   + n2;  /* white-space */
+		n4 = strcspn (line+n3, " \t\0") + n3;  /* setting/property */
+		p1 = line + n3;
+		len = n4 - n3;
+
+		dot = strchr (p1, '.');
+		if (dot && dot < p1 + len) {
+			p2 = dot + 1;
+			num1 = strcspn (p1, ".");
+			num2 = len > num1 + 1 ? len - num1 - 1 : 0;
+			sett = num1 > 0 ? g_strndup (p1, num1) : sett;
+			prop = num2 > 0 ? g_strndup (p2, num2) : prop;
+		} else {
+			if (!prop)
+				prop = len > 0 ? g_strndup (p1, len) : NULL;
+		}
+	}
+
+	if (setting)
+		*setting = sett;
+	else
+		g_free (sett);
+	if (property)
+		*property = prop;
+	else
+		g_free (prop);
+}
+
+static gboolean
+_get_and_check_property (const char *prompt,
+                         const char *line,
+                         const char **array,
+                         const char **array_multi,
+                         gboolean *multi)
+{
+	char *prop;
+	gboolean found = FALSE;
+
+	extract_setting_and_property (prompt, line, NULL, &prop);
+	if (prop) {
+		if (array)
+			found = !!nmc_string_is_valid (prop, array, NULL);
+		if (array_multi && multi)
+			*multi = !!nmc_string_is_valid (prop, array_multi, NULL);
+		g_free (prop);
+	}
+	return found;
 }
 
 static gboolean
 should_complete_files (const char *prompt, const char *line)
 {
-	char *prop;
-	gboolean found = FALSE;
 	const char *file_properties[] = {
 		/* '802-1x' properties */
 		"ca-cert",
@@ -6307,32 +6364,86 @@ should_complete_files (const char *prompt, const char *line)
 		"config",
 		NULL
 	};
-
-	prop = extract_property_name (prompt, line);
-	if (prop) {
-		found = !!nmc_string_is_valid (prop, file_properties, NULL);
-		g_free (prop);
-	}
-	return found;
+	return _get_and_check_property (prompt, line, file_properties, NULL, NULL);
 }
 
 static gboolean
 should_complete_vpn_uuids (const char *prompt, const char *line)
 {
-	char *prop;
-	gboolean found = FALSE;
 	const char *uuid_properties[] = {
 		/* 'connection' properties */
 		"secondaries",
 		NULL
 	};
+	return _get_and_check_property (prompt, line, uuid_properties, NULL, NULL);
+}
 
-	prop = extract_property_name (prompt, line);
-	if (prop) {
-		found = !!nmc_string_is_valid (prop, uuid_properties, NULL);
-		g_free (prop);
-	}
-	return found;
+static char *is_property_valid (NMSetting *setting, const char *property, GError **error);
+static const char **
+get_allowed_property_values (void)
+{
+	const NameItem *valid_settings_arr;
+	const char *setting_name;
+	NMSetting *setting = NULL;
+	char *property = NULL;
+	char *sett = NULL, *prop = NULL;
+	const char **avals = NULL;
+
+	extract_setting_and_property (rl_prompt, rl_line_buffer, &sett, &prop);
+	if (sett) {
+		valid_settings_arr = get_valid_settings_array (nmc_tab_completion.con_type);
+		setting_name = check_valid_name (sett, valid_settings_arr, NULL);
+		setting = nmc_setting_new_for_name (setting_name);
+	} else
+		setting = nmc_tab_completion.setting ? g_object_ref (nmc_tab_completion.setting) : NULL;
+
+	if (setting && prop)
+		property = is_property_valid (setting, prop, NULL);
+	else
+		property = g_strdup (nmc_tab_completion.property);
+
+	if (setting && property)
+		avals = nmc_setting_get_property_allowed_values (setting, property);
+
+	g_free (sett);
+	g_free (prop);
+	if (setting)
+		g_object_unref (setting);
+	g_free (property);
+	return avals;
+}
+
+static gboolean
+should_complete_property_values (const char *prompt, const char *line, gboolean *multi)
+{
+	/* properties allowing multiple values */
+	const char *multi_props[] = {
+		/* '802-1x' properties */
+		NM_SETTING_802_1X_EAP,
+		/* '802-11-wireless-security' properties */
+		NM_SETTING_WIRELESS_SECURITY_PROTO,
+		NM_SETTING_WIRELESS_SECURITY_PAIRWISE,
+		NM_SETTING_WIRELESS_SECURITY_GROUP,
+		/* 'bond' properties */
+		NM_SETTING_BOND_OPTIONS,
+		/* 'ethernet' properties */
+		NM_SETTING_WIRED_S390_OPTIONS,
+		NULL
+	};
+	_get_and_check_property (prompt, line, NULL, multi_props, multi);
+	return get_allowed_property_values () != NULL;
+}
+
+static char *
+gen_property_values (const char *text, int state)
+{
+	char *ret = NULL;
+	const char **avals;
+
+	avals = get_allowed_property_values ();
+	if (avals)
+		ret = nmc_rl_gen_func_basic (text, state, avals);
+	return ret;
 }
 
 /* from readline */
@@ -6387,6 +6498,7 @@ nmcli_editor_tab_completion (const char *text, int start, int end)
 		if (!strchr (prompt_tmp, '.')) {
 			int level = g_str_has_prefix (prompt_tmp, "nmcli>") ? 0 : 1;
 			const char *dot = strchr (line, '.');
+			gboolean multi;
 
 			/* Main menu  - level 0,1 */
 			if (start == n1)
@@ -6407,9 +6519,12 @@ nmcli_editor_tab_completion (const char *text, int start, int end)
 					} else if (num >= 3) {
 						if (num == 3 && should_complete_files (NULL, line))
 							rl_attempted_completion_over = 0;
-						if (should_complete_vpn_uuids (NULL, line)) {
+						else if (should_complete_vpn_uuids (NULL, line)) {
 							rl_completion_display_matches_hook = uuid_display_hook;
 							generator_func = gen_vpn_uuids;
+						} else if (   should_complete_property_values (NULL, line, &multi)
+							   && (num == 3 || multi)) {
+							generator_func = gen_property_values;
 						}
 					}
 				} else if (  (   should_complete_cmd (line, end, "remove", &num, NULL)
@@ -6444,6 +6559,8 @@ nmcli_editor_tab_completion (const char *text, int start, int end)
 			if (start == n1)
 				generator_func = gen_nmcli_cmds_submenu;
 			else {
+				gboolean multi;
+
 				if (   should_complete_cmd (line, end, "add", &num, NULL)
 				    || should_complete_cmd (line, end, "set", &num, NULL)) {
 					if (num <= 2 && should_complete_files (prompt_tmp, line))
@@ -6451,6 +6568,9 @@ nmcli_editor_tab_completion (const char *text, int start, int end)
 					else if (should_complete_vpn_uuids (prompt_tmp, line)) {
 						rl_completion_display_matches_hook = uuid_display_hook;
 						generator_func = gen_vpn_uuids;
+					} else if (   should_complete_property_values (prompt_tmp, NULL, &multi)
+						   && (num <= 2 || multi)) {
+						generator_func = gen_property_values;
 					}
 				}
 				if (should_complete_cmd (line, end, "print", &num, NULL) && num <= 2)
@@ -7164,6 +7284,9 @@ property_edit_submenu (NmCli *nmc,
 	gboolean temp_changes;
 	gboolean removed;
 
+	/* Set global variable for use in TAB completion */
+	nmc_tab_completion.property = prop_name;
+
 	prompt = nmc_colorize (nmc->editor_prompt_color, NMC_TERM_FORMAT_NORMAL,
 	                       "nmcli %s.%s> ",
 	                       nm_setting_get_name (curr_setting), prop_name);
@@ -7196,9 +7319,16 @@ property_edit_submenu (NmCli *nmc,
 			 *                   ADD adds the new value(s)
 			 * single values:  : both SET and ADD sets the new value
 			 */
-			if (!cmd_property_arg)
+			if (!cmd_property_arg) {
+				const char **avals = nmc_setting_get_property_allowed_values (curr_setting, prop_name);
+				if (avals) {
+					char *avals_str = nmc_util_strv_for_display (avals, FALSE);
+					g_print (_("Allowed values for '%s' property: %s\n"),
+					         prop_name, avals_str);
+					g_free (avals_str);
+				}
 				prop_val_user = nmc_readline (_("Enter '%s' value: "), prop_name);
-			else
+			} else
 				prop_val_user = g_strdup (cmd_property_arg);
 
 			/* nmc_setting_set_property() only adds new value, thus we have to
@@ -7293,6 +7423,8 @@ property_edit_submenu (NmCli *nmc,
 			break;
 
 		case NMC_EDITOR_SUB_CMD_BACK:
+			/* Set global variable for use in TAB completion */
+			nmc_tab_completion.property = NULL;
 			cmd_property_loop = FALSE;
 			break;
 
@@ -7607,7 +7739,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				if (menu_ctx.level == 1) {
 					const char *prop_name;
 					char *prop_val_user = NULL;
-					const char *avals;
+					const char **avals;
 					GError *tmp_err = NULL;
 
 					prop_name = ask_check_property (cmd_arg,
@@ -7617,9 +7749,12 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 						break;
 
 					avals = nmc_setting_get_property_allowed_values (menu_ctx.curr_setting, prop_name);
-					if (avals)
-						g_print (_("Allowed values for '%s' property: %s\n"), prop_name, avals);
-
+					if (avals) {
+						char *avals_str = nmc_util_strv_for_display (avals, FALSE);
+						g_print (_("Allowed values for '%s' property: %s\n"),
+						         prop_name, avals_str);
+						g_free (avals_str);
+					}
 					prop_val_user = nmc_readline (_("Enter '%s' value: "), prop_name);
 
 					/* Set property value */
@@ -7671,10 +7806,13 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 
 				/* Ask for value */
 				if (!cmd_arg_v) {
-					const char *avals = nmc_setting_get_property_allowed_values (ss, prop_name);
-					if (avals)
-						g_print (_("Allowed values for '%s' property: %s\n"), prop_name, avals);
-
+					const char **avals = nmc_setting_get_property_allowed_values (ss, prop_name);
+					if (avals) {
+						char *avals_str = nmc_util_strv_for_display (avals, FALSE);
+						g_print (_("Allowed values for '%s' property: %s\n"),
+						         prop_name, avals_str);
+						g_free (avals_str);
+					}
 					cmd_arg_v = nmc_readline (_("Enter '%s' value: "), prop_name);
 				}
 

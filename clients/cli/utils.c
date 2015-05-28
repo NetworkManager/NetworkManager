@@ -654,20 +654,22 @@ nmc_util_strv_to_slist (char **strv)
  * Returns: a newly allocated string. Caller must free it with g_free().
  */
 char *
-nmc_util_strv_for_display (const char **strv)
+nmc_util_strv_for_display (const char **strv, gboolean brackets)
 {
 	GString *result;
 	guint i = 0;
 
 	result = g_string_sized_new (150);
-	g_string_append_c (result, '[');
+	if (brackets)
+		g_string_append_c (result, '[');
 	while (strv && strv[i]) {
 		if (result->len > 1)
 			g_string_append (result, ", ");
 		g_string_append (result, strv[i]);
 		i++;
 	}
-	g_string_append_c (result, ']');
+	if (brackets)
+		g_string_append_c (result, ']');
 
 	return g_string_free (result, FALSE);
 }
