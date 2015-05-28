@@ -25,6 +25,7 @@
 #include <glib-object.h>
 
 #include "nm-utils.h"
+#include "nm-vpn-editor-plugin.h"
 
 G_BEGIN_DECLS
 
@@ -97,6 +98,16 @@ NM_AVAILABLE_IN_1_2
 NMVpnPluginInfo *nm_vpn_plugin_info_list_find_by_filename (GSList *list, const char *filename);
 NM_AVAILABLE_IN_1_2
 NMVpnPluginInfo *nm_vpn_plugin_info_list_find_by_service  (GSList *list, const char *service);
+
+
+NM_AVAILABLE_IN_1_2
+NMVpnEditorPlugin *nm_vpn_plugin_info_get_editor_plugin  (NMVpnPluginInfo *plugin_info);
+NM_AVAILABLE_IN_1_2
+void               nm_vpn_plugin_info_set_editor_plugin  (NMVpnPluginInfo *self,
+                                                          NMVpnEditorPlugin *plugin);
+NM_AVAILABLE_IN_1_2
+NMVpnEditorPlugin *nm_vpn_plugin_info_load_editor_plugin (NMVpnPluginInfo *plugin_info,
+                                                          GError **error);
 
 G_END_DECLS
 

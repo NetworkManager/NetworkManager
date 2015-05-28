@@ -56,6 +56,9 @@ typedef struct {
 	 * value somewhere... let's put it in an internal hash table.
 	 * This contains a clone of all the strings in keyfile. */
 	GHashTable *keys;
+
+	gboolean editor_plugin_loaded;
+	NMVpnEditorPlugin *editor_plugin;
 } NMVpnPluginInfoPrivate;
 
 static void nm_vpn_plugin_info_initable_iface_init (GInitableIface *iface);
@@ -647,6 +650,112 @@ nm_vpn_plugin_info_lookup_property (NMVpnPluginInfo *self, const char *group, co
 /*********************************************************************/
 
 /**
+ * nm_vpn_plugin_info_get_editor_plugin:
+ * @self: plugin info instance
+ *
+ * Returns: the cached #NMVpnEditorPlugin instance.
+ *
+ * Since: 1.2
+ */
+NMVpnEditorPlugin *
+nm_vpn_plugin_info_get_editor_plugin (NMVpnPluginInfo *self)
+{
+	g_return_val_if_fail (NM_IS_VPN_PLUGIN_INFO (self), NULL);
+
+	return NM_VPN_PLUGIN_INFO_GET_PRIVATE (self)->editor_plugin;
+}
+
+/**
+ * nm_vpn_plugin_info_set_editor_plugin:
+ * @self: plugin info instance
+ * @plugin: (allow-none): plugin instance
+ *
+ * Set the internal plugin instance. If %NULL, only clear the previous instance.
+ *
+ * Since: 1.2
+ */
+void
+nm_vpn_plugin_info_set_editor_plugin (NMVpnPluginInfo *self, NMVpnEditorPlugin *plugin)
+{
+	NMVpnPluginInfoPrivate *priv;
+	NMVpnEditorPlugin *old;
+
+	g_return_if_fail (NM_IS_VPN_PLUGIN_INFO (self));
+	g_return_if_fail (!plugin || G_IS_OBJECT (plugin));
+
+	priv = NM_VPN_PLUGIN_INFO_GET_PRIVATE (self);
+
+	if (!plugin) {
+		priv->editor_plugin_loaded = FALSE;
+		g_clear_object (&priv->editor_plugin);
+	} else {
+		old = priv->editor_plugin;
+		priv->editor_plugin = g_object_ref (plugin);
+		priv->editor_plugin_loaded = TRUE;
+		if (old)
+			g_object_unref (old);
+	}
+}
+
+/**
+ * nm_vpn_plugin_info_load_editor_plugin:
+ * @self: plugin info instance
+ * @error: error reason on failure
+ *
+ * Returns: loads the plugin and returns the newly created instance.
+ *   The plugin is owned by @self and can be later retrieved again
+ *   via nm_vpn_plugin_info_get_editor_plugin(). You can load the
+ *   plugin only once, unless you reset the state via
+ *   nm_vpn_plugin_info_set_editor_plugin().
+ *
+ * Since: 1.2
+ */
+NMVpnEditorPlugin *
+nm_vpn_plugin_info_load_editor_plugin (NMVpnPluginInfo *self, GError **error)
+{
+	NMVpnPluginInfoPrivate *priv;
+	const char *plugin_filename;
+
+	g_return_val_if_fail (NM_IS_VPN_PLUGIN_INFO (self), NULL);
+
+	priv = NM_VPN_PLUGIN_INFO_GET_PRIVATE (self);
+
+	if (priv->editor_plugin)
+		return priv->editor_plugin;
+
+	plugin_filename = nm_vpn_plugin_info_get_plugin (self);
+	if (!plugin_filename || !*plugin_filename) {
+		g_set_error (error,
+		             NM_VPN_PLUGIN_ERROR,
+		             NM_VPN_PLUGIN_ERROR_FAILED,
+		             _("missing \"plugin\" setting"));
+		return NULL;
+	}
+
+	/* We only try once to load the plugin. If we previously tried and it was
+	 * unsuccessful, error out immediately. */
+	if (priv->editor_plugin_loaded) {
+		g_set_error (error,
+		             NM_VPN_PLUGIN_ERROR,
+		             NM_VPN_PLUGIN_ERROR_FAILED,
+		             _("%s: don't retry loading plugin which already failed previously"), priv->name);
+		return NULL;
+	}
+
+	priv->editor_plugin_loaded = TRUE;
+	priv->editor_plugin = nm_vpn_editor_plugin_load_from_file (plugin_filename,
+	                                                           priv->name,
+	                                                           nm_vpn_plugin_info_get_service (self),
+	                                                           getuid (),
+	                                                           NULL,
+	                                                           NULL,
+	                                                           error);
+	return priv->editor_plugin;
+}
+
+/*********************************************************************/
+
+/**
  * nm_vpn_plugin_info_new_from_file:
  * @filename: filename to read.
  * @error: on failure, the error reason.
@@ -809,6 +918,17 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
+dispose (GObject *object)
+{
+	NMVpnPluginInfo *self = NM_VPN_PLUGIN_INFO (object);
+	NMVpnPluginInfoPrivate *priv = NM_VPN_PLUGIN_INFO_GET_PRIVATE (self);
+
+	g_clear_object (&priv->editor_plugin);
+
+	G_OBJECT_CLASS (nm_vpn_plugin_info_parent_class)->dispose (object);
+}
+
+static void
 finalize (GObject *object)
 {
 	NMVpnPluginInfo *self = NM_VPN_PLUGIN_INFO (object);
@@ -833,6 +953,7 @@ nm_vpn_plugin_info_class_init (NMVpnPluginInfoClass *plugin_class)
 	/* virtual methods */
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->dispose      = dispose;
 	object_class->finalize     = finalize;
 
 	/* properties */
