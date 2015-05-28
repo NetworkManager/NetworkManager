@@ -30,6 +30,7 @@
 #include <glib-object.h>
 
 #include "nm-connection.h"
+#include "nm-utils.h"
 
 G_BEGIN_DECLS
 
@@ -137,6 +138,15 @@ gboolean      nm_vpn_editor_plugin_export                 (NMVpnEditorPlugin *pl
                                                            GError **error);
 char         *nm_vpn_editor_plugin_get_suggested_filename (NMVpnEditorPlugin *plugin,
                                                            NMConnection *connection);
+
+NM_AVAILABLE_IN_1_2
+NMVpnEditorPlugin *nm_vpn_editor_plugin_load_from_file  (const char *plugin_filename,
+                                                         const char *check_name,
+                                                         const char *check_service,
+                                                         int check_owner,
+                                                         NMUtilsCheckFilePredicate check_file,
+                                                         gpointer user_data,
+                                                         GError **error);
 
 G_END_DECLS
 

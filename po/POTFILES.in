@@ -77,6 +77,7 @@ libnm-core/nm-setting-wireless-security.c
 libnm-core/nm-setting-wireless.c
 libnm-core/nm-setting.c
 libnm-core/nm-utils.c
+libnm-core/nm-vpn-editor-plugin.c
 libnm-core/nm-vpn-plugin-info.c
 libnm-glib/nm-device.c
 libnm-glib/nm-remote-connection.c
