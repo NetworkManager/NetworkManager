@@ -326,6 +326,9 @@ c4d846f239036c05f516c1c71789e980b64b1e70  2e1c889494d274aca24ce5f6a748e66e *libn
 89bdcd324f2e257eca59168a7d0be5608438aab0  abb26a6c3c8d6c1d91c78471aff86b3a *NetworkManager-vpnc-0.9.8.2.tar.xz
 c37a79d43ebe1192ba8dcc5036cd668631b6473e  d87db7021629cef7c110a371dd42b7a8 *NetworkManager-vpnc-0.9.9.0.git20140131.tar.bz2
 
+# NetworkManager-openvpn
+1f159f30617e4a3b8121074b8bf238312941370d  511eae0d4ac17c6d2659a3da2646296f *NetworkManager-openvpn-1.0.2.tar.xz
+
 # mipv6-daemon
 428974c2d0d8e75a2750a3ab0488708c5dfdd8e3  8e3ebd242e7926822bbdf5ce77c1d076 *mipv6-daemon-1.0.tar.gz
 
