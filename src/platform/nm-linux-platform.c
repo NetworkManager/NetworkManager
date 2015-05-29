@@ -570,7 +570,7 @@ _support_kernel_extended_ifa_flags_get (void)
  ******************************************************************/
 
 static guint
-source_to_rtprot (NMIPConfigSource source)
+_nm_ip_config_source_to_rtprot (NMIPConfigSource source)
 {
 	switch (source) {
 	case NM_IP_CONFIG_SOURCE_UNKNOWN:
@@ -589,7 +589,7 @@ source_to_rtprot (NMIPConfigSource source)
 }
 
 static NMIPConfigSource
-rtprot_to_source (guint rtprot)
+_nm_ip_config_source_from_rtprot (guint rtprot)
 {
 	switch (rtprot) {
 	case RTPROT_UNSPEC:
@@ -1273,7 +1273,7 @@ _nmp_vt_cmd_plobj_init_from_nl_ip4_route (NMPlatform *platform, NMPlatformObject
 		 * */
 		obj->source = _NM_IP_CONFIG_SOURCE_RTM_F_CLONED;
 	} else
-		obj->source = rtprot_to_source (rtnl_route_get_protocol (nlo));
+		obj->source = _nm_ip_config_source_from_rtprot (rtnl_route_get_protocol (nlo));
 
 	return TRUE;
 }
@@ -1323,7 +1323,7 @@ _nmp_vt_cmd_plobj_init_from_nl_ip6_route (NMPlatform *platform, NMPlatformObject
 	if (rtnl_route_get_flags (nlo) & RTM_F_CLONED)
 		obj->source = _NM_IP_CONFIG_SOURCE_RTM_F_CLONED;
 	else
-		obj->source = rtprot_to_source (rtnl_route_get_protocol (nlo));
+		obj->source = _nm_ip_config_source_from_rtprot (rtnl_route_get_protocol (nlo));
 
 	return TRUE;
 }
@@ -4300,7 +4300,7 @@ build_rtnl_route (int family, int ifindex, NMIPConfigSource source,
 	rtnl_route_set_dst (rtnlroute, dst);
 	rtnl_route_set_priority (rtnlroute, metric);
 	rtnl_route_set_family (rtnlroute, family);
-	rtnl_route_set_protocol (rtnlroute, source_to_rtprot (source));
+	rtnl_route_set_protocol (rtnlroute, _nm_ip_config_source_to_rtprot (source));
 
 	nexthop = _nl_rtnl_route_nh_alloc ();
 	rtnl_route_nh_set_ifindex (nexthop, ifindex);
