@@ -566,6 +566,127 @@ _support_kernel_extended_ifa_flags_get (void)
 }
 
 /******************************************************************
+ * Object type specific utilities
+ ******************************************************************/
+
+static guint
+source_to_rtprot (NMIPConfigSource source)
+{
+	switch (source) {
+	case NM_IP_CONFIG_SOURCE_UNKNOWN:
+		return RTPROT_UNSPEC;
+	case NM_IP_CONFIG_SOURCE_KERNEL:
+	case _NM_IP_CONFIG_SOURCE_RTPROT_KERNEL:
+		return RTPROT_KERNEL;
+	case NM_IP_CONFIG_SOURCE_DHCP:
+		return RTPROT_DHCP;
+	case NM_IP_CONFIG_SOURCE_RDISC:
+		return RTPROT_RA;
+
+	default:
+		return RTPROT_STATIC;
+	}
+}
+
+static NMIPConfigSource
+rtprot_to_source (guint rtprot)
+{
+	switch (rtprot) {
+	case RTPROT_UNSPEC:
+		return NM_IP_CONFIG_SOURCE_UNKNOWN;
+	case RTPROT_KERNEL:
+		return _NM_IP_CONFIG_SOURCE_RTPROT_KERNEL;
+	case RTPROT_REDIRECT:
+		return NM_IP_CONFIG_SOURCE_KERNEL;
+	case RTPROT_RA:
+		return NM_IP_CONFIG_SOURCE_RDISC;
+	case RTPROT_DHCP:
+		return NM_IP_CONFIG_SOURCE_DHCP;
+
+	default:
+		return NM_IP_CONFIG_SOURCE_USER;
+	}
+}
+
+/******************************************************************/
+
+typedef struct {
+	const NMLinkType nm_type;
+	const char *type_string;
+
+	/* IFLA_INFO_KIND / rtnl_link_get_type() where applicable; the rtnl type
+	 * should only be specified if the device type can be created without
+	 * additional parameters, and if the device type can be determined from
+	 * the rtnl_type.  eg, tun/tap should not be specified since both
+	 * tun and tap devices use "tun", and InfiniBand should not be
+	 * specified because a PKey is required at creation. Drivers set this
+	 * value from their 'struct rtnl_link_ops' structure.
+	 */
+	const char *rtnl_type;
+
+	/* uevent DEVTYPE where applicable, from /sys/class/net/<ifname>/uevent;
+	 * drivers set this value from their SET_NETDEV_DEV() call and the
+	 * 'struct device_type' name member.
+	 */
+	const char *devtype;
+} LinkDesc;
+
+static const LinkDesc linktypes[] = {
+	{ NM_LINK_TYPE_NONE,          "none",        NULL,          NULL },
+	{ NM_LINK_TYPE_UNKNOWN,       "unknown",     NULL,          NULL },
+
+	{ NM_LINK_TYPE_ETHERNET,      "ethernet",    NULL,          NULL },
+	{ NM_LINK_TYPE_INFINIBAND,    "infiniband",  NULL,          NULL },
+	{ NM_LINK_TYPE_OLPC_MESH,     "olpc-mesh",   NULL,          NULL },
+	{ NM_LINK_TYPE_WIFI,          "wifi",        NULL,          "wlan" },
+	{ NM_LINK_TYPE_WWAN_ETHERNET, "wwan",        NULL,          "wwan" },
+	{ NM_LINK_TYPE_WIMAX,         "wimax",       "wimax",       "wimax" },
+
+	{ NM_LINK_TYPE_DUMMY,         "dummy",       "dummy",       NULL },
+	{ NM_LINK_TYPE_GRE,           "gre",         "gre",         NULL },
+	{ NM_LINK_TYPE_GRETAP,        "gretap",      "gretap",      NULL },
+	{ NM_LINK_TYPE_IFB,           "ifb",         "ifb",         NULL },
+	{ NM_LINK_TYPE_LOOPBACK,      "loopback",    NULL,          NULL },
+	{ NM_LINK_TYPE_MACVLAN,       "macvlan",     "macvlan",     NULL },
+	{ NM_LINK_TYPE_MACVTAP,       "macvtap",     "macvtap",     NULL },
+	{ NM_LINK_TYPE_OPENVSWITCH,   "openvswitch", "openvswitch", NULL },
+	{ NM_LINK_TYPE_TAP,           "tap",         NULL,          NULL },
+	{ NM_LINK_TYPE_TUN,           "tun",         NULL,          NULL },
+	{ NM_LINK_TYPE_VETH,          "veth",        "veth",        NULL },
+	{ NM_LINK_TYPE_VLAN,          "vlan",        "vlan",        "vlan" },
+	{ NM_LINK_TYPE_VXLAN,         "vxlan",       "vxlan",       "vxlan" },
+	{ NM_LINK_TYPE_BNEP,          "bluetooth",   NULL,          "bluetooth" },
+
+	{ NM_LINK_TYPE_BRIDGE,        "bridge",      "bridge",      "bridge" },
+	{ NM_LINK_TYPE_BOND,          "bond",        "bond",        "bond" },
+	{ NM_LINK_TYPE_TEAM,          "team",        "team",        NULL },
+};
+
+static const char *
+nm_link_type_to_rtnl_type_string (NMLinkType type)
+{
+	int i;
+
+	for (i = 0; i < G_N_ELEMENTS (linktypes); i++) {
+		if (type == linktypes[i].nm_type)
+			return linktypes[i].rtnl_type;
+	}
+	g_return_val_if_reached (NULL);
+}
+
+const char *
+nm_link_type_to_string (NMLinkType type)
+{
+	int i;
+
+	for (i = 0; i < G_N_ELEMENTS (linktypes); i++) {
+		if (type == linktypes[i].nm_type)
+			return linktypes[i].type_string;
+	}
+	g_return_val_if_reached (NULL);
+}
+
+/******************************************************************
  * NMPlatform types and functions
  ******************************************************************/
 
@@ -666,83 +787,7 @@ check_support_user_ipv6ll (NMPlatform *platform)
 	return _support_user_ipv6ll_get ();
 }
 
-/* Object type specific utilities */
-
-typedef struct {
-	const NMLinkType nm_type;
-	const char *type_string;
-
-	/* IFLA_INFO_KIND / rtnl_link_get_type() where applicable; the rtnl type
-	 * should only be specified if the device type can be created without
-	 * additional parameters, and if the device type can be determined from
-	 * the rtnl_type.  eg, tun/tap should not be specified since both
-	 * tun and tap devices use "tun", and InfiniBand should not be
-	 * specified because a PKey is required at creation. Drivers set this
-	 * value from their 'struct rtnl_link_ops' structure.
-	 */
-	const char *rtnl_type;
-
-	/* uevent DEVTYPE where applicable, from /sys/class/net/<ifname>/uevent;
-	 * drivers set this value from their SET_NETDEV_DEV() call and the
-	 * 'struct device_type' name member.
-	 */
-	const char *devtype;
-} LinkDesc;
-
-static const LinkDesc linktypes[] = {
-	{ NM_LINK_TYPE_NONE,          "none",        NULL,          NULL },
-	{ NM_LINK_TYPE_UNKNOWN,       "unknown",     NULL,          NULL },
-
-	{ NM_LINK_TYPE_ETHERNET,      "ethernet",    NULL,          NULL },
-	{ NM_LINK_TYPE_INFINIBAND,    "infiniband",  NULL,          NULL },
-	{ NM_LINK_TYPE_OLPC_MESH,     "olpc-mesh",   NULL,          NULL },
-	{ NM_LINK_TYPE_WIFI,          "wifi",        NULL,          "wlan" },
-	{ NM_LINK_TYPE_WWAN_ETHERNET, "wwan",        NULL,          "wwan" },
-	{ NM_LINK_TYPE_WIMAX,         "wimax",       "wimax",       "wimax" },
-
-	{ NM_LINK_TYPE_DUMMY,         "dummy",       "dummy",       NULL },
-	{ NM_LINK_TYPE_GRE,           "gre",         "gre",         NULL },
-	{ NM_LINK_TYPE_GRETAP,        "gretap",      "gretap",      NULL },
-	{ NM_LINK_TYPE_IFB,           "ifb",         "ifb",         NULL },
-	{ NM_LINK_TYPE_LOOPBACK,      "loopback",    NULL,          NULL },
-	{ NM_LINK_TYPE_MACVLAN,       "macvlan",     "macvlan",     NULL },
-	{ NM_LINK_TYPE_MACVTAP,       "macvtap",     "macvtap",     NULL },
-	{ NM_LINK_TYPE_OPENVSWITCH,   "openvswitch", "openvswitch", NULL },
-	{ NM_LINK_TYPE_TAP,           "tap",         NULL,          NULL },
-	{ NM_LINK_TYPE_TUN,           "tun",         NULL,          NULL },
-	{ NM_LINK_TYPE_VETH,          "veth",        "veth",        NULL },
-	{ NM_LINK_TYPE_VLAN,          "vlan",        "vlan",        "vlan" },
-	{ NM_LINK_TYPE_VXLAN,         "vxlan",       "vxlan",       "vxlan" },
-	{ NM_LINK_TYPE_BNEP,          "bluetooth",   NULL,          "bluetooth" },
-
-	{ NM_LINK_TYPE_BRIDGE,        "bridge",      "bridge",      "bridge" },
-	{ NM_LINK_TYPE_BOND,          "bond",        "bond",        "bond" },
-	{ NM_LINK_TYPE_TEAM,          "team",        "team",        NULL },
-};
-
-static const char *
-nm_link_type_to_rtnl_type_string (NMLinkType type)
-{
-	int i;
-
-	for (i = 0; i < G_N_ELEMENTS (linktypes); i++) {
-		if (type == linktypes[i].nm_type)
-			return linktypes[i].rtnl_type;
-	}
-	g_return_val_if_reached (NULL);
-}
-
-const char *
-nm_link_type_to_string (NMLinkType type)
-{
-	int i;
-
-	for (i = 0; i < G_N_ELEMENTS (linktypes); i++) {
-		if (type == linktypes[i].nm_type)
-			return linktypes[i].type_string;
-	}
-	g_return_val_if_reached (NULL);
-}
+/******************************************************************/
 
 #define DEVTYPE_PREFIX "DEVTYPE="
 
@@ -1176,45 +1221,6 @@ _nmp_vt_cmd_plobj_init_from_nl_ip6_address (NMPlatform *platform, NMPlatformObje
 	}
 
 	return TRUE;
-}
-
-static guint
-source_to_rtprot (NMIPConfigSource source)
-{
-	switch (source) {
-	case NM_IP_CONFIG_SOURCE_UNKNOWN:
-		return RTPROT_UNSPEC;
-	case NM_IP_CONFIG_SOURCE_KERNEL:
-	case _NM_IP_CONFIG_SOURCE_RTPROT_KERNEL:
-		return RTPROT_KERNEL;
-	case NM_IP_CONFIG_SOURCE_DHCP:
-		return RTPROT_DHCP;
-	case NM_IP_CONFIG_SOURCE_RDISC:
-		return RTPROT_RA;
-
-	default:
-		return RTPROT_STATIC;
-	}
-}
-
-static NMIPConfigSource
-rtprot_to_source (guint rtprot)
-{
-	switch (rtprot) {
-	case RTPROT_UNSPEC:
-		return NM_IP_CONFIG_SOURCE_UNKNOWN;
-	case RTPROT_KERNEL:
-		return _NM_IP_CONFIG_SOURCE_RTPROT_KERNEL;
-	case RTPROT_REDIRECT:
-		return NM_IP_CONFIG_SOURCE_KERNEL;
-	case RTPROT_RA:
-		return NM_IP_CONFIG_SOURCE_RDISC;
-	case RTPROT_DHCP:
-		return NM_IP_CONFIG_SOURCE_DHCP;
-
-	default:
-		return NM_IP_CONFIG_SOURCE_USER;
-	}
 }
 
 gboolean
