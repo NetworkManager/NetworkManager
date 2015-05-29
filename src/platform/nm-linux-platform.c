@@ -290,6 +290,26 @@ _nl_rtnl_addr_set_prefixlen (struct rtnl_addr *rtnladdr, int plen)
 		nl_addr_set_prefixlen (nladdr, plen);
 }
 
+static const char *
+_nl_nlmsg_type_to_str (guint16 type, char *buf, gsize len)
+{
+	const char *str_type = NULL;
+
+	switch (type) {
+	case RTM_NEWLINK:  str_type = "NEWLINK";  break;
+	case RTM_DELLINK:  str_type = "DELLINK";  break;
+	case RTM_NEWADDR:  str_type = "NEWADDR";  break;
+	case RTM_DELADDR:  str_type = "DELADDR";  break;
+	case RTM_NEWROUTE: str_type = "NEWROUTE"; break;
+	case RTM_DELROUTE: str_type = "DELROUTE"; break;
+	}
+	if (str_type)
+		g_strlcpy (buf, str_type, len);
+	else
+		g_snprintf (buf, len, "(%d)", type);
+	return buf;
+}
+
 /******************************************************************/
 
 /* _nl_link_parse_info_data(): Re-fetches a link from the kernel
@@ -2215,6 +2235,7 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 	auto_nl_object struct nl_object *nlo = NULL;
 	auto_nmp_obj NMPObject *obj = NULL;
 	struct nlmsghdr *msghdr;
+	char buf_nlmsg_type[16];
 
 	msghdr = nlmsg_hdr (msg);
 
@@ -2230,7 +2251,9 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 
 	obj = nmp_object_from_nl (platform, nlo, FALSE, TRUE);
 
-	_LOGD ("event-notification: type %d, seq %u: %s", msghdr->nlmsg_type, msghdr->nlmsg_seq, nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+	_LOGD ("event-notification: %s, seq %u: %s",
+	       _nl_nlmsg_type_to_str (msghdr->nlmsg_type, buf_nlmsg_type, sizeof (buf_nlmsg_type)),
+	       msghdr->nlmsg_seq, nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
 	if (obj) {
 		auto_nmp_obj NMPObject *obj_cache = NULL;
 
