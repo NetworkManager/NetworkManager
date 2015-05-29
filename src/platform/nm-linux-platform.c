@@ -292,7 +292,7 @@ _nl_rtnl_addr_set_prefixlen (struct rtnl_addr *rtnladdr, int plen)
 
 /******************************************************************/
 
-/* nm_rtnl_link_parse_info_data(): Re-fetches a link from the kernel
+/* _nl_link_parse_info_data(): Re-fetches a link from the kernel
  * and parses its IFLA_INFO_DATA using a caller-provided parser.
  *
  * Code is stolen from rtnl_link_get_kernel(), nl_pickup(), and link_msg_parser().
@@ -314,7 +314,7 @@ static struct nla_policy info_data_link_info_policy[IFLA_INFO_MAX + 1] = {
 };
 
 static int
-info_data_parser (struct nl_msg *msg, void *arg)
+_nl_link_parse_info_data_cb (struct nl_msg *msg, void *arg)
 {
 	NMNLInfoDataClosure *closure = arg;
 	struct nlmsghdr *n = nlmsg_hdr (msg);
@@ -343,8 +343,8 @@ info_data_parser (struct nl_msg *msg, void *arg)
 }
 
 static int
-nm_rtnl_link_parse_info_data (struct nl_sock *sk, int ifindex,
-                              NMNLInfoDataParser parser, gpointer parser_data)
+_nl_link_parse_info_data (struct nl_sock *sk, int ifindex,
+                          NMNLInfoDataParser parser, gpointer parser_data)
 {
 	NMNLInfoDataClosure data = { .parser = parser, .parser_data = parser_data };
 	struct nl_msg *msg = NULL;
@@ -363,7 +363,7 @@ nm_rtnl_link_parse_info_data (struct nl_sock *sk, int ifindex,
 	cb = nl_cb_clone (nl_socket_get_cb (sk));
 	if (cb == NULL)
 		return -NLE_NOMEM;
-	nl_cb_set (cb, NL_CB_VALID, NL_CB_CUSTOM, info_data_parser, &data);
+	nl_cb_set (cb, NL_CB_VALID, NL_CB_CUSTOM, _nl_link_parse_info_data_cb, &data);
 
 	err = nl_recvmsgs (sk, cb);
 	nl_cb_put (cb);
@@ -3371,10 +3371,10 @@ infiniband_get_info (NMPlatform *platform, int ifindex, int *parent, int *p_key,
 	if (parent)
 		*parent = obj->link.parent;
 
-	if (nm_rtnl_link_parse_info_data (priv->nlh,
-	                                  ifindex,
-	                                  infiniband_info_data_parser,
-	                                  &info) != 0) {
+	if (_nl_link_parse_info_data (priv->nlh,
+	                              ifindex,
+	                              infiniband_info_data_parser,
+	                              &info) != 0) {
 		const char *iface = obj->link.name;
 		char *path, *contents = NULL;
 
@@ -3555,8 +3555,8 @@ macvlan_get_properties (NMPlatform *platform, int ifindex, NMPlatformMacvlanProp
 
 	props->parent_ifindex = obj->link.parent;
 
-	err = nm_rtnl_link_parse_info_data (priv->nlh, ifindex,
-	                                    macvlan_info_data_parser, props);
+	err = _nl_link_parse_info_data (priv->nlh, ifindex,
+	                                macvlan_info_data_parser, props);
 	if (err != 0) {
 		warning ("(%s) could not read properties: %s",
 		         obj->link.name, nl_geterror (err));
@@ -3686,8 +3686,8 @@ vxlan_get_properties (NMPlatform *platform, int ifindex, NMPlatformVxlanProperti
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	int err;
 
-	err = nm_rtnl_link_parse_info_data (priv->nlh, ifindex,
-	                                    vxlan_info_data_parser, props);
+	err = _nl_link_parse_info_data (priv->nlh, ifindex,
+	                                vxlan_info_data_parser, props);
 	if (err != 0) {
 		warning ("(%s) could not read properties: %s",
 		         link_get_name (platform, ifindex), nl_geterror (err));
@@ -3740,8 +3740,8 @@ gre_get_properties (NMPlatform *platform, int ifindex, NMPlatformGreProperties *
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	int err;
 
-	err = nm_rtnl_link_parse_info_data (priv->nlh, ifindex,
-	                                    gre_info_data_parser, props);
+	err = _nl_link_parse_info_data (priv->nlh, ifindex,
+	                                gre_info_data_parser, props);
 	if (err != 0) {
 		warning ("(%s) could not read properties: %s",
 		         link_get_name (platform, ifindex), nl_geterror (err));
