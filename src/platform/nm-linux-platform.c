@@ -189,9 +189,9 @@ _nl_has_capability (int capability)
 }
 
 /* Automatic deallocation of local variables */
-#define auto_nl_object __attribute__((cleanup(put_nl_object)))
+#define auto_nl_object __attribute__((cleanup(_nl_auto_nl_object)))
 static void
-put_nl_object (void *ptr)
+_nl_auto_nl_object (void *ptr)
 {
 	struct nl_object **object = ptr;
 
@@ -201,9 +201,9 @@ put_nl_object (void *ptr)
 	}
 }
 
-#define auto_nl_addr __attribute__((cleanup(put_nl_addr)))
+#define auto_nl_addr __attribute__((cleanup(_nl_auto_nl_addr)))
 static void
-put_nl_addr (void *ptr)
+_nl_auto_nl_addr (void *ptr)
 {
 	struct nl_addr **object = ptr;
 
@@ -216,7 +216,7 @@ put_nl_addr (void *ptr)
 /* wrap the libnl alloc functions and abort on out-of-memory*/
 
 static struct nl_addr *
-_nm_nl_addr_build (int family, const void *buf, size_t size)
+_nl_addr_build (int family, const void *buf, size_t size)
 {
 	struct nl_addr *addr;
 
@@ -228,7 +228,7 @@ _nm_nl_addr_build (int family, const void *buf, size_t size)
 }
 
 static struct rtnl_link *
-_nm_rtnl_link_alloc (int ifindex, const char*name)
+_nl_rtnl_link_alloc (int ifindex, const char*name)
 {
 	struct rtnl_link *rtnllink;
 
@@ -244,7 +244,7 @@ _nm_rtnl_link_alloc (int ifindex, const char*name)
 }
 
 static struct rtnl_addr *
-_nm_rtnl_addr_alloc (int ifindex)
+_nl_rtnl_addr_alloc (int ifindex)
 {
 	struct rtnl_addr *rtnladdr;
 
@@ -257,7 +257,7 @@ _nm_rtnl_addr_alloc (int ifindex)
 }
 
 static struct rtnl_route *
-_nm_rtnl_route_alloc (void)
+_nl_rtnl_route_alloc (void)
 {
 	struct rtnl_route *rtnlroute = rtnl_route_alloc ();
 
@@ -267,7 +267,7 @@ _nm_rtnl_route_alloc (void)
 }
 
 static struct rtnl_nexthop *
-_nm_rtnl_route_nh_alloc (void)
+_nl_rtnl_route_nh_alloc (void)
 {
 	struct rtnl_nexthop *nexthop;
 
@@ -279,7 +279,7 @@ _nm_rtnl_route_nh_alloc (void)
 
 /* rtnl_addr_set_prefixlen fails to update the nl_addr prefixlen */
 static void
-nm_rtnl_addr_set_prefixlen (struct rtnl_addr *rtnladdr, int plen)
+_nl_rtnl_addr_set_prefixlen (struct rtnl_addr *rtnladdr, int plen)
 {
 	struct nl_addr *nladdr;
 
@@ -289,7 +289,6 @@ nm_rtnl_addr_set_prefixlen (struct rtnl_addr *rtnladdr, int plen)
 	if (nladdr)
 		nl_addr_set_prefixlen (nladdr, plen);
 }
-#define rtnl_addr_set_prefixlen nm_rtnl_addr_set_prefixlen
 
 /******************************************************************/
 
@@ -2511,7 +2510,7 @@ build_rtnl_link (int ifindex, const char *name, NMLinkType type)
 	struct rtnl_link *rtnllink;
 	int nle;
 
-	rtnllink = _nm_rtnl_link_alloc (ifindex, name);
+	rtnllink = _nl_rtnl_link_alloc (ifindex, name);
 	if (type) {
 		nle = rtnl_link_set_type (rtnllink, nm_link_type_to_rtnl_type_string (type));
 		g_assert (!nle);
@@ -2727,7 +2726,7 @@ link_add (NMPlatform *platform,
 
 	g_assert ( (address != NULL) ^ (address_len == 0) );
 	if (address) {
-		auto_nl_addr struct nl_addr *nladdr = _nm_nl_addr_build (AF_LLC, address, address_len);
+		auto_nl_addr struct nl_addr *nladdr = _nl_addr_build (AF_LLC, address, address_len);
 
 		rtnl_link_set_addr ((struct rtnl_link *) l, nladdr);
 	}
@@ -2860,7 +2859,7 @@ link_uses_arp (NMPlatform *platform, int ifindex)
 static gboolean
 link_change_flags (NMPlatform *platform, int ifindex, unsigned int flags, gboolean value)
 {
-	auto_nl_object struct rtnl_link *change = _nm_rtnl_link_alloc (ifindex, NULL);
+	auto_nl_object struct rtnl_link *change = _nl_rtnl_link_alloc (ifindex, NULL);
 	const NMPObject *obj_cache;
 	char buf[256];
 
@@ -2937,7 +2936,7 @@ link_set_user_ipv6ll_enabled (NMPlatform *platform, int ifindex, gboolean enable
 {
 #if HAVE_LIBNL_INET6_ADDR_GEN_MODE
 	if (_support_user_ipv6ll_get ()) {
-		auto_nl_object struct rtnl_link *nlo = _nm_rtnl_link_alloc (ifindex, NULL);
+		auto_nl_object struct rtnl_link *nlo = _nl_rtnl_link_alloc (ifindex, NULL);
 		guint8 mode = enabled ? IN6_ADDR_GEN_MODE_NONE : IN6_ADDR_GEN_MODE_EUI64;
 		char buf[32];
 
@@ -2982,8 +2981,8 @@ link_supports_vlans (NMPlatform *platform, int ifindex)
 static gboolean
 link_set_address (NMPlatform *platform, int ifindex, gconstpointer address, size_t length)
 {
-	auto_nl_object struct rtnl_link *change = _nm_rtnl_link_alloc (ifindex, NULL);
-	auto_nl_addr struct nl_addr *nladdr = _nm_nl_addr_build (AF_LLC, address, length);
+	auto_nl_object struct rtnl_link *change = _nl_rtnl_link_alloc (ifindex, NULL);
+	auto_nl_addr struct nl_addr *nladdr = _nl_addr_build (AF_LLC, address, length);
 	gs_free char *mac = NULL;
 
 	rtnl_link_set_addr (change, nladdr);
@@ -3028,7 +3027,7 @@ link_get_permanent_address (NMPlatform *platform,
 static gboolean
 link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 {
-	auto_nl_object struct rtnl_link *change = _nm_rtnl_link_alloc (ifindex, NULL);
+	auto_nl_object struct rtnl_link *change = _nl_rtnl_link_alloc (ifindex, NULL);
 
 	rtnl_link_set_mtu (change, mtu);
 	debug ("link: change %d: mtu %lu", ifindex, (unsigned long)mtu);
@@ -3162,7 +3161,7 @@ vlan_set_egress_map (NMPlatform *platform, int ifindex, int from, int to)
 static gboolean
 link_enslave (NMPlatform *platform, int master, int slave)
 {
-	auto_nl_object struct rtnl_link *change = _nm_rtnl_link_alloc (slave, NULL);
+	auto_nl_object struct rtnl_link *change = _nl_rtnl_link_alloc (slave, NULL);
 
 	rtnl_link_set_master (change, master);
 	debug ("link: change %d: enslave to master %d", slave, master);
@@ -3994,10 +3993,10 @@ build_rtnl_addr (NMPlatform *platform,
                  guint flags,
                  const char *label)
 {
-	auto_nl_object struct rtnl_addr *rtnladdr = _nm_rtnl_addr_alloc (ifindex);
+	auto_nl_object struct rtnl_addr *rtnladdr = _nl_rtnl_addr_alloc (ifindex);
 	struct rtnl_addr *rtnladdr_copy;
 	int addrlen = family == AF_INET ? sizeof (in_addr_t) : sizeof (struct in6_addr);
-	auto_nl_addr struct nl_addr *nladdr = _nm_nl_addr_build (family, addr, addrlen);
+	auto_nl_addr struct nl_addr *nladdr = _nl_addr_build (family, addr, addrlen);
 	int nle;
 
 	/* IP address */
@@ -4017,14 +4016,14 @@ build_rtnl_addr (NMPlatform *platform,
 		auto_nl_addr struct nl_addr *bcaddr = NULL;
 
 		bcast = *((in_addr_t *) addr) | ~nm_utils_ip4_prefix_to_netmask (plen);
-		bcaddr = _nm_nl_addr_build (family, &bcast, addrlen);
+		bcaddr = _nl_addr_build (family, &bcast, addrlen);
 		g_assert (bcaddr);
 		rtnl_addr_set_broadcast (rtnladdr, bcaddr);
 	}
 
 	/* Peer/point-to-point address */
 	if (peer_addr) {
-		auto_nl_addr struct nl_addr *nlpeer = _nm_nl_addr_build (family, peer_addr, addrlen);
+		auto_nl_addr struct nl_addr *nlpeer = _nl_addr_build (family, peer_addr, addrlen);
 
 		nle = rtnl_addr_set_peer (rtnladdr, nlpeer);
 		if (nle && nle != -NLE_AF_NOSUPPORT) {
@@ -4034,7 +4033,7 @@ build_rtnl_addr (NMPlatform *platform,
 		}
 	}
 
-	rtnl_addr_set_prefixlen (rtnladdr, plen);
+	_nl_rtnl_addr_set_prefixlen (rtnladdr, plen);
 	if (lifetime) {
 		/* note that here we set the relative timestamps (ticking from *now*).
 		 * Contrary to the rtnl_addr objects from our cache, which have absolute
@@ -4276,18 +4275,18 @@ build_rtnl_route (int family, int ifindex, NMIPConfigSource source,
 	int addrlen = (family == AF_INET) ? sizeof (in_addr_t) : sizeof (struct in6_addr);
 	/* Workaround a libnl bug by using zero destination address length for default routes */
 	auto_nl_addr struct nl_addr *dst = NULL;
-	auto_nl_addr struct nl_addr *gw = gateway ? _nm_nl_addr_build (family, gateway, addrlen) : NULL;
-	auto_nl_addr struct nl_addr *pref_src_nl = pref_src ? _nm_nl_addr_build (family, pref_src, addrlen) : NULL;
+	auto_nl_addr struct nl_addr *gw = gateway ? _nl_addr_build (family, gateway, addrlen) : NULL;
+	auto_nl_addr struct nl_addr *pref_src_nl = pref_src ? _nl_addr_build (family, pref_src, addrlen) : NULL;
 
 	/* There seem to be problems adding a route with non-zero host identifier.
 	 * Adding IPv6 routes is simply ignored, without error message.
 	 * In the IPv4 case, we got an error. Thus, we have to make sure, that
 	 * the address is sane. */
 	clear_host_address (family, network, plen, network_clean);
-	dst = _nm_nl_addr_build (family, network_clean, plen ? addrlen : 0);
+	dst = _nl_addr_build (family, network_clean, plen ? addrlen : 0);
 	nl_addr_set_prefixlen (dst, plen);
 
-	rtnlroute = _nm_rtnl_route_alloc ();
+	rtnlroute = _nl_rtnl_route_alloc ();
 	rtnl_route_set_table (rtnlroute, RT_TABLE_MAIN);
 	rtnl_route_set_tos (rtnlroute, 0);
 	rtnl_route_set_dst (rtnlroute, dst);
@@ -4295,7 +4294,7 @@ build_rtnl_route (int family, int ifindex, NMIPConfigSource source,
 	rtnl_route_set_family (rtnlroute, family);
 	rtnl_route_set_protocol (rtnlroute, source_to_rtprot (source));
 
-	nexthop = _nm_rtnl_route_nh_alloc ();
+	nexthop = _nl_rtnl_route_nh_alloc ();
 	rtnl_route_nh_set_ifindex (nexthop, ifindex);
 	if (gw && !nl_addr_iszero (gw))
 		rtnl_route_nh_set_gateway (nexthop, gw);
