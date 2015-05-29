@@ -1764,6 +1764,17 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 		svSetValue (ifcfg, "GATEWAY_PING_TIMEOUT", tmp, FALSE);
 		g_free (tmp);
 	}
+
+	switch (nm_setting_connection_get_metered (s_con)) {
+	case NM_METERED_YES:
+		svSetValue (ifcfg, "CONNECTION_METERED", "yes", FALSE);
+		break;
+	case NM_METERED_NO:
+		svSetValue (ifcfg, "CONNECTION_METERED", "no", FALSE);
+		break;
+	default:
+		svSetValue (ifcfg, "CONNECTION_METERED", NULL, FALSE);
+	}
 }
 
 static gboolean

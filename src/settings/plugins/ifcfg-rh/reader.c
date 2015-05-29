@@ -250,6 +250,15 @@ make_connection_setting (const char *file,
 		g_free (value);
 	}
 
+	switch (svTrueValue (ifcfg, "CONNECTION_METERED", -1)) {
+	case TRUE:
+		g_object_set (s_con, NM_SETTING_CONNECTION_METERED, NM_METERED_YES, NULL);
+		break;
+	case FALSE:
+		g_object_set (s_con, NM_SETTING_CONNECTION_METERED, NM_METERED_NO, NULL);
+		break;
+	}
+
 	return NM_SETTING (s_con);
 }
 

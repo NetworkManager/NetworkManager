@@ -1671,6 +1671,14 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 *
 	 * Since: 1.0.6
 	 **/
+	/* ---ifcfg-rh---
+	 * property: metered
+	 * variable: CONNECTION_METERED
+	 * values: yes,no,unknown
+	 * description: Whether the device is metered
+	 * example: CONNECTION_METERED=yes
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_METERED,
 		 g_param_spec_enum (NM_SETTING_CONNECTION_METERED, "", "",
