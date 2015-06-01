@@ -27,6 +27,7 @@
 #include "nm-core-internal.h"
 #include "nm-macros-internal.h"
 #include "NetworkManagerUtils.h"
+#include "gsystem-local-alloc.h"
 
 #include "utils.h"
 #include "shvar.h"
@@ -151,41 +152,34 @@ check_suffix (const char *base, const char *tag)
 gboolean
 utils_should_ignore_file (const char *filename, gboolean only_ifcfg)
 {
-	char *base;
-	gboolean ignore = TRUE;
-	gboolean is_ifcfg = FALSE;
-	gboolean is_other = FALSE;
+	gs_free char *base = NULL;
 
 	g_return_val_if_fail (filename != NULL, TRUE);
 
 	base = g_path_get_basename (filename);
-	g_return_val_if_fail (base != NULL, TRUE);
 
 	/* Only handle ifcfg, keys, and routes files */
-	if (!strncmp (base, IFCFG_TAG, strlen (IFCFG_TAG)))
-		is_ifcfg = TRUE;
-
-	if (only_ifcfg == FALSE) {
-		if (   !strncmp (base, KEYS_TAG, strlen (KEYS_TAG))
-		    || !strncmp (base, ROUTE_TAG, strlen (ROUTE_TAG))
-		    || !strncmp (base, ROUTE6_TAG, strlen (ROUTE6_TAG)))
-				is_other = TRUE;
+	if (strncmp (base, IFCFG_TAG, strlen (IFCFG_TAG)) != 0) {
+		if (only_ifcfg)
+			return TRUE;
+		else if (   strncmp (base, KEYS_TAG, strlen (KEYS_TAG)) != 0
+		         && strncmp (base, ROUTE_TAG, strlen (ROUTE_TAG)) != 0
+		         && strncmp (base, ROUTE6_TAG, strlen (ROUTE6_TAG)) != 0)
+			return TRUE;
 	}
 
 	/* But not those that have certain suffixes */
-	if (   (is_ifcfg || is_other)
-	    && !check_suffix (base, BAK_TAG)
-	    && !check_suffix (base, TILDE_TAG)
-	    && !check_suffix (base, ORIG_TAG)
-	    && !check_suffix (base, REJ_TAG)
-	    && !check_suffix (base, RPMNEW_TAG)
-	    && !check_suffix (base, AUGNEW_TAG)
-	    && !check_suffix (base, AUGTMP_TAG)
-	    && !check_rpm_temp_suffix (base))
-		ignore = FALSE;
+	if (   check_suffix (base, BAK_TAG)
+	    || check_suffix (base, TILDE_TAG)
+	    || check_suffix (base, ORIG_TAG)
+	    || check_suffix (base, REJ_TAG)
+	    || check_suffix (base, RPMNEW_TAG)
+	    || check_suffix (base, AUGNEW_TAG)
+	    || check_suffix (base, AUGTMP_TAG)
+	    || check_rpm_temp_suffix (base))
+		return TRUE;
 
-	g_free (base);
-	return ignore;
+	return FALSE;
 }
 
 char *
