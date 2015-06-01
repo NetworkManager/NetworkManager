@@ -48,7 +48,8 @@ GType nm_ifcfg_connection_get_type (void);
 
 NMIfcfgConnection *nm_ifcfg_connection_new (NMConnection *source,
                                             const char *full_path,
-                                            GError **error);
+                                            GError **error,
+                                            gboolean *out_ignore_error);
 
 const char *nm_ifcfg_connection_get_unmanaged_spec (NMIfcfgConnection *self);
 const char *nm_ifcfg_connection_get_unrecognized_spec (NMIfcfgConnection *self);
