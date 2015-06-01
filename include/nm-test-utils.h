@@ -92,7 +92,7 @@
 #include <errno.h>
 
 #include "nm-utils.h"
-#include "nm-utils-internal.h"
+#include "nm-macros-internal.h"
 #include "nm-glib-compat.h"
 #include "gsystem-local-alloc.h"
 

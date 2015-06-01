@@ -31,7 +31,7 @@
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
 #include "nm-core-enum-types.h"
-#include "nm-utils-internal.h"
+#include "nm-macros-internal.h"
 #include "gsystem-local-alloc.h"
 
 /**

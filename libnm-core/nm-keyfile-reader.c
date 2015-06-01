@@ -31,7 +31,7 @@
 #include <glib/gi18n-lib.h>
 
 #include "nm-core-internal.h"
-#include "nm-utils-internal.h"
+#include "nm-macros-internal.h"
 #include "gsystem-local-alloc.h"
 #include "nm-glib-compat.h"
 #include "nm-keyfile-internal.h"

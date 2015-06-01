@@ -29,7 +29,7 @@
 #include <glib.h>
 #include <glib-object.h>
 
-#include "nm-utils-internal.h"
+#include "nm-macros-internal.h"
 
 /* Log domains */
 typedef enum  { /*< skip >*/

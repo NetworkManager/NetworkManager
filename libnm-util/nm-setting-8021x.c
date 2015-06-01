@@ -33,7 +33,7 @@
 #include "crypto.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
-#include "nm-utils-internal.h"
+#include "nm-macros-internal.h"
 
 /**
  * SECTION:nm-setting-8021x

@@ -25,7 +25,7 @@
 #include <string.h>
 
 #include "nm-core-internal.h"
-#include "nm-utils-internal.h"
+#include "nm-macros-internal.h"
 #include "NetworkManagerUtils.h"
 
 #include "utils.h"

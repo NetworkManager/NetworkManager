@@ -21,7 +21,7 @@
 
 #include "config.h"
 
-#include "nm-utils-internal.h"
+#include "nm-macros-internal.h"
 #include "nm-keyfile-utils.h"
 #include "nm-keyfile-internal.h"
 
