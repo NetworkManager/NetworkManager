@@ -27,7 +27,7 @@
 #include "nm-device.h"
 #include "gsystem-local-alloc.h"
 #include "nm-core-internal.h"
-#include "nm-utils-internal.h"
+#include "nm-macros-internal.h"
 
 typedef struct {
 	char *group_name;

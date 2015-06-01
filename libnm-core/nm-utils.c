@@ -37,7 +37,7 @@
 #include "nm-setting-private.h"
 #include "crypto.h"
 #include "gsystem-local-alloc.h"
-#include "nm-utils-internal.h"
+#include "nm-macros-internal.h"
 
 #include "nm-setting-bond.h"
 #include "nm-setting-bridge.h"

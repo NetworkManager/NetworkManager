@@ -32,7 +32,7 @@
 #include "nm-utils.h"
 #include "nm-ip4-config.h"
 #include "nm-platform.h"
-#include "nm-utils-internal.h"
+#include "nm-macros-internal.h"
 
 #define DEBUG 1
 

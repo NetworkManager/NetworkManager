@@ -4,6 +4,6 @@ EXTRA_DIST = \
      nm-glib-compat.h \
      nm-gvaluearray-compat.h \
      nm-test-utils.h \
-     nm-utils-internal.h
+     nm-macros-internal.h
 
 CLEANFILES=nm-version.h

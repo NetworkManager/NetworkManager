@@ -19,8 +19,8 @@
  * (C) Copyright 2014 Red Hat, Inc.
  */
 
-#ifndef __NM_UTILS_INTERNAL_H__
-#define __NM_UTILS_INTERNAL_H__
+#ifndef __NM_MACROS_INTERNAL_H__
+#define __NM_MACROS_INTERNAL_H__
 
 
 #include <glib.h>
@@ -191,4 +191,4 @@ nm_clear_g_source (guint *id)
 
 /*****************************************************************************/
 
-#endif
+#endif /* __NM_MACROS_INTERNAL_H__ */

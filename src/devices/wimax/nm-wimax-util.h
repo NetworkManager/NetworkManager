@@ -23,7 +23,7 @@
 
 #include <glib.h>
 
-#include "nm-utils-internal.h"
+#include "nm-macros-internal.h"
 
 NM_PRAGMA_WARNING_DISABLE("-Wstrict-prototypes")
 #include <WiMaxType.h>
