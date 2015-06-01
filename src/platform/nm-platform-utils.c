@@ -27,6 +27,7 @@
 #include <linux/ethtool.h>
 #include <linux/sockios.h>
 #include <linux/mii.h>
+#include <linux/version.h>
 
 #include "gsystem-local-alloc.h"
 #include "nm-utils.h"
@@ -230,6 +231,30 @@ nmp_utils_ethtool_get_wake_on_lan (const char *ifname)
 		return FALSE;
 
 	return wol.wolopts != 0;
+}
+
+gboolean
+nmp_utils_ethtool_get_link_speed (const char *ifname, guint32 *out_speed)
+{
+	struct ethtool_cmd edata = {
+		.cmd = ETHTOOL_GSET,
+	};
+	guint32 speed;
+
+	if (!ethtool_get (ifname, &edata))
+		return FALSE;
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
+	speed = edata.speed;
+#else
+	speed = ethtool_cmd_speed (&edata);
+#endif
+	if (speed == G_MAXUINT16 || speed == G_MAXUINT32)
+		speed = 0;
+
+	if (out_speed)
+		*out_speed = speed;
+	return TRUE;
 }
 
 /******************************************************************
