@@ -500,7 +500,10 @@ nmc_string_to_bool (const char *str, gboolean *val_bool, GError **error)
 
 	if (g_strcmp0 (str, "o") == 0) {
 		g_set_error (error, 1, 0,
-		             _("'%s' is ambiguous (on x off)"), str);
+		             /* Translators: the first %s is the partial value entered by
+		              * the user, the second %s a list of compatible values.
+		              */
+		             _("'%s' is ambiguous (%s)"), str, "on x off");
 		return FALSE;
 	}
 
@@ -528,7 +531,10 @@ nmc_string_to_tristate (const char *str, NMCTriStateValue *val, GError **error)
 
 	if (g_strcmp0 (str, "o") == 0) {
 		g_set_error (error, 1, 0,
-		             _("'%s' is ambiguous (on x off)"), str);
+		             /* Translators: the first %s is the partial value entered by
+		              * the user, the second %s a list of compatible values.
+		              */
+		             _("'%s' is ambiguous (%s)"), str, "on x off");
 		return FALSE;
 	}
 
