@@ -424,6 +424,36 @@ nmc_string_to_bool (const char *str, gboolean *val_bool, GError **error)
 	return TRUE;
 }
 
+gboolean
+nmc_string_to_tristate (const char *str, NMCTriStateValue *val, GError **error)
+{
+	const char *s_true[] = { "true", "yes", "on", NULL };
+	const char *s_false[] = { "false", "no", "off", NULL };
+	const char *s_unknown[] = { "unknown", NULL };
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (g_strcmp0 (str, "o") == 0) {
+		g_set_error (error, 1, 0,
+		             _("'%s' is ambiguous (on x off)"), str);
+		return FALSE;
+	}
+
+	if (nmc_string_is_valid (str, s_true, NULL))
+		*val = NMC_TRI_STATE_YES;
+	else if (nmc_string_is_valid (str, s_false, NULL))
+		*val = NMC_TRI_STATE_NO;
+	else if (nmc_string_is_valid (str, s_unknown, NULL))
+		*val = NMC_TRI_STATE_UNKNOWN;
+	else {
+		g_set_error (error, 1, 0,
+		             _("'%s' is not valid; use [%s], [%s] or [%s]"),
+		             str, "true, yes, on", "false, no, off", "unknown");
+		return FALSE;
+	}
+	return TRUE;
+}
+
 /*
  * Ask user for input and return the string.
  * The caller is responsible for freeing the returned string.
