@@ -2462,7 +2462,7 @@ escape_id (const char *id)
 	while (*p) {
 		if (*p == ' ')
 			*p = '_';
-		else if (strchr ("\\][|/=()!", *p))
+		else if (strchr ("\\][|/=()!:", *p))
 			*p = '-';
 		p++;
 	}
