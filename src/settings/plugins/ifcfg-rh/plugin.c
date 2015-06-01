@@ -213,6 +213,7 @@ update_connection (SCPluginIfcfg *self,
 	const char *new_unrecognized = NULL, *old_unrecognized = NULL;
 	gboolean unmanaged_changed = FALSE, unrecognized_changed = FALSE;
 	const char *uuid;
+	gboolean ignore_error = FALSE;
 
 	g_return_val_if_fail (!source || NM_IS_CONNECTION (source), NULL);
 	g_return_val_if_fail (full_path || source, NULL);
@@ -222,13 +223,16 @@ update_connection (SCPluginIfcfg *self,
 
 	/* Create a NMIfcfgConnection instance, either by reading from @full_path or
 	 * based on @source. */
-	connection_new = nm_ifcfg_connection_new (source, full_path, error);
+	connection_new = nm_ifcfg_connection_new (source, full_path, &local, &ignore_error);
 	if (!connection_new) {
 		/* Unexpected failure. Probably the file is invalid? */
 		if (   connection
 		    && !protect_existing_connection
 		    && (!protected_connections || !g_hash_table_contains (protected_connections, connection)))
 			remove_connection (self, connection);
+		if (!source && !ignore_error)
+			_LOGW ("loading \"%s\" fails: %s", full_path, local ? local->message : "(unknown reason)");
+		g_propagate_error (error, local);
 		return NULL;
 	}
 
