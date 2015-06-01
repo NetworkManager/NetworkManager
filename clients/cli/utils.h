@@ -32,6 +32,12 @@ typedef struct {
 	gboolean found;
 } nmc_arg_t;
 
+typedef enum {
+	NMC_TRI_STATE_NO,
+	NMC_TRI_STATE_YES,
+	NMC_TRI_STATE_UNKNOWN,
+} NMCTriStateValue;
+
 /* === Functions === */
 int matches (const char *cmd, const char *pattern);
 int next_arg (int *argc, char ***argv);
@@ -62,6 +68,7 @@ gboolean nmc_string_to_uint (const char *str,
                              unsigned long int max,
                              unsigned long int *value);
 gboolean nmc_string_to_bool (const char *str, gboolean *val_bool, GError **error);
+gboolean nmc_string_to_tristate (const char *str, NMCTriStateValue *val, GError **error);
 char *nmc_ip4_address_as_string (guint32 ip, GError **error);
 char *nmc_ip6_address_as_string (const struct in6_addr *ip, GError **error);
 void nmc_terminal_erase_line (void);
