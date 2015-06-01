@@ -425,25 +425,13 @@ ifcfg_dir_changed (GFileMonitor *monitor,
                    gpointer user_data)
 {
 	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (user_data);
-	char *path, *base, *ifcfg_path;
+	char *path, *ifcfg_path;
 	NMIfcfgConnection *connection;
 
 	path = g_file_get_path (file);
-	if (utils_should_ignore_file (path, FALSE)) {
-		g_free (path);
-		return;
-	}
 
-	_LOGD ("ifcfg_dir_changed(%s) = %d", path, event_type);
-
-	base = g_file_get_basename (file);
-	if (utils_is_ifcfg_alias_file (base, NULL)) {
-		/* Alias file changed. Get the base ifcfg file from it */
-		ifcfg_path = utils_get_ifcfg_from_alias (path);
-	} else {
-		/* Given any ifcfg, keys, or routes file, get the ifcfg file path */
-		ifcfg_path = utils_get_ifcfg_path (path);
-	}
+	ifcfg_path = utils_detect_ifcfg_path (path, FALSE);
+	_LOGD ("ifcfg_dir_changed(%s) = %d // %s", path, event_type, ifcfg_path ? ifcfg_path : "(none)");
 	if (ifcfg_path) {
 		connection = find_by_path (plugin, ifcfg_path);
 		switch (event_type) {
@@ -462,7 +450,6 @@ ifcfg_dir_changed (GFileMonitor *monitor,
 		g_free (ifcfg_path);
 	}
 	g_free (path);
-	g_free (base);
 }
 
 static void
@@ -546,18 +533,14 @@ read_connections (SCPluginIfcfg *plugin)
 
 	filenames = g_ptr_array_new_with_free_func (g_free);
 	while ((item = g_dir_read_name (dir))) {
-		char *full_path;
-
-		if (utils_should_ignore_file (item, TRUE))
-			continue;
-		if (utils_is_ifcfg_alias_file (item, NULL))
-			continue;
+		char *full_path, *real_path;
 
 		full_path = g_build_filename (IFCFG_DIR, item, NULL);
-		if (!utils_get_ifcfg_name (full_path, TRUE))
-			g_free (full_path);
-		else
-			g_ptr_array_add (filenames, full_path);
+		real_path = utils_detect_ifcfg_path (full_path, TRUE);
+
+		if (real_path)
+			g_ptr_array_add (filenames, real_path);
+		g_free (full_path);
 	}
 	g_dir_close (dir);
 
@@ -629,20 +612,25 @@ load_connection (NMSystemConfigInterface *config,
 	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (config);
 	NMIfcfgConnection *connection;
 	int dir_len = strlen (IFCFG_DIR);
+	char *ifcfg_path;
 
 	if (   strncmp (filename, IFCFG_DIR, dir_len) != 0
 	    || filename[dir_len] != '/'
 	    || strchr (filename + dir_len + 1, '/') != NULL)
 		return FALSE;
 
-	if (utils_should_ignore_file (filename + dir_len + 1, TRUE))
+	/* get the real ifcfg-path. This allows us to properly
+	 * handle load command using a route-* file etc. */
+	ifcfg_path = utils_detect_ifcfg_path (filename, FALSE);
+	if (!ifcfg_path)
 		return FALSE;
 
-	connection = find_by_path (plugin, filename);
-	update_connection (plugin, NULL, filename, connection, TRUE, NULL, NULL);
+	connection = find_by_path (plugin, ifcfg_path);
+	update_connection (plugin, NULL, ifcfg_path, connection, TRUE, NULL, NULL);
 	if (!connection)
-		connection = find_by_path (plugin, filename);
+		connection = find_by_path (plugin, ifcfg_path);
 
+	g_free (ifcfg_path);
 	return (connection != NULL);
 }
 
