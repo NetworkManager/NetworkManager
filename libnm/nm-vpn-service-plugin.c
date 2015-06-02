@@ -114,6 +114,8 @@ nm_vpn_service_plugin_set_connection (NMVpnServicePlugin *plugin,
  * nm_vpn_service_plugin_get_connection:
  *
  * Returns: (transfer full):
+ *
+ * Since: 1.2
  */
 GDBusConnection *
 nm_vpn_service_plugin_get_connection (NMVpnServicePlugin *plugin)
@@ -603,6 +605,8 @@ impl_vpn_service_plugin_new_secrets (NMVpnServicePlugin *plugin,
  * request new secrets when the secrets originally provided by NetworkManager
  * are insufficient, or the VPN process indicates that it needs additional
  * information to complete the request.
+ *
+ * Since: 1.2
  */
 void
 nm_vpn_service_plugin_secrets_required (NMVpnServicePlugin *plugin,
@@ -655,6 +659,8 @@ free_secret (gpointer data)
  * an applet when the applet calls the authentication dialog of the VPN plugin.
  *
  * Returns: %TRUE if reading values was successful, %FALSE if not
+ *
+ * Since: 1.2
  **/
 gboolean
 nm_vpn_service_plugin_read_vpn_details (int fd,
@@ -756,6 +762,8 @@ nm_vpn_service_plugin_read_vpn_details (int fd,
  *
  * Returns: %TRUE if the flag data item was found and successfully converted
  * to flags, %FALSE if not
+ *
+ * Since: 1.2
  **/
 gboolean
 nm_vpn_service_plugin_get_secret_flags (GHashTable *data,
@@ -1085,6 +1093,8 @@ nm_vpn_service_plugin_class_init (NMVpnServicePluginClass *plugin_class)
 	 * NMVpnServicePlugin:service-name:
 	 *
 	 * The D-Bus service name of this plugin.
+	 *
+	 * Since: 1.2
 	 */
 	g_object_class_install_property
 		(object_class, PROP_DBUS_SERVICE_NAME,
@@ -1098,6 +1108,8 @@ nm_vpn_service_plugin_class_init (NMVpnServicePluginClass *plugin_class)
 	 * NMVpnServicePlugin:state:
 	 *
 	 * The state of the plugin.
+	 *
+	 * Since: 1.2
 	 */
 	g_object_class_install_property
 		(object_class, PROP_STATE,

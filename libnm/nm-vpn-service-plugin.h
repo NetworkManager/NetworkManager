@@ -39,94 +39,122 @@ G_BEGIN_DECLS
 #define NM_VPN_SERVICE_PLUGIN_STATE             "state"
 
 typedef struct {
+	NM_AVAILABLE_IN_1_2
 	GObject parent;
-} NMVpnServicePlugin;
+} NMVpnServicePlugin NM_AVAILABLE_IN_1_2;
 
 typedef struct {
+	NM_AVAILABLE_IN_1_2
 	GObjectClass parent;
 
 	/* Signals */
+	NM_AVAILABLE_IN_1_2
 	void (*state_changed)  (NMVpnServicePlugin *plugin,
 	                        NMVpnServiceState state);
 
+	NM_AVAILABLE_IN_1_2
 	void (*ip4_config)     (NMVpnServicePlugin *plugin,
 	                        GVariant  *ip4_config);
 
+	NM_AVAILABLE_IN_1_2
 	void (*login_banner)   (NMVpnServicePlugin *plugin,
 	                        const char *banner);
 
+	NM_AVAILABLE_IN_1_2
 	void (*failure)        (NMVpnServicePlugin *plugin,
 	                        NMVpnPluginFailure reason);
 
+	NM_AVAILABLE_IN_1_2
 	void (*quit)           (NMVpnServicePlugin *plugin);
 
+	NM_AVAILABLE_IN_1_2
 	void (*config)         (NMVpnServicePlugin *plugin,
 	                        GVariant  *config);
 
+	NM_AVAILABLE_IN_1_2
 	void (*ip6_config)     (NMVpnServicePlugin *plugin,
 	                        GVariant  *config);
 
 	/* virtual methods */
+	NM_AVAILABLE_IN_1_2
 	gboolean (*connect)      (NMVpnServicePlugin   *plugin,
 	                          NMConnection  *connection,
 	                          GError       **err);
 
+	NM_AVAILABLE_IN_1_2
 	gboolean (*need_secrets) (NMVpnServicePlugin *plugin,
 	                          NMConnection *connection,
 	                          const char **setting_name,
 	                          GError **error);
 
+	NM_AVAILABLE_IN_1_2
 	gboolean (*disconnect)   (NMVpnServicePlugin   *plugin,
 	                          GError       **err);
 
+	NM_AVAILABLE_IN_1_2
 	gboolean (*new_secrets)  (NMVpnServicePlugin *plugin,
 	                          NMConnection *connection,
 	                          GError **error);
 
+	NM_AVAILABLE_IN_1_2
 	gboolean (*connect_interactive) (NMVpnServicePlugin *plugin,
 	                                 NMConnection *connection,
 	                                 GVariant *details,
 	                                 GError **error);
 
 	/*< private >*/
+	NM_AVAILABLE_IN_1_2
 	gpointer padding[8];
-} NMVpnServicePluginClass;
+} NMVpnServicePluginClass NM_AVAILABLE_IN_1_2;
 
+NM_AVAILABLE_IN_1_2
 GType  nm_vpn_service_plugin_get_type       (void);
 
+NM_AVAILABLE_IN_1_2
 GDBusConnection   *nm_vpn_service_plugin_get_connection (NMVpnServicePlugin *plugin);
+NM_AVAILABLE_IN_1_2
 NMVpnServiceState  nm_vpn_service_plugin_get_state      (NMVpnServicePlugin *plugin);
+NM_AVAILABLE_IN_1_2
 void               nm_vpn_service_plugin_set_state      (NMVpnServicePlugin *plugin,
                                                          NMVpnServiceState state);
 
+NM_AVAILABLE_IN_1_2
 void               nm_vpn_service_plugin_secrets_required (NMVpnServicePlugin *plugin,
                                                            const char *message,
                                                            const char **hints);
 
+NM_AVAILABLE_IN_1_2
 void               nm_vpn_service_plugin_set_login_banner (NMVpnServicePlugin *plugin,
                                                            const char *banner);
 
+NM_AVAILABLE_IN_1_2
 void               nm_vpn_service_plugin_failure        (NMVpnServicePlugin *plugin,
                                                          NMVpnPluginFailure reason);
 
+NM_AVAILABLE_IN_1_2
 void               nm_vpn_service_plugin_set_config     (NMVpnServicePlugin *plugin,
                                                          GVariant *config);
 
+NM_AVAILABLE_IN_1_2
 void               nm_vpn_service_plugin_set_ip4_config (NMVpnServicePlugin *plugin,
                                                          GVariant *ip4_config);
 
+NM_AVAILABLE_IN_1_2
 void               nm_vpn_service_plugin_set_ip6_config (NMVpnServicePlugin *plugin,
                                                          GVariant *ip6_config);
 
+NM_AVAILABLE_IN_1_2
 gboolean           nm_vpn_service_plugin_disconnect     (NMVpnServicePlugin *plugin,
                                                          GError **err);
 
 /* Utility functions */
 
+NM_AVAILABLE_IN_1_2
 gboolean nm_vpn_service_plugin_read_vpn_details (int fd,
                                                  GHashTable **out_data,
                                                  GHashTable **out_secrets);
 
+NM_AVAILABLE_IN_1_2
 gboolean nm_vpn_service_plugin_get_secret_flags (GHashTable *data,
                                                  const char *secret_name,
                                                  NMSettingSecretFlags *out_flags);
