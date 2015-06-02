@@ -364,12 +364,19 @@ AS_IF([test "$with_session_tracking" = "none"], [use_consolekit="no" use_systemd
 AS_IF([test -n "$with_systemd_logind" ], [use_systemd_logind="$with_systemd_logind"])
 AS_IF([test -n "$with_consolekit" ], [use_consolekit="$with_consolekit"])
 # defaults
-AS_IF([test -z "$use_systemd_logind"], [use_systemd_logind="yes"])
+AS_IF([test -z "$use_systemd_logind"], [use_systemd_logind="auto"])
 AS_IF([test -z "$use_consolekit"], [use_consolekit="yes"])
 # output
 session_tracking=
-if test "$use_systemd_logind" = "yes"; then
-	PKG_CHECK_MODULES(SYSTEMD_LOGIN, [libsystemd], , [PKG_CHECK_MODULES(SYSTEMD_LOGIN, [libsystemd-login])])
+if test "$use_systemd_logind" = "yes" -o "$use_systemd_logind" = "auto"; then
+    PKG_CHECK_MODULES(SYSTEMD_LOGIN, [libsystemd], [have_systemd_logind=yes], [PKG_CHECK_MODULES(SYSTEMD_LOGIN, [libsystemd-login], [have_systemd_logind=yes], [have_systemd_logind=no])])
+else
+    have_systemd_logind=no
+fi
+if test "$use_systemd_logind" = "yes" -a "$have_systemd_logind" = "no"; then
+    AC_MSG_ERROR([You must have libsystemd installed to build with systemd-logind support.])
+fi
+if test "$have_systemd_logind" = "yes"; then
 	AC_SUBST(SYSTEMD_LOGIN_CFLAGS)
 	AC_SUBST(SYSTEMD_LOGIN_LIBS)
 	AC_DEFINE([SESSION_TRACKING_SYSTEMD], 1, [Define to 1 if libsystemd-login is available])

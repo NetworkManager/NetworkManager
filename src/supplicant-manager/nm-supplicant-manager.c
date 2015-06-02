@@ -25,6 +25,8 @@
 #include <glib.h>
 #include <dbus/dbus.h>
 
+#include "nm-glib-compat.h"
+
 #include "nm-supplicant-manager.h"
 #include "nm-supplicant-interface.h"
 #include "nm-logging.h"
