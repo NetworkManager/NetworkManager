@@ -19,10 +19,6 @@
  * Copyright 2007 - 2008 Red Hat, Inc.
  */
 
-/* This interface is expected to be deprecated in NM 1.2, at which point there
- * will be a new "NMVpnPlugin" class to replace it.
- */
-
 #include "config.h"
 
 #include <errno.h>
@@ -117,6 +113,8 @@ nm_vpn_plugin_old_set_connection (NMVpnPluginOld *plugin,
  * nm_vpn_plugin_old_get_connection:
  *
  * Returns: (transfer full):
+ *
+ * Deprecated: 1.2: replaced by NMVpnServicePlugin
  */
 GDBusConnection *
 nm_vpn_plugin_old_get_connection (NMVpnPluginOld *plugin)
@@ -606,6 +604,8 @@ impl_vpn_plugin_old_new_secrets (NMVpnPluginOld *plugin,
  * request new secrets when the secrets originally provided by NetworkManager
  * are insufficient, or the VPN process indicates that it needs additional
  * information to complete the request.
+ *
+ * Deprecated: 1.2: replaced by NMVpnServicePlugin
  */
 void
 nm_vpn_plugin_old_secrets_required (NMVpnPluginOld *plugin,
@@ -658,6 +658,8 @@ free_secret (gpointer data)
  * an applet when the applet calls the authentication dialog of the VPN plugin.
  *
  * Returns: %TRUE if reading values was successful, %FALSE if not
+ *
+ * Deprecated: 1.2: replaced by NMVpnServicePlugin
  **/
 gboolean
 nm_vpn_plugin_old_read_vpn_details (int fd,
@@ -759,6 +761,8 @@ nm_vpn_plugin_old_read_vpn_details (int fd,
  *
  * Returns: %TRUE if the flag data item was found and successfully converted
  * to flags, %FALSE if not
+ *
+ * Deprecated: 1.2: replaced by NMVpnServicePlugin
  **/
 gboolean
 nm_vpn_plugin_old_get_secret_flags (GHashTable *data,
@@ -1088,6 +1092,8 @@ nm_vpn_plugin_old_class_init (NMVpnPluginOldClass *plugin_class)
 	 * NMVpnPluginOld:service-name:
 	 *
 	 * The D-Bus service name of this plugin.
+	 *
+	 * Deprecated: 1.2: replaced by NMVpnServicePlugin
 	 */
 	g_object_class_install_property
 		(object_class, PROP_DBUS_SERVICE_NAME,
@@ -1101,6 +1107,8 @@ nm_vpn_plugin_old_class_init (NMVpnPluginOldClass *plugin_class)
 	 * NMVpnPluginOld:state:
 	 *
 	 * The state of the plugin.
+	 *
+	 * Deprecated: 1.2: replaced by NMVpnServicePlugin
 	 */
 	g_object_class_install_property
 		(object_class, PROP_STATE,
