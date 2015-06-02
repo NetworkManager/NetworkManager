@@ -1180,16 +1180,14 @@ read_aliases (NMSettingIPConfig *s_ip4, const char *filename, const char *networ
 	GDir *dir;
 	char *dirname, *base;
 	shvarFile *parsed;
-	NMIPAddress *base_addr;
+	NMIPAddress *base_addr = NULL;
 	GError *err = NULL;
 
 	g_return_if_fail (s_ip4 != NULL);
 	g_return_if_fail (filename != NULL);
 
-	if (nm_setting_ip_config_get_num_addresses (s_ip4) == 0)
-		return;
-
-	base_addr = nm_setting_ip_config_get_address (s_ip4, 0);
+	if (nm_setting_ip_config_get_num_addresses (s_ip4) > 0)
+		base_addr = nm_setting_ip_config_get_address (s_ip4, 0);
 
 	dirname = g_path_get_dirname (filename);
 	g_return_if_fail (dirname != NULL);
@@ -4889,18 +4887,13 @@ done:
 NMConnection *
 connection_from_file (const char *filename,
                       char **out_unhandled,
-                      GError **error)
+                      GError **error,
+                      gboolean *out_ignore_error)
 {
-	gboolean ignore_error = FALSE;
-	NMConnection *conn;
-
-	conn = connection_from_file_full (filename, NULL, NULL,
+	return connection_from_file_full (filename, NULL, NULL,
 	                                  out_unhandled,
 	                                  error,
-	                                  &ignore_error);
-	if (error && *error && !ignore_error)
-		PARSE_WARNING ("%s", (*error)->message);
-	return conn;
+	                                  out_ignore_error);
 }
 
 NMConnection *

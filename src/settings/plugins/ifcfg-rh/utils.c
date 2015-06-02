@@ -27,6 +27,7 @@
 #include "nm-core-internal.h"
 #include "nm-macros-internal.h"
 #include "NetworkManagerUtils.h"
+#include "gsystem-local-alloc.h"
 
 #include "utils.h"
 #include "shvar.h"
@@ -151,41 +152,34 @@ check_suffix (const char *base, const char *tag)
 gboolean
 utils_should_ignore_file (const char *filename, gboolean only_ifcfg)
 {
-	char *base;
-	gboolean ignore = TRUE;
-	gboolean is_ifcfg = FALSE;
-	gboolean is_other = FALSE;
+	gs_free char *base = NULL;
 
 	g_return_val_if_fail (filename != NULL, TRUE);
 
 	base = g_path_get_basename (filename);
-	g_return_val_if_fail (base != NULL, TRUE);
 
 	/* Only handle ifcfg, keys, and routes files */
-	if (!strncmp (base, IFCFG_TAG, strlen (IFCFG_TAG)))
-		is_ifcfg = TRUE;
-
-	if (only_ifcfg == FALSE) {
-		if (   !strncmp (base, KEYS_TAG, strlen (KEYS_TAG))
-		    || !strncmp (base, ROUTE_TAG, strlen (ROUTE_TAG))
-		    || !strncmp (base, ROUTE6_TAG, strlen (ROUTE6_TAG)))
-				is_other = TRUE;
+	if (strncmp (base, IFCFG_TAG, strlen (IFCFG_TAG)) != 0) {
+		if (only_ifcfg)
+			return TRUE;
+		else if (   strncmp (base, KEYS_TAG, strlen (KEYS_TAG)) != 0
+		         && strncmp (base, ROUTE_TAG, strlen (ROUTE_TAG)) != 0
+		         && strncmp (base, ROUTE6_TAG, strlen (ROUTE6_TAG)) != 0)
+			return TRUE;
 	}
 
 	/* But not those that have certain suffixes */
-	if (   (is_ifcfg || is_other)
-	    && !check_suffix (base, BAK_TAG)
-	    && !check_suffix (base, TILDE_TAG)
-	    && !check_suffix (base, ORIG_TAG)
-	    && !check_suffix (base, REJ_TAG)
-	    && !check_suffix (base, RPMNEW_TAG)
-	    && !check_suffix (base, AUGNEW_TAG)
-	    && !check_suffix (base, AUGTMP_TAG)
-	    && !check_rpm_temp_suffix (base))
-		ignore = FALSE;
+	if (   check_suffix (base, BAK_TAG)
+	    || check_suffix (base, TILDE_TAG)
+	    || check_suffix (base, ORIG_TAG)
+	    || check_suffix (base, REJ_TAG)
+	    || check_suffix (base, RPMNEW_TAG)
+	    || check_suffix (base, AUGNEW_TAG)
+	    || check_suffix (base, AUGTMP_TAG)
+	    || check_rpm_temp_suffix (base))
+		return TRUE;
 
-	g_free (base);
-	return ignore;
+	return FALSE;
 }
 
 char *
@@ -230,6 +224,12 @@ utils_get_ifcfg_name (const char *file, gboolean only_ifcfg)
 		} \
 	} G_STMT_END
 
+	/* Do not detect alias files and return 'eth0:0' instead of 'eth0'.
+	 * Unfortunately, we cannot be sure that our files don't contain colons,
+	 * so we cannot reject files with colons.
+	 *
+	 * Instead, you must not call utils_get_ifcfg_name() with an alias file
+	 * or files that are ignored. */
 	MATCH_TAG_AND_RETURN (name, IFCFG_TAG);
 	if (!only_ifcfg) {
 		MATCH_TAG_AND_RETURN (name, KEYS_TAG);
@@ -425,26 +425,43 @@ utils_is_ifcfg_alias_file (const char *alias, const char *ifcfg)
 }
 
 char *
-utils_get_ifcfg_from_alias (const char *alias)
+utils_detect_ifcfg_path (const char *path, gboolean only_ifcfg)
 {
-	char *base, *ptr, *ifcfg = NULL;
+	gs_free char *base = NULL;
+	char *ptr, *ifcfg = NULL;
 
-	g_return_val_if_fail (alias != NULL, NULL);
+	g_return_val_if_fail (path != NULL, NULL);
 
-	base = g_path_get_basename (alias);
-	g_return_val_if_fail (base != NULL, NULL);
+	if (utils_should_ignore_file (path, only_ifcfg))
+		return NULL;
 
-	if (utils_is_ifcfg_alias_file (base, NULL)) {
-		ifcfg = g_strdup (alias);
-		ptr = strrchr (ifcfg, ':');
-		if (ptr)
-			*ptr = '\0';
-		else {
+	base = g_path_get_basename (path);
+
+	if (strncmp (base, IFCFG_TAG, STRLEN (IFCFG_TAG)) == 0) {
+		if (base[STRLEN (IFCFG_TAG)] == '\0')
+			return NULL;
+		if (utils_is_ifcfg_alias_file (base, NULL)) {
+			ifcfg = g_strdup (path);
+			ptr = strrchr (ifcfg, ':');
+			if (ptr && ptr > ifcfg) {
+				*ptr = '\0';
+				if (g_file_test (ifcfg, G_FILE_TEST_EXISTS)) {
+					/* the file has a colon, so it is probably an alias.
+					 * To be ~more~ certain that this is an alias file,
+					 * check whether a corresponding base file exists. */
+					if (only_ifcfg) {
+						g_free (ifcfg);
+						return NULL;
+					}
+					return ifcfg;
+				}
+			}
 			g_free (ifcfg);
-			ifcfg = NULL;
 		}
+		return g_strdup (path);
 	}
 
-	g_free (base);
-	return ifcfg;
+	if (only_ifcfg)
+		return NULL;
+	return utils_get_ifcfg_path (path);
 }

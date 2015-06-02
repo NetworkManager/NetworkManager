@@ -201,7 +201,8 @@ files_changed_cb (NMInotifyHelper *ih,
 NMIfcfgConnection *
 nm_ifcfg_connection_new (NMConnection *source,
                          const char *full_path,
-                         GError **error)
+                         GError **error,
+                         gboolean *out_ignore_error)
 {
 	GObject *object;
 	NMConnection *tmp;
@@ -211,13 +212,17 @@ nm_ifcfg_connection_new (NMConnection *source,
 
 	g_assert (source || full_path);
 
+	if (out_ignore_error)
+		*out_ignore_error = FALSE;
+
 	/* If we're given a connection already, prefer that instead of re-reading */
 	if (source)
 		tmp = g_object_ref (source);
 	else {
 		tmp = connection_from_file (full_path,
 		                            &unhandled_spec,
-		                            error);
+		                            error,
+		                            out_ignore_error);
 		if (!tmp)
 			return NULL;
 
@@ -376,7 +381,7 @@ commit_changes (NMSettingsConnection *connection,
 	 */
 	filename = nm_settings_connection_get_filename (connection);
 	if (filename) {
-		reread = connection_from_file (filename, NULL, NULL);
+		reread = connection_from_file (filename, NULL, NULL, NULL);
 		if (reread) {
 			same = nm_connection_compare (NM_CONNECTION (connection),
 			                              reread,
