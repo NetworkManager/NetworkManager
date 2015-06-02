@@ -55,7 +55,8 @@ libnminclude_hfiles =			\
 
 libnminclude_nointrospect_hfiles =	\
 	nm-secret-agent-old.h		\
-	nm-vpn-plugin-old.h
+	nm-vpn-plugin-old.h         \
+	nm-vpn-service-plugin.h
 
 libnminclude_HEADERS =			\
 	$(libnminclude_hfiles)		\
@@ -109,6 +110,7 @@ libnm_la_csources =			\
 	nm-vpn-connection.c		\
 	nm-vpn-plugin-old.c		\
 	nm-vpn-editor.c		\
+	nm-vpn-service-plugin.c     \
 	nm-wimax-nsp.c
 
 libnm_la_SOURCES =			\
