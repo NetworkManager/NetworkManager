@@ -366,13 +366,13 @@ RfKillType nm_device_get_rfkill_type (NMDevice *device);
  *   yet initialized
  */
 typedef enum {
-	NM_UNMANAGED_NONE          = 0x00,
-	NM_UNMANAGED_DEFAULT       = 0x01,
-	NM_UNMANAGED_INTERNAL      = 0x02,
-	NM_UNMANAGED_USER          = 0x04,
-	NM_UNMANAGED_PARENT        = 0x08,
-	NM_UNMANAGED_EXTERNAL_DOWN = 0x10,
-	NM_UNMANAGED_PLATFORM_INIT = 0x20,
+	NM_UNMANAGED_NONE          = 0,
+	NM_UNMANAGED_DEFAULT       = (1LL <<  0),
+	NM_UNMANAGED_INTERNAL      = (1LL <<  1),
+	NM_UNMANAGED_USER          = (1LL <<  2),
+	NM_UNMANAGED_PARENT        = (1LL <<  3),
+	NM_UNMANAGED_EXTERNAL_DOWN = (1LL <<  4),
+	NM_UNMANAGED_PLATFORM_INIT = (1LL <<  5),
 
 	/* Boundary value */
 	__NM_UNMANAGED_LAST,
