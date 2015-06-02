@@ -524,10 +524,7 @@ ipv6.ip6-privacy=1
         </varlistentry>
         <varlistentry>
           <term><varname>ipv6.ip6-privacy</varname></term>
-          <listitem><para>If this value is unset, NetworkManager will always first check "/etc/sysctl.conf" and "/etc/sysctl.d/sysctl.conf" whether
-            they contain "net.ipv6.conf.default.use_tempaddr". This value is then preferred over any per-connection
-            setting. That step is omitted when setting the global configuration value <literal>ipv6.ip6-privacy</literal>
-            to any value. If <literal>ipv6.ip6-privacy</literal> is set but neither "0", "1", or "2", use the content of
+          <listitem><para>If <literal>ipv6.ip6-privacy</literal> is unset, use the content of
             "/proc/sys/net/ipv6/conf/default/use_tempaddr" as last fallback.
           </para></listitem>
         </varlistentry>

@@ -508,19 +508,10 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
 	 * 0: disabled, 1: enabled (prefer public address), 2: enabled (prefer temporary
 	 * addresses).
 	 *
-	 * This property can be configured with a default value in global configuration
-	 * NetworkManager.conf.
+	 * Having a per-connection setting set to "-1" (unknown) means fallback to
+	 * global configuration "ipv6.ip6-privacy".
 	 *
-	 * If the global configuration value "connection.ipv6.ip6-privacy"
-	 * is not specified, the sysctl value "net.ipv6.conf.default.use_tempaddr" in /etc/sysctl.conf or
-	 * /lib/sysctl.d/sysctl.conf is always checked first. If set to "0", "1", or "2", that
-	 * value is always used and any per-connection setting is ignored. This behavior is kept for
-	 * backward compatiblity.
-	 *
-	 * Otherwise this per-connection setting is honored next. Having a per-connection setting set
-	 * to "-1" (unknown) means fallback to global configuration "ipv6.ip6-privacy".
-	 *
-	 * If the global configuration is explicitly set to "-1", fallback to read
+	 * If also global configuration is unspecified or set to "-1", fallback to read
 	 * "/proc/sys/net/ipv6/conf/default/use_tempaddr".
 	 **/
 	/* ---ifcfg-rh---

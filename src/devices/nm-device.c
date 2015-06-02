@@ -4726,45 +4726,6 @@ _ip6_privacy_clamp (NMSettingIP6ConfigPrivacy use_tempaddr)
 	}
 }
 
-/* Get net.ipv6.conf.default.use_tempaddr value from /etc/sysctl.conf or
- * /lib/sysctl.d/sysctl.conf
- */
-static NMSettingIP6ConfigPrivacy
-_ip6_privacy_sysctl (void)
-{
-	char *contents = NULL;
-	const char *group_name = "[forged_group]\n";
-	char *sysctl_data = NULL;
-	GKeyFile *keyfile;
-	GError *error = NULL;
-	gint tmp;
-	NMSettingIP6ConfigPrivacy ret = NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
-
-	/* Read file contents to a string. */
-	if (!g_file_get_contents ("/etc/sysctl.conf", &contents, NULL, NULL))
-		if (!g_file_get_contents ("/lib/sysctl.d/sysctl.conf", &contents, NULL, NULL))
-			return NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
-
-	/* Prepend a group so that we can use GKeyFile parser. */
-	sysctl_data = g_strdup_printf ("%s%s", group_name, contents);
-
-	keyfile = g_key_file_new ();
-	if (!g_key_file_load_from_data (keyfile, sysctl_data, -1, G_KEY_FILE_NONE, NULL))
-		goto done;
-
-	tmp = g_key_file_get_integer (keyfile, "forged_group", "net.ipv6.conf.default.use_tempaddr", &error);
-	if (error == NULL)
-		ret = _ip6_privacy_clamp (tmp);
-
-done:
-	g_free (contents);
-	g_free (sysctl_data);
-	g_clear_error (&error);
-	g_key_file_free (keyfile);
-
-	return ret;
-}
-
 static NMSettingIP6ConfigPrivacy
 _ip6_privacy_get (NMDevice *self)
 {
@@ -4774,20 +4735,7 @@ _ip6_privacy_get (NMDevice *self)
 
 	g_return_val_if_fail (self, NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
 
-	value = nm_config_data_get_connection_default (nm_config_get_data (nm_config_get ()),
-	                                               "ipv6.ip6-privacy", self);
-
-	/* 1.) If (and only if) the default value is not configured, check _ip6_privacy_sysctl()
-	 * first. This is to preserve backward compatibility. In this case -- having no
-	 * default value in global configuration, but use_tempaddr configured in /etc/sysctl --
-	 * the per-connection setting is always ignored. */
-	if (!value) {
-		ip6_privacy = _ip6_privacy_sysctl ();
-		if (ip6_privacy != NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN)
-			return ip6_privacy;
-	}
-
-	/* 2.) Next we always look at the per-connection setting. If it is not -1 (unknown),
+	/* 1.) First look at the per-connection setting. If it is not -1 (unknown),
 	 * use it. */
 	connection = nm_device_get_connection (self);
 	if (connection) {
@@ -4801,13 +4749,10 @@ _ip6_privacy_get (NMDevice *self)
 		}
 	}
 
-	/* 3.) All options (per-connection, global, sysctl) are unset/default.
-	 * Return UNKNOWN. Skip step 5.) because that would be a change in behavior
-	 * compared to older versions. */
-	if (!value)
-		return NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
+	value = nm_config_data_get_connection_default (nm_config_get_data (nm_config_get ()),
+	                                               "ipv6.ip6-privacy", self);
 
-	/* 4.) use the default value from the configuration. */
+	/* 2.) use the default value from the configuration. */
 	ip6_privacy = _nm_utils_ascii_str_to_int64 (value, 10,
 	                                            NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
 	                                            NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
@@ -4815,15 +4760,8 @@ _ip6_privacy_get (NMDevice *self)
 	if (ip6_privacy != NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN)
 		return ip6_privacy;
 
-	/* 5.) A default-value is configured, but it is invalid/unknown. Fallback to sysctl reading.
+	/* 3.) No valid default-value configured. Fallback to reading sysctl.
 	 *
-	 * _ip6_privacy_sysctl() only reads two files from /etc and does not support the complexity
-	 * of parsing all files. Also, it only considers "net.ipv6.conf.default.use_tempaddr",
-	 * not the per-interface values. This is kinda unexpected, but we do it in 1.) to preserve
-	 * old behavior.
-	 *
-	 * Now, the user actively configured a default value to "unknown" and we can introduce new
-	 * behavior without changing old behavior (step 1.).
 	 * Instead of reading static config files in /etc, just read the current sysctl value.
 	 * This works as NM only writes to "/proc/sys/net/ipv6/conf/IFNAME/use_tempaddr", but leaves
 	 * the "default" entry untouched. */
