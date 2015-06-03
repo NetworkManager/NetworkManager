@@ -36,7 +36,7 @@ DISTCHECK_CONFIGURE_FLAGS = \
 	--enable-tests=yes \
 	--with-valgrind=no \
 	--enable-gtk-doc \
-	--enable-more-warnings=yes \
+	--enable-more-warnings=error \
 	--with-udev-dir=$$dc_install_base/lib/udev \
 	--with-wext=no \
 	--enable-ifcfg-rh \
@@ -58,8 +58,6 @@ DISTCLEANFILES = intltool-extract intltool-merge intltool-update
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = NetworkManager.pc
-
-DISTCHECK_CONFIGURE_FLAGS = --enable-more-warnings=error
 
 CLEANFILES = cscope.in.out cscope.out cscope.po.out
 
