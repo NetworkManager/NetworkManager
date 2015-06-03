@@ -64,6 +64,7 @@ typedef struct {
 	NMConnectivityState connectivity;
 	NMActiveConnection *primary_connection;
 	NMActiveConnection *activating_connection;
+	NMMetered metered;
 
 	GCancellable *perm_call_cancellable;
 	GHashTable *permissions;
@@ -102,6 +103,7 @@ enum {
 	PROP_PRIMARY_CONNECTION,
 	PROP_ACTIVATING_CONNECTION,
 	PROP_DEVICES,
+	PROP_METERED,
 
 	LAST_PROP
 };
@@ -179,6 +181,7 @@ init_dbus (NMObject *object)
 		{ NM_MANAGER_PRIMARY_CONNECTION,        &priv->primary_connection, NULL, NM_TYPE_ACTIVE_CONNECTION },
 		{ NM_MANAGER_ACTIVATING_CONNECTION,     &priv->activating_connection, NULL, NM_TYPE_ACTIVE_CONNECTION },
 		{ NM_MANAGER_DEVICES,                   &priv->devices, NULL, NM_TYPE_DEVICE, "device" },
+		{ NM_MANAGER_METERED,                   &priv->metered },
 		{ NULL },
 	};
 
@@ -1537,6 +1540,9 @@ get_property (GObject *object,
 	case PROP_DEVICES:
 		g_value_take_boxed (value, _nm_utils_copy_object_array (nm_manager_get_devices (self)));
 		break;
+	case PROP_METERED:
+		g_value_set_uint (value, priv->metered);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -1669,6 +1675,19 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		                     G_TYPE_PTR_ARRAY,
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
+	/**
+	 * NMManager:metered:
+	 *
+	 * Whether the connectivity is metered.
+	 *
+	 * Since: 1.0.6
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_METERED,
+		 g_param_spec_uint (NM_MANAGER_METERED, "", "",
+		                    0, G_MAXUINT32, NM_METERED_UNKNOWN,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/* signals */
 
