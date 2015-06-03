@@ -301,6 +301,7 @@ get_secrets_cb (NMSecretAgentOld *self,
 	if (error)
 		g_dbus_method_invocation_return_gerror (info->context, error);
 	else {
+		g_variant_take_ref (secrets);
 		g_dbus_method_invocation_return_value (info->context,
 		                                       g_variant_new ("(@a{sa{sv}})", secrets));
 	}
