@@ -56,6 +56,7 @@ G_BEGIN_DECLS
 #define NM_CLIENT_CONNECTIONS "connections"
 #define NM_CLIENT_HOSTNAME "hostname"
 #define NM_CLIENT_CAN_MODIFY "can-modify"
+#define NM_CLIENT_METERED "metered"
 
 #define NM_CLIENT_DEVICE_ADDED "device-added"
 #define NM_CLIENT_DEVICE_REMOVED "device-removed"

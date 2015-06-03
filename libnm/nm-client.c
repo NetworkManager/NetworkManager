@@ -76,6 +76,7 @@ enum {
 	PROP_CONNECTIONS,
 	PROP_HOSTNAME,
 	PROP_CAN_MODIFY,
+	PROP_METERED,
 
 	LAST_PROP
 };
@@ -1871,6 +1872,7 @@ get_property (GObject *object, guint prop_id,
 	case PROP_PRIMARY_CONNECTION:
 	case PROP_ACTIVATING_CONNECTION:
 	case PROP_DEVICES:
+	case PROP_METERED:
 		g_object_get_property (G_OBJECT (NM_CLIENT_GET_PRIVATE (object)->manager),
 		                       pspec->name, value);
 		break;
@@ -2142,6 +2144,20 @@ nm_client_class_init (NMClientClass *client_class)
 		                       FALSE,
 		                       G_PARAM_READABLE |
 		                       G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMClient:metered:
+	 *
+	 * Whether the connectivity is metered.
+	 *
+	 * Since: 1.2
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_METERED,
+		 g_param_spec_uint (NM_CLIENT_METERED, "", "",
+		                    0, G_MAXUINT32, NM_METERED_UNKNOWN,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/* signals */
 

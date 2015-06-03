@@ -157,6 +157,7 @@ typedef struct {
 	guint ac_cleanup_id;
 	NMActiveConnection *primary_connection;
 	NMActiveConnection *activating_connection;
+	NMMetered metered;
 
 	GSList *devices;
 	NMState state;
@@ -230,6 +231,7 @@ enum {
 	PROP_PRIMARY_CONNECTION_TYPE,
 	PROP_ACTIVATING_CONNECTION,
 	PROP_DEVICES,
+	PROP_METERED,
 
 	/* Not exported */
 	PROP_HOSTNAME,
@@ -652,6 +654,30 @@ find_best_device_state (NMManager *manager)
 	}
 
 	return best_state;
+}
+
+static void
+nm_manager_update_metered (NMManager *manager)
+{
+	NMManagerPrivate *priv;
+	NMDevice *device;
+	NMMetered value = NM_METERED_UNKNOWN;
+
+	g_return_if_fail (NM_IS_MANAGER (manager));
+	priv = NM_MANAGER_GET_PRIVATE (manager);
+
+	if (priv->primary_connection) {
+		device =  nm_active_connection_get_device (priv->primary_connection);
+		if (device)
+			value = nm_device_get_metered (device);
+	}
+
+	if (value != priv->metered) {
+		priv->metered = value;
+		nm_log_dbg (LOGD_CORE, "New manager metered value: %d",
+		            (int) priv->metered);
+		g_object_notify (G_OBJECT (manager), NM_MANAGER_METERED);
+	}
 }
 
 static void
@@ -4056,6 +4082,14 @@ firmware_dir_changed (GFileMonitor *monitor,
 }
 
 static void
+connection_metered_changed (GObject *object,
+                            NMMetered metered,
+                            gpointer user_data)
+{
+	nm_manager_update_metered (NM_MANAGER (user_data));
+}
+
+static void
 policy_default_device_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
@@ -4077,11 +4111,23 @@ policy_default_device_changed (GObject *object, GParamSpec *pspec, gpointer user
 		ac = NULL;
 
 	if (ac != priv->primary_connection) {
-		g_clear_object (&priv->primary_connection);
+		if (priv->primary_connection) {
+			g_signal_handlers_disconnect_by_func (priv->primary_connection,
+			                                      G_CALLBACK (connection_metered_changed),
+			                                      self);
+			g_clear_object (&priv->primary_connection);
+		}
+
 		priv->primary_connection = ac ? g_object_ref (ac) : NULL;
+
+		if (priv->primary_connection) {
+			g_signal_connect (priv->primary_connection, NM_ACTIVE_CONNECTION_DEVICE_METERED_CHANGED,
+			                  G_CALLBACK (connection_metered_changed), self);
+		}
 		nm_log_dbg (LOGD_CORE, "PrimaryConnection now %s", ac ? nm_active_connection_get_id (ac) : "(none)");
 		g_object_notify (G_OBJECT (self), NM_MANAGER_PRIMARY_CONNECTION);
 		g_object_notify (G_OBJECT (self), NM_MANAGER_PRIMARY_CONNECTION_TYPE);
+		nm_manager_update_metered (self);
 	}
 }
 
@@ -4649,6 +4695,8 @@ nm_manager_init (NMManager *manager)
 
 	/* Update timestamps in active connections */
 	priv->timestamp_update_id = g_timeout_add_seconds (300, (GSourceFunc) periodic_update_active_connection_timestamps, manager);
+
+	priv->metered = NM_METERED_UNKNOWN;
 }
 
 static void
@@ -4732,6 +4780,9 @@ get_property (GObject *object, guint prop_id,
 				g_ptr_array_add (array, g_strdup (path));
 		}
 		g_value_take_boxed (value, array);
+		break;
+	case PROP_METERED:
+		g_value_set_uint (value, priv->metered);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -5010,6 +5061,20 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		                     DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMManager:metered:
+	 *
+	 * Whether the connectivity is metered.
+	 *
+	 * Since: 1.2
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_METERED,
+		 g_param_spec_uint (NM_MANAGER_METERED, "", "",
+		                    0, G_MAXUINT32, NM_METERED_UNKNOWN,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/* signals */
 	signals[DEVICE_ADDED] =

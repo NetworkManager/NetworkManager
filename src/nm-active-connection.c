@@ -100,6 +100,7 @@ enum {
 
 enum {
 	DEVICE_CHANGED,
+	DEVICE_METERED_CHANGED,
 	LAST_SIGNAL
 };
 static guint signals[LAST_SIGNAL] = { 0 };
@@ -401,6 +402,18 @@ device_master_changed (GObject *object,
 	}
 }
 
+static void
+device_metered_changed (GObject *object,
+                        GParamSpec *pspec,
+                        gpointer user_data)
+{
+	NMActiveConnection *self = (NMActiveConnection *) user_data;
+	NMDevice *device = NM_DEVICE (object);
+
+	g_return_if_fail (NM_IS_ACTIVE_CONNECTION (self));
+	g_signal_emit (self, signals[DEVICE_METERED_CHANGED], 0, nm_device_get_metered (device));
+}
+
 gboolean
 nm_active_connection_set_device (NMActiveConnection *self, NMDevice *device)
 {
@@ -427,6 +440,8 @@ nm_active_connection_set_device (NMActiveConnection *self, NMDevice *device)
 		                  G_CALLBACK (device_state_changed), self);
 		g_signal_connect (device, "notify::master",
 		                  G_CALLBACK (device_master_changed), self);
+		g_signal_connect (device, "notify::" NM_DEVICE_METERED,
+		                  G_CALLBACK (device_metered_changed), self);
 
 		if (!priv->assumed) {
 			priv->pending_activation_id = g_strdup_printf ("activation::%p", (void *)self);
@@ -837,6 +852,7 @@ _device_cleanup (NMActiveConnection *self)
 	if (priv->device) {
 		g_signal_handlers_disconnect_by_func (priv->device, G_CALLBACK (device_state_changed), self);
 		g_signal_handlers_disconnect_by_func (priv->device, G_CALLBACK (device_master_changed), self);
+		g_signal_handlers_disconnect_by_func (priv->device, G_CALLBACK (device_metered_changed), self);
 	}
 
 	if (priv->pending_activation_id) {
@@ -1041,6 +1057,14 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 		              G_STRUCT_OFFSET (NMActiveConnectionClass, device_changed),
 		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 2, NM_TYPE_DEVICE, NM_TYPE_DEVICE);
+
+	signals[DEVICE_METERED_CHANGED] =
+		g_signal_new (NM_ACTIVE_CONNECTION_DEVICE_METERED_CHANGED,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMActiveConnectionClass, device_metered_changed),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 1, G_TYPE_UINT);
 
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (ac_class),

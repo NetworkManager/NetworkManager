@@ -50,6 +50,7 @@ G_BEGIN_DECLS
 #define NM_MANAGER_PRIMARY_CONNECTION "primary-connection"
 #define NM_MANAGER_ACTIVATING_CONNECTION "activating-connection"
 #define NM_MANAGER_DEVICES "devices"
+#define NM_MANAGER_METERED "metered"
 
 typedef struct {
 	NMObject parent;
