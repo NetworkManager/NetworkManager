@@ -302,7 +302,7 @@ get_secrets_cb (NMSecretAgentOld *self,
 		g_dbus_method_invocation_return_gerror (info->context, error);
 	else {
 		g_dbus_method_invocation_return_value (info->context,
-		                                       g_variant_new ("(@a{sa{sv}})", secrets));
+		                                       g_variant_new ("(a{sa{sv}})", secrets));
 	}
 
 	/* Remove the request from internal tracking */
