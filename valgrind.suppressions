@@ -108,6 +108,20 @@
    obj:/*/ld-*.so
 }
 {
+   # added on Fedora 22
+   _dl_expand_dynamic_string_token
+   Memcheck:Cond
+   fun:index
+   fun:expand_dynamic_string_token
+   ...
+   fun:dl_main
+   fun:_dl_sysdep_start
+   fun:_dl_start_final
+   fun:_dl_start
+   obj:/*/ld-*.so
+   ...
+}
+{
     all_gobject_init_ctor
     Memcheck:Leak
     ...
