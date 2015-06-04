@@ -109,6 +109,9 @@
 }
 {
    # added on Fedora 22
+   # This happens when setting LD_LIBRARY_PATH and the linker is searching the libraries to load.
+   # for example:
+   # LD_LIBRARY_PATH=./././././././././././././././././libnm/.libs:./libnm-util/.libs:./libnm-glib/.libs
    _dl_expand_dynamic_string_token
    Memcheck:Cond
    fun:index
