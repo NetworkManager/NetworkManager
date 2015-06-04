@@ -26,6 +26,7 @@ $LIBTOOL --mode=execute "$VALGRIND" \
 	--leak-check=full \
 	--gen-suppressions=all \
 	--suppressions="$SUPPRESSIONS" \
+	--num-callers=100 \
 	--log-file="$LOGFILE" \
 	"$@"
 RESULT=$?
