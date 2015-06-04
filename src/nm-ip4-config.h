@@ -41,7 +41,10 @@ typedef struct {
 	GObjectClass parent;
 } NMIP4ConfigClass;
 
+/* internal */
 #define NM_IP4_CONFIG_IFINDEX "ifindex"
+
+/* public*/
 #define NM_IP4_CONFIG_ADDRESS_DATA "address-data"
 #define NM_IP4_CONFIG_ROUTE_DATA "route-data"
 #define NM_IP4_CONFIG_GATEWAY "gateway"

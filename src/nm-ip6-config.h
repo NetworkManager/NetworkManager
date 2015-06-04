@@ -42,7 +42,10 @@ typedef struct {
 	GObjectClass parent;
 } NMIP6ConfigClass;
 
+/* internal */
 #define NM_IP6_CONFIG_IFINDEX "ifindex"
+
+/* public */
 #define NM_IP6_CONFIG_ADDRESS_DATA "address-data"
 #define NM_IP6_CONFIG_ROUTE_DATA "route-data"
 #define NM_IP6_CONFIG_GATEWAY "gateway"
