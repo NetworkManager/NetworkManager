@@ -88,6 +88,7 @@ void nm_ip6_config_set_never_default (NMIP6Config *config, gboolean never_defaul
 gboolean nm_ip6_config_get_never_default (const NMIP6Config *config);
 void nm_ip6_config_set_gateway (NMIP6Config *config, const struct in6_addr *);
 const struct in6_addr *nm_ip6_config_get_gateway (const NMIP6Config *config);
+gint64 nm_ip6_config_get_route_metric (const NMIP6Config *config);
 
 /* Addresses */
 void nm_ip6_config_reset_addresses (NMIP6Config *config);

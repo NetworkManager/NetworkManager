@@ -88,6 +88,7 @@ void nm_ip4_config_set_never_default (NMIP4Config *config, gboolean never_defaul
 gboolean nm_ip4_config_get_never_default (const NMIP4Config *config);
 void nm_ip4_config_set_gateway (NMIP4Config *config, guint32 gateway);
 guint32 nm_ip4_config_get_gateway (const NMIP4Config *config);
+gint64 nm_ip4_config_get_route_metric (const NMIP4Config *config);
 
 /* Addresses */
 void nm_ip4_config_reset_addresses (NMIP4Config *config);
