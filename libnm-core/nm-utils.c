@@ -3688,3 +3688,123 @@ int _nm_utils_dns_option_find_idx (GPtrArray *array, const char *option)
 	return -1;
 }
 
+/**
+ * nm_utils_enum_to_str
+ * @type: the %GType of the enum
+ * @value: the value to be translated
+ *
+ * Converts an enum value to its string representation. If the enum is a
+ * %G_TYPE_FLAGS the function returns a comma-separated list of matching values.
+ * If the enum is a %G_TYPE_ENUM and the given value is not valid the
+ * function returns %NULL.
+ *
+ * Returns: a newly allocated string or %NULL
+ *
+ * Since: 1.2
+ */
+char *nm_utils_enum_to_str (GType type, int value)
+{
+	GTypeClass *class;
+	char *ret;
+
+	class = g_type_class_ref (type);
+
+	if (G_IS_ENUM_CLASS (class)) {
+		GEnumValue *enum_value;
+
+		enum_value = g_enum_get_value (G_ENUM_CLASS (class), value);
+		ret = enum_value ? strdup (enum_value->value_nick) : NULL;
+	} else if (G_IS_FLAGS_CLASS (class)) {
+		GFlagsValue *flags_value;
+		GString *str = g_string_new ("");
+		gboolean first = TRUE;
+
+		while (value) {
+			flags_value = g_flags_get_first_value (G_FLAGS_CLASS (class), value);
+			if (!flags_value)
+				break;
+
+			if (!first)
+				g_string_append_c (str, ',');
+			g_string_append (str, flags_value->value_nick);
+
+			value &= ~flags_value->value;
+			first = FALSE;
+		}
+		ret = g_string_free (str, FALSE);
+	} else
+		g_return_if_reached ();
+
+	g_type_class_unref (class);
+	return ret;
+}
+
+/**
+ * nm_utils_enum_from_str
+ * @type: the %GType of the enum
+ * @str: the input string
+ * @out_value: (out) (allow-none) the output value
+ * @err_token: (out) (allow-none) location to store the first unrecognized token
+ *
+ * Converts a string to the matching enum value.
+ *
+ * If the enum is a %G_TYPE_FLAGS the function returns the logical OR of values
+ * matching the comma-separated tokens in the string; if an unknown token is found
+ * the function returns %FALSE and stores a pointer to a newly allocated string
+ * containing the unrecognized token in @err_token.
+ *
+ * Returns: %TRUE if the conversion was successful, %FALSE otherwise
+ *
+ * Since: 1.2
+ */
+gboolean nm_utils_enum_from_str (GType type, const char *str,
+                                 int *out_value, char **err_token)
+{
+	GTypeClass *class;
+	gboolean ret = FALSE;
+	int value = 0;
+
+	g_return_val_if_fail (str, FALSE);
+	class = g_type_class_ref (type);
+
+	if (G_IS_ENUM_CLASS (class)) {
+		GEnumValue *enum_value;
+
+		enum_value = g_enum_get_value_by_nick (G_ENUM_CLASS (class), str);
+		if (enum_value) {
+			value = enum_value->value;
+			ret = TRUE;
+		}
+	} else if (G_IS_FLAGS_CLASS (class)) {
+		GFlagsValue *flags_value;
+		gs_strfreev char **strv = NULL;
+		int i;
+
+		strv = g_strsplit (str, ",", 0);
+		for (i = 0; strv[i]; i++) {
+			if (!strv[i][0])
+				continue;
+
+			flags_value = g_flags_get_value_by_nick (G_FLAGS_CLASS (class), strv[i]);
+			if (!flags_value)
+				break;
+
+			value |= flags_value->value;
+		}
+
+		if (strv[i]) {
+			if (err_token)
+				*err_token = strdup (strv[i]);
+			value = 0;
+		} else
+			ret = TRUE;
+	} else
+		g_assert_not_reached ();
+
+	if (out_value)
+		*out_value = value;
+
+	g_type_class_unref (class);
+	return ret;
+}
+

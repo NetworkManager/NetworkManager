@@ -877,4 +877,6 @@ global:
 	nm_setting_wireless_get_powersave;
 	nm_utils_bond_mode_int_to_string;
 	nm_utils_bond_mode_string_to_int;
+	nm_utils_enum_from_str;
+	nm_utils_enum_to_str;
 } libnm_1_0_0;

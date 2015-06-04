@@ -1,5 +1,14 @@
 if ENABLE_TESTS
 
+include $(GLIB_MAKEFILE)
+
+GLIB_GENERATED = nm-core-tests-enum-types.h nm-core-tests-enum-types.c
+nm_core_tests_enum_types_sources = test-general-enums.h
+GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM
+GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
+
+BUILT_SOURCES = $(GLIB_GENERATED)
+
 certsdir = $(srcdir)/certs
 
 AM_CPPFLAGS = \
@@ -27,6 +36,12 @@ LDADD = \
 
 @VALGRIND_RULES@
 TESTS = $(noinst_PROGRAMS)
+
+test_general_SOURCES = \
+	test-general.c \
+	test-general-enums.h \
+	nm-core-tests-enum-types.c \
+	nm-core-tests-enum-types.h
 
 endif
 
