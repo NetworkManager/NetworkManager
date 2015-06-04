@@ -50,6 +50,9 @@ if [ $RESULT -ne 0 -a $RESULT -ne 77 ]; then
 			echo Files without debugging symbols: $UNRESOLVED >&2
 		fi
 	fi
+	exit $RESULT
 fi
+
+find -name "$LOGFILE" -size 0 -delete
 
 exit $RESULT
