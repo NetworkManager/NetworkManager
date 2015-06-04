@@ -32,6 +32,7 @@
 #include "nm-setting-private.h"
 #include "nm-utils.h"
 #include "nm-core-internal.h"
+#include "nm-core-tests-enum-types.h"
 
 #include "nm-setting-8021x.h"
 #include "nm-setting-adsl.h"
@@ -62,6 +63,7 @@
 #include "nm-glib-compat.h"
 
 #include "nm-test-utils.h"
+#include "test-general-enums.h"
 
 static void
 vpn_check_func (const char *key, const char *value, gpointer user_data)
@@ -4536,6 +4538,77 @@ test_nm_in_set (void)
 
 /******************************************************************************/
 
+static void
+test_nm_utils_enum_from_str_do (GType type, const char *str,
+                                gboolean exp_result, int exp_flags,
+                                const char *exp_err_token)
+{
+	int flags = 1;
+	char *err_token = NULL;
+	gboolean result;
+
+	result = nm_utils_enum_from_str (type, str, &flags, &err_token);
+
+	g_assert (result == exp_result);
+	g_assert_cmpint (flags, ==, exp_flags);
+	g_assert_cmpstr (err_token, ==, exp_err_token);
+
+	g_free (err_token);
+}
+
+static void
+test_nm_utils_enum_to_str_do (GType type, int flags, const char *exp_str)
+{
+	char *str;
+
+	str = nm_utils_enum_to_str (type, flags);
+	g_assert_cmpstr (str, ==, exp_str);
+	g_free (str);
+}
+
+static void test_nm_utils_enum (void)
+{
+	GType bool_enum = nm_test_general_bool_enum_get_type();
+	GType meta_flags = nm_test_general_meta_flags_get_type();
+	GType color_flags = nm_test_general_color_flags_get_type();
+
+	test_nm_utils_enum_to_str_do (bool_enum, NM_TEST_GENERAL_BOOL_ENUM_YES, "yes");
+	test_nm_utils_enum_to_str_do (bool_enum, NM_TEST_GENERAL_BOOL_ENUM_UNKNOWN, "unknown");
+	test_nm_utils_enum_to_str_do (bool_enum, NM_TEST_GENERAL_BOOL_ENUM_INVALID, NULL);
+
+	test_nm_utils_enum_to_str_do (meta_flags, NM_TEST_GENERAL_META_FLAGS_NONE, "");
+	test_nm_utils_enum_to_str_do (meta_flags, NM_TEST_GENERAL_META_FLAGS_BAZ, "baz");
+	test_nm_utils_enum_to_str_do (meta_flags, NM_TEST_GENERAL_META_FLAGS_FOO |
+	                                          NM_TEST_GENERAL_META_FLAGS_BAR |
+	                                          NM_TEST_GENERAL_META_FLAGS_BAZ, "foo,bar,baz");
+
+	test_nm_utils_enum_to_str_do (color_flags, NM_TEST_GENERAL_COLOR_FLAGS_RED, "red");
+	test_nm_utils_enum_to_str_do (color_flags, NM_TEST_GENERAL_COLOR_FLAGS_WHITE, "");
+	test_nm_utils_enum_to_str_do (color_flags, NM_TEST_GENERAL_COLOR_FLAGS_RED |
+	                                           NM_TEST_GENERAL_COLOR_FLAGS_GREEN, "red,green");
+
+	test_nm_utils_enum_from_str_do (bool_enum, "", FALSE, 0, NULL);
+	test_nm_utils_enum_from_str_do (bool_enum, "invalid", FALSE, 0, NULL);
+	test_nm_utils_enum_from_str_do (bool_enum, "yes", TRUE, NM_TEST_GENERAL_BOOL_ENUM_YES, NULL);
+	test_nm_utils_enum_from_str_do (bool_enum, "no", TRUE, NM_TEST_GENERAL_BOOL_ENUM_NO, NULL);
+	test_nm_utils_enum_from_str_do (bool_enum, "yes,no", FALSE, 0, NULL);
+
+	test_nm_utils_enum_from_str_do (meta_flags, "", TRUE, 0, NULL);
+	test_nm_utils_enum_from_str_do (meta_flags, "foo", TRUE, NM_TEST_GENERAL_META_FLAGS_FOO, NULL);
+	test_nm_utils_enum_from_str_do (meta_flags, "foo,baz", TRUE, NM_TEST_GENERAL_META_FLAGS_FOO |
+	                                                             NM_TEST_GENERAL_META_FLAGS_BAZ, NULL);
+	test_nm_utils_enum_from_str_do (meta_flags, "foo,,bar", TRUE, NM_TEST_GENERAL_META_FLAGS_FOO |
+	                                                              NM_TEST_GENERAL_META_FLAGS_BAR, NULL);
+	test_nm_utils_enum_from_str_do (meta_flags, "foo,baz,quux,bar", FALSE, 0, "quux");
+
+	test_nm_utils_enum_from_str_do (color_flags, "green", TRUE, NM_TEST_GENERAL_COLOR_FLAGS_GREEN, NULL);
+	test_nm_utils_enum_from_str_do (color_flags, "blue,red", TRUE, NM_TEST_GENERAL_COLOR_FLAGS_BLUE |
+	                                                               NM_TEST_GENERAL_COLOR_FLAGS_RED, NULL);
+	test_nm_utils_enum_from_str_do (color_flags, "blue,white", FALSE, 0, "white");
+}
+
+/******************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -4640,6 +4713,8 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/nm_utils_is_power_of_two", test_nm_utils_is_power_of_two);
 	g_test_add_func ("/core/general/_glib_compat_g_ptr_array_insert", test_g_ptr_array_insert);
 	g_test_add_func ("/core/general/_nm_utils_ptrarray_find_binary_search", test_nm_utils_ptrarray_find_binary_search);
+
+	g_test_add_func ("/core/general/test_nm_utils_enum", test_nm_utils_enum);
 
 	return g_test_run ();
 }
