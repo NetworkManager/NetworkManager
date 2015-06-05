@@ -65,8 +65,6 @@ typedef struct {
 	const char *conf_file;
 	GFileMonitor *conf_file_monitor;
 	guint conf_file_monitor_id;
-
-	gboolean disposed;
 } SCPluginKeyfilePrivate;
 
 static void
@@ -628,25 +626,24 @@ dispose (GObject *object)
 {
 	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (object);
 
-	if (priv->disposed)
-		goto out;
-
-	priv->disposed = TRUE;
-
 	if (priv->monitor) {
-		if (priv->monitor_id)
+		if (priv->monitor_id) {
 			g_signal_handler_disconnect (priv->monitor, priv->monitor_id);
+			priv->monitor_id = 0;
+		}
 
 		g_file_monitor_cancel (priv->monitor);
-		g_object_unref (priv->monitor);
+		g_clear_object (&priv->monitor);
 	}
 
 	if (priv->conf_file_monitor) {
-		if (priv->conf_file_monitor_id)
+		if (priv->conf_file_monitor_id) {
 			g_signal_handler_disconnect (priv->conf_file_monitor, priv->conf_file_monitor_id);
+			priv->conf_file_monitor_id = 0;
+		}
 
 		g_file_monitor_cancel (priv->conf_file_monitor);
-		g_object_unref (priv->conf_file_monitor);
+		g_clear_object (&priv->conf_file_monitor);
 	}
 
 	if (priv->connections) {
@@ -654,7 +651,6 @@ dispose (GObject *object)
 		priv->connections = NULL;
 	}
 
-out:
 	G_OBJECT_CLASS (sc_plugin_keyfile_parent_class)->dispose (object);
 }
 
