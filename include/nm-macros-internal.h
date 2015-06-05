@@ -105,7 +105,7 @@
 #ifdef NM_MORE_ASSERTS
 #define nm_assert(cond) G_STMT_START { g_assert (cond); } G_STMT_END
 #else
-#define nm_assert(cond) G_STMT_START { (void) 0; } G_STMT_END
+#define nm_assert(cond) G_STMT_START { if (FALSE) { if (cond) { } } } G_STMT_END
 #endif
 
 /*****************************************************************************/
@@ -188,6 +188,29 @@ nm_clear_g_source (guint *id)
 
 #define NM_FLAGS_ANY(flags, check)  ( ( ((flags) & (check)) != 0       ) ? TRUE : FALSE )
 #define NM_FLAGS_ALL(flags, check)  ( ( ((flags) & (check)) == (check) ) ? TRUE : FALSE )
+
+#define NM_FLAGS_SET(flags, val)  ({ \
+		const typeof(flags) _flags = (flags); \
+		const typeof(flags) _val = (val); \
+		\
+		_flags | _val; \
+	})
+
+#define NM_FLAGS_UNSET(flags, val)  ({ \
+		const typeof(flags) _flags = (flags); \
+		const typeof(flags) _val = (val); \
+		\
+		_flags & (~_val); \
+	})
+
+#define NM_FLAGS_ASSIGN(flags, val, assign)  ({ \
+		const typeof(flags) _flags = (flags); \
+		const typeof(flags) _val = (val); \
+		\
+		(assign) \
+			? _flags | (_val) \
+			: _flags & (~_val); \
+	})
 
 /*****************************************************************************/
 

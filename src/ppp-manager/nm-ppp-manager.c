@@ -1071,7 +1071,7 @@ nm_ppp_manager_start (NMPPPManager *manager,
 
 	/* Make sure /dev/ppp exists (bgo #533064) */
 	if (stat ("/dev/ppp", &st) || !S_ISCHR (st.st_mode))
-		nm_utils_modprobe (NULL, "ppp_generic", NULL);
+		nm_utils_modprobe (NULL, FALSE, "ppp_generic", NULL);
 
 	connection = nm_act_request_get_connection (req);
 	g_assert (connection);

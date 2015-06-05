@@ -8,7 +8,7 @@
 #include "nm-test-utils.h"
 
 #define SIGNAL_DATA_FMT "'%s-%s' ifindex %d%s%s%s (%d times received)"
-#define SIGNAL_DATA_ARG(data) (data)->name, _change_type_to_string ((data)->change_type), (data)->ifindex, (data)->ifname ? " ifname '" : "", (data)->ifname ? (data)->ifname : "", (data)->ifname ? "'" : "", (data)->received_count
+#define SIGNAL_DATA_ARG(data) (data)->name, nm_platform_signal_change_type_to_string ((data)->change_type), (data)->ifindex, (data)->ifname ? " ifname '" : "", (data)->ifname ? (data)->ifname : "", (data)->ifname ? "'" : "", (data)->received_count
 
 
 gboolean
@@ -17,6 +17,13 @@ nmtst_platform_is_root_test ()
 	NM_PRAGMA_WARNING_DISABLE("-Wtautological-compare")
 	return (SETUP == nm_linux_platform_setup);
 	NM_PRAGMA_WARNING_REENABLE
+}
+
+gboolean
+nmtst_platform_is_sysfs_writable ()
+{
+	return    !nmtst_platform_is_root_test ()
+	       || (access ("/sys/devices", W_OK) == 0);
 }
 
 SignalData *
@@ -34,21 +41,6 @@ add_signal_full (const char *name, NMPlatformSignalChangeType change_type, GCall
 	g_assert (data->handler_id >= 0);
 
 	return data;
-}
-
-static const char *
-_change_type_to_string (NMPlatformSignalChangeType change_type)
-{
-    switch (change_type) {
-    case NM_PLATFORM_SIGNAL_ADDED:
-        return "added";
-    case NM_PLATFORM_SIGNAL_CHANGED:
-        return "changed";
-    case NM_PLATFORM_SIGNAL_REMOVED:
-        return "removed";
-    default:
-        g_return_val_if_reached ("UNKNOWN");
-    }
 }
 
 void
@@ -127,7 +119,7 @@ link_callback (NMPlatform *platform, int ifindex, NMPlatformLink *received, NMPl
 	}
 
 	data->received_count++;
-	debug ("Received signal '%s-%s' ifindex %d ifname '%s' %dth time.", data->name, _change_type_to_string (data->change_type), ifindex, received->name, data->received_count);
+	debug ("Received signal '%s-%s' ifindex %d ifname '%s' %dth time.", data->name, nm_platform_signal_change_type_to_string (data->change_type), ifindex, received->name, data->received_count);
 
 	if (change_type == NM_PLATFORM_SIGNAL_REMOVED)
 		g_assert (!nm_platform_link_get_name (NM_PLATFORM_GET, ifindex));
@@ -278,6 +270,46 @@ run_command (const char *format, ...)
 
 NMTST_DEFINE();
 
+static gboolean
+unshare_user ()
+{
+	FILE *f;
+	uid_t uid = geteuid ();
+	gid_t gid = getegid ();
+
+	/* Already a root? */
+	if (gid == 0 && uid == 0)
+		return TRUE;
+
+	/* Become a root in new user NS. */
+	if (unshare (CLONE_NEWUSER) != 0)
+		return FALSE;
+
+	/* Since Linux 3.19 we have to disable setgroups() in order to map users.
+	 * Just proceed if the file is not there. */
+	f = fopen ("/proc/self/setgroups", "w");
+	if (f) {
+		fprintf (f, "deny");
+		fclose (f);
+	}
+
+	/* Map current UID to root in NS to be created. */
+	f = fopen ("/proc/self/uid_map", "w");
+	if (!f)
+		return FALSE;
+	fprintf (f, "0 %d 1", uid);
+	fclose (f);
+
+	/* Map current GID to root in NS to be created. */
+	f = fopen ("/proc/self/gid_map", "w");
+	if (!f)
+		return FALSE;
+	fprintf (f, "0 %d 1", gid);
+	fclose (f);
+
+	return TRUE;
+}
+
 int
 main (int argc, char **argv)
 {
@@ -286,17 +318,21 @@ main (int argc, char **argv)
 
 	init_tests (&argc, &argv);
 
-	if (nmtst_platform_is_root_test ()  && getuid() != 0) {
-		/* Try to exec as sudo, this function does not return, if a sudo-cmd is set. */
-		nmtst_reexec_sudo ();
+	if (   nmtst_platform_is_root_test ()
+	    && (geteuid () != 0 || getegid () != 0)) {
+		if (   g_getenv ("NMTST_FORCE_REAL_ROOT")
+		    || !unshare_user ()) {
+			/* Try to exec as sudo, this function does not return, if a sudo-cmd is set. */
+			nmtst_reexec_sudo ();
 
 #ifdef REQUIRE_ROOT_TESTS
-		g_print ("Fail test: requires root privileges (%s)\n", program);
-		return EXIT_FAILURE;
+			g_print ("Fail test: requires root privileges (%s)\n", program);
+			return EXIT_FAILURE;
 #else
-		g_print ("Skipping test: requires root privileges (%s)\n", program);
-		return g_test_run ();
+			g_print ("Skipping test: requires root privileges (%s)\n", program);
+			return g_test_run ();
 #endif
+		}
 	}
 
 	if (nmtst_platform_is_root_test () && !g_getenv ("NMTST_NO_UNSHARE")) {
@@ -325,12 +361,17 @@ main (int argc, char **argv)
 			g_error ("mount(\"/sys/devices\") failed with %s (%d)", strerror (errsv), errsv);
 		}
 		if (mount (NULL, "/sys/devices", "sysfs", MS_REMOUNT, NULL) != 0) {
-			errsv = errno;
-			g_error ("remount(\"/sys/devices\") failed with  %s (%d)", strerror (errsv), errsv);
-		}
-		if (mount ("/sys/devices/devices", "/sys/devices", "sysfs", MS_BIND, NULL) != 0) {
-			errsv = errno;
-			g_error ("mount(\"/sys\") failed with %s (%d)", strerror (errsv), errsv);
+			/* Read-write remount failed. Never mind, we're probably just a root in
+			 * our user NS. */
+			if (umount ("/sys/devices") != 0) {
+				errsv = errno;
+				g_error ("umount(\"/sys/devices\") failed with  %s (%d)", strerror (errsv), errsv);
+			}
+		} else {
+			if (mount ("/sys/devices/devices", "/sys/devices", "sysfs", MS_BIND, NULL) != 0) {
+				errsv = errno;
+				g_error ("mount(\"/sys\") failed with %s (%d)", strerror (errsv), errsv);
+			}
 		}
 	}
 

@@ -51,7 +51,7 @@ nm_utils_ip6_route_metric_normalize (guint32 metric)
 
 int nm_spawn_process (const char *args, GError **error);
 
-int nm_utils_modprobe (GError **error, const char *arg1, ...) G_GNUC_NULL_TERMINATED;
+int nm_utils_modprobe (GError **error, gboolean suppress_error_loggin, const char *arg1, ...) G_GNUC_NULL_TERMINATED;
 
 /**
  * str_if_set:

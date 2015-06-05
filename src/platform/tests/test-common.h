@@ -29,6 +29,7 @@ typedef struct {
 } SignalData;
 
 gboolean nmtst_platform_is_root_test (void);
+gboolean nmtst_platform_is_sysfs_writable (void);
 
 SignalData *add_signal_full (const char *name, NMPlatformSignalChangeType change_type, GCallback callback, int ifindex, const char *ifname);
 #define add_signal(name, change_type, callback) add_signal_full (name, change_type, (GCallback) callback, 0, NULL)

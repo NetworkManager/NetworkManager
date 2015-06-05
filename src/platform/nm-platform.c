@@ -382,36 +382,6 @@ nm_platform_sysctl_get_int_checked (NMPlatform *self, const char *path, guint ba
 /******************************************************************/
 
 /**
- * nm_platform_query_devices:
- * self: platform instance
- *
- * Emit #NMPlatform:link-changed ADDED signals for all currently-known links.
- * Should only be called at startup.
- */
-void
-nm_platform_query_devices (NMPlatform *self)
-{
-	GArray *links_array;
-	NMPlatformLink *links;
-	int i;
-
-	_CHECK_SELF_VOID (self, klass);
-
-	links_array = nm_platform_link_get_all (self);
-	links = (NMPlatformLink *) links_array->data;
-	for (i = 0; i < links_array->len; i++) {
-		g_signal_emit (self, signals[SIGNAL_LINK_CHANGED], 0,
-		               links[i].ifindex, &links[i], NM_PLATFORM_SIGNAL_ADDED,
-		               NM_PLATFORM_REASON_INTERNAL);
-	}
-	g_array_unref (links_array);
-
-	/* Platform specific device setup. */
-	if (klass->setup_devices)
-		klass->setup_devices (self);
-}
-
-/**
  * nm_platform_link_get_all:
  * self: platform instance
  *
@@ -2915,8 +2885,8 @@ nm_platform_ip_address_cmp_expiry (const NMPlatformIPAddress *a, const NMPlatfor
 
 #undef _CMP_POINTER
 
-static const char *
-_change_type_to_string (NMPlatformSignalChangeType change_type)
+const char *
+nm_platform_signal_change_type_to_string (NMPlatformSignalChangeType change_type)
 {
 	switch (change_type) {
 	case NM_PLATFORM_SIGNAL_ADDED:
@@ -2934,31 +2904,31 @@ static void
 log_link (NMPlatform *p, int ifindex, NMPlatformLink *device, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
 
-	debug ("signal: link %7s: %s", _change_type_to_string (change_type), nm_platform_link_to_string (device));
+	debug ("signal: link %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_link_to_string (device));
 }
 
 static void
 log_ip4_address (NMPlatform *p, int ifindex, NMPlatformIP4Address *address, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
-	debug ("signal: address 4 %7s: %s", _change_type_to_string (change_type), nm_platform_ip4_address_to_string (address));
+	debug ("signal: address 4 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip4_address_to_string (address));
 }
 
 static void
 log_ip6_address (NMPlatform *p, int ifindex, NMPlatformIP6Address *address, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
-	debug ("signal: address 6 %7s: %s", _change_type_to_string (change_type), nm_platform_ip6_address_to_string (address));
+	debug ("signal: address 6 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip6_address_to_string (address));
 }
 
 static void
 log_ip4_route (NMPlatform *p, int ifindex, NMPlatformIP4Route *route, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
-	debug ("signal: route   4 %7s: %s", _change_type_to_string (change_type), nm_platform_ip4_route_to_string (route));
+	debug ("signal: route   4 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip4_route_to_string (route));
 }
 
 static void
 log_ip6_route (NMPlatform *p, int ifindex, NMPlatformIP6Route *route, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
-	debug ("signal: route   6 %7s: %s", _change_type_to_string (change_type), nm_platform_ip6_route_to_string (route));
+	debug ("signal: route   6 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip6_route_to_string (route));
 }
 
 /******************************************************************/

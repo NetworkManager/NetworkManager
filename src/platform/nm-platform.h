@@ -368,8 +368,6 @@ struct _NMPlatform {
 typedef struct {
 	GObjectClass parent;
 
-	void (*setup_devices) (NMPlatform *);
-
 	gboolean (*sysctl_set) (NMPlatform *, const char *path, const char *value);
 	char * (*sysctl_get) (NMPlatform *, const char *path);
 
@@ -517,6 +515,8 @@ typedef struct {
 #define NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED "ip4-route-changed"
 #define NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED "ip6-route-changed"
 
+const char *nm_platform_signal_change_type_to_string (NMPlatformSignalChangeType change_type);
+
 /******************************************************************/
 
 GType nm_platform_get_type (void);
@@ -534,8 +534,6 @@ const char *nm_link_type_to_string (NMLinkType link_type);
 void nm_platform_set_error (NMPlatform *self, NMPlatformError error);
 NMPlatformError nm_platform_get_error (NMPlatform *self);
 const char *nm_platform_get_error_msg (NMPlatform *self);
-
-void nm_platform_query_devices (NMPlatform *self);
 
 gboolean nm_platform_sysctl_set (NMPlatform *self, const char *path, const char *value);
 char *nm_platform_sysctl_get (NMPlatform *self, const char *path);

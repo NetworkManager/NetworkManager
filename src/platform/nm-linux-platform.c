@@ -31,10 +31,6 @@
 #include <linux/if_link.h>
 #include <linux/if_tun.h>
 #include <linux/if_tunnel.h>
-#include <sys/ioctl.h>
-#include <linux/sockios.h>
-#include <linux/ethtool.h>
-#include <linux/mii.h>
 #include <netlink/netlink.h>
 #include <netlink/object.h>
 #include <netlink/cache.h>
@@ -58,6 +54,7 @@
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 #include "nm-linux-platform.h"
+#include "nm-platform-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-logging.h"
@@ -362,162 +359,45 @@ _support_user_ipv6ll_detect (const struct rtnl_link *rtnl_link)
 #endif
 }
 
-/******************************************************************
- * ethtool
- ******************************************************************/
+/******************************************************************/
 
-static gboolean
-ethtool_get (const char *name, gpointer edata)
+static int _support_kernel_extended_ifa_flags = 0;
+
+#define _support_kernel_extended_ifa_flags_still_undecided() (G_UNLIKELY (_support_kernel_extended_ifa_flags == 0))
+
+static void
+_support_kernel_extended_ifa_flags_detect (struct nl_msg *msg)
 {
-	struct ifreq ifr;
-	int fd;
+	struct nlmsghdr *msg_hdr = nlmsg_hdr (msg);
 
-	if (!name || !*name)
-		return FALSE;
+	if (!_support_kernel_extended_ifa_flags_still_undecided ())
+		return;
 
-	memset (&ifr, 0, sizeof (ifr));
-	strncpy (ifr.ifr_name, name, IFNAMSIZ);
-	ifr.ifr_data = edata;
+	msg_hdr = nlmsg_hdr (msg);
+	if (msg_hdr->nlmsg_type != RTM_NEWADDR)
+		return;
 
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
-	if (fd < 0) {
-		error ("ethtool: Could not open socket.");
-		return FALSE;
-	}
+	/* the extended address flags are only set for AF_INET6 */
+	if (((struct ifaddrmsg *) nlmsg_data (msg_hdr))->ifa_family != AF_INET6)
+		return;
 
-	if (ioctl (fd, SIOCETHTOOL, &ifr) < 0) {
-		debug ("ethtool: Request failed: %s", strerror (errno));
-		close (fd);
-		return FALSE;
-	}
-
-	close (fd);
-	return TRUE;
-}
-
-static int
-ethtool_get_stringset_index (const char *ifname, int stringset_id, const char *string)
-{
-	gs_free struct ethtool_sset_info *info = NULL;
-	gs_free struct ethtool_gstrings *strings = NULL;
-	guint32 len, i;
-
-	info = g_malloc0 (sizeof (*info) + sizeof (guint32));
-	info->cmd = ETHTOOL_GSSET_INFO;
-	info->reserved = 0;
-	info->sset_mask = 1ULL << stringset_id;
-
-	if (!ethtool_get (ifname, info))
-		return -1;
-	if (!info->sset_mask)
-		return -1;
-
-	len = info->data[0];
-
-	strings = g_malloc0 (sizeof (*strings) + len * ETH_GSTRING_LEN);
-	strings->cmd = ETHTOOL_GSTRINGS;
-	strings->string_set = stringset_id;
-	strings->len = len;
-	if (!ethtool_get (ifname, strings))
-		return -1;
-
-	for (i = 0; i < len; i++) {
-		if (!strcmp ((char *) &strings->data[i * ETH_GSTRING_LEN], string))
-			return i;
-	}
-
-	return -1;
+	/* see if the nl_msg contains the IFA_FLAGS attribute. If it does,
+	 * we assume, that the kernel supports extended flags, IFA_F_MANAGETEMPADDR
+	 * and IFA_F_NOPREFIXROUTE (they were added together).
+	 **/
+	_support_kernel_extended_ifa_flags =
+	    nlmsg_find_attr (msg_hdr, sizeof (struct ifaddrmsg), 8 /* IFA_FLAGS */)
+	    ? 1 : -1;
 }
 
 static gboolean
-ethtool_get_driver_info (const char *ifname,
-                         char **out_driver_name,
-                         char **out_driver_version,
-                         char **out_fw_version)
+_support_kernel_extended_ifa_flags_get ()
 {
-	struct ethtool_drvinfo drvinfo = { 0 };
-
-	if (!ifname)
-		return FALSE;
-
-	drvinfo.cmd = ETHTOOL_GDRVINFO;
-	if (!ethtool_get (ifname, &drvinfo))
-		return FALSE;
-
-	if (out_driver_name)
-		*out_driver_name = g_strdup (drvinfo.driver);
-	if (out_driver_version)
-		*out_driver_version = g_strdup (drvinfo.version);
-	if (out_fw_version)
-		*out_fw_version = g_strdup (drvinfo.fw_version);
-
-	return TRUE;
-}
-
-static gboolean
-ethtool_get_permanent_address (const char *ifname,
-                               guint8 *buf,
-                               size_t *length)
-{
-	gs_free struct ethtool_perm_addr *epaddr = NULL;
-
-	if (!ifname)
-		return FALSE;
-
-	epaddr = g_malloc0 (sizeof (*epaddr) + NM_UTILS_HWADDR_LEN_MAX);
-	epaddr->cmd = ETHTOOL_GPERMADDR;
-	epaddr->size = NM_UTILS_HWADDR_LEN_MAX;
-
-	if (!ethtool_get (ifname, epaddr))
-		return FALSE;
-	if (!nm_ethernet_address_is_valid (epaddr->data, epaddr->size))
-		return FALSE;
-
-	g_assert (epaddr->size <= NM_UTILS_HWADDR_LEN_MAX);
-	memcpy (buf, epaddr->data, epaddr->size);
-	*length = epaddr->size;
-	return TRUE;
-}
-
-/******************************************************************
- * udev
- ******************************************************************/
-
-static const char *
-udev_get_driver (GUdevDevice *device, int ifindex)
-{
-	GUdevDevice *parent = NULL, *grandparent = NULL;
-	const char *driver, *subsys;
-
-	driver = g_udev_device_get_driver (device);
-	if (driver)
-		goto out;
-
-	/* Try the parent */
-	parent = g_udev_device_get_parent (device);
-	if (parent) {
-		driver = g_udev_device_get_driver (parent);
-		if (!driver) {
-			/* Try the grandparent if it's an ibmebus device or if the
-			 * subsys is NULL which usually indicates some sort of
-			 * platform device like a 'gadget' net interface.
-			 */
-			subsys = g_udev_device_get_subsystem (parent);
-			if (   (g_strcmp0 (subsys, "ibmebus") == 0)
-			    || (subsys == NULL)) {
-				grandparent = g_udev_device_get_parent (parent);
-				if (grandparent)
-					driver = g_udev_device_get_driver (grandparent);
-			}
-		}
+	if (_support_kernel_extended_ifa_flags_still_undecided ()) {
+		nm_log_warn (LOGD_PLATFORM, "Unable to detect kernel support for extended IFA_FLAGS. Assume no kernel support.");
+		_support_kernel_extended_ifa_flags = -1;
 	}
-	g_clear_object (&parent);
-	g_clear_object (&grandparent);
-
-out:
-	/* Intern the string so we don't have to worry about memory
-	 * management in NMPlatformLink. */
-	return g_intern_string (driver);
+	return _support_kernel_extended_ifa_flags > 0;
 }
 
 /******************************************************************
@@ -550,8 +430,6 @@ typedef struct {
 	GHashTable *udev_devices;
 
 	GHashTable *wifi_data;
-
-	int support_kernel_extended_ifa_flags;
 } NMLinuxPlatformPrivate;
 
 #define NM_LINUX_PLATFORM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_LINUX_PLATFORM, NMLinuxPlatformPrivate))
@@ -824,42 +702,12 @@ nm_rtnl_link_parse_info_data (struct nl_sock *sk, int ifindex,
 
 /******************************************************************/
 
-static void
-_check_support_kernel_extended_ifa_flags_init (NMLinuxPlatformPrivate *priv, struct nl_msg *msg)
-{
-	struct nlmsghdr *msg_hdr = nlmsg_hdr (msg);
-
-	g_return_if_fail (priv->support_kernel_extended_ifa_flags == 0);
-	g_return_if_fail (msg_hdr->nlmsg_type == RTM_NEWADDR);
-
-	/* the extended address flags are only set for AF_INET6 */
-	if (((struct ifaddrmsg *) nlmsg_data (msg_hdr))->ifa_family != AF_INET6)
-		return;
-
-	/* see if the nl_msg contains the IFA_FLAGS attribute. If it does,
-	 * we assume, that the kernel supports extended flags, IFA_F_MANAGETEMPADDR
-	 * and IFA_F_NOPREFIXROUTE (they were added together).
-	 **/
-	priv->support_kernel_extended_ifa_flags =
-	    nlmsg_find_attr (msg_hdr, sizeof (struct ifaddrmsg), 8 /* IFA_FLAGS */)
-	    ? 1 : -1;
-}
-
 static gboolean
 check_support_kernel_extended_ifa_flags (NMPlatform *platform)
 {
-	NMLinuxPlatformPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_LINUX_PLATFORM (platform), FALSE);
 
-	priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-
-	if (priv->support_kernel_extended_ifa_flags == 0) {
-		nm_log_warn (LOGD_PLATFORM, "Unable to detect kernel support for extended IFA_FLAGS. Assume no kernel support.");
-		priv->support_kernel_extended_ifa_flags = -1;
-	}
-
-	return priv->support_kernel_extended_ifa_flags > 0;
+	return _support_kernel_extended_ifa_flags_get ();
 }
 
 static gboolean
@@ -1033,7 +881,7 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink)
 		}
 
 		/* Fallback OVS detection for kernel <= 3.16 */
-		if (ethtool_get_driver_info (ifname, &driver, NULL, NULL)) {
+		if (nmp_utils_ethtool_get_driver_info (ifname, &driver, NULL, NULL)) {
 			if (!g_strcmp0 (driver, "openvswitch"))
 				return NM_LINK_TYPE_OPENVSWITCH;
 		}
@@ -1102,7 +950,7 @@ init_link (NMPlatform *platform, NMPlatformLink *info, struct rtnl_link *rtnllin
 
 	udev_device = g_hash_table_lookup (priv->udev_devices, GINT_TO_POINTER (info->ifindex));
 	if (udev_device) {
-		info->driver = udev_get_driver (udev_device, info->ifindex);
+		info->driver = nmp_utils_udev_get_driver (udev_device);
 		info->udi = g_udev_device_get_sysfs_path (udev_device);
 		info->initialized = TRUE;
 	}
@@ -1110,7 +958,7 @@ init_link (NMPlatform *platform, NMPlatformLink *info, struct rtnl_link *rtnllin
 	if (!info->driver)
 		info->driver = info->kind;
 	if (!info->driver) {
-		if (ethtool_get_driver_info (name, &tmp, NULL, NULL)) {
+		if (nmp_utils_ethtool_get_driver_info (name, &tmp, NULL, NULL)) {
 			info->driver = g_intern_string (tmp);
 			g_free (tmp);
 		}
@@ -2065,12 +1913,8 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 
 	event = nlmsg_hdr (msg)->nlmsg_type;
 
-	if (priv->support_kernel_extended_ifa_flags == 0 && event == RTM_NEWADDR) {
-		/* if kernel support for extended ifa flags is still undecided, use the opportunity
-		 * now and use @msg to decide it. This saves a blocking net link request.
-		 **/
-		_check_support_kernel_extended_ifa_flags_init (priv, msg);
-	}
+	if (_support_kernel_extended_ifa_flags_still_undecided () && event == RTM_NEWADDR)
+		_support_kernel_extended_ifa_flags_detect (msg);
 
 	nl_msg_parse (msg, ref_object, &object);
 	if (!object)
@@ -2439,7 +2283,7 @@ link_add (NMPlatform *platform,
 		 * bond0 automatically.
 		 */
 		if (!g_file_test ("/sys/class/net/bonding_masters", G_FILE_TEST_EXISTS))
-			nm_utils_modprobe (NULL, "bonding", "max_bonds=0", NULL);
+			nm_utils_modprobe (NULL, TRUE, "bonding", "max_bonds=0", NULL);
 	}
 
 	debug ("link: add link '%s' of type '%s' (%d)",
@@ -2742,58 +2586,6 @@ link_set_user_ipv6ll_enabled (NMPlatform *platform, int ifindex, gboolean enable
 }
 
 static gboolean
-supports_ethtool_carrier_detect (const char *ifname)
-{
-	struct ethtool_cmd edata = { .cmd = ETHTOOL_GLINK };
-
-	/* We ignore the result. If the ETHTOOL_GLINK call succeeded, then we
-	 * assume the device supports carrier-detect, otherwise we assume it
-	 * doesn't.
-	 */
-	return ethtool_get (ifname, &edata);
-}
-
-static gboolean
-supports_mii_carrier_detect (const char *ifname)
-{
-	int fd;
-	struct ifreq ifr;
-	struct mii_ioctl_data *mii;
-	gboolean supports_mii = FALSE;
-
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
-	if (fd < 0) {
-		nm_log_err (LOGD_PLATFORM, "couldn't open control socket.");
-		return FALSE;
-	}
-
-	memset (&ifr, 0, sizeof (struct ifreq));
-	strncpy (ifr.ifr_name, ifname, IFNAMSIZ);
-
-	errno = 0;
-	if (ioctl (fd, SIOCGMIIPHY, &ifr) < 0) {
-		nm_log_dbg (LOGD_PLATFORM, "SIOCGMIIPHY failed: %d", errno);
-		goto out;
-	}
-
-	/* If we can read the BMSR register, we assume that the card supports MII link detection */
-	mii = (struct mii_ioctl_data *) &ifr.ifr_ifru;
-	mii->reg_num = MII_BMSR;
-
-	if (ioctl (fd, SIOCGMIIREG, &ifr) == 0) {
-		nm_log_dbg (LOGD_PLATFORM, "SIOCGMIIREG result 0x%X", mii->val_out);
-		supports_mii = TRUE;
-	} else {
-		nm_log_dbg (LOGD_PLATFORM, "SIOCGMIIREG failed: %d", errno);
-	}
-
- out:
-	close (fd);
-	nm_log_dbg (LOGD_PLATFORM, "MII %s supported", supports_mii ? "is" : "not");
-	return supports_mii;	
-}
-
-static gboolean
 link_supports_carrier_detect (NMPlatform *platform, int ifindex)
 {
 	const char *name = nm_platform_link_get_name (platform, ifindex);
@@ -2805,42 +2597,19 @@ link_supports_carrier_detect (NMPlatform *platform, int ifindex)
 	 * us whether the device actually supports carrier detection in the first
 	 * place. We assume any device that does implements one of these two APIs.
 	 */
-	return supports_ethtool_carrier_detect (name) || supports_mii_carrier_detect (name);
+	return nmp_utils_ethtool_supports_carrier_detect (name) || nmp_utils_mii_supports_carrier_detect (name);
 }
 
 static gboolean
 link_supports_vlans (NMPlatform *platform, int ifindex)
 {
 	auto_nl_object struct rtnl_link *rtnllink = link_get (platform, ifindex);
-	const char *name = nm_platform_link_get_name (platform, ifindex);
-	gs_free struct ethtool_gfeatures *features = NULL;
-	int idx, block, bit, size;
 
 	/* Only ARPHRD_ETHER links can possibly support VLANs. */
 	if (!rtnllink || rtnl_link_get_arptype (rtnllink) != ARPHRD_ETHER)
 		return FALSE;
 
-	if (!name)
-		return FALSE;
-
-	idx = ethtool_get_stringset_index (name, ETH_SS_FEATURES, "vlan-challenged");
-	if (idx == -1) {
-		debug ("vlan-challenged ethtool feature does not exist?");
-		return FALSE;
-	}
-
-	block = idx /  32;
-	bit = idx % 32;
-	size = block + 1;
-
-	features = g_malloc0 (sizeof (*features) + size * sizeof (struct ethtool_get_features_block));
-	features->cmd = ETHTOOL_GFEATURES;
-	features->size = size;
-
-	if (!ethtool_get (name, features))
-		return FALSE;
-
-	return !(features->features[block].active & (1 << bit));
+	return nmp_utils_ethtool_supports_vlans (rtnl_link_get_name (rtnllink));
 }
 
 static gboolean
@@ -2891,7 +2660,7 @@ link_get_permanent_address (NMPlatform *platform,
                             guint8 *buf,
                             size_t *length)
 {
-	return ethtool_get_permanent_address (nm_platform_link_get_name (platform, ifindex), buf, length);
+	return nmp_utils_ethtool_get_permanent_address (nm_platform_link_get_name (platform, ifindex), buf, length);
 }
 
 static gboolean
@@ -3288,26 +3057,17 @@ static gboolean
 veth_get_properties (NMPlatform *platform, int ifindex, NMPlatformVethProperties *props)
 {
 	const char *ifname;
-	gs_free struct ethtool_stats *stats = NULL;
-	int peer_ifindex_stat;
+	int peer_ifindex;
 
 	ifname = nm_platform_link_get_name (platform, ifindex);
 	if (!ifname)
 		return FALSE;
 
-	peer_ifindex_stat = ethtool_get_stringset_index (ifname, ETH_SS_STATS, "peer_ifindex");
-	if (peer_ifindex_stat == -1) {
-		debug ("%s: peer_ifindex ethtool stat does not exist?", ifname);
-		return FALSE;
-	}
-
-	stats = g_malloc0 (sizeof (*stats) + (peer_ifindex_stat + 1) * sizeof (guint64));
-	stats->cmd = ETHTOOL_GSTATS;
-	stats->n_stats = peer_ifindex_stat + 1;
-	if (!ethtool_get (ifname, stats))
+	peer_ifindex = nmp_utils_ethtool_get_peer_ifindex (ifname);
+	if (peer_ifindex <= 0)
 		return FALSE;
 
-	props->peer = stats->data[peer_ifindex_stat];
+	props->peer = peer_ifindex;
 	return TRUE;
 }
 
@@ -3805,16 +3565,9 @@ link_get_wake_on_lan (NMPlatform *platform, int ifindex)
 {
 	NMLinkType type = link_get_type (platform, ifindex);
 
-	if (type == NM_LINK_TYPE_ETHERNET) {
-		struct ethtool_wolinfo wol;
-
-		memset (&wol, 0, sizeof (wol));
-		wol.cmd = ETHTOOL_GWOL;
-		if (!ethtool_get (link_get_name (platform, ifindex), &wol))
-			return FALSE;
-
-		return wol.wolopts != 0;
-	} else if (type == NM_LINK_TYPE_WIFI) {
+	if (type == NM_LINK_TYPE_ETHERNET)
+		return nmp_utils_ethtool_get_wake_on_lan (link_get_name (platform, ifindex));
+	else if (type == NM_LINK_TYPE_WIFI) {
 		WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
 
 		if (!wifi_data)
@@ -3832,10 +3585,10 @@ link_get_driver_info (NMPlatform *platform,
                       char **out_driver_version,
                       char **out_fw_version)
 {
-	return ethtool_get_driver_info (nm_platform_link_get_name (platform, ifindex),
-	                                out_driver_name,
-	                                out_driver_version,
-	                                out_fw_version);
+	return nmp_utils_ethtool_get_driver_info (nm_platform_link_get_name (platform, ifindex),
+	                                          out_driver_name,
+	                                          out_driver_version,
+	                                          out_fw_version);
 }
 
 /******************************************************************/
@@ -3962,7 +3715,7 @@ build_rtnl_addr (NMPlatform *platform,
 		rtnl_addr_set_preferred_lifetime (rtnladdr, preferred);
 	}
 	if (flags) {
-		if ((flags & ~0xFF) && !check_support_kernel_extended_ifa_flags (platform)) {
+		if ((flags & ~0xFF) && !_support_kernel_extended_ifa_flags_get ()) {
 			/* Older kernels don't accept unknown netlink attributes.
 			 *
 			 * With commit libnl commit 5206c050504f8676a24854519b9c351470fb7cc6, libnl will only set
@@ -4774,6 +4527,8 @@ constructed (GObject *_object)
 	int channel_flags;
 	gboolean status;
 	int nle;
+	GUdevEnumerator *enumerator;
+	GList *devices, *iter;
 
 	/* Initialize netlink socket for requests */
 	priv->nlh = setup_socket (FALSE, platform);
@@ -4838,16 +4593,6 @@ constructed (GObject *_object)
 
 	priv->wifi_data = g_hash_table_new_full (NULL, NULL, NULL, (GDestroyNotify) wifi_utils_deinit);
 
-	G_OBJECT_CLASS (nm_linux_platform_parent_class)->constructed (_object);
-}
-
-static void
-setup_devices (NMPlatform *platform)
-{
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	GUdevEnumerator *enumerator;
-	GList *devices, *iter;
-
 	/* And read initial device list */
 	enumerator = g_udev_enumerator_new (priv->udev_client);
 	g_udev_enumerator_add_match_subsystem (enumerator, "net");
@@ -4861,6 +4606,8 @@ setup_devices (NMPlatform *platform)
 	}
 	g_list_free (devices);
 	g_object_unref (enumerator);
+
+	G_OBJECT_CLASS (nm_linux_platform_parent_class)->constructed (_object);
 }
 
 static void
@@ -4897,8 +4644,6 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	/* virtual methods */
 	object_class->constructed = constructed;
 	object_class->finalize = nm_linux_platform_finalize;
-
-	platform_class->setup_devices = setup_devices;
 
 	platform_class->sysctl_set = sysctl_set;
 	platform_class->sysctl_get = sysctl_get;

@@ -26,10 +26,6 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <stdlib.h>
-#include <linux/sockios.h>
-#include <linux/ethtool.h>
-#include <linux/version.h>
-#include <sys/ioctl.h>
 #include <unistd.h>
 #include <errno.h>
 
@@ -48,6 +44,7 @@
 #include "nm-enum-types.h"
 #include "nm-dbus-manager.h"
 #include "nm-platform.h"
+#include "nm-platform-utils.h"
 #include "nm-dcb.h"
 #include "nm-settings-connection.h"
 #include "nm-config.h"
@@ -1533,37 +1530,10 @@ get_link_speed (NMDevice *device)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
-	struct ifreq ifr;
-	struct ethtool_cmd edata = {
-		.cmd = ETHTOOL_GSET,
-	};
 	guint32 speed;
-	int fd;
 
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
-	if (fd < 0) {
-		_LOGW (LOGD_HW | LOGD_ETHER, "couldn't open ethtool control socket.");
+	if (!nmp_utils_ethtool_get_link_speed (nm_device_get_iface (device), &speed))
 		return;
-	}
-
-	memset (&ifr, 0, sizeof (struct ifreq));
-	strncpy (ifr.ifr_name, nm_device_get_iface (device), IFNAMSIZ);
-	ifr.ifr_data = (char *) &edata;
-
-	if (ioctl (fd, SIOCETHTOOL, &ifr) < 0) {
-		close (fd);
-		return;
-	}
-	close (fd);
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
-	speed = edata.speed;
-#else
-	speed = ethtool_cmd_speed (&edata);
-#endif
-	if (speed == G_MAXUINT16 || speed == G_MAXUINT32)
-		speed = 0;
-
 	if (priv->speed == speed)
 		return;
 
