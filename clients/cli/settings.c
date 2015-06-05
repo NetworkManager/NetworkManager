@@ -29,9 +29,15 @@
 #include "common.h"
 #include "settings.h"
 #include "nm-glib-compat.h"
+#include "nm-macros-internal.h"
 
 /* Forward declarations */
 static char *wep_key_type_to_string (NMWepKeyType type);
+
+typedef enum {
+	NMC_PROPERTY_GET_PRETTY,
+	NMC_PROPERTY_GET_PARSABLE,
+} NmcPropertyGetType;
 
 /* Helper macro to define fields */
 #define SETTING_FIELD(setting, width) { setting, N_(setting), width, NULL, FALSE, FALSE, 0 }
@@ -745,8 +751,11 @@ vlan_priorities_to_string (NMSettingVlan *s_vlan, NMVlanPriorityMap map)
 }
 
 static char *
-ip6_privacy_to_string (NMSettingIP6ConfigPrivacy ip6_privacy)
+ip6_privacy_to_string (NMSettingIP6ConfigPrivacy ip6_privacy, NmcPropertyGetType get_type)
 {
+	if (get_type == NMC_PROPERTY_GET_PARSABLE)
+		return g_strdup_printf ("%d", ip6_privacy);
+
 	switch (ip6_privacy) {
 	case NM_SETTING_IP6_CONFIG_PRIVACY_DISABLED:
 		return g_strdup_printf (_("%d (disabled)"), ip6_privacy);
@@ -760,8 +769,11 @@ ip6_privacy_to_string (NMSettingIP6ConfigPrivacy ip6_privacy)
 }
 
 static char *
-autoconnect_slaves_to_string (NMSettingConnectionAutoconnectSlaves autoconnect_slaves)
+autoconnect_slaves_to_string (NMSettingConnectionAutoconnectSlaves autoconnect_slaves, NmcPropertyGetType get_type)
 {
+	if (get_type == NMC_PROPERTY_GET_PARSABLE)
+		return g_strdup_printf ("%d", (int) autoconnect_slaves);
+
 	switch (autoconnect_slaves) {
 	case NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_NO:
 		return g_strdup_printf (_("%d (no)"), autoconnect_slaves);
@@ -774,15 +786,18 @@ autoconnect_slaves_to_string (NMSettingConnectionAutoconnectSlaves autoconnect_s
 }
 
 static char *
-secret_flags_to_string (guint32 flags)
+secret_flags_to_string (guint32 flags, NmcPropertyGetType get_type)
 {
 	GString *flag_str;
+
+	if (get_type == NMC_PROPERTY_GET_PARSABLE)
+		return g_strdup_printf ("%u", flags);
 
 	if (flags == 0)
 		return g_strdup (_("0 (none)"));
 
 	flag_str = g_string_new (NULL);
-	g_string_printf (flag_str, "%d (", flags);
+	g_string_printf (flag_str, "%u (", flags);
 
 	if (flags & NM_SETTING_SECRET_FLAG_AGENT_OWNED)
 		g_string_append (flag_str, _("agent-owned, "));
@@ -816,7 +831,7 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 /* === property get functions === */
 #define DEFINE_GETTER(func_name, property_name) \
 	static char * \
-	func_name (NMSetting *setting) \
+	func_name (NMSetting *setting, NmcPropertyGetType get_type) \
 	{ \
 		char *s; \
 		GValue val = G_VALUE_INIT; \
@@ -829,7 +844,7 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 
 #define DEFINE_SECRET_FLAGS_GETTER(func_name, property_name) \
 	static char * \
-	func_name (NMSetting *setting) \
+	func_name (NMSetting *setting, NmcPropertyGetType get_type) \
 	{ \
 		guint v; \
 		GValue val = G_VALUE_INIT; \
@@ -837,7 +852,7 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 		g_object_get_property (G_OBJECT (setting), property_name, &val); \
 		v = g_value_get_uint (&val); \
 		g_value_unset (&val); \
-		return secret_flags_to_string (v); \
+		return secret_flags_to_string (v, get_type); \
 	}
 
 /* --- NM_SETTING_802_1X_SETTING_NAME property get functions --- */
@@ -868,7 +883,7 @@ DEFINE_SECRET_FLAGS_GETTER (nmc_property_802_1X_get_pin_flags, NM_SETTING_802_1X
 DEFINE_GETTER (nmc_property_802_1X_get_system_ca_certs, NM_SETTING_802_1X_SYSTEM_CA_CERTS)
 
 static char *
-nmc_property_802_1X_get_ca_cert (NMSetting *setting)
+nmc_property_802_1X_get_ca_cert (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
 	NMSetting8021xCKScheme scheme;
@@ -884,7 +899,7 @@ nmc_property_802_1X_get_ca_cert (NMSetting *setting)
 }
 
 static char *
-nmc_property_802_1X_get_client_cert (NMSetting *setting)
+nmc_property_802_1X_get_client_cert (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
 	NMSetting8021xCKScheme scheme;
@@ -900,7 +915,7 @@ nmc_property_802_1X_get_client_cert (NMSetting *setting)
 }
 
 static char *
-nmc_property_802_1X_get_phase2_ca_cert (NMSetting *setting)
+nmc_property_802_1X_get_phase2_ca_cert (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
 	NMSetting8021xCKScheme scheme;
@@ -916,7 +931,7 @@ nmc_property_802_1X_get_phase2_ca_cert (NMSetting *setting)
 }
 
 static char *
-nmc_property_802_1X_get_phase2_client_cert (NMSetting *setting)
+nmc_property_802_1X_get_phase2_client_cert (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
 	NMSetting8021xCKScheme scheme;
@@ -932,14 +947,14 @@ nmc_property_802_1X_get_phase2_client_cert (NMSetting *setting)
 }
 
 static char *
-nmc_property_802_1X_get_password_raw (NMSetting *setting)
+nmc_property_802_1X_get_password_raw (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
 	return bytes_to_string (nm_setting_802_1x_get_password_raw (s_8021X));
 }
 
 static char *
-nmc_property_802_1X_get_private_key (NMSetting *setting)
+nmc_property_802_1X_get_private_key (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
 	NMSetting8021xCKScheme scheme;
@@ -955,7 +970,7 @@ nmc_property_802_1X_get_private_key (NMSetting *setting)
 }
 
 static char *
-nmc_property_802_1X_get_phase2_private_key (NMSetting *setting)
+nmc_property_802_1X_get_phase2_private_key (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
 	NMSetting8021xCKScheme scheme;
@@ -984,7 +999,7 @@ DEFINE_GETTER (nmc_property_bluetooth_get_bdaddr, NM_SETTING_BLUETOOTH_BDADDR)
 DEFINE_GETTER (nmc_property_bluetooth_get_type, NM_SETTING_BLUETOOTH_TYPE)
 
 static char *
-nmc_property_bond_get_options (NMSetting *setting)
+nmc_property_bond_get_options (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSettingBond *s_bond = NM_SETTING_BOND (setting);
 	GString *bond_options_s;
@@ -1040,7 +1055,7 @@ DEFINE_GETTER (nmc_property_connection_get_timestamp, NM_SETTING_CONNECTION_TIME
 DEFINE_GETTER (nmc_property_connection_get_read_only, NM_SETTING_CONNECTION_READ_ONLY)
 
 static char *
-nmc_property_connection_get_permissions (NMSetting *setting)
+nmc_property_connection_get_permissions (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSettingConnection *s_con = NM_SETTING_CONNECTION (setting);
 	GString *perm = NULL;
@@ -1064,10 +1079,10 @@ DEFINE_GETTER (nmc_property_connection_get_master, NM_SETTING_CONNECTION_MASTER)
 DEFINE_GETTER (nmc_property_connection_get_slave_type, NM_SETTING_CONNECTION_SLAVE_TYPE)
 
 static char *
-nmc_property_connection_get_autoconnect_slaves (NMSetting *setting)
+nmc_property_connection_get_autoconnect_slaves (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSettingConnection *s_con = NM_SETTING_CONNECTION (setting);
-	return autoconnect_slaves_to_string (nm_setting_connection_get_autoconnect_slaves (s_con));
+	return autoconnect_slaves_to_string (nm_setting_connection_get_autoconnect_slaves (s_con), get_type);
 }
 
 DEFINE_GETTER (nmc_property_connection_get_secondaries, NM_SETTING_CONNECTION_SECONDARIES)
@@ -1104,7 +1119,7 @@ dcb_flags_to_string (NMSettingDcbFlags flags)
 
 #define DEFINE_DCB_FLAGS_GETTER(func_name, property_name) \
 	static char * \
-	func_name (NMSetting *setting) \
+	func_name (NMSetting *setting, NmcPropertyGetType get_type) \
 	{ \
 		guint v; \
 		GValue val = G_VALUE_INIT; \
@@ -1123,7 +1138,7 @@ dcb_app_priority_to_string (gint priority)
 
 #define DEFINE_DCB_APP_PRIORITY_GETTER(func_name, property_name) \
 	static char * \
-	func_name (NMSetting *setting) \
+	func_name (NMSetting *setting, NmcPropertyGetType get_type) \
 	{ \
 		int v; \
 		GValue val = G_VALUE_INIT; \
@@ -1136,7 +1151,7 @@ dcb_app_priority_to_string (gint priority)
 
 #define DEFINE_DCB_BOOL_GETTER(func_name, getter_func_name) \
 	static char * \
-	func_name (NMSetting *setting) \
+	func_name (NMSetting *setting, NmcPropertyGetType get_type) \
 	{ \
 		NMSettingDcb *s_dcb = NM_SETTING_DCB (setting); \
 		GString *str; \
@@ -1158,7 +1173,7 @@ dcb_app_priority_to_string (gint priority)
 
 #define DEFINE_DCB_UINT_GETTER(func_name, getter_func_name) \
 	static char * \
-	func_name (NMSetting *setting) \
+	func_name (NMSetting *setting, NmcPropertyGetType get_type) \
 	{ \
 		NMSettingDcb *s_dcb = NM_SETTING_DCB (setting); \
 		GString *str; \
@@ -1208,7 +1223,7 @@ DEFINE_GETTER (nmc_property_ib_get_mac_address, NM_SETTING_INFINIBAND_MAC_ADDRES
 DEFINE_GETTER (nmc_property_ib_get_transport_mode, NM_SETTING_INFINIBAND_TRANSPORT_MODE)
 
 static char *
-nmc_property_ib_get_mtu (NMSetting *setting)
+nmc_property_ib_get_mtu (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSettingInfiniband *s_infiniband = NM_SETTING_INFINIBAND (setting);
 	int mtu;
@@ -1221,7 +1236,7 @@ nmc_property_ib_get_mtu (NMSetting *setting)
 }
 
 static char *
-nmc_property_ib_get_p_key (NMSetting *setting)
+nmc_property_ib_get_p_key (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSettingInfiniband *s_infiniband = NM_SETTING_INFINIBAND (setting);
 	int p_key;
@@ -1241,7 +1256,7 @@ DEFINE_GETTER (nmc_property_ipv4_get_dns, NM_SETTING_IP_CONFIG_DNS)
 DEFINE_GETTER (nmc_property_ipv4_get_dns_search, NM_SETTING_IP_CONFIG_DNS_SEARCH)
 
 static char *
-nmc_property_ip_get_addresses (NMSetting *setting)
+nmc_property_ip_get_addresses (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSettingIPConfig *s_ip = NM_SETTING_IP_CONFIG (setting);
 	GString *printable;
@@ -1266,40 +1281,60 @@ nmc_property_ip_get_addresses (NMSetting *setting)
 }
 
 static char *
-nmc_property_ipv4_get_routes (NMSetting *setting)
+nmc_property_ipvx_get_routes (NMSetting *setting, NmcPropertyGetType get_type)
 {
-	NMSettingIPConfig *s_ip4 = NM_SETTING_IP_CONFIG (setting);
+	NMSettingIPConfig *s_ip = NM_SETTING_IP_CONFIG (setting);
 	GString *printable;
 	guint32 num_routes, i;
 	NMIPRoute *route;
 
 	printable = g_string_new (NULL);
 
-	num_routes = nm_setting_ip_config_get_num_routes (s_ip4);
+	num_routes = nm_setting_ip_config_get_num_routes (s_ip);
 	for (i = 0; i < num_routes; i++) {
-		route = nm_setting_ip_config_get_route (s_ip4, i);
+		route = nm_setting_ip_config_get_route (s_ip, i);
 
-		if (printable->len > 0)
-			g_string_append (printable, "; ");
+		if (get_type == NMC_PROPERTY_GET_PARSABLE) {
+			if (printable->len > 0)
+				g_string_append (printable, ", ");
 
-		g_string_append (printable, "{ ");
+			g_string_append_printf (printable, "%s/%u",
+			                        nm_ip_route_get_dest (route),
+			                        nm_ip_route_get_prefix (route));
 
-		g_string_append_printf (printable, "ip = %s/%u",
-		                        nm_ip_route_get_dest (route),
-		                        nm_ip_route_get_prefix (route));
+			if (nm_ip_route_get_next_hop (route))
+				g_string_append_printf (printable, " %s", nm_ip_route_get_next_hop (route));
+			if (nm_ip_route_get_metric (route) != -1)
+				g_string_append_printf (printable, " %u", (guint32) nm_ip_route_get_metric (route));
+		} else {
+			if (printable->len > 0)
+				g_string_append (printable, "; ");
 
-		if (nm_ip_route_get_next_hop (route)) {
-			g_string_append_printf (printable, ", nh = %s",
-			                        nm_ip_route_get_next_hop (route));
+			g_string_append (printable, "{ ");
+
+			g_string_append_printf (printable, "ip = %s/%u",
+			                        nm_ip_route_get_dest (route),
+			                        nm_ip_route_get_prefix (route));
+
+			if (nm_ip_route_get_next_hop (route)) {
+				g_string_append_printf (printable, ", nh = %s",
+				                        nm_ip_route_get_next_hop (route));
+			}
+
+			if (nm_ip_route_get_metric (route) != -1)
+				g_string_append_printf (printable, ", mt = %u", (guint32) nm_ip_route_get_metric (route));
+
+			g_string_append (printable, " }");
 		}
-
-		if (nm_ip_route_get_metric (route) != -1)
-			g_string_append_printf (printable, ", mt = %u", (guint32) nm_ip_route_get_metric (route));
-
-		g_string_append (printable, " }");
 	}
 
 	return g_string_free (printable, FALSE);
+}
+
+static char *
+nmc_property_ipv4_get_routes (NMSetting *setting, NmcPropertyGetType get_type)
+{
+	return nmc_property_ipvx_get_routes (setting, get_type);
 }
 
 DEFINE_GETTER (nmc_property_ipv4_get_gateway, NM_SETTING_IP_CONFIG_GATEWAY)
@@ -1318,40 +1353,9 @@ DEFINE_GETTER (nmc_property_ipv6_get_dns, NM_SETTING_IP_CONFIG_DNS)
 DEFINE_GETTER (nmc_property_ipv6_get_dns_search, NM_SETTING_IP_CONFIG_DNS_SEARCH)
 
 static char *
-nmc_property_ipv6_get_routes (NMSetting *setting)
+nmc_property_ipv6_get_routes (NMSetting *setting, NmcPropertyGetType get_type)
 {
-	NMSettingIPConfig *s_ip6 = NM_SETTING_IP_CONFIG (setting);
-	GString *printable;
-	guint32 num_routes, i;
-	NMIPRoute *route;
-
-	printable = g_string_new (NULL);
-
-	num_routes = nm_setting_ip_config_get_num_routes (s_ip6);
-	for (i = 0; i < num_routes; i++) {
-		route = nm_setting_ip_config_get_route (s_ip6, i);
-
-		if (printable->len > 0)
-			g_string_append (printable, "; ");
-
-		g_string_append (printable, "{ ");
-
-		g_string_append_printf (printable, "ip = %s/%u",
-		                        nm_ip_route_get_dest (route),
-		                        nm_ip_route_get_prefix (route));
-
-		if (nm_ip_route_get_next_hop (route)) {
-			g_string_append_printf (printable, ", nh = %s",
-			                        nm_ip_route_get_next_hop (route));
-		}
-
-		if (nm_ip_route_get_metric (route) != -1)
-			g_string_append_printf (printable, ", mt = %u", (guint32) nm_ip_route_get_metric (route));
-
-		g_string_append (printable, " }");
-	}
-
-	return g_string_free (printable, FALSE);
+	return nmc_property_ipvx_get_routes (setting, get_type);
 }
 
 DEFINE_GETTER (nmc_property_ipv6_get_gateway, NM_SETTING_IP_CONFIG_GATEWAY)
@@ -1364,10 +1368,10 @@ DEFINE_GETTER (nmc_property_ipv6_get_dhcp_send_hostname, NM_SETTING_IP_CONFIG_DH
 DEFINE_GETTER (nmc_property_ipv6_get_dhcp_hostname, NM_SETTING_IP_CONFIG_DHCP_HOSTNAME)
 
 static char *
-nmc_property_ipv6_get_ip6_privacy (NMSetting *setting)
+nmc_property_ipv6_get_ip6_privacy (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSettingIP6Config *s_ip6 = NM_SETTING_IP6_CONFIG (setting);
-	return ip6_privacy_to_string (nm_setting_ip6_config_get_ip6_privacy (s_ip6));
+	return ip6_privacy_to_string (nm_setting_ip6_config_get_ip6_privacy (s_ip6), get_type);
 }
 
 /* --- NM_SETTING_OLPC_MESH_SETTING_NAME property get functions --- */
@@ -1375,7 +1379,7 @@ DEFINE_GETTER (nmc_property_olpc_get_channel, NM_SETTING_OLPC_MESH_CHANNEL)
 DEFINE_GETTER (nmc_property_olpc_get_anycast_address, NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS)
 
 static char *
-nmc_property_olpc_get_ssid (NMSetting *setting)
+nmc_property_olpc_get_ssid (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSettingOlpcMesh *s_olpc_mesh = NM_SETTING_OLPC_MESH (setting);
 	GBytes *ssid;
@@ -1428,21 +1432,21 @@ DEFINE_GETTER (nmc_property_vlan_get_id, NM_SETTING_VLAN_ID)
 
 
 static char *
-nmc_property_vlan_get_flags (NMSetting *setting)
+nmc_property_vlan_get_flags (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSettingVlan *s_vlan = NM_SETTING_VLAN (setting);
 	return vlan_flags_to_string (nm_setting_vlan_get_flags (s_vlan));
 }
 
 static char *
-nmc_property_vlan_get_ingress_priority_map (NMSetting *setting)
+nmc_property_vlan_get_ingress_priority_map (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSettingVlan *s_vlan = NM_SETTING_VLAN (setting);
 	return vlan_priorities_to_string (s_vlan, NM_VLAN_INGRESS_MAP);
 }
 
 static char *
-nmc_property_vlan_get_egress_priority_map (NMSetting *setting)
+nmc_property_vlan_get_egress_priority_map (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSettingVlan *s_vlan = NM_SETTING_VLAN (setting);
 	return vlan_priorities_to_string (s_vlan, NM_VLAN_EGRESS_MAP);
@@ -1453,7 +1457,7 @@ DEFINE_GETTER (nmc_property_vpn_get_service_type, NM_SETTING_VPN_SERVICE_TYPE)
 DEFINE_GETTER (nmc_property_vpn_get_user_name, NM_SETTING_VPN_USER_NAME)
 
 static char *
-nmc_property_vpn_get_data (NMSetting *setting)
+nmc_property_vpn_get_data (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSettingVpn *s_vpn = NM_SETTING_VPN (setting);
 	GString *data_item_str;
@@ -1465,7 +1469,7 @@ nmc_property_vpn_get_data (NMSetting *setting)
 }
 
 static char *
-nmc_property_vpn_get_secrets (NMSetting *setting)
+nmc_property_vpn_get_secrets (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSettingVpn *s_vpn = NM_SETTING_VPN (setting);
 	GString *secret_str;
@@ -1495,7 +1499,7 @@ DEFINE_GETTER (nmc_property_wired_get_s390_nettype, NM_SETTING_WIRED_S390_NETTYP
 DEFINE_GETTER (nmc_property_wired_get_s390_options, NM_SETTING_WIRED_S390_OPTIONS)
 
 static char *
-nmc_property_wired_get_mtu (NMSetting *setting)
+nmc_property_wired_get_mtu (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSettingWired *s_wired = NM_SETTING_WIRED (setting);
 	int mtu;
@@ -1521,7 +1525,7 @@ DEFINE_GETTER (nmc_property_wireless_get_seen_bssids, NM_SETTING_WIRELESS_SEEN_B
 DEFINE_GETTER (nmc_property_wireless_get_hidden, NM_SETTING_WIRELESS_HIDDEN)
 
 static char *
-nmc_property_wireless_get_ssid (NMSetting *setting)
+nmc_property_wireless_get_ssid (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSettingWireless *s_wireless = NM_SETTING_WIRELESS (setting);
 	GBytes *ssid;
@@ -1537,7 +1541,7 @@ nmc_property_wireless_get_ssid (NMSetting *setting)
 }
 
 static char *
-nmc_property_wireless_get_mtu (NMSetting *setting)
+nmc_property_wireless_get_mtu (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSettingWireless *s_wireless = NM_SETTING_WIRELESS (setting);
 	int mtu;
@@ -1564,35 +1568,35 @@ DEFINE_GETTER (nmc_property_wifi_sec_get_leap_password, NM_SETTING_WIRELESS_SECU
 DEFINE_SECRET_FLAGS_GETTER (nmc_property_wifi_sec_get_leap_password_flags, NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD_FLAGS)
 
 static char *
-nmc_property_wifi_sec_get_wep_key0 (NMSetting *setting)
+nmc_property_wifi_sec_get_wep_key0 (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSettingWirelessSecurity *s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (setting);
 	return g_strdup (nm_setting_wireless_security_get_wep_key (s_wireless_sec, 0));
 }
 
 static char *
-nmc_property_wifi_sec_get_wep_key1 (NMSetting *setting)
+nmc_property_wifi_sec_get_wep_key1 (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSettingWirelessSecurity *s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (setting);
 	return g_strdup (nm_setting_wireless_security_get_wep_key (s_wireless_sec, 1));
 }
 
 static char *
-nmc_property_wifi_sec_get_wep_key2 (NMSetting *setting)
+nmc_property_wifi_sec_get_wep_key2 (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSettingWirelessSecurity *s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (setting);
 	return g_strdup (nm_setting_wireless_security_get_wep_key (s_wireless_sec, 2));
 }
 
 static char *
-nmc_property_wifi_sec_get_wep_key3 (NMSetting *setting)
+nmc_property_wifi_sec_get_wep_key3 (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSettingWirelessSecurity *s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (setting);
 	return g_strdup (nm_setting_wireless_security_get_wep_key (s_wireless_sec, 3));
 }
 
 static char *
-nmc_property_wifi_sec_get_wep_key_type (NMSetting *setting)
+nmc_property_wifi_sec_get_wep_key_type (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSettingWirelessSecurity *s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (setting);
 	return wep_key_type_to_string (nm_setting_wireless_security_get_wep_key_type (s_wireless_sec));
@@ -1625,20 +1629,23 @@ register_nmcli_value_transforms (void)
 
 /* Main hash table storing function pointer for manipulating properties */
 static GHashTable *nmc_properties = NULL;
-typedef	char *        (*NmcPropertyGetFunc)      (NMSetting *);
+typedef	char *        (*NmcPropertyGetFunc)      (NMSetting *, NmcPropertyGetType);
 typedef	gboolean      (*NmcPropertySetFunc)      (NMSetting *, const char *, const char *, GError **);
 typedef	gboolean      (*NmcPropertyRemoveFunc)   (NMSetting *, const char *, const char *, guint32, GError **);
 typedef	const char *  (*NmcPropertyDescribeFunc) (NMSetting *, const char *);
 typedef	const char ** (*NmcPropertyValuesFunc)   (NMSetting *, const char *);
-typedef	      char *  (*NmcPropertyOut2InFunc)   (const char *);
 
 typedef struct {
-	NmcPropertyGetFunc get_func;           /* func getting property values */
-	NmcPropertySetFunc set_func;           /* func adding/setting property values */
-	NmcPropertyRemoveFunc remove_func;     /* func removing items from container options */
-	NmcPropertyDescribeFunc describe_func; /* func returning property description */
-	NmcPropertyValuesFunc values_func;     /* func returning allowed property values */
-	NmcPropertyOut2InFunc out2in_func;     /* func converting property values from output to input format */
+	/* The order of the fields is important as they correspond
+	 * to the order as _nmc_add_prop_funcs() passes the arguments. */
+#define NmcPropertyFuncsFields \
+	NmcPropertyGetFunc get_func;           /* func getting property values */ \
+	NmcPropertySetFunc set_func;           /* func adding/setting property values */ \
+	NmcPropertyRemoveFunc remove_func;     /* func removing items from container options */ \
+	NmcPropertyDescribeFunc describe_func; /* func returning property description */ \
+	NmcPropertyValuesFunc values_func;     /* func returning allowed property values */ \
+	;
+	NmcPropertyFuncsFields
 } NmcPropertyFuncs;
 
 /*
@@ -2448,17 +2455,6 @@ done:
 		g_strfreev (list); \
 		return TRUE; \
 	}
-
-static char *
-nmc_property_out2in_cut_paren (const char *out_format)
-{
-	const char *p;
-	size_t n;
-
-	p = strstr (out_format, " (");
-	n = p ? p - out_format : strlen (out_format);
-	return g_strndup (out_format, n);
-}
 
 /* --- NM_SETTING_CONNECTION_SETTING_NAME property setter functions --- */
 #if 0
@@ -3459,37 +3455,6 @@ nmc_property_ipv4_describe_routes (NMSetting *setting, const char *prop)
 	         "          10.1.2.0/24\n");
 }
 
-static char *
-nmc_property_out2in_routes (const char *out_format)
-{
-        GRegex *regex;
-	GString *str;
-        char **strv;
-	int i;
-
-	str = g_string_sized_new (128);
-	regex = g_regex_new ("\\{ dst = ([^/]+)/([^,]+), nh = ([^,]+), mt = ([^ ]+) \\}", 0, 0, NULL);
-
-	strv = g_regex_split (regex, out_format, 0);
-	for (i = 1; strv && strv[i] && strv[i+1] && strv[i+2] && strv[i+3]; i=i+5) {
-		g_string_append (str, strv[i]); /* IP */
-		g_string_append_c (str, '/');
-		g_string_append (str, strv[i+1]); /* prefix */
-		g_string_append_c (str, ' ');
-		g_string_append (str, strv[i+2]); /* next hop */
-		g_string_append_c (str, ' ');
-		g_string_append (str, strv[i+3]); /* metric */
-		g_string_append (str, ", ");
-	}
-	if (str->len > 0)
-		g_string_truncate (str, str->len - 2);
-
-	g_strfreev (strv);
-	g_regex_unref (regex);
-
-	return g_string_free (str, FALSE);
-}
-
 /* --- NM_SETTING_IP6_CONFIG_SETTING_NAME property setter functions --- */
 /* 'method' */
 static const char *ipv6_valid_methods[] = {
@@ -3807,7 +3772,7 @@ nmc_property_olpc_set_channel (NMSetting *setting, const char *prop, const char 
 
 /* --- NM_SETTING_SERIAL_SETTING_NAME property setter functions --- */
 static char *
-nmc_property_serial_get_parity (NMSetting *setting)
+nmc_property_serial_get_parity (NMSetting *setting, NmcPropertyGetType get_type)
 {
 	NMSettingSerial *s_serial = NM_SETTING_SERIAL (setting);
 
@@ -4749,29 +4714,36 @@ DEFINE_ALLOWED_VAL_FUNC (nmc_property_dcb_allowed_app_fcoe_modes, _dcb_valid_fco
 
 /*----------------------------------------------------------------------------*/
 
-static void
-nmc_add_prop_funcs (char *key,
-                    NmcPropertyGetFunc get_func,
-                    NmcPropertySetFunc set_func,
-                    NmcPropertyRemoveFunc remove_func,
-                    NmcPropertyDescribeFunc describe_func,
-                    NmcPropertyValuesFunc values_func,
-                    NmcPropertyOut2InFunc out2in_func)
+static inline void
+_nmc_add_prop_funcs (const char *key,
+                     const NmcPropertyFuncs *item_init)
 {
-	NmcPropertyFuncs *item = g_malloc0 (sizeof (NmcPropertyFuncs));
-	item->get_func = get_func;
-	item->set_func = set_func;
-	item->remove_func = remove_func;
-	item->describe_func = describe_func;
-	item->values_func = values_func;
-	item->out2in_func = out2in_func;
+	NmcPropertyFuncs *item;
 
-	g_hash_table_insert (nmc_properties, key, item);
+	item = g_malloc (sizeof (NmcPropertyFuncs));
+	*item = *item_init;
+	g_hash_table_insert (nmc_properties, (gpointer) key, item);
 }
 
+#define nmc_add_prop_funcs(key, ...) \
+	G_STMT_START { \
+		struct { \
+			NmcPropertyFuncsFields; \
+			/* The _dummy field is here so that the last argument can be always
+			 * NULL. That means every call to nmc_add_prop_funcs() below ends
+			 * with a separate line "NULL);". */ \
+			gpointer _dummy; \
+		} _item_init = { \
+			__VA_ARGS__ \
+		};\
+		\
+		nm_assert (_item_init._dummy == NULL); \
+		_nmc_add_prop_funcs ("" key, (NmcPropertyFuncs *) &_item_init); \
+	} G_STMT_END
+
 /* concatenate setting name and property name */
-#define GLUE(A,B) (g_strconcat ((NM_SETTING_##A##_SETTING_NAME),(NM_SETTING_##A##_##B), NULL))
-#define GLUE_IP(A,B) (g_strconcat ((NM_SETTING_IP##A##_CONFIG_SETTING_NAME),(NM_SETTING_IP_CONFIG_##B), NULL))
+#define GLUE(A,B) "" NM_SETTING_##A##_SETTING_NAME "" NM_SETTING_##A##_##B ""
+#define GLUE_IP(A,B) "" NM_SETTING_IP##A##_CONFIG_SETTING_NAME "" NM_SETTING_IP_CONFIG_##B ""
 
 void
 nmc_properties_init (void)
@@ -4780,7 +4752,7 @@ nmc_properties_init (void)
 		return;
 
 	/* create properties hash table */
-	nmc_properties = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+	nmc_properties = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
 
 	/* Add editable properties for NM_SETTING_802_1X_SETTING_NAME */
 	nmc_add_prop_funcs (GLUE (802_1X, EAP),
@@ -4929,7 +4901,7 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL,
-	                    nmc_property_out2in_cut_paren);
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, PASSWORD_RAW),
 	                    nmc_property_802_1X_get_password_raw,
 	                    nmc_property_802_1X_set_password_raw,
@@ -4943,7 +4915,7 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL,
-	                    nmc_property_out2in_cut_paren);
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, PRIVATE_KEY),
 	                    nmc_property_802_1X_get_private_key,
 	                    nmc_property_802_1X_set_private_key,
@@ -4964,7 +4936,7 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL,
-	                    nmc_property_out2in_cut_paren);
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, PHASE2_PRIVATE_KEY),
 	                    nmc_property_802_1X_get_phase2_private_key,
 	                    nmc_property_802_1X_set_phase2_private_key,
@@ -4985,7 +4957,7 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL,
-	                    nmc_property_out2in_cut_paren);
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, PIN),
 	                    nmc_property_802_1X_get_pin,
 	                    nmc_property_set_string,
@@ -4999,7 +4971,7 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL,
-	                    nmc_property_out2in_cut_paren);
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, SYSTEM_CA_CERTS),
 	                    nmc_property_802_1X_get_system_ca_certs,
 	                    nmc_property_set_bool,
@@ -5029,7 +5001,7 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL,
-	                    nmc_property_out2in_cut_paren);
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (ADSL, PROTOCOL),
 	                    nmc_property_adsl_get_protocol,
 	                    nmc_property_adsl_set_protocol,
@@ -5186,7 +5158,7 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL,
-	                    nmc_property_out2in_cut_paren);
+	                    NULL);
 
 	/* Add editable properties for NM_SETTING_CONNECTION_SETTING_NAME */
 	nmc_add_prop_funcs (GLUE (CONNECTION, ID),
@@ -5430,7 +5402,7 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL,
-	                    nmc_property_out2in_cut_paren);
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (GSM, APN),
 	                    nmc_property_gsm_get_apn,
 	                    nmc_property_set_string,
@@ -5458,7 +5430,7 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL,
-	                    nmc_property_out2in_cut_paren);
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (GSM, HOME_ONLY),
 	                    nmc_property_gsm_get_home_only,
 	                    nmc_property_set_bool,
@@ -5546,7 +5518,7 @@ nmc_properties_init (void)
 	                    nmc_property_ipv4_remove_routes,
 	                    nmc_property_ipv4_describe_routes,
 	                    NULL,
-	                    nmc_property_out2in_routes);
+	                    NULL);
 	nmc_add_prop_funcs (GLUE_IP (4, ROUTE_METRIC),
 	                    nmc_property_ipv4_get_route_metric,
 	                    nmc_property_set_int64,
@@ -5646,7 +5618,7 @@ nmc_properties_init (void)
 	                    nmc_property_ipv6_remove_routes,
 	                    nmc_property_ipv6_describe_routes,
 	                    NULL,
-	                    nmc_property_out2in_routes);
+	                    NULL);
 	nmc_add_prop_funcs (GLUE_IP (6, ROUTE_METRIC),
 	                    nmc_property_ipv6_get_route_metric,
 	                    nmc_property_set_int64,
@@ -5688,7 +5660,7 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL,
-	                    nmc_property_out2in_cut_paren);
+	                    NULL);
 	nmc_add_prop_funcs (GLUE_IP (6, DHCP_SEND_HOSTNAME),
 	                    nmc_property_ipv6_get_dhcp_send_hostname,
 	                    nmc_property_set_bool,
@@ -5883,7 +5855,7 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL,
-	                    nmc_property_out2in_cut_paren);
+	                    NULL);
 
 	/* Add editable properties for NM_SETTING_SERIAL_SETTING_NAME */
 	nmc_add_prop_funcs (GLUE (SERIAL, BAUD),
@@ -6290,7 +6262,7 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL,
-	                    nmc_property_out2in_cut_paren);
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, WEP_KEY_TYPE),
 	                    nmc_property_wifi_sec_get_wep_key_type,
 	                    nmc_property_wifi_set_wep_key_type,
@@ -6311,7 +6283,7 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL,
-	                    nmc_property_out2in_cut_paren);
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, LEAP_PASSWORD),
 	                    nmc_property_wifi_sec_get_leap_password,
 	                    nmc_property_set_string,
@@ -6325,7 +6297,7 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL,
-	                    nmc_property_out2in_cut_paren);
+	                    NULL);
 }
 
 void
@@ -6338,21 +6310,21 @@ nmc_properties_cleanup ()
 static const NmcPropertyFuncs *
 nmc_properties_find (const char *s_name, const char *p_name)
 {
-	NmcPropertyFuncs *item = NULL;
 	char *key;
+	gsize p_l, s_l;
 
-	/* FIXME: maybe it's better to init it globally */
 	nmc_properties_init ();
 
-	key = g_strdup_printf ("%s%s", s_name, p_name);
-	item = (NmcPropertyFuncs *) g_hash_table_lookup (nmc_properties, key);
-	g_free (key);
-
-	return item;
+	s_l = strlen (s_name);
+	p_l = strlen (p_name);
+	key = g_alloca (s_l + p_l + 1);
+	memcpy (&key[  0], s_name, s_l);
+	memcpy (&key[s_l], p_name, p_l + 1);
+	return (NmcPropertyFuncs *) g_hash_table_lookup (nmc_properties, key);
 }
 
 static char *
-get_property_val (NMSetting *setting, const char *prop, gboolean convert, GError **error)
+get_property_val (NMSetting *setting, const char *prop, NmcPropertyGetType get_type, GError **error)
 {
 	const NmcPropertyFuncs *item;
 
@@ -6360,15 +6332,8 @@ get_property_val (NMSetting *setting, const char *prop, gboolean convert, GError
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
 	item = nmc_properties_find (nm_setting_get_name (setting), prop);
-	if (item && item->get_func) {
-		char *prop_val = item->get_func (setting);
-		if (convert && item->out2in_func) {
-			char *converted = item->out2in_func (prop_val);
-			g_free (prop_val);
-			return converted;
-		} else
-			return prop_val;
-	}
+	if (item && item->get_func)
+		return item->get_func (setting, get_type);
 
 	g_set_error_literal (error, 1, 0, _("don't know how to get the property value"));
 	return NULL;
@@ -6384,17 +6349,17 @@ get_property_val (NMSetting *setting, const char *prop, gboolean convert, GError
 char *
 nmc_setting_get_property (NMSetting *setting, const char *prop, GError **error)
 {
-	return get_property_val (setting, prop, FALSE, error);
+	return get_property_val (setting, prop, NMC_PROPERTY_GET_PRETTY, error);
 }
 
 /*
- * The same as nmc_setting_get_property(), but in addition converts
- * usual output format into a simpler one, used as input in the editor.
+ * Similar to nmc_setting_get_property(), but returns the property in a string
+ * format that can be parsed via nmc_setting_set_property().
  */
 char *
-nmc_setting_get_property_out2in (NMSetting *setting, const char *prop, GError **error)
+nmc_setting_get_property_parsable (NMSetting *setting, const char *prop, GError **error)
 {
-	return get_property_val (setting, prop, TRUE, error);
+	return get_property_val (setting, prop, NMC_PROPERTY_GET_PARSABLE, error);
 }
 
 /*
@@ -6626,7 +6591,7 @@ nmc_property_set_gvalue (NMSetting *setting, const char *prop, GValue *value)
 /*----------------------------------------------------------------------------*/
 
 #define GET_SECRET(show, setting, func) \
-	(show ? func (setting) : g_strdup (_("<hidden>")))
+	(show ? func (setting, NMC_PROPERTY_GET_PRETTY) : g_strdup (_("<hidden>")))
 
 static gboolean
 setting_connection_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
@@ -6646,21 +6611,21 @@ setting_connection_details (NMSetting *setting, NmCli *nmc,  const char *one_pro
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_connection_get_id (setting));
-	set_val_str (arr, 2, nmc_property_connection_get_uuid (setting));
-	set_val_str (arr, 3, nmc_property_connection_get_interface_name (setting));
-	set_val_str (arr, 4, nmc_property_connection_get_type (setting));
-	set_val_str (arr, 5, nmc_property_connection_get_autoconnect (setting));
-	set_val_str (arr, 6, nmc_property_connection_get_autoconnect_priority (setting));
-	set_val_str (arr, 7, nmc_property_connection_get_timestamp (setting));
-	set_val_str (arr, 8, nmc_property_connection_get_read_only (setting));
-	set_val_str (arr, 9, nmc_property_connection_get_permissions (setting));
-	set_val_str (arr, 10, nmc_property_connection_get_zone (setting));
-	set_val_str (arr, 11, nmc_property_connection_get_master (setting));
-	set_val_str (arr, 12, nmc_property_connection_get_slave_type (setting));
-	set_val_str (arr, 13, nmc_property_connection_get_autoconnect_slaves (setting));
-	set_val_str (arr, 14, nmc_property_connection_get_secondaries (setting));
-	set_val_str (arr, 15, nmc_property_connection_get_gateway_ping_timeout (setting));
+	set_val_str (arr, 1, nmc_property_connection_get_id (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 2, nmc_property_connection_get_uuid (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 3, nmc_property_connection_get_interface_name (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 4, nmc_property_connection_get_type (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 5, nmc_property_connection_get_autoconnect (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 6, nmc_property_connection_get_autoconnect_priority (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 7, nmc_property_connection_get_timestamp (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 8, nmc_property_connection_get_read_only (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 9, nmc_property_connection_get_permissions (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 10, nmc_property_connection_get_zone (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 11, nmc_property_connection_get_master (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 12, nmc_property_connection_get_slave_type (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 13, nmc_property_connection_get_autoconnect_slaves (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 14, nmc_property_connection_get_secondaries (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 15, nmc_property_connection_get_gateway_ping_timeout (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -6686,17 +6651,17 @@ setting_wired_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gb
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_wired_get_port (setting));
-	set_val_str (arr, 2, nmc_property_wired_get_speed (setting));
-	set_val_str (arr, 3, nmc_property_wired_get_duplex (setting));
-	set_val_str (arr, 4, nmc_property_wired_get_auto_negotiate (setting));
-	set_val_str (arr, 5, nmc_property_wired_get_mac_address (setting));
-	set_val_str (arr, 6, nmc_property_wired_get_cloned_mac_address (setting));
-	set_val_str (arr, 7, nmc_property_wired_get_mac_address_blacklist (setting));
-	set_val_str (arr, 8, nmc_property_wired_get_mtu (setting));
-	set_val_str (arr, 9, nmc_property_wired_get_s390_subchannels (setting));
-	set_val_str (arr, 10, nmc_property_wired_get_s390_nettype (setting));
-	set_val_str (arr, 11, nmc_property_wired_get_s390_options (setting));
+	set_val_str (arr, 1, nmc_property_wired_get_port (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 2, nmc_property_wired_get_speed (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 3, nmc_property_wired_get_duplex (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 4, nmc_property_wired_get_auto_negotiate (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 5, nmc_property_wired_get_mac_address (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 6, nmc_property_wired_get_cloned_mac_address (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 7, nmc_property_wired_get_mac_address_blacklist (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 8, nmc_property_wired_get_mtu (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 9, nmc_property_wired_get_s390_subchannels (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 10, nmc_property_wired_get_s390_nettype (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 11, nmc_property_wired_get_s390_options (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -6722,38 +6687,38 @@ setting_802_1X_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, g
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_802_1X_get_eap (setting));
-	set_val_str (arr, 2, nmc_property_802_1X_get_identity (setting));
-	set_val_str (arr, 3, nmc_property_802_1X_get_anonymous_identity (setting));
-	set_val_str (arr, 4, nmc_property_802_1X_get_pac_file (setting));
-	set_val_str (arr, 5, nmc_property_802_1X_get_ca_cert (setting));
-	set_val_str (arr, 6, nmc_property_802_1X_get_ca_path (setting));
-	set_val_str (arr, 7, nmc_property_802_1X_get_subject_match (setting));
-	set_val_str (arr, 8, nmc_property_802_1X_get_altsubject_matches (setting));
-	set_val_str (arr, 9, nmc_property_802_1X_get_client_cert (setting));
-	set_val_str (arr, 10, nmc_property_802_1X_get_phase1_peapver (setting));
-	set_val_str (arr, 11, nmc_property_802_1X_get_phase1_peaplabel (setting));
-	set_val_str (arr, 12, nmc_property_802_1X_get_phase1_fast_provisioning (setting));
-	set_val_str (arr, 13, nmc_property_802_1X_get_phase2_auth (setting));
-	set_val_str (arr, 14, nmc_property_802_1X_get_phase2_autheap (setting));
-	set_val_str (arr, 15, nmc_property_802_1X_get_phase2_ca_cert (setting));
-	set_val_str (arr, 16, nmc_property_802_1X_get_phase2_ca_path (setting));
-	set_val_str (arr, 17, nmc_property_802_1X_get_phase2_subject_match (setting));
-	set_val_str (arr, 18, nmc_property_802_1X_get_phase2_altsubject_matches (setting));
-	set_val_str (arr, 19, nmc_property_802_1X_get_phase2_client_cert (setting));
+	set_val_str (arr, 1, nmc_property_802_1X_get_eap (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 2, nmc_property_802_1X_get_identity (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 3, nmc_property_802_1X_get_anonymous_identity (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 4, nmc_property_802_1X_get_pac_file (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 5, nmc_property_802_1X_get_ca_cert (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 6, nmc_property_802_1X_get_ca_path (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 7, nmc_property_802_1X_get_subject_match (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 8, nmc_property_802_1X_get_altsubject_matches (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 9, nmc_property_802_1X_get_client_cert (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 10, nmc_property_802_1X_get_phase1_peapver (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 11, nmc_property_802_1X_get_phase1_peaplabel (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 12, nmc_property_802_1X_get_phase1_fast_provisioning (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 13, nmc_property_802_1X_get_phase2_auth (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 14, nmc_property_802_1X_get_phase2_autheap (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 15, nmc_property_802_1X_get_phase2_ca_cert (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 16, nmc_property_802_1X_get_phase2_ca_path (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 17, nmc_property_802_1X_get_phase2_subject_match (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 18, nmc_property_802_1X_get_phase2_altsubject_matches (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 19, nmc_property_802_1X_get_phase2_client_cert (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 20, GET_SECRET (secrets, setting, nmc_property_802_1X_get_password));
-	set_val_str (arr, 21, nmc_property_802_1X_get_password_flags (setting));
+	set_val_str (arr, 21, nmc_property_802_1X_get_password_flags (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 22, GET_SECRET (secrets, setting, nmc_property_802_1X_get_password_raw));
-	set_val_str (arr, 23, nmc_property_802_1X_get_password_raw_flags (setting));
-	set_val_str (arr, 24, nmc_property_802_1X_get_private_key (setting));
+	set_val_str (arr, 23, nmc_property_802_1X_get_password_raw_flags (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 24, nmc_property_802_1X_get_private_key (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 25, GET_SECRET (secrets, setting, nmc_property_802_1X_get_private_key_password));
-	set_val_str (arr, 26, nmc_property_802_1X_get_private_key_password_flags (setting));
-	set_val_str (arr, 27, nmc_property_802_1X_get_phase2_private_key (setting));
+	set_val_str (arr, 26, nmc_property_802_1X_get_private_key_password_flags (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 27, nmc_property_802_1X_get_phase2_private_key (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 28, GET_SECRET (secrets, setting, nmc_property_802_1X_get_phase2_private_key_password));
-	set_val_str (arr, 29, nmc_property_802_1X_get_phase2_private_key_password_flags (setting));
+	set_val_str (arr, 29, nmc_property_802_1X_get_phase2_private_key_password_flags (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 30, GET_SECRET (secrets, setting, nmc_property_802_1X_get_pin));
-	set_val_str (arr, 31, nmc_property_802_1X_get_pin_flags (setting));
-	set_val_str (arr, 32, nmc_property_802_1X_get_system_ca_certs (setting));
+	set_val_str (arr, 31, nmc_property_802_1X_get_pin_flags (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 32, nmc_property_802_1X_get_system_ca_certs (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -6779,19 +6744,19 @@ setting_wireless_details (NMSetting *setting, NmCli *nmc,  const char *one_prop,
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_wireless_get_ssid (setting));
-	set_val_str (arr, 2, nmc_property_wireless_get_mode (setting));
-	set_val_str (arr, 3, nmc_property_wireless_get_band (setting));
-	set_val_str (arr, 4, nmc_property_wireless_get_channel (setting));
-	set_val_str (arr, 5, nmc_property_wireless_get_bssid (setting));
-	set_val_str (arr, 6, nmc_property_wireless_get_rate (setting));
-	set_val_str (arr, 7, nmc_property_wireless_get_tx_power (setting));
-	set_val_str (arr, 8, nmc_property_wireless_get_mac_address (setting));
-	set_val_str (arr, 9, nmc_property_wireless_get_cloned_mac_address (setting));
-	set_val_str (arr, 10, nmc_property_wireless_get_mac_address_blacklist (setting));
-	set_val_str (arr, 11, nmc_property_wireless_get_mtu (setting));
-	set_val_str (arr, 12, nmc_property_wireless_get_seen_bssids (setting));
-	set_val_str (arr, 13, nmc_property_wireless_get_hidden (setting));
+	set_val_str (arr, 1, nmc_property_wireless_get_ssid (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 2, nmc_property_wireless_get_mode (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 3, nmc_property_wireless_get_band (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 4, nmc_property_wireless_get_channel (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 5, nmc_property_wireless_get_bssid (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 6, nmc_property_wireless_get_rate (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 7, nmc_property_wireless_get_tx_power (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 8, nmc_property_wireless_get_mac_address (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 9, nmc_property_wireless_get_cloned_mac_address (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 10, nmc_property_wireless_get_mac_address_blacklist (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 11, nmc_property_wireless_get_mtu (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 12, nmc_property_wireless_get_seen_bssids (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 13, nmc_property_wireless_get_hidden (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -6817,23 +6782,23 @@ setting_wireless_security_details (NMSetting *setting, NmCli *nmc, const char *o
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_wifi_sec_get_key_mgmt (setting));
-	set_val_str (arr, 2, nmc_property_wifi_sec_get_wep_tx_keyidx (setting));
-	set_val_str (arr, 3, nmc_property_wifi_sec_get_auth_alg (setting));
-	set_val_str (arr, 4, nmc_property_wifi_sec_get_proto (setting));
-	set_val_str (arr, 5, nmc_property_wifi_sec_get_pairwise (setting));
-	set_val_str (arr, 6, nmc_property_wifi_sec_get_group (setting));
-	set_val_str (arr, 7, nmc_property_wifi_sec_get_leap_username (setting));
+	set_val_str (arr, 1, nmc_property_wifi_sec_get_key_mgmt (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 2, nmc_property_wifi_sec_get_wep_tx_keyidx (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 3, nmc_property_wifi_sec_get_auth_alg (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 4, nmc_property_wifi_sec_get_proto (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 5, nmc_property_wifi_sec_get_pairwise (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 6, nmc_property_wifi_sec_get_group (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 7, nmc_property_wifi_sec_get_leap_username (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 8, GET_SECRET (secrets, setting, nmc_property_wifi_sec_get_wep_key0));
 	set_val_str (arr, 9, GET_SECRET (secrets, setting, nmc_property_wifi_sec_get_wep_key1));
 	set_val_str (arr, 10, GET_SECRET (secrets, setting, nmc_property_wifi_sec_get_wep_key2));
 	set_val_str (arr, 11, GET_SECRET (secrets, setting, nmc_property_wifi_sec_get_wep_key3));
-	set_val_str (arr, 12, nmc_property_wifi_sec_get_wep_key_flags (setting));
-	set_val_str (arr, 13, nmc_property_wifi_sec_get_wep_key_type (setting));
+	set_val_str (arr, 12, nmc_property_wifi_sec_get_wep_key_flags (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 13, nmc_property_wifi_sec_get_wep_key_type (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 14, GET_SECRET (secrets, setting, nmc_property_wifi_sec_get_psk));
-	set_val_str (arr, 15, nmc_property_wifi_sec_get_psk_flags (setting));
+	set_val_str (arr, 15, nmc_property_wifi_sec_get_psk_flags (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 16, GET_SECRET (secrets, setting, nmc_property_wifi_sec_get_leap_password));
-	set_val_str (arr, 17, nmc_property_wifi_sec_get_leap_password_flags (setting));
+	set_val_str (arr, 17, nmc_property_wifi_sec_get_leap_password_flags (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -6859,20 +6824,20 @@ setting_ip4_config_details (NMSetting *setting, NmCli *nmc,  const char *one_pro
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_ipv4_get_method (setting));
-	set_val_str (arr, 2, nmc_property_ipv4_get_dns (setting));
-	set_val_str (arr, 3, nmc_property_ipv4_get_dns_search (setting));
-	set_val_str (arr, 4, nmc_property_ip_get_addresses (setting));
-	set_val_str (arr, 5, nmc_property_ipv4_get_gateway (setting));
-	set_val_str (arr, 6, nmc_property_ipv4_get_routes (setting));
-	set_val_str (arr, 7, nmc_property_ipv4_get_route_metric (setting));
-	set_val_str (arr, 8, nmc_property_ipv4_get_ignore_auto_routes (setting));
-	set_val_str (arr, 9, nmc_property_ipv4_get_ignore_auto_dns (setting));
-	set_val_str (arr, 10, nmc_property_ipv4_get_dhcp_client_id (setting));
-	set_val_str (arr, 11, nmc_property_ipv4_get_dhcp_send_hostname (setting));
-	set_val_str (arr, 12, nmc_property_ipv4_get_dhcp_hostname (setting));
-	set_val_str (arr, 13, nmc_property_ipv4_get_never_default (setting));
-	set_val_str (arr, 14, nmc_property_ipv4_get_may_fail (setting));
+	set_val_str (arr, 1, nmc_property_ipv4_get_method (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 2, nmc_property_ipv4_get_dns (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 3, nmc_property_ipv4_get_dns_search (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 4, nmc_property_ip_get_addresses (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 5, nmc_property_ipv4_get_gateway (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 6, nmc_property_ipv4_get_routes (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 7, nmc_property_ipv4_get_route_metric (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 8, nmc_property_ipv4_get_ignore_auto_routes (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 9, nmc_property_ipv4_get_ignore_auto_dns (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 10, nmc_property_ipv4_get_dhcp_client_id (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 11, nmc_property_ipv4_get_dhcp_send_hostname (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 12, nmc_property_ipv4_get_dhcp_hostname (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 13, nmc_property_ipv4_get_never_default (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 14, nmc_property_ipv4_get_may_fail (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -6898,20 +6863,20 @@ setting_ip6_config_details (NMSetting *setting, NmCli *nmc,  const char *one_pro
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_ipv6_get_method (setting));
-	set_val_str (arr, 2, nmc_property_ipv6_get_dns (setting));
-	set_val_str (arr, 3, nmc_property_ipv6_get_dns_search (setting));
-	set_val_str (arr, 4, nmc_property_ip_get_addresses (setting));
-	set_val_str (arr, 5, nmc_property_ipv6_get_gateway (setting));
-	set_val_str (arr, 6, nmc_property_ipv6_get_routes (setting));
-	set_val_str (arr, 7, nmc_property_ipv6_get_route_metric (setting));
-	set_val_str (arr, 8, nmc_property_ipv6_get_ignore_auto_routes (setting));
-	set_val_str (arr, 9, nmc_property_ipv6_get_ignore_auto_dns (setting));
-	set_val_str (arr, 10, nmc_property_ipv6_get_never_default (setting));
-	set_val_str (arr, 11, nmc_property_ipv6_get_may_fail (setting));
-	set_val_str (arr, 12, nmc_property_ipv6_get_ip6_privacy (setting));
-	set_val_str (arr, 13, nmc_property_ipv6_get_dhcp_send_hostname (setting));
-	set_val_str (arr, 14, nmc_property_ipv6_get_dhcp_hostname (setting));
+	set_val_str (arr, 1, nmc_property_ipv6_get_method (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 2, nmc_property_ipv6_get_dns (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 3, nmc_property_ipv6_get_dns_search (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 4, nmc_property_ip_get_addresses (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 5, nmc_property_ipv6_get_gateway (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 6, nmc_property_ipv6_get_routes (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 7, nmc_property_ipv6_get_route_metric (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 8, nmc_property_ipv6_get_ignore_auto_routes (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 9, nmc_property_ipv6_get_ignore_auto_dns (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 10, nmc_property_ipv6_get_never_default (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 11, nmc_property_ipv6_get_may_fail (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 12, nmc_property_ipv6_get_ip6_privacy (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 13, nmc_property_ipv6_get_dhcp_send_hostname (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 14, nmc_property_ipv6_get_dhcp_hostname (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -6937,11 +6902,11 @@ setting_serial_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, g
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_serial_get_baud (setting));
-	set_val_str (arr, 2, nmc_property_serial_get_bits (setting));
-	set_val_str (arr, 3, nmc_property_serial_get_parity (setting));
-	set_val_str (arr, 4, nmc_property_serial_get_stopbits (setting));
-	set_val_str (arr, 5, nmc_property_serial_get_send_delay (setting));
+	set_val_str (arr, 1, nmc_property_serial_get_baud (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 2, nmc_property_serial_get_bits (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 3, nmc_property_serial_get_parity (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 4, nmc_property_serial_get_stopbits (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 5, nmc_property_serial_get_send_delay (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -6967,24 +6932,24 @@ setting_ppp_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboo
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_ppp_get_noauth (setting));
-	set_val_str (arr, 2, nmc_property_ppp_get_refuse_eap (setting));
-	set_val_str (arr, 3, nmc_property_ppp_get_refuse_pap (setting));
-	set_val_str (arr, 4, nmc_property_ppp_get_refuse_chap (setting));
-	set_val_str (arr, 5, nmc_property_ppp_get_refuse_mschap (setting));
-	set_val_str (arr, 6, nmc_property_ppp_get_refuse_mschapv2 (setting));
-	set_val_str (arr, 7, nmc_property_ppp_get_nobsdcomp (setting));
-	set_val_str (arr, 8, nmc_property_ppp_get_nodeflate (setting));
-	set_val_str (arr, 9, nmc_property_ppp_get_no_vj_comp (setting));
-	set_val_str (arr, 10, nmc_property_ppp_get_require_mppe (setting));
-	set_val_str (arr, 11, nmc_property_ppp_get_require_mppe_128 (setting));
-	set_val_str (arr, 12, nmc_property_ppp_get_mppe_stateful (setting));
-	set_val_str (arr, 13, nmc_property_ppp_get_crtscts (setting));
-	set_val_str (arr, 14, nmc_property_ppp_get_baud (setting));
-	set_val_str (arr, 15, nmc_property_ppp_get_mru (setting));
-	set_val_str (arr, 16, nmc_property_ppp_get_mtu (setting));
-	set_val_str (arr, 17, nmc_property_ppp_get_lcp_echo_failure (setting));
-	set_val_str (arr, 18, nmc_property_ppp_get_lcp_echo_interval (setting));
+	set_val_str (arr, 1, nmc_property_ppp_get_noauth (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 2, nmc_property_ppp_get_refuse_eap (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 3, nmc_property_ppp_get_refuse_pap (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 4, nmc_property_ppp_get_refuse_chap (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 5, nmc_property_ppp_get_refuse_mschap (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 6, nmc_property_ppp_get_refuse_mschapv2 (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 7, nmc_property_ppp_get_nobsdcomp (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 8, nmc_property_ppp_get_nodeflate (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 9, nmc_property_ppp_get_no_vj_comp (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 10, nmc_property_ppp_get_require_mppe (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 11, nmc_property_ppp_get_require_mppe_128 (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 12, nmc_property_ppp_get_mppe_stateful (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 13, nmc_property_ppp_get_crtscts (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 14, nmc_property_ppp_get_baud (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 15, nmc_property_ppp_get_mru (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 16, nmc_property_ppp_get_mtu (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 17, nmc_property_ppp_get_lcp_echo_failure (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 18, nmc_property_ppp_get_lcp_echo_interval (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -7010,10 +6975,10 @@ setting_pppoe_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gb
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_pppoe_get_service (setting));
-	set_val_str (arr, 2, nmc_property_pppoe_get_username (setting));
+	set_val_str (arr, 1, nmc_property_pppoe_get_service (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 2, nmc_property_pppoe_get_username (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 3, GET_SECRET (secrets, setting, nmc_property_pppoe_get_password));
-	set_val_str (arr, 4, nmc_property_pppoe_get_password_flags (setting));
+	set_val_str (arr, 4, nmc_property_pppoe_get_password_flags (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -7039,15 +7004,15 @@ setting_gsm_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboo
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_gsm_get_number (setting));
-	set_val_str (arr, 2, nmc_property_gsm_get_username (setting));
+	set_val_str (arr, 1, nmc_property_gsm_get_number (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 2, nmc_property_gsm_get_username (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 3, GET_SECRET (secrets, setting, nmc_property_gsm_get_password));
-	set_val_str (arr, 4, nmc_property_gsm_get_password_flags (setting));
-	set_val_str (arr, 5, nmc_property_gsm_get_apn (setting));
-	set_val_str (arr, 6, nmc_property_gsm_get_network_id (setting));
+	set_val_str (arr, 4, nmc_property_gsm_get_password_flags (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 5, nmc_property_gsm_get_apn (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 6, nmc_property_gsm_get_network_id (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 7, GET_SECRET (secrets, setting, nmc_property_gsm_get_pin));
-	set_val_str (arr, 8, nmc_property_gsm_get_pin_flags (setting));
-	set_val_str (arr, 9, nmc_property_gsm_get_home_only (setting));
+	set_val_str (arr, 8, nmc_property_gsm_get_pin_flags (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 9, nmc_property_gsm_get_home_only (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -7073,10 +7038,10 @@ setting_cdma_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gbo
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_cdma_get_number (setting));
-	set_val_str (arr, 2, nmc_property_cdma_get_username (setting));
+	set_val_str (arr, 1, nmc_property_cdma_get_number (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 2, nmc_property_cdma_get_username (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 3, GET_SECRET (secrets, setting, nmc_property_cdma_get_password));
-	set_val_str (arr, 4, nmc_property_cdma_get_password_flags (setting));
+	set_val_str (arr, 4, nmc_property_cdma_get_password_flags (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -7102,8 +7067,8 @@ setting_bluetooth_details (NMSetting *setting, NmCli *nmc,  const char *one_prop
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_bluetooth_get_bdaddr (setting));
-	set_val_str (arr, 2, nmc_property_bluetooth_get_type (setting));
+	set_val_str (arr, 1, nmc_property_bluetooth_get_bdaddr (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 2, nmc_property_bluetooth_get_type (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -7129,9 +7094,9 @@ setting_olpc_mesh_details (NMSetting *setting, NmCli *nmc,  const char *one_prop
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_olpc_get_ssid (setting));
-	set_val_str (arr, 2, nmc_property_olpc_get_channel (setting));
-	set_val_str (arr, 3, nmc_property_olpc_get_anycast_address (setting));
+	set_val_str (arr, 1, nmc_property_olpc_get_ssid (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 2, nmc_property_olpc_get_channel (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 3, nmc_property_olpc_get_anycast_address (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -7157,11 +7122,11 @@ setting_vpn_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboo
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_vpn_get_service_type (setting));
-	set_val_str (arr, 2, nmc_property_vpn_get_user_name (setting));
-	set_val_str (arr, 3, nmc_property_vpn_get_data (setting));
+	set_val_str (arr, 1, nmc_property_vpn_get_service_type (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 2, nmc_property_vpn_get_user_name (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 3, nmc_property_vpn_get_data (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 4, GET_SECRET (secrets, setting, nmc_property_vpn_get_secrets));
-	set_val_str (arr, 5, nmc_property_vpn_get_persistent (setting));
+	set_val_str (arr, 5, nmc_property_vpn_get_persistent (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -7187,8 +7152,8 @@ setting_wimax_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gb
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_wimax_get_mac_address (setting));
-	set_val_str (arr, 2, nmc_property_wimax_get_network_name (setting));
+	set_val_str (arr, 1, nmc_property_wimax_get_mac_address (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 2, nmc_property_wimax_get_network_name (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -7214,11 +7179,11 @@ setting_infiniband_details (NMSetting *setting, NmCli *nmc,  const char *one_pro
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_ib_get_mac_address (setting));
-	set_val_str (arr, 2, nmc_property_ib_get_mtu (setting));
-	set_val_str (arr, 3, nmc_property_ib_get_transport_mode (setting));
-	set_val_str (arr, 4, nmc_property_ib_get_p_key (setting));
-	set_val_str (arr, 5, nmc_property_ib_get_parent (setting));
+	set_val_str (arr, 1, nmc_property_ib_get_mac_address (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 2, nmc_property_ib_get_mtu (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 3, nmc_property_ib_get_transport_mode (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 4, nmc_property_ib_get_p_key (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 5, nmc_property_ib_get_parent (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -7244,7 +7209,7 @@ setting_bond_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gbo
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_bond_get_options (setting));
+	set_val_str (arr, 1, nmc_property_bond_get_options (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -7270,11 +7235,11 @@ setting_vlan_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gbo
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_vlan_get_parent (setting));
-	set_val_str (arr, 2, nmc_property_vlan_get_id (setting));
-	set_val_str (arr, 3, nmc_property_vlan_get_flags (setting));
-	set_val_str (arr, 4, nmc_property_vlan_get_ingress_priority_map (setting));
-	set_val_str (arr, 5, nmc_property_vlan_get_egress_priority_map (setting));
+	set_val_str (arr, 1, nmc_property_vlan_get_parent (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 2, nmc_property_vlan_get_id (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 3, nmc_property_vlan_get_flags (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 4, nmc_property_vlan_get_ingress_priority_map (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 5, nmc_property_vlan_get_egress_priority_map (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -7300,13 +7265,13 @@ setting_adsl_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gbo
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_adsl_get_username (setting));
+	set_val_str (arr, 1, nmc_property_adsl_get_username (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 2, GET_SECRET (secrets, setting, nmc_property_adsl_get_password));
-	set_val_str (arr, 3, nmc_property_adsl_get_password_flags (setting));
-	set_val_str (arr, 4, nmc_property_adsl_get_protocol (setting));
-	set_val_str (arr, 5, nmc_property_adsl_get_encapsulation (setting));
-	set_val_str (arr, 6, nmc_property_adsl_get_vpi (setting));
-	set_val_str (arr, 7, nmc_property_adsl_get_vci (setting));
+	set_val_str (arr, 3, nmc_property_adsl_get_password_flags (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 4, nmc_property_adsl_get_protocol (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 5, nmc_property_adsl_get_encapsulation (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 6, nmc_property_adsl_get_vpi (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 7, nmc_property_adsl_get_vci (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -7332,13 +7297,13 @@ setting_bridge_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, g
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_bridge_get_mac_address (setting));
-	set_val_str (arr, 2, nmc_property_bridge_get_stp (setting));
-	set_val_str (arr, 3, nmc_property_bridge_get_priority (setting));
-	set_val_str (arr, 4, nmc_property_bridge_get_forward_delay (setting));
-	set_val_str (arr, 5, nmc_property_bridge_get_hello_time (setting));
-	set_val_str (arr, 6, nmc_property_bridge_get_max_age (setting));
-	set_val_str (arr, 7, nmc_property_bridge_get_ageing_time (setting));
+	set_val_str (arr, 1, nmc_property_bridge_get_mac_address (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 2, nmc_property_bridge_get_stp (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 3, nmc_property_bridge_get_priority (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 4, nmc_property_bridge_get_forward_delay (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 5, nmc_property_bridge_get_hello_time (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 6, nmc_property_bridge_get_max_age (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 7, nmc_property_bridge_get_ageing_time (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -7364,9 +7329,9 @@ setting_bridge_port_details (NMSetting *setting, NmCli *nmc,  const char *one_pr
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_bridge_port_get_priority (setting));
-	set_val_str (arr, 2, nmc_property_bridge_port_get_path_cost (setting));
-	set_val_str (arr, 3, nmc_property_bridge_port_get_hairpin_mode (setting));
+	set_val_str (arr, 1, nmc_property_bridge_port_get_priority (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 2, nmc_property_bridge_port_get_path_cost (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 3, nmc_property_bridge_port_get_hairpin_mode (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -7392,7 +7357,7 @@ setting_team_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gbo
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_team_get_config (setting));
+	set_val_str (arr, 1, nmc_property_team_get_config (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -7418,7 +7383,7 @@ setting_team_port_details (NMSetting *setting, NmCli *nmc,  const char *one_prop
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_team_port_get_config (setting));
+	set_val_str (arr, 1, nmc_property_team_port_get_config (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -7444,21 +7409,21 @@ setting_dcb_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboo
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_dcb_get_app_fcoe_flags (setting));
-	set_val_str (arr, 2, nmc_property_dcb_get_app_fcoe_priority (setting));
-	set_val_str (arr, 3, nmc_property_dcb_get_app_fcoe_mode (setting));
-	set_val_str (arr, 4, nmc_property_dcb_get_app_iscsi_flags (setting));
-	set_val_str (arr, 5, nmc_property_dcb_get_app_iscsi_priority (setting));
-	set_val_str (arr, 6, nmc_property_dcb_get_app_fip_flags (setting));
-	set_val_str (arr, 7, nmc_property_dcb_get_app_fip_priority (setting));
-	set_val_str (arr, 8, nmc_property_dcb_get_pfc_flags (setting));
-	set_val_str (arr, 9, nmc_property_dcb_get_pfc (setting));
-	set_val_str (arr, 10, nmc_property_dcb_get_pg_flags (setting));
-	set_val_str (arr, 11, nmc_property_dcb_get_pg_group_id (setting));
-	set_val_str (arr, 12, nmc_property_dcb_get_pg_group_bandwidth (setting));
-	set_val_str (arr, 13, nmc_property_dcb_get_pg_bandwidth (setting));
-	set_val_str (arr, 14, nmc_property_dcb_get_pg_strict (setting));
-	set_val_str (arr, 15, nmc_property_dcb_get_pg_traffic_class (setting));
+	set_val_str (arr, 1, nmc_property_dcb_get_app_fcoe_flags (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 2, nmc_property_dcb_get_app_fcoe_priority (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 3, nmc_property_dcb_get_app_fcoe_mode (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 4, nmc_property_dcb_get_app_iscsi_flags (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 5, nmc_property_dcb_get_app_iscsi_priority (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 6, nmc_property_dcb_get_app_fip_flags (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 7, nmc_property_dcb_get_app_fip_priority (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 8, nmc_property_dcb_get_pfc_flags (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 9, nmc_property_dcb_get_pfc (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 10, nmc_property_dcb_get_pg_flags (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 11, nmc_property_dcb_get_pg_group_id (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 12, nmc_property_dcb_get_pg_group_bandwidth (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 13, nmc_property_dcb_get_pg_bandwidth (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 14, nmc_property_dcb_get_pg_strict (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 15, nmc_property_dcb_get_pg_traffic_class (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
