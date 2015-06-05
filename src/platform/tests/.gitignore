@@ -1,11 +1,12 @@
 /dump
 /monitor
 /platform
-/test-link-fake
-/test-link-linux
 /test-address-fake
 /test-address-linux
-/test-route-fake
-/test-route-linux
 /test-cleanup-fake
 /test-cleanup-linux
+/test-general
+/test-link-fake
+/test-link-linux
+/test-route-fake
+/test-route-linux
