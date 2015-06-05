@@ -7,7 +7,7 @@ Plugins generally have three components:
   NMSystemConfigInterface interface.  See plugin.c.
 
 2) "connections": subclasses of NMSettingsConnection.  They handle updates to
-  configuration data, deletion, etc.  See NMExampleConnection.c.
+  configuration data, deletion, etc.  See NMKeyfileConnection.
 
 3) reader/writer code: typically a separate static library that gets linked
   into the main plugin shared object, so they can be unit tested separately
