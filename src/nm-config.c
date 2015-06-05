@@ -108,11 +108,11 @@ static void _set_config_data (NMConfig *self, NMConfigData *new_data);
 
 /************************************************************************/
 
-static gboolean
-_get_bool_value (GKeyFile *keyfile,
-                 const char *section,
-                 const char *key,
-                 gboolean default_value)
+gboolean
+nm_config_keyfile_get_boolean (GKeyFile *keyfile,
+                               const char *section,
+                               const char *key,
+                               gboolean default_value)
 {
 	gboolean value = default_value;
 	char *str;
@@ -837,9 +837,9 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	if (!priv->plugins)
 		priv->plugins = g_new0 (char *, 1);
 
-	priv->monitor_connection_files = _get_bool_value (keyfile, "main", "monitor-connection-files", FALSE);
+	priv->monitor_connection_files = nm_config_keyfile_get_boolean (keyfile, "main", "monitor-connection-files", FALSE);
 
-	priv->auth_polkit = _get_bool_value (keyfile, "main", "auth-polkit", NM_CONFIG_DEFAULT_AUTH_POLKIT);
+	priv->auth_polkit = nm_config_keyfile_get_boolean (keyfile, "main", "auth-polkit", NM_CONFIG_DEFAULT_AUTH_POLKIT);
 
 	priv->dhcp_client = g_key_file_get_value (keyfile, "main", "dhcp", NULL);
 
@@ -848,7 +848,7 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 
 	priv->debug = g_key_file_get_value (keyfile, "main", "debug", NULL);
 
-	priv->configure_and_quit = _get_bool_value (keyfile, "main", "configure-and-quit", FALSE);
+	priv->configure_and_quit = nm_config_keyfile_get_boolean (keyfile, "main", "configure-and-quit", FALSE);
 
 	no_auto_default_orig_list = nm_config_get_device_match_spec (keyfile, "main", "no-auto-default");
 

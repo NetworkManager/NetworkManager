@@ -1000,6 +1000,9 @@ nm_device_get_type_description (NMDevice *device)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 	const char *desc, *typename;
 
+	/* BEWARE: this function should return the same value
+	 * as nm_device_get_type_description() in nm-core. */
+
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
 	if (priv->type_description)

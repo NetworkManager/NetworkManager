@@ -504,9 +504,15 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
 	 * enabled, it makes the kernel generate a temporary IPv6 address in
 	 * addition to the public one generated from MAC address via modified
 	 * EUI-64.  This enhances privacy, but could cause problems in some
-	 * applications, on the other hand.  The permitted values are: 0: disabled,
-	 * 1: enabled (prefer public address), 2: enabled (prefer temporary
+	 * applications, on the other hand.  The permitted values are: -1: unknown,
+	 * 0: disabled, 1: enabled (prefer public address), 2: enabled (prefer temporary
 	 * addresses).
+	 *
+	 * Having a per-connection setting set to "-1" (unknown) means fallback to
+	 * global configuration "ipv6.ip6-privacy".
+	 *
+	 * If also global configuration is unspecified or set to "-1", fallback to read
+	 * "/proc/sys/net/ipv6/conf/default/use_tempaddr".
 	 **/
 	/* ---ifcfg-rh---
 	 * property: ip6-privacy

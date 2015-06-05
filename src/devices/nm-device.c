@@ -191,6 +191,7 @@ typedef struct {
 	int           ip_ifindex;
 	NMDeviceType  type;
 	char *        type_desc;
+	char *        type_description;
 	NMDeviceCapabilities capabilities;
 	char *        driver;
 	char *        driver_version;
@@ -740,50 +741,63 @@ nm_device_get_priority (NMDevice *self)
 	return 11000;
 }
 
-guint32
-nm_device_get_ip4_route_metric (NMDevice *self)
+static guint32
+_get_ipx_route_metric (NMDevice *self,
+                       gboolean is_v4)
 {
+	char *value;
+	gint64 route_metric;
+	NMSettingIPConfig *s_ip;
 	NMConnection *connection;
-	NMSettingIPConfig *s_ip = NULL;
-	gint64 route_metric = -1;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), G_MAXUINT32);
 
 	connection = nm_device_get_connection (self);
-	if (connection)
-		s_ip = nm_connection_get_setting_ip4_config (connection);
+	if (connection) {
+		s_ip = is_v4
+		       ? nm_connection_get_setting_ip4_config (connection)
+		       : nm_connection_get_setting_ip6_config (connection);
 
-	/* Slave interfaces don't have IP settings, but we may get here when
-	 * external changes are made or when noticing IP changes when starting
-	 * the slave connection.
-	 */
-	if (s_ip)
-		route_metric = nm_setting_ip_config_get_route_metric (s_ip);
+		/* Slave interfaces don't have IP settings, but we may get here when
+		 * external changes are made or when noticing IP changes when starting
+		 * the slave connection.
+		 */
+		if (s_ip) {
+			route_metric = nm_setting_ip_config_get_route_metric (s_ip);
+			if (route_metric >= 0)
+				goto out;
+		}
+	}
 
-	return route_metric >= 0 ? route_metric : nm_device_get_priority (self);
+	/* use the current NMConfigData, which makes this configuration reloadable.
+	 * Note that that means that the route-metric might change between SIGHUP.
+	 * You must cache the returned value if that is a problem. */
+	value = nm_config_data_get_connection_default (nm_config_get_data (nm_config_get ()),
+	                                               is_v4 ? "ipv4.route-metric" : "ipv6.route-metric", self);
+	if (value) {
+		route_metric = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXUINT32, -1);
+		g_free (value);
+
+		if (route_metric >= 0)
+			goto out;
+	}
+	route_metric = nm_device_get_priority (self);
+out:
+	if (!is_v4)
+		route_metric = nm_utils_ip6_route_metric_normalize (route_metric);
+	return route_metric;
+}
+
+guint32
+nm_device_get_ip4_route_metric (NMDevice *self)
+{
+	return _get_ipx_route_metric (self, TRUE);
 }
 
 guint32
 nm_device_get_ip6_route_metric (NMDevice *self)
 {
-	NMConnection *connection;
-	NMSettingIPConfig *s_ip = NULL;
-	gint64 route_metric = -1;
-
-	g_return_val_if_fail (NM_IS_DEVICE (self), G_MAXUINT32);
-
-	connection = nm_device_get_connection (self);
-	if (connection)
-		s_ip = nm_connection_get_setting_ip6_config (connection);
-
-	/* Slave interfaces don't have IP settings, but we may get here when
-	 * external changes are made or when noticing IP changes when starting
-	 * the slave connection.
-	 */
-	if (s_ip)
-		route_metric = nm_setting_ip_config_get_route_metric (s_ip);
-
-	return route_metric >= 0 ? route_metric : nm_device_get_priority (self);
+	return _get_ipx_route_metric (self, FALSE);
 }
 
 const NMPlatformIP4Route *
@@ -822,6 +836,34 @@ nm_device_get_type_desc (NMDevice *self)
 	g_return_val_if_fail (self != NULL, NULL);
 
 	return NM_DEVICE_GET_PRIVATE (self)->type_desc;
+}
+
+const char *
+nm_device_get_type_description (NMDevice *self)
+{
+	g_return_val_if_fail (self != NULL, NULL);
+
+	/* Beware: this function should return the same
+	 * value as nm_device_get_type_description() in libnm. */
+
+	return NM_DEVICE_GET_CLASS (self)->get_type_description (self);
+}
+
+static const char *
+get_type_description (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (!priv->type_description) {
+		const char *typename;
+
+		typename = G_OBJECT_TYPE_NAME (self);
+		if (g_str_has_prefix (typename, "NMDevice"))
+			typename += 8;
+		priv->type_description = g_ascii_strdown (typename, -1);
+	}
+
+	return priv->type_description;
 }
 
 gboolean
@@ -4669,8 +4711,10 @@ set_nm_ipv6ll (NMDevice *self, gboolean enable)
 	}
 }
 
+/************************************************************************/
+
 static NMSettingIP6ConfigPrivacy
-use_tempaddr_clamp (NMSettingIP6ConfigPrivacy use_tempaddr)
+_ip6_privacy_clamp (NMSettingIP6ConfigPrivacy use_tempaddr)
 {
 	switch (use_tempaddr) {
 	case NM_SETTING_IP6_CONFIG_PRIVACY_DISABLED:
@@ -4682,44 +4726,50 @@ use_tempaddr_clamp (NMSettingIP6ConfigPrivacy use_tempaddr)
 	}
 }
 
-/* Get net.ipv6.conf.default.use_tempaddr value from /etc/sysctl.conf or
- * /lib/sysctl.d/sysctl.conf
- */
 static NMSettingIP6ConfigPrivacy
-ip6_use_tempaddr (void)
+_ip6_privacy_get (NMDevice *self)
 {
-	char *contents = NULL;
-	const char *group_name = "[forged_group]\n";
-	char *sysctl_data = NULL;
-	GKeyFile *keyfile;
-	GError *error = NULL;
-	gint tmp;
-	NMSettingIP6ConfigPrivacy ret = NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
+	NMSettingIP6ConfigPrivacy ip6_privacy;
+	gs_free char *value = NULL;
+	NMConnection *connection;
 
-	/* Read file contents to a string. */
-	if (!g_file_get_contents ("/etc/sysctl.conf", &contents, NULL, NULL))
-		if (!g_file_get_contents ("/lib/sysctl.d/sysctl.conf", &contents, NULL, NULL))
-			return NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
+	g_return_val_if_fail (self, NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
 
-	/* Prepend a group so that we can use GKeyFile parser. */
-	sysctl_data = g_strdup_printf ("%s%s", group_name, contents);
+	/* 1.) First look at the per-connection setting. If it is not -1 (unknown),
+	 * use it. */
+	connection = nm_device_get_connection (self);
+	if (connection) {
+		NMSettingIPConfig *s_ip6 = nm_connection_get_setting_ip6_config (connection);
 
-	keyfile = g_key_file_new ();
-	if (!g_key_file_load_from_data (keyfile, sysctl_data, -1, G_KEY_FILE_NONE, NULL))
-		goto done;
+		if (s_ip6) {
+			ip6_privacy = nm_setting_ip6_config_get_ip6_privacy (NM_SETTING_IP6_CONFIG (s_ip6));
+			ip6_privacy = _ip6_privacy_clamp (ip6_privacy);
+			if (ip6_privacy != NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN)
+				return ip6_privacy;
+		}
+	}
 
-	tmp = g_key_file_get_integer (keyfile, "forged_group", "net.ipv6.conf.default.use_tempaddr", &error);
-	if (error == NULL)
-		ret = use_tempaddr_clamp (tmp);
+	value = nm_config_data_get_connection_default (nm_config_get_data (nm_config_get ()),
+	                                               "ipv6.ip6-privacy", self);
 
-done:
-	g_free (contents);
-	g_free (sysctl_data);
-	g_clear_error (&error);
-	g_key_file_free (keyfile);
+	/* 2.) use the default value from the configuration. */
+	ip6_privacy = _nm_utils_ascii_str_to_int64 (value, 10,
+	                                            NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
+	                                            NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
+	                                            NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
+	if (ip6_privacy != NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN)
+		return ip6_privacy;
 
-	return ret;
+	/* 3.) No valid default-value configured. Fallback to reading sysctl.
+	 *
+	 * Instead of reading static config files in /etc, just read the current sysctl value.
+	 * This works as NM only writes to "/proc/sys/net/ipv6/conf/IFNAME/use_tempaddr", but leaves
+	 * the "default" entry untouched. */
+	ip6_privacy = nm_platform_sysctl_get_int32 (NM_PLATFORM_GET, "/proc/sys/net/ipv6/conf/default/use_tempaddr", NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
+	return _ip6_privacy_clamp (ip6_privacy);
 }
+
+/****************************************************************/
 
 static gboolean
 ip6_requires_slaves (NMConnection *connection)
@@ -4819,18 +4869,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 	/* Re-enable IPv6 on the interface */
 	set_disable_ipv6 (self, "0");
 
-	/* Enable/disable IPv6 Privacy Extensions.
-	 * If a global value is configured by sysadmin (e.g. /etc/sysctl.conf),
-	 * use that value instead of per-connection value.
-	 */
-	ip6_privacy = ip6_use_tempaddr ();
-	if (ip6_privacy == NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN) {
-		NMSettingIPConfig *s_ip6 = nm_connection_get_setting_ip6_config (connection);
-
-		if (s_ip6)
-			ip6_privacy = nm_setting_ip6_config_get_ip6_privacy (NM_SETTING_IP6_CONFIG (s_ip6));
-	}
-	ip6_privacy = use_tempaddr_clamp (ip6_privacy);
+	ip6_privacy = _ip6_privacy_get (self);
 
 	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0) {
 		if (!addrconf6_start (self, ip6_privacy)) {
@@ -8502,6 +8541,10 @@ spec_match_list (NMDevice *self, const GSList *specs)
 		m = nm_match_spec_interface_name (specs, nm_device_get_iface (self));
 		matched = MAX (matched, m);
 	}
+	if (matched != NM_MATCH_SPEC_NEG_MATCH) {
+		m = nm_match_spec_device_type (specs, nm_device_get_type_description (self));
+		matched = MAX (matched, m);
+	}
 	return matched;
 }
 
@@ -8788,6 +8831,7 @@ finalize (GObject *object)
 	g_free (priv->driver_version);
 	g_free (priv->firmware_version);
 	g_free (priv->type_desc);
+	g_free (priv->type_description);
 	g_free (priv->dhcp_anycast_address);
 
 	g_hash_table_unref (priv->ip6_saved_properties);
@@ -8805,7 +8849,7 @@ set_property (GObject *object, guint prop_id,
 	NMPlatformLink *platform_device;
 	const char *hw_addr, *p;
 	guint count;
- 
+
 	switch (prop_id) {
 	case PROP_PLATFORM_DEVICE:
 		platform_device = g_value_get_pointer (value);
@@ -9073,6 +9117,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->act_stage4_ip6_config_timeout = act_stage4_ip6_config_timeout;
 	klass->have_any_ready_slaves = have_any_ready_slaves;
 
+	klass->get_type_description = get_type_description;
 	klass->spec_match_list = spec_match_list;
 	klass->can_auto_connect = can_auto_connect;
 	klass->check_connection_compatible = check_connection_compatible;
