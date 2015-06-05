@@ -439,11 +439,6 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 	/* ensure that monotonic timestamp is called (because it initially logs a line) */
 	nm_utils_get_monotonic_timestamp_s ();
 #endif
-
-	/* Avoid loading the VFS modules we don't use in the daemon.
-	 * See: src/main-utils.c:nm_main_utils_early_setup() */
-	setenv ("GIO_USE_VFS", "local", 1);
-	setenv ("GIO_MODULE_DIR", "", 1);
 }
 
 #ifdef __NETWORKMANAGER_LOGGING_H__

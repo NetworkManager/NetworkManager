@@ -205,9 +205,6 @@ nm_main_utils_early_setup (const char *progname,
 	 * talking on the session bus.  See rh #588745
 	 */
 	setenv ("GIO_USE_VFS", "local", 1);
-	/* Don't load GIO modules. We just want to load plain files and the
-	 * modules would just take extra memory. */
-	setenv ("GIO_MODULE_DIR", "", 1);
 
 	/*
 	 * Set the umask to 0022, which results in 0666 & ~0022 = 0644.
