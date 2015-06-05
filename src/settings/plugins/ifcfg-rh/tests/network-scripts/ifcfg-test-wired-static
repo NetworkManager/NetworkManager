@@ -18,3 +18,4 @@ IPV6ADDR=dead:beaf::1
 IPV6ADDR_SECONDARIES="dead:beaf::2/56"
 DNS3=1:2:3:4::a
 DNS4=1:2:3:4::b
+RES_OPTIONS=

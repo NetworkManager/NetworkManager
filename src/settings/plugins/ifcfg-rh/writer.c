@@ -889,20 +889,22 @@ write_wireless_setting (NMConnection *connection,
 		svSetValue (ifcfg, "ESSID", str->str, TRUE);
 		g_string_free (str, TRUE);
 	} else {
+		const char *tmp_escaped;
+
 		/* Printable SSIDs always get quoted */
 		memset (buf, 0, sizeof (buf));
 		memcpy (buf, ssid_data, ssid_len);
-		tmp = svEscape (buf);
+		tmp_escaped = svEscape (buf, &tmp);
 
 		/* svEscape will usually quote the string, but just for consistency,
 		 * if svEscape doesn't quote the ESSID, we quote it ourselves.
 		 */
-		if (tmp[0] != '"' && tmp[strlen (tmp) - 1] != '"') {
-			tmp2 = g_strdup_printf ("\"%s\"", tmp);
+		if (tmp_escaped[0] != '"' && tmp_escaped[strlen (tmp_escaped) - 1] != '"') {
+			tmp2 = g_strdup_printf ("\"%s\"", tmp_escaped);
 			svSetValue (ifcfg, "ESSID", tmp2, TRUE);
 			g_free (tmp2);
 		} else
-			svSetValue (ifcfg, "ESSID", tmp, TRUE);
+			svSetValue (ifcfg, "ESSID", tmp_escaped, TRUE);
 		g_free (tmp);
 	}
 
@@ -2504,14 +2506,16 @@ write_res_options (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		}
 	}
 
-	if (array->len > 0) {
+	if (array->len > 0
+	    || (s_ip4 && nm_setting_ip_config_has_dns_options (s_ip4))
+	    || (s_ip6 && nm_setting_ip_config_has_dns_options (s_ip6))) {
 		value = g_string_new (NULL);
 		for (i = 0; i < array->len; i++) {
 			if (i > 0)
 				g_string_append_c (value, ' ');
 			g_string_append (value, array->pdata[i]);
 		}
-		svSetValue (ifcfg, "RES_OPTIONS", value->str, FALSE);
+		svSetValueFull (ifcfg, "RES_OPTIONS", value->str, FALSE);
 		g_string_free (value, TRUE);
 	} else
 		svSetValue (ifcfg, "RES_OPTIONS", NULL, FALSE);

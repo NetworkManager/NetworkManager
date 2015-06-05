@@ -677,6 +677,9 @@ parse_dns_options (NMSettingIPConfig *ip_config, char *value)
 	if (!value)
 		return;
 
+	if (!nm_setting_ip_config_has_dns_options (ip_config))
+		nm_setting_ip_config_clear_dns_options (ip_config, TRUE);
+
 	options = g_strsplit (value, " ", 0);
 	if (options) {
 		char **item;
@@ -927,7 +930,7 @@ make_ip4_setting (shvarFile *ifcfg,
 		/* Get the connection ifcfg device name and the global gateway device */
 		value = svGetValue (ifcfg, "DEVICE", FALSE);
 		gatewaydev = svGetValue (network_ifcfg, "GATEWAYDEV", FALSE);
-		dns_options = svGetValue (network_ifcfg, "RES_OPTIONS", FALSE);
+		dns_options = svGetValueFull (network_ifcfg, "RES_OPTIONS", FALSE);
 
 		/* If there was a global gateway device specified, then only connections
 		 * for that device can be the default connection.
@@ -1105,7 +1108,7 @@ make_ip4_setting (shvarFile *ifcfg,
 	}
 
 	/* DNS options */
-	value = svGetValue (ifcfg, "RES_OPTIONS", FALSE);
+	value = svGetValueFull (ifcfg, "RES_OPTIONS", FALSE);
 	parse_dns_options (s_ip4, value);
 	parse_dns_options (s_ip4, dns_options);
 	g_free (value);
@@ -1317,7 +1320,7 @@ make_ip6_setting (shvarFile *ifcfg,
 		value = svGetValue (ifcfg, "DEVICE", FALSE);
 		ipv6_defaultgw = svGetValue (network_ifcfg, "IPV6_DEFAULTGW", FALSE);
 		ipv6_defaultdev = svGetValue (network_ifcfg, "IPV6_DEFAULTDEV", FALSE);
-		dns_options = svGetValue (network_ifcfg, "RES_OPTIONS", FALSE);
+		dns_options = svGetValueFull (network_ifcfg, "RES_OPTIONS", FALSE);
 
 		if (ipv6_defaultgw) {
 			default_dev = strchr (ipv6_defaultgw, '%');
@@ -1515,7 +1518,7 @@ make_ip6_setting (shvarFile *ifcfg,
 	}
 
 	/* DNS options */
-	value = svGetValue (ifcfg, "RES_OPTIONS", FALSE);
+	value = svGetValueFull (ifcfg, "RES_OPTIONS", FALSE);
 	parse_dns_options (s_ip6, value);
 	parse_dns_options (s_ip6, dns_options);
 	g_free (value);

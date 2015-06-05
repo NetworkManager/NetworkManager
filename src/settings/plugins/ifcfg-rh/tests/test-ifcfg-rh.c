@@ -484,6 +484,9 @@ test_read_wired_static (const char *file,
 	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
 	g_assert (nm_setting_ip_config_get_may_fail (s_ip4));
 
+	g_assert (nm_setting_ip_config_has_dns_options (s_ip4));
+	g_assert_cmpint (nm_setting_ip_config_get_num_dns_options (s_ip4), ==, 0);
+
 	/* DNS Addresses */
 	g_assert_cmpint (nm_setting_ip_config_get_num_dns (s_ip4), ==, 2);
 	g_assert_cmpstr (nm_setting_ip_config_get_dns (s_ip4, 0), ==, "4.2.2.1");
@@ -506,6 +509,9 @@ test_read_wired_static (const char *file,
 		g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_MANUAL);
 		g_assert (nm_setting_ip_config_get_may_fail (s_ip6));
 
+		g_assert (nm_setting_ip_config_has_dns_options (s_ip6));
+		g_assert_cmpint (nm_setting_ip_config_get_num_dns_options (s_ip6), ==, 0);
+
 		/* DNS Addresses */
 		g_assert_cmpint (nm_setting_ip_config_get_num_dns (s_ip6), ==, 2);
 		g_assert_cmpstr (nm_setting_ip_config_get_dns (s_ip6, 0), ==, "1:2:3:4::a");
@@ -525,6 +531,7 @@ test_read_wired_static (const char *file,
 		g_assert_cmpstr (nm_ip_address_get_address (ip6_addr), ==, "dead:beaf::2");
 	} else {
 		g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
+		g_assert (!nm_setting_ip_config_has_dns_options (s_ip6));
 	}
 
 	g_object_unref (connection);
@@ -562,6 +569,9 @@ test_read_wired_static_no_prefix (gconstpointer user_data)
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
 	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
+
+	g_assert (!nm_setting_ip_config_has_dns_options (s_ip4));
+	g_assert_cmpint (nm_setting_ip_config_get_num_dns_options (s_ip4), ==, 0);
 
 	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip4), ==, 1);
 	ip4_addr = nm_setting_ip_config_get_address (s_ip4, 0);
@@ -2635,11 +2645,11 @@ test_write_dns_options (void)
 	unlink (testfile);
 
 	/* RES_OPTIONS is copied to both IPv4 and IPv6 settings */
-	nm_setting_ip_config_clear_dns_options (s_ip4);
+	nm_setting_ip_config_clear_dns_options (s_ip4, TRUE);
 	nm_setting_ip_config_add_dns_option (s_ip4, "debug");
 	nm_setting_ip_config_add_dns_option (s_ip4, "timeout:3");
 
-	nm_setting_ip_config_clear_dns_options (s_ip6);
+	nm_setting_ip_config_clear_dns_options (s_ip6, TRUE);
 	nm_setting_ip_config_add_dns_option (s_ip6, "debug");
 	nm_setting_ip_config_add_dns_option (s_ip6, "timeout:3");
 
