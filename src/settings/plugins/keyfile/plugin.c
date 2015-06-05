@@ -62,9 +62,7 @@ typedef struct {
 	GFileMonitor *monitor;
 	guint monitor_id;
 
-	const char *conf_file;
-	GFileMonitor *conf_file_monitor;
-	guint conf_file_monitor_id;
+	NMConfig *config;
 } SCPluginKeyfilePrivate;
 
 static void
@@ -317,23 +315,19 @@ dir_changed (GFileMonitor *monitor,
 }
 
 static void
-conf_file_changed (GFileMonitor *monitor,
-				   GFile *file,
-				   GFile *other_file,
-				   GFileMonitorEvent event_type,
-				   gpointer data)
+config_changed_cb (NMConfig *config,
+                   NMConfigData *config_data,
+                   NMConfigChangeFlags changes,
+                   NMConfigData *old_data,
+                   SCPluginKeyfile *self)
 {
-	SCPluginKeyfile *self = SC_PLUGIN_KEYFILE (data);
+	gs_free char *old_value = NULL, *new_value = NULL;
 
-	switch (event_type) {
-	case G_FILE_MONITOR_EVENT_DELETED:
-	case G_FILE_MONITOR_EVENT_CREATED:
-	case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
+	old_value = nm_config_data_get_value (old_data, "keyfile", "unmanaged-devices", NULL);
+	new_value = nm_config_data_get_value (config_data, "keyfile", "unmanaged-devices", NULL);
+
+	if (g_strcmp0 (old_value, new_value) != 0)
 		g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
-		break;
-	default:
-		break;
-	}
 }
 
 static void
@@ -354,16 +348,10 @@ setup_monitoring (NMSystemConfigInterface *config)
 		}
 	}
 
-	if (priv->conf_file) {
-		file = g_file_new_for_path (priv->conf_file);
-		monitor = g_file_monitor_file (file, G_FILE_MONITOR_NONE, NULL, NULL);
-		g_object_unref (file);
-
-		if (monitor) {
-			priv->conf_file_monitor_id = g_signal_connect (monitor, "changed", G_CALLBACK (conf_file_changed), config);
-			priv->conf_file_monitor = monitor;
-		}
-	}
+	g_signal_connect (G_OBJECT (priv->config),
+	                  NM_CONFIG_SIGNAL_CONFIG_CHANGED,
+	                  G_CALLBACK (config_changed_cb),
+	                  config);
 }
 
 static GHashTable *
@@ -532,52 +520,14 @@ add_connection (NMSystemConfigInterface *config,
 	return NM_SETTINGS_CONNECTION (update_connection (self, connection, path, NULL, FALSE, NULL, error));
 }
 
-static gboolean
-parse_key_file_allow_none (SCPluginKeyfilePrivate  *priv,
-                           GKeyFile                *key_file,
-                           GError                 **error)
-{
-	gboolean ret = FALSE;
-	GError *local_error = NULL;
-
-	if (!g_key_file_load_from_file (key_file, priv->conf_file, G_KEY_FILE_NONE, &local_error)) {
-		if (g_error_matches (local_error, G_FILE_ERROR, G_FILE_ERROR_NOENT))
-			g_clear_error (&local_error);
-		else {
-			g_propagate_prefixed_error (error, local_error,
-			                            "Error parsing file '%s': ",
-			                            priv->conf_file);
-			goto out;
-		}
-	}
-	ret = TRUE;
-
- out:
-	return ret;
-}
-
 static GSList *
 get_unmanaged_specs (NMSystemConfigInterface *config)
 {
 	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (config);
-	GKeyFile *key_file;
-	GSList *specs = NULL;
-	GError *error = NULL;
+	gs_free char *value = NULL;
 
-	if (!priv->conf_file)
-		return NULL;
-
-	key_file = nm_config_create_keyfile ();
-	if (parse_key_file_allow_none (priv, key_file, &error))
-		specs = nm_config_get_device_match_spec (key_file, "keyfile", "unmanaged-devices");
-
-	if (error) {
-		nm_log_warn (LOGD_SETTINGS, "keyfile: error getting unmanaged specs: %s", error->message);
-		g_error_free (error);
-	}
-	g_key_file_free (key_file);
-
-	return specs;
+	value = nm_config_data_get_value (nm_config_get_data (priv->config), "keyfile", "unmanaged-devices", NULL);
+	return nm_match_spec_split (value);
 }
 
 /* GObject */
@@ -636,19 +586,14 @@ dispose (GObject *object)
 		g_clear_object (&priv->monitor);
 	}
 
-	if (priv->conf_file_monitor) {
-		if (priv->conf_file_monitor_id) {
-			g_signal_handler_disconnect (priv->conf_file_monitor, priv->conf_file_monitor_id);
-			priv->conf_file_monitor_id = 0;
-		}
-
-		g_file_monitor_cancel (priv->conf_file_monitor);
-		g_clear_object (&priv->conf_file_monitor);
-	}
-
 	if (priv->connections) {
 		g_hash_table_destroy (priv->connections);
 		priv->connections = NULL;
+	}
+
+	if (priv->config) {
+		g_signal_handlers_disconnect_by_func (priv->config, config_changed_cb, object);
+		g_clear_object (&priv->config);
 	}
 
 	G_OBJECT_CLASS (sc_plugin_keyfile_parent_class)->dispose (object);
@@ -700,8 +645,8 @@ nm_settings_keyfile_plugin_new (void)
 		singleton = SC_PLUGIN_KEYFILE (g_object_new (SC_TYPE_PLUGIN_KEYFILE, NULL));
 		priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (singleton);
 
-		priv->conf_file = nm_config_data_get_config_main_file (nm_config_get_data (nm_config_get ()));
-		value = nm_config_data_get_value (nm_config_get_data (nm_config_get ()),
+		priv->config = g_object_ref (nm_config_get ());
+		value = nm_config_data_get_value (nm_config_get_data (priv->config),
 		                                  "keyfile", "hostname", NULL);
 		if (value) {
 			nm_log_warn (LOGD_SETTINGS, "keyfile: 'hostname' option is deprecated and has no effect");
