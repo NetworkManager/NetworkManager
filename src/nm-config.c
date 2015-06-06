@@ -37,10 +37,10 @@
 #include <gio/gio.h>
 #include <glib/gi18n.h>
 
-#define NM_DEFAULT_SYSTEM_CONF_FILE    NMCONFDIR "/NetworkManager.conf"
-#define NM_DEFAULT_SYSTEM_CONF_DIR     NMCONFDIR "/conf.d"
-#define NM_OLD_SYSTEM_CONF_FILE        NMCONFDIR "/nm-system-settings.conf"
-#define NM_NO_AUTO_DEFAULT_STATE_FILE  NMSTATEDIR "/no-auto-default.state"
+#define DEFAULT_CONFIG_MAIN_FILE        NMCONFDIR "/NetworkManager.conf"
+#define DEFAULT_CONFIG_DIR              NMCONFDIR "/conf.d"
+#define DEFAULT_CONFIG_MAIN_FILE_OLD    NMCONFDIR "/nm-system-settings.conf"
+#define DEFAULT_NO_AUTO_DEFAULT_FILE    NMSTATEDIR "/no-auto-default.state"
 
 struct NMConfigCmdLineOptions {
 	char *config_main_file;
@@ -379,9 +379,9 @@ nm_config_cmd_line_options_add_to_entries (NMConfigCmdLineOptions *cli,
 
 	{
 		GOptionEntry config_options[] = {
-			{ "config", 0, 0, G_OPTION_ARG_FILENAME, &cli->config_main_file, N_("Config file location"), N_(NM_DEFAULT_SYSTEM_CONF_FILE) },
-			{ "config-dir", 0, 0, G_OPTION_ARG_FILENAME, &cli->config_dir, N_("Config directory location"), N_(NM_DEFAULT_SYSTEM_CONF_DIR) },
-			{ "no-auto-default", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_FILENAME, &cli->no_auto_default_file, N_("State file for no-auto-default devices"), N_(NM_NO_AUTO_DEFAULT_STATE_FILE) },
+			{ "config", 0, 0, G_OPTION_ARG_FILENAME, &cli->config_main_file, N_("Config file location"), N_(DEFAULT_CONFIG_MAIN_FILE) },
+			{ "config-dir", 0, 0, G_OPTION_ARG_FILENAME, &cli->config_dir, N_("Config directory location"), N_(DEFAULT_CONFIG_DIR) },
+			{ "no-auto-default", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_FILENAME, &cli->no_auto_default_file, N_("State file for no-auto-default devices"), N_(DEFAULT_NO_AUTO_DEFAULT_FILE) },
 			{ "plugins", 0, 0, G_OPTION_ARG_STRING, &cli->plugins, N_("List of plugins separated by ','"), N_(CONFIG_PLUGINS_DEFAULT) },
 			{ "configure-and-quit", 0, 0, G_OPTION_ARG_NONE, &cli->configure_and_quit, N_("Quit after initial configuration"), NULL },
 
@@ -562,27 +562,27 @@ read_base_config (GKeyFile *keyfile,
 	 */
 
 	/* Try deprecated nm-system-settings.conf first */
-	if (read_config (keyfile, NM_OLD_SYSTEM_CONF_FILE, &my_error)) {
-		*out_config_main_file = g_strdup (NM_OLD_SYSTEM_CONF_FILE);
+	if (read_config (keyfile, DEFAULT_CONFIG_MAIN_FILE_OLD, &my_error)) {
+		*out_config_main_file = g_strdup (DEFAULT_CONFIG_MAIN_FILE_OLD);
 		return TRUE;
 	}
 
 	if (!g_error_matches (my_error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND)) {
 		nm_log_warn (LOGD_CORE, "Old default config file %s invalid: %s\n",
-		             NM_OLD_SYSTEM_CONF_FILE,
+		             DEFAULT_CONFIG_MAIN_FILE_OLD,
 		             my_error->message);
 	}
 	g_clear_error (&my_error);
 
 	/* Try the standard config file location next */
-	if (read_config (keyfile, NM_DEFAULT_SYSTEM_CONF_FILE, &my_error)) {
-		*out_config_main_file = g_strdup (NM_DEFAULT_SYSTEM_CONF_FILE);
+	if (read_config (keyfile, DEFAULT_CONFIG_MAIN_FILE, &my_error)) {
+		*out_config_main_file = g_strdup (DEFAULT_CONFIG_MAIN_FILE);
 		return TRUE;
 	}
 
 	if (!g_error_matches (my_error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND)) {
 		nm_log_warn (LOGD_CORE, "Default config file %s invalid: %s\n",
-		             NM_DEFAULT_SYSTEM_CONF_FILE,
+		             DEFAULT_CONFIG_MAIN_FILE,
 		             my_error->message);
 		g_propagate_error (error, my_error);
 		return FALSE;
@@ -592,9 +592,9 @@ read_base_config (GKeyFile *keyfile,
 	/* If for some reason no config file exists, use the default
 	 * config file path.
 	 */
-	*out_config_main_file = g_strdup (NM_DEFAULT_SYSTEM_CONF_FILE);
+	*out_config_main_file = g_strdup (DEFAULT_CONFIG_MAIN_FILE);
 	nm_log_info (LOGD_CORE, "No config file found or given; using %s\n",
-	             NM_DEFAULT_SYSTEM_CONF_FILE);
+	             DEFAULT_CONFIG_MAIN_FILE);
 	return TRUE;
 }
 
@@ -915,7 +915,7 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	if (priv->cli.config_dir)
 		priv->config_dir = g_strdup (priv->cli.config_dir);
 	else
-		priv->config_dir = g_strdup (NM_DEFAULT_SYSTEM_CONF_DIR);
+		priv->config_dir = g_strdup (DEFAULT_CONFIG_DIR);
 
 	keyfile = read_entire_config (&priv->cli,
 	                              priv->config_dir,
@@ -930,7 +930,7 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	if (priv->cli.no_auto_default_file)
 		priv->no_auto_default_file = g_strdup (priv->cli.no_auto_default_file);
 	else
-		priv->no_auto_default_file = g_strdup (NM_NO_AUTO_DEFAULT_STATE_FILE);
+		priv->no_auto_default_file = g_strdup (DEFAULT_NO_AUTO_DEFAULT_FILE);
 
 	priv->plugins = g_key_file_get_string_list (keyfile, "main", "plugins", NULL, NULL);
 	if (!priv->plugins)
