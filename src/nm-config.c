@@ -822,19 +822,27 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
                     char **out_config_description,
                     GError **error)
 {
-	GKeyFile *keyfile = nm_config_create_keyfile ();
+	GKeyFile *keyfile;
 	gs_unref_ptrarray GPtrArray *system_confs = NULL;
 	gs_unref_ptrarray GPtrArray *confs = NULL;
 	guint i;
 	gs_free char *o_config_main_file = NULL;
-	char **plugins_tmp;
 	GString *str;
+	char **plugins_default;
 
 	g_return_val_if_fail (config_dir, NULL);
 	g_return_val_if_fail (system_config_dir, NULL);
 	g_return_val_if_fail (out_config_main_file && !*out_config_main_file, FALSE);
 	g_return_val_if_fail (out_config_description && !*out_config_description, NULL);
 	g_return_val_if_fail (!error || !*error, FALSE);
+
+	/* create a default configuration file. */
+	keyfile = nm_config_create_keyfile ();
+
+	plugins_default = g_strsplit (CONFIG_PLUGINS_DEFAULT, ",", -1);
+	if (plugins_default && plugins_default[0])
+		nm_config_keyfile_set_string_list (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "plugins", (const char *const*) plugins_default, -1);
+	g_strfreev (plugins_default);
 
 	system_confs = _get_config_dir_files (system_config_dir);
 	confs = _get_config_dir_files (config_dir);
@@ -872,19 +880,13 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 
 	/* Merge settings from command line. They overwrite everything read from
 	 * config files. */
-
-	if (cli && cli->plugins && cli->plugins[0])
+	if (cli && cli->plugins) {
+		/* plugins is a string list. Set the value directly, so the user has to do proper escaping
+		 * on the command line. */
 		g_key_file_set_value (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "plugins", cli->plugins);
-	plugins_tmp = g_key_file_get_string_list (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "plugins", NULL, NULL);
-	if (!plugins_tmp) {
-		if (STRLEN (CONFIG_PLUGINS_DEFAULT) > 0)
-			g_key_file_set_value (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "plugins", CONFIG_PLUGINS_DEFAULT);
-	} else
-		g_strfreev (plugins_tmp);
-
+	}
 	if (cli && cli->configure_and_quit)
 		g_key_file_set_boolean (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "configure-and-quit", TRUE);
-
 	if (cli && cli->connectivity_uri && cli->connectivity_uri[0])
 		g_key_file_set_string (keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, "uri", cli->connectivity_uri);
 	if (cli && cli->connectivity_interval >= 0)
