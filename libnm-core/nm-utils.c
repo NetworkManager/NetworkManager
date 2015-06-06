@@ -434,13 +434,53 @@ nm_utils_same_ssid (const guint8 *ssid1, gsize len1,
 gboolean
 _nm_utils_string_in_list (const char *str, const char **valid_strings)
 {
-	int i;
+	return _nm_utils_strv_find_first ((char **) valid_strings, -1, str) >= 0;
+}
 
-	for (i = 0; valid_strings[i]; i++)
-		if (strcmp (str, valid_strings[i]) == 0)
-			break;
+/**
+ * _nm_utils_strv_find_first:
+ * @list: the strv list to search
+ * @len: the length of the list, or a negative value if @list is %NULL terminated.
+ * @needle: the value to search for. The search is done using strcmp().
+ *
+ * Searches @list for @needle and returns the index of the first match (based
+ * on strcmp()).
+ *
+ * For convenience, @list has type 'char**' instead of 'const char **'.
+ *
+ * Returns: index of first occurrence or -1 if @needle is not found in @list.
+ */
+gssize
+_nm_utils_strv_find_first (char **list, gssize len, const char *needle)
+{
+	gssize i;
 
-	return valid_strings[i] != NULL;
+	if (len > 0) {
+		g_return_val_if_fail (list, -1);
+
+		if (!needle) {
+			/* if we search a list with known length, %NULL is a valid @needle. */
+			for (i = 0; i < len; i++) {
+				if (!list[i])
+					return i;
+			}
+		} else {
+			for (i = 0; i < len; i++) {
+				if (list[i] && !strcmp (needle, list[i]))
+					return i;
+			}
+		}
+	} else if (len < 0) {
+		g_return_val_if_fail (needle, -1);
+
+		if (list) {
+			for (i = 0; list[i]; i++) {
+				if (strcmp (needle, list[i]) == 0)
+					return i;
+			}
+		}
+	}
+	return -1;
 }
 
 gboolean
