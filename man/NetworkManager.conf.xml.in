@@ -62,7 +62,8 @@ Copyright 2010 - 2014 Red Hat, Inc.
     <para>
       For keys that take a list of devices as their value, you can
       specify devices by their MAC addresses or interface names, or
-      "*" to specify all devices.
+      "*" to specify all devices. See <xref linkend="device-spec"/>
+      below.
     </para>
     <para>
       Minimal system settings configuration file looks like this:
@@ -76,6 +77,7 @@ Copyright 2010 - 2014 Red Hat, Inc.
       append a value to a previously-set list-valued key by doing:
       <programlisting>
 	plugins+=another-plugin
+	plugins-=remove-me
       </programlisting>
     </para>
   </refsect1>
