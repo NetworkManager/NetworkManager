@@ -91,7 +91,7 @@ const guint nm_config_data_get_connectivity_interval (const NMConfigData *config
 const char *nm_config_data_get_connectivity_response (const NMConfigData *config_data);
 
 const char *const*nm_config_data_get_no_auto_default (const NMConfigData *config_data);
-const GSList *    nm_config_data_get_no_auto_default_list (const NMConfigData *config_data);
+gboolean          nm_config_data_get_no_auto_default_for_device (const NMConfigData *self, NMDevice *device);
 
 const char *nm_config_data_get_dns_mode (const NMConfigData *self);
 const char *nm_config_data_get_rc_manager (const NMConfigData *self);

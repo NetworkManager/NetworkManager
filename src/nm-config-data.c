@@ -60,6 +60,7 @@ typedef struct {
 	struct {
 		char **arr;
 		GSList *specs;
+		GSList *specs_config;
 	} no_auto_default;
 
 	GSList *ignore_carrier;
@@ -145,12 +146,17 @@ nm_config_data_get_no_auto_default (const NMConfigData *self)
 	return (const char *const*) NM_CONFIG_DATA_GET_PRIVATE (self)->no_auto_default.arr;
 }
 
-const GSList *
-nm_config_data_get_no_auto_default_list (const NMConfigData *self)
+gboolean
+nm_config_data_get_no_auto_default_for_device (const NMConfigData *self, NMDevice *device)
 {
-	g_return_val_if_fail (self, NULL);
+	NMConfigDataPrivate *priv;
 
-	return NM_CONFIG_DATA_GET_PRIVATE (self)->no_auto_default.specs;
+	g_return_val_if_fail (NM_IS_CONFIG_DATA (self), FALSE);
+	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
+
+	priv = NM_CONFIG_DATA_GET_PRIVATE (self);
+	return    nm_device_spec_match_list (device, priv->no_auto_default.specs)
+	       || nm_device_spec_match_list (device, priv->no_auto_default.specs_config);
 }
 
 const char *
@@ -315,12 +321,21 @@ _keyfile_a_contains_all_in_b (GKeyFile *kf_a, GKeyFile *kf_b)
 	return TRUE;
 }
 
+static gboolean
+_slist_str_equals (GSList *a, GSList *b)
+{
+	while (a && b && g_strcmp0 (a->data, b->data) == 0) {
+		a = a->next;
+		b = b->next;
+	}
+	return !a && !b;
+}
+
 NMConfigChangeFlags
 nm_config_data_diff (NMConfigData *old_data, NMConfigData *new_data)
 {
 	NMConfigChangeFlags changes = NM_CONFIG_CHANGE_NONE;
 	NMConfigDataPrivate *priv_old, *priv_new;
-	GSList *spec_old, *spec_new;
 
 	g_return_val_if_fail (NM_IS_CONFIG_DATA (old_data), NM_CONFIG_CHANGE_NONE);
 	g_return_val_if_fail (NM_IS_CONFIG_DATA (new_data), NM_CONFIG_CHANGE_NONE);
@@ -341,13 +356,8 @@ nm_config_data_diff (NMConfigData *old_data, NMConfigData *new_data)
 	    || g_strcmp0 (nm_config_data_get_connectivity_response (old_data), nm_config_data_get_connectivity_response (new_data)))
 		changes |= NM_CONFIG_CHANGE_CONNECTIVITY;
 
-	spec_old = priv_old->no_auto_default.specs;
-	spec_new = priv_new->no_auto_default.specs;
-	while (spec_old && spec_new && strcmp (spec_old->data, spec_new->data) == 0) {
-		spec_old = spec_old->next;
-		spec_new = spec_new->next;
-	}
-	if (spec_old || spec_new)
+	if (   !_slist_str_equals (priv_old->no_auto_default.specs, priv_new->no_auto_default.specs)
+	    || !_slist_str_equals (priv_old->no_auto_default.specs_config, priv_new->no_auto_default.specs_config))
 		changes |= NM_CONFIG_CHANGE_NO_AUTO_DEFAULT;
 
 	if (g_strcmp0 (nm_config_data_get_dns_mode (old_data), nm_config_data_get_dns_mode (new_data)))
@@ -376,9 +386,6 @@ get_property (GObject *object,
 	case PROP_CONFIG_DESCRIPTION:
 		g_value_set_string (value, nm_config_data_get_config_description (self));
 		break;
-	case PROP_NO_AUTO_DEFAULT:
-		g_value_take_boxed (value, g_strdupv ((char **) nm_config_data_get_no_auto_default (self)));
-		break;
 	case PROP_CONNECTIVITY_URI:
 		g_value_set_string (value, nm_config_data_get_connectivity_uri (self));
 		break;
@@ -402,7 +409,6 @@ set_property (GObject *object,
 {
 	NMConfigData *self = NM_CONFIG_DATA (object);
 	NMConfigDataPrivate *priv = NM_CONFIG_DATA_GET_PRIVATE (self);
-	guint i;
 
 	/* This type is immutable. All properties are construct only. */
 	switch (prop_id) {
@@ -418,12 +424,24 @@ set_property (GObject *object,
 			priv->keyfile = nm_config_create_keyfile ();
 		break;
 	case PROP_NO_AUTO_DEFAULT:
-		priv->no_auto_default.arr = g_strdupv (g_value_get_boxed (value));
-		if (!priv->no_auto_default.arr)
-			priv->no_auto_default.arr = g_new0 (char *, 1);
-		for (i = 0; priv->no_auto_default.arr[i]; i++)
-			priv->no_auto_default.specs = g_slist_prepend (priv->no_auto_default.specs, priv->no_auto_default.arr[i]);
-		priv->no_auto_default.specs = g_slist_reverse (priv->no_auto_default.specs);
+		{
+			char **value_arr = g_value_get_boxed (value);
+			guint i, j = 0;
+
+			priv->no_auto_default.arr = g_new (char *, g_strv_length (value_arr) + 1);
+			priv->no_auto_default.specs = NULL;
+
+			for (i = 0; value_arr && value_arr[i]; i++) {
+				if (   *value_arr[i]
+				    && nm_utils_hwaddr_valid (value_arr[i], -1)
+				    && _nm_utils_strv_find_first (value_arr, i, value_arr[i]) < 0) {
+					priv->no_auto_default.arr[j++] = g_strdup (value_arr[i]);
+					priv->no_auto_default.specs = g_slist_prepend (priv->no_auto_default.specs, g_strdup_printf ("mac:%s", value_arr[i]));
+				}
+			}
+			priv->no_auto_default.arr[j++] = NULL;
+			priv->no_auto_default.specs = g_slist_reverse (priv->no_auto_default.specs);
+		}
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -448,7 +466,8 @@ finalize (GObject *gobject)
 	g_free (priv->connectivity.uri);
 	g_free (priv->connectivity.response);
 
-	g_slist_free (priv->no_auto_default.specs);
+	g_slist_free_full (priv->no_auto_default.specs, g_free);
+	g_slist_free_full (priv->no_auto_default.specs_config, g_free);
 	g_strfreev (priv->no_auto_default.arr);
 
 	g_free (priv->dns_mode);
@@ -500,6 +519,8 @@ constructed (GObject *object)
 
 	priv->ignore_carrier = nm_config_get_device_match_spec (priv->keyfile, "main", "ignore-carrier");
 	priv->assume_ipv6ll_only = nm_config_get_device_match_spec (priv->keyfile, "main", "assume-ipv6ll-only");
+
+	priv->no_auto_default.specs_config = nm_config_get_device_match_spec (priv->keyfile, "main", "no-auto-default");
 
 	G_OBJECT_CLASS (nm_config_data_parent_class)->constructed (object);
 }
@@ -594,7 +615,7 @@ nm_config_data_class_init (NMConfigDataClass *config_class)
 	    (object_class, PROP_NO_AUTO_DEFAULT,
 	     g_param_spec_boxed (NM_CONFIG_DATA_NO_AUTO_DEFAULT, "", "",
 	                         G_TYPE_STRV,
-	                         G_PARAM_READWRITE |
+	                         G_PARAM_WRITABLE |
 	                         G_PARAM_CONSTRUCT_ONLY |
 	                         G_PARAM_STATIC_STRINGS));
 

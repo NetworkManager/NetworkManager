@@ -260,94 +260,99 @@ nm_config_get_configure_and_quit (NMConfig *config)
 /************************************************************************/
 
 static char **
-no_auto_default_merge_from_file (const char *no_auto_default_file, const char *const* no_auto_default)
+no_auto_default_from_file (const char *no_auto_default_file)
 {
-	GPtrArray *updated;
+	GPtrArray *no_auto_default_new;
 	char **list;
-	int i, j;
+	guint i;
 	char *data;
 
-	updated = g_ptr_array_new ();
-	if (no_auto_default) {
-		for (i = 0; no_auto_default[i]; i++)
-			g_ptr_array_add (updated, g_strdup (no_auto_default[i]));
-	}
+	no_auto_default_new = g_ptr_array_new ();
 
 	if (   no_auto_default_file
 	    && g_file_get_contents (no_auto_default_file, &data, NULL, NULL)) {
 		list = g_strsplit (data, "\n", -1);
 		for (i = 0; list[i]; i++) {
-			if (!*list[i])
+			if (   *list[i]
+			    && nm_utils_hwaddr_valid (list[i], -1)
+			    && _nm_utils_strv_find_first (list, i, list[i]) < 0)
+				g_ptr_array_add (no_auto_default_new, list[i]);
+			else
 				g_free (list[i]);
-			else {
-				for (j = 0; j < updated->len; j++) {
-					if (!strcmp (list[i], updated->pdata[j]))
-						break;
-				}
-				if (j == updated->len)
-					g_ptr_array_add (updated, list[i]);
-				else
-					g_free (list[i]);
-			}
 		}
 		g_free (list);
 		g_free (data);
 	}
 
-	g_ptr_array_add (updated, NULL);
-	return (char **) g_ptr_array_free (updated, FALSE);
+	g_ptr_array_add (no_auto_default_new, NULL);
+	return (char **) g_ptr_array_free (no_auto_default_new, FALSE);
+}
+
+static gboolean
+no_auto_default_to_file (const char *no_auto_default_file, const char *const*no_auto_default, GError **error)
+{
+	GString *data;
+	gboolean success;
+	guint i;
+
+	data = g_string_new ("");
+	for (i = 0; no_auto_default && no_auto_default[i]; i++) {
+		g_string_append (data, no_auto_default[i]);
+		g_string_append_c (data, '\n');
+	}
+	success = g_file_set_contents (no_auto_default_file, data->str, data->len, error);
+	g_string_free (data, TRUE);
+	return success;
 }
 
 gboolean
 nm_config_get_no_auto_default_for_device (NMConfig *self, NMDevice *device)
 {
-	NMConfigData *config_data;
-
 	g_return_val_if_fail (NM_IS_CONFIG (self), FALSE);
-	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
-	config_data = NM_CONFIG_GET_PRIVATE (self)->config_data;
-	return nm_device_spec_match_list (device, nm_config_data_get_no_auto_default_list (config_data));
+	return nm_config_data_get_no_auto_default_for_device (NM_CONFIG_GET_PRIVATE (self)->config_data, device);
 }
 
 void
 nm_config_set_no_auto_default_for_device (NMConfig *self, NMDevice *device)
 {
 	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (self);
-	char *current;
-	GString *updated;
 	GError *error = NULL;
-	char **no_auto_default;
 	NMConfigData *new_data = NULL;
+	const char *hw_address;
+	const char *const*no_auto_default_current;
+	GPtrArray *no_auto_default_new = NULL;
+	guint i;
 
 	g_return_if_fail (NM_IS_CONFIG (self));
 	g_return_if_fail (NM_IS_DEVICE (device));
 
-	if (nm_config_get_no_auto_default_for_device (self, device))
-		return;
+	hw_address = nm_device_get_hw_address (device);
 
-	updated = g_string_new (NULL);
-	if (g_file_get_contents (priv->no_auto_default_file, &current, NULL, NULL)) {
-		g_string_append (updated, current);
-		g_free (current);
-		if (updated->str[updated->len - 1] != '\n')
-			g_string_append_c (updated, '\n');
+	no_auto_default_current = nm_config_data_get_no_auto_default (priv->config_data);
+
+	if (_nm_utils_strv_find_first ((char **) no_auto_default_current, -1, hw_address) >= 0) {
+		/* @hw_address is already blocked. We don't have to update our in-memory representation.
+		 * Maybe we should write to no_auto_default_file anew, but let's save that too. */
+		return;
 	}
 
-	g_string_append (updated, nm_device_get_hw_address (device));
-	g_string_append_c (updated, '\n');
+	no_auto_default_new = g_ptr_array_new ();
+	for (i = 0; no_auto_default_current && no_auto_default_current[i]; i++)
+		g_ptr_array_add (no_auto_default_new, (char *) no_auto_default_current[i]);
+	g_ptr_array_add (no_auto_default_new, (char *) hw_address);
+	g_ptr_array_add (no_auto_default_new, NULL);
 
-	if (!g_file_set_contents (priv->no_auto_default_file, updated->str, updated->len, &error)) {
+	if (!no_auto_default_to_file (priv->no_auto_default_file, (const char *const*) no_auto_default_new->pdata, &error)) {
 		nm_log_warn (LOGD_SETTINGS, "Could not update no-auto-default.state file: %s",
 		             error->message);
 		g_error_free (error);
 	}
 
-	g_string_free (updated, TRUE);
+	new_data = nm_config_data_new_update_no_auto_default (priv->config_data, (const char *const*) no_auto_default_new->pdata);
 
-	no_auto_default = no_auto_default_merge_from_file (priv->no_auto_default_file, nm_config_data_get_no_auto_default (priv->config_data));
-	new_data = nm_config_data_new_update_no_auto_default (priv->config_data, (const char *const*) no_auto_default);
-	g_strfreev (no_auto_default);
+	/* unref no_auto_default_set here. Note that _set_config_data() probably invalidates the content of the array. */
+	g_ptr_array_unref (no_auto_default_new);
 
 	_set_config_data (self, new_data, 0);
 }
@@ -951,9 +956,7 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	GKeyFile *keyfile;
 	char *config_main_file = NULL;
 	char *config_description = NULL;
-	char **no_auto_default;
-	GSList *no_auto_default_orig_list;
-	GPtrArray *no_auto_default_orig;
+	gs_strfreev char **no_auto_default = NULL;
 
 	if (priv->config_dir) {
 		/* Object is already initialized. */
@@ -1000,18 +1003,9 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 
 	priv->configure_and_quit = nm_config_keyfile_get_boolean (keyfile, "main", "configure-and-quit", FALSE);
 
-	no_auto_default_orig_list = nm_config_get_device_match_spec (keyfile, "main", "no-auto-default");
-
-	no_auto_default_orig = _nm_utils_copy_slist_to_array (no_auto_default_orig_list, NULL, NULL);
-	g_ptr_array_add (no_auto_default_orig, NULL);
-	no_auto_default = no_auto_default_merge_from_file (priv->no_auto_default_file, (const char *const *) no_auto_default_orig->pdata);
-	g_ptr_array_unref (no_auto_default_orig);
-
-	g_slist_free_full (no_auto_default_orig_list, g_free);
+	no_auto_default = no_auto_default_from_file (priv->no_auto_default_file);
 
 	priv->config_data_orig = nm_config_data_new (config_main_file, config_description, (const char *const*) no_auto_default, keyfile);
-
-	g_strfreev (no_auto_default);
 
 	priv->config_data = g_object_ref (priv->config_data_orig);
 
