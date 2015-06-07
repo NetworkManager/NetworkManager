@@ -2696,9 +2696,9 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 		}
 
 		nm_active_connection_set_master (active, master_ac);
-		nm_log_dbg (LOGD_CORE, "Activation of '%s' depends on active connection %s",
+		nm_log_dbg (LOGD_CORE, "Activation of '%s' depends on active connection %p",
 		            nm_connection_get_id (connection),
-		            nm_active_connection_get_path (master_ac));
+		            master_ac);
 	}
 
 	/* Check slaves for master connection and possibly activate them */
