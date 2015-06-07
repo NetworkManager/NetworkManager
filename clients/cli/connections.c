@@ -4124,6 +4124,30 @@ do_questionnaire_ip (NMConnection *connection)
 	maybe_ask_for_gateway (connection, AF_INET6);
 }
 
+static NMSetting *
+is_setting_valid (NMConnection *connection, const NameItem *valid_settings, char *setting)
+{
+	const char *setting_name;
+
+	if (!(setting_name = check_valid_name (setting, valid_settings, NULL)))
+		return NULL;
+	return nm_connection_get_setting_by_name (connection, setting_name);
+}
+
+static char *
+is_property_valid (NMSetting *setting, const char *property, GError **error)
+{
+	char **valid_props = NULL;
+	const char *prop_name;
+	char *ret;
+
+	valid_props = nmc_setting_get_valid_properties (setting);
+	prop_name = nmc_string_is_valid (property, (const char **) valid_props, error);
+	ret = g_strdup (prop_name);
+	g_strfreev (valid_props);
+	return ret;
+}
+
 static gboolean
 complete_connection_by_type (NMConnection *connection,
                              const char *con_type,
@@ -6379,7 +6403,6 @@ should_complete_vpn_uuids (const char *prompt, const char *line)
 	return _get_and_check_property (prompt, line, uuid_properties, NULL, NULL);
 }
 
-static char *is_property_valid (NMSetting *setting, const char *property, GError **error);
 static const char **
 get_allowed_property_values (void)
 {
@@ -7490,30 +7513,6 @@ split_editor_main_cmd_args (const char *str, char **setting, char **property, ch
 			*value = g_strstrip (g_strdup (args[1]));
 	}
 	g_strfreev (args);
-}
-
-static NMSetting *
-is_setting_valid (NMConnection *connection, const NameItem *valid_settings, char *setting)
-{
-	const char *setting_name;
-
-	if (!(setting_name = check_valid_name (setting, valid_settings, NULL)))
-		return NULL;
-	return nm_connection_get_setting_by_name (connection, setting_name);
-}
-
-static char *
-is_property_valid (NMSetting *setting, const char *property, GError **error)
-{
-	char **valid_props = NULL;
-	const char *prop_name;
-	char *ret;
-
-	valid_props = nmc_setting_get_valid_properties (setting);
-	prop_name = nmc_string_is_valid (property, (const char **) valid_props, error);
-	ret = g_strdup (prop_name);
-	g_strfreev (valid_props);
-	return ret;
 }
 
 static NMSetting *
