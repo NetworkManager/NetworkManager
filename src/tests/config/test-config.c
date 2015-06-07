@@ -341,6 +341,26 @@ test_config_confdir (void)
 	ASSERT_GET_CONN_DEFAULT (config, "ord.key09", "C-2.1.09");
 	ASSERT_GET_CONN_DEFAULT (config, "ord.ovw01", "C-0.1.ovw01");
 
+	value = nm_config_data_get_value (nm_config_get_data_orig (config), "append", "val1", NULL);
+	g_assert_cmpstr (value, ==, "a,c");
+	g_free (value);
+
+	value = nm_config_data_get_value (nm_config_get_data_orig (config), "append", "val2", NULL);
+	g_assert_cmpstr (value, ==, "VAL2");
+	g_free (value);
+
+	value = nm_config_data_get_value (nm_config_get_data_orig (config), "append", "val3", NULL);
+	g_assert_cmpstr (value, ==, NULL);
+	g_free (value);
+
+	value = nm_config_data_get_value (nm_config_get_data_orig (config), "append", "val4", NULL);
+	g_assert_cmpstr (value, ==, "vb,vb");
+	g_free (value);
+
+	value = nm_config_data_get_value (nm_config_get_data_orig (config), "append", "val5", NULL);
+	g_assert_cmpstr (value, ==, "VAL5");
+	g_free (value);
+
 	g_object_unref (config);
 }
 
