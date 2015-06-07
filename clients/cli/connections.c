@@ -253,7 +253,7 @@ usage (void)
 	              "  show [--active] [--show-secrets] [id | uuid | path | apath] <ID> ...\n\n"
 	              "  up [[id | uuid | path] <ID>] [ifname <ifname>] [ap <BSSID>] [passwd-file <file with passwords>]\n\n"
 	              "  down [id | uuid | path | apath] <ID> ...\n\n"
-	              "  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n\n"
+	              "  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS [-- ([+|-]<setting>.<property> <value>)+]\n\n"
 	              "  modify [--temporary] [id | uuid | path] <ID> ([+|-]<setting>.<property> <value>)+\n\n"
 	              "  edit [id | uuid | path] <ID>\n"
 	              "  edit [type <new_con_type>] [con-name <new_con_name>]\n\n"
@@ -321,7 +321,7 @@ usage_connection_add (void)
 {
 	g_printerr (_("Usage: nmcli connection add { ARGUMENTS | help }\n"
 	              "\n"
-	              "ARGUMENTS := COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n\n"
+	              "ARGUMENTS := COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS [-- ([+|-]<setting>.<property> <value>)+]\n\n"
 	              "  COMMON_OPTIONS:\n"
 	              "                  type <type>\n"
 	              "                  ifname <interface name> | \"*\"\n"
@@ -5568,8 +5568,8 @@ cleanup_olpc:
 
 			ip4 = gw4 = ip6 = gw6 = NULL;
 
-			if (!nmc_parse_args (exp_args, TRUE, &argc, &argv, error))
-				return FALSE;
+			if (!nmc_parse_args (exp_args, TRUE, &argc, &argv, NULL))
+				break;
 
 			/* coverity[dead_error_begin] */
 			if (ip4) {
@@ -5641,6 +5641,18 @@ cleanup_olpc:
 		/* Ask for addresses if '--ask' is specified. */
 		if (ask)
 			do_questionnaire_ip (connection);
+	}
+
+	if (argc) {
+		/* Set extra connection properties. */
+		nmc_arg_t exp_args[] = { {"--", FALSE, NULL, TRUE},
+					 {NULL} };
+
+		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
+			return FALSE;
+
+		if (!read_connection_properties (connection, argc, argv, error))
+			return FALSE;
 	}
 
 	return TRUE;
