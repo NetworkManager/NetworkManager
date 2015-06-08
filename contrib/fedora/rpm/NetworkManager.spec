@@ -541,6 +541,8 @@ fi
 %if 0%{?with_nmtui}
 %exclude %{_mandir}/man1/nmtui*
 %endif
+%dir %{_sysconfdir}/%{name}
+%dir %{_sysconfdir}/%{name}/conf.d
 %config %{_sysconfdir}/%{name}/conf.d/10-ibft-plugin.conf
 %{_mandir}/man1/*
 %{_mandir}/man5/*
