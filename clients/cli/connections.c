@@ -251,7 +251,7 @@ usage (void)
 	              "  show [--active] [--show-secrets] [id | uuid | path | apath] <ID> ...\n\n"
 	              "  up [[id | uuid | path] <ID>] [ifname <ifname>] [ap <BSSID>] [passwd-file <file with passwords>]\n\n"
 	              "  down [id | uuid | path | apath] <ID> ...\n\n"
-	              "  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS [-- ([+|-]<setting>.<property> <value>)+]\n\n"
+	              "  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS SLAVE_OPTIONS IP_OPTIONS [-- ([+|-]<setting>.<property> <value>)+]\n\n"
 	              "  modify [--temporary] [id | uuid | path] <ID> ([+|-]<setting>.<property> <value>)+\n\n"
 	              "  edit [id | uuid | path] <ID>\n"
 	              "  edit [type <new_con_type>] [con-name <new_con_name>]\n\n"
@@ -319,12 +319,15 @@ usage_connection_add (void)
 {
 	g_printerr (_("Usage: nmcli connection add { ARGUMENTS | help }\n"
 	              "\n"
-	              "ARGUMENTS := COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS [-- ([+|-]<setting>.<property> <value>)+]\n\n"
+	              "ARGUMENTS := COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS SLAVE_OPTIONS IP_OPTIONS [-- ([+|-]<setting>.<property> <value>)+]\n\n"
 	              "  COMMON_OPTIONS:\n"
 	              "                  type <type>\n"
 	              "                  ifname <interface name> | \"*\"\n"
 	              "                  [con-name <connection name>]\n"
 	              "                  [autoconnect yes|no]\n\n"
+	              "                  [save yes|no]\n\n"
+	              "                  [master <master (ifname, or connection UUID or name)>]\n"
+	              "                  [slave-type <master connection type>]\n\n"
 	              "                  [save yes|no]\n\n"
 	              "  TYPE_SPECIFIC_OPTIONS:\n"
 	              "    ethernet:     [mac <MAC address>]\n"
@@ -390,6 +393,11 @@ usage_connection_add (void)
 	              "    olpc-mesh:    ssid <SSID>\n"
 	              "                  [channel <1-13>]\n"
 	              "                  [dhcp-anycast <MAC address>]\n\n"
+	              "  SLAVE_OPTIONS:\n"
+	              "    bridge:       [priority <0-63>]\n"
+	              "                  [path-cost <1-65535>]\n"
+	              "                  [hairpin yes|no]\n\n"
+	              "    team:         [config <file>|<raw JSON data>]\n\n"
 	              "  IP_OPTIONS:\n"
 	              "                  [ip4 <IPv4 address>] [gw4 <IPv4 gateway>]\n"
 	              "                  [ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\n\n"));
@@ -4317,8 +4325,9 @@ complete_slave (NMSettingConnection *s_con,
 		const char *checked_master = NULL;
 
 		if (type)
-			g_print (_("Warning: 'type' is currently ignored. "
-			           "We only support ethernet slaves for now.\n"));
+			g_print (_("Warning: 'type' is ignored. "
+			           "Use 'nmcli connection add \"%s\" ...' instead."),
+			           type);
 
 		if (nm_setting_connection_get_master (s_con)) {
 			/* Master already set. */
@@ -4339,8 +4348,6 @@ complete_slave (NMSettingConnection *s_con,
 		}
 		/* Verify master argument */
 		checked_master = normalized_master_for_slave (all_connections, master, slave_type, NULL);
-		if (!checked_master)
-			g_print (_("Warning: master='%s' doesn't refer to any existing profile.\n"), master);
 
 		/* Change properties in 'connection' setting */
 		g_object_set (s_con,
@@ -5916,6 +5923,9 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 	gboolean ifname_mandatory = TRUE;
 	const char *save = NULL;
 	gboolean save_bool = TRUE;
+	const char *master = NULL;
+	const char *checked_master = NULL;
+	const char *slave_type = NULL;
 	AddConnectionInfo *info = NULL;
 	const char *setting_name;
 	GError *error = NULL;
@@ -5924,6 +5934,8 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 	                         {"autoconnect", TRUE, &autoconnect, FALSE},
 	                         {"ifname",      TRUE, &ifname,      FALSE},
 	                         {"save",        TRUE, &save,        FALSE},
+	                         {"master",      TRUE, &master,      FALSE},
+	                         {"slave-type",  TRUE, &slave_type,  FALSE},
 	                         {NULL} };
 
 	rl_attempted_completion_function = (rl_completion_func_t *) nmcli_con_add_tab_completion;
@@ -6024,12 +6036,19 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 		default_name = unique_connection_name (nmc->connections, try_name);
 		g_free (try_name);
 	}
+
+	if (master)
+		/* Verify master argument */
+		checked_master = normalized_master_for_slave (nmc->connections, master, slave_type, &slave_type);
+
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_ID, default_name,
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_TYPE, setting_name,
 	              NM_SETTING_CONNECTION_AUTOCONNECT, auto_bool,
 	              NM_SETTING_CONNECTION_INTERFACE_NAME, ifname,
+		      NM_SETTING_CONNECTION_MASTER, checked_master,
+	              NM_SETTING_CONNECTION_SLAVE_TYPE, slave_type,
 	              NULL);
 	g_free (uuid);
 	g_free (default_name);

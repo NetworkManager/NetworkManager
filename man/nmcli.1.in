@@ -418,7 +418,7 @@ See \fBconnection show\fP above for the description of the <ID>-specifying keywo
 .br
 If '--wait' option is not specified, the default timeout will be 10 seconds.
 .TP
-.B add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS [-- [+|-]<setting>.<property> <value> ...]
+.B add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS SLAVE_OPTIONS IP_OPTIONS [-- [+|-]<setting>.<property> <value> ...]
 .br
 Add a connection for NetworkManager. Arguments differ according to connection types, see below.
 .RS
@@ -426,6 +426,9 @@ Add a connection for NetworkManager. Arguments differ according to connection ty
 .B COMMON_OPTIONS:
 .IP "\fItype <type>\fP" 42
 \(en connection type; see below \fBTYPE_SPECIFIC_OPTIONS\fP for allowed values; (mandatory)
+Note that types \fIbond-slave\fP, \fIteam-slave\fP and \fIbridge-slave\fP create \fIethernet\fP
+connection profiles. Their use is discouraged in favor of using a specific type with \fImaster\fP
+option.
 .IP "\fIifname <ifname> | \(dq\&*\(dq\&\fP" 42
 \(en interface to bind the connection to. The connection will only be applicable to this
 interface name. A special value of "\fB*\fP" can be used for interface-independent connections.
@@ -437,6 +440,13 @@ Note: use quotes around \fB*\fP to suppress shell expansion.
 \(en whether the connection profile can be automatically activated (default: yes)
 .IP "\fI[save yes|no]\fP" 42
 \(en whether the connection should be persistent, i.e. NetworkManager should store it on disk (default: yes)
+.IP "\fI[master <master (ifname, or connection UUID or name)>]\fP" 42
+\(en master interface name, or connection UUID or ID of master connection profile.
+The value can be prefixed with \fBifname/\fP, \fBuuid/\fP or \fBid/\fP to disambiguate it.
+See below \fBSLAVE_OPTIONS\fP for additional options for slave connection to masters of various types.
+.IP "\fI[slave-type <master connection type>]\fP" 42
+\(en type of master connection. Only required when it can not be inferred (i.e. the master connection does
+not exist yet).
 .RE
 .RS
 .TP
@@ -580,8 +590,6 @@ The value can be prefixed with \fBifname/\fP, \fBuuid/\fP or \fBid/\fP to disamb
 .IP "\fImaster <master (ifname, or connection UUID or name)>\fP" 42
 \(en master team interface name, or connection UUID or ID of team master connection profile.
 The value can be prefixed with \fBifname/\fP, \fBuuid/\fP or \fBid/\fP to disambiguate it.
-.IP "\fI[config <file>|<raw JSON data>]\fP" 42
-\(en JSON configuration for team
 .RE
 .RS
 .TP
@@ -610,13 +618,6 @@ originally introduced in 3.15 upstream kernel)
 .IP "\fImaster <master (ifname, or connection UUID or name)>\fP" 42
 \(en master bridge interface name, or connection UUID or ID of bridge master connection profile.
 The value can be prefixed with \fBifname/\fP, \fBuuid/\fP or \fBid/\fP to disambiguate it.
-.IP "\fI[priority <0-63>]\fP" 42
-\(en STP priority of this slave (default: 32)
-.IP "\fI[path-cost <1-65535>]\fP" 42
-\(en STP port cost for destinations via this slave (default: 100)
-.IP "\fI[hairpin yes|no]\fP" 42
-\(en 'hairpin mode' for the slave, which allows frames
-to be sent back out through the slave the frame was received on (default: yes)
 .RE
 .RS
 .TP
@@ -635,6 +636,27 @@ to be sent back out through the slave the frame was received on (default: yes)
 \(en channel to use for the network
 .IP "\fI[dhcp-anycast <MAC address>]\fP" 42
 \(en anycast DHCP MAC address used when requesting an IP address via DHCP
+.RE
+.RS
+.TP
+.B SLAVE_OPTIONS:
+.RE
+.RS
+.TP
+.B bridge:
+.IP "\fI[priority <0-63>]\fP" 42
+\(en STP priority of this slave (default: 32)
+.IP "\fI[path-cost <1-65535>]\fP" 42
+\(en STP port cost for destinations via this slave (default: 100)
+.IP "\fI[hairpin yes|no]\fP" 42
+\(en 'hairpin mode' for the slave, which allows frames
+to be sent back out through the slave the frame was received on (default: yes)
+.RE
+.RS
+.TP
+.B team:
+.IP "\fI[config <file>|<raw JSON data>]\fP" 42
+\(en JSON configuration for team
 .RE
 .RS
 .TP
