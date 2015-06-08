@@ -27,6 +27,7 @@
 #include "gsystem-local-alloc.h"
 #include "nm-device.h"
 #include "nm-core-internal.h"
+#include "nm-keyfile-internal.h"
 #include "nm-macros-internal.h"
 
 typedef struct {
@@ -295,33 +296,6 @@ _get_connection_infos (GKeyFile *keyfile)
 /************************************************************************/
 
 static gboolean
-_keyfile_a_contains_all_in_b (GKeyFile *kf_a, GKeyFile *kf_b)
-{
-	gs_strfreev char **groups = NULL;
-	guint i, j;
-
-	if (kf_a == kf_b)
-		return TRUE;
-
-	groups = g_key_file_get_groups (kf_a, NULL);
-	for (i = 0; groups && groups[i]; i++) {
-		gs_strfreev char **keys = NULL;
-
-		keys = g_key_file_get_keys (kf_a, groups[i], NULL, NULL);
-		if (keys) {
-			for (j = 0; keys[j]; j++) {
-				gs_free char *key_a = g_key_file_get_value (kf_a, groups[i], keys[j], NULL);
-				gs_free char *key_b = g_key_file_get_value (kf_b, groups[i], keys[j], NULL);
-
-				if (g_strcmp0 (key_a, key_b) != 0)
-					return FALSE;
-			}
-		}
-	}
-	return TRUE;
-}
-
-static gboolean
 _slist_str_equals (GSList *a, GSList *b)
 {
 	while (a && b && g_strcmp0 (a->data, b->data) == 0) {
@@ -343,8 +317,7 @@ nm_config_data_diff (NMConfigData *old_data, NMConfigData *new_data)
 	priv_old = NM_CONFIG_DATA_GET_PRIVATE (old_data);
 	priv_new = NM_CONFIG_DATA_GET_PRIVATE (new_data);
 
-	if (   !_keyfile_a_contains_all_in_b (priv_old->keyfile, priv_new->keyfile)
-	    || !_keyfile_a_contains_all_in_b (priv_new->keyfile, priv_old->keyfile))
+	if (!_nm_keyfile_equals (priv_old->keyfile, priv_new->keyfile))
 		changes |= NM_CONFIG_CHANGE_VALUES;
 
 	if (   g_strcmp0 (nm_config_data_get_config_main_file (old_data), nm_config_data_get_config_main_file (new_data)) != 0
