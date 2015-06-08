@@ -799,6 +799,7 @@ nm_config_reload (NMConfig *self, int signal)
 	NMConfigData *new_data = NULL;
 	char *config_main_file = NULL;
 	char *config_description = NULL;
+	gs_strfreev char **no_auto_default = NULL;
 
 	g_return_if_fail (NM_IS_CONFIG (self));
 
@@ -824,7 +825,9 @@ nm_config_reload (NMConfig *self, int signal)
 		_set_config_data (self, NULL, signal);
 		return;
 	}
-	new_data = nm_config_data_new (config_main_file, config_description, nm_config_data_get_no_auto_default (priv->config_data), keyfile);
+	no_auto_default = no_auto_default_from_file (priv->no_auto_default_file);
+
+	new_data = nm_config_data_new (config_main_file, config_description, (const char *const*) no_auto_default, keyfile);
 	g_free (config_main_file);
 	g_free (config_description);
 	g_key_file_unref (keyfile);
