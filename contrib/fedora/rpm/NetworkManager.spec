@@ -34,6 +34,7 @@
 
 %define systemd_dir %{_prefix}/lib/systemd/system
 %define udev_dir %{_prefix}/lib/udev
+%define nmlibdir %{_prefix}/lib/%{name}
 
 %global with_adsl 1
 %global with_bluetooth 1
@@ -443,6 +444,7 @@ make install DESTDIR=$RPM_BUILD_ROOT
 %{__cp} %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/
 
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/conf.d
+mkdir -p $RPM_BUILD_ROOT%{nmlibdir}/conf.d
 %{__cp} %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/conf.d
 %{__cp} %{SOURCE3} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/conf.d
 %{__cp} %{SOURCE4} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/conf.d
@@ -543,6 +545,8 @@ fi
 %endif
 %dir %{_sysconfdir}/%{name}
 %dir %{_sysconfdir}/%{name}/conf.d
+%dir %{nmlibdir}
+%dir %{nmlibdir}/conf.d
 %config %{_sysconfdir}/%{name}/conf.d/10-ibft-plugin.conf
 %{_mandir}/man1/*
 %{_mandir}/man5/*

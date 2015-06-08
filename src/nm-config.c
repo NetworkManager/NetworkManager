@@ -40,11 +40,13 @@
 #define DEFAULT_CONFIG_MAIN_FILE        NMCONFDIR "/NetworkManager.conf"
 #define DEFAULT_CONFIG_DIR              NMCONFDIR "/conf.d"
 #define DEFAULT_CONFIG_MAIN_FILE_OLD    NMCONFDIR "/nm-system-settings.conf"
+#define DEFAULT_SYSTEM_CONFIG_DIR       NMLIBDIR  "/conf.d"
 #define DEFAULT_NO_AUTO_DEFAULT_FILE    NMSTATEDIR "/no-auto-default.state"
 
 struct NMConfigCmdLineOptions {
 	char *config_main_file;
 	char *config_dir;
+	char *system_config_dir;
 	char *no_auto_default_file;
 	char *plugins;
 	gboolean configure_and_quit;
@@ -64,6 +66,7 @@ typedef struct {
 	NMConfigData *config_data_orig;
 
 	char *config_dir;
+	char *system_config_dir;
 	char *no_auto_default_file;
 
 	char **plugins;
@@ -407,6 +410,7 @@ _nm_config_cmd_line_options_clear (NMConfigCmdLineOptions *cli)
 {
 	g_clear_pointer (&cli->config_main_file, g_free);
 	g_clear_pointer (&cli->config_dir, g_free);
+	g_clear_pointer (&cli->system_config_dir, g_free);
 	g_clear_pointer (&cli->no_auto_default_file, g_free);
 	g_clear_pointer (&cli->plugins, g_free);
 	cli->configure_and_quit = FALSE;
@@ -424,6 +428,7 @@ _nm_config_cmd_line_options_copy (const NMConfigCmdLineOptions *cli, NMConfigCmd
 
 	_nm_config_cmd_line_options_clear (dst);
 	dst->config_dir = g_strdup (cli->config_dir);
+	dst->system_config_dir = g_strdup (cli->system_config_dir);
 	dst->config_main_file = g_strdup (cli->config_main_file);
 	dst->no_auto_default_file = g_strdup (cli->no_auto_default_file);
 	dst->plugins = g_strdup (cli->plugins);
@@ -462,6 +467,7 @@ nm_config_cmd_line_options_add_to_entries (NMConfigCmdLineOptions *cli,
 		GOptionEntry config_options[] = {
 			{ "config", 0, 0, G_OPTION_ARG_FILENAME, &cli->config_main_file, N_("Config file location"), N_(DEFAULT_CONFIG_MAIN_FILE) },
 			{ "config-dir", 0, 0, G_OPTION_ARG_FILENAME, &cli->config_dir, N_("Config directory location"), N_(DEFAULT_CONFIG_DIR) },
+			{ "system-config-dir", 0, 0, G_OPTION_ARG_FILENAME, &cli->system_config_dir, N_("System config directory location"), N_(DEFAULT_SYSTEM_CONFIG_DIR) },
 			{ "no-auto-default", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_FILENAME, &cli->no_auto_default_file, N_("State file for no-auto-default devices"), N_(DEFAULT_NO_AUTO_DEFAULT_FILE) },
 			{ "plugins", 0, 0, G_OPTION_ARG_STRING, &cli->plugins, N_("List of plugins separated by ','"), N_(CONFIG_PLUGINS_DEFAULT) },
 			{ "configure-and-quit", 0, 0, G_OPTION_ARG_NONE, &cli->configure_and_quit, N_("Quit after initial configuration"), NULL },
@@ -550,16 +556,22 @@ _setting_is_string_list (const char *group, const char *key)
 }
 
 static gboolean
-read_config (GKeyFile *keyfile, const char *path, GError **error)
+read_config (GKeyFile *keyfile, const char *dirname, const char *path, GError **error)
 {
 	GKeyFile *kf;
 	char **groups, **keys;
 	gsize ngroups, nkeys;
 	int g, k;
+	gs_free char *path_free = NULL;
 
 	g_return_val_if_fail (keyfile, FALSE);
 	g_return_val_if_fail (path, FALSE);
 	g_return_val_if_fail (!error || !*error, FALSE);
+
+	if (dirname) {
+		path_free = g_build_filename (dirname, path, NULL);
+		path = path_free;
+	}
 
 	if (g_file_test (path, G_FILE_TEST_EXISTS) == FALSE) {
 		g_set_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND, "file %s not found", path);
@@ -710,7 +722,7 @@ read_base_config (GKeyFile *keyfile,
 	/* Try a user-specified config file first */
 	if (cli_config_main_file) {
 		/* Bad user-specific config file path is a hard error */
-		if (read_config (keyfile, cli_config_main_file, error)) {
+		if (read_config (keyfile, NULL, cli_config_main_file, error)) {
 			*out_config_main_file = g_strdup (cli_config_main_file);
 			return TRUE;
 		} else
@@ -725,7 +737,7 @@ read_base_config (GKeyFile *keyfile,
 	 */
 
 	/* Try deprecated nm-system-settings.conf first */
-	if (read_config (keyfile, DEFAULT_CONFIG_MAIN_FILE_OLD, &my_error)) {
+	if (read_config (keyfile, NULL, DEFAULT_CONFIG_MAIN_FILE_OLD, &my_error)) {
 		*out_config_main_file = g_strdup (DEFAULT_CONFIG_MAIN_FILE_OLD);
 		return TRUE;
 	}
@@ -738,7 +750,7 @@ read_base_config (GKeyFile *keyfile,
 	g_clear_error (&my_error);
 
 	/* Try the standard config file location next */
-	if (read_config (keyfile, DEFAULT_CONFIG_MAIN_FILE, &my_error)) {
+	if (read_config (keyfile, NULL, DEFAULT_CONFIG_MAIN_FILE, &my_error)) {
 		*out_config_main_file = g_strdup (DEFAULT_CONFIG_MAIN_FILE);
 		return TRUE;
 	}
@@ -771,24 +783,20 @@ sort_asciibetically (gconstpointer a, gconstpointer b)
 }
 
 static GPtrArray *
-_get_config_dir_files (const char *config_main_file,
-                       const char *config_dir,
-                       char **out_config_description)
+_get_config_dir_files (const char *config_dir)
 {
 	GFile *dir;
 	GFileEnumerator *direnum;
 	GFileInfo *info;
 	GPtrArray *confs;
-	GString *config_description;
 	const char *name;
-	guint i;
 
-	g_return_val_if_fail (config_main_file, NULL);
 	g_return_val_if_fail (config_dir, NULL);
-	g_return_val_if_fail (out_config_description && !*out_config_description, NULL);
 
 	confs = g_ptr_array_new_with_free_func (g_free);
-	config_description = g_string_new (config_main_file);
+	if (!*config_dir)
+		return confs;
+
 	dir = g_file_new_for_path (config_dir);
 	direnum = g_file_enumerate_children (dir, G_FILE_ATTRIBUTE_STANDARD_NAME, 0, NULL, NULL);
 	if (direnum) {
@@ -802,42 +810,50 @@ _get_config_dir_files (const char *config_main_file,
 	}
 	g_object_unref (dir);
 
-	if (confs->len > 0) {
-		g_ptr_array_sort (confs, sort_asciibetically);
-		g_string_append (config_description, " and conf.d: ");
-		for (i = 0; i < confs->len; i++) {
-			char *n = confs->pdata[i];
-
-			if (i > 0)
-				g_string_append (config_description, ", ");
-			g_string_append (config_description, n);
-			confs->pdata[i] = g_build_filename (config_dir, n, NULL);
-			g_free (n);
-		}
-	}
-
-	*out_config_description = g_string_free (config_description, FALSE);
+	g_ptr_array_sort (confs, sort_asciibetically);
 	return confs;
 }
 
 static GKeyFile *
 read_entire_config (const NMConfigCmdLineOptions *cli,
                     const char *config_dir,
+                    const char *system_config_dir,
                     char **out_config_main_file,
                     char **out_config_description,
                     GError **error)
 {
 	GKeyFile *keyfile = nm_config_create_keyfile ();
-	GPtrArray *confs;
+	gs_unref_ptrarray GPtrArray *system_confs = NULL;
+	gs_unref_ptrarray GPtrArray *confs = NULL;
 	guint i;
-	char *o_config_main_file = NULL;
-	char *o_config_description = NULL;
+	gs_free char *o_config_main_file = NULL;
 	char **plugins_tmp;
+	GString *str;
 
 	g_return_val_if_fail (config_dir, NULL);
+	g_return_val_if_fail (system_config_dir, NULL);
 	g_return_val_if_fail (out_config_main_file && !*out_config_main_file, FALSE);
 	g_return_val_if_fail (out_config_description && !*out_config_description, NULL);
 	g_return_val_if_fail (!error || !*error, FALSE);
+
+	system_confs = _get_config_dir_files (system_config_dir);
+	confs = _get_config_dir_files (config_dir);
+
+	for (i = 0; i < system_confs->len; ) {
+		const char *filename = system_confs->pdata[i];
+
+		/* if a same named file exists in config_dir, skip it. */
+		if (_nm_utils_strv_find_first ((char **) confs->pdata, confs->len, filename) >= 0) {
+			g_ptr_array_remove_index (system_confs, i);
+			continue;
+		}
+
+		if (!read_config (keyfile, system_config_dir, filename, error)) {
+			g_key_file_free (keyfile);
+			return NULL;
+		}
+		i++;
+	}
 
 	/* First read the base config file */
 	if (!read_base_config (keyfile, cli ? cli->config_main_file : NULL, &o_config_main_file, error)) {
@@ -847,17 +863,12 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 
 	g_assert (o_config_main_file);
 
-	confs = _get_config_dir_files (o_config_main_file, config_dir, &o_config_description);
 	for (i = 0; i < confs->len; i++) {
-		if (!read_config (keyfile, confs->pdata[i], error)) {
+		if (!read_config (keyfile, config_dir, confs->pdata[i], error)) {
 			g_key_file_free (keyfile);
-			g_free (o_config_main_file);
-			g_free (o_config_description);
-			g_ptr_array_unref (confs);
 			return NULL;
 		}
 	}
-	g_ptr_array_unref (confs);
 
 	/* Merge settings from command line. They overwrite everything read from
 	 * config files. */
@@ -881,8 +892,32 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 	if (cli && cli->connectivity_response && cli->connectivity_response[0])
 		g_key_file_set_string (keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, "response", cli->connectivity_response);
 
+	str = g_string_new (o_config_main_file);
+	if (system_confs->len > 0) {
+		for (i = 0; i < system_confs->len; i++) {
+			if (i == 0)
+				g_string_append (str, " (lib: ");
+			else
+				g_string_append (str, ", ");
+			g_string_append (str, system_confs->pdata[i]);
+		}
+		g_string_append (str, ")");
+	}
+	if (confs->len > 0) {
+		for (i = 0; i < confs->len; i++) {
+			if (i == 0)
+				g_string_append (str, " (etc: ");
+			else
+				g_string_append (str, ", ");
+			g_string_append (str, confs->pdata[i]);
+		}
+		g_string_append (str, ")");
+	}
+
 	*out_config_main_file = o_config_main_file;
-	*out_config_description = o_config_description;
+	*out_config_description = g_string_free (str, FALSE);
+
+	o_config_main_file = NULL;
 	return keyfile;
 }
 
@@ -928,6 +963,7 @@ nm_config_reload (NMConfig *self, int signal)
 	 */
 	keyfile = read_entire_config (&priv->cli,
 	                              priv->config_dir,
+	                              priv->system_config_dir,
 	                              &config_main_file,
 	                              &config_description,
 	                              &error);
@@ -1087,8 +1123,21 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	else
 		priv->config_dir = g_strdup (DEFAULT_CONFIG_DIR);
 
+	if (priv->cli.system_config_dir)
+		priv->system_config_dir = g_strdup (priv->cli.system_config_dir);
+	else
+		priv->system_config_dir = g_strdup (DEFAULT_SYSTEM_CONFIG_DIR);
+
+	if (strcmp (priv->config_dir, priv->system_config_dir) == 0) {
+		/* having the same directory twice makes no sense. In that case, clear
+		 * @system_config_dir. */
+		g_free (priv->system_config_dir);
+		priv->system_config_dir = g_strdup ("");
+	}
+
 	keyfile = read_entire_config (&priv->cli,
 	                              priv->config_dir,
+	                              priv->system_config_dir,
 	                              &config_main_file,
 	                              &config_description,
 	                              error);
@@ -1156,6 +1205,7 @@ finalize (GObject *gobject)
 	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (gobject);
 
 	g_free (priv->config_dir);
+	g_free (priv->system_config_dir);
 	g_free (priv->no_auto_default_file);
 	g_strfreev (priv->plugins);
 	g_free (priv->dhcp_client);

@@ -27,7 +27,8 @@ Copyright 2010 - 2014 Red Hat, Inc.
 
   <refsynopsisdiv>
     <para><filename>/etc/NetworkManager/NetworkManager.conf</filename>,
-    <filename>/etc/NetworkManager/conf.d/<replaceable>name</replaceable>.conf</filename>
+    <filename>/etc/NetworkManager/conf.d/<replaceable>name</replaceable>.conf</filename>,
+    <filename>/usr/lib/NetworkManager/conf.d/<replaceable>name</replaceable>.conf</filename>
     </para>
   </refsynopsisdiv>
 
@@ -42,8 +43,14 @@ Copyright 2010 - 2014 Red Hat, Inc.
     provided by your distribution's packages, you should not modify
     it, since your changes may get overwritten by package
     updates. Instead, you can add additional <literal>.conf</literal>
-    files to the <literal>conf.d</literal> directory. These will be read in order,
-    with later files overriding earlier ones.
+    files to the <literal>/etc/NetworkManager/conf.d</literal> directory.
+    These will be read in order, with later files overriding earlier ones.
+    Packages might install further configuration snippets to <literal>/usr/lib/NetworkManager/conf.d</literal>.
+    This directory is parsed first, even before <literal>NetworkManager.conf</literal>.
+    The loading of a file <literal>/usr/lib/NetworkManager/conf.d/<replaceable>name</replaceable>.conf</literal>
+    can be prevented by adding a file <literal>/etc/NetworkManager/conf.d/<replaceable>name</replaceable>.conf</literal>.
+    In this case, the file from the etc configuration shadows the file from the
+    system configuration directory.
     </para>
 
   </refsect1>
