@@ -23,7 +23,7 @@
 
 #include <glib.h>
 
-#define VPN_SECRETS_GROUP "vpn-secrets"
+#define NM_KEYFILE_GROUP_VPN_SECRETS "vpn-secrets"
 
 const char *nm_keyfile_plugin_get_alias_for_setting_name (const char *setting_name);
 

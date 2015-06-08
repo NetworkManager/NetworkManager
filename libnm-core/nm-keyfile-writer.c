@@ -247,7 +247,7 @@ write_hash_of_string (GKeyFile *file,
 
 	/* Write VPN secrets out to a different group to keep them separate */
 	if (NM_IS_SETTING_VPN (setting) && !strcmp (key, NM_SETTING_VPN_SECRETS)) {
-		group_name = VPN_SECRETS_GROUP;
+		group_name = NM_KEYFILE_GROUP_VPN_SECRETS;
 		vpn_secrets = TRUE;
 	}
 
