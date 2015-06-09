@@ -82,16 +82,9 @@ ignore_cb(NMSettingsConnectionInterface * connection,
 static gboolean
 is_managed_plugin (void)
 {
-	char *result = NULL;
-
-	result = nm_config_data_get_value (NM_CONFIG_GET_DATA_ORIG,
-	                                   IFNET_KEY_FILE_GROUP, IFNET_KEY_FILE_KEY_MANAGED);
-	if (result) {
-		gboolean ret = is_true (result);
-		g_free (result);
-		return ret;
-	}
-	return IFNET_MANAGE_WELL_KNOWN_DEFAULT;
+	return nm_config_data_get_value_boolean (NM_CONFIG_GET_DATA_ORIG,
+	                                         IFNET_KEY_FILE_GROUP, IFNET_KEY_FILE_KEY_MANAGED,
+	                                         IFNET_MANAGE_WELL_KNOWN_DEFAULT);
 }
 
 static void
@@ -199,8 +192,7 @@ reload_connections (NMSystemConfigInterface *config)
 	SCPluginIfnet *self = SC_PLUGIN_IFNET (config);
 	SCPluginIfnetPrivate *priv = SC_PLUGIN_IFNET_GET_PRIVATE (self);
 	GList *conn_names = NULL, *n_iter = NULL;
-	gboolean auto_refresh = FALSE;
-	char *str_auto_refresh;
+	gboolean auto_refresh;
 	GError *error = NULL;
 
 	/* save names for removing unused connections */
@@ -217,11 +209,9 @@ reload_connections (NMSystemConfigInterface *config)
 
 	nm_log_info (LOGD_SETTINGS, "Loading connections");
 
-	str_auto_refresh = nm_config_data_get_value (NM_CONFIG_GET_DATA_ORIG,
-	                                             IFNET_KEY_FILE_GROUP, "auto_refresh");
-	if (str_auto_refresh && is_true (str_auto_refresh))
-		auto_refresh = TRUE;
-	g_free (str_auto_refresh);
+	auto_refresh = nm_config_data_get_value_boolean (NM_CONFIG_GET_DATA_ORIG,
+	                                                 IFNET_KEY_FILE_GROUP, "auto_refresh",
+	                                                 FALSE);
 
 	new_connections = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
 
