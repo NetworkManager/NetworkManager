@@ -764,18 +764,20 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 	const char **iter;
 	gboolean keyfile_added = FALSE;
 	gboolean success = TRUE;
+	gboolean add_ibft = FALSE;
+	gboolean has_no_ibft;
+	gssize idx_no_ibft, idx_ibft;
+
+	idx_ibft    = _nm_utils_strv_find_first ((char **) plugins, -1, "ibft");
+	idx_no_ibft = _nm_utils_strv_find_first ((char **) plugins, -1, "no-ibft");
+	has_no_ibft = idx_no_ibft >= 0 && idx_no_ibft > idx_ibft;
+#if WITH_SETTINGS_PLUGIN_IBFT
+	add_ibft = idx_no_ibft < 0 && idx_ibft < 0;
+#endif
 
 	for (iter = plugins; iter && *iter; iter++) {
-		GModule *plugin;
-		gs_free char *full_name = NULL;
-		gs_free char *path = NULL;
-		const char *pname;
+		const char *pname = *iter;
 		GObject *obj;
-		GObject * (*factory_func) (void);
-		struct stat st;
-		int errsv;
-
-		pname = *iter;
 
 		if (!*pname || strchr (pname, '/')) {
 			LOG (LOGL_WARN, "ignore invalid plugin \"%s\"", pname);
@@ -786,6 +788,11 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 			LOG (LOGL_WARN, "skipping deprecated plugin ifcfg-suse");
 			continue;
 		}
+
+		if (!strcmp (pname, "no-ibft"))
+			continue;
+		if (has_no_ibft && !strcmp (pname, "ibft"))
+			continue;
 
 		obj = find_plugin (list, pname);
 		if (obj)
@@ -800,61 +807,79 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 			continue;
 		}
 
-		full_name = g_strdup_printf ("nm-settings-plugin-%s", pname);
-		path = g_module_build_path (NMPLUGINDIR, full_name);
+load_plugin:
+		{
+			GModule *plugin;
+			gs_free char *full_name = NULL;
+			gs_free char *path = NULL;
+			GObject * (*factory_func) (void);
+			struct stat st;
+			int errsv;
 
-		if (stat (path, &st) != 0) {
-			errsv = errno;
-			LOG (LOGL_WARN, "Could not load plugin '%s' from file '%s': %s", pname, path, strerror (errsv));
-			continue;
-		}
-		if (!S_ISREG (st.st_mode)) {
-			LOG (LOGL_WARN, "Could not load plugin '%s' from file '%s': not a file", pname, path);
-			continue;
-		}
-		if (st.st_uid != 0) {
-			LOG (LOGL_WARN, "Could not load plugin '%s' from file '%s': file must be owned by root", pname, path);
-			continue;
-		}
-		if (st.st_mode & (S_IWGRP | S_IWOTH | S_ISUID)) {
-			LOG (LOGL_WARN, "Could not load plugin '%s' from file '%s': invalid file permissions", pname, path);
-			continue;
-		}
+			full_name = g_strdup_printf ("nm-settings-plugin-%s", pname);
+			path = g_module_build_path (NMPLUGINDIR, full_name);
 
-		plugin = g_module_open (path, G_MODULE_BIND_LOCAL);
-		if (!plugin) {
-			LOG (LOGL_WARN, "Could not load plugin '%s' from file '%s': %s",
-			     pname, path, g_module_error ());
-			continue;
+			if (stat (path, &st) != 0) {
+				errsv = errno;
+				LOG (LOGL_WARN, "Could not load plugin '%s' from file '%s': %s", pname, path, strerror (errsv));
+				goto next;
+			}
+			if (!S_ISREG (st.st_mode)) {
+				LOG (LOGL_WARN, "Could not load plugin '%s' from file '%s': not a file", pname, path);
+				goto next;
+			}
+			if (st.st_uid != 0) {
+				LOG (LOGL_WARN, "Could not load plugin '%s' from file '%s': file must be owned by root", pname, path);
+				goto next;
+			}
+			if (st.st_mode & (S_IWGRP | S_IWOTH | S_ISUID)) {
+				LOG (LOGL_WARN, "Could not load plugin '%s' from file '%s': invalid file permissions", pname, path);
+				goto next;
+			}
+
+			plugin = g_module_open (path, G_MODULE_BIND_LOCAL);
+			if (!plugin) {
+				LOG (LOGL_WARN, "Could not load plugin '%s' from file '%s': %s",
+				     pname, path, g_module_error ());
+				goto next;
+			}
+
+			/* errors after this point are fatal, because we loaded the shared library already. */
+
+			if (!g_module_symbol (plugin, "nm_system_config_factory", (gpointer) (&factory_func))) {
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+				             "Could not find plugin '%s' factory function.",
+				             pname);
+				success = FALSE;
+				g_module_close (plugin);
+				break;
+			}
+
+			obj = (*factory_func) ();
+			if (!obj || !NM_IS_SYSTEM_CONFIG_INTERFACE (obj)) {
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+				             "Plugin '%s' returned invalid system config object.",
+				             pname);
+				success = FALSE;
+				g_module_close (plugin);
+				break;
+			}
+
+			g_module_make_resident (plugin);
+			g_object_weak_ref (obj, (GWeakNotify) g_module_close, plugin);
+			g_object_set_data_full (obj, PLUGIN_MODULE_PATH, path, g_free);
+			path = NULL;
+			add_plugin (self, NM_SYSTEM_CONFIG_INTERFACE (obj));
+			list = g_slist_append (list, obj);
 		}
-
-		/* errors after this point are fatal, because we loaded the shared library already. */
-
-		if (!g_module_symbol (plugin, "nm_system_config_factory", (gpointer) (&factory_func))) {
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-			             "Could not find plugin '%s' factory function.",
-			             pname);
-			success = FALSE;
-			g_module_close (plugin);
-			break;
+next:
+		if (add_ibft && !strcmp (pname, "ifcfg-rh")) {
+			/* The plugin ibft is not explicitly mentioned but we just enabled "ifcfg-rh".
+			 * Enable "ibft" by default after "ifcfg-rh". */
+			pname = "ibft";
+			add_ibft = FALSE;
+			goto load_plugin;
 		}
-
-		obj = (*factory_func) ();
-		if (!obj || !NM_IS_SYSTEM_CONFIG_INTERFACE (obj)) {
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-			             "Plugin '%s' returned invalid system config object.",
-			             pname);
-			success = FALSE;
-			g_module_close (plugin);
-			break;
-		}
-
-		g_module_make_resident (plugin);
-		g_object_weak_ref (obj, (GWeakNotify) g_module_close, plugin);
-		g_object_set_data_full (obj, PLUGIN_MODULE_PATH, path, g_free);
-		path = NULL;
-		add_plugin (self, NM_SYSTEM_CONFIG_INTERFACE (obj));
-		list = g_slist_append (list, obj);
 	}
 
 	/* If keyfile plugin was not among configured plugins, add it as the last one */

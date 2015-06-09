@@ -632,6 +632,9 @@ ipv6.ip6-privacy=1
 	    <filename>/etc/sysconfig/network-scripts/ifcfg-*</filename>
 	    files. It currently supports reading Ethernet, Wi-Fi,
 	    InfiniBand, VLAN, Bond, Bridge, and Team connections.
+	    Enabling <literal>ifcfg-rh</literal> implicitly enables
+	    <literal>ibft</literal> plugin, if it is available.
+	    This can be disabled by adding <literal>no-ibft</literal>.
 	  </para>
 	</listitem>
       </varlistentry>
@@ -665,12 +668,16 @@ ipv6.ip6-privacy=1
       </varlistentry>
 
       <varlistentry>
-	<term><varname>ibft</varname></term>
+	<term><varname>ibft</varname>, <varname>no-ibft</varname></term>
 	<listitem>
 	  <para>
 	    This plugin allows to read iBFT configuration (iSCSI Boot Firmware Table).
 	    The configuration is read using /sbin/iscsiadm. Users are expected to
 	    configure iBFT connections via the firmware interfaces.
+	    If ibft support is available, it is automatically enabled after
+	    <literal>ifcfg-rh</literal>. This can be disabled by <literal>no-ibft</literal>.
+	    You can also explicitly specify <literal>ibft</literal> to load the
+	    plugin without <literal>ifcfg-rh</literal> or to change the plugin order.
 	  </para>
 	</listitem>
       </varlistentry>
