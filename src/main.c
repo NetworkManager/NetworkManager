@@ -412,6 +412,7 @@ main (int argc, char *argv[])
 	dbus_glib_global_set_disable_legacy_property_access ();
 
 	nm_log_info (LOGD_CORE, "Read config: %s", nm_config_data_get_config_description (nm_config_get_data (config)));
+	nm_config_data_log (nm_config_get_data (config), "CONFIG: ");
 	nm_log_dbg (LOGD_CORE, "WEXT support is %s",
 #if HAVE_WEXT
 	             "enabled"

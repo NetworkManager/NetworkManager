@@ -29,6 +29,7 @@
 #include "nm-core-internal.h"
 #include "nm-keyfile-internal.h"
 #include "nm-macros-internal.h"
+#include "nm-logging.h"
 
 typedef struct {
 	char *group_name;
@@ -208,6 +209,94 @@ nm_config_data_get_assume_ipv6ll_only (const NMConfigData *self, NMDevice *devic
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
 	return nm_device_spec_match_list (device, NM_CONFIG_DATA_GET_PRIVATE (self)->assume_ipv6ll_only);
+}
+
+/************************************************************************/
+
+static int
+_nm_config_data_log_sort (const char **pa, const char **pb, gpointer dummy)
+{
+	gboolean a_is_connection, b_is_connection;
+	const char *a = *pa;
+	const char *b = *pb;
+
+	/* we sort connection groups before intern groups (to the end). */
+	a_is_connection = a && g_str_has_prefix (a, NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION);
+	b_is_connection = b && g_str_has_prefix (b, NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION);
+
+	if (a_is_connection && b_is_connection) {
+		/* if both are connection groups, we want the explicit [connection] group first. */
+		a_is_connection = a[STRLEN (NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION)] == '\0';
+		b_is_connection = b[STRLEN (NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION)] == '\0';
+
+		if (a_is_connection != b_is_connection) {
+			if (a_is_connection)
+				return -1;
+			return 1;
+		}
+		/* the sections are ordered lowest-priority first. Reverse their order. */
+		return pa < pb ? 1 : -1;
+	}
+	if (a_is_connection && !b_is_connection)
+		return 1;
+	if (b_is_connection && !a_is_connection)
+		return -1;
+
+	/* no reordering. */
+	return 0;
+}
+
+void
+nm_config_data_log (const NMConfigData *self, const char *prefix)
+{
+	NMConfigDataPrivate *priv;
+	gs_strfreev char **groups = NULL;
+	gsize ngroups;
+	guint g, k;
+
+	g_return_if_fail (NM_IS_CONFIG_DATA (self));
+
+	if (!nm_logging_enabled (LOGL_DEBUG, LOGD_CORE))
+		return;
+
+	if (!prefix)
+		prefix = "";
+
+#define _LOG(...) _nm_log (LOGL_DEBUG, LOGD_CORE, 0, "%s"_NM_UTILS_MACRO_FIRST(__VA_ARGS__), prefix _NM_UTILS_MACRO_REST (__VA_ARGS__))
+
+	priv = NM_CONFIG_DATA_GET_PRIVATE (self);
+
+	groups = g_key_file_get_groups (priv->keyfile, &ngroups);
+	if (!groups)
+		ngroups = 0;
+
+	if (groups && groups[0]) {
+		g_qsort_with_data (groups, ngroups,
+		                   sizeof (char *),
+		                   (GCompareDataFunc) _nm_config_data_log_sort,
+		                   NULL);
+	}
+
+	_LOG ("config-data[%p]: %lu groups", self, (unsigned long) ngroups);
+
+	for (g = 0; g < ngroups; g++) {
+		const char *group = groups[g];
+		gs_strfreev char **keys = NULL;
+
+		_LOG ("");
+		_LOG ("[%s]", group);
+
+		keys = g_key_file_get_keys (priv->keyfile, group, NULL, NULL);
+		for (k = 0; keys && keys[k]; k++) {
+			const char *key = keys[k];
+			gs_free char *value = NULL;
+
+			value = g_key_file_get_value (priv->keyfile, group, key, NULL);
+			_LOG ("  %s=%s", key, value);
+		}
+	}
+
+#undef _LOG
 }
 
 /************************************************************************/

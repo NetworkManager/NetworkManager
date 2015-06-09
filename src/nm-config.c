@@ -933,6 +933,7 @@ _set_config_data (NMConfig *self, NMConfigData *new_data, int signal)
 	if (new_data) {
 		nm_log_info (LOGD_CORE, "config: update %s (%s)", nm_config_data_get_config_description (new_data),
 		             (log_str = nm_config_change_flags_to_string (changes)));
+		nm_config_data_log (new_data, "CONFIG: ");
 		priv->config_data = new_data;
 	} else if (had_new_data)
 		nm_log_info (LOGD_CORE, "config: signal %s (no changes from disk)", (log_str = nm_config_change_flags_to_string (changes)));
