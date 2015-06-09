@@ -591,7 +591,7 @@ get_unmanaged_specs (NMSystemConfigInterface *config)
 
 	key_file = nm_config_create_keyfile ();
 	if (parse_key_file_allow_none (priv, key_file, &error))
-		specs = nm_config_get_device_match_spec (key_file, "keyfile", "unmanaged-devices");
+		specs = nm_config_get_device_match_spec (key_file, NM_CONFIG_KEYFILE_GROUP_KEYFILE, "unmanaged-devices");
 
 	if (error) {
 		nm_log_warn (LOGD_SETTINGS, "keyfile: error getting unmanaged specs: %s", error->message);
@@ -617,7 +617,7 @@ plugin_get_hostname (SCPluginKeyfile *plugin)
 	if (!parse_key_file_allow_none (priv, key_file, &error))
 		goto out;
 
-	hostname = g_key_file_get_value (key_file, "keyfile", "hostname", NULL);
+	hostname = g_key_file_get_value (key_file, NM_CONFIG_KEYFILE_GROUP_KEYFILE, "hostname", NULL);
 
  out:
 	if (error) {
@@ -653,7 +653,7 @@ plugin_set_hostname (SCPluginKeyfile *plugin, const char *hostname)
 	if (!parse_key_file_allow_none (priv, key_file, &error))
 		goto out;
 
-	g_key_file_set_string (key_file, "keyfile", "hostname", hostname);
+	g_key_file_set_string (key_file, NM_CONFIG_KEYFILE_GROUP_KEYFILE, "hostname", hostname);
 
 	data = g_key_file_to_data (key_file, &len, &error);
 	if (!data)

@@ -48,6 +48,20 @@ G_BEGIN_DECLS
 
 #define NM_CONFIG_KEYFILE_LIST_SEPARATOR ','
 
+#define NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION            "connection"
+
+#define NM_CONFIG_KEYFILE_GROUP_MAIN                        "main"
+#define NM_CONFIG_KEYFILE_GROUP_LOGGING                     "logging"
+#define NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY                "connectivity"
+
+#define NM_CONFIG_KEYFILE_GROUP_KEYFILE                     "keyfile"
+#define NM_CONFIG_KEYFILE_GROUP_IFUPDOWN                    "ifupdown"
+#define NM_CONFIG_KEYFILE_GROUP_IFNET                       "ifnet"
+
+#define NM_CONFIG_KEYFILE_KEY_IFNET_AUTO_REFRESH            "auto_refresh"
+#define NM_CONFIG_KEYFILE_KEY_IFNET_MANAGED                 "managed"
+#define NM_CONFIG_KEYFILE_KEY_IFUPDOWN_MANAGED              "managed"
+
 typedef struct NMConfigCmdLineOptions NMConfigCmdLineOptions;
 
 struct _NMConfig {
