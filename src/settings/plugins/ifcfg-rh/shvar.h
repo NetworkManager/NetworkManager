@@ -62,7 +62,7 @@ char *svGetValueFull (shvarFile *s, const char *key, gboolean verbatim);
  * return FALSE if <key> resolves to any non-truth value (e.g. "no", "n", "false")
  * return <def> otherwise
  */
-gboolean svTrueValue (shvarFile *s, const char *key, gboolean def);
+gint svTrueValue (shvarFile *s, const char *key, gint def);
 
 gint64 svGetValueInt64 (shvarFile *s, const char *key, guint base, gint64 min, gint64 max, gint64 fallback);
 

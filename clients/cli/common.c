@@ -522,6 +522,23 @@ nmc_device_state_to_string (NMDeviceState state)
 }
 
 const char *
+nmc_device_metered_to_string (NMMetered value)
+{
+	switch (value) {
+	case NM_METERED_YES:
+		return _("yes");
+	case NM_METERED_NO:
+		return _("no");
+	case NM_METERED_GUESS_YES:
+		return _("yes (guessed)");
+	case NM_METERED_GUESS_NO:
+		return _("no (guessed)");
+	default:
+		return _("unknown");
+	}
+}
+
+const char *
 nmc_device_reason_to_string (NMDeviceStateReason reason)
 {
 	switch (reason) {

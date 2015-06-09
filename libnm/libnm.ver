@@ -848,9 +848,12 @@ local:
 libnm_1_2_0 {
 global:
 	nm_access_point_get_last_seen;
+	nm_device_get_metered;
 	nm_device_get_nm_plugin_missing;
+	nm_metered_get_type;
 	nm_setting_802_1x_check_cert_scheme;
 	nm_setting_bridge_get_multicast_snooping;
+	nm_setting_connection_get_metered;
 	nm_setting_ip_config_add_dns_option;
 	nm_setting_ip_config_clear_dns_options;
 	nm_setting_ip_config_get_dns_option;

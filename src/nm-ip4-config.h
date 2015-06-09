@@ -161,6 +161,10 @@ void nm_ip4_config_set_mtu (NMIP4Config *config, guint32 mtu, NMIPConfigSource s
 guint32 nm_ip4_config_get_mtu (const NMIP4Config *config);
 NMIPConfigSource nm_ip4_config_get_mtu_source (const NMIP4Config *config);
 
+/* Metered */
+void nm_ip4_config_set_metered (NMIP4Config *config, gboolean metered);
+gboolean nm_ip4_config_get_metered (const NMIP4Config *config);
+
 void nm_ip4_config_hash (const NMIP4Config *config, GChecksum *sum, gboolean dns_only);
 gboolean nm_ip4_config_equal (const NMIP4Config *a, const NMIP4Config *b);
 

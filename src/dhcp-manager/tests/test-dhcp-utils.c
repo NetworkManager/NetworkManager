@@ -176,6 +176,30 @@ test_wins_options (void)
 }
 
 static void
+test_vendor_option_metered (void)
+{
+	GHashTable *options;
+	NMIP4Config *ip4_config;
+	static const Option data[] = {
+		{ "vendor_encapsulated_options", "ANDROID_METERED" },
+		{ NULL, NULL }
+	};
+
+	options = fill_table (generic_options, NULL);
+	ip4_config = nm_dhcp_utils_ip4_config_from_options (1, "eth0", options, 0);
+	g_assert (ip4_config);
+	g_assert (nm_ip4_config_get_metered (ip4_config) == FALSE);
+	g_hash_table_destroy (options);
+
+	options = fill_table (generic_options, NULL);
+	options = fill_table (data, options);
+	ip4_config = nm_dhcp_utils_ip4_config_from_options (1, "eth0", options, 0);
+	g_assert (ip4_config);
+	g_assert (nm_ip4_config_get_metered (ip4_config) == TRUE);
+	g_hash_table_destroy (options);
+}
+
+static void
 ip4_test_route (NMIP4Config *ip4_config,
                 guint route_num,
                 const char *expected_dest,
@@ -716,6 +740,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/dhcp/ip4-missing-prefix-8", test_ip4_missing_prefix_8);
 	g_test_add_func ("/dhcp/ip4-prefix-classless", test_ip4_prefix_classless);
 	g_test_add_func ("/dhcp/client-id-from-string", test_client_id_from_string);
+	g_test_add_func ("/dhcp/vendor-option-metered", test_vendor_option_metered);
 
 	return g_test_run ();
 }

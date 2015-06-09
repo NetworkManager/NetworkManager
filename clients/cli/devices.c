@@ -79,11 +79,12 @@ static NmcOutputField nmc_fields_dev_show_general[] = {
 	{"CONNECTION",        N_("CONNECTION"),        20},  /* 21 */
 	{"CON-UUID",          N_("CON-UUID"),          38},  /* 22 */
 	{"CON-PATH",          N_("CON-PATH"),          51},  /* 23 */
+	{"METERED",           N_("METERED"),           10},  /* 24 */
 	{NULL, NULL, 0}
 };
 #define NMC_FIELDS_DEV_SHOW_GENERAL_ALL     "NAME,DEVICE,TYPE,NM-TYPE,VENDOR,PRODUCT,DRIVER,DRIVER-VERSION,FIRMWARE-VERSION,HWADDR,MTU,"\
                                             "STATE,REASON,UDI,IP-IFACE,IS-SOFTWARE,NM-MANAGED,AUTOCONNECT,FIRMWARE-MISSING,NM-PLUGIN-MISSING,"\
-                                            "PHYS-PORT-ID,CONNECTION,CON-UUID,CON-PATH"
+                                            "PHYS-PORT-ID,CONNECTION,CON-UUID,CON-PATH,METERED"
 #define NMC_FIELDS_DEV_SHOW_GENERAL_COMMON  "NAME,DEVICE,TYPE,VENDOR,PRODUCT,DRIVER,HWADDR,STATE"
 
 /* Available fields for 'device show' - CONNECTIONS part */
@@ -845,6 +846,7 @@ show_device_info (NMDevice *device, NmCli *nmc)
 			set_val_strc (arr, 21, get_active_connection_id (device));
 			set_val_strc (arr, 22, acon ? nm_active_connection_get_uuid (acon) : NULL);
 			set_val_strc (arr, 23, acon ? nm_object_get_path (NM_OBJECT (acon)) : NULL);
+			set_val_strc (arr, 24, nmc_device_metered_to_string (nm_device_get_metered (device)));
 			g_ptr_array_add (nmc->output_data, arr);
 
 			print_data (nmc);  /* Print all data */

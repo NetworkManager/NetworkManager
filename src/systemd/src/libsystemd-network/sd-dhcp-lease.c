@@ -180,6 +180,19 @@ int sd_dhcp_lease_get_routes(sd_dhcp_lease *lease, struct sd_dhcp_route **routes
         return 0;
 }
 
+int sd_dhcp_lease_get_vendor_specific(sd_dhcp_lease *lease, uint8_t **data) {
+        assert_return(lease, -EINVAL);
+        assert_return(data, -EINVAL);
+
+        if (lease->vendor_specific) {
+                *data = lease->vendor_specific;
+                return lease->vendor_specific_size;
+        } else
+                return -ENOENT;
+
+        return 0;
+}
+
 sd_dhcp_lease *sd_dhcp_lease_ref(sd_dhcp_lease *lease) {
         if (lease)
                 assert_se(REFCNT_INC(lease->n_ref) >= 2);
@@ -270,6 +283,24 @@ static int lease_parse_string(const uint8_t *option, size_t len, char **ret) {
 
                 free(*ret);
                 *ret = string;
+        }
+
+        return 0;
+}
+
+static int lease_parse_binary(const uint8_t *option, size_t len, uint8_t **ret) {
+        assert (option);
+        assert (ret);
+
+        if (len >= 1) {
+                uint8_t *data;
+
+                data = memdup(option, len);
+                if (!data)
+                        return -errno;
+
+                free(*ret);
+                *ret = data;
         }
 
         return 0;
@@ -571,6 +602,14 @@ int dhcp_lease_parse_options(uint8_t code, uint8_t len, const uint8_t *option,
                         return r;
 
                 break;
+
+        case DHCP_OPTION_VENDOR_SPECIFIC:
+               r = lease_parse_binary(option, len, &lease->vendor_specific);
+               if (r < 0)
+                       return r;
+               lease->vendor_specific_size = len;
+
+               break;
         }
 
         return 0;
@@ -598,6 +637,7 @@ int sd_dhcp_lease_save(sd_dhcp_lease *lease, const char *lease_file) {
         const uint8_t *client_id;
         size_t client_id_len;
         const char *string;
+        uint8_t *data;
         uint16_t mtu;
         struct sd_dhcp_route *routes;
         int r;
@@ -669,6 +709,18 @@ int sd_dhcp_lease_save(sd_dhcp_lease *lease, const char *lease_file) {
         r = sd_dhcp_lease_get_routes(lease, &routes);
         if (r >= 0)
                 serialize_dhcp_routes(f, "ROUTES", routes, r);
+
+        r = sd_dhcp_lease_get_vendor_specific(lease, &data);
+        if (r >= 0) {
+                _cleanup_free_ char *option_hex = NULL;
+
+                option_hex = hexmem(data, r);
+                if (!option_hex) {
+                        r = -ENOMEM;
+                        goto finish;
+                }
+                fprintf(f, "VENDOR_SPECIFIC=%s\n", option_hex);
+        }
 
         r = sd_dhcp_lease_get_client_id(lease, &client_id, &client_id_len);
         if (r >= 0) {
