@@ -95,16 +95,18 @@ NMConfig *nm_config_new (const NMConfigCmdLineOptions *cli, GError **error);
 NMConfig *nm_config_setup (const NMConfigCmdLineOptions *cli, GError **error);
 void nm_config_reload (NMConfig *config, int signal);
 
+gint nm_config_parse_boolean (const char *str, gint default_value);
+
 GKeyFile *nm_config_create_keyfile (void);
-gboolean nm_config_keyfile_get_boolean (GKeyFile *keyfile,
-                                        const char *section,
+gint nm_config_keyfile_get_boolean (GKeyFile *keyfile,
+                                    const char *section,
+                                    const char *key,
+                                    gint default_value);
+void nm_config_keyfile_set_string_list (GKeyFile *keyfile,
+                                        const char *group,
                                         const char *key,
-                                        gboolean default_value);
-void     nm_config_keyfile_set_string_list (GKeyFile *keyfile,
-                                            const char *group,
-                                            const char *key,
-                                            const char *const* strv,
-                                            gssize len);
+                                        const char *const* strv,
+                                        gssize len);
 GSList *nm_config_get_device_match_spec (const GKeyFile *keyfile, const char *group, const char *key);
 
 G_END_DECLS
