@@ -108,11 +108,13 @@ nm_config_data_get_config_description (const NMConfigData *self)
 }
 
 char *
-nm_config_data_get_value (const NMConfigData *self, const char *group, const char *key, GError **error)
+nm_config_data_get_value (const NMConfigData *self, const char *group, const char *key)
 {
 	g_return_val_if_fail (self, NULL);
+	g_return_val_if_fail (group && *group, NULL);
+	g_return_val_if_fail (key && *key, NULL);
 
-	return g_key_file_get_string (NM_CONFIG_DATA_GET_PRIVATE (self)->keyfile, group, key, error);
+	return g_key_file_get_string (NM_CONFIG_DATA_GET_PRIVATE (self)->keyfile, group, key, NULL);
 }
 
 const char *

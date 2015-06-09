@@ -323,8 +323,8 @@ config_changed_cb (NMConfig *config,
 {
 	gs_free char *old_value = NULL, *new_value = NULL;
 
-	old_value = nm_config_data_get_value (old_data, "keyfile", "unmanaged-devices", NULL);
-	new_value = nm_config_data_get_value (config_data, "keyfile", "unmanaged-devices", NULL);
+	old_value = nm_config_data_get_value (old_data, "keyfile", "unmanaged-devices");
+	new_value = nm_config_data_get_value (config_data, "keyfile", "unmanaged-devices");
 
 	if (g_strcmp0 (old_value, new_value) != 0)
 		g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
@@ -526,7 +526,7 @@ get_unmanaged_specs (NMSystemConfigInterface *config)
 	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (config);
 	gs_free char *value = NULL;
 
-	value = nm_config_data_get_value (nm_config_get_data (priv->config), "keyfile", "unmanaged-devices", NULL);
+	value = nm_config_data_get_value (nm_config_get_data (priv->config), "keyfile", "unmanaged-devices");
 	return nm_match_spec_split (value);
 }
 
@@ -647,7 +647,7 @@ nm_settings_keyfile_plugin_new (void)
 
 		priv->config = g_object_ref (nm_config_get ());
 		value = nm_config_data_get_value (nm_config_get_data (priv->config),
-		                                  "keyfile", "hostname", NULL);
+		                                  "keyfile", "hostname");
 		if (value) {
 			nm_log_warn (LOGD_SETTINGS, "keyfile: 'hostname' option is deprecated and has no effect");
 			g_free (value);

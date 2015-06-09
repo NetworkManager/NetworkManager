@@ -303,7 +303,6 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 	GHashTable *auto_ifaces;
 	if_block *block = NULL;
 	char *value;
-	GError *error = NULL;
 	GList *keys, *iter;
 	GHashTableIter con_iter;
 	const char *block_name;
@@ -421,17 +420,11 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 
 	/* Check the config file to find out whether to manage interfaces */
 	value = nm_config_data_get_value (nm_config_get_data_orig (nm_config_get ()),
-	                                  IFUPDOWN_KEY_FILE_GROUP, IFUPDOWN_KEY_FILE_KEY_MANAGED,
-	                                  &error);
-	if (error) {
-		nm_log_info (LOGD_SETTINGS, "loading system config file (%s) caused error: %s",
-		             nm_config_data_get_config_main_file (nm_config_get_data (nm_config_get ())),
-		             error->message);
-	} else {
+	                                  IFUPDOWN_KEY_FILE_GROUP, IFUPDOWN_KEY_FILE_KEY_MANAGED);
+	if (value) {
 		gboolean manage_well_known;
-		error = NULL;
 
-		manage_well_known = !g_strcmp0 (value, "true") || !g_strcmp0 (value, "1");
+		manage_well_known = !strcmp (value, "true") || !strcmp (value, "1");
 		priv->unmanage_well_known = !manage_well_known;
 		g_free (value);
 	}

@@ -84,7 +84,7 @@ NMConfigChangeFlags nm_config_data_diff (NMConfigData *old_data, NMConfigData *n
 const char *nm_config_data_get_config_main_file (const NMConfigData *config_data);
 const char *nm_config_data_get_config_description (const NMConfigData *config_data);
 
-char *nm_config_data_get_value (const NMConfigData *config_data, const char *group, const char *key, GError **error);
+char *nm_config_data_get_value (const NMConfigData *config_data, const char *group, const char *key);
 
 const char *nm_config_data_get_connectivity_uri (const NMConfigData *config_data);
 const guint nm_config_data_get_connectivity_interval (const NMConfigData *config_data);
