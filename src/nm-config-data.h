@@ -85,6 +85,7 @@ const char *nm_config_data_get_config_main_file (const NMConfigData *config_data
 const char *nm_config_data_get_config_description (const NMConfigData *config_data);
 
 char *nm_config_data_get_value (const NMConfigData *config_data, const char *group, const char *key);
+gint nm_config_data_get_value_boolean (const NMConfigData *self, const char *group, const char *key, gint default_value);
 
 const char *nm_config_data_get_connectivity_uri (const NMConfigData *config_data);
 const guint nm_config_data_get_connectivity_interval (const NMConfigData *config_data);

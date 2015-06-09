@@ -117,6 +117,20 @@ nm_config_data_get_value (const NMConfigData *self, const char *group, const cha
 	return g_key_file_get_string (NM_CONFIG_DATA_GET_PRIVATE (self)->keyfile, group, key, NULL);
 }
 
+gint
+nm_config_data_get_value_boolean (const NMConfigData *self, const char *group, const char *key, gint default_value)
+{
+	char *str;
+	gint value = default_value;
+
+	str = nm_config_data_get_value (self, group, key);
+	if (str) {
+		value = nm_config_parse_boolean (str, default_value);
+		g_free (str);
+	}
+	return value;
+}
+
 const char *
 nm_config_data_get_connectivity_uri (const NMConfigData *self)
 {
