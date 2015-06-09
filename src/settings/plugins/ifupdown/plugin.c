@@ -419,7 +419,7 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 	g_hash_table_destroy (auto_ifaces);
 
 	/* Check the config file to find out whether to manage interfaces */
-	value = nm_config_data_get_value (nm_config_get_data_orig (nm_config_get ()),
+	value = nm_config_data_get_value (NM_CONFIG_GET_DATA_ORIG,
 	                                  IFUPDOWN_KEY_FILE_GROUP, IFUPDOWN_KEY_FILE_KEY_MANAGED);
 	if (value) {
 		gboolean manage_well_known;

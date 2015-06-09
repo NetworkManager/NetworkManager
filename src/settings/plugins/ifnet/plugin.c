@@ -84,7 +84,7 @@ is_managed_plugin (void)
 {
 	char *result = NULL;
 
-	result = nm_config_data_get_value (nm_config_get_data_orig (nm_config_get ()),
+	result = nm_config_data_get_value (NM_CONFIG_GET_DATA_ORIG,
 	                                   IFNET_KEY_FILE_GROUP, IFNET_KEY_FILE_KEY_MANAGED);
 	if (result) {
 		gboolean ret = is_true (result);
@@ -217,7 +217,7 @@ reload_connections (NMSystemConfigInterface *config)
 
 	nm_log_info (LOGD_SETTINGS, "Loading connections");
 
-	str_auto_refresh = nm_config_data_get_value (nm_config_get_data_orig (nm_config_get ()),
+	str_auto_refresh = nm_config_data_get_value (NM_CONFIG_GET_DATA_ORIG,
 	                                             IFNET_KEY_FILE_GROUP, "auto_refresh");
 	if (str_auto_refresh && is_true (str_auto_refresh))
 		auto_refresh = TRUE;
