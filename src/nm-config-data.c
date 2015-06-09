@@ -111,10 +111,12 @@ nm_config_data_get_config_description (const NMConfigData *self)
 char *
 nm_config_data_get_value (const NMConfigData *self, const char *group, const char *key)
 {
-	g_return_val_if_fail (self, NULL);
+	g_return_val_if_fail (NM_IS_CONFIG_DATA (self), NULL);
 	g_return_val_if_fail (group && *group, NULL);
 	g_return_val_if_fail (key && *key, NULL);
 
+	/* nm_config_data_get_value() translates to g_key_file_get_string(), because we want
+	 * to use the string representation, not the (raw) GKeyFile value. */
 	return g_key_file_get_string (NM_CONFIG_DATA_GET_PRIVATE (self)->keyfile, group, key, NULL);
 }
 
@@ -124,7 +126,12 @@ nm_config_data_get_value_boolean (const NMConfigData *self, const char *group, c
 	char *str;
 	gint value = default_value;
 
-	str = nm_config_data_get_value (self, group, key);
+	g_return_val_if_fail (NM_IS_CONFIG_DATA (self), default_value);
+	g_return_val_if_fail (group && *group, default_value);
+	g_return_val_if_fail (key && *key, default_value);
+
+	/* when parsing the boolean, base it on the raw value from g_key_file_get_value(). */
+	str = g_key_file_get_value (NM_CONFIG_DATA_GET_PRIVATE (self)->keyfile, group, key, NULL);
 	if (str) {
 		value = nm_config_parse_boolean (str, default_value);
 		g_free (str);
@@ -322,7 +329,7 @@ nm_config_data_get_connection_default (const NMConfigData *self,
 		char *value;
 		gboolean match;
 
-		value = g_key_file_get_value (priv->keyfile, connection_info->group_name, property, NULL);
+		value = g_key_file_get_string (priv->keyfile, connection_info->group_name, property, NULL);
 		if (!value && !connection_info->stop_match)
 			continue;
 
@@ -340,17 +347,13 @@ nm_config_data_get_connection_default (const NMConfigData *self,
 static void
 _get_connection_info_init (ConnectionInfo *connection_info, GKeyFile *keyfile, char *group)
 {
-	char *value;
-
 	/* pass ownership of @group on... */
 	connection_info->group_name = group;
 
-	value = g_key_file_get_value (keyfile, group, "match-device", NULL);
-	if (value) {
-		connection_info->match_device.has = TRUE;
-		connection_info->match_device.spec = nm_match_spec_split (value);
-		g_free (value);
-	}
+	connection_info->match_device.spec = nm_config_get_device_match_spec (keyfile,
+	                                                                      group,
+	                                                                      "match-device",
+	                                                                      &connection_info->match_device.has);
 	connection_info->stop_match = nm_config_keyfile_get_boolean (keyfile, group, "stop-match", FALSE);
 }
 
@@ -581,24 +584,24 @@ constructed (GObject *object)
 
 	priv->connection_infos = _get_connection_infos (priv->keyfile);
 
-	priv->connectivity.uri = g_key_file_get_value (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, "uri", NULL);
-	priv->connectivity.response = g_key_file_get_value (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, "response", NULL);
+	priv->connectivity.uri = g_key_file_get_string (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, "uri", NULL);
+	priv->connectivity.response = g_key_file_get_string (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, "response", NULL);
 
 	/* On missing config value, fallback to 300. On invalid value, disable connectivity checking by setting
 	 * the interval to zero. */
-	interval = g_key_file_get_value (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, "interval", NULL);
+	interval = g_key_file_get_string (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, "interval", NULL);
 	priv->connectivity.interval = interval
 	    ? _nm_utils_ascii_str_to_int64 (interval, 10, 0, G_MAXUINT, 0)
 	    : NM_CONFIG_DEFAULT_CONNECTIVITY_INTERVAL;
 	g_free (interval);
 
-	priv->dns_mode = g_key_file_get_value (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "dns", NULL);
-	priv->rc_manager = g_key_file_get_value (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "rc-manager", NULL);
+	priv->dns_mode = g_key_file_get_string (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "dns", NULL);
+	priv->rc_manager = g_key_file_get_string (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "rc-manager", NULL);
 
-	priv->ignore_carrier = nm_config_get_device_match_spec (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "ignore-carrier");
-	priv->assume_ipv6ll_only = nm_config_get_device_match_spec (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "assume-ipv6ll-only");
+	priv->ignore_carrier = nm_config_get_device_match_spec (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "ignore-carrier", NULL);
+	priv->assume_ipv6ll_only = nm_config_get_device_match_spec (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "assume-ipv6ll-only", NULL);
 
-	priv->no_auto_default.specs_config = nm_config_get_device_match_spec (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "no-auto-default");
+	priv->no_auto_default.specs_config = nm_config_get_device_match_spec (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "no-auto-default", NULL);
 
 	G_OBJECT_CLASS (nm_config_data_parent_class)->constructed (object);
 }
