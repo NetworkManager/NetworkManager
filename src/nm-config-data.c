@@ -284,8 +284,8 @@ _get_connection_infos (GKeyFile *keyfile)
 		ngroups = 0;
 	else if (ngroups > 0) {
 		for (i = 0, j = 0; i < ngroups; i++) {
-			if (g_str_has_prefix (groups[i], "connection")) {
-				if (groups[i][STRLEN ("connection")] == '\0')
+			if (g_str_has_prefix (groups[i], NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION)) {
+				if (groups[i][STRLEN (NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION)] == '\0')
 					connection_tag = groups[i];
 				else
 					groups[j++] = groups[i];
@@ -492,24 +492,24 @@ constructed (GObject *object)
 
 	priv->connection_infos = _get_connection_infos (priv->keyfile);
 
-	priv->connectivity.uri = g_key_file_get_value (priv->keyfile, "connectivity", "uri", NULL);
-	priv->connectivity.response = g_key_file_get_value (priv->keyfile, "connectivity", "response", NULL);
+	priv->connectivity.uri = g_key_file_get_value (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, "uri", NULL);
+	priv->connectivity.response = g_key_file_get_value (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, "response", NULL);
 
 	/* On missing config value, fallback to 300. On invalid value, disable connectivity checking by setting
 	 * the interval to zero. */
-	interval = g_key_file_get_value (priv->keyfile, "connectivity", "interval", NULL);
+	interval = g_key_file_get_value (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, "interval", NULL);
 	priv->connectivity.interval = interval
 	    ? _nm_utils_ascii_str_to_int64 (interval, 10, 0, G_MAXUINT, 0)
 	    : NM_CONFIG_DEFAULT_CONNECTIVITY_INTERVAL;
 	g_free (interval);
 
-	priv->dns_mode = g_key_file_get_value (priv->keyfile, "main", "dns", NULL);
-	priv->rc_manager = g_key_file_get_value (priv->keyfile, "main", "rc-manager", NULL);
+	priv->dns_mode = g_key_file_get_value (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "dns", NULL);
+	priv->rc_manager = g_key_file_get_value (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "rc-manager", NULL);
 
-	priv->ignore_carrier = nm_config_get_device_match_spec (priv->keyfile, "main", "ignore-carrier");
-	priv->assume_ipv6ll_only = nm_config_get_device_match_spec (priv->keyfile, "main", "assume-ipv6ll-only");
+	priv->ignore_carrier = nm_config_get_device_match_spec (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "ignore-carrier");
+	priv->assume_ipv6ll_only = nm_config_get_device_match_spec (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "assume-ipv6ll-only");
 
-	priv->no_auto_default.specs_config = nm_config_get_device_match_spec (priv->keyfile, "main", "no-auto-default");
+	priv->no_auto_default.specs_config = nm_config_get_device_match_spec (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "no-auto-default");
 
 	G_OBJECT_CLASS (nm_config_data_parent_class)->constructed (object);
 }

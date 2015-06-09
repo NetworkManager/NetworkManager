@@ -46,7 +46,6 @@
 #define IFNET_PLUGIN_NAME_PRINT "ifnet"
 #define IFNET_PLUGIN_INFO "(C) 1999-2010 Gentoo Foundation, Inc. To report bugs please use bugs.gentoo.org with [networkmanager] or [qiaomuf] prefix."
 #define IFNET_MANAGE_WELL_KNOWN_DEFAULT TRUE
-#define IFNET_KEY_FILE_KEY_MANAGED "managed"
 
 typedef struct {
 	GHashTable *connections;  /* uuid::connection */
@@ -83,7 +82,7 @@ static gboolean
 is_managed_plugin (void)
 {
 	return nm_config_data_get_value_boolean (NM_CONFIG_GET_DATA_ORIG,
-	                                         IFNET_KEY_FILE_GROUP, IFNET_KEY_FILE_KEY_MANAGED,
+	                                         NM_CONFIG_KEYFILE_GROUP_IFNET, NM_CONFIG_KEYFILE_KEY_IFNET_MANAGED,
 	                                         IFNET_MANAGE_WELL_KNOWN_DEFAULT);
 }
 
@@ -210,7 +209,7 @@ reload_connections (NMSystemConfigInterface *config)
 	nm_log_info (LOGD_SETTINGS, "Loading connections");
 
 	auto_refresh = nm_config_data_get_value_boolean (NM_CONFIG_GET_DATA_ORIG,
-	                                                 IFNET_KEY_FILE_GROUP, "auto_refresh",
+	                                                 NM_CONFIG_KEYFILE_GROUP_IFNET, NM_CONFIG_KEYFILE_KEY_IFNET_AUTO_REFRESH,
 	                                                 FALSE);
 
 	new_connections = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);

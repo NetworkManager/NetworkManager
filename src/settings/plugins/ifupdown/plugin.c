@@ -59,8 +59,6 @@
 #define IFUPDOWN_PLUGIN_NAME "ifupdown"
 #define IFUPDOWN_PLUGIN_INFO "(C) 2008 Canonical Ltd.  To report bugs please use the NetworkManager mailing list."
 
-#define IFUPDOWN_KEY_FILE_GROUP "ifupdown"
-#define IFUPDOWN_KEY_FILE_KEY_MANAGED "managed"
 #define IFUPDOWN_UNMANAGE_WELL_KNOWN_DEFAULT TRUE
 
 /* #define ALWAYS_UNMANAGE TRUE */
@@ -417,8 +415,8 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 
 	/* Check the config file to find out whether to manage interfaces */
 	priv->unmanage_well_known = !nm_config_data_get_value_boolean (NM_CONFIG_GET_DATA_ORIG,
-	                                                               IFUPDOWN_KEY_FILE_GROUP,
-	                                                               IFUPDOWN_KEY_FILE_KEY_MANAGED,
+	                                                               NM_CONFIG_KEYFILE_GROUP_IFUPDOWN,
+	                                                               NM_CONFIG_KEYFILE_KEY_IFUPDOWN_MANAGED,
 	                                                               !IFUPDOWN_UNMANAGE_WELL_KNOWN_DEFAULT);
 	nm_log_info (LOGD_SETTINGS, "management mode: %s", priv->unmanage_well_known ? "unmanaged" : "managed");
 
