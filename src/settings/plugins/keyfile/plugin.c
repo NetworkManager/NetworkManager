@@ -591,7 +591,7 @@ get_unmanaged_specs (NMSystemConfigInterface *config)
 
 	key_file = nm_config_create_keyfile ();
 	if (parse_key_file_allow_none (priv, key_file, &error))
-		specs = nm_config_get_device_match_spec (key_file, NM_CONFIG_KEYFILE_GROUP_KEYFILE, "unmanaged-devices");
+		specs = nm_config_get_device_match_spec (key_file, NM_CONFIG_KEYFILE_GROUP_KEYFILE, "unmanaged-devices", NULL);
 
 	if (error) {
 		nm_log_warn (LOGD_SETTINGS, "keyfile: error getting unmanaged specs: %s", error->message);
