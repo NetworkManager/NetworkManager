@@ -337,8 +337,8 @@
 
     <property name="Metered" type="u" access="read" tp:type="NM_METERED">
       <tp:docstring>
-        Wheter the connectivity is metered. This is equivalent to the
-        metered property of the device associated with the primary
+        Indicates whether the connectivity is metered. This is equivalent
+        to the metered property of the device associated with the primary
         connection.
       </tp:docstring>
     </property>
