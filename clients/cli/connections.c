@@ -6861,10 +6861,15 @@ editor_main_help (const char *command)
 		case NMC_EDITOR_MAIN_CMD_NMCLI:
 			g_print (_("nmcli [<conf-option> <value>]  :: nmcli configuration\n\n"
 			           "Configures nmcli. The following options are available:\n"
-			           "status-line yes | no        [default: no]\n"
-			           "save-confirmation yes | no  [default: yes]\n"
-			           "show-secrets yes | no       [default: no]\n"
-			           "prompt-color <0-8>          [default: 0]\n"
+			           "status-line yes | no          [default: no]\n"
+			           "save-confirmation yes | no    [default: yes]\n"
+			           "show-secrets yes | no         [default: no]\n"
+			           "prompt-color <color> | <0-8>  [default: 0]\n"
+			           "%s"  /* color table description */
+			           "\n"
+			           "Examples: nmcli> nmcli status-line yes\n"
+			           "          nmcli> nmcli save-confirmation no\n"
+			           "          nmcli> nmcli prompt-color 3\n"),
 			           "  0 = normal\n"
 			           "  1 = \33[30mblack\33[0m\n"
 			           "  2 = \33[31mred\33[0m\n"
@@ -6873,11 +6878,7 @@ editor_main_help (const char *command)
 			           "  5 = \33[34mblue\33[0m\n"
 			           "  6 = \33[35mmagenta\33[0m\n"
 			           "  7 = \33[36mcyan\33[0m\n"
-			           "  8 = \33[37mwhite\33[0m\n"
-			           "\n"
-			           "Examples: nmcli> nmcli status-line yes\n"
-			           "          nmcli> nmcli save-confirmation no\n"
-			           "          nmcli> nmcli prompt-color 3\n"));
+			           "  8 = \33[37mwhite\33[0m\n");
 			break;
 		case NMC_EDITOR_MAIN_CMD_QUIT:
 			g_print (_("quit  :: exit nmcli\n\n"
@@ -8330,12 +8331,13 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				} else
 					nmc->editor_show_secrets = bb;
 			} else if (cmd_arg_p && matches (cmd_arg_p, "prompt-color") == 0) {
-				unsigned long color;
-				if (!nmc_string_to_uint (cmd_arg_v ? g_strstrip (cmd_arg_v) : "X",
-				                         TRUE, 0, 8, &color))
-					g_print (_("Error: bad color number: '%s'; use <0-8>\n"),
-					         cmd_arg_v ? cmd_arg_v : "");
-				else {
+				GError *tmp_err = NULL;
+				NmcTermColor color;
+				color = nmc_term_color_parse_string (cmd_arg_v ? g_strstrip (cmd_arg_v) : " ", &tmp_err);
+				if (tmp_err) {
+					g_print (_("Error: bad color: %s\n"), tmp_err->message);
+					g_clear_error (&tmp_err);
+				} else {
 					nmc->editor_prompt_color = color;
 					g_free (menu_ctx.main_prompt);
 					if (menu_ctx.level == 0)
