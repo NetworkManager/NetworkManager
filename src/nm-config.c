@@ -1010,7 +1010,8 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	else
 		priv->no_auto_default_file = g_strdup (DEFAULT_NO_AUTO_DEFAULT_FILE);
 
-	priv->plugins = g_key_file_get_string_list (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "plugins", NULL, NULL);
+	priv->plugins = _nm_utils_strv_cleanup (g_key_file_get_string_list (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "plugins", NULL, NULL),
+	                                        TRUE, TRUE, TRUE);
 	if (!priv->plugins)
 		priv->plugins = g_new0 (char *, 1);
 
