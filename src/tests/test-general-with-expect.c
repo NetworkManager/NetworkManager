@@ -334,7 +334,7 @@ test_nm_utils_kill_child (void)
 /*******************************************/
 
 static void
-test_nm_ethernet_address_is_valid ()
+test_nm_ethernet_address_is_valid (void)
 {
 	g_assert (!nm_ethernet_address_is_valid (NULL, -1));
 	g_assert (!nm_ethernet_address_is_valid (NULL, ETH_ALEN));

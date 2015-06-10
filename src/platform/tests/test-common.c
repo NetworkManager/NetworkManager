@@ -12,7 +12,7 @@
 
 
 gboolean
-nmtst_platform_is_root_test ()
+nmtst_platform_is_root_test (void)
 {
 	NM_PRAGMA_WARNING_DISABLE("-Wtautological-compare")
 	return (SETUP == nm_linux_platform_setup);
@@ -20,7 +20,7 @@ nmtst_platform_is_root_test ()
 }
 
 gboolean
-nmtst_platform_is_sysfs_writable ()
+nmtst_platform_is_sysfs_writable (void)
 {
 	return    !nmtst_platform_is_root_test ()
 	       || (access ("/sys/devices", W_OK) == 0);
@@ -271,7 +271,7 @@ run_command (const char *format, ...)
 NMTST_DEFINE();
 
 static gboolean
-unshare_user ()
+unshare_user (void)
 {
 	FILE *f;
 	uid_t uid = geteuid ();
