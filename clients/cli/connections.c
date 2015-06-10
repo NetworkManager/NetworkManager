@@ -5939,7 +5939,8 @@ gen_cmd_nmcli (const char *text, int state)
 static char *
 gen_cmd_nmcli_prompt_color (const char *text, int state)
 {
-	const char *words[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", NULL };
+	const char *words[] = { "normal", "black", "red", "green", "yellow",
+	                        "blue", "magenta", "cyan", "white", NULL };
 	return nmc_rl_gen_func_basic (text, state, words);
 }
 
