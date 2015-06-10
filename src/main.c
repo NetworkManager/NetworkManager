@@ -160,7 +160,7 @@ parse_state_file (const char *filename,
 }
 
 static void
-_set_g_fatal_warnings ()
+_set_g_fatal_warnings (void)
 {
 	GLogLevelFlags fatal_mask;
 

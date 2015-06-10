@@ -35,7 +35,7 @@
 /*******************************************/
 
 static void
-test_nm_utils_monotonic_timestamp_as_boottime ()
+test_nm_utils_monotonic_timestamp_as_boottime (void)
 {
 	gint64 timestamp_ns_per_tick, now, now_boottime, now_boottime_2, now_boottime_3;
 	struct timespec tp;
@@ -420,7 +420,7 @@ _remove_at_indexes_init_random_idx (GArray *idx, guint array_len, guint idx_len)
 }
 
 static void
-test_nm_utils_array_remove_at_indexes ()
+test_nm_utils_array_remove_at_indexes (void)
 {
 	gs_unref_array GArray *idx = NULL, *array = NULL;
 	gs_unref_hashtable GHashTable *unique = NULL;
@@ -468,7 +468,7 @@ test_nm_utils_array_remove_at_indexes ()
 /*******************************************/
 
 static void
-test_nm_ethernet_address_is_valid ()
+test_nm_ethernet_address_is_valid (void)
 {
 	g_assert (!nm_ethernet_address_is_valid (NULL, -1));
 	g_assert (!nm_ethernet_address_is_valid (NULL, ETH_ALEN));

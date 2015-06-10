@@ -325,7 +325,7 @@ static int _support_user_ipv6ll = 0;
 #endif
 
 static gboolean
-_support_user_ipv6ll_get ()
+_support_user_ipv6ll_get (void)
 {
 #if HAVE_LIBNL_INET6_ADDR_GEN_MODE
 	if (G_UNLIKELY (_support_user_ipv6ll == 0)) {
@@ -391,7 +391,7 @@ _support_kernel_extended_ifa_flags_detect (struct nl_msg *msg)
 }
 
 static gboolean
-_support_kernel_extended_ifa_flags_get ()
+_support_kernel_extended_ifa_flags_get (void)
 {
 	if (_support_kernel_extended_ifa_flags_still_undecided ()) {
 		nm_log_warn (LOGD_PLATFORM, "Unable to detect kernel support for extended IFA_FLAGS. Assume no kernel support.");

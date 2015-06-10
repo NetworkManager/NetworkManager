@@ -102,7 +102,7 @@ test_defaults (GType type, const char *name)
 }
 
 static void
-defaults ()
+defaults (void)
 {
 	/* The tests */
 	test_defaults (NM_TYPE_SETTING_CONNECTION, NM_SETTING_CONNECTION_SETTING_NAME);
