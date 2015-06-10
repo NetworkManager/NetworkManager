@@ -774,6 +774,118 @@ test_nm_utils_uuid_generate_from_strings (void)
 
 /*******************************************/
 
+static const char *_test_match_spec_all[] = {
+	"e",
+	"em",
+	"em*",
+	"em\\",
+	"em\\*",
+	"em\\1",
+	"em\\11",
+	"em\\2",
+	"em1",
+	"em11",
+	"em2",
+	"=em*",
+	NULL
+};
+
+static gboolean
+_test_match_spec_contains (const char **matches, const char *match)
+{
+	guint i;
+
+	for (i = 0; matches && matches[i]; i++) {
+		if (strcmp (match, matches[i]) == 0)
+			return TRUE;
+	}
+	return FALSE;
+}
+
+static void
+test_match_spec_ifname (const char *spec_str, const char **matches, const char **neg_matches)
+{
+	const char *m;
+	GSList *specs, *specs_reverse = NULL;
+	guint i;
+
+	g_assert (spec_str);
+
+	specs = nm_match_spec_split (spec_str);
+	specs_reverse = g_slist_reverse (g_slist_copy (specs));
+
+	for (i = 0; matches && matches[i]; i++) {
+		g_assert (nm_match_spec_interface_name (specs, matches[i]) == NM_MATCH_SPEC_MATCH);
+		g_assert (nm_match_spec_interface_name (specs_reverse, matches[i]) == NM_MATCH_SPEC_MATCH);
+	}
+	for (i = 0; neg_matches && neg_matches[i]; i++) {
+		g_assert (nm_match_spec_interface_name (specs, neg_matches[i]) == NM_MATCH_SPEC_NEG_MATCH);
+		g_assert (nm_match_spec_interface_name (specs_reverse, neg_matches[i]) == NM_MATCH_SPEC_NEG_MATCH);
+	}
+	for (i = 0; (m = _test_match_spec_all[i]); i++) {
+		if (_test_match_spec_contains (matches, m))
+			continue;
+		if (_test_match_spec_contains (neg_matches, m))
+			continue;
+		g_assert (nm_match_spec_interface_name (specs, m) == NM_MATCH_SPEC_NO_MATCH);
+		g_assert (nm_match_spec_interface_name (specs_reverse, m) == NM_MATCH_SPEC_NO_MATCH);
+	}
+
+	g_slist_free (specs_reverse);
+	g_slist_free_full (specs, g_free);
+}
+
+static void
+test_nm_match_spec_interface_name (void)
+{
+#define S(...) ((const char *[]) { __VA_ARGS__, NULL } )
+	test_match_spec_ifname ("em1",
+	                        S ("em1"),
+	                        NULL);
+	test_match_spec_ifname ("em1,em2",
+	                        S ("em1", "em2"),
+	                        NULL);
+	test_match_spec_ifname ("em1,em2,interface-name:em2",
+	                        S ("em1", "em2"),
+	                        NULL);
+	test_match_spec_ifname ("interface-name:em1",
+	                        S ("em1"),
+	                        NULL);
+	test_match_spec_ifname ("interface-name:em*",
+	                        S ("em", "em*", "em\\", "em\\*", "em\\1", "em\\11", "em\\2", "em1", "em11", "em2", "em3"),
+	                        NULL);
+	test_match_spec_ifname ("interface-name:em\\*",
+	                        S ("em\\", "em\\*", "em\\1", "em\\11", "em\\2"),
+	                        NULL);
+	test_match_spec_ifname ("interface-name:~em\\*",
+	                        S ("em\\", "em\\*", "em\\1", "em\\11", "em\\2"),
+	                        NULL);
+	test_match_spec_ifname ("interface-name:=em*",
+	                        S ("em*"),
+	                        NULL);
+	test_match_spec_ifname ("interface-name:em*,except:interface-name:em1*",
+	                        S ("em", "em*", "em\\", "em\\*", "em\\1", "em\\11", "em\\2", "em2", "em3"),
+	                        S ("em1", "em11"));
+	test_match_spec_ifname ("interface-name:em*,except:interface-name:=em*",
+	                        S ("em", "em\\", "em\\*", "em\\1", "em\\11", "em\\2", "em1", "em11", "em2", "em3"),
+	                        S ("em*"));
+	test_match_spec_ifname ("aa,bb,cc\\,dd,e,,",
+	                        S ("aa", "bb", "cc,dd", "e"),
+	                        NULL);
+	test_match_spec_ifname ("aa;bb;cc\\;dd;e,;",
+	                        S ("aa", "bb", "cc;dd", "e"),
+	                        NULL);
+	test_match_spec_ifname ("interface-name:em\\;1,em\\,2,\\,,\\\\,,em\\\\x",
+	                        S ("em;1", "em,2", ",", "\\", "em\\x"),
+	                        NULL);
+	test_match_spec_ifname ("  , interface-name:a, ,",
+	                        S ("  ", " ", " interface-name:a"),
+	                        NULL);
+#undef S
+}
+
+/*******************************************/
+
 NMTST_DEFINE ();
 
 int
@@ -797,6 +909,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/general/connection-sort/autoconnect-priority", test_connection_sort_autoconnect_priority);
 
 	g_test_add_func ("/general/nm_utils_uuid_generate_from_strings", test_nm_utils_uuid_generate_from_strings);
+	g_test_add_func ("/general/nm_match_spec_interface_name", test_nm_match_spec_interface_name);
 
 	return g_test_run ();
 }

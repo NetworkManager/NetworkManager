@@ -830,55 +830,99 @@ nm_utils_find_helper(const char *progname, const char *try_first, GError **error
 
 /******************************************************************************************/
 
-gboolean
-nm_match_spec_string (const GSList *specs, const char *match)
+#define MAC_TAG "mac:"
+#define INTERFACE_NAME_TAG "interface-name:"
+#define SUBCHAN_TAG "s390-subchannels:"
+#define EXCEPT_TAG "except:"
+
+static const char *
+_match_except (const char *spec_str, gboolean *out_except)
 {
-	const GSList *iter;
-
-	for (iter = specs; iter; iter = g_slist_next (iter)) {
-		if (!g_ascii_strcasecmp ((const char *) iter->data, match))
-			return TRUE;
-	}
-
-	return FALSE;
+	if (!g_ascii_strncasecmp (spec_str, EXCEPT_TAG, STRLEN (EXCEPT_TAG))) {
+		spec_str += STRLEN (EXCEPT_TAG);
+		*out_except = TRUE;
+	} else
+		*out_except = FALSE;
+	return spec_str;
 }
 
-gboolean
+NMMatchSpecMatchType
 nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr)
 {
 	const GSList *iter;
+	NMMatchSpecMatchType match = NM_MATCH_SPEC_NO_MATCH;
 
-	g_return_val_if_fail (hwaddr != NULL, FALSE);
+	g_return_val_if_fail (hwaddr != NULL, NM_MATCH_SPEC_NO_MATCH);
 
 	for (iter = specs; iter; iter = g_slist_next (iter)) {
 		const char *spec_str = iter->data;
+		gboolean except;
 
-		if (   !g_ascii_strncasecmp (spec_str, "mac:", 4)
-		    && nm_utils_hwaddr_matches (spec_str + 4, -1, hwaddr, -1))
-			return TRUE;
+		if (!spec_str || !*spec_str)
+			continue;
 
-		if (nm_utils_hwaddr_matches (spec_str, -1, hwaddr, -1))
-			return TRUE;
+		spec_str = _match_except (spec_str, &except);
+
+		if (   !g_ascii_strncasecmp (spec_str, INTERFACE_NAME_TAG, STRLEN (INTERFACE_NAME_TAG))
+		    || !g_ascii_strncasecmp (spec_str, SUBCHAN_TAG, STRLEN (SUBCHAN_TAG)))
+			continue;
+
+		if (!g_ascii_strncasecmp (spec_str, MAC_TAG, STRLEN (MAC_TAG)))
+			spec_str += STRLEN (MAC_TAG);
+		else if (except)
+			continue;
+
+		if (nm_utils_hwaddr_matches (spec_str, -1, hwaddr, -1)) {
+			if (except)
+				return NM_MATCH_SPEC_NEG_MATCH;
+			match = NM_MATCH_SPEC_MATCH;
+		}
 	}
-
-	return FALSE;
+	return match;
 }
 
-gboolean
+NMMatchSpecMatchType
 nm_match_spec_interface_name (const GSList *specs, const char *interface_name)
 {
-	char *iface_match;
-	gboolean matched;
+	const GSList *iter;
+	NMMatchSpecMatchType match = NM_MATCH_SPEC_NO_MATCH;
 
-	g_return_val_if_fail (interface_name != NULL, FALSE);
+	g_return_val_if_fail (interface_name != NULL, NM_MATCH_SPEC_NO_MATCH);
 
-	if (nm_match_spec_string (specs, interface_name))
-		return TRUE;
+	for (iter = specs; iter; iter = g_slist_next (iter)) {
+		const char *spec_str = iter->data;
+		gboolean use_pattern = FALSE;
+		gboolean except;
 
-	iface_match = g_strdup_printf ("interface-name:%s", interface_name);
-	matched = nm_match_spec_string (specs, iface_match);
-	g_free (iface_match);
-	return matched;
+		if (!spec_str || !*spec_str)
+			continue;
+
+		spec_str = _match_except (spec_str, &except);
+
+		if (   !g_ascii_strncasecmp (spec_str, MAC_TAG, STRLEN (MAC_TAG))
+		    || !g_ascii_strncasecmp (spec_str, SUBCHAN_TAG, STRLEN (SUBCHAN_TAG)))
+			continue;
+
+		if (!g_ascii_strncasecmp (spec_str, INTERFACE_NAME_TAG, STRLEN (INTERFACE_NAME_TAG))) {
+			spec_str += STRLEN (INTERFACE_NAME_TAG);
+			if (spec_str[0] == '=')
+				spec_str += 1;
+			else {
+				if (spec_str[0] == '~')
+					spec_str += 1;
+				use_pattern=TRUE;
+			}
+		} else if (except)
+			continue;
+
+		if (   !strcmp (spec_str, interface_name)
+		    || (use_pattern && g_pattern_match_simple (spec_str, interface_name))) {
+			if (except)
+				return NM_MATCH_SPEC_NEG_MATCH;
+			match = NM_MATCH_SPEC_MATCH;
+		}
+	}
+	return match;
 }
 
 #define BUFSIZE 10
@@ -947,33 +991,108 @@ parse_subchannels (const char *subchannels, guint32 *a, guint32 *b, guint32 *c)
 	return TRUE;
 }
 
-#define SUBCHAN_TAG "s390-subchannels:"
-
-gboolean
+NMMatchSpecMatchType
 nm_match_spec_s390_subchannels (const GSList *specs, const char *subchannels)
 {
 	const GSList *iter;
 	guint32 a = 0, b = 0, c = 0;
 	guint32 spec_a = 0, spec_b = 0, spec_c = 0;
+	NMMatchSpecMatchType match = NM_MATCH_SPEC_NO_MATCH;
 
-	g_return_val_if_fail (subchannels != NULL, FALSE);
+	g_return_val_if_fail (subchannels != NULL, NM_MATCH_SPEC_NO_MATCH);
 
 	if (!parse_subchannels (subchannels, &a, &b, &c))
-		return FALSE;
+		return NM_MATCH_SPEC_NO_MATCH;
 
 	for (iter = specs; iter; iter = g_slist_next (iter)) {
-		const char *spec = iter->data;
+		const char *spec_str = iter->data;
+		gboolean except;
 
-		if (!strncmp (spec, SUBCHAN_TAG, strlen (SUBCHAN_TAG))) {
-			spec += strlen (SUBCHAN_TAG);
-			if (parse_subchannels (spec, &spec_a, &spec_b, &spec_c)) {
-				if (a == spec_a && b == spec_b && c == spec_c)
-					return TRUE;
+		if (!spec_str || !*spec_str)
+			continue;
+
+		spec_str = _match_except (spec_str, &except);
+
+		if (!g_ascii_strncasecmp (spec_str, SUBCHAN_TAG, STRLEN (SUBCHAN_TAG))) {
+			spec_str += STRLEN (SUBCHAN_TAG);
+			if (parse_subchannels (spec_str, &spec_a, &spec_b, &spec_c)) {
+				if (a == spec_a && b == spec_b && c == spec_c) {
+					if (except)
+						return NM_MATCH_SPEC_NEG_MATCH;
+					match = NM_MATCH_SPEC_MATCH;
+				}
 			}
 		}
 	}
+	return match;
+}
 
-	return FALSE;
+GSList *
+nm_match_spec_split (const char *value)
+{
+	char *string_value, *p, *q0, *q;
+	GSList *pieces = NULL;
+
+	if (!value || !*value)
+		return NULL;
+
+	/* Copied from glibs g_key_file_parse_value_as_string() function
+	 * and adjusted. */
+
+	string_value = g_new (gchar, strlen (value) + 1);
+
+	p = (gchar *) value;
+	q0 = q = string_value;
+	while (*p) {
+		if (*p == '\\') {
+			p++;
+
+			switch (*p) {
+			case 's':
+				*q = ' ';
+				break;
+			case 'n':
+				*q = '\n';
+				break;
+			case 't':
+				*q = '\t';
+				break;
+			case 'r':
+				*q = '\r';
+				break;
+			case '\\':
+				*q = '\\';
+				break;
+			case '\0':
+				break;
+			default:
+				if (NM_IN_SET (*p, ',', ';'))
+					*q = *p;
+				else {
+					*q++ = '\\';
+					*q = *p;
+				}
+				break;
+			}
+		} else {
+			*q = *p;
+			if (NM_IN_SET (*p, ',', ';')) {
+				if (q0 < q)
+					pieces = g_slist_prepend (pieces, g_strndup (q0, q - q0));
+				q0 = q + 1;
+			}
+		}
+		if (*p == '\0')
+			break;
+		q++;
+		p++;
+	}
+
+	*q = '\0';
+	if (q0 < q)
+		pieces = g_slist_prepend (pieces, g_strndup (q0, q - q0));
+	g_free (string_value);
+	return g_slist_reverse (pieces);
 }
 
 const char *
