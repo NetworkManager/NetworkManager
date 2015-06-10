@@ -39,6 +39,7 @@ G_BEGIN_DECLS
 
 /* Properties */
 #define NM_CONFIG_CMD_LINE_OPTIONS                  "cmd-line-options"
+#define NM_CONFIG_ATOMIC_SECTION_PREFIXES           "atomic-section-prefixes"
 
 /* Signals */
 #define NM_CONFIG_SIGNAL_CONFIG_CHANGED             "config-changed"
@@ -60,6 +61,7 @@ G_BEGIN_DECLS
 #define NM_CONFIG_KEYFILE_GROUP_IFUPDOWN                    "ifupdown"
 #define NM_CONFIG_KEYFILE_GROUP_IFNET                       "ifnet"
 
+#define NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS            ".was"
 #define NM_CONFIG_KEYFILE_KEY_IFNET_AUTO_REFRESH            "auto_refresh"
 #define NM_CONFIG_KEYFILE_KEY_IFNET_MANAGED                 "managed"
 #define NM_CONFIG_KEYFILE_KEY_IFUPDOWN_MANAGED              "managed"
@@ -115,8 +117,8 @@ void                    nm_config_cmd_line_options_add_to_entries (NMConfigCmdLi
 gboolean nm_config_get_no_auto_default_for_device (NMConfig *config, NMDevice *device);
 void nm_config_set_no_auto_default_for_device  (NMConfig *config, NMDevice *device);
 
-NMConfig *nm_config_new (const NMConfigCmdLineOptions *cli, GError **error);
-NMConfig *nm_config_setup (const NMConfigCmdLineOptions *cli, GError **error);
+NMConfig *nm_config_new (const NMConfigCmdLineOptions *cli, char **atomic_section_prefixes, GError **error);
+NMConfig *nm_config_setup (const NMConfigCmdLineOptions *cli, char **atomic_section_prefixes, GError **error);
 void nm_config_reload (NMConfig *config, int signal);
 
 gint nm_config_parse_boolean (const char *str, gint default_value);

@@ -84,11 +84,14 @@ typedef struct {
 	char *debug;
 
 	gboolean configure_and_quit;
+
+	char **atomic_section_prefixes;
 } NMConfigPrivate;
 
 enum {
 	PROP_0,
 	PROP_CMD_LINE_OPTIONS,
+	PROP_ATOMIC_SECTION_PREFIXES,
 	LAST_PROP,
 };
 
@@ -655,6 +658,11 @@ read_config (GKeyFile *keyfile, const char *dirname, const char *path, GError **
 				continue;
 			}
 
+			if (!strcmp (key, NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS)) {
+				/* the "was" key is protected and it cannot be set by user configuration. */
+				continue;
+			}
+
 			key_len = strlen (key);
 			last_char = key[key_len - 1];
 			if (   key_len > 1
@@ -963,6 +971,70 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 	return keyfile;
 }
 
+static gboolean
+_is_atomic_section (const char *const*atomic_section_prefixes, const char *group)
+{
+	if (atomic_section_prefixes) {
+		for (; *atomic_section_prefixes; atomic_section_prefixes++) {
+			if (   **atomic_section_prefixes
+			    && g_str_has_prefix (group, *atomic_section_prefixes))
+				return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+static void
+_string_append_val (GString *str, const char *value)
+{
+	if (!value)
+		return;
+	g_string_append_c (str, '+');
+	while (TRUE) {
+		switch (*value) {
+		case '\0':
+			return;
+		case '\\':
+		case '+':
+		case '#':
+		case ':':
+			g_string_append_c (str, '+');
+		default:
+			g_string_append_c (str, *value);
+		}
+		value++;
+	}
+}
+
+static char *
+_keyfile_serialize_section (GKeyFile *keyfile, const char *group)
+{
+	gs_strfreev char **keys = NULL;
+	GString *str;
+	guint k;
+
+	if (keyfile)
+		keys = g_key_file_get_keys (keyfile, group, NULL, NULL);
+	if (!keys)
+		return g_strdup ("0#");
+
+	/* prepend a version. */
+	str = g_string_new ("1#");
+
+	for (k = 0; keys[k]; k++) {
+		const char *key = keys[k];
+		gs_free char *value = NULL;
+
+		_string_append_val (str, key);
+		g_string_append_c (str, ':');
+
+		value = g_key_file_get_value (keyfile, group, key, NULL);
+		_string_append_val (str, value);
+		g_string_append_c (str, '#');
+	}
+	return g_string_free (str, FALSE);
+}
+
 /**
  * intern_config_read:
  * @filename: the filename where to store the internal config
@@ -983,6 +1055,7 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 static GKeyFile *
 intern_config_read (const char *filename,
                     GKeyFile *keyfile_conf,
+                    const char *const*atomic_section_prefixes,
                     gboolean *out_needs_rewrite)
 {
 	GKeyFile *keyfile_intern;
@@ -1012,13 +1085,32 @@ intern_config_read (const char *filename,
 	for (g = 0; groups && groups[g]; g++) {
 		gs_strfreev char **keys = NULL;
 		const char *group = groups[g];
-		gboolean is_intern;
+		gboolean is_intern, is_atomic;
 
 		keys = g_key_file_get_keys (keyfile, group, NULL, NULL);
 		if (!keys)
 			continue;
 
 		is_intern = g_str_has_prefix (group, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN);
+		is_atomic = !is_intern && _is_atomic_section (atomic_section_prefixes, group);
+
+		if (is_atomic) {
+			gs_free char *conf_section_was = NULL;
+			gs_free char *conf_section_is = NULL;
+
+			conf_section_is = _keyfile_serialize_section (keyfile_conf, group);
+			conf_section_was = g_key_file_get_string (keyfile, group, NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS, NULL);
+
+			if (g_strcmp0 (conf_section_was, conf_section_is) != 0) {
+				/* the section no longer matches. Skip it entirely. */
+				needs_rewrite = TRUE;
+				continue;
+			}
+			/* we must set the "was" marker in our keyfile, so that we know that the section
+			 * from user config is overwritten. The value doesn't matter, it's just a marker
+			 * that this section is present. */
+			g_key_file_set_value (keyfile_intern, group, NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS, "");
+		}
 
 		for (k = 0; keys[k]; k++) {
 			gs_free char *value_set = NULL;
@@ -1028,6 +1120,10 @@ intern_config_read (const char *filename,
 
 			if (is_intern) {
 				has_intern = TRUE;
+				g_key_file_set_value (keyfile_intern, group, key, value_set);
+			} else if (is_atomic) {
+				if (strcmp (key, NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS) == 0)
+					continue;
 				g_key_file_set_value (keyfile_intern, group, key, value_set);
 			} else if (_HAS_PREFIX (key, NM_CONFIG_KEYFILE_KEYPREFIX_SET)) {
 				const char *key_base = &key[STRLEN (NM_CONFIG_KEYFILE_KEYPREFIX_SET)];
@@ -1098,7 +1194,7 @@ out:
 }
 
 static int
-_intern_config_write_sort_fcn (const char **a, const char **b, gpointer dummy)
+_intern_config_write_sort_fcn (const char **a, const char **b, const char *const*atomic_section_prefixes)
 {
 	const char *g_a = (a ? *a : NULL);
 	const char *g_b = (b ? *b : NULL);
@@ -1112,6 +1208,16 @@ _intern_config_write_sort_fcn (const char **a, const char **b, gpointer dummy)
 			return 1;
 		return -1;
 	}
+	if (!a_is) {
+		a_is = _is_atomic_section (atomic_section_prefixes, g_a);
+		b_is = _is_atomic_section (atomic_section_prefixes, g_b);
+
+		if (a_is != b_is) {
+			if (a_is)
+				return 1;
+			return -1;
+		}
+	}
 	return g_strcmp0 (g_a, g_b);
 }
 
@@ -1119,6 +1225,7 @@ static gboolean
 intern_config_write (const char *filename,
                      GKeyFile *keyfile_intern,
                      GKeyFile *keyfile_conf,
+                     const char *const*atomic_section_prefixes,
                      GError **error)
 {
 	GKeyFile *keyfile;
@@ -1144,31 +1251,58 @@ intern_config_write (const char *filename,
 			                   g_strv_length (groups),
 			                   sizeof (char *),
 			                   (GCompareDataFunc) _intern_config_write_sort_fcn,
-			                   NULL);
+			                   (gpointer) atomic_section_prefixes);
 		}
 	}
 	for (g = 0; groups && groups[g]; g++) {
 		gs_strfreev char **keys = NULL;
 		const char *group = groups[g];
-		gboolean is_intern;
+		gboolean is_intern, is_atomic;
 
 		keys = g_key_file_get_keys (keyfile_intern, group, NULL, NULL);
 		if (!keys)
 			continue;
 
 		is_intern = g_str_has_prefix (group, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN);
+		is_atomic = !is_intern && _is_atomic_section (atomic_section_prefixes, group);
+
+		if (is_atomic) {
+			if (   (!keys[0] || (!keys[1] && strcmp (keys[0], NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS) == 0))
+			    && !g_key_file_has_group (keyfile_conf, group)) {
+				/* we are about to save an atomic section. However, we don't have any additional
+				 * keys on our own and there is no user-provided (overlapping) section either.
+				 * We don't have to write an empty section (i.e. skip the useless ".was=0#"). */
+				continue;
+			} else {
+				gs_free char *conf_section_is = NULL;
+
+				conf_section_is = _keyfile_serialize_section (keyfile_conf, group);
+				g_key_file_set_string (keyfile, group, NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS, conf_section_is);
+				g_key_file_set_comment (keyfile, group, NULL,
+				                        " Overwrites entire section from 'NetworkManager.conf'",
+				                        NULL);
+			}
+		}
 
 		for (k = 0; keys[k]; k++) {
 			const char *key = keys[k];
 			gs_free char *value_set = NULL;
 			gs_free char *key_set = NULL;
 
+			if (   !is_intern
+			    && strcmp (key, NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS) == 0) {
+				g_warn_if_fail (is_atomic);
+				continue;
+			}
+
 			value_set = g_key_file_get_value (keyfile_intern, group, key, NULL);
 
 			if (is_intern) {
 				has_intern = TRUE;
 				g_key_file_set_value (keyfile, group, key, value_set);
-			} else {
+			} else if (is_atomic)
+				g_key_file_set_value (keyfile, group, key, value_set);
+			else {
 				gs_free char *value_was = NULL;
 
 				if (_HAS_PREFIX (key, NM_CONFIG_KEYFILE_KEYPREFIX_SET)) {
@@ -1237,6 +1371,10 @@ intern_config_write (const char *filename,
 	                        " That means, if you modify a value in 'NetworkManager.conf', the internal\n"
 	                        " overwrite no longer matches and is ignored.\n"
 	                        "\n"
+	                        " Certain sections can only be overwritten whole, not on a per key basis.\n"
+	                        " Such sections are marked with a \""NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS"\" key that records the user configuration\n"
+	                        " at the time of writing.\n"
+	                        "\n"
 	                        " Internal sections of the form [" NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN "*] cannot\n"
 	                        " be set by user configuration.\n"
 	                        "\n"
@@ -1286,10 +1424,15 @@ nm_config_get_device_match_spec (const GKeyFile *keyfile, const char *group, con
  *  keys and values you set in @keyfile_intern_new. You basically reset all
  *  internal configuration values to what is in @keyfile_intern_new.
  *
- *  There are 2 types of settings:
+ *  There are 3 types of settings:
  *    - all groups/sections with a prefix [.intern.*] are taken as is. As these
  *      groups are separate from user configuration, there is no conflict. You set
  *      them, that's it.
+ *    - there are atomic sections, i.e. sections whose name start with one of
+ *      NM_CONFIG_ATOMIC_SECTION_PREFIXES. If you put values in these sections,
+ *      it means you completely replace the section from user configuration.
+ *      You can also hide a user provided section by only putting the special
+ *      key NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS into that section.
  *    - otherwise you can overwrite individual values from user-configuration.
  *      Just set the value. Keys with a prefix NM_CONFIG_KEYFILE_KEYPREFIX_*
  *      are protected -- as they are not value user keys.
@@ -1308,6 +1451,8 @@ nm_config_set_values (NMConfig *self,
 	GKeyFile *keyfile_new;
 	GError *local = NULL;
 	NMConfigData *new_data = NULL;
+	gs_strfreev char **groups = NULL;
+	gint g;
 
 	g_return_if_fail (NM_IS_CONFIG (self));
 
@@ -1318,6 +1463,13 @@ nm_config_set_values (NMConfig *self,
 	keyfile_new = nm_config_create_keyfile ();
 	if (keyfile_intern_new)
 		_nm_keyfile_copy (keyfile_new, keyfile_intern_new);
+
+	/* ensure that every atomic section has a .was entry. */
+	groups = g_key_file_get_groups (keyfile_new, NULL);
+	for (g = 0; groups && groups[g]; g++) {
+		if (_is_atomic_section ((const char *const*) priv->atomic_section_prefixes, groups[g]))
+			g_key_file_set_value (keyfile_new, groups[g], NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS, "");
+	}
 
 	if (!_nm_keyfile_equals (keyfile_intern_current, keyfile_new, TRUE))
 		new_data = nm_config_data_new_update_keyfile_intern (priv->config_data, keyfile_new);
@@ -1335,7 +1487,8 @@ nm_config_set_values (NMConfig *self,
 		 * changes on disk happened in any case *after* now. */
 		if (*priv->intern_config_file) {
 			keyfile_user = _nm_config_data_get_keyfile_user (priv->config_data);
-			if (!intern_config_write (priv->intern_config_file, keyfile_new, keyfile_user, &local)) {
+			if (!intern_config_write (priv->intern_config_file, keyfile_new, keyfile_user,
+			                          (const char *const*) priv->atomic_section_prefixes, &local)) {
 				nm_log_warn (LOGD_CORE, "error saving internal configuration \"%s\": %s", priv->intern_config_file, local->message);
 				g_clear_error (&local);
 			}
@@ -1390,9 +1543,14 @@ nm_config_reload (NMConfig *self, int signal)
 
 	no_auto_default = no_auto_default_from_file (priv->no_auto_default_file);
 
-	keyfile_intern = intern_config_read (priv->intern_config_file, keyfile, &intern_config_needs_rewrite);
-	if (intern_config_needs_rewrite)
-		intern_config_write (priv->intern_config_file, keyfile_intern, keyfile, NULL);
+	keyfile_intern = intern_config_read (priv->intern_config_file,
+	                                     keyfile,
+	                                     (const char *const*) priv->atomic_section_prefixes,
+	                                     &intern_config_needs_rewrite);
+	if (intern_config_needs_rewrite) {
+		intern_config_write (priv->intern_config_file, keyfile_intern, keyfile,
+		                     (const char *const*) priv->atomic_section_prefixes, NULL);
+	}
 
 	new_data = nm_config_data_new (config_main_file, config_description, (const char *const*) no_auto_default, keyfile, keyfile_intern);
 	g_free (config_main_file);
@@ -1515,11 +1673,11 @@ nm_config_get (void)
 }
 
 NMConfig *
-nm_config_setup (const NMConfigCmdLineOptions *cli, GError **error)
+nm_config_setup (const NMConfigCmdLineOptions *cli, char **atomic_section_prefixes, GError **error)
 {
 	g_assert (!singleton_instance);
 
-	singleton_instance = nm_config_new (cli, error);
+	singleton_instance = nm_config_new (cli, atomic_section_prefixes, error);
 	if (singleton_instance)
 		nm_singleton_instance_weak_ref_register ();
 	return singleton_instance;
@@ -1602,9 +1760,14 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 
 	no_auto_default = no_auto_default_from_file (priv->no_auto_default_file);
 
-	keyfile_intern = intern_config_read (priv->intern_config_file, keyfile, &intern_config_needs_rewrite);
-	if (intern_config_needs_rewrite)
-		intern_config_write (priv->intern_config_file, keyfile_intern, keyfile, NULL);
+	keyfile_intern = intern_config_read (priv->intern_config_file,
+	                                     keyfile,
+	                                     (const char *const*) priv->atomic_section_prefixes,
+	                                     &intern_config_needs_rewrite);
+	if (intern_config_needs_rewrite) {
+		intern_config_write (priv->intern_config_file, keyfile_intern, keyfile,
+		                     (const char *const*) priv->atomic_section_prefixes, NULL);
+	}
 
 	priv->config_data_orig = nm_config_data_new (config_main_file, config_description, (const char *const*) no_auto_default, keyfile, keyfile_intern);
 
@@ -1619,12 +1782,13 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 }
 
 NMConfig *
-nm_config_new (const NMConfigCmdLineOptions *cli, GError **error)
+nm_config_new (const NMConfigCmdLineOptions *cli, char **atomic_section_prefixes, GError **error)
 {
 	return NM_CONFIG (g_initable_new (NM_TYPE_CONFIG,
 	                                  NULL,
 	                                  error,
 	                                  NM_CONFIG_CMD_LINE_OPTIONS, cli,
+	                                  NM_CONFIG_ATOMIC_SECTION_PREFIXES, atomic_section_prefixes,
 	                                  NULL));
 }
 
@@ -1650,6 +1814,7 @@ finalize (GObject *gobject)
 	g_free (priv->log_level);
 	g_free (priv->log_domains);
 	g_free (priv->debug);
+	g_strfreev (priv->atomic_section_prefixes);
 
 	_nm_config_cmd_line_options_clear (&priv->cli);
 
@@ -1676,6 +1841,10 @@ set_property (GObject *object, guint prop_id,
 		else
 			_nm_config_cmd_line_options_copy (cli, &priv->cli);
 		break;
+	case PROP_ATOMIC_SECTION_PREFIXES:
+		/* construct only */
+		priv->atomic_section_prefixes = g_strdupv (g_value_get_boxed (value));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -1697,6 +1866,14 @@ nm_config_class_init (NMConfigClass *config_class)
 	                           G_PARAM_WRITABLE |
 	                           G_PARAM_CONSTRUCT_ONLY |
 	                           G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property
+	    (object_class, PROP_ATOMIC_SECTION_PREFIXES,
+	     g_param_spec_boxed (NM_CONFIG_ATOMIC_SECTION_PREFIXES, "", "",
+	                         G_TYPE_STRV,
+	                         G_PARAM_WRITABLE |
+	                         G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_STATIC_STRINGS));
 
 	signals[SIGNAL_CONFIG_CHANGED] =
 	    g_signal_new (NM_CONFIG_SIGNAL_CONFIG_CHANGED,

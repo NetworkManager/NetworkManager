@@ -82,7 +82,7 @@ setup_config (GError **error, const char *config_file, const char *intern_config
 
 	g_ptr_array_free (args, TRUE);
 
-	config = nm_config_setup (cli, &local_error);
+	config = nm_config_setup (cli, NULL, &local_error);
 	if (error) {
 		g_assert (!config);
 		g_assert (local_error);

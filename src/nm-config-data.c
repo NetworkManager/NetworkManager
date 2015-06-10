@@ -310,6 +310,42 @@ nm_config_data_get_keys (const NMConfigData *self, const char *group)
 	return g_key_file_get_keys (NM_CONFIG_DATA_GET_PRIVATE (self)->keyfile, group, NULL, NULL);
 }
 
+/**
+ * nm_config_data_is_intern_atomic_group:
+ * @self:
+ * @group: name of the group to check.
+ *
+ * whether a configuration group @group exists and is entirely overwritten
+ * by internal configuration, i.e. whether it is an atomic group that is
+ * overwritten.
+ *
+ * It doesn't say, that there actually is a user setting that was overwritten. That
+ * means there could be no corresponding section defined in user configuration
+ * that required overwriting.
+ *
+ * Returns: %TRUE if @group exists and is an atomic group set via internal configuration.
+ */
+gboolean
+nm_config_data_is_intern_atomic_group (const NMConfigData *self, const char *group)
+{
+	NMConfigDataPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_CONFIG_DATA (self), FALSE);
+	g_return_val_if_fail (group && *group, FALSE);
+
+	priv = NM_CONFIG_DATA_GET_PRIVATE (self);
+
+	if (   !priv->keyfile_intern
+	    || !g_key_file_has_key (priv->keyfile_intern, group, NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS, NULL))
+		return FALSE;
+
+	/* we have a .was entry for the section. That means that the section would be overwritten
+	 * from user configuration. But it doesn't mean that the merged configuration contains this
+	 * groups, because the internal setting could hide the user section.
+	 * Only return TRUE, if we actually have such a group in the merged configuration.*/
+	return g_key_file_has_group (priv->keyfile, group);
+}
+
 /************************************************************************/
 
 static GKeyFile *
@@ -336,26 +372,36 @@ _merge_keyfiles (GKeyFile *keyfile_user, GKeyFile *keyfile_intern)
 	for (g = 0; groups[g]; g++) {
 		const char *group = groups[g];
 		gs_strfreev char **keys = NULL;
-		gboolean is_intern;
+		gboolean is_intern, is_atomic = FALSE;
 
 		keys = g_key_file_get_keys (keyfile_intern, group, NULL, NULL);
 		if (!keys)
 			continue;
 
 		is_intern = g_str_has_prefix (group, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN);
+		if (   !is_intern
+		    && g_key_file_has_key (keyfile_intern, group, NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS, NULL)) {
+			/* the entire section is atomically overwritten by @keyfile_intern. */
+			g_key_file_remove_group (keyfile, group, NULL);
+			is_atomic = TRUE;
+		}
 
 		for (k = 0; keys[k]; k++) {
 			const char *key = keys[k];
 			gs_free char *value = NULL;
 
-			if (!is_intern && _HAS_PREFIX (key, NM_CONFIG_KEYFILE_KEYPREFIX_WAS)) {
+			if (is_atomic && strcmp (key, NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS) == 0)
+				continue;
+
+			if (   !is_intern && !is_atomic
+			    && _HAS_PREFIX (key, NM_CONFIG_KEYFILE_KEYPREFIX_WAS)) {
 				const char *key_base = &key[STRLEN (NM_CONFIG_KEYFILE_KEYPREFIX_WAS)];
 
 				if (!g_key_file_has_key (keyfile_intern, group, key_base, NULL))
 					g_key_file_remove_key (keyfile, group, key_base, NULL);
 				continue;
 			}
-			if (!is_intern && _HAS_PREFIX (key, NM_CONFIG_KEYFILE_KEYPREFIX_SET))
+			if (!is_intern && !is_atomic && _HAS_PREFIX (key, NM_CONFIG_KEYFILE_KEYPREFIX_SET))
 				continue;
 
 			value = g_key_file_get_value (keyfile_intern, group, key, NULL);
@@ -448,9 +494,12 @@ nm_config_data_log (const NMConfigData *self, const char *prefix)
 	for (g = 0; g < ngroups; g++) {
 		const char *group = groups[g];
 		gs_strfreev char **keys = NULL;
+		gboolean is_atomic;
+
+		is_atomic = nm_config_data_is_intern_atomic_group (self, group);
 
 		_LOG ("");
-		_LOG ("[%s]", group);
+		_LOG ("[%s]%s", group, is_atomic ? "*" : "");
 
 		keys = g_key_file_get_keys (priv->keyfile, group, NULL, NULL);
 		for (k = 0; keys && keys[k]; k++) {

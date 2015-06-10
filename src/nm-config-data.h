@@ -132,6 +132,7 @@ char *nm_config_data_get_connection_default (const NMConfigData *self,
 
 char **nm_config_data_get_groups (const NMConfigData *self);
 char **nm_config_data_get_keys (const NMConfigData *self, const char *group);
+gboolean nm_config_data_is_intern_atomic_group (const NMConfigData *self, const char *group);
 
 GKeyFile *nm_config_data_clone_keyfile_intern (const NMConfigData *self);
 
