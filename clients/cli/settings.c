@@ -2699,6 +2699,17 @@ nmc_property_connection_get_metered (NMSetting *setting, NmcPropertyGetType get_
 {
 	NMSettingConnection *s_conn = NM_SETTING_CONNECTION (setting);
 
+	if (get_type == NMC_PROPERTY_GET_PARSABLE) {
+		switch (nm_setting_connection_get_metered (s_conn)) {
+		case NM_METERED_YES:
+			return g_strdup ("yes");
+		case NM_METERED_NO:
+			return g_strdup ("no");
+		case NM_METERED_UNKNOWN:
+		default:
+			return g_strdup ("unknown");
+		}
+	}
 	switch (nm_setting_connection_get_metered (s_conn)) {
 	case NM_METERED_YES:
 		return g_strdup (_("yes"));
