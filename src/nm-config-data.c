@@ -317,7 +317,7 @@ nm_config_data_diff (NMConfigData *old_data, NMConfigData *new_data)
 	priv_old = NM_CONFIG_DATA_GET_PRIVATE (old_data);
 	priv_new = NM_CONFIG_DATA_GET_PRIVATE (new_data);
 
-	if (!_nm_keyfile_equals (priv_old->keyfile, priv_new->keyfile))
+	if (!_nm_keyfile_equals (priv_old->keyfile, priv_new->keyfile, TRUE))
 		changes |= NM_CONFIG_CHANGE_VALUES;
 
 	if (   g_strcmp0 (nm_config_data_get_config_main_file (old_data), nm_config_data_get_config_main_file (new_data)) != 0
