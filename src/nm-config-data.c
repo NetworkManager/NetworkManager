@@ -108,6 +108,15 @@ nm_config_data_get_config_description (const NMConfigData *self)
 	return NM_CONFIG_DATA_GET_PRIVATE (self)->config_description;
 }
 
+gboolean
+nm_config_data_has_group (const NMConfigData *self, const char *group)
+{
+	g_return_val_if_fail (NM_IS_CONFIG_DATA (self), FALSE);
+	g_return_val_if_fail (group && *group, FALSE);
+
+	return g_key_file_has_group (NM_CONFIG_DATA_GET_PRIVATE (self)->keyfile, group);
+}
+
 char *
 nm_config_data_get_value (const NMConfigData *self, const char *group, const char *key)
 {
@@ -118,6 +127,21 @@ nm_config_data_get_value (const NMConfigData *self, const char *group, const cha
 	/* nm_config_data_get_value() translates to g_key_file_get_string(), because we want
 	 * to use the string representation, not the (raw) GKeyFile value. */
 	return g_key_file_get_string (NM_CONFIG_DATA_GET_PRIVATE (self)->keyfile, group, key, NULL);
+}
+
+gboolean
+nm_config_data_has_value (const NMConfigData *self, const char *group, const char *key)
+{
+	gs_free char *value = NULL;
+
+	g_return_val_if_fail (NM_IS_CONFIG_DATA (self), FALSE);
+	g_return_val_if_fail (group && *group, FALSE);
+	g_return_val_if_fail (key && *key, FALSE);
+
+	/* nm_config_data_get_value() translates to g_key_file_get_string(), because we want
+	 * to use the string representation, not the (raw) GKeyFile value. */
+	value = g_key_file_get_string (NM_CONFIG_DATA_GET_PRIVATE (self)->keyfile, group, key, NULL);
+	return !!value;
 }
 
 gint
@@ -216,6 +240,33 @@ nm_config_data_get_assume_ipv6ll_only (const NMConfigData *self, NMDevice *devic
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
 	return nm_device_spec_match_list (device, NM_CONFIG_DATA_GET_PRIVATE (self)->assume_ipv6ll_only);
+}
+
+/************************************************************************/
+
+/**
+ * nm_config_data_get_groups:
+ * @self: the #NMConfigData instance
+ *
+ * Returns: (transfer-full): the list of groups in the configuration. The order
+ * of the section is undefined, as the configuration gets merged from multiple
+ * sources.
+ */
+char **
+nm_config_data_get_groups (const NMConfigData *self)
+{
+	g_return_val_if_fail (NM_IS_CONFIG_DATA (self), NULL);
+
+	return g_key_file_get_groups (NM_CONFIG_DATA_GET_PRIVATE (self)->keyfile, NULL);
+}
+
+char **
+nm_config_data_get_keys (const NMConfigData *self, const char *group)
+{
+	g_return_val_if_fail (NM_IS_CONFIG_DATA (self), NULL);
+	g_return_val_if_fail (group && *group, NULL);
+
+	return g_key_file_get_keys (NM_CONFIG_DATA_GET_PRIVATE (self)->keyfile, group, NULL, NULL);
 }
 
 /************************************************************************/

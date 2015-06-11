@@ -86,6 +86,8 @@ void nm_config_data_log (const NMConfigData *config_data, const char *prefix);
 const char *nm_config_data_get_config_main_file (const NMConfigData *config_data);
 const char *nm_config_data_get_config_description (const NMConfigData *config_data);
 
+gboolean nm_config_data_has_group (const NMConfigData *self, const char *group);
+gboolean nm_config_data_has_value (const NMConfigData *self, const char *group, const char *key);
 char *nm_config_data_get_value (const NMConfigData *config_data, const char *group, const char *key);
 gint nm_config_data_get_value_boolean (const NMConfigData *self, const char *group, const char *key, gint default_value);
 
@@ -105,6 +107,9 @@ gboolean nm_config_data_get_assume_ipv6ll_only (const NMConfigData *self, NMDevi
 char *nm_config_data_get_connection_default (const NMConfigData *self,
                                              const char *property,
                                              NMDevice *device);
+
+char **nm_config_data_get_groups (const NMConfigData *self);
+char **nm_config_data_get_keys (const NMConfigData *self, const char *group);
 
 G_END_DECLS
 
