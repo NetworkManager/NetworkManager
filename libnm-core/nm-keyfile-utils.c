@@ -267,11 +267,67 @@ _nm_keyfile_a_contains_all_in_b (GKeyFile *kf_a, GKeyFile *kf_b)
 	return TRUE;
 }
 
-gboolean
-_nm_keyfile_equals (GKeyFile *kf_a, GKeyFile *kf_b)
+
+static gboolean
+_nm_keyfile_equals_ordered (GKeyFile *kf_a, GKeyFile *kf_b)
 {
-	return    _nm_keyfile_a_contains_all_in_b (kf_a, kf_b)
-	       && _nm_keyfile_a_contains_all_in_b (kf_b, kf_a);
+	gs_strfreev char **groups = NULL;
+	gs_strfreev char **groups_b = NULL;
+	guint i, j;
+
+	if (kf_a == kf_b)
+		return TRUE;
+	if (!kf_a || !kf_b)
+		return FALSE;
+
+	groups = g_key_file_get_groups (kf_a, NULL);
+	groups_b = g_key_file_get_groups (kf_b, NULL);
+	if (!groups && !groups_b)
+		return TRUE;
+	if (!groups || !groups_b)
+		return FALSE;
+	for (i = 0; groups[i] && groups_b[i] && !strcmp (groups[i], groups_b[i]); i++)
+		;
+	if (groups[i] || groups_b[i])
+		return FALSE;
+
+	for (i = 0; groups[i]; i++) {
+		gs_strfreev char **keys = NULL;
+		gs_strfreev char **keys_b = NULL;
+
+		keys = g_key_file_get_keys (kf_a, groups[i], NULL, NULL);
+		keys_b = g_key_file_get_keys (kf_b, groups[i], NULL, NULL);
+
+		if ((!keys) != (!keys_b))
+			return FALSE;
+		if (!keys)
+			continue;
+
+		for (j = 0; keys[j] && keys_b[j] && !strcmp (keys[j], keys_b[j]); j++)
+			;
+		if (keys[j] || keys_b[j])
+			return FALSE;
+
+		for (j = 0; keys[j]; j++) {
+			gs_free char *key_a = g_key_file_get_value (kf_a, groups[i], keys[j], NULL);
+			gs_free char *key_b = g_key_file_get_value (kf_b, groups[i], keys[j], NULL);
+
+			if (g_strcmp0 (key_a, key_b) != 0)
+				return FALSE;
+		}
+	}
+	return TRUE;
+}
+
+gboolean
+_nm_keyfile_equals (GKeyFile *kf_a, GKeyFile *kf_b, gboolean consider_order)
+{
+	if (!consider_order) {
+		return    _nm_keyfile_a_contains_all_in_b (kf_a, kf_b)
+		       && _nm_keyfile_a_contains_all_in_b (kf_b, kf_a);
+	} else {
+		return _nm_keyfile_equals_ordered (kf_a, kf_b);
+	}
 }
 
 gboolean
