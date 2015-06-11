@@ -11,6 +11,7 @@
 *.typelib
 *.stamp
 *-enum-types.[ch]
+*.loT
 Makefile
 Makefile.in*
 compile
@@ -42,6 +43,10 @@ test-*.trs
 /config.*
 /configure
 /intltool-*
+
+/confdefs.h
+/conftest.[ch]
+/conftest.o.*
 
 /callouts/nm-avahi-autoipd.action
 /callouts/nm-dispatcher
