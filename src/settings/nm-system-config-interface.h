@@ -43,7 +43,6 @@ GObject * nm_system_config_factory (void);
 #define NM_SYSTEM_CONFIG_INTERFACE_NAME "name"
 #define NM_SYSTEM_CONFIG_INTERFACE_INFO "info"
 #define NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES "capabilities"
-#define NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME "hostname"
 
 #define NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED "unmanaged-specs-changed"
 #define NM_SYSTEM_CONFIG_INTERFACE_UNRECOGNIZED_SPECS_CHANGED "unrecognized-specs-changed"
@@ -52,7 +51,6 @@ GObject * nm_system_config_factory (void);
 typedef enum {
 	NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE = 0x00000000,
 	NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS = 0x00000001,
-	NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME = 0x00000002
 
 	/* When adding more capabilities, be sure to update the "Capabilities"
 	 * property max value in nm-system-config-interface.c.
@@ -65,7 +63,6 @@ typedef enum {
 	NM_SYSTEM_CONFIG_INTERFACE_PROP_NAME = NM_SYSTEM_CONFIG_INTERFACE_PROP_FIRST,
 	NM_SYSTEM_CONFIG_INTERFACE_PROP_INFO,
 	NM_SYSTEM_CONFIG_INTERFACE_PROP_CAPABILITIES,
-	NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME,
 } NMSystemConfigInterfaceProp;
 
 

@@ -34,6 +34,10 @@
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
 
+#if HAVE_SELINUX
+#include <selinux/selinux.h>
+#endif
+
 #include "gsystem-local-alloc.h"
 #include <nm-dbus-interface.h>
 #include <nm-connection.h>
@@ -94,6 +98,24 @@ EXPORT(nm_settings_connection_replace_settings)
 EXPORT(nm_settings_connection_replace_and_commit)
 /* END LINKER CRACKROCK */
 
+#define HOSTNAMED_SERVICE_NAME      "org.freedesktop.hostname1"
+#define HOSTNAMED_SERVICE_PATH      "/org/freedesktop/hostname1"
+#define HOSTNAMED_SERVICE_INTERFACE "org.freedesktop.hostname1"
+
+#define HOSTNAME_FILE_DEFAULT   "/etc/hostname"
+#define HOSTNAME_FILE_SUSE      "/etc/HOSTNAME"
+#define HOSTNAME_FILE_GENTOO    "/etc/conf.d/hostname"
+#define IFCFG_DIR               SYSCONFDIR "/sysconfig/network"
+#define CONF_DHCP               IFCFG_DIR "/dhcp"
+
+#if defined(HOSTNAME_PERSIST_SUSE)
+#define HOSTNAME_FILE           HOSTNAME_FILE_SUSE
+#elif defined(HOSTNAME_PERSIST_GENTOO)
+#define HOSTNAME_FILE           HOSTNAME_FILE_GENTOO
+#else
+#define HOSTNAME_FILE           HOSTNAME_FILE_DEFAULT
+#endif
+
 static void claim_connection (NMSettings *self,
                               NMSettingsConnection *connection);
 
@@ -152,6 +174,16 @@ typedef struct {
 	GSList *get_connections_cache;
 
 	gboolean startup_complete;
+
+	struct {
+		char *value;
+		char *file;
+		GFileMonitor *monitor;
+		GFileMonitor *dhcp_monitor;
+		guint monitor_id;
+		guint dhcp_monitor_id;
+		GDBusProxy *hostnamed_proxy;
+	} hostname;
 } NMSettingsPrivate;
 
 #define NM_SETTINGS_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTINGS, NMSettingsPrivate))
@@ -497,7 +529,7 @@ get_plugin (NMSettings *self, guint32 capability)
 
 	g_return_val_if_fail (self != NULL, NULL);
 
-	/* Do any of the plugins support setting the hostname? */
+	/* Do any of the plugins support the given capability? */
 	for (iter = priv->plugins; iter; iter = iter->next) {
 		NMSystemConfigInterfaceCapabilities caps = NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE;
 
@@ -509,30 +541,94 @@ get_plugin (NMSettings *self, guint32 capability)
 	return NULL;
 }
 
+#if defined(HOSTNAME_PERSIST_GENTOO)
+static gchar *
+read_hostname_gentoo (const char *path)
+{
+	gchar *contents = NULL, *result = NULL, *tmp;
+	gchar **all_lines = NULL;
+	guint line_num, i;
+
+	if (!g_file_get_contents (path, &contents, NULL, NULL))
+		return NULL;
+	all_lines = g_strsplit (contents, "\n", 0);
+	line_num = g_strv_length (all_lines);
+	for (i = 0; i < line_num; i++) {
+		g_strstrip (all_lines[i]);
+		if (all_lines[i][0] == '#' || all_lines[i][0] == '\0')
+			continue;
+		if (g_str_has_prefix (all_lines[i], "hostname=")) {
+			tmp = &all_lines[i][STRLEN ("hostname=")];
+			result = g_shell_unquote (tmp, NULL);
+			break;
+		}
+	}
+	g_strfreev (all_lines);
+	g_free (contents);
+	return result;
+}
+#endif
+
+#if defined(HOSTNAME_PERSIST_SUSE)
+static gboolean
+hostname_is_dynamic (void)
+{
+	GIOChannel *channel;
+	char *str = NULL;
+	gboolean dynamic = FALSE;
+
+	channel = g_io_channel_new_file (CONF_DHCP, "r", NULL);
+	if (!channel)
+		return dynamic;
+
+	while (g_io_channel_read_line (channel, &str, NULL, NULL, NULL) != G_IO_STATUS_EOF) {
+		if (str) {
+			g_strstrip (str);
+			if (g_str_has_prefix (str, "DHCLIENT_SET_HOSTNAME="))
+				dynamic = strcmp (&str[STRLEN ("DHCLIENT_SET_HOSTNAME=")], "\"yes\"") == 0;
+			g_free (str);
+		}
+	}
+
+	g_io_channel_shutdown (channel, FALSE, NULL);
+	g_io_channel_unref (channel);
+
+	return dynamic;
+}
+#endif
+
 /* Returns an allocated string which the caller owns and must eventually free */
 char *
 nm_settings_get_hostname (NMSettings *self)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	GSList *iter;
 	char *hostname = NULL;
 
-	/* Hostname returned is the hostname returned from the first plugin
-	 * that provides one.
-	 */
-	for (iter = priv->plugins; iter; iter = iter->next) {
-		NMSystemConfigInterfaceCapabilities caps = NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE;
-
-		g_object_get (G_OBJECT (iter->data), NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES, &caps, NULL);
-		if (caps & NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME) {
-			g_object_get (G_OBJECT (iter->data), NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME, &hostname, NULL);
-			if (hostname && strlen (hostname))
-				return hostname;
-			g_free (hostname);
-		}
+	if (priv->hostname.hostnamed_proxy) {
+		hostname = g_strdup (priv->hostname.value);
+		goto out;
 	}
 
-	return NULL;
+#if defined(HOSTNAME_PERSIST_GENTOO)
+	hostname = read_hostname_gentoo (priv->hostname.file);
+#else
+
+#if defined(HOSTNAME_PERSIST_SUSE)
+	if (priv->hostname.dhcp_monitor_id && hostname_is_dynamic ())
+		return NULL;
+#endif
+	if (g_file_get_contents (priv->hostname.file, &hostname, NULL, NULL))
+		g_strchomp (hostname);
+
+#endif /* HOSTNAME_PERSIST_GENTOO */
+
+out:
+	if (hostname && !hostname[0]) {
+		g_free (hostname);
+		hostname = NULL;
+	}
+
+	return hostname;
 }
 
 static gboolean
@@ -596,14 +692,6 @@ unrecognized_specs_changed (NMSystemConfigInterface *config,
 }
 
 static void
-hostname_changed (NMSystemConfigInterface *config,
-                  GParamSpec *pspec,
-                  gpointer user_data)
-{
-	g_object_notify (G_OBJECT (user_data), NM_SETTINGS_HOSTNAME);
-}
-
-static void
 add_plugin (NMSettings *self, NMSystemConfigInterface *plugin)
 {
 	NMSettingsPrivate *priv;
@@ -616,9 +704,6 @@ add_plugin (NMSettings *self, NMSystemConfigInterface *plugin)
 	priv = NM_SETTINGS_GET_PRIVATE (self);
 
 	priv->plugins = g_slist_append (priv->plugins, g_object_ref (plugin));
-
-	g_signal_connect (plugin, "notify::"NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME, G_CALLBACK (hostname_changed), self);
-
 	nm_system_config_interface_init (plugin, NULL);
 
 	g_object_get (G_OBJECT (plugin),
@@ -692,6 +777,11 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 
 		if (!*pname || strchr (pname, '/')) {
 			LOG (LOGL_WARN, "ignore invalid plugin \"%s\"", pname);
+			continue;
+		}
+
+		if (!strcmp (pname, "ifcfg-suse")) {
+			LOG (LOGL_WARN, "skipping deprecated plugin ifcfg-suse");
 			continue;
 		}
 
@@ -1442,6 +1532,73 @@ impl_settings_reload_connections (NMSettings *self,
 	dbus_g_method_return (context, TRUE);
 }
 
+static gboolean
+write_hostname (NMSettingsPrivate *priv, const char *hostname)
+{
+	char *hostname_eol;
+	gboolean ret;
+	gs_free_error GError *error = NULL;
+	const char *file = priv->hostname.file;
+	gs_unref_variant GVariant *var = NULL;
+#if HAVE_SELINUX
+	security_context_t se_ctx_prev = NULL, se_ctx = NULL;
+	struct stat file_stat = { .st_mode = 0 };
+	mode_t st_mode = 0;
+#endif
+
+	if (priv->hostname.hostnamed_proxy) {
+		var = g_dbus_proxy_call_sync (priv->hostname.hostnamed_proxy,
+		                              "SetStaticHostname",
+		                              g_variant_new ("(sb)", hostname, FALSE),
+		                              G_DBUS_CALL_FLAGS_NONE,
+		                              -1,
+		                              NULL,
+		                              &error);
+		if (error)
+			nm_log_warn (LOGD_SETTINGS, "Could not set hostname: %s", error->message);
+
+		return !error;
+	}
+
+#if HAVE_SELINUX
+	/* Get default context for hostname file and set it for fscreate */
+	if (stat (file, &file_stat) == 0)
+		st_mode = file_stat.st_mode;
+	matchpathcon (file, st_mode, &se_ctx);
+	matchpathcon_fini ();
+	getfscreatecon (&se_ctx_prev);
+	setfscreatecon (se_ctx);
+#endif
+
+#if defined (HOSTNAME_PERSIST_GENTOO)
+	hostname_eol = g_strdup_printf ("#Generated by NetworkManager\n"
+	                                "hostname=\"%s\"\n", hostname);
+#else
+	hostname_eol = g_strdup_printf ("%s\n", hostname);
+#endif
+
+	/* FIXME: g_file_set_contents() writes first to a temporary file
+	 * and renames it atomically. We should hack g_file_set_contents()
+	 * to set the SELINUX labels before renaming the file. */
+	ret = g_file_set_contents (file, hostname_eol, -1, &error);
+
+#if HAVE_SELINUX
+	/* Restore previous context and cleanup */
+	setfscreatecon (se_ctx_prev);
+	freecon (se_ctx);
+	freecon (se_ctx_prev);
+#endif
+
+	g_free (hostname_eol);
+
+	if (!ret) {
+		nm_log_warn (LOGD_SETTINGS, "Could not save hostname to %s: %s", file, error->message);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
 static void
 pk_hostname_cb (NMAuthChain *chain,
                 GError *chain_error,
@@ -1452,7 +1609,6 @@ pk_hostname_cb (NMAuthChain *chain,
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	NMAuthCallResult result;
 	GError *error = NULL;
-	GSList *iter;
 	const char *hostname;
 
 	g_assert (context);
@@ -1472,21 +1628,12 @@ pk_hostname_cb (NMAuthChain *chain,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
 		                             "Insufficient privileges.");
 	} else {
-		/* Set the hostname in all plugins */
 		hostname = nm_auth_chain_get_data (chain, "hostname");
-		for (iter = priv->plugins; iter; iter = iter->next) {
-			NMSystemConfigInterfaceCapabilities caps = NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE;
 
-			/* error will be cleared if any plugin supports saving the hostname */
+		if (!write_hostname (priv, hostname)) {
 			error = g_error_new_literal (NM_SETTINGS_ERROR,
 			                             NM_SETTINGS_ERROR_FAILED,
 			                             "Saving the hostname failed.");
-
-			g_object_get (G_OBJECT (iter->data), NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES, &caps, NULL);
-			if (caps & NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME) {
-				g_object_set (G_OBJECT (iter->data), NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME, hostname, NULL);
-				g_clear_error (&error);
-			}
 		}
 	}
 
@@ -1543,14 +1690,6 @@ impl_settings_save_hostname (NMSettings *self,
 		goto done;
 	}
 
-	/* Do any of the plugins support setting the hostname? */
-	if (!get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME)) {
-		error = g_error_new_literal (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_NOT_SUPPORTED,
-		                             "None of the registered plugins support setting the hostname.");
-		goto done;
-	}
-
 	chain = nm_auth_chain_new_context (context, pk_hostname_cb, self);
 	if (!chain) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
@@ -1567,6 +1706,37 @@ done:
 	if (error)
 		dbus_g_method_return_error (context, error);
 	g_clear_error (&error);
+}
+
+static void
+hostname_maybe_changed (NMSettings *settings)
+{
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (settings);
+	char *new_hostname;
+
+	new_hostname = nm_settings_get_hostname (settings);
+
+	if (   (new_hostname && !priv->hostname.value)
+	    || (!new_hostname && priv->hostname.value)
+	    || (priv->hostname.value && new_hostname && strcmp (priv->hostname.value, new_hostname))) {
+
+		nm_log_info (LOGD_SETTINGS, "hostname changed from '%s' to '%s'",
+		             priv->hostname.value, new_hostname);
+		g_free (priv->hostname.value);
+		priv->hostname.value = new_hostname;
+		g_object_notify (G_OBJECT (settings), NM_SETTINGS_HOSTNAME);
+	} else
+		g_free (new_hostname);
+}
+
+static void
+hostname_file_changed_cb (GFileMonitor *monitor,
+                          GFile *file,
+                          GFile *other_file,
+                          GFileMonitorEvent event_type,
+                          gpointer user_data)
+{
+	hostname_maybe_changed (user_data);
 }
 
 static gboolean
@@ -1867,11 +2037,79 @@ nm_settings_get_startup_complete (NMSettings *self)
 
 /***************************************************************/
 
+static void
+hostnamed_properties_changed (GDBusProxy *proxy,
+                              GVariant *changed_properties,
+                              char **invalidated_properties,
+                              gpointer user_data)
+{
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (user_data);
+	GVariant *v_hostname;
+	const char *hostname;
+
+	v_hostname = g_dbus_proxy_get_cached_property (priv->hostname.hostnamed_proxy,
+	                                               "StaticHostname");
+	if (!v_hostname)
+		return;
+
+	hostname = g_variant_get_string (v_hostname, NULL);
+
+	if (g_strcmp0 (priv->hostname.value, hostname) != 0) {
+		nm_log_info (LOGD_SETTINGS, "hostname changed from '%s' to '%s'",
+		             priv->hostname.value, hostname);
+		g_free (priv->hostname.value);
+		priv->hostname.value = g_strdup (hostname);
+		g_object_notify (G_OBJECT (user_data), NM_SETTINGS_HOSTNAME);
+	}
+
+	g_variant_unref (v_hostname);
+}
+
+static void
+setup_hostname_file_monitors (NMSettings *self)
+{
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	GFileMonitor *monitor;
+	GFile *file;
+
+	priv->hostname.file = HOSTNAME_FILE;
+	priv->hostname.value = nm_settings_get_hostname (self);
+
+	/* monitor changes to hostname file */
+	file = g_file_new_for_path (priv->hostname.file);
+	monitor = g_file_monitor_file (file, G_FILE_MONITOR_NONE, NULL, NULL);
+	g_object_unref (file);
+	if (monitor) {
+		priv->hostname.monitor_id = g_signal_connect (monitor, "changed",
+		                                              G_CALLBACK (hostname_file_changed_cb),
+		                                              self);
+		priv->hostname.monitor = monitor;
+	}
+
+#if defined (HOSTNAME_PERSIST_SUSE)
+	/* monitor changes to dhcp file to know whether the hostname is valid */
+	file = g_file_new_for_path (CONF_DHCP);
+	monitor = g_file_monitor_file (file, G_FILE_MONITOR_NONE, NULL, NULL);
+	g_object_unref (file);
+	if (monitor) {
+		priv->hostname.dhcp_monitor_id = g_signal_connect (monitor, "changed",
+		                                                   G_CALLBACK (hostname_file_changed_cb),
+		                                                   self);
+		priv->hostname.dhcp_monitor = monitor;
+	}
+#endif
+
+	hostname_maybe_changed (self);
+}
+
 NMSettings *
 nm_settings_new (GError **error)
 {
 	NMSettings *self;
 	NMSettingsPrivate *priv;
+	GDBusProxy *proxy;
+	GVariant *variant;
+	GError *local_error = NULL;
 
 	self = g_object_new (NM_TYPE_SETTINGS, NULL);
 
@@ -1888,6 +2126,31 @@ nm_settings_new (GError **error)
 
 	load_connections (self);
 	check_startup_complete (self);
+
+	proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM, 0, NULL,
+	                                       HOSTNAMED_SERVICE_NAME, HOSTNAMED_SERVICE_PATH,
+	                                       HOSTNAMED_SERVICE_INTERFACE, NULL, &local_error);
+	if (proxy) {
+		variant = g_dbus_proxy_get_cached_property (proxy, "StaticHostname");
+		if (variant) {
+			nm_log_info (LOGD_SETTINGS, "hostname: using hostnamed");
+			priv->hostname.hostnamed_proxy = proxy;
+			g_signal_connect (proxy, "g-properties-changed",
+			                  G_CALLBACK (hostnamed_properties_changed), self);
+			hostnamed_properties_changed (proxy, NULL, NULL, self);
+			g_variant_unref (variant);
+		} else {
+			nm_log_info (LOGD_SETTINGS, "hostname: couldn't get property from hostnamed");
+			g_object_unref (proxy);
+		}
+	} else {
+		nm_log_info (LOGD_SETTINGS, "hostname: hostnamed not used as proxy creation failed with: %s",
+		             local_error->message);
+		g_clear_error (&local_error);
+	}
+
+	if (!priv->hostname.hostnamed_proxy)
+		setup_hostname_file_monitors (self);
 
 	nm_dbus_manager_register_object (priv->dbus_mgr, NM_DBUS_PATH_SETTINGS, self);
 	return self;
@@ -1931,6 +2194,32 @@ dispose (GObject *object)
 	priv->dbus_mgr = NULL;
 
 	g_object_unref (priv->agent_mgr);
+
+	if (priv->hostname.hostnamed_proxy) {
+		g_signal_handlers_disconnect_by_func (priv->hostname.hostnamed_proxy,
+		                                      G_CALLBACK (hostnamed_properties_changed),
+		                                      self);
+		g_clear_object (&priv->hostname.hostnamed_proxy);
+	}
+
+	if (priv->hostname.monitor) {
+		if (priv->hostname.monitor_id)
+			g_signal_handler_disconnect (priv->hostname.monitor, priv->hostname.monitor_id);
+
+		g_file_monitor_cancel (priv->hostname.monitor);
+		g_clear_object (&priv->hostname.monitor);
+	}
+
+	if (priv->hostname.dhcp_monitor) {
+		if (priv->hostname.dhcp_monitor_id)
+			g_signal_handler_disconnect (priv->hostname.dhcp_monitor,
+			                             priv->hostname.dhcp_monitor_id);
+
+		g_file_monitor_cancel (priv->hostname.dhcp_monitor);
+		g_clear_object (&priv->hostname.dhcp_monitor);
+	}
+
+	g_clear_pointer (&priv->hostname.value, g_free);
 
 	G_OBJECT_CLASS (nm_settings_parent_class)->dispose (object);
 }
@@ -2001,7 +2290,7 @@ static void
 nm_settings_class_init (NMSettingsClass *class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (class);
-	
+
 	g_type_class_add_private (class, sizeof (NMSettingsPrivate));
 
 	/* virtual methods */

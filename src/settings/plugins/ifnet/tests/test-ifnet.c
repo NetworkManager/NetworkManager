@@ -70,32 +70,6 @@ test_getdata (void)
 }
 
 static void
-test_read_hostname (void)
-{
-	char *hostname;
-
-	hostname = read_hostname (TEST_IFNET_DIR "/hostname");
-	g_assert_cmpstr (hostname, ==, "gentoo");
-
-	g_free (hostname);
-}
-
-static void
-test_write_hostname (void)
-{
-	char *hostname_path = TEST_SCRATCH_DIR "/hostname-test";
-	char *hostname;
-
-	write_hostname (hostname_path, "gentoo-nm");
-	hostname = read_hostname (hostname_path);
-
-	g_assert_cmpstr (hostname, ==, "gentoo-nm");
-
-	g_free (hostname);
-	unlink (hostname_path);
-}
-
-static void
 test_is_static (void)
 {
 	g_assert (!is_static_ip4 ("eth1"));
@@ -404,8 +378,6 @@ main (int argc, char **argv)
 	g_test_add_func (TPATH "has-ip6-address", test_has_ip6_address);
 	g_test_add_func (TPATH "has-default-route", test_has_default_route);
 	g_test_add_func (TPATH "get-data", test_getdata);
-	g_test_add_func (TPATH "read-hostname", test_read_hostname);
-	g_test_add_func (TPATH "write-hostname", test_write_hostname);
 	g_test_add_func (TPATH "is-ip4-address", test_is_ip4_address);
 	g_test_add_func (TPATH "is-ip6-address", test_is_ip6_address);
 	g_test_add_func (TPATH "convert-ip4-config", test_convert_ipv4_config_block);

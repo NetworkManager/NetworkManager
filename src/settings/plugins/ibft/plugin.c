@@ -182,10 +182,6 @@ sc_plugin_ibft_class_init (SCPluginIbftClass *req_class)
 	g_object_class_override_property (object_class,
 	                                  NM_SYSTEM_CONFIG_INTERFACE_PROP_CAPABILITIES,
 	                                  NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES);
-
-	g_object_class_override_property (object_class,
-	                                  NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME,
-	                                  NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME);
 }
 
 static void

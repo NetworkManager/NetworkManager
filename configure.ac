@@ -85,7 +85,7 @@ AC_SUBST(nmrundir, "$runstatedir/$PACKAGE", [NetworkManager runtime state direct
 # Alternative configuration plugins
 AC_ARG_ENABLE(config-plugin-ibft, AS_HELP_STRING([--enable-config-plugin-ibft], [enable ibft configuration plugin]))
 AC_ARG_ENABLE(ifcfg-rh, AS_HELP_STRING([--enable-ifcfg-rh], [enable ifcfg-rh configuration plugin (Fedora/RHEL)]))
-AC_ARG_ENABLE(ifcfg-suse, AS_HELP_STRING([--enable-ifcfg-suse], [enable ifcfg-suse configuration plugin (SUSE)]))
+AC_ARG_ENABLE(ifcfg-suse, AS_HELP_STRING([--enable-ifcfg-suse], [enable ifcfg-suse configuration plugin (SUSE) (deprecated)]))
 AC_ARG_ENABLE(ifupdown, AS_HELP_STRING([--enable-ifupdown], [enable ifupdown configuration plugin (Debian/Ubuntu)]))
 AC_ARG_ENABLE(ifnet, AS_HELP_STRING([--enable-ifnet], [enable ifnet configuration plugin (Gentoo)]))
 # Default alternative plugins by distribution
@@ -105,7 +105,6 @@ AS_IF([test -z "$enable_config_plugin_ibft"], enable_config_plugin_ibft="yes")
 # Create automake conditionals
 AM_CONDITIONAL(CONFIG_PLUGIN_IBFT, test "$enable_config_plugin_ibft" = "yes")
 AM_CONDITIONAL(CONFIG_PLUGIN_IFCFG_RH, test "$enable_ifcfg_rh" = "yes")
-AM_CONDITIONAL(CONFIG_PLUGIN_IFCFG_SUSE, test "$enable_ifcfg_suse" = "yes")
 AM_CONDITIONAL(CONFIG_PLUGIN_IFUPDOWN, test "$enable_ifupdown" = "yes")
 AM_CONDITIONAL(CONFIG_PLUGIN_IFNET, test "$enable_ifnet" = "yes")
 
@@ -113,12 +112,18 @@ AC_ARG_WITH(config-plugins-default, AS_HELP_STRING([--with-config-plugins-defaul
 if test -z "$config_plugins_default" -o "$config_plugins_default" = no; then
     config_plugins_default=''
     test "$enable_ifcfg_rh" = "yes"           && config_plugins_default="$config_plugins_default,ifcfg-rh"
-    test "$enable_ifcfg_suse" = "yes"         && config_plugins_default="$config_plugins_default,ifcfg-suse"
     test "$enable_ifupdown" = "yes"           && config_plugins_default="$config_plugins_default,ifupdown"
     test "$enable_ifnet" = "yes"              && config_plugins_default="$config_plugins_default,ifnet"
     test "$enable_config_plugin_ibft" = "yes" && config_plugins_default="$config_plugins_default,ibft"
     config_plugins_default="${config_plugins_default#,}"
 fi
+
+test "$enable_ifcfg_rh" = "yes"           && distro_plugins="$distro_plugins,ifcfg-rh"
+test "$enable_ifcfg_suse" = "yes"         && distro_plugins="$distro_plugins,ifcfg-suse"
+test "$enable_ifupdown" = "yes"           && distro_plugins="$distro_plugins,ifupdown"
+test "$enable_ifnet" = "yes"              && distro_plugins="$distro_plugins,ifnet"
+distro_plugins="${distro_plugins#,}"
+
 AC_DEFINE_UNQUOTED(CONFIG_PLUGINS_DEFAULT, "$config_plugins_default", [Default configuration option for main.plugins setting])
 
 if test "$enable_ifcfg_rh" = "yes"; then
@@ -346,6 +351,24 @@ fi
 
 PKG_CHECK_MODULES(SYSTEMD_200, [systemd >= 200], [have_systemd_200=yes],[have_systemd_200=no])
 AM_CONDITIONAL(HAVE_SYSTEMD_200, test "${have_systemd_200}" = "yes")
+
+# Hostname persist mode
+AC_ARG_WITH(hostname-persist, AS_HELP_STRING([--with-hostname-persist=default|suse|gentoo],
+	[Hostname persist method]))
+
+AS_IF([test "$with_hostname_persist" = "suse"], hostname_persist=suse)
+AS_IF([test "$with_hostname_persist" = "gentoo"], hostname_persist=gentoo)
+AS_IF([test "$with_hostname_persist" = "default"], hostname_persist=default)
+# if the method was not explicitly set, try to guess it from the enabled plugins
+AS_IF([test -z "$hostname_persist" -a "$distro_plugins" = "ifcfg-suse"], hostname_persist=suse)
+AS_IF([test -z "$hostname_persist" -a "$distro_plugins" = "ifnet"], hostname_persist=gentoo)
+AS_IF([test -z "$hostname_persist"], hostname_persist=default)
+
+if test "$hostname_persist" = suse; then
+	AC_DEFINE(HOSTNAME_PERSIST_SUSE, 1, [Enable SuSE hostname persist method])
+elif test "$hostname_persist" = gentoo; then
+	AC_DEFINE(HOSTNAME_PERSIST_GENTOO, 1, [Enable Gentoo hostname persist method])
+fi
 
 # Session tracking support
 AC_ARG_WITH(systemd-logind, AS_HELP_STRING([--with-systemd-logind=yes|no],
@@ -954,11 +977,9 @@ src/settings/plugins/ifcfg-rh/tests/Makefile
 src/settings/plugins/ifcfg-rh/tests/network-scripts/Makefile
 src/settings/plugins/ibft/Makefile
 src/settings/plugins/ibft/tests/Makefile
-src/settings/plugins/ifcfg-suse/Makefile
 src/settings/plugins/keyfile/Makefile
 src/settings/plugins/keyfile/tests/Makefile
 src/settings/plugins/keyfile/tests/keyfiles/Makefile
-src/settings/plugins/example/Makefile
 src/platform/Makefile
 src/platform/tests/Makefile
 src/rdisc/Makefile
@@ -1063,6 +1084,7 @@ else
 fi
 echo "  polkit agent: ${enable_polkit_agent}"
 echo "  selinux: $have_selinux"
+echo "  hostname persist: ${hostname_persist}"
 echo
 
 echo "Features:"
@@ -1078,7 +1100,6 @@ echo
 echo "Configuration plugins (main.plugins=${config_plugins_default})"
 echo "  ibft: ${enable_config_plugin_ibft}"
 echo "  ifcfg-rh: ${enable_ifcfg_rh}"
-echo "  ifcfg-suse: ${enable_ifcfg_suse}"
 echo "  ifupdown: ${enable_ifupdown}"
 echo "  ifnet: ${enable_ifnet}"
 echo

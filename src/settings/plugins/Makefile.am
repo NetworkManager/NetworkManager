@@ -1,4 +1,4 @@
-SUBDIRS=keyfile example
+SUBDIRS=keyfile
 
 @GNOME_CODE_COVERAGE_RULES@
 
@@ -8,10 +8,6 @@ endif
 
 if CONFIG_PLUGIN_IFCFG_RH
 SUBDIRS+=ifcfg-rh
-endif
-
-if CONFIG_PLUGIN_IFCFG_SUSE
-SUBDIRS+=ifcfg-suse
 endif
 
 if CONFIG_PLUGIN_IFUPDOWN

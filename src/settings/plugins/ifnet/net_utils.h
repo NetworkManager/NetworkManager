@@ -37,8 +37,6 @@ typedef struct _ip_block {
 	struct _ip_block *next;
 } ip_block;
 
-gchar *read_hostname (const char *path);
-gboolean write_hostname (const char *path, const char *hostname);
 gboolean is_static_ip4 (const char *conn_name);
 gboolean is_static_ip6 (const char *conn_name);
 gboolean is_ip4_address (const char *in_address);

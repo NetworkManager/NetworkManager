@@ -313,7 +313,10 @@ no-auto-default=*
       <variablelist>
 	<varlistentry>
 	  <term><varname>hostname</varname></term>
-	  <listitem><para>Set a persistent hostname.</para></listitem>
+	  <listitem><para>This key is deprecated and has no effect
+	  since the hostname is now stored in /etc/hostname or other
+	  system configuration files according to build options.
+	  </para></listitem>
 	</varlistentry>
 	<varlistentry>
 	  <term><varname>unmanaged-devices</varname></term>
@@ -619,12 +622,9 @@ ipv6.ip6-privacy=1
 	<term><varname>ifcfg-suse</varname></term>
 	<listitem>
 	  <para>
-	    This plugin is only provided for simple backward
-	    compatibility with SUSE and OpenSUSE configuration. Most
-	    setups should be using the <literal>keyfile</literal>
-	    plugin instead. The <literal>ifcfg-suse</literal> plugin
-	    supports reading Ethernet and Wi-Fi connections, but does
-	    not support saving any connection types.
+	    This plugin is deprecated and its selection has no effect.
+	    The <literal>keyfile</literal> plugin should be used
+	    instead.
 	  </para>
 	</listitem>
       </varlistentry>
