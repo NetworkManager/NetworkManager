@@ -2697,11 +2697,10 @@ ASSERT_VALID_PATH_COMPONENT (const char *name)
 
 	return name;
 fail:
-	if (name)
-		nm_log_err (LOGD_CORE, "Failed asserting path component: NULL");
-	else
-		nm_log_err (LOGD_CORE, "Failed asserting path component: \"%s\"", name);
-	g_error ("FATAL: Failed asserting path component: %s", name ? name : "(null)");
+	nm_log_err (LOGD_CORE, "Failed asserting path component: %s%s%s",
+	            NM_PRINT_FMT_QUOTED (name, "\"", name, "\"", "(null)"));
+	g_error ("FATAL: Failed asserting path component: %s%s%s",
+	         NM_PRINT_FMT_QUOTED (name, "\"", name, "\"", "(null)"));
 	g_assert_not_reached ();
 }
 
