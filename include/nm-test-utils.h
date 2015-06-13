@@ -137,6 +137,14 @@ nmtst_assert_error (GError *error,
 		} \
 	} G_STMT_END
 
+inline static void
+_nmtst_assert_success (gboolean success, GError *error, const char *file, int line)
+{
+	if (!success || error)
+		g_error ("(%s:%d) FAILURE success=%d, error=%s", file, line, success, error && error->message ? error->message : "(no error)");
+}
+#define nmtst_assert_success(success, error) _nmtst_assert_success ((success), (error), __FILE__, __LINE__)
+
 /*******************************************************************************/
 
 struct __nmtst_internal
