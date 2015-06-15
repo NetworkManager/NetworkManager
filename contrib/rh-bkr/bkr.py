@@ -265,9 +265,11 @@ def nitrate_get_cases_by_one_tag(tag_name):
     cases_with_tag = _nitrate_index_cases_by_case_id(cases_with_tag)
     return sub_dict(cases, cases_with_tag.keys())
 
-def _call(args, stderr=devnull, reason=None, dry_run=False, verbose=False):
+def _call(args, stderr=None, reason=None, dry_run=False, verbose=False):
     if verbose:
         print(">%s '%s'" % ('x' if dry_run else '>',  "' '".join(args)))
+    elif stderr is None:
+        stderr = devnull
     try:
         if dry_run:
             output = ''
