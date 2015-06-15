@@ -35,7 +35,7 @@ test_cleanup_internal (void)
 	inet_pton (AF_INET6, "2001:db8:e:f:1:2:3:4", &gateway6);
 
 	/* Create and set up device */
-	g_assert (nm_platform_dummy_add (NM_PLATFORM_GET, DEVICE_NAME, NULL));
+	g_assert (nm_platform_dummy_add (NM_PLATFORM_GET, DEVICE_NAME, NULL) == NM_PLATFORM_ERROR_SUCCESS);
 	accept_signal (link_added);
 	free_signal (link_added);
 	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME)));

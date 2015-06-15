@@ -323,7 +323,7 @@ setup_tests (void)
 
 	nm_platform_link_delete (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME));
 	g_assert (!nm_platform_link_exists (NM_PLATFORM_GET, DEVICE_NAME));
-	g_assert (nm_platform_dummy_add (NM_PLATFORM_GET, DEVICE_NAME, NULL));
+	g_assert (nm_platform_dummy_add (NM_PLATFORM_GET, DEVICE_NAME, NULL) == NM_PLATFORM_ERROR_SUCCESS);
 	accept_signal (link_added);
 	free_signal (link_added);
 

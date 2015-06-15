@@ -85,36 +85,37 @@ test_loopback (void)
 	g_assert (!nm_platform_link_supports_vlans (NM_PLATFORM_GET, LO_INDEX));
 }
 
-static int
+static gboolean
 software_add (NMLinkType link_type, const char *name)
 {
 	switch (link_type) {
 	case NM_LINK_TYPE_DUMMY:
-		return nm_platform_dummy_add (NM_PLATFORM_GET, name, NULL);
+		return nm_platform_dummy_add (NM_PLATFORM_GET, name, NULL) == NM_PLATFORM_ERROR_SUCCESS;
 	case NM_LINK_TYPE_BRIDGE:
-		return nm_platform_bridge_add (NM_PLATFORM_GET, name, NULL, 0, NULL);
+		return nm_platform_bridge_add (NM_PLATFORM_GET, name, NULL, 0, NULL) == NM_PLATFORM_ERROR_SUCCESS;
 	case NM_LINK_TYPE_BOND:
 		{
 			gboolean bond0_exists = nm_platform_link_exists (NM_PLATFORM_GET, "bond0");
-			gboolean result = nm_platform_bond_add (NM_PLATFORM_GET, name, NULL);
-			NMPlatformError error = nm_platform_get_error (NM_PLATFORM_GET);
+			NMPlatformError plerr;
+
+			plerr = nm_platform_bond_add (NM_PLATFORM_GET, name, NULL);
 
 			/* Check that bond0 is *not* automatically created. */
 			if (!bond0_exists)
 				g_assert (!nm_platform_link_exists (NM_PLATFORM_GET, "bond0"));
 
-			nm_platform_set_error (NM_PLATFORM_GET, error);
-			return result;
+			nm_platform_set_error (NM_PLATFORM_GET, plerr);
+			return plerr == NM_PLATFORM_ERROR_SUCCESS;
 		}
 	case NM_LINK_TYPE_TEAM:
-		return nm_platform_team_add (NM_PLATFORM_GET, name, NULL);
+		return nm_platform_team_add (NM_PLATFORM_GET, name, NULL) == NM_PLATFORM_ERROR_SUCCESS;
 	case NM_LINK_TYPE_VLAN: {
 		SignalData *parent_added;
 		SignalData *parent_changed;
 
 		/* Don't call link_callback for the bridge interface */
 		parent_added = add_signal_ifname (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_ADDED, link_callback, PARENT_NAME);
-		if (nm_platform_bridge_add (NM_PLATFORM_GET, PARENT_NAME, NULL, 0, NULL))
+		if (nm_platform_bridge_add (NM_PLATFORM_GET, PARENT_NAME, NULL, 0, NULL) == NM_PLATFORM_ERROR_SUCCESS)
 			accept_signal (parent_added);
 		free_signal (parent_added);
 
@@ -131,7 +132,7 @@ software_add (NMLinkType link_type, const char *name)
 				accept_signal (parent_changed);
 			free_signal (parent_changed);
 
-			return nm_platform_vlan_add (NM_PLATFORM_GET, name, parent_ifindex, VLAN_ID, 0, NULL);
+			return nm_platform_vlan_add (NM_PLATFORM_GET, name, parent_ifindex, VLAN_ID, 0, NULL) == NM_PLATFORM_ERROR_SUCCESS;
 		}
 	}
 	default:
@@ -440,12 +441,12 @@ test_internal (void)
 	error (NM_PLATFORM_ERROR_NOT_FOUND);
 
 	/* Add device */
-	g_assert (nm_platform_dummy_add (NM_PLATFORM_GET, DEVICE_NAME, NULL));
+	g_assert (nm_platform_dummy_add (NM_PLATFORM_GET, DEVICE_NAME, NULL) == NM_PLATFORM_ERROR_SUCCESS);
 	no_error ();
 	accept_signal (link_added);
 
 	/* Try to add again */
-	g_assert (!nm_platform_dummy_add (NM_PLATFORM_GET, DEVICE_NAME, NULL));
+	g_assert (nm_platform_dummy_add (NM_PLATFORM_GET, DEVICE_NAME, NULL) == NM_PLATFORM_ERROR_EXISTS);
 	error (NM_PLATFORM_ERROR_EXISTS);
 
 	/* Check device index, name and type */
