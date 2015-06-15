@@ -579,21 +579,21 @@ class CmdSubmit(CmdBase):
                     if re.match(r'^.*/NetworkManager-0.9.9.1-[1-9][0-9]*\.git20140326\.4dba720\.el7\.x86_64\.rpm$', u):
                         return 'rhel-7.0' # stable rhel-7.0 release
                     if re.match(r'^.*/NetworkManager-0.9.11.0-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
-                        return 'master' # upstream pre 1.0
+                        return 'rhel-7.1' # upstream pre 1.0
                     if re.match(r'^.*/NetworkManager-0.9[0-9][0-9]+.0.0-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
-                        return 'master' # upstream 1.0-beta
+                        return 'rhel-7.1' # upstream 1.0-beta
                     if re.match(r'^.*/NetworkManager-1.0.[0-9]+-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
-                        return 'master' # upstream 1.0
+                        return 'rhel-7.1' # upstream 1.0
+                    if re.match(r'^.*/NetworkManager-0.9.10.[0-9]+-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
+                        return 'rhel-7.1' # 0.9.10
+                    if re.match(r'^.*/NetworkManager-0.9.9.9[0-9]+-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
+                        return 'rhel-7.1' # 0.9.10-rc
+                    if re.match(r'^.*/NetworkManager-0\.9\.11\..*\.git20141022.e28ee14.el7.x86_64.rpm$', u):
+                        return 'rhel-7.1' # rhel-7.1-rc
+                    if re.match(r'^.*/NetworkManager-1.0.[0-9]+-[0-9]+\.git20150121\.b4ea599c\.el7.x86_64.rpm$', u):
+                        return 'rhel-7.1' # rhel-7.1-rc
                     if re.match(r'^.*/NetworkManager-1.1.[0-9]+-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
                         return 'master' # upstream 1.1
-                    if re.match(r'^.*/NetworkManager-0.9.10.[0-9]+-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
-                        return 'master' # 0.9.10
-                    if re.match(r'^.*/NetworkManager-0.9.9.9[0-9]+-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
-                        return 'master' # 0.9.10-rc
-                    if re.match(r'^.*/NetworkManager-0\.9\.11\..*\.git20141022.e28ee14.el7.x86_64.rpm$', u):
-                        return 'master' # rhel-7.1-rc
-                    if re.match(r'^.*/NetworkManager-1.0.[0-9]+-[0-9]+\.git20150121\.b4ea599c\.el7.x86_64.rpm$', u):
-                        return 'master' # rhel-7.1-rc
         raise Exception("could not detect the target branch. Try setting as environment variable GIT_TARGETBRANCH%s" % (
                     ((" (or try setting "+key_name+")") if key_name == 'GIT_TARGETBRANCH' else '')))
 
