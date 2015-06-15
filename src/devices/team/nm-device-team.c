@@ -689,16 +689,17 @@ NMDevice *
 nm_device_team_new_for_connection (NMConnection *connection, GError **error)
 {
 	const char *iface = nm_connection_get_interface_name (connection);
+	NMPlatformError plerr;
 
 	g_assert (iface);
 
-	if (   !nm_platform_team_add (NM_PLATFORM_GET, iface, NULL)
-	    && nm_platform_get_error (NM_PLATFORM_GET) != NM_PLATFORM_ERROR_EXISTS) {
+	plerr = nm_platform_team_add (NM_PLATFORM_GET, iface, NULL);
+	if (plerr != NM_PLATFORM_ERROR_SUCCESS && plerr != NM_PLATFORM_ERROR_EXISTS) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 		             "Failed to create team master interface '%s' for '%s': %s",
 		             iface,
 		             nm_connection_get_id (connection),
-		             nm_platform_get_error_msg (NM_PLATFORM_GET));
+		             nm_platform_error_to_string (plerr));
 		return NULL;
 	}
 

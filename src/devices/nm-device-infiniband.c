@@ -326,6 +326,7 @@ create_virtual_device_for_connection (NMDeviceFactory *factory,
 	NMSettingInfiniband *s_infiniband;
 	int p_key, parent_ifindex;
 	const char *iface;
+	NMPlatformError plerr;
 
 	if (!NM_IS_DEVICE_INFINIBAND (parent)) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
@@ -342,13 +343,13 @@ create_virtual_device_for_connection (NMDeviceFactory *factory,
 	parent_ifindex = nm_device_get_ifindex (parent);
 	p_key = nm_setting_infiniband_get_p_key (s_infiniband);
 
-	if (   !nm_platform_infiniband_partition_add (NM_PLATFORM_GET, parent_ifindex, p_key, NULL)
-	    && nm_platform_get_error (NM_PLATFORM_GET) != NM_PLATFORM_ERROR_EXISTS) {
+	plerr = nm_platform_infiniband_partition_add (NM_PLATFORM_GET, parent_ifindex, p_key, NULL);
+	if (plerr != NM_PLATFORM_ERROR_SUCCESS && plerr != NM_PLATFORM_ERROR_EXISTS) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 		             "Failed to create InfiniBand P_Key interface '%s' for '%s': %s",
 		             iface,
 		             nm_connection_get_id (connection),
-		             nm_platform_get_error_msg (NM_PLATFORM_GET));
+		             nm_platform_error_to_string (plerr));
 		return NULL;
 	}
 
