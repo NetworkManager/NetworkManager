@@ -36,57 +36,6 @@
 /*******************************************/
 
 static void
-test_nm_ref_string (void)
-{
-	const char *nm_str, *s1, *s2;
-
-	nm_str = nm_ref_string_new ("hallo");
-
-	g_assert_cmpstr (nm_str, ==, "hallo");
-
-	nm_ref_string_ref (nm_str);
-	g_assert_cmpstr (nm_str, ==, "hallo");
-
-	nm_ref_string_unref (nm_str);
-	g_assert_cmpstr (nm_str, ==, "hallo");
-
-	nm_str = nm_ref_string_replace (nm_str, "hallo");
-	g_assert_cmpstr (nm_str, ==, "hallo");
-
-	nm_str = nm_ref_string_replace (nm_str, "hallo2");
-	g_assert_cmpstr (nm_str, ==, "hallo2");
-
-	nm_ref_string_unref (nm_str);
-
-	/* replace() reallocs old memory if ref-count is 1. */
-	s1 = nm_ref_string_new ("abcdef");
-	g_assert_cmpstr (s1, ==, "abcdef");
-	s2 = nm_ref_string_replace (s1, "ABC");
-	g_assert_cmpstr (s2, ==, "ABC");
-	nm_ref_string_unref (s2);
-
-	/* replace() reallocs old memory if ref-count is 1. */
-	s1 = nm_ref_string_new ("ABC");
-	g_assert_cmpstr (s1, ==, "ABC");
-	s2 = nm_ref_string_replace (s1, "abcdef");
-	g_assert_cmpstr (s2, ==, "abcdef");
-	nm_ref_string_unref (s2);
-
-	/* replace allocates new memory if ref-count larger 1. */
-	s1 = nm_ref_string_new ("ABC");
-	g_assert_cmpstr (s1, ==, "ABC");
-	nm_ref_string_ref (s1);
-	s2 = nm_ref_string_replace (s1, "abcdef");
-	g_assert_cmpstr (s2, ==, "abcdef");
-	g_assert_cmpstr (s1, ==, "ABC");
-	g_assert (s1 != s2);
-	nm_ref_string_unref (s2);
-	nm_ref_string_unref (s1);
-}
-
-/*******************************************/
-
-static void
 test_nm_utils_monotonic_timestamp_as_boottime (void)
 {
 	gint64 timestamp_ns_per_tick, now, now_boottime, now_boottime_2, now_boottime_3;
@@ -909,7 +858,6 @@ main (int argc, char **argv)
 {
 	nmtst_init_assert_logging (&argc, &argv, "DEBUG", "DEFAULT");
 
-	g_test_add_func ("/general/nm_ref_string", test_nm_ref_string);
 	g_test_add_func ("/general/nm_utils_monotonic_timestamp_as_boottime", test_nm_utils_monotonic_timestamp_as_boottime);
 	g_test_add_func ("/general/nm_utils_kill_child", test_nm_utils_kill_child);
 	g_test_add_func ("/general/nm_utils_array_remove_at_indexes", test_nm_utils_array_remove_at_indexes);

@@ -201,10 +201,4 @@ gboolean nm_utils_get_testing_initialized (void);
 NMUtilsTestFlags nm_utils_get_testing (void);
 void _nm_utils_set_testing (NMUtilsTestFlags flags);
 
-typedef const char *NMRefString;
-NMRefString nm_ref_string_new (const char *str);
-NMRefString nm_ref_string_ref (NMRefString nmstr);
-void nm_ref_string_unref (NMRefString nmstr);
-NMRefString nm_ref_string_replace (NMRefString nmstr, const char *str);
-
 #endif /* __NETWORKMANAGER_UTILS_H__ */
