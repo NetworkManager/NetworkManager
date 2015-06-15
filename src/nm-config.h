@@ -49,11 +49,13 @@ G_BEGIN_DECLS
 
 #define NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN                ".intern."
 #define NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION            "connection"
+#define NM_CONFIG_KEYFILE_GROUPPREFIX_GLOBAL_DNS_DOMAIN     "global-dns-domain-"
 #define NM_CONFIG_KEYFILE_GROUPPREFIX_TEST_APPEND_STRINGLIST ".test-append-stringlist"
 
 #define NM_CONFIG_KEYFILE_GROUP_MAIN                        "main"
 #define NM_CONFIG_KEYFILE_GROUP_LOGGING                     "logging"
 #define NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY                "connectivity"
+#define NM_CONFIG_KEYFILE_GROUP_GLOBAL_DNS                  "global-dns"
 
 #define NM_CONFIG_KEYFILE_GROUP_KEYFILE                     "keyfile"
 #define NM_CONFIG_KEYFILE_GROUP_IFUPDOWN                    "ifupdown"
@@ -68,6 +70,11 @@ G_BEGIN_DECLS
 
 #define NM_CONFIG_KEYFILE_KEYPREFIX_WAS                     ".was."
 #define NM_CONFIG_KEYFILE_KEYPREFIX_SET                     ".set."
+
+#define NM_CONFIG_KEYFILE_GROUP_INTERN_GLOBAL_DNS \
+	NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN NM_CONFIG_KEYFILE_GROUP_GLOBAL_DNS
+#define NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_GLOBAL_DNS_DOMAIN \
+	NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN NM_CONFIG_KEYFILE_GROUPPREFIX_GLOBAL_DNS_DOMAIN
 
 typedef struct NMConfigCmdLineOptions NMConfigCmdLineOptions;
 

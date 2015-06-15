@@ -244,6 +244,83 @@ test_config_override (void)
 }
 
 static void
+test_config_global_dns (void)
+{
+	NMConfig *config;
+	const NMGlobalDnsConfig *dns;
+	NMGlobalDnsDomain *domain;
+	const char *const *strv;
+
+	config = setup_config (NULL, SRCDIR "/NetworkManager.conf", "", NULL,
+	                       "/no/such/dir", "", NULL);
+
+	dns = nm_config_data_get_global_dns_config (nm_config_get_data_orig (config));
+	g_assert (dns);
+
+	strv = nm_global_dns_config_get_searches (dns);
+	g_assert (strv);
+	g_assert_cmpuint (g_strv_length ((char **) strv), ==, 2);
+	g_assert_cmpstr (strv[0], ==, "foo.com");
+	g_assert_cmpstr (strv[1], ==, "bar.org");
+
+	strv = nm_global_dns_config_get_options (dns);
+	g_assert (strv);
+	g_assert_cmpuint (g_strv_length ((char **) strv), ==, 2);
+	g_assert_cmpstr (strv[0], ==, "debug");
+	g_assert_cmpstr (strv[1], ==, "edns0");
+
+	g_assert_cmpuint (nm_global_dns_config_get_num_domains (dns), ==, 2);
+
+	/* Default domain */
+	domain = nm_global_dns_config_lookup_domain (dns, "*");
+	g_assert (domain);
+
+	strv = nm_global_dns_domain_get_servers (domain);
+	g_assert (strv);
+	g_assert_cmpuint (g_strv_length ((char **) strv), ==, 2);
+	g_assert_cmpstr (strv[0], ==, "1.1.1.1");
+	g_assert_cmpstr (strv[1], ==, "1::128");
+
+	strv = nm_global_dns_domain_get_options (domain);
+	g_assert (strv);
+	g_assert_cmpuint (g_strv_length ((char **) strv), ==, 2);
+	g_assert_cmpstr (strv[0], ==, "opt1");
+	g_assert_cmpstr (strv[1], ==, "opt2");
+
+	/* 'example.com' domain */
+	domain = nm_global_dns_config_lookup_domain (dns, "example.com");
+	g_assert (domain);
+
+	strv = nm_global_dns_domain_get_servers (domain);
+	g_assert (strv);
+	g_assert_cmpuint (g_strv_length ((char **) strv), ==, 1);
+	g_assert_cmpstr (strv[0], ==, "2.2.2.2");
+
+	strv = nm_global_dns_domain_get_options (domain);
+	g_assert (!strv || g_strv_length ((char **) strv) == 0);
+
+	/* Non-existent domain 'test.com' */
+	domain = nm_global_dns_config_lookup_domain (dns, "test.com");
+	g_assert (!domain);
+
+	g_object_unref (config);
+
+	/* Check that a file without "enable=yes" gives a NULL configuration */
+	config = setup_config (NULL, SRCDIR "/global-dns-disabled.conf", "", NULL,
+	                       "/no/such/dir", "", NULL);
+	dns = nm_config_data_get_global_dns_config (nm_config_get_data_orig (config));
+	g_assert (!dns);
+	g_object_unref (config);
+
+	/* Check that a file without a default domain section gives a NULL configuration */
+	config = setup_config (NULL, SRCDIR "/global-dns-invalid.conf", "", NULL,
+	                       "/no/such/dir", "", NULL);
+	dns = nm_config_data_get_global_dns_config (nm_config_get_data_orig (config));
+	g_assert (!dns);
+	g_object_unref (config);
+}
+
+static void
 test_config_no_auto_default (void)
 {
 	NMConfig *config;
@@ -852,6 +929,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/config/confdir-parse-error", test_config_confdir_parse_error);
 
 	g_test_add_func ("/config/set-values", test_config_set_values);
+	g_test_add_func ("/config/global-dns", test_config_global_dns);
 
 	g_test_add_func ("/config/signal", test_config_signal);
 
