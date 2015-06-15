@@ -2969,6 +2969,20 @@ link_get_udi (NMPlatform *platform, int ifindex)
 	return g_udev_device_get_sysfs_path (obj->_link.udev.device);
 }
 
+static GObject *
+link_get_udev_device (NMPlatform *platform, int ifindex)
+{
+	const NMPObject *obj_cache;
+
+	/* we don't use cache_lookup_link() because this would return NULL
+	 * if the link is not visible in libnl. For link_get_udev_device()
+	 * we want to return whatever we have, even if the link itself
+	 * appears invisible via other platform functions. */
+
+	obj_cache = nmp_cache_lookup_link (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, ifindex);
+	return obj_cache ? (GObject *) obj_cache->_link.udev.device : NULL;
+}
+
 static gboolean
 link_get_user_ipv6ll_enabled (NMPlatform *platform, int ifindex)
 {
@@ -4999,6 +5013,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_uses_arp = link_uses_arp;
 
 	platform_class->link_get_udi = link_get_udi;
+	platform_class->link_get_udev_device = link_get_udev_device;
 	platform_class->link_get_ipv6_token = link_get_ipv6_token;
 
 	platform_class->link_get_user_ipv6ll_enabled = link_get_user_ipv6ll_enabled;

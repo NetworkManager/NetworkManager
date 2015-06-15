@@ -928,6 +928,19 @@ nm_platform_link_get_udi (NMPlatform *self, int ifindex)
 	return NULL;
 }
 
+GObject *
+nm_platform_link_get_udev_device (NMPlatform *self, int ifindex)
+{
+	_CHECK_SELF (self, klass, FALSE);
+	reset_error (self);
+
+	g_return_val_if_fail (ifindex >= 0, NULL);
+
+	if (klass->link_get_udev_device)
+		return klass->link_get_udev_device (self, ifindex);
+	return NULL;
+}
+
 /**
  * nm_platform_link_get_user_ip6vll_enabled:
  * @self: platform instance
