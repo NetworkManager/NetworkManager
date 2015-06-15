@@ -551,12 +551,15 @@ class CmdSubmit(CmdBase):
 
     def _get_default(self, key_name):
         if not hasattr(self, '_default_var'):
+            # Lazily set self._default_var from the command line arguments
+            # the first time we need it
             self._default_var = {}
-            for v0 in self.options.var:
-                v = v0.split('=', 1)
-                if len(v) != 2:
-                    raise Exception("Invalid --var option %s. Should be NAME=VALUE" % (v0))
-                self._default_var[v[0]] = v[1]
+            if self.options.var is not None:
+                for v0 in self.options.var:
+                    v = v0.split('=', 1)
+                    if len(v) != 2:
+                        raise Exception("Invalid --var option %s. Should be NAME=VALUE" % (v0))
+                    self._default_var[v[0]] = v[1]
         if key_name in self._default_var:
             return self._default_var[key_name]
         return os.environ.get(key_name)
