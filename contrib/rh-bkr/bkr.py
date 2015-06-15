@@ -752,7 +752,7 @@ class CmdSubmit(CmdBase):
                 print("replace \'%s\' => '%s'" % (k, v))
             for k in [ k for (k,v) in replacements.iteritems() if v is None ]:
                 print("replace \'%s\' %s" % (k, termcolor.colored("not found", 'yellow')))
-            temp = tempfile.NamedTemporaryFile(prefix='brk_job.xml.', delete=False)
+            temp = tempfile.NamedTemporaryFile(prefix='bkr_job.xml.', delete=False)
             for l in job:
                 temp.write(l)
             temp.close()
