@@ -150,6 +150,7 @@ const char *const *nm_global_dns_domain_get_servers (const NMGlobalDnsDomain *do
 const char *const *nm_global_dns_domain_get_options (const NMGlobalDnsDomain *domain);
 gboolean nm_global_dns_config_is_internal (const NMGlobalDnsConfig *dns);
 gboolean nm_global_dns_config_is_empty (const NMGlobalDnsConfig *dns);
+void nm_global_dns_config_update_checksum (const NMGlobalDnsConfig *dns, GChecksum *sum);
 void nm_global_dns_config_free (NMGlobalDnsConfig *conf);
 
 /* private accessors */

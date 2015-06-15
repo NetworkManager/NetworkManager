@@ -31,6 +31,7 @@ update (NMDnsPlugin *plugin,
         const GSList *vpn_configs,
         const GSList *dev_configs,
         const GSList *other_configs,
+        const NMGlobalDnsConfig *global_config,
         const char *hostname)
 {
 	/* TODO: We currently call a script installed with the dnssec-trigger
