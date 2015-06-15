@@ -640,6 +640,37 @@ nm_global_dns_config_is_empty (const NMGlobalDnsConfig *dns)
 	       && g_hash_table_size (dns->domains) == 0;
 }
 
+void
+nm_global_dns_config_update_checksum (const NMGlobalDnsConfig *dns, GChecksum *sum)
+{
+	NMGlobalDnsDomain *domain;
+	GList *keys, *key;
+	guint i;
+
+	g_return_if_fail (dns);
+	g_return_if_fail (dns->domains);
+	g_return_if_fail (sum);
+
+	for (i = 0; dns->searches && dns->searches[i]; i++)
+		g_checksum_update (sum, (guchar *) dns->searches[i], strlen (dns->searches[i]));
+	for (i = 0; dns->options && dns->options[i]; i++)
+		g_checksum_update (sum, (guchar *) dns->options[i], strlen (dns->options[i]));
+
+	keys = g_list_sort (g_hash_table_get_keys (dns->domains), (GCompareFunc) strcmp);
+	for (key = keys; key; key = g_list_next (key)) {
+
+		domain = g_hash_table_lookup (dns->domains, key->data);
+		g_assert_nonnull (domain);
+		g_checksum_update (sum, (guchar *) domain->name, strlen (domain->name));
+
+		for (i = 0; domain->servers && domain->servers[i]; i++)
+			g_checksum_update (sum, (guchar *) domain->servers[i], strlen (domain->servers[i]));
+		for (i = 0; domain->options && domain->options[i]; i++)
+			g_checksum_update (sum, (guchar *) domain->options[i], strlen (domain->options[i]));
+	}
+	g_list_free (keys);
+}
+
 static void
 global_dns_domain_free (NMGlobalDnsDomain  *domain)
 {

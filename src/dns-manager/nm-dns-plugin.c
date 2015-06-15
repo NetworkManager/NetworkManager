@@ -56,6 +56,7 @@ nm_dns_plugin_update (NMDnsPlugin *self,
                       const GSList *vpn_configs,
                       const GSList *dev_configs,
                       const GSList *other_configs,
+                      const NMGlobalDnsConfig *global_config,
                       const char *hostname)
 {
 	g_return_val_if_fail (NM_DNS_PLUGIN_GET_CLASS (self)->update != NULL, FALSE);
@@ -64,6 +65,7 @@ nm_dns_plugin_update (NMDnsPlugin *self,
 	                                               vpn_configs,
 	                                               dev_configs,
 	                                               other_configs,
+	                                               global_config,
 	                                               hostname);
 }
 
