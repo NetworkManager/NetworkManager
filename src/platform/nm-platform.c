@@ -173,9 +173,44 @@ void nm_platform_set_error (NMPlatform *self, NMPlatformError error)
 NMPlatformError
 nm_platform_get_error (NMPlatform *self)
 {
-	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_NONE);
+	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
 
 	return self->error;
+}
+
+/**
+ * nm_platform_error_to_string:
+ * @error_code: the error code to stringify.
+ *
+ * Returns: A string representation of the error.
+ * For negative numbers, this function interprets
+ * the code as -errno.
+ */
+const char *
+nm_platform_error_to_string (NMPlatformError error)
+{
+	switch (error) {
+	case NM_PLATFORM_ERROR_SUCCESS:
+		return "success";
+	case NM_PLATFORM_ERROR_BUG:
+		return "bug";
+	case NM_PLATFORM_ERROR_UNSPECIFIED:
+		return "unspecified";
+	case NM_PLATFORM_ERROR_NOT_FOUND:
+		return "not-found";
+	case NM_PLATFORM_ERROR_EXISTS:
+		return "exists";
+	case NM_PLATFORM_ERROR_WRONG_TYPE:
+		return "wrong-type";
+	case NM_PLATFORM_ERROR_NOT_SLAVE:
+		return "not-slave";
+	case NM_PLATFORM_ERROR_NO_FIRMWARE:
+		return "no-firmware";
+	default:
+		if (error < 0)
+			return g_strerror (- ((int) error));
+		return "unknown";
+	}
 }
 
 /**
@@ -189,29 +224,14 @@ nm_platform_get_error_msg (NMPlatform *self)
 {
 	_CHECK_SELF (self, klass, NULL);
 
-	switch (self->error) {
-	case NM_PLATFORM_ERROR_NONE:
-		return "unknown error";
-	case NM_PLATFORM_ERROR_NOT_FOUND:
-		return "object not found";
-	case NM_PLATFORM_ERROR_EXISTS:
-		return "object already exists";
-	case NM_PLATFORM_ERROR_WRONG_TYPE:
-		return "object is wrong type";
-	case NM_PLATFORM_ERROR_NOT_SLAVE:
-		return "link not a slave";
-	case NM_PLATFORM_ERROR_NO_FIRMWARE:
-		return "firmware not found";
-	default:
-		return "invalid error number";
-	}
+	return nm_platform_error_to_string (self->error);
 }
 
 static void
 reset_error (NMPlatform *self)
 {
 	g_assert (self);
-	self->error = NM_PLATFORM_ERROR_NONE;
+	self->error = NM_PLATFORM_ERROR_SUCCESS;
 }
 
 #define IFA_F_MANAGETEMPADDR_STR "mngtmpaddr"

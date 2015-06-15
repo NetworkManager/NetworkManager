@@ -55,18 +55,23 @@ typedef struct _NMPlatform NMPlatform;
 #endif
 
 typedef enum {
-	/* no error specified, sometimes this means the arguments were wrong */
-	NM_PLATFORM_ERROR_NONE,
-	/* object was not found */
+
+	/* dummy value, to enforce that the enum type is signed and has a size
+	 * to hold an integer. We want to encode errno from <errno.h> as negative
+	 * values. */
+	_NM_PLATFORM_ERROR_MININT = G_MININT,
+
+	NM_PLATFORM_ERROR_SUCCESS = 0,
+
+	NM_PLATFORM_ERROR_BUG,
+
+	NM_PLATFORM_ERROR_UNSPECIFIED,
+
 	NM_PLATFORM_ERROR_NOT_FOUND,
-	/* object already exists */
 	NM_PLATFORM_ERROR_EXISTS,
-	/* object is wrong type */
 	NM_PLATFORM_ERROR_WRONG_TYPE,
-	/* object is not a slave */
 	NM_PLATFORM_ERROR_NOT_SLAVE,
-	/* firmware is not found */
-	NM_PLATFORM_ERROR_NO_FIRMWARE
+	NM_PLATFORM_ERROR_NO_FIRMWARE,
 } NMPlatformError;
 
 typedef enum {
@@ -584,6 +589,7 @@ nm_platform_route_scope_inv (guint8 scope)
 
 const char *nm_link_type_to_string (NMLinkType link_type);
 
+const char *nm_platform_error_to_string (NMPlatformError error);
 void nm_platform_set_error (NMPlatform *self, NMPlatformError error);
 NMPlatformError nm_platform_get_error (NMPlatform *self);
 const char *nm_platform_get_error_msg (NMPlatform *self);
