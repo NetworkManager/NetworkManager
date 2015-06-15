@@ -160,7 +160,6 @@ link_get (NMPlatform *platform, int ifindex)
 	return device;
 not_found:
 	debug ("link not found: %d", ifindex);
-	platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
 	return NULL;
 }
 
@@ -649,10 +648,8 @@ link_release (NMPlatform *platform, int master_idx, int slave_idx)
 	g_return_val_if_fail (master, FALSE);
 	g_return_val_if_fail (slave, FALSE);
 
-	if (slave->link.master != master->link.ifindex) {
-		platform->error = NM_PLATFORM_ERROR_NOT_SLAVE;
+	if (slave->link.master != master->link.ifindex)
 		return FALSE;
-	}
 
 	slave->link.master = 0;
 

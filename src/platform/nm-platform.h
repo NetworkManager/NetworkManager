@@ -401,8 +401,6 @@ typedef struct {
 
 struct _NMPlatform {
 	GObject parent;
-
-	NMPlatformError error;
 };
 
 typedef struct {
@@ -590,9 +588,6 @@ nm_platform_route_scope_inv (guint8 scope)
 const char *nm_link_type_to_string (NMLinkType link_type);
 
 const char *nm_platform_error_to_string (NMPlatformError error);
-void nm_platform_set_error (NMPlatform *self, NMPlatformError error);
-NMPlatformError nm_platform_get_error (NMPlatform *self);
-const char *nm_platform_get_error_msg (NMPlatform *self);
 
 gboolean nm_platform_sysctl_set (NMPlatform *self, const char *path, const char *value);
 char *nm_platform_sysctl_get (NMPlatform *self, const char *path);

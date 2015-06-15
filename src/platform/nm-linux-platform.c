@@ -2477,10 +2477,8 @@ cache_lookup_link (NMPlatform *platform, int ifindex)
 	const NMPObject *obj_cache;
 
 	obj_cache = nmp_cache_lookup_link (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, ifindex);
-	if (!nmp_object_is_visible (obj_cache)) {
-		platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
+	if (!nmp_object_is_visible (obj_cache))
 		return NULL;
-	}
 
 	return obj_cache;
 }
@@ -2718,13 +2716,11 @@ do_change_link (NMPlatform *platform, struct rtnl_link *nlo, gboolean complete_f
 		_LOGD ("do-change-link: success changing link %d: %s (%d)", ifindex, nl_geterror (nle), -nle);
 		break;
 	case -NLE_OBJ_NOTFOUND:
-		platform->error = NM_PLATFORM_ERROR_NO_FIRMWARE;
 		/* fall-through */
 	default:
-		if (complete_from_cache != complete_from_cache2) {
-			platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
+		if (complete_from_cache != complete_from_cache2)
 			_LOGD ("do-change-link: failure changing link %d: link does not exist in cache", ifindex);
-		} else
+		else
 			_LOGE ("do-change-link: failure changing link %d: %s (%d)", ifindex, nl_geterror (nle), -nle);
 		return nle == -NLE_OBJ_NOTFOUND ? NM_PLATFORM_ERROR_NO_FIRMWARE : NM_PLATFORM_ERROR_UNSPECIFIED;
 	}
@@ -2780,10 +2776,8 @@ link_delete (NMPlatform *platform, int ifindex)
 	const NMPObject *obj;
 
 	obj = nmp_cache_lookup_link (priv->cache, ifindex);
-	if (!obj || !obj->_link.netlink.is_in_netlink) {
-		platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
+	if (!obj || !obj->_link.netlink.is_in_netlink)
 		return FALSE;
-	}
 
 	nmp_object_stackinit_id_link (&obj_needle, ifindex);
 	return do_delete_object (platform, &obj_needle, NULL);
@@ -2798,8 +2792,6 @@ link_get_ifindex (NMPlatform *platform, const char *ifname)
 
 	obj = nmp_cache_lookup_link_full (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache,
 	                                  0, ifname, TRUE, NM_LINK_TYPE_NONE, NULL, NULL);
-	if (!obj)
-		platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
 	return obj ? obj->link.ifindex : 0;
 }
 
@@ -2951,15 +2943,15 @@ link_set_noarp (NMPlatform *platform, int ifindex)
 static gboolean
 link_get_ipv6_token (NMPlatform *platform, int ifindex, NMUtilsIPv6IfaceId *iid)
 {
+#if HAVE_LIBNL_INET6_TOKEN
 	const NMPObject *obj = cache_lookup_link (platform, ifindex);
 
-	/* Always lookup @obj, because it properly sets nm_platform_get_error().
-	 * Otherwise, we could save this '#ifndef HAVE_LIBNL_INET6_TOKEN' */
-	if (!obj || !obj->link.inet6_token.is_valid)
-		return FALSE;
-
-	*iid = obj->link.inet6_token.iid;
-	return TRUE;
+	if (obj && obj->link.inet6_token.is_valid) {
+		*iid = obj->link.inet6_token.iid;
+		return TRUE;
+	}
+#endif
+	return FALSE;
 }
 
 static const char *
@@ -2991,12 +2983,12 @@ link_get_udev_device (NMPlatform *platform, int ifindex)
 static gboolean
 link_get_user_ipv6ll_enabled (NMPlatform *platform, int ifindex)
 {
+#if HAVE_LIBNL_INET6_ADDR_GEN_MODE
 	const NMPObject *obj = cache_lookup_link (platform, ifindex);
 
-	/* Always lookup @obj, because it properly sets nm_platform_get_error().
-	 * Otherwise, we could save this '#ifndef HAVE_LIBNL_INET6_ADDR_GEN_MODE' */
 	if (obj && obj->link.inet6_addr_gen_mode_inv)
 		return (~obj->link.inet6_addr_gen_mode_inv) == IN6_ADDR_GEN_MODE_NONE;
+#endif
 	return FALSE;
 }
 
@@ -3301,10 +3293,8 @@ slave_category (NMPlatform *platform, int slave)
 {
 	int master = link_get_master (platform, slave);
 
-	if (master <= 0) {
-		platform->error = NM_PLATFORM_ERROR_NOT_SLAVE;
+	if (master <= 0)
 		return NULL;
-	}
 
 	switch (link_get_type (platform, master)) {
 	case NM_LINK_TYPE_BRIDGE:
