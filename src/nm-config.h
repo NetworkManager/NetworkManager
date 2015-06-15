@@ -96,6 +96,11 @@ gboolean nm_config_keyfile_get_boolean (GKeyFile *keyfile,
                                         const char *section,
                                         const char *key,
                                         gboolean default_value);
+void     nm_config_keyfile_set_string_list (GKeyFile *keyfile,
+                                            const char *group,
+                                            const char *key,
+                                            const char *const* strv,
+                                            gssize len);
 GSList *nm_config_get_device_match_spec (const GKeyFile *keyfile, const char *group, const char *key);
 
 G_END_DECLS

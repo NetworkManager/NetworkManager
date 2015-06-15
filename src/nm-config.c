@@ -141,6 +141,39 @@ nm_config_keyfile_get_boolean (GKeyFile *keyfile,
 	return value;
 }
 
+void
+nm_config_keyfile_set_string_list (GKeyFile *keyfile,
+                                   const char *group,
+                                   const char *key,
+                                   const char *const* strv,
+                                   gssize len)
+{
+	gsize l;
+	char *new_value;
+
+	if (len < 0)
+		len = strv ? g_strv_length ((char **) strv) : 0;
+
+	g_key_file_set_string_list (keyfile, group, key, strv, len);
+
+	/* g_key_file_set_string_list() appends a trailing separator to the value.
+	 * We don't like that, get rid of it. */
+
+	new_value = g_key_file_get_value (keyfile, group, key, NULL);
+	if (!new_value)
+		return;
+
+	l = strlen (new_value);
+	if (l > 0 && new_value[l - 1] == NM_CONFIG_KEYFILE_LIST_SEPARATOR) {
+		/* Maybe we should check that value doesn't end with "\\,", i.e.
+		 * with an escaped separator. But the way g_key_file_set_string_list()
+		 * is implemented (currently), it always adds a trailing separator. */
+		new_value[l - 1] = '\0';
+		g_key_file_set_value (keyfile, group, key, new_value);
+	}
+	g_free (new_value);
+}
+
 /************************************************************************/
 
 NMConfigData *
