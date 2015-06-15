@@ -1354,6 +1354,8 @@ static void
 do_emit_signal (NMPlatform *platform, const NMPObject *obj, NMPCacheOpsType cache_op, gboolean was_visible, NMPlatformReason reason)
 {
 	gboolean is_visible;
+	NMPObject obj_clone;
+	const NMPClass *klass;
 
 	nm_assert (NM_IN_SET ((NMPlatformSignalChangeType) cache_op, (NMPlatformSignalChangeType) NMP_CACHE_OPS_UNCHANGED, NM_PLATFORM_SIGNAL_ADDED, NM_PLATFORM_SIGNAL_CHANGED, NM_PLATFORM_SIGNAL_REMOVED));
 
@@ -1394,13 +1396,18 @@ do_emit_signal (NMPlatform *platform, const NMPObject *obj, NMPCacheOpsType cach
 		return;
 	}
 
+	klass = NMP_OBJECT_GET_CLASS (obj);
+
 	_LOGT ("emit signal %s %s: %s (%ld)",
-	       NMP_OBJECT_GET_CLASS (obj)->signal_type,
+	       klass->signal_type,
 	       nm_platform_signal_change_type_to_string ((NMPlatformSignalChangeType) cache_op),
 	       nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0),
 	       (long) reason);
 
-	g_signal_emit_by_name (platform, NMP_OBJECT_GET_CLASS (obj)->signal_type, obj->object.ifindex, &obj->object, (NMPlatformSignalChangeType) cache_op, reason);
+	/* don't expose @obj directly, but clone the public fields. A signal handler might
+	 * call back into NMPlatform which could invalidate (or modify) @obj. */
+	memcpy (&obj_clone.object, &obj->object, klass->sizeof_public);
+	g_signal_emit_by_name (platform, klass->signal_type, obj_clone.object.ifindex, &obj_clone.object, (NMPlatformSignalChangeType) cache_op, reason);
 }
 
 /******************************************************************/
