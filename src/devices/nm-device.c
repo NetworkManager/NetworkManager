@@ -4723,8 +4723,7 @@ set_nm_ipv6ll (NMDevice *self, gboolean enable)
 		const char *detail = enable ? "enable" : "disable";
 
 		_LOGD (LOGD_IP6, "will %s userland IPv6LL", detail);
-		if (  !nm_platform_link_set_user_ipv6ll_enabled (NM_PLATFORM_GET, ifindex, enable)
-		   && nm_platform_get_error (NM_PLATFORM_GET) != NM_PLATFORM_ERROR_NOT_FOUND)
+		if (!nm_platform_link_set_user_ipv6ll_enabled (NM_PLATFORM_GET, ifindex, enable))
 			_LOGW (LOGD_IP6, "failed to %s userspace IPv6LL address handling", detail);
 
 		if (enable) {
