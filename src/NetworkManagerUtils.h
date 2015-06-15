@@ -211,10 +211,4 @@ GSList *nm_utils_ip6_routes_from_gvalue (const GValue *value);
 
 void nm_utils_setpgid (gpointer unused);
 
-typedef const char *NMRefString;
-NMRefString nm_ref_string_new (const char *str);
-NMRefString nm_ref_string_ref (NMRefString nmstr);
-void nm_ref_string_unref (NMRefString nmstr);
-NMRefString nm_ref_string_replace (NMRefString nmstr, const char *str);
-
 #endif /* __NETWORKMANAGER_UTILS_H__ */
