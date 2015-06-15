@@ -129,7 +129,7 @@ link_init (NMFakePlatformLink *device, int ifindex, int type, const char *name)
 	device->link.type = type;
 	device->link.kind = type_to_type_name (type);
 	device->link.driver = type_to_type_name (type);
-	device->link.udi = device->udi = g_strdup_printf ("fake:%d", ifindex);
+	device->udi = g_strdup_printf ("fake:%d", ifindex);
 	device->link.initialized = TRUE;
 	device->ip6_lladdr = *nmtst_inet6_from_string (ip6_lladdr);
 	if (name)
@@ -541,6 +541,16 @@ link_get_dev_id (NMPlatform *platform, int ifindex)
 	link_get (platform, ifindex);
 
 	return 0;
+}
+
+static const char *
+link_get_udi (NMPlatform *platform, int ifindex)
+{
+	NMFakePlatformLink *device = link_get (platform, ifindex);
+
+	if (!device)
+		return NULL;
+	return device->udi;
 }
 
 static gboolean
@@ -1510,6 +1520,8 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->link_get_type = link_get_type;
 	platform_class->link_get_type_name = link_get_type_name;
 	platform_class->link_get_unmanaged = link_get_unmanaged;
+
+	platform_class->link_get_udi = link_get_udi;
 
 	platform_class->link_set_up = link_set_up;
 	platform_class->link_set_down = link_set_down;

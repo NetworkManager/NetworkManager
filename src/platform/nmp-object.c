@@ -132,7 +132,6 @@ void
 _nmp_object_fixup_link_udev_fields (NMPObject *obj, gboolean use_udev)
 {
 	const char *driver = NULL;
-	const char *udi = NULL;
 	gboolean initialized = FALSE;
 
 	nm_assert (NMP_OBJECT_GET_TYPE (obj) == OBJECT_TYPE_LINK);
@@ -145,10 +144,9 @@ _nmp_object_fixup_link_udev_fields (NMPObject *obj, gboolean use_udev)
 		driver = _link_get_driver (obj->_link.udev.device,
 		                           obj->link.kind,
 		                           obj->link.name);
-		if (obj->_link.udev.device) {
-			udi = g_udev_device_get_sysfs_path (obj->_link.udev.device);
+		if (obj->_link.udev.device)
 			initialized = TRUE;
-		} else if (!use_udev) {
+		else if (!use_udev) {
 			/* If we don't use udev, we immediately mark the link as initialized.
 			 *
 			 * For that, we consult @use_udev argument, that is cached via
@@ -165,7 +163,6 @@ _nmp_object_fixup_link_udev_fields (NMPObject *obj, gboolean use_udev)
 	}
 
 	obj->link.driver = driver;
-	obj->link.udi = nm_ref_string_replace (obj->link.udi, udi);
 	obj->link.initialized = initialized;
 }
 
@@ -225,7 +222,6 @@ nmp_object_unref (NMPObject *obj)
 static void
 _vt_cmd_obj_dispose_link (NMPObject *obj)
 {
-	nm_ref_string_unref (obj->link.udi);
 	g_clear_object (&obj->_link.udev.device);
 }
 
@@ -586,10 +582,6 @@ _vt_cmd_obj_copy_link (NMPObject *dst, const NMPObject *src)
 			g_object_unref (dst->_link.udev.device);
 		if (src->_link.udev.device)
 			g_object_ref (src->_link.udev.device);
-	}
-	if (dst->link.udi != src->link.udi) {
-		nm_ref_string_unref (dst->link.udi);
-		nm_ref_string_ref (src->link.udi);
 	}
 	dst->_link = src->_link;
 }
@@ -1512,8 +1504,7 @@ nmp_cache_update_netlink (NMPCache *cache, NMPObject *obj, NMPObject **out_obj, 
 	 * a use-case */
 	nm_assert (NMP_OBJECT_GET_TYPE (obj) != OBJECT_TYPE_LINK ||
 	           (   !obj->_link.udev.device
-	            && !obj->link.driver
-	            && !obj->link.udi));
+	            && !obj->link.driver));
 
 	old = g_hash_table_lookup (cache->idx_main, obj);
 
