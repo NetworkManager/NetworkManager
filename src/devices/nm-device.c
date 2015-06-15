@@ -8771,8 +8771,7 @@ constructed (GObject *object)
 				       priv->perm_hw_addr);
 			} else {
 				/* Fall back to current address */
-				_LOGD (LOGD_HW | LOGD_ETHER, "unable to read permanent MAC address (error %d)",
-					   nm_platform_get_error (NM_PLATFORM_GET));
+				_LOGD (LOGD_HW | LOGD_ETHER, "unable to read permanent MAC address");
 				priv->perm_hw_addr = g_strdup (priv->hw_addr);
 			}
 		}
