@@ -1184,6 +1184,24 @@ intern_config_read (const char *filename,
 	}
 
 out:
+	/*
+	 * If user configuration specifies global DNS options, the DNS
+	 * options in internal configuration must be deleted. Otherwise a
+	 * deletion of options from user configuration may cause the
+	 * internal options to appear again.
+	 */
+	if (nm_config_keyfile_get_boolean (keyfile_conf, NM_CONFIG_KEYFILE_GROUP_GLOBAL_DNS, NM_CONFIG_KEYFILE_KEY_GLOBAL_DNS_ENABLE, FALSE)) {
+		if (g_key_file_remove_group (keyfile_intern, NM_CONFIG_KEYFILE_GROUP_INTERN_GLOBAL_DNS, NULL))
+			needs_rewrite = TRUE;
+		for (g = 0; groups && groups[g]; g++) {
+			if (   g_str_has_prefix (groups[g], NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_GLOBAL_DNS_DOMAIN)
+			    && groups[g][STRLEN (NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_GLOBAL_DNS_DOMAIN)]) {
+				g_key_file_remove_group (keyfile_intern, groups[g], NULL);
+				needs_rewrite = TRUE;
+			}
+		}
+	}
+
 	g_key_file_unref (keyfile);
 
 	if (out_needs_rewrite)
@@ -1593,6 +1611,8 @@ _change_flags_one_to_string (NMConfigChangeFlags flag)
 		return "dns-mode";
 	case NM_CONFIG_CHANGE_RC_MANAGER:
 		return "rc-manager";
+	case NM_CONFIG_CHANGE_GLOBAL_DNS_CONFIG:
+		return "global-dns-config";
 	default:
 		g_return_val_if_reached ("unknown");
 	}
