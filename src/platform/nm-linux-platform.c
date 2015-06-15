@@ -2697,7 +2697,7 @@ do_delete_object (NMPlatform *platform, const NMPObject *obj_id, const struct nl
 	return nle >= 0;
 }
 
-static gboolean
+static NMPlatformError
 do_change_link (NMPlatform *platform, struct rtnl_link *nlo, gboolean complete_from_cache)
 {
 	int nle;
@@ -2706,7 +2706,7 @@ do_change_link (NMPlatform *platform, struct rtnl_link *nlo, gboolean complete_f
 
 	ifindex = rtnl_link_get_ifindex (nlo);
 	if (ifindex <= 0)
-		g_return_val_if_reached (FALSE);
+		g_return_val_if_reached (NM_PLATFORM_ERROR_BUG);
 
 	nle = kernel_change_link (platform, nlo, &complete_from_cache2);
 
@@ -2726,13 +2726,13 @@ do_change_link (NMPlatform *platform, struct rtnl_link *nlo, gboolean complete_f
 			_LOGD ("do-change-link: failure changing link %d: link does not exist in cache", ifindex);
 		} else
 			_LOGE ("do-change-link: failure changing link %d: %s (%d)", ifindex, nl_geterror (nle), -nle);
-		return FALSE;
+		return nle == -NLE_OBJ_NOTFOUND ? NM_PLATFORM_ERROR_NO_FIRMWARE : NM_PLATFORM_ERROR_UNSPECIFIED;
 	}
 
 	/* FIXME: as we modify the link via a separate socket, the cache is not in
 	 * sync and we have to refetch the link. */
 	do_request_link (platform, ifindex, NULL, TRUE);
-	return TRUE;
+	return NM_PLATFORM_ERROR_SUCCESS;
 }
 
 static gboolean
@@ -2894,7 +2894,7 @@ link_uses_arp (NMPlatform *platform, int ifindex)
 	return !(link_get_flags (platform, ifindex) & IFF_NOARP);
 }
 
-static gboolean
+static NMPlatformError
 link_change_flags (NMPlatform *platform, int ifindex, unsigned int flags, gboolean value)
 {
 	auto_nl_object struct rtnl_link *change = _nl_rtnl_link_alloc (ifindex, NULL);
@@ -2903,7 +2903,7 @@ link_change_flags (NMPlatform *platform, int ifindex, unsigned int flags, gboole
 
 	obj_cache = cache_lookup_link (platform, ifindex);
 	if (!obj_cache)
-		return FALSE;
+		return NM_PLATFORM_ERROR_NOT_FOUND;
 
 	rtnl_link_set_flags (change, obj_cache->link.flags);
 	if (value)
@@ -2920,27 +2920,32 @@ link_change_flags (NMPlatform *platform, int ifindex, unsigned int flags, gboole
 }
 
 static gboolean
-link_set_up (NMPlatform *platform, int ifindex)
+link_set_up (NMPlatform *platform, int ifindex, gboolean *out_no_firmware)
 {
-	return link_change_flags (platform, ifindex, IFF_UP, TRUE);
+	NMPlatformError plerr;
+
+	plerr = link_change_flags (platform, ifindex, IFF_UP, TRUE);
+	if (out_no_firmware)
+		*out_no_firmware = plerr == NM_PLATFORM_ERROR_NO_FIRMWARE;
+	return plerr == NM_PLATFORM_ERROR_SUCCESS;
 }
 
 static gboolean
 link_set_down (NMPlatform *platform, int ifindex)
 {
-	return link_change_flags (platform, ifindex, IFF_UP, FALSE);
+	return link_change_flags (platform, ifindex, IFF_UP, FALSE) == NM_PLATFORM_ERROR_SUCCESS;
 }
 
 static gboolean
 link_set_arp (NMPlatform *platform, int ifindex)
 {
-	return link_change_flags (platform, ifindex, IFF_NOARP, FALSE);
+	return link_change_flags (platform, ifindex, IFF_NOARP, FALSE) == NM_PLATFORM_ERROR_SUCCESS;
 }
 
 static gboolean
 link_set_noarp (NMPlatform *platform, int ifindex)
 {
-	return link_change_flags (platform, ifindex, IFF_NOARP, TRUE);
+	return link_change_flags (platform, ifindex, IFF_NOARP, TRUE) == NM_PLATFORM_ERROR_SUCCESS;
 }
 
 static gboolean
@@ -3007,7 +3012,7 @@ link_set_user_ipv6ll_enabled (NMPlatform *platform, int ifindex, gboolean enable
 		rtnl_link_inet6_set_addr_gen_mode (nlo, mode);
 		debug ("link: change %d: set IPv6 address generation mode to %s",
 		       ifindex, rtnl_link_inet6_addrgenmode2str (mode, buf, sizeof (buf)));
-		return do_change_link (platform, nlo, TRUE);
+		return do_change_link (platform, nlo, TRUE) == NM_PLATFORM_ERROR_SUCCESS;
 	}
 #endif
 	return FALSE;
@@ -3054,7 +3059,7 @@ link_set_address (NMPlatform *platform, int ifindex, gconstpointer address, size
 	_LOGD ("link: change %d: address %s (%lu bytes)", ifindex,
 	       (mac = nm_utils_hwaddr_ntoa (address, length)),
 	       (unsigned long) length);
-	return do_change_link (platform, change, TRUE);
+	return do_change_link (platform, change, TRUE) == NM_PLATFORM_ERROR_SUCCESS;
 }
 
 static gconstpointer
@@ -3096,7 +3101,7 @@ link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 	rtnl_link_set_mtu (change, mtu);
 	debug ("link: change %d: mtu %lu", ifindex, (unsigned long)mtu);
 
-	return do_change_link (platform, change, TRUE);
+	return do_change_link (platform, change, TRUE) == NM_PLATFORM_ERROR_SUCCESS;
 }
 
 static guint32
@@ -3206,7 +3211,7 @@ vlan_set_ingress_map (NMPlatform *platform, int ifindex, int from, int to)
 
 	debug ("link: change %d: vlan ingress map %d -> %d", ifindex, from, to);
 
-	return do_change_link (platform, change, TRUE);
+	return do_change_link (platform, change, TRUE) == NM_PLATFORM_ERROR_SUCCESS;
 }
 
 static gboolean
@@ -3219,7 +3224,7 @@ vlan_set_egress_map (NMPlatform *platform, int ifindex, int from, int to)
 
 	debug ("link: change %d: vlan egress map %d -> %d", ifindex, from, to);
 
-	return do_change_link (platform, change, TRUE);
+	return do_change_link (platform, change, TRUE) == NM_PLATFORM_ERROR_SUCCESS;
 }
 
 static gboolean
@@ -3230,7 +3235,7 @@ link_enslave (NMPlatform *platform, int master, int slave)
 	rtnl_link_set_master (change, master);
 	debug ("link: change %d: enslave to master %d", slave, master);
 
-	return do_change_link (platform, change, TRUE);
+	return do_change_link (platform, change, TRUE) == NM_PLATFORM_ERROR_SUCCESS;
 }
 
 static gboolean

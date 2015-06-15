@@ -34,7 +34,7 @@ test_bogus(void)
 	g_assert (!nm_platform_link_get_type_name (NM_PLATFORM_GET, BOGUS_IFINDEX));
 	error (NM_PLATFORM_ERROR_NOT_FOUND);
 
-	g_assert (!nm_platform_link_set_up (NM_PLATFORM_GET, BOGUS_IFINDEX));
+	g_assert (!nm_platform_link_set_up (NM_PLATFORM_GET, BOGUS_IFINDEX, NULL));
 	error (NM_PLATFORM_ERROR_NOT_FOUND);
 	g_assert (!nm_platform_link_set_down (NM_PLATFORM_GET, BOGUS_IFINDEX));
 	error (NM_PLATFORM_ERROR_NOT_FOUND);
@@ -124,7 +124,7 @@ software_add (NMLinkType link_type, const char *name)
 			gboolean was_up = nm_platform_link_is_up (NM_PLATFORM_GET, parent_ifindex);
 
 			parent_changed = add_signal_ifindex (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_CHANGED, link_callback, parent_ifindex);
-			g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, parent_ifindex));
+			g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, parent_ifindex, NULL));
 			if (was_up) {
 				/* when NM is running in the background, it will mess with addrgenmode which might cause additional signals. */
 				accept_signals (parent_changed, 0, 1);
@@ -183,7 +183,7 @@ test_slave (int master, int type, SignalData *master_changed)
 		g_assert (!nm_platform_link_is_up (NM_PLATFORM_GET, ifindex));
 
 	/* Set master up */
-	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, master));
+	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, master, NULL));
 	g_assert (nm_platform_link_is_up (NM_PLATFORM_GET, master));
 	accept_signals (master_changed, 1, 2);
 
@@ -220,7 +220,7 @@ test_slave (int master, int type, SignalData *master_changed)
 	}
 
 	/* Set slave up and see if master gets up too */
-	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, ifindex)); no_error ();
+	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, ifindex, NULL)); no_error ();
 	g_assert (nm_platform_link_is_connected (NM_PLATFORM_GET, ifindex));
 	g_assert (nm_platform_link_is_connected (NM_PLATFORM_GET, master));
 	accept_signals (link_changed, 1, 3);
@@ -461,7 +461,7 @@ test_internal (void)
 	/* Up/connected */
 	g_assert (!nm_platform_link_is_up (NM_PLATFORM_GET, ifindex)); no_error ();
 	g_assert (!nm_platform_link_is_connected (NM_PLATFORM_GET, ifindex)); no_error ();
-	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, ifindex)); no_error ();
+	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, ifindex, NULL)); no_error ();
 	g_assert (nm_platform_link_is_up (NM_PLATFORM_GET, ifindex)); no_error ();
 	g_assert (nm_platform_link_is_connected (NM_PLATFORM_GET, ifindex)); no_error ();
 	accept_signal (link_changed);

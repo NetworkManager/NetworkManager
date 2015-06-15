@@ -327,7 +327,7 @@ setup_tests (void)
 	accept_signal (link_added);
 	free_signal (link_added);
 
-	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME)));
+	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME), NULL));
 
 	g_test_add_func ("/route/ip4", test_ip4_route);
 	g_test_add_func ("/route/ip6", test_ip6_route);

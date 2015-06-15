@@ -1145,11 +1145,12 @@ nm_platform_link_supports_vlans (NMPlatform *self, int ifindex)
  * nm_platform_link_set_up:
  * @self: platform instance
  * @ifindex: Interface index
+ * @out_no_firmware: (allow-none): if the failure reason is due to missing firmware.
  *
  * Bring the interface up.
  */
 gboolean
-nm_platform_link_set_up (NMPlatform *self, int ifindex)
+nm_platform_link_set_up (NMPlatform *self, int ifindex, gboolean *out_no_firmware)
 {
 	_CHECK_SELF (self, klass, FALSE);
 	reset_error (self);
@@ -1158,7 +1159,7 @@ nm_platform_link_set_up (NMPlatform *self, int ifindex)
 	g_return_val_if_fail (klass->link_set_up, FALSE);
 
 	debug ("link: setting up '%s' (%d)", nm_platform_link_get_name (self, ifindex), ifindex);
-	return klass->link_set_up (self, ifindex);
+	return klass->link_set_up (self, ifindex, out_no_firmware);
 }
 
 /**
