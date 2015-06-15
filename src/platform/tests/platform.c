@@ -865,7 +865,6 @@ main (int argc, char **argv)
 	const char *arg0 = *argv++;
 	const command_t *command = NULL;
 	gboolean status = TRUE;
-	int error;
 
 #if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
@@ -899,12 +898,5 @@ main (int argc, char **argv)
 		error ("\n");
 	}
 
-	error = nm_platform_get_error (NM_PLATFORM_GET);
-	if (error) {
-		const char *msg = nm_platform_get_error_msg (NM_PLATFORM_GET);
-
-		error ("nm-platform: %s\n", msg);
-	}
-
-	return !!error;
+	return EXIT_SUCCESS;
 }

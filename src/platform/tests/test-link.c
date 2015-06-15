@@ -22,54 +22,32 @@ test_bogus(void)
 	size_t addrlen;
 
 	g_assert (!nm_platform_link_exists (NM_PLATFORM_GET, BOGUS_NAME));
-	no_error ();
 	g_assert (!nm_platform_link_delete (NM_PLATFORM_GET, BOGUS_IFINDEX));
-	error (NM_PLATFORM_ERROR_NOT_FOUND);
 	g_assert (!nm_platform_link_get_ifindex (NM_PLATFORM_GET, BOGUS_NAME));
-	error (NM_PLATFORM_ERROR_NOT_FOUND);
 	g_assert (!nm_platform_link_get_name (NM_PLATFORM_GET, BOGUS_IFINDEX));
-	error (NM_PLATFORM_ERROR_NOT_FOUND);
 	g_assert (!nm_platform_link_get_type (NM_PLATFORM_GET, BOGUS_IFINDEX));
-	error (NM_PLATFORM_ERROR_NOT_FOUND);
 	g_assert (!nm_platform_link_get_type_name (NM_PLATFORM_GET, BOGUS_IFINDEX));
-	error (NM_PLATFORM_ERROR_NOT_FOUND);
 
 	g_assert (!nm_platform_link_set_up (NM_PLATFORM_GET, BOGUS_IFINDEX, NULL));
-	error (NM_PLATFORM_ERROR_NOT_FOUND);
 	g_assert (!nm_platform_link_set_down (NM_PLATFORM_GET, BOGUS_IFINDEX));
-	error (NM_PLATFORM_ERROR_NOT_FOUND);
 	g_assert (!nm_platform_link_set_arp (NM_PLATFORM_GET, BOGUS_IFINDEX));
-	error (NM_PLATFORM_ERROR_NOT_FOUND);
 	g_assert (!nm_platform_link_set_noarp (NM_PLATFORM_GET, BOGUS_IFINDEX));
-	error (NM_PLATFORM_ERROR_NOT_FOUND);
 	g_assert (!nm_platform_link_is_up (NM_PLATFORM_GET, BOGUS_IFINDEX));
-	error (NM_PLATFORM_ERROR_NOT_FOUND);
 	g_assert (!nm_platform_link_is_connected (NM_PLATFORM_GET, BOGUS_IFINDEX));
-	error (NM_PLATFORM_ERROR_NOT_FOUND);
 	g_assert (!nm_platform_link_uses_arp (NM_PLATFORM_GET, BOGUS_IFINDEX));
-	error (NM_PLATFORM_ERROR_NOT_FOUND);
 
 	g_assert (!nm_platform_link_get_address (NM_PLATFORM_GET, BOGUS_IFINDEX, &addrlen));
 	g_assert (!addrlen);
-	error (NM_PLATFORM_ERROR_NOT_FOUND);
 	g_assert (!nm_platform_link_get_address (NM_PLATFORM_GET, BOGUS_IFINDEX, NULL));
-	error (NM_PLATFORM_ERROR_NOT_FOUND);
 	g_assert (!nm_platform_link_set_mtu (NM_PLATFORM_GET, BOGUS_IFINDEX, MTU));
-	error (NM_PLATFORM_ERROR_NOT_FOUND);
 	g_assert (!nm_platform_link_get_mtu (NM_PLATFORM_GET, BOGUS_IFINDEX));
-	error (NM_PLATFORM_ERROR_NOT_FOUND);
 
 	g_assert (!nm_platform_link_supports_carrier_detect (NM_PLATFORM_GET, BOGUS_IFINDEX));
-	error (NM_PLATFORM_ERROR_NOT_FOUND);
 	g_assert (!nm_platform_link_supports_vlans (NM_PLATFORM_GET, BOGUS_IFINDEX));
-	error (NM_PLATFORM_ERROR_NOT_FOUND);
 
 	g_assert (!nm_platform_vlan_get_info (NM_PLATFORM_GET, BOGUS_IFINDEX, NULL, NULL));
-	error (NM_PLATFORM_ERROR_NOT_FOUND);
 	g_assert (!nm_platform_vlan_set_ingress_map (NM_PLATFORM_GET, BOGUS_IFINDEX, 0, 0));
-	error (NM_PLATFORM_ERROR_NOT_FOUND);
 	g_assert (!nm_platform_vlan_set_egress_map (NM_PLATFORM_GET, BOGUS_IFINDEX, 0, 0));
-	error (NM_PLATFORM_ERROR_NOT_FOUND);
 }
 
 static void
@@ -103,8 +81,6 @@ software_add (NMLinkType link_type, const char *name)
 			/* Check that bond0 is *not* automatically created. */
 			if (!bond0_exists)
 				g_assert (!nm_platform_link_exists (NM_PLATFORM_GET, "bond0"));
-
-			nm_platform_set_error (NM_PLATFORM_GET, plerr);
 			return plerr == NM_PLATFORM_ERROR_SUCCESS;
 		}
 	case NM_LINK_TYPE_TEAM:
@@ -170,8 +146,8 @@ test_slave (int master, int type, SignalData *master_changed)
 
 	/* Enslave */
 	link_changed->ifindex = ifindex;
-	g_assert (nm_platform_link_enslave (NM_PLATFORM_GET, master, ifindex)); no_error ();
-	g_assert_cmpint (nm_platform_link_get_master (NM_PLATFORM_GET, ifindex), ==, master); no_error ();
+	g_assert (nm_platform_link_enslave (NM_PLATFORM_GET, master, ifindex));
+	g_assert_cmpint (nm_platform_link_get_master (NM_PLATFORM_GET, ifindex), ==, master);
 
 	accept_signals (link_changed, 1, 3);
 	accept_signals (master_changed, 0, 1);
@@ -220,7 +196,7 @@ test_slave (int master, int type, SignalData *master_changed)
 	}
 
 	/* Set slave up and see if master gets up too */
-	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, ifindex, NULL)); no_error ();
+	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, ifindex, NULL));
 	g_assert (nm_platform_link_is_connected (NM_PLATFORM_GET, ifindex));
 	g_assert (nm_platform_link_is_connected (NM_PLATFORM_GET, master));
 	accept_signals (link_changed, 1, 3);
@@ -232,7 +208,7 @@ test_slave (int master, int type, SignalData *master_changed)
 	 * Gracefully succeed if already enslaved.
 	 */
 	ensure_no_signal (link_changed);
-	g_assert (nm_platform_link_enslave (NM_PLATFORM_GET, master, ifindex)); no_error ();
+	g_assert (nm_platform_link_enslave (NM_PLATFORM_GET, master, ifindex));
 	accept_signals (link_changed, 0, 2);
 	ensure_no_signal (master_changed);
 
@@ -241,9 +217,7 @@ test_slave (int master, int type, SignalData *master_changed)
 	case NM_LINK_TYPE_BRIDGE:
 		if (nmtst_platform_is_sysfs_writable ()) {
 			g_assert (nm_platform_slave_set_option (NM_PLATFORM_GET, ifindex, "priority", "789"));
-			no_error ();
 			value = nm_platform_slave_get_option (NM_PLATFORM_GET, ifindex, "priority");
-			no_error ();
 			g_assert_cmpstr (value, ==, "789");
 			g_free (value);
 		}
@@ -255,7 +229,7 @@ test_slave (int master, int type, SignalData *master_changed)
 	/* Release */
 	ensure_no_signal (link_changed);
 	g_assert (nm_platform_link_release (NM_PLATFORM_GET, master, ifindex));
-	g_assert_cmpint (nm_platform_link_get_master (NM_PLATFORM_GET, ifindex), ==, 0); no_error ();
+	g_assert_cmpint (nm_platform_link_get_master (NM_PLATFORM_GET, ifindex), ==, 0);
 	accept_signals (link_changed, 1, 3);
 	if (link_type != NM_LINK_TYPE_TEAM)
 		accept_signals (master_changed, 1, 2);
@@ -267,14 +241,12 @@ test_slave (int master, int type, SignalData *master_changed)
 	/* Release again */
 	ensure_no_signal (link_changed);
 	g_assert (!nm_platform_link_release (NM_PLATFORM_GET, master, ifindex));
-	error (NM_PLATFORM_ERROR_NOT_SLAVE);
 
 	ensure_no_signal (master_changed);
 
 	/* Remove */
 	ensure_no_signal (link_changed);
 	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex));
-	no_error ();
 	accept_signals (master_changed, 0, 1);
 	accept_signals (link_changed, 0, 1);
 	accept_signal (link_removed);
@@ -296,7 +268,6 @@ test_software (NMLinkType link_type, const char *link_typename)
 	/* Add */
 	link_added = add_signal_ifname (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_ADDED, link_callback, DEVICE_NAME);
 	g_assert (software_add (link_type, DEVICE_NAME));
-	no_error ();
 	accept_signal (link_added);
 	g_assert (nm_platform_link_exists (NM_PLATFORM_GET, DEVICE_NAME));
 	ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME);
@@ -309,12 +280,10 @@ test_software (NMLinkType link_type, const char *link_typename)
 		g_assert (nm_platform_vlan_get_info (NM_PLATFORM_GET, ifindex, &vlan_parent, &vlan_id));
 		g_assert_cmpint (vlan_parent, ==, nm_platform_link_get_ifindex (NM_PLATFORM_GET, PARENT_NAME));
 		g_assert_cmpint (vlan_id, ==, VLAN_ID);
-		no_error ();
 	}
 
 	/* Add again */
 	g_assert (!software_add (link_type, DEVICE_NAME));
-	error (NM_PLATFORM_ERROR_EXISTS);
 
 	/* Set ARP/NOARP */
 	g_assert (nm_platform_link_uses_arp (NM_PLATFORM_GET, ifindex));
@@ -330,9 +299,7 @@ test_software (NMLinkType link_type, const char *link_typename)
 	case NM_LINK_TYPE_BRIDGE:
 		if (nmtst_platform_is_sysfs_writable ()) {
 			g_assert (nm_platform_master_set_option (NM_PLATFORM_GET, ifindex, "forward_delay", "789"));
-			no_error ();
 			value = nm_platform_master_get_option (NM_PLATFORM_GET, ifindex, "forward_delay");
-			no_error ();
 			g_assert_cmpstr (value, ==, "789");
 			g_free (value);
 		}
@@ -340,9 +307,7 @@ test_software (NMLinkType link_type, const char *link_typename)
 	case NM_LINK_TYPE_BOND:
 		if (nmtst_platform_is_sysfs_writable ()) {
 			g_assert (nm_platform_master_set_option (NM_PLATFORM_GET, ifindex, "mode", "active-backup"));
-			no_error ();
 			value = nm_platform_master_get_option (NM_PLATFORM_GET, ifindex, "mode");
-			no_error ();
 			/* When reading back, the output looks slightly different. */
 			g_assert (g_str_has_prefix (value, "active-backup"));
 			g_free (value);
@@ -368,17 +333,13 @@ test_software (NMLinkType link_type, const char *link_typename)
 
 	/* Delete */
 	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex));
-	no_error ();
-	g_assert (!nm_platform_link_exists (NM_PLATFORM_GET, DEVICE_NAME)); no_error ();
+	g_assert (!nm_platform_link_exists (NM_PLATFORM_GET, DEVICE_NAME));
 	g_assert_cmpint (nm_platform_link_get_type (NM_PLATFORM_GET, ifindex), ==, NM_LINK_TYPE_NONE);
-	error (NM_PLATFORM_ERROR_NOT_FOUND);
 	g_assert (!nm_platform_link_get_type (NM_PLATFORM_GET, ifindex));
-	error (NM_PLATFORM_ERROR_NOT_FOUND);
 	accept_signal (link_removed);
 
 	/* Delete again */
 	g_assert (!nm_platform_link_delete (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME)));
-	error (NM_PLATFORM_ERROR_NOT_FOUND);
 
 	/* VLAN: Delete parent */
 	if (link_type == NM_LINK_TYPE_VLAN) {
@@ -436,18 +397,15 @@ test_internal (void)
 	int ifindex;
 
 	/* Check the functions for non-existent devices */
-	g_assert (!nm_platform_link_exists (NM_PLATFORM_GET, DEVICE_NAME)); no_error ();
+	g_assert (!nm_platform_link_exists (NM_PLATFORM_GET, DEVICE_NAME));
 	g_assert (!nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME));
-	error (NM_PLATFORM_ERROR_NOT_FOUND);
 
 	/* Add device */
 	g_assert (nm_platform_dummy_add (NM_PLATFORM_GET, DEVICE_NAME, NULL) == NM_PLATFORM_ERROR_SUCCESS);
-	no_error ();
 	accept_signal (link_added);
 
 	/* Try to add again */
 	g_assert (nm_platform_dummy_add (NM_PLATFORM_GET, DEVICE_NAME, NULL) == NM_PLATFORM_ERROR_EXISTS);
-	error (NM_PLATFORM_ERROR_EXISTS);
 
 	/* Check device index, name and type */
 	ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME);
@@ -459,15 +417,15 @@ test_internal (void)
 	link_removed = add_signal_ifindex (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_REMOVED, link_callback, ifindex);
 
 	/* Up/connected */
-	g_assert (!nm_platform_link_is_up (NM_PLATFORM_GET, ifindex)); no_error ();
-	g_assert (!nm_platform_link_is_connected (NM_PLATFORM_GET, ifindex)); no_error ();
-	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, ifindex, NULL)); no_error ();
-	g_assert (nm_platform_link_is_up (NM_PLATFORM_GET, ifindex)); no_error ();
-	g_assert (nm_platform_link_is_connected (NM_PLATFORM_GET, ifindex)); no_error ();
+	g_assert (!nm_platform_link_is_up (NM_PLATFORM_GET, ifindex));
+	g_assert (!nm_platform_link_is_connected (NM_PLATFORM_GET, ifindex));
+	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, ifindex, NULL));
+	g_assert (nm_platform_link_is_up (NM_PLATFORM_GET, ifindex));
+	g_assert (nm_platform_link_is_connected (NM_PLATFORM_GET, ifindex));
 	accept_signal (link_changed);
-	g_assert (nm_platform_link_set_down (NM_PLATFORM_GET, ifindex)); no_error ();
-	g_assert (!nm_platform_link_is_up (NM_PLATFORM_GET, ifindex)); no_error ();
-	g_assert (!nm_platform_link_is_connected (NM_PLATFORM_GET, ifindex)); no_error ();
+	g_assert (nm_platform_link_set_down (NM_PLATFORM_GET, ifindex));
+	g_assert (!nm_platform_link_is_up (NM_PLATFORM_GET, ifindex));
+	g_assert (!nm_platform_link_is_connected (NM_PLATFORM_GET, ifindex));
 	accept_signal (link_changed);
 
 	/* arp/noarp */
@@ -494,18 +452,15 @@ test_internal (void)
 
 	/* Set MTU */
 	g_assert (nm_platform_link_set_mtu (NM_PLATFORM_GET, ifindex, MTU));
-	no_error ();
 	g_assert_cmpint (nm_platform_link_get_mtu (NM_PLATFORM_GET, ifindex), ==, MTU);
 	accept_signal (link_changed);
 
 	/* Delete device */
 	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex));
-	no_error ();
 	accept_signal (link_removed);
 
 	/* Try to delete again */
 	g_assert (!nm_platform_link_delete (NM_PLATFORM_GET, ifindex));
-	error (NM_PLATFORM_ERROR_NOT_FOUND);
 
 	free_signal (link_added);
 	free_signal (link_changed);
