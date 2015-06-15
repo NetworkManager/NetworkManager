@@ -16,7 +16,7 @@
 #define debug(...) nm_log_dbg (LOGD_PLATFORM, __VA_ARGS__)
 
 #define error(err) g_assert (nm_platform_get_error (NM_PLATFORM_GET) == err)
-#define no_error() error (NM_PLATFORM_ERROR_NONE)
+#define no_error() error (NM_PLATFORM_ERROR_SUCCESS)
 
 typedef struct {
 	int handler_id;
