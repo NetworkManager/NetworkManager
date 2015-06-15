@@ -175,7 +175,7 @@ test_ip4_address_external (void)
 	/* Looks like addresses are not announced by kerenl when the interface
 	 * is down. Link-local IPv6 address is automatically added.
 	 */
-	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME)));
+	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME), NULL));
 
 	/* Add/delete notification */
 	run_command ("ip address add %s/%d dev %s valid_lft %d preferred_lft %d",

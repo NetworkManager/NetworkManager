@@ -363,10 +363,13 @@ link_changed (NMPlatform *platform, NMFakePlatformLink *device, gboolean raise_s
 }
 
 static gboolean
-link_set_up (NMPlatform *platform, int ifindex)
+link_set_up (NMPlatform *platform, int ifindex, gboolean *out_no_firmware)
 {
 	NMFakePlatformLink *device = link_get (platform, ifindex);
 	gboolean up, connected;
+
+	if (out_no_firmware)
+		*out_no_firmware = FALSE;
 
 	if (!device)
 		return FALSE;

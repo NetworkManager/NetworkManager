@@ -598,7 +598,7 @@ nm_device_set_ip_iface (NMDevice *self, const char *iface)
 				nm_platform_link_set_user_ipv6ll_enabled (NM_PLATFORM_GET, priv->ip_ifindex, TRUE);
 
 			if (!nm_platform_link_is_up (NM_PLATFORM_GET, priv->ip_ifindex))
-				nm_platform_link_set_up (NM_PLATFORM_GET, priv->ip_ifindex);
+				nm_platform_link_set_up (NM_PLATFORM_GET, priv->ip_ifindex, NULL);
 		} else {
 			/* Device IP interface must always be a kernel network interface */
 			_LOGW (LOGD_HW, "failed to look up interface index");
@@ -5527,7 +5527,7 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 	/* Interface must be IFF_UP before IP config can be applied */
 	ip_ifindex = nm_device_get_ip_ifindex (self);
 	if (!nm_platform_link_is_up (NM_PLATFORM_GET, ip_ifindex) && !nm_device_uses_assumed_connection (self)) {
-		nm_platform_link_set_up (NM_PLATFORM_GET, ip_ifindex);
+		nm_platform_link_set_up (NM_PLATFORM_GET, ip_ifindex, NULL);
 		if (!nm_platform_link_is_up (NM_PLATFORM_GET, ip_ifindex))
 			_LOGW (LOGD_DEVICE, "interface %s not up for IP configuration", nm_device_get_ip_iface (self));
 	}
@@ -5648,7 +5648,7 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 	/* Interface must be IFF_UP before IP config can be applied */
 	ip_ifindex = nm_device_get_ip_ifindex (self);
 	if (!nm_platform_link_is_up (NM_PLATFORM_GET, ip_ifindex) && !nm_device_uses_assumed_connection (self)) {
-		nm_platform_link_set_up (NM_PLATFORM_GET, ip_ifindex);
+		nm_platform_link_set_up (NM_PLATFORM_GET, ip_ifindex, NULL);
 		if (!nm_platform_link_is_up (NM_PLATFORM_GET, ip_ifindex))
 			_LOGW (LOGD_DEVICE, "interface %s not up for IP configuration", nm_device_get_ip_iface (self));
 	}
@@ -6792,9 +6792,7 @@ bring_up (NMDevice *self, gboolean *no_firmware)
 		return TRUE;
 	}
 
-	result = nm_platform_link_set_up (NM_PLATFORM_GET, ifindex);
-	if (no_firmware)
-		*no_firmware = nm_platform_get_error (NM_PLATFORM_GET) == NM_PLATFORM_ERROR_NO_FIRMWARE;
+	result = nm_platform_link_set_up (NM_PLATFORM_GET, ifindex, no_firmware);
 
 	/* Store carrier immediately. */
 	if (result && nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT))

@@ -652,7 +652,7 @@ fixture_setup (test_fixture *fixture, gconstpointer user_data)
 	accept_signal (link_added);
 	free_signal (link_added);
 	fixture->ifindex0 = nm_platform_link_get_ifindex (NM_PLATFORM_GET, "nm-test-device0");
-	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, fixture->ifindex0));
+	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, fixture->ifindex0, NULL));
 
 	link_added = add_signal_ifname (NM_PLATFORM_SIGNAL_LINK_CHANGED,
 	                                NM_PLATFORM_SIGNAL_ADDED,
@@ -664,7 +664,7 @@ fixture_setup (test_fixture *fixture, gconstpointer user_data)
 	accept_signal (link_added);
 	free_signal (link_added);
 	fixture->ifindex1 = nm_platform_link_get_ifindex (NM_PLATFORM_GET, "nm-test-device1");
-	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, fixture->ifindex1));
+	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, fixture->ifindex1, NULL));
 }
 
 static void

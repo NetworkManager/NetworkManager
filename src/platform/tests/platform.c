@@ -182,7 +182,14 @@ LINK_CMD_GET_FULL (get_type, decimal, value > 0)
 LINK_CMD_GET (is_software, boolean)
 LINK_CMD_GET (supports_slaves, boolean)
 
-LINK_CMD (set_up)
+static gboolean
+do_link_set_up (char **argv)
+{
+	int ifindex = parse_ifindex (argv[0]);
+
+	return ifindex ? nm_platform_link_set_up (NM_PLATFORM_GET, ifindex, NULL) : FALSE;
+}
+
 LINK_CMD (set_down)
 LINK_CMD (set_arp)
 LINK_CMD (set_noarp)

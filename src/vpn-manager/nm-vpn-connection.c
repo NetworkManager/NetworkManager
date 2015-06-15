@@ -921,7 +921,7 @@ nm_vpn_connection_apply_config (NMVpnConnection *connection)
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 
 	if (priv->ip_ifindex > 0) {
-		nm_platform_link_set_up (NM_PLATFORM_GET, priv->ip_ifindex);
+		nm_platform_link_set_up (NM_PLATFORM_GET, priv->ip_ifindex, NULL);
 
 		if (priv->ip4_config) {
 			if (!nm_ip4_config_commit (priv->ip4_config, priv->ip_ifindex,

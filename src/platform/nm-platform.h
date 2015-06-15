@@ -429,7 +429,7 @@ typedef struct {
 
 	gboolean (*link_refresh) (NMPlatform *, int ifindex);
 
-	gboolean (*link_set_up) (NMPlatform *, int ifindex);
+	gboolean (*link_set_up) (NMPlatform *, int ifindex, gboolean *out_no_firmware);
 	gboolean (*link_set_down) (NMPlatform *, int ifindex);
 	gboolean (*link_set_arp) (NMPlatform *, int ifindex);
 	gboolean (*link_set_noarp) (NMPlatform *, int ifindex);
@@ -620,7 +620,7 @@ gboolean nm_platform_link_supports_slaves (NMPlatform *self, int ifindex);
 
 gboolean nm_platform_link_refresh (NMPlatform *self, int ifindex);
 
-gboolean nm_platform_link_set_up (NMPlatform *self, int ifindex);
+gboolean nm_platform_link_set_up (NMPlatform *self, int ifindex, gboolean *out_no_firmware);
 gboolean nm_platform_link_set_down (NMPlatform *self, int ifindex);
 gboolean nm_platform_link_set_arp (NMPlatform *self, int ifindex);
 gboolean nm_platform_link_set_noarp (NMPlatform *self, int ifindex);
