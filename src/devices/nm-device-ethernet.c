@@ -1559,7 +1559,7 @@ link_changed (NMDevice *device, NMPlatformLink *info)
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 
 	NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->link_changed (device, info);
-	if (!priv->subchan1 && info->udi)
+	if (!priv->subchan1 && info->initialized)
 		_update_s390_subchannels (self);
 }
 

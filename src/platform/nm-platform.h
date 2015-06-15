@@ -95,12 +95,6 @@ struct _NMPlatformLink {
 	/* NMPlatform initializes this field with a static string. */
 	const char *kind;
 
-	/* Beware: NMPlatform initializes this string with an allocated string
-	 * (NMRefString). Handle it properly (i.e. don't keep a reference to it
-	 * without incrementing the ref-counter).
-	 * This property depends on @initialized. */
-	const char *udi;
-
 	/* NMPlatform initializes this field with a static string. */
 	const char *driver;
 
@@ -438,6 +432,7 @@ typedef struct {
 	gboolean (*link_is_connected) (NMPlatform *, int ifindex);
 	gboolean (*link_uses_arp) (NMPlatform *, int ifindex);
 
+	const char *(*link_get_udi) (NMPlatform *self, int ifindex);
 	gboolean (*link_get_ipv6_token) (NMPlatform *, int ifindex, NMUtilsIPv6IfaceId *iid);
 
 	gboolean (*link_get_user_ipv6ll_enabled) (NMPlatform *, int ifindex);
@@ -627,6 +622,7 @@ gboolean nm_platform_link_is_connected (NMPlatform *self, int ifindex);
 gboolean nm_platform_link_uses_arp (NMPlatform *self, int ifindex);
 
 gboolean nm_platform_link_get_ipv6_token (NMPlatform *self, int ifindex, NMUtilsIPv6IfaceId *iid);
+const char *nm_platform_link_get_udi (NMPlatform *self, int ifindex);
 
 gboolean nm_platform_link_get_user_ipv6ll_enabled (NMPlatform *self, int ifindex);
 gboolean nm_platform_link_set_user_ipv6ll_enabled (NMPlatform *self, int ifindex, gboolean enabled);

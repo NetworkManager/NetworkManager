@@ -915,6 +915,18 @@ nm_platform_link_get_ipv6_token (NMPlatform *self, int ifindex, NMUtilsIPv6Iface
 	return FALSE;
 }
 
+const char *
+nm_platform_link_get_udi (NMPlatform *self, int ifindex)
+{
+	_CHECK_SELF (self, klass, FALSE);
+	reset_error (self);
+
+	g_return_val_if_fail (ifindex >= 0, NULL);
+
+	if (klass->link_get_udi)
+		return klass->link_get_udi (self, ifindex);
+	return NULL;
+}
 
 /**
  * nm_platform_link_get_user_ip6vll_enabled:
@@ -2533,7 +2545,7 @@ nm_platform_link_to_string (const NMPlatformLink *link)
 	            "%s%s" /* addr */
 	            "%s%s" /* inet6_token */
 	            "%s%s" /* driver */
-	            "%s%s", /* udi */
+	            ,
 	            link->ifindex,
 	            link->name,
 	            parent,
@@ -2552,9 +2564,7 @@ nm_platform_link_to_string (const NMPlatformLink *link)
 	            str_inet6_token ? " inet6token " : "",
 	            str_inet6_token ? str_inet6_token : "",
 	            link->driver ? " driver " : "",
-	            link->driver ? link->driver : "",
-	            link->udi ? " udi " : "",
-	            link->udi ? link->udi : "");
+	            link->driver ? link->driver : "");
 	g_string_free (str_flags, TRUE);
 	return _nm_platform_to_string_buffer;
 }
@@ -2854,11 +2864,6 @@ nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 	_CMP_FIELD (a, b, inet6_addr_gen_mode_inv);
 	_CMP_FIELD (a, b, inet6_token.is_valid);
 	_CMP_FIELD_STR_INTERNED (a, b, kind);
-
-	/* udi is not an interned string, but NMRefString. Hence,
-	 * do a pointer comparison first. */
-	_CMP_FIELD_STR_INTERNED (a, b, udi);
-
 	_CMP_FIELD_STR_INTERNED (a, b, driver);
 	if (a->addr.len)
 		_CMP_FIELD_MEMCMP_LEN (a, b, addr.data, a->addr.len);

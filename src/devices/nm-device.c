@@ -1341,11 +1341,13 @@ device_link_changed (NMDevice *self, NMPlatformLink *info)
 	NMUtilsIPv6IfaceId token_iid;
 	gboolean ip_ifname_changed = FALSE;
 	gboolean platform_unmanaged = FALSE;
+	const char *udi;
 
-	if (info->udi && g_strcmp0 (info->udi, priv->udi)) {
+	udi = nm_platform_link_get_udi (NM_PLATFORM_GET, info->ifindex);
+	if (udi && g_strcmp0 (udi, priv->udi)) {
 		/* Update UDI to what udev gives us */
 		g_free (priv->udi);
-		priv->udi = g_strdup (info->udi);
+		priv->udi = g_strdup (udi);
 		g_object_notify (G_OBJECT (self), NM_DEVICE_UDI);
 	}
 
@@ -8938,7 +8940,7 @@ set_property (GObject *object, guint prop_id,
 		platform_device = g_value_get_pointer (value);
 		if (platform_device) {
 			g_free (priv->udi);
-			priv->udi = g_strdup (platform_device->udi);
+			priv->udi = g_strdup (nm_platform_link_get_udi (NM_PLATFORM_GET, platform_device->ifindex));
 			g_free (priv->iface);
 			priv->iface = g_strdup (platform_device->name);
 			priv->ifindex = platform_device->ifindex;

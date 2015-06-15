@@ -2950,6 +2950,18 @@ link_get_ipv6_token (NMPlatform *platform, int ifindex, NMUtilsIPv6IfaceId *iid)
 	return TRUE;
 }
 
+static const char *
+link_get_udi (NMPlatform *platform, int ifindex)
+{
+	const NMPObject *obj = cache_lookup_link (platform, ifindex);
+
+	if (   !obj
+	    || !obj->_link.netlink.is_in_netlink
+	    || !obj->_link.udev.device)
+		return NULL;
+	return g_udev_device_get_sysfs_path (obj->_link.udev.device);
+}
+
 static gboolean
 link_get_user_ipv6ll_enabled (NMPlatform *platform, int ifindex)
 {
@@ -4979,6 +4991,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_is_connected = link_is_connected;
 	platform_class->link_uses_arp = link_uses_arp;
 
+	platform_class->link_get_udi = link_get_udi;
 	platform_class->link_get_ipv6_token = link_get_ipv6_token;
 
 	platform_class->link_get_user_ipv6ll_enabled = link_get_user_ipv6ll_enabled;
