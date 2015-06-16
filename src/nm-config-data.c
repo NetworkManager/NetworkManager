@@ -376,6 +376,13 @@ nm_config_data_get_connection_default (const NMConfigData *self,
 		char *value;
 		gboolean match;
 
+		/* FIXME: Here we use g_key_file_get_string(). This should be in sync with what keyfile-reader
+		 * does.
+		 *
+		 * Unfortunately that is currently not possible because keyfile-reader does the two steps
+		 * string_to_value(keyfile_to_string(keyfile)) in one. Optimally, keyfile library would
+		 * expose both functions, and we would return here keyfile_to_string(keyfile).
+		 * The caller then could convert the string to the proper value via string_to_value(value). */
 		value = g_key_file_get_string (priv->keyfile, connection_info->group_name, property, NULL);
 		if (!value && !connection_info->stop_match)
 			continue;
