@@ -121,6 +121,11 @@ gboolean    _nm_utils_string_in_list   (const char *str,
 
 gssize      _nm_utils_strv_find_first (char **list, gssize len, const char *needle);
 
+char **_nm_utils_strv_cleanup (char **strv,
+                               gboolean strip_whitespace,
+                               gboolean skip_empty,
+                               gboolean skip_repeated);
+
 char **     _nm_utils_strsplit_set (const char *str,
                                     const char *delimiters,
                                     int max_tokens);
