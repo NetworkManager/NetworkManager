@@ -622,7 +622,7 @@ constructed (GObject *object)
 
 	priv->connection_infos = _get_connection_infos (priv->keyfile);
 
-	priv->connectivity.uri = g_key_file_get_string (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, "uri", NULL);
+	priv->connectivity.uri = nm_strstrip (g_key_file_get_string (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, "uri", NULL));
 	priv->connectivity.response = g_key_file_get_string (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, "response", NULL);
 
 	/* On missing config value, fallback to 300. On invalid value, disable connectivity checking by setting
@@ -633,7 +633,7 @@ constructed (GObject *object)
 	    : NM_CONFIG_DEFAULT_CONNECTIVITY_INTERVAL;
 	g_free (interval);
 
-	priv->dns_mode = g_key_file_get_string (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "dns", NULL);
+	priv->dns_mode = nm_strstrip (g_key_file_get_string (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "dns", NULL));
 
 	priv->ignore_carrier = nm_config_get_device_match_spec (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "ignore-carrier", NULL);
 	priv->assume_ipv6ll_only = nm_config_get_device_match_spec (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "assume-ipv6ll-only", NULL);
