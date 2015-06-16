@@ -582,8 +582,6 @@ class CmdSubmit(CmdBase):
                         return 'rhel-7.1' # upstream pre 1.0
                     if re.match(r'^.*/NetworkManager-0.9[0-9][0-9]+.0.0-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
                         return 'rhel-7.1' # upstream 1.0-beta
-                    if re.match(r'^.*/NetworkManager-1.0.[0-9]+-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
-                        return 'rhel-7.1' # upstream 1.0
                     if re.match(r'^.*/NetworkManager-0.9.10.[0-9]+-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
                         return 'rhel-7.1' # 0.9.10
                     if re.match(r'^.*/NetworkManager-0.9.9.9[0-9]+-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
@@ -592,6 +590,8 @@ class CmdSubmit(CmdBase):
                         return 'rhel-7.1' # rhel-7.1-rc
                     if re.match(r'^.*/NetworkManager-1.0.[0-9]+-[0-9]+\.git20150121\.b4ea599c\.el7.x86_64.rpm$', u):
                         return 'rhel-7.1' # rhel-7.1-rc
+                    if re.match(r'^.*/NetworkManager-1.0.[0-9]+-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
+                        return 'rhel-7' # upstream 1.0
                     if re.match(r'^.*/NetworkManager-1.1.[0-9]+-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
                         return 'master' # upstream 1.1
         raise Exception("could not detect the target branch. Try setting as environment variable GIT_TARGETBRANCH%s" % (
@@ -636,7 +636,11 @@ class CmdSubmit(CmdBase):
         target_branch = self.__process_line_get_GIT_TARGETBRANCH_detect("DISTRO_NAME")
         if target_branch == 'rhel-7.0':
             return 'RHEL-7.0-20140507.0'
-        return 'RHEL-7.1-20141023.n.1'
+        if target_branch == 'rhel-7.1':
+            return 'RHEL-7.1-20141023.n.1'
+        if target_branch == 'rhel-7':
+            return 'RHEL-7.2-20150616.n.0'
+        return 'RHEL-7.2-20150616.n.0'
 
     def _process_line_get_RESERVESYS(self, key, replacement, index=None, none=None):
         v = self._get_default('RESERVESYS')
