@@ -45,6 +45,23 @@ G_BEGIN_DECLS
 #define NM_CONFIG_DATA_NO_AUTO_DEFAULT       "no-auto-default"
 #define NM_CONFIG_DATA_DNS_MODE              "dns"
 
+typedef enum { /*<flags >*/
+	NM_CONFIG_GET_VALUE_NONE                   = 0,
+
+	/* use g_key_file_get_value() instead of g_key_file_get_string(). */
+	NM_CONFIG_GET_VALUE_RAW                    = (1LL << 0),
+
+	/* strip whitespaces */
+	NM_CONFIG_GET_VALUE_STRIP                  = (1LL << 1),
+
+	/* if the returned string would be the empty word, return NULL. */
+	NM_CONFIG_GET_VALUE_NO_EMPTY               = (1LL << 2),
+
+	/* special flag to read device spec. You want to use this before passing the
+	 * value to nm_match_spec_split(). */
+	NM_CONFIG_GET_VALUE_TYPE_SPEC              = NM_CONFIG_GET_VALUE_RAW,
+} NMConfigGetValueFlags;
+
 typedef enum { /*< flags >*/
 	NM_CONFIG_CHANGE_NONE                      = 0,
 
@@ -87,8 +104,8 @@ const char *nm_config_data_get_config_main_file (const NMConfigData *config_data
 const char *nm_config_data_get_config_description (const NMConfigData *config_data);
 
 gboolean nm_config_data_has_group (const NMConfigData *self, const char *group);
-gboolean nm_config_data_has_value (const NMConfigData *self, const char *group, const char *key);
-char *nm_config_data_get_value (const NMConfigData *config_data, const char *group, const char *key);
+gboolean nm_config_data_has_value (const NMConfigData *self, const char *group, const char *key, NMConfigGetValueFlags flags);
+char *nm_config_data_get_value (const NMConfigData *config_data, const char *group, const char *key, NMConfigGetValueFlags flags);
 gint nm_config_data_get_value_boolean (const NMConfigData *self, const char *group, const char *key, gint default_value);
 
 const char *nm_config_data_get_connectivity_uri (const NMConfigData *config_data);

@@ -116,6 +116,10 @@ gint nm_config_keyfile_get_boolean (GKeyFile *keyfile,
                                     const char *section,
                                     const char *key,
                                     gint default_value);
+char *nm_config_keyfile_get_value (GKeyFile *keyfile,
+                                   const char *section,
+                                   const char *key,
+                                   NMConfigGetValueFlags flags);
 void nm_config_keyfile_set_string_list (GKeyFile *keyfile,
                                         const char *group,
                                         const char *key,

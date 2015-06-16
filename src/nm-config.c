@@ -156,6 +156,34 @@ nm_config_keyfile_get_boolean (GKeyFile *keyfile,
 	return nm_config_parse_boolean (str, default_value);
 }
 
+char *
+nm_config_keyfile_get_value (GKeyFile *keyfile,
+                             const char *section,
+                             const char *key,
+                             NMConfigGetValueFlags flags)
+{
+	char *value;
+
+	if (NM_FLAGS_HAS (flags, NM_CONFIG_GET_VALUE_RAW))
+		value = g_key_file_get_value (keyfile, section, key, NULL);
+	else
+		value = g_key_file_get_string (keyfile, section, key, NULL);
+
+	if (!value)
+		return NULL;
+
+	if (NM_FLAGS_HAS (flags, NM_CONFIG_GET_VALUE_STRIP))
+		g_strstrip (value);
+
+	if (   NM_FLAGS_HAS (flags, NM_CONFIG_GET_VALUE_NO_EMPTY)
+	    && !*value) {
+		g_free (value);
+		return NULL;
+	}
+
+	return value;
+}
+
 void
 nm_config_keyfile_set_string_list (GKeyFile *keyfile,
                                    const char *group,

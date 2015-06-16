@@ -118,19 +118,17 @@ nm_config_data_has_group (const NMConfigData *self, const char *group)
 }
 
 char *
-nm_config_data_get_value (const NMConfigData *self, const char *group, const char *key)
+nm_config_data_get_value (const NMConfigData *self, const char *group, const char *key, NMConfigGetValueFlags flags)
 {
 	g_return_val_if_fail (NM_IS_CONFIG_DATA (self), NULL);
 	g_return_val_if_fail (group && *group, NULL);
 	g_return_val_if_fail (key && *key, NULL);
 
-	/* nm_config_data_get_value() translates to g_key_file_get_string(), because we want
-	 * to use the string representation, not the (raw) GKeyFile value. */
-	return g_key_file_get_string (NM_CONFIG_DATA_GET_PRIVATE (self)->keyfile, group, key, NULL);
+	return nm_config_keyfile_get_value (NM_CONFIG_DATA_GET_PRIVATE (self)->keyfile, group, key, flags);
 }
 
 gboolean
-nm_config_data_has_value (const NMConfigData *self, const char *group, const char *key)
+nm_config_data_has_value (const NMConfigData *self, const char *group, const char *key, NMConfigGetValueFlags flags)
 {
 	gs_free char *value = NULL;
 
@@ -138,9 +136,7 @@ nm_config_data_has_value (const NMConfigData *self, const char *group, const cha
 	g_return_val_if_fail (group && *group, FALSE);
 	g_return_val_if_fail (key && *key, FALSE);
 
-	/* nm_config_data_get_value() translates to g_key_file_get_string(), because we want
-	 * to use the string representation, not the (raw) GKeyFile value. */
-	value = g_key_file_get_string (NM_CONFIG_DATA_GET_PRIVATE (self)->keyfile, group, key, NULL);
+	value = nm_config_keyfile_get_value (NM_CONFIG_DATA_GET_PRIVATE (self)->keyfile, group, key, flags);
 	return !!value;
 }
 
