@@ -680,6 +680,9 @@ test_match_spec_ifname (const char *spec_str, const char **matches, const char *
 	g_assert (spec_str);
 
 	specs = nm_match_spec_split (spec_str);
+
+	/* also check the matches in the reverse order. They must yield the same result because
+	 * matches are inclusive -- except "except:" which always wins. */
 	specs_reverse = g_slist_reverse (g_slist_copy (specs));
 
 	for (i = 0; matches && matches[i]; i++) {
@@ -746,8 +749,11 @@ test_nm_match_spec_interface_name (void)
 	test_match_spec_ifname ("interface-name:em\\;1,em\\,2,\\,,\\\\,,em\\\\x",
 	                        S ("em;1", "em,2", ",", "\\", "em\\x"),
 	                        NULL);
-	test_match_spec_ifname ("  , interface-name:a, ,",
+	test_match_spec_ifname ("\\s\\s,\\sinterface-name:a,\\s,",
 	                        S ("  ", " ", " interface-name:a"),
+	                        NULL);
+	test_match_spec_ifname (" aa ;  bb   ; cc\\;dd  ;e , ; \t\\t  , ",
+	                        S ("aa", "bb", "cc;dd", "e", "\t"),
 	                        NULL);
 #undef S
 }
