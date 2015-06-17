@@ -24,11 +24,15 @@
 #include <unistd.h>
 #include <netinet/icmp6.h>
 #include <netinet/in.h>
+#include <linux/rtnetlink.h>
 
 #include "gsystem-local-alloc.h"
+#include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-fake-platform.h"
 #include "nm-logging.h"
+
+#include "nm-test-utils.h"
 
 #define debug(format, ...) nm_log_dbg (LOGD_PLATFORM, format, __VA_ARGS__)
 
@@ -48,11 +52,21 @@ typedef struct {
 	GBytes *address;
 	int vlan_id;
 	int ib_p_key;
+	struct in6_addr ip6_lladdr;
 } NMFakePlatformLink;
 
 #define NM_FAKE_PLATFORM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_FAKE_PLATFORM, NMFakePlatformPrivate))
 
 G_DEFINE_TYPE (NMFakePlatform, nm_fake_platform, NM_TYPE_PLATFORM)
+
+/******************************************************************/
+
+static void link_changed (NMPlatform *platform, NMFakePlatformLink *device, gboolean raise_signal);
+
+static gboolean ip6_address_add (NMPlatform *platform, int ifindex,
+                                 struct in6_addr addr, struct in6_addr peer_addr,
+                                 int plen, guint32 lifetime, guint32 preferred, guint flags);
+static gboolean ip6_address_delete (NMPlatform *platform, int ifindex, struct in6_addr addr, int plen);
 
 /******************************************************************/
 
@@ -103,24 +117,30 @@ type_to_type_name (NMLinkType type)
 static void
 link_init (NMFakePlatformLink *device, int ifindex, int type, const char *name)
 {
+	gs_free char *ip6_lladdr = NULL;
+
 	g_assert (!name || strlen (name) < sizeof(device->link.name));
 
 	memset (device, 0, sizeof (*device));
+
+	ip6_lladdr = ifindex > 0 ? g_strdup_printf ("fe80::fa1e:%0x:%0x", ifindex / 256, ifindex % 256) : NULL;
 
 	device->link.ifindex = name ? ifindex : 0;
 	device->link.type = type;
 	device->link.kind = type_to_type_name (type);
 	device->link.driver = type_to_type_name (type);
-	device->link.udi = device->udi = g_strdup_printf ("fake:%d", ifindex);
+	device->udi = g_strdup_printf ("fake:%d", ifindex);
 	device->link.initialized = TRUE;
+	device->ip6_lladdr = *nmtst_inet6_from_string (ip6_lladdr);
 	if (name)
 		strcpy (device->link.name, name);
 	switch (device->link.type) {
 	case NM_LINK_TYPE_DUMMY:
-		device->link.arp = FALSE;
+		device->link.flags = NM_FLAGS_SET (device->link.flags, IFF_NOARP);
 		break;
 	default:
-		device->link.arp = TRUE;
+		device->link.flags = NM_FLAGS_UNSET (device->link.flags, IFF_NOARP);
+		break;
 	}
 	device->address = NULL;
 }
@@ -140,7 +160,6 @@ link_get (NMPlatform *platform, int ifindex)
 	return device;
 not_found:
 	debug ("link not found: %d", ifindex);
-	platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
 	return NULL;
 }
 
@@ -205,8 +224,11 @@ link_add (NMPlatform *platform,
 
 	g_array_append_val (priv->links, device);
 
-	if (device.link.ifindex)
+	if (device.link.ifindex) {
 		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_LINK_CHANGED, device.link.ifindex, &device, NM_PLATFORM_SIGNAL_ADDED, NM_PLATFORM_REASON_INTERNAL);
+
+		link_changed (platform, &g_array_index (priv->links, NMFakePlatformLink, priv->links->len - 1), FALSE);
+	}
 
 	if (out_link)
 		*out_link = device.link;
@@ -303,55 +325,76 @@ link_get_unmanaged (NMPlatform *platform, int ifindex, gboolean *managed)
 }
 
 static void
-link_changed (NMPlatform *platform, NMFakePlatformLink *device)
+link_changed (NMPlatform *platform, NMFakePlatformLink *device, gboolean raise_signal)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	int i;
 
-	g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_LINK_CHANGED, device->link.ifindex, &device->link, NM_PLATFORM_SIGNAL_CHANGED, NM_PLATFORM_REASON_INTERNAL);
+	if (raise_signal)
+		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_LINK_CHANGED, device->link.ifindex, &device->link, NM_PLATFORM_SIGNAL_CHANGED, NM_PLATFORM_REASON_INTERNAL);
+
+	if (device->link.ifindex && !IN6_IS_ADDR_UNSPECIFIED (&device->ip6_lladdr)) {
+		if (device->link.connected)
+			ip6_address_add (platform, device->link.ifindex, device->ip6_lladdr, in6addr_any, 64, NM_PLATFORM_LIFETIME_PERMANENT, NM_PLATFORM_LIFETIME_PERMANENT, 0);
+		else
+			ip6_address_delete (platform, device->link.ifindex, device->ip6_lladdr, 64);
+	}
 
 	if (device->link.master) {
+		gboolean connected = FALSE;
+
 		NMFakePlatformLink *master = link_get (platform, device->link.master);
 
-		g_return_if_fail (master != device);
+		g_return_if_fail (master && master != device);
 
-		master->link.connected = FALSE;
 		for (i = 0; i < priv->links->len; i++) {
 			NMFakePlatformLink *slave = &g_array_index (priv->links, NMFakePlatformLink, i);
 
 			if (slave && slave->link.master == master->link.ifindex && slave->link.connected)
-				master->link.connected = TRUE;
+				connected = TRUE;
 		}
 
-		link_changed (platform, master);
+		if (master->link.connected != connected) {
+			master->link.connected = connected;
+			link_changed (platform, master, TRUE);
+		}
 	}
 }
 
 static gboolean
-link_set_up (NMPlatform *platform, int ifindex)
+link_set_up (NMPlatform *platform, int ifindex, gboolean *out_no_firmware)
 {
 	NMFakePlatformLink *device = link_get (platform, ifindex);
+	gboolean up, connected;
+
+	if (out_no_firmware)
+		*out_no_firmware = FALSE;
 
 	if (!device)
 		return FALSE;
 
-	device->link.up = TRUE;
+	up = TRUE;
+	connected = TRUE;
 	switch (device->link.type) {
 	case NM_LINK_TYPE_DUMMY:
 	case NM_LINK_TYPE_VLAN:
-		device->link.connected = TRUE;
 		break;
 	case NM_LINK_TYPE_BRIDGE:
 	case NM_LINK_TYPE_BOND:
 	case NM_LINK_TYPE_TEAM:
-		device->link.connected = FALSE;
+		connected = FALSE;
 		break;
 	default:
-		device->link.connected = FALSE;
+		connected = FALSE;
 		g_error ("Unexpected device type: %d", device->link.type);
 	}
 
-	link_changed (platform, device);
+	if (   NM_FLAGS_HAS (device->link.flags, IFF_UP) != !!up
+	    || device->link.connected != connected) {
+		device->link.flags = NM_FLAGS_ASSIGN (device->link.flags, IFF_UP, up);
+		device->link.connected = connected;
+		link_changed (platform, device, TRUE);
+	}
 
 	return TRUE;
 }
@@ -364,10 +407,12 @@ link_set_down (NMPlatform *platform, int ifindex)
 	if (!device)
 		return FALSE;
 
-	device->link.up = FALSE;
-	device->link.connected = FALSE;
+	if (NM_FLAGS_HAS (device->link.flags, IFF_UP) || device->link.connected) {
+		device->link.flags = NM_FLAGS_UNSET (device->link.flags, IFF_UP);
+		device->link.connected = FALSE;
 
-	link_changed (platform, device);
+		link_changed (platform, device, TRUE);
+	}
 
 	return TRUE;
 }
@@ -380,9 +425,9 @@ link_set_arp (NMPlatform *platform, int ifindex)
 	if (!device)
 		return FALSE;
 
-	device->link.arp = TRUE;
+	device->link.flags = NM_FLAGS_UNSET (device->link.flags, IFF_NOARP);
 
-	link_changed (platform, device);
+	link_changed (platform, device, TRUE);
 
 	return TRUE;
 }
@@ -395,9 +440,9 @@ link_set_noarp (NMPlatform *platform, int ifindex)
 	if (!device)
 		return FALSE;
 
-	device->link.arp = FALSE;
+	device->link.flags = NM_FLAGS_SET (device->link.flags, IFF_NOARP);
 
-	link_changed (platform, device);
+	link_changed (platform, device, TRUE);
 
 	return TRUE;
 }
@@ -407,7 +452,7 @@ link_is_up (NMPlatform *platform, int ifindex)
 {
 	NMFakePlatformLink *device = link_get (platform, ifindex);
 
-	return device ? device->link.up : FALSE;
+	return device ? NM_FLAGS_HAS (device->link.flags, IFF_UP) : FALSE;
 }
 
 static gboolean
@@ -423,7 +468,7 @@ link_uses_arp (NMPlatform *platform, int ifindex)
 {
 	NMFakePlatformLink *device = link_get (platform, ifindex);
 
-	return device ? device->link.arp : FALSE;
+	return device ? !NM_FLAGS_HAS (device->link.flags, IFF_NOARP) : FALSE;
 }
 
 static gboolean
@@ -436,7 +481,7 @@ link_set_address (NMPlatform *platform, int ifindex, gconstpointer addr, size_t 
 
 	device->address = g_bytes_new (addr, len);
 
-	link_changed (platform, link_get (platform, ifindex));
+	link_changed (platform, link_get (platform, ifindex), TRUE);
 
 	return TRUE;
 }
@@ -468,7 +513,7 @@ link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 
 	if (device) {
 		device->link.mtu = mtu;
-		link_changed (platform, device);
+		link_changed (platform, device, TRUE);
 	}
 
 	return !!device;
@@ -498,6 +543,16 @@ link_get_dev_id (NMPlatform *platform, int ifindex)
 	link_get (platform, ifindex);
 
 	return 0;
+}
+
+static const char *
+link_get_udi (NMPlatform *platform, int ifindex)
+{
+	NMFakePlatformLink *device = link_get (platform, ifindex);
+
+	if (!device)
+		return NULL;
+	return device->udi;
 }
 
 static gboolean
@@ -565,12 +620,21 @@ static gboolean
 link_enslave (NMPlatform *platform, int master, int slave)
 {
 	NMFakePlatformLink *device = link_get (platform, slave);
+	NMFakePlatformLink *master_device = link_get (platform, master);
 
 	g_return_val_if_fail (device, FALSE);
+	g_return_val_if_fail (master_device, FALSE);
 
-	device->link.master = master;
+	if (device->link.master != master) {
+		device->link.master = master;
 
-	link_changed (platform, device);
+		if (NM_IN_SET (master_device->link.type, NM_LINK_TYPE_BOND, NM_LINK_TYPE_TEAM)) {
+			device->link.flags = NM_FLAGS_SET (device->link.flags, IFF_UP);
+			device->link.connected = TRUE;
+		}
+
+		link_changed (platform, device, TRUE);
+	}
 
 	return TRUE;
 }
@@ -584,15 +648,13 @@ link_release (NMPlatform *platform, int master_idx, int slave_idx)
 	g_return_val_if_fail (master, FALSE);
 	g_return_val_if_fail (slave, FALSE);
 
-	if (slave->link.master != master->link.ifindex) {
-		platform->error = NM_PLATFORM_ERROR_NOT_SLAVE;
+	if (slave->link.master != master->link.ifindex)
 		return FALSE;
-	}
 
 	slave->link.master = 0;
 
-	link_changed (platform, slave);
-	link_changed (platform, master);
+	link_changed (platform, slave, TRUE);
+	link_changed (platform, master, TRUE);
 
 	return TRUE;
 }
@@ -982,8 +1044,10 @@ ip6_address_add (NMPlatform *platform, int ifindex,
 		if (item->plen != address.plen)
 			continue;
 
-		memcpy (item, &address, sizeof (address));
-		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED, ifindex, &address, NM_PLATFORM_SIGNAL_CHANGED, NM_PLATFORM_REASON_INTERNAL);
+		if (nm_platform_ip6_address_cmp (item, &address) != 0) {
+			memcpy (item, &address, sizeof (address));
+			g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED, ifindex, &address, NM_PLATFORM_SIGNAL_CHANGED, NM_PLATFORM_REASON_INTERNAL);
+		}
 		return TRUE;
 	}
 
@@ -1196,6 +1260,9 @@ ip4_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	NMPlatformIP4Route route;
 	guint i;
+	guint8 scope;
+
+	scope = gateway == 0 ? RT_SCOPE_LINK : RT_SCOPE_UNIVERSE;
 
 	memset (&route, 0, sizeof (route));
 	route.source = NM_IP_CONFIG_SOURCE_KERNEL;
@@ -1206,6 +1273,7 @@ ip4_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 	route.gateway = gateway;
 	route.metric = metric;
 	route.mss = mss;
+	route.scope_inv = nm_platform_route_scope_inv (scope);
 
 	if (gateway) {
 		for (i = 0; i < priv->ip4_routes->len; i++) {
@@ -1218,8 +1286,8 @@ ip4_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 				break;
 		}
 		if (i == priv->ip4_routes->len) {
-			nm_log_warn (LOGD_PLATFORM, "Fake platform: error adding %s: Network Unreachable",
-			             nm_platform_ip4_route_to_string (&route));
+			nm_log_warn (LOGD_PLATFORM, "Fake platform: failure adding ip4-route '%d: %s/%d %d': Network Unreachable",
+			             route.ifindex, nm_utils_inet4_ntop (route.network, NULL), route.plen, route.metric);
 			return FALSE;
 		}
 	}
@@ -1285,8 +1353,8 @@ ip6_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 				break;
 		}
 		if (i == priv->ip6_routes->len) {
-			nm_log_warn (LOGD_PLATFORM, "Fake platform: error adding %s: Network Unreachable",
-			             nm_platform_ip6_route_to_string (&route));
+			nm_log_warn (LOGD_PLATFORM, "Fake platform: failure adding ip6-route '%d: %s/%d %d': Network Unreachable",
+			             route.ifindex, nm_utils_inet6_ntop (&route.network, NULL), route.plen, route.metric);
 			return FALSE;
 		}
 	}
@@ -1452,6 +1520,8 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->link_get_type = link_get_type;
 	platform_class->link_get_type_name = link_get_type_name;
 	platform_class->link_get_unmanaged = link_get_unmanaged;
+
+	platform_class->link_get_udi = link_get_udi;
 
 	platform_class->link_set_up = link_set_up;
 	platform_class->link_set_down = link_set_down;

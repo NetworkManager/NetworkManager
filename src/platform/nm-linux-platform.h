@@ -32,8 +32,12 @@
 
 /******************************************************************/
 
+struct _NMLinuxPlatformPrivate;
+
 typedef struct {
 	NMPlatform parent;
+
+	struct _NMLinuxPlatformPrivate *priv;
 } NMLinuxPlatform;
 
 typedef struct {

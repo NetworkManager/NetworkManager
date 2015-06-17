@@ -35,10 +35,10 @@ test_cleanup_internal (void)
 	inet_pton (AF_INET6, "2001:db8:e:f:1:2:3:4", &gateway6);
 
 	/* Create and set up device */
-	g_assert (nm_platform_dummy_add (NM_PLATFORM_GET, DEVICE_NAME, NULL));
+	g_assert (nm_platform_dummy_add (NM_PLATFORM_GET, DEVICE_NAME, NULL) == NM_PLATFORM_ERROR_SUCCESS);
 	accept_signal (link_added);
 	free_signal (link_added);
-	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME)));
+	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME), NULL));
 	ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME);
 	g_assert (ifindex > 0);
 
@@ -58,7 +58,7 @@ test_cleanup_internal (void)
 	routes6 = nm_platform_ip6_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
 
 	g_assert_cmpint (addresses4->len, ==, 1);
-	g_assert_cmpint (addresses6->len, ==, 1);
+	g_assert_cmpint (addresses6->len, ==, 2); /* also has a IPv6 LL address. */
 	g_assert_cmpint (routes4->len, ==, 3);
 	g_assert_cmpint (routes6->len, ==, 3);
 

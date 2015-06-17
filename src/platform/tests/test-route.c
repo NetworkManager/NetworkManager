@@ -1,5 +1,7 @@
 #include "config.h"
 
+#include <linux/rtnetlink.h>
+
 #include "test-common.h"
 #include "nm-test-utils.h"
 #include "NetworkManagerUtils.h"
@@ -64,7 +66,6 @@ test_ip4_route_metric0 (void)
 
 	/* add the first route */
 	g_assert (nm_platform_ip4_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, INADDR_ANY, 0, metric, mss));
-	no_error ();
 	accept_signal (route_added);
 
 	assert_ip4_route_exists (FALSE, DEVICE_NAME, network, plen, 0);
@@ -72,7 +73,6 @@ test_ip4_route_metric0 (void)
 
 	/* Deleting route with metric 0 does nothing */
 	g_assert (nm_platform_ip4_route_delete (NM_PLATFORM_GET, ifindex, network, plen, 0));
-	no_error ();
 	ensure_no_signal (route_removed);
 
 	assert_ip4_route_exists (FALSE, DEVICE_NAME, network, plen, 0);
@@ -80,7 +80,6 @@ test_ip4_route_metric0 (void)
 
 	/* add the second route */
 	g_assert (nm_platform_ip4_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, INADDR_ANY, 0, 0, mss));
-	no_error ();
 	accept_signal (route_added);
 
 	assert_ip4_route_exists (TRUE,  DEVICE_NAME, network, plen, 0);
@@ -88,7 +87,6 @@ test_ip4_route_metric0 (void)
 
 	/* Delete route with metric 0 */
 	g_assert (nm_platform_ip4_route_delete (NM_PLATFORM_GET, ifindex, network, plen, 0));
-	no_error ();
 	accept_signal (route_removed);
 
 	assert_ip4_route_exists (FALSE, DEVICE_NAME, network, plen, 0);
@@ -96,7 +94,6 @@ test_ip4_route_metric0 (void)
 
 	/* Delete route with metric 0 again (we expect nothing to happen) */
 	g_assert (nm_platform_ip4_route_delete (NM_PLATFORM_GET, ifindex, network, plen, 0));
-	no_error ();
 	ensure_no_signal (route_removed);
 
 	assert_ip4_route_exists (FALSE, DEVICE_NAME, network, plen, 0);
@@ -104,7 +101,6 @@ test_ip4_route_metric0 (void)
 
 	/* Delete the other route */
 	g_assert (nm_platform_ip4_route_delete (NM_PLATFORM_GET, ifindex, network, plen, metric));
-	no_error ();
 	accept_signal (route_removed);
 
 	assert_ip4_route_exists (FALSE, DEVICE_NAME, network, plen, 0);
@@ -136,36 +132,27 @@ test_ip4_route (void)
 
 	/* Add route to gateway */
 	g_assert (nm_platform_ip4_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, gateway, 32, INADDR_ANY, 0, metric, mss));
-	no_error ();
 	accept_signal (route_added);
 
 	/* Add route */
 	assert_ip4_route_exists (FALSE, DEVICE_NAME, network, plen, metric);
-	no_error ();
 	g_assert (nm_platform_ip4_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, gateway, 0, metric, mss));
-	no_error ();
 	assert_ip4_route_exists (TRUE, DEVICE_NAME, network, plen, metric);
-	no_error ();
 	accept_signal (route_added);
 
 	/* Add route again */
 	g_assert (nm_platform_ip4_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, gateway, 0, metric, mss));
-	no_error ();
-	accept_signal (route_changed);
+	accept_signals (route_changed, 0, 1);
 
 	/* Add default route */
 	assert_ip4_route_exists (FALSE, DEVICE_NAME, 0, 0, metric);
-	no_error ();
 	g_assert (nm_platform_ip4_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, 0, 0, gateway, 0, metric, mss));
-	no_error ();
 	assert_ip4_route_exists (TRUE, DEVICE_NAME, 0, 0, metric);
-	no_error ();
 	accept_signal (route_added);
 
 	/* Add default route again */
 	g_assert (nm_platform_ip4_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, 0, 0, gateway, 0, metric, mss));
-	no_error ();
-	accept_signal (route_changed);
+	accept_signals (route_changed, 0, 1);
 
 	/* Test route listing */
 	routes = nm_platform_ip4_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
@@ -177,6 +164,7 @@ test_ip4_route (void)
 	rts[0].gateway = INADDR_ANY;
 	rts[0].metric = metric;
 	rts[0].mss = mss;
+	rts[0].scope_inv = nm_platform_route_scope_inv (RT_SCOPE_LINK);
 	rts[1].source = NM_IP_CONFIG_SOURCE_USER;
 	rts[1].network = network;
 	rts[1].plen = plen;
@@ -184,6 +172,7 @@ test_ip4_route (void)
 	rts[1].gateway = gateway;
 	rts[1].metric = metric;
 	rts[1].mss = mss;
+	rts[1].scope_inv = nm_platform_route_scope_inv (RT_SCOPE_UNIVERSE);
 	rts[2].source = NM_IP_CONFIG_SOURCE_USER;
 	rts[2].network = 0;
 	rts[2].plen = 0;
@@ -191,20 +180,18 @@ test_ip4_route (void)
 	rts[2].gateway = gateway;
 	rts[2].metric = metric;
 	rts[2].mss = mss;
+	rts[2].scope_inv = nm_platform_route_scope_inv (RT_SCOPE_UNIVERSE);
 	g_assert_cmpint (routes->len, ==, 3);
-	g_assert (!memcmp (routes->data, rts, sizeof (rts)));
 	nmtst_platform_ip4_routes_equal ((NMPlatformIP4Route *) routes->data, rts, routes->len, TRUE);
 	g_array_unref (routes);
 
 	/* Remove route */
 	g_assert (nm_platform_ip4_route_delete (NM_PLATFORM_GET, ifindex, network, plen, metric));
-	no_error ();
 	assert_ip4_route_exists (FALSE, DEVICE_NAME, network, plen, metric);
 	accept_signal (route_removed);
 
 	/* Remove route again */
 	g_assert (nm_platform_ip4_route_delete (NM_PLATFORM_GET, ifindex, network, plen, metric));
-	no_error ();
 
 	free_signal (route_added);
 	free_signal (route_changed);
@@ -232,36 +219,27 @@ test_ip6_route (void)
 
 	/* Add route to gateway */
 	g_assert (nm_platform_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, gateway, 128, in6addr_any, metric, mss));
-	no_error ();
 	accept_signal (route_added);
 
 	/* Add route */
 	g_assert (!nm_platform_ip6_route_exists (NM_PLATFORM_GET, ifindex, network, plen, metric));
-	no_error ();
 	g_assert (nm_platform_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, gateway, metric, mss));
-	no_error ();
 	g_assert (nm_platform_ip6_route_exists (NM_PLATFORM_GET, ifindex, network, plen, metric));
-	no_error ();
 	accept_signal (route_added);
 
 	/* Add route again */
 	g_assert (nm_platform_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, gateway, metric, mss));
-	no_error ();
-	accept_signal (route_changed);
+	accept_signals (route_changed, 0, 1);
 
 	/* Add default route */
 	g_assert (!nm_platform_ip6_route_exists (NM_PLATFORM_GET, ifindex, in6addr_any, 0, metric));
-	no_error ();
 	g_assert (nm_platform_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, in6addr_any, 0, gateway, metric, mss));
-	no_error ();
 	g_assert (nm_platform_ip6_route_exists (NM_PLATFORM_GET, ifindex, in6addr_any, 0, metric));
-	no_error ();
 	accept_signal (route_added);
 
 	/* Add default route again */
 	g_assert (nm_platform_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, in6addr_any, 0, gateway, metric, mss));
-	no_error ();
-	accept_signal (route_changed);
+	accept_signals (route_changed, 0, 1);
 
 	/* Test route listing */
 	routes = nm_platform_ip6_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
@@ -288,19 +266,16 @@ test_ip6_route (void)
 	rts[2].metric = nm_utils_ip6_route_metric_normalize (metric);
 	rts[2].mss = mss;
 	g_assert_cmpint (routes->len, ==, 3);
-	g_assert (!memcmp (routes->data, rts, sizeof (rts)));
 	nmtst_platform_ip6_routes_equal ((NMPlatformIP6Route *) routes->data, rts, routes->len, TRUE);
 	g_array_unref (routes);
 
 	/* Remove route */
 	g_assert (nm_platform_ip6_route_delete (NM_PLATFORM_GET, ifindex, network, plen, metric));
-	no_error ();
 	g_assert (!nm_platform_ip6_route_exists (NM_PLATFORM_GET, ifindex, network, plen, metric));
 	accept_signal (route_removed);
 
 	/* Remove route again */
 	g_assert (nm_platform_ip6_route_delete (NM_PLATFORM_GET, ifindex, network, plen, metric));
-	no_error ();
 
 	free_signal (route_added);
 	free_signal (route_changed);
@@ -320,11 +295,11 @@ setup_tests (void)
 
 	nm_platform_link_delete (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME));
 	g_assert (!nm_platform_link_exists (NM_PLATFORM_GET, DEVICE_NAME));
-	g_assert (nm_platform_dummy_add (NM_PLATFORM_GET, DEVICE_NAME, NULL));
+	g_assert (nm_platform_dummy_add (NM_PLATFORM_GET, DEVICE_NAME, NULL) == NM_PLATFORM_ERROR_SUCCESS);
 	accept_signal (link_added);
 	free_signal (link_added);
 
-	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME)));
+	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME), NULL));
 
 	g_test_add_func ("/route/ip4", test_ip4_route);
 	g_test_add_func ("/route/ip6", test_ip6_route);

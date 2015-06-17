@@ -8,5 +8,7 @@
 /test-general
 /test-link-fake
 /test-link-linux
+/test-nmp-object
 /test-route-fake
 /test-route-linux
+
