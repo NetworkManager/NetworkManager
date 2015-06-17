@@ -621,8 +621,8 @@ class CmdSubmit(CmdBase):
         elif hosttype == 'infiniband':
             return '<hostname op="=" value="rdma-qe-11.lab.bos.redhat.com"/>'
         elif hosttype == 'wifi':
-            return '<group op="=" value="wireless"/><hostname op="like" value="wlan-r2%.wlan.rhts.eng.bos.redhat.com"/>'
-            #return '<hostname op="=" value="wlan-r2s26.wlan.rhts.eng.bos.redhat.com"/>'
+            # 8086:08ae (wlwifi,iwldvm) Intel Corporation Centrino Wireless-N 100 doesn't support AP mode
+            return '<group op="=" value="wireless"/><hostname op="like" value="wlan-r2%.wlan.rhts.eng.bos.redhat.com"/><device op="!=" vendor_id="8086" device_id="08ae"/>'
         else:
             return '<group op="=" value="desktopqe-net"/>'
 
