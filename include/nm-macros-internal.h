@@ -100,6 +100,11 @@
         _found;                                                 \
     })
 
+#define NM_PRINT_FMT_QUOTED(cond, prefix, str, suffix, str_else) \
+	(cond) ? (prefix) : "", \
+	(cond) ? (str) : (str_else), \
+	(cond) ? (suffix) : ""
+
 /*****************************************************************************/
 
 #ifdef NM_MORE_ASSERTS
