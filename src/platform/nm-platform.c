@@ -256,6 +256,8 @@ nm_platform_sysctl_set_ip6_hop_limit_safe (NMPlatform *self, const char *iface, 
 	const char *path;
 	gint64 cur;
 
+	_CHECK_SELF (self, klass, FALSE);
+
 	/* the hop-limit provided via RA is uint8. */
 	if (value > 0xFF)
 		return FALSE;
