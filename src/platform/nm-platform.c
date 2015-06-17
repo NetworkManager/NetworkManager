@@ -35,6 +35,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
 #include "nm-enum-types.h"
+#include "nm-core-internal.h"
 
 #define debug(...) nm_log_dbg (LOGD_PLATFORM, __VA_ARGS__)
 
@@ -354,7 +355,7 @@ nm_platform_sysctl_get_int_checked (const char *path, guint base, gint64 min, gi
 		return fallback;
 	}
 
-	ret = nm_utils_ascii_str_to_int64 (value, base, min, max, fallback);
+	ret = _nm_utils_ascii_str_to_int64 (value, base, min, max, fallback);
 	g_free (value);
 	return ret;
 }

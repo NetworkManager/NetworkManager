@@ -4040,6 +4040,137 @@ test_nm_utils_uuid_generate_from_string (void)
 
 /******************************************************************************/
 
+static void
+test_nm_utils_ascii_str_to_int64_check (const char *str, guint base, gint64 min,
+                                        gint64 max, gint64 fallback, int exp_errno,
+                                        gint64 exp_val)
+{
+	gint64 v;
+
+	errno = 1;
+	v = _nm_utils_ascii_str_to_int64 (str, base, min, max, fallback);
+	g_assert_cmpint (errno, ==, exp_errno);
+	g_assert_cmpint (v, ==, exp_val);
+}
+
+static void
+test_nm_utils_ascii_str_to_int64_do (const char *str, guint base, gint64 min,
+                                     gint64 max, gint64 fallback, int exp_errno,
+                                     gint64 exp_val)
+{
+	const char *sign = "";
+	const char *val;
+	static const char *whitespaces[] = {
+		"",
+		" ",
+		"\r\n\t",
+		" \r\n\t ",
+		" \r\n\t \t\r\n\t",
+		NULL,
+	};
+	static const char *nulls[] = {
+		"",
+		"0",
+		"00",
+		"0000",
+		"0000000000000000",
+		"00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+		"00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+		NULL,
+	};
+	const char **ws_pre, **ws_post, **null;
+	guint i;
+
+	if (str == NULL || exp_errno != 0) {
+		test_nm_utils_ascii_str_to_int64_check (str, base, min, max, fallback, exp_errno, exp_val);
+		return;
+	}
+
+	if (strncmp (str, "-", 1) == 0)
+		sign = "-";
+
+	val = str + strlen (sign);
+
+	for (ws_pre = whitespaces; *ws_pre; ws_pre++) {
+		for (ws_post = whitespaces; *ws_post; ws_post++) {
+			for (null = nulls; *null; null++) {
+				for (i = 0; ; i++) {
+					char *s;
+					const char *str_base = "";
+
+					if (base == 16) {
+						if (i == 1)
+							str_base = "0x";
+						else if (i > 1)
+							break;
+					} else if (base == 8) {
+						if (i == 1)
+							str_base = "0";
+						else if (i > 1)
+							break;
+					} else if (base == 0) {
+						if (i > 0)
+							break;
+						/* with base==0, a leading zero would be interpreted as octal. Only test without *null */
+						if ((*null)[0])
+							break;
+					} else {
+						if (i > 0)
+							break;
+					}
+
+					s = g_strdup_printf ("%s%s%s%s%s%s", *ws_pre, sign, str_base, *null, val, *ws_post);
+
+					test_nm_utils_ascii_str_to_int64_check (s, base, min, max, fallback, exp_errno, exp_val);
+					g_free (s);
+				}
+			}
+		}
+	}
+}
+
+static void
+test_nm_utils_ascii_str_to_int64 (void)
+{
+	test_nm_utils_ascii_str_to_int64_do (NULL, 10, 0, 10000, -1, EINVAL, -1);
+	test_nm_utils_ascii_str_to_int64_do ("", 10, 0, 10000, -1, EINVAL, -1);
+	test_nm_utils_ascii_str_to_int64_do ("1x", 10, 0, 10000, -1, EINVAL, -1);
+	test_nm_utils_ascii_str_to_int64_do ("4711", 10, 0, 10000, -1, 0, 4711);
+	test_nm_utils_ascii_str_to_int64_do ("10000", 10, 0, 10000, -1, 0, 10000);
+	test_nm_utils_ascii_str_to_int64_do ("10001", 10, 0, 10000, -1, ERANGE, -1);
+	test_nm_utils_ascii_str_to_int64_do ("FF", 16, 0, 10000, -1, 0, 255);
+	test_nm_utils_ascii_str_to_int64_do ("FF", 10, 0, 10000, -2, EINVAL, -2);
+	test_nm_utils_ascii_str_to_int64_do ("9223372036854775807", 10, 0, G_MAXINT64, -2, 0, G_MAXINT64);
+	test_nm_utils_ascii_str_to_int64_do ("7FFFFFFFFFFFFFFF", 16, 0, G_MAXINT64, -2, 0, G_MAXINT64);
+	test_nm_utils_ascii_str_to_int64_do ("9223372036854775808", 10, 0, G_MAXINT64, -2, ERANGE, -2);
+	test_nm_utils_ascii_str_to_int64_do ("-9223372036854775808", 10, G_MININT64, 0, -2, 0, G_MININT64);
+	test_nm_utils_ascii_str_to_int64_do ("-9223372036854775808", 10, G_MININT64+1, 0, -2, ERANGE, -2);
+	test_nm_utils_ascii_str_to_int64_do ("-9223372036854775809", 10, G_MININT64, 0, -2, ERANGE, -2);
+	test_nm_utils_ascii_str_to_int64_do ("1.0", 10, 1, 1, -1, EINVAL, -1);
+	test_nm_utils_ascii_str_to_int64_do ("1x0", 16, -10, 10, -100, EINVAL, -100);
+	test_nm_utils_ascii_str_to_int64_do ("0", 16, -10, 10, -100, 0, 0);
+	test_nm_utils_ascii_str_to_int64_do ("10001111", 2, -1000, 1000, -100000, 0, 0x8F);
+	test_nm_utils_ascii_str_to_int64_do ("-10001111", 2, -1000, 1000, -100000, 0, -0x8F);
+	test_nm_utils_ascii_str_to_int64_do ("1111111", 2, G_MININT64, G_MAXINT64, -1, 0, 0x7F);
+	test_nm_utils_ascii_str_to_int64_do ("111111111111111", 2, G_MININT64, G_MAXINT64, -1, 0, 0x7FFF);
+	test_nm_utils_ascii_str_to_int64_do ("11111111111111111111111111111111111111111111111", 2, G_MININT64, G_MAXINT64, -1, 0, 0x7FFFFFFFFFFF);
+	test_nm_utils_ascii_str_to_int64_do ("111111111111111111111111111111111111111111111111111111111111111", 2, G_MININT64, G_MAXINT64, -1, 0, 0x7FFFFFFFFFFFFFFF);
+	test_nm_utils_ascii_str_to_int64_do ("100000000000000000000000000000000000000000000000000000000000000", 2, G_MININT64, G_MAXINT64, -1, 0,  0x4000000000000000);
+	test_nm_utils_ascii_str_to_int64_do ("1000000000000000000000000000000000000000000000000000000000000000", 2, G_MININT64, G_MAXINT64, -1, ERANGE, -1);
+	test_nm_utils_ascii_str_to_int64_do ("-100000000000000000000000000000000000000000000000000000000000000", 2, G_MININT64, G_MAXINT64, -1, 0,  -0x4000000000000000);
+	test_nm_utils_ascii_str_to_int64_do ("111111111111111111111111111111111111111111111111111111111111111",  2, G_MININT64, G_MAXINT64, -1, 0, 0x7FFFFFFFFFFFFFFF);
+	test_nm_utils_ascii_str_to_int64_do ("-100000000000000000000000000000000000000000000000000000000000000",  2, G_MININT64, G_MAXINT64, -1, 0,  -0x4000000000000000);
+	test_nm_utils_ascii_str_to_int64_do ("0x70",  10, G_MININT64, G_MAXINT64, -1, EINVAL, -1);
+	test_nm_utils_ascii_str_to_int64_do ("4711",  0, G_MININT64, G_MAXINT64, -1, 0, 4711);
+	test_nm_utils_ascii_str_to_int64_do ("04711",  0, G_MININT64, G_MAXINT64, -1, 0, 04711);
+	test_nm_utils_ascii_str_to_int64_do ("0x4711",  0, G_MININT64, G_MAXINT64, -1, 0, 0x4711);
+	test_nm_utils_ascii_str_to_int64_do ("080",  0, G_MININT64, G_MAXINT64, -1, EINVAL, -1);
+	test_nm_utils_ascii_str_to_int64_do ("070",  0, G_MININT64, G_MAXINT64, -1, 0, 7*8);
+	test_nm_utils_ascii_str_to_int64_do ("0x70",  0, G_MININT64, G_MAXINT64, -1, 0, 0x70);
+}
+
+/******************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -4137,6 +4268,8 @@ int main (int argc, char **argv)
 
 	g_test_add_func ("/core/general/hexstr2bin", test_hexstr2bin);
 	g_test_add_func ("/core/general/test_nm_utils_uuid_generate_from_string", test_nm_utils_uuid_generate_from_string);
+
+	g_test_add_func ("/core/general/_nm_utils_ascii_str_to_int64", test_nm_utils_ascii_str_to_int64);
 
 	return g_test_run ();
 }

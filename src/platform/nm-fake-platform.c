@@ -1058,6 +1058,56 @@ ip6_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteMode mod
 }
 
 static gboolean
+ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen, guint32 metric)
+{
+	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
+	int i;
+
+	for (i = 0; i < priv->ip4_routes->len; i++) {
+		NMPlatformIP4Route *route = &g_array_index (priv->ip4_routes, NMPlatformIP4Route, i);
+		NMPlatformIP4Route deleted_route;
+
+		if (   route->ifindex != ifindex
+		    || route->network != network
+		    || route->plen != plen
+		    || route->metric != metric)
+			continue;
+
+		memcpy (&deleted_route, route, sizeof (deleted_route));
+		g_array_remove_index (priv->ip4_routes, i);
+		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, ifindex, &deleted_route, NM_PLATFORM_SIGNAL_REMOVED, NM_PLATFORM_REASON_INTERNAL);
+	}
+
+	return TRUE;
+}
+
+static gboolean
+ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, int plen, guint32 metric)
+{
+	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
+	int i;
+
+	metric = nm_utils_ip6_route_metric_normalize (metric);
+
+	for (i = 0; i < priv->ip6_routes->len; i++) {
+		NMPlatformIP6Route *route = &g_array_index (priv->ip6_routes, NMPlatformIP6Route, i);
+		NMPlatformIP6Route deleted_route;
+
+		if (   route->ifindex != ifindex
+		    || !IN6_ARE_ADDR_EQUAL (&route->network, &network)
+		    || route->plen != plen
+		    || route->metric != metric)
+			continue;
+
+		memcpy (&deleted_route, route, sizeof (deleted_route));
+		g_array_remove_index (priv->ip6_routes, i);
+		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, ifindex, &deleted_route, NM_PLATFORM_SIGNAL_REMOVED, NM_PLATFORM_REASON_INTERNAL);
+	}
+
+	return TRUE;
+}
+
+static gboolean
 ip4_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
                in_addr_t network, int plen, in_addr_t gateway,
                guint32 pref_src, guint32 metric, guint32 mss)
@@ -1076,17 +1126,38 @@ ip4_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 	route.metric = metric;
 	route.mss = mss;
 
+	if (gateway) {
+		for (i = 0; i < priv->ip4_routes->len; i++) {
+			NMPlatformIP4Route *item = &g_array_index (priv->ip4_routes,
+			                                           NMPlatformIP4Route, i);
+			guint32 gate = ntohl (item->network) >> (32 - item->plen);
+			guint32 host = ntohl (gateway) >> (32 - item->plen);
+
+			if (ifindex == item->ifindex && gate == host)
+				break;
+		}
+		if (i == priv->ip4_routes->len) {
+			g_warning ("Fake platform: error adding %s: Network Unreachable",
+			           nm_platform_ip4_route_to_string (&route));
+			return FALSE;
+		}
+	}
+
 	for (i = 0; i < priv->ip4_routes->len; i++) {
 		NMPlatformIP4Route *item = &g_array_index (priv->ip4_routes, NMPlatformIP4Route, i);
 
-		if (item->ifindex != route.ifindex)
-			continue;
 		if (item->network != route.network)
 			continue;
 		if (item->plen != route.plen)
 			continue;
 		if (item->metric != metric)
 			continue;
+
+		if (item->ifindex != route.ifindex) {
+			ip4_route_delete (platform, item->ifindex, item->network, item->plen, item->metric);
+			i--;
+			continue;
+		}
 
 		memcpy (item, &route, sizeof (route));
 		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, ifindex, &route, NM_PLATFORM_SIGNAL_CHANGED, NM_PLATFORM_REASON_INTERNAL);
@@ -1120,17 +1191,40 @@ ip6_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 	route.metric = metric;
 	route.mss = mss;
 
+	if (!IN6_IS_ADDR_UNSPECIFIED(&gateway)) {
+		for (i = 0; i < priv->ip6_routes->len; i++) {
+			NMPlatformIP6Route *item = &g_array_index (priv->ip6_routes,
+			                                           NMPlatformIP6Route, i);
+			guint8 gate_bits = gateway.s6_addr[item->plen / 8] >> (8 - item->plen % 8);
+			guint8 host_bits = item->network.s6_addr[item->plen / 8] >> (8 - item->plen % 8);
+
+			if (   ifindex == item->ifindex
+			    && memcmp (&gateway, &item->network, item->plen / 8) == 0
+			    && gate_bits == host_bits)
+				break;
+		}
+		if (i == priv->ip6_routes->len) {
+			g_warning ("Fake platform: error adding %s: Network Unreachable",
+			           nm_platform_ip6_route_to_string (&route));
+			return FALSE;
+		}
+	}
+
 	for (i = 0; i < priv->ip6_routes->len; i++) {
 		NMPlatformIP6Route *item = &g_array_index (priv->ip6_routes, NMPlatformIP6Route, i);
 
-		if (item->ifindex != route.ifindex)
-			continue;
 		if (!IN6_ARE_ADDR_EQUAL (&item->network, &route.network))
 			continue;
 		if (item->plen != route.plen)
 			continue;
 		if (item->metric != metric)
 			continue;
+
+		if (item->ifindex != route.ifindex) {
+			ip6_route_delete (platform, item->ifindex, item->network, item->plen, item->metric);
+			i--;
+			continue;
+		}
 
 		memcpy (item, &route, sizeof (route));
 		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, ifindex, &route, NM_PLATFORM_SIGNAL_CHANGED, NM_PLATFORM_REASON_INTERNAL);
@@ -1181,36 +1275,6 @@ ip6_route_get (NMPlatform *platform, int ifindex, struct in6_addr network, int p
 	}
 
 	return NULL;
-}
-
-static gboolean
-ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen, guint32 metric)
-{
-	NMPlatformIP4Route *route = ip4_route_get (platform, ifindex, network, plen, metric);
-	NMPlatformIP4Route deleted_route;
-
-	if (route) {
-		memcpy (&deleted_route, route, sizeof (deleted_route));
-		memset (route, 0, sizeof (*route));
-		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, ifindex, &deleted_route, NM_PLATFORM_SIGNAL_REMOVED, NM_PLATFORM_REASON_INTERNAL);
-	}
-
-	return TRUE;
-}
-
-static gboolean
-ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, int plen, guint32 metric)
-{
-	NMPlatformIP6Route *route = ip6_route_get (platform, ifindex, network, plen, metric);
-	NMPlatformIP6Route deleted_route;
-
-	if (route) {
-		memcpy (&deleted_route, route, sizeof (deleted_route));
-		memset (route, 0, sizeof (*route));
-		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, ifindex, &deleted_route, NM_PLATFORM_SIGNAL_REMOVED, NM_PLATFORM_REASON_INTERNAL);
-	}
-
-	return TRUE;
 }
 
 static gboolean
