@@ -179,6 +179,9 @@ typedef struct {
 	gboolean initialized;
 	gboolean platform_link_initialized;
 
+	guint device_link_changed_id;
+	guint device_ip_link_changed_id;
+
 	NMDeviceState state;
 	NMDeviceStateReason state_reason;
 	QueuedState   queued_state;
@@ -1333,8 +1336,8 @@ device_set_master (NMDevice *self, int ifindex)
 	}
 }
 
-static void
-device_link_changed (NMDevice *self, NMPlatformLink *info)
+static gboolean
+device_link_changed (NMDevice *self)
 {
 	NMDeviceClass *klass = NM_DEVICE_GET_CLASS (self);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
@@ -1342,8 +1345,16 @@ device_link_changed (NMDevice *self, NMPlatformLink *info)
 	gboolean ip_ifname_changed = FALSE;
 	gboolean platform_unmanaged = FALSE;
 	const char *udi;
+	NMPlatformLink info;
+	int ifindex;
 
-	udi = nm_platform_link_get_udi (NM_PLATFORM_GET, info->ifindex);
+	priv->device_link_changed_id = 0;
+
+	ifindex = nm_device_get_ifindex (self);
+	if (!nm_platform_link_get (NM_PLATFORM_GET, ifindex, &info))
+		return G_SOURCE_REMOVE;
+
+	udi = nm_platform_link_get_udi (NM_PLATFORM_GET, info.ifindex);
 	if (udi && g_strcmp0 (udi, priv->udi)) {
 		/* Update UDI to what udev gives us */
 		g_free (priv->udi);
@@ -1351,24 +1362,24 @@ device_link_changed (NMDevice *self, NMPlatformLink *info)
 		g_object_notify (G_OBJECT (self), NM_DEVICE_UDI);
 	}
 
-	if (g_strcmp0 (info->driver, priv->driver)) {
+	if (g_strcmp0 (info.driver, priv->driver)) {
 		/* Update driver to what udev gives us */
 		g_free (priv->driver);
-		priv->driver = g_strdup (info->driver);
+		priv->driver = g_strdup (info.driver);
 		g_object_notify (G_OBJECT (self), NM_DEVICE_DRIVER);
 	}
 
 	/* Update MTU if it has changed. */
-	if (priv->mtu != info->mtu) {
-		priv->mtu = info->mtu;
+	if (priv->mtu != info.mtu) {
+		priv->mtu = info.mtu;
 		g_object_notify (G_OBJECT (self), NM_DEVICE_MTU);
 	}
 
-	if (info->name[0] && strcmp (priv->iface, info->name) != 0) {
+	if (info.name[0] && strcmp (priv->iface, info.name) != 0) {
 		_LOGI (LOGD_DEVICE, "interface index %d renamed iface from '%s' to '%s'",
-		       priv->ifindex, priv->iface, info->name);
+		       priv->ifindex, priv->iface, info.name);
 		g_free (priv->iface);
-		priv->iface = g_strdup (info->name);
+		priv->iface = g_strdup (info.name);
 
 		/* If the device has no explicit ip_iface, then changing iface changes ip_iface too. */
 		ip_ifname_changed = !priv->ip_iface;
@@ -1387,10 +1398,10 @@ device_link_changed (NMDevice *self, NMPlatformLink *info)
 	}
 
 	/* Update slave status for external changes */
-	if (priv->enslaved && info->master != nm_device_get_ifindex (priv->master))
+	if (priv->enslaved && info.master != nm_device_get_ifindex (priv->master))
 		nm_device_release_one_slave (priv->master, self, FALSE, NM_DEVICE_STATE_REASON_NONE);
-	if (info->master && !priv->enslaved) {
-		device_set_master (self, info->master);
+	if (info.master && !priv->enslaved) {
+		device_set_master (self, info.master);
 		if (priv->master)
 			nm_device_enslave_slave (priv->master, self, NULL);
 	}
@@ -1402,21 +1413,21 @@ device_link_changed (NMDevice *self, NMPlatformLink *info)
 	}
 
 	if (klass->link_changed)
-		klass->link_changed (self, info);
+		klass->link_changed (self, &info);
 
 	/* Update DHCP, etc, if needed */
 	if (ip_ifname_changed)
 		update_for_ip_ifname_change (self);
 
-	if (priv->up != NM_FLAGS_HAS (info->flags, IFF_UP)) {
-		priv->up = NM_FLAGS_HAS (info->flags, IFF_UP);
+	if (priv->up != NM_FLAGS_HAS (info.flags, IFF_UP)) {
+		priv->up = NM_FLAGS_HAS (info.flags, IFF_UP);
 
 		/* Manage externally-created software interfaces only when they are IFF_UP */
 		g_assert (priv->ifindex > 0);
 		if (NM_DEVICE_GET_CLASS (self)->can_unmanaged_external_down (self)) {
 			gboolean external_down = nm_device_get_unmanaged_flag (self, NM_UNMANAGED_EXTERNAL_DOWN);
 
-			if (external_down && NM_FLAGS_HAS (info->flags, IFF_UP)) {
+			if (external_down && NM_FLAGS_HAS (info.flags, IFF_UP)) {
 				if (nm_device_get_state (self) < NM_DEVICE_STATE_DISCONNECTED) {
 					/* Ensure the assume check is queued before any queued state changes
 					 * from the transition to UNAVAILABLE.
@@ -1439,7 +1450,7 @@ device_link_changed (NMDevice *self, NMPlatformLink *info)
 					 */
 					priv->unmanaged_flags &= ~NM_UNMANAGED_EXTERNAL_DOWN;
 				}
-			} else if (!external_down && !NM_FLAGS_HAS (info->flags, IFF_UP) && nm_device_get_state (self) <= NM_DEVICE_STATE_DISCONNECTED) {
+			} else if (!external_down && !NM_FLAGS_HAS (info.flags, IFF_UP) && nm_device_get_state (self) <= NM_DEVICE_STATE_DISCONNECTED) {
 				/* If the device is already disconnected and is set !IFF_UP,
 				 * unmanage it.
 				 */
@@ -1451,7 +1462,7 @@ device_link_changed (NMDevice *self, NMPlatformLink *info)
 		}
 	}
 
-	if (priv->ifindex > 0 && !priv->platform_link_initialized && info->initialized) {
+	if (priv->ifindex > 0 && !priv->platform_link_initialized && info.initialized) {
 		priv->platform_link_initialized = TRUE;
 
 		if (nm_platform_link_get_unmanaged (NM_PLATFORM_GET, priv->ifindex, &platform_unmanaged)) {
@@ -1466,23 +1477,34 @@ device_link_changed (NMDevice *self, NMPlatformLink *info)
 		                         FALSE,
 		                         NM_DEVICE_STATE_REASON_NOW_MANAGED);
 	}
+
+	return G_SOURCE_REMOVE;
 }
 
-static void
-device_ip_link_changed (NMDevice *self, NMPlatformLink *info)
+static gboolean
+device_ip_link_changed (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMPlatformLink info;
+	int ip_ifindex;
 
-	if (info->name[0] && g_strcmp0 (priv->ip_iface, info->name)) {
+	priv->device_ip_link_changed_id = 0;
+
+	ip_ifindex = nm_device_get_ip_ifindex (self);
+	if (!nm_platform_link_get (NM_PLATFORM_GET, ip_ifindex, &info))
+		return G_SOURCE_REMOVE;
+
+	if (info.name[0] && g_strcmp0 (priv->ip_iface, info.name)) {
 		_LOGI (LOGD_DEVICE, "interface index %d renamed ip_iface (%d) from '%s' to '%s'",
 		       priv->ifindex, nm_device_get_ip_ifindex (self),
-		       priv->ip_iface, info->name);
+		       priv->ip_iface, info.name);
 		g_free (priv->ip_iface);
-		priv->ip_iface = g_strdup (info->name);
+		priv->ip_iface = g_strdup (info.name);
 
 		g_object_notify (G_OBJECT (self), NM_DEVICE_IP_IFACE);
 		update_for_ip_ifname_change (self);
 	}
+	return G_SOURCE_REMOVE;
 }
 
 static void
@@ -1493,8 +1515,12 @@ link_changed_cb (NMPlatform *platform,
                  NMPlatformReason reason,
                  NMDevice *self)
 {
+	NMDevicePrivate *priv;
+
 	if (change_type != NM_PLATFORM_SIGNAL_CHANGED)
 		return;
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	/* We don't filter by 'reason' because we are interested in *all* link
 	 * changes. For example a call to nm_platform_link_set_up() may result
@@ -1502,10 +1528,17 @@ link_changed_cb (NMPlatform *platform,
 	 * and it results in also setting IFF_LOWER_UP.
 	 */
 
-	if (ifindex == nm_device_get_ifindex (self))
-		device_link_changed (self, info);
-	else if (ifindex == nm_device_get_ip_ifindex (self))
-		device_ip_link_changed (self, info);
+	if (ifindex == nm_device_get_ifindex (self)) {
+		if (!priv->device_link_changed_id) {
+			priv->device_link_changed_id = g_idle_add ((GSourceFunc) device_link_changed, self);
+			_LOGD (LOGD_DEVICE, "queued link change for ifindex %d", ifindex);
+		}
+	} else if (ifindex == nm_device_get_ip_ifindex (self)) {
+		if (!priv->device_ip_link_changed_id) {
+			priv->device_ip_link_changed_id = g_idle_add ((GSourceFunc) device_ip_link_changed, self);
+			_LOGD (LOGD_DEVICE, "queued link change for ip-ifindex %d", ifindex);
+		}
+	}
 }
 
 static void
@@ -7136,10 +7169,10 @@ device_ip_changed (NMPlatform *platform,
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	if (nm_device_get_ip_ifindex (self) == ifindex) {
-		if (!priv->queued_ip_config_id)
+		if (!priv->queued_ip_config_id) {
 			priv->queued_ip_config_id = g_idle_add (queued_ip_config_change, self);
-
-		_LOGD (LOGD_DEVICE, "queued IP config change");
+			_LOGD (LOGD_DEVICE, "queued IP config change");
+		}
 	}
 }
 
@@ -8887,6 +8920,9 @@ dispose (GObject *object)
 	platform = nm_platform_get ();
 	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (device_ip_changed), self);
 	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (link_changed_cb), self);
+
+	nm_clear_g_source (&priv->device_link_changed_id);
+	nm_clear_g_source (&priv->device_ip_link_changed_id);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->dispose (object);
 }
