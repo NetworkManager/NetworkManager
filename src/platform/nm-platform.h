@@ -39,6 +39,8 @@
 
 /******************************************************************/
 
+typedef struct _NMPlatform NMPlatform;
+
 /* workaround for older libnl version, that does not define these flags. */
 #ifndef IFA_F_MANAGETEMPADDR
 #define IFA_F_MANAGETEMPADDR 0x100
@@ -252,10 +254,10 @@ typedef struct {
 	gsize sizeof_route;
 	int (*route_cmp) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b);
 	const char *(*route_to_string) (const NMPlatformIPXRoute *route);
-	GArray *(*route_get_all) (int ifindex, NMPlatformGetRouteMode mode);
-	gboolean (*route_add) (int ifindex, const NMPlatformIPXRoute *route, guint32 v4_pref_src);
-	gboolean (*route_delete) (int ifindex, const NMPlatformIPXRoute *route);
-	gboolean (*route_delete_default) (int ifindex, guint32 metric);
+	GArray *(*route_get_all) (NMPlatform *self, int ifindex, NMPlatformGetRouteMode mode);
+	gboolean (*route_add) (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route, guint32 v4_pref_src);
+	gboolean (*route_delete) (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route);
+	gboolean (*route_delete_default) (NMPlatform *self, int ifindex, guint32 metric);
 	guint32 (*metric_normalize) (guint32 metric);
 } NMPlatformVTableRoute;
 
@@ -346,11 +348,11 @@ typedef struct {
  * network configuration daemons stopped. Look at the code first.
  */
 
-typedef struct {
+struct _NMPlatform {
 	GObject parent;
 
 	NMPlatformError error;
-} NMPlatform;
+};
 
 typedef struct {
 	GObjectClass parent;
@@ -491,134 +493,136 @@ void nm_platform_setup (GType type);
 NMPlatform *nm_platform_get (void);
 void nm_platform_free (void);
 
+#define NM_PLATFORM_GET (nm_platform_get ())
+
 /******************************************************************/
 
-void nm_platform_set_error (NMPlatformError error);
-NMPlatformError nm_platform_get_error (void);
-const char *nm_platform_get_error_msg (void);
+void nm_platform_set_error (NMPlatform *self, NMPlatformError error);
+NMPlatformError nm_platform_get_error (NMPlatform *self);
+const char *nm_platform_get_error_msg (NMPlatform *self);
 
-void nm_platform_query_devices (void);
+void nm_platform_query_devices (NMPlatform *self);
 
-gboolean nm_platform_sysctl_set (const char *path, const char *value);
-char *nm_platform_sysctl_get (const char *path);
-gint32 nm_platform_sysctl_get_int32 (const char *path, gint32 fallback);
-gint64 nm_platform_sysctl_get_int_checked (const char *path, guint base, gint64 min, gint64 max, gint64 fallback);
+gboolean nm_platform_sysctl_set (NMPlatform *self, const char *path, const char *value);
+char *nm_platform_sysctl_get (NMPlatform *self, const char *path);
+gint32 nm_platform_sysctl_get_int32 (NMPlatform *self, const char *path, gint32 fallback);
+gint64 nm_platform_sysctl_get_int_checked (NMPlatform *self, const char *path, guint base, gint64 min, gint64 max, gint64 fallback);
 
-gboolean nm_platform_sysctl_set_ip6_hop_limit_safe (const char *iface, int value);
+gboolean nm_platform_sysctl_set_ip6_hop_limit_safe (NMPlatform *self, const char *iface, int value);
 
-gboolean nm_platform_link_get (int ifindex, NMPlatformLink *link);
-GArray *nm_platform_link_get_all (void);
-gboolean nm_platform_dummy_add (const char *name);
-gboolean nm_platform_bridge_add (const char *name, const void *address, size_t address_len);
-gboolean nm_platform_bond_add (const char *name);
-gboolean nm_platform_team_add (const char *name);
-gboolean nm_platform_link_exists (const char *name);
-gboolean nm_platform_link_delete (int ifindex);
-int nm_platform_link_get_ifindex (const char *name);
-const char *nm_platform_link_get_name (int ifindex);
-NMLinkType nm_platform_link_get_type (int ifindex);
-const char *nm_platform_link_get_type_name (int ifindex);
-gboolean nm_platform_link_get_unmanaged (int ifindex, gboolean *managed);
-gboolean nm_platform_link_is_software (int ifindex);
-gboolean nm_platform_link_supports_slaves (int ifindex);
+gboolean nm_platform_link_get (NMPlatform *self, int ifindex, NMPlatformLink *link);
+GArray *nm_platform_link_get_all (NMPlatform *self);
+gboolean nm_platform_dummy_add (NMPlatform *self, const char *name);
+gboolean nm_platform_bridge_add (NMPlatform *self, const char *name, const void *address, size_t address_len);
+gboolean nm_platform_bond_add (NMPlatform *self, const char *name);
+gboolean nm_platform_team_add (NMPlatform *self, const char *name);
+gboolean nm_platform_link_exists (NMPlatform *self, const char *name);
+gboolean nm_platform_link_delete (NMPlatform *self, int ifindex);
+int nm_platform_link_get_ifindex (NMPlatform *self, const char *name);
+const char *nm_platform_link_get_name (NMPlatform *self, int ifindex);
+NMLinkType nm_platform_link_get_type (NMPlatform *self, int ifindex);
+const char *nm_platform_link_get_type_name (NMPlatform *self, int ifindex);
+gboolean nm_platform_link_get_unmanaged (NMPlatform *self, int ifindex, gboolean *managed);
+gboolean nm_platform_link_is_software (NMPlatform *self, int ifindex);
+gboolean nm_platform_link_supports_slaves (NMPlatform *self, int ifindex);
 
-gboolean nm_platform_link_refresh (int ifindex);
+gboolean nm_platform_link_refresh (NMPlatform *self, int ifindex);
 
-gboolean nm_platform_link_set_up (int ifindex);
-gboolean nm_platform_link_set_down (int ifindex);
-gboolean nm_platform_link_set_arp (int ifindex);
-gboolean nm_platform_link_set_noarp (int ifindex);
-gboolean nm_platform_link_is_up (int ifindex);
-gboolean nm_platform_link_is_connected (int ifindex);
-gboolean nm_platform_link_uses_arp (int ifindex);
+gboolean nm_platform_link_set_up (NMPlatform *self, int ifindex);
+gboolean nm_platform_link_set_down (NMPlatform *self, int ifindex);
+gboolean nm_platform_link_set_arp (NMPlatform *self, int ifindex);
+gboolean nm_platform_link_set_noarp (NMPlatform *self, int ifindex);
+gboolean nm_platform_link_is_up (NMPlatform *self, int ifindex);
+gboolean nm_platform_link_is_connected (NMPlatform *self, int ifindex);
+gboolean nm_platform_link_uses_arp (NMPlatform *self, int ifindex);
 
-gboolean nm_platform_link_get_ipv6_token (int ifindex, NMUtilsIPv6IfaceId *iid);
+gboolean nm_platform_link_get_ipv6_token (NMPlatform *self, int ifindex, NMUtilsIPv6IfaceId *iid);
 
-gboolean nm_platform_link_get_user_ipv6ll_enabled (int ifindex);
-gboolean nm_platform_link_set_user_ipv6ll_enabled (int ifindex, gboolean enabled);
+gboolean nm_platform_link_get_user_ipv6ll_enabled (NMPlatform *self, int ifindex);
+gboolean nm_platform_link_set_user_ipv6ll_enabled (NMPlatform *self, int ifindex, gboolean enabled);
 
-gconstpointer nm_platform_link_get_address (int ifindex, size_t *length);
-gboolean nm_platform_link_set_address (int ifindex, const void *address, size_t length);
-guint32 nm_platform_link_get_mtu (int ifindex);
-gboolean nm_platform_link_set_mtu (int ifindex, guint32 mtu);
+gconstpointer nm_platform_link_get_address (NMPlatform *self, int ifindex, size_t *length);
+gboolean nm_platform_link_set_address (NMPlatform *self, int ifindex, const void *address, size_t length);
+guint32 nm_platform_link_get_mtu (NMPlatform *self, int ifindex);
+gboolean nm_platform_link_set_mtu (NMPlatform *self, int ifindex, guint32 mtu);
 
-char    *nm_platform_link_get_physical_port_id (int ifindex);
-guint    nm_platform_link_get_dev_id (int ifindex);
-gboolean nm_platform_link_get_wake_on_lan (int ifindex);
+char    *nm_platform_link_get_physical_port_id (NMPlatform *self, int ifindex);
+guint    nm_platform_link_get_dev_id (NMPlatform *self, int ifindex);
+gboolean nm_platform_link_get_wake_on_lan (NMPlatform *self, int ifindex);
 
-gboolean nm_platform_link_supports_carrier_detect (int ifindex);
-gboolean nm_platform_link_supports_vlans (int ifindex);
+gboolean nm_platform_link_supports_carrier_detect (NMPlatform *self, int ifindex);
+gboolean nm_platform_link_supports_vlans (NMPlatform *self, int ifindex);
 
-gboolean nm_platform_link_enslave (int master, int slave);
-gboolean nm_platform_link_release (int master, int slave);
-int nm_platform_link_get_master (int slave);
-gboolean nm_platform_master_set_option (int ifindex, const char *option, const char *value);
-char *nm_platform_master_get_option (int ifindex, const char *option);
-gboolean nm_platform_slave_set_option (int ifindex, const char *option, const char *value);
-char *nm_platform_slave_get_option (int ifindex, const char *option);
+gboolean nm_platform_link_enslave (NMPlatform *self, int master, int slave);
+gboolean nm_platform_link_release (NMPlatform *self, int master, int slave);
+int nm_platform_link_get_master (NMPlatform *self, int slave);
+gboolean nm_platform_master_set_option (NMPlatform *self, int ifindex, const char *option, const char *value);
+char *nm_platform_master_get_option (NMPlatform *self, int ifindex, const char *option);
+gboolean nm_platform_slave_set_option (NMPlatform *self, int ifindex, const char *option, const char *value);
+char *nm_platform_slave_get_option (NMPlatform *self, int ifindex, const char *option);
 
-gboolean nm_platform_vlan_add (const char *name, int parent, int vlanid, guint32 vlanflags);
-gboolean nm_platform_vlan_get_info (int ifindex, int *parent, int *vlanid);
-gboolean nm_platform_vlan_set_ingress_map (int ifindex, int from, int to);
-gboolean nm_platform_vlan_set_egress_map (int ifindex, int from, int to);
+gboolean nm_platform_vlan_add (NMPlatform *self, const char *name, int parent, int vlanid, guint32 vlanflags);
+gboolean nm_platform_vlan_get_info (NMPlatform *self, int ifindex, int *parent, int *vlanid);
+gboolean nm_platform_vlan_set_ingress_map (NMPlatform *self, int ifindex, int from, int to);
+gboolean nm_platform_vlan_set_egress_map (NMPlatform *self, int ifindex, int from, int to);
 
-gboolean nm_platform_infiniband_partition_add (int parent, int p_key);
+gboolean nm_platform_infiniband_partition_add (NMPlatform *self, int parent, int p_key);
 
-gboolean nm_platform_veth_get_properties (int ifindex, NMPlatformVethProperties *properties);
-gboolean nm_platform_tun_get_properties (int ifindex, NMPlatformTunProperties *properties);
-gboolean nm_platform_macvlan_get_properties (int ifindex, NMPlatformMacvlanProperties *props);
-gboolean nm_platform_vxlan_get_properties (int ifindex, NMPlatformVxlanProperties *props);
-gboolean nm_platform_gre_get_properties (int ifindex, NMPlatformGreProperties *props);
+gboolean nm_platform_veth_get_properties        (NMPlatform *self, int ifindex, NMPlatformVethProperties *properties);
+gboolean nm_platform_tun_get_properties         (NMPlatform *self, int ifindex, NMPlatformTunProperties *properties);
+gboolean nm_platform_macvlan_get_properties     (NMPlatform *self, int ifindex, NMPlatformMacvlanProperties *props);
+gboolean nm_platform_vxlan_get_properties       (NMPlatform *self, int ifindex, NMPlatformVxlanProperties *props);
+gboolean nm_platform_gre_get_properties         (NMPlatform *self, int ifindex, NMPlatformGreProperties *props);
 
-gboolean    nm_platform_wifi_get_capabilities (int ifindex, NMDeviceWifiCapabilities *caps);
-gboolean    nm_platform_wifi_get_bssid        (int ifindex, guint8 *bssid);
-GByteArray *nm_platform_wifi_get_ssid         (int ifindex);
-guint32     nm_platform_wifi_get_frequency    (int ifindex);
-int         nm_platform_wifi_get_quality      (int ifindex);
-guint32     nm_platform_wifi_get_rate         (int ifindex);
-NM80211Mode nm_platform_wifi_get_mode         (int ifindex);
-void        nm_platform_wifi_set_mode         (int ifindex, NM80211Mode mode);
-guint32     nm_platform_wifi_find_frequency   (int ifindex, const guint32 *freqs);
-void        nm_platform_wifi_indicate_addressing_running (int ifindex, gboolean running);
+gboolean    nm_platform_wifi_get_capabilities (NMPlatform *self, int ifindex, NMDeviceWifiCapabilities *caps);
+gboolean    nm_platform_wifi_get_bssid        (NMPlatform *self, int ifindex, guint8 *bssid);
+GByteArray *nm_platform_wifi_get_ssid         (NMPlatform *self, int ifindex);
+guint32     nm_platform_wifi_get_frequency    (NMPlatform *self, int ifindex);
+int         nm_platform_wifi_get_quality      (NMPlatform *self, int ifindex);
+guint32     nm_platform_wifi_get_rate         (NMPlatform *self, int ifindex);
+NM80211Mode nm_platform_wifi_get_mode         (NMPlatform *self, int ifindex);
+void        nm_platform_wifi_set_mode         (NMPlatform *self, int ifindex, NM80211Mode mode);
+guint32     nm_platform_wifi_find_frequency   (NMPlatform *self, int ifindex, const guint32 *freqs);
+void        nm_platform_wifi_indicate_addressing_running (NMPlatform *self, int ifindex, gboolean running);
 
-guint32     nm_platform_mesh_get_channel      (int ifindex);
-gboolean    nm_platform_mesh_set_channel      (int ifindex, guint32 channel);
-gboolean    nm_platform_mesh_set_ssid         (int ifindex, const guint8 *ssid, gsize len);
+guint32     nm_platform_mesh_get_channel      (NMPlatform *self, int ifindex);
+gboolean    nm_platform_mesh_set_channel      (NMPlatform *self, int ifindex, guint32 channel);
+gboolean    nm_platform_mesh_set_ssid         (NMPlatform *self, int ifindex, const guint8 *ssid, gsize len);
 
-GArray *nm_platform_ip4_address_get_all (int ifindex);
-GArray *nm_platform_ip6_address_get_all (int ifindex);
-gboolean nm_platform_ip4_address_add (int ifindex,
+GArray *nm_platform_ip4_address_get_all (NMPlatform *self, int ifindex);
+GArray *nm_platform_ip6_address_get_all (NMPlatform *self, int ifindex);
+gboolean nm_platform_ip4_address_add (NMPlatform *self, int ifindex,
                                       in_addr_t address, in_addr_t peer_address, int plen,
                                       guint32 lifetime, guint32 preferred_lft,
                                       const char *label);
-gboolean nm_platform_ip6_address_add (int ifindex,
+gboolean nm_platform_ip6_address_add (NMPlatform *self, int ifindex,
                                       struct in6_addr address, struct in6_addr peer_address, int plen,
                                       guint32 lifetime, guint32 preferred_lft, guint flags);
-gboolean nm_platform_ip4_address_delete (int ifindex, in_addr_t address, int plen, in_addr_t peer_address);
-gboolean nm_platform_ip6_address_delete (int ifindex, struct in6_addr address, int plen);
-gboolean nm_platform_ip4_address_exists (int ifindex, in_addr_t address, int plen);
-gboolean nm_platform_ip6_address_exists (int ifindex, struct in6_addr address, int plen);
-gboolean nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresses, guint32 device_route_metric);
-gboolean nm_platform_ip6_address_sync (int ifindex, const GArray *known_addresses, gboolean keep_link_local);
-gboolean nm_platform_address_flush (int ifindex);
+gboolean nm_platform_ip4_address_delete (NMPlatform *self, int ifindex, in_addr_t address, int plen, in_addr_t peer_address);
+gboolean nm_platform_ip6_address_delete (NMPlatform *self, int ifindex, struct in6_addr address, int plen);
+gboolean nm_platform_ip4_address_exists (NMPlatform *self, int ifindex, in_addr_t address, int plen);
+gboolean nm_platform_ip6_address_exists (NMPlatform *self, int ifindex, struct in6_addr address, int plen);
+gboolean nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, const GArray *known_addresses, guint32 device_route_metric);
+gboolean nm_platform_ip6_address_sync (NMPlatform *self, int ifindex, const GArray *known_addresses, gboolean keep_link_local);
+gboolean nm_platform_address_flush (NMPlatform *self, int ifindex);
 
-gboolean nm_platform_ip4_check_reinstall_device_route (int ifindex, const NMPlatformIP4Address *address, guint32 device_route_metric);
+gboolean nm_platform_ip4_check_reinstall_device_route (NMPlatform *self, int ifindex, const NMPlatformIP4Address *address, guint32 device_route_metric);
 
-GArray *nm_platform_ip4_route_get_all (int ifindex, NMPlatformGetRouteMode mode);
-GArray *nm_platform_ip6_route_get_all (int ifindex, NMPlatformGetRouteMode mode);
-gboolean nm_platform_ip4_route_add (int ifindex, NMIPConfigSource source,
+GArray *nm_platform_ip4_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRouteMode mode);
+GArray *nm_platform_ip6_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRouteMode mode);
+gboolean nm_platform_ip4_route_add (NMPlatform *self, int ifindex, NMIPConfigSource source,
                                     in_addr_t network, int plen, in_addr_t gateway,
                                     guint32 pref_src, guint32 metric, guint32 mss);
-gboolean nm_platform_ip6_route_add (int ifindex, NMIPConfigSource source,
+gboolean nm_platform_ip6_route_add (NMPlatform *self, int ifindex, NMIPConfigSource source,
                                     struct in6_addr network, int plen, struct in6_addr gateway,
                                     guint32 metric, guint32 mss);
-gboolean nm_platform_ip4_route_delete (int ifindex, in_addr_t network, int plen, guint32 metric);
-gboolean nm_platform_ip6_route_delete (int ifindex, struct in6_addr network, int plen, guint32 metric);
-gboolean nm_platform_ip4_route_exists (int ifindex, in_addr_t network, int plen, guint32 metric);
-gboolean nm_platform_ip6_route_exists (int ifindex, struct in6_addr network, int plen, guint32 metric);
-gboolean nm_platform_ip4_route_sync (int ifindex, const GArray *known_routes);
-gboolean nm_platform_ip6_route_sync (int ifindex, const GArray *known_routes);
-gboolean nm_platform_route_flush (int ifindex);
+gboolean nm_platform_ip4_route_delete (NMPlatform *self, int ifindex, in_addr_t network, int plen, guint32 metric);
+gboolean nm_platform_ip6_route_delete (NMPlatform *self, int ifindex, struct in6_addr network, int plen, guint32 metric);
+gboolean nm_platform_ip4_route_exists (NMPlatform *self, int ifindex, in_addr_t network, int plen, guint32 metric);
+gboolean nm_platform_ip6_route_exists (NMPlatform *self, int ifindex, struct in6_addr network, int plen, guint32 metric);
+gboolean nm_platform_ip4_route_sync (NMPlatform *self, int ifindex, const GArray *known_routes);
+gboolean nm_platform_ip6_route_sync (NMPlatform *self, int ifindex, const GArray *known_routes);
+gboolean nm_platform_route_flush (NMPlatform *self, int ifindex);
 
 const char *nm_platform_link_to_string (const NMPlatformLink *link);
 const char *nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address);
@@ -633,8 +637,8 @@ int nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4R
 int nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b);
 
 gboolean nm_platform_check_support_libnl_extended_ifa_flags (void);
-gboolean nm_platform_check_support_kernel_extended_ifa_flags (void);
-gboolean nm_platform_check_support_user_ipv6ll (void);
+gboolean nm_platform_check_support_kernel_extended_ifa_flags (NMPlatform *self);
+gboolean nm_platform_check_support_user_ipv6ll (NMPlatform *self);
 
 void nm_platform_addr_flags2str (int flags, char *buf, size_t size);
 

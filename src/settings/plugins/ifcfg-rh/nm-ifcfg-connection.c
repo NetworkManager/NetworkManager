@@ -164,7 +164,7 @@ nm_ifcfg_connection_check_devtimeout (NMIfcfgConnection *self)
 	if (!devtimeout)
 		return;
 
-	if (nm_platform_link_get_ifindex (ifname) != 0)
+	if (nm_platform_link_get_ifindex (NM_PLATFORM_GET, ifname) != 0)
 		return;
 
 	/* ONBOOT=yes, DEVICE and DEVTIMEOUT are set, but device is not present */

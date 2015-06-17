@@ -144,7 +144,7 @@ set_nas_iface (NMDeviceAdsl *self, int idx, const char *name)
 	g_return_if_fail (name != NULL);
 
 	g_warn_if_fail (priv->nas_ifindex <= 0);
-	priv->nas_ifindex = idx > 0 ? idx : nm_platform_link_get_ifindex (name);
+	priv->nas_ifindex = idx > 0 ? idx : nm_platform_link_get_ifindex (NM_PLATFORM_GET, name);
 	g_warn_if_fail (priv->nas_ifindex > 0);
 
 	g_warn_if_fail (priv->nas_ifname == NULL);
@@ -352,7 +352,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_reason)
 		_LOGD (LOGD_ADSL, "ATM setup successful");
 
 		/* otherwise we're good for stage3 */
-		nm_platform_link_set_up (priv->nas_ifindex);
+		nm_platform_link_set_up (NM_PLATFORM_GET, priv->nas_ifindex);
 		ret = NM_ACT_STAGE_RETURN_SUCCESS;
 
 	} else if (g_strcmp0 (protocol, NM_SETTING_ADSL_PROTOCOL_PPPOA) == 0) {
@@ -492,7 +492,7 @@ carrier_update_cb (gpointer user_data)
 
 	path  = g_strdup_printf ("/sys/class/atm/%s/carrier",
 	                         ASSERT_VALID_PATH_COMPONENT (nm_device_get_iface (NM_DEVICE (self))));
-	carrier = (int) nm_platform_sysctl_get_int_checked (path, 10, 0, 1, -1);
+	carrier = (int) nm_platform_sysctl_get_int_checked (NM_PLATFORM_GET, path, 10, 0, 1, -1);
 	g_free (path);
 
 	if (carrier != -1)
@@ -526,7 +526,7 @@ get_atm_index (const char *iface)
 
 	path = g_strdup_printf ("/sys/class/atm/%s/atmindex",
 	                        ASSERT_VALID_PATH_COMPONENT (iface));
-	idx = (int) nm_platform_sysctl_get_int_checked (path, 10, 0, G_MAXINT, -1);
+	idx = (int) nm_platform_sysctl_get_int_checked (NM_PLATFORM_GET, path, 10, 0, G_MAXINT, -1);
 	g_free (path);
 
 	return idx;

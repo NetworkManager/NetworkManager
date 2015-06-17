@@ -71,6 +71,16 @@
 #define warning(...) nm_log_warn (LOGD_PLATFORM, __VA_ARGS__)
 #define error(...) nm_log_err (LOGD_PLATFORM, __VA_ARGS__)
 
+#define return_type(t, name) \
+	G_STMT_START { \
+		if (out_name) \
+			*out_name = name; \
+		return t; \
+	} G_STMT_END
+
+/******************************************************************
+ * libnl unility functions and wrappers
+ ******************************************************************/
 
 struct libnl_vtable
 {
@@ -78,41 +88,6 @@ struct libnl_vtable
 
 	int (*f_nl_has_capability) (int capability);
 };
-
-
-typedef struct {
-	struct nl_sock *nlh;
-	struct nl_sock *nlh_event;
-	struct nl_cache *link_cache;
-	struct nl_cache *address_cache;
-	struct nl_cache *route_cache;
-	GIOChannel *event_channel;
-	guint event_id;
-
-	GUdevClient *udev_client;
-	GHashTable *udev_devices;
-
-	GHashTable *wifi_data;
-
-	int support_kernel_extended_ifa_flags;
-	int support_user_ipv6ll;
-} NMLinuxPlatformPrivate;
-
-#define NM_LINUX_PLATFORM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_LINUX_PLATFORM, NMLinuxPlatformPrivate))
-
-G_DEFINE_TYPE (NMLinuxPlatform, nm_linux_platform, NM_TYPE_PLATFORM)
-
-static const char *to_string_object (NMPlatform *platform, struct nl_object *obj);
-static gboolean _address_match (struct rtnl_addr *addr, int family, int ifindex);
-static gboolean _route_match (struct rtnl_route *rtnlroute, int family, int ifindex, gboolean include_proto_kernel);
-
-void
-nm_linux_platform_setup (void)
-{
-	nm_platform_setup (NM_TYPE_LINUX_PLATFORM);
-}
-
-/******************************************************************/
 
 static int
 _nl_f_nl_has_capability (int capability)
@@ -148,57 +123,6 @@ _nl_has_capability (int capability)
 {
 	return (_nl_get_vtable ()->f_nl_has_capability) (capability);
 }
-
-/******************************************************************/
-
-static guint32
-_get_expiry (guint32 now_s, guint32 lifetime_s)
-{
-	gint64 t = ((gint64) now_s) + ((gint64) lifetime_s);
-
-	return MIN (t, NM_PLATFORM_LIFETIME_PERMANENT - 1);
-}
-
-/* The rtnl_addr object contains relative lifetimes @valid and @preferred
- * that count in seconds, starting from the moment when the kernel constructed
- * the netlink message.
- *
- * There is also a field rtnl_addr_last_update_time(), which is the absolute
- * time in 1/100th of a second of clock_gettime (CLOCK_MONOTONIC) when the address
- * was modified (wrapping every 497 days).
- * Immediately at the time when the address was last modified, #NOW and @last_update_time
- * are the same, so (only) in that case @valid and @preferred are anchored at @last_update_time.
- * However, this is not true in general. As time goes by, whenever kernel sends a new address
- * via netlink, the lifetimes keep counting down.
- *
- * As we cache the rtnl_addr object we must know the absolute expiries.
- * As a hack, modify the relative timestamps valid and preferred into absolute
- * timestamps of scale nm_utils_get_monotonic_timestamp_s().
- **/
-static void
-_rtnl_addr_hack_lifetimes_rel_to_abs (struct rtnl_addr *rtnladdr)
-{
-	guint32 a_valid  = rtnl_addr_get_valid_lifetime (rtnladdr);
-	guint32 a_preferred = rtnl_addr_get_preferred_lifetime (rtnladdr);
-	guint32 now;
-
-	if (a_valid == NM_PLATFORM_LIFETIME_PERMANENT &&
-	    a_preferred == NM_PLATFORM_LIFETIME_PERMANENT)
-		return;
-
-	now = (guint32) nm_utils_get_monotonic_timestamp_s ();
-
-	if (a_preferred > a_valid)
-		a_preferred = a_valid;
-
-	if (a_valid != NM_PLATFORM_LIFETIME_PERMANENT)
-		rtnl_addr_set_valid_lifetime (rtnladdr, _get_expiry (now, a_valid));
-	rtnl_addr_set_preferred_lifetime (rtnladdr, _get_expiry (now, a_preferred));
-}
-
-/******************************************************************/
-
-/* libnl library workarounds and additions */
 
 /* Automatic deallocation of local variables */
 #define auto_nl_cache __attribute__((cleanup(put_nl_cache)))
@@ -236,8 +160,6 @@ put_nl_addr (void *ptr)
 		*object = NULL;
 	}
 }
-
-/*******************************************************************/
 
 /* wrap the libnl alloc functions and abort on out-of-memory*/
 
@@ -303,8 +225,6 @@ _nm_rtnl_route_nh_alloc (void)
 	return nexthop;
 }
 
-/*******************************************************************/
-
 /* rtnl_addr_set_prefixlen fails to update the nl_addr prefixlen */
 static void
 nm_rtnl_addr_set_prefixlen (struct rtnl_addr *rtnladdr, int plen)
@@ -319,6 +239,213 @@ nm_rtnl_addr_set_prefixlen (struct rtnl_addr *rtnladdr, int plen)
 }
 #define rtnl_addr_set_prefixlen nm_rtnl_addr_set_prefixlen
 
+/******************************************************************/
+
+static guint32
+_get_expiry (guint32 now_s, guint32 lifetime_s)
+{
+	gint64 t = ((gint64) now_s) + ((gint64) lifetime_s);
+
+	return MIN (t, NM_PLATFORM_LIFETIME_PERMANENT - 1);
+}
+
+/* The rtnl_addr object contains relative lifetimes @valid and @preferred
+ * that count in seconds, starting from the moment when the kernel constructed
+ * the netlink message.
+ *
+ * There is also a field rtnl_addr_last_update_time(), which is the absolute
+ * time in 1/100th of a second of clock_gettime (CLOCK_MONOTONIC) when the address
+ * was modified (wrapping every 497 days).
+ * Immediately at the time when the address was last modified, #NOW and @last_update_time
+ * are the same, so (only) in that case @valid and @preferred are anchored at @last_update_time.
+ * However, this is not true in general. As time goes by, whenever kernel sends a new address
+ * via netlink, the lifetimes keep counting down.
+ *
+ * As we cache the rtnl_addr object we must know the absolute expiries.
+ * As a hack, modify the relative timestamps valid and preferred into absolute
+ * timestamps of scale nm_utils_get_monotonic_timestamp_s().
+ **/
+static void
+_rtnl_addr_hack_lifetimes_rel_to_abs (struct rtnl_addr *rtnladdr)
+{
+	guint32 a_valid  = rtnl_addr_get_valid_lifetime (rtnladdr);
+	guint32 a_preferred = rtnl_addr_get_preferred_lifetime (rtnladdr);
+	guint32 now;
+
+	if (a_valid == NM_PLATFORM_LIFETIME_PERMANENT &&
+	    a_preferred == NM_PLATFORM_LIFETIME_PERMANENT)
+		return;
+
+	now = (guint32) nm_utils_get_monotonic_timestamp_s ();
+
+	if (a_preferred > a_valid)
+		a_preferred = a_valid;
+
+	if (a_valid != NM_PLATFORM_LIFETIME_PERMANENT)
+		rtnl_addr_set_valid_lifetime (rtnladdr, _get_expiry (now, a_valid));
+	rtnl_addr_set_preferred_lifetime (rtnladdr, _get_expiry (now, a_preferred));
+}
+
+/******************************************************************
+ * ethtool
+ ******************************************************************/
+
+static gboolean
+ethtool_get (const char *name, gpointer edata)
+{
+	struct ifreq ifr;
+	int fd;
+
+	memset (&ifr, 0, sizeof (ifr));
+	strncpy (ifr.ifr_name, name, IFNAMSIZ);
+	ifr.ifr_data = edata;
+
+	fd = socket (PF_INET, SOCK_DGRAM, 0);
+	if (fd < 0) {
+		error ("ethtool: Could not open socket.");
+		return FALSE;
+	}
+
+	if (ioctl (fd, SIOCETHTOOL, &ifr) < 0) {
+		debug ("ethtool: Request failed: %s", strerror (errno));
+		close (fd);
+		return FALSE;
+	}
+
+	close (fd);
+	return TRUE;
+}
+
+static int
+ethtool_get_stringset_index (const char *ifname, int stringset_id, const char *string)
+{
+	gs_free struct ethtool_sset_info *info = NULL;
+	gs_free struct ethtool_gstrings *strings = NULL;
+	guint32 len, i;
+
+	info = g_malloc0 (sizeof (*info) + sizeof (guint32));
+	info->cmd = ETHTOOL_GSSET_INFO;
+	info->reserved = 0;
+	info->sset_mask = 1ULL << stringset_id;
+
+	if (!ethtool_get (ifname, info))
+		return -1;
+	if (!info->sset_mask)
+		return -1;
+
+	len = info->data[0];
+
+	strings = g_malloc0 (sizeof (*strings) + len * ETH_GSTRING_LEN);
+	strings->cmd = ETHTOOL_GSTRINGS;
+	strings->string_set = stringset_id;
+	strings->len = len;
+	if (!ethtool_get (ifname, strings))
+		return -1;
+
+	for (i = 0; i < len; i++) {
+		if (!strcmp ((char *) &strings->data[i * ETH_GSTRING_LEN], string))
+			return i;
+	}
+
+	return -1;
+}
+
+static const char *
+ethtool_get_driver (const char *ifname)
+{
+	struct ethtool_drvinfo drvinfo = { 0 };
+
+	g_return_val_if_fail (ifname != NULL, NULL);
+
+	drvinfo.cmd = ETHTOOL_GDRVINFO;
+	if (!ethtool_get (ifname, &drvinfo))
+		return NULL;
+
+	if (!*drvinfo.driver)
+		return NULL;
+
+	return g_intern_string (drvinfo.driver);
+}
+
+/******************************************************************
+ * udev
+ ******************************************************************/
+
+static const char *
+udev_get_driver (GUdevDevice *device, int ifindex)
+{
+	GUdevDevice *parent = NULL, *grandparent = NULL;
+	const char *driver, *subsys;
+
+	driver = g_udev_device_get_driver (device);
+	if (driver)
+		return driver;
+
+	/* Try the parent */
+	parent = g_udev_device_get_parent (device);
+	if (parent) {
+		driver = g_udev_device_get_driver (parent);
+		if (!driver) {
+			/* Try the grandparent if it's an ibmebus device or if the
+			 * subsys is NULL which usually indicates some sort of
+			 * platform device like a 'gadget' net interface.
+			 */
+			subsys = g_udev_device_get_subsystem (parent);
+			if (   (g_strcmp0 (subsys, "ibmebus") == 0)
+			    || (subsys == NULL)) {
+				grandparent = g_udev_device_get_parent (parent);
+				if (grandparent) {
+					driver = g_udev_device_get_driver (grandparent);
+				}
+			}
+		}
+	}
+
+	/* Intern the string so we don't have to worry about memory
+	 * management in NMPlatformLink.
+	 */
+	if (driver)
+		driver = g_intern_string (driver);
+
+	g_clear_object (&parent);
+	g_clear_object (&grandparent);
+
+	return driver;
+}
+
+static NMLinkType
+udev_detect_link_type_from_device (GUdevDevice *udev_device, const char *ifname, int arptype, const char **out_name)
+{
+	const char *prop, *sysfs_path;
+
+	g_assert (ifname);
+
+	if (!udev_device)
+		return_type (NM_LINK_TYPE_UNKNOWN, "unknown");
+
+	if (   g_udev_device_get_property (udev_device, "ID_NM_OLPC_MESH")
+	    || g_udev_device_get_sysfs_attr (udev_device, "anycast_mask"))
+		return_type (NM_LINK_TYPE_OLPC_MESH, "olpc-mesh");
+
+	prop = g_udev_device_get_property (udev_device, "DEVTYPE");
+	sysfs_path = g_udev_device_get_sysfs_path (udev_device);
+	if (wifi_utils_is_wifi (ifname, sysfs_path, prop))
+		return_type (NM_LINK_TYPE_WIFI, "wifi");
+	else if (g_strcmp0 (prop, "wwan") == 0)
+		return_type (NM_LINK_TYPE_WWAN_ETHERNET, "wwan");
+	else if (g_strcmp0 (prop, "wimax") == 0)
+		return_type (NM_LINK_TYPE_WIMAX, "wimax");
+
+	if (arptype == ARPHRD_ETHER)
+		return_type (NM_LINK_TYPE_ETHERNET, "ethernet");
+
+	return_type (NM_LINK_TYPE_UNKNOWN, "unknown");
+}
+
+/******************************************************************
+ * NMPlatform types and functions
+ ******************************************************************/
+
 typedef enum {
 	OBJECT_TYPE_UNKNOWN,
 	OBJECT_TYPE_LINK,
@@ -327,10 +454,47 @@ typedef enum {
 	OBJECT_TYPE_IP4_ROUTE,
 	OBJECT_TYPE_IP6_ROUTE,
 	__OBJECT_TYPE_LAST,
+	OBJECT_TYPE_MAX = __OBJECT_TYPE_LAST - 1,
 } ObjectType;
 
+/******************************************************************/
+
+typedef struct {
+	struct nl_sock *nlh;
+	struct nl_sock *nlh_event;
+	struct nl_cache *link_cache;
+	struct nl_cache *address_cache;
+	struct nl_cache *route_cache;
+	GIOChannel *event_channel;
+	guint event_id;
+
+	GUdevClient *udev_client;
+	GHashTable *udev_devices;
+
+	GHashTable *wifi_data;
+
+	int support_kernel_extended_ifa_flags;
+	int support_user_ipv6ll;
+} NMLinuxPlatformPrivate;
+
+#define NM_LINUX_PLATFORM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_LINUX_PLATFORM, NMLinuxPlatformPrivate))
+
+G_DEFINE_TYPE (NMLinuxPlatform, nm_linux_platform, NM_TYPE_PLATFORM)
+
+static const char *to_string_object (NMPlatform *platform, struct nl_object *obj);
+static gboolean _address_match (struct rtnl_addr *addr, int family, int ifindex);
+static gboolean _route_match (struct rtnl_route *rtnlroute, int family, int ifindex, gboolean include_proto_kernel);
+
+void
+nm_linux_platform_setup (void)
+{
+	nm_platform_setup (NM_TYPE_LINUX_PLATFORM);
+}
+
+/******************************************************************/
+
 static ObjectType
-object_type_from_nl_object (const struct nl_object *object)
+_nlo_get_object_type (const struct nl_object *object)
 {
 	const char *type_str;
 
@@ -364,7 +528,7 @@ object_type_from_nl_object (const struct nl_object *object)
 static void
 _nl_link_family_unset (struct nl_object *obj, int *family)
 {
-	if (!obj || object_type_from_nl_object (obj) != OBJECT_TYPE_LINK)
+	if (!obj || _nlo_get_object_type (obj) != OBJECT_TYPE_LINK)
 		*family = AF_UNSPEC;
 	else {
 		*family = rtnl_link_get_family ((struct rtnl_link *) obj);
@@ -407,7 +571,7 @@ static struct nl_object *
 get_kernel_object (struct nl_sock *sock, struct nl_object *needle)
 {
 	struct nl_object *object = NULL;
-	ObjectType type = object_type_from_nl_object (needle);
+	ObjectType type = _nlo_get_object_type (needle);
 
 	switch (type) {
 	case OBJECT_TYPE_LINK:
@@ -483,7 +647,7 @@ get_kernel_object (struct nl_sock *sock, struct nl_object *needle)
 static int
 add_kernel_object (struct nl_sock *sock, struct nl_object *object)
 {
-	switch (object_type_from_nl_object (object)) {
+	switch (_nlo_get_object_type (object)) {
 	case OBJECT_TYPE_LINK:
 		return rtnl_link_add (sock, (struct rtnl_link *) object, NLM_F_CREATE);
 	case OBJECT_TYPE_IP4_ADDRESS:
@@ -578,68 +742,6 @@ nm_rtnl_link_parse_info_data (struct nl_sock *sk, int ifindex,
 
 	nl_wait_for_ack (sk);
 	return 0;
-}
-
-/******************************************************************/
-
-static gboolean
-ethtool_get (const char *name, gpointer edata)
-{
-	struct ifreq ifr;
-	int fd;
-
-	memset (&ifr, 0, sizeof (ifr));
-	strncpy (ifr.ifr_name, name, IFNAMSIZ);
-	ifr.ifr_data = edata;
-
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
-	if (fd < 0) {
-		error ("ethtool: Could not open socket.");
-		return FALSE;
-	}
-
-	if (ioctl (fd, SIOCETHTOOL, &ifr) < 0) {
-		debug ("ethtool: Request failed: %s", strerror (errno));
-		close (fd);
-		return FALSE;
-	}
-
-	close (fd);
-	return TRUE;
-}
-
-static int
-ethtool_get_stringset_index (const char *ifname, int stringset_id, const char *string)
-{
-	gs_free struct ethtool_sset_info *info = NULL;
-	gs_free struct ethtool_gstrings *strings = NULL;
-	guint32 len, i;
-
-	info = g_malloc0 (sizeof (*info) + sizeof (guint32));
-	info->cmd = ETHTOOL_GSSET_INFO;
-	info->reserved = 0;
-	info->sset_mask = 1ULL << stringset_id;
-
-	if (!ethtool_get (ifname, info))
-		return -1;
-	if (!info->sset_mask)
-		return -1;
-
-	len = info->data[0];
-
-	strings = g_malloc0 (sizeof (*strings) + len * ETH_GSTRING_LEN);
-	strings->cmd = ETHTOOL_GSTRINGS;
-	strings->string_set = stringset_id;
-	strings->len = len;
-	if (!ethtool_get (ifname, strings))
-		return -1;
-
-	for (i = 0; i < len; i++) {
-		if (!strcmp ((char *) &strings->data[i * ETH_GSTRING_LEN], string))
-			return i;
-	}
-
-	return -1;
 }
 
 /******************************************************************/
@@ -741,62 +843,6 @@ type_to_string (NMLinkType type)
 	}
 }
 
-#define return_type(t, name) \
-	G_STMT_START { \
-		if (out_name) \
-			*out_name = name; \
-		return t; \
-	} G_STMT_END
-
-static NMLinkType
-link_type_from_udev (NMPlatform *platform, int ifindex, const char *ifname, int arptype, const char **out_name)
-{
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	GUdevDevice *udev_device;
-	const char *prop, *sysfs_path;
-
-	g_assert (ifname);
-
-	udev_device = g_hash_table_lookup (priv->udev_devices, GINT_TO_POINTER (ifindex));
-	if (!udev_device)
-		return_type (NM_LINK_TYPE_UNKNOWN, "unknown");
-
-	if (   g_udev_device_get_property (udev_device, "ID_NM_OLPC_MESH")
-	    || g_udev_device_get_sysfs_attr (udev_device, "anycast_mask"))
-		return_type (NM_LINK_TYPE_OLPC_MESH, "olpc-mesh");
-
-	prop = g_udev_device_get_property (udev_device, "DEVTYPE");
-	sysfs_path = g_udev_device_get_sysfs_path (udev_device);
-	if (wifi_utils_is_wifi (ifname, sysfs_path, prop))
-		return_type (NM_LINK_TYPE_WIFI, "wifi");
-	else if (g_strcmp0 (prop, "wwan") == 0)
-		return_type (NM_LINK_TYPE_WWAN_ETHERNET, "wwan");
-	else if (g_strcmp0 (prop, "wimax") == 0)
-		return_type (NM_LINK_TYPE_WIMAX, "wimax");
-
-	if (arptype == ARPHRD_ETHER)
-		return_type (NM_LINK_TYPE_ETHERNET, "ethernet");
-
-	return_type (NM_LINK_TYPE_UNKNOWN, "unknown");
-}
-
-static const char *
-ethtool_get_driver (const char *ifname)
-{
-	struct ethtool_drvinfo drvinfo = { 0 };
-
-	g_return_val_if_fail (ifname != NULL, NULL);
-
-	drvinfo.cmd = ETHTOOL_GDRVINFO;
-	if (!ethtool_get (ifname, &drvinfo))
-		return NULL;
-
-	if (!*drvinfo.driver)
-		return NULL;
-
-	return g_intern_string (drvinfo.driver);
-}
-
 static gboolean
 link_is_announceable (NMPlatform *platform, struct rtnl_link *rtnllink)
 {
@@ -824,6 +870,7 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink, const char 
 		int arptype = rtnl_link_get_arptype (rtnllink);
 		const char *driver;
 		const char *ifname;
+		GUdevDevice *udev_device = NULL;
 
 		if (arptype == ARPHRD_LOOPBACK)
 			return_type (NM_LINK_TYPE_LOOPBACK, "loopback");
@@ -846,11 +893,14 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink, const char 
 		if (!g_strcmp0 (driver, "openvswitch"))
 			return_type (NM_LINK_TYPE_OPENVSWITCH, "openvswitch");
 
-		return link_type_from_udev (platform,
-		                            rtnl_link_get_ifindex (rtnllink),
-		                            ifname,
-		                            arptype,
-		                            out_name);
+		if (platform) {
+			udev_device = g_hash_table_lookup (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->udev_devices,
+			                                   GINT_TO_POINTER (rtnl_link_get_ifindex (rtnllink)));
+		}
+		return udev_detect_link_type_from_device (udev_device,
+		                                          ifname,
+		                                          arptype,
+		                                          out_name);
 	} else if (!strcmp (type, "dummy"))
 		return_type (NM_LINK_TYPE_DUMMY, "dummy");
 	else if (!strcmp (type, "gre"))
@@ -867,7 +917,7 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink, const char 
 		NMPlatformTunProperties props;
 		guint flags;
 
-		if (nm_platform_tun_get_properties (rtnl_link_get_ifindex (rtnllink), &props)) {
+		if (nm_platform_tun_get_properties (platform, rtnl_link_get_ifindex (rtnllink), &props)) {
 			if (!g_strcmp0 (props.mode, "tap"))
 				return_type (NM_LINK_TYPE_TAP, "tap");
 			if (!g_strcmp0 (props.mode, "tun"))
@@ -898,48 +948,6 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink, const char 
 	return_type (NM_LINK_TYPE_UNKNOWN, type);
 }
 
-static const char *
-udev_get_driver (NMPlatform *platform, GUdevDevice *device, int ifindex)
-{
-	GUdevDevice *parent = NULL, *grandparent = NULL;
-	const char *driver, *subsys;
-
-	driver = g_udev_device_get_driver (device);
-	if (driver)
-		return driver;
-
-	/* Try the parent */
-	parent = g_udev_device_get_parent (device);
-	if (parent) {
-		driver = g_udev_device_get_driver (parent);
-		if (!driver) {
-			/* Try the grandparent if it's an ibmebus device or if the
-			 * subsys is NULL which usually indicates some sort of
-			 * platform device like a 'gadget' net interface.
-			 */
-			subsys = g_udev_device_get_subsystem (parent);
-			if (   (g_strcmp0 (subsys, "ibmebus") == 0)
-			    || (subsys == NULL)) {
-				grandparent = g_udev_device_get_parent (parent);
-				if (grandparent) {
-					driver = g_udev_device_get_driver (grandparent);
-				}
-			}
-		}
-	}
-
-	/* Intern the string so we don't have to worry about memory
-	 * management in NMPlatformLink.
-	 */
-	if (driver)
-		driver = g_intern_string (driver);
-
-	g_clear_object (&parent);
-	g_clear_object (&grandparent);
-
-	return driver;
-}
-
 static gboolean
 init_link (NMPlatform *platform, NMPlatformLink *info, struct rtnl_link *rtnllink)
 {
@@ -967,7 +975,7 @@ init_link (NMPlatform *platform, NMPlatformLink *info, struct rtnl_link *rtnllin
 
 	udev_device = g_hash_table_lookup (priv->udev_devices, GINT_TO_POINTER (info->ifindex));
 	if (udev_device) {
-		info->driver = udev_get_driver (platform, udev_device, info->ifindex);
+		info->driver = udev_get_driver (udev_device, info->ifindex);
 		if (!info->driver)
 			info->driver = g_intern_string (rtnl_link_get_type (rtnllink));
 		if (!info->driver)
@@ -1428,7 +1436,7 @@ to_string_object_with_type (NMPlatform *platform, struct nl_object *obj, ObjectT
 static const char *
 to_string_object (NMPlatform *platform, struct nl_object *obj)
 {
-	return to_string_object_with_type (platform, obj, object_type_from_nl_object (obj));
+	return to_string_object_with_type (platform, obj, _nlo_get_object_type (obj));
 }
 
 #undef SET_AND_RETURN_STRING_BUFFER
@@ -1437,7 +1445,7 @@ to_string_object (NMPlatform *platform, struct nl_object *obj)
 
 /* Object and cache manipulation */
 
-static const char *signal_by_type_and_status[__OBJECT_TYPE_LAST] = {
+static const char *signal_by_type_and_status[OBJECT_TYPE_MAX + 1] = {
 	[OBJECT_TYPE_LINK]        = NM_PLATFORM_SIGNAL_LINK_CHANGED,
 	[OBJECT_TYPE_IP4_ADDRESS] = NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED,
 	[OBJECT_TYPE_IP6_ADDRESS] = NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED,
@@ -1468,13 +1476,13 @@ choose_cache_by_type (NMPlatform *platform, ObjectType object_type)
 static struct nl_cache *
 choose_cache (NMPlatform *platform, struct nl_object *object)
 {
-	return choose_cache_by_type (platform, object_type_from_nl_object (object));
+	return choose_cache_by_type (platform, _nlo_get_object_type (object));
 }
 
 static gboolean
 object_has_ifindex (struct nl_object *object, int ifindex)
 {
-	switch (object_type_from_nl_object (object)) {
+	switch (_nlo_get_object_type (object)) {
 	case OBJECT_TYPE_IP4_ADDRESS:
 	case OBJECT_TYPE_IP6_ADDRESS:
 		return ifindex == rtnl_addr_get_ifindex ((struct rtnl_addr *) object);
@@ -1522,7 +1530,7 @@ static void
 announce_object (NMPlatform *platform, const struct nl_object *object, NMPlatformSignalChangeType change_type, NMPlatformReason reason)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	ObjectType object_type = object_type_from_nl_object (object);
+	ObjectType object_type = _nlo_get_object_type (object);
 	const char *sig = signal_by_type_and_status[object_type];
 
 	switch (object_type) {
@@ -1691,7 +1699,7 @@ refresh_object (NMPlatform *platform, struct nl_object *object, gboolean removed
 			return FALSE;
 
 		/* Unsupported object types should never have reached the caches */
-		type = object_type_from_nl_object (kernel_object);
+		type = _nlo_get_object_type (kernel_object);
 		g_assert (type != OBJECT_TYPE_UNKNOWN);
 
 		hack_empty_master_iff_lower_up (platform, kernel_object);
@@ -1777,7 +1785,7 @@ delete_object (NMPlatform *platform, struct nl_object *object, gboolean do_refre
 	int nle;
 	gboolean result = FALSE;
 
-	object_type = object_type_from_nl_object (object);
+	object_type = _nlo_get_object_type (object);
 	g_return_val_if_fail (object_type != OBJECT_TYPE_UNKNOWN, FALSE);
 
 	switch (object_type) {
@@ -1948,7 +1956,7 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 	nl_msg_parse (msg, ref_object, &object);
 	g_return_val_if_fail (object, NL_OK);
 
-	type = object_type_from_nl_object (object);
+	type = _nlo_get_object_type (object);
 
 	if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
 		if (type == OBJECT_TYPE_LINK) {
@@ -2622,7 +2630,7 @@ supports_mii_carrier_detect (const char *ifname)
 static gboolean
 link_supports_carrier_detect (NMPlatform *platform, int ifindex)
 {
-	const char *name = nm_platform_link_get_name (ifindex);
+	const char *name = nm_platform_link_get_name (platform, ifindex);
 
 	if (!name)
 		return FALSE;
@@ -2638,7 +2646,7 @@ static gboolean
 link_supports_vlans (NMPlatform *platform, int ifindex)
 {
 	auto_nl_object struct rtnl_link *rtnllink = link_get (platform, ifindex);
-	const char *name = nm_platform_link_get_name (ifindex);
+	const char *name = nm_platform_link_get_name (platform, ifindex);
 	gs_free struct ethtool_gfeatures *features = NULL;
 	int idx, block, bit, size;
 
@@ -2736,7 +2744,7 @@ link_get_physical_port_id (NMPlatform *platform, int ifindex)
 	const char *ifname;
 	char *path, *id;
 
-	ifname = nm_platform_link_get_name (ifindex);
+	ifname = nm_platform_link_get_name (platform, ifindex);
 	if (!ifname)
 		return NULL;
 
@@ -2756,7 +2764,7 @@ link_get_dev_id (NMPlatform *platform, int ifindex)
 	gs_free char *path = NULL, *id = NULL;
 	gint64 int_val;
 
-	ifname = nm_platform_link_get_name (ifindex);
+	ifname = nm_platform_link_get_name (platform, ifindex);
 	if (!ifname)
 		return 0;
 
@@ -2869,10 +2877,10 @@ link_get_master (NMPlatform *platform, int slave)
 }
 
 static char *
-link_option_path (int master, const char *category, const char *option)
+link_option_path (NMPlatform *platform, int master, const char *category, const char *option)
 {
-	const char *name = nm_platform_link_get_name (master);
-   
+	const char *name = nm_platform_link_get_name (platform, master);
+
 	if (!name || !category || !option)
 		return NULL;
 
@@ -2883,19 +2891,19 @@ link_option_path (int master, const char *category, const char *option)
 }
 
 static gboolean
-link_set_option (int master, const char *category, const char *option, const char *value)
+link_set_option (NMPlatform *platform, int master, const char *category, const char *option, const char *value)
 {
-	gs_free char *path = link_option_path (master, category, option);
+	gs_free char *path = link_option_path (platform, master, category, option);
 
-	return path && nm_platform_sysctl_set (path, value);
+	return path && nm_platform_sysctl_set (platform, path, value);
 }
 
 static char *
-link_get_option (int master, const char *category, const char *option)
+link_get_option (NMPlatform *platform, int master, const char *category, const char *option)
 {
-	gs_free char *path = link_option_path (master, category, option);
+	gs_free char *path = link_option_path (platform, master, category, option);
 
-	return path ? nm_platform_sysctl_get (path) : NULL;
+	return path ? nm_platform_sysctl_get (platform, path) : NULL;
 }
 
 static const char *
@@ -2934,25 +2942,25 @@ slave_category (NMPlatform *platform, int slave)
 static gboolean
 master_set_option (NMPlatform *platform, int master, const char *option, const char *value)
 {
-	return link_set_option (master, master_category (platform, master), option, value);
+	return link_set_option (platform, master, master_category (platform, master), option, value);
 }
 
 static char *
 master_get_option (NMPlatform *platform, int master, const char *option)
 {
-	return link_get_option (master, master_category (platform, master), option);
+	return link_get_option (platform, master, master_category (platform, master), option);
 }
 
 static gboolean
 slave_set_option (NMPlatform *platform, int slave, const char *option, const char *value)
 {
-	return link_set_option (slave, slave_category (platform, slave), option, value);
+	return link_set_option (platform, slave, slave_category (platform, slave), option, value);
 }
 
 static char *
 slave_get_option (NMPlatform *platform, int slave, const char *option)
 {
-	return link_get_option (slave, slave_category (platform, slave), option);
+	return link_get_option (platform, slave, slave_category (platform, slave), option);
 }
 
 static gboolean
@@ -2962,12 +2970,12 @@ infiniband_partition_add (NMPlatform *platform, int parent, int p_key)
 	char *path, *id;
 	gboolean success;
 
-	parent_name = nm_platform_link_get_name (parent);
+	parent_name = nm_platform_link_get_name (platform, parent);
 	g_return_val_if_fail (parent_name != NULL, FALSE);
 
 	path = g_strdup_printf ("/sys/class/net/%s/create_child", ASSERT_VALID_PATH_COMPONENT (parent_name));
 	id = g_strdup_printf ("0x%04x", p_key);
-	success = nm_platform_sysctl_set (path, id);
+	success = nm_platform_sysctl_set (platform, path, id);
 	g_free (id);
 	g_free (path);
 
@@ -2988,7 +2996,7 @@ veth_get_properties (NMPlatform *platform, int ifindex, NMPlatformVethProperties
 	gs_free struct ethtool_stats *stats = NULL;
 	int peer_ifindex_stat;
 
-	ifname = nm_platform_link_get_name (ifindex);
+	ifname = nm_platform_link_get_name (platform, ifindex);
 	if (!ifname)
 		return FALSE;
 
@@ -3021,13 +3029,13 @@ tun_get_properties (NMPlatform *platform, int ifindex, NMPlatformTunProperties *
 	props->owner = -1;
 	props->group = -1;
 
-	ifname = nm_platform_link_get_name (ifindex);
+	ifname = nm_platform_link_get_name (platform, ifindex);
 	if (!ifname || !nm_utils_iface_valid_name (ifname))
 		return FALSE;
 	ifname = ASSERT_VALID_PATH_COMPONENT (ifname);
 
 	path = g_strdup_printf ("/sys/class/net/%s/owner", ifname);
-	val = nm_platform_sysctl_get (path);
+	val = nm_platform_sysctl_get (platform, path);
 	g_free (path);
 	if (val) {
 		props->owner = _nm_utils_ascii_str_to_int64 (val, 10, -1, G_MAXINT64, -1);
@@ -3038,7 +3046,7 @@ tun_get_properties (NMPlatform *platform, int ifindex, NMPlatformTunProperties *
 		success = FALSE;
 
 	path = g_strdup_printf ("/sys/class/net/%s/group", ifname);
-	val = nm_platform_sysctl_get (path);
+	val = nm_platform_sysctl_get (platform, path);
 	g_free (path);
 	if (val) {
 		props->group = _nm_utils_ascii_str_to_int64 (val, 10, -1, G_MAXINT64, -1);
@@ -3049,7 +3057,7 @@ tun_get_properties (NMPlatform *platform, int ifindex, NMPlatformTunProperties *
 		success = FALSE;
 
 	path = g_strdup_printf ("/sys/class/net/%s/tun_flags", ifname);
-	val = nm_platform_sysctl_get (path);
+	val = nm_platform_sysctl_get (platform, path);
 	g_free (path);
 	if (val) {
 		gint64 flags;
@@ -3580,7 +3588,8 @@ ip4_is_link_local (const struct in_addr *src)
 }
 
 static struct nl_object *
-build_rtnl_addr (int family,
+build_rtnl_addr (NMPlatform *platform,
+                 int family,
                  int ifindex,
                  gconstpointer addr,
                  gconstpointer peer_addr,
@@ -3642,7 +3651,7 @@ build_rtnl_addr (int family,
 		rtnl_addr_set_preferred_lifetime (rtnladdr, preferred);
 	}
 	if (flags) {
-		if ((flags & ~0xFF) && !check_support_kernel_extended_ifa_flags (nm_platform_get ())) {
+		if ((flags & ~0xFF) && !check_support_kernel_extended_ifa_flags (platform)) {
 			/* Older kernels don't accept unknown netlink attributes.
 			 *
 			 * With commit libnl commit 5206c050504f8676a24854519b9c351470fb7cc6, libnl will only set
@@ -3672,7 +3681,7 @@ ip4_address_add (NMPlatform *platform,
                  guint32 preferred,
                  const char *label)
 {
-	return add_object (platform, build_rtnl_addr (AF_INET, ifindex, &addr,
+	return add_object (platform, build_rtnl_addr (platform, AF_INET, ifindex, &addr,
 	                                              peer_addr ? &peer_addr : NULL,
 	                                              plen, lifetime, preferred, 0,
 	                                              label));
@@ -3688,7 +3697,7 @@ ip6_address_add (NMPlatform *platform,
                  guint32 preferred,
                  guint flags)
 {
-	return add_object (platform, build_rtnl_addr (AF_INET6, ifindex, &addr,
+	return add_object (platform, build_rtnl_addr (platform, AF_INET6, ifindex, &addr,
 	                                              IN6_IS_ADDR_UNSPECIFIED (&peer_addr) ? NULL : &peer_addr,
 	                                              plen, lifetime, preferred, flags,
 	                                              NULL));
@@ -3697,19 +3706,19 @@ ip6_address_add (NMPlatform *platform,
 static gboolean
 ip4_address_delete (NMPlatform *platform, int ifindex, in_addr_t addr, int plen, in_addr_t peer_address)
 {
-	return delete_object (platform, build_rtnl_addr (AF_INET, ifindex, &addr, peer_address ? &peer_address : NULL, plen, 0, 0, 0, NULL), TRUE);
+	return delete_object (platform, build_rtnl_addr (platform, AF_INET, ifindex, &addr, peer_address ? &peer_address : NULL, plen, 0, 0, 0, NULL), TRUE);
 }
 
 static gboolean
 ip6_address_delete (NMPlatform *platform, int ifindex, struct in6_addr addr, int plen)
 {
-	return delete_object (platform, build_rtnl_addr (AF_INET6, ifindex, &addr, NULL, plen, 0, 0, 0, NULL), TRUE);
+	return delete_object (platform, build_rtnl_addr (platform, AF_INET6, ifindex, &addr, NULL, plen, 0, 0, 0, NULL), TRUE);
 }
 
 static gboolean
 ip_address_exists (NMPlatform *platform, int family, int ifindex, gconstpointer addr, int plen)
 {
-	auto_nl_object struct nl_object *object = build_rtnl_addr (family, ifindex, addr, NULL, plen, 0, 0, 0, NULL);
+	auto_nl_object struct nl_object *object = build_rtnl_addr (platform, family, ifindex, addr, NULL, plen, 0, 0, 0, NULL);
 	auto_nl_object struct nl_object *cached_object = nl_cache_search (choose_cache (platform, object), object);
 
 	return !!cached_object;
@@ -4153,7 +4162,7 @@ cache_announce_changes (NMPlatform *platform, struct nl_cache *new, struct nl_ca
 		struct nl_object *cached_object = nm_nl_cache_search (old, object);
 
 		if (cached_object) {
-			ObjectType type = object_type_from_nl_object (object);
+			ObjectType type = _nlo_get_object_type (object);
 			if (nm_nl_object_diff (type, object, cached_object))
 				announce_object (platform, object, NM_PLATFORM_SIGNAL_CHANGED, NM_PLATFORM_REASON_EXTERNAL);
 			nl_object_put (cached_object);
@@ -4180,7 +4189,7 @@ cache_remove_unknown (struct nl_cache *cache)
 	struct nl_object *object;
 
 	for (object = nl_cache_get_first (cache); object; object = nl_cache_get_next (object)) {
-		if (object_type_from_nl_object (object) == OBJECT_TYPE_UNKNOWN) {
+		if (_nlo_get_object_type (object) == OBJECT_TYPE_UNKNOWN) {
 			if (!objects_to_remove)
 				objects_to_remove = g_ptr_array_new_with_free_func ((GDestroyNotify) nl_object_put);
 			nl_object_get (object);

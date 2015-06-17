@@ -1096,7 +1096,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection, GError 
 	 */
 	priv->ignore_link_added_cb++;
 
-	nm_owned = !nm_platform_link_exists (iface);
+	nm_owned = !nm_platform_link_exists (NM_PLATFORM_GET, iface);
 
 	for (iter = priv->factories; iter; iter = iter->next) {
 		device = nm_device_factory_create_virtual_device_for_connection (NM_DEVICE_FACTORY (iter->data),
@@ -1579,13 +1579,13 @@ get_existing_connection (NMManager *manager, NMDevice *device, gboolean *out_gen
 	nm_device_capture_initial_config (device);
 
 	if (ifindex) {
-		int master_ifindex = nm_platform_link_get_master (ifindex);
+		int master_ifindex = nm_platform_link_get_master (NM_PLATFORM_GET, ifindex);
 
 		if (master_ifindex) {
 			master = nm_manager_get_device_by_ifindex (manager, master_ifindex);
 			if (!master) {
 				nm_log_dbg (LOGD_DEVICE, "(%s): cannot generate connection for slave before its master (%s/%d)",
-				            nm_device_get_iface (device), nm_platform_link_get_name (master_ifindex), master_ifindex);
+				            nm_device_get_iface (device), nm_platform_link_get_name (NM_PLATFORM_GET, master_ifindex), master_ifindex);
 				return NULL;
 			}
 			if (!nm_device_get_act_request (master)) {
@@ -1877,7 +1877,7 @@ add_device (NMManager *self, NMDevice *device, gboolean try_assume)
 	user_unmanaged = nm_device_spec_match_list (device, unmanaged_specs);
 	nm_device_set_initial_unmanaged_flag (device, NM_UNMANAGED_USER, user_unmanaged);
 
-	if (nm_platform_link_get_unmanaged (nm_device_get_ifindex (device), &platform_unmanaged))
+	if (nm_platform_link_get_unmanaged (NM_PLATFORM_GET, nm_device_get_ifindex (device), &platform_unmanaged))
 		nm_device_set_initial_unmanaged_flag (device, NM_UNMANAGED_DEFAULT, platform_unmanaged);
 
 	sleeping = manager_sleeping (self);
@@ -3673,7 +3673,7 @@ done:
 static gboolean
 device_is_wake_on_lan (NMDevice *device)
 {
-	return nm_platform_link_get_wake_on_lan (nm_device_get_ip_ifindex (device));
+	return nm_platform_link_get_wake_on_lan (NM_PLATFORM_GET, nm_device_get_ip_ifindex (device));
 }
 
 static void
@@ -4268,7 +4268,7 @@ nm_manager_start (NMManager *self)
 	for (iter = priv->factories; iter; iter = iter->next)
 		nm_device_factory_start (iter->data);
 
-	nm_platform_query_devices ();
+	nm_platform_query_devices (NM_PLATFORM_GET);
 
 	/*
 	 * Connections added before the manager is started do not emit

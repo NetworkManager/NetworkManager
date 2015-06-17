@@ -298,7 +298,7 @@ nm_ip6_config_capture (int ifindex, gboolean capture_resolv_conf, NMSettingIP6Co
 	gboolean notify_nameservers = FALSE;
 
 	/* Slaves have no IP configuration */
-	if (nm_platform_link_get_master (ifindex) > 0)
+	if (nm_platform_link_get_master (NM_PLATFORM_GET, ifindex) > 0)
 		return NULL;
 
 	config = nm_ip6_config_new ();
@@ -307,8 +307,8 @@ nm_ip6_config_capture (int ifindex, gboolean capture_resolv_conf, NMSettingIP6Co
 	g_array_unref (priv->addresses);
 	g_array_unref (priv->routes);
 
-	priv->addresses = nm_platform_ip6_address_get_all (ifindex);
-	priv->routes = nm_platform_ip6_route_get_all (ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
+	priv->addresses = nm_platform_ip6_address_get_all (NM_PLATFORM_GET, ifindex);
+	priv->routes = nm_platform_ip6_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
 
 	/* Extract gateway from default route */
 	old_gateway = priv->gateway;
@@ -375,7 +375,7 @@ nm_ip6_config_commit (const NMIP6Config *config, int ifindex)
 	g_return_val_if_fail (config != NULL, FALSE);
 
 	/* Addresses */
-	nm_platform_ip6_address_sync (ifindex, priv->addresses, TRUE);
+	nm_platform_ip6_address_sync (NM_PLATFORM_GET, ifindex, priv->addresses, TRUE);
 
 	/* Routes */
 	{
@@ -396,7 +396,7 @@ nm_ip6_config_commit (const NMIP6Config *config, int ifindex)
 			g_array_append_vals (routes, route, 1);
 		}
 
-		success = nm_platform_ip6_route_sync (ifindex, routes);
+		success = nm_platform_ip6_route_sync (NM_PLATFORM_GET, ifindex, routes);
 		g_array_unref (routes);
 	}
 
