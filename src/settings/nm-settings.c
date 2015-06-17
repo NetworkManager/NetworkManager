@@ -108,6 +108,8 @@ EXPORT(nm_settings_connection_replace_and_commit)
 #define IFCFG_DIR               SYSCONFDIR "/sysconfig/network"
 #define CONF_DHCP               IFCFG_DIR "/dhcp"
 
+#define PLUGIN_MODULE_PATH      "plugin-module-path"
+
 #if defined(HOSTNAME_PERSIST_SUSE)
 #define HOSTNAME_FILE           HOSTNAME_FILE_SUSE
 #elif defined(HOSTNAME_PERSIST_GENTOO)
@@ -697,6 +699,7 @@ add_plugin (NMSettings *self, NMSystemConfigInterface *plugin)
 	NMSettingsPrivate *priv;
 	char *pname = NULL;
 	char *pinfo = NULL;
+	const char *path;
 
 	g_return_if_fail (NM_IS_SETTINGS (self));
 	g_return_if_fail (NM_IS_SYSTEM_CONFIG_INTERFACE (plugin));
@@ -711,7 +714,10 @@ add_plugin (NMSettings *self, NMSystemConfigInterface *plugin)
 	              NM_SYSTEM_CONFIG_INTERFACE_INFO, &pinfo,
 	              NULL);
 
-	nm_log_info (LOGD_SETTINGS, "Loaded settings plugin %s: %s", pname, pinfo);
+	path = g_object_get_data (G_OBJECT (plugin), PLUGIN_MODULE_PATH);
+
+	nm_log_info (LOGD_SETTINGS, "Loaded settings plugin %s: %s%s%s%s", pname, pinfo,
+	             NM_PRINT_FMT_QUOTED (path, " (", path, ")", ""));
 	g_free (pname);
 	g_free (pinfo);
 }
@@ -822,7 +828,7 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 		plugin = g_module_open (path, G_MODULE_BIND_LOCAL);
 		if (!plugin) {
 			LOG (LOGL_WARN, "Could not load plugin '%s' from file '%s': %s",
-			     pname, full_name, g_module_error ());
+			     pname, path, g_module_error ());
 			continue;
 		}
 
@@ -849,6 +855,8 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 
 		g_module_make_resident (plugin);
 		g_object_weak_ref (obj, (GWeakNotify) g_module_close, plugin);
+		g_object_set_data_full (obj, PLUGIN_MODULE_PATH, path, g_free);
+		path = NULL;
 		add_plugin (self, NM_SYSTEM_CONFIG_INTERFACE (obj));
 		list = g_slist_append (list, obj);
 	}
