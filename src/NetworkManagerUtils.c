@@ -1447,7 +1447,8 @@ nm_utils_get_ip_config_method (NMConnection *connection,
 			return NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
 		else {
 			s_ip4 = nm_connection_get_setting_ip4_config (connection);
-			g_return_val_if_fail (s_ip4 != NULL, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+			if (!s_ip4)
+				return NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
 			method = nm_setting_ip_config_get_method (s_ip4);
 			g_return_val_if_fail (method != NULL, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 
@@ -1461,7 +1462,8 @@ nm_utils_get_ip_config_method (NMConnection *connection,
 			return NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
 		else {
 			s_ip6 = nm_connection_get_setting_ip6_config (connection);
-			g_return_val_if_fail (s_ip6 != NULL, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
+			if (!s_ip6)
+				return NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
 			method = nm_setting_ip_config_get_method (s_ip6);
 			g_return_val_if_fail (method != NULL, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
 
