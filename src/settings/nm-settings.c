@@ -744,6 +744,7 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 			             "Could not find plugin '%s' factory function.",
 			             pname);
 			success = FALSE;
+			g_module_close (plugin);
 			break;
 		}
 
@@ -753,6 +754,7 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 			             "Plugin '%s' returned invalid system config object.",
 			             pname);
 			success = FALSE;
+			g_module_close (plugin);
 			break;
 		}
 
