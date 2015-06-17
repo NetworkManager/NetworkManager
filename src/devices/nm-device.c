@@ -598,7 +598,7 @@ nm_device_set_ip_iface (NMDevice *self, const char *iface)
 				nm_platform_link_set_user_ipv6ll_enabled (NM_PLATFORM_GET, priv->ip_ifindex, TRUE);
 
 			if (!nm_platform_link_is_up (NM_PLATFORM_GET, priv->ip_ifindex))
-				nm_platform_link_set_up (NM_PLATFORM_GET, priv->ip_ifindex);
+				nm_platform_link_set_up (NM_PLATFORM_GET, priv->ip_ifindex, NULL);
 		} else {
 			/* Device IP interface must always be a kernel network interface */
 			_LOGW (LOGD_HW, "failed to look up interface index");
@@ -1341,11 +1341,13 @@ device_link_changed (NMDevice *self, NMPlatformLink *info)
 	NMUtilsIPv6IfaceId token_iid;
 	gboolean ip_ifname_changed = FALSE;
 	gboolean platform_unmanaged = FALSE;
+	const char *udi;
 
-	if (info->udi && g_strcmp0 (info->udi, priv->udi)) {
+	udi = nm_platform_link_get_udi (NM_PLATFORM_GET, info->ifindex);
+	if (udi && g_strcmp0 (udi, priv->udi)) {
 		/* Update UDI to what udev gives us */
 		g_free (priv->udi);
-		priv->udi = g_strdup (info->udi);
+		priv->udi = g_strdup (udi);
 		g_object_notify (G_OBJECT (self), NM_DEVICE_UDI);
 	}
 
@@ -1406,15 +1408,15 @@ device_link_changed (NMDevice *self, NMPlatformLink *info)
 	if (ip_ifname_changed)
 		update_for_ip_ifname_change (self);
 
-	if (priv->up != info->up) {
-		priv->up = info->up;
+	if (priv->up != NM_FLAGS_HAS (info->flags, IFF_UP)) {
+		priv->up = NM_FLAGS_HAS (info->flags, IFF_UP);
 
 		/* Manage externally-created software interfaces only when they are IFF_UP */
 		g_assert (priv->ifindex > 0);
 		if (NM_DEVICE_GET_CLASS (self)->can_unmanaged_external_down (self)) {
 			gboolean external_down = nm_device_get_unmanaged_flag (self, NM_UNMANAGED_EXTERNAL_DOWN);
 
-			if (external_down && info->up) {
+			if (external_down && NM_FLAGS_HAS (info->flags, IFF_UP)) {
 				if (nm_device_get_state (self) < NM_DEVICE_STATE_DISCONNECTED) {
 					/* Ensure the assume check is queued before any queued state changes
 					 * from the transition to UNAVAILABLE.
@@ -1437,7 +1439,7 @@ device_link_changed (NMDevice *self, NMPlatformLink *info)
 					 */
 					priv->unmanaged_flags &= ~NM_UNMANAGED_EXTERNAL_DOWN;
 				}
-			} else if (!external_down && !info->up && nm_device_get_state (self) <= NM_DEVICE_STATE_DISCONNECTED) {
+			} else if (!external_down && !NM_FLAGS_HAS (info->flags, IFF_UP) && nm_device_get_state (self) <= NM_DEVICE_STATE_DISCONNECTED) {
 				/* If the device is already disconnected and is set !IFF_UP,
 				 * unmanage it.
 				 */
@@ -4721,8 +4723,7 @@ set_nm_ipv6ll (NMDevice *self, gboolean enable)
 		const char *detail = enable ? "enable" : "disable";
 
 		_LOGD (LOGD_IP6, "will %s userland IPv6LL", detail);
-		if (  !nm_platform_link_set_user_ipv6ll_enabled (NM_PLATFORM_GET, ifindex, enable)
-		   && nm_platform_get_error (NM_PLATFORM_GET) != NM_PLATFORM_ERROR_NOT_FOUND)
+		if (!nm_platform_link_set_user_ipv6ll_enabled (NM_PLATFORM_GET, ifindex, enable))
 			_LOGW (LOGD_IP6, "failed to %s userspace IPv6LL address handling", detail);
 
 		if (enable) {
@@ -5526,7 +5527,7 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 	/* Interface must be IFF_UP before IP config can be applied */
 	ip_ifindex = nm_device_get_ip_ifindex (self);
 	if (!nm_platform_link_is_up (NM_PLATFORM_GET, ip_ifindex) && !nm_device_uses_assumed_connection (self)) {
-		nm_platform_link_set_up (NM_PLATFORM_GET, ip_ifindex);
+		nm_platform_link_set_up (NM_PLATFORM_GET, ip_ifindex, NULL);
 		if (!nm_platform_link_is_up (NM_PLATFORM_GET, ip_ifindex))
 			_LOGW (LOGD_DEVICE, "interface %s not up for IP configuration", nm_device_get_ip_iface (self));
 	}
@@ -5647,7 +5648,7 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 	/* Interface must be IFF_UP before IP config can be applied */
 	ip_ifindex = nm_device_get_ip_ifindex (self);
 	if (!nm_platform_link_is_up (NM_PLATFORM_GET, ip_ifindex) && !nm_device_uses_assumed_connection (self)) {
-		nm_platform_link_set_up (NM_PLATFORM_GET, ip_ifindex);
+		nm_platform_link_set_up (NM_PLATFORM_GET, ip_ifindex, NULL);
 		if (!nm_platform_link_is_up (NM_PLATFORM_GET, ip_ifindex))
 			_LOGW (LOGD_DEVICE, "interface %s not up for IP configuration", nm_device_get_ip_iface (self));
 	}
@@ -6791,9 +6792,7 @@ bring_up (NMDevice *self, gboolean *no_firmware)
 		return TRUE;
 	}
 
-	result = nm_platform_link_set_up (NM_PLATFORM_GET, ifindex);
-	if (no_firmware)
-		*no_firmware = nm_platform_get_error (NM_PLATFORM_GET) == NM_PLATFORM_ERROR_NO_FIRMWARE;
+	result = nm_platform_link_set_up (NM_PLATFORM_GET, ifindex, no_firmware);
 
 	/* Store carrier immediately. */
 	if (result && nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT))
@@ -8772,8 +8771,7 @@ constructed (GObject *object)
 				       priv->perm_hw_addr);
 			} else {
 				/* Fall back to current address */
-				_LOGD (LOGD_HW | LOGD_ETHER, "unable to read permanent MAC address (error %d)",
-					   nm_platform_get_error (NM_PLATFORM_GET));
+				_LOGD (LOGD_HW | LOGD_ETHER, "unable to read permanent MAC address");
 				priv->perm_hw_addr = g_strdup (priv->hw_addr);
 			}
 		}
@@ -8938,11 +8936,11 @@ set_property (GObject *object, guint prop_id,
 		platform_device = g_value_get_pointer (value);
 		if (platform_device) {
 			g_free (priv->udi);
-			priv->udi = g_strdup (platform_device->udi);
+			priv->udi = g_strdup (nm_platform_link_get_udi (NM_PLATFORM_GET, platform_device->ifindex));
 			g_free (priv->iface);
 			priv->iface = g_strdup (platform_device->name);
 			priv->ifindex = platform_device->ifindex;
-			priv->up = platform_device->up;
+			priv->up = NM_FLAGS_HAS (platform_device->flags, IFF_UP);
 			g_free (priv->driver);
 			priv->driver = g_strdup (platform_device->driver);
 			priv->platform_link_initialized = platform_device->initialized;

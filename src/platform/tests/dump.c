@@ -7,6 +7,7 @@
 #include "nm-platform.h"
 #include "nm-linux-platform.h"
 #include "nm-fake-platform.h"
+#include "nm-macros-internal.h"
 
 static void
 dump_interface (NMPlatformLink *link)
@@ -26,14 +27,14 @@ dump_interface (NMPlatformLink *link)
 	size_t addrlen;
 	int i;
 
-	g_assert (link->up || !link->connected);
+	g_assert (NM_FLAGS_HAS (link->flags, IFF_UP) || !link->connected);
 
 	printf ("%d: %s: %s", link->ifindex, link->name, nm_link_type_to_string (link->type));
-	if (link->up)
+	if (NM_FLAGS_HAS (link->flags, IFF_UP))
 		printf (" %s", link->connected ? "CONNECTED" : "DISCONNECTED");
 	else
 		printf (" DOWN");
-	if (!link->arp)
+	if (NM_FLAGS_HAS (link->flags, IFF_NOARP))
 		printf (" noarp");
 	if (link->master)
 		printf (" master %d", link->master);
@@ -43,7 +44,7 @@ dump_interface (NMPlatformLink *link)
 	printf ("\n");
 	if (link->driver)
 		printf ("    driver: %s\n", link->driver);
-	printf ("    UDI: %s\n", link->udi);
+	printf ("    UDI: %s\n", nm_platform_link_get_udi (NM_PLATFORM_GET, link->ifindex));
 	if (!nm_platform_vlan_get_info (NM_PLATFORM_GET, link->ifindex, &vlan_parent, &vlan_id))
 		g_assert_not_reached ();
 	if (vlan_parent)

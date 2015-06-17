@@ -27,6 +27,7 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <netlink/route/addr.h>
+#include <netlink/route/rtnl.h>
 
 #include "gsystem-local-alloc.h"
 #include "NetworkManagerUtils.h"
@@ -36,6 +37,8 @@
 #include "nm-logging.h"
 #include "nm-enum-types.h"
 #include "nm-core-internal.h"
+
+G_STATIC_ASSERT (sizeof ( ((NMPlatformLink *) NULL)->addr.data ) == NM_UTILS_HWADDR_LEN_MAX);
 
 #define debug(...) nm_log_dbg (LOGD_PLATFORM, __VA_ARGS__)
 
@@ -54,6 +57,16 @@ enum {
 };
 
 static guint signals[LAST_SIGNAL] = { 0 };
+
+enum {
+	PROP_0,
+	PROP_REGISTER_SINGLETON,
+	LAST_PROP,
+};
+
+typedef struct {
+	gboolean register_singleton;
+} NMPlatformPrivate;
 
 /******************************************************************/
 
@@ -133,73 +146,41 @@ nm_platform_try_get (void)
 /******************************************************************/
 
 /**
- * nm_platform_set_error:
- * @self: platform instance
- * @error: The error code
+ * nm_platform_error_to_string:
+ * @error_code: the error code to stringify.
  *
- * Convenience function to falsify self->error. It can be used for example
- * by functions that want to save the error, execute some operations and
- * restore it.
- */
-void nm_platform_set_error (NMPlatform *self, NMPlatformError error)
-{
-	_CHECK_SELF_VOID (self, klass);
-
-	self->error = error;
-}
-
-/**
- * nm_platform_get_error:
- * @self: platform instance
- *
- * Convenience function to quickly retrieve the error code of the last
- * operation.
- *
- * Returns: Integer error code.
- */
-NMPlatformError
-nm_platform_get_error (NMPlatform *self)
-{
-	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_NONE);
-
-	return self->error;
-}
-
-/**
- * nm_platform_get_error_message:
- * @self: platform instance
- *
- * Returns: Static human-readable string for the error. Don't free.
+ * Returns: A string representation of the error.
+ * For negative numbers, this function interprets
+ * the code as -errno.
  */
 const char *
-nm_platform_get_error_msg (NMPlatform *self)
+nm_platform_error_to_string (NMPlatformError error)
 {
-	_CHECK_SELF (self, klass, NULL);
-
-	switch (self->error) {
-	case NM_PLATFORM_ERROR_NONE:
-		return "unknown error";
+	switch (error) {
+	case NM_PLATFORM_ERROR_SUCCESS:
+		return "success";
+	case NM_PLATFORM_ERROR_BUG:
+		return "bug";
+	case NM_PLATFORM_ERROR_UNSPECIFIED:
+		return "unspecified";
 	case NM_PLATFORM_ERROR_NOT_FOUND:
-		return "object not found";
+		return "not-found";
 	case NM_PLATFORM_ERROR_EXISTS:
-		return "object already exists";
+		return "exists";
 	case NM_PLATFORM_ERROR_WRONG_TYPE:
-		return "object is wrong type";
+		return "wrong-type";
 	case NM_PLATFORM_ERROR_NOT_SLAVE:
-		return "link not a slave";
+		return "not-slave";
 	case NM_PLATFORM_ERROR_NO_FIRMWARE:
-		return "firmware not found";
+		return "no-firmware";
 	default:
-		return "invalid error number";
+		if (error < 0)
+			return g_strerror (- ((int) error));
+		return "unknown";
 	}
 }
 
-static void
-reset_error (NMPlatform *self)
-{
-	g_assert (self);
-	self->error = NM_PLATFORM_ERROR_NONE;
-}
+/******************************************************************/
 
 #define IFA_F_MANAGETEMPADDR_STR "mngtmpaddr"
 #define IFA_F_NOPREFIXROUTE_STR "noprefixroute"
@@ -266,8 +247,6 @@ nm_platform_sysctl_set (NMPlatform *self, const char *path, const char *value)
 	g_return_val_if_fail (value, FALSE);
 	g_return_val_if_fail (klass->sysctl_set, FALSE);
 
-	reset_error (self);
-
 	return klass->sysctl_set (self, path, value);
 }
 
@@ -317,8 +296,6 @@ nm_platform_sysctl_get (NMPlatform *self, const char *path)
 
 	g_return_val_if_fail (path, NULL);
 	g_return_val_if_fail (klass->sysctl_get, NULL);
-
-	reset_error (self);
 
 	return klass->sysctl_get (self, path);
 }
@@ -397,7 +374,6 @@ nm_platform_link_get_all (NMPlatform *self)
 	NMPlatformLink *item;
 
 	_CHECK_SELF (self, klass, NULL);
-	reset_error (self);
 
 	g_return_val_if_fail (klass->link_get_all, NULL);
 
@@ -540,6 +516,35 @@ nm_platform_link_get_by_address (NMPlatform *self,
 	return !!klass->link_get_by_address (self, address, length, link);
 }
 
+static NMPlatformError
+_link_add_check_existing (NMPlatform *self, const char *name, NMLinkType type, NMPlatformLink *out_link)
+{
+	int ifindex;
+	NMPlatformLink pllink;
+
+	ifindex = nm_platform_link_get_ifindex (self, name);
+	if (ifindex > 0) {
+		if (nm_platform_link_get (self, ifindex, &pllink)) {
+			gboolean wrong_type;
+
+			wrong_type = type != NM_LINK_TYPE_NONE && pllink.type != type;
+			debug ("link: skip adding link due to existing interface '%s' of type %s%s%s",
+			       name,
+			       nm_link_type_to_string (pllink.type),
+			       wrong_type ? ", expected " : "",
+			       wrong_type ? nm_link_type_to_string (type) : "");
+			if (out_link)
+				*out_link = pllink;
+			if (wrong_type)
+				return NM_PLATFORM_ERROR_WRONG_TYPE;
+			return NM_PLATFORM_ERROR_EXISTS;
+		}
+		/* strange, nm_platform_link_get_ifindex() returned a valid ifindex, but nm_platform_link_get() failed.
+		 * This is unexpected... proceed with "SUCCESS". */
+	}
+	return NM_PLATFORM_ERROR_SUCCESS;
+}
+
 /**
  * nm_platform_link_add:
  * @self: platform instance
@@ -550,12 +555,16 @@ nm_platform_link_get_by_address (NMPlatform *self,
  * @out_link: on success, the link object
  *
  * Add a software interface.  If the interface already exists and is of type
- * @type, sets platform->error to NM_PLATFORM_ERROR_EXISTS and returns the link
+ * @type, return NM_PLATFORM_ERROR_EXISTS and returns the link
  * in @out_link.  If the interface already exists and is not of type @type,
- * sets platform->error to NM_PLATFORM_ERROR_WRONG_TYPE.  Any link-changed ADDED
- * signal will be emitted directly, before this function finishes.
+ * return NM_PLATFORM_ERROR_WRONG_TYPE.
+ *
+ * Any link-changed ADDED signal will be emitted directly, before this
+ * function finishes.
+ *
+ * Returns: the error reason or NM_PLATFORM_ERROR_SUCCESS.
  */
-static gboolean
+static NMPlatformError
 nm_platform_link_add (NMPlatform *self,
                       const char *name,
                       NMLinkType type,
@@ -563,29 +572,22 @@ nm_platform_link_add (NMPlatform *self,
                       size_t address_len,
                       NMPlatformLink *out_link)
 {
-	int ifindex;
+	NMPlatformError plerr;
 
-	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
+	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
 
-	g_return_val_if_fail (name, FALSE);
-	g_return_val_if_fail (klass->link_add, FALSE);
-	g_return_val_if_fail ( (address != NULL) ^ (address_len == 0) , FALSE);
+	g_return_val_if_fail (name, NM_PLATFORM_ERROR_BUG);
+	g_return_val_if_fail (klass->link_add, NM_PLATFORM_ERROR_BUG);
+	g_return_val_if_fail ( (address != NULL) ^ (address_len == 0) , NM_PLATFORM_ERROR_BUG);
 
-	ifindex = nm_platform_link_get_ifindex (self, name);
-	if (ifindex > 0) {
-		debug ("link: already exists");
-		if (nm_platform_link_get_type (self, ifindex) != type)
-			self->error = NM_PLATFORM_ERROR_WRONG_TYPE;
-		else {
-			self->error = NM_PLATFORM_ERROR_EXISTS;
-			(void) nm_platform_link_get (self, ifindex, out_link);
-		}
-		return FALSE;
-	}
+	plerr = _link_add_check_existing (self, name, type, out_link);
+	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
+		return plerr;
 
-	reset_error(self);
-	return klass->link_add (self, name, type, address, address_len, out_link);
+	debug ("link: adding %s '%s'", nm_link_type_to_string (type), name);
+	if (!klass->link_add (self, name, type, address, address_len, out_link))
+		return NM_PLATFORM_ERROR_UNSPECIFIED;
+	return NM_PLATFORM_ERROR_SUCCESS;
 }
 
 /**
@@ -596,12 +598,9 @@ nm_platform_link_add (NMPlatform *self,
  *
  * Create a software ethernet-like interface
  */
-gboolean
+NMPlatformError
 nm_platform_dummy_add (NMPlatform *self, const char *name, NMPlatformLink *out_link)
 {
-	g_return_val_if_fail (name, FALSE);
-
-	debug ("link: adding dummy '%s'", name);
 	return nm_platform_link_add (self, name, NM_LINK_TYPE_DUMMY, NULL, 0, out_link);
 }
 
@@ -621,7 +620,6 @@ nm_platform_link_exists (NMPlatform *self, const char *name)
 
 	ifindex = nm_platform_link_get_ifindex (self, name);
 
-	reset_error (self);
 	return ifindex > 0;
 }
 
@@ -629,9 +627,6 @@ nm_platform_link_exists (NMPlatform *self, const char *name)
  * nm_platform_link_delete:
  * @self: platform instance
  * @ifindex: Interface index
- *
- * Delete a software interface. Sets self->error to
- * NM_PLATFORM_ERROR_NOT_FOUND if ifindex not available.
  */
 gboolean
 nm_platform_link_delete (NMPlatform *self, int ifindex)
@@ -639,7 +634,6 @@ nm_platform_link_delete (NMPlatform *self, int ifindex)
 	const char *name;
 
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (klass->link_delete, FALSE);
 
@@ -666,17 +660,14 @@ nm_platform_link_get_ifindex (NMPlatform *self, const char *name)
 	int ifindex;
 
 	_CHECK_SELF (self, klass, 0);
-	reset_error (self);
 
 	g_return_val_if_fail (name, 0);
 	g_return_val_if_fail (klass->link_get_ifindex, 0);
 
 	ifindex = klass->link_get_ifindex (self, name);
 
-	if (!ifindex) {
+	if (!ifindex)
 		debug ("link not found: %s", name);
-		self->error = NM_PLATFORM_ERROR_NOT_FOUND;
-	}
 
 	return ifindex;
 }
@@ -695,7 +686,6 @@ nm_platform_link_get_name (NMPlatform *self, int ifindex)
 	const char *name;
 
 	_CHECK_SELF (self, klass, NULL);
-	reset_error (self);
 
 	g_return_val_if_fail (klass->link_get_name, NULL);
 
@@ -703,7 +693,6 @@ nm_platform_link_get_name (NMPlatform *self, int ifindex)
 
 	if (!name) {
 		debug ("link not found: %d", ifindex);
-		self->error = NM_PLATFORM_ERROR_NOT_FOUND;
 		return FALSE;
 	}
 
@@ -722,7 +711,6 @@ NMLinkType
 nm_platform_link_get_type (NMPlatform *self, int ifindex)
 {
 	_CHECK_SELF (self, klass, NM_LINK_TYPE_NONE);
-	reset_error (self);
 
 	g_return_val_if_fail (klass->link_get_type, NM_LINK_TYPE_NONE);
 
@@ -742,7 +730,6 @@ const char *
 nm_platform_link_get_type_name (NMPlatform *self, int ifindex)
 {
 	_CHECK_SELF (self, klass, NULL);
-	reset_error (self);
 
 	g_return_val_if_fail (klass->link_get_type_name, NULL);
 
@@ -763,7 +750,6 @@ gboolean
 nm_platform_link_get_unmanaged (NMPlatform *self, int ifindex, gboolean *managed)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (klass->link_get_unmanaged, FALSE);
 
@@ -809,7 +795,6 @@ gboolean
 nm_platform_link_refresh (NMPlatform *self, int ifindex)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 
@@ -830,7 +815,6 @@ gboolean
 nm_platform_link_is_up (NMPlatform *self, int ifindex)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex >= 0, FALSE);
 	g_return_val_if_fail (klass->link_is_up, FALSE);
@@ -849,7 +833,6 @@ gboolean
 nm_platform_link_is_connected (NMPlatform *self, int ifindex)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex >= 0, FALSE);
 	g_return_val_if_fail (klass->link_is_connected, FALSE);
@@ -868,7 +851,6 @@ gboolean
 nm_platform_link_uses_arp (NMPlatform *self, int ifindex)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex >= 0, FALSE);
 	g_return_val_if_fail (klass->link_uses_arp, FALSE);
@@ -892,7 +874,6 @@ gboolean
 nm_platform_link_get_ipv6_token (NMPlatform *self, int ifindex, NMUtilsIPv6IfaceId *iid)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex >= 0, FALSE);
 	g_return_val_if_fail (iid, FALSE);
@@ -902,6 +883,29 @@ nm_platform_link_get_ipv6_token (NMPlatform *self, int ifindex, NMUtilsIPv6Iface
 	return FALSE;
 }
 
+const char *
+nm_platform_link_get_udi (NMPlatform *self, int ifindex)
+{
+	_CHECK_SELF (self, klass, FALSE);
+
+	g_return_val_if_fail (ifindex >= 0, NULL);
+
+	if (klass->link_get_udi)
+		return klass->link_get_udi (self, ifindex);
+	return NULL;
+}
+
+GObject *
+nm_platform_link_get_udev_device (NMPlatform *self, int ifindex)
+{
+	_CHECK_SELF (self, klass, FALSE);
+
+	g_return_val_if_fail (ifindex >= 0, NULL);
+
+	if (klass->link_get_udev_device)
+		return klass->link_get_udev_device (self, ifindex);
+	return NULL;
+}
 
 /**
  * nm_platform_link_get_user_ip6vll_enabled:
@@ -918,7 +922,6 @@ gboolean
 nm_platform_link_get_user_ipv6ll_enabled (NMPlatform *self, int ifindex)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex >= 0, FALSE);
 	g_return_val_if_fail (klass->check_support_user_ipv6ll, FALSE);
@@ -943,7 +946,6 @@ gboolean
 nm_platform_link_set_user_ipv6ll_enabled (NMPlatform *self, int ifindex, gboolean enabled)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex >= 0, FALSE);
 	g_return_val_if_fail (klass->check_support_user_ipv6ll, FALSE);
@@ -965,7 +967,6 @@ gboolean
 nm_platform_link_set_address (NMPlatform *self, int ifindex, gconstpointer address, size_t length)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (address, FALSE);
@@ -989,7 +990,6 @@ gconstpointer
 nm_platform_link_get_address (NMPlatform *self, int ifindex, size_t *length)
 {
 	_CHECK_SELF (self, klass, NULL);
-	reset_error (self);
 
 	if (length)
 		*length = 0;
@@ -1015,7 +1015,6 @@ gboolean
 nm_platform_link_get_permanent_address (NMPlatform *self, int ifindex, guint8 *buf, size_t *length)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	if (length)
 		*length = 0;
@@ -1054,20 +1053,20 @@ nm_platform_link_supports_vlans (NMPlatform *self, int ifindex)
  * nm_platform_link_set_up:
  * @self: platform instance
  * @ifindex: Interface index
+ * @out_no_firmware: (allow-none): if the failure reason is due to missing firmware.
  *
  * Bring the interface up.
  */
 gboolean
-nm_platform_link_set_up (NMPlatform *self, int ifindex)
+nm_platform_link_set_up (NMPlatform *self, int ifindex, gboolean *out_no_firmware)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (klass->link_set_up, FALSE);
 
 	debug ("link: setting up '%s' (%d)", nm_platform_link_get_name (self, ifindex), ifindex);
-	return klass->link_set_up (self, ifindex);
+	return klass->link_set_up (self, ifindex, out_no_firmware);
 }
 
 /**
@@ -1081,7 +1080,6 @@ gboolean
 nm_platform_link_set_down (NMPlatform *self, int ifindex)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (klass->link_set_down, FALSE);
@@ -1101,7 +1099,6 @@ gboolean
 nm_platform_link_set_arp (NMPlatform *self, int ifindex)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex >= 0, FALSE);
 	g_return_val_if_fail (klass->link_set_arp, FALSE);
@@ -1121,7 +1118,6 @@ gboolean
 nm_platform_link_set_noarp (NMPlatform *self, int ifindex)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex >= 0, FALSE);
 	g_return_val_if_fail (klass->link_set_noarp, FALSE);
@@ -1142,7 +1138,6 @@ gboolean
 nm_platform_link_set_mtu (NMPlatform *self, int ifindex, guint32 mtu)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex >= 0, FALSE);
 	g_return_val_if_fail (mtu > 0, FALSE);
@@ -1163,7 +1158,6 @@ guint32
 nm_platform_link_get_mtu (NMPlatform *self, int ifindex)
 {
 	_CHECK_SELF (self, klass, 0);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex >= 0, 0);
 	g_return_val_if_fail (klass->link_get_mtu, 0);
@@ -1189,7 +1183,6 @@ char *
 nm_platform_link_get_physical_port_id (NMPlatform *self, int ifindex)
 {
 	_CHECK_SELF (self, klass, NULL);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex >= 0, NULL);
 	g_return_val_if_fail (klass->link_get_physical_port_id, NULL);
@@ -1213,7 +1206,6 @@ guint
 nm_platform_link_get_dev_id (NMPlatform *self, int ifindex)
 {
 	_CHECK_SELF (self, klass, 0);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex >= 0, 0);
 	g_return_val_if_fail (klass->link_get_dev_id, 0);
@@ -1232,7 +1224,6 @@ gboolean
 nm_platform_link_get_wake_on_lan (NMPlatform *self, int ifindex)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex >= 0, FALSE);
 	g_return_val_if_fail (klass->link_get_wake_on_lan, FALSE);
@@ -1260,7 +1251,6 @@ nm_platform_link_get_driver_info (NMPlatform *self,
                                   char **out_fw_version)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex >= 0, FALSE);
 	g_return_val_if_fail (klass->link_get_driver_info, FALSE);
@@ -1284,7 +1274,6 @@ gboolean
 nm_platform_link_enslave (NMPlatform *self, int master, int slave)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (master > 0, FALSE);
 	g_return_val_if_fail (slave> 0, FALSE);
@@ -1308,16 +1297,13 @@ gboolean
 nm_platform_link_release (NMPlatform *self, int master, int slave)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (master > 0, FALSE);
 	g_return_val_if_fail (slave > 0, FALSE);
 	g_return_val_if_fail (klass->link_release, FALSE);
 
-	if (nm_platform_link_get_master (self, slave) != master) {
-		self->error = NM_PLATFORM_ERROR_NOT_SLAVE;
+	if (nm_platform_link_get_master (self, slave) != master)
 		return FALSE;
-	}
 
 	debug ("link: releasing '%s' (%d) from master '%s' (%d)",
 	       nm_platform_link_get_name (self, slave), slave,
@@ -1336,15 +1322,12 @@ int
 nm_platform_link_get_master (NMPlatform *self, int slave)
 {
 	_CHECK_SELF (self, klass, 0);
-	reset_error (self);
 
 	g_return_val_if_fail (slave >= 0, FALSE);
 	g_return_val_if_fail (klass->link_get_master, FALSE);
 
-	if (!nm_platform_link_get_name (self, slave)) {
-		self->error = NM_PLATFORM_ERROR_NOT_FOUND;
+	if (!nm_platform_link_get_name (self, slave))
 		return 0;
-	}
 	return klass->link_get_master (self, slave);
 }
 
@@ -1358,14 +1341,13 @@ nm_platform_link_get_master (NMPlatform *self, int slave)
  *
  * Create a software bridge.
  */
-gboolean
+NMPlatformError
 nm_platform_bridge_add (NMPlatform *self,
                         const char *name,
                         const void *address,
                         size_t address_len,
                         NMPlatformLink *out_link)
 {
-	debug ("link: adding bridge '%s'", name);
 	return nm_platform_link_add (self, name, NM_LINK_TYPE_BRIDGE, address, address_len, out_link);
 }
 
@@ -1377,10 +1359,9 @@ nm_platform_bridge_add (NMPlatform *self,
  *
  * Create a software bonding device.
  */
-gboolean
+NMPlatformError
 nm_platform_bond_add (NMPlatform *self, const char *name, NMPlatformLink *out_link)
 {
-	debug ("link: adding bond '%s'", name);
 	return nm_platform_link_add (self, name, NM_LINK_TYPE_BOND, NULL, 0, out_link);
 }
 
@@ -1392,10 +1373,9 @@ nm_platform_bond_add (NMPlatform *self, const char *name, NMPlatformLink *out_li
  *
  * Create a software teaming device.
  */
-gboolean
+NMPlatformError
 nm_platform_team_add (NMPlatform *self, const char *name, NMPlatformLink *out_link)
 {
-	debug ("link: adding team '%s'", name);
 	return nm_platform_link_add (self, name, NM_LINK_TYPE_TEAM, NULL, 0, out_link);
 }
 
@@ -1409,7 +1389,7 @@ nm_platform_team_add (NMPlatform *self, const char *name, NMPlatformLink *out_li
  *
  * Create a software VLAN device.
  */
-gboolean
+NMPlatformError
 nm_platform_vlan_add (NMPlatform *self,
                       const char *name,
                       int parent,
@@ -1417,30 +1397,30 @@ nm_platform_vlan_add (NMPlatform *self,
                       guint32 vlanflags,
                       NMPlatformLink *out_link)
 {
-	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
+	NMPlatformError plerr;
 
-	g_return_val_if_fail (parent >= 0, FALSE);
-	g_return_val_if_fail (vlanid >= 0, FALSE);
-	g_return_val_if_fail (name, FALSE);
-	g_return_val_if_fail (klass->vlan_add, FALSE);
+	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
 
-	if (nm_platform_link_exists (self, name)) {
-		debug ("link already exists: %s", name);
-		self->error = NM_PLATFORM_ERROR_EXISTS;
-		return FALSE;
-	}
+	g_return_val_if_fail (parent >= 0, NM_PLATFORM_ERROR_BUG);
+	g_return_val_if_fail (vlanid >= 0, NM_PLATFORM_ERROR_BUG);
+	g_return_val_if_fail (name, NM_PLATFORM_ERROR_BUG);
+	g_return_val_if_fail (klass->vlan_add, NM_PLATFORM_ERROR_BUG);
+
+	plerr = _link_add_check_existing (self, name, NM_LINK_TYPE_VLAN, out_link);
+	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
+		return plerr;
 
 	debug ("link: adding vlan '%s' parent %d vlanid %d vlanflags %x",
-		name, parent, vlanid, vlanflags);
-	return klass->vlan_add (self, name, parent, vlanid, vlanflags, out_link);
+	       name, parent, vlanid, vlanflags);
+	if (!klass->vlan_add (self, name, parent, vlanid, vlanflags, out_link))
+		return NM_PLATFORM_ERROR_UNSPECIFIED;
+	return NM_PLATFORM_ERROR_SUCCESS;
 }
 
 gboolean
 nm_platform_master_set_option (NMPlatform *self, int ifindex, const char *option, const char *value)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (option, FALSE);
@@ -1454,7 +1434,6 @@ char *
 nm_platform_master_get_option (NMPlatform *self, int ifindex, const char *option)
 {
 	_CHECK_SELF (self, klass, NULL);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (option, FALSE);
@@ -1467,7 +1446,6 @@ gboolean
 nm_platform_slave_set_option (NMPlatform *self, int ifindex, const char *option, const char *value)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (option, FALSE);
@@ -1481,7 +1459,6 @@ char *
 nm_platform_slave_get_option (NMPlatform *self, int ifindex, const char *option)
 {
 	_CHECK_SELF (self, klass, NULL);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (option, FALSE);
@@ -1494,7 +1471,6 @@ gboolean
 nm_platform_vlan_get_info (NMPlatform *self, int ifindex, int *parent, int *vlanid)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (klass->vlan_get_info, FALSE);
 
@@ -1513,7 +1489,6 @@ gboolean
 nm_platform_vlan_set_ingress_map (NMPlatform *self, int ifindex, int from, int to)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (klass->vlan_set_ingress_map, FALSE);
 
@@ -1525,7 +1500,6 @@ gboolean
 nm_platform_vlan_set_egress_map (NMPlatform *self, int ifindex, int from, int to)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (klass->vlan_set_egress_map, FALSE);
 
@@ -1533,35 +1507,34 @@ nm_platform_vlan_set_egress_map (NMPlatform *self, int ifindex, int from, int to
 	return klass->vlan_set_egress_map (self, ifindex, from, to);
 }
 
-gboolean
+NMPlatformError
 nm_platform_infiniband_partition_add (NMPlatform *self, int parent, int p_key, NMPlatformLink *out_link)
 {
-	const char *parent_name;
-	char *name;
+	gs_free char *parent_name = NULL;
+	gs_free char *name = NULL;
+	NMPlatformError plerr;
 
-	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
+	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
 
-	g_return_val_if_fail (parent >= 0, FALSE);
-	g_return_val_if_fail (p_key >= 0, FALSE);
-	g_return_val_if_fail (klass->infiniband_partition_add, FALSE);
+	g_return_val_if_fail (parent >= 0, NM_PLATFORM_ERROR_BUG);
+	g_return_val_if_fail (p_key >= 0, NM_PLATFORM_ERROR_BUG);
+	g_return_val_if_fail (klass->infiniband_partition_add, NM_PLATFORM_ERROR_BUG);
 
-	if (nm_platform_link_get_type (self, parent) != NM_LINK_TYPE_INFINIBAND) {
-		self->error = NM_PLATFORM_ERROR_WRONG_TYPE;
-		return FALSE;
-	}
+	parent_name = g_strdup (nm_platform_link_get_name (self, parent));
+	if (   !parent_name
+	    || nm_platform_link_get_type (self, parent) != NM_LINK_TYPE_INFINIBAND)
+		return NM_PLATFORM_ERROR_WRONG_TYPE;
 
-	parent_name = nm_platform_link_get_name (self, parent);
 	name = g_strdup_printf ("%s.%04x", parent_name, p_key);
-	if (nm_platform_link_exists (self, name)) {
-		debug ("infiniband: already exists");
-		self->error = NM_PLATFORM_ERROR_EXISTS;
-		g_free (name);
-		return FALSE;
-	}
-	g_free (name);
+	plerr = _link_add_check_existing (self, name, NM_LINK_TYPE_INFINIBAND, out_link);
+	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
+		return plerr;
 
-	return klass->infiniband_partition_add (self, parent, p_key, out_link);
+	debug ("link: adding infiniband partition %s for parent '%s' (%d), key %d",
+	       name, parent_name, parent, p_key);
+	if (!klass->infiniband_partition_add (self, parent, p_key, out_link))
+		return NM_PLATFORM_ERROR_UNSPECIFIED;
+	return NM_PLATFORM_ERROR_SUCCESS;
 }
 
 gboolean
@@ -1572,7 +1545,6 @@ nm_platform_infiniband_get_info (NMPlatform *self,
                                  const char **mode)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (klass->infiniband_get_info, FALSE);
@@ -1584,7 +1556,6 @@ gboolean
 nm_platform_veth_get_properties (NMPlatform *self, int ifindex, NMPlatformVethProperties *props)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (props != NULL, FALSE);
@@ -1596,7 +1567,6 @@ gboolean
 nm_platform_tun_get_properties (NMPlatform *self, int ifindex, NMPlatformTunProperties *props)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (props != NULL, FALSE);
@@ -1608,7 +1578,6 @@ gboolean
 nm_platform_macvlan_get_properties (NMPlatform *self, int ifindex, NMPlatformMacvlanProperties *props)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (props != NULL, FALSE);
@@ -1620,7 +1589,6 @@ gboolean
 nm_platform_vxlan_get_properties (NMPlatform *self, int ifindex, NMPlatformVxlanProperties *props)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (props != NULL, FALSE);
@@ -1632,7 +1600,6 @@ gboolean
 nm_platform_gre_get_properties (NMPlatform *self, int ifindex, NMPlatformGreProperties *props)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (props != NULL, FALSE);
@@ -1644,7 +1611,6 @@ gboolean
 nm_platform_wifi_get_capabilities (NMPlatform *self, int ifindex, NMDeviceWifiCapabilities *caps)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 
@@ -1655,7 +1621,6 @@ gboolean
 nm_platform_wifi_get_bssid (NMPlatform *self, int ifindex, guint8 *bssid)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 
@@ -1666,7 +1631,6 @@ guint32
 nm_platform_wifi_get_frequency (NMPlatform *self, int ifindex)
 {
 	_CHECK_SELF (self, klass, 0);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex > 0, 0);
 
@@ -1677,7 +1641,6 @@ int
 nm_platform_wifi_get_quality (NMPlatform *self, int ifindex)
 {
 	_CHECK_SELF (self, klass, 0);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex > 0, 0);
 
@@ -1688,7 +1651,6 @@ guint32
 nm_platform_wifi_get_rate (NMPlatform *self, int ifindex)
 {
 	_CHECK_SELF (self, klass, 0);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex > 0, 0);
 
@@ -1699,7 +1661,6 @@ NM80211Mode
 nm_platform_wifi_get_mode (NMPlatform *self, int ifindex)
 {
 	_CHECK_SELF (self, klass, NM_802_11_MODE_UNKNOWN);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex > 0, NM_802_11_MODE_UNKNOWN);
 
@@ -1710,7 +1671,6 @@ void
 nm_platform_wifi_set_mode (NMPlatform *self, int ifindex, NM80211Mode mode)
 {
 	_CHECK_SELF_VOID (self, klass);
-	reset_error (self);
 
 	g_return_if_fail (ifindex > 0);
 
@@ -1727,7 +1687,6 @@ void
 nm_platform_wifi_set_powersave (NMPlatform *self, int ifindex, guint32 powersave)
 {
 	_CHECK_SELF_VOID (self, klass);
-	reset_error (self);
 
 	g_return_if_fail (ifindex > 0);
 
@@ -1738,7 +1697,6 @@ guint32
 nm_platform_wifi_find_frequency (NMPlatform *self, int ifindex, const guint32 *freqs)
 {
 	_CHECK_SELF (self, klass, 0);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex > 0, 0);
 	g_return_val_if_fail (freqs != NULL, 0);
@@ -1750,7 +1708,6 @@ void
 nm_platform_wifi_indicate_addressing_running (NMPlatform *self, int ifindex, gboolean running)
 {
 	_CHECK_SELF_VOID (self, klass);
-	reset_error (self);
 
 	g_return_if_fail (ifindex > 0);
 
@@ -1761,7 +1718,6 @@ guint32
 nm_platform_mesh_get_channel (NMPlatform *self, int ifindex)
 {
 	_CHECK_SELF (self, klass, 0);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex > 0, 0);
 
@@ -1772,7 +1728,6 @@ gboolean
 nm_platform_mesh_set_channel (NMPlatform *self, int ifindex, guint32 channel)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 
@@ -1783,7 +1738,6 @@ gboolean
 nm_platform_mesh_set_ssid (NMPlatform *self, int ifindex, const guint8 *ssid, gsize len)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (ssid != NULL, FALSE);
@@ -1821,7 +1775,6 @@ GArray *
 nm_platform_ip4_address_get_all (NMPlatform *self, int ifindex)
 {
 	_CHECK_SELF (self, klass, NULL);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex > 0, NULL);
 	g_return_val_if_fail (klass->ip4_address_get_all, NULL);
@@ -1833,7 +1786,6 @@ GArray *
 nm_platform_ip6_address_get_all (NMPlatform *self, int ifindex)
 {
 	_CHECK_SELF (self, klass, NULL);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex > 0, NULL);
 	g_return_val_if_fail (klass->ip6_address_get_all, NULL);
@@ -1852,7 +1804,6 @@ nm_platform_ip4_address_add (NMPlatform *self,
                              const char *label)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (plen > 0, FALSE);
@@ -1890,7 +1841,6 @@ nm_platform_ip6_address_add (NMPlatform *self,
                              guint flags)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (plen > 0, FALSE);
@@ -1922,7 +1872,6 @@ nm_platform_ip4_address_delete (NMPlatform *self, int ifindex, in_addr_t address
 	char str_peer[NM_UTILS_INET_ADDRSTRLEN];
 
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (plen > 0, FALSE);
@@ -1944,7 +1893,6 @@ nm_platform_ip6_address_delete (NMPlatform *self, int ifindex, struct in6_addr a
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
 
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (plen > 0, FALSE);
@@ -1960,7 +1908,6 @@ gboolean
 nm_platform_ip4_address_exists (NMPlatform *self, int ifindex, in_addr_t address, int plen)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (plen > 0, FALSE);
 	g_return_val_if_fail (klass->ip4_address_exists, FALSE);
@@ -1972,7 +1919,6 @@ gboolean
 nm_platform_ip6_address_exists (NMPlatform *self, int ifindex, struct in6_addr address, int plen)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (plen > 0, FALSE);
 	g_return_val_if_fail (klass->ip6_address_exists, FALSE);
@@ -2086,7 +2032,6 @@ gboolean
 nm_platform_ip4_check_reinstall_device_route (NMPlatform *self, int ifindex, const NMPlatformIP4Address *address, guint32 device_route_metric)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	if (   ifindex <= 0
 	    || address->plen <= 0
@@ -2247,7 +2192,6 @@ GArray *
 nm_platform_ip4_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRouteMode mode)
 {
 	_CHECK_SELF (self, klass, NULL);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex >= 0, NULL);
 	g_return_val_if_fail (klass->ip4_route_get_all, NULL);
@@ -2259,7 +2203,6 @@ GArray *
 nm_platform_ip6_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRouteMode mode)
 {
 	_CHECK_SELF (self, klass, NULL);
-	reset_error (self);
 
 	g_return_val_if_fail (ifindex >= 0, NULL);
 	g_return_val_if_fail (klass->ip6_route_get_all, NULL);
@@ -2275,7 +2218,6 @@ nm_platform_ip4_route_add (NMPlatform *self,
                            guint32 metric, guint32 mss)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (0 <= plen && plen <= 32, FALSE);
 	g_return_val_if_fail (klass->ip4_route_add, FALSE);
@@ -2307,7 +2249,6 @@ nm_platform_ip6_route_add (NMPlatform *self,
                            guint32 metric, guint32 mss)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (0 <= plen && plen <= 128, FALSE);
 	g_return_val_if_fail (klass->ip6_route_add, FALSE);
@@ -2334,7 +2275,6 @@ nm_platform_ip4_route_delete (NMPlatform *self, int ifindex, in_addr_t network, 
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
 
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (klass->ip4_route_delete, FALSE);
 
@@ -2350,7 +2290,6 @@ nm_platform_ip6_route_delete (NMPlatform *self, int ifindex, struct in6_addr net
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
 
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (klass->ip6_route_delete, FALSE);
 
@@ -2364,7 +2303,6 @@ gboolean
 nm_platform_ip4_route_exists (NMPlatform *self, int ifindex, in_addr_t network, int plen, guint32 metric)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (klass->ip4_route_exists, FALSE);
 
@@ -2375,7 +2313,6 @@ gboolean
 nm_platform_ip6_route_exists (NMPlatform *self, int ifindex, struct in6_addr network, int plen, guint32 metric)
 {
 	_CHECK_SELF (self, klass, FALSE);
-	reset_error (self);
 
 	g_return_val_if_fail (klass->ip6_route_exists, FALSE);
 
@@ -2388,6 +2325,10 @@ static const char *
 source_to_string (NMIPConfigSource source)
 {
 	switch (source) {
+	case _NM_IP_CONFIG_SOURCE_RTPROT_KERNEL:
+		return "rtprot-kernel";
+	case _NM_IP_CONFIG_SOURCE_RTM_F_CLONED:
+		return "rtm-f-cloned";
 	case NM_IP_CONFIG_SOURCE_KERNEL:
 		return "kernel";
 	case NM_IP_CONFIG_SOURCE_SHARED:
@@ -2432,28 +2373,38 @@ _lifetime_summary_to_string (gint32 now, guint32 timestamp, guint32 preferred, g
 	return buf;
 }
 
-static char to_string_buffer[256];
+char _nm_platform_to_string_buffer[256];
 
 const char *
 nm_platform_link_to_string (const NMPlatformLink *link)
 {
 	char master[20];
 	char parent[20];
-	char *driver, *udi;
-	GString *str;
+	char str_vlan[16];
+	GString *str_flags;
+	char str_addrmode[30];
+	gs_free char *str_addr = NULL;
+	gs_free char *str_inet6_token = NULL;
 
 	if (!link)
 		return "(unknown link)";
 
-	str = g_string_new (NULL);
-	if (!link->arp)
-		g_string_append (str, "NOARP,");
-	if (link->up)
-		g_string_append (str, "UP");
+	str_flags = g_string_new (NULL);
+	if (NM_FLAGS_HAS (link->flags, IFF_NOARP))
+		g_string_append (str_flags, "NOARP,");
+	if (NM_FLAGS_HAS (link->flags, IFF_UP))
+		g_string_append (str_flags, "UP");
 	else
-		g_string_append (str, "DOWN");
+		g_string_append (str_flags, "DOWN");
 	if (link->connected)
-		g_string_append (str, ",LOWER_UP");
+		g_string_append (str_flags, ",LOWER_UP");
+
+	if (link->flags) {
+		char str_flags_buf[64];
+
+		rtnl_link_flags2str (link->flags, str_flags_buf, sizeof (str_flags_buf));
+		g_string_append_printf (str_flags, ";%s", str_flags_buf);
+	}
 
 	if (link->master)
 		g_snprintf (master, sizeof (master), " master %d", link->master);
@@ -2465,23 +2416,69 @@ nm_platform_link_to_string (const NMPlatformLink *link)
 	else
 		parent[0] = 0;
 
-	driver = link->driver ? g_strdup_printf (" driver '%s'", link->driver) : NULL;
-	udi = link->udi ? g_strdup_printf (" udi '%s'", link->udi) : NULL;
+	if (link->vlan_id)
+		g_snprintf (str_vlan, sizeof (str_vlan), " vlan %u", (guint) link->vlan_id);
+	else
+		str_vlan[0] = '\0';
 
-	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%d: %s%s <%s> mtu %d%s "
-	            "%s" /* link->type */
+	if (link->inet6_addr_gen_mode_inv) {
+		switch ((guint8) ~link->inet6_addr_gen_mode_inv) {
+			case 0:
+				g_snprintf (str_addrmode, sizeof (str_addrmode), " addrgenmode eui64");
+				break;
+			case 1:
+				g_snprintf (str_addrmode, sizeof (str_addrmode), " addrgenmode none");
+				break;
+			default:
+				g_snprintf (str_addrmode, sizeof (str_addrmode), " addrgenmode %d", (int) (guint8) (~link->inet6_addr_gen_mode_inv));
+				break;
+		}
+	} else
+		str_addrmode[0] = '\0';
+
+	if (link->addr.len)
+		str_addr = nm_utils_hwaddr_ntoa (link->addr.data, MIN (link->addr.len, sizeof (link->addr.data)));
+	if (link->inet6_token.is_valid)
+		str_inet6_token = nm_utils_hwaddr_ntoa (&link->inet6_token.iid, sizeof (link->inet6_token.iid));
+
+	g_snprintf (_nm_platform_to_string_buffer, sizeof (_nm_platform_to_string_buffer),
+	            "%d: " /* ifindex */
+	            "%s" /* name */
+	            "%s" /* parent */
+	            " <%s>" /* flags */
+	            " mtu %d"
+	            "%s" /* master */
+	            "%s" /* vlan */
+	            " arp %u" /* arptype */
+	            "%s%s" /* link->type */
 	            "%s%s" /* kind */
-	            "%s%s",
-	            link->ifindex, link->name, parent, str->str,
+	            "%s" /* is-in-udev */
+	            "%s" /* addr-gen-mode */
+	            "%s%s" /* addr */
+	            "%s%s" /* inet6_token */
+	            "%s%s" /* driver */
+	            ,
+	            link->ifindex,
+	            link->name,
+	            parent,
+	            str_flags->str,
 	            link->mtu, master,
-	            nm_link_type_to_string (link->type),
-	            link->type != NM_LINK_TYPE_UNKNOWN && link->kind ? " kind " : "",
-	            link->type != NM_LINK_TYPE_UNKNOWN && link->kind ? link->kind : "",
-	            driver ? driver : "", udi ? udi : "");
-	g_string_free (str, TRUE);
-	g_free (driver);
-	g_free (udi);
-	return to_string_buffer;
+	            str_vlan,
+	            link->arptype,
+	            nm_link_type_to_string (link->type) ? " " : "",
+	            str_if_set (nm_link_type_to_string (link->type), "???"),
+	            link->kind ? (g_strcmp0 (nm_link_type_to_string (link->type), link->kind) ? "/" : "*") : "",
+	            link->kind && g_strcmp0 (nm_link_type_to_string (link->type), link->kind) ? link->kind : "",
+	            link->initialized ? " init" : " not-init",
+	            str_addrmode,
+	            str_addr ? " addr " : "",
+	            str_addr ? str_addr : "",
+	            str_inet6_token ? " inet6token " : "",
+	            str_inet6_token ? str_inet6_token : "",
+	            link->driver ? " driver " : "",
+	            link->driver ? link->driver : "");
+	g_string_free (str_flags, TRUE);
+	return _nm_platform_to_string_buffer;
 }
 
 /**
@@ -2534,14 +2531,14 @@ nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address)
 	                                      now, str_pref, sizeof (str_pref)) );
 	str_time_p = _lifetime_summary_to_string (now, address->timestamp, address->preferred, address->lifetime, str_time, sizeof (str_time));
 
-	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%s/%d lft %s pref %s%s%s%s%s src %s",
+	g_snprintf (_nm_platform_to_string_buffer, sizeof (_nm_platform_to_string_buffer), "%s/%d lft %s pref %s%s%s%s%s src %s",
 	            s_address, address->plen, str_lft_p, str_pref_p, str_time_p,
 	            str_peer ? str_peer : "",
 	            str_dev,
 	            str_label,
 	            source_to_string (address->source));
 	g_free (str_peer);
-	return to_string_buffer;
+	return _nm_platform_to_string_buffer;
 }
 
 /**
@@ -2618,7 +2615,7 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address)
 	                                      now, str_pref, sizeof (str_pref)) );
 	str_time_p = _lifetime_summary_to_string (now, address->timestamp, address->preferred, address->lifetime, str_time, sizeof (str_time));
 
-	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%s/%d lft %s pref %s%s%s%s%s src %s",
+	g_snprintf (_nm_platform_to_string_buffer, sizeof (_nm_platform_to_string_buffer), "%s/%d lft %s pref %s%s%s%s%s src %s",
 	            s_address, address->plen, str_lft_p, str_pref_p, str_time_p,
 	            str_peer ? str_peer : "",
 	            str_dev,
@@ -2626,7 +2623,7 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address)
 	            source_to_string (address->source));
 	g_free (str_flags);
 	g_free (str_peer);
-	return to_string_buffer;
+	return _nm_platform_to_string_buffer;
 }
 
 /**
@@ -2646,6 +2643,7 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route)
 {
 	char s_network[INET_ADDRSTRLEN], s_gateway[INET_ADDRSTRLEN];
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
+	char str_scope[30];
 
 	g_return_val_if_fail (route, "(unknown)");
 
@@ -2654,12 +2652,14 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route)
 
 	_to_string_dev (NULL, route->ifindex, str_dev, sizeof (str_dev));
 
-	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%s/%d via %s%s metric %"G_GUINT32_FORMAT" mss %"G_GUINT32_FORMAT" src %s",
+	g_snprintf (_nm_platform_to_string_buffer, sizeof (_nm_platform_to_string_buffer), "%s/%d via %s%s metric %"G_GUINT32_FORMAT" mss %"G_GUINT32_FORMAT" src %s%s%s",
 	            s_network, route->plen, s_gateway,
 	            str_dev,
 	            route->metric, route->mss,
-	            source_to_string (route->source));
-	return to_string_buffer;
+	            source_to_string (route->source),
+	            route->scope_inv ? " scope " : "",
+	            route->scope_inv ? (rtnl_scope2str (nm_platform_route_scope_inv (route->scope_inv), str_scope, sizeof (str_scope))) : "");
+	return _nm_platform_to_string_buffer;
 }
 
 /**
@@ -2687,12 +2687,12 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route)
 
 	_to_string_dev (NULL, route->ifindex, str_dev, sizeof (str_dev));
 
-	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%s/%d via %s%s metric %"G_GUINT32_FORMAT" mss %"G_GUINT32_FORMAT" src %s",
+	g_snprintf (_nm_platform_to_string_buffer, sizeof (_nm_platform_to_string_buffer), "%s/%d via %s%s metric %"G_GUINT32_FORMAT" mss %"G_GUINT32_FORMAT" src %s",
 	            s_network, route->plen, s_gateway,
 	            str_dev,
 	            route->metric, route->mss,
 	            source_to_string (route->source));
-	return to_string_buffer;
+	return _nm_platform_to_string_buffer;
 }
 
 #define _CMP_POINTER(a, b)                                  \
@@ -2741,6 +2741,14 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route)
             return c < 0 ? -1 : 1;                          \
     } G_STMT_END
 
+#define _CMP_FIELD_MEMCMP_LEN(a, b, field, len)             \
+    G_STMT_START {                                          \
+        int c = memcmp (&((a)->field), &((b)->field),       \
+                        MIN (len, sizeof ((a)->field)));    \
+        if (c != 0)                                         \
+            return c < 0 ? -1 : 1;                          \
+    } G_STMT_END
+
 #define _CMP_FIELD_MEMCMP(a, b, field)                      \
     G_STMT_START {                                          \
         int c = memcmp (&((a)->field), &((b)->field),       \
@@ -2758,14 +2766,21 @@ nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 	_CMP_FIELD_STR (a, b, name);
 	_CMP_FIELD (a, b, master);
 	_CMP_FIELD (a, b, parent);
-	_CMP_FIELD (a, b, up);
+	_CMP_FIELD (a, b, vlan_id);
+	_CMP_FIELD (a, b, flags);
 	_CMP_FIELD (a, b, connected);
-	_CMP_FIELD (a, b, arp);
 	_CMP_FIELD (a, b, mtu);
 	_CMP_FIELD_BOOL (a, b, initialized);
+	_CMP_FIELD (a, b, arptype);
+	_CMP_FIELD (a, b, addr.len);
+	_CMP_FIELD (a, b, inet6_addr_gen_mode_inv);
+	_CMP_FIELD (a, b, inet6_token.is_valid);
 	_CMP_FIELD_STR_INTERNED (a, b, kind);
-	_CMP_FIELD_STR0 (a, b, udi);
 	_CMP_FIELD_STR_INTERNED (a, b, driver);
+	if (a->addr.len)
+		_CMP_FIELD_MEMCMP_LEN (a, b, addr.data, a->addr.len);
+	if (a->inet6_token.is_valid)
+		_CMP_FIELD_MEMCMP (a, b, inet6_token.iid);
 	return 0;
 }
 
@@ -2812,6 +2827,7 @@ nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route
 	_CMP_FIELD (a, b, gateway);
 	_CMP_FIELD (a, b, metric);
 	_CMP_FIELD (a, b, mss);
+	_CMP_FIELD (a, b, scope_inv);
 	return 0;
 }
 
@@ -3029,6 +3045,35 @@ const NMPlatformVTableRoute nm_platform_vtable_route_v6 = {
 /******************************************************************/
 
 static void
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
+{
+	NMPlatformPrivate *priv =  NM_PLATFORM_GET_PRIVATE (object);
+
+	switch (prop_id) {
+	case PROP_REGISTER_SINGLETON:
+		/* construct-only */
+		priv->register_singleton = g_value_get_boolean (value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+constructed (GObject *object)
+{
+	NMPlatform *self = NM_PLATFORM (object);
+	NMPlatformPrivate *priv =  NM_PLATFORM_GET_PRIVATE (self);
+
+	G_OBJECT_CLASS (nm_platform_parent_class)->constructed (object);
+
+	if (priv->register_singleton)
+		nm_platform_setup (self);
+}
+
+static void
 nm_platform_init (NMPlatform *object)
 {
 }
@@ -3046,7 +3091,20 @@ nm_platform_class_init (NMPlatformClass *platform_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (platform_class);
 
+	g_type_class_add_private (object_class, sizeof (NMPlatformPrivate));
+
+	object_class->set_property = set_property;
+	object_class->constructed = constructed;
+
 	platform_class->wifi_set_powersave = wifi_set_powersave;
+
+	g_object_class_install_property
+	 (object_class, PROP_REGISTER_SINGLETON,
+	     g_param_spec_boolean (NM_PLATFORM_REGISTER_SINGLETON, "", "",
+	                           FALSE,
+	                           G_PARAM_WRITABLE |
+	                           G_PARAM_CONSTRUCT_ONLY |
+	                           G_PARAM_STATIC_STRINGS));
 
 	/* Signals */
 	SIGNAL (SIGNAL_LINK_CHANGED, log_link)

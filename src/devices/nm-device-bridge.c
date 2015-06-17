@@ -498,6 +498,7 @@ create_virtual_device_for_connection (NMDeviceFactory *factory,
 	NMSettingBridge *s_bridge;
 	const char *mac_address_str;
 	guint8 mac_address[NM_UTILS_HWADDR_LEN_MAX];
+	NMPlatformError plerr;
 
 	g_assert (iface);
 
@@ -510,17 +511,17 @@ create_virtual_device_for_connection (NMDeviceFactory *factory,
 			mac_address_str = NULL;
 	}
 
-	if (   !nm_platform_bridge_add (NM_PLATFORM_GET,
+	plerr = nm_platform_bridge_add (NM_PLATFORM_GET,
 	                                iface,
 	                                mac_address_str ? mac_address : NULL,
 	                                mac_address_str ? ETH_ALEN : 0,
-	                                NULL)
-	    && nm_platform_get_error (NM_PLATFORM_GET) != NM_PLATFORM_ERROR_EXISTS) {
+	                                NULL);
+	if (plerr != NM_PLATFORM_ERROR_SUCCESS && plerr != NM_PLATFORM_ERROR_EXISTS) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 		             "Failed to create bridge interface '%s' for '%s': %s",
 		             iface,
 		             nm_connection_get_id (connection),
-		             nm_platform_get_error_msg (NM_PLATFORM_GET));
+		             nm_platform_error_to_string (plerr));
 		return NULL;
 	}
 

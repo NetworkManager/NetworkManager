@@ -112,6 +112,8 @@ GPtrArray *_nm_utils_copy_array (const GPtrArray *array,
                                  GDestroyNotify free_func);
 GPtrArray *_nm_utils_copy_object_array (const GPtrArray *array);
 
+gssize _nm_utils_ptrarray_find_first (gpointer *list, gssize len, gconstpointer needle);
+
 gboolean    _nm_utils_string_in_list   (const char *str,
                                         const char **valid_strings);
 

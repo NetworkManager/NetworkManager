@@ -656,6 +656,7 @@ create_virtual_device_for_connection (NMDeviceFactory *factory,
 	NMDevice *device;
 	NMSettingVlan *s_vlan;
 	gs_free char *iface = NULL;
+	NMPlatformError plerr;
 
 	if (!NM_IS_DEVICE (parent)) {
 		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
@@ -672,18 +673,18 @@ create_virtual_device_for_connection (NMDeviceFactory *factory,
 		                                nm_setting_vlan_get_id (s_vlan));
 	}
 
-	if (   !nm_platform_vlan_add (NM_PLATFORM_GET,
+	plerr = nm_platform_vlan_add (NM_PLATFORM_GET,
 	                              iface,
 	                              nm_device_get_ifindex (parent),
 	                              nm_setting_vlan_get_id (s_vlan),
 	                              nm_setting_vlan_get_flags (s_vlan),
-	                              NULL)
-	    && nm_platform_get_error (NM_PLATFORM_GET) != NM_PLATFORM_ERROR_EXISTS) {
+	                              NULL);
+	if (plerr != NM_PLATFORM_ERROR_SUCCESS && plerr != NM_PLATFORM_ERROR_EXISTS) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 		             "Failed to create VLAN interface '%s' for '%s': %s",
 		             iface,
 		             nm_connection_get_id (connection),
-		             nm_platform_get_error_msg (NM_PLATFORM_GET));
+		             nm_platform_error_to_string (plerr));
 		return NULL;
 	}
 

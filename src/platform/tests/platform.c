@@ -93,25 +93,25 @@ do_link_get_all (char **argv)
 static gboolean
 do_dummy_add (char **argv)
 {
-	return nm_platform_dummy_add (NM_PLATFORM_GET, argv[0], NULL);
+	return nm_platform_dummy_add (NM_PLATFORM_GET, argv[0], NULL) == NM_PLATFORM_ERROR_SUCCESS;
 }
 
 static gboolean
 do_bridge_add (char **argv)
 {
-	return nm_platform_bridge_add (NM_PLATFORM_GET, argv[0], NULL, 0, NULL);
+	return nm_platform_bridge_add (NM_PLATFORM_GET, argv[0], NULL, 0, NULL) == NM_PLATFORM_ERROR_SUCCESS;
 }
 
 static gboolean
 do_bond_add (char **argv)
 {
-	return nm_platform_bond_add (NM_PLATFORM_GET, argv[0], NULL);
+	return nm_platform_bond_add (NM_PLATFORM_GET, argv[0], NULL) == NM_PLATFORM_ERROR_SUCCESS;
 }
 
 static gboolean
 do_team_add (char **argv)
 {
-	return nm_platform_team_add (NM_PLATFORM_GET, argv[0], NULL);
+	return nm_platform_team_add (NM_PLATFORM_GET, argv[0], NULL) == NM_PLATFORM_ERROR_SUCCESS;
 }
 
 static gboolean
@@ -122,7 +122,7 @@ do_vlan_add (char **argv)
 	int vlanid = strtol (*argv++, NULL, 10);
 	guint32 vlan_flags = strtol (*argv++, NULL, 10);
 
-	return nm_platform_vlan_add (NM_PLATFORM_GET, name, parent, vlanid, vlan_flags, NULL);
+	return nm_platform_vlan_add (NM_PLATFORM_GET, name, parent, vlanid, vlan_flags, NULL) == NM_PLATFORM_ERROR_SUCCESS;
 }
 
 static gboolean
@@ -182,7 +182,14 @@ LINK_CMD_GET_FULL (get_type, decimal, value > 0)
 LINK_CMD_GET (is_software, boolean)
 LINK_CMD_GET (supports_slaves, boolean)
 
-LINK_CMD (set_up)
+static gboolean
+do_link_set_up (char **argv)
+{
+	int ifindex = parse_ifindex (argv[0]);
+
+	return ifindex ? nm_platform_link_set_up (NM_PLATFORM_GET, ifindex, NULL) : FALSE;
+}
+
 LINK_CMD (set_down)
 LINK_CMD (set_arp)
 LINK_CMD (set_noarp)
@@ -858,7 +865,6 @@ main (int argc, char **argv)
 	const char *arg0 = *argv++;
 	const command_t *command = NULL;
 	gboolean status = TRUE;
-	int error;
 
 #if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
@@ -892,12 +898,5 @@ main (int argc, char **argv)
 		error ("\n");
 	}
 
-	error = nm_platform_get_error (NM_PLATFORM_GET);
-	if (error) {
-		const char *msg = nm_platform_get_error_msg (NM_PLATFORM_GET);
-
-		error ("nm-platform: %s\n", msg);
-	}
-
-	return !!error;
+	return EXIT_SUCCESS;
 }

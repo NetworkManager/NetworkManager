@@ -352,7 +352,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_reason)
 		_LOGD (LOGD_ADSL, "ATM setup successful");
 
 		/* otherwise we're good for stage3 */
-		nm_platform_link_set_up (NM_PLATFORM_GET, priv->nas_ifindex);
+		nm_platform_link_set_up (NM_PLATFORM_GET, priv->nas_ifindex, NULL);
 		ret = NM_ACT_STAGE_RETURN_SUCCESS;
 
 	} else if (g_strcmp0 (protocol, NM_SETTING_ADSL_PROTOCOL_PPPOA) == 0) {

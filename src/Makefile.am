@@ -227,6 +227,8 @@ nm_sources = \
 	platform/nm-platform.h \
 	platform/nm-platform-utils.c \
 	platform/nm-platform-utils.h \
+	platform/nmp-object.c \
+	platform/nmp-object.h \
 	platform/wifi/wifi-utils-nl80211.c \
 	platform/wifi/wifi-utils-nl80211.h \
 	platform/wifi/wifi-utils-private.h \
@@ -331,6 +333,8 @@ nm_sources = \
 	nm-auth-utils.h \
 	nm-manager.c \
 	nm-manager.h \
+	nm-multi-index.c \
+	nm-multi-index.h \
 	nm-policy.c \
 	nm-policy.h \
 	nm-properties-changed-signal.c \
@@ -473,6 +477,8 @@ libnm_iface_helper_la_SOURCES = \
 	platform/nm-platform.h \
 	platform/nm-platform-utils.c \
 	platform/nm-platform-utils.h \
+	platform/nmp-object.c \
+	platform/nmp-object.h \
 	platform/wifi/wifi-utils-nl80211.c \
 	platform/wifi/wifi-utils-nl80211.h \
 	platform/wifi/wifi-utils-private.h \
@@ -498,6 +504,8 @@ libnm_iface_helper_la_SOURCES = \
 	nm-enum-types.h \
 	nm-logging.c \
 	nm-logging.h \
+	nm-multi-index.c \
+	nm-multi-index.h \
 	NetworkManagerUtils.c \
 	NetworkManagerUtils.h
 

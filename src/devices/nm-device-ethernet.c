@@ -52,6 +52,7 @@
 #include "nm-connection-provider.h"
 #include "nm-device-factory.h"
 #include "nm-core-internal.h"
+#include "NetworkManagerUtils.h"
 
 #include "nm-device-ethernet-glue.h"
 
@@ -151,28 +152,21 @@ static void
 _update_s390_subchannels (NMDeviceEthernet *self)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
-	GUdevClient *client;
 	GUdevDevice *dev;
 	GUdevDevice *parent = NULL;
 	const char *parent_path, *item, *driver;
-	const char *subsystems[] = { "net", NULL };
-	const char *iface;
+	int ifindex;
 	GDir *dir;
 	GError *error = NULL;
 
-	client = g_udev_client_new (subsystems);
-	if (!client) {
-		_LOGW (LOGD_DEVICE | LOGD_HW, "failed to initialize GUdev client");
-		return;
-	}
-
-	iface = nm_device_get_iface (NM_DEVICE (self));
-	dev = iface ? g_udev_client_query_by_subsystem_and_name (client, "net", iface) : NULL;
+	ifindex = nm_device_get_ifindex (NM_DEVICE (self));
+	dev = (GUdevDevice *) nm_platform_link_get_udev_device (NM_PLATFORM_GET, ifindex);
 	if (!dev) {
-		_LOGW (LOGD_DEVICE | LOGD_HW, "failed to find device '%s' with udev",
-		       iface ? iface : "(null)");
+		_LOGW (LOGD_DEVICE | LOGD_HW, "failed to find device %d '%s' with udev",
+		       ifindex, str_if_set (nm_device_get_iface (NM_DEVICE (self)), "(null)"));
 		goto out;
 	}
+	g_object_ref (dev);
 
 	/* Try for the "ccwgroup" parent */
 	parent = g_udev_device_get_parent_with_subsystem (dev, "ccwgroup", NULL);
@@ -244,7 +238,6 @@ out:
 		g_object_unref (parent);
 	if (dev)
 		g_object_unref (dev);
-	g_object_unref (client);
 }
 
 static GObject*
@@ -1559,7 +1552,7 @@ link_changed (NMDevice *device, NMPlatformLink *info)
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 
 	NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->link_changed (device, info);
-	if (!priv->subchan1 && info->udi)
+	if (!priv->subchan1 && info->initialized)
 		_update_s390_subchannels (self);
 }
 

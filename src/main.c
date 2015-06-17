@@ -477,7 +477,7 @@ main (int argc, char *argv[])
 	 * physical interfaces.
 	 */
 	nm_log_dbg (LOGD_CORE, "setting up local loopback");
-	nm_platform_link_set_up (NM_PLATFORM_GET, 1);
+	nm_platform_link_set_up (NM_PLATFORM_GET, 1, NULL);
 
 	success = TRUE;
 

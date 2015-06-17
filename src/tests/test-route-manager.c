@@ -22,6 +22,7 @@
 
 #include <glib.h>
 #include <arpa/inet.h>
+#include <linux/rtnetlink.h>
 
 #include "test-common.h"
 
@@ -168,6 +169,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.gateway = INADDR_ANY,
 			.metric = 20,
 			.mss = 1000,
+			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_LINK),
 		},
 		{
 			.source = NM_IP_CONFIG_SOURCE_USER,
@@ -177,6 +179,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.gateway = nmtst_inet4_from_string ("6.6.6.1"),
 			.metric = 21021,
 			.mss = 0,
+			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_UNIVERSE),
 		},
 		{
 			.source = NM_IP_CONFIG_SOURCE_USER,
@@ -186,6 +189,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.gateway = INADDR_ANY,
 			.metric = 22,
 			.mss = 0,
+			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_LINK),
 		},
 	};
 
@@ -198,6 +202,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.gateway = INADDR_ANY,
 			.metric = 20,
 			.mss = 0,
+			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_LINK),
 		},
 		{
 			.source = NM_IP_CONFIG_SOURCE_USER,
@@ -207,6 +212,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.gateway = INADDR_ANY,
 			.metric = 21,
 			.mss = 0,
+			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_LINK),
 		},
 		{
 			.source = NM_IP_CONFIG_SOURCE_USER,
@@ -216,6 +222,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.gateway = INADDR_ANY,
 			.metric = 22,
 			.mss = 0,
+			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_LINK),
 		},
 	};
 
@@ -228,6 +235,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.gateway = INADDR_ANY,
 			.metric = 22,
 			.mss = 0,
+			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_LINK),
 		},
 		{
 			.source = NM_IP_CONFIG_SOURCE_USER,
@@ -237,11 +245,12 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.gateway = INADDR_ANY,
 			.metric = 20,
 			.mss = 0,
+			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_LINK),
 		},
 	};
 
 	setup_dev0_ip4 (fixture->ifindex0, 1000, 21021);
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*error adding 8.0.0.0/8 via 6.6.6.2 dev *");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*failure adding ip4-route '*: 8.0.0.0/8 22': *");
 	setup_dev1_ip4 (fixture->ifindex1);
 	g_test_assert_expected_messages ();
 
@@ -253,7 +262,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 	nmtst_platform_ip4_routes_equal ((NMPlatformIP4Route *) routes->data, state1, routes->len, TRUE);
 	g_array_free (routes, TRUE);
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*error adding 8.0.0.0/8 via 6.6.6.2 dev *");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*failure adding ip4-route '*: 8.0.0.0/8 22': *");
 	setup_dev1_ip4 (fixture->ifindex1);
 	g_test_assert_expected_messages ();
 
@@ -575,7 +584,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 	};
 
 	setup_dev0_ip6 (fixture->ifindex0);
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*error adding 2001:db8:d34d::/64 via 2001:db8:8086::2 dev *");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*failure adding ip6-route '*: 2001:db8:d34d::/64 20': *");
 	setup_dev1_ip6 (fixture->ifindex1);
 	g_test_assert_expected_messages ();
 
@@ -589,7 +598,7 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 	g_array_free (routes, TRUE);
 
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*error adding 2001:db8:d34d::/64 via 2001:db8:8086::2 dev *");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*failure adding ip6-route '*: 2001:db8:d34d::/64 20': *");
 	setup_dev1_ip6 (fixture->ifindex1);
 	g_test_assert_expected_messages ();
 	setup_dev0_ip6 (fixture->ifindex0);
@@ -639,11 +648,11 @@ fixture_setup (test_fixture *fixture, gconstpointer user_data)
 	                                "nm-test-device0");
 	nm_platform_link_delete (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, "nm-test-device0"));
 	g_assert (!nm_platform_link_exists (NM_PLATFORM_GET, "nm-test-device0"));
-	g_assert (nm_platform_dummy_add (NM_PLATFORM_GET, "nm-test-device0", NULL));
+	g_assert (nm_platform_dummy_add (NM_PLATFORM_GET, "nm-test-device0", NULL) == NM_PLATFORM_ERROR_SUCCESS);
 	accept_signal (link_added);
 	free_signal (link_added);
 	fixture->ifindex0 = nm_platform_link_get_ifindex (NM_PLATFORM_GET, "nm-test-device0");
-	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, fixture->ifindex0));
+	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, fixture->ifindex0, NULL));
 
 	link_added = add_signal_ifname (NM_PLATFORM_SIGNAL_LINK_CHANGED,
 	                                NM_PLATFORM_SIGNAL_ADDED,
@@ -651,11 +660,11 @@ fixture_setup (test_fixture *fixture, gconstpointer user_data)
 	                                "nm-test-device1");
 	nm_platform_link_delete (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, "nm-test-device1"));
 	g_assert (!nm_platform_link_exists (NM_PLATFORM_GET, "nm-test-device1"));
-	g_assert (nm_platform_dummy_add (NM_PLATFORM_GET, "nm-test-device1", NULL));
+	g_assert (nm_platform_dummy_add (NM_PLATFORM_GET, "nm-test-device1", NULL) == NM_PLATFORM_ERROR_SUCCESS);
 	accept_signal (link_added);
 	free_signal (link_added);
 	fixture->ifindex1 = nm_platform_link_get_ifindex (NM_PLATFORM_GET, "nm-test-device1");
-	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, fixture->ifindex1));
+	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, fixture->ifindex1, NULL));
 }
 
 static void

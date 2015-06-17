@@ -29,6 +29,7 @@
 
 #include <nm-dbus-interface.h>
 #include "nm-types.h"
+#include "NetworkManagerUtils.h"
 
 #define NM_TYPE_PLATFORM            (nm_platform_get_type ())
 #define NM_PLATFORM(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_PLATFORM, NMPlatform))
@@ -36,6 +37,10 @@
 #define NM_IS_PLATFORM(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_PLATFORM))
 #define NM_IS_PLATFORM_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_PLATFORM))
 #define NM_PLATFORM_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_PLATFORM, NMPlatformClass))
+
+/******************************************************************/
+
+#define NM_PLATFORM_REGISTER_SINGLETON "register-singleton"
 
 /******************************************************************/
 
@@ -50,18 +55,23 @@ typedef struct _NMPlatform NMPlatform;
 #endif
 
 typedef enum {
-	/* no error specified, sometimes this means the arguments were wrong */
-	NM_PLATFORM_ERROR_NONE,
-	/* object was not found */
+
+	/* dummy value, to enforce that the enum type is signed and has a size
+	 * to hold an integer. We want to encode errno from <errno.h> as negative
+	 * values. */
+	_NM_PLATFORM_ERROR_MININT = G_MININT,
+
+	NM_PLATFORM_ERROR_SUCCESS = 0,
+
+	NM_PLATFORM_ERROR_BUG,
+
+	NM_PLATFORM_ERROR_UNSPECIFIED,
+
 	NM_PLATFORM_ERROR_NOT_FOUND,
-	/* object already exists */
 	NM_PLATFORM_ERROR_EXISTS,
-	/* object is wrong type */
 	NM_PLATFORM_ERROR_WRONG_TYPE,
-	/* object is not a slave */
 	NM_PLATFORM_ERROR_NOT_SLAVE,
-	/* firmware is not found */
-	NM_PLATFORM_ERROR_NO_FIRMWARE
+	NM_PLATFORM_ERROR_NO_FIRMWARE,
 } NMPlatformError;
 
 typedef enum {
@@ -90,19 +100,44 @@ struct _NMPlatformLink {
 	/* NMPlatform initializes this field with a static string. */
 	const char *kind;
 
-	/* Beware: NMPlatform initializes this string with an allocated string.
-	 * Handle it properly (i.e. don't keep a reference to it). */
-	const char *udi;
-
 	/* NMPlatform initializes this field with a static string. */
 	const char *driver;
 
 	gboolean initialized;
 	int master;
 	int parent;
-	gboolean up;
+
+	/* rtnl_link_get_arptype(), ifinfomsg.ifi_type. */
+	guint32 arptype;
+
+	/* rtnl_link_get_addr() */
+	struct {
+		guint8 data[20]; /* NM_UTILS_HWADDR_LEN_MAX */
+		guint8 len;
+	} addr;
+
+	/* rtnl_link_inet6_get_token() */
+	struct {
+		NMUtilsIPv6IfaceId iid;
+		guint8 is_valid;
+	} inet6_token;
+
+	/* The bitwise inverse of rtnl_link_inet6_get_addr_gen_mode(). It is inverse
+	 * to have a default of 0 -- meaning: unspecified. That way, a struct
+	 * initialized with memset(0) has and unset value.*/
+	guint8 inet6_addr_gen_mode_inv;
+
+	/* rtnl_link_vlan_get_id(), IFLA_VLAN_ID */
+	guint16 vlan_id;
+
+	/* IFF_* flags as u32. Note that ifi_flags in 'struct ifinfomsg' is declared as 'unsigned',
+	 * but libnl stores the flag internally as u32.  */
+	guint32 flags;
+
+	/* @connected is mostly identical to (@flags & IFF_UP). Except for bridge/bond masters,
+	 * where we coerce the link as disconnect if it has no slaves. */
 	gboolean connected;
-	gboolean arp;
+
 	guint mtu;
 };
 
@@ -237,6 +272,10 @@ struct _NMPlatformIP4Route {
 	__NMPlatformIPRoute_COMMON;
 	in_addr_t network;
 	in_addr_t gateway;
+
+	/* The bitwise inverse of the route scope. It is inverted so that the
+	 * default value (RT_SCOPE_NOWHERE) is nul. */
+	guint8 scope_inv;
 };
 G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPRoute, network_ptr) == G_STRUCT_OFFSET (NMPlatformIP4Route, network));
 
@@ -275,6 +314,7 @@ typedef struct {
 extern const NMPlatformVTableRoute nm_platform_vtable_route_v4;
 extern const NMPlatformVTableRoute nm_platform_vtable_route_v6;
 
+extern char _nm_platform_to_string_buffer[256];
 
 typedef struct {
 	int peer;
@@ -361,8 +401,6 @@ typedef struct {
 
 struct _NMPlatform {
 	GObject parent;
-
-	NMPlatformError error;
 };
 
 typedef struct {
@@ -389,7 +427,7 @@ typedef struct {
 
 	gboolean (*link_refresh) (NMPlatform *, int ifindex);
 
-	gboolean (*link_set_up) (NMPlatform *, int ifindex);
+	gboolean (*link_set_up) (NMPlatform *, int ifindex, gboolean *out_no_firmware);
 	gboolean (*link_set_down) (NMPlatform *, int ifindex);
 	gboolean (*link_set_arp) (NMPlatform *, int ifindex);
 	gboolean (*link_set_noarp) (NMPlatform *, int ifindex);
@@ -397,6 +435,8 @@ typedef struct {
 	gboolean (*link_is_connected) (NMPlatform *, int ifindex);
 	gboolean (*link_uses_arp) (NMPlatform *, int ifindex);
 
+	const char *(*link_get_udi) (NMPlatform *self, int ifindex);
+	GObject *(*link_get_udev_device) (NMPlatform *self, int ifindex);
 	gboolean (*link_get_ipv6_token) (NMPlatform *, int ifindex, NMUtilsIPv6IfaceId *iid);
 
 	gboolean (*link_get_user_ipv6ll_enabled) (NMPlatform *, int ifindex);
@@ -529,11 +569,25 @@ NMPlatform *nm_platform_try_get (void);
 
 /******************************************************************/
 
+/**
+ * nm_platform_route_scope_inv:
+ * @scope: the route scope, either its original value, or its inverse.
+ *
+ * This function is useful, because the constants such as RT_SCOPE_NOWHERE
+ * are 'int', so ~scope also gives an 'int'. This function gets the type
+ * casts to guint8 right.
+ *
+ * Returns: the bitwise inverse of the route scope.
+ * */
+static inline guint8
+nm_platform_route_scope_inv (guint8 scope)
+{
+	return (guint8) ~scope;
+}
+
 const char *nm_link_type_to_string (NMLinkType link_type);
 
-void nm_platform_set_error (NMPlatform *self, NMPlatformError error);
-NMPlatformError nm_platform_get_error (NMPlatform *self);
-const char *nm_platform_get_error_msg (NMPlatform *self);
+const char *nm_platform_error_to_string (NMPlatformError error);
 
 gboolean nm_platform_sysctl_set (NMPlatform *self, const char *path, const char *value);
 char *nm_platform_sysctl_get (NMPlatform *self, const char *path);
@@ -545,10 +599,10 @@ gboolean nm_platform_sysctl_set_ip6_hop_limit_safe (NMPlatform *self, const char
 gboolean nm_platform_link_get (NMPlatform *self, int ifindex, NMPlatformLink *link);
 GArray *nm_platform_link_get_all (NMPlatform *self);
 gboolean nm_platform_link_get_by_address (NMPlatform *self, gconstpointer address, size_t length, NMPlatformLink *link);
-gboolean nm_platform_dummy_add (NMPlatform *self, const char *name, NMPlatformLink *out_link);
-gboolean nm_platform_bridge_add (NMPlatform *self, const char *name, const void *address, size_t address_len, NMPlatformLink *out_link);
-gboolean nm_platform_bond_add (NMPlatform *self, const char *name, NMPlatformLink *out_link);
-gboolean nm_platform_team_add (NMPlatform *self, const char *name, NMPlatformLink *out_link);
+NMPlatformError nm_platform_dummy_add (NMPlatform *self, const char *name, NMPlatformLink *out_link);
+NMPlatformError nm_platform_bridge_add (NMPlatform *self, const char *name, const void *address, size_t address_len, NMPlatformLink *out_link);
+NMPlatformError nm_platform_bond_add (NMPlatform *self, const char *name, NMPlatformLink *out_link);
+NMPlatformError nm_platform_team_add (NMPlatform *self, const char *name, NMPlatformLink *out_link);
 gboolean nm_platform_link_exists (NMPlatform *self, const char *name);
 gboolean nm_platform_link_delete (NMPlatform *self, int ifindex);
 int nm_platform_link_get_ifindex (NMPlatform *self, const char *name);
@@ -561,7 +615,7 @@ gboolean nm_platform_link_supports_slaves (NMPlatform *self, int ifindex);
 
 gboolean nm_platform_link_refresh (NMPlatform *self, int ifindex);
 
-gboolean nm_platform_link_set_up (NMPlatform *self, int ifindex);
+gboolean nm_platform_link_set_up (NMPlatform *self, int ifindex, gboolean *out_no_firmware);
 gboolean nm_platform_link_set_down (NMPlatform *self, int ifindex);
 gboolean nm_platform_link_set_arp (NMPlatform *self, int ifindex);
 gboolean nm_platform_link_set_noarp (NMPlatform *self, int ifindex);
@@ -570,6 +624,9 @@ gboolean nm_platform_link_is_connected (NMPlatform *self, int ifindex);
 gboolean nm_platform_link_uses_arp (NMPlatform *self, int ifindex);
 
 gboolean nm_platform_link_get_ipv6_token (NMPlatform *self, int ifindex, NMUtilsIPv6IfaceId *iid);
+const char *nm_platform_link_get_udi (NMPlatform *self, int ifindex);
+
+GObject *nm_platform_link_get_udev_device (NMPlatform *self, int ifindex);
 
 gboolean nm_platform_link_get_user_ipv6ll_enabled (NMPlatform *self, int ifindex);
 gboolean nm_platform_link_set_user_ipv6ll_enabled (NMPlatform *self, int ifindex, gboolean enabled);
@@ -600,12 +657,12 @@ char *nm_platform_master_get_option (NMPlatform *self, int ifindex, const char *
 gboolean nm_platform_slave_set_option (NMPlatform *self, int ifindex, const char *option, const char *value);
 char *nm_platform_slave_get_option (NMPlatform *self, int ifindex, const char *option);
 
-gboolean nm_platform_vlan_add (NMPlatform *self, const char *name, int parent, int vlanid, guint32 vlanflags, NMPlatformLink *out_link);
+NMPlatformError nm_platform_vlan_add (NMPlatform *self, const char *name, int parent, int vlanid, guint32 vlanflags, NMPlatformLink *out_link);
 gboolean nm_platform_vlan_get_info (NMPlatform *self, int ifindex, int *parent, int *vlanid);
 gboolean nm_platform_vlan_set_ingress_map (NMPlatform *self, int ifindex, int from, int to);
 gboolean nm_platform_vlan_set_egress_map (NMPlatform *self, int ifindex, int from, int to);
 
-gboolean nm_platform_infiniband_partition_add (NMPlatform *self, int parent, int p_key, NMPlatformLink *out_link);
+NMPlatformError nm_platform_infiniband_partition_add (NMPlatform *self, int parent, int p_key, NMPlatformLink *out_link);
 gboolean nm_platform_infiniband_get_info (NMPlatform *self, int ifindex, int *parent, int *p_key, const char **mode);
 
 gboolean nm_platform_veth_get_properties        (NMPlatform *self, int ifindex, NMPlatformVethProperties *properties);

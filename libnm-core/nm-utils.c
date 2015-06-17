@@ -631,6 +631,32 @@ _nm_utils_copy_object_array (const GPtrArray *array)
 	return _nm_utils_copy_array (array, g_object_ref, g_object_unref);
 }
 
+/* have @list of type 'gpointer *' instead of 'gconstpointer *' to
+ * reduce the necessity for annoying const-casts. */
+gssize
+_nm_utils_ptrarray_find_first (gpointer *list, gssize len, gconstpointer needle)
+{
+	gssize i;
+
+	if (len == 0)
+		return -1;
+
+	if (len > 0) {
+		g_return_val_if_fail (list, -1);
+		for (i = 0; i < len; i++) {
+			if (list[i] == needle)
+				return i;
+		}
+	} else {
+		g_return_val_if_fail (needle, -1);
+		for (i = 0; list && list[i]; i++) {
+			if (list[i] == needle)
+				return i;
+		}
+	}
+	return -1;
+}
+
 GVariant *
 _nm_utils_bytes_to_dbus (const GValue *prop_value)
 {

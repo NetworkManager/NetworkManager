@@ -181,6 +181,23 @@ nm_clear_g_source (guint *id)
 
 /*****************************************************************************/
 
+/* Determine whether @x is a power of two (@x being an integer type).
+ * For the special cases @x equals zero or one, it also returns true.
+ * For negative @x, always returns FALSE. That only applies, is the data
+ * type of @x is signed. */
+#define nm_utils_is_power_of_two(x) ({ \
+		const typeof(x) __x = (x); \
+		\
+		((__x & (__x - 1)) == 0) && \
+			/* Check if the value is negative. In that case, return FALSE.
+			 * The first expression is a compile time constant, depending on whether
+			 * the type is signed. The second expression is a clumsy way for (__x >= 0),
+			 * which causes a compiler warning for unsigned types. */ \
+			( ( ((typeof(__x)) -1) > ((typeof(__x)) 0) ) || (__x > 0) || (__x == 0) ); \
+	})
+
+/*****************************************************************************/
+
 /* check if @flags has exactly one flag (@check) set. You should call this
  * only with @check being a compile time constant and a power of two. */
 #define NM_FLAGS_HAS(flags, check)  \
