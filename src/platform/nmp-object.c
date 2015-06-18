@@ -873,8 +873,8 @@ nmp_cache_id_destroy (NMPCacheId *id)
 
 NMPCacheId _nmp_cache_id_static;
 
-NMPCacheId *
-nmp_cache_id_init (NMPCacheId *id, NMPCacheIdType id_type)
+static NMPCacheId *
+_nmp_cache_id_init (NMPCacheId *id, NMPCacheIdType id_type)
 {
 	memset (id, 0, sizeof (NMPCacheId));
 	id->_id_type = id_type;
@@ -882,38 +882,57 @@ nmp_cache_id_init (NMPCacheId *id, NMPCacheIdType id_type)
 }
 
 NMPCacheId *
-nmp_cache_id_init_object_type (NMPCacheId *id, ObjectType obj_type)
+nmp_cache_id_init_object_type (NMPCacheId *id, ObjectType obj_type, gboolean visible_only)
 {
-	nmp_cache_id_init (id, NMP_CACHE_ID_TYPE_OBJECT_TYPE);
+	_nmp_cache_id_init (id, visible_only
+	                        ? NMP_CACHE_ID_TYPE_OBJECT_TYPE_VISIBLE_ONLY
+	                        : NMP_CACHE_ID_TYPE_OBJECT_TYPE);
 	id->object_type.obj_type = obj_type;
 	return id;
 }
 
 NMPCacheId *
-nmp_cache_id_init_links (NMPCacheId *id, gboolean visible_only)
+nmp_cache_id_init_addrroute_visible_by_ifindex (NMPCacheId *id,
+                                                ObjectType obj_type,
+                                                int ifindex)
 {
-	if (visible_only)
-		return nmp_cache_id_init (id, NMP_CACHE_ID_TYPE_LINKS_VISIBLE_ONLY);
-	else
-		return nmp_cache_id_init_object_type (id, OBJECT_TYPE_LINK);
-}
+	g_return_val_if_fail (NM_IN_SET (obj_type,
+	                                 OBJECT_TYPE_IP4_ADDRESS, OBJECT_TYPE_IP4_ROUTE,
+	                                 OBJECT_TYPE_IP6_ADDRESS, OBJECT_TYPE_IP6_ROUTE), NULL);
 
-NMPCacheId *
-nmp_cache_id_init_addrroute_by_ifindex (NMPCacheId *id, ObjectType obj_type, int ifindex)
-{
-	nmp_cache_id_init (id, NMP_CACHE_ID_TYPE_ADDRROUTE_BY_IFINDEX);
-	id->addrroute_by_ifindex.obj_type = obj_type;
-	id->addrroute_by_ifindex.ifindex = ifindex;
+	if (ifindex <= 0)
+		return nmp_cache_id_init_object_type (id, obj_type, TRUE);
+
+	_nmp_cache_id_init (id, NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX);
+	id->object_type_by_ifindex.obj_type = obj_type;
+	id->object_type_by_ifindex.ifindex = ifindex;
 	return id;
 }
 
 NMPCacheId *
-nmp_cache_id_init_routes_visible (NMPCacheId *id, NMPCacheIdType id_type, gboolean is_v4, int ifindex)
+nmp_cache_id_init_routes_visible (NMPCacheId *id,
+                                  ObjectType obj_type,
+                                  gboolean with_default,
+                                  gboolean with_non_default,
+                                  int ifindex)
 {
-	g_return_val_if_fail (NM_IN_SET (id_type, NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_ALL, NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_NO_DEFAULT, NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_ONLY_DEFAULT), NULL);
-	nmp_cache_id_init (id, id_type);
-	id->routes_visible.is_v4 = !!is_v4;
-	id->routes_visible.ifindex = ifindex;
+	g_return_val_if_fail (NM_IN_SET (obj_type, OBJECT_TYPE_IP4_ROUTE, OBJECT_TYPE_IP6_ROUTE), NULL);
+
+	if (with_default && with_non_default) {
+		if (ifindex <= 0)
+			return nmp_cache_id_init_object_type (id, obj_type, TRUE);
+		return nmp_cache_id_init_addrroute_visible_by_ifindex (id, obj_type, ifindex);
+	}
+
+	if (with_default)
+		_nmp_cache_id_init (id, NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_ONLY_DEFAULT);
+	else if (with_non_default)
+		_nmp_cache_id_init (id, NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_NO_DEFAULT);
+	else
+		g_return_val_if_reached (NULL);
+
+	id->object_type_by_ifindex.obj_type = obj_type;
+	id->object_type_by_ifindex.ifindex = ifindex;
 	return id;
 }
 
@@ -924,37 +943,35 @@ _nmp_object_init_cache_id (const NMPObject *obj, NMPCacheIdType id_type, NMPCach
 {
 	const NMPClass *klass = NMP_OBJECT_GET_CLASS (obj);
 
-	if (id_type == NMP_CACHE_ID_TYPE_OBJECT_TYPE) {
-		*out_id = nmp_cache_id_init_object_type (id, klass->obj_type);
+	switch (id_type) {
+	case NMP_CACHE_ID_TYPE_OBJECT_TYPE:
+		*out_id = nmp_cache_id_init_object_type (id, klass->obj_type, FALSE);
 		return TRUE;
+	case NMP_CACHE_ID_TYPE_OBJECT_TYPE_VISIBLE_ONLY:
+		if (nmp_object_is_visible (obj))
+			*out_id = nmp_cache_id_init_object_type (id, klass->obj_type, TRUE);
+		else
+			*out_id = NULL;
+		return TRUE;
+	default:
+		return klass->cmd_obj_init_cache_id (obj, id_type, id, out_id);
 	}
-	return klass->cmd_obj_init_cache_id (obj, id_type, id, out_id);
 }
 
 static gboolean
 _vt_cmd_obj_init_cache_id_link (const NMPObject *obj, NMPCacheIdType id_type, NMPCacheId *id, const NMPCacheId **out_id)
 {
-	switch (id_type) {
-	case NMP_CACHE_ID_TYPE_LINKS_VISIBLE_ONLY:
-		if (_vt_cmd_obj_is_visible_link (obj)) {
-			*out_id = nmp_cache_id_init_links (id, TRUE);
-			return TRUE;
-		}
-		break;
-	default:
-		return FALSE;
-	}
-	*out_id = NULL;
-	return TRUE;
+	return FALSE;
 }
 
 static gboolean
-_vt_cmd_obj_init_cache_id_ip4_address (const NMPObject *obj, NMPCacheIdType id_type, NMPCacheId *id, const NMPCacheId **out_id)
+_vt_cmd_obj_init_cache_id_ipx_address (const NMPObject *obj, NMPCacheIdType id_type, NMPCacheId *id, const NMPCacheId **out_id)
 {
 	switch (id_type) {
-	case NMP_CACHE_ID_TYPE_ADDRROUTE_BY_IFINDEX:
+	case NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX:
 		if (_vt_cmd_obj_is_visible_ipx_address (obj)) {
-			*out_id = nmp_cache_id_init_addrroute_by_ifindex (id, OBJECT_TYPE_IP4_ADDRESS, obj->object.ifindex);
+			nm_assert (obj->object.ifindex > 0);
+			*out_id = nmp_cache_id_init_addrroute_visible_by_ifindex (id, NMP_OBJECT_GET_TYPE (obj), obj->object.ifindex);
 			return TRUE;
 		}
 		break;
@@ -966,83 +983,45 @@ _vt_cmd_obj_init_cache_id_ip4_address (const NMPObject *obj, NMPCacheIdType id_t
 }
 
 static gboolean
-_vt_cmd_obj_init_cache_id_ip6_address (const NMPObject *obj, NMPCacheIdType id_type, NMPCacheId *id, const NMPCacheId **out_id)
+_vt_cmd_obj_init_cache_id_ipx_route (const NMPObject *obj, NMPCacheIdType id_type, NMPCacheId *id, const NMPCacheId **out_id)
 {
 	switch (id_type) {
-	case NMP_CACHE_ID_TYPE_ADDRROUTE_BY_IFINDEX:
-		if (_vt_cmd_obj_is_visible_ipx_address (obj)) {
-			*out_id = nmp_cache_id_init_addrroute_by_ifindex (id, OBJECT_TYPE_IP6_ADDRESS, obj->object.ifindex);
-			return TRUE;
-		}
-		break;
-	default:
-		return FALSE;
-	}
-	*out_id = NULL;
-	return TRUE;
-}
-
-static gboolean
-_vt_cmd_obj_init_cache_id_ip4_route (const NMPObject *obj, NMPCacheIdType id_type, NMPCacheId *id, const NMPCacheId **out_id)
-{
-	switch (id_type) {
-	case NMP_CACHE_ID_TYPE_ADDRROUTE_BY_IFINDEX:
+	case NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX:
 		if (_vt_cmd_obj_is_visible_ipx_route (obj)) {
-			*out_id = nmp_cache_id_init_addrroute_by_ifindex (id, OBJECT_TYPE_IP4_ROUTE, obj->object.ifindex);
-			return TRUE;
-		}
-		break;
-	case NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_ALL:
-		if (_vt_cmd_obj_is_visible_ipx_route (obj)) {
-			*out_id = nmp_cache_id_init_routes_visible (id, id_type, TRUE, obj->object.ifindex);
+			nm_assert (obj->object.ifindex > 0);
+			*out_id = nmp_cache_id_init_addrroute_visible_by_ifindex (id, NMP_OBJECT_GET_TYPE (obj), obj->object.ifindex);
 			return TRUE;
 		}
 		break;
 	case NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_NO_DEFAULT:
 		if (   _vt_cmd_obj_is_visible_ipx_route (obj)
 		    && !NM_PLATFORM_IP_ROUTE_IS_DEFAULT (&obj->ip_route)) {
-			*out_id = nmp_cache_id_init_routes_visible (id, id_type, TRUE, obj->object.ifindex);
+			nm_assert (obj->object.ifindex > 0);
+			*out_id = nmp_cache_id_init_routes_visible (id, NMP_OBJECT_GET_TYPE (obj), FALSE, TRUE, 0);
 			return TRUE;
 		}
 		break;
 	case NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_ONLY_DEFAULT:
 		if (   _vt_cmd_obj_is_visible_ipx_route (obj)
 		    && NM_PLATFORM_IP_ROUTE_IS_DEFAULT (&obj->ip_route)) {
-			*out_id = nmp_cache_id_init_routes_visible (id, id_type, TRUE, obj->object.ifindex);
+			nm_assert (obj->object.ifindex > 0);
+			*out_id = nmp_cache_id_init_routes_visible (id, NMP_OBJECT_GET_TYPE (obj), TRUE, FALSE, 0);
 			return TRUE;
 		}
 		break;
-	default:
-		return FALSE;
-	}
-	*out_id = NULL;
-	return TRUE;
-}
-
-static gboolean
-_vt_cmd_obj_init_cache_id_ip6_route (const NMPObject *obj, NMPCacheIdType id_type, NMPCacheId *id, const NMPCacheId **out_id)
-{
-	switch (id_type) {
-	case NMP_CACHE_ID_TYPE_ADDRROUTE_BY_IFINDEX:
-		*out_id = nmp_cache_id_init_addrroute_by_ifindex (id, OBJECT_TYPE_IP6_ROUTE, obj->object.ifindex);
-		return TRUE;
-	case NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_ALL:
-		if (_vt_cmd_obj_is_visible_ipx_route (obj)) {
-			*out_id = nmp_cache_id_init_routes_visible (id, id_type, FALSE, obj->object.ifindex);
-			return TRUE;
-		}
-		break;
-	case NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_NO_DEFAULT:
+	case NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_NO_DEFAULT:
 		if (   _vt_cmd_obj_is_visible_ipx_route (obj)
 		    && !NM_PLATFORM_IP_ROUTE_IS_DEFAULT (&obj->ip_route)) {
-			*out_id = nmp_cache_id_init_routes_visible (id, id_type, FALSE, obj->object.ifindex);
+			nm_assert (obj->object.ifindex > 0);
+			*out_id = nmp_cache_id_init_routes_visible (id, NMP_OBJECT_GET_TYPE (obj), FALSE, TRUE, obj->object.ifindex);
 			return TRUE;
 		}
 		break;
-	case NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_ONLY_DEFAULT:
+	case NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_ONLY_DEFAULT:
 		if (   _vt_cmd_obj_is_visible_ipx_route (obj)
 		    && NM_PLATFORM_IP_ROUTE_IS_DEFAULT (&obj->ip_route)) {
-			*out_id = nmp_cache_id_init_routes_visible (id, id_type, FALSE, obj->object.ifindex);
+			nm_assert (obj->object.ifindex > 0);
+			*out_id = nmp_cache_id_init_routes_visible (id, NMP_OBJECT_GET_TYPE (obj), TRUE, FALSE, obj->object.ifindex);
 			return TRUE;
 		}
 		break;
@@ -1134,7 +1113,7 @@ nmp_cache_link_connected_needs_toggle (const NMPCache *cache, const NMPObject *m
 	    && potential_slave->link.connected) {
 		is_lower_up = TRUE;
 	} else {
-		links = (const NMPlatformLink *const *) nmp_cache_lookup_multi (cache, nmp_cache_id_init_links (NMP_CACHE_ID_STATIC, FALSE), &len);
+		links = (const NMPlatformLink *const *) nmp_cache_lookup_multi (cache, nmp_cache_id_init_object_type (NMP_CACHE_ID_STATIC, OBJECT_TYPE_LINK, FALSE), &len);
 		for (i = 0; i < len; i++) {
 			const NMPlatformLink *link = links[i];
 			const NMPObject *obj = NMP_OBJECT_UP_CAST ((NMPlatformObject *) link);
@@ -1261,12 +1240,10 @@ nmp_cache_lookup_link_full (const NMPCache *cache,
 	} else if (!ifname && !match_fn)
 		return NULL;
 	else {
-		list = nmp_cache_lookup_multi (cache, nmp_cache_id_init_object_type (&cache_id, OBJECT_TYPE_LINK), &len);
+		list = nmp_cache_lookup_multi (cache, nmp_cache_id_init_object_type (&cache_id, OBJECT_TYPE_LINK, visible_only), &len);
 		for (i = 0; i < len; i++) {
 			obj = NMP_OBJECT_UP_CAST (list[i]);
 
-			if (visible_only && !nmp_object_is_visible (obj))
-				continue;
 			if (link_type != NM_LINK_TYPE_NONE && obj->link.type != link_type)
 				continue;
 			if (ifname && strcmp (ifname, obj->link.name))
@@ -1850,7 +1827,7 @@ const NMPClass _nmp_classes[OBJECT_TYPE_MAX] = {
 		.addr_family                        = AF_INET,
 		.rtm_gettype                        = RTM_GETADDR,
 		.signal_type                        = NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED,
-		.cmd_obj_init_cache_id              = _vt_cmd_obj_init_cache_id_ip4_address,
+		.cmd_obj_init_cache_id              = _vt_cmd_obj_init_cache_id_ipx_address,
 		.cmd_obj_equal                      = _vt_cmd_obj_equal_plain,
 		.cmd_obj_copy                       = _vt_cmd_obj_copy_plain,
 		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_ip4_address,
@@ -1874,7 +1851,7 @@ const NMPClass _nmp_classes[OBJECT_TYPE_MAX] = {
 		.addr_family                        = AF_INET6,
 		.rtm_gettype                        = RTM_GETADDR,
 		.signal_type                        = NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED,
-		.cmd_obj_init_cache_id              = _vt_cmd_obj_init_cache_id_ip6_address,
+		.cmd_obj_init_cache_id              = _vt_cmd_obj_init_cache_id_ipx_address,
 		.cmd_obj_equal                      = _vt_cmd_obj_equal_plain,
 		.cmd_obj_copy                       = _vt_cmd_obj_copy_plain,
 		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_ip6_address,
@@ -1898,7 +1875,7 @@ const NMPClass _nmp_classes[OBJECT_TYPE_MAX] = {
 		.addr_family                        = AF_INET,
 		.rtm_gettype                        = RTM_GETROUTE,
 		.signal_type                        = NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED,
-		.cmd_obj_init_cache_id              = _vt_cmd_obj_init_cache_id_ip4_route,
+		.cmd_obj_init_cache_id              = _vt_cmd_obj_init_cache_id_ipx_route,
 		.cmd_obj_equal                      = _vt_cmd_obj_equal_plain,
 		.cmd_obj_copy                       = _vt_cmd_obj_copy_plain,
 		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_ip4_route,
@@ -1922,7 +1899,7 @@ const NMPClass _nmp_classes[OBJECT_TYPE_MAX] = {
 		.addr_family                        = AF_INET6,
 		.rtm_gettype                        = RTM_GETROUTE,
 		.signal_type                        = NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED,
-		.cmd_obj_init_cache_id              = _vt_cmd_obj_init_cache_id_ip6_route,
+		.cmd_obj_init_cache_id              = _vt_cmd_obj_init_cache_id_ipx_route,
 		.cmd_obj_equal                      = _vt_cmd_obj_equal_plain,
 		.cmd_obj_copy                       = _vt_cmd_obj_copy_plain,
 		.cmd_obj_stackinit_id               = _vt_cmd_obj_stackinit_id_ip6_route,

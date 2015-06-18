@@ -60,32 +60,34 @@ typedef enum { /*< skip >*/
  * An object of a certain object-type, can be candidate to being
  * indexed by a certain NMPCacheIdType or not. For example, all
  * objects are indexed via an index of type NMP_CACHE_ID_TYPE_OBJECT_TYPE,
- * but only route objects are indexed by NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_ALL.
+ * but only route objects can be indexed by NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_NO_DEFAULT.
  *
- * Of one index type, there can be different indexes or not.
- * For example, there is only one single instance of
- * NMP_CACHE_ID_TYPE_LINKS_VISIBLE_ONLY, because this instance is
- * applicable for all link objects.
- * But there are different instances of NMP_CACHE_ID_TYPE_ADDRROUTE_BY_IFINDEX
- * type index, which differ in v4/v6, the ifindex, and whether the index
- * is for routes or address instances.
+ * Of one index type, there can be multiple indexes or not.
+ * For example, of the index type NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX there
+ * are multiple instances (for different route/addresses, v4/v6, per-ifindex).
  *
- * But one object, can only be indexed by one particular index of one
+ * But one object, can only be indexed by one particular index of a
  * type. For example, a certain address instance is only indexed by
- * the index NMP_CACHE_ID_TYPE_ADDRROUTE_BY_IFINDEX with matching v4/v6
- * and ifindex.
+ * the index NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX with
+ * matching v4/v6 and ifindex -- or maybe not at all if it isn't visible.
  * */
 typedef enum { /*< skip >*/
+	/* all the objects of a certain type */
 	NMP_CACHE_ID_TYPE_OBJECT_TYPE,
 
-	NMP_CACHE_ID_TYPE_LINKS_VISIBLE_ONLY,
+	/* all the visible objects of a certain type */
+	NMP_CACHE_ID_TYPE_OBJECT_TYPE_VISIBLE_ONLY,
 
-	NMP_CACHE_ID_TYPE_ADDRROUTE_BY_IFINDEX,
-
-	/* three indeces for the visibile routes. */
-	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_ALL,
+	/* indeces for the visible routes, ignoring ifindex. */
 	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_NO_DEFAULT,
 	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_ONLY_DEFAULT,
+
+	/* all the visible addresses/routes (by object-type) for an ifindex. */
+	NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX,
+
+	/* three indeces for the visible routes, per ifindex. */
+	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_NO_DEFAULT,
+	NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_ONLY_DEFAULT,
 
 	__NMP_CACHE_ID_TYPE_MAX,
 	NMP_CACHE_ID_TYPE_MAX = __NMP_CACHE_ID_TYPE_MAX - 1,
@@ -99,31 +101,20 @@ typedef struct {
 		guint8 _id_type; /* NMPCacheIdType as guint8 */
 		struct {
 			/* NMP_CACHE_ID_TYPE_OBJECT_TYPE */
+			/* NMP_CACHE_ID_TYPE_OBJECT_TYPE_VISIBLE_ONLY */
+			/* NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_NO_DEFAULT */
+			/* NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_ONLY_DEFAULT */
 			guint8 _id_type;
 			guint8 obj_type; /* ObjectType as guint8 */
 		} object_type;
 		struct {
-			/* NMP_CACHE_ID_TYPE_LINKS_VISIBLE_ONLY */
-			guint8 _id_type;
-
-			/* the @_global_id is only defined by it's type and has no arguments.
-			 * It is used by NMP_CACHE_ID_TYPE_LINKS_VISIBLE_ONLY. There is only
-			 * one single occurence of an index of this type. */
-		} _global_id;
-		struct {
-			/* NMP_CACHE_ID_TYPE_ADDRROUTE_BY_IFINDEX */
+			/* NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX */
+			/* NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_NO_DEFAULT */
+			/* NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_ONLY_DEFAULT */
 			guint8 _id_type;
 			guint8 obj_type; /* ObjectType as guint8 */
 			int ifindex;
-		} addrroute_by_ifindex;
-		struct {
-			/* NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_ALL */
-			/* NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_NO_DEFAULT */
-			/* NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_ONLY_DEFAULT */
-			guint8 _id_type;
-			guint8 is_v4;
-			int ifindex;
-		} routes_visible;
+		} object_type_by_ifindex;
 	};
 } NMPCacheId;
 
@@ -323,11 +314,9 @@ guint nmp_cache_id_hash (const NMPCacheId *id);
 NMPCacheId *nmp_cache_id_clone (const NMPCacheId *id);
 void nmp_cache_id_destroy (NMPCacheId *id);
 
-NMPCacheId *nmp_cache_id_init (NMPCacheId *id, NMPCacheIdType id_type);
-NMPCacheId *nmp_cache_id_init_object_type (NMPCacheId *id, ObjectType obj_type);
-NMPCacheId *nmp_cache_id_init_links (NMPCacheId *id, gboolean visible_only);
-NMPCacheId *nmp_cache_id_init_addrroute_by_ifindex (NMPCacheId *id, ObjectType obj_type, int ifindex);
-NMPCacheId *nmp_cache_id_init_routes_visible (NMPCacheId *id, NMPCacheIdType id_type, gboolean is_v4, int ifindex);
+NMPCacheId *nmp_cache_id_init_object_type (NMPCacheId *id, ObjectType obj_type, gboolean visible_only);
+NMPCacheId *nmp_cache_id_init_addrroute_visible_by_ifindex (NMPCacheId *id, ObjectType obj_type, int ifindex);
+NMPCacheId *nmp_cache_id_init_routes_visible (NMPCacheId *id, ObjectType obj_type, gboolean with_default, gboolean with_non_default, int ifindex);
 
 const NMPlatformObject *const *nmp_cache_lookup_multi (const NMPCache *cache, const NMPCacheId *cache_id, guint *out_len);
 GArray *nmp_cache_lookup_multi_to_array (const NMPCache *cache, ObjectType obj_type, const NMPCacheId *cache_id);

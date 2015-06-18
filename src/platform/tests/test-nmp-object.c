@@ -250,8 +250,8 @@ test_cache_link ()
 	g_assert (nmp_cache_lookup_obj (cache, obj1) == obj2);
 	g_assert (nmp_cache_lookup_obj (cache, nmp_object_stackinit_id_link (&objs1, pl_link_2.ifindex)) == obj2);
 	g_assert (nmp_object_is_visible (obj2));
-	_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_links (&cache_id_storage, TRUE), obj2, TRUE);
-	_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_links (&cache_id_storage, FALSE), obj2, TRUE);
+	_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, OBJECT_TYPE_LINK, TRUE), obj2, TRUE);
+	_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, OBJECT_TYPE_LINK, FALSE), obj2, TRUE);
 	nmp_object_unref (obj1);
 	nmp_object_unref (obj2);
 
@@ -290,8 +290,8 @@ test_cache_link ()
 		g_assert (!was_visible);
 		g_assert (nmp_cache_lookup_obj (cache, nmp_object_stackinit_id_link (&objs1, pl_link_2.ifindex)) == obj2);
 		g_assert (!nmp_object_is_visible (obj2));
-		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_links (&cache_id_storage, TRUE), obj2, FALSE);
-		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_links (&cache_id_storage, FALSE), obj2, TRUE);
+		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, OBJECT_TYPE_LINK, TRUE), obj2, FALSE);
+		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, OBJECT_TYPE_LINK, FALSE), obj2, TRUE);
 		nmp_object_unref (obj2);
 	}
 
@@ -306,8 +306,8 @@ test_cache_link ()
 	g_assert (nmp_cache_lookup_obj (cache, obj1) == obj2);
 	g_assert (nmp_cache_lookup_obj (cache, nmp_object_stackinit_id_link (&objs1, pl_link_2.ifindex)) == obj2);
 	g_assert (nmp_object_is_visible (obj2));
-	_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_links (&cache_id_storage, TRUE), obj2, TRUE);
-	_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_links (&cache_id_storage, FALSE), obj2, TRUE);
+	_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, OBJECT_TYPE_LINK, TRUE), obj2, TRUE);
+	_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, OBJECT_TYPE_LINK, FALSE), obj2, TRUE);
 	nmp_object_unref (obj1);
 	nmp_object_unref (obj2);
 
@@ -323,8 +323,8 @@ test_cache_link ()
 		g_assert (nmp_cache_lookup_obj (cache, obj1) == obj2);
 		g_assert (nmp_cache_lookup_obj (cache, nmp_object_stackinit_id_link (&objs1, pl_link_2.ifindex)) == obj2);
 		g_assert (!nmp_object_is_visible (obj2));
-		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_links (&cache_id_storage, TRUE), obj2, FALSE);
-		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_links (&cache_id_storage, FALSE), obj2, TRUE);
+		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, OBJECT_TYPE_LINK, TRUE), obj2, FALSE);
+		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, OBJECT_TYPE_LINK, FALSE), obj2, TRUE);
 	} else {
 		g_assert (nmp_cache_lookup_obj (cache, obj1) == NULL);
 		g_assert (nmp_cache_lookup_obj (cache, nmp_object_stackinit_id_link (&objs1, pl_link_2.ifindex)) == NULL);
@@ -343,8 +343,8 @@ test_cache_link ()
 		g_assert (!was_visible);
 		g_assert (!nmp_object_is_visible (obj2));
 		g_assert (nmp_cache_lookup_obj (cache, nmp_object_stackinit_id_link (&objs1, pl_link_3.ifindex)) == obj2);
-		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_links (&cache_id_storage, TRUE), obj2, FALSE);
-		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_links (&cache_id_storage, FALSE), obj2, TRUE);
+		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, OBJECT_TYPE_LINK, TRUE), obj2, FALSE);
+		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, OBJECT_TYPE_LINK, FALSE), obj2, TRUE);
 		g_assert_cmpint (obj2->_link.netlink.is_in_netlink, ==, FALSE);
 		g_assert_cmpint (obj2->link.initialized, ==, FALSE);
 		nmp_object_unref (obj2);
@@ -361,8 +361,8 @@ test_cache_link ()
 		g_assert (nmp_cache_lookup_obj (cache, obj1) == obj2);
 		g_assert (nmp_cache_lookup_obj (cache, nmp_object_stackinit_id_link (&objs1, pl_link_3.ifindex)) == obj2);
 		g_assert (nmp_object_is_visible (obj2));
-		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_links (&cache_id_storage, TRUE), obj2, TRUE);
-		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_links (&cache_id_storage, FALSE), obj2, TRUE);
+		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, OBJECT_TYPE_LINK, TRUE), obj2, TRUE);
+		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, OBJECT_TYPE_LINK, FALSE), obj2, TRUE);
 		g_assert_cmpint (obj2->_link.netlink.is_in_netlink, ==, TRUE);
 		g_assert_cmpint (obj2->link.initialized, ==, TRUE);
 		nmp_object_unref (obj1);
@@ -375,8 +375,8 @@ test_cache_link ()
 		g_assert (was_visible);
 		g_assert (nmp_cache_lookup_obj (cache, nmp_object_stackinit_id_link (&objs1, pl_link_3.ifindex)) == obj2);
 		g_assert (nmp_object_is_visible (obj2));
-		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_links (&cache_id_storage, TRUE), obj2, TRUE);
-		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_links (&cache_id_storage, FALSE), obj2, TRUE);
+		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, OBJECT_TYPE_LINK, TRUE), obj2, TRUE);
+		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, OBJECT_TYPE_LINK, FALSE), obj2, TRUE);
 		g_assert_cmpint (obj2->_link.netlink.is_in_netlink, ==, TRUE);
 		g_assert_cmpint (obj2->link.initialized, ==, !nmp_cache_use_udev_get (cache));
 		nmp_object_unref (obj2);
