@@ -15,8 +15,8 @@ PKG_NAME=NetworkManager
 
 (test -f $srcdir/configure.ac \
   && test -f $srcdir/src/main.c) || {
-    echo -n "**Error**: Directory "\`$srcdir\'" does not look like the"
-    echo " top-level $PKG_NAME directory"
+    printf "**Error**: Directory "\`$srcdir\'" does not look like the" >&2
+    echo " top-level $PKG_NAME directory" >&2
     exit 1
 }
 
