@@ -199,7 +199,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, priv->props.src_port_max);
 		break;
 	case PROP_PROXY:
-		g_value_set_uint (value, priv->props.proxy);
+		g_value_set_boolean (value, priv->props.proxy);
 		break;
 	case PROP_RSC:
 		g_value_set_boolean (value, priv->props.rsc);
