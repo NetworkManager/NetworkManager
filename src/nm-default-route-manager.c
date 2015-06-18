@@ -411,6 +411,30 @@ _get_assumed_interface_metrics (const VTableIP *vtable, NMDefaultRouteManager *s
 			g_hash_table_add (result, GUINT_TO_POINTER (vtable->vt->metric_normalize (route->metric)));
 	}
 
+	/* also add all non-synced metrics from our entries list. We might have there some metrics that
+	 * we track as non-synced but that are no longer part of platform routes. Anyway, for now
+	 * we still want to treat them as assumed. */
+	for (i = 0; i < entries->len; i++) {
+		gboolean ifindex_has_synced_entry = FALSE;
+		Entry *e_i = g_ptr_array_index (entries, i);
+
+		if (e_i->synced)
+			continue;
+
+		for (j = 0; j < entries->len; j++) {
+			Entry *e_j = g_ptr_array_index (entries, j);
+
+			if (   j != i
+			    && (e_j->synced && e_j->route.rx.ifindex == e_i->route.rx.ifindex)) {
+				ifindex_has_synced_entry = TRUE;
+				break;
+			}
+		}
+
+		if (!ifindex_has_synced_entry)
+			g_hash_table_add (result, GUINT_TO_POINTER (vtable->vt->metric_normalize (e_i->route.rx.metric)));
+	}
+
 	return result;
 }
 
