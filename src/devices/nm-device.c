@@ -6135,7 +6135,7 @@ nm_device_steal_connection (NMDevice *self, NMConnection *connection)
 	    && priv->state < NM_DEVICE_STATE_DEACTIVATING)
 		nm_device_state_changed (self,
 		                         NM_DEVICE_STATE_DEACTIVATING,
-		                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
+		                         NM_DEVICE_STATE_REASON_NEW_ACTIVATION);
 }
 
 void
