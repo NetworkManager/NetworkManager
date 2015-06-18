@@ -15,21 +15,9 @@ AC_INIT([NetworkManager], [nm_version],
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([build-aux])
+AC_REQUIRE_AUX_FILE([tap-driver.sh])
 
-dnl Initialize automake.  automake < 1.12 didn't have serial-tests and
-dnl gives an error if it sees this, but for automake >= 1.13
-dnl serial-tests is required so we have to include it.  Solution is to
-dnl test for the version of automake (by running an external command)
-dnl and provide it if necessary.  Note we have to do this entirely using
-dnl m4 macros since automake queries this macro by running
-dnl 'autoconf --trace ...'.
-m4_define([serial_tests], [
-    m4_esyscmd([automake --version |
-                head -1 |
-                awk '{split ($NF,a,"."); if (a[1] == 1 && a[2] >= 12) { print "serial-tests" }}'
-    ])
-])
-AM_INIT_AUTOMAKE(1.11 serial_tests tar-ustar no-dist-gzip dist-bzip2 -Wno-portability)  dnl NB: Do not [quote] this parameter.
+AM_INIT_AUTOMAKE(1.12 tar-ustar no-dist-gzip dist-bzip2 -Wno-portability)  dnl NB: Do not [quote] this parameter.
 AM_MAINTAINER_MODE([enable])
 AM_SILENT_RULES([yes])
 
@@ -267,7 +255,11 @@ else
 fi
 AM_CONDITIONAL(HAVE_DBUS_GLIB_100, test "${have_dbus_glib_100}" = "yes")
 
-PKG_CHECK_MODULES(GLIB, gio-unix-2.0 >= 2.32 gmodule-2.0)
+PKG_CHECK_MODULES(GLIB, [gio-unix-2.0 >= 2.37.6 gmodule-2.0],
+	[AC_SUBST(LOG_DRIVER, '$(top_srcdir)/build-aux/tap-driver.sh'),
+	 AC_SUBST(AM_TESTS_FD_REDIRECT, '--tap')],
+	[PKG_CHECK_MODULES(GLIB, gio-unix-2.0 >= 2.32 gmodule-2.0)
+	 AC_SUBST(LOG_DRIVER, '$(top_srcdir)/build-aux/test-driver')])
 
 dnl GLIB_VERSION_MIN_REQUIRED should match the version above.
 dnl GLIB_VERSION_MAX_ALLOWED should be set to the same version;
@@ -828,6 +820,18 @@ AM_CONDITIONAL(BUILD_NMTUI, test "$build_nmtui" = yes)
 
 NM_COMPILER_WARNINGS
 
+AC_ARG_ENABLE(more-asserts,
+              AS_HELP_STRING([--enable-more-asserts], [Enable more assertions for debugging (default: no)]))
+if test "${enable_more_asserts}" = "yes"; then
+    AC_DEFINE(NM_MORE_ASSERTS, [1], [Define if more asserts are enabled])
+fi
+
+AC_ARG_ENABLE(more-logging,
+              AS_HELP_STRING([--enable-more-logging], [Enable more debug logging (default: no)]))
+if test "${enable_more_logging}" = "yes"; then
+    AC_DEFINE(NM_MORE_LOGGING, [1], [Define if more asserts are enabled])
+fi
+
 AC_ARG_ENABLE(lto, AS_HELP_STRING([--enable-lto], [Enable Link Time Optimization for smaller size (default: no)]))
 if (test "${enable_lto}" = "yes"); then
     CFLAGS="-flto $CFLAGS"
@@ -859,8 +863,16 @@ AS_IF([test "$with_valgrind" == "yes"],
 # Add conditionals and substitutions
 AM_CONDITIONAL(ENABLE_TESTS, test "$enable_tests" != "no")
 AM_CONDITIONAL(REQUIRE_ROOT_TESTS, test "$enable_tests" == "root")
+AC_ARG_WITH(valgrind-suppressions, AS_HELP_STRING([--with-valgrind-suppressions=path], [Use specific valgrind suppression file]))
+if test "$with_valgrind" == no; then
+	with_valgrind_suppressions=
+else
+	if test  "$with_valgrind_suppressions" == ""; then
+		with_valgrind_suppressions='$(top_srcdir)/valgrind.suppressions'
+	fi
+fi
 AS_IF([test "$with_valgrind" != "no"],
-	AC_SUBST(VALGRIND_RULES, 'TESTS_ENVIRONMENT = "$(top_srcdir)/tools/run-test-valgrind.sh" "$(LIBTOOL)" "$(with_valgrind)" "$(top_srcdir)/valgrind.suppressions"'),
+	AC_SUBST(VALGRIND_RULES, 'LOG_COMPILER = "$(top_srcdir)/tools/run-test-valgrind.sh" "$(LIBTOOL)" "$(with_valgrind)" '"$with_valgrind_suppressions"),
 	AC_SUBST(VALGRIND_RULES, []))
 AM_CONDITIONAL(WITH_VALGRIND, test "${with_valgrind}" != "no")
 
@@ -1084,7 +1096,7 @@ echo
 echo "Miscellaneous:"
 echo "  documentation: $enable_gtk_doc"
 echo "  tests: $enable_tests"
-echo "  valgrind: $with_valgrind"
+echo "  valgrind: $with_valgrind   $with_valgrind_suppressions"
 echo "  code coverage: $enable_code_coverage"
 echo "  LTO: $enable_lto"
 echo

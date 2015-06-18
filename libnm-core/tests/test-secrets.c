@@ -739,33 +739,23 @@ NMTST_DEFINE ();
 int
 main (int argc, char **argv)
 {
-	char *base;
-
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
-
 	nmtst_init (&argc, &argv, TRUE);
 
 	/* The tests */
-	test_need_tls_secrets_path ();
-	test_need_tls_secrets_blob ();
-	test_need_tls_phase2_secrets_path ();
-	test_need_tls_phase2_secrets_blob ();
+	g_test_add_func ("/libnm/need_tls_secrets_path", test_need_tls_secrets_path);
+	g_test_add_func ("/libnm/need_tls_secrets_blob", test_need_tls_secrets_blob);
+	g_test_add_func ("/libnm/need_tls_phase2_secrets_path", test_need_tls_phase2_secrets_path);
+	g_test_add_func ("/libnm/need_tls_phase2_secrets_blob", test_need_tls_phase2_secrets_blob);
 
-	test_update_secrets_wifi_single_setting ();
-	test_update_secrets_wifi_full_hash ();
-	test_update_secrets_wifi_bad_setting_name ();
+	g_test_add_func ("/libnm/update_secrets_wifi_single_setting", test_update_secrets_wifi_single_setting);
+	g_test_add_func ("/libnm/update_secrets_wifi_full_hash", test_update_secrets_wifi_full_hash);
+	g_test_add_func ("/libnm/update_secrets_wifi_bad_setting_name", test_update_secrets_wifi_bad_setting_name);
 
-	test_update_secrets_whole_connection ();
-	test_update_secrets_whole_connection_empty_hash ();
-	test_update_secrets_whole_connection_bad_setting ();
-	test_update_secrets_whole_connection_empty_base_setting ();
-	test_update_secrets_null_setting_name_with_setting_hash ();
+	g_test_add_func ("/libnm/update_secrets_whole_connection", test_update_secrets_whole_connection);
+	g_test_add_func ("/libnm/update_secrets_whole_connection_empty_hash", test_update_secrets_whole_connection_empty_hash);
+	g_test_add_func ("/libnm/update_secrets_whole_connection_bad_setting", test_update_secrets_whole_connection_bad_setting);
+	g_test_add_func ("/libnm/update_secrets_whole_connection_empty_base_setting", test_update_secrets_whole_connection_empty_base_setting);
+	g_test_add_func ("/libnm/update_secrets_null_setting_name_with_setting_hash", test_update_secrets_null_setting_name_with_setting_hash);
 
-	base = g_path_get_basename (argv[0]);
-	fprintf (stdout, "%s: SUCCESS\n", base);
-	g_free (base);
-	return 0;
+	return g_test_run ();
 }
-

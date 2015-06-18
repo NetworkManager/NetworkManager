@@ -109,7 +109,6 @@ test_cleanup_linux_CPPFLAGS = \
 	-DKERNEL_HACKS=1
 test_cleanup_linux_LDADD = $(PLATFORM_LDADD)
 
-
 @VALGRIND_RULES@
 TESTS = \
 	test-address-fake \

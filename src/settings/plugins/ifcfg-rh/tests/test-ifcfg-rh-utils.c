@@ -115,15 +115,9 @@ test_ignored (const char *desc, const char *path, gboolean expected_ignored)
 	ASSERT (result == expected_ignored, desc, "unexpected ignore result for path '%s'", path);
 }
 
-NMTST_DEFINE ();
-
-int main (int argc, char **argv)
+static void
+test_name (void)
 {
-	char *base;
-
-	nmtst_init_assert_logging (&argc, &argv, "INFO", "DEFAULT");
-
-	/* The tests */
 	test_get_ifcfg_name ("get-ifcfg-name-bad", "/foo/bar/adfasdfadf", FALSE, NULL);
 	test_get_ifcfg_name ("get-ifcfg-name-good", "/foo/bar/ifcfg-FooBar", FALSE, "FooBar");
 	test_get_ifcfg_name ("get-ifcfg-name-keys", "/foo/bar/keys-BlahLbah", FALSE, "BlahLbah");
@@ -137,7 +131,11 @@ int main (int argc, char **argv)
 	test_get_ifcfg_name ("get-ifcfg-name-bad2-ifcfg", "/foo/bar/asdfasifcfg-Foobar", FALSE, NULL);
 	test_get_ifcfg_name ("get-ifcfg-name-bad2-keys", "/foo/bar/asdfaskeys-Foobar", FALSE, NULL);
 	test_get_ifcfg_name ("get-ifcfg-name-bad2-route", "/foo/bar/asdfasroute-Foobar", FALSE, NULL);
+}
 
+static void
+test_path (void)
+{
 	test_get_ifcfg_path ("ifcfg-path-bad", "/foo/bar/adfasdfasdf", NULL);
 	test_get_ifcfg_path ("ifcfg-path-from-keys-no-path", "keys-BlahBlah", "ifcfg-BlahBlah");
 	test_get_ifcfg_path ("ifcfg-path-from-keys", "/foo/bar/keys-BlahBlah", "/foo/bar/ifcfg-BlahBlah");
@@ -152,7 +150,11 @@ int main (int argc, char **argv)
 	test_get_route_path ("route-path-from-ifcfg-no-path", "ifcfg-FooBar", "route-FooBar");
 	test_get_route_path ("route-path-from-ifcfg", "/foo/bar/ifcfg-FooBar", "/foo/bar/route-FooBar");
 	test_get_route_path ("route-path-from-keys", "/foo/bar/keys-FooBar", "/foo/bar/route-FooBar");
+}
 
+static void
+test_ignore (void)
+{
 	test_ignored ("ignored-ifcfg", "ifcfg-FooBar", FALSE);
 	test_ignored ("ignored-keys", "keys-FooBar", FALSE);
 	test_ignored ("ignored-route", "route-FooBar", FALSE);
@@ -163,10 +165,19 @@ int main (int argc, char **argv)
 	test_ignored ("ignored-rpmnew", "ifcfg-FooBar" RPMNEW_TAG, TRUE);
 	test_ignored ("ignored-augnew", "ifcfg-FooBar" AUGNEW_TAG, TRUE);
 	test_ignored ("ignored-augtmp", "ifcfg-FooBar" AUGTMP_TAG, TRUE);
+}
 
-	base = g_path_get_basename (argv[0]);
-	fprintf (stdout, "%s: SUCCESS\n", base);
-	g_free (base);
-	return 0;
+NMTST_DEFINE ();
+
+int main (int argc, char **argv)
+{
+	nmtst_init_assert_logging (&argc, &argv, "INFO", "DEFAULT");
+
+	/* The tests */
+	g_test_add_func ("/settings/plugins/ifcfg-rh/name", test_name);
+	g_test_add_func ("/settings/plugins/ifcfg-rh/path", test_path);
+	g_test_add_func ("/settings/plugins/ifcfg-rh/ignore", test_ignore);
+
+	return g_test_run ();
 }
 
