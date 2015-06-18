@@ -1624,7 +1624,7 @@ cache_prune_candidates_record_all (NMPlatform *platform, ObjectType obj_type)
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 
 	priv->prune_candidates = nmp_cache_lookup_all_to_hash (priv->cache,
-	                                                       nmp_cache_id_init_object_type (NMP_CACHE_ID_STATIC, obj_type),
+	                                                       nmp_cache_id_init_object_type (NMP_CACHE_ID_STATIC, obj_type, FALSE),
 	                                                       priv->prune_candidates);
 	_LOGT ("cache-prune: record %s (now %u candidates)", nmp_class_from_type (obj_type)->obj_type_name,
 	       priv->prune_candidates ? g_hash_table_size (priv->prune_candidates) : 0);
@@ -2490,7 +2490,7 @@ link_get_all (NMPlatform *platform)
 
 	return nmp_cache_lookup_multi_to_array (priv->cache,
 	                                        OBJECT_TYPE_LINK,
-	                                        nmp_cache_id_init_links (NMP_CACHE_ID_STATIC, TRUE));
+	                                        nmp_cache_id_init_object_type (NMP_CACHE_ID_STATIC, OBJECT_TYPE_LINK, TRUE));
 }
 
 static gboolean
@@ -4009,26 +4009,29 @@ link_get_driver_info (NMPlatform *platform,
 /******************************************************************/
 
 static GArray *
-ipx_address_get_all (NMPlatform *platform, int ifindex, gboolean is_v4)
+ipx_address_get_all (NMPlatform *platform, int ifindex, ObjectType obj_type)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	ObjectType obj_type = is_v4 ? OBJECT_TYPE_IP4_ADDRESS : OBJECT_TYPE_IP6_ADDRESS;
+
+	nm_assert (NM_IN_SET (obj_type, OBJECT_TYPE_IP4_ADDRESS, OBJECT_TYPE_IP6_ADDRESS));
 
 	return nmp_cache_lookup_multi_to_array (priv->cache,
 	                                        obj_type,
-	                                        nmp_cache_id_init_addrroute_by_ifindex (NMP_CACHE_ID_STATIC, obj_type, ifindex));
+	                                        nmp_cache_id_init_addrroute_visible_by_ifindex (NMP_CACHE_ID_STATIC,
+	                                                                                        obj_type,
+	                                                                                        ifindex));
 }
 
 static GArray *
 ip4_address_get_all (NMPlatform *platform, int ifindex)
 {
-	return ipx_address_get_all (platform, ifindex, TRUE);
+	return ipx_address_get_all (platform, ifindex, OBJECT_TYPE_IP4_ADDRESS);
 }
 
 static GArray *
 ip6_address_get_all (NMPlatform *platform, int ifindex)
 {
-	return ipx_address_get_all (platform, ifindex, FALSE);
+	return ipx_address_get_all (platform, ifindex, OBJECT_TYPE_IP6_ADDRESS);
 }
 
 #define IPV4LL_NETWORK (htonl (0xA9FE0000L))
@@ -4273,35 +4276,42 @@ check_for_route:
 /******************************************************************/
 
 static GArray *
-ipx_route_get_all (NMPlatform *platform, int ifindex, gboolean is_v4, NMPlatformGetRouteMode mode)
+ipx_route_get_all (NMPlatform *platform, int ifindex, ObjectType obj_type, NMPlatformGetRouteMode mode)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	NMPCacheIdType id_type;
+	gboolean with_default = FALSE, with_non_default = FALSE;
 
-	if (mode == NM_PLATFORM_GET_ROUTE_MODE_ALL)
-		id_type = NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_ALL;
-	else if (mode == NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT)
-		id_type = NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_NO_DEFAULT;
+	nm_assert (NM_IN_SET (obj_type, OBJECT_TYPE_IP4_ROUTE, OBJECT_TYPE_IP6_ROUTE));
+
+	if (mode == NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT)
+		with_non_default = TRUE;
 	else if (mode == NM_PLATFORM_GET_ROUTE_MODE_ONLY_DEFAULT)
-		id_type = NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_ONLY_DEFAULT;
-	else
+		with_default = TRUE;
+	else if (mode == NM_PLATFORM_GET_ROUTE_MODE_ALL) {
+		with_non_default = TRUE;
+		with_default = TRUE;
+	} else
 		g_return_val_if_reached (NULL);
 
 	return nmp_cache_lookup_multi_to_array (priv->cache,
-	                                        is_v4 ? OBJECT_TYPE_IP4_ROUTE : OBJECT_TYPE_IP6_ROUTE,
-	                                        nmp_cache_id_init_routes_visible (NMP_CACHE_ID_STATIC, id_type, is_v4, ifindex));
+	                                        obj_type,
+	                                        nmp_cache_id_init_routes_visible (NMP_CACHE_ID_STATIC,
+	                                                                          obj_type,
+	                                                                          with_default,
+	                                                                          with_non_default,
+	                                                                          ifindex));
 }
 
 static GArray *
 ip4_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteMode mode)
 {
-	return ipx_route_get_all (platform, ifindex, TRUE, mode);
+	return ipx_route_get_all (platform, ifindex, OBJECT_TYPE_IP4_ROUTE, mode);
 }
 
 static GArray *
 ip6_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteMode mode)
 {
-	return ipx_route_get_all (platform, ifindex, FALSE, mode);
+	return ipx_route_get_all (platform, ifindex, OBJECT_TYPE_IP6_ROUTE, mode);
 }
 
 static void
