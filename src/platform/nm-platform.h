@@ -426,6 +426,7 @@ typedef struct {
 	gboolean (*link_get_unmanaged) (NMPlatform *, int ifindex, gboolean *managed);
 
 	gboolean (*link_refresh) (NMPlatform *, int ifindex);
+	void (*process_events) (NMPlatform *self);
 
 	gboolean (*link_set_up) (NMPlatform *, int ifindex, gboolean *out_no_firmware);
 	gboolean (*link_set_down) (NMPlatform *, int ifindex);
@@ -614,6 +615,7 @@ gboolean nm_platform_link_is_software (NMPlatform *self, int ifindex);
 gboolean nm_platform_link_supports_slaves (NMPlatform *self, int ifindex);
 
 gboolean nm_platform_link_refresh (NMPlatform *self, int ifindex);
+void nm_platform_process_events (NMPlatform *self);
 
 gboolean nm_platform_link_set_up (NMPlatform *self, int ifindex, gboolean *out_no_firmware);
 gboolean nm_platform_link_set_down (NMPlatform *self, int ifindex);

@@ -136,6 +136,7 @@ typedef enum {
 
 static gboolean tun_get_properties_ifname (NMPlatform *platform, const char *ifname, NMPlatformTunProperties *props);
 static void delayed_action_schedule (NMPlatform *platform, DelayedActionType action_type, gpointer user_data);
+static gboolean delayed_action_handle_all (NMPlatform *platform, gboolean read_netlink);
 static void do_request_link (NMPlatform *platform, int ifindex, const char *name, gboolean handle_delayed_action);
 static void do_request_all (NMPlatform *platform, DelayedActionType action_type, gboolean handle_delayed_action);
 static void cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMPCacheOpsType ops_type, gpointer user_data);
@@ -805,6 +806,12 @@ check_support_user_ipv6ll (NMPlatform *platform)
 	g_return_val_if_fail (NM_IS_LINUX_PLATFORM (platform), FALSE);
 
 	return _support_user_ipv6ll_get ();
+}
+
+static void
+process_events (NMPlatform *platform)
+{
+	delayed_action_handle_all (platform, TRUE);
 }
 
 /******************************************************************/
@@ -5097,5 +5104,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 
 	platform_class->check_support_kernel_extended_ifa_flags = check_support_kernel_extended_ifa_flags;
 	platform_class->check_support_user_ipv6ll = check_support_user_ipv6ll;
+
+	platform_class->process_events = process_events;
 }
 
