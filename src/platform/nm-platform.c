@@ -224,6 +224,23 @@ nm_platform_check_support_user_ipv6ll (NMPlatform *self)
 	return !!supported;
 }
 
+/**
+ * nm_platform_process_events:
+ * @self: platform instance
+ *
+ * Process pending events or handle pending delayed-actions.
+ * Effectively, this reads the netlink socket and processes
+ * new netlink messages. Possibly it will raise change signals.
+ */
+void
+nm_platform_process_events (NMPlatform *self)
+{
+	_CHECK_SELF_VOID (self, klass);
+
+	if (klass->process_events)
+		klass->process_events (self);
+}
+
 /******************************************************************/
 
 /**
