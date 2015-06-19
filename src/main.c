@@ -209,7 +209,7 @@ _init_nm_debug (const char *debug)
 }
 
 void
-nm_main_config_reload ()
+nm_main_config_reload (void)
 {
 	nm_log_info (LOGD_CORE, "reload configuration...");
 	/* The signal handler thread is only installed after
