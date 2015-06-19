@@ -170,7 +170,7 @@ _set_hostname (NMPolicy *policy,
 	 * there was no valid hostname to start with.
 	 */
 
-	/* Clear lookup adresses if we have a hostname, so that we don't
+	/* Clear lookup addresses if we have a hostname, so that we don't
 	 * restart the reverse lookup thread later.
 	 */
 	if (new_hostname)

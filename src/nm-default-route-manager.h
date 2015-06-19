@@ -51,8 +51,8 @@ NMDefaultRouteManager *nm_default_route_manager_get (void);
 void nm_default_route_manager_ip4_update_default_route (NMDefaultRouteManager *manager, gpointer source);
 void nm_default_route_manager_ip6_update_default_route (NMDefaultRouteManager *manager, gpointer source);
 
-gboolean nm_default_route_manager_ip4_connection_has_default_route (NMDefaultRouteManager *manager, NMConnection *connection);
-gboolean nm_default_route_manager_ip6_connection_has_default_route (NMDefaultRouteManager *manager, NMConnection *connection);
+gboolean nm_default_route_manager_ip4_connection_has_default_route (NMDefaultRouteManager *manager, NMConnection *connection, gboolean *out_is_never_default);
+gboolean nm_default_route_manager_ip6_connection_has_default_route (NMDefaultRouteManager *manager, NMConnection *connection, gboolean *out_is_never_default);
 
 NMDevice *nm_default_route_manager_ip4_get_best_device (NMDefaultRouteManager *manager, const GSList *devices, gboolean fully_activated, NMDevice *preferred_device);
 NMDevice *nm_default_route_manager_ip6_get_best_device (NMDefaultRouteManager *manager, const GSList *devices, gboolean fully_activated, NMDevice *preferred_device);
