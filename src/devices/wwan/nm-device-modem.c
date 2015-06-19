@@ -372,6 +372,18 @@ get_generic_capabilities (NMDevice *device)
 	return NM_DEVICE_CAP_IS_NON_KERNEL;
 }
 
+static const char *
+get_type_description (NMDevice *device)
+{
+	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
+
+	if (NM_FLAGS_HAS (priv->current_caps, NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS))
+		return "gsm";
+	if (NM_FLAGS_HAS (priv->current_caps, NM_DEVICE_MODEM_CAPABILITY_CDMA_EVDO))
+		return "cdma";
+	return NM_DEVICE_CLASS (nm_device_modem_parent_class)->get_type_description (device);
+}
+
 static gboolean
 check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
@@ -741,6 +753,7 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 	object_class->constructed = constructed;
 
 	device_class->get_generic_capabilities = get_generic_capabilities;
+	device_class->get_type_description = get_type_description;
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->check_connection_available = check_connection_available;
 	device_class->complete_connection = complete_connection;

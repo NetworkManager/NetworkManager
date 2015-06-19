@@ -54,6 +54,14 @@ get_generic_capabilities (NMDevice *dev)
 		return NM_DEVICE_CAP_NONE;
 }
 
+static const char *
+get_type_description (NMDevice *device)
+{
+	if (NM_DEVICE_GENERIC_GET_PRIVATE (device)->type_description)
+		return NM_DEVICE_GENERIC_GET_PRIVATE (device)->type_description;
+	return NM_DEVICE_CLASS (nm_device_generic_parent_class)->get_type_description (device);
+}
+
 static gboolean
 check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
@@ -184,6 +192,7 @@ nm_device_generic_class_init (NMDeviceGenericClass *klass)
 	object_class->set_property = set_property;
 
 	parent_class->get_generic_capabilities = get_generic_capabilities;
+	parent_class->get_type_description = get_type_description;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->update_connection = update_connection;
 
