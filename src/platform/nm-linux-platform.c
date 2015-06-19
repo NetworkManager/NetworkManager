@@ -816,6 +816,14 @@ process_events (NMPlatform *platform)
 
 /******************************************************************/
 
+#define cache_lookup_all_objects(type, platform, obj_type, visible_only) \
+	((const type *const*) nmp_cache_lookup_multi (NM_LINUX_PLATFORM_GET_PRIVATE ((platform))->cache, \
+	                                              nmp_cache_id_init_object_type (NMP_CACHE_ID_STATIC, (obj_type), (visible_only)), \
+	                                              NULL))
+
+
+/******************************************************************/
+
 #define DEVTYPE_PREFIX "DEVTYPE="
 
 static char *
@@ -4255,26 +4263,53 @@ ip4_check_reinstall_device_route (NMPlatform *platform, int ifindex, const NMPla
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	guint32 device_network;
 	NMPObject obj_needle;
-
-	if (nmp_cache_lookup_obj (priv->cache,
-	                          nmp_object_stackinit_id_ip4_address (&obj_needle, ifindex, address->address, address->plen))) {
-		/* If we already have the same address installed on any interface,
-		 * we back off. */
-		return FALSE;
-	}
+	const NMPlatformIP4Address *const *addresses;
+	const NMPlatformIP4Route *const *routes;
 
 	device_network = nm_utils_ip4_address_clear_host_address (address->address, address->plen);
 
-check_for_route:
+	/* in many cases we expect the route to already exist. So first do an exact lookup
+	 * to save the O(n) access below. */
 	nmp_object_stackinit_id_ip4_route (&obj_needle, ifindex, device_network, address->plen, device_route_metric);
 	if (nmp_cache_lookup_obj (priv->cache, &obj_needle)) {
 		/* There is already a route with metric 0 or the metric we want to install
 		 * for the same subnet. */
 		return FALSE;
 	}
-	if (device_route_metric != 0) {
-		device_route_metric = 0;
-		goto check_for_route;
+	if (obj_needle.ip4_route.metric != 0) {
+		obj_needle.ip4_route.metric = 0;
+		if (nmp_cache_lookup_obj (priv->cache, &obj_needle))
+			return FALSE;
+	}
+
+	/* also check whether we already have the same address configured on *any* device. */
+	addresses = cache_lookup_all_objects (NMPlatformIP4Address, platform, NMP_OBJECT_TYPE_IP4_ADDRESS, FALSE);
+	if (addresses) {
+		for (; *addresses; addresses++) {
+			const NMPlatformIP4Address *addr_candidate = *addresses;
+
+			if (   addr_candidate->plen == address->plen
+			    && addr_candidate->address == device_network) {
+				/* If we already have the same address installed on any interface,
+				 * we back off. */
+				return FALSE;
+			}
+		}
+	}
+
+	routes = cache_lookup_all_objects (NMPlatformIP4Route, platform, NMP_OBJECT_TYPE_IP4_ROUTE, FALSE);
+	if (routes) {
+		for (; *routes; routes++) {
+			const NMPlatformIP4Route *route_candidate = *routes;
+
+			if (   route_candidate->network == device_network
+			    && route_candidate->plen == address->plen
+			    && (route_candidate->metric == 0 || route_candidate->metric == device_route_metric)) {
+				/* If we already have the same address installed on any interface,
+				 * we back off. */
+				return FALSE;
+			}
+		}
 	}
 
 	return TRUE;
