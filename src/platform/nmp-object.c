@@ -134,7 +134,7 @@ _nmp_object_fixup_link_udev_fields (NMPObject *obj, gboolean use_udev)
 	const char *driver = NULL;
 	gboolean initialized = FALSE;
 
-	nm_assert (NMP_OBJECT_GET_TYPE (obj) == OBJECT_TYPE_LINK);
+	nm_assert (NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_LINK);
 
 	/* The link contains internal fields that are combined by
 	 * properties from netlink and udev. Update those properties */
@@ -169,7 +169,7 @@ _nmp_object_fixup_link_udev_fields (NMPObject *obj, gboolean use_udev)
 static void
 _nmp_object_fixup_link_master_connected (NMPObject *obj, const NMPCache *cache)
 {
-	nm_assert (NMP_OBJECT_GET_TYPE (obj) == OBJECT_TYPE_LINK);
+	nm_assert (NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_LINK);
 
 	if (nmp_cache_link_connected_needs_toggle (cache, obj, NULL, NULL))
 		obj->link.connected = !obj->link.connected;
@@ -178,7 +178,7 @@ _nmp_object_fixup_link_master_connected (NMPObject *obj, const NMPCache *cache)
 /******************************************************************/
 
 const NMPClass *
-nmp_class_from_type (ObjectType obj_type)
+nmp_class_from_type (NMPObjectType obj_type)
 {
 	g_return_val_if_fail (obj_type > OBJECT_TYPE_UNKNOWN && obj_type <= OBJECT_TYPE_MAX, NULL);
 
@@ -242,7 +242,7 @@ _nmp_object_new_from_class (const NMPClass *klass)
 }
 
 NMPObject *
-nmp_object_new (ObjectType obj_type, const NMPlatformObject *plobj)
+nmp_object_new (NMPObjectType obj_type, const NMPlatformObject *plobj)
 {
 	const NMPClass *klass = nmp_class_from_type (obj_type);
 	NMPObject *obj;
@@ -258,7 +258,7 @@ nmp_object_new_link (int ifindex)
 {
 	NMPObject *obj;
 
-	obj = nmp_object_new (OBJECT_TYPE_LINK, NULL);
+	obj = nmp_object_new (NMP_OBJECT_TYPE_LINK, NULL);
 	obj->link.ifindex = ifindex;
 	return obj;
 }
@@ -277,7 +277,7 @@ _nmp_object_stackinit_from_class (NMPObject *obj, const NMPClass *klass)
 }
 
 const NMPObject *
-nmp_object_stackinit (NMPObject *obj, ObjectType obj_type, const NMPlatformObject *plobj)
+nmp_object_stackinit (NMPObject *obj, NMPObjectType obj_type, const NMPlatformObject *plobj)
 {
 	const NMPClass *klass = nmp_class_from_type (obj_type);
 
@@ -300,7 +300,7 @@ nmp_object_stackinit_id  (NMPObject *obj, const NMPObject *src)
 const NMPObject *
 nmp_object_stackinit_id_link (NMPObject *obj, int ifindex)
 {
-	nmp_object_stackinit (obj, OBJECT_TYPE_LINK, NULL);
+	nmp_object_stackinit (obj, NMP_OBJECT_TYPE_LINK, NULL);
 	obj->link.ifindex = ifindex;
 	return obj;
 }
@@ -314,7 +314,7 @@ _vt_cmd_obj_stackinit_id_link (NMPObject *obj, const NMPObject *src)
 const NMPObject *
 nmp_object_stackinit_id_ip4_address (NMPObject *obj, int ifindex, guint32 address, int plen)
 {
-	nmp_object_stackinit (obj, OBJECT_TYPE_IP4_ADDRESS, NULL);
+	nmp_object_stackinit (obj, NMP_OBJECT_TYPE_IP4_ADDRESS, NULL);
 	obj->ip4_address.ifindex = ifindex;
 	obj->ip4_address.address = address;
 	obj->ip4_address.plen = plen;
@@ -330,7 +330,7 @@ _vt_cmd_obj_stackinit_id_ip4_address (NMPObject *obj, const NMPObject *src)
 const NMPObject *
 nmp_object_stackinit_id_ip6_address (NMPObject *obj, int ifindex, const struct in6_addr *address, int plen)
 {
-	nmp_object_stackinit (obj, OBJECT_TYPE_IP6_ADDRESS, NULL);
+	nmp_object_stackinit (obj, NMP_OBJECT_TYPE_IP6_ADDRESS, NULL);
 	obj->ip4_address.ifindex = ifindex;
 	if (address)
 		obj->ip6_address.address = *address;
@@ -347,7 +347,7 @@ _vt_cmd_obj_stackinit_id_ip6_address (NMPObject *obj, const NMPObject *src)
 const NMPObject *
 nmp_object_stackinit_id_ip4_route (NMPObject *obj, int ifindex, guint32 network, int plen, guint32 metric)
 {
-	nmp_object_stackinit (obj, OBJECT_TYPE_IP4_ROUTE, NULL);
+	nmp_object_stackinit (obj, NMP_OBJECT_TYPE_IP4_ROUTE, NULL);
 	obj->ip4_route.ifindex = ifindex;
 	obj->ip4_route.network = network;
 	obj->ip4_route.plen = plen;
@@ -364,7 +364,7 @@ _vt_cmd_obj_stackinit_id_ip4_route (NMPObject *obj, const NMPObject *src)
 const NMPObject *
 nmp_object_stackinit_id_ip6_route (NMPObject *obj, int ifindex, const struct in6_addr *network, int plen, guint32 metric)
 {
-	nmp_object_stackinit (obj, OBJECT_TYPE_IP6_ROUTE, NULL);
+	nmp_object_stackinit (obj, NMP_OBJECT_TYPE_IP6_ROUTE, NULL);
 	obj->ip6_route.ifindex = ifindex;
 	if (network)
 		obj->ip6_route.network = *network;
@@ -409,7 +409,7 @@ nmp_object_to_string (const NMPObject *obj, NMPObjectToStringMode to_string_mode
 	case NMP_OBJECT_TO_STRING_ALL:
 		g_strlcpy (buf2, NMP_OBJECT_GET_CLASS (obj)->cmd_plobj_to_string (&obj->object), sizeof (buf2));
 
-		if (NMP_OBJECT_GET_TYPE (obj) == OBJECT_TYPE_LINK) {
+		if (NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_LINK) {
 			g_snprintf (buf3, sizeof (buf3),
 			            ",%cin-nl,%p",
 			            obj->_link.netlink.is_in_netlink ? '+' : '-',
@@ -806,7 +806,7 @@ _vt_cmd_obj_is_visible_ipx_route (const NMPObject *obj)
 NMPObject *
 nmp_object_from_nl (NMPlatform *platform, const struct nl_object *nlo, gboolean id_only, gboolean complete_from_cache)
 {
-	ObjectType obj_type = _nlo_get_object_type (nlo);
+	NMPObjectType obj_type = _nlo_get_object_type (nlo);
 	NMPObject *obj;
 
 	if (obj_type == OBJECT_TYPE_UNKNOWN)
@@ -882,7 +882,7 @@ _nmp_cache_id_init (NMPCacheId *id, NMPCacheIdType id_type)
 }
 
 NMPCacheId *
-nmp_cache_id_init_object_type (NMPCacheId *id, ObjectType obj_type, gboolean visible_only)
+nmp_cache_id_init_object_type (NMPCacheId *id, NMPObjectType obj_type, gboolean visible_only)
 {
 	_nmp_cache_id_init (id, visible_only
 	                        ? NMP_CACHE_ID_TYPE_OBJECT_TYPE_VISIBLE_ONLY
@@ -893,12 +893,12 @@ nmp_cache_id_init_object_type (NMPCacheId *id, ObjectType obj_type, gboolean vis
 
 NMPCacheId *
 nmp_cache_id_init_addrroute_visible_by_ifindex (NMPCacheId *id,
-                                                ObjectType obj_type,
+                                                NMPObjectType obj_type,
                                                 int ifindex)
 {
 	g_return_val_if_fail (NM_IN_SET (obj_type,
-	                                 OBJECT_TYPE_IP4_ADDRESS, OBJECT_TYPE_IP4_ROUTE,
-	                                 OBJECT_TYPE_IP6_ADDRESS, OBJECT_TYPE_IP6_ROUTE), NULL);
+	                                 NMP_OBJECT_TYPE_IP4_ADDRESS, NMP_OBJECT_TYPE_IP4_ROUTE,
+	                                 NMP_OBJECT_TYPE_IP6_ADDRESS, NMP_OBJECT_TYPE_IP6_ROUTE), NULL);
 
 	if (ifindex <= 0)
 		return nmp_cache_id_init_object_type (id, obj_type, TRUE);
@@ -911,12 +911,12 @@ nmp_cache_id_init_addrroute_visible_by_ifindex (NMPCacheId *id,
 
 NMPCacheId *
 nmp_cache_id_init_routes_visible (NMPCacheId *id,
-                                  ObjectType obj_type,
+                                  NMPObjectType obj_type,
                                   gboolean with_default,
                                   gboolean with_non_default,
                                   int ifindex)
 {
-	g_return_val_if_fail (NM_IN_SET (obj_type, OBJECT_TYPE_IP4_ROUTE, OBJECT_TYPE_IP6_ROUTE), NULL);
+	g_return_val_if_fail (NM_IN_SET (obj_type, NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE), NULL);
 
 	if (with_default && with_non_default) {
 		if (ifindex <= 0)
@@ -1092,7 +1092,7 @@ nmp_cache_link_connected_needs_toggle (const NMPCache *cache, const NMPObject *m
 	guint len, i;
 
 	if (   !master
-	    || NMP_OBJECT_GET_TYPE (master) != OBJECT_TYPE_LINK
+	    || NMP_OBJECT_GET_TYPE (master) != NMP_OBJECT_TYPE_LINK
 	    || master->link.ifindex <= 0
 	    || !nmp_object_is_visible (master)
 	    || !NM_IN_SET (master->link.type, NM_LINK_TYPE_BRIDGE, NM_LINK_TYPE_BOND))
@@ -1103,7 +1103,7 @@ nmp_cache_link_connected_needs_toggle (const NMPCache *cache, const NMPObject *m
 	if (!NM_FLAGS_HAS (master->link.flags, IFF_LOWER_UP))
 		return !!master->link.connected;
 
-	if (potential_slave && NMP_OBJECT_GET_TYPE (potential_slave) != OBJECT_TYPE_LINK)
+	if (potential_slave && NMP_OBJECT_GET_TYPE (potential_slave) != NMP_OBJECT_TYPE_LINK)
 		potential_slave = NULL;
 
 	if (   potential_slave
@@ -1113,12 +1113,12 @@ nmp_cache_link_connected_needs_toggle (const NMPCache *cache, const NMPObject *m
 	    && potential_slave->link.connected) {
 		is_lower_up = TRUE;
 	} else {
-		links = (const NMPlatformLink *const *) nmp_cache_lookup_multi (cache, nmp_cache_id_init_object_type (NMP_CACHE_ID_STATIC, OBJECT_TYPE_LINK, FALSE), &len);
+		links = (const NMPlatformLink *const *) nmp_cache_lookup_multi (cache, nmp_cache_id_init_object_type (NMP_CACHE_ID_STATIC, NMP_OBJECT_TYPE_LINK, FALSE), &len);
 		for (i = 0; i < len; i++) {
 			const NMPlatformLink *link = links[i];
 			const NMPObject *obj = NMP_OBJECT_UP_CAST ((NMPlatformObject *) link);
 
-			nm_assert (NMP_OBJECT_GET_TYPE (NMP_OBJECT_UP_CAST ((NMPlatformObject *) link)) == OBJECT_TYPE_LINK);
+			nm_assert (NMP_OBJECT_GET_TYPE (NMP_OBJECT_UP_CAST ((NMPlatformObject *) link)) == NMP_OBJECT_TYPE_LINK);
 
 			if (   (!potential_slave || potential_slave->link.ifindex != link->ifindex)
 			    && ignore_slave != obj
@@ -1177,7 +1177,7 @@ nmp_cache_lookup_multi (const NMPCache *cache, const NMPCacheId *cache_id, guint
 }
 
 GArray *
-nmp_cache_lookup_multi_to_array (const NMPCache *cache, ObjectType obj_type, const NMPCacheId *cache_id)
+nmp_cache_lookup_multi_to_array (const NMPCache *cache, NMPObjectType obj_type, const NMPCacheId *cache_id)
 {
 	const NMPClass *klass = nmp_class_from_type (obj_type);
 	guint len, i;
@@ -1240,7 +1240,7 @@ nmp_cache_lookup_link_full (const NMPCache *cache,
 	} else if (!ifname && !match_fn)
 		return NULL;
 	else {
-		list = nmp_cache_lookup_multi (cache, nmp_cache_id_init_object_type (&cache_id, OBJECT_TYPE_LINK, visible_only), &len);
+		list = nmp_cache_lookup_multi (cache, nmp_cache_id_init_object_type (&cache_id, NMP_OBJECT_TYPE_LINK, visible_only), &len);
 		for (i = 0; i < len; i++) {
 			obj = NMP_OBJECT_UP_CAST (list[i]);
 
@@ -1393,7 +1393,7 @@ nmp_cache_remove (NMPCache *cache, const NMPObject *obj, gboolean equals_by_ptr,
 NMPCacheOpsType
 nmp_cache_remove_netlink (NMPCache *cache, const NMPObject *obj_needle, NMPObject **out_obj, gboolean *out_was_visible, NMPCachePreHook pre_hook, gpointer user_data)
 {
-	if (NMP_OBJECT_GET_TYPE (obj_needle) == OBJECT_TYPE_LINK) {
+	if (NMP_OBJECT_GET_TYPE (obj_needle) == NMP_OBJECT_TYPE_LINK) {
 		NMPObject *old;
 		auto_nmp_obj NMPObject *obj = NULL;
 
@@ -1479,7 +1479,7 @@ nmp_cache_update_netlink (NMPCache *cache, NMPObject *obj, NMPObject **out_obj, 
 	/* A link object from netlink must have the udev related fields unset.
 	 * We could implement to handle that, but there is no need to support such
 	 * a use-case */
-	nm_assert (NMP_OBJECT_GET_TYPE (obj) != OBJECT_TYPE_LINK ||
+	nm_assert (NMP_OBJECT_GET_TYPE (obj) != NMP_OBJECT_TYPE_LINK ||
 	           (   !obj->_link.udev.device
 	            && !obj->link.driver));
 
@@ -1494,7 +1494,7 @@ nmp_cache_update_netlink (NMPCache *cache, NMPObject *obj, NMPObject **out_obj, 
 		if (!nmp_object_is_alive (obj))
 			return NMP_CACHE_OPS_UNCHANGED;
 
-		if (NMP_OBJECT_GET_TYPE (obj) == OBJECT_TYPE_LINK) {
+		if (NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_LINK) {
 			_nmp_object_fixup_link_master_connected (obj, cache);
 			_nmp_object_fixup_link_udev_fields (obj, cache->use_udev);
 		}
@@ -1536,7 +1536,7 @@ nmp_cache_update_netlink (NMPCache *cache, NMPObject *obj, NMPObject **out_obj, 
 		if (out_was_visible)
 			*out_was_visible = nmp_object_is_visible (old);
 
-		if (NMP_OBJECT_GET_TYPE (obj) == OBJECT_TYPE_LINK) {
+		if (NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_LINK) {
 			if (!obj->_link.netlink.is_in_netlink) {
 				if (!old->_link.netlink.is_in_netlink) {
 					nm_assert (old->_link.udev.device);
@@ -1603,7 +1603,7 @@ nmp_cache_update_link_udev (NMPCache *cache, int ifindex, GUdevDevice *udev_devi
 		if (!udev_device)
 			return NMP_CACHE_OPS_UNCHANGED;
 
-		obj = nmp_object_new (OBJECT_TYPE_LINK, NULL);
+		obj = nmp_object_new (NMP_OBJECT_TYPE_LINK, NULL);
 		obj->link.ifindex = ifindex;
 		obj->_link.udev.device = g_object_ref (udev_device);
 
@@ -1793,8 +1793,8 @@ ASSERT_nmp_cache_is_consistent (const NMPCache *cache)
 /******************************************************************/
 
 const NMPClass _nmp_classes[OBJECT_TYPE_MAX] = {
-	[OBJECT_TYPE_LINK - 1] = {
-		.obj_type                           = OBJECT_TYPE_LINK,
+	[NMP_OBJECT_TYPE_LINK - 1] = {
+		.obj_type                           = NMP_OBJECT_TYPE_LINK,
 		.sizeof_data                        = sizeof (NMPObjectLink),
 		.sizeof_public                      = sizeof (NMPlatformLink),
 		.obj_type_name                      = "link",
@@ -1818,8 +1818,8 @@ const NMPClass _nmp_classes[OBJECT_TYPE_MAX] = {
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj)) nm_platform_link_to_string,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_link_cmp,
 	},
-	[OBJECT_TYPE_IP4_ADDRESS - 1] = {
-		.obj_type                           = OBJECT_TYPE_IP4_ADDRESS,
+	[NMP_OBJECT_TYPE_IP4_ADDRESS - 1] = {
+		.obj_type                           = NMP_OBJECT_TYPE_IP4_ADDRESS,
 		.sizeof_data                        = sizeof (NMPObjectIP4Address),
 		.sizeof_public                      = sizeof (NMPlatformIP4Address),
 		.obj_type_name                      = "ip4-address",
@@ -1842,8 +1842,8 @@ const NMPClass _nmp_classes[OBJECT_TYPE_MAX] = {
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj)) nm_platform_ip4_address_to_string,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_ip4_address_cmp,
 	},
-	[OBJECT_TYPE_IP6_ADDRESS - 1] = {
-		.obj_type                           = OBJECT_TYPE_IP6_ADDRESS,
+	[NMP_OBJECT_TYPE_IP6_ADDRESS - 1] = {
+		.obj_type                           = NMP_OBJECT_TYPE_IP6_ADDRESS,
 		.sizeof_data                        = sizeof (NMPObjectIP6Address),
 		.sizeof_public                      = sizeof (NMPlatformIP6Address),
 		.obj_type_name                      = "ip6-address",
@@ -1866,8 +1866,8 @@ const NMPClass _nmp_classes[OBJECT_TYPE_MAX] = {
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj)) nm_platform_ip6_address_to_string,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_ip6_address_cmp
 	},
-	[OBJECT_TYPE_IP4_ROUTE - 1] = {
-		.obj_type                           = OBJECT_TYPE_IP4_ROUTE,
+	[NMP_OBJECT_TYPE_IP4_ROUTE - 1] = {
+		.obj_type                           = NMP_OBJECT_TYPE_IP4_ROUTE,
 		.sizeof_data                        = sizeof (NMPObjectIP4Route),
 		.sizeof_public                      = sizeof (NMPlatformIP4Route),
 		.obj_type_name                      = "ip4-route",
@@ -1890,8 +1890,8 @@ const NMPClass _nmp_classes[OBJECT_TYPE_MAX] = {
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj)) nm_platform_ip4_route_to_string,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_ip4_route_cmp,
 	},
-	[OBJECT_TYPE_IP6_ROUTE - 1] = {
-		.obj_type                           = OBJECT_TYPE_IP6_ROUTE,
+	[NMP_OBJECT_TYPE_IP6_ROUTE - 1] = {
+		.obj_type                           = NMP_OBJECT_TYPE_IP6_ROUTE,
 		.sizeof_data                        = sizeof (NMPObjectIP6Route),
 		.sizeof_public                      = sizeof (NMPlatformIP6Route),
 		.obj_type_name                      = "ip6-route",

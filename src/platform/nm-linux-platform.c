@@ -468,7 +468,7 @@ _nl_sock_request_link (NMPlatform *platform, struct nl_sock *sk, int ifindex, co
 }
 
 static int
-_nl_sock_request_all (NMPlatform *platform, struct nl_sock *sk, ObjectType obj_type, guint32 *out_seq)
+_nl_sock_request_all (NMPlatform *platform, struct nl_sock *sk, NMPObjectType obj_type, guint32 *out_seq)
 {
 	const NMPClass *klass;
 	struct rtgenmsg gmsg = { 0 };
@@ -758,7 +758,7 @@ nm_linux_platform_setup (void)
 
 /******************************************************************/
 
-ObjectType
+NMPObjectType
 _nlo_get_object_type (const struct nl_object *object)
 {
 	const char *type_str;
@@ -767,22 +767,22 @@ _nlo_get_object_type (const struct nl_object *object)
 		return OBJECT_TYPE_UNKNOWN;
 
 	if (!strcmp (type_str, "route/link"))
-		return OBJECT_TYPE_LINK;
+		return NMP_OBJECT_TYPE_LINK;
 	else if (!strcmp (type_str, "route/addr")) {
 		switch (rtnl_addr_get_family ((struct rtnl_addr *) object)) {
 		case AF_INET:
-			return OBJECT_TYPE_IP4_ADDRESS;
+			return NMP_OBJECT_TYPE_IP4_ADDRESS;
 		case AF_INET6:
-			return OBJECT_TYPE_IP6_ADDRESS;
+			return NMP_OBJECT_TYPE_IP6_ADDRESS;
 		default:
 			return OBJECT_TYPE_UNKNOWN;
 		}
 	} else if (!strcmp (type_str, "route/route")) {
 		switch (rtnl_route_get_family ((struct rtnl_route *) object)) {
 		case AF_INET:
-			return OBJECT_TYPE_IP4_ROUTE;
+			return NMP_OBJECT_TYPE_IP4_ROUTE;
 		case AF_INET6:
-			return OBJECT_TYPE_IP6_ROUTE;
+			return NMP_OBJECT_TYPE_IP6_ROUTE;
 		default:
 			return OBJECT_TYPE_UNKNOWN;
 		}
@@ -1420,27 +1420,27 @@ do_emit_signal (NMPlatform *platform, const NMPObject *obj, NMPCacheOpsType cach
 /******************************************************************/
 
 static DelayedActionType
-delayed_action_refresh_from_object_type (ObjectType obj_type)
+delayed_action_refresh_from_object_type (NMPObjectType obj_type)
 {
 	switch (obj_type) {
-	case OBJECT_TYPE_LINK:          return DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS;
-	case OBJECT_TYPE_IP4_ADDRESS:   return DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES;
-	case OBJECT_TYPE_IP6_ADDRESS:   return DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES;
-	case OBJECT_TYPE_IP4_ROUTE:     return DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES;
-	case OBJECT_TYPE_IP6_ROUTE:     return DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES;
+	case NMP_OBJECT_TYPE_LINK:          return DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS;
+	case NMP_OBJECT_TYPE_IP4_ADDRESS:   return DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES;
+	case NMP_OBJECT_TYPE_IP6_ADDRESS:   return DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES;
+	case NMP_OBJECT_TYPE_IP4_ROUTE:     return DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES;
+	case NMP_OBJECT_TYPE_IP6_ROUTE:     return DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES;
 	default: g_return_val_if_reached (DELAYED_ACTION_TYPE_NONE);
 	}
 }
 
-static ObjectType
+static NMPObjectType
 delayed_action_refresh_to_object_type (DelayedActionType action_type)
 {
 	switch (action_type) {
-	case DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS:             return OBJECT_TYPE_LINK;
-	case DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES:     return OBJECT_TYPE_IP4_ADDRESS;
-	case DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES:     return OBJECT_TYPE_IP6_ADDRESS;
-	case DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES:        return OBJECT_TYPE_IP4_ROUTE;
-	case DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES:        return OBJECT_TYPE_IP6_ROUTE;
+	case DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS:             return NMP_OBJECT_TYPE_LINK;
+	case DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES:     return NMP_OBJECT_TYPE_IP4_ADDRESS;
+	case DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES:     return NMP_OBJECT_TYPE_IP6_ADDRESS;
+	case DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES:        return NMP_OBJECT_TYPE_IP4_ROUTE;
+	case DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES:        return NMP_OBJECT_TYPE_IP6_ROUTE;
 	default: g_return_val_if_reached (OBJECT_TYPE_UNKNOWN);
 	}
 }
@@ -1626,7 +1626,7 @@ delayed_action_schedule (NMPlatform *platform, DelayedActionType action_type, gp
 /******************************************************************/
 
 static void
-cache_prune_candidates_record_all (NMPlatform *platform, ObjectType obj_type)
+cache_prune_candidates_record_all (NMPlatform *platform, NMPObjectType obj_type)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 
@@ -1768,7 +1768,7 @@ cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMP
 	           : ""));
 
 	switch (klass->obj_type) {
-	case OBJECT_TYPE_LINK:
+	case NMP_OBJECT_TYPE_LINK:
 		{
 			/* check whether changing a slave link can cause a master link (bridge or bond) to go up/down */
 			if (   old
@@ -1839,14 +1839,14 @@ cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMP
 
 		}
 		break;
-	case OBJECT_TYPE_IP4_ADDRESS:
-	case OBJECT_TYPE_IP6_ADDRESS:
+	case NMP_OBJECT_TYPE_IP4_ADDRESS:
+	case NMP_OBJECT_TYPE_IP6_ADDRESS:
 		{
 			/* Address deletion is sometimes accompanied by route deletion. We need to
 			 * check all routes belonging to the same interface. */
 			if (ops_type == NMP_CACHE_OPS_REMOVED) {
 				delayed_action_schedule (platform,
-				                         (klass->obj_type == OBJECT_TYPE_IP4_ADDRESS)
+				                         (klass->obj_type == NMP_OBJECT_TYPE_IP4_ADDRESS)
 				                             ? DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES
 				                             : DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES,
 				                         NULL);
@@ -1947,7 +1947,7 @@ do_request_link (NMPlatform *platform, int ifindex, const char *name, gboolean h
 }
 
 static void
-do_request_one_type (NMPlatform *platform, ObjectType obj_type, gboolean handle_delayed_action)
+do_request_one_type (NMPlatform *platform, NMPObjectType obj_type, gboolean handle_delayed_action)
 {
 	do_request_all (platform, delayed_action_refresh_from_object_type (obj_type), handle_delayed_action);
 }
@@ -1969,11 +1969,11 @@ do_request_all (NMPlatform *platform, DelayedActionType action_type, gboolean ha
 
 	for (iflags = (DelayedActionType) 0x1LL; iflags <= DELAYED_ACTION_TYPE_MAX; iflags <<= 1) {
 		if (NM_FLAGS_HAS (action_type, iflags)) {
-			ObjectType obj_type = delayed_action_refresh_to_object_type (iflags);
+			NMPObjectType obj_type = delayed_action_refresh_to_object_type (iflags);
 
 			/* clear any delayed action that request a refresh of this object type. */
 			priv->delayed_action.flags &= ~iflags;
-			if (obj_type == OBJECT_TYPE_LINK) {
+			if (obj_type == NMP_OBJECT_TYPE_LINK) {
 				priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_REFRESH_LINK;
 				g_ptr_array_set_size (priv->delayed_action.list_refresh_link, 0);
 			}
@@ -1993,7 +1993,7 @@ do_request_all (NMPlatform *platform, DelayedActionType action_type, gboolean ha
 }
 
 static gboolean
-kernel_add_object (NMPlatform *platform, ObjectType obj_type, const struct nl_object *nlo)
+kernel_add_object (NMPlatform *platform, NMPObjectType obj_type, const struct nl_object *nlo)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	int nle;
@@ -2001,15 +2001,15 @@ kernel_add_object (NMPlatform *platform, ObjectType obj_type, const struct nl_ob
 	g_return_val_if_fail (nlo, FALSE);
 
 	switch (obj_type) {
-	case OBJECT_TYPE_LINK:
+	case NMP_OBJECT_TYPE_LINK:
 		nle = rtnl_link_add (priv->nlh, (struct rtnl_link *) nlo, NLM_F_CREATE);
 		break;
-	case OBJECT_TYPE_IP4_ADDRESS:
-	case OBJECT_TYPE_IP6_ADDRESS:
+	case NMP_OBJECT_TYPE_IP4_ADDRESS:
+	case NMP_OBJECT_TYPE_IP6_ADDRESS:
 		nle = rtnl_addr_add (priv->nlh, (struct rtnl_addr *) nlo, NLM_F_CREATE | NLM_F_REPLACE);
 		break;
-	case OBJECT_TYPE_IP4_ROUTE:
-	case OBJECT_TYPE_IP6_ROUTE:
+	case NMP_OBJECT_TYPE_IP4_ROUTE:
+	case NMP_OBJECT_TYPE_IP6_ROUTE:
 		nle = rtnl_route_add (priv->nlh, (struct rtnl_route *) nlo, NLM_F_CREATE | NLM_F_REPLACE);
 		break;
 	default:
@@ -2026,7 +2026,7 @@ kernel_add_object (NMPlatform *platform, ObjectType obj_type, const struct nl_ob
 		/* NLE_EXIST is considered equivalent to success to avoid race conditions. You
 		 * never know when something sends an identical object just before
 		 * NetworkManager. */
-		if (obj_type != OBJECT_TYPE_LINK)
+		if (obj_type != NMP_OBJECT_TYPE_LINK)
 			return -NLE_SUCCESS;
 		/* fall-through */
 	default:
@@ -2035,21 +2035,21 @@ kernel_add_object (NMPlatform *platform, ObjectType obj_type, const struct nl_ob
 }
 
 static int
-kernel_delete_object (NMPlatform *platform, ObjectType object_type, const struct nl_object *object)
+kernel_delete_object (NMPlatform *platform, NMPObjectType object_type, const struct nl_object *object)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	int nle;
 
 	switch (object_type) {
-	case OBJECT_TYPE_LINK:
+	case NMP_OBJECT_TYPE_LINK:
 		nle = rtnl_link_delete (priv->nlh, (struct rtnl_link *) object);
 		break;
-	case OBJECT_TYPE_IP4_ADDRESS:
-	case OBJECT_TYPE_IP6_ADDRESS:
+	case NMP_OBJECT_TYPE_IP4_ADDRESS:
+	case NMP_OBJECT_TYPE_IP6_ADDRESS:
 		nle = rtnl_addr_delete (priv->nlh, (struct rtnl_addr *) object, 0);
 		break;
-	case OBJECT_TYPE_IP4_ROUTE:
-	case OBJECT_TYPE_IP6_ROUTE:
+	case NMP_OBJECT_TYPE_IP4_ROUTE:
+	case NMP_OBJECT_TYPE_IP6_ROUTE:
 		nle = rtnl_route_delete (priv->nlh, (struct rtnl_route *) object, 0);
 		break;
 	default:
@@ -2064,7 +2064,7 @@ kernel_delete_object (NMPlatform *platform, ObjectType object_type, const struct
 		       nmp_class_from_type (object_type)->obj_type_name, nl_geterror (nle), -nle);
 		return -NLE_SUCCESS;
 	case -NLE_FAILURE:
-		if (object_type == OBJECT_TYPE_IP6_ADDRESS) {
+		if (object_type == NMP_OBJECT_TYPE_IP6_ADDRESS) {
 			/* On RHEL7 kernel, deleting a non existing address fails with ENXIO (which libnl maps to NLE_FAILURE) */
 			_LOGT ("kernel-delete-%s: deleting address failed with \"%s\" (%d), meaning the address was already removed",
 			       nmp_class_from_type (object_type)->obj_type_name, nl_geterror (nle), -nle);
@@ -2072,7 +2072,7 @@ kernel_delete_object (NMPlatform *platform, ObjectType object_type, const struct
 		}
 		break;
 	case -NLE_NOADDR:
-		if (object_type == OBJECT_TYPE_IP4_ADDRESS || object_type == OBJECT_TYPE_IP6_ADDRESS) {
+		if (object_type == NMP_OBJECT_TYPE_IP4_ADDRESS || object_type == NMP_OBJECT_TYPE_IP6_ADDRESS) {
 			_LOGT ("kernel-delete-%s: deleting address failed with \"%s\" (%d), meaning the address was already removed",
 			       nmp_class_from_type (object_type)->obj_type_name, nl_geterror (nle), -nle);
 			return -NLE_SUCCESS;
@@ -2274,7 +2274,7 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 		switch (msghdr->nlmsg_type) {
 
 		case RTM_NEWLINK:
-			if (   NMP_OBJECT_GET_TYPE (obj) == OBJECT_TYPE_LINK
+			if (   NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_LINK
 			    && g_hash_table_lookup (priv->delayed_deletion, obj) != NULL) {
 				/* the object is scheduled for delayed deletion. Replace that object
 				 * by clearing the value from priv->delayed_deletion. */
@@ -2288,7 +2288,7 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 			break;
 
 		case RTM_DELLINK:
-			if (   NMP_OBJECT_GET_TYPE (obj) == OBJECT_TYPE_LINK
+			if (   NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_LINK
 			    && g_hash_table_contains (priv->delayed_deletion, obj)) {
 				/* We sometimes receive spurious RTM_DELLINK events. In this case, we want to delay
 				 * the deletion of the object until later. */
@@ -2496,8 +2496,8 @@ link_get_all (NMPlatform *platform)
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 
 	return nmp_cache_lookup_multi_to_array (priv->cache,
-	                                        OBJECT_TYPE_LINK,
-	                                        nmp_cache_id_init_object_type (NMP_CACHE_ID_STATIC, OBJECT_TYPE_LINK, TRUE));
+	                                        NMP_OBJECT_TYPE_LINK,
+	                                        nmp_cache_id_init_object_type (NMP_CACHE_ID_STATIC, NMP_OBJECT_TYPE_LINK, TRUE));
 }
 
 static gboolean
@@ -2579,7 +2579,7 @@ do_add_link (NMPlatform *platform, const char *name, const struct rtnl_link *nlo
 
 	event_handler_read_netlink_all (platform, FALSE);
 
-	nle = kernel_add_object (platform, OBJECT_TYPE_LINK, (const struct nl_object *) nlo);
+	nle = kernel_add_object (platform, NMP_OBJECT_TYPE_LINK, (const struct nl_object *) nlo);
 	if (nle < 0) {
 		_LOGE ("do-add-link: failure adding link '%s': %s", name, nl_geterror (nle));
 		return FALSE;
@@ -2627,8 +2627,8 @@ do_add_addrroute (NMPlatform *platform, const NMPObject *obj_id, const struct nl
 	int nle;
 
 	nm_assert (NM_IN_SET (NMP_OBJECT_GET_TYPE (obj_id),
-	                      OBJECT_TYPE_IP4_ADDRESS, OBJECT_TYPE_IP6_ADDRESS,
-	                      OBJECT_TYPE_IP4_ROUTE, OBJECT_TYPE_IP6_ROUTE));
+	                      NMP_OBJECT_TYPE_IP4_ADDRESS, NMP_OBJECT_TYPE_IP6_ADDRESS,
+	                      NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE));
 
 	event_handler_read_netlink_all (platform, FALSE);
 
@@ -2681,7 +2681,7 @@ do_delete_object (NMPlatform *platform, const NMPObject *obj_id, const struct nl
 
 	/* FIXME: instead of re-requesting the deleted object, add it via nlh_event
 	 * so that the events are in sync. */
-	if (NMP_OBJECT_GET_TYPE (obj_id) == OBJECT_TYPE_LINK) {
+	if (NMP_OBJECT_GET_TYPE (obj_id) == NMP_OBJECT_TYPE_LINK) {
 		const NMPObject *obj;
 
 		obj = nmp_cache_lookup_link_full (priv->cache, obj_id->link.ifindex, obj_id->link.ifindex <= 0 && obj_id->link.name[0] ? obj_id->link.name : NULL, FALSE, NM_LINK_TYPE_NONE, NULL, NULL);
@@ -4016,11 +4016,11 @@ link_get_driver_info (NMPlatform *platform,
 /******************************************************************/
 
 static GArray *
-ipx_address_get_all (NMPlatform *platform, int ifindex, ObjectType obj_type)
+ipx_address_get_all (NMPlatform *platform, int ifindex, NMPObjectType obj_type)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 
-	nm_assert (NM_IN_SET (obj_type, OBJECT_TYPE_IP4_ADDRESS, OBJECT_TYPE_IP6_ADDRESS));
+	nm_assert (NM_IN_SET (obj_type, NMP_OBJECT_TYPE_IP4_ADDRESS, NMP_OBJECT_TYPE_IP6_ADDRESS));
 
 	return nmp_cache_lookup_multi_to_array (priv->cache,
 	                                        obj_type,
@@ -4032,13 +4032,13 @@ ipx_address_get_all (NMPlatform *platform, int ifindex, ObjectType obj_type)
 static GArray *
 ip4_address_get_all (NMPlatform *platform, int ifindex)
 {
-	return ipx_address_get_all (platform, ifindex, OBJECT_TYPE_IP4_ADDRESS);
+	return ipx_address_get_all (platform, ifindex, NMP_OBJECT_TYPE_IP4_ADDRESS);
 }
 
 static GArray *
 ip6_address_get_all (NMPlatform *platform, int ifindex)
 {
-	return ipx_address_get_all (platform, ifindex, OBJECT_TYPE_IP6_ADDRESS);
+	return ipx_address_get_all (platform, ifindex, NMP_OBJECT_TYPE_IP6_ADDRESS);
 }
 
 #define IPV4LL_NETWORK (htonl (0xA9FE0000L))
@@ -4283,12 +4283,12 @@ check_for_route:
 /******************************************************************/
 
 static GArray *
-ipx_route_get_all (NMPlatform *platform, int ifindex, ObjectType obj_type, NMPlatformGetRouteMode mode)
+ipx_route_get_all (NMPlatform *platform, int ifindex, NMPObjectType obj_type, NMPlatformGetRouteMode mode)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	gboolean with_default = FALSE, with_non_default = FALSE;
 
-	nm_assert (NM_IN_SET (obj_type, OBJECT_TYPE_IP4_ROUTE, OBJECT_TYPE_IP6_ROUTE));
+	nm_assert (NM_IN_SET (obj_type, NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE));
 
 	if (mode == NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT)
 		with_non_default = TRUE;
@@ -4312,13 +4312,13 @@ ipx_route_get_all (NMPlatform *platform, int ifindex, ObjectType obj_type, NMPla
 static GArray *
 ip4_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteMode mode)
 {
-	return ipx_route_get_all (platform, ifindex, OBJECT_TYPE_IP4_ROUTE, mode);
+	return ipx_route_get_all (platform, ifindex, NMP_OBJECT_TYPE_IP4_ROUTE, mode);
 }
 
 static GArray *
 ip6_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteMode mode)
 {
-	return ipx_route_get_all (platform, ifindex, OBJECT_TYPE_IP6_ROUTE, mode);
+	return ipx_route_get_all (platform, ifindex, NMP_OBJECT_TYPE_IP6_ROUTE, mode);
 }
 
 static void
@@ -4485,7 +4485,7 @@ ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen
 		 * FIXME: once our ip4_address_add() is sure that upon return we have
 		 * the latest state from in the platform cache, we might save this
 		 * additional expensive cache-resync. */
-		do_request_one_type (platform, OBJECT_TYPE_IP4_ROUTE, TRUE);
+		do_request_one_type (platform, NMP_OBJECT_TYPE_IP4_ROUTE, TRUE);
 
 		obj = nmp_cache_lookup_obj (priv->cache, &obj_needle);
 		if (!obj)
