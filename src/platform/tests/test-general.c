@@ -31,7 +31,7 @@
 /******************************************************************/
 
 static void
-test_init_linux_platform ()
+test_init_linux_platform (void)
 {
 	gs_unref_object NMPlatform *platform = NULL;
 

@@ -42,7 +42,7 @@ typedef struct {
 /******************************************************************************************/
 
 static ValuesData *
-_values_data_create ()
+_values_data_create (void)
 {
 	ValuesData *values_data;
 
