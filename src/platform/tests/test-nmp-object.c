@@ -212,7 +212,7 @@ static const NMPlatformLink pl_link_3 = {
 };
 
 static void
-test_cache_link ()
+test_cache_link (void)
 {
 	NMPCache *cache;
 	NMPObject *obj1, *obj2;

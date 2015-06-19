@@ -4395,7 +4395,7 @@ enum TEST_IS_POWER_OF_TWP_ENUM_UNSIGNED_64 {
 	} G_STMT_END
 
 static void
-test_nm_utils_is_power_of_two ()
+test_nm_utils_is_power_of_two (void)
 {
 	guint64 xyes, xno;
 	gint i, j;
