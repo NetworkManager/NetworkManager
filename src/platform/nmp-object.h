@@ -33,14 +33,14 @@
 
 typedef enum { /*< skip >*/
 	OBJECT_TYPE_UNKNOWN,
-	OBJECT_TYPE_LINK,
-	OBJECT_TYPE_IP4_ADDRESS,
-	OBJECT_TYPE_IP6_ADDRESS,
-	OBJECT_TYPE_IP4_ROUTE,
-	OBJECT_TYPE_IP6_ROUTE,
+	NMP_OBJECT_TYPE_LINK,
+	NMP_OBJECT_TYPE_IP4_ADDRESS,
+	NMP_OBJECT_TYPE_IP6_ADDRESS,
+	NMP_OBJECT_TYPE_IP4_ROUTE,
+	NMP_OBJECT_TYPE_IP6_ROUTE,
 	__OBJECT_TYPE_LAST,
 	OBJECT_TYPE_MAX = __OBJECT_TYPE_LAST - 1,
-} ObjectType;
+} NMPObjectType;
 
 typedef enum { /*< skip >*/
 	NMP_OBJECT_TO_STRING_ID,
@@ -105,14 +105,14 @@ typedef struct {
 			/* NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_NO_DEFAULT */
 			/* NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_ONLY_DEFAULT */
 			guint8 _id_type;
-			guint8 obj_type; /* ObjectType as guint8 */
+			guint8 obj_type; /* NMPObjectType as guint8 */
 		} object_type;
 		struct {
 			/* NMP_CACHE_ID_TYPE_ADDRROUTE_VISIBLE_BY_IFINDEX */
 			/* NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_NO_DEFAULT */
 			/* NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_BY_IFINDEX_ONLY_DEFAULT */
 			guint8 _id_type;
-			guint8 obj_type; /* ObjectType as guint8 */
+			guint8 obj_type; /* NMPObjectType as guint8 */
 			int ifindex;
 		} object_type_by_ifindex;
 	};
@@ -122,7 +122,7 @@ extern NMPCacheId _nmp_cache_id_static;
 #define NMP_CACHE_ID_STATIC  (&_nmp_cache_id_static)
 
 typedef struct {
-	ObjectType obj_type;
+	NMPObjectType obj_type;
 	int addr_family;
 	int rtm_gettype;
 	int sizeof_data;
@@ -260,7 +260,7 @@ NMP_OBJECT_GET_CLASS (const NMPObject *obj)
 	return obj->_class;
 }
 
-static inline ObjectType
+static inline NMPObjectType
 NMP_OBJECT_GET_TYPE (const NMPObject *obj)
 {
 	nm_assert (!obj || NMP_OBJECT_IS_VALID (obj));
@@ -270,14 +270,14 @@ NMP_OBJECT_GET_TYPE (const NMPObject *obj)
 
 
 
-const NMPClass *nmp_class_from_type (ObjectType obj_type);
+const NMPClass *nmp_class_from_type (NMPObjectType obj_type);
 
 NMPObject *nmp_object_ref (NMPObject *object);
 void nmp_object_unref (NMPObject *object);
-NMPObject *nmp_object_new (ObjectType obj_type, const NMPlatformObject *plob);
+NMPObject *nmp_object_new (NMPObjectType obj_type, const NMPlatformObject *plob);
 NMPObject *nmp_object_new_link (int ifindex);
 
-const NMPObject *nmp_object_stackinit (NMPObject *obj, ObjectType obj_type, const NMPlatformObject *plobj);
+const NMPObject *nmp_object_stackinit (NMPObject *obj, NMPObjectType obj_type, const NMPlatformObject *plobj);
 const NMPObject *nmp_object_stackinit_id  (NMPObject *obj, const NMPObject *src);
 const NMPObject *nmp_object_stackinit_id_link (NMPObject *obj, int ifindex);
 const NMPObject *nmp_object_stackinit_id_ip4_address (NMPObject *obj, int ifindex, guint32 address, int plen);
@@ -314,12 +314,12 @@ guint nmp_cache_id_hash (const NMPCacheId *id);
 NMPCacheId *nmp_cache_id_clone (const NMPCacheId *id);
 void nmp_cache_id_destroy (NMPCacheId *id);
 
-NMPCacheId *nmp_cache_id_init_object_type (NMPCacheId *id, ObjectType obj_type, gboolean visible_only);
-NMPCacheId *nmp_cache_id_init_addrroute_visible_by_ifindex (NMPCacheId *id, ObjectType obj_type, int ifindex);
-NMPCacheId *nmp_cache_id_init_routes_visible (NMPCacheId *id, ObjectType obj_type, gboolean with_default, gboolean with_non_default, int ifindex);
+NMPCacheId *nmp_cache_id_init_object_type (NMPCacheId *id, NMPObjectType obj_type, gboolean visible_only);
+NMPCacheId *nmp_cache_id_init_addrroute_visible_by_ifindex (NMPCacheId *id, NMPObjectType obj_type, int ifindex);
+NMPCacheId *nmp_cache_id_init_routes_visible (NMPCacheId *id, NMPObjectType obj_type, gboolean with_default, gboolean with_non_default, int ifindex);
 
 const NMPlatformObject *const *nmp_cache_lookup_multi (const NMPCache *cache, const NMPCacheId *cache_id, guint *out_len);
-GArray *nmp_cache_lookup_multi_to_array (const NMPCache *cache, ObjectType obj_type, const NMPCacheId *cache_id);
+GArray *nmp_cache_lookup_multi_to_array (const NMPCache *cache, NMPObjectType obj_type, const NMPCacheId *cache_id);
 const NMPObject *nmp_cache_lookup_obj (const NMPCache *cache, const NMPObject *obj);
 const NMPObject *nmp_cache_lookup_link (const NMPCache *cache, int ifindex);
 
@@ -357,7 +357,7 @@ struct nl_object *nmp_object_to_nl (NMPlatform *platform, const NMPObject *obj, 
 
 /* the following functions are currently implemented inside nm-linux-platform, because
  * they depend on utility functions there. */
-ObjectType _nlo_get_object_type (const struct nl_object *nlo);
+NMPObjectType _nlo_get_object_type (const struct nl_object *nlo);
 gboolean _nmp_vt_cmd_plobj_init_from_nl_link (NMPlatform *platform, NMPlatformObject *_obj, const struct nl_object *_nlo, gboolean id_only, gboolean complete_from_cache);
 gboolean _nmp_vt_cmd_plobj_init_from_nl_ip4_address (NMPlatform *platform, NMPlatformObject *_obj, const struct nl_object *_nlo, gboolean id_only, gboolean complete_from_cache);
 gboolean _nmp_vt_cmd_plobj_init_from_nl_ip6_address (NMPlatform *platform, NMPlatformObject *_obj, const struct nl_object *_nlo, gboolean id_only, gboolean complete_from_cache);

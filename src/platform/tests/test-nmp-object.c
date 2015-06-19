@@ -228,7 +228,7 @@ test_cache_link (void)
 	nmp_cache_use_udev_set (cache, g_rand_int_range (nmtst_get_rand (), 0, 2));
 
 	/* if we have a link, and don't set is_in_netlink, adding it has no effect. */
-	obj1 = nmp_object_new (OBJECT_TYPE_LINK, (NMPlatformObject *) &pl_link_2);
+	obj1 = nmp_object_new (NMP_OBJECT_TYPE_LINK, (NMPlatformObject *) &pl_link_2);
 	g_assert (NMP_OBJECT_UP_CAST (&obj1->object) == obj1);
 	g_assert (!nmp_object_is_alive (obj1));
 	_nmp_cache_update_netlink (cache, obj1, &obj2, &was_visible, NMP_CACHE_OPS_UNCHANGED);
@@ -240,7 +240,7 @@ test_cache_link (void)
 	nmp_object_unref (obj1);
 
 	/* Only when setting @is_in_netlink the link is added. */
-	obj1 = nmp_object_new (OBJECT_TYPE_LINK, (NMPlatformObject *) &pl_link_2);
+	obj1 = nmp_object_new (NMP_OBJECT_TYPE_LINK, (NMPlatformObject *) &pl_link_2);
 	obj1->_link.netlink.is_in_netlink = TRUE;
 	g_assert (nmp_object_is_alive (obj1));
 	_nmp_cache_update_netlink (cache, obj1, &obj2, &was_visible, NMP_CACHE_OPS_ADDED);
@@ -250,13 +250,13 @@ test_cache_link (void)
 	g_assert (nmp_cache_lookup_obj (cache, obj1) == obj2);
 	g_assert (nmp_cache_lookup_obj (cache, nmp_object_stackinit_id_link (&objs1, pl_link_2.ifindex)) == obj2);
 	g_assert (nmp_object_is_visible (obj2));
-	_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, OBJECT_TYPE_LINK, TRUE), obj2, TRUE);
-	_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, OBJECT_TYPE_LINK, FALSE), obj2, TRUE);
+	_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, NMP_OBJECT_TYPE_LINK, TRUE), obj2, TRUE);
+	_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, NMP_OBJECT_TYPE_LINK, FALSE), obj2, TRUE);
 	nmp_object_unref (obj1);
 	nmp_object_unref (obj2);
 
 	/* updating the same link with identical value, has no effect. */
-	obj1 = nmp_object_new (OBJECT_TYPE_LINK, (NMPlatformObject *) &pl_link_2);
+	obj1 = nmp_object_new (NMP_OBJECT_TYPE_LINK, (NMPlatformObject *) &pl_link_2);
 	obj1->_link.netlink.is_in_netlink = TRUE;
 	g_assert (nmp_object_is_alive (obj1));
 	_nmp_cache_update_netlink (cache, obj1, &obj2, &was_visible, NMP_CACHE_OPS_UNCHANGED);
@@ -270,7 +270,7 @@ test_cache_link (void)
 	nmp_object_unref (obj2);
 
 	/* remove the link from netlink */
-	obj1 = nmp_object_new (OBJECT_TYPE_LINK, (NMPlatformObject *) &pl_link_2);
+	obj1 = nmp_object_new (NMP_OBJECT_TYPE_LINK, (NMPlatformObject *) &pl_link_2);
 	g_assert (!nmp_object_is_alive (obj1));
 	_nmp_cache_update_netlink (cache, obj1, &obj2, &was_visible, NMP_CACHE_OPS_REMOVED);
 	ASSERT_nmp_cache_is_consistent (cache);
@@ -290,13 +290,13 @@ test_cache_link (void)
 		g_assert (!was_visible);
 		g_assert (nmp_cache_lookup_obj (cache, nmp_object_stackinit_id_link (&objs1, pl_link_2.ifindex)) == obj2);
 		g_assert (!nmp_object_is_visible (obj2));
-		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, OBJECT_TYPE_LINK, TRUE), obj2, FALSE);
-		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, OBJECT_TYPE_LINK, FALSE), obj2, TRUE);
+		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, NMP_OBJECT_TYPE_LINK, TRUE), obj2, FALSE);
+		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, NMP_OBJECT_TYPE_LINK, FALSE), obj2, TRUE);
 		nmp_object_unref (obj2);
 	}
 
 	/* add it in netlink too. */
-	obj1 = nmp_object_new (OBJECT_TYPE_LINK, (NMPlatformObject *) &pl_link_2);
+	obj1 = nmp_object_new (NMP_OBJECT_TYPE_LINK, (NMPlatformObject *) &pl_link_2);
 	obj1->_link.netlink.is_in_netlink = TRUE;
 	g_assert (nmp_object_is_alive (obj1));
 	_nmp_cache_update_netlink (cache, obj1, &obj2, &was_visible, udev_device_2 ? NMP_CACHE_OPS_UPDATED : NMP_CACHE_OPS_ADDED);
@@ -306,13 +306,13 @@ test_cache_link (void)
 	g_assert (nmp_cache_lookup_obj (cache, obj1) == obj2);
 	g_assert (nmp_cache_lookup_obj (cache, nmp_object_stackinit_id_link (&objs1, pl_link_2.ifindex)) == obj2);
 	g_assert (nmp_object_is_visible (obj2));
-	_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, OBJECT_TYPE_LINK, TRUE), obj2, TRUE);
-	_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, OBJECT_TYPE_LINK, FALSE), obj2, TRUE);
+	_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, NMP_OBJECT_TYPE_LINK, TRUE), obj2, TRUE);
+	_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, NMP_OBJECT_TYPE_LINK, FALSE), obj2, TRUE);
 	nmp_object_unref (obj1);
 	nmp_object_unref (obj2);
 
 	/* remove again from netlink. */
-	obj1 = nmp_object_new (OBJECT_TYPE_LINK, (NMPlatformObject *) &pl_link_2);
+	obj1 = nmp_object_new (NMP_OBJECT_TYPE_LINK, (NMPlatformObject *) &pl_link_2);
 	obj1->_link.netlink.is_in_netlink = FALSE;
 	g_assert (!nmp_object_is_alive (obj1));
 	_nmp_cache_update_netlink (cache, obj1, &obj2, &was_visible, udev_device_2 ? NMP_CACHE_OPS_UPDATED : NMP_CACHE_OPS_REMOVED);
@@ -323,8 +323,8 @@ test_cache_link (void)
 		g_assert (nmp_cache_lookup_obj (cache, obj1) == obj2);
 		g_assert (nmp_cache_lookup_obj (cache, nmp_object_stackinit_id_link (&objs1, pl_link_2.ifindex)) == obj2);
 		g_assert (!nmp_object_is_visible (obj2));
-		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, OBJECT_TYPE_LINK, TRUE), obj2, FALSE);
-		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, OBJECT_TYPE_LINK, FALSE), obj2, TRUE);
+		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, NMP_OBJECT_TYPE_LINK, TRUE), obj2, FALSE);
+		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, NMP_OBJECT_TYPE_LINK, FALSE), obj2, TRUE);
 	} else {
 		g_assert (nmp_cache_lookup_obj (cache, obj1) == NULL);
 		g_assert (nmp_cache_lookup_obj (cache, nmp_object_stackinit_id_link (&objs1, pl_link_2.ifindex)) == NULL);
@@ -343,14 +343,14 @@ test_cache_link (void)
 		g_assert (!was_visible);
 		g_assert (!nmp_object_is_visible (obj2));
 		g_assert (nmp_cache_lookup_obj (cache, nmp_object_stackinit_id_link (&objs1, pl_link_3.ifindex)) == obj2);
-		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, OBJECT_TYPE_LINK, TRUE), obj2, FALSE);
-		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, OBJECT_TYPE_LINK, FALSE), obj2, TRUE);
+		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, NMP_OBJECT_TYPE_LINK, TRUE), obj2, FALSE);
+		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, NMP_OBJECT_TYPE_LINK, FALSE), obj2, TRUE);
 		g_assert_cmpint (obj2->_link.netlink.is_in_netlink, ==, FALSE);
 		g_assert_cmpint (obj2->link.initialized, ==, FALSE);
 		nmp_object_unref (obj2);
 
 		/* add it in netlink too. */
-		obj1 = nmp_object_new (OBJECT_TYPE_LINK, (NMPlatformObject *) &pl_link_3);
+		obj1 = nmp_object_new (NMP_OBJECT_TYPE_LINK, (NMPlatformObject *) &pl_link_3);
 		obj1->_link.netlink.is_in_netlink = TRUE;
 		g_assert (nmp_object_is_alive (obj1));
 		_nmp_cache_update_netlink (cache, obj1, &obj2, &was_visible, NMP_CACHE_OPS_UPDATED);
@@ -361,8 +361,8 @@ test_cache_link (void)
 		g_assert (nmp_cache_lookup_obj (cache, obj1) == obj2);
 		g_assert (nmp_cache_lookup_obj (cache, nmp_object_stackinit_id_link (&objs1, pl_link_3.ifindex)) == obj2);
 		g_assert (nmp_object_is_visible (obj2));
-		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, OBJECT_TYPE_LINK, TRUE), obj2, TRUE);
-		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, OBJECT_TYPE_LINK, FALSE), obj2, TRUE);
+		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, NMP_OBJECT_TYPE_LINK, TRUE), obj2, TRUE);
+		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, NMP_OBJECT_TYPE_LINK, FALSE), obj2, TRUE);
 		g_assert_cmpint (obj2->_link.netlink.is_in_netlink, ==, TRUE);
 		g_assert_cmpint (obj2->link.initialized, ==, TRUE);
 		nmp_object_unref (obj1);
@@ -375,8 +375,8 @@ test_cache_link (void)
 		g_assert (was_visible);
 		g_assert (nmp_cache_lookup_obj (cache, nmp_object_stackinit_id_link (&objs1, pl_link_3.ifindex)) == obj2);
 		g_assert (nmp_object_is_visible (obj2));
-		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, OBJECT_TYPE_LINK, TRUE), obj2, TRUE);
-		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, OBJECT_TYPE_LINK, FALSE), obj2, TRUE);
+		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, NMP_OBJECT_TYPE_LINK, TRUE), obj2, TRUE);
+		_assert_cache_multi_lookup_contains (cache, nmp_cache_id_init_object_type (&cache_id_storage, NMP_OBJECT_TYPE_LINK, FALSE), obj2, TRUE);
 		g_assert_cmpint (obj2->_link.netlink.is_in_netlink, ==, TRUE);
 		g_assert_cmpint (obj2->link.initialized, ==, !nmp_cache_use_udev_get (cache));
 		nmp_object_unref (obj2);
