@@ -96,7 +96,7 @@ void
 setup_tests (void)
 {
 	nm_platform_link_delete (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME));
-	g_assert (!nm_platform_link_exists (NM_PLATFORM_GET, DEVICE_NAME));
+	g_assert (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, DEVICE_NAME));
 
 	g_test_add_func ("/internal", test_cleanup_internal);
 	/* FIXME: add external cleanup check */

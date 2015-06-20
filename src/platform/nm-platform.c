@@ -487,23 +487,39 @@ nm_platform_link_get_all (NMPlatform *self)
  * nm_platform_link_get:
  * @self: platform instance
  * @ifindex: ifindex of the link
- * @link: (out): output NMPlatformLink structure.
  *
- * If a link with given @ifindex exists, fill the given NMPlatformLink
- * structure.
+ * Lookup the internal NMPlatformLink object.
  *
- * Returns: %TRUE, if such a link exists, %FALSE otherwise.
- * If the link does not exist, the content of @link is undefined.
+ * Returns: %NULL, if such a link exists or the internal
+ * platform link object. Do not modify the returned value.
+ * Also, be aware that any subsequent platform call might
+ * invalidated/modify the returned instance.
  **/
-gboolean
-nm_platform_link_get (NMPlatform *self, int ifindex, NMPlatformLink *link)
+const NMPlatformLink *
+nm_platform_link_get (NMPlatform *self, int ifindex)
 {
-	_CHECK_SELF (self, klass, FALSE);
+	_CHECK_SELF (self, klass, NULL);
 
-	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_val_if_fail (ifindex > 0, NULL);
 
-	g_return_val_if_fail (klass->link_get, FALSE);
-	return !!klass->link_get (self, ifindex, link);
+	return klass->link_get (self, ifindex);
+}
+
+/**
+ * nm_platform_link_get_by_ifname:
+ * @self: platform instance
+ * @ifname: the ifname
+ *
+ * Returns: the first #NMPlatformLink instance with the given name.
+ **/
+const NMPlatformLink *
+nm_platform_link_get_by_ifname (NMPlatform *self, const char *ifname)
+{
+	_CHECK_SELF (self, klass, NULL);
+
+	g_return_val_if_fail (ifname && *ifname, NULL);
+
+	return klass->link_get_by_ifname (self, ifname);
 }
 
 /**
@@ -511,55 +527,43 @@ nm_platform_link_get (NMPlatform *self, int ifindex, NMPlatformLink *link)
  * @self: platform instance
  * @address: a pointer to the binary hardware address
  * @length: the size of @address in bytes
- * @link: (out): output NMPlatformLink structure.
  *
- * If a link with given @address exists, fill the given NMPlatformLink
- * structure.
- *
- * Returns: %TRUE, if such a link exists, %FALSE otherwise.
- * If the link does not exist, the content of @link is undefined.
+ * Returns: the first #NMPlatformLink object with a matching
+ * address.
  **/
-gboolean
+const NMPlatformLink *
 nm_platform_link_get_by_address (NMPlatform *self,
                                  gconstpointer address,
-                                 size_t length,
-                                 NMPlatformLink *link)
+                                 size_t length)
 {
-	_CHECK_SELF (self, klass, FALSE);
+	_CHECK_SELF (self, klass, NULL);
 
-	g_return_val_if_fail (address != NULL, FALSE);
-	g_return_val_if_fail (length > 0, FALSE);
-	g_return_val_if_fail (link, FALSE);
+	g_return_val_if_fail (address != NULL, NULL);
+	g_return_val_if_fail (length > 0, NULL);
 
-	g_return_val_if_fail (klass->link_get_by_address, FALSE);
-	return !!klass->link_get_by_address (self, address, length, link);
+	return klass->link_get_by_address (self, address, length);
 }
 
 static NMPlatformError
 _link_add_check_existing (NMPlatform *self, const char *name, NMLinkType type, NMPlatformLink *out_link)
 {
-	int ifindex;
-	NMPlatformLink pllink;
+	const NMPlatformLink *pllink;
 
-	ifindex = nm_platform_link_get_ifindex (self, name);
-	if (ifindex > 0) {
-		if (nm_platform_link_get (self, ifindex, &pllink)) {
-			gboolean wrong_type;
+	pllink = nm_platform_link_get_by_ifname (self, name);
+	if (pllink) {
+		gboolean wrong_type;
 
-			wrong_type = type != NM_LINK_TYPE_NONE && pllink.type != type;
-			debug ("link: skip adding link due to existing interface '%s' of type %s%s%s",
-			       name,
-			       nm_link_type_to_string (pllink.type),
-			       wrong_type ? ", expected " : "",
-			       wrong_type ? nm_link_type_to_string (type) : "");
-			if (out_link)
-				*out_link = pllink;
-			if (wrong_type)
-				return NM_PLATFORM_ERROR_WRONG_TYPE;
-			return NM_PLATFORM_ERROR_EXISTS;
-		}
-		/* strange, nm_platform_link_get_ifindex() returned a valid ifindex, but nm_platform_link_get() failed.
-		 * This is unexpected... proceed with "SUCCESS". */
+		wrong_type = type != NM_LINK_TYPE_NONE && pllink->type != type;
+		debug ("link: skip adding link due to existing interface '%s' of type %s%s%s",
+		       name,
+		       nm_link_type_to_string (pllink->type),
+		       wrong_type ? ", expected " : "",
+		       wrong_type ? nm_link_type_to_string (type) : "");
+		if (out_link)
+			*out_link = *pllink;
+		if (wrong_type)
+			return NM_PLATFORM_ERROR_WRONG_TYPE;
+		return NM_PLATFORM_ERROR_EXISTS;
 	}
 	return NM_PLATFORM_ERROR_SUCCESS;
 }
@@ -624,25 +628,6 @@ nm_platform_dummy_add (NMPlatform *self, const char *name, NMPlatformLink *out_l
 }
 
 /**
- * nm_platform_link_exists:
- * @self: platform instance
- * @name: Interface name
- *
- * Returns: %TRUE if an interface of this name exists, %FALSE otherwise.
- */
-gboolean
-nm_platform_link_exists (NMPlatform *self, const char *name)
-{
-	int ifindex;
-
-	_CHECK_SELF (self, klass, FALSE);
-
-	ifindex = nm_platform_link_get_ifindex (self, name);
-
-	return ifindex > 0;
-}
-
-/**
  * nm_platform_link_delete:
  * @self: platform instance
  * @ifindex: Interface index
@@ -650,18 +635,17 @@ nm_platform_link_exists (NMPlatform *self, const char *name)
 gboolean
 nm_platform_link_delete (NMPlatform *self, int ifindex)
 {
-	const char *name;
+	const NMPlatformLink *pllink;
 
 	_CHECK_SELF (self, klass, FALSE);
 
-	g_return_val_if_fail (klass->link_delete, FALSE);
-
-	name = nm_platform_link_get_name (self, ifindex);
-
-	if (!name)
+	if (ifindex <= 0)
+		return FALSE;
+	pllink = nm_platform_link_get (self, ifindex);
+	if (!pllink)
 		return FALSE;
 
-	debug ("link: deleting '%s' (%d)", name, ifindex);
+	debug ("link: deleting '%s' (%d)", pllink->name, ifindex);
 	return klass->link_delete (self, ifindex);
 }
 
@@ -676,19 +660,10 @@ nm_platform_link_delete (NMPlatform *self, int ifindex)
 int
 nm_platform_link_get_ifindex (NMPlatform *self, const char *name)
 {
-	int ifindex;
+	const NMPlatformLink *pllink;
 
-	_CHECK_SELF (self, klass, 0);
-
-	g_return_val_if_fail (name, 0);
-	g_return_val_if_fail (klass->link_get_ifindex, 0);
-
-	ifindex = klass->link_get_ifindex (self, name);
-
-	if (!ifindex)
-		debug ("link not found: %s", name);
-
-	return ifindex;
+	pllink = nm_platform_link_get_by_ifname (self, name);
+	return pllink ? pllink->ifindex : 0;
 }
 
 /**
@@ -702,20 +677,12 @@ nm_platform_link_get_ifindex (NMPlatform *self, const char *name)
 const char *
 nm_platform_link_get_name (NMPlatform *self, int ifindex)
 {
-	const char *name;
+	const NMPlatformLink *pllink;
 
 	_CHECK_SELF (self, klass, NULL);
 
-	g_return_val_if_fail (klass->link_get_name, NULL);
-
-	name = klass->link_get_name (self, ifindex);
-
-	if (!name) {
-		debug ("link not found: %d", ifindex);
-		return FALSE;
-	}
-
-	return name;
+	pllink = nm_platform_link_get (self, ifindex);
+	return pllink ? pllink->name : NULL;
 }
 
 /**
@@ -729,11 +696,12 @@ nm_platform_link_get_name (NMPlatform *self, int ifindex)
 NMLinkType
 nm_platform_link_get_type (NMPlatform *self, int ifindex)
 {
+	const NMPlatformLink *pllink;
+
 	_CHECK_SELF (self, klass, NM_LINK_TYPE_NONE);
 
-	g_return_val_if_fail (klass->link_get_type, NM_LINK_TYPE_NONE);
-
-	return klass->link_get_type (self, ifindex);
+	pllink = nm_platform_link_get (self, ifindex);
+	return pllink ? pllink->type : NM_LINK_TYPE_NONE;
 }
 
 /**
@@ -770,9 +738,9 @@ nm_platform_link_get_unmanaged (NMPlatform *self, int ifindex, gboolean *managed
 {
 	_CHECK_SELF (self, klass, FALSE);
 
-	g_return_val_if_fail (klass->link_get_unmanaged, FALSE);
-
-	return klass->link_get_unmanaged (self, ifindex, managed);
+	if (klass->link_get_unmanaged)
+		return klass->link_get_unmanaged (self, ifindex, managed);
+	return FALSE;
 }
 
 /**
@@ -823,6 +791,15 @@ nm_platform_link_refresh (NMPlatform *self, int ifindex)
 	return TRUE;
 }
 
+static guint32
+_link_get_flags (NMPlatform *self, int ifindex)
+{
+	const NMPlatformLink *pllink;
+
+	pllink = nm_platform_link_get (self, ifindex);
+	return pllink ? pllink->flags : IFF_NOARP;
+}
+
 /**
  * nm_platform_link_is_up:
  * @self: platform instance
@@ -835,10 +812,7 @@ nm_platform_link_is_up (NMPlatform *self, int ifindex)
 {
 	_CHECK_SELF (self, klass, FALSE);
 
-	g_return_val_if_fail (ifindex >= 0, FALSE);
-	g_return_val_if_fail (klass->link_is_up, FALSE);
-
-	return klass->link_is_up (self, ifindex);
+	return NM_FLAGS_HAS (_link_get_flags (self, ifindex), IFF_UP);
 }
 
 /**
@@ -851,12 +825,12 @@ nm_platform_link_is_up (NMPlatform *self, int ifindex)
 gboolean
 nm_platform_link_is_connected (NMPlatform *self, int ifindex)
 {
+	const NMPlatformLink *pllink;
+
 	_CHECK_SELF (self, klass, FALSE);
 
-	g_return_val_if_fail (ifindex >= 0, FALSE);
-	g_return_val_if_fail (klass->link_is_connected, FALSE);
-
-	return klass->link_is_connected (self, ifindex);
+	pllink = nm_platform_link_get (self, ifindex);
+	return pllink ? pllink->connected : FALSE;
 }
 
 /**
@@ -871,10 +845,7 @@ nm_platform_link_uses_arp (NMPlatform *self, int ifindex)
 {
 	_CHECK_SELF (self, klass, FALSE);
 
-	g_return_val_if_fail (ifindex >= 0, FALSE);
-	g_return_val_if_fail (klass->link_uses_arp, FALSE);
-
-	return klass->link_uses_arp (self, ifindex);
+	return !NM_FLAGS_HAS (_link_get_flags (self, ifindex), IFF_NOARP);
 }
 
 /**
@@ -897,8 +868,17 @@ nm_platform_link_get_ipv6_token (NMPlatform *self, int ifindex, NMUtilsIPv6Iface
 	g_return_val_if_fail (ifindex >= 0, FALSE);
 	g_return_val_if_fail (iid, FALSE);
 
-	if (klass->link_get_ipv6_token)
-		return klass->link_get_ipv6_token (self, ifindex, iid);
+#if HAVE_LIBNL_INET6_TOKEN
+	{
+		const NMPlatformLink *pllink;
+
+		pllink = nm_platform_link_get (self, ifindex);
+		if (pllink && pllink->inet6_token.is_valid) {
+			*iid = pllink->inet6_token.iid;
+			return TRUE;
+		}
+	}
+#endif
 	return FALSE;
 }
 
@@ -943,12 +923,19 @@ nm_platform_link_get_user_ipv6ll_enabled (NMPlatform *self, int ifindex)
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (ifindex >= 0, FALSE);
-	g_return_val_if_fail (klass->check_support_user_ipv6ll, FALSE);
 
-	if (klass->link_get_user_ipv6ll_enabled)
-		return klass->link_get_user_ipv6ll_enabled (self, ifindex);
+#if HAVE_LIBNL_INET6_ADDR_GEN_MODE
+	{
+		const NMPlatformLink *pllink;
+
+		pllink = nm_platform_link_get (self, ifindex);
+		if (pllink && pllink->inet6_addr_gen_mode_inv)
+			return (~pllink->inet6_addr_gen_mode_inv) == IN6_ADDR_GEN_MODE_NONE;
+	}
+#endif
 	return FALSE;
 }
+
 
 /**
  * nm_platform_link_set_user_ip6vll_enabled:
@@ -1008,15 +995,31 @@ nm_platform_link_set_address (NMPlatform *self, int ifindex, gconstpointer addre
 gconstpointer
 nm_platform_link_get_address (NMPlatform *self, int ifindex, size_t *length)
 {
+	const NMPlatformLink *pllink;
+	gconstpointer a = NULL;
+	guint8 l = 0;
+
 	_CHECK_SELF (self, klass, NULL);
 
 	if (length)
 		*length = 0;
 
 	g_return_val_if_fail (ifindex > 0, NULL);
-	g_return_val_if_fail (klass->link_get_address, NULL);
 
-	return klass->link_get_address (self, ifindex, length);
+	pllink = nm_platform_link_get (self, ifindex);
+	if (pllink && pllink->addr.len > 0) {
+		if (pllink->addr.len > NM_UTILS_HWADDR_LEN_MAX) {
+			if (length)
+				*length = 0;
+			g_return_val_if_reached (NULL);
+		}
+		a = pllink->addr.data;
+		l = pllink->addr.len;
+	}
+
+	if (length)
+		*length = l;
+	return a;
 }
 
 /**
@@ -1039,11 +1042,12 @@ nm_platform_link_get_permanent_address (NMPlatform *self, int ifindex, guint8 *b
 		*length = 0;
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
-	g_return_val_if_fail (klass->link_get_permanent_address, FALSE);
 	g_return_val_if_fail (buf, FALSE);
 	g_return_val_if_fail (length, FALSE);
 
-	return klass->link_get_permanent_address (self, ifindex, buf, length);
+	if (klass->link_get_permanent_address)
+		return klass->link_get_permanent_address (self, ifindex, buf, length);
+	return FALSE;
 }
 
 gboolean
@@ -1176,12 +1180,12 @@ nm_platform_link_set_mtu (NMPlatform *self, int ifindex, guint32 mtu)
 guint32
 nm_platform_link_get_mtu (NMPlatform *self, int ifindex)
 {
+	const NMPlatformLink *pllink;
+
 	_CHECK_SELF (self, klass, 0);
 
-	g_return_val_if_fail (ifindex >= 0, 0);
-	g_return_val_if_fail (klass->link_get_mtu, 0);
-
-	return klass->link_get_mtu (self, ifindex);
+	pllink = nm_platform_link_get (self, ifindex);
+	return pllink ? pllink->mtu : 0;
 }
 
 /**
@@ -1204,9 +1208,10 @@ nm_platform_link_get_physical_port_id (NMPlatform *self, int ifindex)
 	_CHECK_SELF (self, klass, NULL);
 
 	g_return_val_if_fail (ifindex >= 0, NULL);
-	g_return_val_if_fail (klass->link_get_physical_port_id, NULL);
 
-	return klass->link_get_physical_port_id (self, ifindex);
+	if (klass->link_get_physical_port_id)
+		return klass->link_get_physical_port_id (self, ifindex);
+	return NULL;
 }
 
 /**
@@ -1227,9 +1232,10 @@ nm_platform_link_get_dev_id (NMPlatform *self, int ifindex)
 	_CHECK_SELF (self, klass, 0);
 
 	g_return_val_if_fail (ifindex >= 0, 0);
-	g_return_val_if_fail (klass->link_get_dev_id, 0);
 
-	return klass->link_get_dev_id (self, ifindex);
+	if (klass->link_get_dev_id)
+		return klass->link_get_dev_id (self, ifindex);
+	return 0;
 }
 
 /**
@@ -1245,9 +1251,10 @@ nm_platform_link_get_wake_on_lan (NMPlatform *self, int ifindex)
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (ifindex >= 0, FALSE);
-	g_return_val_if_fail (klass->link_get_wake_on_lan, FALSE);
 
-	return klass->link_get_wake_on_lan (self, ifindex);
+	if (klass->link_get_wake_on_lan)
+		return klass->link_get_wake_on_lan (self, ifindex);
+	return FALSE;
 }
 
 /**
@@ -1340,14 +1347,14 @@ nm_platform_link_release (NMPlatform *self, int master, int slave)
 int
 nm_platform_link_get_master (NMPlatform *self, int slave)
 {
+	const NMPlatformLink *pllink;
+
 	_CHECK_SELF (self, klass, 0);
 
 	g_return_val_if_fail (slave >= 0, FALSE);
-	g_return_val_if_fail (klass->link_get_master, FALSE);
 
-	if (!nm_platform_link_get_name (self, slave))
-		return 0;
-	return klass->link_get_master (self, slave);
+	pllink = nm_platform_link_get (self, slave);
+	return pllink ? pllink->master : 0;
 }
 
 /**

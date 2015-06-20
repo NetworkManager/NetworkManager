@@ -128,7 +128,7 @@ do_vlan_add (char **argv)
 static gboolean
 do_link_exists (char **argv)
 {
-	gboolean value = nm_platform_link_exists (NM_PLATFORM_GET, argv[0]);
+	gboolean value = !!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, argv[0]);
 
 	print_boolean (value);
 
