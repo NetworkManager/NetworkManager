@@ -770,7 +770,9 @@ nmp_object_is_visible (const NMPObject *obj)
 static gboolean
 _vt_cmd_obj_is_visible_link (const NMPObject *obj)
 {
-	return obj->object.ifindex > 0 && obj->_link.netlink.is_in_netlink;
+	return    obj->object.ifindex > 0
+	       && obj->_link.netlink.is_in_netlink
+	       && obj->link.name[0];
 }
 
 static gboolean
