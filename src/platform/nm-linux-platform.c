@@ -2508,15 +2508,26 @@ link_get_all (NMPlatform *platform)
 	                                        nmp_cache_id_init_object_type (NMP_CACHE_ID_STATIC, NMP_OBJECT_TYPE_LINK, TRUE));
 }
 
-static gboolean
-_nm_platform_link_get (NMPlatform *platform, int ifindex, NMPlatformLink *l)
+static const NMPlatformLink *
+_nm_platform_link_get (NMPlatform *platform, int ifindex)
 {
 	const NMPObject *obj;
 
 	obj = cache_lookup_link (platform, ifindex);
-	if (obj && l)
-		*l = obj->link;
-	return !!obj;
+	return obj ? &obj->link : NULL;
+}
+
+static const NMPlatformLink *
+_nm_platform_link_get_by_ifname (NMPlatform *platform,
+                                 const char *ifname)
+{
+	const NMPObject *obj = NULL;
+
+	if (ifname && *ifname) {
+		obj = nmp_cache_lookup_link_full (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache,
+		                                  0, ifname, TRUE, NM_LINK_TYPE_NONE, NULL, NULL);
+	}
+	return obj ? &obj->link : NULL;
 }
 
 struct _nm_platform_link_get_by_address_data {
@@ -2530,11 +2541,10 @@ _nm_platform_link_get_by_address_match_link (const NMPObject *obj, struct _nm_pl
 	return obj->link.addr.len == d->length && !memcmp (obj->link.addr.data, d->address, d->length);
 }
 
-static gboolean
+static const NMPlatformLink *
 _nm_platform_link_get_by_address (NMPlatform *platform,
                                   gconstpointer address,
-                                  size_t length,
-                                  NMPlatformLink *l)
+                                  size_t length)
 {
 	const NMPObject *obj;
 	struct _nm_platform_link_get_by_address_data d = {
@@ -2543,16 +2553,14 @@ _nm_platform_link_get_by_address (NMPlatform *platform,
 	};
 
 	if (length <= 0 || length > NM_UTILS_HWADDR_LEN_MAX)
-		return FALSE;
+		return NULL;
 	if (!address)
-		return FALSE;
+		return NULL;
 
 	obj = nmp_cache_lookup_link_full (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache,
 	                                  0, NULL, TRUE, NM_LINK_TYPE_NONE,
 	                                  (NMPObjectMatchFn) _nm_platform_link_get_by_address_match_link, &d);
-	if (obj && l)
-		*l = obj->link;
-	return !!obj;
+	return obj ? &obj->link : NULL;
 }
 
 static struct nl_object *
@@ -2798,34 +2806,6 @@ link_delete (NMPlatform *platform, int ifindex)
 	return do_delete_object (platform, &obj_needle, NULL);
 }
 
-static int
-link_get_ifindex (NMPlatform *platform, const char *ifname)
-{
-	const NMPObject *obj;
-
-	g_return_val_if_fail (ifname, 0);
-
-	obj = nmp_cache_lookup_link_full (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache,
-	                                  0, ifname, TRUE, NM_LINK_TYPE_NONE, NULL, NULL);
-	return obj ? obj->link.ifindex : 0;
-}
-
-static const char *
-link_get_name (NMPlatform *platform, int ifindex)
-{
-	const NMPObject *obj = cache_lookup_link (platform, ifindex);
-
-	return obj ? obj->link.name : NULL;
-}
-
-static NMLinkType
-link_get_type (NMPlatform *platform, int ifindex)
-{
-	const NMPObject *obj = cache_lookup_link (platform, ifindex);
-
-	return obj ? obj->link.type : NM_LINK_TYPE_NONE;
-}
-
 static const char *
 link_get_type_name (NMPlatform *platform, int ifindex)
 {
@@ -2866,39 +2846,11 @@ link_get_unmanaged (NMPlatform *platform, int ifindex, gboolean *managed)
 	return FALSE;
 }
 
-static guint32
-link_get_flags (NMPlatform *platform, int ifindex)
-{
-	const NMPObject *obj = cache_lookup_link (platform, ifindex);
-
-	return obj ? obj->link.flags : IFF_NOARP;
-}
-
 static gboolean
 link_refresh (NMPlatform *platform, int ifindex)
 {
 	do_request_link (platform, ifindex, NULL, TRUE);
 	return !!cache_lookup_link (platform, ifindex);
-}
-
-static gboolean
-link_is_up (NMPlatform *platform, int ifindex)
-{
-	return !!(link_get_flags (platform, ifindex) & IFF_UP);
-}
-
-static gboolean
-link_is_connected (NMPlatform *platform, int ifindex)
-{
-	const NMPObject *obj = cache_lookup_link (platform, ifindex);
-
-	return obj ? obj->link.connected : FALSE;
-}
-
-static gboolean
-link_uses_arp (NMPlatform *platform, int ifindex)
-{
-	return !(link_get_flags (platform, ifindex) & IFF_NOARP);
 }
 
 static NMPlatformError
@@ -2955,20 +2907,6 @@ link_set_noarp (NMPlatform *platform, int ifindex)
 	return link_change_flags (platform, ifindex, IFF_NOARP, TRUE) == NM_PLATFORM_ERROR_SUCCESS;
 }
 
-static gboolean
-link_get_ipv6_token (NMPlatform *platform, int ifindex, NMUtilsIPv6IfaceId *iid)
-{
-#if HAVE_LIBNL_INET6_TOKEN
-	const NMPObject *obj = cache_lookup_link (platform, ifindex);
-
-	if (obj && obj->link.inet6_token.is_valid) {
-		*iid = obj->link.inet6_token.iid;
-		return TRUE;
-	}
-#endif
-	return FALSE;
-}
-
 static const char *
 link_get_udi (NMPlatform *platform, int ifindex)
 {
@@ -2993,18 +2931,6 @@ link_get_udev_device (NMPlatform *platform, int ifindex)
 
 	obj_cache = nmp_cache_lookup_link (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, ifindex);
 	return obj_cache ? (GObject *) obj_cache->_link.udev.device : NULL;
-}
-
-static gboolean
-link_get_user_ipv6ll_enabled (NMPlatform *platform, int ifindex)
-{
-#if HAVE_LIBNL_INET6_ADDR_GEN_MODE
-	const NMPObject *obj = cache_lookup_link (platform, ifindex);
-
-	if (obj && obj->link.inet6_addr_gen_mode_inv)
-		return (~obj->link.inet6_addr_gen_mode_inv) == IN6_ADDR_GEN_MODE_NONE;
-#endif
-	return FALSE;
 }
 
 static gboolean
@@ -3069,28 +2995,6 @@ link_set_address (NMPlatform *platform, int ifindex, gconstpointer address, size
 	return do_change_link (platform, change, TRUE) == NM_PLATFORM_ERROR_SUCCESS;
 }
 
-static gconstpointer
-link_get_address (NMPlatform *platform, int ifindex, size_t *length)
-{
-	const NMPObject *obj = cache_lookup_link (platform, ifindex);
-	gconstpointer a = NULL;
-	guint8 l = 0;
-
-	if (obj && obj->link.addr.len > 0) {
-		if (obj->link.addr.len > NM_UTILS_HWADDR_LEN_MAX) {
-			if (length)
-				*length = 0;
-			g_return_val_if_reached (NULL);
-		}
-		a = obj->link.addr.data;
-		l = obj->link.addr.len;
-	}
-
-	if (length)
-		*length = l;
-	return a;
-}
-
 static gboolean
 link_get_permanent_address (NMPlatform *platform,
                             int ifindex,
@@ -3109,14 +3013,6 @@ link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 	debug ("link: change %d: mtu %lu", ifindex, (unsigned long)mtu);
 
 	return do_change_link (platform, change, TRUE) == NM_PLATFORM_ERROR_SUCCESS;
-}
-
-static guint32
-link_get_mtu (NMPlatform *platform, int ifindex)
-{
-	const NMPObject *obj = cache_lookup_link (platform, ifindex);
-
-	return obj ? obj->link.mtu : 0;
 }
 
 static char *
@@ -3251,14 +3147,6 @@ link_release (NMPlatform *platform, int master, int slave)
 	return link_enslave (platform, 0, slave);
 }
 
-static int
-link_get_master (NMPlatform *platform, int slave)
-{
-	const NMPObject *obj = cache_lookup_link (platform, slave);
-
-	return obj ? obj->link.master : 0;
-}
-
 static char *
 link_option_path (NMPlatform *platform, int master, const char *category, const char *option)
 {
@@ -3292,13 +3180,12 @@ link_get_option (NMPlatform *platform, int master, const char *category, const c
 static const char *
 master_category (NMPlatform *platform, int master)
 {
-	switch (link_get_type (platform, master)) {
+	switch (nm_platform_link_get_type (platform, master)) {
 	case NM_LINK_TYPE_BRIDGE:
 		return "bridge";
 	case NM_LINK_TYPE_BOND:
 		return "bonding";
 	default:
-		g_return_val_if_reached (NULL);
 		return NULL;
 	}
 }
@@ -3306,16 +3193,15 @@ master_category (NMPlatform *platform, int master)
 static const char *
 slave_category (NMPlatform *platform, int slave)
 {
-	int master = link_get_master (platform, slave);
+	int master = nm_platform_link_get_master (platform, slave);
 
 	if (master <= 0)
 		return NULL;
 
-	switch (link_get_type (platform, master)) {
+	switch (nm_platform_link_get_type (platform, master)) {
 	case NM_LINK_TYPE_BRIDGE:
 		return "brport";
 	default:
-		g_return_val_if_reached (NULL);
 		return NULL;
 	}
 }
@@ -3761,8 +3647,8 @@ vxlan_get_properties (NMPlatform *platform, int ifindex, NMPlatformVxlanProperti
 	err = _nl_link_parse_info_data (priv->nlh, ifindex,
 	                                vxlan_info_data_parser, props);
 	if (err != 0) {
-		warning ("(%s) could not read properties: %s",
-		         link_get_name (platform, ifindex), nl_geterror (err));
+		warning ("(%s) could not read vxlan properties: %s",
+		         nm_platform_link_get_name (platform, ifindex), nl_geterror (err));
 	}
 	return (err == 0);
 }
@@ -3815,8 +3701,8 @@ gre_get_properties (NMPlatform *platform, int ifindex, NMPlatformGreProperties *
 	err = _nl_link_parse_info_data (priv->nlh, ifindex,
 	                                gre_info_data_parser, props);
 	if (err != 0) {
-		warning ("(%s) could not read properties: %s",
-		         link_get_name (platform, ifindex), nl_geterror (err));
+		warning ("(%s) could not read gre properties: %s",
+		         nm_platform_link_get_name (platform, ifindex), nl_geterror (err));
 	}
 	return (err == 0);
 }
@@ -3829,26 +3715,25 @@ wifi_get_wifi_data (NMPlatform *platform, int ifindex)
 
 	wifi_data = g_hash_table_lookup (priv->wifi_data, GINT_TO_POINTER (ifindex));
 	if (!wifi_data) {
-		NMLinkType type;
-		const char *ifname;
+		const NMPlatformLink *pllink;
 
-		type = link_get_type (platform, ifindex);
-		ifname = link_get_name (platform, ifindex);
-
-		if (type == NM_LINK_TYPE_WIFI)
-			wifi_data = wifi_utils_init (ifname, ifindex, TRUE);
-		else if (type == NM_LINK_TYPE_OLPC_MESH) {
-			/* The kernel driver now uses nl80211, but we force use of WEXT because
-			 * the cfg80211 interactions are not quite ready to support access to
-			 * mesh control through nl80211 just yet.
-			 */
+		pllink = nm_platform_link_get (platform, ifindex);
+		if (pllink) {
+			if (pllink->type == NM_LINK_TYPE_WIFI)
+				wifi_data = wifi_utils_init (pllink->name, ifindex, TRUE);
+			else if (pllink->type == NM_LINK_TYPE_OLPC_MESH) {
+				/* The kernel driver now uses nl80211, but we force use of WEXT because
+				 * the cfg80211 interactions are not quite ready to support access to
+				 * mesh control through nl80211 just yet.
+				 */
 #if HAVE_WEXT
-			wifi_data = wifi_wext_init (ifname, ifindex, FALSE);
+				wifi_data = wifi_wext_init (pllink->name, ifindex, FALSE);
 #endif
-		}
+			}
 
-		if (wifi_data)
-			g_hash_table_insert (priv->wifi_data, GINT_TO_POINTER (ifindex), wifi_data);
+			if (wifi_data)
+				g_hash_table_insert (priv->wifi_data, GINT_TO_POINTER (ifindex), wifi_data);
+		}
 	}
 
 	return wifi_data;
@@ -3993,10 +3878,10 @@ mesh_set_ssid (NMPlatform *platform, int ifindex, const guint8 *ssid, gsize len)
 static gboolean
 link_get_wake_on_lan (NMPlatform *platform, int ifindex)
 {
-	NMLinkType type = link_get_type (platform, ifindex);
+	NMLinkType type = nm_platform_link_get_type (platform, ifindex);
 
 	if (type == NM_LINK_TYPE_ETHERNET)
-		return nmp_utils_ethtool_get_wake_on_lan (link_get_name (platform, ifindex));
+		return nmp_utils_ethtool_get_wake_on_lan (nm_platform_link_get_name (platform, ifindex));
 	else if (type == NM_LINK_TYPE_WIFI) {
 		WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
 
@@ -5039,13 +4924,11 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->sysctl_get = sysctl_get;
 
 	platform_class->link_get = _nm_platform_link_get;
+	platform_class->link_get_by_ifname = _nm_platform_link_get_by_ifname;
 	platform_class->link_get_by_address = _nm_platform_link_get_by_address;
 	platform_class->link_get_all = link_get_all;
 	platform_class->link_add = link_add;
 	platform_class->link_delete = link_delete;
-	platform_class->link_get_ifindex = link_get_ifindex;
-	platform_class->link_get_name = link_get_name;
-	platform_class->link_get_type = link_get_type;
 	platform_class->link_get_type_name = link_get_type_name;
 	platform_class->link_get_unmanaged = link_get_unmanaged;
 
@@ -5055,21 +4938,14 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_set_down = link_set_down;
 	platform_class->link_set_arp = link_set_arp;
 	platform_class->link_set_noarp = link_set_noarp;
-	platform_class->link_is_up = link_is_up;
-	platform_class->link_is_connected = link_is_connected;
-	platform_class->link_uses_arp = link_uses_arp;
 
 	platform_class->link_get_udi = link_get_udi;
 	platform_class->link_get_udev_device = link_get_udev_device;
-	platform_class->link_get_ipv6_token = link_get_ipv6_token;
 
-	platform_class->link_get_user_ipv6ll_enabled = link_get_user_ipv6ll_enabled;
 	platform_class->link_set_user_ipv6ll_enabled = link_set_user_ipv6ll_enabled;
 
-	platform_class->link_get_address = link_get_address;
 	platform_class->link_set_address = link_set_address;
 	platform_class->link_get_permanent_address = link_get_permanent_address;
-	platform_class->link_get_mtu = link_get_mtu;
 	platform_class->link_set_mtu = link_set_mtu;
 
 	platform_class->link_get_physical_port_id = link_get_physical_port_id;
@@ -5082,7 +4958,6 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 
 	platform_class->link_enslave = link_enslave;
 	platform_class->link_release = link_release;
-	platform_class->link_get_master = link_get_master;
 	platform_class->master_set_option = master_set_option;
 	platform_class->master_get_option = master_get_option;
 	platform_class->slave_set_option = slave_set_option;

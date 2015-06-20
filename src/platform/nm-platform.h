@@ -409,8 +409,10 @@ typedef struct {
 	gboolean (*sysctl_set) (NMPlatform *, const char *path, const char *value);
 	char * (*sysctl_get) (NMPlatform *, const char *path);
 
-	gboolean (*link_get) (NMPlatform *platform, int ifindex, NMPlatformLink *link);
-	gboolean (*link_get_by_address) (NMPlatform *platform, gconstpointer address, size_t length, NMPlatformLink *link);
+	const NMPlatformLink *(*link_get) (NMPlatform *platform, int ifindex);
+	const NMPlatformLink *(*link_get_by_ifname) (NMPlatform *platform, const char *ifname);
+	const NMPlatformLink *(*link_get_by_address) (NMPlatform *platform, gconstpointer address, size_t length);
+
 	GArray *(*link_get_all) (NMPlatform *);
 	gboolean (*link_add) (NMPlatform *,
 	                      const char *name,
@@ -419,9 +421,6 @@ typedef struct {
 	                      size_t address_len,
 	                      NMPlatformLink *out_link);
 	gboolean (*link_delete) (NMPlatform *, int ifindex);
-	int (*link_get_ifindex) (NMPlatform *, const char *name);
-	const char *(*link_get_name) (NMPlatform *, int ifindex);
-	NMLinkType (*link_get_type) (NMPlatform *, int ifindex);
 	const char *(*link_get_type_name) (NMPlatform *, int ifindex);
 	gboolean (*link_get_unmanaged) (NMPlatform *, int ifindex, gboolean *managed);
 
@@ -432,24 +431,17 @@ typedef struct {
 	gboolean (*link_set_down) (NMPlatform *, int ifindex);
 	gboolean (*link_set_arp) (NMPlatform *, int ifindex);
 	gboolean (*link_set_noarp) (NMPlatform *, int ifindex);
-	gboolean (*link_is_up) (NMPlatform *, int ifindex);
-	gboolean (*link_is_connected) (NMPlatform *, int ifindex);
-	gboolean (*link_uses_arp) (NMPlatform *, int ifindex);
 
 	const char *(*link_get_udi) (NMPlatform *self, int ifindex);
 	GObject *(*link_get_udev_device) (NMPlatform *self, int ifindex);
-	gboolean (*link_get_ipv6_token) (NMPlatform *, int ifindex, NMUtilsIPv6IfaceId *iid);
 
-	gboolean (*link_get_user_ipv6ll_enabled) (NMPlatform *, int ifindex);
 	gboolean (*link_set_user_ipv6ll_enabled) (NMPlatform *, int ifindex, gboolean enabled);
 
-	gconstpointer (*link_get_address) (NMPlatform *, int ifindex, size_t *length);
 	gboolean (*link_get_permanent_address) (NMPlatform *,
 	                                        int ifindex,
 	                                        guint8 *buf,
 	                                        size_t *length);
 	gboolean (*link_set_address) (NMPlatform *, int ifindex, gconstpointer address, size_t length);
-	guint32 (*link_get_mtu) (NMPlatform *, int ifindex);
 	gboolean (*link_set_mtu) (NMPlatform *, int ifindex, guint32 mtu);
 
 	char *   (*link_get_physical_port_id) (NMPlatform *, int ifindex);
@@ -466,7 +458,6 @@ typedef struct {
 
 	gboolean (*link_enslave) (NMPlatform *, int master, int slave);
 	gboolean (*link_release) (NMPlatform *, int master, int slave);
-	gboolean (*link_get_master) (NMPlatform *, int slave);
 	gboolean (*master_set_option) (NMPlatform *, int ifindex, const char *option, const char *value);
 	char * (*master_get_option) (NMPlatform *, int ifindex, const char *option);
 	gboolean (*slave_set_option) (NMPlatform *, int ifindex, const char *option, const char *value);
@@ -597,22 +588,34 @@ gint64 nm_platform_sysctl_get_int_checked (NMPlatform *self, const char *path, g
 
 gboolean nm_platform_sysctl_set_ip6_hop_limit_safe (NMPlatform *self, const char *iface, int value);
 
-gboolean nm_platform_link_get (NMPlatform *self, int ifindex, NMPlatformLink *link);
+const NMPlatformLink *nm_platform_link_get (NMPlatform *self, int ifindex);
+const NMPlatformLink *nm_platform_link_get_by_ifname (NMPlatform *self, const char *ifname);
+const NMPlatformLink *nm_platform_link_get_by_address (NMPlatform *self, gconstpointer address, size_t length);
+
 GArray *nm_platform_link_get_all (NMPlatform *self);
-gboolean nm_platform_link_get_by_address (NMPlatform *self, gconstpointer address, size_t length, NMPlatformLink *link);
 NMPlatformError nm_platform_dummy_add (NMPlatform *self, const char *name, NMPlatformLink *out_link);
 NMPlatformError nm_platform_bridge_add (NMPlatform *self, const char *name, const void *address, size_t address_len, NMPlatformLink *out_link);
 NMPlatformError nm_platform_bond_add (NMPlatform *self, const char *name, NMPlatformLink *out_link);
 NMPlatformError nm_platform_team_add (NMPlatform *self, const char *name, NMPlatformLink *out_link);
-gboolean nm_platform_link_exists (NMPlatform *self, const char *name);
 gboolean nm_platform_link_delete (NMPlatform *self, int ifindex);
+
+/* convienience methods to lookup the link and access fields of NMPlatformLink. */
 int nm_platform_link_get_ifindex (NMPlatform *self, const char *name);
 const char *nm_platform_link_get_name (NMPlatform *self, int ifindex);
 NMLinkType nm_platform_link_get_type (NMPlatform *self, int ifindex);
-const char *nm_platform_link_get_type_name (NMPlatform *self, int ifindex);
-gboolean nm_platform_link_get_unmanaged (NMPlatform *self, int ifindex, gboolean *managed);
 gboolean nm_platform_link_is_software (NMPlatform *self, int ifindex);
+gboolean nm_platform_link_is_up (NMPlatform *self, int ifindex);
+gboolean nm_platform_link_is_connected (NMPlatform *self, int ifindex);
+gboolean nm_platform_link_uses_arp (NMPlatform *self, int ifindex);
+guint32 nm_platform_link_get_mtu (NMPlatform *self, int ifindex);
+gboolean nm_platform_link_get_ipv6_token (NMPlatform *self, int ifindex, NMUtilsIPv6IfaceId *iid);
+gboolean nm_platform_link_get_user_ipv6ll_enabled (NMPlatform *self, int ifindex);
+gconstpointer nm_platform_link_get_address (NMPlatform *self, int ifindex, size_t *length);
+int nm_platform_link_get_master (NMPlatform *self, int slave);
+
+gboolean nm_platform_link_get_unmanaged (NMPlatform *self, int ifindex, gboolean *managed);
 gboolean nm_platform_link_supports_slaves (NMPlatform *self, int ifindex);
+const char *nm_platform_link_get_type_name (NMPlatform *self, int ifindex);
 
 gboolean nm_platform_link_refresh (NMPlatform *self, int ifindex);
 void nm_platform_process_events (NMPlatform *self);
@@ -621,22 +624,15 @@ gboolean nm_platform_link_set_up (NMPlatform *self, int ifindex, gboolean *out_n
 gboolean nm_platform_link_set_down (NMPlatform *self, int ifindex);
 gboolean nm_platform_link_set_arp (NMPlatform *self, int ifindex);
 gboolean nm_platform_link_set_noarp (NMPlatform *self, int ifindex);
-gboolean nm_platform_link_is_up (NMPlatform *self, int ifindex);
-gboolean nm_platform_link_is_connected (NMPlatform *self, int ifindex);
-gboolean nm_platform_link_uses_arp (NMPlatform *self, int ifindex);
 
-gboolean nm_platform_link_get_ipv6_token (NMPlatform *self, int ifindex, NMUtilsIPv6IfaceId *iid);
 const char *nm_platform_link_get_udi (NMPlatform *self, int ifindex);
 
 GObject *nm_platform_link_get_udev_device (NMPlatform *self, int ifindex);
 
-gboolean nm_platform_link_get_user_ipv6ll_enabled (NMPlatform *self, int ifindex);
 gboolean nm_platform_link_set_user_ipv6ll_enabled (NMPlatform *self, int ifindex, gboolean enabled);
 
-gconstpointer nm_platform_link_get_address (NMPlatform *self, int ifindex, size_t *length);
 gboolean nm_platform_link_get_permanent_address (NMPlatform *self, int ifindex, guint8 *buf, size_t *length);
 gboolean nm_platform_link_set_address (NMPlatform *self, int ifindex, const void *address, size_t length);
-guint32 nm_platform_link_get_mtu (NMPlatform *self, int ifindex);
 gboolean nm_platform_link_set_mtu (NMPlatform *self, int ifindex, guint32 mtu);
 
 char    *nm_platform_link_get_physical_port_id (NMPlatform *self, int ifindex);
@@ -653,7 +649,6 @@ gboolean nm_platform_link_supports_vlans (NMPlatform *self, int ifindex);
 
 gboolean nm_platform_link_enslave (NMPlatform *self, int master, int slave);
 gboolean nm_platform_link_release (NMPlatform *self, int master, int slave);
-int nm_platform_link_get_master (NMPlatform *self, int slave);
 gboolean nm_platform_master_set_option (NMPlatform *self, int ifindex, const char *option, const char *value);
 char *nm_platform_master_get_option (NMPlatform *self, int ifindex, const char *option);
 gboolean nm_platform_slave_set_option (NMPlatform *self, int ifindex, const char *option, const char *value);

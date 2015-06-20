@@ -1408,7 +1408,7 @@ get_new_connection_ifname (const GSList *existing,
 	for (i = 0; i < 500; i++) {
 		name = g_strdup_printf ("%s%d", prefix, i);
 
-		if (nm_platform_link_exists (NM_PLATFORM_GET, name))
+		if (nm_platform_link_get_by_ifname (NM_PLATFORM_GET, name))
 			goto next;
 
 		for (iter = existing, found = FALSE; iter; iter = g_slist_next (iter)) {

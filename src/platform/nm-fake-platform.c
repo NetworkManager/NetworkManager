@@ -49,7 +49,6 @@ typedef struct {
 	NMPlatformLink link;
 
 	char *udi;
-	GBytes *address;
 	int vlan_id;
 	int ib_p_key;
 	struct in6_addr ip6_lladdr;
@@ -142,7 +141,6 @@ link_init (NMFakePlatformLink *device, int ifindex, int type, const char *name)
 		device->link.flags = NM_FLAGS_UNSET (device->link.flags, IFF_NOARP);
 		break;
 	}
-	device->address = NULL;
 }
 
 static NMFakePlatformLink *
@@ -177,21 +175,16 @@ link_get_all (NMPlatform *platform)
 	return links;
 }
 
-static gboolean
-_nm_platform_link_get (NMPlatform *platform, int ifindex, NMPlatformLink *l)
+static const NMPlatformLink *
+_nm_platform_link_get (NMPlatform *platform, int ifindex)
 {
 	NMFakePlatformLink *device = link_get (platform, ifindex);
 
-	if (device && l)
-		*l = device->link;
-	return !!device;
+	return device ? &device->link : NULL;
 }
 
-static gboolean
-_nm_platform_link_get_by_address (NMPlatform *platform,
-                                  gconstpointer address,
-                                  size_t length,
-                                  NMPlatformLink *l)
+static const NMPlatformLink *
+_nm_platform_link_get_by_ifname (NMPlatform *platform, const char *ifname)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	guint i;
@@ -199,14 +192,34 @@ _nm_platform_link_get_by_address (NMPlatform *platform,
 	for (i = 0; i < priv->links->len; i++) {
 		NMFakePlatformLink *device = &g_array_index (priv->links, NMFakePlatformLink, i);
 
-		if (   device->address
-		    && g_bytes_get_size (device->address) == length
-		    && memcmp (g_bytes_get_data (device->address, NULL), address, length) == 0) {
-			*l = device->link;
-			return TRUE;
+		if (!strcmp (device->link.name, ifname))
+			return &device->link;
+	}
+	return NULL;
+}
+
+static const NMPlatformLink *
+_nm_platform_link_get_by_address (NMPlatform *platform,
+                                  gconstpointer address,
+                                  size_t length)
+{
+	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
+	guint i;
+
+	if (   length == 0
+	    || length > NM_UTILS_HWADDR_LEN_MAX
+	    || !address)
+		g_return_val_if_reached (NULL);
+
+	for (i = 0; i < priv->links->len; i++) {
+		NMFakePlatformLink *device = &g_array_index (priv->links, NMFakePlatformLink, i);
+
+		if (   device->link.addr.len == length
+		    && memcmp (device->link.addr.data, address, length) == 0) {
+			return &device->link;
 		}
 	}
-	return FALSE;
+	return NULL;
 }
 
 static gboolean
@@ -280,48 +293,10 @@ link_delete (NMPlatform *platform, int ifindex)
 	return TRUE;
 }
 
-static int
-link_get_ifindex (NMPlatform *platform, const char *name)
-{
-	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
-	int i;
-
-	for (i = 0; i < priv->links->len; i++) {
-		NMFakePlatformLink *device = &g_array_index (priv->links, NMFakePlatformLink, i);
-
-		if (device && !g_strcmp0 (device->link.name, name))
-			return device->link.ifindex;
-	}
-
-	return 0;
-}
-
-static const char *
-link_get_name (NMPlatform *platform, int ifindex)
-{
-	NMFakePlatformLink *device = link_get (platform, ifindex);
-
-	return device ? device->link.name : NULL;
-}
-
-static NMLinkType
-link_get_type (NMPlatform *platform, int ifindex)
-{
-	NMFakePlatformLink *device = link_get (platform, ifindex);
-
-	return device ? device->link.type : NM_LINK_TYPE_NONE;
-}
-
 static const char *
 link_get_type_name (NMPlatform *platform, int ifindex)
 {
-	return type_to_type_name (link_get_type (platform, ifindex));
-}
-
-static gboolean
-link_get_unmanaged (NMPlatform *platform, int ifindex, gboolean *managed)
-{
-	return FALSE;
+	return type_to_type_name (nm_platform_link_get_type (platform, ifindex));
 }
 
 static void
@@ -448,62 +423,24 @@ link_set_noarp (NMPlatform *platform, int ifindex)
 }
 
 static gboolean
-link_is_up (NMPlatform *platform, int ifindex)
-{
-	NMFakePlatformLink *device = link_get (platform, ifindex);
-
-	return device ? NM_FLAGS_HAS (device->link.flags, IFF_UP) : FALSE;
-}
-
-static gboolean
-link_is_connected (NMPlatform *platform, int ifindex)
-{
-	NMFakePlatformLink *device = link_get (platform, ifindex);
-
-	return device ? device->link.connected : FALSE;
-}
-
-static gboolean
-link_uses_arp (NMPlatform *platform, int ifindex)
-{
-	NMFakePlatformLink *device = link_get (platform, ifindex);
-
-	return device ? !NM_FLAGS_HAS (device->link.flags, IFF_NOARP) : FALSE;
-}
-
-static gboolean
 link_set_address (NMPlatform *platform, int ifindex, gconstpointer addr, size_t len)
 {
 	NMFakePlatformLink *device = link_get (platform, ifindex);
 
-	if (device->address)
-		g_bytes_unref (device->address);
+	if (   len == 0
+	    || len > NM_UTILS_HWADDR_LEN_MAX
+	    || !addr)
+		g_return_val_if_reached (FALSE);
 
-	device->address = g_bytes_new (addr, len);
-
-	link_changed (platform, link_get (platform, ifindex), TRUE);
-
-	return TRUE;
-}
-
-static gconstpointer
-link_get_address (NMPlatform *platform, int ifindex, size_t *length)
-{
-	NMFakePlatformLink *device = link_get (platform, ifindex);
-
-	if (!device || !device->address) {
-		if (length)
-			*length = 0;
-		return NULL;
+	if (   device->link.addr.len != len
+	    || (   len > 0
+	        && memcmp (device->link.addr.data, addr, len) != 0)) {
+		memcpy (device->link.addr.data, addr, len);
+		device->link.addr.len = len;
+		link_changed (platform, link_get (platform, ifindex), TRUE);
 	}
 
-	return g_bytes_get_data (device->address, length);
-}
-
-static gboolean
-link_get_permanent_address (NMPlatform *platform, int ifindex, guint8 *buf, size_t *length)
-{
-	return FALSE;
+	return TRUE;
 }
 
 static gboolean
@@ -519,32 +456,6 @@ link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 	return !!device;
 }
 
-static guint32
-link_get_mtu (NMPlatform *platform, int ifindex)
-{
-	NMFakePlatformLink *device = link_get (platform, ifindex);
-
-	return device ? device->link.mtu : 0;
-}
-
-static char *
-link_get_physical_port_id (NMPlatform *platform, int ifindex)
-{
-	/* We call link_get just to cause an error to be set if @ifindex is bad. */
-	link_get (platform, ifindex);
-
-	return NULL;
-}
-
-static guint
-link_get_dev_id (NMPlatform *platform, int ifindex)
-{
-	/* We call link_get just to cause an error to be set if @ifindex is bad. */
-	link_get (platform, ifindex);
-
-	return 0;
-}
-
 static const char *
 link_get_udi (NMPlatform *platform, int ifindex)
 {
@@ -553,15 +464,6 @@ link_get_udi (NMPlatform *platform, int ifindex)
 	if (!device)
 		return NULL;
 	return device->udi;
-}
-
-static gboolean
-link_get_wake_on_lan (NMPlatform *platform, int ifindex)
-{
-	/* We call link_get just to cause an error to be set if @ifindex is bad. */
-	link_get (platform, ifindex);
-
-	return FALSE;
 }
 
 static gboolean
@@ -577,9 +479,6 @@ link_get_driver_info (NMPlatform *platform,
 		*out_driver_version = NULL;
 	if (out_fw_version)
 		*out_fw_version = NULL;
-
-	/* We call link_get just to cause an error to be set if @ifindex is bad. */
-	link_get (platform, ifindex);
 
 	return TRUE;
 }
@@ -659,16 +558,6 @@ link_release (NMPlatform *platform, int master_idx, int slave_idx)
 	return TRUE;
 }
 
-static int
-link_get_master (NMPlatform *platform, int slave)
-{
-	NMFakePlatformLink *device = link_get (platform, slave);
-
-	g_return_val_if_fail (device, FALSE);
-
-	return device->link.master;
-}
-
 static gboolean
 master_set_option (NMPlatform *platform, int master, const char *option, const char *value)
 {
@@ -709,7 +598,7 @@ vlan_add (NMPlatform *platform, const char *name, int parent, int vlan_id, guint
 	if (!link_add (platform, name, NM_LINK_TYPE_VLAN, NULL, 0, NULL))
 		return FALSE;
 
-	device = link_get (platform, link_get_ifindex (platform, name));
+	device = link_get (platform, nm_platform_link_get_ifindex (platform, name));
 
 	g_return_val_if_fail (device, FALSE);
 
@@ -761,7 +650,7 @@ infiniband_partition_add (NMPlatform *platform, int parent, int p_key, NMPlatfor
 	if (!link_add (platform, name, NM_LINK_TYPE_INFINIBAND, NULL, 0, out_link))
 		return FALSE;
 
-	device = link_get (platform, link_get_ifindex (platform, name));
+	device = link_get (platform, nm_platform_link_get_ifindex (platform, name));
 	g_return_val_if_fail (device, FALSE);
 
 	device->ib_p_key = p_key;
@@ -1484,7 +1373,6 @@ nm_fake_platform_finalize (GObject *object)
 	for (i = 0; i < priv->links->len; i++) {
 		NMFakePlatformLink *device = &g_array_index (priv->links, NMFakePlatformLink, i);
 
-		g_bytes_unref (device->address);
 		g_free (device->udi);
 	}
 	g_array_unref (priv->links);
@@ -1511,15 +1399,12 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->sysctl_get = sysctl_get;
 
 	platform_class->link_get = _nm_platform_link_get;
+	platform_class->link_get_by_ifname = _nm_platform_link_get_by_ifname;
 	platform_class->link_get_by_address = _nm_platform_link_get_by_address;
 	platform_class->link_get_all = link_get_all;
 	platform_class->link_add = link_add;
 	platform_class->link_delete = link_delete;
-	platform_class->link_get_ifindex = link_get_ifindex;
-	platform_class->link_get_name = link_get_name;
-	platform_class->link_get_type = link_get_type;
 	platform_class->link_get_type_name = link_get_type_name;
-	platform_class->link_get_unmanaged = link_get_unmanaged;
 
 	platform_class->link_get_udi = link_get_udi;
 
@@ -1527,19 +1412,10 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->link_set_down = link_set_down;
 	platform_class->link_set_arp = link_set_arp;
 	platform_class->link_set_noarp = link_set_noarp;
-	platform_class->link_is_up = link_is_up;
-	platform_class->link_is_connected = link_is_connected;
-	platform_class->link_uses_arp = link_uses_arp;
 
 	platform_class->link_set_address = link_set_address;
-	platform_class->link_get_address = link_get_address;
-	platform_class->link_get_permanent_address = link_get_permanent_address;
-	platform_class->link_get_mtu = link_get_mtu;
 	platform_class->link_set_mtu = link_set_mtu;
 
-	platform_class->link_get_physical_port_id = link_get_physical_port_id;
-	platform_class->link_get_dev_id = link_get_dev_id;
-	platform_class->link_get_wake_on_lan = link_get_wake_on_lan;
 	platform_class->link_get_driver_info = link_get_driver_info;
 
 	platform_class->link_supports_carrier_detect = link_supports_carrier_detect;
@@ -1547,7 +1423,6 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 
 	platform_class->link_enslave = link_enslave;
 	platform_class->link_release = link_release;
-	platform_class->link_get_master = link_get_master;
 	platform_class->master_set_option = master_set_option;
 	platform_class->master_get_option = master_get_option;
 	platform_class->slave_set_option = slave_set_option;

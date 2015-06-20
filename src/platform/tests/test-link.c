@@ -21,7 +21,7 @@ test_bogus(void)
 {
 	size_t addrlen;
 
-	g_assert (!nm_platform_link_exists (NM_PLATFORM_GET, BOGUS_NAME));
+	g_assert (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, BOGUS_NAME));
 	g_assert (!nm_platform_link_delete (NM_PLATFORM_GET, BOGUS_IFINDEX));
 	g_assert (!nm_platform_link_get_ifindex (NM_PLATFORM_GET, BOGUS_NAME));
 	g_assert (!nm_platform_link_get_name (NM_PLATFORM_GET, BOGUS_IFINDEX));
@@ -53,7 +53,7 @@ test_bogus(void)
 static void
 test_loopback (void)
 {
-	g_assert (nm_platform_link_exists (NM_PLATFORM_GET, LO_NAME));
+	g_assert (nm_platform_link_get_by_ifname (NM_PLATFORM_GET, LO_NAME));
 	g_assert_cmpint (nm_platform_link_get_type (NM_PLATFORM_GET, LO_INDEX), ==, NM_LINK_TYPE_LOOPBACK);
 	g_assert_cmpint (nm_platform_link_get_ifindex (NM_PLATFORM_GET, LO_NAME), ==, LO_INDEX);
 	g_assert_cmpstr (nm_platform_link_get_name (NM_PLATFORM_GET, LO_INDEX), ==, LO_NAME);
@@ -73,14 +73,14 @@ software_add (NMLinkType link_type, const char *name)
 		return nm_platform_bridge_add (NM_PLATFORM_GET, name, NULL, 0, NULL) == NM_PLATFORM_ERROR_SUCCESS;
 	case NM_LINK_TYPE_BOND:
 		{
-			gboolean bond0_exists = nm_platform_link_exists (NM_PLATFORM_GET, "bond0");
+			gboolean bond0_exists = !!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, "bond0");
 			NMPlatformError plerr;
 
 			plerr = nm_platform_bond_add (NM_PLATFORM_GET, name, NULL);
 
 			/* Check that bond0 is *not* automatically created. */
 			if (!bond0_exists)
-				g_assert (!nm_platform_link_exists (NM_PLATFORM_GET, "bond0"));
+				g_assert (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, "bond0"));
 			return plerr == NM_PLATFORM_ERROR_SUCCESS;
 		}
 	case NM_LINK_TYPE_TEAM:
@@ -269,7 +269,7 @@ test_software (NMLinkType link_type, const char *link_typename)
 	link_added = add_signal_ifname (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_ADDED, link_callback, DEVICE_NAME);
 	g_assert (software_add (link_type, DEVICE_NAME));
 	accept_signal (link_added);
-	g_assert (nm_platform_link_exists (NM_PLATFORM_GET, DEVICE_NAME));
+	g_assert (nm_platform_link_get_by_ifname (NM_PLATFORM_GET, DEVICE_NAME));
 	ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME);
 	g_assert (ifindex >= 0);
 	g_assert_cmpint (nm_platform_link_get_type (NM_PLATFORM_GET, ifindex), ==, link_type);
@@ -333,7 +333,7 @@ test_software (NMLinkType link_type, const char *link_typename)
 
 	/* Delete */
 	g_assert (nm_platform_link_delete (NM_PLATFORM_GET, ifindex));
-	g_assert (!nm_platform_link_exists (NM_PLATFORM_GET, DEVICE_NAME));
+	g_assert (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, DEVICE_NAME));
 	g_assert_cmpint (nm_platform_link_get_type (NM_PLATFORM_GET, ifindex), ==, NM_LINK_TYPE_NONE);
 	g_assert (!nm_platform_link_get_type (NM_PLATFORM_GET, ifindex));
 	accept_signal (link_removed);
@@ -397,7 +397,7 @@ test_internal (void)
 	int ifindex;
 
 	/* Check the functions for non-existent devices */
-	g_assert (!nm_platform_link_exists (NM_PLATFORM_GET, DEVICE_NAME));
+	g_assert (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, DEVICE_NAME));
 	g_assert (!nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME));
 
 	/* Add device */
@@ -470,16 +470,15 @@ test_internal (void)
 static void
 test_external (void)
 {
-	NMPlatformLink link;
+	const NMPlatformLink *pllink;
 	SignalData *link_added = add_signal_ifname (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_ADDED, link_callback, DEVICE_NAME);
 	SignalData *link_changed, *link_removed;
 	int ifindex;
-	gboolean success;
 
 	run_command ("ip link add %s type %s", DEVICE_NAME, "dummy");
 	wait_signal (link_added);
 
-	g_assert (nm_platform_link_exists (NM_PLATFORM_GET, DEVICE_NAME));
+	g_assert (nm_platform_link_get_by_ifname (NM_PLATFORM_GET, DEVICE_NAME));
 	ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME);
 	g_assert (ifindex > 0);
 	g_assert_cmpstr (nm_platform_link_get_name (NM_PLATFORM_GET, ifindex), ==, DEVICE_NAME);
@@ -488,9 +487,9 @@ test_external (void)
 	link_changed = add_signal_ifindex (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_CHANGED, link_callback, ifindex);
 	link_removed = add_signal_ifindex (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_REMOVED, link_callback, ifindex);
 
-	success = nm_platform_link_get (NM_PLATFORM_GET, ifindex, &link);
-	g_assert (success);
-	if (!link.initialized) {
+	pllink = nm_platform_link_get (NM_PLATFORM_GET, ifindex);
+	g_assert (pllink);
+	if (!pllink->initialized) {
 		/* we still lack the notification via UDEV. Expect another link changed signal. */
 		wait_signal (link_changed);
 	}
@@ -520,7 +519,7 @@ test_external (void)
 	run_command ("ip link del %s", DEVICE_NAME);
 	wait_signal (link_removed);
 	accept_signals (link_changed, 0, 1);
-	g_assert (!nm_platform_link_exists (NM_PLATFORM_GET, DEVICE_NAME));
+	g_assert (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, DEVICE_NAME));
 
 	free_signal (link_added);
 	free_signal (link_changed);
@@ -539,9 +538,9 @@ setup_tests (void)
 	nm_platform_link_delete (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME));
 	nm_platform_link_delete (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, SLAVE_NAME));
 	nm_platform_link_delete (NM_PLATFORM_GET, nm_platform_link_get_ifindex (NM_PLATFORM_GET, PARENT_NAME));
-	g_assert (!nm_platform_link_exists (NM_PLATFORM_GET, DEVICE_NAME));
-	g_assert (!nm_platform_link_exists (NM_PLATFORM_GET, SLAVE_NAME));
-	g_assert (!nm_platform_link_exists (NM_PLATFORM_GET, PARENT_NAME));
+	g_assert (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, DEVICE_NAME));
+	g_assert (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, SLAVE_NAME));
+	g_assert (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, PARENT_NAME));
 
 	g_test_add_func ("/link/bogus", test_bogus);
 	g_test_add_func ("/link/loopback", test_loopback);

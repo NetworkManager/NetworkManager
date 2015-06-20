@@ -1346,13 +1346,17 @@ device_link_changed (NMDevice *self)
 	gboolean platform_unmanaged = FALSE;
 	const char *udi;
 	NMPlatformLink info;
+	const NMPlatformLink *pllink;
 	int ifindex;
 
 	priv->device_link_changed_id = 0;
 
 	ifindex = nm_device_get_ifindex (self);
-	if (!nm_platform_link_get (NM_PLATFORM_GET, ifindex, &info))
+	pllink = nm_platform_link_get (NM_PLATFORM_GET, ifindex);
+	if (!pllink)
 		return G_SOURCE_REMOVE;
+
+	info = *pllink;
 
 	udi = nm_platform_link_get_udi (NM_PLATFORM_GET, info.ifindex);
 	if (udi && g_strcmp0 (udi, priv->udi)) {
@@ -1485,21 +1489,22 @@ static gboolean
 device_ip_link_changed (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMPlatformLink info;
+	const NMPlatformLink *pllink;
 	int ip_ifindex;
 
 	priv->device_ip_link_changed_id = 0;
 
 	ip_ifindex = nm_device_get_ip_ifindex (self);
-	if (!nm_platform_link_get (NM_PLATFORM_GET, ip_ifindex, &info))
+	pllink = nm_platform_link_get (NM_PLATFORM_GET, ip_ifindex);
+	if (!pllink)
 		return G_SOURCE_REMOVE;
 
-	if (info.name[0] && g_strcmp0 (priv->ip_iface, info.name)) {
+	if (pllink->name[0] && g_strcmp0 (priv->ip_iface, pllink->name)) {
 		_LOGI (LOGD_DEVICE, "interface index %d renamed ip_iface (%d) from '%s' to '%s'",
 		       priv->ifindex, nm_device_get_ip_ifindex (self),
-		       priv->ip_iface, info.name);
+		       priv->ip_iface, pllink->name);
 		g_free (priv->ip_iface);
-		priv->ip_iface = g_strdup (info.name);
+		priv->ip_iface = g_strdup (pllink->name);
 
 		g_object_notify (G_OBJECT (self), NM_DEVICE_IP_IFACE);
 		update_for_ip_ifname_change (self);

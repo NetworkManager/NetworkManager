@@ -1038,7 +1038,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection, GError 
 	 */
 	priv->ignore_link_added_cb++;
 
-	nm_owned = !nm_platform_link_exists (NM_PLATFORM_GET, iface);
+	nm_owned = !nm_platform_link_get_by_ifname (NM_PLATFORM_GET, iface);
 
 	device = nm_device_factory_create_virtual_device_for_connection (factory,
 	                                                                 connection,
