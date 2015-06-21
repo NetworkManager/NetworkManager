@@ -188,7 +188,7 @@ nm_clear_g_source (guint *id)
 
 /* Determine whether @x is a power of two (@x being an integer type).
  * For the special cases @x equals zero or one, it also returns true.
- * For negative @x, always returns FALSE. That only applies, is the data
+ * For negative @x, always returns FALSE. That only applies, if the data
  * type of @x is signed. */
 #define nm_utils_is_power_of_two(x) ({ \
 		const typeof(x) __x = (x); \
