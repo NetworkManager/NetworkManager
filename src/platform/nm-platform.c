@@ -500,9 +500,9 @@ nm_platform_link_get (NMPlatform *self, int ifindex)
 {
 	_CHECK_SELF (self, klass, NULL);
 
-	g_return_val_if_fail (ifindex > 0, NULL);
-
-	return klass->link_get (self, ifindex);
+	if (ifindex > 0)
+		return klass->link_get (self, ifindex);
+	return NULL;
 }
 
 /**
@@ -517,9 +517,9 @@ nm_platform_link_get_by_ifname (NMPlatform *self, const char *ifname)
 {
 	_CHECK_SELF (self, klass, NULL);
 
-	g_return_val_if_fail (ifname && *ifname, NULL);
-
-	return klass->link_get_by_ifname (self, ifname);
+	if (ifname && *ifname)
+		return klass->link_get_by_ifname (self, ifname);
+	return NULL;
 }
 
 /**
@@ -538,10 +538,13 @@ nm_platform_link_get_by_address (NMPlatform *self,
 {
 	_CHECK_SELF (self, klass, NULL);
 
-	g_return_val_if_fail (address != NULL, NULL);
-	g_return_val_if_fail (length > 0, NULL);
-
-	return klass->link_get_by_address (self, address, length);
+	g_return_val_if_fail (length == 0 || address, NULL);
+	if (length > 0) {
+		if (length > NM_UTILS_HWADDR_LEN_MAX)
+			g_return_val_if_reached (NULL);
+		return klass->link_get_by_address (self, address, length);
+	}
+	return NULL;
 }
 
 static NMPlatformError
@@ -639,8 +642,6 @@ nm_platform_link_delete (NMPlatform *self, int ifindex)
 
 	_CHECK_SELF (self, klass, FALSE);
 
-	if (ifindex <= 0)
-		return FALSE;
 	pllink = nm_platform_link_get (self, ifindex);
 	if (!pllink)
 		return FALSE;
