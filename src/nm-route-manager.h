@@ -46,6 +46,8 @@ gboolean nm_route_manager_ip4_route_sync (NMRouteManager *self, int ifindex, con
 gboolean nm_route_manager_ip6_route_sync (NMRouteManager *self, int ifindex, const GArray *known_routes, gboolean ignore_kernel_routes);
 gboolean nm_route_manager_route_flush (NMRouteManager *self, int ifindex);
 
+void nm_route_manager_ip4_route_register_device_route_purge_list (NMRouteManager *self, GArray *device_route_purge_list);
+
 NMRouteManager *nm_route_manager_get (void);
 
 #endif  /* NM_ROUTE_MANAGER_H */

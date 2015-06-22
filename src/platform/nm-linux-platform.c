@@ -4181,64 +4181,6 @@ ip6_address_exists (NMPlatform *platform, int ifindex, struct in6_addr addr, int
 	return nmp_object_is_visible (nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, &obj_needle));
 }
 
-static gboolean
-ip4_check_reinstall_device_route (NMPlatform *platform, int ifindex, const NMPlatformIP4Address *address, guint32 device_route_metric)
-{
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	guint32 device_network;
-	NMPObject obj_needle;
-	const NMPlatformIP4Address *const *addresses;
-	const NMPlatformIP4Route *const *routes;
-
-	device_network = nm_utils_ip4_address_clear_host_address (address->address, address->plen);
-
-	/* in many cases we expect the route to already exist. So first do an exact lookup
-	 * to save the O(n) access below. */
-	nmp_object_stackinit_id_ip4_route (&obj_needle, ifindex, device_network, address->plen, device_route_metric);
-	if (nmp_cache_lookup_obj (priv->cache, &obj_needle)) {
-		/* There is already a route with metric 0 or the metric we want to install
-		 * for the same subnet. */
-		return FALSE;
-	}
-	if (obj_needle.ip4_route.metric != 0) {
-		obj_needle.ip4_route.metric = 0;
-		if (nmp_cache_lookup_obj (priv->cache, &obj_needle))
-			return FALSE;
-	}
-
-	/* also check whether we already have the same address configured on *any* device. */
-	addresses = cache_lookup_all_objects (NMPlatformIP4Address, platform, NMP_OBJECT_TYPE_IP4_ADDRESS, FALSE);
-	if (addresses) {
-		for (; *addresses; addresses++) {
-			const NMPlatformIP4Address *addr_candidate = *addresses;
-
-			if (   addr_candidate->plen == address->plen
-			    && addr_candidate->address == device_network) {
-				/* If we already have the same address installed on any interface,
-				 * we back off. */
-				return FALSE;
-			}
-		}
-	}
-
-	routes = cache_lookup_all_objects (NMPlatformIP4Route, platform, NMP_OBJECT_TYPE_IP4_ROUTE, FALSE);
-	if (routes) {
-		for (; *routes; routes++) {
-			const NMPlatformIP4Route *route_candidate = *routes;
-
-			if (   route_candidate->network == device_network
-			    && route_candidate->plen == address->plen
-			    && (route_candidate->metric == 0 || route_candidate->metric == device_route_metric)) {
-				/* If we already have the same address installed on any interface,
-				 * we back off. */
-				return FALSE;
-			}
-		}
-	}
-
-	return TRUE;
-}
-
 /******************************************************************/
 
 static GArray *
@@ -5051,8 +4993,6 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->ip6_address_delete = ip6_address_delete;
 	platform_class->ip4_address_exists = ip4_address_exists;
 	platform_class->ip6_address_exists = ip6_address_exists;
-
-	platform_class->ip4_check_reinstall_device_route = ip4_check_reinstall_device_route;
 
 	platform_class->ip4_route_get_all = ip4_route_get_all;
 	platform_class->ip6_route_get_all = ip6_route_get_all;

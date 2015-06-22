@@ -6345,10 +6345,11 @@ nm_device_set_ip4_config (NMDevice *self,
 
 		nm_device_set_mtu (self, nm_ip4_config_get_mtu (new_config));
 
-		/* for assumed devices we set the device_route_metric to the default which will
-		 * stop nm_platform_ip4_address_sync() to replace the device routes. */
+		/* For assumed devices we must not touch the kernel-routes, such as the device-route.
+		 * FIXME: this is wrong in case where "assumed" means "take-over-seamlessly". In this
+		 * case, we should manage the device route, for example on new DHCP lease. */
 		success = nm_ip4_config_commit (new_config, ip_ifindex,
-		                                assumed ? NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE : default_route_metric);
+		                                assumed ? (gint64) -1 : (gint64) default_route_metric);
 		if (!success)
 			reason_local = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
 	}
@@ -7173,6 +7174,11 @@ update_ip4_config (NMDevice *self, gboolean initial)
 			g_clear_object (&priv->dev_ip4_config);
 			capture_lease_config (self, priv->ext_ip4_config, &priv->dev_ip4_config, NULL, NULL);
 		}
+
+		/* FIXME: ext_ip4_config does not contain routes with source==RTPROT_KERNEL.
+		 * Hence, we will wrongly remove device-routes with metric=0 if they were added by
+		 * the user on purpose. This should be fixed by also tracking and exposing
+		 * kernel routes. */
 
 		/* This function was called upon external changes. Remove the configuration
 		 * (addresses,routes) that is no longer present externally from the internal

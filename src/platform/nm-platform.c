@@ -1997,32 +1997,15 @@ array_contains_ip6_address (const GArray *addresses, const NMPlatformIP6Address 
 	return FALSE;
 }
 
-gboolean
-nm_platform_ip4_check_reinstall_device_route (NMPlatform *self, int ifindex, const NMPlatformIP4Address *address, guint32 device_route_metric)
-{
-	_CHECK_SELF (self, klass, FALSE);
-
-	if (   ifindex <= 0
-	    || address->plen <= 0
-	    || address->plen >= 32)
-		return FALSE;
-
-	if (device_route_metric == NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE) {
-		/* The automatically added route would be already our desired priority.
-		 * Nothing to do. */
-		return FALSE;
-	}
-
-	return klass->ip4_check_reinstall_device_route (self, ifindex, address, device_route_metric);
-}
-
 /**
  * nm_platform_ip4_address_sync:
  * @self: platform instance
  * @ifindex: Interface index
  * @known_addresses: List of addresses
- * @device_route_metric: the route metric for adding subnet routes (replaces
- *   the kernel added routes).
+ * @out_added_addresses: (out): (allow-none): if not %NULL, return a #GPtrArray
+ *   with the addresses added. The pointers point into @known_addresses.
+ *   It possibly does not contain all addresses from @known_address because
+ *   some addresses might be expired.
  *
  * A convenience function to synchronize addresses for a specific interface
  * with the least possible disturbance. It simply removes addresses that are
@@ -2031,7 +2014,7 @@ nm_platform_ip4_check_reinstall_device_route (NMPlatform *self, int ifindex, con
  * Returns: %TRUE on success.
  */
 gboolean
-nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, const GArray *known_addresses, guint32 device_route_metric)
+nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, const GArray *known_addresses, GPtrArray **out_added_addresses)
 {
 	GArray *addresses;
 	NMPlatformIP4Address *address;
@@ -2050,6 +2033,9 @@ nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, const GArray *known
 	}
 	g_array_free (addresses, TRUE);
 
+	if (out_added_addresses)
+		*out_added_addresses = NULL;
+
 	if (!known_addresses)
 		return TRUE;
 
@@ -2057,33 +2043,18 @@ nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, const GArray *known
 	for (i = 0; i < known_addresses->len; i++) {
 		const NMPlatformIP4Address *known_address = &g_array_index (known_addresses, NMPlatformIP4Address, i);
 		guint32 lifetime, preferred;
-		guint32 network;
-		gboolean reinstall_device_route = FALSE;
 
 		if (!nmp_utils_lifetime_get (known_address->timestamp, known_address->lifetime, known_address->preferred,
 		                             now, ADDRESS_LIFETIME_PADDING, &lifetime, &preferred))
 			continue;
 
-		if (nm_platform_ip4_check_reinstall_device_route (self, ifindex, known_address, device_route_metric))
-			reinstall_device_route = TRUE;
-
 		if (!nm_platform_ip4_address_add (self, ifindex, known_address->address, known_address->peer_address, known_address->plen, lifetime, preferred, known_address->label))
 			return FALSE;
 
-		if (reinstall_device_route) {
-			/* Kernel automatically adds a device route for us with metric 0. That is not what we want.
-			 * Remove it, and re-add it.
-			 *
-			 * In face of having the same subnets on two different interfaces with the same metric,
-			 * this is a problem. Surprisingly, kernel is able to add two routes for the same subnet/prefix,metric
-			 * to different interfaces. We cannot. Adding one, would replace the other. This is avoided
-			 * by the above nm_platform_ip4_check_reinstall_device_route() check.
-			 */
-			network = nm_utils_ip4_address_clear_host_address (known_address->address, known_address->plen);
-			(void) nm_platform_ip4_route_add (self, ifindex, NM_IP_CONFIG_SOURCE_KERNEL, network, known_address->plen,
-			                                  0, known_address->address, device_route_metric, 0);
-			(void) nm_platform_ip4_route_delete (self, ifindex, network, known_address->plen,
-			                                     NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE);
+		if (out_added_addresses) {
+			if (!*out_added_addresses)
+				*out_added_addresses = g_ptr_array_new ();
+			g_ptr_array_add (*out_added_addresses, (gpointer) known_address);
 		}
 	}
 
@@ -2151,8 +2122,8 @@ nm_platform_address_flush (NMPlatform *self, int ifindex)
 {
 	_CHECK_SELF (self, klass, FALSE);
 
-	return nm_platform_ip4_address_sync (self, ifindex, NULL, 0)
-			&& nm_platform_ip6_address_sync (self, ifindex, NULL, FALSE);
+	return    nm_platform_ip4_address_sync (self, ifindex, NULL, NULL)
+	       && nm_platform_ip6_address_sync (self, ifindex, NULL, FALSE);
 }
 
 /******************************************************************/
