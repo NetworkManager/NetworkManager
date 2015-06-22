@@ -410,9 +410,14 @@ nmp_utils_lifetime_get (guint32 timestamp,
 		 * In that case we also expect that the other fields (timestamp and preferred) are left unset. */
 		g_return_val_if_fail (timestamp == 0 && preferred == 0, TRUE);
 	} else {
+		if (!now)
+			now = nm_utils_get_monotonic_timestamp_s ();
 		t_lifetime = nmp_utils_lifetime_rebase_relative_time_on_now (timestamp, lifetime, now, padding);
-		if (!t_lifetime)
+		if (!t_lifetime) {
+			*out_lifetime = 0;
+			*out_preferred = 0;
 			return FALSE;
+		}
 		t_preferred = nmp_utils_lifetime_rebase_relative_time_on_now (timestamp, preferred, now, padding);
 
 		*out_lifetime = t_lifetime;

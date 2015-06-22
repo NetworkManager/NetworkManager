@@ -4022,13 +4022,9 @@ build_rtnl_addr (NMPlatform *platform,
 	}
 
 	_nl_rtnl_addr_set_prefixlen (rtnladdr, plen);
-	if (lifetime) {
-		/* note that here we set the relative timestamps (ticking from *now*).
-		 * Contrary to the rtnl_addr objects from our cache, which have absolute
-		 * timestamps (see _rtnl_addr_hack_lifetimes_rel_to_abs()).
-		 *
-		 * This is correct, because we only use build_rtnl_addr() for
-		 * add_object(), delete_object() and cache search (ip_address_exists). */
+	if (   lifetime  != 0 || lifetime  != NM_PLATFORM_LIFETIME_PERMANENT
+	    || preferred != 0 || preferred != NM_PLATFORM_LIFETIME_PERMANENT) {
+		/* note that here we set the relative timestamps (ticking from *now*). */
 		rtnl_addr_set_valid_lifetime (rtnladdr, lifetime);
 		rtnl_addr_set_preferred_lifetime (rtnladdr, preferred);
 	}
@@ -4057,6 +4053,10 @@ struct nl_object *
 _nmp_vt_cmd_plobj_to_nl_ip4_address (NMPlatform *platform, const NMPlatformObject *_obj, gboolean id_only)
 {
 	const NMPlatformIP4Address *obj = (const NMPlatformIP4Address *) _obj;
+	guint32 lifetime, preferred;
+
+	nmp_utils_lifetime_get (obj->timestamp, obj->lifetime, obj->preferred,
+	                        0, 0, &lifetime, &preferred);
 
 	return build_rtnl_addr (platform,
 	                        AF_INET,
@@ -4064,8 +4064,8 @@ _nmp_vt_cmd_plobj_to_nl_ip4_address (NMPlatform *platform, const NMPlatformObjec
 	                        &obj->address,
 	                        obj->peer_address ? &obj->peer_address : NULL,
 	                        obj->plen,
-	                        obj->lifetime,
-	                        obj->preferred,
+	                        lifetime,
+	                        preferred,
 	                        0,
 	                        obj->label[0] ? obj->label : NULL);
 }
@@ -4074,6 +4074,10 @@ struct nl_object *
 _nmp_vt_cmd_plobj_to_nl_ip6_address (NMPlatform *platform, const NMPlatformObject *_obj, gboolean id_only)
 {
 	const NMPlatformIP6Address *obj = (const NMPlatformIP6Address *) _obj;
+	guint32 lifetime, preferred;
+
+	nmp_utils_lifetime_get (obj->timestamp, obj->lifetime, obj->preferred,
+	                        0, 0, &lifetime, &preferred);
 
 	return build_rtnl_addr (platform,
 	                        AF_INET6,
@@ -4081,8 +4085,8 @@ _nmp_vt_cmd_plobj_to_nl_ip6_address (NMPlatform *platform, const NMPlatformObjec
 	                        &obj->address,
 	                        !IN6_IS_ADDR_UNSPECIFIED (&obj->peer_address) ? &obj->peer_address : NULL,
 	                        obj->plen,
-	                        obj->lifetime,
-	                        obj->preferred,
+	                        lifetime,
+	                        preferred,
 	                        0,
 	                        NULL);
 }
