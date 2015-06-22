@@ -4242,42 +4242,34 @@ ip4_check_reinstall_device_route (NMPlatform *platform, int ifindex, const NMPla
 /******************************************************************/
 
 static GArray *
-ipx_route_get_all (NMPlatform *platform, int ifindex, NMPObjectType obj_type, NMPlatformGetRouteMode mode)
+ipx_route_get_all (NMPlatform *platform, int ifindex, NMPObjectType obj_type, NMPlatformGetRouteFlags flags)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	gboolean with_default = FALSE, with_non_default = FALSE;
 
 	nm_assert (NM_IN_SET (obj_type, NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE));
 
-	if (mode == NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT)
-		with_non_default = TRUE;
-	else if (mode == NM_PLATFORM_GET_ROUTE_MODE_ONLY_DEFAULT)
-		with_default = TRUE;
-	else if (mode == NM_PLATFORM_GET_ROUTE_MODE_ALL) {
-		with_non_default = TRUE;
-		with_default = TRUE;
-	} else
-		g_return_val_if_reached (NULL);
+	if (!NM_FLAGS_ANY (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT))
+		flags |= NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT;
 
 	return nmp_cache_lookup_multi_to_array (priv->cache,
 	                                        obj_type,
 	                                        nmp_cache_id_init_routes_visible (NMP_CACHE_ID_STATIC,
 	                                                                          obj_type,
-	                                                                          with_default,
-	                                                                          with_non_default,
+	                                                                          NM_FLAGS_HAS (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT),
+	                                                                          NM_FLAGS_HAS (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT),
 	                                                                          ifindex));
 }
 
 static GArray *
-ip4_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteMode mode)
+ip4_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteFlags flags)
 {
-	return ipx_route_get_all (platform, ifindex, NMP_OBJECT_TYPE_IP4_ROUTE, mode);
+	return ipx_route_get_all (platform, ifindex, NMP_OBJECT_TYPE_IP4_ROUTE, flags);
 }
 
 static GArray *
-ip6_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteMode mode)
+ip6_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteFlags flags)
 {
-	return ipx_route_get_all (platform, ifindex, NMP_OBJECT_TYPE_IP6_ROUTE, mode);
+	return ipx_route_get_all (platform, ifindex, NMP_OBJECT_TYPE_IP6_ROUTE, flags);
 }
 
 static void

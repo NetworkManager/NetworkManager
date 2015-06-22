@@ -2148,25 +2148,23 @@ nm_platform_address_flush (NMPlatform *self, int ifindex)
 /******************************************************************/
 
 GArray *
-nm_platform_ip4_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRouteMode mode)
+nm_platform_ip4_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRouteFlags flags)
 {
 	_CHECK_SELF (self, klass, NULL);
 
 	g_return_val_if_fail (ifindex >= 0, NULL);
-	g_return_val_if_fail (klass->ip4_route_get_all, NULL);
 
-	return klass->ip4_route_get_all (self, ifindex, mode);
+	return klass->ip4_route_get_all (self, ifindex, flags);
 }
 
 GArray *
-nm_platform_ip6_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRouteMode mode)
+nm_platform_ip6_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRouteFlags flags)
 {
 	_CHECK_SELF (self, klass, NULL);
 
 	g_return_val_if_fail (ifindex >= 0, NULL);
-	g_return_val_if_fail (klass->ip6_route_get_all, NULL);
 
-	return klass->ip6_route_get_all (self, ifindex, mode);
+	return klass->ip6_route_get_all (self, ifindex, flags);
 }
 
 gboolean

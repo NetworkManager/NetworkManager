@@ -1034,26 +1034,27 @@ ip4_check_reinstall_device_route (NMPlatform *platform, int ifindex, const NMPla
 /******************************************************************/
 
 static GArray *
-ip4_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteMode mode)
+ip4_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteFlags flags)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	GArray *routes;
 	NMPlatformIP4Route *route;
 	guint i;
 
-	g_return_val_if_fail (NM_IN_SET (mode, NM_PLATFORM_GET_ROUTE_MODE_ALL, NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT, NM_PLATFORM_GET_ROUTE_MODE_ONLY_DEFAULT), NULL);
-
 	routes = g_array_new (TRUE, TRUE, sizeof (NMPlatformIP4Route));
+
+	if (!NM_FLAGS_ANY (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT))
+		flags |= NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT;
 
 	/* Fill routes */
 	for (i = 0; i < priv->ip4_routes->len; i++) {
 		route = &g_array_index (priv->ip4_routes, NMPlatformIP4Route, i);
 		if (route && (!ifindex || route->ifindex == ifindex)) {
 			if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route)) {
-				if (mode != NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT)
+				if (NM_FLAGS_HAS (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT))
 					g_array_append_val (routes, *route);
 			} else {
-				if (mode != NM_PLATFORM_GET_ROUTE_MODE_ONLY_DEFAULT)
+				if (NM_FLAGS_HAS (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT))
 					g_array_append_val (routes, *route);
 			}
 		}
@@ -1063,26 +1064,27 @@ ip4_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteMode mod
 }
 
 static GArray *
-ip6_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteMode mode)
+ip6_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteFlags flags)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	GArray *routes;
 	NMPlatformIP6Route *route;
 	guint i;
 
-	g_return_val_if_fail (NM_IN_SET (mode, NM_PLATFORM_GET_ROUTE_MODE_ALL, NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT, NM_PLATFORM_GET_ROUTE_MODE_ONLY_DEFAULT), NULL);
-
 	routes = g_array_new (TRUE, TRUE, sizeof (NMPlatformIP6Route));
+
+	if (!NM_FLAGS_ANY (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT))
+		flags |= NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT;
 
 	/* Fill routes */
 	for (i = 0; i < priv->ip6_routes->len; i++) {
 		route = &g_array_index (priv->ip6_routes, NMPlatformIP6Route, i);
 		if (route && (!ifindex || route->ifindex == ifindex)) {
 			if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route)) {
-				if (mode != NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT)
+				if (NM_FLAGS_HAS (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT))
 					g_array_append_val (routes, *route);
 			} else {
-				if (mode != NM_PLATFORM_GET_ROUTE_MODE_ONLY_DEFAULT)
+				if (NM_FLAGS_HAS (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT))
 					g_array_append_val (routes, *route);
 			}
 		}

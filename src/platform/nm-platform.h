@@ -151,10 +151,14 @@ typedef enum {
 #define NM_PLATFORM_LIFETIME_PERMANENT G_MAXUINT32
 
 typedef enum {
-	NM_PLATFORM_GET_ROUTE_MODE_ALL,
-	NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT,
-	NM_PLATFORM_GET_ROUTE_MODE_ONLY_DEFAULT,
-} NMPlatformGetRouteMode;
+	NM_PLATFORM_GET_ROUTE_FLAGS_NONE                            = 0,
+
+	/* Whether to include default-routes/non-default-routes. Omitting
+	 * both WITH_DEFAULT and WITH_NON_DEFAULT, is equal to specifying
+	 * both of them. */
+	NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT                    = (1LL << 0),
+	NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT                = (1LL << 1),
+} NMPlatformGetRouteFlags;
 
 typedef struct {
 	__NMPlatformObject_COMMON;
@@ -308,7 +312,7 @@ typedef struct {
 	gsize sizeof_route;
 	int (*route_cmp) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b);
 	const char *(*route_to_string) (const NMPlatformIPXRoute *route);
-	GArray *(*route_get_all) (NMPlatform *self, int ifindex, NMPlatformGetRouteMode mode);
+	GArray *(*route_get_all) (NMPlatform *self, int ifindex, NMPlatformGetRouteFlags flags);
 	gboolean (*route_add) (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route);
 	gboolean (*route_delete) (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route);
 	gboolean (*route_delete_default) (NMPlatform *self, int ifindex, guint32 metric);
@@ -517,8 +521,8 @@ typedef struct {
 
 	gboolean (*ip4_check_reinstall_device_route) (NMPlatform *, int ifindex, const NMPlatformIP4Address *address, guint32 device_route_metric);
 
-	GArray * (*ip4_route_get_all) (NMPlatform *, int ifindex, NMPlatformGetRouteMode mode);
-	GArray * (*ip6_route_get_all) (NMPlatform *, int ifindex, NMPlatformGetRouteMode mode);
+	GArray * (*ip4_route_get_all) (NMPlatform *, int ifindex, NMPlatformGetRouteFlags flags);
+	GArray * (*ip6_route_get_all) (NMPlatform *, int ifindex, NMPlatformGetRouteFlags flags);
 	gboolean (*ip4_route_add) (NMPlatform *, int ifindex, NMIPConfigSource source,
 	                           in_addr_t network, int plen, in_addr_t gateway,
 	                           guint32 pref_src, guint32 metric, guint32 mss);
@@ -707,8 +711,8 @@ gboolean nm_platform_address_flush (NMPlatform *self, int ifindex);
 
 gboolean nm_platform_ip4_check_reinstall_device_route (NMPlatform *self, int ifindex, const NMPlatformIP4Address *address, guint32 device_route_metric);
 
-GArray *nm_platform_ip4_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRouteMode mode);
-GArray *nm_platform_ip6_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRouteMode mode);
+GArray *nm_platform_ip4_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRouteFlags flags);
+GArray *nm_platform_ip6_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRouteFlags flags);
 gboolean nm_platform_ip4_route_add (NMPlatform *self, int ifindex, NMIPConfigSource source,
                                     in_addr_t network, int plen, in_addr_t gateway,
                                     guint32 pref_src, guint32 metric, guint32 mss);

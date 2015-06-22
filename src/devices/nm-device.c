@@ -3114,9 +3114,9 @@ _device_get_default_route_from_platform (NMDevice *self, int addr_family, NMPlat
 	GArray *routes;
 
 	if (addr_family == AF_INET)
-		routes = nm_platform_ip4_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_MODE_ONLY_DEFAULT);
+		routes = nm_platform_ip4_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT);
 	else
-		routes = nm_platform_ip6_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_MODE_ONLY_DEFAULT);
+		routes = nm_platform_ip6_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT);
 
 	if (routes) {
 		guint route_metric = G_MAXUINT32, m;

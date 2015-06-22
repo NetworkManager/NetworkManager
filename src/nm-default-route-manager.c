@@ -292,7 +292,7 @@ _platform_route_sync_flush (const VTableIP *vtable, NMDefaultRouteManager *self,
 	gboolean changed = FALSE;
 
 	/* prune all other default routes from this device. */
-	routes = vtable->vt->route_get_all (NM_PLATFORM_GET, 0, NM_PLATFORM_GET_ROUTE_MODE_ONLY_DEFAULT);
+	routes = vtable->vt->route_get_all (NM_PLATFORM_GET, 0, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT);
 
 	for (i = 0; i < routes->len; i++) {
 		const NMPlatformIPRoute *route;
@@ -478,7 +478,7 @@ _resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *c
 
 	entries = vtable->get_entries (priv);
 
-	routes = vtable->vt->route_get_all (NM_PLATFORM_GET, 0, NM_PLATFORM_GET_ROUTE_MODE_ONLY_DEFAULT);
+	routes = vtable->vt->route_get_all (NM_PLATFORM_GET, 0, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT);
 
 	assumed_metrics = _get_assumed_interface_metrics (vtable, self, routes);
 
