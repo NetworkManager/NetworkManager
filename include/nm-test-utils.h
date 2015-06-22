@@ -125,6 +125,18 @@ nmtst_assert_error (GError *error,
 	}
 }
 
+#define NMTST_BUSY_WAIT(max_wait_ms, condition, wait) \
+	G_STMT_START { \
+		gint64 _nmtst_end, _nmtst_max_wait_us = (max_wait_ms) * 1000L; \
+		\
+		_nmtst_end = g_get_monotonic_time () + _nmtst_max_wait_us; \
+		while (!(condition)) { \
+			{ wait }; \
+			if (g_get_monotonic_time () > _nmtst_end) \
+				g_assert_not_reached (); \
+		} \
+	} G_STMT_END
+
 /*******************************************************************************/
 
 struct __nmtst_internal
