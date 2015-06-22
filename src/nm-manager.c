@@ -2191,7 +2191,7 @@ find_master (NMManager *self,
 				NMConnection *candidate = iter->data;
 				char *vname;
 
-				vname = get_virtual_iface_name (self, connection, NULL, NULL);
+				vname = get_virtual_iface_name (self, candidate, NULL, NULL);
 				if (g_strcmp0 (master, vname) == 0 && is_compatible_with_slave (candidate, connection))
 					master_connection = candidate;
 				g_free (vname);
