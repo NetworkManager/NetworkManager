@@ -158,6 +158,8 @@ typedef enum {
 	 * both of them. */
 	NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT                    = (1LL << 0),
 	NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT                = (1LL << 1),
+
+	NM_PLATFORM_GET_ROUTE_FLAGS_WITH_RTPROT_KERNEL              = (1LL << 2),
 } NMPlatformGetRouteFlags;
 
 typedef struct {
