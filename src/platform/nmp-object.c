@@ -674,7 +674,7 @@ _vt_cmd_plobj_id_hash (link, NMPlatformLink, {
 	/* libnl considers:
 	 *   .oo_id_attrs = LINK_ATTR_IFINDEX | LINK_ATTR_FAMILY,
 	 */
-	hash = (guint) 3982791431;
+	hash = (guint) 3982791431u;
 	hash = hash      + ((guint) obj->ifindex);
 })
 _vt_cmd_plobj_id_hash (ip4_address, NMPlatformIP4Address, {
@@ -682,13 +682,13 @@ _vt_cmd_plobj_id_hash (ip4_address, NMPlatformIP4Address, {
 	 *   .oo_id_attrs = (ADDR_ATTR_FAMILY | ADDR_ATTR_IFINDEX |
 	 *                   ADDR_ATTR_LOCAL | ADDR_ATTR_PREFIXLEN),
 	 */
-	hash = (guint) 3591309853;
+	hash = (guint) 3591309853u;
 	hash = hash      + ((guint) obj->ifindex);
 	hash = hash * 33 + ((guint) obj->plen);
 	hash = hash * 33 + ((guint) obj->address);
 })
 _vt_cmd_plobj_id_hash (ip6_address, NMPlatformIP6Address, {
-	hash = (guint) 2907861637;
+	hash = (guint) 2907861637u;
 	hash = hash      + ((guint) obj->ifindex);
 	hash = hash * 33 + ((guint) obj->plen);
 	hash = hash * 33 + _id_hash_ip6_addr (&obj->address);
@@ -699,14 +699,14 @@ _vt_cmd_plobj_id_hash (ip4_route, NMPlatformIP4Route, {
 	 *                   ROUTE_ATTR_TABLE | ROUTE_ATTR_DST |
 	 *                   ROUTE_ATTR_PRIO),
 	 */
-	hash = (guint) 2569857221;
+	hash = (guint) 2569857221u;
 	hash = hash      + ((guint) obj->ifindex);
 	hash = hash * 33 + ((guint) obj->plen);
 	hash = hash * 33 + ((guint) obj->metric);
 	hash = hash * 33 + ((guint) obj->network);
 })
 _vt_cmd_plobj_id_hash (ip6_route, NMPlatformIP6Route, {
-	hash = (guint) 3999787007;
+	hash = (guint) 3999787007u;
 	hash = hash      + ((guint) obj->ifindex);
 	hash = hash * 33 + ((guint) obj->plen);
 	hash = hash * 33 + ((guint) obj->metric);
