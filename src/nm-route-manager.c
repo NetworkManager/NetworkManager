@@ -368,7 +368,7 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 	_LOGD (vtable->vt->addr_family, "%3d: sync %u IPv%c routes", ifindex, known_routes_idx->len, vtable->vt->is_ip4 ? '4' : '6');
 	if (_LOGT_ENABLED (vtable->vt->addr_family)) {
 		for (i = 0; i < known_routes_idx->len; i++) {
-			_LOGT (vtable->vt->addr_family, "%3d: sync new addr #%u: %s",
+			_LOGT (vtable->vt->addr_family, "%3d: sync new route #%u: %s",
 			       ifindex, i, vtable->vt->route_to_string (VTABLE_ROUTE_INDEX (vtable, known_routes, i)));
 		}
 		for (i = 0; i < ipx_routes->index->len; i++)
