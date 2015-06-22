@@ -276,6 +276,10 @@ struct _NMPlatformIP4Route {
 	/* The bitwise inverse of the route scope. It is inverted so that the
 	 * default value (RT_SCOPE_NOWHERE) is nul. */
 	guint8 scope_inv;
+
+	/* RTA_PREFSRC/rtnl_route_get_pref_src(). A value of zero means that
+	 * no pref-src is set.  */
+	guint32 pref_src;
 };
 G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPRoute, network_ptr) == G_STRUCT_OFFSET (NMPlatformIP4Route, network));
 
@@ -305,7 +309,7 @@ typedef struct {
 	int (*route_cmp) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b);
 	const char *(*route_to_string) (const NMPlatformIPXRoute *route);
 	GArray *(*route_get_all) (NMPlatform *self, int ifindex, NMPlatformGetRouteMode mode);
-	gboolean (*route_add) (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route, guint32 v4_pref_src);
+	gboolean (*route_add) (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route);
 	gboolean (*route_delete) (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route);
 	gboolean (*route_delete_default) (NMPlatform *self, int ifindex, guint32 metric);
 	guint32 (*metric_normalize) (guint32 metric);
