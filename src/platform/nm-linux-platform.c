@@ -1289,6 +1289,7 @@ _nmp_vt_cmd_plobj_init_from_nl_ip4_route (NMPlatform *platform, NMPlatformObject
 	struct rtnl_route *nlo = (struct rtnl_route *) _nlo;
 	struct nl_addr *dst, *gw;
 	struct rtnl_nexthop *nexthop;
+	struct nl_addr *pref_src;
 
 	if (rtnl_route_get_type (nlo) != RTN_UNICAST ||
 	    rtnl_route_get_table (nlo) != RT_TABLE_MAIN ||
@@ -1333,6 +1334,14 @@ _nmp_vt_cmd_plobj_init_from_nl_ip4_route (NMPlatform *platform, NMPlatformObject
 		obj->source = _NM_IP_CONFIG_SOURCE_RTM_F_CLONED;
 	} else
 		obj->source = _nm_ip_config_source_from_rtprot (rtnl_route_get_protocol (nlo));
+
+	pref_src = rtnl_route_get_pref_src (nlo);
+	if (pref_src) {
+		if (nl_addr_get_len (pref_src) != sizeof (obj->pref_src))
+			g_warn_if_reached ();
+		else
+			memcpy (&obj->pref_src, nl_addr_get_binary_addr (pref_src), sizeof (obj->pref_src));
+	}
 
 	return TRUE;
 }
@@ -4345,7 +4354,7 @@ _nmp_vt_cmd_plobj_to_nl_ip4_route (NMPlatform *platform, const NMPlatformObject 
 	                         &obj->network,
 	                         obj->plen,
 	                         &obj->gateway,
-	                         NULL,
+	                         obj->pref_src ? &obj->pref_src : NULL,
 	                         obj->metric,
 	                         obj->mss);
 }

@@ -2183,7 +2183,6 @@ nm_platform_ip4_route_add (NMPlatform *self,
 
 	if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
 		NMPlatformIP4Route route = { 0 };
-		char pref_src_buf[NM_UTILS_INET_ADDRSTRLEN];
 
 		route.ifindex = ifindex;
 		route.source = source;
@@ -2192,11 +2191,9 @@ nm_platform_ip4_route_add (NMPlatform *self,
 		route.gateway = gateway;
 		route.metric = metric;
 		route.mss = mss;
+		route.pref_src = pref_src;
 
-		debug ("route: adding or updating IPv4 route: %s%s%s%s", nm_platform_ip4_route_to_string (&route),
-		       pref_src ? " (src: " : "",
-		       pref_src ? nm_utils_inet4_ntop (pref_src, pref_src_buf) : "",
-		       pref_src ? ")" : "");
+		debug ("route: adding or updating IPv4 route: %s", nm_platform_ip4_route_to_string (&route));
 	}
 	return klass->ip4_route_add (self, ifindex, source, network, plen, gateway, pref_src, metric, mss);
 }
@@ -2601,6 +2598,7 @@ const char *
 nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route)
 {
 	char s_network[INET_ADDRSTRLEN], s_gateway[INET_ADDRSTRLEN];
+	char s_pref_src[INET_ADDRSTRLEN];
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
 	char str_scope[30];
 
@@ -2619,6 +2617,7 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route)
 	            " mss %"G_GUINT32_FORMAT
 	            " src %s" /* source */
 	            "%s%s" /* scope */
+	            "%s%s" /* pref-src */
 	            "",
 	            s_network, route->plen,
 	            s_gateway,
@@ -2627,7 +2626,9 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route)
 	            route->mss,
 	            source_to_string (route->source),
 	            route->scope_inv ? " scope " : "",
-	            route->scope_inv ? (rtnl_scope2str (nm_platform_route_scope_inv (route->scope_inv), str_scope, sizeof (str_scope))) : "");
+	            route->scope_inv ? (rtnl_scope2str (nm_platform_route_scope_inv (route->scope_inv), str_scope, sizeof (str_scope))) : "",
+	            route->pref_src ? " pref-src " : "",
+	            route->pref_src ? inet_ntop (AF_INET, &route->pref_src, s_pref_src, sizeof(s_pref_src)) : "");
 	return _nm_platform_to_string_buffer;
 }
 
@@ -2806,6 +2807,7 @@ nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route
 	_CMP_FIELD (a, b, metric);
 	_CMP_FIELD (a, b, mss);
 	_CMP_FIELD (a, b, scope_inv);
+	_CMP_FIELD (a, b, pref_src);
 	return 0;
 }
 
@@ -2928,7 +2930,7 @@ log_ip6_route (NMPlatform *p, NMPObjectType obj_type, int ifindex, NMPlatformIP6
 /******************************************************************/
 
 static gboolean
-_vtr_v4_route_add (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route, guint32 v4_pref_src)
+_vtr_v4_route_add (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route)
 {
 	return nm_platform_ip4_route_add (self,
 	                                  ifindex > 0 ? ifindex : route->rx.ifindex,
@@ -2936,13 +2938,13 @@ _vtr_v4_route_add (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *rout
 	                                  route->r4.network,
 	                                  route->rx.plen,
 	                                  route->r4.gateway,
-	                                  v4_pref_src,
+	                                  route->r4.pref_src,
 	                                  route->rx.metric,
 	                                  route->rx.mss);
 }
 
 static gboolean
-_vtr_v6_route_add (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route, guint32 v4_pref_src)
+_vtr_v6_route_add (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route)
 {
 	return nm_platform_ip6_route_add (self,
 	                                  ifindex > 0 ? ifindex : route->rx.ifindex,
