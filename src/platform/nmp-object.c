@@ -786,7 +786,7 @@ _vt_cmd_obj_is_visible_ipx_route (const NMPObject *obj)
 {
 	NMIPConfigSource source = obj->ip_route.source;
 
-	return obj->object.ifindex > 0 && (source != NM_IP_CONFIG_SOURCE_RTPROT_KERNEL && source != _NM_IP_CONFIG_SOURCE_RTM_F_CLONED);
+	return obj->object.ifindex > 0 && source != _NM_IP_CONFIG_SOURCE_RTM_F_CLONED;
 }
 
 /******************************************************************/

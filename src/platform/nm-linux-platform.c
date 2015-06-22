@@ -4245,19 +4245,39 @@ static GArray *
 ipx_route_get_all (NMPlatform *platform, int ifindex, NMPObjectType obj_type, NMPlatformGetRouteFlags flags)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	NMPCacheId cache_id;
+	const NMPlatformIPRoute *const* routes;
+	GArray *array;
+	const NMPClass *klass;
+	gboolean with_rtprot_kernel;
+	guint i, len;
 
 	nm_assert (NM_IN_SET (obj_type, NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE));
 
 	if (!NM_FLAGS_ANY (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT))
 		flags |= NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT;
 
-	return nmp_cache_lookup_multi_to_array (priv->cache,
-	                                        obj_type,
-	                                        nmp_cache_id_init_routes_visible (NMP_CACHE_ID_STATIC,
-	                                                                          obj_type,
-	                                                                          NM_FLAGS_HAS (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT),
-	                                                                          NM_FLAGS_HAS (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT),
-	                                                                          ifindex));
+	klass = nmp_class_from_type (obj_type);
+
+	nmp_cache_id_init_routes_visible (&cache_id,
+	                                  obj_type,
+	                                  NM_FLAGS_HAS (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT),
+	                                  NM_FLAGS_HAS (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT),
+	                                  ifindex);
+
+	routes = (const NMPlatformIPRoute *const*) nmp_cache_lookup_multi (priv->cache, &cache_id, &len);
+
+	array = g_array_sized_new (FALSE, FALSE, klass->sizeof_public, len);
+
+	with_rtprot_kernel = NM_FLAGS_HAS (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_RTPROT_KERNEL);
+	for (i = 0; i < len; i++) {
+		nm_assert (NMP_OBJECT_GET_CLASS (NMP_OBJECT_UP_CAST (routes[i])) == klass);
+
+		if (   with_rtprot_kernel
+		    || routes[i]->source != NM_IP_CONFIG_SOURCE_RTPROT_KERNEL)
+			g_array_append_vals (array, routes[i], 1);
+	}
+	return array;
 }
 
 static GArray *
