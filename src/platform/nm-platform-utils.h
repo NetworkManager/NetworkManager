@@ -50,5 +50,17 @@ gboolean nmp_utils_mii_supports_carrier_detect (const char *ifname);
 
 const char *nmp_utils_udev_get_driver (GUdevDevice *device);
 
+guint32 nmp_utils_lifetime_rebase_relative_time_on_now (guint32 timestamp,
+                                                        guint32 duration,
+                                                        guint32 now,
+                                                        guint32 padding);
+
+gboolean nmp_utils_lifetime_get (guint32 timestamp,
+                                 guint32 lifetime,
+                                 guint32 preferred,
+                                 guint32 now,
+                                 guint32 padding,
+                                 guint32 *out_lifetime,
+                                 guint32 *out_preferred);
 
 #endif /* __NM_PLATFORM_UTILS_H__ */
