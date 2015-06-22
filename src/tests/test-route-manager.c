@@ -144,10 +144,10 @@ ip4_routes (test_fixture *fixture)
 {
 	GArray *routes = nm_platform_ip4_route_get_all (NM_PLATFORM_GET,
 	                                                fixture->ifindex0,
-	                                                NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT);
+	                                                NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
 	GArray *routes1 = nm_platform_ip4_route_get_all (NM_PLATFORM_GET,
 	                                                 fixture->ifindex1,
-	                                                 NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT);
+	                                                 NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
 
 	g_array_append_vals (routes, routes1->data, routes1->len);
 	g_array_free (routes1, TRUE);
@@ -459,10 +459,10 @@ ip6_routes (test_fixture *fixture)
 {
 	GArray *routes = nm_platform_ip6_route_get_all (NM_PLATFORM_GET,
 	                                                fixture->ifindex0,
-	                                                NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT);
+	                                                NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
 	GArray *routes1 = nm_platform_ip6_route_get_all (NM_PLATFORM_GET,
 	                                                 fixture->ifindex1,
-	                                                 NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT);
+	                                                 NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
 
 	g_array_append_vals (routes, routes1->data, routes1->len);
 	g_array_free (routes1, TRUE);
