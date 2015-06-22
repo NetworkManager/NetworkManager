@@ -23,6 +23,7 @@
 
 #include <glib.h>
 #include <glib-object.h>
+#include <string.h>
 
 
 #ifdef __clang__
