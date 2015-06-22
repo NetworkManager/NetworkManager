@@ -33,6 +33,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-platform.h"
+#include "nm-platform-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
 #include "nm-enum-types.h"
@@ -1984,76 +1985,6 @@ array_contains_ip6_address (const GArray *addresses, const NMPlatformIP6Address 
 	return FALSE;
 }
 
-/**
- * Takes a pair @timestamp and @duration, and returns the remaining duration based
- * on the new timestamp @now.
- */
-static guint32
-_rebase_relative_time_on_now (guint32 timestamp, guint32 duration, guint32 now, guint32 padding)
-{
-	gint64 t;
-
-	if (duration == NM_PLATFORM_LIFETIME_PERMANENT)
-		return NM_PLATFORM_LIFETIME_PERMANENT;
-
-	if (timestamp == 0) {
-		/* if the @timestamp is zero, assume it was just left unset and that the relative
-		 * @duration starts counting from @now. This is convenient to construct an address
-		 * and print it in nm_platform_ip4_address_to_string().
-		 *
-		 * In general it does not make sense to set the @duration without anchoring at
-		 * @timestamp because you don't know the absolute expiration time when looking
-		 * at the address at a later moment. */
-		timestamp = now;
-	}
-
-	/* For timestamp > now, just accept it and calculate the expected(?) result. */
-	t = (gint64) timestamp + (gint64) duration - (gint64) now;
-
-	/* Optional padding to avoid potential races. */
-	t += (gint64) padding;
-
-	if (t <= 0)
-		return 0;
-	if (t >= NM_PLATFORM_LIFETIME_PERMANENT)
-		return NM_PLATFORM_LIFETIME_PERMANENT - 1;
-	return t;
-}
-
-static gboolean
-_address_get_lifetime (const NMPlatformIPAddress *address, guint32 now, guint32 padding, guint32 *out_lifetime, guint32 *out_preferred)
-{
-	guint32 lifetime, preferred;
-
-	if (address->lifetime == 0) {
-		*out_lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
-		*out_preferred = NM_PLATFORM_LIFETIME_PERMANENT;
-
-		/* We treat lifetime==0 as permanent addresses to allow easy creation of such addresses
-		 * (without requiring to set the lifetime fields to NM_PLATFORM_LIFETIME_PERMANENT).
-		 * In that case we also expect that the other fields (timestamp and preferred) are left unset. */
-		g_return_val_if_fail (address->timestamp == 0 && address->preferred == 0, TRUE);
-	} else {
-		lifetime = _rebase_relative_time_on_now (address->timestamp, address->lifetime, now, padding);
-		if (!lifetime)
-			return FALSE;
-		preferred = _rebase_relative_time_on_now (address->timestamp, address->preferred, now, padding);
-
-		*out_lifetime = lifetime;
-		*out_preferred = MIN (preferred, lifetime);
-
-		/* Assert that non-permanent addresses have a (positive) @timestamp. _rebase_relative_time_on_now()
-		 * treats addresses with timestamp 0 as *now*. Addresses passed to _address_get_lifetime() always
-		 * should have a valid @timestamp, otherwise on every re-sync, their lifetime will be extended anew.
-		 */
-		g_return_val_if_fail (   address->timestamp != 0
-		                      || (   address->lifetime  == NM_PLATFORM_LIFETIME_PERMANENT
-		                          && address->preferred == NM_PLATFORM_LIFETIME_PERMANENT), TRUE);
-		g_return_val_if_fail (preferred <= lifetime, TRUE);
-	}
-	return TRUE;
-}
-
 gboolean
 nm_platform_ip4_check_reinstall_device_route (NMPlatform *self, int ifindex, const NMPlatformIP4Address *address, guint32 device_route_metric)
 {
@@ -2118,7 +2049,8 @@ nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, const GArray *known
 		gboolean reinstall_device_route = FALSE;
 
 		/* add a padding of 5 seconds to avoid potential races. */
-		if (!_address_get_lifetime ((NMPlatformIPAddress *) known_address, now, 5, &lifetime, &preferred))
+		if (!nmp_utils_lifetime_get (known_address->timestamp, known_address->lifetime, known_address->preferred,
+		                             now, 5, &lifetime, &preferred))
 			continue;
 
 		if (nm_platform_ip4_check_reinstall_device_route (self, ifindex, known_address, device_route_metric))
@@ -2191,7 +2123,8 @@ nm_platform_ip6_address_sync (NMPlatform *self, int ifindex, const GArray *known
 		guint32 lifetime, preferred;
 
 		/* add a padding of 5 seconds to avoid potential races. */
-		if (!_address_get_lifetime ((NMPlatformIPAddress *) known_address, now, 5, &lifetime, &preferred))
+		if (!nmp_utils_lifetime_get (known_address->timestamp, known_address->lifetime, known_address->preferred,
+		                             now, 5, &lifetime, &preferred))
 			continue;
 
 		if (!nm_platform_ip6_address_add (self, ifindex, known_address->address,
@@ -2386,7 +2319,7 @@ _lifetime_to_string (guint32 timestamp, guint32 lifetime, gint32 now, char *buf,
 		return "forever";
 
 	g_snprintf (buf, buf_size, "%usec",
-	            _rebase_relative_time_on_now (timestamp, lifetime, now, 0));
+	            nmp_utils_lifetime_rebase_relative_time_on_now (timestamp, lifetime, now, 0));
 	return buf;
 }
 
