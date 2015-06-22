@@ -24,9 +24,17 @@
 
 #include "nm-route-manager.h"
 #include "nm-platform.h"
+#include "nmp-object.h"
+#include "nm-core-internal.h"
 #include "nm-logging.h"
 #include "gsystem-local-alloc.h"
 #include "NetworkManagerUtils.h"
+
+/* if within half a second after adding an IP address a matching device-route shows
+ * up, we delete it. */
+#define IP4_DEVICE_ROUTES_WAIT_TIME_NS                 (NM_UTILS_NS_PER_SECOND / 2)
+
+#define IP4_DEVICE_ROUTES_GC_INTERVAL_SEC              (IP4_DEVICE_ROUTES_WAIT_TIME_NS * 2)
 
 typedef struct {
 	guint len;
@@ -39,10 +47,21 @@ typedef struct {
 } RouteEntries;
 
 typedef struct {
+	NMRouteManager *self;
+	gint64 scheduled_at_ns;
+	guint idle_id;
+	NMPObject *obj;
+} IP4DeviceRoutePurgeEntry;
+
+typedef struct {
 	NMPlatform *platform;
 
 	RouteEntries ip4_routes;
 	RouteEntries ip6_routes;
+	struct {
+		GHashTable *entries;
+		guint gc_id;
+	} ip4_device_routes;
 } NMRouteManagerPrivate;
 
 #define NM_ROUTE_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_ROUTE_MANAGER, NMRouteManagerPrivate))
@@ -122,6 +141,10 @@ static const VTableIP vtable_v4, vtable_v6;
 #define _LOGI(addr_family, ...)      _LOG (LOGL_INFO , addr_family, __VA_ARGS__)
 #define _LOGW(addr_family, ...)      _LOG (LOGL_WARN , addr_family, __VA_ARGS__)
 #define _LOGE(addr_family, ...)      _LOG (LOGL_ERR  , addr_family, __VA_ARGS__)
+
+/*********************************************************************************************/
+
+static gboolean _ip4_device_routes_cancel (NMRouteManager *self);
 
 /*********************************************************************************************/
 
@@ -232,6 +255,41 @@ _route_index_create (const VTableIP *vtable, const GArray *routes)
 	                   (GCompareDataFunc) _route_index_create_sort,
 	                   (gpointer) vtable);
 	return index;
+}
+
+static int
+_vx_route_id_cmp_full (const NMPlatformIPXRoute *r1, const NMPlatformIPXRoute *r2, const VTableIP *vtable)
+{
+	return vtable->route_id_cmp (r1, r2);
+}
+
+static gssize
+_route_index_find (const VTableIP *vtable, const RouteIndex *index, const NMPlatformIPXRoute *needle)
+{
+	gssize idx, idx2;
+
+	idx = _nm_utils_ptrarray_find_binary_search ((gpointer *) index->entries, index->len, (gpointer) needle, (GCompareDataFunc) _vx_route_id_cmp_full, (gpointer) vtable);
+	if (idx < 0)
+		return idx;
+
+	/* we only know that the route at index @idx has matching destination. Also find the one with the right
+	 * ifindex by searching the neighbours */
+
+	idx2 = idx;
+	do {
+		if (index->entries[idx2]->rx.ifindex == needle->rx.ifindex)
+			return idx2;
+	} while (   idx2 > 0
+	         && vtable->route_id_cmp (index->entries[--idx2], needle) != 0);
+
+	for (idx++; idx < index->len; idx++ ){
+		if (vtable->route_id_cmp (index->entries[idx], needle) != 0)
+			break;
+		if (index->entries[idx]->rx.ifindex == needle->rx.ifindex)
+			return idx;
+	}
+
+	return ~idx;
 }
 
 static guint
@@ -638,6 +696,182 @@ nm_route_manager_route_flush (NMRouteManager *self, int ifindex)
 
 /*********************************************************************************************/
 
+static gboolean
+_ip4_device_routes_entry_expired (const IP4DeviceRoutePurgeEntry *entry, gint64 now)
+{
+	return entry->scheduled_at_ns + IP4_DEVICE_ROUTES_WAIT_TIME_NS < now;
+}
+
+static IP4DeviceRoutePurgeEntry *
+_ip4_device_routes_purge_entry_create (NMRouteManager *self, const NMPlatformIP4Route *route, gint64 now_ns)
+{
+	IP4DeviceRoutePurgeEntry *entry;
+
+	entry = g_slice_new (IP4DeviceRoutePurgeEntry);
+
+	entry->self = self;
+	entry->scheduled_at_ns = now_ns;
+	entry->idle_id = 0;
+	entry->obj = nmp_object_new (NMP_OBJECT_TYPE_IP4_ROUTE, (NMPlatformObject *) route);
+	return entry;
+}
+
+static void
+_ip4_device_routes_purge_entry_free (IP4DeviceRoutePurgeEntry *entry)
+{
+	nmp_object_unref (entry->obj);
+	nm_clear_g_source (&entry->idle_id);
+	g_slice_free (IP4DeviceRoutePurgeEntry, entry);
+}
+
+static gboolean
+_ip4_device_routes_idle_cb (IP4DeviceRoutePurgeEntry *entry)
+{
+	NMRouteManager *self;
+	NMRouteManagerPrivate *priv;
+
+	nm_clear_g_source (&entry->idle_id);
+
+	self = entry->self;
+	priv = NM_ROUTE_MANAGER_GET_PRIVATE (self);
+	if (_route_index_find (&vtable_v4, priv->ip4_routes.index, &entry->obj->ipx_route) >= 0) {
+		/* we have an identical route in our list. Don't delete it. */
+		return G_SOURCE_REMOVE;
+	}
+
+	_LOGT (vtable_v4.vt->addr_family, "device-route: delete %s", nmp_object_to_string (entry->obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+
+	nm_platform_ip4_route_delete (priv->platform,
+	                              entry->obj->ip4_route.ifindex,
+	                              entry->obj->ip4_route.network,
+	                              entry->obj->ip4_route.plen,
+	                              entry->obj->ip4_route.metric);
+
+	g_hash_table_remove (priv->ip4_device_routes.entries, entry->obj);
+	_ip4_device_routes_cancel (self);
+	return G_SOURCE_REMOVE;
+}
+
+static void
+_ip4_device_routes_ip4_route_changed (NMPlatform *platform,
+                                      NMPObjectType obj_type,
+                                      int ifindex,
+                                      const NMPlatformIP4Route *route,
+                                      NMPlatformSignalChangeType change_type,
+                                      NMPlatformReason reason,
+                                      NMRouteManager *self)
+{
+	NMRouteManagerPrivate *priv;
+	NMPObject obj_needle;
+	IP4DeviceRoutePurgeEntry *entry;
+
+	if (change_type == NM_PLATFORM_SIGNAL_REMOVED)
+		return;
+
+	if (   route->source != NM_IP_CONFIG_SOURCE_RTPROT_KERNEL
+	    || route->metric != 0) {
+		/* we don't have an automatically created device route at hand. Bail out early. */
+		return;
+	}
+
+	priv = NM_ROUTE_MANAGER_GET_PRIVATE (self);
+
+	entry = g_hash_table_lookup (priv->ip4_device_routes.entries,
+	                             nmp_object_stackinit (&obj_needle, NMP_OBJECT_TYPE_IP4_ROUTE, (NMPlatformObject *) route));
+	if (!entry)
+		return;
+
+	if (_ip4_device_routes_entry_expired (entry, nm_utils_get_monotonic_timestamp_ns ())) {
+		_LOGT (vtable_v4.vt->addr_family, "device-route: cleanup-ch %s", nmp_object_to_string (entry->obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+		g_hash_table_remove (priv->ip4_device_routes.entries, entry->obj);
+		_ip4_device_routes_cancel (self);
+		return;
+	}
+
+	if (entry->idle_id == 0) {
+		_LOGT (vtable_v4.vt->addr_family, "device-route: schedule %s", nmp_object_to_string (entry->obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+		entry->idle_id = g_idle_add ((GSourceFunc) _ip4_device_routes_idle_cb, entry);
+	}
+}
+
+static gboolean
+_ip4_device_routes_cancel (NMRouteManager *self)
+{
+	NMRouteManagerPrivate *priv = NM_ROUTE_MANAGER_GET_PRIVATE (self);
+
+	if (priv->ip4_device_routes.gc_id) {
+		if (g_hash_table_size (priv->ip4_device_routes.entries) > 0)
+			return G_SOURCE_CONTINUE;
+		_LOGT (vtable_v4.vt->addr_family, "device-route: cancel");
+		if (priv->platform)
+			g_signal_handlers_disconnect_by_func (priv->platform, G_CALLBACK (_ip4_device_routes_ip4_route_changed), self);
+		nm_clear_g_source (&priv->ip4_device_routes.gc_id);
+	}
+	return G_SOURCE_REMOVE;
+}
+
+static gboolean
+_ip4_device_routes_gc (NMRouteManager *self)
+{
+	NMRouteManagerPrivate *priv;
+	GHashTableIter iter;
+	IP4DeviceRoutePurgeEntry *entry;
+	gint64 now = nm_utils_get_monotonic_timestamp_ns ();
+
+	priv = NM_ROUTE_MANAGER_GET_PRIVATE (self);
+
+	g_hash_table_iter_init (&iter, priv->ip4_device_routes.entries);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &entry)) {
+		if (_ip4_device_routes_entry_expired (entry, now)) {
+			_LOGT (vtable_v4.vt->addr_family, "device-route: cleanup-gc %s", nmp_object_to_string (entry->obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+			g_hash_table_iter_remove (&iter);
+		}
+	}
+
+	return _ip4_device_routes_cancel (self);
+}
+
+/**
+ * nm_route_manager_ip4_route_register_device_route_purge_list:
+ *
+ * When adding an IPv4 address, kernel will automatically add a device route with
+ * metric zero. We don't want that route and want to delete it. However, the route
+ * by kernel immediately, but some time after. That means during nm_route_manager_ip4_route_sync()
+ * such a route doesn't exist yet. We must remember that we expect such a route to appear later
+ * and to remove it. */
+void
+nm_route_manager_ip4_route_register_device_route_purge_list (NMRouteManager *self, GArray *device_route_purge_list)
+{
+	NMRouteManagerPrivate *priv;
+	guint i;
+	gint64 now_ns;
+
+	if (!device_route_purge_list || device_route_purge_list->len == 0)
+		return;
+
+	priv = NM_ROUTE_MANAGER_GET_PRIVATE (self);
+
+	now_ns = nm_utils_get_monotonic_timestamp_ns ();
+	for (i = 0; i < device_route_purge_list->len; i++) {
+		IP4DeviceRoutePurgeEntry *entry;
+
+		entry = _ip4_device_routes_purge_entry_create (self, &g_array_index (device_route_purge_list, NMPlatformIP4Route, i), now_ns);
+		_LOGT (vtable_v4.vt->addr_family, "device-route: watch (%s) %s",
+		                                  g_hash_table_contains (priv->ip4_device_routes.entries, entry->obj)
+		                                      ? "update" : "new",
+		                                  nmp_object_to_string (entry->obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+		g_hash_table_replace (priv->ip4_device_routes.entries,
+		                      nmp_object_ref (entry->obj),
+		                      entry);
+	}
+	if (priv->ip4_device_routes.gc_id == 0) {
+		g_signal_connect (priv->platform, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, G_CALLBACK (_ip4_device_routes_ip4_route_changed), self);
+		priv->ip4_device_routes.gc_id = g_timeout_add (IP4_DEVICE_ROUTES_GC_INTERVAL_SEC, (GSourceFunc) _ip4_device_routes_gc, self);
+	}
+}
+
+/*********************************************************************************************/
+
 static const VTableIP vtable_v4 = {
 	.vt                             = &nm_platform_vtable_route_v4,
 	.route_id_cmp                   = (int (*) (const NMPlatformIPXRoute *, const NMPlatformIPXRoute *)) _v4_route_id_cmp,
@@ -661,12 +895,20 @@ nm_route_manager_init (NMRouteManager *self)
 	priv->ip6_routes.entries = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP6Route));
 	priv->ip4_routes.index = _route_index_create (&vtable_v4, priv->ip4_routes.entries);
 	priv->ip6_routes.index = _route_index_create (&vtable_v6, priv->ip6_routes.entries);
+	priv->ip4_device_routes.entries = g_hash_table_new_full ((GHashFunc) nmp_object_id_hash,
+	                                                         (GEqualFunc) nmp_object_id_equal,
+	                                                         (GDestroyNotify) nmp_object_unref,
+	                                                         (GDestroyNotify) _ip4_device_routes_purge_entry_free);
 }
 
 static void
 dispose (GObject *object)
 {
+	NMRouteManager *self = NM_ROUTE_MANAGER (object);
 	NMRouteManagerPrivate *priv = NM_ROUTE_MANAGER_GET_PRIVATE (object);
+
+	g_hash_table_remove_all (priv->ip4_device_routes.entries);
+	_ip4_device_routes_cancel (self);
 
 	g_clear_object (&priv->platform);
 
@@ -682,6 +924,8 @@ finalize (GObject *object)
 	g_array_free (priv->ip6_routes.entries, TRUE);
 	g_free (priv->ip4_routes.index);
 	g_free (priv->ip6_routes.index);
+
+	g_hash_table_unref (priv->ip4_device_routes.entries);
 
 	G_OBJECT_CLASS (nm_route_manager_parent_class)->finalize (object);
 }
