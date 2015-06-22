@@ -313,7 +313,7 @@ nm_ip6_config_capture (int ifindex, gboolean capture_resolv_conf, NMSettingIP6Co
 
 	/* Extract gateway from default route */
 	old_gateway = priv->gateway;
-	for (i = 0; i < priv->routes->len; i++) {
+	for (i = 0; i < priv->routes->len; ) {
 		const NMPlatformIP6Route *route = &g_array_index (priv->routes, NMPlatformIP6Route, i);
 
 		if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route)) {
@@ -323,9 +323,10 @@ nm_ip6_config_capture (int ifindex, gboolean capture_resolv_conf, NMSettingIP6Co
 			}
 			has_gateway = TRUE;
 			/* Remove the default route from the list */
-			g_array_remove_index (priv->routes, i);
-			i--;
+			g_array_remove_index_fast (priv->routes, i);
+			continue;
 		}
+		i++;
 	}
 
 	/* If there is a host route to the gateway, ignore that route.  It is
