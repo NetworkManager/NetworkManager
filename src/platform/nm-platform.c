@@ -2679,10 +2679,20 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route)
 
 	_to_string_dev (NULL, route->ifindex, str_dev, sizeof (str_dev));
 
-	g_snprintf (_nm_platform_to_string_buffer, sizeof (_nm_platform_to_string_buffer), "%s/%d via %s%s metric %"G_GUINT32_FORMAT" mss %"G_GUINT32_FORMAT" src %s%s%s",
-	            s_network, route->plen, s_gateway,
+	g_snprintf (_nm_platform_to_string_buffer, sizeof (_nm_platform_to_string_buffer),
+	            "%s/%d"
+	            " via %s"
+	            "%s"
+	            " metric %"G_GUINT32_FORMAT
+	            " mss %"G_GUINT32_FORMAT
+	            " src %s" /* source */
+	            "%s%s" /* scope */
+	            "",
+	            s_network, route->plen,
+	            s_gateway,
 	            str_dev,
-	            route->metric, route->mss,
+	            route->metric,
+	            route->mss,
 	            source_to_string (route->source),
 	            route->scope_inv ? " scope " : "",
 	            route->scope_inv ? (rtnl_scope2str (nm_platform_route_scope_inv (route->scope_inv), str_scope, sizeof (str_scope))) : "");
@@ -2714,10 +2724,19 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route)
 
 	_to_string_dev (NULL, route->ifindex, str_dev, sizeof (str_dev));
 
-	g_snprintf (_nm_platform_to_string_buffer, sizeof (_nm_platform_to_string_buffer), "%s/%d via %s%s metric %"G_GUINT32_FORMAT" mss %"G_GUINT32_FORMAT" src %s",
-	            s_network, route->plen, s_gateway,
+	g_snprintf (_nm_platform_to_string_buffer, sizeof (_nm_platform_to_string_buffer),
+	            "%s/%d"
+	            " via %s"
+	            "%s"
+	            " metric %"G_GUINT32_FORMAT
+	            " mss %"G_GUINT32_FORMAT
+	            " src %s" /* source */
+	            "",
+	            s_network, route->plen,
+	            s_gateway,
 	            str_dev,
-	            route->metric, route->mss,
+	            route->metric,
+	            route->mss,
 	            source_to_string (route->source));
 	return _nm_platform_to_string_buffer;
 }
