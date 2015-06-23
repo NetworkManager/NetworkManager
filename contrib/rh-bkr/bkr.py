@@ -592,6 +592,8 @@ class CmdSubmit(CmdBase):
                         return 'rhel-7.1' # rhel-7.1-rc
                     if re.match(r'^.*/NetworkManager-1.0.[0-9]+-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
                         return 'rhel-7' # upstream 1.0
+                    if re.match(r'^.*/NetworkManager-1.0.[0-9]+-[0-9]+\.git20160622\.9c83d18d\.el7.x86_64.rpm$', u):
+                        return 'rhel-7' # rhel-7.2-rc
                     if re.match(r'^.*/NetworkManager-1.1.[0-9]+-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
                         return 'master' # upstream 1.1
         raise Exception("could not detect the target branch. Try setting as environment variable GIT_TARGETBRANCH%s" % (
