@@ -597,7 +597,7 @@ _nm_ip_config_source_to_rtprot (NMIPConfigSource source)
 	case NM_IP_CONFIG_SOURCE_UNKNOWN:
 		return RTPROT_UNSPEC;
 	case NM_IP_CONFIG_SOURCE_KERNEL:
-	case _NM_IP_CONFIG_SOURCE_RTPROT_KERNEL:
+	case NM_IP_CONFIG_SOURCE_RTPROT_KERNEL:
 		return RTPROT_KERNEL;
 	case NM_IP_CONFIG_SOURCE_DHCP:
 		return RTPROT_DHCP;
@@ -616,7 +616,7 @@ _nm_ip_config_source_from_rtprot (guint rtprot)
 	case RTPROT_UNSPEC:
 		return NM_IP_CONFIG_SOURCE_UNKNOWN;
 	case RTPROT_KERNEL:
-		return _NM_IP_CONFIG_SOURCE_RTPROT_KERNEL;
+		return NM_IP_CONFIG_SOURCE_RTPROT_KERNEL;
 	case RTPROT_REDIRECT:
 		return NM_IP_CONFIG_SOURCE_KERNEL;
 	case RTPROT_RA:
