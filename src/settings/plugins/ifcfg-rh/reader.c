@@ -4493,13 +4493,10 @@ make_vlan_setting (shvarFile *ifcfg,
 			/* Grab VLAN ID from interface name; this takes precedence over the
 			 * separate VLAN_ID property for backwards compat.
 			 */
-			vlan_id = (gint) g_ascii_strtoll (p, &end, 10);
-			if (vlan_id < 0 || vlan_id > 4095 || end == p || *end) {
-				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-				             "Failed to determine VLAN ID from DEVICE '%s'",
-				             iface_name);
-				goto error;
-			}
+
+			gint device_vlan_id = (gint) g_ascii_strtoll (p, &end, 10);
+			if (device_vlan_id >= 0 && device_vlan_id <= 4095 && end != p && !*end)
+				vlan_id = device_vlan_id;
 		}
 	}
 
