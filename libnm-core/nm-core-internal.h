@@ -114,6 +114,8 @@ GPtrArray *_nm_utils_copy_object_array (const GPtrArray *array);
 
 gssize _nm_utils_ptrarray_find_first (gpointer *list, gssize len, gconstpointer needle);
 
+gssize _nm_utils_ptrarray_find_binary_search (gpointer *list, gsize len, gpointer needle, GCompareDataFunc cmpfcn, gpointer user_data);
+
 gboolean    _nm_utils_string_in_list   (const char *str,
                                         const char **valid_strings);
 

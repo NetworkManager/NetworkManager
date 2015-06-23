@@ -4484,6 +4484,110 @@ test_g_ptr_array_insert (void)
 
 /******************************************************************************/
 
+static int
+_test_find_binary_search_cmp (gconstpointer a, gconstpointer b, gpointer dummy)
+{
+	int ia, ib;
+
+	ia = GPOINTER_TO_INT (a);
+	ib = GPOINTER_TO_INT (b);
+
+	if (ia == ib)
+		return 0;
+	if (ia < ib)
+		return -1;
+	return 1;
+}
+
+static void
+_test_find_binary_search_do (const int *array, gsize len)
+{
+	gsize i;
+	gssize idx;
+	gs_free gpointer *parray = g_new (gpointer, len);
+	const int needle = 0;
+	gpointer pneedle = GINT_TO_POINTER (needle);
+	gssize expected_result;
+
+	for (i = 0; i < len; i++)
+		parray[i] = GINT_TO_POINTER (array[i]);
+
+	expected_result = _nm_utils_ptrarray_find_first (parray, len, pneedle);
+
+	idx = _nm_utils_ptrarray_find_binary_search (parray, len, pneedle, _test_find_binary_search_cmp, NULL);
+	if (expected_result >= 0)
+		g_assert_cmpint (expected_result, ==, idx);
+	else {
+		gssize idx2 = ~idx;
+		g_assert_cmpint (idx, <, 0);
+
+		g_assert (idx2 >= 0);
+		g_assert (idx2 <= len);
+		g_assert (idx2 - 1 < 0 || _test_find_binary_search_cmp (parray[idx2 - 1], pneedle, NULL) < 0);
+		g_assert (idx2 >= len || _test_find_binary_search_cmp (parray[idx2], pneedle, NULL) > 0);
+	}
+	for (i = 0; i < len; i++) {
+		int cmp;
+
+		cmp = _test_find_binary_search_cmp (parray[i], pneedle, NULL);
+		if (cmp == 0) {
+			g_assert (pneedle == parray[i]);
+			g_assert (idx >= 0);
+			g_assert (i == idx);
+		} else {
+			g_assert (pneedle != parray[i]);
+			if (cmp < 0) {
+				if (idx < 0)
+					g_assert (i < ~idx);
+				else
+					g_assert (i < idx);
+			} else {
+				if (idx < 0)
+					g_assert (i >= ~idx);
+				else
+					g_assert (i >= idx);
+			}
+		}
+	}
+}
+#define test_find_binary_search_do(...) \
+	G_STMT_START { \
+		const int _array[] = { __VA_ARGS__ } ; \
+		_test_find_binary_search_do (_array, G_N_ELEMENTS (_array)); \
+	} G_STMT_END
+
+static void
+test_nm_utils_ptrarray_find_binary_search (void)
+{
+#define _NOT(idx) (~ ((gssize) (idx)))
+	test_find_binary_search_do (            0);
+	test_find_binary_search_do (        -1, 0);
+	test_find_binary_search_do (    -2, -1, 0);
+	test_find_binary_search_do (-3, -2, -1, 0);
+	test_find_binary_search_do (            0, 1);
+	test_find_binary_search_do (            0, 1, 2);
+	test_find_binary_search_do (        -1, 0, 1, 2);
+	test_find_binary_search_do (    -2, -1, 0, 1, 2);
+	test_find_binary_search_do (-3, -2, -1, 0, 1, 2);
+	test_find_binary_search_do (-3, -2, -1, 0, 1, 2);
+	test_find_binary_search_do (-3, -2, -1, 0, 1, 2, 3);
+	test_find_binary_search_do (-3, -2, -1, 0, 1, 2, 3, 4);
+
+	test_find_binary_search_do (        -1);
+	test_find_binary_search_do (    -2, -1);
+	test_find_binary_search_do (-3, -2, -1);
+	test_find_binary_search_do (            1);
+	test_find_binary_search_do (            1, 2);
+	test_find_binary_search_do (        -1, 1, 2);
+	test_find_binary_search_do (    -2, -1, 1, 2);
+	test_find_binary_search_do (-3, -2, -1, 1, 2);
+	test_find_binary_search_do (-3, -2, -1, 1, 2);
+	test_find_binary_search_do (-3, -2, -1, 1, 2, 3);
+	test_find_binary_search_do (-3, -2, -1, 1, 2, 3, 4);
+}
+
+/******************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -4587,6 +4691,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/_nm_utils_ascii_str_to_int64", test_nm_utils_ascii_str_to_int64);
 	g_test_add_func ("/core/general/nm_utils_is_power_of_two", test_nm_utils_is_power_of_two);
 	g_test_add_func ("/core/general/_glib_compat_g_ptr_array_insert", test_g_ptr_array_insert);
+	g_test_add_func ("/core/general/_nm_utils_ptrarray_find_binary_search", test_nm_utils_ptrarray_find_binary_search);
 
 	g_test_add_func ("/core/general/_nm_utils_dns_option_validate", test_nm_utils_dns_option_validate);
 	g_test_add_func ("/core/general/_nm_utils_dns_option_find_idx", test_nm_utils_dns_option_find_idx);
