@@ -12,4 +12,5 @@ EXTRA_DIST = \
 	list-devices.py \
 	update-ip4-method.py \
 	is-wwan-default.py \
-	wifi-hotspot.py
+	wifi-hotspot.py \
+	create-bond.py
