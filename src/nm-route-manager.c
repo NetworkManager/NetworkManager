@@ -39,6 +39,8 @@ typedef struct {
 } RouteEntries;
 
 typedef struct {
+	NMPlatform *platform;
+
 	RouteEntries ip4_routes;
 	RouteEntries ip6_routes;
 } NMRouteManagerPrivate;
@@ -358,7 +360,7 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 	NMPlatformIPXRoute *cur_ipx_route;
 
 	ipx_routes = vtable->vt->is_ip4 ? &priv->ip4_routes : &priv->ip6_routes;
-	plat_routes = vtable->vt->route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
+	plat_routes = vtable->vt->route_get_all (priv->platform, ifindex, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
 	plat_routes_idx = _route_index_create (vtable, plat_routes);
 	known_routes_idx = _route_index_create (vtable, known_routes);
 
@@ -494,7 +496,7 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 
 		/* if @cur_ipx_route is not equal to @plat_route, the route must be deleted. */
 		if (!(cur_ipx_route && route_id_cmp_result == 0))
-			vtable->vt->route_delete (NM_PLATFORM_GET, ifindex, cur_plat_route);
+			vtable->vt->route_delete (priv->platform, ifindex, cur_plat_route);
 
 		cur_plat_route = _get_next_plat_route (plat_routes_idx, FALSE, &i_plat_routes);
 	}
@@ -515,7 +517,7 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 					 * device routes, on the second the others (gateway routes). */
 					continue;
 				}
-				vtable->vt->route_add (NM_PLATFORM_GET, 0, rest_route);
+				vtable->vt->route_add (priv->platform, 0, rest_route);
 			}
 		}
 		g_array_unref (to_restore_routes);
@@ -559,7 +561,7 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 			    || route_id_cmp_result != 0
 			    || !_route_equals_ignoring_ifindex (vtable, cur_plat_route, cur_ipx_route)) {
 
-				if (!vtable->vt->route_add (NM_PLATFORM_GET, ifindex, cur_ipx_route)) {
+				if (!vtable->vt->route_add (priv->platform, ifindex, cur_ipx_route)) {
 					if (cur_ipx_route->rx.source < NM_IP_CONFIG_SOURCE_USER) {
 						_LOGD (vtable->vt->addr_family,
 						       "ignore error adding IPv%c route to kernel: %s",
@@ -646,10 +648,22 @@ nm_route_manager_init (NMRouteManager *self)
 {
 	NMRouteManagerPrivate *priv = NM_ROUTE_MANAGER_GET_PRIVATE (self);
 
+	priv->platform = g_object_ref (NM_PLATFORM_GET);
+
 	priv->ip4_routes.entries = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP4Route));
 	priv->ip6_routes.entries = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP6Route));
 	priv->ip4_routes.index = _route_index_create (&vtable_v4, priv->ip4_routes.entries);
 	priv->ip6_routes.index = _route_index_create (&vtable_v6, priv->ip6_routes.entries);
+}
+
+static void
+dispose (GObject *object)
+{
+	NMRouteManagerPrivate *priv = NM_ROUTE_MANAGER_GET_PRIVATE (object);
+
+	g_clear_object (&priv->platform);
+
+	G_OBJECT_CLASS (nm_route_manager_parent_class)->dispose (object);
 }
 
 static void
@@ -673,5 +687,6 @@ nm_route_manager_class_init (NMRouteManagerClass *klass)
 	g_type_class_add_private (klass, sizeof (NMRouteManagerPrivate));
 
 	/* virtual methods */
+	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 }
