@@ -11,4 +11,5 @@ EXTRA_DIST = \
 	get-active-connection-uuids.py \
 	list-devices.py \
 	update-ip4-method.py \
-	is-wwan-default.py
+	is-wwan-default.py \
+	wifi-hotspot.py
