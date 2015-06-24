@@ -42,8 +42,8 @@ typedef struct {
 
 GType nm_route_manager_get_type (void);
 
-gboolean nm_route_manager_ip4_route_sync (NMRouteManager *self, int ifindex, const GArray *known_routes);
-gboolean nm_route_manager_ip6_route_sync (NMRouteManager *self, int ifindex, const GArray *known_routes);
+gboolean nm_route_manager_ip4_route_sync (NMRouteManager *self, int ifindex, const GArray *known_routes, gboolean ignore_kernel_routes);
+gboolean nm_route_manager_ip6_route_sync (NMRouteManager *self, int ifindex, const GArray *known_routes, gboolean ignore_kernel_routes);
 gboolean nm_route_manager_route_flush (NMRouteManager *self, int ifindex);
 
 NMRouteManager *nm_route_manager_get (void);

@@ -320,7 +320,7 @@ nm_ip4_config_commit (const NMIP4Config *config, int ifindex, guint32 default_ro
 			g_array_append_vals (routes, route, 1);
 		}
 
-		success = nm_route_manager_ip4_route_sync (nm_route_manager_get (), ifindex, routes);
+		success = nm_route_manager_ip4_route_sync (nm_route_manager_get (), ifindex, routes, TRUE);
 		g_array_unref (routes);
 		if (!success)
 			return FALSE;

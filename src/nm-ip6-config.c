@@ -437,7 +437,7 @@ nm_ip6_config_commit (const NMIP6Config *config, int ifindex)
 			g_array_append_vals (routes, route, 1);
 		}
 
-		success = nm_route_manager_ip6_route_sync (nm_route_manager_get (), ifindex, routes);
+		success = nm_route_manager_ip6_route_sync (nm_route_manager_get (), ifindex, routes, TRUE);
 		g_array_unref (routes);
 	}
 
