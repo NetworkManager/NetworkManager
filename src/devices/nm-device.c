@@ -185,7 +185,8 @@ typedef struct {
 	NMDeviceState state;
 	NMDeviceStateReason state_reason;
 	QueuedState   queued_state;
-	guint queued_ip_config_id;
+	guint queued_ip4_config_id;
+	guint queued_ip6_config_id;
 	GSList *pending_actions;
 
 	char *        udi;
@@ -5663,10 +5664,15 @@ nm_device_queued_ip_config_change_clear (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->queued_ip_config_id) {
-		_LOGD (LOGD_DEVICE, "clearing queued IP config change");
-		g_source_remove (priv->queued_ip_config_id);
-		priv->queued_ip_config_id = 0;
+	if (priv->queued_ip4_config_id) {
+		_LOGD (LOGD_DEVICE, "clearing queued IP4 config change");
+		g_source_remove (priv->queued_ip4_config_id);
+		priv->queued_ip4_config_id = 0;
+	}
+	if (priv->queued_ip6_config_id) {
+		_LOGD (LOGD_DEVICE, "clearing queued IP6 config change");
+		g_source_remove (priv->queued_ip6_config_id);
+		priv->queued_ip6_config_id = 0;
 	}
 }
 
@@ -7059,11 +7065,10 @@ capture_lease_config (NMDevice *self,
 }
 
 static void
-update_ip_config (NMDevice *self, gboolean initial)
+update_ip4_config (NMDevice *self, gboolean initial)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	int ifindex;
-	gboolean linklocal6_just_completed = FALSE;
 	gboolean capture_resolv_conf;
 	NMDnsManagerResolvConfMode resolv_conf_mode;
 
@@ -7110,6 +7115,23 @@ update_ip_config (NMDevice *self, gboolean initial)
 
 		ip4_config_merge_and_apply (self, NULL, FALSE, NULL);
 	}
+}
+
+static void
+update_ip6_config (NMDevice *self, gboolean initial)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	int ifindex;
+	gboolean linklocal6_just_completed = FALSE;
+	gboolean capture_resolv_conf;
+	NMDnsManagerResolvConfMode resolv_conf_mode;
+
+	ifindex = nm_device_get_ip_ifindex (self);
+	if (!ifindex)
+		return;
+
+	resolv_conf_mode = nm_dns_manager_get_resolv_conf_mode (nm_dns_manager_get ());
+	capture_resolv_conf = initial && (resolv_conf_mode == NM_DNS_MANAGER_RESOLV_CONF_EXPLICIT);
 
 	/* IPv6 */
 	g_clear_object (&priv->ext_ip6_config);
@@ -7163,11 +7185,12 @@ update_ip_config (NMDevice *self, gboolean initial)
 void
 nm_device_capture_initial_config (NMDevice *self)
 {
-	update_ip_config (self, TRUE);
+	update_ip4_config (self, TRUE);
+	update_ip6_config (self, TRUE);
 }
 
 static gboolean
-queued_ip_config_change (gpointer user_data)
+queued_ip4_config_change (gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
@@ -7176,9 +7199,27 @@ queued_ip_config_change (gpointer user_data)
 	if (priv->queued_state.id)
 		return TRUE;
 
-	priv->queued_ip_config_id = 0;
+	priv->queued_ip4_config_id = 0;
 	g_object_ref (self);
-	update_ip_config (self, FALSE);
+	update_ip4_config (self, FALSE);
+	g_object_unref (self);
+
+	return FALSE;
+}
+
+static gboolean
+queued_ip6_config_change (gpointer user_data)
+{
+	NMDevice *self = NM_DEVICE (user_data);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	/* Wait for any queued state changes */
+	if (priv->queued_state.id)
+		return TRUE;
+
+	priv->queued_ip6_config_id = 0;
+	g_object_ref (self);
+	update_ip6_config (self, FALSE);
 
 	/* If no IPv6 link-local address exists but other addresses do then we
 	 * must add the LL address to remain conformant with RFC 3513 chapter 2.1
@@ -7194,19 +7235,37 @@ queued_ip_config_change (gpointer user_data)
 }
 
 static void
-device_ip_changed (NMPlatform *platform,
-                   int ifindex,
-                   gpointer platform_object,
-                   NMPlatformSignalChangeType change_type,
-                   NMPlatformReason reason,
-                   NMDevice *self)
+device_ip4_changed (NMPlatform *platform,
+                    int ifindex,
+                    gpointer platform_object,
+                    NMPlatformSignalChangeType change_type,
+                    NMPlatformReason reason,
+                    NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	if (nm_device_get_ip_ifindex (self) == ifindex) {
-		if (!priv->queued_ip_config_id) {
-			priv->queued_ip_config_id = g_idle_add (queued_ip_config_change, self);
-			_LOGD (LOGD_DEVICE, "queued IP config change");
+		if (!priv->queued_ip4_config_id) {
+			priv->queued_ip4_config_id = g_idle_add (queued_ip4_config_change, self);
+			_LOGD (LOGD_DEVICE, "queued IP4 config change");
+		}
+	}
+}
+
+static void
+device_ip6_changed (NMPlatform *platform,
+                    int ifindex,
+                    gpointer platform_object,
+                    NMPlatformSignalChangeType change_type,
+                    NMPlatformReason reason,
+                    NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (nm_device_get_ip_ifindex (self) == ifindex) {
+		if (!priv->queued_ip6_config_id) {
+			priv->queued_ip6_config_id = g_idle_add (queued_ip6_config_change, self);
+			_LOGD (LOGD_DEVICE, "queued IP6 config change");
 		}
 	}
 }
@@ -8778,14 +8837,15 @@ constructor (GType type,
 
 	/* Watch for external IP config changes */
 	platform = nm_platform_get ();
-	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED, G_CALLBACK (device_ip_changed), self);
-	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED, G_CALLBACK (device_ip_changed), self);
-	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, G_CALLBACK (device_ip_changed), self);
-	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, G_CALLBACK (device_ip_changed), self);
+	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED, G_CALLBACK (device_ip4_changed), self);
+	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED, G_CALLBACK (device_ip6_changed), self);
+	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, G_CALLBACK (device_ip4_changed), self);
+	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, G_CALLBACK (device_ip6_changed), self);
 	g_signal_connect (platform, NM_PLATFORM_SIGNAL_LINK_CHANGED, G_CALLBACK (link_changed_cb), self);
 
 	/* trigger initial ip config change to initialize ip-config */
-	priv->queued_ip_config_id = g_idle_add (queued_ip_config_change, self);
+	priv->queued_ip4_config_id = g_idle_add (queued_ip4_config_change, self);
+	priv->queued_ip6_config_id = g_idle_add (queued_ip6_config_change, self);
 
 	if (nm_platform_check_support_user_ipv6ll (NM_PLATFORM_GET)) {
 		int ip_ifindex = nm_device_get_ip_ifindex (self);
@@ -8939,7 +8999,8 @@ dispose (GObject *object)
 	_clear_queued_act_request (priv);
 
 	platform = nm_platform_get ();
-	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (device_ip_changed), self);
+	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (device_ip4_changed), self);
+	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (device_ip6_changed), self);
 	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (link_changed_cb), self);
 
 	nm_clear_g_source (&priv->device_link_changed_id);
