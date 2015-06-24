@@ -33,6 +33,7 @@
 #include "gsystem-local-alloc.h"
 #include "nm-enum-types.h"
 #include "nm-core-internal.h"
+#include "nm-keyfile-internal.h"
 
 #include <gio/gio.h>
 #include <glib/gi18n.h>
@@ -42,9 +43,11 @@
 #define DEFAULT_CONFIG_MAIN_FILE_OLD    NMCONFDIR "/nm-system-settings.conf"
 #define DEFAULT_SYSTEM_CONFIG_DIR       NMLIBDIR  "/conf.d"
 #define DEFAULT_NO_AUTO_DEFAULT_FILE    NMSTATEDIR "/no-auto-default.state"
+#define DEFAULT_INTERN_CONFIG_FILE      NMSTATEDIR "/NetworkManager-intern.conf"
 
 struct NMConfigCmdLineOptions {
 	char *config_main_file;
+	char *intern_config_file;
 	char *config_dir;
 	char *system_config_dir;
 	char *no_auto_default_file;
@@ -68,6 +71,7 @@ typedef struct {
 	char *config_dir;
 	char *system_config_dir;
 	char *no_auto_default_file;
+	char *intern_config_file;
 
 	char **plugins;
 	gboolean monitor_connection_files;
@@ -108,6 +112,14 @@ G_DEFINE_TYPE_WITH_CODE (NMConfig, nm_config, G_TYPE_OBJECT,
 /************************************************************************/
 
 static void _set_config_data (NMConfig *self, NMConfigData *new_data, int signal);
+
+/************************************************************************/
+
+#define _HAS_PREFIX(str, prefix) \
+	({ \
+		const char *_str = (str); \
+		g_str_has_prefix ( _str, ""prefix"") && _str[STRLEN(prefix)] != '\0'; \
+	})
 
 /************************************************************************/
 
@@ -362,7 +374,7 @@ nm_config_get_no_auto_default_for_device (NMConfig *self, NMDevice *device)
 void
 nm_config_set_no_auto_default_for_device (NMConfig *self, NMDevice *device)
 {
-	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (self);
+	NMConfigPrivate *priv;
 	GError *error = NULL;
 	NMConfigData *new_data = NULL;
 	const char *hw_address;
@@ -372,6 +384,8 @@ nm_config_set_no_auto_default_for_device (NMConfig *self, NMDevice *device)
 
 	g_return_if_fail (NM_IS_CONFIG (self));
 	g_return_if_fail (NM_IS_DEVICE (device));
+
+	priv = NM_CONFIG_GET_PRIVATE (self);
 
 	hw_address = nm_device_get_hw_address (device);
 
@@ -412,6 +426,7 @@ _nm_config_cmd_line_options_clear (NMConfigCmdLineOptions *cli)
 	g_clear_pointer (&cli->config_dir, g_free);
 	g_clear_pointer (&cli->system_config_dir, g_free);
 	g_clear_pointer (&cli->no_auto_default_file, g_free);
+	g_clear_pointer (&cli->intern_config_file, g_free);
 	g_clear_pointer (&cli->plugins, g_free);
 	cli->configure_and_quit = FALSE;
 	g_clear_pointer (&cli->connectivity_uri, g_free);
@@ -431,6 +446,7 @@ _nm_config_cmd_line_options_copy (const NMConfigCmdLineOptions *cli, NMConfigCmd
 	dst->system_config_dir = g_strdup (cli->system_config_dir);
 	dst->config_main_file = g_strdup (cli->config_main_file);
 	dst->no_auto_default_file = g_strdup (cli->no_auto_default_file);
+	dst->intern_config_file = g_strdup (cli->intern_config_file);
 	dst->plugins = g_strdup (cli->plugins);
 	dst->configure_and_quit = cli->configure_and_quit;
 	dst->connectivity_uri = g_strdup (cli->connectivity_uri);
@@ -468,6 +484,7 @@ nm_config_cmd_line_options_add_to_entries (NMConfigCmdLineOptions *cli,
 			{ "config", 0, 0, G_OPTION_ARG_FILENAME, &cli->config_main_file, N_("Config file location"), N_(DEFAULT_CONFIG_MAIN_FILE) },
 			{ "config-dir", 0, 0, G_OPTION_ARG_FILENAME, &cli->config_dir, N_("Config directory location"), N_(DEFAULT_CONFIG_DIR) },
 			{ "system-config-dir", 0, 0, G_OPTION_ARG_FILENAME, &cli->system_config_dir, N_("System config directory location"), N_(DEFAULT_SYSTEM_CONFIG_DIR) },
+			{ "intern-config", 0, 0, G_OPTION_ARG_FILENAME, &cli->intern_config_file, N_("Internal config file location"), N_(DEFAULT_INTERN_CONFIG_FILE) },
 			{ "no-auto-default", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_FILENAME, &cli->no_auto_default_file, N_("State file for no-auto-default devices"), N_(DEFAULT_NO_AUTO_DEFAULT_FILE) },
 			{ "plugins", 0, 0, G_OPTION_ARG_STRING, &cli->plugins, N_("List of plugins separated by ','"), N_(CONFIG_PLUGINS_DEFAULT) },
 			{ "configure-and-quit", 0, 0, G_OPTION_ARG_NONE, &cli->configure_and_quit, N_("Quit after initial configuration"), NULL },
@@ -532,6 +549,18 @@ _sort_groups_cmp (const char **pa, const char **pb, gpointer dummy)
 	 * is special and it's order will be fixed later. It doesn't actually
 	 * matter here how it compares with [connection.\+] sections. */
 	return pa > pb ? -1 : 1;
+}
+
+void
+_nm_config_sort_groups (char **groups, gsize ngroups)
+{
+	if (ngroups > 1) {
+		g_qsort_with_data (groups,
+		                   ngroups,
+		                   sizeof (char *),
+		                   (GCompareDataFunc) _sort_groups_cmp,
+		                   NULL);
+	}
 }
 
 static gboolean
@@ -599,17 +628,15 @@ read_config (GKeyFile *keyfile, const char *dirname, const char *path, GError **
 	 * At the very end, we will revert the order of all sections again and
 	 * get thus the right behavior. This final reversing is done in
 	 * NMConfigData:_get_connection_infos().  */
-	if (ngroups > 1) {
-		g_qsort_with_data (groups,
-		                   ngroups,
-		                   sizeof (char *),
-		                   (GCompareDataFunc) _sort_groups_cmp,
-		                   NULL);
-	}
+	_nm_config_sort_groups (groups, ngroups);
 
 	for (g = 0; groups[g]; g++) {
 		const char *group = groups[g];
 
+		if (g_str_has_prefix (group, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN)) {
+			/* internal groups cannot be set by user configuration. */
+			continue;
+		}
 		keys = g_key_file_get_keys (kf, group, &nkeys, NULL);
 		if (!keys)
 			continue;
@@ -621,6 +648,13 @@ read_config (GKeyFile *keyfile, const char *dirname, const char *path, GError **
 
 			key = keys[k];
 			g_assert (key && *key);
+
+			if (   _HAS_PREFIX (key, NM_CONFIG_KEYFILE_KEYPREFIX_WAS)
+			    || _HAS_PREFIX (key, NM_CONFIG_KEYFILE_KEYPREFIX_SET)) {
+				/* these keys are protected. We ignore them if the user sets them. */
+				continue;
+			}
+
 			key_len = strlen (key);
 			last_char = key[key_len - 1];
 			if (   key_len > 1
@@ -832,8 +866,8 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 
 	g_return_val_if_fail (config_dir, NULL);
 	g_return_val_if_fail (system_config_dir, NULL);
-	g_return_val_if_fail (out_config_main_file && !*out_config_main_file, FALSE);
-	g_return_val_if_fail (out_config_description && !*out_config_description, NULL);
+	g_return_val_if_fail (!out_config_main_file || !*out_config_main_file, FALSE);
+	g_return_val_if_fail (!out_config_description || !*out_config_description, NULL);
 	g_return_val_if_fail (!error || !*error, FALSE);
 
 	/* create a default configuration file. */
@@ -916,12 +950,309 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 		g_string_append (str, ")");
 	}
 
-	*out_config_main_file = o_config_main_file;
-	*out_config_description = g_string_free (str, FALSE);
+	if (out_config_main_file)
+		*out_config_main_file = o_config_main_file;
+	else
+		g_free (o_config_main_file);
+	if (out_config_description)
+		*out_config_description = g_string_free (str, FALSE);
+	else
+		g_string_free (str, TRUE);
 
 	o_config_main_file = NULL;
 	return keyfile;
 }
+
+/**
+ * intern_config_read:
+ * @filename: the filename where to store the internal config
+ * @keyfile_conf: the merged configuration from user (/etc/NM/NetworkManager.conf).
+ * @out_needs_rewrite: (allow-none): whether the read keyfile contains inconsistent
+ *   data (compared to @keyfile_conf). If %TRUE, you might want to rewrite
+ *   the file.
+ *
+ * Does the opposite of intern_config_write(). It reads the internal configuration.
+ * Note that the actual format of how the configuration is saved in @filename
+ * is different then what we return here. NMConfig manages what is written internally
+ * by having it inside a keyfile_intern. But we don't write that to disk as is.
+ * Especially, we also store parts of @keyfile_conf as ".was" and on read we compare
+ * what we have, with what ".was".
+ *
+ * Returns: a #GKeyFile instance with the internal configuration.
+ */
+static GKeyFile *
+intern_config_read (const char *filename,
+                    GKeyFile *keyfile_conf,
+                    gboolean *out_needs_rewrite)
+{
+	GKeyFile *keyfile_intern;
+	GKeyFile *keyfile;
+	gboolean needs_rewrite = FALSE;
+	gs_strfreev char **groups = NULL;
+	guint g, k;
+	gboolean has_intern = FALSE;
+
+	g_return_val_if_fail (filename, NULL);
+
+	if (!*filename) {
+		if (out_needs_rewrite)
+			*out_needs_rewrite = FALSE;
+		return NULL;
+	}
+
+	keyfile_intern = nm_config_create_keyfile ();
+
+	keyfile = nm_config_create_keyfile ();
+	if (!g_key_file_load_from_file (keyfile, filename, G_KEY_FILE_NONE, NULL)) {
+		needs_rewrite = TRUE;
+		goto out;
+	}
+
+	groups = g_key_file_get_groups (keyfile, NULL);
+	for (g = 0; groups && groups[g]; g++) {
+		gs_strfreev char **keys = NULL;
+		const char *group = groups[g];
+		gboolean is_intern;
+
+		keys = g_key_file_get_keys (keyfile, group, NULL, NULL);
+		if (!keys)
+			continue;
+
+		is_intern = g_str_has_prefix (group, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN);
+
+		for (k = 0; keys[k]; k++) {
+			gs_free char *value_set = NULL;
+			const char *key = keys[k];
+
+			value_set = g_key_file_get_value (keyfile, group, key, NULL);
+
+			if (is_intern) {
+				has_intern = TRUE;
+				g_key_file_set_value (keyfile_intern, group, key, value_set);
+			} else if (_HAS_PREFIX (key, NM_CONFIG_KEYFILE_KEYPREFIX_SET)) {
+				const char *key_base = &key[STRLEN (NM_CONFIG_KEYFILE_KEYPREFIX_SET)];
+				gs_free char *value_was = NULL;
+				gs_free char *value_conf = NULL;
+				gs_free char *key_was = g_strdup_printf (NM_CONFIG_KEYFILE_KEYPREFIX_WAS"%s", key_base);
+
+				if (keyfile_conf)
+					value_conf = g_key_file_get_value (keyfile_conf, group, key_base, NULL);
+				value_was = g_key_file_get_value (keyfile, group, key_was, NULL);
+
+				if (g_strcmp0 (value_conf, value_was) != 0) {
+					/* if value_was is no longer the same as @value_conf, it means the user
+					 * changed the configuration since the last write. In this case, we
+					 * drop the value. It also means our file is out-of-date, and we should
+					 * rewrite it. */
+					needs_rewrite = TRUE;
+					continue;
+				}
+				has_intern = TRUE;
+				g_key_file_set_value (keyfile_intern, group, key_base, value_set);
+			} else if (_HAS_PREFIX (key, NM_CONFIG_KEYFILE_KEYPREFIX_WAS)) {
+				const char *key_base = &key[STRLEN (NM_CONFIG_KEYFILE_KEYPREFIX_WAS)];
+				gs_free char *key_set = g_strdup_printf (NM_CONFIG_KEYFILE_KEYPREFIX_SET"%s", key_base);
+				gs_free char *value_was = NULL;
+				gs_free char *value_conf = NULL;
+
+				if (g_key_file_has_key (keyfile, group, key_set, NULL)) {
+					/* we have a matching "set" key too. Handle the "was" key there. */
+					continue;
+				}
+
+				if (keyfile_conf)
+					value_conf = g_key_file_get_value (keyfile_conf, group, key_base, NULL);
+				value_was = g_key_file_get_value (keyfile, group, key, NULL);
+
+				if (g_strcmp0 (value_conf, value_was) != 0) {
+					/* if value_was is no longer the same as @value_conf, it means the user
+					 * changed the configuration since the last write. In this case, we
+					 * don't overwrite the user-provided value. It also means our file is
+					 * out-of-date, and we should rewrite it. */
+					needs_rewrite = TRUE;
+					continue;
+				}
+				has_intern = TRUE;
+				/* signal the absence of the value. That means, we must propagate the
+				 * "was" key to NMConfigData, so that it knows to hide the corresponding
+				 * user key. */
+				g_key_file_set_value (keyfile_intern, group, key, "");
+			} else
+				needs_rewrite = TRUE;
+		}
+	}
+
+out:
+	g_key_file_unref (keyfile);
+
+	if (out_needs_rewrite)
+		*out_needs_rewrite = needs_rewrite;
+
+	nm_log_dbg (LOGD_CORE, "intern config file \"%s\"", filename);
+
+	if (!has_intern) {
+		g_key_file_unref (keyfile_intern);
+		return NULL;
+	}
+	return keyfile_intern;
+}
+
+static int
+_intern_config_write_sort_fcn (const char **a, const char **b, gpointer dummy)
+{
+	const char *g_a = (a ? *a : NULL);
+	const char *g_b = (b ? *b : NULL);
+	gboolean a_is, b_is;
+
+	a_is = g_str_has_prefix (g_a, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN);
+	b_is = g_str_has_prefix (g_b, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN);
+
+	if (a_is != b_is) {
+		if (a_is)
+			return 1;
+		return -1;
+	}
+	return g_strcmp0 (g_a, g_b);
+}
+
+static gboolean
+intern_config_write (const char *filename,
+                     GKeyFile *keyfile_intern,
+                     GKeyFile *keyfile_conf,
+                     GError **error)
+{
+	GKeyFile *keyfile;
+	gs_strfreev char **groups = NULL;
+	guint g, k;
+	gboolean has_intern = FALSE;
+	gboolean success = FALSE;
+	GError *local = NULL;
+
+	g_return_val_if_fail (filename, FALSE);
+
+	if (!*filename) {
+		g_set_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND, "no filename to write (use --intern-config?)");
+		return FALSE;
+	}
+
+	keyfile = nm_config_create_keyfile ();
+
+	if (keyfile_intern) {
+		groups = g_key_file_get_groups (keyfile_intern, NULL);
+		if (groups && groups[0]) {
+			g_qsort_with_data (groups,
+			                   g_strv_length (groups),
+			                   sizeof (char *),
+			                   (GCompareDataFunc) _intern_config_write_sort_fcn,
+			                   NULL);
+		}
+	}
+	for (g = 0; groups && groups[g]; g++) {
+		gs_strfreev char **keys = NULL;
+		const char *group = groups[g];
+		gboolean is_intern;
+
+		keys = g_key_file_get_keys (keyfile_intern, group, NULL, NULL);
+		if (!keys)
+			continue;
+
+		is_intern = g_str_has_prefix (group, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN);
+
+		for (k = 0; keys[k]; k++) {
+			const char *key = keys[k];
+			gs_free char *value_set = NULL;
+			gs_free char *key_set = NULL;
+
+			value_set = g_key_file_get_value (keyfile_intern, group, key, NULL);
+
+			if (is_intern) {
+				has_intern = TRUE;
+				g_key_file_set_value (keyfile, group, key, value_set);
+			} else {
+				gs_free char *value_was = NULL;
+
+				if (_HAS_PREFIX (key, NM_CONFIG_KEYFILE_KEYPREFIX_SET)) {
+					/* Setting a key with .set prefix has no meaning, as these keys
+					 * are protected. Just set the value you want to set instead.
+					 * Why did this happen?? */
+					g_warn_if_reached ();
+				} else if (_HAS_PREFIX (key, NM_CONFIG_KEYFILE_KEYPREFIX_WAS)) {
+					const char *key_base = &key[STRLEN (NM_CONFIG_KEYFILE_KEYPREFIX_WAS)];
+
+					if (   _HAS_PREFIX (key_base, NM_CONFIG_KEYFILE_KEYPREFIX_SET)
+					    || _HAS_PREFIX (key_base, NM_CONFIG_KEYFILE_KEYPREFIX_WAS)) {
+						g_warn_if_reached ();
+						continue;
+					}
+
+					if (g_key_file_has_key (keyfile_intern, group, key_base, NULL)) {
+						/* There is also a matching key_base entry. Skip processing
+						 * the .was. key ad handle the key_base in the other else branch. */
+						continue;
+					}
+
+					if (keyfile_conf) {
+						value_was = g_key_file_get_value (keyfile_conf, group, key_base, NULL);
+						if (value_was)
+							g_key_file_set_value (keyfile, group, key, value_was);
+					}
+				} else {
+					if (keyfile_conf) {
+						value_was = g_key_file_get_value (keyfile_conf, group, key, NULL);
+						if (g_strcmp0 (value_set, value_was) == 0) {
+							/* there is no point in storing the identical value as we have via
+							 * user configuration. Skip it. */
+							continue;
+						}
+						if (value_was) {
+							gs_free char *key_was = NULL;
+
+							key_was = g_strdup_printf (NM_CONFIG_KEYFILE_KEYPREFIX_WAS"%s", key);
+							g_key_file_set_value (keyfile, group, key_was, value_was);
+						}
+					}
+					key = key_set = g_strdup_printf (NM_CONFIG_KEYFILE_KEYPREFIX_SET"%s", key);
+					g_key_file_set_value (keyfile, group, key, value_set);
+				}
+			}
+		}
+		if (   is_intern
+		    && g_key_file_has_group (keyfile, group)) {
+			g_key_file_set_comment (keyfile, group, NULL,
+			                        " Internal section. Not overwritable via user configuration in 'NetworkManager.conf'",
+			                        NULL);
+		}
+	}
+
+	g_key_file_set_comment (keyfile, NULL, NULL,
+	                        " Internal configuration file. This file is written and read\n"
+	                        " by NetworkManager and its configuration values are merged\n"
+	                        " with the configuration from 'NetworkManager.conf'.\n"
+	                        "\n"
+	                        " Keys with a \""NM_CONFIG_KEYFILE_KEYPREFIX_SET"\" prefix specify the value to set.\n"
+	                        " A corresponding key with a \""NM_CONFIG_KEYFILE_KEYPREFIX_WAS"\" prefix records the value\n"
+	                        " of the user configuration at the time of storing the file.\n"
+	                        " The value from internal configuration is rejected if the corresponding\n"
+	                        " \""NM_CONFIG_KEYFILE_KEYPREFIX_WAS"\" key no longer matches the configuration from 'NetworkManager.conf'.\n"
+	                        " That means, if you modify a value in 'NetworkManager.conf', the internal\n"
+	                        " overwrite no longer matches and is ignored.\n"
+	                        "\n"
+	                        " Internal sections of the form [" NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN "*] cannot\n"
+	                        " be set by user configuration.\n"
+	                        "\n"
+	                        " CHANGES TO THIS FILE WILL BE OVERWRITTEN",
+	                        NULL);
+
+	success = g_key_file_save_to_file (keyfile, filename, &local);
+
+	nm_log_dbg (LOGD_CORE, "write intern config file \"%s\"%s%s", filename, success ? "" : ": ", success ? "" : local->message);
+	g_key_file_unref (keyfile);
+	if (!success)
+		g_propagate_error (error, local);
+	return success;
+}
+
+/************************************************************************/
 
 GSList *
 nm_config_get_device_match_spec (const GKeyFile *keyfile, const char *group, const char *key, gboolean *out_has_key)
@@ -939,16 +1270,97 @@ nm_config_get_device_match_spec (const GKeyFile *keyfile, const char *group, con
 
 /************************************************************************/
 
+/**
+ * nm_config_set_values:
+ * @self: the NMConfig instance
+ * @keyfile_intern_new: (allow-none): the new internal settings to set.
+ *   If %NULL, it is equal to an empty keyfile.
+ * @allow_write: only if %TRUE, allow writing the changes to file. Otherwise,
+ *   do the changes in-memory only.
+ * @force_rewrite: if @allow_write is %FALSE, this has no effect. If %FALSE,
+ *   only write the configuration to file, if there are any actual changes.
+ *   If %TRUE, always write the configuration to file, even if tere are seemingly
+ *   no changes.
+ *
+ *  This is the most flexible function to set values. It all depends on the
+ *  keys and values you set in @keyfile_intern_new. You basically reset all
+ *  internal configuration values to what is in @keyfile_intern_new.
+ *
+ *  There are 2 types of settings:
+ *    - all groups/sections with a prefix [.intern.*] are taken as is. As these
+ *      groups are separate from user configuration, there is no conflict. You set
+ *      them, that's it.
+ *    - otherwise you can overwrite individual values from user-configuration.
+ *      Just set the value. Keys with a prefix NM_CONFIG_KEYFILE_KEYPREFIX_*
+ *      are protected -- as they are not value user keys.
+ *      You can also hide a certain user setting by putting only a key
+ *      NM_CONFIG_KEYFILE_KEYPREFIX_WAS"keyname" into the keyfile.
+ */
+void
+nm_config_set_values (NMConfig *self,
+                      GKeyFile *keyfile_intern_new,
+                      gboolean allow_write,
+                      gboolean force_rewrite)
+{
+	NMConfigPrivate *priv;
+	GKeyFile *keyfile_intern_current;
+	GKeyFile *keyfile_user;
+	GKeyFile *keyfile_new;
+	GError *local = NULL;
+	NMConfigData *new_data = NULL;
+
+	g_return_if_fail (NM_IS_CONFIG (self));
+
+	priv = NM_CONFIG_GET_PRIVATE (self);
+
+	keyfile_intern_current = _nm_config_data_get_keyfile_intern (priv->config_data);
+
+	keyfile_new = nm_config_create_keyfile ();
+	if (keyfile_intern_new)
+		_nm_keyfile_copy (keyfile_new, keyfile_intern_new);
+
+	if (!_nm_keyfile_equals (keyfile_intern_current, keyfile_new, TRUE))
+		new_data = nm_config_data_new_update_keyfile_intern (priv->config_data, keyfile_new);
+
+	nm_log_dbg (LOGD_CORE, "set values(): %s", new_data ? "has changes" : "no changes");
+
+	if (allow_write
+	    && (new_data || force_rewrite)) {
+		/* We write the internal config file based on the user configuration from
+		 * the last load/reload. That is correct, because the intern properties might
+		 * be in accordance to what NM thinks is currently configured. Even if the files
+		 * on disk changed in the meantime.
+		 * But if they changed, on the next reload with might throw away our just
+		 * written data. That is correct, because from NM's point of view, those
+		 * changes on disk happened in any case *after* now. */
+		if (*priv->intern_config_file) {
+			keyfile_user = _nm_config_data_get_keyfile_user (priv->config_data);
+			if (!intern_config_write (priv->intern_config_file, keyfile_new, keyfile_user, &local)) {
+				nm_log_warn (LOGD_CORE, "error saving internal configuration \"%s\": %s", priv->intern_config_file, local->message);
+				g_clear_error (&local);
+			}
+		} else
+			nm_log_dbg (LOGD_CORE, "don't persistate internal configuration (no file set, use --intern-config?)");
+	}
+	if (new_data)
+		_set_config_data (self, new_data, 0);
+
+	g_key_file_unref (keyfile_new);
+}
+
+/************************************************************************/
+
 void
 nm_config_reload (NMConfig *self, int signal)
 {
 	NMConfigPrivate *priv;
 	GError *error = NULL;
-	GKeyFile *keyfile;
+	GKeyFile *keyfile, *keyfile_intern;
 	NMConfigData *new_data = NULL;
 	char *config_main_file = NULL;
 	char *config_description = NULL;
 	gs_strfreev char **no_auto_default = NULL;
+	gboolean intern_config_needs_rewrite;
 
 	g_return_if_fail (NM_IS_CONFIG (self));
 
@@ -975,12 +1387,19 @@ nm_config_reload (NMConfig *self, int signal)
 		_set_config_data (self, NULL, signal);
 		return;
 	}
+
 	no_auto_default = no_auto_default_from_file (priv->no_auto_default_file);
 
-	new_data = nm_config_data_new (config_main_file, config_description, (const char *const*) no_auto_default, keyfile);
+	keyfile_intern = intern_config_read (priv->intern_config_file, keyfile, &intern_config_needs_rewrite);
+	if (intern_config_needs_rewrite)
+		intern_config_write (priv->intern_config_file, keyfile_intern, keyfile, NULL);
+
+	new_data = nm_config_data_new (config_main_file, config_description, (const char *const*) no_auto_default, keyfile, keyfile_intern);
 	g_free (config_main_file);
 	g_free (config_description);
 	g_key_file_unref (keyfile);
+	if (keyfile_intern)
+		g_key_file_unref (keyfile_intern);
 
 	_set_config_data (self, new_data, signal);
 }
@@ -999,6 +1418,10 @@ _change_flags_one_to_string (NMConfigChangeFlags flag)
 		return "config-files";
 	case NM_CONFIG_CHANGE_VALUES:
 		return "values";
+	case NM_CONFIG_CHANGE_VALUES_USER:
+		return "values-user";
+	case NM_CONFIG_CHANGE_VALUES_INTERN:
+		return "values-intern";
 	case NM_CONFIG_CHANGE_CONNECTIVITY:
 		return "connectivity";
 	case NM_CONFIG_CHANGE_NO_AUTO_DEFAULT:
@@ -1107,10 +1530,11 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 {
 	NMConfig *self = NM_CONFIG (initable);
 	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (self);
-	GKeyFile *keyfile;
+	GKeyFile *keyfile, *keyfile_intern;
 	char *config_main_file = NULL;
 	char *config_description = NULL;
 	gs_strfreev char **no_auto_default = NULL;
+	gboolean intern_config_needs_rewrite;
 
 	if (priv->config_dir) {
 		/* Object is already initialized. */
@@ -1136,6 +1560,11 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 		g_free (priv->system_config_dir);
 		priv->system_config_dir = g_strdup ("");
 	}
+
+	if (priv->cli.intern_config_file)
+		priv->intern_config_file = g_strdup (priv->cli.intern_config_file);
+	else
+		priv->intern_config_file = g_strdup (DEFAULT_INTERN_CONFIG_FILE);
 
 	keyfile = read_entire_config (&priv->cli,
 	                              priv->config_dir,
@@ -1173,13 +1602,19 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 
 	no_auto_default = no_auto_default_from_file (priv->no_auto_default_file);
 
-	priv->config_data_orig = nm_config_data_new (config_main_file, config_description, (const char *const*) no_auto_default, keyfile);
+	keyfile_intern = intern_config_read (priv->intern_config_file, keyfile, &intern_config_needs_rewrite);
+	if (intern_config_needs_rewrite)
+		intern_config_write (priv->intern_config_file, keyfile_intern, keyfile, NULL);
+
+	priv->config_data_orig = nm_config_data_new (config_main_file, config_description, (const char *const*) no_auto_default, keyfile, keyfile_intern);
 
 	priv->config_data = g_object_ref (priv->config_data_orig);
 
 	g_free (config_main_file);
 	g_free (config_description);
 	g_key_file_unref (keyfile);
+	if (keyfile_intern)
+		g_key_file_unref (keyfile_intern);
 	return TRUE;
 }
 
@@ -1209,6 +1644,7 @@ finalize (GObject *gobject)
 	g_free (priv->config_dir);
 	g_free (priv->system_config_dir);
 	g_free (priv->no_auto_default_file);
+	g_free (priv->intern_config_file);
 	g_strfreev (priv->plugins);
 	g_free (priv->dhcp_client);
 	g_free (priv->log_level);

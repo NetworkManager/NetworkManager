@@ -28,16 +28,19 @@ Copyright 2010 - 2014 Red Hat, Inc.
   <refsynopsisdiv>
     <para><filename>/etc/NetworkManager/NetworkManager.conf</filename>,
     <filename>/etc/NetworkManager/conf.d/<replaceable>name</replaceable>.conf</filename>,
-    <filename>/usr/lib/NetworkManager/conf.d/<replaceable>name</replaceable>.conf</filename>
+    <filename>/usr/lib/NetworkManager/conf.d/<replaceable>name</replaceable>.conf</filename>,
+    <filename>/var/lib/NetworkManager/NetworkManager-intern.conf</filename>
     </para>
   </refsynopsisdiv>
 
   <refsect1>
     <title>Description</title>
-    <para>This is a configuration file for NetworkManager. It is used
+    <para><literal>NetworkManager.conf</literal> is the configuration file for NetworkManager. It is used
     to set up various aspects of NetworkManager's behavior. The
-    location of the file may be changed through use of the
-    <option>--config</option> argument for NetworkManager.
+    location of the main file and configuration directories may be changed
+    through use of the <option>--config</option>, <option>--config-dir</option>,
+    <option>--system-config-dir</option>, and <option>--intern-config</option>
+    argument for NetworkManager, respectively.
     </para>
     <para>If a default <literal>NetworkManager.conf</literal> is
     provided by your distribution's packages, you should not modify
@@ -51,6 +54,12 @@ Copyright 2010 - 2014 Red Hat, Inc.
     can be prevented by adding a file <literal>/etc/NetworkManager/conf.d/<replaceable>name</replaceable>.conf</literal>.
     In this case, the file from the etc configuration shadows the file from the
     system configuration directory.
+    </para>
+    <para>
+    NetworkManager can overwrite certain user configuration options via D-Bus or other internal
+    operations. In this case it writes those changes to <literal>/var/lib/NetworkManager/NetworkManager-intern.conf</literal>.
+    This file is not intended to be modified by the user, but it is read last and can shadow
+    user configuration from <literal>NetworkManager.conf</literal>.
     </para>
 
   </refsect1>

@@ -48,6 +48,7 @@ G_BEGIN_DECLS
 
 #define NM_CONFIG_KEYFILE_LIST_SEPARATOR ','
 
+#define NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN                ".intern."
 #define NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION            "connection"
 #define NM_CONFIG_KEYFILE_GROUPPREFIX_TEST_APPEND_STRINGLIST ".test-append-stringlist"
 
@@ -62,6 +63,9 @@ G_BEGIN_DECLS
 #define NM_CONFIG_KEYFILE_KEY_IFNET_AUTO_REFRESH            "auto_refresh"
 #define NM_CONFIG_KEYFILE_KEY_IFNET_MANAGED                 "managed"
 #define NM_CONFIG_KEYFILE_KEY_IFUPDOWN_MANAGED              "managed"
+
+#define NM_CONFIG_KEYFILE_KEYPREFIX_WAS                     ".was."
+#define NM_CONFIG_KEYFILE_KEYPREFIX_SET                     ".set."
 
 typedef struct NMConfigCmdLineOptions NMConfigCmdLineOptions;
 
@@ -97,6 +101,11 @@ const char *nm_config_get_log_domains (NMConfig *config);
 const char *nm_config_get_debug (NMConfig *config);
 gboolean nm_config_get_configure_and_quit (NMConfig *config);
 
+void nm_config_set_values (NMConfig *self,
+                           GKeyFile *keyfile_intern_new,
+                           gboolean allow_write,
+                           gboolean force_rewrite);
+
 /* for main.c only */
 NMConfigCmdLineOptions *nm_config_cmd_line_options_new (void);
 void                    nm_config_cmd_line_options_free (NMConfigCmdLineOptions *cli);
@@ -127,6 +136,8 @@ void nm_config_keyfile_set_string_list (GKeyFile *keyfile,
                                         const char *const* strv,
                                         gssize len);
 GSList *nm_config_get_device_match_spec (const GKeyFile *keyfile, const char *group, const char *key, gboolean *out_has_key);
+
+void _nm_config_sort_groups (char **groups, gsize ngroups);
 
 G_END_DECLS
 
