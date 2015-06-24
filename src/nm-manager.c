@@ -164,8 +164,6 @@ typedef struct {
 	NMConfig *config;
 	NMConnectivity *connectivity;
 
-	int ignore_link_added_cb;
-
 	NMPolicy *policy;
 
 	NMDBusManager *dbus_mgr;
@@ -1032,12 +1030,6 @@ system_create_virtual_device (NMManager *self, NMConnection *connection, GError 
 		goto out;
 	}
 
-	/* Block notification of link added since we're creating the device
-	 * explicitly here, otherwise adding the platform/kernel device would
-	 * create it before this function can do the rest of the setup.
-	 */
-	priv->ignore_link_added_cb++;
-
 	nm_owned = !nm_platform_link_get_by_ifname (NM_PLATFORM_GET, iface);
 
 	device = nm_device_factory_create_virtual_device_for_connection (factory,
@@ -1055,8 +1047,6 @@ system_create_virtual_device (NMManager *self, NMConnection *connection, GError 
 
 		g_object_unref (device);
 	}
-
-	priv->ignore_link_added_cb--;
 
 out:
 	g_free (iface);
@@ -1878,19 +1868,14 @@ _register_device_factory (NMDeviceFactory *factory, gpointer user_data)
 static void
 platform_link_added (NMManager *self,
                      int ifindex,
-                     NMPlatformLink *plink,
-                     NMPlatformReason reason)
+                     NMPlatformLink *plink)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMDeviceFactory *factory;
 	NMDevice *device = NULL;
 	GError *error = NULL;
 	gboolean nm_plugin_missing = FALSE;
 
 	g_return_if_fail (ifindex > 0);
-
-	if (priv->ignore_link_added_cb > 0)
-		return;
 
 	if (nm_manager_get_device_by_ifindex (self, ifindex))
 		return;
@@ -1936,6 +1921,38 @@ platform_link_added (NMManager *self,
 	}
 }
 
+typedef struct {
+	NMManager *self;
+	int ifindex;
+} PlatformLinkCbData;
+
+static gboolean
+_platform_link_cb_idle (PlatformLinkCbData *data)
+{
+	NMManager *self = data->self;
+
+	if (self) {
+		const NMPlatformLink *l;
+
+		l = nm_platform_link_get (NM_PLATFORM_GET, data->ifindex);
+		if (l) {
+			NMPlatformLink pllink;
+
+			pllink = *l; /* make a copy of the link instance */
+			platform_link_added (self, data->ifindex, &pllink);
+		} else {
+			NMDevice *device;
+
+			device = nm_manager_get_device_by_ifindex (self, data->ifindex);
+			if (device)
+				remove_device (self, device, FALSE, TRUE);
+		}
+		g_object_remove_weak_pointer (G_OBJECT (self), (gpointer *) &data->self);
+	}
+	g_slice_free (PlatformLinkCbData, data);
+	return G_SOURCE_REMOVE;
+}
+
 static void
 platform_link_cb (NMPlatform *platform,
                   int ifindex,
@@ -1944,22 +1961,20 @@ platform_link_cb (NMPlatform *platform,
                   NMPlatformReason reason,
                   gpointer user_data)
 {
+	PlatformLinkCbData *data;
+
 	switch (change_type) {
 	case NM_PLATFORM_SIGNAL_ADDED:
-		platform_link_added (NM_MANAGER (user_data), ifindex, plink, reason);
+	case NM_PLATFORM_SIGNAL_REMOVED:
+		data = g_slice_new (PlatformLinkCbData);
+		data->self = NM_MANAGER (user_data);
+		data->ifindex = ifindex;
+		g_object_add_weak_pointer (G_OBJECT (data->self), (gpointer *) &data->self);
+		g_idle_add ((GSourceFunc) _platform_link_cb_idle, data);
 		break;
-	case NM_PLATFORM_SIGNAL_REMOVED: {
-		NMManager *self = NM_MANAGER (user_data);
-		NMDevice *device;
-
-		device = nm_manager_get_device_by_ifindex (self, ifindex);
-		if (device)
-			remove_device (self, device, FALSE, TRUE);
+	default:
 		break;
-	 }
-	 default:
-		break;
-	 }
+	}
 }
 
 static void
@@ -1972,7 +1987,7 @@ platform_query_devices (NMManager *self)
 	links_array = nm_platform_link_get_all (NM_PLATFORM_GET);
 	links = (NMPlatformLink *) links_array->data;
 	for (i = 0; i < links_array->len; i++)
-		platform_link_added (self, links[i].ifindex, &links[i], NM_PLATFORM_REASON_INTERNAL);
+		platform_link_added (self, links[i].ifindex, &links[i]);
 
 	g_array_unref (links_array);
 }
