@@ -31,7 +31,7 @@
 #include <gudev/gudev.h>
 
 
-typedef enum { /*< skip >*/
+typedef enum {
 	OBJECT_TYPE_UNKNOWN,
 	NMP_OBJECT_TYPE_LINK,
 	NMP_OBJECT_TYPE_IP4_ADDRESS,
