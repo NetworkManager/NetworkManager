@@ -154,6 +154,7 @@ typedef struct {
 	char *state_file;
 
 	GSList *active_connections;
+	GSList *authorizing_connections;
 	guint ac_cleanup_id;
 	NMActiveConnection *primary_connection;
 	NMActiveConnection *activating_connection;
@@ -2696,9 +2697,9 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 		}
 
 		nm_active_connection_set_master (active, master_ac);
-		nm_log_dbg (LOGD_CORE, "Activation of '%s' depends on active connection %s",
+		nm_log_dbg (LOGD_CORE, "Activation of '%s' depends on active connection %p",
 		            nm_connection_get_id (connection),
-		            nm_active_connection_get_path (master_ac));
+		            master_ac);
 	}
 
 	/* Check slaves for master connection and possibly activate them */
@@ -2857,7 +2858,10 @@ _internal_activation_auth_done (NMActiveConnection *active,
                                 gpointer user_data2)
 {
 	NMManager *self = user_data1;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GError *error = NULL;
+
+	priv->authorizing_connections = g_slist_remove (priv->authorizing_connections, active);
 
 	if (success) {
 		if (_internal_activate_generic (self, active, &error)) {
@@ -2898,8 +2902,10 @@ nm_manager_activate_connection (NMManager *self,
                                 NMAuthSubject *subject,
                                 GError **error)
 {
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMActiveConnection *active;
 	char *error_desc = NULL;
+	GSList *iter;
 
 	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (connection != NULL, NULL);
@@ -2918,14 +2924,32 @@ nm_manager_activate_connection (NMManager *self,
 		return NULL;
 	}
 
+	/* Look for a active connection that's equivalent and is already pending authorization
+	 * and eventual activation. This is used to de-duplicate concurrent activations which would
+	 * otherwise race and cause the device to disconnect and reconnect repeatedly.
+	 * In particular, this allows the master and multiple slaves to concurrently auto-activate
+	 * while all the slaves would use the same active-connection. */
+	for (iter = priv->authorizing_connections; iter; iter = g_slist_next (iter)) {
+		active = iter->data;
+
+		if (   connection == nm_active_connection_get_connection (active)
+		    && g_strcmp0 (nm_active_connection_get_specific_object (active), specific_object) == 0
+		    && nm_active_connection_get_device (active) == device
+		    && nm_auth_subject_is_internal (nm_active_connection_get_subject (active))
+		    && nm_auth_subject_is_internal (subject))
+			return active;
+	}
+
 	active = _new_active_connection (self,
 	                                 connection,
 	                                 specific_object,
 	                                 device,
 	                                 subject,
 	                                 error);
-	if (active)
+	if (active) {
+		priv->authorizing_connections = g_slist_prepend (priv->authorizing_connections, active);
 		nm_active_connection_authorize (active, _internal_activation_auth_done, self, NULL);
+	}
 	return active;
 }
 

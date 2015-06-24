@@ -530,6 +530,7 @@ master_state_cb (NMActiveConnection *master,
                  gpointer user_data)
 {
 	NMActiveConnection *self = NM_ACTIVE_CONNECTION (user_data);
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 	NMActiveConnectionState master_state = nm_active_connection_get_state (master);
 
 	check_master_ready (self);
@@ -537,8 +538,8 @@ master_state_cb (NMActiveConnection *master,
 	nm_log_dbg (LOGD_DEVICE, "(%p): master ActiveConnection [%p] state now '%s' (%d)",
 	            self, master, state_to_string (master_state), master_state);
 
-	if (master_state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATING &&
-	    nm_active_connection_get_device (master) == NULL) {
+	if (   master_state >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING
+	    && !priv->master_ready) {
 		/* Master failed without ever creating its device */
 		if (NM_ACTIVE_CONNECTION_GET_CLASS (self)->master_failed)
 			NM_ACTIVE_CONNECTION_GET_CLASS (self)->master_failed (self);
