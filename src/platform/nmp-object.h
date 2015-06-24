@@ -142,7 +142,7 @@ typedef struct {
 	int (*cmd_plobj_cmp) (const NMPlatformObject *obj1, const NMPlatformObject *obj2);
 } NMPClass;
 
-extern const NMPClass _nmp_classes[OBJECT_TYPE_MAX];
+extern const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX];
 
 typedef struct {
 	NMPlatformLink _public;
@@ -254,7 +254,7 @@ NMP_OBJECT_GET_TYPE (const NMPObject *obj)
 {
 	nm_assert (!obj || NMP_OBJECT_IS_VALID (obj));
 
-	return obj ? obj->_class->obj_type : OBJECT_TYPE_UNKNOWN;
+	return obj ? obj->_class->obj_type : NMP_OBJECT_TYPE_UNKNOWN;
 }
 
 

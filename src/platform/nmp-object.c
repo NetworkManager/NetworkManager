@@ -180,7 +180,7 @@ _nmp_object_fixup_link_master_connected (NMPObject *obj, const NMPCache *cache)
 const NMPClass *
 nmp_class_from_type (NMPObjectType obj_type)
 {
-	g_return_val_if_fail (obj_type > OBJECT_TYPE_UNKNOWN && obj_type <= OBJECT_TYPE_MAX, NULL);
+	g_return_val_if_fail (obj_type > NMP_OBJECT_TYPE_UNKNOWN && obj_type <= NMP_OBJECT_TYPE_MAX, NULL);
 
 	return &_nmp_classes[obj_type - 1];
 }
@@ -811,7 +811,7 @@ nmp_object_from_nl (NMPlatform *platform, const struct nl_object *nlo, gboolean 
 	NMPObjectType obj_type = _nlo_get_object_type (nlo);
 	NMPObject *obj;
 
-	if (obj_type == OBJECT_TYPE_UNKNOWN)
+	if (obj_type == NMP_OBJECT_TYPE_UNKNOWN)
 		return NULL;
 
 	obj = nmp_object_new (obj_type, NULL);
@@ -1798,7 +1798,7 @@ ASSERT_nmp_cache_is_consistent (const NMPCache *cache)
 }
 /******************************************************************/
 
-const NMPClass _nmp_classes[OBJECT_TYPE_MAX] = {
+const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 	[NMP_OBJECT_TYPE_LINK - 1] = {
 		.obj_type                           = NMP_OBJECT_TYPE_LINK,
 		.sizeof_data                        = sizeof (NMPObjectLink),
