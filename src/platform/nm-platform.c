@@ -727,20 +727,19 @@ nm_platform_link_get_type_name (NMPlatform *self, int ifindex)
 /**
  * nm_platform_link_get_unmanaged:
  * @self: platform instance
- * @ifindex: Interface index.
- * @managed: Management status in case %TRUE is returned
+ * @ifindex: interface index
+ * @unmanaged: management status (in case %TRUE is returned)
  *
- * Returns: %TRUE if platform overrides whether the device ought
- * to be managed by default. %FALSE with @managed unmodified
- * otherwise.
+ * Returns: %TRUE if platform overrides NM default-unmanaged status,
+ * %FALSE otherwise (with @unmanaged unmodified).
  */
 gboolean
-nm_platform_link_get_unmanaged (NMPlatform *self, int ifindex, gboolean *managed)
+nm_platform_link_get_unmanaged (NMPlatform *self, int ifindex, gboolean *unmanaged)
 {
 	_CHECK_SELF (self, klass, FALSE);
 
 	if (klass->link_get_unmanaged)
-		return klass->link_get_unmanaged (self, ifindex, managed);
+		return klass->link_get_unmanaged (self, ifindex, unmanaged);
 	return FALSE;
 }
 

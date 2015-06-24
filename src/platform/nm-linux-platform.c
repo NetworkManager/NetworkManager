@@ -2828,7 +2828,7 @@ link_get_type_name (NMPlatform *platform, int ifindex)
 }
 
 static gboolean
-link_get_unmanaged (NMPlatform *platform, int ifindex, gboolean *managed)
+link_get_unmanaged (NMPlatform *platform, int ifindex, gboolean *unmanaged)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	const NMPObject *link;
@@ -2839,7 +2839,7 @@ link_get_unmanaged (NMPlatform *platform, int ifindex, gboolean *managed)
 		udev_device = link->_link.udev.device;
 
 	if (udev_device && g_udev_device_get_property (udev_device, "NM_UNMANAGED")) {
-		*managed = g_udev_device_get_property_as_boolean (udev_device, "NM_UNMANAGED");
+		*unmanaged = g_udev_device_get_property_as_boolean (udev_device, "NM_UNMANAGED");
 		return TRUE;
 	}
 
