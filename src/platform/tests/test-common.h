@@ -48,7 +48,7 @@ gboolean ip4_route_exists (const char *ifname, guint32 network, int plen, guint3
 void _assert_ip4_route_exists (const char *file, guint line, const char *func, gboolean exists, const char *ifname, guint32 network, int plen, guint32 metric);
 #define assert_ip4_route_exists(exists, ifname, network, plen, metric) _assert_ip4_route_exists (__FILE__, __LINE__, G_STRFUNC, exists, ifname, network, plen, metric)
 
-void link_callback (NMPlatform *platform, int ifindex, NMPlatformLink *received, NMPlatformSignalChangeType change_type, NMPlatformReason reason, SignalData *data);
+void link_callback (NMPlatform *platform, NMPObjectType obj_type, int ifindex, NMPlatformLink *received, NMPlatformSignalChangeType change_type, NMPlatformReason reason, SignalData *data);
 
 void run_command (const char *format, ...);
 

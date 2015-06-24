@@ -1515,6 +1515,7 @@ device_ip_link_changed (NMDevice *self)
 
 static void
 link_changed_cb (NMPlatform *platform,
+                 NMPObjectType obj_type,
                  int ifindex,
                  NMPlatformLink *info,
                  NMPlatformSignalChangeType change_type,
@@ -7236,6 +7237,7 @@ queued_ip6_config_change (gpointer user_data)
 
 static void
 device_ip4_changed (NMPlatform *platform,
+                    NMPObjectType obj_type,
                     int ifindex,
                     gpointer platform_object,
                     NMPlatformSignalChangeType change_type,
@@ -7254,6 +7256,7 @@ device_ip4_changed (NMPlatform *platform,
 
 static void
 device_ip6_changed (NMPlatform *platform,
+                    NMPObjectType obj_type,
                     int ifindex,
                     gpointer platform_object,
                     NMPlatformSignalChangeType change_type,

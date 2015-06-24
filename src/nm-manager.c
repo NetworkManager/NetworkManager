@@ -1955,6 +1955,7 @@ _platform_link_cb_idle (PlatformLinkCbData *data)
 
 static void
 platform_link_cb (NMPlatform *platform,
+                  NMPObjectType obj_type,
                   int ifindex,
                   NMPlatformLink *plink,
                   NMPlatformSignalChangeType change_type,

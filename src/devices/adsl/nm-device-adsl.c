@@ -295,7 +295,7 @@ error:
 }
 
 static void
-link_changed_cb (NMPlatform *platform, int ifindex, NMPlatformLink *info, NMPlatformSignalChangeType change_type, NMPlatformReason reason, NMDeviceAdsl *self)
+link_changed_cb (NMPlatform *platform, NMPObjectType obj_type, int ifindex, NMPlatformLink *info, NMPlatformSignalChangeType change_type, NMPlatformReason reason, NMDeviceAdsl *self)
 {
 	if (change_type == NM_PLATFORM_SIGNAL_REMOVED) {
 		NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (self);

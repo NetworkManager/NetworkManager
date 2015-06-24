@@ -96,7 +96,7 @@ devtimeout_ready (gpointer user_data)
 }
 
 static void
-link_changed (NMPlatform *platform, int ifindex, NMPlatformLink *link,
+link_changed (NMPlatform *platform, NMPObjectType *obj_type, int ifindex, const NMPlatformLink *link,
               NMPlatformSignalChangeType change_type, NMPlatformReason reason,
               NMConnection *self)
 {

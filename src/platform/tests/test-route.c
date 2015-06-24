@@ -9,7 +9,7 @@
 #define DEVICE_NAME "nm-test-device"
 
 static void
-ip4_route_callback (NMPlatform *platform, int ifindex, NMPlatformIP4Route *received, NMPlatformSignalChangeType change_type, NMPlatformReason reason, SignalData *data)
+ip4_route_callback (NMPlatform *platform, NMPObjectType obj_type, int ifindex, const NMPlatformIP4Route *received, NMPlatformSignalChangeType change_type, NMPlatformReason reason, SignalData *data)
 {
 	g_assert (received);
 	g_assert_cmpint (received->ifindex, ==, ifindex);
@@ -29,7 +29,7 @@ ip4_route_callback (NMPlatform *platform, int ifindex, NMPlatformIP4Route *recei
 }
 
 static void
-ip6_route_callback (NMPlatform *platform, int ifindex, NMPlatformIP6Route *received, NMPlatformSignalChangeType change_type, NMPlatformReason reason, SignalData *data)
+ip6_route_callback (NMPlatform *platform, NMPObjectType obj_type, int ifindex, const NMPlatformIP6Route *received, NMPlatformSignalChangeType change_type, NMPlatformReason reason, SignalData *data)
 {
 	g_assert (received);
 	g_assert_cmpint (received->ifindex, ==, ifindex);
