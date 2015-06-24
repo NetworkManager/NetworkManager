@@ -1313,51 +1313,30 @@ _platform_ipx_route_changed_cb (const VTableIP *vtable,
 }
 
 static void
-_platform_ip4_address_changed_cb (NMPlatform *platform,
-                                  NMPObjectType obj_type,
-                                  int ifindex,
-                                  gpointer platform_object,
-                                  NMPlatformSignalChangeType change_type,
-                                  NMPlatformReason reason,
-                                  NMDefaultRouteManager *self)
+_platform_changed_cb (NMPlatform *platform,
+                      NMPObjectType obj_type,
+                      int ifindex,
+                      gpointer platform_object,
+                      NMPlatformSignalChangeType change_type,
+                      NMPlatformReason reason,
+                      NMDefaultRouteManager *self)
 {
-	_platform_ipx_route_changed_cb (&vtable_ip4, self, NULL);
-}
-
-static void
-_platform_ip6_address_changed_cb (NMPlatform *platform,
-                                  NMPObjectType obj_type,
-                                  int ifindex,
-                                  gpointer platform_object,
-                                  NMPlatformSignalChangeType change_type,
-                                  NMPlatformReason reason,
-                                  NMDefaultRouteManager *self)
-{
-	_platform_ipx_route_changed_cb (&vtable_ip6, self, NULL);
-}
-
-static void
-_platform_ip4_route_changed_cb (NMPlatform *platform,
-                                NMPObjectType obj_type,
-                                int ifindex,
-                                gpointer platform_object,
-                                NMPlatformSignalChangeType change_type,
-                                NMPlatformReason reason,
-                                NMDefaultRouteManager *self)
-{
-	_platform_ipx_route_changed_cb (&vtable_ip4, self, platform_object);
-}
-
-static void
-_platform_ip6_route_changed_cb (NMPlatform *platform,
-                                NMPObjectType obj_type,
-                                int ifindex,
-                                gpointer platform_object,
-                                NMPlatformSignalChangeType change_type,
-                                NMPlatformReason reason,
-                                NMDefaultRouteManager *self)
-{
-	_platform_ipx_route_changed_cb (&vtable_ip6, self, platform_object);
+	switch (obj_type) {
+	case NMP_OBJECT_TYPE_IP4_ADDRESS:
+		_platform_ipx_route_changed_cb (&vtable_ip4, self, NULL);
+		break;
+	case NMP_OBJECT_TYPE_IP6_ADDRESS:
+		_platform_ipx_route_changed_cb (&vtable_ip6, self, NULL);
+		break;
+	case NMP_OBJECT_TYPE_IP4_ROUTE:
+		_platform_ipx_route_changed_cb (&vtable_ip4, self, (const NMPlatformIPRoute *) platform_object);
+		break;
+	case NMP_OBJECT_TYPE_IP6_ROUTE:
+		_platform_ipx_route_changed_cb (&vtable_ip6, self, (const NMPlatformIPRoute *) platform_object);
+		break;
+	default:
+		g_return_if_reached ();
+	}
 }
 
 /***********************************************************************************/
@@ -1371,10 +1350,10 @@ nm_default_route_manager_init (NMDefaultRouteManager *self)
 	priv->entries_ip6 = g_ptr_array_new_full (0, (GDestroyNotify) _entry_free);
 
 	priv->platform = g_object_ref (nm_platform_get ());
-	g_signal_connect (priv->platform, NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED, G_CALLBACK (_platform_ip4_address_changed_cb), self);
-	g_signal_connect (priv->platform, NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED, G_CALLBACK (_platform_ip6_address_changed_cb), self);
-	g_signal_connect (priv->platform, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, G_CALLBACK (_platform_ip4_route_changed_cb), self);
-	g_signal_connect (priv->platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, G_CALLBACK (_platform_ip6_route_changed_cb), self);
+	g_signal_connect (priv->platform, NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED, G_CALLBACK (_platform_changed_cb), self);
+	g_signal_connect (priv->platform, NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED, G_CALLBACK (_platform_changed_cb), self);
+	g_signal_connect (priv->platform, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, G_CALLBACK (_platform_changed_cb), self);
+	g_signal_connect (priv->platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, G_CALLBACK (_platform_changed_cb), self);
 }
 
 static void
@@ -1386,7 +1365,7 @@ dispose (GObject *object)
 	priv->disposed = TRUE;
 
 	if (priv->platform) {
-		g_signal_handlers_disconnect_by_data (priv->platform, self);
+		g_signal_handlers_disconnect_by_func (priv->platform, G_CALLBACK (_platform_changed_cb), self);
 		g_clear_object (&priv->platform);
 	}
 
