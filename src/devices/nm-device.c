@@ -3097,12 +3097,10 @@ _device_get_default_route_from_platform (NMDevice *self, int addr_family, NMPlat
 /*********************************************/
 
 static void
-ensure_con_ipx_config (NMDevice *self)
+ensure_con_ip4_config (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *connection;
-
-	g_assert (!!priv->con_ip4_config == !!priv->con_ip6_config);
 
 	if (priv->con_ip4_config)
 		return;
@@ -3112,20 +3110,37 @@ ensure_con_ipx_config (NMDevice *self)
 		return;
 
 	priv->con_ip4_config = nm_ip4_config_new ();
-	priv->con_ip6_config = nm_ip6_config_new ();
-
 	nm_ip4_config_merge_setting (priv->con_ip4_config,
 	                             nm_connection_get_setting_ip4_config (connection),
 	                             nm_device_get_ip4_route_metric (self));
+
+	if (nm_device_uses_assumed_connection (self)) {
+		/* For assumed connections ignore all addresses and routes. */
+		nm_ip4_config_reset_addresses (priv->con_ip4_config);
+		nm_ip4_config_reset_routes (priv->con_ip4_config);
+	}
+}
+
+static void
+ensure_con_ip6_config (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMConnection *connection;
+
+	if (priv->con_ip6_config)
+		return;
+
+	connection = nm_device_get_connection (self);
+	if (!connection)
+		return;
+
+	priv->con_ip6_config = nm_ip6_config_new ();
 	nm_ip6_config_merge_setting (priv->con_ip6_config,
 	                             nm_connection_get_setting_ip6_config (connection),
 	                             nm_device_get_ip6_route_metric (self));
 
 	if (nm_device_uses_assumed_connection (self)) {
 		/* For assumed connections ignore all addresses and routes. */
-		nm_ip4_config_reset_addresses (priv->con_ip4_config);
-		nm_ip4_config_reset_routes (priv->con_ip4_config);
-
 		nm_ip6_config_reset_addresses (priv->con_ip6_config);
 		nm_ip6_config_reset_routes (priv->con_ip6_config);
 	}
@@ -3184,7 +3199,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 	composite = nm_ip4_config_new ();
 
 	if (commit)
-		ensure_con_ipx_config (self);
+		ensure_con_ip4_config (self);
 
 	if (priv->dev_ip4_config)
 		nm_ip4_config_merge (composite, priv->dev_ip4_config);
@@ -3777,7 +3792,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 	composite = nm_ip6_config_new ();
 
 	if (commit)
-		ensure_con_ipx_config (self);
+		ensure_con_ip6_config (self);
 
 	/* Merge all the IP configs into the composite config */
 	if (priv->ac_ip6_config)
