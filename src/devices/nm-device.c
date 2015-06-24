@@ -7236,7 +7236,7 @@ queued_ip6_config_change (gpointer user_data)
 }
 
 static void
-device_ip4_changed (NMPlatform *platform,
+device_ipx_changed (NMPlatform *platform,
                     NMPObjectType obj_type,
                     int ifindex,
                     gpointer platform_object,
@@ -7244,32 +7244,29 @@ device_ip4_changed (NMPlatform *platform,
                     NMPlatformReason reason,
                     NMDevice *self)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDevicePrivate *priv;
 
-	if (nm_device_get_ip_ifindex (self) == ifindex) {
+	if (nm_device_get_ip_ifindex (self) != ifindex)
+		return;
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	switch (obj_type) {
+	case NMP_OBJECT_TYPE_IP4_ADDRESS:
+	case NMP_OBJECT_TYPE_IP4_ROUTE:
 		if (!priv->queued_ip4_config_id) {
 			priv->queued_ip4_config_id = g_idle_add (queued_ip4_config_change, self);
 			_LOGD (LOGD_DEVICE, "queued IP4 config change");
 		}
-	}
-}
-
-static void
-device_ip6_changed (NMPlatform *platform,
-                    NMPObjectType obj_type,
-                    int ifindex,
-                    gpointer platform_object,
-                    NMPlatformSignalChangeType change_type,
-                    NMPlatformReason reason,
-                    NMDevice *self)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	if (nm_device_get_ip_ifindex (self) == ifindex) {
+		break;
+	case NMP_OBJECT_TYPE_IP6_ADDRESS:
+	case NMP_OBJECT_TYPE_IP6_ROUTE:
 		if (!priv->queued_ip6_config_id) {
 			priv->queued_ip6_config_id = g_idle_add (queued_ip6_config_change, self);
 			_LOGD (LOGD_DEVICE, "queued IP6 config change");
 		}
+		break;
+	default:
+		g_return_if_reached ();
 	}
 }
 
@@ -8840,10 +8837,10 @@ constructor (GType type,
 
 	/* Watch for external IP config changes */
 	platform = nm_platform_get ();
-	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED, G_CALLBACK (device_ip4_changed), self);
-	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED, G_CALLBACK (device_ip6_changed), self);
-	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, G_CALLBACK (device_ip4_changed), self);
-	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, G_CALLBACK (device_ip6_changed), self);
+	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED, G_CALLBACK (device_ipx_changed), self);
+	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED, G_CALLBACK (device_ipx_changed), self);
+	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, G_CALLBACK (device_ipx_changed), self);
+	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, G_CALLBACK (device_ipx_changed), self);
 	g_signal_connect (platform, NM_PLATFORM_SIGNAL_LINK_CHANGED, G_CALLBACK (link_changed_cb), self);
 
 	/* trigger initial ip config change to initialize ip-config */
@@ -9002,8 +8999,7 @@ dispose (GObject *object)
 	_clear_queued_act_request (priv);
 
 	platform = nm_platform_get ();
-	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (device_ip4_changed), self);
-	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (device_ip6_changed), self);
+	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (device_ipx_changed), self);
 	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (link_changed_cb), self);
 
 	nm_clear_g_source (&priv->device_link_changed_id);
