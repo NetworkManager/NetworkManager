@@ -61,7 +61,7 @@ setup_dev0_ip4 (int ifindex, guint mss_of_first_route, guint32 metric_of_second_
 	route.mss = 0;
 	g_array_append_val (routes, route);
 
-	nm_route_manager_ip4_route_sync (nm_route_manager_get (), ifindex, routes);
+	nm_route_manager_ip4_route_sync (nm_route_manager_get (), ifindex, routes, TRUE);
 	g_array_free (routes, TRUE);
 }
 
@@ -107,7 +107,7 @@ setup_dev1_ip4 (int ifindex)
 	route.metric = 22;
 	g_array_append_val (routes, route);
 
-	nm_route_manager_ip4_route_sync (nm_route_manager_get (), ifindex, routes);
+	nm_route_manager_ip4_route_sync (nm_route_manager_get (), ifindex, routes, TRUE);
 	g_array_free (routes, TRUE);
 }
 
@@ -134,7 +134,7 @@ update_dev0_ip4 (int ifindex)
 	route.metric = 21;
 	g_array_append_val (routes, route);
 
-	nm_route_manager_ip4_route_sync (nm_route_manager_get (), ifindex, routes);
+	nm_route_manager_ip4_route_sync (nm_route_manager_get (), ifindex, routes, TRUE);
 	g_array_free (routes, TRUE);
 }
 
@@ -346,7 +346,7 @@ setup_dev0_ip6 (int ifindex)
 	                                       0);
 	g_array_append_val (routes, *route);
 
-	nm_route_manager_ip6_route_sync (nm_route_manager_get (), ifindex, routes);
+	nm_route_manager_ip6_route_sync (nm_route_manager_get (), ifindex, routes, TRUE);
 	g_array_free (routes, TRUE);
 }
 
@@ -403,7 +403,7 @@ setup_dev1_ip6 (int ifindex)
 	                                       0);
 	g_array_append_val (routes, *route);
 
-	nm_route_manager_ip6_route_sync (nm_route_manager_get (), ifindex, routes);
+	nm_route_manager_ip6_route_sync (nm_route_manager_get (), ifindex, routes, TRUE);
 	g_array_free (routes, TRUE);
 }
 
@@ -450,7 +450,7 @@ update_dev0_ip6 (int ifindex)
 	                                       0);
 	g_array_append_val (routes, *route);
 
-	nm_route_manager_ip6_route_sync (nm_route_manager_get (), ifindex, routes);
+	nm_route_manager_ip6_route_sync (nm_route_manager_get (), ifindex, routes, TRUE);
 	g_array_free (routes, TRUE);
 }
 

@@ -345,7 +345,7 @@ _sort_indexes_cmp (guint *a, guint *b)
 /*********************************************************************************************/
 
 static gboolean
-_vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const GArray *known_routes)
+_vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const GArray *known_routes, gboolean ignore_kernel_routes)
 {
 	NMRouteManagerPrivate *priv = NM_ROUTE_MANAGER_GET_PRIVATE (self);
 	GArray *plat_routes;
@@ -362,7 +362,10 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 	nm_platform_process_events (priv->platform);
 
 	ipx_routes = vtable->vt->is_ip4 ? &priv->ip4_routes : &priv->ip6_routes;
-	plat_routes = vtable->vt->route_get_all (priv->platform, ifindex, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
+	plat_routes = vtable->vt->route_get_all (priv->platform, ifindex,
+	                                         ignore_kernel_routes
+	                                             ? NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT
+	                                             : NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_RTPROT_KERNEL);
 	plat_routes_idx = _route_index_create (vtable, plat_routes);
 	known_routes_idx = _route_index_create (vtable, known_routes);
 
@@ -590,6 +593,7 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
  * nm_route_manager_ip4_route_sync:
  * @ifindex: Interface index
  * @known_routes: List of routes
+ * @ignore_kernel_routes: if %TRUE, ignore kernel routes.
  *
  * A convenience function to synchronize routes for a specific interface
  * with the least possible disturbance. It simply removes routes that are
@@ -600,15 +604,16 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
  * Returns: %TRUE on success.
  */
 gboolean
-nm_route_manager_ip4_route_sync (NMRouteManager *self, int ifindex, const GArray *known_routes)
+nm_route_manager_ip4_route_sync (NMRouteManager *self, int ifindex, const GArray *known_routes, gboolean ignore_kernel_routes)
 {
-	return _vx_route_sync (&vtable_v4, self, ifindex, known_routes);
+	return _vx_route_sync (&vtable_v4, self, ifindex, known_routes, ignore_kernel_routes);
 }
 
 /**
  * nm_route_manager_ip6_route_sync:
  * @ifindex: Interface index
  * @known_routes: List of routes
+ * @ignore_kernel_routes: if %TRUE, ignore kernel routes.
  *
  * A convenience function to synchronize routes for a specific interface
  * with the least possible disturbance. It simply removes routes that are
@@ -619,16 +624,16 @@ nm_route_manager_ip4_route_sync (NMRouteManager *self, int ifindex, const GArray
  * Returns: %TRUE on success.
  */
 gboolean
-nm_route_manager_ip6_route_sync (NMRouteManager *self, int ifindex, const GArray *known_routes)
+nm_route_manager_ip6_route_sync (NMRouteManager *self, int ifindex, const GArray *known_routes, gboolean ignore_kernel_routes)
 {
-	return _vx_route_sync (&vtable_v6, self, ifindex, known_routes);
+	return _vx_route_sync (&vtable_v6, self, ifindex, known_routes, ignore_kernel_routes);
 }
 
 gboolean
 nm_route_manager_route_flush (NMRouteManager *self, int ifindex)
 {
-	return    nm_route_manager_ip4_route_sync (self, ifindex, NULL)
-	       && nm_route_manager_ip6_route_sync (self, ifindex, NULL);
+	return    nm_route_manager_ip4_route_sync (self, ifindex, NULL, TRUE)
+	       && nm_route_manager_ip6_route_sync (self, ifindex, NULL, TRUE);
 }
 
 /*********************************************************************************************/
