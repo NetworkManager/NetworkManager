@@ -39,6 +39,8 @@
 #include "nm-enum-types.h"
 #include "nm-core-internal.h"
 
+#define ADDRESS_LIFETIME_PADDING 5
+
 G_STATIC_ASSERT (sizeof ( ((NMPlatformLink *) NULL)->addr.data ) == NM_UTILS_HWADDR_LEN_MAX);
 
 #define debug(...) nm_log_dbg (LOGD_PLATFORM, __VA_ARGS__)
@@ -1948,7 +1950,7 @@ nm_platform_ip6_address_exists (NMPlatform *self, int ifindex, struct in6_addr a
 }
 
 static gboolean
-array_contains_ip4_address (const GArray *addresses, const NMPlatformIP4Address *address)
+array_contains_ip4_address (const GArray *addresses, const NMPlatformIP4Address *address, gint64 now, guint32 padding)
 {
 	guint len = addresses ? addresses->len : 0;
 	guint i;
@@ -1956,15 +1958,20 @@ array_contains_ip4_address (const GArray *addresses, const NMPlatformIP4Address 
 	for (i = 0; i < len; i++) {
 		NMPlatformIP4Address *candidate = &g_array_index (addresses, NMPlatformIP4Address, i);
 
-		if (candidate->address == address->address && candidate->plen == address->plen)
-			return TRUE;
+		if (candidate->address == address->address && candidate->plen == address->plen) {
+			guint32 lifetime, preferred;
+
+			if (nmp_utils_lifetime_get (candidate->timestamp, candidate->lifetime, candidate->preferred,
+			                            now, padding, &lifetime, &preferred))
+				return TRUE;
+		}
 	}
 
 	return FALSE;
 }
 
 static gboolean
-array_contains_ip6_address (const GArray *addresses, const NMPlatformIP6Address *address)
+array_contains_ip6_address (const GArray *addresses, const NMPlatformIP6Address *address, gint64 now, guint32 padding)
 {
 	guint len = addresses ? addresses->len : 0;
 	guint i;
@@ -1972,8 +1979,13 @@ array_contains_ip6_address (const GArray *addresses, const NMPlatformIP6Address 
 	for (i = 0; i < len; i++) {
 		NMPlatformIP6Address *candidate = &g_array_index (addresses, NMPlatformIP6Address, i);
 
-		if (IN6_ARE_ADDR_EQUAL (&candidate->address, &address->address) && candidate->plen == address->plen)
-			return TRUE;
+		if (IN6_ARE_ADDR_EQUAL (&candidate->address, &address->address) && candidate->plen == address->plen) {
+			guint32 lifetime, preferred;
+
+			if (nmp_utils_lifetime_get (candidate->timestamp, candidate->lifetime, candidate->preferred,
+			                            now, padding, &lifetime, &preferred))
+				return TRUE;
+		}
 	}
 
 	return FALSE;
@@ -2027,7 +2039,7 @@ nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, const GArray *known
 	for (i = 0; i < addresses->len; i++) {
 		address = &g_array_index (addresses, NMPlatformIP4Address, i);
 
-		if (!array_contains_ip4_address (known_addresses, address))
+		if (!array_contains_ip4_address (known_addresses, address, now, ADDRESS_LIFETIME_PADDING))
 			nm_platform_ip4_address_delete (self, ifindex, address->address, address->plen, address->peer_address);
 	}
 	g_array_free (addresses, TRUE);
@@ -2042,9 +2054,8 @@ nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, const GArray *known
 		guint32 network;
 		gboolean reinstall_device_route = FALSE;
 
-		/* add a padding of 5 seconds to avoid potential races. */
 		if (!nmp_utils_lifetime_get (known_address->timestamp, known_address->lifetime, known_address->preferred,
-		                             now, 5, &lifetime, &preferred))
+		                             now, ADDRESS_LIFETIME_PADDING, &lifetime, &preferred))
 			continue;
 
 		if (nm_platform_ip4_check_reinstall_device_route (self, ifindex, known_address, device_route_metric))
@@ -2103,7 +2114,7 @@ nm_platform_ip6_address_sync (NMPlatform *self, int ifindex, const GArray *known
 		if (keep_link_local && IN6_IS_ADDR_LINKLOCAL (&address->address))
 			continue;
 
-		if (!array_contains_ip6_address (known_addresses, address))
+		if (!array_contains_ip6_address (known_addresses, address, now, ADDRESS_LIFETIME_PADDING))
 			nm_platform_ip6_address_delete (self, ifindex, address->address, address->plen);
 	}
 	g_array_free (addresses, TRUE);
@@ -2116,9 +2127,8 @@ nm_platform_ip6_address_sync (NMPlatform *self, int ifindex, const GArray *known
 		const NMPlatformIP6Address *known_address = &g_array_index (known_addresses, NMPlatformIP6Address, i);
 		guint32 lifetime, preferred;
 
-		/* add a padding of 5 seconds to avoid potential races. */
 		if (!nmp_utils_lifetime_get (known_address->timestamp, known_address->lifetime, known_address->preferred,
-		                             now, 5, &lifetime, &preferred))
+		                             now, ADDRESS_LIFETIME_PADDING, &lifetime, &preferred))
 			continue;
 
 		if (!nm_platform_ip6_address_add (self, ifindex, known_address->address,
