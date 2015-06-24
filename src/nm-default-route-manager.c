@@ -1314,6 +1314,7 @@ _platform_ipx_route_changed_cb (const VTableIP *vtable,
 
 static void
 _platform_ip4_address_changed_cb (NMPlatform *platform,
+                                  NMPObjectType obj_type,
                                   int ifindex,
                                   gpointer platform_object,
                                   NMPlatformSignalChangeType change_type,
@@ -1325,6 +1326,7 @@ _platform_ip4_address_changed_cb (NMPlatform *platform,
 
 static void
 _platform_ip6_address_changed_cb (NMPlatform *platform,
+                                  NMPObjectType obj_type,
                                   int ifindex,
                                   gpointer platform_object,
                                   NMPlatformSignalChangeType change_type,
@@ -1336,6 +1338,7 @@ _platform_ip6_address_changed_cb (NMPlatform *platform,
 
 static void
 _platform_ip4_route_changed_cb (NMPlatform *platform,
+                                NMPObjectType obj_type,
                                 int ifindex,
                                 gpointer platform_object,
                                 NMPlatformSignalChangeType change_type,
@@ -1347,6 +1350,7 @@ _platform_ip4_route_changed_cb (NMPlatform *platform,
 
 static void
 _platform_ip6_route_changed_cb (NMPlatform *platform,
+                                NMPObjectType obj_type,
                                 int ifindex,
                                 gpointer platform_object,
                                 NMPlatformSignalChangeType change_type,
