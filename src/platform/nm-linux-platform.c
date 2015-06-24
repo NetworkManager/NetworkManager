@@ -764,7 +764,7 @@ _nlo_get_object_type (const struct nl_object *object)
 	const char *type_str;
 
 	if (!object || !(type_str = nl_object_get_type (object)))
-		return OBJECT_TYPE_UNKNOWN;
+		return NMP_OBJECT_TYPE_UNKNOWN;
 
 	if (!strcmp (type_str, "route/link"))
 		return NMP_OBJECT_TYPE_LINK;
@@ -775,7 +775,7 @@ _nlo_get_object_type (const struct nl_object *object)
 		case AF_INET6:
 			return NMP_OBJECT_TYPE_IP6_ADDRESS;
 		default:
-			return OBJECT_TYPE_UNKNOWN;
+			return NMP_OBJECT_TYPE_UNKNOWN;
 		}
 	} else if (!strcmp (type_str, "route/route")) {
 		switch (rtnl_route_get_family ((struct rtnl_route *) object)) {
@@ -784,10 +784,10 @@ _nlo_get_object_type (const struct nl_object *object)
 		case AF_INET6:
 			return NMP_OBJECT_TYPE_IP6_ROUTE;
 		default:
-			return OBJECT_TYPE_UNKNOWN;
+			return NMP_OBJECT_TYPE_UNKNOWN;
 		}
 	} else
-		return OBJECT_TYPE_UNKNOWN;
+		return NMP_OBJECT_TYPE_UNKNOWN;
 }
 
 /******************************************************************/
@@ -1449,7 +1449,7 @@ delayed_action_refresh_to_object_type (DelayedActionType action_type)
 	case DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES:     return NMP_OBJECT_TYPE_IP6_ADDRESS;
 	case DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES:        return NMP_OBJECT_TYPE_IP4_ROUTE;
 	case DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES:        return NMP_OBJECT_TYPE_IP6_ROUTE;
-	default: g_return_val_if_reached (OBJECT_TYPE_UNKNOWN);
+	default: g_return_val_if_reached (NMP_OBJECT_TYPE_UNKNOWN);
 	}
 }
 
