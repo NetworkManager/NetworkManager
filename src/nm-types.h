@@ -120,6 +120,17 @@ typedef enum {
 	NM_LINK_TYPE_TEAM,
 } NMLinkType;
 
+typedef enum {
+	OBJECT_TYPE_UNKNOWN,
+	NMP_OBJECT_TYPE_LINK,
+	NMP_OBJECT_TYPE_IP4_ADDRESS,
+	NMP_OBJECT_TYPE_IP6_ADDRESS,
+	NMP_OBJECT_TYPE_IP4_ROUTE,
+	NMP_OBJECT_TYPE_IP6_ROUTE,
+	__OBJECT_TYPE_LAST,
+	OBJECT_TYPE_MAX = __OBJECT_TYPE_LAST - 1,
+} NMPObjectType;
+
 /* settings */
 typedef struct _NMAgentManager       NMAgentManager;
 typedef struct _NMSecretAgent        NMSecretAgent;
