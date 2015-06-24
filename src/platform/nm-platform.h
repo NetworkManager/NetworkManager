@@ -422,7 +422,7 @@ typedef struct {
 	                      NMPlatformLink *out_link);
 	gboolean (*link_delete) (NMPlatform *, int ifindex);
 	const char *(*link_get_type_name) (NMPlatform *, int ifindex);
-	gboolean (*link_get_unmanaged) (NMPlatform *, int ifindex, gboolean *managed);
+	gboolean (*link_get_unmanaged) (NMPlatform *, int ifindex, gboolean *unmanaged);
 
 	gboolean (*link_refresh) (NMPlatform *, int ifindex);
 	void (*process_events) (NMPlatform *self);
@@ -613,7 +613,7 @@ gboolean nm_platform_link_get_user_ipv6ll_enabled (NMPlatform *self, int ifindex
 gconstpointer nm_platform_link_get_address (NMPlatform *self, int ifindex, size_t *length);
 int nm_platform_link_get_master (NMPlatform *self, int slave);
 
-gboolean nm_platform_link_get_unmanaged (NMPlatform *self, int ifindex, gboolean *managed);
+gboolean nm_platform_link_get_unmanaged (NMPlatform *self, int ifindex, gboolean *unmanaged);
 gboolean nm_platform_link_supports_slaves (NMPlatform *self, int ifindex);
 const char *nm_platform_link_get_type_name (NMPlatform *self, int ifindex);
 
