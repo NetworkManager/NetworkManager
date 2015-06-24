@@ -152,7 +152,7 @@ _keyfile_convert (NMConnection **con,
 		c0_k1_c2 = _nm_keyfile_read (c0_k1, keyfile_name, base_dir, read_handler, read_data, FALSE);
 		c0_k1_c2_k3 = _nm_keyfile_write (c0_k1_c2, write_handler, write_data);
 
-		_nm_keyfile_equals (c0_k1, c0_k1_c2_k3);
+		g_assert (_nm_keyfile_equals (c0_k1, c0_k1_c2_k3));
 	}
 	if (k0) {
 		NMSetting8021x *s1, *s2;
@@ -214,7 +214,7 @@ _keyfile_convert (NMConnection **con,
 	else {
 		/* finally, if both a keyfile and a connection are given, assert that they are equal
 		 * after a round of conversion. */
-		_nm_keyfile_equals (c0_k1, k0_c1_k2);
+		g_assert (_nm_keyfile_equals (c0_k1, k0_c1_k2));
 		nmtst_assert_connection_equals (k0_c1, FALSE, c0_k1_c2, FALSE);
 	}
 }
