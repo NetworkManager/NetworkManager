@@ -359,6 +359,8 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 	const NMPlatformIPXRoute *cur_known_route, *cur_plat_route;
 	NMPlatformIPXRoute *cur_ipx_route;
 
+	nm_platform_process_events (priv->platform);
+
 	ipx_routes = vtable->vt->is_ip4 ? &priv->ip4_routes : &priv->ip6_routes;
 	plat_routes = vtable->vt->route_get_all (priv->platform, ifindex, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
 	plat_routes_idx = _route_index_create (vtable, plat_routes);
