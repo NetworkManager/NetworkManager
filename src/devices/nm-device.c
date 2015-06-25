@@ -1156,6 +1156,37 @@ nm_device_finish_init (NMDevice *self)
 }
 
 static void
+update_dynamic_ip_setup (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	g_hash_table_remove_all (priv->ip6_saved_properties);
+
+	if (priv->dhcp4_client) {
+		if (!nm_device_dhcp4_renew (self, FALSE)) {
+			nm_device_state_changed (self,
+			                         NM_DEVICE_STATE_FAILED,
+			                         NM_DEVICE_STATE_REASON_DHCP_FAILED);
+			return;
+		}
+	}
+	if (priv->dhcp6_client) {
+		if (!nm_device_dhcp6_renew (self, FALSE)) {
+			nm_device_state_changed (self,
+			                         NM_DEVICE_STATE_FAILED,
+			                         NM_DEVICE_STATE_REASON_DHCP_FAILED);
+			return;
+		}
+	}
+	if (priv->rdisc) {
+		/* FIXME: todo */
+	}
+	if (priv->dnsmasq_manager) {
+		/* FIXME: todo */
+	}
+}
+
+static void
 carrier_changed (NMDevice *self, gboolean carrier)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
@@ -1204,6 +1235,12 @@ carrier_changed (NMDevice *self, gboolean carrier)
 			 * the device.
 			 */
 			nm_device_emit_recheck_auto_activate (self);
+		} else if (priv->state == NM_DEVICE_STATE_ACTIVATED) {
+			/* If the device is active without a carrier (probably because it is
+			 * tagged for carrier ignore) ensure that when the carrier appears we
+			 * renew DHCP leases and such.
+			 */
+			update_dynamic_ip_setup (self);
 		}
 	} else {
 		g_return_if_fail (priv->state >= NM_DEVICE_STATE_UNAVAILABLE);
@@ -1282,37 +1319,6 @@ nm_device_set_carrier (NMDevice *self, gboolean carrier)
 		                                                link_disconnect_action_cb, self);
 		_LOGD (LOGD_DEVICE, "link disconnected (deferring action for %d seconds) (id=%u)",
 		       LINK_DISCONNECT_DELAY, priv->carrier_defer_id);
-	}
-}
-
-static void
-update_for_ip_ifname_change (NMDevice *self)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	g_hash_table_remove_all (priv->ip6_saved_properties);
-
-	if (priv->dhcp4_client) {
-		if (!nm_device_dhcp4_renew (self, FALSE)) {
-			nm_device_state_changed (self,
-			                         NM_DEVICE_STATE_FAILED,
-			                         NM_DEVICE_STATE_REASON_DHCP_FAILED);
-			return;
-		}
-	}
-	if (priv->dhcp6_client) {
-		if (!nm_device_dhcp6_renew (self, FALSE)) {
-			nm_device_state_changed (self,
-			                         NM_DEVICE_STATE_FAILED,
-			                         NM_DEVICE_STATE_REASON_DHCP_FAILED);
-			return;
-		}
-	}
-	if (priv->rdisc) {
-		/* FIXME: todo */
-	}
-	if (priv->dnsmasq_manager) {
-		/* FIXME: todo */
 	}
 }
 
@@ -1422,7 +1428,7 @@ device_link_changed (NMDevice *self)
 
 	/* Update DHCP, etc, if needed */
 	if (ip_ifname_changed)
-		update_for_ip_ifname_change (self);
+		update_dynamic_ip_setup (self);
 
 	if (priv->up != NM_FLAGS_HAS (info.flags, IFF_UP)) {
 		priv->up = NM_FLAGS_HAS (info.flags, IFF_UP);
@@ -1508,7 +1514,7 @@ device_ip_link_changed (NMDevice *self)
 		priv->ip_iface = g_strdup (pllink->name);
 
 		g_object_notify (G_OBJECT (self), NM_DEVICE_IP_IFACE);
-		update_for_ip_ifname_change (self);
+		update_dynamic_ip_setup (self);
 	}
 	return G_SOURCE_REMOVE;
 }
