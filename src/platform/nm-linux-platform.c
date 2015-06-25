@@ -1019,7 +1019,7 @@ _nmp_vt_cmd_plobj_init_from_nl_link (NMPlatform *platform, NMPlatformObject *_ob
 		guint8 mode = 0;
 
 		if (rtnl_link_inet6_get_addr_gen_mode (nlo, &mode) == 0)
-			obj->inet6_addr_gen_mode_inv = ~mode;
+			obj->inet6_addr_gen_mode_inv = _nm_platform_uint8_inv (mode);
 	}
 #endif
 
