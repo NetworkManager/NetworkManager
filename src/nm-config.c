@@ -408,6 +408,45 @@ nm_config_create_keyfile ()
 	return keyfile;
 }
 
+static int
+_sort_groups_cmp (const char **pa, const char **pb, gpointer dummy)
+{
+	const char *a, *b;
+	gboolean a_is_connection, b_is_connection;
+
+	/* basic NULL checking... */
+	if (pa == pb)
+		return 0;
+	if (!pa)
+		return -1;
+	if (!pb)
+		return 1;
+
+	a = *pa;
+	b = *pb;
+
+	a_is_connection = g_str_has_prefix (a, "connection");
+	b_is_connection = g_str_has_prefix (b, "connection");
+
+	if (a_is_connection != b_is_connection) {
+		/* one is a [connection*] entry, the other not. We sort [connection*] entires
+		 * after.  */
+		if (a_is_connection)
+			return 1;
+		return -1;
+	}
+	if (!a_is_connection) {
+		/* both are non-connection entries. Don't reorder. */
+		return 0;
+	}
+
+	/* both are [connection.\+] entires. Reverse their order.
+	 * One of the sections might be literally [connection]. That section
+	 * is special and it's order will be fixed later. It doesn't actually
+	 * matter here how it compares with [connection.\+] sections. */
+	return pa > pb ? -1 : 1;
+}
+
 static gboolean
 read_config (GKeyFile *keyfile, const char *path, GError **error)
 {
@@ -435,6 +474,25 @@ read_config (GKeyFile *keyfile, const char *path, GError **error)
 
 	/* Override the current settings with the new ones */
 	groups = g_key_file_get_groups (kf, &ngroups);
+	if (!groups)
+		ngroups = 0;
+
+	/* Within one file we reverse the order of the '[connection.\+] sections.
+	 * Here we merge the current file (@kf) into @keyfile. As we merge multiple
+	 * files, earlier sections (with lower priority) will be added first.
+	 * But within one file, we want a top-to-bottom order. This means we
+	 * must reverse the order within each file.
+	 * At the very end, we will revert the order of all sections again and
+	 * get thus the right behavior. This final reversing is done in
+	 * NMConfigData:_get_connection_infos().  */
+	if (ngroups > 1) {
+		g_qsort_with_data (groups,
+		                   ngroups,
+		                   sizeof (char *),
+		                   (GCompareDataFunc) _sort_groups_cmp,
+		                   NULL);
+	}
+
 	for (g = 0; groups[g]; g++) {
 		keys = g_key_file_get_keys (kf, groups[g], &nkeys, NULL);
 		if (!keys)

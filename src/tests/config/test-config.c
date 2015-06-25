@@ -324,6 +324,23 @@ test_config_confdir (void)
 	g_assert_cmpstr (value, ==, "0");
 	g_free (value);
 
+#define ASSERT_GET_CONN_DEFAULT(xconfig, xname, xvalue) \
+	G_STMT_START { \
+		gs_free char *_value = nm_config_data_get_connection_default (nm_config_get_data_orig (xconfig), (xname), NULL); \
+		g_assert_cmpstr (_value, ==, (xvalue)); \
+	} G_STMT_END
+	ASSERT_GET_CONN_DEFAULT (config, "ord.key00", "A-0.0.00");
+	ASSERT_GET_CONN_DEFAULT (config, "ord.key01", "A-0.3.01");
+	ASSERT_GET_CONN_DEFAULT (config, "ord.key02", "A-0.2.02");
+	ASSERT_GET_CONN_DEFAULT (config, "ord.key03", "A-0.1.03");
+	ASSERT_GET_CONN_DEFAULT (config, "ord.key04", "B-1.3.04");
+	ASSERT_GET_CONN_DEFAULT (config, "ord.key05", "B-1.2.05");
+	ASSERT_GET_CONN_DEFAULT (config, "ord.key06", "B-1.1.06");
+	ASSERT_GET_CONN_DEFAULT (config, "ord.key07", "C-2.3.07");
+	ASSERT_GET_CONN_DEFAULT (config, "ord.key08", "C-2.2.08");
+	ASSERT_GET_CONN_DEFAULT (config, "ord.key09", "C-2.1.09");
+	ASSERT_GET_CONN_DEFAULT (config, "ord.ovw01", "C-0.1.ovw01");
+
 	g_object_unref (config);
 }
 
