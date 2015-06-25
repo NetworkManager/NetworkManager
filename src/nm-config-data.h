@@ -47,12 +47,17 @@ G_BEGIN_DECLS
 
 typedef enum { /*< flags >*/
 	NM_CONFIG_CHANGE_NONE                      = 0,
-	NM_CONFIG_CHANGE_CONFIG_FILES              = (1L << 0),
-	NM_CONFIG_CHANGE_VALUES                    = (1L << 1),
-	NM_CONFIG_CHANGE_CONNECTIVITY              = (1L << 2),
-	NM_CONFIG_CHANGE_NO_AUTO_DEFAULT           = (1L << 3),
-	NM_CONFIG_CHANGE_DNS_MODE                  = (1L << 4),
-	NM_CONFIG_CHANGE_RC_MANAGER                = (1L << 5),
+
+	NM_CONFIG_CHANGE_SIGHUP                    = (1L << 0),
+	NM_CONFIG_CHANGE_SIGUSR1                   = (1L << 1),
+	NM_CONFIG_CHANGE_SIGUSR2                   = (1L << 2),
+
+	NM_CONFIG_CHANGE_CONFIG_FILES              = (1L << 3),
+	NM_CONFIG_CHANGE_VALUES                    = (1L << 4),
+	NM_CONFIG_CHANGE_CONNECTIVITY              = (1L << 5),
+	NM_CONFIG_CHANGE_NO_AUTO_DEFAULT           = (1L << 6),
+	NM_CONFIG_CHANGE_DNS_MODE                  = (1L << 7),
+	NM_CONFIG_CHANGE_RC_MANAGER                = (1L << 8),
 
 	_NM_CONFIG_CHANGE_LAST,
 	NM_CONFIG_CHANGE_ALL                       = ((_NM_CONFIG_CHANGE_LAST - 1) << 1) - 1,

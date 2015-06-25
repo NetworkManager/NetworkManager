@@ -500,7 +500,7 @@ main (int argc, char *argv[])
 /* Stub functions */
 
 void
-nm_main_config_reload ()
+nm_main_config_reload (int signal)
 {
 	nm_log_info (LOGD_CORE, "reloading configuration not supported");
 }
