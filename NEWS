@@ -8,13 +8,13 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * The MTU setting from an IPv6 neighbor discovery Router Advertisements is
     now ignored if applying it would result in invalid configuration.
 
-* The some configuration options can now be changed without restarting the
+* Some configuration options can now be changed without restarting the
     daemon. Notably, this applies to 'dns', 'connectivity' and
     'ignore-carrier' settings.
 
 * The connection activation was made more robust. If an active connection
-    is reactiated, the device it's active on takes precedence. If an attempt
-    is made to activate a connection on a different device than it's active,
+    is reactivated, the device it's active on takes precedence. If an attempt
+    is made to activate a connection on a different device than it is active on,
     the activation proceeds removing the connection from the active device.
 
 * The device specifiers in configuration files now support negation via
