@@ -482,7 +482,7 @@ ipv6.ip6-privacy=1
     </para>
 
     <para>
-        The sections are considered in order of appearance, with the
+        The sections within one file are considered in order of appearance, with the
         exception that the <literal>[connection]</literal> section is always
         considered last. In the example above, this order is <literal>[connection-wifi-wlan0]</literal>,
         <literal>[connection-wlan-other]</literal>, and <literal>[connection]</literal>.
@@ -494,6 +494,11 @@ ipv6.ip6-privacy=1
         Note that also "wlan0" gets "ipv6.ip6-privacy=1", because although the section
         "[connection-wifi-wlan0]" matches the device, it does not contain that property
         and the search continues.
+    </para>
+    <para>
+        When having different sections in multiple files, sections from files that are read
+        later have higher priority. So within one file the priority of the sections is
+        top-to-bottom. Across multiple files later definitions take precedence.
     </para>
 
     <para>

@@ -225,58 +225,63 @@ nm_config_data_get_connection_default (const NMConfigData *self,
 	return NULL;
 }
 
+static void
+_get_connection_info_init (ConnectionInfo *connection_info, GKeyFile *keyfile, char *group)
+{
+	char *value;
+
+	/* pass ownership of @group on... */
+	connection_info->group_name = group;
+
+	value = g_key_file_get_value (keyfile, group, "match-device", NULL);
+	if (value) {
+		connection_info->match_device.has = TRUE;
+		connection_info->match_device.spec = nm_match_spec_split (value);
+		g_free (value);
+	}
+	connection_info->stop_match = nm_config_keyfile_get_boolean (keyfile, group, "stop-match", FALSE);
+}
+
 static ConnectionInfo *
 _get_connection_infos (GKeyFile *keyfile)
 {
 	char **groups;
-	guint i;
+	gsize i, j, ngroups;
 	char *connection_tag = NULL;
-	GSList *connection_groups = NULL;
 	ConnectionInfo *connection_infos = NULL;
 
 	/* get the list of existing [connection.\+] sections that we consider
-	 * for nm_config_data_get_connection_default(). Also, get them
-	 * in the right order. */
-	groups = g_key_file_get_groups (keyfile, NULL);
-	for (i = 0; groups && groups[i]; i++) {
-		if (g_str_has_prefix (groups[i], "connection")) {
-			if (strlen (groups[i]) == STRLEN ("connection"))
-				connection_tag = groups[i];
-			else
-				connection_groups = g_slist_prepend (connection_groups, groups[i]);
-		} else
-			g_free (groups[i]);
+	 * for nm_config_data_get_connection_default().
+	 *
+	 * We expect the sections in their right order, with lowest priority
+	 * first. Only exception is the (literal) [connection] section, which
+	 * we will always reorder to the end. */
+	groups = g_key_file_get_groups (keyfile, &ngroups);
+	if (!groups)
+		ngroups = 0;
+	else if (ngroups > 0) {
+		for (i = 0, j = 0; i < ngroups; i++) {
+			if (g_str_has_prefix (groups[i], "connection")) {
+				if (groups[i][STRLEN ("connection")] == '\0')
+					connection_tag = groups[i];
+				else
+					groups[j++] = groups[i];
+			} else
+				g_free (groups[i]);
+		}
+		ngroups = j;
+	}
+
+	connection_infos = g_new0 (ConnectionInfo, ngroups + 1 + (connection_tag ? 1 : 0));
+	for (i = 0; i < ngroups; i++) {
+		/* pass ownership of @group on... */
+		_get_connection_info_init (&connection_infos[i], keyfile, groups[ngroups - i - 1]);
+	}
+	if (connection_tag) {
+		/* pass ownership of @connection_tag on... */
+		_get_connection_info_init (&connection_infos[i], keyfile, connection_tag);
 	}
 	g_free (groups);
-	if (connection_tag) {
-		/* We want the group "connection" checked at last, so that
-		 * all other "connection.\+" have preference. Those other
-		 * groups are checked in order of appearance. */
-		connection_groups = g_slist_prepend (connection_groups, connection_tag);
-	}
-	if (connection_groups) {
-		guint len = g_slist_length (connection_groups);
-		GSList *iter;
-
-		connection_infos = g_new0 (ConnectionInfo, len + 1);
-		for (iter = connection_groups; iter; iter = iter->next) {
-			ConnectionInfo *connection_info;
-			char *value;
-
-			nm_assert (len >= 1);
-			connection_info = &connection_infos[--len];
-			connection_info->group_name = iter->data;
-
-			value = g_key_file_get_value (keyfile, iter->data, "match-device", NULL);
-			if (value) {
-				connection_info->match_device.has = TRUE;
-				connection_info->match_device.spec = nm_match_spec_split (value);
-				g_free (value);
-			}
-			connection_info->stop_match = nm_config_keyfile_get_boolean (keyfile, iter->data, "stop-match", FALSE);
-		}
-		g_slist_free (connection_groups);
-	}
 
 	return connection_infos;
 }
