@@ -1,4 +1,63 @@
 ===============================================
+NetworkManager-1.0.4
+Overview of changes since NetworkManager-1.0.2
+===============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* The MTU setting from an IPv6 neighbor discovery Router Advertisements is
+    now ignored if applying it would result in invalid configuration.
+
+* The some configuration options can now be changed without restarting the
+    daemon. Notably, this applies to 'dns', 'connectivity' and
+    'ignore-carrier' settings.
+
+* The connection activation was made more robust. If an active connection
+    is reactiated, the device it's active on takes precedence. If an attempt
+    is made to activate a connection on a different device than it's active,
+    the activation proceeds removing the connection from the active device.
+
+* The device specifiers in configuration files now support negation via
+    'except:' match.
+
+* Devices that only have IPv6 link-local address are no longer assumed to
+    be connected.
+
+* nmcli now provides hints and tab-completion for enumeration properties.
+
+* If the IPv6 interface tokens are set they are honored when creating an
+    interface identifier for IPv6 addressing.
+
+* NetworkManager now maintains correct routing configuration when multiple
+    interfaces are connected to the same network.
+
+* The management of devices can now be controlled with udev rules. The veth
+    devices as well as the virtual Ethernet devices of various
+    virtualization tools (VMWare, VirtualBox, Parallels Workstation) are
+    now ignored by default.
+
+* The IPv6 privacy extensions are now enabled by default and handling of
+    the ip6-privacy sysctl has been improved.
+
+* Activating a Bond, Bridge or Team device can now optionally activate the
+    slave connections as well. The behavior is controlled with
+    'connection.autoconnect-slaves' property.
+
+* The platform support code has been refactored, resulting in better
+    scalability in large configurations.
+
+* Changes to network interfaces configuration done outside NetworkManager
+    are now picked up and exposed to the user via NetworkManager API and tools.
+
+* A connection can now optionally leave externally configured default route
+    in place instead of overriding it. The behavior is controlled with
+    'ipv4.never-default' and 'ipv6.never-default' properties.
+
+* Multiple crasher and memory leak bugs in the daemon were fixed.
+
+* Multiple bugs that could cause the client tools to hang or crash were fixed.
+
+===============================================
 NetworkManager-1.0.2
 Overview of changes since NetworkManager-1.0
 ===============================================
