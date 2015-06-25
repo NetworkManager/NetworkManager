@@ -428,7 +428,7 @@ teamd_kill (NMDeviceTeam *self, const char *teamd_binary, GError **error)
 	gs_free char *tmp_str = NULL;
 
 	if (!teamd_binary) {
-		teamd_binary = nm_utils_find_helper ("teamd", NULL, NULL);
+		teamd_binary = nm_utils_find_helper ("teamd", NULL, error);
 		if (!teamd_binary) {
 			_LOGW (LOGD_TEAM, "Activation: (team) failed to start teamd: teamd binary not found");
 			return FALSE;
