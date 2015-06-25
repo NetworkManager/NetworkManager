@@ -1303,15 +1303,19 @@ config_changed_cb (NMConfig *config,
 {
 	GError *error = NULL;
 
-	if (!NM_FLAGS_ANY (changes, NM_CONFIG_CHANGE_DNS_MODE |
-	                            NM_CONFIG_CHANGE_RC_MANAGER))
-		return;
+	if (NM_FLAGS_HAS (changes, NM_CONFIG_CHANGE_DNS_MODE))
+		init_resolv_conf_mode (self);
+	if (NM_FLAGS_HAS (changes, NM_CONFIG_CHANGE_RC_MANAGER))
+		init_resolv_conf_manager (self);
 
-	init_resolv_conf_mode (self);
-	init_resolv_conf_manager (self);
-	if (!update_dns (self, TRUE, &error)) {
-		nm_log_warn (LOGD_DNS, "could not commit DNS changes: %s", error->message);
-		g_clear_error (&error);
+	if (NM_FLAGS_ANY (changes, NM_CONFIG_CHANGE_SIGHUP |
+	                           NM_CONFIG_CHANGE_SIGUSR1 |
+	                           NM_CONFIG_CHANGE_DNS_MODE |
+	                           NM_CONFIG_CHANGE_RC_MANAGER)) {
+		if (!update_dns (self, TRUE, &error)) {
+			nm_log_warn (LOGD_DNS, "could not commit DNS changes: %s", error->message);
+			g_clear_error (&error);
+		}
 	}
 }
 
