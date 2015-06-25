@@ -3035,7 +3035,7 @@ validate_activation_request (NMManager *self,
 			g_set_error_literal (error,
 			                     NM_MANAGER_ERROR,
 			                     NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-			                     "This connection requires an existing device.");
+			                     "No suitable device found for this connection.");
 			goto error;
 		}
 
