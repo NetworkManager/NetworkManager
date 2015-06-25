@@ -930,7 +930,7 @@ nm_platform_link_get_user_ipv6ll_enabled (NMPlatform *self, int ifindex)
 
 		pllink = nm_platform_link_get (self, ifindex);
 		if (pllink && pllink->inet6_addr_gen_mode_inv)
-			return (~pllink->inet6_addr_gen_mode_inv) == IN6_ADDR_GEN_MODE_NONE;
+			return _nm_platform_uint8_inv (pllink->inet6_addr_gen_mode_inv) == IN6_ADDR_GEN_MODE_NONE;
 	}
 #endif
 	return FALSE;
@@ -2448,7 +2448,7 @@ nm_platform_link_to_string (const NMPlatformLink *link)
 		str_vlan[0] = '\0';
 
 	if (link->inet6_addr_gen_mode_inv) {
-		switch ((guint8) ~link->inet6_addr_gen_mode_inv) {
+		switch (_nm_platform_uint8_inv (link->inet6_addr_gen_mode_inv)) {
 			case 0:
 				g_snprintf (str_addrmode, sizeof (str_addrmode), " addrgenmode eui64");
 				break;
@@ -2456,7 +2456,7 @@ nm_platform_link_to_string (const NMPlatformLink *link)
 				g_snprintf (str_addrmode, sizeof (str_addrmode), " addrgenmode none");
 				break;
 			default:
-				g_snprintf (str_addrmode, sizeof (str_addrmode), " addrgenmode %d", (int) (guint8) (~link->inet6_addr_gen_mode_inv));
+				g_snprintf (str_addrmode, sizeof (str_addrmode), " addrgenmode %d", _nm_platform_uint8_inv (link->inet6_addr_gen_mode_inv));
 				break;
 		}
 	} else

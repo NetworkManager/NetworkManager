@@ -571,8 +571,9 @@ NMPlatform *nm_platform_try_get (void);
  *
  * Returns: the bitwise inverse of the route scope.
  * */
+#define nm_platform_route_scope_inv _nm_platform_uint8_inv
 static inline guint8
-nm_platform_route_scope_inv (guint8 scope)
+_nm_platform_uint8_inv (guint8 scope)
 {
 	return (guint8) ~scope;
 }
