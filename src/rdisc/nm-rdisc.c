@@ -83,7 +83,7 @@ nm_rdisc_add_gateway (NMRDisc *rdisc, const NMRDiscGateway *new)
 	}
 
 	if (new->lifetime)
-		g_array_insert_val (rdisc->gateways, CLAMP (insert_idx, 0, G_MAXINT), *new);
+		g_array_insert_val (rdisc->gateways, MAX (insert_idx, 0), *new);
 	return !!new->lifetime;
 }
 

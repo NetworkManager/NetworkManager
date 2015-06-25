@@ -554,7 +554,7 @@ static int _support_kernel_extended_ifa_flags = 0;
 static void
 _support_kernel_extended_ifa_flags_detect (struct nl_msg *msg)
 {
-	struct nlmsghdr *msg_hdr = nlmsg_hdr (msg);
+	struct nlmsghdr *msg_hdr;
 
 	if (!_support_kernel_extended_ifa_flags_still_undecided ())
 		return;
@@ -1789,16 +1789,19 @@ cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMP
 		}
 		{
 			/* check whether we are about to change a master link that needs toggling connected state. */
-			if (nmp_cache_link_connected_needs_toggle (cache, new, new, old))
+			if (   new /* <-- nonsensical, make coverity happy */
+			    && nmp_cache_link_connected_needs_toggle (cache, new, new, old))
 				delayed_action_schedule (platform, DELAYED_ACTION_TYPE_MASTER_CONNECTED, GINT_TO_POINTER (new->link.ifindex));
 		}
 		{
 			int ifindex = 0;
 
 			/* if we remove a link (from netlink), we must refresh the addresses and routes */
-			if (ops_type == NMP_CACHE_OPS_REMOVED)
+			if (   ops_type == NMP_CACHE_OPS_REMOVED
+			    && old /* <-- nonsensical, make coverity happy */)
 				ifindex = old->link.ifindex;
 			else if (   ops_type == NMP_CACHE_OPS_UPDATED
+			         && old && new /* <-- nonsensical, make coverity happy */
 			         && !new->_link.netlink.is_in_netlink
 			         && new->_link.netlink.is_in_netlink != old->_link.netlink.is_in_netlink)
 				ifindex = new->link.ifindex;
@@ -1815,6 +1818,7 @@ cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMP
 		{
 			/* if a link goes down, we must refresh routes */
 			if (   ops_type == NMP_CACHE_OPS_UPDATED
+			    && old && new /* <-- nonsensical, make coverity happy */
 			    && old->_link.netlink.is_in_netlink
 			    && NM_FLAGS_HAS (old->link.flags, IFF_LOWER_UP)
 			    && new->_link.netlink.is_in_netlink
@@ -2209,7 +2213,7 @@ static int
 event_seq_check (struct nl_msg *msg, gpointer user_data)
 {
 	NMPlatform *platform = NM_PLATFORM (user_data);
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (user_data);
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	struct nlmsghdr *hdr;
 
 	hdr = nlmsg_hdr (msg);
@@ -2232,14 +2236,12 @@ event_seq_check (struct nl_msg *msg, gpointer user_data)
 }
 
 static int
-event_err (struct sockaddr_nl *nla, struct nlmsgerr *nlerr, gpointer user_data)
+event_err (struct sockaddr_nl *nla, struct nlmsgerr *nlerr, gpointer platform)
 {
-	NMPlatform *platform = NM_PLATFORM (user_data);
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (user_data);
-	int errsv = nlerr ? -nlerr->error : 0;
-
-	_LOGT ("event_err(): error from kernel: %s (%d) for request %d", strerror (errsv), errsv, priv->nlh_seq_last);
-
+	_LOGT ("event_err(): error from kernel: %s (%d) for request %d",
+	       strerror (nlerr ? -nlerr->error : 0),
+	       nlerr ? -nlerr->error : 0,
+	       NM_LINUX_PLATFORM_GET_PRIVATE (platform)->nlh_seq_last);
 	return NL_OK;
 }
 
