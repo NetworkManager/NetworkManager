@@ -281,7 +281,6 @@ test_cache_link (void)
 	nmp_object_unref (obj1);
 	nmp_object_unref (obj2);
 
-	udev_device_2 = NULL;
 	if (udev_device_2) {
 		/* now add the link only with aspect UDEV. */
 		ops_type = nmp_cache_update_link_udev (cache, pl_link_2.ifindex, udev_device_2, &obj2, &was_visible, NULL, NULL);
