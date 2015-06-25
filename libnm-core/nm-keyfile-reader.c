@@ -1576,6 +1576,8 @@ nm_keyfile_read (GKeyFile *keyfile,
 	info.user_data = user_data;
 
 	groups = g_key_file_get_groups (keyfile, &length);
+	if (!groups)
+		length = 0;
 	for (i = 0; i < length; i++) {
 		/* Only read out secrets when needed */
 		if (!strcmp (groups[i], VPN_SECRETS_GROUP)) {
