@@ -44,9 +44,7 @@
 static gboolean
 sighup_handler (gpointer user_data)
 {
-	/* Reread config stuff like system config files, VPN service files, etc */
-	nm_main_config_reload ();
-
+	nm_main_config_reload (GPOINTER_TO_INT (user_data));
 	return G_SOURCE_CONTINUE;
 }
 
@@ -85,7 +83,9 @@ nm_main_utils_setup_signals (GMainLoop *main_loop)
 
 	signal (SIGPIPE, SIG_IGN);
 
-	g_unix_signal_add (SIGHUP, sighup_handler, NULL);
+	g_unix_signal_add (SIGHUP, sighup_handler, GINT_TO_POINTER (SIGHUP));
+	g_unix_signal_add (SIGUSR1, sighup_handler, GINT_TO_POINTER (SIGUSR1));
+	g_unix_signal_add (SIGUSR2, sighup_handler, GINT_TO_POINTER (SIGUSR2));
 	g_unix_signal_add (SIGINT, sigint_handler, main_loop);
 	g_unix_signal_add (SIGTERM, sigterm_handler, main_loop);
 }
