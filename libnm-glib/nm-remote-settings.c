@@ -493,7 +493,7 @@ connection_inited (GObject *source, GAsyncResult *result, gpointer user_data)
 			local = g_error_new (NM_REMOTE_SETTINGS_ERROR,
 			                     NM_REMOTE_SETTINGS_ERROR_CONNECTION_UNAVAILABLE,
 			                     "Connection not visible or not available: %s",
-			                     error ? error->message : "(unknown)");
+			                     error->message);
 			add_connection_info_complete (self, addinfo, local);
 			g_error_free (local);
 		}
