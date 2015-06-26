@@ -558,16 +558,18 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 			if (   !cur_plat_route
 			    || route_id_cmp_result != 0
 			    || !_route_equals_ignoring_ifindex (vtable, cur_plat_route, cur_ipx_route)) {
-				gboolean s;
 
-				s = vtable->vt->route_add (NM_PLATFORM_GET, ifindex, cur_ipx_route, 0);
-				if (!s && cur_ipx_route->rx.source < NM_IP_CONFIG_SOURCE_USER) {
-					_LOGD (vtable->vt->addr_family, "ignore error adding IPv%c route to kernel: %s",
-					       vtable->vt->is_ip4 ? '4' : '6',
-					       vtable->vt->route_to_string (cur_ipx_route));
-					/* Remember that there was a failure, but for now continue trying to sync the
-					 * remaining routes. */
-					success = FALSE;
+				if (!vtable->vt->route_add (NM_PLATFORM_GET, ifindex, cur_ipx_route, 0)) {
+					if (cur_ipx_route->rx.source < NM_IP_CONFIG_SOURCE_USER) {
+						_LOGD (vtable->vt->addr_family,
+						       "ignore error adding IPv%c route to kernel: %s",
+						       vtable->vt->is_ip4 ? '4' : '6',
+						       vtable->vt->route_to_string (cur_ipx_route));
+					} else {
+						/* Remember that there was a failure, but for now continue trying
+						 * to sync the remaining routes. */
+						success = FALSE;
+					}
 				}
 			}
 		}
