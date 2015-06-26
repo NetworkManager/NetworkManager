@@ -72,6 +72,7 @@ G_BEGIN_DECLS
  * #NMSettingConnectionAutoconnectSlaves values indicate whether slave connections
  * should be activated when master is activated.
  */
+NM_AVAILABLE_IN_1_0_4
 typedef enum {
 	NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_DEFAULT = -1,
 	NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_NO = 0,
