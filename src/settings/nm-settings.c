@@ -1730,8 +1730,9 @@ hostname_maybe_changed (NMSettings *settings)
 	    || (!new_hostname && priv->hostname.value)
 	    || (priv->hostname.value && new_hostname && strcmp (priv->hostname.value, new_hostname))) {
 
-		nm_log_info (LOGD_SETTINGS, "hostname changed from '%s' to '%s'",
-		             priv->hostname.value, new_hostname);
+		nm_log_info (LOGD_SETTINGS, "hostname changed from %s%s%s to %s%s%s",
+		             NM_PRINT_FMT_QUOTED (priv->hostname.value, "\"", priv->hostname.value, "\"", "(none)"),
+		             NM_PRINT_FMT_QUOTED (new_hostname, "\"", new_hostname, "\"", "(none)"));
 		g_free (priv->hostname.value);
 		priv->hostname.value = new_hostname;
 		g_object_notify (G_OBJECT (settings), NM_SETTINGS_HOSTNAME);
@@ -2065,8 +2066,9 @@ hostnamed_properties_changed (GDBusProxy *proxy,
 	hostname = g_variant_get_string (v_hostname, NULL);
 
 	if (g_strcmp0 (priv->hostname.value, hostname) != 0) {
-		nm_log_info (LOGD_SETTINGS, "hostname changed from '%s' to '%s'",
-		             priv->hostname.value, hostname);
+		nm_log_info (LOGD_SETTINGS, "hostname changed from %s%s%s to %s%s%s",
+		             NM_PRINT_FMT_QUOTED (priv->hostname.value, "\"", priv->hostname.value, "\"", "(none)"),
+		             NM_PRINT_FMT_QUOTED (hostname, "\"", hostname, "\"", "(none)"));
 		g_free (priv->hostname.value);
 		priv->hostname.value = g_strdup (hostname);
 		g_object_notify (G_OBJECT (user_data), NM_SETTINGS_HOSTNAME);
