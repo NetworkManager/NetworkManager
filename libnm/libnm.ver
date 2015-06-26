@@ -845,6 +845,11 @@ local:
 	*;
 };
 
+libnm_1_0_4 {
+	#nm_setting_connection_autoconnect_slaves_get_type@libnm_1_0_4;
+	#nm_setting_connection_get_autoconnect_slaves@libnm_1_0_4;
+} libnm_1_0_0;
+
 libnm_1_2_0 {
 global:
 	nm_access_point_get_last_seen;
