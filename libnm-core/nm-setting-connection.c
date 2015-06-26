@@ -613,6 +613,8 @@ nm_setting_connection_is_slave_type (NMSettingConnection *setting,
  *
  * Returns: whether slaves of the connection should be activated together
  *          with the connection.
+ *
+ * Since: 1.0.4
  **/
 NMSettingConnectionAutoconnectSlaves
 nm_setting_connection_get_autoconnect_slaves (NMSettingConnection *setting)
@@ -1559,6 +1561,8 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * 1: activate all the slave connections with this connection, -1: default.
 	 * If -1 (default) is set, global connection.autoconnect-slaves is read to
 	 * determine the real value. If it is default as well, this fallbacks to 0.
+	 *
+	 * Since: 1.0.4
 	 **/
 	/* ---ifcfg-rh---
 	 * property: autoconnect-slaves

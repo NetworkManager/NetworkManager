@@ -131,6 +131,7 @@ const char *nm_setting_connection_get_master           (NMSettingConnection *set
 gboolean    nm_setting_connection_is_slave_type        (NMSettingConnection *setting,
                                                         const char *type);
 const char *nm_setting_connection_get_slave_type       (NMSettingConnection *setting);
+NM_AVAILABLE_IN_1_0_4
 NMSettingConnectionAutoconnectSlaves nm_setting_connection_get_autoconnect_slaves (NMSettingConnection *setting);
 
 guint32     nm_setting_connection_get_num_secondaries  (NMSettingConnection *setting);
