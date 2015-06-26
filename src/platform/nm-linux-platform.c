@@ -1000,7 +1000,7 @@ _nmp_vt_cmd_plobj_init_from_nl_link (NMPlatform *platform, NMPlatformObject *_ob
 	obj->mtu = rtnl_link_get_mtu (nlo);
 	obj->arptype = rtnl_link_get_arptype (nlo);
 
-	if (obj->type == NM_LINK_TYPE_VLAN)
+	if (!g_strcmp0 (rtnl_link_get_type (nlo), "vlan"))
 		obj->vlan_id = rtnl_link_vlan_get_id (nlo);
 
 	if ((nladdr = rtnl_link_get_addr (nlo))) {
