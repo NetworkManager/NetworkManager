@@ -86,7 +86,7 @@ void nm_config_set_no_auto_default_for_device  (NMConfig *config, NMDevice *devi
 
 NMConfig *nm_config_new (const NMConfigCmdLineOptions *cli, GError **error);
 NMConfig *nm_config_setup (const NMConfigCmdLineOptions *cli, GError **error);
-void nm_config_reload (NMConfig *config);
+void nm_config_reload (NMConfig *config, int signal);
 
 GKeyFile *nm_config_create_keyfile (void);
 gboolean nm_config_keyfile_get_boolean (GKeyFile *keyfile,

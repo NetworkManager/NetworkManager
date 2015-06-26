@@ -104,7 +104,7 @@ G_DEFINE_TYPE_WITH_CODE (NMConfig, nm_config, G_TYPE_OBJECT,
 
 /************************************************************************/
 
-static void _set_config_data (NMConfig *self, NMConfigData *new_data);
+static void _set_config_data (NMConfig *self, NMConfigData *new_data, int signal);
 
 /************************************************************************/
 
@@ -316,7 +316,7 @@ nm_config_set_no_auto_default_for_device (NMConfig *self, NMDevice *device)
 	new_data = nm_config_data_new_update_no_auto_default (priv->config_data, (const char *const*) no_auto_default);
 	g_strfreev (no_auto_default);
 
-	_set_config_data (self, new_data);
+	_set_config_data (self, new_data, 0);
 }
 
 /************************************************************************/
@@ -677,7 +677,7 @@ nm_config_get_device_match_spec (const GKeyFile *keyfile, const char *group, con
 /************************************************************************/
 
 void
-nm_config_reload (NMConfig *self)
+nm_config_reload (NMConfig *self, int signal)
 {
 	NMConfigPrivate *priv;
 	GError *error = NULL;
@@ -689,6 +689,11 @@ nm_config_reload (NMConfig *self)
 	g_return_if_fail (NM_IS_CONFIG (self));
 
 	priv = NM_CONFIG_GET_PRIVATE (self);
+
+	if (signal != SIGHUP) {
+		_set_config_data (self, NULL, signal);
+		return;
+	}
 
 	/* pass on the original command line options. This means, that
 	 * options specified at command line cannot ever be reloaded from
@@ -702,6 +707,7 @@ nm_config_reload (NMConfig *self)
 	if (!keyfile) {
 		nm_log_err (LOGD_CORE, "Failed to reload the configuration: %s", error->message);
 		g_clear_error (&error);
+		_set_config_data (self, NULL, signal);
 		return;
 	}
 	new_data = nm_config_data_new (config_main_file, config_description, nm_config_data_get_no_auto_default (priv->config_data), keyfile);
@@ -709,13 +715,19 @@ nm_config_reload (NMConfig *self)
 	g_free (config_description);
 	g_key_file_unref (keyfile);
 
-	_set_config_data (self, new_data);
+	_set_config_data (self, new_data, signal);
 }
 
 static const char *
 _change_flags_one_to_string (NMConfigChangeFlags flag)
 {
 	switch (flag) {
+	case NM_CONFIG_CHANGE_SIGHUP:
+		return "SIGHUP";
+	case NM_CONFIG_CHANGE_SIGUSR1:
+		return "SIGUSR1";
+	case NM_CONFIG_CHANGE_SIGUSR2:
+		return "SIGUSR2";
 	case NM_CONFIG_CHANGE_CONFIG_FILES:
 		return "config-files";
 	case NM_CONFIG_CHANGE_VALUES:
@@ -752,24 +764,53 @@ nm_config_change_flags_to_string (NMConfigChangeFlags flags)
 }
 
 static void
-_set_config_data (NMConfig *self, NMConfigData *new_data)
+_set_config_data (NMConfig *self, NMConfigData *new_data, int signal)
 {
 	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (self);
 	NMConfigData *old_data = priv->config_data;
-	NMConfigChangeFlags changes;
+	NMConfigChangeFlags changes, changes_diff;
 	gs_free char *log_str = NULL;
+	gboolean had_new_data = !!new_data;
 
-	changes = nm_config_data_diff (old_data, new_data);
-	if (changes == NM_CONFIG_CHANGE_NONE) {
-		g_object_unref (new_data);
-		return;
+	switch (signal) {
+	case SIGHUP:
+		changes = NM_CONFIG_CHANGE_SIGHUP;
+		break;
+	case SIGUSR1:
+		changes = NM_CONFIG_CHANGE_SIGUSR1;
+		break;
+	case SIGUSR2:
+		changes = NM_CONFIG_CHANGE_SIGUSR2;
+		break;
+	default:
+		changes = NM_CONFIG_CHANGE_NONE;
+		break;
 	}
 
-	nm_log_info (LOGD_CORE, "config: update %s (%s)", nm_config_data_get_config_description (new_data),
-	             (log_str = nm_config_change_flags_to_string (changes)));
-	priv->config_data = new_data;
-	g_signal_emit (self, signals[SIGNAL_CONFIG_CHANGED], 0, new_data, changes, old_data);
-	g_object_unref (old_data);
+	if (new_data) {
+		changes_diff = nm_config_data_diff (old_data, new_data);
+		if (changes_diff == NM_CONFIG_CHANGE_NONE)
+			g_clear_object (&new_data);
+		else
+			changes |= changes_diff;
+	}
+
+	if (changes == NM_CONFIG_CHANGE_NONE)
+		return;
+
+	if (new_data) {
+		nm_log_info (LOGD_CORE, "config: update %s (%s)", nm_config_data_get_config_description (new_data),
+		             (log_str = nm_config_change_flags_to_string (changes)));
+		priv->config_data = new_data;
+	} else if (had_new_data)
+		nm_log_info (LOGD_CORE, "config: signal %s (no changes from disk)", (log_str = nm_config_change_flags_to_string (changes)));
+	else
+		nm_log_info (LOGD_CORE, "config: signal %s", (log_str = nm_config_change_flags_to_string (changes)));
+	g_signal_emit (self, signals[SIGNAL_CONFIG_CHANGED], 0,
+	               new_data ? new_data : old_data,
+	               changes, old_data);
+	if (new_data)
+		g_object_unref (old_data);
 }
 
 NM_DEFINE_SINGLETON_DESTRUCTOR (NMConfig);
