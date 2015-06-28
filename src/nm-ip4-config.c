@@ -564,7 +564,7 @@ nm_ip4_config_merge (NMIP4Config *dst, const NMIP4Config *src)
 		nm_ip4_config_add_nameserver (dst, nm_ip4_config_get_nameserver (src, i));
 
 	/* default gateway */
-	if (!nm_ip4_config_get_gateway (dst))
+	if (nm_ip4_config_get_gateway (src))
 		nm_ip4_config_set_gateway (dst, nm_ip4_config_get_gateway (src));
 
 	/* routes */
@@ -589,11 +589,11 @@ nm_ip4_config_merge (NMIP4Config *dst, const NMIP4Config *src)
 		nm_ip4_config_add_dns_option (dst, nm_ip4_config_get_dns_option (src, i));
 
 	/* MSS */
-	if (!nm_ip4_config_get_mss (dst))
+	if (nm_ip4_config_get_mss (src))
 		nm_ip4_config_set_mss (dst, nm_ip4_config_get_mss (src));
 
 	/* MTU */
-	if (!nm_ip4_config_get_mtu (dst))
+	if (nm_ip4_config_get_mtu (src))
 		nm_ip4_config_set_mtu (dst, nm_ip4_config_get_mtu (src),
 		                       nm_ip4_config_get_mtu_source (src));
 

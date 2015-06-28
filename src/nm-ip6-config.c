@@ -684,7 +684,7 @@ nm_ip6_config_merge (NMIP6Config *dst, const NMIP6Config *src)
 		nm_ip6_config_add_nameserver (dst, nm_ip6_config_get_nameserver (src, i));
 
 	/* default gateway */
-	if (!nm_ip6_config_get_gateway (dst))
+	if (nm_ip6_config_get_gateway (src))
 		nm_ip6_config_set_gateway (dst, nm_ip6_config_get_gateway (src));
 
 	/* routes */
@@ -708,7 +708,7 @@ nm_ip6_config_merge (NMIP6Config *dst, const NMIP6Config *src)
 	for (i = 0; i < nm_ip6_config_get_num_dns_options (src); i++)
 		nm_ip6_config_add_dns_option (dst, nm_ip6_config_get_dns_option (src, i));
 
-	if (!nm_ip6_config_get_mss (dst))
+	if (nm_ip6_config_get_mss (src))
 		nm_ip6_config_set_mss (dst, nm_ip6_config_get_mss (src));
 
 	g_object_thaw_notify (G_OBJECT (dst));
