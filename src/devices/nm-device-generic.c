@@ -125,7 +125,22 @@ nm_device_generic_new (NMPlatformLink *plink)
 static void
 nm_device_generic_init (NMDeviceGeneric *self)
 {
-	nm_device_set_initial_unmanaged_flag (NM_DEVICE (self), NM_UNMANAGED_DEFAULT, TRUE);
+}
+
+static GObject *
+constructor (GType type,
+             guint n_construct_params,
+             GObjectConstructParam *construct_params)
+{
+	GObject *object;
+
+	object = G_OBJECT_CLASS (nm_device_generic_parent_class)->constructor (type,
+	                                                                       n_construct_params,
+	                                                                       construct_params);
+
+	nm_device_set_initial_unmanaged_flag (NM_DEVICE (object), NM_UNMANAGED_DEFAULT, TRUE);
+
+	return object;
 }
 
 static void
@@ -183,6 +198,7 @@ nm_device_generic_class_init (NMDeviceGenericClass *klass)
 
 	parent_class->connection_type = NM_SETTING_GENERIC_SETTING_NAME;
 
+	object_class->constructor = constructor;
 	object_class->dispose = dispose;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;

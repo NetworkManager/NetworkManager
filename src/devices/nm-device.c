@@ -384,6 +384,10 @@ static void nm_device_update_hw_address (NMDevice *self);
 static gboolean queued_ip4_config_change (gpointer user_data);
 static gboolean queued_ip6_config_change (gpointer user_data);
 
+static void _set_unmanaged_flags (NMDevice *self,
+                                  NMUnmanagedFlags flags,
+                                  gboolean unmanaged);
+
 /***********************************************************/
 
 #define QUEUED_PREFIX "queued state change to "
@@ -1448,7 +1452,7 @@ device_link_changed (NMDevice *self)
 					 * state higher than UNAVAILABLE, it is already IFF_UP
 					 * or an explicit activation request was received.
 					 */
-					priv->unmanaged_flags &= ~NM_UNMANAGED_EXTERNAL_DOWN;
+					_set_unmanaged_flags (self, NM_UNMANAGED_EXTERNAL_DOWN, FALSE);
 				}
 			} else if (!external_down && !NM_FLAGS_HAS (info.flags, IFF_UP) && nm_device_get_state (self) <= NM_DEVICE_STATE_DISCONNECTED) {
 				/* If the device is already disconnected and is set !IFF_UP,
@@ -7668,8 +7672,8 @@ nm_device_get_managed (NMDevice *self)
 	 * default-unmanaged flag (eg, only NM_UNMANAGED_DEFAULT is set) then
 	 * the device is managed whenever it's not in the UNMANAGED state.
 	 */
-	managed = !(priv->unmanaged_flags & ~NM_UNMANAGED_DEFAULT);
-	if (managed && (priv->unmanaged_flags & NM_UNMANAGED_DEFAULT))
+	managed = !NM_FLAGS_ANY (priv->unmanaged_flags, ~NM_UNMANAGED_DEFAULT);
+	if (managed && NM_FLAGS_HAS (priv->unmanaged_flags, NM_UNMANAGED_DEFAULT))
 		managed = (priv->state > NM_DEVICE_STATE_UNMANAGED);
 
 	return managed;
@@ -7699,6 +7703,34 @@ nm_device_get_default_unmanaged (NMDevice *self)
 	return nm_device_get_unmanaged_flag (self, NM_UNMANAGED_DEFAULT);
 }
 
+static void
+_set_unmanaged_flags (NMDevice *self,
+                      NMUnmanagedFlags flags,
+                      gboolean unmanaged)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (unmanaged) {
+		if (!NM_FLAGS_ALL (priv->unmanaged_flags, flags)) {
+			_LOGD (LOGD_DEVICE, "unmanaged: flags set to 0x%0llx (was 0x%0llx, %s 0x%0llx)",
+			       (long long unsigned) (priv->unmanaged_flags | flags),
+			       (long long unsigned) priv->unmanaged_flags,
+			       "set",
+			       (long long unsigned) (~priv->unmanaged_flags & flags));
+			priv->unmanaged_flags |= flags;
+		}
+	} else {
+		if (NM_FLAGS_ANY (priv->unmanaged_flags, flags)) {
+			_LOGD (LOGD_DEVICE, "unmanaged: flags set to 0x%0llx (was 0x%0llx, %s 0x%0llx)",
+			       (long long unsigned) (priv->unmanaged_flags & (~flags)),
+			       (long long unsigned) priv->unmanaged_flags,
+			       "clear",
+			       (long long unsigned) (priv->unmanaged_flags & flags));
+			priv->unmanaged_flags &= ~flags;
+		}
+	}
+}
+
 void
 nm_device_set_unmanaged (NMDevice *self,
                          NMUnmanagedFlags flag,
@@ -7714,10 +7746,7 @@ nm_device_set_unmanaged (NMDevice *self,
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	was_managed = nm_device_get_managed (self);
-	if (unmanaged)
-		priv->unmanaged_flags |= flag;
-	else
-		priv->unmanaged_flags &= ~flag;
+	_set_unmanaged_flags (self, flag, unmanaged);
 	now_managed = nm_device_get_managed (self);
 
 	if (was_managed != now_managed) {
@@ -7770,10 +7799,7 @@ nm_device_set_initial_unmanaged_flag (NMDevice *self,
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	g_return_if_fail (priv->initialized == FALSE);
 
-	if (unmanaged)
-		priv->unmanaged_flags |= flag;
-	else
-		priv->unmanaged_flags &= ~flag;
+	_set_unmanaged_flags (self, flag, unmanaged);
 }
 
 void
