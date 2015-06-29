@@ -1107,7 +1107,6 @@ void
 nm_device_finish_init (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	gboolean platform_unmanaged = FALSE;
 
 	g_assert (priv->initialized == FALSE);
 
@@ -1129,6 +1128,8 @@ nm_device_finish_init (NMDevice *self)
 			 * Currently it can happen that NM deletes 127.0.0.1 address. */
 			nm_device_set_initial_unmanaged_flag (self, NM_UNMANAGED_DEFAULT, TRUE);
 		} else if (priv->platform_link_initialized || (priv->is_nm_owned && nm_device_is_software (self))) {
+			gboolean platform_unmanaged = FALSE;
+
 			if (nm_platform_link_get_unmanaged (NM_PLATFORM_GET, priv->ifindex, &platform_unmanaged))
 				nm_device_set_initial_unmanaged_flag (self, NM_UNMANAGED_DEFAULT, platform_unmanaged);
 		} else {
@@ -1339,7 +1340,6 @@ device_link_changed (NMDevice *self)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMUtilsIPv6IfaceId token_iid;
 	gboolean ip_ifname_changed = FALSE;
-	gboolean platform_unmanaged = FALSE;
 	const char *udi;
 	NMPlatformLink info;
 	const NMPlatformLink *pllink;
@@ -1463,6 +1463,8 @@ device_link_changed (NMDevice *self)
 	}
 
 	if (priv->ifindex > 0 && !priv->platform_link_initialized && info.initialized) {
+		gboolean platform_unmanaged = FALSE;
+
 		priv->platform_link_initialized = TRUE;
 
 		if (nm_platform_link_get_unmanaged (NM_PLATFORM_GET, priv->ifindex, &platform_unmanaged)) {
