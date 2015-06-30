@@ -358,6 +358,7 @@ nm_utils_modprobe (GError **error, gboolean suppress_error_logging, const char *
  * nm_utils_get_start_time_for_pid:
  * @pid: the process identifier
  * @out_state: return the state character, like R, S, Z. See `man 5 proc`.
+ * @out_ppid: parent process id
  *
  * Originally copied from polkit source (src/polkit/polkitunixprocess.c)
  * and adjusted.
@@ -368,7 +369,7 @@ nm_utils_modprobe (GError **error, gboolean suppress_error_logging, const char *
  * The returned start time counts since boot, in the unit HZ (with HZ usually being (1/100) seconds)
  **/
 guint64
-nm_utils_get_start_time_for_pid (pid_t pid, char *out_state)
+nm_utils_get_start_time_for_pid (pid_t pid, char *out_state, pid_t *out_ppid)
 {
 	guint64 start_time;
 	gs_free gchar *filename = NULL;
@@ -379,6 +380,7 @@ nm_utils_get_start_time_for_pid (pid_t pid, char *out_state)
 	gchar *p;
 	gchar *endp;
 	char state = '\0';
+	gint64 ppid = 0;
 
 	start_time = 0;
 	contents = NULL;
@@ -410,6 +412,9 @@ nm_utils_get_start_time_for_pid (pid_t pid, char *out_state)
 	if (num_tokens < 20)
 		goto out;
 
+	if (out_ppid)
+		ppid = _nm_utils_ascii_str_to_int64 (tokens[1], 10, 1, G_MAXINT, 0);
+
 	errno = 0;
 	start_time = strtoull (tokens[19], &endp, 10);
 	if (*endp != '\0' || errno != 0)
@@ -418,6 +423,8 @@ nm_utils_get_start_time_for_pid (pid_t pid, char *out_state)
 out:
 	if (out_state)
 		*out_state = state;
+	if (out_ppid)
+		*out_ppid = ppid;
 
 	return start_time;
 }
@@ -895,7 +902,7 @@ nm_utils_kill_process_sync (pid_t pid, guint64 start_time, int sig, NMLogDomain 
 	g_return_if_fail (log_name != NULL);
 	g_return_if_fail (wait_before_kill_msec > 0);
 
-	start_time0 = nm_utils_get_start_time_for_pid (pid, &p_state);
+	start_time0 = nm_utils_get_start_time_for_pid (pid, &p_state, NULL);
 	if (start_time0 == 0) {
 		nm_log_dbg (log_domain, LOG_NAME_PROCESS_FMT ": cannot kill process %ld because it seems already gone",
 		            LOG_NAME_ARGS, (long int) pid);
@@ -948,7 +955,7 @@ nm_utils_kill_process_sync (pid_t pid, guint64 start_time, int sig, NMLogDomain 
 		max_wait_until = 0;
 
 	while (TRUE) {
-		start_time = nm_utils_get_start_time_for_pid (pid, &p_state);
+		start_time = nm_utils_get_start_time_for_pid (pid, &p_state, NULL);
 
 		if (start_time != start_time0) {
 			nm_log_dbg (log_domain, LOG_NAME_PROCESS_FMT ": process is gone after sending signal %s%s",
