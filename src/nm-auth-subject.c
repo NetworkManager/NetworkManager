@@ -360,7 +360,7 @@ constructed (GObject *object)
 		if (!priv->unix_process.dbus_sender || !*priv->unix_process.dbus_sender)
 			break;
 
-		priv->unix_process.start_time = nm_utils_get_start_time_for_pid (priv->unix_process.pid);
+		priv->unix_process.start_time = nm_utils_get_start_time_for_pid (priv->unix_process.pid, NULL);
 
 		if (!priv->unix_process.start_time) {
 			/* could not detect the process start time. The subject is invalid, but don't

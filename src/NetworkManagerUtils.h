@@ -69,7 +69,7 @@ str_if_set (const char *str, const char *fallback)
 	return str ? str : fallback;
 }
 
-guint64 nm_utils_get_start_time_for_pid (pid_t pid);
+guint64 nm_utils_get_start_time_for_pid (pid_t pid, char *out_state);
 
 void nm_utils_kill_process_sync (pid_t pid, guint64 start_time, int sig, guint64 log_domain,
                                  const char *log_name, guint32 wait_before_kill_msec,

@@ -592,7 +592,7 @@ nm_dhcp_client_stop_existing (const char *pid_file, const char *binary_name)
 		const char *exe;
 
 		/* Ensure the process is a DHCP client */
-		start_time = nm_utils_get_start_time_for_pid (tmp);
+		start_time = nm_utils_get_start_time_for_pid (tmp, NULL);
 		proc_path = g_strdup_printf ("/proc/%ld/cmdline", tmp);
 		if (   start_time
 		    && g_file_get_contents (proc_path, &proc_contents, NULL, NULL)) {

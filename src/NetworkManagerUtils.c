@@ -357,6 +357,7 @@ nm_utils_modprobe (GError **error, gboolean suppress_error_logging, const char *
 /**
  * nm_utils_get_start_time_for_pid:
  * @pid: the process identifier
+ * @out_state: return the state character, like R, S, Z. See `man 5 proc`.
  *
  * Originally copied from polkit source (src/polkit/polkitunixprocess.c)
  * and adjusted.
@@ -367,7 +368,7 @@ nm_utils_modprobe (GError **error, gboolean suppress_error_logging, const char *
  * The returned start time counts since boot, in the unit HZ (with HZ usually being (1/100) seconds)
  **/
 guint64
-nm_utils_get_start_time_for_pid (pid_t pid)
+nm_utils_get_start_time_for_pid (pid_t pid, char *out_state)
 {
 	guint64 start_time;
 	gchar *filename;
@@ -377,6 +378,7 @@ nm_utils_get_start_time_for_pid (pid_t pid)
 	guint num_tokens;
 	gchar *p;
 	gchar *endp;
+	char state = '\0';
 
 	start_time = 0;
 	contents = NULL;
@@ -399,6 +401,8 @@ nm_utils_get_start_time_for_pid (pid_t pid)
 	if (p - contents >= (int) length)
 		goto out;
 
+	state = p[0];
+
 	tokens = g_strsplit (p, " ", 0);
 
 	num_tokens = g_strv_length (tokens);
@@ -413,6 +417,9 @@ nm_utils_get_start_time_for_pid (pid_t pid)
 	g_strfreev (tokens);
 
  out:
+	if (out_state)
+		*out_state = state;
+
 	g_free (filename);
 	g_free (contents);
 
@@ -867,7 +874,7 @@ out:
  *   Set to zero, to use the default (meaning 20 wakeups per seconds).
  *
  * Kill a non-child process synchronously and wait. This function will not return before the
- * process with PID @pid is gone.
+ * process with PID @pid is gone or the process is a zombie.
  **/
 void
 nm_utils_kill_process_sync (pid_t pid, guint64 start_time, int sig, NMLogDomain log_domain,
@@ -881,12 +888,13 @@ nm_utils_kill_process_sync (pid_t pid, guint64 start_time, int sig, NMLogDomain 
 	int loop_count = 0;
 	gboolean was_waiting = FALSE;
 	char buf_wait[KC_WAITED_TO_STRING];
+	char p_state;
 
 	g_return_if_fail (pid > 0);
 	g_return_if_fail (log_name != NULL);
 	g_return_if_fail (wait_before_kill_msec > 0);
 
-	start_time0 = nm_utils_get_start_time_for_pid (pid);
+	start_time0 = nm_utils_get_start_time_for_pid (pid, &p_state);
 	if (start_time0 == 0) {
 		nm_log_dbg (log_domain, LOG_NAME_PROCESS_FMT ": cannot kill process %ld because it seems already gone",
 		            LOG_NAME_ARGS, (long int) pid);
@@ -896,6 +904,17 @@ nm_utils_kill_process_sync (pid_t pid, guint64 start_time, int sig, NMLogDomain 
 		nm_log_dbg (log_domain, LOG_NAME_PROCESS_FMT ": don't kill process %ld because the start_time is unexpectedly %lu instead of %ld",
 		            LOG_NAME_ARGS, (long int) pid, (long unsigned) start_time0, (long unsigned) start_time);
 		return;
+	}
+
+	switch (p_state) {
+	case 'Z':
+	case 'x':
+	case 'X':
+		nm_log_dbg (log_domain, LOG_NAME_PROCESS_FMT ": cannot kill process %ld because it is already a zombie (%c)",
+		            LOG_NAME_ARGS, (long int) pid, p_state);
+		return;
+	default:
+		break;
 	}
 
 	if (kill (pid, sig) != 0) {
@@ -919,13 +938,24 @@ nm_utils_kill_process_sync (pid_t pid, guint64 start_time, int sig, NMLogDomain 
 	wait_until = wait_start_us + (((gint64) wait_before_kill_msec) * 1000L);
 
 	while (TRUE) {
-		start_time = nm_utils_get_start_time_for_pid (pid);
+		start_time = nm_utils_get_start_time_for_pid (pid, &p_state);
 
 		if (start_time != start_time0) {
 			nm_log_dbg (log_domain, LOG_NAME_PROCESS_FMT ": process is gone after sending signal %s%s",
 			            LOG_NAME_ARGS, _kc_signal_to_string (sig),
 			            was_waiting ? _kc_waited_to_string (buf_wait, wait_start_us) : "");
 			return;
+		}
+		switch (p_state) {
+		case 'Z':
+		case 'x':
+		case 'X':
+			nm_log_dbg (log_domain, LOG_NAME_PROCESS_FMT ": process is a zombie (%c) after sending signal %s%s",
+			            LOG_NAME_ARGS, p_state, _kc_signal_to_string (sig),
+			            was_waiting ? _kc_waited_to_string (buf_wait, wait_start_us) : "");
+			return;
+		default:
+			break;
 		}
 
 		if (kill (pid, 0) != 0) {
