@@ -549,8 +549,13 @@ on_name_lost (GDBusConnection *connection,
               gpointer         user_data)
 {
 	if (!connection) {
-		g_warning ("Could not get the system bus.  Make sure the message bus daemon is running!");
-		exit (1);
+		if (!ever_acquired_name) {
+			g_warning ("Could not get the system bus.  Make sure the message bus daemon is running!");
+			exit (1);
+		} else {
+			g_message ("System bus stopped. Exiting");
+			exit (0);
+		}
 	} else if (!ever_acquired_name) {
 		g_warning ("Could not acquire the " NM_DISPATCHER_DBUS_SERVICE " service.");
 		exit (1);
