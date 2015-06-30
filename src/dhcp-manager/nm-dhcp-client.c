@@ -590,9 +590,10 @@ nm_dhcp_client_stop_existing (const char *pid_file, const char *binary_name)
 	if ((errno == 0) && (tmp > 1)) {
 		guint64 start_time;
 		const char *exe;
+		pid_t ppid;
 
 		/* Ensure the process is a DHCP client */
-		start_time = nm_utils_get_start_time_for_pid (tmp, NULL, NULL);
+		start_time = nm_utils_get_start_time_for_pid (tmp, NULL, &ppid);
 		proc_path = g_strdup_printf ("/proc/%ld/cmdline", tmp);
 		if (   start_time
 		    && g_file_get_contents (proc_path, &proc_contents, NULL, NULL)) {
@@ -602,9 +603,15 @@ nm_dhcp_client_stop_existing (const char *pid_file, const char *binary_name)
 			else
 				exe = proc_contents;
 
-			if (!strcmp (exe, binary_name))
-				nm_utils_kill_process_sync (tmp, start_time, SIGTERM, LOGD_DHCP,
-				                            "dhcp-client", 1000 / 2, 1000 / 20, 2000);
+			if (!strcmp (exe, binary_name)) {
+				if (ppid == getpid ()) {
+					/* the process is our own child. */
+					nm_utils_kill_child_sync (tmp, SIGTERM, LOGD_DHCP, "dhcp-client", NULL, 1000 / 2, 1000 / 20);
+				} else {
+					nm_utils_kill_process_sync (tmp, start_time, SIGTERM, LOGD_DHCP,
+					                            "dhcp-client", 1000 / 2, 1000 / 20, 2000);
+				}
+			}
 		}
 	}
 
