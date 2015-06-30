@@ -371,10 +371,10 @@ guint64
 nm_utils_get_start_time_for_pid (pid_t pid, char *out_state)
 {
 	guint64 start_time;
-	gchar *filename;
-	gchar *contents;
+	gs_free gchar *filename = NULL;
+	gs_free gchar *contents = NULL;
 	size_t length;
-	gchar **tokens;
+	gs_strfreev gchar **tokens = NULL;
 	guint num_tokens;
 	gchar *p;
 	gchar *endp;
@@ -410,18 +410,14 @@ nm_utils_get_start_time_for_pid (pid_t pid, char *out_state)
 	if (num_tokens < 20)
 		goto out;
 
+	errno = 0;
 	start_time = strtoull (tokens[19], &endp, 10);
-	if (endp == tokens[19])
-		goto out;
+	if (*endp != '\0' || errno != 0)
+		start_time = 0;
 
-	g_strfreev (tokens);
-
- out:
+out:
 	if (out_state)
 		*out_state = state;
-
-	g_free (filename);
-	g_free (contents);
 
 	return start_time;
 }
