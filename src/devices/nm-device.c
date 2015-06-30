@@ -141,6 +141,12 @@ enum {
 #define PENDING_ACTION_AUTOCONF6 "autoconf6"
 
 typedef enum {
+	CLEANUP_TYPE_DECONFIGURE,
+	CLEANUP_TYPE_KEEP,
+	CLEANUP_TYPE_REMOVED,
+} CleanupType;
+
+typedef enum {
 	IP_NONE = 0,
 	IP_WAIT,
 	IP_CONF,
@@ -3198,7 +3204,7 @@ ensure_con_ip6_config (NMDevice *self)
 /* DHCPv4 stuff */
 
 static void
-dhcp4_cleanup (NMDevice *self, gboolean stop, gboolean release)
+dhcp4_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
@@ -3211,7 +3217,8 @@ dhcp4_cleanup (NMDevice *self, gboolean stop, gboolean release)
 
 		nm_device_remove_pending_action (self, PENDING_ACTION_DHCP4, FALSE);
 
-		if (stop)
+		if (   cleanup_type == CLEANUP_TYPE_DECONFIGURE
+		    || cleanup_type == CLEANUP_TYPE_REMOVED)
 			nm_dhcp_client_stop (priv->dhcp4_client, release);
 
 		g_clear_object (&priv->dhcp4_client);
@@ -3410,7 +3417,7 @@ dhcp4_fail (NMDevice *self, gboolean timeout)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	dhcp4_cleanup (self, TRUE, FALSE);
+	dhcp4_cleanup (self, CLEANUP_TYPE_DECONFIGURE, FALSE);
 	if (timeout || (priv->ip4_state == IP_CONF))
 		nm_device_activate_schedule_ip4_config_timeout (self);
 	else if (priv->ip4_state == IP_DONE)
@@ -3557,7 +3564,7 @@ nm_device_dhcp4_renew (NMDevice *self, gboolean release)
 	_LOGI (LOGD_DHCP4, "DHCPv4 lease renewal requested");
 
 	/* Terminate old DHCP instance and release the old lease */
-	dhcp4_cleanup (self, TRUE, release);
+	dhcp4_cleanup (self, CLEANUP_TYPE_DECONFIGURE, release);
 
 	connection = nm_device_get_connection (self);
 	g_assert (connection);
@@ -3812,7 +3819,7 @@ act_stage3_ip4_config_start (NMDevice *self,
 /* DHCPv6 stuff */
 
 static void
-dhcp6_cleanup (NMDevice *self, gboolean stop, gboolean release)
+dhcp6_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
@@ -3825,7 +3832,8 @@ dhcp6_cleanup (NMDevice *self, gboolean stop, gboolean release)
 			priv->dhcp6_state_sigid = 0;
 		}
 
-		if (stop)
+		if (   cleanup_type == CLEANUP_TYPE_DECONFIGURE
+		    || cleanup_type == CLEANUP_TYPE_REMOVED)
 			nm_dhcp_client_stop (priv->dhcp6_client, release);
 
 		g_clear_object (&priv->dhcp6_client);
@@ -4032,7 +4040,7 @@ dhcp6_fail (NMDevice *self, gboolean timeout)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	dhcp6_cleanup (self, TRUE, FALSE);
+	dhcp6_cleanup (self, CLEANUP_TYPE_DECONFIGURE, FALSE);
 
 	if (priv->dhcp6_mode == NM_RDISC_DHCP_LEVEL_MANAGED) {
 		if (timeout || (priv->ip6_state == IP_CONF))
@@ -4057,7 +4065,7 @@ dhcp6_timeout (NMDevice *self, NMDhcpClient *client)
 		dhcp6_fail (self, TRUE);
 	else {
 		/* not a hard failure; just live with the RA info */
-		dhcp6_cleanup (self, TRUE, FALSE);
+		dhcp6_cleanup (self, CLEANUP_TYPE_DECONFIGURE, FALSE);
 		if (priv->ip6_state == IP_CONF)
 			nm_device_activate_schedule_ip6_config_result (self);
 	}
@@ -4232,7 +4240,7 @@ nm_device_dhcp6_renew (NMDevice *self, gboolean release)
 	_LOGI (LOGD_DHCP6, "DHCPv6 lease renewal requested");
 
 	/* Terminate old DHCP instance and release the old lease */
-	dhcp6_cleanup (self, TRUE, release);
+	dhcp6_cleanup (self, CLEANUP_TYPE_DECONFIGURE, release);
 
 	/* Start DHCP again on the interface */
 	return dhcp6_start (self, FALSE, NULL);
@@ -4613,7 +4621,7 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *self)
 	}
 
 	if (changed & NM_RDISC_CONFIG_DHCP_LEVEL) {
-		dhcp6_cleanup (self, TRUE, TRUE);
+		dhcp6_cleanup (self, CLEANUP_TYPE_DECONFIGURE, TRUE);
 
 		priv->dhcp6_mode = rdisc->dhcp_level;
 		if (priv->dhcp6_mode != NM_RDISC_DHCP_LEVEL_NONE) {
@@ -7802,16 +7810,16 @@ nm_device_has_pending_action (NMDevice *self)
 /***********************************************************/
 
 static void
-_cleanup_ip_pre (NMDevice *self, gboolean deconfigure)
+_cleanup_ip_pre (NMDevice *self, CleanupType cleanup_type)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	priv->ip4_state = priv->ip6_state = IP_NONE;
 	nm_device_queued_ip_config_change_clear (self);
 
-	dhcp4_cleanup (self, deconfigure, FALSE);
+	dhcp4_cleanup (self, cleanup_type, FALSE);
 	arp_cleanup (self);
-	dhcp6_cleanup (self, deconfigure, FALSE);
+	dhcp6_cleanup (self, cleanup_type, FALSE);
 	linklocal6_cleanup (self);
 	addrconf6_cleanup (self);
 	dnsmasq_cleanup (self);
@@ -7837,14 +7845,14 @@ _cancel_activation (NMDevice *self)
 }
 
 static void
-_cleanup_generic_pre (NMDevice *self, gboolean deconfigure)
+_cleanup_generic_pre (NMDevice *self, CleanupType cleanup_type)
 {
 	NMConnection *connection;
 
 	_cancel_activation (self);
 
 	connection = nm_device_get_connection (self);
-	if (   deconfigure
+	if (   cleanup_type == CLEANUP_TYPE_DECONFIGURE
 	    && connection
 	    && !nm_device_uses_assumed_connection (self)) {
 		nm_firewall_manager_remove_from_zone (nm_firewall_manager_get (),
@@ -7855,11 +7863,11 @@ _cleanup_generic_pre (NMDevice *self, gboolean deconfigure)
 	/* Clear any queued transitions */
 	nm_device_queued_state_clear (self);
 
-	_cleanup_ip_pre (self, deconfigure);
+	_cleanup_ip_pre (self, cleanup_type);
 }
 
 static void
-_cleanup_generic_post (NMDevice *self, gboolean deconfigure)
+_cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
@@ -7900,7 +7908,7 @@ _cleanup_generic_post (NMDevice *self, gboolean deconfigure)
 		g_object_notify (G_OBJECT (self), NM_DEVICE_IP4_ADDRESS);
 	}
 
-	if (deconfigure) {
+	if (cleanup_type == CLEANUP_TYPE_DECONFIGURE) {
 		/* Check if the device was deactivated, and if so, delete_link.
 		 * Don't call delete_link synchronously because we are currently
 		 * handling a state change -- which is not reentrant. */
@@ -7921,7 +7929,7 @@ _cleanup_generic_post (NMDevice *self, gboolean deconfigure)
  *
  */
 static void
-nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, gboolean deconfigure)
+nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, CleanupType cleanup_type)
 {
 	NMDevicePrivate *priv;
 	int ifindex;
@@ -7936,10 +7944,10 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, gboolean deconfig
 	/* Save whether or not we tried IPv6 for later */
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	_cleanup_generic_pre (self, deconfigure);
+	_cleanup_generic_pre (self, cleanup_type);
 
 	/* Turn off kernel IPv6 */
-	if (deconfigure) {
+	if (cleanup_type == CLEANUP_TYPE_DECONFIGURE) {
 		set_disable_ipv6 (self, "1");
 		nm_device_ipv6_sysctl_set (self, "accept_ra", "0");
 		nm_device_ipv6_sysctl_set (self, "use_tempaddr", "0");
@@ -7965,7 +7973,7 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, gboolean deconfig
 	}
 
 	nm_device_update_metered (self);
-	_cleanup_generic_post (self, deconfigure);
+	_cleanup_generic_post (self, cleanup_type);
 }
 
 static char *
@@ -8294,11 +8302,11 @@ _set_state_full (NMDevice *self,
 		nm_device_set_firmware_missing (self, FALSE);
 		if (old_state > NM_DEVICE_STATE_UNMANAGED) {
 			if (reason == NM_DEVICE_STATE_REASON_REMOVED) {
-				nm_device_cleanup (self, reason, FALSE);
+				nm_device_cleanup (self, reason, CLEANUP_TYPE_REMOVED);
 			} else {
 				/* Clean up if the device is now unmanaged but was activated */
 				if (nm_device_get_act_request (self))
-					nm_device_cleanup (self, reason, TRUE);
+					nm_device_cleanup (self, reason, CLEANUP_TYPE_DECONFIGURE);
 				nm_device_take_down (self, TRUE);
 				set_nm_ipv6ll (self, FALSE);
 				restore_ip6_properties (self);
@@ -8327,7 +8335,7 @@ _set_state_full (NMDevice *self,
 			 * Note that we "deactivate" the device even when coming from
 			 * UNMANAGED, to ensure that it's in a clean state.
 			 */
-			nm_device_cleanup (self, reason, TRUE);
+			nm_device_cleanup (self, reason, CLEANUP_TYPE_DECONFIGURE);
 		}
 		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
@@ -8337,7 +8345,7 @@ _set_state_full (NMDevice *self,
 			 */
 			set_nm_ipv6ll (self, TRUE);
 
-			nm_device_cleanup (self, reason, TRUE);
+			nm_device_cleanup (self, reason, CLEANUP_TYPE_DECONFIGURE);
 		} else if (old_state < NM_DEVICE_STATE_DISCONNECTED) {
 			if (reason != NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED) {
 				/* Ensure IPv6 is set up as it may not have been done when
@@ -8352,7 +8360,7 @@ _set_state_full (NMDevice *self,
 			/* Clean up any half-done IP operations if the device's layer2
 			 * finds out it needs authentication during IP config.
 			 */
-			_cleanup_ip_pre (self, TRUE);
+			_cleanup_ip_pre (self, CLEANUP_TYPE_DECONFIGURE);
 		}
 		break;
 	default:
@@ -8991,7 +8999,7 @@ dispose (GObject *object)
 
 	dispatcher_cleanup (self);
 
-	_cleanup_generic_pre (self, FALSE);
+	_cleanup_generic_pre (self, CLEANUP_TYPE_KEEP);
 
 	g_warn_if_fail (priv->slaves == NULL);
 	g_assert (priv->master_ready_id == 0);
@@ -8999,7 +9007,7 @@ dispose (GObject *object)
 	/* Let the kernel manage IPv6LL again */
 	set_nm_ipv6ll (self, FALSE);
 
-	_cleanup_generic_post (self, FALSE);
+	_cleanup_generic_post (self, CLEANUP_TYPE_KEEP);
 
 	g_hash_table_remove_all (priv->ip6_saved_properties);
 
