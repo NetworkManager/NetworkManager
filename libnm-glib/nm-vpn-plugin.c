@@ -279,6 +279,17 @@ quit_timer_expired (gpointer data)
 	return G_SOURCE_REMOVE;
 }
 
+static void
+schedule_quit_timer (NMVPNPlugin *self)
+{
+	NMVPNPluginPrivate *priv = NM_VPN_PLUGIN_GET_PRIVATE (self);
+
+	nm_clear_g_source (&priv->quit_timer);
+	priv->quit_timer = g_timeout_add_seconds (NM_VPN_PLUGIN_QUIT_TIMER,
+	                                          quit_timer_expired,
+	                                          self);
+}
+
 static gboolean
 fail_stop (gpointer data)
 {
@@ -539,6 +550,11 @@ impl_vpn_plugin_need_secrets (NMVPNPlugin *plugin,
 
 	ret = TRUE;
 	if (needed) {
+		/* Push back the quit timer so the VPN plugin doesn't quit in the
+		 * middle of asking the user for secrets.
+		 */
+		schedule_quit_timer (plugin);
+
 		g_assert (sn);
 		*setting_name = g_strdup (sn);
 	} else {
@@ -889,9 +905,7 @@ state_changed (NMVPNPlugin *plugin, NMVPNServiceState state)
 		nm_clear_g_source (&priv->fail_stop_id);
 		break;
 	case NM_VPN_SERVICE_STATE_STOPPED:
-		priv->quit_timer = g_timeout_add_seconds (NM_VPN_PLUGIN_QUIT_TIMER,
-		                                          quit_timer_expired,
-		                                          plugin);
+		schedule_quit_timer (plugin);
 		break;
 	default:
 		/* Clean up all timers we might have set up. */
