@@ -604,7 +604,7 @@ nm_dhcp_client_stop_existing (const char *pid_file, const char *binary_name)
 
 			if (!strcmp (exe, binary_name))
 				nm_utils_kill_process_sync (tmp, start_time, SIGTERM, LOGD_DHCP,
-				                            "dhcp-client", 1000 / 2, 1000 / 20);
+				                            "dhcp-client", 1000 / 2, 1000 / 20, 0);
 		}
 	}
 
