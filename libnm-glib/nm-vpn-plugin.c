@@ -28,6 +28,7 @@
 #include "nm-utils.h"
 #include "nm-connection.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-macros-internal.h"
 
 static gboolean impl_vpn_plugin_connect    (NMVPNPlugin *plugin,
                                             GHashTable *connection,
@@ -257,6 +258,7 @@ connect_timer_expired (gpointer data)
 	NMVPNPlugin *plugin = NM_VPN_PLUGIN (data);
 	GError *err = NULL;
 
+	NM_VPN_PLUGIN_GET_PRIVATE (plugin)->connect_timer = 0;
 	g_message ("Connect timer expired, disconnecting.");
 	nm_vpn_plugin_disconnect (plugin, &err);
 	if (err) {
@@ -264,26 +266,27 @@ connect_timer_expired (gpointer data)
 		g_error_free (err);
 	}
 
-	return FALSE;
+	return G_SOURCE_REMOVE;
 }
 
 static gboolean
 quit_timer_expired (gpointer data)
 {
-	NMVPNPlugin *plugin = NM_VPN_PLUGIN (data);
+	NMVPNPlugin *self = NM_VPN_PLUGIN (data);
 
-	nm_vpn_plugin_emit_quit (plugin);
-
-	return FALSE;
+	NM_VPN_PLUGIN_GET_PRIVATE (self)->quit_timer = 0;
+	nm_vpn_plugin_emit_quit (self);
+	return G_SOURCE_REMOVE;
 }
 
 static gboolean
 fail_stop (gpointer data)
 {
-	NMVPNPlugin *plugin = NM_VPN_PLUGIN (data);
+	NMVPNPlugin *self = NM_VPN_PLUGIN (data);
 
-	nm_vpn_plugin_set_state (plugin, NM_VPN_SERVICE_STATE_STOPPED);
-	return FALSE;
+	NM_VPN_PLUGIN_GET_PRIVATE (self)->fail_stop_id = 0;
+	nm_vpn_plugin_set_state (self, NM_VPN_SERVICE_STATE_STOPPED);
+	return G_SOURCE_REMOVE;
 }
 
 static void
@@ -291,8 +294,7 @@ schedule_fail_stop (NMVPNPlugin *plugin)
 {
 	NMVPNPluginPrivate *priv = NM_VPN_PLUGIN_GET_PRIVATE (plugin);
 
-	if (priv->fail_stop_id)
-		g_source_remove (priv->fail_stop_id);
+	nm_clear_g_source (&priv->fail_stop_id);
 	priv->fail_stop_id = g_idle_add (fail_stop, plugin);
 }
 
@@ -409,21 +411,11 @@ nm_vpn_plugin_set_ip6_config (NMVPNPlugin *plugin,
 }
 
 static void
-connect_timer_removed (gpointer data)
-{
-	NM_VPN_PLUGIN_GET_PRIVATE (data)->connect_timer = 0;
-}
-
-static void
 connect_timer_start (NMVPNPlugin *plugin)
 {
 	NMVPNPluginPrivate *priv = NM_VPN_PLUGIN_GET_PRIVATE (plugin);
 
-	priv->connect_timer = g_timeout_add_seconds_full (G_PRIORITY_DEFAULT,
-	                                                  60,
-	                                                  connect_timer_expired,
-	                                                  plugin,
-	                                                  connect_timer_removed);
+	priv->connect_timer = g_timeout_add_seconds (60, connect_timer_expired, plugin);
 }
 
 static gboolean
@@ -638,8 +630,7 @@ nm_vpn_plugin_secrets_required (NMVPNPlugin *plugin,
 	/* Cancel the connect timer since secrets might take a while.  It'll
 	 * get restarted when the secrets come back via NewSecrets().
 	 */
-	if (priv->connect_timer)
-		g_source_remove (priv->connect_timer);
+	nm_clear_g_source (&priv->connect_timer);
 
 	g_signal_emit (plugin, signals[SECRETS_REQUIRED], 0, message, hints);
 }
@@ -848,10 +839,9 @@ dispose (GObject *object)
 	NMVPNServiceState state;
 	GError *err = NULL;
 
-	if (priv->fail_stop_id) {
-		g_source_remove (priv->fail_stop_id);
-		priv->fail_stop_id = 0;
-	}
+	nm_clear_g_source (&priv->fail_stop_id);
+	nm_clear_g_source (&priv->quit_timer);
+	nm_clear_g_source (&priv->connect_timer);
 
 	state = nm_vpn_plugin_get_state (plugin);
 
@@ -889,46 +879,25 @@ finalize (GObject *object)
 }
 
 static void
-quit_timer_removed (gpointer data)
-{
-	NM_VPN_PLUGIN_GET_PRIVATE (data)->quit_timer = 0;
-}
-
-static void
 state_changed (NMVPNPlugin *plugin, NMVPNServiceState state)
 {
 	NMVPNPluginPrivate *priv = NM_VPN_PLUGIN_GET_PRIVATE (plugin);
 
 	switch (state) {
 	case NM_VPN_SERVICE_STATE_STARTING:
-		/* Remove the quit timer. */
-		if (priv->quit_timer)
-			g_source_remove (priv->quit_timer);
-
-		if (priv->fail_stop_id) {
-			g_source_remove (priv->fail_stop_id);
-			priv->fail_stop_id = 0;
-		}
+		nm_clear_g_source (&priv->quit_timer);
+		nm_clear_g_source (&priv->fail_stop_id);
 		break;
 	case NM_VPN_SERVICE_STATE_STOPPED:
-		priv->quit_timer = g_timeout_add_seconds_full (G_PRIORITY_DEFAULT,
-		                                               NM_VPN_PLUGIN_QUIT_TIMER,
-		                                               quit_timer_expired,
-		                                               plugin,
-		                                               quit_timer_removed);
+		priv->quit_timer = g_timeout_add_seconds (NM_VPN_PLUGIN_QUIT_TIMER,
+		                                          quit_timer_expired,
+		                                          plugin);
 		break;
 	default:
 		/* Clean up all timers we might have set up. */
-		if (priv->connect_timer)
-			g_source_remove (priv->connect_timer);
-
-		if (priv->quit_timer)
-			g_source_remove (priv->quit_timer);
-
-		if (priv->fail_stop_id) {
-			g_source_remove (priv->fail_stop_id);
-			priv->fail_stop_id = 0;
-		}
+		nm_clear_g_source (&priv->connect_timer);
+		nm_clear_g_source (&priv->quit_timer);
+		nm_clear_g_source (&priv->fail_stop_id);
 		break;
 	}
 }
