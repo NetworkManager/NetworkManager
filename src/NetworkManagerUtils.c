@@ -870,20 +870,25 @@ out:
  * @log_name: name of the process to kill for logging.
  * @wait_before_kill_msec: Waittime in milliseconds before sending %SIGKILL signal. Set this value
  *   to zero, not to send %SIGKILL. If @sig is already %SIGKILL, this parameter has no effect.
+ *   If @max_wait_msec is set but less then @wait_before_kill_msec, the final %SIGKILL will also
+ *   not be send.
  * @sleep_duration_msec: the synchronous function sleeps repeatedly waiting for the child to terminate.
  *   Set to zero, to use the default (meaning 20 wakeups per seconds).
+ * @max_wait_msec: if 0, waits indefinitely until the process is gone (or a zombie). Otherwise, this
+ *   is the maxium wait time until returning. If @max_wait_msec is non-zero but smaller then @wait_before_kill_msec,
+ *   we will not send a final %SIGKILL.
  *
  * Kill a non-child process synchronously and wait. This function will not return before the
- * process with PID @pid is gone or the process is a zombie.
+ * process with PID @pid is gone, the process is a zombie, or @max_wait_msec expires.
  **/
 void
 nm_utils_kill_process_sync (pid_t pid, guint64 start_time, int sig, NMLogDomain log_domain,
                             const char *log_name, guint32 wait_before_kill_msec,
-                            guint32 sleep_duration_msec)
+                            guint32 sleep_duration_msec, guint32 max_wait_msec)
 {
 	int errsv;
 	guint64 start_time0;
-	gint64 wait_until, now, wait_start_us;
+	gint64 wait_until_sigkill, now, wait_start_us, max_wait_until;
 	gulong sleep_time, sleep_duration_usec;
 	int loop_count = 0;
 	gboolean was_waiting = FALSE;
@@ -935,7 +940,16 @@ nm_utils_kill_process_sync (pid_t pid, guint64 start_time, int sig, NMLogDomain 
 	wait_start_us = nm_utils_get_monotonic_timestamp_us ();
 
 	sleep_duration_usec = _sleep_duration_convert_ms_to_us (sleep_duration_msec);
-	wait_until = wait_start_us + (((gint64) wait_before_kill_msec) * 1000L);
+	if (sig != SIGKILL)
+		wait_until_sigkill = wait_start_us + (((gint64) wait_before_kill_msec) * 1000L);
+	else
+		wait_until_sigkill = 0;
+	if (max_wait_msec > 0) {
+		max_wait_until = wait_start_us + (((gint64) max_wait_msec) * 1000L);
+		if (wait_until_sigkill > 0 && wait_until_sigkill > max_wait_msec)
+			wait_until_sigkill = 0;
+	} else
+		max_wait_until = 0;
 
 	while (TRUE) {
 		start_time = nm_utils_get_start_time_for_pid (pid, &p_state);
@@ -974,9 +988,25 @@ nm_utils_kill_process_sync (pid_t pid, guint64 start_time, int sig, NMLogDomain 
 		}
 
 		sleep_time = sleep_duration_usec;
-		if (wait_until != 0) {
-			now = nm_utils_get_monotonic_timestamp_us ();
-			if (sig != SIGKILL && now >= wait_until) {
+		now = nm_utils_get_monotonic_timestamp_us ();
+
+		if (   max_wait_until != 0
+		    && now >= max_wait_until) {
+			if (wait_until_sigkill != 0) {
+				/* wait_before_kill_msec is not larger then max_wait_until but we did not yet send
+				 * SIGKILL. Although we already reached our timeout, we don't want to skip sending
+				 * the signal. Even if we don't wait for the process to disappear. */
+				nm_log_dbg (log_domain, LOG_NAME_PROCESS_FMT ": sending SIGKILL", LOG_NAME_ARGS);
+				kill (pid, SIGKILL);
+			}
+			nm_log_warn (log_domain, LOG_NAME_PROCESS_FMT ": timeout %u msec waiting for process to disappear (after sending %s)%s",
+			             LOG_NAME_ARGS, (unsigned) max_wait_until, _kc_signal_to_string (sig),
+			             was_waiting ? _kc_waited_to_string (buf_wait, wait_start_us) : "");
+			return;
+		}
+
+		if (wait_until_sigkill != 0) {
+			if (now >= wait_until_sigkill) {
 				/* Still not dead. SIGKILL now... */
 				nm_log_dbg (log_domain, LOG_NAME_PROCESS_FMT ": sending SIGKILL", LOG_NAME_ARGS);
 				if (kill (pid, SIGKILL) != 0) {
@@ -993,17 +1023,24 @@ nm_utils_kill_process_sync (pid_t pid, guint64 start_time, int sig, NMLogDomain 
 					return;
 				}
 				sig = SIGKILL;
-				was_waiting = TRUE;
-				wait_until = 0;
+				wait_until_sigkill = 0;
 				loop_count = 0; /* reset the loop_count. Now we really expect the process to die quickly. */
+			} else
+				sleep_time = MIN (wait_until_sigkill - now, sleep_duration_usec);
+		}
+
+		if (!was_waiting) {
+			if (wait_until_sigkill != 0) {
+				nm_log_dbg (log_domain, LOG_NAME_PROCESS_FMT ": waiting up to %ld milliseconds for process to disappear before sending KILL signal after sending %s...",
+				            LOG_NAME_ARGS, (long) wait_before_kill_msec, _kc_signal_to_string (sig));
+			} else if (max_wait_until != 0) {
+				nm_log_dbg (log_domain, LOG_NAME_PROCESS_FMT ": waiting up to %ld milliseconds for process to disappear after sending %s...",
+				            LOG_NAME_ARGS, (long) max_wait_msec, _kc_signal_to_string (sig));
 			} else {
-				if (!was_waiting) {
-					nm_log_dbg (log_domain, LOG_NAME_PROCESS_FMT ": waiting up to %ld milliseconds for process to disappear after sending %s...",
-					            LOG_NAME_ARGS, (long) wait_before_kill_msec, _kc_signal_to_string (sig));
-					was_waiting = TRUE;
-				}
-				sleep_time = MIN (wait_until - now, sleep_duration_usec);
+				nm_log_dbg (log_domain, LOG_NAME_PROCESS_FMT ": waiting for process to disappear after sending %s...",
+				            LOG_NAME_ARGS, _kc_signal_to_string (sig));
 			}
+			was_waiting = TRUE;
 		}
 
 		if (loop_count < 20) {
