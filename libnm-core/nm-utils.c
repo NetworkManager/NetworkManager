@@ -657,6 +657,39 @@ _nm_utils_ptrarray_find_first (gpointer *list, gssize len, gconstpointer needle)
 	return -1;
 }
 
+gssize
+_nm_utils_ptrarray_find_binary_search (gpointer *list, gsize len, gpointer needle, GCompareDataFunc cmpfcn, gpointer user_data)
+{
+	gssize imin, imax, imid;
+	int cmp;
+
+	g_return_val_if_fail (list || !len, ~((gssize) 0));
+	g_return_val_if_fail (cmpfcn, ~((gssize) 0));
+
+	imin = 0;
+	if (len == 0)
+		return ~imin;
+
+	imax = len - 1;
+
+	while (imin <= imax) {
+		imid = imin + (imax - imin) / 2;
+
+		cmp = cmpfcn (list[imid], needle, user_data);
+		if (cmp == 0)
+			return imid;
+
+		if (cmp < 0)
+			imin = imid + 1;
+		else
+			imax = imid - 1;
+	}
+
+	/* return the inverse of @imin. This is a negative number, but
+	 * also is ~imin the position where the value should be inserted. */
+	return ~imin;
+}
+
 GVariant *
 _nm_utils_bytes_to_dbus (const GValue *prop_value)
 {

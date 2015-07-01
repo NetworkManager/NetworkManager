@@ -347,4 +347,92 @@ out:
 	return g_intern_string (driver);
 }
 
+/******************************************************************
+ * utils
+ ******************************************************************/
+
+/**
+ * Takes a pair @timestamp and @duration, and returns the remaining duration based
+ * on the new timestamp @now.
+ */
+guint32
+nmp_utils_lifetime_rebase_relative_time_on_now (guint32 timestamp,
+                                                guint32 duration,
+                                                guint32 now,
+                                                guint32 padding)
+{
+	gint64 t;
+
+	if (duration == NM_PLATFORM_LIFETIME_PERMANENT)
+		return NM_PLATFORM_LIFETIME_PERMANENT;
+
+	if (timestamp == 0) {
+		/* if the @timestamp is zero, assume it was just left unset and that the relative
+		 * @duration starts counting from @now. This is convenient to construct an address
+		 * and print it in nm_platform_ip4_address_to_string().
+		 *
+		 * In general it does not make sense to set the @duration without anchoring at
+		 * @timestamp because you don't know the absolute expiration time when looking
+		 * at the address at a later moment. */
+		timestamp = now;
+	}
+
+	/* For timestamp > now, just accept it and calculate the expected(?) result. */
+	t = (gint64) timestamp + (gint64) duration - (gint64) now;
+
+	/* Optional padding to avoid potential races. */
+	t += (gint64) padding;
+
+	if (t <= 0)
+		return 0;
+	if (t >= NM_PLATFORM_LIFETIME_PERMANENT)
+		return NM_PLATFORM_LIFETIME_PERMANENT - 1;
+	return t;
+}
+
+gboolean
+nmp_utils_lifetime_get (guint32 timestamp,
+                        guint32 lifetime,
+                        guint32 preferred,
+                        guint32 now,
+                        guint32 padding,
+                        guint32 *out_lifetime,
+                        guint32 *out_preferred)
+{
+	guint32 t_lifetime, t_preferred;
+
+	if (lifetime == 0) {
+		*out_lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
+		*out_preferred = NM_PLATFORM_LIFETIME_PERMANENT;
+
+		/* We treat lifetime==0 as permanent addresses to allow easy creation of such addresses
+		 * (without requiring to set the lifetime fields to NM_PLATFORM_LIFETIME_PERMANENT).
+		 * In that case we also expect that the other fields (timestamp and preferred) are left unset. */
+		g_return_val_if_fail (timestamp == 0 && preferred == 0, TRUE);
+	} else {
+		if (!now)
+			now = nm_utils_get_monotonic_timestamp_s ();
+		t_lifetime = nmp_utils_lifetime_rebase_relative_time_on_now (timestamp, lifetime, now, padding);
+		if (!t_lifetime) {
+			*out_lifetime = 0;
+			*out_preferred = 0;
+			return FALSE;
+		}
+		t_preferred = nmp_utils_lifetime_rebase_relative_time_on_now (timestamp, preferred, now, padding);
+
+		*out_lifetime = t_lifetime;
+		*out_preferred = MIN (t_preferred, t_lifetime);
+
+		/* Assert that non-permanent addresses have a (positive) @timestamp. nmp_utils_lifetime_rebase_relative_time_on_now()
+		 * treats addresses with timestamp 0 as *now*. Addresses passed to _address_get_lifetime() always
+		 * should have a valid @timestamp, otherwise on every re-sync, their lifetime will be extended anew.
+		 */
+		g_return_val_if_fail (   timestamp != 0
+		                      || (   lifetime  == NM_PLATFORM_LIFETIME_PERMANENT
+		                          && preferred == NM_PLATFORM_LIFETIME_PERMANENT), TRUE);
+		g_return_val_if_fail (t_preferred <= t_lifetime, TRUE);
+	}
+	return TRUE;
+}
+
 

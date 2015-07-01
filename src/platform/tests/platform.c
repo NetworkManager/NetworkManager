@@ -640,7 +640,7 @@ do_ip4_route_get_all (char **argv)
 	int i;
 
 	if (ifindex) {
-		routes = nm_platform_ip4_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
+		routes = nm_platform_ip4_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
 		for (i = 0; i < routes->len; i++) {
 			route = &g_array_index (routes, NMPlatformIP4Route, i);
 			inet_ntop (AF_INET, &route->network, networkstr, sizeof (networkstr));
@@ -664,7 +664,7 @@ do_ip6_route_get_all (char **argv)
 	int i;
 
 	if (ifindex) {
-		routes = nm_platform_ip6_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
+		routes = nm_platform_ip6_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
 		for (i = 0; i < routes->len; i++) {
 			route = &g_array_index (routes, NMPlatformIP6Route, i);
 			inet_ntop (AF_INET6, &route->network, networkstr, sizeof (networkstr));
