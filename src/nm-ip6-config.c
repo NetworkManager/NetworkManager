@@ -342,11 +342,11 @@ nm_ip6_config_capture (int ifindex, gboolean capture_resolv_conf, NMSettingIP6Co
 	g_array_unref (priv->routes);
 
 	priv->addresses = nm_platform_ip6_address_get_all (NM_PLATFORM_GET, ifindex);
-	priv->routes = nm_platform_ip6_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
+	priv->routes = nm_platform_ip6_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
 
 	/* Extract gateway from default route */
 	old_gateway = priv->gateway;
-	for (i = 0; i < priv->routes->len; i++) {
+	for (i = 0; i < priv->routes->len; ) {
 		const NMPlatformIP6Route *route = &g_array_index (priv->routes, NMPlatformIP6Route, i);
 
 		if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route)) {
@@ -356,9 +356,10 @@ nm_ip6_config_capture (int ifindex, gboolean capture_resolv_conf, NMSettingIP6Co
 			}
 			has_gateway = TRUE;
 			/* Remove the default route from the list */
-			g_array_remove_index (priv->routes, i);
-			i--;
+			g_array_remove_index_fast (priv->routes, i);
+			continue;
 		}
+		i++;
 	}
 
 	/* we detect the route metric based on the default route. All non-default
@@ -436,7 +437,7 @@ nm_ip6_config_commit (const NMIP6Config *config, int ifindex)
 			g_array_append_vals (routes, route, 1);
 		}
 
-		success = nm_route_manager_ip6_route_sync (nm_route_manager_get (), ifindex, routes);
+		success = nm_route_manager_ip6_route_sync (nm_route_manager_get (), ifindex, routes, TRUE);
 		g_array_unref (routes);
 	}
 

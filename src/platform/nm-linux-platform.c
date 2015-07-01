@@ -597,7 +597,7 @@ _nm_ip_config_source_to_rtprot (NMIPConfigSource source)
 	case NM_IP_CONFIG_SOURCE_UNKNOWN:
 		return RTPROT_UNSPEC;
 	case NM_IP_CONFIG_SOURCE_KERNEL:
-	case _NM_IP_CONFIG_SOURCE_RTPROT_KERNEL:
+	case NM_IP_CONFIG_SOURCE_RTPROT_KERNEL:
 		return RTPROT_KERNEL;
 	case NM_IP_CONFIG_SOURCE_DHCP:
 		return RTPROT_DHCP;
@@ -616,7 +616,7 @@ _nm_ip_config_source_from_rtprot (guint rtprot)
 	case RTPROT_UNSPEC:
 		return NM_IP_CONFIG_SOURCE_UNKNOWN;
 	case RTPROT_KERNEL:
-		return _NM_IP_CONFIG_SOURCE_RTPROT_KERNEL;
+		return NM_IP_CONFIG_SOURCE_RTPROT_KERNEL;
 	case RTPROT_REDIRECT:
 		return NM_IP_CONFIG_SOURCE_KERNEL;
 	case RTPROT_RA:
@@ -1289,6 +1289,7 @@ _nmp_vt_cmd_plobj_init_from_nl_ip4_route (NMPlatform *platform, NMPlatformObject
 	struct rtnl_route *nlo = (struct rtnl_route *) _nlo;
 	struct nl_addr *dst, *gw;
 	struct rtnl_nexthop *nexthop;
+	struct nl_addr *pref_src;
 
 	if (rtnl_route_get_type (nlo) != RTN_UNICAST ||
 	    rtnl_route_get_table (nlo) != RT_TABLE_MAIN ||
@@ -1333,6 +1334,14 @@ _nmp_vt_cmd_plobj_init_from_nl_ip4_route (NMPlatform *platform, NMPlatformObject
 		obj->source = _NM_IP_CONFIG_SOURCE_RTM_F_CLONED;
 	} else
 		obj->source = _nm_ip_config_source_from_rtprot (rtnl_route_get_protocol (nlo));
+
+	pref_src = rtnl_route_get_pref_src (nlo);
+	if (pref_src) {
+		if (nl_addr_get_len (pref_src) != sizeof (obj->pref_src))
+			g_warn_if_reached ();
+		else
+			memcpy (&obj->pref_src, nl_addr_get_binary_addr (pref_src), sizeof (obj->pref_src));
+	}
 
 	return TRUE;
 }
@@ -4022,13 +4031,9 @@ build_rtnl_addr (NMPlatform *platform,
 	}
 
 	_nl_rtnl_addr_set_prefixlen (rtnladdr, plen);
-	if (lifetime) {
-		/* note that here we set the relative timestamps (ticking from *now*).
-		 * Contrary to the rtnl_addr objects from our cache, which have absolute
-		 * timestamps (see _rtnl_addr_hack_lifetimes_rel_to_abs()).
-		 *
-		 * This is correct, because we only use build_rtnl_addr() for
-		 * add_object(), delete_object() and cache search (ip_address_exists). */
+	if (   lifetime  != 0 || lifetime  != NM_PLATFORM_LIFETIME_PERMANENT
+	    || preferred != 0 || preferred != NM_PLATFORM_LIFETIME_PERMANENT) {
+		/* note that here we set the relative timestamps (ticking from *now*). */
 		rtnl_addr_set_valid_lifetime (rtnladdr, lifetime);
 		rtnl_addr_set_preferred_lifetime (rtnladdr, preferred);
 	}
@@ -4057,6 +4062,10 @@ struct nl_object *
 _nmp_vt_cmd_plobj_to_nl_ip4_address (NMPlatform *platform, const NMPlatformObject *_obj, gboolean id_only)
 {
 	const NMPlatformIP4Address *obj = (const NMPlatformIP4Address *) _obj;
+	guint32 lifetime, preferred;
+
+	nmp_utils_lifetime_get (obj->timestamp, obj->lifetime, obj->preferred,
+	                        0, 0, &lifetime, &preferred);
 
 	return build_rtnl_addr (platform,
 	                        AF_INET,
@@ -4064,8 +4073,8 @@ _nmp_vt_cmd_plobj_to_nl_ip4_address (NMPlatform *platform, const NMPlatformObjec
 	                        &obj->address,
 	                        obj->peer_address ? &obj->peer_address : NULL,
 	                        obj->plen,
-	                        obj->lifetime,
-	                        obj->preferred,
+	                        lifetime,
+	                        preferred,
 	                        0,
 	                        obj->label[0] ? obj->label : NULL);
 }
@@ -4074,6 +4083,10 @@ struct nl_object *
 _nmp_vt_cmd_plobj_to_nl_ip6_address (NMPlatform *platform, const NMPlatformObject *_obj, gboolean id_only)
 {
 	const NMPlatformIP6Address *obj = (const NMPlatformIP6Address *) _obj;
+	guint32 lifetime, preferred;
+
+	nmp_utils_lifetime_get (obj->timestamp, obj->lifetime, obj->preferred,
+	                        0, 0, &lifetime, &preferred);
 
 	return build_rtnl_addr (platform,
 	                        AF_INET6,
@@ -4081,8 +4094,8 @@ _nmp_vt_cmd_plobj_to_nl_ip6_address (NMPlatform *platform, const NMPlatformObjec
 	                        &obj->address,
 	                        !IN6_IS_ADDR_UNSPECIFIED (&obj->peer_address) ? &obj->peer_address : NULL,
 	                        obj->plen,
-	                        obj->lifetime,
-	                        obj->preferred,
+	                        lifetime,
+	                        preferred,
 	                        0,
 	                        NULL);
 }
@@ -4168,103 +4181,57 @@ ip6_address_exists (NMPlatform *platform, int ifindex, struct in6_addr addr, int
 	return nmp_object_is_visible (nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, &obj_needle));
 }
 
-static gboolean
-ip4_check_reinstall_device_route (NMPlatform *platform, int ifindex, const NMPlatformIP4Address *address, guint32 device_route_metric)
-{
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	guint32 device_network;
-	NMPObject obj_needle;
-	const NMPlatformIP4Address *const *addresses;
-	const NMPlatformIP4Route *const *routes;
-
-	device_network = nm_utils_ip4_address_clear_host_address (address->address, address->plen);
-
-	/* in many cases we expect the route to already exist. So first do an exact lookup
-	 * to save the O(n) access below. */
-	nmp_object_stackinit_id_ip4_route (&obj_needle, ifindex, device_network, address->plen, device_route_metric);
-	if (nmp_cache_lookup_obj (priv->cache, &obj_needle)) {
-		/* There is already a route with metric 0 or the metric we want to install
-		 * for the same subnet. */
-		return FALSE;
-	}
-	if (obj_needle.ip4_route.metric != 0) {
-		obj_needle.ip4_route.metric = 0;
-		if (nmp_cache_lookup_obj (priv->cache, &obj_needle))
-			return FALSE;
-	}
-
-	/* also check whether we already have the same address configured on *any* device. */
-	addresses = cache_lookup_all_objects (NMPlatformIP4Address, platform, NMP_OBJECT_TYPE_IP4_ADDRESS, FALSE);
-	if (addresses) {
-		for (; *addresses; addresses++) {
-			const NMPlatformIP4Address *addr_candidate = *addresses;
-
-			if (   addr_candidate->plen == address->plen
-			    && addr_candidate->address == device_network) {
-				/* If we already have the same address installed on any interface,
-				 * we back off. */
-				return FALSE;
-			}
-		}
-	}
-
-	routes = cache_lookup_all_objects (NMPlatformIP4Route, platform, NMP_OBJECT_TYPE_IP4_ROUTE, FALSE);
-	if (routes) {
-		for (; *routes; routes++) {
-			const NMPlatformIP4Route *route_candidate = *routes;
-
-			if (   route_candidate->network == device_network
-			    && route_candidate->plen == address->plen
-			    && (route_candidate->metric == 0 || route_candidate->metric == device_route_metric)) {
-				/* If we already have the same address installed on any interface,
-				 * we back off. */
-				return FALSE;
-			}
-		}
-	}
-
-	return TRUE;
-}
-
 /******************************************************************/
 
 static GArray *
-ipx_route_get_all (NMPlatform *platform, int ifindex, NMPObjectType obj_type, NMPlatformGetRouteMode mode)
+ipx_route_get_all (NMPlatform *platform, int ifindex, NMPObjectType obj_type, NMPlatformGetRouteFlags flags)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	gboolean with_default = FALSE, with_non_default = FALSE;
+	NMPCacheId cache_id;
+	const NMPlatformIPRoute *const* routes;
+	GArray *array;
+	const NMPClass *klass;
+	gboolean with_rtprot_kernel;
+	guint i, len;
 
 	nm_assert (NM_IN_SET (obj_type, NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE));
 
-	if (mode == NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT)
-		with_non_default = TRUE;
-	else if (mode == NM_PLATFORM_GET_ROUTE_MODE_ONLY_DEFAULT)
-		with_default = TRUE;
-	else if (mode == NM_PLATFORM_GET_ROUTE_MODE_ALL) {
-		with_non_default = TRUE;
-		with_default = TRUE;
-	} else
-		g_return_val_if_reached (NULL);
+	if (!NM_FLAGS_ANY (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT))
+		flags |= NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT;
 
-	return nmp_cache_lookup_multi_to_array (priv->cache,
-	                                        obj_type,
-	                                        nmp_cache_id_init_routes_visible (NMP_CACHE_ID_STATIC,
-	                                                                          obj_type,
-	                                                                          with_default,
-	                                                                          with_non_default,
-	                                                                          ifindex));
+	klass = nmp_class_from_type (obj_type);
+
+	nmp_cache_id_init_routes_visible (&cache_id,
+	                                  obj_type,
+	                                  NM_FLAGS_HAS (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT),
+	                                  NM_FLAGS_HAS (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT),
+	                                  ifindex);
+
+	routes = (const NMPlatformIPRoute *const*) nmp_cache_lookup_multi (priv->cache, &cache_id, &len);
+
+	array = g_array_sized_new (FALSE, FALSE, klass->sizeof_public, len);
+
+	with_rtprot_kernel = NM_FLAGS_HAS (flags, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_RTPROT_KERNEL);
+	for (i = 0; i < len; i++) {
+		nm_assert (NMP_OBJECT_GET_CLASS (NMP_OBJECT_UP_CAST (routes[i])) == klass);
+
+		if (   with_rtprot_kernel
+		    || routes[i]->source != NM_IP_CONFIG_SOURCE_RTPROT_KERNEL)
+			g_array_append_vals (array, routes[i], 1);
+	}
+	return array;
 }
 
 static GArray *
-ip4_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteMode mode)
+ip4_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteFlags flags)
 {
-	return ipx_route_get_all (platform, ifindex, NMP_OBJECT_TYPE_IP4_ROUTE, mode);
+	return ipx_route_get_all (platform, ifindex, NMP_OBJECT_TYPE_IP4_ROUTE, flags);
 }
 
 static GArray *
-ip6_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteMode mode)
+ip6_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteFlags flags)
 {
-	return ipx_route_get_all (platform, ifindex, NMP_OBJECT_TYPE_IP6_ROUTE, mode);
+	return ipx_route_get_all (platform, ifindex, NMP_OBJECT_TYPE_IP6_ROUTE, flags);
 }
 
 static void
@@ -4341,7 +4308,7 @@ _nmp_vt_cmd_plobj_to_nl_ip4_route (NMPlatform *platform, const NMPlatformObject 
 	                         &obj->network,
 	                         obj->plen,
 	                         &obj->gateway,
-	                         NULL,
+	                         obj->pref_src ? &obj->pref_src : NULL,
 	                         obj->metric,
 	                         obj->mss);
 }
@@ -5026,8 +4993,6 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->ip6_address_delete = ip6_address_delete;
 	platform_class->ip4_address_exists = ip4_address_exists;
 	platform_class->ip6_address_exists = ip6_address_exists;
-
-	platform_class->ip4_check_reinstall_device_route = ip4_check_reinstall_device_route;
 
 	platform_class->ip4_route_get_all = ip4_route_get_all;
 	platform_class->ip6_route_get_all = ip6_route_get_all;

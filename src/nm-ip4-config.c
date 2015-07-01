@@ -35,6 +35,7 @@
 #include "nm-core-internal.h"
 #include "nm-route-manager.h"
 #include "nm-core-internal.h"
+#include "gsystem-local-alloc.h"
 
 G_DEFINE_TYPE (NMIP4Config, nm_ip4_config, G_TYPE_OBJECT)
 
@@ -229,11 +230,11 @@ nm_ip4_config_capture (int ifindex, gboolean capture_resolv_conf)
 	g_array_unref (priv->routes);
 
 	priv->addresses = nm_platform_ip4_address_get_all (NM_PLATFORM_GET, ifindex);
-	priv->routes = nm_platform_ip4_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
+	priv->routes = nm_platform_ip4_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
 
 	/* Extract gateway from default route */
 	old_gateway = priv->gateway;
-	for (i = 0; i < priv->routes->len; i++) {
+	for (i = 0; i < priv->routes->len; ) {
 		const NMPlatformIP4Route *route = &g_array_index (priv->routes, NMPlatformIP4Route, i);
 
 		if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route)) {
@@ -243,9 +244,10 @@ nm_ip4_config_capture (int ifindex, gboolean capture_resolv_conf)
 			}
 			has_gateway = TRUE;
 			/* Remove the default route from the list */
-			g_array_remove_index (priv->routes, i);
-			i--;
+			g_array_remove_index_fast (priv->routes, i);
+			continue;
 		}
+		i++;
 	}
 
 	/* we detect the route metric based on the default route. All non-default
@@ -288,25 +290,59 @@ nm_ip4_config_capture (int ifindex, gboolean capture_resolv_conf)
 }
 
 gboolean
-nm_ip4_config_commit (const NMIP4Config *config, int ifindex, guint32 default_route_metric)
+nm_ip4_config_commit (const NMIP4Config *config, int ifindex, gint64 default_route_metric)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 	int i;
+	gs_unref_ptrarray GPtrArray *added_addresses = NULL;
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (config != NULL, FALSE);
 
 	/* Addresses */
-	nm_platform_ip4_address_sync (NM_PLATFORM_GET, ifindex, priv->addresses, default_route_metric);
+	nm_platform_ip4_address_sync (NM_PLATFORM_GET, ifindex, priv->addresses,
+	                              default_route_metric >= 0 ? &added_addresses : NULL);
 
 	/* Routes */
 	{
 		int count = nm_ip4_config_get_num_routes (config);
 		GArray *routes = g_array_sized_new (FALSE, FALSE, sizeof (NMPlatformIP4Route), count);
-		const NMPlatformIP4Route *route;
 		gboolean success;
+		gs_unref_array GArray *device_route_purge_list = NULL;
+
+		if (   default_route_metric >= 0
+		    && added_addresses) {
+			/* For IPv6, we explicitly add the device-routes (onlink) to NMIP6Config.
+			 * As we don't do that for IPv4, add it here shortly before syncing
+			 * the routes. For NMRouteManager these routes are very much important. */
+			for (i = 0; i < added_addresses->len; i++) {
+				const NMPlatformIP4Address *addr = added_addresses->pdata[i];
+				NMPlatformIP4Route route = { 0 };
+
+				if (addr->plen == 0)
+					continue;
+
+				route.ifindex = ifindex;
+				route.source = NM_IP_CONFIG_SOURCE_KERNEL;
+				route.network = nm_utils_ip4_address_clear_host_address (addr->address, addr->plen);
+				route.plen = addr->plen;
+				route.pref_src = addr->address;
+				route.metric = default_route_metric;
+
+				g_array_append_val (routes, route);
+
+				if (default_route_metric != NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE) {
+					if (!device_route_purge_list)
+						device_route_purge_list = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP4Route));
+					route.metric = NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE;
+					g_array_append_val (device_route_purge_list, route);
+				}
+			}
+		}
 
 		for (i = 0; i < count; i++) {
+			const NMPlatformIP4Route *route;
+
 			route = nm_ip4_config_get_route (config, i);
 
 			/* Don't add the route if it's more specific than one of the subnets
@@ -316,10 +352,14 @@ nm_ip4_config_commit (const NMIP4Config *config, int ifindex, guint32 default_ro
 			    && nm_ip4_config_destination_is_direct (config, route->network, route->plen))
 				continue;
 
+			/* duplicates in @routes are no problem as route-manager handles them
+			 * gracefully (by ignoring them). */
 			g_array_append_vals (routes, route, 1);
 		}
 
-		success = nm_route_manager_ip4_route_sync (nm_route_manager_get (), ifindex, routes);
+		nm_route_manager_ip4_route_register_device_route_purge_list (nm_route_manager_get (), device_route_purge_list);
+
+		success = nm_route_manager_ip4_route_sync (nm_route_manager_get (), ifindex, routes, default_route_metric < 0);
 		g_array_unref (routes);
 		if (!success)
 			return FALSE;

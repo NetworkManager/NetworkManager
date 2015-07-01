@@ -54,8 +54,8 @@ test_cleanup_internal (void)
 
 	addresses4 = nm_platform_ip4_address_get_all (NM_PLATFORM_GET, ifindex);
 	addresses6 = nm_platform_ip6_address_get_all (NM_PLATFORM_GET, ifindex);
-	routes4 = nm_platform_ip4_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
-	routes6 = nm_platform_ip6_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
+	routes4 = nm_platform_ip4_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
+	routes6 = nm_platform_ip6_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
 
 	g_assert_cmpint (addresses4->len, ==, 1);
 	g_assert_cmpint (addresses6->len, ==, 2); /* also has a IPv6 LL address. */
@@ -72,8 +72,8 @@ test_cleanup_internal (void)
 
 	addresses4 = nm_platform_ip4_address_get_all (NM_PLATFORM_GET, ifindex);
 	addresses6 = nm_platform_ip6_address_get_all (NM_PLATFORM_GET, ifindex);
-	routes4 = nm_platform_ip4_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
-	routes6 = nm_platform_ip6_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
+	routes4 = nm_platform_ip4_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
+	routes6 = nm_platform_ip6_route_get_all (NM_PLATFORM_GET, ifindex, NM_PLATFORM_GET_ROUTE_FLAGS_WITH_DEFAULT | NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
 
 	g_assert_cmpint (addresses4->len, ==, 0);
 	g_assert_cmpint (addresses6->len, ==, 0);

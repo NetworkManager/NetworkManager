@@ -55,8 +55,8 @@ typedef enum {
 	/* platform internal flag used to mark routes with RTM_F_CLONED. */
 	_NM_IP_CONFIG_SOURCE_RTM_F_CLONED,
 
-	/* platform internal flag used to mark routes with protocol RTPROT_KERNEL. */
-	_NM_IP_CONFIG_SOURCE_RTPROT_KERNEL,
+	/* routes from platform with protocol RTPROT_KERNEL. */
+	NM_IP_CONFIG_SOURCE_RTPROT_KERNEL,
 
 	NM_IP_CONFIG_SOURCE_KERNEL,
 	NM_IP_CONFIG_SOURCE_SHARED,

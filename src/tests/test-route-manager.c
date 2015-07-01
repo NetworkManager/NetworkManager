@@ -61,7 +61,7 @@ setup_dev0_ip4 (int ifindex, guint mss_of_first_route, guint32 metric_of_second_
 	route.mss = 0;
 	g_array_append_val (routes, route);
 
-	nm_route_manager_ip4_route_sync (nm_route_manager_get (), ifindex, routes);
+	nm_route_manager_ip4_route_sync (nm_route_manager_get (), ifindex, routes, TRUE);
 	g_array_free (routes, TRUE);
 }
 
@@ -107,7 +107,7 @@ setup_dev1_ip4 (int ifindex)
 	route.metric = 22;
 	g_array_append_val (routes, route);
 
-	nm_route_manager_ip4_route_sync (nm_route_manager_get (), ifindex, routes);
+	nm_route_manager_ip4_route_sync (nm_route_manager_get (), ifindex, routes, TRUE);
 	g_array_free (routes, TRUE);
 }
 
@@ -134,7 +134,7 @@ update_dev0_ip4 (int ifindex)
 	route.metric = 21;
 	g_array_append_val (routes, route);
 
-	nm_route_manager_ip4_route_sync (nm_route_manager_get (), ifindex, routes);
+	nm_route_manager_ip4_route_sync (nm_route_manager_get (), ifindex, routes, TRUE);
 	g_array_free (routes, TRUE);
 }
 
@@ -144,10 +144,10 @@ ip4_routes (test_fixture *fixture)
 {
 	GArray *routes = nm_platform_ip4_route_get_all (NM_PLATFORM_GET,
 	                                                fixture->ifindex0,
-	                                                NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT);
+	                                                NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
 	GArray *routes1 = nm_platform_ip4_route_get_all (NM_PLATFORM_GET,
 	                                                 fixture->ifindex1,
-	                                                 NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT);
+	                                                 NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
 
 	g_array_append_vals (routes, routes1->data, routes1->len);
 	g_array_free (routes1, TRUE);
@@ -346,7 +346,7 @@ setup_dev0_ip6 (int ifindex)
 	                                       0);
 	g_array_append_val (routes, *route);
 
-	nm_route_manager_ip6_route_sync (nm_route_manager_get (), ifindex, routes);
+	nm_route_manager_ip6_route_sync (nm_route_manager_get (), ifindex, routes, TRUE);
 	g_array_free (routes, TRUE);
 }
 
@@ -403,7 +403,7 @@ setup_dev1_ip6 (int ifindex)
 	                                       0);
 	g_array_append_val (routes, *route);
 
-	nm_route_manager_ip6_route_sync (nm_route_manager_get (), ifindex, routes);
+	nm_route_manager_ip6_route_sync (nm_route_manager_get (), ifindex, routes, TRUE);
 	g_array_free (routes, TRUE);
 }
 
@@ -450,7 +450,7 @@ update_dev0_ip6 (int ifindex)
 	                                       0);
 	g_array_append_val (routes, *route);
 
-	nm_route_manager_ip6_route_sync (nm_route_manager_get (), ifindex, routes);
+	nm_route_manager_ip6_route_sync (nm_route_manager_get (), ifindex, routes, TRUE);
 	g_array_free (routes, TRUE);
 }
 
@@ -459,10 +459,10 @@ ip6_routes (test_fixture *fixture)
 {
 	GArray *routes = nm_platform_ip6_route_get_all (NM_PLATFORM_GET,
 	                                                fixture->ifindex0,
-	                                                NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT);
+	                                                NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
 	GArray *routes1 = nm_platform_ip6_route_get_all (NM_PLATFORM_GET,
 	                                                 fixture->ifindex1,
-	                                                 NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT);
+	                                                 NM_PLATFORM_GET_ROUTE_FLAGS_WITH_NON_DEFAULT);
 
 	g_array_append_vals (routes, routes1->data, routes1->len);
 	g_array_free (routes1, TRUE);

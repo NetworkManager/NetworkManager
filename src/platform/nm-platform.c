@@ -33,10 +33,13 @@
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-platform.h"
+#include "nm-platform-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
 #include "nm-enum-types.h"
 #include "nm-core-internal.h"
+
+#define ADDRESS_LIFETIME_PADDING 5
 
 G_STATIC_ASSERT (sizeof ( ((NMPlatformLink *) NULL)->addr.data ) == NM_UTILS_HWADDR_LEN_MAX);
 
@@ -1953,7 +1956,7 @@ nm_platform_ip6_address_exists (NMPlatform *self, int ifindex, struct in6_addr a
 }
 
 static gboolean
-array_contains_ip4_address (const GArray *addresses, const NMPlatformIP4Address *address)
+array_contains_ip4_address (const GArray *addresses, const NMPlatformIP4Address *address, gint64 now, guint32 padding)
 {
 	guint len = addresses ? addresses->len : 0;
 	guint i;
@@ -1961,15 +1964,20 @@ array_contains_ip4_address (const GArray *addresses, const NMPlatformIP4Address 
 	for (i = 0; i < len; i++) {
 		NMPlatformIP4Address *candidate = &g_array_index (addresses, NMPlatformIP4Address, i);
 
-		if (candidate->address == address->address && candidate->plen == address->plen)
-			return TRUE;
+		if (candidate->address == address->address && candidate->plen == address->plen) {
+			guint32 lifetime, preferred;
+
+			if (nmp_utils_lifetime_get (candidate->timestamp, candidate->lifetime, candidate->preferred,
+			                            now, padding, &lifetime, &preferred))
+				return TRUE;
+		}
 	}
 
 	return FALSE;
 }
 
 static gboolean
-array_contains_ip6_address (const GArray *addresses, const NMPlatformIP6Address *address)
+array_contains_ip6_address (const GArray *addresses, const NMPlatformIP6Address *address, gint64 now, guint32 padding)
 {
 	guint len = addresses ? addresses->len : 0;
 	guint i;
@@ -1977,100 +1985,16 @@ array_contains_ip6_address (const GArray *addresses, const NMPlatformIP6Address 
 	for (i = 0; i < len; i++) {
 		NMPlatformIP6Address *candidate = &g_array_index (addresses, NMPlatformIP6Address, i);
 
-		if (IN6_ARE_ADDR_EQUAL (&candidate->address, &address->address) && candidate->plen == address->plen)
-			return TRUE;
+		if (IN6_ARE_ADDR_EQUAL (&candidate->address, &address->address) && candidate->plen == address->plen) {
+			guint32 lifetime, preferred;
+
+			if (nmp_utils_lifetime_get (candidate->timestamp, candidate->lifetime, candidate->preferred,
+			                            now, padding, &lifetime, &preferred))
+				return TRUE;
+		}
 	}
 
 	return FALSE;
-}
-
-/**
- * Takes a pair @timestamp and @duration, and returns the remaining duration based
- * on the new timestamp @now.
- */
-static guint32
-_rebase_relative_time_on_now (guint32 timestamp, guint32 duration, guint32 now, guint32 padding)
-{
-	gint64 t;
-
-	if (duration == NM_PLATFORM_LIFETIME_PERMANENT)
-		return NM_PLATFORM_LIFETIME_PERMANENT;
-
-	if (timestamp == 0) {
-		/* if the @timestamp is zero, assume it was just left unset and that the relative
-		 * @duration starts counting from @now. This is convenient to construct an address
-		 * and print it in nm_platform_ip4_address_to_string().
-		 *
-		 * In general it does not make sense to set the @duration without anchoring at
-		 * @timestamp because you don't know the absolute expiration time when looking
-		 * at the address at a later moment. */
-		timestamp = now;
-	}
-
-	/* For timestamp > now, just accept it and calculate the expected(?) result. */
-	t = (gint64) timestamp + (gint64) duration - (gint64) now;
-
-	/* Optional padding to avoid potential races. */
-	t += (gint64) padding;
-
-	if (t <= 0)
-		return 0;
-	if (t >= NM_PLATFORM_LIFETIME_PERMANENT)
-		return NM_PLATFORM_LIFETIME_PERMANENT - 1;
-	return t;
-}
-
-static gboolean
-_address_get_lifetime (const NMPlatformIPAddress *address, guint32 now, guint32 padding, guint32 *out_lifetime, guint32 *out_preferred)
-{
-	guint32 lifetime, preferred;
-
-	if (address->lifetime == 0) {
-		*out_lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
-		*out_preferred = NM_PLATFORM_LIFETIME_PERMANENT;
-
-		/* We treat lifetime==0 as permanent addresses to allow easy creation of such addresses
-		 * (without requiring to set the lifetime fields to NM_PLATFORM_LIFETIME_PERMANENT).
-		 * In that case we also expect that the other fields (timestamp and preferred) are left unset. */
-		g_return_val_if_fail (address->timestamp == 0 && address->preferred == 0, TRUE);
-	} else {
-		lifetime = _rebase_relative_time_on_now (address->timestamp, address->lifetime, now, padding);
-		if (!lifetime)
-			return FALSE;
-		preferred = _rebase_relative_time_on_now (address->timestamp, address->preferred, now, padding);
-
-		*out_lifetime = lifetime;
-		*out_preferred = MIN (preferred, lifetime);
-
-		/* Assert that non-permanent addresses have a (positive) @timestamp. _rebase_relative_time_on_now()
-		 * treats addresses with timestamp 0 as *now*. Addresses passed to _address_get_lifetime() always
-		 * should have a valid @timestamp, otherwise on every re-sync, their lifetime will be extended anew.
-		 */
-		g_return_val_if_fail (   address->timestamp != 0
-		                      || (   address->lifetime  == NM_PLATFORM_LIFETIME_PERMANENT
-		                          && address->preferred == NM_PLATFORM_LIFETIME_PERMANENT), TRUE);
-		g_return_val_if_fail (preferred <= lifetime, TRUE);
-	}
-	return TRUE;
-}
-
-gboolean
-nm_platform_ip4_check_reinstall_device_route (NMPlatform *self, int ifindex, const NMPlatformIP4Address *address, guint32 device_route_metric)
-{
-	_CHECK_SELF (self, klass, FALSE);
-
-	if (   ifindex <= 0
-	    || address->plen <= 0
-	    || address->plen >= 32)
-		return FALSE;
-
-	if (device_route_metric == NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE) {
-		/* The automatically added route would be already our desired priority.
-		 * Nothing to do. */
-		return FALSE;
-	}
-
-	return klass->ip4_check_reinstall_device_route (self, ifindex, address, device_route_metric);
 }
 
 /**
@@ -2078,8 +2002,10 @@ nm_platform_ip4_check_reinstall_device_route (NMPlatform *self, int ifindex, con
  * @self: platform instance
  * @ifindex: Interface index
  * @known_addresses: List of addresses
- * @device_route_metric: the route metric for adding subnet routes (replaces
- *   the kernel added routes).
+ * @out_added_addresses: (out): (allow-none): if not %NULL, return a #GPtrArray
+ *   with the addresses added. The pointers point into @known_addresses.
+ *   It possibly does not contain all addresses from @known_address because
+ *   some addresses might be expired.
  *
  * A convenience function to synchronize addresses for a specific interface
  * with the least possible disturbance. It simply removes addresses that are
@@ -2088,7 +2014,7 @@ nm_platform_ip4_check_reinstall_device_route (NMPlatform *self, int ifindex, con
  * Returns: %TRUE on success.
  */
 gboolean
-nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, const GArray *known_addresses, guint32 device_route_metric)
+nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, const GArray *known_addresses, GPtrArray **out_added_addresses)
 {
 	GArray *addresses;
 	NMPlatformIP4Address *address;
@@ -2102,10 +2028,13 @@ nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, const GArray *known
 	for (i = 0; i < addresses->len; i++) {
 		address = &g_array_index (addresses, NMPlatformIP4Address, i);
 
-		if (!array_contains_ip4_address (known_addresses, address))
+		if (!array_contains_ip4_address (known_addresses, address, now, ADDRESS_LIFETIME_PADDING))
 			nm_platform_ip4_address_delete (self, ifindex, address->address, address->plen, address->peer_address);
 	}
 	g_array_free (addresses, TRUE);
+
+	if (out_added_addresses)
+		*out_added_addresses = NULL;
 
 	if (!known_addresses)
 		return TRUE;
@@ -2114,33 +2043,18 @@ nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, const GArray *known
 	for (i = 0; i < known_addresses->len; i++) {
 		const NMPlatformIP4Address *known_address = &g_array_index (known_addresses, NMPlatformIP4Address, i);
 		guint32 lifetime, preferred;
-		guint32 network;
-		gboolean reinstall_device_route = FALSE;
 
-		/* add a padding of 5 seconds to avoid potential races. */
-		if (!_address_get_lifetime ((NMPlatformIPAddress *) known_address, now, 5, &lifetime, &preferred))
+		if (!nmp_utils_lifetime_get (known_address->timestamp, known_address->lifetime, known_address->preferred,
+		                             now, ADDRESS_LIFETIME_PADDING, &lifetime, &preferred))
 			continue;
-
-		if (nm_platform_ip4_check_reinstall_device_route (self, ifindex, known_address, device_route_metric))
-			reinstall_device_route = TRUE;
 
 		if (!nm_platform_ip4_address_add (self, ifindex, known_address->address, known_address->peer_address, known_address->plen, lifetime, preferred, known_address->label))
 			return FALSE;
 
-		if (reinstall_device_route) {
-			/* Kernel automatically adds a device route for us with metric 0. That is not what we want.
-			 * Remove it, and re-add it.
-			 *
-			 * In face of having the same subnets on two different interfaces with the same metric,
-			 * this is a problem. Surprisingly, kernel is able to add two routes for the same subnet/prefix,metric
-			 * to different interfaces. We cannot. Adding one, would replace the other. This is avoided
-			 * by the above nm_platform_ip4_check_reinstall_device_route() check.
-			 */
-			network = nm_utils_ip4_address_clear_host_address (known_address->address, known_address->plen);
-			(void) nm_platform_ip4_route_add (self, ifindex, NM_IP_CONFIG_SOURCE_KERNEL, network, known_address->plen,
-			                                  0, known_address->address, device_route_metric, 0);
-			(void) nm_platform_ip4_route_delete (self, ifindex, network, known_address->plen,
-			                                     NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE);
+		if (out_added_addresses) {
+			if (!*out_added_addresses)
+				*out_added_addresses = g_ptr_array_new ();
+			g_ptr_array_add (*out_added_addresses, (gpointer) known_address);
 		}
 	}
 
@@ -2177,7 +2091,7 @@ nm_platform_ip6_address_sync (NMPlatform *self, int ifindex, const GArray *known
 		if (keep_link_local && IN6_IS_ADDR_LINKLOCAL (&address->address))
 			continue;
 
-		if (!array_contains_ip6_address (known_addresses, address))
+		if (!array_contains_ip6_address (known_addresses, address, now, ADDRESS_LIFETIME_PADDING))
 			nm_platform_ip6_address_delete (self, ifindex, address->address, address->plen);
 	}
 	g_array_free (addresses, TRUE);
@@ -2190,8 +2104,8 @@ nm_platform_ip6_address_sync (NMPlatform *self, int ifindex, const GArray *known
 		const NMPlatformIP6Address *known_address = &g_array_index (known_addresses, NMPlatformIP6Address, i);
 		guint32 lifetime, preferred;
 
-		/* add a padding of 5 seconds to avoid potential races. */
-		if (!_address_get_lifetime ((NMPlatformIPAddress *) known_address, now, 5, &lifetime, &preferred))
+		if (!nmp_utils_lifetime_get (known_address->timestamp, known_address->lifetime, known_address->preferred,
+		                             now, ADDRESS_LIFETIME_PADDING, &lifetime, &preferred))
 			continue;
 
 		if (!nm_platform_ip6_address_add (self, ifindex, known_address->address,
@@ -2208,32 +2122,30 @@ nm_platform_address_flush (NMPlatform *self, int ifindex)
 {
 	_CHECK_SELF (self, klass, FALSE);
 
-	return nm_platform_ip4_address_sync (self, ifindex, NULL, 0)
-			&& nm_platform_ip6_address_sync (self, ifindex, NULL, FALSE);
+	return    nm_platform_ip4_address_sync (self, ifindex, NULL, NULL)
+	       && nm_platform_ip6_address_sync (self, ifindex, NULL, FALSE);
 }
 
 /******************************************************************/
 
 GArray *
-nm_platform_ip4_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRouteMode mode)
+nm_platform_ip4_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRouteFlags flags)
 {
 	_CHECK_SELF (self, klass, NULL);
 
 	g_return_val_if_fail (ifindex >= 0, NULL);
-	g_return_val_if_fail (klass->ip4_route_get_all, NULL);
 
-	return klass->ip4_route_get_all (self, ifindex, mode);
+	return klass->ip4_route_get_all (self, ifindex, flags);
 }
 
 GArray *
-nm_platform_ip6_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRouteMode mode)
+nm_platform_ip6_route_get_all (NMPlatform *self, int ifindex, NMPlatformGetRouteFlags flags)
 {
 	_CHECK_SELF (self, klass, NULL);
 
 	g_return_val_if_fail (ifindex >= 0, NULL);
-	g_return_val_if_fail (klass->ip6_route_get_all, NULL);
 
-	return klass->ip6_route_get_all (self, ifindex, mode);
+	return klass->ip6_route_get_all (self, ifindex, flags);
 }
 
 gboolean
@@ -2250,7 +2162,6 @@ nm_platform_ip4_route_add (NMPlatform *self,
 
 	if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
 		NMPlatformIP4Route route = { 0 };
-		char pref_src_buf[NM_UTILS_INET_ADDRSTRLEN];
 
 		route.ifindex = ifindex;
 		route.source = source;
@@ -2259,11 +2170,9 @@ nm_platform_ip4_route_add (NMPlatform *self,
 		route.gateway = gateway;
 		route.metric = metric;
 		route.mss = mss;
+		route.pref_src = pref_src;
 
-		debug ("route: adding or updating IPv4 route: %s%s%s%s", nm_platform_ip4_route_to_string (&route),
-		       pref_src ? " (src: " : "",
-		       pref_src ? nm_utils_inet4_ntop (pref_src, pref_src_buf) : "",
-		       pref_src ? ")" : "");
+		debug ("route: adding or updating IPv4 route: %s", nm_platform_ip4_route_to_string (&route));
 	}
 	return klass->ip4_route_add (self, ifindex, source, network, plen, gateway, pref_src, metric, mss);
 }
@@ -2351,7 +2260,7 @@ static const char *
 source_to_string (NMIPConfigSource source)
 {
 	switch (source) {
-	case _NM_IP_CONFIG_SOURCE_RTPROT_KERNEL:
+	case NM_IP_CONFIG_SOURCE_RTPROT_KERNEL:
 		return "rtprot-kernel";
 	case _NM_IP_CONFIG_SOURCE_RTM_F_CLONED:
 		return "rtm-f-cloned";
@@ -2386,7 +2295,7 @@ _lifetime_to_string (guint32 timestamp, guint32 lifetime, gint32 now, char *buf,
 		return "forever";
 
 	g_snprintf (buf, buf_size, "%usec",
-	            _rebase_relative_time_on_now (timestamp, lifetime, now, 0));
+	            nmp_utils_lifetime_rebase_relative_time_on_now (timestamp, lifetime, now, 0));
 	return buf;
 }
 
@@ -2668,6 +2577,7 @@ const char *
 nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route)
 {
 	char s_network[INET_ADDRSTRLEN], s_gateway[INET_ADDRSTRLEN];
+	char s_pref_src[INET_ADDRSTRLEN];
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
 	char str_scope[30];
 
@@ -2686,6 +2596,7 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route)
 	            " mss %"G_GUINT32_FORMAT
 	            " src %s" /* source */
 	            "%s%s" /* scope */
+	            "%s%s" /* pref-src */
 	            "",
 	            s_network, route->plen,
 	            s_gateway,
@@ -2694,7 +2605,9 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route)
 	            route->mss,
 	            source_to_string (route->source),
 	            route->scope_inv ? " scope " : "",
-	            route->scope_inv ? (rtnl_scope2str (nm_platform_route_scope_inv (route->scope_inv), str_scope, sizeof (str_scope))) : "");
+	            route->scope_inv ? (rtnl_scope2str (nm_platform_route_scope_inv (route->scope_inv), str_scope, sizeof (str_scope))) : "",
+	            route->pref_src ? " pref-src " : "",
+	            route->pref_src ? inet_ntop (AF_INET, &route->pref_src, s_pref_src, sizeof(s_pref_src)) : "");
 	return _nm_platform_to_string_buffer;
 }
 
@@ -2873,6 +2786,7 @@ nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route
 	_CMP_FIELD (a, b, metric);
 	_CMP_FIELD (a, b, mss);
 	_CMP_FIELD (a, b, scope_inv);
+	_CMP_FIELD (a, b, pref_src);
 	return 0;
 }
 
@@ -2995,7 +2909,7 @@ log_ip6_route (NMPlatform *p, NMPObjectType obj_type, int ifindex, NMPlatformIP6
 /******************************************************************/
 
 static gboolean
-_vtr_v4_route_add (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route, guint32 v4_pref_src)
+_vtr_v4_route_add (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route)
 {
 	return nm_platform_ip4_route_add (self,
 	                                  ifindex > 0 ? ifindex : route->rx.ifindex,
@@ -3003,13 +2917,13 @@ _vtr_v4_route_add (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *rout
 	                                  route->r4.network,
 	                                  route->rx.plen,
 	                                  route->r4.gateway,
-	                                  v4_pref_src,
+	                                  route->r4.pref_src,
 	                                  route->rx.metric,
 	                                  route->rx.mss);
 }
 
 static gboolean
-_vtr_v6_route_add (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route, guint32 v4_pref_src)
+_vtr_v6_route_add (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route)
 {
 	return nm_platform_ip6_route_add (self,
 	                                  ifindex > 0 ? ifindex : route->rx.ifindex,
