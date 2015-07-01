@@ -423,7 +423,7 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 	--with-suspend-resume=systemd \
 	--with-systemdsystemunitdir=%{systemd_dir} \
 	--with-udev-dir=%{udev_dir} \
-	--with-system-ca-path=/etc/pki/tls/certs \
+	--with-system-ca-path=/etc/pki/tls/cert.pem \
 	--with-tests=yes \
 	--with-valgrind=no \
 	--enable-ifcfg-rh=yes \

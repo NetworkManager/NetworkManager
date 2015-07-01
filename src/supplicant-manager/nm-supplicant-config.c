@@ -733,6 +733,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	gboolean fast = FALSE;
 	guint32 i, num_eap;
 	gboolean fast_provisoning_allowed = FALSE;
+	const char *ca_path_override = NULL, *ca_cert_override = NULL;
 
 	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), FALSE);
 	g_return_val_if_fail (setting != NULL, FALSE);
@@ -870,10 +871,18 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 		}
 	}
 
+	/* If user wants to use system CA certs, either populate ca_path (if the path
+	 * is a directory) or ca_cert (the path is a file name) */
+	if (nm_setting_802_1x_get_system_ca_certs (setting)) {
+		if (g_file_test (SYSTEM_CA_PATH, G_FILE_TEST_IS_DIR))
+			ca_path_override = SYSTEM_CA_PATH;
+		else
+			ca_cert_override = SYSTEM_CA_PATH;
+	}
+
 	/* CA path */
 	path = nm_setting_802_1x_get_ca_path (setting);
-	if (nm_setting_802_1x_get_system_ca_certs (setting))
-		path = SYSTEM_CA_PATH;
+	path = ca_path_override ? ca_path_override : path;
 	if (path) {
 		if (!add_string_val (self, path, "ca_path", FALSE, FALSE))
 			return FALSE;
@@ -881,41 +890,50 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 
 	/* Phase2 CA path */
 	path = nm_setting_802_1x_get_phase2_ca_path (setting);
-	if (nm_setting_802_1x_get_system_ca_certs (setting))
-		path = SYSTEM_CA_PATH;
+	path = ca_path_override ? ca_path_override : path;
 	if (path) {
 		if (!add_string_val (self, path, "ca_path2", FALSE, FALSE))
 			return FALSE;
 	}
 
 	/* CA certificate */
-	switch (nm_setting_802_1x_get_ca_cert_scheme (setting)) {
-	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-		bytes = nm_setting_802_1x_get_ca_cert_blob (setting);
-		ADD_BLOB_VAL (bytes, "ca_cert", con_uuid);
-		break;
-	case NM_SETTING_802_1X_CK_SCHEME_PATH:
-		path = nm_setting_802_1x_get_ca_cert_path (setting);
-		if (!add_string_val (self, path, "ca_cert", FALSE, FALSE))
+	if (ca_cert_override) {
+		if (!add_string_val (self, ca_cert_override, "ca_cert", FALSE, FALSE))
 			return FALSE;
-		break;
-	default:
-		break;
+	} else {
+		switch (nm_setting_802_1x_get_ca_cert_scheme (setting)) {
+		case NM_SETTING_802_1X_CK_SCHEME_BLOB:
+			bytes = nm_setting_802_1x_get_ca_cert_blob (setting);
+			ADD_BLOB_VAL (bytes, "ca_cert", con_uuid);
+			break;
+		case NM_SETTING_802_1X_CK_SCHEME_PATH:
+			path = nm_setting_802_1x_get_ca_cert_path (setting);
+			if (!add_string_val (self, path, "ca_cert", FALSE, FALSE))
+				return FALSE;
+			break;
+		default:
+			break;
+		}
 	}
 
 	/* Phase 2 CA certificate */
-	switch (nm_setting_802_1x_get_phase2_ca_cert_scheme (setting)) {
-	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-		bytes = nm_setting_802_1x_get_phase2_ca_cert_blob (setting);
-		ADD_BLOB_VAL (bytes, "ca_cert2", con_uuid);
-		break;
-	case NM_SETTING_802_1X_CK_SCHEME_PATH:
-		path = nm_setting_802_1x_get_phase2_ca_cert_path (setting);
-		if (!add_string_val (self, path, "ca_cert2", FALSE, FALSE))
+	if (ca_cert_override) {
+		if (!add_string_val (self, ca_cert_override, "ca_cert2", FALSE, FALSE))
 			return FALSE;
-		break;
-	default:
-		break;
+	} else {
+		switch (nm_setting_802_1x_get_phase2_ca_cert_scheme (setting)) {
+		case NM_SETTING_802_1X_CK_SCHEME_BLOB:
+			bytes = nm_setting_802_1x_get_phase2_ca_cert_blob (setting);
+			ADD_BLOB_VAL (bytes, "ca_cert2", con_uuid);
+			break;
+		case NM_SETTING_802_1X_CK_SCHEME_PATH:
+			path = nm_setting_802_1x_get_phase2_ca_cert_path (setting);
+			if (!add_string_val (self, path, "ca_cert2", FALSE, FALSE))
+				return FALSE;
+			break;
+		default:
+			break;
+		}
 	}
 
 	/* Subject match */

@@ -3933,7 +3933,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * specified at configure time with the --system-ca-path switch.  The
 	 * certificates in this directory are added to the verification chain in
 	 * addition to any certificates specified by the #NMSetting8021x:ca-cert and
-	 * #NMSetting8021x:phase2-ca-cert properties.
+	 * #NMSetting8021x:phase2-ca-cert properties. If the path provided with
+	 * --system-ca-path is rather a file name (bundle of trusted CA certificates),
+	 * it overrides #NMSetting8021x:ca-cert and #NMSetting8021x:phase2-ca-cert
+	 * properties instead (sets ca_cert/ca_cert2 options for wpa_supplicant).
 	 **/
 	/* ---ifcfg-rh---
 	 * property: system-ca-certs
