@@ -130,8 +130,8 @@ char **     _nm_utils_strsplit_set (const char *str,
                                     const char *delimiters,
                                     int max_tokens);
 
-GSList *    _nm_utils_strv_to_slist (char **strv);
-char **     _nm_utils_slist_to_strv (GSList *slist);
+GSList *    _nm_utils_strv_to_slist (char **strv, gboolean deep_copy);
+char **     _nm_utils_slist_to_strv (GSList *slist, gboolean deep_copy);
 
 GPtrArray * _nm_utils_strv_to_ptrarray (char **strv);
 char **     _nm_utils_ptrarray_to_strv (GPtrArray *ptrarray);

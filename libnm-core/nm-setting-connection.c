@@ -1184,7 +1184,7 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_SECONDARIES:
 		g_slist_free_full (priv->secondaries, g_free);
-		priv->secondaries = _nm_utils_strv_to_slist (g_value_get_boxed (value));
+		priv->secondaries = _nm_utils_strv_to_slist (g_value_get_boxed (value), TRUE);
 		break;
 	case PROP_GATEWAY_PING_TIMEOUT:
 		priv->gateway_ping_timeout = g_value_get_uint (value);
@@ -1260,7 +1260,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_enum (value, nm_setting_connection_get_autoconnect_slaves (setting));
 		break;
 	case PROP_SECONDARIES:
-		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->secondaries));
+		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->secondaries, TRUE));
 		break;
 	case PROP_GATEWAY_PING_TIMEOUT:
 		g_value_set_uint (value, priv->gateway_ping_timeout);

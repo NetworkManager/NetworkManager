@@ -2890,7 +2890,7 @@ set_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_EAP:
 		g_slist_free_full (priv->eap, g_free);
-		priv->eap = _nm_utils_strv_to_slist (g_value_get_boxed (value));
+		priv->eap = _nm_utils_strv_to_slist (g_value_get_boxed (value), TRUE);
 		break;
 	case PROP_IDENTITY:
 		g_free (priv->identity);
@@ -2924,7 +2924,7 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_ALTSUBJECT_MATCHES:
 		g_slist_free_full (priv->altsubject_matches, g_free);
-		priv->altsubject_matches = _nm_utils_strv_to_slist (g_value_get_boxed (value));
+		priv->altsubject_matches = _nm_utils_strv_to_slist (g_value_get_boxed (value), TRUE);
 		break;
 	case PROP_CLIENT_CERT:
 		if (priv->client_cert)
@@ -2976,7 +2976,7 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_PHASE2_ALTSUBJECT_MATCHES:
 		g_slist_free_full (priv->phase2_altsubject_matches, g_free);
-		priv->phase2_altsubject_matches = _nm_utils_strv_to_slist (g_value_get_boxed (value));
+		priv->phase2_altsubject_matches = _nm_utils_strv_to_slist (g_value_get_boxed (value), TRUE);
 		break;
 	case PROP_PHASE2_CLIENT_CERT:
 		if (priv->phase2_client_cert)
@@ -3062,7 +3062,7 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_EAP:
-		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->eap));
+		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->eap, TRUE));
 		break;
 	case PROP_IDENTITY:
 		g_value_set_string (value, priv->identity);
@@ -3083,7 +3083,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, priv->subject_match);
 		break;
 	case PROP_ALTSUBJECT_MATCHES:
-		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->altsubject_matches));
+		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->altsubject_matches, TRUE));
 		break;
 	case PROP_CLIENT_CERT:
 		g_value_set_boxed (value, priv->client_cert);
@@ -3113,7 +3113,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, priv->phase2_subject_match);
 		break;
 	case PROP_PHASE2_ALTSUBJECT_MATCHES:
-		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->phase2_altsubject_matches));
+		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->phase2_altsubject_matches, TRUE));
 		break;
 	case PROP_PHASE2_CLIENT_CERT:
 		g_value_set_boxed (value, priv->phase2_client_cert);

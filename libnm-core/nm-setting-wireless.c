@@ -929,7 +929,7 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_SEEN_BSSIDS:
 		g_slist_free_full (priv->seen_bssids, g_free);
-		priv->seen_bssids = _nm_utils_strv_to_slist (g_value_get_boxed (value));
+		priv->seen_bssids = _nm_utils_strv_to_slist (g_value_get_boxed (value), TRUE);
 		break;
 	case PROP_HIDDEN:
 		priv->hidden = g_value_get_boolean (value);
@@ -985,7 +985,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, nm_setting_wireless_get_mtu (setting));
 		break;
 	case PROP_SEEN_BSSIDS:
-		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->seen_bssids));
+		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->seen_bssids, TRUE));
 		break;
 	case PROP_HIDDEN:
 		g_value_set_boolean (value, nm_setting_wireless_get_hidden (setting));

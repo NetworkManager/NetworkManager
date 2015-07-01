@@ -755,21 +755,26 @@ _nm_utils_bytes_from_dbus (GVariant *dbus_value,
 }
 
 GSList *
-_nm_utils_strv_to_slist (char **strv)
+_nm_utils_strv_to_slist (char **strv, gboolean deep_copy)
 {
 	int i;
 	GSList *list = NULL;
 
 	if (strv) {
-		for (i = 0; strv[i]; i++)
-			list = g_slist_prepend (list, g_strdup (strv[i]));
+		if (deep_copy) {
+			for (i = 0; strv[i]; i++)
+				list = g_slist_prepend (list, g_strdup (strv[i]));
+		} else {
+			for (i = 0; strv[i]; i++)
+				list = g_slist_prepend (list, strv[i]);
+		}
 	}
 
 	return g_slist_reverse (list);
 }
 
 char **
-_nm_utils_slist_to_strv (GSList *slist)
+_nm_utils_slist_to_strv (GSList *slist, gboolean deep_copy)
 {
 	GSList *iter;
 	char **strv;
@@ -778,8 +783,13 @@ _nm_utils_slist_to_strv (GSList *slist)
 	len = g_slist_length (slist);
 	strv = g_new (char *, len + 1);
 
-	for (i = 0, iter = slist; iter; iter = iter->next, i++)
-		strv[i] = g_strdup (iter->data);
+	if (deep_copy) {
+		for (i = 0, iter = slist; iter; iter = iter->next, i++)
+			strv[i] = g_strdup (iter->data);
+	} else {
+		for (i = 0, iter = slist; iter; iter = iter->next, i++)
+			strv[i] = iter->data;
+	}
 	strv[i] = NULL;
 
 	return strv;
