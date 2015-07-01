@@ -49,6 +49,7 @@ G_BEGIN_DECLS
 #define NM_CONFIG_KEYFILE_LIST_SEPARATOR ','
 
 #define NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION            "connection"
+#define NM_CONFIG_KEYFILE_GROUPPREFIX_TEST_APPEND_STRINGLIST ".test-append-stringlist"
 
 #define NM_CONFIG_KEYFILE_GROUP_MAIN                        "main"
 #define NM_CONFIG_KEYFILE_GROUP_LOGGING                     "logging"
