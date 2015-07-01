@@ -993,7 +993,7 @@ _nmp_vt_cmd_plobj_init_from_nl_link (NMPlatform *platform, NMPlatformObject *_ob
 	const char *kind;
 	gboolean completed_from_cache_val = FALSE;
 	gboolean *completed_from_cache = complete_from_cache ? &completed_from_cache_val : NULL;
-	const NMPObject *link_cached;
+	const NMPObject *link_cached = NULL;
 
 	nm_assert (memcmp (obj, ((char [sizeof (NMPObjectLink)]) { 0 }), sizeof (NMPObjectLink)) == 0);
 
