@@ -849,8 +849,27 @@ read_devtype (const char *sysfs_path)
 	return NULL;
 }
 
+static const NMPObject *
+_lookup_link_cached (NMPlatform *platform, int ifindex, gboolean *completed_from_cache, const NMPObject **link_cached)
+{
+	const NMPObject *obj;
+
+	nm_assert (completed_from_cache && link_cached);
+
+	if (!*completed_from_cache) {
+		obj = ifindex > 0 ? nmp_cache_lookup_link (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, ifindex) : NULL;
+
+		if (obj && !obj->_link.netlink.is_in_netlink)
+			*link_cached = obj;
+		else
+			*link_cached = NULL;
+		*completed_from_cache = TRUE;
+	}
+	return *link_cached;
+}
+
 static NMLinkType
-link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink, gboolean complete_from_cache, const char **out_kind)
+link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink, gboolean *completed_from_cache, const NMPObject **link_cached, const char **out_kind)
 {
 	const char *rtnl_type, *ifname;
 	int i, arptype;
@@ -862,18 +881,13 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink, gboolean co
 	}
 
 	rtnl_type = rtnl_link_get_type (rtnllink);
-	if (!rtnl_type && complete_from_cache) {
-		int ifindex = rtnl_link_get_ifindex (rtnllink);
+	if (!rtnl_type && completed_from_cache) {
 		const NMPObject *obj;
 
-		/* Sometimes we get netlink messages with the link type unset.
-		 * In this case, look it up in the cache. */
-		if (ifindex > 0) {
-			obj = nmp_cache_lookup_link (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, ifindex);
-			if (obj && obj->_link.netlink.is_in_netlink && obj->link.kind) {
-				rtnl_type = obj->link.kind;
-				_LOGT ("link_extract_type(): complete kind from cache: ifindex=%d, kind=%s", ifindex, rtnl_type);
-			}
+		obj = _lookup_link_cached (platform, rtnl_link_get_ifindex (rtnllink), completed_from_cache, link_cached);
+		if (obj && obj->link.kind) {
+			rtnl_type = obj->link.kind;
+			_LOGT ("link_extract_type(): complete kind from cache: ifindex=%d, kind=%s", rtnl_link_get_ifindex (rtnllink), rtnl_type);
 		}
 	}
 	if (out_kind)
@@ -977,6 +991,9 @@ _nmp_vt_cmd_plobj_init_from_nl_link (NMPlatform *platform, NMPlatformObject *_ob
 	const char *name;
 	struct nl_addr *nladdr;
 	const char *kind;
+	gboolean completed_from_cache_val = FALSE;
+	gboolean *completed_from_cache = complete_from_cache ? &completed_from_cache_val : NULL;
+	const NMPObject *link_cached;
 
 	nm_assert (memcmp (obj, ((char [sizeof (NMPObjectLink)]) { 0 }), sizeof (NMPObjectLink)) == 0);
 
@@ -991,7 +1008,7 @@ _nmp_vt_cmd_plobj_init_from_nl_link (NMPlatform *platform, NMPlatformObject *_ob
 	name = rtnl_link_get_name (nlo);
 	if (name)
 		g_strlcpy (obj->name, name, sizeof (obj->name));
-	obj->type = link_extract_type (platform, nlo, complete_from_cache, &kind);
+	obj->type = link_extract_type (platform, nlo, completed_from_cache, &link_cached, &kind);
 	obj->kind = g_intern_string (kind);
 	obj->flags = rtnl_link_get_flags (nlo);
 	obj->connected = NM_FLAGS_HAS (obj->flags, IFF_LOWER_UP);
@@ -1000,8 +1017,15 @@ _nmp_vt_cmd_plobj_init_from_nl_link (NMPlatform *platform, NMPlatformObject *_ob
 	obj->mtu = rtnl_link_get_mtu (nlo);
 	obj->arptype = rtnl_link_get_arptype (nlo);
 
-	if (!g_strcmp0 (rtnl_link_get_type (nlo), "vlan"))
-		obj->vlan_id = rtnl_link_vlan_get_id (nlo);
+	if (obj->type == NM_LINK_TYPE_VLAN) {
+		if (!g_strcmp0 (rtnl_link_get_type (nlo), "vlan"))
+			obj->vlan_id = rtnl_link_vlan_get_id (nlo);
+		else if (completed_from_cache) {
+			_lookup_link_cached (platform, obj->ifindex, completed_from_cache, &link_cached);
+			if (link_cached)
+				obj->vlan_id = link_cached->link.vlan_id;
+		}
+	}
 
 	if ((nladdr = rtnl_link_get_addr (nlo))) {
 		unsigned int l = 0;
