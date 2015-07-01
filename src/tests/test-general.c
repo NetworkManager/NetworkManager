@@ -674,12 +674,26 @@ static void
 test_match_spec_ifname (const char *spec_str, const char **matches, const char **neg_matches)
 {
 	const char *m;
-	GSList *specs, *specs_reverse = NULL;
+	GSList *specs, *specs_reverse = NULL, *specs_resplit, *specs_i, *specs_j;
 	guint i;
+	gs_free char *specs_joined = NULL;
 
 	g_assert (spec_str);
 
 	specs = nm_match_spec_split (spec_str);
+
+	/* assert that split(join(specs)) == specs */
+	specs_joined = nm_match_spec_join (specs);
+	specs_resplit = nm_match_spec_split (specs_joined);
+	specs_i = specs;
+	specs_j = specs_resplit;
+	while (specs_i && specs_j && g_strcmp0 (specs_i->data, specs_j->data) == 0) {
+		specs_i = specs_i->next;
+		specs_j = specs_j->next;
+	}
+	g_assert (!specs_i);
+	g_assert (!specs_j);
+	g_slist_free_full (specs_resplit, g_free);
 
 	/* also check the matches in the reverse order. They must yield the same result because
 	 * matches are inclusive -- except "except:" which always wins. */
