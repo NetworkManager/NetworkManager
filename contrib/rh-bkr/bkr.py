@@ -628,8 +628,10 @@ class CmdSubmit(CmdBase):
             return '''
                 <group op="=" value="wireless"/>
                 <hostname op="like" value="wlan-r2%.wlan.rhts.eng.bos.redhat.com"/>
-                <!-- 8086:08ae (wlwifi,iwldvm) Intel Corporation Centrino Wireless-N 100 doesn't support AP mode -->
+                <!-- 8086:08ae (iwlwifi,iwldvm) Intel Corporation Centrino Wireless-N 100 doesn't support AP mode -->
                 <device op="!=" vendor_id="8086" device_id="08ae"/>
+		<!-- 8086:08b3 (iwlwifi,iwlmvm) Ooops-es: https://bugzilla.redhat.com/show_bug.cgi?id=1235694 -->
+                <device op="!=" vendor_id="8086" device_id="08b3"/>
                 <!-- Pick an Intel, so that we're not scheduled on some poor Realtek chip -->
                 <device op="==" driver="iwlwifi"/>
             '''
