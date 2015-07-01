@@ -529,6 +529,27 @@ _sort_groups_cmp (const char **pa, const char **pb, gpointer dummy)
 }
 
 static gboolean
+_setting_is_device_spec (const char *group, const char *key)
+{
+#define _IS(group_v, key_v) (strcmp (group, (""group_v)) == 0 && strcmp (key, (""key_v)) == 0)
+	return    _IS (NM_CONFIG_KEYFILE_GROUP_MAIN, "no-auto-default")
+	       || _IS (NM_CONFIG_KEYFILE_GROUP_MAIN, "ignore-carrier")
+	       || _IS (NM_CONFIG_KEYFILE_GROUP_MAIN, "assume-ipv6ll-only")
+	       || _IS (NM_CONFIG_KEYFILE_GROUP_KEYFILE, "unmanaged-devices")
+	       || (g_str_has_prefix (group, NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION) && !strcmp (key, "match-device"));
+}
+
+static gboolean
+_setting_is_string_list (const char *group, const char *key)
+{
+	return    _IS (NM_CONFIG_KEYFILE_GROUP_MAIN, "plugins")
+	       || _IS (NM_CONFIG_KEYFILE_GROUP_MAIN, "debug")
+	       || _IS (NM_CONFIG_KEYFILE_GROUP_LOGGING, "domains")
+	       || g_str_has_prefix (group, NM_CONFIG_KEYFILE_GROUPPREFIX_TEST_APPEND_STRINGLIST);
+#undef _IS
+}
+
+static gboolean
 read_config (GKeyFile *keyfile, const char *path, GError **error)
 {
 	GKeyFile *kf;
@@ -593,29 +614,72 @@ read_config (GKeyFile *keyfile, const char *path, GError **error)
 			if (   key_len > 1
 			    && (last_char == '+' || last_char == '-')) {
 				gs_free char *base_key = g_strndup (key, key_len - 1);
-				gs_strfreev  char **old_val = g_key_file_get_string_list (keyfile, group, base_key, NULL, NULL);
-				gs_free char **new_val = g_key_file_get_string_list (kf, group, key, NULL, NULL);
-				gs_unref_ptrarray GPtrArray *new = g_ptr_array_new_with_free_func (g_free);
-				char **iter_val;
+				gboolean is_string_list;
 
-				for (iter_val = old_val; iter_val && *iter_val; iter_val++) {
-					if (   last_char != '-'
-					    || _nm_utils_strv_find_first (new_val, -1, *iter_val) < 0)
-						g_ptr_array_add (new, g_strdup (*iter_val));
-				}
-				for (iter_val = new_val; iter_val && *iter_val; iter_val++) {
-					/* don't add duplicates. That means an "option=a,b"; "option+=a,c" results in "option=a,b,c" */
-					if (   last_char == '+'
-					    && _nm_utils_strv_find_first (old_val, -1, *iter_val) < 0)
-						g_ptr_array_add (new, *iter_val);
-					else
-						g_free (*iter_val);
-				}
+				is_string_list = _setting_is_string_list (group, base_key);
 
-				if (new->len > 0)
-					nm_config_keyfile_set_string_list (keyfile, group, base_key, (const char *const*) new->pdata, new->len);
-				else
-					g_key_file_remove_key (keyfile, group, base_key, NULL);
+				if (   is_string_list
+				    || _setting_is_device_spec (group, base_key)) {
+					gs_unref_ptrarray GPtrArray *new = g_ptr_array_new_with_free_func (g_free);
+					char **iter_val;
+					gs_strfreev  char **old_val = NULL;
+					gs_free char **new_val = NULL;
+
+					if (is_string_list) {
+						old_val = g_key_file_get_string_list (keyfile, group, base_key, NULL, NULL);
+						new_val = g_key_file_get_string_list (kf, group, key, NULL, NULL);
+					} else {
+						gs_free char *old_sval = nm_config_keyfile_get_value (keyfile, group, base_key, NM_CONFIG_GET_VALUE_TYPE_SPEC);
+						gs_free char *new_sval = nm_config_keyfile_get_value (kf, group, key, NM_CONFIG_GET_VALUE_TYPE_SPEC);
+						gs_free_slist GSList *old_specs = nm_match_spec_split (old_sval);
+						gs_free_slist GSList *new_specs = nm_match_spec_split (new_sval);
+
+						/* the key is a device spec. This is a special kind of string-list, that
+						 * we must split differently. */
+						old_val = _nm_utils_slist_to_strv (old_specs, FALSE);
+						new_val = _nm_utils_slist_to_strv (new_specs, FALSE);
+					}
+
+					/* merge the string lists, by omiting duplicates. */
+
+					for (iter_val = old_val; iter_val && *iter_val; iter_val++) {
+						if (   last_char != '-'
+						    || _nm_utils_strv_find_first (new_val, -1, *iter_val) < 0)
+							g_ptr_array_add (new, g_strdup (*iter_val));
+					}
+					for (iter_val = new_val; iter_val && *iter_val; iter_val++) {
+						/* don't add duplicates. That means an "option=a,b"; "option+=a,c" results in "option=a,b,c" */
+						if (   last_char == '+'
+						    && _nm_utils_strv_find_first (old_val, -1, *iter_val) < 0)
+							g_ptr_array_add (new, *iter_val);
+						else
+							g_free (*iter_val);
+					}
+
+					if (new->len > 0) {
+						if (is_string_list)
+							nm_config_keyfile_set_string_list (keyfile, group, base_key, (const char *const*) new->pdata, new->len);
+						else {
+							gs_free_slist GSList *specs = NULL;
+							gs_free char *specs_joined = NULL;
+
+							g_ptr_array_add (new, NULL);
+							specs = _nm_utils_strv_to_slist ((char **) new->pdata, FALSE);
+
+							specs_joined = nm_match_spec_join (specs);
+
+							g_key_file_set_value (keyfile, group, base_key, specs_joined);
+						}
+					} else {
+						if (is_string_list)
+							g_key_file_remove_key (keyfile, group, base_key, NULL);
+						else
+							g_key_file_set_value (keyfile, group, base_key, "");
+					}
+				} else {
+					/* For any other settings we don't support extending the option with +/-.
+					 * Just drop the key. */
+				}
 				continue;
 			}
 
