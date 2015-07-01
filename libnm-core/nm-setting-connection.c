@@ -1663,7 +1663,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	g_object_class_install_property
 		(object_class, PROP_GATEWAY_PING_TIMEOUT,
 		 g_param_spec_uint (NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT, "", "",
-		                    0, 30, 0,
+		                    0, 600, 0,
 		                    G_PARAM_READWRITE |
 		                    G_PARAM_CONSTRUCT |
 		                    G_PARAM_STATIC_STRINGS));
