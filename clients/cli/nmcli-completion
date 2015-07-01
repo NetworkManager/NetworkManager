@@ -688,6 +688,25 @@ _nmcli_compl_COMMAND_nl() {
     _nmcli_list_nl "$(printf "%s%s\n%s" "" "$V" "$a")"
 }
 
+_nmcli_compl_PROPERTIES()
+{
+    while [[ "${#words[@]}" -gt 0 ]]; do
+        if [[ ${#words[@]} -le 1 ]]; then
+            local PREFIX=""
+
+            if [[ "${words[0]:0:1}" == [+-] ]]; then
+                PREFIX="${words[0]:0:1}"
+            fi
+            _nmcli_list_nl "$(echo -e 'print\nquit\nyes' |nmcli c edit "$@" 2>/dev/null |awk -F: '/\..*:/ {print "'$PREFIX'"$1}')"
+            return 0
+        elif [[ ${#words[@]} -le 2 ]]; then
+            return 0
+        fi
+        _nmcli_array_delete_at words 0 1
+    done
+    _nmcli_list_nl "$(echo -e 'print\nquit\nyes' |nmcli c edit "$@" 2>/dev/null |awk -F: '/\..*:/ {print $1}')"
+}
+
 _nmcli()
 {
     local cur prev words cword i
@@ -712,7 +731,7 @@ _nmcli()
         cur=''
     fi
 
-    local OPTIONS_UNKNOWN_OPTION OPTIONS_TYPE OPTIONS_TYPED OPTIONS OPTIONS_MANDATORY COMMAND_ARGS_WAIT_OPTIONS OPTIONS_IP OPTIONS_MANDATORY OPTIONS_NEXT_GROUP
+    local OPTIONS_UNKNOWN_OPTION OPTIONS_TYPE OPTIONS_TYPED OPTIONS OPTIONS_MANDATORY COMMAND_ARGS_WAIT_OPTIONS OPTIONS_IP OPTIONS_MANDATORY OPTIONS_NEXT_GROUP OPTIONS_SEP
     local COMMAND_CONNECTION_TYPE COMMAND_CONNECTION_ID OPTIONS_MANDATORY_IFNAME HELP_ONLY_AS_FIRST
     local COMMAND_CONNECTION_ACTIVE=""
 
@@ -956,6 +975,7 @@ _nmcli()
                             fi
 
                             OPTIONS_IP=(ip4 ip6 gw4 gw6)
+                            OPTIONS_SEP=(--)
                             OPTIONS_MANDATORY=()
                             case "$OPTIONS_TYPE" in
                                 802-3|802-3-|802-3-e|802-3-et|802-3-eth|802-3-ethe|802-3-ether|802-3-ethern|802-3-etherne|802-3-ethernet| \
@@ -1052,7 +1072,7 @@ _nmcli()
                                 if [[ "${#OPTIONS_MANDATORY[@]}" -gt 0 ]]; then
                                     _nmcli_list "$(echo "${OPTIONS[@]}") $(echo "${OPTIONS_TYPED[@]}")"
                                 else
-                                    _nmcli_list "$(echo "${OPTIONS[@]}") $(echo "${OPTIONS_TYPED[@]}") $(echo "${OPTIONS_IP[@]}")"
+                                    _nmcli_list "$(echo "${OPTIONS[@]}") $(echo "${OPTIONS_TYPED[@]}") $(echo "${OPTIONS_IP[@]}") $(echo "${OPTIONS_SEP[@]}")"
                                 fi
                                 return 0
                             fi
@@ -1069,7 +1089,7 @@ _nmcli()
                                     if [[ "${#OPTIONS_MANDATORY[@]}" -gt 0 ]]; then
                                         _nmcli_list "$(echo "${OPTIONS[@]}")"
                                     else
-                                        _nmcli_list "$(echo "${OPTIONS[@]}") $(echo "${OPTIONS_IP[@]}")"
+                                        _nmcli_list "$(echo "${OPTIONS[@]}") $(echo "${OPTIONS_IP[@]}") $(echo "${OPTIONS_SEP[@]}")"
                                     fi
                                     return 0
                                 fi
@@ -1080,11 +1100,12 @@ _nmcli()
                                         # we have an unknown option, but still mandatory ones that must be fullfiled first.
                                         return 0
                                     fi
-                                    if ! _nmcli_array_has_value OPTIONS_IP "${OPTIONS_UNKNOWN_OPTION:1}"; then
-                                        # the unknown option is NOT an IP option.
+                                    if ! (_nmcli_array_has_value OPTIONS_IP "${OPTIONS_UNKNOWN_OPTION:1}" ||
+                                          _nmcli_array_has_value OPTIONS_SEP "${OPTIONS_UNKNOWN_OPTION:1}"); then
+                                        # the unknown option is neither an IP option nor a separator.
                                         return 0
                                     fi
-                                    # The unknown option is an IP option, which is fine... continue...
+                                    # The unknown option is an IP option or a separator, which is fine... continue...
                                 fi
 
                             fi
@@ -1101,8 +1122,9 @@ _nmcli()
                                 fi
 
                                 if [[ "$OPTIONS_UNKNOWN_OPTION" != "" ]]; then
-                                    if ! _nmcli_array_has_value OPTIONS_IP "${OPTIONS_UNKNOWN_OPTION:1}"; then
-                                        # the unknown option is NOT an IP option.
+                                    if ! (_nmcli_array_has_value OPTIONS_IP "${OPTIONS_UNKNOWN_OPTION:1}" ||
+                                          _nmcli_array_has_value OPTIONS_SEP "${OPTIONS_UNKNOWN_OPTION:1}"); then
+                                        # the unknown option is neither an IP option nor a separator.
                                         return 0
                                     fi
                                 fi
@@ -1110,8 +1132,8 @@ _nmcli()
 
 
                             # no mandatory options... do final completion including IP options
-                            OPTIONS=("${OPTIONS[@]}" "${OPTIONS_IP[@]}")
-                            OPTIONS_NEXT_GROUP=("${OPTIONS_IP[@]}")
+                            OPTIONS=("${OPTIONS[@]}" "${OPTIONS_IP[@]}" "${OPTIONS_SEP[@]}")
+                            OPTIONS_NEXT_GROUP=("${OPTIONS_IP[@]}" "${OPTIONS_SEP[@]}")
                             _nmcli_compl_ARGS && return 0
 
                             if [[ "$OPTIONS_UNKNOWN_OPTION" != "" ]]; then
@@ -1125,11 +1147,18 @@ _nmcli()
                                 return 0
                             fi
 
+
                             # process the last group of options, as the OPTIONS_TYPED are already handled...
-                            OPTIONS=("${OPTIONS_IP[@]}")
-                            OPTIONS_NEXT_GROUP=()
+                            OPTIONS=("${OPTIONS_IP[@]}" "${OPTIONS_SEP[@]}")
+                            OPTIONS_NEXT_GROUP=("${OPTIONS_SEP[@]}")
                             COMMAND_ARGS_WAIT_OPTIONS=0
                             _nmcli_compl_ARGS && return 0
+
+                            _nmcli_array_delete_at words 0
+                            _nmcli_compl_PROPERTIES type "$OPTIONS_TYPE"
+
+                            return 0
+
                         fi
                         ;;
                     e|ed|edi|edit)
@@ -1186,21 +1215,9 @@ _nmcli()
 
                             OPTIONS=(id uuid path)
                             _nmcli_compl_ARGS_CONNECTION && return 0
-                            while [[ "${#words[@]}" -gt 0 ]]; do
-                                if [[ ${#words[@]} -le 1 ]]; then
-                                    local PREFIX=""
 
-                                    if [[ "${words[0]:0:1}" == [+-] ]]; then
-                                        PREFIX="${words[0]:0:1}"
-                                    fi
-                                    _nmcli_list_nl "$(nmcli --fields profile connection show ${COMMAND_CONNECTION_TYPE} "$COMMAND_CONNECTION_ID" 2>/dev/null | sed -n 's/^\([^:]\+\):.*/'$PREFIX'\1/p')"
-                                    return 0
-                                elif [[ ${#words[@]} -le 2 ]]; then
-                                    return 0
-                                fi
-                                _nmcli_array_delete_at words 0 1
-                            done
-                            _nmcli_list_nl "$(nmcli --fields profile connection show ${COMMAND_CONNECTION_TYPE} "$COMMAND_CONNECTION_ID" 2>/dev/null | sed -n 's/^\([^:]\+\):.*/\1/p')"
+                            _nmcli_compl_PROPERTIES ${COMMAND_CONNECTION_TYPE} "$COMMAND_CONNECTION_ID"
+
                             return 0
                         fi
                         ;;
