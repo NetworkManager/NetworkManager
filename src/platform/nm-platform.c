@@ -444,14 +444,9 @@ nm_platform_link_get_all (NMPlatform *self)
 	for (i = 0; i < links->len; i++) {
 		item = &g_array_index (links, NMPlatformLink, i);
 
-		if (item->ifindex <= 0 || g_hash_table_contains (unseen, GINT_TO_POINTER (item->ifindex))) {
-			_LOGT ("link-get: SKIP: %3d: %s", i, nm_platform_link_to_string (item));
-			g_warn_if_reached ();
-			item->ifindex = 0;
-			continue;
-		}
-
 		_LOGT ("link-get: %3d: %s", i, nm_platform_link_to_string (item));
+
+		nm_assert (item->ifindex > 0 && !g_hash_table_contains (unseen, GINT_TO_POINTER (item->ifindex)));
 
 		g_hash_table_insert (unseen, GINT_TO_POINTER (item->ifindex), NULL);
 	}
