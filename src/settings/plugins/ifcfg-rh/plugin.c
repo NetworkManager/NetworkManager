@@ -162,7 +162,8 @@ remove_connection (SCPluginIfcfg *self, NMIfcfgConnection *connection)
 
 	g_object_ref (connection);
 	g_hash_table_remove (priv->connections, nm_connection_get_uuid (NM_CONNECTION (connection)));
-	nm_settings_connection_signal_remove (NM_SETTINGS_CONNECTION (connection));
+	if (!unmanaged && !unrecognized)
+		nm_settings_connection_signal_remove (NM_SETTINGS_CONNECTION (connection));
 	g_object_unref (connection);
 
 	/* Emit changes _after_ removing the connection */
