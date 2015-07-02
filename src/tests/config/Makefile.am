@@ -10,7 +10,8 @@ AM_CPPFLAGS = \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
-	-DSRCDIR=\""$(srcdir)"\"
+	-DSRCDIR=\""$(srcdir)"\" \
+	-DBUILDDIR=\""$(builddir)"\"
 
 noinst_PROGRAMS = \
 	test-config

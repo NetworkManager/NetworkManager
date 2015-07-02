@@ -701,8 +701,8 @@ static void
 test_config_set_values (void)
 {
 	gs_unref_object NMConfig *config = NULL;
-	const char *CONFIG_USER = SRCDIR"/test-set-values-user.conf";
-	const char *CONFIG_INTERN = SRCDIR"/test-set-values-intern.conf";
+	const char *CONFIG_USER = BUILDDIR"/test-set-values-user.conf";
+	const char *CONFIG_INTERN = BUILDDIR"/test-set-values-intern.conf";
 	const char *atomic_section_prefixes[] = {
 		"atomic-prefix-1.",
 		"atomic-prefix-2.",
