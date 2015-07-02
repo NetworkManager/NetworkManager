@@ -54,7 +54,7 @@ typedef struct _NMPlatform NMPlatform;
 #define IFA_F_NOPREFIXROUTE 0x200
 #endif
 
-typedef enum {
+typedef enum { /*< skip >*/
 
 	/* dummy value, to enforce that the enum type is signed and has a size
 	 * to hold an integer. We want to encode errno from <errno.h> as negative
@@ -74,7 +74,7 @@ typedef enum {
 	NM_PLATFORM_ERROR_NO_FIRMWARE,
 } NMPlatformError;
 
-typedef enum {
+typedef enum { /*< skip >*/
 	NM_PLATFORM_REASON_NONE,
 	/* Event was requested by NetworkManager. */
 	NM_PLATFORM_REASON_INTERNAL,
@@ -141,7 +141,7 @@ struct _NMPlatformLink {
 	guint mtu;
 };
 
-typedef enum {
+typedef enum { /*< skip >*/
 	NM_PLATFORM_SIGNAL_NONE,
 	NM_PLATFORM_SIGNAL_ADDED,
 	NM_PLATFORM_SIGNAL_CHANGED,
@@ -150,7 +150,7 @@ typedef enum {
 
 #define NM_PLATFORM_LIFETIME_PERMANENT G_MAXUINT32
 
-typedef enum {
+typedef enum { /*< skip >*/
 	NM_PLATFORM_GET_ROUTE_FLAGS_NONE                            = 0,
 
 	/* Whether to include default-routes/non-default-routes. Omitting
