@@ -722,7 +722,9 @@ class CmdSubmit(CmdBase):
             l = m.group('rest')
             m = CmdSubmit.re_subs1.match(l)
             if m is None:
-                return r + l
+                l = l[1:]
+                r = r + '$'
+                continue
             name = m.group('name')
             if name == '$':
                 r = r + '$'
