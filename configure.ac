@@ -78,7 +78,7 @@ AC_SUBST(runstatedir)
 # NetworkManager paths
 AC_SUBST(nmbinary, "$sbindir/$PACKAGE", [NetworkManager binary executable])
 AC_SUBST(nmconfdir, "$sysconfdir/$PACKAGE", [NetworkManager configuration directory])
-AC_SUBST(nmlibdir, "$libdir/$PACKAGE", [NetworkManager library directory])
+AC_SUBST(nmlibdir, "$prefix/lib/$PACKAGE", [NetworkManager library directory])
 AC_SUBST(nmdatadir, "$datadir/$PACKAGE", [NetworkManager shared data directory])
 AC_SUBST(nmstatedir, "$localstatedir/lib/$PACKAGE", [NetworkManager persistent state directory])
 AC_SUBST(nmrundir, "$runstatedir/$PACKAGE", [NetworkManager runtime state directory])
