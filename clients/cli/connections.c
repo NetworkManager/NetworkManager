@@ -31,6 +31,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
+#include "gsystem-local-alloc.h"
 #include "utils.h"
 #include "common.h"
 #include "settings.h"
@@ -252,7 +253,7 @@ usage (void)
 	              "  show [--active] [--show-secrets] [id | uuid | path | apath] <ID> ...\n\n"
 	              "  up [[id | uuid | path] <ID>] [ifname <ifname>] [ap <BSSID>] [passwd-file <file with passwords>]\n\n"
 	              "  down [id | uuid | path | apath] <ID> ...\n\n"
-	              "  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n\n"
+	              "  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS [-- ([+|-]<setting>.<property> <value>)+]\n\n"
 	              "  modify [--temporary] [id | uuid | path] <ID> ([+|-]<setting>.<property> <value>)+\n\n"
 	              "  edit [id | uuid | path] <ID>\n"
 	              "  edit [type <new_con_type>] [con-name <new_con_name>]\n\n"
@@ -320,7 +321,7 @@ usage_connection_add (void)
 {
 	g_printerr (_("Usage: nmcli connection add { ARGUMENTS | help }\n"
 	              "\n"
-	              "ARGUMENTS := COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n\n"
+	              "ARGUMENTS := COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS [-- ([+|-]<setting>.<property> <value>)+]\n\n"
 	              "  COMMON_OPTIONS:\n"
 	              "                  type <type>\n"
 	              "                  ifname <interface name> | \"*\"\n"
@@ -4124,6 +4125,165 @@ do_questionnaire_ip (NMConnection *connection)
 	maybe_ask_for_gateway (connection, AF_INET6);
 }
 
+static NMSetting *
+is_setting_valid (NMConnection *connection, const NameItem *valid_settings, char *setting)
+{
+	const char *setting_name;
+
+	if (!(setting_name = check_valid_name (setting, valid_settings, NULL)))
+		return NULL;
+	return nm_connection_get_setting_by_name (connection, setting_name);
+}
+
+static char *
+is_property_valid (NMSetting *setting, const char *property, GError **error)
+{
+	char **valid_props = NULL;
+	const char *prop_name;
+	char *ret;
+
+	valid_props = nmc_setting_get_valid_properties (setting);
+	prop_name = nmc_string_is_valid (property, (const char **) valid_props, error);
+	ret = g_strdup (prop_name);
+	g_strfreev (valid_props);
+	return ret;
+}
+
+static gboolean
+read_connection_properties (NMConnection *connection,
+                            int argc,
+                            char **argv,
+                            GError **error)
+{
+	NMSetting *setting;
+	NMSettingConnection *s_con;
+	const char *con_type;
+	const char *s_dot_p;
+	const char *value;
+	char **strv = NULL;
+	const char *setting_name;
+	gboolean append = FALSE;
+	gboolean remove = FALSE;
+	gboolean success = FALSE;
+	GError *local = NULL;
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	con_type = nm_setting_connection_get_connection_type (s_con);
+
+	/* Go through arguments and set properties */
+	while (argc) {
+		gs_free char *property_name = NULL;
+
+		s_dot_p = *argv;
+		next_arg (&argc, &argv);
+		value = *argv;
+		next_arg (&argc, &argv);
+
+		if (!s_dot_p) {
+			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			                     _("Error: <setting>.<property> argument is missing."));
+			goto finish;
+		}
+		if (!value) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("Error: value for '%s' is missing."), s_dot_p);
+			goto finish;
+		}
+		/* Empty string will reset the value to default */
+		if (value[0] == '\0')
+			value = NULL;
+
+		if (s_dot_p[0] == '+') {
+			s_dot_p++;
+			append = TRUE;
+		} else if (s_dot_p[0] == '-') {
+			s_dot_p++;
+			remove = TRUE;
+		}
+
+		strv = g_strsplit (s_dot_p, ".", 2);
+		if (g_strv_length (strv) != 2) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("Error: invalid <setting>.<property> '%s'."), s_dot_p);
+			goto finish;
+		}
+
+		setting_name = check_valid_name (strv[0], get_valid_settings_array (con_type), &local);
+		if (!setting_name) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("Error: invalid or not allowed setting '%s': %s."),
+			             strv[0], local->message);
+			g_clear_error (&local);
+			goto finish;
+		}
+		setting = nm_connection_get_setting_by_name (connection, setting_name);
+		if (!setting) {
+			setting = nmc_setting_new_for_name (setting_name);
+			if (!setting) {
+				/* This should really not happen */
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_UNKNOWN,
+				             _("Error: don't know how to create '%s' setting."),
+				             setting_name);
+				goto finish;
+			}
+			nm_connection_add_setting (connection, setting);
+		}
+
+		property_name = is_property_valid (setting, strv[1], &local);
+		if (!property_name) {
+			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+			             _("Error: invalid property '%s': %s."),
+			             strv[1], local->message);
+			g_clear_error (&local);
+			goto finish;
+		}
+
+		if (!remove) {
+			/* Set/add value */
+			if (!append)
+				nmc_setting_reset_property (setting, property_name, NULL);
+			if (!nmc_setting_set_property (setting, property_name, value, &local)) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("Error: failed to modify %s.%s: %s."),
+                                             strv[0], strv[1], local->message);
+				g_clear_error (&local);
+				goto finish;
+			}
+		} else {
+			/* Remove value
+			 * - either empty: remove whole value
+			 * - or specified by index <0-n>: remove item at the index
+			 * - or option name: remove item with the option name
+			 */
+			if (value) {
+				unsigned long idx;
+				if (nmc_string_to_uint (value, TRUE, 0, G_MAXUINT32, &idx))
+					nmc_setting_remove_property_option (setting, property_name, NULL, idx, &local);
+				else
+					nmc_setting_remove_property_option (setting, property_name, value, 0, &local);
+				if (local) {
+					g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+					             _("Error: failed to remove a value from %s.%s: %s."),
+					             strv[0], strv[1],  local->message);
+					g_clear_error (&local);
+					goto finish;
+				}
+			} else
+				nmc_setting_reset_property (setting, property_name, NULL);
+		}
+
+		g_strfreev (strv);
+		strv = NULL;
+	}
+
+	success = TRUE;
+finish:
+	if (strv)
+		g_strfreev (strv);
+	return success;
+}
+
 static gboolean
 complete_connection_by_type (NMConnection *connection,
                              const char *con_type,
@@ -5408,8 +5568,8 @@ cleanup_olpc:
 
 			ip4 = gw4 = ip6 = gw6 = NULL;
 
-			if (!nmc_parse_args (exp_args, TRUE, &argc, &argv, error))
-				return FALSE;
+			if (!nmc_parse_args (exp_args, TRUE, &argc, &argv, NULL))
+				break;
 
 			/* coverity[dead_error_begin] */
 			if (ip4) {
@@ -5481,6 +5641,18 @@ cleanup_olpc:
 		/* Ask for addresses if '--ask' is specified. */
 		if (ask)
 			do_questionnaire_ip (connection);
+	}
+
+	if (argc) {
+		/* Set extra connection properties. */
+		nmc_arg_t exp_args[] = { {"--", FALSE, NULL, TRUE},
+					 {NULL} };
+
+		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
+			return FALSE;
+
+		if (!read_connection_properties (connection, argc, argv, error))
+			return FALSE;
 	}
 
 	return TRUE;
@@ -6379,7 +6551,6 @@ should_complete_vpn_uuids (const char *prompt, const char *line)
 	return _get_and_check_property (prompt, line, uuid_properties, NULL, NULL);
 }
 
-static char *is_property_valid (NMSetting *setting, const char *property, GError **error);
 static const char **
 get_allowed_property_values (void)
 {
@@ -7490,30 +7661,6 @@ split_editor_main_cmd_args (const char *str, char **setting, char **property, ch
 			*value = g_strstrip (g_strdup (args[1]));
 	}
 	g_strfreev (args);
-}
-
-static NMSetting *
-is_setting_valid (NMConnection *connection, const NameItem *valid_settings, char *setting)
-{
-	const char *setting_name;
-
-	if (!(setting_name = check_valid_name (setting, valid_settings, NULL)))
-		return NULL;
-	return nm_connection_get_setting_by_name (connection, setting_name);
-}
-
-static char *
-is_property_valid (NMSetting *setting, const char *property, GError **error)
-{
-	char **valid_props = NULL;
-	const char *prop_name;
-	char *ret;
-
-	valid_props = nmc_setting_get_valid_properties (setting);
-	prop_name = nmc_string_is_valid (property, (const char **) valid_props, error);
-	ret = g_strdup (prop_name);
-	g_strfreev (valid_props);
-	return ret;
 }
 
 static NMSetting *
@@ -8764,20 +8911,11 @@ do_connection_modify (NmCli *nmc,
 {
 	NMConnection *connection = NULL;
 	NMRemoteConnection *rc = NULL;
-	NMSetting *setting;
-	NMSettingConnection *s_con;
-	const char *con_type;
 	const char *name;
 	const char *selector = NULL;
-	const char *s_dot_p;
-	const char *value;
-	char **strv = NULL;
-	const char *setting_name;
-	char *property_name = NULL;
-	gboolean append = FALSE;
-	gboolean remove = FALSE;
 	GError *error = NULL;
 
+	nmc->return_value = NMC_RESULT_SUCCESS;
 	nmc->should_wait = FALSE;
 
 	if (argc == 0) {
@@ -8817,9 +8955,6 @@ do_connection_modify (NmCli *nmc,
 		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
 		goto finish;
 	}
-	s_con = nm_connection_get_setting_connection (NM_CONNECTION (rc));
-	g_assert (s_con);
-	con_type = nm_setting_connection_get_connection_type (s_con);
 
 	if (next_arg (&argc, &argv) != 0) {
 		g_string_printf (nmc->return_text, _("Error: <setting>.<property> argument is missing."));
@@ -8827,116 +8962,17 @@ do_connection_modify (NmCli *nmc,
 		goto finish;
 	}
 
-	/* Go through arguments and set properties */
-	while (argc) {
-		s_dot_p = *argv;
-		next_arg (&argc, &argv);
-		value = *argv;
-		next_arg (&argc, &argv);
-
-		if (!s_dot_p) {
-			g_string_printf (nmc->return_text, _("Error: <setting>.<property> argument is missing."));
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto finish;
-		}
-		if (!value) {
-			g_string_printf (nmc->return_text, _("Error: value for '%s' is missing."), s_dot_p);
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto finish;
-		}
-		/* Empty string will reset the value to default */
-		if (value[0] == '\0')
-			value = NULL;
-
-		if (s_dot_p[0] == '+') {
-			s_dot_p++;
-			append = TRUE;
-		} else if (s_dot_p[0] == '-') {
-			s_dot_p++;
-			remove = TRUE;
-		}
-
-		strv = g_strsplit (s_dot_p, ".", 2);
-		if (g_strv_length (strv) != 2) {
-			g_string_printf (nmc->return_text, _("Error: invalid <setting>.<property> '%s'."),
-			                 s_dot_p);
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto finish;
-		}
-
-		setting_name = check_valid_name (strv[0], get_valid_settings_array (con_type), &error);
-		if (!setting_name) {
-			g_string_printf (nmc->return_text, _("Error: invalid or not allowed setting '%s': %s."),
-			                 strv[0], error->message);
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto finish;
-		}
-		setting = nm_connection_get_setting_by_name (NM_CONNECTION (rc), setting_name);
-		if (!setting) {
-			setting = nmc_setting_new_for_name (setting_name);
-			if (!setting) {
-				/* This should really not happen */
-				g_string_printf (nmc->return_text,
-				                 "Error: don't know how to create '%s' setting.",
-				                  setting_name);
-				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-				goto finish;
-			}
-			nm_connection_add_setting (NM_CONNECTION (rc), setting);
-		}
-
-		property_name = is_property_valid (setting, strv[1], &error);
-		if (!property_name) {
-			g_string_printf (nmc->return_text, _("Error: invalid property '%s': %s."),
-			                 strv[1], error->message);
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto finish;
-		}
-
-		if (!remove) {
-			/* Set/add value */
-			if (!append)
-				nmc_setting_reset_property (setting, property_name, NULL);
-			if (!nmc_setting_set_property (setting, property_name, value, &error)) {
-				g_string_printf (nmc->return_text, _("Error: failed to modify %s.%s: %s."),
-				                 strv[0], strv[1], error->message);
-				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-				goto finish;
-			}
-		} else {
-			/* Remove value
-			 * - either empty: remove whole value
-			 * - or specified by index <0-n>: remove item at the index
-			 * - or option name: remove item with the option name
-			 */
-			if (value) {
-				unsigned long idx;
-				if (nmc_string_to_uint (value, TRUE, 0, G_MAXUINT32, &idx))
-					nmc_setting_remove_property_option (setting, property_name, NULL, idx, &error);
-				else
-					nmc_setting_remove_property_option (setting, property_name, value, 0, &error);
-				if (error) {
-					g_string_printf (nmc->return_text, _("Error: failed to remove a value from %s.%s: %s."),
-					                 strv[0], strv[1], error->message);
-					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-					goto finish;
-				}
-			} else
-				nmc_setting_reset_property (setting, property_name, NULL);
-		}
-
-		g_strfreev (strv);
-		strv = NULL;
+	if (!read_connection_properties (NM_CONNECTION (rc), argc, argv, &error)) {
+		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+		nmc->return_value = error->code;
+		g_clear_error (&error);
+		goto finish;
 	}
 
 	update_connection (!temporary, rc, modify_connection_cb, nmc);
 
+	nmc->should_wait = TRUE;
 finish:
-	nmc->should_wait = (nmc->return_value == NMC_RESULT_SUCCESS);
-	g_free (property_name);
-	if (strv)
-		g_strfreev (strv);
-	g_clear_error (&error);
 	return nmc->return_value;
 }
 

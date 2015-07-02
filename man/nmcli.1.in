@@ -418,7 +418,7 @@ See \fBconnection show\fP above for the description of the <ID>-specifying keywo
 .br
 If '--wait' option is not specified, the default timeout will be 10 seconds.
 .TP
-.B add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS
+.B add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS [-- [+|-]<setting>.<property> <value> ...]
 .br
 Add a connection for NetworkManager. Arguments differ according to connection types, see below.
 .RS
@@ -643,6 +643,11 @@ to be sent back out through the slave the frame was received on (default: yes)
 \(en IPv4 addresses
 .IP "\fI[ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\fP" 42
 \(en IPv6 addresses
+.RE
+.RS
+If a \fI--\fP argument is encountered, the rest of command line is interpreted
+as property list in the same format as \fIconnection modify\fP command accepts.
+This makes it possible to adjust the connection properties before it's added.
 .RE
 .TP
 .B edit [id | uuid | path ] <ID>  - edit an existing connection
@@ -996,6 +1001,11 @@ and disables the connection's "autoconnect" flag.
 .IP
 non-interactively adds a VLAN connection with ID 55. The connection will use eth0 and the VLAN interface
 will be named Maxipes\(hyfik.
+
+.IP "\fB\f(CWnmcli c a ifname eth0 type ethernet -- ipv4.method disabled ipv6.method link-local\fP\fP"
+.IP
+non-interactively adds a connection that will use eth0 Ethernet interface and only have an IPv6 link-local
+address configured.
 
 .IP "\fB\f(CWnmcli connection edit ethernet\-em1\-2\fP\fP"
 .IP
