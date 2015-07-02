@@ -40,6 +40,19 @@ test_init_linux_platform (void)
 
 /******************************************************************/
 
+static void
+test_link_get_all (void)
+{
+	gs_unref_object NMPlatform *platform = NULL;
+	gs_unref_array GArray *links = NULL;
+
+	platform = g_object_new (NM_TYPE_LINUX_PLATFORM, NULL);
+
+	links = nm_platform_link_get_all (platform);
+}
+
+/******************************************************************/
+
 NMTST_DEFINE ();
 
 int
@@ -48,6 +61,7 @@ main (int argc, char **argv)
 	nmtst_init_assert_logging (&argc, &argv, "INFO", "DEFAULT");
 
 	g_test_add_func ("/general/init_linux_platform", test_init_linux_platform);
+	g_test_add_func ("/general/link_get_all", test_link_get_all);
 
 	return g_test_run ();
 }
