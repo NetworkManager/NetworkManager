@@ -445,10 +445,13 @@ nm_platform_link_get_all (NMPlatform *self)
 		item = &g_array_index (links, NMPlatformLink, i);
 
 		if (item->ifindex <= 0 || g_hash_table_contains (unseen, GINT_TO_POINTER (item->ifindex))) {
+			_LOGT ("link-get: SKIP: %3d: %s", i, nm_platform_link_to_string (item));
 			g_warn_if_reached ();
 			item->ifindex = 0;
 			continue;
 		}
+
+		_LOGT ("link-get: %3d: %s", i, nm_platform_link_to_string (item));
 
 		g_hash_table_insert (unseen, GINT_TO_POINTER (item->ifindex), NULL);
 	}
@@ -499,6 +502,8 @@ nm_platform_link_get_all (NMPlatform *self)
 			if (item->parent > 0 && g_hash_table_contains (unseen, GINT_TO_POINTER (item->parent)))
 				continue;
 
+			_LOGT ("link-get: add %3d -> %3d: %s", i, j, nm_platform_link_to_string (item));
+
 			g_hash_table_remove (unseen, GINT_TO_POINTER (item->ifindex));
 			g_array_index (result, NMPlatformLink, j++) = *item;
 			item->ifindex = 0;
@@ -507,8 +512,10 @@ nm_platform_link_get_all (NMPlatform *self)
 
 		if (!found_something) {
 			/* there is a circle, pop the first (remaining) element from the list */
-			g_warn_if_reached ();
 			item = &g_array_index (links, NMPlatformLink, first_idx);
+
+			_LOGT ("link-get: add (circle) %3d -> %3d: %s", first_idx, j, nm_platform_link_to_string (item));
+			g_warn_if_reached ();
 
 			g_hash_table_remove (unseen, GINT_TO_POINTER (item->ifindex));
 			g_array_index (result, NMPlatformLink, j++) = *item;
