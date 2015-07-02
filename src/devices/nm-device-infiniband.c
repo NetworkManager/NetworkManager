@@ -387,6 +387,9 @@ get_virtual_iface_name (NMDeviceFactory *factory,
 	s_infiniband = nm_connection_get_setting_infiniband (connection);
 	g_assert (s_infiniband);
 
+	if (!parent_iface)
+		return NULL;
+
 	g_return_val_if_fail (g_strcmp0 (parent_iface, nm_setting_infiniband_get_parent (s_infiniband)) == 0, NULL);
 
 	return g_strdup (nm_setting_infiniband_get_virtual_interface_name (s_infiniband));
