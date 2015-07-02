@@ -81,8 +81,6 @@ G_STATIC_ASSERT (sizeof ( ((NMPlatformLink *) NULL)->addr.data ) == NM_UTILS_HWA
 #define _LOGW(...)      _LOG (LOGL_WARN , _LOG_DOMAIN, self, __VA_ARGS__)
 #define _LOGE(...)      _LOG (LOGL_ERR  , _LOG_DOMAIN, self, __VA_ARGS__)
 
-#define debug(...) nm_log_dbg (LOGD_PLATFORM, __VA_ARGS__)
-
 #define NM_PLATFORM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_PLATFORM, NMPlatformPrivate))
 
 G_DEFINE_TYPE (NMPlatform, nm_platform, G_TYPE_OBJECT)
@@ -598,7 +596,7 @@ _link_add_check_existing (NMPlatform *self, const char *name, NMLinkType type, N
 		gboolean wrong_type;
 
 		wrong_type = type != NM_LINK_TYPE_NONE && pllink->type != type;
-		debug ("link: skip adding link due to existing interface '%s' of type %s%s%s",
+		_LOGD ("link: skip adding link due to existing interface '%s' of type %s%s%s",
 		       name,
 		       nm_link_type_to_string (pllink->type),
 		       wrong_type ? ", expected " : "",
@@ -651,7 +649,7 @@ nm_platform_link_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	debug ("link: adding %s '%s'", nm_link_type_to_string (type), name);
+	_LOGD ("link: adding %s '%s'", nm_link_type_to_string (type), name);
 	if (!klass->link_add (self, name, type, address, address_len, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
 	return NM_PLATFORM_ERROR_SUCCESS;
@@ -687,7 +685,7 @@ nm_platform_link_delete (NMPlatform *self, int ifindex)
 	if (!pllink)
 		return FALSE;
 
-	debug ("link: deleting '%s' (%d)", pllink->name, ifindex);
+	_LOGD ("link: deleting '%s' (%d)", pllink->name, ifindex);
 	return klass->link_delete (self, ifindex);
 }
 
@@ -1020,7 +1018,7 @@ nm_platform_link_set_address (NMPlatform *self, int ifindex, gconstpointer addre
 	g_return_val_if_fail (length > 0, FALSE);
 	g_return_val_if_fail (klass->link_set_address, FALSE);
 
-	debug ("link: setting '%s' (%d) hardware address", nm_platform_link_get_name (self, ifindex), ifindex);
+	_LOGD ("link: setting '%s' (%d) hardware address", nm_platform_link_get_name (self, ifindex), ifindex);
 	return klass->link_set_address (self, ifindex, address, length);
 }
 
@@ -1129,7 +1127,7 @@ nm_platform_link_set_up (NMPlatform *self, int ifindex, gboolean *out_no_firmwar
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (klass->link_set_up, FALSE);
 
-	debug ("link: setting up '%s' (%d)", nm_platform_link_get_name (self, ifindex), ifindex);
+	_LOGD ("link: setting up '%s' (%d)", nm_platform_link_get_name (self, ifindex), ifindex);
 	return klass->link_set_up (self, ifindex, out_no_firmware);
 }
 
@@ -1148,7 +1146,7 @@ nm_platform_link_set_down (NMPlatform *self, int ifindex)
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (klass->link_set_down, FALSE);
 
-	debug ("link: setting down '%s' (%d)", nm_platform_link_get_name (self, ifindex), ifindex);
+	_LOGD ("link: setting down '%s' (%d)", nm_platform_link_get_name (self, ifindex), ifindex);
 	return klass->link_set_down (self, ifindex);
 }
 
@@ -1167,7 +1165,7 @@ nm_platform_link_set_arp (NMPlatform *self, int ifindex)
 	g_return_val_if_fail (ifindex >= 0, FALSE);
 	g_return_val_if_fail (klass->link_set_arp, FALSE);
 
-	debug ("link: setting arp '%s' (%d)", nm_platform_link_get_name (self, ifindex), ifindex);
+	_LOGD ("link: setting arp '%s' (%d)", nm_platform_link_get_name (self, ifindex), ifindex);
 	return klass->link_set_arp (self, ifindex);
 }
 
@@ -1186,7 +1184,7 @@ nm_platform_link_set_noarp (NMPlatform *self, int ifindex)
 	g_return_val_if_fail (ifindex >= 0, FALSE);
 	g_return_val_if_fail (klass->link_set_noarp, FALSE);
 
-	debug ("link: setting noarp '%s' (%d)", nm_platform_link_get_name (self, ifindex), ifindex);
+	_LOGD ("link: setting noarp '%s' (%d)", nm_platform_link_get_name (self, ifindex), ifindex);
 	return klass->link_set_noarp (self, ifindex);
 }
 
@@ -1207,7 +1205,7 @@ nm_platform_link_set_mtu (NMPlatform *self, int ifindex, guint32 mtu)
 	g_return_val_if_fail (mtu > 0, FALSE);
 	g_return_val_if_fail (klass->link_set_mtu, FALSE);
 
-	debug ("link: setting '%s' (%d) mtu %"G_GUINT32_FORMAT, nm_platform_link_get_name (self, ifindex), ifindex, mtu);
+	_LOGD ("link: setting '%s' (%d) mtu %"G_GUINT32_FORMAT, nm_platform_link_get_name (self, ifindex), ifindex, mtu);
 	return klass->link_set_mtu (self, ifindex, mtu);
 }
 
@@ -1346,7 +1344,7 @@ nm_platform_link_enslave (NMPlatform *self, int master, int slave)
 	g_return_val_if_fail (slave> 0, FALSE);
 	g_return_val_if_fail (klass->link_enslave, FALSE);
 
-	debug ("link: enslaving '%s' (%d) to master '%s' (%d)",
+	_LOGD ("link: enslaving '%s' (%d) to master '%s' (%d)",
 	       nm_platform_link_get_name (self, slave), slave,
 	       nm_platform_link_get_name (self, master), master);
 	return klass->link_enslave (self, master, slave);
@@ -1372,7 +1370,7 @@ nm_platform_link_release (NMPlatform *self, int master, int slave)
 	if (nm_platform_link_get_master (self, slave) != master)
 		return FALSE;
 
-	debug ("link: releasing '%s' (%d) from master '%s' (%d)",
+	_LOGD ("link: releasing '%s' (%d) from master '%s' (%d)",
 	       nm_platform_link_get_name (self, slave), slave,
 	       nm_platform_link_get_name (self, master), master);
 	return klass->link_release (self, master, slave);
@@ -1477,7 +1475,7 @@ nm_platform_vlan_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	debug ("link: adding vlan '%s' parent %d vlanid %d vlanflags %x",
+	_LOGD ("link: adding vlan '%s' parent %d vlanid %d vlanflags %x",
 	       name, parent, vlanid, vlanflags);
 	if (!klass->vlan_add (self, name, parent, vlanid, vlanflags, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
@@ -1559,7 +1557,7 @@ nm_platform_vlan_set_ingress_map (NMPlatform *self, int ifindex, int from, int t
 
 	g_return_val_if_fail (klass->vlan_set_ingress_map, FALSE);
 
-	debug ("link: setting vlan ingress map for %d from %d to %d", ifindex, from, to);
+	_LOGD ("link: setting vlan ingress map for %d from %d to %d", ifindex, from, to);
 	return klass->vlan_set_ingress_map (self, ifindex, from, to);
 }
 
@@ -1570,7 +1568,7 @@ nm_platform_vlan_set_egress_map (NMPlatform *self, int ifindex, int from, int to
 
 	g_return_val_if_fail (klass->vlan_set_egress_map, FALSE);
 
-	debug ("link: setting vlan egress map for %d from %d to %d", ifindex, from, to);
+	_LOGD ("link: setting vlan egress map for %d from %d to %d", ifindex, from, to);
 	return klass->vlan_set_egress_map (self, ifindex, from, to);
 }
 
@@ -1597,7 +1595,7 @@ nm_platform_infiniband_partition_add (NMPlatform *self, int parent, int p_key, N
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	debug ("link: adding infiniband partition %s for parent '%s' (%d), key %d",
+	_LOGD ("link: adding infiniband partition %s for parent '%s' (%d), key %d",
 	       name, parent_name, parent, p_key);
 	if (!klass->infiniband_partition_add (self, parent, p_key, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
@@ -1892,7 +1890,7 @@ nm_platform_ip4_address_add (NMPlatform *self,
 		if (label)
 			g_strlcpy (addr.label, label, sizeof (addr.label));
 
-		debug ("address: adding or updating IPv4 address: %s", nm_platform_ip4_address_to_string (&addr));
+		_LOGD ("address: adding or updating IPv4 address: %s", nm_platform_ip4_address_to_string (&addr));
 	}
 	return klass->ip4_address_add (self, ifindex, address, peer_address, plen, lifetime, preferred, label);
 }
@@ -1927,7 +1925,7 @@ nm_platform_ip6_address_add (NMPlatform *self,
 		addr.preferred = preferred;
 		addr.flags = flags;
 
-		debug ("address: adding or updating IPv6 address: %s", nm_platform_ip6_address_to_string (&addr));
+		_LOGD ("address: adding or updating IPv6 address: %s", nm_platform_ip6_address_to_string (&addr));
 	}
 	return klass->ip6_address_add (self, ifindex, address, peer_address, plen, lifetime, preferred, flags);
 }
@@ -1944,7 +1942,7 @@ nm_platform_ip4_address_delete (NMPlatform *self, int ifindex, in_addr_t address
 	g_return_val_if_fail (plen > 0, FALSE);
 	g_return_val_if_fail (klass->ip4_address_delete, FALSE);
 
-	debug ("address: deleting IPv4 address %s/%d, %s%s%sifindex %d%s",
+	_LOGD ("address: deleting IPv4 address %s/%d, %s%s%sifindex %d%s",
 	       nm_utils_inet4_ntop (address, NULL), plen,
 	       peer_address ? "peer " : "",
 	       peer_address ? nm_utils_inet4_ntop (peer_address, str_peer) : "",
@@ -1965,7 +1963,7 @@ nm_platform_ip6_address_delete (NMPlatform *self, int ifindex, struct in6_addr a
 	g_return_val_if_fail (plen > 0, FALSE);
 	g_return_val_if_fail (klass->ip6_address_delete, FALSE);
 
-	debug ("address: deleting IPv6 address %s/%d, ifindex %d%s",
+	_LOGD ("address: deleting IPv6 address %s/%d, ifindex %d%s",
 	       nm_utils_inet6_ntop (&address, NULL), plen, ifindex,
 	       _to_string_dev (self, ifindex, str_dev, sizeof (str_dev)));
 	return klass->ip6_address_delete (self, ifindex, address, plen);
@@ -2210,7 +2208,7 @@ nm_platform_ip4_route_add (NMPlatform *self,
 		route.mss = mss;
 		route.pref_src = pref_src;
 
-		debug ("route: adding or updating IPv4 route: %s", nm_platform_ip4_route_to_string (&route));
+		_LOGD ("route: adding or updating IPv4 route: %s", nm_platform_ip4_route_to_string (&route));
 	}
 	return klass->ip4_route_add (self, ifindex, source, network, plen, gateway, pref_src, metric, mss);
 }
@@ -2237,7 +2235,7 @@ nm_platform_ip6_route_add (NMPlatform *self,
 		route.metric = metric;
 		route.mss = mss;
 
-		debug ("route: adding or updating IPv6 route: %s", nm_platform_ip6_route_to_string (&route));
+		_LOGD ("route: adding or updating IPv6 route: %s", nm_platform_ip6_route_to_string (&route));
 	}
 	return klass->ip6_route_add (self, ifindex, source, network, plen, gateway, metric, mss);
 }
@@ -2251,7 +2249,7 @@ nm_platform_ip4_route_delete (NMPlatform *self, int ifindex, in_addr_t network, 
 
 	g_return_val_if_fail (klass->ip4_route_delete, FALSE);
 
-	debug ("route: deleting IPv4 route %s/%d, metric=%"G_GUINT32_FORMAT", ifindex %d%s",
+	_LOGD ("route: deleting IPv4 route %s/%d, metric=%"G_GUINT32_FORMAT", ifindex %d%s",
 	       nm_utils_inet4_ntop (network, NULL), plen, metric, ifindex,
 	       _to_string_dev (self, ifindex, str_dev, sizeof (str_dev)));
 	return klass->ip4_route_delete (self, ifindex, network, plen, metric);
@@ -2266,7 +2264,7 @@ nm_platform_ip6_route_delete (NMPlatform *self, int ifindex, struct in6_addr net
 
 	g_return_val_if_fail (klass->ip6_route_delete, FALSE);
 
-	debug ("route: deleting IPv6 route %s/%d, metric=%"G_GUINT32_FORMAT", ifindex %d%s",
+	_LOGD ("route: deleting IPv6 route %s/%d, metric=%"G_GUINT32_FORMAT", ifindex %d%s",
 	       nm_utils_inet6_ntop (&network, NULL), plen, metric, ifindex,
 	       _to_string_dev (self, ifindex, str_dev, sizeof (str_dev)));
 	return klass->ip6_route_delete (self, ifindex, network, plen, metric);
@@ -2914,34 +2912,34 @@ nm_platform_signal_change_type_to_string (NMPlatformSignalChangeType change_type
 }
 
 static void
-log_link (NMPlatform *p, NMPObjectType obj_type, int ifindex, NMPlatformLink *device, NMPlatformSignalChangeType change_type, gpointer user_data)
+log_link (NMPlatform *self, NMPObjectType obj_type, int ifindex, NMPlatformLink *device, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
 
-	debug ("signal: link %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_link_to_string (device));
+	_LOGD ("signal: link %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_link_to_string (device));
 }
 
 static void
-log_ip4_address (NMPlatform *p, NMPObjectType obj_type, int ifindex, NMPlatformIP4Address *address, NMPlatformSignalChangeType change_type, gpointer user_data)
+log_ip4_address (NMPlatform *self, NMPObjectType obj_type, int ifindex, NMPlatformIP4Address *address, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
-	debug ("signal: address 4 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip4_address_to_string (address));
+	_LOGD ("signal: address 4 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip4_address_to_string (address));
 }
 
 static void
-log_ip6_address (NMPlatform *p, NMPObjectType obj_type, int ifindex, NMPlatformIP6Address *address, NMPlatformSignalChangeType change_type, gpointer user_data)
+log_ip6_address (NMPlatform *self, NMPObjectType obj_type, int ifindex, NMPlatformIP6Address *address, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
-	debug ("signal: address 6 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip6_address_to_string (address));
+	_LOGD ("signal: address 6 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip6_address_to_string (address));
 }
 
 static void
-log_ip4_route (NMPlatform *p, NMPObjectType obj_type, int ifindex, NMPlatformIP4Route *route, NMPlatformSignalChangeType change_type, gpointer user_data)
+log_ip4_route (NMPlatform *self, NMPObjectType obj_type, int ifindex, NMPlatformIP4Route *route, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
-	debug ("signal: route   4 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip4_route_to_string (route));
+	_LOGD ("signal: route   4 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip4_route_to_string (route));
 }
 
 static void
-log_ip6_route (NMPlatform *p, NMPObjectType obj_type, int ifindex, NMPlatformIP6Route *route, NMPlatformSignalChangeType change_type, gpointer user_data)
+log_ip6_route (NMPlatform *self, NMPObjectType obj_type, int ifindex, NMPlatformIP6Route *route, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
-	debug ("signal: route   6 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip6_route_to_string (route));
+	_LOGD ("signal: route   6 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip6_route_to_string (route));
 }
 
 /******************************************************************/
