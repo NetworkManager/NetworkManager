@@ -333,7 +333,7 @@ _nm_keyfile_equals (GKeyFile *kf_a, GKeyFile *kf_b, gboolean consider_order)
 gboolean
 _nm_keyfile_has_values (GKeyFile *keyfile)
 {
-	gs_strfreev char **groups;
+	gs_strfreev char **groups = NULL;
 
 	g_return_val_if_fail (keyfile, FALSE);
 
