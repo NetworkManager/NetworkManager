@@ -74,7 +74,7 @@ typedef enum { /*< skip >*/
 	NM_PLATFORM_ERROR_NO_FIRMWARE,
 } NMPlatformError;
 
-typedef enum { /*< skip >*/
+typedef enum {
 	NM_PLATFORM_REASON_NONE,
 	/* Event was requested by NetworkManager. */
 	NM_PLATFORM_REASON_INTERNAL,
@@ -141,7 +141,7 @@ struct _NMPlatformLink {
 	guint mtu;
 };
 
-typedef enum { /*< skip >*/
+typedef enum {
 	NM_PLATFORM_SIGNAL_NONE,
 	NM_PLATFORM_SIGNAL_ADDED,
 	NM_PLATFORM_SIGNAL_CHANGED,
