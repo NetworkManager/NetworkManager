@@ -651,8 +651,8 @@ class CmdSubmit(CmdBase):
         if target_branch == 'rhel-7.1':
             return 'RHEL-7.1-20141023.n.1'
         if target_branch == 'rhel-7':
-            return 'RHEL-7.2-20150625.n.0'
-        return 'RHEL-7.2-20150625.n.0'
+            return 'RHEL-7.2-20150630.n.3'
+        return 'RHEL-7.2-20150630.n.3'
 
     def _process_line_get_RESERVESYS(self, key, replacement, index=None, none=None):
         v = self._get_default('RESERVESYS')
