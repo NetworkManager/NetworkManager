@@ -4736,7 +4736,8 @@ connection_from_file_full (const char *filename,
 
 		connection = create_unhandled_connection (filename, parsed, "unmanaged", out_unhandled);
 		if (!connection)
-			PARSE_WARNING ("NM_CONTROLLED was false but device was not uniquely identified; device will be managed");
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+			             "NM_CONTROLLED was false but device was not uniquely identified; device will be managed");
 		goto done;
 	}
 
