@@ -236,4 +236,13 @@ nm_clear_g_source (guint *id)
 
 /*****************************************************************************/
 
+static inline char *
+nm_strstrip (char *str)
+{
+	/* g_strstrip doesn't like NULL. */
+	return str ? g_strstrip (str) : NULL;
+}
+
+/*****************************************************************************/
+
 #endif /* __NM_MACROS_INTERNAL_H__ */

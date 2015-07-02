@@ -483,6 +483,36 @@ _nm_utils_strv_find_first (char **list, gssize len, const char *needle)
 	return -1;
 }
 
+char **
+_nm_utils_strv_cleanup (char **strv,
+                        gboolean strip_whitespace,
+                        gboolean skip_empty,
+                        gboolean skip_repeated)
+{
+	guint i, j;
+
+	if (!strv || !*strv)
+		return strv;
+
+	if (strip_whitespace) {
+		for (i = 0; strv[i]; i++)
+			g_strstrip (strv[i]);
+	}
+	if (!skip_empty && !skip_repeated)
+		return strv;
+	j = 0;
+	for (i = 0; strv[i]; i++) {
+		if (   (skip_empty && !*strv[i])
+		    || (skip_repeated && _nm_utils_strv_find_first (strv, j, strv[i]) >= 0))
+			g_free (strv[i]);
+		else
+			strv[j++] = strv[i];
+	}
+	strv[j] = NULL;
+	return strv;
+}
+
+
 gboolean
 _nm_utils_string_slist_validate (GSList *list, const char **valid_values)
 {
@@ -725,21 +755,26 @@ _nm_utils_bytes_from_dbus (GVariant *dbus_value,
 }
 
 GSList *
-_nm_utils_strv_to_slist (char **strv)
+_nm_utils_strv_to_slist (char **strv, gboolean deep_copy)
 {
 	int i;
 	GSList *list = NULL;
 
 	if (strv) {
-		for (i = 0; strv[i]; i++)
-			list = g_slist_prepend (list, g_strdup (strv[i]));
+		if (deep_copy) {
+			for (i = 0; strv[i]; i++)
+				list = g_slist_prepend (list, g_strdup (strv[i]));
+		} else {
+			for (i = 0; strv[i]; i++)
+				list = g_slist_prepend (list, strv[i]);
+		}
 	}
 
 	return g_slist_reverse (list);
 }
 
 char **
-_nm_utils_slist_to_strv (GSList *slist)
+_nm_utils_slist_to_strv (GSList *slist, gboolean deep_copy)
 {
 	GSList *iter;
 	char **strv;
@@ -748,8 +783,13 @@ _nm_utils_slist_to_strv (GSList *slist)
 	len = g_slist_length (slist);
 	strv = g_new (char *, len + 1);
 
-	for (i = 0, iter = slist; iter; iter = iter->next, i++)
-		strv[i] = g_strdup (iter->data);
+	if (deep_copy) {
+		for (i = 0, iter = slist; iter; iter = iter->next, i++)
+			strv[i] = g_strdup (iter->data);
+	} else {
+		for (i = 0, iter = slist; iter; iter = iter->next, i++)
+			strv[i] = iter->data;
+	}
 	strv[i] = NULL;
 
 	return strv;

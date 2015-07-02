@@ -213,4 +213,41 @@ _nm_g_ptr_array_insert (GPtrArray *array,
 #endif
 
 
+#if !GLIB_CHECK_VERSION (2, 40, 0)
+inline static gboolean
+_g_key_file_save_to_file (GKeyFile     *key_file,
+                          const gchar  *filename,
+                          GError      **error)
+{
+	gchar *contents;
+	gboolean success;
+	gsize length;
+
+	g_return_val_if_fail (key_file != NULL, FALSE);
+	g_return_val_if_fail (filename != NULL, FALSE);
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	contents = g_key_file_to_data (key_file, &length, NULL);
+	g_assert (contents != NULL);
+
+	success = g_file_set_contents (filename, contents, length, error);
+	g_free (contents);
+
+	return success;
+}
+#define g_key_file_save_to_file(key_file, filename, error) \
+	_g_key_file_save_to_file (key_file, filename, error)
+#else
+#define g_key_file_save_to_file(key_file, filename, error) \
+	({ \
+		gboolean _success; \
+		\
+		G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
+		_success = g_key_file_save_to_file (key_file, filename, error); \
+		G_GNUC_END_IGNORE_DEPRECATIONS \
+		_success; \
+	})
+#endif
+
+
 #endif  /* __NM_GLIB_COMPAT_H__ */

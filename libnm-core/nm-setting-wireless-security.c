@@ -1132,15 +1132,15 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_PROTO:
 		g_slist_free_full (priv->proto, g_free);
-		priv->proto = _nm_utils_strv_to_slist (g_value_get_boxed (value));
+		priv->proto = _nm_utils_strv_to_slist (g_value_get_boxed (value), TRUE);
 		break;
 	case PROP_PAIRWISE:
 		g_slist_free_full (priv->pairwise, g_free);
-		priv->pairwise = _nm_utils_strv_to_slist (g_value_get_boxed (value));
+		priv->pairwise = _nm_utils_strv_to_slist (g_value_get_boxed (value), TRUE);
 		break;
 	case PROP_GROUP:
 		g_slist_free_full (priv->group, g_free);
-		priv->group = _nm_utils_strv_to_slist (g_value_get_boxed (value));
+		priv->group = _nm_utils_strv_to_slist (g_value_get_boxed (value), TRUE);
 		break;
 	case PROP_LEAP_USERNAME:
 		g_free (priv->leap_username);
@@ -1206,13 +1206,13 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, priv->auth_alg);
 		break;
 	case PROP_PROTO:
-		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->proto));
+		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->proto, TRUE));
 		break;
 	case PROP_PAIRWISE:
-		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->pairwise));
+		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->pairwise, TRUE));
 		break;
 	case PROP_GROUP:
-		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->group));
+		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->group, TRUE));
 		break;
 	case PROP_LEAP_USERNAME:
 		g_value_set_string (value, priv->leap_username);
