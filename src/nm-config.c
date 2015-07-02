@@ -404,7 +404,7 @@ nm_config_create_keyfile ()
 	GKeyFile *keyfile;
 
 	keyfile = g_key_file_new ();
-	g_key_file_set_list_separator (keyfile, ',');
+	g_key_file_set_list_separator (keyfile, NM_CONFIG_KEYFILE_LIST_SEPARATOR);
 	return keyfile;
 }
 

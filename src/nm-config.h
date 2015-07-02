@@ -46,6 +46,8 @@ G_BEGIN_DECLS
 #define NM_CONFIG_DEFAULT_CONNECTIVITY_INTERVAL 300
 #define NM_CONFIG_DEFAULT_CONNECTIVITY_RESPONSE "NetworkManager is online" /* NOT LOCALIZED */
 
+#define NM_CONFIG_KEYFILE_LIST_SEPARATOR ','
+
 typedef struct NMConfigCmdLineOptions NMConfigCmdLineOptions;
 
 struct _NMConfig {
