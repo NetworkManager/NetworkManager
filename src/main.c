@@ -343,7 +343,7 @@ main (int argc, char *argv[])
 	}
 
 	/* Read the config file and CLI overrides */
-	config = nm_config_setup (config_cli, &error);
+	config = nm_config_setup (config_cli, NULL, &error);
 	nm_config_cmd_line_options_free (config_cli);
 	config_cli = NULL;
 	if (config == NULL) {

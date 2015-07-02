@@ -3323,7 +3323,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 	if (   !priv->default_route.v4_configure_first_time
 	    && !nm_device_uses_assumed_connection (self)
 	    && connection_is_never_default) {
-		/* If the connection is explicitly configured as never-default, we enforce the (absense of the)
+		/* If the connection is explicitly configured as never-default, we enforce the (absence of the)
 		 * default-route only once. That allows the user to configure a connection as never-default,
 		 * but he can add default routes externally (via a dispatcher script) and NM will not interfere. */
 		goto END_ADD_DEFAULT_ROUTE;

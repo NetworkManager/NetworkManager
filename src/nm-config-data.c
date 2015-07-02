@@ -48,6 +48,8 @@ typedef struct {
 	char *config_description;
 
 	GKeyFile *keyfile;
+	GKeyFile *keyfile_user;
+	GKeyFile *keyfile_intern;
 
 	/* A zero-terminated list of pre-processed information from the
 	 * [connection] sections. This is to speed up lookup. */
@@ -77,7 +79,8 @@ enum {
 	PROP_0,
 	PROP_CONFIG_MAIN_FILE,
 	PROP_CONFIG_DESCRIPTION,
-	PROP_KEYFILE,
+	PROP_KEYFILE_USER,
+	PROP_KEYFILE_INTERN,
 	PROP_CONNECTIVITY_URI,
 	PROP_CONNECTIVITY_INTERVAL,
 	PROP_CONNECTIVITY_RESPONSE,
@@ -89,6 +92,14 @@ enum {
 G_DEFINE_TYPE (NMConfigData, nm_config_data, G_TYPE_OBJECT)
 
 #define NM_CONFIG_DATA_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_CONFIG_DATA, NMConfigDataPrivate))
+
+/************************************************************************/
+
+#define _HAS_PREFIX(str, prefix) \
+	({ \
+		const char *_str = (str); \
+		g_str_has_prefix ( _str, ""prefix"") && _str[STRLEN(prefix)] != '\0'; \
+	})
 
 /************************************************************************/
 
@@ -238,6 +249,40 @@ nm_config_data_get_assume_ipv6ll_only (const NMConfigData *self, NMDevice *devic
 	return nm_device_spec_match_list (device, NM_CONFIG_DATA_GET_PRIVATE (self)->assume_ipv6ll_only);
 }
 
+GKeyFile *
+nm_config_data_clone_keyfile_intern (const NMConfigData *self)
+{
+	NMConfigDataPrivate *priv;
+	GKeyFile *keyfile;
+
+	g_return_val_if_fail (NM_IS_CONFIG_DATA (self), FALSE);
+
+	priv = NM_CONFIG_DATA_GET_PRIVATE (self);
+
+	keyfile = nm_config_create_keyfile ();
+	if (priv->keyfile_intern)
+		_nm_keyfile_copy (keyfile, priv->keyfile_intern);
+	return keyfile;
+}
+
+GKeyFile *
+_nm_config_data_get_keyfile (const NMConfigData *self)
+{
+	return NM_CONFIG_DATA_GET_PRIVATE (self)->keyfile;
+}
+
+GKeyFile *
+_nm_config_data_get_keyfile_intern (const NMConfigData *self)
+{
+	return NM_CONFIG_DATA_GET_PRIVATE (self)->keyfile_intern;
+}
+
+GKeyFile *
+_nm_config_data_get_keyfile_user (const NMConfigData *self)
+{
+	return NM_CONFIG_DATA_GET_PRIVATE (self)->keyfile_user;
+}
+
 /************************************************************************/
 
 /**
@@ -265,14 +310,127 @@ nm_config_data_get_keys (const NMConfigData *self, const char *group)
 	return g_key_file_get_keys (NM_CONFIG_DATA_GET_PRIVATE (self)->keyfile, group, NULL, NULL);
 }
 
+/**
+ * nm_config_data_is_intern_atomic_group:
+ * @self:
+ * @group: name of the group to check.
+ *
+ * whether a configuration group @group exists and is entirely overwritten
+ * by internal configuration, i.e. whether it is an atomic group that is
+ * overwritten.
+ *
+ * It doesn't say, that there actually is a user setting that was overwritten. That
+ * means there could be no corresponding section defined in user configuration
+ * that required overwriting.
+ *
+ * Returns: %TRUE if @group exists and is an atomic group set via internal configuration.
+ */
+gboolean
+nm_config_data_is_intern_atomic_group (const NMConfigData *self, const char *group)
+{
+	NMConfigDataPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_CONFIG_DATA (self), FALSE);
+	g_return_val_if_fail (group && *group, FALSE);
+
+	priv = NM_CONFIG_DATA_GET_PRIVATE (self);
+
+	if (   !priv->keyfile_intern
+	    || !g_key_file_has_key (priv->keyfile_intern, group, NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS, NULL))
+		return FALSE;
+
+	/* we have a .was entry for the section. That means that the section would be overwritten
+	 * from user configuration. But it doesn't mean that the merged configuration contains this
+	 * groups, because the internal setting could hide the user section.
+	 * Only return TRUE, if we actually have such a group in the merged configuration.*/
+	return g_key_file_has_group (priv->keyfile, group);
+}
+
+/************************************************************************/
+
+static GKeyFile *
+_merge_keyfiles (GKeyFile *keyfile_user, GKeyFile *keyfile_intern)
+{
+	gs_strfreev char **groups = NULL;
+	guint g, k;
+	GKeyFile *keyfile;
+	gsize ngroups;
+
+	keyfile = nm_config_create_keyfile ();
+	if (keyfile_user)
+		_nm_keyfile_copy (keyfile, keyfile_user);
+	if (!keyfile_intern)
+		return keyfile;
+
+	groups = g_key_file_get_groups (keyfile_intern, &ngroups);
+	if (!groups)
+		return keyfile;
+
+	/* we must reverse the order of the connection settings so that we
+	 * have lowest priority last. */
+	_nm_config_sort_groups (groups, ngroups);
+	for (g = 0; groups[g]; g++) {
+		const char *group = groups[g];
+		gs_strfreev char **keys = NULL;
+		gboolean is_intern, is_atomic = FALSE;
+
+		keys = g_key_file_get_keys (keyfile_intern, group, NULL, NULL);
+		if (!keys)
+			continue;
+
+		is_intern = g_str_has_prefix (group, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN);
+		if (   !is_intern
+		    && g_key_file_has_key (keyfile_intern, group, NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS, NULL)) {
+			/* the entire section is atomically overwritten by @keyfile_intern. */
+			g_key_file_remove_group (keyfile, group, NULL);
+			is_atomic = TRUE;
+		}
+
+		for (k = 0; keys[k]; k++) {
+			const char *key = keys[k];
+			gs_free char *value = NULL;
+
+			if (is_atomic && strcmp (key, NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS) == 0)
+				continue;
+
+			if (   !is_intern && !is_atomic
+			    && _HAS_PREFIX (key, NM_CONFIG_KEYFILE_KEYPREFIX_WAS)) {
+				const char *key_base = &key[STRLEN (NM_CONFIG_KEYFILE_KEYPREFIX_WAS)];
+
+				if (!g_key_file_has_key (keyfile_intern, group, key_base, NULL))
+					g_key_file_remove_key (keyfile, group, key_base, NULL);
+				continue;
+			}
+			if (!is_intern && !is_atomic && _HAS_PREFIX (key, NM_CONFIG_KEYFILE_KEYPREFIX_SET))
+				continue;
+
+			value = g_key_file_get_value (keyfile_intern, group, key, NULL);
+			g_key_file_set_value (keyfile, group, key, value);
+		}
+	}
+	return keyfile;
+}
+
 /************************************************************************/
 
 static int
 _nm_config_data_log_sort (const char **pa, const char **pb, gpointer dummy)
 {
 	gboolean a_is_connection, b_is_connection;
+	gboolean a_is_intern, b_is_intern;
 	const char *a = *pa;
 	const char *b = *pb;
+
+	/* we sort intern groups to the end. */
+	a_is_intern = g_str_has_prefix (a, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN);
+	b_is_intern = g_str_has_prefix (b, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN);
+
+	if (a_is_intern && b_is_intern)
+		return 0;
+	if (a_is_intern)
+		return 1;
+	if (b_is_intern)
+		return -1;
 
 	/* we sort connection groups before intern groups (to the end). */
 	a_is_connection = a && g_str_has_prefix (a, NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION);
@@ -336,9 +494,12 @@ nm_config_data_log (const NMConfigData *self, const char *prefix)
 	for (g = 0; g < ngroups; g++) {
 		const char *group = groups[g];
 		gs_strfreev char **keys = NULL;
+		gboolean is_atomic;
+
+		is_atomic = nm_config_data_is_intern_atomic_group (self, group);
 
 		_LOG ("");
-		_LOG ("[%s]", group);
+		_LOG ("[%s]%s", group, is_atomic ? "*" : "");
 
 		keys = g_key_file_get_keys (priv->keyfile, group, NULL, NULL);
 		for (k = 0; keys && keys[k]; k++) {
@@ -479,8 +640,11 @@ nm_config_data_diff (NMConfigData *old_data, NMConfigData *new_data)
 	priv_old = NM_CONFIG_DATA_GET_PRIVATE (old_data);
 	priv_new = NM_CONFIG_DATA_GET_PRIVATE (new_data);
 
-	if (!_nm_keyfile_equals (priv_old->keyfile, priv_new->keyfile, TRUE))
-		changes |= NM_CONFIG_CHANGE_VALUES;
+	if (!_nm_keyfile_equals (priv_old->keyfile_user, priv_new->keyfile_user, TRUE))
+		changes |= NM_CONFIG_CHANGE_VALUES | NM_CONFIG_CHANGE_VALUES_USER;
+
+	if (!_nm_keyfile_equals (priv_old->keyfile_intern, priv_new->keyfile_intern, TRUE))
+		changes |= NM_CONFIG_CHANGE_VALUES | NM_CONFIG_CHANGE_VALUES_INTERN;
 
 	if (   g_strcmp0 (nm_config_data_get_config_main_file (old_data), nm_config_data_get_config_main_file (new_data)) != 0
 	    || g_strcmp0 (nm_config_data_get_config_description (old_data), nm_config_data_get_config_description (new_data)) != 0)
@@ -553,10 +717,21 @@ set_property (GObject *object,
 	case PROP_CONFIG_DESCRIPTION:
 		priv->config_description = g_value_dup_string (value);
 		break;
-	case PROP_KEYFILE:
-		priv->keyfile = g_value_dup_boxed (value);
-		if (!priv->keyfile)
-			priv->keyfile = nm_config_create_keyfile ();
+	case PROP_KEYFILE_USER:
+		priv->keyfile_user = g_value_dup_boxed (value);
+		if (   priv->keyfile_user
+		    && !_nm_keyfile_has_values (priv->keyfile_user)) {
+			g_key_file_unref (priv->keyfile_user);
+			priv->keyfile_user = NULL;
+		}
+		break;
+	case PROP_KEYFILE_INTERN:
+		priv->keyfile_intern = g_value_dup_boxed (value);
+		if (   priv->keyfile_intern
+		    && !_nm_keyfile_has_values (priv->keyfile_intern)) {
+			g_key_file_unref (priv->keyfile_intern);
+			priv->keyfile_intern = NULL;
+		}
 		break;
 	case PROP_NO_AUTO_DEFAULT:
 		{
@@ -620,6 +795,10 @@ finalize (GObject *gobject)
 	}
 
 	g_key_file_unref (priv->keyfile);
+	if (priv->keyfile_user)
+		g_key_file_unref (priv->keyfile_user);
+	if (priv->keyfile_intern)
+		g_key_file_unref (priv->keyfile_intern);
 
 	G_OBJECT_CLASS (nm_config_data_parent_class)->finalize (gobject);
 }
@@ -635,6 +814,8 @@ constructed (GObject *object)
 	NMConfigData *self = NM_CONFIG_DATA (object);
 	NMConfigDataPrivate *priv = NM_CONFIG_DATA_GET_PRIVATE (self);
 	char *interval;
+
+	priv->keyfile = _merge_keyfiles (priv->keyfile_user, priv->keyfile_intern);
 
 	priv->connection_infos = _get_connection_infos (priv->keyfile);
 
@@ -664,13 +845,29 @@ NMConfigData *
 nm_config_data_new (const char *config_main_file,
                     const char *config_description,
                     const char *const*no_auto_default,
-                    GKeyFile *keyfile)
+                    GKeyFile *keyfile_user,
+                    GKeyFile *keyfile_intern)
 {
 	return g_object_new (NM_TYPE_CONFIG_DATA,
 	                     NM_CONFIG_DATA_CONFIG_MAIN_FILE, config_main_file,
 	                     NM_CONFIG_DATA_CONFIG_DESCRIPTION, config_description,
-	                     NM_CONFIG_DATA_KEYFILE, keyfile,
+	                     NM_CONFIG_DATA_KEYFILE_USER, keyfile_user,
+	                     NM_CONFIG_DATA_KEYFILE_INTERN, keyfile_intern,
 	                     NM_CONFIG_DATA_NO_AUTO_DEFAULT, no_auto_default,
+	                     NULL);
+}
+
+NMConfigData *
+nm_config_data_new_update_keyfile_intern (const NMConfigData *base, GKeyFile *keyfile_intern)
+{
+	NMConfigDataPrivate *priv = NM_CONFIG_DATA_GET_PRIVATE (base);
+
+	return g_object_new (NM_TYPE_CONFIG_DATA,
+	                     NM_CONFIG_DATA_CONFIG_MAIN_FILE, priv->config_main_file,
+	                     NM_CONFIG_DATA_CONFIG_DESCRIPTION, priv->config_description,
+	                     NM_CONFIG_DATA_KEYFILE_USER, priv->keyfile_user, /* the keyfile is unchanged. It's safe to share it. */
+	                     NM_CONFIG_DATA_KEYFILE_INTERN, keyfile_intern,
+	                     NM_CONFIG_DATA_NO_AUTO_DEFAULT, priv->no_auto_default.arr,
 	                     NULL);
 }
 
@@ -683,7 +880,8 @@ nm_config_data_new_update_no_auto_default (const NMConfigData *base,
 	return g_object_new (NM_TYPE_CONFIG_DATA,
 	                     NM_CONFIG_DATA_CONFIG_MAIN_FILE, priv->config_main_file,
 	                     NM_CONFIG_DATA_CONFIG_DESCRIPTION, priv->config_description,
-	                     NM_CONFIG_DATA_KEYFILE, priv->keyfile, /* the keyfile is unchanged. It's safe to share it. */
+	                     NM_CONFIG_DATA_KEYFILE_USER, priv->keyfile_user, /* the keyfile is unchanged. It's safe to share it. */
+	                     NM_CONFIG_DATA_KEYFILE_INTERN, priv->keyfile_intern,
 	                     NM_CONFIG_DATA_NO_AUTO_DEFAULT, no_auto_default,
 	                     NULL);
 }
@@ -718,8 +916,16 @@ nm_config_data_class_init (NMConfigDataClass *config_class)
 	                          G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
-	      (object_class, PROP_KEYFILE,
-	       g_param_spec_boxed (NM_CONFIG_DATA_KEYFILE, "", "",
+	      (object_class, PROP_KEYFILE_USER,
+	       g_param_spec_boxed (NM_CONFIG_DATA_KEYFILE_USER, "", "",
+	                           G_TYPE_KEY_FILE,
+	                           G_PARAM_WRITABLE |
+	                           G_PARAM_CONSTRUCT_ONLY |
+	                           G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property
+	      (object_class, PROP_KEYFILE_INTERN,
+	       g_param_spec_boxed (NM_CONFIG_DATA_KEYFILE_INTERN, "", "",
 	                           G_TYPE_KEY_FILE,
 	                           G_PARAM_WRITABLE |
 	                           G_PARAM_CONSTRUCT_ONLY |

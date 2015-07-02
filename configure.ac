@@ -78,6 +78,7 @@ AC_SUBST(runstatedir)
 # NetworkManager paths
 AC_SUBST(nmbinary, "$sbindir/$PACKAGE", [NetworkManager binary executable])
 AC_SUBST(nmconfdir, "$sysconfdir/$PACKAGE", [NetworkManager configuration directory])
+AC_SUBST(nmlibdir, "$libdir/$PACKAGE", [NetworkManager library directory])
 AC_SUBST(nmdatadir, "$datadir/$PACKAGE", [NetworkManager shared data directory])
 AC_SUBST(nmstatedir, "$localstatedir/lib/$PACKAGE", [NetworkManager persistent state directory])
 AC_SUBST(nmrundir, "$runstatedir/$PACKAGE", [NetworkManager runtime state directory])
@@ -125,6 +126,11 @@ test "$enable_ifnet" = "yes"              && distro_plugins="$distro_plugins,ifn
 distro_plugins="${distro_plugins#,}"
 
 AC_DEFINE_UNQUOTED(CONFIG_PLUGINS_DEFAULT, "$config_plugins_default", [Default configuration option for main.plugins setting])
+if test "${enable_config_plugin_ibft}" = yes; then
+	AC_DEFINE(WITH_SETTINGS_PLUGIN_IBFT, 1, [Whether compilation of ibft setting plugin is enabled])
+else
+	AC_DEFINE(WITH_SETTINGS_PLUGIN_IBFT, 0, [Whether compilation of ibft setting plugin is enabled])
+fi
 
 if test "$enable_ifcfg_rh" = "yes"; then
     DISTRO_NETWORK_SERVICE=network.service
@@ -1065,6 +1071,7 @@ echo "  exec_prefix: $exec_prefix"
 echo "  systemdunitdir: $with_systemdsystemunitdir"
 echo "  nmbinary: $nmbinary"
 echo "  nmconfdir: $nmconfdir"
+echo "  nmlibdir: $nmlibdir"
 echo "  nmdatadir: $nmdatadir"
 echo "  nmstatedir: $nmstatedir"
 echo "  nmrundir: $nmrundir"

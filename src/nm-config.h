@@ -39,6 +39,7 @@ G_BEGIN_DECLS
 
 /* Properties */
 #define NM_CONFIG_CMD_LINE_OPTIONS                  "cmd-line-options"
+#define NM_CONFIG_ATOMIC_SECTION_PREFIXES           "atomic-section-prefixes"
 
 /* Signals */
 #define NM_CONFIG_SIGNAL_CONFIG_CHANGED             "config-changed"
@@ -48,6 +49,7 @@ G_BEGIN_DECLS
 
 #define NM_CONFIG_KEYFILE_LIST_SEPARATOR ','
 
+#define NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN                ".intern."
 #define NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION            "connection"
 #define NM_CONFIG_KEYFILE_GROUPPREFIX_TEST_APPEND_STRINGLIST ".test-append-stringlist"
 
@@ -59,9 +61,13 @@ G_BEGIN_DECLS
 #define NM_CONFIG_KEYFILE_GROUP_IFUPDOWN                    "ifupdown"
 #define NM_CONFIG_KEYFILE_GROUP_IFNET                       "ifnet"
 
+#define NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS            ".was"
 #define NM_CONFIG_KEYFILE_KEY_IFNET_AUTO_REFRESH            "auto_refresh"
 #define NM_CONFIG_KEYFILE_KEY_IFNET_MANAGED                 "managed"
 #define NM_CONFIG_KEYFILE_KEY_IFUPDOWN_MANAGED              "managed"
+
+#define NM_CONFIG_KEYFILE_KEYPREFIX_WAS                     ".was."
+#define NM_CONFIG_KEYFILE_KEYPREFIX_SET                     ".set."
 
 typedef struct NMConfigCmdLineOptions NMConfigCmdLineOptions;
 
@@ -97,6 +103,11 @@ const char *nm_config_get_log_domains (NMConfig *config);
 const char *nm_config_get_debug (NMConfig *config);
 gboolean nm_config_get_configure_and_quit (NMConfig *config);
 
+void nm_config_set_values (NMConfig *self,
+                           GKeyFile *keyfile_intern_new,
+                           gboolean allow_write,
+                           gboolean force_rewrite);
+
 /* for main.c only */
 NMConfigCmdLineOptions *nm_config_cmd_line_options_new (void);
 void                    nm_config_cmd_line_options_free (NMConfigCmdLineOptions *cli);
@@ -106,8 +117,8 @@ void                    nm_config_cmd_line_options_add_to_entries (NMConfigCmdLi
 gboolean nm_config_get_no_auto_default_for_device (NMConfig *config, NMDevice *device);
 void nm_config_set_no_auto_default_for_device  (NMConfig *config, NMDevice *device);
 
-NMConfig *nm_config_new (const NMConfigCmdLineOptions *cli, GError **error);
-NMConfig *nm_config_setup (const NMConfigCmdLineOptions *cli, GError **error);
+NMConfig *nm_config_new (const NMConfigCmdLineOptions *cli, char **atomic_section_prefixes, GError **error);
+NMConfig *nm_config_setup (const NMConfigCmdLineOptions *cli, char **atomic_section_prefixes, GError **error);
 void nm_config_reload (NMConfig *config, int signal);
 
 gint nm_config_parse_boolean (const char *str, gint default_value);
@@ -127,6 +138,8 @@ void nm_config_keyfile_set_string_list (GKeyFile *keyfile,
                                         const char *const* strv,
                                         gssize len);
 GSList *nm_config_get_device_match_spec (const GKeyFile *keyfile, const char *group, const char *key, gboolean *out_has_key);
+
+void _nm_config_sort_groups (char **groups, gsize ngroups);
 
 G_END_DECLS
 

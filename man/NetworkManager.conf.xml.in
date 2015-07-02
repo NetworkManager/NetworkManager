@@ -27,23 +27,39 @@ Copyright 2010 - 2014 Red Hat, Inc.
 
   <refsynopsisdiv>
     <para><filename>/etc/NetworkManager/NetworkManager.conf</filename>,
-    <filename>/etc/NetworkManager/conf.d/<replaceable>name</replaceable>.conf</filename>
+    <filename>/etc/NetworkManager/conf.d/<replaceable>name</replaceable>.conf</filename>,
+    <filename>/usr/lib/NetworkManager/conf.d/<replaceable>name</replaceable>.conf</filename>,
+    <filename>/var/lib/NetworkManager/NetworkManager-intern.conf</filename>
     </para>
   </refsynopsisdiv>
 
   <refsect1>
     <title>Description</title>
-    <para>This is a configuration file for NetworkManager. It is used
+    <para><literal>NetworkManager.conf</literal> is the configuration file for NetworkManager. It is used
     to set up various aspects of NetworkManager's behavior. The
-    location of the file may be changed through use of the
-    <option>--config</option> argument for NetworkManager.
+    location of the main file and configuration directories may be changed
+    through use of the <option>--config</option>, <option>--config-dir</option>,
+    <option>--system-config-dir</option>, and <option>--intern-config</option>
+    argument for NetworkManager, respectively.
     </para>
     <para>If a default <literal>NetworkManager.conf</literal> is
     provided by your distribution's packages, you should not modify
     it, since your changes may get overwritten by package
     updates. Instead, you can add additional <literal>.conf</literal>
-    files to the <literal>conf.d</literal> directory. These will be read in order,
-    with later files overriding earlier ones.
+    files to the <literal>/etc/NetworkManager/conf.d</literal> directory.
+    These will be read in order, with later files overriding earlier ones.
+    Packages might install further configuration snippets to <literal>/usr/lib/NetworkManager/conf.d</literal>.
+    This directory is parsed first, even before <literal>NetworkManager.conf</literal>.
+    The loading of a file <literal>/usr/lib/NetworkManager/conf.d/<replaceable>name</replaceable>.conf</literal>
+    can be prevented by adding a file <literal>/etc/NetworkManager/conf.d/<replaceable>name</replaceable>.conf</literal>.
+    In this case, the file from the etc configuration shadows the file from the
+    system configuration directory.
+    </para>
+    <para>
+    NetworkManager can overwrite certain user configuration options via D-Bus or other internal
+    operations. In this case it writes those changes to <literal>/var/lib/NetworkManager/NetworkManager-intern.conf</literal>.
+    This file is not intended to be modified by the user, but it is read last and can shadow
+    user configuration from <literal>NetworkManager.conf</literal>.
     </para>
 
   </refsect1>
@@ -625,6 +641,9 @@ ipv6.ip6-privacy=1
 	    <filename>/etc/sysconfig/network-scripts/ifcfg-*</filename>
 	    files. It currently supports reading Ethernet, Wi-Fi,
 	    InfiniBand, VLAN, Bond, Bridge, and Team connections.
+	    Enabling <literal>ifcfg-rh</literal> implicitly enables
+	    <literal>ibft</literal> plugin, if it is available.
+	    This can be disabled by adding <literal>no-ibft</literal>.
 	  </para>
 	</listitem>
       </varlistentry>
@@ -658,12 +677,16 @@ ipv6.ip6-privacy=1
       </varlistentry>
 
       <varlistentry>
-	<term><varname>ibft</varname></term>
+	<term><varname>ibft</varname>, <varname>no-ibft</varname></term>
 	<listitem>
 	  <para>
 	    This plugin allows to read iBFT configuration (iSCSI Boot Firmware Table).
 	    The configuration is read using /sbin/iscsiadm. Users are expected to
 	    configure iBFT connections via the firmware interfaces.
+	    If ibft support is available, it is automatically enabled after
+	    <literal>ifcfg-rh</literal>. This can be disabled by <literal>no-ibft</literal>.
+	    You can also explicitly specify <literal>ibft</literal> to load the
+	    plugin without <literal>ifcfg-rh</literal> or to change the plugin order.
 	  </para>
 	</listitem>
       </varlistentry>

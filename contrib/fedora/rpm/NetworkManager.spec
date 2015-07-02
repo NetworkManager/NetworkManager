@@ -34,6 +34,7 @@
 
 %define systemd_dir %{_prefix}/lib/systemd/system
 %define udev_dir %{_prefix}/lib/udev
+%define nmlibdir %{_prefix}/lib/%{name}
 
 %global with_adsl 1
 %global with_bluetooth 1
@@ -83,8 +84,7 @@ URL: http://www.gnome.org/projects/NetworkManager/
 Source: __SOURCE1__
 Source1: NetworkManager.conf
 Source2: 00-server.conf
-Source3: 10-ibft-plugin.conf
-Source4: 20-connectivity-fedora.conf
+Source3: 20-connectivity-fedora.conf
 
 #Patch1: 0001-some.patch
 
@@ -443,9 +443,9 @@ make install DESTDIR=$RPM_BUILD_ROOT
 %{__cp} %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/
 
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/conf.d
-%{__cp} %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/conf.d
-%{__cp} %{SOURCE3} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/conf.d
-%{__cp} %{SOURCE4} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/conf.d
+mkdir -p $RPM_BUILD_ROOT%{nmlibdir}/conf.d
+%{__cp} %{SOURCE2} $RPM_BUILD_ROOT%{nmlibdir}/conf.d/
+%{__cp} %{SOURCE3} $RPM_BUILD_ROOT%{nmlibdir}/conf.d/
 
 # create a VPN directory
 %{__mkdir_p} $RPM_BUILD_ROOT%{_sysconfdir}/NetworkManager/VPN
@@ -543,7 +543,8 @@ fi
 %endif
 %dir %{_sysconfdir}/%{name}
 %dir %{_sysconfdir}/%{name}/conf.d
-%config %{_sysconfdir}/%{name}/conf.d/10-ibft-plugin.conf
+%dir %{nmlibdir}
+%dir %{nmlibdir}/conf.d
 %{_mandir}/man1/*
 %{_mandir}/man5/*
 %{_mandir}/man8/*
@@ -660,15 +661,15 @@ fi
 
 %files config-connectivity-fedora
 %defattr(-,root,root,0755)
-%dir %{_sysconfdir}/%{name}
-%dir %{_sysconfdir}/%{name}/conf.d
-%config(noreplace) %{_sysconfdir}/%{name}/conf.d/20-connectivity-fedora.conf
+%dir %{nmlibdir}
+%dir %{nmlibdir}/conf.d
+%{nmlibdir}/conf.d/20-connectivity-fedora.conf
 
 %files config-server
 %defattr(-,root,root,0755)
-%dir %{_sysconfdir}/%{name}
-%dir %{_sysconfdir}/%{name}/conf.d
-%config(noreplace) %{_sysconfdir}/%{name}/conf.d/00-server.conf
+%dir %{nmlibdir}
+%dir %{nmlibdir}/conf.d
+%{nmlibdir}/conf.d/00-server.conf
 
 %if 0%{?with_nmtui}
 %files tui
