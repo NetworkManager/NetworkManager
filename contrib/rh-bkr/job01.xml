@@ -8,7 +8,14 @@
 			<autopick random="true"/>
 			<watchdog panic="None"/>
 			<packages/>
-			<ks_appends/>
+			<ks_appends>
+				<!-- A workaround for rdma machine post-deploy script woes, suggested by honli -->
+				<ks_append><![CDATA[%post
+sed -e '/^\s*linux16\s*\/vmlinuz/ s/$/ $SELINUX_DISABLED/' -i /boot/grub2/grub.cfg || :
+%end
+]]>
+				</ks_append>
+			</ks_appends>
 			<repos/>
 			<distroRequires>
 				<and>
