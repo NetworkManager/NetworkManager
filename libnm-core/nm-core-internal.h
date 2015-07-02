@@ -121,9 +121,20 @@ gboolean    _nm_utils_string_in_list   (const char *str,
 
 gssize      _nm_utils_strv_find_first (char **list, gssize len, const char *needle);
 
+char **_nm_utils_strv_cleanup (char **strv,
+                               gboolean strip_whitespace,
+                               gboolean skip_empty,
+                               gboolean skip_repeated);
+
 char **     _nm_utils_strsplit_set (const char *str,
                                     const char *delimiters,
                                     int max_tokens);
+
+GSList *    _nm_utils_strv_to_slist (char **strv, gboolean deep_copy);
+char **     _nm_utils_slist_to_strv (GSList *slist, gboolean deep_copy);
+
+GPtrArray * _nm_utils_strv_to_ptrarray (char **strv);
+char **     _nm_utils_ptrarray_to_strv (GPtrArray *ptrarray);
 
 #define NM_UTILS_UUID_TYPE_LEGACY            0
 #define NM_UTILS_UUID_TYPE_VARIANT3          1

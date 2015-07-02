@@ -37,10 +37,10 @@
 #include <gio/gio.h>
 #include <glib/gi18n.h>
 
-#define NM_DEFAULT_SYSTEM_CONF_FILE    NMCONFDIR "/NetworkManager.conf"
-#define NM_DEFAULT_SYSTEM_CONF_DIR     NMCONFDIR "/conf.d"
-#define NM_OLD_SYSTEM_CONF_FILE        NMCONFDIR "/nm-system-settings.conf"
-#define NM_NO_AUTO_DEFAULT_STATE_FILE  NMSTATEDIR "/no-auto-default.state"
+#define DEFAULT_CONFIG_MAIN_FILE        NMCONFDIR "/NetworkManager.conf"
+#define DEFAULT_CONFIG_DIR              NMCONFDIR "/conf.d"
+#define DEFAULT_CONFIG_MAIN_FILE_OLD    NMCONFDIR "/nm-system-settings.conf"
+#define DEFAULT_NO_AUTO_DEFAULT_FILE    NMSTATEDIR "/no-auto-default.state"
 
 struct NMConfigCmdLineOptions {
 	char *config_main_file;
@@ -108,37 +108,113 @@ static void _set_config_data (NMConfig *self, NMConfigData *new_data, int signal
 
 /************************************************************************/
 
-gboolean
+gint
+nm_config_parse_boolean (const char *str,
+                         gint default_value)
+{
+	gsize len;
+	char *s = NULL;
+
+	if (!str)
+		return default_value;
+
+	while (str[0] && g_ascii_isspace (str[0]))
+		str++;
+
+	if (!str[0])
+		return default_value;
+
+	len = strlen (str);
+	if (g_ascii_isspace (str[len - 1])) {
+		s = g_strdup (str);
+		g_strchomp (s);
+		str = s;
+	}
+
+	if (!g_ascii_strcasecmp (str, "true") || !g_ascii_strcasecmp (str, "yes") || !g_ascii_strcasecmp (str, "on") || !g_ascii_strcasecmp (str, "1"))
+		default_value = TRUE;
+	else if (!g_ascii_strcasecmp (str, "false") || !g_ascii_strcasecmp (str, "no") || !g_ascii_strcasecmp (str, "off") || !g_ascii_strcasecmp (str, "0"))
+		default_value = FALSE;
+	if (s)
+		g_free (s);
+	return default_value;
+}
+
+gint
 nm_config_keyfile_get_boolean (GKeyFile *keyfile,
                                const char *section,
                                const char *key,
-                               gboolean default_value)
+                               gint default_value)
 {
-	gboolean value = default_value;
-	char *str;
+	gs_free char *str = NULL;
 
 	g_return_val_if_fail (keyfile != NULL, default_value);
 	g_return_val_if_fail (section != NULL, default_value);
 	g_return_val_if_fail (key != NULL, default_value);
 
 	str = g_key_file_get_value (keyfile, section, key, NULL);
-	if (!str)
-		return default_value;
+	return nm_config_parse_boolean (str, default_value);
+}
 
-	g_strstrip (str);
-	if (str[0]) {
-		if (!g_ascii_strcasecmp (str, "true") || !g_ascii_strcasecmp (str, "yes") || !g_ascii_strcasecmp (str, "on") || !g_ascii_strcasecmp (str, "1"))
-			value = TRUE;
-		else if (!g_ascii_strcasecmp (str, "false") || !g_ascii_strcasecmp (str, "no") || !g_ascii_strcasecmp (str, "off") || !g_ascii_strcasecmp (str, "0"))
-			value = FALSE;
-		else {
-			nm_log_warn (LOGD_CORE, "Unrecognized value for %s.%s: '%s'. Assuming '%s'",
-			             section, key, str, default_value ? "true" : "false");
-		}
+char *
+nm_config_keyfile_get_value (GKeyFile *keyfile,
+                             const char *section,
+                             const char *key,
+                             NMConfigGetValueFlags flags)
+{
+	char *value;
+
+	if (NM_FLAGS_HAS (flags, NM_CONFIG_GET_VALUE_RAW))
+		value = g_key_file_get_value (keyfile, section, key, NULL);
+	else
+		value = g_key_file_get_string (keyfile, section, key, NULL);
+
+	if (!value)
+		return NULL;
+
+	if (NM_FLAGS_HAS (flags, NM_CONFIG_GET_VALUE_STRIP))
+		g_strstrip (value);
+
+	if (   NM_FLAGS_HAS (flags, NM_CONFIG_GET_VALUE_NO_EMPTY)
+	    && !*value) {
+		g_free (value);
+		return NULL;
 	}
 
-	g_free (str);
 	return value;
+}
+
+void
+nm_config_keyfile_set_string_list (GKeyFile *keyfile,
+                                   const char *group,
+                                   const char *key,
+                                   const char *const* strv,
+                                   gssize len)
+{
+	gsize l;
+	char *new_value;
+
+	if (len < 0)
+		len = strv ? g_strv_length ((char **) strv) : 0;
+
+	g_key_file_set_string_list (keyfile, group, key, strv, len);
+
+	/* g_key_file_set_string_list() appends a trailing separator to the value.
+	 * We don't like that, get rid of it. */
+
+	new_value = g_key_file_get_value (keyfile, group, key, NULL);
+	if (!new_value)
+		return;
+
+	l = strlen (new_value);
+	if (l > 0 && new_value[l - 1] == NM_CONFIG_KEYFILE_LIST_SEPARATOR) {
+		/* Maybe we should check that value doesn't end with "\\,", i.e.
+		 * with an escaped separator. But the way g_key_file_set_string_list()
+		 * is implemented (currently), it always adds a trailing separator. */
+		new_value[l - 1] = '\0';
+		g_key_file_set_value (keyfile, group, key, new_value);
+	}
+	g_free (new_value);
 }
 
 /************************************************************************/
@@ -227,94 +303,99 @@ nm_config_get_configure_and_quit (NMConfig *config)
 /************************************************************************/
 
 static char **
-no_auto_default_merge_from_file (const char *no_auto_default_file, const char *const* no_auto_default)
+no_auto_default_from_file (const char *no_auto_default_file)
 {
-	GPtrArray *updated;
+	GPtrArray *no_auto_default_new;
 	char **list;
-	int i, j;
+	guint i;
 	char *data;
 
-	updated = g_ptr_array_new ();
-	if (no_auto_default) {
-		for (i = 0; no_auto_default[i]; i++)
-			g_ptr_array_add (updated, g_strdup (no_auto_default[i]));
-	}
+	no_auto_default_new = g_ptr_array_new ();
 
 	if (   no_auto_default_file
 	    && g_file_get_contents (no_auto_default_file, &data, NULL, NULL)) {
 		list = g_strsplit (data, "\n", -1);
 		for (i = 0; list[i]; i++) {
-			if (!*list[i])
+			if (   *list[i]
+			    && nm_utils_hwaddr_valid (list[i], -1)
+			    && _nm_utils_strv_find_first (list, i, list[i]) < 0)
+				g_ptr_array_add (no_auto_default_new, list[i]);
+			else
 				g_free (list[i]);
-			else {
-				for (j = 0; j < updated->len; j++) {
-					if (!strcmp (list[i], updated->pdata[j]))
-						break;
-				}
-				if (j == updated->len)
-					g_ptr_array_add (updated, list[i]);
-				else
-					g_free (list[i]);
-			}
 		}
 		g_free (list);
 		g_free (data);
 	}
 
-	g_ptr_array_add (updated, NULL);
-	return (char **) g_ptr_array_free (updated, FALSE);
+	g_ptr_array_add (no_auto_default_new, NULL);
+	return (char **) g_ptr_array_free (no_auto_default_new, FALSE);
+}
+
+static gboolean
+no_auto_default_to_file (const char *no_auto_default_file, const char *const*no_auto_default, GError **error)
+{
+	GString *data;
+	gboolean success;
+	guint i;
+
+	data = g_string_new ("");
+	for (i = 0; no_auto_default && no_auto_default[i]; i++) {
+		g_string_append (data, no_auto_default[i]);
+		g_string_append_c (data, '\n');
+	}
+	success = g_file_set_contents (no_auto_default_file, data->str, data->len, error);
+	g_string_free (data, TRUE);
+	return success;
 }
 
 gboolean
 nm_config_get_no_auto_default_for_device (NMConfig *self, NMDevice *device)
 {
-	NMConfigData *config_data;
-
 	g_return_val_if_fail (NM_IS_CONFIG (self), FALSE);
-	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
-	config_data = NM_CONFIG_GET_PRIVATE (self)->config_data;
-	return nm_device_spec_match_list (device, nm_config_data_get_no_auto_default_list (config_data));
+	return nm_config_data_get_no_auto_default_for_device (NM_CONFIG_GET_PRIVATE (self)->config_data, device);
 }
 
 void
 nm_config_set_no_auto_default_for_device (NMConfig *self, NMDevice *device)
 {
 	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (self);
-	char *current;
-	GString *updated;
 	GError *error = NULL;
-	char **no_auto_default;
 	NMConfigData *new_data = NULL;
+	const char *hw_address;
+	const char *const*no_auto_default_current;
+	GPtrArray *no_auto_default_new = NULL;
+	guint i;
 
 	g_return_if_fail (NM_IS_CONFIG (self));
 	g_return_if_fail (NM_IS_DEVICE (device));
 
-	if (nm_config_get_no_auto_default_for_device (self, device))
-		return;
+	hw_address = nm_device_get_hw_address (device);
 
-	updated = g_string_new (NULL);
-	if (g_file_get_contents (priv->no_auto_default_file, &current, NULL, NULL)) {
-		g_string_append (updated, current);
-		g_free (current);
-		if (updated->str[updated->len - 1] != '\n')
-			g_string_append_c (updated, '\n');
+	no_auto_default_current = nm_config_data_get_no_auto_default (priv->config_data);
+
+	if (_nm_utils_strv_find_first ((char **) no_auto_default_current, -1, hw_address) >= 0) {
+		/* @hw_address is already blocked. We don't have to update our in-memory representation.
+		 * Maybe we should write to no_auto_default_file anew, but let's save that too. */
+		return;
 	}
 
-	g_string_append (updated, nm_device_get_hw_address (device));
-	g_string_append_c (updated, '\n');
+	no_auto_default_new = g_ptr_array_new ();
+	for (i = 0; no_auto_default_current && no_auto_default_current[i]; i++)
+		g_ptr_array_add (no_auto_default_new, (char *) no_auto_default_current[i]);
+	g_ptr_array_add (no_auto_default_new, (char *) hw_address);
+	g_ptr_array_add (no_auto_default_new, NULL);
 
-	if (!g_file_set_contents (priv->no_auto_default_file, updated->str, updated->len, &error)) {
+	if (!no_auto_default_to_file (priv->no_auto_default_file, (const char *const*) no_auto_default_new->pdata, &error)) {
 		nm_log_warn (LOGD_SETTINGS, "Could not update no-auto-default.state file: %s",
 		             error->message);
 		g_error_free (error);
 	}
 
-	g_string_free (updated, TRUE);
+	new_data = nm_config_data_new_update_no_auto_default (priv->config_data, (const char *const*) no_auto_default_new->pdata);
 
-	no_auto_default = no_auto_default_merge_from_file (priv->no_auto_default_file, nm_config_data_get_no_auto_default (priv->config_data));
-	new_data = nm_config_data_new_update_no_auto_default (priv->config_data, (const char *const*) no_auto_default);
-	g_strfreev (no_auto_default);
+	/* unref no_auto_default_set here. Note that _set_config_data() probably invalidates the content of the array. */
+	g_ptr_array_unref (no_auto_default_new);
 
 	_set_config_data (self, new_data, 0);
 }
@@ -379,16 +460,16 @@ nm_config_cmd_line_options_add_to_entries (NMConfigCmdLineOptions *cli,
 
 	{
 		GOptionEntry config_options[] = {
-			{ "config", 0, 0, G_OPTION_ARG_FILENAME, &cli->config_main_file, N_("Config file location"), N_("/path/to/config.file") },
-			{ "config-dir", 0, 0, G_OPTION_ARG_FILENAME, &cli->config_dir, N_("Config directory location"), N_("/path/to/config/dir") },
-			{ "no-auto-default", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_FILENAME, &cli->no_auto_default_file, "no-auto-default.state location", NULL },
-			{ "plugins", 0, 0, G_OPTION_ARG_STRING, &cli->plugins, N_("List of plugins separated by ','"), N_("plugin1,plugin2") },
+			{ "config", 0, 0, G_OPTION_ARG_FILENAME, &cli->config_main_file, N_("Config file location"), N_(DEFAULT_CONFIG_MAIN_FILE) },
+			{ "config-dir", 0, 0, G_OPTION_ARG_FILENAME, &cli->config_dir, N_("Config directory location"), N_(DEFAULT_CONFIG_DIR) },
+			{ "no-auto-default", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_FILENAME, &cli->no_auto_default_file, N_("State file for no-auto-default devices"), N_(DEFAULT_NO_AUTO_DEFAULT_FILE) },
+			{ "plugins", 0, 0, G_OPTION_ARG_STRING, &cli->plugins, N_("List of plugins separated by ','"), N_(CONFIG_PLUGINS_DEFAULT) },
 			{ "configure-and-quit", 0, 0, G_OPTION_ARG_NONE, &cli->configure_and_quit, N_("Quit after initial configuration"), NULL },
 
 				/* These three are hidden for now, and should eventually just go away. */
 			{ "connectivity-uri", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_STRING, &cli->connectivity_uri, N_("An http(s) address for checking internet connectivity"), "http://example.com" },
-			{ "connectivity-interval", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_INT, &cli->connectivity_interval, N_("The interval between connectivity checks (in seconds)"), "60" },
-			{ "connectivity-response", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_STRING, &cli->connectivity_response, N_("The expected start of the response"), N_("Bingo!") },
+			{ "connectivity-interval", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_INT, &cli->connectivity_interval, N_("The interval between connectivity checks (in seconds)"), G_STRINGIFY (NM_CONFIG_DEFAULT_CONNECTIVITY_INTERVAL) },
+			{ "connectivity-response", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_STRING, &cli->connectivity_response, N_("The expected start of the response"), N_(NM_CONFIG_DEFAULT_CONNECTIVITY_RESPONSE) },
 			{ 0 },
 		};
 
@@ -404,8 +485,68 @@ nm_config_create_keyfile ()
 	GKeyFile *keyfile;
 
 	keyfile = g_key_file_new ();
-	g_key_file_set_list_separator (keyfile, ',');
+	g_key_file_set_list_separator (keyfile, NM_CONFIG_KEYFILE_LIST_SEPARATOR);
 	return keyfile;
+}
+
+static int
+_sort_groups_cmp (const char **pa, const char **pb, gpointer dummy)
+{
+	const char *a, *b;
+	gboolean a_is_connection, b_is_connection;
+
+	/* basic NULL checking... */
+	if (pa == pb)
+		return 0;
+	if (!pa)
+		return -1;
+	if (!pb)
+		return 1;
+
+	a = *pa;
+	b = *pb;
+
+	a_is_connection = g_str_has_prefix (a, NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION);
+	b_is_connection = g_str_has_prefix (b, NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION);
+
+	if (a_is_connection != b_is_connection) {
+		/* one is a [connection*] entry, the other not. We sort [connection*] entires
+		 * after.  */
+		if (a_is_connection)
+			return 1;
+		return -1;
+	}
+	if (!a_is_connection) {
+		/* both are non-connection entries. Don't reorder. */
+		return 0;
+	}
+
+	/* both are [connection.\+] entires. Reverse their order.
+	 * One of the sections might be literally [connection]. That section
+	 * is special and it's order will be fixed later. It doesn't actually
+	 * matter here how it compares with [connection.\+] sections. */
+	return pa > pb ? -1 : 1;
+}
+
+static gboolean
+_setting_is_device_spec (const char *group, const char *key)
+{
+#define _IS(group_v, key_v) (strcmp (group, (""group_v)) == 0 && strcmp (key, (""key_v)) == 0)
+	return    _IS (NM_CONFIG_KEYFILE_GROUP_MAIN, "no-auto-default")
+	       || _IS (NM_CONFIG_KEYFILE_GROUP_MAIN, "ignore-carrier")
+	       || _IS (NM_CONFIG_KEYFILE_GROUP_MAIN, "assume-ipv6ll-only")
+	       || _IS (NM_CONFIG_KEYFILE_GROUP_KEYFILE, "unmanaged-devices")
+	       || (g_str_has_prefix (group, NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION) && !strcmp (key, "match-device"));
+}
+
+static gboolean
+_setting_is_string_list (const char *group, const char *key)
+{
+	return    _IS (NM_CONFIG_KEYFILE_GROUP_MAIN, "plugins")
+	       || _IS (NM_CONFIG_KEYFILE_GROUP_MAIN, "debug")
+	       || _IS (NM_CONFIG_KEYFILE_GROUP_LOGGING, "domains")
+	       || g_str_has_prefix (group, NM_CONFIG_KEYFILE_GROUPPREFIX_TEST_APPEND_STRINGLIST);
+#undef _IS
 }
 
 static gboolean
@@ -435,36 +576,116 @@ read_config (GKeyFile *keyfile, const char *path, GError **error)
 
 	/* Override the current settings with the new ones */
 	groups = g_key_file_get_groups (kf, &ngroups);
+	if (!groups)
+		ngroups = 0;
+
+	/* Within one file we reverse the order of the '[connection.\+] sections.
+	 * Here we merge the current file (@kf) into @keyfile. As we merge multiple
+	 * files, earlier sections (with lower priority) will be added first.
+	 * But within one file, we want a top-to-bottom order. This means we
+	 * must reverse the order within each file.
+	 * At the very end, we will revert the order of all sections again and
+	 * get thus the right behavior. This final reversing is done in
+	 * NMConfigData:_get_connection_infos().  */
+	if (ngroups > 1) {
+		g_qsort_with_data (groups,
+		                   ngroups,
+		                   sizeof (char *),
+		                   (GCompareDataFunc) _sort_groups_cmp,
+		                   NULL);
+	}
+
 	for (g = 0; groups[g]; g++) {
-		keys = g_key_file_get_keys (kf, groups[g], &nkeys, NULL);
+		const char *group = groups[g];
+
+		keys = g_key_file_get_keys (kf, group, &nkeys, NULL);
 		if (!keys)
 			continue;
 		for (k = 0; keys[k]; k++) {
-			int len = strlen (keys[k]);
-			char *v;
+			const char *key;
+			char *new_value;
+			char last_char;
+			gsize key_len;
 
-			if (keys[k][len - 1] == '+') {
-				char *base_key = g_strndup (keys[k], len - 1);
-				char *old_val = g_key_file_get_value (keyfile, groups[g], base_key, NULL);
-				char *new_val = g_key_file_get_value (kf, groups[g], keys[k], NULL);
+			key = keys[k];
+			g_assert (key && *key);
+			key_len = strlen (key);
+			last_char = key[key_len - 1];
+			if (   key_len > 1
+			    && (last_char == '+' || last_char == '-')) {
+				gs_free char *base_key = g_strndup (key, key_len - 1);
+				gboolean is_string_list;
 
-				if (old_val && *old_val) {
-					char *combined = g_strconcat (old_val, ",", new_val, NULL);
+				is_string_list = _setting_is_string_list (group, base_key);
 
-					g_key_file_set_value (keyfile, groups[g], base_key, combined);
-					g_free (combined);
-				} else
-					g_key_file_set_value (keyfile, groups[g], base_key, new_val);
+				if (   is_string_list
+				    || _setting_is_device_spec (group, base_key)) {
+					gs_unref_ptrarray GPtrArray *new = g_ptr_array_new_with_free_func (g_free);
+					char **iter_val;
+					gs_strfreev  char **old_val = NULL;
+					gs_free char **new_val = NULL;
 
-				g_free (base_key);
-				g_free (old_val);
-				g_free (new_val);
+					if (is_string_list) {
+						old_val = g_key_file_get_string_list (keyfile, group, base_key, NULL, NULL);
+						new_val = g_key_file_get_string_list (kf, group, key, NULL, NULL);
+					} else {
+						gs_free char *old_sval = nm_config_keyfile_get_value (keyfile, group, base_key, NM_CONFIG_GET_VALUE_TYPE_SPEC);
+						gs_free char *new_sval = nm_config_keyfile_get_value (kf, group, key, NM_CONFIG_GET_VALUE_TYPE_SPEC);
+						gs_free_slist GSList *old_specs = nm_match_spec_split (old_sval);
+						gs_free_slist GSList *new_specs = nm_match_spec_split (new_sval);
+
+						/* the key is a device spec. This is a special kind of string-list, that
+						 * we must split differently. */
+						old_val = _nm_utils_slist_to_strv (old_specs, FALSE);
+						new_val = _nm_utils_slist_to_strv (new_specs, FALSE);
+					}
+
+					/* merge the string lists, by omiting duplicates. */
+
+					for (iter_val = old_val; iter_val && *iter_val; iter_val++) {
+						if (   last_char != '-'
+						    || _nm_utils_strv_find_first (new_val, -1, *iter_val) < 0)
+							g_ptr_array_add (new, g_strdup (*iter_val));
+					}
+					for (iter_val = new_val; iter_val && *iter_val; iter_val++) {
+						/* don't add duplicates. That means an "option=a,b"; "option+=a,c" results in "option=a,b,c" */
+						if (   last_char == '+'
+						    && _nm_utils_strv_find_first (old_val, -1, *iter_val) < 0)
+							g_ptr_array_add (new, *iter_val);
+						else
+							g_free (*iter_val);
+					}
+
+					if (new->len > 0) {
+						if (is_string_list)
+							nm_config_keyfile_set_string_list (keyfile, group, base_key, (const char *const*) new->pdata, new->len);
+						else {
+							gs_free_slist GSList *specs = NULL;
+							gs_free char *specs_joined = NULL;
+
+							g_ptr_array_add (new, NULL);
+							specs = _nm_utils_strv_to_slist ((char **) new->pdata, FALSE);
+
+							specs_joined = nm_match_spec_join (specs);
+
+							g_key_file_set_value (keyfile, group, base_key, specs_joined);
+						}
+					} else {
+						if (is_string_list)
+							g_key_file_remove_key (keyfile, group, base_key, NULL);
+						else
+							g_key_file_set_value (keyfile, group, base_key, "");
+					}
+				} else {
+					/* For any other settings we don't support extending the option with +/-.
+					 * Just drop the key. */
+				}
 				continue;
 			}
 
-			g_key_file_set_value (keyfile, groups[g], keys[k],
-			                      v = g_key_file_get_value (kf, groups[g], keys[k], NULL));
-			g_free (v);
+			new_value = g_key_file_get_value (kf, group, key, NULL);
+			g_key_file_set_value (keyfile, group, key, new_value);
+			g_free (new_value);
 		}
 		g_strfreev (keys);
 	}
@@ -504,27 +725,27 @@ read_base_config (GKeyFile *keyfile,
 	 */
 
 	/* Try deprecated nm-system-settings.conf first */
-	if (read_config (keyfile, NM_OLD_SYSTEM_CONF_FILE, &my_error)) {
-		*out_config_main_file = g_strdup (NM_OLD_SYSTEM_CONF_FILE);
+	if (read_config (keyfile, DEFAULT_CONFIG_MAIN_FILE_OLD, &my_error)) {
+		*out_config_main_file = g_strdup (DEFAULT_CONFIG_MAIN_FILE_OLD);
 		return TRUE;
 	}
 
 	if (!g_error_matches (my_error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND)) {
 		nm_log_warn (LOGD_CORE, "Old default config file %s invalid: %s\n",
-		             NM_OLD_SYSTEM_CONF_FILE,
+		             DEFAULT_CONFIG_MAIN_FILE_OLD,
 		             my_error->message);
 	}
 	g_clear_error (&my_error);
 
 	/* Try the standard config file location next */
-	if (read_config (keyfile, NM_DEFAULT_SYSTEM_CONF_FILE, &my_error)) {
-		*out_config_main_file = g_strdup (NM_DEFAULT_SYSTEM_CONF_FILE);
+	if (read_config (keyfile, DEFAULT_CONFIG_MAIN_FILE, &my_error)) {
+		*out_config_main_file = g_strdup (DEFAULT_CONFIG_MAIN_FILE);
 		return TRUE;
 	}
 
 	if (!g_error_matches (my_error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND)) {
 		nm_log_warn (LOGD_CORE, "Default config file %s invalid: %s\n",
-		             NM_DEFAULT_SYSTEM_CONF_FILE,
+		             DEFAULT_CONFIG_MAIN_FILE,
 		             my_error->message);
 		g_propagate_error (error, my_error);
 		return FALSE;
@@ -534,9 +755,9 @@ read_base_config (GKeyFile *keyfile,
 	/* If for some reason no config file exists, use the default
 	 * config file path.
 	 */
-	*out_config_main_file = g_strdup (NM_DEFAULT_SYSTEM_CONF_FILE);
+	*out_config_main_file = g_strdup (DEFAULT_CONFIG_MAIN_FILE);
 	nm_log_info (LOGD_CORE, "No config file found or given; using %s\n",
-	             NM_DEFAULT_SYSTEM_CONF_FILE);
+	             DEFAULT_CONFIG_MAIN_FILE);
 	return TRUE;
 }
 
@@ -642,23 +863,23 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 	 * config files. */
 
 	if (cli && cli->plugins && cli->plugins[0])
-		g_key_file_set_value (keyfile, "main", "plugins", cli->plugins);
-	plugins_tmp = g_key_file_get_string_list (keyfile, "main", "plugins", NULL, NULL);
+		g_key_file_set_value (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "plugins", cli->plugins);
+	plugins_tmp = g_key_file_get_string_list (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "plugins", NULL, NULL);
 	if (!plugins_tmp) {
 		if (STRLEN (CONFIG_PLUGINS_DEFAULT) > 0)
-			g_key_file_set_value (keyfile, "main", "plugins", CONFIG_PLUGINS_DEFAULT);
+			g_key_file_set_value (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "plugins", CONFIG_PLUGINS_DEFAULT);
 	} else
 		g_strfreev (plugins_tmp);
 
 	if (cli && cli->configure_and_quit)
-		g_key_file_set_value (keyfile, "main", "configure-and-quit", "true");
+		g_key_file_set_boolean (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "configure-and-quit", TRUE);
 
 	if (cli && cli->connectivity_uri && cli->connectivity_uri[0])
-		g_key_file_set_value (keyfile, "connectivity", "uri", cli->connectivity_uri);
+		g_key_file_set_string (keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, "uri", cli->connectivity_uri);
 	if (cli && cli->connectivity_interval >= 0)
-		g_key_file_set_integer (keyfile, "connectivity", "interval", cli->connectivity_interval);
+		g_key_file_set_integer (keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, "interval", cli->connectivity_interval);
 	if (cli && cli->connectivity_response && cli->connectivity_response[0])
-		g_key_file_set_value (keyfile, "connectivity", "response", cli->connectivity_response);
+		g_key_file_set_string (keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, "response", cli->connectivity_response);
 
 	*out_config_main_file = o_config_main_file;
 	*out_config_description = o_config_description;
@@ -666,11 +887,16 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
 }
 
 GSList *
-nm_config_get_device_match_spec (const GKeyFile *keyfile, const char *group, const char *key)
+nm_config_get_device_match_spec (const GKeyFile *keyfile, const char *group, const char *key, gboolean *out_has_key)
 {
 	gs_free char *value = NULL;
 
-	value = g_key_file_get_string ((GKeyFile *) keyfile, group, key, NULL);
+	/* nm_match_spec_split() already supports full escaping and is basically
+	 * a modified version of g_key_file_parse_value_as_string(). So we first read
+	 * the raw value (g_key_file_get_value()), and do the parsing ourselves. */
+	value = g_key_file_get_value ((GKeyFile *) keyfile, group, key, NULL);
+	if (out_has_key)
+		*out_has_key = !!value;
 	return nm_match_spec_split (value);
 }
 
@@ -685,6 +911,7 @@ nm_config_reload (NMConfig *self, int signal)
 	NMConfigData *new_data = NULL;
 	char *config_main_file = NULL;
 	char *config_description = NULL;
+	gs_strfreev char **no_auto_default = NULL;
 
 	g_return_if_fail (NM_IS_CONFIG (self));
 
@@ -710,7 +937,9 @@ nm_config_reload (NMConfig *self, int signal)
 		_set_config_data (self, NULL, signal);
 		return;
 	}
-	new_data = nm_config_data_new (config_main_file, config_description, nm_config_data_get_no_auto_default (priv->config_data), keyfile);
+	no_auto_default = no_auto_default_from_file (priv->no_auto_default_file);
+
+	new_data = nm_config_data_new (config_main_file, config_description, (const char *const*) no_auto_default, keyfile);
 	g_free (config_main_file);
 	g_free (config_description);
 	g_key_file_unref (keyfile);
@@ -801,6 +1030,7 @@ _set_config_data (NMConfig *self, NMConfigData *new_data, int signal)
 	if (new_data) {
 		nm_log_info (LOGD_CORE, "config: update %s (%s)", nm_config_data_get_config_description (new_data),
 		             (log_str = nm_config_change_flags_to_string (changes)));
+		nm_config_data_log (new_data, "CONFIG: ");
 		priv->config_data = new_data;
 	} else if (had_new_data)
 		nm_log_info (LOGD_CORE, "config: signal %s (no changes from disk)", (log_str = nm_config_change_flags_to_string (changes)));
@@ -842,9 +1072,7 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	GKeyFile *keyfile;
 	char *config_main_file = NULL;
 	char *config_description = NULL;
-	char **no_auto_default;
-	GSList *no_auto_default_orig_list;
-	GPtrArray *no_auto_default_orig;
+	gs_strfreev char **no_auto_default = NULL;
 
 	if (priv->config_dir) {
 		/* Object is already initialized. */
@@ -857,7 +1085,7 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	if (priv->cli.config_dir)
 		priv->config_dir = g_strdup (priv->cli.config_dir);
 	else
-		priv->config_dir = g_strdup (NM_DEFAULT_SYSTEM_CONF_DIR);
+		priv->config_dir = g_strdup (DEFAULT_CONFIG_DIR);
 
 	keyfile = read_entire_config (&priv->cli,
 	                              priv->config_dir,
@@ -872,37 +1100,29 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	if (priv->cli.no_auto_default_file)
 		priv->no_auto_default_file = g_strdup (priv->cli.no_auto_default_file);
 	else
-		priv->no_auto_default_file = g_strdup (NM_NO_AUTO_DEFAULT_STATE_FILE);
+		priv->no_auto_default_file = g_strdup (DEFAULT_NO_AUTO_DEFAULT_FILE);
 
-	priv->plugins = g_key_file_get_string_list (keyfile, "main", "plugins", NULL, NULL);
+	priv->plugins = _nm_utils_strv_cleanup (g_key_file_get_string_list (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "plugins", NULL, NULL),
+	                                        TRUE, TRUE, TRUE);
 	if (!priv->plugins)
 		priv->plugins = g_new0 (char *, 1);
 
-	priv->monitor_connection_files = nm_config_keyfile_get_boolean (keyfile, "main", "monitor-connection-files", FALSE);
+	priv->monitor_connection_files = nm_config_keyfile_get_boolean (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "monitor-connection-files", FALSE);
 
-	priv->auth_polkit = nm_config_keyfile_get_boolean (keyfile, "main", "auth-polkit", NM_CONFIG_DEFAULT_AUTH_POLKIT);
+	priv->auth_polkit = nm_config_keyfile_get_boolean (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "auth-polkit", NM_CONFIG_DEFAULT_AUTH_POLKIT);
 
-	priv->dhcp_client = g_key_file_get_value (keyfile, "main", "dhcp", NULL);
+	priv->dhcp_client = nm_strstrip (g_key_file_get_string (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "dhcp", NULL));
 
-	priv->log_level = g_key_file_get_value (keyfile, "logging", "level", NULL);
-	priv->log_domains = g_key_file_get_value (keyfile, "logging", "domains", NULL);
+	priv->log_level = nm_strstrip (g_key_file_get_string (keyfile, NM_CONFIG_KEYFILE_GROUP_LOGGING, "level", NULL));
+	priv->log_domains = nm_strstrip (g_key_file_get_string (keyfile, NM_CONFIG_KEYFILE_GROUP_LOGGING, "domains", NULL));
 
-	priv->debug = g_key_file_get_value (keyfile, "main", "debug", NULL);
+	priv->debug = g_key_file_get_string (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "debug", NULL);
 
-	priv->configure_and_quit = nm_config_keyfile_get_boolean (keyfile, "main", "configure-and-quit", FALSE);
+	priv->configure_and_quit = nm_config_keyfile_get_boolean (keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "configure-and-quit", FALSE);
 
-	no_auto_default_orig_list = nm_config_get_device_match_spec (keyfile, "main", "no-auto-default");
-
-	no_auto_default_orig = _nm_utils_copy_slist_to_array (no_auto_default_orig_list, NULL, NULL);
-	g_ptr_array_add (no_auto_default_orig, NULL);
-	no_auto_default = no_auto_default_merge_from_file (priv->no_auto_default_file, (const char *const *) no_auto_default_orig->pdata);
-	g_ptr_array_unref (no_auto_default_orig);
-
-	g_slist_free_full (no_auto_default_orig_list, g_free);
+	no_auto_default = no_auto_default_from_file (priv->no_auto_default_file);
 
 	priv->config_data_orig = nm_config_data_new (config_main_file, config_description, (const char *const*) no_auto_default, keyfile);
-
-	g_strfreev (no_auto_default);
 
 	priv->config_data = g_object_ref (priv->config_data_orig);
 

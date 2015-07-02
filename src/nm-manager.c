@@ -2472,7 +2472,7 @@ should_connect_slaves (NMConnection *connection, NMDevice *device)
 		goto out;
 
 	/* Check configuration default for autoconnect-slaves property */
-	value = nm_config_data_get_connection_default (nm_config_get_data (nm_config_get ()),
+	value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
 	                                               "connection.autoconnect-slaves", device);
 	if (value)
 		autoconnect_slaves = _nm_utils_ascii_str_to_int64 (value, 10, 0, 1, -1);

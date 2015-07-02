@@ -44,6 +44,24 @@ G_BEGIN_DECLS
 #define NM_CONFIG_SIGNAL_CONFIG_CHANGED             "config-changed"
 
 #define NM_CONFIG_DEFAULT_CONNECTIVITY_INTERVAL 300
+#define NM_CONFIG_DEFAULT_CONNECTIVITY_RESPONSE "NetworkManager is online" /* NOT LOCALIZED */
+
+#define NM_CONFIG_KEYFILE_LIST_SEPARATOR ','
+
+#define NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION            "connection"
+#define NM_CONFIG_KEYFILE_GROUPPREFIX_TEST_APPEND_STRINGLIST ".test-append-stringlist"
+
+#define NM_CONFIG_KEYFILE_GROUP_MAIN                        "main"
+#define NM_CONFIG_KEYFILE_GROUP_LOGGING                     "logging"
+#define NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY                "connectivity"
+
+#define NM_CONFIG_KEYFILE_GROUP_KEYFILE                     "keyfile"
+#define NM_CONFIG_KEYFILE_GROUP_IFUPDOWN                    "ifupdown"
+#define NM_CONFIG_KEYFILE_GROUP_IFNET                       "ifnet"
+
+#define NM_CONFIG_KEYFILE_KEY_IFNET_AUTO_REFRESH            "auto_refresh"
+#define NM_CONFIG_KEYFILE_KEY_IFNET_MANAGED                 "managed"
+#define NM_CONFIG_KEYFILE_KEY_IFUPDOWN_MANAGED              "managed"
 
 typedef struct NMConfigCmdLineOptions NMConfigCmdLineOptions;
 
@@ -66,6 +84,10 @@ char *nm_config_change_flags_to_string (NMConfigChangeFlags flags);
 
 NMConfigData *nm_config_get_data (NMConfig *config);
 NMConfigData *nm_config_get_data_orig (NMConfig *config);
+
+#define NM_CONFIG_GET_DATA      (nm_config_get_data (nm_config_get ()))
+#define NM_CONFIG_GET_DATA_ORIG (nm_config_get_data_orig (nm_config_get ()))
+
 const char **nm_config_get_plugins (NMConfig *config);
 gboolean nm_config_get_monitor_connection_files (NMConfig *config);
 gboolean nm_config_get_auth_polkit (NMConfig *config);
@@ -88,12 +110,23 @@ NMConfig *nm_config_new (const NMConfigCmdLineOptions *cli, GError **error);
 NMConfig *nm_config_setup (const NMConfigCmdLineOptions *cli, GError **error);
 void nm_config_reload (NMConfig *config, int signal);
 
+gint nm_config_parse_boolean (const char *str, gint default_value);
+
 GKeyFile *nm_config_create_keyfile (void);
-gboolean nm_config_keyfile_get_boolean (GKeyFile *keyfile,
-                                        const char *section,
+gint nm_config_keyfile_get_boolean (GKeyFile *keyfile,
+                                    const char *section,
+                                    const char *key,
+                                    gint default_value);
+char *nm_config_keyfile_get_value (GKeyFile *keyfile,
+                                   const char *section,
+                                   const char *key,
+                                   NMConfigGetValueFlags flags);
+void nm_config_keyfile_set_string_list (GKeyFile *keyfile,
+                                        const char *group,
                                         const char *key,
-                                        gboolean default_value);
-GSList *nm_config_get_device_match_spec (const GKeyFile *keyfile, const char *group, const char *key);
+                                        const char *const* strv,
+                                        gssize len);
+GSList *nm_config_get_device_match_spec (const GKeyFile *keyfile, const char *group, const char *key, gboolean *out_has_key);
 
 G_END_DECLS
 

@@ -805,7 +805,7 @@ _get_ipx_route_metric (NMDevice *self,
 	/* use the current NMConfigData, which makes this configuration reloadable.
 	 * Note that that means that the route-metric might change between SIGHUP.
 	 * You must cache the returned value if that is a problem. */
-	value = nm_config_data_get_connection_default (nm_config_get_data (nm_config_get ()),
+	value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
 	                                               is_v4 ? "ipv4.route-metric" : "ipv6.route-metric", self);
 	if (value) {
 		route_metric = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXUINT32, -1);
@@ -2329,7 +2329,7 @@ nm_device_generate_connection (NMDevice *self, NMDevice *master)
 	    && g_strcmp0 (ip6_method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0
 	    && !nm_setting_connection_get_master (NM_SETTING_CONNECTION (s_con))
 	    && !priv->slaves
-	    && !nm_config_data_get_assume_ipv6ll_only (nm_config_get_data (nm_config_get ()), self)) {
+	    && !nm_config_data_get_assume_ipv6ll_only (NM_CONFIG_GET_DATA, self)) {
 		_LOGD (LOGD_DEVICE, "ignoring generated connection (IPv6LL-only and not in master-slave relationship)");
 		g_object_unref (connection);
 		connection = NULL;
@@ -4902,7 +4902,7 @@ _ip6_privacy_get (NMDevice *self)
 		}
 	}
 
-	value = nm_config_data_get_connection_default (nm_config_get_data (nm_config_get ()),
+	value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
 	                                               "ipv6.ip6-privacy", self);
 
 	/* 2.) use the default value from the configuration. */
@@ -8454,7 +8454,7 @@ _set_state_full (NMDevice *self,
 		if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
 			/* We cache the ignore_carrier state to not react on config-reloads while the connection
 			 * is active. But on deactivating, reset the ignore-carrier flag to the current state. */
-			priv->ignore_carrier = nm_config_data_get_ignore_carrier (nm_config_get_data (nm_config_get ()), self);
+			priv->ignore_carrier = nm_config_data_get_ignore_carrier (NM_CONFIG_GET_DATA, self);
 		}
 
 		if (quitting) {

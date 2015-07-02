@@ -237,8 +237,8 @@ do_early_setup (int *argc, char **argv[], NMConfigCmdLineOptions *config_cli)
 		  N_("Log domains separated by ',': any combination of [%s]"),
 		  "PLATFORM,RFKILL,WIFI" },
 		{ "g-fatal-warnings", 0, 0, G_OPTION_ARG_NONE, &global_opt.g_fatal_warnings, N_("Make all warnings fatal"), NULL },
-		{ "pid-file", 'p', 0, G_OPTION_ARG_FILENAME, &global_opt.pidfile, N_("Specify the location of a PID file"), N_("filename") },
-		{ "state-file", 0, 0, G_OPTION_ARG_FILENAME, &global_opt.state_file, N_("State file location"), N_("/path/to/state.file") },
+		{ "pid-file", 'p', 0, G_OPTION_ARG_FILENAME, &global_opt.pidfile, N_("Specify the location of a PID file"), N_(NM_DEFAULT_PID_FILE) },
+		{ "state-file", 0, 0, G_OPTION_ARG_FILENAME, &global_opt.state_file, N_("State file location"), N_(NM_DEFAULT_SYSTEM_STATE_FILE) },
 		{ "run-from-build-dir", 0, 0, G_OPTION_ARG_NONE, &global_opt.run_from_build_dir, "Run from build directory", NULL },
 		{NULL}
 	};
@@ -412,6 +412,7 @@ main (int argc, char *argv[])
 	dbus_glib_global_set_disable_legacy_property_access ();
 
 	nm_log_info (LOGD_CORE, "Read config: %s", nm_config_data_get_config_description (nm_config_get_data (config)));
+	nm_config_data_log (nm_config_get_data (config), "CONFIG: ");
 	nm_log_dbg (LOGD_CORE, "WEXT support is %s",
 #if HAVE_WEXT
 	             "enabled"

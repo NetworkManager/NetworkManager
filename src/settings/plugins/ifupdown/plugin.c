@@ -59,8 +59,6 @@
 #define IFUPDOWN_PLUGIN_NAME "ifupdown"
 #define IFUPDOWN_PLUGIN_INFO "(C) 2008 Canonical Ltd.  To report bugs please use the NetworkManager mailing list."
 
-#define IFUPDOWN_KEY_FILE_GROUP "ifupdown"
-#define IFUPDOWN_KEY_FILE_KEY_MANAGED "managed"
 #define IFUPDOWN_UNMANAGE_WELL_KNOWN_DEFAULT TRUE
 
 /* #define ALWAYS_UNMANAGE TRUE */
@@ -302,8 +300,6 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 	SCPluginIfupdownPrivate *priv = SC_PLUGIN_IFUPDOWN_GET_PRIVATE (self);
 	GHashTable *auto_ifaces;
 	if_block *block = NULL;
-	char *value;
-	GError *error = NULL;
 	GList *keys, *iter;
 	GHashTableIter con_iter;
 	const char *block_name;
@@ -328,8 +324,6 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 		nm_log_warn (LOGD_SETTINGS, "    error initializing libgudev");
 	} else
 		g_signal_connect (priv->client, "uevent", G_CALLBACK (handle_uevent), self);
-
-	priv->unmanage_well_known = IFUPDOWN_UNMANAGE_WELL_KNOWN_DEFAULT;
 
 	/* Read in all the interfaces */
 	ifparser_init (ENI_INTERFACES_FILE, 0);
@@ -420,21 +414,10 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 	g_hash_table_destroy (auto_ifaces);
 
 	/* Check the config file to find out whether to manage interfaces */
-	value = nm_config_data_get_value (nm_config_get_data_orig (nm_config_get ()),
-	                                  IFUPDOWN_KEY_FILE_GROUP, IFUPDOWN_KEY_FILE_KEY_MANAGED,
-	                                  &error);
-	if (error) {
-		nm_log_info (LOGD_SETTINGS, "loading system config file (%s) caused error: %s",
-		             nm_config_data_get_config_main_file (nm_config_get_data (nm_config_get ())),
-		             error->message);
-	} else {
-		gboolean manage_well_known;
-		error = NULL;
-
-		manage_well_known = !g_strcmp0 (value, "true") || !g_strcmp0 (value, "1");
-		priv->unmanage_well_known = !manage_well_known;
-		g_free (value);
-	}
+	priv->unmanage_well_known = !nm_config_data_get_value_boolean (NM_CONFIG_GET_DATA_ORIG,
+	                                                               NM_CONFIG_KEYFILE_GROUP_IFUPDOWN,
+	                                                               NM_CONFIG_KEYFILE_KEY_IFUPDOWN_MANAGED,
+	                                                               !IFUPDOWN_UNMANAGE_WELL_KNOWN_DEFAULT);
 	nm_log_info (LOGD_SETTINGS, "management mode: %s", priv->unmanage_well_known ? "unmanaged" : "managed");
 
 	/* Add well-known interfaces */
@@ -524,7 +507,7 @@ sc_plugin_ifupdown_init (SCPluginIfupdown *plugin)
 
 static void
 GObject__get_property (GObject *object, guint prop_id,
-				   GValue *value, GParamSpec *pspec)
+                       GValue *value, GParamSpec *pspec)
 {
 	switch (prop_id) {
 	case NM_SYSTEM_CONFIG_INTERFACE_PROP_NAME:

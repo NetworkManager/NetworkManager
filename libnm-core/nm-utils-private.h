@@ -45,12 +45,6 @@ GVariant *  _nm_utils_bytes_to_dbus     (const GValue *prop_value);
 void        _nm_utils_bytes_from_dbus   (GVariant *dbus_value,
                                          GValue *prop_value);
 
-GSList *    _nm_utils_strv_to_slist (char **strv);
-char **     _nm_utils_slist_to_strv (GSList *slist);
-
-GPtrArray * _nm_utils_strv_to_ptrarray (char **strv);
-char **     _nm_utils_ptrarray_to_strv (GPtrArray *ptrarray);
-
 char *      _nm_utils_hwaddr_canonical_or_invalid (const char *mac, gssize length);
 
 #endif

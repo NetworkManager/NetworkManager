@@ -769,17 +769,13 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 		GModule *plugin;
 		gs_free char *full_name = NULL;
 		gs_free char *path = NULL;
-		gs_free char *pname = NULL;
+		const char *pname;
 		GObject *obj;
 		GObject * (*factory_func) (void);
 		struct stat st;
 		int errsv;
 
-		pname = g_strdup (*iter);
-		g_strstrip (pname);
-
-		if (!*pname)
-			continue;
+		pname = *iter;
 
 		if (!*pname || strchr (pname, '/')) {
 			LOG (LOGL_WARN, "ignore invalid plugin \"%s\"", pname);

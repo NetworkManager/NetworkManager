@@ -37,8 +37,6 @@ G_DEFINE_TYPE (NMConnectivity, nm_connectivity, G_TYPE_OBJECT)
 #define NM_CONNECTIVITY_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_CONNECTIVITY, NMConnectivityPrivate))
 
 
-#define DEFAULT_RESPONSE "NetworkManager is online" /* NOT LOCALIZED */
-
 #define _LOG_DEFAULT_DOMAIN  LOGD_CONCHECK
 
 #define _LOG(level, domain, ...) \
@@ -140,7 +138,7 @@ nm_connectivity_check_cb (SoupSession *session, SoupMessage *msg, gpointer user_
 	NMConnectivityState new_state;
 	const char *nm_header;
 	const char *uri = cb_data->uri;
-	const char *response = cb_data->response ? cb_data->response : DEFAULT_RESPONSE;
+	const char *response = cb_data->response ? cb_data->response : NM_CONFIG_DEFAULT_CONNECTIVITY_RESPONSE;
 
 	self = NM_CONNECTIVITY (g_async_result_get_source_object (G_ASYNC_RESULT (simple)));
 	/* it is safe to unref @self here, @simple holds yet another reference. */
@@ -401,7 +399,7 @@ set_property (GObject *object, guint property_id,
 	case PROP_RESPONSE:
 		response = g_value_get_string (value);
 		if (g_strcmp0 (response, priv->response) != 0) {
-			/* a response %NULL means, DEFAULT_RESPONSE. Any other response
+			/* a response %NULL means, NM_CONFIG_DEFAULT_CONNECTIVITY_RESPONSE. Any other response
 			 * (including "") is accepted. */
 			g_free (priv->response);
 			priv->response = g_strdup (response);
@@ -432,7 +430,7 @@ get_property (GObject *object, guint property_id,
 		if (priv->response)
 			g_value_set_string (value, priv->response);
 		else
-			g_value_set_static_string (value, DEFAULT_RESPONSE);
+			g_value_set_static_string (value, NM_CONFIG_DEFAULT_CONNECTIVITY_RESPONSE);
 		break;
 	case PROP_STATE:
 		g_value_set_uint (value, priv->state);
@@ -510,7 +508,7 @@ nm_connectivity_class_init (NMConnectivityClass *klass)
 	g_object_class_install_property
 	    (object_class, PROP_RESPONSE,
 	     g_param_spec_string (NM_CONNECTIVITY_RESPONSE, "", "",
-	                          DEFAULT_RESPONSE,
+	                          NM_CONFIG_DEFAULT_CONNECTIVITY_RESPONSE,
 	                          G_PARAM_READWRITE |
 	                          G_PARAM_CONSTRUCT |
 	                          G_PARAM_STATIC_STRINGS));

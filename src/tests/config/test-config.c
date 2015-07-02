@@ -91,7 +91,6 @@ static void
 test_config_simple (void)
 {
 	NMConfig *config;
-	GError *error = NULL;
 	const char **plugins;
 	char *value;
 	gs_unref_object NMDevice *dev50 = nm_test_device_new ("00:00:00:00:00:50");
@@ -111,25 +110,21 @@ test_config_simple (void)
 	g_assert_cmpstr (plugins[1], ==, "bar");
 	g_assert_cmpstr (plugins[2], ==, "baz");
 
-	value = nm_config_data_get_value (nm_config_get_data_orig (config), "extra-section", "extra-key", NULL);
+	value = nm_config_data_get_value (nm_config_get_data_orig (config), "extra-section", "extra-key", NM_CONFIG_GET_VALUE_NONE);
 	g_assert_cmpstr (value, ==, "some value");
 	g_free (value);
 
-	value = nm_config_data_get_value (nm_config_get_data_orig (config), "extra-section", "no-key", &error);
+	value = nm_config_data_get_value (nm_config_get_data_orig (config), "extra-section", "no-key", NM_CONFIG_GET_VALUE_NONE);
 	g_assert (!value);
-	g_assert_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_KEY_NOT_FOUND);
-	g_clear_error (&error);
 
-	value = nm_config_data_get_value (nm_config_get_data_orig (config), "no-section", "no-key", &error);
+	value = nm_config_data_get_value (nm_config_get_data_orig (config), "no-section", "no-key", NM_CONFIG_GET_VALUE_NONE);
 	g_assert (!value);
-	g_assert_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_GROUP_NOT_FOUND);
-	g_clear_error (&error);
 
-	value = nm_config_data_get_value (nm_config_get_data_orig (config), "connection", "ipv6.ip6_privacy", NULL);
+	value = nm_config_data_get_value (nm_config_get_data_orig (config), "connection", "ipv6.ip6_privacy", NM_CONFIG_GET_VALUE_NONE);
 	g_assert_cmpstr (value, ==, "0");
 	g_free (value);
 
-	value = nm_config_data_get_value (nm_config_get_data_orig (config), "connection.dev51", "ipv4.route-metric", NULL);
+	value = nm_config_data_get_value (nm_config_get_data_orig (config), "connection.dev51", "ipv4.route-metric", NM_CONFIG_GET_VALUE_NONE);
 	g_assert_cmpstr (value, ==, "51");
 	g_free (value);
 
@@ -288,6 +283,7 @@ test_config_confdir (void)
 	NMConfig *config;
 	const char **plugins;
 	char *value;
+	GSList *specs;
 
 	config = setup_config (NULL, SRCDIR "/NetworkManager.conf", SRCDIR "/conf.d", NULL);
 
@@ -306,23 +302,85 @@ test_config_confdir (void)
 	g_assert_cmpstr (plugins[3], ==, "one");
 	g_assert_cmpstr (plugins[4], ==, "two");
 
-	value = nm_config_data_get_value (nm_config_get_data_orig (config), "main", "extra", NULL);
+	value = nm_config_data_get_value (nm_config_get_data_orig (config), "main", "extra", NM_CONFIG_GET_VALUE_NONE);
 	g_assert_cmpstr (value, ==, "hello");
 	g_free (value);
 
-	value = nm_config_data_get_value (nm_config_get_data_orig (config), "main", "new", NULL);
+	value = nm_config_data_get_value (nm_config_get_data_orig (config), "main", "no-auto-default", NM_CONFIG_GET_VALUE_TYPE_SPEC);
+	specs = nm_match_spec_split (value);
+	g_free (value);
+	g_assert_cmpint (g_slist_length (specs), ==, 2);
+	g_assert_cmpstr (g_slist_nth_data (specs, 0), ==, "spec2");
+	g_assert_cmpstr (g_slist_nth_data (specs, 1), ==, "spec3");
+	g_slist_free_full (specs, g_free);
+
+	value = nm_config_data_get_value (nm_config_get_data_orig (config), "main", "ignore-carrier", NM_CONFIG_GET_VALUE_TYPE_SPEC);
+	specs = nm_match_spec_split (value);
+	g_free (value);
+	g_assert_cmpint (g_slist_length (specs), ==, 2);
+	g_assert_cmpstr (g_slist_nth_data (specs, 0), ==, "  space1  ");
+	g_assert_cmpstr (g_slist_nth_data (specs, 1), ==, " space2\t");
+	g_slist_free_full (specs, g_free);
+
+	value = nm_config_data_get_value (nm_config_get_data_orig (config), NM_CONFIG_KEYFILE_GROUPPREFIX_TEST_APPEND_STRINGLIST".0", "new", NM_CONFIG_GET_VALUE_NONE);
 	g_assert_cmpstr (value, ==, "something"); /* not ",something" */
 	g_free (value);
 
-	value = nm_config_data_get_value (nm_config_get_data_orig (config), "order", "a", NULL);
+	value = nm_config_data_get_value (nm_config_get_data_orig (config), "order", "a", NM_CONFIG_GET_VALUE_NONE);
 	g_assert_cmpstr (value, ==, "90");
 	g_free (value);
-	value = nm_config_data_get_value (nm_config_get_data_orig (config), "order", "b", NULL);
+	value = nm_config_data_get_value (nm_config_get_data_orig (config), "order", "b", NM_CONFIG_GET_VALUE_NONE);
 	g_assert_cmpstr (value, ==, "10");
 	g_free (value);
-	value = nm_config_data_get_value (nm_config_get_data_orig (config), "order", "c", NULL);
+	value = nm_config_data_get_value (nm_config_get_data_orig (config), "order", "c", NM_CONFIG_GET_VALUE_NONE);
 	g_assert_cmpstr (value, ==, "0");
 	g_free (value);
+
+	g_assert (!nm_config_data_has_value (nm_config_get_data_orig (config), "appendable-test", "non-appendable-key1", NM_CONFIG_GET_VALUE_RAW));
+	g_assert (!nm_config_data_has_value (nm_config_get_data_orig (config), "appendable-test", "non-appendable-key1+", NM_CONFIG_GET_VALUE_RAW));
+	g_assert (!nm_config_data_has_value (nm_config_get_data_orig (config), "appendable-test", "non-appendable-key1-", NM_CONFIG_GET_VALUE_RAW));
+	g_assert (!nm_config_data_has_value (nm_config_get_data_orig (config), "appendable-test", "non-appendable-key2", NM_CONFIG_GET_VALUE_RAW));
+	g_assert (!nm_config_data_has_value (nm_config_get_data_orig (config), "appendable-test", "non-appendable-key2+", NM_CONFIG_GET_VALUE_RAW));
+	g_assert (!nm_config_data_has_value (nm_config_get_data_orig (config), "appendable-test", "non-appendable-key2-", NM_CONFIG_GET_VALUE_RAW));
+
+#define ASSERT_GET_CONN_DEFAULT(xconfig, xname, xvalue) \
+	G_STMT_START { \
+		gs_free char *_value = nm_config_data_get_connection_default (nm_config_get_data_orig (xconfig), (xname), NULL); \
+		g_assert_cmpstr (_value, ==, (xvalue)); \
+	} G_STMT_END
+	ASSERT_GET_CONN_DEFAULT (config, "ord.key00", "A-0.0.00");
+	ASSERT_GET_CONN_DEFAULT (config, "ord.key01", "A-0.3.01");
+	ASSERT_GET_CONN_DEFAULT (config, "ord.key02", "A-0.2.02");
+	ASSERT_GET_CONN_DEFAULT (config, "ord.key03", "A-0.1.03");
+	ASSERT_GET_CONN_DEFAULT (config, "ord.key04", "B-1.3.04");
+	ASSERT_GET_CONN_DEFAULT (config, "ord.key05", "B-1.2.05");
+	ASSERT_GET_CONN_DEFAULT (config, "ord.key06", "B-1.1.06");
+	ASSERT_GET_CONN_DEFAULT (config, "ord.key07", "C-2.3.07");
+	ASSERT_GET_CONN_DEFAULT (config, "ord.key08", "C-2.2.08");
+	ASSERT_GET_CONN_DEFAULT (config, "ord.key09", "C-2.1.09");
+	ASSERT_GET_CONN_DEFAULT (config, "ord.ovw01", "C-0.1.ovw01");
+
+	value = nm_config_data_get_value (nm_config_get_data_orig (config), NM_CONFIG_KEYFILE_GROUPPREFIX_TEST_APPEND_STRINGLIST".1", "val1", NM_CONFIG_GET_VALUE_NONE);
+	g_assert_cmpstr (value, ==, "a,c");
+	g_free (value);
+
+	value = nm_config_data_get_value (nm_config_get_data_orig (config), NM_CONFIG_KEYFILE_GROUPPREFIX_TEST_APPEND_STRINGLIST".1", "val2", NM_CONFIG_GET_VALUE_NONE);
+	g_assert_cmpstr (value, ==, "VAL2");
+	g_free (value);
+
+	value = nm_config_data_get_value (nm_config_get_data_orig (config), NM_CONFIG_KEYFILE_GROUPPREFIX_TEST_APPEND_STRINGLIST".1", "val3", NM_CONFIG_GET_VALUE_NONE);
+	g_assert_cmpstr (value, ==, NULL);
+	g_free (value);
+
+	value = nm_config_data_get_value (nm_config_get_data_orig (config), NM_CONFIG_KEYFILE_GROUPPREFIX_TEST_APPEND_STRINGLIST".1", "val4", NM_CONFIG_GET_VALUE_NONE);
+	g_assert_cmpstr (value, ==, "vb,vb");
+	g_free (value);
+
+	value = nm_config_data_get_value (nm_config_get_data_orig (config), NM_CONFIG_KEYFILE_GROUPPREFIX_TEST_APPEND_STRINGLIST".1", "val5", NM_CONFIG_GET_VALUE_NONE);
+	g_assert_cmpstr (value, ==, "VAL5");
+	g_free (value);
+
+	nm_config_data_log (nm_config_get_data_orig (config), ">>> TEST: ");
 
 	g_object_unref (config);
 }
