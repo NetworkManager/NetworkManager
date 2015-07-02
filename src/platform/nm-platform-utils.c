@@ -143,8 +143,6 @@ nmp_utils_ethtool_get_permanent_address (const char *ifname,
 
 	if (!ethtool_get (ifname, epaddr))
 		return FALSE;
-	if (!nm_ethernet_address_is_valid (epaddr->data, epaddr->size))
-		return FALSE;
 
 	g_assert (epaddr->size <= NM_UTILS_HWADDR_LEN_MAX);
 	memcpy (buf, epaddr->data, epaddr->size);
