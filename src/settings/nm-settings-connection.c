@@ -534,6 +534,9 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 		nm_utils_log_connection_diff (new_connection, NM_CONNECTION (self), LOGL_DEBUG, LOGD_CORE, log_diff_name, "++ ");
 
 	nm_connection_replace_settings_from_connection (NM_CONNECTION (self), new_connection);
+
+	_LOGD ("replace settings from connection %p (%s)", new_connection, nm_connection_get_id (NM_CONNECTION (self)));
+
 	nm_settings_connection_set_flags (self,
 	                                  NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED | NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED_ASSUMED,
 	                                  FALSE);
@@ -699,7 +702,7 @@ remove_entry_from_db (NMSettingsConnection *self, const char* db_name)
 			g_free (data);
 		}
 		if (error) {
-			nm_log_warn (LOGD_SETTINGS, "error writing %s file '%s': %s", db_name, db_file, error->message);
+			_LOGW ("error writing %s file '%s': %s", db_name, db_file, error->message);
 			g_error_free (error);
 		}
 	}
@@ -785,8 +788,8 @@ new_secrets_commit_cb (NMSettingsConnection *self,
                        gpointer user_data)
 {
 	if (error) {
-		nm_log_warn (LOGD_SETTINGS, "Error saving new secrets to backing storage: (%d) %s",
-		             error->code, error->message ? error->message : "(unknown)");
+		_LOGW ("Error saving new secrets to backing storage: (%d) %s",
+		       error->code, error->message ? error->message : "(unknown)");
 	}
 }
 
@@ -813,12 +816,11 @@ agent_secrets_done_cb (NMAgentManager *manager,
 	gboolean agent_had_system = FALSE;
 
 	if (error) {
-		nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) secrets request error: (%d) %s",
-		            nm_connection_get_uuid (NM_CONNECTION (self)),
-		            setting_name,
-		            call_id,
-		            error->code,
-		            error->message ? error->message : "(unknown)");
+		_LOGD ("(%s:%u) secrets request error: (%d) %s",
+		       setting_name,
+		       call_id,
+		       error->code,
+		       error->message ? error->message : "(unknown)");
 
 		callback (self, call_id, NULL, setting_name, error, callback_data);
 		return;
@@ -835,11 +837,10 @@ agent_secrets_done_cb (NMAgentManager *manager,
 
 	g_assert (secrets);
 	if (agent_dbus_owner) {
-		nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) secrets returned from agent %s",
-		            nm_connection_get_uuid (NM_CONNECTION (self)),
-		            setting_name,
-		            call_id,
-		            agent_dbus_owner);
+		_LOGD ("(%s:%u) secrets returned from agent %s",
+		       setting_name,
+		       call_id,
+		       agent_dbus_owner);
 
 		/* If the agent returned any system-owned secrets (initial connect and no
 		 * secrets given when the connection was created, or something like that)
@@ -853,36 +854,32 @@ agent_secrets_done_cb (NMAgentManager *manager,
 				/* No user interaction was allowed when requesting secrets; the
 				 * agent is being bad.  Remove system-owned secrets.
 				 */
-				nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) interaction forbidden but agent %s returned system secrets",
-				            nm_connection_get_uuid (NM_CONNECTION (self)),
-				            setting_name,
-				            call_id,
-				            agent_dbus_owner);
+				_LOGD ("(%s:%u) interaction forbidden but agent %s returned system secrets",
+				       setting_name,
+				       call_id,
+				       agent_dbus_owner);
 
 				for_each_secret (NM_CONNECTION (self), secrets, FALSE, clear_nonagent_secrets, NULL);
 			} else if (agent_has_modify == FALSE) {
 				/* Agent didn't successfully authenticate; clear system-owned secrets
 				 * from the secrets the agent returned.
 				 */
-				nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) agent failed to authenticate but provided system secrets",
-				            nm_connection_get_uuid (NM_CONNECTION (self)),
-				            setting_name,
-				            call_id);
+				_LOGD ("(%s:%u) agent failed to authenticate but provided system secrets",
+				       setting_name,
+				       call_id);
 
 				for_each_secret (NM_CONNECTION (self), secrets, FALSE, clear_nonagent_secrets, NULL);
 			}
 		}
 	} else {
-		nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) existing secrets returned",
-		            nm_connection_get_uuid (NM_CONNECTION (self)),
-		            setting_name,
-		            call_id);
+		_LOGD ("(%s:%u) existing secrets returned",
+		       setting_name,
+		       call_id);
 	}
 
-	nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) secrets request completed",
-	            nm_connection_get_uuid (NM_CONNECTION (self)),
-	            setting_name,
-	            call_id);
+	_LOGD ("(%s:%u) secrets request completed",
+	       setting_name,
+	       call_id);
 
 	/* If no user interaction was allowed, make sure that no "unsaved" secrets
 	 * came back.  Unsaved secrets by definition require user interaction.
@@ -915,34 +912,30 @@ agent_secrets_done_cb (NMAgentManager *manager,
 			 * nothing has changed, since agent-owned secrets don't get saved here.
 			 */
 			if (agent_had_system) {
-				nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) saving new secrets to backing storage",
-						    nm_connection_get_uuid (NM_CONNECTION (self)),
-						    setting_name,
-						    call_id);
+				_LOGD ("(%s:%u) saving new secrets to backing storage",
+				       setting_name,
+				       call_id);
 
 				nm_settings_connection_commit_changes (self, new_secrets_commit_cb, NULL);
 			} else {
-				nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) new agent secrets processed",
-						    nm_connection_get_uuid (NM_CONNECTION (self)),
-						    setting_name,
-						    call_id);
+				_LOGD ("(%s:%u) new agent secrets processed",
+				       setting_name,
+				       call_id);
 			}
 		} else {
-			nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) failed to update with agent secrets: (%d) %s",
-			            nm_connection_get_uuid (NM_CONNECTION (self)),
-			            setting_name,
-			            call_id,
-			            local ? local->code : -1,
-			            (local && local->message) ? local->message : "(unknown)");
+			_LOGD ("(%s:%u) failed to update with agent secrets: (%d) %s",
+			       setting_name,
+			       call_id,
+			       local ? local->code : -1,
+			       (local && local->message) ? local->message : "(unknown)");
 		}
 		g_variant_unref (secrets_dict);
 	} else {
-		nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) failed to update with existing secrets: (%d) %s",
-		            nm_connection_get_uuid (NM_CONNECTION (self)),
-		            setting_name,
-		            call_id,
-		            local ? local->code : -1,
-		            (local && local->message) ? local->message : "(unknown)");
+		_LOGD ("(%s:%u) failed to update with existing secrets: (%d) %s",
+		       setting_name,
+		       call_id,
+		       local ? local->code : -1,
+		       (local && local->message) ? local->message : "(unknown)");
 	}
 
 	callback (self, call_id, agent_username, setting_name, local, callback_data);
@@ -1019,12 +1012,11 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 	if (existing_secrets)
 		g_variant_unref (existing_secrets);
 
-	nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) secrets requested flags 0x%X hints '%s'",
-	            nm_connection_get_uuid (NM_CONNECTION (self)),
-	            setting_name,
-	            call_id,
-	            flags,
-	            (hints && hints[0]) ? (joined_hints = g_strjoinv (",", (char **) hints)) : "(none)");
+	_LOGD ("(%s:%u) secrets requested flags 0x%X hints '%s'",
+	       setting_name,
+	       call_id,
+	       flags,
+	       (hints && hints[0]) ? (joined_hints = g_strjoinv (",", (char **) hints)) : "(none)");
 
 	return call_id;
 }
@@ -1035,9 +1027,8 @@ nm_settings_connection_cancel_secrets (NMSettingsConnection *self,
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
-	nm_log_dbg (LOGD_SETTINGS, "(%s:%u) secrets canceled",
-	            nm_connection_get_uuid (NM_CONNECTION (self)),
-	            call_id);
+	_LOGD ("(%u) secrets canceled",
+	       call_id);
 
 	priv->reqs = g_slist_remove (priv->reqs, GUINT_TO_POINTER (call_id));
 	nm_agent_manager_cancel_secrets (priv->agent_mgr, call_id);
@@ -1907,7 +1898,7 @@ nm_settings_connection_update_timestamp (NMSettingsConnection *self,
 	timestamps_file = g_key_file_new ();
 	if (!g_key_file_load_from_file (timestamps_file, SETTINGS_TIMESTAMPS_FILE, G_KEY_FILE_KEEP_COMMENTS, &error)) {
 		if (!(error->domain == G_FILE_ERROR && error->code == G_FILE_ERROR_NOENT))
-			nm_log_warn (LOGD_SETTINGS, "error parsing timestamps file '%s': %s", SETTINGS_TIMESTAMPS_FILE, error->message);
+			_LOGW ("error parsing timestamps file '%s': %s", SETTINGS_TIMESTAMPS_FILE, error->message);
 		g_clear_error (&error);
 	}
 
@@ -1922,7 +1913,7 @@ nm_settings_connection_update_timestamp (NMSettingsConnection *self,
 		g_free (data);
 	}
 	if (error) {
-		nm_log_warn (LOGD_SETTINGS, "error saving timestamp to file '%s': %s", SETTINGS_TIMESTAMPS_FILE, error->message);
+		_LOGW ("error saving timestamp to file '%s': %s", SETTINGS_TIMESTAMPS_FILE, error->message);
 		g_error_free (error);
 	}
 	g_key_file_free (timestamps_file);
@@ -1962,8 +1953,8 @@ nm_settings_connection_read_and_fill_timestamp (NMSettingsConnection *self)
 		priv->timestamp = timestamp;
 		priv->timestamp_set = TRUE;
 	} else {
-		nm_log_dbg (LOGD_SETTINGS, "failed to read connection timestamp for '%s': (%d) %s",
-		            connection_uuid, err->code, err->message);
+		_LOGD ("failed to read connection timestamp: (%d) %s",
+		       err->code, err->message);
 		g_clear_error (&err);
 	}
 	g_key_file_free (timestamps_file);
@@ -2059,8 +2050,8 @@ nm_settings_connection_add_seen_bssid (NMSettingsConnection *self,
 	g_key_file_set_list_separator (seen_bssids_file, ',');
 	if (!g_key_file_load_from_file (seen_bssids_file, SETTINGS_SEEN_BSSIDS_FILE, G_KEY_FILE_KEEP_COMMENTS, &error)) {
 		if (!g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT)) {
-			nm_log_warn (LOGD_SETTINGS, "error parsing seen-bssids file '%s': %s",
-			             SETTINGS_SEEN_BSSIDS_FILE, error->message);
+			_LOGW ("error parsing seen-bssids file '%s': %s",
+			       SETTINGS_SEEN_BSSIDS_FILE, error->message);
 		}
 		g_clear_error (&error);
 	}
@@ -2077,8 +2068,8 @@ nm_settings_connection_add_seen_bssid (NMSettingsConnection *self,
 	g_key_file_free (seen_bssids_file);
 
 	if (error) {
-		nm_log_warn (LOGD_SETTINGS, "error saving seen-bssids to file '%s': %s",
-		             SETTINGS_SEEN_BSSIDS_FILE, error->message);
+		_LOGW ("error saving seen-bssids to file '%s': %s",
+		       SETTINGS_SEEN_BSSIDS_FILE, error->message);
 		g_error_free (error);
 	}
 }
@@ -2318,11 +2309,23 @@ nm_settings_connection_init (NMSettingsConnection *self)
 }
 
 static void
+constructed (GObject *object)
+{
+	NMSettingsConnection *self = NM_SETTINGS_CONNECTION (object);
+
+	_LOGD ("constructed (%s)", G_OBJECT_TYPE_NAME (self));
+
+	G_OBJECT_CLASS (nm_settings_connection_parent_class)->constructed (object);
+}
+
+static void
 dispose (GObject *object)
 {
 	NMSettingsConnection *self = NM_SETTINGS_CONNECTION (object);
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	GSList *iter;
+
+	_LOGD ("disposing");
 
 	if (priv->updated_idle_id) {
 		g_source_remove (priv->updated_idle_id);
@@ -2424,6 +2427,7 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 	g_type_class_add_private (class, sizeof (NMSettingsConnectionPrivate));
 
 	/* Virtual methods */
+	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
