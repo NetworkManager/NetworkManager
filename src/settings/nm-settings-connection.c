@@ -43,6 +43,48 @@
 #define SETTINGS_TIMESTAMPS_FILE  NMSTATEDIR "/timestamps"
 #define SETTINGS_SEEN_BSSIDS_FILE NMSTATEDIR "/seen-bssids"
 
+
+#define _LOG_DOMAIN LOGD_SETTINGS
+#define _LOG_PREFIX_NAME "settings-connection"
+
+#define _LOG(level, domain, self, ...) \
+    G_STMT_START { \
+        const NMLogLevel __level = (level); \
+        const NMLogDomain __domain = (domain); \
+        \
+        if (nm_logging_enabled (__level, __domain)) { \
+            char __prefix[128]; \
+            const char *__p_prefix = _LOG_PREFIX_NAME; \
+            const void *const __self = (self); \
+            \
+            if (__self) { \
+                const char *__uuid = nm_connection_get_uuid ((NMConnection *) __self); \
+                \
+                g_snprintf (__prefix, sizeof (__prefix), "%s[%p%s%s]", _LOG_PREFIX_NAME, __self, __uuid ? "," : "", __uuid ? __uuid : ""); \
+                __p_prefix = __prefix; \
+            } \
+            _nm_log (__level, __domain, 0, \
+                     "%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+                     __p_prefix _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
+        } \
+    } G_STMT_END
+#define _LOG_LEVEL_ENABLED(level, domain) \
+    ( nm_logging_enabled ((level), (domain)) )
+
+#ifdef NM_MORE_LOGGING
+#define _LOGT_ENABLED()     _LOG_LEVEL_ENABLED (LOGL_TRACE, _LOG_DOMAIN)
+#define _LOGT(...)          _LOG (LOGL_TRACE, _LOG_DOMAIN, self, __VA_ARGS__)
+#else
+#define _LOGT_ENABLED()     FALSE
+#define _LOGT(...)          G_STMT_START { if (FALSE) { _LOG (LOGL_TRACE, _LOG_DOMAIN, self, __VA_ARGS__); } } G_STMT_END
+#endif
+
+#define _LOGD(...)      _LOG (LOGL_DEBUG, _LOG_DOMAIN, self, __VA_ARGS__)
+#define _LOGI(...)      _LOG (LOGL_INFO , _LOG_DOMAIN, self, __VA_ARGS__)
+#define _LOGW(...)      _LOG (LOGL_WARN , _LOG_DOMAIN, self, __VA_ARGS__)
+#define _LOGE(...)      _LOG (LOGL_ERR  , _LOG_DOMAIN, self, __VA_ARGS__)
+
+
 static void impl_settings_connection_get_settings (NMSettingsConnection *self,
                                                    DBusGMethodInvocation *context);
 
