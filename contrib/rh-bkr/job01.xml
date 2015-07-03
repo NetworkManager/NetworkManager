@@ -12,6 +12,7 @@
 				<!-- A workaround for rdma machine post-deploy script woes, suggested by honli -->
 				<ks_append><![CDATA[%post
 sed -e '/^\s*linux16\s*\/vmlinuz/ s/$/ $SELINUX_DISABLED/' -i /boot/grub2/grub.cfg || :
+rm -f /etc/sysconfig/network-scripts/ifcfg-mlx*
 %end
 ]]>
 				</ks_append>
