@@ -49,6 +49,7 @@
 #define NM_MANAGER_ACTIVATING_CONNECTION "activating-connection"
 #define NM_MANAGER_DEVICES "devices"
 #define NM_MANAGER_METERED "metered"
+#define NM_MANAGER_GLOBAL_DNS_CONFIGURATION "global-dns-configuration"
 
 /* Not exported */
 #define NM_MANAGER_HOSTNAME "hostname"

@@ -812,6 +812,188 @@ load_global_dns (GKeyFile *keyfile, gboolean internal)
 	return conf;
 }
 
+
+void
+nm_global_dns_config_to_dbus (const NMGlobalDnsConfig *dns, GValue *value)
+{
+	GVariantBuilder conf_builder, domains_builder, domain_builder;
+	NMGlobalDnsDomain *domain;
+	GHashTableIter iter;
+
+	g_variant_builder_init (&conf_builder, G_VARIANT_TYPE ("a{sv}"));
+	if (!dns)
+		goto out;
+
+	if (dns->searches) {
+		g_variant_builder_add (&conf_builder, "{sv}", "searches",
+		                       g_variant_new_strv ((const char *const *) dns->searches, -1));
+	}
+
+	if (dns->options) {
+		g_variant_builder_add (&conf_builder, "{sv}", "options",
+		                       g_variant_new_strv ((const char *const *) dns->options, -1));
+	}
+
+	g_variant_builder_init (&domains_builder, G_VARIANT_TYPE ("a{sv}"));
+
+	g_hash_table_iter_init (&iter, dns->domains);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &domain)) {
+
+		g_variant_builder_init (&domain_builder, G_VARIANT_TYPE ("a{sv}"));
+
+		if (domain->servers) {
+			g_variant_builder_add (&domain_builder, "{sv}", "servers",
+			                       g_variant_new_strv ((const char *const *) domain->servers, -1));
+		}
+		if (domain->options) {
+			g_variant_builder_add (&domain_builder, "{sv}", "options",
+			                       g_variant_new_strv ((const char *const *) domain->options, -1));
+		}
+
+		g_variant_builder_add (&domains_builder, "{sv}", domain->name,
+		                       g_variant_builder_end (&domain_builder));
+	}
+
+	g_variant_builder_add (&conf_builder, "{sv}", "domains",
+	                       g_variant_builder_end (&domains_builder));
+out:
+	g_value_take_variant (value, g_variant_builder_end (&conf_builder));
+}
+
+static NMGlobalDnsDomain *
+global_dns_domain_from_dbus (char *name, GVariant *variant)
+{
+	NMGlobalDnsDomain *domain;
+	GVariantIter iter;
+	char **strv, *key;
+	GVariant *val;
+	int i, j;
+
+	if (!g_variant_is_of_type (variant, G_VARIANT_TYPE ("a{sv}")))
+		return NULL;
+
+	domain = g_malloc0 (sizeof (NMGlobalDnsDomain));
+	domain->name = g_strdup (name);
+
+	g_variant_iter_init (&iter, variant);
+	while (g_variant_iter_next (&iter, "{&sv}", &key, &val)) {
+
+		if (   !g_strcmp0 (key, "servers")
+		    && g_variant_is_of_type (val, G_VARIANT_TYPE ("as"))) {
+			strv = g_variant_dup_strv (val, NULL);
+			_nm_utils_strv_cleanup (strv, TRUE, TRUE, TRUE);
+			for (i = 0, j = 0; strv && strv[i]; i++) {
+				if (   nm_utils_ipaddr_valid (AF_INET, strv[i])
+				    || nm_utils_ipaddr_valid (AF_INET6, strv[i]))
+					strv[j++] = strv[i];
+				else
+					g_free (strv[i]);
+			}
+			if (j) {
+				strv[j] = NULL;
+				domain->servers = strv;
+			} else
+				g_free (strv);
+		} else if (   !g_strcmp0 (key, "options")
+		           && g_variant_is_of_type (val, G_VARIANT_TYPE ("as"))) {
+			strv = g_variant_dup_strv (val, NULL);
+			domain->options = _nm_utils_strv_cleanup (strv, TRUE, TRUE, TRUE);
+		}
+
+		g_variant_unref (val);
+	}
+
+	/* At least one server is required */
+	if (!domain->servers) {
+		global_dns_domain_free (domain);
+		return NULL;
+	}
+
+	return domain;
+}
+
+NMGlobalDnsConfig *
+nm_global_dns_config_from_dbus (const GValue *value, GError **error)
+{
+	NMGlobalDnsConfig *dns_config;
+	GVariant *variant, *val;
+	GVariantIter iter;
+	char **strv, *key;
+	int i, j;
+
+	if (!G_VALUE_HOLDS_VARIANT (value)) {
+		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
+		             "invalid value type");
+		return NULL;
+	}
+
+	variant = g_value_get_variant (value);
+	if (!g_variant_is_of_type (variant, G_VARIANT_TYPE ("a{sv}"))) {
+		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
+		             "invalid variant type");
+		return NULL;
+	}
+
+	dns_config = g_malloc0 (sizeof (NMGlobalDnsConfig));
+	dns_config->domains = g_hash_table_new_full (g_str_hash, g_str_equal,
+	                                             g_free, (GDestroyNotify) global_dns_domain_free);
+
+	g_variant_iter_init (&iter, variant);
+	while (g_variant_iter_next (&iter, "{&sv}", &key, &val)) {
+
+		if (   !g_strcmp0 (key, "searches")
+		    && g_variant_is_of_type (val, G_VARIANT_TYPE ("as"))) {
+			strv = g_variant_dup_strv (val, NULL);
+			dns_config->searches = _nm_utils_strv_cleanup (strv, TRUE, TRUE, TRUE);
+		} else if (   !g_strcmp0 (key, "options")
+		           && g_variant_is_of_type (val, G_VARIANT_TYPE ("as"))) {
+			strv = g_variant_dup_strv (val, NULL);
+			_nm_utils_strv_cleanup (strv, TRUE, TRUE, TRUE);
+
+			for (i = 0, j = 0; strv && strv[i]; i++) {
+				if (_nm_utils_dns_option_validate (strv[i], NULL, NULL, TRUE, NULL))
+					strv[j++] = strv[i];
+				else
+					g_free (strv[i]);
+			}
+
+			if (strv)
+				strv[j] = NULL;
+
+			dns_config->options = strv;
+		} else if (   !g_strcmp0 (key, "domains")
+		           && g_variant_is_of_type (val, G_VARIANT_TYPE ("a{sv}"))) {
+			NMGlobalDnsDomain *domain;
+			GVariantIter domain_iter;
+			GVariant *v;
+			char *k;
+
+			g_variant_iter_init (&domain_iter, val);
+			while (g_variant_iter_next (&domain_iter, "{&sv}", &k, &v)) {
+				if (k) {
+					domain = global_dns_domain_from_dbus (k, v);
+					if (domain)
+						g_hash_table_insert (dns_config->domains, strdup (k), domain);
+				}
+				g_variant_unref (v);
+			}
+		}
+		g_variant_unref (val);
+	}
+
+	/* An empty value is valid and clears the internal configuration */
+	if (   !nm_global_dns_config_is_empty (dns_config)
+	    && !nm_global_dns_config_lookup_domain (dns_config, "*")) {
+		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
+		                     "Global DNS configuration is missing the default domain");
+		nm_global_dns_config_free (dns_config);
+		return NULL;
+	}
+
+	global_dns_config_update_domain_list (dns_config);
+	return dns_config;
+}
+
 static gboolean
 global_dns_equal (NMGlobalDnsConfig *old, NMGlobalDnsConfig *new)
 {

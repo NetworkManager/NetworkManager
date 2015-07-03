@@ -147,6 +147,8 @@ GSList *nm_config_get_device_match_spec (const GKeyFile *keyfile, const char *gr
 
 void _nm_config_sort_groups (char **groups, gsize ngroups);
 
+gboolean nm_config_set_global_dns (NMConfig *self, NMGlobalDnsConfig *global_dns, GError **error);
+
 G_END_DECLS
 
 #endif /* __NETWORKMANAGER_CONFIG_H__ */

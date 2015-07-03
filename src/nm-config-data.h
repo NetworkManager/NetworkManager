@@ -153,6 +153,9 @@ gboolean nm_global_dns_config_is_empty (const NMGlobalDnsConfig *dns);
 void nm_global_dns_config_update_checksum (const NMGlobalDnsConfig *dns, GChecksum *sum);
 void nm_global_dns_config_free (NMGlobalDnsConfig *conf);
 
+NMGlobalDnsConfig *nm_global_dns_config_from_dbus (const GValue *value, GError **error);
+void nm_global_dns_config_to_dbus (const NMGlobalDnsConfig *dns_config, GValue *value);
+
 /* private accessors */
 GKeyFile *_nm_config_data_get_keyfile (const NMConfigData *self);
 GKeyFile *_nm_config_data_get_keyfile_user (const NMConfigData *self);

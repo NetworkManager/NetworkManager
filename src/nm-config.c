@@ -1431,6 +1431,73 @@ nm_config_get_device_match_spec (const GKeyFile *keyfile, const char *group, con
 
 /************************************************************************/
 
+gboolean
+nm_config_set_global_dns (NMConfig *self, NMGlobalDnsConfig *global_dns, GError **error)
+{
+	NMConfigPrivate *priv;
+	GKeyFile *keyfile;
+	char **groups;
+	const NMGlobalDnsConfig *old_global_dns;
+	guint i;
+
+	g_return_val_if_fail (NM_IS_CONFIG (self), FALSE);
+
+	priv = NM_CONFIG_GET_PRIVATE (self);
+	g_return_val_if_fail (priv->config_data, FALSE);
+
+	old_global_dns = nm_config_data_get_global_dns_config (priv->config_data);
+	if (old_global_dns && !nm_global_dns_config_is_internal (old_global_dns)) {
+		g_set_error_literal (error, 1, 0,
+		                     "Global DNS configuration already set via configuration file");
+		return FALSE;
+	}
+
+	keyfile = nm_config_data_clone_keyfile_intern (priv->config_data);
+
+	/* Remove existing groups */
+	g_key_file_remove_group (keyfile, NM_CONFIG_KEYFILE_GROUP_INTERN_GLOBAL_DNS, NULL);
+	groups = g_key_file_get_groups (keyfile, NULL);
+	for (i = 0; groups[i]; i++) {
+		if (g_str_has_prefix (groups[i], NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_GLOBAL_DNS_DOMAIN))
+			g_key_file_remove_group (keyfile, groups[i], NULL);
+	}
+	g_strfreev (groups);
+
+	/* An empty configuration removes everything from internal configuration file */
+	if (nm_global_dns_config_is_empty (global_dns))
+		goto done;
+
+	/* Set new values */
+	g_key_file_set_string (keyfile, NM_CONFIG_KEYFILE_GROUP_INTERN_GLOBAL_DNS, NM_CONFIG_KEYFILE_KEY_GLOBAL_DNS_ENABLE, "yes");
+
+	nm_config_keyfile_set_string_list (keyfile, NM_CONFIG_KEYFILE_GROUP_INTERN_GLOBAL_DNS,
+	                                   "searches", nm_global_dns_config_get_searches (global_dns),
+	                                   -1);
+
+	nm_config_keyfile_set_string_list (keyfile, NM_CONFIG_KEYFILE_GROUP_INTERN_GLOBAL_DNS,
+	                                   "options", nm_global_dns_config_get_options (global_dns),
+	                                   -1);
+
+	for (i = 0; i < nm_global_dns_config_get_num_domains (global_dns); i++) {
+		NMGlobalDnsDomain *domain = nm_global_dns_config_get_domain (global_dns, i);
+		gs_free char *group_name;
+
+		group_name = g_strdup_printf (NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_GLOBAL_DNS_DOMAIN "%s",
+		                              nm_global_dns_domain_get_name (domain));
+
+		nm_config_keyfile_set_string_list (keyfile, group_name, "servers",
+		                                   nm_global_dns_domain_get_servers (domain), -1);
+		nm_config_keyfile_set_string_list (keyfile, group_name, "options",
+		                                   nm_global_dns_domain_get_options (domain), -1);
+	}
+
+done:
+	nm_config_set_values (self, keyfile, TRUE, FALSE);
+	g_key_file_unref (keyfile);
+
+	return TRUE;
+}
+
 /**
  * nm_config_set_values:
  * @self: the NMConfig instance
