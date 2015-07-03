@@ -368,6 +368,20 @@
       </tp:docstring>
     </property>
 
+    <property name="GlobalDnsConfiguration" type="a{sv}" access="readwrite">
+      <tp:docstring>
+        Dictionary of global DNS settings where the key is one of
+        "searches", "options" and "domains".  The values for the
+        "searches" and "options" keys are string arrays describing the
+        list of search domains and resolver options, respectively.
+        The value of the "domains" key is a second-level dictionary,
+        where each key is a domain name, and each key's value is a
+        third-level dictionary with the keys "servers" and
+        "options". "servers" is a string array of DNS servers,
+        "options" is a string array of domain-specific options.
+      </tp:docstring>
+    </property>
+
     <signal name="PropertiesChanged">
       <tp:docstring>
         NetworkManager's properties changed.

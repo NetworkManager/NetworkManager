@@ -181,6 +181,7 @@ enum {
 	PROP_ACTIVATING_CONNECTION,
 	PROP_DEVICES,
 	PROP_METERED,
+	PROP_GLOBAL_DNS_CONFIGURATION,
 
 	/* Not exported */
 	PROP_HOSTNAME,
@@ -424,6 +425,9 @@ _config_changed_cb (NMConfig *config, NMConfigData *config_data, NMConfigChangeF
 	              NM_CONNECTIVITY_INTERVAL, nm_config_data_get_connectivity_interval (config_data),
 	              NM_CONNECTIVITY_RESPONSE, nm_config_data_get_connectivity_response (config_data),
 	              NULL);
+
+	if (NM_FLAGS_HAS (changes, NM_CONFIG_CHANGE_GLOBAL_DNS_CONFIG))
+		g_object_notify (G_OBJECT (self), NM_MANAGER_GLOBAL_DNS_CONFIGURATION);
 }
 
 /************************************************************************/
@@ -4430,7 +4434,6 @@ typedef struct {
 	char *audit_prop_value;
 	GType interface_type;
 	const char *glib_propname;
-	gboolean set_enable;
 } PropertyFilterData;
 
 static void
@@ -4453,9 +4456,12 @@ prop_set_auth_done_cb (NMAuthChain *chain,
 	PropertyFilterData *pfd = user_data;
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (pfd->self);
 	NMAuthCallResult result;
-	GDBusMessage *reply;
+	GDBusMessage *reply = NULL;
 	const char *error_message;
 	NMExportedObject *object;
+	const NMGlobalDnsConfig *global_dns;
+	gs_unref_variant GVariant *value = NULL;
+	GVariant *args;
 
 	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
 	result = nm_auth_chain_get_result (chain, pfd->permission);
@@ -4485,9 +4491,29 @@ prop_set_auth_done_cb (NMAuthChain *chain,
 		goto done;
 	}
 
-	/* ... but set the property on the @object itself. It would be correct to set the property
-	 * on the skeleton interface, but as it is now, the result is the same. */
-	g_object_set (object, pfd->glib_propname, pfd->set_enable, NULL);
+	args = g_dbus_message_get_body (pfd->message);
+	g_variant_get (args, "(&s&sv)", NULL, NULL, &value);
+	g_assert (pfd->glib_propname);
+
+	if (!strcmp (pfd->glib_propname, NM_MANAGER_GLOBAL_DNS_CONFIGURATION)) {
+		g_assert (g_variant_is_of_type (value, G_VARIANT_TYPE ("a{sv}")));
+		global_dns = nm_config_data_get_global_dns_config (nm_config_get_data (priv->config));
+
+		if (global_dns && !nm_global_dns_config_is_internal (global_dns)) {
+			reply = g_dbus_message_new_method_error (pfd->message,
+			                                         NM_PERM_DENIED_ERROR,
+			                                         (error_message = "Global DNS configuration already set via configuration file"));
+			goto done;
+		}
+		/* ... but set the property on the @object itself. It would be correct to set the property
+		 * on the skeleton interface, but as it is now, the result is the same. */
+		g_object_set (object, pfd->glib_propname, value, NULL);
+	} else {
+		g_assert (g_variant_is_of_type (value, G_VARIANT_TYPE_BOOLEAN));
+		/* the same here */
+		g_object_set (object, pfd->glib_propname, g_variant_get_boolean (value), NULL);
+	}
+
 	reply = g_dbus_message_new_method_reply (pfd->message);
 	g_dbus_message_set_body (reply, g_variant_new_tuple (NULL, 0));
 	error_message = NULL;
@@ -4552,14 +4578,15 @@ prop_filter (GDBusConnection *connection,
              gpointer user_data)
 {
 	gs_unref_object NMManager *self = NULL;
-	GVariant *args, *value = NULL;
+	GVariant *args;
 	const char *propiface = NULL;
 	const char *propname = NULL;
 	const char *glib_propname = NULL, *permission = NULL;
 	const char *audit_op = NULL;
-	gboolean set_enable;
 	GType interface_type = G_TYPE_INVALID;
 	PropertyFilterData *pfd;
+	const GVariantType *expected_type = G_VARIANT_TYPE_BOOLEAN;
+	gs_unref_variant GVariant *value = NULL;
 
 	self = g_weak_ref_get (user_data);
 	if (!self)
@@ -4576,17 +4603,10 @@ prop_filter (GDBusConnection *connection,
 	    || g_strcmp0 (g_dbus_message_get_member (message), "Set") != 0)
 		return message;
 
-	/* Only filter calls with correct arguments (all filtered properties are boolean) */
 	args = g_dbus_message_get_body (message);
 	if (!g_variant_is_of_type (args, G_VARIANT_TYPE ("(ssv)")))
 		return message;
 	g_variant_get (args, "(&s&sv)", &propiface, &propname, &value);
-	if (!g_variant_is_of_type (value, G_VARIANT_TYPE_BOOLEAN)) {
-		g_variant_unref (value);
-		return message;
-	}
-	set_enable = g_variant_get_boolean (value);
-	g_variant_unref (value);
 
 	/* Only filter calls to filtered properties, on existing objects */
 	if (!strcmp (propiface, NM_DBUS_INTERFACE)) {
@@ -4602,6 +4622,11 @@ prop_filter (GDBusConnection *connection,
 			glib_propname = NM_MANAGER_WIMAX_ENABLED;
 			permission = NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX;
 			audit_op = NM_AUDIT_OP_RADIO_CONTROL;
+		} else if (!strcmp (propname, "GlobalDnsConfiguration")) {
+			glib_propname = NM_MANAGER_GLOBAL_DNS_CONFIGURATION;
+			permission = NM_AUTH_PERMISSION_SETTINGS_MODIFY_GLOBAL_DNS;
+			audit_op = NM_AUDIT_OP_NET_CONTROL;
+			expected_type = G_VARIANT_TYPE ("a{sv}");
 		} else
 			return message;
 		interface_type = NMDBUS_TYPE_MANAGER_SKELETON;
@@ -4620,6 +4645,9 @@ prop_filter (GDBusConnection *connection,
 	} else
 		return message;
 
+	if (!g_variant_is_of_type (value, expected_type))
+		return message;
+
 	/* This filter function is called from a gdbus worker thread which we can't
 	 * make other D-Bus calls from. In particular, we cannot call
 	 * org.freedesktop.DBus.GetConnectionUnixUser to find the remote UID.
@@ -4632,9 +4660,13 @@ prop_filter (GDBusConnection *connection,
 	pfd->permission = permission;
 	pfd->interface_type = interface_type;
 	pfd->glib_propname = glib_propname;
-	pfd->set_enable = set_enable;
 	pfd->audit_op = audit_op;
-	pfd->audit_prop_value = g_strdup_printf ("%s:%d", pfd->glib_propname, pfd->set_enable);
+	if (g_variant_is_of_type (value, G_VARIANT_TYPE_BOOLEAN)) {
+		pfd->audit_prop_value = g_strdup_printf ("%s:%d", pfd->glib_propname,
+		                                         g_variant_get_boolean (value));
+	} else
+		pfd->audit_prop_value = g_strdup (pfd->glib_propname);
+
 	g_idle_add (do_set_property_check, pfd);
 
 	return NULL;
@@ -5028,6 +5060,8 @@ get_property (GObject *object, guint prop_id,
 {
 	NMManager *self = NM_MANAGER (object);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMConfigData *config_data;
+	const NMGlobalDnsConfig *dns_config;
 	const char *type;
 
 	switch (prop_id) {
@@ -5097,6 +5131,11 @@ get_property (GObject *object, guint prop_id,
 	case PROP_METERED:
 		g_value_set_uint (value, priv->metered);
 		break;
+	case PROP_GLOBAL_DNS_CONFIGURATION:
+		config_data = nm_config_get_data (priv->config);
+		dns_config = nm_config_data_get_global_dns_config (config_data);
+		nm_global_dns_config_to_dbus (dns_config, value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -5109,6 +5148,8 @@ set_property (GObject *object, guint prop_id,
 {
 	NMManager *self = NM_MANAGER (object);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMGlobalDnsConfig *dns_config;
+	GError *error = NULL;
 
 	switch (prop_id) {
 	case PROP_NETWORKING_ENABLED:
@@ -5127,6 +5168,18 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_WIMAX_ENABLED:
 		/* WIMAX is depreacted. This does nothing. */
+		break;
+	case PROP_GLOBAL_DNS_CONFIGURATION:
+		dns_config = nm_global_dns_config_from_dbus (value, &error);
+		if (!error)
+			nm_config_set_global_dns (priv->config, dns_config, &error);
+
+		nm_global_dns_config_free (dns_config);
+
+		if (error) {
+			nm_log_dbg (LOGD_CORE, "set global DNS failed with error: %s", error->message);
+			g_error_free (error);
+		}
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -5394,6 +5447,21 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		                    0, G_MAXUINT32, NM_METERED_UNKNOWN,
 		                    G_PARAM_READABLE |
 		                    G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMManager:global-dns-configuration:
+	 *
+	 * The global DNS configuration.
+	 *
+	 * Since: 1.2
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_GLOBAL_DNS_CONFIGURATION,
+		 g_param_spec_variant (NM_MANAGER_GLOBAL_DNS_CONFIGURATION, "", "",
+		                       G_VARIANT_TYPE ("a{sv}"),
+		                       NULL,
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/* signals */
 	signals[DEVICE_ADDED] =
