@@ -38,6 +38,7 @@
 #include "nm-properties-changed-signal.h"
 #include "nm-core-internal.h"
 #include "nm-glib-compat.h"
+#include "gsystem-local-alloc.h"
 
 #define SETTINGS_TIMESTAMPS_FILE  NMSTATEDIR "/timestamps"
 #define SETTINGS_SEEN_BSSIDS_FILE NMSTATEDIR "/seen-bssids"
@@ -938,7 +939,7 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 	GVariant *existing_secrets;
 	GHashTable *existing_secrets_hash;
 	guint32 call_id = 0;
-	char *joined_hints = NULL;
+	gs_free char *joined_hints = NULL;
 
 	/* Use priv->secrets to work around the fact that nm_connection_clear_secrets()
 	 * will clear secrets on this object's settings.
@@ -976,17 +977,12 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 	if (existing_secrets)
 		g_variant_unref (existing_secrets);
 
-	if (nm_logging_enabled (LOGL_DEBUG, LOGD_SETTINGS)) {
-		if (hints)
-			joined_hints = g_strjoinv (",", (char **) hints);
-		nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) secrets requested flags 0x%X hints '%s'",
-		            nm_connection_get_uuid (NM_CONNECTION (self)),
-		            setting_name,
-		            call_id,
-		            flags,
-		            joined_hints ? joined_hints : "(none)");
-		g_free (joined_hints);
-	}
+	nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) secrets requested flags 0x%X hints '%s'",
+	            nm_connection_get_uuid (NM_CONNECTION (self)),
+	            setting_name,
+	            call_id,
+	            flags,
+	            (hints && hints[0]) ? (joined_hints = g_strjoinv (",", (char **) hints)) : "(none)");
 
 	return call_id;
 }
