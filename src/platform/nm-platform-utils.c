@@ -48,8 +48,11 @@ ethtool_get (const char *name, gpointer edata)
 	if (!name || !*name)
 		return FALSE;
 
+	if (strlen (name) >= IFNAMSIZ)
+		g_return_val_if_reached (FALSE);
+
 	memset (&ifr, 0, sizeof (ifr));
-	strncpy (ifr.ifr_name, name, IFNAMSIZ);
+	strcpy (ifr.ifr_name, name);
 	ifr.ifr_data = edata;
 
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
