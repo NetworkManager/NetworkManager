@@ -244,18 +244,18 @@ no_auto_default_merge_from_file (const char *no_auto_default_file, const char *c
 	    && g_file_get_contents (no_auto_default_file, &data, NULL, NULL)) {
 		list = g_strsplit (data, "\n", -1);
 		for (i = 0; list[i]; i++) {
-			if (!*list[i]) {
+			if (!*list[i])
 				g_free (list[i]);
-				continue;
+			else {
+				for (j = 0; j < updated->len; j++) {
+					if (!strcmp (list[i], updated->pdata[j]))
+						break;
+				}
+				if (j == updated->len)
+					g_ptr_array_add (updated, list[i]);
+				else
+					g_free (list[i]);
 			}
-			for (j = 0; j < updated->len; j++) {
-				if (!strcmp (list[i], updated->pdata[j]))
-					break;
-			}
-			if (j == updated->len)
-				g_ptr_array_add (updated, list[i]);
-			else
-				g_free (list[i]);
 		}
 		g_free (list);
 		g_free (data);
