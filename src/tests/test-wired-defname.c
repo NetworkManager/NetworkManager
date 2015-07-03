@@ -26,7 +26,9 @@
 #include <nm-simple-connection.h>
 #include <nm-setting-connection.h>
 #include "nm-device-ethernet-utils.h"
-#include "gsystem-local-alloc.h"
+#include "nm-logging.h"
+
+#include "nm-test-utils.h"
 
 static NMConnection *
 _new_connection (const char *id)
@@ -112,14 +114,12 @@ test_defname_multiple_conflicts (void)
 
 /*******************************************/
 
+NMTST_DEFINE ();
+
 int
 main (int argc, char **argv)
 {
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
-
-	g_test_init (&argc, &argv, NULL);
+	nmtst_init_assert_logging (&argc, &argv, "INFO", "DEFAULT");
 
 	g_test_add_func ("/defname/no_connections", test_defname_no_connections);
 	g_test_add_func ("/defname/no_conflict", test_defname_no_conflict);

@@ -28,6 +28,9 @@
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
 #include "nm-platform.h"
+#include "nm-logging.h"
+
+#include "nm-test-utils.h"
 
 static void
 test_capture_empty (void)
@@ -288,14 +291,12 @@ test_capture_dns_options_valid6 (void)
 }
 /*******************************************/
 
+NMTST_DEFINE ();
+
 int
 main (int argc, char **argv)
 {
-	g_test_init (&argc, &argv, NULL);
-
-#if !GLIB_CHECK_VERSION (2,35,0)
-	g_type_init ();
-#endif
+	nmtst_init_assert_logging (&argc, &argv, "INFO", "DEFAULT");
 
 	g_test_add_func ("/resolvconf-capture/empty", test_capture_empty);
 	g_test_add_func ("/resolvconf-capture/basic4", test_capture_basic4);

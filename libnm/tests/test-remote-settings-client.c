@@ -502,6 +502,8 @@ test_save_hostname (void)
 
 /*******************************************************************/
 
+NMTST_DEFINE ();
+
 int
 main (int argc, char **argv)
 {
@@ -510,11 +512,7 @@ main (int argc, char **argv)
 
 	g_setenv ("LIBNM_USE_SESSION_BUS", "1", TRUE);
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
-	
-	g_test_init (&argc, &argv, NULL);
+	nmtst_init (&argc, &argv, TRUE);
 
 	bus = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
 	g_assert_no_error (error);

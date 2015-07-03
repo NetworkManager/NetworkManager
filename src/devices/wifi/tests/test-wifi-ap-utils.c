@@ -27,6 +27,9 @@
 #include "nm-dbus-glib-types.h"
 
 #include "nm-core-internal.h"
+#include "nm-logging.h"
+
+#include "nm-test-utils.h"
 
 #define DEBUG 1
 
@@ -1336,16 +1339,14 @@ test_strength_wext (void)
 
 /*******************************************/
 
+NMTST_DEFINE ();
+
 int
 main (int argc, char **argv)
 {
 	gsize i;
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
-
-	g_test_init (&argc, &argv, NULL);
+	nmtst_init_assert_logging (&argc, &argv, "INFO", "DEFAULT");
 
 	g_test_add_func ("/wifi/lock_bssid",
 	                 test_lock_bssid);

@@ -33,7 +33,8 @@
 #include "nm-device-wifi.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-wimax.h"
-#include "nm-glib-compat.h"
+
+#include "nm-test-utils.h"
 
 #include "common.h"
 
@@ -880,14 +881,12 @@ test_client_manager_running (void)
 
 /*******************************************************************/
 
+NMTST_DEFINE ();
+
 int
 main (int argc, char **argv)
 {
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
-
-	g_test_init (&argc, &argv, NULL);
+	nmtst_init (&argc, &argv, TRUE);
 
 	loop = g_main_loop_new (NULL, FALSE);
 

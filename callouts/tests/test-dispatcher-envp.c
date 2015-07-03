@@ -30,6 +30,8 @@
 #include "nm-dispatcher-utils.h"
 #include "nm-dispatcher-api.h"
 
+#include "nm-test-utils.h"
+
 /*******************************************/
 
 static gboolean
@@ -605,14 +607,12 @@ test_up_empty_vpn_iface (void)
 
 /*******************************************/
 
+NMTST_DEFINE ();
+
 int
 main (int argc, char **argv)
 {
-	g_test_init (&argc, &argv, NULL);
-
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
+	nmtst_init (&argc, &argv, TRUE);
 
 	g_test_add_func ("/dispatcher/up", test_up);
 	g_test_add_func ("/dispatcher/down", test_down);
