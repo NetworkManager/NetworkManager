@@ -9,8 +9,29 @@
 			<watchdog panic="None"/>
 			<packages/>
 			<ks_appends>
-				<!-- A workaround for rdma machine post-deploy script woes, suggested by honli -->
-				<ks_append><![CDATA[%post
+				<ks_append><![CDATA[
+%post
+sed -i -e 's/^ *\(Storage\|SystemMaxUse\|RateLimitBurst\|RateLimitInterval\)=.*/#\0/' \
+	-e '$$a\Storage=persistent' \
+	-e '$$a\SystemMaxUse=2G' \
+	-e '$$a\RateLimitBurst=0/' \
+	-e '$$a\RateLimitInterval=0/' \
+	/etc/systemd/journald.conf ;
+
+mkdir -p /etc/NetworkManager/conf.d/
+cat >/etc/NetworkManager/conf.d/99-test.conf <<EOF
+[main]
+debug=$CONF_DEBUG
+dhcp=$CONF_DHCP
+
+[logging]
+level=$CONF_LOGLEVEL
+domains=ALL
+EOF
+
+yum install -y yum $RPM_LIST
+
+#A workaround for rdma machine post-deploy script woes, suggested by honli
 sed -e '/^\s*linux16\s*\/vmlinuz/ s/$/ $SELINUX_DISABLED/' -i /boot/grub2/grub.cfg || :
 rm -f /etc/sysconfig/network-scripts/ifcfg-mlx*
 %end
@@ -41,37 +62,9 @@ rm -f /etc/sysconfig/network-scripts/ifcfg-mlx*
 				<system_type value="Machine"/>
 			</hostRequires>
 			<partitions/>
-			<task name="/distribution/command" role="STANDALONE">
-				<params>
-					<param name="CMDS_TO_RUN" value="
-						    sed -i -e 's/^ *\(Storage\|SystemMaxUse\|RateLimitBurst\|RateLimitInterval\)=.*/#\0/'
-						           -e '$$a\Storage=persistent'
-						           -e '$$a\SystemMaxUse=2G'
-						           -e '$$a\RateLimitBurst=0/'
-						           -e '$$a\RateLimitInterval=0/'
-						           /etc/systemd/journald.conf ;
-						    systemctl restart systemd-journald.service ;
-						"/>
-				</params>
-			</task>
 			<task name="/distribution/pkginstall" role="STANDALONE">
 				<params>
 					<param name="PKGARGNAME" value="python-setuptools python-netaddr pexpect bash-completion iw net-tools teamd NetworkManager radvd wireshark git firewalld psmisc bridge-utils"/>
-				</params>
-			</task>
-			<task name="/distribution/command" role="STANDALONE">
-				<params>
-					<param name="CMDS_TO_RUN" value="mkdir -p /etc/NetworkManager/conf.d/; printf '[main]\n    debug=$CONF_DEBUG\n    dhcp=$CONF_DHCP\n\n[logging]\n    level=$CONF_LOGLEVEL\n    domains=ALL\n\n' > /etc/NetworkManager/conf.d/99-test.conf"/>
-				</params>
-			</task>
-			<task name="/distribution/command" role="STANDALONE">
-				<params>
-					<param name="CMDS_TO_RUN" value="yum install -y yum $RPM_LIST"/>
-				</params>
-			</task>
-			<task name="/distribution/command" role="STANDALONE">
-				<params>
-					<param name="CMDS_TO_RUN" value="systemctl restart NetworkManager.service"/>
 				</params>
 			</task>
 			<task name="/qe/desktop/simpletestharness" role="STANDALONE">
