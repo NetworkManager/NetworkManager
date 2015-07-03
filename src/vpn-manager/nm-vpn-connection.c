@@ -45,6 +45,7 @@
 #include "nm-core-internal.h"
 #include "nm-default-route-manager.h"
 #include "nm-route-manager.h"
+#include "nm-firewall-manager.h"
 #include "gsystem-local-alloc.h"
 
 #include "nm-vpn-connection-glue.h"
@@ -93,6 +94,9 @@ typedef struct {
 	NMVpnConnectionStateReason failure_reason;
 
 	NMVpnServiceState service_state;
+
+	/* Firewall */
+	NMFirewallPendingCall fw_call;
 
 	GDBusProxy *proxy;
 	GCancellable *cancellable;
@@ -221,6 +225,17 @@ call_plugin_disconnect (NMVpnConnection *self)
 }
 
 static void
+fw_call_cleanup (NMVpnConnection *connection)
+{
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+
+	if (priv->fw_call) {
+		nm_firewall_manager_cancel_call (nm_firewall_manager_get (), priv->fw_call);
+		priv->fw_call = NULL;
+	}
+}
+
+static void
 vpn_cleanup (NMVpnConnection *connection, NMDevice *parent_dev)
 {
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
@@ -234,6 +249,14 @@ vpn_cleanup (NMVpnConnection *connection, NMDevice *parent_dev)
 	nm_device_set_vpn4_config (parent_dev, NULL);
 	nm_device_set_vpn6_config (parent_dev, NULL);
 
+	/* Remove zone from firewall */
+	if (priv->ip_iface)
+		nm_firewall_manager_remove_from_zone (nm_firewall_manager_get (),
+		                                      priv->ip_iface,
+		                                      NULL);
+	/* Cancel pending firewall call */
+	fw_call_cleanup (connection);
+
 	g_free (priv->banner);
 	priv->banner = NULL;
 
@@ -246,6 +269,7 @@ vpn_cleanup (NMVpnConnection *connection, NMDevice *parent_dev)
 	 */
 	if (priv->connection)
 		nm_connection_clear_secrets (priv->connection);
+
 }
 
 static void
@@ -959,10 +983,47 @@ nm_vpn_connection_apply_config (NMVpnConnection *connection)
 }
 
 static void
+_cleanup_failed_config (NMVpnConnection *connection)
+{
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+
+	g_clear_object (&priv->ip4_config);
+	g_clear_object (&priv->ip6_config);
+
+	nm_log_warn (LOGD_VPN, "VPN connection '%s' did not receive valid IP config information.",
+	             nm_connection_get_id (priv->connection));
+	_set_vpn_state (connection, STATE_FAILED, NM_VPN_CONNECTION_STATE_REASON_IP_CONFIG_INVALID, FALSE);
+}
+
+static void
+fw_change_zone_cb (GError *error, gpointer user_data)
+{
+	NMVpnConnection *connection = NM_VPN_CONNECTION (user_data);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	priv->fw_call = NULL;
+
+	if (error) {
+		nm_log_warn (LOGD_VPN, "VPN connection '%s': setting firewall zone failed: '%s'",
+		             nm_connection_get_id (priv->connection), error->message);
+		// FIXME: fail the activation?
+	}
+
+	if (!nm_vpn_connection_apply_config (connection))
+		_cleanup_failed_config (connection);
+}
+
+static void
 nm_vpn_connection_config_maybe_complete (NMVpnConnection *connection,
                                          gboolean         success)
 {
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	NMConnection *base_con;
+	NMSettingConnection *s_con;
+	const char *zone;
 
 	if (priv->vpn_state < STATE_IP_CONFIG_GET || priv->vpn_state > STATE_ACTIVATED)
 		return;
@@ -983,16 +1044,29 @@ nm_vpn_connection_config_maybe_complete (NMVpnConnection *connection,
 	if (success) {
 		print_vpn_config (connection);
 
-		if (nm_vpn_connection_apply_config (connection))
+		/* Add the tunnel interface to the specified firewall zone */
+		if (priv->ip_iface) {
+			base_con = nm_vpn_connection_get_connection (connection);
+			g_assert (base_con);
+			s_con = nm_connection_get_setting_connection (base_con);
+			zone = nm_setting_connection_get_zone (s_con);
+
+			nm_log_dbg (LOGD_VPN, "VPN connection '%s': setting firewall zone '%s' for '%s'",
+			            nm_connection_get_id (base_con), zone ? zone : "default", priv->ip_iface);
+			fw_call_cleanup (connection);
+			priv->fw_call = nm_firewall_manager_add_or_change_zone (nm_firewall_manager_get (),
+			                                                        priv->ip_iface,
+			                                                        zone,
+			                                                        FALSE,
+			                                                        fw_change_zone_cb,
+			                                                        connection);
 			return;
+		} else
+			if (nm_vpn_connection_apply_config (connection))
+				return;
 	}
 
-	g_clear_object (&priv->ip4_config);
-	g_clear_object (&priv->ip6_config);
-
-	nm_log_warn (LOGD_VPN, "VPN connection '%s' did not receive valid IP config information.",
-	             nm_connection_get_id (priv->connection));
-	_set_vpn_state (connection, STATE_FAILED, NM_VPN_CONNECTION_STATE_REASON_IP_CONFIG_INVALID, FALSE);
+	_cleanup_failed_config (connection);
 }
 
 static gboolean
@@ -2160,6 +2234,8 @@ dispose (GObject *object)
 	g_clear_object (&priv->ip6_config);
 	g_clear_object (&priv->proxy);
 	g_clear_object (&priv->connection);
+
+	fw_call_cleanup (NM_VPN_CONNECTION (object));
 
 	G_OBJECT_CLASS (nm_vpn_connection_parent_class)->dispose (object);
 }
