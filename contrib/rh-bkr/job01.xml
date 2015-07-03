@@ -79,7 +79,7 @@ sed -e '/^\s*linux16\s*\/vmlinuz/ s/$/ $SELINUX_DISABLED/' -i /boot/grub2/grub.c
 					<param name="TESTS" value="$TESTS"/>
 					<param name="TEST_MAPPER" value="True"/>
 					<param name="COMPONENT" value="NetworkManager"/>
-					<param name="GIT_URL" value="http://code.engineering.redhat.com/gerrit/desktopqe/NetworkManager"/>
+					<param name="GIT_URL" value="$GIT_URL"/>
 					<param name="TYPE" value="TEST"/>
 				</params>
 			</task>

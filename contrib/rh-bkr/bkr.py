@@ -687,6 +687,7 @@ class CmdSubmit(CmdBase):
             'CONF_LOGLEVEL'     : 'DEBUG',
             'CONF_DHCP'         : 'dhclient',
             'CONF_DEBUG'        : 'RLIMIT_CORE,fatal-warnings',
+            'GIT_URL'           : 'http://code.engineering.redhat.com/gerrit/desktopqe/NetworkManager',
         }
     def _process_line_get(self, key, replacement, index=None, none=None):
         if key in replacement:
