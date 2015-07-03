@@ -2553,12 +2553,12 @@ nm_platform_addr_flags2str (int flags, char *buf, size_t size)
 const char *
 nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address)
 {
+#define S_FLAGS_PREFIX " flags "
 	char s_flags[256];
 	char s_address[INET6_ADDRSTRLEN];
 	char s_peer[INET6_ADDRSTRLEN];
 	char str_lft[30], str_pref[30], str_time[50];
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
-	char *str_flags;
 	char *str_peer = NULL;
 	const char *str_lft_p, *str_pref_p, *str_time_p;
 	gint32 now = nm_utils_get_monotonic_timestamp_s ();
@@ -2574,9 +2574,11 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address)
 
 	_to_string_dev (NULL, address->ifindex, str_dev, sizeof (str_dev));
 
-	nm_platform_addr_flags2str (address->flags, s_flags, sizeof (s_flags));
-
-	str_flags = s_flags[0] ? g_strconcat (" flags ", s_flags, NULL) : NULL;
+	nm_platform_addr_flags2str (address->flags, &s_flags[STRLEN (S_FLAGS_PREFIX)], sizeof (s_flags) - STRLEN (S_FLAGS_PREFIX));
+	if (s_flags[STRLEN (S_FLAGS_PREFIX)] == '\0')
+		s_flags[0] = '\0';
+	else
+		memcpy (s_flags, S_FLAGS_PREFIX, STRLEN (S_FLAGS_PREFIX));
 
 	str_lft_p = _lifetime_to_string (address->timestamp,
 	                                 address->lifetime ? address->lifetime : NM_PLATFORM_LIFETIME_PERMANENT,
@@ -2592,9 +2594,8 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address)
 	            s_address, address->plen, str_lft_p, str_pref_p, str_time_p,
 	            str_peer ? str_peer : "",
 	            str_dev,
-	            str_flags ? str_flags : "",
+	            s_flags,
 	            source_to_string (address->source));
-	g_free (str_flags);
 	g_free (str_peer);
 	return _nm_platform_to_string_buffer;
 }
