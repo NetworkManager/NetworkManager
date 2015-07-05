@@ -191,6 +191,26 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.mss = 0,
 			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_LINK),
 		},
+		{
+			.source = NM_IP_CONFIG_SOURCE_USER,
+			.network = nmtst_inet4_from_string ("6.6.6.0"),
+			.plen = 24,
+			.ifindex = fixture->ifindex1,
+			.gateway = INADDR_ANY,
+			.metric = 21,
+			.mss = 0,
+			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_LINK),
+		},
+		{
+			.source = NM_IP_CONFIG_SOURCE_USER,
+			.network = nmtst_inet4_from_string ("8.0.0.0"),
+			.plen = 8,
+			.ifindex = fixture->ifindex1,
+			.gateway = nmtst_inet4_from_string ("6.6.6.2"),
+			.metric = 22,
+			.mss = 0,
+			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_UNIVERSE),
+		},
 	};
 
 	NMPlatformIP4Route state2[] = {
@@ -224,6 +244,26 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.mss = 0,
 			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_LINK),
 		},
+		{
+			.source = NM_IP_CONFIG_SOURCE_USER,
+			.network = nmtst_inet4_from_string ("6.6.6.0"),
+			.plen = 24,
+			.ifindex = fixture->ifindex1,
+			.gateway = INADDR_ANY,
+			.metric = 21,
+			.mss = 0,
+			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_LINK),
+		},
+		{
+			.source = NM_IP_CONFIG_SOURCE_USER,
+			.network = nmtst_inet4_from_string ("8.0.0.0"),
+			.plen = 8,
+			.ifindex = fixture->ifindex1,
+			.gateway = nmtst_inet4_from_string ("6.6.6.2"),
+			.metric = 22,
+			.mss = 0,
+			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_UNIVERSE),
+		},
 	};
 
 	NMPlatformIP4Route state3[] = {
@@ -247,22 +287,44 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 			.mss = 0,
 			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_LINK),
 		},
+		{
+			.source = NM_IP_CONFIG_SOURCE_USER,
+			.network = nmtst_inet4_from_string ("8.0.0.0"),
+			.plen = 8,
+			.ifindex = fixture->ifindex1,
+			.gateway = nmtst_inet4_from_string ("6.6.6.2"),
+			.metric = 22,
+			.mss = 0,
+			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_UNIVERSE),
+		},
+		{
+			.source = NM_IP_CONFIG_SOURCE_USER,
+			.network = nmtst_inet4_from_string ("6.6.6.0"),
+			.plen = 24,
+			.ifindex = fixture->ifindex1,
+			.gateway = INADDR_ANY,
+			/* this is a ghost entry because we synced ifindex0 and restore the route
+			 * with metric 20 (above). But we don't remove the metric 21. */
+			.metric = 21,
+			.mss = 0,
+			.scope_inv = nm_platform_route_scope_inv (RT_SCOPE_LINK),
+		},
 	};
 
 	setup_dev0_ip4 (fixture->ifindex0, 1000, 21021);
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*failure adding ip4-route '*: 8.0.0.0/8 22': *");
 	setup_dev1_ip4 (fixture->ifindex1);
 	g_test_assert_expected_messages ();
 
-	/* 6.6.6.0/24 on dev0 won over 6.6.6.0/24 on dev1
-	 * 7.0.0.0/8 routes did not clash
-	 * 8.0.0.0/8 could not be added. */
+	/* - 6.6.6.0/24 on dev0 won over 6.6.6.0/24 on dev1
+	 * - 6.6.6.0/24 on dev1 has metric bumped.
+	 * - 7.0.0.0/8 route, metric 21021 added
+	 * - 7.0.0.0/8 route, metric 22 added
+	 * - 8.0.0.0/8 could be added. */
 	routes = ip4_routes (fixture);
 	g_assert_cmpint (routes->len, ==, G_N_ELEMENTS (state1));
 	nmtst_platform_ip4_routes_equal ((NMPlatformIP4Route *) routes->data, state1, routes->len, TRUE);
 	g_array_free (routes, TRUE);
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*failure adding ip4-route '*: 8.0.0.0/8 22': *");
 	setup_dev1_ip4 (fixture->ifindex1);
 	g_test_assert_expected_messages ();
 
@@ -278,7 +340,7 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 
 	update_dev0_ip4 (fixture->ifindex0);
 
-	/* 7.0.0.0/8 on dev0 was updated for gateway removal*/
+	/* minor changes in the routes. Quite similar to state1. */
 	routes = ip4_routes (fixture);
 	g_assert_cmpint (routes->len, ==, G_N_ELEMENTS (state2));
 	nmtst_platform_ip4_routes_equal ((NMPlatformIP4Route *) routes->data, state2, routes->len, TRUE);
@@ -287,8 +349,9 @@ test_ip4 (test_fixture *fixture, gconstpointer user_data)
 	nm_route_manager_route_flush (nm_route_manager_get (), fixture->ifindex0);
 
 	/* 6.6.6.0/24 is now on dev1
+	 * 6.6.6.0/24 is also still on dev1 with bumped metric 21.
 	 * 7.0.0.0/8 gone from dev0, still present on dev1
-	 * 8.0.0.0/8 is present on dev1 now that 6.6.6.0/24 is on dev1 too
+	 * 8.0.0.0/8 is present on dev1
 	 * No dev0 routes left. */
 	routes = ip4_routes (fixture);
 	g_assert_cmpint (routes->len, ==, G_N_ELEMENTS (state3));
@@ -512,6 +575,33 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 			.metric = 22,
 			.mss = 0,
 		},
+		{
+			.source = NM_IP_CONFIG_SOURCE_USER,
+			.network = *nmtst_inet6_from_string ("2001:db8:1337::"),
+			.plen = 48,
+			.ifindex = fixture->ifindex1,
+			.gateway = in6addr_any,
+			.metric = 1025,
+			.mss = 0,
+		},
+		{
+			.source = NM_IP_CONFIG_SOURCE_USER,
+			.network = *nmtst_inet6_from_string ("2001:db8:8086::"),
+			.plen = 48,
+			.ifindex = fixture->ifindex1,
+			.gateway = in6addr_any,
+			.metric = 21,
+			.mss = 0,
+		},
+		{
+			.source = NM_IP_CONFIG_SOURCE_USER,
+			.network = *nmtst_inet6_from_string ("2001:db8:d34d::"),
+			.plen = 64,
+			.ifindex = fixture->ifindex1,
+			.gateway = *nmtst_inet6_from_string ("2001:db8:8086::2"),
+			.metric = 20,
+			.mss = 0,
+		},
 	};
 
 	NMPlatformIP6Route state2[] = {
@@ -551,6 +641,33 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 			.metric = 22,
 			.mss = 0,
 		},
+		{
+			.source = NM_IP_CONFIG_SOURCE_USER,
+			.network = *nmtst_inet6_from_string ("2001:db8:1337::"),
+			.plen = 48,
+			.ifindex = fixture->ifindex1,
+			.gateway = in6addr_any,
+			.metric = 1025,
+			.mss = 0,
+		},
+		{
+			.source = NM_IP_CONFIG_SOURCE_USER,
+			.network = *nmtst_inet6_from_string ("2001:db8:8086::"),
+			.plen = 48,
+			.ifindex = fixture->ifindex1,
+			.gateway = in6addr_any,
+			.metric = 21,
+			.mss = 0,
+		},
+		{
+			.source = NM_IP_CONFIG_SOURCE_USER,
+			.network = *nmtst_inet6_from_string ("2001:db8:d34d::"),
+			.plen = 64,
+			.ifindex = fixture->ifindex1,
+			.gateway = *nmtst_inet6_from_string ("2001:db8:8086::2"),
+			.metric = 20,
+			.mss = 0,
+		},
 	};
 
 	NMPlatformIP6Route state3[] = {
@@ -581,10 +698,36 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 			.metric = 1024,
 			.mss = 0,
 		},
+		{
+			.source = NM_IP_CONFIG_SOURCE_USER,
+			.network = *nmtst_inet6_from_string ("2001:db8:1337::"),
+			.plen = 48,
+			.ifindex = fixture->ifindex1,
+			.gateway = in6addr_any,
+			.metric = 1025,
+			.mss = 0,
+		},
+		{
+			.source = NM_IP_CONFIG_SOURCE_USER,
+			.network = *nmtst_inet6_from_string ("2001:db8:8086::"),
+			.plen = 48,
+			.ifindex = fixture->ifindex1,
+			.gateway = in6addr_any,
+			.metric = 21,
+			.mss = 0,
+		},
+		{
+			.source = NM_IP_CONFIG_SOURCE_USER,
+			.network = *nmtst_inet6_from_string ("2001:db8:d34d::"),
+			.plen = 64,
+			.ifindex = fixture->ifindex1,
+			.gateway = *nmtst_inet6_from_string ("2001:db8:8086::2"),
+			.metric = 20,
+			.mss = 0,
+		},
 	};
 
 	setup_dev0_ip6 (fixture->ifindex0);
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*failure adding ip6-route '*: 2001:db8:d34d::/64 20': *");
 	setup_dev1_ip6 (fixture->ifindex1);
 	g_test_assert_expected_messages ();
 
@@ -598,7 +741,6 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 	g_array_free (routes, TRUE);
 
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING, "*failure adding ip6-route '*: 2001:db8:d34d::/64 20': *");
 	setup_dev1_ip6 (fixture->ifindex1);
 	g_test_assert_expected_messages ();
 	setup_dev0_ip6 (fixture->ifindex0);

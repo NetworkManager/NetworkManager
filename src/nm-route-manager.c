@@ -44,6 +44,13 @@ typedef struct {
 typedef struct {
 	GArray *entries;
 	RouteIndex *index;
+
+	/* list of effective metrics. The indexes of the array correspond to @index, not @entries. */
+	GArray *effective_metrics;
+
+	/* this array contains the effective metrics but using the reversed index that corresponds
+	 * to @entries, instead of @index. */
+	GArray *effective_metrics_reverse;
 } RouteEntries;
 
 typedef struct {
@@ -446,11 +453,14 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 	RouteIndex *plat_routes_idx, *known_routes_idx;
 	gboolean success = TRUE;
 	guint i, i_type;
-	GArray *to_delete_indexes = NULL, *to_restore_routes = NULL;
+	GArray *to_delete_indexes = NULL;
 	GPtrArray *to_add_routes = NULL;
 	guint i_known_routes, i_plat_routes, i_ipx_routes;
 	const NMPlatformIPXRoute *cur_known_route, *cur_plat_route;
 	NMPlatformIPXRoute *cur_ipx_route;
+	gint64 *p_effective_metric = NULL;
+	gboolean ipx_routes_changed = FALSE;
+	gint64 *effective_metrics = NULL;
 
 	nm_platform_process_events (priv->platform);
 
@@ -462,6 +472,8 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 	plat_routes_idx = _route_index_create (vtable, plat_routes);
 	known_routes_idx = _route_index_create (vtable, known_routes);
 
+	effective_metrics = &g_array_index (ipx_routes->effective_metrics, gint64, 0);
+
 	ASSERT_route_index_valid (vtable, plat_routes, plat_routes_idx, TRUE);
 	ASSERT_route_index_valid (vtable, known_routes, known_routes_idx, FALSE);
 
@@ -472,7 +484,10 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 			       ifindex, i, vtable->vt->route_to_string (VTABLE_ROUTE_INDEX (vtable, known_routes, i)));
 		}
 		for (i = 0; i < ipx_routes->index->len; i++)
-			_LOGT (vtable->vt->addr_family, "%3d: STATE: has    #%u - %s", ifindex, i, vtable->vt->route_to_string (ipx_routes->index->entries[i]));
+			_LOGT (vtable->vt->addr_family, "%3d: STATE: has    #%u - %s (%lld)",
+			       ifindex, i,
+			       vtable->vt->route_to_string (ipx_routes->index->entries[i]),
+			       (long long) g_array_index (ipx_routes->effective_metrics, gint64, i));
 	}
 
 	/***************************************************************************
@@ -497,19 +512,6 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 				to_delete_indexes = g_array_new (FALSE, FALSE, sizeof (guint));
 			g_array_append_val (to_delete_indexes, i_ipx_routes);
 
-			/* later we will delete @cur_ipx_route. See if @cur_ipx_route was shadowing another route, that
-			 * we must restore. */
-			if (i_ipx_routes + 1 < ipx_routes->index->len) {
-				const NMPlatformIPXRoute *next_route = ipx_routes->index->entries[i_ipx_routes + 1];
-
-				if (vtable->route_id_cmp (cur_ipx_route, next_route) == 0) {
-					if (!to_restore_routes)
-						to_restore_routes = g_array_new (FALSE, FALSE, vtable->vt->sizeof_route);
-					g_array_append_vals (to_restore_routes, next_route, 1);
-					g_assert (next_route->rx.ifindex != ifindex);
-				}
-			}
-
 			/* find the next @cur_ipx_route with matching ifindex. */
 			cur_ipx_route = _get_next_ipx_route (ipx_routes->index, FALSE, &i_ipx_routes, ifindex);
 		}
@@ -523,6 +525,7 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 				memcpy (cur_ipx_route, cur_known_route, vtable->vt->sizeof_route);
 				cur_ipx_route->rx.ifindex = ifindex;
 				cur_ipx_route->rx.metric = vtable->vt->metric_normalize (cur_ipx_route->rx.metric);
+				ipx_routes_changed = TRUE;
 				_LOGT (vtable->vt->addr_family, "%3d: STATE: update #%u - %s", ifindex, i_ipx_routes, vtable->vt->route_to_string (cur_ipx_route));
 			}
 		} else if (cur_known_route) {
@@ -551,9 +554,14 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 			}
 			g_array_sort (to_delete_indexes, (GCompareFunc) _sort_indexes_cmp);
 			nm_utils_array_remove_at_indexes (ipx_routes->entries, &g_array_index (to_delete_indexes, guint, 0), to_delete_indexes->len);
+			nm_utils_array_remove_at_indexes (ipx_routes->effective_metrics_reverse, &g_array_index (to_delete_indexes, guint, 0), to_delete_indexes->len);
 			g_array_unref (to_delete_indexes);
 		}
 		if (to_add_routes) {
+			guint j = ipx_routes->effective_metrics_reverse->len;
+
+			g_array_set_size (ipx_routes->effective_metrics_reverse, j + to_add_routes->len);
+
 			for (i = 0; i < to_add_routes->len; i++) {
 				NMPlatformIPXRoute *ipx_route;
 
@@ -563,13 +571,98 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 				ipx_route->rx.ifindex = ifindex;
 				ipx_route->rx.metric = vtable->vt->metric_normalize (ipx_route->rx.metric);
 
+				g_array_index (ipx_routes->effective_metrics_reverse, gint64, j++) = -1;
+
 				_LOGT (vtable->vt->addr_family, "%3d: STATE: added  #%u - %s", ifindex, ipx_routes->entries->len - 1, vtable->vt->route_to_string (ipx_route));
 			}
 			g_ptr_array_unref (to_add_routes);
 		}
 		g_free (ipx_routes->index);
 		ipx_routes->index = _route_index_create (vtable, ipx_routes->entries);
+		ipx_routes_changed = TRUE;
 		ASSERT_route_index_valid (vtable, ipx_routes->entries, ipx_routes->index, TRUE);
+	}
+
+	if (ipx_routes_changed) {
+		/***************************************************************************
+		 * Rebuild the list of effective metrics. In case of conflicting routes,
+		 * we configure device routes with a bumped metric. We do this, because non-direct
+		 * routes might require this direct route to reach the gateway (e.g. the default
+		 * route).
+		 *
+		 * We determine the effective metrics only based on our internal list @ipx_routes
+		 * and don't consider @plat_routes. That means, we might bump the metric of a route
+		 * and thereby cause a conflict with an existing route on an unmanaged device (which
+		 * causes the route on the unmanaged device to be replaced).
+		 * Still, that is not much different then from messing with unmanaged routes when
+		 * the effective and the intended metrics equal. The rules is: NM will leave routes
+		 * on unmanged devices alone, unless they conflict with what NM wants to configure.
+		 ***************************************************************************/
+
+		g_array_set_size (ipx_routes->effective_metrics, ipx_routes->entries->len);
+		effective_metrics = &g_array_index (ipx_routes->effective_metrics, gint64, 0);
+
+		/* Completely regenerate the list of effective metrics by walking through
+		 * ipx_routes->index and determining the effective metric. */
+
+		for (i_ipx_routes = 0; i_ipx_routes < ipx_routes->index->len; i_ipx_routes++) {
+			gint64 *p_effective_metric_before;
+			gboolean is_shadowed;
+			guint i_ipx_routes_before;
+
+			cur_ipx_route = ipx_routes->index->entries[i_ipx_routes];
+			p_effective_metric = &effective_metrics[i_ipx_routes];
+
+			is_shadowed =    i_ipx_routes > 0
+			              && vtable->route_dest_cmp (cur_ipx_route, ipx_routes->index->entries[i_ipx_routes - 1]) == 0;
+
+			if (!is_shadowed) {
+				/* the route is not shadowed, the effective metric is just as specified. */
+				*p_effective_metric = cur_ipx_route->rx.metric;
+				goto next;
+			}
+			if (!VTABLE_IS_DEVICE_ROUTE (vtable, cur_ipx_route)) {
+				/* The route is not a device route. We want to add redundant device routes, because
+				 * we might need the direct routes to the gateway. For non-direct routes, there is not much
+				 * reason to do the metric increment. */
+				*p_effective_metric = -1;
+				goto next;
+			}
+
+			/* The current route might be shadowed by several other routes. Find the one with the highest metric,
+			 * i.e. the one with an effecive metric set and in the index before the current index. */
+			i_ipx_routes_before = i_ipx_routes;
+			while (TRUE) {
+				nm_assert (i_ipx_routes_before > 0);
+
+				i_ipx_routes_before--;
+
+				p_effective_metric_before = &effective_metrics[i_ipx_routes_before];
+
+				if (*p_effective_metric_before == -1) {
+					/* this route is also shadowed, continue search. */
+					continue;
+				}
+
+				if (*p_effective_metric_before < cur_ipx_route->rx.metric) {
+					/* the previous route has a lower metric. There is no conflict,
+					 * just use the original metric. */
+					*p_effective_metric = cur_ipx_route->rx.metric;
+				} else if (*p_effective_metric_before == G_MAXUINT32) {
+					/* we cannot bump the metric. Don't configure this route. */
+					*p_effective_metric = -1;
+				} else {
+					/* bump the metric by one. */
+					*p_effective_metric = *p_effective_metric_before + 1;
+				}
+				break;
+			}
+next:
+			_LOGT (vtable->vt->addr_family, "%3d: new metric    #%u - %s (%lld)",
+			       ifindex, i_ipx_routes,
+			       vtable->vt->route_to_string (cur_ipx_route),
+			       (long long) *p_effective_metric);
+		}
 	}
 
 	/***************************************************************************
@@ -579,8 +672,10 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 	/* iterate over @plat_routes and @ipx_routes */
 	cur_plat_route = _get_next_plat_route (plat_routes_idx, TRUE, &i_plat_routes);
 	cur_ipx_route = _get_next_ipx_route (ipx_routes->index, TRUE, &i_ipx_routes, ifindex);
+	if (cur_ipx_route)
+		p_effective_metric = &effective_metrics[i_ipx_routes];
 	while (cur_plat_route) {
-		int route_id_cmp_result = 0;
+		int route_dest_cmp_result = 0;
 
 		g_assert (cur_plat_route->rx.ifindex == ifindex);
 
@@ -588,37 +683,79 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 
 		/* skip over @cur_ipx_route that are ordered before @cur_plat_route */
 		while (   cur_ipx_route
-		       && ((route_id_cmp_result = vtable->route_id_cmp (cur_ipx_route, cur_plat_route)) < 0)) {
+		       && ((route_dest_cmp_result = vtable->route_dest_cmp (cur_ipx_route, cur_plat_route)) <= 0)) {
+			if (   route_dest_cmp_result == 0
+			    && *p_effective_metric != -1
+			    && *p_effective_metric >= cur_plat_route->rx.metric) {
+				break;
+			}
 			cur_ipx_route = _get_next_ipx_route (ipx_routes->index, FALSE, &i_ipx_routes, ifindex);
+			if (cur_ipx_route)
+				p_effective_metric = &effective_metrics[i_ipx_routes];
 		}
 
 		/* if @cur_ipx_route is not equal to @plat_route, the route must be deleted. */
-		if (!(cur_ipx_route && route_id_cmp_result == 0))
+		if (   !cur_ipx_route
+		    || route_dest_cmp_result != 0
+		    || *p_effective_metric != cur_plat_route->rx.metric)
 			vtable->vt->route_delete (priv->platform, ifindex, cur_plat_route);
 
 		cur_plat_route = _get_next_plat_route (plat_routes_idx, FALSE, &i_plat_routes);
 	}
 
 	/***************************************************************************
-	 * Restore shadowed routes. These routes are on an other @ifindex, but were
-	 * shadowed before. Unshadow them now.
+	 * Restore shadowed routes. These routes are on an other @ifindex then what
+	 * we are syncing now. But the current changes make it necessary to add those
+	 * routes.
+	 *
+	 * Only add some routes that might be necessary. We don't delete any routes
+	 * on other ifindexes here. I.e. we don't do a full sync, but only ~add~ routes
+	 * that were shadowed previously, but should be now present with a different
+	 * metric.
 	 **************************************************************************/
 
-	if (to_restore_routes) {
-		for (i_type = 0; i_type < 2; i_type++) {
-			for (i = 0; i < to_restore_routes->len; i++) {
-				const NMPlatformIPXRoute *rest_route = VTABLE_ROUTE_INDEX (vtable, to_restore_routes, i);
+	if (ipx_routes_changed) {
+		/* @effective_metrics_reverse contains the list of assigned metrics from the last
+		 * sync. Walk through it and see what changes there are (and possibly restore a
+		 * shadowed route).
+		 * Thereby also update @effective_metrics_reverse to be up-to-date again. */
+		for (i_ipx_routes = 0; i_ipx_routes < ipx_routes->entries->len; i_ipx_routes++) {
+			guint i_ipx_routes_reverse;
+			gint64 *p_effective_metric_reversed;
 
-				if (   (i_type == 0 && !VTABLE_IS_DEVICE_ROUTE (vtable, rest_route))
-				    || (i_type == 1 && VTABLE_IS_DEVICE_ROUTE (vtable, rest_route))) {
-					/* Make two runs over the list of @to_restore_routes. On the first, only add
-					 * device routes, on the second the others (gateway routes). */
-					continue;
-				}
-				vtable->vt->route_add (priv->platform, 0, rest_route, -1);
+			p_effective_metric = &effective_metrics[i_ipx_routes];
+
+			i_ipx_routes_reverse = _route_index_reverse_idx (vtable, ipx_routes->index, i_ipx_routes, ipx_routes->entries);
+			p_effective_metric_reversed = &g_array_index (ipx_routes->effective_metrics_reverse, gint64, i_ipx_routes_reverse);
+
+			if (*p_effective_metric_reversed == *p_effective_metric) {
+				/* The entry is up to date. No change, continue with the next one. */
+				continue;
 			}
+			*p_effective_metric_reversed = *p_effective_metric;
+
+			if (*p_effective_metric == -1) {
+				/* the entry is shadowed. Nothing to do. */
+				continue;
+			}
+
+			cur_ipx_route = ipx_routes->index->entries[i_ipx_routes];
+			if (cur_ipx_route->rx.ifindex == ifindex) {
+				/* @cur_ipx_route is on the current @ifindex. No need to special handling them
+				 * because we are about to do a full sync of the ifindex. */
+				continue;
+			}
+
+			/* the effective metric from previous sync changed. While @cur_ipx_route is not on the
+			 * ifindex we are about to sync, we still must add this route. Possibly it was shadowed
+			 * before, and now we want to restore it.
+			 *
+			 * Note that we don't do a full sync on the other ifindex. Especially, we don't delete
+			 * or add any further routes then this. That means there might be some stale routes
+			 * (with a higher metric!). They will only be removed on the next sync of that other
+			 * ifindex. */
+			vtable->vt->route_add (priv->platform, 0, cur_ipx_route, *p_effective_metric);
 		}
-		g_array_unref (to_restore_routes);
 	}
 
 	/***************************************************************************
@@ -633,7 +770,7 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 		 * we need to know whether a route is shadowed by another route, and that
 		 * requires to look at @ipx_routes. */
 		for (; cur_ipx_route; cur_ipx_route = _get_next_ipx_route (ipx_routes->index, FALSE, &i_ipx_routes, ifindex)) {
-			int route_id_cmp_result = -1;
+			int route_id_dest_result = -1;
 
 			if (   (i_type == 0 && !VTABLE_IS_DEVICE_ROUTE (vtable, cur_ipx_route))
 			    || (i_type == 1 && VTABLE_IS_DEVICE_ROUTE (vtable, cur_ipx_route))) {
@@ -642,24 +779,29 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 				continue;
 			}
 
-			if (   i_ipx_routes > 0
-			    && vtable->route_id_cmp (cur_ipx_route, ipx_routes->index->entries[i_ipx_routes - 1]) == 0) {
+			p_effective_metric = &effective_metrics[i_ipx_routes];
+
+			if (*p_effective_metric == -1) {
 				/* @cur_ipx_route is shadewed by another route. */
 				continue;
 			}
 
 			/* skip over @plat_routes that are ordered before our @cur_ipx_route. */
 			while (   cur_plat_route
-			       && (route_id_cmp_result = vtable->route_id_cmp (cur_plat_route, cur_ipx_route)) < 0)
+			       && (route_id_dest_result = vtable->route_dest_cmp (cur_plat_route, cur_ipx_route)) <= 0) {
+				if (   route_id_dest_result == 0
+				    && cur_plat_route->rx.metric >= *p_effective_metric)
+					break;
 				cur_plat_route = _get_next_plat_route (plat_routes_idx, FALSE, &i_plat_routes);
+			}
 
 			/* only add the route if we don't have an identical route in @plat_routes,
 			 * i.e. if @cur_plat_route is different from @cur_ipx_route. */
 			if (   !cur_plat_route
-			    || route_id_cmp_result != 0
-			    || !_route_equals_ignoring_ifindex (vtable, cur_plat_route, cur_ipx_route, -1)) {
+			    || route_id_dest_result != 0
+			    || !_route_equals_ignoring_ifindex (vtable, cur_plat_route, cur_ipx_route, *p_effective_metric)) {
 
-				if (!vtable->vt->route_add (priv->platform, ifindex, cur_ipx_route, -1)) {
+				if (!vtable->vt->route_add (priv->platform, ifindex, cur_ipx_route, *p_effective_metric)) {
 					if (cur_ipx_route->rx.source < NM_IP_CONFIG_SOURCE_USER) {
 						_LOGD (vtable->vt->addr_family,
 						       "ignore error adding IPv%c route to kernel: %s",
@@ -930,6 +1072,10 @@ nm_route_manager_init (NMRouteManager *self)
 
 	priv->ip4_routes.entries = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP4Route));
 	priv->ip6_routes.entries = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP6Route));
+	priv->ip4_routes.effective_metrics = g_array_new (FALSE, FALSE, sizeof (gint64));
+	priv->ip6_routes.effective_metrics = g_array_new (FALSE, FALSE, sizeof (gint64));
+	priv->ip4_routes.effective_metrics_reverse = g_array_new (FALSE, FALSE, sizeof (gint64));
+	priv->ip6_routes.effective_metrics_reverse = g_array_new (FALSE, FALSE, sizeof (gint64));
 	priv->ip4_routes.index = _route_index_create (&vtable_v4, priv->ip4_routes.entries);
 	priv->ip6_routes.index = _route_index_create (&vtable_v6, priv->ip6_routes.entries);
 	priv->ip4_device_routes.entries = g_hash_table_new_full ((GHashFunc) nmp_object_id_hash,
@@ -959,6 +1105,10 @@ finalize (GObject *object)
 
 	g_array_free (priv->ip4_routes.entries, TRUE);
 	g_array_free (priv->ip6_routes.entries, TRUE);
+	g_array_free (priv->ip4_routes.effective_metrics, TRUE);
+	g_array_free (priv->ip6_routes.effective_metrics, TRUE);
+	g_array_free (priv->ip4_routes.effective_metrics_reverse, TRUE);
+	g_array_free (priv->ip6_routes.effective_metrics_reverse, TRUE);
 	g_free (priv->ip4_routes.index);
 	g_free (priv->ip6_routes.index);
 
