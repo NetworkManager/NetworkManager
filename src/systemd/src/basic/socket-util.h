@@ -66,6 +66,7 @@ typedef enum SocketAddressBindIPv6Only {
 #define socket_address_family(a) ((a)->sockaddr.sa.sa_family)
 
 int socket_address_parse(SocketAddress *a, const char *s);
+int socket_address_parse_and_warn(SocketAddress *a, const char *s);
 int socket_address_parse_netlink(SocketAddress *a, const char *s);
 int socket_address_print(const SocketAddress *a, char **p);
 int socket_address_verify(const SocketAddress *a) _pure_;
@@ -79,6 +80,7 @@ int socket_address_listen(
                 int backlog,
                 SocketAddressBindIPv6Only only,
                 const char *bind_to_device,
+                bool reuse_port,
                 bool free_bind,
                 bool transparent,
                 mode_t directory_mode,

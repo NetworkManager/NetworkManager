@@ -27,11 +27,12 @@
 #include "fileio.h"
 #include "unaligned.h"
 #include "in-addr-util.h"
-
+#include "hostname-util.h"
 #include "dhcp-protocol.h"
 #include "dhcp-lease-internal.h"
 #include "sd-dhcp-lease.h"
 #include "network-internal.h"
+#include "dns-domain.h"
 
 int sd_dhcp_lease_get_address(sd_dhcp_lease *lease, struct in_addr *addr) {
         assert_return(lease, -EINVAL);
@@ -504,8 +505,17 @@ int dhcp_lease_parse_options(uint8_t code, uint8_t len, const uint8_t *option,
                 if (e)
                         *e = 0;
 
-                if (!hostname_is_valid(domainname) || is_localhost(domainname))
+                if (is_localhost(domainname))
                         break;
+
+                r = dns_name_is_valid(domainname);
+                if (r <= 0) {
+                        if (r < 0)
+                                log_error_errno(r, "Failed to validate domain name: %s: %m", domainname);
+                        if (r == 0)
+                                log_warning("Domain name is not valid, ignoring: %s", domainname);
+                        break;
+                }
 
                 free(lease->domainname);
                 lease->domainname = domainname;
@@ -672,7 +682,7 @@ int sd_dhcp_lease_save(sd_dhcp_lease *lease, const char *lease_file) {
         if (r >= 0) {
                 _cleanup_free_ char *client_id_hex;
 
-                client_id_hex = hexmem (client_id, client_id_len);
+                client_id_hex = hexmem(client_id, client_id_len);
                 if (!client_id_hex) {
                         r = -ENOMEM;
                         goto finish;

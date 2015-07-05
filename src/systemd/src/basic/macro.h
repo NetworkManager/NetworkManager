@@ -248,10 +248,20 @@ static inline unsigned long ALIGN_POWER2(unsigned long u) {
         REENABLE_WARNING
 #endif
 
+#define assert_log(expr) ((_likely_(expr))      \
+        ? (true)                                \
+        : (log_assert_failed_return(#expr, __FILE__, __LINE__, __PRETTY_FUNCTION__), false))
+
 #define assert_return(expr, r)                                          \
         do {                                                            \
-                if (_unlikely_(!(expr))) {                              \
-                        log_assert_failed_return(#expr, __FILE__, __LINE__, __PRETTY_FUNCTION__); \
+                if (!assert_log(expr))                                  \
+                        return (r);                                     \
+        } while (false)
+
+#define assert_return_errno(expr, r, err)                               \
+        do {                                                            \
+                if (!assert_log(expr)) {                                \
+                        errno = err;                                    \
                         return (r);                                     \
                 }                                                       \
         } while (false)
@@ -457,5 +467,8 @@ do {                                                                    \
                         func(*p);                               \
         }                                                       \
         struct __useless_struct_to_allow_trailing_semicolon__
+
+#define CMSG_FOREACH(cmsg, mh)                                          \
+        for ((cmsg) = CMSG_FIRSTHDR(mh); (cmsg); (cmsg) = CMSG_NXTHDR((mh), (cmsg)))
 
 #include "log.h"
