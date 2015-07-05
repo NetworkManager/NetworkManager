@@ -549,7 +549,7 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 
 		g_assert (cur_plat_route->rx.ifindex == ifindex);
 
-		_LOGT (vtable->vt->addr_family, "%3d: platform rt   #%u - %s", ifindex, i_ipx_routes, vtable->vt->route_to_string (cur_plat_route));
+		_LOGT (vtable->vt->addr_family, "%3d: platform rt   #%u - %s", ifindex, i_plat_routes, vtable->vt->route_to_string (cur_plat_route));
 
 		/* skip over @cur_ipx_route that are ordered before @cur_plat_route */
 		while (   cur_ipx_route
