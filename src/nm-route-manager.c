@@ -347,13 +347,16 @@ _route_index_reverse_idx (const VTableIP *vtable, const RouteIndex *index, guint
 /*********************************************************************************************/
 
 static gboolean
-_route_equals_ignoring_ifindex (const VTableIP *vtable, const NMPlatformIPXRoute *r1, const NMPlatformIPXRoute *r2)
+_route_equals_ignoring_ifindex (const VTableIP *vtable, const NMPlatformIPXRoute *r1, const NMPlatformIPXRoute *r2, gint64 r2_metric)
 {
 	NMPlatformIPXRoute r2_backup;
 
-	if (r1->rx.ifindex != r2->rx.ifindex) {
+	if (   r1->rx.ifindex != r2->rx.ifindex
+	    || (r2_metric >= 0 && ((guint32) r2_metric) != r2->rx.metric)) {
 		memcpy (&r2_backup, r2, vtable->vt->sizeof_route);
 		r2_backup.rx.ifindex = r1->rx.ifindex;
+		if (r2_metric >= 0)
+			r2_backup.rx.metric = (guint32) r2_metric;
 		r2 = &r2_backup;
 	}
 	return vtable->vt->route_cmp (r1, r2) == 0;
@@ -513,7 +516,7 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 		if (   cur_ipx_route
 		    && cur_known_route
 		    && route_id_cmp_result == 0) {
-			if (!_route_equals_ignoring_ifindex (vtable, cur_ipx_route, cur_known_route)) {
+			if (!_route_equals_ignoring_ifindex (vtable, cur_ipx_route, cur_known_route, -1)) {
 				/* The routes match. Update the entry in place. As this is an exact match of primary
 				 * fields, this only updates possibly modified fields such as @gateway or @mss.
 				 * Modifiying @cur_ipx_route this way does not invalidate @ipx_routes->index. */
@@ -654,7 +657,7 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 			 * i.e. if @cur_plat_route is different from @cur_ipx_route. */
 			if (   !cur_plat_route
 			    || route_id_cmp_result != 0
-			    || !_route_equals_ignoring_ifindex (vtable, cur_plat_route, cur_ipx_route)) {
+			    || !_route_equals_ignoring_ifindex (vtable, cur_plat_route, cur_ipx_route, -1)) {
 
 				if (!vtable->vt->route_add (priv->platform, ifindex, cur_ipx_route, -1)) {
 					if (cur_ipx_route->rx.source < NM_IP_CONFIG_SOURCE_USER) {
