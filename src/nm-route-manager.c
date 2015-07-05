@@ -75,6 +75,12 @@ NM_DEFINE_SINGLETON_GETTER (NMRouteManager, nm_route_manager_get, NM_TYPE_ROUTE_
 typedef struct {
 	const NMPlatformVTableRoute *vt;
 
+	/* a compare function for two routes that considers only the destination fields network/plen.
+	 * It is a looser comparisong then @route_id_cmp(), that means that if @route_dest_cmp()
+	 * returns non-zero, also @route_id_cmp() returns the same value. It also means, that
+	 * sorting by @route_id_cmp() implicitly sorts by @route_dest_cmp() as well. */
+	int (*route_dest_cmp) (const NMPlatformIPXRoute *r1, const NMPlatformIPXRoute *r2);
+
 	/* a compare function for two routes that considers only the fields network/plen,metric. */
 	int (*route_id_cmp) (const NMPlatformIPXRoute *r1, const NMPlatformIPXRoute *r2);
 } VTableIP;
@@ -203,12 +209,21 @@ ASSERT_route_index_valid (const VTableIP *vtable, const GArray *entries, const R
 /*********************************************************************************************/
 
 static int
+_v4_route_dest_cmp (const NMPlatformIP4Route *r1, const NMPlatformIP4Route *r2)
+{
+	CMP_AND_RETURN_INT (r1->plen, r2->plen);
+	CMP_AND_RETURN_INT (nm_utils_ip4_address_clear_host_address (r1->network, r1->plen),
+	                    nm_utils_ip4_address_clear_host_address (r2->network, r2->plen));
+	return 0;
+}
+
+static int
 _v4_route_id_cmp (const NMPlatformIP4Route *r1, const NMPlatformIP4Route *r2)
 {
 	CMP_AND_RETURN_INT (r1->plen, r2->plen);
-	CMP_AND_RETURN_INT (r1->metric, r2->metric);
 	CMP_AND_RETURN_INT (nm_utils_ip4_address_clear_host_address (r1->network, r1->plen),
 	                    nm_utils_ip4_address_clear_host_address (r2->network, r2->plen));
+	CMP_AND_RETURN_INT (r1->metric, r2->metric);
 	return 0;
 }
 
@@ -216,10 +231,27 @@ static int
 _v6_route_id_cmp (const NMPlatformIP6Route *r1, const NMPlatformIP6Route *r2)
 {
 	struct in6_addr n1, n2;
+	int c;
 
 	CMP_AND_RETURN_INT (r1->plen, r2->plen);
+
+	nm_utils_ip6_address_clear_host_address (&n1, &r1->network, r1->plen);
+	nm_utils_ip6_address_clear_host_address (&n2, &r2->network, r2->plen);
+	c = memcmp (&n1, &n2, sizeof (n1));
+	if (c != 0)
+		return c;
+
 	CMP_AND_RETURN_INT (nm_utils_ip6_route_metric_normalize (r1->metric),
 	                    nm_utils_ip6_route_metric_normalize (r2->metric));
+	return 0;
+}
+
+static int
+_v6_route_dest_cmp (const NMPlatformIP6Route *r1, const NMPlatformIP6Route *r2)
+{
+	struct in6_addr n1, n2;
+
+	CMP_AND_RETURN_INT (r1->plen, r2->plen);
 
 	nm_utils_ip6_address_clear_host_address (&n1, &r1->network, r1->plen);
 	nm_utils_ip6_address_clear_host_address (&n2, &r2->network, r2->plen);
@@ -874,11 +906,13 @@ nm_route_manager_ip4_route_register_device_route_purge_list (NMRouteManager *sel
 
 static const VTableIP vtable_v4 = {
 	.vt                             = &nm_platform_vtable_route_v4,
+	.route_dest_cmp                 = (int (*) (const NMPlatformIPXRoute *, const NMPlatformIPXRoute *)) _v4_route_dest_cmp,
 	.route_id_cmp                   = (int (*) (const NMPlatformIPXRoute *, const NMPlatformIPXRoute *)) _v4_route_id_cmp,
 };
 
 static const VTableIP vtable_v6 = {
 	.vt                             = &nm_platform_vtable_route_v6,
+	.route_dest_cmp                 = (int (*) (const NMPlatformIPXRoute *, const NMPlatformIPXRoute *)) _v6_route_dest_cmp,
 	.route_id_cmp                   = (int (*) (const NMPlatformIPXRoute *, const NMPlatformIPXRoute *)) _v6_route_id_cmp,
 };
 
