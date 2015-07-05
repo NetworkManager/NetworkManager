@@ -28,6 +28,7 @@
 #include "util.h"
 #include "macro.h"
 #include "sd-id128.h"
+#include "random-util.h"
 
 #if 0 /* NM_IGNORED */
 _public_ char *sd_id128_to_string(sd_id128_t id, char s[33]) {

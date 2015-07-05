@@ -57,6 +57,7 @@ noinst_LTLIBRARIES = \
 SYSTEMD_NM_CFLAGS = \
 	-I$(top_srcdir)/src/systemd/src/systemd \
 	-I$(top_srcdir)/src/systemd/src/libsystemd-network \
+	-I$(top_srcdir)/src/systemd/src/basic \
 	-I$(top_srcdir)/src/systemd/src/shared \
 	-I$(top_srcdir)/src/systemd
 
@@ -85,30 +86,36 @@ libsystemd_nm_la_SOURCES = \
 	systemd/src/libsystemd-network/sd-ipv4ll.c \
 	systemd/src/libsystemd-network/ipv4ll-packet.c \
 	systemd/src/libsystemd-network/ipv4ll-network.c \
-	systemd/src/shared/async.h \
-	systemd/src/shared/time-util.h \
-	systemd/src/shared/siphash24.h \
-	systemd/src/shared/time-util.c \
-	systemd/src/shared/socket-util.h \
-	systemd/src/shared/sparse-endian.h \
-	systemd/src/shared/macro.h \
-	systemd/src/shared/refcnt.h \
-	systemd/src/shared/util.c \
-	systemd/src/shared/in-addr-util.c \
-	systemd/src/shared/siphash24.c \
-	systemd/src/shared/util.h \
-	systemd/src/shared/in-addr-util.h \
-	systemd/src/shared/list.h \
-	systemd/src/shared/log.h \
-	systemd/src/shared/fileio.h \
-	systemd/src/shared/fileio.c \
-	systemd/src/shared/path-util.c \
-	systemd/src/shared/path-util.h \
-	systemd/src/shared/strv.h \
-	systemd/src/shared/strv.c \
-	systemd/src/shared/unaligned.h \
-	systemd/src/shared/utf8.h \
-	systemd/src/shared/utf8.c \
+	systemd/src/basic/async.h \
+	systemd/src/basic/time-util.h \
+	systemd/src/basic/siphash24.h \
+	systemd/src/basic/time-util.c \
+	systemd/src/basic/socket-util.h \
+	systemd/src/basic/sparse-endian.h \
+	systemd/src/basic/macro.h \
+	systemd/src/basic/refcnt.h \
+	systemd/src/basic/util.c \
+	systemd/src/basic/in-addr-util.c \
+	systemd/src/basic/siphash24.c \
+	systemd/src/basic/util.h \
+	systemd/src/basic/in-addr-util.h \
+	systemd/src/basic/list.h \
+	systemd/src/basic/log.h \
+	systemd/src/basic/fileio.h \
+	systemd/src/basic/fileio.c \
+	systemd/src/basic/path-util.c \
+	systemd/src/basic/path-util.h \
+	systemd/src/basic/strv.h \
+	systemd/src/basic/strv.c \
+	systemd/src/basic/unaligned.h \
+	systemd/src/basic/utf8.h \
+	systemd/src/basic/utf8.c \
+	systemd/src/basic/hostname-util.h \
+	systemd/src/basic/hostname-util.c \
+	systemd/src/basic/random-util.h \
+	systemd/src/basic/random-util.c \
+	systemd/src/shared/dns-domain.c \
+	systemd/src/shared/dns-domain.h \
 	systemd/src/systemd/sd-dhcp-lease.h \
 	systemd/src/systemd/sd-dhcp-client.h \
 	systemd/src/systemd/sd-id128.h \

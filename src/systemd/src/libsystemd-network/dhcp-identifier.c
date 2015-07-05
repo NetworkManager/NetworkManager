@@ -22,7 +22,7 @@
 #include "nm-sd-adapt.h"
 
 #include "sd-id128.h"
-#if 0 /* NM_IGNORED a*/
+#if 0 /* NM_IGNORED */
 #include "libudev.h"
 #include "udev-util.h"
 
@@ -51,8 +51,9 @@ int dhcp_identifier_set_duid_en(struct duid *duid, size_t *len) {
         if (r < 0)
                 return r;
 
-        duid->type = htobe16(DHCP6_DUID_EN);
-        duid->en.pen = htobe32(SYSTEMD_PEN);
+        unaligned_write_be16(&duid->type, DHCP6_DUID_EN);
+        unaligned_write_be32(&duid->en.pen, SYSTEMD_PEN);
+
         *len = sizeof(duid->type) + sizeof(duid->en);
 
         /* a bit of snake-oil perhaps, but no need to expose the machine-id
@@ -63,7 +64,7 @@ int dhcp_identifier_set_duid_en(struct duid *duid, size_t *len) {
 }
 
 
-int dhcp_identifier_set_iaid(int ifindex, uint8_t *mac, size_t mac_len, uint32_t *_id) {
+int dhcp_identifier_set_iaid(int ifindex, uint8_t *mac, size_t mac_len, void *_id) {
 #if 0 /* NM_IGNORED */
         /* name is a pointer to memory in the udev_device struct, so must
            have the same scope */
@@ -105,7 +106,7 @@ int dhcp_identifier_set_iaid(int ifindex, uint8_t *mac, size_t mac_len, uint32_t
                 siphash24((uint8_t*)&id, mac, mac_len, HASH_KEY.bytes);
 
         /* fold into 32 bits */
-        *_id = (id & 0xffffffff) ^ (id >> 32);
+        unaligned_write_be32(_id, (id & 0xffffffff) ^ (id >> 32));
 
         return 0;
 }

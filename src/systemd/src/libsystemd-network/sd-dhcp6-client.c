@@ -32,6 +32,7 @@
 #endif /* NM_IGNORED */
 #include "util.h"
 #include "refcnt.h"
+#include "random-util.h"
 
 #include "network-internal.h"
 #include "sd-dhcp6-client.h"
@@ -1208,6 +1209,7 @@ sd_dhcp6_client *sd_dhcp6_client_unref(sd_dhcp6_client *client) {
                 client_reset(client);
 
                 sd_dhcp6_client_detach_event(client);
+                sd_dhcp6_lease_unref(client->lease);
 
                 free(client->req_opts);
                 free(client);

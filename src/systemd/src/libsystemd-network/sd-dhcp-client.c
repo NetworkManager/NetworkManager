@@ -30,6 +30,7 @@
 
 #include "util.h"
 #include "refcnt.h"
+#include "random-util.h"
 #include "async.h"
 
 #include "dhcp-protocol.h"
@@ -39,7 +40,7 @@
 #include "sd-dhcp-client.h"
 
 #define MAX_CLIENT_ID_LEN (sizeof(uint32_t) + MAX_DUID_LEN)  /* Arbitrary limit */
-#define MAX_MAC_ADDR_LEN INFINIBAND_ALEN
+#define MAX_MAC_ADDR_LEN CONST_MAX(INFINIBAND_ALEN, ETH_ALEN)
 
 struct sd_dhcp_client {
         RefCount n_ref;
@@ -929,6 +930,8 @@ static int client_initialize_time_events(sd_dhcp_client *client) {
 
         r = sd_event_source_set_priority(client->timeout_resend,
                                          client->event_priority);
+        if (r < 0)
+                goto error;
 
         r = sd_event_source_set_description(client->timeout_resend, "dhcp4-resend-timer");
         if (r < 0)
@@ -1471,7 +1474,7 @@ static int client_receive_message_udp(sd_event_source *s, int fd,
         _cleanup_free_ DHCPMessage *message = NULL;
         int buflen = 0, len, r;
         const struct ether_addr zero_mac = { { 0, 0, 0, 0, 0, 0 } };
-        bool expect_chaddr;
+        const struct ether_addr *expected_chaddr = NULL;
         uint8_t expected_hlen = 0;
 
         assert(s);
@@ -1516,11 +1519,11 @@ static int client_receive_message_udp(sd_event_source *s, int fd,
 
         if (client->arp_type == ARPHRD_ETHER) {
                 expected_hlen = ETH_ALEN;
-                expect_chaddr = true;
+                expected_chaddr = (const struct ether_addr *) &client->mac_addr;
         } else {
                /* Non-ethernet links expect zero chaddr */
                expected_hlen = 0;
-               expect_chaddr = false;
+               expected_chaddr = &zero_mac;
         }
 
         if (message->hlen != expected_hlen) {
@@ -1528,10 +1531,7 @@ static int client_receive_message_udp(sd_event_source *s, int fd,
                 return 0;
         }
 
-        if (memcmp(&message->chaddr[0], expect_chaddr ?
-                                          (void *)&client->mac_addr :
-                                          (void *)&zero_mac,
-                                        ETH_ALEN)) {
+        if (memcmp(&message->chaddr[0], expected_chaddr, ETH_ALEN)) {
                 log_dhcp_client(client, "received chaddr does not match "
                                 "expected: ignoring");
                 return 0;
@@ -1592,7 +1592,7 @@ static int client_receive_message_raw(sd_event_source *s, int fd,
         } else if ((size_t)len < sizeof(DHCPPacket))
                 return 0;
 
-        for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
+        CMSG_FOREACH(cmsg, &msg) {
                 if (cmsg->cmsg_level == SOL_PACKET &&
                     cmsg->cmsg_type == PACKET_AUXDATA &&
                     cmsg->cmsg_len == CMSG_LEN(sizeof(struct tpacket_auxdata))) {
