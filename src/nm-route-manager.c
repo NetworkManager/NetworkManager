@@ -612,7 +612,7 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 					 * device routes, on the second the others (gateway routes). */
 					continue;
 				}
-				vtable->vt->route_add (priv->platform, 0, rest_route);
+				vtable->vt->route_add (priv->platform, 0, rest_route, -1);
 			}
 		}
 		g_array_unref (to_restore_routes);
@@ -656,7 +656,7 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 			    || route_id_cmp_result != 0
 			    || !_route_equals_ignoring_ifindex (vtable, cur_plat_route, cur_ipx_route)) {
 
-				if (!vtable->vt->route_add (priv->platform, ifindex, cur_ipx_route)) {
+				if (!vtable->vt->route_add (priv->platform, ifindex, cur_ipx_route, -1)) {
 					if (cur_ipx_route->rx.source < NM_IP_CONFIG_SOURCE_USER) {
 						_LOGD (vtable->vt->addr_family,
 						       "ignore error adding IPv%c route to kernel: %s",
