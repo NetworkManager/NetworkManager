@@ -225,6 +225,18 @@ _v4_route_dest_cmp (const NMPlatformIP4Route *r1, const NMPlatformIP4Route *r2)
 }
 
 static int
+_v6_route_dest_cmp (const NMPlatformIP6Route *r1, const NMPlatformIP6Route *r2)
+{
+	struct in6_addr n1, n2;
+
+	CMP_AND_RETURN_INT (r1->plen, r2->plen);
+
+	nm_utils_ip6_address_clear_host_address (&n1, &r1->network, r1->plen);
+	nm_utils_ip6_address_clear_host_address (&n2, &r2->network, r2->plen);
+	return memcmp (&n1, &n2, sizeof (n1));
+}
+
+static int
 _v4_route_id_cmp (const NMPlatformIP4Route *r1, const NMPlatformIP4Route *r2)
 {
 	CMP_AND_RETURN_INT (r1->plen, r2->plen);
@@ -251,18 +263,6 @@ _v6_route_id_cmp (const NMPlatformIP6Route *r1, const NMPlatformIP6Route *r2)
 	CMP_AND_RETURN_INT (nm_utils_ip6_route_metric_normalize (r1->metric),
 	                    nm_utils_ip6_route_metric_normalize (r2->metric));
 	return 0;
-}
-
-static int
-_v6_route_dest_cmp (const NMPlatformIP6Route *r1, const NMPlatformIP6Route *r2)
-{
-	struct in6_addr n1, n2;
-
-	CMP_AND_RETURN_INT (r1->plen, r2->plen);
-
-	nm_utils_ip6_address_clear_host_address (&n1, &r1->network, r1->plen);
-	nm_utils_ip6_address_clear_host_address (&n2, &r2->network, r2->plen);
-	return memcmp (&n1, &n2, sizeof (n1));
 }
 
 /*********************************************************************************************/
