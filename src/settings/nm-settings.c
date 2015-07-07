@@ -536,7 +536,7 @@ get_plugin (NMSettings *self, guint32 capability)
 		NMSystemConfigInterfaceCapabilities caps = NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE;
 
 		g_object_get (G_OBJECT (iter->data), NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES, &caps, NULL);
-		if (caps & capability)
+		if (NM_FLAGS_ALL (caps, capability))
 			return NM_SYSTEM_CONFIG_INTERFACE (iter->data);
 	}
 
