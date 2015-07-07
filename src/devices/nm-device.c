@@ -4836,7 +4836,6 @@ set_nm_ipv6ll (NMDevice *self, gboolean enable)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	int ifindex = nm_device_get_ip_ifindex (self);
-	const char *iface = nm_device_get_ip_iface (self);
 	char *value;
 
 	if (!nm_platform_check_support_user_ipv6ll (NM_PLATFORM_GET))
@@ -4852,7 +4851,8 @@ set_nm_ipv6ll (NMDevice *self, gboolean enable)
 
 		if (enable) {
 			/* Bounce IPv6 to ensure the kernel stops IPv6LL address generation */
-			value = nm_platform_sysctl_get (NM_PLATFORM_GET, nm_utils_ip6_property_path (iface, "disable_ipv6"));
+			value = nm_platform_sysctl_get (NM_PLATFORM_GET, 
+			                                nm_utils_ip6_property_path (nm_device_get_ip_iface (self), "disable_ipv6"));
 			if (g_strcmp0 (value, "0") == 0)
 				nm_device_ipv6_sysctl_set (self, "disable_ipv6", "1");
 			g_free (value);
