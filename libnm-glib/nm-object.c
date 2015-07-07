@@ -174,23 +174,19 @@ constructed (GObject *object)
 
 	priv->properties_proxy = _nm_object_new_proxy (self, NULL, DBUS_INTERFACE_PROPERTIES);
 
-	if (_nm_object_is_connection_private (self))
-		priv->nm_running = TRUE;
-	else {
-		priv->bus_proxy = dbus_g_proxy_new_for_name (priv->connection,
-		                                             DBUS_SERVICE_DBUS,
-		                                             DBUS_PATH_DBUS,
-		                                             DBUS_INTERFACE_DBUS);
-		g_assert (priv->bus_proxy);
+	priv->bus_proxy = dbus_g_proxy_new_for_name (priv->connection,
+	                                             DBUS_SERVICE_DBUS,
+	                                             DBUS_PATH_DBUS,
+	                                             DBUS_INTERFACE_DBUS);
+	g_assert (priv->bus_proxy);
 
-		dbus_g_proxy_add_signal (priv->bus_proxy, "NameOwnerChanged",
-		                         G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
-		                         G_TYPE_INVALID);
-		dbus_g_proxy_connect_signal (priv->bus_proxy,
-		                             "NameOwnerChanged",
-		                             G_CALLBACK (proxy_name_owner_changed),
-		                             object, NULL);
-	}
+	dbus_g_proxy_add_signal (priv->bus_proxy, "NameOwnerChanged",
+	                         G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
+	                         G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->bus_proxy,
+	                             "NameOwnerChanged",
+	                             G_CALLBACK (proxy_name_owner_changed),
+	                             object, NULL);
 }
 
 static gboolean
@@ -272,16 +268,12 @@ init_async (GAsyncInitable *initable, int io_priority,
 
 	simple = g_simple_async_result_new (G_OBJECT (initable), callback, user_data, init_async);
 
-	if (_nm_object_is_connection_private (NM_OBJECT (initable)))
-		_nm_object_reload_properties_async (NM_OBJECT (initable), init_async_got_properties, simple);
-	else {
-		/* Check if NM is running */
-		dbus_g_proxy_begin_call (priv->bus_proxy, "NameHasOwner",
-		                         init_async_got_manager_running,
-		                         simple, NULL,
-		                         G_TYPE_STRING, NM_DBUS_SERVICE,
-		                         G_TYPE_INVALID);
-	}
+	/* Check if NM is running */
+	dbus_g_proxy_begin_call (priv->bus_proxy, "NameHasOwner",
+	                         init_async_got_manager_running,
+	                         simple, NULL,
+	                         G_TYPE_STRING, NM_DBUS_SERVICE,
+	                         G_TYPE_INVALID);
 }
 
 static gboolean
@@ -1437,10 +1429,4 @@ _nm_object_new_proxy (NMObject *self, const char *path, const char *interface)
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
 
 	return _nm_dbus_new_proxy_for_connection (priv->connection, path ? path : priv->path, interface);
-}
-
-gboolean
-_nm_object_is_connection_private (NMObject *self)
-{
-	return _nm_dbus_is_connection_private (NM_OBJECT_GET_PRIVATE (self)->connection);
 }

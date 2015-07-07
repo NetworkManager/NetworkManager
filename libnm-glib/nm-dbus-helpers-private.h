@@ -28,8 +28,6 @@
 
 DBusGConnection *_nm_dbus_new_connection (GError **error);
 
-gboolean         _nm_dbus_is_connection_private (DBusGConnection *connection);
-
 DBusGProxy *     _nm_dbus_new_proxy_for_connection (DBusGConnection *connection,
                                                     const char *path,
                                                     const char *interface);
