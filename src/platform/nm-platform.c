@@ -2947,7 +2947,7 @@ log_ip6_route (NMPlatform *self, NMPObjectType obj_type, int ifindex, NMPlatform
 /******************************************************************/
 
 static gboolean
-_vtr_v4_route_add (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route)
+_vtr_v4_route_add (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route, gint64 metric)
 {
 	return nm_platform_ip4_route_add (self,
 	                                  ifindex > 0 ? ifindex : route->rx.ifindex,
@@ -2956,12 +2956,12 @@ _vtr_v4_route_add (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *rout
 	                                  route->rx.plen,
 	                                  route->r4.gateway,
 	                                  route->r4.pref_src,
-	                                  route->rx.metric,
+	                                  metric >= 0 ? (guint32) metric : route->rx.metric,
 	                                  route->rx.mss);
 }
 
 static gboolean
-_vtr_v6_route_add (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route)
+_vtr_v6_route_add (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *route, gint64 metric)
 {
 	return nm_platform_ip6_route_add (self,
 	                                  ifindex > 0 ? ifindex : route->rx.ifindex,
@@ -2969,7 +2969,7 @@ _vtr_v6_route_add (NMPlatform *self, int ifindex, const NMPlatformIPXRoute *rout
 	                                  route->r6.network,
 	                                  route->rx.plen,
 	                                  route->r6.gateway,
-	                                  route->rx.metric,
+	                                  metric >= 0 ? (guint32) metric : route->rx.metric,
 	                                  route->rx.mss);
 }
 
