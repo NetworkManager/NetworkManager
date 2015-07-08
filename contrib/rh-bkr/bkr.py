@@ -753,7 +753,7 @@ class CmdSubmit(CmdBase):
             if is_sequence(v):
                 if index is not None and index != '@':
                     raise Exception("Using index %s is not implemented" % index)
-                v = ' '.join(v)
+                v = " \\\n\t".join(v)
         replacement[key] = v
         return v
 
