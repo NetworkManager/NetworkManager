@@ -48,7 +48,10 @@ static NMLogLevel log_level = LOGL_INFO;
 static char *log_domains;
 static NMLogDomain logging[LOGL_MAX];
 static gboolean logging_set_up;
-static gboolean syslog_opened;
+enum {
+	LOG_BACKEND_GLIB,
+	LOG_BACKEND_SYSLOG,
+} log_backend = LOG_BACKEND_GLIB;
 static char *logging_domains_to_string;
 
 typedef struct {
@@ -426,10 +429,13 @@ _nm_log_impl (const char *file,
 		g_assert_not_reached ();
 	}
 
-	if (syslog_opened)
+	switch (log_backend) {
+	case LOG_BACKEND_SYSLOG:
 		syslog (syslog_level, "%s", fullmsg);
-	else
+		break;
+	default:
 		g_log (G_LOG_DOMAIN, g_log_level, "%s", fullmsg);
+	}
 
 	g_free (msg);
 	g_free (fullmsg);
@@ -473,9 +479,10 @@ nm_log_handler (const gchar *log_domain,
 void
 nm_logging_syslog_openlog (gboolean debug)
 {
-	if (syslog_opened)
+	if (log_backend != LOG_BACKEND_GLIB)
 		g_return_if_reached ();
-	syslog_opened = TRUE;
+
+	log_backend = LOG_BACKEND_SYSLOG;
 
 	if (debug)
 		openlog (G_LOG_DOMAIN, LOG_CONS | LOG_PERROR | LOG_PID, LOG_USER);
