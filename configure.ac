@@ -400,6 +400,26 @@ else
 	AC_DEFINE([SYSTEMD_JOURNAL], 0, [Define to 1 if libsystemd-journald is available])
 fi
 
+AC_ARG_WITH(config-logging-backend-default, AS_HELP_STRING([--with-logging-backend-default=backend], [Default value for logging.backend]), nm_config_logging_backend_default="$withval", nm_config_logging_backend_default="")
+if test "$nm_config_logging_backend_default" != 'debug' \
+     -a "$nm_config_logging_backend_default" != 'syslog' \
+     -a "$nm_config_logging_backend_default" != 'journal' \
+     -a "$nm_config_logging_backend_default" != 'journal-syslog-style'; then
+	# unknown backend. Reset to default. Silently accept the invalid value to
+	# be future proof.
+	nm_config_logging_backend_default=''
+fi
+if test "$nm_config_logging_backend_default" = ""; then
+	if test "$have_systemd_journal" = "yes"; then
+		nm_config_logging_backend_default='journal-syslog-style'
+	else
+		nm_config_logging_backend_default='syslog'
+	fi
+fi
+AC_DEFINE_UNQUOTED(NM_CONFIG_LOGGING_BACKEND_DEFAULT, "$nm_config_logging_backend_default", [Default configuration option for logging.backend])
+NM_CONFIG_LOGGING_BACKEND_DEFAULT_TEXT="$nm_config_logging_backend_default"
+AC_SUBST(NM_CONFIG_LOGGING_BACKEND_DEFAULT_TEXT)
+
 # Session tracking support
 AC_ARG_WITH(systemd-logind, AS_HELP_STRING([--with-systemd-logind=yes|no],
 	[Support systemd session tracking]))
@@ -1115,7 +1135,7 @@ else
 fi
 echo "  polkit agent: ${enable_polkit_agent}"
 echo "  selinux: $have_selinux"
-echo "  systemd-journald: $have_systemd_journal"
+echo "  systemd-journald: $have_systemd_journal (logging.backend: ${nm_config_logging_backend_default})"
 echo "  hostname persist: ${hostname_persist}"
 echo
 

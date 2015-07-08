@@ -640,12 +640,15 @@ nm_logging_syslog_openlog (const char *logging_backend)
 	if (log_backend != LOG_BACKEND_GLIB)
 		g_return_if_reached ();
 
-	if (g_strcmp0 (logging_backend, "debug") == 0) {
+	if (!logging_backend)
+		logging_backend = ""NM_CONFIG_LOGGING_BACKEND_DEFAULT;
+
+	if (strcmp (logging_backend, "debug") == 0) {
 		log_backend = LOG_BACKEND_SYSLOG;
 		openlog (G_LOG_DOMAIN, LOG_CONS | LOG_PERROR | LOG_PID, LOG_USER);
 #if SYSTEMD_JOURNAL
-	} else if (g_strcmp0 (logging_backend, "syslog") != 0) {
-		if (g_strcmp0 (logging_backend, "journal-syslog-style") != 0)
+	} else if (strcmp (logging_backend, "syslog") != 0) {
+		if (strcmp (logging_backend, "journal-syslog-style") != 0)
 			log_backend = LOG_BACKEND_JOURNAL;
 		else
 			log_backend = LOG_BACKEND_JOURNAL_SYSLOG_STYLE;
