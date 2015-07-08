@@ -379,6 +379,8 @@ _nm_log_impl (const char *file,
 	GTimeVal tv;
 	int syslog_level = LOG_INFO;
 	int g_log_level = G_LOG_LEVEL_INFO;
+	gboolean full_details = FALSE;
+	const char *level_str = NULL;
 
 	g_return_if_fail (level < LOGL_MAX);
 
@@ -397,37 +399,43 @@ _nm_log_impl (const char *file,
 
 	switch (level) {
 	case LOGL_TRACE:
-		g_get_current_time (&tv);
 		syslog_level = LOG_DEBUG;
 		g_log_level = G_LOG_LEVEL_DEBUG;
-		fullmsg = g_strdup_printf ("<trace> [%ld.%06ld] [%s:%u] %s(): %s", tv.tv_sec, tv.tv_usec, file, line, func, msg);
+		full_details = TRUE;
+		level_str = "<trace>";
 		break;
 	case LOGL_DEBUG:
-		g_get_current_time (&tv);
 		syslog_level = LOG_INFO;
 		g_log_level = G_LOG_LEVEL_DEBUG;
-		fullmsg = g_strdup_printf ("<debug> [%ld.%06ld] [%s:%u] %s(): %s", tv.tv_sec, tv.tv_usec, file, line, func, msg);
+		full_details = TRUE;
+		level_str = "<debug>";
 		break;
 	case LOGL_INFO:
 		syslog_level = LOG_INFO;
 		g_log_level = G_LOG_LEVEL_MESSAGE;
-		fullmsg = g_strconcat ("<info>  ", msg, NULL);
+		level_str = "<info>";
 		break;
 	case LOGL_WARN:
 		syslog_level = LOG_WARNING;
 		g_log_level = G_LOG_LEVEL_WARNING;
-		fullmsg = g_strconcat ("<warn>  ", msg, NULL);
+		level_str = "<warn>";
 		break;
 	case LOGL_ERR:
 		syslog_level = LOG_ERR;
 		/* g_log_level is still WARNING, because ERROR is fatal */
 		g_log_level = G_LOG_LEVEL_WARNING;
-		g_get_current_time (&tv);
-		fullmsg = g_strdup_printf ("<error> [%ld.%06ld] [%s:%u] %s(): %s", tv.tv_sec, tv.tv_usec, file, line, func, msg);
+		full_details = TRUE;
+		level_str = "<error>";
 		break;
 	default:
-		g_assert_not_reached ();
+		g_return_if_reached ();
 	}
+
+	if (full_details) {
+		g_get_current_time (&tv);
+		fullmsg = g_strdup_printf ("%-7s [%ld.%06ld] [%s:%u] %s(): %s", level_str, tv.tv_sec, tv.tv_usec, file, line, func, msg);
+	} else
+		fullmsg = g_strdup_printf ("%-7s %s", level_str, msg);
 
 	switch (log_backend) {
 	case LOG_BACKEND_SYSLOG:
