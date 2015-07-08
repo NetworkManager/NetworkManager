@@ -473,18 +473,18 @@ nm_log_handler (const gchar *log_domain,
 void
 nm_logging_syslog_openlog (gboolean debug)
 {
+	if (syslog_opened)
+		g_return_if_reached ();
+	syslog_opened = TRUE;
+
 	if (debug)
 		openlog (G_LOG_DOMAIN, LOG_CONS | LOG_PERROR | LOG_PID, LOG_USER);
 	else
 		openlog (G_LOG_DOMAIN, LOG_PID, LOG_DAEMON);
 
-	if (!syslog_opened) {
-		syslog_opened = TRUE;
-
-		g_log_set_handler (G_LOG_DOMAIN,
-		                   G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION,
-		                   nm_log_handler,
-		                   NULL);
-	}
+	g_log_set_handler (G_LOG_DOMAIN,
+	                   G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION,
+	                   nm_log_handler,
+	                   NULL);
 }
 
