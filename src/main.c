@@ -486,8 +486,6 @@ main (int argc, char *argv[])
 done:
 	g_clear_object (&manager);
 
-	nm_logging_syslog_closelog ();
-
 	if (global_opt.pidfile && wrote_pidfile)
 		unlink (global_opt.pidfile);
 

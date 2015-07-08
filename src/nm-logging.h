@@ -164,6 +164,5 @@ gboolean nm_logging_setup (const char  *level,
                            char       **bad_domains,
                            GError     **error);
 void     nm_logging_syslog_openlog   (gboolean debug);
-void     nm_logging_syslog_closelog  (void);
 
 #endif /* __NETWORKMANAGER_LOGGING_H__ */

@@ -488,9 +488,3 @@ nm_logging_syslog_openlog (gboolean debug)
 	}
 }
 
-void
-nm_logging_syslog_closelog (void)
-{
-	if (syslog_opened)
-		closelog ();
-}

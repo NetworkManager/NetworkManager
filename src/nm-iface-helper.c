@@ -481,8 +481,6 @@ main (int argc, char *argv[])
 
 	g_clear_pointer (&hwaddr, g_byte_array_unref);
 
-	nm_logging_syslog_closelog ();
-
 	if (pidfile && wrote_pidfile)
 		unlink (pidfile);
 
