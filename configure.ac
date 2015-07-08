@@ -376,6 +376,30 @@ elif test "$hostname_persist" = gentoo; then
 	AC_DEFINE(HOSTNAME_PERSIST_GENTOO, 1, [Enable Gentoo hostname persist method])
 fi
 
+AC_ARG_WITH(systemd-journal, AS_HELP_STRING([--with-systemd-journal=yes|no], [Use systemd journal for logging]))
+have_systemd_journal=no
+if test "$with_systemd_journal" != "no"; then
+	PKG_CHECK_MODULES(SYSTEMD_JOURNAL,
+	                  [libsystemd >= 209],
+	                  [have_systemd_journal=yes],
+	                  [PKG_CHECK_MODULES(SYSTEMD_JOURNAL,
+	                                     [libsystemd-journal],
+	                                     [have_systemd_journal=yes],
+	                                     [have_systemd_journal=no])])
+	if test "$have_systemd_journal" != "yes"; then
+		if test "$with_systemd_journal" = "yes"; then
+			AC_MSG_ERROR([Missing systemd-journald support])
+		fi
+	fi
+fi
+if test "$have_systemd_journal" = "yes"; then
+	AC_SUBST(SYSTEMD_JOURNAL_CFLAGS)
+	AC_SUBST(SYSTEMD_JOURNAL_LIBS)
+	AC_DEFINE([SYSTEMD_JOURNAL], 1, [Define to 1 if libsystemd-journald is available])
+else
+	AC_DEFINE([SYSTEMD_JOURNAL], 0, [Define to 1 if libsystemd-journald is available])
+fi
+
 # Session tracking support
 AC_ARG_WITH(systemd-logind, AS_HELP_STRING([--with-systemd-logind=yes|no],
 	[Support systemd session tracking]))
@@ -1091,6 +1115,7 @@ else
 fi
 echo "  polkit agent: ${enable_polkit_agent}"
 echo "  selinux: $have_selinux"
+echo "  systemd-journald: $have_systemd_journal"
 echo "  hostname persist: ${hostname_persist}"
 echo
 
