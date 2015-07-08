@@ -489,10 +489,12 @@ class UploadFileRepo(UploadFile_ParseWebsite):
             raise Exception("Could not find primary.xml in %s" % self._baseurl + 'repodata/repomd.xml')
 
     def parse_urls(self, page):
-        for a in re.finditer('href=[\'"]([^\'"]*\.rpm)[\'"]', page):
+        latest = {}
+        for a in re.finditer('href=[\'"]([^\'"]*?([^\'"/]+)-[^\'"-]+-[^\'"-]+\.rpm)[\'"]', page):
             url = self._baseurl + a.group(1)
             if self.is_matching_url(url):
-                yield url
+                latest[a.group(2)] = self._baseurl + a.group(1)
+        return latest.values()
     def raise_no_urls(self):
         raise Exception("Could not detect any URLs in '%s' repository" % self.uri)
 
