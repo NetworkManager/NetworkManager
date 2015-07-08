@@ -383,6 +383,12 @@ class UploadFile_ParseWebsite(UploadFile):
         page = p.read()
         p.close()
 
+        if re.match('.*\.gz$', self._mainpage):
+            import gzip, StringIO
+            p = StringIO.StringIO(page)
+            page = gzip.GzipFile(fileobj=p).read()
+            p.close()
+
         urls = list(self.parse_urls(page))
         if not urls:
             self.raise_no_urls()
