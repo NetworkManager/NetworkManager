@@ -59,6 +59,7 @@ enum {
 	LOG_BACKEND_GLIB,
 	LOG_BACKEND_SYSLOG,
 	LOG_BACKEND_JOURNAL,
+	LOG_BACKEND_JOURNAL_SYSLOG_STYLE,
 } log_backend = LOG_BACKEND_GLIB;
 static char *logging_domains_to_string;
 
@@ -470,6 +471,7 @@ _nm_log_impl (const char *file,
 	switch (log_backend) {
 #if SYSTEMD_JOURNAL
 	case LOG_BACKEND_JOURNAL:
+	case LOG_BACKEND_JOURNAL_SYSLOG_STYLE:
 		{
 			gint64 now, boottime;
 #define _NUM_MAX_FIELDS_SYSLOG_FACILITY 10
@@ -482,7 +484,12 @@ _nm_log_impl (const char *file,
 			boottime = nm_utils_monotonic_timestamp_as_boottime (now, 1);
 
 			_iovec_set_format (iov, iov_free, i_field++, "PRIORITY=%d", syslog_level);
-			_iovec_set_format (iov, iov_free, i_field++, "MESSAGE=%-7s %s", level_str, msg);
+			if (   log_backend == LOG_BACKEND_JOURNAL_SYSLOG_STYLE
+			    && full_details) {
+				g_get_current_time (&tv);
+				_iovec_set_format (iov, iov_free, i_field++, "MESSAGE=%-7s [%ld.%06ld] [%s:%u] %s(): %s", level_str, tv.tv_sec, tv.tv_usec, file, line, func, msg);
+			} else
+				_iovec_set_format (iov, iov_free, i_field++, "MESSAGE=%-7s %s", level_str, msg);
 			_iovec_set_literal_string (iov, iov_free, i_field++, "SYSLOG_IDENTIFIER=" G_LOG_DOMAIN);
 			_iovec_set_format (iov, iov_free, i_field++, "SYSLOG_PID=%ld", (long) getpid ());
 			{
@@ -601,6 +608,7 @@ nm_log_handler (const gchar *log_domain,
 	switch (log_backend) {
 #if SYSTEMD_JOURNAL
 	case LOG_BACKEND_JOURNAL:
+	case LOG_BACKEND_JOURNAL_SYSLOG_STYLE:
 		{
 			gint64 now, boottime;
 
@@ -637,7 +645,10 @@ nm_logging_syslog_openlog (const char *logging_backend)
 		openlog (G_LOG_DOMAIN, LOG_CONS | LOG_PERROR | LOG_PID, LOG_USER);
 #if SYSTEMD_JOURNAL
 	} else if (g_strcmp0 (logging_backend, "syslog") != 0) {
-		log_backend = LOG_BACKEND_JOURNAL;
+		if (g_strcmp0 (logging_backend, "journal-syslog-style") != 0)
+			log_backend = LOG_BACKEND_JOURNAL;
+		else
+			log_backend = LOG_BACKEND_JOURNAL_SYSLOG_STYLE;
 
 		/* ensure we read a monotonic timestamp. Reading the timestamp the first
 		 * time causes a logging message. We don't want to do that during _nm_log_impl. */
