@@ -405,6 +405,11 @@ class UploadFile_ParseWebsite(UploadFile):
 class UploadFileJenkins(UploadFile_ParseWebsite):
     jenkins_base_url = 'http://10.34.130.105:8080/job/NetworkManager/'
     def __init__(self, uri):
+
+        p = urllib.urlopen(self._mainpage)
+        page = p.read()
+        p.close()
+
         UploadFile_ParseWebsite.__init__(self, uri)
     def parse_uri(self):
         m = re.match('^jenkins://([0-9]+)(/(.+)|/?)?$', self.uri)
@@ -460,6 +465,38 @@ class UploadFileBrew(UploadFile_ParseWebsite):
             raise Exception("Could not detect any URLs on brew for '%s' (see \"%s\"). Try giving a pattern \"%s://%s/.*\"" % (self.uri, self._mainpage, self._type, self._id))
         raise Exception("Could not detect any URLs on brew for '%s' (see \"%s\")" % (self.uri, self._mainpage))
 
+class UploadFileRepo(UploadFile_ParseWebsite):
+    def __init__(self, uri):
+        UploadFile_ParseWebsite.__init__(self, uri)
+    def parse_uri(self):
+        m = re.match('^repo:(.+?)/?([^\/]+rpm)?$', self.uri)
+        if not m:
+            raise Exception("Error detecting scheme repo: from '%s'. Expected is 'repo:<baseurl>[/<regex-wildcard>.rpm]" % (self.uri))
+
+        self._baseurl = m.group(1) + '/'
+        self.set_pattern(m.group(2))
+
+        p = urllib.urlopen(self._baseurl + 'repodata/repomd.xml')
+        r = re.compile('(.*)')
+        r = re.compile('.*<location href="([^"]*primary.xml[^"]*)"/>.*')
+        for line in p:
+            m = r.match(line)
+            if m:
+                self._mainpage = self._baseurl + m.group(1)
+                break
+        p.close()
+        if not hasattr(self, '_mainpage'):
+            raise Exception("Could not find primary.xml in %s" % self._baseurl + 'repodata/repomd.xml')
+
+    def parse_urls(self, page):
+        for a in re.finditer('href=[\'"]([^\'"]*\.rpm)[\'"]', page):
+            url = self._baseurl + a.group(1)
+            if self.is_matching_url(url):
+                yield url
+    def raise_no_urls(self):
+        raise Exception("Could not detect any URLs in '%s' repository" % self.uri)
+
+
 class CmdBase:
     def __init__(self, name):
         self.name = name
@@ -475,7 +512,7 @@ class CmdSubmit(CmdBase):
 
         self.parser = argparse.ArgumentParser(prog=sys.argv[0] + " " + name, description='Submit job to beaker.')
         self.parser.add_argument('--no-test', action='store_true', help='do submit the job to beaker')
-        self.parser.add_argument('--rpm', '-r', action='append', help='Filenames of RPMs. Supports (local) files, file://, jenkins://, brew:// and brewtask:// URI schemes')
+        self.parser.add_argument('--rpm', '-r', action='append', help='Filenames of RPMs. Supports (local) files, file://, jenkins://, brew://, brewtask:// and repo: URI schemes')
         self.parser.add_argument('--nitrate-tag', '-t', action='append', help='Query nitrate for tests having this tag. Output is appended to $TESTS. Specifying more then once combines them as AND')
         self.parser.add_argument('--nitrate-all', '-a', action='store_true', help='Query all nitrate tests')
         self.parser.add_argument('--nitrate-exclude-tag', '-T', action='append', help='Query nitrate for tests not having this tag. Output is appended to $TESTS. In combination with --nitrate-tag this blacklists cases (after selecting then)')
@@ -504,6 +541,8 @@ class CmdSubmit(CmdBase):
                 ctor = UploadFileJenkins
             elif r.startswith('brew://') or r.startswith('brewtask://'):
                 ctor = UploadFileBrew
+            elif r.startswith('repo:'):
+                ctor = UploadFileRepo
             else:
                 ctor = UploadFileSsh
             uf = ctor(r)

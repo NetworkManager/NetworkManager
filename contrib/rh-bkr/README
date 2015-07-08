@@ -98,7 +98,8 @@ Currently the following types are supported:
     https://brewweb.devel.redhat.com/kinfo?taskID=ID, i.e. the builds
     when doing a scratch build with rhpkg.
 
-  - everything else is treated as file://, but without globbing
+  - repo:<baseurl>[/<regex-wildcard>.rpm]: fetches from a RPMMD (Yum) repository
+    Useful with official Fedora repositories or COPRs
 
 You can provide arbitrarily many -r flags and they will be joined together to
 form $RPM_LIST.
