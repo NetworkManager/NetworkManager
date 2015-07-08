@@ -386,7 +386,12 @@ main (int argc, char *argv[])
 	/* Set up unix signal handling - before creating threads, but after daemonizing! */
 	nm_main_utils_setup_signals (main_loop);
 
-	nm_logging_syslog_openlog (nm_config_get_is_debug (config));
+	nm_logging_syslog_openlog (nm_config_get_is_debug (config)
+	                           ? "debug"
+	                           : nm_config_data_get_value_cached (NM_CONFIG_GET_DATA_ORIG,
+	                                                              NM_CONFIG_KEYFILE_GROUP_LOGGING,
+	                                                              NM_CONFIG_KEYFILE_KEY_LOGGING_BACKEND,
+	                                                              NM_CONFIG_GET_VALUE_STRIP | NM_CONFIG_GET_VALUE_NO_EMPTY));
 
 	nm_log_info (LOGD_CORE, "NetworkManager (version " NM_DIST_VERSION ") is starting...");
 

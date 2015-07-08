@@ -8092,6 +8092,7 @@ nm_device_spawn_iface_helper (NMDevice *self)
 	const char *method;
 	GPtrArray *argv;
 	gs_free char *dhcp4_address = NULL;
+	char *logging_backend;
 
 	if (priv->state != NM_DEVICE_STATE_ACTIVATED)
 		return;
@@ -8109,6 +8110,17 @@ nm_device_spawn_iface_helper (NMDevice *self)
 	g_ptr_array_add (argv, g_strdup (nm_device_get_ip_iface (self)));
 	g_ptr_array_add (argv, g_strdup ("--uuid"));
 	g_ptr_array_add (argv, g_strdup (nm_connection_get_uuid (connection)));
+
+	logging_backend = nm_config_get_is_debug (nm_config_get ())
+	                  ? g_strdup ("debug")
+	                  : nm_config_data_get_value (NM_CONFIG_GET_DATA_ORIG,
+	                                              NM_CONFIG_KEYFILE_GROUP_LOGGING,
+	                                              NM_CONFIG_KEYFILE_KEY_LOGGING_BACKEND,
+	                                              NM_CONFIG_GET_VALUE_STRIP | NM_CONFIG_GET_VALUE_NO_EMPTY);
+	if (logging_backend) {
+		g_ptr_array_add (argv, g_strdup ("--logging-backend"));
+		g_ptr_array_add (argv, logging_backend);
+	}
 
 	dhcp4_address = find_dhcp4_address (self);
 

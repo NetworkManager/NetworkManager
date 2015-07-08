@@ -72,6 +72,7 @@ static struct {
 	char *dhcp4_clientid;
 	char *dhcp4_hostname;
 	char *iid_str;
+	char *logging_backend;
 	char *opt_log_level;
 	char *opt_log_domains;
 	guint32 priority_v4;
@@ -294,6 +295,7 @@ do_early_setup (int *argc, char **argv[])
 		{ "priority4", '\0', 0, G_OPTION_ARG_INT64, &priority64_v4, N_("Route priority for IPv4"), N_("0") },
 		{ "priority6", '\0', 0, G_OPTION_ARG_INT64, &priority64_v6, N_("Route priority for IPv6"), N_("1024") },
 		{ "iid", 'e', 0, G_OPTION_ARG_STRING, &global_opt.iid_str, N_("Hex-encoded Interface Identifier"), "" },
+		{ "logging-backend", '\0', 0, G_OPTION_ARG_STRING, &global_opt.logging_backend, N_("The logging backend configuration value. See logging.backend in NetworkManager.conf"), NULL },
 
 		/* Logging/debugging */
 		{ "version", 'V', 0, G_OPTION_ARG_NONE, &global_opt.show_version, N_("Print NetworkManager version and exit"), NULL },
@@ -405,7 +407,9 @@ main (int argc, char *argv[])
 	main_loop = g_main_loop_new (NULL, FALSE);
 	setup_signals ();
 
-	nm_logging_syslog_openlog (global_opt.debug);
+	nm_logging_syslog_openlog (global_opt.logging_backend
+	                           ? global_opt.logging_backend
+	                           : (global_opt.debug ? "debug" : NULL));
 
 	nm_log_info (LOGD_CORE, "nm-iface-helper (version " NM_DIST_VERSION ") is starting...");
 

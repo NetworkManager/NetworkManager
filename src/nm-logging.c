@@ -627,16 +627,16 @@ nm_log_handler (const gchar *log_domain,
 }
 
 void
-nm_logging_syslog_openlog (gboolean debug)
+nm_logging_syslog_openlog (const char *logging_backend)
 {
 	if (log_backend != LOG_BACKEND_GLIB)
 		g_return_if_reached ();
 
-	if (debug) {
+	if (g_strcmp0 (logging_backend, "debug") == 0) {
 		log_backend = LOG_BACKEND_SYSLOG;
 		openlog (G_LOG_DOMAIN, LOG_CONS | LOG_PERROR | LOG_PID, LOG_USER);
 #if SYSTEMD_JOURNAL
-	} else if (TRUE) {
+	} else if (g_strcmp0 (logging_backend, "syslog") != 0) {
 		log_backend = LOG_BACKEND_JOURNAL;
 
 		/* ensure we read a monotonic timestamp. Reading the timestamp the first
