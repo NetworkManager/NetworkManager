@@ -546,7 +546,7 @@ nm_device_get_udi (NMDevice *self)
 const char *
 nm_device_get_iface (NMDevice *self)
 {
-	g_return_val_if_fail (NM_IS_DEVICE (self), 0);
+	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
 
 	return NM_DEVICE_GET_PRIVATE (self)->iface;
 }
