@@ -53,6 +53,7 @@ struct NMConfigCmdLineOptions {
 	char *no_auto_default_file;
 	char *plugins;
 	gboolean configure_and_quit;
+	gboolean is_debug;
 	char *connectivity_uri;
 
 	/* We store interval as signed internally to track whether it's
@@ -318,6 +319,12 @@ nm_config_get_configure_and_quit (NMConfig *config)
 	return NM_CONFIG_GET_PRIVATE (config)->configure_and_quit;
 }
 
+gboolean
+nm_config_get_is_debug (NMConfig *config)
+{
+	return NM_CONFIG_GET_PRIVATE (config)->cli.is_debug;
+}
+
 /************************************************************************/
 
 static char **
@@ -432,6 +439,7 @@ _nm_config_cmd_line_options_clear (NMConfigCmdLineOptions *cli)
 	g_clear_pointer (&cli->intern_config_file, g_free);
 	g_clear_pointer (&cli->plugins, g_free);
 	cli->configure_and_quit = FALSE;
+	cli->is_debug = FALSE;
 	g_clear_pointer (&cli->connectivity_uri, g_free);
 	g_clear_pointer (&cli->connectivity_response, g_free);
 	cli->connectivity_interval = -1;
@@ -452,6 +460,7 @@ _nm_config_cmd_line_options_copy (const NMConfigCmdLineOptions *cli, NMConfigCmd
 	dst->intern_config_file = g_strdup (cli->intern_config_file);
 	dst->plugins = g_strdup (cli->plugins);
 	dst->configure_and_quit = cli->configure_and_quit;
+	dst->is_debug = cli->is_debug;
 	dst->connectivity_uri = g_strdup (cli->connectivity_uri);
 	dst->connectivity_response = g_strdup (cli->connectivity_response);
 	dst->connectivity_interval = cli->connectivity_interval;
@@ -491,6 +500,7 @@ nm_config_cmd_line_options_add_to_entries (NMConfigCmdLineOptions *cli,
 			{ "no-auto-default", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_FILENAME, &cli->no_auto_default_file, N_("State file for no-auto-default devices"), N_(DEFAULT_NO_AUTO_DEFAULT_FILE) },
 			{ "plugins", 0, 0, G_OPTION_ARG_STRING, &cli->plugins, N_("List of plugins separated by ','"), N_(CONFIG_PLUGINS_DEFAULT) },
 			{ "configure-and-quit", 0, 0, G_OPTION_ARG_NONE, &cli->configure_and_quit, N_("Quit after initial configuration"), NULL },
+			{ "debug", 'd', 0, G_OPTION_ARG_NONE, &cli->is_debug, N_("Don't become a daemon, and log to stderr"), NULL },
 
 				/* These three are hidden for now, and should eventually just go away. */
 			{ "connectivity-uri", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_STRING, &cli->connectivity_uri, N_("An http(s) address for checking internet connectivity"), "http://example.com" },
