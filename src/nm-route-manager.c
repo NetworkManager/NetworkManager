@@ -715,6 +715,8 @@ next:
 	 **************************************************************************/
 
 	if (ipx_routes_changed) {
+		GArray *gateway_routes = NULL;
+
 		/* @effective_metrics_reverse contains the list of assigned metrics from the last
 		 * sync. Walk through it and see what changes there are (and possibly restore a
 		 * shadowed route).
@@ -754,7 +756,31 @@ next:
 			 * or add any further routes then this. That means there might be some stale routes
 			 * (with a higher metric!). They will only be removed on the next sync of that other
 			 * ifindex. */
-			vtable->vt->route_add (priv->platform, 0, cur_ipx_route, *p_effective_metric);
+
+			if (!VTABLE_IS_DEVICE_ROUTE (vtable, cur_ipx_route)) {
+				/* the route to restore has a gateway. We can only restore the route
+				 * when we also have a direct route to the gateway. There can be cases
+				 * where the direct route is shadowed too, and we cannot restore the gateway
+				 * route.
+				 *
+				 * Restore first the direct-routes, and gateway-routes afterwards.
+				 * This can avoid some cases where we would fail to add the
+				 * gateway route. */
+				if (!gateway_routes)
+					gateway_routes = g_array_new (FALSE, FALSE, sizeof (guint));
+				g_array_append_val (gateway_routes, i_ipx_routes);
+			} else
+				vtable->vt->route_add (priv->platform, 0, cur_ipx_route, *p_effective_metric);
+		}
+
+		if (gateway_routes) {
+			for (i = 0; i < gateway_routes->len; i++) {
+				i_ipx_routes = g_array_index (gateway_routes, guint, i);
+				vtable->vt->route_add (priv->platform, 0,
+				                       ipx_routes->index->entries[i_ipx_routes],
+				                       effective_metrics[i_ipx_routes]);
+			}
+			g_array_unref (gateway_routes);
 		}
 	}
 
