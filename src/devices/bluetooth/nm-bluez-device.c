@@ -28,6 +28,7 @@
 
 #include "nm-core-internal.h"
 
+#include "nm-bt-error.h"
 #include "nm-bluez-common.h"
 #include "nm-bluez-device.h"
 #include "nm-logging.h"
@@ -436,8 +437,6 @@ nm_bluez_device_disconnect (NMBluezDevice *self)
 		} else if (priv->bluez_version == 5) {
 #if WITH_BLUEZ5_DUN
 			nm_bluez5_dun_cleanup (priv->b5_dun_context);
-#else
-			g_assert_not_reached ();
 #endif
 			priv->connected = FALSE;
 			goto out;
@@ -559,7 +558,11 @@ nm_bluez_device_connect_async (NMBluezDevice *self,
 				priv->b5_dun_context = nm_bluez5_dun_new (priv->adapter_address, priv->address);
 			nm_bluez5_dun_connect (priv->b5_dun_context, bluez5_dun_connect_cb, simple);
 #else
-			g_assert_not_reached ();
+			g_simple_async_result_set_error (simple,
+							 NM_BT_ERROR,
+							 NM_BT_ERROR_DUN_CONNECT_FAILED,
+							 "NetworkManager built without support for Bluez 5");
+			g_simple_async_result_complete (simple);
 #endif
 			return;
 		}
