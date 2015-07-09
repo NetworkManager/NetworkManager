@@ -3241,10 +3241,11 @@ ip4_config_merge_and_apply (NMDevice *self,
 		if (s_ip4) {
 			if (nm_setting_ip_config_get_ignore_auto_routes (s_ip4))
 				nm_ip4_config_reset_routes (composite);
-			if (nm_setting_ip_config_get_ignore_auto_dns (s_ip4))
+			if (nm_setting_ip_config_get_ignore_auto_dns (s_ip4)) {
 				nm_ip4_config_reset_nameservers (composite);
 				nm_ip4_config_reset_domains (composite);
 				nm_ip4_config_reset_searches (composite);
+			}
 		}
 	}
 
@@ -3852,10 +3853,11 @@ ip6_config_merge_and_apply (NMDevice *self,
 		if (s_ip6) {
 			if (nm_setting_ip_config_get_ignore_auto_routes (s_ip6))
 				nm_ip6_config_reset_routes (composite);
-			if (nm_setting_ip_config_get_ignore_auto_dns (s_ip6))
+			if (nm_setting_ip_config_get_ignore_auto_dns (s_ip6)) {
 				nm_ip6_config_reset_nameservers (composite);
 				nm_ip6_config_reset_domains (composite);
 				nm_ip6_config_reset_searches (composite);
+			}
 		}
 	}
 
