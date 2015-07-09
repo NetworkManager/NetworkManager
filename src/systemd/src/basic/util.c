@@ -1227,7 +1227,7 @@ int cunescape_length_with_prefix(const char *s, size_t length, const char *prefi
 
         for (f = s, t = r + pl; f < s + length; f++) {
                 size_t remaining;
-                uint32_t u;
+                uint32_t u = 0;
                 char c;
                 int k;
 
