@@ -68,12 +68,20 @@ typedef struct {
 	const char *name;
 } LogDesc;
 
-static const char *level_names[LOGL_MAX] = {
-	[LOGL_TRACE] = "TRACE",
-	[LOGL_DEBUG] = "DEBUG",
-	[LOGL_INFO] = "INFO",
-	[LOGL_WARN] = "WARN",
-	[LOGL_ERR] = "ERR",
+typedef struct {
+	const char *name;
+	const char *level_str;
+	int syslog_level;
+	GLogLevelFlags g_log_level;
+	gboolean full_details;
+} LogLevelDesc;
+
+static const LogLevelDesc level_desc[LOGL_MAX] = {
+	[LOGL_TRACE] = { "TRACE", "<trace>", LOG_DEBUG,   G_LOG_LEVEL_DEBUG,   TRUE  },
+	[LOGL_DEBUG] = { "DEBUG", "<debug>", LOG_INFO,    G_LOG_LEVEL_DEBUG,   TRUE  },
+	[LOGL_INFO]  = { "INFO",  "<info>",  LOG_INFO,    G_LOG_LEVEL_MESSAGE, FALSE },
+	[LOGL_WARN]  = { "WARN",  "<warn>",  LOG_WARNING, G_LOG_LEVEL_WARNING, FALSE },
+	[LOGL_ERR]   = { "ERR",   "<error>", LOG_ERR,     G_LOG_LEVEL_WARNING, TRUE  },
 };
 
 static const LogDesc domain_descs[] = {
@@ -141,7 +149,7 @@ match_log_level (const char  *level,
 	int i;
 
 	for (i = 0; i < LOGL_MAX; i++) {
-		if (!g_ascii_strcasecmp (level_names[i], level)) {
+		if (!g_ascii_strcasecmp (level_desc[i].name, level)) {
 			*out_level = i;
 			return TRUE;
 		}
@@ -271,7 +279,7 @@ nm_logging_setup (const char  *level,
 const char *
 nm_logging_level_to_string (void)
 {
-	return level_names[log_level];
+	return level_desc[log_level].name;
 }
 
 const char *
@@ -286,7 +294,7 @@ nm_logging_all_levels_to_string (void)
 		for (i = 0; i < LOGL_MAX; i++) {
 			if (str->len)
 				g_string_append_c (str, ',');
-			g_string_append (str, level_names[i]);
+			g_string_append (str, level_desc[i].name);
 		}
 	}
 
@@ -320,7 +328,7 @@ nm_logging_domains_to_string (void)
 			/* Check if it's logging at a lower level than the default. */
 			for (i = 0; i < log_level; i++) {
 				if (diter->num & logging[i]) {
-					g_string_append_printf (str, ":%s", level_names[i]);
+					g_string_append_printf (str, ":%s", level_desc[i].name);
 					break;
 				}
 			}
@@ -328,7 +336,7 @@ nm_logging_domains_to_string (void)
 			if (!(diter->num & logging[log_level])) {
 				for (i = log_level + 1; i < LOGL_MAX; i++) {
 					if (diter->num & logging[i]) {
-						g_string_append_printf (str, ":%s", level_names[i]);
+						g_string_append_printf (str, ":%s", level_desc[i].name);
 						break;
 					}
 				}
@@ -413,10 +421,6 @@ _nm_log_impl (const char *file,
 	char *msg;
 	char *fullmsg = NULL;
 	GTimeVal tv;
-	int syslog_level = LOG_INFO;
-	int g_log_level = G_LOG_LEVEL_INFO;
-	gboolean full_details = FALSE;
-	const char *level_str = NULL;
 
 	if ((guint) level >= LOGL_MAX)
 		g_return_if_reached ();
@@ -434,40 +438,6 @@ _nm_log_impl (const char *file,
 	msg = g_strdup_vprintf (fmt, args);
 	va_end (args);
 
-	switch (level) {
-	case LOGL_TRACE:
-		syslog_level = LOG_DEBUG;
-		g_log_level = G_LOG_LEVEL_DEBUG;
-		full_details = TRUE;
-		level_str = "<trace>";
-		break;
-	case LOGL_DEBUG:
-		syslog_level = LOG_INFO;
-		g_log_level = G_LOG_LEVEL_DEBUG;
-		full_details = TRUE;
-		level_str = "<debug>";
-		break;
-	case LOGL_INFO:
-		syslog_level = LOG_INFO;
-		g_log_level = G_LOG_LEVEL_MESSAGE;
-		level_str = "<info>";
-		break;
-	case LOGL_WARN:
-		syslog_level = LOG_WARNING;
-		g_log_level = G_LOG_LEVEL_WARNING;
-		level_str = "<warn>";
-		break;
-	case LOGL_ERR:
-		syslog_level = LOG_ERR;
-		/* g_log_level is still WARNING, because ERROR is fatal */
-		g_log_level = G_LOG_LEVEL_WARNING;
-		full_details = TRUE;
-		level_str = "<error>";
-		break;
-	default:
-		g_return_if_reached ();
-	}
-
 	switch (log_backend) {
 #if SYSTEMD_JOURNAL
 	case LOG_BACKEND_JOURNAL:
@@ -483,13 +453,13 @@ _nm_log_impl (const char *file,
 			now = nm_utils_get_monotonic_timestamp_ns ();
 			boottime = nm_utils_monotonic_timestamp_as_boottime (now, 1);
 
-			_iovec_set_format (iov, iov_free, i_field++, "PRIORITY=%d", syslog_level);
+			_iovec_set_format (iov, iov_free, i_field++, "PRIORITY=%d", level_desc[level].syslog_level);
 			if (   log_backend == LOG_BACKEND_JOURNAL_SYSLOG_STYLE
-			    && full_details) {
+			    && level_desc[level].full_details) {
 				g_get_current_time (&tv);
-				_iovec_set_format (iov, iov_free, i_field++, "MESSAGE=%-7s [%ld.%06ld] [%s:%u] %s(): %s", level_str, tv.tv_sec, tv.tv_usec, file, line, func, msg);
+				_iovec_set_format (iov, iov_free, i_field++, "MESSAGE=%-7s [%ld.%06ld] [%s:%u] %s(): %s", level_desc[level].level_str, tv.tv_sec, tv.tv_usec, file, line, func, msg);
 			} else
-				_iovec_set_format (iov, iov_free, i_field++, "MESSAGE=%-7s %s", level_str, msg);
+				_iovec_set_format (iov, iov_free, i_field++, "MESSAGE=%-7s %s", level_desc[level].level_str, msg);
 			_iovec_set_literal_string (iov, iov_free, i_field++, "SYSLOG_IDENTIFIER=" G_LOG_DOMAIN);
 			_iovec_set_format (iov, iov_free, i_field++, "SYSLOG_PID=%ld", (long) getpid ());
 			{
@@ -534,7 +504,7 @@ _nm_log_impl (const char *file,
 				} else
 					_iovec_set_format (iov, iov_free, i_field++, "NM_LOG_DOMAINS=%s", s_domain_1);
 			}
-			_iovec_set_format (iov, iov_free, i_field++, "NM_LOG_LEVEL=%s", level_names[level]);
+			_iovec_set_format (iov, iov_free, i_field++, "NM_LOG_LEVEL=%s", level_desc[level].name);
 			_iovec_set_format (iov, iov_free, i_field++, "CODE_FUNC=%s", func);
 			_iovec_set_format (iov, iov_free, i_field++, "CODE_FILE=%s", file);
 			_iovec_set_format (iov, iov_free, i_field++, "CODE_LINE=%u", line);
@@ -556,16 +526,16 @@ _nm_log_impl (const char *file,
 		break;
 #endif
 	default:
-		if (full_details) {
+		if (level_desc[level].full_details) {
 			g_get_current_time (&tv);
-			fullmsg = g_strdup_printf ("%-7s [%ld.%06ld] [%s:%u] %s(): %s", level_str, tv.tv_sec, tv.tv_usec, file, line, func, msg);
+			fullmsg = g_strdup_printf ("%-7s [%ld.%06ld] [%s:%u] %s(): %s", level_desc[level].level_str, tv.tv_sec, tv.tv_usec, file, line, func, msg);
 		} else
-			fullmsg = g_strdup_printf ("%-7s %s", level_str, msg);
+			fullmsg = g_strdup_printf ("%-7s %s", level_desc[level].level_str, msg);
 
 		if (log_backend == LOG_BACKEND_SYSLOG)
-			syslog (syslog_level, "%s", fullmsg);
+			syslog (level_desc[level].syslog_level, "%s", fullmsg);
 		else
-			g_log (G_LOG_DOMAIN, g_log_level, "%s", fullmsg);
+			g_log (G_LOG_DOMAIN, level_desc[level].g_log_level, "%s", fullmsg);
 		break;
 	}
 
