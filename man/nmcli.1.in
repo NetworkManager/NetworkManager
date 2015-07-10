@@ -802,7 +802,8 @@ List available Wi\(hyFi access points. The \fIifname\fP and \fIbssid\fP options
 can be used to list APs for a particular interface or with a specific BSSID,
 respectively.
 .TP
-.B wifi connect <(B)SSID> [password <password>] [wep\-key\-type key|phrase] [ifname <ifname>] [bssid <BSSID>] [name <name>] [private yes|no]
+.B wifi connect <(B)SSID> [password <password>] [wep\-key\-type key|phrase] [ifname <ifname>] [bssid <BSSID>] [name <name>]
+.B [private yes|no] [hidden yes|no]
 .br
 Connect to a Wi\(hyFi network specified by SSID or BSSID. The command creates a new
 connection and then activates it on a device. This is a command\(hyline counterpart
@@ -830,6 +831,9 @@ Available options are:
 .IP \fIprivate\fP 13
 \(en if set to \fByes\fP, the connection will only be visible to the user who created it.
 Otherwise the connection is system\(hywide, which is the default.
+.IP \fIhidden\fP 13
+\(en set to \fByes\fP when connecting for the first time to an AP not broadcasting its SSID.
+Otherwise the SSID would not be found and the connection attempt would fail.
 .RE
 .TP
 .B wifi rescan [ifname <ifname>] [[ssid <SSID>] ...]
