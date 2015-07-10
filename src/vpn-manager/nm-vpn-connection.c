@@ -891,10 +891,17 @@ apply_parent_device_config (NMVpnConnection *connection)
 		 * be done on the parent interface instead.
 		 */
 
-		if (vpn4_parent_config)
+		/* Also clear the gateway. We don't configure the gateway as part of the
+		 * vpn-config. Instead we tell NMDefaultRouteManager directly about the
+		 * default route. */
+		if (vpn4_parent_config) {
 			nm_ip4_config_merge (vpn4_parent_config, priv->ip4_config);
-		if (vpn6_parent_config)
+			nm_ip4_config_set_gateway (vpn4_parent_config, 0);
+		}
+		if (vpn6_parent_config) {
 			nm_ip6_config_merge (vpn6_parent_config, priv->ip6_config);
+			nm_ip6_config_set_gateway (vpn6_parent_config, NULL);
+		}
 	}
 
 	if (vpn4_parent_config) {
