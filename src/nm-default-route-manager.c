@@ -789,7 +789,13 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 					}
 				}
 			}
-			synced = TRUE;
+			if (nm_vpn_connection_get_ip_ifindex (vpn) > 0)
+				synced = TRUE;
+			else {
+				/* a VPN connection without tunnel device cannot have a non-synced, missing default route.
+				 * Either it has a default route (which is synced), or it has no entry. */
+				synced = default_route && !never_default;
+			}
 		}
 	}
 
