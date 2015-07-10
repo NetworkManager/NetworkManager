@@ -122,10 +122,10 @@ static gboolean
 strv_has (gchar **haystack,
           gchar  *needle)
 {
-	gchar *iter;
+	gchar **iter;
 
-	for (iter = *haystack; iter; iter++) {
-		if (g_strcmp0 (iter, needle) == 0)
+	for (iter = haystack; iter && *iter; iter++) {
+		if (g_strcmp0 (*iter, needle) == 0)
 			return TRUE;
 	}
 
