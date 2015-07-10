@@ -455,6 +455,7 @@ _nmcli_compl_ARGS()
             stp| \
             hairpin| \
             save| \
+            hidden| \
             private)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     _nmcli_list "yes no"
@@ -1250,7 +1251,7 @@ _nmcli()
                                         fi
                                     else
                                         _nmcli_array_delete_at words 0 3
-                                        local OPTIONS=(password wep-key-type ifname bssid name private)
+                                        local OPTIONS=(password wep-key-type ifname bssid name private hidden)
                                         _nmcli_compl_ARGS
                                     fi
                                     ;;
