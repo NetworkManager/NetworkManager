@@ -272,8 +272,6 @@ dnl
 dnl Checks for dbus-glib
 dnl
 PKG_CHECK_MODULES(DBUS, dbus-1 >= 1.1 dbus-glib-1 >= 0.94)
-AC_SUBST(DBUS_CFLAGS)
-AC_SUBST(DBUS_LIBS)
 
 AC_CHECK_LIB([dbus-glib-1], [dbus_g_method_invocation_get_g_connection], ac_have_gmi_get_con="1", ac_have_gmi_get_con="0")
 AC_DEFINE_UNQUOTED(HAVE_DBUS_GLIB_GMI_GET_CONNECTION, $ac_have_gmi_get_con, [Define if you have a dbus-glib with dbus_g_method_invocation_get_g_connection()])
@@ -305,8 +303,6 @@ AC_SUBST(GLIB_CFLAGS)
 AC_SUBST(GLIB_LIBS)
 
 PKG_CHECK_MODULES(GUDEV, gudev-1.0 >= 165)
-AC_SUBST(GUDEV_CFLAGS)
-AC_SUBST(GUDEV_LIBS)
 
 GOBJECT_INTROSPECTION_CHECK([0.9.6])
 
@@ -318,8 +314,6 @@ if (test "${enable_qt}" = "yes"); then
 	if test x"$have_qt" = x"no"; then
 		AC_MSG_ERROR(Qt development headers are required)
 	fi
-	AC_SUBST(QT_CFLAGS)
-	AC_SUBST(QT_LIBS)
 	# Check for moc-qt4 and if not found then moc
 	QT4_BINDIR=`$PKG_CONFIG QtCore --variable moc_location`
 	AC_CHECK_PROGS(MOC, [moc-qt4 moc],, [$QT4_BINDIR:$PATH])
@@ -393,8 +387,6 @@ if test "$with_systemd_journal" != "no"; then
 	fi
 fi
 if test "$have_systemd_journal" = "yes"; then
-	AC_SUBST(SYSTEMD_JOURNAL_CFLAGS)
-	AC_SUBST(SYSTEMD_JOURNAL_LIBS)
 	AC_DEFINE([SYSTEMD_JOURNAL], 1, [Define to 1 if libsystemd-journald is available])
 else
 	AC_DEFINE([SYSTEMD_JOURNAL], 0, [Define to 1 if libsystemd-journald is available])
@@ -450,8 +442,6 @@ if test "$use_systemd_logind" = "yes" -a "$have_systemd_logind" = "no"; then
     AC_MSG_ERROR([You must have libsystemd installed to build with systemd-logind support.])
 fi
 if test "$have_systemd_logind" = "yes"; then
-	AC_SUBST(SYSTEMD_LOGIN_CFLAGS)
-	AC_SUBST(SYSTEMD_LOGIN_LIBS)
 	AC_DEFINE([SESSION_TRACKING_SYSTEMD], 1, [Define to 1 if libsystemd-login is available])
 	session_tracking="$session_tracking, systemd-logind"
 fi
@@ -507,8 +497,6 @@ AM_CONDITIONAL(HAVE_SELINUX, test "${have_selinux}" = "yes")
 
 # libnl support for the linux platform
 PKG_CHECK_MODULES(LIBNL, libnl-3.0 >= 3.2.8 libnl-route-3.0 libnl-genl-3.0)
-AC_SUBST(LIBNL_CFLAGS)
-AC_SUBST(LIBNL_LIBS)
 
 AC_CHECK_LIB([nl-route-3], [rtnl_link_inet6_get_addr_gen_mode],
 	ac_have_addr_gen_mode="1",
@@ -542,8 +530,6 @@ AC_DEFINE_UNQUOTED(HAVE_LIBNL_INET6_TOKEN,
 
 # uuid library
 PKG_CHECK_MODULES(UUID, uuid)
-AC_SUBST(UUID_CFLAGS)
-AC_SUBST(UUID_LIBS)
 
 dnl Checks for readline library - used by nmcli
 AX_LIB_READLINE
@@ -556,9 +542,6 @@ if (test "${enable_teamdctl}" = "yes"); then
 	if test x"$have_teamdctl" = x"no"; then
 		AC_MSG_ERROR(Teamd control is required)
 	fi
-
-	AC_SUBST(LIBTEAMDCTL_CFLAGS)
-	AC_SUBST(LIBTEAMDCTL_LIBS)
 	# temporary bug workaround
 	LIBTEAMDCTL_CFLAGS=`echo $LIBTEAMDCTL_CFLAGS | sed -e 's:/teamdctl.h::'`
 	AC_DEFINE(WITH_TEAMDCTL, 1, [Define if you have Teamd control support])
@@ -596,9 +579,6 @@ if (test "${enable_polkit_agent}" = "yes"); then
 	if test x"$have_pk_agent" = x"no"; then
 		AC_MSG_ERROR(Polkit agent is required)
 	fi
-
-	AC_SUBST(POLKIT_CFLAGS)
-	AC_SUBST(POLKIT_LIBS)
 	AC_DEFINE(WITH_POLKIT_AGENT, 1, [Define if you have polkit agent])
 else
 	AC_DEFINE(WITH_POLKIT_AGENT, 0, [Define if you have polkit agent])
@@ -627,15 +607,11 @@ if test x"$ac_crypto" = xnss; then
     AC_MSG_ERROR([No usable NSS found])
   fi
 
-  AC_SUBST(NSS_CFLAGS)
-  AC_SUBST(NSS_LIBS)
   AC_DEFINE(HAVE_NSS, 1, [Define if you have NSS])
   with_nss=yes
 elif test x"$ac_crypto" = xgnutls; then
   PKG_CHECK_MODULES(GNUTLS, [gnutls >= 2.12])
   AC_DEFINE(HAVE_GNUTLS, 1, [Define if you have libgnutls])
-  AC_SUBST(GNUTLS_CFLAGS)
-  AC_SUBST(GNUTLS_LIBS)
   with_gnutls=yes
 else
   AC_MSG_ERROR([Please choose either 'nss' or 'gnutls' for certificate and crypto operations])
@@ -702,8 +678,6 @@ if (test "${with_modem_manager_1}" != "no"); then
                       [mm-glib >= 0.7.991],
                       [have_libmm_glib=yes],
                       [have_libmm_glib=no])
-    AC_SUBST(MM_GLIB_CFLAGS)
-    AC_SUBST(MM_GLIB_LIBS)
 
     if (test "${have_libmm_glib}" = "no"); then
         if (test "${with_modem_manager_1}" = "yes"); then
@@ -868,8 +842,6 @@ if (test "${enable_concheck}" = "yes"); then
 	if test x"$with_libsoup" = x"no"; then
 		AC_MSG_ERROR(Connectivity checking requires libsoup)
 	fi
-	AC_SUBST(LIBSOUP_CFLAGS)
-	AC_SUBST(LIBSOUP_LIBS)
 	AC_DEFINE(WITH_CONCHECK, 1, [Define if you want connectivity checking support])
 else
 	AC_DEFINE(WITH_CONCHECK, 0, [Define if you want connectivity checking support])
