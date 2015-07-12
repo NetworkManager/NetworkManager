@@ -38,6 +38,7 @@
 
 #include "polkit-agent.h"
 #include "nmcli.h"
+#include "nm-glib-compat.h"
 #include "utils.h"
 #include "common.h"
 #include "connections.h"
@@ -607,10 +608,8 @@ main (int argc, char *argv[])
 	textdomain (GETTEXT_PACKAGE);
 #endif
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
-	
+	nm_g_type_init ();
+
 	/* Save terminal settings */
 	tcgetattr (STDIN_FILENO, &termios_orig);
 

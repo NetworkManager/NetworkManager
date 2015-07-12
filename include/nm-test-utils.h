@@ -302,9 +302,7 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 
 	__nmtst_internal.assert_logging = !!assert_logging;
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
+	nm_g_type_init ();
 
 	is_debug = g_test_verbose ();
 
@@ -632,6 +630,17 @@ __define_nmtst_static(03, 1024)
 		memcpy(__nmtst_swap_temp, &y, sizeof(x)); \
 		memcpy(&y,                &x, sizeof(x)); \
 		memcpy(&x, __nmtst_swap_temp, sizeof(x)); \
+	} G_STMT_END
+
+#define nmtst_assert_str_has_substr(str, substr) \
+	G_STMT_START { \
+		const char *__str = (str); \
+		const char *__substr = (substr); \
+		\
+		g_assert (__str); \
+		g_assert (__substr); \
+		if (strstr (__str, __substr) == NULL) \
+			g_error ("%s:%d: Expects \"%s\" but got \"%s\"", __FILE__, __LINE__, __substr, __str); \
 	} G_STMT_END
 
 inline static guint32

@@ -846,7 +846,7 @@ nm_dhcp_systemd_class_init (NMDhcpSystemdClass *sdhcp_class)
 static void __attribute__((constructor))
 register_dhcp_dhclient (void)
 {
-	g_type_init ();
+	nm_g_type_init ();
 	_nm_dhcp_client_register (NM_TYPE_DHCP_SYSTEMD,
 	                          "internal",
 	                          NULL,

@@ -123,9 +123,7 @@ dump_all (void)
 int
 main (int argc, char **argv)
 {
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
+	nm_g_type_init ();
 
 	g_assert (argc <= 2);
 	if (argc > 1 && !g_strcmp0 (argv[1], "--fake"))

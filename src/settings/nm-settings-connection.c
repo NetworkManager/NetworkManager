@@ -38,32 +38,75 @@
 #include "nm-properties-changed-signal.h"
 #include "nm-core-internal.h"
 #include "nm-glib-compat.h"
+#include "gsystem-local-alloc.h"
 
 #define SETTINGS_TIMESTAMPS_FILE  NMSTATEDIR "/timestamps"
 #define SETTINGS_SEEN_BSSIDS_FILE NMSTATEDIR "/seen-bssids"
 
-static void impl_settings_connection_get_settings (NMSettingsConnection *connection,
+
+#define _LOG_DOMAIN LOGD_SETTINGS
+#define _LOG_PREFIX_NAME "settings-connection"
+
+#define _LOG(level, domain, self, ...) \
+    G_STMT_START { \
+        const NMLogLevel __level = (level); \
+        const NMLogDomain __domain = (domain); \
+        \
+        if (nm_logging_enabled (__level, __domain)) { \
+            char __prefix[128]; \
+            const char *__p_prefix = _LOG_PREFIX_NAME; \
+            const void *const __self = (self); \
+            \
+            if (__self) { \
+                const char *__uuid = nm_connection_get_uuid ((NMConnection *) __self); \
+                \
+                g_snprintf (__prefix, sizeof (__prefix), "%s[%p%s%s]", _LOG_PREFIX_NAME, __self, __uuid ? "," : "", __uuid ? __uuid : ""); \
+                __p_prefix = __prefix; \
+            } \
+            _nm_log (__level, __domain, 0, \
+                     "%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+                     __p_prefix _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
+        } \
+    } G_STMT_END
+#define _LOG_LEVEL_ENABLED(level, domain) \
+    ( nm_logging_enabled ((level), (domain)) )
+
+#ifdef NM_MORE_LOGGING
+#define _LOGT_ENABLED()     _LOG_LEVEL_ENABLED (LOGL_TRACE, _LOG_DOMAIN)
+#define _LOGT(...)          _LOG (LOGL_TRACE, _LOG_DOMAIN, self, __VA_ARGS__)
+#else
+#define _LOGT_ENABLED()     FALSE
+#define _LOGT(...)          G_STMT_START { if (FALSE) { _LOG (LOGL_TRACE, _LOG_DOMAIN, self, __VA_ARGS__); } } G_STMT_END
+#endif
+
+#define _LOGD(...)      _LOG (LOGL_DEBUG, _LOG_DOMAIN, self, __VA_ARGS__)
+#define _LOGI(...)      _LOG (LOGL_INFO , _LOG_DOMAIN, self, __VA_ARGS__)
+#define _LOGW(...)      _LOG (LOGL_WARN , _LOG_DOMAIN, self, __VA_ARGS__)
+#define _LOGE(...)      _LOG (LOGL_ERR  , _LOG_DOMAIN, self, __VA_ARGS__)
+
+
+static void impl_settings_connection_get_settings (NMSettingsConnection *self,
                                                    DBusGMethodInvocation *context);
 
-static void impl_settings_connection_update (NMSettingsConnection *connection,
+static void impl_settings_connection_update (NMSettingsConnection *self,
                                              GHashTable *new_settings,
                                              DBusGMethodInvocation *context);
 
-static void impl_settings_connection_update_unsaved (NMSettingsConnection *connection,
+static void impl_settings_connection_update_unsaved (NMSettingsConnection *self,
                                                      GHashTable *new_settings,
                                                      DBusGMethodInvocation *context);
 
-static void impl_settings_connection_save (NMSettingsConnection *connection,
+static void impl_settings_connection_save (NMSettingsConnection *self,
                                            DBusGMethodInvocation *context);
 
-static void impl_settings_connection_delete (NMSettingsConnection *connection,
+static void impl_settings_connection_delete (NMSettingsConnection *self,
                                              DBusGMethodInvocation *context);
 
-static void impl_settings_connection_get_secrets (NMSettingsConnection *connection,
+static void impl_settings_connection_get_secrets (NMSettingsConnection *self,
                                                   const gchar *setting_name,
                                                   DBusGMethodInvocation *context);
 
-static void impl_settings_connection_clear_secrets (NMSettingsConnection *connection,
+static void impl_settings_connection_clear_secrets (NMSettingsConnection *self,
                                                     DBusGMethodInvocation *context);
 
 #include "nm-settings-connection-glue.h"
@@ -145,7 +188,7 @@ typedef gboolean (*ForEachSecretFunc) (GHashTableIter *iter,
                                        gpointer user_data);
 
 static void
-for_each_secret (NMConnection *connection,
+for_each_secret (NMConnection *self,
                  GHashTable *secrets,
                  gboolean remove_non_secrets,
                  ForEachSecretFunc callback,
@@ -188,7 +231,7 @@ for_each_secret (NMConnection *connection,
 		 * from the connection data, since flags aren't secrets.  What we're
 		 * iterating here is just the secrets, not a whole connection.
 		 */
-		setting = nm_connection_get_setting_by_name (connection, setting_name);
+		setting = nm_connection_get_setting_by_name (self, setting_name);
 		if (setting == NULL)
 			continue;
 
@@ -491,6 +534,9 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 		nm_utils_log_connection_diff (new_connection, NM_CONNECTION (self), LOGL_DEBUG, LOGD_CORE, log_diff_name, "++ ");
 
 	nm_connection_replace_settings_from_connection (NM_CONNECTION (self), new_connection);
+
+	_LOGD ("replace settings from connection %p (%s)", new_connection, nm_connection_get_id (NM_CONNECTION (self)));
+
 	nm_settings_connection_set_flags (self,
 	                                  NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED | NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED_ASSUMED,
 	                                  FALSE);
@@ -529,7 +575,7 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 }
 
 static void
-ignore_cb (NMSettingsConnection *connection,
+ignore_cb (NMSettingsConnection *self,
            GError *error,
            gpointer user_data)
 {
@@ -586,49 +632,49 @@ commit_changes (NMSettingsConnection *self,
 }
 
 void
-nm_settings_connection_commit_changes (NMSettingsConnection *connection,
+nm_settings_connection_commit_changes (NMSettingsConnection *self,
                                        NMSettingsConnectionCommitFunc callback,
                                        gpointer user_data)
 {
-	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (connection));
+	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (self));
 
-	if (NM_SETTINGS_CONNECTION_GET_CLASS (connection)->commit_changes) {
-		NM_SETTINGS_CONNECTION_GET_CLASS (connection)->commit_changes (connection,
-		                                                               callback ? callback : ignore_cb,
-		                                                               user_data);
+	if (NM_SETTINGS_CONNECTION_GET_CLASS (self)->commit_changes) {
+		NM_SETTINGS_CONNECTION_GET_CLASS (self)->commit_changes (self,
+		                                                         callback ? callback : ignore_cb,
+		                                                         user_data);
 	} else {
 		GError *error = g_error_new (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_FAILED,
 		                             "%s: %s:%d commit_changes() unimplemented", __func__, __FILE__, __LINE__);
 		if (callback)
-			callback (connection, error, user_data);
+			callback (self, error, user_data);
 		g_error_free (error);
 	}
 }
 
 void
-nm_settings_connection_delete (NMSettingsConnection *connection,
+nm_settings_connection_delete (NMSettingsConnection *self,
                                NMSettingsConnectionDeleteFunc callback,
                                gpointer user_data)
 {
-	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (connection));
+	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (self));
 
-	if (NM_SETTINGS_CONNECTION_GET_CLASS (connection)->delete) {
-		NM_SETTINGS_CONNECTION_GET_CLASS (connection)->delete (connection,
-		                                                       callback ? callback : ignore_cb,
-		                                                       user_data);
+	if (NM_SETTINGS_CONNECTION_GET_CLASS (self)->delete) {
+		NM_SETTINGS_CONNECTION_GET_CLASS (self)->delete (self,
+		                                                 callback ? callback : ignore_cb,
+		                                                 user_data);
 	} else {
 		GError *error = g_error_new (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_FAILED,
 		                             "%s: %s:%d delete() unimplemented", __func__, __FILE__, __LINE__);
 		if (callback)
-			callback (connection, error, user_data);
+			callback (self, error, user_data);
 		g_error_free (error);
 	}
 }
 
 static void
-remove_entry_from_db (NMSettingsConnection *connection, const char* db_name)
+remove_entry_from_db (NMSettingsConnection *self, const char* db_name)
 {
 	GKeyFile *key_file;
 	const char *db_file;
@@ -647,7 +693,7 @@ remove_entry_from_db (NMSettingsConnection *connection, const char* db_name)
 		gsize len;
 		GError *error = NULL;
 
-		connection_uuid = nm_connection_get_uuid (NM_CONNECTION (connection));
+		connection_uuid = nm_connection_get_uuid (NM_CONNECTION (self));
 
 		g_key_file_remove_key (key_file, db_name, connection_uuid, NULL);
 		data = g_key_file_to_data (key_file, &len, &error);
@@ -656,7 +702,7 @@ remove_entry_from_db (NMSettingsConnection *connection, const char* db_name)
 			g_free (data);
 		}
 		if (error) {
-			nm_log_warn (LOGD_SETTINGS, "error writing %s file '%s': %s", db_name, db_file, error->message);
+			_LOGW ("error writing %s file '%s': %s", db_name, db_file, error->message);
 			g_error_free (error);
 		}
 	}
@@ -664,39 +710,39 @@ remove_entry_from_db (NMSettingsConnection *connection, const char* db_name)
 }
 
 static void
-do_delete (NMSettingsConnection *connection,
+do_delete (NMSettingsConnection *self,
            NMSettingsConnectionDeleteFunc callback,
            gpointer user_data)
 {
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (connection);
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	NMConnection *for_agents;
 
-	g_object_ref (connection);
-	set_visible (connection, FALSE);
+	g_object_ref (self);
+	set_visible (self, FALSE);
 
 	/* Tell agents to remove secrets for this connection */
-	for_agents = nm_simple_connection_new_clone (NM_CONNECTION (connection));
+	for_agents = nm_simple_connection_new_clone (NM_CONNECTION (self));
 	nm_connection_clear_secrets (for_agents);
 	nm_agent_manager_delete_secrets (priv->agent_mgr, for_agents);
 	g_object_unref (for_agents);
 
 	/* Remove timestamp from timestamps database file */
-	remove_entry_from_db (connection, "timestamps");
+	remove_entry_from_db (self, "timestamps");
 
 	/* Remove connection from seen-bssids database file */
-	remove_entry_from_db (connection, "seen-bssids");
+	remove_entry_from_db (self, "seen-bssids");
 
-	nm_settings_connection_signal_remove (connection);
+	nm_settings_connection_signal_remove (self);
 
-	callback (connection, NULL, user_data);
+	callback (self, NULL, user_data);
 
-	g_object_unref (connection);
+	g_object_unref (self);
 }
 
 /**************************************************************/
 
 static gboolean
-supports_secrets (NMSettingsConnection *connection, const char *setting_name)
+supports_secrets (NMSettingsConnection *self, const char *setting_name)
 {
 	/* All secrets supported */
 	return TRUE;
@@ -737,13 +783,13 @@ has_system_owned_secrets (GHashTableIter *iter,
 }
 
 static void
-new_secrets_commit_cb (NMSettingsConnection *connection,
+new_secrets_commit_cb (NMSettingsConnection *self,
                        GError *error,
                        gpointer user_data)
 {
 	if (error) {
-		nm_log_warn (LOGD_SETTINGS, "Error saving new secrets to backing storage: (%d) %s",
-		             error->code, error->message ? error->message : "(unknown)");
+		_LOGW ("Error saving new secrets to backing storage: (%d) %s",
+		       error->code, error->message ? error->message : "(unknown)");
 	}
 }
 
@@ -770,12 +816,11 @@ agent_secrets_done_cb (NMAgentManager *manager,
 	gboolean agent_had_system = FALSE;
 
 	if (error) {
-		nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) secrets request error: (%d) %s",
-		            nm_connection_get_uuid (NM_CONNECTION (self)),
-		            setting_name,
-		            call_id,
-		            error->code,
-		            error->message ? error->message : "(unknown)");
+		_LOGD ("(%s:%u) secrets request error: (%d) %s",
+		       setting_name,
+		       call_id,
+		       error->code,
+		       error->message ? error->message : "(unknown)");
 
 		callback (self, call_id, NULL, setting_name, error, callback_data);
 		return;
@@ -792,11 +837,10 @@ agent_secrets_done_cb (NMAgentManager *manager,
 
 	g_assert (secrets);
 	if (agent_dbus_owner) {
-		nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) secrets returned from agent %s",
-		            nm_connection_get_uuid (NM_CONNECTION (self)),
-		            setting_name,
-		            call_id,
-		            agent_dbus_owner);
+		_LOGD ("(%s:%u) secrets returned from agent %s",
+		       setting_name,
+		       call_id,
+		       agent_dbus_owner);
 
 		/* If the agent returned any system-owned secrets (initial connect and no
 		 * secrets given when the connection was created, or something like that)
@@ -810,36 +854,32 @@ agent_secrets_done_cb (NMAgentManager *manager,
 				/* No user interaction was allowed when requesting secrets; the
 				 * agent is being bad.  Remove system-owned secrets.
 				 */
-				nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) interaction forbidden but agent %s returned system secrets",
-				            nm_connection_get_uuid (NM_CONNECTION (self)),
-				            setting_name,
-				            call_id,
-				            agent_dbus_owner);
+				_LOGD ("(%s:%u) interaction forbidden but agent %s returned system secrets",
+				       setting_name,
+				       call_id,
+				       agent_dbus_owner);
 
 				for_each_secret (NM_CONNECTION (self), secrets, FALSE, clear_nonagent_secrets, NULL);
 			} else if (agent_has_modify == FALSE) {
 				/* Agent didn't successfully authenticate; clear system-owned secrets
 				 * from the secrets the agent returned.
 				 */
-				nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) agent failed to authenticate but provided system secrets",
-				            nm_connection_get_uuid (NM_CONNECTION (self)),
-				            setting_name,
-				            call_id);
+				_LOGD ("(%s:%u) agent failed to authenticate but provided system secrets",
+				       setting_name,
+				       call_id);
 
 				for_each_secret (NM_CONNECTION (self), secrets, FALSE, clear_nonagent_secrets, NULL);
 			}
 		}
 	} else {
-		nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) existing secrets returned",
-		            nm_connection_get_uuid (NM_CONNECTION (self)),
-		            setting_name,
-		            call_id);
+		_LOGD ("(%s:%u) existing secrets returned",
+		       setting_name,
+		       call_id);
 	}
 
-	nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) secrets request completed",
-	            nm_connection_get_uuid (NM_CONNECTION (self)),
-	            setting_name,
-	            call_id);
+	_LOGD ("(%s:%u) secrets request completed",
+	       setting_name,
+	       call_id);
 
 	/* If no user interaction was allowed, make sure that no "unsaved" secrets
 	 * came back.  Unsaved secrets by definition require user interaction.
@@ -872,34 +912,30 @@ agent_secrets_done_cb (NMAgentManager *manager,
 			 * nothing has changed, since agent-owned secrets don't get saved here.
 			 */
 			if (agent_had_system) {
-				nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) saving new secrets to backing storage",
-						    nm_connection_get_uuid (NM_CONNECTION (self)),
-						    setting_name,
-						    call_id);
+				_LOGD ("(%s:%u) saving new secrets to backing storage",
+				       setting_name,
+				       call_id);
 
 				nm_settings_connection_commit_changes (self, new_secrets_commit_cb, NULL);
 			} else {
-				nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) new agent secrets processed",
-						    nm_connection_get_uuid (NM_CONNECTION (self)),
-						    setting_name,
-						    call_id);
+				_LOGD ("(%s:%u) new agent secrets processed",
+				       setting_name,
+				       call_id);
 			}
 		} else {
-			nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) failed to update with agent secrets: (%d) %s",
-			            nm_connection_get_uuid (NM_CONNECTION (self)),
-			            setting_name,
-			            call_id,
-			            local ? local->code : -1,
-			            (local && local->message) ? local->message : "(unknown)");
+			_LOGD ("(%s:%u) failed to update with agent secrets: (%d) %s",
+			       setting_name,
+			       call_id,
+			       local ? local->code : -1,
+			       (local && local->message) ? local->message : "(unknown)");
 		}
 		g_variant_unref (secrets_dict);
 	} else {
-		nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) failed to update with existing secrets: (%d) %s",
-		            nm_connection_get_uuid (NM_CONNECTION (self)),
-		            setting_name,
-		            call_id,
-		            local ? local->code : -1,
-		            (local && local->message) ? local->message : "(unknown)");
+		_LOGD ("(%s:%u) failed to update with existing secrets: (%d) %s",
+		       setting_name,
+		       call_id,
+		       local ? local->code : -1,
+		       (local && local->message) ? local->message : "(unknown)");
 	}
 
 	callback (self, call_id, agent_username, setting_name, local, callback_data);
@@ -910,7 +946,7 @@ agent_secrets_done_cb (NMAgentManager *manager,
 
 /**
  * nm_settings_connection_get_secrets:
- * @connection: the #NMSettingsConnection
+ * @self: the #NMSettingsConnection
  * @subject: the #NMAuthSubject originating the request
  * @setting_name: the setting to return secrets for
  * @flags: flags to modify the secrets request
@@ -938,7 +974,7 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 	GVariant *existing_secrets;
 	GHashTable *existing_secrets_hash;
 	guint32 call_id = 0;
-	char *joined_hints = NULL;
+	gs_free char *joined_hints = NULL;
 
 	/* Use priv->secrets to work around the fact that nm_connection_clear_secrets()
 	 * will clear secrets on this object's settings.
@@ -976,17 +1012,11 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 	if (existing_secrets)
 		g_variant_unref (existing_secrets);
 
-	if (nm_logging_enabled (LOGL_DEBUG, LOGD_SETTINGS)) {
-		if (hints)
-			joined_hints = g_strjoinv (",", (char **) hints);
-		nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) secrets requested flags 0x%X hints '%s'",
-		            nm_connection_get_uuid (NM_CONNECTION (self)),
-		            setting_name,
-		            call_id,
-		            flags,
-		            joined_hints ? joined_hints : "(none)");
-		g_free (joined_hints);
-	}
+	_LOGD ("(%s:%u) secrets requested flags 0x%X hints '%s'",
+	       setting_name,
+	       call_id,
+	       flags,
+	       (hints && hints[0]) ? (joined_hints = g_strjoinv (",", (char **) hints)) : "(none)");
 
 	return call_id;
 }
@@ -997,9 +1027,8 @@ nm_settings_connection_cancel_secrets (NMSettingsConnection *self,
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
-	nm_log_dbg (LOGD_SETTINGS, "(%s:%u) secrets canceled",
-	            nm_connection_get_uuid (NM_CONNECTION (self)),
-	            call_id);
+	_LOGD ("(%u) secrets canceled",
+	       call_id);
 
 	priv->reqs = g_slist_remove (priv->reqs, GUINT_TO_POINTER (call_id));
 	nm_agent_manager_cancel_secrets (priv->agent_mgr, call_id);
@@ -1007,7 +1036,7 @@ nm_settings_connection_cancel_secrets (NMSettingsConnection *self,
 
 /**** User authorization **************************************/
 
-typedef void (*AuthCallback) (NMSettingsConnection *connection, 
+typedef void (*AuthCallback) (NMSettingsConnection *self,
                               DBusGMethodInvocation *context,
                               NMAuthSubject *subject,
                               GError *error,
@@ -1138,13 +1167,13 @@ auth_start (NMSettingsConnection *self,
 /**** DBus method handlers ************************************/
 
 static gboolean
-check_writable (NMConnection *connection, GError **error)
+check_writable (NMConnection *self, GError **error)
 {
 	NMSettingConnection *s_con;
 
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (self), FALSE);
 
-	s_con = nm_connection_get_setting_connection (connection);
+	s_con = nm_connection_get_setting_connection (self);
 	if (!s_con) {
 		g_set_error_literal (error,
 		                     NM_SETTINGS_ERROR,
@@ -1274,11 +1303,11 @@ has_some_secrets_cb (NMSetting *setting,
 }
 
 static gboolean
-any_secrets_present (NMConnection *connection)
+any_secrets_present (NMConnection *self)
 {
 	gboolean has_secrets = FALSE;
 
-	nm_connection_for_each_setting_value (connection, has_some_secrets_cb, &has_secrets);
+	nm_connection_for_each_setting_value (self, has_some_secrets_cb, &has_secrets);
 	return has_secrets;
 }
 
@@ -1516,7 +1545,7 @@ impl_settings_connection_save (NMSettingsConnection *self,
 }
 
 static void
-con_delete_cb (NMSettingsConnection *connection,
+con_delete_cb (NMSettingsConnection *self,
                GError *error,
                gpointer user_data)
 {
@@ -1529,7 +1558,7 @@ con_delete_cb (NMSettingsConnection *connection,
 }
 
 static void
-delete_auth_cb (NMSettingsConnection *self, 
+delete_auth_cb (NMSettingsConnection *self,
                 DBusGMethodInvocation *context,
                 NMAuthSubject *subject,
                 GError *error,
@@ -1544,7 +1573,7 @@ delete_auth_cb (NMSettingsConnection *self,
 }
 
 static const char *
-get_modify_permission_basic (NMSettingsConnection *connection)
+get_modify_permission_basic (NMSettingsConnection *self)
 {
 	NMSettingConnection *s_con;
 
@@ -1552,7 +1581,7 @@ get_modify_permission_basic (NMSettingsConnection *connection)
 	 * we use the 'modify.own' permission instead of 'modify.system'.  If the
 	 * request affects more than just the caller, require 'modify.system'.
 	 */
-	s_con = nm_connection_get_setting_connection (NM_CONNECTION (connection));
+	s_con = nm_connection_get_setting_connection (NM_CONNECTION (self));
 	g_assert (s_con);
 	if (nm_setting_connection_get_num_permissions (s_con) == 1)
 		return NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN;
@@ -1693,7 +1722,7 @@ clear_secrets_cb (NMSettingsConnection *self,
 }
 
 static void
-dbus_clear_secrets_auth_cb (NMSettingsConnection *self, 
+dbus_clear_secrets_auth_cb (NMSettingsConnection *self,
                             DBusGMethodInvocation *context,
                             NMAuthSubject *subject,
                             GError *error,
@@ -1816,7 +1845,7 @@ nm_settings_connection_set_flags_all (NMSettingsConnection *self, NMSettingsConn
 
 /**
  * nm_settings_connection_get_timestamp:
- * @connection: the #NMSettingsConnection
+ * @self: the #NMSettingsConnection
  * @out_timestamp: the connection's timestamp
  *
  * Returns the time (in seconds since the Unix epoch) when the connection
@@ -1825,19 +1854,19 @@ nm_settings_connection_set_flags_all (NMSettingsConnection *self, NMSettingsConn
  * Returns: %TRUE if the timestamp has ever been set, otherwise %FALSE.
  **/
 gboolean
-nm_settings_connection_get_timestamp (NMSettingsConnection *connection,
+nm_settings_connection_get_timestamp (NMSettingsConnection *self,
                                       guint64 *out_timestamp)
 {
-	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (connection), FALSE);
+	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), FALSE);
 
 	if (out_timestamp)
-		*out_timestamp = NM_SETTINGS_CONNECTION_GET_PRIVATE (connection)->timestamp;
-	return NM_SETTINGS_CONNECTION_GET_PRIVATE (connection)->timestamp_set;
+		*out_timestamp = NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->timestamp;
+	return NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->timestamp_set;
 }
 
 /**
  * nm_settings_connection_update_timestamp:
- * @connection: the #NMSettingsConnection
+ * @self: the #NMSettingsConnection
  * @timestamp: timestamp to set into the connection and to store into
  * the timestamps database
  * @flush_to_disk: if %TRUE, commit timestamp update to persistent storage
@@ -1845,18 +1874,18 @@ nm_settings_connection_get_timestamp (NMSettingsConnection *connection,
  * Updates the connection and timestamps database with the provided timestamp.
  **/
 void
-nm_settings_connection_update_timestamp (NMSettingsConnection *connection,
+nm_settings_connection_update_timestamp (NMSettingsConnection *self,
                                          guint64 timestamp,
                                          gboolean flush_to_disk)
 {
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (connection);
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	const char *connection_uuid;
 	GKeyFile *timestamps_file;
 	char *data, *tmp;
 	gsize len;
 	GError *error = NULL;
 
-	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (connection));
+	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (self));
 
 	/* Update timestamp in private storage */
 	priv->timestamp = timestamp;
@@ -1869,11 +1898,11 @@ nm_settings_connection_update_timestamp (NMSettingsConnection *connection,
 	timestamps_file = g_key_file_new ();
 	if (!g_key_file_load_from_file (timestamps_file, SETTINGS_TIMESTAMPS_FILE, G_KEY_FILE_KEEP_COMMENTS, &error)) {
 		if (!(error->domain == G_FILE_ERROR && error->code == G_FILE_ERROR_NOENT))
-			nm_log_warn (LOGD_SETTINGS, "error parsing timestamps file '%s': %s", SETTINGS_TIMESTAMPS_FILE, error->message);
+			_LOGW ("error parsing timestamps file '%s': %s", SETTINGS_TIMESTAMPS_FILE, error->message);
 		g_clear_error (&error);
 	}
 
-	connection_uuid = nm_connection_get_uuid (NM_CONNECTION (connection));
+	connection_uuid = nm_connection_get_uuid (NM_CONNECTION (self));
 	tmp = g_strdup_printf ("%" G_GUINT64_FORMAT, timestamp);
 	g_key_file_set_value (timestamps_file, "timestamps", connection_uuid, tmp);
 	g_free (tmp);
@@ -1884,7 +1913,7 @@ nm_settings_connection_update_timestamp (NMSettingsConnection *connection,
 		g_free (data);
 	}
 	if (error) {
-		nm_log_warn (LOGD_SETTINGS, "error saving timestamp to file '%s': %s", SETTINGS_TIMESTAMPS_FILE, error->message);
+		_LOGW ("error saving timestamp to file '%s': %s", SETTINGS_TIMESTAMPS_FILE, error->message);
 		g_error_free (error);
 	}
 	g_key_file_free (timestamps_file);
@@ -1892,27 +1921,27 @@ nm_settings_connection_update_timestamp (NMSettingsConnection *connection,
 
 /**
  * nm_settings_connection_read_and_fill_timestamp:
- * @connection: the #NMSettingsConnection
+ * @self: the #NMSettingsConnection
  *
  * Retrieves timestamp of the connection's last usage from database file and
  * stores it into the connection private data.
  **/
 void
-nm_settings_connection_read_and_fill_timestamp (NMSettingsConnection *connection)
+nm_settings_connection_read_and_fill_timestamp (NMSettingsConnection *self)
 {
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (connection);
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	const char *connection_uuid;
 	guint64 timestamp = 0;
 	GKeyFile *timestamps_file;
 	GError *err = NULL;
 	char *tmp_str;
 
-	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (connection));
+	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (self));
 
 	/* Get timestamp from database file */
 	timestamps_file = g_key_file_new ();
 	g_key_file_load_from_file (timestamps_file, SETTINGS_TIMESTAMPS_FILE, G_KEY_FILE_KEEP_COMMENTS, NULL);
-	connection_uuid = nm_connection_get_uuid (NM_CONNECTION (connection));
+	connection_uuid = nm_connection_get_uuid (NM_CONNECTION (self));
 	tmp_str = g_key_file_get_value (timestamps_file, "timestamps", connection_uuid, &err);
 	if (tmp_str) {
 		timestamp = g_ascii_strtoull (tmp_str, NULL, 10);
@@ -1924,8 +1953,8 @@ nm_settings_connection_read_and_fill_timestamp (NMSettingsConnection *connection
 		priv->timestamp = timestamp;
 		priv->timestamp_set = TRUE;
 	} else {
-		nm_log_dbg (LOGD_SETTINGS, "failed to read connection timestamp for '%s': (%d) %s",
-		            connection_uuid, err->code, err->message);
+		_LOGD ("failed to read connection timestamp: (%d) %s",
+		       err->code, err->message);
 		g_clear_error (&err);
 	}
 	g_key_file_free (timestamps_file);
@@ -1933,7 +1962,7 @@ nm_settings_connection_read_and_fill_timestamp (NMSettingsConnection *connection
 
 /**
  * nm_settings_connection_get_seen_bssids:
- * @connection: the #NMSettingsConnection
+ * @self: the #NMSettingsConnection
  *
  * Returns current list of seen BSSIDs for the connection.
  *
@@ -1941,14 +1970,14 @@ nm_settings_connection_read_and_fill_timestamp (NMSettingsConnection *connection
  * The caller is responsible for freeing the list, but not the content.
  **/
 char **
-nm_settings_connection_get_seen_bssids (NMSettingsConnection *connection)
+nm_settings_connection_get_seen_bssids (NMSettingsConnection *self)
 {
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (connection);
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	GHashTableIter iter;
 	char **bssids, *bssid;
 	int i;
 
-	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (connection), NULL);
+	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), NULL);
 
 	bssids = g_new (char *, g_hash_table_size (priv->seen_bssids) + 1);
 
@@ -1963,34 +1992,34 @@ nm_settings_connection_get_seen_bssids (NMSettingsConnection *connection)
 
 /**
  * nm_settings_connection_has_seen_bssid:
- * @connection: the #NMSettingsConnection
+ * @self: the #NMSettingsConnection
  * @bssid: the BSSID to check the seen BSSID list for
  *
  * Returns: %TRUE if the given @bssid is in the seen BSSIDs list
  **/
 gboolean
-nm_settings_connection_has_seen_bssid (NMSettingsConnection *connection,
+nm_settings_connection_has_seen_bssid (NMSettingsConnection *self,
                                        const char *bssid)
 {
-	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (connection), FALSE);
+	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), FALSE);
 	g_return_val_if_fail (bssid != NULL, FALSE);
 
-	return !!g_hash_table_lookup (NM_SETTINGS_CONNECTION_GET_PRIVATE (connection)->seen_bssids, bssid);
+	return !!g_hash_table_lookup (NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->seen_bssids, bssid);
 }
 
 /**
  * nm_settings_connection_add_seen_bssid:
- * @connection: the #NMSettingsConnection
+ * @self: the #NMSettingsConnection
  * @seen_bssid: BSSID to set into the connection and to store into
  * the seen-bssids database
  *
  * Updates the connection and seen-bssids database with the provided BSSID.
  **/
 void
-nm_settings_connection_add_seen_bssid (NMSettingsConnection *connection,
+nm_settings_connection_add_seen_bssid (NMSettingsConnection *self,
                                        const char *seen_bssid)
 {
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (connection);
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	const char *connection_uuid;
 	GKeyFile *seen_bssids_file;
 	char *data, *bssid_str;
@@ -2021,13 +2050,13 @@ nm_settings_connection_add_seen_bssid (NMSettingsConnection *connection,
 	g_key_file_set_list_separator (seen_bssids_file, ',');
 	if (!g_key_file_load_from_file (seen_bssids_file, SETTINGS_SEEN_BSSIDS_FILE, G_KEY_FILE_KEEP_COMMENTS, &error)) {
 		if (!g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT)) {
-			nm_log_warn (LOGD_SETTINGS, "error parsing seen-bssids file '%s': %s",
-			             SETTINGS_SEEN_BSSIDS_FILE, error->message);
+			_LOGW ("error parsing seen-bssids file '%s': %s",
+			       SETTINGS_SEEN_BSSIDS_FILE, error->message);
 		}
 		g_clear_error (&error);
 	}
 
-	connection_uuid = nm_connection_get_uuid (NM_CONNECTION (connection));
+	connection_uuid = nm_connection_get_uuid (NM_CONNECTION (self));
 	g_key_file_set_string_list (seen_bssids_file, "seen-bssids", connection_uuid, list, n);
 	g_free (list);
 
@@ -2039,23 +2068,23 @@ nm_settings_connection_add_seen_bssid (NMSettingsConnection *connection,
 	g_key_file_free (seen_bssids_file);
 
 	if (error) {
-		nm_log_warn (LOGD_SETTINGS, "error saving seen-bssids to file '%s': %s",
-		             SETTINGS_SEEN_BSSIDS_FILE, error->message);
+		_LOGW ("error saving seen-bssids to file '%s': %s",
+		       SETTINGS_SEEN_BSSIDS_FILE, error->message);
 		g_error_free (error);
 	}
 }
 
 /**
  * nm_settings_connection_read_and_fill_seen_bssids:
- * @connection: the #NMSettingsConnection
+ * @self: the #NMSettingsConnection
  *
  * Retrieves seen BSSIDs of the connection from database file and stores then into the
  * connection private data.
  **/
 void
-nm_settings_connection_read_and_fill_seen_bssids (NMSettingsConnection *connection)
+nm_settings_connection_read_and_fill_seen_bssids (NMSettingsConnection *self)
 {
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (connection);
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	const char *connection_uuid;
 	GKeyFile *seen_bssids_file;
 	char **tmp_strv = NULL;
@@ -2066,7 +2095,7 @@ nm_settings_connection_read_and_fill_seen_bssids (NMSettingsConnection *connecti
 	seen_bssids_file = g_key_file_new ();
 	g_key_file_set_list_separator (seen_bssids_file, ',');
 	if (g_key_file_load_from_file (seen_bssids_file, SETTINGS_SEEN_BSSIDS_FILE, G_KEY_FILE_KEEP_COMMENTS, NULL)) {
-		connection_uuid = nm_connection_get_uuid (NM_CONNECTION (connection));
+		connection_uuid = nm_connection_get_uuid (NM_CONNECTION (self));
 		tmp_strv = g_key_file_get_string_list (seen_bssids_file, "seen-bssids", connection_uuid, &len, NULL);
 	}
 	g_key_file_free (seen_bssids_file);
@@ -2083,7 +2112,7 @@ nm_settings_connection_read_and_fill_seen_bssids (NMSettingsConnection *connecti
 		 * seen-bssids list from the deprecated seen-bssids property of the
 		 * wifi setting.
 		 */
-		s_wifi = nm_connection_get_setting_wireless (NM_CONNECTION (connection));
+		s_wifi = nm_connection_get_setting_wireless (NM_CONNECTION (self));
 		if (s_wifi) {
 			len = nm_setting_wireless_get_num_seen_bssids (s_wifi);
 			for (i = 0; i < len; i++) {
@@ -2099,16 +2128,16 @@ nm_settings_connection_read_and_fill_seen_bssids (NMSettingsConnection *connecti
 #define AUTOCONNECT_RESET_RETRIES_TIMER 300
 
 int
-nm_settings_connection_get_autoconnect_retries (NMSettingsConnection *connection)
+nm_settings_connection_get_autoconnect_retries (NMSettingsConnection *self)
 {
-	return NM_SETTINGS_CONNECTION_GET_PRIVATE (connection)->autoconnect_retries;
+	return NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->autoconnect_retries;
 }
 
 void
-nm_settings_connection_set_autoconnect_retries (NMSettingsConnection *connection,
+nm_settings_connection_set_autoconnect_retries (NMSettingsConnection *self,
                                                 int retries)
 {
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (connection);
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
 	priv->autoconnect_retries = retries;
 	if (retries)
@@ -2118,34 +2147,34 @@ nm_settings_connection_set_autoconnect_retries (NMSettingsConnection *connection
 }
 
 void
-nm_settings_connection_reset_autoconnect_retries (NMSettingsConnection *connection)
+nm_settings_connection_reset_autoconnect_retries (NMSettingsConnection *self)
 {
-	nm_settings_connection_set_autoconnect_retries (connection, AUTOCONNECT_RETRIES_DEFAULT);
+	nm_settings_connection_set_autoconnect_retries (self, AUTOCONNECT_RETRIES_DEFAULT);
 }
 
 gint32
-nm_settings_connection_get_autoconnect_retry_time (NMSettingsConnection *connection)
+nm_settings_connection_get_autoconnect_retry_time (NMSettingsConnection *self)
 {
-	return NM_SETTINGS_CONNECTION_GET_PRIVATE (connection)->autoconnect_retry_time;
+	return NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->autoconnect_retry_time;
 }
 
 NMDeviceStateReason
-nm_settings_connection_get_autoconnect_blocked_reason (NMSettingsConnection *connection)
+nm_settings_connection_get_autoconnect_blocked_reason (NMSettingsConnection *self)
 {
-	return NM_SETTINGS_CONNECTION_GET_PRIVATE (connection)->autoconnect_blocked_reason;
+	return NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->autoconnect_blocked_reason;
 }
 
 void
-nm_settings_connection_set_autoconnect_blocked_reason (NMSettingsConnection *connection,
+nm_settings_connection_set_autoconnect_blocked_reason (NMSettingsConnection *self,
                                                        NMDeviceStateReason reason)
 {
-	NM_SETTINGS_CONNECTION_GET_PRIVATE (connection)->autoconnect_blocked_reason = reason;
+	NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->autoconnect_blocked_reason = reason;
 }
 
 gboolean
-nm_settings_connection_can_autoconnect (NMSettingsConnection *connection)
+nm_settings_connection_can_autoconnect (NMSettingsConnection *self)
 {
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (connection);
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	NMSettingConnection *s_con;
 	const char *permission;
 
@@ -2154,13 +2183,13 @@ nm_settings_connection_can_autoconnect (NMSettingsConnection *connection)
 	    || priv->autoconnect_blocked_reason != NM_DEVICE_STATE_REASON_NONE)
 		return FALSE;
 
-	s_con = nm_connection_get_setting_connection (NM_CONNECTION (connection));
+	s_con = nm_connection_get_setting_connection (NM_CONNECTION (self));
 	if (!nm_setting_connection_get_autoconnect (s_con))
 		return FALSE;
 
-	permission = nm_utils_get_shared_wifi_permission (NM_CONNECTION (connection));
+	permission = nm_utils_get_shared_wifi_permission (NM_CONNECTION (self));
 	if (permission) {
-		if (nm_settings_connection_check_permission (connection, permission) == FALSE)
+		if (nm_settings_connection_check_permission (self, permission) == FALSE)
 			return FALSE;
 	}
 
@@ -2169,89 +2198,89 @@ nm_settings_connection_can_autoconnect (NMSettingsConnection *connection)
 
 /**
  * nm_settings_connection_get_nm_generated:
- * @connection: an #NMSettingsConnection
+ * @self: an #NMSettingsConnection
  *
- * Gets the "nm-generated" flag on @connection.
+ * Gets the "nm-generated" flag on @self.
  *
  * A connection is "nm-generated" if it was generated by
  * nm_device_generate_connection() and has not been modified or
  * saved by the user since then.
  */
 gboolean
-nm_settings_connection_get_nm_generated (NMSettingsConnection *connection)
+nm_settings_connection_get_nm_generated (NMSettingsConnection *self)
 {
-	return NM_FLAGS_HAS (nm_settings_connection_get_flags (connection), NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED);
+	return NM_FLAGS_HAS (nm_settings_connection_get_flags (self), NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED);
 }
 
 /**
  * nm_settings_connection_get_nm_generated_assumed:
- * @connection: an #NMSettingsConnection
+ * @self: an #NMSettingsConnection
  *
- * Gets the "nm-generated-assumed" flag on @connection.
+ * Gets the "nm-generated-assumed" flag on @self.
  *
  * The connection is a generated connection especially
  * generated for connection assumption.
  */
 gboolean
-nm_settings_connection_get_nm_generated_assumed (NMSettingsConnection *connection)
+nm_settings_connection_get_nm_generated_assumed (NMSettingsConnection *self)
 {
-	return NM_FLAGS_HAS (nm_settings_connection_get_flags (connection), NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED_ASSUMED);
+	return NM_FLAGS_HAS (nm_settings_connection_get_flags (self), NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED_ASSUMED);
 }
 
 gboolean
-nm_settings_connection_get_ready (NMSettingsConnection *connection)
+nm_settings_connection_get_ready (NMSettingsConnection *self)
 {
-	return NM_SETTINGS_CONNECTION_GET_PRIVATE (connection)->ready;
+	return NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->ready;
 }
 
 void
-nm_settings_connection_set_ready (NMSettingsConnection *connection,
+nm_settings_connection_set_ready (NMSettingsConnection *self,
                                   gboolean ready)
 {
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (connection);
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
 	ready = !!ready;
 	if (priv->ready != ready) {
 		priv->ready = ready;
-		g_object_notify (G_OBJECT (connection), NM_SETTINGS_CONNECTION_READY);
+		g_object_notify (G_OBJECT (self), NM_SETTINGS_CONNECTION_READY);
 	}
 }
 
 /**
  * nm_settings_connection_set_filename:
- * @connection: an #NMSettingsConnection
- * @filename: @connection's filename
+ * @self: an #NMSettingsConnection
+ * @filename: @self's filename
  *
- * Called by a backend to sets the filename that @connection is read
+ * Called by a backend to sets the filename that @self is read
  * from/written to.
  */
 void
-nm_settings_connection_set_filename (NMSettingsConnection *connection,
+nm_settings_connection_set_filename (NMSettingsConnection *self,
                                      const char *filename)
 {
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (connection);
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
 	if (g_strcmp0 (filename, priv->filename) != 0) {
 		g_free (priv->filename);
 		priv->filename = g_strdup (filename);
-		g_object_notify (G_OBJECT (connection), NM_SETTINGS_CONNECTION_FILENAME);
+		g_object_notify (G_OBJECT (self), NM_SETTINGS_CONNECTION_FILENAME);
 	}
 }
 
 /**
  * nm_settings_connection_get_filename:
- * @connection: an #NMSettingsConnection
+ * @self: an #NMSettingsConnection
  *
- * Gets the filename that @connection was read from/written to.  This may be
- * %NULL if @connection is unsaved, or if it is associated with a backend that
+ * Gets the filename that @self was read from/written to.  This may be
+ * %NULL if @self is unsaved, or if it is associated with a backend that
  * does not store each connection in a separate file.
  *
- * Returns: @connection's filename.
+ * Returns: @self's filename.
  */
 const char *
-nm_settings_connection_get_filename (NMSettingsConnection *connection)
+nm_settings_connection_get_filename (NMSettingsConnection *self)
 {
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (connection);
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
 	return priv->filename;
 }
@@ -2280,11 +2309,23 @@ nm_settings_connection_init (NMSettingsConnection *self)
 }
 
 static void
+constructed (GObject *object)
+{
+	NMSettingsConnection *self = NM_SETTINGS_CONNECTION (object);
+
+	_LOGD ("constructed (%s)", G_OBJECT_TYPE_NAME (self));
+
+	G_OBJECT_CLASS (nm_settings_connection_parent_class)->constructed (object);
+}
+
+static void
 dispose (GObject *object)
 {
 	NMSettingsConnection *self = NM_SETTINGS_CONNECTION (object);
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	GSList *iter;
+
+	_LOGD ("disposing");
 
 	if (priv->updated_idle_id) {
 		g_source_remove (priv->updated_idle_id);
@@ -2386,6 +2427,7 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 	g_type_class_add_private (class, sizeof (NMSettingsConnectionPrivate));
 
 	/* Virtual methods */
+	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
@@ -2436,7 +2478,7 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 	/* Signals */
 
 	/* Emitted when the connection is changed for any reason */
-	signals[UPDATED] = 
+	signals[UPDATED] =
 		g_signal_new (NM_SETTINGS_CONNECTION_UPDATED,
 		              G_TYPE_FROM_CLASS (class),
 		              G_SIGNAL_RUN_FIRST,

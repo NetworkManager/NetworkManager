@@ -27,10 +27,10 @@
 
 #include <NetworkManager.h>
 #include <nm-secret-agent-old.h>
-#include "nm-glib-compat.h"
-#include "nm-test-utils.h"
 
 #include "common.h"
+
+#include "nm-test-utils.h"
 
 /*******************************************************************/
 
@@ -624,6 +624,8 @@ test_secret_agent_auto_register (void)
 
 /*******************************************************************/
 
+NMTST_DEFINE ();
+
 int
 main (int argc, char **argv)
 {
@@ -631,11 +633,7 @@ main (int argc, char **argv)
 
 	g_setenv ("LIBNM_USE_SESSION_BUS", "1", TRUE);
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
-
-	g_test_init (&argc, &argv, NULL);
+	nmtst_init (&argc, &argv, TRUE);
 
 	g_test_add ("/libnm/secret-agent/none", TestSecretAgentData, NULL,
 	            test_setup, test_secret_agent_none, test_cleanup);

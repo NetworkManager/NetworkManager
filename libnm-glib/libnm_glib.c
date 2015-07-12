@@ -32,6 +32,8 @@
 #include "NetworkManager.h"
 #include "libnm_glib.h"
 
+#include "nm-glib-compat.h"
+
 #define	DBUS_NO_SERVICE_ERROR			"org.freedesktop.DBus.Error.ServiceDoesNotExist"
 
 
@@ -495,9 +497,7 @@ libnm_glib_init (void)
 {
 	libnm_glib_ctx	*ctx = NULL;
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
+	nm_g_type_init ();
 
 	if (!g_thread_supported ())
 		g_thread_init (NULL);

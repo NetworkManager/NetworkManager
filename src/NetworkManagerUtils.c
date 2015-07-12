@@ -2526,11 +2526,15 @@ nm_utils_log_connection_diff (NMConnection *connection, NMConnection *diff_base,
 
 			if (print_header) {
 				GError *err_verify = NULL;
+				const char *path = nm_connection_get_path (connection);
 
-				if (diff_base)
-					nm_log (level, domain, "%sconnection '%s' (%p/%s < %p/%s):", prefix, name, connection, G_OBJECT_TYPE_NAME (connection), diff_base, G_OBJECT_TYPE_NAME (diff_base));
-				else
-					nm_log (level, domain, "%sconnection '%s' (%p/%s):", prefix, name, connection, G_OBJECT_TYPE_NAME (connection));
+				if (diff_base) {
+					nm_log (level, domain, "%sconnection '%s' (%p/%s < %p/%s)%s%s%s:", prefix, name, connection, G_OBJECT_TYPE_NAME (connection), diff_base, G_OBJECT_TYPE_NAME (diff_base),
+					        NM_PRINT_FMT_QUOTED (path, " [", path, "]", ""));
+				} else {
+					nm_log (level, domain, "%sconnection '%s' (%p/%s):%s%s%s", prefix, name, connection, G_OBJECT_TYPE_NAME (connection),
+					        NM_PRINT_FMT_QUOTED (path, " [", path, "]", ""));
+				}
 				print_header = FALSE;
 
 				if (!nm_connection_verify (connection, &err_verify)) {

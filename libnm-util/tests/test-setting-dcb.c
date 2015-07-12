@@ -308,9 +308,7 @@ int main (int argc, char **argv)
 
 	g_test_init (&argc, &argv, NULL);
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
+	nm_g_type_init ();
 
 	success = nm_utils_init (&error);
 	g_assert_no_error (error);

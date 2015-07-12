@@ -1170,10 +1170,6 @@ main (int argc, char **argv)
 {
 	g_setenv ("LIBNM_USE_SESSION_BUS", "1", TRUE);
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
-
 	nmtst_init (&argc, &argv, TRUE);
 
 	loop = g_main_loop_new (NULL, FALSE);

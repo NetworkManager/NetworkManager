@@ -273,9 +273,7 @@ main (int argc, char *argv[])
 	char *bad_domains = NULL;
 	NMConfigCmdLineOptions *config_cli;
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
+	nm_g_type_init ();
 
 	_nm_utils_is_manager_process = TRUE;
 

@@ -24,11 +24,11 @@
 #include <glib.h>
 #include <string.h>
 #include <nm-utils.h>
-#include <nm-glib-compat.h>
 #include "nm-setting-dcb.h"
 #include "nm-connection.h"
 #include "nm-errors.h"
-#include "gsystem-local-alloc.h"
+
+#include "nm-test-utils.h"
 
 #define DCB_FLAGS_ALL (NM_SETTING_DCB_FLAG_ENABLE | \
                        NM_SETTING_DCB_FLAG_ADVERTISE | \
@@ -303,18 +303,12 @@ test_dcb_bandwidth_sums (void)
 
 #define TPATH "/libnm/settings/dcb/"
 
+NMTST_DEFINE ();
+
 int
 main (int argc, char **argv)
 {
-	g_test_init (&argc, &argv, NULL);
-
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
-
-#if !GLIB_CHECK_VERSION(2,34,0)
-	g_log_set_always_fatal (G_LOG_LEVEL_CRITICAL);
-#endif
+	nmtst_init (&argc, &argv, TRUE);
 
 	g_test_add_func (TPATH "flags-valid", test_dcb_flags_valid);
 	g_test_add_func (TPATH "flags-invalid", test_dcb_flags_invalid);

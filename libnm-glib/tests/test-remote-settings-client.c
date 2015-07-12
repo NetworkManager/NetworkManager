@@ -36,7 +36,8 @@
 
 #include "nm-remote-settings.h"
 #include "common.h"
-#include "gsystem-local-alloc.h"
+
+#include "nm-test-utils.h"
 
 static NMTestServiceInfo *sinfo;
 static NMRemoteSettings *settings = NULL;
@@ -422,17 +423,15 @@ test_service_running (void)
 
 /*******************************************************************/
 
+NMTST_DEFINE ();
+
 int
 main (int argc, char **argv)
 {
 	int ret;
 	GError *error = NULL;
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
-	
-	g_test_init (&argc, &argv, NULL);
+	nmtst_init (&argc, &argv, TRUE);
 
 	bus = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
 	g_assert_no_error (error);

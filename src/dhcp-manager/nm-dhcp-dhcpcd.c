@@ -39,6 +39,7 @@
 #include "nm-logging.h"
 #include "NetworkManagerUtils.h"
 #include "nm-dhcp-listener.h"
+#include "nm-glib-compat.h"
 
 G_DEFINE_TYPE (NMDhcpDhcpcd, nm_dhcp_dhcpcd, NM_TYPE_DHCP_CLIENT)
 
@@ -213,7 +214,7 @@ nm_dhcp_dhcpcd_class_init (NMDhcpDhcpcdClass *dhcpcd_class)
 static void __attribute__((constructor))
 register_dhcp_dhclient (void)
 {
-	g_type_init ();
+	nm_g_type_init ();
 	_nm_dhcp_client_register (NM_TYPE_DHCP_DHCPCD,
 	                          "dhcpcd",
 	                          nm_dhcp_dhcpcd_get_path,

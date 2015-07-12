@@ -24,6 +24,9 @@
 #include <arpa/inet.h>
 
 #include "nm-dnsmasq-utils.h"
+#include "nm-logging.h"
+
+#include "nm-test-utils.h"
 
 static guint32
 addr_to_num (const char *addr)
@@ -101,14 +104,12 @@ test_address_ranges (void)
 
 /*******************************************/
 
+NMTST_DEFINE ();
+
 int
 main (int argc, char **argv)
 {
-	g_test_init (&argc, &argv, NULL);
-
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
+	nmtst_init_assert_logging (&argc, &argv, "INFO", "DEFAULT");
 
 	g_test_add_func ("/dnsmasq-manager/address-ranges", test_address_ranges);
 

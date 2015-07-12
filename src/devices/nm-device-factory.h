@@ -262,7 +262,7 @@ extern const char *_nm_device_factory_no_default_settings[];
 	static void __attribute__((constructor)) \
 	register_device_factory_internal_##lower (void) \
 	{ \
-		g_type_init (); \
+		nm_g_type_init (); \
 		g_type_ensure (NM_TYPE_##upper##_FACTORY); \
 	} \
  \
