@@ -178,8 +178,8 @@ $ nmcli g log level INFO domains DEFAULT
     <example><title>Adding a bonding master and two slave connection profiles</title>
       <programlisting><emphasis role="bold">
 $ nmcli con add type bond ifname mybond0 mode active-backup
-$ nmcli con add type bond-slave ifname eth1 master mybond0
-$ nmcli con add type bond-slave ifname eth2 master mybond0
+$ nmcli con add type ethernet ifname eth1 master mybond0
+$ nmcli con add type ethernet ifname eth2 master mybond0
       </emphasis></programlisting>
     </example>
     <para>
@@ -194,8 +194,8 @@ $ nmcli con add type bond-slave ifname eth2 master mybond0
     <example><title>Adding a team master and two slave connection profiles</title>
       <programlisting><emphasis role="bold">
 $ nmcli con add type team con-name Team1 ifname Team1 config team1-master-json.conf
-$ nmcli con add type team-slave con-name Team1-slave1 ifname em1 master Team1
-$ nmcli con add type team-slave con-name Team1-slave2 ifname em2 master Team1
+$ nmcli con add type ethernet con-name Team1-slave1 ifname em1 master Team1
+$ nmcli con add type ethernet con-name Team1-slave2 ifname em2 master Team1
       </emphasis></programlisting>
     </example>
     <para>
@@ -222,8 +222,8 @@ $ nmcli con up Team1-slave2
     <example><title>Adding a bridge and two slave profiles</title>
       <programlisting><emphasis role="bold">
 $ nmcli con add type bridge con-name TowerBridge ifname TowerBridge
-$ nmcli con add type bridge-slave con-name br-slave-1 ifname ens3 master TowerBridge
-$ nmcli con add type bridge-slave con-name br-slave-2 ifname ens4 master TowerBridge
+$ nmcli con add type ethernet con-name br-slave-1 ifname ens3 master TowerBridge
+$ nmcli con add type ethernet con-name br-slave-2 ifname ens4 master TowerBridge
 $ nmcli con modify TowerBridge bridge.stp no
       </emphasis></programlisting>
     </example>
