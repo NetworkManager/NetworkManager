@@ -1204,8 +1204,10 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 
 	/* Internal address of the VPN subnet's gateway */
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_INT_GATEWAY);
-	if (val)
+	if (val) {
 		priv->ip4_internal_gw = g_value_get_uint (val);
+		nm_ip4_config_set_gateway (config, priv->ip4_internal_gw);
+	}
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_ADDRESS);
 	if (val)
@@ -1351,8 +1353,10 @@ nm_vpn_connection_ip6_config_get (DBusGProxy *proxy,
 	if (val) {
 		GByteArray *ba = g_value_get_boxed (val);
 
-		if (ba->len == sizeof (struct in6_addr))
+		if (ba->len == sizeof (struct in6_addr)) {
 			priv->ip6_internal_gw = g_memdup (ba->data, ba->len);
+			nm_ip6_config_set_gateway (config, priv->ip6_internal_gw);
+		}
 	}
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP6_CONFIG_ADDRESS);
