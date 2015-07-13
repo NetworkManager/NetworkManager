@@ -290,7 +290,7 @@ nm_ip4_config_capture (int ifindex, gboolean capture_resolv_conf)
 }
 
 gboolean
-nm_ip4_config_commit (const NMIP4Config *config, int ifindex, gint64 default_route_metric)
+nm_ip4_config_commit (const NMIP4Config *config, int ifindex, gboolean routes_full_sync, gint64 default_route_metric)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 	int i;
@@ -359,7 +359,7 @@ nm_ip4_config_commit (const NMIP4Config *config, int ifindex, gint64 default_rou
 
 		nm_route_manager_ip4_route_register_device_route_purge_list (nm_route_manager_get (), device_route_purge_list);
 
-		success = nm_route_manager_ip4_route_sync (nm_route_manager_get (), ifindex, routes, default_route_metric < 0, TRUE);
+		success = nm_route_manager_ip4_route_sync (nm_route_manager_get (), ifindex, routes, default_route_metric < 0, routes_full_sync);
 		g_array_unref (routes);
 		if (!success)
 			return FALSE;

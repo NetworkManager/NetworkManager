@@ -104,7 +104,7 @@ dhcp4_state_changed (NMDhcpClient *client,
 			nm_ip4_config_subtract (existing, last_config);
 
 		nm_ip4_config_merge (existing, ip4_config);
-		if (!nm_ip4_config_commit (existing, ifindex, global_opt.priority_v4))
+		if (!nm_ip4_config_commit (existing, ifindex, TRUE, global_opt.priority_v4))
 			nm_log_warn (LOGD_DHCP4, "(%s): failed to apply DHCPv4 config", global_opt.ifname);
 
 		if (last_config)
@@ -241,7 +241,7 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, gpointer user_da
 		nm_ip6_config_subtract (existing, last_config);
 
 	nm_ip6_config_merge (existing, ip6_config);
-	if (!nm_ip6_config_commit (existing, ifindex))
+	if (!nm_ip6_config_commit (existing, ifindex, TRUE))
 		nm_log_warn (LOGD_IP6, "(%s): failed to apply IPv6 config", global_opt.ifname);
 
 	if (last_config)

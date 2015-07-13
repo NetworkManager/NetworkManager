@@ -406,7 +406,7 @@ nm_ip6_config_capture (int ifindex, gboolean capture_resolv_conf, NMSettingIP6Co
 }
 
 gboolean
-nm_ip6_config_commit (const NMIP6Config *config, int ifindex)
+nm_ip6_config_commit (const NMIP6Config *config, int ifindex, gboolean routes_full_sync)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 	int i;
@@ -437,7 +437,7 @@ nm_ip6_config_commit (const NMIP6Config *config, int ifindex)
 			g_array_append_vals (routes, route, 1);
 		}
 
-		success = nm_route_manager_ip6_route_sync (nm_route_manager_get (), ifindex, routes, TRUE, TRUE);
+		success = nm_route_manager_ip6_route_sync (nm_route_manager_get (), ifindex, routes, TRUE, routes_full_sync);
 		g_array_unref (routes);
 	}
 

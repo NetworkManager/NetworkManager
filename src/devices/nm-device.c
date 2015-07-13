@@ -6351,6 +6351,7 @@ nm_device_set_ip4_config (NMDevice *self,
 		 * FIXME: this is wrong in case where "assumed" means "take-over-seamlessly". In this
 		 * case, we should manage the device route, for example on new DHCP lease. */
 		success = nm_ip4_config_commit (new_config, ip_ifindex,
+		                                TRUE,
 		                                assumed ? (gint64) -1 : (gint64) default_route_metric);
 		if (!success)
 			reason_local = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
@@ -6483,7 +6484,9 @@ nm_device_set_ip6_config (NMDevice *self,
 	/* Always commit to nm-platform to update lifetimes */
 	if (commit && new_config) {
 		nm_device_ipv6_set_mtu (self, priv->ip6_mtu);
-		success = nm_ip6_config_commit (new_config, ip_ifindex);
+		success = nm_ip6_config_commit (new_config,
+		                                ip_ifindex,
+		                                TRUE);
 		if (!success)
 			reason_local = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
 	}
