@@ -880,12 +880,14 @@ apply_parent_device_config (NMVpnConnection *connection)
 	NMIP4Config *vpn4_parent_config = NULL;
 	NMIP6Config *vpn6_parent_config = NULL;
 
-	if (priv->ip4_config)
-		vpn4_parent_config = nm_ip4_config_new (priv->ip_ifindex);
-	if (priv->ip6_config)
-		vpn6_parent_config = nm_ip6_config_new (priv->ip_ifindex);
+	if (priv->ip_ifindex > 0) {
+		if (priv->ip4_config)
+			vpn4_parent_config = nm_ip4_config_new (priv->ip_ifindex);
+		if (priv->ip6_config)
+			vpn6_parent_config = nm_ip6_config_new (priv->ip_ifindex);
+	} else {
+		int ifindex;
 
-	if (priv->ip_ifindex <= 0) {
 		/* If the VPN didn't return a network interface, it is a route-based
 		 * VPN (like kernel IPSec) and all IP addressing and routing should
 		 * be done on the parent interface instead.
@@ -894,11 +896,14 @@ apply_parent_device_config (NMVpnConnection *connection)
 		/* Also clear the gateway. We don't configure the gateway as part of the
 		 * vpn-config. Instead we tell NMDefaultRouteManager directly about the
 		 * default route. */
-		if (vpn4_parent_config) {
+		ifindex = nm_device_get_ip_ifindex (parent_dev);
+		if (priv->ip4_config) {
+			vpn4_parent_config = nm_ip4_config_new (ifindex);
 			nm_ip4_config_merge (vpn4_parent_config, priv->ip4_config);
 			nm_ip4_config_set_gateway (vpn4_parent_config, 0);
 		}
-		if (vpn6_parent_config) {
+		if (priv->ip6_config) {
+			vpn6_parent_config = nm_ip6_config_new (ifindex);
 			nm_ip6_config_merge (vpn6_parent_config, priv->ip6_config);
 			nm_ip6_config_set_gateway (vpn6_parent_config, NULL);
 		}
