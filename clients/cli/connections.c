@@ -325,7 +325,6 @@ usage_connection_add (void)
 	              "                  ifname <interface name> | \"*\"\n"
 	              "                  [con-name <connection name>]\n"
 	              "                  [autoconnect yes|no]\n\n"
-	              "                  [save yes|no]\n\n"
 	              "                  [master <master (ifname, or connection UUID or name)>]\n"
 	              "                  [slave-type <master connection type>]\n\n"
 	              "                  [save yes|no]\n\n"
