@@ -792,7 +792,14 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 			synced = TRUE;
 		}
 	}
+
 	g_assert (!default_route || default_route->plen == 0);
+
+	if (!synced && never_default) {
+		/* having a non-synced, never-default entry is non-sensical. Unset
+		 * @default_route so that we don't add such an entry below. */
+		default_route = NULL;
+	}
 
 	if (!entry && !default_route)
 		/* nothing to do */;
