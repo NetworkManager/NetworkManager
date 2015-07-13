@@ -1191,8 +1191,10 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 	address.plen = 24;
 
 	/* Internal address of the VPN subnet's gateway */
-	if (g_variant_lookup (dict, NM_VPN_PLUGIN_IP4_CONFIG_INT_GATEWAY, "u", &u32))
+	if (g_variant_lookup (dict, NM_VPN_PLUGIN_IP4_CONFIG_INT_GATEWAY, "u", &u32)) {
 		priv->ip4_internal_gw = u32;
+		nm_ip4_config_set_gateway (config, priv->ip4_internal_gw);
+	}
 
 	if (g_variant_lookup (dict, NM_VPN_PLUGIN_IP4_CONFIG_ADDRESS, "u", &u32))
 		address.address = u32;
@@ -1318,6 +1320,7 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 	g_clear_pointer (&priv->ip6_internal_gw, g_free);
 	if (g_variant_lookup (dict, NM_VPN_PLUGIN_IP6_CONFIG_INT_GATEWAY, "@ay", &v)) {
 		priv->ip6_internal_gw = ip6_addr_dup_from_variant (v);
+		nm_ip6_config_set_gateway (config, priv->ip6_internal_gw);
 		g_variant_unref (v);
 	}
 
