@@ -796,7 +796,7 @@ next:
 		 * we need to know whether a route is shadowed by another route, and that
 		 * requires to look at @ipx_routes. */
 		for (; cur_ipx_route; cur_ipx_route = _get_next_ipx_route (ipx_routes->index, FALSE, &i_ipx_routes, ifindex)) {
-			int route_id_dest_result = -1;
+			int route_dest_cmp_result = -1;
 
 			if (   (i_type == 0 && !VTABLE_IS_DEVICE_ROUTE (vtable, cur_ipx_route))
 			    || (i_type == 1 && VTABLE_IS_DEVICE_ROUTE (vtable, cur_ipx_route))) {
@@ -814,8 +814,8 @@ next:
 
 			/* skip over @plat_routes that are ordered before our @cur_ipx_route. */
 			while (   cur_plat_route
-			       && (route_id_dest_result = vtable->route_dest_cmp (cur_plat_route, cur_ipx_route)) <= 0) {
-				if (   route_id_dest_result == 0
+			       && (route_dest_cmp_result = vtable->route_dest_cmp (cur_plat_route, cur_ipx_route)) <= 0) {
+				if (   route_dest_cmp_result == 0
 				    && cur_plat_route->rx.metric >= *p_effective_metric)
 					break;
 				cur_plat_route = _get_next_plat_route (plat_routes_idx, FALSE, &i_plat_routes);
@@ -824,7 +824,7 @@ next:
 			/* only add the route if we don't have an identical route in @plat_routes,
 			 * i.e. if @cur_plat_route is different from @cur_ipx_route. */
 			if (   !cur_plat_route
-			    || route_id_dest_result != 0
+			    || route_dest_cmp_result != 0
 			    || !_route_equals_ignoring_ifindex (vtable, cur_plat_route, cur_ipx_route, *p_effective_metric)) {
 
 				if (!vtable->vt->route_add (priv->platform, ifindex, cur_ipx_route, *p_effective_metric)) {
