@@ -880,21 +880,33 @@ apply_parent_device_config (NMVpnConnection *connection)
 	NMIP4Config *vpn4_parent_config = NULL;
 	NMIP6Config *vpn6_parent_config = NULL;
 
-	if (priv->ip4_config)
-		vpn4_parent_config = nm_ip4_config_new (priv->ip_ifindex);
-	if (priv->ip6_config)
-		vpn6_parent_config = nm_ip6_config_new (priv->ip_ifindex);
+	if (priv->ip_ifindex > 0) {
+		if (priv->ip4_config)
+			vpn4_parent_config = nm_ip4_config_new (priv->ip_ifindex);
+		if (priv->ip6_config)
+			vpn6_parent_config = nm_ip6_config_new (priv->ip_ifindex);
+	} else {
+		int ifindex;
 
-	if (priv->ip_ifindex <= 0) {
 		/* If the VPN didn't return a network interface, it is a route-based
 		 * VPN (like kernel IPSec) and all IP addressing and routing should
 		 * be done on the parent interface instead.
 		 */
 
-		if (vpn4_parent_config)
+		/* Also clear the gateway. We don't configure the gateway as part of the
+		 * vpn-config. Instead we tell NMDefaultRouteManager directly about the
+		 * default route. */
+		ifindex = nm_device_get_ip_ifindex (parent_dev);
+		if (priv->ip4_config) {
+			vpn4_parent_config = nm_ip4_config_new (ifindex);
 			nm_ip4_config_merge (vpn4_parent_config, priv->ip4_config);
-		if (vpn6_parent_config)
+			nm_ip4_config_set_gateway (vpn4_parent_config, 0);
+		}
+		if (priv->ip6_config) {
+			vpn6_parent_config = nm_ip6_config_new (ifindex);
 			nm_ip6_config_merge (vpn6_parent_config, priv->ip6_config);
+			nm_ip6_config_set_gateway (vpn6_parent_config, NULL);
+		}
 	}
 
 	if (vpn4_parent_config) {
@@ -1182,12 +1194,12 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 
 	memset (&address, 0, sizeof (address));
 	address.plen = 24;
-	if (priv->ip4_external_gw)
-		nm_ip4_config_set_gateway (config, priv->ip4_external_gw);
 
 	/* Internal address of the VPN subnet's gateway */
-	if (g_variant_lookup (dict, NM_VPN_PLUGIN_IP4_CONFIG_INT_GATEWAY, "u", &u32))
+	if (g_variant_lookup (dict, NM_VPN_PLUGIN_IP4_CONFIG_INT_GATEWAY, "u", &u32)) {
 		priv->ip4_internal_gw = u32;
+		nm_ip4_config_set_gateway (config, priv->ip4_internal_gw);
+	}
 
 	if (g_variant_lookup (dict, NM_VPN_PLUGIN_IP4_CONFIG_ADDRESS, "u", &u32))
 		address.address = u32;
@@ -1308,13 +1320,12 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 
 	memset (&address, 0, sizeof (address));
 	address.plen = 128;
-	if (priv->ip6_external_gw)
-		nm_ip6_config_set_gateway (config, priv->ip6_external_gw);
 
 	/* Internal address of the VPN subnet's gateway */
 	g_clear_pointer (&priv->ip6_internal_gw, g_free);
 	if (g_variant_lookup (dict, NM_VPN_PLUGIN_IP6_CONFIG_INT_GATEWAY, "@ay", &v)) {
 		priv->ip6_internal_gw = ip6_addr_dup_from_variant (v);
+		nm_ip6_config_set_gateway (config, priv->ip6_internal_gw);
 		g_variant_unref (v);
 	}
 

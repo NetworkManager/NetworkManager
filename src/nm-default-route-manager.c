@@ -767,7 +767,7 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 						never_default = nm_ip4_config_get_never_default (vpn_config);
 						rt.r4.ifindex = ip_ifindex;
 						rt.r4.source = NM_IP_CONFIG_SOURCE_VPN;
-						rt.r4.gateway = nm_vpn_connection_get_ip4_internal_gateway (vpn);
+						rt.r4.gateway = nm_ip4_config_get_gateway (vpn_config);
 						rt.r4.metric = nm_vpn_connection_get_ip4_route_metric (vpn);
 						rt.r4.mss = nm_ip4_config_get_mss (vpn_config);
 						default_route = &rt.rx;
@@ -777,7 +777,7 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 
 					vpn_config = nm_vpn_connection_get_ip6_config (vpn);
 					if (vpn_config) {
-						const struct in6_addr *int_gw = nm_vpn_connection_get_ip6_internal_gateway (vpn);
+						const struct in6_addr *int_gw = nm_ip6_config_get_gateway (vpn_config);
 
 						never_default = nm_ip6_config_get_never_default (vpn_config);
 						rt.r6.ifindex = ip_ifindex;
@@ -789,10 +789,23 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 					}
 				}
 			}
-			synced = TRUE;
+			if (nm_vpn_connection_get_ip_ifindex (vpn) > 0)
+				synced = TRUE;
+			else {
+				/* a VPN connection without tunnel device cannot have a non-synced, missing default route.
+				 * Either it has a default route (which is synced), or it has no entry. */
+				synced = default_route && !never_default;
+			}
 		}
 	}
+
 	g_assert (!default_route || default_route->plen == 0);
+
+	if (!synced && never_default) {
+		/* having a non-synced, never-default entry is non-sensical. Unset
+		 * @default_route so that we don't add such an entry below. */
+		default_route = NULL;
+	}
 
 	if (!entry && !default_route)
 		/* nothing to do */;
