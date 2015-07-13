@@ -359,7 +359,7 @@ nm_ip4_config_commit (const NMIP4Config *config, int ifindex, gint64 default_rou
 
 		nm_route_manager_ip4_route_register_device_route_purge_list (nm_route_manager_get (), device_route_purge_list);
 
-		success = nm_route_manager_ip4_route_sync (nm_route_manager_get (), ifindex, routes, default_route_metric < 0);
+		success = nm_route_manager_ip4_route_sync (nm_route_manager_get (), ifindex, routes, default_route_metric < 0, TRUE);
 		g_array_unref (routes);
 		if (!success)
 			return FALSE;

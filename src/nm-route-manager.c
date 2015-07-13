@@ -445,7 +445,7 @@ _sort_indexes_cmp (guint *a, guint *b)
 /*********************************************************************************************/
 
 static gboolean
-_vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const GArray *known_routes, gboolean ignore_kernel_routes)
+_vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const GArray *known_routes, gboolean ignore_kernel_routes, gboolean full_sync)
 {
 	NMRouteManagerPrivate *priv = NM_ROUTE_MANAGER_GET_PRIVATE (self);
 	GArray *plat_routes;
@@ -541,6 +541,53 @@ _vx_route_sync (const VTableIP *vtable, NMRouteManager *self, int ifindex, const
 			cur_ipx_route = _get_next_ipx_route (ipx_routes->index, FALSE, &i_ipx_routes, ifindex);
 		if (cur_known_route)
 			cur_known_route = _get_next_known_route (vtable, known_routes_idx, FALSE, &i_known_routes);
+	}
+
+	if (!full_sync && to_delete_indexes) {
+		/***************************************************************************
+		 * Delete routes in platform, that we are about to remove from @ipx_routes
+		 *
+		 * When doing a non-full_sync, we delete routes from platform that were previously
+		 * known by route-manager, and are now deleted.
+		 ***************************************************************************/
+
+		/* iterate over @to_delete_indexes and @plat_routes.
+		 * @to_delete_indexes contains the indexes (relative to ipx_routes->index) of items
+		 * we are about to delete. */
+		cur_plat_route = _get_next_plat_route (plat_routes_idx, TRUE, &i_plat_routes);
+		for (i = 0; i < to_delete_indexes->len; i++) {
+			int route_dest_cmp_result = 0;
+			i_ipx_routes = g_array_index (to_delete_indexes, guint, i);
+			cur_ipx_route = ipx_routes->index->entries[i_ipx_routes];
+			p_effective_metric = &effective_metrics[i_ipx_routes];
+
+			nm_assert (cur_ipx_route->rx.ifindex == ifindex);
+
+			if (*p_effective_metric == -1)
+				continue;
+
+			/* skip over @plat_routes that are ordered before our @cur_ipx_route. */
+			while (   cur_plat_route
+			       && (route_dest_cmp_result = vtable->route_dest_cmp (cur_plat_route, cur_ipx_route)) <= 0) {
+				if (   route_dest_cmp_result == 0
+				    && cur_plat_route->rx.metric >= *p_effective_metric)
+					break;
+				cur_plat_route = _get_next_plat_route (plat_routes_idx, FALSE, &i_plat_routes);
+			}
+
+			if (!cur_plat_route) {
+				/* no more platform routes. Break the loop. */
+				break;
+			}
+
+			if (   route_dest_cmp_result == 0
+			    && cur_plat_route->rx.metric == *p_effective_metric) {
+				/* we are about to delete cur_ipx_route and we have a matching route
+				 * in platform. Delete it. */
+				_LOGT (vtable->vt->addr_family, "%3d: platform rt-rm #%u - %s", ifindex, i_plat_routes, vtable->vt->route_to_string (cur_plat_route));
+				vtable->vt->route_delete (priv->platform, ifindex, cur_plat_route);
+			}
+		}
 	}
 
 	/* Update @ipx_routes with the just learned changes. */
@@ -665,42 +712,47 @@ next:
 		}
 	}
 
-	/***************************************************************************
-	 * Delete routes in platform, that no longer exist in @ipx_routes
-	 ***************************************************************************/
+	if (full_sync) {
+		/***************************************************************************
+		 * Delete all routes in platform, that no longer exist in @ipx_routes
+		 *
+		 * Different from the delete action above, we delete every unknown route on
+		 * the interface.
+		 ***************************************************************************/
 
-	/* iterate over @plat_routes and @ipx_routes */
-	cur_plat_route = _get_next_plat_route (plat_routes_idx, TRUE, &i_plat_routes);
-	cur_ipx_route = _get_next_ipx_route (ipx_routes->index, TRUE, &i_ipx_routes, ifindex);
-	if (cur_ipx_route)
-		p_effective_metric = &effective_metrics[i_ipx_routes];
-	while (cur_plat_route) {
-		int route_dest_cmp_result = 0;
+		/* iterate over @plat_routes and @ipx_routes */
+		cur_plat_route = _get_next_plat_route (plat_routes_idx, TRUE, &i_plat_routes);
+		cur_ipx_route = _get_next_ipx_route (ipx_routes->index, TRUE, &i_ipx_routes, ifindex);
+		if (cur_ipx_route)
+			p_effective_metric = &effective_metrics[i_ipx_routes];
+		while (cur_plat_route) {
+			int route_dest_cmp_result = 0;
 
-		g_assert (cur_plat_route->rx.ifindex == ifindex);
+			g_assert (cur_plat_route->rx.ifindex == ifindex);
 
-		_LOGT (vtable->vt->addr_family, "%3d: platform rt   #%u - %s", ifindex, i_plat_routes, vtable->vt->route_to_string (cur_plat_route));
+			_LOGT (vtable->vt->addr_family, "%3d: platform rt   #%u - %s", ifindex, i_plat_routes, vtable->vt->route_to_string (cur_plat_route));
 
-		/* skip over @cur_ipx_route that are ordered before @cur_plat_route */
-		while (   cur_ipx_route
-		       && ((route_dest_cmp_result = vtable->route_dest_cmp (cur_ipx_route, cur_plat_route)) <= 0)) {
-			if (   route_dest_cmp_result == 0
-			    && *p_effective_metric != -1
-			    && *p_effective_metric >= cur_plat_route->rx.metric) {
-				break;
+			/* skip over @cur_ipx_route that are ordered before @cur_plat_route */
+			while (   cur_ipx_route
+			       && ((route_dest_cmp_result = vtable->route_dest_cmp (cur_ipx_route, cur_plat_route)) <= 0)) {
+				if (   route_dest_cmp_result == 0
+				    && *p_effective_metric != -1
+				    && *p_effective_metric >= cur_plat_route->rx.metric) {
+					break;
+				}
+				cur_ipx_route = _get_next_ipx_route (ipx_routes->index, FALSE, &i_ipx_routes, ifindex);
+				if (cur_ipx_route)
+					p_effective_metric = &effective_metrics[i_ipx_routes];
 			}
-			cur_ipx_route = _get_next_ipx_route (ipx_routes->index, FALSE, &i_ipx_routes, ifindex);
-			if (cur_ipx_route)
-				p_effective_metric = &effective_metrics[i_ipx_routes];
+
+			/* if @cur_ipx_route is not equal to @plat_route, the route must be deleted. */
+			if (   !cur_ipx_route
+			    || route_dest_cmp_result != 0
+			    || *p_effective_metric != cur_plat_route->rx.metric)
+				vtable->vt->route_delete (priv->platform, ifindex, cur_plat_route);
+
+			cur_plat_route = _get_next_plat_route (plat_routes_idx, FALSE, &i_plat_routes);
 		}
-
-		/* if @cur_ipx_route is not equal to @plat_route, the route must be deleted. */
-		if (   !cur_ipx_route
-		    || route_dest_cmp_result != 0
-		    || *p_effective_metric != cur_plat_route->rx.metric)
-			vtable->vt->route_delete (priv->platform, ifindex, cur_plat_route);
-
-		cur_plat_route = _get_next_plat_route (plat_routes_idx, FALSE, &i_plat_routes);
 	}
 
 	/***************************************************************************
@@ -855,6 +907,9 @@ next:
  * @ifindex: Interface index
  * @known_routes: List of routes
  * @ignore_kernel_routes: if %TRUE, ignore kernel routes.
+ * @full_sync: whether to do a full sync and delete routes
+ *   that are configured on the interface but not currently
+ *   tracked by route-manager.
  *
  * A convenience function to synchronize routes for a specific interface
  * with the least possible disturbance. It simply removes routes that are
@@ -865,9 +920,9 @@ next:
  * Returns: %TRUE on success.
  */
 gboolean
-nm_route_manager_ip4_route_sync (NMRouteManager *self, int ifindex, const GArray *known_routes, gboolean ignore_kernel_routes)
+nm_route_manager_ip4_route_sync (NMRouteManager *self, int ifindex, const GArray *known_routes, gboolean ignore_kernel_routes, gboolean full_sync)
 {
-	return _vx_route_sync (&vtable_v4, self, ifindex, known_routes, ignore_kernel_routes);
+	return _vx_route_sync (&vtable_v4, self, ifindex, known_routes, ignore_kernel_routes, full_sync);
 }
 
 /**
@@ -875,6 +930,9 @@ nm_route_manager_ip4_route_sync (NMRouteManager *self, int ifindex, const GArray
  * @ifindex: Interface index
  * @known_routes: List of routes
  * @ignore_kernel_routes: if %TRUE, ignore kernel routes.
+ * @full_sync: whether to do a full sync and delete routes
+ *   that are configured on the interface but not currently
+ *   tracked by route-manager.
  *
  * A convenience function to synchronize routes for a specific interface
  * with the least possible disturbance. It simply removes routes that are
@@ -885,16 +943,16 @@ nm_route_manager_ip4_route_sync (NMRouteManager *self, int ifindex, const GArray
  * Returns: %TRUE on success.
  */
 gboolean
-nm_route_manager_ip6_route_sync (NMRouteManager *self, int ifindex, const GArray *known_routes, gboolean ignore_kernel_routes)
+nm_route_manager_ip6_route_sync (NMRouteManager *self, int ifindex, const GArray *known_routes, gboolean ignore_kernel_routes, gboolean full_sync)
 {
-	return _vx_route_sync (&vtable_v6, self, ifindex, known_routes, ignore_kernel_routes);
+	return _vx_route_sync (&vtable_v6, self, ifindex, known_routes, ignore_kernel_routes, full_sync);
 }
 
 gboolean
 nm_route_manager_route_flush (NMRouteManager *self, int ifindex)
 {
-	return    nm_route_manager_ip4_route_sync (self, ifindex, NULL, FALSE)
-	       && nm_route_manager_ip6_route_sync (self, ifindex, NULL, FALSE);
+	return    nm_route_manager_ip4_route_sync (self, ifindex, NULL, FALSE, TRUE)
+	       && nm_route_manager_ip6_route_sync (self, ifindex, NULL, FALSE, TRUE);
 }
 
 /*********************************************************************************************/
