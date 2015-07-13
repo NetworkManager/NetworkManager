@@ -120,6 +120,7 @@ static const LogDesc domain_descs[] = {
 	{ LOGD_CONCHECK,  "CONCHECK" },
 	{ LOGD_DCB,       "DCB" },
 	{ LOGD_DISPATCH,  "DISPATCH" },
+	{ LOGD_AUDIT,     "AUDIT" },
 	{ 0, NULL }
 };
 
