@@ -351,6 +351,7 @@ static gboolean nm_device_set_ip4_config (NMDevice *self,
                                           NMIP4Config *config,
                                           guint32 default_route_metric,
                                           gboolean commit,
+                                          gboolean routes_full_sync,
                                           NMDeviceStateReason *reason);
 static gboolean ip4_config_merge_and_apply (NMDevice *self,
                                             NMIP4Config *config,
@@ -360,6 +361,7 @@ static gboolean ip4_config_merge_and_apply (NMDevice *self,
 static gboolean nm_device_set_ip6_config (NMDevice *self,
                                           NMIP6Config *config,
                                           gboolean commit,
+                                          gboolean routes_full_sync,
                                           NMDeviceStateReason *reason);
 
 static gboolean nm_device_master_add_slave (NMDevice *self, NMDevice *slave, gboolean configure);
@@ -3248,6 +3250,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 	const guint32 default_route_metric = nm_device_get_ip4_route_metric (self);
 	guint32 gateway;
 	gboolean connection_has_default_route, connection_is_never_default;
+	gboolean routes_full_sync;
 
 	/* Merge all the configs into the composite config */
 	if (config) {
@@ -3311,6 +3314,10 @@ ip4_config_merge_and_apply (NMDevice *self,
 	 * the route is assumed. */
 	priv->default_route.v4_has = FALSE;
 	priv->default_route.v4_is_assumed = TRUE;
+
+	routes_full_sync =    commit
+	                   && priv->default_route.v4_configure_first_time
+	                   && !nm_device_uses_assumed_connection (self);
 
 	if (!commit) {
 		/* during a non-commit event, we always pickup whatever is configured. */
@@ -3391,7 +3398,7 @@ END_ADD_DEFAULT_ROUTE:
 			NM_DEVICE_GET_CLASS (self)->ip4_config_pre_commit (self, composite);
 	}
 
-	success = nm_device_set_ip4_config (self, composite, default_route_metric, commit, out_reason);
+	success = nm_device_set_ip4_config (self, composite, default_route_metric, commit, routes_full_sync, out_reason);
 	g_object_unref (composite);
 	return success;
 }
@@ -3864,6 +3871,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 	gboolean has_direct_route;
 	const struct in6_addr *gateway;
 	gboolean connection_has_default_route, connection_is_never_default;
+	gboolean routes_full_sync;
 
 	/* If no config was passed in, create a new one */
 	composite = nm_ip6_config_new (nm_device_get_ip_ifindex (self));
@@ -3925,6 +3933,10 @@ ip6_config_merge_and_apply (NMDevice *self,
 	 * the route is assumed. */
 	priv->default_route.v6_has = FALSE;
 	priv->default_route.v6_is_assumed = TRUE;
+
+	routes_full_sync =    commit
+	                   && priv->default_route.v6_configure_first_time
+	                   && !nm_device_uses_assumed_connection (self);
 
 	if (!commit) {
 		/* during a non-commit event, we always pickup whatever is configured. */
@@ -4008,7 +4020,7 @@ END_ADD_DEFAULT_ROUTE:
 			NM_DEVICE_GET_CLASS (self)->ip6_config_pre_commit (self, composite);
 	}
 
-	success = nm_device_set_ip6_config (self, composite, commit, out_reason);
+	success = nm_device_set_ip6_config (self, composite, commit, routes_full_sync, out_reason);
 	g_object_unref (composite);
 	return success;
 }
@@ -6317,6 +6329,7 @@ nm_device_set_ip4_config (NMDevice *self,
                           NMIP4Config *new_config,
                           guint32 default_route_metric,
                           gboolean commit,
+                          gboolean routes_full_sync,
                           NMDeviceStateReason *reason)
 {
 	NMDevicePrivate *priv;
@@ -6351,7 +6364,7 @@ nm_device_set_ip4_config (NMDevice *self,
 		 * FIXME: this is wrong in case where "assumed" means "take-over-seamlessly". In this
 		 * case, we should manage the device route, for example on new DHCP lease. */
 		success = nm_ip4_config_commit (new_config, ip_ifindex,
-		                                TRUE,
+		                                routes_full_sync,
 		                                assumed ? (gint64) -1 : (gint64) default_route_metric);
 		if (!success)
 			reason_local = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
@@ -6457,6 +6470,7 @@ static gboolean
 nm_device_set_ip6_config (NMDevice *self,
                           NMIP6Config *new_config,
                           gboolean commit,
+                          gboolean routes_full_sync,
                           NMDeviceStateReason *reason)
 {
 	NMDevicePrivate *priv;
@@ -6486,7 +6500,7 @@ nm_device_set_ip6_config (NMDevice *self,
 		nm_device_ipv6_set_mtu (self, priv->ip6_mtu);
 		success = nm_ip6_config_commit (new_config,
 		                                ip_ifindex,
-		                                TRUE);
+		                                routes_full_sync);
 		if (!success)
 			reason_local = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
 	}
@@ -7940,8 +7954,8 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 	/* Clean up IP configs; this does not actually deconfigure the
 	 * interface; the caller must flush routes and addresses explicitly.
 	 */
-	nm_device_set_ip4_config (self, NULL, 0, TRUE, &ignored);
-	nm_device_set_ip6_config (self, NULL, TRUE, &ignored);
+	nm_device_set_ip4_config (self, NULL, 0, TRUE, TRUE, &ignored);
+	nm_device_set_ip6_config (self, NULL, TRUE, TRUE, &ignored);
 	g_clear_object (&priv->con_ip4_config);
 	g_clear_object (&priv->dev_ip4_config);
 	g_clear_object (&priv->ext_ip4_config);
