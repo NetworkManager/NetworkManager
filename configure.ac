@@ -493,7 +493,6 @@ if test "$have_selinux" = "yes"; then
 else
     AC_DEFINE(HAVE_SELINUX, 0, [Define if you have SELinux support])
 fi
-AM_CONDITIONAL(HAVE_SELINUX, test "${have_selinux}" = "yes")
 
 # libnl support for the linux platform
 PKG_CHECK_MODULES(LIBNL, libnl-3.0 >= 3.2.8 libnl-route-3.0 libnl-genl-3.0)

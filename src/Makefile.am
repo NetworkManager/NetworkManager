@@ -459,14 +459,11 @@ libNetworkManager_la_LIBADD = \
 	$(SYSTEMD_JOURNAL_LIBS) \
 	$(LIBNDP_LIBS) \
 	$(LIBDL) \
-	$(LIBM)
+	$(LIBM) \
+	$(SELINUX_LIBS)
 
 if WITH_LIBSOUP
 libNetworkManager_la_LIBADD += $(LIBSOUP_LIBS)
-endif
-
-if HAVE_SELINUX
-libNetworkManager_la_LIBADD += $(SELINUX_LIBS)
 endif
 
 NetworkManager_LDFLAGS = -rdynamic
