@@ -437,7 +437,8 @@ dispatcher_idle_cb (gpointer user_data)
 static gboolean
 _dispatcher_call (DispatcherAction action,
                   gboolean blocking,
-                  NMConnection *connection,
+                  NMSettingsConnection *settings_connection,
+                  NMConnection *applied_connection,
                   NMDevice *device,
                   const char *vpn_iface,
                   NMIP4Config *vpn_ip4_config,
@@ -510,29 +511,33 @@ _dispatcher_call (DispatcherAction action,
 		goto done;
 	}
 
-	if (connection) {
+	if (applied_connection)
+		connection_dict = nm_connection_to_dbus (applied_connection, NM_CONNECTION_SERIALIZE_NO_SECRETS);
+	else
+		connection_dict = g_variant_new_array (G_VARIANT_TYPE ("{sa{sv}}"), NULL, 0);
+
+	g_variant_builder_init (&connection_props, G_VARIANT_TYPE_VARDICT);
+	if (settings_connection) {
+		const char *connection_path;
 		const char *filename;
 
-		connection_dict = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_NO_SECRETS);
-
-		g_variant_builder_init (&connection_props, G_VARIANT_TYPE_VARDICT);
-		g_variant_builder_add (&connection_props, "{sv}",
-		                       NMD_CONNECTION_PROPS_PATH,
-		                       g_variant_new_object_path (nm_connection_get_path (connection)));
-		filename = nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection));
+		connection_path = nm_connection_get_path (NM_CONNECTION (settings_connection));
+		if (connection_path) {
+			g_variant_builder_add (&connection_props, "{sv}",
+			                       NMD_CONNECTION_PROPS_PATH,
+			                       g_variant_new_object_path (connection_path));
+		}
+		filename = nm_settings_connection_get_filename (settings_connection);
 		if (filename) {
 			g_variant_builder_add (&connection_props, "{sv}",
 			                       NMD_CONNECTION_PROPS_FILENAME,
 			                       g_variant_new_string (filename));
 		}
-		if (nm_settings_connection_get_nm_generated_assumed (NM_SETTINGS_CONNECTION (connection))) {
+		if (nm_settings_connection_get_nm_generated_assumed (settings_connection)) {
 			g_variant_builder_add (&connection_props, "{sv}",
 			                       NMD_CONNECTION_PROPS_EXTERNAL,
 			                       g_variant_new_boolean (TRUE));
 		}
-	} else {
-		connection_dict = g_variant_new_array (G_VARIANT_TYPE ("{sa{sv}}"), NULL, 0);
-		g_variant_builder_init (&connection_props, G_VARIANT_TYPE_VARDICT);
 	}
 
 	g_variant_builder_init (&device_props, G_VARIANT_TYPE_VARDICT);
@@ -639,7 +644,8 @@ done:
 /**
  * nm_dispatcher_call:
  * @action: the %DispatcherAction
- * @connection: the #NMConnection the action applies to
+ * @settings_connection: the #NMSettingsConnection the action applies to
+ * @applied_connection: the currently applied connection
  * @device: the #NMDevice the action applies to
  * @callback: a caller-supplied callback to execute when done
  * @user_data: caller-supplied pointer passed to @callback
@@ -653,20 +659,22 @@ done:
  */
 gboolean
 nm_dispatcher_call (DispatcherAction action,
-                    NMConnection *connection,
+                    NMSettingsConnection *settings_connection,
+                    NMConnection *applied_connection,
                     NMDevice *device,
                     DispatcherFunc callback,
                     gpointer user_data,
                     guint *out_call_id)
 {
-	return _dispatcher_call (action, FALSE, connection, device, NULL, NULL,
+	return _dispatcher_call (action, FALSE, settings_connection, applied_connection, device, NULL, NULL,
 	                         NULL, callback, user_data, out_call_id);
 }
 
 /**
  * nm_dispatcher_call_sync():
  * @action: the %DispatcherAction
- * @connection: the #NMConnection the action applies to
+ * @settings_connection: the #NMSettingsConnection the action applies to
+ * @applied_connection: the currently applied connection
  * @device: the #NMDevice the action applies to
  *
  * This method always invokes the dispatcher action synchronously and it may
@@ -676,17 +684,19 @@ nm_dispatcher_call (DispatcherAction action,
  */
 gboolean
 nm_dispatcher_call_sync (DispatcherAction action,
-                         NMConnection *connection,
+                         NMSettingsConnection *settings_connection,
+                         NMConnection *applied_connection,
                          NMDevice *device)
 {
-	return _dispatcher_call (action, TRUE, connection, device, NULL, NULL,
+	return _dispatcher_call (action, TRUE, settings_connection, applied_connection, device, NULL, NULL,
 	                         NULL, NULL, NULL, NULL);
 }
 
 /**
  * nm_dispatcher_call_vpn():
  * @action: the %DispatcherAction
- * @connection: the #NMConnection the action applies to
+ * @settings_connection: the #NMSettingsConnection the action applies to
+ * @applied_connection: the currently applied connection
  * @parent_device: the parent #NMDevice of the VPN connection
  * @vpn_iface: the IP interface of the VPN tunnel, if any
  * @vpn_ip4_config: the #NMIP4Config of the VPN connection
@@ -703,7 +713,8 @@ nm_dispatcher_call_sync (DispatcherAction action,
  */
 gboolean
 nm_dispatcher_call_vpn (DispatcherAction action,
-                        NMConnection *connection,
+                        NMSettingsConnection *settings_connection,
+                        NMConnection *applied_connection,
                         NMDevice *parent_device,
                         const char *vpn_iface,
                         NMIP4Config *vpn_ip4_config,
@@ -712,14 +723,15 @@ nm_dispatcher_call_vpn (DispatcherAction action,
                         gpointer user_data,
                         guint *out_call_id)
 {
-	return _dispatcher_call (action, FALSE, connection, parent_device, vpn_iface,
+	return _dispatcher_call (action, FALSE, settings_connection, applied_connection, parent_device, vpn_iface,
 	                         vpn_ip4_config, vpn_ip6_config, callback, user_data, out_call_id);
 }
 
 /**
  * nm_dispatcher_call_vpn_sync():
  * @action: the %DispatcherAction
- * @connection: the #NMConnection the action applies to
+ * @settings_connection: the #NMSettingsConnection the action applies to
+ * @applied_connection: the currently applied connection
  * @parent_device: the parent #NMDevice of the VPN connection
  * @vpn_iface: the IP interface of the VPN tunnel, if any
  * @vpn_ip4_config: the #NMIP4Config of the VPN connection
@@ -732,13 +744,14 @@ nm_dispatcher_call_vpn (DispatcherAction action,
  */
 gboolean
 nm_dispatcher_call_vpn_sync (DispatcherAction action,
-                             NMConnection *connection,
+                             NMSettingsConnection *settings_connection,
+                             NMConnection *applied_connection,
                              NMDevice *parent_device,
                              const char *vpn_iface,
                              NMIP4Config *vpn_ip4_config,
                              NMIP6Config *vpn_ip6_config)
 {
-	return _dispatcher_call (action, TRUE, connection, parent_device, vpn_iface,
+	return _dispatcher_call (action, TRUE, settings_connection, applied_connection, parent_device, vpn_iface,
 	                         vpn_ip4_config, vpn_ip6_config, NULL, NULL, NULL);
 }
 

@@ -474,8 +474,6 @@ struct _NMAgentManagerCallId {
 
 					NMAgentSecretsResultFunc callback;
 					gpointer callback_data;
-					gpointer other_data2;
-					gpointer other_data3;
 				} get;
 			};
 		} con;
@@ -564,9 +562,7 @@ req_complete_release (Request *req,
 		                       req->con.get.flags,
 		                       error ? NULL : secrets,
 		                       error,
-		                       req->con.get.callback_data,
-		                       req->con.get.other_data2,
-		                       req->con.get.other_data3);
+		                       req->con.get.callback_data);
 
 		break;
 	case REQUEST_TYPE_CON_SAVE:
@@ -1167,8 +1163,6 @@ _con_get_try_complete_early (Request *req)
  * @hints:
  * @callback:
  * @callback_data:
- * @other_data2:
- * @other_data3:
  *
  * Requests secrets for a connection.
  *
@@ -1190,17 +1184,15 @@ nm_agent_manager_get_secrets (NMAgentManager *self,
                               NMSecretAgentGetSecretsFlags flags,
                               const char **hints,
                               NMAgentSecretsResultFunc callback,
-                              gpointer callback_data,
-                              gpointer other_data2,
-                              gpointer other_data3)
+                              gpointer callback_data)
 {
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
 	Request *req;
 
-	g_return_val_if_fail (self != NULL, 0);
-	g_return_val_if_fail (path && *path, 0);
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), 0);
-	g_return_val_if_fail (callback != NULL, 0);
+	g_return_val_if_fail (self != NULL, NULL);
+	g_return_val_if_fail (path && *path, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+	g_return_val_if_fail (callback != NULL, NULL);
 
 	nm_log_dbg (LOGD_SETTINGS,
 	            "Secrets requested for connection %s (%s/%s)",
@@ -1227,8 +1219,6 @@ nm_agent_manager_get_secrets (NMAgentManager *self,
 	req->con.get.flags = flags;
 	req->con.get.callback = callback;
 	req->con.get.callback_data = callback_data;
-	req->con.get.other_data2 = other_data2;
-	req->con.get.other_data3 = other_data3;
 
 	if (!g_hash_table_add (priv->requests, req))
 		g_assert_not_reached ();

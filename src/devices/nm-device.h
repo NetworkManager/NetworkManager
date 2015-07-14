@@ -357,8 +357,11 @@ GSList *        nm_device_master_get_slaves (NMDevice *dev);
 /* Slave */
 NMDevice *      nm_device_get_master        (NMDevice *dev);
 
-NMActRequest *	nm_device_get_act_request	(NMDevice *dev);
-NMConnection *  nm_device_get_connection	(NMDevice *dev);
+NMActRequest *          nm_device_get_act_request               (NMDevice *dev);
+NMSettingsConnection *  nm_device_get_settings_connection       (NMDevice *dev);
+NMConnection *          nm_device_get_applied_connection        (NMDevice *dev);
+gboolean                nm_device_has_unmodified_applied_connection (NMDevice *self,
+                                                                     NMSettingCompareFlags compare_flags);
 
 void            nm_device_removed        (NMDevice *dev);
 
@@ -470,7 +473,7 @@ gboolean nm_device_get_nm_plugin_missing (NMDevice *self);
 void     nm_device_set_nm_plugin_missing (NMDevice *self,
                                           gboolean missing);
 
-void nm_device_steal_connection (NMDevice *device, NMConnection *connection);
+void nm_device_steal_connection (NMDevice *device, NMSettingsConnection *connection);
 
 void nm_device_queue_activation (NMDevice *device, NMActRequest *req);
 
@@ -498,6 +501,10 @@ const NMPlatformIP4Route *nm_device_get_ip4_default_route (NMDevice *self, gbool
 const NMPlatformIP6Route *nm_device_get_ip6_default_route (NMDevice *self, gboolean *out_is_assumed);
 
 void nm_device_spawn_iface_helper (NMDevice *self);
+
+void nm_device_reapply_settings_immediately (NMDevice *self);
+
+void nm_device_update_firewall_zone (NMDevice *self);
 void nm_device_update_metered (NMDevice *self);
 
 G_END_DECLS

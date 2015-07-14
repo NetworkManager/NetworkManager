@@ -23,7 +23,7 @@
 #define __NETWORKMANAGER_MANAGER_H__
 
 #include "nm-exported-object.h"
-#include "nm-connection.h"
+#include "nm-settings-connection.h"
 
 #define NM_TYPE_MANAGER            (nm_manager_get_type ())
 #define NM_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_MANAGER, NMManager))
@@ -98,7 +98,7 @@ NMDevice *          nm_manager_get_device_by_ifindex   (NMManager *manager,
                                                         int ifindex);
 
 NMActiveConnection *nm_manager_activate_connection     (NMManager *manager,
-                                                        NMConnection *connection,
+                                                        NMSettingsConnection *connection,
                                                         const char *specific_object,
                                                         NMDevice *device,
                                                         NMAuthSubject *subject,

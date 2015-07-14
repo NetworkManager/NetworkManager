@@ -70,14 +70,12 @@ typedef struct {
 
 GType nm_vpn_connection_get_type (void);
 
-NMVpnConnection * nm_vpn_connection_new (NMConnection *connection,
+NMVpnConnection * nm_vpn_connection_new (NMSettingsConnection *settings_connection,
                                          NMDevice *parent_device,
                                          const char *specific_object,
                                          NMAuthSubject *subject);
 
 void                 nm_vpn_connection_activate        (NMVpnConnection *self);
-NMConnection *       nm_vpn_connection_get_connection  (NMVpnConnection *self);
-const char*          nm_vpn_connection_get_connection_id (NMVpnConnection *self);
 NMVpnConnectionState nm_vpn_connection_get_vpn_state   (NMVpnConnection *self);
 const char *         nm_vpn_connection_get_banner      (NMVpnConnection *self);
 

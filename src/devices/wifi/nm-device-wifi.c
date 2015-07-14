@@ -318,8 +318,6 @@ get_ap_by_supplicant_path (NMDeviceWifi *self, const char *path)
 static void
 update_seen_bssids_cache (NMDeviceWifi *self, NMAccessPoint *ap)
 {
-	NMConnection *connection;
-
 	g_return_if_fail (NM_IS_DEVICE_WIFI (self));
 
 	if (ap == NULL)
@@ -329,12 +327,10 @@ update_seen_bssids_cache (NMDeviceWifi *self, NMAccessPoint *ap)
 	if (nm_ap_get_mode (ap) != NM_802_11_MODE_INFRA)
 		return;
 
-	if (nm_device_get_state (NM_DEVICE (self)) == NM_DEVICE_STATE_ACTIVATED) {
-		connection = nm_device_get_connection (NM_DEVICE (self));
-		if (connection) {
-			nm_settings_connection_add_seen_bssid (NM_SETTINGS_CONNECTION (connection),
-			                                       nm_ap_get_address (ap));
-		}
+	if (   nm_device_get_state (NM_DEVICE (self)) == NM_DEVICE_STATE_ACTIVATED
+	    && nm_device_has_unmodified_applied_connection (NM_DEVICE (self), NM_SETTING_COMPARE_FLAG_NONE)) {
+		nm_settings_connection_add_seen_bssid (nm_device_get_settings_connection (NM_DEVICE (self)),
+		                                       nm_ap_get_address (ap));
 	}
 }
 
@@ -484,14 +480,7 @@ deactivate (NMDevice *device)
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	int ifindex = nm_device_get_ifindex (device);
-	NMConnection *connection;
 	NM80211Mode old_mode = priv->mode;
-
-	connection = nm_device_get_connection (device);
-	if (connection) {
-		/* Clear wireless secrets tries when deactivating */
-		g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, NULL);
-	}
 
 	if (priv->periodic_source_id) {
 		g_source_remove (priv->periodic_source_id);
@@ -1164,7 +1153,7 @@ scanning_allowed (NMDeviceWifi *self)
 	    || nm_supplicant_interface_get_scanning (priv->sup_iface))
 		return FALSE;
 
-	connection = nm_device_get_connection (NM_DEVICE (self));
+	connection = nm_device_get_applied_connection (NM_DEVICE (self));
 	if (connection) {
 		NMSettingWireless *s_wifi;
 		const char *ip4_method = NULL;
@@ -1675,7 +1664,7 @@ cleanup_association_attempt (NMDeviceWifi *self, gboolean disconnect)
 static void
 wifi_secrets_cb (NMActRequest *req,
                  NMActRequestGetSecretsCallId call_id,
-                 NMConnection *connection,
+                 NMSettingsConnection *connection,
                  GError *error,
                  gpointer user_data)
 {
@@ -1686,7 +1675,7 @@ wifi_secrets_cb (NMActRequest *req,
 		return;
 
 	g_return_if_fail (nm_device_get_state (device) == NM_DEVICE_STATE_NEED_AUTH);
-	g_return_if_fail (nm_act_request_get_connection (req) == connection);
+	g_return_if_fail (nm_act_request_get_settings_connection (req) == connection);
 
 	if (error) {
 		_LOGW (LOGD_WIFI, "%s", error->message);
@@ -1748,7 +1737,7 @@ need_new_8021x_secrets (NMDeviceWifi *self,
 
 	g_assert (setting_name != NULL);
 
-	connection = nm_device_get_connection (NM_DEVICE (self));
+	connection = nm_device_get_applied_connection (NM_DEVICE (self));
 	g_return_val_if_fail (connection != NULL, FALSE);
 
 	/* 802.1x stuff only happens in the supplicant's ASSOCIATED state when it's
@@ -1801,7 +1790,7 @@ need_new_wpa_psk (NMDeviceWifi *self,
 
 	g_assert (setting_name != NULL);
 
-	connection = nm_device_get_connection (NM_DEVICE (self));
+	connection = nm_device_get_applied_connection (NM_DEVICE (self));
 	g_return_val_if_fail (connection != NULL, FALSE);
 
 	/* A bad PSK will cause the supplicant to disconnect during the 4-way handshake */
@@ -1829,7 +1818,6 @@ handle_8021x_or_psk_auth_fail (NMDeviceWifi *self,
 {
 	NMDevice *device = NM_DEVICE (self);
 	NMActRequest *req;
-	NMConnection *connection;
 	const char *setting_name = NULL;
 	gboolean handled = FALSE;
 
@@ -1838,13 +1826,10 @@ handle_8021x_or_psk_auth_fail (NMDeviceWifi *self,
 	req = nm_device_get_act_request (NM_DEVICE (self));
 	g_return_val_if_fail (req != NULL, FALSE);
 
-	connection = nm_act_request_get_connection (req);
-	g_assert (connection);
-
 	if (   need_new_8021x_secrets (self, old_state, &setting_name)
 	    || need_new_wpa_psk (self, old_state, &setting_name)) {
 
-		nm_connection_clear_secrets (connection);
+		nm_act_request_clear_secrets (req);
 
 		_LOGI (LOGD_DEVICE | LOGD_WIFI,
 		       "Activation: (wifi) disconnected during association, asking for new key");
@@ -1914,7 +1899,7 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 			NMSettingWireless *s_wifi;
 			GBytes *ssid;
 
-			connection = nm_device_get_connection (NM_DEVICE (self));
+			connection = nm_device_get_applied_connection (NM_DEVICE (self));
 			g_return_if_fail (connection);
 
 			s_wifi = nm_connection_get_setting_wireless (connection);
@@ -2090,7 +2075,7 @@ handle_auth_or_fail (NMDeviceWifi *self,
 {
 	const char *setting_name;
 	guint32 tries;
-	NMConnection *connection;
+	NMConnection *applied_connection;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 
 	g_return_val_if_fail (NM_IS_DEVICE_WIFI (self), NM_ACT_STAGE_RETURN_FAILURE);
@@ -2100,17 +2085,16 @@ handle_auth_or_fail (NMDeviceWifi *self,
 		g_assert (req);
 	}
 
-	connection = nm_act_request_get_connection (req);
-	g_assert (connection);
+	applied_connection = nm_act_request_get_applied_connection (req);
 
-	tries = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES));
+	tries = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (applied_connection), WIRELESS_SECRETS_TRIES));
 	if (tries > 3)
 		return NM_ACT_STAGE_RETURN_FAILURE;
 
 	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
 
-	nm_connection_clear_secrets (connection);
-	setting_name = nm_connection_need_secrets (connection, NULL);
+	nm_act_request_clear_secrets (req);
+	setting_name = nm_connection_need_secrets (applied_connection, NULL);
 	if (setting_name) {
 		NMSecretAgentGetSecretsFlags flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 
@@ -2118,7 +2102,7 @@ handle_auth_or_fail (NMDeviceWifi *self,
 			flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW;
 		nm_act_request_get_secrets (req, setting_name, flags, NULL, wifi_secrets_cb, self);
 
-		g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, GUINT_TO_POINTER (++tries));
+		g_object_set_data (G_OBJECT (applied_connection), WIRELESS_SECRETS_TRIES, GUINT_TO_POINTER (++tries));
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	} else
 		_LOGW (LOGD_DEVICE, "Cleared secrets, but setting didn't need any secrets.");
@@ -2155,7 +2139,7 @@ supplicant_connection_timeout_cb (gpointer user_data)
 	req = nm_device_get_act_request (device);
 	g_assert (req);
 
-	connection = nm_act_request_get_connection (req);
+	connection = nm_act_request_get_applied_connection (req);
 	g_assert (connection);
 
 	if (   priv->mode == NM_802_11_MODE_ADHOC
@@ -2292,7 +2276,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 	req = nm_device_get_act_request (NM_DEVICE (self));
 	g_return_val_if_fail (req != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
-	connection = nm_act_request_get_connection (req);
+	connection = nm_act_request_get_applied_connection (req);
 	g_return_val_if_fail (connection != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
@@ -2420,7 +2404,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 		goto out;
 	}
 
-	connection = nm_act_request_get_connection (req);
+	connection = nm_act_request_get_applied_connection (req);
 	g_assert (connection);
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
@@ -2518,7 +2502,7 @@ act_stage3_ip4_config_start (NMDevice *device,
 	NMSettingIPConfig *s_ip4;
 	const char *method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
 
-	connection = nm_device_get_connection (device);
+	connection = nm_device_get_applied_connection (device);
 	g_assert (connection);
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	if (s_ip4)
@@ -2540,7 +2524,7 @@ act_stage3_ip6_config_start (NMDevice *device,
 	NMSettingIPConfig *s_ip6;
 	const char *method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
 
-	connection = nm_device_get_connection (device);
+	connection = nm_device_get_applied_connection (device);
 	g_assert (connection);
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	if (s_ip6)
@@ -2561,7 +2545,7 @@ ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
 	NMSettingWireless *s_wifi;
 	guint32 mtu;
 
-	connection = nm_device_get_connection (device);
+	connection = nm_device_get_applied_connection (device);
 	g_assert (connection);
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
@@ -2648,7 +2632,7 @@ act_stage4_ip4_config_timeout (NMDevice *device, NMDeviceStateReason *reason)
 	gboolean may_fail = FALSE, chain_up = FALSE;
 	NMActStageReturn ret;
 
-	connection = nm_device_get_connection (device);
+	connection = nm_device_get_applied_connection (device);
 	g_assert (connection);
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
@@ -2669,7 +2653,7 @@ act_stage4_ip6_config_timeout (NMDevice *device, NMDeviceStateReason *reason)
 	gboolean may_fail = FALSE, chain_up = FALSE;
 	NMActStageReturn ret;
 
-	connection = nm_device_get_connection (device);
+	connection = nm_device_get_applied_connection (device);
 	g_assert (connection);
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
@@ -2689,19 +2673,18 @@ activation_success_handler (NMDevice *device)
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	int ifindex = nm_device_get_ifindex (device);
 	NMActRequest *req;
-	NMConnection *connection;
+	NMConnection *applied_connection;
 
 	req = nm_device_get_act_request (device);
 	g_assert (req);
 
-	connection = nm_act_request_get_connection (req);
-	g_assert (connection);
+	applied_connection = nm_act_request_get_applied_connection (req);
 
 	/* Clear any critical protocol notification in the wifi stack */
 	nm_platform_wifi_indicate_addressing_running (NM_PLATFORM_GET, ifindex, FALSE);
 
 	/* Clear wireless secrets tries on success */
-	g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, NULL);
+	g_object_set_data (G_OBJECT (applied_connection), WIRELESS_SECRETS_TRIES, NULL);
 
 	/* There should always be a current AP, either a fake one because we haven't
 	 * seen a scan result for the activated AP yet, or a real one from the
@@ -2744,13 +2727,13 @@ activation_success_handler (NMDevice *device)
 static void
 activation_failure_handler (NMDevice *device)
 {
-	NMConnection *connection;
+	NMConnection *applied_connection;
 
-	connection = nm_device_get_connection (device);
-	g_assert (connection);
+	applied_connection = nm_device_get_applied_connection (device);
+	g_assert (applied_connection);
 
 	/* Clear wireless secrets tries on failure */
-	g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, NULL);
+	g_object_set_data (G_OBJECT (applied_connection), WIRELESS_SECRETS_TRIES, NULL);
 
 	/* Clear any critical protocol notification in the wifi stack */
 	nm_platform_wifi_indicate_addressing_running (NM_PLATFORM_GET, nm_device_get_ifindex (device), FALSE);

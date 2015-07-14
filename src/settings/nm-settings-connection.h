@@ -126,6 +126,10 @@ struct _NMSettingsConnectionClass {
 
 GType nm_settings_connection_get_type (void);
 
+gboolean nm_settings_connection_has_unmodified_applied_connection (NMSettingsConnection *self,
+                                                                   NMConnection *applied_connection,
+                                                                   NMSettingCompareFlags compare_flage);
+
 void nm_settings_connection_commit_changes (NMSettingsConnection *self,
                                             NMSettingsConnectionCommitReason commit_reason,
                                             NMSettingsConnectionCommitFunc callback,
@@ -154,13 +158,13 @@ typedef void (*NMSettingsConnectionSecretsFunc) (NMSettingsConnection *self,
                                                  gpointer user_data);
 
 NMSettingsConnectionCallId nm_settings_connection_get_secrets (NMSettingsConnection *self,
+                                                               NMConnection *applied_connection,
                                                                NMAuthSubject *subject,
                                                                const char *setting_name,
                                                                NMSecretAgentGetSecretsFlags flags,
                                                                const char **hints,
                                                                NMSettingsConnectionSecretsFunc callback,
-                                                               gpointer callback_data,
-                                                               GError **error);
+                                                               gpointer callback_data);
 
 void nm_settings_connection_cancel_secrets (NMSettingsConnection *self,
                                             NMSettingsConnectionCallId call_id);

@@ -430,7 +430,7 @@ nm_settings_get_connection_by_path (NMSettings *self, const char *path)
 }
 
 gboolean
-nm_settings_has_connection (NMSettings *self, NMConnection *connection)
+nm_settings_has_connection (NMSettings *self, NMSettingsConnection *connection)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	GHashTableIter iter;
@@ -1174,7 +1174,7 @@ send_agent_owned_secrets (NMSettings *self,
 	                                        secrets_filter_cb,
 	                                        GUINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED));
 	nm_agent_manager_save_secrets (priv->agent_mgr,
-	                               nm_connection_get_path (NM_CONNECTION (for_agent)),
+	                               nm_connection_get_path (NM_CONNECTION (connection)),
 	                               for_agent,
 	                               subject);
 	g_object_unref (for_agent);
@@ -1230,7 +1230,7 @@ pk_add_cb (NMAuthChain *chain,
 	callback (self, added, error, context, subject, callback_data);
 
 	/* Send agent-owned secrets to the agents */
-	if (!error && added && nm_settings_has_connection (self, (NMConnection *) added))
+	if (!error && added && nm_settings_has_connection (self, added))
 		send_agent_owned_secrets (self, added, subject);
 
 	g_clear_error (&error);
@@ -1388,9 +1388,9 @@ impl_settings_add_connection_add_cb (NMSettings *self,
 		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD, NULL, FALSE, subject, error->message);
 	} else {
 		g_dbus_method_invocation_return_value (
-			context,
-			g_variant_new ("(o)", nm_connection_get_path (NM_CONNECTION (connection))));
-		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD, NM_CONNECTION (connection), TRUE,
+		    context,
+		    g_variant_new ("(o)", nm_connection_get_path (NM_CONNECTION (connection))));
+		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD, connection, TRUE,
 		                            subject, NULL);
 	}
 }
@@ -2046,7 +2046,7 @@ hostnamed_properties_changed (GDBusProxy *proxy,
 		g_free (priv->hostname.value);
 		priv->hostname.value = g_strdup (hostname);
 		g_object_notify (G_OBJECT (user_data), NM_SETTINGS_HOSTNAME);
-		nm_dispatcher_call (DISPATCHER_ACTION_HOSTNAME, NULL, NULL, NULL, NULL, NULL);
+		nm_dispatcher_call (DISPATCHER_ACTION_HOSTNAME, NULL, NULL, NULL, NULL, NULL, NULL);
 	}
 
 	g_variant_unref (v_hostname);

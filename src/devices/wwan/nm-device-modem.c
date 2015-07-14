@@ -330,7 +330,7 @@ device_state_changed (NMDevice *device,
 {
 	NMDeviceModem *self = NM_DEVICE_MODEM (device);
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
-	NMConnection *connection = nm_device_get_connection (device);
+	NMConnection *connection = nm_device_get_applied_connection (device);
 
 	g_assert (priv->modem);
 

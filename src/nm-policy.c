@@ -195,7 +195,7 @@ _set_hostname (NMPolicy *policy,
 	nm_dns_manager_set_hostname (priv->dns_manager, priv->cur_hostname);
 
 	if (set_system_hostname (priv->cur_hostname, msg))
-		nm_dispatcher_call (DISPATCHER_ACTION_HOSTNAME, NULL, NULL, NULL, NULL, NULL);
+		nm_dispatcher_call (DISPATCHER_ACTION_HOSTNAME, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 static void
@@ -466,7 +466,7 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 		return;
 
 	priv->default_device4 = default_device;
-	connection = nm_active_connection_get_connection (best_ac);
+	connection = nm_active_connection_get_applied_connection (best_ac);
 	nm_log_info (LOGD_CORE, "Policy set '%s' (%s) as default for IPv4 routing and DNS.",
 	             nm_connection_get_id (connection), ip_iface);
 	g_object_notify (G_OBJECT (policy), NM_POLICY_DEFAULT_IP4_DEVICE);
@@ -561,7 +561,7 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 		return;
 
 	priv->default_device6 = default_device6;
-	connection = nm_active_connection_get_connection (best_ac);
+	connection = nm_active_connection_get_applied_connection (best_ac);
 	nm_log_info (LOGD_CORE, "Policy set '%s' (%s) as default for IPv6 routing and DNS.",
 	             nm_connection_get_id (connection), ip_iface);
 	g_object_notify (G_OBJECT (policy), NM_POLICY_DEFAULT_IP6_DEVICE);
@@ -636,7 +636,7 @@ auto_activate_device (gpointer user_data)
 	ActivateData *data = (ActivateData *) user_data;
 	NMPolicy *policy;
 	NMPolicyPrivate *priv;
-	NMConnection *best_connection;
+	NMSettingsConnection *best_connection;
 	char *specific_object = NULL;
 	GPtrArray *connections;
 	GSList *connection_list;
@@ -674,7 +674,7 @@ auto_activate_device (gpointer user_data)
 		if (!nm_settings_connection_can_autoconnect (candidate))
 			continue;
 		if (nm_device_can_auto_connect (data->device, (NMConnection *) candidate, &specific_object)) {
-			best_connection = (NMConnection *) candidate;
+			best_connection = candidate;
 			break;
 		}
 	}
@@ -685,7 +685,7 @@ auto_activate_device (gpointer user_data)
 		NMAuthSubject *subject;
 
 		nm_log_info (LOGD_DEVICE, "Auto-activating connection '%s'.",
-		             nm_connection_get_id (best_connection));
+		             nm_settings_connection_get_id (best_connection));
 		subject = nm_auth_subject_new_internal ();
 		if (!nm_manager_activate_connection (priv->manager,
 		                                     best_connection,
@@ -694,7 +694,7 @@ auto_activate_device (gpointer user_data)
 		                                     subject,
 		                                     &error)) {
 			nm_log_info (LOGD_DEVICE, "Connection '%s' auto-activation failed: (%d) %s",
-			             nm_connection_get_id (best_connection),
+			             nm_settings_connection_get_id (best_connection),
 			             error ? error->code : -1,
 			             error ? error->message : "(none)");
 			g_error_free (error);
@@ -768,7 +768,7 @@ process_secondaries (NMPolicy *policy,
 
 			if (connected) {
 				nm_log_dbg (LOGD_DEVICE, "Secondary connection '%s' SUCCEEDED; active path '%s'",
-				            nm_active_connection_get_id (active),
+				            nm_active_connection_get_settings_connection_id (active),
 				            nm_exported_object_get_path (NM_EXPORTED_OBJECT (active)));
 
 				/* Secondary connection activated */
@@ -784,7 +784,7 @@ process_secondaries (NMPolicy *policy,
 				}
 			} else {
 				nm_log_dbg (LOGD_DEVICE, "Secondary connection '%s' FAILED; active path '%s'",
-				            nm_active_connection_get_id (active),
+				            nm_active_connection_get_settings_connection_id (active),
 				            nm_exported_object_get_path (NM_EXPORTED_OBJECT (active)));
 
 				/* Secondary connection failed -> do not watch other connections */
@@ -983,7 +983,7 @@ static void
 activate_slave_connections (NMPolicy *policy, NMDevice *device)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
-	const char *master_device, *master_uuid = NULL;
+	const char *master_device, *master_uuid_settings = NULL, *master_uuid_applied = NULL;
 	GSList *connections, *iter;
 	NMActRequest *req;
 
@@ -991,8 +991,19 @@ activate_slave_connections (NMPolicy *policy, NMDevice *device)
 	g_assert (master_device);
 
 	req = nm_device_get_act_request (device);
-	if (req)
-		master_uuid = nm_active_connection_get_uuid (NM_ACTIVE_CONNECTION (req));
+	if (req) {
+		NMConnection *con;
+
+		con = nm_active_connection_get_applied_connection (NM_ACTIVE_CONNECTION (req));
+		if (con)
+			master_uuid_applied = nm_connection_get_uuid (con);
+		con = NM_CONNECTION (nm_active_connection_get_settings_connection (NM_ACTIVE_CONNECTION (req)));
+		if (con) {
+			master_uuid_settings = nm_connection_get_uuid (con);
+			if (!g_strcmp0 (master_uuid_settings, master_uuid_applied))
+				master_uuid_settings = NULL;
+		}
+	}
 
 	connections = nm_settings_get_connections (priv->settings);
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
@@ -1009,7 +1020,9 @@ activate_slave_connections (NMPolicy *policy, NMDevice *device)
 		if (!slave_master)
 			continue;
 
-		if (!g_strcmp0 (slave_master, master_device) || !g_strcmp0 (slave_master, master_uuid))
+		if (   !g_strcmp0 (slave_master, master_device)
+		    || !g_strcmp0 (slave_master, master_uuid_applied)
+		    || !g_strcmp0 (slave_master, master_uuid_settings))
 			nm_settings_connection_reset_autoconnect_retries (NM_SETTINGS_CONNECTION (slave));
 	}
 
@@ -1049,7 +1062,7 @@ activate_secondary_connections (NMPolicy *policy,
 		}
 		if (!nm_connection_is_type (NM_CONNECTION (settings_con), NM_SETTING_VPN_SETTING_NAME)) {
 			nm_log_warn (LOGD_DEVICE, "Secondary connection '%s (%s)' auto-activation failed: The connection is not a VPN.",
-			             nm_connection_get_id (NM_CONNECTION (settings_con)), sec_uuid);
+			             nm_settings_connection_get_id (settings_con), sec_uuid);
 			success = FALSE;
 			break;
 		}
@@ -1058,10 +1071,10 @@ activate_secondary_connections (NMPolicy *policy,
 		g_assert (req);
 
 		nm_log_dbg (LOGD_DEVICE, "Activating secondary connection '%s (%s)' for base connection '%s (%s)'",
-		            nm_connection_get_id (NM_CONNECTION (settings_con)), sec_uuid,
+		            nm_settings_connection_get_id (settings_con), sec_uuid,
 		            nm_connection_get_id (connection), nm_connection_get_uuid (connection));
 		ac = nm_manager_activate_connection (priv->manager,
-		                                     NM_CONNECTION (settings_con),
+		                                     settings_con,
 		                                     nm_exported_object_get_path (NM_EXPORTED_OBJECT (req)),
 		                                     device,
 		                                     nm_active_connection_get_subject (NM_ACTIVE_CONNECTION (req)),
@@ -1070,7 +1083,7 @@ activate_secondary_connections (NMPolicy *policy,
 			secondary_ac_list = g_slist_append (secondary_ac_list, g_object_ref (ac));
 		else {
 			nm_log_warn (LOGD_DEVICE, "Secondary connection '%s (%s)' auto-activation failed: (%d) %s",
-			             nm_connection_get_id (NM_CONNECTION (settings_con)), sec_uuid,
+			             nm_settings_connection_get_id (settings_con), sec_uuid,
 			             error ? error->code : 0,
 			             (error && error->message) ? error->message : "unknown");
 			g_clear_error (&error);
@@ -1097,7 +1110,9 @@ device_state_changed (NMDevice *device,
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
-	NMSettingsConnection *connection = NM_SETTINGS_CONNECTION (nm_device_get_connection (device));
+
+	NMSettingsConnection *connection = nm_device_get_settings_connection (device);
+
 	const char *ip_iface = nm_device_get_ip_iface (device);
 	NMIP4Config *ip4_config;
 	NMIP6Config *ip6_config;
@@ -1115,18 +1130,18 @@ device_state_changed (NMDevice *device,
 
 			if (reason == NM_DEVICE_STATE_REASON_NO_SECRETS) {
 				nm_log_dbg (LOGD_DEVICE, "Connection '%s' now blocked from autoconnect due to no secrets",
-				            nm_connection_get_id (NM_CONNECTION (connection)));
+				            nm_settings_connection_get_id (connection));
 
 				nm_settings_connection_set_autoconnect_blocked_reason (connection, NM_DEVICE_STATE_REASON_NO_SECRETS);
 			} else if (tries > 0) {
 				nm_log_dbg (LOGD_DEVICE, "Connection '%s' failed to autoconnect; %d tries left",
-				            nm_connection_get_id (NM_CONNECTION (connection)), tries);
+				            nm_settings_connection_get_id (connection), tries);
 				nm_settings_connection_set_autoconnect_retries (connection, tries - 1);
 			}
 
 			if (nm_settings_connection_get_autoconnect_retries (connection) == 0) {
 				nm_log_info (LOGD_DEVICE, "Disabling autoconnect for connection '%s'.",
-				             nm_connection_get_id (NM_CONNECTION (connection)));
+				             nm_settings_connection_get_id (connection));
 				/* Schedule a handler to reset retries count */
 				if (!priv->reset_retries_id) {
 					gint32 retry_time = nm_settings_connection_get_autoconnect_retry_time (connection);
@@ -1146,6 +1161,7 @@ device_state_changed (NMDevice *device,
 			/* And clear secrets so they will always be requested from the
 			 * settings service when the next connection is made.
 			 */
+
 			nm_connection_clear_secrets (NM_CONNECTION (connection));
 		}
 
@@ -1178,7 +1194,7 @@ device_state_changed (NMDevice *device,
 				if (connection) {
 					/* The connection was deactivated, so block just this connection */
 					nm_log_dbg (LOGD_DEVICE, "Blocking autoconnect of connection '%s' by user request",
-					            nm_connection_get_id (NM_CONNECTION (connection)));
+					            nm_settings_connection_get_id (connection));
 					nm_settings_connection_set_autoconnect_blocked_reason (connection,
 					                                                       NM_DEVICE_STATE_REASON_USER_REQUESTED);
 				}
@@ -1459,7 +1475,7 @@ vpn_connection_retry_after_failure (NMVpnConnection *vpn, NMPolicy *policy)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	NMActiveConnection *ac = NM_ACTIVE_CONNECTION (vpn);
-	NMConnection *connection = nm_active_connection_get_connection (ac);
+	NMSettingsConnection *connection = nm_active_connection_get_settings_connection (ac);
 	GError *error = NULL;
 
 	/* Attempt to reconnect VPN connections that failed after being connected */
@@ -1470,7 +1486,7 @@ vpn_connection_retry_after_failure (NMVpnConnection *vpn, NMPolicy *policy)
 	                                     nm_active_connection_get_subject (ac),
 	                                     &error)) {
 		nm_log_warn (LOGD_DEVICE, "VPN '%s' reconnect failed: %s",
-		             nm_connection_get_id (connection),
+		             nm_settings_connection_get_id (connection),
 		             error->message ? error->message : "unknown");
 		g_clear_error (&error);
 	}
@@ -1551,63 +1567,16 @@ connection_added (NMSettings *settings,
 }
 
 static void
-add_or_change_zone_cb (GError *error, gpointer user_data)
-{
-	NMDevice *device = NM_DEVICE (user_data);
-
-	if (error) {
-		/* FIXME: what do we do here? */
-	}
-
-	g_object_unref (device);
-}
-
-static void
-firewall_update_zone (NMPolicy *policy, NMConnection *connection, NMDevice *device)
-{
-	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
-	NMSettingConnection *s_con = nm_connection_get_setting_connection (connection);
-
-	if (   nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED
-	    && !nm_device_uses_assumed_connection (device)) {
-		nm_firewall_manager_add_or_change_zone (priv->firewall_manager,
-		                                        nm_device_get_ip_iface (device),
-		                                        nm_setting_connection_get_zone (s_con),
-		                                        FALSE, /* change zone */
-		                                        add_or_change_zone_cb,
-		                                        g_object_ref (device));
-	}
-}
-
-static void
 firewall_started (NMFirewallManager *manager,
                   gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
-	NMConnection *connection;
-	NMSettingConnection *s_con;
 	const GSList *iter;
 
 	/* add interface of each device to correct zone */
-	for (iter = nm_manager_get_devices (priv->manager); iter; iter = g_slist_next (iter)) {
-		NMDevice *dev = NM_DEVICE (iter->data);
-
-		connection = nm_device_get_connection (dev);
-		if (!connection)
-			continue;
-
-		s_con = nm_connection_get_setting_connection (connection);
-		if (    nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED
-		    && !nm_device_uses_assumed_connection (dev)) {
-			nm_firewall_manager_add_or_change_zone (priv->firewall_manager,
-			                                        nm_device_get_ip_iface (dev),
-			                                        nm_setting_connection_get_zone (s_con),
-			                                        FALSE, /* still change zone */
-			                                        add_or_change_zone_cb,
-			                                        g_object_ref (dev));
-		}
-	}
+	for (iter = nm_manager_get_devices (priv->manager); iter; iter = g_slist_next (iter))
+		nm_device_update_firewall_zone (iter->data);
 }
 
 static void
@@ -1665,22 +1634,21 @@ connection_updated_by_user (NMSettings *settings,
 	for (iter = nm_manager_get_devices (priv->manager); iter; iter = g_slist_next (iter)) {
 		NMDevice *dev = NM_DEVICE (iter->data);
 
-		if (nm_device_get_connection (dev) == NM_CONNECTION (connection)) {
+		if (nm_device_get_settings_connection (dev) == connection) {
 			device = dev;
 			break;
 		}
 	}
 
-	if (device) {
-		firewall_update_zone (policy, NM_CONNECTION (connection), device);
-		nm_device_update_metered (device);
-	}
+	if (device)
+		nm_device_reapply_settings_immediately (device);
+
 	/* Reset auto retries back to default since connection was updated */
 	nm_settings_connection_reset_autoconnect_retries (connection);
 }
 
 static void
-_deactivate_if_active (NMManager *manager, NMConnection *connection)
+_deactivate_if_active (NMManager *manager, NMSettingsConnection *connection)
 {
 	const GSList *active, *iter;
 
@@ -1690,14 +1658,14 @@ _deactivate_if_active (NMManager *manager, NMConnection *connection)
 		NMActiveConnectionState state = nm_active_connection_get_state (ac);
 		GError *error = NULL;
 
-		if (nm_active_connection_get_connection (ac) == connection &&
+		if (nm_active_connection_get_settings_connection (ac) == connection &&
 		    (state <= NM_ACTIVE_CONNECTION_STATE_ACTIVATED)) {
 			if (!nm_manager_deactivate_connection (manager,
 			                                       nm_exported_object_get_path (NM_EXPORTED_OBJECT (ac)),
 			                                       NM_DEVICE_STATE_REASON_CONNECTION_REMOVED,
 			                                       &error)) {
 				nm_log_warn (LOGD_DEVICE, "Connection '%s' disappeared, but error deactivating it: (%d) %s",
-					         nm_connection_get_id (connection),
+					         nm_settings_connection_get_id (connection),
 					         error ? error->code : -1,
 					         error ? error->message : "(unknown)");
 				g_clear_error (&error);
@@ -1708,7 +1676,7 @@ _deactivate_if_active (NMManager *manager, NMConnection *connection)
 
 static void
 connection_removed (NMSettings *settings,
-                    NMConnection *connection,
+                    NMSettingsConnection *connection,
                     gpointer user_data)
 {
 	NMPolicy *policy = user_data;
@@ -1728,7 +1696,7 @@ connection_visibility_changed (NMSettings *settings,
 	if (nm_settings_connection_is_visible (connection))
 		schedule_activate_all (policy);
 	else
-		_deactivate_if_active (priv->manager, NM_CONNECTION (connection));
+		_deactivate_if_active (priv->manager, connection);
 }
 
 static void

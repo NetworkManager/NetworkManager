@@ -33,6 +33,7 @@
 #include "nm-config.h"
 #include "nm-logging.h"
 #include "nm-macros-internal.h"
+#include "nm-settings-connection.h"
 
 #define AUDIT_LOG_LEVEL LOGL_INFO
 
@@ -213,7 +214,7 @@ nm_audit_manager_audit_enabled (NMAuditManager *self)
 
 void
 _nm_audit_manager_log_connection_op (NMAuditManager *self, const char *file, guint line,
-                                     const char *func, const char *op, NMConnection *connection,
+                                     const char *func, const char *op, NMSettingsConnection *connection,
                                      gboolean result, NMAuthSubject *subject, const char *reason)
 {
 	gs_unref_ptrarray GPtrArray *fields = NULL;
@@ -224,11 +225,11 @@ _nm_audit_manager_log_connection_op (NMAuditManager *self, const char *file, gui
 	fields = g_ptr_array_new ();
 
 	if (connection) {
-		_audit_field_init_string (&uuid_field, "uuid", nm_connection_get_uuid (connection),
+		_audit_field_init_string (&uuid_field, "uuid", nm_settings_connection_get_uuid (connection),
 		                          FALSE, BACKEND_ALL);
 		g_ptr_array_add (fields, &uuid_field);
 
-		_audit_field_init_string (&name_field, "name", nm_connection_get_id (connection),
+		_audit_field_init_string (&name_field, "name", nm_settings_connection_get_id (connection),
 		                          TRUE, BACKEND_ALL);
 		g_ptr_array_add (fields, &name_field);
 	}

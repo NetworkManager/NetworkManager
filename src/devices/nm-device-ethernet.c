@@ -271,7 +271,7 @@ clear_secrets_tries (NMDevice *device)
 
 	req = nm_device_get_act_request (device);
 	if (req) {
-		connection = nm_act_request_get_connection (req);
+		connection = nm_act_request_get_applied_connection (req);
 		/* Clear wired secrets tries on success, failure, or when deactivating */
 		g_object_set_data (G_OBJECT (connection), WIRED_SECRETS_TRIES, NULL);
 	}
@@ -415,7 +415,7 @@ device_get_setting (NMDevice *device, GType setting_type)
 	if (req) {
 		NMConnection *connection;
 
-		connection = nm_act_request_get_connection (req);
+		connection = nm_act_request_get_applied_connection (req);
 		if (connection)
 			setting = nm_connection_get_setting (connection, setting_type);
 	}
@@ -481,7 +481,7 @@ supplicant_interface_release (NMDeviceEthernet *self)
 static void
 wired_secrets_cb (NMActRequest *req,
                   NMActRequestGetSecretsCallId call_id,
-                  NMConnection *connection,
+                  NMSettingsConnection *connection,
                   GError *error,
                   gpointer user_data)
 {
@@ -492,7 +492,7 @@ wired_secrets_cb (NMActRequest *req,
 		return;
 
 	g_return_if_fail (nm_device_get_state (dev) == NM_DEVICE_STATE_NEED_AUTH);
-	g_return_if_fail (nm_act_request_get_connection (req) == connection);
+	g_return_if_fail (nm_act_request_get_settings_connection (req) == connection);
 
 	if (error) {
 		_LOGW (LOGD_ETHER, "%s", error->message);
@@ -510,7 +510,7 @@ link_timeout_cb (gpointer user_data)
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	NMDevice *dev = NM_DEVICE (self);
 	NMActRequest *req;
-	NMConnection *connection;
+	NMConnection *applied_connection;
 	const char *setting_name;
 
 	priv->supplicant_timeout_id = 0;
@@ -531,9 +531,10 @@ link_timeout_cb (gpointer user_data)
 	if (nm_device_get_state (dev) != NM_DEVICE_STATE_CONFIG)
 		goto time_out;
 
-	connection = nm_act_request_get_connection (req);
-	nm_connection_clear_secrets (connection);
-	setting_name = nm_connection_need_secrets (connection, NULL);
+	nm_active_connection_clear_secrets (NM_ACTIVE_CONNECTION (req));
+
+	applied_connection = nm_act_request_get_applied_connection (req);
+	setting_name = nm_connection_need_secrets (applied_connection, NULL);
 	if (!setting_name)
 		goto time_out;
 
@@ -566,7 +567,7 @@ build_supplicant_config (NMDeviceEthernet *self)
 	NMSetting8021x *security;
 	NMConnection *connection;
 
-	connection = nm_device_get_connection (NM_DEVICE (self));
+	connection = nm_device_get_applied_connection (NM_DEVICE (self));
 	g_assert (connection);
 	con_uuid = nm_connection_get_uuid (connection);
 
@@ -703,19 +704,19 @@ handle_auth_or_fail (NMDeviceEthernet *self,
 {
 	const char *setting_name;
 	guint32 tries;
-	NMConnection *connection;
+	NMConnection *applied_connection;
 
-	connection = nm_act_request_get_connection (req);
-	g_assert (connection);
+	applied_connection = nm_act_request_get_applied_connection (req);
 
-	tries = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), WIRED_SECRETS_TRIES));
+	tries = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (applied_connection), WIRED_SECRETS_TRIES));
 	if (tries > 3)
 		return NM_ACT_STAGE_RETURN_FAILURE;
 
 	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
 
-	nm_connection_clear_secrets (connection);
-	setting_name = nm_connection_need_secrets (connection, NULL);
+	nm_active_connection_clear_secrets (NM_ACTIVE_CONNECTION (req));
+
+	setting_name = nm_connection_need_secrets (applied_connection, NULL);
 	if (setting_name) {
 		NMSecretAgentGetSecretsFlags flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 
@@ -723,7 +724,7 @@ handle_auth_or_fail (NMDeviceEthernet *self,
 			flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW;
 		nm_act_request_get_secrets (req, setting_name, flags, NULL, wired_secrets_cb, self);
 
-		g_object_set_data (G_OBJECT (connection), WIRED_SECRETS_TRIES, GUINT_TO_POINTER (++tries));
+		g_object_set_data (G_OBJECT (applied_connection), WIRED_SECRETS_TRIES, GUINT_TO_POINTER (++tries));
 	} else
 		_LOGI (LOGD_DEVICE, "Cleared secrets, but setting didn't need any secrets.");
 
@@ -753,7 +754,7 @@ supplicant_connection_timeout_cb (gpointer user_data)
 	req = nm_device_get_act_request (device);
 	g_assert (req);
 
-	connection = nm_act_request_get_connection (req);
+	connection = nm_act_request_get_applied_connection (req);
 	g_assert (connection);
 
 	/* Ask for new secrets only if we've never activated this connection
@@ -875,7 +876,7 @@ nm_8021x_stage2_config (NMDeviceEthernet *self, NMDeviceStateReason *reason)
 	const char *setting_name;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 
-	connection = nm_device_get_connection (NM_DEVICE (self));
+	connection = nm_device_get_applied_connection (NM_DEVICE (self));
 	g_assert (connection);
 	security = nm_connection_get_setting_802_1x (connection);
 	if (!security) {
@@ -961,7 +962,7 @@ pppoe_stage3_ip4_config_start (NMDeviceEthernet *self, NMDeviceStateReason *reas
 	req = nm_device_get_act_request (NM_DEVICE (self));
 	g_assert (req);
 
-	connection = nm_act_request_get_connection (req);
+	connection = nm_act_request_get_applied_connection (req);
 	g_assert (req);
 
 	s_pppoe = nm_connection_get_setting_pppoe (connection);
@@ -1275,7 +1276,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	}
 
 	/* PPPoE setup */
-	if (nm_connection_is_type (nm_device_get_connection (device),
+	if (nm_connection_is_type (nm_device_get_applied_connection (device),
 	                           NM_SETTING_PPPOE_SETTING_NAME)) {
 		NMSettingPpp *s_ppp;
 
@@ -1330,7 +1331,7 @@ ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
 	if (NM_DEVICE_ETHERNET_GET_PRIVATE (device)->ppp_manager)
 		return;
 
-	connection = nm_device_get_connection (device);
+	connection = nm_device_get_applied_connection (device);
 	g_assert (connection);
 	s_wired = nm_connection_get_setting_wired (connection);
 	g_assert (s_wired);

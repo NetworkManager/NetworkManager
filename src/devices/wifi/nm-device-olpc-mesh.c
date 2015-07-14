@@ -208,7 +208,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	GBytes *ssid;
 	const char *anycast_addr;
 
-	connection = nm_device_get_connection (device);
+	connection = nm_device_get_applied_connection (device);
 	g_assert (connection);
 
 	s_mesh = nm_connection_get_setting_olpc_mesh (connection);

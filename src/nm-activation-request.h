@@ -47,26 +47,28 @@ typedef struct {
 
 GType nm_act_request_get_type (void);
 
-NMActRequest *nm_act_request_new          (NMConnection *connection,
+NMActRequest *nm_act_request_new          (NMSettingsConnection *settings_connection,
                                            const char *specific_object,
                                            NMAuthSubject *subject,
                                            NMDevice *device);
 
-NMConnection *nm_act_request_get_connection (NMActRequest *req);
+NMSettingsConnection *nm_act_request_get_settings_connection (NMActRequest *req);
 
-gboolean      nm_act_request_get_shared (NMActRequest *req);
+NMConnection         *nm_act_request_get_applied_connection (NMActRequest *req);
 
-void          nm_act_request_set_shared (NMActRequest *req, gboolean shared);
+gboolean              nm_act_request_get_shared (NMActRequest *req);
 
-void          nm_act_request_add_share_rule (NMActRequest *req,
-                                             const char *table,
-                                             const char *rule);
+void                  nm_act_request_set_shared (NMActRequest *req, gboolean shared);
+
+void                  nm_act_request_add_share_rule (NMActRequest *req,
+                                                     const char *table,
+                                                     const char *rule);
 
 /* Secrets handling */
 
 typedef void (*NMActRequestSecretsFunc) (NMActRequest *req,
                                          NMActRequestGetSecretsCallId call_id,
-                                         NMConnection *connection,
+                                         NMSettingsConnection *connection,
                                          GError *error,
                                          gpointer user_data);
 
@@ -78,6 +80,7 @@ NMActRequestGetSecretsCallId nm_act_request_get_secrets (NMActRequest *req,
                                                          gpointer callback_data);
 
 void nm_act_request_cancel_secrets (NMActRequest *req, NMActRequestGetSecretsCallId call_id);
+void nm_act_request_clear_secrets (NMActRequest *self);
 
 #endif /* __NETWORKMANAGER_ACTIVATION_REQUEST_H__ */
 

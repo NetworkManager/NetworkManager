@@ -85,7 +85,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	req = nm_device_get_act_request (dev);
 	g_return_val_if_fail (req != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
-	connection = nm_act_request_get_connection (req);
+	connection = nm_act_request_get_applied_connection (req);
 	g_assert (connection);
 	s_infiniband = nm_connection_get_setting_infiniband (connection);
 	g_assert (s_infiniband);
@@ -123,7 +123,7 @@ ip4_config_pre_commit (NMDevice *self, NMIP4Config *config)
 	NMSettingInfiniband *s_infiniband;
 	guint32 mtu;
 
-	connection = nm_device_get_connection (self);
+	connection = nm_device_get_applied_connection (self);
 	g_assert (connection);
 	s_infiniband = nm_connection_get_setting_infiniband (connection);
 	g_assert (s_infiniband);

@@ -64,7 +64,7 @@ nm_vpn_manager_activate_connection (NMVpnManager *manager,
                                     NMVpnConnection *vpn,
                                     GError **error)
 {
-	NMConnection *connection;
+	NMConnection *applied_connection;
 	NMSettingVpn *s_vpn;
 	NMVpnService *service;
 	NMVpnPluginInfo *plugin_info;
@@ -85,9 +85,8 @@ nm_vpn_manager_activate_connection (NMVpnManager *manager,
 		return FALSE;
 	}
 
-	connection = nm_active_connection_get_connection (NM_ACTIVE_CONNECTION (vpn));
-	g_assert (connection);
-	s_vpn = nm_connection_get_setting_vpn (connection);
+	applied_connection = nm_active_connection_get_applied_connection (NM_ACTIVE_CONNECTION (vpn));
+	s_vpn = nm_connection_get_setting_vpn (applied_connection);
 	g_assert (s_vpn);
 
 	service_name = nm_setting_vpn_get_service_type (s_vpn);

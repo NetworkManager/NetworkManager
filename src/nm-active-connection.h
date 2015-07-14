@@ -49,7 +49,7 @@
 #define NM_ACTIVE_CONNECTION_MASTER          "master"
 
 /* Internal non-exported properties */
-#define NM_ACTIVE_CONNECTION_INT_CONNECTION     "int-connection"
+#define NM_ACTIVE_CONNECTION_INT_SETTINGS_CONNECTION "int-settings-connection"
 #define NM_ACTIVE_CONNECTION_INT_DEVICE         "int-device"
 #define NM_ACTIVE_CONNECTION_INT_SUBJECT        "int-subject"
 #define NM_ACTIVE_CONNECTION_INT_MASTER         "int-master"
@@ -92,20 +92,23 @@ typedef void (*NMActiveConnectionAuthResultFunc) (NMActiveConnection *self,
                                                   gpointer user_data2);
 
 void          nm_active_connection_authorize (NMActiveConnection *self,
+                                              NMConnection *initial_connection,
                                               NMActiveConnectionAuthResultFunc result_func,
                                               gpointer user_data1,
                                               gpointer user_data2);
 
-NMConnection *nm_active_connection_get_connection (NMActiveConnection *self);
+NMSettingsConnection *nm_active_connection_get_settings_connection (NMActiveConnection *self);
+NMConnection *nm_active_connection_get_applied_connection (NMActiveConnection *self);
 
-void          nm_active_connection_set_connection (NMActiveConnection *self,
-                                                   NMConnection *connection);
+NMSettingsConnection *_nm_active_connection_get_settings_connection (NMActiveConnection *self);
 
-const char *  nm_active_connection_get_id         (NMActiveConnection *self);
+void          nm_active_connection_set_settings_connection (NMActiveConnection *self,
+                                                            NMSettingsConnection *connection);
 
-const char *  nm_active_connection_get_uuid       (NMActiveConnection *self);
+gboolean      nm_active_connection_has_unmodified_applied_connection (NMActiveConnection *self,
+                                                                      NMSettingCompareFlags compare_flags);
 
-const char *  nm_active_connection_get_connection_type (NMActiveConnection *self);
+const char *  nm_active_connection_get_settings_connection_id         (NMActiveConnection *self);
 
 const char *  nm_active_connection_get_specific_object (NMActiveConnection *self);
 
@@ -146,5 +149,7 @@ void          nm_active_connection_set_assumed (NMActiveConnection *self,
                                                 gboolean assumed);
 
 gboolean      nm_active_connection_get_assumed (NMActiveConnection *self);
+
+void          nm_active_connection_clear_secrets (NMActiveConnection *self);
 
 #endif /* __NETWORKMANAGER_ACTIVE_CONNECTION_H__ */

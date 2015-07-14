@@ -98,7 +98,7 @@ gboolean nm_audit_manager_audit_enabled (NMAuditManager *self);
 	} G_STMT_END
 
 void _nm_audit_manager_log_connection_op (NMAuditManager *self, const char *file, guint line,
-                                          const char *func, const char *op, NMConnection *connection,
+                                          const char *func, const char *op, NMSettingsConnection *connection,
                                           gboolean result, NMAuthSubject *subject, const char *reason);
 
 void _nm_audit_manager_log_control_op    (NMAuditManager *self, const char *file, guint line,

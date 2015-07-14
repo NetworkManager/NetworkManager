@@ -310,7 +310,7 @@ match_parent (NMDeviceVlan *self, const char *parent)
 		if (!parent_req)
 			return FALSE;
 
-		parent_connection = nm_active_connection_get_connection (NM_ACTIVE_CONNECTION (parent_req));
+		parent_connection = nm_active_connection_get_applied_connection (NM_ACTIVE_CONNECTION (parent_req));
 		if (!parent_connection)
 			return FALSE;
 
@@ -495,7 +495,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	req = nm_device_get_act_request (dev);
 	g_return_val_if_fail (req != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
-	connection = nm_act_request_get_connection (req);
+	connection = nm_act_request_get_applied_connection (req);
 	g_return_val_if_fail (connection != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
 	s_wired = nm_connection_get_setting_wired (connection);
@@ -534,7 +534,7 @@ ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
 	NMSettingWired *s_wired;
 	guint32 mtu;
 
-	connection = nm_device_get_connection (device);
+	connection = nm_device_get_applied_connection (device);
 	g_assert (connection);
 
 	s_wired = nm_connection_get_setting_wired (connection);

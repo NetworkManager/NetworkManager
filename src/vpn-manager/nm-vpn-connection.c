@@ -76,7 +76,6 @@ typedef enum {
 } VpnState;
 
 typedef struct {
-	NMConnection *connection;
 	gboolean service_can_persist;
 	gboolean connection_can_persist;
 
@@ -136,6 +135,9 @@ enum {
 	LAST_PROP
 };
 
+static NMSettingsConnection *_get_settings_connection (NMVpnConnection *self,
+                                                       gboolean allow_missing);
+
 static void get_secrets (NMVpnConnection *self,
                          SecretsReq secrets_idx,
                          const char **hints);
@@ -168,7 +170,7 @@ __LOG_create_prefix (char *buf, NMVpnConnection *self)
 
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
-	con = nm_active_connection_get_connection (NM_ACTIVE_CONNECTION (self));
+	con = NM_CONNECTION (_get_settings_connection (self, TRUE));
 	id = con ? nm_connection_get_id (con) : NULL;
 
 	g_snprintf (buf, __NMLOG_prefix_buf_len,
@@ -212,7 +214,7 @@ cancel_get_secrets (NMVpnConnection *self)
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
 	if (priv->secrets_id) {
-		nm_settings_connection_cancel_secrets (NM_SETTINGS_CONNECTION (priv->connection),
+		nm_settings_connection_cancel_secrets (_get_settings_connection (self, FALSE),
 		                                       priv->secrets_id);
 		g_warn_if_fail (!priv->secrets_id);
 		priv->secrets_id = NULL;
@@ -278,6 +280,31 @@ _state_to_ac_state (VpnState vpn_state)
 	return NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
 }
 
+static NMSettingsConnection *
+_get_settings_connection (NMVpnConnection *self, gboolean allow_missing)
+{
+	NMSettingsConnection *con;
+
+	/* Currently we operate on the assumption, that the settings-connection
+	 * never changes after it is set (though initially, it might be unset).
+	 * Later we might want to change that, but then we need fixes here too. */
+
+	con = _nm_active_connection_get_settings_connection (NM_ACTIVE_CONNECTION (self));
+	if (!con && !allow_missing)
+		g_return_val_if_reached (NULL);
+	return con;
+}
+
+static NMConnection *
+_get_applied_connection (NMVpnConnection *connection)
+{
+	NMConnection *con;
+
+	con = nm_active_connection_get_applied_connection (NM_ACTIVE_CONNECTION (connection));
+	g_return_val_if_fail (con, NULL);
+	return con;
+}
+
 static void
 call_plugin_disconnect (NMVpnConnection *self)
 {
@@ -332,9 +359,7 @@ vpn_cleanup (NMVpnConnection *self, NMDevice *parent_dev)
 	/* Clear out connection secrets to ensure that the settings service
 	 * gets asked for them next time the connection is activated.
 	 */
-	if (priv->connection)
-		nm_connection_clear_secrets (priv->connection);
-
+	nm_active_connection_clear_secrets (NM_ACTIVE_CONNECTION (self));
 }
 
 static void
@@ -433,7 +458,8 @@ _set_vpn_state (NMVpnConnection *self,
 		break;
 	case STATE_PRE_UP:
 		if (!nm_dispatcher_call_vpn (DISPATCHER_ACTION_VPN_PRE_UP,
-		                             priv->connection,
+		                             _get_settings_connection (self, FALSE),
+		                             _get_applied_connection (self),
 		                             parent_dev,
 		                             priv->ip_iface,
 		                             priv->ip4_config,
@@ -447,11 +473,12 @@ _set_vpn_state (NMVpnConnection *self,
 		break;
 	case STATE_ACTIVATED:
 		/* Secrets no longer needed now that we're connected */
-		nm_connection_clear_secrets (priv->connection);
+		nm_active_connection_clear_secrets (NM_ACTIVE_CONNECTION (self));
 
 		/* Let dispatcher scripts know we're up and running */
 		nm_dispatcher_call_vpn (DISPATCHER_ACTION_VPN_UP,
-		                        priv->connection,
+		                        _get_settings_connection (self, FALSE),
+		                        _get_applied_connection (self),
 		                        parent_dev,
 		                        priv->ip_iface,
 		                        priv->ip4_config,
@@ -463,14 +490,16 @@ _set_vpn_state (NMVpnConnection *self,
 	case STATE_DEACTIVATING:
 		if (quitting) {
 			nm_dispatcher_call_vpn_sync (DISPATCHER_ACTION_VPN_PRE_DOWN,
-			                             priv->connection,
+			                             _get_settings_connection (self, FALSE),
+			                             _get_applied_connection (self),
 			                             parent_dev,
 			                             priv->ip_iface,
 			                             priv->ip4_config,
 			                             priv->ip6_config);
 		} else {
 			if (!nm_dispatcher_call_vpn (DISPATCHER_ACTION_VPN_PRE_DOWN,
-			                             priv->connection,
+			                             _get_settings_connection (self, FALSE),
+			                             _get_applied_connection (self),
 			                             parent_dev,
 			                             priv->ip_iface,
 			                             priv->ip4_config,
@@ -490,14 +519,16 @@ _set_vpn_state (NMVpnConnection *self,
 			/* Let dispatcher scripts know we're about to go down */
 			if (quitting) {
 				nm_dispatcher_call_vpn_sync (DISPATCHER_ACTION_VPN_DOWN,
-				                             priv->connection,
+				                             _get_settings_connection (self, FALSE),
+				                             _get_applied_connection (self),
 				                             parent_dev,
 				                             priv->ip_iface,
 				                             NULL,
 				                             NULL);
 			} else {
 				nm_dispatcher_call_vpn (DISPATCHER_ACTION_VPN_DOWN,
-				                        priv->connection,
+				                        _get_settings_connection (self, FALSE),
+				                        _get_applied_connection (self),
 				                        parent_dev,
 				                        priv->ip_iface,
 				                        NULL,
@@ -674,16 +705,16 @@ add_ip6_vpn_gateway_route (NMIP6Config *config,
 }
 
 NMVpnConnection *
-nm_vpn_connection_new (NMConnection *connection,
+nm_vpn_connection_new (NMSettingsConnection *settings_connection,
                        NMDevice *parent_device,
                        const char *specific_object,
                        NMAuthSubject *subject)
 {
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+	g_return_val_if_fail (!settings_connection || NM_IS_SETTINGS_CONNECTION (settings_connection), NULL);
 	g_return_val_if_fail (NM_IS_DEVICE (parent_device), NULL);
 
 	return (NMVpnConnection *) g_object_new (NM_TYPE_VPN_CONNECTION,
-	                                         NM_ACTIVE_CONNECTION_INT_CONNECTION, connection,
+	                                         NM_ACTIVE_CONNECTION_INT_SETTINGS_CONNECTION, settings_connection,
 	                                         NM_ACTIVE_CONNECTION_INT_DEVICE, parent_device,
 	                                         NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT, specific_object,
 	                                         NM_ACTIVE_CONNECTION_INT_SUBJECT, subject,
@@ -694,10 +725,9 @@ nm_vpn_connection_new (NMConnection *connection,
 static const char *
 nm_vpn_connection_get_service (NMVpnConnection *self)
 {
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 	NMSettingVpn *s_vpn;
 
-	s_vpn = nm_connection_get_setting_vpn (priv->connection);
+	s_vpn = nm_connection_get_setting_vpn (_get_applied_connection (self));
 	return nm_setting_vpn_get_service_type (s_vpn);
 }
 
@@ -827,7 +857,7 @@ plugin_state_changed (NMVpnConnection *self, NMVpnServiceState new_service_state
 		/* Clear connection secrets to ensure secrets get requested each time the
 		 * connection is activated.
 		 */
-		nm_connection_clear_secrets (priv->connection);
+		nm_active_connection_clear_secrets (NM_ACTIVE_CONNECTION (self));
 
 		if ((priv->vpn_state >= STATE_WAITING) && (priv->vpn_state <= STATE_ACTIVATED)) {
 			VpnState old_state = priv->vpn_state;
@@ -1109,8 +1139,7 @@ nm_vpn_connection_config_maybe_complete (NMVpnConnection *self,
 
 		/* Add the tunnel interface to the specified firewall zone */
 		if (priv->ip_iface) {
-			base_con = nm_vpn_connection_get_connection (self);
-			g_assert (base_con);
+			base_con = _get_applied_connection (self);
 			s_con = nm_connection_get_setting_connection (base_con);
 			zone = nm_setting_connection_get_zone (s_con);
 
@@ -1260,31 +1289,25 @@ nm_vpn_connection_config_get (NMVpnConnection *self, GVariant *dict)
 guint32
 nm_vpn_connection_get_ip4_route_metric (NMVpnConnection *self)
 {
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
+	gint64 route_metric;
+	NMConnection *applied;
 
-	if (priv->connection) {
-		gint64 route_metric = nm_setting_ip_config_get_route_metric (nm_connection_get_setting_ip4_config (priv->connection));
+	applied = _get_applied_connection (self);
+	route_metric = nm_setting_ip_config_get_route_metric (nm_connection_get_setting_ip4_config (applied));
 
-		if (route_metric >= 0)
-			return route_metric;
-	}
-
-	return NM_VPN_ROUTE_METRIC_DEFAULT;
+	return (route_metric >= 0) ? route_metric : NM_VPN_ROUTE_METRIC_DEFAULT;
 }
 
 guint32
 nm_vpn_connection_get_ip6_route_metric (NMVpnConnection *self)
 {
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
+	gint64 route_metric;
+	NMConnection *applied;
 
-	if (priv->connection) {
-		gint64 route_metric = nm_setting_ip_config_get_route_metric (nm_connection_get_setting_ip6_config (priv->connection));
+	applied = _get_applied_connection (self);
+	route_metric = nm_setting_ip_config_get_route_metric (nm_connection_get_setting_ip6_config (applied));
 
-		if (route_metric >= 0)
-			return route_metric;
-	}
-
-	return NM_VPN_ROUTE_METRIC_DEFAULT;
+	return (route_metric >= 0) ? route_metric : NM_VPN_ROUTE_METRIC_DEFAULT;
 }
 
 static void
@@ -1415,7 +1438,7 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 
 	/* Merge in user overrides from the NMConnection's IPv4 setting */
 	nm_ip4_config_merge_setting (config,
-	                             nm_connection_get_setting_ip4_config (priv->connection),
+	                             nm_connection_get_setting_ip4_config (_get_applied_connection (self)),
 	                             route_metric);
 
 	g_clear_object (&priv->ip4_config);
@@ -1550,7 +1573,7 @@ next:
 
 	/* Merge in user overrides from the NMConnection's IPv6 setting */
 	nm_ip6_config_merge_setting (config,
-	                             nm_connection_get_setting_ip6_config (priv->connection),
+	                             nm_connection_get_setting_ip6_config (_get_applied_connection (self)),
 	                             route_metric);
 
 	g_clear_object (&priv->ip6_config);
@@ -1684,7 +1707,7 @@ really_activate (NMVpnConnection *self, const char *username)
 	g_return_if_fail (priv->vpn_state == STATE_NEED_AUTH);
 
 	g_clear_pointer (&priv->connect_hash, g_variant_unref);
-	priv->connect_hash = _hash_with_username (priv->connection, username);
+	priv->connect_hash = _hash_with_username (_get_applied_connection (self), username);
 	g_variant_ref_sink (priv->connect_hash);
 
 	/* If at least one agent doesn't support VPN hints, then we can't use
@@ -1851,7 +1874,7 @@ nm_vpn_connection_activate (NMVpnConnection *self)
 
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
-	s_vpn = nm_connection_get_setting_vpn (priv->connection);
+	s_vpn = nm_connection_get_setting_vpn (_get_applied_connection (self));
 	g_assert (s_vpn);
 	priv->connection_can_persist = nm_setting_vpn_get_persistent (s_vpn);
 
@@ -1867,25 +1890,6 @@ nm_vpn_connection_activate (NMVpnConnection *self)
 	                          priv->cancellable,
 	                          (GAsyncReadyCallback) on_proxy_acquired,
 	                          self);
-}
-
-NMConnection *
-nm_vpn_connection_get_connection (NMVpnConnection *self)
-{
-	g_return_val_if_fail (NM_IS_VPN_CONNECTION (self), NULL);
-
-	return NM_VPN_CONNECTION_GET_PRIVATE (self)->connection;
-}
-
-const char*
-nm_vpn_connection_get_connection_id (NMVpnConnection *self)
-{
-	NMConnection *c;
-
-	g_return_val_if_fail (NM_IS_VPN_CONNECTION (self), NULL);
-
-	c = NM_VPN_CONNECTION_GET_PRIVATE (self)->connection;
-	return c ? nm_connection_get_id (c) : NULL;
 }
 
 NMVpnConnectionState
@@ -2059,10 +2063,14 @@ get_secrets_cb (NMSettingsConnection *connection,
                 gpointer user_data)
 {
 	NMVpnConnection *self = NM_VPN_CONNECTION (user_data);
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
+	NMVpnConnectionPrivate *priv;
 	GVariant *dict;
 
-	g_return_if_fail (NM_CONNECTION (connection) == priv->connection);
+	g_return_if_fail (NM_IS_VPN_CONNECTION (self));
+
+	priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
+
+	g_return_if_fail (connection && connection == _get_settings_connection (self, FALSE));
 	g_return_if_fail (call_id == priv->secrets_id);
 
 	priv->secrets_id = NULL;
@@ -2083,7 +2091,7 @@ get_secrets_cb (NMSettingsConnection *connection,
 		priv->username = g_strdup (agent_username);
 	}
 
-	dict = _hash_with_username (priv->connection, priv->username);
+	dict = _hash_with_username (_get_applied_connection (self), priv->username);
 
 	if (priv->secrets_idx == SECRETS_REQ_INTERACTIVE) {
 		_LOGD ("sending secrets to the plugin");
@@ -2119,7 +2127,6 @@ get_secrets (NMVpnConnection *self,
 {
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 	NMSecretAgentGetSecretsFlags flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE;
-	GError *error = NULL;
 
 	g_return_if_fail (secrets_idx < SECRETS_REQ_LAST);
 	priv->secrets_idx = secrets_idx;
@@ -2147,22 +2154,15 @@ get_secrets (NMVpnConnection *self,
 	if (nm_active_connection_get_user_requested (NM_ACTIVE_CONNECTION (self)))
 		flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_USER_REQUESTED;
 
-	priv->secrets_id = nm_settings_connection_get_secrets (NM_SETTINGS_CONNECTION (priv->connection),
+	priv->secrets_id = nm_settings_connection_get_secrets (_get_settings_connection (self, FALSE),
+	                                                       _get_applied_connection (self),
 	                                                       nm_active_connection_get_subject (NM_ACTIVE_CONNECTION (self)),
 	                                                       NM_SETTING_VPN_SETTING_NAME,
 	                                                       flags,
 	                                                       hints,
 	                                                       get_secrets_cb,
-	                                                       self,
-	                                                       &error);
-	if (!priv->secrets_id) {
-		if (error) {
-			_LOGE ("failed to request VPN secrets #%d: (%d) %s",
-			       priv->secrets_idx + 1, error->code, error->message);
-		}
-		_set_vpn_state (self, STATE_FAILED, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS, FALSE);
-		g_clear_error (&error);
-	}
+	                                                       self);
+	g_return_if_fail (priv->secrets_id);
 }
 
 static void
@@ -2242,17 +2242,6 @@ nm_vpn_connection_init (NMVpnConnection *self)
 }
 
 static void
-constructed (GObject *object)
-{
-	NMConnection *connection;
-
-	G_OBJECT_CLASS (nm_vpn_connection_parent_class)->constructed (object);
-
-	connection = nm_active_connection_get_connection (NM_ACTIVE_CONNECTION (object));
-	NM_VPN_CONNECTION_GET_PRIVATE (object)->connection = g_object_ref (connection);
-}
-
-static void
 dispose (GObject *object)
 {
 	NMVpnConnection *self = NM_VPN_CONNECTION (object);
@@ -2276,13 +2265,13 @@ dispose (GObject *object)
 	g_clear_object (&priv->ip4_config);
 	g_clear_object (&priv->ip6_config);
 	g_clear_object (&priv->proxy);
-	g_clear_object (&priv->connection);
-	g_clear_object (&priv->default_route_manager);
-	g_clear_object (&priv->route_manager);
 
 	fw_call_cleanup (self);
 
 	G_OBJECT_CLASS (nm_vpn_connection_parent_class)->dispose (object);
+
+	g_clear_object (&priv->default_route_manager);
+	g_clear_object (&priv->route_manager);
 }
 
 static void
@@ -2345,7 +2334,6 @@ nm_vpn_connection_class_init (NMVpnConnectionClass *connection_class)
 
 	/* virtual methods */
 	object_class->get_property = get_property;
-	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	active_class->device_state_changed = device_state_changed;
