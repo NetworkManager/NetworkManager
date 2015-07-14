@@ -59,6 +59,8 @@ This is a new stable release of NetworkManager.  Notable changes include:
 
 * nmcli allows multiple devices for 'nmcli device disconnect/delete'.
 
+* Firewall zone is added to firewalld for device-based VPN connections too.
+
 ===============================================
 NetworkManager-1.0.2
 Overview of changes since NetworkManager-1.0
