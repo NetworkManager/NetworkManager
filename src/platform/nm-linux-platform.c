@@ -4031,8 +4031,8 @@ build_rtnl_addr (NMPlatform *platform,
 	}
 
 	_nl_rtnl_addr_set_prefixlen (rtnladdr, plen);
-	if (   lifetime  != 0 || lifetime  != NM_PLATFORM_LIFETIME_PERMANENT
-	    || preferred != 0 || preferred != NM_PLATFORM_LIFETIME_PERMANENT) {
+	if (   (lifetime  != 0 && lifetime  != NM_PLATFORM_LIFETIME_PERMANENT)
+	    || (preferred != 0 && preferred != NM_PLATFORM_LIFETIME_PERMANENT)) {
 		/* note that here we set the relative timestamps (ticking from *now*). */
 		rtnl_addr_set_valid_lifetime (rtnladdr, lifetime);
 		rtnl_addr_set_preferred_lifetime (rtnladdr, preferred);
