@@ -595,7 +595,7 @@ read_config (GKeyFile *keyfile, const char *path, GError **error)
 		                   NULL);
 	}
 
-	for (g = 0; groups[g]; g++) {
+	for (g = 0; groups && groups[g]; g++) {
 		const char *group = groups[g];
 
 		keys = g_key_file_get_keys (kf, group, &nkeys, NULL);
