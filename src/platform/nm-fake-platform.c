@@ -992,8 +992,8 @@ ip6_address_delete (NMPlatform *platform, int ifindex, struct in6_addr addr, int
 	return TRUE;
 }
 
-static gboolean
-ip4_address_exists (NMPlatform *platform, int ifindex, in_addr_t addr, int plen)
+static const NMPlatformIP4Address *
+ip4_address_get (NMPlatform *platform, int ifindex, in_addr_t addr, int plen)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	int i;
@@ -1002,14 +1002,14 @@ ip4_address_exists (NMPlatform *platform, int ifindex, in_addr_t addr, int plen)
 		NMPlatformIP4Address *address = &g_array_index (priv->ip4_addresses, NMPlatformIP4Address, i);
 
 		if (address->ifindex == ifindex && address->plen == plen && address->address == addr)
-			return TRUE;
+			return address;
 	}
 
-	return FALSE;
+	return NULL;
 }
 
-static gboolean
-ip6_address_exists (NMPlatform *platform, int ifindex, struct in6_addr addr, int plen)
+static const NMPlatformIP6Address *
+ip6_address_get (NMPlatform *platform, int ifindex, struct in6_addr addr, int plen)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	int i;
@@ -1019,10 +1019,10 @@ ip6_address_exists (NMPlatform *platform, int ifindex, struct in6_addr addr, int
 
 		if (address->ifindex == ifindex && address->plen == plen &&
 				IN6_ARE_ADDR_EQUAL (&address->address, &addr))
-			return TRUE;
+			return address;
 	}
 
-	return FALSE;
+	return NULL;
 }
 
 /******************************************************************/
@@ -1271,7 +1271,7 @@ ip6_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 	return TRUE;
 }
 
-static NMPlatformIP4Route *
+static const NMPlatformIP4Route *
 ip4_route_get (NMPlatform *platform, int ifindex, in_addr_t network, int plen, guint32 metric)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
@@ -1290,7 +1290,7 @@ ip4_route_get (NMPlatform *platform, int ifindex, in_addr_t network, int plen, g
 	return NULL;
 }
 
-static NMPlatformIP6Route *
+static const NMPlatformIP6Route *
 ip6_route_get (NMPlatform *platform, int ifindex, struct in6_addr network, int plen, guint32 metric)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
@@ -1309,18 +1309,6 @@ ip6_route_get (NMPlatform *platform, int ifindex, struct in6_addr network, int p
 	}
 
 	return NULL;
-}
-
-static gboolean
-ip4_route_exists (NMPlatform *platform, int ifindex, in_addr_t network, int plen, guint32 metric)
-{
-	return !!ip4_route_get (platform, ifindex, network, plen, metric);
-}
-
-static gboolean
-ip6_route_exists (NMPlatform *platform, int ifindex, struct in6_addr network, int plen, guint32 metric)
-{
-	return !!ip6_route_get (platform, ifindex, network, plen, metric);
 }
 
 /******************************************************************/
@@ -1453,21 +1441,21 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->mesh_set_channel = mesh_set_channel;
 	platform_class->mesh_set_ssid = mesh_set_ssid;
 
+	platform_class->ip4_address_get = ip4_address_get;
+	platform_class->ip6_address_get = ip6_address_get;
 	platform_class->ip4_address_get_all = ip4_address_get_all;
 	platform_class->ip6_address_get_all = ip6_address_get_all;
 	platform_class->ip4_address_add = ip4_address_add;
 	platform_class->ip6_address_add = ip6_address_add;
 	platform_class->ip4_address_delete = ip4_address_delete;
 	platform_class->ip6_address_delete = ip6_address_delete;
-	platform_class->ip4_address_exists = ip4_address_exists;
-	platform_class->ip6_address_exists = ip6_address_exists;
 
+	platform_class->ip4_route_get = ip4_route_get;
+	platform_class->ip6_route_get = ip6_route_get;
 	platform_class->ip4_route_get_all = ip4_route_get_all;
 	platform_class->ip6_route_get_all = ip6_route_get_all;
 	platform_class->ip4_route_add = ip4_route_add;
 	platform_class->ip6_route_add = ip6_route_add;
 	platform_class->ip4_route_delete = ip4_route_delete;
 	platform_class->ip6_route_delete = ip6_route_delete;
-	platform_class->ip4_route_exists = ip4_route_exists;
-	platform_class->ip6_route_exists = ip6_route_exists;
 }
