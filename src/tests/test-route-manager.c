@@ -36,6 +36,8 @@ typedef struct {
 	int ifindex0, ifindex1;
 } test_fixture;
 
+/*****************************************************************************/
+
 static void
 setup_dev0_ip4 (int ifindex, guint mss_of_first_route, guint32 metric_of_second_route)
 {
@@ -779,6 +781,89 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 	g_array_free (routes, TRUE);
 }
 
+/*****************************************************************************/
+
+static void
+_assert_route_check (const NMPlatformVTableRoute *vtable, gboolean has, const NMPlatformIPXRoute *route)
+{
+	const NMPlatformIPXRoute *r;
+
+	g_assert (route);
+
+	if (vtable->is_ip4)
+		r = (const NMPlatformIPXRoute *) nm_platform_ip4_route_get (NM_PLATFORM_GET, route->rx.ifindex, route->r4.network, route->rx.plen, route->rx.metric);
+	else
+		r = (const NMPlatformIPXRoute *) nm_platform_ip6_route_get (NM_PLATFORM_GET, route->rx.ifindex, route->r6.network, route->rx.plen, route->rx.metric);
+
+	if (!has) {
+		g_assert (!r);
+	} else {
+		if (!r || vtable->route_cmp (route, r) != 0)
+			g_error ("Invalid route. Expect %s, has %s",
+			         nmtst_static_1024_01 (vtable->route_to_string (route)),
+			         nmtst_static_1024_02 (vtable->route_to_string (r)));
+		g_assert (r);
+	}
+}
+
+static void
+test_ip4_full_sync (test_fixture *fixture, gconstpointer user_data)
+{
+	const NMPlatformVTableRoute *vtable = &nm_platform_vtable_route_v4;
+	gs_unref_array GArray *routes = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP4Route));
+	NMPlatformIP4Route r01, r02, r03;
+
+	nm_log_dbg (LOGD_CORE, "TEST start test_ip4_full_sync(): start");
+
+	r01 = *nmtst_platform_ip4_route_full ("12.3.4.0", 24, NULL,
+	                                      fixture->ifindex0, NM_IP_CONFIG_SOURCE_USER,
+	                                      100, 0, RT_SCOPE_LINK, NULL);
+	r02 = *nmtst_platform_ip4_route_full ("13.4.5.6", 32, "12.3.4.1",
+	                                      fixture->ifindex0, NM_IP_CONFIG_SOURCE_USER,
+	                                      100, 0, RT_SCOPE_UNIVERSE, NULL);
+	r03 = *nmtst_platform_ip4_route_full ("14.5.6.7", 32, "12.3.4.1",
+	                                      fixture->ifindex0, NM_IP_CONFIG_SOURCE_USER,
+	                                      110, 0, RT_SCOPE_UNIVERSE, NULL);
+	g_array_set_size (routes, 2);
+	g_array_index (routes, NMPlatformIP4Route, 0) = r01;
+	g_array_index (routes, NMPlatformIP4Route, 1) = r02;
+	nm_route_manager_ip4_route_sync (nm_route_manager_get (), fixture->ifindex0, routes, TRUE, TRUE);
+
+	_assert_route_check (vtable, TRUE,  (const NMPlatformIPXRoute *) &r01);
+	_assert_route_check (vtable, TRUE,  (const NMPlatformIPXRoute *) &r02);
+	_assert_route_check (vtable, FALSE, (const NMPlatformIPXRoute *) &r03);
+
+	vtable->route_add (NM_PLATFORM_GET, 0, (const NMPlatformIPXRoute *) &r03, -1);
+
+	_assert_route_check (vtable, TRUE,  (const NMPlatformIPXRoute *) &r01);
+	_assert_route_check (vtable, TRUE,  (const NMPlatformIPXRoute *) &r02);
+	_assert_route_check (vtable, TRUE,  (const NMPlatformIPXRoute *) &r03);
+
+	nm_route_manager_ip4_route_sync (nm_route_manager_get (), fixture->ifindex0, routes, TRUE, FALSE);
+
+	_assert_route_check (vtable, TRUE,  (const NMPlatformIPXRoute *) &r01);
+	_assert_route_check (vtable, TRUE,  (const NMPlatformIPXRoute *) &r02);
+	_assert_route_check (vtable, TRUE,  (const NMPlatformIPXRoute *) &r03);
+
+	g_array_set_size (routes, 1);
+
+	nm_route_manager_ip4_route_sync (nm_route_manager_get (), fixture->ifindex0, routes, TRUE, FALSE);
+
+	_assert_route_check (vtable, TRUE,  (const NMPlatformIPXRoute *) &r01);
+	_assert_route_check (vtable, FALSE, (const NMPlatformIPXRoute *) &r02);
+	_assert_route_check (vtable, TRUE,  (const NMPlatformIPXRoute *) &r03);
+
+	nm_route_manager_ip4_route_sync (nm_route_manager_get (), fixture->ifindex0, routes, TRUE, TRUE);
+
+	_assert_route_check (vtable, TRUE,  (const NMPlatformIPXRoute *) &r01);
+	_assert_route_check (vtable, FALSE, (const NMPlatformIPXRoute *) &r02);
+	_assert_route_check (vtable, FALSE, (const NMPlatformIPXRoute *) &r03);
+
+	nm_log_dbg (LOGD_CORE, "TEST test_ip4_full_sync(): done");
+}
+
+/*****************************************************************************/
+
 static void
 fixture_setup (test_fixture *fixture, gconstpointer user_data)
 {
@@ -816,6 +901,8 @@ fixture_teardown (test_fixture *fixture, gconstpointer user_data)
 	nm_platform_link_delete (NM_PLATFORM_GET, fixture->ifindex1);
 }
 
+/*****************************************************************************/
+
 void
 init_tests (int *argc, char ***argv)
 {
@@ -827,4 +914,6 @@ setup_tests (void)
 {
 	g_test_add ("/route-manager/ip4", test_fixture, NULL, fixture_setup, test_ip4, fixture_teardown);
 	g_test_add ("/route-manager/ip6", test_fixture, NULL, fixture_setup, test_ip6, fixture_teardown);
+
+	g_test_add ("/route-manager/ip4-full-sync", test_fixture, NULL, fixture_setup, test_ip4_full_sync, fixture_teardown);
 }
