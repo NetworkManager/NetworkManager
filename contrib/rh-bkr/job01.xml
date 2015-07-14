@@ -9,7 +9,17 @@
 			<packages/>
 			<ks_appends>
 				<ks_append><![CDATA[
+%packages
+# SELinux forbids dumping cores to /, ABRT comes to the rescue
+# and collects them
+abrt-tui
+abrt-addon-ccpp
+%end
+
 %post
+# Allow ABRT to collect cores from our poor unsigned packages
+sed 's/^OpenGPGCheck.*/OpenGPGCheck = no/' -i /etc/abrt/abrt-action-save-package-data.conf
+
 sed -i -e 's/^ *\(Storage\|SystemMaxUse\|RateLimitBurst\|RateLimitInterval\)=.*/#\0/' \
 	-e '$$a\Storage=persistent' \
 	-e '$$a\SystemMaxUse=2G' \
