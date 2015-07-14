@@ -311,6 +311,7 @@ typedef struct {
 
 typedef void (*NMDeviceAuthRequestFunc) (NMDevice *device,
                                          DBusGMethodInvocation *context,
+                                         NMAuthSubject *subject,
                                          GError *error,
                                          gpointer user_data);
 
