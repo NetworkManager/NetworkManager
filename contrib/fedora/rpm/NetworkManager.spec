@@ -397,6 +397,11 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 %endif
 %if 0%{?with_wifi}
 	--enable-wifi=yes \
+%if 0%{?fedora}
+	--with-wext=yes \
+%else
+	--with-wext=no \
+%endif
 %else
 	--enable-wifi=no \
 %endif
@@ -410,11 +415,6 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 	--enable-gtk-doc \
 %else
 	--disable-gtk-doc \
-%endif
-%if 0%{?fedora}
-	--with-wext=yes \
-%else
-	--with-wext=no \
 %endif
 %if 0%{?with_team}
 	--enable-teamdctl=yes \
