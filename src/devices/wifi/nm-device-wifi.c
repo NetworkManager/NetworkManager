@@ -55,6 +55,7 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-wifi-enum-types.h"
 #include "nm-connection-provider.h"
+#include "gsystem-local-alloc.h"
 
 
 static gboolean impl_device_get_access_points (NMDeviceWifi *device,
@@ -178,7 +179,7 @@ static void supplicant_iface_notify_scanning_cb (NMSupplicantInterface * iface,
 
 static void schedule_scanlist_cull (NMDeviceWifi *self);
 
-static gboolean request_wireless_scan (gpointer user_data);
+static void request_wireless_scan (NMDeviceWifi *self, GHashTable *scan_options);
 
 static void remove_access_point (NMDeviceWifi *device, NMAccessPoint *ap);
 
@@ -753,7 +754,7 @@ deactivate (NMDevice *device)
 	/* Ensure we trigger a scan after deactivating a Hotspot */
 	if (old_mode == NM_802_11_MODE_AP) {
 		cancel_pending_scan (self);
-		request_wireless_scan (self);
+		request_wireless_scan (self, NULL);
 	}
 }
 
@@ -1253,6 +1254,7 @@ request_scan_cb (NMDevice *device,
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	GError *local = NULL;
+	gs_unref_hashtable GHashTable *new_scan_options = user_data;
 
 	if (error) {
 		dbus_g_method_return_error (context, error);
@@ -1269,7 +1271,7 @@ request_scan_cb (NMDevice *device,
 	}
 
 	cancel_pending_scan (self);
-	request_wireless_scan (self);
+	request_wireless_scan (self, new_scan_options);
 	dbus_g_method_return (context);
 }
 
@@ -1316,7 +1318,7 @@ impl_device_request_scan (NMDeviceWifi *self,
 	                       NM_AUTH_PERMISSION_NETWORK_CONTROL,
 	                       TRUE,
 	                       request_scan_cb,
-	                       NULL);
+	                       options ? g_hash_table_ref (options) : NULL);
 	return;
 
 error:
@@ -1482,23 +1484,31 @@ build_hidden_probe_list (NMDeviceWifi *self)
 	return ssids;
 }
 
-static gboolean
-request_wireless_scan (gpointer user_data)
+static void
+request_wireless_scan (NMDeviceWifi *self, GHashTable *scan_options)
 {
-	NMDeviceWifi *self = NM_DEVICE_WIFI (user_data);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	gboolean backoff = FALSE;
 	GPtrArray *ssids = NULL;
 
 	if (priv->requested_scan) {
 		/* There's already a scan in progress */
-		return FALSE;
+		return;
 	}
 
 	if (check_scanning_allowed (self)) {
 		_LOGD (LOGD_WIFI_SCAN, "scanning requested");
 
-		ssids = build_hidden_probe_list (self);
+		if (scan_options && g_hash_table_size (scan_options)) {
+			GValue *val = g_hash_table_lookup (scan_options, "ssids");
+
+			if (val && G_VALUE_HOLDS (val, DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UCHAR))
+				ssids = g_ptr_array_ref (g_value_get_boxed (val));
+			else
+				_LOGD (LOGD_WIFI_SCAN, "ignoring invalid scan options");
+		}
+		if (!ssids)
+			ssids = build_hidden_probe_list (self);
 
 		if (nm_logging_enabled (LOGL_DEBUG, LOGD_WIFI_SCAN)) {
 			if (ssids) {
@@ -1533,9 +1543,14 @@ request_wireless_scan (gpointer user_data)
 
 	priv->pending_scan_id = 0;
 	schedule_scan (self, backoff);
-	return FALSE;
 }
 
+static gboolean
+request_wireless_scan_periodic (gpointer user_data)
+{
+	request_wireless_scan (user_data, NULL);
+	return FALSE;
+}
 
 /*
  * schedule_scan
@@ -1563,7 +1578,7 @@ schedule_scan (NMDeviceWifi *self, gboolean backoff)
 			factor = 1;
 
 		priv->pending_scan_id = g_timeout_add_seconds (next_scan,
-		                                               request_wireless_scan,
+		                                               request_wireless_scan_periodic,
 		                                               self);
 
 		priv->scheduled_scan_time = now + priv->scan_interval;
@@ -3072,7 +3087,7 @@ device_state_changed (NMDevice *device,
 		/* Kick off a scan to get latest results */
 		priv->scan_interval = SCAN_INTERVAL_MIN;
 		cancel_pending_scan (self);
-		request_wireless_scan (self);
+		request_wireless_scan (self, NULL);
 		break;
 	default:
 		break;
