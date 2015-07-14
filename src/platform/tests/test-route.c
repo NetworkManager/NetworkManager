@@ -222,9 +222,9 @@ test_ip6_route (void)
 	accept_signal (route_added);
 
 	/* Add route */
-	g_assert (!nm_platform_ip6_route_exists (NM_PLATFORM_GET, ifindex, network, plen, metric));
+	g_assert (!nm_platform_ip6_route_get (NM_PLATFORM_GET, ifindex, network, plen, metric));
 	g_assert (nm_platform_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, network, plen, gateway, metric, mss));
-	g_assert (nm_platform_ip6_route_exists (NM_PLATFORM_GET, ifindex, network, plen, metric));
+	g_assert (nm_platform_ip6_route_get (NM_PLATFORM_GET, ifindex, network, plen, metric));
 	accept_signal (route_added);
 
 	/* Add route again */
@@ -232,9 +232,9 @@ test_ip6_route (void)
 	accept_signals (route_changed, 0, 1);
 
 	/* Add default route */
-	g_assert (!nm_platform_ip6_route_exists (NM_PLATFORM_GET, ifindex, in6addr_any, 0, metric));
+	g_assert (!nm_platform_ip6_route_get (NM_PLATFORM_GET, ifindex, in6addr_any, 0, metric));
 	g_assert (nm_platform_ip6_route_add (NM_PLATFORM_GET, ifindex, NM_IP_CONFIG_SOURCE_USER, in6addr_any, 0, gateway, metric, mss));
-	g_assert (nm_platform_ip6_route_exists (NM_PLATFORM_GET, ifindex, in6addr_any, 0, metric));
+	g_assert (nm_platform_ip6_route_get (NM_PLATFORM_GET, ifindex, in6addr_any, 0, metric));
 	accept_signal (route_added);
 
 	/* Add default route again */
@@ -271,7 +271,7 @@ test_ip6_route (void)
 
 	/* Remove route */
 	g_assert (nm_platform_ip6_route_delete (NM_PLATFORM_GET, ifindex, network, plen, metric));
-	g_assert (!nm_platform_ip6_route_exists (NM_PLATFORM_GET, ifindex, network, plen, metric));
+	g_assert (!nm_platform_ip6_route_get (NM_PLATFORM_GET, ifindex, network, plen, metric));
 	accept_signal (route_removed);
 
 	/* Remove route again */
