@@ -33,7 +33,8 @@
     <method name="RequestScan">
       <arg name="options" type="a{sv}" direction="in">
         <tp:docstring>
-          Options of scan (currently unused argument).
+          Options of scan.
+          Currently 'ssids' option with value of "aay" type is supported.
         </tp:docstring>
       </arg>
       <tp:docstring>
