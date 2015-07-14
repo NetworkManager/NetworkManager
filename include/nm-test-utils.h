@@ -812,6 +812,38 @@ nmtst_platform_ip6_address_full (const char *address, const char *peer_address, 
 	return addr;
 }
 
+inline static NMPlatformIP4Route *
+nmtst_platform_ip4_route (const char *network, guint plen, const char *gateway)
+{
+	static NMPlatformIP4Route route;
+
+	memset (&route, 0, sizeof (route));
+	route.network = nmtst_inet4_from_string (network);
+	route.plen = plen;
+	route.gateway = nmtst_inet4_from_string (gateway);
+
+	return &route;
+}
+
+inline static NMPlatformIP4Route *
+nmtst_platform_ip4_route_full (const char *network, guint plen, const char *gateway,
+                               int ifindex, NMIPConfigSource source,
+                               guint metric, guint mss,
+                               guint8 scope,
+                               const char *pref_src)
+{
+	NMPlatformIP4Route *route = nmtst_platform_ip4_route (network, plen, gateway);
+
+	route->ifindex = ifindex;
+	route->source = source;
+	route->metric = metric;
+	route->mss = mss;
+	route->scope_inv = nm_platform_route_scope_inv (scope);
+	route->pref_src = nmtst_inet4_from_string (pref_src);
+
+	return route;
+}
+
 inline static NMPlatformIP6Route *
 nmtst_platform_ip6_route (const char *network, guint plen, const char *gateway)
 {

@@ -4163,22 +4163,30 @@ ip6_address_delete (NMPlatform *platform, int ifindex, struct in6_addr addr, int
 	return do_delete_object (platform, &obj_needle, NULL);
 }
 
-static gboolean
-ip4_address_exists (NMPlatform *platform, int ifindex, in_addr_t addr, int plen)
+static const NMPlatformIP4Address *
+ip4_address_get (NMPlatform *platform, int ifindex, in_addr_t addr, int plen)
 {
 	NMPObject obj_needle;
+	const NMPObject *obj;
 
 	nmp_object_stackinit_id_ip4_address (&obj_needle, ifindex, addr, plen);
-	return nmp_object_is_visible (nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, &obj_needle));
+	obj = nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, &obj_needle);
+	if (nmp_object_is_visible (obj))
+		return &obj->ip4_address;
+	return NULL;
 }
 
-static gboolean
-ip6_address_exists (NMPlatform *platform, int ifindex, struct in6_addr addr, int plen)
+static const NMPlatformIP6Address *
+ip6_address_get (NMPlatform *platform, int ifindex, struct in6_addr addr, int plen)
 {
 	NMPObject obj_needle;
+	const NMPObject *obj;
 
 	nmp_object_stackinit_id_ip6_address (&obj_needle, ifindex, &addr, plen);
-	return nmp_object_is_visible (nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, &obj_needle));
+	obj = nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, &obj_needle);
+	if (nmp_object_is_visible (obj))
+		return &obj->ip6_address;
+	return NULL;
 }
 
 /******************************************************************/
@@ -4461,24 +4469,32 @@ ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, in
 	return do_delete_object (platform, &obj_needle, nlo);
 }
 
-static gboolean
-ip4_route_exists (NMPlatform *platform, int ifindex, in_addr_t network, int plen, guint32 metric)
+static const NMPlatformIP4Route *
+ip4_route_get (NMPlatform *platform, int ifindex, in_addr_t network, int plen, guint32 metric)
 {
 	NMPObject obj_needle;
+	const NMPObject *obj;
 
 	nmp_object_stackinit_id_ip4_route (&obj_needle, ifindex, network, plen, metric);
-	return nmp_object_is_visible (nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, &obj_needle));
+	obj = nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, &obj_needle);
+	if (nmp_object_is_visible (obj))
+		return &obj->ip4_route;
+	return NULL;
 }
 
-static gboolean
-ip6_route_exists (NMPlatform *platform, int ifindex, struct in6_addr network, int plen, guint32 metric)
+static const NMPlatformIP6Route *
+ip6_route_get (NMPlatform *platform, int ifindex, struct in6_addr network, int plen, guint32 metric)
 {
 	NMPObject obj_needle;
+	const NMPObject *obj;
 
 	metric = nm_utils_ip6_route_metric_normalize (metric);
 
 	nmp_object_stackinit_id_ip6_route (&obj_needle, ifindex, &network, plen, metric);
-	return nmp_object_is_visible (nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, &obj_needle));
+	obj = nmp_cache_lookup_obj (NM_LINUX_PLATFORM_GET_PRIVATE (platform)->cache, &obj_needle);
+	if (nmp_object_is_visible (obj))
+		return &obj->ip6_route;
+	return NULL;
 }
 
 /******************************************************************/
@@ -4985,23 +5001,23 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->mesh_set_channel = mesh_set_channel;
 	platform_class->mesh_set_ssid = mesh_set_ssid;
 
+	platform_class->ip4_address_get = ip4_address_get;
+	platform_class->ip6_address_get = ip6_address_get;
 	platform_class->ip4_address_get_all = ip4_address_get_all;
 	platform_class->ip6_address_get_all = ip6_address_get_all;
 	platform_class->ip4_address_add = ip4_address_add;
 	platform_class->ip6_address_add = ip6_address_add;
 	platform_class->ip4_address_delete = ip4_address_delete;
 	platform_class->ip6_address_delete = ip6_address_delete;
-	platform_class->ip4_address_exists = ip4_address_exists;
-	platform_class->ip6_address_exists = ip6_address_exists;
 
+	platform_class->ip4_route_get = ip4_route_get;
+	platform_class->ip6_route_get = ip6_route_get;
 	platform_class->ip4_route_get_all = ip4_route_get_all;
 	platform_class->ip6_route_get_all = ip6_route_get_all;
 	platform_class->ip4_route_add = ip4_route_add;
 	platform_class->ip6_route_add = ip6_route_add;
 	platform_class->ip4_route_delete = ip4_route_delete;
 	platform_class->ip6_route_delete = ip6_route_delete;
-	platform_class->ip4_route_exists = ip4_route_exists;
-	platform_class->ip6_route_exists = ip6_route_exists;
 
 	platform_class->check_support_kernel_extended_ifa_flags = check_support_kernel_extended_ifa_flags;
 	platform_class->check_support_user_ipv6ll = check_support_user_ipv6ll;

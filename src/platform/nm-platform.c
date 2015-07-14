@@ -1971,26 +1971,24 @@ nm_platform_ip6_address_delete (NMPlatform *self, int ifindex, struct in6_addr a
 	return klass->ip6_address_delete (self, ifindex, address, plen);
 }
 
-gboolean
-nm_platform_ip4_address_exists (NMPlatform *self, int ifindex, in_addr_t address, int plen)
+const NMPlatformIP4Address *
+nm_platform_ip4_address_get (NMPlatform *self, int ifindex, in_addr_t address, int plen)
 {
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (plen > 0, FALSE);
-	g_return_val_if_fail (klass->ip4_address_exists, FALSE);
 
-	return klass->ip4_address_exists (self, ifindex, address, plen);
+	return klass->ip4_address_get (self, ifindex, address, plen);
 }
 
-gboolean
-nm_platform_ip6_address_exists (NMPlatform *self, int ifindex, struct in6_addr address, int plen)
+const NMPlatformIP6Address *
+nm_platform_ip6_address_get (NMPlatform *self, int ifindex, struct in6_addr address, int plen)
 {
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (plen > 0, FALSE);
-	g_return_val_if_fail (klass->ip6_address_exists, FALSE);
 
-	return klass->ip6_address_exists (self, ifindex, address, plen);
+	return klass->ip6_address_get (self, ifindex, address, plen);
 }
 
 static gboolean
@@ -2272,24 +2270,20 @@ nm_platform_ip6_route_delete (NMPlatform *self, int ifindex, struct in6_addr net
 	return klass->ip6_route_delete (self, ifindex, network, plen, metric);
 }
 
-gboolean
-nm_platform_ip4_route_exists (NMPlatform *self, int ifindex, in_addr_t network, int plen, guint32 metric)
+const NMPlatformIP4Route *
+nm_platform_ip4_route_get (NMPlatform *self, int ifindex, in_addr_t network, int plen, guint32 metric)
 {
 	_CHECK_SELF (self, klass, FALSE);
 
-	g_return_val_if_fail (klass->ip4_route_exists, FALSE);
-
-	return klass->ip4_route_exists (self ,ifindex, network, plen, metric);
+	return klass->ip4_route_get (self ,ifindex, network, plen, metric);
 }
 
-gboolean
-nm_platform_ip6_route_exists (NMPlatform *self, int ifindex, struct in6_addr network, int plen, guint32 metric)
+const NMPlatformIP6Route *
+nm_platform_ip6_route_get (NMPlatform *self, int ifindex, struct in6_addr network, int plen, guint32 metric)
 {
 	_CHECK_SELF (self, klass, FALSE);
 
-	g_return_val_if_fail (klass->ip6_route_exists, FALSE);
-
-	return klass->ip6_route_exists (self, ifindex, network, plen, metric);
+	return klass->ip6_route_get (self, ifindex, network, plen, metric);
 }
 
 /******************************************************************/

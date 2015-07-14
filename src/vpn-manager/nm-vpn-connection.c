@@ -961,12 +961,15 @@ nm_vpn_connection_apply_config (NMVpnConnection *connection)
 
 		if (priv->ip4_config) {
 			if (!nm_ip4_config_commit (priv->ip4_config, priv->ip_ifindex,
+			                           TRUE,
 			                           nm_vpn_connection_get_ip4_route_metric (connection)))
 				return FALSE;
 		}
 
 		if (priv->ip6_config) {
-			if (!nm_ip6_config_commit (priv->ip6_config, priv->ip_ifindex))
+			if (!nm_ip6_config_commit (priv->ip6_config,
+			                           priv->ip_ifindex,
+			                           TRUE))
 				return FALSE;
 		}
 	}
