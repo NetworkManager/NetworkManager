@@ -37,6 +37,8 @@
 #include "nm-default.h"
 #include "nm-dispatcher-api.h"
 #include "nm-dispatcher-utils.h"
+#include "nm-macros-internal.h"
+#include "gsystem-local-alloc.h"
 
 #include "nmdbus-dispatcher.h"
 
@@ -54,7 +56,8 @@ typedef struct {
 	NMDBusDispatcher *dbus_dispatcher;
 
 	Request *current_request;
-	GQueue *pending_requests;
+	GQueue *requests_waiting;
+	gint num_requests_pending;
 } Handler;
 
 typedef struct {
@@ -89,7 +92,7 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 static void
 handler_init (Handler *h)
 {
-	h->pending_requests = g_queue_new ();
+	h->requests_waiting = g_queue_new ();
 	h->dbus_dispatcher = nmdbus_dispatcher_skeleton_new ();
 	g_signal_connect (h->dbus_dispatcher, "handle-action",
 	                  G_CALLBACK (handle_action), h);
@@ -100,7 +103,7 @@ handler_class_init (HandlerClass *h_class)
 {
 }
 
-static void dispatch_one_script (Request *request);
+static gboolean dispatch_one_script (Request *request);
 
 typedef struct {
 	Request *request;
@@ -109,6 +112,10 @@ typedef struct {
 	GPid pid;
 	DispatchResult result;
 	char *error;
+	gboolean wait;
+	gboolean dispatched;
+	guint watch_id;
+	guint timeout_id;
 } ScriptInfo;
 
 struct Request {
@@ -122,9 +129,7 @@ struct Request {
 
 	GPtrArray *scripts;  /* list of ScriptInfo */
 	guint idx;
-
-	guint script_watch_id;
-	guint script_timeout_id;
+	gint num_scripts_done;
 };
 
 static void
@@ -140,11 +145,14 @@ script_info_free (gpointer ptr)
 static void
 request_free (Request *request)
 {
+	g_assert_cmpuint (request->num_scripts_done, ==, request->scripts->len);
+
 	g_free (request->action);
 	g_free (request->iface);
 	g_strfreev (request->envp);
 	if (request->scripts)
 		g_ptr_array_free (request->scripts, TRUE);
+
 	g_free (request);
 }
 
@@ -156,64 +164,81 @@ quit_timeout_cb (gpointer user_data)
 }
 
 static void
-quit_timeout_cancel (void)
+quit_timeout_reschedule (void)
 {
-	if (quit_id) {
-		g_source_remove (quit_id);
-		quit_id = 0;
+	if (!persist) {
+		nm_clear_g_source (&quit_id);
+		quit_id = g_timeout_add_seconds (10, quit_timeout_cb, NULL);
 	}
 }
 
-static void
-quit_timeout_reschedule (void)
+/**
+ * next_request:
+ *
+ * @h: the handler
+ * @request: (allow-none): the request to set as next. If %NULL, dequeue the next
+ * waiting request. Otherwise, try to set the given request.
+ *
+ * Sets the currently active request (@current_request). The current request
+ * is a request that has at least on "wait" script, because requests that only
+ * consist of "no-wait" scripts are handled right away and not enqueued to
+ * @requests_waiting nor set as @current_request.
+ *
+ * Returns: %TRUE, if there was currently not request in process and it set
+ * a new request as current.
+ */
+static gboolean
+next_request (Handler *h, Request *request)
 {
-	quit_timeout_cancel ();
-	if (!persist)
-		quit_id = g_timeout_add_seconds (10, quit_timeout_cb, NULL);
-}
+	if (request) {
+		if (h->current_request) {
+			g_queue_push_tail (h->requests_waiting, request);
+			return FALSE;
+		}
+	} else {
+		/* when calling next_request() without explicit @request, we always
+		 * forcefully clear @current_request. That one is certainly
+		 * handled already. */
+		h->current_request = NULL;
 
-static void
-start_request (Request *request)
-{
+		request = g_queue_pop_head (h->requests_waiting);
+		if (!request)
+			return FALSE;
+	}
+
 	if (request->iface)
 		g_message ("Dispatching action '%s' for %s", request->action, request->iface);
 	else
 		g_message ("Dispatching action '%s'", request->action);
 
-	request->handler->current_request = request;
-	dispatch_one_script (request);
+	h->current_request = request;
+
+	return TRUE;
 }
 
+/**
+ * complete_request:
+ * @request: the request
+ *
+ * Checks if all the scripts for the request have terminated and in such case
+ * it sends the D-Bus response and releases the request resources.
+ *
+ * It also decreases @num_requests_pending and possibly does quit_timeout_reschedule().
+ */
 static void
-next_request (Handler *h)
+complete_request (Request *request)
 {
-	Request *request = g_queue_pop_head (h->pending_requests);
-
-	if (request) {
-		start_request (request);
-		return;
-	}
-
-	h->current_request = NULL;
-	quit_timeout_reschedule ();
-}
-
-static gboolean
-next_script (gpointer user_data)
-{
-	Request *request = user_data;
-	Handler *h = request->handler;
 	GVariantBuilder results;
 	GVariant *ret;
 	guint i;
+	Handler *handler = request->handler;
 
-	request->idx++;
-	if (request->idx < request->scripts->len) {
-		dispatch_one_script (request);
-		return FALSE;
-	}
+	nm_assert (request);
 
-	/* All done */
+	/* Are there still pending scripts? Then do nothing (for now). */
+	if (request->num_scripts_done < request->scripts->len)
+		return;
+
 	g_variant_builder_init (&results, G_VARIANT_TYPE ("a(sus)"));
 	for (i = 0; i < request->scripts->len; i++) {
 		ScriptInfo *script = g_ptr_array_index (request->scripts, i);
@@ -233,10 +258,63 @@ next_script (gpointer user_data)
 		else
 			g_message ("Dispatch '%s' complete", request->action);
 	}
+
+	if (handler->current_request == request)
+		handler->current_request = NULL;
+
 	request_free (request);
 
-	next_request (h);
-	return FALSE;
+	g_assert_cmpuint (handler->num_requests_pending, >, 0);
+	if (--handler->num_requests_pending <= 0) {
+		nm_assert (!handler->current_request && !g_queue_peek_head (handler->requests_waiting));
+		quit_timeout_reschedule ();
+	}
+}
+
+static void
+complete_script (ScriptInfo *script)
+{
+	Handler *handler;
+	gboolean wait = script->wait;
+
+	if (wait) {
+		/* for "wait" scripts, try to schedule the next blocking script.
+		 * If that is successful, return (as we must wait for its completion). */
+		if (dispatch_one_script (script->request))
+			return;
+	}
+
+	handler = script->request->handler;
+
+	nm_assert (!wait || handler->current_request == script->request);
+
+	/* Try to complete the request. */
+	complete_request (script->request);
+
+	if (!wait) {
+		/* this was a "no-wait" script. We either completed the request,
+		 * or there is nothing to do. Especially, there is no need to
+		 * queue the next_request() -- because no-wait scripts don't block
+		 * requests. */
+		return;
+	}
+
+	while (next_request (handler, NULL)) {
+		Request *request;
+
+		request = handler->current_request;
+
+		if (dispatch_one_script (request))
+			return;
+
+		/* Try to complete the request. It will be either completed
+		 * now, or when all pending "no-wait" scripts return. */
+		complete_request (request);
+
+		/* We can immediately start next_request(), because our current
+		 * @request has obviously no more "wait" scripts either.
+		 * Repeat... */
+	}
 }
 
 static void
@@ -247,9 +325,9 @@ script_watch_cb (GPid pid, gint status, gpointer user_data)
 
 	g_assert (pid == script->pid);
 
-	script->request->script_watch_id = 0;
-	g_source_remove (script->request->script_timeout_id);
-	script->request->script_timeout_id = 0;
+	script->watch_id = 0;
+	nm_clear_g_source (&script->timeout_id);
+	script->request->num_scripts_done++;
 
 	if (WIFEXITED (status)) {
 		err = WEXITSTATUS (status);
@@ -279,7 +357,8 @@ script_watch_cb (GPid pid, gint status, gpointer user_data)
 	}
 
 	g_spawn_close_pid (script->pid);
-	next_script (script->request);
+
+	complete_script (script);
 }
 
 static gboolean
@@ -287,9 +366,9 @@ script_timeout_cb (gpointer user_data)
 {
 	ScriptInfo *script = user_data;
 
-	g_source_remove (script->request->script_watch_id);
-	script->request->script_watch_id = 0;
-	script->request->script_timeout_id = 0;
+	script->timeout_id = 0;
+	nm_clear_g_source (&script->watch_id);
+	script->request->num_scripts_done++;
 
 	g_warning ("Script '%s' took too long; killing it.", script->script);
 
@@ -304,7 +383,9 @@ again:
 	script->result = DISPATCH_RESULT_TIMEOUT;
 
 	g_spawn_close_pid (script->pid);
-	g_idle_add (next_script, script->request);
+
+	complete_script (script);
+
 	return FALSE;
 }
 
@@ -365,12 +446,17 @@ check_filename (const char *file_name)
 
 #define SCRIPT_TIMEOUT 600  /* 10 minutes */
 
-static void
-dispatch_one_script (Request *request)
+static gboolean
+script_dispatch (ScriptInfo *script)
 {
 	GError *error = NULL;
 	gchar *argv[4];
-	ScriptInfo *script = g_ptr_array_index (request->scripts, request->idx);
+	Request *request = script->request;
+
+	if (script->dispatched)
+		return FALSE;
+
+	script->dispatched = TRUE;
 
 	argv[0] = script->script;
 	argv[1] = request->iface
@@ -382,19 +468,32 @@ dispatch_one_script (Request *request)
 	if (request->debug)
 		g_message ("Running script '%s'", script->script);
 
-	if (g_spawn_async ("/", argv, request->envp, G_SPAWN_DO_NOT_REAP_CHILD, NULL, request, &script->pid, &error)) {
-		request->script_watch_id = g_child_watch_add (script->pid, (GChildWatchFunc) script_watch_cb, script);
-		request->script_timeout_id = g_timeout_add_seconds (SCRIPT_TIMEOUT, script_timeout_cb, script);
+	if (g_spawn_async ("/", argv, request->envp, G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL, &script->pid, &error)) {
+		script->watch_id = g_child_watch_add (script->pid, (GChildWatchFunc) script_watch_cb, script);
+		script->timeout_id = g_timeout_add_seconds (SCRIPT_TIMEOUT, script_timeout_cb, script);
+		return TRUE;
 	} else {
 		g_warning ("Failed to execute script '%s': (%d) %s",
 		           script->script, error->code, error->message);
 		script->result = DISPATCH_RESULT_EXEC_FAILED;
 		script->error = g_strdup (error->message);
+		request->num_scripts_done++;
 		g_clear_error (&error);
-
-		/* Try the next script */
-		g_idle_add (next_script, request);
+		return FALSE;
 	}
+}
+
+static gboolean
+dispatch_one_script (Request *request)
+{
+	while (request->idx < request->scripts->len) {
+		ScriptInfo *script;
+
+		script = g_ptr_array_index (request->scripts, request->idx++);
+		if (script_dispatch (script))
+			return TRUE;
+	}
+	return FALSE;
 }
 
 static GSList *
@@ -453,6 +552,34 @@ find_scripts (const char *str_action)
 }
 
 static gboolean
+script_must_wait (const char *path)
+{
+	gs_free char *link = NULL;
+	gs_free char *dir = NULL;
+	gs_free char *real = NULL;
+	char *tmp;
+
+	link = g_file_read_link (path, NULL);
+	if (link) {
+		if (!g_path_is_absolute (link)) {
+			dir = g_path_get_dirname (path);
+			tmp = g_build_path ("/", dir, link, NULL);
+			g_free (link);
+			g_free (dir);
+			link = tmp;
+		}
+
+		dir = g_path_get_dirname (link);
+		real = realpath (dir, NULL);
+
+		if (real && !strcmp (real, NMD_SCRIPT_DIR_NO_WAIT))
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
+static gboolean
 handle_action (NMDBusDispatcher *dbus_dispatcher,
                GDBusMethodInvocation *context,
                const char *str_action,
@@ -475,6 +602,7 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 	Request *request;
 	char **p;
 	char *iface = NULL;
+	guint i, num_nowait = 0;
 
 	sorted_scripts = find_scripts (str_action);
 
@@ -486,7 +614,7 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 		return TRUE;
 	}
 
-	quit_timeout_cancel ();
+	nm_clear_g_source (&quit_id);
 
 	request = g_malloc0 (sizeof (*request));
 	request->handler = h;
@@ -522,14 +650,53 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 		ScriptInfo *s = g_malloc0 (sizeof (*s));
 		s->request = request;
 		s->script = iter->data;
+		s->wait = script_must_wait (s->script);
 		g_ptr_array_add (request->scripts, s);
 	}
 	g_slist_free (sorted_scripts);
+	h->num_requests_pending++;
 
-	if (h->current_request)
-		g_queue_push_tail (h->pending_requests, request);
-	else
-		start_request (request);
+	for (i = 0; i < request->scripts->len; i++) {
+		ScriptInfo *s = g_ptr_array_index (request->scripts, i);
+
+		if (!s->wait) {
+			script_dispatch (s);
+			num_nowait++;
+		}
+	}
+
+	if (num_nowait < request->scripts->len) {
+		/* The request has at least one wait script.
+		 * Try next_request() to schedule the request for
+		 * execution. This either enqueues the request or
+		 * sets it as h->current_request. */
+		if (next_request (h, request)) {
+			/* @request is now @current_request. Go ahead and
+			 * schedule the first wait script. */
+			if (!dispatch_one_script (request)) {
+				/* If that fails, we might be already finished with the
+				 * request. Try complete_request(). */
+				complete_request (request);
+
+				if (next_request (h, NULL)) {
+					/* As @request was successfully scheduled as next_request(), there is no
+					 * other request in queue that can be scheduled afterwards. Assert against
+					 * that, but call next_request() to clear current_request. */
+					g_assert_not_reached ();
+				}
+			}
+		}
+	} else {
+		/* The request contains only no-wait scripts. Try to complete
+		 * the request right away (we might have failed to schedule any
+		 * of the scripts). It will be either completed now, or later
+		 * when the pending scripts return.
+		 * We don't enqueue it to h->requests_waiting.
+		 * There is no need to handle next_request(), because @request is
+		 * not the current request anyway and does not interfere with requests
+		 * that have any "wait" scripts. */
+		complete_request (request);
+	}
 
 	return TRUE;
 }
@@ -572,7 +739,7 @@ log_handler (const gchar *log_domain,
              const gchar *message,
              gpointer ignored)
 {
-	int syslog_priority;	
+	int syslog_priority;
 
 	switch (log_level) {
 	case G_LOG_LEVEL_ERROR:
@@ -604,7 +771,7 @@ static void
 logging_setup (void)
 {
 	openlog (G_LOG_DOMAIN, LOG_CONS, LOG_DAEMON);
-	g_log_set_handler (G_LOG_DOMAIN, 
+	g_log_set_handler (G_LOG_DOMAIN,
 	                   G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION,
 	                   log_handler,
 	                   NULL);
@@ -690,12 +857,11 @@ main (int argc, char **argv)
 	                              NULL, NULL);
 	g_object_unref (bus);
 
-	if (!persist)
-		quit_id = g_timeout_add_seconds (10, quit_timeout_cb, NULL);
+	quit_timeout_reschedule ();
 
 	g_main_loop_run (loop);
 
-	g_queue_free (handler->pending_requests);
+	g_queue_free (handler->requests_waiting);
 	g_object_unref (handler);
 
 	if (!debug)

@@ -270,10 +270,12 @@
       Dispatcher scripts are run one at a time, but asynchronously from the main
       NetworkManager process, and will be killed if they run for too long. If your script
       might take arbitrarily long to complete, you should spawn a child process and have the
-      parent return immediately. Also beware that once a script is queued, it will always be
-      run, even if a later event renders it obsolete. (Eg, if an interface goes up, and then
-      back down again quickly, it is possible that one or more "up" scripts will be run
-      after the interface has gone down.)
+      parent return immediately. Scripts that are symbolic links pointing inside the
+      /etc/NetworkManager/dispatcher.d/no-wait.d/ directory are run immediately, without
+      waiting for the termination of previous scripts, and in parallel. Also beware that
+      once a script is queued, it will always be run, even if a later event renders it
+      obsolete. (Eg, if an interface goes up, and then back down again quickly, it is
+      possible that one or more "up" scripts will be run after the interface has gone down.)
     </para>
   </refsect1>
 
