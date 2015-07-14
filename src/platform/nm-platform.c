@@ -506,11 +506,11 @@ nm_platform_link_get_all (NMPlatform *self)
 		}
 
 		if (!found_something) {
-			/* there is a circle, pop the first (remaining) element from the list */
+			/* There is a loop, pop the first (remaining) element from the list.
+			 * This can happen for veth pairs where each peer is parent of the other end. */
 			item = &g_array_index (links, NMPlatformLink, first_idx);
 
-			_LOGT ("link-get: add (circle) %3d -> %3d: %s", first_idx, j, nm_platform_link_to_string (item));
-			g_warn_if_reached ();
+			_LOGT ("link-get: add (loop) %3d -> %3d: %s", first_idx, j, nm_platform_link_to_string (item));
 
 			g_hash_table_remove (unseen, GINT_TO_POINTER (item->ifindex));
 			g_array_index (result, NMPlatformLink, j++) = *item;
