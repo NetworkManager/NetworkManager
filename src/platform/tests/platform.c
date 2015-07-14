@@ -615,7 +615,7 @@ do_ip6_address_add (char **argv)
 		v##_t address; \
 		int plen; \
 		if (ifindex && parse_##v##_address (*argv++, &address, &plen)) { \
-			gboolean value = nm_platform_##v##_address_##cmdname (NM_PLATFORM_GET, ifindex, address, plen, ##__VA_ARGS__); \
+			gboolean value = !!nm_platform_##v##_address_##cmdname (NM_PLATFORM_GET, ifindex, address, plen, ##__VA_ARGS__); \
 			if (print) { \
 				print_boolean (value); \
 				return TRUE; \
@@ -628,7 +628,7 @@ do_ip6_address_add (char **argv)
 #define ADDR_CMD_PRINT(cmdname) ADDR_CMD_FULL (ip4, cmdname, TRUE) ADDR_CMD_FULL (ip6, cmdname, TRUE)
 
 ADDR_CMD (delete)
-ADDR_CMD_PRINT (exists)
+ADDR_CMD_PRINT (get)
 
 static gboolean
 do_ip4_route_get_all (char **argv)
@@ -738,7 +738,7 @@ do_ip6_route_delete (char **argv)
 }
 
 static gboolean
-do_ip4_route_exists (char **argv)
+do_ip4_route_get (char **argv)
 {
 	int ifindex = parse_ifindex (*argv++);
 	in_addr_t network;
@@ -747,12 +747,12 @@ do_ip4_route_exists (char **argv)
 	parse_ip4_address (*argv++, &network, &plen);
 	metric = strtol (*argv++, NULL, 10);
 
-	print_boolean (nm_platform_ip4_route_exists (NM_PLATFORM_GET, ifindex, network, plen, metric));
+	print_boolean (!!nm_platform_ip4_route_get (NM_PLATFORM_GET, ifindex, network, plen, metric));
 	return TRUE;
 }
 
 static gboolean
-do_ip6_route_exists (char **argv)
+do_ip6_route_get (char **argv)
 {
 	int ifindex = parse_ifindex (*argv++);
 	struct in6_addr network;
@@ -761,7 +761,7 @@ do_ip6_route_exists (char **argv)
 	parse_ip6_address (*argv++, &network, &plen);
 	metric = strtol (*argv++, NULL, 10);
 
-	print_boolean (nm_platform_ip6_route_exists (NM_PLATFORM_GET, ifindex, network, plen, metric));
+	print_boolean (!!nm_platform_ip6_route_get (NM_PLATFORM_GET, ifindex, network, plen, metric));
 	return TRUE;
 }
 
@@ -838,9 +838,9 @@ static const command_t commands[] = {
 		"<ifname/ifindex> <address>/<plen>" },
 	{ "ip6-address-delete", "delete IPv6 address", do_ip6_address_delete, 2,
 		"<ifname/ifindex> <address>/<plen>" },
-	{ "ip4-address-exists", "check for existence of IPv4 address", do_ip4_address_exists, 2,
+	{ "ip4-address-exists", "check for existence of IPv4 address", do_ip4_address_get, 2,
 		"<ifname/ifindex> <address>/<plen>" },
-	{ "ip6-address-exists", "check for existence of IPv6 address", do_ip6_address_exists, 2,
+	{ "ip6-address-exists", "check for existence of IPv6 address", do_ip6_address_get, 2,
 		"<ifname/ifindex> <address>/<plen>" },
 	{ "ip4-route-get-all", "print all IPv4 routes", do_ip4_route_get_all, 1, "<ifname/ifindex>" },
 	{ "ip6-route-get-all", "print all IPv6 routes", do_ip6_route_get_all, 1, "<ifname/ifindex>" },
@@ -852,9 +852,9 @@ static const command_t commands[] = {
 		"<ifname/ifindex> <network>/<plen> <metric>" },
 	{ "ip6-route-delete", "delete IPv6 route", do_ip6_route_delete, 3,
 		"<ifname/ifindex> <network>/<plen> <metric>" },
-	{ "ip4-route-exists", "check for existence of IPv4 route", do_ip4_route_exists, 3,
+	{ "ip4-route-exists", "check for existence of IPv4 route", do_ip4_route_get, 3,
 		"<ifname/ifindex> <network>/<plen> <metric>" },
-	{ "ip6-route-exists", "check for existence of IPv6 route", do_ip6_route_exists, 3,
+	{ "ip6-route-exists", "check for existence of IPv6 route", do_ip6_route_get, 3,
 		"<ifname/ifindex> <network>/<plen> <metric>" },
 	{ NULL, NULL, NULL, 0, NULL },
 };

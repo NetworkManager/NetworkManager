@@ -244,7 +244,7 @@ _assert_ip4_route_exists (const char *file, guint line, const char *func, gboole
 
 	ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, ifname);
 	g_assert (ifindex > 0);
-	if (!nm_platform_ip4_route_exists (NM_PLATFORM_GET, ifindex, network, plen, metric) != !exists) {
+	if (!nm_platform_ip4_route_get (NM_PLATFORM_GET, ifindex, network, plen, metric) != !exists) {
 		g_error ("[%s:%u] %s(): The ip4 route %s/%d metric %u %s, but platform thinks %s",
 		         file, line, func,
 		         nm_utils_inet4_ntop (network, NULL), plen, metric,
