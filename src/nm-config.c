@@ -633,7 +633,7 @@ read_config (GKeyFile *keyfile, const char *dirname, const char *path, GError **
 	 * NMConfigData:_get_connection_infos().  */
 	_nm_config_sort_groups (groups, ngroups);
 
-	for (g = 0; groups[g]; g++) {
+	for (g = 0; groups && groups[g]; g++) {
 		const char *group = groups[g];
 
 		if (g_str_has_prefix (group, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN)) {
