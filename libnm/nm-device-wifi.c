@@ -269,6 +269,52 @@ nm_device_wifi_get_access_point_by_path (NMDeviceWifi *device,
 	return ap;
 }
 
+static GVariant *
+prepare_scan_options (GVariant *options)
+{
+
+	GVariant *variant;
+	GVariantIter iter;
+	GVariantBuilder builder;
+	char *key;
+	GVariant *value;
+
+	if (!options)
+		variant = g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
+	else {
+		g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
+		g_variant_iter_init (&iter, options);
+		while (g_variant_iter_loop (&iter, "{sv}", &key, &value))
+		{
+			// FIXME: verify options here?
+			g_variant_builder_add (&builder, "{sv}", key, value);
+		}
+		variant = g_variant_builder_end (&builder);
+	}
+	return variant;
+}
+
+static gboolean
+_device_wifi_request_scan (NMDeviceWifi *device,
+                           GVariant *options,
+                           GCancellable *cancellable,
+                           GError **error)
+{
+	gboolean ret;
+	GVariant *variant;
+
+	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), FALSE);
+
+	variant = prepare_scan_options (options);
+
+	ret = nmdbus_device_wifi_call_request_scan_sync (NM_DEVICE_WIFI_GET_PRIVATE (device)->proxy,
+	                                                 variant,
+	                                                 cancellable, error);
+	if (error && *error)
+		g_dbus_error_strip_remote_error (*error);
+	return ret;
+}
+
 /**
  * nm_device_wifi_request_scan:
  * @device: a #NMDeviceWifi
@@ -287,17 +333,36 @@ nm_device_wifi_request_scan (NMDeviceWifi *device,
                              GCancellable *cancellable,
                              GError **error)
 {
-	gboolean ret;
+	return _device_wifi_request_scan (device, NULL, cancellable, error);
+}
 
-	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), FALSE);
-
-	ret = nmdbus_device_wifi_call_request_scan_sync (NM_DEVICE_WIFI_GET_PRIVATE (device)->proxy,
-	                                                 g_variant_new_array (G_VARIANT_TYPE ("{sv}"),
-	                                                                      NULL, 0),
-	                                                 cancellable, error);
-	if (error && *error)
-		g_dbus_error_strip_remote_error (*error);
-	return ret;
+/**
+ * nm_device_wifi_request_scan_options:
+ * @device: a #NMDeviceWifi
+ * @options: dictionary with options for RequestScan(), or %NULL
+ * @cancellable: a #GCancellable, or %NULL
+ * @error: location for a #GError, or %NULL
+ *
+ * Request NM to scan for access points on @device. Note that the function
+ * returns immediately after requesting the scan, and it may take some time
+ * after that for the scan to complete.
+ * This is the same as @nm_device_wifi_request_scan except it accepts @options
+ * for the scanning. The argument is the dictionary passed to RequestScan()
+ * D-Bus call. Valid otions inside the dictionary are:
+ * 'ssids' => array of SSIDs (saay)
+ *
+ * Returns: %TRUE on success, %FALSE on error, in which case @error will be
+ * set.
+ *
+ * Since: 1.2
+ **/
+gboolean
+nm_device_wifi_request_scan_options (NMDeviceWifi *device,
+                                     GVariant *options,
+                                     GCancellable *cancellable,
+                                     GError **error)
+{
+	return _device_wifi_request_scan (device, options, cancellable, error);
 }
 
 static void
@@ -324,19 +389,9 @@ request_scan_cb (GObject *source,
 	g_slice_free (RequestScanInfo, info);
 }
 
-/**
- * nm_device_wifi_request_scan_async:
- * @device: a #NMDeviceWifi
- * @cancellable: a #GCancellable, or %NULL
- * @callback: callback to be called when the scan has been requested
- * @user_data: caller-specific data passed to @callback
- *
- * Request NM to scan for access points on @device. Note that @callback will be
- * called immediately after requesting the scan, and it may take some time after
- * that for the scan to complete.
- **/
-void
-nm_device_wifi_request_scan_async (NMDeviceWifi *device,
+static void
+_device_wifi_request_scan_async (NMDeviceWifi *device,
+                                   GVariant *options,
                                    GCancellable *cancellable,
                                    GAsyncReadyCallback callback,
                                    gpointer user_data)
@@ -344,6 +399,7 @@ nm_device_wifi_request_scan_async (NMDeviceWifi *device,
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
 	RequestScanInfo *info;
 	GSimpleAsyncResult *simple;
+	GVariant *variant;
 
 	g_return_if_fail (NM_IS_DEVICE_WIFI (device));
 
@@ -362,10 +418,60 @@ nm_device_wifi_request_scan_async (NMDeviceWifi *device,
 	info->device = device;
 	info->simple = simple;
 
+	variant = prepare_scan_options (options);
+
 	priv->scan_info = info;
 	nmdbus_device_wifi_call_request_scan (NM_DEVICE_WIFI_GET_PRIVATE (device)->proxy,
-	                                      g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0),
+	                                      variant,
 	                                      cancellable, request_scan_cb, info);
+}
+
+/**
+ * nm_device_wifi_request_scan_async:
+ * @device: a #NMDeviceWifi
+ * @cancellable: a #GCancellable, or %NULL
+ * @callback: callback to be called when the scan has been requested
+ * @user_data: caller-specific data passed to @callback
+ *
+ * Request NM to scan for access points on @device. Note that @callback will be
+ * called immediately after requesting the scan, and it may take some time after
+ * that for the scan to complete.
+ **/
+void
+nm_device_wifi_request_scan_async (NMDeviceWifi *device,
+                                   GCancellable *cancellable,
+                                   GAsyncReadyCallback callback,
+                                   gpointer user_data)
+{
+	_device_wifi_request_scan_async (device, NULL, cancellable, callback, user_data);
+}
+
+/**
+ * nm_device_wifi_request_scan_options_async:
+ * @device: a #NMDeviceWifi
+ * @options: dictionary with options for RequestScan(), or %NULL
+ * @cancellable: a #GCancellable, or %NULL
+ * @callback: callback to be called when the scan has been requested
+ * @user_data: caller-specific data passed to @callback
+ *
+ * Request NM to scan for access points on @device. Note that @callback will be
+ * called immediately after requesting the scan, and it may take some time after
+ * that for the scan to complete.
+ * This is the same as @nm_device_wifi_request_scan_async except it accepts @options
+ * for the scanning. The argument is the dictionary passed to RequestScan()
+ * D-Bus call. Valid otions inside the dictionary are:
+ * 'ssids' => array of SSIDs (saay)
+ *
+ * Since: 1.2
+ **/
+void
+nm_device_wifi_request_scan_options_async (NMDeviceWifi *device,
+                                           GVariant *options,
+                                           GCancellable *cancellable,
+                                           GAsyncReadyCallback callback,
+                                           gpointer user_data)
+{
+	_device_wifi_request_scan_async (device, options, cancellable, callback, user_data);
 }
 
 /**
