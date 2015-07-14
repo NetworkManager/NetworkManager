@@ -280,8 +280,8 @@ nm_vpn_plugin_old_set_config (NMVpnPluginOld *plugin,
 
 	priv->got_config = TRUE;
 
-	g_variant_lookup (config, NM_VPN_PLUGIN_CONFIG_HAS_IP4, "b", &priv->has_ip4);
-	g_variant_lookup (config, NM_VPN_PLUGIN_CONFIG_HAS_IP6, "b", &priv->has_ip6);
+	(void) g_variant_lookup (config, NM_VPN_PLUGIN_CONFIG_HAS_IP4, "b", &priv->has_ip4);
+	(void) g_variant_lookup (config, NM_VPN_PLUGIN_CONFIG_HAS_IP6, "b", &priv->has_ip6);
 
 	g_warn_if_fail (priv->has_ip4 || priv->has_ip6);
 
@@ -289,13 +289,13 @@ nm_vpn_plugin_old_set_config (NMVpnPluginOld *plugin,
 	 * ip4config, for compatibility with older daemons.
 	 */
 	g_clear_pointer (&priv->banner, g_free);
-	g_variant_lookup (config, NM_VPN_PLUGIN_CONFIG_BANNER, "&s", &priv->banner);
+	(void) g_variant_lookup (config, NM_VPN_PLUGIN_CONFIG_BANNER, "&s", &priv->banner);
 	g_clear_pointer (&priv->tundev, g_free);
-	g_variant_lookup (config, NM_VPN_PLUGIN_CONFIG_TUNDEV, "&s", &priv->tundev);
+	(void) g_variant_lookup (config, NM_VPN_PLUGIN_CONFIG_TUNDEV, "&s", &priv->tundev);
 	g_clear_pointer (&priv->gateway, g_free);
-	g_variant_lookup (config, NM_VPN_PLUGIN_CONFIG_EXT_GATEWAY, "&s", &priv->gateway);
+	(void) g_variant_lookup (config, NM_VPN_PLUGIN_CONFIG_EXT_GATEWAY, "&s", &priv->gateway);
 	g_clear_pointer (&priv->mtu, g_free);
-	g_variant_lookup (config, NM_VPN_PLUGIN_CONFIG_MTU, "&s", &priv->mtu);
+	(void) g_variant_lookup (config, NM_VPN_PLUGIN_CONFIG_MTU, "&s", &priv->mtu);
 
 	g_signal_emit (plugin, signals[CONFIG], 0, config);
 }

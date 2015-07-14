@@ -388,7 +388,7 @@ nm_dispatcher_utils_construct_envp (const char *action,
 			return NULL;
 		}
 		g_variant_unref (value);
-		g_variant_lookup (device_props, NMD_DEVICE_PROPS_IP_INTERFACE, "&s", &ip_iface);
+		(void) g_variant_lookup (device_props, NMD_DEVICE_PROPS_IP_INTERFACE, "&s", &ip_iface);
 	}
 
 	/* Device type */
