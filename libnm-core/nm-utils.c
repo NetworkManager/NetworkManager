@@ -317,6 +317,21 @@ nm_utils_ssid_to_utf8 (const guint8 *ssid, gsize len)
 		                                     "UTF-8", e1, "?", NULL, NULL, NULL);
 	}
 
+	if (!converted) {
+		/* If there is still no converted string, the SSID probably
+		 * contains characters not valid in the current locale. Convert
+		 * the string to ASCII instead.
+		 */
+
+		/* Use the printable range of 0x20-0x7E */
+		gchar *valid_chars = " !\"#$%&'()*+,-./0123456789:;<=>?@"
+		                     "ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
+		                     "abcdefghijklmnopqrstuvwxyz{|}~";
+
+		converted = g_strndup ((const gchar *)ssid, len);
+		g_strcanon (converted, valid_chars, '?');
+	}
+
 	return converted;
 }
 
