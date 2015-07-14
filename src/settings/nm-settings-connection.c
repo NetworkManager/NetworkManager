@@ -36,6 +36,7 @@
 #include "nm-agent-manager.h"
 #include "NetworkManagerUtils.h"
 #include "nm-core-internal.h"
+#include "nm-audit-manager.h"
 #include "gsystem-local-alloc.h"
 
 #define SETTINGS_TIMESTAMPS_FILE  NMSTATEDIR "/timestamps"
@@ -1320,6 +1321,11 @@ typedef struct {
 	gboolean save_to_disk;
 } UpdateInfo;
 
+typedef struct {
+	DBusGMethodInvocation *context;
+	NMAuthSubject *subject;
+} CallbackInfo;
+
 static void
 has_some_secrets_cb (NMSetting *setting,
                      const char *key,
@@ -1383,6 +1389,9 @@ update_complete (NMSettingsConnection *self,
 		dbus_g_method_return_error (info->context, error);
 	else
 		dbus_g_method_return (info->context);
+
+	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_UPDATE, NM_CONNECTION (self), !error,
+	                            info->subject, error ? error->message : NULL);
 
 	g_clear_object (&info->subject);
 	g_clear_object (&info->agent_mgr);
@@ -1549,6 +1558,9 @@ impl_settings_connection_update_helper (NMSettingsConnection *self,
 	return;
 
 error:
+	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_UPDATE, NM_CONNECTION (self), FALSE, subject,
+	                            error->message);
+
 	g_clear_object (&tmp);
 	g_clear_object (&subject);
 
@@ -1590,12 +1602,16 @@ con_delete_cb (NMSettingsConnection *self,
                GError *error,
                gpointer user_data)
 {
-	DBusGMethodInvocation *context = user_data;
+	CallbackInfo *info = user_data;
 
 	if (error)
-		dbus_g_method_return_error (context, error);
+		dbus_g_method_return_error (info->context, error);
 	else
-		dbus_g_method_return (context);
+		dbus_g_method_return (info->context);
+
+	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_DELETE, NM_CONNECTION (self),
+	                            !error, info->subject, error ? error->message : NULL);
+	g_free (info);
 }
 
 static void
@@ -1605,12 +1621,20 @@ delete_auth_cb (NMSettingsConnection *self,
                 GError *error,
                 gpointer data)
 {
+	CallbackInfo *info;
+
 	if (error) {
+		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_DELETE, NM_CONNECTION (self), FALSE, subject,
+		                            error->message);
 		dbus_g_method_return_error (context, error);
 		return;
 	}
 
-	nm_settings_connection_delete (self, con_delete_cb, context);
+	info = g_malloc0 (sizeof (*info));
+	info->context = context;
+	info->subject = subject;
+
+	nm_settings_connection_delete (self, con_delete_cb, info);
 }
 
 static const char *
@@ -1634,23 +1658,24 @@ static void
 impl_settings_connection_delete (NMSettingsConnection *self,
                                  DBusGMethodInvocation *context)
 {
-	NMAuthSubject *subject;
+	NMAuthSubject *subject = NULL;
 	GError *error = NULL;
 	
-	if (!check_writable (NM_CONNECTION (self), &error)) {
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
-		return;
-	}
+	if (!check_writable (NM_CONNECTION (self), &error))
+		goto out_err;
 
 	subject = _new_auth_subject (context, &error);
 	if (subject) {
 		auth_start (self, context, subject, get_modify_permission_basic (self), delete_auth_cb, NULL);
 		g_object_unref (subject);
-	} else {
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
-	}
+	} else
+		goto out_err;
+
+	return;
+out_err:
+	dbus_g_method_return_error (context, error);
+	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_DELETE, NM_CONNECTION (self), FALSE, subject, error->message);
+	g_error_free (error);
 }
 
 /**************************************************************/
@@ -1754,12 +1779,16 @@ clear_secrets_cb (NMSettingsConnection *self,
                   GError *error,
                   gpointer user_data)
 {
-	DBusGMethodInvocation *context = (DBusGMethodInvocation *) user_data;
+	CallbackInfo *info = user_data;
 
 	if (error)
-		dbus_g_method_return_error (context, error);
+		dbus_g_method_return_error (info->context, error);
 	else
-		dbus_g_method_return (context);
+		dbus_g_method_return (info->context);
+
+	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_CLEAR_SECRETS, NM_CONNECTION (self),
+	                            !error, info->subject, error ? error->message : NULL);
+	g_free (info);
 }
 
 static void
@@ -1770,10 +1799,13 @@ dbus_clear_secrets_auth_cb (NMSettingsConnection *self,
                             gpointer user_data)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+	CallbackInfo *info;
 
-	if (error)
+	if (error) {
 		dbus_g_method_return_error (context, error);
-	else {
+		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_CLEAR_SECRETS, NM_CONNECTION (self),
+		                            FALSE, subject, error->message);
+	} else {
 		/* Clear secrets in connection and caches */
 		nm_connection_clear_secrets (NM_CONNECTION (self));
 		if (priv->system_secrets)
@@ -1784,7 +1816,11 @@ dbus_clear_secrets_auth_cb (NMSettingsConnection *self,
 		/* Tell agents to remove secrets for this connection */
 		nm_agent_manager_delete_secrets (priv->agent_mgr, NM_CONNECTION (self));
 
-		nm_settings_connection_commit_changes (self, NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE, clear_secrets_cb, context);
+		info = g_malloc0 (sizeof (*info));
+		info->context = context;
+		info->subject = subject;
+
+		nm_settings_connection_commit_changes (self, NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE, clear_secrets_cb, info);
 	}
 }
 
@@ -1806,6 +1842,8 @@ impl_settings_connection_clear_secrets (NMSettingsConnection *self,
 		g_object_unref (subject);
 	} else {
 		dbus_g_method_return_error (context, error);
+		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_CLEAR_SECRETS, NM_CONNECTION (self),
+		                            FALSE, NULL, error->message);
 		g_error_free (error);
 	}
 }
