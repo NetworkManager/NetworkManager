@@ -579,7 +579,9 @@ _nmcli_compl_ARGS()
         # remove the options already seen.
         for i in ${!OPTIONS[*]}; do
             if [[ "${OPTIONS[$i]}" = "${REMOVE_OPTIONS[0]}" || "${OPTIONS[$i]}" = "${REMOVE_OPTIONS[1]}" ]]; then
-                unset OPTIONS[$i]
+                if ! _nmcli_array_has_value OPTIONS_REPEATABLE "${OPTIONS[$i]}" ; then
+                    unset OPTIONS[$i]
+                fi
             fi
         done
         for i in ${!OPTIONS_MANDATORY[*]}; do
@@ -737,7 +739,7 @@ _nmcli()
         cur=''
     fi
 
-    local OPTIONS_UNKNOWN_OPTION OPTIONS_TYPE OPTIONS_TYPED OPTIONS OPTIONS_MANDATORY COMMAND_ARGS_WAIT_OPTIONS OPTIONS_IP OPTIONS_MANDATORY OPTIONS_NEXT_GROUP OPTIONS_SEP
+    local OPTIONS_UNKNOWN_OPTION OPTIONS_TYPE OPTIONS_TYPED OPTIONS OPTIONS_MANDATORY COMMAND_ARGS_WAIT_OPTIONS OPTIONS_IP OPTIONS_MANDATORY OPTIONS_NEXT_GROUP OPTIONS_SEP OPTIONS_REPEATABLE
     local COMMAND_CONNECTION_TYPE COMMAND_CONNECTION_ID OPTIONS_MANDATORY_IFNAME HELP_ONLY_AS_FIRST
     local COMMAND_CONNECTION_ACTIVE=""
 
@@ -1293,7 +1295,8 @@ _nmcli()
                                     ;;
                                 r|re|res|resc|resca|rescan)
                                     _nmcli_array_delete_at words 0 2
-                                    OPTIONS=(ifname)
+                                    OPTIONS_REPEATABLE=(ssid)
+                                    OPTIONS=(ifname ssid)
                                     _nmcli_compl_ARGS
                                     ;;
                             esac

@@ -21,7 +21,7 @@
 .\"
 .\" Copyright 2010 - 2015 Red Hat, Inc.
 .\"
-.TH NMCLI "1" "19 February 2015"
+.TH NMCLI "1" "12 August 2015"
 
 .SH NAME
 nmcli \- command\(hyline tool for controlling NetworkManager
@@ -832,11 +832,15 @@ Available options are:
 Otherwise the connection is system\(hywide, which is the default.
 .RE
 .TP
-.B wifi rescan [[ifname] <ifname>]
+.B wifi rescan [ifname <ifname>] [[ssid <SSID>] ...]
 .br
 Request that \fINetworkManager\fP immediately re-scan for available access points.
 NetworkManager scans Wi\(hyFi networks periodically, but in some cases it can be
-useful to start scanning manually (e.g. after resuming the computer).
+useful to start scanning manually (e.g. after resuming the computer). By using
+\fIssid\fP, it is possible to scan for a specific SSID, which is useful for APs
+with hidden SSIDs. You can provide multiple \fIssid\fP parameters in order to
+scan more SSIDs.
+.br
 This command does not show the APs, use 'nmcli device wifi list' for that.
 
 .TP

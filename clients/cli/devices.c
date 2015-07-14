@@ -265,7 +265,7 @@ usage (void)
 	              "  wifi [list [ifname <ifname>] [bssid <BSSID>]]\n\n"
 	              "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] [ifname <ifname>]\n"
 	              "                         [bssid <BSSID>] [name <name>] [private yes|no]\n\n"
-	              "  wifi rescan [[ifname] <ifname>]\n\n"
+	              "  wifi rescan [ifname <ifname>] [[ssid <SSID to scan>] ...]\n\n"
 	              ));
 }
 
@@ -356,12 +356,14 @@ usage_device_wifi (void)
 	              "only open, WEP and WPA-PSK networks are supported at the moment. It is also\n"
 	              "assumed that IP configuration is obtained via DHCP.\n"
 	              "\n"
-	              "ARGUMENTS := rescan [[ifname] <ifname>]\n"
+	              "ARGUMENTS := rescan [ifname <ifname>] [[ssid <SSID to scan>] ...]\n"
 	              "\n"
 	              "Request that NetworkManager immediately re-scan for available access points.\n"
 	              "NetworkManager scans Wi-Fi networks periodically, but in some cases it might\n"
-	              "be useful to start scanning manually. Note that this command does not show\n"
-	              "the APs, use 'nmcli device wifi list' for that.\n\n"));
+	              "be useful to start scanning manually. 'ssid' allows scanning for a specific\n"
+	              "SSID, which is useful for APs with hidden SSIDs. More 'ssid' parameters can be\n"
+	              "given. Note that this command does not show the APs,\n"
+	              "use 'nmcli device wifi list' for that.\n\n"));
 }
 
 /* quit main loop */
@@ -2510,21 +2512,44 @@ do_device_wifi_rescan (NmCli *nmc, int argc, char **argv)
 {
 	NMDevice *device;
 	const char *ifname = NULL;
+	GPtrArray *ssids;
 	const GPtrArray *devices;
 	int devices_idx;
+	GVariantBuilder builder, array_builder;
+	GVariant *options;
+	const char *ssid;
+	int i;
 
 	nmc->should_wait = TRUE;
 
+	ssids = g_ptr_array_new ();
+
 	/* Get the parameters */
-	if (argc > 0) {
+	while (argc > 0) {
 		if (strcmp (*argv, "ifname") == 0) {
+			if (ifname) {
+				g_string_printf (nmc->return_text, _("Error: '%s' cannot repeat."), *(argv-1));
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
 			if (next_arg (&argc, &argv) != 0) {
 				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 				goto error;
 			}
-		}
-		ifname = *argv;
+			ifname = *argv;
+		} else if (strcmp (*argv, "ssid") == 0) {
+			if (next_arg (&argc, &argv) != 0) {
+				g_string_printf (nmc->return_text, _("Error: %s argument is missing."), *(argv-1));
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto error;
+			}
+			g_ptr_array_add (ssids, *argv);
+		} else
+			g_printerr (_("Unknown parameter: %s\n"), *argv);
+
+		argc--;
+		argv++;
 	}
 
 	/* Find Wi-Fi device to scan on. When no ifname is provided, the first Wi-Fi is used. */
@@ -2541,12 +2566,31 @@ do_device_wifi_rescan (NmCli *nmc, int argc, char **argv)
 		goto error;
 	}
 
-	nm_device_wifi_request_scan_async (NM_DEVICE_WIFI (device), NULL,
-	                                   request_rescan_cb, nmc);
 
+	if (ssids->len) {
+		g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
+		g_variant_builder_init (&array_builder, G_VARIANT_TYPE ("aay"));
+
+		for (i = 0; i < ssids->len; i++) {
+			ssid = g_ptr_array_index (ssids, i);
+			g_variant_builder_add (&array_builder, "@ay",
+			                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE, ssid, strlen (ssid), 1));
+		}
+
+		g_variant_builder_add (&builder, "{sv}", "ssids", g_variant_builder_end (&array_builder));
+		options = g_variant_builder_end (&builder);
+
+		nm_device_wifi_request_scan_options_async (NM_DEVICE_WIFI (device), options,
+		                                           NULL, request_rescan_cb, nmc);
+	} else
+		nm_device_wifi_request_scan_async (NM_DEVICE_WIFI (device),
+		                                   NULL, request_rescan_cb, nmc);
+
+	g_ptr_array_free (ssids, FALSE);
 	return nmc->return_value;
 error:
 	nmc->should_wait = FALSE;
+	g_ptr_array_free (ssids, FALSE);
 	return nmc->return_value;
 }
 
