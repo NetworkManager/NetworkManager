@@ -61,6 +61,7 @@ G_BEGIN_DECLS
 #define NM_CONFIG_KEYFILE_GROUP_IFUPDOWN                    "ifupdown"
 #define NM_CONFIG_KEYFILE_GROUP_IFNET                       "ifnet"
 
+#define NM_CONFIG_KEYFILE_KEY_LOGGING_BACKEND               "backend"
 #define NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS            ".was"
 #define NM_CONFIG_KEYFILE_KEY_IFNET_AUTO_REFRESH            "auto_refresh"
 #define NM_CONFIG_KEYFILE_KEY_IFNET_MANAGED                 "managed"
@@ -102,6 +103,7 @@ const char *nm_config_get_log_level (NMConfig *config);
 const char *nm_config_get_log_domains (NMConfig *config);
 const char *nm_config_get_debug (NMConfig *config);
 gboolean nm_config_get_configure_and_quit (NMConfig *config);
+gboolean nm_config_get_is_debug (NMConfig *config);
 
 void nm_config_set_values (NMConfig *self,
                            GKeyFile *keyfile_intern_new,

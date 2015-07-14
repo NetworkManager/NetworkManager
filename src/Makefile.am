@@ -419,6 +419,7 @@ AM_CPPFLAGS += \
 	$(LIBSOUP_CFLAGS) \
 	$(SELINUX_CFLAGS) \
 	$(SYSTEMD_LOGIN_CFLAGS) \
+	$(SYSTEMD_JOURNAL_CFLAGS) \
 	$(SYSTEMD_NM_CFLAGS) \
 	\
 	-DBINDIR=\"$(bindir)\" \
@@ -455,6 +456,7 @@ libNetworkManager_la_LIBADD = \
 	$(GUDEV_LIBS) \
 	$(LIBNL_LIBS) \
 	$(SYSTEMD_LOGIN_LIBS) \
+	$(SYSTEMD_JOURNAL_LIBS) \
 	$(LIBNDP_LIBS) \
 	$(LIBDL) \
 	$(LIBM)
@@ -550,6 +552,7 @@ nm_iface_helper_LDADD = \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS) \
 	$(GUDEV_LIBS) \
+	$(SYSTEMD_JOURNAL_LIBS) \
 	$(LIBNL_LIBS) \
 	$(LIBNDP_LIBS) \
 	$(LIBM)

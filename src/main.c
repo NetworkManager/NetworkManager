@@ -70,7 +70,6 @@ static gboolean configure_and_quit = FALSE;
 static struct {
 	gboolean show_version;
 	gboolean become_daemon;
-	gboolean debug;
 	gboolean g_fatal_warnings;
 	gboolean run_from_build_dir;
 	char *opt_log_level;
@@ -231,7 +230,6 @@ do_early_setup (int *argc, char **argv[], NMConfigCmdLineOptions *config_cli)
 	GOptionEntry options[] = {
 		{ "version", 'V', 0, G_OPTION_ARG_NONE, &global_opt.show_version, N_("Print NetworkManager version and exit"), NULL },
 		{ "no-daemon", 'n', G_OPTION_FLAG_REVERSE, G_OPTION_ARG_NONE, &global_opt.become_daemon, N_("Don't become a daemon"), NULL },
-		{ "debug", 'd', 0, G_OPTION_ARG_NONE, &global_opt.debug, N_("Don't become a daemon, and log to stderr"), NULL },
 		{ "log-level", 0, 0, G_OPTION_ARG_STRING, &global_opt.opt_log_level, N_("Log level: one of [%s]"), "INFO" },
 		{ "log-domains", 0, 0, G_OPTION_ARG_STRING, &global_opt.opt_log_domains,
 		  N_("Log domains separated by ',': any combination of [%s]"),
@@ -372,7 +370,7 @@ main (int argc, char *argv[])
 		}
 	}
 
-	if (global_opt.become_daemon && !global_opt.debug) {
+	if (global_opt.become_daemon && !nm_config_get_is_debug (config)) {
 		if (daemon (0, 0) < 0) {
 			int saved_errno;
 
@@ -388,7 +386,12 @@ main (int argc, char *argv[])
 	/* Set up unix signal handling - before creating threads, but after daemonizing! */
 	nm_main_utils_setup_signals (main_loop);
 
-	nm_logging_syslog_openlog (global_opt.debug);
+	nm_logging_syslog_openlog (nm_config_get_is_debug (config)
+	                           ? "debug"
+	                           : nm_config_data_get_value_cached (NM_CONFIG_GET_DATA_ORIG,
+	                                                              NM_CONFIG_KEYFILE_GROUP_LOGGING,
+	                                                              NM_CONFIG_KEYFILE_KEY_LOGGING_BACKEND,
+	                                                              NM_CONFIG_GET_VALUE_STRIP | NM_CONFIG_GET_VALUE_NO_EMPTY));
 
 	nm_log_info (LOGD_CORE, "NetworkManager (version " NM_DIST_VERSION ") is starting...");
 
@@ -487,8 +490,6 @@ main (int argc, char *argv[])
 
 done:
 	g_clear_object (&manager);
-
-	nm_logging_syslog_closelog ();
 
 	if (global_opt.pidfile && wrote_pidfile)
 		unlink (global_opt.pidfile);

@@ -72,6 +72,9 @@ typedef struct {
 
 	char *dns_mode;
 	char *rc_manager;
+
+	/* mutable field */
+	char *value_cached;
 } NMConfigDataPrivate;
 
 
@@ -136,6 +139,22 @@ nm_config_data_get_value (const NMConfigData *self, const char *group, const cha
 	g_return_val_if_fail (key && *key, NULL);
 
 	return nm_config_keyfile_get_value (NM_CONFIG_DATA_GET_PRIVATE (self)->keyfile, group, key, flags);
+}
+
+const char *nm_config_data_get_value_cached (const NMConfigData *self, const char *group, const char *key, NMConfigGetValueFlags flags)
+{
+	NMConfigDataPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_CONFIG_DATA (self), NULL);
+	g_return_val_if_fail (group && *group, NULL);
+	g_return_val_if_fail (key && *key, NULL);
+
+	priv = NM_CONFIG_DATA_GET_PRIVATE (self);
+
+	/* we modify @value_cached. In C++ jargon, the field is mutable. */
+	g_free (priv->value_cached);
+	priv->value_cached = nm_config_keyfile_get_value (priv->keyfile, group, key, flags);
+	return priv->value_cached;
 }
 
 gboolean
@@ -801,6 +820,8 @@ finalize (GObject *gobject)
 		g_key_file_unref (priv->keyfile_intern);
 
 	G_OBJECT_CLASS (nm_config_data_parent_class)->finalize (gobject);
+
+	g_free (priv->value_cached);
 }
 
 static void
