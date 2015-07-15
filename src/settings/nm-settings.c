@@ -76,6 +76,7 @@
 #include "nm-connection-provider.h"
 #include "nm-config.h"
 #include "NetworkManagerUtils.h"
+#include "nm-dispatcher.h"
 
 #define LOG(level, ...) \
 	G_STMT_START { \
@@ -2093,6 +2094,7 @@ hostnamed_properties_changed (GDBusProxy *proxy,
 		g_free (priv->hostname.value);
 		priv->hostname.value = g_strdup (hostname);
 		g_object_notify (G_OBJECT (user_data), NM_SETTINGS_HOSTNAME);
+		nm_dispatcher_call (DISPATCHER_ACTION_HOSTNAME, NULL, NULL, NULL, NULL, NULL);
 	}
 
 	g_variant_unref (v_hostname);
