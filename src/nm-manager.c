@@ -3250,6 +3250,7 @@ activation_add_done (NMSettings *self,
                      NMSettingsConnection *new_connection,
                      GError *error,
                      DBusGMethodInvocation *context,
+                     NMAuthSubject *subject,
                      gpointer user_data)
 {
 	AddAndActivateInfo *info = user_data;

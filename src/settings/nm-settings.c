@@ -75,6 +75,7 @@
 #include "nm-agent-manager.h"
 #include "nm-connection-provider.h"
 #include "nm-config.h"
+#include "nm-audit-manager.h"
 #include "NetworkManagerUtils.h"
 #include "nm-dispatcher.h"
 
@@ -1229,7 +1230,7 @@ pk_add_cb (NMAuthChain *chain,
 	callback_data = nm_auth_chain_get_data (chain, "callback-data");
 	subject = nm_auth_chain_get_data (chain, "subject");
 
-	callback (self, added, error, context, callback_data);
+	callback (self, added, error, context, subject, callback_data);
 
 	/* Send agent-owned secrets to the agents */
 	if (!error && added && nm_settings_has_connection (self, (NMConnection *) added))
@@ -1371,7 +1372,7 @@ nm_settings_add_connection_dbus (NMSettings *self,
 
 done:
 	if (error)
-		callback (self, NULL, error, context, user_data);
+		callback (self, NULL, error, context, subject, user_data);
 
 	g_clear_error (&error);
 	g_clear_object (&subject);
@@ -1382,12 +1383,17 @@ impl_settings_add_connection_add_cb (NMSettings *self,
                                      NMSettingsConnection *connection,
                                      GError *error,
                                      DBusGMethodInvocation *context,
+                                     NMAuthSubject *subject,
                                      gpointer user_data)
 {
-	if (error)
+	if (error) {
 		dbus_g_method_return_error (context, error);
-	else
+		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD, NULL, FALSE, subject, error->message);
+	} else {
 		dbus_g_method_return (context, nm_connection_get_path (NM_CONNECTION (connection)));
+		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD, NM_CONNECTION (connection), TRUE,
+		                            subject, NULL);
+	}
 }
 
 static void

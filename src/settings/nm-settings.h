@@ -87,6 +87,7 @@ typedef void (*NMSettingsAddCallback) (NMSettings *settings,
                                        NMSettingsConnection *connection,
                                        GError *error,
                                        DBusGMethodInvocation *context,
+                                       NMAuthSubject *subject,
                                        gpointer user_data);
 
 void nm_settings_add_connection_dbus (NMSettings *self,
