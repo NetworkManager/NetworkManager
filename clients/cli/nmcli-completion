@@ -467,6 +467,12 @@ _nmcli_compl_ARGS()
                     return 0
                 fi
                 ;;
+            slave-type)
+                if [[ "${#words[@]}" -eq 2 ]]; then
+                    _nmcli_list "bond team bridge"
+                    return 0
+                fi
+                ;;
             lacp-rate)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     _nmcli_list "slow fast"
@@ -934,7 +940,7 @@ _nmcli()
                         ;;
                     a|ad|add)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_compl_COMMAND "${words[2]}" type ifname con-name autoconnect master
+                            _nmcli_compl_COMMAND "${words[2]}" type ifname con-name autoconnect master slave-type
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             _nmcli_array_delete_at words 0 1
 
@@ -947,14 +953,14 @@ _nmcli()
                                     ;;
                                 1)
                                     if [[ "$HELP_ONLY_AS_FIRST" == 1 ]]; then
-                                        _nmcli_compl_COMMAND "${words[2]}" type ifname con-name autoconnect master
+                                        _nmcli_compl_COMMAND "${words[2]}" type ifname con-name autoconnect master slave-type
                                     fi
                                     return 0
                                     ;;
                             esac
 
                             OPTIONS_TYPE=
-                            OPTIONS=(type ifname con-name autoconnect save master)
+                            OPTIONS=(type ifname con-name autoconnect save master slave-type)
                             OPTIONS_MANDATORY=(type ifname)
                             COMMAND_ARGS_WAIT_OPTIONS=1
                             OPTIONS_MANDATORY_IFNAME=1
