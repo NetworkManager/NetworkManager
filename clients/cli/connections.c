@@ -3201,7 +3201,8 @@ normalized_master_for_slave (const GPtrArray *connections,
 		if (func) {
 			/* There was a prefix; only compare to that type. */
 			if (g_strcmp0 (master, func (connection)) == 0) {
-				*out_type = con_type;
+				if (out_type)
+					*out_type = con_type;
 				if (func == nm_connection_get_id)
 					out_master = nm_connection_get_uuid (connection);
 				else
@@ -3215,7 +3216,8 @@ normalized_master_for_slave (const GPtrArray *connections,
 			if (   g_strcmp0 (master, uuid) == 0
 			    || g_strcmp0 (master, ifname) == 0) {
 				out_master = master;
-				*out_type = con_type;
+				if (out_type)
+					*out_type = con_type;
 				break;
 			}
 			if (!found_by_id && g_strcmp0 (master, id) == 0) {
