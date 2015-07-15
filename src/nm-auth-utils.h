@@ -92,5 +92,7 @@ gboolean nm_auth_is_subject_in_acl (NMConnection *connection,
                                     NMAuthSubject *subect,
                                     char **out_error_desc);
 
+NMAuthSubject *nm_auth_chain_get_subject (NMAuthChain *self);
+
 #endif /* __NETWORKMANAGER_MANAGER_AUTH_H__ */
 

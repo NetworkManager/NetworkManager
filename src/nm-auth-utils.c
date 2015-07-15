@@ -223,6 +223,14 @@ nm_auth_chain_set_data_ulong (NMAuthChain *self,
 	nm_auth_chain_set_data (self, tag, ptr, g_free);
 }
 
+NMAuthSubject *
+nm_auth_chain_get_subject (NMAuthChain *self)
+{
+	g_return_val_if_fail (self != NULL, NULL);
+
+	return self->subject;
+}
+
 NMAuthCallResult
 nm_auth_chain_get_result (NMAuthChain *self, const char *permission)
 {
