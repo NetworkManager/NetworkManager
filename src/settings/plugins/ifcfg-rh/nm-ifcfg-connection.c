@@ -162,12 +162,13 @@ nm_ifcfg_connection_check_devtimeout (NMIfcfgConnection *self)
 	filename = nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (self));
 	if (!filename)
 		return;
-	devtimeout = devtimeout_from_file (filename);
-	if (!devtimeout)
-		return;
 
 	pllink = nm_platform_link_get_by_ifname (NM_PLATFORM_GET, ifname);
 	if (pllink && pllink->initialized)
+		return;
+
+	devtimeout = devtimeout_from_file (filename);
+	if (!devtimeout)
 		return;
 
 	/* ONBOOT=yes, DEVICE and DEVTIMEOUT are set, but device is not present */
