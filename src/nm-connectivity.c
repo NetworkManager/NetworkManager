@@ -371,12 +371,14 @@ set_property (GObject *object, guint property_id,
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 	const char *uri, *response;
 	guint interval;
+	gboolean changed;
 
 	switch (property_id) {
 	case PROP_URI:
 		uri = g_value_get_string (value);
 		if (uri && !*uri)
 			uri = NULL;
+		changed = g_strcmp0 (uri, priv->uri) != 0;
 #if WITH_CONCHECK
 		if (uri) {
 			SoupURI *soup_uri = soup_uri_new (uri);
@@ -385,11 +387,14 @@ set_property (GObject *object, guint property_id,
 				_LOGE ("invalid uri '%s' for connectivity check.", uri);
 				uri = NULL;
 			}
+			if (uri && soup_uri && changed &&
+			    soup_uri_get_scheme(soup_uri) == SOUP_URI_SCHEME_HTTPS)
+				_LOGW ("use of HTTPS for connectivity checking is not reliable and is discouraged (URI: %s)", uri);
 			if (soup_uri)
 				soup_uri_free (soup_uri);
 		}
 #endif
-		if (g_strcmp0 (uri, priv->uri) != 0) {
+		if (changed) {
 			g_free (priv->uri);
 			priv->uri = g_strdup (uri);
 			_reschedule_periodic_checks (self, TRUE);
