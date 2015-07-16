@@ -151,25 +151,31 @@ nm_connectivity_check_cb (SoupSession *session, SoupMessage *msg, gpointer user_
 		goto done;
 	}
 
-	/* Check headers; if we find the NM-specific one we're done */
-	nm_header = soup_message_headers_get_one (msg->response_headers, "X-NetworkManager-Status");
-	if (g_strcmp0 (nm_header, "online") == 0) {
-		_LOGD ("check for uri '%s' with Status header successful.", uri);
-		new_state = NM_CONNECTIVITY_FULL;
-	} else if (msg->status_code == SOUP_STATUS_OK) {
-		/* check response */
-		if (msg->response_body->data && g_str_has_prefix (msg->response_body->data, response)) {
-			_LOGD ("check for uri '%s' successful.", uri);
+	if (msg->status_code == 511) {
+		_LOGD ("check for uri '%s' returned status '%d %s'; captive portal present.",
+			   uri, msg->status_code, msg->reason_phrase);
+		new_state = NM_CONNECTIVITY_PORTAL;
+	} else {
+		/* Check headers; if we find the NM-specific one we're done */
+		nm_header = soup_message_headers_get_one (msg->response_headers, "X-NetworkManager-Status");
+		if (g_strcmp0 (nm_header, "online") == 0) {
+			_LOGD ("check for uri '%s' with Status header successful.", uri);
 			new_state = NM_CONNECTIVITY_FULL;
+		} else if (msg->status_code == SOUP_STATUS_OK) {
+			/* check response */
+			if (msg->response_body->data && g_str_has_prefix (msg->response_body->data, response)) {
+				_LOGD ("check for uri '%s' successful.", uri);
+				new_state = NM_CONNECTIVITY_FULL;
+			} else {
+				_LOGI ("check for uri '%s' did not match expected response '%s'; assuming captive portal.",
+					   uri, response);
+				new_state = NM_CONNECTIVITY_PORTAL;
+			}
 		} else {
-			_LOGI ("check for uri '%s' did not match expected response '%s'; assuming captive portal.",
-			       uri, response);
+			_LOGI ("check for uri '%s' returned status '%d %s'; assuming captive portal.",
+				   uri, msg->status_code, msg->reason_phrase);
 			new_state = NM_CONNECTIVITY_PORTAL;
 		}
-	} else {
-		_LOGI ("check for uri '%s' returned status '%d %s'; assuming captive portal.",
-		       uri, msg->status_code, msg->reason_phrase);
-		new_state = NM_CONNECTIVITY_PORTAL;
 	}
 
  done:
