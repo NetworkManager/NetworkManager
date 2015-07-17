@@ -223,7 +223,7 @@ nm_access_point_get_strength (NMAccessPoint *ap)
 }
 
 /**
- * nm_access_point_get_strength:
+ * nm_access_point_get_last_seen:
  * @ap: a #NMAccessPoint
  *
  * Returns the timestamp (in CLOCK_BOOTTIME seconds) for the last time the
