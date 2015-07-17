@@ -244,6 +244,7 @@ _internal_write_connection (NMConnection *connection,
 	const char *id;
 	WriteInfo info = { 0 };
 	GError *local_err = NULL;
+	int errsv;
 
 	g_return_val_if_fail (!out_path || !*out_path, FALSE);
 	g_return_val_if_fail (keyfile_dir && keyfile_dir[0] == '/', FALSE);
@@ -330,24 +331,26 @@ _internal_write_connection (NMConnection *connection,
 	g_file_set_contents (path, data, len, &local_err);
 	if (local_err) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "%s.%d: error writing to file '%s': %s", __FILE__, __LINE__,
+		             "error writing to file '%s': %s",
 		             path, local_err->message);
 		g_error_free (local_err);
 		return FALSE;
 	}
 
 	if (chown (path, owner_uid, owner_grp) < 0) {
+		errsv = errno;
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "%s.%d: error chowning '%s': %d", __FILE__, __LINE__,
-		             path, errno);
+		             "error chowning '%s': %s (%d)",
+		             path, g_strerror (errsv), errsv);
 		unlink (path);
 		return FALSE;
 	}
 
 	if (chmod (path, S_IRUSR | S_IWUSR) < 0) {
+		errsv = errno;
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "%s.%d: error setting permissions on '%s': %d", __FILE__,
-		             __LINE__, path, errno);
+		             "error setting permissions on '%s': %s (%d)",
+		             path, g_strerror (errsv), errsv);
 		unlink (path);
 		return FALSE;
 	}
