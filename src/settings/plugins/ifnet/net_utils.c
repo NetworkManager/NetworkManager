@@ -26,10 +26,10 @@
 #include <string.h>
 #include <errno.h>
 #include <nm-utils.h>
-#include <NetworkManagerUtils.h>
+#include "NetworkManagerUtils.h"
 #include <nm-system-config-interface.h>
-#include <nm-logging.h>
-#include <nm-config.h>
+#include "nm-logging.h"
+#include "nm-config.h"
 #include "nm-glib.h"
 #include "net_utils.h"
 #include "wpa_parser.h"

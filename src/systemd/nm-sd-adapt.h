@@ -19,7 +19,7 @@
 #ifndef NM_SD_ADAPT_H
 #define NM_SD_ADAPT_H
 
-#include <config.h>
+#include "config.h"
 
 #include <glib.h>
 

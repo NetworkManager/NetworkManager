@@ -21,7 +21,7 @@
 #ifndef __NETWORKMANAGER_TEST_DEVICE_H__
 #define __NETWORKMANAGER_TEST_DEVICE_H__
 
-#include <nm-device.h>
+#include "nm-device.h"
 
 G_BEGIN_DECLS
 

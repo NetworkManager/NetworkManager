@@ -33,8 +33,8 @@
 #include <nm-setting.h>
 #include <nm-setting-connection.h>
 #include <nm-utils.h>
-#include <nm-config.h>
-#include <nm-logging.h>
+#include "nm-config.h"
+#include "nm-logging.h"
 #include "nm-glib.h"
 #include "nm-core-internal.h"
 

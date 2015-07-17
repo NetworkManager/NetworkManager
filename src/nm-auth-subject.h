@@ -21,7 +21,7 @@
 #ifndef __NETWORKMANAGER_AUTH_SUBJECT_H__
 #define __NETWORKMANAGER_AUTH_SUBJECT_H__
 
-#include <config.h>
+#include "config.h"
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
 

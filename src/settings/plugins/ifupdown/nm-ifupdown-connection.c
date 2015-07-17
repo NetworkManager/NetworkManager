@@ -30,7 +30,7 @@
 #include <nm-setting-wireless-security.h>
 #include <nm-settings-connection.h>
 #include <nm-system-config-interface.h>
-#include <nm-logging.h>
+#include "nm-logging.h"
 #include "nm-ifupdown-connection.h"
 #include "parser.h"
 

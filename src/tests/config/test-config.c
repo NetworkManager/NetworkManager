@@ -23,7 +23,7 @@
 #include <unistd.h>
 
 
-#include <nm-config.h>
+#include "nm-config.h"
 #include "nm-glib.h"
 #include "nm-test-device.h"
 #include "nm-fake-platform.h"
