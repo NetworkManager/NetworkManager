@@ -405,11 +405,6 @@ class UploadFile_ParseWebsite(UploadFile):
 class UploadFileJenkins(UploadFile_ParseWebsite):
     jenkins_base_url = 'http://10.34.130.105:8080/job/NetworkManager/'
     def __init__(self, uri):
-
-        p = urllib.urlopen(self._mainpage)
-        page = p.read()
-        p.close()
-
         UploadFile_ParseWebsite.__init__(self, uri)
     def parse_uri(self):
         m = re.match('^jenkins://([0-9]+)(/(.+)|/?)?$', self.uri)
