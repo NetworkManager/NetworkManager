@@ -91,6 +91,7 @@ nm_keyfile_connection_new (NMConnection *source,
 
 static void
 commit_changes (NMSettingsConnection *connection,
+                NMSettingsConnectionCommitReason commit_reason,
                 NMSettingsConnectionCommitFunc callback,
                 gpointer user_data)
 {
@@ -99,6 +100,8 @@ commit_changes (NMSettingsConnection *connection,
 
 	if (!nm_keyfile_plugin_write_connection (NM_CONNECTION (connection),
 	                                         nm_settings_connection_get_filename (connection),
+	                                         NM_FLAGS_ALL (commit_reason,   NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION
+	                                                                      | NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED),
 	                                         &path,
 	                                         &error)) {
 		callback (connection, error, user_data);
@@ -128,6 +131,7 @@ commit_changes (NMSettingsConnection *connection,
 	g_free (path);
 
 	NM_SETTINGS_CONNECTION_CLASS (nm_keyfile_connection_parent_class)->commit_changes (connection,
+	                                                                                   commit_reason,
 	                                                                                   callback,
 	                                                                                   user_data);
 }

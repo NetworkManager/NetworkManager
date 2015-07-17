@@ -234,6 +234,7 @@ _internal_write_connection (NMConnection *connection,
                             uid_t owner_uid,
                             pid_t owner_grp,
                             const char *existing_path,
+                            gboolean force_rename,
                             char **out_path,
                             GError **error)
 {
@@ -268,7 +269,7 @@ _internal_write_connection (NMConnection *connection,
 	/* If we have existing file path, use it. Else generate one from
 	 * connection's ID.
 	 */
-	if (existing_path != NULL) {
+	if (existing_path != NULL && !force_rename) {
 		path = g_strdup (existing_path);
 	} else {
 		char *filename_escaped = nm_keyfile_plugin_utils_escape_filename (id);
@@ -365,6 +366,7 @@ _internal_write_connection (NMConnection *connection,
 gboolean
 nm_keyfile_plugin_write_connection (NMConnection *connection,
                                     const char *existing_path,
+                                    gboolean force_rename,
                                     char **out_path,
                                     GError **error)
 {
@@ -372,6 +374,7 @@ nm_keyfile_plugin_write_connection (NMConnection *connection,
 	                                   KEYFILE_DIR,
 	                                   0, 0,
 	                                   existing_path,
+	                                   force_rename,
 	                                   out_path,
 	                                   error);
 }
@@ -388,6 +391,7 @@ nm_keyfile_plugin_write_test_connection (NMConnection *connection,
 	                                   keyfile_dir,
 	                                   owner_uid, owner_grp,
 	                                   NULL,
+	                                   FALSE,
 	                                   out_path,
 	                                   error);
 }

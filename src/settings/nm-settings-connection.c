@@ -593,9 +593,14 @@ replace_and_commit (NMSettingsConnection *self,
                     gpointer user_data)
 {
 	GError *error = NULL;
+	NMSettingsConnectionCommitReason commit_reason = NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION;
+
+	if (g_strcmp0 (nm_connection_get_id (NM_CONNECTION (self)),
+	               nm_connection_get_id (new_connection)) != 0)
+		commit_reason |= NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED;
 
 	if (nm_settings_connection_replace_settings (self, new_connection, TRUE, "replace-and-commit-disk", &error))
-		nm_settings_connection_commit_changes (self, callback, user_data);
+		nm_settings_connection_commit_changes (self, commit_reason, callback, user_data);
 	else {
 		g_assert (error);
 		if (callback)
@@ -618,6 +623,7 @@ nm_settings_connection_replace_and_commit (NMSettingsConnection *self,
 
 static void
 commit_changes (NMSettingsConnection *self,
+                NMSettingsConnectionCommitReason commit_reason,
                 NMSettingsConnectionCommitFunc callback,
                 gpointer user_data)
 {
@@ -633,6 +639,7 @@ commit_changes (NMSettingsConnection *self,
 
 void
 nm_settings_connection_commit_changes (NMSettingsConnection *self,
+                                       NMSettingsConnectionCommitReason commit_reason,
                                        NMSettingsConnectionCommitFunc callback,
                                        gpointer user_data)
 {
@@ -640,6 +647,7 @@ nm_settings_connection_commit_changes (NMSettingsConnection *self,
 
 	if (NM_SETTINGS_CONNECTION_GET_CLASS (self)->commit_changes) {
 		NM_SETTINGS_CONNECTION_GET_CLASS (self)->commit_changes (self,
+		                                                         commit_reason,
 		                                                         callback ? callback : ignore_cb,
 		                                                         user_data);
 	} else {
@@ -916,7 +924,7 @@ agent_secrets_done_cb (NMAgentManager *manager,
 				       setting_name,
 				       call_id);
 
-				nm_settings_connection_commit_changes (self, new_secrets_commit_cb, NULL);
+				nm_settings_connection_commit_changes (self, NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE, new_secrets_commit_cb, NULL);
 			} else {
 				_LOGD ("(%s:%u) new agent secrets processed",
 				       setting_name,
@@ -1743,7 +1751,7 @@ dbus_clear_secrets_auth_cb (NMSettingsConnection *self,
 		/* Tell agents to remove secrets for this connection */
 		nm_agent_manager_delete_secrets (priv->agent_mgr, NM_CONNECTION (self));
 
-		nm_settings_connection_commit_changes (self, clear_secrets_cb, context);
+		nm_settings_connection_commit_changes (self, NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE, clear_secrets_cb, context);
 	}
 }
 

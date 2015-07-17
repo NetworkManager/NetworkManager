@@ -365,6 +365,7 @@ replace_and_commit (NMSettingsConnection *connection,
 
 static void
 commit_changes (NMSettingsConnection *connection,
+                NMSettingsConnectionCommitReason commit_reason,
                 NMSettingsConnectionCommitFunc callback,
                 gpointer user_data)
 {
@@ -392,7 +393,7 @@ commit_changes (NMSettingsConnection *connection,
 			/* Don't bother writing anything out if in-memory and on-disk data are the same */
 			if (same) {
 				/* But chain up to parent to handle success - emits updated signal */
-				NM_SETTINGS_CONNECTION_CLASS (nm_ifcfg_connection_parent_class)->commit_changes (connection, callback, user_data);
+				NM_SETTINGS_CONNECTION_CLASS (nm_ifcfg_connection_parent_class)->commit_changes (connection, commit_reason, callback, user_data);
 				return;
 			}
 		}
@@ -415,7 +416,7 @@ commit_changes (NMSettingsConnection *connection,
 
 	if (success) {
 		/* Chain up to parent to handle success */
-		NM_SETTINGS_CONNECTION_CLASS (nm_ifcfg_connection_parent_class)->commit_changes (connection, callback, user_data);
+		NM_SETTINGS_CONNECTION_CLASS (nm_ifcfg_connection_parent_class)->commit_changes (connection, commit_reason, callback, user_data);
 	} else {
 		/* Otherwise immediate error */
 		callback (connection, error, user_data);

@@ -78,6 +78,11 @@ typedef enum
 	NM_SETTINGS_CONNECTION_FLAGS_ALL = ((__NM_SETTINGS_CONNECTION_FLAGS_LAST - 1) << 1) - 1,
 } NMSettingsConnectionFlags;
 
+typedef enum { /*< skip >*/
+	NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE                       = 0,
+	NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION                = (1LL << 0),
+	NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED                 = (1LL << 1),
+} NMSettingsConnectionCommitReason;
 
 typedef struct _NMSettingsConnectionClass NMSettingsConnectionClass;
 
@@ -103,6 +108,7 @@ struct _NMSettingsConnectionClass {
 	                            gpointer user_data);
 
 	void (*commit_changes) (NMSettingsConnection *self,
+	                        NMSettingsConnectionCommitReason commit_reason,
 	                        NMSettingsConnectionCommitFunc callback,
 	                        gpointer user_data);
 
@@ -117,6 +123,7 @@ struct _NMSettingsConnectionClass {
 GType nm_settings_connection_get_type (void);
 
 void nm_settings_connection_commit_changes (NMSettingsConnection *self,
+                                            NMSettingsConnectionCommitReason commit_reason,
                                             NMSettingsConnectionCommitFunc callback,
                                             gpointer user_data);
 

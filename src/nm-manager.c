@@ -3221,7 +3221,9 @@ activation_add_done (NMSettings *self,
 		nm_active_connection_set_connection (info->active, NM_CONNECTION (new_connection));
 
 		if (_internal_activate_generic (info->manager, info->active, &local)) {
-			nm_settings_connection_commit_changes (new_connection, NULL, NULL);
+			nm_settings_connection_commit_changes (new_connection,
+			                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION | NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED,
+			                                       NULL, NULL);
 			dbus_g_method_return (context,
 			                      nm_connection_get_path (NM_CONNECTION (new_connection)),
 			                      nm_active_connection_get_path (info->active));
