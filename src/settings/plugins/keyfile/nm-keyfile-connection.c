@@ -104,8 +104,10 @@ commit_changes (NMSettingsConnection *connection,
 	}
 
 	/* Update the filename if it changed */
-	if (path)
+	if (path) {
 		nm_settings_connection_set_filename (connection, path);
+		g_free (path);
+	}
 
 	NM_SETTINGS_CONNECTION_CLASS (nm_keyfile_connection_parent_class)->commit_changes (connection,
 	                                                                                   callback,
