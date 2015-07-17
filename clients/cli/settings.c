@@ -2087,6 +2087,46 @@ validate_uint (NMSetting *setting, const char* prop, guint val, GError **error)
 	return success;
 }
 
+static char *
+flag_values_to_string (GFlagsValue *array, guint n)
+{
+	GString *str;
+	guint i;
+
+	str = g_string_new (NULL);
+	for (i = 0; i < n; i++)
+		g_string_append_printf (str, "%u, ", array[i].value);
+	if (str->len)
+		g_string_truncate (str, str->len-2);  /* chop off trailing ', ' */
+	return g_string_free (str, FALSE);
+}
+
+static gboolean
+validate_flags (NMSetting *setting, const char* prop, guint val, GError **error)
+{
+	GParamSpec *pspec;
+	GValue value = G_VALUE_INIT;
+	gboolean success = TRUE;
+
+	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (setting)), prop);
+	g_assert (G_IS_PARAM_SPEC (pspec));
+
+	g_value_init (&value, pspec->value_type);
+	g_value_set_flags (&value, val);
+
+	if (g_param_value_validate (pspec, &value)) {
+		GParamSpecFlags *pspec_flags = (GParamSpecFlags *) pspec;
+		char *flag_values = flag_values_to_string (pspec_flags->flags_class->values,
+		                                           pspec_flags->flags_class->n_values);
+		g_set_error (error, 1, 0, _("'%u' flags are not valid; use combination of %s"),
+		             val, flag_values);
+		g_free (flag_values);
+		success = FALSE;
+	}
+	g_value_unset (&value);
+	return success;
+}
+
 static gboolean
 check_and_set_string (NMSetting *setting,
                       const char *prop,
@@ -2306,6 +2346,26 @@ nmc_property_set_int64 (NMSetting *setting, const char *prop, const char *val, G
 		return FALSE;
 
 	g_object_set (setting, prop, (gint64) val_int, NULL);
+	return TRUE;
+}
+
+static gboolean
+nmc_property_set_flags (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	unsigned long val_int;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (!nmc_string_to_uint (val, TRUE, 0, G_MAXUINT, &val_int)) {
+		g_set_error (error, 1, 0, _("'%s' is not a valid number (or out of range)"), val);
+		return FALSE;
+	}
+
+	/* Validate the flags according to the property spec */
+	if (!validate_flags (setting, prop, (guint) val_int, error))
+		return FALSE;
+
+	g_object_set (setting, prop, (guint) val_int, NULL);
 	return TRUE;
 }
 
@@ -4704,8 +4764,8 @@ nmc_property_dcb_set_flags (NMSetting *setting, const char *prop, const char *va
 		g_strfreev (strv);
 	}
 
-	/* Validate the number according to the property spec */
-	if (!validate_uint (setting, prop, (guint) flags, error))
+	/* Validate the flags according to the property spec */
+	if (!validate_flags (setting, prop, (guint) flags, error))
 		return FALSE;
 
 	g_object_set (setting, prop, (guint) flags, NULL);
@@ -6165,7 +6225,7 @@ nmc_properties_init (void)
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (VLAN, FLAGS),
 	                    nmc_property_vlan_get_flags,
-	                    nmc_property_set_uint,
+	                    nmc_property_set_flags,
 	                    NULL,
 	                    NULL,
 	                    NULL,
