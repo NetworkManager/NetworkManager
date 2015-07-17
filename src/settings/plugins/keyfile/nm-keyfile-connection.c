@@ -33,6 +33,9 @@
 #include "reader.h"
 #include "writer.h"
 #include "common.h"
+#include "utils.h"
+#include "gsystem-local-alloc.h"
+#include "nm-logging.h"
 
 G_DEFINE_TYPE (NMKeyfileConnection, nm_keyfile_connection, NM_TYPE_SETTINGS_CONNECTION)
 
@@ -104,10 +107,25 @@ commit_changes (NMSettingsConnection *connection,
 	}
 
 	/* Update the filename if it changed */
-	if (path) {
+	if (   path
+	    && g_strcmp0 (path, nm_settings_connection_get_filename (connection)) != 0) {
+		gs_free char *old_path = g_strdup (nm_settings_connection_get_filename (connection));
+
 		nm_settings_connection_set_filename (connection, path);
-		g_free (path);
+		if (old_path) {
+			nm_log_info (LOGD_SETTINGS, "keyfile: update "NM_KEYFILE_CONNECTION_LOG_FMT" and rename from \"%s\"",
+			             NM_KEYFILE_CONNECTION_LOG_ARG (connection),
+			             old_path);
+		} else {
+			nm_log_info (LOGD_SETTINGS, "keyfile: update "NM_KEYFILE_CONNECTION_LOG_FMT" and persist connection",
+			             NM_KEYFILE_CONNECTION_LOG_ARG (connection));
+		}
+	} else {
+		nm_log_info (LOGD_SETTINGS, "keyfile: update "NM_KEYFILE_CONNECTION_LOG_FMT,
+		             NM_KEYFILE_CONNECTION_LOG_ARG (connection));
 	}
+
+	g_free (path);
 
 	NM_SETTINGS_CONNECTION_CLASS (nm_keyfile_connection_parent_class)->commit_changes (connection,
 	                                                                                   callback,
