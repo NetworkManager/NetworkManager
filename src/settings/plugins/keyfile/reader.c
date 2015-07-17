@@ -25,7 +25,7 @@
 
 #include "reader.h"
 
-#include "nm-logging.h"
+#include "nm-default.h"
 #include "nm-keyfile-internal.h"
 #include "NetworkManagerUtils.h"
 

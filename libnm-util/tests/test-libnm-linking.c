@@ -23,7 +23,7 @@
 
 #include <nm-utils.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 
 extern GType nm_state_get_type (void);
 

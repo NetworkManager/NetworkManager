@@ -22,7 +22,7 @@
 #ifndef __NETWORKMANAGER_POLICY_H__
 #define __NETWORKMANAGER_POLICY_H__
 
-#include "nm-types.h"
+#include "nm-default.h"
 
 #define NM_TYPE_POLICY            (nm_policy_get_type ())
 #define NM_POLICY(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_POLICY, NMPolicy))

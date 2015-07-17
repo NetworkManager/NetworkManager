@@ -25,9 +25,8 @@
 #include <sys/inotify.h>
 #include <errno.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-inotify-helper.h"
-#include "nm-logging.h"
 #include "NetworkManagerUtils.h"
 
 /* NOTE: this code should be killed once we depend on a new enough glib to

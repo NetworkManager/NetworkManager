@@ -23,11 +23,10 @@
 #include <sys/wait.h>
 #include <string.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-dcb.h"
 #include "nm-platform.h"
 #include "NetworkManagerUtils.h"
-#include "nm-logging.h"
 
 static const char *helper_names[] = { "dcbtool", "fcoeadm" };
 

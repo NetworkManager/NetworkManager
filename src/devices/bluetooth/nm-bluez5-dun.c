@@ -32,7 +32,7 @@
 
 #include "nm-bluez5-dun.h"
 #include "nm-bt-error.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 #include "NetworkManagerUtils.h"
 
 struct _NMBluez5DunContext {

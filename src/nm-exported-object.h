@@ -23,8 +23,7 @@
 
 #include <dbus/dbus-glib.h>
 
-#include "nm-glib.h"
-#include "nm-types.h"
+#include "nm-default.h"
 
 G_BEGIN_DECLS
 

@@ -33,12 +33,11 @@
 #include <linux/if.h>
 #include <linux/if_infiniband.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "NetworkManagerUtils.h"
 #include "nm-platform.h"
 #include "nm-utils.h"
 #include "nm-core-internal.h"
-#include "nm-logging.h"
 #include "nm-device.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-ip4-config.h"
@@ -47,7 +46,6 @@
 #include "nm-setting-wireless-security.h"
 #include "nm-auth-utils.h"
 #include "nm-dbus-glib-types.h"
-#include "gsystem-local-alloc.h"
 
 /*
  * Some toolchains (E.G. uClibc 0.9.33 and earlier) don't export

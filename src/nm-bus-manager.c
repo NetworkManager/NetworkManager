@@ -26,7 +26,7 @@
 #include <sys/types.h>
 #include <errno.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-dbus-interface.h"
 #include "nm-bus-manager.h"
 
@@ -34,7 +34,6 @@
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-lowlevel.h>
 #include <string.h>
-#include "nm-logging.h"
 #include "NetworkManagerUtils.h"
 
 #define PRIV_SOCK_PATH NMRUNDIR "/private"

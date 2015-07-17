@@ -34,7 +34,7 @@
 #include <gmodule.h>
 #include <glib/gi18n.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "vpn-helpers.h"
 
 #include "nm-macros-internal.h"

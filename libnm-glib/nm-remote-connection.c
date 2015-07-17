@@ -27,7 +27,7 @@
 #include <NetworkManager.h>
 #include <nm-utils.h>
 #include <nm-setting-connection.h>
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-remote-connection.h"
 #include "nm-remote-connection-private.h"
 #include "nm-object-private.h"

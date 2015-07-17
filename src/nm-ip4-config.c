@@ -26,6 +26,7 @@
 
 #include "nm-ip4-config.h"
 
+#include "nm-default.h"
 #include "nm-utils.h"
 #include "nm-platform.h"
 #include "nm-dbus-glib-types.h"
@@ -34,7 +35,6 @@
 #include "nm-core-internal.h"
 #include "nm-route-manager.h"
 #include "nm-core-internal.h"
-#include "gsystem-local-alloc.h"
 
 G_DEFINE_TYPE (NMIP4Config, nm_ip4_config, NM_TYPE_EXPORTED_OBJECT)
 

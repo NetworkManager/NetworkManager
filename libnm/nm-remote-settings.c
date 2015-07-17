@@ -26,7 +26,7 @@
 #include <nm-dbus-interface.h>
 #include <nm-connection.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-remote-settings.h"
 #include "nm-client.h"
 #include "nm-remote-connection.h"

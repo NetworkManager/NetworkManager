@@ -25,7 +25,7 @@
 
 #include <nm-utils.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wired.h"
 #include "nm-setting-8021x.h"

@@ -42,10 +42,9 @@
 #include <linux/if.h>
 #include <linux/if_ppp.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "NetworkManagerUtils.h"
 #include "nm-ppp-manager.h"
-#include "nm-logging.h"
 #include "nm-platform.h"
 #include "nm-core-internal.h"
 

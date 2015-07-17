@@ -33,12 +33,11 @@
 #include <fcntl.h>
 #include <stdio.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-dhcp-manager.h"
 #include "nm-dhcp-dhclient.h"
 #include "nm-dhcp-dhcpcd.h"
 #include "nm-dhcp-systemd.h"
-#include "nm-logging.h"
 #include "nm-config.h"
 #include "nm-dbus-glib-types.h"
 #include "NetworkManagerUtils.h"

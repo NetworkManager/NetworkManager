@@ -29,13 +29,12 @@
 #include <netlink/route/addr.h>
 #include <netlink/route/rtnl.h>
 
-#include "gsystem-local-alloc.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-platform.h"
 #include "nm-platform-utils.h"
 #include "NetworkManagerUtils.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 #include "nm-enum-types.h"
 #include "nm-core-internal.h"
 

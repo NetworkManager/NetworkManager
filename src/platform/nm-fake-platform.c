@@ -26,11 +26,10 @@
 #include <netinet/in.h>
 #include <linux/rtnetlink.h>
 
-#include "gsystem-local-alloc.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-fake-platform.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 
 #include "nm-test-utils.h"
 

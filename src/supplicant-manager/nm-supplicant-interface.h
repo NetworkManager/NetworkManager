@@ -22,7 +22,7 @@
 #ifndef __NETWORKMANAGER_SUPPLICANT_INTERFACE_H__
 #define __NETWORKMANAGER_SUPPLICANT_INTERFACE_H__
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-supplicant-types.h"
 
 /*

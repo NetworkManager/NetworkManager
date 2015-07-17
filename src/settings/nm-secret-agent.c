@@ -26,12 +26,11 @@
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-lowlevel.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-dbus-interface.h"
 #include "nm-secret-agent.h"
 #include "nm-bus-manager.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-logging.h"
 #include "nm-auth-subject.h"
 #include "nm-simple-connection.h"
 #include "NetworkManagerUtils.h"

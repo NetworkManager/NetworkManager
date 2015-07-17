@@ -26,8 +26,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "nm-glib.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 #include "nm-bluez-manager.h"
 #include "nm-bluez5-manager.h"
 #include "nm-bluez-device.h"

@@ -25,9 +25,8 @@
 #include <stdio.h>
 #include <arpa/inet.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-connection.h"
-#include "nm-types.h"
 
 /*****************************************************************************/
 

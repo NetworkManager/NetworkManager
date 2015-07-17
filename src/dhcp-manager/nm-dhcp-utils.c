@@ -24,8 +24,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
-#include "nm-glib.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 #include "nm-dhcp-utils.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"

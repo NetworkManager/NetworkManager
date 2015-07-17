@@ -26,7 +26,7 @@
 
 #include "nm-exported-object.h"
 #include <nm-connection.h>
-#include "nm-types.h"
+#include "nm-default.h"
 
 G_BEGIN_DECLS
 

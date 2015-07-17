@@ -20,7 +20,7 @@
 
 #include <NetworkManager.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 
 typedef struct {
 	GDBusConnection *bus;

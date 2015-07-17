@@ -22,8 +22,7 @@
 #define __NETWORKMANAGER_ACTIVATION_REQUEST_H__
 
 
-#include "nm-glib.h"
-#include "nm-types.h"
+#include "nm-default.h"
 #include "nm-connection.h"
 #include "nm-active-connection.h"
 

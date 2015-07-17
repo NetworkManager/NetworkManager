@@ -30,6 +30,7 @@
 #include <glib/gi18n.h>
 #include <NetworkManager.h>
 
+#include "nm-default.h"
 #include "nm-editor-utils.h"
 #if 0
 #include "vpn-helpers.h"

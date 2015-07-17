@@ -26,7 +26,7 @@
 #include <glib/gi18n-lib.h>
 #include <gudev/gudev.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-dbus-interface.h"
 #include "nm-active-connection.h"
 #include "nm-device-ethernet.h"

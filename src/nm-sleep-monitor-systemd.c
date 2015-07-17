@@ -25,8 +25,7 @@
 #include <glib/gi18n.h>
 #include <gio/gunixfdlist.h>
 
-#include "nm-glib.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 

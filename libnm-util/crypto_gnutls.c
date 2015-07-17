@@ -30,7 +30,7 @@
 #include <gnutls/x509.h>
 #include <gnutls/pkcs12.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "crypto.h"
 
 #define SALT_LEN 8

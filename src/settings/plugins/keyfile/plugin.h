@@ -22,7 +22,7 @@
 #ifndef _PLUGIN_H_
 #define _PLUGIN_H_
 
-#include "nm-glib.h"
+#include "nm-default.h"
 
 #define SC_TYPE_PLUGIN_KEYFILE            (sc_plugin_keyfile_get_type ())
 #define SC_PLUGIN_KEYFILE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), SC_TYPE_PLUGIN_KEYFILE, SCPluginKeyfile))

@@ -37,12 +37,10 @@
  * Forward declare if_nametoindex. */
 extern unsigned int if_nametoindex (const char *__ifname);
 
-#include "nm-glib.h"
-#include "gsystem-local-alloc.h"
+#include "nm-default.h"
 #include "NetworkManagerUtils.h"
 #include "nm-linux-platform.h"
 #include "nm-dhcp-manager.h"
-#include "nm-logging.h"
 #include "main-utils.h"
 #include "nm-rdisc.h"
 #include "nm-lndp-rdisc.h"

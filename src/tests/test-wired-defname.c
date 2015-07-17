@@ -23,9 +23,8 @@
 
 #include <nm-simple-connection.h>
 #include <nm-setting-connection.h>
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-device-ethernet-utils.h"
-#include "nm-logging.h"
 
 #include "nm-test-utils.h"
 

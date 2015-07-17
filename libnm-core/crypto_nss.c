@@ -35,7 +35,7 @@
 #include <ciferfam.h>
 #include <p12plcy.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "crypto.h"
 #include "nm-errors.h"
 

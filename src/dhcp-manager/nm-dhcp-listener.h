@@ -19,7 +19,7 @@
 #ifndef __NETWORKMANAGER_DHCP_LISTENER_H__
 #define __NETWORKMANAGER_DHCP_LISTENER_H__
 
-#include "nm-glib.h"
+#include "nm-default.h"
 
 #define NM_TYPE_DHCP_LISTENER           (nm_dhcp_listener_get_type ())
 #define NM_DHCP_LISTENER(obj)           (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DHCP_LISTENER, NMDhcpListener))

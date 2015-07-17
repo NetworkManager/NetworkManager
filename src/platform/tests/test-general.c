@@ -23,7 +23,7 @@
 #include <linux/rtnetlink.h>
 
 #include "nm-linux-platform.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 
 #include "nm-test-utils.h"
 

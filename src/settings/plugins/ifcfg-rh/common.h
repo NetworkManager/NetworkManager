@@ -21,7 +21,7 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
-#include "nm-glib.h"
+#include "nm-default.h"
 
 #define IFCFG_TAG "ifcfg-"
 #define KEYS_TAG "keys-"

@@ -54,7 +54,7 @@
 #include "reader.h"
 #include "writer.h"
 #include "utils.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 
 #include "nm-test-utils.h"
 

@@ -34,8 +34,7 @@
 #include <nm-setting-connection.h>
 #include <nm-utils.h>
 #include "nm-config.h"
-#include "nm-logging.h"
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-core-internal.h"
 
 #include "plugin.h"
@@ -44,7 +43,6 @@
 #include "writer.h"
 #include "common.h"
 #include "utils.h"
-#include "gsystem-local-alloc.h"
 
 static void system_config_interface_init (NMSystemConfigInterface *system_config_interface_class);
 

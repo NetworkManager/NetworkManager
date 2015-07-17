@@ -24,12 +24,11 @@
 #include <string.h>
 
 #include "nm-config.h"
-#include "gsystem-local-alloc.h"
 #include "nm-device.h"
 #include "nm-core-internal.h"
 #include "nm-keyfile-internal.h"
 #include "nm-macros-internal.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 
 typedef struct {
 	char *group_name;

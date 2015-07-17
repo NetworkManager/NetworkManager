@@ -22,7 +22,7 @@
 #ifndef _WPA_PARSER_H
 #define _WPA_PARSER_H
 
-#include "nm-glib.h"
+#include "nm-default.h"
 
 #define WPA_SUPPLICANT_CONF SYSCONFDIR "/wpa_supplicant/wpa_supplicant.conf"
 

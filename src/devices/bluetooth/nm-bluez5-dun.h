@@ -21,7 +21,7 @@
 #ifndef _NM_BLUEZ5_UTILS_H_
 #define _NM_BLUEZ5_UTILS_H_
 
-#include "nm-glib.h"
+#include "nm-default.h"
 
 typedef struct _NMBluez5DunContext NMBluez5DunContext;
 

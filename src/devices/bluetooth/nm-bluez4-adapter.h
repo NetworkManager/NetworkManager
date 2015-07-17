@@ -22,7 +22,7 @@
 #define __NETWORKMANAGER_BLUEZ4_ADAPTER_H__
 
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-bluez-device.h"
 #include "nm-connection-provider.h"
 

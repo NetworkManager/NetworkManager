@@ -32,11 +32,10 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-dhcp-dhcpcd.h"
 #include "nm-dhcp-manager.h"
 #include "nm-utils.h"
-#include "nm-logging.h"
 #include "NetworkManagerUtils.h"
 #include "nm-dhcp-listener.h"
 

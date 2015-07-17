@@ -34,7 +34,7 @@
 
 #include <NetworkManager.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nmt-newt.h"
 #include "nm-editor-bindings.h"
 

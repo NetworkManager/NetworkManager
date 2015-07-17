@@ -23,7 +23,7 @@
 
 #include <sys/inotify.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 
 /* NOTE: this code should be killed once we depend on a new enough glib to
  * include the patches from https://bugzilla.gnome.org/show_bug.cgi?id=532815

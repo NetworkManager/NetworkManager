@@ -19,9 +19,8 @@
  */
 
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-connection.h"
-#include "nm-types.h"
 
 #ifndef __NETWORKMANAGER_DEFAULT_ROUTE_MANAGER_H__
 #define __NETWORKMANAGER_DEFAULT_ROUTE_MANAGER_H__

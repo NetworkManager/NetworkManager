@@ -36,7 +36,7 @@
 
 #include "nm-supplicant-config.h"
 #include "nm-supplicant-settings-verify.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 
 #include "nm-test-utils.h"
 

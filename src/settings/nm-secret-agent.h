@@ -23,8 +23,7 @@
 
 
 #include <nm-connection.h>
-#include "nm-glib.h"
-#include "nm-types.h"
+#include "nm-default.h"
 
 #define NM_TYPE_SECRET_AGENT            (nm_secret_agent_get_type ())
 #define NM_SECRET_AGENT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SECRET_AGENT, NMSecretAgent))

@@ -22,7 +22,7 @@
 #ifndef _NET_PARSER_H
 #define _NET_PARSER_H
 
-#include "nm-glib.h"
+#include "nm-default.h"
 
 #define CONF_NET_FILE SYSCONFDIR "/conf.d/net"
 

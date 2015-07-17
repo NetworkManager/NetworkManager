@@ -39,10 +39,8 @@
 #include <systemd/sd-journal.h>
 #endif
 
-#include "nm-glib.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 #include "nm-errors.h"
-#include "gsystem-local-alloc.h"
 #include "NetworkManagerUtils.h"
 
 static void

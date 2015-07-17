@@ -23,7 +23,7 @@
 #include <dbus/dbus.h>
 #include <string.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "NetworkManager.h"
 
 #include "common.h"

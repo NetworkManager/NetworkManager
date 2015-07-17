@@ -25,7 +25,7 @@
 
 #include "nm-rdisc.h"
 #include "nm-lndp-rdisc.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 
 #include "nm-linux-platform.h"
 

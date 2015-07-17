@@ -27,7 +27,7 @@
 #include <nm-setting-connection.h>
 #include <nm-setting-bluetooth.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-device-bt.h"
 #include "nm-device-private.h"
 #include "nm-object-private.h"

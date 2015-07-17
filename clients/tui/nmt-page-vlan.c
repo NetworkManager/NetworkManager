@@ -25,7 +25,7 @@
 
 #include <glib/gi18n-lib.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-editor-bindings.h"
 
 #include "nmt-page-vlan.h"

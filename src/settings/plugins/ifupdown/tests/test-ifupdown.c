@@ -22,12 +22,10 @@
 
 #include <string.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-core-internal.h"
-#include "nm-logging.h"
 #include "interface_parser.h"
 #include "parser.h"
-#include "nm-logging.h"
 
 #include "nm-test-utils.h"
 

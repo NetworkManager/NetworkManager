@@ -25,7 +25,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-supplicant-settings-verify.h"
 
 struct Opt {

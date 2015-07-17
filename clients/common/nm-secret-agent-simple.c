@@ -34,6 +34,7 @@
 #include <string.h>
 #include <glib/gi18n-lib.h>
 
+#include "nm-default.h"
 #include "nm-secret-agent-simple.h"
 
 G_DEFINE_TYPE (NMSecretAgentSimple, nm_secret_agent_simple, NM_TYPE_SECRET_AGENT_OLD)

@@ -29,7 +29,7 @@
 #include <nm-setting-wireless-security.h>
 #include <nm-utils.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-device-wifi.h"
 #include "nm-access-point.h"
 #include "nm-device-private.h"

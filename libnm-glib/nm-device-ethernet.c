@@ -28,7 +28,7 @@
 #include <nm-setting-wired.h>
 #include <nm-setting-pppoe.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-private.h"
 #include "nm-object-private.h"

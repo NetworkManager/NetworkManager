@@ -22,12 +22,11 @@
 
 #include <string.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-device-modem.h"
 #include "nm-modem.h"
 #include "nm-device-private.h"
 #include "nm-rfkill-manager.h"
-#include "nm-logging.h"
 #include "nm-settings-connection.h"
 #include "nm-modem-broadband.h"
 #include "NetworkManagerUtils.h"

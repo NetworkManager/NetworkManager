@@ -21,7 +21,7 @@
 
 #include <NetworkManager.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 
 GSList *vpn_get_plugins (void);
 

@@ -28,7 +28,7 @@
 #include <nm-setting-wimax.h>
 #include <nm-utils.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-device-wimax.h"
 #include "nm-wimax-nsp.h"
 #include "nm-object-private.h"

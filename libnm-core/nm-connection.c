@@ -24,13 +24,12 @@
 
 #include <glib/gi18n-lib.h>
 #include <string.h>
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-connection.h"
 #include "nm-connection-private.h"
 #include "nm-utils.h"
 #include "nm-setting-private.h"
 #include "nm-core-internal.h"
-#include "gsystem-local-alloc.h"
 
 /**
  * SECTION:nm-connection

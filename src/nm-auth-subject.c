@@ -33,11 +33,10 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-bus-manager.h"
 #include "nm-enum-types.h"
 #include "NetworkManagerUtils.h"
-#include "gsystem-local-alloc.h"
 
 G_DEFINE_TYPE (NMAuthSubject, nm_auth_subject, G_TYPE_OBJECT)
 

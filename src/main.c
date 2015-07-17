@@ -39,8 +39,7 @@
 #include <string.h>
 #include <sys/resource.h>
 
-#include "nm-glib.h"
-#include "gsystem-local-alloc.h"
+#include "nm-default.h"
 #include "nm-dbus-interface.h"
 #include "NetworkManagerUtils.h"
 #include "main-utils.h"
@@ -49,7 +48,6 @@
 #include "nm-bus-manager.h"
 #include "nm-device.h"
 #include "nm-dhcp-manager.h"
-#include "nm-logging.h"
 #include "nm-config.h"
 #include "nm-session-monitor.h"
 #include "nm-dispatcher.h"

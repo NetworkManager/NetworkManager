@@ -21,7 +21,7 @@
 #ifndef __NM_OBJECT_PRIVATE_H__
 #define __NM_OBJECT_PRIVATE_H__
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-object.h"
 
 typedef gboolean (*PropertyMarshalFunc) (NMObject *, GParamSpec *, GVariant *, gpointer);

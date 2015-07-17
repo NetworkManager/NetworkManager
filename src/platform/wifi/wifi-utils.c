@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "wifi-utils.h"
 #include "wifi-utils-private.h"
 #include "wifi-utils-nl80211.h"

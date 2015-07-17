@@ -24,10 +24,8 @@
 
 #include <stdlib.h>
 
-#include "nm-glib.h"
-#include "gsystem-local-alloc.h"
+#include "nm-default.h"
 #include "nm-device-bridge.h"
-#include "nm-logging.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
 #include "nm-dbus-glib-types.h"

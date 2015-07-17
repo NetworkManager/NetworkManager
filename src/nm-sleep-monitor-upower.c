@@ -22,8 +22,7 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/stat.h>
-#include "nm-glib.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 #include "nm-core-internal.h"
 
 #include "nm-sleep-monitor.h"

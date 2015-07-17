@@ -37,13 +37,12 @@
 #include <sys/ioctl.h>
 #include <errno.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-device.h"
 #include "nm-device-wifi.h"
 #include "nm-device-olpc-mesh.h"
 #include "nm-device-private.h"
 #include "nm-utils.h"
-#include "nm-logging.h"
 #include "NetworkManagerUtils.h"
 #include "nm-activation-request.h"
 #include "nm-setting-connection.h"

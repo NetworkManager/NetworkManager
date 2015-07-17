@@ -22,11 +22,9 @@
 
 #include <string.h>
 
-#include "nm-glib.h"
-#include "gsystem-local-alloc.h"
+#include "nm-default.h"
 #include "nm-setting-connection.h"
 #include "nm-auth-utils.h"
-#include "nm-logging.h"
 #include "nm-auth-subject.h"
 #include "nm-auth-manager.h"
 #include "nm-session-monitor.h"

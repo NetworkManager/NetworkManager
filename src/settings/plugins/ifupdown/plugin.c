@@ -30,7 +30,7 @@
 #include <glib/gi18n.h>
 #include <nm-setting-connection.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "interface_parser.h"
 
 #include "nm-dbus-interface.h"
@@ -46,7 +46,6 @@
 #include "plugin.h"
 #include "parser.h"
 
-#include "nm-logging.h"
 #include "nm-config.h"
 
 #include <arpa/inet.h>

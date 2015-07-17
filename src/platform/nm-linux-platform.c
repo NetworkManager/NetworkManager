@@ -50,14 +50,13 @@
 #endif
 #endif
 
-#include "gsystem-local-alloc.h"
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 #include "nm-linux-platform.h"
 #include "nm-platform-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 #include "wifi/wifi-utils.h"
 #include "wifi/wifi-utils-wext.h"
 #include "nmp-object.h"

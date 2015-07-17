@@ -45,8 +45,7 @@
 #include "nm-core-internal.h"
 #include "nm-macros-internal.h"
 
-#include "nm-logging.h"
-#include "gsystem-local-alloc.h"
+#include "nm-default.h"
 #include "common.h"
 #include "shvar.h"
 #include "reader.h"

@@ -25,8 +25,7 @@
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
 
-#include "nm-glib.h"
-#include "nm-types.h"
+#include "nm-default.h"
 
 #define NM_TYPE_AUTH_SUBJECT            (nm_auth_subject_get_type ())
 #define NM_AUTH_SUBJECT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_AUTH_SUBJECT, NMAuthSubject))

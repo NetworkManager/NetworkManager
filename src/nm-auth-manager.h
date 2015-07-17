@@ -22,7 +22,7 @@
 #define NM_AUTH_MANAGER_H
 
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-auth-subject.h"
 
 G_BEGIN_DECLS

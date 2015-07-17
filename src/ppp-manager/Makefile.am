@@ -3,6 +3,7 @@ if WITH_PPP
 AM_CPPFLAGS = \
 	-I${top_srcdir}/include \
 	-I${top_srcdir}/libnm-core \
+	-I${top_srcdir}/src \
 	-I${top_builddir}/libnm-core \
 	-DG_LOG_DOMAIN=\""nm-pppd-plugin"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \

@@ -29,10 +29,9 @@
 #include <errno.h>
 #include <unistd.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-dhcp-listener.h"
 #include "nm-core-internal.h"
-#include "nm-logging.h"
 #include "nm-bus-manager.h"
 #include "nm-dbus-glib-types.h"
 #include "NetworkManagerUtils.h"

@@ -28,10 +28,9 @@
 #include <stdlib.h>
 #include <uuid/uuid.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
-#include "nm-logging.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-dhcp-client.h"
 #include "nm-dhcp-utils.h"

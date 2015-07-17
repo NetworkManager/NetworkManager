@@ -24,8 +24,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
-#include "nm-glib.h"
-#include "gsystem-local-alloc.h"
+#include "nm-default.h"
 #include "NetworkManagerUtils.h"
 #include "nm-dhcp-dhclient-utils.h"
 #include "nm-dhcp-utils.h"
@@ -33,7 +32,6 @@
 #include "nm-ip4-config.h"
 #include "nm-platform.h"
 #include "nm-macros-internal.h"
-#include "nm-logging.h"
 
 #include "nm-test-utils.h"
 

@@ -27,7 +27,7 @@
 
 #include "nm-exported-object.h"
 #include "nm-dbus-interface.h"
-#include "nm-types.h"
+#include "nm-default.h"
 #include "nm-connection.h"
 #include "nm-rfkill-manager.h"
 #include "NetworkManagerUtils.h"

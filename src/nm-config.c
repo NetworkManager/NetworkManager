@@ -26,13 +26,11 @@
 
 #include <glib/gi18n.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-config.h"
-#include "nm-logging.h"
 #include "nm-utils.h"
 #include "nm-device.h"
 #include "NetworkManagerUtils.h"
-#include "gsystem-local-alloc.h"
 #include "nm-enum-types.h"
 #include "nm-core-internal.h"
 #include "nm-keyfile-internal.h"

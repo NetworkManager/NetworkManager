@@ -22,8 +22,7 @@
 #define NM_CONFIG_DATA_H
 
 
-#include "nm-glib.h"
-#include "nm-types.h"
+#include "nm-default.h"
 
 G_BEGIN_DECLS
 

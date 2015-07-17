@@ -26,9 +26,8 @@
 #include <string.h>
 #include <sys/stat.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-session-monitor.h"
-#include "nm-logging.h"
 #include "NetworkManagerUtils.h"
 
 #ifdef SESSION_TRACKING_SYSTEMD

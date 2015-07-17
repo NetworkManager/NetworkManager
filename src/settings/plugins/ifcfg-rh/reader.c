@@ -48,14 +48,12 @@
 #include <nm-setting-bridge-port.h>
 #include <nm-setting-dcb.h>
 #include <nm-setting-generic.h>
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-core-internal.h"
 #include <nm-utils.h>
 
 #include "nm-platform.h"
 #include "NetworkManagerUtils.h"
-#include "nm-logging.h"
-#include "gsystem-local-alloc.h"
 
 #include "common.h"
 #include "shvar.h"

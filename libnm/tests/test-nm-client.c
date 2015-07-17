@@ -26,7 +26,7 @@
 
 #include <NetworkManager.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "common.h"
 
 #include "nm-test-utils.h"

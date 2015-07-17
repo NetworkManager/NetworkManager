@@ -24,7 +24,7 @@
 #ifndef __NETWORKMANAGER_DNS_MANAGER_H__
 #define __NETWORKMANAGER_DNS_MANAGER_H__
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
 

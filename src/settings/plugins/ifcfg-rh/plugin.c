@@ -42,13 +42,12 @@
 
 #include <nm-setting-connection.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "common.h"
 #include "nm-dbus-glib-types.h"
 #include "plugin.h"
 #include "nm-system-config-interface.h"
 #include "nm-config.h"
-#include "nm-logging.h"
 #include "NetworkManagerUtils.h"
 
 #include "nm-ifcfg-connection.h"
@@ -56,7 +55,6 @@
 #include "reader.h"
 #include "writer.h"
 #include "utils.h"
-#include "gsystem-local-alloc.h"
 
 #define IFCFGRH1_DBUS_SERVICE_NAME "com.redhat.ifcfgrh1"
 #define IFCFGRH1_DBUS_OBJECT_PATH "/com/redhat/ifcfgrh1"

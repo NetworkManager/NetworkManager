@@ -27,7 +27,7 @@
 #include <netinet/in.h>
 
 #include "nm-property-compare.h"
-#include "nm-glib.h"
+#include "nm-default.h"
 
 static gint
 _nm_property_compare_collection (GVariant *value1, GVariant *value2)

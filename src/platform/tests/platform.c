@@ -26,7 +26,7 @@
 #include <arpa/inet.h>
 #include <netlink/route/addr.h>
 
-#include "gsystem-local-alloc.h"
+#include "nm-default.h"
 #include "nm-platform.h"
 #include "nm-linux-platform.h"
 #include "nm-fake-platform.h"

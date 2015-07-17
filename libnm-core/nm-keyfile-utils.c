@@ -23,8 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "nm-glib.h"
-#include "gsystem-local-alloc.h"
+#include "nm-default.h"
 #include "nm-keyfile-utils.h"
 #include "nm-keyfile-internal.h"
 #include "nm-setting-wired.h"

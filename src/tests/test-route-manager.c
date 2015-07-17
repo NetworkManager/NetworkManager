@@ -23,12 +23,11 @@
 #include <arpa/inet.h>
 #include <linux/rtnetlink.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "test-common.h"
 
 #include "nm-platform.h"
 #include "nm-route-manager.h"
-#include "nm-logging.h"
 
 #include "nm-test-utils.h"
 

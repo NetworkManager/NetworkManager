@@ -24,8 +24,7 @@
 #include <dbus/dbus-glib.h>
 
 #include <nm-connection.h>
-#include "nm-glib.h"
-#include "nm-types.h"
+#include "nm-default.h"
 
 #define NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK     "org.freedesktop.NetworkManager.enable-disable-network"
 #define NM_AUTH_PERMISSION_SLEEP_WAKE                 "org.freedesktop.NetworkManager.sleep-wake"

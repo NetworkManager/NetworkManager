@@ -24,10 +24,9 @@
 #include <string.h>
 #include <dbus/dbus.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-supplicant-manager.h"
 #include "nm-supplicant-interface.h"
-#include "nm-logging.h"
 #include "nm-core-internal.h"
 
 #define NM_SUPPLICANT_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \

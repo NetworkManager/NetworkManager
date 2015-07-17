@@ -24,8 +24,7 @@
 
 #include <stdio.h>
 
-#include "nm-glib.h"
-#include "nm-types.h"
+#include "nm-default.h"
 #include "nm-connection.h"
 
 typedef enum {

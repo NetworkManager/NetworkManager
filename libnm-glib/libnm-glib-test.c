@@ -31,7 +31,7 @@
 #include <arpa/inet.h>
 
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-client.h"
 #include "nm-device.h"
 #include "nm-device-ethernet.h"

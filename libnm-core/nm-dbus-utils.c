@@ -23,7 +23,7 @@
 #include <string.h>
 #include <glib/gi18n-lib.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-core-internal.h"
 
 typedef struct {

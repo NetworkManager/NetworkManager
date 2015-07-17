@@ -27,7 +27,7 @@
 #include <libmm-glib.h>
 
 #include "nm-modem-manager.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 #include "nm-modem.h"
 #include "nm-modem-broadband.h"
 

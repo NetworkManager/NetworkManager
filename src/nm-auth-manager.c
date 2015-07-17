@@ -22,7 +22,7 @@
 
 #include "nm-auth-manager.h"
 
-#include "nm-logging.h"
+#include "nm-default.h"
 #include "nm-errors.h"
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"

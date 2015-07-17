@@ -31,7 +31,7 @@
 
 #include "nm-core-internal.h"
 #include "nm-system-config-interface.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 
 #include "parser.h"
 #include "plugin.h"

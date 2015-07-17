@@ -26,7 +26,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <nm-utils.h>
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-dbus-interface.h"
 #include "nm-object.h"
 #include "nm-object-cache.h"

@@ -22,7 +22,7 @@
 
 #include <string.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-dbus-interface.h"
 #include "nm-dhcp6-config.h"
 #include "nm-dhcp6-config-glue.h"

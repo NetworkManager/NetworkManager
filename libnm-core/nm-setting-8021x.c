@@ -25,6 +25,7 @@
 #include <string.h>
 #include <glib/gi18n-lib.h>
 
+#include "nm-default.h"
 #include "nm-setting-8021x.h"
 #include "nm-utils.h"
 #include "crypto.h"
@@ -32,7 +33,6 @@
 #include "nm-setting-private.h"
 #include "nm-core-enum-types.h"
 #include "nm-macros-internal.h"
-#include "gsystem-local-alloc.h"
 
 /**
  * SECTION:nm-setting-8021x

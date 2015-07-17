@@ -27,11 +27,10 @@
 #include <netdb.h>
 
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-policy.h"
 #include "NetworkManagerUtils.h"
 #include "nm-activation-request.h"
-#include "nm-logging.h"
 #include "nm-device.h"
 #include "nm-default-route-manager.h"
 #include "nm-setting-ip4-config.h"

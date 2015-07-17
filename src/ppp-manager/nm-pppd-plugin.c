@@ -34,7 +34,7 @@
 #include <pppd/eui64.h>
 #include <pppd/ipv6cp.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-dbus-interface.h"
 #include "nm-pppd-plugin.h"
 #include "nm-ppp-status.h"

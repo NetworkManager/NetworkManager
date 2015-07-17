@@ -22,7 +22,7 @@
 
 #include "config.h"
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-param-spec-specialized.h"
 
 struct _NMParamSpecSpecialized {

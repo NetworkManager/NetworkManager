@@ -27,7 +27,7 @@
 
 #include "nm-modem-broadband.h"
 #include "nm-core-internal.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
 #include "nm-platform.h"

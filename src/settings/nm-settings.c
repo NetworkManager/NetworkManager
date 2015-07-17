@@ -38,7 +38,6 @@
 #include <selinux/selinux.h>
 #endif
 
-#include "gsystem-local-alloc.h"
 #include <nm-dbus-interface.h>
 #include <nm-connection.h>
 #include <nm-setting-8021x.h>
@@ -66,7 +65,7 @@
 #include "nm-settings.h"
 #include "nm-settings-connection.h"
 #include "nm-system-config-interface.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 #include "nm-bus-manager.h"
 #include "nm-auth-utils.h"
 #include "nm-auth-subject.h"
