@@ -3580,10 +3580,10 @@ validate_dns_option (const char *name, gboolean numeric, gboolean ipv6,
 /**
  * _nm_utils_dns_option_validate
  * @option: option string
- * @out_name: (out) (allow-none) the option name
- * @out_value: (out) (allow-none) the option value
+ * @out_name: (out) (allow-none): the option name
+ * @out_value: (out) (allow-none): the option value
  * @ipv6: whether the option refers to a IPv6 configuration
- * @option_descs: (allow-none) an array of NMUtilsDNSOptionDesc which describes the
+ * @option_descs: (allow-none): an array of NMUtilsDNSOptionDesc which describes the
  * valid options
  *
  * Parses a DNS option in the form "name" or "name:number" and, if
