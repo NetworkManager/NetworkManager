@@ -26,7 +26,7 @@
 #ifndef __NM_DBUS_INTERFACE_H__
 #define __NM_DBUS_INTERFACE_H__
 
-#include "nm-version.h"
+#include <nm-version.h>
 
 /*
  * dbus services details
