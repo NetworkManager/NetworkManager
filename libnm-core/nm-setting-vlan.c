@@ -742,7 +742,7 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 * property: flags
 	 * variable: VLAN_FLAGS, REORDER_HDR
 	 * values: "GVRP", "LOOSE_BINDING" for VLAN_FLAGS; 0 or 1 for REORDER_HDR
-	 * description: Parent interface of the VLAN.
+	 * description: VLAN flags.
 	 * ---end---
 	 */
 	g_object_class_install_property
