@@ -34,6 +34,7 @@
 #include "common.h"
 #include "utils.h"
 #include "nm-keyfile-internal.h"
+#include "gsystem-local-alloc.h"
 
 
 typedef struct {
@@ -237,10 +238,9 @@ _internal_write_connection (NMConnection *connection,
                             GError **error)
 {
 	GKeyFile *key_file;
-	char *data;
+	gs_free char *data = NULL;
 	gsize len;
-	gboolean success = FALSE;
-	char *path;
+	gs_free char *path = NULL;
 	const char *id;
 	WriteInfo info = { 0 };
 	GError *local_err = NULL;
@@ -312,8 +312,7 @@ _internal_write_connection (NMConnection *connection,
 				/* this really should not happen, we tried hard to find an unused name... bail out. */
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 				                    "could not find suitable keyfile file name (%s already used)", path);
-				g_free (path);
-				goto out;
+				return FALSE;
 			}
 			/* Both our preferred path based on connection id and id-uuid are taken.
 			 * Fallback to @existing_path */
@@ -334,8 +333,7 @@ _internal_write_connection (NMConnection *connection,
 		             "%s.%d: error writing to file '%s': %s", __FILE__, __LINE__,
 		             path, local_err->message);
 		g_error_free (local_err);
-		g_free (path);
-		goto out;
+		return FALSE;
 	}
 
 	if (chown (path, owner_uid, owner_grp) < 0) {
@@ -343,25 +341,22 @@ _internal_write_connection (NMConnection *connection,
 		             "%s.%d: error chowning '%s': %d", __FILE__, __LINE__,
 		             path, errno);
 		unlink (path);
-	} else {
-		if (chmod (path, S_IRUSR | S_IWUSR) < 0) {
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-			             "%s.%d: error setting permissions on '%s': %d", __FILE__,
-			             __LINE__, path, errno);
-			unlink (path);
-		} else {
-			if (out_path && g_strcmp0 (existing_path, path)) {
-				*out_path = path;  /* pass path out to caller */
-				path = NULL;
-			}
-			success = TRUE;
-		}
+		return FALSE;
 	}
-	g_free (path);
 
-out:
-	g_free (data);
-	return success;
+	if (chmod (path, S_IRUSR | S_IWUSR) < 0) {
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+		             "%s.%d: error setting permissions on '%s': %d", __FILE__,
+		             __LINE__, path, errno);
+		unlink (path);
+		return FALSE;
+	}
+
+	if (out_path && g_strcmp0 (existing_path, path)) {
+		*out_path = path;  /* pass path out to caller */
+		path = NULL;
+	}
+	return TRUE;
 }
 
 gboolean
