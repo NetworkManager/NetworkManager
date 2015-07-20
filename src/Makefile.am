@@ -300,6 +300,8 @@ nm_sources = \
 	nm-activation-request.h \
 	nm-active-connection.c \
 	nm-active-connection.h \
+	nm-audit-manager.c \
+	nm-audit-manager.h \
 	nm-bus-manager.c \
 	nm-bus-manager.h \
 	nm-config.c \
@@ -418,6 +420,7 @@ AM_CPPFLAGS += \
 	$(LIBNDP_CFLAGS) \
 	$(LIBSOUP_CFLAGS) \
 	$(SELINUX_CFLAGS) \
+	$(LIBAUDIT_CFLAGS) \
 	$(SYSTEMD_LOGIN_CFLAGS) \
 	$(SYSTEMD_JOURNAL_CFLAGS) \
 	$(SYSTEMD_NM_CFLAGS) \
@@ -460,7 +463,8 @@ libNetworkManager_la_LIBADD = \
 	$(LIBNDP_LIBS) \
 	$(LIBDL) \
 	$(LIBM) \
-	$(SELINUX_LIBS)
+	$(SELINUX_LIBS) \
+	$(LIBAUDIT_LIBS)
 
 if WITH_LIBSOUP
 libNetworkManager_la_LIBADD += $(LIBSOUP_LIBS)

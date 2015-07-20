@@ -494,6 +494,22 @@ else
     AC_DEFINE(HAVE_SELINUX, 0, [Define if you have SELinux support])
 fi
 
+# libaudit support
+AC_ARG_WITH(libaudit, AS_HELP_STRING([--with-libaudit=yes|no|auto], [Build with audit daemon support (default: auto)]),,[with_libaudit=auto])
+if test "$with_libaudit" = "yes" -o "$with_libaudit" = "auto"; then
+    PKG_CHECK_MODULES(LIBAUDIT, audit, [have_libaudit=yes], [have_libaudit=no])
+else
+    have_libaudit=no
+fi
+if test "$with_libaudit" = "yes" -a "$have_libaudit" = "no"; then
+    AC_MSG_ERROR([You must have libaudit installed to build --with-libaudit=yes.])
+fi
+if test "$have_libaudit" = "yes"; then
+    AC_DEFINE(HAVE_LIBAUDIT, 1, [Define if you have libaudit support])
+else
+    AC_DEFINE(HAVE_LIBAUDIT, 0, [Define if you have libaudit support])
+fi
+
 # libnl support for the linux platform
 PKG_CHECK_MODULES(LIBNL, libnl-3.0 >= 3.2.8 libnl-route-3.0 libnl-genl-3.0)
 
@@ -1108,6 +1124,7 @@ echo "  polkit agent: ${enable_polkit_agent}"
 echo "  selinux: $have_selinux"
 echo "  systemd-journald: $have_systemd_journal (logging.backend: ${nm_config_logging_backend_default})"
 echo "  hostname persist: ${hostname_persist}"
+echo "  libaudit: $have_libaudit"
 echo
 
 echo "Features:"
