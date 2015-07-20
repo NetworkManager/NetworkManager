@@ -72,8 +72,8 @@ gboolean nm_bus_manager_get_caller_info (NMBusManager *self,
                                          gulong *out_uid,
                                          gulong *out_pid);
 
-gboolean nm_bus_manager_connection_is_private (NMBusManager *self,
-                                               GDBusConnection *connection);
+const char *nm_bus_manager_connection_get_private_name (NMBusManager *self,
+                                                        GDBusConnection *connection);
 
 gboolean nm_bus_manager_get_unix_user (NMBusManager *self,
                                        const char *sender,
@@ -87,12 +87,13 @@ gboolean nm_bus_manager_get_caller_info_from_message (NMBusManager *self,
                                                       gulong *out_pid);
 
 void nm_bus_manager_register_object (NMBusManager *self,
-                                     NMExportedObject *object);
+                                     GDBusObjectSkeleton *object);
 
-void nm_bus_manager_unregister_object (NMBusManager *self, NMExportedObject *object);
+void nm_bus_manager_unregister_object (NMBusManager *self,
+                                       GDBusObjectSkeleton *object);
 
-NMExportedObject *nm_bus_manager_get_registered_object (NMBusManager *self,
-                                                        const char *path);
+GDBusObjectSkeleton *nm_bus_manager_get_registered_object (NMBusManager *self,
+                                                           const char *path);
 
 void nm_bus_manager_private_server_register (NMBusManager *self,
                                              const char *path,

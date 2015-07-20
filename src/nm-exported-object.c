@@ -35,7 +35,7 @@ static gboolean quitting = FALSE;
 #define _ASSERT_NO_EARLY_EXPORT
 #endif
 
-G_DEFINE_ABSTRACT_TYPE_WITH_CODE (NMExportedObject, nm_exported_object, G_TYPE_OBJECT,
+G_DEFINE_ABSTRACT_TYPE_WITH_CODE (NMExportedObject, nm_exported_object, G_TYPE_DBUS_OBJECT_SKELETON,
                                   prefix_counters = g_hash_table_new (g_str_hash, g_str_equal);
                                   )
 
@@ -63,6 +63,19 @@ typedef struct {
 
 GQuark nm_exported_object_class_info_quark (void);
 G_DEFINE_QUARK (NMExportedObjectClassInfo, nm_exported_object_class_info)
+
+/*****************************************************************************/
+
+#define _NMLOG_PREFIX_NAME                "exported-object"
+#define _NMLOG_DOMAIN                     LOGD_CORE
+
+#define _NMLOG(level, ...) \
+    nm_log (level, _NMLOG_DOMAIN, \
+            "%s[%p]: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+            _NMLOG_PREFIX_NAME, (self) \
+            _NM_UTILS_MACRO_REST (__VA_ARGS__))
+
+/*****************************************************************************/
 
 /* "AddConnectionUnsaved" -> "handle-add-connection-unsaved" */
 char *
@@ -461,6 +474,8 @@ nm_exported_object_create_skeletons (NMExportedObject *self,
 		                                                methods_len,
 		                                                (GObject *) self);
 
+		g_dbus_object_skeleton_add_interface ((GDBusObjectSkeleton *) self, interface);
+
 		priv->interfaces = g_slist_prepend (priv->interfaces, interface);
 	}
 }
@@ -498,6 +513,7 @@ nm_exported_object_destroy_skeletons (NMExportedObject *self)
 		GDBusInterfaceSkeleton *interface = priv->interfaces->data;
 
 		priv->interfaces = g_slist_delete_link (priv->interfaces, priv->interfaces);
+		g_dbus_object_skeleton_remove_interface ((GDBusObjectSkeleton *) self, interface);
 		nm_exported_object_skeleton_release (interface);
 	}
 }
@@ -533,6 +549,11 @@ nm_exported_object_export (NMExportedObject *self)
 	nm_assert (priv->_constructed);
 #endif
 
+	priv->bus_mgr = nm_bus_manager_get ();
+	if (!priv->bus_mgr)
+		g_return_val_if_reached (NULL);
+	g_object_add_weak_pointer ((GObject *) priv->bus_mgr, (gpointer *) &priv->bus_mgr);
+
 	class_export_path = NM_EXPORTED_OBJECT_GET_CLASS (self)->export_path;
 	p = strchr (class_export_path, '%');
 	if (p) {
@@ -551,18 +572,19 @@ nm_exported_object_export (NMExportedObject *self)
 	} else
 		priv->path = g_strdup (class_export_path);
 
+	_LOGT ("export: \"%s\"", priv->path);
+	g_dbus_object_skeleton_set_object_path (G_DBUS_OBJECT_SKELETON (self), priv->path);
+
 	type = G_OBJECT_TYPE (self);
 	while (type != NM_TYPE_EXPORTED_OBJECT) {
 		nm_exported_object_create_skeletons (self, type);
 		type = g_type_parent (type);
 	}
 
-	priv->bus_mgr = g_object_ref (nm_bus_manager_get ());
-
 	/* Important: priv->path and priv->interfaces must not change while
 	 * the object is registered. */
 
-	nm_bus_manager_register_object (priv->bus_mgr, self);
+	nm_bus_manager_register_object (priv->bus_mgr, (GDBusObjectSkeleton *) self);
 
 	return priv->path;
 }
@@ -615,17 +637,23 @@ nm_exported_object_unexport (NMExportedObject *self)
 	priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
 
 	g_return_if_fail (priv->path);
-	g_return_if_fail (priv->bus_mgr);
 
 	/* Important: priv->path and priv->interfaces must not change while
 	 * the object is registered. */
 
-	nm_bus_manager_unregister_object (priv->bus_mgr, self);
+	_LOGT ("unexport: \"%s\"", priv->path);
+
+	if (priv->bus_mgr) {
+		nm_bus_manager_unregister_object (priv->bus_mgr, (GDBusObjectSkeleton *) self);
+		g_object_remove_weak_pointer ((GObject *) priv->bus_mgr, (gpointer *) &priv->bus_mgr);
+		priv->bus_mgr = NULL;
+	}
 
 	nm_exported_object_destroy_skeletons (self);
 
+	g_dbus_object_skeleton_set_object_path ((GDBusObjectSkeleton *) self, NULL);
+
 	g_clear_pointer (&priv->path, g_free);
-	g_clear_object (&priv->bus_mgr);
 
 	if (nm_clear_g_source (&priv->notify_idle_id)) {
 		/* We had a notification queued. Since we removed all interfaces,

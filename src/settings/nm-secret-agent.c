@@ -679,7 +679,7 @@ nm_secret_agent_new (GDBusMethodInvocation *context,
 
 	priv->bus_mgr = g_object_ref (nm_bus_manager_get ());
 	priv->connection = g_object_ref (connection);
-	priv->connection_is_private = nm_bus_manager_connection_is_private (priv->bus_mgr, connection);
+	priv->connection_is_private = !!nm_bus_manager_connection_get_private_name (priv->bus_mgr, connection);
 
 	_LOGt ("constructed: %s, owner=%s%s%s (%s), private-connection=%d, unique-name=%s%s%s",
 	       (description = _create_description (dbus_owner, identifier, uid)),

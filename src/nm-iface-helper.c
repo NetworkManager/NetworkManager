@@ -523,7 +523,7 @@ gconstpointer nm_config_get (void);
 const char *nm_config_get_dhcp_client (gpointer unused);
 gboolean nm_config_get_configure_and_quit (gpointer unused);
 gconstpointer nm_bus_manager_get (void);
-void nm_bus_manager_register_object (gpointer unused, const char *path, gpointer object);
+void nm_bus_manager_register_object (gpointer unused, gpointer object);
 void nm_bus_manager_unregister_object (gpointer unused, gpointer object);
 
 gconstpointer
@@ -551,7 +551,7 @@ nm_bus_manager_get (void)
 }
 
 void
-nm_bus_manager_register_object (gpointer unused, const char *path, gpointer object)
+nm_bus_manager_register_object (gpointer unused, gpointer object)
 {
 }
 

@@ -52,11 +52,11 @@ void nm_exported_object_skeleton_release (GDBusInterfaceSkeleton *interface);
 #define NM_EXPORTED_OBJECT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_EXPORTED_OBJECT, NMExportedObjectClass))
 
 struct _NMExportedObject {
-	GObject parent;
+	GDBusObjectSkeleton parent;
 };
 
 typedef struct {
-	GObjectClass parent;
+	GDBusObjectSkeletonClass parent;
 
 	const char *export_path;
 	char export_on_construction;
