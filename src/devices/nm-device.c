@@ -756,14 +756,14 @@ nm_device_get_priority (NMDevice *self)
 		return 400;
 	case NM_DEVICE_TYPE_BRIDGE:
 		return 425;
-	case NM_DEVICE_TYPE_MODEM:
-		return 450;
-	case NM_DEVICE_TYPE_BT:
-		return 550;
 	case NM_DEVICE_TYPE_WIFI:
 		return 600;
 	case NM_DEVICE_TYPE_OLPC_MESH:
 		return 650;
+	case NM_DEVICE_TYPE_MODEM:
+		return 700;
+	case NM_DEVICE_TYPE_BT:
+		return 750;
 	case NM_DEVICE_TYPE_GENERIC:
 		return 950;
 	case NM_DEVICE_TYPE_UNKNOWN:
