@@ -55,6 +55,7 @@
 #include "nm-utils.h"
 #include "nm-dbus-helpers.h"
 #include "nm-setting-connection.h"
+#include "nm-macros-internal.h"
 
 #include "nmdbus-device.h"
 
@@ -1978,6 +1979,8 @@ nm_device_get_metered (NMDevice *device)
 
 	return NM_DEVICE_GET_PRIVATE (device)->metered;
 }
+
+NM_BACKPORT_SYMBOL (libnm_1_0_6, NMMetered, nm_device_get_metered, (NMDevice *device), (device));
 
 /**
  * nm_device_is_software:

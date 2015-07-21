@@ -783,6 +783,11 @@ nm_setting_connection_get_metered (NMSettingConnection *setting)
 	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->metered;
 }
 
+NM_BACKPORT_SYMBOL (libnm_1_0_6, NMMetered, nm_setting_connection_get_metered, (NMSettingConnection *setting), (setting));
+
+NM_BACKPORT_SYMBOL (libnm_1_0_6, GType, nm_metered_get_type, (void), ());
+
+
 static void
 _set_error_missing_base_setting (GError **error, const char *type)
 {
