@@ -3356,7 +3356,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 	}
 
 	gateway = nm_ip4_config_get_gateway (composite);
-	if (   !gateway
+	if (   !nm_ip4_config_has_gateway (composite)
 	    && nm_device_get_device_type (self) != NM_DEVICE_TYPE_MODEM)
 		goto END_ADD_DEFAULT_ROUTE;
 
