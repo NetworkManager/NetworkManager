@@ -2288,7 +2288,7 @@ set_property (GObject *object, guint prop_id,
 		gateway = g_value_get_string (value);
 		g_return_if_fail (!gateway || nm_utils_ipaddr_valid (NM_SETTING_IP_CONFIG_GET_FAMILY (setting), gateway));
 		g_free (priv->gateway);
-		priv->gateway = canonicalize_ip (NM_SETTING_IP_CONFIG_GET_FAMILY (setting), gateway, TRUE);
+		priv->gateway = canonicalize_ip (NM_SETTING_IP_CONFIG_GET_FAMILY (setting), gateway, gateway == NULL);
 		break;
 	case PROP_ROUTES:
 		g_ptr_array_unref (priv->routes);
