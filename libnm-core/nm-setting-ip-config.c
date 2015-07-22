@@ -71,10 +71,8 @@ canonicalize_ip (int family, const char *ip, gboolean null_any)
 	char addr_str[NM_UTILS_INET_ADDRSTRLEN];
 	int ret;
 
-	if (!ip) {
-		g_return_val_if_fail (null_any == TRUE, NULL);
+	if (!ip)
 		return NULL;
-	}
 
 	ret = inet_pton (family, ip, addr_bytes);
 	g_return_val_if_fail (ret == 1, NULL);
@@ -92,6 +90,11 @@ canonicalize_ip (int family, const char *ip, gboolean null_any)
 static gboolean
 valid_ip (int family, const char *ip, GError **error)
 {
+	if (!ip) {
+		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+		             family == AF_INET ? _("Missing IPv4 address") : _("Missing IPv6 address'"));
+		return FALSE;
+	}
 	if (!nm_utils_ipaddr_valid (family, ip)) {
 		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
 		             family == AF_INET ? _("Invalid IPv4 address '%s'") : _("Invalid IPv6 address '%s'"),
@@ -2283,7 +2286,7 @@ set_property (GObject *object, guint prop_id,
 		gateway = g_value_get_string (value);
 		g_return_if_fail (!gateway || nm_utils_ipaddr_valid (NM_SETTING_IP_CONFIG_GET_FAMILY (setting), gateway));
 		g_free (priv->gateway);
-		priv->gateway = canonicalize_ip (NM_SETTING_IP_CONFIG_GET_FAMILY (setting), gateway, TRUE);
+		priv->gateway = canonicalize_ip (NM_SETTING_IP_CONFIG_GET_FAMILY (setting), gateway, FALSE);
 		break;
 	case PROP_ROUTES:
 		g_ptr_array_unref (priv->routes);

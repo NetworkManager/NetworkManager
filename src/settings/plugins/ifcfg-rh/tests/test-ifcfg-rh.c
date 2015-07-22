@@ -6572,7 +6572,7 @@ test_write_wired_static_ip6_only_gw (gconstpointer user_data)
 	g_assert (addr6);
 
 	/* assert that the gateway was written and reloaded as expected */
-	if (!gateway6 || !strcmp (gateway6, "::")) {
+	if (!gateway6) {
 		g_assert (nm_setting_ip_config_get_gateway (s_ip6) == NULL);
 		g_assert (written_ifcfg_gateway == NULL);
 	} else {
