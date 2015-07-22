@@ -274,13 +274,14 @@ typedef struct {
 	struct {
 		gboolean v4_has;
 		gboolean v4_is_assumed;
-		gboolean v4_configure_first_time;
 		NMPlatformIP4Route v4;
 		gboolean v6_has;
 		gboolean v6_is_assumed;
-		gboolean v6_configure_first_time;
 		NMPlatformIP6Route v6;
 	} default_route;
+
+	gboolean v4_commit_first_time;
+	gboolean v6_commit_first_time;
 
 	/* DHCPv4 tracking */
 	NMDhcpClient *  dhcp4_client;
@@ -3316,7 +3317,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 	priv->default_route.v4_is_assumed = TRUE;
 
 	routes_full_sync =    commit
-	                   && priv->default_route.v4_configure_first_time
+	                   && priv->v4_commit_first_time
 	                   && !nm_device_uses_assumed_connection (self);
 
 	if (!commit) {
@@ -3328,7 +3329,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 	    = nm_default_route_manager_ip4_connection_has_default_route (nm_default_route_manager_get (),
 	                                                                 connection, &connection_is_never_default);
 
-	if (   !priv->default_route.v4_configure_first_time
+	if (   !priv->v4_commit_first_time
 	    && !nm_device_uses_assumed_connection (self)
 	    && connection_is_never_default) {
 		/* If the connection is explicitly configured as never-default, we enforce the (absence of the)
@@ -3344,7 +3345,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 
 	/* we are about to commit (for a non-assumed connection). Enforce whatever we have
 	 * configured. */
-	priv->default_route.v4_configure_first_time = FALSE;
+	priv->v4_commit_first_time = FALSE;
 	priv->default_route.v4_is_assumed = FALSE;
 
 	if (!connection_has_default_route)
@@ -3935,7 +3936,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 	priv->default_route.v6_is_assumed = TRUE;
 
 	routes_full_sync =    commit
-	                   && priv->default_route.v6_configure_first_time
+	                   && priv->v6_commit_first_time
 	                   && !nm_device_uses_assumed_connection (self);
 
 	if (!commit) {
@@ -3947,7 +3948,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 	    = nm_default_route_manager_ip6_connection_has_default_route (nm_default_route_manager_get (),
 	                                                                 connection, &connection_is_never_default);
 
-	if (   !priv->default_route.v6_configure_first_time
+	if (   !priv->v6_commit_first_time
 	    && !nm_device_uses_assumed_connection (self)
 	    && connection_is_never_default) {
 		/* If the connection is explicitly configured as never-default, we enforce the (absence of the)
@@ -3963,7 +3964,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 
 	/* we are about to commit (for a non-assumed connection). Enforce whatever we have
 	 * configured. */
-	priv->default_route.v6_configure_first_time = FALSE;
+	priv->v6_commit_first_time = FALSE;
 	priv->default_route.v6_is_assumed = FALSE;
 
 	if (!connection_has_default_route)
@@ -7943,10 +7944,11 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 
 	priv->default_route.v4_has = FALSE;
 	priv->default_route.v4_is_assumed = TRUE;
-	priv->default_route.v4_configure_first_time = TRUE;
 	priv->default_route.v6_has = FALSE;
 	priv->default_route.v6_is_assumed = TRUE;
-	priv->default_route.v6_configure_first_time = TRUE;
+
+	priv->v4_commit_first_time = TRUE;
+	priv->v6_commit_first_time = TRUE;
 
 	nm_default_route_manager_ip4_update_default_route (nm_default_route_manager_get (), self);
 	nm_default_route_manager_ip6_update_default_route (nm_default_route_manager_get (), self);
@@ -8900,9 +8902,10 @@ nm_device_init (NMDevice *self)
 	priv->ip6_saved_properties = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
 
 	priv->default_route.v4_is_assumed = TRUE;
-	priv->default_route.v4_configure_first_time = TRUE;
 	priv->default_route.v6_is_assumed = TRUE;
-	priv->default_route.v6_configure_first_time = TRUE;
+
+	priv->v4_commit_first_time = TRUE;
+	priv->v6_commit_first_time = TRUE;
 }
 
 static GObject*
