@@ -575,6 +575,9 @@ nm_dhcp_utils_ip4_config_from_options (const char *iface,
 		g_strfreev (nis);
 	}
 
+	str = g_hash_table_lookup (options, "vendor_encapsulated_options");
+	nm_ip4_config_set_metered (ip4_config, str && strstr (str, "ANDROID_METERED"));
+
 	return ip4_config;
 
 error:

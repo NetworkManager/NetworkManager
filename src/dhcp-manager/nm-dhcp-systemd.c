@@ -224,6 +224,8 @@ lease_to_ip4_config (sd_dhcp_lease *lease,
 	guint16 mtu;
 	int r, num;
 	guint64 end_time;
+	uint8_t *data;
+	gboolean metered = FALSE;
 
 	g_return_val_if_fail (lease != NULL, NULL);
 
@@ -354,6 +356,11 @@ lease_to_ip4_config (sd_dhcp_lease *lease,
 		add_option (options, dhcp4_requests, DHCP_OPTION_NTP_SERVER, l->str);
 		g_string_free (l, TRUE);
 	}
+
+	num = sd_dhcp_lease_get_vendor_specific (lease, &data);
+	if (num > 0)
+		metered = !!memmem (data, num, "ANDROID_METERED", STRLEN ("ANDROID_METERED"));
+	nm_ip4_config_set_metered (ip4_config, metered);
 
 	return ip4_config;
 }

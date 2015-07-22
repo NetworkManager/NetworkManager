@@ -51,6 +51,7 @@
 #define NM_MANAGER_PRIMARY_CONNECTION_TYPE "primary-connection-type"
 #define NM_MANAGER_ACTIVATING_CONNECTION "activating-connection"
 #define NM_MANAGER_DEVICES "devices"
+#define NM_MANAGER_METERED "metered"
 
 /* Not exported */
 #define NM_MANAGER_HOSTNAME "hostname"

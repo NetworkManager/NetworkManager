@@ -335,6 +335,14 @@
       </tp:docstring>
     </property>
 
+    <property name="Metered" type="u" access="read" tp:type="NM_METERED">
+      <tp:docstring>
+        Wheter the connectivity is metered. This is equivalent to the
+        metered property of the device associated with the primary
+        connection.
+      </tp:docstring>
+    </property>
+
     <property name="ActivatingConnection" type="o" access="read">
       <tp:docstring>
         The object path of an active connection that is currently

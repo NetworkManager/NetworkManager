@@ -403,7 +403,6 @@ typedef enum {
 	NM_DEVICE_STATE_FAILED       = 120
 } NMDeviceState;
 
-
 /**
  * NMDeviceStateReason:
  * @NM_DEVICE_STATE_REASON_NONE: No reason given
@@ -540,6 +539,26 @@ typedef enum {
 	NM_DEVICE_STATE_REASON_PARENT_MANAGED_CHANGED = 62,
 } NMDeviceStateReason;
 
+/**
+ * NMMetered:
+ * @NM_METERED_UNKNOWN:     The metered status is unknown
+ * @NM_METERED_YES:         Metered, the value was statically set
+ * @NM_METERED_NO:          Not metered, the value was statically set
+ * @NM_METERED_GUESS_YES:   Metered, the value was guessed
+ * @NM_METERED_GUESS_NO:    Not metered, the value was guessed
+ *
+ * (Corresponds to the NM_METERED type in nm-device.xml.)
+ *
+ * Since: 1.0.6
+ **/
+NM_AVAILABLE_IN_1_0_6
+typedef enum {
+	NM_METERED_UNKNOWN    = 0,
+	NM_METERED_YES        = 1,
+	NM_METERED_NO         = 2,
+	NM_METERED_GUESS_YES  = 3,
+	NM_METERED_GUESS_NO   = 4,
+} NMMetered;
 
 /**
  * NMActiveConnectionState:

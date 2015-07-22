@@ -57,7 +57,8 @@
 #define NM_ACTIVE_CONNECTION_INT_MASTER_READY   "int-master-ready"
 
 /* Internal signals*/
-#define NM_ACTIVE_CONNECTION_DEVICE_CHANGED     "device-changed"
+#define NM_ACTIVE_CONNECTION_DEVICE_CHANGED          "device-changed"
+#define NM_ACTIVE_CONNECTION_DEVICE_METERED_CHANGED  "device-metered-changed"
 
 struct _NMActiveConnection {
 	GObject parent;
@@ -78,6 +79,9 @@ typedef struct {
 	void (*device_changed) (NMActiveConnection *connection,
 	                        NMDevice *new_device,
 	                        NMDevice *old_device);
+
+	void (*device_metered_changed) (NMActiveConnection *connection,
+	                                NMMetered new_value);
 } NMActiveConnectionClass;
 
 GType         nm_active_connection_get_type (void);

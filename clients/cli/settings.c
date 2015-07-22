@@ -60,6 +60,7 @@ NmcOutputField nmc_fields_setting_connection[] = {
 	SETTING_FIELD (NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES, 13),    /* 13 */
 	SETTING_FIELD (NM_SETTING_CONNECTION_SECONDARIES, 40),           /* 14 */
 	SETTING_FIELD (NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT, 30),  /* 15 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_METERED, 10),               /* 16 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_CONNECTION_ALL     "name"","\
@@ -77,7 +78,8 @@ NmcOutputField nmc_fields_setting_connection[] = {
                                               NM_SETTING_CONNECTION_SLAVE_TYPE","\
                                               NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES","\
                                               NM_SETTING_CONNECTION_SECONDARIES","\
-                                              NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT
+                                              NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT","\
+                                              NM_SETTING_CONNECTION_METERED
 #define NMC_FIELDS_SETTING_CONNECTION_COMMON  NMC_FIELDS_SETTING_CONNECTION_ALL
 
 /* Available fields for NM_SETTING_WIRED_SETTING_NAME */
@@ -2744,6 +2746,51 @@ nmc_property_connection_describe_secondaries (NMSetting *setting, const char *pr
 	         "Example: private-openvpn, fe6ba5d8-c2fc-4aae-b2e3-97efddd8d9a7\n");
 }
 
+/* 'metered' */
+static char *
+nmc_property_connection_get_metered (NMSetting *setting, NmcPropertyGetType get_type)
+{
+	NMSettingConnection *s_conn = NM_SETTING_CONNECTION (setting);
+
+	switch (nm_setting_connection_get_metered (s_conn)) {
+	case NM_METERED_YES:
+		return g_strdup (_("yes"));
+	case NM_METERED_NO:
+		return g_strdup (_("no"));
+	case NM_METERED_UNKNOWN:
+	default:
+		return g_strdup (_("unknown"));
+	}
+}
+
+static gboolean
+nmc_property_connection_set_metered (NMSetting *setting, const char *prop,
+                                     const char *val, GError **error)
+{
+	NMMetered metered;
+	NMCTriStateValue ts_val;
+
+	if (!nmc_string_to_tristate (val, &ts_val, error))
+		return FALSE;
+
+	switch (ts_val) {
+	case NMC_TRI_STATE_YES:
+		metered = NM_METERED_YES;
+		break;
+	case NMC_TRI_STATE_NO:
+		metered = NM_METERED_NO;
+		break;
+	case NMC_TRI_STATE_UNKNOWN:
+		metered = NM_METERED_UNKNOWN;
+		break;
+	default:
+		g_assert_not_reached();
+	}
+
+	g_object_set (setting, prop, metered, NULL);
+	return TRUE;
+}
+
 /* --- NM_SETTING_802_1X_SETTING_NAME property setter functions --- */
 #define DEFINE_SETTER_STR_LIST(def_func, set_func) \
 	static gboolean \
@@ -5324,6 +5371,13 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL);
+	nmc_add_prop_funcs (GLUE (CONNECTION, METERED),
+	                    nmc_property_connection_get_metered,
+	                    nmc_property_connection_set_metered,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
 
 	/* Add editable properties for NM_SETTING_DCB_SETTING_NAME */
 	nmc_add_prop_funcs (GLUE (DCB, APP_FCOE_FLAGS),
@@ -6684,6 +6738,7 @@ setting_connection_details (NMSetting *setting, NmCli *nmc,  const char *one_pro
 	set_val_str (arr, 13, nmc_property_connection_get_autoconnect_slaves (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 14, nmc_property_connection_get_secondaries (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 15, nmc_property_connection_get_gateway_ping_timeout (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 16, nmc_property_connection_get_metered (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */

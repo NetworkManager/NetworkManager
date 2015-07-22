@@ -59,6 +59,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES "autoconnect-slaves"
 #define NM_SETTING_CONNECTION_SECONDARIES    "secondaries"
 #define NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT "gateway-ping-timeout"
+#define NM_SETTING_CONNECTION_METERED        "metered"
 
 /* Types for property values */
 /**
@@ -142,6 +143,8 @@ void        nm_setting_connection_remove_secondary     (NMSettingConnection *set
 gboolean    nm_setting_connection_remove_secondary_by_value (NMSettingConnection *setting, const char *sec_uuid);
 
 guint32     nm_setting_connection_get_gateway_ping_timeout (NMSettingConnection *setting);
+NM_AVAILABLE_IN_1_0_6
+NMMetered   nm_setting_connection_get_metered (NMSettingConnection *setting);
 
 G_END_DECLS
 

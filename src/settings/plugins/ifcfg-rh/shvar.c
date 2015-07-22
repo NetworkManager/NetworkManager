@@ -303,11 +303,11 @@ svGetValueFull (shvarFile *s, const char *key, gboolean verbatim)
  * return FALSE if <key> resolves to any non-truth value (e.g. "no", "n", "false")
  * return <default> otherwise
  */
-gboolean
-svTrueValue (shvarFile *s, const char *key, gboolean def)
+gint
+svTrueValue (shvarFile *s, const char *key, gint def)
 {
 	char *tmp;
-	gboolean returnValue = def;
+	gint returnValue = def;
 
 	tmp = svGetValue (s, key, FALSE);
 	if (!tmp)

@@ -81,6 +81,7 @@ typedef struct {
 	char *driver_version;
 	char *firmware_version;
 	char *type_description;
+	NMMetered metered;
 	NMDeviceCapabilities capabilities;
 	gboolean managed;
 	gboolean firmware_missing;
@@ -130,6 +131,7 @@ enum {
 	PROP_AVAILABLE_CONNECTIONS,
 	PROP_PHYSICAL_PORT_ID,
 	PROP_MTU,
+	PROP_METERED,
 
 	LAST_PROP
 };
@@ -193,6 +195,7 @@ init_dbus (NMObject *object)
 		{ NM_DEVICE_AVAILABLE_CONNECTIONS, &priv->available_connections, NULL, NM_TYPE_REMOTE_CONNECTION },
 		{ NM_DEVICE_PHYSICAL_PORT_ID,  &priv->physical_port_id },
 		{ NM_DEVICE_MTU,               &priv->mtu },
+		{ NM_DEVICE_METERED,           &priv->metered },
 
 		/* Properties that exist in D-Bus but that we don't track */
 		{ "ip4-address", NULL },
@@ -448,6 +451,9 @@ get_property (GObject *object,
 		break;
 	case PROP_MTU:
 		g_value_set_uint (value, nm_device_get_mtu (device));
+		break;
+	case PROP_METERED:
+		g_value_set_uint (value, nm_device_get_metered (device));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -790,6 +796,20 @@ nm_device_class_init (NMDeviceClass *device_class)
 		(object_class, PROP_MTU,
 		 g_param_spec_uint (NM_DEVICE_MTU, "", "",
 		                    0, G_MAXUINT32, 1500,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMDevice:metered:
+	 *
+	 * Whether the device is metered.
+	 *
+	 * Since: 1.0.6
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_METERED,
+		 g_param_spec_uint (NM_DEVICE_METERED, "", "",
+		                    0, G_MAXUINT32, NM_METERED_UNKNOWN,
 		                    G_PARAM_READABLE |
 		                    G_PARAM_STATIC_STRINGS));
 
@@ -1881,6 +1901,24 @@ nm_device_get_mtu (NMDevice *device)
 	g_return_val_if_fail (NM_IS_DEVICE (device), 0);
 
 	return NM_DEVICE_GET_PRIVATE (device)->mtu;
+}
+
+/**
+ * nm_device_get_metered:
+ * @device: a #NMDevice
+ *
+ * Gets the metered setting of a #NMDevice.
+ *
+ * Returns: the metered setting.
+ *
+ * Since: 1.0.6
+ **/
+NMMetered
+nm_device_get_metered (NMDevice *device)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (device), NM_METERED_UNKNOWN);
+
+	return NM_DEVICE_GET_PRIVATE (device)->metered;
 }
 
 /**
