@@ -616,7 +616,7 @@ nm_ip4_config_merge (NMIP4Config *dst, const NMIP4Config *src)
 
 	if (dst_priv->route_metric == -1)
 		dst_priv->route_metric = src_priv->route_metric;
-	else
+	else if (src_priv->route_metric != -1)
 		dst_priv->route_metric = MIN (dst_priv->route_metric, src_priv->route_metric);
 
 	/* domains */
