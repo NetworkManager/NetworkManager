@@ -1290,7 +1290,9 @@ _resync_idle_reschedule (NMDefaultRouteManager *self)
 			g_source_remove (priv->resync.idle_handle);
 		else
 			_LOGD (0, "resync: schedule on idle");
-		priv->resync.idle_handle = g_idle_add ((GSourceFunc) _resync_idle_now, self);
+		/* Schedule this at low priority so that on an external change to platform
+		 * a NMDevice has a chance to picks up the changes first. */
+		priv->resync.idle_handle = g_idle_add_full (G_PRIORITY_LOW, (GSourceFunc) _resync_idle_now, self, NULL);
 	} else if (!priv->resync.idle_handle) {
 		priv->resync.idle_handle =  g_timeout_add (priv->resync.backoff_wait_time_ms, (GSourceFunc) _resync_idle_now, self);
 		_LOGD (0, "resync: schedule in %u.%03u seconds (%u)", priv->resync.backoff_wait_time_ms/1000,
