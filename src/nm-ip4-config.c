@@ -45,6 +45,7 @@ typedef struct {
 
 	gboolean never_default;
 	guint32 gateway;
+	gboolean has_gateway;
 	GArray *addresses;
 	GArray *routes;
 	GArray *nameservers;
@@ -187,7 +188,7 @@ nm_ip4_config_capture (int ifindex, gboolean capture_resolv_conf)
 	guint i;
 	guint32 lowest_metric = G_MAXUINT32;
 	guint32 old_gateway = 0;
-	gboolean has_gateway = FALSE;
+	gboolean old_has_gateway = FALSE;
 
 	/* Slaves have no IP configuration */
 	if (nm_platform_link_get_master (NM_PLATFORM_GET, ifindex) > 0)
@@ -204,6 +205,7 @@ nm_ip4_config_capture (int ifindex, gboolean capture_resolv_conf)
 
 	/* Extract gateway from default route */
 	old_gateway = priv->gateway;
+	old_has_gateway = priv->has_gateway;
 	for (i = 0; i < priv->routes->len; ) {
 		const NMPlatformIP4Route *route = &g_array_index (priv->routes, NMPlatformIP4Route, i);
 
@@ -212,7 +214,7 @@ nm_ip4_config_capture (int ifindex, gboolean capture_resolv_conf)
 				priv->gateway = route->gateway;
 				lowest_metric = route->metric;
 			}
-			has_gateway = TRUE;
+			priv->has_gateway = TRUE;
 			/* Remove the default route from the list */
 			g_array_remove_index_fast (priv->routes, i);
 			continue;
@@ -222,12 +224,12 @@ nm_ip4_config_capture (int ifindex, gboolean capture_resolv_conf)
 
 	/* we detect the route metric based on the default route. All non-default
 	 * routes have their route metrics explicitly set. */
-	priv->route_metric = has_gateway ? (gint64) lowest_metric : (gint64) -1;
+	priv->route_metric = priv->has_gateway ? (gint64) lowest_metric : (gint64) -1;
 
 	/* If there is a host route to the gateway, ignore that route.  It is
 	 * automatically added by NetworkManager when needed.
 	 */
-	if (has_gateway) {
+	if (priv->has_gateway) {
 		for (i = 0; i < priv->routes->len; i++) {
 			const NMPlatformIP4Route *route = &g_array_index (priv->routes, NMPlatformIP4Route, i);
 
@@ -243,7 +245,7 @@ nm_ip4_config_capture (int ifindex, gboolean capture_resolv_conf)
 	/* If the interface has the default route, and has IPv4 addresses, capture
 	 * nameservers from /etc/resolv.conf.
 	 */
-	if (priv->addresses->len && has_gateway && capture_resolv_conf) {
+	if (priv->addresses->len && priv->has_gateway && capture_resolv_conf) {
 		if (nm_ip4_config_capture_resolv_conf (priv->nameservers, NULL))
 			_NOTIFY (config, PROP_NAMESERVERS);
 	}
@@ -253,7 +255,8 @@ nm_ip4_config_capture (int ifindex, gboolean capture_resolv_conf)
 	_NOTIFY (config, PROP_ROUTE_DATA);
 	_NOTIFY (config, PROP_ADDRESSES);
 	_NOTIFY (config, PROP_ROUTES);
-	if (priv->gateway != old_gateway)
+	if (   priv->gateway != old_gateway
+	    || priv->has_gateway != old_has_gateway)
 		_NOTIFY (config, PROP_GATEWAY);
 
 	return config;
@@ -484,7 +487,7 @@ nm_ip4_config_create_setting (const NMIP4Config *config)
 	}
 
 	/* Gateway */
-	if (   gateway
+	if (   nm_ip4_config_has_gateway (config)
 	    && nm_setting_ip_config_get_num_addresses (s_ip4) > 0) {
 		g_object_set (s_ip4,
 		              NM_SETTING_IP_CONFIG_GATEWAY, nm_utils_inet4_ntop (gateway, NULL),
@@ -561,7 +564,7 @@ nm_ip4_config_merge (NMIP4Config *dst, const NMIP4Config *src)
 		nm_ip4_config_add_nameserver (dst, nm_ip4_config_get_nameserver (src, i));
 
 	/* default gateway */
-	if (nm_ip4_config_get_gateway (src))
+	if (nm_ip4_config_has_gateway (src))
 		nm_ip4_config_set_gateway (dst, nm_ip4_config_get_gateway (src));
 
 	/* routes */
@@ -752,11 +755,12 @@ nm_ip4_config_subtract (NMIP4Config *dst, const NMIP4Config *src)
 	}
 
 	/* default gateway */
-	if (nm_ip4_config_get_gateway (src) == nm_ip4_config_get_gateway (dst))
-		nm_ip4_config_set_gateway (dst, 0);
+	if (   (nm_ip4_config_has_gateway (src) == nm_ip4_config_has_gateway (dst))
+	    && (nm_ip4_config_get_gateway (src) == nm_ip4_config_get_gateway (dst)))
+		nm_ip4_config_unset_gateway (dst);
 
 	if (!nm_ip4_config_get_num_addresses (dst))
-		nm_ip4_config_set_gateway (dst, 0);
+		nm_ip4_config_unset_gateway (dst);
 
 	/* ignore route_metric */
 
@@ -834,8 +838,10 @@ nm_ip4_config_intersect (NMIP4Config *dst, const NMIP4Config *src)
 
 	/* default gateway */
 	if (   !nm_ip4_config_get_num_addresses (dst)
-	    || (nm_ip4_config_get_gateway (src) != nm_ip4_config_get_gateway (dst)))
-		nm_ip4_config_set_gateway (dst, 0);
+	    || (nm_ip4_config_has_gateway (src) != nm_ip4_config_has_gateway (dst))
+	    || (nm_ip4_config_get_gateway (src) != nm_ip4_config_get_gateway (dst))) {
+		nm_ip4_config_unset_gateway (dst);
+	}
 
 	/* routes */
 	for (i = 0; i < nm_ip4_config_get_num_routes (dst); ) {
@@ -901,7 +907,8 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 	}
 
 	/* default gateway */
-	if (src_priv->gateway != dst_priv->gateway) {
+	if (   src_priv->gateway != dst_priv->gateway
+	    || src_priv->has_gateway != dst_priv->has_gateway) {
 		nm_ip4_config_set_gateway (dst, src_priv->gateway);
 		has_relevant_changes = TRUE;
 	}
@@ -1104,8 +1111,10 @@ nm_ip4_config_dump (const NMIP4Config *config, const char *detail)
 		g_message ("      a: %s", nm_platform_ip4_address_to_string (nm_ip4_config_get_address (config, i)));
 
 	/* default gateway */
-	tmp = nm_ip4_config_get_gateway (config);
-	g_message ("     gw: %s", nm_utils_inet4_ntop (tmp, NULL));
+	if (nm_ip4_config_has_gateway (config)) {
+		tmp = nm_ip4_config_get_gateway (config);
+		g_message ("     gw: %s", nm_utils_inet4_ntop (tmp, NULL));
+	}
 
 	/* nameservers */
 	for (i = 0; i < nm_ip4_config_get_num_nameservers (config); i++) {
@@ -1185,10 +1194,31 @@ nm_ip4_config_set_gateway (NMIP4Config *config, guint32 gateway)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 
-	if (priv->gateway != gateway) {
+	if (priv->gateway != gateway || !priv->has_gateway) {
 		priv->gateway = gateway;
+		priv->has_gateway = TRUE;
 		_NOTIFY (config, PROP_GATEWAY);
 	}
+}
+
+void
+nm_ip4_config_unset_gateway (NMIP4Config *config)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+
+	if (priv->has_gateway) {
+		priv->gateway = 0;
+		priv->has_gateway = FALSE;
+		_NOTIFY (config, PROP_GATEWAY);
+	}
+}
+
+gboolean
+nm_ip4_config_has_gateway (const NMIP4Config *config)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+
+	return priv->has_gateway;
 }
 
 guint32
@@ -1832,6 +1862,7 @@ nm_ip4_config_hash (const NMIP4Config *config, GChecksum *sum, gboolean dns_only
 	g_return_if_fail (sum);
 
 	if (!dns_only) {
+		hash_u32 (sum, nm_ip4_config_has_gateway (config));
 		hash_u32 (sum, nm_ip4_config_get_gateway (config));
 
 		for (i = 0; i < nm_ip4_config_get_num_addresses (config); i++) {
@@ -2093,7 +2124,7 @@ get_property (GObject *object, guint prop_id,
 		}
 		break;
 	case PROP_GATEWAY:
-		if (priv->gateway)
+		if (priv->has_gateway)
 			g_value_set_string (value, nm_utils_inet4_ntop (priv->gateway, NULL));
 		else
 			g_value_set_string (value, NULL);

@@ -3353,6 +3353,9 @@ nm_utils_ipaddr_valid (int family, const char *ip)
 
 	g_return_val_if_fail (family == AF_INET || family == AF_INET6 || family == AF_UNSPEC, FALSE);
 
+	if (!ip)
+		return FALSE;
+
 	if (family == AF_UNSPEC)
 		family = strchr (ip, ':') ? AF_INET6 : AF_INET;
 
