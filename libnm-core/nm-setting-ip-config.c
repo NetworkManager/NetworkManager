@@ -92,6 +92,11 @@ canonicalize_ip (int family, const char *ip, gboolean null_any)
 static gboolean
 valid_ip (int family, const char *ip, GError **error)
 {
+	if (!ip) {
+		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+		             family == AF_INET ? _("Missing IPv4 address") : _("Missing IPv6 address'"));
+		return FALSE;
+	}
 	if (!nm_utils_ipaddr_valid (family, ip)) {
 		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
 		             family == AF_INET ? _("Invalid IPv4 address '%s'") : _("Invalid IPv6 address '%s'"),
