@@ -28,6 +28,8 @@
 #include "nm-default.h"
 
 static GHashTable *prefix_counters;
+static gboolean quitting = FALSE;
+
 
 #if NM_MORE_ASSERTS >= 2
 #define _ASSERT_NO_EARLY_EXPORT
@@ -632,6 +634,28 @@ nm_exported_object_get_interface_by_type (NMExportedObject *self, GType interfac
 	return NULL;
 }
 
+void
+_nm_exported_object_clear_and_unexport (NMExportedObject **location)
+{
+	NMExportedObject *self;
+	NMExportedObjectPrivate *priv;
+
+	if (!location || !*location)
+		return;
+
+	self = *location;
+	*location = NULL;
+
+	g_return_if_fail (NM_IS_EXPORTED_OBJECT (self));
+
+	priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
+
+	if (priv->path)
+		nm_exported_object_unexport (self);
+
+	g_object_unref (self);
+}
+
 static void
 nm_exported_object_init (NMExportedObject *self)
 {
@@ -765,8 +789,16 @@ nm_exported_object_dispose (GObject *object)
 {
 	NMExportedObjectPrivate *priv = NM_EXPORTED_OBJECT_GET_PRIVATE (object);
 
-	if (priv->path)
-		nm_exported_object_unexport (NM_EXPORTED_OBJECT (object));
+	/* Objects should have already been unexported by their owner, unless
+	 * we are quitting, where many objects stick around until exit.
+	 */
+	if (!quitting) {
+		if (priv->path) {
+			g_warn_if_reached ();
+			nm_exported_object_unexport (NM_EXPORTED_OBJECT (object));
+		}
+	} else
+		g_clear_pointer (&priv->path, g_free);
 
 	g_variant_builder_clear (&priv->pending_notifies);
 	nm_clear_g_source (&priv->notify_idle_id);
@@ -785,3 +817,10 @@ nm_exported_object_class_init (NMExportedObjectClass *klass)
 	object_class->notify = nm_exported_object_notify;
 	object_class->dispose = nm_exported_object_dispose;
 }
+
+void
+nm_exported_object_class_set_quitting (void)
+{
+	quitting = TRUE;
+}
+

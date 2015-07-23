@@ -45,6 +45,8 @@ typedef struct {
 
 GType nm_exported_object_get_type (void);
 
+void nm_exported_object_class_set_quitting  (void);
+
 void nm_exported_object_class_add_interface (NMExportedObjectClass *object_class,
                                              GType                  dbus_skeleton_type,
                                              ...) G_GNUC_NULL_TERMINATED;
@@ -55,6 +57,9 @@ gboolean    nm_exported_object_is_exported (NMExportedObject *self);
 void        nm_exported_object_unexport    (NMExportedObject *self);
 GSList *    nm_exported_object_get_interfaces (NMExportedObject *self);
 GDBusInterfaceSkeleton *nm_exported_object_get_interface_by_type (NMExportedObject *self, GType interface_type);
+
+void        _nm_exported_object_clear_and_unexport (NMExportedObject **location);
+#define nm_exported_object_clear_and_unexport(location) _nm_exported_object_clear_and_unexport ((NMExportedObject **) (location))
 
 G_END_DECLS
 
