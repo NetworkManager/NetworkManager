@@ -33,6 +33,7 @@
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
+#include "nm-setting-wired.h"
 
 
 /******************************************************************
@@ -256,6 +257,43 @@ nmp_utils_ethtool_get_link_speed (const char *ifname, guint32 *out_speed)
 	if (out_speed)
 		*out_speed = speed;
 	return TRUE;
+}
+
+gboolean
+nmp_utils_ethtool_set_wake_on_lan (const char *ifname,
+                                   NMSettingWiredWakeOnLan wol,
+                                   const char *wol_password)
+{
+	struct ethtool_wolinfo wol_info = { };
+
+	nm_log_dbg (LOGD_PLATFORM, "setting Wake-on-LAN options 0x%x, password '%s'",
+	            (unsigned int) wol, wol_password);
+
+	wol_info.cmd = ETHTOOL_SWOL;
+	wol_info.wolopts = 0;
+
+	if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_PHY))
+		wol_info.wolopts |= WAKE_PHY;
+	if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_UNICAST))
+		wol_info.wolopts |= WAKE_UCAST;
+	if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_MULTICAST))
+		wol_info.wolopts |= WAKE_MCAST;
+	if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_BROADCAST))
+		wol_info.wolopts |= WAKE_BCAST;
+	if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_ARP))
+		wol_info.wolopts |= WAKE_ARP;
+	if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC))
+		wol_info.wolopts |= WAKE_MAGIC;
+
+	if (wol_password) {
+		if (!nm_utils_hwaddr_aton (wol_password, wol_info.sopass, ETH_ALEN)) {
+			nm_log_dbg (LOGD_PLATFORM, "couldn't parse Wake-on-LAN password '%s'", wol_password);
+			return FALSE;
+		}
+		wol_info.wolopts |= WAKE_MAGICSECURE;
+	}
+
+	return ethtool_get (ifname, &wol_info);
 }
 
 /******************************************************************

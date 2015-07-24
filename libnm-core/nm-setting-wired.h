@@ -40,6 +40,37 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_WIRED_SETTING_NAME "802-3-ethernet"
 
+/**
+ * NMSettingWiredWakeOnLan:
+ * @NM_SETTING_WIRED_WAKE_ON_LAN_NONE: Wake-on-LAN disabled
+ * @NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT: Use the default value
+ * @NM_SETTING_WIRED_WAKE_ON_LAN_PHY: Wake on PHY activity
+ * @NM_SETTING_WIRED_WAKE_ON_LAN_UNICAST: Wake on unicast messages
+ * @NM_SETTING_WIRED_WAKE_ON_LAN_MULTICAST: Wake on multicast messages
+ * @NM_SETTING_WIRED_WAKE_ON_LAN_BROADCAST: Wake on broadcast messages
+ * @NM_SETTING_WIRED_WAKE_ON_LAN_ARP: Wake on ARP
+ * @NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC: Wake on magic packet
+ * @NM_SETTING_WIRED_WAKE_ON_LAN_ALL: Wake on all events
+ *
+ * Options for #NMSettingWired:wake-on-lan. Note that not all options
+ * are supported by all devices.
+ *
+ * Since: 1.2
+ */
+typedef enum { /*< flags >*/
+	NM_SETTING_WIRED_WAKE_ON_LAN_NONE      = 0, /*< skip >*/
+	NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT   = (1 << 0),
+	NM_SETTING_WIRED_WAKE_ON_LAN_PHY       = (1 << 1),
+	NM_SETTING_WIRED_WAKE_ON_LAN_UNICAST   = (1 << 2),
+	NM_SETTING_WIRED_WAKE_ON_LAN_MULTICAST = (1 << 3),
+	NM_SETTING_WIRED_WAKE_ON_LAN_BROADCAST = (1 << 4),
+	NM_SETTING_WIRED_WAKE_ON_LAN_ARP       = (1 << 5),
+	NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC     = (1 << 6),
+	_NM_SETTING_WIRED_WAKE_ON_LAN_LAST,    /*< skip >*/
+	NM_SETTING_WIRED_WAKE_ON_LAN_ALL       = (((_NM_SETTING_WIRED_WAKE_ON_LAN_LAST - 1) << 1) /*< skip >*/
+	                                         - 1 - NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT)
+} NMSettingWiredWakeOnLan;
+
 #define NM_SETTING_WIRED_PORT "port"
 #define NM_SETTING_WIRED_SPEED "speed"
 #define NM_SETTING_WIRED_DUPLEX "duplex"
@@ -51,6 +82,8 @@ G_BEGIN_DECLS
 #define NM_SETTING_WIRED_S390_SUBCHANNELS "s390-subchannels"
 #define NM_SETTING_WIRED_S390_NETTYPE "s390-nettype"
 #define NM_SETTING_WIRED_S390_OPTIONS "s390-options"
+#define NM_SETTING_WIRED_WAKE_ON_LAN "wake-on-lan"
+#define NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD "wake-on-lan-password"
 
 struct _NMSettingWired {
 	NMSetting parent;
@@ -103,6 +136,9 @@ gboolean          nm_setting_wired_add_s390_option      (NMSettingWired *setting
 gboolean          nm_setting_wired_remove_s390_option   (NMSettingWired *setting,
                                                          const char *key);
 const char **     nm_setting_wired_get_valid_s390_options (NMSettingWired *setting);
+
+NMSettingWiredWakeOnLan  nm_setting_wired_get_wake_on_lan          (NMSettingWired *setting);
+const char *             nm_setting_wired_get_wake_on_lan_password (NMSettingWired *setting);
 
 G_END_DECLS
 

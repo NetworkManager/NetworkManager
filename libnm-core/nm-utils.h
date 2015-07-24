@@ -190,6 +190,12 @@ int nm_utils_bond_mode_string_to_int (const char *mode);
 NM_AVAILABLE_IN_1_2
 const char *nm_utils_bond_mode_int_to_string (int mode);
 
+NM_AVAILABLE_IN_1_2
+char *nm_utils_enum_to_str (GType type, int value);
+
+NM_AVAILABLE_IN_1_2
+gboolean nm_utils_enum_from_str (GType type, const char *str, int *out_value, char **err_token);
+
 G_END_DECLS
 
 #endif /* __NM_UTILS_H__ */

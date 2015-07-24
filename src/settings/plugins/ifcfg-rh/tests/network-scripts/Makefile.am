@@ -124,7 +124,8 @@ EXTRA_DIST = \
 	ifcfg-test-team-port \
 	ifcfg-test-team-port-empty-config \
 	ifcfg-test-vlan-trailing-spaces \
-	ifcfg-test-dns-options
+	ifcfg-test-dns-options \
+	ifcfg-test-wired-wake-on-lan
 
 # make target dependencies can't have colons in their names, which ends up
 # meaning that we can't add the alias files to EXTRA_DIST

@@ -53,6 +53,7 @@
 #include "nm-device-factory.h"
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
+#include "gsystem-local-alloc.h"
 
 #include "nm-device-ethernet-glue.h"
 
@@ -1175,6 +1176,40 @@ dcb_carrier_changed (NMDevice *device, GParamSpec *pspec, gpointer unused)
 
 /****************************************************************/
 
+static gboolean
+wake_on_lan_enable (NMDevice *device)
+{
+	NMSettingWiredWakeOnLan wol;
+	NMSettingWired *s_wired;
+	const char *password = NULL;
+	gs_free char *value = NULL;
+
+	s_wired = (NMSettingWired *) device_get_setting (device, NM_TYPE_SETTING_WIRED);
+	if (s_wired) {
+		wol = nm_setting_wired_get_wake_on_lan (s_wired);
+		password = nm_setting_wired_get_wake_on_lan_password (s_wired);
+		if (wol != NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT)
+			goto found;
+	}
+
+	value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+	                                               "ethernet.wake-on-lan",
+	                                               device);
+	if (value) {
+		wol = _nm_utils_ascii_str_to_int64 (value, 10,
+		                                    NM_SETTING_WIRED_WAKE_ON_LAN_NONE,
+		                                    NM_SETTING_WIRED_WAKE_ON_LAN_ALL,
+		                                    NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT);
+		if (wol != NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT)
+			goto found;
+	}
+	wol = NM_SETTING_WIRED_WAKE_ON_LAN_NONE;
+found:
+	return nmp_utils_ethtool_set_wake_on_lan (nm_device_get_iface (device), wol, password);
+}
+
+/****************************************************************/
+
 static NMActStageReturn
 act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 {
@@ -1206,6 +1241,8 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 			return nm_8021x_stage2_config (self, reason);
 		}
 	}
+
+	wake_on_lan_enable (device);
 
 	/* DCB and FCoE setup */
 	s_dcb = (NMSettingDcb *) device_get_setting (device, NM_TYPE_SETTING_DCB);

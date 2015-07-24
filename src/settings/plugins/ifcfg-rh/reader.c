@@ -3547,6 +3547,80 @@ wireless_connection_from_ifcfg (const char *file,
 	return connection;
 }
 
+static void
+parse_ethtool_options (shvarFile *ifcfg, NMSettingWired *s_wired, char *value)
+{
+	NMSettingWiredWakeOnLan wol_flags = NM_SETTING_WIRED_WAKE_ON_LAN_NONE;
+	gboolean use_password = FALSE;
+	char **words, **iter, *flag;
+
+	if (!value || !value[0])
+		return;
+
+	words = g_strsplit_set (value, " ", 0);
+	iter = words;
+
+	while (iter[0]) {
+		if (g_str_equal (iter[0], "wol") && iter[1] && *iter[1]) {
+			for (flag = iter[1]; *flag; flag++) {
+				switch (*flag) {
+				case 'p':
+					wol_flags |= NM_SETTING_WIRED_WAKE_ON_LAN_PHY;
+					break;
+				case 'u':
+					wol_flags |= NM_SETTING_WIRED_WAKE_ON_LAN_UNICAST;
+					break;
+				case 'm':
+					wol_flags |= NM_SETTING_WIRED_WAKE_ON_LAN_MULTICAST;
+					break;
+				case 'b':
+					wol_flags |= NM_SETTING_WIRED_WAKE_ON_LAN_BROADCAST;
+					break;
+				case 'a':
+					wol_flags |= NM_SETTING_WIRED_WAKE_ON_LAN_ARP;
+					break;
+				case 'g':
+					wol_flags |= NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC;
+					break;
+				case 's':
+					use_password = TRUE;
+					break;
+				case 'd':
+					wol_flags = NM_SETTING_WIRED_WAKE_ON_LAN_NONE;
+					use_password = FALSE;
+					break;
+				default:
+					PARSE_WARNING ("unrecognized Wake-on-LAN option '%c'", *flag);
+				}
+			}
+
+			if (!NM_FLAGS_HAS (wol_flags, NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC))
+				use_password = FALSE;
+
+			g_object_set (s_wired, NM_SETTING_WIRED_WAKE_ON_LAN, wol_flags, NULL);
+			iter += 2;
+			continue;
+		}
+
+		if (g_str_equal (iter[0], "sopass") && iter[1] && *iter[1]) {
+			if (use_password) {
+				if (nm_utils_hwaddr_valid (iter[1], ETH_ALEN))
+					g_object_set (s_wired, NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD, iter[1], NULL);
+				else
+					PARSE_WARNING ("Wake-on-LAN password '%s' is invalid", iter[1]);
+			} else
+				PARSE_WARNING ("Wake-on-LAN password not expected");
+			iter += 2;
+			continue;
+		}
+
+		/* Silently skip unknown options */
+		iter++;
+	}
+
+	g_strfreev (words);
+}
+
 static NMSetting *
 make_wired_setting (shvarFile *ifcfg,
                     const char *file,
@@ -3681,6 +3755,10 @@ make_wired_setting (shvarFile *ifcfg,
 		}
 		g_free (value);
 	}
+
+	value = svGetValue (ifcfg, "ETHTOOL_OPTS", FALSE);
+	parse_ethtool_options (ifcfg, s_wired, value);
+	g_free (value);
 
 	return (NMSetting *) s_wired;
 

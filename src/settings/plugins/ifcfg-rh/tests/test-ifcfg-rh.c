@@ -5273,6 +5273,43 @@ test_read_wifi_wep_eap_ttls_chap (void)
 }
 
 static void
+test_read_wired_wake_on_lan (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	gboolean success;
+	GError *error = NULL;
+
+	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-wake-on-lan",
+	                                        NULL, TYPE_WIRELESS, NULL, &error);
+	g_assert_no_error (error);
+	g_assert (connection);
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_WIRED_SETTING_NAME);
+
+	s_wired = nm_connection_get_setting_wired (connection);
+	g_assert (s_wired);
+	g_assert_cmpint (nm_setting_wired_get_wake_on_lan (s_wired),
+	                 ==,
+	                 NM_SETTING_WIRED_WAKE_ON_LAN_ARP |
+	                 NM_SETTING_WIRED_WAKE_ON_LAN_PHY |
+	                 NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC);
+
+	g_assert_cmpstr (nm_setting_wired_get_wake_on_lan_password (s_wired),
+	                 ==,
+	                 "00:11:22:33:44:55");
+
+	g_object_unref (connection);
+}
+
+static void
 test_read_wifi_hidden (void)
 {
 	NMConnection *connection;
@@ -5370,6 +5407,90 @@ test_write_wifi_hidden (void)
 
 	/* re-read the connection for comparison */
 	reread = connection_from_file_test (testfile, NULL, TYPE_WIRELESS,
+	                                    NULL, &error);
+	unlink (testfile);
+	g_assert_no_error (error);
+	g_assert (reread);
+
+	success = nm_connection_verify (reread, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+
+	g_free (testfile);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
+static void
+test_write_wired_wake_on_lan (void)
+{
+	NMConnection *connection, *reread;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingWiredWakeOnLan wol;
+	char *uuid, *testfile = NULL, *val;
+	gboolean success;
+	GError *error = NULL;
+	shvarFile *f;
+
+	connection = nm_simple_connection_new ();
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Wired Wake-on-LAN",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wired setting */
+	s_wired = (NMSettingWired *) nm_setting_wired_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+	wol = NM_SETTING_WIRED_WAKE_ON_LAN_MULTICAST |
+	      NM_SETTING_WIRED_WAKE_ON_LAN_UNICAST |
+	      NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC;
+
+	g_object_set (s_wired,
+	              NM_SETTING_WIRED_WAKE_ON_LAN, wol,
+	              NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD, "00:00:00:11:22:33",
+	              NULL);
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	f = svOpenFile (testfile, &error);
+	g_assert_no_error (error);
+	g_assert (f);
+
+	/* re-read the file to check that the key was written. */
+	val = svGetValue (f, "ETHTOOL_OPTS", FALSE);
+	g_assert (val);
+	g_assert (strstr (val, "wol"));
+	g_assert (strstr (val, "sopass 00:00:00:11:22:33"));
+	g_free (val);
+	svCloseFile (f);
+
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_connection_normalize (connection, NULL, NULL, NULL);
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file_test (testfile, NULL, TYPE_ETHERNET,
 	                                    NULL, &error);
 	unlink (testfile);
 	g_assert_no_error (error);
@@ -12703,6 +12824,7 @@ int main (int argc, char **argv)
 	test_read_vlan_only_vlan_id ();
 	test_read_vlan_only_device ();
 	g_test_add_func (TPATH "vlan/physdev", test_read_vlan_physdev);
+	g_test_add_func (TPATH "wired/read-wake-on-lan", test_read_wired_wake_on_lan);
 
 	test_write_wired_static ();
 	test_write_wired_static_ip6_only ();
@@ -12717,6 +12839,7 @@ int main (int argc, char **argv)
 	test_write_wired_8021x_tls (NM_SETTING_802_1X_CK_SCHEME_BLOB, NM_SETTING_SECRET_FLAG_NONE);
 	test_write_wired_aliases ();
 	g_test_add_func (TPATH "ipv4/write-static-addresses-GATEWAY", test_write_gateway);
+	g_test_add_func (TPATH "wired/write-wake-on-lan", test_write_wired_wake_on_lan);
 	test_write_wifi_open ();
 	test_write_wifi_open_hex_ssid ();
 	test_write_wifi_wep ();
