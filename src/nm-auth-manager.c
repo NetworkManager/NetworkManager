@@ -25,6 +25,7 @@
 #include "nm-logging.h"
 #include "nm-errors.h"
 #include "nm-core-internal.h"
+#include "NetworkManagerUtils.h"
 
 #define POLKIT_SERVICE                      "org.freedesktop.PolicyKit1"
 #define POLKIT_OBJECT_PATH                  "/org/freedesktop/PolicyKit1/Authority"

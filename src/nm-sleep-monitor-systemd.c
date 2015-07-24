@@ -29,6 +29,7 @@
 #include "nm-logging.h"
 #include "nm-dbus-manager.h"
 #include "nm-core-internal.h"
+#include "NetworkManagerUtils.h"
 
 #include "nm-sleep-monitor.h"
 

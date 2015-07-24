@@ -29,6 +29,66 @@
 #include "nm-connection.h"
 #include "nm-types.h"
 
+/*****************************************************************************/
+
+#define NM_DEFINE_SINGLETON_INSTANCE(TYPE) \
+static TYPE *singleton_instance
+
+#define NM_DEFINE_SINGLETON_WEAK_REF(TYPE) \
+NM_DEFINE_SINGLETON_INSTANCE (TYPE); \
+static void \
+_singleton_instance_weak_ref_cb (gpointer data, \
+                                 GObject *where_the_object_was) \
+{ \
+	nm_log_dbg (LOGD_CORE, "disposing %s singleton (%p)", G_STRINGIFY (TYPE), singleton_instance); \
+	singleton_instance = NULL; \
+} \
+static inline void \
+nm_singleton_instance_weak_ref_register (void) \
+{ \
+	g_object_weak_ref (G_OBJECT (singleton_instance), _singleton_instance_weak_ref_cb, NULL); \
+}
+
+#define NM_DEFINE_SINGLETON_DESTRUCTOR(TYPE) \
+NM_DEFINE_SINGLETON_INSTANCE (TYPE); \
+static void __attribute__((destructor)) \
+_singleton_destructor (void) \
+{ \
+	if (singleton_instance) { \
+		if (G_OBJECT (singleton_instance)->ref_count > 1) \
+			nm_log_dbg (LOGD_CORE, "disown %s singleton (%p)", G_STRINGIFY (TYPE), singleton_instance); \
+		g_object_unref (singleton_instance); \
+	} \
+}
+
+/* By default, the getter will assert that the singleton will be created only once. You can
+ * change this by redefining NM_DEFINE_SINGLETON_ALLOW_MULTIPLE. */
+#ifndef NM_DEFINE_SINGLETON_ALLOW_MULTIPLE
+#define NM_DEFINE_SINGLETON_ALLOW_MULTIPLE     FALSE
+#endif
+
+#define NM_DEFINE_SINGLETON_GETTER(TYPE, GETTER, GTYPE, ...) \
+NM_DEFINE_SINGLETON_INSTANCE (TYPE); \
+NM_DEFINE_SINGLETON_WEAK_REF (TYPE); \
+TYPE * \
+GETTER (void) \
+{ \
+	if (G_UNLIKELY (!singleton_instance)) { \
+		static char _already_created = FALSE; \
+\
+		g_assert (!_already_created || (NM_DEFINE_SINGLETON_ALLOW_MULTIPLE)); \
+		_already_created = TRUE;\
+		singleton_instance = (g_object_new (GTYPE, ##__VA_ARGS__, NULL)); \
+		g_assert (singleton_instance); \
+		nm_singleton_instance_weak_ref_register (); \
+		nm_log_dbg (LOGD_CORE, "create %s singleton (%p)", G_STRINGIFY (TYPE), singleton_instance); \
+	} \
+	return singleton_instance; \
+} \
+NM_DEFINE_SINGLETON_DESTRUCTOR(TYPE)
+
+/*****************************************************************************/
+
 gboolean nm_ethernet_address_is_valid (gconstpointer addr, gssize len);
 
 in_addr_t nm_utils_ip4_address_clear_host_address (in_addr_t addr, guint8 plen);

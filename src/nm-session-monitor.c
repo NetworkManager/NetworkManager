@@ -30,6 +30,7 @@
 #include "nm-glib-compat.h"
 #include "nm-session-monitor.h"
 #include "nm-logging.h"
+#include "NetworkManagerUtils.h"
 
 #ifdef SESSION_TRACKING_SYSTEMD
 #include <systemd/sd-login.h>

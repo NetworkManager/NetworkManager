@@ -27,6 +27,7 @@
 #include "nm-firewall-manager.h"
 #include "nm-logging.h"
 #include "gsystem-local-alloc.h"
+#include "NetworkManagerUtils.h"
 
 #define NM_FIREWALL_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
                                               NM_TYPE_FIREWALL_MANAGER, \
