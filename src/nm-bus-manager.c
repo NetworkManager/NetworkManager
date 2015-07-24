@@ -78,8 +78,7 @@ static void nm_bus_manager_cleanup (NMBusManager *self, gboolean dispose);
 static void start_reconnection_timeout (NMBusManager *self);
 static void object_destroyed (NMBusManager *self, gpointer object);
 
-NM_DEFINE_SINGLETON_DESTRUCTOR (NMBusManager);
-NM_DEFINE_SINGLETON_WEAK_REF (NMBusManager);
+NM_DEFINE_SINGLETON_REGISTER (NMBusManager);
 
 NMBusManager *
 nm_bus_manager_get (void)
@@ -103,7 +102,7 @@ nm_bus_manager_setup (NMBusManager *instance)
 
 	already_setup = TRUE;
 	singleton_instance = instance;
-	nm_singleton_instance_weak_ref_register ();
+	nm_singleton_instance_register ();
 	nm_log_dbg (LOGD_CORE, "create %s singleton (%p)", "NMBusManager", singleton_instance);
 }
 

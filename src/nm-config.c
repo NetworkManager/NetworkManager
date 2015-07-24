@@ -1671,8 +1671,7 @@ _set_config_data (NMConfig *self, NMConfigData *new_data, int signal)
 		g_object_unref (old_data);
 }
 
-NM_DEFINE_SINGLETON_DESTRUCTOR (NMConfig);
-NM_DEFINE_SINGLETON_WEAK_REF (NMConfig);
+NM_DEFINE_SINGLETON_REGISTER (NMConfig);
 
 NMConfig *
 nm_config_get (void)
@@ -1688,7 +1687,7 @@ nm_config_setup (const NMConfigCmdLineOptions *cli, char **atomic_section_prefix
 
 	singleton_instance = nm_config_new (cli, atomic_section_prefixes, error);
 	if (singleton_instance)
-		nm_singleton_instance_weak_ref_register ();
+		nm_singleton_instance_register ();
 	return singleton_instance;
 }
 

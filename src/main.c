@@ -440,6 +440,12 @@ main (int argc, char *argv[])
 	/* Set up platform interaction layer */
 	nm_linux_platform_setup ();
 
+	/* FIXME: intentionally leak the singleton instance of NMPlatform.
+	 * nm_linux_platform_setup() will register the singleton for destruction,
+	 * but we don't yet shut down all singletons properly, so don't destroy
+	 * NMPlatform. */
+	g_object_ref (NM_PLATFORM_GET);
+
 	nm_auth_manager_setup (nm_config_get_auth_polkit (config));
 
 	nm_dispatcher_init ();

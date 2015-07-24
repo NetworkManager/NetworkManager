@@ -112,6 +112,53 @@ _nm_utils_set_testing (NMUtilsTestFlags flags)
 	}
 }
 
+/*****************************************************************************/
+
+static GSList *_singletons = NULL;
+static gboolean _singletons_shutdown = FALSE;
+
+static void
+_nm_singleton_instance_weak_cb (gpointer data,
+                                GObject *where_the_object_was)
+{
+	_singletons = g_slist_remove (_singletons, where_the_object_was);
+}
+
+static void __attribute__((destructor))
+_nm_singleton_instance_destroy (void)
+{
+	_singletons_shutdown = TRUE;
+
+	while (_singletons) {
+		GObject *instance = _singletons->data;
+
+		_singletons = g_slist_delete_link (_singletons, _singletons);
+
+		g_object_weak_unref (instance, _nm_singleton_instance_weak_cb, NULL);
+
+		if (instance->ref_count > 1)
+			nm_log_dbg (LOGD_CORE, "disown %s singleton (%p). There are more references and the instance might leak", G_OBJECT_TYPE_NAME (instance), instance);
+
+		g_object_unref (instance);
+	}
+}
+
+void
+_nm_singleton_instance_register_destruction (GObject *instance)
+{
+	g_return_if_fail (G_IS_OBJECT (instance));
+
+	/* Don't allow registration after shutdown. We only destroy the singletons
+	 * once. */
+	g_return_if_fail (!_singletons_shutdown);
+
+	g_object_weak_ref (instance, _nm_singleton_instance_weak_cb, NULL);
+
+	_singletons = g_slist_prepend (_singletons, instance);
+}
+
+/*****************************************************************************/
+
 /*
  * nm_ethernet_address_is_valid:
  * @addr: pointer to a binary or ASCII Ethernet address
