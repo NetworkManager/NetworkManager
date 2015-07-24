@@ -514,7 +514,7 @@ add_connection (NMSystemConfigInterface *config,
 	gs_free char *path = NULL;
 
 	if (save_to_disk) {
-		if (!nm_keyfile_plugin_write_connection (connection, NULL, &path, error))
+		if (!nm_keyfile_plugin_write_connection (connection, NULL, FALSE, &path, error))
 			return NULL;
 	}
 	return NM_SETTINGS_CONNECTION (update_connection (self, connection, path, NULL, FALSE, NULL, error));
