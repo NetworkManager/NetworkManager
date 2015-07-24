@@ -3684,7 +3684,7 @@ char *nm_utils_enum_to_str (GType type, int value)
 		}
 		ret = g_string_free (str, FALSE);
 	} else
-		g_return_if_reached ();
+		g_return_val_if_reached (NULL);
 
 	g_type_class_unref (class);
 	return ret;
@@ -3752,7 +3752,7 @@ gboolean nm_utils_enum_from_str (GType type, const char *str,
 		} else
 			ret = TRUE;
 	} else
-		g_assert_not_reached ();
+		g_return_val_if_reached (FALSE);
 
 	if (out_value)
 		*out_value = value;
