@@ -23,7 +23,6 @@
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-lowlevel.h>
-#include <glib.h>
 #include <string.h>
 #include <sys/types.h>
 #include <signal.h>
@@ -34,6 +33,7 @@
 #include <nm-setting-wired.h>
 #include <nm-utils.h>
 
+#include "nm-glib.h"
 #include "nm-remote-settings.h"
 #include "common.h"
 

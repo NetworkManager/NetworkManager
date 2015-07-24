@@ -18,8 +18,9 @@
  * Copyright 2014 Red Hat, Inc.
  */
 
-#include <gio/gio.h>
 #include <NetworkManager.h>
+
+#include "nm-glib.h"
 
 typedef struct {
 	GDBusConnection *bus;

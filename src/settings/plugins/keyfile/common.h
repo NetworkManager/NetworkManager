@@ -21,7 +21,7 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
-#include <glib.h>
+#include "nm-glib.h"
 
 #define KEYFILE_PLUGIN_NAME "keyfile"
 #define KEYFILE_PLUGIN_INFO "(c) 2007 - 2015 Red Hat, Inc.  To report bugs please use the NetworkManager mailing list."

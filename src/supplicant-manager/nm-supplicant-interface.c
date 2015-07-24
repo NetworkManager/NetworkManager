@@ -23,15 +23,15 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <glib.h>
 
+#include "nm-glib.h"
 #include "NetworkManagerUtils.h"
 #include "nm-supplicant-interface.h"
 #include "nm-logging.h"
 #include "nm-supplicant-config.h"
-#include "nm-glib-compat.h"
 #include "gsystem-local-alloc.h"
 #include "nm-core-internal.h"
+#include "nm-dbus-compat.h"
 
 #define WPAS_DBUS_IFACE_INTERFACE   WPAS_DBUS_INTERFACE ".Interface"
 #define WPAS_DBUS_IFACE_BSS         WPAS_DBUS_INTERFACE ".BSS"
@@ -413,7 +413,9 @@ nm_supplicant_interface_credentials_reply (NMSupplicantInterface *self,
 	                                5000,
 	                                NULL,
 	                                error);
-	/* reply will be unrefed when function exits */
+	if (error && *error)
+		g_dbus_error_strip_remote_error (*error);
+
 	return !!reply;
 }
 
@@ -691,7 +693,7 @@ on_iface_proxy_acquired (GDBusProxy *proxy, GAsyncResult *result, gpointer user_
 		 */
 		priv->ready_count++;
 		g_dbus_proxy_call (priv->iface_proxy,
-		                   "org.freedesktop.DBus.Introspectable.Introspect",
+		                   DBUS_INTERFACE_INTROSPECTABLE ".Introspect",
 		                   NULL,
 		                   G_DBUS_CALL_FLAGS_NONE,
 		                   -1,
@@ -746,6 +748,7 @@ interface_get_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 		g_variant_get (variant, "(&o)", &path);
 		interface_add_done (self, path);
 	} else {
+		g_dbus_error_strip_remote_error (error);
 		nm_log_err (LOGD_SUPPLICANT, "(%s): error getting interface: %s", priv->dev, error->message);
 		set_state (self, NM_SUPPLICANT_INTERFACE_STATE_DOWN);
 	}
@@ -794,10 +797,12 @@ interface_add_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 		 * activation.  Wait for it to start by moving back to the INIT
 		 * state.
 		 */
+		g_dbus_error_strip_remote_error (error);
 		nm_log_dbg (LOGD_SUPPLICANT, "(%s): failed to activate supplicant: %s",
 		            priv->dev, error->message);
 		set_state (self, NM_SUPPLICANT_INTERFACE_STATE_INIT);
 	} else {
+		g_dbus_error_strip_remote_error (error);
 		nm_log_err (LOGD_SUPPLICANT, "(%s): error adding interface: %s", priv->dev, error->message);
 		set_state (self, NM_SUPPLICANT_INTERFACE_STATE_DOWN);
 	}
@@ -914,8 +919,10 @@ log_result_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	reply = g_dbus_proxy_call_finish (proxy, result, &error);
 	if (   !reply
 	    && !g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)
-	    && !strstr (error->message, "fi.w1.wpa_supplicant1.NotConnected"))
+	    && !strstr (error->message, "fi.w1.wpa_supplicant1.NotConnected")) {
+		g_dbus_error_strip_remote_error (error);
 		nm_log_warn (LOGD_SUPPLICANT, "Failed to %s: %s.", (char *) user_data, error->message);
+	}
 }
 
 void
@@ -973,6 +980,7 @@ select_network_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 
 	reply = g_dbus_proxy_call_finish (proxy, result, &err);
 	if (!reply && !g_error_matches (err, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+		g_dbus_error_strip_remote_error (err);
 		nm_log_warn (LOGD_SUPPLICANT, "Couldn't select network config: %s.", err->message);
 		emit_error_helper (NM_SUPPLICANT_INTERFACE (user_data), err);
 	}
@@ -1015,6 +1023,7 @@ add_blob_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	if (reply)
 		call_select_network (self);
 	else {
+		g_dbus_error_strip_remote_error (err);
 		nm_log_warn (LOGD_SUPPLICANT, "Couldn't set network certificates: %s.", err->message);
 		emit_error_helper (self, err);
 	}
@@ -1045,6 +1054,7 @@ add_network_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	priv->net_path = NULL;
 
 	if (error) {
+		g_dbus_error_strip_remote_error (error);
 		nm_log_warn (LOGD_SUPPLICANT, "Adding network to supplicant failed: %s.", error->message);
 		emit_error_helper (self, error);
 		return;
@@ -1090,6 +1100,7 @@ set_ap_scan_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
 	if (!reply) {
+		g_dbus_error_strip_remote_error (error);
 		nm_log_warn (LOGD_SUPPLICANT, "Couldn't send AP scan mode to the supplicant interface: %s.",
 		             error->message);
 		emit_error_helper (self, error);
@@ -1133,7 +1144,7 @@ nm_supplicant_interface_set_config (NMSupplicantInterface *self,
 	if (cfg) {
 		priv->cfg = g_object_ref (cfg);
 		g_dbus_proxy_call (priv->iface_proxy,
-		                   "org.freedesktop.DBus.Properties.Set",
+		                   DBUS_INTERFACE_PROPERTIES ".Set",
 		                   g_variant_new ("(ssv)",
 		                                  WPAS_DBUS_IFACE_INTERFACE,
 		                                  "ApScan",
@@ -1157,8 +1168,10 @@ scan_request_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
 
-	if (error)
+	if (error) {
+		g_dbus_error_strip_remote_error (error);
 		nm_log_warn (LOGD_SUPPLICANT, "Could not get scan request result: %s", error->message);
+	}
 	g_signal_emit (NM_SUPPLICANT_INTERFACE (user_data), signals[SCAN_DONE], 0, error ? FALSE : TRUE);
 }
 

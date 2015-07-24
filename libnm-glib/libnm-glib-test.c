@@ -30,6 +30,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+
+#include "nm-glib.h"
 #include "nm-client.h"
 #include "nm-device.h"
 #include "nm-device-ethernet.h"
@@ -38,7 +40,6 @@
 #include "nm-active-connection.h"
 #include "nm-vpn-connection.h"
 #include "nm-setting-ip4-config.h"
-#include "nm-glib-compat.h"
 
 static gboolean
 test_wireless_enabled (NMClient *client)

@@ -300,6 +300,8 @@ nm_sources = \
 	nm-activation-request.h \
 	nm-active-connection.c \
 	nm-active-connection.h \
+	nm-bus-manager.c \
+	nm-bus-manager.h \
 	nm-config.c \
 	nm-config.h \
 	nm-config-data.c \
@@ -308,8 +310,6 @@ nm_sources = \
 	nm-connection-provider.h \
 	nm-connectivity.c \
 	nm-connectivity.h \
-	nm-dbus-manager.c \
-	nm-dbus-manager.h \
 	nm-dcb.c \
 	nm-dcb.h \
 	nm-route-manager.c \
@@ -324,6 +324,8 @@ nm_sources = \
 	nm-dispatcher.h \
 	nm-enum-types.c \
 	nm-enum-types.h \
+	nm-exported-object.c \
+	nm-exported-object.h \
 	nm-firewall-manager.c \
 	nm-firewall-manager.h \
 	nm-ip4-config.c \
@@ -344,8 +346,6 @@ nm_sources = \
 	nm-multi-index.h \
 	nm-policy.c \
 	nm-policy.h \
-	nm-properties-changed-signal.c \
-	nm-properties-changed-signal.h \
 	nm-rfkill-manager.c \
 	nm-rfkill-manager.h \
 	nm-session-monitor.h \
@@ -505,6 +505,8 @@ libnm_iface_helper_la_SOURCES = \
 	nm-route-manager.c \
 	nm-route-manager.h \
 	\
+	nm-exported-object.c \
+	nm-exported-object.h \
 	nm-ip4-config.c \
 	nm-ip4-config.h \
 	nm-ip6-config.c \

@@ -23,7 +23,6 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <glib/gi18n.h>
 #include <string.h>
 #include <stdlib.h>
@@ -33,13 +32,13 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include "nm-glib.h"
 #include "nm-dhcp-dhcpcd.h"
 #include "nm-dhcp-manager.h"
 #include "nm-utils.h"
 #include "nm-logging.h"
 #include "NetworkManagerUtils.h"
 #include "nm-dhcp-listener.h"
-#include "nm-glib-compat.h"
 
 G_DEFINE_TYPE (NMDhcpDhcpcd, nm_dhcp_dhcpcd, NM_TYPE_DHCP_CLIENT)
 

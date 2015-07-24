@@ -29,16 +29,15 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <dlfcn.h>
-#include <gio/gio.h>
 
 #define INET6
 #include <pppd/eui64.h>
 #include <pppd/ipv6cp.h>
 
+#include "nm-glib.h"
 #include "nm-dbus-interface.h"
 #include "nm-pppd-plugin.h"
 #include "nm-ppp-status.h"
-#include "nm-glib-compat.h"
 
 int plugin_init (void);
 

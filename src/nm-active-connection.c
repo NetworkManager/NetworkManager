@@ -20,14 +20,13 @@
 
 #include "config.h"
 
-#include <glib.h>
 
+#include "nm-glib.h"
 #include "nm-types.h"
 #include "nm-active-connection.h"
 #include "nm-dbus-interface.h"
 #include "nm-logging.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-dbus-manager.h"
 #include "nm-device.h"
 #include "nm-settings-connection.h"
 #include "nm-auth-utils.h"
@@ -35,10 +34,9 @@
 #include "NetworkManagerUtils.h"
 #include "gsystem-local-alloc.h"
 #include "nm-active-connection-glue.h"
-#include "nm-glib-compat.h"
 
 /* Base class for anything implementing the Connection.Active D-Bus interface */
-G_DEFINE_ABSTRACT_TYPE (NMActiveConnection, nm_active_connection, G_TYPE_OBJECT)
+G_DEFINE_ABSTRACT_TYPE (NMActiveConnection, nm_active_connection, NM_TYPE_EXPORTED_OBJECT)
 
 #define NM_ACTIVE_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
                                              NM_TYPE_ACTIVE_CONNECTION, \
@@ -46,7 +44,6 @@ G_DEFINE_ABSTRACT_TYPE (NMActiveConnection, nm_active_connection, G_TYPE_OBJECT)
 
 typedef struct {
 	NMConnection *connection;
-	char *path;
 	char *specific_object;
 	NMDevice *device;
 
@@ -229,18 +226,12 @@ nm_active_connection_set_connection (NMActiveConnection *self,
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 
 	/* Can't change connection after the ActiveConnection is exported over D-Bus */
-	g_return_if_fail (priv->path == NULL);
+	g_return_if_fail (!nm_exported_object_is_exported (NM_EXPORTED_OBJECT (self)));
 	g_return_if_fail (priv->connection == NULL || !NM_IS_SETTINGS_CONNECTION (priv->connection));
 
 	if (priv->connection)
 		g_object_unref (priv->connection);
 	priv->connection = g_object_ref (connection);
-}
-
-const char *
-nm_active_connection_get_path (NMActiveConnection *self)
-{
-	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->path;
 }
 
 const char *
@@ -316,18 +307,6 @@ nm_active_connection_get_default6 (NMActiveConnection *self)
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (self), FALSE);
 
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->is_default6;
-}
-
-void
-nm_active_connection_export (NMActiveConnection *self)
-{
-	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
-	static guint32 counter = 0;
-
-	g_assert (priv->device || priv->vpn);
-
-	priv->path = g_strdup_printf (NM_DBUS_PATH "/ActiveConnection/%d", counter++);
-	nm_dbus_manager_register_object (nm_dbus_manager_get (), priv->path, self);
 }
 
 NMAuthSubject *
@@ -567,7 +546,7 @@ nm_active_connection_set_master (NMActiveConnection *self, NMActiveConnection *m
 
 	/* Master is write-once, and must be set before exporting the object */
 	g_return_if_fail (priv->master == NULL);
-	g_return_if_fail (priv->path == NULL);
+	g_return_if_fail (!nm_exported_object_is_exported (NM_EXPORTED_OBJECT (self)));
 	if (priv->device) {
 		/* Note, the master ActiveConnection may not yet have a device */
 		g_return_if_fail (priv->device != nm_active_connection_get_device (master));
@@ -793,7 +772,7 @@ get_property (GObject *object, guint prop_id,
 	case PROP_DEVICES:
 		devices = g_ptr_array_sized_new (1);
 		if (priv->device && priv->state < NM_ACTIVE_CONNECTION_STATE_DEACTIVATED)
-			g_ptr_array_add (devices, g_strdup (nm_device_get_path (priv->device)));
+			g_ptr_array_add (devices, g_strdup (nm_exported_object_get_path (NM_EXPORTED_OBJECT (priv->device))));
 		g_value_take_boxed (value, devices);
 		break;
 	case PROP_STATE:
@@ -831,7 +810,7 @@ get_property (GObject *object, guint prop_id,
 	case PROP_MASTER:
 		if (priv->master)
 			master_device = nm_active_connection_get_device (priv->master);
-		g_value_set_boxed (value, master_device ? nm_device_get_path (master_device) : "/");
+		nm_utils_g_value_set_object_path (value, master_device);
 		break;
 	case PROP_INT_SUBJECT:
 		g_value_set_object (value, priv->subject);
@@ -875,8 +854,6 @@ dispose (GObject *object)
 		priv->chain = NULL;
 	}
 
-	g_free (priv->path);
-	priv->path = NULL;
 	g_free (priv->specific_object);
 	priv->specific_object = NULL;
 
@@ -899,8 +876,11 @@ static void
 nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (ac_class);
+	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (ac_class);
 
 	g_type_class_add_private (ac_class, sizeof (NMActiveConnectionPrivate));
+
+	exported_object_class->export_path = NM_DBUS_PATH "/ActiveConnection/%u";
 
 	/* virtual methods */
 	object_class->get_property = get_property;
@@ -1067,8 +1047,7 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 1, G_TYPE_UINT);
 
-	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
-	                                        G_TYPE_FROM_CLASS (ac_class),
+	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (ac_class),
 	                                        &dbus_glib_nm_active_connection_object_info);
 }
 

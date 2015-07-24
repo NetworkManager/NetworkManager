@@ -24,8 +24,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <glib.h>
 
+#include "nm-glib.h"
 #include "nm-dns-plugin.h"
 #include "nm-logging.h"
 #include "NetworkManagerUtils.h"

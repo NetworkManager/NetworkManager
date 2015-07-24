@@ -22,13 +22,13 @@
 
 #include <unistd.h>
 
-#include <glib.h>
 
 #include <nm-config.h>
+#include "nm-glib.h"
 #include "nm-test-device.h"
 #include "nm-fake-platform.h"
 #include "nm-logging.h"
-#include "nm-dbus-manager.h"
+#include "nm-bus-manager.h"
 
 #include "nm-test-utils.h"
 
@@ -757,10 +757,10 @@ main (int argc, char **argv)
 
 	/* Initialize the DBus manager singleton explicitly, because it is accessed by
 	 * the class initializer of NMDevice (used by the NMTestDevice stub).
-	 * This way, we skip calling nm_dbus_manager_init_bus() which would
+	 * This way, we skip calling nm_bus_manager_init_bus() which would
 	 * either fail and/or cause unexpected actions in the test.
 	 * */
-	nm_dbus_manager_setup (g_object_new (NM_TYPE_DBUS_MANAGER, NULL));
+	nm_bus_manager_setup (g_object_new (NM_TYPE_BUS_MANAGER, NULL));
 
 	nm_fake_platform_setup ();
 

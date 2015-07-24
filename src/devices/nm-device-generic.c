@@ -24,8 +24,6 @@
 #include "nm-device-private.h"
 #include "nm-enum-types.h"
 #include "nm-platform.h"
-#include "nm-glib-compat.h"
-#include "nm-dbus-manager.h"
 #include "nm-core-internal.h"
 
 #include "nm-device-generic-glue.h"
@@ -204,7 +202,6 @@ nm_device_generic_class_init (NMDeviceGenericClass *klass)
 		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
 		                      G_PARAM_STATIC_STRINGS));
 
-	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
-	                                        G_TYPE_FROM_CLASS (klass),
+	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        &dbus_glib_nm_device_generic_object_info);
 }

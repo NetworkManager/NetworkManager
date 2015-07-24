@@ -22,7 +22,7 @@
 #include "config.h"
 
 #include <signal.h>
-#include "nm-glib-compat.h"
+#include "nm-glib.h"
 #include "nm-vpn-plugin.h"
 #include "nm-vpn-enum-types.h"
 #include "nm-utils.h"
@@ -768,9 +768,9 @@ constructor (GType type,
 		goto err;
 
 	proxy = dbus_g_proxy_new_for_name (connection,
-	                                   "org.freedesktop.DBus",
-	                                   "/org/freedesktop/DBus",
-	                                   "org.freedesktop.DBus");
+	                                   DBUS_SERVICE_DBUS,
+	                                   DBUS_PATH_DBUS,
+	                                   DBUS_INTERFACE_DBUS);
 
 	if (!dbus_g_proxy_call (proxy, "RequestName", &err,
 	                        G_TYPE_STRING, priv->dbus_service_name,

@@ -27,11 +27,10 @@
 #include <string.h>
 
 #include <gmodule.h>
-#include <glib-object.h>
 #include <glib/gi18n.h>
-#include <glib.h>
 #include <nm-setting-connection.h>
 
+#include "nm-glib.h"
 #include "interface_parser.h"
 
 #include "nm-dbus-interface.h"

@@ -24,9 +24,7 @@
 #include <string.h>
 #include "nm-modem.h"
 #include "nm-platform.h"
-#include "nm-dbus-manager.h"
 #include "nm-setting-connection.h"
-#include "nm-properties-changed-signal.h"
 #include "nm-logging.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"

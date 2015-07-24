@@ -21,8 +21,8 @@
 #ifndef NM_AUTH_MANAGER_H
 #define NM_AUTH_MANAGER_H
 
-#include <gio/gio.h>
 
+#include "nm-glib.h"
 #include "nm-auth-subject.h"
 
 G_BEGIN_DECLS

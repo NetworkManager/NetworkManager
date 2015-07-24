@@ -21,14 +21,13 @@
 #include "config.h"
 
 #include <string.h>
-#include <glib.h>
 
+#include "nm-glib.h"
 #include "nm-device-modem.h"
 #include "nm-modem.h"
 #include "nm-device-private.h"
 #include "nm-rfkill-manager.h"
 #include "nm-logging.h"
-#include "nm-dbus-manager.h"
 #include "nm-settings-connection.h"
 #include "nm-modem-broadband.h"
 #include "NetworkManagerUtils.h"
@@ -795,7 +794,6 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
 		                    G_PARAM_STATIC_STRINGS));
 
-	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
-	                                        G_TYPE_FROM_CLASS (mclass),
+	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (mclass),
 	                                        &dbus_glib_nm_device_modem_object_info);
 }

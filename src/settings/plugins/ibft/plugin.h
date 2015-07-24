@@ -21,7 +21,7 @@
 #ifndef _PLUGIN_H_
 #define _PLUGIN_H_
 
-#include <glib-object.h>
+#include "nm-glib.h"
 
 #define SC_TYPE_PLUGIN_IBFT            (sc_plugin_ibft_get_type ())
 #define SC_PLUGIN_IBFT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), SC_TYPE_PLUGIN_IBFT, SCPluginIbft))

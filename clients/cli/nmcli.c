@@ -33,12 +33,11 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-#include <glib.h>
 #include <glib/gi18n.h>
 
+#include "nm-glib.h"
 #include "polkit-agent.h"
 #include "nmcli.h"
-#include "nm-glib-compat.h"
 #include "utils.h"
 #include "common.h"
 #include "connections.h"

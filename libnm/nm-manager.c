@@ -25,6 +25,7 @@
 #include <glib/gi18n-lib.h>
 #include <nm-utils.h>
 
+#include "nm-glib.h"
 #include "nm-manager.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-wifi.h"
@@ -34,7 +35,6 @@
 #include "nm-active-connection.h"
 #include "nm-vpn-connection.h"
 #include "nm-object-cache.h"
-#include "nm-glib-compat.h"
 #include "nm-dbus-helpers.h"
 
 #include "nmdbus-manager.h"

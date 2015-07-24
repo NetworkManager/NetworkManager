@@ -22,13 +22,12 @@
 
 #include "config.h"
 
-#include "nm-property-compare.h"
-#include "nm-glib-compat.h"
-
 #include <string.h>
 #include <math.h>
 #include <netinet/in.h>
-#include <gio/gio.h>
+
+#include "nm-property-compare.h"
+#include "nm-glib.h"
 
 static gint
 _nm_property_compare_collection (GVariant *value1, GVariant *value2)

@@ -24,6 +24,7 @@
 #include <string.h>
 #include <nm-utils.h>
 
+#include "nm-glib.h"
 #include "nm-client.h"
 #include "nm-manager.h"
 #include "nm-remote-settings.h"
@@ -35,7 +36,6 @@
 #include "nm-vpn-connection.h"
 #include "nm-remote-connection.h"
 #include "nm-object-cache.h"
-#include "nm-glib-compat.h"
 #include "nm-dbus-helpers.h"
 
 void _nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device, gboolean enabled);

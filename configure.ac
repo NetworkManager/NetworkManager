@@ -297,7 +297,7 @@ PKG_CHECK_MODULES(GLIB, [gio-unix-2.0 >= 2.37.6 gmodule-2.0],
 
 dnl GLIB_VERSION_MIN_REQUIRED should match the version above.
 dnl GLIB_VERSION_MAX_ALLOWED should be set to the same version;
-dnl nm-glib-compat.h will cause it to be overridden for the functions
+dnl nm-glib.h will cause it to be overridden for the functions
 dnl we have compat versions of.
 GLIB_CFLAGS="$GLIB_CFLAGS -DGLIB_VERSION_MIN_REQUIRED=GLIB_VERSION_2_32 -DGLIB_VERSION_MAX_ALLOWED=GLIB_VERSION_2_32"
 

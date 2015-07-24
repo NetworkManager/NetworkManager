@@ -22,11 +22,10 @@
 #ifndef __NETWORKMANAGER_DEVICE_H__
 #define __NETWORKMANAGER_DEVICE_H__
 
-#include <glib-object.h>
-#include <gio/gio.h>
 #include <dbus/dbus-glib.h>
 #include <netinet/in.h>
 
+#include "nm-exported-object.h"
 #include "nm-dbus-interface.h"
 #include "nm-types.h"
 #include "nm-connection.h"
@@ -105,7 +104,7 @@ typedef enum { /*< skip >*/
 } NMDeviceCheckConAvailableFlags;
 
 struct _NMDevice {
-	GObject parent;
+	NMExportedObject parent;
 };
 
 /* The flags have an relaxing meaning, that means, specifying more flags, can make
@@ -119,7 +118,7 @@ typedef enum { /*< skip >*/
 } NMDeviceCheckDevAvailableFlags;
 
 typedef struct {
-	GObjectClass parent;
+	NMExportedObjectClass parent;
 
 	const char *connection_type;
 
@@ -265,9 +264,6 @@ typedef void (*NMDeviceAuthRequestFunc) (NMDevice *device,
                                          gpointer user_data);
 
 GType nm_device_get_type (void);
-
-const char *    nm_device_get_path (NMDevice *dev);
-void            nm_device_dbus_export   (NMDevice *device);
 
 void            nm_device_finish_init   (NMDevice *device);
 

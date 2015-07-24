@@ -22,13 +22,12 @@
 #include <stdlib.h>
 #include <arpa/inet.h>
 
-#include <glib.h>
 #include <glib/gi18n.h>
 
+#include "nm-glib.h"
 #include "utils.h"
 #include "common.h"
 #include "settings.h"
-#include "nm-glib-compat.h"
 #include "nm-macros-internal.h"
 #include "gsystem-local-alloc.h"
 

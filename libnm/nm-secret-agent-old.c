@@ -22,7 +22,7 @@
 
 #include <string.h>
 
-#include "nm-glib-compat.h"
+#include "nm-glib.h"
 #include "nm-dbus-interface.h"
 #include "nm-secret-agent-old.h"
 #include "nm-enum-types.h"

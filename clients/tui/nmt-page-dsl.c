@@ -23,9 +23,9 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <glib/gi18n-lib.h>
 
+#include "nm-glib.h"
 #include "nmt-page-dsl.h"
 #include "nmt-page-ethernet.h"
 #include "nmt-page-ppp.h"

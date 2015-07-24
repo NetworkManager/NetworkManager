@@ -21,24 +21,21 @@
 
 #include "config.h"
 
-#include <glib.h>
-#include <gio/gio.h>
 #include <string.h>
 #include <errno.h>
 
+#include "nm-glib.h"
 #include "nm-dispatcher.h"
 #include "nm-dispatcher-api.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-logging.h"
-#include "nm-dbus-manager.h"
 #include "nm-device.h"
 #include "nm-dhcp4-config.h"
 #include "nm-dhcp6-config.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-glib-compat.h"
 #include "nm-settings-connection.h"
 #include "nm-platform.h"
 #include "nm-core-internal.h"
@@ -223,44 +220,12 @@ dump_ip6_to_props (NMIP6Config *ip6, GVariantBuilder *builder)
 }
 
 static void
-dump_dhcp4_to_props (NMDhcp4Config *config, GVariantBuilder *builder)
-{
-	GSList *options, *iter;
-
-	options = nm_dhcp4_config_list_options (config);
-	for (iter = options; iter; iter = g_slist_next (iter)) {
-		const char *option = (const char *) iter->data;
-		const char *val;
-
-		val = nm_dhcp4_config_get_option (config, option);
-		g_variant_builder_add (builder, "{sv}", option, g_variant_new_string (val));
-	}
-	g_slist_free (options);
-}
-
-static void
-dump_dhcp6_to_props (NMDhcp6Config *config, GVariantBuilder *builder)
-{
-	GSList *options, *iter;
-
-	options = nm_dhcp6_config_list_options (config);
-	for (iter = options; iter; iter = g_slist_next (iter)) {
-		const char *option = (const char *) iter->data;
-		const char *val;
-
-		val = nm_dhcp6_config_get_option (config, option);
-		g_variant_builder_add (builder, "{sv}", option, g_variant_new_string (val));
-	}
-	g_slist_free (options);
-}
-
-static void
 fill_device_props (NMDevice *device,
                    GVariantBuilder *dev_builder,
                    GVariantBuilder *ip4_builder,
                    GVariantBuilder *ip6_builder,
-                   GVariantBuilder *dhcp4_builder,
-                   GVariantBuilder *dhcp6_builder)
+                   GVariant **dhcp4_props,
+                   GVariant **dhcp6_props)
 {
 	NMIP4Config *ip4_config;
 	NMIP6Config *ip6_config;
@@ -277,7 +242,7 @@ fill_device_props (NMDevice *device,
 	g_variant_builder_add (dev_builder, "{sv}", NMD_DEVICE_PROPS_STATE,
 	                       g_variant_new_uint32 (nm_device_get_state (device)));
 	g_variant_builder_add (dev_builder, "{sv}", NMD_DEVICE_PROPS_PATH,
-	                       g_variant_new_object_path (nm_device_get_path (device)));
+	                       g_variant_new_object_path (nm_exported_object_get_path (NM_EXPORTED_OBJECT (device))));
 
 	ip4_config = nm_device_get_ip4_config (device);
 	if (ip4_config)
@@ -289,11 +254,11 @@ fill_device_props (NMDevice *device,
 
 	dhcp4_config = nm_device_get_dhcp4_config (device);
 	if (dhcp4_config)
-		dump_dhcp4_to_props (dhcp4_config, dhcp4_builder);
+		*dhcp4_props = nm_dhcp4_config_get_options (dhcp4_config);
 
 	dhcp6_config = nm_device_get_dhcp6_config (device);
 	if (dhcp6_config)
-		dump_dhcp6_to_props (dhcp6_config, dhcp6_builder);
+		*dhcp6_props = nm_dhcp6_config_get_options (dhcp6_config);
 }
 
 static void
@@ -487,8 +452,8 @@ _dispatcher_call (DispatcherAction action,
 	GVariantBuilder device_props;
 	GVariantBuilder device_ip4_props;
 	GVariantBuilder device_ip6_props;
-	GVariantBuilder device_dhcp4_props;
-	GVariantBuilder device_dhcp6_props;
+	GVariant *device_dhcp4_props = NULL;
+	GVariant *device_dhcp6_props = NULL;
 	GVariantBuilder vpn_ip4_props;
 	GVariantBuilder vpn_ip6_props;
 	DispatchInfo *info = NULL;
@@ -574,8 +539,6 @@ _dispatcher_call (DispatcherAction action,
 	g_variant_builder_init (&device_props, G_VARIANT_TYPE_VARDICT);
 	g_variant_builder_init (&device_ip4_props, G_VARIANT_TYPE_VARDICT);
 	g_variant_builder_init (&device_ip6_props, G_VARIANT_TYPE_VARDICT);
-	g_variant_builder_init (&device_dhcp4_props, G_VARIANT_TYPE_VARDICT);
-	g_variant_builder_init (&device_dhcp6_props, G_VARIANT_TYPE_VARDICT);
 	g_variant_builder_init (&vpn_ip4_props, G_VARIANT_TYPE_VARDICT);
 	g_variant_builder_init (&vpn_ip6_props, G_VARIANT_TYPE_VARDICT);
 
@@ -595,21 +558,26 @@ _dispatcher_call (DispatcherAction action,
 		}
 	}
 
+	if (!device_dhcp4_props)
+		device_dhcp4_props = g_variant_ref_sink (g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0));
+	if (!device_dhcp6_props)
+		device_dhcp6_props = g_variant_ref_sink (g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0));
+
 	/* Send the action to the dispatcher */
 	if (blocking) {
 		GVariant *ret;
 		GVariantIter *results;
 
 		ret = _nm_dbus_proxy_call_sync (dispatcher_proxy, "Action",
-		                                g_variant_new ("(s@a{sa{sv}}a{sv}a{sv}a{sv}a{sv}a{sv}a{sv}sa{sv}a{sv}b)",
+		                                g_variant_new ("(s@a{sa{sv}}a{sv}a{sv}a{sv}a{sv}@a{sv}@a{sv}sa{sv}a{sv}b)",
 		                                               action_to_string (action),
 		                                               connection_dict,
 		                                               &connection_props,
 		                                               &device_props,
 		                                               &device_ip4_props,
 		                                               &device_ip6_props,
-		                                               &device_dhcp4_props,
-		                                               &device_dhcp6_props,
+		                                               device_dhcp4_props,
+		                                               device_dhcp6_props,
 		                                               vpn_iface ? vpn_iface : "",
 		                                               &vpn_ip4_props,
 		                                               &vpn_ip6_props,
@@ -624,6 +592,7 @@ _dispatcher_call (DispatcherAction action,
 			g_variant_unref (ret);
 			success = TRUE;
 		} else {
+			g_dbus_error_strip_remote_error (error);
 			nm_log_warn (LOGD_DISPATCH, "(%u) failed: %s", reqid, error->message);
 			g_clear_error (&error);
 			success = FALSE;
@@ -635,15 +604,15 @@ _dispatcher_call (DispatcherAction action,
 		info->callback = callback;
 		info->user_data = user_data;
 		g_dbus_proxy_call (dispatcher_proxy, "Action",
-		                   g_variant_new ("(s@a{sa{sv}}a{sv}a{sv}a{sv}a{sv}a{sv}a{sv}sa{sv}a{sv}b)",
+		                   g_variant_new ("(s@a{sa{sv}}a{sv}a{sv}a{sv}a{sv}@a{sv}@a{sv}sa{sv}a{sv}b)",
 		                                  action_to_string (action),
 		                                  connection_dict,
 		                                  &connection_props,
 		                                  &device_props,
 		                                  &device_ip4_props,
 		                                  &device_ip6_props,
-		                                  &device_dhcp4_props,
-		                                  &device_dhcp6_props,
+		                                  device_dhcp4_props,
+		                                  device_dhcp6_props,
 		                                  vpn_iface ? vpn_iface : "",
 		                                  &vpn_ip4_props,
 		                                  &vpn_ip6_props,
@@ -652,6 +621,9 @@ _dispatcher_call (DispatcherAction action,
 		                   NULL, dispatcher_done_cb, info);
 		success = TRUE;
 	}
+
+	g_variant_unref (device_dhcp4_props);
+	g_variant_unref (device_dhcp6_props);
 
 done:
 	if (success && info) {

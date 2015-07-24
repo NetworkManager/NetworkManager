@@ -22,8 +22,7 @@
 #ifndef __NETWORKMANAGER_VPN_SERVICE_H__
 #define __NETWORKMANAGER_VPN_SERVICE_H__
 
-#include <glib.h>
-#include <glib-object.h>
+#include "nm-glib.h"
 #include "nm-device.h"
 #include "nm-vpn-connection.h"
 

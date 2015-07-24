@@ -21,10 +21,7 @@
 #ifndef __NETWORKMANAGER_DHCP4_CONFIG_H__
 #define __NETWORKMANAGER_DHCP4_CONFIG_H__
 
-#include <glib.h>
-#include <glib-object.h>
-
-#include "nm-types.h"
+#include "nm-exported-object.h"
 
 #define NM_TYPE_DHCP4_CONFIG            (nm_dhcp4_config_get_type ())
 #define NM_DHCP4_CONFIG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DHCP4_CONFIG, NMDhcp4Config))
@@ -34,11 +31,11 @@
 #define NM_DHCP4_CONFIG_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DHCP4_CONFIG, NMDhcp4ConfigClass))
 
 struct _NMDhcp4Config {
-	GObject parent;
+	NMExportedObject parent;
 };
 
 typedef struct {
-	GObjectClass parent;
+	NMExportedObjectClass parent;
 
 } NMDhcp4ConfigClass;
 
@@ -48,16 +45,11 @@ GType nm_dhcp4_config_get_type (void);
 
 NMDhcp4Config *nm_dhcp4_config_new (void);
 
-const char *nm_dhcp4_config_get_dbus_path (NMDhcp4Config *config);
-
-void nm_dhcp4_config_add_option (NMDhcp4Config *config,
-                                 const char *key,
-                                 const char *option);
-
-void nm_dhcp4_config_reset (NMDhcp4Config *config);
+void nm_dhcp4_config_set_options (NMDhcp4Config *config,
+                                  GHashTable *options);
 
 const char *nm_dhcp4_config_get_option (NMDhcp4Config *config, const char *option);
 
-GSList *nm_dhcp4_config_list_options (NMDhcp4Config *config);
+GVariant *nm_dhcp4_config_get_options (NMDhcp4Config *config);
 
 #endif /* __NETWORKMANAGER_DHCP4_CONFIG_H__ */

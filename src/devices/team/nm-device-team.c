@@ -24,19 +24,17 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/wait.h>
-#include <glib.h>
 #include <glib/gi18n.h>
-#include <gio/gio.h>
 #include <teamdctl.h>
 #include <stdlib.h>
 
+#include "nm-glib.h"
 #include "nm-device-team.h"
 #include "nm-logging.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
 #include "nm-platform.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-dbus-manager.h"
 #include "nm-enum-types.h"
 #include "nm-team-enum-types.h"
 #include "nm-core-internal.h"
@@ -332,9 +330,9 @@ teamd_dbus_appeared (GDBusConnection *connection,
 		guint32 pid;
 
 		ret = g_dbus_connection_call_sync (connection,
-		                                   "org.freedesktop.DBus",
-		                                   "/org/freedesktop/DBus",
-		                                   "org.freedesktop.DBus",
+		                                   DBUS_SERVICE_DBUS,
+		                                   DBUS_PATH_DBUS,
+		                                   DBUS_INTERFACE_DBUS,
 		                                   "GetConnectionUnixProcessID",
 		                                   g_variant_new ("(s)", name_owner),
 		                                   NULL,
@@ -742,18 +740,14 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-	GPtrArray *slaves;
-	GSList *list, *iter;
+	GSList *list;
 
 	switch (prop_id) {
 		break;
 	case PROP_SLAVES:
-		slaves = g_ptr_array_new ();
 		list = nm_device_master_get_slaves (NM_DEVICE (object));
-		for (iter = list; iter; iter = iter->next)
-			g_ptr_array_add (slaves, g_strdup (nm_device_get_path (NM_DEVICE (iter->data))));
+		nm_utils_g_value_set_object_path_array (value, list);
 		g_slist_free (list);
-		g_value_take_boxed (value, slaves);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -825,7 +819,7 @@ nm_device_team_class_init (NMDeviceTeamClass *klass)
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
 
-	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
-	                                        G_TYPE_FROM_CLASS (klass),
+
+	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        &dbus_glib_nm_device_team_object_info);
 }

@@ -22,8 +22,7 @@
 #ifndef __NETWORKMANAGER_ATM_MANAGER_H__
 #define __NETWORKMANAGER_ATM_MANAGER_H__
 
-#include <glib.h>
-#include <glib-object.h>
+#include "nm-glib.h"
 
 G_BEGIN_DECLS
 

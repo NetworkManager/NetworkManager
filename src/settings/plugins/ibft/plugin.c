@@ -25,12 +25,11 @@
 #include <errno.h>
 
 #include <gmodule.h>
-#include <glib-object.h>
 #include <glib/gi18n.h>
-#include <gio/gio.h>
 
 #include <nm-setting-connection.h>
 
+#include "nm-glib.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-system-config-interface.h"
 #include "nm-logging.h"

@@ -31,7 +31,6 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-#include <glib.h>
 #include <glib/gi18n.h>
 #include <nm-connection.h>
 #include <nm-dbus-interface.h>
@@ -49,6 +48,7 @@
 #include <nm-setting-bridge-port.h>
 #include <nm-setting-dcb.h>
 #include <nm-setting-generic.h>
+#include "nm-glib.h"
 #include "nm-core-internal.h"
 #include <nm-utils.h>
 

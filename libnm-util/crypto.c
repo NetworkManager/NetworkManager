@@ -23,13 +23,13 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <string.h>
 #include <strings.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <glib/gi18n-lib.h>
 
+#include "nm-glib.h"
 #include "crypto.h"
 
 GQuark

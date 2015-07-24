@@ -19,7 +19,6 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -29,6 +28,7 @@
 #include <stdlib.h>
 #include <uuid/uuid.h>
 
+#include "nm-glib.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-logging.h"

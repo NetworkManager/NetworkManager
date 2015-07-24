@@ -23,7 +23,6 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <glib/gi18n-lib.h>
 
 #include <prinit.h>
@@ -36,6 +35,7 @@
 #include <ciferfam.h>
 #include <p12plcy.h>
 
+#include "nm-glib.h"
 #include "crypto.h"
 
 static gboolean initialized = FALSE;

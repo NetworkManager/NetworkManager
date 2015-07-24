@@ -21,13 +21,12 @@
 #ifndef NM_DBUS_HELPERS_PRIVATE_H
 #define NM_DBUS_HELPERS_PRIVATE_H
 
-#include <gio/gio.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
 
-DBusGConnection *_nm_dbus_new_connection (GError **error);
+#include "nm-glib.h"
 
-gboolean         _nm_dbus_is_connection_private (DBusGConnection *connection);
+DBusGConnection *_nm_dbus_new_connection (GError **error);
 
 DBusGProxy *     _nm_dbus_new_proxy_for_connection (DBusGConnection *connection,
                                                     const char *path,

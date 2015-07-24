@@ -21,7 +21,6 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <glib/gi18n.h>
 #include <dbus/dbus.h>
 #include <netinet/in.h>
@@ -36,8 +35,8 @@
 #include <fcntl.h>
 #include <netlink/route/addr.h>
 
+#include "nm-glib.h"
 #include "gsystem-local-alloc.h"
-#include "nm-glib-compat.h"
 #include "nm-device.h"
 #include "nm-device-private.h"
 #include "NetworkManagerUtils.h"
@@ -46,7 +45,6 @@
 #include "nm-rdisc.h"
 #include "nm-lndp-rdisc.h"
 #include "nm-dhcp-manager.h"
-#include "nm-dbus-manager.h"
 #include "nm-logging.h"
 #include "nm-activation-request.h"
 #include "nm-ip4-config.h"
@@ -56,7 +54,6 @@
 #include "nm-dhcp6-config.h"
 #include "nm-rfkill-manager.h"
 #include "nm-firewall-manager.h"
-#include "nm-properties-changed-signal.h"
 #include "nm-enum-types.h"
 #include "nm-settings-connection.h"
 #include "nm-connection-provider.h"
@@ -80,7 +77,7 @@ static void ip_check_ping_watch_cb (GPid pid, gint status, gpointer user_data);
 
 #include "nm-device-glue.h"
 
-G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, G_TYPE_OBJECT)
+G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, NM_TYPE_EXPORTED_OBJECT)
 
 #define NM_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE, NMDevicePrivate))
 
@@ -200,7 +197,6 @@ typedef struct {
 	GSList *pending_actions;
 
 	char *        udi;
-	char *        path;
 	char *        iface;   /* may change, could be renamed by user */
 	int           ifindex;
 	char *        ip_iface;
@@ -513,30 +509,6 @@ nm_device_has_capability (NMDevice *self, NMDeviceCapabilities caps)
 }
 
 /***********************************************************/
-
-void
-nm_device_dbus_export (NMDevice *self)
-{
-	static guint32 devcount = 0;
-	NMDevicePrivate *priv;
-
-	g_return_if_fail (NM_IS_DEVICE (self));
-
-	priv = NM_DEVICE_GET_PRIVATE (self);
-	g_return_if_fail (priv->path == NULL);
-
-	priv->path = g_strdup_printf ("/org/freedesktop/NetworkManager/Devices/%d", devcount++);
-	_LOGD (LOGD_DEVICE, "exported as %s", priv->path);
-	nm_dbus_manager_register_object (nm_dbus_manager_get (), priv->path, self);
-}
-
-const char *
-nm_device_get_path (NMDevice *self)
-{
-	g_return_val_if_fail (self != NULL, NULL);
-
-	return NM_DEVICE_GET_PRIVATE (self)->path;
-}
 
 const char *
 nm_device_get_udi (NMDevice *self)
@@ -3446,22 +3418,6 @@ dhcp4_fail (NMDevice *self, gboolean timeout)
 }
 
 static void
-dhcp4_update_config (NMDevice *self, NMDhcp4Config *config, GHashTable *options)
-{
-	GHashTableIter iter;
-	const char *key, *value;
-
-	/* Update the DHCP4 config object with new DHCP options */
-	nm_dhcp4_config_reset (config);
-
-	g_hash_table_iter_init (&iter, options);
-	while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &value))
-		nm_dhcp4_config_add_option (config, key, value);
-
-	g_object_notify (G_OBJECT (self), NM_DEVICE_DHCP4_CONFIG);
-}
-
-static void
 dhcp4_state_changed (NMDhcpClient *client,
                      NMDhcpState state,
                      NMIP4Config *ip4_config,
@@ -3486,7 +3442,8 @@ dhcp4_state_changed (NMDhcpClient *client,
 			break;
 		}
 
-		dhcp4_update_config (self, priv->dhcp4_config, options);
+		nm_dhcp4_config_set_options (priv->dhcp4_config, options);
+		g_object_notify (G_OBJECT (self), NM_DEVICE_DHCP4_CONFIG);
 
 		if (priv->ip4_state == IP_CONF)
 			nm_device_activate_schedule_ip4_config_result (self, ip4_config);
@@ -4102,22 +4059,6 @@ dhcp6_timeout (NMDevice *self, NMDhcpClient *client)
 }
 
 static void
-dhcp6_update_config (NMDevice *self, NMDhcp6Config *config, GHashTable *options)
-{
-	GHashTableIter iter;
-	const char *key, *value;
-
-	/* Update the DHCP6 config object with new DHCP options */
-	nm_dhcp6_config_reset (config);
-
-	g_hash_table_iter_init (&iter, options);
-	while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &value))
-		nm_dhcp6_config_add_option (config, key, value);
-
-	g_object_notify (G_OBJECT (self), NM_DEVICE_DHCP6_CONFIG);
-}
-
-static void
 dhcp6_state_changed (NMDhcpClient *client,
                      NMDhcpState state,
                      NMIP6Config *ip6_config,
@@ -4137,7 +4078,8 @@ dhcp6_state_changed (NMDhcpClient *client,
 		g_clear_object (&priv->dhcp6_ip6_config);
 		if (ip6_config) {
 			priv->dhcp6_ip6_config = g_object_ref (ip6_config);
-			dhcp6_update_config (self, priv->dhcp6_config, options);
+			nm_dhcp6_config_set_options (priv->dhcp6_config, options);
+			g_object_notify (G_OBJECT (self), NM_DEVICE_DHCP6_CONFIG);
 		}
 
 		if (priv->ip6_state == IP_CONF) {
@@ -6389,25 +6331,23 @@ nm_device_set_ip4_config (NMDevice *self,
 			nm_ip4_config_replace (old_config, new_config, &has_changes);
 			if (has_changes) {
 				_LOGD (LOGD_IP4, "update IP4Config instance (%s)",
-				       nm_ip4_config_get_dbus_path (old_config));
+				       nm_exported_object_get_path (NM_EXPORTED_OBJECT (old_config)));
 			}
 		} else {
 			has_changes = TRUE;
 			priv->ip4_config = g_object_ref (new_config);
 
-			if (success && !nm_ip4_config_get_dbus_path (new_config)) {
-				/* Export over D-Bus */
-				nm_ip4_config_export (new_config);
-			}
+			if (success && !nm_exported_object_is_exported (NM_EXPORTED_OBJECT (new_config)))
+				nm_exported_object_export (NM_EXPORTED_OBJECT (new_config));
 
 			_LOGD (LOGD_IP4, "set IP4Config instance (%s)",
-			       nm_ip4_config_get_dbus_path (new_config));
+			       nm_exported_object_get_path (NM_EXPORTED_OBJECT (new_config)));
 		}
 	} else if (old_config) {
 		has_changes = TRUE;
 		priv->ip4_config = NULL;
 		_LOGD (LOGD_IP4, "clear IP4Config instance (%s)",
-		       nm_ip4_config_get_dbus_path (old_config));
+		       nm_exported_object_get_path (NM_EXPORTED_OBJECT (old_config)));
 		/* Device config is invalid if combined config is invalid */
 		g_clear_object (&priv->dev_ip4_config);
 	}
@@ -6524,25 +6464,23 @@ nm_device_set_ip6_config (NMDevice *self,
 			nm_ip6_config_replace (old_config, new_config, &has_changes);
 			if (has_changes) {
 				_LOGD (LOGD_IP6, "update IP6Config instance (%s)",
-				       nm_ip6_config_get_dbus_path (old_config));
+				       nm_exported_object_get_path (NM_EXPORTED_OBJECT (old_config)));
 			}
 		} else {
 			has_changes = TRUE;
 			priv->ip6_config = g_object_ref (new_config);
 
-			if (success && !nm_ip6_config_get_dbus_path (new_config)) {
-				/* Export over D-Bus */
-				nm_ip6_config_export (new_config);
-			}
+			if (success && !nm_exported_object_is_exported (NM_EXPORTED_OBJECT (new_config)))
+				nm_exported_object_export (NM_EXPORTED_OBJECT (new_config));
 
 			_LOGD (LOGD_IP6, "set IP6Config instance (%s)",
-			       nm_ip6_config_get_dbus_path (new_config));
+			       nm_exported_object_get_path (NM_EXPORTED_OBJECT (new_config)));
 		}
 	} else if (old_config) {
 		has_changes = TRUE;
 		priv->ip6_config = NULL;
 		_LOGD (LOGD_IP6, "clear IP6Config instance (%s)",
-		       nm_ip6_config_get_dbus_path (old_config));
+		       nm_exported_object_get_path (NM_EXPORTED_OBJECT (old_config)));
 	}
 
 	nm_default_route_manager_ip6_update_default_route (nm_default_route_manager_get (), self);
@@ -9158,7 +9096,6 @@ finalize (GObject *object)
 	g_slist_free_full (priv->pending_actions, g_free);
 	g_clear_pointer (&priv->physical_port_id, g_free);
 	g_free (priv->udi);
-	g_free (priv->path);
 	g_free (priv->iface);
 	g_free (priv->ip_iface);
 	g_free (priv->driver);
@@ -9298,7 +9235,6 @@ get_property (GObject *object, guint prop_id,
 {
 	NMDevice *self = NM_DEVICE (object);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	const char *ac_path = NULL;
 	GPtrArray *array;
 	GHashTableIter iter;
 	NMConnection *connection;
@@ -9341,28 +9277,16 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, priv->mtu);
 		break;
 	case PROP_IP4_CONFIG:
-		if (ip_config_valid (priv->state) && priv->ip4_config)
-			g_value_set_boxed (value, nm_ip4_config_get_dbus_path (priv->ip4_config));
-		else
-			g_value_set_boxed (value, "/");
+		nm_utils_g_value_set_object_path (value, ip_config_valid (priv->state) ? priv->ip4_config : NULL);
 		break;
 	case PROP_DHCP4_CONFIG:
-		if (ip_config_valid (priv->state) && priv->dhcp4_config)
-			g_value_set_boxed (value, nm_dhcp4_config_get_dbus_path (priv->dhcp4_config));
-		else
-			g_value_set_boxed (value, "/");
+		nm_utils_g_value_set_object_path (value, ip_config_valid (priv->state) ? priv->dhcp4_config : NULL);
 		break;
 	case PROP_IP6_CONFIG:
-		if (ip_config_valid (priv->state) && priv->ip6_config)
-			g_value_set_boxed (value, nm_ip6_config_get_dbus_path (priv->ip6_config));
-		else
-			g_value_set_boxed (value, "/");
+		nm_utils_g_value_set_object_path (value, ip_config_valid (priv->state) ? priv->ip6_config : NULL);
 		break;
 	case PROP_DHCP6_CONFIG:
-		if (ip_config_valid (priv->state) && priv->dhcp6_config)
-			g_value_set_boxed (value, nm_dhcp6_config_get_dbus_path (priv->dhcp6_config));
-		else
-			g_value_set_boxed (value, "/");
+		nm_utils_g_value_set_object_path (value, ip_config_valid (priv->state) ? priv->dhcp6_config : NULL);
 		break;
 	case PROP_STATE:
 		g_value_set_uint (value, priv->state);
@@ -9372,9 +9296,7 @@ get_property (GObject *object, guint prop_id,
 		dbus_g_type_struct_set (value, 0, priv->state, 1, priv->state_reason, G_MAXUINT);
 		break;
 	case PROP_ACTIVE_CONNECTION:
-		if (priv->act_request)
-			ac_path = nm_active_connection_get_path (NM_ACTIVE_CONNECTION (priv->act_request));
-		g_value_set_boxed (value, ac_path ? ac_path : "/");
+		nm_utils_g_value_set_object_path (value, priv->act_request);
 		break;
 	case PROP_DEVICE_TYPE:
 		g_value_set_uint (value, priv->type);
@@ -9432,8 +9354,11 @@ static void
 nm_device_class_init (NMDeviceClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (klass);
 
 	g_type_class_add_private (object_class, sizeof (NMDevicePrivate));
+
+	exported_object_class->export_path = NM_DBUS_PATH "/Devices/%u";
 
 	/* Virtual methods */
 	object_class->dispose = dispose;
@@ -9767,10 +9692,8 @@ nm_device_class_init (NMDeviceClass *klass)
 		              0, NULL, NULL, NULL,
 		              G_TYPE_NONE, 0);
 
-	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
-	                                        G_TYPE_FROM_CLASS (klass),
+	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        &dbus_glib_nm_device_object_info);
 
 	dbus_g_error_domain_register (NM_DEVICE_ERROR, NULL, NM_TYPE_DEVICE_ERROR);
 }
-

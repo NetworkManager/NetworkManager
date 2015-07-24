@@ -21,8 +21,6 @@
 #ifndef __NETWORKMANAGER_DEVICE_TUN_H__
 #define __NETWORKMANAGER_DEVICE_TUN_H__
 
-#include <glib-object.h>
-
 #include "nm-device-generic.h"
 
 G_BEGIN_DECLS

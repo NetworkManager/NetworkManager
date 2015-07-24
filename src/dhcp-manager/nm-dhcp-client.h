@@ -19,13 +19,12 @@
 #ifndef __NETWORKMANAGER_DHCP_CLIENT_H__
 #define __NETWORKMANAGER_DHCP_CLIENT_H__
 
-#include <glib.h>
-#include <glib-object.h>
-
 #include <nm-setting-ip4-config.h>
 #include <nm-setting-ip6-config.h>
 #include <nm-ip4-config.h>
 #include <nm-ip6-config.h>
+
+#include "nm-glib.h"
 
 #define NM_TYPE_DHCP_CLIENT            (nm_dhcp_client_get_type ())
 #define NM_DHCP_CLIENT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DHCP_CLIENT, NMDhcpClient))

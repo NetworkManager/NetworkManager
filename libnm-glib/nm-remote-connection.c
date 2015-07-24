@@ -22,17 +22,16 @@
 #include "config.h"
 
 #include <string.h>
-#include <gio/gio.h>
 #include <glib/gi18n-lib.h>
 
 #include <NetworkManager.h>
 #include <nm-utils.h>
 #include <nm-setting-connection.h>
+#include "nm-glib.h"
 #include "nm-remote-connection.h"
 #include "nm-remote-connection-private.h"
 #include "nm-object-private.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-glib-compat.h"
 #include "nm-dbus-helpers-private.h"
 
 #define NM_REMOTE_CONNECTION_BUS "bus"

@@ -26,7 +26,6 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <glib/gi18n.h>
 #include <dbus/dbus.h>
 #include <netinet/in.h>
@@ -38,6 +37,7 @@
 #include <sys/ioctl.h>
 #include <errno.h>
 
+#include "nm-glib.h"
 #include "nm-device.h"
 #include "nm-device-wifi.h"
 #include "nm-device-olpc-mesh.h"
@@ -50,13 +50,11 @@
 #include "nm-setting-olpc-mesh.h"
 #include "nm-manager.h"
 #include "nm-enum-types.h"
-#include "nm-dbus-manager.h"
 #include "nm-platform.h"
 #include "nm-wifi-enum-types.h"
 
 /* This is a bug; but we can't really change API now... */
 #include "nm-vpn-dbus-interface.h"
-
 
 #include "nm-device-olpc-mesh-glue.h"
 
@@ -477,10 +475,7 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_COMPANION:
-		if (priv->companion)
-			g_value_set_boxed (value, nm_device_get_path (priv->companion));
-		else
-			g_value_set_boxed (value, "/");
+		nm_utils_g_value_set_object_path (value, priv->companion);
 		break;
 	case PROP_ACTIVE_CHANNEL:
 		g_value_set_uint (value, nm_platform_mesh_get_channel (NM_PLATFORM_GET, nm_device_get_ifindex (NM_DEVICE (device))));
@@ -552,8 +547,7 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 		                    G_PARAM_READABLE |
 		                    G_PARAM_STATIC_STRINGS));
 
-	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
-	                                        G_TYPE_FROM_CLASS (klass),
+	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        &dbus_glib_nm_device_olpc_mesh_object_info);
 }
 

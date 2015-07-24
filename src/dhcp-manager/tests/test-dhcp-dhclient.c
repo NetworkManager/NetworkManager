@@ -20,11 +20,11 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
 
+#include "nm-glib.h"
 #include "gsystem-local-alloc.h"
 #include "NetworkManagerUtils.h"
 #include "nm-dhcp-dhclient-utils.h"

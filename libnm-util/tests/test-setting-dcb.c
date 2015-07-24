@@ -21,10 +21,9 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <string.h>
 #include <nm-utils.h>
-#include <nm-glib-compat.h>
+#include "nm-glib.h"
 #include "nm-setting-dcb.h"
 #include "gsystem-local-alloc.h"
 

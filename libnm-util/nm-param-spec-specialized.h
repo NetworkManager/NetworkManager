@@ -23,7 +23,7 @@
 #ifndef NM_PARAM_SPEC_SPECIALIZED_H
 #define NM_PARAM_SPEC_SPECIALIZED_H
 
-#include <glib-object.h>
+#include "nm-glib.h"
 
 typedef struct _NMParamSpecSpecialized NMParamSpecSpecialized;
 

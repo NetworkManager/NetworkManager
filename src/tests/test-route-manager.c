@@ -20,10 +20,10 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <arpa/inet.h>
 #include <linux/rtnetlink.h>
 
+#include "nm-glib.h"
 #include "test-common.h"
 
 #include "nm-platform.h"

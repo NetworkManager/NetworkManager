@@ -67,7 +67,7 @@
 #include "nm-settings-connection.h"
 #include "nm-system-config-interface.h"
 #include "nm-logging.h"
-#include "nm-dbus-manager.h"
+#include "nm-bus-manager.h"
 #include "nm-auth-utils.h"
 #include "nm-auth-subject.h"
 #include "nm-session-monitor.h"
@@ -156,12 +156,12 @@ static void unrecognized_specs_changed (NMSystemConfigInterface *config, gpointe
 
 static void connection_provider_init (NMConnectionProvider *cp_class);
 
-G_DEFINE_TYPE_EXTENDED (NMSettings, nm_settings, G_TYPE_OBJECT, 0,
+G_DEFINE_TYPE_EXTENDED (NMSettings, nm_settings, NM_TYPE_EXPORTED_OBJECT, 0,
                         G_IMPLEMENT_INTERFACE (NM_TYPE_CONNECTION_PROVIDER, connection_provider_init))
 
 
 typedef struct {
-	NMDBusManager *dbus_mgr;
+	NMBusManager *dbus_mgr;
 
 	NMAgentManager *agent_mgr;
 
@@ -192,7 +192,6 @@ typedef struct {
 #define NM_SETTINGS_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTINGS, NMSettingsPrivate))
 
 enum {
-	PROPERTIES_CHANGED,
 	CONNECTION_ADDED,
 	CONNECTION_UPDATED,
 	CONNECTION_UPDATED_BY_USER,
@@ -454,51 +453,6 @@ nm_settings_get_connection_by_path (NMSettings *self, const char *path)
 	priv = NM_SETTINGS_GET_PRIVATE (self);
 
 	return (NMSettingsConnection *) g_hash_table_lookup (priv->connections, path);
-}
-
-static char*
-uscore_to_wincaps (const char *uscore)
-{
-	const char *p;
-	GString *str;
-	gboolean last_was_uscore;
-
-	last_was_uscore = TRUE;
-  
-	str = g_string_new (NULL);
-	p = uscore;
-	while (p && *p) {
-		if (*p == '-' || *p == '_')
-			last_was_uscore = TRUE;
-		else {
-			if (last_was_uscore) {
-				g_string_append_c (str, g_ascii_toupper (*p));
-				last_was_uscore = FALSE;
-			} else
-				g_string_append_c (str, *p);
-		}
-		++p;
-	}
-
-	return g_string_free (str, FALSE);
-}
-
-static void
-notify (GObject *object, GParamSpec *pspec)
-{
-	GValue *value;
-	GHashTable *hash;
-
-	value = g_slice_new0 (GValue);
-	hash = g_hash_table_new_full (g_str_hash, g_str_equal, (GDestroyNotify) g_free, NULL);
-
-	g_value_init (value, pspec->value_type);
-	g_object_get_property (object, pspec->name, value);
-	g_hash_table_insert (hash, uscore_to_wincaps (pspec->name), value);
-	g_signal_emit (object, signals[PROPERTIES_CHANGED], 0, hash);
-	g_hash_table_destroy (hash);
-	g_value_unset (value);
-	g_slice_free (GValue, value);
 }
 
 gboolean
@@ -1019,11 +973,10 @@ static void
 claim_connection (NMSettings *self, NMSettingsConnection *connection)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	static guint32 ec_counter = 0;
 	GError *error = NULL;
 	GHashTableIter iter;
 	gpointer data;
-	char *path;
+	const char *path;
 	NMSettingsConnection *existing;
 
 	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (connection));
@@ -1089,10 +1042,8 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 
 	/* Export the connection over D-Bus */
 	g_warn_if_fail (nm_connection_get_path (NM_CONNECTION (connection)) == NULL);
-	path = g_strdup_printf ("%s/%u", NM_DBUS_PATH_SETTINGS, ec_counter++);
+	path = nm_exported_object_export (NM_EXPORTED_OBJECT (connection));
 	nm_connection_set_path (NM_CONNECTION (connection), path);
-	nm_dbus_manager_register_object (priv->dbus_mgr, path, G_OBJECT (connection));
-	g_free (path);
 
 	g_hash_table_insert (priv->connections,
 	                     (gpointer) nm_connection_get_path (NM_CONNECTION (connection)),
@@ -1484,13 +1435,13 @@ impl_settings_add_connection_unsaved (NMSettings *self,
 }
 
 static gboolean
-ensure_root (NMDBusManager         *dbus_mgr,
+ensure_root (NMBusManager          *dbus_mgr,
              DBusGMethodInvocation *context)
 {
 	gulong caller_uid;
 	GError *error = NULL;
 
-	if (!nm_dbus_manager_get_caller_info (dbus_mgr, context, NULL, &caller_uid, NULL)) {
+	if (!nm_bus_manager_get_caller_info (dbus_mgr, context, NULL, &caller_uid, NULL)) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
 		                             "Unable to determine request UID.");
@@ -2151,7 +2102,7 @@ nm_settings_new (GError **error)
 	priv = NM_SETTINGS_GET_PRIVATE (self);
 
 	priv->config = nm_config_get ();
-	priv->dbus_mgr = nm_dbus_manager_get ();
+	priv->dbus_mgr = nm_bus_manager_get ();
 
 	/* Load the plugins; fail if a plugin is not found. */
 	if (!load_plugins (self, nm_config_get_plugins (priv->config), error)) {
@@ -2187,7 +2138,7 @@ nm_settings_new (GError **error)
 	if (!priv->hostname.hostnamed_proxy)
 		setup_hostname_file_monitors (self);
 
-	nm_dbus_manager_register_object (priv->dbus_mgr, NM_DBUS_PATH_SETTINGS, self);
+	nm_exported_object_export (NM_EXPORTED_OBJECT (self));
 	return self;
 }
 
@@ -2325,11 +2276,13 @@ static void
 nm_settings_class_init (NMSettingsClass *class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (class);
+	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (class);
 
 	g_type_class_add_private (class, sizeof (NMSettingsPrivate));
 
+	exported_object_class->export_path = NM_DBUS_PATH_SETTINGS;
+
 	/* virtual methods */
-	object_class->notify = notify;
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
@@ -2365,14 +2318,6 @@ nm_settings_class_init (NMSettingsClass *class)
 		                     G_PARAM_STATIC_STRINGS));
 
 	/* signals */
-	signals[PROPERTIES_CHANGED] = 
-	                g_signal_new ("properties-changed",
-	                              G_OBJECT_CLASS_TYPE (object_class),
-	                              G_SIGNAL_RUN_FIRST,
-	                              G_STRUCT_OFFSET (NMSettingsClass, properties_changed),
-	                              NULL, NULL,
-	                              g_cclosure_marshal_VOID__BOXED,
-	                              G_TYPE_NONE, 1, DBUS_TYPE_G_MAP_OF_VARIANT);
 	signals[CONNECTION_ADDED] = 
 	                g_signal_new (NM_SETTINGS_SIGNAL_CONNECTION_ADDED,
 	                              G_OBJECT_CLASS_TYPE (object_class),
@@ -2435,14 +2380,14 @@ nm_settings_class_init (NMSettingsClass *class)
 	                              g_cclosure_marshal_VOID__OBJECT,
 	                              G_TYPE_NONE, 1, G_TYPE_OBJECT);
 
+	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (class),
+	                                        &dbus_glib_nm_settings_object_info);
+
 	dbus_g_error_domain_register (NM_SETTINGS_ERROR,
 	                              NM_DBUS_INTERFACE_SETTINGS,
 	                              NM_TYPE_SETTINGS_ERROR);
 	dbus_g_error_domain_register (NM_CONNECTION_ERROR,
 	                              NM_DBUS_INTERFACE_SETTINGS_CONNECTION,
 	                              NM_TYPE_CONNECTION_ERROR);
-
-	dbus_g_object_type_install_info (NM_TYPE_SETTINGS, &dbus_glib_nm_settings_object_info);
-
 }
 

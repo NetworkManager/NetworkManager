@@ -21,11 +21,10 @@
 #ifndef __NETWORKMANAGER_AGENT_MANAGER_H__
 #define __NETWORKMANAGER_AGENT_MANAGER_H__
 
-#include <glib.h>
-#include <glib-object.h>
 #include <nm-connection.h>
+
+#include "nm-exported-object.h"
 #include "nm-secret-agent.h"
-#include "nm-types.h"
 
 #define NM_TYPE_AGENT_MANAGER            (nm_agent_manager_get_type ())
 #define NM_AGENT_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_AGENT_MANAGER, NMAgentManager))
@@ -35,11 +34,11 @@
 #define NM_AGENT_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_AGENT_MANAGER, NMAgentManagerClass))
 
 struct _NMAgentManager {
-	GObject parent;
+	NMExportedObject parent;
 };
 
 typedef struct {
-	GObjectClass parent;
+	NMExportedObjectClass parent;
 
 	/* Signals */
 	void (*agent_registered)   (NMAgentManager *agent_mgr, NMSecretAgent *agent);

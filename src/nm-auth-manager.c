@@ -154,6 +154,7 @@ cancel_check_authorization_cb (GDBusProxy *proxy,
 
 	value = g_dbus_proxy_call_finish (proxy, res, &error);
 	if (value == NULL) {
+		g_dbus_error_strip_remote_error (error);
 		_LOGD ("Error cancelling authorization check: %s", error->message);
 		g_error_free (error);
 	} else
@@ -195,6 +196,7 @@ check_authorization_cb (GDBusProxy *proxy,
 			                   g_object_ref (self));
 		} else
 			_LOGD ("call[%u]: CheckAuthorization failed: %s", data->call_id, error->message);
+		g_dbus_error_strip_remote_error (error);
 		g_simple_async_result_set_error (data->simple,
 		                                 NM_MANAGER_ERROR,
 		                                 NM_MANAGER_ERROR_FAILED,

@@ -21,7 +21,6 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <glib/gi18n.h>
 #include <dbus/dbus.h>
 #include <netinet/in.h>
@@ -29,8 +28,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include "nm-glib-compat.h"
-#include "nm-dbus-manager.h"
+#include "nm-glib.h"
 #include "nm-device.h"
 #include "nm-device-wifi.h"
 #include "nm-device-private.h"
@@ -56,7 +54,6 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-wifi-enum-types.h"
 #include "nm-connection-provider.h"
-
 
 static gboolean impl_device_get_access_points (NMDeviceWifi *device,
                                                GPtrArray **aps,
@@ -384,7 +381,7 @@ set_current_ap (NMDeviceWifi *self, NMAccessPoint *new_ap, gboolean recheck_avai
 
 		if (force_remove_old_ap || mode == NM_802_11_MODE_ADHOC || mode == NM_802_11_MODE_AP || nm_ap_get_fake (old_ap)) {
 			emit_ap_added_removed (self, ACCESS_POINT_REMOVED, old_ap, FALSE);
-			g_hash_table_remove (priv->aps, nm_ap_get_dbus_path (old_ap));
+			g_hash_table_remove (priv->aps, nm_exported_object_get_path (NM_EXPORTED_OBJECT (old_ap)));
 			if (recheck_available_connections)
 				nm_device_recheck_available_connections (NM_DEVICE (self));
 		}
@@ -986,7 +983,7 @@ can_auto_connect (NMDevice *device,
 	ap = find_first_compatible_ap (self, connection, FALSE);
 	if (ap) {
 		/* All good; connection is usable */
-		*specific_object = (char *) nm_ap_get_dbus_path (ap);
+		*specific_object = (char *) nm_exported_object_get_path (NM_EXPORTED_OBJECT (ap));
 		return TRUE;
 	}
 
@@ -1028,7 +1025,7 @@ impl_device_get_access_points (NMDeviceWifi *self,
 		NMAccessPoint *ap = NM_AP (iter->data);
 
 		if (nm_ap_get_ssid (ap))
-			g_ptr_array_add (*aps, g_strdup (nm_ap_get_dbus_path (ap)));
+			g_ptr_array_add (*aps, g_strdup (nm_exported_object_get_path (NM_EXPORTED_OBJECT (ap))));
 	}
 	g_slist_free (sorted);
 	return TRUE;
@@ -1044,7 +1041,7 @@ impl_device_get_all_access_points (NMDeviceWifi *self,
 	*aps = g_ptr_array_new ();
 	sorted = get_sorted_ap_list (self);
 	for (iter = sorted; iter; iter = iter->next)
-		g_ptr_array_add (*aps, g_strdup (nm_ap_get_dbus_path (NM_AP (iter->data))));
+		g_ptr_array_add (*aps, g_strdup (nm_exported_object_get_path (NM_EXPORTED_OBJECT (iter->data))));
 	g_slist_free (sorted);
 	return TRUE;
 }
@@ -1497,7 +1494,7 @@ supplicant_iface_new_bss_cb (NMSupplicantInterface *iface,
 	NMAccessPoint *ap;
 	NMAccessPoint *found_ap = NULL;
 	const GByteArray *ssid;
-	const char *bssid;
+	const char *bssid, *ap_path;
 
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (properties != NULL);
@@ -1541,10 +1538,8 @@ supplicant_iface_new_bss_cb (NMSupplicantInterface *iface,
 		nm_ap_update_from_properties (found_ap, object_path, properties);
 	} else {
 		nm_ap_dump (ap, "added   ", nm_device_get_iface (NM_DEVICE (self)));
-		nm_ap_export_to_dbus (ap);
-		g_hash_table_insert (priv->aps,
-		                     (gpointer) nm_ap_get_dbus_path (ap),
-		                     g_object_ref (ap));
+		ap_path = nm_exported_object_export (NM_EXPORTED_OBJECT (ap));
+		g_hash_table_insert (priv->aps, (gpointer) ap_path, g_object_ref (ap));
 		emit_ap_added_removed (self, ACCESS_POINT_ADDED, ap, TRUE);
 	}
 
@@ -1609,7 +1604,7 @@ supplicant_iface_bss_removed_cb (NMSupplicantInterface *iface,
 		} else {
 			nm_ap_dump (ap, "removed ", nm_device_get_iface (NM_DEVICE (self)));
 			emit_ap_added_removed (self, ACCESS_POINT_REMOVED, ap, TRUE);
-			g_hash_table_remove (priv->aps, nm_ap_get_dbus_path (ap));
+			g_hash_table_remove (priv->aps, nm_exported_object_get_path (NM_EXPORTED_OBJECT (ap)));
 			schedule_ap_list_dump (self);
 		}
 	}
@@ -2305,7 +2300,8 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 	}
 
 	if (ap) {
-		nm_active_connection_set_specific_object (NM_ACTIVE_CONNECTION (req), nm_ap_get_dbus_path (ap));
+		nm_active_connection_set_specific_object (NM_ACTIVE_CONNECTION (req),
+		                                          nm_exported_object_get_path (NM_EXPORTED_OBJECT (ap)));
 		goto done;
 	}
 
@@ -2321,13 +2317,13 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 	if (nm_ap_is_hotspot (ap))
 		nm_ap_set_address (ap, nm_device_get_hw_address (device));
 
-	nm_ap_export_to_dbus (ap);
-	g_hash_table_insert (priv->aps, (gpointer) nm_ap_get_dbus_path (ap), ap);
+	ap_path = nm_exported_object_export (NM_EXPORTED_OBJECT (ap));
+	g_hash_table_insert (priv->aps, (gpointer) ap_path, ap);
 	g_object_freeze_notify (G_OBJECT (self));
 	set_current_ap (self, ap, FALSE, FALSE);
 	emit_ap_added_removed (self, ACCESS_POINT_ADDED, ap, TRUE);
 	g_object_thaw_notify (G_OBJECT (self));
-	nm_active_connection_set_specific_object (NM_ACTIVE_CONNECTION (req), nm_ap_get_dbus_path (ap));
+	nm_active_connection_set_specific_object (NM_ACTIVE_CONNECTION (req), ap_path);
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 
 done:
@@ -2698,7 +2694,8 @@ activation_success_handler (NMDevice *device)
 				nm_ap_set_max_bitrate (priv->current_ap, nm_platform_wifi_get_rate (NM_PLATFORM_GET, ifindex));
 		}
 
-		nm_active_connection_set_specific_object (NM_ACTIVE_CONNECTION (req), nm_ap_get_dbus_path (priv->current_ap));
+		nm_active_connection_set_specific_object (NM_ACTIVE_CONNECTION (req),
+		                                          nm_exported_object_get_path (NM_EXPORTED_OBJECT (priv->current_ap)));
 	}
 
 	periodic_update (self);
@@ -2928,10 +2925,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_take_boxed (value, array);
 		break;
 	case PROP_ACTIVE_ACCESS_POINT:
-		if (priv->current_ap)
-			g_value_set_boxed (value, nm_ap_get_dbus_path (priv->current_ap));
-		else
-			g_value_set_boxed (value, "/");
+		nm_utils_g_value_set_object_path (value, priv->current_ap);
 		break;
 	case PROP_SCANNING:
 		g_value_set_boolean (value, nm_supplicant_interface_get_scanning (priv->sup_iface));
@@ -3064,8 +3058,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 		              scanning_allowed_accumulator, NULL, NULL,
 		              G_TYPE_BOOLEAN, 0);
 
-	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
-	                                        G_TYPE_FROM_CLASS (klass),
+	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        &dbus_glib_nm_device_wifi_object_info);
 }
 

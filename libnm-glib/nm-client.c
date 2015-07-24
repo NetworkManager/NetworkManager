@@ -25,6 +25,7 @@
 #include <string.h>
 #include <nm-utils.h>
 
+#include "nm-glib.h"
 #include "nm-client.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-wifi.h"
@@ -35,7 +36,6 @@
 #include "nm-vpn-connection.h"
 #include "nm-object-cache.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-glib-compat.h"
 
 void _nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device, gboolean enabled);
 
@@ -1798,23 +1798,19 @@ constructed (GObject *object)
 	                             object,
 	                             NULL);
 
-	if (_nm_object_is_connection_private (NM_OBJECT (object)))
-		priv->manager_running = TRUE;
-	else {
-		priv->bus_proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (NM_OBJECT (object)),
-		                                             DBUS_SERVICE_DBUS,
-		                                             DBUS_PATH_DBUS,
-		                                             DBUS_INTERFACE_DBUS);
-		g_assert (priv->bus_proxy);
+	priv->bus_proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (NM_OBJECT (object)),
+	                                             DBUS_SERVICE_DBUS,
+	                                             DBUS_PATH_DBUS,
+	                                             DBUS_INTERFACE_DBUS);
+	g_assert (priv->bus_proxy);
 
-		dbus_g_proxy_add_signal (priv->bus_proxy, "NameOwnerChanged",
-		                         G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
-		                         G_TYPE_INVALID);
-		dbus_g_proxy_connect_signal (priv->bus_proxy,
-		                             "NameOwnerChanged",
-		                             G_CALLBACK (proxy_name_owner_changed),
-		                             object, NULL);
-	}
+	dbus_g_proxy_add_signal (priv->bus_proxy, "NameOwnerChanged",
+	                         G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
+	                         G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->bus_proxy,
+	                             "NameOwnerChanged",
+	                             G_CALLBACK (proxy_name_owner_changed),
+	                             object, NULL);
 
 	g_signal_connect (object, "notify::" NM_CLIENT_WIRELESS_ENABLED,
 	                  G_CALLBACK (wireless_enabled_cb), NULL);
@@ -1835,15 +1831,13 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	if (!nm_client_parent_initable_iface->init (initable, cancellable, error))
 		return FALSE;
 
-	if (!_nm_object_is_connection_private (NM_OBJECT (client))) {
-		if (!dbus_g_proxy_call (priv->bus_proxy,
-		                        "NameHasOwner", error,
-		                        G_TYPE_STRING, NM_DBUS_SERVICE,
-		                        G_TYPE_INVALID,
-		                        G_TYPE_BOOLEAN, &priv->manager_running,
-		                        G_TYPE_INVALID))
-			return FALSE;
-	}
+	if (!dbus_g_proxy_call (priv->bus_proxy,
+	                        "NameHasOwner", error,
+	                        G_TYPE_STRING, NM_DBUS_SERVICE,
+	                        G_TYPE_INVALID,
+	                        G_TYPE_BOOLEAN, &priv->manager_running,
+	                        G_TYPE_INVALID))
+		return FALSE;
 
 	if (priv->manager_running && !get_permissions_sync (client, error))
 		return FALSE;
@@ -1953,16 +1947,12 @@ init_async (GAsyncInitable *initable, int io_priority,
 	                                               user_data, init_async);
 	g_simple_async_result_set_op_res_gboolean (init_data->result, TRUE);
 
-	if (_nm_object_is_connection_private (NM_OBJECT (init_data->client)))
-		finish_init (init_data);
-	else {
-		/* Check if NM is running */
-		dbus_g_proxy_begin_call (priv->bus_proxy, "NameHasOwner",
-		                         init_async_got_manager_running,
-		                         init_data, NULL,
-		                         G_TYPE_STRING, NM_DBUS_SERVICE,
-		                         G_TYPE_INVALID);
-	}
+	/* Check if NM is running */
+	dbus_g_proxy_begin_call (priv->bus_proxy, "NameHasOwner",
+	                         init_async_got_manager_running,
+	                         init_data, NULL,
+	                         G_TYPE_STRING, NM_DBUS_SERVICE,
+	                         G_TYPE_INVALID);
 }
 
 static gboolean

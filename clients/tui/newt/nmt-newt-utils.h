@@ -20,7 +20,8 @@
 #define NMT_NEWT_UTILS_H
 
 #include <newt.h>
-#include <glib.h>
+
+#include "nm-glib.h"
 
 G_BEGIN_DECLS
 

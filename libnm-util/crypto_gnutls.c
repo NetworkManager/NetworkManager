@@ -23,7 +23,6 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <glib/gi18n-lib.h>
 
 #include <gnutls/gnutls.h>
@@ -31,6 +30,7 @@
 #include <gnutls/x509.h>
 #include <gnutls/pkcs12.h>
 
+#include "nm-glib.h"
 #include "crypto.h"
 
 #define SALT_LEN 8

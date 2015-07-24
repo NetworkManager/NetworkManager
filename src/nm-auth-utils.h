@@ -21,10 +21,10 @@
 #ifndef __NETWORKMANAGER_MANAGER_AUTH_H__
 #define __NETWORKMANAGER_MANAGER_AUTH_H__
 
-#include <glib.h>
 #include <dbus/dbus-glib.h>
 
 #include <nm-connection.h>
+#include "nm-glib.h"
 #include "nm-types.h"
 
 #define NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK     "org.freedesktop.NetworkManager.enable-disable-network"

@@ -24,16 +24,15 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "nm-glib.h"
 #include "nm-wifi-ap.h"
 #include "nm-wifi-ap-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-logging.h"
-#include "nm-dbus-manager.h"
 #include "nm-core-internal.h"
 
 #include "nm-setting-wireless.h"
-#include "nm-glib-compat.h"
 #include "gsystem-local-alloc.h"
 
 #include "nm-access-point-glue.h"
@@ -43,9 +42,7 @@
  */
 typedef struct
 {
-	char *dbus_path;
 	char *supplicant_path;   /* D-Bus object path of this AP from wpa_supplicant */
-	guint32 id;              /* ID for stable sorting of APs */
 
 	/* Scanned or cached values */
 	GByteArray *	ssid;
@@ -67,7 +64,7 @@ typedef struct
 
 #define NM_AP_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_AP, NMAccessPointPrivate))
 
-G_DEFINE_TYPE (NMAccessPoint, nm_ap, G_TYPE_OBJECT)
+G_DEFINE_TYPE (NMAccessPoint, nm_ap, NM_TYPE_EXPORTED_OBJECT)
 
 enum {
 	PROP_0,
@@ -94,20 +91,13 @@ nm_ap_get_supplicant_path (NMAccessPoint *ap)
 	return NM_AP_GET_PRIVATE (ap)->supplicant_path;
 }
 
-const char *
-nm_ap_get_dbus_path (NMAccessPoint *ap)
-{
-	g_return_val_if_fail (NM_IS_AP (ap), NULL);
-
-	return NM_AP_GET_PRIVATE (ap)->dbus_path;
-}
-
 guint32
 nm_ap_get_id (NMAccessPoint *ap)
 {
 	g_return_val_if_fail (NM_IS_AP (ap), 0);
+	g_return_val_if_fail (nm_exported_object_is_exported (NM_EXPORTED_OBJECT (ap)), 0);
 
-	return NM_AP_GET_PRIVATE (ap)->id;
+	return atoi (strrchr (nm_exported_object_get_path (NM_EXPORTED_OBJECT (ap)), '/') + 1);
 }
 
 const GByteArray * nm_ap_get_ssid (const NMAccessPoint *ap)
@@ -299,6 +289,7 @@ guint32
 nm_ap_get_max_bitrate (NMAccessPoint *ap)
 {
 	g_return_val_if_fail (NM_IS_AP (ap), 0);
+	g_return_val_if_fail (nm_exported_object_is_exported (NM_EXPORTED_OBJECT (ap)), 0);
 
 	return NM_AP_GET_PRIVATE (ap)->max_bitrate;
 }
@@ -876,32 +867,11 @@ nm_ap_complete_connection (NMAccessPoint *self,
 
 /*****************************************************************/
 
-void
-nm_ap_export_to_dbus (NMAccessPoint *ap)
-{
-	NMAccessPointPrivate *priv;
-	static guint32 counter = 0;
-
-	g_return_if_fail (NM_IS_AP (ap));
-
-	priv = NM_AP_GET_PRIVATE (ap);
-
-	if (priv->dbus_path) {
-		nm_log_err (LOGD_CORE, "Tried to export AP %s twice.", priv->dbus_path);
-		return;
-	}
-
-	priv->id = counter++;
-	priv->dbus_path = g_strdup_printf (NM_DBUS_PATH_ACCESS_POINT "/%d", priv->id);
-	nm_dbus_manager_register_object (nm_dbus_manager_get (), priv->dbus_path, ap);
-}
-
 static void
 nm_ap_init (NMAccessPoint *ap)
 {
 	NMAccessPointPrivate *priv = NM_AP_GET_PRIVATE (ap);
 
-	priv->dbus_path = NULL;
 	priv->mode = NM_802_11_MODE_INFRA;
 	priv->flags = NM_802_11_AP_FLAGS_NONE;
 	priv->wpa_flags = NM_802_11_AP_SEC_NONE;
@@ -914,7 +884,6 @@ finalize (GObject *object)
 {
 	NMAccessPointPrivate *priv = NM_AP_GET_PRIVATE (object);
 
-	g_free (priv->dbus_path);
 	g_free (priv->supplicant_path);
 	if (priv->ssid)
 		g_byte_array_free (priv->ssid, TRUE);
@@ -988,6 +957,7 @@ static void
 nm_ap_class_init (NMAccessPointClass *ap_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (ap_class);
+	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (ap_class);
 	const NM80211ApSecurityFlags all_sec_flags =   NM_802_11_AP_SEC_NONE
 	                                             | NM_802_11_AP_SEC_PAIR_WEP40
 	                                             | NM_802_11_AP_SEC_PAIR_WEP104
@@ -1001,6 +971,8 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
 	                                             | NM_802_11_AP_SEC_KEY_MGMT_802_1X;
 
 	g_type_class_add_private (ap_class, sizeof (NMAccessPointPrivate));
+
+	exported_object_class->export_path = NM_DBUS_PATH_ACCESS_POINT "/%u";
 
 	/* virtual methods */
 	object_class->set_property = set_property;
@@ -1074,8 +1046,7 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
 	                       -1, G_MAXINT, -1,
 	                        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
-	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
-	                                        G_TYPE_FROM_CLASS (ap_class),
+	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (ap_class),
 	                                        &dbus_glib_nm_access_point_object_info);
 }
 

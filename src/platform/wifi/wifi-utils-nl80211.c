@@ -29,7 +29,6 @@
 #include <unistd.h>
 #include <math.h>
 
-#include <glib.h>
 
 #include <netlink/genl/genl.h>
 #include <netlink/genl/family.h>
@@ -37,6 +36,7 @@
 
 #include <linux/nl80211.h>
 
+#include "nm-glib.h"
 #include "wifi-utils-private.h"
 #include "wifi-utils-nl80211.h"
 #include "nm-platform.h"

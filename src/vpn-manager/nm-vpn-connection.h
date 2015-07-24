@@ -22,8 +22,6 @@
 #ifndef __NETWORKMANAGER_VPN_CONNECTION_H__
 #define __NETWORKMANAGER_VPN_CONNECTION_H__
 
-#include <glib.h>
-#include <glib-object.h>
 #include "nm-vpn-dbus-interface.h"
 #include "nm-device.h"
 #include "nm-auth-subject.h"

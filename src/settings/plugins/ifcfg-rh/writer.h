@@ -22,8 +22,10 @@
 #define _WRITER_H_
 
 #include <sys/types.h>
-#include <glib.h>
+
 #include <nm-connection.h>
+
+#include "nm-glib.h"
 
 gboolean writer_can_write_connection (NMConnection *connection,
                                       GError **error);

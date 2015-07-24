@@ -2,6 +2,7 @@
 
 <node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
     <interface name="org.freedesktop.NetworkManager.DHCP4Config">
+        <annotation name="org.gtk.GDBus.C.Name" value="Dhcp4Config"/>
         <tp:docstring>
             Options and configuration returned by the IPv4 DHCP server.
         </tp:docstring>

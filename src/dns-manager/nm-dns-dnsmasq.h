@@ -19,9 +19,6 @@
 #ifndef __NETWORKMANAGER_DNS_DNSMASQ_H__
 #define __NETWORKMANAGER_DNS_DNSMASQ_H__
 
-#include <glib.h>
-#include <glib-object.h>
-
 #include "nm-dns-plugin.h"
 
 #define NM_TYPE_DNS_DNSMASQ            (nm_dns_dnsmasq_get_type ())

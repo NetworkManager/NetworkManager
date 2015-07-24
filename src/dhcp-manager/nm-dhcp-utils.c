@@ -19,12 +19,12 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
 #include <arpa/inet.h>
 
+#include "nm-glib.h"
 #include "nm-logging.h"
 #include "nm-dhcp-utils.h"
 #include "nm-utils.h"

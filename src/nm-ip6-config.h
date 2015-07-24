@@ -21,10 +21,9 @@
 #ifndef __NETWORKMANAGER_IP6_CONFIG_H__
 #define __NETWORKMANAGER_IP6_CONFIG_H__
 
-#include <glib-object.h>
 #include <netinet/in.h>
 
-#include "nm-types.h"
+#include "nm-exported-object.h"
 #include "nm-setting-ip6-config.h"
 
 #define NM_TYPE_IP6_CONFIG (nm_ip6_config_get_type ())
@@ -35,11 +34,11 @@
 #define NM_IP6_CONFIG_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_IP6_CONFIG, NMIP6ConfigClass))
 
 struct _NMIP6Config {
-	GObject parent;
+	NMExportedObject parent;
 };
 
 typedef struct {
-	GObjectClass parent;
+	NMExportedObjectClass parent;
 } NMIP6ConfigClass;
 
 /* internal */
@@ -64,10 +63,6 @@ GType nm_ip6_config_get_type (void);
 NMIP6Config * nm_ip6_config_new (int ifindex);
 
 int nm_ip6_config_get_ifindex (const NMIP6Config *config);
-
-/* D-Bus integration */
-void nm_ip6_config_export (NMIP6Config *config);
-const char * nm_ip6_config_get_dbus_path (const NMIP6Config *config);
 
 /* Integration with nm-platform and nm-setting */
 NMIP6Config *nm_ip6_config_capture (int ifindex, gboolean capture_resolv_conf, NMSettingIP6ConfigPrivacy use_temporary);

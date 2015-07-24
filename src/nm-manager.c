@@ -28,14 +28,13 @@
 #include <unistd.h>
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
-#include <gio/gio.h>
 #include <glib/gi18n.h>
 
+#include "nm-glib.h"
 #include "gsystem-local-alloc.h"
-#include "nm-glib-compat.h"
 #include "nm-manager.h"
 #include "nm-logging.h"
-#include "nm-dbus-manager.h"
+#include "nm-bus-manager.h"
 #include "nm-vpn-manager.h"
 #include "nm-device.h"
 #include "nm-device-generic.h"
@@ -167,7 +166,7 @@ typedef struct {
 
 	NMPolicy *policy;
 
-	NMDBusManager *dbus_mgr;
+	NMBusManager  *dbus_mgr;
 	gboolean       prop_filter_added;
 	NMRfkillManager *rfkill_mgr;
 
@@ -195,7 +194,7 @@ typedef struct {
 
 #define NM_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_MANAGER, NMManagerPrivate))
 
-G_DEFINE_TYPE (NMManager, nm_manager, G_TYPE_OBJECT)
+G_DEFINE_TYPE (NMManager, nm_manager, NM_TYPE_EXPORTED_OBJECT)
 
 enum {
 	DEVICE_ADDED,
@@ -254,7 +253,7 @@ static gboolean
 active_connection_remove (NMManager *self, NMActiveConnection *active)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	gboolean notify = !!nm_active_connection_get_path (active);
+	gboolean notify = nm_exported_object_is_exported (NM_EXPORTED_OBJECT (active));
 	GSList *found;
 
 	/* FIXME: switch to a GList for faster removal */
@@ -376,7 +375,7 @@ active_connection_add (NMManager *self, NMActiveConnection *active)
 	g_signal_emit (self, signals[ACTIVE_CONNECTION_ADDED], 0, active);
 
 	/* Only notify D-Bus if the active connection is actually exported */
-	if (nm_active_connection_get_path (active))
+	if (nm_exported_object_is_exported (NM_EXPORTED_OBJECT (active)))
 		g_object_notify (G_OBJECT (self), NM_MANAGER_ACTIVE_CONNECTIONS);
 }
 
@@ -447,7 +446,7 @@ active_connection_get_by_path (NMManager *manager, const char *path)
 	for (iter = priv->active_connections; iter; iter = g_slist_next (iter)) {
 		NMActiveConnection *candidate = iter->data;
 
-		if (g_strcmp0 (path, nm_active_connection_get_path (candidate)) == 0)
+		if (g_strcmp0 (path, nm_exported_object_get_path (NM_EXPORTED_OBJECT (candidate))) == 0)
 			return candidate;
 	}
 	return NULL;
@@ -475,7 +474,7 @@ nm_manager_get_device_by_path (NMManager *manager, const char *path)
 	g_return_val_if_fail (path != NULL, NULL);
 
 	for (iter = NM_MANAGER_GET_PRIVATE (manager)->devices; iter; iter = iter->next) {
-		if (!strcmp (nm_device_get_path (NM_DEVICE (iter->data)), path))
+		if (!strcmp (nm_exported_object_get_path (NM_EXPORTED_OBJECT (iter->data)), path))
 			return NM_DEVICE (iter->data);
 	}
 	return NULL;
@@ -833,7 +832,7 @@ remove_device (NMManager *manager,
 	g_object_notify (G_OBJECT (manager), NM_MANAGER_DEVICES);
 	nm_device_removed (device);
 
-	nm_dbus_manager_unregister_object (priv->dbus_mgr, device);
+	nm_exported_object_unexport (NM_EXPORTED_OBJECT (device));
 	g_object_unref (device);
 
 	check_if_startup_complete (manager);
@@ -1598,7 +1597,7 @@ assume_connection (NMManager *self, NMDevice *device, NMConnection *connection)
 		nm_active_connection_set_master (active, master_ac);
 
 	nm_active_connection_set_assumed (active, TRUE);
-	nm_active_connection_export (active);
+	nm_exported_object_export (NM_EXPORTED_OBJECT (active));
 	active_connection_add (self, active);
 	nm_device_queue_activation (device, NM_ACT_REQUEST (active));
 	g_object_unref (active);
@@ -1720,6 +1719,7 @@ add_device (NMManager *self, NMDevice *device, gboolean try_assume)
 	GSList *iter, *remove = NULL;
 	gboolean connection_assumed = FALSE;
 	int ifindex;
+	const char *dbus_path;
 
 	/* No duplicates */
 	ifindex = nm_device_get_ifindex (device);
@@ -1801,7 +1801,9 @@ add_device (NMManager *self, NMDevice *device, gboolean try_assume)
 	sleeping = manager_sleeping (self);
 	nm_device_set_initial_unmanaged_flag (device, NM_UNMANAGED_INTERNAL, sleeping);
 
-	nm_device_dbus_export (device);
+	dbus_path = nm_exported_object_export (NM_EXPORTED_OBJECT (device));
+	nm_log_dbg (LOGD_DEVICE, "(%s): exported as %s", nm_device_get_iface (device), dbus_path);
+
 	nm_device_finish_init (device);
 
 	if (try_assume) {
@@ -2051,8 +2053,7 @@ impl_manager_get_devices (NMManager *manager, GPtrArray **devices, GError **err)
 	*devices = g_ptr_array_sized_new (g_slist_length (priv->devices));
 
 	for (iter = priv->devices; iter; iter = iter->next)
-		g_ptr_array_add (*devices, g_strdup (nm_device_get_path (NM_DEVICE (iter->data))));
-
+		g_ptr_array_add (*devices, g_strdup (nm_exported_object_get_path (NM_EXPORTED_OBJECT (iter->data))));
 	return TRUE;
 }
 
@@ -2067,7 +2068,7 @@ impl_manager_get_device_by_ip_iface (NMManager *self,
 
 	device = find_device_by_ip_iface (self, iface);
 	if (device) {
-		path = nm_device_get_path (device);
+		path = nm_exported_object_get_path (NM_EXPORTED_OBJECT (device));
 		if (path)
 			*out_object_path = g_strdup (path);
 	}
@@ -2538,7 +2539,7 @@ _internal_activate_vpn (NMManager *self, NMActiveConnection *active, GError **er
 	                                              NM_VPN_CONNECTION (active),
 	                                              error);
 	if (success) {
-		nm_active_connection_export (active);
+		nm_exported_object_export (NM_EXPORTED_OBJECT (active));
 		g_object_notify (G_OBJECT (self), NM_MANAGER_ACTIVE_CONNECTIONS);
 	}
 	return success;
@@ -2708,7 +2709,7 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 		nm_device_steal_connection (existing, connection);
 
 	/* Export the new ActiveConnection to clients and start it on the device */
-	nm_active_connection_export (active);
+	nm_exported_object_export (NM_EXPORTED_OBJECT (active));
 	g_object_notify (G_OBJECT (self), NM_MANAGER_ACTIVE_CONNECTIONS);
 	nm_device_queue_activation (device, NM_ACT_REQUEST (active));
 	return TRUE;
@@ -2788,7 +2789,7 @@ _new_vpn_active_connection (NMManager *self,
 
 	return (NMActiveConnection *) nm_vpn_connection_new (connection,
 	                                                     device,
-	                                                     nm_active_connection_get_path (parent),
+	                                                     nm_exported_object_get_path (NM_EXPORTED_OBJECT (parent)),
 	                                                     subject);
 }
 
@@ -3073,7 +3074,7 @@ _activation_auth_done (NMActiveConnection *active,
 
 	if (success) {
 		if (_internal_activate_generic (self, active, &error)) {
-			dbus_g_method_return (context, nm_active_connection_get_path (active));
+			dbus_g_method_return (context, nm_exported_object_get_path (NM_EXPORTED_OBJECT (active)));
 			g_object_unref (active);
 			return;
 		}
@@ -3226,7 +3227,7 @@ activation_add_done (NMSettings *self,
 			                                       NULL, NULL);
 			dbus_g_method_return (context,
 			                      nm_connection_get_path (NM_CONNECTION (new_connection)),
-			                      nm_active_connection_get_path (info->active));
+			                      nm_exported_object_get_path (NM_EXPORTED_OBJECT (info->active)));
 			goto done;
 		}
 		error = local;
@@ -3495,7 +3496,7 @@ impl_manager_deactivate_connection (NMManager *self,
 	for (iter = priv->active_connections; iter; iter = g_slist_next (iter)) {
 		NMActiveConnection *ac = iter->data;
 
-		if (g_strcmp0 (nm_active_connection_get_path (ac), active_path) == 0) {
+		if (g_strcmp0 (nm_exported_object_get_path (NM_EXPORTED_OBJECT (ac)), active_path) == 0) {
 			connection = nm_active_connection_get_connection (ac);
 			break;
 		}
@@ -3991,7 +3992,7 @@ impl_manager_set_logging (NMManager *manager,
 	GError *error = NULL;
 	gulong caller_uid = G_MAXULONG;
 
-	if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr, context, NULL, &caller_uid, NULL)) {
+	if (!nm_bus_manager_get_caller_info (priv->dbus_mgr, context, NULL, &caller_uid, NULL)) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                             "Failed to get request UID.");
@@ -4625,7 +4626,7 @@ periodic_update_active_connection_timestamps (gpointer user_data)
 }
 
 static void
-dbus_connection_changed_cb (NMDBusManager *dbus_mgr,
+dbus_connection_changed_cb (NMBusManager *dbus_mgr,
                             DBusConnection *dbus_connection,
                             gpointer user_data)
 {
@@ -4685,7 +4686,7 @@ nm_manager_new (NMSettings *settings,
 
 	priv = NM_MANAGER_GET_PRIVATE (singleton);
 
-	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
+	bus = nm_bus_manager_get_connection (priv->dbus_mgr);
 	if (!bus) {
 		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
 		                     "Failed to initialize D-Bus connection");
@@ -4752,7 +4753,7 @@ nm_manager_new (NMSettings *settings,
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED,
 	                  G_CALLBACK (connection_changed), singleton);
 
-	nm_dbus_manager_register_object (priv->dbus_mgr, NM_DBUS_PATH, singleton);
+	nm_exported_object_export (NM_EXPORTED_OBJECT (singleton));
 
 	g_signal_connect (nm_platform_get (),
 	                  NM_PLATFORM_SIGNAL_LINK_CHANGED,
@@ -4816,9 +4817,9 @@ nm_manager_init (NMManager *manager)
 	priv->state = NM_STATE_DISCONNECTED;
 	priv->startup = TRUE;
 
-	priv->dbus_mgr = nm_dbus_manager_get ();
+	priv->dbus_mgr = nm_bus_manager_get ();
 	g_signal_connect (priv->dbus_mgr,
-	                  NM_DBUS_MANAGER_DBUS_CONNECTION_CHANGED,
+	                  NM_BUS_MANAGER_DBUS_CONNECTION_CHANGED,
 	                  G_CALLBACK (dbus_connection_changed_cb),
 	                  manager);
 
@@ -4868,9 +4869,6 @@ get_property (GObject *object, guint prop_id,
 {
 	NMManager *self = NM_MANAGER (object);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GSList *iter;
-	GPtrArray *array;
-	const char *path;
 	const char *type;
 
 	switch (prop_id) {
@@ -4906,28 +4904,20 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boolean (value, priv->radio_states[RFKILL_TYPE_WIMAX].hw_enabled);
 		break;
 	case PROP_ACTIVE_CONNECTIONS:
-		array = g_ptr_array_sized_new (3);
-		for (iter = priv->active_connections; iter; iter = g_slist_next (iter)) {
-			path = nm_active_connection_get_path (NM_ACTIVE_CONNECTION (iter->data));
-			if (path)
-				g_ptr_array_add (array, g_strdup (path));
-		}
-		g_value_take_boxed (value, array);
+		nm_utils_g_value_set_object_path_array (value, priv->active_connections);
 		break;
 	case PROP_CONNECTIVITY:
 		g_value_set_uint (value, nm_connectivity_get_state (priv->connectivity));
 		break;
 	case PROP_PRIMARY_CONNECTION:
-		path = priv->primary_connection ? nm_active_connection_get_path (priv->primary_connection) : NULL;
-		g_value_set_boxed (value, path ? path : "/");
+		nm_utils_g_value_set_object_path (value, priv->primary_connection);
 		break;
 	case PROP_PRIMARY_CONNECTION_TYPE:
 		type = priv->primary_connection ? nm_active_connection_get_connection_type (priv->primary_connection) : NULL;
 		g_value_set_string (value, type ? type : "");
 		break;
 	case PROP_ACTIVATING_CONNECTION:
-		path = priv->activating_connection ? nm_active_connection_get_path (priv->activating_connection) : NULL;
-		g_value_set_boxed (value, path ? path : "/");
+		nm_utils_g_value_set_object_path (value, priv->activating_connection);
 		break;
 	case PROP_HOSTNAME:
 		g_value_set_string (value, priv->hostname);
@@ -4936,13 +4926,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boolean (value, priv->sleeping);
 		break;
 	case PROP_DEVICES:
-		array = g_ptr_array_sized_new (5);
-		for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-			path = nm_device_get_path (NM_DEVICE (iter->data));
-			if (path)
-				g_ptr_array_add (array, g_strdup (path));
-		}
-		g_value_take_boxed (value, array);
+		nm_utils_g_value_set_object_path_array (value, priv->devices);
 		break;
 	case PROP_METERED:
 		g_value_set_uint (value, priv->metered);
@@ -5043,7 +5027,7 @@ dispose (GObject *object)
 
 	/* Unregister property filter */
 	if (priv->dbus_mgr) {
-		bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
+		bus = nm_bus_manager_get_connection (priv->dbus_mgr);
 		if (bus) {
 			dbus_connection = dbus_g_connection_get_connection (bus);
 			if (dbus_connection && priv->prop_filter_added) {
@@ -5087,8 +5071,11 @@ static void
 nm_manager_class_init (NMManagerClass *manager_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (manager_class);
+	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (manager_class);
 
 	g_type_class_add_private (manager_class, sizeof (NMManagerPrivate));
+
+	exported_object_class->export_path = NM_DBUS_PATH;
 
 	/* virtual methods */
 	object_class->set_property = set_property;
@@ -5299,8 +5286,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		              0, NULL, NULL, NULL,
 		              G_TYPE_NONE, 0);
 
-	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
-	                                        G_TYPE_FROM_CLASS (manager_class),
+	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (manager_class),
 	                                        &dbus_glib_nm_manager_object_info);
 
 	dbus_g_error_domain_register (NM_MANAGER_ERROR, NM_DBUS_INTERFACE, NM_TYPE_MANAGER_ERROR);

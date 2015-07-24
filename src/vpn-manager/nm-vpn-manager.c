@@ -22,13 +22,12 @@
 #include "config.h"
 
 #include <string.h>
-#include <gio/gio.h>
 
+#include "nm-glib.h"
 #include "nm-vpn-manager.h"
 #include "nm-vpn-service.h"
 #include "nm-vpn-connection.h"
 #include "nm-setting-vpn.h"
-#include "nm-dbus-manager.h"
 #include "nm-vpn-dbus-interface.h"
 #include "nm-enum-types.h"
 #include "nm-logging.h"

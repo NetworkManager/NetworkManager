@@ -20,9 +20,9 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <dbus/dbus-glib.h>
 #include <string.h>
+#include "nm-glib.h"
 #include "nm-types.h"
 #include "nm-types-private.h"
 #include "nm-object-private.h"

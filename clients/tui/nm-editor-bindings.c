@@ -33,7 +33,6 @@
 #include <string.h>
 
 #include "nm-editor-bindings.h"
-#include "nm-gvaluearray-compat.h"
 
 static void
 value_transform_string_int (const GValue *src_value,

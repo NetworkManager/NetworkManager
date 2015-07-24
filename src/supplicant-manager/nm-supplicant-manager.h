@@ -22,7 +22,7 @@
 #ifndef __NETWORKMANAGER_SUPPLICANT_MANAGER_H__
 #define __NETWORKMANAGER_SUPPLICANT_MANAGER_H__
 
-#include <glib-object.h>
+#include "nm-glib.h"
 #include "nm-supplicant-types.h"
 #include "nm-device.h"
 

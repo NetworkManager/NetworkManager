@@ -16,9 +16,9 @@
 #ifndef __NETWORKMANAGER_CONNECTION_PROVIDER_H__
 #define __NETWORKMANAGER_CONNECTION_PROVIDER_H__
 
-#include <glib-object.h>
 #include <nm-connection.h>
 
+#include "nm-glib.h"
 #include "nm-types.h"
 
 #define NM_TYPE_CONNECTION_PROVIDER      (nm_connection_provider_get_type ())

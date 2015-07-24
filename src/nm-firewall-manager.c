@@ -21,9 +21,8 @@
 #include "config.h"
 
 #include <string.h>
-#include <glib.h>
-#include <gio/gio.h>
 
+#include "nm-glib.h"
 #include "nm-firewall-manager.h"
 #include "nm-logging.h"
 #include "gsystem-local-alloc.h"

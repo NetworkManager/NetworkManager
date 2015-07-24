@@ -21,18 +21,9 @@
 #ifndef __NM_DBUS_HELPERS_PRIVATE_H__
 #define __NM_DBUS_HELPERS_PRIVATE_H__
 
-#include <gio/gio.h>
 
-/* Copied from dbus/dbus-shared.h */
-#define DBUS_SERVICE_DBUS      "org.freedesktop.DBus"
-#define DBUS_PATH_DBUS  "/org/freedesktop/DBus"
-#define DBUS_PATH_LOCAL "/org/freedesktop/DBus/Local"
-
-#define DBUS_INTERFACE_DBUS           "org.freedesktop.DBus"
-#define DBUS_INTERFACE_INTROSPECTABLE "org.freedesktop.DBus.Introspectable"
-#define DBUS_INTERFACE_PROPERTIES     "org.freedesktop.DBus.Properties"
-#define DBUS_INTERFACE_PEER           "org.freedesktop.DBus.Peer"
-
+#include "nm-glib.h"
+#include "nm-dbus-compat.h"
 
 GBusType _nm_dbus_bus_type (void);
 

@@ -31,7 +31,6 @@
 #include "config.h"
 
 #include <string.h>
-#include <glib.h>
 #include <gmodule.h>
 #include <glib/gi18n.h>
 
@@ -39,6 +38,7 @@
 #include <nm-setting-connection.h>
 #include <nm-setting-vpn.h>
 
+#include "nm-glib.h"
 #include "vpn-helpers.h"
 
 #define NM_VPN_API_SUBJECT_TO_CHANGE

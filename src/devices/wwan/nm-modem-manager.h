@@ -23,7 +23,6 @@
 #ifndef __NETWORKMANAGER_MODEM_MANAGER_H__
 #define __NETWORKMANAGER_MODEM_MANAGER_H__
 
-#include <glib-object.h>
 #include "nm-modem.h"
 
 #define NM_TYPE_MODEM_MANAGER (nm_modem_manager_get_type ())

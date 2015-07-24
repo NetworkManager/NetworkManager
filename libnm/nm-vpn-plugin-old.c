@@ -30,9 +30,8 @@
 #include <stdlib.h>
 
 #include <glib/gi18n-lib.h>
-#include <gio/gio.h>
 
-#include "nm-glib-compat.h"
+#include "nm-glib.h"
 #include "nm-vpn-plugin-old.h"
 #include "nm-enum-types.h"
 #include "nm-utils.h"

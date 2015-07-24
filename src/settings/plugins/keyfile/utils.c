@@ -20,15 +20,14 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <stdlib.h>
 #include <string.h>
+#include "nm-glib.h"
 #include "gsystem-local-alloc.h"
 #include "utils.h"
 #include <nm-setting-wired.h>
 #include <nm-setting-wireless.h>
 #include <nm-setting-wireless-security.h>
-
 
 static const char temp_letters[] =
 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";

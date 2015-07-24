@@ -21,7 +21,7 @@
 #ifndef __MAIN_UTILS_H__
 #define __MAIN_UTILS_H__
 
-#include <glib.h>
+#include "nm-glib.h"
 
 void     nm_main_utils_ensure_root (void);
 

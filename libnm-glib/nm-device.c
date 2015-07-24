@@ -26,6 +26,7 @@
 #include <glib/gi18n-lib.h>
 #include <gudev/gudev.h>
 
+#include "nm-glib.h"
 #include "NetworkManager.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-adsl.h"
@@ -47,7 +48,6 @@
 #include "nm-remote-connection.h"
 #include "nm-types.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-glib-compat.h"
 #include "nm-utils.h"
 #include "nm-dbus-helpers-private.h"
 
@@ -887,7 +887,7 @@ _nm_device_type_for_path (DBusGConnection *connection,
 	GValue value = G_VALUE_INIT;
 	NMDeviceType nm_dtype;
 
-	proxy = _nm_dbus_new_proxy_for_connection (connection, path, "org.freedesktop.DBus.Properties");
+	proxy = _nm_dbus_new_proxy_for_connection (connection, path, DBUS_INTERFACE_PROPERTIES);
 	if (!proxy) {
 		g_warning ("%s: couldn't create D-Bus object proxy.", __func__);
 		return G_TYPE_INVALID;
@@ -987,7 +987,7 @@ _nm_device_type_for_path_async (DBusGConnection *connection,
 	async_data->callback = callback;
 	async_data->user_data = user_data;
 
-	proxy = _nm_dbus_new_proxy_for_connection (connection, path, "org.freedesktop.DBus.Properties");
+	proxy = _nm_dbus_new_proxy_for_connection (connection, path, DBUS_INTERFACE_PROPERTIES);
 	dbus_g_proxy_begin_call (proxy, "Get",
 	                         async_got_type, async_data, NULL,
 	                         G_TYPE_STRING, NM_DBUS_INTERFACE_DEVICE,

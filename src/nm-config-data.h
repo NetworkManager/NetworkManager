@@ -21,9 +21,8 @@
 #ifndef NM_CONFIG_DATA_H
 #define NM_CONFIG_DATA_H
 
-#include <glib.h>
-#include <glib-object.h>
 
+#include "nm-glib.h"
 #include "nm-types.h"
 
 G_BEGIN_DECLS

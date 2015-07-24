@@ -20,9 +20,9 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <string.h>
 
+#include "nm-glib.h"
 #include "nm-dbus-interface.h"
 #include "nm-bluez4-adapter.h"
 #include "nm-bluez-device.h"
@@ -197,6 +197,7 @@ get_properties_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 	ret = _nm_dbus_proxy_call_finish (G_DBUS_PROXY (proxy), result,
 	                                  G_VARIANT_TYPE ("(a{sv})"), &err);
 	if (!ret) {
+		g_dbus_error_strip_remote_error (err);
 		nm_log_warn (LOGD_BT, "bluez error getting adapter properties: %s", err->message);
 		g_error_free (err);
 		goto done;

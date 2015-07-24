@@ -42,10 +42,9 @@
 #include <linux/if.h>
 #include <linux/if_ppp.h>
 
+#include "nm-glib.h"
 #include "NetworkManagerUtils.h"
-#include "nm-glib-compat.h"
 #include "nm-ppp-manager.h"
-#include "nm-dbus-manager.h"
 #include "nm-logging.h"
 #include "nm-platform.h"
 #include "nm-core-internal.h"
@@ -75,7 +74,6 @@ static void _ppp_kill (NMPPPManager *manager);
 
 typedef struct {
 	GPid pid;
-	char *dbus_path;
 
 	char *parent_iface;
 
@@ -95,7 +93,7 @@ typedef struct {
 
 #define NM_PPP_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_PPP_MANAGER, NMPPPManagerPrivate))
 
-G_DEFINE_TYPE (NMPPPManager, nm_ppp_manager, G_TYPE_OBJECT)
+G_DEFINE_TYPE (NMPPPManager, nm_ppp_manager, NM_TYPE_EXPORTED_OBJECT)
 
 enum {
 	STATE_CHANGED,
@@ -123,13 +121,7 @@ nm_ppp_manager_init (NMPPPManager *manager)
 static void
 constructed (GObject *object)
 {
-	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (object);
-	DBusGConnection *connection;
-	static guint32 counter = 0;
-
-	priv->dbus_path = g_strdup_printf (NM_DBUS_PATH "/PPP/%d", counter++);
-	connection = nm_dbus_manager_get_connection (nm_dbus_manager_get ());
-	dbus_g_connection_register_g_object (connection, priv->dbus_path, object);
+	nm_exported_object_export (NM_EXPORTED_OBJECT (object));
 
 	G_OBJECT_CLASS (nm_ppp_manager_parent_class)->constructed (object);
 }
@@ -189,68 +181,6 @@ get_property (GObject *object, guint prop_id,
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
 	}
-}
-
-static void
-nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
-{
-	GObjectClass *object_class = G_OBJECT_CLASS (manager_class);
-
-	g_type_class_add_private (manager_class, sizeof (NMPPPManagerPrivate));
-
-	object_class->constructed = constructed;
-	object_class->dispose = dispose;
-	object_class->finalize = finalize;
-	object_class->get_property = get_property;
-	object_class->set_property = set_property;
-
-	/* Properties */
-	g_object_class_install_property
-		(object_class, PROP_PARENT_IFACE,
-		 g_param_spec_string (NM_PPP_MANAGER_PARENT_IFACE, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
-
-	/* signals */
-	signals[STATE_CHANGED] =
-		g_signal_new ("state-changed",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMPPPManagerClass, state_changed),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 1,
-		              G_TYPE_UINT);
-
-	signals[IP4_CONFIG] =
-		g_signal_new ("ip4-config",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMPPPManagerClass, ip4_config),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 2,
-		              G_TYPE_STRING,
-		              G_TYPE_OBJECT);
-
-	signals[IP6_CONFIG] =
-		g_signal_new ("ip6-config",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMPPPManagerClass, ip6_config),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 3, G_TYPE_STRING, G_TYPE_POINTER, G_TYPE_OBJECT);
-
-	signals[STATS] =
-		g_signal_new ("stats",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMPPPManagerClass, stats),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 2,
-		              G_TYPE_UINT, G_TYPE_UINT);
-
-	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (manager_class),
-	                                 &dbus_glib_nm_ppp_manager_object_info);
 }
 
 NMPPPManager *
@@ -676,6 +606,71 @@ impl_ppp_manager_set_ip6_config (NMPPPManager *manager,
 	return TRUE;
 }
 
+static void
+nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (manager_class);
+	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (manager_class);
+
+	g_type_class_add_private (manager_class, sizeof (NMPPPManagerPrivate));
+
+	exported_object_class->export_path = NM_DBUS_PATH "/PPP";
+
+	object_class->constructed = constructed;
+	object_class->dispose = dispose;
+	object_class->finalize = finalize;
+	object_class->get_property = get_property;
+	object_class->set_property = set_property;
+
+	/* Properties */
+	g_object_class_install_property
+		(object_class, PROP_PARENT_IFACE,
+		 g_param_spec_string (NM_PPP_MANAGER_PARENT_IFACE, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
+
+	/* signals */
+	signals[STATE_CHANGED] =
+		g_signal_new ("state-changed",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMPPPManagerClass, state_changed),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 1,
+		              G_TYPE_UINT);
+
+	signals[IP4_CONFIG] =
+		g_signal_new ("ip4-config",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMPPPManagerClass, ip4_config),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 2,
+		              G_TYPE_STRING,
+		              G_TYPE_OBJECT);
+
+	signals[IP6_CONFIG] =
+		g_signal_new ("ip6-config",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMPPPManagerClass, ip6_config),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 3, G_TYPE_STRING, G_TYPE_POINTER, G_TYPE_OBJECT);
+
+	signals[STATS] =
+		g_signal_new ("stats",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMPPPManagerClass, stats),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 2,
+		              G_TYPE_UINT, G_TYPE_UINT);
+
+	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (manager_class),
+	                                        &dbus_glib_nm_ppp_manager_object_info);
+}
+
 /*******************************************/
 
 
@@ -1001,7 +996,7 @@ create_pppd_cmd_line (NMPPPManager *self,
 	nm_cmd_line_add_int (cmd, 0);
 
 	nm_cmd_line_add_string (cmd, "ipparam");
-	nm_cmd_line_add_string (cmd, priv->dbus_path);
+	nm_cmd_line_add_string (cmd, nm_exported_object_get_path (NM_EXPORTED_OBJECT (self)));
 
 	nm_cmd_line_add_string (cmd, "plugin");
 	nm_cmd_line_add_string (cmd, NM_PPPD_PLUGIN);

@@ -24,8 +24,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <gmodule.h>
-#include <gio/gio.h>
 
+#include "nm-glib.h"
 #include "nm-logging.h"
 #include "nm-bluez-manager.h"
 #include "nm-device-factory.h"
@@ -280,7 +280,10 @@ check_bluez_and_try_setup_do_introspect (GObject *source_object,
 	result = _nm_dbus_proxy_call_finish (priv->introspect_proxy, res,
 	                                     G_VARIANT_TYPE ("(s)"), &error);
 	if (!result) {
-		char *reason2 = g_strdup_printf ("introspect failed with %s", error->message);
+		char *reason2;
+
+		g_dbus_error_strip_remote_error (error);
+		reason2 = g_strdup_printf ("introspect failed with %s", error->message);
 		check_bluez_and_try_setup_final_step (self, 0, reason2);
 		g_error_free (error);
 		g_free (reason2);

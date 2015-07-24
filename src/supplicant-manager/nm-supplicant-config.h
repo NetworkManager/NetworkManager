@@ -22,10 +22,10 @@
 #ifndef __NETWORKMANAGER_SUPPLICANT_CONFIG_H__
 #define __NETWORKMANAGER_SUPPLICANT_CONFIG_H__
 
-#include <glib-object.h>
 #include <nm-setting-wireless.h>
 #include <nm-setting-wireless-security.h>
 #include <nm-setting-8021x.h>
+#include "nm-glib.h"
 #include "nm-supplicant-types.h"
 
 G_BEGIN_DECLS

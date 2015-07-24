@@ -29,13 +29,11 @@
 #include <sys/stat.h>
 #include <locale.h>
 
-#include <glib.h>
 #include <glib/gi18n.h>
 #include <glib-unix.h>
 #include <gmodule.h>
 
-#include "nm-glib-compat.h"
-
+#include "nm-glib.h"
 #include "gsystem-local-alloc.h"
 #include "main-utils.h"
 #include "NetworkManagerUtils.h"

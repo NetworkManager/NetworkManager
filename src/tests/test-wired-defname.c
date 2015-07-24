@@ -20,11 +20,10 @@
 
 #include "config.h"
 
-#include <glib.h>
-#include <glib-object.h>
 
 #include <nm-simple-connection.h>
 #include <nm-setting-connection.h>
+#include "nm-glib.h"
 #include "nm-device-ethernet-utils.h"
 #include "nm-logging.h"
 

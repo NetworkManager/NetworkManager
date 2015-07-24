@@ -29,17 +29,16 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <glib.h>
 #include <glib/gi18n.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "nm-glib.h"
 #include "nm-device-adsl.h"
 #include "nm-device-private.h"
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
 #include "nm-enum-types.h"
-#include "nm-dbus-manager.h"
 #include "nm-platform.h"
 
 #include "ppp-manager/nm-ppp-manager.h"
@@ -615,7 +614,6 @@ nm_device_adsl_class_init (NMDeviceAdslClass *klass)
 	parent_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
 	parent_class->deactivate = deactivate;
 
-	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
-	                                        G_TYPE_FROM_CLASS (klass),
+	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        &dbus_glib_nm_device_adsl_object_info);
 }

@@ -18,8 +18,8 @@
  * Copyright (C) 2015 Red Hat, Inc.
  */
 
-#include <glib-object.h>
 
+#include "nm-glib.h"
 #include "nm-types.h"
 
 #ifndef __NETWORKMANAGER_ROUTE_MANAGER_H__

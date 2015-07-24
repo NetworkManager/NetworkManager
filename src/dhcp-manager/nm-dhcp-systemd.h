@@ -19,9 +19,6 @@
 #ifndef NM_DHCP_SYSTEMD_H
 #define NM_DHCP_SYSTEMD_H
 
-#include <glib.h>
-#include <glib-object.h>
-
 #include "nm-dhcp-client.h"
 
 #define NM_TYPE_DHCP_SYSTEMD            (nm_dhcp_systemd_get_type ())

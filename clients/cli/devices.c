@@ -25,9 +25,9 @@
 #include <errno.h>
 #include <readline/readline.h>
 
-#include <glib.h>
 #include <glib/gi18n.h>
 
+#include "nm-glib.h"
 #include "nm-secret-agent-simple.h"
 #include "polkit-agent.h"
 #include "utils.h"

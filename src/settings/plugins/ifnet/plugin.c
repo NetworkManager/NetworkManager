@@ -25,12 +25,11 @@
 #include <string.h>
 
 #include <gmodule.h>
-#include <glib.h>
-#include <gio/gio.h>
 
 #include <nm-utils.h>
 #include <nm-setting-connection.h>
 
+#include "nm-glib.h"
 #include "nm-dbus-interface.h"
 #include "nm-system-config-interface.h"
 #include "nm-logging.h"

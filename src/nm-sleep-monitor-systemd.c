@@ -23,11 +23,10 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <glib/gi18n.h>
-#include <gio/gio.h>
 #include <gio/gunixfdlist.h>
 
+#include "nm-glib.h"
 #include "nm-logging.h"
-#include "nm-dbus-manager.h"
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 
@@ -89,6 +88,7 @@ inhibit_done (GObject      *source,
 
 	res = g_dbus_proxy_call_with_unix_fd_list_finish (sd_proxy, &fd_list, result, &error);
 	if (!res) {
+		g_dbus_error_strip_remote_error (error);
 		nm_log_warn (LOGD_SUSPEND, "Inhibit failed: %s", error->message);
 		g_error_free (error);
 	} else {

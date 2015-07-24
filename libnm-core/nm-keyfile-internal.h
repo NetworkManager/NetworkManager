@@ -22,12 +22,11 @@
 #ifndef __NM_KEYFILE_INTERNAL_H__
 #define __NM_KEYFILE_INTERNAL_H__
 
-#include <glib.h>
 #include <sys/types.h>
 
+#include "nm-glib.h"
 #include "nm-connection.h"
 #include "nm-setting-8021x.h"
-
 
 /*********************************************************/
 

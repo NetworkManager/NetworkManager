@@ -30,6 +30,7 @@
 #include <string.h>
 #include <glib/gi18n-lib.h>
 
+#include "nm-glib.h"
 #include "nm-setting.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-ip4-config.h"
@@ -43,7 +44,6 @@
 #include "nm-utils.h"
 
 #include "gsystem-local-alloc.h"
-#include "nm-glib-compat.h"
 #include "nm-keyfile-internal.h"
 #include "nm-keyfile-utils.h"
 

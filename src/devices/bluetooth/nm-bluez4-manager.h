@@ -22,11 +22,8 @@
 #ifndef __NETWORKMANAGER_BLUEZ4_MANAGER_H__
 #define __NETWORKMANAGER_BLUEZ4_MANAGER_H__
 
-#include <glib.h>
-#include <glib-object.h>
-
-#include  <config.h>
-#include  "nm-connection-provider.h"
+#include "nm-glib.h"
+#include "nm-connection-provider.h"
 
 G_BEGIN_DECLS
 

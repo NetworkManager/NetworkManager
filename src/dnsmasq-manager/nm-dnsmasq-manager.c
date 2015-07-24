@@ -28,10 +28,10 @@
 #include <arpa/inet.h>
 #include <stdlib.h>
 
+#include "nm-glib.h"
 #include "nm-dnsmasq-manager.h"
 #include "nm-dnsmasq-utils.h"
 #include "nm-logging.h"
-#include "nm-glib-compat.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 

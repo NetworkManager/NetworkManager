@@ -21,8 +21,6 @@
 #ifndef __NETWORKMANAGER_DEVICE_INFINIBAND_H__
 #define __NETWORKMANAGER_DEVICE_INFINIBAND_H__
 
-#include <glib-object.h>
-
 #include "nm-device.h"
 
 G_BEGIN_DECLS

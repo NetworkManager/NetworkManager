@@ -22,12 +22,11 @@
 
 #include <string.h>
 
-#include "nm-glib-compat.h"
-
 #include <nm-connection.h>
 #include <nm-setting-connection.h>
 #include <nm-setting-wimax.h>
 
+#include "nm-glib.h"
 #include "nm-wimax-nsp.h"
 #include "nm-dbus-interface.h"
 #include "nm-object-private.h"

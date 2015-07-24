@@ -20,17 +20,16 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <glib/gi18n.h>
 
 #include <linux/if_infiniband.h>
 
+#include "nm-glib.h"
 #include "nm-device-infiniband.h"
 #include "nm-logging.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
 #include "nm-enum-types.h"
-#include "nm-dbus-manager.h"
 #include "nm-activation-request.h"
 #include "nm-ip4-config.h"
 #include "nm-platform.h"
@@ -38,7 +37,6 @@
 #include "nm-core-internal.h"
 
 #include "nm-device-infiniband-glue.h"
-
 
 G_DEFINE_TYPE (NMDeviceInfiniband, nm_device_infiniband, NM_TYPE_DEVICE)
 
@@ -296,8 +294,7 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *klass)
 		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
 		                       G_PARAM_STATIC_STRINGS));
 
-	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
-	                                        G_TYPE_FROM_CLASS (klass),
+	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        &dbus_glib_nm_device_infiniband_object_info);
 }
 

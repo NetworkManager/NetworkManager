@@ -21,9 +21,9 @@
 #ifndef __INOTIFY_HELPER_H__
 #define __INOTIFY_HELPER_H__
 
-#include <glib.h>
-#include <glib-object.h>
 #include <sys/inotify.h>
+
+#include "nm-glib.h"
 
 /* NOTE: this code should be killed once we depend on a new enough glib to
  * include the patches from https://bugzilla.gnome.org/show_bug.cgi?id=532815

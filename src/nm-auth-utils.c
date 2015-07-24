@@ -21,13 +21,12 @@
 #include "config.h"
 
 #include <string.h>
-#include <gio/gio.h>
 
+#include "nm-glib.h"
 #include "gsystem-local-alloc.h"
 #include "nm-setting-connection.h"
 #include "nm-auth-utils.h"
 #include "nm-logging.h"
-#include "nm-dbus-manager.h"
 #include "nm-auth-subject.h"
 #include "nm-auth-manager.h"
 #include "nm-session-monitor.h"

@@ -26,18 +26,16 @@
 #include <nm-dbus-interface.h>
 #include <dbus/dbus-glib-lowlevel.h>
 
+#include "nm-glib.h"
 #include "nm-settings-connection.h"
 #include "nm-session-monitor.h"
-#include "nm-dbus-manager.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-logging.h"
 #include "nm-auth-utils.h"
 #include "nm-auth-subject.h"
 #include "nm-agent-manager.h"
 #include "NetworkManagerUtils.h"
-#include "nm-properties-changed-signal.h"
 #include "nm-core-internal.h"
-#include "nm-glib-compat.h"
 #include "gsystem-local-alloc.h"
 
 #define SETTINGS_TIMESTAMPS_FILE  NMSTATEDIR "/timestamps"
@@ -113,7 +111,7 @@ static void impl_settings_connection_clear_secrets (NMSettingsConnection *self,
 
 static void nm_settings_connection_connection_interface_init (NMConnectionInterface *iface);
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingsConnection, nm_settings_connection, G_TYPE_OBJECT,
+G_DEFINE_TYPE_WITH_CODE (NMSettingsConnection, nm_settings_connection, NM_TYPE_EXPORTED_OBJECT,
                          G_IMPLEMENT_INTERFACE (NM_TYPE_CONNECTION, nm_settings_connection_connection_interface_init)
                          )
 
@@ -182,9 +180,8 @@ typedef struct {
 
 /**************************************************************/
 
-/* Return TRUE to continue, FALSE to stop */
-typedef gboolean (*ForEachSecretFunc) (GHashTableIter *iter,
-                                       NMSettingSecretFlags flags,
+/* Return TRUE to keep, FALSE to drop */
+typedef gboolean (*ForEachSecretFunc) (NMSettingSecretFlags flags,
                                        gpointer user_data);
 
 static void
@@ -250,9 +247,13 @@ for_each_secret (NMConnection *self,
 				g_hash_table_iter_init (&vpn_secrets_iter, g_value_get_boxed (val));
 				while (g_hash_table_iter_next (&vpn_secrets_iter, (gpointer) &secret_name, NULL)) {
 					secret_flags = NM_SETTING_SECRET_FLAG_NONE;
-					nm_setting_get_secret_flags (setting, secret_name, &secret_flags, NULL);
-					if (callback (&vpn_secrets_iter, secret_flags, callback_data) == FALSE)
-						return;
+					if (!nm_setting_get_secret_flags (setting, secret_name, &secret_flags, NULL)) {
+						if (remove_non_secrets)
+							g_hash_table_iter_remove (&vpn_secrets_iter);
+						continue;
+					}
+					if (!callback (secret_flags, callback_data))
+						g_hash_table_iter_remove (&vpn_secrets_iter);
 				}
 			} else {
 				if (!nm_setting_get_secret_flags (setting, secret_name, &secret_flags, NULL)) {
@@ -260,11 +261,47 @@ for_each_secret (NMConnection *self,
 						g_hash_table_iter_remove (&secret_iter);
 					continue;
 				}
-				if (callback (&secret_iter, secret_flags, callback_data) == FALSE)
-					return;
+				if (!callback (secret_flags, callback_data))
+					g_hash_table_iter_remove (&secret_iter);
 			}
 		}
 	}
+}
+
+typedef gboolean (*FindSecretFunc) (NMSettingSecretFlags flags,
+                                    gpointer user_data);
+
+typedef struct {
+	FindSecretFunc find_func;
+	gpointer find_func_data;
+	gboolean found;
+} FindSecretData;
+
+static gboolean
+find_secret_for_each_func (NMSettingSecretFlags flags,
+                           gpointer user_data)
+{
+	FindSecretData *data = user_data;
+
+	if (!data->found)
+		data->found = data->find_func (flags, data->find_func_data);
+	return TRUE;
+}
+
+static gboolean
+find_secret (NMConnection *self,
+             GHashTable *secrets,
+             FindSecretFunc callback,
+             gpointer callback_data)
+{
+	FindSecretData data;
+
+	data.find_func = callback;
+	data.find_func_data = callback_data;
+	data.found = FALSE;
+
+	for_each_secret (self, secrets, FALSE, find_secret_for_each_func, &data);
+	return data.found;
 }
 
 /**************************************************************/
@@ -756,38 +793,29 @@ supports_secrets (NMSettingsConnection *self, const char *setting_name)
 	return TRUE;
 }
 
-static gboolean
-clear_nonagent_secrets (GHashTableIter *iter,
-                        NMSettingSecretFlags flags,
-                        gpointer user_data)
-{
-	if (flags != NM_SETTING_SECRET_FLAG_AGENT_OWNED)
-		g_hash_table_iter_remove (iter);
-	return TRUE;
-}
+typedef struct {
+	NMSettingSecretFlags required;
+	NMSettingSecretFlags forbidden;
+} ForEachSecretFlags;
 
 static gboolean
-clear_unsaved_secrets (GHashTableIter *iter,
-                       NMSettingSecretFlags flags,
+validate_secret_flags (NMSettingSecretFlags flags,
                        gpointer user_data)
 {
-	if (flags & (NM_SETTING_SECRET_FLAG_NOT_SAVED | NM_SETTING_SECRET_FLAG_NOT_REQUIRED))
-		g_hash_table_iter_remove (iter);
+	ForEachSecretFlags *cmp_flags = user_data;
+
+	if (!NM_FLAGS_ALL (flags, cmp_flags->required))
+		return FALSE;
+	if (NM_FLAGS_ANY (flags, cmp_flags->forbidden))
+		return FALSE;
 	return TRUE;
 }
 
 static gboolean
-has_system_owned_secrets (GHashTableIter *iter,
-                          NMSettingSecretFlags flags,
-                          gpointer user_data)
+secret_is_system_owned (NMSettingSecretFlags flags,
+                        gpointer user_data)
 {
-	gboolean *has_system_owned = user_data;
-
-	if (flags == NM_SETTING_SECRET_FLAG_NONE) {
-		*has_system_owned = TRUE;
-		return FALSE;
-	}
-	return TRUE;
+	return !NM_FLAGS_HAS (flags, NM_SETTING_SECRET_FLAG_AGENT_OWNED);
 }
 
 static void
@@ -822,6 +850,7 @@ agent_secrets_done_cb (NMAgentManager *manager,
 	GError *local = NULL;
 	GVariant *dict;
 	gboolean agent_had_system = FALSE;
+	ForEachSecretFlags cmp_flags = { NM_SETTING_SECRET_FLAG_NONE, NM_SETTING_SECRET_FLAG_NONE };
 
 	if (error) {
 		_LOGD ("(%s:%u) secrets request error: (%d) %s",
@@ -856,7 +885,7 @@ agent_secrets_done_cb (NMAgentManager *manager,
 		 * save those system-owned secrets.  If not, discard them and use the
 		 * existing secrets, or fail the connection.
 		 */
-		for_each_secret (NM_CONNECTION (self), secrets, TRUE, has_system_owned_secrets, &agent_had_system);
+		agent_had_system = find_secret (NM_CONNECTION (self), secrets, secret_is_system_owned, NULL);
 		if (agent_had_system) {
 			if (flags == NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE) {
 				/* No user interaction was allowed when requesting secrets; the
@@ -867,7 +896,7 @@ agent_secrets_done_cb (NMAgentManager *manager,
 				       call_id,
 				       agent_dbus_owner);
 
-				for_each_secret (NM_CONNECTION (self), secrets, FALSE, clear_nonagent_secrets, NULL);
+				cmp_flags.required |= NM_SETTING_SECRET_FLAG_AGENT_OWNED;
 			} else if (agent_has_modify == FALSE) {
 				/* Agent didn't successfully authenticate; clear system-owned secrets
 				 * from the secrets the agent returned.
@@ -876,7 +905,7 @@ agent_secrets_done_cb (NMAgentManager *manager,
 				       setting_name,
 				       call_id);
 
-				for_each_secret (NM_CONNECTION (self), secrets, FALSE, clear_nonagent_secrets, NULL);
+				cmp_flags.required |= NM_SETTING_SECRET_FLAG_AGENT_OWNED;
 			}
 		}
 	} else {
@@ -892,8 +921,12 @@ agent_secrets_done_cb (NMAgentManager *manager,
 	/* If no user interaction was allowed, make sure that no "unsaved" secrets
 	 * came back.  Unsaved secrets by definition require user interaction.
 	 */
-	if (flags == NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE)
-		for_each_secret (NM_CONNECTION (self), secrets, TRUE, clear_unsaved_secrets, NULL);
+	if (flags == NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE) {
+		cmp_flags.forbidden |= (  NM_SETTING_SECRET_FLAG_NOT_SAVED
+		                        | NM_SETTING_SECRET_FLAG_NOT_REQUIRED);
+	}
+
+	for_each_secret (NM_CONNECTION (self), secrets, TRUE, validate_secret_flags, &cmp_flags);
 
 	/* Update the connection with our existing secrets from backing storage */
 	nm_connection_clear_secrets (NM_CONNECTION (self));
@@ -1791,10 +1824,10 @@ nm_settings_connection_signal_remove (NMSettingsConnection *self)
 	/* Emit removed first */
 	g_signal_emit_by_name (self, NM_SETTINGS_CONNECTION_REMOVED);
 
-	/* And unregistered last to ensure the removed signal goes out before
+	/* And unregister last to ensure the removed signal goes out before
 	 * we take the connection off the bus.
 	 */
-	nm_dbus_manager_unregister_object (nm_dbus_manager_get (), G_OBJECT (self));
+	nm_exported_object_unexport (NM_EXPORTED_OBJECT (self));
 }
 
 gboolean
@@ -2431,8 +2464,11 @@ static void
 nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (class);
+	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (class);
 
 	g_type_class_add_private (class, sizeof (NMSettingsConnectionPrivate));
+
+	exported_object_class->export_path = NM_DBUS_PATH_SETTINGS "/%u";
 
 	/* Virtual methods */
 	object_class->constructed = constructed;
@@ -2513,8 +2549,7 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 		              g_cclosure_marshal_VOID__VOID,
 		              G_TYPE_NONE, 0);
 
-	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
-	                                        G_TYPE_FROM_CLASS (class),
+	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (class),
 	                                        &dbus_glib_nm_settings_connection_object_info);
 }
 

@@ -23,9 +23,9 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <glib/gi18n-lib.h>
 
+#include "nm-glib.h"
 #include "nmt-page-bridge-port.h"
 
 G_DEFINE_TYPE (NmtPageBridgePort, nmt_page_bridge_port, NMT_TYPE_EDITOR_PAGE)

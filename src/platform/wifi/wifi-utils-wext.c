@@ -28,8 +28,8 @@
 #include <unistd.h>
 #include <math.h>
 
-#include <glib.h>
 
+#include "nm-glib.h"
 #include "wifi-utils-private.h"
 #include "wifi-utils-wext.h"
 #include "nm-logging.h"
@@ -43,7 +43,6 @@
 #include <linux/types.h>
 #include <sys/socket.h>
 #include <linux/wireless.h>
-
 
 typedef struct {
 	WifiData parent;

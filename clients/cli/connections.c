@@ -19,7 +19,6 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <glib/gi18n.h>
 #include <stdio.h>
 #include <string.h>
@@ -31,6 +30,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
+#include "nm-glib.h"
 #include "gsystem-local-alloc.h"
 #include "utils.h"
 #include "common.h"

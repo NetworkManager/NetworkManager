@@ -28,8 +28,6 @@
 #ifndef __NETWORKMANAGER_DEVICE_OLPC_MESH_H__
 #define __NETWORKMANAGER_DEVICE_OLPC_MESH_H__
 
-#include <glib-object.h>
-
 #include "nm-device.h"
 
 G_BEGIN_DECLS

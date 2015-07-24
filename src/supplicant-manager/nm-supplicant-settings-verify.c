@@ -20,12 +20,12 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 
+#include "nm-glib.h"
 #include "nm-supplicant-settings-verify.h"
 
 struct Opt {

@@ -25,11 +25,11 @@
 #include <dbus/dbus-glib.h>
 #include <glib/gi18n-lib.h>
 
+#include "nm-glib.h"
 #include "nm-setting-ip6-config.h"
 #include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-glib-compat.h"
 #include "nm-setting-private.h"
 
 /**

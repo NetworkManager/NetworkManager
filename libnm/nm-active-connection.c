@@ -23,6 +23,7 @@
 
 #include <string.h>
 
+#include "nm-glib.h"
 #include "nm-dbus-interface.h"
 #include "nm-active-connection.h"
 #include "nm-object-private.h"
@@ -31,7 +32,6 @@
 #include "nm-device-private.h"
 #include "nm-connection.h"
 #include "nm-vpn-connection.h"
-#include "nm-glib-compat.h"
 #include "nm-dbus-helpers.h"
 #include "nm-dhcp4-config.h"
 #include "nm-dhcp6-config.h"

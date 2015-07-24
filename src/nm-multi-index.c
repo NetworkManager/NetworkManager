@@ -20,13 +20,12 @@
 
 #include "config.h"
 
+#include "nm-glib.h"
 #include "nm-multi-index.h"
 
 #include <string.h>
 
-#include "nm-glib-compat.h"
 #include "nm-macros-internal.h"
-
 
 struct NMMultiIndex {
 	NMMultiIndexFuncEqual equal_fcn;

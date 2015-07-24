@@ -20,9 +20,11 @@
 #define __NETWORKMANAGER_DHCP_UTILS_H__
 
 #include <stdlib.h>
-#include <glib.h>
+
 #include <nm-ip4-config.h>
 #include <nm-ip6-config.h>
+
+#include "nm-glib.h"
 
 NMIP4Config *nm_dhcp_utils_ip4_config_from_options (int ifindex,
                                                     const char *iface,

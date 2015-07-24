@@ -23,9 +23,9 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <glib/gi18n-lib.h>
 
+#include "nm-glib.h"
 #include "nmt-page-bridge.h"
 
 #include "nmt-address-list.h"

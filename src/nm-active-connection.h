@@ -21,8 +21,7 @@
 #ifndef __NETWORKMANAGER_ACTIVE_CONNECTION_H__
 #define __NETWORKMANAGER_ACTIVE_CONNECTION_H__
 
-#include <glib-object.h>
-#include "nm-types.h"
+#include "nm-exported-object.h"
 #include "nm-connection.h"
 
 #define NM_TYPE_ACTIVE_CONNECTION            (nm_active_connection_get_type ())
@@ -61,11 +60,11 @@
 #define NM_ACTIVE_CONNECTION_DEVICE_METERED_CHANGED  "device-metered-changed"
 
 struct _NMActiveConnection {
-	GObject parent;
+	NMExportedObject parent;
 };
 
 typedef struct {
-	GObjectClass parent;
+	NMExportedObjectClass parent;
 
 	/* re-emits device state changes as a convenience for subclasses for
 	 * device states >= DISCONNECTED.
@@ -97,8 +96,6 @@ void          nm_active_connection_authorize (NMActiveConnection *self,
                                               gpointer user_data1,
                                               gpointer user_data2);
 
-void          nm_active_connection_export (NMActiveConnection *self);
-
 NMConnection *nm_active_connection_get_connection (NMActiveConnection *self);
 
 void          nm_active_connection_set_connection (NMActiveConnection *self,
@@ -109,8 +106,6 @@ const char *  nm_active_connection_get_id         (NMActiveConnection *self);
 const char *  nm_active_connection_get_uuid       (NMActiveConnection *self);
 
 const char *  nm_active_connection_get_connection_type (NMActiveConnection *self);
-
-const char *  nm_active_connection_get_path (NMActiveConnection *self);
 
 const char *  nm_active_connection_get_specific_object (NMActiveConnection *self);
 

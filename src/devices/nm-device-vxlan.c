@@ -24,7 +24,6 @@
 
 #include "nm-device-vxlan.h"
 #include "nm-device-private.h"
-#include "nm-dbus-manager.h"
 #include "nm-logging.h"
 #include "nm-manager.h"
 #include "nm-platform.h"
@@ -157,7 +156,7 @@ get_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_PARENT:
 		parent = nm_manager_get_device_by_ifindex (nm_manager_get (), priv->props.parent_ifindex);
-		g_value_set_boxed (value, parent ? nm_device_get_path (parent) : "/");
+		nm_utils_g_value_set_object_path (value, parent);
 		break;
 	case PROP_ID:
 		g_value_set_uint (value, priv->props.id);
@@ -342,8 +341,7 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *klass)
 		                       G_PARAM_READABLE |
 		                       G_PARAM_STATIC_STRINGS));
 
-	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
-	                                        G_TYPE_FROM_CLASS (klass),
+	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        &dbus_glib_nm_device_vxlan_object_info);
 }
 

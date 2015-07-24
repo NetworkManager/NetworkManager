@@ -19,7 +19,6 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <glib/gi18n.h>
 #include <dbus/dbus.h>
 #include <sys/socket.h>
@@ -30,12 +29,12 @@
 #include <errno.h>
 #include <unistd.h>
 
+#include "nm-glib.h"
 #include "nm-dhcp-listener.h"
 #include "nm-core-internal.h"
 #include "nm-logging.h"
-#include "nm-dbus-manager.h"
+#include "nm-bus-manager.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-glib-compat.h"
 #include "NetworkManagerUtils.h"
 
 #define NM_DHCP_CLIENT_DBUS_IFACE "org.freedesktop.nm_dhcp_client"
@@ -43,7 +42,7 @@
 #define PRIV_SOCK_TAG             "dhcp"
 
 typedef struct {
-	NMDBusManager *     dbus_mgr;
+	NMBusManager *      dbus_mgr;
 	guint               new_conn_id;
 	guint               dis_conn_id;
 	GHashTable *        proxies;
@@ -162,7 +161,7 @@ out:
 
 #if HAVE_DBUS_GLIB_100
 static void
-new_connection_cb (NMDBusManager *mgr,
+new_connection_cb (NMBusManager *mgr,
                    DBusGConnection *connection,
                    NMDhcpListener *self)
 {
@@ -177,7 +176,7 @@ new_connection_cb (NMDBusManager *mgr,
 }
 
 static void
-dis_connection_cb (NMDBusManager *mgr,
+dis_connection_cb (NMBusManager *mgr,
                    DBusGConnection *connection,
                    NMDhcpListener *self)
 {
@@ -207,17 +206,17 @@ nm_dhcp_listener_init (NMDhcpListener *self)
 	/* Maps DBusGConnection :: DBusGProxy */
 	priv->proxies = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, g_object_unref);
 
-	priv->dbus_mgr = nm_dbus_manager_get ();
+	priv->dbus_mgr = nm_bus_manager_get ();
 
 #if HAVE_DBUS_GLIB_100
 	/* Register the socket our DHCP clients will return lease info on */
-	nm_dbus_manager_private_server_register (priv->dbus_mgr, PRIV_SOCK_PATH, PRIV_SOCK_TAG);
+	nm_bus_manager_private_server_register (priv->dbus_mgr, PRIV_SOCK_PATH, PRIV_SOCK_TAG);
 	priv->new_conn_id = g_signal_connect (priv->dbus_mgr,
-	                                      NM_DBUS_MANAGER_PRIVATE_CONNECTION_NEW "::" PRIV_SOCK_TAG,
+	                                      NM_BUS_MANAGER_PRIVATE_CONNECTION_NEW "::" PRIV_SOCK_TAG,
 	                                      G_CALLBACK (new_connection_cb),
 	                                      self);
 	priv->dis_conn_id = g_signal_connect (priv->dbus_mgr,
-	                                      NM_DBUS_MANAGER_PRIVATE_CONNECTION_DISCONNECTED "::" PRIV_SOCK_TAG,
+	                                      NM_BUS_MANAGER_PRIVATE_CONNECTION_DISCONNECTED "::" PRIV_SOCK_TAG,
 	                                      G_CALLBACK (dis_connection_cb),
 	                                      self);
 #else

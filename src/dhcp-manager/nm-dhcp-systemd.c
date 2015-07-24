@@ -18,9 +18,7 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <glib/gi18n.h>
-#include <gio/gio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -31,6 +29,7 @@
 #include <ctype.h>
 #include <net/if_arp.h>
 
+#include "nm-glib.h"
 #include "nm-dhcp-systemd.h"
 #include "nm-utils.h"
 #include "nm-logging.h"
