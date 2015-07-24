@@ -30,10 +30,27 @@
 
 #include "nm-sleep-monitor.h"
 
-#define SD_NAME              "org.freedesktop.login1"
-#define SD_PATH              "/org/freedesktop/login1"
-#define SD_INTERFACE         "org.freedesktop.login1.Manager"
+#if defined (SUSPEND_RESUME_SYSTEMD) == defined (SUSPEND_RESUME_CONSOLEKIT)
+#error either define SUSPEND_RESUME_SYSTEMD or SUSPEND_RESUME_CONSOLEKIT
+#endif
 
+#ifdef SUSPEND_RESUME_SYSTEMD
+
+#define SUSPEND_DBUS_NAME               "org.freedesktop.login1"
+#define SUSPEND_DBUS_PATH               "/org/freedesktop/login1"
+#define SUSPEND_DBUS_INTERFACE          "org.freedesktop.login1.Manager"
+
+#else
+
+/* ConsoleKit2 has added the same suspend/resume DBUS API that Systemd
+ * uses. http://consolekit2.github.io/ConsoleKit2/#Manager.Inhibit
+ */
+
+#define SUSPEND_DBUS_NAME               "org.freedesktop.ConsoleKit"
+#define SUSPEND_DBUS_PATH               "/org/freedesktop/ConsoleKit/Manager"
+#define SUSPEND_DBUS_INTERFACE          "org.freedesktop.ConsoleKit.Manager"
+
+#endif
 
 struct _NMSleepMonitor {
 	GObject parent_instance;
@@ -192,7 +209,7 @@ nm_sleep_monitor_init (NMSleepMonitor *self)
 	                          G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START |
 	                          G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
 	                          NULL,
-	                          SD_NAME, SD_PATH, SD_INTERFACE,
+	                          SUSPEND_DBUS_NAME, SUSPEND_DBUS_PATH, SUSPEND_DBUS_INTERFACE,
 	                          NULL,
 	                          (GAsyncReadyCallback) on_proxy_acquired, self);
 }

@@ -361,11 +361,11 @@ nm_sources = \
 	NetworkManagerUtils.h
 
 
-if SUSPEND_RESUME_SYSTEMD
-nm_sources += nm-sleep-monitor-systemd.c
-else
-# UPower suspend/resume used whenever systemd is not enabled
+if SUSPEND_RESUME_UPOWER
 nm_sources += nm-sleep-monitor-upower.c
+else
+# systemd/consolekit suspend/resume used whenever upower is not enabled
+nm_sources += nm-sleep-monitor-systemd.c
 endif
 
 if WITH_WEXT

@@ -452,31 +452,41 @@ if test "$use_consolekit" = "yes"; then
 fi
 session_tracking="$(printf '%s' "${session_tracking}" | sed 's/^, //')"
 
-AC_ARG_WITH(suspend-resume, AS_HELP_STRING([--with-suspend-resume=upower|systemd], [Build NetworkManager with specific suspend/resume support]))
+AC_ARG_WITH(suspend-resume, AS_HELP_STRING([--with-suspend-resume=upower|systemd|consolekit], [Build NetworkManager with specific suspend/resume support]))
 if test "z$with_suspend_resume" = "z"; then
     PKG_CHECK_EXISTS([libsystemd >= 209], [have_systemd_inhibit=yes],
                      [PKG_CHECK_EXISTS([libsystemd-login >= 183], [have_systemd_inhibit=yes], [have_systemd_inhibit=no])])
     if test "z${have_systemd_inhibit}" = "zyes"; then
-	# Use systemd if it's new enough
-	with_suspend_resume="systemd"
+        # Use systemd if it's new enough
+        with_suspend_resume="systemd"
     else
-	# Fall back to upower
-	with_suspend_resume="upower"
+        if test "$use_consolekit" = "yes"; then
+                # Use consolekit suspend if session tracking is consolekit
+                with_suspend_resume="consolekit"
+        else
+                # Fall back to upower
+                with_suspend_resume="upower"
+        fi
     fi
 fi
 
 case $with_suspend_resume in
     upower) ;;
     systemd)
-	PKG_CHECK_MODULES(SYSTEMD_INHIBIT, [libsystemd >= 209],,
-	                  [PKG_CHECK_MODULES(SYSTEMD_INHIBIT, [libsystemd-login >= 183])])
+        PKG_CHECK_MODULES(SYSTEMD_INHIBIT, [libsystemd >= 209],,
+                          [PKG_CHECK_MODULES(SYSTEMD_INHIBIT, [libsystemd-login >= 183])])
+        AC_DEFINE([SUSPEND_RESUME_SYSTEMD], 1, [Define to 1 to use systemd suspend api])
+        ;;
+    consolekit)
+        AC_DEFINE([SUSPEND_RESUME_CONSOLEKIT], 1, [Define to 1 to use ConsoleKit2 suspend api])
         ;;
     *)
-	AC_MSG_ERROR(--with-suspend-resume must be one of [upower, systemd])
+        AC_MSG_ERROR(--with-suspend-resume must be one of [upower, systemd, consolekit])
         ;;
 esac
 AM_CONDITIONAL(SUSPEND_RESUME_UPOWER, test "x$with_suspend_resume" = "xupower")
 AM_CONDITIONAL(SUSPEND_RESUME_SYSTEMD, test "x$with_suspend_resume" = "xsystemd")
+AM_CONDITIONAL(SUSPEND_RESUME_CONSOLEKIT, test "x$with_suspend_resume" = "xconsolekit")
 
 # SELinux support
 AC_ARG_WITH(selinux, AS_HELP_STRING([--with-selinux=yes|no|auto], [Build with SELinux (default: auto)]),,[with_selinux=auto])
