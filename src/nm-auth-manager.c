@@ -500,6 +500,8 @@ nm_auth_manager_setup (gboolean polkit_enabled)
 	singleton_instance = self;
 	nm_singleton_instance_register ();
 
+	nm_log_dbg (LOGD_CORE, "setup %s singleton (%p)", "NMAuthManager", singleton_instance);
+
 	return self;
 }
 

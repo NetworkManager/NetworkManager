@@ -156,7 +156,7 @@ nm_platform_setup (NMPlatform *instance)
 
 	nm_singleton_instance_register ();
 
-	nm_log_dbg (LOGD_CORE, "setup NMPlatform singleton (%p, %s)", instance,  G_OBJECT_TYPE_NAME (instance));
+	nm_log_dbg (LOGD_CORE, "setup %s singleton (%p, %s)", "NMPlatform", singleton_instance, G_OBJECT_TYPE_NAME (instance));
 }
 
 /**

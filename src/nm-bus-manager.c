@@ -103,7 +103,7 @@ nm_bus_manager_setup (NMBusManager *instance)
 	already_setup = TRUE;
 	singleton_instance = instance;
 	nm_singleton_instance_register ();
-	nm_log_dbg (LOGD_CORE, "create %s singleton (%p)", "NMBusManager", singleton_instance);
+	nm_log_dbg (LOGD_CORE, "setup %s singleton (%p)", "NMBusManager", singleton_instance);
 }
 
 /**************************************************************/

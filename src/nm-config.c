@@ -1686,8 +1686,13 @@ nm_config_setup (const NMConfigCmdLineOptions *cli, char **atomic_section_prefix
 	g_assert (!singleton_instance);
 
 	singleton_instance = nm_config_new (cli, atomic_section_prefixes, error);
-	if (singleton_instance)
+	if (singleton_instance) {
 		nm_singleton_instance_register ();
+
+		/* usually, you would not see this logging line because when creating the
+		 * NMConfig instance, the logging is not yet set up to print debug message. */
+		nm_log_dbg (LOGD_CORE, "setup %s singleton (%p)", "NMConfig", singleton_instance);
+	}
 	return singleton_instance;
 }
 
