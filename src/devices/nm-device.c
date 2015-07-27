@@ -4656,19 +4656,19 @@ nm_device_ipv6_set_mtu (NMDevice *self, guint32 mtu)
 	priv->ip6_mtu = mtu ?: plat_mtu;
 
 	if (priv->ip6_mtu && priv->mtu && priv->mtu < priv->ip6_mtu) {
-		_LOGW (LOGD_DEVICE | LOGD_IP6, "Lowering IPv6 MTU (%d) to match device MTU (%d)",
+		_LOGI (LOGD_DEVICE | LOGD_IP6, "Lowering IPv6 MTU (%d) to match device MTU (%d)",
 		       priv->ip6_mtu, priv->mtu);
 		priv->ip6_mtu = priv->mtu;
 	}
 
 	if (priv->ip6_mtu && priv->ip6_mtu < 1280) {
-		_LOGW (LOGD_DEVICE | LOGD_IP6, "IPv6 MTU (%d) smaller than 1280, adjusting",
+		_LOGI (LOGD_DEVICE | LOGD_IP6, "IPv6 MTU (%d) smaller than 1280, adjusting",
 		       priv->ip6_mtu);
 		priv->ip6_mtu = 1280;
 	}
 
 	if (priv->ip6_mtu && priv->mtu && priv->mtu < priv->ip6_mtu) {
-		_LOGW (LOGD_DEVICE | LOGD_IP6, "Raising device MTU (%d) to match IPv6 MTU (%d)",
+		_LOGI (LOGD_DEVICE | LOGD_IP6, "Raising device MTU (%d) to match IPv6 MTU (%d)",
 		       priv->mtu, priv->ip6_mtu);
 		nm_device_set_mtu (self, priv->ip6_mtu);
 	}
