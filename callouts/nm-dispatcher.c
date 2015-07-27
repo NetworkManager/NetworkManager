@@ -130,6 +130,7 @@ struct Request {
 	GPtrArray *scripts;  /* list of ScriptInfo */
 	guint idx;
 	gint num_scripts_done;
+	gint num_scripts_nowait;
 };
 
 static void
@@ -146,6 +147,7 @@ static void
 request_free (Request *request)
 {
 	g_assert_cmpuint (request->num_scripts_done, ==, request->scripts->len);
+	g_assert_cmpuint (request->num_scripts_nowait, ==, 0);
 
 	g_free (request->action);
 	g_free (request->iface);
@@ -295,8 +297,18 @@ complete_script (ScriptInfo *script)
 		/* this was a "no-wait" script. We either completed the request,
 		 * or there is nothing to do. Especially, there is no need to
 		 * queue the next_request() -- because no-wait scripts don't block
-		 * requests. */
-		return;
+		 * requests. However, if this was the last "no-wait" script and
+		 * there are "wait" scripts ready to run, launch them.
+		 */
+		if (   script->request->num_scripts_nowait == 0
+		    && handler->current_request == script->request) {
+
+			if (dispatch_one_script (script->request))
+				return;
+
+			complete_request (script->request);
+		} else
+			return;
 	}
 
 	while (next_request (handler, NULL)) {
@@ -328,6 +340,8 @@ script_watch_cb (GPid pid, gint status, gpointer user_data)
 	script->watch_id = 0;
 	nm_clear_g_source (&script->timeout_id);
 	script->request->num_scripts_done++;
+	if (!script->wait)
+		script->request->num_scripts_nowait--;
 
 	if (WIFEXITED (status)) {
 		err = WEXITSTATUS (status);
@@ -369,6 +383,8 @@ script_timeout_cb (gpointer user_data)
 	script->timeout_id = 0;
 	nm_clear_g_source (&script->watch_id);
 	script->request->num_scripts_done++;
+	if (!script->wait)
+		script->request->num_scripts_nowait--;
 
 	g_warning ("Script '%s' took too long; killing it.", script->script);
 
@@ -471,6 +487,8 @@ script_dispatch (ScriptInfo *script)
 	if (g_spawn_async ("/", argv, request->envp, G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL, &script->pid, &error)) {
 		script->watch_id = g_child_watch_add (script->pid, (GChildWatchFunc) script_watch_cb, script);
 		script->timeout_id = g_timeout_add_seconds (SCRIPT_TIMEOUT, script_timeout_cb, script);
+		if (!script->wait)
+			request->num_scripts_nowait++;
 		return TRUE;
 	} else {
 		g_warning ("Failed to execute script '%s': (%d) %s",
@@ -486,6 +504,9 @@ script_dispatch (ScriptInfo *script)
 static gboolean
 dispatch_one_script (Request *request)
 {
+	if (request->num_scripts_nowait > 0)
+		return TRUE;
+
 	while (request->idx < request->scripts->len) {
 		ScriptInfo *script;
 
