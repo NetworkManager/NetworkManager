@@ -4,7 +4,9 @@ EXTRA_DIST = \
 	libnm-util.deps \
 	libnm-glib.deps
 
+if WITH_LEGACY_LIBRARIES
 VAPIGEN_VAPIS = libnm-util.vapi libnm-glib.vapi
+endif
 
 if ENABLE_VAPIGEN
 include Makefile.vapigen
