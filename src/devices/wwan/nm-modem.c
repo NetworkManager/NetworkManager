@@ -285,7 +285,7 @@ nm_modem_get_connection_ip_type (NMModem *self,
 			                     NM_DEVICE_ERROR,
 			                     NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
 			                     "Connection requested IPv4 but IPv4 is "
-			                     "unsuported by the modem.");
+			                     "unsupported by the modem.");
 			return NULL;
 		}
 		return build_single_ip_type_array (NM_MODEM_IP_TYPE_IPV4);
@@ -297,7 +297,7 @@ nm_modem_get_connection_ip_type (NMModem *self,
 			                     NM_DEVICE_ERROR,
 			                     NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
 			                     "Connection requested IPv6 but IPv6 is "
-			                     "unsuported by the modem.");
+			                     "unsupported by the modem.");
 			return NULL;
 		}
 		return build_single_ip_type_array (NM_MODEM_IP_TYPE_IPV6);
