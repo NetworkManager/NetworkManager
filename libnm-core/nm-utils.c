@@ -30,6 +30,7 @@
 #include <libintl.h>
 #include <gmodule.h>
 #include <glib/gi18n-lib.h>
+#include <sys/stat.h>
 
 #include "nm-glib.h"
 #include "nm-utils.h"
@@ -2409,6 +2410,160 @@ nm_utils_file_is_pkcs12 (const char *filename)
 
 /**********************************************************************************************/
 
+gboolean
+_nm_utils_check_file (const char *filename,
+                      gint64 check_owner,
+                      NMUtilsCheckFilePredicate check_file,
+                      gpointer user_data,
+                      struct stat *out_st,
+                      GError **error)
+{
+	struct stat st_backup;
+
+	if (!out_st)
+		out_st = &st_backup;
+
+	if (stat (filename, out_st) != 0) {
+		int errsv = errno;
+
+		g_set_error (error,
+		             NM_VPN_PLUGIN_ERROR,
+		             NM_VPN_PLUGIN_ERROR_FAILED,
+		             _("failed stat file %s: %s"), filename, strerror (errsv));
+		return FALSE;
+	}
+
+	/* ignore non-files. */
+	if (!S_ISREG (out_st->st_mode)) {
+		g_set_error (error,
+		             NM_VPN_PLUGIN_ERROR,
+		             NM_VPN_PLUGIN_ERROR_FAILED,
+		             _("not a file (%s)"), filename);
+		return FALSE;
+	}
+
+	/* with check_owner enabled, check that the file belongs to the
+	 * owner or root. */
+	if (   check_owner >= 0
+	    && (out_st->st_uid != 0 && (gint64) out_st->st_uid != check_owner)) {
+		g_set_error (error,
+		             NM_VPN_PLUGIN_ERROR,
+		             NM_VPN_PLUGIN_ERROR_FAILED,
+		             _("invalid file owner %d for %s"), out_st->st_uid, filename);
+		return FALSE;
+	}
+
+	/* with check_owner enabled, check that the file cannot be modified
+	 * by other users (except root). */
+	if (   check_owner >= 0
+	    && NM_FLAGS_ANY (out_st->st_mode, S_IWGRP | S_IWOTH | S_ISUID)) {
+		g_set_error (error,
+		             NM_VPN_PLUGIN_ERROR,
+		             NM_VPN_PLUGIN_ERROR_FAILED,
+		             _("file permissions for %s"), filename);
+		return FALSE;
+	}
+
+	if (    check_file
+	    && !check_file (filename, out_st, user_data, error)) {
+		if (error && !*error) {
+			g_set_error (error,
+			             NM_VPN_PLUGIN_ERROR,
+			             NM_VPN_PLUGIN_ERROR_FAILED,
+			             _("reject %s"), filename);
+		}
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+
+static char *
+_resolve_module_file_name (const char *file_name)
+{
+	char *name = NULL;
+
+	/* g_module_open() is searching for the exact file to load,
+	 * but it doesn't give us a hook to check file permissions
+	 * and ownership. Reimplement the file name resolution.
+	 *
+	 * Copied from g_module_open(). */
+
+	/* check whether we have a readable file right away */
+	if (g_file_test (file_name, G_FILE_TEST_IS_REGULAR))
+		name = g_strdup (file_name);
+
+	/* try completing file name with standard library suffix */
+	if (   !name
+	    && !g_str_has_suffix (file_name, "." G_MODULE_SUFFIX)) {
+		name = g_strconcat (file_name, "." G_MODULE_SUFFIX, NULL);
+		if (!g_file_test (name, G_FILE_TEST_IS_REGULAR)) {
+			g_free (name);
+			name = NULL;
+		}
+	}
+
+	/* g_module_open() would also try appending ".la". We don't do that
+	 * because we require the user to specify a shared library (directly). */
+
+	return name;
+}
+
+char *
+_nm_utils_check_module_file (const char *name,
+                             int check_owner,
+                             NMUtilsCheckFilePredicate check_file,
+                             gpointer user_data,
+                             GError **error)
+{
+	gs_free char *name_resolved = NULL;
+	char *s;
+
+	if (!g_path_is_absolute (name)) {
+		g_set_error (error,
+		             NM_VPN_PLUGIN_ERROR,
+		             NM_VPN_PLUGIN_ERROR_FAILED,
+		             _("path is not absolute (%s)"), name);
+		return NULL;
+	}
+
+	name_resolved = _resolve_module_file_name (name);
+
+	if (!name_resolved) {
+		g_set_error (error,
+		             NM_VPN_PLUGIN_ERROR,
+		             NM_VPN_PLUGIN_ERROR_FAILED,
+		             _("could not resolve plugin path (%s)"), name);
+		return NULL;
+	}
+
+	if (g_str_has_suffix (name_resolved, ".la")) {
+		/* g_module_open() treats files that end with .la special.
+		 * We don't want to parse the libtool archive. Just error out. */
+		g_set_error (error,
+		             NM_VPN_PLUGIN_ERROR,
+		             NM_VPN_PLUGIN_ERROR_FAILED,
+		             _("libtool archives are not supported (%s)"), name_resolved);
+		return NULL;
+	}
+
+	if (!_nm_utils_check_file (name_resolved,
+	                           check_owner,
+	                           check_file,
+	                           user_data,
+	                           NULL,
+	                           error)) {
+		return NULL;
+	}
+
+	s = name_resolved;
+	name_resolved = NULL;
+	return s;
+}
+
+/**********************************************************************************************/
+
 /**
  * nm_utils_file_search_in_paths:
  * @progname: the helper program name, like "iptables"
@@ -3484,6 +3639,105 @@ nm_utils_bond_mode_string_to_int (const char *mode)
 			return i;
 	}
 	return -1;
+}
+
+/**********************************************************************************************/
+
+#define STRSTRDICTKEY_V1_SET  0x01
+#define STRSTRDICTKEY_V2_SET  0x02
+#define STRSTRDICTKEY_ALL_SET 0x03
+
+struct _NMUtilsStrStrDictKey {
+	char type;
+	char data[1];
+};
+
+guint
+_nm_utils_strstrdictkey_hash (gconstpointer a)
+{
+	const NMUtilsStrStrDictKey *k = a;
+	const signed char *p;
+	guint32 h = 5381;
+
+	if (k) {
+		if (((int) k->type) & ~STRSTRDICTKEY_ALL_SET)
+			g_return_val_if_reached (0);
+
+		h = (h << 5) + h + k->type;
+		if (k->type & STRSTRDICTKEY_ALL_SET) {
+			p = (void *) k->data;
+			for (; *p != '\0'; p++)
+				h = (h << 5) + h + *p;
+			if (k->type == STRSTRDICTKEY_ALL_SET) {
+				/* the key contains two strings. Continue... */
+				h = (h << 5) + h + '\0';
+				for (p++; *p != '\0'; p++)
+					h = (h << 5) + h + *p;
+			}
+		}
+	}
+
+	return h;
+}
+
+gboolean
+_nm_utils_strstrdictkey_equal  (gconstpointer a, gconstpointer b)
+{
+	const NMUtilsStrStrDictKey *k1 = a;
+	const NMUtilsStrStrDictKey *k2 = b;
+
+	if (k1 == k2)
+		return TRUE;
+	if (!k1 || !k2)
+		return FALSE;
+
+	if (k1->type != k2->type)
+		return FALSE;
+
+	if (k1->type & STRSTRDICTKEY_ALL_SET) {
+		if (strcmp (k1->data, k2->data) != 0)
+			return FALSE;
+
+		if (k1->type == STRSTRDICTKEY_ALL_SET) {
+			gsize l = strlen (k1->data) + 1;
+
+			return strcmp (&k1->data[l], &k2->data[l]) == 0;
+		}
+	}
+
+	return TRUE;
+}
+
+NMUtilsStrStrDictKey *
+_nm_utils_strstrdictkey_create (const char *v1, const char *v2)
+{
+	char type = 0;
+	gsize l1 = 0, l2 = 0;
+	NMUtilsStrStrDictKey *k;
+
+	if (!v1 && !v2)
+		return g_malloc0 (1);
+
+	/* we need to distinguish between ("",NULL) and (NULL,"").
+	 * Thus, in @type we encode which strings we have present
+	 * as not-NULL. */
+	if (v1) {
+		type |= STRSTRDICTKEY_V1_SET;
+		l1 = strlen (v1) + 1;
+	}
+	if (v2) {
+		type |= STRSTRDICTKEY_V2_SET;
+		l2 = strlen (v2) + 1;
+	}
+
+	k = g_malloc (G_STRUCT_OFFSET (NMUtilsStrStrDictKey, data) + l1 + l2);
+	k->type = type;
+	if (v1)
+		memcpy (&k->data[0], v1, l1);
+	if (v2)
+		memcpy (&k->data[l1], v2, l2);
+
+	return k;
 }
 
 /**********************************************************************************************/

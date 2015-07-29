@@ -128,6 +128,10 @@ gboolean nm_utils_file_is_pkcs12 (const char *filename);
 
 typedef gboolean (*NMUtilsFileSearchInPathsPredicate) (const char *filename, gpointer user_data);
 
+struct stat;
+
+typedef gboolean (*NMUtilsCheckFilePredicate) (const char *filename, const struct stat *stat, gpointer user_data, GError **error);
+
 const char *nm_utils_file_search_in_paths (const char *progname,
                                            const char *try_first,
                                            const char *const *paths,

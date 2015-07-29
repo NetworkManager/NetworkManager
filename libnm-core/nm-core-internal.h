@@ -136,6 +136,19 @@ char **     _nm_utils_slist_to_strv (GSList *slist, gboolean deep_copy);
 GPtrArray * _nm_utils_strv_to_ptrarray (char **strv);
 char **     _nm_utils_ptrarray_to_strv (GPtrArray *ptrarray);
 
+gboolean _nm_utils_check_file (const char *filename,
+                               gint64 check_owner,
+                               NMUtilsCheckFilePredicate check_file,
+                               gpointer user_data,
+                               struct stat *out_st,
+                               GError **error);
+
+char *_nm_utils_check_module_file (const char *name,
+                                   int check_owner,
+                                   NMUtilsCheckFilePredicate check_file,
+                                   gpointer user_data,
+                                   GError **error);
+
 #define NM_UTILS_UUID_TYPE_LEGACY            0
 #define NM_UTILS_UUID_TYPE_VARIANT3          1
 
@@ -187,6 +200,26 @@ gboolean _nm_dbus_error_has_name (GError     *error,
 
 /***********************************************************/
 
+gboolean _nm_vpn_plugin_info_check_file (const char *filename,
+                                         gboolean check_absolute,
+                                         gboolean do_validate_filename,
+                                         gint64 check_owner,
+                                         NMUtilsCheckFilePredicate check_file,
+                                         gpointer user_data,
+                                         GError **error);
+
+const char *_nm_vpn_plugin_info_get_default_dir_etc (void);
+const char *_nm_vpn_plugin_info_get_default_dir_lib (void);
+const char *_nm_vpn_plugin_info_get_default_dir_user (void);
+
+GSList *_nm_vpn_plugin_info_list_load_dir (const char *dirname,
+                                           gboolean do_validate_filename,
+                                           gint64 check_owner,
+                                           NMUtilsCheckFilePredicate check_file,
+                                           gpointer user_data);
+
+/***********************************************************/
+
 typedef struct {
 	const char *name;
 	gboolean numeric;
@@ -199,6 +232,16 @@ gboolean    _nm_utils_dns_option_validate (const char *option, char **out_name,
                                            long *out_value, gboolean ipv6,
                                            const NMUtilsDNSOptionDesc *option_descs);
 int         _nm_utils_dns_option_find_idx (GPtrArray *array, const char *option);
+
+/***********************************************************/
+
+typedef struct _NMUtilsStrStrDictKey NMUtilsStrStrDictKey;
+guint                 _nm_utils_strstrdictkey_hash   (gconstpointer a);
+gboolean              _nm_utils_strstrdictkey_equal  (gconstpointer a, gconstpointer b);
+NMUtilsStrStrDictKey *_nm_utils_strstrdictkey_create (const char *v1, const char *v2);
+
+#define _nm_utils_strstrdictkey_static(v1, v2) \
+    ( (NMUtilsStrStrDictKey *) ("\03" v1 "\0" v2 "") )
 
 /***********************************************************/
 

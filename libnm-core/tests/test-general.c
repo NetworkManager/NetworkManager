@@ -4282,6 +4282,54 @@ test_nm_utils_ascii_str_to_int64 (void)
 /******************************************************************************/
 
 static void
+test_nm_utils_strstrdictkey ()
+{
+#define _VALUES_STATIC(_v1, _v2) { .v1 = _v1, .v2 = _v2, .v_static = _nm_utils_strstrdictkey_static (_v1, _v2), }
+	const struct {
+		const char *v1;
+		const char *v2;
+		NMUtilsStrStrDictKey *v_static;
+	} *val1, *val2, values[] = {
+		{ NULL, NULL },
+		{ "", NULL },
+		{ NULL, "" },
+		{ "a", NULL },
+		{ NULL, "a" },
+		_VALUES_STATIC ("", ""),
+		_VALUES_STATIC ("a", ""),
+		_VALUES_STATIC ("", "a"),
+		_VALUES_STATIC ("a", "b"),
+	};
+	guint i, j;
+
+	for (i = 0; i < G_N_ELEMENTS (values); i++) {
+		gs_free NMUtilsStrStrDictKey *key1 = NULL;
+
+		val1 = &values[i];
+
+		key1 = _nm_utils_strstrdictkey_create (val1->v1, val1->v2);
+		if (val1->v_static) {
+			g_assert (_nm_utils_strstrdictkey_equal (key1, val1->v_static));
+			g_assert (_nm_utils_strstrdictkey_equal (val1->v_static, key1));
+			g_assert_cmpint (_nm_utils_strstrdictkey_hash (key1), ==, _nm_utils_strstrdictkey_hash (val1->v_static));
+		}
+
+		for (j = 0; j < G_N_ELEMENTS (values); j++) {
+			gs_free NMUtilsStrStrDictKey *key2 = NULL;
+
+			val2 = &values[j];
+			key2 = _nm_utils_strstrdictkey_create (val2->v1, val2->v2);
+			if (i != j) {
+				g_assert (!_nm_utils_strstrdictkey_equal (key1, key2));
+				g_assert (!_nm_utils_strstrdictkey_equal (key2, key1));
+			}
+		}
+	}
+}
+
+/******************************************************************************/
+
+static void
 test_nm_utils_dns_option_validate_do (char *option, gboolean ipv6, const NMUtilsDNSOptionDesc *descs,
                                       gboolean exp_result, char *exp_name, gboolean exp_value)
 {
@@ -4764,6 +4812,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/nm_utils_is_power_of_two", test_nm_utils_is_power_of_two);
 	g_test_add_func ("/core/general/_glib_compat_g_ptr_array_insert", test_g_ptr_array_insert);
 	g_test_add_func ("/core/general/_nm_utils_ptrarray_find_binary_search", test_nm_utils_ptrarray_find_binary_search);
+	g_test_add_func ("/core/general/_nm_utils_strstrdictkey", test_nm_utils_strstrdictkey);
 
 	g_test_add_func ("/core/general/_nm_utils_dns_option_validate", test_nm_utils_dns_option_validate);
 	g_test_add_func ("/core/general/_nm_utils_dns_option_find_idx", test_nm_utils_dns_option_find_idx);
