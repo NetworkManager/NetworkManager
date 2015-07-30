@@ -483,9 +483,9 @@ proxy_cleanup (NMSecretAgent *self)
 		g_clear_object (&priv->proxy);
 
 		g_signal_handlers_disconnect_by_func (nm_bus_manager_get (), name_owner_changed_cb, self);
-		g_clear_pointer (&priv->dbus_owner, g_free);
-
 		g_signal_emit (self, signals[DISCONNECTED], 0);
+
+		g_clear_pointer (&priv->dbus_owner, g_free);
 	}
 }
 
