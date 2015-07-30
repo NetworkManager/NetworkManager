@@ -4017,14 +4017,16 @@ gboolean nm_utils_enum_from_str (GType type, const char *str,
 	GTypeClass *class;
 	gboolean ret = FALSE;
 	int value = 0;
+	gs_free char *stripped = NULL;
 
 	g_return_val_if_fail (str, FALSE);
+	stripped = g_strstrip (strdup (str));
 	class = g_type_class_ref (type);
 
 	if (G_IS_ENUM_CLASS (class)) {
 		GEnumValue *enum_value;
 
-		enum_value = g_enum_get_value_by_nick (G_ENUM_CLASS (class), str);
+		enum_value = g_enum_get_value_by_nick (G_ENUM_CLASS (class), stripped);
 		if (enum_value) {
 			value = enum_value->value;
 			ret = TRUE;
@@ -4034,7 +4036,7 @@ gboolean nm_utils_enum_from_str (GType type, const char *str,
 		gs_strfreev char **strv = NULL;
 		int i;
 
-		strv = g_strsplit (str, ",", 0);
+		strv = g_strsplit (stripped, ",", 0);
 		for (i = 0; strv[i]; i++) {
 			if (!strv[i][0])
 				continue;

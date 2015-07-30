@@ -4688,12 +4688,14 @@ static void test_nm_utils_enum (void)
 	                                           NM_TEST_GENERAL_COLOR_FLAGS_GREEN, "red,green");
 
 	test_nm_utils_enum_from_str_do (bool_enum, "", FALSE, 0, NULL);
+	test_nm_utils_enum_from_str_do (bool_enum, " ", FALSE, 0, NULL);
 	test_nm_utils_enum_from_str_do (bool_enum, "invalid", FALSE, 0, NULL);
 	test_nm_utils_enum_from_str_do (bool_enum, "yes", TRUE, NM_TEST_GENERAL_BOOL_ENUM_YES, NULL);
 	test_nm_utils_enum_from_str_do (bool_enum, "no", TRUE, NM_TEST_GENERAL_BOOL_ENUM_NO, NULL);
 	test_nm_utils_enum_from_str_do (bool_enum, "yes,no", FALSE, 0, NULL);
 
 	test_nm_utils_enum_from_str_do (meta_flags, "", TRUE, 0, NULL);
+	test_nm_utils_enum_from_str_do (meta_flags, " ", TRUE, 0, NULL);
 	test_nm_utils_enum_from_str_do (meta_flags, "foo", TRUE, NM_TEST_GENERAL_META_FLAGS_FOO, NULL);
 	test_nm_utils_enum_from_str_do (meta_flags, "foo,baz", TRUE, NM_TEST_GENERAL_META_FLAGS_FOO |
 	                                                             NM_TEST_GENERAL_META_FLAGS_BAZ, NULL);
