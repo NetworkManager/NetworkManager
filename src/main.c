@@ -476,13 +476,7 @@ main (int argc, char *argv[])
 	                          net_enabled,
 	                          wifi_enabled,
 	                          wwan_enabled,
-	                          wimax_enabled,
-	                          &error);
-	if (manager == NULL) {
-		nm_log_err (LOGD_CORE, "failed to initialize the network manager: %s",
-		            error && error->message ? error->message : "(unknown)");
-		goto done;
-	}
+	                          wimax_enabled);
 
 	/* Initialize the supplicant manager */
 	sup_mgr = nm_supplicant_manager_get ();
