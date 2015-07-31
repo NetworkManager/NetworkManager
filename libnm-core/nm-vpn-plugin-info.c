@@ -194,7 +194,7 @@ _sort_files (LoadDirInfo *a, LoadDirInfo *b)
 /**
  * _nm_vpn_plugin_info_get_default_dir_etc:
  *
- * Returns: (transfer-none): compile time constant of the default
+ * Returns: (transfer none): compile time constant of the default
  *   VPN plugin directory.
  */
 const char *
@@ -206,7 +206,7 @@ _nm_vpn_plugin_info_get_default_dir_etc ()
 /**
  * _nm_vpn_plugin_info_get_default_dir_lib:
  *
- * Returns: (transfer-none): compile time constant of the default
+ * Returns: (transfer none): compile time constant of the default
  *   VPN plugin directory.
  */
 const char *
@@ -241,7 +241,7 @@ _nm_vpn_plugin_info_get_default_dir_user ()
  *
  * Iterate over the content of @dirname and load name files.
  *
- * Returns: (transfer-full): list of loaded plugin infos.
+ * Returns: (transfer full) (element-type NMVpnPluginInfo): list of loaded plugin infos.
  */
 GSList *
 _nm_vpn_plugin_info_list_load_dir (const char *dirname,
@@ -303,7 +303,7 @@ _nm_vpn_plugin_info_list_load_dir (const char *dirname,
 /**
  * nm_vpn_plugin_info_list_load:
  *
- * Returns: (tranfer-full): list of plugins loaded from the default
+ * Returns: (tranfer full): list of plugins loaded from the default
  * directories rejecting duplicates.
  *
  * Since: 1.2
@@ -469,7 +469,7 @@ nm_vpn_plugin_info_list_remove (GSList **list, NMVpnPluginInfo *plugin_info)
  * @list: list of plugins
  * @name: name to search
  *
- * Returns: the first plugin with a matching @name (or %NULL).
+ * Returns: (transfer none): the first plugin with a matching @name (or %NULL).
  *
  * Since: 1.2
  */
@@ -493,7 +493,7 @@ nm_vpn_plugin_info_list_find_by_name (GSList *list, const char *name)
  * @list: list of plugins
  * @filename: filename to search
  *
- * Returns: the first plugin with a matching @filename (or %NULL).
+ * Returns: (transfer none): the first plugin with a matching @filename (or %NULL).
  *
  * Since: 1.2
  */
@@ -517,7 +517,7 @@ nm_vpn_plugin_info_list_find_by_filename (GSList *list, const char *filename)
  * @list: list of plugins
  * @service: service to search
  *
- * Returns: the first plugin with a matching @service (or %NULL).
+ * Returns: (transfer none): the first plugin with a matching @service (or %NULL).
  *
  * Since: 1.2
  */
@@ -542,7 +542,7 @@ nm_vpn_plugin_info_list_find_by_service (GSList *list, const char *service)
  * nm_vpn_plugin_info_get_filename:
  * @self: plugin info instance
  *
- * Returns: (transfer-none): the filename. Can be %NULL.
+ * Returns: (transfer none): the filename. Can be %NULL.
  *
  * Since: 1.2
  */
@@ -558,7 +558,7 @@ nm_vpn_plugin_info_get_filename (NMVpnPluginInfo *self)
  * nm_vpn_plugin_info_get_name:
  * @self: plugin info instance
  *
- * Returns: (transfer-none): the name. Cannot be %NULL.
+ * Returns: (transfer none): the name. Cannot be %NULL.
  *
  * Since: 1.2
  */
@@ -574,7 +574,7 @@ nm_vpn_plugin_info_get_name (NMVpnPluginInfo *self)
  * nm_vpn_plugin_info_get_service:
  * @self: plugin info instance
  *
- * Returns: (transfer-none): the service. Cannot be %NULL.
+ * Returns: (transfer none): the service. Cannot be %NULL.
  *
  * Since: 1.2
  */
@@ -590,7 +590,7 @@ nm_vpn_plugin_info_get_service (NMVpnPluginInfo *self)
  * nm_vpn_plugin_info_get_plugin:
  * @self: plugin info instance
  *
- * Returns: (transfer-none): the plugin. Can be %NULL.
+ * Returns: (transfer none): the plugin. Can be %NULL.
  *
  * Since: 1.2
  */
@@ -607,7 +607,7 @@ nm_vpn_plugin_info_get_plugin (NMVpnPluginInfo *self)
  * nm_vpn_plugin_info_get_program:
  * @self: plugin info instance
  *
- * Returns: (transfer-none): the program. Can be %NULL.
+ * Returns: (transfer none): the program. Can be %NULL.
  *
  * Since: 1.2
  */
@@ -626,7 +626,7 @@ nm_vpn_plugin_info_get_program (NMVpnPluginInfo *self)
  * @group: group name
  * @key: name of the property
  *
- * Returns: (transfer-none): #NMVpnPluginInfo is internally a #GKeyFile. Returns the matching
+ * Returns: (transfer none): #NMVpnPluginInfo is internally a #GKeyFile. Returns the matching
  * property.
  *
  * Since: 1.2
@@ -653,7 +653,7 @@ nm_vpn_plugin_info_lookup_property (NMVpnPluginInfo *self, const char *group, co
  * nm_vpn_plugin_info_get_editor_plugin:
  * @self: plugin info instance
  *
- * Returns: the cached #NMVpnEditorPlugin instance.
+ * Returns: (transfer none): the cached #NMVpnEditorPlugin instance.
  *
  * Since: 1.2
  */
@@ -702,8 +702,8 @@ nm_vpn_plugin_info_set_editor_plugin (NMVpnPluginInfo *self, NMVpnEditorPlugin *
  * @self: plugin info instance
  * @error: error reason on failure
  *
- * Returns: loads the plugin and returns the newly created instance.
- *   The plugin is owned by @self and can be later retrieved again
+ * Returns: (transfer none): loads the plugin and returns the newly created
+ *   instance. The plugin is owned by @self and can be later retrieved again
  *   via nm_vpn_plugin_info_get_editor_plugin(). You can load the
  *   plugin only once, unless you reset the state via
  *   nm_vpn_plugin_info_set_editor_plugin().

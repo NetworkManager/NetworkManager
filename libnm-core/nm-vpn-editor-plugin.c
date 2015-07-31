@@ -91,7 +91,7 @@ nm_vpn_editor_plugin_default_init (NMVpnEditorPluginInterface *iface)
  * @check_owner: if non-negative, check whether the file is owned
  *  by UID @check_owner or by root. In this case also check that
  *  the file is not writable by anybody else.
- * @check_file: optional callback to validate the file prior to
+ * @check_file: (scope call): optional callback to validate the file prior to
  *   loading the shared library.
  * @user_data: user data for @check_file
  * @error: on failure the error reason.
@@ -100,7 +100,7 @@ nm_vpn_editor_plugin_default_init (NMVpnEditorPluginInterface *iface)
  * #NMVpnEditorPlugin instace via the #NMVpnEditorPluginFactory
  * function.
  *
- * Returns: (transfer-full): a new plugin instance or %NULL on error.
+ * Returns: (transfer full): a new plugin instance or %NULL on error.
  *
  * Since: 1.2
  */

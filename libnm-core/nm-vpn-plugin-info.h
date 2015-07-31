@@ -101,12 +101,12 @@ NMVpnPluginInfo *nm_vpn_plugin_info_list_find_by_service  (GSList *list, const c
 
 
 NM_AVAILABLE_IN_1_2
-NMVpnEditorPlugin *nm_vpn_plugin_info_get_editor_plugin  (NMVpnPluginInfo *plugin_info);
+NMVpnEditorPlugin *nm_vpn_plugin_info_get_editor_plugin  (NMVpnPluginInfo *self);
 NM_AVAILABLE_IN_1_2
 void               nm_vpn_plugin_info_set_editor_plugin  (NMVpnPluginInfo *self,
                                                           NMVpnEditorPlugin *plugin);
 NM_AVAILABLE_IN_1_2
-NMVpnEditorPlugin *nm_vpn_plugin_info_load_editor_plugin (NMVpnPluginInfo *plugin_info,
+NMVpnEditorPlugin *nm_vpn_plugin_info_load_editor_plugin (NMVpnPluginInfo *self,
                                                           GError **error);
 
 G_END_DECLS
