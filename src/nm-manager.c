@@ -165,7 +165,6 @@ typedef struct {
 	NMPolicy *policy;
 
 	NMBusManager  *dbus_mgr;
-	gboolean       prop_filter_added;
 	NMRfkillManager *rfkill_mgr;
 
 	NMSettings *settings;
@@ -4724,17 +4723,13 @@ dbus_connection_changed_cb (NMBusManager *dbus_mgr,
                             gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
-	gboolean success = FALSE;
+	gboolean success;
 
 	if (dbus_connection) {
-		/* Register property filter on new connection; there's no reason this
-		 * should fail except out-of-memory or program error; if it does fail
-		 * then there's no Manager property access control, which is bad.
-		 */
+		/* Only fails on ENOMEM */
 		success = dbus_connection_add_filter (dbus_connection, prop_filter, self, NULL);
 		g_assert (success);
 	}
-	NM_MANAGER_GET_PRIVATE (self)->prop_filter_added = success;
 }
 
 /**********************************************************************/
@@ -4762,11 +4757,9 @@ nm_manager_new (NMSettings *settings,
                 gboolean initial_net_enabled,
                 gboolean initial_wifi_enabled,
                 gboolean initial_wwan_enabled,
-                gboolean initial_wimax_enabled,
-                GError **error)
+                gboolean initial_wimax_enabled)
 {
 	NMManagerPrivate *priv;
-	DBusGConnection *bus;
 	DBusConnection *dbus_connection;
 	NMConfigData *config_data;
 
@@ -4779,16 +4772,14 @@ nm_manager_new (NMSettings *settings,
 
 	priv = NM_MANAGER_GET_PRIVATE (singleton);
 
-	bus = nm_bus_manager_get_connection (priv->dbus_mgr);
-	if (!bus) {
-		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
-		                     "Failed to initialize D-Bus connection");
-		g_object_unref (singleton);
-		return NULL;
-	}
+	dbus_connection = nm_bus_manager_get_dbus_connection (priv->dbus_mgr);
+	if (dbus_connection) {
+		gboolean success;
 
-	dbus_connection = dbus_g_connection_get_connection (bus);
-	g_assert (dbus_connection);
+		/* Only fails on ENOMEM */
+		success = dbus_connection_add_filter (dbus_connection, prop_filter, singleton, NULL);
+		g_assert (success);
+	}
 
 	priv->policy = nm_policy_new (singleton, settings);
 	g_signal_connect (priv->policy, "notify::" NM_POLICY_DEFAULT_IP4_DEVICE,
@@ -4812,14 +4803,6 @@ nm_manager_new (NMSettings *settings,
 	                                          nm_config_data_get_connectivity_response (config_data));
 	g_signal_connect (priv->connectivity, "notify::" NM_CONNECTIVITY_STATE,
 	                  G_CALLBACK (connectivity_changed), singleton);
-
-	if (!dbus_connection_add_filter (dbus_connection, prop_filter, singleton, NULL)) {
-		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
-		                     "Failed to register DBus connection filter");
-		g_object_unref (singleton);
-		return NULL;
-	}
-	priv->prop_filter_added = TRUE;
 
 	priv->settings = g_object_ref (settings);
 	g_signal_connect (priv->settings, "notify::" NM_SETTINGS_STARTUP_COMPLETE,
@@ -5074,7 +5057,6 @@ dispose (GObject *object)
 {
 	NMManager *manager = NM_MANAGER (object);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	DBusGConnection *bus;
 	DBusConnection *dbus_connection;
 
 	g_slist_free_full (priv->auth_chains, (GDestroyNotify) nm_auth_chain_unref);
@@ -5120,14 +5102,9 @@ dispose (GObject *object)
 
 	/* Unregister property filter */
 	if (priv->dbus_mgr) {
-		bus = nm_bus_manager_get_connection (priv->dbus_mgr);
-		if (bus) {
-			dbus_connection = dbus_g_connection_get_connection (bus);
-			if (dbus_connection && priv->prop_filter_added) {
-				dbus_connection_remove_filter (dbus_connection, prop_filter, manager);
-				priv->prop_filter_added = FALSE;
-			}
-		}
+		dbus_connection = nm_bus_manager_get_dbus_connection (priv->dbus_mgr);
+		if (dbus_connection)
+			dbus_connection_remove_filter (dbus_connection, prop_filter, manager);
 		g_signal_handlers_disconnect_by_func (priv->dbus_mgr, dbus_connection_changed_cb, manager);
 		priv->dbus_mgr = NULL;
 	}

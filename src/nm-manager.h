@@ -81,8 +81,7 @@ NMManager *   nm_manager_new                           (NMSettings *settings,
                                                         gboolean initial_net_enabled,
                                                         gboolean initial_wifi_enabled,
                                                         gboolean initial_wwan_enabled,
-                                                        gboolean initial_wimax_enabled,
-                                                        GError **error);
+                                                        gboolean initial_wimax_enabled);
 
 NMManager *   nm_manager_get                           (void);
 
