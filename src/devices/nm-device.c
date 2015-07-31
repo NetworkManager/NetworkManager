@@ -8205,9 +8205,11 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, CleanupType clean
 	nm_device_master_release_slaves (self);
 
 	/* slave: mark no longer enslaved */
-	g_clear_object (&priv->master);
-	priv->enslaved = FALSE;
-	g_object_notify (G_OBJECT (self), NM_DEVICE_MASTER);
+	if (nm_platform_link_get_master (NM_PLATFORM_GET, priv->ifindex) <= 0) {
+		g_clear_object (&priv->master);
+		priv->enslaved = FALSE;
+		g_object_notify (G_OBJECT (self), NM_DEVICE_MASTER);
+	}
 
 	/* Take out any entries in the routing table and any IP address the device had. */
 	ifindex = nm_device_get_ip_ifindex (self);
