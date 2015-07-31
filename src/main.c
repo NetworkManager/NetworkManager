@@ -419,6 +419,16 @@ main (int argc, char *argv[])
 #endif
 	             );
 
+	nm_auth_manager_setup (nm_config_get_auth_polkit (config));
+
+	settings = nm_settings_new ();
+	manager = nm_manager_new (settings,
+	                          global_opt.state_file,
+	                          net_enabled,
+	                          wifi_enabled,
+	                          wwan_enabled,
+	                          wimax_enabled);
+
 	if (!nm_bus_manager_get_connection (nm_bus_manager_get ())) {
 #if HAVE_DBUS_GLIB_100
 		nm_log_warn (LOGD_CORE, "Failed to connect to D-Bus; only private bus is available");
@@ -443,23 +453,12 @@ main (int argc, char *argv[])
 	 * NMPlatform. */
 	g_object_ref (NM_PLATFORM_GET);
 
-	nm_auth_manager_setup (nm_config_get_auth_polkit (config));
-
 	nm_dispatcher_init ();
 
-	settings = nm_settings_new (&error);
-	if (!settings) {
-		nm_log_err (LOGD_CORE, "failed to initialize settings storage: %s",
-		            error && error->message ? error->message : "(unknown)");
+	if (!nm_settings_start (settings, &error)) {
+		nm_log_err (LOGD_CORE, "failed to initialize settings storage: %s", error->message);
 		goto done;
 	}
-
-	manager = nm_manager_new (settings,
-	                          global_opt.state_file,
-	                          net_enabled,
-	                          wifi_enabled,
-	                          wwan_enabled,
-	                          wimax_enabled);
 
 	g_signal_connect (manager, NM_MANAGER_CONFIGURE_QUIT, G_CALLBACK (manager_configure_quit), config);
 

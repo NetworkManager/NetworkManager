@@ -73,7 +73,8 @@ typedef struct {
 
 GType nm_settings_get_type (void);
 
-NMSettings *nm_settings_new (GError **error);
+NMSettings *nm_settings_new (void);
+gboolean nm_settings_start (NMSettings *self, GError **error);
 
 typedef void (*NMSettingsForEachFunc) (NMSettings *settings,
                                        NMSettingsConnection *connection,

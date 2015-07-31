@@ -4198,6 +4198,11 @@ nm_manager_start (NMManager *self)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	guint i;
 
+	g_signal_connect (nm_platform_get (),
+	                  NM_PLATFORM_SIGNAL_LINK_CHANGED,
+	                  G_CALLBACK (platform_link_cb),
+	                  self);
+
 	/* Set initial radio enabled/disabled state */
 	for (i = 0; i < RFKILL_TYPE_MAX; i++) {
 		RadioState *rstate = &priv->radio_states[i];
@@ -4227,9 +4232,13 @@ nm_manager_start (NMManager *self)
 	system_hostname_changed_cb (priv->settings, NULL, self);
 
 	/* Start device factories */
+	nm_device_factory_manager_load_factories (_register_device_factory, self);
 	nm_device_factory_manager_for_each_factory (start_factory, NULL);
 
 	platform_query_devices (self);
+
+	/* Load VPN plugins */
+	priv->vpn_manager = g_object_ref (nm_vpn_manager_get ());
 
 	/*
 	 * Connections added before the manager is started do not emit
@@ -4831,11 +4840,6 @@ nm_manager_new (NMSettings *settings,
 
 	nm_exported_object_export (NM_EXPORTED_OBJECT (singleton));
 
-	g_signal_connect (nm_platform_get (),
-	                  NM_PLATFORM_SIGNAL_LINK_CHANGED,
-	                  G_CALLBACK (platform_link_cb),
-	                  singleton);
-
 	priv->rfkill_mgr = nm_rfkill_manager_new ();
 	g_signal_connect (priv->rfkill_mgr,
 	                  "rfkill-changed",
@@ -4849,8 +4853,6 @@ nm_manager_new (NMSettings *settings,
 	 */
 	rfkill_change (priv->radio_states[RFKILL_TYPE_WLAN].desc, RFKILL_TYPE_WLAN, initial_wifi_enabled);
 	rfkill_change (priv->radio_states[RFKILL_TYPE_WWAN].desc, RFKILL_TYPE_WWAN, initial_wwan_enabled);
-
-	nm_device_factory_manager_load_factories (_register_device_factory, singleton);
 
 	return singleton;
 }
@@ -4898,8 +4900,6 @@ nm_manager_init (NMManager *manager)
 	                  NM_BUS_MANAGER_DBUS_CONNECTION_CHANGED,
 	                  G_CALLBACK (dbus_connection_changed_cb),
 	                  manager);
-
-	priv->vpn_manager = g_object_ref (nm_vpn_manager_get ());
 
 	/* sleep/wake handling */
 	priv->sleep_monitor = g_object_ref (nm_sleep_monitor_get ());

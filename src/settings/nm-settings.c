@@ -176,6 +176,7 @@ typedef struct {
 	GSList *unrecognized_specs;
 	GSList *get_connections_cache;
 
+	gboolean started;
 	gboolean startup_complete;
 
 	struct {
@@ -560,6 +561,9 @@ nm_settings_get_hostname (NMSettings *self)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	char *hostname = NULL;
+
+	if (!priv->started)
+		return NULL;
 
 	if (priv->hostname.hostnamed_proxy) {
 		hostname = g_strdup (priv->hostname.value);
@@ -2094,13 +2098,10 @@ setup_hostname_file_monitors (NMSettings *self)
 }
 
 NMSettings *
-nm_settings_new (GError **error)
+nm_settings_new (void)
 {
 	NMSettings *self;
 	NMSettingsPrivate *priv;
-	GDBusProxy *proxy;
-	GVariant *variant;
-	GError *local_error = NULL;
 
 	self = g_object_new (NM_TYPE_SETTINGS, NULL);
 
@@ -2109,10 +2110,24 @@ nm_settings_new (GError **error)
 	priv->config = nm_config_get ();
 	priv->dbus_mgr = nm_bus_manager_get ();
 
+	nm_exported_object_export (NM_EXPORTED_OBJECT (self));
+	return self;
+}
+
+gboolean
+nm_settings_start (NMSettings *self, GError **error)
+{
+	NMSettingsPrivate *priv;
+	GDBusProxy *proxy;
+	GVariant *variant;
+	GError *local_error = NULL;
+
+	priv = NM_SETTINGS_GET_PRIVATE (self);
+
 	/* Load the plugins; fail if a plugin is not found. */
 	if (!load_plugins (self, nm_config_get_plugins (priv->config), error)) {
 		g_object_unref (self);
-		return NULL;
+		return FALSE;
 	}
 
 	load_connections (self);
@@ -2143,8 +2158,9 @@ nm_settings_new (GError **error)
 	if (!priv->hostname.hostnamed_proxy)
 		setup_hostname_file_monitors (self);
 
-	nm_exported_object_export (NM_EXPORTED_OBJECT (self));
-	return self;
+	priv->started = TRUE;
+	g_object_notify (G_OBJECT (self), NM_SETTINGS_HOSTNAME);
+	return TRUE;
 }
 
 static void
