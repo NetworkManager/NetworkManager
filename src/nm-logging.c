@@ -237,21 +237,21 @@ nm_logging_setup (const char  *level,
 					break;
 				}
 			}
-		}
 
-		if (!bits) {
-			if (!bad_domains) {
-				g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_LOG_DOMAIN,
-				             _("Unknown log domain '%s'"), *iter);
-				return FALSE;
+			if (!bits) {
+				if (!bad_domains) {
+					g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_LOG_DOMAIN,
+					             _("Unknown log domain '%s'"), *iter);
+					return FALSE;
+				}
+
+				if (unrecognized)
+					g_string_append (unrecognized, ", ");
+				else
+					unrecognized = g_string_new (NULL);
+				g_string_append (unrecognized, *iter);
+				continue;
 			}
-
-			if (unrecognized)
-				g_string_append (unrecognized, ", ");
-			else
-				unrecognized = g_string_new (NULL);
-			g_string_append (unrecognized, *iter);
-			continue;
 		}
 
 		for (i = 0; i < G_N_ELEMENTS (new_logging); i++) {
