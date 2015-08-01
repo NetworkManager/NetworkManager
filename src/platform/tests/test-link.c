@@ -231,10 +231,7 @@ test_slave (int master, int type, SignalData *master_changed)
 	g_assert (nm_platform_link_release (NM_PLATFORM_GET, master, ifindex));
 	g_assert_cmpint (nm_platform_link_get_master (NM_PLATFORM_GET, ifindex), ==, 0);
 	accept_signals (link_changed, 1, 3);
-	if (link_type != NM_LINK_TYPE_TEAM)
-		accept_signals (master_changed, 1, 2);
-	else
-		accept_signals (master_changed, 1, 1);
+	accept_signals (master_changed, 1, 2);
 
 	ensure_no_signal (master_changed);
 
