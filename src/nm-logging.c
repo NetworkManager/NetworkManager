@@ -86,7 +86,6 @@ static const LogLevelDesc level_desc[_LOGL_N] = {
 };
 
 static const LogDesc domain_descs[] = {
-	{ LOGD_NONE,      "NONE" },
 	{ LOGD_PLATFORM,  "PLATFORM" },
 	{ LOGD_RFKILL,    "RFKILL" },
 	{ LOGD_ETHER,     "ETHER" },
