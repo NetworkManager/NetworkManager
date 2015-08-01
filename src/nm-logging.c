@@ -53,7 +53,7 @@ nm_log_handler (const gchar *log_domain,
 
 static NMLogLevel log_level = LOGL_INFO;
 static char *log_domains;
-static NMLogDomain logging[_LOGL_N];
+static NMLogDomain logging[_LOGL_N_REAL];
 static gboolean logging_set_up;
 enum {
 	LOG_BACKEND_GLIB,
@@ -82,6 +82,7 @@ static const LogLevelDesc level_desc[_LOGL_N] = {
 	[LOGL_INFO]  = { "INFO",  "<info>",  LOG_INFO,    G_LOG_LEVEL_MESSAGE, FALSE },
 	[LOGL_WARN]  = { "WARN",  "<warn>",  LOG_WARNING, G_LOG_LEVEL_WARNING, FALSE },
 	[LOGL_ERR]   = { "ERR",   "<error>", LOG_ERR,     G_LOG_LEVEL_WARNING, TRUE  },
+	[_LOGL_OFF]  = { "OFF",   NULL,      0,           0,                   FALSE },
 };
 
 static const LogDesc domain_descs[] = {
@@ -253,10 +254,12 @@ nm_logging_setup (const char  *level,
 			continue;
 		}
 
-		for (i = 0; i < domain_log_level; i++)
-			new_logging[i] &= ~bits;
-		for (i = domain_log_level; i < _LOGL_N; i++)
-			new_logging[i] |= bits;
+		for (i = 0; i < G_N_ELEMENTS (new_logging); i++) {
+			if (i < domain_log_level)
+				new_logging[i] &= ~bits;
+			else
+				new_logging[i] |= bits;
+		}
 	}
 	g_strfreev (tmp);
 

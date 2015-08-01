@@ -90,7 +90,11 @@ typedef enum  { /*< skip >*/
 	LOGL_WARN,
 	LOGL_ERR,
 
-	_LOGL_N, /* the number of logging levels */
+	_LOGL_N_REAL, /* the number of actual logging levels */
+
+	_LOGL_OFF = _LOGL_N_REAL, /* special logging level that is always disabled. */
+
+	_LOGL_N, /* the number of logging levels including "OFF" */
 } NMLogLevel;
 
 #define nm_log_err(domain, ...)     nm_log (LOGL_ERR,   (domain), __VA_ARGS__)
