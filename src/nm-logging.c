@@ -53,7 +53,7 @@ nm_log_handler (const gchar *log_domain,
 
 static NMLogLevel log_level = LOGL_INFO;
 static char *log_domains;
-static NMLogDomain logging[LOGL_MAX];
+static NMLogDomain logging[_LOGL_N];
 static gboolean logging_set_up;
 enum {
 	LOG_BACKEND_GLIB,
@@ -76,7 +76,7 @@ typedef struct {
 	gboolean full_details;
 } LogLevelDesc;
 
-static const LogLevelDesc level_desc[LOGL_MAX] = {
+static const LogLevelDesc level_desc[_LOGL_N] = {
 	[LOGL_TRACE] = { "TRACE", "<trace>", LOG_DEBUG,   G_LOG_LEVEL_DEBUG,   TRUE  },
 	[LOGL_DEBUG] = { "DEBUG", "<debug>", LOG_INFO,    G_LOG_LEVEL_DEBUG,   TRUE  },
 	[LOGL_INFO]  = { "INFO",  "<info>",  LOG_INFO,    G_LOG_LEVEL_MESSAGE, FALSE },
@@ -149,7 +149,7 @@ match_log_level (const char  *level,
 {
 	int i;
 
-	for (i = 0; i < LOGL_MAX; i++) {
+	for (i = 0; i < _LOGL_N; i++) {
 		if (!g_ascii_strcasecmp (level_desc[i].name, level)) {
 			*out_level = i;
 			return TRUE;
@@ -168,7 +168,7 @@ nm_logging_setup (const char  *level,
                   GError     **error)
 {
 	GString *unrecognized = NULL;
-	NMLogDomain new_logging[LOGL_MAX];
+	NMLogDomain new_logging[_LOGL_N];
 	NMLogLevel new_log_level = log_level;
 	char **tmp, **iter;
 	int i;
@@ -178,7 +178,7 @@ nm_logging_setup (const char  *level,
 
 	logging_set_up = TRUE;
 
-	for (i = 0; i < LOGL_MAX; i++)
+	for (i = 0; i < _LOGL_N; i++)
 		new_logging[i] = 0;
 
 	/* levels */
@@ -255,7 +255,7 @@ nm_logging_setup (const char  *level,
 
 		for (i = 0; i < domain_log_level; i++)
 			new_logging[i] &= ~bits;
-		for (i = domain_log_level; i < LOGL_MAX; i++)
+		for (i = domain_log_level; i < _LOGL_N; i++)
 			new_logging[i] |= bits;
 	}
 	g_strfreev (tmp);
@@ -268,7 +268,7 @@ nm_logging_setup (const char  *level,
 	g_clear_pointer (&logging_domains_to_string, g_free);
 
 	log_level = new_log_level;
-	for (i = 0; i < LOGL_MAX; i++)
+	for (i = 0; i < _LOGL_N; i++)
 		logging[i] = new_logging[i];
 
 	if (unrecognized)
@@ -292,7 +292,7 @@ nm_logging_all_levels_to_string (void)
 		int i;
 
 		str = g_string_new (NULL);
-		for (i = 0; i < LOGL_MAX; i++) {
+		for (i = 0; i < _LOGL_N; i++) {
 			if (str->len)
 				g_string_append_c (str, ',');
 			g_string_append (str, level_desc[i].name);
@@ -335,7 +335,7 @@ nm_logging_domains_to_string (void)
 			}
 			/* Check if it's logging at a higher level than the default. */
 			if (!(diter->num & logging[log_level])) {
-				for (i = log_level + 1; i < LOGL_MAX; i++) {
+				for (i = log_level + 1; i < _LOGL_N; i++) {
 					if (diter->num & logging[i]) {
 						g_string_append_printf (str, ":%s", level_desc[i].name);
 						break;
@@ -374,7 +374,7 @@ nm_logging_all_domains_to_string (void)
 gboolean
 nm_logging_enabled (NMLogLevel level, NMLogDomain domain)
 {
-	g_return_val_if_fail (level < LOGL_MAX, FALSE);
+	g_return_val_if_fail (level < _LOGL_N, FALSE);
 
 	_ensure_initialized ();
 
@@ -423,7 +423,7 @@ _nm_log_impl (const char *file,
 	char *fullmsg = NULL;
 	GTimeVal tv;
 
-	if ((guint) level >= LOGL_MAX)
+	if ((guint) level >= _LOGL_N)
 		g_return_if_reached ();
 
 	_ensure_initialized ();
