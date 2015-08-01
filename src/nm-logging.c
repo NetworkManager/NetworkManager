@@ -149,7 +149,7 @@ match_log_level (const char  *level,
 {
 	int i;
 
-	for (i = 0; i < _LOGL_N; i++) {
+	for (i = 0; i < G_N_ELEMENTS (level_desc); i++) {
 		if (!g_ascii_strcasecmp (level_desc[i].name, level)) {
 			*out_level = i;
 			return TRUE;
@@ -168,7 +168,7 @@ nm_logging_setup (const char  *level,
                   GError     **error)
 {
 	GString *unrecognized = NULL;
-	NMLogDomain new_logging[_LOGL_N];
+	NMLogDomain new_logging[G_N_ELEMENTS (logging)];
 	NMLogLevel new_log_level = log_level;
 	char **tmp, **iter;
 	int i;
@@ -178,7 +178,7 @@ nm_logging_setup (const char  *level,
 
 	logging_set_up = TRUE;
 
-	for (i = 0; i < _LOGL_N; i++)
+	for (i = 0; i < G_N_ELEMENTS (new_logging); i++)
 		new_logging[i] = 0;
 
 	/* levels */
@@ -268,7 +268,7 @@ nm_logging_setup (const char  *level,
 	g_clear_pointer (&logging_domains_to_string, g_free);
 
 	log_level = new_log_level;
-	for (i = 0; i < _LOGL_N; i++)
+	for (i = 0; i < G_N_ELEMENTS (new_logging); i++)
 		logging[i] = new_logging[i];
 
 	if (unrecognized)
@@ -292,7 +292,7 @@ nm_logging_all_levels_to_string (void)
 		int i;
 
 		str = g_string_new (NULL);
-		for (i = 0; i < _LOGL_N; i++) {
+		for (i = 0; i < G_N_ELEMENTS (level_desc); i++) {
 			if (str->len)
 				g_string_append_c (str, ',');
 			g_string_append (str, level_desc[i].name);
@@ -335,7 +335,7 @@ nm_logging_domains_to_string (void)
 			}
 			/* Check if it's logging at a higher level than the default. */
 			if (!(diter->num & logging[log_level])) {
-				for (i = log_level + 1; i < _LOGL_N; i++) {
+				for (i = log_level + 1; i < G_N_ELEMENTS (logging); i++) {
 					if (diter->num & logging[i]) {
 						g_string_append_printf (str, ":%s", level_desc[i].name);
 						break;
@@ -374,7 +374,8 @@ nm_logging_all_domains_to_string (void)
 gboolean
 nm_logging_enabled (NMLogLevel level, NMLogDomain domain)
 {
-	g_return_val_if_fail (level < _LOGL_N, FALSE);
+	if ((guint) level >= G_N_ELEMENTS (logging))
+		g_return_val_if_reached (FALSE);
 
 	_ensure_initialized ();
 
@@ -423,7 +424,7 @@ _nm_log_impl (const char *file,
 	char *fullmsg = NULL;
 	GTimeVal tv;
 
-	if ((guint) level >= _LOGL_N)
+	if ((guint) level >= G_N_ELEMENTS (logging))
 		g_return_if_reached ();
 
 	_ensure_initialized ();
