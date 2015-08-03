@@ -140,7 +140,7 @@ script_info_free (gpointer ptr)
 
 	g_free (info->script);
 	g_free (info->error);
-	g_free (info);
+	g_slice_free (ScriptInfo, info);
 }
 
 static void
@@ -155,7 +155,7 @@ request_free (Request *request)
 	if (request->scripts)
 		g_ptr_array_free (request->scripts, TRUE);
 
-	g_free (request);
+	g_slice_free (Request, request);
 }
 
 static gboolean
@@ -637,7 +637,7 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 
 	nm_clear_g_source (&quit_id);
 
-	request = g_malloc0 (sizeof (*request));
+	request = g_slice_new0 (Request);
 	request->handler = h;
 	request->debug = request_debug || debug;
 	request->context = context;
@@ -668,7 +668,9 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 
 	request->scripts = g_ptr_array_new_full (5, script_info_free);
 	for (iter = sorted_scripts; iter; iter = g_slist_next (iter)) {
-		ScriptInfo *s = g_malloc0 (sizeof (*s));
+		ScriptInfo *s;
+
+		s = g_slice_new0 (ScriptInfo);
 		s->request = request;
 		s->script = iter->data;
 		s->wait = script_must_wait (s->script);
