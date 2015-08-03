@@ -46,6 +46,7 @@ static GMainLoop *loop = NULL;
 static gboolean debug = FALSE;
 static gboolean persist = FALSE;
 static guint quit_id;
+static guint request_id_counter = 0;
 
 typedef struct Request Request;
 
@@ -121,6 +122,8 @@ typedef struct {
 struct Request {
 	Handler *handler;
 
+	guint request_id;
+
 	GDBusMethodInvocation *context;
 	char *action;
 	char *iface;
@@ -132,6 +135,57 @@ struct Request {
 	gint num_scripts_done;
 	gint num_scripts_nowait;
 };
+
+/*****************************************************************************/
+
+#define __LOG_print(print_cmd, _request, _script, ...) \
+	G_STMT_START { \
+		nm_assert ((_request) && (!(_script) || (_script)->request == (_request))); \
+		print_cmd ("#%u '%s'%s%s%s%s%s%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+		           (_request)->request_id, \
+		           (_request)->action, \
+		           (_request)->iface ? " [" : "", \
+		           (_request)->iface ? (_request)->iface : "", \
+		           (_request)->iface ? "]" : "", \
+		           (_script) ? ", \"" : "", \
+		           (_script) ? (_script)->script : "", \
+		           (_script) ? "\"" : "" \
+		           _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
+	} G_STMT_END
+
+#define _LOG(_request, _script, log_always, print_cmd, ...) \
+	G_STMT_START { \
+		const Request *__request = (_request); \
+		const ScriptInfo *__script = (_script); \
+		\
+		if (!__request) \
+			__request = __script->request; \
+		nm_assert (__request && (!__script || __script->request == __request)); \
+		if ((log_always) || __request->debug) { \
+			if (FALSE) { \
+				/* g_message() alone does not warn about invalid format. Add a dummy printf() statement to
+				 * get a compiler warning about wrong format. */ \
+				__LOG_print (printf, __request, __script, __VA_ARGS__); \
+			} \
+			__LOG_print (print_cmd, __request, __script, __VA_ARGS__); \
+		} \
+	} G_STMT_END
+
+static gboolean
+_LOG_R_D_enabled (const Request *request)
+{
+	return request->debug;
+}
+
+#define _LOG_R_D(_request, ...) _LOG(_request, NULL, FALSE, g_message, __VA_ARGS__)
+#define _LOG_R_I(_request, ...) _LOG(_request, NULL, TRUE,  g_message, __VA_ARGS__)
+#define _LOG_R_W(_request, ...) _LOG(_request, NULL, TRUE,  g_warning, __VA_ARGS__)
+
+#define _LOG_S_D(_script, ...)  _LOG(NULL, _script,  FALSE, g_message, __VA_ARGS__)
+#define _LOG_S_I(_script, ...)  _LOG(NULL, _script,  TRUE,  g_message, __VA_ARGS__)
+#define _LOG_S_W(_script, ...)  _LOG(NULL, _script,  TRUE,  g_warning, __VA_ARGS__)
+
+/*****************************************************************************/
 
 static void
 script_info_free (gpointer ptr)
@@ -208,10 +262,7 @@ next_request (Handler *h, Request *request)
 			return FALSE;
 	}
 
-	if (request->iface)
-		g_message ("Dispatching action '%s' for %s", request->action, request->iface);
-	else
-		g_message ("Dispatching action '%s'", request->action);
+	_LOG_R_I (request, "start running ordered scripts...");
 
 	h->current_request = request;
 
@@ -254,12 +305,7 @@ complete_request (Request *request)
 	ret = g_variant_new ("(a(sus))", &results);
 	g_dbus_method_invocation_return_value (request->context, ret);
 
-	if (request->debug) {
-		if (request->iface)
-			g_message ("Dispatch '%s' on %s complete", request->action, request->iface);
-		else
-			g_message ("Dispatch '%s' complete", request->action);
-	}
+	_LOG_R_D (request, "completed (%u scripts)", request->scripts->len);
 
 	if (handler->current_request == request)
 		handler->current_request = NULL;
@@ -363,11 +409,10 @@ script_watch_cb (GPid pid, gint status, gpointer user_data)
 	}
 
 	if (script->result == DISPATCH_RESULT_SUCCESS) {
-		if (script->request->debug)
-			g_message ("Script '%s' complete", script->script);
+		_LOG_S_D (script, "complete");
 	} else {
 		script->result = DISPATCH_RESULT_FAILED;
-		g_warning ("%s", script->error);
+		_LOG_S_W (script, "complete: failed with %s", script->error);
 	}
 
 	g_spawn_close_pid (script->pid);
@@ -386,7 +431,7 @@ script_timeout_cb (gpointer user_data)
 	if (!script->wait)
 		script->request->num_scripts_nowait--;
 
-	g_warning ("Script '%s' took too long; killing it.", script->script);
+	_LOG_S_W (script, "complete: timeout (kill script)");
 
 	kill (script->pid, SIGKILL);
 again:
@@ -481,8 +526,7 @@ script_dispatch (ScriptInfo *script)
 	argv[2] = request->action;
 	argv[3] = NULL;
 
-	if (request->debug)
-		g_message ("Running script '%s'", script->script);
+	_LOG_S_D (script, "run script%s", script->wait ? "" : " (no-wait)");
 
 	if (g_spawn_async ("/", argv, request->envp, G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL, &script->pid, &error)) {
 		script->watch_id = g_child_watch_add (script->pid, (GChildWatchFunc) script_watch_cb, script);
@@ -491,8 +535,8 @@ script_dispatch (ScriptInfo *script)
 			request->num_scripts_nowait++;
 		return TRUE;
 	} else {
-		g_warning ("Failed to execute script '%s': (%d) %s",
-		           script->script, error->code, error->message);
+		_LOG_S_W (script, "complete: failed to execute script: %s (%d)",
+		          error->message, error->code);
 		script->result = DISPATCH_RESULT_EXEC_FAILED;
 		script->error = g_strdup (error->message);
 		request->num_scripts_done++;
@@ -536,7 +580,7 @@ find_scripts (const char *str_action)
 		dirname = NMD_SCRIPT_DIR_DEFAULT;
 
 	if (!(dir = g_dir_open (dirname, 0, &error))) {
-		g_message ("Failed to open dispatcher directory '%s': (%d) %s",
+		g_message ("find-scripts: Failed to open dispatcher directory '%s': (%d) %s",
 		           dirname, error->code, error->message);
 		g_error_free (error);
 		return NULL;
@@ -555,11 +599,11 @@ find_scripts (const char *str_action)
 
 		err = stat (path, &st);
 		if (err)
-			g_warning ("Failed to stat '%s': %d", path, err);
+			g_warning ("find-scripts: Failed to stat '%s': %d", path, err);
 		else if (S_ISDIR (st.st_mode))
 			; /* silently skip. */
 		else if (!check_permissions (&st, &err_msg))
-			g_warning ("Cannot execute '%s': %s", path, err_msg);
+			g_warning ("find-scripts: Cannot execute '%s': %s", path, err_msg);
 		else {
 			/* success */
 			sorted = g_slist_insert_sorted (sorted, path, (GCompareFunc) g_strcmp0);
@@ -627,15 +671,8 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 
 	sorted_scripts = find_scripts (str_action);
 
-	if (!sorted_scripts) {
-		GVariant *results;
-
-		results = g_variant_new_array (G_VARIANT_TYPE ("(sus)"), NULL, 0);
-		g_dbus_method_invocation_return_value (context, g_variant_new ("(@a(sus))", results));
-		return TRUE;
-	}
-
 	request = g_slice_new0 (Request);
+	request->request_id = ++request_id_counter;
 	request->handler = h;
 	request->debug = request_debug || debug;
 	request->context = context;
@@ -655,17 +692,6 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 	                                                    &request->iface,
 	                                                    &error_message);
 
-	if (error_message)
-		g_warning (error_message);
-
-	if (request->debug) {
-		g_message ("------------ Action ID %p '%s' Interface %s Environment ------------",
-		           context, str_action, request->iface ? request->iface : "(none)");
-		for (p = request->envp; *p; p++)
-			g_message ("  %s", *p);
-		g_message ("\n");
-	}
-
 	request->scripts = g_ptr_array_new_full (5, script_info_free);
 	for (iter = sorted_scripts; iter; iter = g_slist_next (iter)) {
 		ScriptInfo *s;
@@ -678,8 +704,19 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 	}
 	g_slist_free (sorted_scripts);
 
-	if (error_message) {
+	_LOG_R_I (request, "new request (%u scripts)", request->scripts->len);
+	if (_LOG_R_D_enabled (request)) {
+		for (p = request->envp; *p; p++)
+			_LOG_R_D (request, "environment: %s", *p);
+	}
+
+	if (error_message || request->scripts->len == 0) {
 		GVariant *results;
+
+		if (error_message)
+			_LOG_R_W (request, "completed: invalid request: %s", error_message);
+		else
+			_LOG_R_I (request, "completed: no scripts");
 
 		results = g_variant_new_array (G_VARIANT_TYPE ("(sus)"), NULL, 0);
 		g_dbus_method_invocation_return_value (context, g_variant_new ("(@a(sus))", results));
@@ -848,7 +885,7 @@ main (int argc, char **argv)
 	g_option_context_add_main_entries (opt_ctx, entries, NULL);
 
 	if (!g_option_context_parse (opt_ctx, &argc, &argv, &error)) {
-		g_warning ("%s\n", error->message);
+		g_warning ("Error parsing command line arguments: %s", error->message);
 		g_error_free (error);
 		return 1;
 	}
