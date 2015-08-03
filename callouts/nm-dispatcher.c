@@ -635,8 +635,6 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 		return TRUE;
 	}
 
-	nm_clear_g_source (&quit_id);
-
 	request = g_slice_new0 (Request);
 	request->handler = h;
 	request->debug = request_debug || debug;
@@ -677,6 +675,9 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 		g_ptr_array_add (request->scripts, s);
 	}
 	g_slist_free (sorted_scripts);
+
+	nm_clear_g_source (&quit_id);
+
 	h->num_requests_pending++;
 
 	for (i = 0; i < request->scripts->len; i++) {
