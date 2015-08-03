@@ -261,7 +261,6 @@ main (int argc, char *argv[])
 	gboolean wifi_enabled = TRUE, net_enabled = TRUE, wwan_enabled = TRUE, wimax_enabled = TRUE;
 	gboolean success = FALSE;
 	NMManager *manager = NULL;
-	gs_unref_object NMSettings *settings = NULL;
 	NMConfig *config;
 	GError *error = NULL;
 	gboolean wrote_pidfile = FALSE;
@@ -421,13 +420,11 @@ main (int argc, char *argv[])
 
 	nm_auth_manager_setup (nm_config_get_auth_polkit (config));
 
-	settings = nm_settings_new ();
-	manager = nm_manager_new (settings,
-	                          global_opt.state_file,
-	                          net_enabled,
-	                          wifi_enabled,
-	                          wwan_enabled,
-	                          wimax_enabled);
+	manager = nm_manager_setup (global_opt.state_file,
+	                            net_enabled,
+	                            wifi_enabled,
+	                            wwan_enabled,
+	                            wimax_enabled);
 
 	if (!nm_bus_manager_get_connection (nm_bus_manager_get ())) {
 #if HAVE_DBUS_GLIB_100
@@ -455,14 +452,12 @@ main (int argc, char *argv[])
 
 	nm_dispatcher_init ();
 
-	if (!nm_settings_start (settings, &error)) {
-		nm_log_err (LOGD_CORE, "failed to initialize settings storage: %s", error->message);
-		goto done;
-	}
-
 	g_signal_connect (manager, NM_MANAGER_CONFIGURE_QUIT, G_CALLBACK (manager_configure_quit), config);
 
-	nm_manager_start (manager);
+	if (!nm_manager_start (manager, &error)) {
+		nm_log_err (LOGD_CORE, "failed to initialize: %s", error->message);
+		goto done;
+	}
 
 	/* Make sure the loopback interface is up. If interface is down, we bring
 	 * it up and kernel will assign it link-local IPv4 and IPv6 addresses. If

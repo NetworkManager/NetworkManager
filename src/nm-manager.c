@@ -4192,11 +4192,14 @@ start_factory (NMDeviceFactory *factory, gpointer user_data)
 	nm_device_factory_start (factory);
 }
 
-void
-nm_manager_start (NMManager *self)
+gboolean
+nm_manager_start (NMManager *self, GError **error)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	guint i;
+
+	if (!nm_settings_start (priv->settings, error))
+		return FALSE;
 
 	g_signal_connect (nm_platform_get (),
 	                  NM_PLATFORM_SIGNAL_LINK_CHANGED,
@@ -4247,6 +4250,8 @@ nm_manager_start (NMManager *self)
 	system_create_virtual_devices (self);
 
 	check_if_startup_complete (self);
+
+	return TRUE;
 }
 
 void
@@ -4743,79 +4748,89 @@ dbus_connection_changed_cb (NMBusManager *dbus_mgr,
 
 /**********************************************************************/
 
-static NMManager *singleton = NULL;
+static NMManager *singleton_instance = NULL;
 
 NMManager *
 nm_manager_get (void)
 {
-	g_assert (singleton);
-	return singleton;
+	g_assert (singleton_instance);
+	return singleton_instance;
 }
 
 NMConnectionProvider *
 nm_connection_provider_get (void)
 {
-	g_assert (singleton);
-	g_assert (NM_MANAGER_GET_PRIVATE (singleton)->settings);
-	return NM_CONNECTION_PROVIDER (NM_MANAGER_GET_PRIVATE (singleton)->settings);
+	g_assert (singleton_instance);
+	g_assert (NM_MANAGER_GET_PRIVATE (singleton_instance)->settings);
+	return NM_CONNECTION_PROVIDER (NM_MANAGER_GET_PRIVATE (singleton_instance)->settings);
 }
 
 NMManager *
-nm_manager_new (NMSettings *settings,
-                const char *state_file,
-                gboolean initial_net_enabled,
-                gboolean initial_wifi_enabled,
-                gboolean initial_wwan_enabled,
-                gboolean initial_wimax_enabled)
+nm_manager_setup (const char *state_file,
+                  gboolean initial_net_enabled,
+                  gboolean initial_wifi_enabled,
+                  gboolean initial_wwan_enabled,
+                  gboolean initial_wimax_enabled)
 {
+	NMManager *self;
 	NMManagerPrivate *priv;
 	DBusConnection *dbus_connection;
 	NMConfigData *config_data;
 
-	g_assert (settings);
-
 	/* Can only be called once */
-	g_assert (singleton == NULL);
-	singleton = (NMManager *) g_object_new (NM_TYPE_MANAGER, NULL);
-	g_assert (singleton);
+	g_assert (singleton_instance == NULL);
+	singleton_instance = self = (NMManager *) g_object_new (NM_TYPE_MANAGER, NULL);
+	g_assert (singleton_instance);
 
-	priv = NM_MANAGER_GET_PRIVATE (singleton);
+	priv = NM_MANAGER_GET_PRIVATE (self);
 
 	dbus_connection = nm_bus_manager_get_dbus_connection (priv->dbus_mgr);
 	if (dbus_connection) {
 		gboolean success;
 
 		/* Only fails on ENOMEM */
-		success = dbus_connection_add_filter (dbus_connection, prop_filter, singleton, NULL);
+		success = dbus_connection_add_filter (dbus_connection, prop_filter, self, NULL);
 		g_assert (success);
 	}
 
-	priv->policy = nm_policy_new (singleton, settings);
+	priv->settings = nm_settings_new ();
+	g_signal_connect (priv->settings, "notify::" NM_SETTINGS_STARTUP_COMPLETE,
+	                  G_CALLBACK (settings_startup_complete_changed), self);
+	g_signal_connect (priv->settings, "notify::" NM_SETTINGS_UNMANAGED_SPECS,
+	                  G_CALLBACK (system_unmanaged_devices_changed_cb), self);
+	g_signal_connect (priv->settings, "notify::" NM_SETTINGS_HOSTNAME,
+	                  G_CALLBACK (system_hostname_changed_cb), self);
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_ADDED,
+	                  G_CALLBACK (connection_added), self);
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED,
+	                  G_CALLBACK (connection_changed), self);
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_REMOVED,
+	                  G_CALLBACK (connection_removed), self);
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED,
+	                  G_CALLBACK (connection_changed), self);
+
+	priv->policy = nm_policy_new (self, priv->settings);
 	g_signal_connect (priv->policy, "notify::" NM_POLICY_DEFAULT_IP4_DEVICE,
-	                  G_CALLBACK (policy_default_device_changed), singleton);
+	                  G_CALLBACK (policy_default_device_changed), self);
 	g_signal_connect (priv->policy, "notify::" NM_POLICY_DEFAULT_IP6_DEVICE,
-	                  G_CALLBACK (policy_default_device_changed), singleton);
+	                  G_CALLBACK (policy_default_device_changed), self);
 	g_signal_connect (priv->policy, "notify::" NM_POLICY_ACTIVATING_IP4_DEVICE,
-	                  G_CALLBACK (policy_activating_device_changed), singleton);
+	                  G_CALLBACK (policy_activating_device_changed), self);
 	g_signal_connect (priv->policy, "notify::" NM_POLICY_ACTIVATING_IP6_DEVICE,
-	                  G_CALLBACK (policy_activating_device_changed), singleton);
+	                  G_CALLBACK (policy_activating_device_changed), self);
 
 	priv->config = g_object_ref (nm_config_get ());
 	g_signal_connect (G_OBJECT (priv->config),
 	                  NM_CONFIG_SIGNAL_CONFIG_CHANGED,
 	                  G_CALLBACK (_config_changed_cb),
-	                  singleton);
+	                  self);
 
 	config_data = nm_config_get_data (priv->config);
 	priv->connectivity = nm_connectivity_new (nm_config_data_get_connectivity_uri (config_data),
 	                                          nm_config_data_get_connectivity_interval (config_data),
 	                                          nm_config_data_get_connectivity_response (config_data));
 	g_signal_connect (priv->connectivity, "notify::" NM_CONNECTIVITY_STATE,
-	                  G_CALLBACK (connectivity_changed), singleton);
-
-	priv->settings = g_object_ref (settings);
-	g_signal_connect (priv->settings, "notify::" NM_SETTINGS_STARTUP_COMPLETE,
-	                  G_CALLBACK (settings_startup_complete_changed), singleton);
+	                  G_CALLBACK (connectivity_changed), self);
 
 	priv->state_file = g_strdup (state_file);
 
@@ -4825,26 +4840,13 @@ nm_manager_new (NMSettings *settings,
 	priv->radio_states[RFKILL_TYPE_WWAN].user_enabled = initial_wwan_enabled;
 	priv->radio_states[RFKILL_TYPE_WIMAX].user_enabled = initial_wimax_enabled;
 
-	g_signal_connect (priv->settings, "notify::" NM_SETTINGS_UNMANAGED_SPECS,
-	                  G_CALLBACK (system_unmanaged_devices_changed_cb), singleton);
-	g_signal_connect (priv->settings, "notify::" NM_SETTINGS_HOSTNAME,
-	                  G_CALLBACK (system_hostname_changed_cb), singleton);
-	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_ADDED,
-	                  G_CALLBACK (connection_added), singleton);
-	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED,
-	                  G_CALLBACK (connection_changed), singleton);
-	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_REMOVED,
-	                  G_CALLBACK (connection_removed), singleton);
-	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED,
-	                  G_CALLBACK (connection_changed), singleton);
-
-	nm_exported_object_export (NM_EXPORTED_OBJECT (singleton));
+	nm_exported_object_export (NM_EXPORTED_OBJECT (self));
 
 	priv->rfkill_mgr = nm_rfkill_manager_new ();
 	g_signal_connect (priv->rfkill_mgr,
 	                  "rfkill-changed",
 	                  G_CALLBACK (rfkill_manager_rfkill_changed_cb),
-	                  singleton);
+	                  self);
 
 	/* Force kernel WiFi/WWAN rfkill state to follow NM saved WiFi/WWAN state
 	 * in case the BIOS doesn't save rfkill state, and to be consistent with user
@@ -4854,7 +4856,7 @@ nm_manager_new (NMSettings *settings,
 	rfkill_change (priv->radio_states[RFKILL_TYPE_WLAN].desc, RFKILL_TYPE_WLAN, initial_wifi_enabled);
 	rfkill_change (priv->radio_states[RFKILL_TYPE_WWAN].desc, RFKILL_TYPE_WWAN, initial_wwan_enabled);
 
-	return singleton;
+	return self;
 }
 
 static void
