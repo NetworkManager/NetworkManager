@@ -27,8 +27,6 @@
 
 #include "config.h"
 
-#include <glib/gi18n-lib.h>
-
 #include "nm-default.h"
 #include "nmt-page-bond.h"
 

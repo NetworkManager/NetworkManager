@@ -24,7 +24,6 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/wait.h>
-#include <glib/gi18n.h>
 #include <teamdctl.h>
 #include <stdlib.h>
 

@@ -20,7 +20,6 @@
 
 #include "config.h"
 
-#include <glib/gi18n.h>
 #include <string.h>
 #include <arpa/inet.h>
 #include <libmm-glib.h>

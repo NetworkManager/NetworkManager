@@ -34,7 +34,6 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <glib/gi18n.h>
 #include <gmodule.h>
 #include <string.h>
 #include <sys/resource.h>

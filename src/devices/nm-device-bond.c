@@ -20,8 +20,6 @@
 
 #include "config.h"
 
-#include <glib/gi18n.h>
-
 #include <errno.h>
 #include <stdlib.h>
 

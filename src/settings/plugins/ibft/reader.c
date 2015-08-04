@@ -31,8 +31,6 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-#include <glib/gi18n.h>
-
 #include "nm-default.h"
 #include "nm-core-internal.h"
 #include "nm-platform.h"

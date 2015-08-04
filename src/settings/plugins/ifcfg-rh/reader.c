@@ -31,7 +31,6 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-#include <glib/gi18n.h>
 #include <nm-connection.h>
 #include <nm-dbus-interface.h>
 #include <nm-setting-connection.h>

@@ -22,7 +22,6 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <glib/gi18n.h>
 #include <gio/gunixfdlist.h>
 
 #include "nm-default.h"

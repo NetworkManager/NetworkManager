@@ -30,8 +30,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <glib/gi18n-lib.h>
-
 #include "nmt-newt-form.h"
 #include "nmt-newt-button.h"
 #include "nmt-newt-grid.h"

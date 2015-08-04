@@ -27,8 +27,6 @@
 #include <unistd.h>
 #include <termios.h>
 
-#include <glib/gi18n-lib.h>
-
 #include "nm-default.h"
 #include "polkit-agent.h"
 #include "nm-polkit-listener.h"

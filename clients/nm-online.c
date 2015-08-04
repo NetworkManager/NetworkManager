@@ -38,8 +38,6 @@
 #include <getopt.h>
 #include <locale.h>
 
-#include <glib/gi18n.h>
-
 #include <NetworkManager.h>
 
 #include "nm-default.h"

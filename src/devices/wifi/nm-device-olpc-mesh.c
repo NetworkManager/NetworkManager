@@ -26,7 +26,6 @@
 
 #include "config.h"
 
-#include <glib/gi18n.h>
 #include <dbus/dbus.h>
 #include <netinet/in.h>
 #include <string.h>

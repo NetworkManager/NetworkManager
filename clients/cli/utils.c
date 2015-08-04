@@ -29,8 +29,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include <glib/gi18n.h>
-
 #include "nm-default.h"
 #include "utils.h"
 

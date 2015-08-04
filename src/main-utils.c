@@ -29,7 +29,6 @@
 #include <sys/stat.h>
 #include <locale.h>
 
-#include <glib/gi18n.h>
 #include <glib-unix.h>
 #include <gmodule.h>
 

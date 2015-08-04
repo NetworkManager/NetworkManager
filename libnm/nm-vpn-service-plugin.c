@@ -27,8 +27,6 @@
 #include <signal.h>
 #include <stdlib.h>
 
-#include <glib/gi18n-lib.h>
-
 #include "nm-glib.h"
 #include "nm-enum-types.h"
 #include "nm-utils.h"

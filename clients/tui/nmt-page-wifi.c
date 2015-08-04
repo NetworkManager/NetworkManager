@@ -29,8 +29,6 @@
 
 #include <stdlib.h>
 
-#include <glib/gi18n-lib.h>
-
 #include "nm-default.h"
 #include "nmt-page-wifi.h"
 #include "nmt-mac-entry.h"

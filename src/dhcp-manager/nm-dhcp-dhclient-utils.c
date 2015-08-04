@@ -19,7 +19,6 @@
 
 #include "config.h"
 
-#include <glib/gi18n.h>
 #include <string.h>
 #include <ctype.h>
 #include <arpa/inet.h>

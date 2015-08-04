@@ -24,7 +24,6 @@
 #include <time.h>
 #undef _XOPEN_SOURCE
 
-#include <glib/gi18n.h>
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>

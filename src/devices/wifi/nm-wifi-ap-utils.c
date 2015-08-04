@@ -23,8 +23,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <glib/gi18n.h>
-
 #include "nm-default.h"
 #include "nm-wifi-ap-utils.h"
 #include "nm-utils.h"

@@ -25,7 +25,6 @@
 #include <arpa/inet.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <glib/gi18n.h>
 
 #include "nm-system-config-interface.h"
 #include "nm-default.h"

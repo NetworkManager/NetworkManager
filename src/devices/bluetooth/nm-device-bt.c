@@ -23,8 +23,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <glib/gi18n.h>
-
 #include "nm-default.h"
 #include "nm-bluez-common.h"
 #include "nm-bluez-device.h"

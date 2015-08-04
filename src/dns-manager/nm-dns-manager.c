@@ -35,8 +35,6 @@
 
 #include <linux/fs.h>
 
-#include <glib/gi18n.h>
-
 #include "nm-default.h"
 #include "nm-utils.h"
 #include "nm-core-internal.h"

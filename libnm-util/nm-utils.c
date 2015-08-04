@@ -28,7 +28,6 @@
 #include <uuid/uuid.h>
 #include <libintl.h>
 #include <gmodule.h>
-#include <glib/gi18n-lib.h>
 
 #include "nm-default.h"
 #include "nm-utils.h"

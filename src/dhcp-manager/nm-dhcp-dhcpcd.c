@@ -23,7 +23,6 @@
 
 #include "config.h"
 
-#include <glib/gi18n.h>
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>

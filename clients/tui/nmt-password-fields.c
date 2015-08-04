@@ -27,8 +27,6 @@
 
 #include "config.h"
 
-#include <glib/gi18n-lib.h>
-
 #include "nmt-password-fields.h"
 
 G_DEFINE_TYPE (NmtPasswordFields, nmt_password_fields, NMT_TYPE_NEWT_GRID)

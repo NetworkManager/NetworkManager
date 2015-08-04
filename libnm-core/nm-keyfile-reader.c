@@ -28,7 +28,6 @@
 #include <sys/types.h>
 #include <arpa/inet.h>
 #include <string.h>
-#include <glib/gi18n-lib.h>
 
 #include "nm-default.h"
 #include "nm-core-internal.h"

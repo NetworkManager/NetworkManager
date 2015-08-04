@@ -27,7 +27,6 @@
 
 #include "nmt-editor.h"
 
-#include <glib/gi18n-lib.h>
 #include <nm-utils.h>
 
 #include "nm-default.h"

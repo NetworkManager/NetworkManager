@@ -28,8 +28,6 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-#include <glib/gi18n-lib.h>
-
 #include "nm-default.h"
 #include "nmt-newt-utils.h"
 

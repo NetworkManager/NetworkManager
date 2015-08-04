@@ -25,8 +25,6 @@
 
 #include "config.h"
 
-#include <glib/gi18n-lib.h>
-
 #include "nmt-editor-section.h"
 #include "nmt-newt-toggle-button.h"
 

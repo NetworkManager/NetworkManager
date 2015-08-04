@@ -25,7 +25,6 @@
 #include "nm-vpn-editor-plugin.h"
 
 #include <gio/gio.h>
-#include <glib/gi18n-lib.h>
 
 #include "nm-macros-internal.h"
 #include "gsystem-local-alloc.h"

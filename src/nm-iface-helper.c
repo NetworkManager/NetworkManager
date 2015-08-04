@@ -27,7 +27,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <glib/gi18n.h>
 #include <string.h>
 #include <sys/resource.h>
 #include <sys/stat.h>

@@ -27,7 +27,6 @@
 #include <string.h>
 
 #include <gmodule.h>
-#include <glib/gi18n.h>
 #include <nm-setting-connection.h>
 
 #include "nm-default.h"

@@ -19,7 +19,6 @@
 
 #include "config.h"
 
-#include <glib/gi18n.h>
 #include <dbus/dbus.h>
 #include <sys/socket.h>
 #include <sys/wait.h>

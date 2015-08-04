@@ -21,7 +21,6 @@
 
 #include "config.h"
 
-#include <glib/gi18n.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>

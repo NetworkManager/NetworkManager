@@ -32,8 +32,6 @@
 #include <strings.h>
 #include <string.h>
 
-#include <glib/gi18n.h>
-
 #if SYSTEMD_JOURNAL
 #define SD_JOURNAL_SUPPRESS_LOCATION
 #include <systemd/sd-journal.h>

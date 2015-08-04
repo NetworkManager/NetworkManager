@@ -26,8 +26,6 @@
 
 #include "config.h"
 
-#include <glib/gi18n-lib.h>
-
 #include "nmtui.h"
 #include "nmtui-edit.h"
 #include "nmt-edit-connection-list.h"

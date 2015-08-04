@@ -25,7 +25,6 @@
 #include <string.h>
 #include <netinet/ether.h>
 #include <dbus/dbus-glib.h>
-#include <glib/gi18n-lib.h>
 
 #include "NetworkManager.h"
 #include "nm-setting-olpc-mesh.h"

@@ -24,7 +24,6 @@
 #include <stdlib.h>
 #include <dbus/dbus-glib.h>
 #include <linux/if_infiniband.h>
-#include <glib/gi18n-lib.h>
 
 #include "nm-setting-infiniband.h"
 #include "nm-param-spec-specialized.h"

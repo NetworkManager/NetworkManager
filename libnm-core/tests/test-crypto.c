@@ -25,7 +25,6 @@
 
 #include <unistd.h>
 #include <stdlib.h>
-#include <glib/gi18n.h>
 #include <stdio.h>
 #include <string.h>
 

@@ -26,8 +26,6 @@
 
 #include "config.h"
 
-#include <glib/gi18n-lib.h>
-
 #include "nmt-password-dialog.h"
 #include "nm-secret-agent-simple.h"
 #include "nmtui.h"

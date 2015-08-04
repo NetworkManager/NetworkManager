@@ -27,7 +27,6 @@
 #include <strings.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <glib/gi18n-lib.h>
 
 #include "nm-default.h"
 #include "crypto.h"

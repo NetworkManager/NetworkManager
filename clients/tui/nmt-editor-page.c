@@ -26,8 +26,6 @@
 
 #include "config.h"
 
-#include <glib/gi18n-lib.h>
-
 #include "nmt-editor-page.h"
 
 G_DEFINE_ABSTRACT_TYPE (NmtEditorPage, nmt_editor_page, G_TYPE_OBJECT)

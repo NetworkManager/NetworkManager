@@ -19,7 +19,6 @@
 #include "config.h"
 
 #include <string.h>
-#include <glib/gi18n.h>
 
 #include <nm-connection.h>
 #include "nm-default.h"

@@ -25,8 +25,6 @@
 #include <signal.h>
 #include <stdlib.h>
 
-#include <glib/gi18n-lib.h>
-
 #include "nm-default.h"
 #include "nm-vpn-plugin-old.h"
 #include "nm-enum-types.h"

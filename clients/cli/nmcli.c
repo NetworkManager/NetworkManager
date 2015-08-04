@@ -33,8 +33,6 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-#include <glib/gi18n.h>
-
 #include "nm-default.h"
 #include "polkit-agent.h"
 #include "nmcli.h"

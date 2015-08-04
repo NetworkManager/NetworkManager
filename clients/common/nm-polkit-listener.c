@@ -36,7 +36,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <glib/gi18n-lib.h>
 
 #include "nm-default.h"
 #include "nm-polkit-listener.h"

@@ -25,7 +25,6 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <dbus/dbus-glib.h>
-#include <glib/gi18n-lib.h>
 
 #include "nm-setting-vpn.h"
 #include "nm-param-spec-specialized.h"
