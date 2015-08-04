@@ -496,7 +496,7 @@ fi
 
 # libaudit support
 AC_ARG_WITH(libaudit, AS_HELP_STRING([--with-libaudit=yes|yes-disabled-by-default|no|auto], [Build with audit daemon support (default: auto). yes-disabled-by-default enables support, but disables it unless explicitly configured via NetworkManager.conf]),,[with_libaudit=auto])
-if test "$with_libaudit" = "yes" -o test "$with_libaudit" = "yes-disabled-by-default"-o "$with_libaudit" = "auto"; then
+if test "$with_libaudit" = "yes" -o "$with_libaudit" = "yes-disabled-by-default" -o "$with_libaudit" = "auto"; then
     PKG_CHECK_MODULES(LIBAUDIT, audit, [have_libaudit=yes], [have_libaudit=no])
     if test "$with_libaudit" != "auto" -a "$have_libaudit" = "no"; then
         AC_MSG_ERROR([You must have libaudit installed to build --with-libaudit=$with_libaudit.])
@@ -1134,7 +1134,7 @@ echo "  polkit agent: ${enable_polkit_agent}"
 echo "  selinux: $have_selinux"
 echo "  systemd-journald: $have_systemd_journal (logging.backend: ${nm_config_logging_backend_default})"
 echo "  hostname persist: ${hostname_persist}"
-echo "  libaudit: $have_libaudit"
+echo "  libaudit: $have_libaudit (default: logging.audit=${NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT})"
 echo
 
 echo "Features:"
