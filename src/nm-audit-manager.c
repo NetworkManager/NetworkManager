@@ -290,7 +290,8 @@ init_auditd (NMAuditManager *self)
 	NMConfigData *data = nm_config_get_data (priv->config);
 
 	if (nm_config_data_get_value_boolean (data, NM_CONFIG_KEYFILE_GROUP_LOGGING,
-	                                      NM_CONFIG_KEYFILE_KEY_AUDIT, FALSE)) {
+	                                      NM_CONFIG_KEYFILE_KEY_AUDIT,
+	                                      NM_CONFIG_DEFAULT_LOGGING_AUDIT)) {
 		if (priv->auditd_fd < 0) {
 			priv->auditd_fd = audit_open ();
 			if (priv->auditd_fd < 0) {

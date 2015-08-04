@@ -495,20 +495,30 @@ else
 fi
 
 # libaudit support
-AC_ARG_WITH(libaudit, AS_HELP_STRING([--with-libaudit=yes|no|auto], [Build with audit daemon support (default: auto)]),,[with_libaudit=auto])
-if test "$with_libaudit" = "yes" -o "$with_libaudit" = "auto"; then
+AC_ARG_WITH(libaudit, AS_HELP_STRING([--with-libaudit=yes|yes-disabled-by-default|no|auto], [Build with audit daemon support (default: auto). yes-disabled-by-default enables support, but disables it unless explicitly configured via NetworkManager.conf]),,[with_libaudit=auto])
+if test "$with_libaudit" = "yes" -o test "$with_libaudit" = "yes-disabled-by-default"-o "$with_libaudit" = "auto"; then
     PKG_CHECK_MODULES(LIBAUDIT, audit, [have_libaudit=yes], [have_libaudit=no])
+    if test "$with_libaudit" != "auto" -a "$have_libaudit" = "no"; then
+        AC_MSG_ERROR([You must have libaudit installed to build --with-libaudit=$with_libaudit.])
+    fi
 else
     have_libaudit=no
 fi
-if test "$with_libaudit" = "yes" -a "$have_libaudit" = "no"; then
-    AC_MSG_ERROR([You must have libaudit installed to build --with-libaudit=yes.])
-fi
 if test "$have_libaudit" = "yes"; then
     AC_DEFINE(HAVE_LIBAUDIT, 1, [Define if you have libaudit support])
+	if test "$with_libaudit" = "yes-disabled-by-default"; then
+		AC_DEFINE(NM_CONFIG_DEFAULT_LOGGING_AUDIT, FALSE, [The default value of the logging.audit configuration option])
+		NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT='false'
+	else
+		AC_DEFINE(NM_CONFIG_DEFAULT_LOGGING_AUDIT, TRUE,  [The default value of the logging.audit configuration option])
+		NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT='true'
+	fi
 else
     AC_DEFINE(HAVE_LIBAUDIT, 0, [Define if you have libaudit support])
+	AC_DEFINE(NM_CONFIG_DEFAULT_LOGGING_AUDIT, FALSE, [The default value of the logging.audit configuration option])
+    NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT='false'
 fi
+AC_SUBST(NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT)
 
 # libnl support for the linux platform
 PKG_CHECK_MODULES(LIBNL, libnl-3.0 >= 3.2.8 libnl-route-3.0 libnl-genl-3.0)
