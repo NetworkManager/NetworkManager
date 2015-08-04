@@ -622,7 +622,6 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 	GSList *iter;
 	Request *request;
 	char **p;
-	char *iface = NULL;
 	guint i, num_nowait = 0;
 
 	sorted_scripts = find_scripts (str_action);
@@ -652,17 +651,15 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 	                                                    vpn_ip_iface,
 	                                                    vpn_ip4_props,
 	                                                    vpn_ip6_props,
-	                                                    &iface);
+	                                                    &request->iface);
 
 	if (request->debug) {
 		g_message ("------------ Action ID %p '%s' Interface %s Environment ------------",
-		           context, str_action, iface ? iface : "(none)");
+		           context, str_action, request->iface ? request->iface : "(none)");
 		for (p = request->envp; *p; p++)
 			g_message ("  %s", *p);
 		g_message ("\n");
 	}
-
-	request->iface = iface;
 
 	request->scripts = g_ptr_array_new_full (5, script_info_free);
 	for (iter = sorted_scripts; iter; iter = g_slist_next (iter)) {
