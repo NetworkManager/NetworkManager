@@ -67,8 +67,7 @@ typedef enum { /*< flags >*/
 	NM_SETTING_WIRED_WAKE_ON_LAN_ARP       = (1 << 5),
 	NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC     = (1 << 6),
 	_NM_SETTING_WIRED_WAKE_ON_LAN_LAST,    /*< skip >*/
-	NM_SETTING_WIRED_WAKE_ON_LAN_ALL       = (((_NM_SETTING_WIRED_WAKE_ON_LAN_LAST - 1) << 1) /*< skip >*/
-	                                         - 1 - NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT)
+	NM_SETTING_WIRED_WAKE_ON_LAN_ALL       = (((_NM_SETTING_WIRED_WAKE_ON_LAN_LAST - 1) << 1) - 1 - NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT) /*< skip >*/
 } NMSettingWiredWakeOnLan;
 
 #define NM_SETTING_WIRED_PORT "port"
