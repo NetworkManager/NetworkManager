@@ -26,6 +26,7 @@
  * Depending on which parts are compiled, different values are set. */
 #define NM_NETWORKMANAGER_COMPILATION_DEFAULT             0x0001
 #define NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON       0x0002
+#define NM_NETWORKMANAGER_COMPILATION_LIB                 0x0004
 
 #ifndef NETWORKMANAGER_COMPILATION
 /* For convenience, we don't require our Makefile.am to define
@@ -41,6 +42,18 @@
 #include "nm-glib.h"
 #include "nm-version.h"
 #include "gsystem-local-alloc.h"
+
+/*****************************************************************************/
+
+#if (NETWORKMANAGER_COMPILATION) == NM_NETWORKMANAGER_COMPILATION_LIB
+
+#include <glib/gi18n-lib.h>
+
+#else
+
+#include <glib/gi18n.h>
+
+#endif /* NM_NETWORKMANAGER_COMPILATION_LIB */
 
 /*****************************************************************************/
 
