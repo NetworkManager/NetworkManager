@@ -27,6 +27,7 @@
 
 /* core */
 typedef struct _NMActiveConnection   NMActiveConnection;
+typedef struct _NMAuditManager       NMAuditManager;
 typedef struct _NMVpnConnection      NMVpnConnection;
 typedef struct _NMActRequest         NMActRequest;
 typedef struct _NMAuthSubject        NMAuthSubject;

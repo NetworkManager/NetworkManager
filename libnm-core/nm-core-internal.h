@@ -135,6 +135,7 @@ char **     _nm_utils_slist_to_strv (GSList *slist, gboolean deep_copy);
 
 GPtrArray * _nm_utils_strv_to_ptrarray (char **strv);
 char **     _nm_utils_ptrarray_to_strv (GPtrArray *ptrarray);
+gboolean    _nm_utils_strv_equal (char **strv1, char **strv2);
 
 gboolean _nm_utils_check_file (const char *filename,
                                gint64 check_owner,

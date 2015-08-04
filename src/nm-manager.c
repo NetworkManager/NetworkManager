@@ -57,6 +57,7 @@
 #include "nm-activation-request.h"
 #include "nm-core-internal.h"
 #include "nm-config.h"
+#include "nm-audit-manager.h"
 
 static gboolean impl_manager_get_devices (NMManager *manager,
                                           GPtrArray **devices,
@@ -1357,6 +1358,7 @@ device_auth_done_cb (NMAuthChain *chain,
 	NMDevice *device;
 	const char *permission;
 	NMDeviceAuthRequestFunc callback;
+	NMAuthSubject *subject;
 
 	g_assert (context);
 
@@ -1370,6 +1372,7 @@ device_auth_done_cb (NMAuthChain *chain,
 	g_assert (device);
 
 	result = nm_auth_chain_get_result (chain, permission);
+	subject = nm_auth_chain_get_subject (chain);
 
 	if (auth_error) {
 		/* translate the auth error into a manager permission denied error */
@@ -1390,6 +1393,7 @@ device_auth_done_cb (NMAuthChain *chain,
 
 	callback (device,
 	          context,
+	          subject,
 	          error,
 	          nm_auth_chain_get_data (chain, "user-data"));
 
@@ -1450,9 +1454,10 @@ device_auth_request_cb (NMDevice *device,
 	nm_auth_chain_add_call (chain, permission, allow_interaction);
 
 done:
-	g_clear_object (&subject);
 	if (error)
-		callback (device, context, error, user_data);
+		callback (device, context, subject, error, user_data);
+
+	g_clear_object (&subject);
 	g_clear_error (&error);
 }
 
@@ -3089,10 +3094,17 @@ _activation_auth_done (NMActiveConnection *active,
 	NMManager *self = user_data1;
 	DBusGMethodInvocation *context = user_data2;
 	GError *error = NULL;
+	NMAuthSubject *subject;
+	NMConnection *connection;
+
+	subject = nm_active_connection_get_subject (active);
+	connection = nm_active_connection_get_connection (active);
 
 	if (success) {
 		if (_internal_activate_generic (self, active, &error)) {
 			dbus_g_method_return (context, nm_exported_object_get_path (NM_EXPORTED_OBJECT (active)));
+			nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ACTIVATE, connection, TRUE,
+			                            subject, NULL);
 			g_object_unref (active);
 			return;
 		}
@@ -3104,7 +3116,10 @@ _activation_auth_done (NMActiveConnection *active,
 
 	g_assert (error);
 	dbus_g_method_return_error (context, error);
+	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ACTIVATE, connection, FALSE,
+	                            subject, error->message);
 	_internal_activation_failed (self, active, error->message);
+
 	g_object_unref (active);
 	g_error_free (error);
 }
@@ -3119,7 +3134,7 @@ impl_manager_activate_connection (NMManager *self,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMActiveConnection *active = NULL;
 	NMAuthSubject *subject = NULL;
-	NMConnection *connection;
+	NMConnection *connection = NULL;
 	NMDevice *device = NULL;
 	gboolean is_vpn = FALSE;
 	GError *error = NULL;
@@ -3211,6 +3226,10 @@ impl_manager_activate_connection (NMManager *self,
 	return;
 
 error:
+	if (connection) {
+		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ACTIVATE, connection, FALSE,
+		                            subject, error->message);
+	}
 	g_clear_object (&active);
 	g_clear_object (&subject);
 
@@ -3231,6 +3250,7 @@ activation_add_done (NMSettings *self,
                      NMSettingsConnection *new_connection,
                      GError *error,
                      DBusGMethodInvocation *context,
+                     NMAuthSubject *subject,
                      gpointer user_data)
 {
 	AddAndActivateInfo *info = user_data;
@@ -3246,6 +3266,11 @@ activation_add_done (NMSettings *self,
 			dbus_g_method_return (context,
 			                      nm_connection_get_path (NM_CONNECTION (new_connection)),
 			                      nm_exported_object_get_path (NM_EXPORTED_OBJECT (info->active)));
+			nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD_ACTIVATE,
+			                            nm_active_connection_get_connection (info->active),
+			                            TRUE,
+			                            nm_active_connection_get_subject (info->active),
+			                            NULL);
 			goto done;
 		}
 		error = local;
@@ -3255,6 +3280,11 @@ activation_add_done (NMSettings *self,
 	_internal_activation_failed (info->manager, info->active, error->message);
 	nm_settings_connection_delete (new_connection, NULL, NULL);
 	dbus_g_method_return_error (context, error);
+	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD_ACTIVATE,
+	                            nm_active_connection_get_connection (info->active),
+	                            FALSE,
+	                            nm_active_connection_get_subject (info->active),
+	                            error->message);
 	g_clear_error (&local);
 
 done:
@@ -3293,6 +3323,11 @@ _add_and_activate_auth_done (NMActiveConnection *active,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                             error_desc);
 		dbus_g_method_return_error (context, error);
+		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD_ACTIVATE,
+		                            nm_active_connection_get_connection (active),
+		                            FALSE,
+		                            nm_active_connection_get_subject (active),
+		                            error->message);
 		g_error_free (error);
 	}
 
@@ -3399,6 +3434,7 @@ impl_manager_add_and_activate_connection (NMManager *self,
 	return;
 
 error:
+	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD_ACTIVATE, connection, FALSE, subject, error->message);
 	g_clear_object (&connection);
 	g_slist_free (all_connections);
 	g_clear_object (&subject);
@@ -3462,12 +3498,16 @@ deactivate_net_auth_done_cb (NMAuthChain *chain,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GError *error = NULL;
 	NMAuthCallResult result;
+	NMActiveConnection *active;
+	char *path;
 
 	g_assert (context);
 
 	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
 
+	path = nm_auth_chain_get_data (chain, "path");
 	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL);
+	active = active_connection_get_by_path (self, path);
 
 	if (auth_error) {
 		nm_log_dbg (LOGD_CORE, "Disconnect request failed: %s", auth_error->message);
@@ -3482,7 +3522,7 @@ deactivate_net_auth_done_cb (NMAuthChain *chain,
 	} else {
 		/* success; deactivation allowed */
 		if (!nm_manager_deactivate_connection (self,
-		                                       nm_auth_chain_get_data (chain, "path"),
+		                                       path,
 		                                       NM_DEVICE_STATE_REASON_USER_REQUESTED,
 		                                       &error))
 			g_assert (error);
@@ -3492,6 +3532,14 @@ deactivate_net_auth_done_cb (NMAuthChain *chain,
 		dbus_g_method_return_error (context, error);
 	else
 		dbus_g_method_return (context);
+
+	if (active) {
+		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_DEACTIVATE,
+		                            nm_active_connection_get_connection (active),
+		                            !error,
+		                            nm_auth_chain_get_subject (chain),
+		                            error ? error->message : NULL);
+	}
 
 	g_clear_error (&error);
 	nm_auth_chain_unref (chain);
@@ -3561,9 +3609,14 @@ impl_manager_deactivate_connection (NMManager *self,
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, TRUE);
 
 done:
-	g_clear_object (&subject);
-	if (error)
+	if (error) {
 		dbus_g_method_return_error (context, error);
+		if (connection) {
+			nm_audit_log_connection_op (NM_AUDIT_OP_CONN_DEACTIVATE, connection, FALSE,
+			                            subject, error->message);
+		}
+	}
+	g_clear_object (&subject);
 	g_clear_error (&error);
 }
 
@@ -3725,6 +3778,7 @@ impl_manager_sleep (NMManager *self,
 {
 	NMManagerPrivate *priv;
 	GError *error = NULL;
+	gs_unref_object NMAuthSubject *subject = NULL;
 #if 0
 	NMAuthChain *chain;
 	const char *error_desc = NULL;
@@ -3733,12 +3787,15 @@ impl_manager_sleep (NMManager *self,
 	g_return_if_fail (NM_IS_MANAGER (self));
 
 	priv = NM_MANAGER_GET_PRIVATE (self);
+	subject = nm_auth_subject_new_unix_process_from_context (context);
 
 	if (priv->sleeping == do_sleep) {
 		error = g_error_new (NM_MANAGER_ERROR,
 		                     NM_MANAGER_ERROR_ALREADY_ASLEEP_OR_AWAKE,
 		                     "Already %s", do_sleep ? "asleep" : "awake");
 		dbus_g_method_return_error (context, error);
+		nm_audit_log_control_op (NM_AUDIT_OP_SLEEP_CONTROL, do_sleep ? "on" : "off", FALSE, subject,
+		                         error->message);
 		g_error_free (error);
 		return;
 	}
@@ -3752,6 +3809,7 @@ impl_manager_sleep (NMManager *self,
 	 * D-Bus permissions to restrict the call to root.
 	 */
 	_internal_sleep (self, do_sleep);
+	nm_audit_log_control_op (NM_AUDIT_OP_SLEEP_CONTROL, do_sleep ? "on" : "off", TRUE, subject, NULL);
 	dbus_g_method_return (context);
 	return;
 
@@ -3828,10 +3886,13 @@ enable_net_done_cb (NMAuthChain *chain,
 	GError *ret_error = NULL;
 	NMAuthCallResult result;
 	gboolean enable;
+	NMAuthSubject *subject;
 
 	g_assert (context);
 
 	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
+	enable = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "enable"));
+	subject = nm_auth_chain_get_subject (chain);
 
 	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK);
 	if (error) {
@@ -3846,13 +3907,16 @@ enable_net_done_cb (NMAuthChain *chain,
 		                                 "Not authorized to enable/disable networking");
 	} else {
 		/* Auth success */
-		enable = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "enable"));
 		_internal_enable (self, enable);
 		dbus_g_method_return (context);
+		nm_audit_log_control_op (NM_AUDIT_OP_NET_CONTROL, enable ? "on" : "off", TRUE,
+		                         subject, NULL);
 	}
 
 	if (ret_error) {
 		dbus_g_method_return_error (context, ret_error);
+		nm_audit_log_control_op (NM_AUDIT_OP_NET_CONTROL, enable ? "on" : "off", FALSE,
+		                         subject, ret_error->message);
 		g_error_free (ret_error);
 	}
 
@@ -4360,9 +4424,11 @@ prop_set_auth_done_cb (NMAuthChain *chain,
 	DBusConnection *connection;
 	NMAuthCallResult result;
 	DBusMessage *reply = NULL, *message;
-	const char *permission, *prop;
+	const char *permission, *prop, *audit_op;
 	GObject *obj;
 	gboolean set_enabled = TRUE;
+	NMAuthSubject *subject;
+	gs_free char *prop_value = NULL;
 
 	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
 
@@ -4371,15 +4437,21 @@ prop_set_auth_done_cb (NMAuthChain *chain,
 	prop = nm_auth_chain_get_data (chain, "prop");
 	set_enabled = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "enabled"));
 	obj = nm_auth_chain_get_data (chain, "object");
+	audit_op = nm_auth_chain_get_data (chain, "audit-op");
+
+	prop_value = g_strdup_printf ("%s:%d", prop, set_enabled);
 
 	result = nm_auth_chain_get_result (chain, permission);
+	subject = nm_auth_chain_get_subject (chain);
 	if (error || (result != NM_AUTH_CALL_RESULT_YES)) {
 		reply = dbus_message_new_error (message,
 		                                NM_IS_DEVICE (obj) ? DEV_PERM_DENIED_ERROR : NM_PERM_DENIED_ERROR,
 		                                "Not authorized to perform this operation");
+		nm_audit_log_control_op (audit_op, prop_value, FALSE, subject, error ? error->message : NULL);
 	} else {
 		g_object_set (obj, prop, set_enabled, NULL);
 		reply = dbus_message_new_method_return (message);
+		nm_audit_log_control_op (audit_op, prop_value, TRUE, subject, NULL);
 	}
 
 	g_assert (reply);
@@ -4408,6 +4480,7 @@ prop_filter (DBusConnection *connection,
 	NMAuthSubject *subject = NULL;
 	NMAuthChain *chain;
 	GObject *obj;
+	const char *audit_op = NULL;
 
 	/* The sole purpose of this function is to validate property accesses
 	 * on the NMManager object since dbus-glib doesn't yet give us this
@@ -4436,15 +4509,19 @@ prop_filter (DBusConnection *connection,
 	if (!strcmp (propname, "WirelessEnabled")) {
 		glib_propname = NM_MANAGER_WIRELESS_ENABLED;
 		permission = NM_AUTH_PERMISSION_ENABLE_DISABLE_WIFI;
+		audit_op = NM_AUDIT_OP_RADIO_CONTROL;
 	} else if (!strcmp (propname, "WwanEnabled")) {
 		glib_propname = NM_MANAGER_WWAN_ENABLED;
 		permission = NM_AUTH_PERMISSION_ENABLE_DISABLE_WWAN;
+		audit_op = NM_AUDIT_OP_RADIO_CONTROL;
 	} else if (!strcmp (propname, "WimaxEnabled")) {
 		glib_propname = NM_MANAGER_WIMAX_ENABLED;
 		permission = NM_AUTH_PERMISSION_ENABLE_DISABLE_WIMAX;
+		audit_op = NM_AUDIT_OP_RADIO_CONTROL;
 	} else if (!strcmp (propname, "Autoconnect")) {
 		glib_propname = NM_DEVICE_AUTOCONNECT;
 		permission = NM_AUTH_PERMISSION_NETWORK_CONTROL;
+		audit_op = NM_AUDIT_OP_DEVICE_AUTOCONNECT;
 	} else
 		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
@@ -4487,6 +4564,7 @@ prop_filter (DBusConnection *connection,
 	nm_auth_chain_set_data (chain, "message", dbus_message_ref (message), (GDestroyNotify) dbus_message_unref);
 	nm_auth_chain_set_data (chain, "connection", dbus_connection_ref (connection), (GDestroyNotify) dbus_connection_unref);
 	nm_auth_chain_set_data (chain, "object", g_object_ref (obj), (GDestroyNotify) g_object_unref);
+	nm_auth_chain_set_data (chain, "audit-op", (char *) audit_op, NULL);
 	nm_auth_chain_add_call (chain, permission, TRUE);
 
 out:

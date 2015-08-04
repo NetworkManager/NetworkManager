@@ -138,6 +138,7 @@ BuildRequires: ppp-devel >= 2.4.5
 BuildRequires: nss-devel >= 3.11.7
 BuildRequires: dhclient
 BuildRequires: readline-devel
+BuildRequires: audit-libs-devel
 %if %{regen_docs}
 BuildRequires: gtk-doc
 %endif
@@ -379,6 +380,7 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 	--with-crypto=nss \
 	--enable-more-warnings=error \
 	--enable-ppp=yes \
+	--with-libaudit=yes \
 %if 0%{?with_modem_manager_1}
 	--with-modem-manager-1=yes \
 %else

@@ -66,6 +66,7 @@
 #include "nm-default-route-manager.h"
 #include "nm-route-manager.h"
 #include "sd-ipv4ll.h"
+#include "nm-audit-manager.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF (NMDevice);
@@ -6177,6 +6178,7 @@ delete_on_deactivate_check_and_schedule (NMDevice *self, int ifindex)
 static void
 disconnect_cb (NMDevice *self,
                DBusGMethodInvocation *context,
+               NMAuthSubject *subject,
                GError *error,
                gpointer user_data)
 {
@@ -6185,6 +6187,7 @@ disconnect_cb (NMDevice *self,
 
 	if (error) {
 		dbus_g_method_return_error (context, error);
+		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_DISCONNECT, self, FALSE, subject, error->message);
 		return;
 	}
 
@@ -6194,6 +6197,7 @@ disconnect_cb (NMDevice *self,
 		                             NM_DEVICE_ERROR_NOT_ACTIVE,
 		                             "Device is not active");
 		dbus_g_method_return_error (context, local);
+		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_DISCONNECT, self, FALSE, subject, local->message);
 		g_error_free (local);
 	} else {
 		nm_device_set_autoconnect (self, FALSE);
@@ -6202,6 +6206,7 @@ disconnect_cb (NMDevice *self,
 		                         NM_DEVICE_STATE_DEACTIVATING,
 		                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
 		dbus_g_method_return (context);
+		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_DISCONNECT, self, TRUE, subject, NULL);
 	}
 }
 
@@ -6245,17 +6250,20 @@ impl_device_disconnect (NMDevice *self, DBusGMethodInvocation *context)
 static void
 delete_cb (NMDevice *self,
            DBusGMethodInvocation *context,
+           NMAuthSubject *subject,
            GError *error,
            gpointer user_data)
 {
 	if (error) {
 		dbus_g_method_return_error (context, error);
+		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_DELETE, self, FALSE, subject, error->message);
 		return;
 	}
 
 	/* Authorized */
 	nm_platform_link_delete (NM_PLATFORM_GET, nm_device_get_ifindex (self));
 	dbus_g_method_return (context);
+	nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_DELETE, self, TRUE, subject, NULL);
 }
 
 static void
