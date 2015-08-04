@@ -47,7 +47,7 @@ G_BEGIN_DECLS
 typedef struct {
 	NM_AVAILABLE_IN_1_2
 	GObject parent;
-} NMVpnPluginInfo NM_AVAILABLE_IN_1_2;
+} NMVpnPluginInfo;
 
 typedef struct {
 	NM_AVAILABLE_IN_1_2
