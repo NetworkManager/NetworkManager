@@ -1123,16 +1123,16 @@ echo "  session tracking: $session_tracking"
 echo "  suspend/resume: $with_suspend_resume"
 if test "${enable_polkit}" = "yes"; then
 	if test "${enable_modify_system}" = "yes"; then
-		echo "  policykit: yes (permissive modify.system) (default=${enable_polkit})"
+		echo "  policykit: yes (permissive modify.system) (default: main.auth-polkit=${enable_polkit})"
 	else
-		echo "  policykit: yes (restrictive modify.system) (default=${enable_polkit})"
+		echo "  policykit: yes (restrictive modify.system) (default: main.auth-polkit=${enable_polkit})"
 	fi
 else
 	echo  "  policykit: no"
 fi
 echo "  polkit agent: ${enable_polkit_agent}"
 echo "  selinux: $have_selinux"
-echo "  systemd-journald: $have_systemd_journal (logging.backend: ${nm_config_logging_backend_default})"
+echo "  systemd-journald: $have_systemd_journal (default: logging.backend=${nm_config_logging_backend_default})"
 echo "  hostname persist: ${hostname_persist}"
 echo "  libaudit: $have_libaudit (default: logging.audit=${NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT})"
 echo
