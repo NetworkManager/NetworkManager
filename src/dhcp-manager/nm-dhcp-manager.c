@@ -180,6 +180,7 @@ static void client_state_changed (NMDhcpClient *client,
                                   NMDhcpState state,
                                   GObject *ip_config,
                                   GVariant *options,
+                                  const char *event_id,
                                   NMDhcpManager *self);
 
 static void
@@ -200,6 +201,7 @@ client_state_changed (NMDhcpClient *client,
                       NMDhcpState state,
                       GObject *ip_config,
                       GVariant *options,
+                      const char *event_id,
                       NMDhcpManager *self)
 {
 	if (state >= NM_DHCP_STATE_TIMEOUT)

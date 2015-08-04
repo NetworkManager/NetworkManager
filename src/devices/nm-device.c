@@ -320,6 +320,8 @@ typedef struct {
 	NMDhcp6Config * dhcp6_config;
 	/* IP6 config from DHCP */
 	NMIP6Config *   dhcp6_ip6_config;
+	/* Event ID of the current IP6 config from DHCP */
+	char *          dhcp6_event_id;
 
 	/* allow autoconnect feature */
 	gboolean        autoconnect;
@@ -3625,6 +3627,7 @@ dhcp4_state_changed (NMDhcpClient *client,
                      NMDhcpState state,
                      NMIP4Config *ip4_config,
                      GHashTable *options,
+                     const char *event_id,
                      gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
@@ -4004,6 +4007,7 @@ dhcp6_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 
 	priv->dhcp6_mode = NM_RDISC_DHCP_LEVEL_NONE;
 	g_clear_object (&priv->dhcp6_ip6_config);
+	g_clear_pointer (&priv->dhcp6_event_id, g_free);
 
 	if (priv->dhcp6_client) {
 		if (priv->dhcp6_state_sigid) {
@@ -4272,10 +4276,12 @@ dhcp6_state_changed (NMDhcpClient *client,
                      NMDhcpState state,
                      NMIP6Config *ip6_config,
                      GHashTable *options,
+                     const char *event_id,
                      gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	guint i;
 
 	g_return_if_fail (nm_dhcp_client_get_ipv6 (client) == TRUE);
 	g_return_if_fail (!ip6_config || NM_IS_IP6_CONFIG (ip6_config));
@@ -4284,11 +4290,27 @@ dhcp6_state_changed (NMDhcpClient *client,
 
 	switch (state) {
 	case NM_DHCP_STATE_BOUND:
-		g_clear_object (&priv->dhcp6_ip6_config);
-		if (ip6_config) {
-			priv->dhcp6_ip6_config = g_object_ref (ip6_config);
-			nm_dhcp6_config_set_options (priv->dhcp6_config, options);
-			g_object_notify (G_OBJECT (self), NM_DEVICE_DHCP6_CONFIG);
+		/* If the server sends multiple IPv6 addresses, we receive a state
+		 * changed event for each of them. Use the event ID to merge IPv6
+		 * addresses from the same transaction into a single configuration.
+		 */
+		if (   ip6_config
+		    && event_id
+		    && priv->dhcp6_event_id
+		    && !strcmp (event_id, priv->dhcp6_event_id)) {
+			for (i = 0; i < nm_ip6_config_get_num_addresses (ip6_config); i++) {
+				nm_ip6_config_add_address (priv->dhcp6_ip6_config,
+				                           nm_ip6_config_get_address (ip6_config, i));
+			}
+		} else {
+			g_clear_object (&priv->dhcp6_ip6_config);
+			g_clear_pointer (&priv->dhcp6_event_id, g_free);
+			if (ip6_config) {
+				priv->dhcp6_ip6_config = g_object_ref (ip6_config);
+				priv->dhcp6_event_id = g_strdup (event_id);
+				nm_dhcp6_config_set_options (priv->dhcp6_config, options);
+				g_object_notify (G_OBJECT (self), NM_DEVICE_DHCP6_CONFIG);
+			}
 		}
 
 		if (priv->ip6_state == IP_CONF) {
@@ -4381,6 +4403,7 @@ dhcp6_start (NMDevice *self, gboolean wait_for_ll, NMDeviceStateReason *reason)
 
 	g_warn_if_fail (priv->dhcp6_ip6_config == NULL);
 	g_clear_object (&priv->dhcp6_ip6_config);
+	g_clear_pointer (&priv->dhcp6_event_id, g_free);
 
 	connection = nm_device_get_connection (self);
 	g_assert (connection);

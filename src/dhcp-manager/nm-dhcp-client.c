@@ -34,6 +34,7 @@
 #include "nm-dhcp-client.h"
 #include "nm-dhcp-utils.h"
 #include "nm-platform.h"
+#include "gsystem-local-alloc.h"
 
 typedef struct {
 	char *       iface;
@@ -282,6 +283,7 @@ nm_dhcp_client_set_state (NMDhcpClient *self,
                           GHashTable *options)
 {
 	NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
+	gs_free char *event_id = NULL;
 
 	if (new_state >= NM_DHCP_STATE_BOUND)
 		timeout_cleanup (self);
@@ -306,19 +308,30 @@ nm_dhcp_client_set_state (NMDhcpClient *self,
 	if ((priv->state == new_state) && (new_state != NM_DHCP_STATE_BOUND))
 		return;
 
+	if (priv->ipv6 && new_state == NM_DHCP_STATE_BOUND) {
+		char *start, *iaid;
+
+		iaid = g_hash_table_lookup (options, "iaid");
+		start = g_hash_table_lookup (options, "life_starts");
+		if (iaid && start)
+			event_id = g_strdup_printf ("%s|%s", iaid, start);
+	}
+
 	nm_log_info (priv->ipv6 ? LOGD_DHCP6 : LOGD_DHCP4,
-	             "(%s): DHCPv%c state changed %s -> %s",
+	             "(%s): DHCPv%c state changed %s -> %s%s%s%s",
 	             priv->iface,
 	             priv->ipv6 ? '6' : '4',
 	             state_to_string (priv->state),
-	             state_to_string (new_state));
+	             state_to_string (new_state),
+	             NM_PRINT_FMT_QUOTED (event_id, ", event ID=\"", event_id, "\"", ""));
 
 	priv->state = new_state;
 	g_signal_emit (G_OBJECT (self),
 	               signals[SIGNAL_STATE_CHANGED], 0,
 	               new_state,
 	               ip_config,
-	               options);
+	               options,
+	               event_id);
 }
 
 static gboolean
@@ -985,6 +998,6 @@ nm_dhcp_client_class_init (NMDhcpClientClass *client_class)
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMDhcpClientClass, state_changed),
 					  NULL, NULL, NULL,
-					  G_TYPE_NONE, 3, G_TYPE_UINT, G_TYPE_OBJECT, G_TYPE_HASH_TABLE);
+					  G_TYPE_NONE, 4, G_TYPE_UINT, G_TYPE_OBJECT, G_TYPE_HASH_TABLE, G_TYPE_STRING);
 }
 
