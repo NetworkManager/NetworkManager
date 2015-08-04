@@ -623,6 +623,7 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 	Request *request;
 	char **p;
 	guint i, num_nowait = 0;
+	const char *error_message = NULL;
 
 	sorted_scripts = find_scripts (str_action);
 
@@ -651,7 +652,11 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 	                                                    vpn_ip_iface,
 	                                                    vpn_ip4_props,
 	                                                    vpn_ip6_props,
-	                                                    &request->iface);
+	                                                    &request->iface,
+	                                                    &error_message);
+
+	if (error_message)
+		g_warning (error_message);
 
 	if (request->debug) {
 		g_message ("------------ Action ID %p '%s' Interface %s Environment ------------",
@@ -672,6 +677,15 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 		g_ptr_array_add (request->scripts, s);
 	}
 	g_slist_free (sorted_scripts);
+
+	if (error_message) {
+		GVariant *results;
+
+		results = g_variant_new_array (G_VARIANT_TYPE ("(sus)"), NULL, 0);
+		g_dbus_method_invocation_return_value (context, g_variant_new ("(@a(sus))", results));
+		request_free (request);
+		return TRUE;
+	}
 
 	nm_clear_g_source (&quit_id);
 
