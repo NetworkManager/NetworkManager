@@ -61,6 +61,7 @@ SYSTEMD_NM_CFLAGS = \
 	-I$(top_srcdir)/src/systemd/src/shared \
 	-I$(top_srcdir)/src/systemd \
 	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON
 
 libsystemd_nm_la_SOURCES = \
