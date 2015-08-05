@@ -4281,7 +4281,7 @@ test_nm_utils_ascii_str_to_int64 (void)
 /******************************************************************************/
 
 static void
-test_nm_utils_strstrdictkey ()
+test_nm_utils_strstrdictkey (void)
 {
 #define _VALUES_STATIC(_v1, _v2) { .v1 = _v1, .v2 = _v2, .v_static = _nm_utils_strstrdictkey_static (_v1, _v2), }
 	const struct {
