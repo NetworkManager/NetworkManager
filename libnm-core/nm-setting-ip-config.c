@@ -1479,7 +1479,7 @@ nm_setting_ip_config_get_dns_option (NMSettingIPConfig *setting, guint idx)
 }
 
 /**
- * nm_setting_ip_config_next_valid_dns_option
+ * nm_setting_ip_config_next_valid_dns_option:
  * @setting: the #NMSettingIPConfig
  * @idx: index to start the search from
  *
