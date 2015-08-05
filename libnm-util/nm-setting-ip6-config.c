@@ -23,9 +23,8 @@
 
 #include <string.h>
 #include <dbus/dbus-glib.h>
-#include <glib/gi18n-lib.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-setting-ip6-config.h"
 #include "nm-param-spec-specialized.h"
 #include "nm-utils.h"

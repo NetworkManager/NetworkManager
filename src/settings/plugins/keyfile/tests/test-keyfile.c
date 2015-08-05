@@ -29,7 +29,7 @@
 #include <sys/socket.h>
 
 #include "nm-core-internal.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 
 #include "reader.h"
 #include "writer.h"

@@ -22,9 +22,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <glib/gi18n.h>
-
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "polkit-agent.h"
 #include "utils.h"
 #include "general.h"

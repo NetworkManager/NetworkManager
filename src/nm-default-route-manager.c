@@ -25,7 +25,7 @@
 
 #include "string.h"
 
-#include "nm-logging.h"
+#include "nm-default.h"
 #include "nm-device.h"
 #include "nm-vpn-connection.h"
 #include "nm-platform.h"

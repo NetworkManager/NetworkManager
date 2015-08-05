@@ -33,8 +33,9 @@
 #include <nm-setting-pppoe.h>
 #include <nm-setting-wireless-security.h>
 #include <nm-setting-8021x.h>
-#include <nm-platform.h>
-#include <nm-logging.h>
+#include "nm-platform.h"
+
+#include "nm-default.h"
 
 #include "common.h"
 #include "nm-config.h"

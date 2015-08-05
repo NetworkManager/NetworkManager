@@ -25,7 +25,7 @@
 #include <string.h>
 #include <nm-utils.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-client.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-wifi.h"

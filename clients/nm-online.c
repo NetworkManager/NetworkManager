@@ -38,11 +38,9 @@
 #include <getopt.h>
 #include <locale.h>
 
-#include <glib/gi18n.h>
-
 #include <NetworkManager.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 
 #define PROGRESS_STEPS 15
 #define WAIT_STARTUP_TAG "wait-startup"

@@ -22,9 +22,7 @@
 #include <stdlib.h>
 #include <arpa/inet.h>
 
-#include <glib/gi18n.h>
-
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "utils.h"
 #include "common.h"
 #include "settings.h"

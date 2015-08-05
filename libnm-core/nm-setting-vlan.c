@@ -23,7 +23,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <glib/gi18n-lib.h>
 
 #include "nm-setting-vlan.h"
 #include "nm-utils.h"

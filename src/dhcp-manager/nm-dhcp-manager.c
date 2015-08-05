@@ -22,7 +22,6 @@
 
 #include "config.h"
 
-#include <glib/gi18n.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <signal.h>
@@ -33,12 +32,11 @@
 #include <fcntl.h>
 #include <stdio.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-dhcp-manager.h"
 #include "nm-dhcp-dhclient.h"
 #include "nm-dhcp-dhcpcd.h"
 #include "nm-dhcp-systemd.h"
-#include "nm-logging.h"
 #include "nm-config.h"
 #include "nm-dbus-glib-types.h"
 #include "NetworkManagerUtils.h"

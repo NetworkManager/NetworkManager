@@ -3,10 +3,9 @@
 #include <stdlib.h>
 #include <syslog.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-fake-platform.h"
 #include "nm-linux-platform.h"
-#include "nm-logging.h"
 
 int
 main (int argc, char **argv)

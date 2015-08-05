@@ -25,10 +25,9 @@
 #include <stdlib.h>
 #include <dbus/dbus-glib.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-supplicant-config.h"
 #include "nm-supplicant-settings-verify.h"
-#include "nm-logging.h"
 #include "nm-setting.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"

@@ -23,8 +23,7 @@
 #define __NETWORKMANAGER_CONFIG_H__
 
 
-#include "nm-glib.h"
-#include "nm-types.h"
+#include "nm-default.h"
 #include "nm-config-data.h"
 
 G_BEGIN_DECLS

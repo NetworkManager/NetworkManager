@@ -25,7 +25,7 @@
 #include <string.h>
 #include <signal.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 
 #define NM_DHCP_CLIENT_DBUS_IFACE   "org.freedesktop.nm_dhcp_client"
 

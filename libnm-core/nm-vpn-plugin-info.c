@@ -23,7 +23,6 @@
 #include "nm-vpn-plugin-info.h"
 
 #include <gio/gio.h>
-#include <glib/gi18n-lib.h>
 #include <string.h>
 #include <errno.h>
 #include <sys/stat.h>

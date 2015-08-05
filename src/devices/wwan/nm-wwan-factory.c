@@ -29,7 +29,7 @@
 #include "nm-setting-cdma.h"
 #include "nm-modem-manager.h"
 #include "nm-device-modem.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 #include "nm-platform.h"
 
 static GType nm_wwan_factory_get_type (void);

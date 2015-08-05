@@ -34,7 +34,7 @@
  **/
 
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-connection.h"
 #include "nm-core-enum-types.h"
 #include "nm-dbus-interface.h"
@@ -67,7 +67,6 @@
 #include "nm-setting.h"
 #include "nm-simple-connection.h"
 #include "nm-utils.h"
-#include "nm-version.h"
 #include "nm-vpn-dbus-interface.h"
 
 #define NM_UTILS_CLEAR_CANCELLABLE(c) \

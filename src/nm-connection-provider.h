@@ -18,8 +18,7 @@
 
 #include <nm-connection.h>
 
-#include "nm-glib.h"
-#include "nm-types.h"
+#include "nm-default.h"
 
 #define NM_TYPE_CONNECTION_PROVIDER      (nm_connection_provider_get_type ())
 #define NM_CONNECTION_PROVIDER(obj)      (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_CONNECTION_PROVIDER, NMConnectionProvider))

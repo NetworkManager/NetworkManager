@@ -28,12 +28,9 @@
 #include <unistd.h>
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
-#include <glib/gi18n.h>
 
-#include "nm-glib.h"
-#include "gsystem-local-alloc.h"
+#include "nm-default.h"
 #include "nm-manager.h"
-#include "nm-logging.h"
 #include "nm-bus-manager.h"
 #include "nm-vpn-manager.h"
 #include "nm-device.h"

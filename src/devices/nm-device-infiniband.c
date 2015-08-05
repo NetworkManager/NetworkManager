@@ -20,13 +20,10 @@
 
 #include "config.h"
 
-#include <glib/gi18n.h>
-
 #include <linux/if_infiniband.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-device-infiniband.h"
-#include "nm-logging.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
 #include "nm-enum-types.h"

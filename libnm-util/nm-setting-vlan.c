@@ -24,7 +24,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <dbus/dbus-glib.h>
-#include <glib/gi18n-lib.h>
 
 #include "nm-setting-vlan.h"
 #include "nm-param-spec-specialized.h"

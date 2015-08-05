@@ -24,7 +24,6 @@
 
 #include <string.h>
 #include <net/ethernet.h>
-#include <glib/gi18n-lib.h>
 
 #include "nm-setting-wired.h"
 #include "nm-utils.h"

@@ -33,8 +33,6 @@
 #include <netinet/in.h>
 #include <stdlib.h>
 
-#include <glib/gi18n-lib.h>
-
 #include "nmt-ip-entry.h"
 
 G_DEFINE_TYPE (NmtIPEntry, nmt_ip_entry, NMT_TYPE_NEWT_ENTRY)

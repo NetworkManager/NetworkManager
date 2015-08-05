@@ -28,8 +28,6 @@
 
 #include "config.h"
 
-#include <glib/gi18n-lib.h>
-
 #include "nmt-newt-popup.h"
 #include "nmt-newt-form.h"
 #include "nmt-newt-hacks.h"

@@ -20,15 +20,11 @@
 
 #include "config.h"
 
-#include <glib/gi18n.h>
-
 #include <errno.h>
 #include <stdlib.h>
 
-#include "nm-glib.h"
-#include "gsystem-local-alloc.h"
+#include "nm-default.h"
 #include "nm-device-bond.h"
-#include "nm-logging.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
 #include "nm-platform.h"

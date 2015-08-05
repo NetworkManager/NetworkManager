@@ -21,7 +21,6 @@
 #include "config.h"
 
 #include <string.h>
-#include <glib/gi18n-lib.h>
 
 #include "nm-device-generic.h"
 #include "nm-device-private.h"

@@ -22,14 +22,13 @@
 #include "config.h"
 
 #include <string.h>
-#include <glib/gi18n-lib.h>
 
 #include <nm-setting-connection.h>
 #include <nm-setting-wireless.h>
 #include <nm-setting-wireless-security.h>
 #include <nm-utils.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-device-wifi.h"
 #include "nm-access-point.h"
 #include "nm-device-private.h"

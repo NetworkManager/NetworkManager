@@ -23,7 +23,7 @@
 
 #include <string.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-setting-8021x.h"
 #include "nm-setting-cdma.h"
 #include "nm-setting-connection.h"

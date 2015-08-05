@@ -26,7 +26,6 @@
 #include <errno.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <glib/gi18n-lib.h>
 
 #include "nm-setting-bond.h"
 #include "nm-utils.h"

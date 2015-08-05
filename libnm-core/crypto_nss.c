@@ -23,8 +23,6 @@
 
 #include "config.h"
 
-#include <glib/gi18n-lib.h>
-
 #include <prinit.h>
 #include <nss.h>
 #include <pk11pub.h>
@@ -35,7 +33,7 @@
 #include <ciferfam.h>
 #include <p12plcy.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "crypto.h"
 #include "nm-errors.h"
 

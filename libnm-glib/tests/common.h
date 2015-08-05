@@ -18,7 +18,7 @@
  * Copyright 2014 Red Hat, Inc.
  */
 
-#include "nm-glib.h"
+#include "nm-default.h"
 
 typedef struct {
 	GDBusConnection *bus;

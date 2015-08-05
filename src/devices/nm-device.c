@@ -21,7 +21,6 @@
 
 #include "config.h"
 
-#include <glib/gi18n.h>
 #include <dbus/dbus.h>
 #include <netinet/in.h>
 #include <string.h>
@@ -35,8 +34,7 @@
 #include <fcntl.h>
 #include <netlink/route/addr.h>
 
-#include "nm-glib.h"
-#include "gsystem-local-alloc.h"
+#include "nm-default.h"
 #include "nm-device.h"
 #include "nm-device-private.h"
 #include "NetworkManagerUtils.h"
@@ -45,7 +43,6 @@
 #include "nm-rdisc.h"
 #include "nm-lndp-rdisc.h"
 #include "nm-dhcp-manager.h"
-#include "nm-logging.h"
 #include "nm-activation-request.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"

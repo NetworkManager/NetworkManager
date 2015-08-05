@@ -22,9 +22,8 @@
 
 #include <arpa/inet.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-dnsmasq-utils.h"
-#include "nm-logging.h"
 
 #include "nm-test-utils.h"
 

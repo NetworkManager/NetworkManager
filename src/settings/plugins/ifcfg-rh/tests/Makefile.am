@@ -15,7 +15,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/settings \
 	-I$(srcdir)/../ \
 	-DG_LOG_DOMAIN=\""NetworkManager-ifcfg-rh"\" \
-	-DNETWORKMANAGER_COMPILATION \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	-DTEST_IFCFG_DIR=\"$(abs_srcdir)\" \
 	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/\" \

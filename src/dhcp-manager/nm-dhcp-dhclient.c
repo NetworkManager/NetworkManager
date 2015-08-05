@@ -24,7 +24,6 @@
 #include <time.h>
 #undef _XOPEN_SOURCE
 
-#include <glib/gi18n.h>
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -34,15 +33,13 @@
 #include <arpa/inet.h>
 #include <ctype.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-dhcp-dhclient.h"
 #include "nm-utils.h"
-#include "nm-logging.h"
 #include "nm-dhcp-dhclient-utils.h"
 #include "nm-dhcp-manager.h"
 #include "NetworkManagerUtils.h"
 #include "nm-dhcp-listener.h"
-#include "gsystem-local-alloc.h"
 
 G_DEFINE_TYPE (NMDhcpDhclient, nm_dhcp_dhclient, NM_TYPE_DHCP_CLIENT)
 

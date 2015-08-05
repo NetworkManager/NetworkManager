@@ -22,12 +22,11 @@
 
 #include <string.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-wifi-ap-utils.h"
 #include "nm-dbus-glib-types.h"
 
 #include "nm-core-internal.h"
-#include "nm-logging.h"
 
 #include "nm-test-utils.h"
 

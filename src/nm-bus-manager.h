@@ -22,12 +22,11 @@
 #ifndef __NM_BUS_MANAGER_H__
 #define __NM_BUS_MANAGER_H__
 
-#include <config.h>
+#include "config.h"
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
 
-#include "nm-glib.h"
-#include "nm-types.h"
+#include "nm-default.h"
 
 G_BEGIN_DECLS
 

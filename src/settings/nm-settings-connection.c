@@ -26,18 +26,16 @@
 #include <nm-dbus-interface.h>
 #include <dbus/dbus-glib-lowlevel.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-settings-connection.h"
 #include "nm-session-monitor.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-logging.h"
 #include "nm-auth-utils.h"
 #include "nm-auth-subject.h"
 #include "nm-agent-manager.h"
 #include "NetworkManagerUtils.h"
 #include "nm-core-internal.h"
 #include "nm-audit-manager.h"
-#include "gsystem-local-alloc.h"
 
 #define SETTINGS_TIMESTAMPS_FILE  NMSTATEDIR "/timestamps"
 #define SETTINGS_SEEN_BSSIDS_FILE NMSTATEDIR "/seen-bssids"

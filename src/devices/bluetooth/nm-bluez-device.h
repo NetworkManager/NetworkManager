@@ -22,8 +22,8 @@
 #define __NETWORKMANAGER_BLUEZ_DEVICE_H__
 
 
-#include <config.h>
-#include "nm-glib.h"
+#include "config.h"
+#include "nm-default.h"
 #include "nm-connection.h"
 #include "nm-connection-provider.h"
 

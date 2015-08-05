@@ -26,7 +26,7 @@
 #include <nm-setting-connection.h>
 #include <nm-setting-wimax.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-wimax-nsp.h"
 #include "nm-dbus-interface.h"
 #include "nm-object-private.h"

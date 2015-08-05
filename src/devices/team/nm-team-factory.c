@@ -26,7 +26,7 @@
 #include "nm-device-factory.h"
 #include "nm-team-factory.h"
 #include "nm-device-team.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 #include "nm-platform.h"
 #include "nm-core-internal.h"
 

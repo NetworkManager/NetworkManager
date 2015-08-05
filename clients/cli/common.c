@@ -21,7 +21,6 @@
 
 #include "config.h"
 
-#include <glib/gi18n.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -29,7 +28,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "common.h"
 #include "utils.h"
 

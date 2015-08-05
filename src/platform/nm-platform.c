@@ -29,13 +29,12 @@
 #include <netlink/route/addr.h>
 #include <netlink/route/rtnl.h>
 
-#include "gsystem-local-alloc.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-platform.h"
 #include "nm-platform-utils.h"
 #include "NetworkManagerUtils.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 #include "nm-enum-types.h"
 #include "nm-core-internal.h"
 
@@ -112,7 +111,7 @@ typedef struct {
 /* Singleton NMPlatform subclass instance and cached class object */
 NM_DEFINE_SINGLETON_INSTANCE (NMPlatform);
 
-NM_DEFINE_SINGLETON_WEAK_REF (NMPlatform);
+NM_DEFINE_SINGLETON_REGISTER (NMPlatform);
 
 /* Just always initialize a @klass instance. NM_PLATFORM_GET_CLASS()
  * is only a plain read on the self instance, which the compiler
@@ -154,9 +153,9 @@ nm_platform_setup (NMPlatform *instance)
 
 	singleton_instance = instance;
 
-	nm_singleton_instance_weak_ref_register ();
+	nm_singleton_instance_register ();
 
-	nm_log_dbg (LOGD_CORE, "setup NMPlatform singleton (%p, %s)", instance,  G_OBJECT_TYPE_NAME (instance));
+	nm_log_dbg (LOGD_CORE, "setup %s singleton (%p, %s)", "NMPlatform", singleton_instance, G_OBJECT_TYPE_NAME (instance));
 }
 
 /**

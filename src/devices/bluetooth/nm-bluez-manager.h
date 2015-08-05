@@ -22,7 +22,7 @@
 #ifndef __NETWORKMANAGER_BLUEZ_MANAGER_H__
 #define __NETWORKMANAGER_BLUEZ_MANAGER_H__
 
-#include "nm-glib.h"
+#include "nm-default.h"
 
 G_BEGIN_DECLS
 

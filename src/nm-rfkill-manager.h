@@ -20,8 +20,7 @@
  */
 
 
-#include "nm-glib.h"
-#include "nm-types.h"
+#include "nm-default.h"
 
 #ifndef __NETWORKMANAGER_RFKILL_MANAGER_H__
 #define __NETWORKMANAGER_RFKILL_MANAGER_H__

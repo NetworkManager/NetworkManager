@@ -28,7 +28,7 @@
 #include <string.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "NetworkManager.h"
 #include "libnm_glib.h"
 

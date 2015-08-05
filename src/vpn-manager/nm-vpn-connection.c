@@ -28,12 +28,11 @@
 #include <errno.h>
 #include <stdlib.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-vpn-connection.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
 #include "nm-platform.h"
-#include "nm-logging.h"
 #include "nm-active-connection.h"
 #include "nm-dbus-glib-types.h"
 #include "NetworkManagerUtils.h"
@@ -44,7 +43,6 @@
 #include "nm-default-route-manager.h"
 #include "nm-route-manager.h"
 #include "nm-firewall-manager.h"
-#include "gsystem-local-alloc.h"
 
 #include "nm-vpn-connection-glue.h"
 

@@ -26,8 +26,7 @@
 #include <linux/if_addr.h>
 
 #include <nm-dbus-interface.h>
-#include "nm-glib.h"
-#include "nm-types.h"
+#include "nm-default.h"
 #include "NetworkManagerUtils.h"
 
 #define NM_TYPE_PLATFORM            (nm_platform_get_type ())

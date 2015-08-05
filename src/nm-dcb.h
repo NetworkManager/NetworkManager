@@ -21,7 +21,7 @@
 #ifndef __NETWORKMANAGER_DCB_H__
 #define __NETWORKMANAGER_DCB_H__
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-setting-dcb.h"
 
 gboolean nm_dcb_enable (const char *iface, gboolean enable, GError **error);

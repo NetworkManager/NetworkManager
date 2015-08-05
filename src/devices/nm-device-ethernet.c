@@ -21,7 +21,6 @@
 
 #include "config.h"
 
-#include <glib/gi18n.h>
 #include <netinet/in.h>
 #include <string.h>
 #include <stdlib.h>
@@ -30,7 +29,7 @@
 
 #include <gudev/gudev.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-private.h"
 #include "nm-activation-request.h"
@@ -39,7 +38,6 @@
 #include "nm-supplicant-interface.h"
 #include "nm-supplicant-config.h"
 #include "ppp-manager/nm-ppp-manager.h"
-#include "nm-logging.h"
 #include "nm-enum-types.h"
 #include "nm-platform.h"
 #include "nm-platform-utils.h"
@@ -51,7 +49,6 @@
 #include "nm-device-factory.h"
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
-#include "gsystem-local-alloc.h"
 
 #include "nm-device-ethernet-glue.h"
 

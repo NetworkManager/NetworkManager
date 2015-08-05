@@ -29,7 +29,7 @@
 
 #include "nm-device-veth.h"
 #include "nm-device-private.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 #include "nm-manager.h"
 #include "nm-platform.h"
 #include "nm-device-factory.h"

@@ -30,7 +30,7 @@
 #include "nm-rdisc-private.h"
 
 #include "NetworkManagerUtils.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 #include "nm-platform.h"
 
 #define debug(...) nm_log_dbg (LOGD_IP6, __VA_ARGS__)

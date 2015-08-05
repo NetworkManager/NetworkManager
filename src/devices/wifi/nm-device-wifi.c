@@ -21,20 +21,17 @@
 
 #include "config.h"
 
-#include <glib/gi18n.h>
 #include <dbus/dbus.h>
 #include <netinet/in.h>
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-device.h"
 #include "nm-device-wifi.h"
 #include "nm-device-private.h"
 #include "nm-utils.h"
-#include "nm-logging.h"
-#include "gsystem-local-alloc.h"
 #include "NetworkManagerUtils.h"
 #include "nm-activation-request.h"
 #include "nm-supplicant-manager.h"

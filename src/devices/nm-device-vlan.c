@@ -20,14 +20,11 @@
 
 #include "config.h"
 
-#include <glib/gi18n.h>
-
 #include <sys/socket.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-device-vlan.h"
 #include "nm-manager.h"
-#include "nm-logging.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
@@ -39,7 +36,6 @@
 #include "nm-device-factory.h"
 #include "nm-manager.h"
 #include "nm-core-internal.h"
-#include "gsystem-local-alloc.h"
 
 #include "nm-device-vlan-glue.h"
 

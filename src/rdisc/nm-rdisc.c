@@ -27,7 +27,7 @@
 #include "nm-rdisc.h"
 #include "nm-rdisc-private.h"
 
-#include "nm-logging.h"
+#include "nm-default.h"
 #include "nm-utils.h"
 
 #define debug(...) nm_log_dbg (LOGD_IP6, __VA_ARGS__)

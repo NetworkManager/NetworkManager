@@ -24,15 +24,11 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <glib/gi18n.h>
-
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-config.h"
-#include "nm-logging.h"
 #include "nm-utils.h"
 #include "nm-device.h"
 #include "NetworkManagerUtils.h"
-#include "gsystem-local-alloc.h"
 #include "nm-enum-types.h"
 #include "nm-core-internal.h"
 #include "nm-keyfile-internal.h"
@@ -1671,8 +1667,7 @@ _set_config_data (NMConfig *self, NMConfigData *new_data, int signal)
 		g_object_unref (old_data);
 }
 
-NM_DEFINE_SINGLETON_DESTRUCTOR (NMConfig);
-NM_DEFINE_SINGLETON_WEAK_REF (NMConfig);
+NM_DEFINE_SINGLETON_REGISTER (NMConfig);
 
 NMConfig *
 nm_config_get (void)
@@ -1687,8 +1682,13 @@ nm_config_setup (const NMConfigCmdLineOptions *cli, char **atomic_section_prefix
 	g_assert (!singleton_instance);
 
 	singleton_instance = nm_config_new (cli, atomic_section_prefixes, error);
-	if (singleton_instance)
-		nm_singleton_instance_weak_ref_register ();
+	if (singleton_instance) {
+		nm_singleton_instance_register ();
+
+		/* usually, you would not see this logging line because when creating the
+		 * NMConfig instance, the logging is not yet set up to print debug message. */
+		nm_log_dbg (LOGD_CORE, "setup %s singleton (%p)", "NMConfig", singleton_instance);
+	}
 	return singleton_instance;
 }
 

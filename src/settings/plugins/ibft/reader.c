@@ -31,13 +31,10 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-#include <glib/gi18n.h>
-
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-core-internal.h"
 #include "nm-platform.h"
 #include "NetworkManagerUtils.h"
-#include "nm-logging.h"
 
 #include "reader.h"
 

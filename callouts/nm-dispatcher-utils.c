@@ -29,7 +29,7 @@
 #include <nm-setting-ip6-config.h>
 #include <nm-setting-connection.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-dispatcher-api.h"
 #include "nm-utils.h"
 

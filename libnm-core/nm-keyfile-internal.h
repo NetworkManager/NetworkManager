@@ -24,7 +24,7 @@
 
 #include <sys/types.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-connection.h"
 #include "nm-setting-8021x.h"
 

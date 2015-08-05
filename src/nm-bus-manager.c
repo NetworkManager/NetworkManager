@@ -26,7 +26,7 @@
 #include <sys/types.h>
 #include <errno.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-dbus-interface.h"
 #include "nm-bus-manager.h"
 
@@ -34,7 +34,6 @@
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-lowlevel.h>
 #include <string.h>
-#include "nm-logging.h"
 #include "NetworkManagerUtils.h"
 
 #define PRIV_SOCK_PATH NMRUNDIR "/private"
@@ -78,8 +77,7 @@ static void nm_bus_manager_cleanup (NMBusManager *self, gboolean dispose);
 static void start_reconnection_timeout (NMBusManager *self);
 static void object_destroyed (NMBusManager *self, gpointer object);
 
-NM_DEFINE_SINGLETON_DESTRUCTOR (NMBusManager);
-NM_DEFINE_SINGLETON_WEAK_REF (NMBusManager);
+NM_DEFINE_SINGLETON_REGISTER (NMBusManager);
 
 NMBusManager *
 nm_bus_manager_get (void)
@@ -103,8 +101,8 @@ nm_bus_manager_setup (NMBusManager *instance)
 
 	already_setup = TRUE;
 	singleton_instance = instance;
-	nm_singleton_instance_weak_ref_register ();
-	nm_log_dbg (LOGD_CORE, "create %s singleton (%p)", "NMBusManager", singleton_instance);
+	nm_singleton_instance_register ();
+	nm_log_dbg (LOGD_CORE, "setup %s singleton (%p)", "NMBusManager", singleton_instance);
 }
 
 /**************************************************************/

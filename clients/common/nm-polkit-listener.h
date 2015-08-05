@@ -22,7 +22,7 @@
 #define POLKIT_AGENT_I_KNOW_API_IS_SUBJECT_TO_CHANGE
 #include <polkitagent/polkitagent.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 
 G_BEGIN_DECLS
 

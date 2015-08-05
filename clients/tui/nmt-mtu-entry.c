@@ -34,8 +34,6 @@
 
 #include <stdlib.h>
 
-#include <glib/gi18n-lib.h>
-
 #include "nmt-mtu-entry.h"
 
 G_DEFINE_TYPE (NmtMtuEntry, nmt_mtu_entry, NMT_TYPE_NEWT_GRID)

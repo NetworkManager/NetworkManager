@@ -27,7 +27,7 @@
 #include <unistd.h>
 
 #include <nm-system-config-interface.h>
-#include <nm-logging.h>
+#include "nm-default.h"
 
 #include "plugin.h"
 #include "nm-platform.h"

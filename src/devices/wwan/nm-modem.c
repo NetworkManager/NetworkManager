@@ -25,7 +25,7 @@
 #include "nm-modem.h"
 #include "nm-platform.h"
 #include "nm-setting-connection.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
 #include "nm-dbus-glib-types.h"

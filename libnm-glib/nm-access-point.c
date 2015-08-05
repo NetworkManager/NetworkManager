@@ -30,7 +30,7 @@
 #include <nm-setting-wireless-security.h>
 #include <nm-utils.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-access-point.h"
 #include "NetworkManager.h"
 #include "nm-types-private.h"

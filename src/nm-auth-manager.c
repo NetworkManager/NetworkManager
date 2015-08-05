@@ -22,7 +22,7 @@
 
 #include "nm-auth-manager.h"
 
-#include "nm-logging.h"
+#include "nm-default.h"
 #include "nm-errors.h"
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
@@ -78,8 +78,7 @@ typedef struct {
 #endif
 } NMAuthManagerPrivate;
 
-NM_DEFINE_SINGLETON_DESTRUCTOR (NMAuthManager);
-NM_DEFINE_SINGLETON_WEAK_REF (NMAuthManager);
+NM_DEFINE_SINGLETON_REGISTER (NMAuthManager);
 
 G_DEFINE_TYPE (NMAuthManager, nm_auth_manager, G_TYPE_OBJECT)
 
@@ -499,7 +498,9 @@ nm_auth_manager_setup (gboolean polkit_enabled)
 	_LOGD ("set instance");
 
 	singleton_instance = self;
-	nm_singleton_instance_weak_ref_register ();
+	nm_singleton_instance_register ();
+
+	nm_log_dbg (LOGD_CORE, "setup %s singleton (%p)", "NMAuthManager", singleton_instance);
 
 	return self;
 }

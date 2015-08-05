@@ -24,7 +24,7 @@
 
 #include <nm-connection.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 
 NMConnection *nm_keyfile_plugin_connection_from_file (const char *filename, GError **error);
 

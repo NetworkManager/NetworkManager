@@ -24,7 +24,6 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
-#include <glib/gi18n-lib.h>
 
 #include "nm-setting-bridge-port.h"
 #include "nm-utils.h"

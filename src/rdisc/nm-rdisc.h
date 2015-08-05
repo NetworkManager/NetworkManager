@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <netinet/in.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "NetworkManagerUtils.h"
 
 #define NM_TYPE_RDISC            (nm_rdisc_get_type ())

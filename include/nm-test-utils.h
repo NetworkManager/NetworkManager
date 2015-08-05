@@ -89,10 +89,9 @@
 #include <string.h>
 #include <errno.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-utils.h"
 #include "nm-macros-internal.h"
-#include "gsystem-local-alloc.h"
 
 #ifdef __NETWORKMANAGER_LOGGING_H__
 /* We are running tests under src/. Let's include some files by default.

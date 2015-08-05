@@ -23,7 +23,7 @@
 #ifndef _PLUGIN_H_
 #define _PLUGIN_H_
 
-#include "nm-glib.h"
+#include "nm-default.h"
 
 #define SC_TYPE_PLUGIN_IFNET            (sc_plugin_ifnet_get_type ())
 #define SC_PLUGIN_IFNET(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), SC_TYPE_PLUGIN_IFNET, SCPluginIfnet))

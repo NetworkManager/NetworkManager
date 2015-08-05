@@ -24,7 +24,7 @@
 #include <gudev/gudev.h>
 
 #include "nm-rfkill-manager.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 
 typedef struct {
 	GUdevClient *client;

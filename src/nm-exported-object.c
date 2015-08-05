@@ -25,7 +25,7 @@
 #include "nm-exported-object.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-bus-manager.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 
 static GHashTable *prefix_counters;
 

@@ -21,7 +21,7 @@
 #ifndef __NM_SETTING_PRIVATE_H__
 #define __NM_SETTING_PRIVATE_H__
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-setting.h"
 #include "nm-connection.h"
 #include "nm-core-enum-types.h"

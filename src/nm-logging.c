@@ -32,17 +32,13 @@
 #include <strings.h>
 #include <string.h>
 
-#include <glib/gi18n.h>
-
 #if SYSTEMD_JOURNAL
 #define SD_JOURNAL_SUPPRESS_LOCATION
 #include <systemd/sd-journal.h>
 #endif
 
-#include "nm-glib.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 #include "nm-errors.h"
-#include "gsystem-local-alloc.h"
 #include "NetworkManagerUtils.h"
 
 static void

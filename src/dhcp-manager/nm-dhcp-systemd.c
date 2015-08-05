@@ -18,7 +18,6 @@
 
 #include "config.h"
 
-#include <glib/gi18n.h>
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -29,13 +28,11 @@
 #include <ctype.h>
 #include <net/if_arp.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-dhcp-systemd.h"
 #include "nm-utils.h"
-#include "nm-logging.h"
 #include "nm-dhcp-utils.h"
 #include "NetworkManagerUtils.h"
-#include "gsystem-local-alloc.h"
 #include "nm-platform.h"
 
 #include "nm-sd-adapt.h"

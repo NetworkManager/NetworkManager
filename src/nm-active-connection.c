@@ -21,18 +21,15 @@
 #include "config.h"
 
 
-#include "nm-glib.h"
-#include "nm-types.h"
+#include "nm-default.h"
 #include "nm-active-connection.h"
 #include "nm-dbus-interface.h"
-#include "nm-logging.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-device.h"
 #include "nm-settings-connection.h"
 #include "nm-auth-utils.h"
 #include "nm-auth-subject.h"
 #include "NetworkManagerUtils.h"
-#include "gsystem-local-alloc.h"
 #include "nm-active-connection-glue.h"
 
 /* Base class for anything implementing the Connection.Active D-Bus interface */

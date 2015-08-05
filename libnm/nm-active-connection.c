@@ -23,7 +23,7 @@
 
 #include <string.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-dbus-interface.h"
 #include "nm-active-connection.h"
 #include "nm-object-private.h"

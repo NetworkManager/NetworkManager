@@ -25,9 +25,7 @@
 
 #include <stdlib.h>
 
-#include <glib/gi18n-lib.h>
-
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nmt-page-ppp.h"
 #include "nmt-newt-section.h"
 #include "nmt-newt-separator.h"

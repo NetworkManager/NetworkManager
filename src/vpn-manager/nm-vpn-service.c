@@ -27,9 +27,8 @@
 #include <signal.h>
 #include <unistd.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-vpn-service.h"
-#include "nm-logging.h"
 #include "nm-vpn-manager.h"
 
 G_DEFINE_TYPE (NMVpnService, nm_vpn_service, G_TYPE_OBJECT)

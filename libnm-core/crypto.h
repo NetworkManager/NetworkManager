@@ -24,7 +24,7 @@
 #ifndef __CRYPTO_H__
 #define __CRYPTO_H__
 
-#include "nm-glib.h"
+#include "nm-default.h"
 
 #define MD5_HASH_LEN 20
 #define CIPHER_DES_EDE3_CBC "DES-EDE3-CBC"

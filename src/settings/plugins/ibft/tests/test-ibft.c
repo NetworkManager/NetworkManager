@@ -33,7 +33,7 @@
 #include "NetworkManagerUtils.h"
 
 #include "reader.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 
 #include "nm-test-utils.h"
 

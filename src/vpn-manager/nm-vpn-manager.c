@@ -23,7 +23,7 @@
 
 #include <string.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-vpn-manager.h"
 #include "nm-vpn-service.h"
 #include "nm-vpn-connection.h"
@@ -31,8 +31,6 @@
 #include "nm-vpn-dbus-interface.h"
 #include "nm-core-internal.h"
 #include "nm-enum-types.h"
-#include "nm-logging.h"
-#include "gsystem-local-alloc.h"
 
 G_DEFINE_TYPE (NMVpnManager, nm_vpn_manager, G_TYPE_OBJECT)
 

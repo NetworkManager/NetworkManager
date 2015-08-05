@@ -23,7 +23,7 @@
 
 #include <string.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "NetworkManager.h"
 #include "nm-active-connection.h"
 #include "nm-object-private.h"

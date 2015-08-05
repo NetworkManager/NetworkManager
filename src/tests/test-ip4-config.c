@@ -23,10 +23,9 @@
 #include <string.h>
 #include <arpa/inet.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-ip4-config.h"
 #include "nm-platform.h"
-#include "nm-logging.h"
 
 #include "nm-test-utils.h"
 

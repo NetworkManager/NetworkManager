@@ -27,6 +27,7 @@
 #include <nm-setting-connection.h>
 #include <nm-utils.h>
 
+#include "nm-default.h"
 #include "nm-system-config-interface.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-keyfile-connection.h"
@@ -34,7 +35,6 @@
 #include "writer.h"
 #include "common.h"
 #include "utils.h"
-#include "gsystem-local-alloc.h"
 #include "nm-logging.h"
 
 G_DEFINE_TYPE (NMKeyfileConnection, nm_keyfile_connection, NM_TYPE_SETTINGS_CONNECTION)

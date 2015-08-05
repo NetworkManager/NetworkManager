@@ -29,9 +29,8 @@
 #include <unistd.h>
 #include <nm-utils.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-linux-platform.h"
-#include "nm-logging.h"
 
 #include "net_parser.h"
 #include "net_utils.h"

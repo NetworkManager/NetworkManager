@@ -19,7 +19,7 @@
 #ifndef NMT_PAGE_DSL_H
 #define NMT_PAGE_DSL_H
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nmt-editor-page-device.h"
 
 G_BEGIN_DECLS

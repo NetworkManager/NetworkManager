@@ -31,7 +31,7 @@
 #ifndef _SHVAR_H
 #define _SHVAR_H
 
-#include "nm-glib.h"
+#include "nm-default.h"
 
 G_BEGIN_DECLS
 

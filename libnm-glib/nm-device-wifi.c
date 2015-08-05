@@ -28,7 +28,7 @@
 #include <nm-setting-wireless.h>
 #include <nm-setting-wireless-security.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-device-wifi.h"
 #include "nm-device-private.h"
 #include "nm-object-private.h"

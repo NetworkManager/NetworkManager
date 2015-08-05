@@ -23,9 +23,8 @@
 #include <string.h>
 #include <errno.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "NetworkManagerUtils.h"
-#include "nm-logging.h"
 #include "nm-core-internal.h"
 
 #include "nm-test-utils.h"

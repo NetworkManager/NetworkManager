@@ -29,15 +29,13 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <glib/gi18n.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-device-adsl.h"
 #include "nm-device-private.h"
 #include "NetworkManagerUtils.h"
-#include "nm-logging.h"
 #include "nm-enum-types.h"
 #include "nm-platform.h"
 

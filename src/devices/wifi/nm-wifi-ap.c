@@ -24,16 +24,14 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-wifi-ap.h"
 #include "nm-wifi-ap-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
-#include "nm-logging.h"
 #include "nm-core-internal.h"
 
 #include "nm-setting-wireless.h"
-#include "gsystem-local-alloc.h"
 
 #include "nm-access-point-glue.h"
 

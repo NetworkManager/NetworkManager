@@ -22,7 +22,7 @@
 
 #include <string.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-dbus-helpers.h"
 #include "nm-dbus-interface.h"
 

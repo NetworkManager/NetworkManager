@@ -25,7 +25,7 @@
 
 #include "nm-rdisc.h"
 #include "nm-fake-rdisc.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 
 #include "nm-fake-platform.h"
 

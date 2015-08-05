@@ -22,7 +22,7 @@
 #include "config.h"
 
 #include <signal.h>
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-vpn-plugin.h"
 #include "nm-vpn-enum-types.h"
 #include "nm-utils.h"

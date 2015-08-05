@@ -29,15 +29,13 @@
 #include <uuid/uuid.h>
 #include <libintl.h>
 #include <gmodule.h>
-#include <glib/gi18n-lib.h>
 #include <sys/stat.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
 #include "crypto.h"
-#include "gsystem-local-alloc.h"
 #include "nm-macros-internal.h"
 
 #include "nm-setting-bond.h"

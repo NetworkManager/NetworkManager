@@ -34,7 +34,7 @@
 
 #include <glib-unix.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-dispatcher-api.h"
 #include "nm-dispatcher-utils.h"
 

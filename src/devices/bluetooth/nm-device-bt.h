@@ -21,7 +21,7 @@
 #ifndef __NETWORKMANAGER_DEVICE_BT_H__
 #define __NETWORKMANAGER_DEVICE_BT_H__
 
-#include <nm-device.h>
+#include "nm-device.h"
 #include "nm-bluez-device.h"
 #include "nm-modem.h"
 

@@ -29,10 +29,9 @@
 #include <linux/mii.h>
 #include <linux/version.h>
 
-#include "gsystem-local-alloc.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 #include "nm-setting-wired.h"
 
 

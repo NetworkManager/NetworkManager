@@ -25,7 +25,7 @@
 #include "nm-platform-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 
 /*********************************************************************************************/
 

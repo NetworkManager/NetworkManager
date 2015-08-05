@@ -19,7 +19,7 @@
 #ifndef NM_SD_ADAPT_H
 #define NM_SD_ADAPT_H
 
-#include <config.h>
+#include "config.h"
 
 #include <glib.h>
 
@@ -39,7 +39,7 @@
 #include <net/if_arp.h>
 #include <sys/resource.h>
 
-#include "nm-logging.h"
+#include "nm-default.h"
 
 /* Missing in Linux 3.2.0, in Ubuntu 12.04 */
 #ifndef BPF_XOR

@@ -26,7 +26,7 @@
 #include "nm-fake-rdisc.h"
 #include "nm-rdisc-private.h"
 
-#include "nm-logging.h"
+#include "nm-default.h"
 
 #define debug(...) nm_log_dbg (LOGD_IP6, __VA_ARGS__)
 #define warning(...) nm_log_warn (LOGD_IP6, __VA_ARGS__)

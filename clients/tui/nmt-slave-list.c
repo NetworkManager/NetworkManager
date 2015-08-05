@@ -26,7 +26,6 @@
 
 #include "config.h"
 
-#include <glib/gi18n-lib.h>
 #include <NetworkManager.h>
 
 #include "nmt-slave-list.h"

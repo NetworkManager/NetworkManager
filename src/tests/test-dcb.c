@@ -22,9 +22,8 @@
 
 #include <string.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-dcb.h"
-#include "nm-logging.h"
 
 #include "nm-test-utils.h"
 

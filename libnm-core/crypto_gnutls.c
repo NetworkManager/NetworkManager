@@ -23,14 +23,12 @@
 
 #include "config.h"
 
-#include <glib/gi18n-lib.h>
-
 #include <gnutls/gnutls.h>
 #include <gnutls/crypto.h>
 #include <gnutls/x509.h>
 #include <gnutls/pkcs12.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "crypto.h"
 #include "nm-errors.h"
 

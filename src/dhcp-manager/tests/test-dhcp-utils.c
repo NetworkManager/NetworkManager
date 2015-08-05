@@ -25,9 +25,8 @@
 
 #include <nm-utils.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-dhcp-utils.h"
-#include "nm-logging.h"
 #include "nm-platform.h"
 
 #include "nm-test-utils.h"

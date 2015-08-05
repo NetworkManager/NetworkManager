@@ -25,9 +25,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-dns-plugin.h"
-#include "nm-logging.h"
 #include "NetworkManagerUtils.h"
 
 typedef struct {

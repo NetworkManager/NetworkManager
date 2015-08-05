@@ -30,7 +30,6 @@
 #include <netinet/in.h>
 #include <stdlib.h>
 
-#include <glib/gi18n-lib.h>
 #include <NetworkManager.h>
 
 #include "nmt-route-table.h"

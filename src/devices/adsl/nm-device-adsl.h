@@ -23,7 +23,7 @@
 #define __NETWORKMANAGER_DEVICE_ADSL_H__
 
 // Parent class
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-device.h"
 
 G_BEGIN_DECLS

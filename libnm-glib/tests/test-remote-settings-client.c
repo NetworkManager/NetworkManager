@@ -33,7 +33,7 @@
 #include <nm-setting-wired.h>
 #include <nm-utils.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-remote-settings.h"
 #include "common.h"
 

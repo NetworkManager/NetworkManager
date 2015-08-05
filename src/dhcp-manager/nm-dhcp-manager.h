@@ -23,7 +23,7 @@
 #define __NETWORKMANAGER_DHCP_MANAGER_H__
 
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-dhcp-client.h"
 #include "nm-ip4-config.h"
 #include "nm-dhcp4-config.h"

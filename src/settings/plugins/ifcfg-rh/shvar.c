@@ -36,9 +36,8 @@
 
 #include "shvar.h"
 
-#include "gsystem-local-alloc.h"
 #include "nm-core-internal.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 
 #define PARSE_WARNING(msg...) nm_log_warn (LOGD_SETTINGS, "    " msg)
 

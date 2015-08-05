@@ -25,8 +25,7 @@
 #include <stdlib.h>
 #include <gmodule.h>
 
-#include "nm-glib.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 #include "nm-bluez-manager.h"
 #include "nm-device-factory.h"
 #include "nm-setting-bluetooth.h"

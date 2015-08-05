@@ -34,13 +34,11 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <glib/gi18n.h>
 #include <gmodule.h>
 #include <string.h>
 #include <sys/resource.h>
 
-#include "nm-glib.h"
-#include "gsystem-local-alloc.h"
+#include "nm-default.h"
 #include "nm-dbus-interface.h"
 #include "NetworkManagerUtils.h"
 #include "main-utils.h"
@@ -49,7 +47,6 @@
 #include "nm-bus-manager.h"
 #include "nm-device.h"
 #include "nm-dhcp-manager.h"
-#include "nm-logging.h"
 #include "nm-config.h"
 #include "nm-session-monitor.h"
 #include "nm-dispatcher.h"
@@ -439,6 +436,12 @@ main (int argc, char *argv[])
 
 	/* Set up platform interaction layer */
 	nm_linux_platform_setup ();
+
+	/* FIXME: intentionally leak the singleton instance of NMPlatform.
+	 * nm_linux_platform_setup() will register the singleton for destruction,
+	 * but we don't yet shut down all singletons properly, so don't destroy
+	 * NMPlatform. */
+	g_object_ref (NM_PLATFORM_GET);
 
 	nm_auth_manager_setup (nm_config_get_auth_polkit (config));
 

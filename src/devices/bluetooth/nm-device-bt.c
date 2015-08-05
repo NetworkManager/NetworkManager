@@ -23,14 +23,11 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <glib/gi18n.h>
-
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-bluez-common.h"
 #include "nm-bluez-device.h"
 #include "nm-device-bt.h"
 #include "nm-device-private.h"
-#include "nm-logging.h"
 #include "ppp-manager/nm-ppp-manager.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-bluetooth.h"

@@ -26,10 +26,9 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include "gsystem-local-alloc.h"
 
 #include "nm-activation-request.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-8021x.h"
 #include "nm-device.h"

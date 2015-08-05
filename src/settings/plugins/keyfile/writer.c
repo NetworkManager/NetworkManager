@@ -27,13 +27,11 @@
 #include <errno.h>
 #include <string.h>
 
-#include "nm-glib.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 #include "writer.h"
 #include "common.h"
 #include "utils.h"
 #include "nm-keyfile-internal.h"
-#include "gsystem-local-alloc.h"
 
 typedef struct {
 	const char *keyfile_dir;

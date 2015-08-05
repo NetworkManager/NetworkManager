@@ -24,12 +24,11 @@
 #include <gudev/gudev.h>
 #include <gmodule.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-atm-manager.h"
 #include "nm-setting-adsl.h"
 #include "nm-device-adsl.h"
 #include "nm-device-factory.h"
-#include "nm-logging.h"
 
 typedef struct {
 	GUdevClient *client;

@@ -27,10 +27,9 @@
 #endif
 
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-connectivity.h"
 #include "nm-config.h"
-#include "nm-logging.h"
 
 G_DEFINE_TYPE (NMConnectivity, nm_connectivity, G_TYPE_OBJECT)
 

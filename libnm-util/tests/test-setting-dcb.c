@@ -23,9 +23,8 @@
 
 #include <string.h>
 #include <nm-utils.h>
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-setting-dcb.h"
-#include "gsystem-local-alloc.h"
 
 #define DCB_FLAGS_ALL (NM_SETTING_DCB_FLAG_ENABLE | \
                        NM_SETTING_DCB_FLAG_ADVERTISE | \

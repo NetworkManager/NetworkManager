@@ -21,16 +21,14 @@
 
 #include "config.h"
 
-#include <glib/gi18n.h>
 #include <string.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-core-internal.h"
 
 #include "nm-bt-error.h"
 #include "nm-bluez-common.h"
 #include "nm-bluez-device.h"
-#include "nm-logging.h"
 #include "nm-settings-connection.h"
 #include "NetworkManagerUtils.h"
 

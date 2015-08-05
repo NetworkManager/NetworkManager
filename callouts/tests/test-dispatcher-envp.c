@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-core-internal.h"
 #include "nm-dispatcher-utils.h"
 #include "nm-dispatcher-api.h"

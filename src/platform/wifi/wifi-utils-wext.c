@@ -29,10 +29,9 @@
 #include <math.h>
 
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "wifi-utils-private.h"
 #include "wifi-utils-wext.h"
-#include "nm-logging.h"
 #include "nm-utils.h"
 
 /* Hacks necessary to #include wireless.h; yay for WEXT */

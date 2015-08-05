@@ -22,7 +22,7 @@
 #define __WIFI_UTILS_PRIVATE_H__
 
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-dbus-interface.h"
 #include "wifi-utils.h"
 

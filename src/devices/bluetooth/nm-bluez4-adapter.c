@@ -22,12 +22,11 @@
 
 #include <string.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-dbus-interface.h"
 #include "nm-bluez4-adapter.h"
 #include "nm-bluez-device.h"
 #include "nm-bluez-common.h"
-#include "nm-logging.h"
 #include "nm-core-internal.h"
 
 G_DEFINE_TYPE (NMBluez4Adapter, nm_bluez4_adapter, G_TYPE_OBJECT)

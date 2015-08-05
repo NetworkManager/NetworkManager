@@ -24,7 +24,7 @@
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 
 DBusGConnection *_nm_dbus_new_connection (GError **error);
 

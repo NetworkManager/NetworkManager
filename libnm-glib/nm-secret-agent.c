@@ -23,7 +23,7 @@
 #include <string.h>
 #include <dbus/dbus-glib-lowlevel.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "NetworkManager.h"
 #include "nm-secret-agent.h"
 #include "nm-glib-enum-types.h"

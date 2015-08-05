@@ -21,7 +21,7 @@
 #ifndef __NETWORKMANAGER_FIREWALL_MANAGER_H__
 #define __NETWORKMANAGER_FIREWALL_MANAGER_H__
 
-#include "nm-glib.h"
+#include "nm-default.h"
 
 #define FIREWALL_DBUS_SERVICE         "org.fedoraproject.FirewallD1"
 #define FIREWALL_DBUS_PATH            "/org/fedoraproject/FirewallD1"

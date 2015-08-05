@@ -22,8 +22,7 @@
 #define __NETWORKMANAGER_SESSION_MONITOR_H__
 
 
-#include "nm-glib.h"
-#include "nm-types.h"
+#include "nm-default.h"
 
 G_BEGIN_DECLS
 

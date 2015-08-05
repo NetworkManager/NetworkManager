@@ -36,6 +36,7 @@
 
 #include "nm-supplicant-config.h"
 #include "nm-supplicant-settings-verify.h"
+#include "nm-default.h"
 
 #include "nm-test-utils.h"
 
@@ -443,7 +444,7 @@ NMTST_DEFINE ();
 
 int main (int argc, char **argv)
 {
-	nmtst_init (&argc, &argv, TRUE);
+	nmtst_init_assert_logging (&argc, &argv, "INFO", "DEFAULT");
 
 	g_test_add_func ("/supplicant-config/wifi-open", test_wifi_open);
 	g_test_add_func ("/supplicant-config/wifi-wep", test_wifi_wep);

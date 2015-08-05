@@ -21,7 +21,7 @@
 #ifndef _UTILS_H_
 #define _UTILS_H_
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "NetworkManagerUtils.h"
 
 #define NM_KEYFILE_CONNECTION_LOG_PATH(path)  str_if_set (path,"in-memory")

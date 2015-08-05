@@ -36,11 +36,10 @@
 
 #include <linux/nl80211.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "wifi-utils-private.h"
 #include "wifi-utils-nl80211.h"
 #include "nm-platform.h"
-#include "nm-logging.h"
 #include "nm-utils.h"
 
 typedef struct {

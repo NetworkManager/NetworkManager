@@ -21,7 +21,7 @@
 #ifndef __NM_OBJECT_CACHE_H__
 #define __NM_OBJECT_CACHE_H__
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-object.h"
 
 G_BEGIN_DECLS

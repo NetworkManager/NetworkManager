@@ -22,7 +22,7 @@
 #ifndef __NETWORKMANAGER_MODEM_H__
 #define __NETWORKMANAGER_MODEM_H__
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "ppp-manager/nm-ppp-manager.h"
 #include "nm-device.h"
 

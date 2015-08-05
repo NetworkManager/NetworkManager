@@ -19,7 +19,7 @@
 #ifndef NMT_UTILS_H
 #define NMT_UTILS_H
 
-#include "nm-glib.h"
+#include "nm-default.h"
 
 G_BEGIN_DECLS
 

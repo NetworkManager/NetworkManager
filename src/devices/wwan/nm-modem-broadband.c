@@ -20,14 +20,13 @@
 
 #include "config.h"
 
-#include <glib/gi18n.h>
 #include <string.h>
 #include <arpa/inet.h>
 #include <libmm-glib.h>
 
 #include "nm-modem-broadband.h"
 #include "nm-core-internal.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
 #include "nm-platform.h"

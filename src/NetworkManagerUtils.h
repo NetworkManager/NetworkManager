@@ -25,16 +25,15 @@
 #include <stdio.h>
 #include <arpa/inet.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-connection.h"
-#include "nm-types.h"
 
 /*****************************************************************************/
 
 #define NM_DEFINE_SINGLETON_INSTANCE(TYPE) \
 static TYPE *singleton_instance
 
-#define NM_DEFINE_SINGLETON_WEAK_REF(TYPE) \
+#define NM_DEFINE_SINGLETON_REGISTER(TYPE) \
 NM_DEFINE_SINGLETON_INSTANCE (TYPE); \
 static void \
 _singleton_instance_weak_ref_cb (gpointer data, \
@@ -44,22 +43,13 @@ _singleton_instance_weak_ref_cb (gpointer data, \
 	singleton_instance = NULL; \
 } \
 static inline void \
-nm_singleton_instance_weak_ref_register (void) \
+nm_singleton_instance_register () \
 { \
 	g_object_weak_ref (G_OBJECT (singleton_instance), _singleton_instance_weak_ref_cb, NULL); \
+	_nm_singleton_instance_register_destruction (G_OBJECT (singleton_instance)); \
 }
 
-#define NM_DEFINE_SINGLETON_DESTRUCTOR(TYPE) \
-NM_DEFINE_SINGLETON_INSTANCE (TYPE); \
-static void __attribute__((destructor)) \
-_singleton_destructor (void) \
-{ \
-	if (singleton_instance) { \
-		if (G_OBJECT (singleton_instance)->ref_count > 1) \
-			nm_log_dbg (LOGD_CORE, "disown %s singleton (%p)", G_STRINGIFY (TYPE), singleton_instance); \
-		g_object_unref (singleton_instance); \
-	} \
-}
+void _nm_singleton_instance_register_destruction (GObject *instance);
 
 /* By default, the getter will assert that the singleton will be created only once. You can
  * change this by redefining NM_DEFINE_SINGLETON_ALLOW_MULTIPLE. */
@@ -69,7 +59,7 @@ _singleton_destructor (void) \
 
 #define NM_DEFINE_SINGLETON_GETTER(TYPE, GETTER, GTYPE, ...) \
 NM_DEFINE_SINGLETON_INSTANCE (TYPE); \
-NM_DEFINE_SINGLETON_WEAK_REF (TYPE); \
+NM_DEFINE_SINGLETON_REGISTER (TYPE); \
 TYPE * \
 GETTER (void) \
 { \
@@ -80,12 +70,11 @@ GETTER (void) \
 		_already_created = TRUE;\
 		singleton_instance = (g_object_new (GTYPE, ##__VA_ARGS__, NULL)); \
 		g_assert (singleton_instance); \
-		nm_singleton_instance_weak_ref_register (); \
+		nm_singleton_instance_register (); \
 		nm_log_dbg (LOGD_CORE, "create %s singleton (%p)", G_STRINGIFY (TYPE), singleton_instance); \
 	} \
 	return singleton_instance; \
-} \
-NM_DEFINE_SINGLETON_DESTRUCTOR(TYPE)
+}
 
 /*****************************************************************************/
 

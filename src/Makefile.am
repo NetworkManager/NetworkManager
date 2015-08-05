@@ -38,7 +38,7 @@ AM_CPPFLAGS =				\
 	-I$(top_srcdir)/callouts	\
 	-DPREFIX=\"$(prefix)\"          \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
-	-DNETWORKMANAGER_COMPILATION	\
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE
 
 # add each subdirectory that contains a libNM source file. $(sort) is being used
@@ -59,7 +59,9 @@ SYSTEMD_NM_CFLAGS = \
 	-I$(top_srcdir)/src/systemd/src/libsystemd-network \
 	-I$(top_srcdir)/src/systemd/src/basic \
 	-I$(top_srcdir)/src/systemd/src/shared \
-	-I$(top_srcdir)/src/systemd
+	-I$(top_srcdir)/src/systemd \
+	-I$(top_srcdir)/libnm-core \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON
 
 libsystemd_nm_la_SOURCES = \
 	systemd/src/libsystemd/sd-id128/sd-id128.c \

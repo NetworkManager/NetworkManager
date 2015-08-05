@@ -24,13 +24,11 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/wait.h>
-#include <glib/gi18n.h>
 #include <teamdctl.h>
 #include <stdlib.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-device-team.h"
-#include "nm-logging.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
 #include "nm-platform.h"
@@ -38,7 +36,6 @@
 #include "nm-enum-types.h"
 #include "nm-team-enum-types.h"
 #include "nm-core-internal.h"
-#include "gsystem-local-alloc.h"
 
 #include "nm-device-team-glue.h"
 

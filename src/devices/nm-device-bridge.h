@@ -21,7 +21,7 @@
 #ifndef __NETWORKMANAGER_DEVICE_BRIDGE_H__
 #define __NETWORKMANAGER_DEVICE_BRIDGE_H__
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-device.h"
 
 G_BEGIN_DECLS

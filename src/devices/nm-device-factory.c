@@ -27,7 +27,7 @@
 #include <gmodule.h>
 
 #include "nm-device-factory.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 #include "nm-platform.h"
 
 const NMLinkType _nm_device_factory_no_default_links[] = { NM_LINK_TYPE_NONE };

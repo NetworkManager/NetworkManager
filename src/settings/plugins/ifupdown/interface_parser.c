@@ -29,7 +29,7 @@
 #include <wordexp.h>
 #include <libgen.h>
 #include "nm-utils.h"
-#include "nm-logging.h"
+#include "nm-default.h"
 
 if_block* first;
 if_block* last;

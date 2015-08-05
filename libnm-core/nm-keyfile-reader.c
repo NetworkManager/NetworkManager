@@ -28,12 +28,10 @@
 #include <sys/types.h>
 #include <arpa/inet.h>
 #include <string.h>
-#include <glib/gi18n-lib.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-core-internal.h"
 #include "nm-macros-internal.h"
-#include "gsystem-local-alloc.h"
 #include "nm-keyfile-internal.h"
 #include "nm-keyfile-utils.h"
 

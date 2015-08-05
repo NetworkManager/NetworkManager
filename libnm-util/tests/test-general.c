@@ -29,8 +29,7 @@
 #include <sys/resource.h>
 
 #include <nm-utils.h>
-#include "nm-glib.h"
-#include "gsystem-local-alloc.h"
+#include "nm-default.h"
 
 #include "nm-setting-private.h"
 #include "nm-setting-connection.h"

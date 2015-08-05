@@ -25,7 +25,7 @@
 #include <NetworkManager.h>
 #include <nm-connection.h>
 
-#include "nm-glib.h"
+#include "nm-default.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-remote-settings.h"
 #include "nm-remote-connection-private.h"
