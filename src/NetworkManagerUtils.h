@@ -43,7 +43,7 @@ _singleton_instance_weak_ref_cb (gpointer data, \
 	singleton_instance = NULL; \
 } \
 static inline void \
-nm_singleton_instance_register () \
+nm_singleton_instance_register (void) \
 { \
 	g_object_weak_ref (G_OBJECT (singleton_instance), _singleton_instance_weak_ref_cb, NULL); \
 	_nm_singleton_instance_register_destruction (G_OBJECT (singleton_instance)); \
