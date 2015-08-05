@@ -5203,11 +5203,6 @@ act_stage3_ip6_config_start (NMDevice *self,
 			ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	} else if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0) {
 		ret = linklocal6_start (self);
-		if (ret == NM_ACT_STAGE_RETURN_FINISH) {
-			/* New blank config; LL address is already in priv->ext_ip6_config */
-			*out_config = nm_ip6_config_new (nm_device_get_ip_ifindex (self));
-			g_assert (*out_config);
-		}
 	} else if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_DHCP) == 0) {
 		priv->dhcp6_mode = NM_RDISC_DHCP_LEVEL_MANAGED;
 		if (!dhcp6_start (self, TRUE, reason)) {
