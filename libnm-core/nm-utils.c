@@ -3857,7 +3857,7 @@ validate_dns_option (const char *name, gboolean numeric, gboolean ipv6,
 }
 
 /**
- * _nm_utils_dns_option_validate
+ * _nm_utils_dns_option_validate:
  * @option: option string
  * @out_name: (out) (allow-none): the option name
  * @out_value: (out) (allow-none): the option value
@@ -3929,7 +3929,7 @@ out:
 }
 
 /**
- * _nm_utils_dns_option_find_idx
+ * _nm_utils_dns_option_find_idx:
  * @array: an array of strings
  * @option: a dns option string
  *
