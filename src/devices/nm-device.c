@@ -3427,6 +3427,8 @@ ip4_config_merge_and_apply (NMDevice *self,
 	guint32 gateway;
 	gboolean connection_has_default_route, connection_is_never_default;
 	gboolean routes_full_sync;
+	gboolean ignore_auto_routes = FALSE;
+	gboolean ignore_auto_dns = FALSE;
 
 	/* Merge all the configs into the composite config */
 	if (config) {
@@ -3434,13 +3436,27 @@ ip4_config_merge_and_apply (NMDevice *self,
 		priv->dev_ip4_config = g_object_ref (config);
 	}
 
+	/* Apply ignore-auto-routes and ignore-auto-dns settings */
+	connection = nm_device_get_connection (self);
+	if (connection) {
+		NMSettingIPConfig *s_ip4 = nm_connection_get_setting_ip4_config (connection);
+
+		if (s_ip4) {
+			ignore_auto_routes = nm_setting_ip_config_get_ignore_auto_routes (s_ip4);
+			ignore_auto_dns = nm_setting_ip_config_get_ignore_auto_dns (s_ip4);
+		}
+	}
+
 	composite = nm_ip4_config_new (nm_device_get_ip_ifindex (self));
 
 	if (commit)
 		ensure_con_ip4_config (self);
 
-	if (priv->dev_ip4_config)
-		nm_ip4_config_merge (composite, priv->dev_ip4_config, NM_IP_CONFIG_MERGE_DEFAULT);
+	if (priv->dev_ip4_config) {
+		nm_ip4_config_merge (composite, priv->dev_ip4_config,
+		                       (ignore_auto_routes ? NM_IP_CONFIG_MERGE_NO_ROUTES : 0)
+		                     | (ignore_auto_dns ? NM_IP_CONFIG_MERGE_NO_DNS : 0));
+	}
 	if (priv->vpn4_config)
 		nm_ip4_config_merge (composite, priv->vpn4_config, NM_IP_CONFIG_MERGE_DEFAULT);
 	if (priv->ext_ip4_config)
@@ -3449,23 +3465,10 @@ ip4_config_merge_and_apply (NMDevice *self,
 	/* Merge WWAN config *last* to ensure modem-given settings overwrite
 	 * any external stuff set by pppd or other scripts.
 	 */
-	if (priv->wwan_ip4_config)
-		nm_ip4_config_merge (composite, priv->wwan_ip4_config, NM_IP_CONFIG_MERGE_DEFAULT);
-
-	/* Apply ignore-auto-routes and ignore-auto-dns settings */
-	connection = nm_device_get_connection (self);
-	if (connection) {
-		NMSettingIPConfig *s_ip4 = nm_connection_get_setting_ip4_config (connection);
-
-		if (s_ip4) {
-			if (nm_setting_ip_config_get_ignore_auto_routes (s_ip4))
-				nm_ip4_config_reset_routes (composite);
-			if (nm_setting_ip_config_get_ignore_auto_dns (s_ip4)) {
-				nm_ip4_config_reset_nameservers (composite);
-				nm_ip4_config_reset_domains (composite);
-				nm_ip4_config_reset_searches (composite);
-			}
-		}
+	if (priv->wwan_ip4_config) {
+		nm_ip4_config_merge (composite, priv->wwan_ip4_config,
+		                       (ignore_auto_routes ? NM_IP_CONFIG_MERGE_NO_ROUTES : 0)
+		                     | (ignore_auto_dns ? NM_IP_CONFIG_MERGE_NO_DNS : 0));
 	}
 
 	/* Merge user overrides into the composite config. For assumed connections,
@@ -4039,6 +4042,19 @@ ip6_config_merge_and_apply (NMDevice *self,
 	const struct in6_addr *gateway;
 	gboolean connection_has_default_route, connection_is_never_default;
 	gboolean routes_full_sync;
+	gboolean ignore_auto_routes = FALSE;
+	gboolean ignore_auto_dns = FALSE;
+
+	/* Apply ignore-auto-routes and ignore-auto-dns settings */
+	connection = nm_device_get_connection (self);
+	if (connection) {
+		NMSettingIPConfig *s_ip6 = nm_connection_get_setting_ip6_config (connection);
+
+		if (s_ip6) {
+			ignore_auto_routes = nm_setting_ip_config_get_ignore_auto_routes (s_ip6);
+			ignore_auto_dns = nm_setting_ip_config_get_ignore_auto_dns (s_ip6);
+		}
+	}
 
 	/* If no config was passed in, create a new one */
 	composite = nm_ip6_config_new (nm_device_get_ip_ifindex (self));
@@ -4048,10 +4064,16 @@ ip6_config_merge_and_apply (NMDevice *self,
 	g_assert (composite);
 
 	/* Merge all the IP configs into the composite config */
-	if (priv->ac_ip6_config)
-		nm_ip6_config_merge (composite, priv->ac_ip6_config, NM_IP_CONFIG_MERGE_DEFAULT);
-	if (priv->dhcp6_ip6_config)
-		nm_ip6_config_merge (composite, priv->dhcp6_ip6_config, NM_IP_CONFIG_MERGE_DEFAULT);
+	if (priv->ac_ip6_config) {
+		nm_ip6_config_merge (composite, priv->ac_ip6_config,
+		                       (ignore_auto_routes ? NM_IP_CONFIG_MERGE_NO_ROUTES : 0)
+		                     | (ignore_auto_dns ? NM_IP_CONFIG_MERGE_NO_DNS : 0));
+	}
+	if (priv->dhcp6_ip6_config) {
+		nm_ip6_config_merge (composite, priv->dhcp6_ip6_config,
+		                       (ignore_auto_routes ? NM_IP_CONFIG_MERGE_NO_ROUTES : 0)
+		                     | (ignore_auto_dns ? NM_IP_CONFIG_MERGE_NO_DNS : 0));
+	}
 	if (priv->vpn6_config)
 		nm_ip6_config_merge (composite, priv->vpn6_config, NM_IP_CONFIG_MERGE_DEFAULT);
 	if (priv->ext_ip6_config)
@@ -4060,23 +4082,10 @@ ip6_config_merge_and_apply (NMDevice *self,
 	/* Merge WWAN config *last* to ensure modem-given settings overwrite
 	 * any external stuff set by pppd or other scripts.
 	 */
-	if (priv->wwan_ip6_config)
-		nm_ip6_config_merge (composite, priv->wwan_ip6_config, NM_IP_CONFIG_MERGE_DEFAULT);
-
-	/* Apply ignore-auto-routes and ignore-auto-dns settings */
-	connection = nm_device_get_connection (self);
-	if (connection) {
-		NMSettingIPConfig *s_ip6 = nm_connection_get_setting_ip6_config (connection);
-
-		if (s_ip6) {
-			if (nm_setting_ip_config_get_ignore_auto_routes (s_ip6))
-				nm_ip6_config_reset_routes (composite);
-			if (nm_setting_ip_config_get_ignore_auto_dns (s_ip6)) {
-				nm_ip6_config_reset_nameservers (composite);
-				nm_ip6_config_reset_domains (composite);
-				nm_ip6_config_reset_searches (composite);
-			}
-		}
+	if (priv->wwan_ip6_config) {
+		nm_ip6_config_merge (composite, priv->wwan_ip6_config,
+		                       (ignore_auto_routes ? NM_IP_CONFIG_MERGE_NO_ROUTES : 0)
+		                     | (ignore_auto_dns ? NM_IP_CONFIG_MERGE_NO_DNS : 0));
 	}
 
 	/* Merge user overrides into the composite config. For assumed connections,
