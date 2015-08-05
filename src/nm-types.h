@@ -132,6 +132,12 @@ typedef enum {
 	NMP_OBJECT_TYPE_MAX = __NMP_OBJECT_TYPE_LAST - 1,
 } NMPObjectType;
 
+typedef enum {
+	NM_IP_CONFIG_MERGE_DEFAULT                  = 0,
+	NM_IP_CONFIG_MERGE_NO_ROUTES                = (1LL << 0),
+	NM_IP_CONFIG_MERGE_NO_DNS                   = (1LL << 1),
+} NMIPConfigMergeFlags;
+
 /* settings */
 typedef struct _NMAgentManager       NMAgentManager;
 typedef struct _NMSecretAgent        NMSecretAgent;

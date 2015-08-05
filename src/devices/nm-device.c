@@ -3440,17 +3440,17 @@ ip4_config_merge_and_apply (NMDevice *self,
 		ensure_con_ip4_config (self);
 
 	if (priv->dev_ip4_config)
-		nm_ip4_config_merge (composite, priv->dev_ip4_config);
+		nm_ip4_config_merge (composite, priv->dev_ip4_config, NM_IP_CONFIG_MERGE_DEFAULT);
 	if (priv->vpn4_config)
-		nm_ip4_config_merge (composite, priv->vpn4_config);
+		nm_ip4_config_merge (composite, priv->vpn4_config, NM_IP_CONFIG_MERGE_DEFAULT);
 	if (priv->ext_ip4_config)
-		nm_ip4_config_merge (composite, priv->ext_ip4_config);
+		nm_ip4_config_merge (composite, priv->ext_ip4_config, NM_IP_CONFIG_MERGE_DEFAULT);
 
 	/* Merge WWAN config *last* to ensure modem-given settings overwrite
 	 * any external stuff set by pppd or other scripts.
 	 */
 	if (priv->wwan_ip4_config)
-		nm_ip4_config_merge (composite, priv->wwan_ip4_config);
+		nm_ip4_config_merge (composite, priv->wwan_ip4_config, NM_IP_CONFIG_MERGE_DEFAULT);
 
 	/* Apply ignore-auto-routes and ignore-auto-dns settings */
 	connection = nm_device_get_connection (self);
@@ -3471,7 +3471,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 	/* Merge user overrides into the composite config. For assumed connections,
 	 * con_ip4_config is empty. */
 	if (priv->con_ip4_config)
-		nm_ip4_config_merge (composite, priv->con_ip4_config);
+		nm_ip4_config_merge (composite, priv->con_ip4_config, NM_IP_CONFIG_MERGE_DEFAULT);
 
 
 	/* Add the default route.
@@ -4049,19 +4049,19 @@ ip6_config_merge_and_apply (NMDevice *self,
 
 	/* Merge all the IP configs into the composite config */
 	if (priv->ac_ip6_config)
-		nm_ip6_config_merge (composite, priv->ac_ip6_config);
+		nm_ip6_config_merge (composite, priv->ac_ip6_config, NM_IP_CONFIG_MERGE_DEFAULT);
 	if (priv->dhcp6_ip6_config)
-		nm_ip6_config_merge (composite, priv->dhcp6_ip6_config);
+		nm_ip6_config_merge (composite, priv->dhcp6_ip6_config, NM_IP_CONFIG_MERGE_DEFAULT);
 	if (priv->vpn6_config)
-		nm_ip6_config_merge (composite, priv->vpn6_config);
+		nm_ip6_config_merge (composite, priv->vpn6_config, NM_IP_CONFIG_MERGE_DEFAULT);
 	if (priv->ext_ip6_config)
-		nm_ip6_config_merge (composite, priv->ext_ip6_config);
+		nm_ip6_config_merge (composite, priv->ext_ip6_config, NM_IP_CONFIG_MERGE_DEFAULT);
 
 	/* Merge WWAN config *last* to ensure modem-given settings overwrite
 	 * any external stuff set by pppd or other scripts.
 	 */
 	if (priv->wwan_ip6_config)
-		nm_ip6_config_merge (composite, priv->wwan_ip6_config);
+		nm_ip6_config_merge (composite, priv->wwan_ip6_config, NM_IP_CONFIG_MERGE_DEFAULT);
 
 	/* Apply ignore-auto-routes and ignore-auto-dns settings */
 	connection = nm_device_get_connection (self);
@@ -4082,7 +4082,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 	/* Merge user overrides into the composite config. For assumed connections,
 	 * con_ip6_config is empty. */
 	if (priv->con_ip6_config)
-		nm_ip6_config_merge (composite, priv->con_ip6_config);
+		nm_ip6_config_merge (composite, priv->con_ip6_config, NM_IP_CONFIG_MERGE_DEFAULT);
 
 	/* Add the default route.
 	 *

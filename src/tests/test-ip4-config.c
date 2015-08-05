@@ -318,12 +318,12 @@ test_merge_subtract_mss_mtu (void)
 	nm_ip4_config_set_mss (cfg3, expected_mss3);
 	nm_ip4_config_set_mtu (cfg3, expected_mtu3, NM_IP_CONFIG_SOURCE_UNKNOWN);
 
-	nm_ip4_config_merge (cfg1, cfg2);
+	nm_ip4_config_merge (cfg1, cfg2, NM_IP_CONFIG_MERGE_DEFAULT);
 	/* ensure MSS and MTU are in cfg1 */
 	g_assert_cmpuint (nm_ip4_config_get_mss (cfg1), ==, expected_mss2);
 	g_assert_cmpuint (nm_ip4_config_get_mtu (cfg1), ==, expected_mtu2);
 
-	nm_ip4_config_merge (cfg1, cfg3);
+	nm_ip4_config_merge (cfg1, cfg3, NM_IP_CONFIG_MERGE_DEFAULT);
 	/* ensure again the MSS and MTU in cfg1 got overriden */
 	g_assert_cmpuint (nm_ip4_config_get_mss (cfg1), ==, expected_mss3);
 	g_assert_cmpuint (nm_ip4_config_get_mtu (cfg1), ==, expected_mtu3);

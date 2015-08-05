@@ -71,7 +71,7 @@ void nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIPConfig *settin
 NMSetting *nm_ip6_config_create_setting (const NMIP6Config *config);
 
 /* Utility functions */
-void nm_ip6_config_merge (NMIP6Config *dst, const NMIP6Config *src);
+void nm_ip6_config_merge (NMIP6Config *dst, const NMIP6Config *src, NMIPConfigMergeFlags merge_flags);
 void nm_ip6_config_subtract (NMIP6Config *dst, const NMIP6Config *src);
 void nm_ip6_config_intersect (NMIP6Config *dst, const NMIP6Config *src);
 gboolean nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relevant_changes);

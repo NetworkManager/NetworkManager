@@ -70,7 +70,7 @@ void nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIPConfig *settin
 NMSetting *nm_ip4_config_create_setting (const NMIP4Config *config);
 
 /* Utility functions */
-void nm_ip4_config_merge (NMIP4Config *dst, const NMIP4Config *src);
+void nm_ip4_config_merge (NMIP4Config *dst, const NMIP4Config *src, NMIPConfigMergeFlags merge_flags);
 void nm_ip4_config_subtract (NMIP4Config *dst, const NMIP4Config *src);
 void nm_ip4_config_intersect (NMIP4Config *dst, const NMIP4Config *src);
 gboolean nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relevant_changes);

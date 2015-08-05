@@ -34,6 +34,7 @@
 #include "nm-route-manager.h"
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
+#include "nm-macros-internal.h"
 
 G_DEFINE_TYPE (NMIP6Config, nm_ip6_config, NM_TYPE_EXPORTED_OBJECT)
 
@@ -640,7 +641,7 @@ nm_ip6_config_create_setting (const NMIP6Config *config)
 /******************************************************************/
 
 void
-nm_ip6_config_merge (NMIP6Config *dst, const NMIP6Config *src)
+nm_ip6_config_merge (NMIP6Config *dst, const NMIP6Config *src, NMIPConfigMergeFlags merge_flags)
 {
 	NMIP6ConfigPrivate *dst_priv, *src_priv;
 	guint32 i;
@@ -666,8 +667,10 @@ nm_ip6_config_merge (NMIP6Config *dst, const NMIP6Config *src)
 		nm_ip6_config_set_gateway (dst, nm_ip6_config_get_gateway (src));
 
 	/* routes */
-	for (i = 0; i < nm_ip6_config_get_num_routes (src); i++)
-		nm_ip6_config_add_route (dst, nm_ip6_config_get_route (src, i));
+	if (!NM_FLAGS_HAS (merge_flags, NM_IP_CONFIG_MERGE_NO_ROUTES)) {
+		for (i = 0; i < nm_ip6_config_get_num_routes (src); i++)
+			nm_ip6_config_add_route (dst, nm_ip6_config_get_route (src, i));
+	}
 
 	if (dst_priv->route_metric == -1)
 		dst_priv->route_metric = src_priv->route_metric;
@@ -675,16 +678,22 @@ nm_ip6_config_merge (NMIP6Config *dst, const NMIP6Config *src)
 		dst_priv->route_metric = MIN (dst_priv->route_metric, src_priv->route_metric);
 
 	/* domains */
-	for (i = 0; i < nm_ip6_config_get_num_domains (src); i++)
-		nm_ip6_config_add_domain (dst, nm_ip6_config_get_domain (src, i));
+	if (!NM_FLAGS_HAS (merge_flags, NM_IP_CONFIG_MERGE_NO_DNS)) {
+		for (i = 0; i < nm_ip6_config_get_num_domains (src); i++)
+			nm_ip6_config_add_domain (dst, nm_ip6_config_get_domain (src, i));
+	}
 
 	/* dns searches */
-	for (i = 0; i < nm_ip6_config_get_num_searches (src); i++)
-		nm_ip6_config_add_search (dst, nm_ip6_config_get_search (src, i));
+	if (!NM_FLAGS_HAS (merge_flags, NM_IP_CONFIG_MERGE_NO_DNS)) {
+		for (i = 0; i < nm_ip6_config_get_num_searches (src); i++)
+			nm_ip6_config_add_search (dst, nm_ip6_config_get_search (src, i));
+	}
 
 	/* dns options */
-	for (i = 0; i < nm_ip6_config_get_num_dns_options (src); i++)
-		nm_ip6_config_add_dns_option (dst, nm_ip6_config_get_dns_option (src, i));
+	if (!NM_FLAGS_HAS (merge_flags, NM_IP_CONFIG_MERGE_NO_DNS)) {
+		for (i = 0; i < nm_ip6_config_get_num_dns_options (src); i++)
+			nm_ip6_config_add_dns_option (dst, nm_ip6_config_get_dns_option (src, i));
+	}
 
 	if (nm_ip6_config_get_mss (src))
 		nm_ip6_config_set_mss (dst, nm_ip6_config_get_mss (src));
