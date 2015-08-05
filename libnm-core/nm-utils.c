@@ -3965,7 +3965,7 @@ int _nm_utils_dns_option_find_idx (GPtrArray *array, const char *option)
 }
 
 /**
- * nm_utils_enum_to_str
+ * nm_utils_enum_to_str:
  * @type: the %GType of the enum
  * @value: the value to be translated
  *
@@ -4016,7 +4016,7 @@ char *nm_utils_enum_to_str (GType type, int value)
 }
 
 /**
- * nm_utils_enum_from_str
+ * nm_utils_enum_from_str:
  * @type: the %GType of the enum
  * @str: the input string
  * @out_value: (out) (allow-none): the output value
