@@ -380,7 +380,7 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 	--with-crypto=nss \
 	--enable-more-warnings=error \
 	--enable-ppp=yes \
-	--with-libaudit=yes \
+	--with-libaudit=yes-disabled-by-default \
 %if 0%{?with_modem_manager_1}
 	--with-modem-manager-1=yes \
 %else
