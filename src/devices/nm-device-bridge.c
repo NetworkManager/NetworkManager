@@ -447,7 +447,7 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_SLAVES:
 		list = nm_device_master_get_slaves (NM_DEVICE (object));
-		nm_utils_g_value_set_object_path_array (value, list);
+		nm_utils_g_value_set_object_path_array (value, list, NULL, NULL);
 		g_slist_free (list);
 		break;
 	default:

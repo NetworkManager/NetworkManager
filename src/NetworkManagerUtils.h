@@ -320,7 +320,20 @@ NMUtilsTestFlags nm_utils_get_testing (void);
 void _nm_utils_set_testing (NMUtilsTestFlags flags);
 
 void nm_utils_g_value_set_object_path (GValue *value, gpointer object);
-void nm_utils_g_value_set_object_path_array (GValue *value, GSList *objects);
 void nm_utils_g_value_set_strv (GValue *value, GPtrArray *strings);
+
+/**
+ * NMUtilsObjectFunc:
+ * @object: the object to filter on
+ * @user_data: data passed to the function from the caller
+ *
+ * Returns: %TRUE if the object should be used, %FALSE if not
+ */
+typedef gboolean (*NMUtilsObjectFunc) (GObject *object, gpointer user_data);
+
+void nm_utils_g_value_set_object_path_array (GValue *value,
+                                             GSList *objects,
+                                             NMUtilsObjectFunc filter_func,
+                                             gpointer user_data);
 
 #endif /* __NETWORKMANAGER_UTILS_H__ */

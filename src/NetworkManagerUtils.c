@@ -3440,11 +3440,16 @@ nm_utils_g_value_set_object_path (GValue *value, gpointer object)
  * nm_utils_g_value_set_object_path_array:
  * @value: a #GValue, initialized to store an object path
  * @objects: a #GSList of #NMExportedObjects
+ * @filter_func: (allow-none): function to call on each object in @objects
+ * @user_data: data to pass to @filter_func
  *
  * Sets @value to an array of object paths of the objects in @objects.
  */
 void
-nm_utils_g_value_set_object_path_array (GValue *value, GSList *objects)
+nm_utils_g_value_set_object_path_array (GValue *value,
+                                        GSList *objects,
+                                        NMUtilsObjectFunc filter_func,
+                                        gpointer user_data)
 {
 	GPtrArray *paths;
 	GSList *iter;
@@ -3454,6 +3459,8 @@ nm_utils_g_value_set_object_path_array (GValue *value, GSList *objects)
 		NMExportedObject *object = iter->data;
 
 		if (!nm_exported_object_is_exported (object))
+			continue;
+		if (filter_func && !filter_func (G_OBJECT (object), user_data))
 			continue;
 		g_ptr_array_add (paths, g_strdup (nm_exported_object_get_path (object)));
 	}
