@@ -10130,7 +10130,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boolean (value, priv->is_master);
 		break;
 	case PROP_MASTER:
-		g_value_set_object (value, priv->master);
+		g_value_set_object (value, nm_device_get_master (self));
 		break;
 	case PROP_HW_ADDRESS:
 		g_value_set_string (value, priv->hw_addr);
