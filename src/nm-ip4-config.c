@@ -35,6 +35,7 @@
 #include "nm-core-internal.h"
 #include "nm-route-manager.h"
 #include "nm-core-internal.h"
+#include "nm-macros-internal.h"
 
 G_DEFINE_TYPE (NMIP4Config, nm_ip4_config, NM_TYPE_EXPORTED_OBJECT)
 
@@ -562,7 +563,7 @@ nm_ip4_config_create_setting (const NMIP4Config *config)
 /******************************************************************/
 
 void
-nm_ip4_config_merge (NMIP4Config *dst, const NMIP4Config *src)
+nm_ip4_config_merge (NMIP4Config *dst, const NMIP4Config *src, NMIPConfigMergeFlags merge_flags)
 {
 	NMIP4ConfigPrivate *dst_priv, *src_priv;
 	guint32 i;
@@ -580,16 +581,20 @@ nm_ip4_config_merge (NMIP4Config *dst, const NMIP4Config *src)
 		nm_ip4_config_add_address (dst, nm_ip4_config_get_address (src, i));
 
 	/* nameservers */
-	for (i = 0; i < nm_ip4_config_get_num_nameservers (src); i++)
-		nm_ip4_config_add_nameserver (dst, nm_ip4_config_get_nameserver (src, i));
+	if (!NM_FLAGS_HAS (merge_flags, NM_IP_CONFIG_MERGE_NO_DNS)) {
+		for (i = 0; i < nm_ip4_config_get_num_nameservers (src); i++)
+			nm_ip4_config_add_nameserver (dst, nm_ip4_config_get_nameserver (src, i));
+	}
 
 	/* default gateway */
 	if (nm_ip4_config_has_gateway (src))
 		nm_ip4_config_set_gateway (dst, nm_ip4_config_get_gateway (src));
 
 	/* routes */
-	for (i = 0; i < nm_ip4_config_get_num_routes (src); i++)
-		nm_ip4_config_add_route (dst, nm_ip4_config_get_route (src, i));
+	if (!NM_FLAGS_HAS (merge_flags, NM_IP_CONFIG_MERGE_NO_ROUTES)) {
+		for (i = 0; i < nm_ip4_config_get_num_routes (src); i++)
+			nm_ip4_config_add_route (dst, nm_ip4_config_get_route (src, i));
+	}
 
 	if (dst_priv->route_metric == -1)
 		dst_priv->route_metric = src_priv->route_metric;
@@ -597,16 +602,22 @@ nm_ip4_config_merge (NMIP4Config *dst, const NMIP4Config *src)
 		dst_priv->route_metric = MIN (dst_priv->route_metric, src_priv->route_metric);
 
 	/* domains */
-	for (i = 0; i < nm_ip4_config_get_num_domains (src); i++)
-		nm_ip4_config_add_domain (dst, nm_ip4_config_get_domain (src, i));
+	if (!NM_FLAGS_HAS (merge_flags, NM_IP_CONFIG_MERGE_NO_DNS)) {
+		for (i = 0; i < nm_ip4_config_get_num_domains (src); i++)
+			nm_ip4_config_add_domain (dst, nm_ip4_config_get_domain (src, i));
+	}
 
 	/* dns searches */
-	for (i = 0; i < nm_ip4_config_get_num_searches (src); i++)
-		nm_ip4_config_add_search (dst, nm_ip4_config_get_search (src, i));
+	if (!NM_FLAGS_HAS (merge_flags, NM_IP_CONFIG_MERGE_NO_DNS)) {
+		for (i = 0; i < nm_ip4_config_get_num_searches (src); i++)
+			nm_ip4_config_add_search (dst, nm_ip4_config_get_search (src, i));
+	}
 
 	/* dns options */
-	for (i = 0; i < nm_ip4_config_get_num_dns_options (src); i++)
-		nm_ip4_config_add_dns_option (dst, nm_ip4_config_get_dns_option (src, i));
+	if (!NM_FLAGS_HAS (merge_flags, NM_IP_CONFIG_MERGE_NO_DNS)) {
+		for (i = 0; i < nm_ip4_config_get_num_dns_options (src); i++)
+			nm_ip4_config_add_dns_option (dst, nm_ip4_config_get_dns_option (src, i));
+	}
 
 	/* MSS */
 	if (nm_ip4_config_get_mss (src))
@@ -618,15 +629,19 @@ nm_ip4_config_merge (NMIP4Config *dst, const NMIP4Config *src)
 		                       nm_ip4_config_get_mtu_source (src));
 
 	/* NIS */
-	for (i = 0; i < nm_ip4_config_get_num_nis_servers (src); i++)
-		nm_ip4_config_add_nis_server (dst, nm_ip4_config_get_nis_server (src, i));
+	if (!NM_FLAGS_HAS (merge_flags, NM_IP_CONFIG_MERGE_NO_DNS)) {
+		for (i = 0; i < nm_ip4_config_get_num_nis_servers (src); i++)
+			nm_ip4_config_add_nis_server (dst, nm_ip4_config_get_nis_server (src, i));
 
-	if (nm_ip4_config_get_nis_domain (src))
-		nm_ip4_config_set_nis_domain (dst, nm_ip4_config_get_nis_domain (src));
+		if (nm_ip4_config_get_nis_domain (src))
+			nm_ip4_config_set_nis_domain (dst, nm_ip4_config_get_nis_domain (src));
+	}
 
 	/* WINS */
-	for (i = 0; i < nm_ip4_config_get_num_wins (src); i++)
-		nm_ip4_config_add_wins (dst, nm_ip4_config_get_wins (src, i));
+	if (!NM_FLAGS_HAS (merge_flags, NM_IP_CONFIG_MERGE_NO_DNS)) {
+		for (i = 0; i < nm_ip4_config_get_num_wins (src); i++)
+			nm_ip4_config_add_wins (dst, nm_ip4_config_get_wins (src, i));
+	}
 
 	/* metered flag */
 	nm_ip4_config_set_metered (dst, nm_ip4_config_get_metered (dst) ||
