@@ -67,4 +67,6 @@ gboolean nmp_utils_lifetime_get (guint32 timestamp,
                                  guint32 *out_lifetime,
                                  guint32 *out_preferred);
 
+gboolean nmp_utils_device_exists (const char *name);
+
 #endif /* __NM_PLATFORM_UTILS_H__ */

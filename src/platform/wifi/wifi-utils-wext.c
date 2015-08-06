@@ -33,6 +33,7 @@
 #include "wifi-utils-private.h"
 #include "wifi-utils-wext.h"
 #include "nm-utils.h"
+#include "nm-platform-utils.h"
 
 /* Hacks necessary to #include wireless.h; yay for WEXT */
 #ifndef __user
@@ -661,6 +662,9 @@ wifi_wext_is_wifi (const char *iface)
 	int fd;
 	struct iwreq iwr;
 	gboolean is_wifi = FALSE;
+
+	if (!nmp_utils_device_exists (iface))
+		return FALSE;
 
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
 	if (fd >= 0) {
