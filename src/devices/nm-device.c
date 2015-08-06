@@ -168,7 +168,7 @@ typedef struct {
 
 typedef struct {
 	NMDevice *slave;
-	gboolean enslaved;
+	gboolean slave_is_enslaved;
 	gboolean configure;
 	guint watch_id;
 } SlaveInfo;
@@ -347,7 +347,7 @@ typedef struct {
 
 	/* master interface for bridge/bond/team slave */
 	NMDevice *      master;
-	gboolean        enslaved;
+	gboolean        is_enslaved;
 	gboolean        master_ready_handled;
 	guint           master_ready_id;
 
@@ -1061,7 +1061,7 @@ nm_device_enslave_slave (NMDevice *self, NMDevice *slave, NMConnection *connecti
 	if (!info)
 		return FALSE;
 
-	if (info->enslaved)
+	if (info->slave_is_enslaved)
 		success = TRUE;
 	else {
 		configure = (info->configure && connection != NULL);
@@ -1069,7 +1069,7 @@ nm_device_enslave_slave (NMDevice *self, NMDevice *slave, NMConnection *connecti
 			g_return_val_if_fail (nm_device_get_state (slave) >= NM_DEVICE_STATE_DISCONNECTED, FALSE);
 
 		success = NM_DEVICE_GET_CLASS (self)->enslave_slave (self, slave, connection, configure);
-		info->enslaved = success;
+		info->slave_is_enslaved = success;
 	}
 
 	nm_device_slave_notify_enslave (info->slave, success);
@@ -1123,7 +1123,7 @@ nm_device_release_one_slave (NMDevice *self, NMDevice *slave, gboolean configure
 		return FALSE;
 	priv->slaves = g_slist_remove (priv->slaves, info);
 
-	if (info->enslaved) {
+	if (info->slave_is_enslaved) {
 		success = NM_DEVICE_GET_CLASS (self)->release_slave (self, slave, configure);
 		/* The release_slave() implementation logs success/failure (in the
 		 * correct device-specific log domain), so we don't have to do anything.
@@ -1390,10 +1390,10 @@ device_recheck_slave_status (NMDevice *self, NMPlatformLink *plink)
 
 	g_return_if_fail (plink != NULL);
 
-	if (priv->enslaved && plink->master != nm_device_get_ifindex (priv->master))
+	if (priv->is_enslaved && plink->master != nm_device_get_ifindex (priv->master))
 		nm_device_release_one_slave (priv->master, self, FALSE, NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
 
-	if (plink->master && !priv->enslaved) {
+	if (plink->master && !priv->is_enslaved) {
 		NMDevice *master;
 
 		master = nm_manager_get_device_by_ifindex (nm_manager_get (), plink->master);
@@ -2317,7 +2317,7 @@ nm_device_get_master (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->enslaved)
+	if (priv->is_enslaved)
 		return priv->master;
 	else
 		return NULL;
@@ -2340,7 +2340,7 @@ nm_device_slave_notify_enslave (NMDevice *self, gboolean success)
 
 	g_assert (priv->master);
 
-	if (!priv->enslaved) {
+	if (!priv->is_enslaved) {
 		if (success) {
 			if (activating) {
 				_LOGI (LOGD_DEVICE, "Activation: connection '%s' enslaved, continuing activation",
@@ -2348,7 +2348,7 @@ nm_device_slave_notify_enslave (NMDevice *self, gboolean success)
 			} else
 				_LOGI (LOGD_DEVICE, "enslaved to %s", nm_device_get_iface (priv->master));
 
-			priv->enslaved = TRUE;
+			priv->is_enslaved = TRUE;
 			g_object_notify (G_OBJECT (self), NM_DEVICE_MASTER);
 		} else if (activating) {
 			_LOGW (LOGD_DEVICE, "Activation: connection '%s' could not be enslaved",
@@ -2403,10 +2403,10 @@ nm_device_slave_notify_release (NMDevice *self, NMDeviceStateReason reason)
 	} else if (priv->master)
 		_LOGI (LOGD_DEVICE, "released from master %s", nm_device_get_iface (priv->master));
 	else
-		_LOGD (LOGD_DEVICE, "released from master%s", priv->enslaved ? "" : " (was not enslaved)");
+		_LOGD (LOGD_DEVICE, "released from master%s", priv->is_enslaved ? "" : " (was not enslaved)");
 
-	if (priv->enslaved) {
-		priv->enslaved = FALSE;
+	if (priv->is_enslaved) {
+		priv->is_enslaved = FALSE;
 		g_object_notify (G_OBJECT (self), NM_DEVICE_MASTER);
 	}
 }
@@ -2421,7 +2421,7 @@ nm_device_slave_notify_release (NMDevice *self, NMDeviceStateReason reason)
 gboolean
 nm_device_get_enslaved (NMDevice *self)
 {
-	return NM_DEVICE_GET_PRIVATE (self)->enslaved;
+	return NM_DEVICE_GET_PRIVATE (self)->is_enslaved;
 }
 
 /**
@@ -2436,7 +2436,7 @@ nm_device_removed (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->enslaved) {
+	if (priv->is_enslaved) {
 		/* this is called when something externally messes with the slave or during shut-down.
 		 * Release the slave from master, but don't touch the device. */
 		nm_device_release_one_slave (priv->master, self, FALSE, NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
@@ -9059,7 +9059,7 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, CleanupType clean
 	/* slave: mark no longer enslaved */
 	if (nm_platform_link_get_master (NM_PLATFORM_GET, priv->ifindex) <= 0) {
 		g_clear_object (&priv->master);
-		priv->enslaved = FALSE;
+		priv->is_enslaved = FALSE;
 		g_object_notify (G_OBJECT (self), NM_DEVICE_MASTER);
 	}
 
