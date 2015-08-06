@@ -2721,28 +2721,35 @@ nm_utils_ip4_property_path (const char *ifname, const char *property)
 	return _get_property_path (ifname, property, FALSE);
 }
 
-const char *
-ASSERT_VALID_PATH_COMPONENT (const char *name)
+gboolean
+nm_utils_is_valid_path_component (const char *name)
 {
 	const char *n;
 
 	if (name == NULL || name[0] == '\0')
-		goto fail;
+		return FALSE;
 
 	if (name[0] == '.') {
 		if (name[1] == '\0')
-			goto fail;
+			return FALSE;
 		if (name[1] == '.' && name[2] == '\0')
-			goto fail;
+			return FALSE;
 	}
 	n = name;
 	do {
 		if (*n == '/')
-			goto fail;
+			return FALSE;
 	} while (*(++n) != '\0');
 
-	return name;
-fail:
+	return TRUE;
+}
+
+const char *
+ASSERT_VALID_PATH_COMPONENT (const char *name)
+{
+	if (G_LIKELY (nm_utils_is_valid_path_component (name)))
+		return name;
+
 	nm_log_err (LOGD_CORE, "Failed asserting path component: %s%s%s",
 	            NM_PRINT_FMT_QUOTED (name, "\"", name, "\"", "(null)"));
 	g_error ("FATAL: Failed asserting path component: %s%s%s",
