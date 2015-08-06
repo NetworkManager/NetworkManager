@@ -2,6 +2,7 @@
 # To override or extend the rules place a file in /etc/udev/rules.d
 
 SUBSYSTEM!="net", GOTO="nm_unmanaged_end"
+ACTION!="add|change", GOTO="nm_unmanaged_end"
 
 # Determine ID_NET_DRIVER if there's no ID_NET_DRIVER or DRIVERS (old udev?)
 ENV{ID_NET_DRIVER}=="?*", GOTO="nm_unmanaged_driver"
