@@ -70,6 +70,7 @@ _LOG_DECLARE_SELF (NMDevice);
 
 static void nm_device_update_metered (NMDevice *self);
 static void ip_check_ping_watch_cb (GPid pid, gint status, gpointer user_data);
+static gboolean ip_config_valid (NMDeviceState state);
 
 G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, NM_TYPE_EXPORTED_OBJECT)
 
@@ -6060,26 +6061,18 @@ static void
 _update_ip4_address (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	struct ifreq req;
-	guint32 new_address;
-	int fd;
+	guint32 addr;
 
-	g_return_if_fail (self  != NULL);
+	g_return_if_fail (NM_IS_DEVICE (self));
 
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
-	if (fd < 0) {
-		_LOGE (LOGD_IP4, "couldn't open control socket.");
-		return;
+	if (   ip_config_valid (priv->state)
+	    && nm_ip4_config_get_num_addresses (priv->ip4_config)) {
+		addr = nm_ip4_config_get_address (priv->ip4_config, 0)->address;
+		if (addr != priv->ip4_address) {
+			priv->ip4_address = addr;
+			g_object_notify (G_OBJECT (self), NM_DEVICE_IP4_ADDRESS);
+		}
 	}
-
-	memset (&req, 0, sizeof (struct ifreq));
-	strncpy (req.ifr_name, nm_device_get_ip_iface (self), IFNAMSIZ);
-	if (ioctl (fd, SIOCGIFADDR, &req) == 0) {
-		new_address = ((struct sockaddr_in *)(&req.ifr_addr))->sin_addr.s_addr;
-		if (new_address != priv->ip4_address)
-			priv->ip4_address = new_address;
-	}
-	close (fd);
 }
 
 gboolean
