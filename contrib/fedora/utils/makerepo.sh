@@ -200,10 +200,13 @@ detect_build_type 'libibverbs-[0-9]*' libibverbs.spec
 
 CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
 if [[ "x$CURRENT_BRANCH" != x && -f "./.git/makerepo.gitignore-$CURRENT_BRANCH" ]]; then
-    /bin/cp "./.git/makerepo.gitignore-$CURRENT_BRANCH" ./makerepo.gitignore
+    MAKEREPO_GIT_IGNORE_MY="makerepo.gitignore-$CURRENT_BRANCH"
 elif [[ -f ./.git/makerepo.gitignore ]]; then
-    /bin/cp "./.git/makerepo.gitignore" ./makerepo.gitignore
+    MAKEREPO_GIT_IGNORE_MY=makerepo.gitignore
+else
+    MAKEREPO_GIT_IGNORE_MY=""
 fi
+MAKEREPO_GIT_IGNORE_LAST="makerepo.gitignore.last-$CURRENT_BRANCH"
 
 get_local_mirror() {
     local URL="$1"
@@ -375,7 +378,12 @@ EOF
         [[ x == "x$(git diff HEAD "$ORIG_HEAD")" ]] || die "error recreating initial tarball"
     fi
     (
-        cat ../makerepo.gitignore 2>/dev/null;
+        if [[ -n "$MAKEREPO_GIT_IGNORE_MY" ]]; then
+            cat "../.git/$MAKEREPO_GIT_IGNORE_MY"
+        fi
+        if [[ -f "../.git/$MAKEREPO_GIT_IGNORE_LAST" ]]; then
+            cat "../.git/$MAKEREPO_GIT_IGNORE_LAST"
+        fi
         sed -n 's/^%patch\([0-9]\+\) \+.*-b \+\([^ ]\+\).*$/*\2/p' ../"$SPEC";
         echo '*.[0-9][0-9][0-9][0-9][-.]*.orig'
     ) | LANG=C sort | LANG=C uniq > .gitignore
@@ -482,6 +490,9 @@ if [[ $LOCAL != 0 ]]; then
     mv ./.makerepo.git/ "$DIRNAME/.git"
     pushd "$DIRNAME"
         git checkout -- .gitignore
+
+        # write git-ignore file...
+        git status --porcelain | sed 's/^...//' >> "../.git/$MAKEREPO_GIT_IGNORE_LAST"
     popd
 fi
 
