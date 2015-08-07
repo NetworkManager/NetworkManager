@@ -50,14 +50,14 @@ typedef struct {
        AuditBackend backends;
 } AuditField;
 
-typedef struct {
 #if HAVE_LIBAUDIT
+typedef struct {
 	NMConfig *config;
 	int auditd_fd;
-#endif
 } NMAuditManagerPrivate;
 
 #define NM_AUDIT_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_AUDIT_MANAGER, NMAuditManagerPrivate))
+#endif
 
 G_DEFINE_TYPE (NMAuditManager, nm_audit_manager, G_TYPE_OBJECT)
 
@@ -136,13 +136,16 @@ static void
 nm_audit_log (NMAuditManager *self, GPtrArray *fields, const char *file,
               guint line, const char *func, gboolean success)
 {
+#if HAVE_LIBAUDIT
 	NMAuditManagerPrivate *priv;
+#endif
 	char *msg;
 
 	g_return_if_fail (NM_IS_AUDIT_MANAGER (self));
-	priv = NM_AUDIT_MANAGER_GET_PRIVATE (self);
 
 #if HAVE_LIBAUDIT
+	priv = NM_AUDIT_MANAGER_GET_PRIVATE (self);
+
 	if (priv->auditd_fd >= 0) {
 		msg = build_message (fields, BACKEND_AUDITD);
 		audit_log_user_message (priv->auditd_fd, AUDIT_USYS_CONFIG, msg,
@@ -364,7 +367,9 @@ nm_audit_manager_class_init (NMAuditManagerClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
+#if HAVE_LIBAUDIT
 	g_type_class_add_private (klass, sizeof (NMAuditManagerPrivate));
+#endif
 
 	/* virtual methods */
 	object_class->dispose = dispose;
