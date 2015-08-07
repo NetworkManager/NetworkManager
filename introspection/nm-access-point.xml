@@ -30,6 +30,13 @@
     <property name="Strength" type="y" access="read">
       <tp:docstring>The current signal quality of the access point, in percent.</tp:docstring>
     </property>
+    <property name="LastSeen" type="i" access="read">
+      <tp:docstring>
+        The timestamp (in CLOCK_BOOTTIME seconds) for the last time the access
+        point was found in scan results.  A value of -1 means the access point
+        has never been found in scan results.
+      </tp:docstring>
+    </property>
 
     <signal name="PropertiesChanged">
         <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
