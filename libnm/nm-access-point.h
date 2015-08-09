@@ -74,6 +74,7 @@ guint32                nm_access_point_get_frequency    (NMAccessPoint *ap);
 NM80211Mode            nm_access_point_get_mode         (NMAccessPoint *ap);
 guint32                nm_access_point_get_max_bitrate  (NMAccessPoint *ap);
 guint8                 nm_access_point_get_strength     (NMAccessPoint *ap);
+NM_AVAILABLE_IN_1_2
 gint                   nm_access_point_get_last_seen    (NMAccessPoint *ap);
 
 GPtrArray *            nm_access_point_filter_connections (NMAccessPoint *ap,
