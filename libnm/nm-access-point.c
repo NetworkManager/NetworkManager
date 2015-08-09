@@ -33,6 +33,7 @@
 #include "nm-access-point.h"
 #include "nm-dbus-interface.h"
 #include "nm-object-private.h"
+#include "nm-macros-internal.h"
 
 G_DEFINE_TYPE (NMAccessPoint, nm_access_point, NM_TYPE_OBJECT)
 
@@ -240,6 +241,7 @@ nm_access_point_get_last_seen (NMAccessPoint *ap)
 
 	return NM_ACCESS_POINT_GET_PRIVATE (ap)->last_seen;
 }
+NM_BACKPORT_SYMBOL (libnm_1_0_6, gint, nm_access_point_get_last_seen, (NMAccessPoint *ap), (ap));
 
 /**
  * nm_access_point_connection_valid:
