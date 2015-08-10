@@ -4726,8 +4726,7 @@ NMManager *
 nm_manager_setup (const char *state_file,
                   gboolean initial_net_enabled,
                   gboolean initial_wifi_enabled,
-                  gboolean initial_wwan_enabled,
-                  gboolean initial_wimax_enabled)
+                  gboolean initial_wwan_enabled)
 {
 	NMManager *self;
 	NMManagerPrivate *priv;
@@ -4790,7 +4789,6 @@ nm_manager_setup (const char *state_file,
 
 	priv->radio_states[RFKILL_TYPE_WLAN].user_enabled = initial_wifi_enabled;
 	priv->radio_states[RFKILL_TYPE_WWAN].user_enabled = initial_wwan_enabled;
-	priv->radio_states[RFKILL_TYPE_WIMAX].user_enabled = initial_wimax_enabled;
 
 	nm_exported_object_export (NM_EXPORTED_OBJECT (self));
 
@@ -4834,13 +4832,6 @@ nm_manager_init (NMManager *manager)
 	priv->radio_states[RFKILL_TYPE_WWAN].hw_prop = NM_MANAGER_WWAN_HARDWARE_ENABLED;
 	priv->radio_states[RFKILL_TYPE_WWAN].desc = "WWAN";
 	priv->radio_states[RFKILL_TYPE_WWAN].rtype = RFKILL_TYPE_WWAN;
-
-	priv->radio_states[RFKILL_TYPE_WIMAX].user_enabled = TRUE;
-	priv->radio_states[RFKILL_TYPE_WIMAX].key = "WimaxEnabled";
-	priv->radio_states[RFKILL_TYPE_WIMAX].prop = NM_MANAGER_WIMAX_ENABLED;
-	priv->radio_states[RFKILL_TYPE_WIMAX].hw_prop = NM_MANAGER_WIMAX_HARDWARE_ENABLED;
-	priv->radio_states[RFKILL_TYPE_WIMAX].desc = "WiMAX";
-	priv->radio_states[RFKILL_TYPE_WIMAX].rtype = RFKILL_TYPE_WIMAX;
 
 	for (i = 0; i < RFKILL_TYPE_MAX; i++)
 		priv->radio_states[i].hw_enabled = TRUE;
@@ -4928,10 +4919,10 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boolean (value, priv->radio_states[RFKILL_TYPE_WWAN].hw_enabled);
 		break;
 	case PROP_WIMAX_ENABLED:
-		g_value_set_boolean (value, radio_enabled_for_type (self, RFKILL_TYPE_WIMAX, TRUE));
+		g_value_set_boolean (value, FALSE);
 		break;
 	case PROP_WIMAX_HARDWARE_ENABLED:
-		g_value_set_boolean (value, priv->radio_states[RFKILL_TYPE_WIMAX].hw_enabled);
+		g_value_set_boolean (value, FALSE);
 		break;
 	case PROP_ACTIVE_CONNECTIONS:
 		nm_utils_g_value_set_object_path_array (value, priv->active_connections);
@@ -4990,9 +4981,7 @@ set_property (GObject *object, guint prop_id,
 		                            g_value_get_boolean (value));
 		break;
 	case PROP_WIMAX_ENABLED:
-		manager_radio_user_toggled (NM_MANAGER (object),
-		                            &priv->radio_states[RFKILL_TYPE_WIMAX],
-		                            g_value_get_boolean (value));
+		/* WIMAX is depreacted. This does nothing. */
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
