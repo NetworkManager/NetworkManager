@@ -6,8 +6,6 @@ SUBDIRS = \
 	introspection \
 	libnm-core \
 	libnm \
-	libnm-util \
-	libnm-glib \
 	src \
 	callouts \
 	clients \
@@ -15,9 +13,17 @@ SUBDIRS = \
 	policy \
 	data \
 	po \
-	docs \
 	man \
-	examples \
+	examples
+
+if WITH_LEGACY_LIBRARIES
+SUBDIRS += \
+	libnm-util \
+	libnm-glib
+endif
+
+SUBDIRS += \
+	docs \
 	vapi
 
 @GNOME_CODE_COVERAGE_RULES@

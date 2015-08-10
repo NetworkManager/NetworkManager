@@ -23,6 +23,7 @@
 #include "config.h"
 
 #include "nm-default.h"
+#include "nm-gvaluearray-compat.h"
 #include "nm-param-spec-specialized.h"
 
 struct _NMParamSpecSpecialized {

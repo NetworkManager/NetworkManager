@@ -31,10 +31,6 @@
 
 #include <gmodule.h>
 
-#include <dbus/dbus.h>
-#include <dbus/dbus-glib.h>
-#include <dbus/dbus-glib-lowlevel.h>
-
 #if HAVE_SELINUX
 #include <selinux/selinux.h>
 #endif
@@ -43,7 +39,6 @@
 
 #include "nm-default.h"
 #include "common.h"
-#include "nm-dbus-glib-types.h"
 #include "plugin.h"
 #include "nm-system-config-interface.h"
 #include "nm-config.h"
@@ -54,6 +49,9 @@
 #include "reader.h"
 #include "writer.h"
 #include "utils.h"
+#include "nm-dbus-compat.h"
+
+#include "nmdbus-ifcfg-rh.h"
 
 #define IFCFGRH1_DBUS_SERVICE_NAME "com.redhat.ifcfgrh1"
 #define IFCFGRH1_DBUS_OBJECT_PATH "/com/redhat/ifcfgrh1"
@@ -76,14 +74,6 @@
 
 #define ERR_GET_MSG(err) (((err) && (err)->message) ? (err)->message : "(unknown)")
 
-
-static gboolean impl_ifcfgrh_get_ifcfg_details (SCPluginIfcfg *plugin,
-                                                const char *in_ifcfg,
-                                                const char **out_uuid,
-                                                const char **out_path,
-                                                GError **error);
-
-#include "nm-ifcfg-rh-glue.h"
 
 static NMIfcfgConnection *update_connection (SCPluginIfcfg *plugin,
                                              NMConnection *source,
@@ -109,7 +99,7 @@ typedef struct {
 	GFileMonitor *ifcfg_monitor;
 	guint ifcfg_monitor_id;
 
-	DBusGConnection *bus;
+	gboolean has_dbus_service;
 } SCPluginIfcfgPrivate;
 
 
@@ -696,12 +686,10 @@ add_connection (NMSystemConfigInterface *config,
 	return NM_SETTINGS_CONNECTION (update_connection (self, connection, path, NULL, FALSE, NULL, error));
 }
 
-static gboolean
+static void
 impl_ifcfgrh_get_ifcfg_details (SCPluginIfcfg *plugin,
-                                const char *in_ifcfg,
-                                const char **out_uuid,
-                                const char **out_path,
-                                GError **error)
+                                GDBusMethodInvocation *context,
+                                const char *in_ifcfg)
 {
 	NMIfcfgConnection *connection;
 	NMSettingConnection *s_con;
@@ -709,55 +697,53 @@ impl_ifcfgrh_get_ifcfg_details (SCPluginIfcfg *plugin,
 	const char *path;
 
 	if (!g_path_is_absolute (in_ifcfg)) {
-		g_set_error (error,
-		             NM_SETTINGS_ERROR,
-		             NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "ifcfg path '%s' is not absolute", in_ifcfg);
-		return FALSE;
+		g_dbus_method_invocation_return_error (context,
+		                                       NM_SETTINGS_ERROR,
+		                                       NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		                                       "ifcfg path '%s' is not absolute", in_ifcfg);
+		return;
 	}
 
 	connection = find_by_path (plugin, in_ifcfg);
 	if (   !connection
 	    || nm_ifcfg_connection_get_unmanaged_spec (connection)
 	    || nm_ifcfg_connection_get_unrecognized_spec (connection)) {
-		g_set_error (error,
-		             NM_SETTINGS_ERROR,
-		             NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "ifcfg file '%s' unknown", in_ifcfg);
-		return FALSE;
+		g_dbus_method_invocation_return_error (context,
+		                                       NM_SETTINGS_ERROR,
+		                                       NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		                                       "ifcfg file '%s' unknown", in_ifcfg);
+		return;
 	}
 
 	s_con = nm_connection_get_setting_connection (NM_CONNECTION (connection));
 	if (!s_con) {
-		g_set_error (error,
-		             NM_SETTINGS_ERROR,
-		             NM_SETTINGS_ERROR_FAILED,
-		             "unable to retrieve the connection setting");
-		return FALSE;
+		g_dbus_method_invocation_return_error (context,
+		                                       NM_SETTINGS_ERROR,
+		                                       NM_SETTINGS_ERROR_FAILED,
+		                                       "unable to retrieve the connection setting");
+		return;
 	}
 
 	uuid = nm_setting_connection_get_uuid (s_con);
 	if (!uuid) {
-		g_set_error (error,
-		             NM_SETTINGS_ERROR,
-		             NM_SETTINGS_ERROR_FAILED,
-		             "unable to get the UUID");
-		return FALSE;
+		g_dbus_method_invocation_return_error (context,
+		                                       NM_SETTINGS_ERROR,
+		                                       NM_SETTINGS_ERROR_FAILED,
+		                                       "unable to get the UUID");
+		return;
 	}
 	
 	path = nm_connection_get_path (NM_CONNECTION (connection));
 	if (!path) {
-		g_set_error (error,
-		             NM_SETTINGS_ERROR,
-		             NM_SETTINGS_ERROR_FAILED,
-		             "unable to get the connection D-Bus path");
-		return FALSE;
+		g_dbus_method_invocation_return_error (context,
+		                                       NM_SETTINGS_ERROR,
+		                                       NM_SETTINGS_ERROR_FAILED,
+		                                       "unable to get the connection D-Bus path");
+		return;
 	}
 
-	*out_uuid = g_strdup (uuid);
-	*out_path = g_strdup (path);
-
-	return TRUE;
+	g_dbus_method_invocation_return_value (context,
+	                                       g_variant_new ("(so)", uuid, path));
 }
 
 static void
@@ -770,46 +756,43 @@ sc_plugin_ifcfg_init (SCPluginIfcfg *plugin)
 {
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
 	GError *error = NULL;
-	gboolean success = FALSE;
+	GDBusConnection *bus;
+	GVariant *ret;
+	guint32 result;
 
 	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
 
-	priv->bus = dbus_g_bus_get (DBUS_BUS_SYSTEM, &error);
-	if (!priv->bus) {
+	bus = g_bus_get_sync (G_BUS_TYPE_SYSTEM, NULL, &error);
+	if (!bus) {
 		_LOGW ("Couldn't connect to D-Bus: %s", error->message);
 		g_clear_error (&error);
-	} else {
-		DBusConnection *tmp;
-		DBusGProxy *proxy;
-		int result;
-
-		tmp = dbus_g_connection_get_connection (priv->bus);
-		dbus_connection_set_exit_on_disconnect (tmp, FALSE);
-
-		proxy = dbus_g_proxy_new_for_name (priv->bus,
-		                                   DBUS_SERVICE_DBUS,
-		                                   DBUS_PATH_DBUS,
-		                                   DBUS_INTERFACE_DBUS);
-
-		if (!dbus_g_proxy_call (proxy, "RequestName", &error,
-		                        G_TYPE_STRING, IFCFGRH1_DBUS_SERVICE_NAME,
-		                        G_TYPE_UINT, DBUS_NAME_FLAG_DO_NOT_QUEUE,
-		                        G_TYPE_INVALID,
-		                        G_TYPE_UINT, &result,
-		                        G_TYPE_INVALID)) {
-			_LOGW ("Couldn't acquire D-Bus service: %s", error->message);
-			g_clear_error (&error);
-		} else if (result != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
-			_LOGW ("Couldn't acquire ifcfgrh1 D-Bus service (already taken)");
-		} else
-			success = TRUE;
+		return;
 	}
 
-	if (!success) {
-		if (priv->bus) {
-			dbus_g_connection_unref (priv->bus);
-			priv->bus = NULL;
-		}
+	ret = g_dbus_connection_call_sync (bus,
+	                                   DBUS_SERVICE_DBUS,
+	                                   DBUS_PATH_DBUS,
+	                                   DBUS_INTERFACE_DBUS,
+	                                   "RequestName",
+	                                   g_variant_new ("(su)",
+	                                                  IFCFGRH1_DBUS_SERVICE_NAME,
+	                                                  DBUS_NAME_FLAG_DO_NOT_QUEUE),
+	                                   G_VARIANT_TYPE ("(u)"),
+	                                   G_DBUS_CALL_FLAGS_NONE,
+	                                   -1,
+	                                   NULL, &error);
+	g_object_unref (bus);
+	if (ret) {
+		g_variant_get (ret, "(u)", &result);
+		g_variant_unref (ret);
+
+		if (result == DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER)
+			priv->has_dbus_service = TRUE;
+		else
+			_LOGW ("Couldn't acquire ifcfgrh1 D-Bus service (already taken)");
+	} else {
+		_LOGW ("Couldn't acquire D-Bus service: %s", error->message);
+		g_clear_error (&error);
 	}
 }
 
@@ -818,11 +801,6 @@ dispose (GObject *object)
 {
 	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (object);
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
-
-	if (priv->bus) {
-		dbus_g_connection_unref (priv->bus);
-		priv->bus = NULL;
-	}
 
 	if (priv->connections) {
 		g_hash_table_destroy (priv->connections);
@@ -875,8 +853,11 @@ static void
 sc_plugin_ifcfg_class_init (SCPluginIfcfgClass *req_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (req_class);
+	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (req_class);
 
 	g_type_class_add_private (req_class, sizeof (SCPluginIfcfgPrivate));
+
+	exported_object_class->export_path = IFCFGRH1_DBUS_OBJECT_PATH;
 
 	object_class->dispose = dispose;
 	object_class->get_property = get_property;
@@ -895,7 +876,9 @@ sc_plugin_ifcfg_class_init (SCPluginIfcfgClass *req_class)
 	                                  NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES);
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (req_class),
-	                                        &dbus_glib_nm_ifcfg_rh_object_info);
+	                                        NMDBUS_TYPE_IFCFGRH1_SKELETON,
+	                                        "GetIfcfgDetails", impl_ifcfgrh_get_ifcfg_details,
+	                                        NULL);
 }
 
 static void
@@ -920,10 +903,8 @@ nm_system_config_factory (void)
 	if (!singleton) {
 		singleton = SC_PLUGIN_IFCFG (g_object_new (SC_TYPE_PLUGIN_IFCFG, NULL));
 		priv = SC_PLUGIN_IFCFG_GET_PRIVATE (singleton);
-		if (priv->bus)
-			dbus_g_connection_register_g_object (priv->bus,
-			                                     IFCFGRH1_DBUS_OBJECT_PATH,
-			                                     G_OBJECT (singleton));
+		if (priv->has_dbus_service)
+			nm_exported_object_export (NM_EXPORTED_OBJECT (singleton));
 		_LOGD ("Acquired D-Bus service %s", IFCFGRH1_DBUS_SERVICE_NAME);
 	} else
 		g_object_ref (singleton);

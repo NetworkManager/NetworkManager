@@ -22,8 +22,6 @@
 #define __NETWORKMANAGER_AUTH_SUBJECT_H__
 
 #include "config.h"
-#include <dbus/dbus.h>
-#include <dbus/dbus-glib.h>
 
 #include "nm-default.h"
 
@@ -57,9 +55,9 @@ GType nm_auth_subject_get_type (void);
 
 NMAuthSubject *nm_auth_subject_new_internal (void);
 
-NMAuthSubject *nm_auth_subject_new_unix_process_from_context (DBusGMethodInvocation *context);
+NMAuthSubject *nm_auth_subject_new_unix_process_from_context (GDBusMethodInvocation *context);
 
-NMAuthSubject *nm_auth_subject_new_unix_process_from_message (DBusConnection *connection, DBusMessage *message);
+NMAuthSubject *nm_auth_subject_new_unix_process_from_message (GDBusConnection *connection, GDBusMessage *message);
 
 
 NMAuthSubjectType nm_auth_subject_get_subject_type (NMAuthSubject *subject);

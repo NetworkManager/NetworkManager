@@ -10,7 +10,6 @@
         <tp:docstring>
           Given an ifcfg file, return various internal information about it.
         </tp:docstring>
-        <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_ifcfgrh_get_ifcfg_details"/>
         <arg name="ifcfg" type="s" direction="in">
           <tp:docstring>
             The full path to an ifcfg file.

@@ -34,7 +34,7 @@ struct NMAuthChain {
 	GSList *calls;
 	GHashTable *data;
 
-	DBusGMethodInvocation *context;
+	GDBusMethodInvocation *context;
 	NMAuthSubject *subject;
 	GError *error;
 
@@ -83,7 +83,7 @@ auth_chain_finish (gpointer user_data)
 
 /* Creates the NMAuthSubject automatically */
 NMAuthChain *
-nm_auth_chain_new_context (DBusGMethodInvocation *context,
+nm_auth_chain_new_context (GDBusMethodInvocation *context,
                            NMAuthChainResultFunc done_func,
                            gpointer user_data)
 {
@@ -107,7 +107,7 @@ nm_auth_chain_new_context (DBusGMethodInvocation *context,
 /* Requires an NMAuthSubject */
 NMAuthChain *
 nm_auth_chain_new_subject (NMAuthSubject *subject,
-                           DBusGMethodInvocation *context,
+                           GDBusMethodInvocation *context,
                            NMAuthChainResultFunc done_func,
                            gpointer user_data)
 {

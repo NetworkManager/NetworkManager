@@ -13,13 +13,14 @@ AM_CPPFLAGS = \
 	-I${top_srcdir}/src/settings \
 	-I${top_srcdir}/src/platform \
 	-I${top_srcdir}/src/supplicant-manager \
+	-I${top_builddir}/introspection \
 	-I${top_srcdir}/include \
 	-I${top_builddir}/libnm-core \
 	-I${top_srcdir}/libnm-core \
 	-DG_LOG_DOMAIN=\""NetworkManager-wifi"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
-	$(DBUS_CFLAGS)
+	$(GLIB_CFLAGS)
 
 GLIB_GENERATED = nm-wifi-enum-types.h nm-wifi-enum-types.c
 GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM
@@ -29,14 +30,7 @@ nm_wifi_enum_types_sources = \
 	$(srcdir)/nm-wifi-ap.h \
 	$(srcdir)/nm-device-olpc-mesh.h
 
-glue_sources = \
-	nm-device-wifi-glue.h \
-	nm-device-olpc-mesh-glue.h
-
-%-glue.h: $(top_srcdir)/introspection/%.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=$(subst -,_,$(subst -glue.h,,$@)) --mode=glib-server --output=$@ $<
-
-BUILT_SOURCES = $(GLIB_GENERATED) $(glue_sources)
+BUILT_SOURCES = $(GLIB_GENERATED)
 
 pkglib_LTLIBRARIES = libnm-device-plugin-wifi.la
 
@@ -60,7 +54,8 @@ libnm_device_plugin_wifi_la_LDFLAGS = \
 	 -Wl,--version-script=$(SYMBOL_VIS_FILE)
 
 libnm_device_plugin_wifi_la_LIBADD = \
-	$(DBUS_LIBS) \
+	$(top_builddir)/introspection/libnmdbus.la \
+	$(GLIB_LIBS) \
 	$(GUDEV_LIBS)
 
 CLEANFILES = $(BUILT_SOURCES)

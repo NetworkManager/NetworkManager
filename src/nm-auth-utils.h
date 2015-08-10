@@ -21,8 +21,6 @@
 #ifndef __NETWORKMANAGER_MANAGER_AUTH_H__
 #define __NETWORKMANAGER_MANAGER_AUTH_H__
 
-#include <dbus/dbus-glib.h>
-
 #include <nm-connection.h>
 #include "nm-default.h"
 
@@ -50,15 +48,15 @@ typedef enum {
 
 typedef void (*NMAuthChainResultFunc) (NMAuthChain *chain,
                                        GError *error,
-                                       DBusGMethodInvocation *context,
+                                       GDBusMethodInvocation *context,
                                        gpointer user_data);
 
-NMAuthChain *nm_auth_chain_new_context (DBusGMethodInvocation *context,
+NMAuthChain *nm_auth_chain_new_context (GDBusMethodInvocation *context,
                                         NMAuthChainResultFunc done_func,
                                         gpointer user_data);
 
 NMAuthChain *nm_auth_chain_new_subject (NMAuthSubject *subject,
-                                        DBusGMethodInvocation *context,
+                                        GDBusMethodInvocation *context,
                                         NMAuthChainResultFunc done_func,
                                         gpointer user_data);
 

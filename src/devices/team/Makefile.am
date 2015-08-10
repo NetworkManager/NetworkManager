@@ -7,13 +7,14 @@ AM_CPPFLAGS = \
 	-I${top_builddir}/src \
 	-I${top_srcdir}/src/devices \
 	-I${top_srcdir}/src/platform \
+	-I${top_builddir}/introspection \
 	-I${top_srcdir}/include \
 	-I${top_builddir}/libnm-core \
 	-I${top_srcdir}/libnm-core \
 	-DG_LOG_DOMAIN=\""NetworkManager-team"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
-	$(DBUS_CFLAGS)
+	$(GLIB_CFLAGS)
 
 if WITH_TEAMDCTL
 AM_CPPFLAGS += ${LIBTEAMDCTL_CFLAGS}
@@ -24,13 +25,7 @@ GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM
 GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
 nm_team_enum_types_sources = $(srcdir)/nm-device-team.h
 
-glue_sources = \
-	nm-device-team-glue.h
-
-%-glue.h: $(top_srcdir)/introspection/%.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=$(subst -,_,$(subst -glue.h,,$@)) --mode=glib-server --output=$@ $<
-
-BUILT_SOURCES = $(GLIB_GENERATED) $(glue_sources)
+BUILT_SOURCES = $(GLIB_GENERATED)
 
 pkglib_LTLIBRARIES = libnm-device-plugin-team.la
 
@@ -49,7 +44,8 @@ libnm_device_plugin_team_la_LDFLAGS = \
 	-Wl,--version-script=$(SYMBOL_VIS_FILE)
 
 libnm_device_plugin_team_la_LIBADD = \
-	$(DBUS_LIBS) \
+	$(top_builddir)/introspection/libnmdbus.la \
+	$(GLIB_LIBS) \
 	$(GUDEV_LIBS)
 
 if WITH_TEAMDCTL

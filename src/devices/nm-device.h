@@ -22,7 +22,6 @@
 #ifndef __NETWORKMANAGER_DEVICE_H__
 #define __NETWORKMANAGER_DEVICE_H__
 
-#include <dbus/dbus-glib.h>
 #include <netinet/in.h>
 
 #include "nm-exported-object.h"
@@ -310,7 +309,7 @@ typedef struct {
 } NMDeviceClass;
 
 typedef void (*NMDeviceAuthRequestFunc) (NMDevice *device,
-                                         DBusGMethodInvocation *context,
+                                         GDBusMethodInvocation *context,
                                          NMAuthSubject *subject,
                                          GError *error,
                                          gpointer user_data);

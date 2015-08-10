@@ -24,7 +24,6 @@
 
 #include "nm-default.h"
 #include "nm-wifi-ap-utils.h"
-#include "nm-dbus-glib-types.h"
 
 #include "nm-core-internal.h"
 

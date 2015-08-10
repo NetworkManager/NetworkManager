@@ -26,7 +26,7 @@
 #include "nm-platform.h"
 #include "nm-core-internal.h"
 
-#include "nm-device-generic-glue.h"
+#include "nmdbus-device-generic.h"
 
 G_DEFINE_TYPE (NMDeviceGeneric, nm_device_generic, NM_TYPE_DEVICE)
 
@@ -202,5 +202,6 @@ nm_device_generic_class_init (NMDeviceGenericClass *klass)
 		                      G_PARAM_STATIC_STRINGS));
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        &dbus_glib_nm_device_generic_object_info);
+	                                        NMDBUS_TYPE_DEVICE_GENERIC_SKELETON,
+	                                        NULL);
 }

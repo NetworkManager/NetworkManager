@@ -8,7 +8,6 @@
       <tp:docstring>
         Get the list of network devices.
       </tp:docstring>
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_get_devices"/>
       <arg name="devices" type="ao" direction="out">
         <tp:docstring>
           List of object paths of network devices known to the system.
@@ -22,7 +21,6 @@
         interface name.  Note that some devices (usually modems) only have an
         IP interface name when they are connected.
       </tp:docstring>
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_get_device_by_ip_iface"/>
       <arg name="iface" type="s" direction="in">
         <tp:docstring>
           Interface name of the device to find.
@@ -36,8 +34,6 @@
     </method>
 
     <method name="ActivateConnection">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_activate_connection"/>
-      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <tp:docstring>
         Activate a connection using the supplied device.
       </tp:docstring>
@@ -76,8 +72,6 @@
     </method>
 
     <method name="AddAndActivateConnection">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_add_and_activate_connection"/>
-      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <tp:docstring>
         Adds a new connection using the given details (if any) as a template
         (automatically filling in missing settings with the capabilities of the
@@ -121,8 +115,6 @@
       <tp:docstring>
         Deactivate an active connection.
       </tp:docstring>
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_deactivate_connection"/>
-      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <arg name="active_connection" type="o" direction="in">
         <tp:docstring>
           The currently active connection to deactivate.
@@ -131,8 +123,6 @@
     </method>
 
     <method name="Sleep">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_sleep"/>
-      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <tp:docstring>
         Control the NetworkManager daemon's sleep state.  When asleep, all
         interfaces that it manages are deactivated.  When awake, devices are
@@ -147,8 +137,6 @@
     </method>
 
     <method name="Enable">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_enable"/>
-      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <tp:docstring>
         Control whether overall networking is enabled or disabled.  When
         disabled, all interfaces that NM manages are deactivated.  When enabled,
@@ -165,8 +153,6 @@
     </method>
 
     <method name="GetPermissions">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_get_permissions"/>
-      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <tp:docstring>
         Returns the permissions a caller has for various authenticated operations
         that NetworkManager provides, like Enable/Disable networking, changing
@@ -193,8 +179,6 @@
     </signal>
 
     <method name="SetLogging">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_set_logging"/>
-      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <tp:docstring>
         Set logging verbosity and which operations are logged.
       </tp:docstring>
@@ -223,7 +207,6 @@
     </method>
 
     <method name="GetLogging">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_get_logging"/>
       <tp:docstring>
         Get current logging verbosity level and operations domains.
       </tp:docstring>
@@ -240,8 +223,6 @@
     </method>
 
     <method name="CheckConnectivity">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_check_connectivity"/>
-      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <tp:docstring>
 	Re-check the network connectivity state.
       </tp:docstring>
@@ -257,7 +238,6 @@
         The overall networking state as determined by the NetworkManager daemon,
         based on the state of network devices under it's management.
       </tp:docstring>
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_get_state"/>
       <arg name="state" type="u" direction="out" tp:type="NM_STATE"/>
     </method>
 

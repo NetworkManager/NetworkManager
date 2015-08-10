@@ -38,9 +38,6 @@
 
 #endif
 
-
-#include "nm-gvaluearray-compat.h"
-
 static inline void
 __g_type_ensure (GType type)
 {
@@ -254,6 +251,25 @@ _g_key_file_save_to_file (GKeyFile     *key_file,
 		_success = g_key_file_save_to_file (key_file, filename, error); \
 		G_GNUC_END_IGNORE_DEPRECATIONS \
 		_success; \
+	})
+#endif
+
+
+#if GLIB_CHECK_VERSION (2, 36, 0)
+#define g_credentials_get_unix_pid(creds, error) \
+	G_GNUC_EXTENSION ({ \
+		G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
+			(g_credentials_get_unix_pid) ((creds), (error)); \
+		G_GNUC_END_IGNORE_DEPRECATIONS \
+	})
+#else
+#define g_credentials_get_unix_pid(creds, error) \
+	G_GNUC_EXTENSION ({ \
+		struct ucred *native_creds; \
+		 \
+		native_creds = g_credentials_get_native ((creds), G_CREDENTIALS_TYPE_LINUX_UCRED); \
+		g_assert (native_creds); \
+		native_creds->pid; \
 	})
 #endif
 

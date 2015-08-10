@@ -75,69 +75,6 @@ build_signal_parameters (void)
 	return g_variant_new ("(a{sv})", &builder);
 }
 
-#if !HAVE_DBUS_GLIB_100
-/* It doesn't matter that nm-dhcp-helper doesn't use dbus-glib itself; the
- * workaround code is for if the daemon is built with old dbus-glib.
- */
-
-static gboolean ever_acquired = FALSE;
-
-static void
-on_name_acquired (GDBusConnection *connection,
-                  const gchar     *name,
-                  gpointer         user_data)
-{
-	GMainLoop *loop = user_data;
-
-	ever_acquired = TRUE;
-	g_main_loop_quit (loop);
-}
-
-static void
-on_name_lost (GDBusConnection *connection,
-              const gchar     *name,
-              gpointer         user_data)
-{
-	if (ever_acquired) {
-		g_print ("Lost D-Bus name: exiting\n");
-		exit (0);
-	} else {
-		g_printerr ("Error: Could not acquire the NM DHCP client service.\n");
-		exit (1);
-	}
-}
-
-static GDBusConnection *
-shared_connection_init (void)
-{
-	GDBusConnection *connection;
-	GError *error = NULL;
-	GMainLoop *loop;
-
-	connection = g_bus_get_sync (G_BUS_TYPE_SYSTEM, NULL, &error);
-	if (!connection) {
-		g_dbus_error_strip_remote_error (error);
-		g_printerr ("Error: could not get the system bus.  Make sure "
-		            "the message bus daemon is running!  Message: %s\n",
-		            error->message);
-		g_error_free (error);
-		return NULL;
-	}
-
-	loop = g_main_loop_new (NULL, FALSE);
-	g_bus_own_name_on_connection (connection,
-	                              "org.freedesktop.nm_dhcp_client",
-	                              0,
-	                              on_name_acquired,
-	                              on_name_lost,
-	                              loop, NULL);
-	g_main_loop_run (loop);
-	g_main_loop_unref (loop);
-
-	return connection;
-}
-#endif
-
 static void
 fatal_error (void)
 {
@@ -164,16 +101,11 @@ main (int argc, char *argv[])
 	                                                     G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT,
 	                                                     NULL, NULL, &error);
 	if (!connection) {
-#if !HAVE_DBUS_GLIB_100
-		connection = shared_connection_init ();
-#endif
-		if (!connection) {
-			g_dbus_error_strip_remote_error (error);
-			g_printerr ("Error: could not connect to NetworkManager D-Bus socket: %s\n",
-			            error->message);
-			g_error_free (error);
-			fatal_error ();
-		}
+		g_dbus_error_strip_remote_error (error);
+		g_printerr ("Error: could not connect to NetworkManager D-Bus socket: %s\n",
+		            error->message);
+		g_error_free (error);
+		fatal_error ();
 	}
 
 	if (!g_dbus_connection_emit_signal (connection,

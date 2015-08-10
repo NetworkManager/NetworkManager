@@ -268,25 +268,6 @@ dnl
 AC_CHECK_LIB([dl], [dladdr], LIBDL="-ldl", LIBDL="")
 AC_SUBST(LIBDL)
 
-dnl
-dnl Checks for dbus-glib
-dnl
-PKG_CHECK_MODULES(DBUS, dbus-1 >= 1.1 dbus-glib-1 >= 0.94)
-
-AC_CHECK_LIB([dbus-glib-1], [dbus_g_method_invocation_get_g_connection], ac_have_gmi_get_con="1", ac_have_gmi_get_con="0")
-AC_DEFINE_UNQUOTED(HAVE_DBUS_GLIB_GMI_GET_CONNECTION, $ac_have_gmi_get_con, [Define if you have a dbus-glib with dbus_g_method_invocation_get_g_connection()])
-
-dnl
-dnl Only dbus-glib >= 0.100 can use private dbus connections
-dnl
-PKG_CHECK_MODULES(DBUS_GLIB_100, [dbus-glib-1 >= 0.100], [have_dbus_glib_100=yes],[have_dbus_glib_100=no])
-if (test "${have_dbus_glib_100}" = "yes"); then
-	AC_DEFINE(HAVE_DBUS_GLIB_100, 1, [Define if you have dbus-glib >= 0.100])
-else
-	AC_DEFINE(HAVE_DBUS_GLIB_100, 0, [Define if you have dbus-glib >= 0.100])
-fi
-AM_CONDITIONAL(HAVE_DBUS_GLIB_100, test "${have_dbus_glib_100}" = "yes")
-
 PKG_CHECK_MODULES(GLIB, [gio-unix-2.0 >= 2.37.6 gmodule-2.0],
 	[AC_SUBST(LOG_DRIVER, '$(top_srcdir)/build-aux/tap-driver.sh'),
 	 AC_SUBST(AM_TESTS_FD_REDIRECT, '--tap')],
@@ -301,6 +282,16 @@ GLIB_CFLAGS="$GLIB_CFLAGS -DGLIB_VERSION_MIN_REQUIRED=GLIB_VERSION_2_32 -DGLIB_V
 
 AC_SUBST(GLIB_CFLAGS)
 AC_SUBST(GLIB_LIBS)
+
+AC_ARG_WITH(libnm-glib, AS_HELP_STRING([--without-libnm-glib], [don't build legacy libraries]))
+if test "$with_libnm_glib" != "no"; then
+    PKG_CHECK_MODULES(DBUS, dbus-1 >= 1.1 dbus-glib-1 >= 0.94, :,
+    			    [AC_MSG_FAILURE([$DBUS_PKG_ERRORS
+
+Configure with --without-libnm-glib if you do not need the legacy libraries])])
+    with_libnm_glib=yes
+fi
+AM_CONDITIONAL(WITH_LEGACY_LIBRARIES, test "$with_libnm_glib" != "no")
 
 PKG_CHECK_MODULES(GUDEV, gudev-1.0 >= 165)
 
@@ -1154,6 +1145,7 @@ echo "  ppp: $enable_ppp"
 echo "  modemmanager-1: $with_modem_manager_1"
 echo "  concheck: $enable_concheck"
 echo "  libteamdctl: $enable_teamdctl"
+echo "  libnm-glib: $with_libnm_glib"
 echo "  nmtui: $build_nmtui"
 echo
 

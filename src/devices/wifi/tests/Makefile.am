@@ -1,4 +1,5 @@
 AM_CPPFLAGS = \
+	-I$(top_builddir)/introspection \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/libnm-core \
 	-I$(top_builddir)/libnm-core \
@@ -9,8 +10,7 @@ AM_CPPFLAGS = \
 	-DG_LOG_DOMAIN=\""NetworkManager-wifi"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
-	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS)
+	$(GLIB_CFLAGS)
 
 noinst_PROGRAMS = test-wifi-ap-utils
 

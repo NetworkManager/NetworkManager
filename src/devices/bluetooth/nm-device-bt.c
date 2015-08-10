@@ -35,12 +35,13 @@
 #include "nm-setting-gsm.h"
 #include "nm-setting-serial.h"
 #include "nm-setting-ppp.h"
-#include "nm-device-bt-glue.h"
 #include "NetworkManagerUtils.h"
 #include "nm-bt-enum-types.h"
 #include "nm-utils.h"
 #include "nm-bt-error.h"
 #include "nm-bt-enum-types.h"
+
+#include "nmdbus-device-bt.h"
 
 #define MM_DBUS_SERVICE   "org.freedesktop.ModemManager1"
 #define MM_DBUS_PATH      "/org/freedesktop/ModemManager1"
@@ -1194,5 +1195,6 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 		              G_TYPE_UINT, G_TYPE_UINT);
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        &dbus_glib_nm_device_bt_object_info);
+	                                        NMDBUS_TYPE_DEVICE_BLUETOOTH_SKELETON,
+	                                        NULL);
 }

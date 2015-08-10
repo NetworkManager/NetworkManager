@@ -10,7 +10,6 @@
       <tp:docstring>
         List the saved network connections known to NetworkManager.
       </tp:docstring>
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_list_connections"/>
       <arg name="connections" type="ao" direction="out">
         <tp:docstring>
           List of connections.
@@ -22,8 +21,6 @@
       <tp:docstring>
         Retrieve the object path of a connection, given that connection's UUID.
       </tp:docstring>
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_get_connection_by_uuid"/>
-      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <arg name="uuid" type="s" direction="in">
         <tp:docstring>
           The UUID to find the connection object path for.
@@ -43,8 +40,6 @@
         the network described by the new connection, and (2) the connection
         is allowed to be started automatically.
       </tp:docstring>
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_add_connection"/>
-      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <arg name="connection" type="a{sa{sv}}" direction="in">
         <tp:docstring>
           Connection settings and properties.
@@ -69,8 +64,6 @@
         connection is reloaded from disk (either automatically on file
         change or due to an explicit ReloadConnections call).
       </tp:docstring>
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_add_connection_unsaved"/>
-      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <arg name="connection" type="a{sa{sv}}" direction="in">
         <tp:docstring>
           Connection settings and properties.
@@ -93,8 +86,6 @@
         harmless.) As with AddConnection(), this operation does not
         necessarily start the network connection.
       </tp:docstring>
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_load_connections"/>
-      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <arg name="filenames" type="as" direction="in">
         <tp:docstring>
           Array of paths to on-disk connection profiles in directories
@@ -125,8 +116,6 @@
         change, so you only need to use this command if you have set
         "monitor-connection-files=false" in NetworkManager.conf.
       </tp:docstring>
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_reload_connections"/>
-      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <arg name="status" type="b" direction="out">
         <tp:docstring>
           Success or failure.
@@ -138,8 +127,6 @@
       <tp:docstring>
         Save the hostname to persistent configuration.
       </tp:docstring>
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_save_hostname"/>
-      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <arg name="hostname" type="s" direction="in">
         <tp:docstring>
           The hostname to save to persistent configuration.  If blank, the persistent hostname is cleared.

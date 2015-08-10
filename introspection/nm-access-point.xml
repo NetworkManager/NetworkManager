@@ -12,6 +12,10 @@
       <tp:docstring>Flags describing the access point's capabilities according to the RSN (Robust Secure Network) protocol.</tp:docstring>
     </property>
     <property name="Ssid" type="ay" access="read">
+      <!-- gdbus-codegen assumes that "ay" means "non-UTF-8 string" and
+           won't deal with '\0' bytes correctly.
+      -->
+      <annotation name="org.gtk.GDBus.C.ForceGVariant" value="1"/>
       <tp:docstring>The Service Set Identifier identifying the access point.</tp:docstring>
     </property>
     <property name="Frequency" type="u" access="read">

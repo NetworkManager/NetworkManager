@@ -31,7 +31,6 @@ cscope.*out
 valgrind-*.log
 test-*.log
 test-*.trs
-*-glue.h
 
 /ABOUT-NLS
 /COPYING
@@ -156,6 +155,8 @@ test-*.trs
 /libnm-core/tests/test-setting-8021x
 /libnm-core/tests/test-setting-dcb
 
+/libnm-glib/nm-secret-agent-glue.h
+/libnm-glib/nm-vpn-plugin-glue.h
 /libnm-glib/libnm-glib-test
 /libnm-glib/tests/test-nm-client
 /libnm-glib/tests/test-remote-settings-client
@@ -246,6 +247,7 @@ test-*.trs
 /src/rdisc/tests/test-rdisc-fake
 /src/rdisc/tests/test-rdisc-linux
 /src/settings/plugins/ibft/tests/test-ibft
+/src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.[ch]
 /src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh
 /src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh-utils
 /src/settings/plugins/ifnet/tests/test-ifnet

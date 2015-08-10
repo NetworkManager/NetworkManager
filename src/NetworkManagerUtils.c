@@ -44,7 +44,6 @@
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-auth-utils.h"
-#include "nm-dbus-glib-types.h"
 
 /*
  * Some toolchains (E.G. uClibc 0.9.33 and earlier) don't export
@@ -2891,47 +2890,6 @@ nm_utils_ipv6_interface_identfier_get_from_addr (NMUtilsIPv6IfaceId *iid,
 }
 
 /**
- * nm_utils_connection_hash_to_dict:
- * @hash: a hashed #NMConnection
- *
- * Returns: a (floating) #GVariant equivalent to @hash.
- */
-GVariant *
-nm_utils_connection_hash_to_dict (GHashTable *hash)
-{
-	GValue val = { 0, };
-	GVariant *variant;
-
-	if (!hash)
-		return NULL;
-
-	g_value_init (&val, DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT);
-	g_value_set_boxed (&val, hash);
-	variant = dbus_g_value_build_g_variant (&val);
-	g_value_unset (&val);
-
-	return variant;
-}
-
-/**
- * nm_utils_connection_dict_to_hash:
- * @dict: a #GVariant-serialized #NMConnection
- *
- * Returns: a #GHashTable equivalent to @dict.
- */
-GHashTable *
-nm_utils_connection_dict_to_hash (GVariant *dict)
-{
-	GValue val = { 0, };
-
-	if (!dict)
-		return NULL;
-
-	dbus_g_value_parse_g_variant (dict, &val);
-	return g_value_get_boxed (&val);
-}
-
-/**
  * nm_utils_setpgid:
  * @unused: unused
  *
@@ -2963,9 +2921,9 @@ nm_utils_g_value_set_object_path (GValue *value, gpointer object)
 	g_return_if_fail (!object || NM_IS_EXPORTED_OBJECT (object));
 
 	if (object && nm_exported_object_is_exported (object))
-		g_value_set_boxed (value, nm_exported_object_get_path (object));
+		g_value_set_string (value, nm_exported_object_get_path (object));
 	else
-		g_value_set_boxed (value, "/");
+		g_value_set_string (value, "/");
 }
 
 /**
@@ -2989,5 +2947,27 @@ nm_utils_g_value_set_object_path_array (GValue *value, GSList *objects)
 			continue;
 		g_ptr_array_add (paths, g_strdup (nm_exported_object_get_path (object)));
 	}
-	g_value_take_boxed (value, paths);
+	g_ptr_array_add (paths, NULL);
+	g_value_take_boxed (value, (char **) g_ptr_array_free (paths, FALSE));
+}
+
+/**
+ * nm_utils_g_value_set_strv:
+ * @value: a #GValue, initialized to store a #G_TYPE_STRV
+ * @strings: a #GPtrArray of strings
+ *
+ * Converts @strings to a #GStrv and stores it in @value.
+ */
+void
+nm_utils_g_value_set_strv (GValue *value, GPtrArray *strings)
+{
+	char **strv;
+	int i;
+
+	strv = g_new (char *, strings->len + 1);
+	for (i = 0; i < strings->len; i++)
+		strv[i] = g_strdup (strings->pdata[i]);
+	strv[i] = NULL;
+
+	g_value_take_boxed (value, strv);
 }

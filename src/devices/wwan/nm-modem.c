@@ -28,7 +28,6 @@
 #include "nm-default.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
-#include "nm-dbus-glib-types.h"
 #include "nm-modem-enum-types.h"
 #include "nm-route-manager.h"
 

@@ -34,7 +34,6 @@
 #include "nm-dhcp6-config.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
-#include "nm-dbus-glib-types.h"
 #include "nm-settings-connection.h"
 #include "nm-platform.h"
 #include "nm-core-internal.h"

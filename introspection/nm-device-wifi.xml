@@ -5,7 +5,6 @@
     <annotation name="org.gtk.GDBus.C.Name" value="DeviceWifi"/>
 
     <method name="GetAccessPoints">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_get_access_points"/>
       <arg name="access_points" type="ao" direction="out">
         <tp:docstring>
           List of access point object paths.
@@ -20,7 +19,6 @@
     </method>
 
     <method name="GetAllAccessPoints">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_get_all_access_points"/>
       <arg name="access_points" type="ao" direction="out">
         <tp:docstring>
           List of access point object paths.
@@ -33,8 +31,6 @@
     </method>
 
     <method name="RequestScan">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_request_scan"/>
-      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <arg name="options" type="a{sv}" direction="in">
         <tp:docstring>
           Options of scan (currently unused argument).

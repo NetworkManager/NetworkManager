@@ -22,7 +22,6 @@
 #include "config.h"
 
 #include <string.h>
-#include <dbus/dbus.h>
 
 #include "nm-default.h"
 #include "nm-supplicant-manager.h"

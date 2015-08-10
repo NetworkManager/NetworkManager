@@ -12,7 +12,6 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/settings \
 	-I$(srcdir)/../ \
 	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS) \
 	$(CODE_COVERAGE_CFLAGS) \
 	-DG_LOG_DOMAIN=\""NetworkManager-keyfile"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
@@ -31,7 +30,6 @@ test_keyfile_SOURCES = \
 
 test_keyfile_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la \
-	$(DBUS_LIBS) \
 	$(CODE_COVERAGE_LDFLAGS)
 
 @VALGRIND_RULES@

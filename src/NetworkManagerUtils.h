@@ -224,9 +224,6 @@ void nm_utils_ipv6_addr_set_interface_identfier (struct in6_addr *addr,
 void nm_utils_ipv6_interface_identfier_get_from_addr (NMUtilsIPv6IfaceId *iid,
                                                       const struct in6_addr *addr);
 
-GVariant   *nm_utils_connection_hash_to_dict (GHashTable *hash);
-GHashTable *nm_utils_connection_dict_to_hash (GVariant *dict);
-
 void nm_utils_array_remove_at_indexes (GArray *array, const guint *indexes_to_delete, gsize len);
 
 void nm_utils_setpgid (gpointer unused);
@@ -253,5 +250,6 @@ void _nm_utils_set_testing (NMUtilsTestFlags flags);
 
 void nm_utils_g_value_set_object_path (GValue *value, gpointer object);
 void nm_utils_g_value_set_object_path_array (GValue *value, GSList *objects);
+void nm_utils_g_value_set_strv (GValue *value, GPtrArray *strings);
 
 #endif /* __NETWORKMANAGER_UTILS_H__ */

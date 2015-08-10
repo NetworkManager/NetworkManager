@@ -33,7 +33,7 @@
 #include "nm-device-factory.h"
 #include "nm-core-internal.h"
 
-#include "nm-device-infiniband-glue.h"
+#include "nmdbus-device-infiniband.h"
 
 G_DEFINE_TYPE (NMDeviceInfiniband, nm_device_infiniband, NM_TYPE_DEVICE)
 
@@ -350,7 +350,8 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *klass)
 		                       G_PARAM_STATIC_STRINGS));
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        &dbus_glib_nm_device_infiniband_object_info);
+	                                        NMDBUS_TYPE_DEVICE_INFINIBAND_SKELETON,
+	                                        NULL);
 }
 
 /*************************************************************/

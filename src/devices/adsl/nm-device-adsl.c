@@ -43,7 +43,7 @@
 #include "nm-setting-adsl.h"
 #include "nm-utils.h"
 
-#include "nm-device-adsl-glue.h"
+#include "nmdbus-device-adsl.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF (NMDeviceAdsl);
@@ -613,5 +613,6 @@ nm_device_adsl_class_init (NMDeviceAdslClass *klass)
 	parent_class->deactivate = deactivate;
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        &dbus_glib_nm_device_adsl_object_info);
+	                                        NMDBUS_TYPE_DEVICE_ADSL_SKELETON,
+	                                        NULL);
 }

@@ -28,13 +28,12 @@
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
 #include "nm-platform.h"
-#include "nm-dbus-glib-types.h"
 #include "nm-enum-types.h"
 #include "nm-device-factory.h"
 #include "nm-core-internal.h"
 #include "nm-ip4-config.h"
 
-#include "nm-device-bond-glue.h"
+#include "nmdbus-device-bond.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceBond);
@@ -556,12 +555,13 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 	g_object_class_install_property
 		(object_class, PROP_SLAVES,
 		 g_param_spec_boxed (NM_DEVICE_BOND_SLAVES, "", "",
-		                     DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
+		                     G_TYPE_STRV,
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        &dbus_glib_nm_device_bond_object_info);
+	                                        NMDBUS_TYPE_DEVICE_BOND_SKELETON,
+	                                        NULL);
 }
 
 /*************************************************************/

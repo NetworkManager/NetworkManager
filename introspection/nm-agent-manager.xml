@@ -8,8 +8,6 @@
         Called by secret Agents to register their ability to provide and save
         network secrets.
       </tp:docstring>
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_agent_manager_register"/>
-      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <arg name="identifier" type="s" direction="in">
         <tp:docstring>
           Identifies this agent; only one agent in each user session may use the
@@ -27,8 +25,6 @@
       <tp:docstring>
         Like Register() but indicates agent capabilities to NetworkManager.
       </tp:docstring>
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_agent_manager_register_with_capabilities"/>
-      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <arg name="identifier" type="s" direction="in">
         <tp:docstring>
             See the Register() method's identifier argument.
@@ -47,8 +43,6 @@
         longer handle requests for network secrets.  Agents are automatically
         unregistered when they disconnect from D-Bus.
       </tp:docstring>
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_agent_manager_unregister"/>
-      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
     </method>
 
   </interface>

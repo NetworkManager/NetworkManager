@@ -29,7 +29,6 @@
 #include <nm-setting-connection.h>
 
 #include "nm-default.h"
-#include "nm-dbus-glib-types.h"
 #include "nm-system-config-interface.h"
 #include "NetworkManagerUtils.h"
 

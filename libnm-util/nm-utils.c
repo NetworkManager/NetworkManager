@@ -30,6 +30,7 @@
 #include <gmodule.h>
 
 #include "nm-default.h"
+#include "nm-gvaluearray-compat.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-dbus-glib-types.h"

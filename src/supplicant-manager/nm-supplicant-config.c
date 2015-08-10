@@ -23,7 +23,6 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <dbus/dbus-glib.h>
 
 #include "nm-default.h"
 #include "nm-supplicant-config.h"

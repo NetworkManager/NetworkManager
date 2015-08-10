@@ -30,7 +30,7 @@
 #include "nm-utils.h"
 #include "nm-device-factory.h"
 
-#include "nm-device-vxlan-glue.h"
+#include "nmdbus-device-vxlan.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceVxlan);
@@ -234,10 +234,10 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *klass)
 	/* properties */
 	g_object_class_install_property
 		(object_class, PROP_PARENT,
-		 g_param_spec_boxed (NM_DEVICE_VXLAN_PARENT, "", "",
-		                     DBUS_TYPE_G_OBJECT_PATH,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+		 g_param_spec_string (NM_DEVICE_VXLAN_PARENT, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_ID,
@@ -345,7 +345,8 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *klass)
 		                       G_PARAM_STATIC_STRINGS));
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        &dbus_glib_nm_device_vxlan_object_info);
+	                                        NMDBUS_TYPE_DEVICE_VXLAN_SKELETON,
+	                                        NULL);
 }
 
 /*************************************************************/

@@ -37,6 +37,7 @@
 #include "nm-device-bt.h"
 #include "nm-core-internal.h"
 #include "nm-platform.h"
+#include "nm-dbus-compat.h"
 
 typedef struct {
 	int bluez_version;

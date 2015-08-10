@@ -159,7 +159,7 @@ void nm_dhcp_client_set_state (NMDhcpClient *self,
 gboolean nm_dhcp_client_handle_event (gpointer unused,
                                       const char *iface,
                                       gint pid,
-                                      GHashTable *options,
+                                      GVariant *options,
                                       const char *reason,
                                       NMDhcpClient *self);
 

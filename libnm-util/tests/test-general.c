@@ -30,6 +30,7 @@
 
 #include <nm-utils.h>
 #include "nm-default.h"
+#include "nm-gvaluearray-compat.h"
 
 #include "nm-setting-private.h"
 #include "nm-setting-connection.h"

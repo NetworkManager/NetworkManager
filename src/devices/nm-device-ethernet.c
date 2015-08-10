@@ -50,7 +50,7 @@
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 
-#include "nm-device-ethernet-glue.h"
+#include "nmdbus-device-ethernet.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceEthernet);
@@ -1712,7 +1712,8 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 		                    G_PARAM_STATIC_STRINGS));
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        &dbus_glib_nm_device_ethernet_object_info);
+	                                        NMDBUS_TYPE_DEVICE_ETHERNET_SKELETON,
+	                                        NULL);
 }
 
 /*************************************************************/

@@ -26,13 +26,12 @@
 #include "nm-device-bridge.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
-#include "nm-dbus-glib-types.h"
 #include "nm-enum-types.h"
 #include "nm-platform.h"
 #include "nm-device-factory.h"
 #include "nm-core-internal.h"
 
-#include "nm-device-bridge-glue.h"
+#include "nmdbus-device-bridge.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceBridge);
@@ -501,12 +500,13 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 	g_object_class_install_property
 		(object_class, PROP_SLAVES,
 		 g_param_spec_boxed (NM_DEVICE_BRIDGE_SLAVES, "", "",
-		                     DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
+		                     G_TYPE_STRV,
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        &dbus_glib_nm_device_bridge_object_info);
+	                                        NMDBUS_TYPE_DEVICE_BRIDGE_SKELETON,
+	                                        NULL);
 }
 
 /*************************************************************/

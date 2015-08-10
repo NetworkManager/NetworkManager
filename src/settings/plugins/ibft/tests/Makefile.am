@@ -20,7 +20,6 @@ AM_CPPFLAGS = \
 
 AM_LDFLAGS = \
 	$(GLIB_LIBS) \
-	$(DBUS_LIBS) \
 	$(CODE_COVERAGE_LDFLAGS)
 
 noinst_PROGRAMS = test-ibft

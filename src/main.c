@@ -21,9 +21,6 @@
 
 #include "config.h"
 
-#include <dbus/dbus.h>
-#include <dbus/dbus-glib-lowlevel.h>
-#include <dbus/dbus-glib.h>
 #include <getopt.h>
 #include <locale.h>
 #include <errno.h>
@@ -261,7 +258,6 @@ main (int argc, char *argv[])
 	gboolean wifi_enabled = TRUE, net_enabled = TRUE, wwan_enabled = TRUE, wimax_enabled = TRUE;
 	gboolean success = FALSE;
 	NMManager *manager = NULL;
-	gs_unref_object NMSettings *settings = NULL;
 	NMConfig *config;
 	GError *error = NULL;
 	gboolean wrote_pidfile = FALSE;
@@ -402,13 +398,6 @@ main (int argc, char *argv[])
 	}
 	g_clear_error (&error);
 
-	dbus_threads_init_default ();
-
-	/* Ensure that non-exported properties don't leak out, and that the
-	 * introspection 'access' permissions are respected.
-	 */
-	dbus_glib_global_set_disable_legacy_property_access ();
-
 	nm_log_info (LOGD_CORE, "Read config: %s", nm_config_data_get_config_description (nm_config_get_data (config)));
 	nm_config_data_log (nm_config_get_data (config), "CONFIG: ");
 	nm_log_dbg (LOGD_CORE, "WEXT support is %s",
@@ -419,13 +408,16 @@ main (int argc, char *argv[])
 #endif
 	             );
 
+	nm_auth_manager_setup (nm_config_get_auth_polkit (config));
+
+	manager = nm_manager_setup (global_opt.state_file,
+	                            net_enabled,
+	                            wifi_enabled,
+	                            wwan_enabled,
+	                            wimax_enabled);
+
 	if (!nm_bus_manager_get_connection (nm_bus_manager_get ())) {
-#if HAVE_DBUS_GLIB_100
 		nm_log_warn (LOGD_CORE, "Failed to connect to D-Bus; only private bus is available");
-#else
-		nm_log_err (LOGD_CORE, "Failed to connect to D-Bus, exiting...");
-		goto done;
-#endif
 	} else {
 		/* Start our DBus service */
 		if (!nm_bus_manager_start_service (nm_bus_manager_get ())) {
@@ -443,33 +435,14 @@ main (int argc, char *argv[])
 	 * NMPlatform. */
 	g_object_ref (NM_PLATFORM_GET);
 
-	nm_auth_manager_setup (nm_config_get_auth_polkit (config));
-
 	nm_dispatcher_init ();
-
-	settings = nm_settings_new (&error);
-	if (!settings) {
-		nm_log_err (LOGD_CORE, "failed to initialize settings storage: %s",
-		            error && error->message ? error->message : "(unknown)");
-		goto done;
-	}
-
-	manager = nm_manager_new (settings,
-	                          global_opt.state_file,
-	                          net_enabled,
-	                          wifi_enabled,
-	                          wwan_enabled,
-	                          wimax_enabled,
-	                          &error);
-	if (manager == NULL) {
-		nm_log_err (LOGD_CORE, "failed to initialize the network manager: %s",
-		            error && error->message ? error->message : "(unknown)");
-		goto done;
-	}
 
 	g_signal_connect (manager, NM_MANAGER_CONFIGURE_QUIT, G_CALLBACK (manager_configure_quit), config);
 
-	nm_manager_start (manager);
+	if (!nm_manager_start (manager, &error)) {
+		nm_log_err (LOGD_CORE, "failed to initialize: %s", error->message);
+		goto done;
+	}
 
 	/* Make sure the loopback interface is up. If interface is down, we bring
 	 * it up and kernel will assign it link-local IPv4 and IPv6 addresses. If
