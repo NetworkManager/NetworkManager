@@ -4648,7 +4648,7 @@ nm_device_set_mtu (NMDevice *self, guint32 mtu)
 	if (priv->ip6_mtu)
 		nm_device_ipv6_set_mtu (self, priv->ip6_mtu);
 
-	if (priv->mtu != nm_platform_link_get_mtu (NM_PLATFORM_GET, ifindex))
+	if (priv->mtu && priv->mtu != nm_platform_link_get_mtu (NM_PLATFORM_GET, ifindex))
 		nm_platform_link_set_mtu (NM_PLATFORM_GET, ifindex, priv->mtu);
 }
 
