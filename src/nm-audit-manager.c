@@ -220,7 +220,6 @@ _nm_audit_manager_log_connection_op (NMAuditManager *self, const char *file, gui
 	AuditField uuid_field = { }, name_field = { };
 
 	g_return_if_fail (op);
-	g_return_if_fail (connection || !strcmp (op, NM_AUDIT_OP_CONN_ADD));
 
 	fields = g_ptr_array_new ();
 

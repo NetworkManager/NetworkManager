@@ -3258,7 +3258,7 @@ activation_add_done (NMSettings *self,
 	nm_settings_connection_delete (new_connection, NULL, NULL);
 	g_dbus_method_invocation_return_gerror (context, error);
 	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD_ACTIVATE,
-	                            nm_active_connection_get_connection (info->active),
+	                            NULL,
 	                            FALSE,
 	                            nm_active_connection_get_subject (info->active),
 	                            error->message);
@@ -3300,7 +3300,7 @@ _add_and_activate_auth_done (NMActiveConnection *active,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                             error_desc);
 		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD_ACTIVATE,
-		                            nm_active_connection_get_connection (active),
+		                            NULL,
 		                            FALSE,
 		                            nm_active_connection_get_subject (active),
 		                            error->message);
@@ -3406,7 +3406,7 @@ impl_manager_add_and_activate_connection (NMManager *self,
 	return;
 
 error:
-	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD_ACTIVATE, connection, FALSE, subject, error->message);
+	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD_ACTIVATE, NULL, FALSE, subject, error->message);
 	g_clear_object (&connection);
 	g_slist_free (all_connections);
 	g_clear_object (&subject);
