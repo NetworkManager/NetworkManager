@@ -53,6 +53,7 @@
 #include "nm-config.h"
 #include "nm-audit-manager.h"
 #include "nm-dbus-compat.h"
+#include "NetworkManagerUtils.h"
 
 #include "nmdbus-manager.h"
 
@@ -4705,7 +4706,7 @@ dbus_connection_changed_cb (NMBusManager *dbus_mgr,
 
 /**********************************************************************/
 
-static NMManager *singleton_instance = NULL;
+NM_DEFINE_SINGLETON_REGISTER (NMManager);
 
 NMManager *
 nm_manager_get (void)
@@ -4805,6 +4806,9 @@ nm_manager_setup (const char *state_file,
 	 */
 	rfkill_change (priv->radio_states[RFKILL_TYPE_WLAN].desc, RFKILL_TYPE_WLAN, initial_wifi_enabled);
 	rfkill_change (priv->radio_states[RFKILL_TYPE_WWAN].desc, RFKILL_TYPE_WWAN, initial_wwan_enabled);
+
+	nm_singleton_instance_register ();
+	nm_log_dbg (LOGD_CORE, "setup %s singleton (%p)", "NMManager", singleton_instance);
 
 	return self;
 }

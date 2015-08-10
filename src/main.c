@@ -249,7 +249,6 @@ main (int argc, char *argv[])
 {
 	gboolean wifi_enabled = TRUE, net_enabled = TRUE, wwan_enabled = TRUE;
 	gboolean success = FALSE;
-	NMManager *manager = NULL;
 	NMConfig *config;
 	GError *error = NULL;
 	gboolean wrote_pidfile = FALSE;
@@ -402,10 +401,10 @@ main (int argc, char *argv[])
 
 	nm_auth_manager_setup (nm_config_get_auth_polkit (config));
 
-	manager = nm_manager_setup (global_opt.state_file,
-	                            net_enabled,
-	                            wifi_enabled,
-	                            wwan_enabled);
+	nm_manager_setup (global_opt.state_file,
+	                  net_enabled,
+	                  wifi_enabled,
+	                  wwan_enabled);
 
 	if (!nm_bus_manager_get_connection (nm_bus_manager_get ())) {
 		nm_log_warn (LOGD_CORE, "Failed to connect to D-Bus; only private bus is available");
@@ -424,9 +423,9 @@ main (int argc, char *argv[])
 
 	nm_dispatcher_init ();
 
-	g_signal_connect (manager, NM_MANAGER_CONFIGURE_QUIT, G_CALLBACK (manager_configure_quit), config);
+	g_signal_connect (nm_manager_get (), NM_MANAGER_CONFIGURE_QUIT, G_CALLBACK (manager_configure_quit), config);
 
-	if (!nm_manager_start (manager, &error)) {
+	if (!nm_manager_start (nm_manager_get (), &error)) {
 		nm_log_err (LOGD_CORE, "failed to initialize: %s", error->message);
 		goto done;
 	}
@@ -449,11 +448,9 @@ main (int argc, char *argv[])
 	if (configure_and_quit == FALSE)
 		g_main_loop_run (main_loop);
 
-	nm_manager_stop (manager);
+	nm_manager_stop (nm_manager_get ());
 
 done:
-	g_clear_object (&manager);
-
 	if (global_opt.pidfile && wrote_pidfile)
 		unlink (global_opt.pidfile);
 
