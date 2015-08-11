@@ -333,7 +333,7 @@ nm_settings_connection_recheck_visibility (NMSettingsConnection *self)
 			continue;
 		if (!nm_session_monitor_user_to_uid (user, &uid))
 			continue;
-		if (!nm_session_monitor_session_exists (uid, FALSE))
+		if (!nm_session_monitor_session_exists (nm_session_monitor_get (), uid, FALSE))
 			continue;
 
 		set_visible (self, TRUE);
@@ -2325,7 +2325,7 @@ nm_settings_connection_init (NMSettingsConnection *self)
 	priv->visible = FALSE;
 	priv->ready = TRUE;
 
-	priv->session_changed_id = nm_session_monitor_connect (session_changed_cb, self);
+	priv->session_changed_id = nm_session_monitor_connect (nm_session_monitor_get (), session_changed_cb, self);
 
 	priv->agent_mgr = g_object_ref (nm_agent_manager_get ());
 
@@ -2388,7 +2388,7 @@ dispose (GObject *object)
 	set_visible (self, FALSE);
 
 	if (priv->session_changed_id) {
-		nm_session_monitor_disconnect (priv->session_changed_id);
+		nm_session_monitor_disconnect (nm_session_monitor_get (), priv->session_changed_id);
 		priv->session_changed_id = 0;
 	}
 	g_clear_object (&priv->agent_mgr);
