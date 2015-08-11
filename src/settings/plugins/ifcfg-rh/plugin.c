@@ -98,8 +98,6 @@ typedef struct {
 
 	GFileMonitor *ifcfg_monitor;
 	guint ifcfg_monitor_id;
-
-	gboolean has_dbus_service;
 } SCPluginIfcfgPrivate;
 
 
@@ -755,12 +753,18 @@ static void
 sc_plugin_ifcfg_init (SCPluginIfcfg *plugin)
 {
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
+
+	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
+}
+
+static void
+constructed (GObject *object)
+{
+	SCPluginIfcfg *self = SC_PLUGIN_IFCFG (object);
 	GError *error = NULL;
 	GDBusConnection *bus;
 	GVariant *ret;
 	guint32 result;
-
-	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
 
 	bus = g_bus_get_sync (G_BUS_TYPE_SYSTEM, NULL, &error);
 	if (!bus) {
@@ -786,9 +790,10 @@ sc_plugin_ifcfg_init (SCPluginIfcfg *plugin)
 		g_variant_get (ret, "(u)", &result);
 		g_variant_unref (ret);
 
-		if (result == DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER)
-			priv->has_dbus_service = TRUE;
-		else
+		if (result == DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
+			nm_exported_object_export (NM_EXPORTED_OBJECT (self));
+			_LOGD ("Acquired D-Bus service %s", IFCFGRH1_DBUS_SERVICE_NAME);
+		} else
 			_LOGW ("Couldn't acquire ifcfgrh1 D-Bus service (already taken)");
 	} else {
 		_LOGW ("Couldn't acquire D-Bus service: %s", error->message);
@@ -859,6 +864,7 @@ sc_plugin_ifcfg_class_init (SCPluginIfcfgClass *req_class)
 
 	exported_object_class->export_path = IFCFGRH1_DBUS_OBJECT_PATH;
 
+	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
@@ -898,15 +904,10 @@ G_MODULE_EXPORT GObject *
 nm_system_config_factory (void)
 {
 	static SCPluginIfcfg *singleton = NULL;
-	SCPluginIfcfgPrivate *priv;
 
-	if (!singleton) {
+	if (!singleton)
 		singleton = SC_PLUGIN_IFCFG (g_object_new (SC_TYPE_PLUGIN_IFCFG, NULL));
-		priv = SC_PLUGIN_IFCFG_GET_PRIVATE (singleton);
-		if (priv->has_dbus_service)
-			nm_exported_object_export (NM_EXPORTED_OBJECT (singleton));
-		_LOGD ("Acquired D-Bus service %s", IFCFGRH1_DBUS_SERVICE_NAME);
-	} else
+	else
 		g_object_ref (singleton);
 
 	return G_OBJECT (singleton);
