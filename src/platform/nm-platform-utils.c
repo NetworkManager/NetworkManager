@@ -48,8 +48,11 @@ ethtool_get (const char *name, gpointer edata)
 	if (!name || !*name)
 		return FALSE;
 
-	if (strlen (name) >= IFNAMSIZ)
-		g_return_val_if_reached (FALSE);
+	if (!nmp_utils_device_exists (name))
+		return FALSE;
+
+	/* nmp_utils_device_exists() already errors out if @name is invalid. */
+	nm_assert (strlen (name) < IFNAMSIZ);
 
 	memset (&ifr, 0, sizeof (ifr));
 	strcpy (ifr.ifr_name, name);
@@ -310,6 +313,9 @@ nmp_utils_mii_supports_carrier_detect (const char *ifname)
 	if (!ifname)
 		return FALSE;
 
+	if (!nmp_utils_device_exists (ifname))
+		return FALSE;
+
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
 		nm_log_err (LOGD_PLATFORM, "mii: couldn't open control socket (%s)", ifname);
@@ -473,4 +479,17 @@ nmp_utils_lifetime_get (guint32 timestamp,
 	return TRUE;
 }
 
+gboolean
+nmp_utils_device_exists (const char *name)
+{
+#define SYS_CLASS_NET "/sys/class/net/"
+	char sysdir[STRLEN (SYS_CLASS_NET) + IFNAMSIZ] = SYS_CLASS_NET;
 
+	if (   !name
+	    || strlen (name) >= IFNAMSIZ
+	    || !nm_utils_is_valid_path_component (name))
+		g_return_val_if_reached (FALSE);
+
+	strcpy (&sysdir[STRLEN (SYS_CLASS_NET)], name);
+	return g_file_test (sysdir, G_FILE_TEST_EXISTS);
+}

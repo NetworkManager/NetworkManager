@@ -186,6 +186,7 @@ gint64 nm_utils_get_monotonic_timestamp_ms (void);
 gint32 nm_utils_get_monotonic_timestamp_s (void);
 gint64 nm_utils_monotonic_timestamp_as_boottime (gint64 timestamp, gint64 timestamp_ticks_per_ns);
 
+gboolean    nm_utils_is_valid_path_component (const char *name);
 const char *ASSERT_VALID_PATH_COMPONENT (const char *name);
 const char *nm_utils_ip6_property_path (const char *ifname, const char *property);
 const char *nm_utils_ip4_property_path (const char *ifname, const char *property);
