@@ -40,6 +40,7 @@
 #include "nm-setting-ppp.h"
 #include "nm-utils.h"
 #include "nm-core-internal.h"
+#include "NetworkManagerUtils.h"
 
 #include "nm-ifupdown-connection.h"
 #include "plugin.h"
@@ -87,6 +88,9 @@ G_DEFINE_TYPE_EXTENDED (SCPluginIfupdown, sc_plugin_ifupdown, G_TYPE_OBJECT, 0,
                                                system_config_interface_init))
 
 #define SC_PLUGIN_IFUPDOWN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), SC_TYPE_PLUGIN_IFUPDOWN, SCPluginIfupdownPrivate))
+
+static SCPluginIfupdown *sc_plugin_ifupdown_get (void);
+NM_DEFINE_SINGLETON_GETTER (SCPluginIfupdown, sc_plugin_ifupdown_get, SC_TYPE_PLUGIN_IFUPDOWN);
 
 static void
 sc_plugin_ifupdown_class_init (SCPluginIfupdownClass *req_class);
@@ -555,15 +559,6 @@ GObject__dispose (GObject *object)
 G_MODULE_EXPORT GObject *
 nm_system_config_factory (void)
 {
-	static SCPluginIfupdown *singleton = NULL;
-	SCPluginIfupdownPrivate *priv;
-
-	if (!singleton) {
-		singleton = SC_PLUGIN_IFUPDOWN (g_object_new (SC_TYPE_PLUGIN_IFUPDOWN, NULL));
-		priv = SC_PLUGIN_IFUPDOWN_GET_PRIVATE (singleton);
-	} else
-		g_object_ref (singleton);
-
-	return G_OBJECT (singleton);
+	return g_object_ref (sc_plugin_ifupdown_get ());
 }
 

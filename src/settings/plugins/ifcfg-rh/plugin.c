@@ -100,6 +100,8 @@ typedef struct {
 	guint ifcfg_monitor_id;
 } SCPluginIfcfgPrivate;
 
+static SCPluginIfcfg *sc_plugin_ifcfg_get (void);
+NM_DEFINE_SINGLETON_GETTER (SCPluginIfcfg, sc_plugin_ifcfg_get, SC_TYPE_PLUGIN_IFCFG);
 
 static void
 connection_ifcfg_changed (NMIfcfgConnection *connection, gpointer user_data)
@@ -903,12 +905,5 @@ system_config_interface_init (NMSystemConfigInterface *system_config_interface_c
 G_MODULE_EXPORT GObject *
 nm_system_config_factory (void)
 {
-	static SCPluginIfcfg *singleton = NULL;
-
-	if (!singleton)
-		singleton = SC_PLUGIN_IFCFG (g_object_new (SC_TYPE_PLUGIN_IFCFG, NULL));
-	else
-		g_object_ref (singleton);
-
-	return G_OBJECT (singleton);
+	return g_object_ref (sc_plugin_ifcfg_get ());
 }

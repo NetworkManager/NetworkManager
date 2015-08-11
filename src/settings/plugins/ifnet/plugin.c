@@ -34,6 +34,7 @@
 #include "nm-system-config-interface.h"
 #include "nm-ifnet-connection.h"
 #include "nm-config.h"
+#include "NetworkManagerUtils.h"
 
 #include "plugin.h"
 #include "net_utils.h"
@@ -68,13 +69,9 @@ static void reload_connections (NMSystemConfigInterface *config);
 G_DEFINE_TYPE_EXTENDED (SCPluginIfnet, sc_plugin_ifnet, G_TYPE_OBJECT, 0,
                         G_IMPLEMENT_INTERFACE (NM_TYPE_SYSTEM_CONFIG_INTERFACE, system_config_interface_init))
 #define SC_PLUGIN_IFNET_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), SC_TYPE_PLUGIN_IFNET, SCPluginIfnetPrivate))
-/*
-static void
-ignore_cb(NMSettingsConnectionInterface * connection,
-	  GError * error, gpointer user_data)
-{
-}
-*/
+
+static SCPluginIfnet *sc_plugin_ifnet_get (void);
+NM_DEFINE_SINGLETON_GETTER (SCPluginIfnet, sc_plugin_ifnet_get, SC_TYPE_PLUGIN_IFNET);
 
 static gboolean
 is_managed_plugin (void)
@@ -500,14 +497,5 @@ sc_plugin_ifnet_class_init (SCPluginIfnetClass * req_class)
 G_MODULE_EXPORT GObject *
 nm_system_config_factory (void)
 {
-	static SCPluginIfnet *singleton = NULL;
-	SCPluginIfnetPrivate *priv;
-
-	if (!singleton) {
-		singleton = SC_PLUGIN_IFNET (g_object_new (SC_TYPE_PLUGIN_IFNET, NULL));
-		priv = SC_PLUGIN_IFNET_GET_PRIVATE (singleton);
-	} else
-		g_object_ref (singleton);
-
-	return G_OBJECT (singleton);
+	return g_object_ref (sc_plugin_ifnet_get ());
 }
