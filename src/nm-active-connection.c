@@ -734,8 +734,12 @@ nm_active_connection_init (NMActiveConnection *self)
 static void
 constructed (GObject *object)
 {
+	NMActiveConnection *self = (NMActiveConnection *) object;
+
 	G_OBJECT_CLASS (nm_active_connection_parent_class)->constructed (object);
 	g_assert (NM_ACTIVE_CONNECTION_GET_PRIVATE (object)->subject);
+
+	_LOGD ("constructed (%s)", G_OBJECT_TYPE_NAME (self));
 }
 
 static void
@@ -886,6 +890,8 @@ dispose (GObject *object)
 {
 	NMActiveConnection *self = NM_ACTIVE_CONNECTION (object);
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+
+	_LOGD ("disposing");
 
 	if (priv->chain) {
 		nm_auth_chain_unref (priv->chain);
