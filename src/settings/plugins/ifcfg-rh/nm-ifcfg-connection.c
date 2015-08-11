@@ -150,6 +150,7 @@ nm_ifcfg_connection_check_devtimeout (NMIfcfgConnection *self)
 	const char *ifname;
 	const char *filename;
 	guint devtimeout;
+	const NMPlatformLink *pllink;
 
 	s_con = nm_connection_get_setting_connection (NM_CONNECTION (self));
 
@@ -161,11 +162,13 @@ nm_ifcfg_connection_check_devtimeout (NMIfcfgConnection *self)
 	filename = nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (self));
 	if (!filename)
 		return;
-	devtimeout = devtimeout_from_file (filename);
-	if (!devtimeout)
+
+	pllink = nm_platform_link_get_by_ifname (NM_PLATFORM_GET, ifname);
+	if (pllink && pllink->initialized)
 		return;
 
-	if (nm_platform_link_get_ifindex (NM_PLATFORM_GET, ifname) != 0)
+	devtimeout = devtimeout_from_file (filename);
+	if (!devtimeout)
 		return;
 
 	/* ONBOOT=yes, DEVICE and DEVTIMEOUT are set, but device is not present */
