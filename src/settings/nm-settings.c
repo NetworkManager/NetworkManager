@@ -726,10 +726,6 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 		if (has_no_ibft && !strcmp (pname, "ibft"))
 			continue;
 
-		obj = find_plugin (list, pname);
-		if (obj)
-			continue;
-
 		/* keyfile plugin is built-in now */
 		if (strcmp (pname, "keyfile") == 0) {
 			if (!keyfile_added) {
@@ -738,6 +734,17 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 			}
 			continue;
 		}
+
+		if (_nm_utils_strv_find_first ((char **) plugins,
+		                               iter - plugins,
+		                               pname) >= 0) {
+			/* the plugin is already mentioned in the list previously.
+			 * Don't load a duplicate. */
+			continue;
+		}
+
+		if (find_plugin (list, pname))
+			continue;
 
 load_plugin:
 		{
