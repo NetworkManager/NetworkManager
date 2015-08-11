@@ -682,7 +682,7 @@ find_plugin (GSList *list, const char *pname)
 static void
 add_keyfile_plugin (NMSettings *self)
 {
-	GObject *keyfile_plugin;
+	gs_unref_object GObject *keyfile_plugin = NULL;
 
 	keyfile_plugin = nm_settings_keyfile_plugin_new ();
 	g_assert (keyfile_plugin);
