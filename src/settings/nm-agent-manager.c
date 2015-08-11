@@ -1543,6 +1543,8 @@ constructed (GObject *object)
 	                  NM_AUTH_MANAGER_SIGNAL_CHANGED,
 	                  G_CALLBACK (authority_changed_cb),
 	                  object);
+
+	NM_UTILS_KEEP_ALIVE (object, nm_session_monitor_get (), "NMAgentManager-depends-on-NMSessionMonitor");
 }
 
 static void
