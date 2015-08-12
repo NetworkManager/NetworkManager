@@ -6065,7 +6065,8 @@ _update_ip4_address (NMDevice *self)
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
-	if (   ip_config_valid (priv->state)
+	if (   priv->ip4_config
+	    && ip_config_valid (priv->state)
 	    && nm_ip4_config_get_num_addresses (priv->ip4_config)) {
 		addr = nm_ip4_config_get_address (priv->ip4_config, 0)->address;
 		if (addr != priv->ip4_address) {
