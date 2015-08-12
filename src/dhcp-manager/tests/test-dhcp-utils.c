@@ -178,7 +178,7 @@ static void
 test_vendor_option_metered (void)
 {
 	GHashTable *options;
-	NMIP4Config *ip4_config;
+	gs_unref_object NMIP4Config *ip4_config = NULL;
 	static const Option data[] = {
 		{ "vendor_encapsulated_options", "ANDROID_METERED" },
 		{ NULL, NULL }
@@ -189,6 +189,7 @@ test_vendor_option_metered (void)
 	g_assert (ip4_config);
 	g_assert (nm_ip4_config_get_metered (ip4_config) == FALSE);
 	g_hash_table_destroy (options);
+	g_clear_object (&ip4_config);
 
 	options = fill_table (generic_options, NULL);
 	options = fill_table (data, options);
