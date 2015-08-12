@@ -179,6 +179,21 @@ int sd_dhcp_lease_get_routes(sd_dhcp_lease *lease, struct sd_dhcp_route **routes
         return 0;
 }
 
+int sd_dhcp_lease_get_vendor_specific(sd_dhcp_lease *lease, const uint8_t **data,
+                                      size_t *data_len) {
+        assert_return(lease, -EINVAL);
+        assert_return(data, -EINVAL);
+        assert_return(data_len, -EINVAL);
+
+        if (!lease->vendor_specific)
+                return -ENOENT;
+
+        *data = lease->vendor_specific;
+        *data_len = lease->vendor_specific_len;
+
+        return 0;
+}
+
 sd_dhcp_lease *sd_dhcp_lease_ref(sd_dhcp_lease *lease) {
         if (lease)
                 assert_se(REFCNT_INC(lease->n_ref) >= 2);
@@ -188,12 +203,21 @@ sd_dhcp_lease *sd_dhcp_lease_ref(sd_dhcp_lease *lease) {
 
 sd_dhcp_lease *sd_dhcp_lease_unref(sd_dhcp_lease *lease) {
         if (lease && REFCNT_DEC(lease->n_ref) == 0) {
+                while (lease->private_options) {
+                        struct sd_dhcp_raw_option *option = lease->private_options;
+
+                        LIST_REMOVE(options, lease->private_options, option);
+
+                        free(option->data);
+                        free(option);
+                }
                 free(lease->hostname);
                 free(lease->domainname);
                 free(lease->dns);
                 free(lease->ntp);
                 free(lease->static_route);
                 free(lease->client_id);
+                free(lease->vendor_specific);
                 free(lease);
         }
 
@@ -435,7 +459,8 @@ int dhcp_lease_parse_options(uint8_t code, uint8_t len, const uint8_t *option,
                 break;
 
         case DHCP_OPTION_ROUTER:
-                lease_parse_be32(option, len, &lease->router);
+                if(len >= 4)
+                        lease_parse_be32(option, 4, &lease->router);
 
                 break;
 
@@ -536,11 +561,10 @@ int dhcp_lease_parse_options(uint8_t code, uint8_t len, const uint8_t *option,
                 if (e)
                         *e = 0;
 
-                if (!hostname_is_valid(hostname) || is_localhost(hostname))
+                if (!hostname_is_valid(hostname, false) || is_localhost(hostname))
                         break;
 
-                free(lease->hostname);
-                lease->hostname = hostname;
+                free_and_replace(&lease->hostname, hostname);
                 hostname = NULL;
 
                 break;
@@ -579,7 +603,56 @@ int dhcp_lease_parse_options(uint8_t code, uint8_t len, const uint8_t *option,
                         return r;
 
                 break;
+
+        case DHCP_OPTION_VENDOR_SPECIFIC:
+                if (len >= 1) {
+                        free(lease->vendor_specific);
+                        lease->vendor_specific = memdup(option, len);
+                        if (!lease->vendor_specific)
+                                return -ENOMEM;
+                        lease->vendor_specific_len = len;
+                }
+
+               break;
+
+        default:
+                if (code < DHCP_OPTION_PRIVATE_BASE || code > DHCP_OPTION_PRIVATE_LAST)
+                    break;
+
+                r = dhcp_lease_insert_private_option(lease, code, option, len);
+                if (r < 0)
+                        return r;
         }
+
+        return 0;
+}
+
+int dhcp_lease_insert_private_option(sd_dhcp_lease *lease, uint8_t tag,
+                                     const uint8_t *data, uint8_t len) {
+        struct sd_dhcp_raw_option *cur, *option;
+
+        LIST_FOREACH(options, cur, lease->private_options) {
+                if (tag < cur->tag)
+                        break;
+                else if (tag == cur->tag) {
+                        log_error("Ignoring duplicate option, tagged %d.", tag);
+                        return 0;
+                }
+        }
+
+        option = new(struct sd_dhcp_raw_option, 1);
+        if (!option)
+                return -ENOMEM;
+
+        option->tag = tag;
+        option->length = len;
+        option->data = memdup(data, len);
+        if (!option->data) {
+                free(option);
+                return -ENOMEM;
+        }
+
+        LIST_INSERT_BEFORE(options, lease->private_options, cur, option);
 
         return 0;
 }
@@ -593,6 +666,7 @@ int dhcp_lease_new(sd_dhcp_lease **ret) {
 
         lease->router = INADDR_ANY;
         lease->n_ref = REFCNT_INIT;
+        LIST_HEAD_INIT(lease->private_options);
 
         *ret = lease;
         return 0;
@@ -601,10 +675,11 @@ int dhcp_lease_new(sd_dhcp_lease **ret) {
 int sd_dhcp_lease_save(sd_dhcp_lease *lease, const char *lease_file) {
         _cleanup_free_ char *temp_path = NULL;
         _cleanup_fclose_ FILE *f = NULL;
+        struct sd_dhcp_raw_option *option;
         struct in_addr address;
         const struct in_addr *addresses;
-        const uint8_t *client_id;
-        size_t client_id_len;
+        const uint8_t *client_id, *data;
+        size_t client_id_len, data_len;
         const char *string;
         uint16_t mtu;
         struct sd_dhcp_route *routes;
@@ -615,13 +690,13 @@ int sd_dhcp_lease_save(sd_dhcp_lease *lease, const char *lease_file) {
 
         r = fopen_temporary(lease_file, &f, &temp_path);
         if (r < 0)
-                goto finish;
+                goto fail;
 
         fchmod(fileno(f), 0644);
 
         r = sd_dhcp_lease_get_address(lease, &address);
         if (r < 0)
-                goto finish;
+                goto fail;
 
         fprintf(f,
                 "# This is private data. Do not parse.\n"
@@ -629,7 +704,7 @@ int sd_dhcp_lease_save(sd_dhcp_lease *lease, const char *lease_file) {
 
         r = sd_dhcp_lease_get_netmask(lease, &address);
         if (r < 0)
-                goto finish;
+                goto fail;
 
         fprintf(f, "NETMASK=%s\n", inet_ntoa(address));
 
@@ -685,26 +760,47 @@ int sd_dhcp_lease_save(sd_dhcp_lease *lease, const char *lease_file) {
                 client_id_hex = hexmem(client_id, client_id_len);
                 if (!client_id_hex) {
                         r = -ENOMEM;
-                        goto finish;
+                        goto fail;
                 }
                 fprintf(f, "CLIENTID=%s\n", client_id_hex);
         }
 
-        r = 0;
+        r = sd_dhcp_lease_get_vendor_specific(lease, &data, &data_len);
+        if (r >= 0) {
+                _cleanup_free_ char *option_hex = NULL;
 
-        fflush(f);
-
-        if (ferror(f) || rename(temp_path, lease_file) < 0) {
-                r = -errno;
-                unlink(lease_file);
-                unlink(temp_path);
+                option_hex = hexmem(data, data_len);
+                if (!option_hex) {
+                        r = -ENOMEM;
+                        goto fail;
+                }
+                fprintf(f, "VENDOR_SPECIFIC=%s\n", option_hex);
         }
 
-finish:
-        if (r < 0)
-                log_error_errno(r, "Failed to save lease data %s: %m", lease_file);
+        LIST_FOREACH(options, option, lease->private_options) {
+                char key[strlen("OPTION_000")+1];
+                snprintf(key, sizeof(key), "OPTION_%"PRIu8, option->tag);
+                r = serialize_dhcp_option(f, key, option->data, option->length);
+                if (r < 0)
+                        goto fail;
+        }
 
-        return r;
+        r = fflush_and_check(f);
+        if (r < 0)
+                goto fail;
+
+        if (rename(temp_path, lease_file) < 0) {
+                r = -errno;
+                goto fail;
+        }
+
+        return 0;
+
+fail:
+        if (temp_path)
+                (void) unlink(temp_path);
+
+        return log_error_errno(r, "Failed to save lease data %s: %m", lease_file);
 }
 
 int sd_dhcp_lease_load(sd_dhcp_lease **ret, const char *lease_file) {
@@ -712,9 +808,12 @@ int sd_dhcp_lease_load(sd_dhcp_lease **ret, const char *lease_file) {
         _cleanup_free_ char *address = NULL, *router = NULL, *netmask = NULL,
                             *server_address = NULL, *next_server = NULL,
                             *dns = NULL, *ntp = NULL, *mtu = NULL,
-                            *routes = NULL, *client_id_hex = NULL;
+                            *routes = NULL, *client_id_hex = NULL,
+                            *vendor_specific_hex = NULL,
+                            *options[DHCP_OPTION_PRIVATE_LAST -
+                                     DHCP_OPTION_PRIVATE_BASE + 1] = { NULL };
         struct in_addr addr;
-        int r;
+        int r, i;
 
         assert(lease_file);
         assert(ret);
@@ -737,6 +836,38 @@ int sd_dhcp_lease_load(sd_dhcp_lease **ret, const char *lease_file) {
                            "ROOT_PATH", &lease->root_path,
                            "ROUTES", &routes,
                            "CLIENTID", &client_id_hex,
+                           "VENDOR_SPECIFIC", &vendor_specific_hex,
+                           "OPTION_224", &options[0],
+                           "OPTION_225", &options[1],
+                           "OPTION_226", &options[2],
+                           "OPTION_227", &options[3],
+                           "OPTION_228", &options[4],
+                           "OPTION_229", &options[5],
+                           "OPTION_230", &options[6],
+                           "OPTION_231", &options[7],
+                           "OPTION_232", &options[8],
+                           "OPTION_233", &options[9],
+                           "OPTION_234", &options[10],
+                           "OPTION_235", &options[11],
+                           "OPTION_236", &options[12],
+                           "OPTION_237", &options[13],
+                           "OPTION_238", &options[14],
+                           "OPTION_239", &options[15],
+                           "OPTION_240", &options[16],
+                           "OPTION_241", &options[17],
+                           "OPTION_242", &options[18],
+                           "OPTION_243", &options[19],
+                           "OPTION_244", &options[20],
+                           "OPTION_245", &options[21],
+                           "OPTION_246", &options[22],
+                           "OPTION_247", &options[23],
+                           "OPTION_248", &options[24],
+                           "OPTION_249", &options[25],
+                           "OPTION_250", &options[26],
+                           "OPTION_251", &options[27],
+                           "OPTION_252", &options[28],
+                           "OPTION_253", &options[29],
+                           "OPTION_254", &options[30],
                            NULL);
         if (r < 0) {
                 if (r == -ENOENT)
@@ -811,13 +942,31 @@ int sd_dhcp_lease_load(sd_dhcp_lease **ret, const char *lease_file) {
         }
 
         if (client_id_hex) {
-                if (strlen (client_id_hex) % 2)
-                        return -EINVAL;
+                r = deserialize_dhcp_option(&lease->client_id, &lease->client_id_len, client_id_hex);
+                if (r < 0)
+                        return r;
+        }
 
-                lease->client_id = unhexmem (client_id_hex, strlen (client_id_hex));
-                if (!lease->client_id)
-                        return -ENOMEM;
-                lease->client_id_len = strlen (client_id_hex) / 2;
+        if (vendor_specific_hex) {
+                r = deserialize_dhcp_option(&lease->vendor_specific, &lease->vendor_specific_len, vendor_specific_hex);
+                if (r < 0)
+                        return r;
+        }
+
+        for (i = 0; i <= DHCP_OPTION_PRIVATE_LAST - DHCP_OPTION_PRIVATE_BASE; i++) {
+                _cleanup_free_ uint8_t *data = NULL;
+                size_t len;
+
+                if (!options[i])
+                        continue;
+
+                r = deserialize_dhcp_option(&data, &len, options[i]);
+                if (r < 0)
+                        return r;
+
+                r = dhcp_lease_insert_private_option(lease, DHCP_OPTION_PRIVATE_BASE + i, data, len);
+                if (r < 0)
+                        return r;
         }
 
         *ret = lease;

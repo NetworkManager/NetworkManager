@@ -27,60 +27,19 @@
 #include "ctype.h"
 #include "fileio.h"
 
-int write_string_stream(FILE *f, const char *line) {
+int write_string_stream(FILE *f, const char *line, bool enforce_newline) {
+
         assert(f);
         assert(line);
 
-        errno = 0;
-
         fputs(line, f);
-        if (!endswith(line, "\n"))
+        if (enforce_newline && !endswith(line, "\n"))
                 fputc('\n', f);
 
-        fflush(f);
-
-        if (ferror(f))
-                return errno ? -errno : -EIO;
-
-        return 0;
+        return fflush_and_check(f);
 }
 
-int write_string_file(const char *fn, const char *line) {
-        _cleanup_fclose_ FILE *f = NULL;
-
-        assert(fn);
-        assert(line);
-
-        f = fopen(fn, "we");
-        if (!f)
-                return -errno;
-
-        return write_string_stream(f, line);
-}
-
-int write_string_file_no_create(const char *fn, const char *line) {
-        _cleanup_fclose_ FILE *f = NULL;
-        int fd;
-
-        assert(fn);
-        assert(line);
-
-        /* We manually build our own version of fopen(..., "we") that
-         * works without O_CREAT */
-        fd = open(fn, O_WRONLY|O_CLOEXEC|O_NOCTTY);
-        if (fd < 0)
-                return -errno;
-
-        f = fdopen(fd, "we");
-        if (!f) {
-                safe_close(fd);
-                return -errno;
-        }
-
-        return write_string_stream(f, line);
-}
-
-int write_string_file_atomic(const char *fn, const char *line) {
+static int write_string_file_atomic(const char *fn, const char *line, bool enforce_newline) {
         _cleanup_fclose_ FILE *f = NULL;
         _cleanup_free_ char *p = NULL;
         int r;
@@ -94,7 +53,7 @@ int write_string_file_atomic(const char *fn, const char *line) {
 
         fchmod_umask(fileno(f), 0644);
 
-        r = write_string_stream(f, line);
+        r = write_string_stream(f, line, enforce_newline);
         if (r >= 0) {
                 if (rename(p, fn) < 0)
                         r = -errno;
@@ -104,6 +63,41 @@ int write_string_file_atomic(const char *fn, const char *line) {
                 unlink(p);
 
         return r;
+}
+
+int write_string_file(const char *fn, const char *line, WriteStringFileFlags flags) {
+        _cleanup_fclose_ FILE *f = NULL;
+
+        assert(fn);
+        assert(line);
+
+        if (flags & WRITE_STRING_FILE_ATOMIC) {
+                assert(flags & WRITE_STRING_FILE_CREATE);
+
+                return write_string_file_atomic(fn, line, !(flags & WRITE_STRING_FILE_AVOID_NEWLINE));
+        }
+
+        if (flags & WRITE_STRING_FILE_CREATE) {
+                f = fopen(fn, "we");
+                if (!f)
+                        return -errno;
+        } else {
+                int fd;
+
+                /* We manually build our own version of fopen(..., "we") that
+                 * works without O_CREAT */
+                fd = open(fn, O_WRONLY|O_CLOEXEC|O_NOCTTY);
+                if (fd < 0)
+                        return -errno;
+
+                f = fdopen(fd, "we");
+                if (!f) {
+                        safe_close(fd);
+                        return -errno;
+                }
+        }
+
+        return write_string_stream(f, line, !(flags & WRITE_STRING_FILE_AVOID_NEWLINE));
 }
 
 int read_one_line_file(const char *fn, char **line) {
@@ -132,6 +126,17 @@ int read_one_line_file(const char *fn, char **line) {
 
         *line = c;
         return 0;
+}
+
+int verify_one_line_file(const char *fn, const char *line) {
+        _cleanup_free_ char *value = NULL;
+        int r;
+
+        r = read_one_line_file(fn, &value);
+        if (r < 0)
+                return r;
+
+        return streq(value, line);
 }
 
 int read_full_stream(FILE *f, char **contents, size_t *size) {
@@ -775,7 +780,7 @@ int executable_is_script(const char *path, char **interpreter) {
  */
 int get_status_field(const char *filename, const char *pattern, char **field) {
         _cleanup_free_ char *status = NULL;
-        char *t;
+        char *t, *f;
         size_t len;
         int r;
 
@@ -809,9 +814,10 @@ int get_status_field(const char *filename, const char *pattern, char **field) {
 
         len = strcspn(t, WHITESPACE);
 
-        *field = strndup(t, len);
-        if (!*field)
+        f = strndup(t, len);
+        if (!f)
                 return -ENOMEM;
 
+        *field = f;
         return 0;
 }

@@ -125,6 +125,7 @@ enum {
         DHCP_OPTION_BROADCAST                   = 28,
         DHCP_OPTION_STATIC_ROUTE                = 33,
         DHCP_OPTION_NTP_SERVER                  = 42,
+        DHCP_OPTION_VENDOR_SPECIFIC             = 43,
         DHCP_OPTION_REQUESTED_IP_ADDRESS        = 50,
         DHCP_OPTION_IP_ADDRESS_LEASE_TIME       = 51,
         DHCP_OPTION_OVERLOAD                    = 52,
@@ -137,5 +138,7 @@ enum {
         DHCP_OPTION_VENDOR_CLASS_IDENTIFIER     = 60,
         DHCP_OPTION_CLIENT_IDENTIFIER           = 61,
         DHCP_OPTION_CLASSLESS_STATIC_ROUTE      = 121,
+        DHCP_OPTION_PRIVATE_BASE                = 224,
+        DHCP_OPTION_PRIVATE_LAST                = 254,
         DHCP_OPTION_END                         = 255,
 };
