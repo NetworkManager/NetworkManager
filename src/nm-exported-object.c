@@ -221,14 +221,15 @@ nm_exported_object_class_add_interface (NMExportedObjectClass *object_class,
 	va_list ap;
 	const char *method_name;
 	GCallback impl;
-	GType *interfaces;
+	gs_free GType *interfaces = NULL;
 	guint n_interfaces;
-	guint *dbus_signals, n_signals, n_method_signals;
+	guint n_signals, n_method_signals;
 	guint object_signal_id;
 	GSignalQuery query;
 	int i, s;
 	GObjectClass *dbus_object_class;
-	GParamSpec **dbus_properties, *object_property;
+	gs_free GParamSpec **dbus_properties = NULL;
+	GParamSpec *object_property;
 	guint n_dbus_properties;
 
 	g_return_if_fail (NM_IS_EXPORTED_OBJECT_CLASS (object_class));
@@ -294,6 +295,8 @@ nm_exported_object_class_add_interface (NMExportedObjectClass *object_class,
 	interfaces = g_type_interfaces (dbus_skeleton_type, &n_interfaces);
 	n_method_signals = 0;
 	for (i = 0; i < n_interfaces; i++) {
+		gs_free guint *dbus_signals = NULL;
+
 		dbus_signals = g_signal_list_ids (interfaces[i], &n_signals);
 		for (s = 0; s < n_signals; s++) {
 			g_signal_query (dbus_signals[s], &query);
