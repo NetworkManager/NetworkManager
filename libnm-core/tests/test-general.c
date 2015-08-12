@@ -7,7 +7,7 @@
  * any later version.
  *
  * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * but WITHOUT SC WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
@@ -4709,6 +4709,95 @@ static void test_nm_utils_enum (void)
 }
 
 /******************************************************************************/
+
+static int
+_test_nm_in_set_get (int *call_counter, gboolean allow_called, int value)
+{
+	g_assert (call_counter);
+	*call_counter += 1;
+	if (!allow_called)
+		g_assert_not_reached ();
+	return value;
+}
+
+static void
+_test_nm_in_set_assert (int *call_counter, int expected)
+{
+	g_assert (call_counter);
+	g_assert_cmpint (expected, ==, *call_counter);
+	*call_counter = 0;
+}
+
+static void
+test_nm_in_set (void)
+{
+	int call_counter = 0;
+
+#define G(x) _test_nm_in_set_get (&call_counter, TRUE,  x)
+#define N(x) _test_nm_in_set_get (&call_counter, FALSE,  x)
+#define _ASSERT(expected, expr) \
+	G_STMT_START { \
+		_test_nm_in_set_assert (&call_counter, 0); \
+		g_assert (expr); \
+		_test_nm_in_set_assert (&call_counter, (expected)); \
+	} G_STMT_END
+	_ASSERT (1, !NM_IN_SET (-1, G( 1)));
+	_ASSERT (1,  NM_IN_SET (-1, G(-1)));
+
+	_ASSERT (2, !NM_IN_SET (-1, G( 1), G( 2)));
+	_ASSERT (2,  NM_IN_SET (-1, G(-1), G( 2)));
+	_ASSERT (2,  NM_IN_SET (-1, G( 1), G(-1)));
+	_ASSERT (2,  NM_IN_SET (-1, G(-1), G(-1)));
+
+	_ASSERT (3, !NM_IN_SET (-1, G( 1), G( 2), G( 3)));
+	_ASSERT (3,  NM_IN_SET (-1, G(-1), G( 2), G( 3)));
+	_ASSERT (3,  NM_IN_SET (-1, G( 1), G(-1), G( 3)));
+	_ASSERT (3,  NM_IN_SET (-1, G( 1), G( 2), G(-1)));
+	_ASSERT (3,  NM_IN_SET (-1, G( 1), G(-1), G(-1)));
+	_ASSERT (3,  NM_IN_SET (-1, G(-1), G( 2), G(-1)));
+	_ASSERT (3,  NM_IN_SET (-1, G(-1), G(-1), G( 3)));
+	_ASSERT (3,  NM_IN_SET (-1, G(-1), G(-1), G(-1)));
+
+	_ASSERT (4, !NM_IN_SET (-1, G( 1), G( 2), G( 3), G( 4)));
+	_ASSERT (4,  NM_IN_SET (-1, G(-1), G( 2), G( 3), G( 4)));
+	_ASSERT (4,  NM_IN_SET (-1, G( 1), G(-1), G( 3), G( 4)));
+	_ASSERT (4,  NM_IN_SET (-1, G( 1), G( 2), G(-1), G( 4)));
+	_ASSERT (4,  NM_IN_SET (-1, G( 1), G( 2), G( 3), G(-1)));
+
+	_ASSERT (5,  NM_IN_SET (-1, G( 1), G( 2), G( 3), G(-1), G( 5)));
+
+	_ASSERT (1, !NM_IN_SET_SC (-1, G( 1)));
+	_ASSERT (1,  NM_IN_SET_SC (-1, G(-1)));
+
+	_ASSERT (2, !NM_IN_SET_SC (-1, G( 1), G( 2)));
+	_ASSERT (1,  NM_IN_SET_SC (-1, G(-1), N( 2)));
+	_ASSERT (2,  NM_IN_SET_SC (-1, G( 1), G(-1)));
+	_ASSERT (1,  NM_IN_SET_SC (-1, G(-1), N(-1)));
+
+	_ASSERT (3, !NM_IN_SET_SC (-1, G( 1), G( 2), G( 3)));
+	_ASSERT (1,  NM_IN_SET_SC (-1, G(-1), N( 2), N( 3)));
+	_ASSERT (2,  NM_IN_SET_SC (-1, G( 1), G(-1), N( 3)));
+	_ASSERT (3,  NM_IN_SET_SC (-1, G( 1), G( 2), G(-1)));
+	_ASSERT (2,  NM_IN_SET_SC (-1, G( 1), G(-1), N(-1)));
+	_ASSERT (1,  NM_IN_SET_SC (-1, G(-1), N( 2), N(-1)));
+	_ASSERT (1,  NM_IN_SET_SC (-1, G(-1), N(-1), N( 3)));
+	_ASSERT (1,  NM_IN_SET_SC (-1, G(-1), N(-1), N(-1)));
+
+	_ASSERT (4, !NM_IN_SET_SC (-1, G( 1), G( 2), G( 3), G( 4)));
+	_ASSERT (1,  NM_IN_SET_SC (-1, G(-1), N( 2), N( 3), N( 4)));
+	_ASSERT (2,  NM_IN_SET_SC (-1, G( 1), G(-1), N( 3), N( 4)));
+	_ASSERT (3,  NM_IN_SET_SC (-1, G( 1), G( 2), G(-1), N( 4)));
+	_ASSERT (4,  NM_IN_SET_SC (-1, G( 1), G( 2), G( 3), G(-1)));
+
+	_ASSERT (4,  NM_IN_SET_SC (-1, G( 1), G( 2), G( 3), G(-1), G( 5)));
+
+#undef G
+#undef N
+#undef _ASSERT
+}
+
+/******************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -4716,6 +4805,7 @@ int main (int argc, char **argv)
 	nmtst_init (&argc, &argv, TRUE);
 
 	/* The tests */
+	g_test_add_func ("/core/general/test_nm_in_set", test_nm_in_set);
 	g_test_add_func ("/core/general/test_setting_vpn_items", test_setting_vpn_items);
 	g_test_add_func ("/core/general/test_setting_vpn_update_secrets", test_setting_vpn_update_secrets);
 	g_test_add_func ("/core/general/test_setting_vpn_modify_during_foreach", test_setting_vpn_modify_during_foreach);
