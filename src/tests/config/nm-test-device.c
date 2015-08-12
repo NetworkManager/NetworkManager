@@ -26,9 +26,9 @@
 #include "nm-device-private.h"
 #include "nm-utils.h"
 
-static GObjectClass *g_object_class;
-
 G_DEFINE_TYPE (NMTestDevice, nm_test_device, NM_TYPE_DEVICE)
+
+#define PARENT_CLASS (G_OBJECT_CLASS (g_type_class_peek_parent (nm_test_device_parent_class)))
 
 static void
 nm_test_device_init (NMTestDevice *self)
@@ -44,21 +44,21 @@ constructor (GType type,
              guint n_construct_params,
              GObjectConstructParam *construct_params)
 {
-	return g_object_class->constructor (type,
-	                                    n_construct_params,
-	                                    construct_params);
+	return PARENT_CLASS->constructor (type,
+	                                  n_construct_params,
+	                                  construct_params);
 }
 
 static void
 constructed (GObject *object)
 {
-	g_object_class->constructed (object);
+	PARENT_CLASS->constructed (object);
 }
 
 static void
 dispose (GObject *object)
 {
-	g_object_class->dispose (object);
+	PARENT_CLASS->dispose (object);
 }
 
 static NMDeviceCapabilities
@@ -72,8 +72,6 @@ nm_test_device_class_init (NMTestDeviceClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
-
-	g_object_class = g_type_class_peek (G_TYPE_OBJECT);
 
 	object_class->constructor = constructor;
 	object_class->constructed = constructed;
