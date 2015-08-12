@@ -3521,22 +3521,17 @@ impl_manager_deactivate_connection (NMManager *self,
                                     const char *active_path)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMActiveConnection *ac;
 	NMConnection *connection = NULL;
 	GError *error = NULL;
 	NMAuthSubject *subject = NULL;
-	GSList *iter;
 	NMAuthChain *chain;
 	char *error_desc = NULL;
 
 	/* Find the connection by its object path */
-	for (iter = priv->active_connections; iter; iter = g_slist_next (iter)) {
-		NMActiveConnection *ac = iter->data;
-
-		if (g_strcmp0 (nm_exported_object_get_path (NM_EXPORTED_OBJECT (ac)), active_path) == 0) {
-			connection = nm_active_connection_get_connection (ac);
-			break;
-		}
-	}
+	ac = active_connection_get_by_path (self, active_path);
+	if (ac)
+		connection = nm_active_connection_get_connection (ac);
 
 	if (!connection) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
