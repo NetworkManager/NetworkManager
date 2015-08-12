@@ -28,6 +28,7 @@
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <inttypes.h>
+#include <stdbool.h>
 
 #define _printf_(a,b) __attribute__ ((format (printf, a, b)))
 #define _alloc_(...) __attribute__ ((alloc_size(__VA_ARGS__)))
@@ -408,12 +409,12 @@ do {                                                                    \
 
 #define IN_SET(x, y, ...)                                               \
         ({                                                              \
-                const typeof(y) _y = (y);                               \
-                typeof(_y) _x = (x);                                    \
+                static const typeof(y) _array[] = { (y), __VA_ARGS__ }; \
+                const typeof(y) _x = (x);                               \
                 unsigned _i;                                            \
                 bool _found = false;                                    \
-                for (_i = 0; _i < 1 + sizeof((typeof(_x)[]) { __VA_ARGS__ })/sizeof(typeof(_x)); _i++) \
-                        if (((typeof(_x)[]) { _y, __VA_ARGS__ })[_i] == _x) { \
+                for (_i = 0; _i < ELEMENTSOF(_array); _i++)             \
+                        if (_array[_i] == _x) {                         \
                                 _found = true;                          \
                                 break;                                  \
                         }                                               \
@@ -464,6 +465,18 @@ do {                                                                    \
 #define GID_INVALID ((gid_t) -1)
 #define MODE_INVALID ((mode_t) -1)
 #endif /* NM_IGNORED */
+
+static inline bool UID_IS_INVALID(uid_t uid) {
+        /* We consider both the old 16bit -1 user and the newer 32bit
+         * -1 user invalid, since they are or used to be incompatible
+         * with syscalls such as setresuid() or chown(). */
+
+        return uid == (uid_t) ((uint32_t) -1) || uid == (uid_t) ((uint16_t) -1);
+}
+
+static inline bool GID_IS_INVALID(gid_t gid) {
+        return gid == (gid_t) ((uint32_t) -1) || gid == (gid_t) ((uint16_t) -1);
+}
 
 #define DEFINE_TRIVIAL_CLEANUP_FUNC(type, func)                 \
         static inline void func##p(type *p) {                   \

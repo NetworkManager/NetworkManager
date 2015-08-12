@@ -535,7 +535,7 @@ int fd_is_mount_point(int fd, const char *filename, int flags) {
          *
          * If that didn't work we will try to read the mount id from
          * /proc/self/fdinfo/<fd>. This is almost as good as
-         * name_to_handle_at(), however, does not return the the
+         * name_to_handle_at(), however, does not return the
          * opaque file handle. The opaque file handle is pretty useful
          * to detect the root directory, which we should always
          * consider a mount point. Hence we use this only as
@@ -663,9 +663,11 @@ int path_is_mount_point(const char *t, int flags) {
                 canonical = canonicalize_file_name(t);
                 if (!canonical)
                         return -errno;
+
+                t = canonical;
         }
 
-        r = path_get_parent(canonical ?: t, &parent);
+        r = path_get_parent(t, &parent);
         if (r < 0)
                 return r;
 
@@ -673,7 +675,7 @@ int path_is_mount_point(const char *t, int flags) {
         if (fd < 0)
                 return -errno;
 
-        return fd_is_mount_point(fd, basename(canonical ?: t), flags);
+        return fd_is_mount_point(fd, basename(t), flags);
 }
 
 int path_is_read_only_fs(const char *path) {

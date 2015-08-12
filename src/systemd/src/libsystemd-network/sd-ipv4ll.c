@@ -189,8 +189,7 @@ static void ipv4ll_set_next_wakeup(sd_ipv4ll *ll, int sec, int random_sec) {
         if (random_sec)
                 next_timeout += random_u32() % (random_sec * USEC_PER_SEC);
 
-        if (sd_event_now(ll->event, clock_boottime_or_monotonic(), &time_now) < 0)
-                time_now = now(clock_boottime_or_monotonic());
+        assert_se(sd_event_now(ll->event, clock_boottime_or_monotonic(), &time_now) >= 0);
 
         ll->next_wakeup = time_now + next_timeout;
         ll->next_wakeup_valid = 1;
@@ -510,7 +509,7 @@ error:
 }
 
 bool sd_ipv4ll_is_running(sd_ipv4ll *ll) {
-        assert_return(ll, -EINVAL);
+        assert_return(ll, false);
 
         return !IN_SET(ll->state, IPV4LL_STATE_INIT, IPV4LL_STATE_STOPPED);
 }
