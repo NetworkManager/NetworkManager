@@ -159,13 +159,15 @@
 #define _NM_IN_SET_EVAL_N2(op, x, n, ...)        _NM_IN_SET_EVAL_##n(op, x, __VA_ARGS__)
 #define _NM_IN_SET_EVAL_N(op, x, n, ...)         _NM_IN_SET_EVAL_N2(op, x, n, __VA_ARGS__)
 
-/* does not do short-circuit evaluation to get a more function-like behavior
- * ("|" instead of "||"). Use NM_IN_SET_SC() if you want that */
-#define NM_IN_SET(x, ...)               _NM_IN_SET_EVAL_N(| , x, NM_NARG (__VA_ARGS__), __VA_ARGS__)
+/* Beware that this does short-circuit evaluation (use "||" instead of "|")
+ * which has a possibly unexpected non-function-like behavior.
+ * Use NM_IN_SET_SE if you need all arguments to be evaluted. */
+#define NM_IN_SET(x, ...)               _NM_IN_SET_EVAL_N(||, x, NM_NARG (__VA_ARGS__), __VA_ARGS__)
 
-/* "SC" stands for "short-cirtuit". It will only evaluate the arguments
- * until a match is found. */
-#define NM_IN_SET_SC(x, ...)            _NM_IN_SET_EVAL_N(||, x, NM_NARG (__VA_ARGS__), __VA_ARGS__)
+/* "SE" stands for "side-effect". Contrary to NM_IN_SET(), this does not do
+ * short-circuit evaluation, which can make a difference if the arguments have
+ * side-effects. */
+#define NM_IN_SET_SE(x, ...)            _NM_IN_SET_EVAL_N(|, x, NM_NARG (__VA_ARGS__), __VA_ARGS__)
 
 /*****************************************************************************/
 

@@ -4745,52 +4745,51 @@ test_nm_in_set (void)
 	_ASSERT (1,  NM_IN_SET (-1, G(-1)));
 
 	_ASSERT (2, !NM_IN_SET (-1, G( 1), G( 2)));
-	_ASSERT (2,  NM_IN_SET (-1, G(-1), G( 2)));
+	_ASSERT (1,  NM_IN_SET (-1, G(-1), N( 2)));
 	_ASSERT (2,  NM_IN_SET (-1, G( 1), G(-1)));
-	_ASSERT (2,  NM_IN_SET (-1, G(-1), G(-1)));
+	_ASSERT (1,  NM_IN_SET (-1, G(-1), N(-1)));
 
 	_ASSERT (3, !NM_IN_SET (-1, G( 1), G( 2), G( 3)));
-	_ASSERT (3,  NM_IN_SET (-1, G(-1), G( 2), G( 3)));
-	_ASSERT (3,  NM_IN_SET (-1, G( 1), G(-1), G( 3)));
+	_ASSERT (1,  NM_IN_SET (-1, G(-1), N( 2), N( 3)));
+	_ASSERT (2,  NM_IN_SET (-1, G( 1), G(-1), N( 3)));
 	_ASSERT (3,  NM_IN_SET (-1, G( 1), G( 2), G(-1)));
-	_ASSERT (3,  NM_IN_SET (-1, G( 1), G(-1), G(-1)));
-	_ASSERT (3,  NM_IN_SET (-1, G(-1), G( 2), G(-1)));
-	_ASSERT (3,  NM_IN_SET (-1, G(-1), G(-1), G( 3)));
-	_ASSERT (3,  NM_IN_SET (-1, G(-1), G(-1), G(-1)));
+	_ASSERT (2,  NM_IN_SET (-1, G( 1), G(-1), N(-1)));
+	_ASSERT (1,  NM_IN_SET (-1, G(-1), N( 2), N(-1)));
+	_ASSERT (1,  NM_IN_SET (-1, G(-1), N(-1), N( 3)));
+	_ASSERT (1,  NM_IN_SET (-1, G(-1), N(-1), N(-1)));
 
 	_ASSERT (4, !NM_IN_SET (-1, G( 1), G( 2), G( 3), G( 4)));
-	_ASSERT (4,  NM_IN_SET (-1, G(-1), G( 2), G( 3), G( 4)));
-	_ASSERT (4,  NM_IN_SET (-1, G( 1), G(-1), G( 3), G( 4)));
-	_ASSERT (4,  NM_IN_SET (-1, G( 1), G( 2), G(-1), G( 4)));
+	_ASSERT (1,  NM_IN_SET (-1, G(-1), N( 2), N( 3), N( 4)));
+	_ASSERT (2,  NM_IN_SET (-1, G( 1), G(-1), N( 3), N( 4)));
+	_ASSERT (3,  NM_IN_SET (-1, G( 1), G( 2), G(-1), N( 4)));
 	_ASSERT (4,  NM_IN_SET (-1, G( 1), G( 2), G( 3), G(-1)));
 
-	_ASSERT (5,  NM_IN_SET (-1, G( 1), G( 2), G( 3), G(-1), G( 5)));
+	_ASSERT (4,  NM_IN_SET (-1, G( 1), G( 2), G( 3), G(-1), G( 5)));
 
-	_ASSERT (1, !NM_IN_SET_SC (-1, G( 1)));
-	_ASSERT (1,  NM_IN_SET_SC (-1, G(-1)));
+	_ASSERT (1, !NM_IN_SET_SE (-1, G( 1)));
+	_ASSERT (1,  NM_IN_SET_SE (-1, G(-1)));
 
-	_ASSERT (2, !NM_IN_SET_SC (-1, G( 1), G( 2)));
-	_ASSERT (1,  NM_IN_SET_SC (-1, G(-1), N( 2)));
-	_ASSERT (2,  NM_IN_SET_SC (-1, G( 1), G(-1)));
-	_ASSERT (1,  NM_IN_SET_SC (-1, G(-1), N(-1)));
+	_ASSERT (2, !NM_IN_SET_SE (-1, G( 1), G( 2)));
+	_ASSERT (2,  NM_IN_SET_SE (-1, G(-1), G( 2)));
+	_ASSERT (2,  NM_IN_SET_SE (-1, G( 1), G(-1)));
+	_ASSERT (2,  NM_IN_SET_SE (-1, G(-1), G(-1)));
 
-	_ASSERT (3, !NM_IN_SET_SC (-1, G( 1), G( 2), G( 3)));
-	_ASSERT (1,  NM_IN_SET_SC (-1, G(-1), N( 2), N( 3)));
-	_ASSERT (2,  NM_IN_SET_SC (-1, G( 1), G(-1), N( 3)));
-	_ASSERT (3,  NM_IN_SET_SC (-1, G( 1), G( 2), G(-1)));
-	_ASSERT (2,  NM_IN_SET_SC (-1, G( 1), G(-1), N(-1)));
-	_ASSERT (1,  NM_IN_SET_SC (-1, G(-1), N( 2), N(-1)));
-	_ASSERT (1,  NM_IN_SET_SC (-1, G(-1), N(-1), N( 3)));
-	_ASSERT (1,  NM_IN_SET_SC (-1, G(-1), N(-1), N(-1)));
+	_ASSERT (3, !NM_IN_SET_SE (-1, G( 1), G( 2), G( 3)));
+	_ASSERT (3,  NM_IN_SET_SE (-1, G(-1), G( 2), G( 3)));
+	_ASSERT (3,  NM_IN_SET_SE (-1, G( 1), G(-1), G( 3)));
+	_ASSERT (3,  NM_IN_SET_SE (-1, G( 1), G( 2), G(-1)));
+	_ASSERT (3,  NM_IN_SET_SE (-1, G( 1), G(-1), G(-1)));
+	_ASSERT (3,  NM_IN_SET_SE (-1, G(-1), G( 2), G(-1)));
+	_ASSERT (3,  NM_IN_SET_SE (-1, G(-1), G(-1), G( 3)));
+	_ASSERT (3,  NM_IN_SET_SE (-1, G(-1), G(-1), G(-1)));
 
-	_ASSERT (4, !NM_IN_SET_SC (-1, G( 1), G( 2), G( 3), G( 4)));
-	_ASSERT (1,  NM_IN_SET_SC (-1, G(-1), N( 2), N( 3), N( 4)));
-	_ASSERT (2,  NM_IN_SET_SC (-1, G( 1), G(-1), N( 3), N( 4)));
-	_ASSERT (3,  NM_IN_SET_SC (-1, G( 1), G( 2), G(-1), N( 4)));
-	_ASSERT (4,  NM_IN_SET_SC (-1, G( 1), G( 2), G( 3), G(-1)));
+	_ASSERT (4, !NM_IN_SET_SE (-1, G( 1), G( 2), G( 3), G( 4)));
+	_ASSERT (4,  NM_IN_SET_SE (-1, G(-1), G( 2), G( 3), G( 4)));
+	_ASSERT (4,  NM_IN_SET_SE (-1, G( 1), G(-1), G( 3), G( 4)));
+	_ASSERT (4,  NM_IN_SET_SE (-1, G( 1), G( 2), G(-1), G( 4)));
+	_ASSERT (4,  NM_IN_SET_SE (-1, G( 1), G( 2), G( 3), G(-1)));
 
-	_ASSERT (4,  NM_IN_SET_SC (-1, G( 1), G( 2), G( 3), G(-1), G( 5)));
-
+	_ASSERT (5,  NM_IN_SET_SE (-1, G( 1), G( 2), G( 3), G(-1), G( 5)));
 #undef G
 #undef N
 #undef _ASSERT
