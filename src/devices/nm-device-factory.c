@@ -303,19 +303,20 @@ nm_device_factory_manager_for_each_factory (NMDeviceFactoryManagerFactoryFunc ca
 	NMDeviceFactory *factory;
 	GSList *list_iter, *list = NULL;
 
-	g_return_if_fail (factories_by_link);
-	g_return_if_fail (factories_by_setting);
-
-	g_hash_table_iter_init (&iter, factories_by_link);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &factory)) {
-		if (!g_slist_find (list, factory))
-			list = g_slist_prepend (list, factory);
+	if (factories_by_link) {
+		g_hash_table_iter_init (&iter, factories_by_link);
+		while (g_hash_table_iter_next (&iter, NULL, (gpointer) &factory)) {
+			if (!g_slist_find (list, factory))
+				list = g_slist_prepend (list, factory);
+		}
 	}
 
-	g_hash_table_iter_init (&iter, factories_by_setting);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &factory)) {
-		if (!g_slist_find (list, factory))
-			list = g_slist_prepend (list, factory);
+	if (factories_by_setting) {
+		g_hash_table_iter_init (&iter, factories_by_setting);
+		while (g_hash_table_iter_next (&iter, NULL, (gpointer) &factory)) {
+			if (!g_slist_find (list, factory))
+				list = g_slist_prepend (list, factory);
+		}
 	}
 
 	for (list_iter = list; list_iter; list_iter = list_iter->next)
