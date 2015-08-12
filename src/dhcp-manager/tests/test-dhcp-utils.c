@@ -71,7 +71,7 @@ static void
 test_generic_options (void)
 {
 	GHashTable *options;
-	NMIP4Config *ip4_config;
+	gs_unref_object NMIP4Config *ip4_config = NULL;
 	const NMPlatformIP4Address *address;
 	const NMPlatformIP4Route *route;
 	guint32 tmp;
@@ -146,7 +146,7 @@ static void
 test_wins_options (void)
 {
 	GHashTable *options;
-	NMIP4Config *ip4_config;
+	gs_unref_object NMIP4Config *ip4_config = NULL;
 	const NMPlatformIP4Address *address;
 	guint32 tmp;
 	const char *expected_wins1 = "63.12.199.5";
@@ -232,7 +232,7 @@ static void
 test_classless_static_routes_1 (void)
 {
 	GHashTable *options;
-	NMIP4Config *ip4_config;
+	gs_unref_object NMIP4Config *ip4_config = NULL;
 	const char *expected_route1_dest = "192.168.10.0";
 	const char *expected_route1_gw = "192.168.1.1";
 	const char *expected_route2_dest = "10.0.0.0";
@@ -260,7 +260,7 @@ static void
 test_classless_static_routes_2 (void)
 {
 	GHashTable *options;
-	NMIP4Config *ip4_config;
+	gs_unref_object NMIP4Config *ip4_config = NULL;
 	const char *expected_route1_dest = "192.168.10.0";
 	const char *expected_route1_gw = "192.168.1.1";
 	const char *expected_route2_dest = "10.0.0.0";
@@ -288,7 +288,7 @@ static void
 test_fedora_dhclient_classless_static_routes (void)
 {
 	GHashTable *options;
-	NMIP4Config *ip4_config;
+	gs_unref_object NMIP4Config *ip4_config = NULL;
 	const char *expected_route1_dest = "129.210.177.128";
 	const char *expected_route1_gw = "192.168.0.113";
 	const char *expected_route2_dest = "2.0.0.0";
@@ -320,7 +320,7 @@ static void
 test_dhclient_invalid_classless_routes_1 (void)
 {
 	GHashTable *options;
-	NMIP4Config *ip4_config;
+	gs_unref_object NMIP4Config *ip4_config = NULL;
 	const char *expected_route1_dest = "192.168.10.0";
 	const char *expected_route1_gw = "192.168.1.1";
 	static const Option data[] = {
@@ -349,7 +349,7 @@ static void
 test_dhcpcd_invalid_classless_routes_1 (void)
 {
 	GHashTable *options;
-	NMIP4Config *ip4_config;
+	gs_unref_object NMIP4Config *ip4_config = NULL;
 	const char *expected_route1_dest = "10.1.1.5";
 	const char *expected_route1_gw = "10.1.1.1";
 	const char *expected_route2_dest = "100.99.88.56";
@@ -383,7 +383,7 @@ static void
 test_dhclient_invalid_classless_routes_2 (void)
 {
 	GHashTable *options;
-	NMIP4Config *ip4_config;
+	gs_unref_object NMIP4Config *ip4_config = NULL;
 	const char *expected_route1_dest = "10.1.1.5";
 	const char *expected_route1_gw = "10.1.1.1";
 	const char *expected_route2_dest = "100.99.88.56";
@@ -416,7 +416,7 @@ static void
 test_dhcpcd_invalid_classless_routes_2 (void)
 {
 	GHashTable *options;
-	NMIP4Config *ip4_config;
+	gs_unref_object NMIP4Config *ip4_config = NULL;
 	const char *expected_route1_dest = "10.1.1.5";
 	const char *expected_route1_gw = "10.1.1.1";
 	const char *expected_route2_dest = "100.99.88.56";
@@ -451,7 +451,7 @@ static void
 test_dhclient_invalid_classless_routes_3 (void)
 {
 	GHashTable *options;
-	NMIP4Config *ip4_config;
+	gs_unref_object NMIP4Config *ip4_config = NULL;
 	const char *expected_route1_dest = "192.168.10.0";
 	const char *expected_route1_gw = "192.168.1.1";
 	static const Option data[] = {
@@ -479,7 +479,7 @@ static void
 test_dhcpcd_invalid_classless_routes_3 (void)
 {
 	GHashTable *options;
-	NMIP4Config *ip4_config;
+	gs_unref_object NMIP4Config *ip4_config = NULL;
 	const char *expected_route1_dest = "192.168.10.0";
 	const char *expected_route1_gw = "192.168.1.1";
 	static Option data[] = {
@@ -507,7 +507,7 @@ static void
 test_dhclient_gw_in_classless_routes (void)
 {
 	GHashTable *options;
-	NMIP4Config *ip4_config;
+	gs_unref_object NMIP4Config *ip4_config = NULL;
 	const char *expected_route1_dest = "192.168.10.0";
 	const char *expected_route1_gw = "192.168.1.1";
 	const char *expected_gateway = "192.2.3.4";
@@ -535,7 +535,7 @@ static void
 test_dhcpcd_gw_in_classless_routes (void)
 {
 	GHashTable *options;
-	NMIP4Config *ip4_config;
+	gs_unref_object NMIP4Config *ip4_config = NULL;
 	const char *expected_route1_dest = "192.168.10.0";
 	const char *expected_route1_gw = "192.168.1.1";
 	const char *expected_gateway = "192.2.3.4";
@@ -563,7 +563,7 @@ static void
 test_escaped_domain_searches (void)
 {
 	GHashTable *options;
-	NMIP4Config *ip4_config;
+	gs_unref_object NMIP4Config *ip4_config = NULL;
 	const char *expected_search0 = "host1";
 	const char *expected_search1 = "host2";
 	const char *expected_search2 = "host3";
@@ -590,7 +590,7 @@ static void
 test_invalid_escaped_domain_searches (void)
 {
 	GHashTable *options;
-	NMIP4Config *ip4_config;
+	gs_unref_object NMIP4Config *ip4_config = NULL;
 	static const Option data[] = {
 		{ "domain_search", "host1\\aahost2\\032host3" },
 		{ NULL, NULL }
@@ -615,7 +615,7 @@ static void
 test_ip4_missing_prefix (const char *ip, guint32 expected_prefix)
 {
 	GHashTable *options;
-	NMIP4Config *ip4_config;
+	gs_unref_object NMIP4Config *ip4_config = NULL;
 	const NMPlatformIP4Address *address;
 
 	options = fill_table (generic_options, NULL);
@@ -655,7 +655,7 @@ static void
 test_ip4_prefix_classless (void)
 {
 	GHashTable *options;
-	NMIP4Config *ip4_config;
+	gs_unref_object NMIP4Config *ip4_config = NULL;
 	const NMPlatformIP4Address *address;
 
 	/* Ensure that the missing-subnet-mask handler doesn't mangle classless
