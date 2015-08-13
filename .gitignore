@@ -6,7 +6,6 @@
 *.gcno
 *.gcda
 *.la
-*.bz2
 *.gir
 *.typelib
 *.stamp
@@ -31,6 +30,8 @@ cscope.*out
 valgrind-*.log
 test-*.log
 test-*.trs
+
+/NetworkManager-*.tar.*
 
 /ABOUT-NLS
 /COPYING
