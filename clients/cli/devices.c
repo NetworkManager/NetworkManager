@@ -2533,15 +2533,9 @@ do_device_wifi_rescan (NmCli *nmc, int argc, char **argv)
 	device = find_wifi_device_by_iface (devices, ifname, &devices_idx);
 
 	if (!device) {
-		if (ifname) {
-			const char *err_msg;
-			if (   nm_device_get_device_type (device) == NM_DEVICE_TYPE_GENERIC
-			    && g_strcmp0 (nm_device_get_type_description (device), "wifi") == 0)
-				err_msg = _("Error: Device '%s' was not recognized as a Wi-Fi device, check NetworkManager Wi-Fi plugin.");
-			else
-				err_msg = _("Error: Device '%s' is not a Wi-Fi device.");
-			g_string_printf (nmc->return_text, err_msg, ifname);
-		} else
+		if (ifname)
+			g_string_printf (nmc->return_text, _("Error: Device '%s' is not a Wi-Fi device."), ifname);
+		else
 			g_string_printf (nmc->return_text, _("Error: No Wi-Fi device found."));
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 		goto error;
