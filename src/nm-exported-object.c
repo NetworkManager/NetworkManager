@@ -523,6 +523,13 @@ nm_exported_object_unexport (NMExportedObject *self)
 		nm_bus_manager_unregister_object (nm_bus_manager_get (), iter->data);
 	g_slist_free_full (priv->interfaces, g_object_unref);
 	priv->interfaces = NULL;
+
+	if (nm_clear_g_source (&priv->notify_idle_id)) {
+		/* We had a notification queued. Since we removed all interfaces,
+		 * the notification is obsolete and must be cleaned up. */
+		g_variant_builder_clear (&priv->pending_notifies);
+		g_variant_builder_init (&priv->pending_notifies, G_VARIANT_TYPE_VARDICT);
+	}
 }
 
 static void
