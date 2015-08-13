@@ -144,7 +144,7 @@ static void plugin_interactive_secrets_required (NMVpnConnection *self,
                                                  const char *message,
                                                  const char **secrets);
 
-static void _set_vpn_state (NMVpnConnection *connection,
+static void _set_vpn_state (NMVpnConnection *self,
                             VpnState vpn_state,
                             NMVpnConnectionStateReason reason,
                             gboolean quitting);
@@ -222,9 +222,9 @@ call_plugin_disconnect (NMVpnConnection *self)
 }
 
 static void
-fw_call_cleanup (NMVpnConnection *connection)
+fw_call_cleanup (NMVpnConnection *self)
 {
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
 	if (priv->fw_call) {
 		nm_firewall_manager_cancel_call (nm_firewall_manager_get (), priv->fw_call);
@@ -233,9 +233,9 @@ fw_call_cleanup (NMVpnConnection *connection)
 }
 
 static void
-vpn_cleanup (NMVpnConnection *connection, NMDevice *parent_dev)
+vpn_cleanup (NMVpnConnection *self, NMDevice *parent_dev)
 {
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
 	if (priv->ip_ifindex) {
 		nm_platform_link_set_down (NM_PLATFORM_GET, priv->ip_ifindex);
@@ -252,7 +252,7 @@ vpn_cleanup (NMVpnConnection *connection, NMDevice *parent_dev)
 		                                      priv->ip_iface,
 		                                      NULL);
 	/* Cancel pending firewall call */
-	fw_call_cleanup (connection);
+	fw_call_cleanup (self);
 
 	g_free (priv->banner);
 	priv->banner = NULL;
@@ -301,7 +301,7 @@ dispatcher_cleanup (NMVpnConnection *self)
 }
 
 static void
-_set_vpn_state (NMVpnConnection *connection,
+_set_vpn_state (NMVpnConnection *self,
                 VpnState vpn_state,
                 NMVpnConnectionStateReason reason,
                 gboolean quitting)
@@ -309,11 +309,11 @@ _set_vpn_state (NMVpnConnection *connection,
 	NMVpnConnectionPrivate *priv;
 	VpnState old_vpn_state;
 	NMVpnConnectionState new_external_state, old_external_state;
-	NMDevice *parent_dev = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (connection));
+	NMDevice *parent_dev = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (self));
 
-	g_return_if_fail (NM_IS_VPN_CONNECTION (connection));
+	g_return_if_fail (NM_IS_VPN_CONNECTION (self));
 
-	priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
 	if (vpn_state == priv->vpn_state)
 		return;
@@ -328,33 +328,33 @@ _set_vpn_state (NMVpnConnection *connection,
 		g_object_ref (parent_dev);
 
 	/* Update active connection base class state */
-	nm_active_connection_set_state (NM_ACTIVE_CONNECTION (connection),
+	nm_active_connection_set_state (NM_ACTIVE_CONNECTION (self),
 	                                _state_to_ac_state (vpn_state));
 
 	/* Clear any in-progress secrets request */
 	if (priv->secrets_id)
 		nm_settings_connection_cancel_secrets (NM_SETTINGS_CONNECTION (priv->connection), priv->secrets_id);
 
-	dispatcher_cleanup (connection);
+	dispatcher_cleanup (self);
 
-	nm_default_route_manager_ip4_update_default_route (priv->default_route_manager, connection);
-	nm_default_route_manager_ip6_update_default_route (priv->default_route_manager, connection);
+	nm_default_route_manager_ip4_update_default_route (priv->default_route_manager, self);
+	nm_default_route_manager_ip6_update_default_route (priv->default_route_manager, self);
 
 	/* The connection gets destroyed by the VPN manager when it enters the
 	 * disconnected/failed state, but we need to keep it around for a bit
 	 * to send out signals and handle the dispatcher.  So ref it.
 	 */
-	g_object_ref (connection);
+	g_object_ref (self);
 
 	old_external_state = _state_to_nm_vpn_state (old_vpn_state);
 	new_external_state = _state_to_nm_vpn_state (priv->vpn_state);
 	if (new_external_state != old_external_state) {
-		g_signal_emit (connection, signals[VPN_STATE_CHANGED], 0, new_external_state, reason);
-		g_signal_emit (connection, signals[INTERNAL_STATE_CHANGED], 0,
+		g_signal_emit (self, signals[VPN_STATE_CHANGED], 0, new_external_state, reason);
+		g_signal_emit (self, signals[INTERNAL_STATE_CHANGED], 0,
 		               new_external_state,
 		               old_external_state,
 		               reason);
-		g_object_notify (G_OBJECT (connection), NM_VPN_CONNECTION_VPN_STATE);
+		g_object_notify (G_OBJECT (self), NM_VPN_CONNECTION_VPN_STATE);
 	}
 
 	switch (vpn_state) {
@@ -372,10 +372,10 @@ _set_vpn_state (NMVpnConnection *connection,
 		                             priv->ip4_config,
 		                             priv->ip6_config,
 		                             dispatcher_pre_up_done,
-		                             connection,
+		                             self,
 		                             &priv->dispatcher_id)) {
 			/* Just proceed on errors */
-			dispatcher_pre_up_done (0, connection);
+			dispatcher_pre_up_done (0, self);
 		}
 		break;
 	case STATE_ACTIVATED:
@@ -409,10 +409,10 @@ _set_vpn_state (NMVpnConnection *connection,
 			                             priv->ip4_config,
 			                             priv->ip6_config,
 			                             dispatcher_pre_down_done,
-			                             connection,
+			                             self,
 			                             &priv->dispatcher_id)) {
 				/* Just proceed on errors */
-				dispatcher_pre_down_done (0, connection);
+				dispatcher_pre_down_done (0, self);
 			}
 		}
 		break;
@@ -442,15 +442,15 @@ _set_vpn_state (NMVpnConnection *connection,
 		}
 
 		/* Tear down and clean up the connection */
-		call_plugin_disconnect (connection);
-		vpn_cleanup (connection, parent_dev);
+		call_plugin_disconnect (self);
+		vpn_cleanup (self, parent_dev);
 		/* Fall through */
 	default:
 		priv->secrets_idx = SECRETS_REQ_SYSTEM;
 		break;
 	}
 
-	g_object_unref (connection);
+	g_object_unref (self);
 	if (parent_dev)
 		g_object_unref (parent_dev);
 }
@@ -625,9 +625,9 @@ nm_vpn_connection_new (NMConnection *connection,
 }
 
 static const char *
-nm_vpn_connection_get_service (NMVpnConnection *connection)
+nm_vpn_connection_get_service (NMVpnConnection *self)
 {
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 	NMSettingVpn *s_vpn;
 
 	s_vpn = nm_connection_get_setting_vpn (priv->connection);
@@ -788,9 +788,9 @@ plugin_state_changed (NMVpnConnection *self, NMVpnServiceState new_service_state
 }
 
 static void
-print_vpn_config (NMVpnConnection *connection)
+print_vpn_config (NMVpnConnection *self)
 {
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 	const NMPlatformIP4Address *address4;
 	const NMPlatformIP6Address *address6;
 	char *dns_domain = NULL;
@@ -892,10 +892,10 @@ print_vpn_config (NMVpnConnection *connection)
 }
 
 static void
-apply_parent_device_config (NMVpnConnection *connection)
+apply_parent_device_config (NMVpnConnection *self)
 {
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
-	NMDevice *parent_dev = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (connection));
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
+	NMDevice *parent_dev = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (self));
 	NMIP4Config *vpn4_parent_config = NULL;
 	NMIP6Config *vpn6_parent_config = NULL;
 
@@ -947,9 +947,9 @@ apply_parent_device_config (NMVpnConnection *connection)
 }
 
 static gboolean
-nm_vpn_connection_apply_config (NMVpnConnection *connection)
+nm_vpn_connection_apply_config (NMVpnConnection *self)
 {
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
 	if (priv->ip_ifindex > 0) {
 		nm_platform_link_set_up (NM_PLATFORM_GET, priv->ip_ifindex, NULL);
@@ -957,7 +957,7 @@ nm_vpn_connection_apply_config (NMVpnConnection *connection)
 		if (priv->ip4_config) {
 			if (!nm_ip4_config_commit (priv->ip4_config, priv->ip_ifindex,
 			                           TRUE,
-			                           nm_vpn_connection_get_ip4_route_metric (connection)))
+			                           nm_vpn_connection_get_ip4_route_metric (self)))
 				return FALSE;
 		}
 
@@ -969,35 +969,35 @@ nm_vpn_connection_apply_config (NMVpnConnection *connection)
 		}
 	}
 
-	apply_parent_device_config (connection);
+	apply_parent_device_config (self);
 
-	nm_default_route_manager_ip4_update_default_route (priv->default_route_manager, connection);
-	nm_default_route_manager_ip6_update_default_route (priv->default_route_manager, connection);
+	nm_default_route_manager_ip4_update_default_route (priv->default_route_manager, self);
+	nm_default_route_manager_ip6_update_default_route (priv->default_route_manager, self);
 
 	nm_log_info (LOGD_VPN, "VPN connection '%s' (IP Config Get) complete.",
 	             nm_connection_get_id (priv->connection));
-	_set_vpn_state (connection, STATE_PRE_UP, NM_VPN_CONNECTION_STATE_REASON_NONE, FALSE);
+	_set_vpn_state (self, STATE_PRE_UP, NM_VPN_CONNECTION_STATE_REASON_NONE, FALSE);
 	return TRUE;
 }
 
 static void
-_cleanup_failed_config (NMVpnConnection *connection)
+_cleanup_failed_config (NMVpnConnection *self)
 {
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
 	g_clear_object (&priv->ip4_config);
 	g_clear_object (&priv->ip6_config);
 
 	nm_log_warn (LOGD_VPN, "VPN connection '%s' did not receive valid IP config information.",
 	             nm_connection_get_id (priv->connection));
-	_set_vpn_state (connection, STATE_FAILED, NM_VPN_CONNECTION_STATE_REASON_IP_CONFIG_INVALID, FALSE);
+	_set_vpn_state (self, STATE_FAILED, NM_VPN_CONNECTION_STATE_REASON_IP_CONFIG_INVALID, FALSE);
 }
 
 static void
 fw_change_zone_cb (GError *error, gpointer user_data)
 {
-	NMVpnConnection *connection = NM_VPN_CONNECTION (user_data);
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	NMVpnConnection *self = NM_VPN_CONNECTION (user_data);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
 	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
@@ -1010,15 +1010,15 @@ fw_change_zone_cb (GError *error, gpointer user_data)
 		// FIXME: fail the activation?
 	}
 
-	if (!nm_vpn_connection_apply_config (connection))
-		_cleanup_failed_config (connection);
+	if (!nm_vpn_connection_apply_config (self))
+		_cleanup_failed_config (self);
 }
 
 static void
-nm_vpn_connection_config_maybe_complete (NMVpnConnection *connection,
+nm_vpn_connection_config_maybe_complete (NMVpnConnection *self,
                                          gboolean         success)
 {
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 	NMConnection *base_con;
 	NMSettingConnection *s_con;
 	const char *zone;
@@ -1040,31 +1040,31 @@ nm_vpn_connection_config_maybe_complete (NMVpnConnection *connection,
 	}
 
 	if (success) {
-		print_vpn_config (connection);
+		print_vpn_config (self);
 
 		/* Add the tunnel interface to the specified firewall zone */
 		if (priv->ip_iface) {
-			base_con = nm_vpn_connection_get_connection (connection);
+			base_con = nm_vpn_connection_get_connection (self);
 			g_assert (base_con);
 			s_con = nm_connection_get_setting_connection (base_con);
 			zone = nm_setting_connection_get_zone (s_con);
 
 			nm_log_dbg (LOGD_VPN, "VPN connection '%s': setting firewall zone '%s' for '%s'",
 			            nm_connection_get_id (base_con), zone ? zone : "default", priv->ip_iface);
-			fw_call_cleanup (connection);
+			fw_call_cleanup (self);
 			priv->fw_call = nm_firewall_manager_add_or_change_zone (nm_firewall_manager_get (),
 			                                                        priv->ip_iface,
 			                                                        zone,
 			                                                        FALSE,
 			                                                        fw_change_zone_cb,
-			                                                        connection);
+			                                                        self);
 			return;
 		} else
-			if (nm_vpn_connection_apply_config (connection))
+			if (nm_vpn_connection_apply_config (self))
 				return;
 	}
 
-	_cleanup_failed_config (connection);
+	_cleanup_failed_config (self);
 }
 
 static gboolean
@@ -1193,9 +1193,9 @@ nm_vpn_connection_config_get (NMVpnConnection *self, GVariant *dict)
 }
 
 guint32
-nm_vpn_connection_get_ip4_route_metric (NMVpnConnection *connection)
+nm_vpn_connection_get_ip4_route_metric (NMVpnConnection *self)
 {
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
 	if (priv->connection) {
 		gint64 route_metric = nm_setting_ip_config_get_route_metric (nm_connection_get_setting_ip4_config (priv->connection));
@@ -1208,9 +1208,9 @@ nm_vpn_connection_get_ip4_route_metric (NMVpnConnection *connection)
 }
 
 guint32
-nm_vpn_connection_get_ip6_route_metric (NMVpnConnection *connection)
+nm_vpn_connection_get_ip6_route_metric (NMVpnConnection *self)
 {
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
 	if (priv->connection) {
 		gint64 route_metric = nm_setting_ip_config_get_route_metric (nm_connection_get_setting_ip6_config (priv->connection));
@@ -1460,7 +1460,7 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 
 			if (!ip6_addr_from_variant (dest, &route.network)) {
 				nm_log_warn (LOGD_VPN, "VPN connection '%s' received invalid IPv6 dest address",
-						     nm_connection_get_id (priv->connection));
+				             nm_connection_get_id (priv->connection));
 				goto next;
 			}
 
@@ -1502,8 +1502,8 @@ next:
 static gboolean
 connect_timeout_cb (gpointer user_data)
 {
-	NMVpnConnection *connection = NM_VPN_CONNECTION (user_data);
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	NMVpnConnection *self = NM_VPN_CONNECTION (user_data);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
 	priv->connect_timeout = 0;
 
@@ -1512,19 +1512,19 @@ connect_timeout_cb (gpointer user_data)
 	    priv->vpn_state == STATE_IP_CONFIG_GET) {
 		nm_log_warn (LOGD_VPN, "VPN connection '%s' connect timeout exceeded.",
 		             nm_connection_get_id (priv->connection));
-		_set_vpn_state (connection, STATE_FAILED, NM_VPN_CONNECTION_STATE_REASON_CONNECT_TIMEOUT, FALSE);
+		_set_vpn_state (self, STATE_FAILED, NM_VPN_CONNECTION_STATE_REASON_CONNECT_TIMEOUT, FALSE);
 	}
 
 	return FALSE;
 }
 
 static void
-connect_success (NMVpnConnection *connection)
+connect_success (NMVpnConnection *self)
 {
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
 	/* 40 second timeout waiting for IP config signal from VPN service */
-	priv->connect_timeout = g_timeout_add_seconds (40, connect_timeout_cb, connection);
+	priv->connect_timeout = g_timeout_add_seconds (40, connect_timeout_cb, self);
 
 	g_clear_pointer (&priv->connect_hash, g_variant_unref);
 }
@@ -1815,111 +1815,111 @@ nm_vpn_connection_activate (NMVpnConnection *self)
 }
 
 NMConnection *
-nm_vpn_connection_get_connection (NMVpnConnection *connection)
+nm_vpn_connection_get_connection (NMVpnConnection *self)
 {
-	g_return_val_if_fail (NM_IS_VPN_CONNECTION (connection), NULL);
+	g_return_val_if_fail (NM_IS_VPN_CONNECTION (self), NULL);
 
-	return NM_VPN_CONNECTION_GET_PRIVATE (connection)->connection;
+	return NM_VPN_CONNECTION_GET_PRIVATE (self)->connection;
 }
 
 const char*
-nm_vpn_connection_get_connection_id (NMVpnConnection *connection)
+nm_vpn_connection_get_connection_id (NMVpnConnection *self)
 {
 	NMConnection *c;
 
-	g_return_val_if_fail (NM_IS_VPN_CONNECTION (connection), NULL);
+	g_return_val_if_fail (NM_IS_VPN_CONNECTION (self), NULL);
 
-	c = NM_VPN_CONNECTION_GET_PRIVATE (connection)->connection;
+	c = NM_VPN_CONNECTION_GET_PRIVATE (self)->connection;
 	return c ? nm_connection_get_id (c) : NULL;
 }
 
 NMVpnConnectionState
-nm_vpn_connection_get_vpn_state (NMVpnConnection *connection)
+nm_vpn_connection_get_vpn_state (NMVpnConnection *self)
 {
-	g_return_val_if_fail (NM_IS_VPN_CONNECTION (connection), NM_VPN_CONNECTION_STATE_UNKNOWN);
+	g_return_val_if_fail (NM_IS_VPN_CONNECTION (self), NM_VPN_CONNECTION_STATE_UNKNOWN);
 
-	return _state_to_nm_vpn_state (NM_VPN_CONNECTION_GET_PRIVATE (connection)->vpn_state);
+	return _state_to_nm_vpn_state (NM_VPN_CONNECTION_GET_PRIVATE (self)->vpn_state);
 }
 
 const char *
-nm_vpn_connection_get_banner (NMVpnConnection *connection)
+nm_vpn_connection_get_banner (NMVpnConnection *self)
 {
-	g_return_val_if_fail (NM_IS_VPN_CONNECTION (connection), NULL);
+	g_return_val_if_fail (NM_IS_VPN_CONNECTION (self), NULL);
 
-	return NM_VPN_CONNECTION_GET_PRIVATE (connection)->banner;
+	return NM_VPN_CONNECTION_GET_PRIVATE (self)->banner;
 }
 
 NMIP4Config *
-nm_vpn_connection_get_ip4_config (NMVpnConnection *connection)
+nm_vpn_connection_get_ip4_config (NMVpnConnection *self)
 {
-	g_return_val_if_fail (NM_IS_VPN_CONNECTION (connection), NULL);
+	g_return_val_if_fail (NM_IS_VPN_CONNECTION (self), NULL);
 
-	return NM_VPN_CONNECTION_GET_PRIVATE (connection)->ip4_config;
+	return NM_VPN_CONNECTION_GET_PRIVATE (self)->ip4_config;
 }
 
 NMIP6Config *
-nm_vpn_connection_get_ip6_config (NMVpnConnection *connection)
+nm_vpn_connection_get_ip6_config (NMVpnConnection *self)
 {
-	g_return_val_if_fail (NM_IS_VPN_CONNECTION (connection), NULL);
+	g_return_val_if_fail (NM_IS_VPN_CONNECTION (self), NULL);
 
-	return NM_VPN_CONNECTION_GET_PRIVATE (connection)->ip6_config;
+	return NM_VPN_CONNECTION_GET_PRIVATE (self)->ip6_config;
 }
 
 const char *
-nm_vpn_connection_get_ip_iface (NMVpnConnection *connection)
+nm_vpn_connection_get_ip_iface (NMVpnConnection *self)
 {
-	g_return_val_if_fail (NM_IS_VPN_CONNECTION (connection), NULL);
+	g_return_val_if_fail (NM_IS_VPN_CONNECTION (self), NULL);
 
-	return NM_VPN_CONNECTION_GET_PRIVATE (connection)->ip_iface;
+	return NM_VPN_CONNECTION_GET_PRIVATE (self)->ip_iface;
 }
 
 int
-nm_vpn_connection_get_ip_ifindex (NMVpnConnection *connection)
+nm_vpn_connection_get_ip_ifindex (NMVpnConnection *self)
 {
-	g_return_val_if_fail (NM_IS_VPN_CONNECTION (connection), -1);
+	g_return_val_if_fail (NM_IS_VPN_CONNECTION (self), -1);
 
-	return NM_VPN_CONNECTION_GET_PRIVATE (connection)->ip_ifindex;
+	return NM_VPN_CONNECTION_GET_PRIVATE (self)->ip_ifindex;
 }
 
 guint32
-nm_vpn_connection_get_ip4_internal_gateway (NMVpnConnection *connection)
+nm_vpn_connection_get_ip4_internal_gateway (NMVpnConnection *self)
 {
-	g_return_val_if_fail (NM_IS_VPN_CONNECTION (connection), 0);
+	g_return_val_if_fail (NM_IS_VPN_CONNECTION (self), 0);
 
-	return NM_VPN_CONNECTION_GET_PRIVATE (connection)->ip4_internal_gw;
+	return NM_VPN_CONNECTION_GET_PRIVATE (self)->ip4_internal_gw;
 }
 
 struct in6_addr *
-nm_vpn_connection_get_ip6_internal_gateway (NMVpnConnection *connection)
+nm_vpn_connection_get_ip6_internal_gateway (NMVpnConnection *self)
 {
-	g_return_val_if_fail (NM_IS_VPN_CONNECTION (connection), 0);
+	g_return_val_if_fail (NM_IS_VPN_CONNECTION (self), 0);
 
-	return NM_VPN_CONNECTION_GET_PRIVATE (connection)->ip6_internal_gw;
+	return NM_VPN_CONNECTION_GET_PRIVATE (self)->ip6_internal_gw;
 }
 
 void
-nm_vpn_connection_disconnect (NMVpnConnection *connection,
+nm_vpn_connection_disconnect (NMVpnConnection *self,
                               NMVpnConnectionStateReason reason,
                               gboolean quitting)
 {
-	g_return_if_fail (NM_IS_VPN_CONNECTION (connection));
+	g_return_if_fail (NM_IS_VPN_CONNECTION (self));
 
-	_set_vpn_state (connection, STATE_DISCONNECTED, reason, quitting);
+	_set_vpn_state (self, STATE_DISCONNECTED, reason, quitting);
 }
 
 gboolean
-nm_vpn_connection_deactivate (NMVpnConnection *connection,
+nm_vpn_connection_deactivate (NMVpnConnection *self,
                               NMVpnConnectionStateReason reason,
                               gboolean quitting)
 {
 	NMVpnConnectionPrivate *priv;
 	gboolean success = FALSE;
 
-	g_return_val_if_fail (NM_IS_VPN_CONNECTION (connection), FALSE);
+	g_return_val_if_fail (NM_IS_VPN_CONNECTION (self), FALSE);
 
-	priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 	if (priv->vpn_state > STATE_UNKNOWN && priv->vpn_state <= STATE_DEACTIVATING) {
-		_set_vpn_state (connection, STATE_DEACTIVATING, reason, quitting);
+		_set_vpn_state (self, STATE_DEACTIVATING, reason, quitting);
 		success = TRUE;
 	}
 	return success;
