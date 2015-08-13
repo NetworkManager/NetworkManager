@@ -1666,7 +1666,7 @@ dbus_get_agent_secrets_cb (NMSettingsConnection *self,
 		dict = nm_connection_to_dbus (NM_CONNECTION (self), NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
 		if (!dict)
 			dict = g_variant_new_array (G_VARIANT_TYPE ("{sa{sv}}"), NULL, 0);
-		g_dbus_method_invocation_return_value (context, g_variant_new ("(@a{s{a{sv}}})", dict));
+		g_dbus_method_invocation_return_value (context, g_variant_new ("(@a{sa{sv}})", dict));
 	}
 }
 
