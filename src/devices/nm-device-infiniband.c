@@ -243,7 +243,6 @@ create_and_realize (NMDevice *device,
 	int parent_ifindex, p_key;
 	NMPlatformError plerr;
 
-	g_assert (nm_device_get_ifindex (device) <= 0);
 	g_assert (out_plink);
 
 	if (!NM_IS_DEVICE_INFINIBAND (parent)) {

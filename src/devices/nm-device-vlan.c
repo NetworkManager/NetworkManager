@@ -177,7 +177,6 @@ create_and_realize (NMDevice *device,
 	int parent_ifindex, vlan_id;
 	NMPlatformError plerr;
 
-	g_assert (nm_device_get_ifindex (device) <= 0);
 	g_assert (out_plink);
 
 	s_vlan = nm_connection_get_setting_vlan (connection);

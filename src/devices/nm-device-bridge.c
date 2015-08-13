@@ -399,7 +399,6 @@ create_and_realize (NMDevice *device,
 	NMPlatformError plerr;
 
 	g_assert (iface);
-	g_assert (nm_device_get_ifindex (device) <= 0);
 	g_assert (out_plink);
 
 	s_bridge = nm_connection_get_setting_bridge (connection);
