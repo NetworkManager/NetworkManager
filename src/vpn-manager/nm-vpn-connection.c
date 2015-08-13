@@ -710,7 +710,7 @@ plugin_failed (NMVpnConnection *self, guint reason)
 {
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
-	nm_log_warn (LOGD_VPN, "VPN plugin failed: %s (%d)", vpn_plugin_failure_to_string (reason), reason);
+	_LOGW ("VPN plugin: failed: %s (%d)", vpn_plugin_failure_to_string (reason), reason);
 
 	switch (reason) {
 	case NM_VPN_PLUGIN_FAILURE_LOGIN_FAILED:
@@ -807,8 +807,8 @@ plugin_state_changed (NMVpnConnection *self, NMVpnServiceState new_service_state
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 	NMVpnServiceState old_service_state = priv->service_state;
 
-	nm_log_info (LOGD_VPN, "VPN plugin state changed: %s (%d)",
-	             vpn_service_state_to_string (new_service_state), new_service_state);
+	_LOGI ("VPN plugin: state changed: %s (%d)",
+	       vpn_service_state_to_string (new_service_state), new_service_state);
 	priv->service_state = new_service_state;
 
 	if (new_service_state == NM_VPN_SERVICE_STATE_STOPPED) {
@@ -820,8 +820,8 @@ plugin_state_changed (NMVpnConnection *self, NMVpnServiceState new_service_state
 		if ((priv->vpn_state >= STATE_WAITING) && (priv->vpn_state <= STATE_ACTIVATED)) {
 			VpnState old_state = priv->vpn_state;
 
-			nm_log_info (LOGD_VPN, "VPN plugin state change reason: %s (%d)",
-			             vpn_reason_to_string (priv->failure_reason), priv->failure_reason);
+			_LOGI ("VPN plugin: state change reason: %s (%d)",
+			       vpn_reason_to_string (priv->failure_reason), priv->failure_reason);
 			_set_vpn_state (self, STATE_FAILED, priv->failure_reason, FALSE);
 
 			/* Reset the failure reason */
@@ -853,96 +853,96 @@ print_vpn_config (NMVpnConnection *self)
 	char buf[NM_UTILS_INET_ADDRSTRLEN];
 
 	if (priv->ip4_external_gw) {
-		nm_log_info (LOGD_VPN, "VPN Gateway: %s",
-		             nm_utils_inet4_ntop (priv->ip4_external_gw, NULL));
+		_LOGI ("Data: VPN Gateway: %s",
+		       nm_utils_inet4_ntop (priv->ip4_external_gw, NULL));
 	} else if (priv->ip6_external_gw) {
-		nm_log_info (LOGD_VPN, "VPN Gateway: %s",
-		             nm_utils_inet6_ntop (priv->ip6_external_gw, NULL));
+		_LOGI ("Data: VPN Gateway: %s",
+		       nm_utils_inet6_ntop (priv->ip6_external_gw, NULL));
 	}
 
-	nm_log_info (LOGD_VPN, "Tunnel Device: %s", priv->ip_iface ? priv->ip_iface : "(none)");
+	_LOGI ("Data: Tunnel Device: %s", priv->ip_iface ? priv->ip_iface : "(none)");
 
 	if (priv->ip4_config) {
-		nm_log_info (LOGD_VPN, "IPv4 configuration:");
+		_LOGI ("Data: IPv4 configuration:");
 
 		address4 = nm_ip4_config_get_address (priv->ip4_config, 0);
 
 		if (priv->ip4_internal_gw)
-			nm_log_info (LOGD_VPN, "  Internal Gateway: %s", nm_utils_inet4_ntop (priv->ip4_internal_gw, NULL));
-		nm_log_info (LOGD_VPN, "  Internal Address: %s", nm_utils_inet4_ntop (address4->address, NULL));
-		nm_log_info (LOGD_VPN, "  Internal Prefix: %d", address4->plen);
-		nm_log_info (LOGD_VPN, "  Internal Point-to-Point Address: %s", nm_utils_inet4_ntop (address4->peer_address, NULL));
-		nm_log_info (LOGD_VPN, "  Maximum Segment Size (MSS): %d", nm_ip4_config_get_mss (priv->ip4_config));
+			_LOGI ("Data:   Internal Gateway: %s", nm_utils_inet4_ntop (priv->ip4_internal_gw, NULL));
+		_LOGI ("Data:   Internal Address: %s", nm_utils_inet4_ntop (address4->address, NULL));
+		_LOGI ("Data:   Internal Prefix: %d", address4->plen);
+		_LOGI ("Data:   Internal Point-to-Point Address: %s", nm_utils_inet4_ntop (address4->peer_address, NULL));
+		_LOGI ("Data:   Maximum Segment Size (MSS): %d", nm_ip4_config_get_mss (priv->ip4_config));
 
 		num = nm_ip4_config_get_num_routes (priv->ip4_config);
 		for (i = 0; i < num; i++) {
 			const NMPlatformIP4Route *route = nm_ip4_config_get_route (priv->ip4_config, i);
 
-			nm_log_info (LOGD_VPN, "  Static Route: %s/%d   Next Hop: %s",
-			             nm_utils_inet4_ntop (route->network, NULL),
-			             route->plen,
-			             nm_utils_inet4_ntop (route->gateway, buf));
+			_LOGI ("Data:   Static Route: %s/%d   Next Hop: %s",
+			       nm_utils_inet4_ntop (route->network, NULL),
+			       route->plen,
+			       nm_utils_inet4_ntop (route->gateway, buf));
 		}
 
-		nm_log_info (LOGD_VPN, "  Forbid Default Route: %s",
-		             nm_ip4_config_get_never_default (priv->ip4_config) ? "yes" : "no");
+		_LOGI ("Data:   Forbid Default Route: %s",
+		       nm_ip4_config_get_never_default (priv->ip4_config) ? "yes" : "no");
 
 		num = nm_ip4_config_get_num_nameservers (priv->ip4_config);
 		for (i = 0; i < num; i++) {
-			nm_log_info (LOGD_VPN, "  Internal DNS: %s",
-			             nm_utils_inet4_ntop (nm_ip4_config_get_nameserver (priv->ip4_config, i), NULL));
+			_LOGI ("Data:   Internal DNS: %s",
+			       nm_utils_inet4_ntop (nm_ip4_config_get_nameserver (priv->ip4_config, i), NULL));
 		}
 
 		if (nm_ip4_config_get_num_domains (priv->ip4_config) > 0)
 			dns_domain = (char *) nm_ip4_config_get_domain (priv->ip4_config, 0);
 
-		nm_log_info (LOGD_VPN, "  DNS Domain: '%s'", dns_domain ? dns_domain : "(none)");
+		_LOGI ("Data:   DNS Domain: '%s'", dns_domain ? dns_domain : "(none)");
 	} else
-		nm_log_info (LOGD_VPN, "No IPv4 configuration");
+		_LOGI ("Data: No IPv4 configuration");
 
 	if (priv->ip6_config) {
-		nm_log_info (LOGD_VPN, "IPv6 configuration:");
+		_LOGI ("Data: IPv6 configuration:");
 
 		address6 = nm_ip6_config_get_address (priv->ip6_config, 0);
 
 		if (priv->ip6_internal_gw)
-			nm_log_info (LOGD_VPN, "  Internal Gateway: %s", nm_utils_inet6_ntop (priv->ip6_internal_gw, NULL));
-		nm_log_info (LOGD_VPN, "  Internal Address: %s", nm_utils_inet6_ntop (&address6->address, NULL));
-		nm_log_info (LOGD_VPN, "  Internal Prefix: %d", address6->plen);
-		nm_log_info (LOGD_VPN, "  Internal Point-to-Point Address: %s", nm_utils_inet6_ntop (&address6->peer_address, NULL));
-		nm_log_info (LOGD_VPN, "  Maximum Segment Size (MSS): %d", nm_ip6_config_get_mss (priv->ip6_config));
+			_LOGI ("Data:   Internal Gateway: %s", nm_utils_inet6_ntop (priv->ip6_internal_gw, NULL));
+		_LOGI ("Data:   Internal Address: %s", nm_utils_inet6_ntop (&address6->address, NULL));
+		_LOGI ("Data:   Internal Prefix: %d", address6->plen);
+		_LOGI ("Data:   Internal Point-to-Point Address: %s", nm_utils_inet6_ntop (&address6->peer_address, NULL));
+		_LOGI ("Data:   Maximum Segment Size (MSS): %d", nm_ip6_config_get_mss (priv->ip6_config));
 
 		num = nm_ip6_config_get_num_routes (priv->ip6_config);
 		for (i = 0; i < num; i++) {
 			const NMPlatformIP6Route *route = nm_ip6_config_get_route (priv->ip6_config, i);
 
-			nm_log_info (LOGD_VPN, "  Static Route: %s/%d   Next Hop: %s",
-			             nm_utils_inet6_ntop (&route->network, NULL),
-			             route->plen,
-			             nm_utils_inet6_ntop (&route->gateway, buf));
+			_LOGI ("Data:   Static Route: %s/%d   Next Hop: %s",
+			       nm_utils_inet6_ntop (&route->network, NULL),
+			       route->plen,
+			       nm_utils_inet6_ntop (&route->gateway, buf));
 		}
 
-		nm_log_info (LOGD_VPN, "  Forbid Default Route: %s",
-		             nm_ip6_config_get_never_default (priv->ip6_config) ? "yes" : "no");
+		_LOGI ("Data:   Forbid Default Route: %s",
+		       nm_ip6_config_get_never_default (priv->ip6_config) ? "yes" : "no");
 
 		num = nm_ip6_config_get_num_nameservers (priv->ip6_config);
 		for (i = 0; i < num; i++) {
-			nm_log_info (LOGD_VPN, "  Internal DNS: %s",
-			             nm_utils_inet6_ntop (nm_ip6_config_get_nameserver (priv->ip6_config, i), NULL));
+			_LOGI ("Data:   Internal DNS: %s",
+			       nm_utils_inet6_ntop (nm_ip6_config_get_nameserver (priv->ip6_config, i), NULL));
 		}
 
 		if (nm_ip6_config_get_num_domains (priv->ip6_config) > 0)
 			dns_domain = (char *) nm_ip6_config_get_domain (priv->ip6_config, 0);
 
-		nm_log_info (LOGD_VPN, "  DNS Domain: '%s'", dns_domain ? dns_domain : "(none)");
+		_LOGI ("Data:   DNS Domain: '%s'", dns_domain ? dns_domain : "(none)");
 	} else
-		nm_log_info (LOGD_VPN, "No IPv6 configuration");
+		_LOGI ("Data: No IPv6 configuration");
 
 	if (priv->banner && strlen (priv->banner)) {
-		nm_log_info (LOGD_VPN, "Login Banner:");
-		nm_log_info (LOGD_VPN, "-----------------------------------------");
-		nm_log_info (LOGD_VPN, "%s", priv->banner);
-		nm_log_info (LOGD_VPN, "-----------------------------------------");
+		_LOGI ("Data: Login Banner:");
+		_LOGI ("Data: -----------------------------------------");
+		_LOGI ("Data: %s", priv->banner);
+		_LOGI ("Data: -----------------------------------------");
 	}
 }
 
@@ -1029,8 +1029,7 @@ nm_vpn_connection_apply_config (NMVpnConnection *self)
 	nm_default_route_manager_ip4_update_default_route (priv->default_route_manager, self);
 	nm_default_route_manager_ip6_update_default_route (priv->default_route_manager, self);
 
-	nm_log_info (LOGD_VPN, "VPN connection '%s' (IP Config Get) complete.",
-	             nm_connection_get_id (priv->connection));
+	_LOGI ("VPN connection: (IP Config Get) complete");
 	_set_vpn_state (self, STATE_PRE_UP, NM_VPN_CONNECTION_STATE_REASON_NONE, FALSE);
 	return TRUE;
 }
@@ -1043,8 +1042,7 @@ _cleanup_failed_config (NMVpnConnection *self)
 	g_clear_object (&priv->ip4_config);
 	g_clear_object (&priv->ip6_config);
 
-	nm_log_warn (LOGD_VPN, "VPN connection '%s' did not receive valid IP config information.",
-	             nm_connection_get_id (priv->connection));
+	_LOGW ("VPN connection: did not receive valid IP config information");
 	_set_vpn_state (self, STATE_FAILED, NM_VPN_CONNECTION_STATE_REASON_IP_CONFIG_INVALID, FALSE);
 }
 
@@ -1060,8 +1058,8 @@ fw_change_zone_cb (GError *error, gpointer user_data)
 	priv->fw_call = NULL;
 
 	if (error) {
-		nm_log_warn (LOGD_VPN, "VPN connection '%s': setting firewall zone failed: '%s'",
-		             nm_connection_get_id (priv->connection), error->message);
+		_LOGW ("VPN connection: setting firewall zone failed: '%s'",
+		       error->message);
 		// FIXME: fail the activation?
 	}
 
@@ -1104,8 +1102,9 @@ nm_vpn_connection_config_maybe_complete (NMVpnConnection *self,
 			s_con = nm_connection_get_setting_connection (base_con);
 			zone = nm_setting_connection_get_zone (s_con);
 
-			nm_log_dbg (LOGD_VPN, "VPN connection '%s': setting firewall zone '%s' for '%s'",
-			            nm_connection_get_id (base_con), zone ? zone : "default", priv->ip_iface);
+			_LOGD ("setting firewall zone %s%s%s for '%s'",
+			       NM_PRINT_FMT_QUOTED (zone, "'", zone, "'", "(default)"),
+			       priv->ip_iface);
 			fw_call_cleanup (self);
 			priv->fw_call = nm_firewall_manager_add_or_change_zone (nm_firewall_manager_get (),
 			                                                        priv->ip_iface,
@@ -1177,8 +1176,8 @@ process_generic_config (NMVpnConnection *self, GVariant *dict)
 	if (priv->ip_iface) {
 		/* Grab the interface index for address/routing operations */
 		priv->ip_ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, priv->ip_iface);
-		if (!priv->ip_ifindex) {
-			nm_log_err (LOGD_VPN, "(%s): failed to look up VPN interface index", priv->ip_iface);
+		if (priv->ip_ifindex <= 0) {
+			_LOGE ("failed to look up VPN interface index for \"%s\"", priv->ip_iface);
 			nm_vpn_connection_config_maybe_complete (self, FALSE);
 			return FALSE;
 		}
@@ -1202,7 +1201,7 @@ process_generic_config (NMVpnConnection *self, GVariant *dict)
 	}
 
 	if (!success) {
-		nm_log_err (LOGD_VPN, "(%s): VPN gateway is neither IPv4 nor IPv6", priv->ip_iface);
+		_LOGE ("VPN gateway is neither IPv4 nor IPv6");
 		nm_vpn_connection_config_maybe_complete (self, FALSE);
 		return FALSE;
 	}
@@ -1226,8 +1225,7 @@ nm_vpn_connection_config_get (NMVpnConnection *self, GVariant *dict)
 
 	g_return_if_fail (dict && g_variant_is_of_type (dict, G_VARIANT_TYPE_VARDICT));
 
-	nm_log_info (LOGD_VPN, "VPN connection '%s' (IP Config Get) reply received.",
-	             nm_connection_get_id (priv->connection));
+	_LOGI ("VPN connection: (IP Config Get) reply received.");
 
 	if (priv->vpn_state == STATE_CONNECT)
 		_set_vpn_state (self, STATE_IP_CONFIG_GET, NM_VPN_CONNECTION_STATE_REASON_NONE, FALSE);
@@ -1295,8 +1293,7 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 		_set_vpn_state (self, STATE_IP_CONFIG_GET, NM_VPN_CONNECTION_STATE_REASON_NONE, FALSE);
 
 	if (priv->has_ip4) {
-		nm_log_info (LOGD_VPN, "VPN connection '%s' (IP4 Config Get) reply received.",
-		             nm_connection_get_id (priv->connection));
+		_LOGI ("VPN connection: (IP4 Config Get) reply received");
 
 		if (g_variant_n_children (dict) == 0) {
 			priv->has_ip4 = FALSE;
@@ -1304,8 +1301,7 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 			return;
 		}
 	} else {
-		nm_log_info (LOGD_VPN, "VPN connection '%s' (IP4 Config Get) reply received from old-style plugin.",
-		             nm_connection_get_id (priv->connection));
+		_LOGI ("VPN connection: (IP4 Config Get) reply received from old-style plugin");
 
 		/* In the old API, the generic and IPv4 configuration items
 		 * were mixed together.
@@ -1341,7 +1337,7 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 		address.source = NM_IP_CONFIG_SOURCE_VPN;
 		nm_ip4_config_add_address (config, &address);
 	} else {
-		nm_log_err (LOGD_VPN, "invalid IP4 config received!");
+		_LOGE ("invalid IP4 config received!");
 		g_object_unref (config);
 		nm_vpn_connection_config_maybe_complete (self, FALSE);
 		return;
@@ -1431,8 +1427,7 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 
 	g_return_if_fail (dict && g_variant_is_of_type (dict, G_VARIANT_TYPE_VARDICT));
 
-	nm_log_info (LOGD_VPN, "VPN connection '%s' (IP6 Config Get) reply received.",
-	             nm_connection_get_id (priv->connection));
+	_LOGI ("VPN connection: (IP6 Config Get) reply received");
 
 	if (priv->vpn_state == STATE_CONNECT)
 		_set_vpn_state (self, STATE_IP_CONFIG_GET, NM_VPN_CONNECTION_STATE_REASON_NONE, FALSE);
@@ -1473,7 +1468,7 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 		address.source = NM_IP_CONFIG_SOURCE_VPN;
 		nm_ip6_config_add_address (config, &address);
 	} else {
-		nm_log_err (LOGD_VPN, "invalid IP6 config received!");
+		_LOGE ("invalid IP6 config received!");
 		g_object_unref (config);
 		nm_vpn_connection_config_maybe_complete (self, FALSE);
 		return;
@@ -1514,8 +1509,7 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 			memset (&route, 0, sizeof (route));
 
 			if (!ip6_addr_from_variant (dest, &route.network)) {
-				nm_log_warn (LOGD_VPN, "VPN connection '%s' received invalid IPv6 dest address",
-				             nm_connection_get_id (priv->connection));
+				_LOGW ("VPN connection: received invalid IPv6 dest address");
 				goto next;
 			}
 
@@ -1565,8 +1559,7 @@ connect_timeout_cb (gpointer user_data)
 	/* Cancel activation if it's taken too long */
 	if (priv->vpn_state == STATE_CONNECT ||
 	    priv->vpn_state == STATE_IP_CONFIG_GET) {
-		nm_log_warn (LOGD_VPN, "VPN connection '%s' connect timeout exceeded.",
-		             nm_connection_get_id (priv->connection));
+		_LOGW ("VPN connection: connect timeout exceeded.");
 		_set_vpn_state (self, STATE_FAILED, NM_VPN_CONNECTION_STATE_REASON_CONNECT_TIMEOUT, FALSE);
 	}
 
@@ -1599,9 +1592,8 @@ connect_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 
 	if (error) {
 		g_dbus_error_strip_remote_error (error);
-		nm_log_warn (LOGD_VPN, "VPN connection '%s' failed to connect: '%s'.",
-		             nm_connection_get_id (NM_VPN_CONNECTION_GET_PRIVATE (self)->connection),
-		             error->message);
+		_LOGW ("VPN connection: failed to connect: '%s'",
+		       error->message);
 		_set_vpn_state (self, STATE_FAILED, NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_FAILED, FALSE);
 	} else
 		connect_success (self);
@@ -1622,12 +1614,10 @@ connect_interactive_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_d
 	self = NM_VPN_CONNECTION (user_data);
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
-	nm_log_info (LOGD_VPN, "VPN connection '%s' (ConnectInteractive) reply received.",
-	             nm_connection_get_id (priv->connection));
+	_LOGI ("VPN connection: (ConnectInteractive) reply received");
 
 	if (g_error_matches (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_INTERACTIVE_NOT_SUPPORTED)) {
-		nm_log_dbg (LOGD_VPN, "VPN connection '%s' falling back to non-interactive connect.",
-		            nm_connection_get_id (priv->connection));
+		_LOGD ("VPN connection: falling back to non-interactive connect");
 
 		/* Fall back to Connect() */
 		g_dbus_proxy_call (priv->proxy,
@@ -1640,8 +1630,8 @@ connect_interactive_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_d
 		                   self);
 	} else if (error) {
 		g_dbus_error_strip_remote_error (error);
-		nm_log_warn (LOGD_VPN, "VPN connection '%s' failed to connect interactively: '%s'.",
-		             nm_connection_get_id (priv->connection), error->message);
+		_LOGW ("VPN connection: failed to connect interactively: '%s'",
+		       error->message);
 		_set_vpn_state (self, STATE_FAILED, NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_FAILED, FALSE);
 	} else
 		connect_success (self);
@@ -1694,7 +1684,7 @@ really_activate (NMVpnConnection *self, const char *username)
 	if (nm_agent_manager_all_agents_have_capability (nm_agent_manager_get (),
 	                                                 nm_active_connection_get_subject (NM_ACTIVE_CONNECTION (self)),
 	                                                 NM_SECRET_AGENT_CAPABILITY_VPN_HINTS)) {
-		nm_log_dbg (LOGD_VPN, "Allowing interactive secrets as all agents have that capability");
+		_LOGD ("Allowing interactive secrets as all agents have that capability");
 
 		g_variant_builder_init (&details, G_VARIANT_TYPE_VARDICT);
 		g_dbus_proxy_call (priv->proxy,
@@ -1706,7 +1696,7 @@ really_activate (NMVpnConnection *self, const char *username)
 		                   (GAsyncReadyCallback) connect_interactive_cb,
 		                   self);
 	} else {
-		nm_log_dbg (LOGD_VPN, "Calling old Connect function as not all agents support interactive secrets");
+		_LOGD ("Calling old Connect function as not all agents support interactive secrets");
 		g_dbus_proxy_call (priv->proxy,
 		                   "Connect",
 		                   g_variant_new ("(@a{sa{sv}})", priv->connect_hash),
@@ -1806,10 +1796,8 @@ on_proxy_acquired (GObject *object, GAsyncResult *result, gpointer user_data)
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
 	if (error) {
-		nm_log_err (LOGD_VPN, "(%s/%s) failed to acquire dbus proxy for VPN service: %s",
-		            nm_connection_get_uuid (priv->connection),
-		            nm_connection_get_id (priv->connection),
-		            error->message);
+		_LOGE ("failed to acquire dbus proxy for VPN service: %s",
+		       error->message);
 		_set_vpn_state (self,
 		                STATE_FAILED,
 		                NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_FAILED,
@@ -2000,20 +1988,16 @@ plugin_need_secrets_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_d
 
 	if (error) {
 		g_dbus_error_strip_remote_error (error);
-		nm_log_err (LOGD_VPN, "(%s/%s) plugin NeedSecrets request #%d failed: %s",
-		            nm_connection_get_uuid (priv->connection),
-		            nm_connection_get_id (priv->connection),
-		            priv->secrets_idx + 1,
-		            error->message);
+		_LOGE ("plugin NeedSecrets request #%d failed: %s",
+		       priv->secrets_idx + 1,
+		       error->message);
 		_set_vpn_state (self, STATE_FAILED, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS, FALSE);
 		return;
 	}
 
 	g_variant_get (reply, "(&s)", &setting_name);
 	if (!strlen (setting_name)) {
-		nm_log_dbg (LOGD_VPN, "(%s/%s) service indicated no additional secrets required",
-			        nm_connection_get_uuid (priv->connection),
-			        nm_connection_get_id (priv->connection));
+		_LOGD ("service indicated no additional secrets required");
 
 		/* No secrets required; we can start the VPN */
 		really_activate (self, priv->username);
@@ -2022,14 +2006,10 @@ plugin_need_secrets_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_d
 
 	/* More secrets required */
 	if (priv->secrets_idx == SECRETS_REQ_NEW) {
-		nm_log_err (LOGD_VPN, "(%s/%s) final secrets request failed to provide sufficient secrets",
-		            nm_connection_get_uuid (priv->connection),
-		            nm_connection_get_id (priv->connection));
+		_LOGE ("final secrets request failed to provide sufficient secrets");
 		_set_vpn_state (self, STATE_FAILED, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS, FALSE);
 	} else {
-		nm_log_dbg (LOGD_VPN, "(%s/%s) service indicated additional secrets required",
-		            nm_connection_get_uuid (priv->connection),
-		            nm_connection_get_id (priv->connection));
+		_LOGD ("service indicated additional secrets required");
 		get_secrets (self, priv->secrets_idx + 1, NULL);
 	}
 }
@@ -2051,10 +2031,8 @@ plugin_new_secrets_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_da
 
 	if (error) {
 		g_dbus_error_strip_remote_error (error);
-		nm_log_err (LOGD_VPN, "(%s/%s) sending new secrets to the plugin failed: %s",
-		            nm_connection_get_uuid (priv->connection),
-		            nm_connection_get_id (priv->connection),
-		            error->message);
+		_LOGE ("sending new secrets to the plugin failed: %s",
+		       error->message);
 		_set_vpn_state (self, STATE_FAILED, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS, FALSE);
 	} else
 		_set_vpn_state (self, STATE_CONNECT, NM_VPN_CONNECTION_STATE_REASON_NONE, FALSE);
@@ -2081,8 +2059,8 @@ get_secrets_cb (NMSettingsConnection *connection,
 		return;
 
 	if (error && priv->secrets_idx >= SECRETS_REQ_NEW) {
-		nm_log_err (LOGD_VPN, "Failed to request VPN secrets #%d: (%d) %s",
-		            priv->secrets_idx + 1, error->code, error->message);
+		_LOGE ("Failed to request VPN secrets #%d: (%d) %s",
+		       priv->secrets_idx + 1, error->code, error->message);
 		_set_vpn_state (self, STATE_FAILED, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS, FALSE);
 		return;
 	}
@@ -2096,9 +2074,7 @@ get_secrets_cb (NMSettingsConnection *connection,
 	dict = _hash_with_username (priv->connection, priv->username);
 
 	if (priv->secrets_idx == SECRETS_REQ_INTERACTIVE) {
-		nm_log_dbg (LOGD_VPN, "(%s/%s) sending secrets to the plugin",
-		            nm_connection_get_uuid (priv->connection),
-		            nm_connection_get_id (priv->connection));
+		_LOGD ("sending secrets to the plugin");
 
 		/* Send the secrets back to the plugin */
 		g_dbus_proxy_call (priv->proxy,
@@ -2110,9 +2086,7 @@ get_secrets_cb (NMSettingsConnection *connection,
 		                   (GAsyncReadyCallback) plugin_new_secrets_cb,
 		                   self);
 	} else {
-		nm_log_dbg (LOGD_VPN, "(%s/%s) asking service if additional secrets are required",
-		            nm_connection_get_uuid (priv->connection),
-		            nm_connection_get_id (priv->connection));
+		_LOGD ("asking service if additional secrets are required");
 
 		/* Ask the VPN service if more secrets are required */
 		g_dbus_proxy_call (priv->proxy,
@@ -2138,10 +2112,8 @@ get_secrets (NMVpnConnection *self,
 	g_return_if_fail (secrets_idx < SECRETS_REQ_LAST);
 	priv->secrets_idx = secrets_idx;
 
-	nm_log_dbg (LOGD_VPN, "(%s/%s) requesting VPN secrets pass #%d",
-	            nm_connection_get_uuid (priv->connection),
-	            nm_connection_get_id (priv->connection),
-	            priv->secrets_idx + 1);
+	_LOGD ("requesting VPN secrets pass #%d",
+	       priv->secrets_idx + 1);
 
 	switch (priv->secrets_idx) {
 	case SECRETS_REQ_SYSTEM:
@@ -2171,8 +2143,8 @@ get_secrets (NMVpnConnection *self,
 	                                                       &error);
 	if (!priv->secrets_id) {
 		if (error) {
-			nm_log_err (LOGD_VPN, "failed to request VPN secrets #%d: (%d) %s",
-			            priv->secrets_idx + 1, error->code, error->message);
+			_LOGE ("failed to request VPN secrets #%d: (%d) %s",
+			       priv->secrets_idx + 1, error->code, error->message);
 		}
 		_set_vpn_state (self, STATE_FAILED, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS, FALSE);
 		g_clear_error (&error);
@@ -2189,8 +2161,8 @@ plugin_interactive_secrets_required (NMVpnConnection *self,
 	char **hints;
 	guint32 i;
 
-	nm_log_info (LOGD_VPN, "VPN plugin requested secrets; state %s (%d)",
-	             vpn_state_to_string (priv->vpn_state), priv->vpn_state);
+	_LOGI ("VPN plugin: requested secrets; state %s (%d)",
+	       vpn_state_to_string (priv->vpn_state), priv->vpn_state);
 
 	g_return_if_fail (priv->vpn_state == STATE_CONNECT ||
 	                  priv->vpn_state == STATE_NEED_AUTH);
