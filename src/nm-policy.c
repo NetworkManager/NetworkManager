@@ -51,6 +51,7 @@
 
 typedef struct {
 	NMManager *manager;
+	NMFirewallManager *firewall_manager;
 	guint update_state_id;
 	GSList *pending_activation_checks;
 	GSList *manager_ids;
@@ -1575,7 +1576,7 @@ firewall_update_zone (NMPolicy *policy, NMConnection *connection)
 		if (   (nm_device_get_connection (dev) == connection)
 		    && (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED)
 		    && !nm_device_uses_assumed_connection (dev)) {
-			nm_firewall_manager_add_or_change_zone (nm_firewall_manager_get (),
+			nm_firewall_manager_add_or_change_zone (priv->firewall_manager,
 			                                        nm_device_get_ip_iface (dev),
 			                                        nm_setting_connection_get_zone (s_con),
 			                                        FALSE, /* change zone */
@@ -1606,7 +1607,7 @@ firewall_started (NMFirewallManager *manager,
 		s_con = nm_connection_get_setting_connection (connection);
 		if (    nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED
 		    && !nm_device_uses_assumed_connection (dev)) {
-			nm_firewall_manager_add_or_change_zone (nm_firewall_manager_get (),
+			nm_firewall_manager_add_or_change_zone (priv->firewall_manager,
 			                                        nm_device_get_ip_iface (dev),
 			                                        nm_setting_connection_get_zone (s_con),
 			                                        FALSE, /* still change zone */
@@ -1782,7 +1783,9 @@ nm_policy_new (NMManager *manager, NMSettings *settings)
 			priv->orig_hostname = g_strdup (hostname);
 	}
 
-	priv->fw_started_id = g_signal_connect (nm_firewall_manager_get (), "started",
+	priv->firewall_manager = g_object_ref (nm_firewall_manager_get ());
+
+	priv->fw_started_id = g_signal_connect (priv->firewall_manager, "started",
 	                                        G_CALLBACK (firewall_started), policy);
 
 	priv->dns_manager = g_object_ref (nm_dns_manager_get ());
@@ -1889,9 +1892,11 @@ dispose (GObject *object)
 	g_slist_free_full (priv->pending_secondaries, (GDestroyNotify) pending_secondary_data_free);
 	priv->pending_secondaries = NULL;
 
-	if (priv->fw_started_id) {
-		g_signal_handler_disconnect (nm_firewall_manager_get (), priv->fw_started_id);
+	if (priv->firewall_manager) {
+		g_assert (priv->fw_started_id);
+		g_signal_handler_disconnect (priv->firewall_manager, priv->fw_started_id);
 		priv->fw_started_id = 0;
+		g_clear_object (&priv->firewall_manager);
 	}
 
 	if (priv->dns_manager) {

@@ -50,6 +50,9 @@ typedef struct {
 	gboolean initialized;
 } SCPluginIbftPrivate;
 
+static SCPluginIbft *sc_plugin_ibft_get (void);
+NM_DEFINE_SINGLETON_GETTER (SCPluginIbft, sc_plugin_ibft_get, SC_TYPE_PLUGIN_IBFT);
+
 static void
 read_connections (SCPluginIbft *self)
 {
@@ -191,12 +194,5 @@ system_config_interface_init (NMSystemConfigInterface *system_config_interface_c
 G_MODULE_EXPORT GObject *
 nm_system_config_factory (void)
 {
-	static SCPluginIbft *singleton = NULL;
-
-	if (!singleton)
-		singleton = SC_PLUGIN_IBFT (g_object_new (SC_TYPE_PLUGIN_IBFT, NULL));
-	else
-		g_object_ref (singleton);
-
-	return G_OBJECT (singleton);
+	return g_object_ref (sc_plugin_ibft_get ());
 }

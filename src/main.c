@@ -79,17 +79,15 @@ parse_state_file (const char *filename,
                   gboolean *net_enabled,
                   gboolean *wifi_enabled,
                   gboolean *wwan_enabled,
-                  gboolean *wimax_enabled,
                   GError **error)
 {
 	GKeyFile *state_file;
 	GError *tmp_error = NULL;
-	gboolean wifi, net, wwan, wimax;
+	gboolean wifi, net, wwan;
 
 	g_return_val_if_fail (net_enabled != NULL, FALSE);
 	g_return_val_if_fail (wifi_enabled != NULL, FALSE);
 	g_return_val_if_fail (wwan_enabled != NULL, FALSE);
-	g_return_val_if_fail (wimax_enabled != NULL, FALSE);
 
 	state_file = g_key_file_new ();
 	g_key_file_set_list_separator (state_file, ',');
@@ -111,7 +109,6 @@ parse_state_file (const char *filename,
 			g_key_file_set_boolean (state_file, "main", "NetworkingEnabled", *net_enabled);
 			g_key_file_set_boolean (state_file, "main", "WirelessEnabled", *wifi_enabled);
 			g_key_file_set_boolean (state_file, "main", "WWANEnabled", *wwan_enabled);
-			g_key_file_set_boolean (state_file, "main", "WimaxEnabled", *wimax_enabled);
 
 			data = g_key_file_to_data (state_file, &len, NULL);
 			if (data)
@@ -141,11 +138,6 @@ parse_state_file (const char *filename,
 	wwan = g_key_file_get_boolean (state_file, "main", "WWANEnabled", &tmp_error);
 	if (tmp_error == NULL)
 		*wwan_enabled = wwan;
-	g_clear_error (&tmp_error);
-
-	wimax = g_key_file_get_boolean (state_file, "main", "WimaxEnabled", &tmp_error);
-	if (tmp_error == NULL)
-		*wimax_enabled = wimax;
 	g_clear_error (&tmp_error);
 
 	g_key_file_free (state_file);
@@ -255,9 +247,8 @@ do_early_setup (int *argc, char **argv[], NMConfigCmdLineOptions *config_cli)
 int
 main (int argc, char *argv[])
 {
-	gboolean wifi_enabled = TRUE, net_enabled = TRUE, wwan_enabled = TRUE, wimax_enabled = TRUE;
+	gboolean wifi_enabled = TRUE, net_enabled = TRUE, wwan_enabled = TRUE;
 	gboolean success = FALSE;
-	NMManager *manager = NULL;
 	NMConfig *config;
 	GError *error = NULL;
 	gboolean wrote_pidfile = FALSE;
@@ -389,7 +380,7 @@ main (int argc, char *argv[])
 	nm_log_info (LOGD_CORE, "NetworkManager (version " NM_DIST_VERSION ") is starting...");
 
 	/* Parse the state file */
-	if (!parse_state_file (global_opt.state_file, &net_enabled, &wifi_enabled, &wwan_enabled, &wimax_enabled, &error)) {
+	if (!parse_state_file (global_opt.state_file, &net_enabled, &wifi_enabled, &wwan_enabled, &error)) {
 		nm_log_err (LOGD_CORE, "State file %s parsing failed: (%d) %s",
 		            global_opt.state_file,
 		            error ? error->code : -1,
@@ -410,11 +401,10 @@ main (int argc, char *argv[])
 
 	nm_auth_manager_setup (nm_config_get_auth_polkit (config));
 
-	manager = nm_manager_setup (global_opt.state_file,
-	                            net_enabled,
-	                            wifi_enabled,
-	                            wwan_enabled,
-	                            wimax_enabled);
+	nm_manager_setup (global_opt.state_file,
+	                  net_enabled,
+	                  wifi_enabled,
+	                  wwan_enabled);
 
 	if (!nm_bus_manager_get_connection (nm_bus_manager_get ())) {
 		nm_log_warn (LOGD_CORE, "Failed to connect to D-Bus; only private bus is available");
@@ -429,17 +419,13 @@ main (int argc, char *argv[])
 	/* Set up platform interaction layer */
 	nm_linux_platform_setup ();
 
-	/* FIXME: intentionally leak the singleton instance of NMPlatform.
-	 * nm_linux_platform_setup() will register the singleton for destruction,
-	 * but we don't yet shut down all singletons properly, so don't destroy
-	 * NMPlatform. */
-	g_object_ref (NM_PLATFORM_GET);
+	NM_UTILS_KEEP_ALIVE (config, NM_PLATFORM_GET, "NMConfig-depends-on-NMPlatform");
 
 	nm_dispatcher_init ();
 
-	g_signal_connect (manager, NM_MANAGER_CONFIGURE_QUIT, G_CALLBACK (manager_configure_quit), config);
+	g_signal_connect (nm_manager_get (), NM_MANAGER_CONFIGURE_QUIT, G_CALLBACK (manager_configure_quit), config);
 
-	if (!nm_manager_start (manager, &error)) {
+	if (!nm_manager_start (nm_manager_get (), &error)) {
 		nm_log_err (LOGD_CORE, "failed to initialize: %s", error->message);
 		goto done;
 	}
@@ -462,11 +448,9 @@ main (int argc, char *argv[])
 	if (configure_and_quit == FALSE)
 		g_main_loop_run (main_loop);
 
-	nm_manager_stop (manager);
+	nm_manager_stop (nm_manager_get ());
 
 done:
-	g_clear_object (&manager);
-
 	if (global_opt.pidfile && wrote_pidfile)
 		unlink (global_opt.pidfile);
 

@@ -277,12 +277,11 @@ ck_finalize (NMSessionMonitor *monitor)
 
 /********************************************************************/
 
-NMSessionMonitor *nm_session_monitor_get(void);
-
 NM_DEFINE_SINGLETON_GETTER (NMSessionMonitor, nm_session_monitor_get, NM_TYPE_SESSION_MONITOR);
 
 /**
  * nm_session_monitor_connect:
+ * @self: the session monitor
  * @callback: The callback.
  * @user_data: User data for the callback.
  *
@@ -291,9 +290,13 @@ NM_DEFINE_SINGLETON_GETTER (NMSessionMonitor, nm_session_monitor_get, NM_TYPE_SE
  * Returns: Handler ID to be used with nm_session_monitor_disconnect().
  */
 gulong
-nm_session_monitor_connect (NMSessionCallback callback, gpointer user_data)
+nm_session_monitor_connect (NMSessionMonitor *self,
+                            NMSessionCallback callback,
+                            gpointer user_data)
 {
-	return g_signal_connect (nm_session_monitor_get (),
+	g_return_val_if_fail (NM_IS_SESSION_MONITOR (self), 0);
+
+	return g_signal_connect (self,
                              NM_SESSION_MONITOR_CHANGED,
                              G_CALLBACK (callback),
                              user_data);
@@ -301,14 +304,18 @@ nm_session_monitor_connect (NMSessionCallback callback, gpointer user_data)
 
 /**
  * nm_session_monitor_disconnect:
+ * @self: the session monitor
  * @handler_id: Handler ID returned by nm_session_monitor-connect().
  *
  * Disconnect callback from the session handler.
  */
 void
-nm_session_monitor_disconnect (gulong handler_id)
+nm_session_monitor_disconnect (NMSessionMonitor *self,
+                               gulong handler_id)
 {
-	g_signal_handler_disconnect (nm_session_monitor_get (), handler_id);
+	g_return_if_fail (NM_IS_SESSION_MONITOR (self));
+
+	g_signal_handler_disconnect (self, handler_id);
 }
 
 /**
@@ -357,6 +364,7 @@ nm_session_monitor_user_to_uid (const char *user, uid_t *out_uid)
 
 /**
  * nm_session_monitor_session_exists:
+ * @self: the session monitor
  * @uid: A user ID.
  * @active: Ignore inactive sessions.
  *
@@ -369,19 +377,19 @@ nm_session_monitor_user_to_uid (const char *user, uid_t *out_uid)
  * logged into an active session.
  */
 gboolean
-nm_session_monitor_session_exists (uid_t uid, gboolean active)
+nm_session_monitor_session_exists (NMSessionMonitor *self,
+                                   uid_t uid,
+                                   gboolean active)
 {
-#if defined(SESSION_TRACKING_SYSTEMD) || defined(SESSION_TRACKING_CONSOLEKIT)
-	NMSessionMonitor *monitor = nm_session_monitor_get ();
-#endif
+	g_return_val_if_fail (NM_IS_SESSION_MONITOR (self), FALSE);
 
 #ifdef SESSION_TRACKING_SYSTEMD
-	if (sd_session_exists (monitor, uid, active))
+	if (sd_session_exists (self, uid, active))
 		return TRUE;
 #endif
 
 #ifdef SESSION_TRACKING_CONSOLEKIT
-	if (ck_session_exists (monitor, uid, active))
+	if (ck_session_exists (self, uid, active))
 		return TRUE;
 #endif
 

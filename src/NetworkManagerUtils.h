@@ -76,6 +76,17 @@ GETTER (void) \
 	return singleton_instance; \
 }
 
+/* attach @instance to the data or @owner. @owner owns a reference
+ * to @instance thus the lifetime of @instance is at least as long
+ * as that of @owner. Use this when @owner depends on @instance. */
+#define NM_UTILS_KEEP_ALIVE(owner, instance, unique_token) \
+    G_STMT_START { \
+         g_object_set_data_full (G_OBJECT (owner), \
+                                 ".nm-utils-keep-alive-" unique_token "", \
+                                 g_object_ref (instance), \
+                                 g_object_unref); \
+    } G_STMT_END
+
 /*****************************************************************************/
 
 gboolean nm_ethernet_address_is_valid (gconstpointer addr, gssize len);

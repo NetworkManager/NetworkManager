@@ -268,8 +268,6 @@ rfkill_type_to_enum (const char *str)
 		return RFKILL_TYPE_WLAN;
 	else if (!strcmp (str, "wwan"))
 		return RFKILL_TYPE_WWAN;
-	else if (!strcmp (str, "wimax"))
-		return RFKILL_TYPE_WIMAX;
 
 	return RFKILL_TYPE_UNKNOWN;
 }

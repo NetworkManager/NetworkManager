@@ -111,6 +111,7 @@ typedef struct {
 	gboolean removed;
 
 	NMAgentManager *agent_mgr;
+	NMSessionMonitor *session_monitor;
 	guint session_changed_id;
 
 	NMSettingsConnectionFlags flags;
@@ -333,7 +334,7 @@ nm_settings_connection_recheck_visibility (NMSettingsConnection *self)
 			continue;
 		if (!nm_session_monitor_user_to_uid (user, &uid))
 			continue;
-		if (!nm_session_monitor_session_exists (uid, FALSE))
+		if (!nm_session_monitor_session_exists (priv->session_monitor, uid, FALSE))
 			continue;
 
 		set_visible (self, TRUE);
@@ -2325,7 +2326,8 @@ nm_settings_connection_init (NMSettingsConnection *self)
 	priv->visible = FALSE;
 	priv->ready = TRUE;
 
-	priv->session_changed_id = nm_session_monitor_connect (session_changed_cb, self);
+	priv->session_monitor = g_object_ref (nm_session_monitor_get ());
+	priv->session_changed_id = nm_session_monitor_connect (priv->session_monitor, session_changed_cb, self);
 
 	priv->agent_mgr = g_object_ref (nm_agent_manager_get ());
 
@@ -2387,9 +2389,10 @@ dispose (GObject *object)
 
 	set_visible (self, FALSE);
 
-	if (priv->session_changed_id) {
-		nm_session_monitor_disconnect (priv->session_changed_id);
+	if (priv->session_monitor) {
+		nm_session_monitor_disconnect (priv->session_monitor, priv->session_changed_id);
 		priv->session_changed_id = 0;
+		g_clear_object (&priv->session_monitor);
 	}
 	g_clear_object (&priv->agent_mgr);
 

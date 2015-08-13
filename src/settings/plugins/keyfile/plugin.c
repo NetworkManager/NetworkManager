@@ -569,6 +569,18 @@ set_property (GObject *object, guint prop_id,
 }
 
 static void
+constructed (GObject *object)
+{
+	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (object);
+
+	priv->config = g_object_ref (nm_config_get ());
+	if (nm_config_data_has_value (nm_config_get_data_orig (priv->config),
+	                              NM_CONFIG_KEYFILE_GROUP_KEYFILE, "hostname",
+	                              NM_CONFIG_GET_VALUE_RAW))
+		nm_log_warn (LOGD_SETTINGS, "keyfile: 'hostname' option is deprecated and has no effect");
+}
+
+static void
 dispose (GObject *object)
 {
 	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (object);
@@ -603,6 +615,7 @@ sc_plugin_keyfile_class_init (SCPluginKeyfileClass *req_class)
 
 	g_type_class_add_private (req_class, sizeof (SCPluginKeyfilePrivate));
 
+	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
@@ -634,20 +647,5 @@ system_config_interface_init (NMSystemConfigInterface *system_config_interface_c
 GObject *
 nm_settings_keyfile_plugin_new (void)
 {
-	static SCPluginKeyfile *singleton = NULL;
-	SCPluginKeyfilePrivate *priv;
-
-	if (!singleton) {
-		singleton = SC_PLUGIN_KEYFILE (g_object_new (SC_TYPE_PLUGIN_KEYFILE, NULL));
-		priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (singleton);
-
-		priv->config = g_object_ref (nm_config_get ());
-		if (nm_config_data_has_value (nm_config_get_data_orig (priv->config),
-		                              NM_CONFIG_KEYFILE_GROUP_KEYFILE, "hostname",
-		                              NM_CONFIG_GET_VALUE_RAW))
-			nm_log_warn (LOGD_SETTINGS, "keyfile: 'hostname' option is deprecated and has no effect");
-	} else
-		g_object_ref (singleton);
-
-	return G_OBJECT (singleton);
+	return g_object_new (SC_TYPE_PLUGIN_KEYFILE, NULL);
 }

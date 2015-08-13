@@ -9103,6 +9103,8 @@ constructed (GObject *object)
 	}
 
 	G_OBJECT_CLASS (nm_device_parent_class)->constructed (object);
+
+	_LOGD (LOGD_DEVICE, "constructed (%s)", G_OBJECT_TYPE_NAME (self));
 }
 
 static void
@@ -9112,7 +9114,7 @@ dispose (GObject *object)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMPlatform *platform;
 
-	_LOGD (LOGD_DEVICE, "dispose(): %s", G_OBJECT_TYPE_NAME (self));
+	_LOGD (LOGD_DEVICE, "disposing");
 
 	g_signal_handlers_disconnect_by_func (nm_config_get (), config_changed_update_ignore_carrier, self);
 

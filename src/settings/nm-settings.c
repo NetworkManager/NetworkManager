@@ -625,7 +625,7 @@ unrecognized_specs_changed (NMSystemConfigInterface *config,
 	              nm_system_config_interface_get_unrecognized_specs);
 }
 
-static void
+static gboolean
 add_plugin (NMSettings *self, NMSystemConfigInterface *plugin)
 {
 	NMSettingsPrivate *priv;
@@ -633,10 +633,15 @@ add_plugin (NMSettings *self, NMSystemConfigInterface *plugin)
 	char *pinfo = NULL;
 	const char *path;
 
-	g_return_if_fail (NM_IS_SETTINGS (self));
-	g_return_if_fail (NM_IS_SYSTEM_CONFIG_INTERFACE (plugin));
+	g_return_val_if_fail (NM_IS_SETTINGS (self), FALSE);
+	g_return_val_if_fail (NM_IS_SYSTEM_CONFIG_INTERFACE (plugin), FALSE);
 
 	priv = NM_SETTINGS_GET_PRIVATE (self);
+
+	if (g_slist_find (priv->plugins, plugin)) {
+		/* don't add duplicates. */
+		return FALSE;
+	}
 
 	priv->plugins = g_slist_append (priv->plugins, g_object_ref (plugin));
 	nm_system_config_interface_init (plugin, NULL);
@@ -652,6 +657,8 @@ add_plugin (NMSettings *self, NMSystemConfigInterface *plugin)
 	             NM_PRINT_FMT_QUOTED (path, " (", path, ")", ""));
 	g_free (pname);
 	g_free (pinfo);
+
+	return TRUE;
 }
 
 static GObject *
@@ -682,11 +689,12 @@ find_plugin (GSList *list, const char *pname)
 static void
 add_keyfile_plugin (NMSettings *self)
 {
-	GObject *keyfile_plugin;
+	gs_unref_object GObject *keyfile_plugin = NULL;
 
 	keyfile_plugin = nm_settings_keyfile_plugin_new ();
 	g_assert (keyfile_plugin);
-	add_plugin (self, NM_SYSTEM_CONFIG_INTERFACE (keyfile_plugin));
+	if (!add_plugin (self, NM_SYSTEM_CONFIG_INTERFACE (keyfile_plugin)))
+		g_return_if_reached ();
 }
 
 static gboolean
@@ -726,10 +734,6 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 		if (has_no_ibft && !strcmp (pname, "ibft"))
 			continue;
 
-		obj = find_plugin (list, pname);
-		if (obj)
-			continue;
-
 		/* keyfile plugin is built-in now */
 		if (strcmp (pname, "keyfile") == 0) {
 			if (!keyfile_added) {
@@ -738,6 +742,17 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 			}
 			continue;
 		}
+
+		if (_nm_utils_strv_find_first ((char **) plugins,
+		                               iter - plugins,
+		                               pname) >= 0) {
+			/* the plugin is already mentioned in the list previously.
+			 * Don't load a duplicate. */
+			continue;
+		}
+
+		if (find_plugin (list, pname))
+			continue;
 
 load_plugin:
 		{
@@ -801,8 +816,10 @@ load_plugin:
 			g_object_weak_ref (obj, (GWeakNotify) g_module_close, plugin);
 			g_object_set_data_full (obj, PLUGIN_MODULE_PATH, path, g_free);
 			path = NULL;
-			add_plugin (self, NM_SYSTEM_CONFIG_INTERFACE (obj));
-			list = g_slist_append (list, obj);
+			if (add_plugin (self, NM_SYSTEM_CONFIG_INTERFACE (obj)))
+				list = g_slist_append (list, obj);
+			else
+				g_object_unref (obj);
 		}
 next:
 		if (add_ibft && !strcmp (pname, "ifcfg-rh")) {
