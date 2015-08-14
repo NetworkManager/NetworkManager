@@ -21,7 +21,7 @@
 .\"
 .\" Copyright 2010 - 2015 Red Hat, Inc.
 .\"
-.TH NMCLI "1" "19 February 2015"
+.TH NMCLI "1" "12 August 2015"
 
 .SH NAME
 nmcli \- command\(hyline tool for controlling NetworkManager
@@ -802,7 +802,8 @@ List available Wi\(hyFi access points. The \fIifname\fP and \fIbssid\fP options
 can be used to list APs for a particular interface or with a specific BSSID,
 respectively.
 .TP
-.B wifi connect <(B)SSID> [password <password>] [wep\-key\-type key|phrase] [ifname <ifname>] [bssid <BSSID>] [name <name>] [private yes|no]
+.B wifi connect <(B)SSID> [password <password>] [wep\-key\-type key|phrase] [ifname <ifname>] [bssid <BSSID>] [name <name>]
+.B [private yes|no] [hidden yes|no]
 .br
 Connect to a Wi\(hyFi network specified by SSID or BSSID. The command creates a new
 connection and then activates it on a device. This is a command\(hyline counterpart
@@ -830,13 +831,20 @@ Available options are:
 .IP \fIprivate\fP 13
 \(en if set to \fByes\fP, the connection will only be visible to the user who created it.
 Otherwise the connection is system\(hywide, which is the default.
+.IP \fIhidden\fP 13
+\(en set to \fByes\fP when connecting for the first time to an AP not broadcasting its SSID.
+Otherwise the SSID would not be found and the connection attempt would fail.
 .RE
 .TP
-.B wifi rescan [[ifname] <ifname>]
+.B wifi rescan [ifname <ifname>] [[ssid <SSID>] ...]
 .br
 Request that \fINetworkManager\fP immediately re-scan for available access points.
 NetworkManager scans Wi\(hyFi networks periodically, but in some cases it can be
-useful to start scanning manually (e.g. after resuming the computer).
+useful to start scanning manually (e.g. after resuming the computer). By using
+\fIssid\fP, it is possible to scan for a specific SSID, which is useful for APs
+with hidden SSIDs. You can provide multiple \fIssid\fP parameters in order to
+scan more SSIDs.
+.br
 This command does not show the APs, use 'nmcli device wifi list' for that.
 
 .TP

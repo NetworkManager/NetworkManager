@@ -77,11 +77,21 @@ const GPtrArray *        nm_device_wifi_get_access_points        (NMDeviceWifi *
 gboolean                 nm_device_wifi_request_scan             (NMDeviceWifi *device,
                                                                   GCancellable *cancellable,
                                                                   GError **error);
-
+NM_AVAILABLE_IN_1_2
+gboolean                 nm_device_wifi_request_scan_options     (NMDeviceWifi *device,
+                                                                  GVariant *options,
+                                                                  GCancellable *cancellable,
+                                                                  GError **error);
 void                     nm_device_wifi_request_scan_async       (NMDeviceWifi *device,
                                                                   GCancellable *cancellable,
                                                                   GAsyncReadyCallback callback,
                                                                   gpointer user_data);
+NM_AVAILABLE_IN_1_2
+void                     nm_device_wifi_request_scan_options_async (NMDeviceWifi *device,
+                                                                    GVariant *options,
+                                                                    GCancellable *cancellable,
+                                                                    GAsyncReadyCallback callback,
+                                                                    gpointer user_data);
 gboolean                 nm_device_wifi_request_scan_finish      (NMDeviceWifi *device,
                                                                   GAsyncResult *result,
                                                                   GError **error);

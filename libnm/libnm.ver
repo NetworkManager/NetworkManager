@@ -851,6 +851,8 @@ global:
 	nm_access_point_get_last_seen;
 	nm_device_get_metered;
 	nm_device_get_nm_plugin_missing;
+	nm_device_wifi_request_scan_options;
+	nm_device_wifi_request_scan_options_async;
 	nm_metered_get_type;
 	nm_setting_802_1x_check_cert_scheme;
 	nm_setting_bridge_get_multicast_snooping;
