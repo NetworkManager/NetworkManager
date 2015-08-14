@@ -585,9 +585,12 @@ request_next_agent (Request *req)
 {
 	GError *error = NULL;
 
-	req->current_call_id = NULL;
-	if (req->current)
-		g_object_unref (req->current);
+	if (req->current) {
+		if (req->current_call_id)
+			nm_secret_agent_cancel_secrets (req->current, req->current_call_id);
+		g_clear_object (&req->current);
+	}
+	g_warn_if_fail (!req->current_call_id);
 
 	if (req->pending) {
 		/* Send the request to the next agent */
@@ -600,8 +603,6 @@ request_next_agent (Request *req)
 
 		req->next_callback (req);
 	} else {
-		req->current = NULL;
-
 		/* No more secret agents are available to fulfill this secrets request */
 		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
 		                             NM_AGENT_MANAGER_ERROR_NO_SECRETS,
@@ -783,13 +784,22 @@ get_done_cb (NMSecretAgent *agent,
 	char *agent_uname = NULL;
 
 	g_return_if_fail (call_id == parent->current_call_id);
+	g_return_if_fail (agent == parent->current);
+
+	parent->current_call_id = NULL;
 
 	if (error) {
-		nm_log_dbg (LOGD_AGENTS, "(%s) agent failed secrets request %p/%s/%s: (%d) %s",
+		if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+			nm_log_dbg (LOGD_AGENTS, "(%s) get secrets request cancelled: %p/%s/%s",
+			            nm_secret_agent_get_description (agent),
+			            req, parent->detail, req->setting_name);
+			return;
+		}
+
+		nm_log_dbg (LOGD_AGENTS, "(%s) agent failed secrets request %p/%s/%s: %s",
 		            nm_secret_agent_get_description (agent),
 		            req, parent->detail, req->setting_name,
-		            error ? error->code : -1,
-		            (error && error->message) ? error->message : "(unknown)");
+		            error->message);
 
 		if (g_error_matches (error, NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_USER_CANCELED)) {
 			error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
@@ -900,9 +910,8 @@ get_agent_request_secrets (ConnectionRequest *req, gboolean include_system_secre
 	                                                       req->flags,
 	                                                       get_done_cb,
 	                                                       req);
-	if (parent->current_call_id == NULL) {
-		/* Shouldn't hit this, but handle it anyway */
-		g_warn_if_fail (parent->current_call_id != NULL);
+	if (!parent->current_call_id) {
+		g_warn_if_reached ();
 		request_next_agent (parent);
 	}
 
@@ -1230,13 +1239,22 @@ save_done_cb (NMSecretAgent *agent,
 	const char *agent_dbus_owner;
 
 	g_return_if_fail (call_id == parent->current_call_id);
+	g_return_if_fail (agent == parent->current);
+
+	parent->current_call_id = NULL;
 
 	if (error) {
-		nm_log_dbg (LOGD_AGENTS, "(%s) agent failed save secrets request %p/%s: (%d) %s",
+		if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+			nm_log_dbg (LOGD_AGENTS, "(%s) save secrets request cancelled: %p/%s",
+			            nm_secret_agent_get_description (agent),
+			            req, parent->detail);
+			return;
+		}
+
+		nm_log_dbg (LOGD_AGENTS, "(%s) agent failed save secrets request %p/%s: %s",
 		            nm_secret_agent_get_description (agent),
 		            req, parent->detail,
-		            error ? error->code : -1,
-		            (error && error->message) ? error->message : "(unknown)");
+		            error->message);
 		/* Try the next agent */
 		request_next_agent (parent);
 		maybe_remove_agent_on_error (agent, error);
@@ -1260,9 +1278,8 @@ save_next_cb (Request *parent)
 	                                                        req->connection,
 	                                                        save_done_cb,
 	                                                        req);
-	if (parent->current_call_id == NULL) {
-		/* Shouldn't hit this, but handle it anyway */
-		g_warn_if_fail (parent->current_call_id != NULL);
+	if (!parent->current_call_id) {
+		g_warn_if_reached ();
 		request_next_agent (parent);
 	}
 }
@@ -1323,12 +1340,20 @@ delete_done_cb (NMSecretAgent *agent,
 	Request *req = user_data;
 
 	g_return_if_fail (call_id == req->current_call_id);
+	g_return_if_fail (agent == req->current);
+
+	req->current_call_id = NULL;
 
 	if (error) {
-		nm_log_dbg (LOGD_AGENTS, "(%s) agent failed delete secrets request %p/%s: (%d) %s",
+		if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+			nm_log_dbg (LOGD_AGENTS, "(%s) delete secrets request cancelled: %p/%s",
+			            nm_secret_agent_get_description (agent), req, req->detail);
+			return;
+		}
+
+		nm_log_dbg (LOGD_AGENTS, "(%s) agent failed delete secrets request %p/%s: %s",
 		            nm_secret_agent_get_description (agent), req, req->detail,
-		            error ? error->code : -1,
-		            (error && error->message) ? error->message : "(unknown)");
+		            error->message);
 	} else {
 		nm_log_dbg (LOGD_AGENTS, "(%s) agent deleted secrets for request %p/%s",
 		            nm_secret_agent_get_description (agent), req, req->detail);
@@ -1349,9 +1374,8 @@ delete_next_cb (Request *parent)
 	                                                          req->connection,
 	                                                          delete_done_cb,
 	                                                          req);
-	if (parent->current_call_id == NULL) {
-		/* Shouldn't hit this, but handle it anyway */
-		g_warn_if_fail (parent->current_call_id != NULL);
+	if (!parent->current_call_id) {
+		g_warn_if_reached ();
 		request_next_agent (parent);
 	}
 }
