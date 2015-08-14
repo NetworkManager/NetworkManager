@@ -855,6 +855,8 @@ libnm_1_0_6 {
 global:
 	nm_access_point_get_last_seen;
 	nm_device_get_metered;
+	nm_device_wifi_request_scan_options;
+	nm_device_wifi_request_scan_options_async;
 	nm_metered_get_type;
 	nm_setting_connection_get_metered;
 } libnm_1_0_4;
