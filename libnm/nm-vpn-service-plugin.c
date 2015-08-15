@@ -150,6 +150,7 @@ nm_vpn_service_plugin_set_state (NMVpnServicePlugin *plugin,
 	if (priv->state != state) {
 		priv->state = state;
 		g_signal_emit (plugin, signals[STATE_CHANGED], 0, state);
+		nmdbus_vpn_plugin_emit_state_changed (priv->dbus_vpn_service_plugin, state);
 	}
 }
 
@@ -157,19 +158,27 @@ void
 nm_vpn_service_plugin_set_login_banner (NMVpnServicePlugin *plugin,
                                         const char *banner)
 {
+	NMVpnServicePluginPrivate *priv;
+
 	g_return_if_fail (NM_IS_VPN_SERVICE_PLUGIN (plugin));
 	g_return_if_fail (banner != NULL);
 
+	priv = NM_VPN_SERVICE_PLUGIN_GET_PRIVATE (plugin);
 	g_signal_emit (plugin, signals[LOGIN_BANNER], 0, banner);
+	nmdbus_vpn_plugin_emit_login_banner (priv->dbus_vpn_service_plugin, banner);
 }
 
 void
 nm_vpn_service_plugin_failure (NMVpnServicePlugin *plugin,
                                NMVpnPluginFailure reason)
 {
+	NMVpnServicePluginPrivate *priv;
+
 	g_return_if_fail (NM_IS_VPN_SERVICE_PLUGIN (plugin));
 
+	priv = NM_VPN_SERVICE_PLUGIN_GET_PRIVATE (plugin);
 	g_signal_emit (plugin, signals[FAILURE], 0, reason);
+	nmdbus_vpn_plugin_emit_failure (priv->dbus_vpn_service_plugin, reason);
 }
 
 gboolean
@@ -315,6 +324,7 @@ nm_vpn_service_plugin_set_config (NMVpnServicePlugin *plugin,
 	                                    G_VARIANT_TYPE ("u"));
 
 	g_signal_emit (plugin, signals[CONFIG], 0, config);
+	nmdbus_vpn_plugin_emit_config (priv->dbus_vpn_service_plugin, config);
 }
 
 void
@@ -365,6 +375,7 @@ nm_vpn_service_plugin_set_ip4_config (NMVpnServicePlugin *plugin,
 	combined_config = g_variant_builder_end (&builder);
 	g_variant_ref_sink (combined_config);
 	g_signal_emit (plugin, signals[IP4_CONFIG], 0, combined_config);
+	nmdbus_vpn_plugin_emit_ip4_config (priv->dbus_vpn_service_plugin, combined_config);
 	g_variant_unref (combined_config);
 
 	if (   priv->has_ip4 == priv->got_ip4
@@ -383,6 +394,7 @@ nm_vpn_service_plugin_set_ip6_config (NMVpnServicePlugin *plugin,
 
 	priv->got_ip6 = TRUE;
 	g_signal_emit (plugin, signals[IP6_CONFIG], 0, ip6_config);
+	g_signal_emit (priv->dbus_vpn_service_plugin, signals[IP6_CONFIG], 0, ip6_config);
 
 	if (   priv->has_ip4 == priv->got_ip4
 	    && priv->has_ip6 == priv->got_ip6)
@@ -627,6 +639,7 @@ nm_vpn_service_plugin_secrets_required (NMVpnServicePlugin *plugin,
 	nm_clear_g_source (&priv->connect_timer);
 
 	g_signal_emit (plugin, signals[SECRETS_REQUIRED], 0, message, hints);
+	nmdbus_vpn_plugin_emit_secrets_required (priv->dbus_vpn_service_plugin, message, hints);
 }
 
 /***************************************************************/
