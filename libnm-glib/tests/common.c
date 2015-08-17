@@ -75,7 +75,7 @@ nm_test_service_init (void)
 	g_assert_no_error (error);
 
 	/* Wait until the service is registered on the bus */
-	for (i = 100; i > 0; i--) {
+	for (i = 1000; i > 0; i--) {
 		if (name_exists (info->bus, "org.freedesktop.NetworkManager"))
 			break;
 		g_usleep (G_USEC_PER_SEC / 50);
