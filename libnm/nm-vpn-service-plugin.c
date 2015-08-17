@@ -364,13 +364,13 @@ nm_vpn_service_plugin_set_ip4_config (NMVpnServicePlugin *plugin,
 	}
 
 	if (priv->banner)
-		g_variant_builder_add (&builder, "{sv}", NM_VPN_PLUGIN_IP4_CONFIG_BANNER, &priv->banner);
+		g_variant_builder_add (&builder, "{sv}", NM_VPN_PLUGIN_IP4_CONFIG_BANNER, priv->banner);
 	if (priv->tundev)
-		g_variant_builder_add (&builder, "{sv}", NM_VPN_PLUGIN_IP4_CONFIG_TUNDEV, &priv->tundev);
+		g_variant_builder_add (&builder, "{sv}", NM_VPN_PLUGIN_IP4_CONFIG_TUNDEV, priv->tundev);
 	if (priv->gateway)
-		g_variant_builder_add (&builder, "{sv}", NM_VPN_PLUGIN_IP4_CONFIG_EXT_GATEWAY, &priv->gateway);
+		g_variant_builder_add (&builder, "{sv}", NM_VPN_PLUGIN_IP4_CONFIG_EXT_GATEWAY, priv->gateway);
 	if (priv->mtu)
-		g_variant_builder_add (&builder, "{sv}", NM_VPN_PLUGIN_IP4_CONFIG_MTU, &priv->mtu);
+		g_variant_builder_add (&builder, "{sv}", NM_VPN_PLUGIN_IP4_CONFIG_MTU, priv->mtu);
 
 	combined_config = g_variant_builder_end (&builder);
 	g_variant_ref_sink (combined_config);
