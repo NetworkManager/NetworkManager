@@ -113,7 +113,10 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_PARENT:
-		parent = nm_manager_get_device_by_ifindex (nm_manager_get (), priv->props.parent_ifindex);
+		if (priv->props.parent_ifindex > 0)
+			parent = nm_manager_get_device_by_ifindex (nm_manager_get (), priv->props.parent_ifindex);
+		else
+			parent = NULL;
 		nm_utils_g_value_set_object_path (value, parent);
 		break;
 	case PROP_MODE:

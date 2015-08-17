@@ -368,7 +368,7 @@ create_device (NMDeviceFactory *factory,
 	gboolean is_partition = FALSE;
 
 	if (plink)
-		is_partition = (plink->parent > 0);
+		is_partition = (plink->parent > 0 || plink->parent == NM_PLATFORM_LINK_OTHER_NETNS);
 	else if (connection) {
 		NMSettingInfiniband *s_infiniband;
 

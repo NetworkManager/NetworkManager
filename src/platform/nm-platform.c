@@ -446,8 +446,12 @@ nm_platform_link_get_all (NMPlatform *self)
 			g_warn_if_fail (g_hash_table_contains (unseen, GINT_TO_POINTER (item->master)));
 		}
 		if (item->parent != 0) {
-			g_warn_if_fail (item->parent > 0);
-			g_warn_if_fail (item->parent != item->ifindex);
+			if (item->parent != NM_PLATFORM_LINK_OTHER_NETNS) {
+				g_warn_if_fail (item->parent > 0);
+				g_warn_if_fail (item->parent != item->ifindex);
+				g_warn_if_fail (   !nm_platform_check_support_libnl_link_netnsid ()
+				                || g_hash_table_contains (unseen, GINT_TO_POINTER (item->parent)));
+			}
 		}
 	}
 #endif
@@ -2359,8 +2363,10 @@ nm_platform_link_to_string (const NMPlatformLink *link)
 	else
 		master[0] = 0;
 
-	if (link->parent)
+	if (link->parent > 0)
 		g_snprintf (parent, sizeof (parent), "@%d", link->parent);
+	else if (link->parent == NM_PLATFORM_LINK_OTHER_NETNS)
+		g_strlcpy (parent, "@other-netns", sizeof (parent));
 	else
 		parent[0] = 0;
 
