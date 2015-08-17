@@ -20,13 +20,13 @@ ENV{INTERFACE}=="vboxnet[0-9]*", ENV{NM_UNMANAGED}="1"
 # Ethernet. No parent device (lives in /virtual/), no support for
 # ethtool to identify the driver. They have their own MAC prefix that
 # can not be changed.
-PROGRAM="/bin/cat %S%p/address", RESULT=="00:50:56:*", ENV{INTERFACE}=="vmnet[0-9]*", ENV{NM_UNMANAGED}="1"
+ATTR{address}=="00:50:56:*", ENV{INTERFACE}=="vmnet[0-9]*", ENV{NM_UNMANAGED}="1"
 
 # Parallels Workstation host networking. Out-of-tree driver that looks like
 # an ordinary Ethernet. No parent device (lives in /virtual/),  no support for
 # ethtool to identify the driver and the interface name is too generic.
 # However, they have their own MAC prefix that can not be changed.
-PROGRAM="/bin/cat %S%p/address", RESULT=="00:1c:42:*", ENV{INTERFACE}=="vnic[0-9]*", ENV{NM_UNMANAGED}="1"
+ATTR{address}=="00:1c:42:*", ENV{INTERFACE}=="vnic[0-9]*", ENV{NM_UNMANAGED}="1"
 
 # Virtual Ethernet device pair. Often used to communicate with a peer interface
 # in another net namespace and managed by libvirt, Docker or the like.
