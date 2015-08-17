@@ -17,7 +17,10 @@ abrt-addon-ccpp
 libreport-rhel-bugzilla
 %end
 
-%post
+%post --log=/dev/console
+set -x
+set -e
+
 # Allow ABRT to collect cores from our poor unsigned packages
 sed 's/^OpenGPGCheck.*/OpenGPGCheck = no/' -i /etc/abrt/abrt-action-save-package-data.conf
 
