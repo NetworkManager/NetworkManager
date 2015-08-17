@@ -146,7 +146,7 @@ _nl_f_nl_has_capability (int capability)
 	return FALSE;
 }
 
-static struct libnl_vtable *
+static const struct libnl_vtable *
 _nl_get_vtable (void)
 {
 	static struct libnl_vtable vtable;
