@@ -163,7 +163,8 @@ _nl_get_vtable (void)
 		if (!vtable.f_nl_has_capability)
 			vtable.f_nl_has_capability = &_nl_f_nl_has_capability;
 
-		g_return_val_if_fail (vtable.handle, &vtable);
+		g_return_val_if_fail (handle, &vtable);
+		g_return_val_if_fail (&nl_connect == (int (*) (struct nl_sock *, int)) dlsym (handle, "nl_connect"), &vtable);
 	}
 
 	return &vtable;
