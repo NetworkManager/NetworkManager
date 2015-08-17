@@ -2360,7 +2360,7 @@ nm_platform_link_to_string (const NMPlatformLink *link)
 		master[0] = 0;
 
 	if (link->parent)
-		g_snprintf (parent, sizeof (master), "@%d", link->parent);
+		g_snprintf (parent, sizeof (parent), "@%d", link->parent);
 	else
 		parent[0] = 0;
 
