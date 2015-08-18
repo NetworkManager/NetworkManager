@@ -341,6 +341,7 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 	NMSupplicantConfigPrivate *priv;
 	gboolean is_adhoc, is_ap;
 	const char *mode, *band;
+	guint32 channel;
 	GBytes *ssid;
 	const char *bssid;
 
@@ -411,22 +412,35 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 	}
 
 	band = nm_setting_wireless_get_band (setting);
+	channel = nm_setting_wireless_get_channel (setting);
 	if (band) {
-		const char *freqs = NULL;
+		if (channel) {
+			guint32 freq;
+			char *str_freq;
 
-		if (!strcmp (band, "a"))
-			freqs = wifi_freqs_to_string (FALSE);
-		else if (!strcmp (band, "bg"))
-			freqs = wifi_freqs_to_string (TRUE);
+			freq = nm_utils_wifi_channel_to_freq (channel, band);
+			str_freq = g_strdup_printf ("%u", freq);
+			if (!nm_supplicant_config_add_option (self, "freq_list", str_freq, -1, FALSE)) {
+				g_free (str_freq);
+				nm_log_warn (LOGD_SUPPLICANT, "Error adding frequency list to supplicant config.");
+				return FALSE;
+			}
+			g_free (str_freq);
+		} else {
+			const char *freqs = NULL;
 
-		if (freqs && !nm_supplicant_config_add_option (self, "freq_list", freqs, strlen (freqs), FALSE)) {
-			nm_log_warn (LOGD_SUPPLICANT, "Error adding frequency list/band to supplicant config.");
-			return FALSE;
+			if (!strcmp (band, "a"))
+				freqs = wifi_freqs_to_string (FALSE);
+			else if (!strcmp (band, "bg"))
+				freqs = wifi_freqs_to_string (TRUE);
+
+			if (freqs && !nm_supplicant_config_add_option (self, "freq_list", freqs, strlen (freqs), FALSE)) {
+				nm_log_warn (LOGD_SUPPLICANT, "Error adding frequency list/band to supplicant config.");
+				return FALSE;
+			}
 		}
 	}
 
-	// FIXME: channel config item
-	
 	return TRUE;
 }
 
