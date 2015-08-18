@@ -361,7 +361,6 @@ nm_exported_object_create_skeletons (NMExportedObject *self,
 	NMExportedObjectClassInfo *classinfo;
 	GSList *iter;
 	GDBusObjectSkeleton *interface;
-	GParamSpec **properties;
 	guint n_properties;
 	int i;
 
@@ -371,6 +370,7 @@ nm_exported_object_create_skeletons (NMExportedObject *self,
 
 	for (iter = classinfo->skeleton_types; iter; iter = iter->next) {
 		GType dbus_skeleton_type = GPOINTER_TO_SIZE (iter->data);
+		gs_free GParamSpec **properties = NULL;
 
 		interface = g_object_new (dbus_skeleton_type, NULL);
 		priv->interfaces = g_slist_prepend (priv->interfaces, interface);
