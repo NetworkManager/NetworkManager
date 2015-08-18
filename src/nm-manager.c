@@ -1091,18 +1091,26 @@ system_hostname_changed_cb (NMSettings *settings,
 	char *hostname;
 
 	hostname = nm_settings_get_hostname (priv->settings);
+
+	/* nm_settings_get_hostname() does not return an empty hostname. */
+	nm_assert (!hostname || *hostname);
+
 	if (!hostname && !priv->hostname)
 		return;
-	if (hostname && priv->hostname && !strcmp (hostname, priv->hostname))
+	if (hostname && priv->hostname && !strcmp (hostname, priv->hostname)) {
+		g_free (hostname);
 		return;
+	}
+
+	/* realloc, to free possibly trailing data after NUL. */
+	if (hostname)
+		hostname = g_realloc (hostname, strlen (hostname) + 1);
 
 	g_free (priv->hostname);
-	priv->hostname = (hostname && strlen (hostname)) ? g_strdup (hostname) : NULL;
+	priv->hostname = hostname;
 	g_object_notify (G_OBJECT (self), NM_MANAGER_HOSTNAME);
 
 	nm_dhcp_manager_set_default_hostname (nm_dhcp_manager_get (), priv->hostname);
-
-	g_free (hostname);
 }
 
 /*******************************************************************/
