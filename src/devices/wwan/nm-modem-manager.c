@@ -28,6 +28,7 @@
 
 #include "nm-modem-manager.h"
 #include "nm-default.h"
+#include "nm-dbus-compat.h"
 #include "nm-modem.h"
 #include "nm-modem-broadband.h"
 
