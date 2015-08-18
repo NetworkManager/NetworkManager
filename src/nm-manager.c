@@ -2016,18 +2016,23 @@ impl_manager_get_devices (NMManager *self,
                           GDBusMethodInvocation *context)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GPtrArray *paths;
+	gs_free const char **paths = NULL;
+	guint i;
 	GSList *iter;
 
-	paths = g_ptr_array_sized_new (g_slist_length (priv->devices) + 1);
+	paths = g_new (const char *, g_slist_length (priv->devices) + 1);
 
-	for (iter = priv->devices; iter; iter = iter->next)
-		g_ptr_array_add (paths, g_strdup (nm_exported_object_get_path (NM_EXPORTED_OBJECT (iter->data))));
-	g_ptr_array_add (paths, NULL);
+	for (i = 0, iter = priv->devices; iter; iter = iter->next) {
+		const char *path;
+
+		path = nm_exported_object_get_path (NM_EXPORTED_OBJECT (iter->data));
+		if (path)
+			paths[i++] = path;
+	}
+	paths[i++] = NULL;
 
 	g_dbus_method_invocation_return_value (context,
-	                                       g_variant_new ("(^ao)", (char **) paths->pdata));
-	g_ptr_array_unref (paths);
+	                                       g_variant_new ("(^ao)", (char **) paths));
 }
 
 static void
