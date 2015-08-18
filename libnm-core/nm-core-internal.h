@@ -143,11 +143,11 @@ gboolean _nm_utils_check_file (const char *filename,
                                struct stat *out_st,
                                GError **error);
 
-char *_nm_utils_check_module_file (const char *name,
-                                   int check_owner,
-                                   NMUtilsCheckFilePredicate check_file,
-                                   gpointer user_data,
-                                   GError **error);
+gboolean _nm_utils_check_module_file (const char *name,
+                                      int check_owner,
+                                      NMUtilsCheckFilePredicate check_file,
+                                      gpointer user_data,
+                                      GError **error);
 
 #define NM_UTILS_UUID_TYPE_LEGACY            0
 #define NM_UTILS_UUID_TYPE_VARIANT3          1

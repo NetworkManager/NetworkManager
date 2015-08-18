@@ -119,17 +119,12 @@ nm_vpn_editor_plugin_load_from_file  (const char *plugin_filename,
 
 	g_return_val_if_fail (plugin_filename && *plugin_filename, NULL);
 
-	if (g_path_is_absolute (plugin_filename)) {
-		gs_free char *module_filename = NULL;
-
-		module_filename = _nm_utils_check_module_file (plugin_filename,
-		                                               check_owner,
-		                                               check_file,
-		                                               user_data,
-		                                               &local);
-		if (module_filename)
-			module = g_module_open (module_filename, G_MODULE_BIND_LAZY | G_MODULE_BIND_LOCAL);
-	}
+	if (_nm_utils_check_module_file (plugin_filename,
+		                             check_owner,
+		                             check_file,
+		                             user_data,
+		                             &local))
+		module = g_module_open (plugin_filename, G_MODULE_BIND_LAZY | G_MODULE_BIND_LOCAL);
 
 	if (!module) {
 		if (local) {

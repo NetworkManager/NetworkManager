@@ -2501,87 +2501,46 @@ _nm_utils_check_file (const char *filename,
 }
 
 
-static char *
-_resolve_module_file_name (const char *file_name)
-{
-	char *name = NULL;
-
-	/* g_module_open() is searching for the exact file to load,
-	 * but it doesn't give us a hook to check file permissions
-	 * and ownership. Reimplement the file name resolution.
-	 *
-	 * Copied from g_module_open(). */
-
-	/* check whether we have a readable file right away */
-	if (g_file_test (file_name, G_FILE_TEST_IS_REGULAR))
-		name = g_strdup (file_name);
-
-	/* try completing file name with standard library suffix */
-	if (   !name
-	    && !g_str_has_suffix (file_name, "." G_MODULE_SUFFIX)) {
-		name = g_strconcat (file_name, "." G_MODULE_SUFFIX, NULL);
-		if (!g_file_test (name, G_FILE_TEST_IS_REGULAR)) {
-			g_free (name);
-			name = NULL;
-		}
-	}
-
-	/* g_module_open() would also try appending ".la". We don't do that
-	 * because we require the user to specify a shared library (directly). */
-
-	return name;
-}
-
-char *
+gboolean
 _nm_utils_check_module_file (const char *name,
                              int check_owner,
                              NMUtilsCheckFilePredicate check_file,
                              gpointer user_data,
                              GError **error)
 {
-	gs_free char *name_resolved = NULL;
-	char *s;
-
 	if (!g_path_is_absolute (name)) {
 		g_set_error (error,
 		             NM_VPN_PLUGIN_ERROR,
 		             NM_VPN_PLUGIN_ERROR_FAILED,
 		             _("path is not absolute (%s)"), name);
-		return NULL;
+		return FALSE;
 	}
 
-	name_resolved = _resolve_module_file_name (name);
-
-	if (!name_resolved) {
+	/* check whether we have a readable file right away */
+	if (!g_file_test (name, G_FILE_TEST_IS_REGULAR)) {
 		g_set_error (error,
 		             NM_VPN_PLUGIN_ERROR,
 		             NM_VPN_PLUGIN_ERROR_FAILED,
-		             _("could not resolve plugin path (%s)"), name);
-		return NULL;
+		             _("could not find plugin (%s)"), name);
+		return FALSE;
 	}
 
-	if (g_str_has_suffix (name_resolved, ".la")) {
+	if (g_str_has_suffix (name, ".la")) {
 		/* g_module_open() treats files that end with .la special.
 		 * We don't want to parse the libtool archive. Just error out. */
 		g_set_error (error,
 		             NM_VPN_PLUGIN_ERROR,
 		             NM_VPN_PLUGIN_ERROR_FAILED,
-		             _("libtool archives are not supported (%s)"), name_resolved);
-		return NULL;
+		             _("libtool archives are not supported (%s)"), name);
+		return FALSE;
 	}
 
-	if (!_nm_utils_check_file (name_resolved,
-	                           check_owner,
-	                           check_file,
-	                           user_data,
-	                           NULL,
-	                           error)) {
-		return NULL;
-	}
-
-	s = name_resolved;
-	name_resolved = NULL;
-	return s;
+	return _nm_utils_check_file (name,
+	                             check_owner,
+	                             check_file,
+	                             user_data,
+	                             NULL,
+	                             error);
 }
 
 /**********************************************************************************************/
