@@ -1167,8 +1167,12 @@ scan_request_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 		return;
 
 	if (error) {
-		g_dbus_error_strip_remote_error (error);
-		nm_log_warn (LOGD_SUPPLICANT, "Could not get scan request result: %s", error->message);
+		if (_nm_dbus_error_has_name (error, "fi.w1.wpa_supplicant1.Interface.ScanError"))
+			nm_log_dbg (LOGD_SUPPLICANT, "Could not get scan request result: %s", error->message);
+		else {
+			g_dbus_error_strip_remote_error (error);
+			nm_log_warn (LOGD_SUPPLICANT, "Could not get scan request result: %s", error->message);
+		}
 	}
 	g_signal_emit (NM_SUPPLICANT_INTERFACE (user_data), signals[SCAN_DONE], 0, error ? FALSE : TRUE);
 }
