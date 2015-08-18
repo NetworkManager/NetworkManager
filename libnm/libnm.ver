@@ -859,5 +859,7 @@ global:
 	nm_device_wifi_request_scan_options_async;
 	nm_metered_get_type;
 	nm_setting_connection_get_metered;
+	nm_utils_wifi_2ghz_freqs;
+	nm_utils_wifi_5ghz_freqs;
 } libnm_1_0_4;
 
