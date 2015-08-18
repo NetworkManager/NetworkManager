@@ -3451,21 +3451,22 @@ nm_utils_g_value_set_object_path_array (GValue *value,
                                         NMUtilsObjectFunc filter_func,
                                         gpointer user_data)
 {
-	GPtrArray *paths;
+	char **paths;
+	guint i;
 	GSList *iter;
 
-	paths = g_ptr_array_new ();
-	for (iter = objects; iter; iter = iter->next) {
+	paths = g_new (char *, g_slist_length (objects) + 1);
+	for (i = 0, iter = objects; iter; iter = iter->next) {
 		NMExportedObject *object = iter->data;
 
 		if (!nm_exported_object_is_exported (object))
 			continue;
-		if (filter_func && !filter_func (G_OBJECT (object), user_data))
+		if (filter_func && !filter_func ((GObject *) object, user_data))
 			continue;
-		g_ptr_array_add (paths, g_strdup (nm_exported_object_get_path (object)));
+		paths[i++] = g_strdup (nm_exported_object_get_path (object));
 	}
-	g_ptr_array_add (paths, NULL);
-	g_value_take_boxed (value, (char **) g_ptr_array_free (paths, FALSE));
+	paths[i] = NULL;
+	g_value_take_boxed (value, paths);
 }
 
 /**
