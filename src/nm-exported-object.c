@@ -637,6 +637,7 @@ nm_exported_object_notify (GObject *object, GParamSpec *pspec)
 	                       dbus_property_name,
 	                       variant);
 	g_value_unset (&value);
+	g_variant_unref (variant);
 
 	if (!priv->notify_idle_id)
 		priv->notify_idle_id = g_idle_add (idle_emit_properties_changed, object);
