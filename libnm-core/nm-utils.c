@@ -2841,6 +2841,61 @@ nm_utils_wifi_is_channel_valid (guint32 channel, const char *band)
 		return FALSE;
 }
 
+static const guint *
+_wifi_freqs (gboolean bg_band)
+{
+	static guint *freqs_2ghz = NULL;
+	static guint *freqs_5ghz = NULL;
+	guint *freqs;
+
+	freqs = bg_band ? freqs_2ghz : freqs_5ghz;
+	if (G_UNLIKELY (freqs == NULL)) {
+		struct cf_pair *table;
+		int i;
+
+		table = bg_band ? bg_table : a_table;
+		freqs = g_new0 (guint, bg_band ? G_N_ELEMENTS (bg_table) : G_N_ELEMENTS (a_table));
+		for (i = 0; table[i].chan; i++)
+			freqs[i] = table[i].freq;
+		freqs[i] = 0;
+		if (bg_band)
+			freqs_2ghz = freqs;
+		else
+			freqs_5ghz = freqs;
+	}
+	return freqs;
+}
+
+/**
+ * nm_utils_wifi_2ghz_freqs:
+ *
+ * Utility function to return 2.4 GHz Wi-Fi frequencies (802.11bg band).
+ *
+ * Returns: zero-terminated array of frequencies numbers (in MHz)
+ *
+ * Since: 1.2
+ **/
+const guint *
+nm_utils_wifi_2ghz_freqs (void)
+{
+	return _wifi_freqs (TRUE);
+}
+
+/**
+ * nm_utils_wifi_5ghz_freqs:
+ *
+ * Utility function to return 5 GHz Wi-Fi frequencies (802.11a band).
+ *
+ * Returns: zero-terminated array of frequencies numbers (in MHz)
+ *
+ * Since: 1.2
+ **/
+const guint *
+nm_utils_wifi_5ghz_freqs (void)
+{
+	return _wifi_freqs (FALSE);
+}
+
 /**
  * nm_utils_wifi_strength_bars:
  * @strength: the access point strength, from 0 to 100
