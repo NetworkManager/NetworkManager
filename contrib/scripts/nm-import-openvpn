@@ -80,7 +80,7 @@ function handle_yes(t, option, value)
   t[option] = "yes"
 end
 function handle_generic(t, option, value)
-  if not value[2] then io.stderr:write(string.format("Warning: ignoring invalid option '%s'\n", value[1])) end
+  if not value[2] then io.stderr:write(string.format("Warning: ignoring invalid option '%s'\n", value[1])) return end
   t[option] = value[2]
 end
 function handle_proto(t, option, value)
@@ -105,7 +105,7 @@ function handle_dev_type(t, option, value)
 end
 function handle_remote(t, option, value)
   local rem
-  if not value[2] then io.stderr:write("Warning: ignoring invalid option 'remote'\n") end
+  if not value[2] then io.stderr:write("Warning: ignoring invalid option 'remote'\n") return end
   rem = value[2]
   if tonumber(value[3]) then
     rem = rem .. ":" .. value[3]
@@ -126,14 +126,14 @@ function handle_port(t, option, value)
   end
 end
 function handle_proxy(t, option, value)
-  if not value[2] then io.stderr:write(string.format("Warning: ignoring invalid option '%s'\n", value[1])) end
+  if not value[2] then io.stderr:write(string.format("Warning: ignoring invalid option '%s'\n", value[1])) return end
   if value[4] then io.stderr:write(string.format("Warning: the third argument of '%s' is not supported yet\n", value[1])) end
   t[option[1]] = string.gsub(value[1], "-proxy", "")
   t[option[2]] = value[2]
   t[option[3]] = value[3]
 end
 function handle_ifconfig(t, option, value)
-  if not (value[2] and value[3]) then io.stderr:write("Warning: ignoring invalid option 'ifconfig'\n") end
+  if not (value[2] and value[3]) then io.stderr:write("Warning: ignoring invalid option 'ifconfig'\n") return end
   t[option[1]] = value[2]
   t[option[2]] = value[3]
 end
@@ -157,6 +157,7 @@ end
 function handle_remote_cert_tls(t, option, value)
   if value[2] ~= "client" and value[2] ~= "server" then
     io.stderr:write(string.format("Warning: ignoring invalid option '%s'\n", value[1]))
+    return
   end
   t[option] = value[2]
 end
