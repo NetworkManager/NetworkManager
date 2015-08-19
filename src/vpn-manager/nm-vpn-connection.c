@@ -93,6 +93,7 @@ typedef struct {
 	/* Firewall */
 	NMFirewallPendingCall fw_call;
 
+	NMDefaultRouteManager *default_route_manager;
 	GDBusProxy *proxy;
 	GCancellable *cancellable;
 	GVariant *connect_hash;
@@ -337,8 +338,8 @@ _set_vpn_state (NMVpnConnection *connection,
 
 	dispatcher_cleanup (connection);
 
-	nm_default_route_manager_ip4_update_default_route (nm_default_route_manager_get (), connection);
-	nm_default_route_manager_ip6_update_default_route (nm_default_route_manager_get (), connection);
+	nm_default_route_manager_ip4_update_default_route (priv->default_route_manager, connection);
+	nm_default_route_manager_ip6_update_default_route (priv->default_route_manager, connection);
 
 	/* The connection gets destroyed by the VPN manager when it enters the
 	 * disconnected/failed state, but we need to keep it around for a bit
@@ -971,8 +972,8 @@ nm_vpn_connection_apply_config (NMVpnConnection *connection)
 
 	apply_parent_device_config (connection);
 
-	nm_default_route_manager_ip4_update_default_route (nm_default_route_manager_get (), connection);
-	nm_default_route_manager_ip6_update_default_route (nm_default_route_manager_get (), connection);
+	nm_default_route_manager_ip4_update_default_route (priv->default_route_manager, connection);
+	nm_default_route_manager_ip6_update_default_route (priv->default_route_manager, connection);
 
 	nm_log_info (LOGD_VPN, "VPN connection '%s' (IP Config Get) complete.",
 	             nm_connection_get_id (priv->connection));
@@ -2193,6 +2194,7 @@ nm_vpn_connection_init (NMVpnConnection *self)
 
 	priv->vpn_state = STATE_WAITING;
 	priv->secrets_idx = SECRETS_REQ_SYSTEM;
+	priv->default_route_manager = g_object_ref (nm_default_route_manager_get ());
 }
 
 static void
@@ -2234,6 +2236,7 @@ dispose (GObject *object)
 	g_clear_object (&priv->ip6_config);
 	g_clear_object (&priv->proxy);
 	g_clear_object (&priv->connection);
+	g_clear_object (&priv->default_route_manager);
 
 	fw_call_cleanup (NM_VPN_CONNECTION (object));
 
