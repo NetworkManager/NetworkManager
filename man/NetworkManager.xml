@@ -60,7 +60,10 @@
     </para>
     <para>
       Each script receives two arguments, the first being the interface name of the
-      device an operation just happened on, and second the action.
+      device an operation just happened on, and second the action. For device actions,
+      the interface is the name of the kernel interface suitable for IP configuration.
+      Thus it is either VPN_IP_IFACE, DEVICE_IP_IFACE, or DEVICE_IFACE, as applicable.
+      For the <varname>hostname</varname> action it is always "none".
     </para>
     <para>The actions are:</para>
     <variablelist class="dispatcher-options">
