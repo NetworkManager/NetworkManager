@@ -94,6 +94,7 @@ typedef struct {
 	NMFirewallPendingCall fw_call;
 
 	NMDefaultRouteManager *default_route_manager;
+	NMRouteManager *route_manager;
 	GDBusProxy *proxy;
 	GCancellable *cancellable;
 	GVariant *connect_hash;
@@ -238,7 +239,7 @@ vpn_cleanup (NMVpnConnection *connection, NMDevice *parent_dev)
 
 	if (priv->ip_ifindex) {
 		nm_platform_link_set_down (NM_PLATFORM_GET, priv->ip_ifindex);
-		nm_route_manager_route_flush (nm_route_manager_get (), priv->ip_ifindex);
+		nm_route_manager_route_flush (priv->route_manager, priv->ip_ifindex);
 		nm_platform_address_flush (NM_PLATFORM_GET, priv->ip_ifindex);
 	}
 
@@ -2195,6 +2196,7 @@ nm_vpn_connection_init (NMVpnConnection *self)
 	priv->vpn_state = STATE_WAITING;
 	priv->secrets_idx = SECRETS_REQ_SYSTEM;
 	priv->default_route_manager = g_object_ref (nm_default_route_manager_get ());
+	priv->route_manager = g_object_ref (nm_route_manager_get ());
 }
 
 static void
@@ -2237,6 +2239,7 @@ dispose (GObject *object)
 	g_clear_object (&priv->proxy);
 	g_clear_object (&priv->connection);
 	g_clear_object (&priv->default_route_manager);
+	g_clear_object (&priv->route_manager);
 
 	fw_call_cleanup (NM_VPN_CONNECTION (object));
 
