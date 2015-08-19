@@ -882,7 +882,6 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 
 	if (!g_hash_table_lookup (priv->connections, cpath))
 		g_return_if_reached ();
-
 	g_object_ref (connection);
 
 	/* Disconnect signal handlers, as plugins might still keep references
@@ -895,6 +894,7 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_updated_by_user), self);
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_visibility_changed), self);
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_ready_changed), self);
+	g_object_unref (self);
 
 	/* Forget about the connection internally */
 	g_hash_table_remove (priv->connections, (gpointer) cpath);
@@ -1019,6 +1019,7 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 	/* Evil openconnect migration hack */
 	openconnect_migrate_hack (NM_CONNECTION (connection));
 
+	g_object_ref (self);
 	g_signal_connect (connection, NM_SETTINGS_CONNECTION_REMOVED,
 	                  G_CALLBACK (connection_removed), self);
 	g_signal_connect (connection, NM_SETTINGS_CONNECTION_UPDATED,
