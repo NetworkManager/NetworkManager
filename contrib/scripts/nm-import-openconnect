@@ -1,0 +1,277 @@
+#!/usr/bin/env lua
+-- -*- Mode: Lua; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+-- vim: ft=lua ts=2 sts=2 sw=2 et ai
+--
+-- This program is free software; you can redistribute it and/or modify
+-- it under the terms of the GNU General Public License as published by
+-- the Free Software Foundation; either version 2 of the License, or
+-- (at your option) any later version.
+--
+-- This program is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-- GNU General Public License for more details.
+--
+-- You should have received a copy of the GNU General Public License along
+-- with this program; if not, write to the Free Software Foundation, Inc.,
+-- 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+--
+-- Copyright 2015 Red Hat, Inc.
+--
+--
+-- Script for importing/converting OpenConnect VPN configuration files for NetworkManager
+-- In general, the implementation follows the logic of import() from
+-- https://git.gnome.org/browse/network-manager-openconnect/tree/properties/nm-openconnect.c
+--
+
+----------------------
+-- Helper functions --
+----------------------
+function read_all(in_file)
+  local f, msg = io.open(in_file, "r")
+  if not f then return nil, msg; end
+  local content = f:read("*all")
+  f:close()
+  return content
+end
+
+function uuid()
+  math.randomseed(os.time())
+  local template ='xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
+  local uuid = string.gsub(template, '[xy]', function (c)
+    local v = (c == 'x') and math.random(0, 0xf) or math.random(8, 0xb)
+    return string.format('%x', v)
+  end)
+  return uuid
+end
+
+function vpn_settings_to_text(vpn_settings)
+  local t = {}
+  for k,v in pairs(vpn_settings) do
+    t[#t+1] = k.."="..v
+  end
+  return table.concat(t, "\n")
+end
+
+function usage()
+  local basename = string.match(arg[0], '[^/\\]+$') or arg[0]
+  print(basename .. " - convert/import OpenConnect VPN configuration to NetworkManager")
+  print("Usage:")
+  print("  " .. basename .. " <input-file> <output-file>")
+  print("    - converts OpenConnect VPN config to NetworkManager keyfile")
+  print("")
+  print("  " .. basename .. " --import <input-file1> <input-file2> ...")
+  print("    - imports OpenConnect VPN config(s) to NetworkManager")
+  os.exit(1)
+end
+
+
+-------------------------------------------
+-- Functions for VPN options translation --
+-------------------------------------------
+function handle_yes(t, option, value)
+  t[option] = "yes"
+end
+function handle_generic(t, option, value)
+  if not value[2] then io.stderr:write(string.format("Warning: ignoring invalid option '%s'\n", value[1])) end
+  t[option] = value[2]
+end
+
+-- global variables
+g_con_data = {}
+g_vpn_data = {}
+
+vpn2nm = {
+  ["Description"]     = { nm_opt="id",                  func=handle_generic, tbl=g_con_data },
+  ["Host"]            = { nm_opt="gateway",             func=handle_generic, tbl=g_vpn_data },
+  ["CACert"]          = { nm_opt="cacert",              func=handle_generic, tbl=g_vpn_data },
+  ["Proxy"]           = { nm_opt="proxy",               func=handle_generic, tbl=g_vpn_data },
+  ["CSDEnable"]       = { nm_opt="enable_csd_trojan",   func=handle_yes,     tbl=g_vpn_data },
+  ["CSDWrapper"]      = { nm_opt="csd_wrapper",         func=handle_generic, tbl=g_vpn_data },
+  ["UserCertificate"] = { nm_opt="usercert",            func=handle_generic, tbl=g_vpn_data },
+  ["PrivateKey"]      = { nm_opt="userkey",             func=handle_generic, tbl=g_vpn_data },
+  ["FSID"]            = { nm_opt="pem_passphrase_fsid", func=handle_yes,     tbl=g_vpn_data },
+  ["StokenSource"]    = { nm_opt="stoken_source",       func=handle_generic, tbl=g_vpn_data },
+  ["StokenString"]    = { nm_opt="stoken_string",       func=handle_generic, tbl=g_vpn_data },
+}
+
+------------------------------------------------------
+-- Read and convert the config into the global vars --
+------------------------------------------------------
+function read_and_convert(in_file)
+  local function line_split(str)
+    -- split at '=' character
+    local sep, fields = "=", {}
+    local pattern = string.format("([^%s]+)%s(.+)", sep, sep)
+    fields[1], fields[2] = str:match(pattern)
+    return fields
+  end
+
+  in_text, msg = read_all(in_file)
+  if not in_text then return false, msg end
+
+  -- loop through the config and convert it
+  for line in in_text:gmatch("[^\r\n]+") do
+    repeat
+      -- skip comments and empty lines
+      if line:find("^%s*[#;]") or line:find("^%s*$") then break end
+      -- trim leading and trailing spaces
+      line = line:find("^%s*$") and "" or line:match("^%s*(.*%S)")
+
+      local words = line_split(line)
+      local val = vpn2nm[words[1]]
+      if val then
+        if type(val) == "table" then val.func(val.tbl, val.nm_opt, words)
+        else print(string.format("debug: '%s' : val=%s"..val)) end
+      end
+    until true
+  end
+
+  -- check mandatory parameters
+  if not g_vpn_data["gateway"] then
+    local msg = in_file .. ": Not a valid OpenConnect VPN configuration"
+    return false, msg
+  end
+  return true
+end
+
+--------------------------------------------------------
+-- Create and write connection file in keyfile format --
+--------------------------------------------------------
+function write_vpn_to_keyfile(in_file, out_file)
+  connection = [[
+[connection]
+id=__NAME_PLACEHOLDER__
+uuid=__UUID_PLACEHOLDER__
+type=vpn
+autoconnect=no
+
+[ipv4]
+method=auto
+never-default=true
+
+[ipv6]
+method=auto
+
+[vpn]
+service-type=org.freedesktop.NetworkManager.openconnect
+]]
+
+  connection = connection .. vpn_settings_to_text(g_vpn_data)
+
+  local con_name = g_con_data["id"] or (out_file:gsub(".*/", ""))
+  connection = string.gsub(connection, "__NAME_PLACEHOLDER__", con_name)
+  connection = string.gsub(connection, "__UUID_PLACEHOLDER__", uuid())
+
+  -- write output file
+  local f, err = io.open(out_file, "w")
+  if not f then io.stderr:write(err) return false end
+  f:write(connection)
+  f:close()
+
+  local ofname = out_file:gsub(".*/", "")
+  io.stderr:write("Successfully converted VPN configuration: " .. in_file .. " => " .. out_file .. "\n")
+  io.stderr:write("To use the connection, do:\n")
+  io.stderr:write("# cp " .. out_file .. " /etc/NetworkManager/system-connections\n")
+  io.stderr:write("# chmod 600 /etc/NetworkManager/system-connections/" .. ofname .. "\n")
+  io.stderr:write("# nmcli con load /etc/NetworkManager/system-connections/" .. ofname .. "\n")
+  return true
+end
+
+---------------------------------------------
+-- Import VPN connection to NetworkManager --
+---------------------------------------------
+function import_vpn_to_NM(filename)
+  local lgi = require 'lgi'
+  local GLib = lgi.GLib
+  local NM = lgi.NM
+
+  -- function creating NMConnection
+  local function create_profile(name)
+    local profile = NM.SimpleConnection.new()
+
+    s_con = NM.SettingConnection.new()
+    s_vpn = NM.SettingVpn.new()
+    s_con[NM.SETTING_CONNECTION_ID] = name
+    s_con[NM.SETTING_CONNECTION_UUID] = uuid()
+    s_con[NM.SETTING_CONNECTION_TYPE] = "vpn"
+    s_vpn[NM.SETTING_VPN_SERVICE_TYPE] = "org.freedesktop.NetworkManager.openconnect"
+    for k,v in pairs(g_vpn_data) do
+      s_vpn:add_data_item(k, v)
+    end
+
+    profile:add_setting(s_con)
+    profile:add_setting(s_vpn)
+    return profile
+  end
+
+  -- callback function for add_connection()
+  local function added_cb(client, result, data)
+    local con,err,code = client:add_connection_finish(result)
+    if con then
+      print(string.format("%s: Imported to NetworkManager: %s - %s",
+                          filename, con:get_uuid(), con:get_id()))
+    else
+      io.stderr:write(code .. ": " .. err .. "\n");
+      return false
+    end
+    main_loop:quit()
+  end
+
+  local profile_name = g_con_data["id"] or string.match(filename, '[^/\\]+$') or filename
+  main_loop = GLib.MainLoop(nil, false)
+  local con = create_profile(profile_name)
+  local client = NM.Client.new()
+
+  -- send the connection to NetworkManager
+  client:add_connection_async(con, true, nil, added_cb, nil)
+
+  -- run main loop so that the callback could be called
+  main_loop:run()
+  return true
+end
+
+
+---------------------------
+-- Main code starts here --
+---------------------------
+local import_mode = false
+local infile, outfile
+
+-- parse command-line arguments
+if not arg[1] or arg[1] == "--help" or arg[1] == "-h" then usage() end
+if arg[1] == "--import" or arg[1] == "-i" then
+  infile = arg[2]
+  if not infile then usage() end
+  import_mode = true
+else
+  infile  = arg[1]
+  outfile = arg[2]
+  if not infile or not outfile then usage() end
+  if arg[3] then usage() end
+end
+
+if import_mode then
+  -- check if lgi is available
+  local success,msg = pcall(require, 'lgi')
+  if not success then
+    io.stderr:write("Lua lgi module is not available, please install it (usually lua-lgi package)\n")
+    -- print(msg)
+    os.exit(1)
+  end
+  -- read configs, convert them and import to NM
+  for i = 2, #arg do
+    ok, err_msg = read_and_convert(arg[i])
+    if ok then import_vpn_to_NM(arg[i])
+    else io.stderr:write(err_msg .. "\n") end
+    -- reset global vars
+    g_con_data = {}
+    g_vpn_data = {}
+  end
+else
+  -- read configs, convert them and write as NM keyfile connection
+  ok, err_msg = read_and_convert(infile)
+  if ok then write_vpn_to_keyfile(infile, outfile)
+  else io.stderr:write(err_msg .. "\n") end
+end
+
