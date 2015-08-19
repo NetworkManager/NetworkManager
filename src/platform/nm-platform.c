@@ -465,7 +465,6 @@ nm_platform_link_get_all (NMPlatform *self)
 		if (item->parent != 0) {
 			g_warn_if_fail (item->parent > 0);
 			g_warn_if_fail (item->parent != item->ifindex);
-			g_warn_if_fail (g_hash_table_contains (unseen, GINT_TO_POINTER (item->parent)));
 		}
 	}
 #endif
