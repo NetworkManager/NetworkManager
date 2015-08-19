@@ -145,6 +145,14 @@ function handle_ifconfig(t, option, value)
   t[option[1]] = value[2]
   t[option[2]] = value[3]
 end
+function handle_keepalive(t, option, value)
+  if (not (value[2] and value[3])) or (not tonumber(value[2]) or not tonumber(value[3])) then
+    io.stderr:write("Warning: ignoring invalid option 'keepalive'; two numbers required\n")
+    return
+  end
+  t[option[1]] = value[2]
+  t[option[2]] = value[3]
+end
 function handle_path(t, option, value)
   if value[1] == "pkcs12" then
     t["ca"] = value[2]
@@ -181,6 +189,7 @@ vpn2nm = {
   ["cert"]              = { nm_opt="cert",             func=handle_path },
   ["cipher"]            = { nm_opt="cipher",           func=handle_generic },
   ["keysize"]           = { nm_opt="keysize",          func=handle_generic },
+  ["keepalive"]         = { nm_opt={"ping", "ping-restart"}, func=handle_keepalive },
   ["client"]            = { nm_opt="client",           func=set_bool },
   ["comp-lzo"]          = { nm_opt="comp-lzo",         func=handle_yes },
   ["float"]             = { nm_opt="float",            func=handle_yes },
