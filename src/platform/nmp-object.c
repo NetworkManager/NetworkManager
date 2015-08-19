@@ -18,49 +18,33 @@
  * Copyright (C) 2015 Red Hat, Inc.
  */
 
-#include "nmp-object.h"
+#include "config.h"
 
 #include <unistd.h>
 
+#include "nm-default.h"
+#include "nmp-object.h"
 #include "nm-platform-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
-#include "nm-default.h"
 
 /*********************************************************************************************/
 
-#define _LOG_DOMAIN LOGD_PLATFORM
-
-#define _LOG(level, domain, obj, ...) \
+#define _NMLOG_DOMAIN LOGD_PLATFORM
+#define _NMLOG(level, obj, ...) \
     G_STMT_START { \
         const NMLogLevel __level = (level); \
-        const NMLogDomain __domain = (domain); \
         \
-        if (nm_logging_enabled (__level, __domain)) { \
+        if (nm_logging_enabled (__level, _NMLOG_DOMAIN)) { \
             const NMPObject *const __obj = (obj); \
             \
-            _nm_log (__level, __domain, 0, \
+            _nm_log (__level, _NMLOG_DOMAIN, 0, \
                      "nmp-object[%p/%s]: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
                      __obj, \
                      (__obj ? NMP_OBJECT_GET_CLASS (__obj)->obj_type_name : "???") \
                      _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
         } \
     } G_STMT_END
-#define _LOG_LEVEL_ENABLED(level, domain) \
-    ( nm_logging_enabled ((level), (domain)) )
-
-#ifdef NM_MORE_LOGGING
-#define _LOGT_ENABLED()     _LOG_LEVEL_ENABLED (LOGL_TRACE, _LOG_DOMAIN)
-#define _LOGT(obj, ...)          _LOG (LOGL_TRACE, _LOG_DOMAIN, obj, __VA_ARGS__)
-#else
-#define _LOGT_ENABLED()     FALSE
-#define _LOGT(obj, ...)          G_STMT_START { if (FALSE) { _LOG (LOGL_TRACE, _LOG_DOMAIN, obj, __VA_ARGS__); } } G_STMT_END
-#endif
-
-#define _LOGD(obj, ...)      _LOG (LOGL_DEBUG, _LOG_DOMAIN, obj, __VA_ARGS__)
-#define _LOGI(obj, ...)      _LOG (LOGL_INFO , _LOG_DOMAIN, obj, __VA_ARGS__)
-#define _LOGW(obj, ...)      _LOG (LOGL_WARN , _LOG_DOMAIN, obj, __VA_ARGS__)
-#define _LOGE(obj, ...)      _LOG (LOGL_ERR  , _LOG_DOMAIN, obj, __VA_ARGS__)
 
 /*********************************************************************************************/
 

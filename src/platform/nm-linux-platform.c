@@ -66,8 +66,9 @@
 
 /*********************************************************************************************/
 
-#define _LOG_DOMAIN LOGD_PLATFORM
-#define _LOG_PREFIX_NAME "platform-linux"
+#define _NMLOG_DOMAIN                     LOGD_PLATFORM
+#define _NMLOG_PREFIX_NAME                "platform-linux"
+#define _NMLOG(level, ...)                _LOG(level, _NMLOG_DOMAIN, platform, __VA_ARGS__)
 
 #define _LOG(level, domain, self, ...) \
     G_STMT_START { \
@@ -76,11 +77,11 @@
         \
         if (nm_logging_enabled (__level, __domain)) { \
             char __prefix[32]; \
-            const char *__p_prefix = _LOG_PREFIX_NAME; \
+            const char *__p_prefix = _NMLOG_PREFIX_NAME; \
             const void *const __self = (self); \
             \
             if (__self && __self != nm_platform_try_get ()) { \
-                g_snprintf (__prefix, sizeof (__prefix), "%s[%p]", _LOG_PREFIX_NAME, __self); \
+                g_snprintf (__prefix, sizeof (__prefix), "%s[%p]", _NMLOG_PREFIX_NAME, __self); \
                 __p_prefix = __prefix; \
             } \
             _nm_log (__level, __domain, 0, \
@@ -88,25 +89,10 @@
                      __p_prefix _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
         } \
     } G_STMT_END
-#define _LOG_LEVEL_ENABLED(level, domain) \
-    ( nm_logging_enabled ((level), (domain)) )
 
-#ifdef NM_MORE_LOGGING
-#define _LOGT_ENABLED()     _LOG_LEVEL_ENABLED (LOGL_TRACE, _LOG_DOMAIN)
-#define _LOGT(...)          _LOG (LOGL_TRACE, _LOG_DOMAIN, platform, __VA_ARGS__)
-#else
-#define _LOGT_ENABLED()     FALSE
-#define _LOGT(...)          G_STMT_START { if (FALSE) { _LOG (LOGL_TRACE, _LOG_DOMAIN, platform, __VA_ARGS__); } } G_STMT_END
-#endif
-
-#define _LOGD(...)      _LOG (LOGL_DEBUG, _LOG_DOMAIN, platform, __VA_ARGS__)
-#define _LOGI(...)      _LOG (LOGL_INFO , _LOG_DOMAIN, platform, __VA_ARGS__)
-#define _LOGW(...)      _LOG (LOGL_WARN , _LOG_DOMAIN, platform, __VA_ARGS__)
-#define _LOGE(...)      _LOG (LOGL_ERR  , _LOG_DOMAIN, platform, __VA_ARGS__)
-
-#define debug(...)      _LOG (LOGL_DEBUG, _LOG_DOMAIN, NULL, __VA_ARGS__)
-#define warning(...)    _LOG (LOGL_WARN , _LOG_DOMAIN, NULL, __VA_ARGS__)
-#define error(...)      _LOG (LOGL_ERR  , _LOG_DOMAIN, NULL, __VA_ARGS__)
+#define debug(...)      _LOG (LOGL_DEBUG, _NMLOG_DOMAIN, NULL, __VA_ARGS__)
+#define warning(...)    _LOG (LOGL_WARN , _NMLOG_DOMAIN, NULL, __VA_ARGS__)
+#define error(...)      _LOG (LOGL_ERR  , _NMLOG_DOMAIN, NULL, __VA_ARGS__)
 
 /******************************************************************
  * Forward declarations and enums

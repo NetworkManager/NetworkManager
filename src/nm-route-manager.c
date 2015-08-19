@@ -18,9 +18,9 @@
  * Copyright (C) 2015 Red Hat, Inc.
  */
 
-#include <string.h>
-
 #include "config.h"
+
+#include <string.h>
 
 #include "nm-route-manager.h"
 #include "nm-platform.h"
@@ -111,28 +111,9 @@ static const VTableIP vtable_v4, vtable_v6;
 
 /*********************************************************************************************/
 
-#define _LOG_PREFIX_NAME "route-mgr"
-
-#define _LOG(level, addr_family, ...) \
-    G_STMT_START { \
-        const int __addr_family = (addr_family); \
-        const NMLogLevel __level = (level); \
-        const NMLogDomain __domain = __addr_family == AF_INET ? LOGD_IP4 : (__addr_family == AF_INET6 ? LOGD_IP6 : LOGD_IP); \
-        \
-        if (nm_logging_enabled (__level, __domain)) { \
-            char __ch = __addr_family == AF_INET ? '4' : (__addr_family == AF_INET6 ? '6' : '-'); \
-            char __prefix[30] = _LOG_PREFIX_NAME; \
-            \
-            if ((self) != singleton_instance) \
-                g_snprintf (__prefix, sizeof (__prefix), "%s%c[%p]", _LOG_PREFIX_NAME, __ch, (self)); \
-            else \
-                __prefix[STRLEN (_LOG_PREFIX_NAME)] = __ch; \
-            _nm_log ((level), (__domain), 0, \
-                     "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
-                     __prefix _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
-        } \
-    } G_STMT_END
-#define _LOG_LEVEL_ENABLED(level, addr_family) \
+#define _NMLOG_PREFIX_NAME   "route-mgr"
+#undef  _NMLOG_ENABLED
+#define _NMLOG_ENABLED(level, addr_family) \
     ({ \
         const int __addr_family = (addr_family); \
         const NMLogLevel __level = (level); \
@@ -140,19 +121,25 @@ static const VTableIP vtable_v4, vtable_v6;
         \
         nm_logging_enabled (__level, __domain); \
     })
-
-#ifdef NM_MORE_LOGGING
-#define _LOGT_ENABLED(addr_family)   _LOG_LEVEL_ENABLED (LOGL_TRACE, addr_family)
-#define _LOGT(addr_family, ...)      _LOG (LOGL_TRACE, addr_family, __VA_ARGS__)
-#else
-#define _LOGT_ENABLED(addr_family)   (FALSE && _LOG_LEVEL_ENABLED (LOGL_TRACE, addr_family))
-#define _LOGT(addr_family, ...)      G_STMT_START { if (FALSE) { _LOG (LOGL_TRACE, addr_family, __VA_ARGS__); } } G_STMT_END
-#endif
-
-#define _LOGD(addr_family, ...)      _LOG (LOGL_DEBUG, addr_family, __VA_ARGS__)
-#define _LOGI(addr_family, ...)      _LOG (LOGL_INFO , addr_family, __VA_ARGS__)
-#define _LOGW(addr_family, ...)      _LOG (LOGL_WARN , addr_family, __VA_ARGS__)
-#define _LOGE(addr_family, ...)      _LOG (LOGL_ERR  , addr_family, __VA_ARGS__)
+#define _NMLOG(level, addr_family, ...) \
+    G_STMT_START { \
+        const int __addr_family = (addr_family); \
+        const NMLogLevel __level = (level); \
+        const NMLogDomain __domain = __addr_family == AF_INET ? LOGD_IP4 : (__addr_family == AF_INET6 ? LOGD_IP6 : LOGD_IP); \
+        \
+        if (nm_logging_enabled (__level, __domain)) { \
+            char __ch = __addr_family == AF_INET ? '4' : (__addr_family == AF_INET6 ? '6' : '-'); \
+            char __prefix[30] = _NMLOG_PREFIX_NAME; \
+            \
+            if ((self) != singleton_instance) \
+                g_snprintf (__prefix, sizeof (__prefix), "%s%c[%p]", _NMLOG_PREFIX_NAME, __ch, (self)); \
+            else \
+                __prefix[STRLEN (_NMLOG_PREFIX_NAME)] = __ch; \
+            _nm_log ((level), (__domain), 0, \
+                     "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                     __prefix _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+        } \
+    } G_STMT_END
 
 /*********************************************************************************************/
 

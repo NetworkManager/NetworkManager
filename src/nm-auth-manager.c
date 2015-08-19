@@ -32,26 +32,20 @@
 #define POLKIT_INTERFACE                    "org.freedesktop.PolicyKit1.Authority"
 
 
-#define _LOG_DEFAULT_DOMAIN  LOGD_CORE
-
-#define _LOG(level, domain, ...) \
+#define _NMLOG_PREFIX_NAME    "auth"
+#define _NMLOG_DOMAIN         LOGD_CORE
+#define _NMLOG(level, ...) \
     G_STMT_START { \
-        if (nm_logging_enabled ((level), (domain))) { \
-            char __prefix[30] = "auth"; \
+        if (nm_logging_enabled ((level), (_NMLOG_DOMAIN))) { \
+            char __prefix[30] = _NMLOG_PREFIX_NAME; \
             \
             if ((self) != singleton_instance) \
-                g_snprintf (__prefix, sizeof (__prefix), "auth[%p]", (self)); \
-            _nm_log ((level), (domain), 0, \
+                g_snprintf (__prefix, sizeof (__prefix), ""_NMLOG_PREFIX_NAME"[%p]", (self)); \
+            _nm_log ((level), (_NMLOG_DOMAIN), 0, \
                      "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
                      __prefix _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
         } \
     } G_STMT_END
-
-#define _LOGD(...)      _LOG (LOGL_DEBUG, _LOG_DEFAULT_DOMAIN, __VA_ARGS__)
-#define _LOGI(...)      _LOG (LOGL_INFO,  _LOG_DEFAULT_DOMAIN, __VA_ARGS__)
-#define _LOGW(...)      _LOG (LOGL_WARN,  _LOG_DEFAULT_DOMAIN, __VA_ARGS__)
-#define _LOGE(...)      _LOG (LOGL_ERR,   _LOG_DEFAULT_DOMAIN, __VA_ARGS__)
-
 
 enum {
 	PROP_0,

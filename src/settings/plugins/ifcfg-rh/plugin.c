@@ -35,7 +35,7 @@
 #include <selinux/selinux.h>
 #endif
 
-#include <nm-setting-connection.h>
+#include "nm-setting-connection.h"
 
 #include "nm-default.h"
 #include "common.h"
@@ -56,21 +56,14 @@
 #define IFCFGRH1_DBUS_SERVICE_NAME "com.redhat.ifcfgrh1"
 #define IFCFGRH1_DBUS_OBJECT_PATH "/com/redhat/ifcfgrh1"
 
-#define _LOG_DEFAULT_DOMAIN  LOGD_SETTINGS
-
-#define _LOG(level, domain, ...) \
+#define _NMLOG_DOMAIN  LOGD_SETTINGS
+#define _NMLOG(level, ...) \
     G_STMT_START { \
-        nm_log ((level), (domain), \
+        nm_log ((level), (_NMLOG_DOMAIN), \
                 "%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
                 "ifcfg-rh: " \
                 _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
     } G_STMT_END
-
-#define _LOGT(...)      _LOG (LOGL_TRACE, _LOG_DEFAULT_DOMAIN, __VA_ARGS__)
-#define _LOGD(...)      _LOG (LOGL_DEBUG, _LOG_DEFAULT_DOMAIN, __VA_ARGS__)
-#define _LOGI(...)      _LOG (LOGL_INFO,  _LOG_DEFAULT_DOMAIN, __VA_ARGS__)
-#define _LOGW(...)      _LOG (LOGL_WARN,  _LOG_DEFAULT_DOMAIN, __VA_ARGS__)
-#define _LOGE(...)      _LOG (LOGL_ERR,   _LOG_DEFAULT_DOMAIN, __VA_ARGS__)
 
 #define ERR_GET_MSG(err) (((err) && (err)->message) ? (err)->message : "(unknown)")
 

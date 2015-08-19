@@ -42,43 +42,26 @@
 
 G_STATIC_ASSERT (sizeof ( ((NMPlatformLink *) NULL)->addr.data ) == NM_UTILS_HWADDR_LEN_MAX);
 
-#define _LOG_DOMAIN LOGD_PLATFORM
-#define _LOG_PREFIX_NAME "platform"
-
-#define _LOG(level, domain, self, ...) \
+#define _NMLOG_DOMAIN           LOGD_PLATFORM
+#define _NMLOG_PREFIX_NAME      "platform"
+#define _NMLOG(level, ...) \
     G_STMT_START { \
         const NMLogLevel __level = (level); \
-        const NMLogDomain __domain = (domain); \
         \
-        if (nm_logging_enabled (__level, __domain)) { \
+        if (nm_logging_enabled (__level, _NMLOG_DOMAIN)) { \
             char __prefix[32]; \
-            const char *__p_prefix = _LOG_PREFIX_NAME; \
+            const char *__p_prefix = _NMLOG_PREFIX_NAME; \
             const void *const __self = (self); \
             \
             if (__self && __self != nm_platform_try_get ()) { \
-                g_snprintf (__prefix, sizeof (__prefix), "%s[%p]", _LOG_PREFIX_NAME, __self); \
+                g_snprintf (__prefix, sizeof (__prefix), "%s[%p]", _NMLOG_PREFIX_NAME, __self); \
                 __p_prefix = __prefix; \
             } \
-            _nm_log (__level, __domain, 0, \
+            _nm_log (__level, _NMLOG_DOMAIN, 0, \
                      "%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
                      __p_prefix _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
         } \
     } G_STMT_END
-#define _LOG_LEVEL_ENABLED(level, domain) \
-    ( nm_logging_enabled ((level), (domain)) )
-
-#ifdef NM_MORE_LOGGING
-#define _LOGT_ENABLED()     _LOG_LEVEL_ENABLED (LOGL_TRACE, _LOG_DOMAIN)
-#define _LOGT(...)          _LOG (LOGL_TRACE, _LOG_DOMAIN, self, __VA_ARGS__)
-#else
-#define _LOGT_ENABLED()     FALSE
-#define _LOGT(...)          G_STMT_START { if (FALSE) { _LOG (LOGL_TRACE, _LOG_DOMAIN, self, __VA_ARGS__); } } G_STMT_END
-#endif
-
-#define _LOGD(...)      _LOG (LOGL_DEBUG, _LOG_DOMAIN, self, __VA_ARGS__)
-#define _LOGI(...)      _LOG (LOGL_INFO , _LOG_DOMAIN, self, __VA_ARGS__)
-#define _LOGW(...)      _LOG (LOGL_WARN , _LOG_DOMAIN, self, __VA_ARGS__)
-#define _LOGE(...)      _LOG (LOGL_ERR  , _LOG_DOMAIN, self, __VA_ARGS__)
 
 #define NM_PLATFORM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_PLATFORM, NMPlatformPrivate))
 
@@ -1877,7 +1860,7 @@ nm_platform_ip4_address_add (NMPlatform *self,
 	g_return_val_if_fail (klass->ip4_address_add, FALSE);
 	g_return_val_if_fail (!label || strlen (label) < sizeof (((NMPlatformIP4Address *) NULL)->label), FALSE);
 
-	if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
+	if (_LOGD_ENABLED ()) {
 		NMPlatformIP4Address addr = { 0 };
 
 		addr.ifindex = ifindex;
@@ -1913,7 +1896,7 @@ nm_platform_ip6_address_add (NMPlatform *self,
 	g_return_val_if_fail (preferred <= lifetime, FALSE);
 	g_return_val_if_fail (klass->ip6_address_add, FALSE);
 
-	if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
+	if (_LOGD_ENABLED ()) {
 		NMPlatformIP6Address addr = { 0 };
 
 		addr.ifindex = ifindex;
@@ -2194,7 +2177,7 @@ nm_platform_ip4_route_add (NMPlatform *self,
 	g_return_val_if_fail (0 <= plen && plen <= 32, FALSE);
 	g_return_val_if_fail (klass->ip4_route_add, FALSE);
 
-	if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
+	if (_LOGD_ENABLED ()) {
 		NMPlatformIP4Route route = { 0 };
 
 		route.ifindex = ifindex;
@@ -2222,7 +2205,7 @@ nm_platform_ip6_route_add (NMPlatform *self,
 	g_return_val_if_fail (0 <= plen && plen <= 128, FALSE);
 	g_return_val_if_fail (klass->ip6_route_add, FALSE);
 
-	if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
+	if (_LOGD_ENABLED ()) {
 		NMPlatformIP6Route route = { 0 };
 
 		route.ifindex = ifindex;

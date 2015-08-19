@@ -31,16 +31,12 @@ _nm_device_log_self_to_device (t *self) \
     return (NMDevice *) self; \
 }
 
-#define _LOG(level, domain, ...) \
+#undef  _NMLOG_ENABLED
+#define _NMLOG_ENABLED(level, domain) ( nm_logging_enabled ((level), (domain)) )
+#define _NMLOG(level, domain, ...) \
     nm_log_obj ((level), (domain), (self), \
                 "(%s): " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
                 (self) ? str_if_set (nm_device_get_iface (_nm_device_log_self_to_device (self)), "(null)") : "(none)" \
                 _NM_UTILS_MACRO_REST(__VA_ARGS__))
-
-#define _LOGT(domain, ...)      _LOG (LOGL_TRACE, domain, __VA_ARGS__)
-#define _LOGD(domain, ...)      _LOG (LOGL_DEBUG, domain, __VA_ARGS__)
-#define _LOGI(domain, ...)      _LOG (LOGL_INFO,  domain, __VA_ARGS__)
-#define _LOGW(domain, ...)      _LOG (LOGL_WARN,  domain, __VA_ARGS__)
-#define _LOGE(domain, ...)      _LOG (LOGL_ERR,   domain, __VA_ARGS__)
 
 #endif /* __NETWORKMANAGER_DEVICE_LOGGING_H__ */

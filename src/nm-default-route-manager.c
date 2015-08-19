@@ -21,11 +21,10 @@
 
 #include "config.h"
 
-#include "nm-default-route-manager.h"
-
-#include "string.h"
+#include <string.h>
 
 #include "nm-default.h"
+#include "nm-default-route-manager.h"
 #include "nm-device.h"
 #include "nm-vpn-connection.h"
 #include "nm-platform.h"
@@ -62,7 +61,17 @@ G_DEFINE_TYPE (NMDefaultRouteManager, nm_default_route_manager, G_TYPE_OBJECT)
 
 NM_DEFINE_SINGLETON_GETTER (NMDefaultRouteManager, nm_default_route_manager_get, NM_TYPE_DEFAULT_ROUTE_MANAGER);
 
-#define _LOG(level, addr_family, ...) \
+#define _NMLOG_PREFIX_NAME   "default-route"
+#undef  _NMLOG_ENABLED
+#define _NMLOG_ENABLED(level, addr_family) \
+    ({ \
+        const int __addr_family = (addr_family); \
+        const NMLogLevel __level = (level); \
+        const NMLogDomain __domain = __addr_family == AF_INET ? LOGD_IP4 : (__addr_family == AF_INET6 ? LOGD_IP6 : LOGD_IP); \
+        \
+        nm_logging_enabled (__level, __domain); \
+    })
+#define _NMLOG(level, addr_family, ...) \
     G_STMT_START { \
         const int __addr_family = (addr_family); \
         const NMLogLevel __level = (level); \
@@ -70,22 +79,17 @@ NM_DEFINE_SINGLETON_GETTER (NMDefaultRouteManager, nm_default_route_manager_get,
         \
         if (nm_logging_enabled (__level, __domain)) { \
             char __ch = __addr_family == AF_INET ? '4' : (__addr_family == AF_INET6 ? '6' : '-'); \
-            char __prefix[30] = "default-route"; \
+            char __prefix[30] = _NMLOG_PREFIX_NAME; \
             \
             if ((self) != singleton_instance) \
-                g_snprintf (__prefix, sizeof (__prefix), "default-route%c[%p]", __ch, (self)); \
+                g_snprintf (__prefix, sizeof (__prefix), ""_NMLOG_PREFIX_NAME"%c[%p]", __ch, (self)); \
             else \
-                __prefix[STRLEN ("default-route")] = __ch; \
+                __prefix[STRLEN (_NMLOG_PREFIX_NAME)] = __ch; \
             _nm_log (__level, __domain, 0, \
                      "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
                      __prefix _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
         } \
     } G_STMT_END
-
-#define _LOGD(addr_family, ...)      _LOG (LOGL_DEBUG, addr_family, __VA_ARGS__)
-#define _LOGI(addr_family, ...)      _LOG (LOGL_INFO , addr_family, __VA_ARGS__)
-#define _LOGW(addr_family, ...)      _LOG (LOGL_WARN , addr_family, __VA_ARGS__)
-#define _LOGE(addr_family, ...)      _LOG (LOGL_ERR  , addr_family, __VA_ARGS__)
 
 #define LOG_ENTRY_FMT  "entry[%u/%s:%p:%s:%c:%csync]"
 #define LOG_ENTRY_ARGS(entry_idx, entry) \

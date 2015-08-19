@@ -26,7 +26,6 @@
 #include <libsoup/soup.h>
 #endif
 
-
 #include "nm-default.h"
 #include "nm-connectivity.h"
 #include "nm-config.h"
@@ -35,23 +34,14 @@ G_DEFINE_TYPE (NMConnectivity, nm_connectivity, G_TYPE_OBJECT)
 
 #define NM_CONNECTIVITY_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_CONNECTIVITY, NMConnectivityPrivate))
 
-
-#define _LOG_DEFAULT_DOMAIN  LOGD_CONCHECK
-
-#define _LOG(level, domain, ...) \
+#define _NMLOG_DOMAIN  LOGD_CONCHECK
+#define _NMLOG(level, ...) \
     G_STMT_START { \
-        nm_log ((level), (domain), \
+        nm_log ((level), (_NMLOG_DOMAIN), \
                 "%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
                 "connectivity: " \
                 _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
     } G_STMT_END
-
-#define _LOGT(...)      _LOG (LOGL_TRACE, _LOG_DEFAULT_DOMAIN, __VA_ARGS__)
-#define _LOGD(...)      _LOG (LOGL_DEBUG, _LOG_DEFAULT_DOMAIN, __VA_ARGS__)
-#define _LOGI(...)      _LOG (LOGL_INFO,  _LOG_DEFAULT_DOMAIN, __VA_ARGS__)
-#define _LOGW(...)      _LOG (LOGL_WARN,  _LOG_DEFAULT_DOMAIN, __VA_ARGS__)
-#define _LOGE(...)      _LOG (LOGL_ERR,   _LOG_DEFAULT_DOMAIN, __VA_ARGS__)
-
 
 typedef struct {
 	char *uri;
