@@ -449,9 +449,6 @@ nm_vpn_plugin_info_list_add (GSList **list, NMVpnPluginInfo *plugin_info, GError
 gboolean
 nm_vpn_plugin_info_list_remove (GSList **list, NMVpnPluginInfo *plugin_info)
 {
-	if (!plugin_info)
-		return FALSE;
-
 	g_return_val_if_fail (list, FALSE);
 	g_return_val_if_fail (NM_IS_VPN_PLUGIN_INFO (plugin_info), FALSE);
 

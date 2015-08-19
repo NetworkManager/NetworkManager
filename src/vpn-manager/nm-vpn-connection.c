@@ -43,6 +43,8 @@
 #include "nm-route-manager.h"
 #include "nm-firewall-manager.h"
 #include "nm-config.h"
+#include "nm-vpn-plugin-info.h"
+#include "nm-vpn-manager.h"
 
 #include "nmdbus-vpn-connection.h"
 
@@ -89,6 +91,10 @@ typedef struct {
 	NMVpnConnectionStateReason failure_reason;
 
 	NMVpnServiceState service_state;
+	guint start_timeout;
+	gboolean service_running;
+	NMVpnPluginInfo *plugin_info;
+	char *bus_name;
 
 	/* Firewall */
 	NMFirewallManagerCallId fw_call;
@@ -382,6 +388,9 @@ vpn_cleanup (NMVpnConnection *self, NMDevice *parent_dev)
 	g_free (priv->ip_iface);
 	priv->ip_iface = NULL;
 	priv->ip_ifindex = 0;
+
+	g_free (priv->bus_name);
+	priv->bus_name = NULL;
 
 	/* Clear out connection secrets to ensure that the settings service
 	 * gets asked for them next time the connection is activated.
@@ -1858,6 +1867,111 @@ ip6_config_cb (GDBusProxy *proxy,
 }
 
 static void
+_name_owner_changed (GObject *object,
+                     GParamSpec *pspec,
+                     gpointer user_data)
+{
+	NMVpnConnection *self = NM_VPN_CONNECTION (user_data);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
+	char *owner;
+
+	owner = g_dbus_proxy_get_name_owner (G_DBUS_PROXY (object));
+
+	if (owner && !priv->service_running) {
+		/* service appeared */
+		priv->service_running = TRUE;
+		_LOGI ("Saw the service appear; activating connection");
+
+		/* No need to wait for the timeout any longer */
+		nm_clear_g_source (&priv->start_timeout);
+
+		/* Expect success because the VPN service has already appeared */
+		_nm_dbus_signal_connect (priv->proxy, "Failure", G_VARIANT_TYPE ("(u)"),
+		                         G_CALLBACK (failure_cb), self);
+		_nm_dbus_signal_connect (priv->proxy, "StateChanged", G_VARIANT_TYPE ("(u)"),
+		                         G_CALLBACK (state_changed_cb), self);
+		_nm_dbus_signal_connect (priv->proxy, "SecretsRequired", G_VARIANT_TYPE ("(sas)"),
+		                         G_CALLBACK (secrets_required_cb), self);
+		_nm_dbus_signal_connect (priv->proxy, "Config", G_VARIANT_TYPE ("(a{sv})"),
+		                         G_CALLBACK (config_cb), self);
+		_nm_dbus_signal_connect (priv->proxy, "Ip4Config", G_VARIANT_TYPE ("(a{sv})"),
+		                         G_CALLBACK (ip4_config_cb), self);
+		_nm_dbus_signal_connect (priv->proxy, "Ip6Config", G_VARIANT_TYPE ("(a{sv})"),
+		                         G_CALLBACK (ip6_config_cb), self);
+
+		_set_vpn_state (self, STATE_NEED_AUTH, NM_VPN_CONNECTION_STATE_REASON_NONE, FALSE);
+
+		/* Kick off the secrets requests; first we get existing system secrets
+		 * and ask the plugin if these are sufficient, next we get all existing
+		 * secrets from system and from user agents and ask the plugin again,
+		 * and last we ask the user for new secrets if required.
+		 */
+		get_secrets (self, SECRETS_REQ_SYSTEM, NULL);
+	} else if (!owner && priv->service_running) {
+		/* service went away */
+		priv->service_running = FALSE;
+		_LOGI ("VPN service disappeared");
+		nm_vpn_connection_disconnect (self, NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED, FALSE);
+	}
+
+	g_free (owner);
+}
+
+
+static gboolean
+_daemon_exec_timeout (gpointer data)
+{
+	NMVpnConnection *self = NM_VPN_CONNECTION (data);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
+
+	_LOGW ("Timed out waiting for the service to start");
+	priv->start_timeout = 0;
+	nm_vpn_connection_disconnect (self, NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_TIMEOUT, FALSE);
+
+	g_object_unref (self);
+
+	return G_SOURCE_REMOVE;
+}
+
+static gboolean
+nm_vpn_service_daemon_exec (NMVpnConnection *self, GError **error)
+{
+	NMVpnConnectionPrivate *priv;
+	GPid pid;
+	char *vpn_argv[4];
+	gboolean success = FALSE;
+	GError *spawn_error = NULL;
+	int i = 0;
+
+	g_return_val_if_fail (NM_IS_VPN_CONNECTION (self), FALSE);
+	priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
+
+	vpn_argv[i++] = (char *) nm_vpn_plugin_info_get_program (priv->plugin_info);
+	if (nm_vpn_plugin_info_supports_multiple (priv->plugin_info)) {
+		vpn_argv[i++] = "--bus-name";
+		vpn_argv[i++] = priv->bus_name;
+	}
+	vpn_argv[i] = NULL;
+	g_assert (vpn_argv[0]);
+
+	success = g_spawn_async (NULL, vpn_argv, NULL, 0, nm_utils_setpgid, NULL, &pid, &spawn_error);
+
+	if (success) {
+		_LOGI ("Started the VPN service, PID %ld", (long int) pid);
+		priv->start_timeout = g_timeout_add_seconds (5, _daemon_exec_timeout, g_object_ref (self));
+	} else {
+		g_set_error (error,
+		             NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
+		             "%s", spawn_error ? spawn_error->message : "unknown g_spawn_async() error");
+
+		if (spawn_error)
+			g_error_free (spawn_error);
+	}
+
+	return success;
+}
+
+static void
 on_proxy_acquired (GObject *object, GAsyncResult *result, gpointer user_data)
 {
 	NMVpnConnection *self;
@@ -1883,55 +1997,69 @@ on_proxy_acquired (GObject *object, GAsyncResult *result, gpointer user_data)
 	}
 
 	priv->proxy = proxy;
-	_nm_dbus_signal_connect (priv->proxy, "Failure", G_VARIANT_TYPE ("(u)"),
-	                         G_CALLBACK (failure_cb), self);
-	_nm_dbus_signal_connect (priv->proxy, "StateChanged", G_VARIANT_TYPE ("(u)"),
-	                         G_CALLBACK (state_changed_cb), self);
-	_nm_dbus_signal_connect (priv->proxy, "SecretsRequired", G_VARIANT_TYPE ("(sas)"),
-	                         G_CALLBACK (secrets_required_cb), self);
-	_nm_dbus_signal_connect (priv->proxy, "Config", G_VARIANT_TYPE ("(a{sv})"),
-	                         G_CALLBACK (config_cb), self);
-	_nm_dbus_signal_connect (priv->proxy, "Ip4Config", G_VARIANT_TYPE ("(a{sv})"),
-	                         G_CALLBACK (ip4_config_cb), self);
-	_nm_dbus_signal_connect (priv->proxy, "Ip6Config", G_VARIANT_TYPE ("(a{sv})"),
-	                         G_CALLBACK (ip6_config_cb), self);
 
-	_set_vpn_state (self, STATE_NEED_AUTH, NM_VPN_CONNECTION_STATE_REASON_NONE, FALSE);
+	g_signal_connect (priv->proxy, "notify::g-name-owner",
+	                  G_CALLBACK (_name_owner_changed), self);
+	_name_owner_changed (G_OBJECT (priv->proxy), NULL, self);
 
-	/* Kick off the secrets requests; first we get existing system secrets
-	 * and ask the plugin if these are sufficient, next we get all existing
-	 * secrets from system and from user agents and ask the plugin again,
-	 * and last we ask the user for new secrets if required.
-	 */
-	get_secrets (self, SECRETS_REQ_SYSTEM, NULL);
+	if (priv->service_running)
+		return;
+
+	if (!nm_vpn_service_daemon_exec (self, &error)) {
+		_LOGW ("Could not launch the VPN service. error: %s.",
+		       error->message);
+
+		nm_vpn_connection_disconnect (self, NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_FAILED, FALSE);
+	}
 }
 
 void
-nm_vpn_connection_activate (NMVpnConnection *self)
+nm_vpn_connection_activate (NMVpnConnection *self,
+                            NMVpnPluginInfo *plugin_info)
 {
 	NMVpnConnectionPrivate *priv;
 	NMSettingVpn *s_vpn;
+	const char *service;
 
 	g_return_if_fail (NM_IS_VPN_CONNECTION (self));
+	g_return_if_fail (NM_IS_VPN_PLUGIN_INFO (plugin_info));
 
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
+	g_return_if_fail (!priv->plugin_info);
 
 	s_vpn = nm_connection_get_setting_vpn (_get_applied_connection (self));
-	g_assert (s_vpn);
+	g_return_if_fail (s_vpn);
+
+	service = nm_setting_vpn_get_service_type (s_vpn);
+	g_return_if_fail (!g_strcmp0 (service, nm_vpn_plugin_info_get_service (plugin_info)));
+
+	if (nm_vpn_plugin_info_supports_multiple (plugin_info)) {
+		const char *path;
+
+		path = nm_exported_object_get_path (NM_EXPORTED_OBJECT (self));
+		if (path)
+			path = strrchr (path, '/');
+		g_return_if_fail (path);
+
+		priv->bus_name = g_strdup_printf ("%s.Connection_%s", service, &path[1]);
+	} else
+		priv->bus_name = g_strdup (service);
+
 	priv->connection_can_persist = nm_setting_vpn_get_persistent (s_vpn);
-
-	_set_vpn_state (self, STATE_PREPARE, NM_VPN_CONNECTION_STATE_REASON_NONE, FALSE);
-
+	priv->plugin_info = g_object_ref (plugin_info);
 	priv->cancellable = g_cancellable_new ();
+
 	g_dbus_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
 	                          G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
 	                          NULL,
-	                          nm_vpn_connection_get_service (self),
+	                          priv->bus_name,
 	                          NM_VPN_DBUS_PLUGIN_PATH,
 	                          NM_VPN_DBUS_PLUGIN_INTERFACE,
 	                          priv->cancellable,
 	                          (GAsyncReadyCallback) on_proxy_acquired,
 	                          self);
+
+	_set_vpn_state (self, STATE_PREPARE, NM_VPN_CONNECTION_STATE_REASON_NONE, FALSE);
 }
 
 NMVpnConnectionState
@@ -2305,6 +2433,7 @@ dispose (GObject *object)
 	g_clear_object (&priv->ip4_config);
 	g_clear_object (&priv->ip6_config);
 	g_clear_object (&priv->proxy);
+	g_clear_object (&priv->plugin_info);
 
 	fw_call_cleanup (self);
 
@@ -2429,4 +2558,3 @@ nm_vpn_connection_class_init (NMVpnConnectionClass *connection_class)
 	                                        NMDBUS_TYPE_VPN_CONNECTION_SKELETON,
 	                                        NULL);
 }
-
