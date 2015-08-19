@@ -571,6 +571,12 @@ ipv6.ip6-privacy=1
       The following properties are supported to have their default values configured:
       <variablelist>
         <varlistentry>
+          <term><varname>connection.autoconnect-slaves</varname></term>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>ethernet.wake-on-lan</varname></term>
+        </varlistentry>
+        <varlistentry>
           <term><varname>ipv4.route-metric</varname></term>
         </varlistentry>
         <varlistentry>
@@ -581,12 +587,6 @@ ipv6.ip6-privacy=1
         </varlistentry>
         <varlistentry>
           <term><varname>ipv6.route-metric</varname></term>
-        </varlistentry>
-        <varlistentry>
-          <term><varname>connection.autoconnect-slaves</varname></term>
-        </varlistentry>
-        <varlistentry>
-          <term><varname>ethernet.wake-on-lan</varname></term>
         </varlistentry>
       </variablelist>
     </para>
