@@ -74,7 +74,7 @@ end
 -- Functions for VPN options translation --
 -------------------------------------------
 function set_bool(t, option, value)
-  g_switches[value[1]] = true
+  g_switches[option] = true
 end
 function handle_yes(t, option, value)
   t[option] = "yes"
@@ -195,7 +195,7 @@ vpn2nm = {
   ["reneg-sec"]         = { nm_opt="reneg-seconds",    func=handle_generic },
   ["secret"]            = { nm_opt={"static-key", "static-key-direction"}, func=handle_secret },
   ["tls-auth"]          = { nm_opt={"ta", "ta-dir"},   func=handle_secret },
-  ["tls-client"]        = { nm_opt="tls-client=",      func=set_bool },
+  ["tls-client"]        = { nm_opt="client",           func=set_bool },
   ["tls-remote"]        = { nm_opt="tls-remote",       func=handle_tls_remote },
   ["remote-cert-tls"]   = { nm_opt="remote-cert-tls",  func=handle_remote_cert_tls },
   ["tun-mtu"]           = { nm_opt="tunnel-mtu",       func=handle_generic }
