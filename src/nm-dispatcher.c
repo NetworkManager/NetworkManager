@@ -239,8 +239,9 @@ fill_device_props (NMDevice *device,
 	                       g_variant_new_uint32 (nm_device_get_device_type (device)));
 	g_variant_builder_add (dev_builder, "{sv}", NMD_DEVICE_PROPS_STATE,
 	                       g_variant_new_uint32 (nm_device_get_state (device)));
-	g_variant_builder_add (dev_builder, "{sv}", NMD_DEVICE_PROPS_PATH,
-	                       g_variant_new_object_path (nm_exported_object_get_path (NM_EXPORTED_OBJECT (device))));
+	if (nm_exported_object_is_exported (NM_EXPORTED_OBJECT (device)))
+		g_variant_builder_add (dev_builder, "{sv}", NMD_DEVICE_PROPS_PATH,
+		                       g_variant_new_object_path (nm_exported_object_get_path (NM_EXPORTED_OBJECT (device))));
 
 	ip4_config = nm_device_get_ip4_config (device);
 	if (ip4_config)
