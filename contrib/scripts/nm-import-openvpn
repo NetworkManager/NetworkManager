@@ -83,6 +83,14 @@ function handle_generic(t, option, value)
   if not value[2] then io.stderr:write(string.format("Warning: ignoring invalid option '%s'\n", value[1])) return end
   t[option] = value[2]
 end
+function handle_number(t, option, value)
+  if not value[2] then io.stderr:write(string.format("Warning: ignoring invalid option '%s'\n", value[1])) return end
+  if not tonumber(value[2]) then 
+    io.stderr:write(string.format("Warning: ignoring not numeric value '%s' for option '%s'\n", value[2], value[1]))
+    return
+  end
+  t[option] = value[2]
+end
 function handle_proto(t, option, value)
   if not value[2] then io.stderr:write("Warning: ignoring invalid option 'proto'\n") end
   if value[2] == "tcp" or value[3] == "tcp-client" or value[2] == "tcp-server" then
@@ -183,6 +191,9 @@ vpn2nm = {
   ["ifconfig"]          = { nm_opt={"local-ip", "remote-ip"}, func=handle_ifconfig },
   ["key"]               = { nm_opt="key",              func=handle_path },
   ["mssfix"]            = { nm_opt="mssfix",           func=handle_yes },
+  ["ping"]              = { nm_opt="ping",             func=handle_number },
+  ["ping-exit"]         = { nm_opt="ping-exit",        func=handle_number },
+  ["ping-restart"]      = { nm_opt="ping-restart",     func=handle_number },
   ["pkcs12"]            = { nm_opt="client",           func=handle_path },
   ["port"]              = { nm_opt="port",             func=handle_port },
   ["rport"]             = { nm_opt="port",             func=handle_port },
