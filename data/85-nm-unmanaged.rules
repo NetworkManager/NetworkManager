@@ -7,7 +7,7 @@ ACTION!="add|change", GOTO="nm_unmanaged_end"
 # Determine ID_NET_DRIVER if there's no ID_NET_DRIVER or DRIVERS (old udev?)
 ENV{ID_NET_DRIVER}=="?*", GOTO="nm_unmanaged_driver"
 DRIVERS=="?*", GOTO="nm_unmanaged_driver"
-PROGRAM="/bin/sh -c '/usr/sbin/ethtool -i $env{INTERFACE} |/bin/sed -n s/^driver:\ //p'", RESULT=="?*", ENV{ID_NET_DRIVER}="%c"
+PROGRAM="/bin/sh -c '/usr/sbin/ethtool -i $1 | /bin/sed -n s/^driver:\ //p' -- $env{INTERFACE}", RESULT=="?*", ENV{ID_NET_DRIVER}="%c"
 LABEL="nm_unmanaged_driver"
 
 # VirtualBox host networking. Out-of-tree driver that looks like an ordinary
