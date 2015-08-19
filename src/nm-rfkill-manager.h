@@ -25,13 +25,13 @@
 #ifndef __NETWORKMANAGER_RFKILL_MANAGER_H__
 #define __NETWORKMANAGER_RFKILL_MANAGER_H__
 
-typedef enum {
+typedef enum { /*< skip >*/
 	RFKILL_UNBLOCKED = 0,
 	RFKILL_SOFT_BLOCKED = 1,
 	RFKILL_HARD_BLOCKED = 2
 } RfKillState;
 
-typedef enum {
+typedef enum { /*< skip >*/
 	RFKILL_TYPE_WLAN = 0,
 	RFKILL_TYPE_WWAN = 1,
 
