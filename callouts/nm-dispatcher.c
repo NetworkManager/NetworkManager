@@ -372,7 +372,9 @@ dispatch_one_script (Request *request)
 	ScriptInfo *script = g_ptr_array_index (request->scripts, request->idx);
 
 	argv[0] = script->script;
-	argv[1] = request->iface ? request->iface : "none";
+	argv[1] = request->iface
+	          ? request->iface
+	          : (!strcmp (request->action, NMD_ACTION_HOSTNAME) ? "none" : "");
 	argv[2] = request->action;
 	argv[3] = NULL;
 

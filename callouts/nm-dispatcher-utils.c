@@ -349,7 +349,7 @@ nm_dispatcher_utils_construct_envp (const char *action,
 	g_return_val_if_fail (*out_iface == NULL, NULL);
 
 	/* Hostname changes don't require a device nor contain a connection */
-	if (!strcmp (action, "hostname"))
+	if (!strcmp (action, NMD_ACTION_HOSTNAME))
 		goto done;
 
 	/* Connection properties */
