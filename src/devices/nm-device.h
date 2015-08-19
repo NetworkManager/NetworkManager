@@ -345,10 +345,14 @@ NMDhcp4Config * nm_device_get_dhcp4_config (NMDevice *dev);
 NMDhcp6Config * nm_device_get_dhcp6_config (NMDevice *dev);
 
 NMIP4Config *	nm_device_get_ip4_config	(NMDevice *dev);
-void            nm_device_set_vpn4_config   (NMDevice *dev, NMIP4Config *config);
+void            nm_device_replace_vpn4_config   (NMDevice *dev,
+                                                 NMIP4Config *old,
+                                                 NMIP4Config *config);
 
 NMIP6Config *	nm_device_get_ip6_config	(NMDevice *dev);
-void            nm_device_set_vpn6_config   (NMDevice *dev, NMIP6Config *config);
+void            nm_device_replace_vpn6_config   (NMDevice *dev,
+                                                 NMIP6Config *old,
+                                                 NMIP6Config *config);
 
 void            nm_device_capture_initial_config (NMDevice *dev);
 
