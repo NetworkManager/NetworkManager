@@ -119,6 +119,8 @@ nm_vpn_editor_plugin_load_from_file  (const char *plugin_filename,
 
 	g_return_val_if_fail (plugin_filename && *plugin_filename, NULL);
 
+	/* _nm_utils_check_module_file() fails with ENOENT if the plugin file
+	 * does not exist. That is relevant, because nm-applet checks for that. */
 	if (_nm_utils_check_module_file (plugin_filename,
 		                             check_owner,
 		                             check_file,

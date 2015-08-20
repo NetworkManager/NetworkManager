@@ -2516,12 +2516,25 @@ _nm_utils_check_module_file (const char *name,
 		return FALSE;
 	}
 
-	/* check whether we have a readable file right away */
+	/* Set special error code if the file doesn't exist.
+	 * The VPN package might be split into separate packages,
+	 * so it could be correct that the plugin file is missing.
+	 *
+	 * Note that nm-applet checks for this error code to fail
+	 * gracefully. */
+	if (!g_file_test (name, G_FILE_TEST_EXISTS)) {
+		g_set_error (error,
+		             G_FILE_ERROR,
+		             G_FILE_ERROR_NOENT,
+		             _("Plugin file does not exist (%s)"), name);
+		return FALSE;
+	}
+
 	if (!g_file_test (name, G_FILE_TEST_IS_REGULAR)) {
 		g_set_error (error,
 		             NM_VPN_PLUGIN_ERROR,
 		             NM_VPN_PLUGIN_ERROR_FAILED,
-		             _("could not find plugin (%s)"), name);
+		             _("Plugin is not a valid file (%s)"), name);
 		return FALSE;
 	}
 
