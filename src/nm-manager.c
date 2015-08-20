@@ -4391,7 +4391,8 @@ free_property_filter_data (PropertyFilterData *pfd)
 	g_object_unref (pfd->connection);
 	g_object_unref (pfd->message);
 	g_object_unref (pfd->subject);
-	g_object_unref (pfd->object);
+	if (pfd->object)
+		g_object_unref (pfd->object);
 	g_free (pfd->audit_prop_value);
 	g_slice_free (PropertyFilterData, pfd);
 }
@@ -4439,6 +4440,18 @@ do_set_property_check (gpointer user_data)
 	NMAuthChain *chain;
 	const char *error_message = NULL;
 
+	if (!pfd->object) {
+		pfd->object = nm_bus_manager_get_registered_object (nm_bus_manager_get (),
+		                                                    g_dbus_message_get_path (pfd->message));
+		if (!pfd->object) {
+			reply = g_dbus_message_new_method_error (pfd->message,
+			                                         "org.freedesktop.DBus.Error.UnknownObject",
+			                                         (error_message = "Object doesn't exist."));
+			goto out;
+		}
+		g_object_ref (pfd->object);
+	}
+
 	pfd->subject = nm_auth_subject_new_unix_process_from_message (pfd->connection, pfd->message);
 	if (!pfd->subject) {
 		reply = g_dbus_message_new_method_error (pfd->message,
@@ -4485,7 +4498,7 @@ prop_filter (GDBusConnection *connection,
 	const char *glib_propname = NULL, *permission = NULL;
 	const char *audit_op = NULL;
 	gboolean set_enable;
-	gpointer obj;
+	GObject *object = NULL;
 	PropertyFilterData *pfd;
 
 	/* The sole purpose of this function is to validate property accesses on the
@@ -4528,18 +4541,13 @@ prop_filter (GDBusConnection *connection,
 		} else
 			return message;
 
-		obj = self;
+		object = g_object_ref (self);
 	} else if (!strcmp (propiface, NM_DBUS_INTERFACE_DEVICE)) {
 		if (!strcmp (propname, "Autoconnect")) {
 			glib_propname = NM_DEVICE_AUTOCONNECT;
 			permission = NM_AUTH_PERMISSION_NETWORK_CONTROL;
 			audit_op = NM_AUDIT_OP_DEVICE_AUTOCONNECT;
 		} else
-			return message;
-
-		obj = nm_bus_manager_get_registered_object (nm_bus_manager_get (),
-		                                            g_dbus_message_get_path (message));
-		if (!obj)
 			return message;
 	} else
 		return message;
@@ -4553,7 +4561,7 @@ prop_filter (GDBusConnection *connection,
 	pfd->connection = g_object_ref (connection);
 	pfd->message = message;
 	pfd->permission = permission;
-	pfd->object = g_object_ref (obj);
+	pfd->object = object;
 	pfd->property = glib_propname;
 	pfd->set_enable = set_enable;
 	pfd->audit_op = audit_op;
