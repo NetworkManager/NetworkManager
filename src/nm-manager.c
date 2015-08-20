@@ -4378,6 +4378,7 @@ typedef struct {
 	NMAuthSubject *subject;
 	const char *permission;
 	const char *audit_op;
+	char *audit_prop_value;
 	GObject *object;
 	const char *property;
 	gboolean set_enable;
@@ -4391,6 +4392,7 @@ free_property_filter_data (PropertyFilterData *pfd)
 	g_object_unref (pfd->message);
 	g_object_unref (pfd->subject);
 	g_object_unref (pfd->object);
+	g_free (pfd->audit_prop_value);
 	g_slice_free (PropertyFilterData, pfd);
 }
 
@@ -4403,10 +4405,7 @@ prop_set_auth_done_cb (NMAuthChain *chain,
 	PropertyFilterData *pfd = user_data;
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (pfd->self);
 	NMAuthCallResult result;
-	gs_free char *prop_value = NULL;
 	GDBusMessage *reply;
-
-	prop_value = g_strdup_printf ("%s:%d", pfd->property, pfd->set_enable);
 
 	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
 	result = nm_auth_chain_get_result (chain, pfd->permission);
@@ -4414,12 +4413,12 @@ prop_set_auth_done_cb (NMAuthChain *chain,
 		reply = g_dbus_message_new_method_error (pfd->message,
 		                                         NM_PERM_DENIED_ERROR,
 		                                         "Not authorized to perform this operation");
-		nm_audit_log_control_op (pfd->audit_op, prop_value, FALSE, pfd->subject, error ? error->message : NULL);
+		nm_audit_log_control_op (pfd->audit_op, pfd->audit_prop_value, FALSE, pfd->subject, error ? error->message : NULL);
 	} else {
 		g_object_set (pfd->object, pfd->property, pfd->set_enable, NULL);
 		reply = g_dbus_message_new_method_reply (pfd->message);
 		g_dbus_message_set_body (reply, g_variant_new_tuple (NULL, 0));
-		nm_audit_log_control_op (pfd->audit_op, prop_value, TRUE, pfd->subject, NULL);
+		nm_audit_log_control_op (pfd->audit_op, pfd->audit_prop_value, TRUE, pfd->subject, NULL);
 	}
 
 	g_dbus_connection_send_message (pfd->connection, reply,
@@ -4438,12 +4437,13 @@ do_set_property_check (gpointer user_data)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (pfd->self);
 	GDBusMessage *reply = NULL;
 	NMAuthChain *chain;
+	const char *error_message = NULL;
 
 	pfd->subject = nm_auth_subject_new_unix_process_from_message (pfd->connection, pfd->message);
 	if (!pfd->subject) {
 		reply = g_dbus_message_new_method_error (pfd->message,
 		                                         NM_PERM_DENIED_ERROR,
-		                                         "Could not determine request UID.");
+		                                         (error_message = "Could not determine request UID."));
 		goto out;
 	}
 
@@ -4452,7 +4452,7 @@ do_set_property_check (gpointer user_data)
 	if (!chain) {
 		reply = g_dbus_message_new_method_error (pfd->message,
 		                                         NM_PERM_DENIED_ERROR,
-		                                         "Could not authenticate request.");
+		                                         (error_message = "Could not authenticate request."));
 		goto out;
 	}
 
@@ -4461,6 +4461,7 @@ do_set_property_check (gpointer user_data)
 
 out:
 	if (reply) {
+		nm_audit_log_control_op (pfd->audit_op, pfd->audit_prop_value, FALSE, pfd->subject, error_message);
 		g_dbus_connection_send_message (pfd->connection, reply,
 		                                G_DBUS_SEND_MESSAGE_FLAGS_NONE,
 		                                NULL, NULL);
@@ -4556,6 +4557,7 @@ prop_filter (GDBusConnection *connection,
 	pfd->property = glib_propname;
 	pfd->set_enable = set_enable;
 	pfd->audit_op = audit_op;
+	pfd->audit_prop_value = g_strdup_printf ("%s:%d", pfd->property, pfd->set_enable);
 	g_idle_add (do_set_property_check, pfd);
 
 	return NULL;
