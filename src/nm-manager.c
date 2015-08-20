@@ -112,7 +112,10 @@ typedef struct {
 	NMPolicy *policy;
 
 	NMBusManager  *dbus_mgr;
-	guint          prop_filter;
+	struct {
+		GDBusConnection *connection;
+		guint            id;
+	} prop_filter;
 	NMRfkillManager *rfkill_mgr;
 
 	NMSettings *settings;
@@ -4499,7 +4502,7 @@ prop_filter (GDBusConnection *connection,
              gboolean incoming,
              gpointer user_data)
 {
-	NMManager *self = NM_MANAGER (user_data);
+	gs_unref_object NMManager *self = NULL;
 	GVariant *args, *value = NULL;
 	const char *propiface = NULL;
 	const char *propname = NULL;
@@ -4508,6 +4511,10 @@ prop_filter (GDBusConnection *connection,
 	gboolean set_enable;
 	GObject *object = NULL;
 	PropertyFilterData *pfd;
+
+	self = g_weak_ref_get (user_data);
+	if (!self)
+		return message;
 
 	/* The sole purpose of this function is to validate property accesses on the
 	 * NMManager object since gdbus doesn't give us this functionality.
@@ -4565,7 +4572,8 @@ prop_filter (GDBusConnection *connection,
 	 * org.freedesktop.DBus.GetConnectionUnixUser to find the remote UID.
 	 */
 	pfd = g_slice_new0 (PropertyFilterData);
-	pfd->self = g_object_ref (self);
+	pfd->self = self;
+	self = NULL;
 	pfd->connection = g_object_ref (connection);
 	pfd->message = message;
 	pfd->permission = permission;
@@ -4578,6 +4586,55 @@ prop_filter (GDBusConnection *connection,
 
 	return NULL;
 }
+
+/******************************************************************************/
+
+static int
+_set_prop_filter_free2 (gpointer user_data)
+{
+	g_slice_free (GWeakRef, user_data);
+	return G_SOURCE_REMOVE;
+}
+
+static void
+_set_prop_filter_free (gpointer user_data)
+{
+	g_weak_ref_clear (user_data);
+
+	/* Delay the final deletion of the user_data. There is a race when
+	 * calling g_dbus_connection_remove_filter() that the callback and user_data
+	 * might have been copied and being executed after the destroy function
+	 * runs (bgo #704568).
+	 * This doesn't really fix the race, but it should work well enough. */
+	g_timeout_add_seconds (2, _set_prop_filter_free2, user_data);
+}
+
+static void
+_set_prop_filter (NMManager *self, GDBusConnection *connection)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+
+	nm_assert ((!priv->prop_filter.connection) == (!priv->prop_filter.id));
+
+	if (priv->prop_filter.connection == connection)
+		return;
+
+	if (priv->prop_filter.connection) {
+		g_dbus_connection_remove_filter (priv->prop_filter.connection, priv->prop_filter.id);
+		priv->prop_filter.id = 0;
+		g_clear_object (&priv->prop_filter.connection);
+	}
+	if (connection) {
+		GWeakRef *wptr;
+
+		wptr = g_slice_new (GWeakRef);
+		g_weak_ref_init  (wptr, self);
+		priv->prop_filter.id = g_dbus_connection_add_filter (connection, prop_filter, wptr, _set_prop_filter_free);
+		priv->prop_filter.connection = g_object_ref (connection);
+	}
+}
+
+/******************************************************************************/
 
 static void
 authority_changed_cb (NMAuthManager *auth_manager, gpointer user_data)
@@ -4728,11 +4785,7 @@ dbus_connection_changed_cb (NMBusManager *dbus_mgr,
                             GDBusConnection *connection,
                             gpointer user_data)
 {
-	NMManager *self = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-
-	if (connection)
-		priv->prop_filter = g_dbus_connection_add_filter (connection, prop_filter, self, NULL);
+	_set_prop_filter (NM_MANAGER (user_data), connection);
 }
 
 /**********************************************************************/
@@ -4762,7 +4815,6 @@ nm_manager_setup (const char *state_file,
 {
 	NMManager *self;
 	NMManagerPrivate *priv;
-	GDBusConnection *bus;
 	NMConfigData *config_data;
 
 	/* Can only be called once */
@@ -4772,9 +4824,7 @@ nm_manager_setup (const char *state_file,
 
 	priv = NM_MANAGER_GET_PRIVATE (self);
 
-	bus = nm_bus_manager_get_connection (priv->dbus_mgr);
-	if (bus)
-		priv->prop_filter = g_dbus_connection_add_filter (bus, prop_filter, self, NULL);
+	_set_prop_filter (self, nm_bus_manager_get_connection (priv->dbus_mgr));
 
 	priv->settings = nm_settings_new ();
 	g_signal_connect (priv->settings, "notify::" NM_SETTINGS_STARTUP_COMPLETE,
@@ -5035,7 +5085,6 @@ dispose (GObject *object)
 {
 	NMManager *manager = NM_MANAGER (object);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	GDBusConnection *bus;
 
 	g_slist_free_full (priv->auth_chains, (GDestroyNotify) nm_auth_chain_unref);
 	priv->auth_chains = NULL;
@@ -5080,14 +5129,10 @@ dispose (GObject *object)
 
 	/* Unregister property filter */
 	if (priv->dbus_mgr) {
-		bus = nm_bus_manager_get_connection (priv->dbus_mgr);
-		if (bus && priv->prop_filter) {
-			g_dbus_connection_remove_filter (bus, priv->prop_filter);
-			priv->prop_filter = 0;
-		}
 		g_signal_handlers_disconnect_by_func (priv->dbus_mgr, dbus_connection_changed_cb, manager);
 		g_clear_object (&priv->dbus_mgr);
 	}
+	_set_prop_filter (manager, NULL);
 
 	if (priv->sleep_monitor) {
 		g_signal_handlers_disconnect_by_func (priv->sleep_monitor, sleeping_cb, manager);
