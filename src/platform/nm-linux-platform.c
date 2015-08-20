@@ -91,6 +91,7 @@
     } G_STMT_END
 
 #define debug(...)      _LOG (LOGL_DEBUG, _NMLOG_DOMAIN, NULL, __VA_ARGS__)
+#define info(...)       _LOG (LOGL_INFO,  _NMLOG_DOMAIN, NULL, __VA_ARGS__)
 #define warning(...)    _LOG (LOGL_WARN , _NMLOG_DOMAIN, NULL, __VA_ARGS__)
 #define error(...)      _LOG (LOGL_ERR  , _NMLOG_DOMAIN, NULL, __VA_ARGS__)
 
@@ -4547,7 +4548,7 @@ event_handler_read_netlink_one (NMPlatform *platform)
 			debug ("Uncritical failure to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
 			break;
 		case -NLE_NOMEM:
-			warning ("Too many netlink events. Need to resynchronize platform cache");
+			info ("Too many netlink events. Need to resynchronize platform cache");
 			/* Drain the event queue, we've lost events and are out of sync anyway and we'd
 			 * like to free up some space. We'll read in the status synchronously. */
 			_nl_sock_flush_data (priv->nlh_event);
