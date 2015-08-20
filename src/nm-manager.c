@@ -4857,7 +4857,7 @@ nm_manager_init (NMManager *manager)
 	priv->state = NM_STATE_DISCONNECTED;
 	priv->startup = TRUE;
 
-	priv->dbus_mgr = nm_bus_manager_get ();
+	priv->dbus_mgr = g_object_ref (nm_bus_manager_get ());
 	g_signal_connect (priv->dbus_mgr,
 	                  NM_BUS_MANAGER_DBUS_CONNECTION_CHANGED,
 	                  G_CALLBACK (dbus_connection_changed_cb),
@@ -5068,7 +5068,7 @@ dispose (GObject *object)
 			priv->prop_filter = 0;
 		}
 		g_signal_handlers_disconnect_by_func (priv->dbus_mgr, dbus_connection_changed_cb, manager);
-		priv->dbus_mgr = NULL;
+		g_clear_object (&priv->dbus_mgr);
 	}
 
 	if (priv->sleep_monitor) {
