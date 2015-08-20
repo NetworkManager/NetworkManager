@@ -4391,7 +4391,7 @@ free_property_filter_data (PropertyFilterData *pfd)
 	g_object_unref (pfd->message);
 	g_object_unref (pfd->subject);
 	g_object_unref (pfd->object);
-	g_free (pfd);
+	g_slice_free (PropertyFilterData, pfd);
 }
 
 static void
@@ -4547,7 +4547,7 @@ prop_filter (GDBusConnection *connection,
 	 * make other D-Bus calls from. In particular, we cannot call
 	 * org.freedesktop.DBus.GetConnectionUnixUser to find the remote UID.
 	 */
-	pfd = g_new0 (PropertyFilterData, 1);
+	pfd = g_slice_new0 (PropertyFilterData);
 	pfd->self = g_object_ref (self);
 	pfd->connection = g_object_ref (connection);
 	pfd->message = message;
