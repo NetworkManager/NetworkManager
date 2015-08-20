@@ -4449,6 +4449,14 @@ do_set_property_check (gpointer user_data)
 			                                         (error_message = "Object doesn't exist."));
 			goto out;
 		}
+		/* If we lookup the object, we expect the object to be of a certain type.
+		 * Only NMDevice type have settable properties. */
+		if (!NM_IS_DEVICE (pfd->object)) {
+			reply = g_dbus_message_new_method_error (pfd->message,
+			                                         "org.freedesktop.DBus.Error.InvalidArgs",
+			                                         (error_message = "Object is of unexpected type."));
+			goto out;
+		}
 		g_object_ref (pfd->object);
 	}
 
