@@ -1498,7 +1498,8 @@ nm_connection_get_uuid (NMConnection *connection)
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	s_con = nm_connection_get_setting_connection (connection);
-	g_return_val_if_fail (s_con != NULL, NULL);
+	if (!s_con)
+		return NULL;
 
 	return nm_setting_connection_get_uuid (s_con);
 }

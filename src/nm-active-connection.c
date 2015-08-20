@@ -110,6 +110,29 @@ static void _device_cleanup (NMActiveConnection *self);
 
 /****************************************************************/
 
+#define _NMLOG_DOMAIN         LOGD_DEVICE
+#define _NMLOG_PREFIX_NAME    "active-connection"
+#define _NMLOG(level, ...) \
+    G_STMT_START { \
+        const NMLogLevel __level = (level); \
+        \
+        if (nm_logging_enabled (__level, _NMLOG_DOMAIN)) { \
+            char __prefix[128]; \
+            const char *__p_prefix = _NMLOG_PREFIX_NAME; \
+            const void *const __self = (self); \
+            \
+            if (__self) { \
+                g_snprintf (__prefix, sizeof (__prefix), "%s[%p]", _NMLOG_PREFIX_NAME, __self); \
+                __p_prefix = __prefix; \
+            } \
+            _nm_log (__level, _NMLOG_DOMAIN, 0, \
+                     "%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+                     __p_prefix _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
+        } \
+    } G_STMT_END
+
+/****************************************************************/
+
 static const char *
 state_to_string (NMActiveConnectionState state)
 {
@@ -488,15 +511,15 @@ check_master_ready (NMActiveConnection *self)
 	NMActiveConnectionState master_state = NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
 
 	if (priv->state != NM_ACTIVE_CONNECTION_STATE_ACTIVATING) {
-		nm_log_dbg (LOGD_DEVICE, "(%p): not signalling master-ready (not activating)", self);
+		_LOGD ("not signalling master-ready (not activating)");
 		return;
 	}
 	if (!priv->master) {
-		nm_log_dbg (LOGD_DEVICE, "(%p): not signalling master-ready (no master)", self);
+		_LOGD ("not signalling master-ready (no master)");
 		return;
 	}
 	if (priv->master_ready) {
-		nm_log_dbg (LOGD_DEVICE, "(%p): not signalling master-ready (already signaled)", self);
+		_LOGD ("not signalling master-ready (already signaled)");
 		return;
 	}
 
@@ -506,12 +529,12 @@ check_master_ready (NMActiveConnection *self)
 	 * or higher states.
 	 */
 	master_state = nm_active_connection_get_state (priv->master);
-	nm_log_dbg (LOGD_DEVICE, "(%p): master ActiveConnection [%p] state now '%s' (%d)",
-	            self, priv->master, state_to_string (master_state), master_state);
+	_LOGD ("master ActiveConnection [%p] state now '%s' (%d)",
+	       priv->master, state_to_string (master_state), master_state);
 
 	if (   master_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING
 	    || master_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
-		nm_log_dbg (LOGD_DEVICE, "(%p): signalling master-ready", self);
+		_LOGD ("signalling master-ready");
 
 		priv->master_ready = TRUE;
 		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_INT_MASTER_READY);
@@ -535,8 +558,8 @@ master_state_cb (NMActiveConnection *master,
 
 	check_master_ready (self);
 
-	nm_log_dbg (LOGD_DEVICE, "(%p): master ActiveConnection [%p] state now '%s' (%d)",
-	            self, master, state_to_string (master_state), master_state);
+	_LOGD ("master ActiveConnection [%p] state now '%s' (%d)",
+	       master, state_to_string (master_state), master_state);
 
 	if (   master_state >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING
 	    && !priv->master_ready) {
@@ -573,8 +596,8 @@ nm_active_connection_set_master (NMActiveConnection *self, NMActiveConnection *m
 		g_return_if_fail (priv->device != nm_active_connection_get_device (master));
 	}
 
-	nm_log_dbg (LOGD_DEVICE, "(%p): master ActiveConnection is [%p] %s",
-	            self, master, nm_active_connection_get_id (master));
+	_LOGD ("master ActiveConnection is [%p] %s",
+	       master, nm_active_connection_get_id (master));
 
 	priv->master = g_object_ref (master);
 	g_signal_connect (priv->master,
