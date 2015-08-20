@@ -24,6 +24,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <termios.h>
+#include <sys/ioctl.h>
 
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -1068,6 +1070,7 @@ nmc_readline (const char *prompt_fmt, ...)
 {
 	va_list args;
 	char *prompt, *str;
+	int b;
 
 	va_start (args, prompt_fmt);
 	prompt = g_strdup_vprintf (prompt_fmt, args);
@@ -1079,6 +1082,13 @@ readline_mark:
 	str = readline (prompt);
 	/* We are outside readline -> Ctrl-C should quit nmcli */
 	nmc_set_in_readline (FALSE);
+
+	/* Check for an I/O error by attempting to peek into the input buffer.
+	 * Readline just inserts newlines when errors occur so we need to check ourselves. */
+	if (ioctl (0, FIONREAD, &b) == -1) {
+		g_free (str);
+		str = NULL;
+	}
 
 	/* Add string to the history */
 	if (str && *str)
