@@ -4043,6 +4043,8 @@ char *nm_utils_enum_to_str (GType type, int value)
 	g_type_class_unref (class);
 	return ret;
 }
+NM_BACKPORT_SYMBOL (libnm_1_0_6, char *, nm_utils_enum_to_str,
+                    (GType type, int value), (type, value));
 
 /**
  * nm_utils_enum_from_str:
@@ -4114,4 +4116,7 @@ gboolean nm_utils_enum_from_str (GType type, const char *str,
 	g_type_class_unref (class);
 	return ret;
 }
+NM_BACKPORT_SYMBOL (libnm_1_0_6, gboolean, nm_utils_enum_from_str,
+                    (GType type, const char *str, int *out_value, char **err_token),
+                    (type, str, out_value, err_token));
 
