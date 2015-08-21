@@ -141,7 +141,6 @@ char         *nm_vpn_editor_plugin_get_suggested_filename (NMVpnEditorPlugin *pl
 
 NM_AVAILABLE_IN_1_2
 NMVpnEditorPlugin *nm_vpn_editor_plugin_load_from_file  (const char *plugin_filename,
-                                                         const char *check_name,
                                                          const char *check_service,
                                                          int check_owner,
                                                          NMUtilsCheckFilePredicate check_file,

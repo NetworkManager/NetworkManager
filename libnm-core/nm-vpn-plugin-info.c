@@ -743,7 +743,6 @@ nm_vpn_plugin_info_load_editor_plugin (NMVpnPluginInfo *self, GError **error)
 
 	priv->editor_plugin_loaded = TRUE;
 	priv->editor_plugin = nm_vpn_editor_plugin_load_from_file (plugin_filename,
-	                                                           priv->name,
 	                                                           nm_vpn_plugin_info_get_service (self),
 	                                                           getuid (),
 	                                                           NULL,

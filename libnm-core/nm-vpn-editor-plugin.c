@@ -83,8 +83,6 @@ nm_vpn_editor_plugin_default_init (NMVpnEditorPluginInterface *iface)
  *  If the path is not an absolute path or no matching module
  *  can be found, lookup inside a directory defined at compile time.
  *  Due to this, @check_file might be called for two different paths.
- * @check_name: if not-null, check that the loaded plugin has
- *  the given name.
  * @check_service: if not-null, check that the loaded plugin advertises
  *  the given service.
  * @check_owner: if non-negative, check whether the file is owned
@@ -105,7 +103,6 @@ nm_vpn_editor_plugin_default_init (NMVpnEditorPluginInterface *iface)
  */
 NMVpnEditorPlugin *
 nm_vpn_editor_plugin_load_from_file  (const char *plugin_filename,
-                                      const char *check_name,
                                       const char *check_service,
                                       int check_owner,
                                       NMUtilsCheckFilePredicate check_file,
@@ -160,11 +157,11 @@ nm_vpn_editor_plugin_load_from_file  (const char *plugin_filename,
 			              NM_VPN_EDITOR_PLUGIN_SERVICE, &plug_service,
 			              NULL);
 
-			if (check_name && g_strcmp0 (plug_name, check_name) != 0) {
+			if (!plug_name || !*plug_name) {
 				g_set_error (error,
 				             NM_VPN_PLUGIN_ERROR,
 				             NM_VPN_PLUGIN_ERROR_FAILED,
-				             _("cannot load VPN plugin in '%s': invalid plugin name"),
+				             _("cannot load VPN plugin in '%s': missing plugin name"),
 				             g_module_name (module));
 			} else if (   check_service
 			           && g_strcmp0 (plug_service, check_service) != 0) {
