@@ -620,6 +620,26 @@ nm_vpn_plugin_info_get_program (NMVpnPluginInfo *self)
 }
 
 /**
+ * nm_vpn_plugin_info_supports_multiple:
+ * @self: plugin info instance
+ *
+ * Returns: %TRUE if the service supports multiple instances with different bus names, otherwise %FALSE
+ *
+ * Since: 1.2
+ */
+gboolean
+nm_vpn_plugin_info_supports_multiple (NMVpnPluginInfo *self)
+{
+	g_return_val_if_fail (NM_IS_VPN_PLUGIN_INFO (self), FALSE);
+
+	return g_key_file_get_boolean (NM_VPN_PLUGIN_INFO_GET_PRIVATE (self)->keyfile,
+	                               NM_VPN_PLUGIN_INFO_KF_GROUP_CONNECTION,
+	                               "supports-multiple-connections",
+	                               NULL);
+}
+
+
+/**
  * nm_vpn_plugin_info_lookup_property:
  * @self: plugin info instance
  * @group: group name
