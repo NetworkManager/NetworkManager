@@ -45,7 +45,6 @@ typedef struct {
 	char *owner_username;
 	char *dbus_owner;
 	NMSecretAgentCapabilities capabilities;
-	guint32 hash;
 
 	GSList *permissions;
 
@@ -188,14 +187,6 @@ nm_secret_agent_get_capabilities (NMSecretAgent *agent)
 	g_return_val_if_fail (NM_IS_SECRET_AGENT (agent), NM_SECRET_AGENT_CAPABILITY_NONE);
 
 	return NM_SECRET_AGENT_GET_PRIVATE (agent)->capabilities;
-}
-
-guint32
-nm_secret_agent_get_hash (NMSecretAgent *agent)
-{
-	g_return_val_if_fail (NM_IS_SECRET_AGENT (agent), 0);
-
-	return NM_SECRET_AGENT_GET_PRIVATE (agent)->hash;
 }
 
 NMAuthSubject *
@@ -565,7 +556,6 @@ nm_secret_agent_new (GDBusMethodInvocation *context,
 {
 	NMSecretAgent *self;
 	NMSecretAgentPrivate *priv;
-	char *hash_str;
 	struct passwd *pw;
 	GDBusProxy *proxy;
 	char *owner_username = NULL;
@@ -587,10 +577,6 @@ nm_secret_agent_new (GDBusMethodInvocation *context,
 	priv->dbus_owner = g_strdup (nm_auth_subject_get_unix_process_dbus_sender (subject));
 	priv->capabilities = capabilities;
 	priv->subject = g_object_ref (subject);
-
-	hash_str = g_strdup_printf ("%16lu%s", nm_auth_subject_get_unix_process_uid (subject), identifier);
-	priv->hash = g_str_hash (hash_str);
-	g_free (hash_str);
 
 	proxy = nm_bus_manager_new_proxy (nm_bus_manager_get (),
 	                                  context,

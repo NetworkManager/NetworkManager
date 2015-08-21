@@ -401,12 +401,6 @@ struct _Request {
 	/* Stores the sorted list of NMSecretAgents which will be asked for secrets */
 	GSList *pending;
 
-	/* Stores the list of NMSecretAgent hashes that we've already
-	 * asked for secrets, so that we don't ask the same agent twice
-	 * if it quits and re-registers during this secrets request.
-	 */
-	GSList *asked;
-
 	guint32 idle_id;
 
 	RequestAddAgentFunc add_agent_callback;
@@ -466,7 +460,6 @@ request_free (Request *req)
 	g_free (req->detail);
 	g_free (req->verb);
 	g_slist_free_full (req->pending, g_object_unref);
-	g_slist_free (req->asked);
 	memset (req, 0, sizeof (Request));
 	g_free (req);
 }
@@ -534,9 +527,6 @@ request_add_agent (Request *req, NMSecretAgent *agent)
 {
 	g_return_if_fail (req != NULL);
 	g_return_if_fail (agent != NULL);
-
-	if (g_slist_find (req->asked, GUINT_TO_POINTER (nm_secret_agent_get_hash (agent))))
-		return;
 
 	if (req->add_agent_callback && !req->add_agent_callback (req, agent))
 		return;

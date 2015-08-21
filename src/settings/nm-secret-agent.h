@@ -66,8 +66,6 @@ gulong      nm_secret_agent_get_pid        (NMSecretAgent *agent);
 
 NMSecretAgentCapabilities nm_secret_agent_get_capabilities (NMSecretAgent *agent);
 
-guint32     nm_secret_agent_get_hash       (NMSecretAgent *agent);
-
 NMAuthSubject *nm_secret_agent_get_subject (NMSecretAgent *agent);
 
 void        nm_secret_agent_add_permission (NMSecretAgent *agent,
