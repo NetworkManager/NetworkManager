@@ -151,16 +151,23 @@ nm_vpn_editor_plugin_load_from_file  (const char *plugin_filename,
 		g_assert (!editor_plugin || G_IS_OBJECT (editor_plugin));
 
 		if (editor_plugin) {
-			gs_free char *plug_service = NULL;
+			gs_free char *plug_name = NULL, *plug_service = NULL;
 
 			/* Validate plugin properties */
 
 			g_object_get (G_OBJECT (editor_plugin),
+			              NM_VPN_EDITOR_PLUGIN_NAME, &plug_name,
 			              NM_VPN_EDITOR_PLUGIN_SERVICE, &plug_service,
 			              NULL);
 
-			if (   check_service
-			    && g_strcmp0 (plug_service, check_service) != 0) {
+			if (check_name && g_strcmp0 (plug_name, check_name) != 0) {
+				g_set_error (error,
+				             NM_VPN_PLUGIN_ERROR,
+				             NM_VPN_PLUGIN_ERROR_FAILED,
+				             _("cannot load VPN plugin in '%s': invalid plugin name"),
+				             g_module_name (module));
+			} else if (   check_service
+			           && g_strcmp0 (plug_service, check_service) != 0) {
 				g_set_error (error,
 				             NM_VPN_PLUGIN_ERROR,
 				             NM_VPN_PLUGIN_ERROR_FAILED,
