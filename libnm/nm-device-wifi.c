@@ -355,7 +355,7 @@ nm_device_wifi_request_scan (NMDeviceWifi *device,
  * Returns: %TRUE on success, %FALSE on error, in which case @error will be
  * set.
  *
- * Since: 1.0.6
+ * Since: 1.2
  **/
 gboolean
 nm_device_wifi_request_scan_options (NMDeviceWifi *device,
@@ -467,7 +467,7 @@ nm_device_wifi_request_scan_async (NMDeviceWifi *device,
  * D-Bus call. Valid otions inside the dictionary are:
  * 'ssids' => array of SSIDs (saay)
  *
- * Since: 1.0.6
+ * Since: 1.2
  **/
 void
 nm_device_wifi_request_scan_options_async (NMDeviceWifi *device,

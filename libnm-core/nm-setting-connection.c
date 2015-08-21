@@ -616,7 +616,7 @@ nm_setting_connection_is_slave_type (NMSettingConnection *setting,
  * Returns: whether slaves of the connection should be activated together
  *          with the connection.
  *
- * Since: 1.0.4
+ * Since: 1.2
  **/
 NMSettingConnectionAutoconnectSlaves
 nm_setting_connection_get_autoconnect_slaves (NMSettingConnection *setting)
@@ -771,7 +771,7 @@ nm_setting_connection_get_gateway_ping_timeout (NMSettingConnection *setting)
  *
  * Returns: the #NMSettingConnection:metered property of the setting.
  *
- * Since: 1.0.6
+ * Since: 1.2
  **/
 NMMetered
 nm_setting_connection_get_metered (NMSettingConnection *setting)

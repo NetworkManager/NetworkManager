@@ -1969,7 +1969,7 @@ nm_device_get_mtu (NMDevice *device)
  *
  * Returns: the metered setting.
  *
- * Since: 1.0.6
+ * Since: 1.2
  **/
 NMMetered
 nm_device_get_metered (NMDevice *device)
