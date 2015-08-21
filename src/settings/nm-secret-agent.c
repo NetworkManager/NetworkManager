@@ -69,6 +69,10 @@ typedef struct {
 	GSList *permissions;
 
 	NMDBusSecretAgent *proxy;
+	NMBusManager *bus_mgr;
+	GDBusConnection *connection;
+	gboolean connection_is_private;
+	guint on_disconnected_id;
 
 	GHashTable *requests;
 } NMSecretAgentPrivate;
@@ -565,23 +569,67 @@ nm_secret_agent_delete_secrets (NMSecretAgent *self,
 /*************************************************************/
 
 static void
-name_owner_changed_cb (GObject *proxy,
-                       GParamSpec *pspec,
-                       gpointer user_data)
+_on_disconnected_cleanup (NMSecretAgentPrivate *priv)
+{
+	if (priv->on_disconnected_id) {
+		if (priv->connection_is_private) {
+			g_signal_handler_disconnect (priv->bus_mgr,
+			                             priv->on_disconnected_id);
+		} else {
+			g_dbus_connection_signal_unsubscribe (priv->connection,
+			                                      priv->on_disconnected_id);
+		}
+		priv->on_disconnected_id = 0;
+	}
+
+	g_clear_object (&priv->connection);
+	g_clear_object (&priv->proxy);
+	g_clear_object (&priv->bus_mgr);
+}
+
+static void
+_on_disconnected_private_connection (NMBusManager *mgr,
+                                     GDBusConnection *connection,
+                                     NMSecretAgent *self)
+{
+	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
+
+	if (priv->connection != connection)
+		return;
+
+	_LOGT ("private connection disconnected");
+
+	_on_disconnected_cleanup (priv);
+	g_signal_emit (self, signals[DISCONNECTED], 0);
+}
+
+static void
+_on_disconnected_name_owner_changed (GDBusConnection *connection,
+                                     const gchar      *sender_name,
+                                     const gchar      *object_path,
+                                     const gchar      *interface_name,
+                                     const gchar      *signal_name,
+                                     GVariant         *parameters,
+                                     gpointer          user_data)
 {
 	NMSecretAgent *self = NM_SECRET_AGENT (user_data);
 	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
-	char *owner;
+	const char *old_owner, *new_owner;
 
-	owner = g_dbus_proxy_get_name_owner (G_DBUS_PROXY (proxy));
-	_LOGT ("name-owner-changed: %s%s%s",
-	       NM_PRINT_FMT_QUOTED (owner, "owner = \"", owner, "\"", "disconnected"));
-	if (!owner) {
-		g_signal_handlers_disconnect_by_func (priv->proxy, name_owner_changed_cb, self);
-		g_clear_object (&priv->proxy);
+	g_variant_get (parameters,
+	               "(&s&s&s)",
+	               NULL,
+	               &old_owner,
+	               &new_owner);
+
+	_LOGT ("name-owner-changed: %s%s%s => %s%s%s",
+	       NM_PRINT_FMT_QUOTE_STRING (old_owner),
+	       NM_PRINT_FMT_QUOTE_STRING (new_owner));
+
+	if (!*new_owner) {
+		_on_disconnected_cleanup (priv);
 		g_signal_emit (self, signals[DISCONNECTED], 0);
-	} else
-		g_free (owner);
+	}
 }
 
 /*************************************************************/
@@ -601,11 +649,16 @@ nm_secret_agent_new (GDBusMethodInvocation *context,
 	char *description = NULL;
 	char buf_subject[64];
 	gulong uid;
+	GDBusConnection *connection;
 
 	g_return_val_if_fail (context != NULL, NULL);
 	g_return_val_if_fail (NM_IS_AUTH_SUBJECT (subject), NULL);
 	g_return_val_if_fail (nm_auth_subject_is_unix_process (subject), NULL);
 	g_return_val_if_fail (identifier != NULL, NULL);
+
+	connection = g_dbus_method_invocation_get_connection (context);
+
+	g_return_val_if_fail (G_IS_DBUS_CONNECTION (connection), NULL);
 
 	uid = nm_auth_subject_get_unix_process_uid (subject);
 
@@ -619,10 +672,16 @@ nm_secret_agent_new (GDBusMethodInvocation *context,
 
 	priv = NM_SECRET_AGENT_GET_PRIVATE (self);
 
-	_LOGT ("constructed: %s, owner=%s%s%s (%s)",
+	priv->bus_mgr = g_object_ref (nm_bus_manager_get ());
+	priv->connection = g_object_ref (connection);
+	priv->connection_is_private = nm_bus_manager_connection_is_private (priv->bus_mgr, connection);
+
+	_LOGT ("constructed: %s, owner=%s%s%s (%s), private-connection=%d, unique-name=%s%s%s",
 	       (description = _create_description (dbus_owner, identifier, uid)),
 	       NM_PRINT_FMT_QUOTE_STRING (owner_username),
-	       nm_auth_subject_to_string (subject, buf_subject, sizeof (buf_subject)));
+	       nm_auth_subject_to_string (subject, buf_subject, sizeof (buf_subject)),
+	       priv->connection_is_private,
+	       NM_PRINT_FMT_QUOTE_STRING (g_dbus_connection_get_unique_name (priv->connection)));
 
 	priv->identifier = g_strdup (identifier);
 	priv->owner_username = owner_username;
@@ -631,17 +690,34 @@ nm_secret_agent_new (GDBusMethodInvocation *context,
 	priv->capabilities = capabilities;
 	priv->subject = g_object_ref (subject);
 
-	proxy = nm_bus_manager_new_proxy (nm_bus_manager_get (),
-	                                  context,
+	proxy = nm_bus_manager_new_proxy (priv->bus_mgr,
+	                                  priv->connection,
 	                                  NMDBUS_TYPE_SECRET_AGENT_PROXY,
 	                                  priv->dbus_owner,
 	                                  NM_DBUS_PATH_SECRET_AGENT,
 	                                  NM_DBUS_INTERFACE_SECRET_AGENT);
 	g_assert (proxy);
-	g_signal_connect (proxy, "notify::g-name-owner",
-	                  G_CALLBACK (name_owner_changed_cb),
-	                  self);
 	priv->proxy = NMDBUS_SECRET_AGENT (proxy);
+
+	/* we cannot subscribe to notify::g-name-owner because that doesn't work
+	 * for unique names and it doesn't work for private connections. */
+	if (priv->connection_is_private) {
+		priv->on_disconnected_id = g_signal_connect (priv->bus_mgr,
+		                                             NM_BUS_MANAGER_PRIVATE_CONNECTION_DISCONNECTED,
+		                                             G_CALLBACK (_on_disconnected_private_connection),
+		                                             self);
+	} else {
+		priv->on_disconnected_id = g_dbus_connection_signal_subscribe (priv->connection,
+		                                                               "org.freedesktop.DBus",  /* name */
+		                                                               "org.freedesktop.DBus",  /* interface */
+		                                                               "NameOwnerChanged",      /* signal name */
+		                                                               "/org/freedesktop/DBus", /* path */
+		                                                               priv->dbus_owner,        /* arg0 */
+		                                                               G_DBUS_SIGNAL_FLAGS_NONE,
+		                                                               _on_disconnected_name_owner_changed,
+		                                                               self,
+		                                                               NULL);
+	}
 
 	return self;
 }
@@ -668,7 +744,8 @@ dispose (GObject *object)
 		do_cancel_secrets (self, r, TRUE);
 	}
 
-	g_clear_object (&priv->proxy);
+	_on_disconnected_cleanup (priv);
+
 	g_clear_object (&priv->subject);
 
 	G_OBJECT_CLASS (nm_secret_agent_parent_class)->dispose (object);
