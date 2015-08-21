@@ -575,6 +575,8 @@ nm_setting_wired_get_wake_on_lan (NMSettingWired *setting)
 
 	return NM_SETTING_WIRED_GET_PRIVATE (setting)->wol;
 }
+NM_BACKPORT_SYMBOL (libnm_1_0_6, NMSettingWiredWakeOnLan, nm_setting_wired_get_wake_on_lan,
+                    (NMSettingWired *setting), (setting));
 
 /**
  * nm_setting_wired_get_wake_on_lan_password:
@@ -594,6 +596,10 @@ nm_setting_wired_get_wake_on_lan_password (NMSettingWired *setting)
 
 	return NM_SETTING_WIRED_GET_PRIVATE (setting)->wol_password;
 }
+NM_BACKPORT_SYMBOL (libnm_1_0_6, const char *, nm_setting_wired_get_wake_on_lan_password,
+                    (NMSettingWired *setting), (setting));
+
+NM_BACKPORT_SYMBOL (libnm_1_0_6, GType, nm_setting_wired_wake_on_lan_get_type, (void), ());
 
 static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
