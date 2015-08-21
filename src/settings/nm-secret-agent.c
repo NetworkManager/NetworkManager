@@ -568,6 +568,7 @@ nm_secret_agent_new (GDBusMethodInvocation *context,
 	char *hash_str;
 	struct passwd *pw;
 	GDBusProxy *proxy;
+	char *owner_username = NULL;
 
 	g_return_val_if_fail (context != NULL, NULL);
 	g_return_val_if_fail (NM_IS_AUTH_SUBJECT (subject), NULL);
@@ -575,14 +576,14 @@ nm_secret_agent_new (GDBusMethodInvocation *context,
 	g_return_val_if_fail (identifier != NULL, NULL);
 
 	pw = getpwuid (nm_auth_subject_get_unix_process_uid (subject));
-	g_return_val_if_fail (pw != NULL, NULL);
-	g_return_val_if_fail (pw->pw_name[0] != '\0', NULL);
+	if (pw && pw->pw_name && pw->pw_name[0])
+		owner_username = g_strdup (pw->pw_name);
 
 	self = (NMSecretAgent *) g_object_new (NM_TYPE_SECRET_AGENT, NULL);
 	priv = NM_SECRET_AGENT_GET_PRIVATE (self);
 
 	priv->identifier = g_strdup (identifier);
-	priv->owner_username = g_strdup (pw->pw_name);
+	priv->owner_username = owner_username;
 	priv->dbus_owner = g_strdup (nm_auth_subject_get_unix_process_dbus_sender (subject));
 	priv->capabilities = capabilities;
 	priv->subject = g_object_ref (subject);
