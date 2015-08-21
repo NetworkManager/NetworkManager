@@ -144,6 +144,10 @@ guint32 nm_utils_wifi_freq_to_channel (guint32 freq);
 guint32 nm_utils_wifi_channel_to_freq (guint32 channel, const char *band);
 guint32 nm_utils_wifi_find_next_channel (guint32 channel, int direction, char *band);
 gboolean nm_utils_wifi_is_channel_valid (guint32 channel, const char *band);
+NM_AVAILABLE_IN_1_2
+const guint *nm_utils_wifi_2ghz_freqs (void);
+NM_AVAILABLE_IN_1_2
+const guint *nm_utils_wifi_5ghz_freqs (void);
 
 const char *nm_utils_wifi_strength_bars (guint8 strength);
 

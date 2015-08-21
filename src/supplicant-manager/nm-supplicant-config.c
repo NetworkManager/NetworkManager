@@ -306,12 +306,32 @@ nm_supplicant_config_get_blobs (NMSupplicantConfig * self)
 	return NM_SUPPLICANT_CONFIG_GET_PRIVATE (self)->blobs;
 }
 
-#define TWO_GHZ_FREQS  "2412,2417,2422,2427,2432,2437,2442,2447,2452,2457,2462,2467,2472,2484"
-#define FIVE_GHZ_FREQS "4915,4920,4925,4935,4940,4945,4960,4980,5035,5040,5045,5055,5060,5080," \
-                         "5170,5180,5190,5200,5210,5220,5230,5240,5260,5280,5300,5320,5500," \
-                         "5520,5540,5560,5580,5600,5620,5640,5660,5680,5700,5745,5765,5785," \
-                         "5805,5825"
+static const char *
+wifi_freqs_to_string (gboolean bg_band)
+{
+	static const char *str_2ghz = NULL;
+	static const char *str_5ghz = NULL;
+	const char *str;
 
+	str = bg_band ? str_2ghz : str_5ghz;
+
+	if (G_UNLIKELY (str == NULL)) {
+		GString *tmp;
+		const guint *freqs;
+		int i;
+
+		freqs = bg_band ? nm_utils_wifi_2ghz_freqs () : nm_utils_wifi_5ghz_freqs ();
+		tmp = g_string_sized_new (bg_band ? 70 : 225);
+		for (i = 0; freqs[i]; i++)
+			g_string_append_printf (tmp, i == 0 ? "%d" : " %d", freqs[i]);
+		str = g_string_free (tmp, FALSE);
+		if (bg_band)
+			str_2ghz = str;
+		else
+			str_5ghz = str;
+	}
+	return str;
+}
 
 gboolean
 nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
@@ -321,6 +341,7 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 	NMSupplicantConfigPrivate *priv;
 	gboolean is_adhoc, is_ap;
 	const char *mode, *band;
+	guint32 channel;
 	GBytes *ssid;
 	const char *bssid;
 
@@ -391,22 +412,35 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 	}
 
 	band = nm_setting_wireless_get_band (setting);
+	channel = nm_setting_wireless_get_channel (setting);
 	if (band) {
-		const char *freqs = NULL;
+		if (channel) {
+			guint32 freq;
+			char *str_freq;
 
-		if (!strcmp (band, "a"))
-			freqs = FIVE_GHZ_FREQS;
-		else if (!strcmp (band, "bg"))
-			freqs = TWO_GHZ_FREQS;
+			freq = nm_utils_wifi_channel_to_freq (channel, band);
+			str_freq = g_strdup_printf ("%u", freq);
+			if (!nm_supplicant_config_add_option (self, "freq_list", str_freq, -1, FALSE)) {
+				g_free (str_freq);
+				nm_log_warn (LOGD_SUPPLICANT, "Error adding frequency list to supplicant config.");
+				return FALSE;
+			}
+			g_free (str_freq);
+		} else {
+			const char *freqs = NULL;
 
-		if (freqs && !nm_supplicant_config_add_option (self, "freq_list", freqs, strlen (freqs), FALSE)) {
-			nm_log_warn (LOGD_SUPPLICANT, "Error adding frequency list/band to supplicant config.");
-			return FALSE;
+			if (!strcmp (band, "a"))
+				freqs = wifi_freqs_to_string (FALSE);
+			else if (!strcmp (band, "bg"))
+				freqs = wifi_freqs_to_string (TRUE);
+
+			if (freqs && !nm_supplicant_config_add_option (self, "freq_list", freqs, strlen (freqs), FALSE)) {
+				nm_log_warn (LOGD_SUPPLICANT, "Error adding frequency list/band to supplicant config.");
+				return FALSE;
+			}
 		}
 	}
 
-	// FIXME: channel config item
-	
 	return TRUE;
 }
 

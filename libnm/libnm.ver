@@ -876,6 +876,8 @@ global:
 	nm_utils_bond_mode_string_to_int;
 	nm_utils_enum_from_str;
 	nm_utils_enum_to_str;
+	nm_utils_wifi_2ghz_freqs;
+	nm_utils_wifi_5ghz_freqs;
 	nm_vpn_editor_plugin_load_from_file;
 	nm_vpn_plugin_info_get_filename;
 	nm_vpn_plugin_info_get_editor_plugin;
