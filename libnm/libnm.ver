@@ -846,6 +846,8 @@ libnm_1_0_6 {
 	#nm_device_wifi_request_scan_options_async@libnm_1_0_6;
 	#nm_metered_get_type@libnm_1_0_6;
 	#nm_setting_connection_get_metered@libnm_1_0_6;
+	#nm_utils_wifi_2ghz_freqs@libnm_1_0_6;
+	#nm_utils_wifi_5ghz_freqs@libnm_1_0_6;
 } libnm_1_0_4;
 
 libnm_1_2_0 {

@@ -2880,6 +2880,7 @@ nm_utils_wifi_2ghz_freqs (void)
 {
 	return _wifi_freqs (TRUE);
 }
+NM_BACKPORT_SYMBOL (libnm_1_0_6, const guint *, nm_utils_wifi_2ghz_freqs, (void), ());
 
 /**
  * nm_utils_wifi_5ghz_freqs:
@@ -2895,6 +2896,7 @@ nm_utils_wifi_5ghz_freqs (void)
 {
 	return _wifi_freqs (FALSE);
 }
+NM_BACKPORT_SYMBOL (libnm_1_0_6, const guint *, nm_utils_wifi_5ghz_freqs, (void), ());
 
 /**
  * nm_utils_wifi_strength_bars:
