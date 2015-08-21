@@ -2873,7 +2873,7 @@ _wifi_freqs (gboolean bg_band)
  *
  * Returns: zero-terminated array of frequencies numbers (in MHz)
  *
- * Since: 1.2
+ * Since: 1.0.6
  **/
 const guint *
 nm_utils_wifi_2ghz_freqs (void)
@@ -2889,7 +2889,7 @@ NM_BACKPORT_SYMBOL (libnm_1_0_6, const guint *, nm_utils_wifi_2ghz_freqs, (void)
  *
  * Returns: zero-terminated array of frequencies numbers (in MHz)
  *
- * Since: 1.2
+ * Since: 1.0.6
  **/
 const guint *
 nm_utils_wifi_5ghz_freqs (void)

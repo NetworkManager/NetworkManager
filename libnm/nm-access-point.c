@@ -232,7 +232,7 @@ nm_access_point_get_strength (NMAccessPoint *ap)
  *
  * Returns: the last seen time in seconds
  *
- * Since: 1.2
+ * Since: 1.0.6
  **/
 gint
 nm_access_point_get_last_seen (NMAccessPoint *ap)
