@@ -470,8 +470,6 @@ name_owner_changed_cb (GObject *proxy,
 		g_signal_handlers_disconnect_by_func (priv->proxy, name_owner_changed_cb, self);
 		g_clear_object (&priv->proxy);
 		g_signal_emit (self, signals[DISCONNECTED], 0);
-
-		g_clear_pointer (&priv->dbus_owner, g_free);
 	} else
 		g_free (owner);
 }
@@ -555,6 +553,7 @@ finalize (GObject *object)
 	g_free (priv->description);
 	g_free (priv->identifier);
 	g_free (priv->owner_username);
+	g_free (priv->dbus_owner);
 
 	g_slist_free_full (priv->permissions, g_free);
 	g_hash_table_destroy (priv->requests);
