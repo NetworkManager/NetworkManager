@@ -189,6 +189,12 @@ gboolean nm_utils_ipaddr_valid (int family, const char *ip);
 
 gboolean nm_utils_check_virtual_device_compatibility (GType virtual_type, GType other_type);
 
+NM_AVAILABLE_IN_1_0_6
+char *nm_utils_enum_to_str (GType type, int value);
+
+NM_AVAILABLE_IN_1_0_6
+gboolean nm_utils_enum_from_str (GType type, const char *str, int *out_value, char **err_token);
+
 G_END_DECLS
 
 #endif /* __NM_UTILS_H__ */
