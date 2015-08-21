@@ -1289,7 +1289,7 @@ nm_client_add_connection_async (NMClient *client,
 	}
 
 	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
-	                                    nm_client_deactivate_connection_async);
+	                                    nm_client_add_connection_async);
 	nm_remote_settings_add_connection_async (NM_CLIENT_GET_PRIVATE (client)->settings,
 	                                         connection, save_to_disk,
 	                                         cancellable, add_connection_cb, simple);
