@@ -76,12 +76,12 @@ AS_IF([test -z "$runstatedir"], runstatedir="$localstatedir/run")
 AC_SUBST(runstatedir)
 
 # NetworkManager paths
-AC_SUBST(nmbinary, "$sbindir/$PACKAGE", [NetworkManager binary executable])
-AC_SUBST(nmconfdir, "$sysconfdir/$PACKAGE", [NetworkManager configuration directory])
-AC_SUBST(nmlibdir, "$prefix/lib/$PACKAGE", [NetworkManager library directory])
-AC_SUBST(nmdatadir, "$datadir/$PACKAGE", [NetworkManager shared data directory])
-AC_SUBST(nmstatedir, "$localstatedir/lib/$PACKAGE", [NetworkManager persistent state directory])
-AC_SUBST(nmrundir, "$runstatedir/$PACKAGE", [NetworkManager runtime state directory])
+AC_SUBST(nmbinary, '${sbindir}'/$PACKAGE, [NetworkManager binary executable])
+AC_SUBST(nmconfdir, '${sysconfdir}'/$PACKAGE, [NetworkManager configuration directory])
+AC_SUBST(nmlibdir, '${prefix}'/lib/$PACKAGE, [NetworkManager library directory])
+AC_SUBST(nmdatadir, '${datadir}'/$PACKAGE, [NetworkManager shared data directory])
+AC_SUBST(nmstatedir, '${localstatedir}'/lib/$PACKAGE, [NetworkManager persistent state directory])
+AC_SUBST(nmrundir, '${runstatedir}'/$PACKAGE, [NetworkManager runtime state directory])
 
 # Alternative configuration plugins
 AC_ARG_ENABLE(config-plugin-ibft, AS_HELP_STRING([--enable-config-plugin-ibft], [enable ibft configuration plugin]))
