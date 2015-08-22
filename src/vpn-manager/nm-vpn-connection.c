@@ -727,7 +727,7 @@ nm_vpn_connection_new (NMSettingsConnection *settings_connection,
 	                                         NULL);
 }
 
-static const char *
+const char *
 nm_vpn_connection_get_service (NMVpnConnection *self)
 {
 	NMSettingVpn *s_vpn;
