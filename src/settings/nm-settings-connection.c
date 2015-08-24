@@ -181,7 +181,7 @@ for_each_secret (NMConnection *self,
 		}
 
 		g_variant_builder_init (&setting_builder, NM_VARIANT_TYPE_SETTING);
-		while (g_variant_iter_next (setting_iter, "{sv}", &secret_name, &val)) {
+		while (g_variant_iter_next (setting_iter, "{&sv}", &secret_name, &val)) {
 			NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
 
 			/* VPN secrets need slightly different treatment here since the
