@@ -63,14 +63,16 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 /*************************************************************/
 
-typedef struct {
+struct _NMSecretAgentCallId {
 	NMSecretAgent *agent;
 	GCancellable *cancellable;
 	char *path;
 	char *setting_name;
 	NMSecretAgentCallback callback;
 	gpointer callback_data;
-} Request;
+};
+
+typedef struct _NMSecretAgentCallId Request;
 
 static Request *
 request_new (NMSecretAgent *agent,
@@ -279,7 +281,7 @@ get_callback (GObject *proxy,
 	g_hash_table_remove (priv->requests, r);
 }
 
-gconstpointer
+NMSecretAgentCallId
 nm_secret_agent_get_secrets (NMSecretAgent *self,
                              NMConnection *connection,
                              const char *setting_name,
@@ -337,7 +339,7 @@ cancel_done (GObject *proxy, GAsyncResult *result, gpointer user_data)
 }
 
 void
-nm_secret_agent_cancel_secrets (NMSecretAgent *self, gconstpointer call)
+nm_secret_agent_cancel_secrets (NMSecretAgent *self, NMSecretAgentCallId call)
 {
 	NMSecretAgentPrivate *priv;
 	Request *r = (gpointer) call;
@@ -378,7 +380,7 @@ agent_save_cb (GObject *proxy,
 	g_hash_table_remove (priv->requests, r);
 }
 
-gconstpointer
+NMSecretAgentCallId
 nm_secret_agent_save_secrets (NMSecretAgent *self,
                               NMConnection *connection,
                               NMSecretAgentCallback callback,
@@ -426,7 +428,7 @@ agent_delete_cb (GObject *proxy,
 	g_hash_table_remove (priv->requests, r);
 }
 
-gconstpointer
+NMSecretAgentCallId
 nm_secret_agent_delete_secrets (NMSecretAgent *self,
                                 NMConnection *connection,
                                 NMSecretAgentCallback callback,
