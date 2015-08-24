@@ -29,6 +29,11 @@
 local lgi = require 'lgi'
 local NM = lgi.NM
 
+function is_empty(t)
+  local next = next
+  if next(t) then return false else return true end
+end
+
 function ssid_to_utf8(ap)
   local ssid = ap:get_ssid()
   if not ssid then return "" end
@@ -44,13 +49,51 @@ function print_device_info(device)
   print(string.rep("=", info:len()))
 end
 
+function flags_to_string(flags)
+  local str = ""
+  for flag, _ in pairs(flags) do
+      str = str .. " " .. flag
+  end
+  if str == "" then str = "NONE" end
+  return (str:gsub( "^%s", ""))
+end
+
+function flags_to_security(flags, wpa_flags, rsn_flags)
+  local str = ""
+  if flags["PRIVACY"] and is_empty(wpa_flags) and is_empty(rsn_flags) then
+    str = str .. " WEP"
+  end
+  if not is_empty(wpa_flags) then
+    str = str .. " WPA1"
+  end
+  if not is_empty(rsn_flags) then
+    str = str .. " WPA2"
+  end
+  if wpa_flags["KEY_MGMT_802_1X"] or rsn_flags["KEY_MGMT_802_1X"] then
+    str = str .. " 802.1X"
+  end
+  return (str:gsub( "^%s", ""))
+end
+
 function print_ap_info(ap)
   local strength = ap:get_strength()
   local frequency = ap:get_frequency()
+  local flags = ap:get_flags()
+  local wpa_flags = ap:get_wpa_flags()
+  local rsn_flags = ap:get_rsn_flags()
+  -- remove extra NONE from the flags tables
+  flags["NONE"] = nil
+  wpa_flags["NONE"] = nil
+  rsn_flags["NONE"] = nil
   print("SSID:      ", ssid_to_utf8(ap))
   print("BSSID:     ", ap:get_bssid())
   print("Frequency: ", frequency)
   print("Channel:   ", NM.utils_wifi_freq_to_channel(frequency))
+  print("Mode:      ", ap:get_mode())
+  print("Flags:     ", flags_to_string(flags))
+  print("WPA flags: ", flags_to_string(wpa_flags))
+  print("RSN flags: ", flags_to_string(rsn_flags))
+  print("Security:  ", flags_to_security(flags, wpa_flags, rsn_flags))
   print(string.format("Strength:  %s %s%%", NM.utils_wifi_strength_bars(strength), strength))
   print("")
 end
