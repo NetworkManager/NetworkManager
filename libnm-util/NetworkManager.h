@@ -185,7 +185,7 @@ typedef enum {
  *
  * (Corresponds to the NM_DEVICE_CAP type in nm-device-wifi.xml.)
  **/
-typedef enum {
+typedef enum { /*< flags >*/
 	NM_DEVICE_CAP_NONE           = 0x00000000,
 	NM_DEVICE_CAP_NM_SUPPORTED   = 0x00000001,
 	NM_DEVICE_CAP_CARRIER_DETECT = 0x00000002,
@@ -212,7 +212,7 @@ typedef enum {
  *
  * (Corresponds to the NM_802_11_DEVICE_CAP type in nm-device-wifi.xml.)
  **/
-typedef enum {
+typedef enum { /*< flags >*/
 	NM_WIFI_DEVICE_CAP_NONE          = 0x00000000,
 	NM_WIFI_DEVICE_CAP_CIPHER_WEP40  = 0x00000001,
 	NM_WIFI_DEVICE_CAP_CIPHER_WEP104 = 0x00000002,
@@ -238,7 +238,7 @@ typedef enum {
  *
  * (Corresponds to the NM_802_11_AP_FLAGS type in nm-access-point.xml.)
  **/
-typedef enum {
+typedef enum { /*< underscore_name=nm_802_11_ap_flags, flags >*/
 	NM_802_11_AP_FLAGS_NONE    = 0x00000000,
 	NM_802_11_AP_FLAGS_PRIVACY = 0x00000001
 } NM80211ApFlags;
@@ -270,7 +270,7 @@ typedef enum {
  *
  * (Corresponds to the NM_802_11_AP_SEC type in nm-access-point.xml.)
  **/
-typedef enum {
+typedef enum { /*< underscore_name=nm_802_11_ap_security_flags, flags >*/
 	NM_802_11_AP_SEC_NONE            = 0x00000000,
 	NM_802_11_AP_SEC_PAIR_WEP40      = 0x00000001,
 	NM_802_11_AP_SEC_PAIR_WEP104     = 0x00000002,
@@ -301,7 +301,7 @@ typedef enum {
  *
  * (Corresponds to the NM_802_11_MODE type in generic-types.xml.)
  **/
-typedef enum {
+typedef enum { /*< underscore_name=nm_802_11_mode >*/
 	NM_802_11_MODE_UNKNOWN = 0,
 	NM_802_11_MODE_ADHOC,
 	NM_802_11_MODE_INFRA,
@@ -319,7 +319,7 @@ typedef enum {
  *
  * (Corresponds to the NM_BT_CAPABILITY type in nm-device-bt.xml.)
  **/
-typedef enum {
+typedef enum { /*< flags >*/
 	NM_BT_CAPABILITY_NONE = 0x00000000,
 	NM_BT_CAPABILITY_DUN  = 0x00000001,
 	NM_BT_CAPABILITY_NAP  = 0x00000002,
@@ -343,7 +343,7 @@ typedef enum {
  *
  * (Corresponds to the NM_DEVICE_MODEM_CAPABILITY type in nm-device-modem.xml.)
  **/
-typedef enum {
+typedef enum { /*< flags >*/
 	NM_DEVICE_MODEM_CAPABILITY_NONE      = 0x00000000,
 	NM_DEVICE_MODEM_CAPABILITY_POTS      = 0x00000001,
 	NM_DEVICE_MODEM_CAPABILITY_CDMA_EVDO = 0x00000002,
