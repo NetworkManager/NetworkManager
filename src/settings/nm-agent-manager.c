@@ -500,6 +500,9 @@ request_free (Request *req)
 
 	g_object_unref (req->self);
 
+	if (req->current)
+		g_object_unref (req->current);
+
 	memset (req, 0, sizeof (Request));
 	g_free (req);
 }
@@ -656,15 +659,19 @@ request_remove_agent (Request *req, NMSecretAgent *agent, GSList **pending_reqs)
 
 	self = req->self;
 
-	req->pending = g_slist_remove (req->pending, agent);
-
 	if (agent == req->current) {
+		nm_assert (!g_slist_find (req->pending, agent));
+
 		_LOGD (agent, "current agent removed from secrets request "LOG_REQ_FMT,
 		       LOG_REQ_ARG (req));
 		*pending_reqs = g_slist_prepend (*pending_reqs, req);
 	} else {
+		req->pending = g_slist_remove (req->pending, agent);
+
 		_LOGD (agent, "agent removed from secrets request "LOG_REQ_FMT,
 		       LOG_REQ_ARG (req));
+
+		g_object_unref (agent);
 	}
 }
 
