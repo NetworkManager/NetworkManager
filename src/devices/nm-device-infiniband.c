@@ -313,7 +313,7 @@ new_link (NMDeviceFactory *factory, NMPlatformLink *plink, gboolean *out_ignore,
 	                                  NM_DEVICE_PLATFORM_DEVICE, plink,
 	                                  NM_DEVICE_TYPE_DESC, "InfiniBand",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_INFINIBAND,
-	                                  NM_DEVICE_INFINIBAND_IS_PARTITION, (plink->parent > 0),
+	                                  NM_DEVICE_INFINIBAND_IS_PARTITION, (plink->parent > 0 || plink->parent == NM_PLATFORM_LINK_OTHER_NETNS),
 	                                  NULL);
 }
 
