@@ -269,6 +269,11 @@ _nm_dbus_proxy_call_sync (GDBusProxy          *proxy,
  *
  * Checks if @error is set and corresponds to the D-Bus error @dbus_error_name.
  *
+ * This should only be used for "foreign" D-Bus errors (eg, errors
+ * from BlueZ or wpa_supplicant). All NetworkManager D-Bus errors
+ * should be properly mapped by gdbus to one of the domains/codes in
+ * nm-errors.h.
+ *
  * Returns: %TRUE or %FALSE
  */
 gboolean
