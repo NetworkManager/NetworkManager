@@ -138,6 +138,7 @@ typedef struct {
 	guint timestamp_update_id;
 
 	gboolean startup;
+	gboolean devices_inited;
 } NMManagerPrivate;
 
 #define NM_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_MANAGER, NMManagerPrivate))
@@ -685,6 +686,9 @@ check_if_startup_complete (NMManager *self)
 	GSList *iter;
 
 	if (!priv->startup)
+		return;
+
+	if (!priv->devices_inited)
 		return;
 
 	if (!nm_settings_get_startup_complete (priv->settings)) {
@@ -4200,6 +4204,8 @@ nm_manager_start (NMManager *self, GError **error)
 	 * connection-added signals thus devices have to be created manually.
 	 */
 	system_create_virtual_devices (self);
+
+	priv->devices_inited = TRUE;
 
 	check_if_startup_complete (self);
 
