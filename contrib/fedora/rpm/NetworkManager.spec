@@ -459,6 +459,7 @@ mkdir -p $RPM_BUILD_ROOT%{nmlibdir}/VPN
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/dispatcher.d
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/dispatcher.d/pre-up.d
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/dispatcher.d/pre-down.d
+mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/dispatcher.d/no-wait.d
 %{__cp} examples/dispatcher/10-ifcfg-rh-routes.sh $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/dispatcher.d/
 %{__ln_s} ../10-ifcfg-rh-routes.sh $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/dispatcher.d/pre-up.d/
 
@@ -527,6 +528,7 @@ fi
 %{_sysconfdir}/%{name}/dispatcher.d/10-ifcfg-rh-routes.sh
 %dir %{_sysconfdir}/%{name}/dispatcher.d/pre-down.d
 %dir %{_sysconfdir}/%{name}/dispatcher.d/pre-up.d
+%dir %{_sysconfdir}/%{name}/dispatcher.d/no-wait.d
 %{_sysconfdir}/%{name}/dispatcher.d/pre-up.d/10-ifcfg-rh-routes.sh
 %dir %{_sysconfdir}/%{name}/dnsmasq.d
 %dir %{_sysconfdir}/%{name}/VPN

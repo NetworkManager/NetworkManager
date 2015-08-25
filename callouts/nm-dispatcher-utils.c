@@ -331,7 +331,8 @@ nm_dispatcher_utils_construct_envp (const char *action,
                                     const char *vpn_ip_iface,
                                     GVariant *vpn_ip4_props,
                                     GVariant *vpn_ip6_props,
-                                    char **out_iface)
+                                    char **out_iface,
+                                    const char **out_error_message)
 {
 	const char *iface = NULL, *ip_iface = NULL;
 	const char *uuid = NULL, *id = NULL, *path = NULL;
@@ -343,6 +344,10 @@ nm_dispatcher_utils_construct_envp (const char *action,
 	GSList *items = NULL, *iter;
 	guint i;
 	GVariant *con_setting;
+	const char *error_message_backup;
+
+	if (!out_error_message)
+		out_error_message = &error_message_backup;
 
 	g_return_val_if_fail (action != NULL, NULL);
 	g_return_val_if_fail (out_iface != NULL, NULL);
@@ -354,7 +359,7 @@ nm_dispatcher_utils_construct_envp (const char *action,
 
 	/* Connection properties */
 	if (!g_variant_lookup (connection_props, NMD_CONNECTION_PROPS_PATH, "&o", &path)) {
-		g_warning ("Missing or invalid required value " NMD_CONNECTION_PROPS_PATH "!");
+		*out_error_message = "Missing or invalid required value " NMD_CONNECTION_PROPS_PATH "!";
 		return NULL;
 	}
 	items = g_slist_prepend (items, g_strdup_printf ("CONNECTION_DBUS_PATH=%s", path));
@@ -374,7 +379,7 @@ nm_dispatcher_utils_construct_envp (const char *action,
 
 	/* interface name */
 	if (!g_variant_lookup (device_props, NMD_DEVICE_PROPS_INTERFACE, "&s", &iface)) {
-		g_warning ("Missing or invalid required value " NMD_DEVICE_PROPS_INTERFACE "!");
+		*out_error_message = "Missing or invalid required value " NMD_DEVICE_PROPS_INTERFACE "!";
 		return NULL;
 	}
 	if (!*iface)
@@ -384,7 +389,7 @@ nm_dispatcher_utils_construct_envp (const char *action,
 	value = g_variant_lookup_value (device_props, NMD_DEVICE_PROPS_IP_INTERFACE, NULL);
 	if (value) {
 		if (!g_variant_is_of_type (value, G_VARIANT_TYPE_STRING)) {
-			g_warning ("Invalid value " NMD_DEVICE_PROPS_IP_INTERFACE "!");
+			*out_error_message = "Invalid value " NMD_DEVICE_PROPS_IP_INTERFACE "!";
 			return NULL;
 		}
 		g_variant_unref (value);
@@ -393,14 +398,14 @@ nm_dispatcher_utils_construct_envp (const char *action,
 
 	/* Device type */
 	if (!g_variant_lookup (device_props, NMD_DEVICE_PROPS_TYPE, "u", NULL)) {
-		g_warning ("Missing or invalid required value " NMD_DEVICE_PROPS_TYPE "!");
+		*out_error_message = "Missing or invalid required value " NMD_DEVICE_PROPS_TYPE "!";
 		return NULL;
 	}
 
 	/* Device state */
 	value = g_variant_lookup_value (device_props, NMD_DEVICE_PROPS_STATE, G_VARIANT_TYPE_UINT32);
 	if (!value) {
-		g_warning ("Missing or invalid required value " NMD_DEVICE_PROPS_STATE "!");
+		*out_error_message = "Missing or invalid required value " NMD_DEVICE_PROPS_STATE "!";
 		return NULL;
 	}
 	dev_state = g_variant_get_uint32 (value);
@@ -408,25 +413,25 @@ nm_dispatcher_utils_construct_envp (const char *action,
 
 	/* device itself */
 	if (!g_variant_lookup (device_props, NMD_DEVICE_PROPS_PATH, "o", NULL)) {
-		g_warning ("Missing or invalid required value " NMD_DEVICE_PROPS_PATH "!");
+		*out_error_message = "Missing or invalid required value " NMD_DEVICE_PROPS_PATH "!";
 		return NULL;
 	}
 
 	/* UUID and ID */
 	con_setting = g_variant_lookup_value (connection_dict, NM_SETTING_CONNECTION_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
 	if (!con_setting) {
-		g_warning ("Failed to read connection setting");
+		*out_error_message = "Failed to read connection setting";
 		return NULL;
 	}
 
 	if (!g_variant_lookup (con_setting, NM_SETTING_CONNECTION_UUID, "&s", &uuid)) {
-		g_warning ("Connection hash did not contain the UUID");
+		*out_error_message = "Connection hash did not contain the UUID";
 		g_variant_unref (con_setting);
 		return NULL;
 	}
 
 	if (!g_variant_lookup (con_setting, NM_SETTING_CONNECTION_ID, "&s", &id)) {
-		g_warning ("Connection hash did not contain the ID");
+		*out_error_message = "Connection hash did not contain the ID";
 		g_variant_unref (con_setting);
 		return NULL;
 	}
@@ -473,6 +478,7 @@ nm_dispatcher_utils_construct_envp (const char *action,
 		envp[i] = (char *) iter->data;
 	g_slist_free (items);
 
+	*out_error_message = NULL;
 	return envp;
 }
 

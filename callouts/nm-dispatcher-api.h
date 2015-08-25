@@ -21,6 +21,7 @@
 #define NMD_SCRIPT_DIR_DEFAULT  NMCONFDIR "/dispatcher.d"
 #define NMD_SCRIPT_DIR_PRE_UP   NMD_SCRIPT_DIR_DEFAULT "/pre-up.d"
 #define NMD_SCRIPT_DIR_PRE_DOWN NMD_SCRIPT_DIR_DEFAULT "/pre-down.d"
+#define NMD_SCRIPT_DIR_NO_WAIT  NMD_SCRIPT_DIR_DEFAULT "/no-wait.d"
 
 #define NM_DISPATCHER_DBUS_SERVICE   "org.freedesktop.nm_dispatcher"
 #define NM_DISPATCHER_DBUS_INTERFACE "org.freedesktop.nm_dispatcher"

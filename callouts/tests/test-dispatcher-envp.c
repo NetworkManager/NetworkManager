@@ -458,6 +458,7 @@ test_generic (const char *file, const char *override_vpn_ip_iface)
 	char *expected_iface = NULL;
 	char *action = NULL;
 	char *out_iface = NULL;
+	const char *error_message = NULL;
 	GHashTable *expected_env = NULL;
 	GError *error = NULL;
 	gboolean success;
@@ -497,7 +498,13 @@ test_generic (const char *file, const char *override_vpn_ip_iface)
 	                                           override_vpn_ip_iface ? override_vpn_ip_iface : vpn_ip_iface,
 	                                           vpn_ip4_props,
 	                                           vpn_ip6_props,
-	                                           &out_iface);
+	                                           &out_iface,
+	                                           &error_message);
+
+	g_assert ((!denv && error_message) || (denv && !error_message));
+
+	if (error_message)
+		g_warning (error_message);
 
 	/* Print out environment for now */
 #ifdef DEBUG
