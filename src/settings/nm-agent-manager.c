@@ -791,7 +791,7 @@ get_done_cb (NMSecretAgent *agent,
 		            error ? error->code : -1,
 		            (error && error->message) ? error->message : "(unknown)");
 
-		if (_nm_dbus_error_has_name (error, NM_DBUS_INTERFACE_SECRET_AGENT ".UserCanceled")) {
+		if (g_error_matches (error, NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_USER_CANCELED)) {
 			error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
 			                             NM_AGENT_MANAGER_ERROR_USER_CANCELED,
 			                             "User canceled the secrets request.");
