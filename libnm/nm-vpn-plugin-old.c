@@ -380,8 +380,12 @@ nm_vpn_plugin_old_set_ip6_config (NMVpnPluginOld *plugin,
 	g_return_if_fail (NM_IS_VPN_PLUGIN_OLD (plugin));
 	g_return_if_fail (ip6_config != NULL);
 
+	g_variant_ref_sink (ip6_config);
+
 	priv->got_ip6 = TRUE;
 	g_signal_emit (plugin, signals[IP6_CONFIG], 0, ip6_config);
+
+	g_variant_unref (ip6_config);
 
 	if (   priv->has_ip4 == priv->got_ip4
 	    && priv->has_ip6 == priv->got_ip6)
