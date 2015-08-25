@@ -152,19 +152,16 @@ _nl_get_vtable (void)
 	static struct libnl_vtable vtable;
 
 	if (G_UNLIKELY (!vtable.f_nl_has_capability)) {
-		void *handle;
-
-		handle = dlopen ("libnl-3.so.200", RTLD_LAZY | RTLD_NOLOAD);
-		if (handle) {
-			vtable.handle = handle;
-			vtable.f_nl_has_capability = dlsym (handle, "nl_has_capability");
+		vtable.handle = dlopen ("libnl-3.so.200", RTLD_LAZY | RTLD_NOLOAD);
+		if (vtable.handle) {
+			vtable.f_nl_has_capability = dlsym (vtable.handle, "nl_has_capability");
 		}
 
 		if (!vtable.f_nl_has_capability)
 			vtable.f_nl_has_capability = &_nl_f_nl_has_capability;
 
-		g_return_val_if_fail (handle, &vtable);
-		g_return_val_if_fail (&nl_connect == (int (*) (struct nl_sock *, int)) dlsym (handle, "nl_connect"), &vtable);
+		g_return_val_if_fail (vtable.handle, &vtable);
+		g_return_val_if_fail (&nl_connect == (int (*) (struct nl_sock *, int)) dlsym (vtable.handle, "nl_connect"), &vtable);
 	}
 
 	return &vtable;
