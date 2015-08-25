@@ -85,6 +85,8 @@ typedef enum {
 	_NM_PLATFORM_REASON_CACHE_CHECK_INTERNAL,
 } NMPlatformReason;
 
+#define NM_PLATFORM_LINK_OTHER_NETNS    (-1)
+
 #define __NMPlatformObject_COMMON \
 	int ifindex; \
 	;
@@ -103,6 +105,10 @@ struct _NMPlatformLink {
 
 	gboolean initialized;
 	int master;
+
+	/* rtnl_link_get_link(), IFLA_LINK.
+	 * If IFLA_LINK_NETNSID indicates that the parent is in another namespace,
+	 * this field be set to (negative) NM_PLATFORM_LINK_OTHER_NETNS. */
 	int parent;
 
 	/* rtnl_link_get_arptype(), ifinfomsg.ifi_type. */
@@ -733,6 +739,7 @@ int nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4R
 int nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b);
 
 gboolean nm_platform_check_support_libnl_extended_ifa_flags (void);
+gboolean nm_platform_check_support_libnl_link_netnsid (void);
 gboolean nm_platform_check_support_kernel_extended_ifa_flags (NMPlatform *self);
 gboolean nm_platform_check_support_user_ipv6ll (NMPlatform *self);
 

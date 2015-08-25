@@ -90,6 +90,7 @@
         } \
     } G_STMT_END
 
+#define trace(...)      _LOG (LOGL_TRACE, _NMLOG_DOMAIN, NULL, __VA_ARGS__)
 #define debug(...)      _LOG (LOGL_DEBUG, _NMLOG_DOMAIN, NULL, __VA_ARGS__)
 #define info(...)       _LOG (LOGL_INFO,  _NMLOG_DOMAIN, NULL, __VA_ARGS__)
 #define warning(...)    _LOG (LOGL_WARN , _NMLOG_DOMAIN, NULL, __VA_ARGS__)
@@ -136,8 +137,10 @@ static NMPCacheOpsType cache_remove_netlink (NMPlatform *platform, const NMPObje
 struct libnl_vtable
 {
 	void *handle;
+	void *handle_route;
 
 	int (*f_nl_has_capability) (int capability);
+	int (*f_rtnl_link_get_link_netnsid) (const struct rtnl_link *link, gint32 *out_link_netnsid);
 };
 
 static int
@@ -146,24 +149,31 @@ _nl_f_nl_has_capability (int capability)
 	return FALSE;
 }
 
-static struct libnl_vtable *
+static const struct libnl_vtable *
 _nl_get_vtable (void)
 {
 	static struct libnl_vtable vtable;
 
 	if (G_UNLIKELY (!vtable.f_nl_has_capability)) {
-		void *handle;
-
-		handle = dlopen ("libnl-3.so.200", RTLD_LAZY | RTLD_NOLOAD);
-		if (handle) {
-			vtable.handle = handle;
-			vtable.f_nl_has_capability = dlsym (handle, "nl_has_capability");
+		vtable.handle = dlopen ("libnl-3.so.200", RTLD_LAZY | RTLD_NOLOAD);
+		if (vtable.handle) {
+			vtable.f_nl_has_capability = dlsym (vtable.handle, "nl_has_capability");
+		}
+		vtable.handle_route = dlopen ("libnl-route-3.so.200", RTLD_LAZY | RTLD_NOLOAD);
+		if (vtable.handle_route) {
+			vtable.f_rtnl_link_get_link_netnsid = dlsym (vtable.handle_route, "rtnl_link_get_link_netnsid");
 		}
 
 		if (!vtable.f_nl_has_capability)
 			vtable.f_nl_has_capability = &_nl_f_nl_has_capability;
 
+		trace ("libnl: rtnl_link_get_link_netnsid() %s", vtable.f_rtnl_link_get_link_netnsid ? "supported" : "not supported");
+
 		g_return_val_if_fail (vtable.handle, &vtable);
+		g_return_val_if_fail (&nl_connect == (int (*) (struct nl_sock *, int)) dlsym (vtable.handle, "nl_connect"), &vtable);
+
+		g_return_val_if_fail (vtable.handle_route, &vtable);
+		g_return_val_if_fail (&rtnl_link_alloc == (struct rtnl_link *(*) (void)) dlsym (vtable.handle_route, "rtnl_link_alloc"), &vtable);
 	}
 
 	return &vtable;
@@ -173,6 +183,26 @@ static gboolean
 _nl_has_capability (int capability)
 {
 	return (_nl_get_vtable ()->f_nl_has_capability) (capability);
+}
+
+static int
+_rtnl_link_get_link_netnsid (const struct rtnl_link *link, gint32 *out_link_netnsid)
+{
+	const struct libnl_vtable *vtable;
+
+	g_return_val_if_fail (link, -NLE_INVAL);
+	g_return_val_if_fail (out_link_netnsid, -NLE_INVAL);
+
+	vtable = _nl_get_vtable ();
+	return vtable->f_rtnl_link_get_link_netnsid
+	    ? vtable->f_rtnl_link_get_link_netnsid (link, out_link_netnsid)
+	    : -NLE_OPNOTSUPP;
+}
+
+gboolean
+nm_platform_check_support_libnl_link_netnsid (void)
+{
+	return !!(_nl_get_vtable ()->f_rtnl_link_get_link_netnsid);
 }
 
 /* Automatic deallocation of local variables */
@@ -980,6 +1010,7 @@ _nmp_vt_cmd_plobj_init_from_nl_link (NMPlatform *platform, NMPlatformObject *_ob
 	gboolean completed_from_cache_val = FALSE;
 	gboolean *completed_from_cache = complete_from_cache ? &completed_from_cache_val : NULL;
 	const NMPObject *link_cached = NULL;
+	int parent;
 
 	nm_assert (memcmp (obj, ((char [sizeof (NMPObjectLink)]) { 0 }), sizeof (NMPObjectLink)) == 0);
 
@@ -999,7 +1030,15 @@ _nmp_vt_cmd_plobj_init_from_nl_link (NMPlatform *platform, NMPlatformObject *_ob
 	obj->flags = rtnl_link_get_flags (nlo);
 	obj->connected = NM_FLAGS_HAS (obj->flags, IFF_LOWER_UP);
 	obj->master = rtnl_link_get_master (nlo);
-	obj->parent = rtnl_link_get_link (nlo);
+	parent = rtnl_link_get_link (nlo);
+	if (parent > 0) {
+		gint32 link_netnsid;
+
+		if (_rtnl_link_get_link_netnsid (nlo, &link_netnsid) == 0)
+			obj->parent = NM_PLATFORM_LINK_OTHER_NETNS;
+		else
+			obj->parent = parent;
+	}
 	obj->mtu = rtnl_link_get_mtu (nlo);
 	obj->arptype = rtnl_link_get_arptype (nlo);
 

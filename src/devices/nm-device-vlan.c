@@ -151,11 +151,14 @@ realize (NMDevice *device,
 		return FALSE;
 	}
 
-	parent = nm_manager_get_device_by_ifindex (nm_manager_get (), parent_ifindex);
-	if (!parent) {
-		nm_log_dbg (LOGD_HW, "(%s): VLAN parent interface unknown", plink->name);
-		return FALSE;
-	}
+	if (parent_ifindex != NM_PLATFORM_LINK_OTHER_NETNS) {
+		parent = nm_manager_get_device_by_ifindex (nm_manager_get (), parent_ifindex);
+		if (!parent) {
+			nm_log_dbg (LOGD_HW, "(%s): VLAN parent interface unknown", plink->name);
+			return FALSE;
+		}
+	} else
+		parent = NULL;
 
 	g_warn_if_fail (priv->parent == NULL);
 	nm_device_vlan_set_parent (NM_DEVICE_VLAN (device), parent);
@@ -271,7 +274,8 @@ component_added (NMDevice *device, GObject *component)
 		return FALSE;
 	}
 
-	if (nm_device_get_ifindex (added_device) != parent_ifindex)
+	if (   parent_ifindex <= 0
+	    || nm_device_get_ifindex (added_device) != parent_ifindex)
 		return FALSE;
 
 	nm_device_vlan_set_parent (self, added_device);
@@ -446,23 +450,28 @@ update_connection (NMDevice *device, NMConnection *connection)
 	if (vlan_id != nm_setting_vlan_get_id (s_vlan))
 		g_object_set (s_vlan, NM_SETTING_VLAN_ID, priv->vlan_id, NULL);
 
-	parent = nm_manager_get_device_by_ifindex (nm_manager_get (), parent_ifindex);
-	g_assert (parent);
+	if (parent_ifindex != NM_PLATFORM_LINK_OTHER_NETNS)
+		parent = nm_manager_get_device_by_ifindex (nm_manager_get (), parent_ifindex);
+	else
+		parent = NULL;
 	nm_device_vlan_set_parent (NM_DEVICE_VLAN (device), parent);
 
 	/* Update parent in the connection; default to parent's interface name */
-	new_parent = nm_device_get_iface (parent);
-	setting_parent = nm_setting_vlan_get_parent (s_vlan);
-	if (setting_parent && nm_utils_is_uuid (setting_parent)) {
-		NMConnection *parent_connection;
+	if (parent) {
+		new_parent = nm_device_get_iface (parent);
+		setting_parent = nm_setting_vlan_get_parent (s_vlan);
+		if (setting_parent && nm_utils_is_uuid (setting_parent)) {
+			NMConnection *parent_connection;
 
-		/* Don't change a parent specified by UUID if it's still valid */
-		parent_connection = nm_connection_provider_get_connection_by_uuid (nm_connection_provider_get (), setting_parent);
-		if (parent_connection && nm_device_check_connection_compatible (parent, parent_connection))
-			new_parent = NULL;
-	}
-	if (new_parent)
-		g_object_set (s_vlan, NM_SETTING_VLAN_PARENT, new_parent, NULL);
+			/* Don't change a parent specified by UUID if it's still valid */
+			parent_connection = nm_connection_provider_get_connection_by_uuid (nm_connection_provider_get (), setting_parent);
+			if (parent_connection && nm_device_check_connection_compatible (parent, parent_connection))
+				new_parent = NULL;
+		}
+		if (new_parent)
+			g_object_set (s_vlan, NM_SETTING_VLAN_PARENT, new_parent, NULL);
+	} else
+		g_object_set (s_vlan, NM_SETTING_VLAN_PARENT, NULL, NULL);
 }
 
 static NMActStageReturn
