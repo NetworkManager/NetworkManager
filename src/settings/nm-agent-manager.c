@@ -665,7 +665,7 @@ request_remove_agent (Request *req, NMSecretAgent *agent, GSList **pending_reqs)
 		_LOGD (agent, "current agent removed from secrets request "LOG_REQ_FMT,
 		       LOG_REQ_ARG (req));
 		*pending_reqs = g_slist_prepend (*pending_reqs, req);
-	} else {
+	} else if (g_slist_find (req->pending, agent)) {
 		req->pending = g_slist_remove (req->pending, agent);
 
 		_LOGD (agent, "agent removed from secrets request "LOG_REQ_FMT,
