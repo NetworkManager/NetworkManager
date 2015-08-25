@@ -847,10 +847,38 @@ nm_bus_manager_unregister_object (NMBusManager *self, gpointer object)
 	g_dbus_interface_skeleton_unexport (G_DBUS_INTERFACE_SKELETON (object));
 }
 
+gboolean
+nm_bus_manager_connection_is_private (NMBusManager *self,
+                                      GDBusConnection *connection)
+{
+	NMBusManagerPrivate *priv;
+	GSList *iter;
+
+	g_return_val_if_fail (NM_IS_BUS_MANAGER (self), FALSE);
+	g_return_val_if_fail (G_IS_DBUS_CONNECTION (connection), FALSE);
+
+	if (g_dbus_connection_get_unique_name (connection))
+		return FALSE;
+
+	/* Assert that we still track the private connection. The caller
+	 * of nm_bus_manager_connection_is_private() want's to subscribe
+	 * to NM_BUS_MANAGER_PRIVATE_CONNECTION_DISCONNECTED, thus the signal
+	 * never comes if we don't track the connection. */
+	priv = NM_BUS_MANAGER_GET_PRIVATE (self);
+	for (iter = priv->private_servers; iter; iter = g_slist_next (iter)) {
+		PrivateServer *s = iter->data;
+
+		if (g_hash_table_contains (s->connections,
+		                           connection))
+			return TRUE;
+	}
+	g_return_val_if_reached (TRUE);
+}
+
 /**
  * nm_bus_manager_new_proxy:
  * @self: the #NMBusManager
- * @context: the method call context this proxy should be created
+ * @connection: the GDBusConnection for which this connection should be created
  * @proxy_type: the type of #GDBusProxy to create
  * @name: any name on the message bus
  * @path: name of the object instance to call methods on
@@ -865,23 +893,20 @@ nm_bus_manager_unregister_object (NMBusManager *self, gpointer object)
  */
 GDBusProxy *
 nm_bus_manager_new_proxy (NMBusManager *self,
-                          GDBusMethodInvocation *context,
+                          GDBusConnection *connection,
                           GType proxy_type,
                           const char *name,
                           const char *path,
                           const char *iface)
 {
 	NMBusManagerPrivate *priv = NM_BUS_MANAGER_GET_PRIVATE (self);
-	GDBusConnection *connection;
 	GSList *iter;
 	const char *owner;
 	GDBusProxy *proxy;
 	GError *error = NULL;
 
 	g_return_val_if_fail (g_type_is_a (proxy_type, G_TYPE_DBUS_PROXY), NULL);
-
-	connection = g_dbus_method_invocation_get_connection (context);
-	g_assert (connection);
+	g_return_val_if_fail (G_IS_DBUS_CONNECTION (connection), NULL);
 
 	/* Might be a private connection, for which @name is fake */
 	for (iter = priv->private_servers; iter; iter = g_slist_next (iter)) {

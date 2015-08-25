@@ -72,6 +72,9 @@ gboolean nm_bus_manager_get_caller_info (NMBusManager *self,
                                          gulong *out_uid,
                                          gulong *out_pid);
 
+gboolean nm_bus_manager_connection_is_private (NMBusManager *self,
+                                               GDBusConnection *connection);
+
 gboolean nm_bus_manager_get_unix_user (NMBusManager *self,
                                        const char *sender,
                                        gulong *out_uid);
@@ -97,7 +100,7 @@ void nm_bus_manager_private_server_register (NMBusManager *self,
                                              const char *tag);
 
 GDBusProxy *nm_bus_manager_new_proxy (NMBusManager *self,
-                                      GDBusMethodInvocation *context,
+                                      GDBusConnection *connection,
                                       GType proxy_type,
                                       const char *name,
                                       const char *path,

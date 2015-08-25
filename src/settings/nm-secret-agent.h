@@ -43,6 +43,8 @@ typedef struct {
 	void (*disconnected) (NMSecretAgent *self);
 } NMSecretAgentClass;
 
+typedef struct _NMSecretAgentCallId *NMSecretAgentCallId;
+
 GType nm_secret_agent_get_type (void);
 
 NMSecretAgent *nm_secret_agent_new (GDBusMethodInvocation *context,
@@ -64,8 +66,6 @@ gulong      nm_secret_agent_get_pid        (NMSecretAgent *agent);
 
 NMSecretAgentCapabilities nm_secret_agent_get_capabilities (NMSecretAgent *agent);
 
-guint32     nm_secret_agent_get_hash       (NMSecretAgent *agent);
-
 NMAuthSubject *nm_secret_agent_get_subject (NMSecretAgent *agent);
 
 void        nm_secret_agent_add_permission (NMSecretAgent *agent,
@@ -76,30 +76,30 @@ gboolean    nm_secret_agent_has_permission (NMSecretAgent *agent,
                                             const char *permission);
 
 typedef void (*NMSecretAgentCallback) (NMSecretAgent *agent,
-                                       gconstpointer call,
+                                       NMSecretAgentCallId call_id,
                                        GVariant *new_secrets, /* NULL for save & delete */
                                        GError *error,
                                        gpointer user_data);
 
-gconstpointer nm_secret_agent_get_secrets  (NMSecretAgent *agent,
-                                            NMConnection *connection,
-                                            const char *setting_name,
-                                            const char **hints,
-                                            NMSecretAgentGetSecretsFlags flags,
-                                            NMSecretAgentCallback callback,
-                                            gpointer callback_data);
+NMSecretAgentCallId nm_secret_agent_get_secrets  (NMSecretAgent *agent,
+                                                  NMConnection *connection,
+                                                  const char *setting_name,
+                                                  const char **hints,
+                                                  NMSecretAgentGetSecretsFlags flags,
+                                                  NMSecretAgentCallback callback,
+                                                  gpointer callback_data);
 
 void        nm_secret_agent_cancel_secrets (NMSecretAgent *agent,
-                                            gconstpointer call_id);
+                                            NMSecretAgentCallId call_id);
 
-gconstpointer nm_secret_agent_save_secrets (NMSecretAgent *agent,
-                                            NMConnection *connection,
-                                            NMSecretAgentCallback callback,
-                                            gpointer callback_data);
+NMSecretAgentCallId nm_secret_agent_save_secrets (NMSecretAgent *agent,
+                                                  NMConnection *connection,
+                                                  NMSecretAgentCallback callback,
+                                                  gpointer callback_data);
 
-gconstpointer nm_secret_agent_delete_secrets (NMSecretAgent *agent,
-                                              NMConnection *connection,
-                                              NMSecretAgentCallback callback,
-                                              gpointer callback_data);
+NMSecretAgentCallId nm_secret_agent_delete_secrets (NMSecretAgent *agent,
+                                                    NMConnection *connection,
+                                                    NMSecretAgentCallback callback,
+                                                    gpointer callback_data);
 
 #endif /* __NETWORKMANAGER_SECRET_AGENT_H__ */
