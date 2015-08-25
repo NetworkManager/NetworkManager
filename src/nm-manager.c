@@ -1885,11 +1885,6 @@ platform_link_added (NMManager *self,
 				g_clear_error (&error);
 			}
 			return;
-		} else if (!nm_device_realize (device, plink, &error)) {
-			nm_log_warn (LOGD_HW, "%s: factory failed to create device: %s",
-			             plink->name, error->message);
-			g_clear_error (&error);
-			return;
 		}
 	}
 
@@ -1913,7 +1908,13 @@ platform_link_added (NMManager *self,
 	if (device) {
 		if (nm_plugin_missing)
 			nm_device_set_nm_plugin_missing (device, TRUE);
-		add_device (self, device, plink->type != NM_LINK_TYPE_LOOPBACK);
+		if (nm_device_realize (device, plink, &error))
+			add_device (self, device, plink->type != NM_LINK_TYPE_LOOPBACK);
+		else {
+			nm_log_warn (LOGD_HW, "%s: failed to realize device: %s",
+			             plink->name, error->message);
+			g_clear_error (&error);
+		}
 		g_object_unref (device);
 	}
 }
