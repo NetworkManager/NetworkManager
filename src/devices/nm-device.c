@@ -4046,7 +4046,7 @@ dhcp6_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 	priv->dhcp6_mode = NM_RDISC_DHCP_LEVEL_NONE;
 	g_clear_object (&priv->dhcp6_ip6_config);
 	g_clear_pointer (&priv->dhcp6_event_id, g_free);
-	nm_clear_g_source (&priv->dhcp4_restart_id);
+	nm_clear_g_source (&priv->dhcp6_restart_id);
 
 	if (priv->dhcp6_client) {
 		if (priv->dhcp6_state_sigid) {
