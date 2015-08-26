@@ -504,7 +504,7 @@ test_generic (const char *file, const char *override_vpn_ip_iface)
 	g_assert ((!denv && error_message) || (denv && !error_message));
 
 	if (error_message)
-		g_warning (error_message);
+		g_warning ("%s", error_message);
 
 	/* Print out environment for now */
 #ifdef DEBUG
