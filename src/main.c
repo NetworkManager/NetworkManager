@@ -246,7 +246,6 @@ do_early_setup (int *argc, char **argv[], NMConfigCmdLineOptions *config_cli)
 		{NULL}
 	};
 
-	config_cli = nm_config_cmd_line_options_new ();
 	if (!nm_main_utils_early_setup ("NetworkManager",
 	                                argc,
 	                                argv,
