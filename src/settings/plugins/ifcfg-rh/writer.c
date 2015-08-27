@@ -1194,11 +1194,42 @@ vlan_priority_maplist_to_stringlist (NMSettingVlan *s_vlan, NMVlanPriorityMap ma
 }
 
 static gboolean
+write_wired_for_virtual (NMConnection *connection, shvarFile *ifcfg)
+{
+	NMSettingWired *s_wired;
+	gboolean has_wired = FALSE;
+
+	s_wired = nm_connection_get_setting_wired (connection);
+	if (s_wired) {
+		const char *device_mac, *cloned_mac;
+		char *tmp;
+		guint32 mtu;
+
+		has_wired = TRUE;
+
+		device_mac = nm_setting_wired_get_mac_address (s_wired);
+		if (device_mac)
+			svSetValue (ifcfg, "HWADDR", device_mac, FALSE);
+
+		cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
+		if (cloned_mac)
+			svSetValue (ifcfg, "MACADDR", cloned_mac, FALSE);
+
+		mtu = nm_setting_wired_get_mtu (s_wired);
+		if (mtu) {
+			tmp = g_strdup_printf ("%u", mtu);
+			svSetValue (ifcfg, "MTU", tmp, FALSE);
+			g_free (tmp);
+		}
+	}
+	return has_wired;
+}
+
+static gboolean
 write_vlan_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired, GError **error)
 {
 	NMSettingVlan *s_vlan;
 	NMSettingConnection *s_con;
-	NMSettingWired *s_wired;
 	char *tmp;
 	guint32 vlan_flags = 0;
 
@@ -1252,34 +1283,13 @@ write_vlan_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired,
 	svSetValue (ifcfg, "MACADDR", NULL, FALSE);
 	svSetValue (ifcfg, "MTU", NULL, FALSE);
 
-	s_wired = nm_connection_get_setting_wired (connection);
-	if (s_wired) {
-		const char *device_mac, *cloned_mac;
-		guint32 mtu;
-
-		*wired = TRUE;
-
-		device_mac = nm_setting_wired_get_mac_address (s_wired);
-		if (device_mac)
-			svSetValue (ifcfg, "HWADDR", device_mac, FALSE);
-
-		cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
-		if (cloned_mac)
-			svSetValue (ifcfg, "MACADDR", cloned_mac, FALSE);
-
-		mtu = nm_setting_wired_get_mtu (s_wired);
-		if (mtu) {
-			tmp = g_strdup_printf ("%u", mtu);
-			svSetValue (ifcfg, "MTU", tmp, FALSE);
-			g_free (tmp);
-		}
-	}
+	*wired = write_wired_for_virtual (connection, ifcfg);
 
 	return TRUE;
 }
 
 static gboolean
-write_bonding_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
+write_bonding_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired, GError **error)
 {
 	NMSettingBond *s_bond;
 	const char *iface;
@@ -1327,11 +1337,13 @@ write_bonding_setting (NMConnection *connection, shvarFile *ifcfg, GError **erro
 	svSetValue (ifcfg, "TYPE", TYPE_BOND, FALSE);
 	svSetValue (ifcfg, "BONDING_MASTER", "yes", FALSE);
 
+	*wired = write_wired_for_virtual (connection, ifcfg);
+
 	return TRUE;
 }
 
 static gboolean
-write_team_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
+write_team_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired, GError **error)
 {
 	NMSettingTeam *s_team;
 	const char *iface;
@@ -1355,6 +1367,8 @@ write_team_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	config = nm_setting_team_get_config (s_team);
 	svSetValue (ifcfg, "TEAM_CONFIG", config, FALSE);
 	svSetValue (ifcfg, "DEVICETYPE", TYPE_TEAM, FALSE);
+
+	*wired = write_wired_for_virtual (connection, ifcfg);
 
 	return TRUE;
 }
@@ -2692,10 +2706,10 @@ write_connection (NMConnection *connection,
 		if (!write_infiniband_setting (connection, ifcfg, error))
 			goto out;
 	} else if (!strcmp (type, NM_SETTING_BOND_SETTING_NAME)) {
-		if (!write_bonding_setting (connection, ifcfg, error))
+		if (!write_bonding_setting (connection, ifcfg, &wired, error))
 			goto out;
 	} else if (!strcmp (type, NM_SETTING_TEAM_SETTING_NAME)) {
-		if (!write_team_setting (connection, ifcfg, error))
+		if (!write_team_setting (connection, ifcfg, &wired, error))
 			goto out;
 	} else if (!strcmp (type, NM_SETTING_BRIDGE_SETTING_NAME)) {
 		if (!write_bridge_setting (connection, ifcfg, error))
