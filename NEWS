@@ -1,4 +1,28 @@
 ===============================================
+NetworkManager-1.0.6
+Overview of changes since NetworkManager-1.0.4
+===============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Improved capture portal detection.
+
+* Default route through WiFi connection is now preferred to Mobile
+    Broadband if both are available.
+
+* Expose a flag to determine whether a particular connection is metered
+    via API and client tools.
+
+* Add support for locking connections to a channel within a particular
+    band.
+
+* Add support for configuring Wake-on-LAN capabilitites.
+
+* Allow overriding the MTU for team device.
+
+* Usual pile of bug fixes and robustness improvements.
+
+===============================================
 NetworkManager-1.0.4
 Overview of changes since NetworkManager-1.0.2
 ===============================================
