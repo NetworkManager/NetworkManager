@@ -168,6 +168,9 @@ _nl_get_vtable (void)
 			vtable.f_nl_has_capability = &_nl_f_nl_has_capability;
 
 		trace ("libnl: rtnl_link_get_link_netnsid() %s", vtable.f_rtnl_link_get_link_netnsid ? "supported" : "not supported");
+
+		g_return_val_if_fail (vtable.handle, &vtable);
+		g_return_val_if_fail (vtable.handle_route, &vtable);
 	}
 
 	return &vtable;
