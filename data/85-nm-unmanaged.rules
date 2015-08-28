@@ -1,14 +1,8 @@
-# Do not modify this file, it will get overwriten on updates.
+# Do not modify this file, it will get overwritten on updates.
 # To override or extend the rules place a file in /etc/udev/rules.d
 
 SUBSYSTEM!="net", GOTO="nm_unmanaged_end"
 ACTION!="add|change", GOTO="nm_unmanaged_end"
-
-# Determine ID_NET_DRIVER if there's no ID_NET_DRIVER or DRIVERS (old udev?)
-ENV{ID_NET_DRIVER}=="?*", GOTO="nm_unmanaged_driver"
-DRIVERS=="?*", GOTO="nm_unmanaged_driver"
-PROGRAM="/bin/sh -c '/usr/sbin/ethtool -i $1 | /bin/sed -n s/^driver:\ //p' -- $env{INTERFACE}", RESULT=="?*", ENV{ID_NET_DRIVER}="%c"
-LABEL="nm_unmanaged_driver"
 
 # VirtualBox host networking. Out-of-tree driver that looks like an ordinary
 # Ethernet. No parent device (lives in /virtual/), no support for ethtool
