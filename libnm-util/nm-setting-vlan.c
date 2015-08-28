@@ -805,7 +805,7 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	g_object_class_install_property
 		(object_class, PROP_FLAGS,
 		 g_param_spec_uint (NM_SETTING_VLAN_FLAGS, "", "",
-		                    0, G_MAXUINT32, 0,
+		                    0, G_MAXUINT32, NM_VLAN_FLAG_REORDER_HEADERS,
 		                    G_PARAM_READWRITE |
 		                    G_PARAM_CONSTRUCT |
 		                    NM_SETTING_PARAM_INFERRABLE |

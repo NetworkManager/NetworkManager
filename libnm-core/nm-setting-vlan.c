@@ -748,7 +748,7 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 		(object_class, PROP_FLAGS,
 		 g_param_spec_flags (NM_SETTING_VLAN_FLAGS, "", "",
 		                     NM_TYPE_VLAN_FLAGS,
-		                     0,
+		                     NM_VLAN_FLAG_REORDER_HEADERS,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_CONSTRUCT |
 		                     NM_SETTING_PARAM_INFERRABLE |

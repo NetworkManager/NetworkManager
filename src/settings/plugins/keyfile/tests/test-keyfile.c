@@ -3293,6 +3293,35 @@ test_read_missing_vlan_setting (void)
 	s_vlan = nm_connection_get_setting_vlan (connection);
 	g_assert (s_vlan);
 	g_assert_cmpint (nm_setting_vlan_get_id (s_vlan), ==, 0);
+	/* Ensure the VLAN flags are not set (0) */
+	g_assert_cmpint (nm_setting_vlan_get_flags (s_vlan), ==, 0);
+
+	g_object_unref (connection);
+}
+
+static void
+test_read_missing_vlan_flags (void)
+{
+	NMConnection *connection;
+	NMSettingVlan *s_vlan;
+	GError *error = NULL;
+	gboolean success;
+
+	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR"/Test_Missing_Vlan_Flags", &error);
+	g_assert_no_error (error);
+	g_assert (connection);
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* Ensure the VLAN setting exists */
+	s_vlan = nm_connection_get_setting_vlan (connection);
+	g_assert (s_vlan);
+
+	g_assert_cmpint (nm_setting_vlan_get_id (s_vlan), ==, 444);
+	g_assert_cmpstr (nm_setting_vlan_get_parent (s_vlan), ==, "em1");
+	/* Ensure the VLAN flags are not set (0) */
+	g_assert_cmpint (nm_setting_vlan_get_flags (s_vlan), ==, 0);
 
 	g_object_unref (connection);
 }
@@ -3689,6 +3718,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/keyfile/test_write_new_wireless_group_names ", test_write_new_wireless_group_names);
 
 	g_test_add_func ("/keyfile/test_read_missing_vlan_setting ", test_read_missing_vlan_setting);
+	g_test_add_func ("/keyfile/test_read_missing_vlan_flags ", test_read_missing_vlan_flags);
 	g_test_add_func ("/keyfile/test_read_missing_id_uuid ", test_read_missing_id_uuid);
 
 	g_test_add_func ("/keyfile/test_read_minimal", test_read_minimal);

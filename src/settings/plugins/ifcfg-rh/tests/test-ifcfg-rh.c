@@ -11044,6 +11044,8 @@ test_read_vlan_only_vlan_id (void)
 
 	g_assert_cmpstr (nm_setting_vlan_get_parent (s_vlan), ==, "eth9");
 	g_assert_cmpint (nm_setting_vlan_get_id (s_vlan), ==, 43);
+	/* Ensure that flags are 0 if both REORDER_HDR and VLAN_FLAGS are missing */
+	g_assert_cmpint (nm_setting_vlan_get_flags (s_vlan), ==, 0);
 
 	g_object_unref (connection);
 }

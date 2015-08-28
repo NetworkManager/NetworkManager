@@ -1249,6 +1249,15 @@ static KeyParser key_parsers[] = {
 };
 
 static void
+set_default_for_missing_key (NMSetting *setting, const char *property)
+{
+	/* Set a value different from the default value of the property's spec */
+
+	if (NM_IS_SETTING_VLAN (setting) && !strcmp (property, NM_SETTING_VLAN_FLAGS))
+		g_object_set (setting, property, 0, NULL);
+}
+
+static void
 read_one_setting_value (NMSetting *setting,
                         const char *key,
                         const GValue *value,
@@ -1312,6 +1321,9 @@ read_one_setting_value (NMSetting *setting,
 			                  err->message))
 				goto out_error;
 		}
+
+		/* Allow default values different than in property spec */
+		set_default_for_missing_key (setting, key);
 		return;
 	}
 
@@ -1644,6 +1656,18 @@ nm_keyfile_read (GKeyFile *keyfile,
 			read_vpn_secrets (&info, s_vpn);
 			if (info.error)
 				goto out_error;
+		}
+	}
+
+	/* Make sure that if [vlan] group was missing we set vlan.flags to 0
+	 * for backwards compatibility */
+	if (nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)) {
+		if (!nm_connection_get_setting_vlan (connection)) {
+			NMSettingVlan *s_vlan;
+
+			s_vlan = NM_SETTING_VLAN (nm_setting_vlan_new ());
+			g_object_set (s_vlan, NM_SETTING_VLAN_FLAGS, 0, NULL);
+			nm_connection_add_setting (connection, NM_SETTING (s_vlan));
 		}
 	}
 

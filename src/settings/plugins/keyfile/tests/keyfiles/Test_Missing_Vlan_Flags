@@ -1,0 +1,15 @@
+# VLAN setting with missing 'flags' key
+# vlan.flags will be set to 0 (even if the default 'flags' property value is 1)
+
+[connection]
+id=Test Missing Vlan Flags
+uuid=803ebe47-8c31-401d-b47b-03fc0d34eb11
+type=vlan
+autoconnect=true
+
+[802-3-ethernet]
+mac-address=00:11:22:33:44:55
+
+[vlan]
+id=444
+parent=em1
