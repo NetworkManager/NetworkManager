@@ -30,18 +30,7 @@
 #include <string.h>
 #include <glib/gi18n-lib.h>
 
-#include "nm-setting.h"
-#include "nm-setting-connection.h"
-#include "nm-setting-ip4-config.h"
-#include "nm-setting-ip6-config.h"
-#include "nm-setting-vpn.h"
-#include "nm-setting-wired.h"
-#include "nm-setting-wireless.h"
-#include "nm-setting-ip4-config.h"
-#include "nm-setting-bluetooth.h"
-#include "nm-setting-8021x.h"
-#include "nm-utils.h"
-
+#include "nm-core-internal.h"
 #include "gsystem-local-alloc.h"
 #include "nm-glib-compat.h"
 #include "nm-keyfile-internal.h"
@@ -598,6 +587,15 @@ static KeyWriter key_writers[] = {
 	{ NULL, NULL, NULL }
 };
 
+static gboolean
+can_omit_default_value (NMSetting *setting, const char *property)
+{
+	if (NM_IS_SETTING_VLAN (setting) && !strcmp (property, NM_SETTING_VLAN_FLAGS))
+		return FALSE;
+
+	return TRUE;
+}
+
 static void
 write_setting_value (NMSetting *setting,
                      const char *key,
@@ -628,7 +626,8 @@ write_setting_value (NMSetting *setting,
 	/* If the value is the default value, remove the item from the keyfile */
 	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), key);
 	if (pspec) {
-		if (g_param_value_defaults (pspec, (GValue *) value)) {
+		if (   can_omit_default_value (setting, key)
+		    && g_param_value_defaults (pspec, (GValue *) value)) {
 			g_key_file_remove_key (info->keyfile, setting_name, key, NULL);
 			return;
 		}

@@ -28,6 +28,7 @@ KEYFILES = \
 	Test_minimal_slave_3 \
 	Test_minimal_slave_4 \
 	Test_Missing_Vlan_Setting \
+	Test_Missing_Vlan_Flags \
 	Test_Missing_ID_UUID \
 	Test_Enum_Property \
 	Test_Flags_Property
