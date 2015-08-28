@@ -37,6 +37,7 @@ examples_DATA = server.conf
 if WITH_UDEV_DIR
 udevrulesdir = $(UDEV_DIR)/rules.d
 udevrules_DATA = \
+	84-nm-drivers.rules \
 	85-nm-unmanaged.rules
 endif
 
@@ -57,6 +58,7 @@ EXTRA_DIST = \
 	NetworkManager-wait-online-systemd-pre200.service.in \
 	NetworkManager-dispatcher.service.in \
 	org.freedesktop.NetworkManager.service.in \
+	84-nm-drivers.rules \
 	85-nm-unmanaged.rules \
 	server.conf.in
 
