@@ -1258,9 +1258,9 @@ write_vlan_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired,
 
 	vlan_flags = nm_setting_vlan_get_flags (s_vlan);
 	if (vlan_flags & NM_VLAN_FLAG_REORDER_HEADERS)
-		svSetValue (ifcfg, "REORDER_HDR", "1", FALSE);
+		svSetValue (ifcfg, "REORDER_HDR", "yes", FALSE);
 	else
-		svSetValue (ifcfg, "REORDER_HDR", "0", FALSE);
+		svSetValue (ifcfg, "REORDER_HDR", "no", FALSE);
 
 	svSetValue (ifcfg, "VLAN_FLAGS", NULL, FALSE);
 	if (vlan_flags & NM_VLAN_FLAG_GVRP) {
