@@ -1,0 +1,7 @@
+VLAN=yes
+TYPE=Vlan
+DEVICE=vlan0.3
+PHYSDEV=eth0
+VLAN_ID=3
+REORDER_HDR=1
+
