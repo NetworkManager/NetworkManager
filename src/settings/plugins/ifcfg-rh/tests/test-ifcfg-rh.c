@@ -11105,6 +11105,33 @@ test_read_vlan_physdev (void)
 }
 
 static void
+test_read_vlan_reorder_hdr_1 (void)
+{
+	NMConnection *connection;
+	GError *error = NULL;
+	NMSettingVlan *s_vlan;
+
+	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-reorder-hdr-1",
+	                                        NULL, TYPE_ETHERNET, NULL,
+	                                        &error);
+	g_assert_no_error (error);
+	g_assert (connection);
+	g_assert (nm_connection_verify (connection, &error));
+
+	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "vlan0.3");
+
+	s_vlan = nm_connection_get_setting_vlan (connection);
+	g_assert (s_vlan);
+
+	g_assert_cmpstr (nm_setting_vlan_get_parent (s_vlan), ==, "eth0");
+	g_assert_cmpint (nm_setting_vlan_get_id (s_vlan), ==, 3);
+	/* Check correct read of REORDER_HDR=1 */
+	g_assert_cmpint (nm_setting_vlan_get_flags (s_vlan), ==, 1);
+
+	g_object_unref (connection);
+}
+
+static void
 test_write_vlan (void)
 {
 	NMConnection *connection;
@@ -11177,6 +11204,77 @@ test_write_vlan_only_vlanid (void)
 
 	g_object_unref (connection);
 	g_object_unref (reread);
+}
+
+static void
+test_write_vlan_reorder_hdr (void)
+{
+	NMConnection *connection, *reread;
+	NMSettingConnection *s_con;
+	NMSettingVlan *s_vlan;
+	NMSettingWired *s_wired;
+	char *uuid;
+	GError *error = NULL;
+	gboolean success;
+	char *testfile = NULL;
+
+	connection = nm_simple_connection_new ();
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write VLAN reorder_hdr",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, FALSE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_VLAN_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wired setting */
+	s_wired = (NMSettingWired *) nm_setting_wired_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+	/* VLAN setting */
+	s_vlan = (NMSettingVlan *) nm_setting_vlan_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_vlan));
+
+	g_object_set (s_vlan,
+	              NM_SETTING_VLAN_PARENT, "eth0",
+	              NM_SETTING_VLAN_ID, 444,
+	              NM_SETTING_VLAN_FLAGS, 1,
+	              NULL);
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	g_assert_no_error (error);
+	g_assert (success);
+	g_assert (testfile);
+
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_connection_normalize (connection, NULL, NULL, NULL);
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file_test (testfile,
+	                                    NULL,
+	                                    TYPE_ETHERNET,
+	                                    NULL,
+	                                    &error);
+	unlink (testfile);
+
+	g_assert_no_error (error);
+	g_assert (reread);
+	g_assert (nm_connection_verify (reread, &error));
+	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+
+	g_object_unref (connection);
+	g_object_unref (reread);
+	g_free (testfile);
 }
 
 static void
@@ -12869,6 +12967,7 @@ int main (int argc, char **argv)
 	test_read_vlan_only_vlan_id ();
 	test_read_vlan_only_device ();
 	g_test_add_func (TPATH "vlan/physdev", test_read_vlan_physdev);
+	g_test_add_func (TPATH "vlan/reorder-hdr-1", test_read_vlan_reorder_hdr_1);
 	g_test_add_func (TPATH "wired/read-wake-on-lan", test_read_wired_wake_on_lan);
 
 	test_write_wired_static ();
@@ -12948,6 +13047,7 @@ int main (int argc, char **argv)
 	test_write_infiniband ();
 	test_write_vlan ();
 	test_write_vlan_only_vlanid ();
+	g_test_add_func (TPATH "vlan/write-vlan-reorder-hdr", test_write_vlan_reorder_hdr);
 	test_write_ethernet_missing_ipv6 ();
 	g_test_add_func (TPATH "write-dns-options", test_write_dns_options);
 

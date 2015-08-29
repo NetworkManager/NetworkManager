@@ -298,8 +298,8 @@ svGetValueFull (shvarFile *s, const char *key, gboolean verbatim)
 	return value;
 }
 
-/* return TRUE if <key> resolves to any truth value (e.g. "yes", "y", "true")
- * return FALSE if <key> resolves to any non-truth value (e.g. "no", "n", "false")
+/* return TRUE if <key> resolves to any truth value (e.g. "yes", "true", "y", "t", "1")
+ * return FALSE if <key> resolves to any non-truth value (e.g. "no", "false", "n", "f", "0")
  * return <default> otherwise
  */
 gint
@@ -315,12 +315,14 @@ svTrueValue (shvarFile *s, const char *key, gint def)
 	if (   !g_ascii_strcasecmp ("yes", tmp)
 	    || !g_ascii_strcasecmp ("true", tmp)
 	    || !g_ascii_strcasecmp ("t", tmp)
-	    || !g_ascii_strcasecmp ("y", tmp))
+	    || !g_ascii_strcasecmp ("y", tmp)
+	    || !g_ascii_strcasecmp ("1", tmp))
 		returnValue = TRUE;
 	else if (   !g_ascii_strcasecmp ("no", tmp)
 	         || !g_ascii_strcasecmp ("false", tmp)
 	         || !g_ascii_strcasecmp ("f", tmp)
-	         || !g_ascii_strcasecmp ("n", tmp))
+	         || !g_ascii_strcasecmp ("n", tmp)
+	         || !g_ascii_strcasecmp ("0", tmp))
 		returnValue = FALSE;
 
 	g_free (tmp);
