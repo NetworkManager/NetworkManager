@@ -4545,15 +4545,15 @@ ip6_route_get (NMPlatform *platform, int ifindex, struct in6_addr network, int p
 #define DISCONNECT_CONDITIONS ((GIOCondition) (G_IO_HUP))
 
 static int
-verify_source (struct nl_msg *msg, gpointer user_data)
+verify_source (struct nl_msg *msg, NMPlatform *platform)
 {
 	struct ucred *creds = nlmsg_get_creds (msg);
 
 	if (!creds || creds->pid) {
 		if (creds)
-			warning ("netlink: received non-kernel message (pid %d)", creds->pid);
+			_LOGW ("netlink: received non-kernel message (pid %d)", creds->pid);
 		else
-			warning ("netlink: received message without credentials");
+			_LOGW ("netlink: received message without credentials");
 		return NL_STOP;
 	}
 
@@ -4675,7 +4675,7 @@ event_handler_read_netlink_all (NMPlatform *platform, gboolean wait_for_acks)
 }
 
 static struct nl_sock *
-setup_socket (gboolean event, gpointer user_data)
+setup_socket (NMPlatform *platform, gboolean event)
 {
 	struct nl_sock *sock;
 	int nle;
@@ -4684,14 +4684,14 @@ setup_socket (gboolean event, gpointer user_data)
 	g_return_val_if_fail (sock, NULL);
 
 	/* Only ever accept messages from kernel */
-	nle = nl_socket_modify_cb (sock, NL_CB_MSG_IN, NL_CB_CUSTOM, verify_source, user_data);
+	nle = nl_socket_modify_cb (sock, NL_CB_MSG_IN, NL_CB_CUSTOM, (nl_recvmsg_msg_cb_t) verify_source, platform);
 	g_assert (!nle);
 
 	/* Dispatch event messages (event socket only) */
 	if (event) {
-		nl_socket_modify_cb (sock, NL_CB_VALID, NL_CB_CUSTOM, event_notification, user_data);
-		nl_socket_modify_cb (sock, NL_CB_SEQ_CHECK, NL_CB_CUSTOM, event_seq_check, user_data);
-		nl_socket_modify_err_cb (sock, NL_CB_CUSTOM, event_err, user_data);
+		nl_socket_modify_cb (sock, NL_CB_VALID, NL_CB_CUSTOM, event_notification, platform);
+		nl_socket_modify_cb (sock, NL_CB_SEQ_CHECK, NL_CB_CUSTOM, event_seq_check, platform);
+		nl_socket_modify_err_cb (sock, NL_CB_CUSTOM, event_err, platform);
 	}
 
 	nle = nl_connect (sock, NETLINK_ROUTE);
@@ -4847,12 +4847,12 @@ constructed (GObject *_object)
 	_LOGD ("create");
 
 	/* Initialize netlink socket for requests */
-	priv->nlh = setup_socket (FALSE, platform);
+	priv->nlh = setup_socket (platform, FALSE);
 	g_assert (priv->nlh);
 	debug ("Netlink socket for requests established: port=%u, fd=%d", nl_socket_get_local_port (priv->nlh), nl_socket_get_fd (priv->nlh));
 
 	/* Initialize netlink socket for events */
-	priv->nlh_event = setup_socket (TRUE, platform);
+	priv->nlh_event = setup_socket (platform, TRUE);
 	g_assert (priv->nlh_event);
 	/* The default buffer size wasn't enough for the testsuites. It might just
 	 * as well happen with NetworkManager itself. For now let's hope 128KB is
