@@ -25,7 +25,7 @@ ip4_route_callback (NMPlatform *platform, NMPObjectType obj_type, int ifindex, c
 		g_main_loop_quit (data->loop);
 
 	data->received_count++;
-	debug ("Received signal '%s' %dth time.", data->name, data->received_count);
+	_LOGD ("Received signal '%s' %dth time.", data->name, data->received_count);
 }
 
 static void
@@ -45,7 +45,7 @@ ip6_route_callback (NMPlatform *platform, NMPObjectType obj_type, int ifindex, c
 		g_main_loop_quit (data->loop);
 
 	data->received_count++;
-	debug ("Received signal '%s' %dth time.", data->name, data->received_count);
+	_LOGD ("Received signal '%s' %dth time.", data->name, data->received_count);
 }
 
 static void

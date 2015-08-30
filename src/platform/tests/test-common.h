@@ -13,7 +13,25 @@
 
 #define DEVICE_NAME "nm-test-device"
 
-#define debug(...) nm_log_dbg (LOGD_PLATFORM, __VA_ARGS__)
+/*********************************************************************************************/
+
+#define _NMLOG_PREFIX_NAME                "platform-test"
+#define _NMLOG_DOMAIN                     LOGD_PLATFORM
+#define _NMLOG(level, ...)                _LOG(level, _NMLOG_DOMAIN, __VA_ARGS__)
+
+#define _LOG(level, domain, ...) \
+    G_STMT_START { \
+        const NMLogLevel __level = (level); \
+        const NMLogDomain __domain = (domain); \
+        \
+        if (nm_logging_enabled (__level, __domain)) { \
+            _nm_log (__level, __domain, 0, \
+                     "%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+                     _NMLOG_PREFIX_NAME _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
+        } \
+    } G_STMT_END
+
+/*********************************************************************************************/
 
 typedef struct {
 	int handler_id;
