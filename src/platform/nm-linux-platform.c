@@ -735,6 +735,8 @@ struct _NMLinuxPlatformPrivate {
 	GIOChannel *event_channel;
 	guint event_id;
 
+	GHashTable *sysctl_get_prev_values;
+
 	GUdevClient *udev_client;
 
 	struct {
@@ -2394,32 +2396,32 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 /******************************************************************/
 
 static void
-_log_dbg_sysctl_set_impl (const char *path, const char *value)
+_log_dbg_sysctl_set_impl (NMPlatform *platform, const char *path, const char *value)
 {
 	GError *error = NULL;
 	char *contents, *contents_escaped;
 	char *value_escaped = g_strescape (value, NULL);
 
 	if (!g_file_get_contents (path, &contents, NULL, &error)) {
-		debug ("sysctl: setting '%s' to '%s' (current value cannot be read: %s)", path, value_escaped, error->message);
+		_LOGD ("sysctl: setting '%s' to '%s' (current value cannot be read: %s)", path, value_escaped, error->message);
 		g_clear_error (&error);
 	} else {
 		g_strstrip (contents);
 		contents_escaped = g_strescape (contents, NULL);
 		if (strcmp (contents, value) == 0)
-			debug ("sysctl: setting '%s' to '%s' (current value is identical)", path, value_escaped);
+			_LOGD ("sysctl: setting '%s' to '%s' (current value is identical)", path, value_escaped);
 		else
-			debug ("sysctl: setting '%s' to '%s' (current value is '%s')", path, value_escaped, contents_escaped);
+			_LOGD ("sysctl: setting '%s' to '%s' (current value is '%s')", path, value_escaped, contents_escaped);
 		g_free (contents);
 		g_free (contents_escaped);
 	}
 	g_free (value_escaped);
 }
 
-#define _log_dbg_sysctl_set(path, value) \
+#define _log_dbg_sysctl_set(platform, path, value) \
 	G_STMT_START { \
-		if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) { \
-			_log_dbg_sysctl_set_impl (path, value); \
+		if (_LOGD_ENABLED ()) { \
+			_log_dbg_sysctl_set_impl (platform, path, value); \
 		} \
 	} G_STMT_END
 
@@ -2441,16 +2443,16 @@ sysctl_set (NMPlatform *platform, const char *path, const char *value)
 	fd = open (path, O_WRONLY | O_TRUNC);
 	if (fd == -1) {
 		if (errno == ENOENT) {
-			debug ("sysctl: failed to open '%s': (%d) %s",
+			_LOGD ("sysctl: failed to open '%s': (%d) %s",
 			       path, errno, strerror (errno));
 		} else {
-			error ("sysctl: failed to open '%s': (%d) %s",
+			_LOGE ("sysctl: failed to open '%s': (%d) %s",
 			       path, errno, strerror (errno));
 		}
 		return FALSE;
 	}
 
-	_log_dbg_sysctl_set (path, value);
+	_log_dbg_sysctl_set (platform, path, value);
 
 	/* Most sysfs and sysctl options don't care about a trailing LF, while some
 	 * (like infiniband) do.  So always add the LF.  Also, neither sysfs nor
@@ -2465,17 +2467,17 @@ sysctl_set (NMPlatform *platform, const char *path, const char *value)
 		nwrote = write (fd, actual, len);
 		if (nwrote == -1) {
 			if (errno == EINTR) {
-				debug ("sysctl: interrupted, will try again");
+				_LOGD ("sysctl: interrupted, will try again");
 				continue;
 			}
 			break;
 		}
 	}
 	if (nwrote == -1 && errno != EEXIST) {
-		error ("sysctl: failed to set '%s' to '%s': (%d) %s",
+		_LOGE ("sysctl: failed to set '%s' to '%s': (%d) %s",
 		       path, value, errno, strerror (errno));
 	} else if (nwrote < len) {
-		error ("sysctl: failed to set '%s' to '%s' after three attempts",
+		_LOGE ("sysctl: failed to set '%s' to '%s' after three attempts",
 		       path, value);
 	}
 
@@ -2484,44 +2486,47 @@ sysctl_set (NMPlatform *platform, const char *path, const char *value)
 	return (nwrote == len);
 }
 
-static GHashTable *sysctl_get_prev_values;
-
 static void
-_log_dbg_sysctl_get_impl (const char *path, const char *contents)
+_log_dbg_sysctl_get_impl (NMPlatform *platform, const char *path, const char *contents)
 {
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	const char *prev_value = NULL;
 
-	if (!sysctl_get_prev_values)
-		sysctl_get_prev_values = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+	if (!priv->sysctl_get_prev_values)
+		priv->sysctl_get_prev_values = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 	else
-		prev_value = g_hash_table_lookup (sysctl_get_prev_values, path);
+		prev_value = g_hash_table_lookup (priv->sysctl_get_prev_values, path);
 
 	if (prev_value) {
 		if (strcmp (prev_value, contents) != 0) {
 			char *contents_escaped = g_strescape (contents, NULL);
 			char *prev_value_escaped = g_strescape (prev_value, NULL);
 
-			debug ("sysctl: reading '%s': '%s' (changed from '%s' on last read)", path, contents_escaped, prev_value_escaped);
+			_LOGD ("sysctl: reading '%s': '%s' (changed from '%s' on last read)", path, contents_escaped, prev_value_escaped);
 			g_free (contents_escaped);
 			g_free (prev_value_escaped);
-			g_hash_table_insert (sysctl_get_prev_values, g_strdup (path), g_strdup (contents));
+			g_hash_table_insert (priv->sysctl_get_prev_values, g_strdup (path), g_strdup (contents));
 		}
 	} else {
 		char *contents_escaped = g_strescape (contents, NULL);
 
-		debug ("sysctl: reading '%s': '%s'", path, contents_escaped);
+		_LOGD ("sysctl: reading '%s': '%s'", path, contents_escaped);
 		g_free (contents_escaped);
-		g_hash_table_insert (sysctl_get_prev_values, g_strdup (path), g_strdup (contents));
+		g_hash_table_insert (priv->sysctl_get_prev_values, g_strdup (path), g_strdup (contents));
 	}
 }
 
-#define _log_dbg_sysctl_get(path, contents) \
+#define _log_dbg_sysctl_get(platform, path, contents) \
 	G_STMT_START { \
-		if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) { \
-			_log_dbg_sysctl_get_impl (path, contents); \
-		} else if (sysctl_get_prev_values) { \
-			g_hash_table_destroy (sysctl_get_prev_values); \
-			sysctl_get_prev_values = NULL; \
+		if (_LOGD_ENABLED ()) { \
+			_log_dbg_sysctl_get_impl (platform, path, contents); \
+		} else { \
+			NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform); \
+			\
+			if (priv->sysctl_get_prev_values) { \
+				g_hash_table_destroy (priv->sysctl_get_prev_values); \
+				priv->sysctl_get_prev_values = NULL; \
+			} \
 		} \
 	} G_STMT_END
 
@@ -2541,16 +2546,16 @@ sysctl_get (NMPlatform *platform, const char *path)
 		/* We assume FAILED means EOPNOTSUP */
 		if (   g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT)
 		    || g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_FAILED))
-			debug ("error reading %s: %s", path, error->message);
+			_LOGD ("error reading %s: %s", path, error->message);
 		else
-			error ("error reading %s: %s", path, error->message);
+			_LOGE ("error reading %s: %s", path, error->message);
 		g_clear_error (&error);
 		return NULL;
 	}
 
 	g_strstrip (contents);
 
-	_log_dbg_sysctl_get (path, contents);
+	_log_dbg_sysctl_get (platform, path, contents);
 
 	return contents;
 }
@@ -4946,6 +4951,9 @@ nm_linux_platform_finalize (GObject *object)
 
 	g_object_unref (priv->udev_client);
 	g_hash_table_unref (priv->wifi_data);
+
+	if (priv->sysctl_get_prev_values)
+		g_hash_table_destroy (priv->sysctl_get_prev_values);
 
 	G_OBJECT_CLASS (nm_linux_platform_parent_class)->finalize (object);
 }
