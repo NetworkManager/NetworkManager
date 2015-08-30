@@ -66,9 +66,11 @@
 
 /*********************************************************************************************/
 
-#define _NMLOG_DOMAIN                     LOGD_PLATFORM
 #define _NMLOG_PREFIX_NAME                "platform-linux"
-#define _NMLOG(level, ...)                _LOG(level, _NMLOG_DOMAIN, platform, __VA_ARGS__)
+#define _NMLOG_DOMAIN                     LOGD_PLATFORM
+#define _NMLOG2_DOMAIN                    LOGD_PLATFORM
+#define _NMLOG(level, ...)                _LOG(level, _NMLOG_DOMAIN,  platform, __VA_ARGS__)
+#define _NMLOG2(level, ...)               _LOG(level, _NMLOG2_DOMAIN, NULL,     __VA_ARGS__)
 
 #define _LOG(level, domain, self, ...) \
     G_STMT_START { \
@@ -89,12 +91,6 @@
                      __p_prefix _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
         } \
     } G_STMT_END
-
-#define trace(...)      _LOG (LOGL_TRACE, _NMLOG_DOMAIN, NULL, __VA_ARGS__)
-#define debug(...)      _LOG (LOGL_DEBUG, _NMLOG_DOMAIN, NULL, __VA_ARGS__)
-#define info(...)       _LOG (LOGL_INFO,  _NMLOG_DOMAIN, NULL, __VA_ARGS__)
-#define warning(...)    _LOG (LOGL_WARN , _NMLOG_DOMAIN, NULL, __VA_ARGS__)
-#define error(...)      _LOG (LOGL_ERR  , _NMLOG_DOMAIN, NULL, __VA_ARGS__)
 
 /******************************************************************
  * Forward declarations and enums
@@ -167,7 +163,7 @@ _nl_get_vtable (void)
 		if (!vtable.f_nl_has_capability)
 			vtable.f_nl_has_capability = &_nl_f_nl_has_capability;
 
-		trace ("libnl: rtnl_link_get_link_netnsid() %s", vtable.f_rtnl_link_get_link_netnsid ? "supported" : "not supported");
+		_LOG2t ("libnl: rtnl_link_get_link_netnsid() %s", vtable.f_rtnl_link_get_link_netnsid ? "supported" : "not supported");
 
 		g_return_val_if_fail (vtable.handle, &vtable);
 		g_return_val_if_fail (vtable.handle_route, &vtable);
@@ -529,7 +525,7 @@ _support_user_ipv6ll_get (void)
 #if HAVE_LIBNL_INET6_ADDR_GEN_MODE
 	if (_support_user_ipv6ll_still_undecided ()) {
 		_support_user_ipv6ll = -1;
-		nm_log_warn (LOGD_PLATFORM, "kernel support for IFLA_INET6_ADDR_GEN_MODE %s", "failed to detect; assume no support");
+		_LOG2W ("kernel support for IFLA_INET6_ADDR_GEN_MODE %s", "failed to detect; assume no support");
 	} else
 		return _support_user_ipv6ll > 0;
 #endif
@@ -549,10 +545,10 @@ _support_user_ipv6ll_detect (const struct rtnl_link *rtnl_link)
 
 		if (rtnl_link_inet6_get_addr_gen_mode ((struct rtnl_link *) rtnl_link, &mode) == 0) {
 			_support_user_ipv6ll = 1;
-			nm_log_dbg (LOGD_PLATFORM, "kernel support for IFLA_INET6_ADDR_GEN_MODE %s", "detected");
+			_LOG2D ("kernel support for IFLA_INET6_ADDR_GEN_MODE %s", "detected");
 		} else {
 			_support_user_ipv6ll = -1;
-			nm_log_dbg (LOGD_PLATFORM, "kernel support for IFLA_INET6_ADDR_GEN_MODE %s", "not detected");
+			_LOG2D ("kernel support for IFLA_INET6_ADDR_GEN_MODE %s", "not detected");
 		}
 	}
 #endif
@@ -593,7 +589,7 @@ static gboolean
 _support_kernel_extended_ifa_flags_get (void)
 {
 	if (_support_kernel_extended_ifa_flags_still_undecided ()) {
-		nm_log_warn (LOGD_PLATFORM, "Unable to detect kernel support for extended IFA_FLAGS. Assume no kernel support.");
+		_LOG2W ("Unable to detect kernel support for extended IFA_FLAGS. Assume no kernel support.");
 		_support_kernel_extended_ifa_flags = -1;
 	}
 	return _support_kernel_extended_ifa_flags > 0;
