@@ -33,9 +33,7 @@
 #include "nm-default.h"
 #include "nm-platform.h"
 
-#define debug(...) nm_log_dbg (LOGD_IP6, __VA_ARGS__)
-#define warning(...) nm_log_warn (LOGD_IP6, __VA_ARGS__)
-#define error(...) nm_log_err (LOGD_IP6, __VA_ARGS__)
+#define _NMLOG_PREFIX_NAME                "rdisc-lndp"
 
 typedef struct {
 	struct ndp *ndp;
@@ -65,7 +63,7 @@ send_rs (NMRDisc *rdisc)
 	error = ndp_msg_send (priv->ndp, msg);
 	ndp_msg_destroy (msg);
 	if (error) {
-		error ("(%s): cannot send router solicitation: %d.", rdisc->ifname, error);
+		_LOGE ("cannot send router solicitation: %d.", error);
 		return FALSE;
 	}
 
@@ -109,7 +107,7 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 	 * single time when the configuration is finished and updates can
 	 * come at any time.
 	 */
-	debug ("(%s): received router advertisement at %u", rdisc->ifname, now);
+	_LOGD ("received router advertisement at %u", now);
 
 	/* DHCP level:
 	 *
@@ -260,7 +258,7 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 			 * Kernel would set it, but would flush out all IPv6 addresses away
 			 * from the link, even the link-local, and we wouldn't be able to
 			 * listen for further RAs that could fix the MTU. */
-			warning ("(%s): MTU too small for IPv6 ignored: %d", rdisc->ifname, mtu);
+			_LOGW ("MTU too small for IPv6 ignored: %d", mtu);
 		}
 	}
 
@@ -273,7 +271,7 @@ event_ready (GIOChannel *source, GIOCondition condition, NMRDisc *rdisc)
 {
 	NMLNDPRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
 
-	debug ("(%s): processing libndp events.", rdisc->ifname);
+	_LOGD ("processing libndp events");
 	ndp_callall_eventfd_handler (priv->ndp);
 	return G_SOURCE_CONTINUE;
 }
@@ -323,8 +321,8 @@ nm_lndp_rdisc_new (int ifindex, const char *ifname)
 	priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
 	error = ndp_open (&priv->ndp);
 	if (error != 0) {
+		_LOGD ("error creating socket for NDP; errno=%d", -error);
 		g_object_unref (rdisc);
-		debug ("(%s): error creating socket for NDP; errno=%d", ifname, -error);
 		return NULL;
 	}
 	return rdisc;

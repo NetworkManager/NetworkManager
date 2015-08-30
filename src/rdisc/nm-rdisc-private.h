@@ -33,4 +33,33 @@ gboolean nm_rdisc_add_route      (NMRDisc *rdisc, const NMRDiscRoute *new);
 gboolean nm_rdisc_add_dns_server (NMRDisc *rdisc, const NMRDiscDNSServer *new);
 gboolean nm_rdisc_add_dns_domain (NMRDisc *rdisc, const NMRDiscDNSDomain *new);
 
+/*********************************************************************************************/
+
+#define _NMLOG_DOMAIN                     LOGD_IP6
+#define _NMLOG(level, ...)                _LOG(level, _NMLOG_DOMAIN,  rdisc, __VA_ARGS__)
+
+#define _LOG(level, domain, self, ...) \
+    G_STMT_START { \
+        const NMLogLevel __level = (level); \
+        const NMLogDomain __domain = (domain); \
+        \
+        if (nm_logging_enabled (__level, __domain)) { \
+            char __prefix[64]; \
+            const char *__p_prefix = _NMLOG_PREFIX_NAME; \
+            const NMRDisc *const __self = (self); \
+            \
+            if (__self) { \
+                g_snprintf (__prefix, sizeof (__prefix), "%s[%p,%s%s%s]", \
+                            _NMLOG_PREFIX_NAME, __self, \
+                            NM_PRINT_FMT_QUOTE_STRING (__self->ifname)); \
+                __p_prefix = __prefix; \
+            } \
+            _nm_log (__level, __domain, 0, \
+                     "%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+                     __p_prefix _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
+        } \
+    } G_STMT_END
+
+/*********************************************************************************************/
+
 #endif /* __NETWORKMANAGER_RDISC_PRIVATE_H__ */
