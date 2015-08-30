@@ -925,8 +925,8 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink, gboolean *c
 			}
 			flags = rtnl_link_get_flags (rtnllink);
 
-			nm_log_dbg (LOGD_PLATFORM, "Failed to read tun properties for interface %d (link flags: %X)",
-			            rtnl_link_get_ifindex (rtnllink), flags);
+			_LOGD ("Failed to read tun properties for interface %d (link flags: %X)",
+			       rtnl_link_get_ifindex (rtnllink), flags);
 
 			/* try guessing the type using the link flags instead... */
 			if (flags & IFF_POINTOPOINT)
@@ -2852,7 +2852,7 @@ link_add (NMPlatform *platform,
 			nm_utils_modprobe (NULL, TRUE, "bonding", "max_bonds=0", NULL);
 	}
 
-	debug ("link: add link '%s' of type '%s' (%d)",
+	_LOGD ("link: add link '%s' of type '%s' (%d)",
 	       name, nm_link_type_to_string (type), (int) type);
 
 	l = build_rtnl_link (0, name, type);
@@ -3019,7 +3019,7 @@ link_set_user_ipv6ll_enabled (NMPlatform *platform, int ifindex, gboolean enable
 		char buf[32];
 
 		rtnl_link_inet6_set_addr_gen_mode (nlo, mode);
-		debug ("link: change %d: set IPv6 address generation mode to %s",
+		_LOGD ("link: change %d: set IPv6 address generation mode to %s",
 		       ifindex, rtnl_link_inet6_addrgenmode2str (mode, buf, sizeof (buf)));
 		return do_change_link (platform, nlo, TRUE) == NM_PLATFORM_ERROR_SUCCESS;
 	}
@@ -3086,7 +3086,7 @@ link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 	auto_nl_object struct rtnl_link *change = _nl_rtnl_link_alloc (ifindex, NULL);
 
 	rtnl_link_set_mtu (change, mtu);
-	debug ("link: change %d: mtu %lu", ifindex, (unsigned long)mtu);
+	_LOGD ("link: change %d: mtu %lu", ifindex, (unsigned long)mtu);
 
 	return do_change_link (platform, change, TRUE) == NM_PLATFORM_ERROR_SUCCESS;
 }
@@ -3157,7 +3157,7 @@ vlan_add (NMPlatform *platform,
 	rtnl_link_vlan_set_id (rtnllink, vlan_id);
 	rtnl_link_vlan_set_flags (rtnllink, kernel_flags);
 
-	debug ("link: add vlan '%s', parent %d, vlan id %d, flags %X (native: %X)",
+	_LOGD ("link: add vlan '%s', parent %d, vlan id %d, flags %X (native: %X)",
 	       name, parent, vlan_id, (unsigned int) vlan_flags, kernel_flags);
 
 	return do_add_link_with_lookup (platform, name, rtnllink, NM_LINK_TYPE_VLAN, out_link);
@@ -3188,7 +3188,7 @@ vlan_set_ingress_map (NMPlatform *platform, int ifindex, int from, int to)
 	rtnl_link_set_type (change, "vlan");
 	rtnl_link_vlan_set_ingress_map (change, from, to);
 
-	debug ("link: change %d: vlan ingress map %d -> %d", ifindex, from, to);
+	_LOGD ("link: change %d: vlan ingress map %d -> %d", ifindex, from, to);
 
 	return do_change_link (platform, change, TRUE) == NM_PLATFORM_ERROR_SUCCESS;
 }
@@ -3201,7 +3201,7 @@ vlan_set_egress_map (NMPlatform *platform, int ifindex, int from, int to)
 	rtnl_link_set_type (change, "vlan");
 	rtnl_link_vlan_set_egress_map (change, from, to);
 
-	debug ("link: change %d: vlan egress map %d -> %d", ifindex, from, to);
+	_LOGD ("link: change %d: vlan egress map %d -> %d", ifindex, from, to);
 
 	return do_change_link (platform, change, TRUE) == NM_PLATFORM_ERROR_SUCCESS;
 }
@@ -3212,7 +3212,7 @@ link_enslave (NMPlatform *platform, int master, int slave)
 	auto_nl_object struct rtnl_link *change = _nl_rtnl_link_alloc (slave, NULL);
 
 	rtnl_link_set_master (change, master);
-	debug ("link: change %d: enslave to master %d", slave, master);
+	_LOGD ("link: change %d: enslave to master %d", slave, master);
 
 	return do_change_link (platform, change, TRUE) == NM_PLATFORM_ERROR_SUCCESS;
 }
@@ -3592,8 +3592,8 @@ macvlan_get_properties (NMPlatform *platform, int ifindex, NMPlatformMacvlanProp
 	err = _nl_link_parse_info_data (priv->nlh, ifindex,
 	                                macvlan_info_data_parser, props);
 	if (err != 0) {
-		warning ("(%s) could not read properties: %s",
-		         obj->link.name, nl_geterror (err));
+		_LOGW ("(%s) could not read properties: %s",
+		       obj->link.name, nl_geterror (err));
 	}
 	return (err == 0);
 }
@@ -3723,8 +3723,8 @@ vxlan_get_properties (NMPlatform *platform, int ifindex, NMPlatformVxlanProperti
 	err = _nl_link_parse_info_data (priv->nlh, ifindex,
 	                                vxlan_info_data_parser, props);
 	if (err != 0) {
-		warning ("(%s) could not read vxlan properties: %s",
-		         nm_platform_link_get_name (platform, ifindex), nl_geterror (err));
+		_LOGW ("(%s) could not read vxlan properties: %s",
+		       nm_platform_link_get_name (platform, ifindex), nl_geterror (err));
 	}
 	return (err == 0);
 }
@@ -3777,8 +3777,8 @@ gre_get_properties (NMPlatform *platform, int ifindex, NMPlatformGreProperties *
 	err = _nl_link_parse_info_data (priv->nlh, ifindex,
 	                                gre_info_data_parser, props);
 	if (err != 0) {
-		warning ("(%s) could not read gre properties: %s",
-		         nm_platform_link_get_name (platform, ifindex), nl_geterror (err));
+		_LOGW ("(%s) could not read gre properties: %s",
+		       nm_platform_link_get_name (platform, ifindex), nl_geterror (err));
 	}
 	return (err == 0);
 }
@@ -4040,7 +4040,7 @@ build_rtnl_addr (NMPlatform *platform,
 	/* IP address */
 	nle = rtnl_addr_set_local (rtnladdr, nladdr);
 	if (nle) {
-		error ("build_rtnl_addr(): rtnl_addr_set_local failed with %s (%d)", nl_geterror (nle), nle);
+		_LOGE ("build_rtnl_addr(): rtnl_addr_set_local failed with %s (%d)", nl_geterror (nle), nle);
 		return NULL;
 	}
 
@@ -4066,7 +4066,7 @@ build_rtnl_addr (NMPlatform *platform,
 		nle = rtnl_addr_set_peer (rtnladdr, nlpeer);
 		if (nle && nle != -NLE_AF_NOSUPPORT) {
 			/* IPv6 doesn't support peer addresses yet */
-			error ("build_rtnl_addr(): rtnl_addr_set_peer failed with %s (%d)", nl_geterror (nle), nle);
+			_LOGE ("build_rtnl_addr(): rtnl_addr_set_peer failed with %s (%d)", nl_geterror (nle), nle);
 			return NULL;
 		}
 	}
@@ -4586,10 +4586,10 @@ event_handler_read_netlink_one (NMPlatform *platform)
 		case -NLE_AGAIN:
 			return FALSE;
 		case -NLE_DUMP_INTR:
-			debug ("Uncritical failure to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
+			_LOGD ("Uncritical failure to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
 			break;
 		case -NLE_NOMEM:
-			info ("Too many netlink events. Need to resynchronize platform cache");
+			_LOGI ("Too many netlink events. Need to resynchronize platform cache");
 			/* Drain the event queue, we've lost events and are out of sync anyway and we'd
 			 * like to free up some space. We'll read in the status synchronously. */
 			_nl_sock_flush_data (priv->nlh_event);
@@ -4603,7 +4603,7 @@ event_handler_read_netlink_one (NMPlatform *platform)
 			                         NULL);
 			break;
 		default:
-			error ("Failed to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
+			_LOGE ("Failed to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
 			break;
 	}
 	return TRUE;
@@ -4731,23 +4731,23 @@ udev_device_added (NMPlatform *platform,
 
 	ifname = g_udev_device_get_name (udev_device);
 	if (!ifname) {
-		debug ("udev-add: failed to get device's interface");
+		_LOGD ("udev-add: failed to get device's interface");
 		return;
 	}
 
 	if (g_udev_device_get_property (udev_device, "IFINDEX"))
 		ifindex = g_udev_device_get_property_as_int (udev_device, "IFINDEX");
 	else {
-		warning ("(%s): udev-add: failed to get device's ifindex", ifname);
+		_LOGW ("(%s): udev-add: failed to get device's ifindex", ifname);
 		return;
 	}
 	if (ifindex <= 0) {
-		warning ("(%s): udev-add: retrieved invalid IFINDEX=%d", ifname, ifindex);
+		_LOGW ("(%s): udev-add: retrieved invalid IFINDEX=%d", ifname, ifindex);
 		return;
 	}
 
 	if (!g_udev_device_get_sysfs_path (udev_device)) {
-		debug ("(%s): udev-add: couldn't determine device path; ignoring...", ifname);
+		_LOGD ("(%s): udev-add: couldn't determine device path; ignoring...", ifname);
 		return;
 	}
 
@@ -4777,7 +4777,7 @@ udev_device_removed (NMPlatform *platform,
 			ifindex = obj->link.ifindex;
 	}
 
-	debug ("udev-remove: IFINDEX=%d", ifindex);
+	_LOGD ("udev-remove: IFINDEX=%d", ifindex);
 	if (ifindex <= 0)
 		return;
 
@@ -4803,9 +4803,9 @@ handle_udev_event (GUdevClient *client,
 
 	ifindex = g_udev_device_get_property (udev_device, "IFINDEX");
 	seqnum = g_udev_device_get_seqnum (udev_device);
-	debug ("UDEV event: action '%s' subsys '%s' device '%s' (%s); seqnum=%" G_GUINT64_FORMAT,
-	       action, subsys, g_udev_device_get_name (udev_device),
-	       ifindex ? ifindex : "unknown", seqnum);
+	_LOGD ("UDEV event: action '%s' subsys '%s' device '%s' (%s); seqnum=%" G_GUINT64_FORMAT,
+	        action, subsys, g_udev_device_get_name (udev_device),
+	        ifindex ? ifindex : "unknown", seqnum);
 
 	if (!strcmp (action, "add") || !strcmp (action, "move"))
 		udev_device_added (platform, udev_device);
@@ -4849,7 +4849,7 @@ constructed (GObject *_object)
 	/* Initialize netlink socket for requests */
 	priv->nlh = setup_socket (platform, FALSE);
 	g_assert (priv->nlh);
-	debug ("Netlink socket for requests established: port=%u, fd=%d", nl_socket_get_local_port (priv->nlh), nl_socket_get_fd (priv->nlh));
+	_LOGD ("Netlink socket for requests established: port=%u, fd=%d", nl_socket_get_local_port (priv->nlh), nl_socket_get_fd (priv->nlh));
 
 	/* Initialize netlink socket for events */
 	priv->nlh_event = setup_socket (platform, TRUE);
@@ -4866,7 +4866,7 @@ constructed (GObject *_object)
 	                                 RTNLGRP_IPV4_ROUTE,  RTNLGRP_IPV6_ROUTE,
 	                                 0);
 	g_assert (!nle);
-	debug ("Netlink socket for events established: port=%u, fd=%d", nl_socket_get_local_port (priv->nlh_event), nl_socket_get_fd (priv->nlh_event));
+	_LOGD ("Netlink socket for events established: port=%u, fd=%d", nl_socket_get_local_port (priv->nlh_event), nl_socket_get_fd (priv->nlh_event));
 
 	priv->event_channel = g_io_channel_unix_new (nl_socket_get_fd (priv->nlh_event));
 	g_io_channel_set_encoding (priv->event_channel, NULL, NULL);
