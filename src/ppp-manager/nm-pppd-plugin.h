@@ -32,5 +32,3 @@
 #define NM_PPP_IP6_CONFIG_OUR_IID   "our-iid"
 #define NM_PPP_IP6_CONFIG_PEER_IID  "peer-iid"
 
-#define DBUS_TYPE_EUI64 (dbus_g_type_get_collection ("GByteArray", G_TYPE_UINT8))
-
