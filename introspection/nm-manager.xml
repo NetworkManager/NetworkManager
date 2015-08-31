@@ -195,7 +195,7 @@
           WIFI, BT, MB, DHCP4, DHCP6, PPP, WIFI_SCAN, IP4, IP6, AUTOIP4, DNS,
           VPN, SHARING, SUPPLICANT, AGENTS, SETTINGS, SUSPEND, CORE, DEVICE,
           OLPC, WIMAX, INFINIBAND, FIREWALL, ADSL, BOND, VLAN, BRIDGE, DBUS_PROPS,
-          TEAM, CONCHECK, DCB, DISPATCH].
+          TEAM, CONCHECK, DCB, DISPATCH, AUDIT].
           In addition to these domains, the following special domains can be used:
           [NONE, ALL, DEFAULT, DHCP, IP].  You can also specify that some domains
           should log at a different level from the default by appending a colon (':')
