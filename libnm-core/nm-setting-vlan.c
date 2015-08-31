@@ -762,7 +762,7 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 * "from" and "to" are unsigned integers, ie "7:3".
 	 **/
 	/* ---ifcfg-rh---
-	 * property: ingress-property-map
+	 * property: ingress-priority-map
 	 * variable: VLAN_INGRESS_PRIORITY_MAP
 	 * description: Ingress priority mapping.
 	 * example: VLAN_INGRESS_PRIORITY_MAP=4:2,3:5
@@ -784,7 +784,7 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 * both "from" and "to" are unsigned integers, ie "7:3".
 	 **/
 	/* ---ifcfg-rh---
-	 * property: egress-property-map
+	 * property: egress-priority-map
 	 * variable: VLAN_EGRESS_PRIORITY_MAP
 	 * description: Egress priority mapping.
 	 * example: VLAN_EGRESS_PRIORITY_MAP=5:4,4:1,3:7
