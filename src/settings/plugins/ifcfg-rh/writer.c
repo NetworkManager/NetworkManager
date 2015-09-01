@@ -1264,13 +1264,10 @@ write_vlan_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired,
 	else
 		svSetValue (ifcfg, "REORDER_HDR", "no", FALSE);
 
+	svSetValue (ifcfg, "GVRP", vlan_flags & NM_VLAN_FLAG_GVRP ? "yes" : "no", FALSE);
+
 	svSetValue (ifcfg, "VLAN_FLAGS", NULL, FALSE);
-	if (vlan_flags & NM_VLAN_FLAG_GVRP) {
-		if (vlan_flags & NM_VLAN_FLAG_LOOSE_BINDING)
-			svSetValue (ifcfg, "VLAN_FLAGS", "GVRP,LOOSE_BINDING", FALSE);
-		else
-			svSetValue (ifcfg, "VLAN_FLAGS", "GVRP", FALSE);
-	} else if (vlan_flags & NM_VLAN_FLAG_LOOSE_BINDING)
+	if (vlan_flags & NM_VLAN_FLAG_LOOSE_BINDING)
 		svSetValue (ifcfg, "VLAN_FLAGS", "LOOSE_BINDING", FALSE);
 
 	tmp = vlan_priority_maplist_to_stringlist (s_vlan, NM_VLAN_INGRESS_MAP);
