@@ -118,6 +118,8 @@
         } \
     } G_STMT_END
 
+#define LOG_FMT_IP_TUNNEL "adding %s '%s' parent %u local %s remote %s"
+
 /******************************************************************
  * Forward declarations and enums
  ******************************************************************/
@@ -821,10 +823,10 @@ _parse_lnk_gre (const char *kind, struct nlattr *info_data)
 	props = &obj->lnk_gre;
 
 	props->parent_ifindex = tb[IFLA_GRE_LINK] ? nla_get_u32 (tb[IFLA_GRE_LINK]) : 0;
-	props->input_flags = tb[IFLA_GRE_IFLAGS] ? nla_get_u16 (tb[IFLA_GRE_IFLAGS]) : 0;
-	props->output_flags = tb[IFLA_GRE_OFLAGS] ? nla_get_u16 (tb[IFLA_GRE_OFLAGS]) : 0;
-	props->input_key = (props->input_flags & GRE_KEY) && tb[IFLA_GRE_IKEY] ? nla_get_u32 (tb[IFLA_GRE_IKEY]) : 0;
-	props->output_key = (props->output_flags & GRE_KEY) && tb[IFLA_GRE_OKEY] ? nla_get_u32 (tb[IFLA_GRE_OKEY]) : 0;
+	props->input_flags = tb[IFLA_GRE_IFLAGS] ? ntohs (nla_get_u16 (tb[IFLA_GRE_IFLAGS])) : 0;
+	props->output_flags = tb[IFLA_GRE_OFLAGS] ? ntohs (nla_get_u16 (tb[IFLA_GRE_OFLAGS])) : 0;
+	props->input_key = tb[IFLA_GRE_IKEY] ? ntohl (nla_get_u32 (tb[IFLA_GRE_IKEY])) : 0;
+	props->output_key = tb[IFLA_GRE_OKEY] ? ntohl (nla_get_u32 (tb[IFLA_GRE_OKEY])) : 0;
 	props->local = tb[IFLA_GRE_LOCAL] ? nla_get_u32 (tb[IFLA_GRE_LOCAL]) : 0;
 	props->remote = tb[IFLA_GRE_REMOTE] ? nla_get_u32 (tb[IFLA_GRE_REMOTE]) : 0;
 	props->tos = tb[IFLA_GRE_TOS] ? nla_get_u8 (tb[IFLA_GRE_TOS]) : 0;
@@ -4034,6 +4036,61 @@ nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
 
+static int
+link_gre_add (NMPlatform *platform,
+              const char *name,
+              NMPlatformLnkGre *props,
+              NMPlatformLink *out_link)
+{
+	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+	struct nlattr *info;
+	struct nlattr *data;
+	char buffer[INET_ADDRSTRLEN];
+
+	_LOGD (LOG_FMT_IP_TUNNEL,
+	       "gre",
+	       name,
+	       props->parent_ifindex,
+	       nm_utils_inet4_ntop (props->local, NULL),
+	       nm_utils_inet4_ntop (props->remote, buffer));
+
+	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
+	                          NLM_F_CREATE,
+	                          0,
+	                          name,
+	                          0,
+	                          0);
+	if (!nlmsg)
+		return FALSE;
+
+	if (!(info = nla_nest_start (nlmsg, IFLA_LINKINFO)))
+		goto nla_put_failure;
+
+	NLA_PUT_STRING (nlmsg, IFLA_INFO_KIND, "gre");
+
+	if (!(data = nla_nest_start (nlmsg, IFLA_INFO_DATA)))
+		goto nla_put_failure;
+
+	if (props->parent_ifindex)
+		NLA_PUT_U32 (nlmsg, IFLA_GRE_LINK, props->parent_ifindex);
+	NLA_PUT_U32 (nlmsg, IFLA_GRE_LOCAL, props->local);
+	NLA_PUT_U32 (nlmsg, IFLA_GRE_REMOTE, props->remote);
+	NLA_PUT_U8 (nlmsg, IFLA_GRE_TTL, props->ttl);
+	NLA_PUT_U8 (nlmsg, IFLA_GRE_TOS, props->tos);
+	NLA_PUT_U8 (nlmsg, IFLA_GRE_PMTUDISC, !!props->path_mtu_discovery);
+	NLA_PUT_U32 (nlmsg, IFLA_GRE_IKEY, htonl (props->input_key));
+	NLA_PUT_U32 (nlmsg, IFLA_GRE_OKEY, htonl (props->output_key));
+	NLA_PUT_U32 (nlmsg, IFLA_GRE_IFLAGS, htons (props->input_flags));
+	NLA_PUT_U32 (nlmsg, IFLA_GRE_OFLAGS, htons (props->output_flags));
+
+	nla_nest_end (nlmsg, data);
+	nla_nest_end (nlmsg, info);
+
+	return do_add_link_with_lookup (platform, NM_LINK_TYPE_GRE, name, nlmsg, out_link);
+nla_put_failure:
+	g_return_val_if_reached (FALSE);
+}
+
 static void
 _vlan_change_vlan_qos_mapping_create (gboolean is_ingress_map,
                                       gboolean reset_all,
@@ -5486,6 +5543,8 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->mesh_get_channel = mesh_get_channel;
 	platform_class->mesh_set_channel = mesh_set_channel;
 	platform_class->mesh_set_ssid = mesh_set_ssid;
+
+	platform_class->link_gre_add = link_gre_add;
 
 	platform_class->ip4_address_get = ip4_address_get;
 	platform_class->ip6_address_get = ip6_address_get;

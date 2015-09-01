@@ -63,6 +63,9 @@ typedef struct _NMPlatform NMPlatform;
 
 #define NM_IFF_MULTI_QUEUE                     0x0100 /* IFF_MULTI_QUEUE */
 
+/* Redefine this in host's endianness */
+#define NM_GRE_KEY      0x2000
+
 typedef enum { /*< skip >*/
 
 	/* dummy value, to enforce that the enum type is signed and has a size
@@ -524,6 +527,9 @@ typedef struct {
 	                              const NMVlanQosMapping *egress_map,
 	                              gsize n_egress_map);
 
+	gboolean (*link_gre_add) (NMPlatform *, const char *name, NMPlatformLnkGre *props,
+	                          NMPlatformLink *out_link);
+
 	gboolean (*infiniband_partition_add) (NMPlatform *, int parent, int p_key, NMPlatformLink *out_link);
 
 	gboolean (*tun_add) (NMPlatform *platform, const char *name, gboolean tap, gint64 owner, gint64 group, gboolean pi,
@@ -762,6 +768,10 @@ void                   nm_platform_ip4_address_set_addr (NMPlatformIP4Address *a
 const struct in6_addr *nm_platform_ip6_address_get_peer (const NMPlatformIP6Address *addr);
 
 const NMPlatformIP4Address *nm_platform_ip4_address_get (NMPlatform *self, int ifindex, in_addr_t address, int plen, in_addr_t peer_address);
+
+NMPlatformError nm_platform_link_gre_add (NMPlatform *self, const char *name, NMPlatformLnkGre *props,
+                                          NMPlatformLink *out_link);
+
 const NMPlatformIP6Address *nm_platform_ip6_address_get (NMPlatform *self, int ifindex, struct in6_addr address, int plen);
 GArray *nm_platform_ip4_address_get_all (NMPlatform *self, int ifindex);
 GArray *nm_platform_ip6_address_get_all (NMPlatform *self, int ifindex);

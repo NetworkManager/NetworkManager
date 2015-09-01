@@ -71,6 +71,8 @@ G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPRoute, network_ptr) == G_STRUCT_OF
         } \
     } G_STMT_END
 
+#define LOG_FMT_IP_TUNNEL "adding %s '%s' parent %u local %s remote %s"
+
 /*****************************************************************************/
 
 #define NM_PLATFORM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_PLATFORM, NMPlatformPrivate))
@@ -1707,6 +1709,45 @@ nm_platform_vlan_set_egress_map (NMPlatform *self, int ifindex, int from, int to
 	};
 
 	return nm_platform_link_vlan_change (self, ifindex, 0, 0, FALSE, NULL, 0, FALSE, &map, 1);
+}
+
+/**
+ * nm_platform_link_gre_add:
+ * @self: platform instance
+ * @name: name of the new interface
+ * @props: interface properties
+ * @out_link: on success, the link object
+ *
+ * Create a software GRE device.
+ */
+NMPlatformError
+nm_platform_link_gre_add (NMPlatform *self,
+                          const char *name,
+                          NMPlatformLnkGre *props,
+                          NMPlatformLink *out_link)
+{
+	NMPlatformError plerr;
+	char buffer[INET_ADDRSTRLEN];
+
+	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
+
+	g_return_val_if_fail (props, NM_PLATFORM_ERROR_BUG);
+	g_return_val_if_fail (name, NM_PLATFORM_ERROR_BUG);
+
+	plerr = _link_add_check_existing (self, name, NM_LINK_TYPE_GRE, out_link);
+	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
+		return plerr;
+
+	_LOGD (LOG_FMT_IP_TUNNEL,
+	       "gre",
+	       name,
+	       props->parent_ifindex,
+	       nm_utils_inet4_ntop (props->local, NULL),
+	       nm_utils_inet4_ntop (props->remote, buffer));
+
+	if (!klass->link_gre_add (self, name, props, out_link))
+		return NM_PLATFORM_ERROR_UNSPECIFIED;
+	return NM_PLATFORM_ERROR_SUCCESS;
 }
 
 NMPlatformError
