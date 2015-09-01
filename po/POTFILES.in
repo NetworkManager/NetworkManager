@@ -65,6 +65,7 @@ libnm-core/nm-setting-infiniband.c
 libnm-core/nm-setting-ip-config.c
 libnm-core/nm-setting-ip4-config.c
 libnm-core/nm-setting-ip6-config.c
+libnm-core/nm-setting-ip-tunnel.c
 libnm-core/nm-setting-olpc-mesh.c
 libnm-core/nm-setting-ppp.c
 libnm-core/nm-setting-pppoe.c

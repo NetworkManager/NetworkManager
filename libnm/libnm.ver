@@ -858,6 +858,7 @@ libnm_1_0_6 {
 libnm_1_2_0 {
 global:
 	nm_access_point_get_last_seen;
+	nm_connection_get_setting_ip_tunnel;
 	nm_connection_verify_secrets;
 	nm_device_ethernet_get_s390_subchannels;
 	nm_device_get_lldp_neighbors;
@@ -874,6 +875,7 @@ global:
 	nm_device_tun_get_vnet_hdr;
 	nm_device_wifi_request_scan_options;
 	nm_device_wifi_request_scan_options_async;
+	nm_ip_tunnel_mode_get_type;
 	nm_lldp_neighbor_get_attr_names;
 	nm_lldp_neighbor_get_attr_string_value;
 	nm_lldp_neighbor_get_attr_type;
@@ -904,6 +906,17 @@ global:
 	nm_setting_ip_config_has_dns_options;
 	nm_setting_ip_config_remove_dns_option;
 	nm_setting_ip_config_remove_dns_option_by_value;
+	nm_setting_ip_tunnel_get_input_key;
+	nm_setting_ip_tunnel_get_local;
+	nm_setting_ip_tunnel_get_mode;
+	nm_setting_ip_tunnel_get_output_key;
+	nm_setting_ip_tunnel_get_parent;
+	nm_setting_ip_tunnel_get_path_mtu_discovery;
+	nm_setting_ip_tunnel_get_remote;
+	nm_setting_ip_tunnel_get_tos;
+	nm_setting_ip_tunnel_get_type;
+	nm_setting_ip_tunnel_get_ttl;
+	nm_setting_ip_tunnel_new;
 	nm_setting_mac_randomization_get_type;
 	nm_setting_tun_get_group;
 	nm_setting_tun_get_mode;

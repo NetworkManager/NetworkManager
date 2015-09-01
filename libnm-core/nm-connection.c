@@ -1866,6 +1866,24 @@ nm_connection_get_setting_ip4_config (NMConnection *connection)
 }
 
 /**
+ * nm_connection_get_setting_ip_tunnel:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingIPTunnel the connection might contain.
+ *
+ * Returns: (transfer none): an #NMSettingIPTunnel if the connection contains one, otherwise %NULL
+ *
+ * Since: 1.2
+ **/
+NMSettingIPTunnel *
+nm_connection_get_setting_ip_tunnel (NMConnection *connection)
+{
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return (NMSettingIPTunnel *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP_TUNNEL);
+}
+
+/**
  * nm_connection_get_setting_ip6_config:
  * @connection: the #NMConnection
  *

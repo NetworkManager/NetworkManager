@@ -61,6 +61,7 @@
 #include <nm-setting-gsm.h>
 #include <nm-setting-infiniband.h>
 #include <nm-setting-ip-config.h>
+#include <nm-setting-ip-tunnel.h>
 #include <nm-setting-ip4-config.h>
 #include <nm-setting-ip6-config.h>
 #include <nm-setting-olpc-mesh.h>
