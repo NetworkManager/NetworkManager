@@ -564,7 +564,7 @@ priority_strv_to_maplist (NMVlanPriorityMap map, char **strv)
 	GSList *list = NULL;
 	int i;
 
-	for (i = 0; strv[i]; i++) {
+	for (i = 0; strv && strv[i]; i++) {
 		PriorityMap *item;
 
 		item = priority_map_new_from_str (map, strv[i]);
