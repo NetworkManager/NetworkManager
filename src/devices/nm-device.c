@@ -3655,6 +3655,16 @@ dhcp4_fail (NMDevice *self, gboolean timeout)
 		return;
 	}
 
+	/* Instead of letting an assumed connection fail (which means that the
+	 * device will transition to the ACTIVATED state without IP configuration),
+	 * retry DHCP again.
+	 */
+	if (nm_device_uses_assumed_connection (self)) {
+		_LOGI (LOGD_DHCP4, "Scheduling DHCPv4 restart because the connection is assumed");
+		priv->dhcp4_restart_id = g_timeout_add_seconds (120, dhcp4_restart_cb, self);
+		return;
+	}
+
 	if (timeout || (priv->ip4_state == IP_CONF))
 		nm_device_activate_schedule_ip4_config_timeout (self);
 	else if (priv->ip4_state == IP_DONE)
@@ -4310,6 +4320,16 @@ dhcp6_fail (NMDevice *self, gboolean timeout)
 		    && priv->con_ip6_config
 		    && nm_ip6_config_get_num_addresses (priv->con_ip6_config)) {
 			_LOGI (LOGD_DHCP6, "Scheduling DHCPv6 restart because device has IP addresses");
+			priv->dhcp6_restart_id = g_timeout_add_seconds (120, dhcp6_restart_cb, self);
+			return;
+		}
+
+		/* Instead of letting an assumed connection fail (which means that the
+		 * device will transition to the ACTIVATED state without IP configuration),
+		 * retry DHCP again.
+		 */
+		if (nm_device_uses_assumed_connection (self)) {
+			_LOGI (LOGD_DHCP6, "Scheduling DHCPv6 restart because the connection is assumed");
 			priv->dhcp6_restart_id = g_timeout_add_seconds (120, dhcp6_restart_cb, self);
 			return;
 		}
