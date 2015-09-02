@@ -132,9 +132,9 @@ static void request_remove_agent (Request *req, NMSecretAgent *agent, GSList **p
 
 static void request_next_agent (Request *req);
 
-static void get_next_cb (Request *req);
-static void save_next_cb (Request *req);
-static void delete_next_cb (Request *req);
+static void _con_get_request_start (Request *req);
+static void _con_save_request_start (Request *req);
+static void _con_del_request_start (Request *req);
 
 static gboolean _con_get_try_complete_early (Request *req);
 
@@ -721,13 +721,13 @@ request_next_agent (Request *req)
 
 		switch (req->request_type) {
 		case REQUEST_TYPE_CON_GET:
-			get_next_cb (req);
+			_con_get_request_start (req);
 			break;
 		case REQUEST_TYPE_CON_SAVE:
-			save_next_cb (req);
+			_con_save_request_start (req);
 			break;
 		case REQUEST_TYPE_CON_DEL:
-			delete_next_cb (req);
+			_con_del_request_start (req);
 			break;
 		default:
 			g_assert_not_reached ();
@@ -792,11 +792,11 @@ out:
 /*************************************************************/
 
 static void
-get_done_cb (NMSecretAgent *agent,
-             NMSecretAgentCallId call_id,
-             GVariant *secrets,
-             GError *error,
-             gpointer user_data)
+_con_get_request_done (NMSecretAgent *agent,
+                       NMSecretAgentCallId call_id,
+                       GVariant *secrets,
+                       GError *error,
+                       gpointer user_data)
 {
 	NMAgentManager *self;
 	Request *req = user_data;
@@ -905,7 +905,7 @@ set_secrets_not_required (NMConnection *connection, GVariant *dict)
 }
 
 static void
-get_agent_request_secrets (Request *req, gboolean include_system_secrets)
+_con_get_request_start_proceed (Request *req, gboolean include_system_secrets)
 {
 	NMConnection *tmp;
 
@@ -930,7 +930,7 @@ get_agent_request_secrets (Request *req, gboolean include_system_secrets)
 	                                                    req->con.get.setting_name,
 	                                                    (const char **) req->con.get.hints,
 	                                                    req->con.get.flags,
-	                                                    get_done_cb,
+	                                                    _con_get_request_done,
 	                                                    req);
 	if (!req->current_call_id) {
 		g_warn_if_reached ();
@@ -941,10 +941,10 @@ get_agent_request_secrets (Request *req, gboolean include_system_secrets)
 }
 
 static void
-get_agent_modify_auth_cb (NMAuthChain *chain,
-                          GError *error,
-                          GDBusMethodInvocation *context,
-                          gpointer user_data)
+_con_get_request_start_validated (NMAuthChain *chain,
+                                 GError *error,
+                                 GDBusMethodInvocation *context,
+                                 gpointer user_data)
 {
 	NMAgentManager *self;
 	Request *req = user_data;
@@ -976,18 +976,18 @@ get_agent_modify_auth_cb (NMAuthChain *chain,
 		       LOG_REQ_ARG (req),
 		       req->con.current_has_modify ? "YES" : "NO");
 
-		get_agent_request_secrets (req, req->con.current_has_modify);
+		_con_get_request_start_proceed (req, req->con.current_has_modify);
 	}
 
 	nm_auth_chain_unref (chain);
 }
 
 static void
-check_system_secrets_cb (NMSetting *setting,
-                         const char *key,
-                         const GValue *value,
-                         GParamFlags flags,
-                         gpointer user_data)
+has_system_secrets_check (NMSetting *setting,
+                          const char *key,
+                          const GValue *value,
+                          GParamFlags flags,
+                          gpointer user_data)
 {
 	NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
 	gboolean *has_system = user_data;
@@ -1021,12 +1021,12 @@ has_system_secrets (NMConnection *connection)
 {
 	gboolean has_system = FALSE;
 
-	nm_connection_for_each_setting_value (connection, check_system_secrets_cb, &has_system);
+	nm_connection_for_each_setting_value (connection, has_system_secrets_check, &has_system);
 	return has_system;
 }
 
 static void
-get_next_cb (Request *req)
+_con_get_request_start (Request *req)
 {
 	NMAgentManager *self;
 	NMSettingConnection *s_con;
@@ -1051,7 +1051,7 @@ get_next_cb (Request *req)
 
 		req->con.chain = nm_auth_chain_new_subject (nm_secret_agent_get_subject (req->current),
 		                                            NULL,
-		                                            get_agent_modify_auth_cb,
+		                                            _con_get_request_start_validated,
 		                                            req);
 		g_assert (req->con.chain);
 
@@ -1072,7 +1072,7 @@ get_next_cb (Request *req)
 		_LOGD (NULL, "("LOG_REQ_FMT") requesting user-owned secrets from agent %s",
 		       LOG_REQ_ARG (req), agent_dbus_owner);
 
-		get_agent_request_secrets (req, FALSE);
+		_con_get_request_start_proceed (req, FALSE);
 	}
 }
 
@@ -1213,11 +1213,11 @@ nm_agent_manager_cancel_secrets (NMAgentManager *self,
 /*************************************************************/
 
 static void
-save_done_cb (NMSecretAgent *agent,
-              NMSecretAgentCallId call_id,
-              GVariant *secrets,
-              GError *error,
-              gpointer user_data)
+_con_save_request_done (NMSecretAgent *agent,
+                        NMSecretAgentCallId call_id,
+                        GVariant *secrets,
+                        GError *error,
+                        gpointer user_data)
 {
 	NMAgentManager *self;
 	Request *req = user_data;
@@ -1254,11 +1254,11 @@ save_done_cb (NMSecretAgent *agent,
 }
 
 static void
-save_next_cb (Request *req)
+_con_save_request_start (Request *req)
 {
 	req->current_call_id = nm_secret_agent_save_secrets (req->current,
 	                                                     req->con.connection,
-	                                                     save_done_cb,
+	                                                     _con_save_request_done,
 	                                                     req);
 	if (!req->current_call_id) {
 		g_warn_if_reached ();
@@ -1298,11 +1298,11 @@ nm_agent_manager_save_secrets (NMAgentManager *self,
 /*************************************************************/
 
 static void
-delete_done_cb (NMSecretAgent *agent,
-                NMSecretAgentCallId call_id,
-                GVariant *secrets,
-                GError *error,
-                gpointer user_data)
+_con_del_request_done (NMSecretAgent *agent,
+                       NMSecretAgentCallId call_id,
+                       GVariant *secrets,
+                       GError *error,
+                       gpointer user_data)
 {
 	NMAgentManager *self;
 	Request *req = user_data;
@@ -1336,11 +1336,11 @@ delete_done_cb (NMSecretAgent *agent,
 }
 
 static void
-delete_next_cb (Request *req)
+_con_del_request_start (Request *req)
 {
 	req->current_call_id = nm_secret_agent_delete_secrets (req->current,
 	                                                       req->con.connection,
-	                                                       delete_done_cb,
+	                                                       _con_del_request_done,
 	                                                       req);
 	if (!req->current_call_id) {
 		g_warn_if_reached ();
