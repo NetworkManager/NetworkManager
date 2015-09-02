@@ -73,7 +73,7 @@ typedef struct {
 
 	NMActRequest *act_request;
 	guint32 secrets_tries;
-	guint32 secrets_id;
+	NMActRequestGetSecretsCallId secrets_id;
 
 	guint32 mm_ip_timeout;
 
@@ -724,13 +724,13 @@ cancel_get_secrets (NMModem *self)
 
 	if (priv->secrets_id) {
 		nm_act_request_cancel_secrets (priv->act_request, priv->secrets_id);
-		priv->secrets_id = 0;
+		priv->secrets_id = NULL;
 	}
 }
 
 static void
 modem_secrets_cb (NMActRequest *req,
-                  guint32 call_id,
+                  NMActRequestGetSecretsCallId call_id,
                   NMConnection *connection,
                   GError *error,
                   gpointer user_data)
@@ -740,7 +740,7 @@ modem_secrets_cb (NMActRequest *req,
 
 	g_return_if_fail (call_id == priv->secrets_id);
 
-	priv->secrets_id = 0;
+	priv->secrets_id = NULL;
 
 	if (error)
 		nm_log_warn (LOGD_MB, "(%s): %s", nm_modem_get_uid (self), error->message);

@@ -63,7 +63,7 @@ typedef struct {
 
 	NMActRequest *act_req;
 	GDBusMethodInvocation *pending_secrets_context;
-	guint32 secrets_id;
+	NMActRequestGetSecretsCallId secrets_id;
 	const char *secrets_setting_name;
 
 	guint32 ppp_watch_id;
@@ -243,7 +243,7 @@ cancel_get_secrets (NMPPPManager *self)
 
 	if (priv->secrets_id) {
 		nm_act_request_cancel_secrets (priv->act_req, priv->secrets_id);
-		priv->secrets_id = 0;
+		priv->secrets_id = NULL;
 	}
 	priv->secrets_setting_name = NULL;
 }
@@ -309,7 +309,7 @@ extract_details_from_connection (NMConnection *connection,
 
 static void
 ppp_secrets_cb (NMActRequest *req,
-                guint32 call_id,
+                NMActRequestGetSecretsCallId call_id,
                 NMConnection *connection,
                 GError *error,
                 gpointer user_data)
@@ -348,7 +348,7 @@ ppp_secrets_cb (NMActRequest *req,
 
  out:
 	priv->pending_secrets_context = NULL;
-	priv->secrets_id = 0;
+	priv->secrets_id = NULL;
 	priv->secrets_setting_name = NULL;
 }
 

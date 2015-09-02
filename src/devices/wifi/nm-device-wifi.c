@@ -1674,7 +1674,7 @@ cleanup_association_attempt (NMDeviceWifi *self, gboolean disconnect)
 
 static void
 wifi_secrets_cb (NMActRequest *req,
-                 guint32 call_id,
+                 NMActRequestGetSecretsCallId call_id,
                  NMConnection *connection,
                  GError *error,
                  gpointer user_data)

@@ -124,7 +124,7 @@ enum {
 static guint signals[LAST_SIGNAL] = { 0 };
 
 
-typedef struct _Request Request;
+typedef struct _NMAgentManagerCallId Request;
 
 static void request_add_agent (Request *req, NMSecretAgent *agent);
 
@@ -160,7 +160,7 @@ remove_agent (NMAgentManager *self, const char *owner)
 
 	/* Remove this agent from any in-progress secrets requests */
 	g_hash_table_iter_init (&iter, priv->requests);
-	while (g_hash_table_iter_next (&iter, NULL, &data))
+	while (g_hash_table_iter_next (&iter, &data, NULL))
 		request_remove_agent ((Request *) data, agent, &pending_reqs);
 
 	/* We cannot call request_next_agent() from from within hash iterating loop,
@@ -290,7 +290,7 @@ agent_register_permissions_done (NMAuthChain *chain,
 
 		/* Add this agent to any in-progress secrets requests */
 		g_hash_table_iter_init (&iter, priv->requests);
-		while (g_hash_table_iter_next (&iter, NULL, (gpointer) &req))
+		while (g_hash_table_iter_next (&iter, (gpointer) &req, NULL))
 			request_add_agent (req, agent);
 	}
 
@@ -435,12 +435,11 @@ done:
 
 /*************************************************************/
 
-struct _Request {
+struct _NMAgentManagerCallId {
 	NMAgentManager *self;
 
 	RequestType request_type;
 
-	guint32 reqid;
 	char *detail;
 
 	NMAuthSubject *subject;
@@ -485,8 +484,6 @@ struct _Request {
 	};
 };
 
-static guint32 next_req_id = 1;
-
 static Request *
 request_new (NMAgentManager *self,
              RequestType request_type,
@@ -498,7 +495,6 @@ request_new (NMAgentManager *self,
 	req = g_slice_new0 (Request);
 	req->self = g_object_ref (self);
 	req->request_type = request_type;
-	req->reqid = next_req_id++;
 	req->detail = g_strdup (detail);
 	req->subject = g_object_ref (subject);
 	return req;
@@ -569,7 +565,7 @@ req_complete (Request *req,
 	switch (req->request_type) {
 	case REQUEST_TYPE_CON_GET:
 		req->con.get.callback (self,
-		                       req->reqid,
+		                       req,
 		                       agent_dbus_owner,
 		                       agent_username,
 		                       req->con.current_has_modify,
@@ -589,7 +585,7 @@ req_complete (Request *req,
 		g_return_if_reached ();
 	}
 
-	g_hash_table_remove (priv->requests, GUINT_TO_POINTER (req->reqid));
+	g_hash_table_remove (priv->requests, req);
 }
 
 static void
@@ -1137,7 +1133,7 @@ _con_get_try_complete_early (Request *req)
 	return FALSE;
 }
 
-guint32
+NMAgentManagerCallId
 nm_agent_manager_get_secrets (NMAgentManager *self,
                               NMConnection *connection,
                               NMAuthSubject *subject,
@@ -1184,24 +1180,26 @@ nm_agent_manager_get_secrets (NMAgentManager *self,
 	req->con.get.other_data2 = other_data2;
 	req->con.get.other_data3 = other_data3;
 
-	g_hash_table_insert (priv->requests, GUINT_TO_POINTER (req->reqid), req);
+	g_hash_table_add (priv->requests, req);
 
 	/* Kick off the request */
 	if (!(req->con.get.flags & NM_SECRET_AGENT_GET_SECRETS_FLAG_ONLY_SYSTEM))
 		request_add_agents (self, req);
 	req->idle_id = g_idle_add (request_start, req);
-	return req->reqid;
+	return req;
 }
 
 void
 nm_agent_manager_cancel_secrets (NMAgentManager *self,
-                                 guint32 request_id)
+                                 NMAgentManagerCallId request_id)
 {
 	g_return_if_fail (self != NULL);
-	g_return_if_fail (request_id > 0);
+	g_return_if_fail (request_id);
+	g_return_if_fail (request_id->request_type == REQUEST_TYPE_CON_GET);
 
-	g_hash_table_remove (NM_AGENT_MANAGER_GET_PRIVATE (self)->requests,
-	                     GUINT_TO_POINTER (request_id));
+	if (!g_hash_table_remove (NM_AGENT_MANAGER_GET_PRIVATE (self)->requests,
+	                          request_id))
+		g_return_if_reached ();
 }
 
 /*************************************************************/
@@ -1260,7 +1258,7 @@ _con_save_request_start (Request *req)
 	}
 }
 
-guint32
+void
 nm_agent_manager_save_secrets (NMAgentManager *self,
                                NMConnection *connection,
                                NMAuthSubject *subject)
@@ -1268,8 +1266,8 @@ nm_agent_manager_save_secrets (NMAgentManager *self,
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
 	Request *req;
 
-	g_return_val_if_fail (self != NULL, 0);
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), 0);
+	g_return_if_fail (self);
+	g_return_if_fail (NM_IS_CONNECTION (connection));
 
 	nm_log_dbg (LOGD_SETTINGS,
 	            "Saving secrets for connection %s (%s)",
@@ -1281,12 +1279,11 @@ nm_agent_manager_save_secrets (NMAgentManager *self,
 	                   nm_connection_get_id (connection),
 	                   subject);
 	req->con.connection = g_object_ref (connection);
-	g_hash_table_insert (priv->requests, GUINT_TO_POINTER (req->reqid), req);
+	g_hash_table_add (priv->requests, req);
 
 	/* Kick off the request */
 	request_add_agents (self, req);
 	req->idle_id = g_idle_add (request_start, req);
-	return req->reqid;
 }
 
 /*************************************************************/
@@ -1342,7 +1339,7 @@ _con_del_request_start (Request *req)
 	}
 }
 
-guint32
+void
 nm_agent_manager_delete_secrets (NMAgentManager *self,
                                  NMConnection *connection)
 {
@@ -1350,8 +1347,8 @@ nm_agent_manager_delete_secrets (NMAgentManager *self,
 	NMAuthSubject *subject;
 	Request *req;
 
-	g_return_val_if_fail (self != NULL, 0);
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), 0);
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (NM_IS_CONNECTION (connection));
 
 	nm_log_dbg (LOGD_SETTINGS,
 	            "Deleting secrets for connection %s (%s)",
@@ -1365,12 +1362,11 @@ nm_agent_manager_delete_secrets (NMAgentManager *self,
 	                   subject);
 	req->con.connection = g_object_ref (connection);
 	g_object_unref (subject);
-	g_hash_table_insert (priv->requests, GUINT_TO_POINTER (req->reqid), req);
+	g_hash_table_add (priv->requests, req);
 
 	/* Kick off the request */
 	request_add_agents (self, req);
 	req->idle_id = g_idle_add (request_start, req);
-	return req->reqid;
 }
 
 /*************************************************************/
@@ -1493,8 +1489,8 @@ nm_agent_manager_init (NMAgentManager *self)
 	priv->agents = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
 	priv->requests = g_hash_table_new_full (g_direct_hash,
 	                                        g_direct_equal,
-	                                        NULL,
-	                                        (GDestroyNotify) request_free);
+	                                        (GDestroyNotify) request_free,
+	                                        NULL);
 }
 
 static void

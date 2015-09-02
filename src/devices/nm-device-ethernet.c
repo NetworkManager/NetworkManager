@@ -480,7 +480,7 @@ supplicant_interface_release (NMDeviceEthernet *self)
 
 static void
 wired_secrets_cb (NMActRequest *req,
-                  guint32 call_id,
+                  NMActRequestGetSecretsCallId call_id,
                   NMConnection *connection,
                   GError *error,
                   gpointer user_data)
