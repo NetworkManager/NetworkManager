@@ -138,6 +138,8 @@ typedef struct {
 typedef gboolean (*ForEachSecretFunc) (NMSettingSecretFlags flags,
                                        gpointer user_data);
 
+/* Returns always a non-NULL, non-floating variant that must
+ * be unrefed by the caller. */
 static GVariant *
 for_each_secret (NMConnection *self,
                  GVariant *secrets,
@@ -224,7 +226,7 @@ for_each_secret (NMConnection *self,
 		g_variant_builder_add (&secrets_builder, "{sa{sv}}", setting_name, &setting_builder);
 	}
 
-	return g_variant_builder_end (&secrets_builder);
+	return g_variant_ref_sink (g_variant_builder_end (&secrets_builder));
 }
 
 typedef gboolean (*FindSecretFunc) (NMSettingSecretFlags flags,
@@ -923,7 +925,6 @@ agent_secrets_done_cb (NMAgentManager *manager,
 				       call_id);
 			}
 
-			g_variant_unref (filtered_secrets);
 		} else {
 			_LOGD ("(%s:%u) failed to update with agent secrets: (%d) %s",
 			       setting_name,
@@ -931,6 +932,7 @@ agent_secrets_done_cb (NMAgentManager *manager,
 			       local ? local->code : -1,
 			       (local && local->message) ? local->message : "(unknown)");
 		}
+		g_variant_unref (filtered_secrets);
 	} else {
 		_LOGD ("(%s:%u) failed to update with existing secrets: (%d) %s",
 		       setting_name,
