@@ -136,6 +136,8 @@ static void get_next_cb (Request *req);
 static void save_next_cb (Request *req);
 static void delete_next_cb (Request *req);
 
+static gboolean _con_get_try_complete_early (Request *req);
+
 /*************************************************************/
 
 static gboolean
@@ -772,7 +774,18 @@ request_start (gpointer user_data)
 	Request *req = user_data;
 
 	req->idle_id = 0;
+
+	switch (req->request_type) {
+	case REQUEST_TYPE_CON_GET:
+		if (_con_get_try_complete_early (req))
+			goto out;
+		break;
+	default:
+		break;
+	}
 	request_next_agent (req);
+
+out:
 	return FALSE;
 }
 
@@ -1064,17 +1077,13 @@ get_next_cb (Request *req)
 }
 
 static gboolean
-get_start (gpointer user_data)
+_con_get_try_complete_early (Request *req)
 {
 	NMAgentManager *self;
-	Request *req = user_data;
 	GVariant *setting_secrets = NULL;
-
-	g_return_val_if_fail (req->request_type == REQUEST_TYPE_CON_GET, G_SOURCE_REMOVE);
+	gboolean completed = TRUE;
 
 	self = req->self;
-
-	req->idle_id = 0;
 
 	/* Check if there are any existing secrets */
 	if (req->con.get.existing_secrets)
@@ -1116,7 +1125,7 @@ get_start (gpointer user_data)
 					 * don't error out if any secrets are missing. */
 					req_complete (req, req->con.get.existing_secrets, NULL, NULL, NULL);
 				} else
-					request_next_agent (req);
+					completed = FALSE;
 			}
 		}
 		g_object_unref (tmp);
@@ -1125,13 +1134,13 @@ get_start (gpointer user_data)
 		 * agents for secrets.  Let the Agent Manager handle which agents
 		 * we'll ask and in which order.
 		 */
-		request_next_agent (req);
+		completed = FALSE;
 	}
 
 	if (setting_secrets)
 		g_variant_unref (setting_secrets);
 
-	return FALSE;
+	return completed;
 }
 
 guint32
@@ -1186,7 +1195,7 @@ nm_agent_manager_get_secrets (NMAgentManager *self,
 	/* Kick off the request */
 	if (!(req->con.get.flags & NM_SECRET_AGENT_GET_SECRETS_FLAG_ONLY_SYSTEM))
 		request_add_agents (self, req);
-	req->idle_id = g_idle_add (get_start, req);
+	req->idle_id = g_idle_add (request_start, req);
 	return req->reqid;
 }
 
