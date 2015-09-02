@@ -921,7 +921,7 @@ apply_parent_device_config (NMVpnConnection *connection)
 		if (priv->ip4_config) {
 			vpn4_parent_config = nm_ip4_config_new (ifindex);
 			nm_ip4_config_merge (vpn4_parent_config, priv->ip4_config, NM_IP_CONFIG_MERGE_DEFAULT);
-			nm_ip4_config_set_gateway (vpn4_parent_config, 0);
+			nm_ip4_config_unset_gateway (vpn4_parent_config);
 		}
 		if (priv->ip6_config) {
 			vpn6_parent_config = nm_ip6_config_new (ifindex);
