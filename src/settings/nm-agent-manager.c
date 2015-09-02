@@ -452,7 +452,7 @@ struct _Request {
 	/* Stores the sorted list of NMSecretAgents which will be asked for secrets */
 	GSList *pending;
 
-	guint32 idle_id;
+	guint idle_id;
 
 	gboolean completed;
 
