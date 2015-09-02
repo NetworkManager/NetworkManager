@@ -933,7 +933,7 @@ apply_parent_device_config (NMVpnConnection *connection)
 		 * default route. */
 		if (vpn4_parent_config) {
 			nm_ip4_config_merge (vpn4_parent_config, priv->ip4_config, NM_IP_CONFIG_MERGE_DEFAULT);
-			nm_ip4_config_set_gateway (vpn4_parent_config, 0);
+			nm_ip4_config_unset_gateway (vpn4_parent_config);
 		}
 		if (vpn6_parent_config) {
 			nm_ip6_config_merge (vpn6_parent_config, priv->ip6_config, NM_IP_CONFIG_MERGE_DEFAULT);
