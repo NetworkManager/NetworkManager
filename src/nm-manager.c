@@ -796,6 +796,14 @@ device_removed_cb (NMDevice *device, gpointer user_data)
 	remove_device (NM_MANAGER (user_data), device, FALSE, TRUE);
 }
 
+static void
+device_link_initialized_cb (NMDevice *device, gpointer user_data)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (user_data);
+
+	nm_settings_device_added (priv->settings, device);
+}
+
 NMState
 nm_manager_get_state (NMManager *manager)
 {
@@ -1727,6 +1735,10 @@ add_device (NMManager *self, NMDevice *device, gboolean try_assume)
 	                  G_CALLBACK (device_removed_cb),
 	                  self);
 
+	g_signal_connect (device, NM_DEVICE_LINK_INITIALIZED,
+	                  G_CALLBACK (device_link_initialized_cb),
+	                  self);
+
 	g_signal_connect (device, "notify::" NM_DEVICE_IP_IFACE,
 	                  G_CALLBACK (device_ip_iface_changed),
 	                  self);
@@ -1787,6 +1799,9 @@ add_device (NMManager *self, NMDevice *device, gboolean try_assume)
 		                         NM_DEVICE_STATE_REASON_NOW_MANAGED);
 	}
 
+	/* Try to generate a default connection. If this fails because the link is
+	 * not initialized, we will retry again in device_link_initialized_cb().
+	 */
 	nm_settings_device_added (priv->settings, device);
 	g_signal_emit (self, signals[DEVICE_ADDED], 0, device);
 	g_object_notify (G_OBJECT (self), NM_MANAGER_DEVICES);
