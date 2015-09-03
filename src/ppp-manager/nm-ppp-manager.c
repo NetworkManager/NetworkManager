@@ -229,7 +229,7 @@ static void
 remove_timeout_handler (NMPPPManager *manager)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
-	
+
 	if (priv->ppp_timeout_handler) {
 		g_source_remove (priv->ppp_timeout_handler);
 		priv->ppp_timeout_handler = 0;
@@ -241,11 +241,10 @@ cancel_get_secrets (NMPPPManager *self)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (self);
 
-	if (priv->secrets_id) {
+	if (priv->secrets_id)
 		nm_act_request_cancel_secrets (priv->act_req, priv->secrets_id);
-		priv->secrets_id = NULL;
-	}
-	priv->secrets_setting_name = NULL;
+
+	g_return_if_fail (!priv->secrets_id && !priv->secrets_setting_name);
 }
 
 static gboolean
@@ -323,6 +322,9 @@ ppp_secrets_cb (NMActRequest *req,
 	g_return_if_fail (priv->pending_secrets_context != NULL);
 	g_return_if_fail (req == priv->act_req);
 	g_return_if_fail (call_id == priv->secrets_id);
+
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		goto out;
 
 	if (error) {
 		nm_log_warn (LOGD_PPP, "%s", error->message);

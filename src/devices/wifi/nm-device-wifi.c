@@ -1682,7 +1682,9 @@ wifi_secrets_cb (NMActRequest *req,
 	NMDevice *device = NM_DEVICE (user_data);
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 
-	g_return_if_fail (req == nm_device_get_act_request (device));
+	if (req != nm_device_get_act_request (device))
+		return;
+
 	g_return_if_fail (nm_device_get_state (device) == NM_DEVICE_STATE_NEED_AUTH);
 	g_return_if_fail (nm_act_request_get_connection (req) == connection);
 

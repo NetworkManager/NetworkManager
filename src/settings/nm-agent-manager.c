@@ -453,8 +453,6 @@ struct _NMAgentManagerCallId {
 
 	guint idle_id;
 
-	gboolean completed;
-
 	union {
 		struct {
 			NMConnection *connection;
@@ -524,16 +522,11 @@ request_free (Request *req)
 	if (req->idle_id)
 		g_source_remove (req->idle_id);
 
-	if (!req->completed) {
-		switch (req->request_type) {
-		case REQUEST_TYPE_CON_GET:
-			req->con.current_has_modify = FALSE;
-			if (req->current && req->current_call_id)
-				nm_secret_agent_cancel_secrets (req->current, req->current_call_id);
-			break;
-		default:
-			break;
-		}
+	if (req->current && req->current_call_id) {
+		/* cancel-secrets invokes the done-callback synchronously -- in which case
+		 * the handler just return.
+		 * Hence, we can proceed to free @req... */
+		nm_secret_agent_cancel_secrets (req->current, req->current_call_id);
 	}
 
 	g_object_unref (req->subject);
@@ -551,16 +544,13 @@ request_free (Request *req)
 }
 
 static void
-req_complete (Request *req,
-              GVariant *secrets,
-              const char *agent_dbus_owner,
-              const char *agent_username,
-              GError *error)
+req_complete_release (Request *req,
+                      GVariant *secrets,
+                      const char *agent_dbus_owner,
+                      const char *agent_username,
+                     GError *error)
 {
 	NMAgentManager *self = req->self;
-	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
-
-	req->completed = TRUE;
 
 	switch (req->request_type) {
 	case REQUEST_TYPE_CON_GET:
@@ -585,7 +575,38 @@ req_complete (Request *req,
 		g_return_if_reached ();
 	}
 
-	g_hash_table_remove (priv->requests, req);
+	request_free (req);
+}
+
+static void
+req_complete_cancel (Request *req,
+                     GQuark domain,
+                     guint code,
+                     const char *message)
+{
+	GError *error = NULL;
+
+	nm_assert (req && req->self);
+	nm_assert (!g_hash_table_contains (NM_AGENT_MANAGER_GET_PRIVATE (req->self)->requests, req));
+
+	g_set_error_literal (&error, domain, code, message);
+	req_complete_release (req, NULL, NULL, NULL, error);
+	g_error_free (error);
+}
+
+static void
+req_complete (Request *req,
+              GVariant *secrets,
+              const char *agent_dbus_owner,
+              const char *agent_username,
+              GError *error)
+{
+	NMAgentManager *self = req->self;
+	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
+
+	if (!g_hash_table_remove (priv->requests, req))
+		g_return_if_reached ();
+	req_complete_release (req, secrets, agent_dbus_owner, agent_username, error);
 }
 
 static void
@@ -1133,6 +1154,29 @@ _con_get_try_complete_early (Request *req)
 	return FALSE;
 }
 
+/**
+ * nm_agent_manager_get_secrets:
+ * @self:
+ * @connection:
+ * @subject:
+ * @existing_secrets:
+ * @flags:
+ * @hints:
+ * @callback:
+ * @callback_data:
+ * @other_data2:
+ * @other_data3:
+ *
+ * Requests secrets for a connection.
+ *
+ * This function cannot fail. The callback will be invoked
+ * asynchrnously, but it will always be invoked exactly once.
+ * Even for cancellation and disposing of @self. In those latter
+ * cases, the callback is invoked synchrnously during the cancellation/
+ * disposal.
+ *
+ * Returns: a call-id to cancel the call.
+ */
 NMAgentManagerCallId
 nm_agent_manager_get_secrets (NMAgentManager *self,
                               NMConnection *connection,
@@ -1180,7 +1224,8 @@ nm_agent_manager_get_secrets (NMAgentManager *self,
 	req->con.get.other_data2 = other_data2;
 	req->con.get.other_data3 = other_data3;
 
-	g_hash_table_add (priv->requests, req);
+	if (!g_hash_table_add (priv->requests, req))
+		g_assert_not_reached ();
 
 	/* Kick off the request */
 	if (!(req->con.get.flags & NM_SECRET_AGENT_GET_SECRETS_FLAG_ONLY_SYSTEM))
@@ -1200,6 +1245,8 @@ nm_agent_manager_cancel_secrets (NMAgentManager *self,
 	if (!g_hash_table_remove (NM_AGENT_MANAGER_GET_PRIVATE (self)->requests,
 	                          request_id))
 		g_return_if_reached ();
+
+	req_complete_cancel (request_id, G_IO_ERROR, G_IO_ERROR_CANCELLED, "Request cancelled");
 }
 
 /*************************************************************/
@@ -1279,7 +1326,8 @@ nm_agent_manager_save_secrets (NMAgentManager *self,
 	                   nm_connection_get_id (connection),
 	                   subject);
 	req->con.connection = g_object_ref (connection);
-	g_hash_table_add (priv->requests, req);
+	if (!g_hash_table_add (priv->requests, req))
+		g_assert_not_reached ();
 
 	/* Kick off the request */
 	request_add_agents (self, req);
@@ -1362,7 +1410,8 @@ nm_agent_manager_delete_secrets (NMAgentManager *self,
 	                   subject);
 	req->con.connection = g_object_ref (connection);
 	g_object_unref (subject);
-	g_hash_table_add (priv->requests, req);
+	if (!g_hash_table_add (priv->requests, req))
+		g_assert_not_reached ();
 
 	/* Kick off the request */
 	request_add_agents (self, req);
@@ -1487,10 +1536,7 @@ nm_agent_manager_init (NMAgentManager *self)
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
 
 	priv->agents = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
-	priv->requests = g_hash_table_new_full (g_direct_hash,
-	                                        g_direct_equal,
-	                                        (GDestroyNotify) request_free,
-	                                        NULL);
+	priv->requests = g_hash_table_new (g_direct_hash, g_direct_equal);
 }
 
 static void
@@ -1517,16 +1563,25 @@ dispose (GObject *object)
 {
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (object);
 
+	if (priv->requests) {
+		GHashTableIter iter;
+		Request *req;
+
+		g_hash_table_iter_init (&iter, priv->requests);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &req, NULL)) {
+			g_hash_table_iter_remove (&iter);
+			req_complete_cancel (req, G_IO_ERROR, G_IO_ERROR_FAILED, "Disposing NMAgentManagerClass instance");
+		}
+		g_hash_table_destroy (priv->requests);
+		priv->requests = NULL;
+	}
+
 	g_slist_free_full (priv->chains, (GDestroyNotify) nm_auth_chain_unref);
 	priv->chains = NULL;
 
 	if (priv->agents) {
 		g_hash_table_destroy (priv->agents);
 		priv->agents = NULL;
-	}
-	if (priv->requests) {
-		g_hash_table_destroy (priv->requests);
-		priv->requests = NULL;
 	}
 
 	if (priv->auth_mgr) {

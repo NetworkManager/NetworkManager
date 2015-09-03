@@ -117,7 +117,12 @@ typedef struct {
 	gboolean visible; /* Is this connection is visible by some session? */
 
 	GSList *reqs_int;  /* in-progress internal secrets requests */
-	GSList *reqs_ext;  /* in-progress external secrets requests (D-Bus) */
+
+	GSList *reqs_ext;  /* in-progress external secrets requests (D-Bus). Note that
+	                      this list contains NMSettingsConnectionCallId, vs. NMAgentManagerCallId.
+	                      So, we should for example cancel the reqs_ext with nm_settings_connection_cancel_secrets()
+	                      instead of nm_agent_manager_cancel_secrets().
+	                      Actually, the difference doesn't matter, because both are indeed equivalent. */
 
 	/* Caches secrets from on-disk connections; were they not cached any
 	 * call to nm_connection_clear_secrets() wipes them out and we'd have
@@ -807,6 +812,16 @@ new_secrets_commit_cb (NMSettingsConnection *self,
 }
 
 static void
+_callback_nop (NMSettingsConnection *self,
+               NMSettingsConnectionCallId call_id,
+               const char *agent_username,
+               const char *setting_name,
+               GError *error,
+               gpointer user_data)
+{
+}
+
+static void
 agent_secrets_done_cb (NMAgentManager *manager,
                        NMAgentManagerCallId call_id_a,
                        const char *agent_dbus_owner,
@@ -830,14 +845,16 @@ agent_secrets_done_cb (NMAgentManager *manager,
 	gboolean agent_had_system = FALSE;
 	ForEachSecretFlags cmp_flags = { NM_SETTING_SECRET_FLAG_NONE, NM_SETTING_SECRET_FLAG_NONE };
 
-	priv->reqs_int = g_slist_remove (priv->reqs_int, call_id_a);
+	if (!callback)
+		callback = _callback_nop;
+
+	g_return_if_fail (g_slist_find (priv->reqs_int, call_id));
+
+	priv->reqs_int = g_slist_remove (priv->reqs_int, call_id);
 
 	if (error) {
-		_LOGD ("(%s:%p) secrets request error: (%d) %s",
-		       setting_name,
-		       call_id,
-		       error->code,
-		       error->message ? error->message : "(unknown)");
+		_LOGD ("(%s:%p) secrets request error: %s",
+		       setting_name, call_id, error->message);
 
 		callback (self, call_id, NULL, setting_name, error, callback_data);
 		return;
@@ -978,7 +995,13 @@ agent_secrets_done_cb (NMAgentManager *manager,
  * Retrieves secrets from persistent storage and queries any secret agents for
  * additional secrets.
  *
- * Returns: a call ID which may be used to cancel the ongoing secrets request
+ * With the returned call-id, the call can be cancelled. It is an error
+ * to cancel a call more then once or a call that already completed.
+ * The callback will always be invoked exactly once, also for cancellation
+ * and disposing of @self. In those latter cases, the callback will be invoked
+ * synchronously during cancellation/disposing.
+ *
+ * Returns: a call ID which may be used to cancel the ongoing secrets request.
  **/
 NMSettingsConnectionCallId
 nm_settings_connection_get_secrets (NMSettingsConnection *self,
@@ -1052,7 +1075,6 @@ nm_settings_connection_cancel_secrets (NMSettingsConnection *self,
 
 	_LOGD ("(%p) secrets canceled", call_id);
 
-	priv->reqs_int = g_slist_remove (priv->reqs_int, call_id);
 	nm_agent_manager_cancel_secrets (priv->agent_mgr, NM_AGENT_MANAGER_CALL_ID (call_id));
 }
 
@@ -1657,6 +1679,8 @@ dbus_get_agent_secrets_cb (NMSettingsConnection *self,
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	GDBusMethodInvocation *context = user_data;
 	GVariant *dict;
+
+	g_return_if_fail (g_slist_find (priv->reqs_ext, call_id));
 
 	priv->reqs_ext = g_slist_remove (priv->reqs_ext, call_id);
 
@@ -2361,8 +2385,11 @@ _cancel_all (NMAgentManager *agent_mgr, GSList **preqs)
 	while (*preqs) {
 		NMAgentManagerCallId call_id_a = (*preqs)->data;
 
-		*preqs = g_slist_delete_link (*preqs, *preqs);
+		/* Cancel will invoke the complete callback, which in
+		 * turn deletes the current call-id from the list. */
 		nm_agent_manager_cancel_secrets (agent_mgr, call_id_a);
+
+		g_return_if_fail (!*preqs || (call_id_a != (*preqs)->data));
 	}
 }
 
@@ -2376,6 +2403,9 @@ dispose (GObject *object)
 
 	/* Cancel in-progress secrets requests */
 	if (priv->agent_mgr) {
+		/* although @reqs_ext theoretically contains NMSettingsConnectionCallId,
+		 * we still cancel it with nm_agent_manager_cancel_secrets() -- it is
+		 * actually correct. */
 		_cancel_all (priv->agent_mgr, &priv->reqs_ext);
 		_cancel_all (priv->agent_mgr, &priv->reqs_int);
 	}

@@ -722,10 +722,7 @@ cancel_get_secrets (NMModem *self)
 {
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
 
-	if (priv->secrets_id) {
-		nm_act_request_cancel_secrets (priv->act_request, priv->secrets_id);
-		priv->secrets_id = NULL;
-	}
+	nm_act_request_cancel_secrets (priv->act_request, priv->secrets_id);
 }
 
 static void
@@ -742,13 +739,16 @@ modem_secrets_cb (NMActRequest *req,
 
 	priv->secrets_id = NULL;
 
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
 	if (error)
 		nm_log_warn (LOGD_MB, "(%s): %s", nm_modem_get_uid (self), error->message);
 
 	g_signal_emit (self, signals[AUTH_RESULT], 0, error);
 }
 
-gboolean
+void
 nm_modem_get_secrets (NMModem *self,
                       const char *setting_name,
                       gboolean request_new,
@@ -767,10 +767,8 @@ nm_modem_get_secrets (NMModem *self,
 	                                               hint,
 	                                               modem_secrets_cb,
 	                                               self);
-	if (priv->secrets_id)
-		g_signal_emit (self, signals[AUTH_REQUESTED], 0);
-
-	return !!(priv->secrets_id);
+	g_return_if_fail (priv->secrets_id);
+	g_signal_emit (self, signals[AUTH_REQUESTED], 0);
 }
 
 /*****************************************************************************/
@@ -790,8 +788,7 @@ nm_modem_act_stage1_prepare (NMModem *self,
                              NMDeviceStateReason *reason)
 {
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
-	NMActStageReturn ret;
-	GPtrArray *hints = NULL;
+	gs_unref_ptrarray GPtrArray *hints = NULL;
 	const char *setting_name = NULL;
 	NMSecretAgentGetSecretsFlags flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 	NMConnection *connection;
@@ -820,18 +817,9 @@ nm_modem_act_stage1_prepare (NMModem *self,
 	                                               hints ? g_ptr_array_index (hints, 0) : NULL,
 	                                               modem_secrets_cb,
 	                                               self);
-	if (priv->secrets_id) {
-		g_signal_emit (self, signals[AUTH_REQUESTED], 0);
-		ret = NM_ACT_STAGE_RETURN_POSTPONE;
-	} else {
-		*reason = NM_DEVICE_STATE_REASON_NO_SECRETS;
-		ret = NM_ACT_STAGE_RETURN_FAILURE;
-	}
-
-	if (hints)
-		g_ptr_array_free (hints, TRUE);
-
-	return ret;
+	g_return_val_if_fail (priv->secrets_id, NM_ACT_STAGE_RETURN_FAILURE);
+	g_signal_emit (self, signals[AUTH_REQUESTED], 0);
+	return NM_ACT_STAGE_RETURN_POSTPONE;
 }
 
 /*****************************************************************************/

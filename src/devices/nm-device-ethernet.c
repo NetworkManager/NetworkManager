@@ -488,7 +488,9 @@ wired_secrets_cb (NMActRequest *req,
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (user_data);
 	NMDevice *dev = NM_DEVICE (self);
 
-	g_return_if_fail (req == nm_device_get_act_request (dev));
+	if (req != nm_device_get_act_request (dev))
+		return;
+
 	g_return_if_fail (nm_device_get_state (dev) == NM_DEVICE_STATE_NEED_AUTH);
 	g_return_if_fail (nm_act_request_get_connection (req) == connection);
 

@@ -332,10 +332,8 @@ _set_vpn_state (NMVpnConnection *connection,
 	                                _state_to_ac_state (vpn_state));
 
 	/* Clear any in-progress secrets request */
-	if (priv->secrets_id) {
+	if (priv->secrets_id)
 		nm_settings_connection_cancel_secrets (NM_SETTINGS_CONNECTION (priv->connection), priv->secrets_id);
-		priv->secrets_id = NULL;
-	}
 
 	dispatcher_cleanup (connection);
 
@@ -2024,6 +2022,9 @@ get_secrets_cb (NMSettingsConnection *connection,
 
 	priv->secrets_id = NULL;
 
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
 	if (error && priv->secrets_idx >= SECRETS_REQ_NEW) {
 		nm_log_err (LOGD_VPN, "Failed to request VPN secrets #%d: (%d) %s",
 		            priv->secrets_idx + 1, error->code, error->message);
@@ -2227,7 +2228,6 @@ dispose (GObject *object)
 	if (priv->secrets_id) {
 		nm_settings_connection_cancel_secrets (NM_SETTINGS_CONNECTION (priv->connection),
 		                                       priv->secrets_id);
-		priv->secrets_id = NULL;
 	}
 
 	if (priv->cancellable) {

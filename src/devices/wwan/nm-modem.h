@@ -218,10 +218,10 @@ NMActStageReturn nm_modem_stage3_ip6_config_start (NMModem *modem,
 
 void nm_modem_ip4_pre_commit (NMModem *modem, NMDevice *device, NMIP4Config *config);
 
-gboolean nm_modem_get_secrets (NMModem *modem,
-                               const char *setting_name,
-                               gboolean request_new,
-                               const char *hint);
+void nm_modem_get_secrets (NMModem *modem,
+                           const char *setting_name,
+                           gboolean request_new,
+                           const char *hint);
 
 void nm_modem_deactivate (NMModem *modem, NMDevice *device);
 
