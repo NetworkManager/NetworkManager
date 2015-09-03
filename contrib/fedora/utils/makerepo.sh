@@ -1,5 +1,46 @@
 #!/bin/bash
 
+#
+# The script is ugly but is here to help to create a git-repository
+# based on dist-git.
+#
+#  * Works with fedpkg and rhpkg
+#  * Different packages are supported. See detect_build_type below.
+#  * Creates first an initial commit of the source directory (after "fedpkg prep")
+#  * Excludes files and creates a gitignore file. It does so by .git/makerepo.gitignore
+#    which can be edited manually. Also, after a `$0 local`, it will record all files
+#    with modifications to be ignored in the future.
+#  * Revert each patch from the spec file
+#  * Reapply each patch until you are where were originally (sans ignored files)
+#  * Restore again the original state, i.e. replying the patches (including ignored
+#    files -- that are no longer part of master-tip).
+#  * Fetch from upstream origin (and add as remote)
+#  * Fetch from a local git repository (and add as remote)
+#  * It can detect the parent commit where the package branched of
+#    and rebase the created history on top of that.
+#  * optionally, do `fedpkg local`.
+#
+# ONE-TIME SETUP:
+#   - clone the dist-git package
+#       $ PACKAGE=libnl3
+#       $ fedpkg clone $PACKAGE
+#       $ cd $PACKAGE
+#
+#   - configure local git-repository (optional)
+#       $ ln -s /path/to/local/clone .git/local
+#
+#   - create initial gitignore file (optional)
+#       $ edit .git/makerepo.gitignore
+#     or
+#       $ edit .git/makerepo.gitignore.$BRANCHNAME
+#
+# USAGE:
+#       $ cd $PACKAGE
+#       $ makerepo.sh
+#       $ makerepo.sh local
+#
+
+
 #set -vx
 
 die() {
