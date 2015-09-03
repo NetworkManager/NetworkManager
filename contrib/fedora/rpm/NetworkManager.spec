@@ -7,46 +7,34 @@
 # Note that it contains __PLACEHOLDERS__ that will be replaced by the accompanying 'build.sh' script.
 
 
-%define dbus_version 1.1
-%define dbus_glib_version 0.100
+%global dbus_version 1.1
+%global dbus_glib_version 0.100
 
-%define glib2_version	2.32.0
-%define wireless_tools_version 1:28-0pre9
-%define libnl3_version 3.2.7
+%global glib2_version	2.32.0
+%global wireless_tools_version 1:28-0pre9
+%global libnl3_version 3.2.7
 
-%define ppp_version %(rpm -q ppp-devel >/dev/null && rpm -q --qf '%%{version}' ppp-devel || echo -n bad)
+%global ppp_version %(rpm -q ppp-devel >/dev/null && rpm -q --qf '%%{version}' ppp-devel || echo -n bad)
 
-%define snapshot %{nil}
-%define git_sha __COMMIT__
-%define realversion __VERSION__
-%define release_version __RELEASE_VERSION__
-%define epoch_version 1
+%global snapshot %{nil}
+%global git_sha __COMMIT__
+%global realversion __VERSION__
+%global release_version __RELEASE_VERSION__
+%global epoch_version 1
 
-%define obsoletes_nmver 1:0.9.9.95-1
+%global obsoletes_nmver 1:0.9.9.95-1
 
-%global with_nmtui 1
-
-%if 0%{?fedora}
-%global regen_docs 1
-%else
-%global regen_docs 1
-%endif
-
-%define systemd_dir %{_prefix}/lib/systemd/system
-%define udev_dir %{_prefix}/lib/udev
-%define nmlibdir %{_prefix}/lib/%{name}
+%global systemd_dir %{_prefix}/lib/systemd/system
+%global udev_dir %{_prefix}/lib/udev
+%global nmlibdir %{_prefix}/lib/%{name}
 
 %global with_adsl 1
 %global with_bluetooth 1
 %global with_team 1
 %global with_wifi 1
-%global with_wimax 0
 %global with_wwan 1
-
-# WiMAX still supported on <= F19
-%if ! 0%{?rhel} && (! 0%{?fedora} || 0%{?fedora} < 20)
-%global with_wimax 1
-%endif
+%global with_nmtui 1
+%global regen_docs 1
 
 # ModemManager on Fedora < 20 too old for Bluetooth && wwan
 %if (0%{?fedora} && 0%{?fedora} < 20)
@@ -63,14 +51,15 @@
 %global with_team 0
 %endif
 
-%define with_modem_manager_1 0
 %if 0%{?with_bluetooth} || (0%{?with_wwan} && (0%{?rhel} || (0%{?fedora} && 0%{?fedora} > 19)))
-%define with_modem_manager_1 1
+%global with_modem_manager_1 1
+%else
+%global with_modem_manager_1 0
 %endif
 
 %global _hardened_build 1
 
-%define git_sha_version %(test -n '%{git_sha}' && echo '.%{git_sha}')
+%global git_sha_version %(test -n '%{git_sha}' && echo '.%{git_sha}')
 
 Name: NetworkManager
 Summary: Network connection manager and user applications
@@ -87,8 +76,6 @@ Source2: 00-server.conf
 Source3: 20-connectivity-fedora.conf
 
 #Patch1: 0001-some.patch
-
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 %if 0%{?fedora} && 0%{?fedora} < 20
 Requires(post): chkconfig
@@ -113,6 +100,7 @@ Requires: iptables
 Requires: readline
 Obsoletes: dhcdbd
 Obsoletes: NetworkManager < %{obsoletes_nmver}
+Obsoletes: NetworkManager-wimax < 1.2
 
 Conflicts: NetworkManager-vpnc < 1:0.7.0.99-1
 Conflicts: NetworkManager-openvpn < 1:0.7.0.99-1
@@ -149,9 +137,6 @@ BuildRequires: vala-tools
 BuildRequires: iptables
 %if 0%{?with_bluetooth}
 BuildRequires: bluez-libs-devel
-%endif
-%if 0%{?with_wimax}
-BuildRequires: wimax-devel
 %endif
 BuildRequires: systemd >= 200-3 systemd-devel
 BuildRequires: libsoup-devel
@@ -243,19 +228,6 @@ Obsoletes: NetworkManager < %{obsoletes_nmver}
 
 %description wwan
 This package contains NetworkManager support for mobile broadband (WWAN) devices.
-%endif
-
-
-%if 0%{?with_wimax}
-%package wimax
-Summary: Intel WiMAX device support for NetworkManager
-Group: System Environment/Base
-Requires: wimax
-Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
-
-%description wimax
-This package contains NetworkManager support for Intel WiMAX mobile broadband
-devices.
 %endif
 
 
@@ -368,7 +340,7 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 %if %{regen_docs}
 # back up pristine docs and use them instead of generated ones, which make
 # multilib unhappy due to different timestamps in the generated content
-%{__cp} -R docs ORIG-docs
+cp -R docs ORIG-docs
 %endif
 
 #autopoint --force
@@ -395,11 +367,6 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 %endif
 %else
 	--enable-wifi=no \
-%endif
-%if 0%{?with_wimax}
-	--enable-wimax=yes \
-%else
-	--enable-wimax=no \
 %endif
 	--enable-vala=yes \
 %if 0%{?regen_docs}
@@ -433,54 +400,49 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 make %{?_smp_mflags}
 
 %install
-%{__rm} -rf $RPM_BUILD_ROOT
-
 # install NM
-make install DESTDIR=$RPM_BUILD_ROOT
+make install DESTDIR=%{buildroot}
 
-%{__cp} %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/
+cp %{SOURCE1} %{buildroot}%{_sysconfdir}/%{name}/
 
-mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/conf.d
-mkdir -p $RPM_BUILD_ROOT%{nmlibdir}/conf.d
-mkdir -p $RPM_BUILD_ROOT%{nmlibdir}/VPN
-%{__cp} %{SOURCE2} $RPM_BUILD_ROOT%{nmlibdir}/conf.d/
-%{__cp} %{SOURCE3} $RPM_BUILD_ROOT%{nmlibdir}/conf.d/
+mkdir -p %{buildroot}%{_sysconfdir}/%{name}/conf.d
+mkdir -p %{buildroot}%{nmlibdir}/conf.d
+mkdir -p %{buildroot}%{nmlibdir}/VPN
+cp %{SOURCE2} %{buildroot}%{nmlibdir}/conf.d/
+cp %{SOURCE3} %{buildroot}%{nmlibdir}/conf.d/
 
 # create a VPN directory
-%{__mkdir_p} $RPM_BUILD_ROOT%{_sysconfdir}/NetworkManager/VPN
+mkdir -p %{buildroot}%{_sysconfdir}/NetworkManager/VPN
 
 # create a keyfile plugin system settings directory
-%{__mkdir_p} $RPM_BUILD_ROOT%{_sysconfdir}/NetworkManager/system-connections
+mkdir -p %{buildroot}%{_sysconfdir}/NetworkManager/system-connections
 
 # create a dnsmasq.d directory
-%{__mkdir_p} $RPM_BUILD_ROOT%{_sysconfdir}/NetworkManager/dnsmasq.d
+mkdir -p %{buildroot}%{_sysconfdir}/NetworkManager/dnsmasq.d
 
 # create dispatcher directories
-mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/dispatcher.d
-mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/dispatcher.d/pre-up.d
-mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/dispatcher.d/pre-down.d
-mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/dispatcher.d/no-wait.d
-%{__cp} examples/dispatcher/10-ifcfg-rh-routes.sh $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/dispatcher.d/
-%{__ln_s} ../10-ifcfg-rh-routes.sh $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/dispatcher.d/pre-up.d/
+mkdir -p %{buildroot}%{_sysconfdir}/%{name}/dispatcher.d
+mkdir -p %{buildroot}%{_sysconfdir}/%{name}/dispatcher.d/pre-up.d
+mkdir -p %{buildroot}%{_sysconfdir}/%{name}/dispatcher.d/pre-down.d
+mkdir -p %{buildroot}%{_sysconfdir}/%{name}/dispatcher.d/no-wait.d
+cp examples/dispatcher/10-ifcfg-rh-routes.sh %{buildroot}%{_sysconfdir}/%{name}/dispatcher.d/
+ln -s ../10-ifcfg-rh-routes.sh %{buildroot}%{_sysconfdir}/%{name}/dispatcher.d/pre-up.d/
 
-%{__mkdir_p} $RPM_BUILD_ROOT%{_datadir}/gnome-vpn-properties
+mkdir -p %{buildroot}%{_datadir}/gnome-vpn-properties
 
-%{__mkdir_p} $RPM_BUILD_ROOT%{_localstatedir}/lib/NetworkManager
+mkdir -p %{buildroot}%{_localstatedir}/lib/NetworkManager
 
 %find_lang %{name}
 
-%{__rm} -f $RPM_BUILD_ROOT%{_libdir}/*.la
-%{__rm} -f $RPM_BUILD_ROOT%{_libdir}/pppd/%{ppp_version}/*.la
-%{__rm} -f $RPM_BUILD_ROOT%{_libdir}/NetworkManager/*.la
+rm -f %{buildroot}%{_libdir}/*.la
+rm -f %{buildroot}%{_libdir}/pppd/%{ppp_version}/*.la
+rm -f %{buildroot}%{_libdir}/NetworkManager/*.la
 
 %if %{regen_docs}
 # install the pristine docs
-%{__cp} ORIG-docs/libnm-glib/html/* $RPM_BUILD_ROOT%{_datadir}/gtk-doc/html/libnm-glib/
-%{__cp} ORIG-docs/libnm-util/html/* $RPM_BUILD_ROOT%{_datadir}/gtk-doc/html/libnm-util/
+cp ORIG-docs/libnm-glib/html/* %{buildroot}%{_datadir}/gtk-doc/html/libnm-glib/
+cp ORIG-docs/libnm-util/html/* %{buildroot}%{_datadir}/gtk-doc/html/libnm-util/
 %endif
-
-%clean
-%{__rm} -rf $RPM_BUILD_ROOT
 
 
 %check
@@ -513,10 +475,11 @@ fi
 %post	glib -p /sbin/ldconfig
 %postun	glib -p /sbin/ldconfig
 
+%post	libnm -p /sbin/ldconfig
+%postun	libnm -p /sbin/ldconfig
+
 
 %files -f %{name}.lang
-%defattr(-,root,root,0755)
-%doc COPYING NEWS AUTHORS README CONTRIBUTING TODO
 %{_sysconfdir}/dbus-1/system.d/org.freedesktop.NetworkManager.conf
 %{_sysconfdir}/dbus-1/system.d/nm-dispatcher.conf
 %{_sysconfdir}/dbus-1/system.d/nm-ifcfg-rh.conf
@@ -564,10 +527,11 @@ fi
 %{systemd_dir}/network-online.target.wants/NetworkManager-wait-online.service
 %dir %{_datadir}/doc/NetworkManager/examples
 %{_datadir}/doc/NetworkManager/examples/server.conf
+%doc NEWS AUTHORS README CONTRIBUTING TODO
+%license COPYING
 
 %if 0%{?with_adsl}
 %files adsl
-%defattr(-,root,root,0755)
 %{_libdir}/%{name}/libnm-device-plugin-adsl.so
 %else
 %exclude %{_libdir}/%{name}/libnm-device-plugin-adsl.so
@@ -575,37 +539,26 @@ fi
 
 %if 0%{?with_bluetooth}
 %files bluetooth
-%defattr(-,root,root,0755)
 %{_libdir}/%{name}/libnm-device-plugin-bluetooth.so
 %endif
 
 %if 0%{?with_team}
 %files team
-%defattr(-,root,root,0755)
 %{_libdir}/%{name}/libnm-device-plugin-team.so
 %endif
 
 %if 0%{?with_wifi}
 %files wifi
-%defattr(-,root,root,0755)
 %{_libdir}/%{name}/libnm-device-plugin-wifi.so
 %endif
 
 %if 0%{?with_wwan}
 %files wwan
-%defattr(-,root,root,0755)
 %{_libdir}/%{name}/libnm-device-plugin-wwan.so
 %{_libdir}/%{name}/libnm-wwan.so
 %endif
 
-%if 0%{?with_wimax}
-%files wimax
-%defattr(-,root,root,0755)
-%{_libdir}/%{name}/libnm-device-plugin-wimax.so
-%endif
-
 %files devel
-%defattr(-,root,root,0755)
 %doc ChangeLog docs/api/html/*
 %dir %{_includedir}/%{name}
 %{_includedir}/%{name}/%{name}.h
@@ -618,7 +571,6 @@ fi
 %{_datadir}/vala/vapi/*.vapi
 
 %files glib
-%defattr(-,root,root,0755)
 %{_libdir}/libnm-glib.so.*
 %{_libdir}/libnm-glib-vpn.so.*
 %{_libdir}/libnm-util.so.*
@@ -626,7 +578,6 @@ fi
 %{_libdir}/girepository-1.0/NMClient-1.0.typelib
 
 %files glib-devel
-%defattr(-,root,root,0755)
 %dir %{_includedir}/libnm-glib
 %{_includedir}/libnm-glib/*.h
 %{_includedir}/%{name}/nm-setting*.h
@@ -647,12 +598,10 @@ fi
 %{_datadir}/gtk-doc/html/libnm-util/*
 
 %files libnm
-%defattr(-,root,root,0755)
 %{_libdir}/libnm.so.*
 %{_libdir}/girepository-1.0/NM-1.0.typelib
 
 %files libnm-devel
-%defattr(-,root,root,0755)
 %dir %{_includedir}/libnm
 %{_includedir}/libnm/*.h
 %{_libdir}/pkgconfig/libnm.pc
@@ -662,13 +611,11 @@ fi
 %{_datadir}/gtk-doc/html/libnm/*
 
 %files config-connectivity-fedora
-%defattr(-,root,root,0755)
 %dir %{nmlibdir}
 %dir %{nmlibdir}/conf.d
 %{nmlibdir}/conf.d/20-connectivity-fedora.conf
 
 %files config-server
-%defattr(-,root,root,0755)
 %dir %{nmlibdir}
 %dir %{nmlibdir}/conf.d
 %{nmlibdir}/conf.d/00-server.conf
