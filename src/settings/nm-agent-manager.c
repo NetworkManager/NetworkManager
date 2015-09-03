@@ -1080,8 +1080,9 @@ static gboolean
 _con_get_try_complete_early (Request *req)
 {
 	NMAgentManager *self;
-	GVariant *setting_secrets = NULL;
-	gboolean completed = TRUE;
+	gs_unref_variant GVariant *setting_secrets = NULL;
+	gs_unref_object NMConnection *tmp = NULL;
+	GError *error = NULL;
 
 	self = req->self;
 
@@ -1089,58 +1090,51 @@ _con_get_try_complete_early (Request *req)
 	if (req->con.get.existing_secrets)
 		setting_secrets = g_variant_lookup_value (req->con.get.existing_secrets, req->con.get.setting_name, NM_VARIANT_TYPE_SETTING);
 
-	if (setting_secrets && g_variant_n_children (setting_secrets)) {
-		NMConnection *tmp;
-		GError *error = NULL;
-		gboolean new_secrets = (req->con.get.flags & NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW);
+	if (!setting_secrets || !g_variant_n_children (setting_secrets))
+		return FALSE;
 
-		/* The connection already had secrets; check if any more are required.
-		 * If no more are required, we're done.  If secrets are still needed,
-		 * ask a secret agent for more.  This allows admins to provide generic
-		 * secrets but allow additional user-specific ones as well.
-		 */
-		tmp = nm_simple_connection_new_clone (req->con.connection);
-		g_assert (tmp);
+	/* The connection already had secrets; check if any more are required.
+	 * If no more are required, we're done.  If secrets are still needed,
+	 * ask a secret agent for more.  This allows admins to provide generic
+	 * secrets but allow additional user-specific ones as well.
+	 */
+	tmp = nm_simple_connection_new_clone (req->con.connection);
+	g_assert (tmp);
 
-		if (!nm_connection_update_secrets (tmp, req->con.get.setting_name, req->con.get.existing_secrets, &error)) {
-			req_complete_error (req, error);
-			g_clear_error (&error);
-		} else {
-			/* Do we have everything we need? */
-			if (   (req->con.get.flags & NM_SECRET_AGENT_GET_SECRETS_FLAG_ONLY_SYSTEM)
-			    || ((nm_connection_need_secrets (tmp, NULL) == NULL) && (new_secrets == FALSE))) {
-				_LOGD (NULL, "("LOG_REQ_FMT") system settings secrets sufficient",
-				       LOG_REQ_ARG (req));
+	if (!nm_connection_update_secrets (tmp, req->con.get.setting_name, req->con.get.existing_secrets, &error)) {
+		req_complete_error (req, error);
+		g_clear_error (&error);
+		return TRUE;
+	}
+	/* Do we have everything we need? */
+	if (   NM_FLAGS_HAS (req->con.get.flags, NM_SECRET_AGENT_GET_SECRETS_FLAG_ONLY_SYSTEM)
+	    || (   (nm_connection_need_secrets (tmp, NULL) == NULL)
+	        && !NM_FLAGS_HAS(req->con.get.flags, NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW))) {
+		_LOGD (NULL, "("LOG_REQ_FMT") system settings secrets sufficient",
+		       LOG_REQ_ARG (req));
 
-				/* Got everything, we're done */
-				req_complete (req, req->con.get.existing_secrets, NULL, NULL, NULL);
-			} else {
-				_LOGD (NULL, "("LOG_REQ_FMT") system settings secrets insufficient, asking agents",
-				       LOG_REQ_ARG (req));
-
-				/* We don't, so ask some agents for additional secrets */
-				if (   req->con.get.flags & NM_SECRET_AGENT_GET_SECRETS_FLAG_NO_ERRORS
-				    && !req->pending) {
-					/* The request initiated from GetSecrets() via DBus,
-					 * don't error out if any secrets are missing. */
-					req_complete (req, req->con.get.existing_secrets, NULL, NULL, NULL);
-				} else
-					completed = FALSE;
-			}
-		}
-		g_object_unref (tmp);
-	} else {
-		/* Couldn't get secrets from system settings, so now we ask the
-		 * agents for secrets.  Let the Agent Manager handle which agents
-		 * we'll ask and in which order.
-		 */
-		completed = FALSE;
+		/* Got everything, we're done */
+		req_complete (req, req->con.get.existing_secrets, NULL, NULL, NULL);
+		return TRUE;
 	}
 
-	if (setting_secrets)
-		g_variant_unref (setting_secrets);
+	_LOGD (NULL, "("LOG_REQ_FMT") system settings secrets insufficient, asking agents",
+	       LOG_REQ_ARG (req));
 
-	return completed;
+	/* We don't, so ask some agents for additional secrets */
+	if (   req->con.get.flags & NM_SECRET_AGENT_GET_SECRETS_FLAG_NO_ERRORS
+	    && !req->pending) {
+		/* The request initiated from GetSecrets() via DBus,
+		 * don't error out if any secrets are missing. */
+		req_complete (req, req->con.get.existing_secrets, NULL, NULL, NULL);
+		return TRUE;
+	}
+
+	/* Couldn't get secrets from system settings, so now we ask the
+	 * agents for secrets.  Let the Agent Manager handle which agents
+	 * we'll ask and in which order.
+	 */
+	return FALSE;
 }
 
 guint32
