@@ -4821,18 +4821,18 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_setting_to_dbus_enum", test_setting_to_dbus_enum);
 	g_test_add_func ("/core/general/test_setting_compare_id", test_setting_compare_id);
 	g_test_add_func ("/core/general/test_setting_compare_timestamp", test_setting_compare_timestamp);
-#define ADD_FUNC(func, secret_flags, comp_flags, remove_secret) \
-	g_test_add_data_func_full ("/core/general/" G_STRINGIFY (func), \
+#define ADD_FUNC(name, func, secret_flags, comp_flags, remove_secret) \
+	g_test_add_data_func_full ("/core/general/" G_STRINGIFY (func) "_" name, \
 	                           test_data_compare_secrets_new (secret_flags, comp_flags, remove_secret), \
 	                           func, g_free)
-	ADD_FUNC (test_setting_compare_secrets, NM_SETTING_SECRET_FLAG_AGENT_OWNED, NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS, TRUE);
-	ADD_FUNC (test_setting_compare_secrets, NM_SETTING_SECRET_FLAG_NOT_SAVED, NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS, TRUE);
-	ADD_FUNC (test_setting_compare_secrets, NM_SETTING_SECRET_FLAG_NONE, NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS, TRUE);
-	ADD_FUNC (test_setting_compare_secrets, NM_SETTING_SECRET_FLAG_NONE, NM_SETTING_COMPARE_FLAG_EXACT, FALSE);
-	ADD_FUNC (test_setting_compare_vpn_secrets, NM_SETTING_SECRET_FLAG_AGENT_OWNED, NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS, TRUE);
-	ADD_FUNC (test_setting_compare_vpn_secrets, NM_SETTING_SECRET_FLAG_NOT_SAVED, NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS, TRUE);
-	ADD_FUNC (test_setting_compare_vpn_secrets, NM_SETTING_SECRET_FLAG_NONE, NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS, TRUE);
-	ADD_FUNC (test_setting_compare_vpn_secrets, NM_SETTING_SECRET_FLAG_NONE, NM_SETTING_COMPARE_FLAG_EXACT, FALSE);
+	ADD_FUNC ("agent_owned", test_setting_compare_secrets, NM_SETTING_SECRET_FLAG_AGENT_OWNED, NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS, TRUE);
+	ADD_FUNC ("not_saved", test_setting_compare_secrets, NM_SETTING_SECRET_FLAG_NOT_SAVED, NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS, TRUE);
+	ADD_FUNC ("secrets", test_setting_compare_secrets, NM_SETTING_SECRET_FLAG_NONE, NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS, TRUE);
+	ADD_FUNC ("exact", test_setting_compare_secrets, NM_SETTING_SECRET_FLAG_NONE, NM_SETTING_COMPARE_FLAG_EXACT, FALSE);
+	ADD_FUNC ("agent_owned", test_setting_compare_vpn_secrets, NM_SETTING_SECRET_FLAG_AGENT_OWNED, NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS, TRUE);
+	ADD_FUNC ("not_saved", test_setting_compare_vpn_secrets, NM_SETTING_SECRET_FLAG_NOT_SAVED, NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS, TRUE);
+	ADD_FUNC ("secrets", test_setting_compare_vpn_secrets, NM_SETTING_SECRET_FLAG_NONE, NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS, TRUE);
+	ADD_FUNC ("exact", test_setting_compare_vpn_secrets, NM_SETTING_SECRET_FLAG_NONE, NM_SETTING_COMPARE_FLAG_EXACT, FALSE);
 	g_test_add_func ("/core/general/test_setting_old_uuid", test_setting_old_uuid);
 
 	g_test_add_func ("/core/general/test_connection_to_dbus_setting_name", test_connection_to_dbus_setting_name);

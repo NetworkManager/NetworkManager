@@ -12756,12 +12756,12 @@ int main (int argc, char **argv)
 	test_read_wired_static (TEST_IFCFG_WIRED_STATIC, "System test-wired-static", TRUE);
 	test_read_wired_static (TEST_IFCFG_WIRED_STATIC_BOOTPROTO, "System test-wired-static-bootproto", FALSE);
 	test_read_wired_dhcp ();
-	g_test_add_func (TPATH "dhcp-plus-ip", test_read_wired_dhcp_plus_ip);
-	g_test_add_func (TPATH "shared-plus-ip", test_read_wired_shared_plus_ip);
-	g_test_add_func (TPATH "dhcp-send-hostname", test_read_write_wired_dhcp_send_hostname);
-	g_test_add_func (TPATH "global-gateway", test_read_wired_global_gateway);
-	g_test_add_func (TPATH "obsolete-gateway-n", test_read_wired_obsolete_gateway_n);
-	g_test_add_func (TPATH "never-default", test_read_wired_never_default);
+	g_test_add_func (TPATH "read-dhcp-plus-ip", test_read_wired_dhcp_plus_ip);
+	g_test_add_func (TPATH "read-shared-plus-ip", test_read_wired_shared_plus_ip);
+	g_test_add_func (TPATH "read-dhcp-send-hostname", test_read_write_wired_dhcp_send_hostname);
+	g_test_add_func (TPATH "read-global-gateway", test_read_wired_global_gateway);
+	g_test_add_func (TPATH "read-obsolete-gateway-n", test_read_wired_obsolete_gateway_n);
+	g_test_add_func (TPATH "read-never-default", test_read_wired_never_default);
 	test_read_wired_defroute_no ();
 	test_read_wired_defroute_no_gatewaydev_yes ();
 	g_test_add_func (TPATH "routes/read-static", test_read_wired_static_routes);
@@ -12831,7 +12831,7 @@ int main (int argc, char **argv)
 	test_write_wired_static_routes ();
 	test_read_write_static_routes_legacy ();
 	test_write_wired_dhcp ();
-	g_test_add_func (TPATH "dhcp-plus-ip", test_write_wired_dhcp_plus_ip);
+	g_test_add_func (TPATH "wired/write-dhcp-plus-ip", test_write_wired_dhcp_plus_ip);
 	test_write_wired_dhcp_8021x_peap_mschapv2 ();
 	test_write_wired_8021x_tls (NM_SETTING_802_1X_CK_SCHEME_PATH, NM_SETTING_SECRET_FLAG_AGENT_OWNED);
 	test_write_wired_8021x_tls (NM_SETTING_802_1X_CK_SCHEME_PATH, NM_SETTING_SECRET_FLAG_NOT_SAVED);
