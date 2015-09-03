@@ -446,6 +446,17 @@ do_cancel_secrets (NMSecretAgent *self, Request *r, gboolean disposing)
 	}
 }
 
+/**
+ * nm_secret_agent_cancel_secrets:
+ * @self: #NMSecretAgent instance
+ * @call_id: the call id to cancel
+ *
+ * It is an error to pass an invalid @call_id or a @call_id for an operation
+ * that already completed. NMSecretAgent will always invoke the callback,
+ * also for cancel() and dispose().
+ * In case of nm_secret_agent_cancel_secrets() this will synchronously invoke the
+ * callback before nm_secret_agent_cancel_secrets() returns.
+ */
 void
 nm_secret_agent_cancel_secrets (NMSecretAgent *self, NMSecretAgentCallId call_id)
 {
