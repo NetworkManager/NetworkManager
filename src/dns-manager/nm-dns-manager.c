@@ -765,10 +765,10 @@ update_dns (NMDnsManager *self,
 
 	if (priv->resolv_conf_mode == NM_DNS_MANAGER_RESOLV_CONF_UNMANAGED) {
 		update = FALSE;
-		_LOGD ("not updating resolv.conf");
+		_LOGD ("update-dns: not updating resolv.conf");
 	} else {
 		priv->dns_touched = TRUE;
-		_LOGD ("updating resolv.conf");
+		_LOGD ("update-dns: updating resolv.conf");
 	}
 
 	/* Update hash with config we're applying */
@@ -872,7 +872,7 @@ update_dns (NMDnsManager *self,
 
 		if (nm_dns_plugin_is_caching (plugin)) {
 			if (no_caching) {
-				_LOGD ("plugin %s ignored (caching disabled)",
+				_LOGD ("update-dns: plugin %s ignored (caching disabled)",
 				       plugin_name);
 				goto skip;
 			}
@@ -881,13 +881,13 @@ update_dns (NMDnsManager *self,
 
 		build_plugin_config_lists (self, &vpn_configs, &dev_configs, &other_configs);
 
-		_LOGD ("updating plugin %s", plugin_name);
+		_LOGD ("update-dns: updating plugin %s", plugin_name);
 		if (!nm_dns_plugin_update (plugin,
 		                           vpn_configs,
 		                           dev_configs,
 		                           other_configs,
 		                           priv->hostname)) {
-			_LOGW ("plugin %s update failed", plugin_name);
+			_LOGW ("update-dns: plugin %s update failed", plugin_name);
 
 			/* If the plugin failed to update, we shouldn't write out a local
 			 * caching DNS configuration to resolv.conf.
@@ -931,7 +931,7 @@ update_dns (NMDnsManager *self,
 		}
 
 		if (result == SR_NOTFOUND) {
-			_LOGD ("program not available, writing to resolv.conf");
+			_LOGD ("update-dns: program not available, writing to resolv.conf");
 			g_clear_error (error);
 			result = update_resolv_conf (self, searches, nameservers, options, error, TRUE);
 			resolv_conf_updated = TRUE;
@@ -1245,6 +1245,12 @@ init_resolv_conf_mode (NMDnsManager *self)
 
 	g_clear_object (&priv->plugin);
 
+	mode = nm_config_data_get_dns_mode (nm_config_get_data (priv->config));
+	if (g_strcmp0 (mode, "none")) {
+		priv->resolv_conf_mode = NM_DNS_MANAGER_RESOLV_CONF_UNMANAGED;
+		goto out;
+	}
+
 	fd = open (_PATH_RESCONF, O_RDONLY);
 	if (fd != -1) {
 		if (ioctl (fd, FS_IOC_GETFLAGS, &flags) == -1)
@@ -1252,17 +1258,13 @@ init_resolv_conf_mode (NMDnsManager *self)
 		close (fd);
 
 		if (flags & FS_IMMUTABLE_FL) {
-			_LOGI (_PATH_RESCONF " is immutable; not managing");
+			_LOGI ("set resolv-conf-mode: none -- " _PATH_RESCONF " is immutable");
 			priv->resolv_conf_mode = NM_DNS_MANAGER_RESOLV_CONF_UNMANAGED;
 			return;
 		}
 	}
 
-	mode = nm_config_data_get_dns_mode (nm_config_get_data (priv->config));
-	if (!g_strcmp0 (mode, "none")) {
-		priv->resolv_conf_mode = NM_DNS_MANAGER_RESOLV_CONF_UNMANAGED;
-		_LOGI ("not managing " _PATH_RESCONF);
-	} else if (!g_strcmp0 (mode, "dnsmasq")) {
+	if (!g_strcmp0 (mode, "dnsmasq")) {
 		priv->resolv_conf_mode = NM_DNS_MANAGER_RESOLV_CONF_PROXY;
 		priv->plugin = nm_dns_dnsmasq_new ();
 	} else if (!g_strcmp0 (mode, "unbound")) {
@@ -1270,15 +1272,21 @@ init_resolv_conf_mode (NMDnsManager *self)
 		priv->plugin = nm_dns_unbound_new ();
 	} else {
 		priv->resolv_conf_mode = NM_DNS_MANAGER_RESOLV_CONF_EXPLICIT;
-		if (mode && g_strcmp0 (mode, "default") != 0)
-			_LOGW ("Unknown DNS mode '%s'", mode);
+		if (mode && g_strcmp0 (mode, "default") != 0) {
+			_LOGW ("set resolve-conf-mode: default -- unknown configuration '%s'", mode);
+			return;
+		}
+		mode = "default";
 	}
 
 	if (priv->plugin) {
-		_LOGI ("loaded plugin %s", nm_dns_plugin_get_name (priv->plugin));
 		g_signal_connect (priv->plugin, NM_DNS_PLUGIN_FAILED, G_CALLBACK (plugin_failed), self);
 		g_signal_connect (priv->plugin, NM_DNS_PLUGIN_CHILD_QUIT, G_CALLBACK (plugin_child_quit), self);
 	}
+
+out:
+	_LOGI ("set resolv-conf-mode: %s%s%s%s", mode,
+	       NM_PRINT_FMT_QUOTED (priv->plugin, ", plugin=\"", nm_dns_plugin_get_name (priv->plugin), "\"", ""));
 }
 
 static void
