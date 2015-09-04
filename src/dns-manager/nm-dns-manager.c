@@ -1214,7 +1214,7 @@ nm_dns_manager_end_updates (NMDnsManager *self, const char *func)
 
 	compute_hash (self, new);
 	changed = (memcmp (new, priv->prev_hash, sizeof (new)) != 0) ? TRUE : FALSE;
-	_LOGD ("(%s): DNS configuration %s", __func__, changed ? "changed" : "did not change");
+	_LOGD ("(%s): DNS configuration %s", func, changed ? "changed" : "did not change");
 
 	priv->updates_queue--;
 	if ((priv->updates_queue > 0) || (changed == FALSE)) {
