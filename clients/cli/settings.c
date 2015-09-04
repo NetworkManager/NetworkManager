@@ -2895,6 +2895,16 @@ nmc_property_connection_set_metered (NMSetting *setting, const char *prop,
 	return TRUE;
 }
 
+static const char *
+nmc_property_connection_describe_metered (NMSetting *setting, const char *prop)
+{
+	return _("Enter a value which indicates whether the connection is subject to a data\n"
+	         "quota, usage costs or other limitations. Accepted options are:\n"
+	         "'true','yes','on' to set the connection as metered\n"
+	         "'false','no','off' to set the connection as not metered\n"
+	         "'unknown' to let NetworkManager choose a value using some heuristics\n");
+}
+
 /* --- NM_SETTING_802_1X_SETTING_NAME property setter functions --- */
 #define DEFINE_SETTER_STR_LIST(def_func, set_func) \
 	static gboolean \
@@ -5587,7 +5597,7 @@ nmc_properties_init (void)
 	                    nmc_property_connection_get_metered,
 	                    nmc_property_connection_set_metered,
 	                    NULL,
-	                    NULL,
+	                    nmc_property_connection_describe_metered,
 	                    NULL,
 	                    NULL);
 
