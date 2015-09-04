@@ -53,6 +53,7 @@
 #include "nm-core-internal.h"
 #include "nm-utils.h"
 #include "nm-dbus-helpers.h"
+#include "nm-device-tun.h"
 #include "nm-setting-connection.h"
 #include "nm-macros-internal.h"
 
@@ -362,6 +363,8 @@ _nm_device_gtype_from_dtype (NMDeviceType dtype)
 		return NM_TYPE_DEVICE_VLAN;
 	case NM_DEVICE_TYPE_GENERIC:
 		return NM_TYPE_DEVICE_GENERIC;
+	case NM_DEVICE_TYPE_TUN:
+		return NM_TYPE_DEVICE_TUN;
 	default:
 		g_warning ("Unknown device type %d", dtype);
 		return G_TYPE_INVALID;

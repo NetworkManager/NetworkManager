@@ -117,6 +117,7 @@ libnm/nm-device-bridge.c
 libnm/nm-device-bt.c
 libnm/nm-device-ethernet.c
 libnm/nm-device-generic.c
+libnm/nm-device-tun.c
 libnm/nm-device-infiniband.c
 libnm/nm-device-modem.c
 libnm/nm-device-olpc-mesh.c
