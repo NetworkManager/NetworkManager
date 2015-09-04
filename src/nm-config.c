@@ -1888,7 +1888,7 @@ nm_config_class_init (NMConfigClass *config_class)
 	    g_signal_new (NM_CONFIG_SIGNAL_CONFIG_CHANGED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
-	                  G_STRUCT_OFFSET (NMConfigClass, config_changed),
+	                  0,
 	                  NULL, NULL, NULL,
 	                  G_TYPE_NONE, 3, NM_TYPE_CONFIG_DATA, NM_TYPE_CONFIG_CHANGE_FLAGS, NM_TYPE_CONFIG_DATA);
 }

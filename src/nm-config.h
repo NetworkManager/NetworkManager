@@ -77,9 +77,6 @@ struct _NMConfig {
 
 typedef struct {
 	GObjectClass parent;
-
-	/* Signals */
-	void (*config_changed) (NMConfig *config, GHashTable *changes, NMConfigData *old_data);
 } NMConfigClass;
 
 GType nm_config_get_type (void);
