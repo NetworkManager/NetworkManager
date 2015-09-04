@@ -962,7 +962,7 @@ plugin_child_quit (NMDnsPlugin *plugin, int exit_status, gpointer user_data)
 }
 
 gboolean
-nm_dns_manager_add_ip4_config (NMDnsManager *mgr,
+nm_dns_manager_add_ip4_config (NMDnsManager *self,
                                const char *iface,
                                NMIP4Config *config,
                                NMDnsIPConfigType cfg_type)
@@ -970,10 +970,10 @@ nm_dns_manager_add_ip4_config (NMDnsManager *mgr,
 	NMDnsManagerPrivate *priv;
 	GError *error = NULL;
 
-	g_return_val_if_fail (mgr != NULL, FALSE);
+	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (config != NULL, FALSE);
 
-	priv = NM_DNS_MANAGER_GET_PRIVATE (mgr);
+	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 
 	g_object_set_data_full (G_OBJECT (config), IP_CONFIG_IFACE_TAG, g_strdup (iface), g_free);
 
@@ -992,7 +992,7 @@ nm_dns_manager_add_ip4_config (NMDnsManager *mgr,
 	if (!g_slist_find (priv->configs, config))
 		priv->configs = g_slist_append (priv->configs, g_object_ref (config));
 
-	if (!priv->updates_queue && !update_dns (mgr, FALSE, &error)) {
+	if (!priv->updates_queue && !update_dns (self, FALSE, &error)) {
 		nm_log_warn (LOGD_DNS, "could not commit DNS changes: %s", error->message);
 		g_clear_error (&error);
 	}
@@ -1001,15 +1001,15 @@ nm_dns_manager_add_ip4_config (NMDnsManager *mgr,
 }
 
 gboolean
-nm_dns_manager_remove_ip4_config (NMDnsManager *mgr, NMIP4Config *config)
+nm_dns_manager_remove_ip4_config (NMDnsManager *self, NMIP4Config *config)
 {
 	NMDnsManagerPrivate *priv;
 	GError *error = NULL;
 
-	g_return_val_if_fail (mgr != NULL, FALSE);
+	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (config != NULL, FALSE);
 
-	priv = NM_DNS_MANAGER_GET_PRIVATE (mgr);
+	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 
 	/* Can't remove it if it wasn't in the list to begin with */
 	if (!g_slist_find (priv->configs, config))
@@ -1024,7 +1024,7 @@ nm_dns_manager_remove_ip4_config (NMDnsManager *mgr, NMIP4Config *config)
 
 	g_object_unref (config);
 
-	if (!priv->updates_queue && !update_dns (mgr, FALSE, &error)) {
+	if (!priv->updates_queue && !update_dns (self, FALSE, &error)) {
 		nm_log_warn (LOGD_DNS, "could not commit DNS changes: %s", error->message);
 		g_clear_error (&error);
 	}
@@ -1035,7 +1035,7 @@ nm_dns_manager_remove_ip4_config (NMDnsManager *mgr, NMIP4Config *config)
 }
 
 gboolean
-nm_dns_manager_add_ip6_config (NMDnsManager *mgr,
+nm_dns_manager_add_ip6_config (NMDnsManager *self,
                                const char *iface,
                                NMIP6Config *config,
                                NMDnsIPConfigType cfg_type)
@@ -1043,10 +1043,10 @@ nm_dns_manager_add_ip6_config (NMDnsManager *mgr,
 	NMDnsManagerPrivate *priv;
 	GError *error = NULL;
 
-	g_return_val_if_fail (mgr != NULL, FALSE);
+	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (config != NULL, FALSE);
 
-	priv = NM_DNS_MANAGER_GET_PRIVATE (mgr);
+	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 
 	g_object_set_data_full (G_OBJECT (config), IP_CONFIG_IFACE_TAG, g_strdup (iface), g_free);
 
@@ -1065,7 +1065,7 @@ nm_dns_manager_add_ip6_config (NMDnsManager *mgr,
 	if (!g_slist_find (priv->configs, config))
 		priv->configs = g_slist_append (priv->configs, g_object_ref (config));
 
-	if (!priv->updates_queue && !update_dns (mgr, FALSE, &error)) {
+	if (!priv->updates_queue && !update_dns (self, FALSE, &error)) {
 		nm_log_warn (LOGD_DNS, "could not commit DNS changes: %s", error->message);
 		g_clear_error (&error);
 	}
@@ -1074,15 +1074,15 @@ nm_dns_manager_add_ip6_config (NMDnsManager *mgr,
 }
 
 gboolean
-nm_dns_manager_remove_ip6_config (NMDnsManager *mgr, NMIP6Config *config)
+nm_dns_manager_remove_ip6_config (NMDnsManager *self, NMIP6Config *config)
 {
 	NMDnsManagerPrivate *priv;
 	GError *error = NULL;
 
-	g_return_val_if_fail (mgr != NULL, FALSE);
+	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (config != NULL, FALSE);
 
-	priv = NM_DNS_MANAGER_GET_PRIVATE (mgr);
+	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 
 	/* Can't remove it if it wasn't in the list to begin with */
 	if (!g_slist_find (priv->configs, config))
@@ -1095,9 +1095,9 @@ nm_dns_manager_remove_ip6_config (NMDnsManager *mgr, NMIP6Config *config)
 	if (config == priv->ip6_device_config)
 		priv->ip6_device_config = NULL;
 
-	g_object_unref (config);	
+	g_object_unref (config);
 
-	if (!priv->updates_queue && !update_dns (mgr, FALSE, &error)) {
+	if (!priv->updates_queue && !update_dns (self, FALSE, &error)) {
 		nm_log_warn (LOGD_DNS, "could not commit DNS changes: %s", error->message);
 		g_clear_error (&error);
 	}
@@ -1108,19 +1108,19 @@ nm_dns_manager_remove_ip6_config (NMDnsManager *mgr, NMIP6Config *config)
 }
 
 void
-nm_dns_manager_set_initial_hostname (NMDnsManager *mgr,
+nm_dns_manager_set_initial_hostname (NMDnsManager *self,
                                      const char *hostname)
 {
-	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (mgr);
+	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 
 	priv->hostname = g_strdup (hostname);
 }
 
 void
-nm_dns_manager_set_hostname (NMDnsManager *mgr,
+nm_dns_manager_set_hostname (NMDnsManager *self,
                              const char *hostname)
 {
-	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (mgr);
+	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 	GError *error = NULL;
 	const char *filtered = NULL;
 
@@ -1139,25 +1139,25 @@ nm_dns_manager_set_hostname (NMDnsManager *mgr,
 	g_free (priv->hostname);
 	priv->hostname = g_strdup (filtered);
 
-	if (!priv->updates_queue && !update_dns (mgr, FALSE, &error)) {
+	if (!priv->updates_queue && !update_dns (self, FALSE, &error)) {
 		nm_log_warn (LOGD_DNS, "could not commit DNS changes: %s", error->message);
 		g_clear_error (&error);
 	}
 }
 
 NMDnsManagerResolvConfMode
-nm_dns_manager_get_resolv_conf_mode (NMDnsManager *mgr)
+nm_dns_manager_get_resolv_conf_mode (NMDnsManager *self)
 {
-	return NM_DNS_MANAGER_GET_PRIVATE (mgr)->resolv_conf_mode;
+	return NM_DNS_MANAGER_GET_PRIVATE (self)->resolv_conf_mode;
 }
 
 void
-nm_dns_manager_begin_updates (NMDnsManager *mgr, const char *func)
+nm_dns_manager_begin_updates (NMDnsManager *self, const char *func)
 {
 	NMDnsManagerPrivate *priv;
 
-	g_return_if_fail (mgr != NULL);
-	priv = NM_DNS_MANAGER_GET_PRIVATE (mgr);
+	g_return_if_fail (self != NULL);
+	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 
 	/* Save current hash when starting a new batch */
 	if (priv->updates_queue == 0)
@@ -1169,19 +1169,19 @@ nm_dns_manager_begin_updates (NMDnsManager *mgr, const char *func)
 }
 
 void
-nm_dns_manager_end_updates (NMDnsManager *mgr, const char *func)
+nm_dns_manager_end_updates (NMDnsManager *self, const char *func)
 {
 	NMDnsManagerPrivate *priv;
 	GError *error = NULL;
 	gboolean changed;
 	guint8 new[HASH_LEN];
 
-	g_return_if_fail (mgr != NULL);
+	g_return_if_fail (self != NULL);
 
-	priv = NM_DNS_MANAGER_GET_PRIVATE (mgr);
+	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 	g_return_if_fail (priv->updates_queue > 0);
 
-	compute_hash (mgr, new);
+	compute_hash (self, new);
 	changed = (memcmp (new, priv->prev_hash, sizeof (new)) != 0) ? TRUE : FALSE;
 	nm_log_dbg (LOGD_DNS, "(%s): DNS configuration %s", __func__, changed ? "changed" : "did not change");
 
@@ -1193,7 +1193,7 @@ nm_dns_manager_end_updates (NMDnsManager *mgr, const char *func)
 
 	/* Commit all the outstanding changes */
 	nm_log_dbg (LOGD_DNS, "(%s): committing DNS changes (%d)", func, priv->updates_queue);
-	if (!update_dns (mgr, FALSE, &error)) {
+	if (!update_dns (self, FALSE, &error)) {
 		nm_log_warn (LOGD_DNS, "could not commit DNS changes: %s", error->message);
 		g_clear_error (&error);
 	}
