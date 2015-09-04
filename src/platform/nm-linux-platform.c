@@ -3302,6 +3302,8 @@ slave_get_option (NMPlatform *platform, int slave, const char *option)
 	return link_get_option (platform, slave, slave_category (platform, slave), option);
 }
 
+/******************************************************************/
+
 static gboolean
 infiniband_partition_add (NMPlatform *platform, int parent, int p_key, NMPlatformLink *out_link)
 {
@@ -3441,6 +3443,8 @@ infiniband_get_info (NMPlatform *platform, int ifindex, int *parent, int *p_key,
 	return TRUE;
 }
 
+/******************************************************************/
+
 static gboolean
 veth_get_properties (NMPlatform *platform, int ifindex, NMPlatformVethProperties *props)
 {
@@ -3458,6 +3462,8 @@ veth_get_properties (NMPlatform *platform, int ifindex, NMPlatformVethProperties
 	props->peer = peer_ifindex;
 	return TRUE;
 }
+
+/******************************************************************/
 
 static gboolean
 tun_get_properties_ifname (NMPlatform *platform, const char *ifname, NMPlatformTunProperties *props)
@@ -3527,6 +3533,8 @@ tun_get_properties (NMPlatform *platform, int ifindex, NMPlatformTunProperties *
 	return tun_get_properties_ifname (platform, nm_platform_link_get_name (platform, ifindex), props);
 }
 
+/******************************************************************/
+
 static const struct nla_policy macvlan_info_policy[IFLA_MACVLAN_MAX + 1] = {
 	[IFLA_MACVLAN_MODE]  = { .type = NLA_U32 },
 #ifdef MACVLAN_FLAG_NOPROMISC
@@ -3593,6 +3601,8 @@ macvlan_get_properties (NMPlatform *platform, int ifindex, NMPlatformMacvlanProp
 	}
 	return (err == 0);
 }
+
+/******************************************************************/
 
 /* The installed kernel headers might not have VXLAN stuff at all, or
  * they might have the original properties, but not PORT, GROUP6, or LOCAL6.
@@ -3725,6 +3735,8 @@ vxlan_get_properties (NMPlatform *platform, int ifindex, NMPlatformVxlanProperti
 	return (err == 0);
 }
 
+/******************************************************************/
+
 static const struct nla_policy gre_info_policy[IFLA_GRE_MAX + 1] = {
 	[IFLA_GRE_LINK]     = { .type = NLA_U32 },
 	[IFLA_GRE_IFLAGS]   = { .type = NLA_U16 },
@@ -3778,6 +3790,8 @@ gre_get_properties (NMPlatform *platform, int ifindex, NMPlatformGreProperties *
 	}
 	return (err == 0);
 }
+
+/******************************************************************/
 
 static WifiData *
 wifi_get_wifi_data (NMPlatform *platform, int ifindex)
@@ -3913,6 +3927,7 @@ wifi_indicate_addressing_running (NMPlatform *platform, int ifindex, gboolean ru
 		wifi_utils_indicate_addressing_running (wifi_data, running);
 }
 
+/******************************************************************/
 
 static guint32
 mesh_get_channel (NMPlatform *platform, int ifindex)
@@ -3946,6 +3961,8 @@ mesh_set_ssid (NMPlatform *platform, int ifindex, const guint8 *ssid, gsize len)
 
 	return wifi_utils_set_mesh_ssid (wifi_data, ssid, len);
 }
+
+/******************************************************************/
 
 static gboolean
 link_get_wake_on_lan (NMPlatform *platform, int ifindex)
