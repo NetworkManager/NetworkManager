@@ -82,6 +82,35 @@ G_DEFINE_TYPE (NMDnsManager, nm_dns_manager, G_TYPE_OBJECT)
 #define NETCONFIG_PATH "/sbin/netconfig"
 #endif
 
+NM_DEFINE_SINGLETON_INSTANCE (NMDnsManager);
+
+/*********************************************************************************************/
+
+#define _NMLOG_PREFIX_NAME                "dns-mgr"
+#define _NMLOG_DOMAIN                     LOGD_DNS
+#define _NMLOG(level, ...) \
+    G_STMT_START { \
+        const NMLogLevel __level = (level); \
+        \
+        if (nm_logging_enabled (__level, _NMLOG_DOMAIN)) { \
+            char __prefix[20]; \
+            const NMDnsManager *const __self = (self); \
+            \
+            _nm_log (__level, _NMLOG_DOMAIN, 0, \
+                     "%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+                     ((__self == singleton_instance) \
+                        ? _NMLOG_PREFIX_NAME \
+                        : ({ \
+                                g_snprintf (__prefix, sizeof (__prefix), "%s[%p]", _NMLOG_PREFIX_NAME, __self); \
+                                __prefix; \
+                           }) \
+                     ) \
+                     _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
+        } \
+    } G_STMT_END
+
+/*********************************************************************************************/
+
 typedef struct {
 	NMIP4Config *ip4_vpn_config;
 	NMIP4Config *ip4_device_config;
