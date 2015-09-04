@@ -66,9 +66,11 @@
 
 /*********************************************************************************************/
 
-#define _NMLOG_DOMAIN                     LOGD_PLATFORM
 #define _NMLOG_PREFIX_NAME                "platform-linux"
-#define _NMLOG(level, ...)                _LOG(level, _NMLOG_DOMAIN, platform, __VA_ARGS__)
+#define _NMLOG_DOMAIN                     LOGD_PLATFORM
+#define _NMLOG2_DOMAIN                    LOGD_PLATFORM
+#define _NMLOG(level, ...)                _LOG(level, _NMLOG_DOMAIN,  platform, __VA_ARGS__)
+#define _NMLOG2(level, ...)               _LOG(level, _NMLOG2_DOMAIN, NULL,     __VA_ARGS__)
 
 #define _LOG(level, domain, self, ...) \
     G_STMT_START { \
@@ -89,12 +91,6 @@
                      __p_prefix _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
         } \
     } G_STMT_END
-
-#define trace(...)      _LOG (LOGL_TRACE, _NMLOG_DOMAIN, NULL, __VA_ARGS__)
-#define debug(...)      _LOG (LOGL_DEBUG, _NMLOG_DOMAIN, NULL, __VA_ARGS__)
-#define info(...)       _LOG (LOGL_INFO,  _NMLOG_DOMAIN, NULL, __VA_ARGS__)
-#define warning(...)    _LOG (LOGL_WARN , _NMLOG_DOMAIN, NULL, __VA_ARGS__)
-#define error(...)      _LOG (LOGL_ERR  , _NMLOG_DOMAIN, NULL, __VA_ARGS__)
 
 /******************************************************************
  * Forward declarations and enums
@@ -167,7 +163,7 @@ _nl_get_vtable (void)
 		if (!vtable.f_nl_has_capability)
 			vtable.f_nl_has_capability = &_nl_f_nl_has_capability;
 
-		trace ("libnl: rtnl_link_get_link_netnsid() %s", vtable.f_rtnl_link_get_link_netnsid ? "supported" : "not supported");
+		_LOG2t ("libnl: rtnl_link_get_link_netnsid() %s", vtable.f_rtnl_link_get_link_netnsid ? "supported" : "not supported");
 
 		g_return_val_if_fail (vtable.handle, &vtable);
 		g_return_val_if_fail (vtable.handle_route, &vtable);
@@ -529,7 +525,7 @@ _support_user_ipv6ll_get (void)
 #if HAVE_LIBNL_INET6_ADDR_GEN_MODE
 	if (_support_user_ipv6ll_still_undecided ()) {
 		_support_user_ipv6ll = -1;
-		nm_log_warn (LOGD_PLATFORM, "kernel support for IFLA_INET6_ADDR_GEN_MODE %s", "failed to detect; assume no support");
+		_LOG2W ("kernel support for IFLA_INET6_ADDR_GEN_MODE %s", "failed to detect; assume no support");
 	} else
 		return _support_user_ipv6ll > 0;
 #endif
@@ -549,10 +545,10 @@ _support_user_ipv6ll_detect (const struct rtnl_link *rtnl_link)
 
 		if (rtnl_link_inet6_get_addr_gen_mode ((struct rtnl_link *) rtnl_link, &mode) == 0) {
 			_support_user_ipv6ll = 1;
-			nm_log_dbg (LOGD_PLATFORM, "kernel support for IFLA_INET6_ADDR_GEN_MODE %s", "detected");
+			_LOG2D ("kernel support for IFLA_INET6_ADDR_GEN_MODE %s", "detected");
 		} else {
 			_support_user_ipv6ll = -1;
-			nm_log_dbg (LOGD_PLATFORM, "kernel support for IFLA_INET6_ADDR_GEN_MODE %s", "not detected");
+			_LOG2D ("kernel support for IFLA_INET6_ADDR_GEN_MODE %s", "not detected");
 		}
 	}
 #endif
@@ -593,7 +589,7 @@ static gboolean
 _support_kernel_extended_ifa_flags_get (void)
 {
 	if (_support_kernel_extended_ifa_flags_still_undecided ()) {
-		nm_log_warn (LOGD_PLATFORM, "Unable to detect kernel support for extended IFA_FLAGS. Assume no kernel support.");
+		_LOG2W ("Unable to detect kernel support for extended IFA_FLAGS. Assume no kernel support.");
 		_support_kernel_extended_ifa_flags = -1;
 	}
 	return _support_kernel_extended_ifa_flags > 0;
@@ -734,6 +730,8 @@ struct _NMLinuxPlatformPrivate {
 	NMPCache *cache;
 	GIOChannel *event_channel;
 	guint event_id;
+
+	GHashTable *sysctl_get_prev_values;
 
 	GUdevClient *udev_client;
 
@@ -923,8 +921,8 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink, gboolean *c
 			}
 			flags = rtnl_link_get_flags (rtnllink);
 
-			nm_log_dbg (LOGD_PLATFORM, "Failed to read tun properties for interface %d (link flags: %X)",
-			            rtnl_link_get_ifindex (rtnllink), flags);
+			_LOGD ("Failed to read tun properties for interface %d (link flags: %X)",
+			       rtnl_link_get_ifindex (rtnllink), flags);
 
 			/* try guessing the type using the link flags instead... */
 			if (flags & IFF_POINTOPOINT)
@@ -2394,32 +2392,32 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 /******************************************************************/
 
 static void
-_log_dbg_sysctl_set_impl (const char *path, const char *value)
+_log_dbg_sysctl_set_impl (NMPlatform *platform, const char *path, const char *value)
 {
 	GError *error = NULL;
 	char *contents, *contents_escaped;
 	char *value_escaped = g_strescape (value, NULL);
 
 	if (!g_file_get_contents (path, &contents, NULL, &error)) {
-		debug ("sysctl: setting '%s' to '%s' (current value cannot be read: %s)", path, value_escaped, error->message);
+		_LOGD ("sysctl: setting '%s' to '%s' (current value cannot be read: %s)", path, value_escaped, error->message);
 		g_clear_error (&error);
 	} else {
 		g_strstrip (contents);
 		contents_escaped = g_strescape (contents, NULL);
 		if (strcmp (contents, value) == 0)
-			debug ("sysctl: setting '%s' to '%s' (current value is identical)", path, value_escaped);
+			_LOGD ("sysctl: setting '%s' to '%s' (current value is identical)", path, value_escaped);
 		else
-			debug ("sysctl: setting '%s' to '%s' (current value is '%s')", path, value_escaped, contents_escaped);
+			_LOGD ("sysctl: setting '%s' to '%s' (current value is '%s')", path, value_escaped, contents_escaped);
 		g_free (contents);
 		g_free (contents_escaped);
 	}
 	g_free (value_escaped);
 }
 
-#define _log_dbg_sysctl_set(path, value) \
+#define _log_dbg_sysctl_set(platform, path, value) \
 	G_STMT_START { \
-		if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) { \
-			_log_dbg_sysctl_set_impl (path, value); \
+		if (_LOGD_ENABLED ()) { \
+			_log_dbg_sysctl_set_impl (platform, path, value); \
 		} \
 	} G_STMT_END
 
@@ -2441,16 +2439,16 @@ sysctl_set (NMPlatform *platform, const char *path, const char *value)
 	fd = open (path, O_WRONLY | O_TRUNC);
 	if (fd == -1) {
 		if (errno == ENOENT) {
-			debug ("sysctl: failed to open '%s': (%d) %s",
+			_LOGD ("sysctl: failed to open '%s': (%d) %s",
 			       path, errno, strerror (errno));
 		} else {
-			error ("sysctl: failed to open '%s': (%d) %s",
+			_LOGE ("sysctl: failed to open '%s': (%d) %s",
 			       path, errno, strerror (errno));
 		}
 		return FALSE;
 	}
 
-	_log_dbg_sysctl_set (path, value);
+	_log_dbg_sysctl_set (platform, path, value);
 
 	/* Most sysfs and sysctl options don't care about a trailing LF, while some
 	 * (like infiniband) do.  So always add the LF.  Also, neither sysfs nor
@@ -2465,17 +2463,17 @@ sysctl_set (NMPlatform *platform, const char *path, const char *value)
 		nwrote = write (fd, actual, len);
 		if (nwrote == -1) {
 			if (errno == EINTR) {
-				debug ("sysctl: interrupted, will try again");
+				_LOGD ("sysctl: interrupted, will try again");
 				continue;
 			}
 			break;
 		}
 	}
 	if (nwrote == -1 && errno != EEXIST) {
-		error ("sysctl: failed to set '%s' to '%s': (%d) %s",
+		_LOGE ("sysctl: failed to set '%s' to '%s': (%d) %s",
 		       path, value, errno, strerror (errno));
 	} else if (nwrote < len) {
-		error ("sysctl: failed to set '%s' to '%s' after three attempts",
+		_LOGE ("sysctl: failed to set '%s' to '%s' after three attempts",
 		       path, value);
 	}
 
@@ -2484,44 +2482,47 @@ sysctl_set (NMPlatform *platform, const char *path, const char *value)
 	return (nwrote == len);
 }
 
-static GHashTable *sysctl_get_prev_values;
-
 static void
-_log_dbg_sysctl_get_impl (const char *path, const char *contents)
+_log_dbg_sysctl_get_impl (NMPlatform *platform, const char *path, const char *contents)
 {
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	const char *prev_value = NULL;
 
-	if (!sysctl_get_prev_values)
-		sysctl_get_prev_values = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+	if (!priv->sysctl_get_prev_values)
+		priv->sysctl_get_prev_values = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 	else
-		prev_value = g_hash_table_lookup (sysctl_get_prev_values, path);
+		prev_value = g_hash_table_lookup (priv->sysctl_get_prev_values, path);
 
 	if (prev_value) {
 		if (strcmp (prev_value, contents) != 0) {
 			char *contents_escaped = g_strescape (contents, NULL);
 			char *prev_value_escaped = g_strescape (prev_value, NULL);
 
-			debug ("sysctl: reading '%s': '%s' (changed from '%s' on last read)", path, contents_escaped, prev_value_escaped);
+			_LOGD ("sysctl: reading '%s': '%s' (changed from '%s' on last read)", path, contents_escaped, prev_value_escaped);
 			g_free (contents_escaped);
 			g_free (prev_value_escaped);
-			g_hash_table_insert (sysctl_get_prev_values, g_strdup (path), g_strdup (contents));
+			g_hash_table_insert (priv->sysctl_get_prev_values, g_strdup (path), g_strdup (contents));
 		}
 	} else {
 		char *contents_escaped = g_strescape (contents, NULL);
 
-		debug ("sysctl: reading '%s': '%s'", path, contents_escaped);
+		_LOGD ("sysctl: reading '%s': '%s'", path, contents_escaped);
 		g_free (contents_escaped);
-		g_hash_table_insert (sysctl_get_prev_values, g_strdup (path), g_strdup (contents));
+		g_hash_table_insert (priv->sysctl_get_prev_values, g_strdup (path), g_strdup (contents));
 	}
 }
 
-#define _log_dbg_sysctl_get(path, contents) \
+#define _log_dbg_sysctl_get(platform, path, contents) \
 	G_STMT_START { \
-		if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) { \
-			_log_dbg_sysctl_get_impl (path, contents); \
-		} else if (sysctl_get_prev_values) { \
-			g_hash_table_destroy (sysctl_get_prev_values); \
-			sysctl_get_prev_values = NULL; \
+		if (_LOGD_ENABLED ()) { \
+			_log_dbg_sysctl_get_impl (platform, path, contents); \
+		} else { \
+			NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform); \
+			\
+			if (priv->sysctl_get_prev_values) { \
+				g_hash_table_destroy (priv->sysctl_get_prev_values); \
+				priv->sysctl_get_prev_values = NULL; \
+			} \
 		} \
 	} G_STMT_END
 
@@ -2541,16 +2542,16 @@ sysctl_get (NMPlatform *platform, const char *path)
 		/* We assume FAILED means EOPNOTSUP */
 		if (   g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT)
 		    || g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_FAILED))
-			debug ("error reading %s: %s", path, error->message);
+			_LOGD ("error reading %s: %s", path, error->message);
 		else
-			error ("error reading %s: %s", path, error->message);
+			_LOGE ("error reading %s: %s", path, error->message);
 		g_clear_error (&error);
 		return NULL;
 	}
 
 	g_strstrip (contents);
 
-	_log_dbg_sysctl_get (path, contents);
+	_log_dbg_sysctl_get (platform, path, contents);
 
 	return contents;
 }
@@ -2847,7 +2848,7 @@ link_add (NMPlatform *platform,
 			nm_utils_modprobe (NULL, TRUE, "bonding", "max_bonds=0", NULL);
 	}
 
-	debug ("link: add link '%s' of type '%s' (%d)",
+	_LOGD ("link: add link '%s' of type '%s' (%d)",
 	       name, nm_link_type_to_string (type), (int) type);
 
 	l = build_rtnl_link (0, name, type);
@@ -3014,7 +3015,7 @@ link_set_user_ipv6ll_enabled (NMPlatform *platform, int ifindex, gboolean enable
 		char buf[32];
 
 		rtnl_link_inet6_set_addr_gen_mode (nlo, mode);
-		debug ("link: change %d: set IPv6 address generation mode to %s",
+		_LOGD ("link: change %d: set IPv6 address generation mode to %s",
 		       ifindex, rtnl_link_inet6_addrgenmode2str (mode, buf, sizeof (buf)));
 		return do_change_link (platform, nlo, TRUE) == NM_PLATFORM_ERROR_SUCCESS;
 	}
@@ -3081,7 +3082,7 @@ link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 	auto_nl_object struct rtnl_link *change = _nl_rtnl_link_alloc (ifindex, NULL);
 
 	rtnl_link_set_mtu (change, mtu);
-	debug ("link: change %d: mtu %lu", ifindex, (unsigned long)mtu);
+	_LOGD ("link: change %d: mtu %lu", ifindex, (unsigned long)mtu);
 
 	return do_change_link (platform, change, TRUE) == NM_PLATFORM_ERROR_SUCCESS;
 }
@@ -3152,7 +3153,7 @@ vlan_add (NMPlatform *platform,
 	rtnl_link_vlan_set_id (rtnllink, vlan_id);
 	rtnl_link_vlan_set_flags (rtnllink, kernel_flags);
 
-	debug ("link: add vlan '%s', parent %d, vlan id %d, flags %X (native: %X)",
+	_LOGD ("link: add vlan '%s', parent %d, vlan id %d, flags %X (native: %X)",
 	       name, parent, vlan_id, (unsigned int) vlan_flags, kernel_flags);
 
 	return do_add_link_with_lookup (platform, name, rtnllink, NM_LINK_TYPE_VLAN, out_link);
@@ -3183,7 +3184,7 @@ vlan_set_ingress_map (NMPlatform *platform, int ifindex, int from, int to)
 	rtnl_link_set_type (change, "vlan");
 	rtnl_link_vlan_set_ingress_map (change, from, to);
 
-	debug ("link: change %d: vlan ingress map %d -> %d", ifindex, from, to);
+	_LOGD ("link: change %d: vlan ingress map %d -> %d", ifindex, from, to);
 
 	return do_change_link (platform, change, TRUE) == NM_PLATFORM_ERROR_SUCCESS;
 }
@@ -3196,7 +3197,7 @@ vlan_set_egress_map (NMPlatform *platform, int ifindex, int from, int to)
 	rtnl_link_set_type (change, "vlan");
 	rtnl_link_vlan_set_egress_map (change, from, to);
 
-	debug ("link: change %d: vlan egress map %d -> %d", ifindex, from, to);
+	_LOGD ("link: change %d: vlan egress map %d -> %d", ifindex, from, to);
 
 	return do_change_link (platform, change, TRUE) == NM_PLATFORM_ERROR_SUCCESS;
 }
@@ -3207,7 +3208,7 @@ link_enslave (NMPlatform *platform, int master, int slave)
 	auto_nl_object struct rtnl_link *change = _nl_rtnl_link_alloc (slave, NULL);
 
 	rtnl_link_set_master (change, master);
-	debug ("link: change %d: enslave to master %d", slave, master);
+	_LOGD ("link: change %d: enslave to master %d", slave, master);
 
 	return do_change_link (platform, change, TRUE) == NM_PLATFORM_ERROR_SUCCESS;
 }
@@ -3587,8 +3588,8 @@ macvlan_get_properties (NMPlatform *platform, int ifindex, NMPlatformMacvlanProp
 	err = _nl_link_parse_info_data (priv->nlh, ifindex,
 	                                macvlan_info_data_parser, props);
 	if (err != 0) {
-		warning ("(%s) could not read properties: %s",
-		         obj->link.name, nl_geterror (err));
+		_LOGW ("(%s) could not read properties: %s",
+		       obj->link.name, nl_geterror (err));
 	}
 	return (err == 0);
 }
@@ -3718,8 +3719,8 @@ vxlan_get_properties (NMPlatform *platform, int ifindex, NMPlatformVxlanProperti
 	err = _nl_link_parse_info_data (priv->nlh, ifindex,
 	                                vxlan_info_data_parser, props);
 	if (err != 0) {
-		warning ("(%s) could not read vxlan properties: %s",
-		         nm_platform_link_get_name (platform, ifindex), nl_geterror (err));
+		_LOGW ("(%s) could not read vxlan properties: %s",
+		       nm_platform_link_get_name (platform, ifindex), nl_geterror (err));
 	}
 	return (err == 0);
 }
@@ -3772,8 +3773,8 @@ gre_get_properties (NMPlatform *platform, int ifindex, NMPlatformGreProperties *
 	err = _nl_link_parse_info_data (priv->nlh, ifindex,
 	                                gre_info_data_parser, props);
 	if (err != 0) {
-		warning ("(%s) could not read gre properties: %s",
-		         nm_platform_link_get_name (platform, ifindex), nl_geterror (err));
+		_LOGW ("(%s) could not read gre properties: %s",
+		       nm_platform_link_get_name (platform, ifindex), nl_geterror (err));
 	}
 	return (err == 0);
 }
@@ -4035,7 +4036,7 @@ build_rtnl_addr (NMPlatform *platform,
 	/* IP address */
 	nle = rtnl_addr_set_local (rtnladdr, nladdr);
 	if (nle) {
-		error ("build_rtnl_addr(): rtnl_addr_set_local failed with %s (%d)", nl_geterror (nle), nle);
+		_LOGE ("build_rtnl_addr(): rtnl_addr_set_local failed with %s (%d)", nl_geterror (nle), nle);
 		return NULL;
 	}
 
@@ -4061,7 +4062,7 @@ build_rtnl_addr (NMPlatform *platform,
 		nle = rtnl_addr_set_peer (rtnladdr, nlpeer);
 		if (nle && nle != -NLE_AF_NOSUPPORT) {
 			/* IPv6 doesn't support peer addresses yet */
-			error ("build_rtnl_addr(): rtnl_addr_set_peer failed with %s (%d)", nl_geterror (nle), nle);
+			_LOGE ("build_rtnl_addr(): rtnl_addr_set_peer failed with %s (%d)", nl_geterror (nle), nle);
 			return NULL;
 		}
 	}
@@ -4540,15 +4541,15 @@ ip6_route_get (NMPlatform *platform, int ifindex, struct in6_addr network, int p
 #define DISCONNECT_CONDITIONS ((GIOCondition) (G_IO_HUP))
 
 static int
-verify_source (struct nl_msg *msg, gpointer user_data)
+verify_source (struct nl_msg *msg, NMPlatform *platform)
 {
 	struct ucred *creds = nlmsg_get_creds (msg);
 
 	if (!creds || creds->pid) {
 		if (creds)
-			warning ("netlink: received non-kernel message (pid %d)", creds->pid);
+			_LOGW ("netlink: received non-kernel message (pid %d)", creds->pid);
 		else
-			warning ("netlink: received message without credentials");
+			_LOGW ("netlink: received message without credentials");
 		return NL_STOP;
 	}
 
@@ -4581,10 +4582,10 @@ event_handler_read_netlink_one (NMPlatform *platform)
 		case -NLE_AGAIN:
 			return FALSE;
 		case -NLE_DUMP_INTR:
-			debug ("Uncritical failure to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
+			_LOGD ("Uncritical failure to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
 			break;
 		case -NLE_NOMEM:
-			info ("Too many netlink events. Need to resynchronize platform cache");
+			_LOGI ("Too many netlink events. Need to resynchronize platform cache");
 			/* Drain the event queue, we've lost events and are out of sync anyway and we'd
 			 * like to free up some space. We'll read in the status synchronously. */
 			_nl_sock_flush_data (priv->nlh_event);
@@ -4598,7 +4599,7 @@ event_handler_read_netlink_one (NMPlatform *platform)
 			                         NULL);
 			break;
 		default:
-			error ("Failed to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
+			_LOGE ("Failed to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
 			break;
 	}
 	return TRUE;
@@ -4670,7 +4671,7 @@ event_handler_read_netlink_all (NMPlatform *platform, gboolean wait_for_acks)
 }
 
 static struct nl_sock *
-setup_socket (gboolean event, gpointer user_data)
+setup_socket (NMPlatform *platform, gboolean event)
 {
 	struct nl_sock *sock;
 	int nle;
@@ -4679,14 +4680,14 @@ setup_socket (gboolean event, gpointer user_data)
 	g_return_val_if_fail (sock, NULL);
 
 	/* Only ever accept messages from kernel */
-	nle = nl_socket_modify_cb (sock, NL_CB_MSG_IN, NL_CB_CUSTOM, verify_source, user_data);
+	nle = nl_socket_modify_cb (sock, NL_CB_MSG_IN, NL_CB_CUSTOM, (nl_recvmsg_msg_cb_t) verify_source, platform);
 	g_assert (!nle);
 
 	/* Dispatch event messages (event socket only) */
 	if (event) {
-		nl_socket_modify_cb (sock, NL_CB_VALID, NL_CB_CUSTOM, event_notification, user_data);
-		nl_socket_modify_cb (sock, NL_CB_SEQ_CHECK, NL_CB_CUSTOM, event_seq_check, user_data);
-		nl_socket_modify_err_cb (sock, NL_CB_CUSTOM, event_err, user_data);
+		nl_socket_modify_cb (sock, NL_CB_VALID, NL_CB_CUSTOM, event_notification, platform);
+		nl_socket_modify_cb (sock, NL_CB_SEQ_CHECK, NL_CB_CUSTOM, event_seq_check, platform);
+		nl_socket_modify_err_cb (sock, NL_CB_CUSTOM, event_err, platform);
 	}
 
 	nle = nl_connect (sock, NETLINK_ROUTE);
@@ -4726,23 +4727,23 @@ udev_device_added (NMPlatform *platform,
 
 	ifname = g_udev_device_get_name (udev_device);
 	if (!ifname) {
-		debug ("udev-add: failed to get device's interface");
+		_LOGD ("udev-add: failed to get device's interface");
 		return;
 	}
 
 	if (g_udev_device_get_property (udev_device, "IFINDEX"))
 		ifindex = g_udev_device_get_property_as_int (udev_device, "IFINDEX");
 	else {
-		warning ("(%s): udev-add: failed to get device's ifindex", ifname);
+		_LOGW ("(%s): udev-add: failed to get device's ifindex", ifname);
 		return;
 	}
 	if (ifindex <= 0) {
-		warning ("(%s): udev-add: retrieved invalid IFINDEX=%d", ifname, ifindex);
+		_LOGW ("(%s): udev-add: retrieved invalid IFINDEX=%d", ifname, ifindex);
 		return;
 	}
 
 	if (!g_udev_device_get_sysfs_path (udev_device)) {
-		debug ("(%s): udev-add: couldn't determine device path; ignoring...", ifname);
+		_LOGD ("(%s): udev-add: couldn't determine device path; ignoring...", ifname);
 		return;
 	}
 
@@ -4772,7 +4773,7 @@ udev_device_removed (NMPlatform *platform,
 			ifindex = obj->link.ifindex;
 	}
 
-	debug ("udev-remove: IFINDEX=%d", ifindex);
+	_LOGD ("udev-remove: IFINDEX=%d", ifindex);
 	if (ifindex <= 0)
 		return;
 
@@ -4798,9 +4799,9 @@ handle_udev_event (GUdevClient *client,
 
 	ifindex = g_udev_device_get_property (udev_device, "IFINDEX");
 	seqnum = g_udev_device_get_seqnum (udev_device);
-	debug ("UDEV event: action '%s' subsys '%s' device '%s' (%s); seqnum=%" G_GUINT64_FORMAT,
-	       action, subsys, g_udev_device_get_name (udev_device),
-	       ifindex ? ifindex : "unknown", seqnum);
+	_LOGD ("UDEV event: action '%s' subsys '%s' device '%s' (%s); seqnum=%" G_GUINT64_FORMAT,
+	        action, subsys, g_udev_device_get_name (udev_device),
+	        ifindex ? ifindex : "unknown", seqnum);
 
 	if (!strcmp (action, "add") || !strcmp (action, "move"))
 		udev_device_added (platform, udev_device);
@@ -4842,12 +4843,12 @@ constructed (GObject *_object)
 	_LOGD ("create");
 
 	/* Initialize netlink socket for requests */
-	priv->nlh = setup_socket (FALSE, platform);
+	priv->nlh = setup_socket (platform, FALSE);
 	g_assert (priv->nlh);
-	debug ("Netlink socket for requests established: port=%u, fd=%d", nl_socket_get_local_port (priv->nlh), nl_socket_get_fd (priv->nlh));
+	_LOGD ("Netlink socket for requests established: port=%u, fd=%d", nl_socket_get_local_port (priv->nlh), nl_socket_get_fd (priv->nlh));
 
 	/* Initialize netlink socket for events */
-	priv->nlh_event = setup_socket (TRUE, platform);
+	priv->nlh_event = setup_socket (platform, TRUE);
 	g_assert (priv->nlh_event);
 	/* The default buffer size wasn't enough for the testsuites. It might just
 	 * as well happen with NetworkManager itself. For now let's hope 128KB is
@@ -4861,7 +4862,7 @@ constructed (GObject *_object)
 	                                 RTNLGRP_IPV4_ROUTE,  RTNLGRP_IPV6_ROUTE,
 	                                 0);
 	g_assert (!nle);
-	debug ("Netlink socket for events established: port=%u, fd=%d", nl_socket_get_local_port (priv->nlh_event), nl_socket_get_fd (priv->nlh_event));
+	_LOGD ("Netlink socket for events established: port=%u, fd=%d", nl_socket_get_local_port (priv->nlh_event), nl_socket_get_fd (priv->nlh_event));
 
 	priv->event_channel = g_io_channel_unix_new (nl_socket_get_fd (priv->nlh_event));
 	g_io_channel_set_encoding (priv->event_channel, NULL, NULL);
@@ -4946,6 +4947,9 @@ nm_linux_platform_finalize (GObject *object)
 
 	g_object_unref (priv->udev_client);
 	g_hash_table_unref (priv->wifi_data);
+
+	if (priv->sysctl_get_prev_values)
+		g_hash_table_destroy (priv->sysctl_get_prev_values);
 
 	G_OBJECT_CLASS (nm_linux_platform_parent_class)->finalize (object);
 }

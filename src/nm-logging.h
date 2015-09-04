@@ -194,9 +194,41 @@ void     nm_logging_syslog_openlog (const char *logging_backend);
 #define _LOGT_ENABLED(...)  _NMLOG_ENABLED (LOGL_TRACE, ##__VA_ARGS__)
 #define _LOGT(...)          _NMLOG (LOGL_TRACE, __VA_ARGS__)
 #else
-/* still call the logging macros to get compile time checks, but they will be optimize out. */
+/* still call the logging macros to get compile time checks, but they will be optimized out. */
 #define _LOGT_ENABLED(...)  ( FALSE && (_NMLOG_ENABLED (LOGL_TRACE, ##__VA_ARGS__)) )
 #define _LOGT(...)          G_STMT_START { if (FALSE) { _NMLOG (LOGL_TRACE, __VA_ARGS__); } } G_STMT_END
+#endif
+
+/*****************************************************************************/
+
+/* Some implementation define a second set of logging macros, for a separate
+ * use. As with the _LOGD() macro familiy above, the exact implementation
+ * depends on the file that uses them.
+ * Still, it encourages a common pattern to have the common set of macros
+ * like _LOG2D(), _LOG2I(), etc. and have _LOG2T() which by default
+ * is disabled at compile time. */
+
+#define _NMLOG2_ENABLED(level) ( nm_logging_enabled ((level), (_NMLOG2_DOMAIN)) )
+
+#define _LOG2t(...)          _NMLOG2 (LOGL_TRACE, __VA_ARGS__)
+#define _LOG2D(...)          _NMLOG2 (LOGL_DEBUG, __VA_ARGS__)
+#define _LOG2I(...)          _NMLOG2 (LOGL_INFO , __VA_ARGS__)
+#define _LOG2W(...)          _NMLOG2 (LOGL_WARN , __VA_ARGS__)
+#define _LOG2E(...)          _NMLOG2 (LOGL_ERR  , __VA_ARGS__)
+
+#define _LOG2t_ENABLED(...)  _NMLOG2_ENABLED (LOGL_TRACE, ##__VA_ARGS__)
+#define _LOG2D_ENABLED(...)  _NMLOG2_ENABLED (LOGL_DEBUG, ##__VA_ARGS__)
+#define _LOG2I_ENABLED(...)  _NMLOG2_ENABLED (LOGL_INFO , ##__VA_ARGS__)
+#define _LOG2W_ENABLED(...)  _NMLOG2_ENABLED (LOGL_WARN , ##__VA_ARGS__)
+#define _LOG2E_ENABLED(...)  _NMLOG2_ENABLED (LOGL_ERR  , ##__VA_ARGS__)
+
+#ifdef NM_MORE_LOGGING
+#define _LOG2T_ENABLED(...)  _NMLOG2_ENABLED (LOGL_TRACE, ##__VA_ARGS__)
+#define _LOG2T(...)          _NMLOG2 (LOGL_TRACE, __VA_ARGS__)
+#else
+/* still call the logging macros to get compile time checks, but they will be optimized out. */
+#define _LOG2T_ENABLED(...)  ( FALSE && (_NMLOG2_ENABLED (LOGL_TRACE, ##__VA_ARGS__)) )
+#define _LOG2T(...)          G_STMT_START { if (FALSE) { _NMLOG2 (LOGL_TRACE, __VA_ARGS__); } } G_STMT_END
 #endif
 
 /*****************************************************************************/

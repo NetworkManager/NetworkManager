@@ -46,7 +46,7 @@ add_signal_full (const char *name, NMPlatformSignalChangeType change_type, GCall
 void
 _accept_signal (const char *file, int line, const char *func, SignalData *data)
 {
-	debug ("NMPlatformSignalAssert: %s:%d, %s(): Accepting signal one time: "SIGNAL_DATA_FMT, file, line, func, SIGNAL_DATA_ARG (data));
+	_LOGD ("NMPlatformSignalAssert: %s:%d, %s(): Accepting signal one time: "SIGNAL_DATA_FMT, file, line, func, SIGNAL_DATA_ARG (data));
 	if (data->received_count != 1)
 		g_error ("NMPlatformSignalAssert: %s:%d, %s(): failure to accept signal one time: "SIGNAL_DATA_FMT, file, line, func, SIGNAL_DATA_ARG (data));
 	data->received_count = 0;
@@ -55,7 +55,7 @@ _accept_signal (const char *file, int line, const char *func, SignalData *data)
 void
 _accept_signals (const char *file, int line, const char *func, SignalData *data, int min, int max)
 {
-	debug ("NMPlatformSignalAssert: %s:%d, %s(): Accepting signal [%d,%d] times: "SIGNAL_DATA_FMT, file, line, func, min, max, SIGNAL_DATA_ARG (data));
+	_LOGD ("NMPlatformSignalAssert: %s:%d, %s(): Accepting signal [%d,%d] times: "SIGNAL_DATA_FMT, file, line, func, min, max, SIGNAL_DATA_ARG (data));
 	if (data->received_count < min || data->received_count > max)
 		g_error ("NMPlatformSignalAssert: %s:%d, %s(): failure to accept signal [%d,%d] times: "SIGNAL_DATA_FMT, file, line, func, min, max, SIGNAL_DATA_ARG (data));
 	data->received_count = 0;
@@ -64,7 +64,7 @@ _accept_signals (const char *file, int line, const char *func, SignalData *data,
 void
 _ensure_no_signal (const char *file, int line, const char *func, SignalData *data)
 {
-	debug ("NMPlatformSignalAssert: %s:%d, %s(): Accepting signal 0 times: "SIGNAL_DATA_FMT, file, line, func, SIGNAL_DATA_ARG (data));
+	_LOGD ("NMPlatformSignalAssert: %s:%d, %s(): Accepting signal 0 times: "SIGNAL_DATA_FMT, file, line, func, SIGNAL_DATA_ARG (data));
 	if (data->received_count > 0)
 		g_error ("NMPlatformSignalAssert: %s:%d, %s(): failure to accept signal 0 times: "SIGNAL_DATA_FMT, file, line, func, SIGNAL_DATA_ARG (data));
 }
@@ -72,7 +72,7 @@ _ensure_no_signal (const char *file, int line, const char *func, SignalData *dat
 void
 _wait_signal (const char *file, int line, const char *func, SignalData *data)
 {
-	debug ("NMPlatformSignalAssert: %s:%d, %s(): wait signal: "SIGNAL_DATA_FMT, file, line, func, SIGNAL_DATA_ARG (data));
+	_LOGD ("NMPlatformSignalAssert: %s:%d, %s(): wait signal: "SIGNAL_DATA_FMT, file, line, func, SIGNAL_DATA_ARG (data));
 	if (data->received_count)
 		g_error ("NMPlatformSignalAssert: %s:%d, %s(): failure to wait for signal: "SIGNAL_DATA_FMT, file, line, func, SIGNAL_DATA_ARG (data));
 
@@ -86,7 +86,7 @@ _wait_signal (const char *file, int line, const char *func, SignalData *data)
 void
 _free_signal (const char *file, int line, const char *func, SignalData *data)
 {
-	debug ("NMPlatformSignalAssert: %s:%d, %s(): free signal: "SIGNAL_DATA_FMT, file, line, func, SIGNAL_DATA_ARG (data));
+	_LOGD ("NMPlatformSignalAssert: %s:%d, %s(): free signal: "SIGNAL_DATA_FMT, file, line, func, SIGNAL_DATA_ARG (data));
 	if (data->received_count != 0)
 		g_error ("NMPlatformSignalAssert: %s:%d, %s(): failure to free non-accepted signal: "SIGNAL_DATA_FMT, file, line, func, SIGNAL_DATA_ARG (data));
 
@@ -114,12 +114,12 @@ link_callback (NMPlatform *platform, NMPObjectType obj_type, int ifindex, NMPlat
 		return;
 
 	if (data->loop) {
-		debug ("Quitting main loop.");
+		_LOGD ("Quitting main loop.");
 		g_main_loop_quit (data->loop);
 	}
 
 	data->received_count++;
-	debug ("Received signal '%s-%s' ifindex %d ifname '%s' %dth time.", data->name, nm_platform_signal_change_type_to_string (data->change_type), ifindex, received->name, data->received_count);
+	_LOGD ("Received signal '%s-%s' ifindex %d ifname '%s' %dth time.", data->name, nm_platform_signal_change_type_to_string (data->change_type), ifindex, received->name, data->received_count);
 
 	if (change_type == NM_PLATFORM_SIGNAL_REMOVED)
 		g_assert (!nm_platform_link_get_name (NM_PLATFORM_GET, ifindex));
@@ -262,9 +262,9 @@ run_command (const char *format, ...)
 	va_start (ap, format);
 	command = g_strdup_vprintf (format, ap);
 	va_end (ap);
-	debug ("Running command: %s", command);
+	_LOGD ("Running command: %s", command);
 	g_assert (!system (command));
-	debug ("Command finished.");
+	_LOGD ("Command finished.");
 	g_free (command);
 }
 

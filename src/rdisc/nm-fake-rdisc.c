@@ -28,9 +28,7 @@
 
 #include "nm-default.h"
 
-#define debug(...) nm_log_dbg (LOGD_IP6, __VA_ARGS__)
-#define warning(...) nm_log_warn (LOGD_IP6, __VA_ARGS__)
-#define error(...) nm_log_err (LOGD_IP6, __VA_ARGS__)
+#define _NMLOG_PREFIX_NAME                "rdisc-fake"
 
 typedef struct {
 	guint id;

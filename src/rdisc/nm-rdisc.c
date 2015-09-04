@@ -30,7 +30,7 @@
 #include "nm-default.h"
 #include "nm-utils.h"
 
-#define debug(...) nm_log_dbg (LOGD_IP6, __VA_ARGS__)
+#define _NMLOG_PREFIX_NAME                "rdisc"
 
 typedef struct {
 	int solicitations_left;
@@ -243,7 +243,7 @@ nm_rdisc_set_iid (NMRDisc *rdisc, const NMUtilsIPv6IfaceId iid)
 	if (rdisc->iid.id != iid.id) {
 		rdisc->iid = iid;
 		if (rdisc->addresses->len) {
-			debug ("(%s) IPv6 interface identifier changed, flushing addresses", rdisc->ifname);
+			_LOGD ("IPv6 interface identifier changed, flushing addresses");
 			g_array_remove_range (rdisc->addresses, 0, rdisc->addresses->len);
 			g_signal_emit_by_name (rdisc, NM_RDISC_CONFIG_CHANGED, NM_RDISC_CONFIG_ADDRESSES);
 		}
@@ -281,20 +281,20 @@ send_rs (NMRDisc *rdisc)
 	NMRDiscClass *klass = NM_RDISC_GET_CLASS (rdisc);
 	NMRDiscPrivate *priv = NM_RDISC_GET_PRIVATE (rdisc);
 
-	debug ("(%s): sending router solicitation", rdisc->ifname);
+	_LOGD ("sending router solicitation");
 
 	if (klass->send_rs (rdisc))
 		priv->solicitations_left--;
 
 	priv->last_rs = nm_utils_get_monotonic_timestamp_s ();
 	if (priv->solicitations_left > 0) {
-		debug ("(%s): scheduling router solicitation retry in %d seconds.",
-		       rdisc->ifname, rdisc->rtr_solicitation_interval);
+		_LOGD ("scheduling router solicitation retry in %d seconds.",
+		       rdisc->rtr_solicitation_interval);
 		priv->send_rs_id = g_timeout_add_seconds (rdisc->rtr_solicitation_interval,
 		                                          (GSourceFunc) send_rs, rdisc);
 	} else {
-		debug ("(%s): did not receive a router advertisement after %d solicitations.",
-		       rdisc->ifname, rdisc->rtr_solicitations);
+		_LOGD ("did not receive a router advertisement after %d solicitations.",
+		       rdisc->rtr_solicitations);
 		priv->send_rs_id = 0;
 	}
 
@@ -312,8 +312,8 @@ solicit (NMRDisc *rdisc)
 		priv->solicitations_left = rdisc->rtr_solicitations;
 
 		next = CLAMP (priv->last_rs + rdisc->rtr_solicitation_interval - now, 0, G_MAXINT32);
-		debug ("(%s): scheduling explicit router solicitation request in %" G_GINT64_FORMAT " seconds.",
-		       rdisc->ifname, next);
+		_LOGD ("scheduling explicit router solicitation request in %" G_GINT64_FORMAT " seconds.",
+		       next);
 		priv->send_rs_id = g_timeout_add_seconds ((guint32) next, (GSourceFunc) send_rs, rdisc);
 	}
 }
@@ -337,12 +337,12 @@ nm_rdisc_start (NMRDisc *rdisc)
 
 	g_assert (klass->start);
 
-	debug ("(%s): starting router discovery: %d", rdisc->ifname, rdisc->ifindex);
+	_LOGD ("starting router discovery: %d", rdisc->ifindex);
 
 	clear_ra_timeout (rdisc);
 	ra_wait_secs = CLAMP (rdisc->rtr_solicitations * rdisc->rtr_solicitation_interval, 30, 120);
 	priv->ra_timeout_id = g_timeout_add_seconds (ra_wait_secs, rdisc_ra_timeout_cb, rdisc);
-	debug ("(%s): scheduling RA timeout in %d seconds", rdisc->ifname, ra_wait_secs);
+	_LOGD ("scheduling RA timeout in %d seconds", ra_wait_secs);
 
 	if (klass->start)
 		klass->start (rdisc);
@@ -394,27 +394,27 @@ config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed)
 	char changedstr[CONFIG_MAP_MAX_STR];
 	char addrstr[INET6_ADDRSTRLEN];
 
-	if (nm_logging_enabled (LOGL_DEBUG, LOGD_IP6)) {
+	if (_LOGD_ENABLED ()) {
 		config_map_to_string (changed, changedstr);
-		debug ("(%s): router discovery configuration changed [%s]:", rdisc->ifname, changedstr);
-		debug ("  dhcp-level %s", dhcp_level_to_string (rdisc->dhcp_level));
+		_LOGD ("router discovery configuration changed [%s]:", changedstr);
+		_LOGD ("  dhcp-level %s", dhcp_level_to_string (rdisc->dhcp_level));
 		for (i = 0; i < rdisc->gateways->len; i++) {
 			NMRDiscGateway *gateway = &g_array_index (rdisc->gateways, NMRDiscGateway, i);
 
 			inet_ntop (AF_INET6, &gateway->address, addrstr, sizeof (addrstr));
-			debug ("  gateway %s pref %d exp %u", addrstr, gateway->preference, expiry (gateway));
+			_LOGD ("  gateway %s pref %d exp %u", addrstr, gateway->preference, expiry (gateway));
 		}
 		for (i = 0; i < rdisc->addresses->len; i++) {
 			NMRDiscAddress *address = &g_array_index (rdisc->addresses, NMRDiscAddress, i);
 
 			inet_ntop (AF_INET6, &address->address, addrstr, sizeof (addrstr));
-			debug ("  address %s exp %u", addrstr, expiry (address));
+			_LOGD ("  address %s exp %u", addrstr, expiry (address));
 		}
 		for (i = 0; i < rdisc->routes->len; i++) {
 			NMRDiscRoute *route = &g_array_index (rdisc->routes, NMRDiscRoute, i);
 
 			inet_ntop (AF_INET6, &route->network, addrstr, sizeof (addrstr));
-			debug ("  route %s/%d via %s pref %d exp %u", addrstr, route->plen,
+			_LOGD ("  route %s/%d via %s pref %d exp %u", addrstr, route->plen,
 				   nm_utils_inet6_ntop (&route->gateway, NULL), route->preference,
 				   expiry (route));
 		}
@@ -422,12 +422,12 @@ config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed)
 			NMRDiscDNSServer *dns_server = &g_array_index (rdisc->dns_servers, NMRDiscDNSServer, i);
 
 			inet_ntop (AF_INET6, &dns_server->address, addrstr, sizeof (addrstr));
-			debug ("  dns_server %s exp %u", addrstr, expiry (dns_server));
+			_LOGD ("  dns_server %s exp %u", addrstr, expiry (dns_server));
 		}
 		for (i = 0; i < rdisc->dns_domains->len; i++) {
 			NMRDiscDNSDomain *dns_domain = &g_array_index (rdisc->dns_domains, NMRDiscDNSDomain, i);
 
-			debug ("  dns_domain %s exp %u", dns_domain->domain, expiry (dns_domain));
+			_LOGD ("  dns_domain %s exp %u", dns_domain->domain, expiry (dns_domain));
 		}
 	}
 }
@@ -564,8 +564,8 @@ check_timestamps (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap changed)
 
 	if (nextevent != never) {
 		g_return_if_fail (nextevent > now);
-		debug ("(%s): scheduling next now/lifetime check: %u seconds",
-		       rdisc->ifname, nextevent - now);
+		_LOGD ("scheduling next now/lifetime check: %u seconds",
+		       nextevent - now);
 		priv->timeout_id = g_timeout_add_seconds (nextevent - now, timeout_cb, rdisc);
 	}
 }
