@@ -1441,7 +1441,7 @@ main (int argc, char **argv)
 	                      test_ap_wpa_eap_connection_5);
 
 #define ADD_FUNC(func) do { \
-		gchar *name_idx = g_strdup_printf ("/wifi/wpa_psk/" G_STRINGIFY (func) "/%ld", i); \
+		gchar *name_idx = g_strdup_printf ("/wifi/wpa_psk/" G_STRINGIFY (func) "/%zd", i); \
 		g_test_add_data_func (name_idx, (gconstpointer) i, func); \
 		g_free (name_idx); \
 	} while (0)
@@ -1466,7 +1466,7 @@ main (int argc, char **argv)
 
 #undef ADD_FUNC
 #define ADD_FUNC(func) do { \
-		gchar *name_idx = g_strdup_printf ("/wifi/rsn_psk/" G_STRINGIFY (func) "/%ld", i); \
+		gchar *name_idx = g_strdup_printf ("/wifi/rsn_psk/" G_STRINGIFY (func) "/%zd", i); \
 		g_test_add_data_func (name_idx, (gconstpointer) i, func); \
 		g_free (name_idx); \
 	} while (0)
