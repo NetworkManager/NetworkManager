@@ -203,6 +203,9 @@ char *nm_utils_enum_to_str (GType type, int value);
 NM_AVAILABLE_IN_1_2
 gboolean nm_utils_enum_from_str (GType type, const char *str, int *out_value, char **err_token);
 
+NM_AVAILABLE_IN_1_2
+const char **nm_utils_enum_get_values (GType type, gint from, gint to);
+
 G_END_DECLS
 
 #endif /* __NM_UTILS_H__ */

@@ -4120,3 +4120,55 @@ NM_BACKPORT_SYMBOL (libnm_1_0_6, gboolean, nm_utils_enum_from_str,
                     (GType type, const char *str, int *out_value, char **err_token),
                     (type, str, out_value, err_token));
 
+/**
+ * nm_utils_enum_get_values:
+ * @type: the %GType of the enum
+ * @from: the first element to be returned
+ * @to: the last element to be returned
+ *
+ * Returns the list of possible values for a given enum.
+ *
+ * Returns: a NULL-terminated dynamically-allocated array of static strings
+ * or %NULL on error
+ *
+ * Since: 1.2
+ */
+const char **nm_utils_enum_get_values (GType type, gint from, gint to)
+{
+	GTypeClass *class;
+	GPtrArray *array;
+	gint i;
+
+	class = g_type_class_ref (type);
+	array = g_ptr_array_new ();
+
+	if (G_IS_ENUM_CLASS (class)) {
+		GEnumClass *enum_class = G_ENUM_CLASS (class);
+		GEnumValue *enum_value;
+
+		for (i = 0; i < enum_class->n_values; i++) {
+			enum_value = &enum_class->values[i];
+			if (enum_value->value >= from && enum_value->value <= to)
+				g_ptr_array_add (array, (gpointer) enum_value->value_nick);
+		}
+	} else if (G_IS_FLAGS_CLASS (class)) {
+		GFlagsClass *flags_class = G_FLAGS_CLASS (class);
+		GFlagsValue *flags_value;
+
+		for (i = 0; i < flags_class->n_values; i++) {
+			flags_value = &flags_class->values[i];
+			if (flags_value->value >= from && flags_value->value <= to)
+				g_ptr_array_add (array, (gpointer) flags_value->value_nick);
+		}
+	} else {
+		g_type_class_unref (class);
+		g_ptr_array_free (array, TRUE);
+		g_return_val_if_reached (NULL);
+	}
+
+	g_type_class_unref (class);
+	g_ptr_array_add (array, NULL);
+
+	return (const char **) g_ptr_array_free (array, FALSE);
+}
+
