@@ -288,6 +288,7 @@ NmcOutputField nmc_fields_setting_ip4_config[] = {
 	SETTING_FIELD (NM_SETTING_IP4_CONFIG_DHCP_FQDN),          /* 15 */
 	SETTING_FIELD (NM_SETTING_IP_CONFIG_NEVER_DEFAULT),       /* 16 */
 	SETTING_FIELD (NM_SETTING_IP_CONFIG_MAY_FAIL),            /* 17 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_DAD_TIMEOUT),         /* 18 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_IP4_CONFIG_ALL     "name"","\
@@ -307,7 +308,8 @@ NmcOutputField nmc_fields_setting_ip4_config[] = {
                                               NM_SETTING_IP_CONFIG_DHCP_HOSTNAME","\
                                               NM_SETTING_IP4_CONFIG_DHCP_FQDN","\
                                               NM_SETTING_IP_CONFIG_NEVER_DEFAULT","\
-                                              NM_SETTING_IP_CONFIG_MAY_FAIL
+                                              NM_SETTING_IP_CONFIG_MAY_FAIL","\
+                                              NM_SETTING_IP_CONFIG_DAD_TIMEOUT
 #define NMC_FIELDS_SETTING_IP4_CONFIG_COMMON  NMC_FIELDS_SETTING_IP4_CONFIG_ALL
 
 /* Available fields for NM_SETTING_IP6_CONFIG_SETTING_NAME */
@@ -1550,6 +1552,26 @@ DEFINE_GETTER (nmc_property_ipv4_get_dhcp_hostname, NM_SETTING_IP_CONFIG_DHCP_HO
 DEFINE_GETTER (nmc_property_ipv4_get_dhcp_fqdn, NM_SETTING_IP4_CONFIG_DHCP_FQDN)
 DEFINE_GETTER (nmc_property_ipv4_get_never_default, NM_SETTING_IP_CONFIG_NEVER_DEFAULT)
 DEFINE_GETTER (nmc_property_ipv4_get_may_fail, NM_SETTING_IP_CONFIG_MAY_FAIL)
+
+static char *
+nmc_property_ipv4_get_dad_timeout (NMSetting *setting, NmcPropertyGetType get_type)
+{
+	NMSettingIPConfig *s_ip = NM_SETTING_IP_CONFIG (setting);
+	gint dad_timeout;
+
+	dad_timeout = nm_setting_ip_config_get_dad_timeout (s_ip);
+	if (get_type == NMC_PROPERTY_GET_PARSABLE)
+		return g_strdup_printf ("%d", dad_timeout);
+
+	switch (dad_timeout) {
+	case -1:
+		return g_strdup_printf (_("%d (default)"), dad_timeout);
+	case 0:
+		return g_strdup_printf (_("%d (off)"), dad_timeout);
+	default:
+		return g_strdup_printf ("%d", dad_timeout);
+	}
+}
 
 /* --- NM_SETTING_IP6_CONFIG_SETTING_NAME property get functions --- */
 DEFINE_GETTER (nmc_property_ipv6_get_method, NM_SETTING_IP_CONFIG_METHOD)
@@ -6492,6 +6514,13 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL);
+	nmc_add_prop_funcs (GLUE_IP (4, DAD_TIMEOUT),
+	                    nmc_property_ipv4_get_dad_timeout,
+	                    nmc_property_set_int,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
 
 	/* Add editable properties for NM_SETTING_IP6_CONFIG_SETTING_NAME */
 	nmc_add_prop_funcs (GLUE_IP (6, METHOD),
@@ -8088,6 +8117,7 @@ setting_ip4_config_details (NMSetting *setting, NmCli *nmc,  const char *one_pro
 	set_val_str (arr, 15, nmc_property_ipv4_get_dhcp_fqdn (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 16, nmc_property_ipv4_get_never_default (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 17, nmc_property_ipv4_get_may_fail (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 18, nmc_property_ipv4_get_dad_timeout (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
