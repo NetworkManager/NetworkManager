@@ -1663,8 +1663,10 @@ connection_updated (NMSettings *settings,
 		}
 	}
 
-	if (device)
+	if (device) {
 		firewall_update_zone (policy, connection, device);
+		nm_device_update_metered (device);
+	}
 
 	schedule_activate_all (policy);
 }
