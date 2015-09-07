@@ -747,6 +747,84 @@ test_config_set_values (void)
 
 /*****************************************************************************/
 
+static void
+_test_signal_config_changed_cb (NMConfig *config,
+                                NMConfigData *config_data,
+                                NMConfigChangeFlags changes,
+                                NMConfigData *old_data,
+                                gpointer user_data)
+{
+	const NMConfigChangeFlags *expected = user_data;
+
+	g_assert (changes);
+	g_assert_cmpint (changes, ==, *expected);
+	g_assert (NM_IS_CONFIG (config));
+	g_assert (NM_IS_CONFIG_DATA (config_data));
+
+	g_assert (config_data == old_data);
+	g_assert (config_data == nm_config_get_data (config));
+}
+
+static void
+_test_signal_config_changed_cb2 (NMConfig *config,
+                                 NMConfigData *config_data,
+                                 NMConfigChangeFlags changes,
+                                 NMConfigData *old_data,
+                                 gpointer user_data)
+{
+	const NMConfigChangeFlags *expected = user_data;
+
+	g_assert (changes);
+	g_assert_cmpint (changes, ==, *expected);
+}
+
+static void
+test_config_signal (void)
+{
+	gs_unref_object NMConfig *config = NULL;
+	NMConfigChangeFlags expected;
+	gs_unref_object NMConfigData *config_data_orig = NULL;
+
+	config = setup_config (NULL, SRCDIR "/NetworkManager.conf", "", NULL, SRCDIR "/conf.d", "", NULL);
+
+	config_data_orig = g_object_ref (nm_config_get_data_orig (config));
+
+	g_signal_connect (G_OBJECT (config),
+	                  NM_CONFIG_SIGNAL_CONFIG_CHANGED,
+	                  G_CALLBACK (_test_signal_config_changed_cb),
+	                  &expected);
+
+	expected = NM_CONFIG_CHANGE_SIGUSR1;
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE, "*config: signal SIGUSR1");
+	nm_config_reload (config, SIGUSR1);
+
+	expected = NM_CONFIG_CHANGE_SIGUSR2;
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE, "*config: signal SIGUSR2");
+	nm_config_reload (config, SIGUSR2);
+
+	expected = NM_CONFIG_CHANGE_SIGHUP;
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE, "*config: signal SIGHUP (no changes from disk)*");
+	nm_config_reload (config, SIGHUP);
+
+
+	/* test with subscribing two signals... */
+	g_signal_connect (G_OBJECT (config),
+	                  NM_CONFIG_SIGNAL_CONFIG_CHANGED,
+	                  G_CALLBACK (_test_signal_config_changed_cb2),
+	                  &expected);
+	expected = NM_CONFIG_CHANGE_SIGUSR2;
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE, "*config: signal SIGUSR2");
+	nm_config_reload (config, SIGUSR2);
+	g_signal_handlers_disconnect_by_func (config, _test_signal_config_changed_cb2, &expected);
+
+
+	g_signal_handlers_disconnect_by_func (config, _test_signal_config_changed_cb, &expected);
+
+	g_assert (config_data_orig == nm_config_get_data (config));
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int
@@ -771,6 +849,8 @@ main (int argc, char **argv)
 	g_test_add_func ("/config/confdir-parse-error", test_config_confdir_parse_error);
 
 	g_test_add_func ("/config/set-values", test_config_set_values);
+
+	g_test_add_func ("/config/signal", test_config_signal);
 
 	/* This one has to come last, because it leaves its values in
 	 * nm-config.c's global variables, and there's no way to reset
