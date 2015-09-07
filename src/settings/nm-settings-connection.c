@@ -2345,6 +2345,18 @@ nm_settings_connection_get_filename (NMSettingsConnection *self)
 	return priv->filename;
 }
 
+const char *
+nm_settings_connection_get_id (NMSettingsConnection *self)
+{
+	return nm_connection_get_id (NM_CONNECTION (self));
+}
+
+const char *
+nm_settings_connection_get_uuid (NMSettingsConnection *self)
+{
+	return nm_connection_get_uuid (NM_CONNECTION (self));
+}
+
 /**************************************************************/
 
 static void

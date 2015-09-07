@@ -223,6 +223,9 @@ void        nm_settings_connection_set_filename (NMSettingsConnection *self,
                                                  const char *filename);
 const char *nm_settings_connection_get_filename (NMSettingsConnection *self);
 
+const char *nm_settings_connection_get_id   (NMSettingsConnection *connection);
+const char *nm_settings_connection_get_uuid (NMSettingsConnection *connection);
+
 G_END_DECLS
 
 #endif /* __NETWORKMANAGER_SETTINGS_CONNECTION_H__ */
