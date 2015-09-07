@@ -82,6 +82,7 @@ typedef void (*NMSecretAgentCallback) (NMSecretAgent *agent,
                                        gpointer user_data);
 
 NMSecretAgentCallId nm_secret_agent_get_secrets  (NMSecretAgent *agent,
+                                                  const char *path,
                                                   NMConnection *connection,
                                                   const char *setting_name,
                                                   const char **hints,
@@ -93,11 +94,13 @@ void        nm_secret_agent_cancel_secrets (NMSecretAgent *agent,
                                             NMSecretAgentCallId call_id);
 
 NMSecretAgentCallId nm_secret_agent_save_secrets (NMSecretAgent *agent,
+                                                  const char *path,
                                                   NMConnection *connection,
                                                   NMSecretAgentCallback callback,
                                                   gpointer callback_data);
 
 NMSecretAgentCallId nm_secret_agent_delete_secrets (NMSecretAgent *agent,
+                                                    const char *path,
                                                     NMConnection *connection,
                                                     NMSecretAgentCallback callback,
                                                     gpointer callback_data);

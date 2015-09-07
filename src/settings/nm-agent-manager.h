@@ -66,6 +66,7 @@ typedef void (*NMAgentSecretsResultFunc) (NMAgentManager *manager,
                                           gpointer other_data3);
 
 NMAgentManagerCallId nm_agent_manager_get_secrets (NMAgentManager *manager,
+                                                   const char *path,
                                                    NMConnection *connection,
                                                    NMAuthSubject *subject,
                                                    GVariant *existing_secrets,
@@ -81,10 +82,12 @@ void nm_agent_manager_cancel_secrets (NMAgentManager *manager,
                                       NMAgentManagerCallId request_id);
 
 void nm_agent_manager_save_secrets (NMAgentManager *manager,
+                                    const char *path,
                                     NMConnection *connection,
                                     NMAuthSubject *subject);
 
 void nm_agent_manager_delete_secrets (NMAgentManager *manager,
+                                      const char *path,
                                       NMConnection *connection);
 
 NMSecretAgent *nm_agent_manager_get_agent_by_user (NMAgentManager *manager,

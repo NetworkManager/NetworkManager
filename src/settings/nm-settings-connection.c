@@ -749,7 +749,9 @@ do_delete (NMSettingsConnection *self,
 	/* Tell agents to remove secrets for this connection */
 	for_agents = nm_simple_connection_new_clone (NM_CONNECTION (self));
 	nm_connection_clear_secrets (for_agents);
-	nm_agent_manager_delete_secrets (priv->agent_mgr, for_agents);
+	nm_agent_manager_delete_secrets (priv->agent_mgr,
+	                                 nm_connection_get_path (NM_CONNECTION (self)),
+	                                 for_agents);
 	g_object_unref (for_agents);
 
 	/* Remove timestamp from timestamps database file */
@@ -1039,6 +1041,7 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 	if (existing_secrets)
 		g_variant_ref_sink (existing_secrets);
 	call_id_a = nm_agent_manager_get_secrets (priv->agent_mgr,
+	                                          nm_connection_get_path (NM_CONNECTION (self)),
 	                                          NM_CONNECTION (self),
 	                                          subject,
 	                                          existing_secrets,
@@ -1413,7 +1416,10 @@ con_update_cb (NMSettingsConnection *self,
 		nm_connection_clear_secrets_with_flags (for_agent,
 		                                        secrets_filter_cb,
 		                                        GUINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED));
-		nm_agent_manager_save_secrets (info->agent_mgr, for_agent, info->subject);
+		nm_agent_manager_save_secrets (info->agent_mgr,
+		                               nm_connection_get_path (NM_CONNECTION (self)),
+		                               for_agent,
+		                               info->subject);
 		g_object_unref (for_agent);
 	}
 
@@ -1795,7 +1801,9 @@ dbus_clear_secrets_auth_cb (NMSettingsConnection *self,
 			nm_connection_clear_secrets (priv->agent_secrets);
 
 		/* Tell agents to remove secrets for this connection */
-		nm_agent_manager_delete_secrets (priv->agent_mgr, NM_CONNECTION (self));
+		nm_agent_manager_delete_secrets (priv->agent_mgr,
+		                                 nm_connection_get_path (NM_CONNECTION (self)),
+		                                 NM_CONNECTION (self));
 
 		info = g_malloc0 (sizeof (*info));
 		info->context = context;

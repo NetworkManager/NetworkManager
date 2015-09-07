@@ -29,7 +29,6 @@
 #include "nm-secret-agent.h"
 #include "nm-auth-utils.h"
 #include "nm-setting-vpn.h"
-#include "nm-setting-connection.h"
 #include "nm-enum-types.h"
 #include "nm-auth-manager.h"
 #include "nm-bus-manager.h"
@@ -455,6 +454,7 @@ struct _NMAgentManagerCallId {
 
 	union {
 		struct {
+			char *path;
 			NMConnection *connection;
 
 			NMAuthChain *chain;
@@ -506,6 +506,7 @@ request_free (Request *req)
 	case REQUEST_TYPE_CON_SAVE:
 	case REQUEST_TYPE_CON_DEL:
 		g_object_unref (req->con.connection);
+		g_free (req->con.path);
 		if (req->con.chain)
 			nm_auth_chain_unref (req->con.chain);
 		if (req->request_type == REQUEST_TYPE_CON_GET) {
@@ -943,6 +944,7 @@ _con_get_request_start_proceed (Request *req, gboolean include_system_secrets)
 	}
 
 	req->current_call_id = nm_secret_agent_get_secrets (req->current,
+	                                                    req->con.path,
 	                                                    tmp,
 	                                                    req->con.get.setting_name,
 	                                                    (const char **) req->con.get.hints,
@@ -1157,6 +1159,7 @@ _con_get_try_complete_early (Request *req)
 /**
  * nm_agent_manager_get_secrets:
  * @self:
+ * @path:
  * @connection:
  * @subject:
  * @existing_secrets:
@@ -1179,6 +1182,7 @@ _con_get_try_complete_early (Request *req)
  */
 NMAgentManagerCallId
 nm_agent_manager_get_secrets (NMAgentManager *self,
+                              const char *path,
                               NMConnection *connection,
                               NMAuthSubject *subject,
                               GVariant *existing_secrets,
@@ -1194,12 +1198,13 @@ nm_agent_manager_get_secrets (NMAgentManager *self,
 	Request *req;
 
 	g_return_val_if_fail (self != NULL, 0);
+	g_return_val_if_fail (path && *path, 0);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), 0);
 	g_return_val_if_fail (callback != NULL, 0);
 
 	nm_log_dbg (LOGD_SETTINGS,
 	            "Secrets requested for connection %s (%s/%s)",
-	            nm_connection_get_path (connection),
+	            path,
 	            nm_connection_get_id (connection),
 	            setting_name);
 
@@ -1213,6 +1218,7 @@ nm_agent_manager_get_secrets (NMAgentManager *self,
 	                   nm_connection_get_id (connection),
 	                   subject);
 
+	req->con.path = g_strdup (path);
 	req->con.connection = g_object_ref (connection);
 	if (existing_secrets)
 		req->con.get.existing_secrets = g_variant_ref (existing_secrets);
@@ -1296,6 +1302,7 @@ static void
 _con_save_request_start (Request *req)
 {
 	req->current_call_id = nm_secret_agent_save_secrets (req->current,
+	                                                     req->con.path,
 	                                                     req->con.connection,
 	                                                     _con_save_request_done,
 	                                                     req);
@@ -1307,6 +1314,7 @@ _con_save_request_start (Request *req)
 
 void
 nm_agent_manager_save_secrets (NMAgentManager *self,
+                               const char *path,
                                NMConnection *connection,
                                NMAuthSubject *subject)
 {
@@ -1314,17 +1322,19 @@ nm_agent_manager_save_secrets (NMAgentManager *self,
 	Request *req;
 
 	g_return_if_fail (self);
+	g_return_if_fail (path && *path);
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 
 	nm_log_dbg (LOGD_SETTINGS,
 	            "Saving secrets for connection %s (%s)",
-	            nm_connection_get_path (connection),
+	            path,
 	            nm_connection_get_id (connection));
 
 	req = request_new (self,
 	                   REQUEST_TYPE_CON_SAVE,
 	                   nm_connection_get_id (connection),
 	                   subject);
+	req->con.path = g_strdup (path);
 	req->con.connection = g_object_ref (connection);
 	if (!g_hash_table_add (priv->requests, req))
 		g_assert_not_reached ();
@@ -1378,6 +1388,7 @@ static void
 _con_del_request_start (Request *req)
 {
 	req->current_call_id = nm_secret_agent_delete_secrets (req->current,
+	                                                       req->con.path,
 	                                                       req->con.connection,
 	                                                       _con_del_request_done,
 	                                                       req);
@@ -1389,6 +1400,7 @@ _con_del_request_start (Request *req)
 
 void
 nm_agent_manager_delete_secrets (NMAgentManager *self,
+                                 const char *path,
                                  NMConnection *connection)
 {
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
@@ -1396,11 +1408,12 @@ nm_agent_manager_delete_secrets (NMAgentManager *self,
 	Request *req;
 
 	g_return_if_fail (self != NULL);
+	g_return_if_fail (path && *path);
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 
 	nm_log_dbg (LOGD_SETTINGS,
 	            "Deleting secrets for connection %s (%s)",
-	            nm_connection_get_path (connection),
+	            path,
 	            nm_connection_get_id (connection));
 
 	subject = nm_auth_subject_new_internal ();
@@ -1408,6 +1421,7 @@ nm_agent_manager_delete_secrets (NMAgentManager *self,
 	                   REQUEST_TYPE_CON_DEL,
 	                   nm_connection_get_id (connection),
 	                   subject);
+	req->con.path = g_strdup (path);
 	req->con.connection = g_object_ref (connection);
 	g_object_unref (subject);
 	if (!g_hash_table_add (priv->requests, req))
