@@ -105,11 +105,17 @@ def _nitrate_add_case(case, tag_id=None):
     if tags is not None:
         case['tag'] = list(sorted(set(tags)))
 
-def _nitrate_base_filter(additional=None, default=None):
+def _nitrate_base_filter(test_plan, additional=None, default=None):
     # see https://tcms.engineering.redhat.com/plan/6726/networkmanager#treeview
+    # see https://tcms.engineering.redhat.com/plan/18716/networkmanager#treeview
     if default is None:
         # f = {'plan__component__name': 'NetworkManager'}
-        f = {'plan__parent_id': '6726'}
+        if test_plan is None or test_plan == 'devel':
+            f = {'plan__parent_id': '18716'}
+        elif test_plan == 'rhel-7.1':
+            f = {'plan__parent_id': '6726'}
+        else:
+            f = {'plan__parent_id': test_plan}
     else:
         f = dict(default);
 
@@ -119,7 +125,7 @@ def _nitrate_base_filter(additional=None, default=None):
     return f
 
 _nitrate_cases_searched_by_tag = {}
-def nitrate_get_cases_by_tag(tag=None, tag_name=None, tag_id=None):
+def nitrate_get_cases_by_tag(test_plan, tag=None, tag_name=None, tag_id=None):
     if (0 if tag is None else 1) + \
        (0 if tag_name is None else 1) + \
        (0 if tag_id is None else 1) != 1:
@@ -132,17 +138,17 @@ def nitrate_get_cases_by_tag(tag=None, tag_name=None, tag_id=None):
 
     tag_id = tag['id']
     if tag_id not in _nitrate_cases_searched_by_tag:
-        cases = nitrate.Nitrate()._server.TestCase.filter(_nitrate_base_filter({'tag' : tag_id}))
+        cases = nitrate.Nitrate()._server.TestCase.filter(_nitrate_base_filter(test_plan, {'tag' : tag_id}))
         for case in cases:
             _nitrate_add_case(case, tag_id)
         _nitrate_cases_searched_by_tag[tag_id] = 1
     return [ case for case_id, case in _nitrate_cases.iteritems() if tag_id in case['tag'] ]
 
 _nitrate_get_cases_all = False
-def nitrate_get_cases_all():
+def nitrate_get_cases_all(test_plan):
     global _nitrate_get_cases_all
     if not _nitrate_get_cases_all:
-        cases = nitrate.Nitrate()._server.TestCase.filter(_nitrate_base_filter())
+        cases = nitrate.Nitrate()._server.TestCase.filter(_nitrate_base_filter(test_plan))
         for case in cases:
             _nitrate_add_case(case)
         _nitrate_get_cases_all = True
@@ -162,7 +168,7 @@ def nitrate_subtract_cases(cases, remove, no_cases=None):
             if no_cases is not None:
                 no_cases[case_id] = case
 
-def nitrate_cases_get(tags=None, no_tags=None, include_all=False):
+def nitrate_cases_get(test_plan, tags=None, no_tags=None, include_all=False):
     cases = {}
     no_cases = {}
 
@@ -179,12 +185,12 @@ def nitrate_cases_get(tags=None, no_tags=None, include_all=False):
     if not tags:
         cases_tag = []
     else:
-        cases_tag = [ nitrate_get_cases_by_tag(tag_name=tag) for tag in tags ]
+        cases_tag = [ nitrate_get_cases_by_tag(test_plan, tag_name=tag) for tag in tags ]
     if include_all:
         # only blacklist of ~all~. Fetch first all.
-        cases_tag.append(nitrate_get_cases_all())
+        cases_tag.append(nitrate_get_cases_all(test_plan))
     if no_tags:
-        cases_no_tag = [ nitrate_get_cases_by_tag(tag_name=tag) for tag in no_tags ]
+        cases_no_tag = [ nitrate_get_cases_by_tag(test_plan, tag_name=tag) for tag in no_tags ]
 
     for c in cases_tag:
         nitrate_merge_cases(cases, c)
@@ -257,10 +263,10 @@ def nitrate_print_cases(cases, prefix=""):
             nitrate_get_script_name_for_case(case), case['case_status'], \
             t, "(?) " if not _nitrate_get_cases_all else ""))
 
-def nitrate_get_cases_by_one_tag(tag_name):
+def nitrate_get_cases_by_one_tag(test_plan, tag_name):
     tag = nitrate_get_tag_by_name(tag_name, True)
-    cases = nitrate_get_cases_all()
-    cases_with_tag = nitrate_get_cases_by_tag(tag)
+    cases = nitrate_get_cases_all(test_plan)
+    cases_with_tag = nitrate_get_cases_by_tag(test_plan, tag)
     cases = _nitrate_index_cases_by_case_id(cases)
     cases_with_tag = _nitrate_index_cases_by_case_id(cases_with_tag)
     return sub_dict(cases, cases_with_tag.keys())
@@ -515,6 +521,7 @@ class CmdSubmit(CmdBase):
         self.parser.add_argument('--nitrate-exclude-tag', '-T', action='append', help='Query nitrate for tests not having this tag. Output is appended to $TESTS. In combination with --nitrate-tag this blacklists cases (after selecting then)')
         self.parser.add_argument('--nitrate-status', '-s', action='append', help='After selecting the tests by via --nitrate-tag, --nitrate-all, or --nitrate-exclude-tag, further whitelist by status')
         self.parser.add_argument('--nitrate-exclude-status', '-S', action='append', help='After selecting the tests by via --nitrate-tag, --nitrate-all, --nitrate-exclude-tag, further blacklist by status')
+        self.parser.add_argument('--nitrate-test-plan', '-P', help='Select the nitrate-test-plan for loading tests. Currently supported: \'devel\' (\'18716\'), \'rhel-7.1\' (\'6726\') or the numeric id of parent plan (default: \'devel\'). See for example https://tcms.engineering.redhat.com/plan/18716/networkmanager#treeview')
         self.parser.add_argument('--tests', '-c', action='append', help='Append argument to $TESTS')
         self.parser.add_argument('--job', '-j', help='beaker xml job file')
         self.parser.add_argument('--verbose', '-v', action='count', help='print more information')
@@ -564,7 +571,7 @@ class CmdSubmit(CmdBase):
             tests.extend(self.options.tests)
         if self.options.nitrate_all or self.options.nitrate_tag or self.options.nitrate_exclude_tag:
 
-            cases, no_cases = nitrate_cases_get(self.options.nitrate_tag, self.options.nitrate_exclude_tag, self.options.nitrate_all)
+            cases, no_cases = nitrate_cases_get(self.options.nitrate_test_plan, self.options.nitrate_tag, self.options.nitrate_exclude_tag, self.options.nitrate_all)
             cases, no_case_by_status = nitrate_filter_by_status(cases, self.options.nitrate_status, self.options.nitrate_exclude_status)
 
             if self.options.verbose >= 1:
