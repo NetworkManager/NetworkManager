@@ -312,7 +312,7 @@ nm_settings_get_connection_by_uuid (NMSettings *self, const char *uuid)
 
 	g_hash_table_iter_init (&iter, priv->connections);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &candidate)) {
-		if (g_strcmp0 (uuid, nm_connection_get_uuid (NM_CONNECTION (candidate))) == 0)
+		if (g_strcmp0 (uuid, nm_settings_connection_get_uuid (candidate)) == 0)
 			return candidate;
 	}
 
@@ -990,7 +990,7 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 		return;
 	}
 
-	existing = nm_settings_get_connection_by_uuid (self, nm_connection_get_uuid (NM_CONNECTION (connection)));
+	existing = nm_settings_get_connection_by_uuid (self, nm_settings_connection_get_uuid (connection));
 	if (existing) {
 		/* Cannot add duplicate connections per UUID. Just return without action and
 		 * log a warning.
@@ -1003,7 +1003,7 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 		 * error out. That should not happen unless the admin misconfigured the system
 		 * to create conflicting connections. */
 		nm_log_warn (LOGD_SETTINGS, "plugin provided duplicate connection with UUID %s",
-		             nm_connection_get_uuid (NM_CONNECTION (connection)));
+		             nm_settings_connection_get_uuid (connection));
 		return;
 	}
 
@@ -1884,7 +1884,7 @@ nm_settings_device_added (NMSettings *self, NMDevice *device)
 
 	nm_log_info (LOGD_SETTINGS, "(%s): created default wired connection '%s'",
 	             nm_device_get_iface (device),
-	             nm_connection_get_id (NM_CONNECTION (added)));
+	             nm_settings_connection_get_id (added));
 }
 
 void

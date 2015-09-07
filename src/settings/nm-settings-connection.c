@@ -48,12 +48,11 @@
         if (nm_logging_enabled (__level, _NMLOG_DOMAIN)) { \
             char __prefix[128]; \
             const char *__p_prefix = _NMLOG_PREFIX_NAME; \
-            const void *const __self = (self); \
             \
-            if (__self) { \
-                const char *__uuid = nm_connection_get_uuid ((NMConnection *) __self); \
+            if (self) { \
+                const char *__uuid = nm_settings_connection_get_uuid (self); \
                 \
-                g_snprintf (__prefix, sizeof (__prefix), "%s[%p%s%s]", _NMLOG_PREFIX_NAME, __self, __uuid ? "," : "", __uuid ? __uuid : ""); \
+                g_snprintf (__prefix, sizeof (__prefix), "%s[%p%s%s]", _NMLOG_PREFIX_NAME, self, __uuid ? "," : "", __uuid ? __uuid : ""); \
                 __p_prefix = __prefix; \
             } \
             _nm_log (__level, _NMLOG_DOMAIN, 0, \
@@ -529,11 +528,11 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 		return FALSE;
 
 	if (   nm_connection_get_path (NM_CONNECTION (self))
-	    && g_strcmp0 (nm_connection_get_uuid (NM_CONNECTION (self)), nm_connection_get_uuid (new_connection)) != 0) {
+	    && g_strcmp0 (nm_settings_connection_get_uuid (self), nm_connection_get_uuid (new_connection)) != 0) {
 		/* Updating the UUID is not allowed once the path is exported. */
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "connection %s cannot change the UUID from %s to %s", nm_connection_get_id (NM_CONNECTION (self)),
-		             nm_connection_get_uuid (NM_CONNECTION (self)), nm_connection_get_uuid (new_connection));
+		             "connection %s cannot change the UUID from %s to %s", nm_settings_connection_get_id (self),
+		             nm_settings_connection_get_uuid (self), nm_connection_get_uuid (new_connection));
 		return FALSE;
 	}
 
@@ -720,7 +719,7 @@ remove_entry_from_db (NMSettingsConnection *self, const char* db_name)
 		gsize len;
 		GError *error = NULL;
 
-		connection_uuid = nm_connection_get_uuid (NM_CONNECTION (self));
+		connection_uuid = nm_settings_connection_get_uuid (self);
 
 		g_key_file_remove_key (key_file, db_name, connection_uuid, NULL);
 		data = g_key_file_to_data (key_file, &len, &error);
@@ -1962,7 +1961,7 @@ nm_settings_connection_update_timestamp (NMSettingsConnection *self,
 		g_clear_error (&error);
 	}
 
-	connection_uuid = nm_connection_get_uuid (NM_CONNECTION (self));
+	connection_uuid = nm_settings_connection_get_uuid (self);
 	tmp = g_strdup_printf ("%" G_GUINT64_FORMAT, timestamp);
 	g_key_file_set_value (timestamps_file, "timestamps", connection_uuid, tmp);
 	g_free (tmp);
@@ -2001,7 +2000,7 @@ nm_settings_connection_read_and_fill_timestamp (NMSettingsConnection *self)
 	/* Get timestamp from database file */
 	timestamps_file = g_key_file_new ();
 	g_key_file_load_from_file (timestamps_file, SETTINGS_TIMESTAMPS_FILE, G_KEY_FILE_KEEP_COMMENTS, NULL);
-	connection_uuid = nm_connection_get_uuid (NM_CONNECTION (self));
+	connection_uuid = nm_settings_connection_get_uuid (self);
 	tmp_str = g_key_file_get_value (timestamps_file, "timestamps", connection_uuid, &err);
 	if (tmp_str) {
 		timestamp = g_ascii_strtoull (tmp_str, NULL, 10);
@@ -2116,7 +2115,7 @@ nm_settings_connection_add_seen_bssid (NMSettingsConnection *self,
 		g_clear_error (&error);
 	}
 
-	connection_uuid = nm_connection_get_uuid (NM_CONNECTION (self));
+	connection_uuid = nm_settings_connection_get_uuid (self);
 	g_key_file_set_string_list (seen_bssids_file, "seen-bssids", connection_uuid, list, n);
 	g_free (list);
 
@@ -2155,7 +2154,7 @@ nm_settings_connection_read_and_fill_seen_bssids (NMSettingsConnection *self)
 	seen_bssids_file = g_key_file_new ();
 	g_key_file_set_list_separator (seen_bssids_file, ',');
 	if (g_key_file_load_from_file (seen_bssids_file, SETTINGS_SEEN_BSSIDS_FILE, G_KEY_FILE_KEEP_COMMENTS, NULL)) {
-		connection_uuid = nm_connection_get_uuid (NM_CONNECTION (self));
+		connection_uuid = nm_settings_connection_get_uuid (self);
 		tmp_strv = g_key_file_get_string_list (seen_bssids_file, "seen-bssids", connection_uuid, &len, NULL);
 	}
 	g_key_file_free (seen_bssids_file);
