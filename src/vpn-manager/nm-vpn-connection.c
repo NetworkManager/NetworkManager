@@ -206,6 +206,19 @@ __LOG_create_prefix (char *buf, NMVpnConnection *self)
 
 /*********************************************************************/
 
+static void
+cancel_get_secrets (NMVpnConnection *self)
+{
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
+
+	if (priv->secrets_id) {
+		nm_settings_connection_cancel_secrets (NM_SETTINGS_CONNECTION (priv->connection),
+		                                       priv->secrets_id);
+		g_warn_if_fail (!priv->secrets_id);
+		priv->secrets_id = NULL;
+	}
+}
+
 static NMVpnConnectionState
 _state_to_nm_vpn_state (VpnState state)
 {
@@ -387,8 +400,7 @@ _set_vpn_state (NMVpnConnection *self,
 	                                _state_to_ac_state (vpn_state));
 
 	/* Clear any in-progress secrets request */
-	if (priv->secrets_id)
-		nm_settings_connection_cancel_secrets (NM_SETTINGS_CONNECTION (priv->connection), priv->secrets_id);
+	cancel_get_secrets (self);
 
 	dispatcher_cleanup (self);
 
@@ -2112,6 +2124,8 @@ get_secrets (NMVpnConnection *self,
 	g_return_if_fail (secrets_idx < SECRETS_REQ_LAST);
 	priv->secrets_idx = secrets_idx;
 
+	cancel_get_secrets (self);
+
 	_LOGD ("requesting VPN secrets pass #%d",
 	       priv->secrets_idx + 1);
 
@@ -2241,7 +2255,8 @@ constructed (GObject *object)
 static void
 dispose (GObject *object)
 {
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
+	NMVpnConnection *self = NM_VPN_CONNECTION (object);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
 	g_clear_pointer (&priv->connect_hash, g_variant_unref);
 
@@ -2250,12 +2265,9 @@ dispose (GObject *object)
 		priv->connect_timeout = 0;
 	}
 
-	dispatcher_cleanup (NM_VPN_CONNECTION (object));
+	dispatcher_cleanup (self);
 
-	if (priv->secrets_id) {
-		nm_settings_connection_cancel_secrets (NM_SETTINGS_CONNECTION (priv->connection),
-		                                       priv->secrets_id);
-	}
+	cancel_get_secrets (self);
 
 	if (priv->cancellable) {
 		g_cancellable_cancel (priv->cancellable);
@@ -2268,7 +2280,7 @@ dispose (GObject *object)
 	g_clear_object (&priv->default_route_manager);
 	g_clear_object (&priv->route_manager);
 
-	fw_call_cleanup (NM_VPN_CONNECTION (object));
+	fw_call_cleanup (self);
 
 	G_OBJECT_CLASS (nm_vpn_connection_parent_class)->dispose (object);
 }
