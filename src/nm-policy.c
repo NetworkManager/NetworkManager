@@ -1648,6 +1648,14 @@ connection_updated (NMSettings *settings,
                     NMConnection *connection,
                     gpointer user_data)
 {
+	schedule_activate_all ((NMPolicy *) user_data);
+}
+
+static void
+connection_updated_by_user (NMSettings *settings,
+                            NMSettingsConnection *connection,
+                            gpointer user_data)
+{
 	NMPolicy *policy = (NMPolicy *) user_data;
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	const GSList *iter;
@@ -1657,25 +1665,16 @@ connection_updated (NMSettings *settings,
 	for (iter = nm_manager_get_devices (priv->manager); iter; iter = g_slist_next (iter)) {
 		NMDevice *dev = NM_DEVICE (iter->data);
 
-		if (nm_device_get_connection (dev) == connection) {
+		if (nm_device_get_connection (dev) == NM_CONNECTION (connection)) {
 			device = dev;
 			break;
 		}
 	}
 
 	if (device) {
-		firewall_update_zone (policy, connection, device);
+		firewall_update_zone (policy, NM_CONNECTION (connection), device);
 		nm_device_update_metered (device);
 	}
-
-	schedule_activate_all (policy);
-}
-
-static void
-connection_updated_by_user (NMSettings *settings,
-                            NMSettingsConnection *connection,
-                            gpointer user_data)
-{
 	/* Reset auto retries back to default since connection was updated */
 	nm_settings_connection_reset_autoconnect_retries (connection);
 }
