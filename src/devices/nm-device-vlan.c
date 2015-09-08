@@ -155,6 +155,8 @@ realize (NMDevice *device,
 		parent = nm_manager_get_device_by_ifindex (nm_manager_get (), parent_ifindex);
 		if (!parent) {
 			nm_log_dbg (LOGD_HW, "(%s): VLAN parent interface unknown", plink->name);
+			g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+		                     "(%s): VLAN parent interface unknown", plink->name);
 			return FALSE;
 		}
 	} else
