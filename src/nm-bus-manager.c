@@ -131,6 +131,13 @@ private_server_closed (GDBusConnection *conn,
 	               s->detail,
 	               conn);
 
+	/* FIXME: there's a bug (754730) in GLib for which the connection
+	 * is marked as closed when the remote peer vanishes but its
+	 * resources are not cleaned up.  Work around it by explicitly
+	 * closing the connection in that case. */
+	if (remote_peer_vanished)
+		g_dbus_connection_close (conn, NULL, NULL, NULL);
+
 	g_hash_table_remove (s->connections, conn);
 }
 
