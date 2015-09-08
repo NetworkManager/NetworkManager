@@ -807,7 +807,10 @@ test_config_signal (void)
 	nm_config_reload (config, SIGHUP);
 
 
-	/* test with subscribing two signals... */
+	/* test with subscribing two signals...
+	 *
+	 * This test exposes glib bug https://bugzilla.redhat.com/show_bug.cgi?id=1260577
+	 * for which we however have a workaround in 'nm-config.c' */
 	g_signal_connect (G_OBJECT (config),
 	                  NM_CONFIG_SIGNAL_CONFIG_CHANGED,
 	                  G_CALLBACK (_test_signal_config_changed_cb2),
