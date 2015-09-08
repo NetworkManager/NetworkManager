@@ -924,6 +924,7 @@ make_ip4_setting (shvarFile *ifcfg,
 	shvarFile *network_ifcfg;
 	shvarFile *route_ifcfg;
 	gboolean never_default = FALSE;
+	gint64 timeout;
 
 	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 
@@ -1198,6 +1199,11 @@ make_ip4_setting (shvarFile *ifcfg,
 			g_free (value);
 		}
 	}
+
+	timeout = svGetValueInt64 (ifcfg, "ARPING_WAIT", 10, -1,
+	                           NM_SETTING_IP_CONFIG_DAD_TIMEOUT_MAX / 1000, -1);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_DAD_TIMEOUT,
+	              (gint) (timeout <= 0 ? timeout : timeout * 1000), NULL);
 
 	return NM_SETTING (s_ip4);
 
