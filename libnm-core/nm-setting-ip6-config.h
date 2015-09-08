@@ -41,6 +41,8 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_IP6_CONFIG_IP6_PRIVACY "ip6-privacy"
 
+#define NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE "addr-gen-mode"
+
 /**
  * NM_SETTING_IP6_CONFIG_METHOD_IGNORE:
  *
@@ -114,6 +116,25 @@ typedef enum {
 	NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR = 2
 } NMSettingIP6ConfigPrivacy;
 
+/**
+ * NMSettingIP6ConfigAddrGenMode:
+ * @NM_SETTING_IP6_CONFIG_PRIVACY_EUI64: The Interface Identifier is derived
+ * from the interface hardware address.
+ * @NM_SETTING_IP6_CONFIG_PRIVACY_STABLE_PRIVACY: The Interface Identifier
+ * is created by using a cryptographically secure hash of a secret host-specific
+ * key along with the connection identification and the network address as
+ * specified by RFC7217.
+ *
+ * #NMSettingIP6ConfigAddrGenMode controls how the the Interface Identifier for
+ * RFC4862 Stateless Address Autoconfiguration is created.
+ *
+ * Since: 1.2
+ */
+typedef enum {
+	NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64 = 0,
+	NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY = 1,
+} NMSettingIP6ConfigAddrGenMode;
+
 struct _NMSettingIP6Config {
 	NMSettingIPConfig parent;
 };
@@ -130,6 +151,8 @@ GType nm_setting_ip6_config_get_type (void);
 NMSetting *nm_setting_ip6_config_new (void);
 
 NMSettingIP6ConfigPrivacy nm_setting_ip6_config_get_ip6_privacy (NMSettingIP6Config *setting);
+NM_AVAILABLE_IN_1_2
+NMSettingIP6ConfigAddrGenMode nm_setting_ip6_config_get_addr_gen_mode (NMSettingIP6Config *setting);
 
 G_END_DECLS
 
