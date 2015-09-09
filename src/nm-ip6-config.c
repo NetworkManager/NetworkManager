@@ -659,8 +659,10 @@ nm_ip6_config_merge (NMIP6Config *dst, const NMIP6Config *src, NMIPConfigMergeFl
 		nm_ip6_config_add_address (dst, nm_ip6_config_get_address (src, i));
 
 	/* nameservers */
-	for (i = 0; i < nm_ip6_config_get_num_nameservers (src); i++)
-		nm_ip6_config_add_nameserver (dst, nm_ip6_config_get_nameserver (src, i));
+	if (!NM_FLAGS_HAS (merge_flags, NM_IP_CONFIG_MERGE_NO_DNS)) {
+		for (i = 0; i < nm_ip6_config_get_num_nameservers (src); i++)
+			nm_ip6_config_add_nameserver (dst, nm_ip6_config_get_nameserver (src, i));
+	}
 
 	/* default gateway */
 	if (nm_ip6_config_get_gateway (src))
