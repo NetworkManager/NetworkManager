@@ -1246,7 +1246,7 @@ init_resolv_conf_mode (NMDnsManager *self)
 	g_clear_object (&priv->plugin);
 
 	mode = nm_config_data_get_dns_mode (nm_config_get_data (priv->config));
-	if (g_strcmp0 (mode, "none")) {
+	if (!g_strcmp0 (mode, "none")) {
 		priv->resolv_conf_mode = NM_DNS_MANAGER_RESOLV_CONF_UNMANAGED;
 		goto out;
 	}
