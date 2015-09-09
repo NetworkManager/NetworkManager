@@ -521,7 +521,7 @@ class CmdSubmit(CmdBase):
         self.parser.add_argument('--nitrate-exclude-tag', '-T', action='append', help='Query nitrate for tests not having this tag. Output is appended to $TESTS. In combination with --nitrate-tag this blacklists cases (after selecting then)')
         self.parser.add_argument('--nitrate-status', '-s', action='append', help='After selecting the tests by via --nitrate-tag, --nitrate-all, or --nitrate-exclude-tag, further whitelist by status')
         self.parser.add_argument('--nitrate-exclude-status', '-S', action='append', help='After selecting the tests by via --nitrate-tag, --nitrate-all, --nitrate-exclude-tag, further blacklist by status')
-        self.parser.add_argument('--nitrate-test-plan', '-P', help='Select the nitrate-test-plan for loading tests. Currently supported: \'devel\' (\'18716\'), \'rhel-7.1\' (\'6726\') or the numeric id of parent plan (default: \'devel\'). See for example https://tcms.engineering.redhat.com/plan/18716/networkmanager#treeview')
+        self.parser.add_argument('--nitrate-test-plan', '-P', help='Select the nitrate-test-plan for loading tests. Currently supported: \'devel\' (\'18716\'), \'rhel-7.1\' (\'6726\') or the numeric id of parent plan. The default depends on the target-branch. See for example https://tcms.engineering.redhat.com/plan/18716/networkmanager#treeview')
         self.parser.add_argument('--tests', '-c', action='append', help='Append argument to $TESTS')
         self.parser.add_argument('--job', '-j', help='beaker xml job file')
         self.parser.add_argument('--verbose', '-v', action='count', help='print more information')
@@ -571,7 +571,7 @@ class CmdSubmit(CmdBase):
             tests.extend(self.options.tests)
         if self.options.nitrate_all or self.options.nitrate_tag or self.options.nitrate_exclude_tag:
 
-            cases, no_cases = nitrate_cases_get(self.options.nitrate_test_plan, self.options.nitrate_tag, self.options.nitrate_exclude_tag, self.options.nitrate_all)
+            cases, no_cases = nitrate_cases_get(self._get_nitrate_test_plan(), self.options.nitrate_tag, self.options.nitrate_exclude_tag, self.options.nitrate_all)
             cases, no_case_by_status = nitrate_filter_by_status(cases, self.options.nitrate_status, self.options.nitrate_exclude_status)
 
             if self.options.verbose >= 1:
@@ -615,6 +615,24 @@ class CmdSubmit(CmdBase):
             return self._default_var[key_name]
         return os.environ.get(key_name)
 
+
+    def _get_nitrate_test_plan(self):
+        if self.options.nitrate_test_plan:
+            return self.options.nitrate_test_plan
+
+        # if unspecified, detect the test-plan based on the target-branch.
+        try:
+            target_branch = self.__process_line_get_GIT_TARGETBRANCH_detect("nitrate-test-plan")
+        except:
+            target_branch = None
+
+        if target_branch == 'rhel-7.0' or \
+           target_branch == 'rhel-7.1':
+            t = 'rhel-7.1'
+        else:
+            t = 'devel'
+        print("Detected nitrate-test-plan=%s" % (t))
+        return t
 
     def __process_line_get_GIT_TARGETBRANCH_detect(self, key_name):
         # we default to 'master', unless there is an RPM that looks like it's from
