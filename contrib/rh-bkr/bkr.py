@@ -645,12 +645,13 @@ class CmdSubmit(CmdBase):
                         return 'rhel-7' # rhel-7.2-rc
                     if re.match(r'^.*/NetworkManager-1.0.[0-9]+-[0-9]+\.git20160624\.f245b49a\.el7.x86_64.rpm$', u):
                         return 'rhel-7' # rhel-7.2-rc
-                    if re.match(r'^.*/NetworkManager-1.0.4-[0-9]+\.el7.x86_64.rpm$', u):
+                    if re.match(r'^.*/NetworkManager-1.0.4-[0-9]+\.el7.x86_64.rpm$', u) or \
+                       re.match(r'^.*/NetworkManager-1.0.6-[0-9]+\.el7.x86_64.rpm$', u):
                         return 'rhel-7' # rhel-7.2
                     if re.match(r'^.*/NetworkManager-1.1.[0-9]+-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
                         return 'master' # upstream 1.1
-        raise Exception("could not detect the target branch. Try setting as environment variable GIT_TARGETBRANCH%s" % (
-                    ((" (or try setting "+key_name+")") if key_name == 'GIT_TARGETBRANCH' else '')))
+        raise Exception("could not detect %s. Try setting as target branch GIT_TARGETBRANCH%s" % (key_name,
+                    ((" or "+key_name) if key_name != 'GIT_TARGETBRANCH' else '')))
 
     def _detect_hosttype(self):
         return 'default'
@@ -681,7 +682,7 @@ class CmdSubmit(CmdBase):
                 <hostname op="like" value="wlan-r2%.wlan.rhts.eng.bos.redhat.com"/>
                 <!-- 8086:08ae (iwlwifi,iwldvm) Intel Corporation Centrino Wireless-N 100 doesn't support AP mode -->
                 <device op="!=" vendor_id="8086" device_id="08ae"/>
-		<!-- 8086:08b3 (iwlwifi,iwlmvm) Ooops-es: https://bugzilla.redhat.com/show_bug.cgi?id=1235694 -->
+                <!-- 8086:08b3 (iwlwifi,iwlmvm) Ooops-es: https://bugzilla.redhat.com/show_bug.cgi?id=1235694 -->
                 <device op="!=" vendor_id="8086" device_id="08b3"/>
                 <!-- Pick an Intel, so that we're not scheduled on some poor Realtek chip -->
                 <device op="==" driver="iwlwifi"/>
@@ -702,8 +703,8 @@ class CmdSubmit(CmdBase):
         if target_branch == 'rhel-7.1':
             return 'RHEL-7.1-20141023.n.1'
         if target_branch == 'rhel-7':
-            return 'RHEL-7.2-20150806.1'
-        return 'RHEL-7.2-20150806.1'
+            pass
+        return 'RHEL-7.2-20150907.n.0'
 
     def _process_line_get_RESERVESYS(self, key, replacement, index=None, none=None):
         v = self._get_default('RESERVESYS')
