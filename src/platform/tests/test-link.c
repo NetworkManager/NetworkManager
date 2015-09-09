@@ -118,6 +118,41 @@ software_add (NMLinkType link_type, const char *name)
 }
 
 static void
+test_link_changed_signal_cb (NMPlatform *platform,
+                             NMPObjectType obj_type,
+                             int ifindex,
+                             const NMPlatformIP4Route *route,
+                             NMPlatformSignalChangeType change_type,
+                             NMPlatformReason reason,
+                             gboolean *p_test_link_changed_signal_arg)
+{
+	/* test invocation of platform signals with multiple listeners
+	 * connected to the signal. Platform signals have enum-typed
+	 * arguments and there seem to be an issue with invoking such
+	 * signals on s390x and ppc64 archs.
+	 * https://bugzilla.redhat.com/show_bug.cgi?id=1260577
+	 *
+	 * As the test shows, the failure is not reproducible for
+	 * platform signals.
+	 */
+	g_assert (NM_IS_PLATFORM (platform));
+	g_assert (platform == NM_PLATFORM_GET);
+
+	g_assert (ifindex > 0);
+	g_assert (route);
+
+	g_assert_cmpint (obj_type, ==, NMP_OBJECT_TYPE_LINK);
+
+	g_assert_cmpint ((gint64) change_type, !=, (gint64) 0);
+	g_assert_cmpint (change_type, !=, NM_PLATFORM_SIGNAL_NONE);
+
+	g_assert_cmpint ((gint64) reason, !=, (gint64) 0);
+	g_assert_cmpint (reason, !=, NM_PLATFORM_REASON_NONE);
+
+	*p_test_link_changed_signal_arg = TRUE;
+}
+
+static void
 test_slave (int master, int type, SignalData *master_changed)
 {
 	int ifindex;
@@ -125,6 +160,8 @@ test_slave (int master, int type, SignalData *master_changed)
 	SignalData *link_changed, *link_removed;
 	char *value;
 	NMLinkType link_type = nm_platform_link_get_type (NM_PLATFORM_GET, master);
+	gboolean test_link_changed_signal_arg1;
+	gboolean test_link_changed_signal_arg2;
 
 	g_assert (NM_IN_SET (link_type, NM_LINK_TYPE_TEAM, NM_LINK_TYPE_BOND, NM_LINK_TYPE_BRIDGE));
 
@@ -158,10 +195,20 @@ test_slave (int master, int type, SignalData *master_changed)
 	else
 		g_assert (!nm_platform_link_is_up (NM_PLATFORM_GET, ifindex));
 
+	test_link_changed_signal_arg1 = FALSE;
+	test_link_changed_signal_arg2 = FALSE;
+	g_signal_connect (NM_PLATFORM_GET, NM_PLATFORM_SIGNAL_LINK_CHANGED, G_CALLBACK (test_link_changed_signal_cb), &test_link_changed_signal_arg1);
+	g_signal_connect (NM_PLATFORM_GET, NM_PLATFORM_SIGNAL_LINK_CHANGED, G_CALLBACK (test_link_changed_signal_cb), &test_link_changed_signal_arg2);
+
 	/* Set master up */
 	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, master, NULL));
 	g_assert (nm_platform_link_is_up (NM_PLATFORM_GET, master));
 	accept_signals (master_changed, 1, 2);
+
+	g_signal_handlers_disconnect_by_func (NM_PLATFORM_GET, G_CALLBACK (test_link_changed_signal_cb), &test_link_changed_signal_arg1);
+	g_signal_handlers_disconnect_by_func (NM_PLATFORM_GET, G_CALLBACK (test_link_changed_signal_cb), &test_link_changed_signal_arg2);
+	g_assert (test_link_changed_signal_arg1);
+	g_assert (test_link_changed_signal_arg2);
 
 	/* Master with a disconnected slave is disconnected
 	 *
