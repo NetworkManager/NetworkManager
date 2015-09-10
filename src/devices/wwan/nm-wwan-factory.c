@@ -34,7 +34,7 @@
 
 static GType nm_wwan_factory_get_type (void);
 
-static void device_factory_interface_init (NMDeviceFactory *factory_iface);
+static void device_factory_interface_init (NMDeviceFactoryInterface *factory_iface);
 
 G_DEFINE_TYPE_EXTENDED (NMWwanFactory, nm_wwan_factory, G_TYPE_OBJECT, 0,
                         G_IMPLEMENT_INTERFACE (NM_TYPE_DEVICE_FACTORY, device_factory_interface_init))
@@ -128,7 +128,7 @@ nm_wwan_factory_init (NMWwanFactory *self)
 }
 
 static void
-device_factory_interface_init (NMDeviceFactory *factory_iface)
+device_factory_interface_init (NMDeviceFactoryInterface *factory_iface)
 {
 	factory_iface->get_supported_types = get_supported_types;
 	factory_iface->create_device = create_device;

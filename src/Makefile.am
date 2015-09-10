@@ -266,10 +266,10 @@ libNetworkManager_la_SOURCES = \
 	settings/nm-secret-agent.h \
 	settings/nm-settings-connection.c \
 	settings/nm-settings-connection.h \
+	settings/nm-settings-plugin.c \
+	settings/nm-settings-plugin.h \
 	settings/nm-settings.c \
 	settings/nm-settings.h \
-	settings/nm-system-config-interface.c \
-	settings/nm-system-config-interface.h \
 	\
 	settings/plugins/keyfile/common.h \
 	settings/plugins/keyfile/nm-keyfile-connection.c \

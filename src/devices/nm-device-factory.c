@@ -33,6 +33,8 @@
 const NMLinkType _nm_device_factory_no_default_links[] = { NM_LINK_TYPE_NONE };
 const char *_nm_device_factory_no_default_settings[] = { NULL };
 
+G_DEFINE_INTERFACE (NMDeviceFactory, nm_device_factory, G_TYPE_OBJECT)
+
 enum {
 	DEVICE_ADDED,
 	COMPONENT_ADDED,
@@ -86,7 +88,7 @@ nm_device_factory_create_device (NMDeviceFactory *factory,
                                  gboolean *out_ignore,
                                  GError **error)
 {
-	NMDeviceFactory *interface;
+	NMDeviceFactoryInterface *interface;
 	const NMLinkType *link_types = NULL;
 	const char **setting_types = NULL;
 	int i;
@@ -188,7 +190,7 @@ nm_device_factory_get_virtual_iface_name (NMDeviceFactory *factory,
 /*******************************************************************/
 
 static void
-default_init (NMDeviceFactory *factory_iface)
+nm_device_factory_default_init (NMDeviceFactoryInterface *factory_iface)
 {
 	factory_iface->get_virtual_iface_name = get_virtual_iface_name;
 
@@ -196,35 +198,16 @@ default_init (NMDeviceFactory *factory_iface)
 	signals[DEVICE_ADDED] = g_signal_new (NM_DEVICE_FACTORY_DEVICE_ADDED,
 	                                      NM_TYPE_DEVICE_FACTORY,
 	                                      G_SIGNAL_RUN_FIRST,
-	                                      G_STRUCT_OFFSET (NMDeviceFactory, device_added),
+	                                      G_STRUCT_OFFSET (NMDeviceFactoryInterface, device_added),
 	                                      NULL, NULL, NULL,
 	                                      G_TYPE_NONE, 1, NM_TYPE_DEVICE);
 
 	signals[COMPONENT_ADDED] = g_signal_new (NM_DEVICE_FACTORY_COMPONENT_ADDED,
 	                                         NM_TYPE_DEVICE_FACTORY,
 	                                         G_SIGNAL_RUN_LAST,
-	                                         G_STRUCT_OFFSET (NMDeviceFactory, component_added),
+	                                         G_STRUCT_OFFSET (NMDeviceFactoryInterface, component_added),
 	                                         g_signal_accumulator_true_handled, NULL, NULL,
 	                                         G_TYPE_BOOLEAN, 1, G_TYPE_OBJECT);
-}
-
-GType
-nm_device_factory_get_type (void)
-{
-	static volatile gsize g_define_type_id__volatile = 0;
-	if (g_once_init_enter (&g_define_type_id__volatile)) {
-		GType g_define_type_id =
-			g_type_register_static_simple (G_TYPE_INTERFACE,
-			                               g_intern_static_string ("NMDeviceFactory"),
-			                               sizeof (NMDeviceFactory),
-			                               (GClassInitFunc) default_init,
-			                               0,
-			                               (GInstanceInitFunc) NULL,
-			                               (GTypeFlags) 0);
-		g_type_interface_add_prerequisite (g_define_type_id, G_TYPE_OBJECT);
-		g_once_init_leave (&g_define_type_id__volatile, g_define_type_id);
-	}
-	return g_define_type_id__volatile;
 }
 
 /*******************************************************************/

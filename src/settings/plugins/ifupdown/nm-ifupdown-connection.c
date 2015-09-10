@@ -29,7 +29,7 @@
 #include <nm-utils.h>
 #include <nm-setting-wireless-security.h>
 #include <nm-settings-connection.h>
-#include <nm-system-config-interface.h>
+#include <nm-settings-plugin.h>
 #include "nm-default.h"
 #include "nm-ifupdown-connection.h"
 #include "parser.h"

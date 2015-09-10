@@ -28,24 +28,24 @@
 
 #define PLUGIN_NAME "ifupdown"
 
-#define SC_TYPE_PLUGIN_IFUPDOWN            (sc_plugin_ifupdown_get_type ())
-#define SC_PLUGIN_IFUPDOWN(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), SC_TYPE_PLUGIN_IFUPDOWN, SCPluginIfupdown))
-#define SC_PLUGIN_IFUPDOWN_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), SC_TYPE_PLUGIN_IFUPDOWN, SCPluginIfupdownClass))
-#define SC_IS_PLUGIN_IFUPDOWN(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), SC_TYPE_PLUGIN_IFUPDOWN))
-#define SC_IS_PLUGIN_IFUPDOWN_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), SC_TYPE_PLUGIN_IFUPDOWN))
-#define SC_PLUGIN_IFUPDOWN_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), SC_TYPE_PLUGIN_IFUPDOWN, SCPluginIfupdownClass))
+#define SETTINGS_TYPE_PLUGIN_IFUPDOWN            (settings_plugin_ifupdown_get_type ())
+#define SETTINGS_PLUGIN_IFUPDOWN(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), SETTINGS_TYPE_PLUGIN_IFUPDOWN, SettingsPluginIfupdown))
+#define SETTINGS_PLUGIN_IFUPDOWN_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), SETTINGS_TYPE_PLUGIN_IFUPDOWN, SettingsPluginIfupdownClass))
+#define SETTINGS_IS_PLUGIN_IFUPDOWN(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), SETTINGS_TYPE_PLUGIN_IFUPDOWN))
+#define SETTINGS_IS_PLUGIN_IFUPDOWN_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), SETTINGS_TYPE_PLUGIN_IFUPDOWN))
+#define SETTINGS_PLUGIN_IFUPDOWN_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), SETTINGS_TYPE_PLUGIN_IFUPDOWN, SettingsPluginIfupdownClass))
 
-typedef struct _SCPluginIfupdown SCPluginIfupdown;
-typedef struct _SCPluginIfupdownClass SCPluginIfupdownClass;
+typedef struct _SettingsPluginIfupdown SettingsPluginIfupdown;
+typedef struct _SettingsPluginIfupdownClass SettingsPluginIfupdownClass;
 
-struct _SCPluginIfupdown {
+struct _SettingsPluginIfupdown {
 	GObject parent;
 };
 
-struct _SCPluginIfupdownClass {
+struct _SettingsPluginIfupdownClass {
 	GObjectClass parent;
 };
 
-GType sc_plugin_ifupdown_get_type (void);
+GType settings_plugin_ifupdown_get_type (void);
 
 #endif	/* _PLUGIN_H_ */

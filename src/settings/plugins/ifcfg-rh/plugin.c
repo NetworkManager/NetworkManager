@@ -40,7 +40,7 @@
 #include "nm-default.h"
 #include "common.h"
 #include "plugin.h"
-#include "nm-system-config-interface.h"
+#include "nm-settings-plugin.h"
 #include "nm-config.h"
 #include "NetworkManagerUtils.h"
 
@@ -68,7 +68,7 @@
 #define ERR_GET_MSG(err) (((err) && (err)->message) ? (err)->message : "(unknown)")
 
 
-static NMIfcfgConnection *update_connection (SCPluginIfcfg *plugin,
+static NMIfcfgConnection *update_connection (SettingsPluginIfcfg *plugin,
                                              NMConnection *source,
                                              const char *full_path,
                                              NMIfcfgConnection *connection,
@@ -76,13 +76,13 @@ static NMIfcfgConnection *update_connection (SCPluginIfcfg *plugin,
                                              GHashTable *protected_connections,
                                              GError **error);
 
-static void system_config_interface_init (NMSystemConfigInterface *system_config_interface_class);
+static void settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface);
 
-G_DEFINE_TYPE_EXTENDED (SCPluginIfcfg, sc_plugin_ifcfg, NM_TYPE_EXPORTED_OBJECT, 0,
-						G_IMPLEMENT_INTERFACE (NM_TYPE_SYSTEM_CONFIG_INTERFACE,
-											   system_config_interface_init))
+G_DEFINE_TYPE_EXTENDED (SettingsPluginIfcfg, settings_plugin_ifcfg, NM_TYPE_EXPORTED_OBJECT, 0,
+						G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_PLUGIN,
+											   settings_plugin_interface_init))
 
-#define SC_PLUGIN_IFCFG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), SC_TYPE_PLUGIN_IFCFG, SCPluginIfcfgPrivate))
+#define SETTINGS_PLUGIN_IFCFG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), SETTINGS_TYPE_PLUGIN_IFCFG, SettingsPluginIfcfgPrivate))
 
 
 typedef struct {
@@ -91,16 +91,16 @@ typedef struct {
 
 	GFileMonitor *ifcfg_monitor;
 	guint ifcfg_monitor_id;
-} SCPluginIfcfgPrivate;
+} SettingsPluginIfcfgPrivate;
 
-static SCPluginIfcfg *sc_plugin_ifcfg_get (void);
-NM_DEFINE_SINGLETON_GETTER (SCPluginIfcfg, sc_plugin_ifcfg_get, SC_TYPE_PLUGIN_IFCFG);
+static SettingsPluginIfcfg *settings_plugin_ifcfg_get (void);
+NM_DEFINE_SINGLETON_GETTER (SettingsPluginIfcfg, settings_plugin_ifcfg_get, SETTINGS_TYPE_PLUGIN_IFCFG);
 
 static void
 connection_ifcfg_changed (NMIfcfgConnection *connection, gpointer user_data)
 {
-	SCPluginIfcfg *self = SC_PLUGIN_IFCFG (user_data);
-	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
+	SettingsPluginIfcfg *self = SETTINGS_PLUGIN_IFCFG (user_data);
+	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (self);
 	const char *path;
 
 	path = nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection));
@@ -120,14 +120,14 @@ connection_ifcfg_changed (NMIfcfgConnection *connection, gpointer user_data)
 static void
 connection_removed_cb (NMSettingsConnection *obj, gpointer user_data)
 {
-	g_hash_table_remove (SC_PLUGIN_IFCFG_GET_PRIVATE (user_data)->connections,
+	g_hash_table_remove (SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (user_data)->connections,
 	                     nm_connection_get_uuid (NM_CONNECTION (obj)));
 }
 
 static void
-remove_connection (SCPluginIfcfg *self, NMIfcfgConnection *connection)
+remove_connection (SettingsPluginIfcfg *self, NMIfcfgConnection *connection)
 {
-	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
+	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (self);
 	gboolean unmanaged, unrecognized;
 
 	g_return_if_fail (self != NULL);
@@ -146,15 +146,15 @@ remove_connection (SCPluginIfcfg *self, NMIfcfgConnection *connection)
 
 	/* Emit changes _after_ removing the connection */
 	if (unmanaged)
-		g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
+		g_signal_emit_by_name (self, NM_SETTINGS_PLUGIN_UNMANAGED_SPECS_CHANGED);
 	if (unrecognized)
-		g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNRECOGNIZED_SPECS_CHANGED);
+		g_signal_emit_by_name (self, NM_SETTINGS_PLUGIN_UNRECOGNIZED_SPECS_CHANGED);
 }
 
 static NMIfcfgConnection *
-find_by_path (SCPluginIfcfg *self, const char *path)
+find_by_path (SettingsPluginIfcfg *self, const char *path)
 {
-	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
+	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (self);
 	GHashTableIter iter;
 	NMSettingsConnection *candidate = NULL;
 
@@ -169,7 +169,7 @@ find_by_path (SCPluginIfcfg *self, const char *path)
 }
 
 static NMIfcfgConnection *
-update_connection (SCPluginIfcfg *self,
+update_connection (SettingsPluginIfcfg *self,
                    NMConnection *source,
                    const char *full_path,
                    NMIfcfgConnection *connection,
@@ -177,7 +177,7 @@ update_connection (SCPluginIfcfg *self,
                    GHashTable *protected_connections,
                    GError **error)
 {
-	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
+	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (self);
 	NMIfcfgConnection *connection_new;
 	NMIfcfgConnection *connection_by_uuid;
 	GError *local = NULL;
@@ -324,18 +324,18 @@ update_connection (SCPluginIfcfg *self,
 				if (old_unmanaged /* && !new_unmanaged */) {
 					_LOGI ("Managing connection "NM_IFCFG_CONNECTION_LOG_FMT" and its device because NM_CONTROLLED was true.",
 					       NM_IFCFG_CONNECTION_LOG_ARG (connection_new));
-					g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, connection_by_uuid);
+					g_signal_emit_by_name (self, NM_SETTINGS_PLUGIN_CONNECTION_ADDED, connection_by_uuid);
 				} else if (old_unrecognized /* && !new_unrecognized */) {
 					_LOGI ("Managing connection "NM_IFCFG_CONNECTION_LOG_FMT" because it is now a recognized type.",
 					       NM_IFCFG_CONNECTION_LOG_ARG (connection_new));
-					g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, connection_by_uuid);
+					g_signal_emit_by_name (self, NM_SETTINGS_PLUGIN_CONNECTION_ADDED, connection_by_uuid);
 				}
 			}
 
 			if (unmanaged_changed)
-				g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
+				g_signal_emit_by_name (self, NM_SETTINGS_PLUGIN_UNMANAGED_SPECS_CHANGED);
 			if (unrecognized_changed)
-				g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNRECOGNIZED_SPECS_CHANGED);
+				g_signal_emit_by_name (self, NM_SETTINGS_PLUGIN_UNRECOGNIZED_SPECS_CHANGED);
 		}
 		nm_settings_connection_set_filename (NM_SETTINGS_CONNECTION (connection_by_uuid), full_path);
 		g_object_unref (connection_new);
@@ -379,11 +379,11 @@ update_connection (SCPluginIfcfg *self,
 			/* Only raise the signal if we were called without source, i.e. if we read the connection from file.
 			 * Otherwise, we were called by add_connection() which does not expect the signal. */
 			if (nm_ifcfg_connection_get_unmanaged_spec (connection_new))
-				g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
+				g_signal_emit_by_name (self, NM_SETTINGS_PLUGIN_UNMANAGED_SPECS_CHANGED);
 			else if (nm_ifcfg_connection_get_unrecognized_spec (connection_new))
-				g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNRECOGNIZED_SPECS_CHANGED);
+				g_signal_emit_by_name (self, NM_SETTINGS_PLUGIN_UNRECOGNIZED_SPECS_CHANGED);
 			else
-				g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, connection_new);
+				g_signal_emit_by_name (self, NM_SETTINGS_PLUGIN_CONNECTION_ADDED, connection_new);
 		}
 		return connection_new;
 	}
@@ -396,7 +396,7 @@ ifcfg_dir_changed (GFileMonitor *monitor,
                    GFileMonitorEvent event_type,
                    gpointer user_data)
 {
-	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (user_data);
+	SettingsPluginIfcfg *plugin = SETTINGS_PLUGIN_IFCFG (user_data);
 	char *path, *ifcfg_path;
 	NMIfcfgConnection *connection;
 
@@ -425,9 +425,9 @@ ifcfg_dir_changed (GFileMonitor *monitor,
 }
 
 static void
-setup_ifcfg_monitoring (SCPluginIfcfg *plugin)
+setup_ifcfg_monitoring (SettingsPluginIfcfg *plugin)
 {
-	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
+	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (plugin);
 	GFile *file;
 	GFileMonitor *monitor;
 
@@ -480,9 +480,9 @@ _sort_paths (const char **f1, const char **f2, GHashTable *paths)
 }
 
 static void
-read_connections (SCPluginIfcfg *plugin)
+read_connections (SettingsPluginIfcfg *plugin)
 {
-	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
+	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (plugin);
 	GDir *dir;
 	GError *err = NULL;
 	const char *item;
@@ -552,10 +552,10 @@ read_connections (SCPluginIfcfg *plugin)
 }
 
 static GSList *
-get_connections (NMSystemConfigInterface *config)
+get_connections (NMSettingsPlugin *config)
 {
-	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (config);
-	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
+	SettingsPluginIfcfg *plugin = SETTINGS_PLUGIN_IFCFG (config);
+	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (plugin);
 	GSList *list = NULL;
 	GHashTableIter iter;
 	NMIfcfgConnection *connection;
@@ -578,10 +578,10 @@ get_connections (NMSystemConfigInterface *config)
 }
 
 static gboolean
-load_connection (NMSystemConfigInterface *config,
+load_connection (NMSettingsPlugin *config,
                  const char *filename)
 {
-	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (config);
+	SettingsPluginIfcfg *plugin = SETTINGS_PLUGIN_IFCFG (config);
 	NMIfcfgConnection *connection;
 	int dir_len = strlen (IFCFG_DIR);
 	char *ifcfg_path;
@@ -607,18 +607,18 @@ load_connection (NMSystemConfigInterface *config,
 }
 
 static void
-reload_connections (NMSystemConfigInterface *config)
+reload_connections (NMSettingsPlugin *config)
 {
-	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (config);
+	SettingsPluginIfcfg *plugin = SETTINGS_PLUGIN_IFCFG (config);
 
 	read_connections (plugin);
 }
 
 static GSList *
-get_unhandled_specs (NMSystemConfigInterface *config,
+get_unhandled_specs (NMSettingsPlugin *config,
                      const char *property)
 {
-	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (config);
+	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (config);
 	GSList *list = NULL, *list_iter;
 	GHashTableIter iter;
 	gpointer connection;
@@ -646,24 +646,24 @@ get_unhandled_specs (NMSystemConfigInterface *config,
 }
 
 static GSList *
-get_unmanaged_specs (NMSystemConfigInterface *config)
+get_unmanaged_specs (NMSettingsPlugin *config)
 {
 	return get_unhandled_specs (config, NM_IFCFG_CONNECTION_UNMANAGED_SPEC);
 }
 
 static GSList *
-get_unrecognized_specs (NMSystemConfigInterface *config)
+get_unrecognized_specs (NMSettingsPlugin *config)
 {
 	return get_unhandled_specs (config, NM_IFCFG_CONNECTION_UNRECOGNIZED_SPEC);
 }
 
 static NMSettingsConnection *
-add_connection (NMSystemConfigInterface *config,
+add_connection (NMSettingsPlugin *config,
                 NMConnection *connection,
                 gboolean save_to_disk,
                 GError **error)
 {
-	SCPluginIfcfg *self = SC_PLUGIN_IFCFG (config);
+	SettingsPluginIfcfg *self = SETTINGS_PLUGIN_IFCFG (config);
 	gs_free char *path = NULL;
 
 	/* Ensure we reject attempts to add the connection long before we're
@@ -680,7 +680,7 @@ add_connection (NMSystemConfigInterface *config,
 }
 
 static void
-impl_ifcfgrh_get_ifcfg_details (SCPluginIfcfg *plugin,
+impl_ifcfgrh_get_ifcfg_details (SettingsPluginIfcfg *plugin,
                                 GDBusMethodInvocation *context,
                                 const char *in_ifcfg)
 {
@@ -740,14 +740,14 @@ impl_ifcfgrh_get_ifcfg_details (SCPluginIfcfg *plugin,
 }
 
 static void
-init (NMSystemConfigInterface *config)
+init (NMSettingsPlugin *config)
 {
 }
 
 static void
-sc_plugin_ifcfg_init (SCPluginIfcfg *plugin)
+settings_plugin_ifcfg_init (SettingsPluginIfcfg *plugin)
 {
-	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
+	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (plugin);
 
 	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
 }
@@ -755,7 +755,7 @@ sc_plugin_ifcfg_init (SCPluginIfcfg *plugin)
 static void
 constructed (GObject *object)
 {
-	SCPluginIfcfg *self = SC_PLUGIN_IFCFG (object);
+	SettingsPluginIfcfg *self = SETTINGS_PLUGIN_IFCFG (object);
 	GError *error = NULL;
 	GDBusConnection *bus;
 	GVariant *ret;
@@ -799,8 +799,8 @@ constructed (GObject *object)
 static void
 dispose (GObject *object)
 {
-	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (object);
-	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
+	SettingsPluginIfcfg *plugin = SETTINGS_PLUGIN_IFCFG (object);
+	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (plugin);
 
 	if (priv->connections) {
 		g_hash_table_destroy (priv->connections);
@@ -815,7 +815,7 @@ dispose (GObject *object)
 		g_object_unref (priv->ifcfg_monitor);
 	}
 
-	G_OBJECT_CLASS (sc_plugin_ifcfg_parent_class)->dispose (object);
+	G_OBJECT_CLASS (settings_plugin_ifcfg_parent_class)->dispose (object);
 }
 
 static void
@@ -823,14 +823,14 @@ get_property (GObject *object, guint prop_id,
 			  GValue *value, GParamSpec *pspec)
 {
 	switch (prop_id) {
-	case NM_SYSTEM_CONFIG_INTERFACE_PROP_NAME:
+	case NM_SETTINGS_PLUGIN_PROP_NAME:
 		g_value_set_string (value, IFCFG_PLUGIN_NAME);
 		break;
-	case NM_SYSTEM_CONFIG_INTERFACE_PROP_INFO:
+	case NM_SETTINGS_PLUGIN_PROP_INFO:
 		g_value_set_string (value, IFCFG_PLUGIN_INFO);
 		break;
-	case NM_SYSTEM_CONFIG_INTERFACE_PROP_CAPABILITIES:
-		g_value_set_uint (value, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS);
+	case NM_SETTINGS_PLUGIN_PROP_CAPABILITIES:
+		g_value_set_uint (value, NM_SETTINGS_PLUGIN_CAP_MODIFY_CONNECTIONS);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -850,12 +850,12 @@ set_property (GObject *object, guint prop_id,
 }
 
 static void
-sc_plugin_ifcfg_class_init (SCPluginIfcfgClass *req_class)
+settings_plugin_ifcfg_class_init (SettingsPluginIfcfgClass *req_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (req_class);
 	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (req_class);
 
-	g_type_class_add_private (req_class, sizeof (SCPluginIfcfgPrivate));
+	g_type_class_add_private (req_class, sizeof (SettingsPluginIfcfgPrivate));
 
 	exported_object_class->export_path = IFCFGRH1_DBUS_OBJECT_PATH;
 
@@ -865,16 +865,16 @@ sc_plugin_ifcfg_class_init (SCPluginIfcfgClass *req_class)
 	object_class->set_property = set_property;
 
 	g_object_class_override_property (object_class,
-	                                  NM_SYSTEM_CONFIG_INTERFACE_PROP_NAME,
-	                                  NM_SYSTEM_CONFIG_INTERFACE_NAME);
+	                                  NM_SETTINGS_PLUGIN_PROP_NAME,
+	                                  NM_SETTINGS_PLUGIN_NAME);
 
 	g_object_class_override_property (object_class,
-	                                  NM_SYSTEM_CONFIG_INTERFACE_PROP_INFO,
-	                                  NM_SYSTEM_CONFIG_INTERFACE_INFO);
+	                                  NM_SETTINGS_PLUGIN_PROP_INFO,
+	                                  NM_SETTINGS_PLUGIN_INFO);
 
 	g_object_class_override_property (object_class,
-	                                  NM_SYSTEM_CONFIG_INTERFACE_PROP_CAPABILITIES,
-	                                  NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES);
+	                                  NM_SETTINGS_PLUGIN_PROP_CAPABILITIES,
+	                                  NM_SETTINGS_PLUGIN_CAPABILITIES);
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (req_class),
 	                                        NMDBUS_TYPE_IFCFGRH1_SKELETON,
@@ -883,20 +883,20 @@ sc_plugin_ifcfg_class_init (SCPluginIfcfgClass *req_class)
 }
 
 static void
-system_config_interface_init (NMSystemConfigInterface *system_config_interface_class)
+settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface)
 {
 	/* interface implementation */
-	system_config_interface_class->get_connections = get_connections;
-	system_config_interface_class->add_connection = add_connection;
-	system_config_interface_class->load_connection = load_connection;
-	system_config_interface_class->reload_connections = reload_connections;
-	system_config_interface_class->get_unmanaged_specs = get_unmanaged_specs;
-	system_config_interface_class->get_unrecognized_specs = get_unrecognized_specs;
-	system_config_interface_class->init = init;
+	plugin_iface->get_connections = get_connections;
+	plugin_iface->add_connection = add_connection;
+	plugin_iface->load_connection = load_connection;
+	plugin_iface->reload_connections = reload_connections;
+	plugin_iface->get_unmanaged_specs = get_unmanaged_specs;
+	plugin_iface->get_unrecognized_specs = get_unrecognized_specs;
+	plugin_iface->init = init;
 }
 
 G_MODULE_EXPORT GObject *
-nm_system_config_factory (void)
+nm_settings_plugin_factory (void)
 {
-	return g_object_ref (sc_plugin_ifcfg_get ());
+	return g_object_ref (settings_plugin_ifcfg_get ());
 }

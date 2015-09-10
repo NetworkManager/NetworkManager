@@ -24,22 +24,22 @@
 
 #include "nm-default.h"
 
-#define SC_TYPE_PLUGIN_KEYFILE            (sc_plugin_keyfile_get_type ())
-#define SC_PLUGIN_KEYFILE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), SC_TYPE_PLUGIN_KEYFILE, SCPluginKeyfile))
-#define SC_PLUGIN_KEYFILE_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), SC_TYPE_PLUGIN_KEYFILE, SCPluginKeyfileClass))
-#define SC_IS_PLUGIN_KEYFILE(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), SC_TYPE_PLUGIN_KEYFILE))
-#define SC_IS_PLUGIN_KEYFILE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), SC_TYPE_PLUGIN_KEYFILE))
-#define SC_PLUGIN_KEYFILE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), SC_TYPE_PLUGIN_KEYFILE, SCPluginKeyfileClass))
+#define SETTINGS_TYPE_PLUGIN_KEYFILE            (settings_plugin_keyfile_get_type ())
+#define SETTINGS_PLUGIN_KEYFILE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), SETTINGS_TYPE_PLUGIN_KEYFILE, SettingsPluginKeyfile))
+#define SETTINGS_PLUGIN_KEYFILE_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), SETTINGS_TYPE_PLUGIN_KEYFILE, SettingsPluginKeyfileClass))
+#define SETTINGS_IS_PLUGIN_KEYFILE(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), SETTINGS_TYPE_PLUGIN_KEYFILE))
+#define SETTINGS_IS_PLUGIN_KEYFILE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), SETTINGS_TYPE_PLUGIN_KEYFILE))
+#define SETTINGS_PLUGIN_KEYFILE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), SETTINGS_TYPE_PLUGIN_KEYFILE, SettingsPluginKeyfileClass))
 
 typedef struct {
 	GObject parent;
-} SCPluginKeyfile;
+} SettingsPluginKeyfile;
 
 typedef struct {
 	GObjectClass parent;
-} SCPluginKeyfileClass;
+} SettingsPluginKeyfileClass;
 
-GType sc_plugin_keyfile_get_type (void);
+GType settings_plugin_keyfile_get_type (void);
 
 GObject *nm_settings_keyfile_plugin_new (void);
 

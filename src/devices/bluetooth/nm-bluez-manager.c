@@ -56,7 +56,7 @@ typedef struct {
 
 static GType nm_bluez_manager_get_type (void);
 
-static void device_factory_interface_init (NMDeviceFactory *factory_iface);
+static void device_factory_interface_init (NMDeviceFactoryInterface *factory_iface);
 
 G_DEFINE_TYPE_EXTENDED (NMBluezManager, nm_bluez_manager, G_TYPE_OBJECT, 0,
                         G_IMPLEMENT_INTERFACE (NM_TYPE_DEVICE_FACTORY, device_factory_interface_init))
@@ -421,7 +421,7 @@ create_device (NMDeviceFactory *factory,
 }
 
 static void
-device_factory_interface_init (NMDeviceFactory *factory_iface)
+device_factory_interface_init (NMDeviceFactoryInterface *factory_iface)
 {
 	factory_iface->get_supported_types = get_supported_types;
 	factory_iface->create_device = create_device;

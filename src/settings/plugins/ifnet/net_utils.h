@@ -21,7 +21,7 @@
 
 #ifndef _IFNET_UTILS_H
 #define _IFNET_UTILS_H
-#define IFNET_PLUGIN_NAME "SCPlugin-Ifnet"
+#define IFNET_PLUGIN_NAME "SettingsPlugin-Ifnet"
 #include <arpa/inet.h>
 #include <nm-setting-ip6-config.h>
 #include <nm-setting-ip4-config.h>

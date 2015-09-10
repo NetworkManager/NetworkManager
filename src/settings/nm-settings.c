@@ -61,7 +61,7 @@
 #include "nm-device-ethernet.h"
 #include "nm-settings.h"
 #include "nm-settings-connection.h"
-#include "nm-system-config-interface.h"
+#include "nm-settings-plugin.h"
 #include "nm-default.h"
 #include "nm-bus-manager.h"
 #include "nm-auth-utils.h"
@@ -121,13 +121,13 @@ EXPORT(nm_settings_connection_replace_and_commit)
 static void claim_connection (NMSettings *self,
                               NMSettingsConnection *connection);
 
-static void unmanaged_specs_changed (NMSystemConfigInterface *config, gpointer user_data);
-static void unrecognized_specs_changed (NMSystemConfigInterface *config, gpointer user_data);
+static void unmanaged_specs_changed (NMSettingsPlugin *config, gpointer user_data);
+static void unrecognized_specs_changed (NMSettingsPlugin *config, gpointer user_data);
 
-static void connection_provider_init (NMConnectionProvider *cp_class);
+static void connection_provider_iface_init (NMConnectionProviderInterface *cp_iface);
 
 G_DEFINE_TYPE_EXTENDED (NMSettings, nm_settings, NM_TYPE_EXPORTED_OBJECT, 0,
-                        G_IMPLEMENT_INTERFACE (NM_TYPE_CONNECTION_PROVIDER, connection_provider_init))
+                        G_IMPLEMENT_INTERFACE (NM_TYPE_CONNECTION_PROVIDER, connection_provider_iface_init))
 
 
 typedef struct {
@@ -216,7 +216,7 @@ connection_ready_changed (NMSettingsConnection *conn,
 }
 
 static void
-plugin_connection_added (NMSystemConfigInterface *config,
+plugin_connection_added (NMSettingsPlugin *config,
                          NMSettingsConnection *connection,
                          gpointer user_data)
 {
@@ -230,11 +230,11 @@ load_connections (NMSettings *self)
 	GSList *iter;
 
 	for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
-		NMSystemConfigInterface *plugin = NM_SYSTEM_CONFIG_INTERFACE (iter->data);
+		NMSettingsPlugin *plugin = NM_SETTINGS_PLUGIN (iter->data);
 		GSList *plugin_connections;
 		GSList *elt;
 
-		plugin_connections = nm_system_config_interface_get_connections (plugin);
+		plugin_connections = nm_settings_plugin_get_connections (plugin);
 
 		// FIXME: ensure connections from plugins loaded with a lower priority
 		// get rejected when they conflict with connections from a higher
@@ -245,11 +245,11 @@ load_connections (NMSettings *self)
 
 		g_slist_free (plugin_connections);
 
-		g_signal_connect (plugin, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED,
+		g_signal_connect (plugin, NM_SETTINGS_PLUGIN_CONNECTION_ADDED,
 		                  G_CALLBACK (plugin_connection_added), self);
-		g_signal_connect (plugin, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED,
+		g_signal_connect (plugin, NM_SETTINGS_PLUGIN_UNMANAGED_SPECS_CHANGED,
 		                  G_CALLBACK (unmanaged_specs_changed), self);
-		g_signal_connect (plugin, NM_SYSTEM_CONFIG_INTERFACE_UNRECOGNIZED_SPECS_CHANGED,
+		g_signal_connect (plugin, NM_SETTINGS_PLUGIN_UNRECOGNIZED_SPECS_CHANGED,
 		                  G_CALLBACK (unrecognized_specs_changed), self);
 	}
 
@@ -452,7 +452,7 @@ nm_settings_get_unmanaged_specs (NMSettings *self)
 	return priv->unmanaged_specs;
 }
 
-static NMSystemConfigInterface *
+static NMSettingsPlugin *
 get_plugin (NMSettings *self, guint32 capability)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
@@ -462,11 +462,11 @@ get_plugin (NMSettings *self, guint32 capability)
 
 	/* Do any of the plugins support the given capability? */
 	for (iter = priv->plugins; iter; iter = iter->next) {
-		NMSystemConfigInterfaceCapabilities caps = NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE;
+		NMSettingsPluginCapabilities caps = NM_SETTINGS_PLUGIN_CAP_NONE;
 
-		g_object_get (G_OBJECT (iter->data), NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES, &caps, NULL);
+		g_object_get (G_OBJECT (iter->data), NM_SETTINGS_PLUGIN_CAPABILITIES, &caps, NULL);
 		if (NM_FLAGS_ALL (caps, capability))
-			return NM_SYSTEM_CONFIG_INTERFACE (iter->data);
+			return NM_SETTINGS_PLUGIN (iter->data);
 	}
 
 	return NULL;
@@ -579,7 +579,7 @@ find_spec (GSList *spec_list, const char *spec)
 
 static void
 update_specs (NMSettings *self, GSList **specs_ptr,
-              GSList * (*get_specs_func) (NMSystemConfigInterface *))
+              GSList * (*get_specs_func) (NMSettingsPlugin *))
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	GSList *iter;
@@ -590,7 +590,7 @@ update_specs (NMSettings *self, GSList **specs_ptr,
 	for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
 		GSList *specs, *specs_iter;
 
-		specs = get_specs_func (NM_SYSTEM_CONFIG_INTERFACE (iter->data));
+		specs = get_specs_func (NM_SETTINGS_PLUGIN (iter->data));
 		for (specs_iter = specs; specs_iter; specs_iter = specs_iter->next) {
 			if (!find_spec (*specs_ptr, (const char *) specs_iter->data)) {
 				*specs_ptr = g_slist_prepend (*specs_ptr, specs_iter->data);
@@ -603,30 +603,30 @@ update_specs (NMSettings *self, GSList **specs_ptr,
 }
 
 static void
-unmanaged_specs_changed (NMSystemConfigInterface *config,
+unmanaged_specs_changed (NMSettingsPlugin *config,
                          gpointer user_data)
 {
 	NMSettings *self = NM_SETTINGS (user_data);
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 
 	update_specs (self, &priv->unmanaged_specs,
-	              nm_system_config_interface_get_unmanaged_specs);
+	              nm_settings_plugin_get_unmanaged_specs);
 	g_object_notify (G_OBJECT (self), NM_SETTINGS_UNMANAGED_SPECS);
 }
 
 static void
-unrecognized_specs_changed (NMSystemConfigInterface *config,
+unrecognized_specs_changed (NMSettingsPlugin *config,
                                gpointer user_data)
 {
 	NMSettings *self = NM_SETTINGS (user_data);
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 
 	update_specs (self, &priv->unrecognized_specs,
-	              nm_system_config_interface_get_unrecognized_specs);
+	              nm_settings_plugin_get_unrecognized_specs);
 }
 
 static gboolean
-add_plugin (NMSettings *self, NMSystemConfigInterface *plugin)
+add_plugin (NMSettings *self, NMSettingsPlugin *plugin)
 {
 	NMSettingsPrivate *priv;
 	char *pname = NULL;
@@ -634,7 +634,7 @@ add_plugin (NMSettings *self, NMSystemConfigInterface *plugin)
 	const char *path;
 
 	g_return_val_if_fail (NM_IS_SETTINGS (self), FALSE);
-	g_return_val_if_fail (NM_IS_SYSTEM_CONFIG_INTERFACE (plugin), FALSE);
+	g_return_val_if_fail (NM_IS_SETTINGS_PLUGIN (plugin), FALSE);
 
 	priv = NM_SETTINGS_GET_PRIVATE (self);
 
@@ -644,11 +644,11 @@ add_plugin (NMSettings *self, NMSystemConfigInterface *plugin)
 	}
 
 	priv->plugins = g_slist_append (priv->plugins, g_object_ref (plugin));
-	nm_system_config_interface_init (plugin, NULL);
+	nm_settings_plugin_init (plugin);
 
 	g_object_get (G_OBJECT (plugin),
-	              NM_SYSTEM_CONFIG_INTERFACE_NAME, &pname,
-	              NM_SYSTEM_CONFIG_INTERFACE_INFO, &pinfo,
+	              NM_SETTINGS_PLUGIN_NAME, &pname,
+	              NM_SETTINGS_PLUGIN_INFO, &pinfo,
 	              NULL);
 
 	path = g_object_get_data (G_OBJECT (plugin), PLUGIN_MODULE_PATH);
@@ -670,11 +670,11 @@ find_plugin (GSList *list, const char *pname)
 	g_return_val_if_fail (pname != NULL, NULL);
 
 	for (iter = list; iter && !obj; iter = g_slist_next (iter)) {
-		NMSystemConfigInterface *plugin = NM_SYSTEM_CONFIG_INTERFACE (iter->data);
+		NMSettingsPlugin *plugin = NM_SETTINGS_PLUGIN (iter->data);
 		char *list_pname = NULL;
 
 		g_object_get (G_OBJECT (plugin),
-		              NM_SYSTEM_CONFIG_INTERFACE_NAME,
+		              NM_SETTINGS_PLUGIN_NAME,
 		              &list_pname,
 		              NULL);
 		if (list_pname && !strcmp (pname, list_pname))
@@ -693,7 +693,7 @@ add_keyfile_plugin (NMSettings *self)
 
 	keyfile_plugin = nm_settings_keyfile_plugin_new ();
 	g_assert (keyfile_plugin);
-	if (!add_plugin (self, NM_SYSTEM_CONFIG_INTERFACE (keyfile_plugin)))
+	if (!add_plugin (self, NM_SETTINGS_PLUGIN (keyfile_plugin)))
 		g_return_if_reached ();
 }
 
@@ -793,7 +793,7 @@ load_plugin:
 
 			/* errors after this point are fatal, because we loaded the shared library already. */
 
-			if (!g_module_symbol (plugin, "nm_system_config_factory", (gpointer) (&factory_func))) {
+			if (!g_module_symbol (plugin, "nm_settings_plugin_factory", (gpointer) (&factory_func))) {
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 				             "Could not find plugin '%s' factory function.",
 				             pname);
@@ -803,7 +803,7 @@ load_plugin:
 			}
 
 			obj = (*factory_func) ();
-			if (!obj || !NM_IS_SYSTEM_CONFIG_INTERFACE (obj)) {
+			if (!obj || !NM_IS_SETTINGS_PLUGIN (obj)) {
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 				             "Plugin '%s' returned invalid system config object.",
 				             pname);
@@ -816,7 +816,7 @@ load_plugin:
 			g_object_weak_ref (obj, (GWeakNotify) g_module_close, plugin);
 			g_object_set_data_full (obj, PLUGIN_MODULE_PATH, path, g_free);
 			path = NULL;
-			if (add_plugin (self, NM_SYSTEM_CONFIG_INTERFACE (obj)))
+			if (add_plugin (self, NM_SETTINGS_PLUGIN (obj)))
 				list = g_slist_append (list, obj);
 			else
 				g_object_unref (obj);
@@ -1108,10 +1108,10 @@ nm_settings_add_connection (NMSettings *self,
 	 *     contain the same data as the connection it already knows about
 	 */
 	for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
-		NMSystemConfigInterface *plugin = NM_SYSTEM_CONFIG_INTERFACE (iter->data);
+		NMSettingsPlugin *plugin = NM_SETTINGS_PLUGIN (iter->data);
 		GError *add_error = NULL;
 
-		added = nm_system_config_interface_add_connection (plugin, connection, save_to_disk, &add_error);
+		added = nm_settings_plugin_add_connection (plugin, connection, save_to_disk, &add_error);
 		if (added) {
 			claim_connection (self, added);
 			return added;
@@ -1307,7 +1307,7 @@ nm_settings_add_connection_dbus (NMSettings *self,
 	}
 
 	/* Do any of the plugins support adding? */
-	if (!get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS)) {
+	if (!get_plugin (self, NM_SETTINGS_PLUGIN_CAP_MODIFY_CONNECTIONS)) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_NOT_SUPPORTED,
 		                             "None of the registered plugins support add.");
@@ -1474,9 +1474,9 @@ impl_settings_load_connections (NMSettings *self,
 
 	for (i = 0; filenames[i]; i++) {
 		for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
-			NMSystemConfigInterface *plugin = NM_SYSTEM_CONFIG_INTERFACE (iter->data);
+			NMSettingsPlugin *plugin = NM_SETTINGS_PLUGIN (iter->data);
 
-			if (nm_system_config_interface_load_connection (plugin, filenames[i]))
+			if (nm_settings_plugin_load_connection (plugin, filenames[i]))
 				break;
 		}
 
@@ -1507,9 +1507,9 @@ impl_settings_reload_connections (NMSettings *self,
 		return;
 
 	for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
-		NMSystemConfigInterface *plugin = NM_SYSTEM_CONFIG_INTERFACE (iter->data);
+		NMSettingsPlugin *plugin = NM_SETTINGS_PLUGIN (iter->data);
 
-		nm_system_config_interface_reload_connections (plugin);
+		nm_settings_plugin_reload_connections (plugin);
 	}
 
 	g_dbus_method_invocation_return_value (context, g_variant_new ("(b)", TRUE));
@@ -2152,12 +2152,12 @@ nm_settings_start (NMSettings *self, GError **error)
 }
 
 static void
-connection_provider_init (NMConnectionProvider *cp_class)
+connection_provider_iface_init (NMConnectionProviderInterface *cp_iface)
 {
-    cp_class->get_best_connections = get_best_connections;
-    cp_class->get_connections = get_connections;
-    cp_class->add_connection = _nm_connection_provider_add_connection;
-    cp_class->get_connection_by_uuid = cp_get_connection_by_uuid;
+    cp_iface->get_best_connections = get_best_connections;
+    cp_iface->get_connections = get_connections;
+    cp_iface->add_connection = _nm_connection_provider_add_connection;
+    cp_iface->get_connection_by_uuid = cp_get_connection_by_uuid;
 }
 
 static void
@@ -2262,7 +2262,7 @@ get_property (GObject *object, guint prop_id,
 			g_value_set_static_string (value, "");
 		break;
 	case PROP_CAN_MODIFY:
-		g_value_set_boolean (value, !!get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS));
+		g_value_set_boolean (value, !!get_plugin (self, NM_SETTINGS_PLUGIN_CAP_MODIFY_CONNECTIONS));
 		break;
 	case PROP_CONNECTIONS:
 		array = g_ptr_array_sized_new (g_hash_table_size (priv->connections) + 1);

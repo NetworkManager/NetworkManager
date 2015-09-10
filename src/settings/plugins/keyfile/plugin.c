@@ -38,19 +38,19 @@
 #include "nm-core-internal.h"
 
 #include "plugin.h"
-#include "nm-system-config-interface.h"
+#include "nm-settings-plugin.h"
 #include "nm-keyfile-connection.h"
 #include "writer.h"
 #include "common.h"
 #include "utils.h"
 
-static void system_config_interface_init (NMSystemConfigInterface *system_config_interface_class);
+static void settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface);
 
-G_DEFINE_TYPE_EXTENDED (SCPluginKeyfile, sc_plugin_keyfile, G_TYPE_OBJECT, 0,
-				    G_IMPLEMENT_INTERFACE (NM_TYPE_SYSTEM_CONFIG_INTERFACE,
-									  system_config_interface_init))
+G_DEFINE_TYPE_EXTENDED (SettingsPluginKeyfile, settings_plugin_keyfile, G_TYPE_OBJECT, 0,
+                        G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_PLUGIN,
+                                               settings_plugin_interface_init))
 
-#define SC_PLUGIN_KEYFILE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), SC_TYPE_PLUGIN_KEYFILE, SCPluginKeyfilePrivate))
+#define SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), SETTINGS_TYPE_PLUGIN_KEYFILE, SettingsPluginKeyfilePrivate))
 
 typedef struct {
 	GHashTable *connections;  /* uuid::connection */
@@ -60,19 +60,19 @@ typedef struct {
 	guint monitor_id;
 
 	NMConfig *config;
-} SCPluginKeyfilePrivate;
+} SettingsPluginKeyfilePrivate;
 
 static void
 connection_removed_cb (NMSettingsConnection *obj, gpointer user_data)
 {
-	g_hash_table_remove (SC_PLUGIN_KEYFILE_GET_PRIVATE (user_data)->connections,
+	g_hash_table_remove (SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE (user_data)->connections,
 	                     nm_connection_get_uuid (NM_CONNECTION (obj)));
 }
 
 /* Monitoring */
 
 static void
-remove_connection (SCPluginKeyfile *self, NMKeyfileConnection *connection)
+remove_connection (SettingsPluginKeyfile *self, NMKeyfileConnection *connection)
 {
 	gboolean removed;
 
@@ -83,7 +83,7 @@ remove_connection (SCPluginKeyfile *self, NMKeyfileConnection *connection)
 	/* Removing from the hash table should drop the last reference */
 	g_object_ref (connection);
 	g_signal_handlers_disconnect_by_func (connection, connection_removed_cb, self);
-	removed = g_hash_table_remove (SC_PLUGIN_KEYFILE_GET_PRIVATE (self)->connections,
+	removed = g_hash_table_remove (SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE (self)->connections,
 	                               nm_connection_get_uuid (NM_CONNECTION (connection)));
 	nm_settings_connection_signal_remove (NM_SETTINGS_CONNECTION (connection));
 	g_object_unref (connection);
@@ -92,9 +92,9 @@ remove_connection (SCPluginKeyfile *self, NMKeyfileConnection *connection)
 }
 
 static NMKeyfileConnection *
-find_by_path (SCPluginKeyfile *self, const char *path)
+find_by_path (SettingsPluginKeyfile *self, const char *path)
 {
-	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (self);
+	SettingsPluginKeyfilePrivate *priv = SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE (self);
 	GHashTableIter iter;
 	NMSettingsConnection *candidate = NULL;
 
@@ -140,7 +140,7 @@ find_by_path (SCPluginKeyfile *self, const char *path)
  * Returns: the updated connection.
  * */
 static NMKeyfileConnection *
-update_connection (SCPluginKeyfile *self,
+update_connection (SettingsPluginKeyfile *self,
                    NMConnection *source,
                    const char *full_path,
                    NMKeyfileConnection *connection,
@@ -148,7 +148,7 @@ update_connection (SCPluginKeyfile *self,
                    GHashTable *protected_connections,
                    GError **error)
 {
-	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (self);
+	SettingsPluginKeyfilePrivate *priv = SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE (self);
 	NMKeyfileConnection *connection_new;
 	NMKeyfileConnection *connection_by_uuid;
 	GError *local = NULL;
@@ -264,7 +264,7 @@ update_connection (SCPluginKeyfile *self,
 		if (!source) {
 			/* Only raise the signal if we were called without source, i.e. if we read the connection from file.
 			 * Otherwise, we were called by add_connection() which does not expect the signal. */
-			g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, connection_new);
+			g_signal_emit_by_name (self, NM_SETTINGS_PLUGIN_CONNECTION_ADDED, connection_new);
 		}
 		return connection_new;
 	}
@@ -277,8 +277,8 @@ dir_changed (GFileMonitor *monitor,
              GFileMonitorEvent event_type,
              gpointer user_data)
 {
-	NMSystemConfigInterface *config = NM_SYSTEM_CONFIG_INTERFACE (user_data);
-	SCPluginKeyfile *self = SC_PLUGIN_KEYFILE (config);
+	NMSettingsPlugin *config = NM_SETTINGS_PLUGIN (user_data);
+	SettingsPluginKeyfile *self = SETTINGS_PLUGIN_KEYFILE (config);
 	NMKeyfileConnection *connection;
 	char *full_path;
 	gboolean exists;
@@ -297,12 +297,12 @@ dir_changed (GFileMonitor *monitor,
 	switch (event_type) {
 	case G_FILE_MONITOR_EVENT_DELETED:
 		if (!exists && connection)
-			remove_connection (SC_PLUGIN_KEYFILE (config), connection);
+			remove_connection (SETTINGS_PLUGIN_KEYFILE (config), connection);
 		break;
 	case G_FILE_MONITOR_EVENT_CREATED:
 	case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
 		if (exists)
-			update_connection (SC_PLUGIN_KEYFILE (config), NULL, full_path, connection, TRUE, NULL, NULL);
+			update_connection (SETTINGS_PLUGIN_KEYFILE (config), NULL, full_path, connection, TRUE, NULL, NULL);
 		break;
 	default:
 		break;
@@ -316,7 +316,7 @@ config_changed_cb (NMConfig *config,
                    NMConfigData *config_data,
                    NMConfigChangeFlags changes,
                    NMConfigData *old_data,
-                   SCPluginKeyfile *self)
+                   SettingsPluginKeyfile *self)
 {
 	gs_free char *old_value = NULL, *new_value = NULL;
 
@@ -324,13 +324,13 @@ config_changed_cb (NMConfig *config,
 	new_value = nm_config_data_get_value (config_data, NM_CONFIG_KEYFILE_GROUP_KEYFILE, "unmanaged-devices", NM_CONFIG_GET_VALUE_TYPE_SPEC);
 
 	if (g_strcmp0 (old_value, new_value) != 0)
-		g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
+		g_signal_emit_by_name (self, NM_SETTINGS_PLUGIN_UNMANAGED_SPECS_CHANGED);
 }
 
 static void
-setup_monitoring (NMSystemConfigInterface *config)
+setup_monitoring (NMSettingsPlugin *config)
 {
-	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (config);
+	SettingsPluginKeyfilePrivate *priv = SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE (config);
 	GFile *file;
 	GFileMonitor *monitor;
 
@@ -389,10 +389,10 @@ _sort_paths (const char **f1, const char **f2, GHashTable *paths)
 }
 
 static void
-read_connections (NMSystemConfigInterface *config)
+read_connections (NMSettingsPlugin *config)
 {
-	SCPluginKeyfile *self = SC_PLUGIN_KEYFILE (config);
-	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (self);
+	SettingsPluginKeyfile *self = SETTINGS_PLUGIN_KEYFILE (config);
+	SettingsPluginKeyfilePrivate *priv = SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE (self);
 	GDir *dir;
 	GError *error = NULL;
 	const char *item;
@@ -462,9 +462,9 @@ read_connections (NMSystemConfigInterface *config)
 /* Plugin */
 
 static GSList *
-get_connections (NMSystemConfigInterface *config)
+get_connections (NMSettingsPlugin *config)
 {
-	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (config);
+	SettingsPluginKeyfilePrivate *priv = SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE (config);
 
 	if (!priv->initialized) {
 		setup_monitoring (config);
@@ -475,10 +475,10 @@ get_connections (NMSystemConfigInterface *config)
 }
 
 static gboolean
-load_connection (NMSystemConfigInterface *config,
+load_connection (NMSettingsPlugin *config,
                  const char *filename)
 {
-	SCPluginKeyfile *self = SC_PLUGIN_KEYFILE (config);
+	SettingsPluginKeyfile *self = SETTINGS_PLUGIN_KEYFILE (config);
 	NMKeyfileConnection *connection;
 	int dir_len = strlen (KEYFILE_DIR);
 
@@ -496,18 +496,18 @@ load_connection (NMSystemConfigInterface *config,
 }
 
 static void
-reload_connections (NMSystemConfigInterface *config)
+reload_connections (NMSettingsPlugin *config)
 {
 	read_connections (config);
 }
 
 static NMSettingsConnection *
-add_connection (NMSystemConfigInterface *config,
+add_connection (NMSettingsPlugin *config,
                 NMConnection *connection,
                 gboolean save_to_disk,
                 GError **error)
 {
-	SCPluginKeyfile *self = SC_PLUGIN_KEYFILE (config);
+	SettingsPluginKeyfile *self = SETTINGS_PLUGIN_KEYFILE (config);
 	gs_free char *path = NULL;
 
 	if (save_to_disk) {
@@ -518,9 +518,9 @@ add_connection (NMSystemConfigInterface *config,
 }
 
 static GSList *
-get_unmanaged_specs (NMSystemConfigInterface *config)
+get_unmanaged_specs (NMSettingsPlugin *config)
 {
-	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (config);
+	SettingsPluginKeyfilePrivate *priv = SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE (config);
 	gs_free char *value = NULL;
 
 	value = nm_config_data_get_value (nm_config_get_data (priv->config), NM_CONFIG_KEYFILE_GROUP_KEYFILE, "unmanaged-devices", NM_CONFIG_GET_VALUE_TYPE_SPEC);
@@ -530,9 +530,9 @@ get_unmanaged_specs (NMSystemConfigInterface *config)
 /* GObject */
 
 static void
-sc_plugin_keyfile_init (SCPluginKeyfile *plugin)
+settings_plugin_keyfile_init (SettingsPluginKeyfile *plugin)
 {
-	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (plugin);
+	SettingsPluginKeyfilePrivate *priv = SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE (plugin);
 
 	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
 }
@@ -542,14 +542,14 @@ get_property (GObject *object, guint prop_id,
 		    GValue *value, GParamSpec *pspec)
 {
 	switch (prop_id) {
-	case NM_SYSTEM_CONFIG_INTERFACE_PROP_NAME:
+	case NM_SETTINGS_PLUGIN_PROP_NAME:
 		g_value_set_string (value, KEYFILE_PLUGIN_NAME);
 		break;
-	case NM_SYSTEM_CONFIG_INTERFACE_PROP_INFO:
+	case NM_SETTINGS_PLUGIN_PROP_INFO:
 		g_value_set_string (value, KEYFILE_PLUGIN_INFO);
 		break;
-	case NM_SYSTEM_CONFIG_INTERFACE_PROP_CAPABILITIES:
-		g_value_set_uint (value, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS);
+	case NM_SETTINGS_PLUGIN_PROP_CAPABILITIES:
+		g_value_set_uint (value, NM_SETTINGS_PLUGIN_CAP_MODIFY_CONNECTIONS);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -571,7 +571,7 @@ set_property (GObject *object, guint prop_id,
 static void
 constructed (GObject *object)
 {
-	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (object);
+	SettingsPluginKeyfilePrivate *priv = SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE (object);
 
 	priv->config = g_object_ref (nm_config_get ());
 	if (nm_config_data_has_value (nm_config_get_data_orig (priv->config),
@@ -583,7 +583,7 @@ constructed (GObject *object)
 static void
 dispose (GObject *object)
 {
-	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (object);
+	SettingsPluginKeyfilePrivate *priv = SETTINGS_PLUGIN_KEYFILE_GET_PRIVATE (object);
 
 	if (priv->monitor) {
 		if (priv->monitor_id) {
@@ -605,15 +605,15 @@ dispose (GObject *object)
 		g_clear_object (&priv->config);
 	}
 
-	G_OBJECT_CLASS (sc_plugin_keyfile_parent_class)->dispose (object);
+	G_OBJECT_CLASS (settings_plugin_keyfile_parent_class)->dispose (object);
 }
 
 static void
-sc_plugin_keyfile_class_init (SCPluginKeyfileClass *req_class)
+settings_plugin_keyfile_class_init (SettingsPluginKeyfileClass *req_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (req_class);
 
-	g_type_class_add_private (req_class, sizeof (SCPluginKeyfilePrivate));
+	g_type_class_add_private (req_class, sizeof (SettingsPluginKeyfilePrivate));
 
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
@@ -621,31 +621,31 @@ sc_plugin_keyfile_class_init (SCPluginKeyfileClass *req_class)
 	object_class->set_property = set_property;
 
 	g_object_class_override_property (object_class,
-	                                  NM_SYSTEM_CONFIG_INTERFACE_PROP_NAME,
-	                                  NM_SYSTEM_CONFIG_INTERFACE_NAME);
+	                                  NM_SETTINGS_PLUGIN_PROP_NAME,
+	                                  NM_SETTINGS_PLUGIN_NAME);
 
 	g_object_class_override_property (object_class,
-	                                  NM_SYSTEM_CONFIG_INTERFACE_PROP_INFO,
-	                                  NM_SYSTEM_CONFIG_INTERFACE_INFO);
+	                                  NM_SETTINGS_PLUGIN_PROP_INFO,
+	                                  NM_SETTINGS_PLUGIN_INFO);
 
 	g_object_class_override_property (object_class,
-	                                  NM_SYSTEM_CONFIG_INTERFACE_PROP_CAPABILITIES,
-	                                  NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES);
+	                                  NM_SETTINGS_PLUGIN_PROP_CAPABILITIES,
+	                                  NM_SETTINGS_PLUGIN_CAPABILITIES);
 }
 
 static void
-system_config_interface_init (NMSystemConfigInterface *system_config_interface_class)
+settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface)
 {
 	/* interface implementation */
-	system_config_interface_class->get_connections = get_connections;
-	system_config_interface_class->load_connection = load_connection;
-	system_config_interface_class->reload_connections = reload_connections;
-	system_config_interface_class->add_connection = add_connection;
-	system_config_interface_class->get_unmanaged_specs = get_unmanaged_specs;
+	plugin_iface->get_connections = get_connections;
+	plugin_iface->load_connection = load_connection;
+	plugin_iface->reload_connections = reload_connections;
+	plugin_iface->add_connection = add_connection;
+	plugin_iface->get_unmanaged_specs = get_unmanaged_specs;
 }
 
 GObject *
 nm_settings_keyfile_plugin_new (void)
 {
-	return g_object_new (SC_TYPE_PLUGIN_KEYFILE, NULL);
+	return g_object_new (SETTINGS_TYPE_PLUGIN_KEYFILE, NULL);
 }
