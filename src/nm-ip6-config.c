@@ -2019,10 +2019,10 @@ get_property (GObject *object, guint prop_id,
 				g_variant_builder_add (&array_builder, "(@ayu@ayu)",
 				                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
 				                                                  &route->network, 16, 1),
-				                       g_variant_new_uint32 (route->plen),
+				                       (guint32) route->plen,
 				                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
 				                                                  &route->gateway, 16, 1),
-				                       g_variant_new_uint32 (route->metric));
+				                       (guint32) route->metric);
 			}
 
 			g_value_take_variant (value, g_variant_builder_end (&array_builder));
