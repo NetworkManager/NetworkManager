@@ -8393,15 +8393,9 @@ nm_device_spawn_iface_helper (NMDevice *self)
 	dhcp4_address = find_dhcp4_address (self);
 
 	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
-	if (   priv->ip4_config
-	    && priv->ip4_state == IP_DONE
-	    && g_strcmp0 (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0
-	    && priv->dhcp4_client
-	    && dhcp4_address) {
+	if (g_strcmp0 (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0) {
 		NMSettingIPConfig *s_ip4;
-		GBytes *client_id;
 		char *hex_client_id;
-		const char *hostname;
 
 		s_ip4 = nm_connection_get_setting_ip4_config (connection);
 		g_assert (s_ip4);
@@ -8414,29 +8408,30 @@ nm_device_spawn_iface_helper (NMDevice *self)
 		if (nm_setting_ip_config_get_may_fail (s_ip4) == FALSE)
 			g_ptr_array_add (argv, g_strdup ("--dhcp4-required"));
 
-		client_id = nm_dhcp_client_get_client_id (priv->dhcp4_client);
-		if (client_id) {
-			g_ptr_array_add (argv, g_strdup ("--dhcp4-clientid"));
-			hex_client_id = bin2hexstr (g_bytes_get_data (client_id, NULL),
-			                            g_bytes_get_size (client_id));
-			g_ptr_array_add (argv, hex_client_id);
-		}
+		if (priv->dhcp4_client) {
+			const char *hostname;
+			GBytes *client_id;
 
-		hostname = nm_dhcp_client_get_hostname (priv->dhcp4_client);
-		if (hostname) {
-			g_ptr_array_add (argv, g_strdup ("--dhcp4-hostname"));
-			g_ptr_array_add (argv, g_strdup (hostname));
+			client_id = nm_dhcp_client_get_client_id (priv->dhcp4_client);
+			if (client_id) {
+				g_ptr_array_add (argv, g_strdup ("--dhcp4-clientid"));
+				hex_client_id = bin2hexstr (g_bytes_get_data (client_id, NULL),
+				                            g_bytes_get_size (client_id));
+				g_ptr_array_add (argv, hex_client_id);
+			}
+
+			hostname = nm_dhcp_client_get_hostname (priv->dhcp4_client);
+			if (hostname) {
+				g_ptr_array_add (argv, g_strdup ("--dhcp4-hostname"));
+				g_ptr_array_add (argv, g_strdup (hostname));
+			}
 		}
 
 		configured = TRUE;
 	}
 
 	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
-	if (   priv->ip6_config
-	    && priv->ip6_state == IP_DONE
-	    && g_strcmp0 (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0
-	    && priv->rdisc
-	    && priv->ac_ip6_config) {
+	if (g_strcmp0 (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0) {
 		NMSettingIPConfig *s_ip6;
 		char *hex_iid;
 		NMUtilsIPv6IfaceId iid = NM_UTILS_IPV6_IFACE_ID_INIT;
