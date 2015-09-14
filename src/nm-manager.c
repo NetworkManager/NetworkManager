@@ -4415,9 +4415,8 @@ free_property_filter_data (PropertyFilterData *pfd)
 	g_object_unref (pfd->self);
 	g_object_unref (pfd->connection);
 	g_object_unref (pfd->message);
-	g_object_unref (pfd->subject);
-	if (pfd->object)
-		g_object_unref (pfd->object);
+	g_clear_object (&pfd->subject);
+	g_clear_object (&pfd->object);
 	g_free (pfd->audit_prop_value);
 	g_slice_free (PropertyFilterData, pfd);
 }
