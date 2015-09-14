@@ -1871,6 +1871,37 @@ cache_pre_hook (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMP
 			}
 		}
 		{
+			int ifindex = -1;
+
+			/* removal of a link could be caused by moving the link to another netns.
+			 * In this case, we potentially have to update other links that have this link as parent.
+			 * Currently, kernel misses to sent us a notification in this case (rh #1262908). */
+
+			if (   ops_type == NMP_CACHE_OPS_REMOVED
+			    && old /* <-- nonsensical, make coverity happy */
+			    && old->_link.netlink.is_in_netlink)
+				ifindex = old->link.ifindex;
+			else if (   ops_type == NMP_CACHE_OPS_UPDATED
+			         && old && new /* <-- nonsensical, make coverity happy */
+			         && old->_link.netlink.is_in_netlink
+			         && !new->_link.netlink.is_in_netlink)
+				ifindex = new->link.ifindex;
+
+			if (ifindex > 0) {
+				const NMPlatformLink *const *links;
+
+				links = cache_lookup_all_objects (NMPlatformLink, platform, NMP_OBJECT_TYPE_LINK, FALSE);
+				if (links) {
+					for (; *links; links++) {
+						const NMPlatformLink *l = (*links);
+
+						if (l->parent == ifindex)
+							delayed_action_schedule (platform, DELAYED_ACTION_TYPE_REFRESH_LINK, GINT_TO_POINTER (l->ifindex));
+					}
+				}
+			}
+		}
+		{
 			/* if a link goes down, we must refresh routes */
 			if (   ops_type == NMP_CACHE_OPS_UPDATED
 			    && old && new /* <-- nonsensical, make coverity happy */
