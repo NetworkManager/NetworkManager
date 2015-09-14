@@ -1655,6 +1655,33 @@ delayed_action_handle_idle (gpointer user_data)
 }
 
 static void
+delayed_action_clear_REFRESH_LINK (NMPlatform *platform, int ifindex)
+{
+	NMLinuxPlatformPrivate *priv;
+	gssize idx;
+	gpointer user_data;
+
+	if (ifindex <= 0)
+		return;
+
+	priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	if (!NM_FLAGS_HAS (priv->delayed_action.flags, DELAYED_ACTION_TYPE_REFRESH_LINK))
+		return;
+
+	user_data = GINT_TO_POINTER (ifindex);
+
+	idx = _nm_utils_ptrarray_find_first (priv->delayed_action.list_refresh_link->pdata, priv->delayed_action.list_refresh_link->len, user_data);
+	if (idx < 0)
+		return;
+
+	_LOGT_delayed_action (DELAYED_ACTION_TYPE_REFRESH_LINK, user_data, "clear");
+
+	g_ptr_array_remove_index_fast (priv->delayed_action.list_refresh_link, idx);
+	if (priv->delayed_action.list_refresh_link->len == 0)
+		priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_REFRESH_LINK;
+}
+
+static void
 delayed_action_schedule (NMPlatform *platform, DelayedActionType action_type, gpointer user_data)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
@@ -2071,9 +2098,11 @@ do_request_all (NMPlatform *platform, DelayedActionType action_type, gboolean ha
 
 			/* clear any delayed action that request a refresh of this object type. */
 			priv->delayed_action.flags &= ~iflags;
+			_LOGT_delayed_action (iflags, NULL, "handle (do-request-all)");
 			if (obj_type == NMP_OBJECT_TYPE_LINK) {
 				priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_REFRESH_LINK;
 				g_ptr_array_set_size (priv->delayed_action.list_refresh_link, 0);
+				_LOGT_delayed_action (DELAYED_ACTION_TYPE_REFRESH_LINK, NULL, "clear (do-request-all)");
 			}
 
 			event_handler_read_netlink_all (platform, FALSE);
@@ -2384,12 +2413,14 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 		switch (msghdr->nlmsg_type) {
 
 		case RTM_NEWLINK:
-			if (   NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_LINK
-			    && g_hash_table_lookup (priv->delayed_deletion, obj) != NULL) {
-				/* the object is scheduled for delayed deletion. Replace that object
-				 * by clearing the value from priv->delayed_deletion. */
-				_LOGT ("delayed-deletion: clear delayed deletion of protected object %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ID, NULL, 0));
-				g_hash_table_insert (priv->delayed_deletion, nmp_object_ref (obj), NULL);
+			if (NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_LINK) {
+				if (g_hash_table_lookup (priv->delayed_deletion, obj) != NULL) {
+					/* the object is scheduled for delayed deletion. Replace that object
+					 * by clearing the value from priv->delayed_deletion. */
+					_LOGT ("delayed-deletion: clear delayed deletion of protected object %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ID, NULL, 0));
+					g_hash_table_insert (priv->delayed_deletion, nmp_object_ref (obj), NULL);
+				}
+				delayed_action_clear_REFRESH_LINK (platform, obj->link.ifindex);
 			}
 			/* fall-through */
 		case RTM_NEWADDR:
