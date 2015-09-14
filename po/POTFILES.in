@@ -69,6 +69,7 @@ libnm-core/nm-setting-olpc-mesh.c
 libnm-core/nm-setting-ppp.c
 libnm-core/nm-setting-pppoe.c
 libnm-core/nm-setting-team-port.c
+libnm-core/nm-setting-tun.c
 libnm-core/nm-setting-vlan.c
 libnm-core/nm-setting-vpn.c
 libnm-core/nm-setting-wimax.c

@@ -1950,6 +1950,24 @@ nm_connection_get_setting_serial (NMConnection *connection)
 }
 
 /**
+ * nm_connection_get_setting_tun:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingTun the connection might contain.
+ *
+ * Returns: (transfer none): an #NMSettingTun if the connection contains one, otherwise %NULL
+ *
+ * Since: 1.2
+ **/
+NMSettingTun *
+nm_connection_get_setting_tun (NMConnection *connection)
+{
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return (NMSettingTun *) nm_connection_get_setting (connection, NM_TYPE_SETTING_TUN);
+}
+
+/**
  * nm_connection_get_setting_vpn:
  * @connection: the #NMConnection
  *

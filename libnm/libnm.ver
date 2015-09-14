@@ -897,6 +897,15 @@ global:
 	nm_setting_ip_config_remove_dns_option;
 	nm_setting_ip_config_remove_dns_option_by_value;
 	nm_setting_mac_randomization_get_type;
+	nm_setting_tun_get_group;
+	nm_setting_tun_get_mode;
+	nm_setting_tun_get_multi_queue;
+	nm_setting_tun_get_owner;
+	nm_setting_tun_get_pi;
+	nm_setting_tun_get_type;
+	nm_setting_tun_get_vnet_hdr;
+	nm_setting_tun_mode_get_type;
+	nm_setting_tun_new;
 	nm_setting_verify_secrets;
 	nm_setting_vpn_get_timeout;
 	nm_setting_wired_get_wake_on_lan;

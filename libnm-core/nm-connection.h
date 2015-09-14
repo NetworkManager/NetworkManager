@@ -208,6 +208,7 @@ NMSettingOlpcMesh *        nm_connection_get_setting_olpc_mesh         (NMConnec
 NMSettingPpp *             nm_connection_get_setting_ppp               (NMConnection *connection);
 NMSettingPppoe *           nm_connection_get_setting_pppoe             (NMConnection *connection);
 NMSettingSerial *          nm_connection_get_setting_serial            (NMConnection *connection);
+NMSettingTun *             nm_connection_get_setting_tun               (NMConnection *connection);
 NMSettingVpn *             nm_connection_get_setting_vpn               (NMConnection *connection);
 NMSettingWimax *           nm_connection_get_setting_wimax             (NMConnection *connection);
 NMSettingAdsl *            nm_connection_get_setting_adsl              (NMConnection *connection);
