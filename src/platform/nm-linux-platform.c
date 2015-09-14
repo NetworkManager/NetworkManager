@@ -1619,7 +1619,7 @@ delayed_action_handle_one (NMPlatform *platform)
 
 	user_data = priv->delayed_action.list_refresh_link->pdata[0];
 	g_ptr_array_remove_index_fast (priv->delayed_action.list_refresh_link, 0);
-	if (priv->delayed_action.list_master_connected->len == 0)
+	if (priv->delayed_action.list_refresh_link->len == 0)
 		priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_REFRESH_LINK;
 	nm_assert (_nm_utils_ptrarray_find_first (priv->delayed_action.list_refresh_link->pdata, priv->delayed_action.list_refresh_link->len, user_data) < 0);
 
