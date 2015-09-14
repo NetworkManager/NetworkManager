@@ -1558,9 +1558,16 @@ nmc_property_wired_get_wake_on_lan (NMSetting *setting, NmcPropertyGetType get_t
 {
 	NMSettingWired *s_wired = NM_SETTING_WIRED (setting);
 	NMSettingWiredWakeOnLan wol;
+	char *tmp, *str;
 
 	wol = nm_setting_wired_get_wake_on_lan (s_wired);
-	return nm_utils_enum_to_str (nm_setting_wired_wake_on_lan_get_type (), wol);
+	tmp = nm_utils_enum_to_str (nm_setting_wired_wake_on_lan_get_type (), wol);
+	if (get_type == NMC_PROPERTY_GET_PARSABLE)
+		str = g_strdup_printf ("%s", tmp && *tmp ? tmp : "none");
+	else
+		str = g_strdup_printf ("%d (%s)", wol, tmp && *tmp ? tmp : "none");
+	g_free (tmp);
+	return str;
 }
 
 static gboolean
@@ -1570,21 +1577,26 @@ nmc_property_wired_set_wake_on_lan (NMSetting *setting, const char *prop,
 	NMSettingWiredWakeOnLan wol;
 	gs_free char *err_token = NULL;
 	gboolean ret;
+	long int t;
 
-	ret = nm_utils_enum_from_str (nm_setting_wired_wake_on_lan_get_type (), val,
-	                              (int *) &wol, &err_token);
+	if (nmc_string_to_int_base (val, 0, TRUE, 0, NM_SETTING_WIRED_WAKE_ON_LAN_ALL, &t))
+		wol = (NMSettingWiredWakeOnLan) t;
+	else {
+		ret = nm_utils_enum_from_str (nm_setting_wired_wake_on_lan_get_type (), val,
+		                              (int *) &wol, &err_token);
 
-	if (!ret) {
-		if (   g_ascii_strcasecmp (err_token, "none") == 0
-		    || g_ascii_strcasecmp (err_token, "disable") == 0
-		    || g_ascii_strcasecmp (err_token, "disabled") == 0)
-			wol = NM_SETTING_WIRED_WAKE_ON_LAN_NONE;
-		else {
-			g_set_error (error, 1, 0, _("invalid option '%s', use  a combination of %s or 'default' or 'none'"),
-			             err_token,
-			             nm_utils_enum_to_str (nm_setting_wired_wake_on_lan_get_type (),
-			                                   NM_SETTING_WIRED_WAKE_ON_LAN_ALL));
-			return FALSE;
+		if (!ret) {
+			if (   g_ascii_strcasecmp (err_token, "none") == 0
+			    || g_ascii_strcasecmp (err_token, "disable") == 0
+			    || g_ascii_strcasecmp (err_token, "disabled") == 0)
+				wol = NM_SETTING_WIRED_WAKE_ON_LAN_NONE;
+			else {
+				g_set_error (error, 1, 0, _("invalid option '%s', use  a combination of [%s] or 'default' or 'none'"),
+				             err_token,
+				             nm_utils_enum_to_str (nm_setting_wired_wake_on_lan_get_type (),
+				                                   NM_SETTING_WIRED_WAKE_ON_LAN_ALL));
+				return FALSE;
+			}
 		}
 	}
 

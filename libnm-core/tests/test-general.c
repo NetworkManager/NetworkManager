@@ -4679,12 +4679,12 @@ static void test_nm_utils_enum (void)
 	test_nm_utils_enum_to_str_do (meta_flags, NM_TEST_GENERAL_META_FLAGS_BAZ, "baz");
 	test_nm_utils_enum_to_str_do (meta_flags, NM_TEST_GENERAL_META_FLAGS_FOO |
 	                                          NM_TEST_GENERAL_META_FLAGS_BAR |
-	                                          NM_TEST_GENERAL_META_FLAGS_BAZ, "foo,bar,baz");
+	                                          NM_TEST_GENERAL_META_FLAGS_BAZ, "foo, bar, baz");
 
 	test_nm_utils_enum_to_str_do (color_flags, NM_TEST_GENERAL_COLOR_FLAGS_RED, "red");
 	test_nm_utils_enum_to_str_do (color_flags, NM_TEST_GENERAL_COLOR_FLAGS_WHITE, "");
 	test_nm_utils_enum_to_str_do (color_flags, NM_TEST_GENERAL_COLOR_FLAGS_RED |
-	                                           NM_TEST_GENERAL_COLOR_FLAGS_GREEN, "red,green");
+	                                           NM_TEST_GENERAL_COLOR_FLAGS_GREEN, "red, green");
 
 	test_nm_utils_enum_from_str_do (bool_enum, "", FALSE, 0, NULL);
 	test_nm_utils_enum_from_str_do (bool_enum, " ", FALSE, 0, NULL);
@@ -4698,6 +4698,8 @@ static void test_nm_utils_enum (void)
 	test_nm_utils_enum_from_str_do (meta_flags, "foo", TRUE, NM_TEST_GENERAL_META_FLAGS_FOO, NULL);
 	test_nm_utils_enum_from_str_do (meta_flags, "foo,baz", TRUE, NM_TEST_GENERAL_META_FLAGS_FOO |
 	                                                             NM_TEST_GENERAL_META_FLAGS_BAZ, NULL);
+	test_nm_utils_enum_from_str_do (meta_flags, "foo, baz", TRUE, NM_TEST_GENERAL_META_FLAGS_FOO |
+	                                                              NM_TEST_GENERAL_META_FLAGS_BAZ, NULL);
 	test_nm_utils_enum_from_str_do (meta_flags, "foo,,bar", TRUE, NM_TEST_GENERAL_META_FLAGS_FOO |
 	                                                              NM_TEST_GENERAL_META_FLAGS_BAR, NULL);
 	test_nm_utils_enum_from_str_do (meta_flags, "foo,baz,quux,bar", FALSE, 0, "quux");
