@@ -4465,23 +4465,27 @@ do_set_property_check (gpointer user_data)
 	const char *error_message = NULL;
 
 	if (!pfd->object) {
-		pfd->object = nm_bus_manager_get_registered_object (nm_bus_manager_get (),
+		GObject *object;
+
+		object = nm_bus_manager_get_registered_object (nm_bus_manager_get (),
 		                                                    g_dbus_message_get_path (pfd->message));
-		if (!pfd->object) {
+		if (!object) {
 			reply = g_dbus_message_new_method_error (pfd->message,
 			                                         "org.freedesktop.DBus.Error.UnknownObject",
 			                                         (error_message = "Object doesn't exist."));
 			goto out;
 		}
+
 		/* If we lookup the object, we expect the object to be of a certain type.
 		 * Only NMDevice type have settable properties. */
-		if (!NM_IS_DEVICE (pfd->object)) {
+		if (!NM_IS_DEVICE (object)) {
 			reply = g_dbus_message_new_method_error (pfd->message,
 			                                         "org.freedesktop.DBus.Error.InvalidArgs",
 			                                         (error_message = "Object is of unexpected type."));
 			goto out;
 		}
-		g_object_ref (pfd->object);
+
+		pfd->object = g_object_ref (object);
 	}
 
 	pfd->subject = nm_auth_subject_new_unix_process_from_message (pfd->connection, pfd->message);
