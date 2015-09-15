@@ -1060,6 +1060,13 @@ make_ip4_setting (shvarFile *ifcfg,
 			svCloseFile (network_ifcfg);
 			if (!read_success)
 				goto done;
+
+			if (gateway && nm_setting_ip_config_get_num_addresses (s_ip4) == 0) {
+				gs_free char *f = g_path_get_basename (ifcfg->fileName);
+				PARSE_WARNING ("ignoring GATEWAY (/etc/sysconfig/network) for %s "
+				               "because the connection has no static addresses", f);
+				g_clear_pointer (&gateway, g_free);
+			}
 		}
 	}
 	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_GATEWAY, gateway, NULL);

@@ -878,6 +878,48 @@ test_read_wired_global_gateway (void)
 	g_object_unref (connection);
 }
 
+/* Ignore GATEWAY from /etc/sysconfig/network for automatic connections */
+static void
+test_read_wired_global_gateway_ignore (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingIPConfig *s_ip4;
+	GError *error = NULL;
+	char *unmanaged = NULL;
+
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*ignoring GATEWAY (/etc/sysconfig/network) for * because the connection has no static addresses");
+	connection = connection_from_file_test (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-global-gateway-ignore",
+	                                        TEST_IFCFG_DIR"/network-scripts/network-test-wired-global-gateway-ignore",
+	                                        TYPE_ETHERNET, &unmanaged, &error);
+	nmtst_assert_connection_verifies_without_normalization (connection);
+	g_assert (unmanaged == NULL);
+
+	/* ===== CONNECTION SETTING ===== */
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "System test-wired-global-gateway-ignore");
+
+	/* ===== WIRED SETTING ===== */
+	s_wired = nm_connection_get_setting_wired (connection);
+	g_assert (s_wired);
+
+	/* ===== IPv4 SETTING ===== */
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	g_assert (s_ip4);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+
+	/* Addresses */
+	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip4), ==, 0);
+
+	/* Gateway */
+	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, NULL);
+
+	g_object_unref (connection);
+}
+
 static void
 test_read_wired_obsolete_gateway_n (void)
 {
@@ -12760,6 +12802,7 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "read-shared-plus-ip", test_read_wired_shared_plus_ip);
 	g_test_add_func (TPATH "read-dhcp-send-hostname", test_read_write_wired_dhcp_send_hostname);
 	g_test_add_func (TPATH "read-global-gateway", test_read_wired_global_gateway);
+	g_test_add_func (TPATH "read-global-gateway-ignore", test_read_wired_global_gateway_ignore);
 	g_test_add_func (TPATH "read-obsolete-gateway-n", test_read_wired_obsolete_gateway_n);
 	g_test_add_func (TPATH "read-never-default", test_read_wired_never_default);
 	test_read_wired_defroute_no ();
