@@ -431,7 +431,7 @@ typedef enum {
 } NMUnmanagedFlags;
 
 gboolean nm_device_get_managed (NMDevice *device);
-gboolean nm_device_get_unmanaged_flag (NMDevice *device, NMUnmanagedFlags flag);
+gboolean nm_device_get_unmanaged (NMDevice *device, NMUnmanagedFlags flag);
 void nm_device_set_unmanaged (NMDevice *device,
                               NMUnmanagedFlags flag,
                               gboolean unmanaged,

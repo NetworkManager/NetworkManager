@@ -1427,7 +1427,7 @@ device_link_changed (NMDevice *self)
 		/* Manage externally-created software interfaces only when they are IFF_UP */
 		g_assert (priv->ifindex > 0);
 		if (NM_DEVICE_GET_CLASS (self)->can_unmanaged_external_down (self)) {
-			gboolean external_down = nm_device_get_unmanaged_flag (self, NM_UNMANAGED_EXTERNAL_DOWN);
+			gboolean external_down = nm_device_get_unmanaged (self, NM_UNMANAGED_EXTERNAL_DOWN);
 
 			if (external_down && NM_FLAGS_HAS (info.flags, IFF_UP)) {
 				if (nm_device_get_state (self) < NM_DEVICE_STATE_DISCONNECTED) {
@@ -7678,13 +7678,13 @@ nm_device_get_managed (NMDevice *self)
 }
 
 /**
- * nm_device_get_unmanaged_flag():
+ * nm_device_get_unmanaged():
  * @self: the #NMDevice
  *
  * Returns: %TRUE if the device is unmanaged for @flag.
  */
 gboolean
-nm_device_get_unmanaged_flag (NMDevice *self, NMUnmanagedFlags flag)
+nm_device_get_unmanaged (NMDevice *self, NMUnmanagedFlags flag)
 {
 	return NM_FLAGS_ANY (NM_DEVICE_GET_PRIVATE (self)->unmanaged_flags, flag);
 }
@@ -7698,7 +7698,7 @@ nm_device_get_unmanaged_flag (NMDevice *self, NMUnmanagedFlags flag)
 static gboolean
 nm_device_get_default_unmanaged (NMDevice *self)
 {
-	return nm_device_get_unmanaged_flag (self, NM_UNMANAGED_DEFAULT);
+	return nm_device_get_unmanaged (self, NM_UNMANAGED_DEFAULT);
 }
 
 static void
@@ -7924,7 +7924,7 @@ nm_device_check_connection_available (NMDevice *self,
 	if (state < NM_DEVICE_STATE_UNMANAGED)
 		return FALSE;
 	if (   state < NM_DEVICE_STATE_UNAVAILABLE
-	    && nm_device_get_unmanaged_flag (self, NM_UNMANAGED_ALL & ~NM_UNMANAGED_DEFAULT))
+	    && nm_device_get_unmanaged (self, NM_UNMANAGED_ALL & ~NM_UNMANAGED_DEFAULT))
 		return FALSE;
 	if (   state < NM_DEVICE_STATE_DISCONNECTED
 	    && (   (   !NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER)
