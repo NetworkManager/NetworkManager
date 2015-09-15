@@ -4030,7 +4030,7 @@ char *nm_utils_enum_to_str (GType type, int value)
 				break;
 
 			if (!first)
-				g_string_append_c (str, ',');
+				g_string_append (str, ", ");
 			g_string_append (str, flags_value->value_nick);
 
 			value &= ~flags_value->value;
@@ -4089,7 +4089,7 @@ gboolean nm_utils_enum_from_str (GType type, const char *str,
 		gs_strfreev char **strv = NULL;
 		int i;
 
-		strv = g_strsplit (stripped, ",", 0);
+		strv = g_strsplit_set (stripped, " \t,", 0);
 		for (i = 0; strv[i]; i++) {
 			if (!strv[i][0])
 				continue;
