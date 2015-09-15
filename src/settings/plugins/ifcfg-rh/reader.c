@@ -346,7 +346,6 @@ is_any_ip4_address_defined (shvarFile *ifcfg, int *idx)
 /* Returns TRUE on missing address or valid address */
 static gboolean
 read_full_ip4_address (shvarFile *ifcfg,
-                       const char *network_file,
                        gint32 which,
                        NMIPAddress *base_addr,
                        NMIPAddress **out_address,
@@ -362,7 +361,6 @@ read_full_ip4_address (shvarFile *ifcfg,
 
 	g_return_val_if_fail (which >= -1, FALSE);
 	g_return_val_if_fail (ifcfg != NULL, FALSE);
-	g_return_val_if_fail (network_file != NULL, FALSE);
 	g_return_val_if_fail (out_address != NULL, FALSE);
 	g_return_val_if_fail (*out_address == NULL, FALSE);
 	if (error)
@@ -452,7 +450,6 @@ done:
 /* Returns TRUE on missing route or valid route */
 static gboolean
 read_one_ip4_route (shvarFile *ifcfg,
-                    const char *network_file,
                     guint32 which,
                     NMIPRoute **out_route,
                     GError **error)
@@ -463,7 +460,6 @@ read_one_ip4_route (shvarFile *ifcfg,
 	gboolean success = FALSE;
 
 	g_return_val_if_fail (ifcfg != NULL, FALSE);
-	g_return_val_if_fail (network_file != NULL, FALSE);
 	g_return_val_if_fail (out_route != NULL, FALSE);
 	g_return_val_if_fail (*out_route == NULL, FALSE);
 	if (error)
@@ -684,7 +680,6 @@ error:
 
 static gboolean
 parse_full_ip6_address (shvarFile *ifcfg,
-                        const char *network_file,
                         const char *addr_str,
                         int i,
                         NMIPAddress **out_address,
@@ -962,7 +957,7 @@ make_ip4_setting (shvarFile *ifcfg,
 		if (is_any_ip4_address_defined (ifcfg, &idx)) {
 			NMIPAddress *addr = NULL;
 
-			if (!read_full_ip4_address (ifcfg, network_file, idx, NULL, &addr, NULL, error))
+			if (!read_full_ip4_address (ifcfg, idx, NULL, &addr, NULL, error))
 				goto done;
 			if (!read_ip4_address (ifcfg, "GATEWAY", &gateway, error))
 				goto done;
@@ -1020,7 +1015,7 @@ make_ip4_setting (shvarFile *ifcfg,
 
 		/* gateway will only be set if still unset. Hence, we don't leak gateway
 		 * here by calling read_full_ip4_address() repeatedly */
-		if (!read_full_ip4_address (ifcfg, network_file, i, NULL, &addr, &gateway, error))
+		if (!read_full_ip4_address (ifcfg, i, NULL, &addr, &gateway, error))
 			goto done;
 
 		if (!addr) {
@@ -1108,7 +1103,7 @@ make_ip4_setting (shvarFile *ifcfg,
 			for (i = 0; i < 256; i++) {
 				NMIPRoute *route = NULL;
 
-				if (!read_one_ip4_route (route_ifcfg, network_file, i, &route, error)) {
+				if (!read_one_ip4_route (route_ifcfg, i, &route, error)) {
 					svCloseFile (route_ifcfg);
 					goto done;
 				}
@@ -1158,7 +1153,7 @@ done:
 }
 
 static void
-read_aliases (NMSettingIPConfig *s_ip4, const char *filename, const char *network_file)
+read_aliases (NMSettingIPConfig *s_ip4, const char *filename)
 {
 	GDir *dir;
 	char *dirname, *base;
@@ -1230,7 +1225,7 @@ read_aliases (NMSettingIPConfig *s_ip4, const char *filename, const char *networ
 			}
 
 			addr = NULL;
-			ok = read_full_ip4_address (parsed, network_file, -1, base_addr, &addr, NULL, &err);
+			ok = read_full_ip4_address (parsed, -1, base_addr, &addr, NULL, &err);
 			svCloseFile (parsed);
 			if (ok) {
 				nm_ip_address_set_attribute (addr, "label", g_variant_new_string (device));
@@ -1417,7 +1412,7 @@ make_ip6_setting (shvarFile *ifcfg,
 	for (iter = list, i = 0; iter && *iter; iter++, i++) {
 		NMIPAddress *addr = NULL;
 
-		if (!parse_full_ip6_address (ifcfg, network_file, *iter, i, &addr, error)) {
+		if (!parse_full_ip6_address (ifcfg, *iter, i, &addr, error)) {
 			g_strfreev (list);
 			goto error;
 		}
@@ -4884,7 +4879,7 @@ connection_from_file_full (const char *filename,
 		connection = NULL;
 		goto done;
 	} else {
-		read_aliases (NM_SETTING_IP_CONFIG (s_ip4), filename, network_file);
+		read_aliases (NM_SETTING_IP_CONFIG (s_ip4), filename);
 		nm_connection_add_setting (connection, s_ip4);
 	}
 
