@@ -1084,17 +1084,8 @@ system_unmanaged_devices_changed_cb (NMSettings *settings,
 	const GSList *unmanaged_specs, *iter;
 
 	unmanaged_specs = nm_settings_get_unmanaged_specs (priv->settings);
-	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		NMDevice *device = NM_DEVICE (iter->data);
-		gboolean unmanaged;
-
-		unmanaged = nm_device_spec_match_list (device, unmanaged_specs);
-		nm_device_set_unmanaged (device,
-		                         NM_UNMANAGED_USER,
-		                         unmanaged,
-		                         unmanaged ? NM_DEVICE_STATE_REASON_NOW_UNMANAGED :
-		                                     NM_DEVICE_STATE_REASON_NOW_MANAGED);
-	}
+	for (iter = priv->devices; iter; iter = g_slist_next (iter))
+		nm_device_set_unmanaged_by_device_spec (NM_DEVICE (iter->data), unmanaged_specs);
 }
 
 static void

@@ -7760,6 +7760,25 @@ nm_device_set_unmanaged (NMDevice *self,
 }
 
 void
+nm_device_set_unmanaged_by_device_spec (NMDevice *self, const GSList *unmanaged_specs)
+{
+	NMDevicePrivate *priv;
+	gboolean unmanaged;
+
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	unmanaged = nm_device_spec_match_list (self, unmanaged_specs);
+	nm_device_set_unmanaged (self,
+	                         NM_UNMANAGED_USER,
+	                         unmanaged,
+	                         unmanaged
+	                             ? NM_DEVICE_STATE_REASON_NOW_UNMANAGED
+	                             : NM_DEVICE_STATE_REASON_NOW_MANAGED);
+}
+
+void
 nm_device_set_unmanaged_quitting (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
