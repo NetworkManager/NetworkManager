@@ -754,6 +754,8 @@ nm_device_get_priority (NMDevice *self)
 		return 400;
 	case NM_DEVICE_TYPE_BRIDGE:
 		return 425;
+	case NM_DEVICE_TYPE_TUN:
+		return 450;
 	case NM_DEVICE_TYPE_WIFI:
 		return 600;
 	case NM_DEVICE_TYPE_OLPC_MESH:

@@ -1594,7 +1594,8 @@ nm_connection_is_virtual (NMConnection *connection)
 	if (   !strcmp (type, NM_SETTING_BOND_SETTING_NAME)
 	    || !strcmp (type, NM_SETTING_TEAM_SETTING_NAME)
 	    || !strcmp (type, NM_SETTING_BRIDGE_SETTING_NAME)
-	    || !strcmp (type, NM_SETTING_VLAN_SETTING_NAME))
+	    || !strcmp (type, NM_SETTING_VLAN_SETTING_NAME)
+	    || !strcmp (type, NM_SETTING_TUN_SETTING_NAME))
 		return TRUE;
 
 	if (!strcmp (type, NM_SETTING_INFINIBAND_SETTING_NAME)) {
