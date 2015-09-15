@@ -468,11 +468,6 @@ create_async_inited (GObject *object, GAsyncResult *result, gpointer user_data)
 	}
 
 	create_async_complete (object, async_data);
-
-	if (_nm_object_cache_get (async_data->path))
-		g_clear_object (&object);
-	else
-		_nm_object_cache_add (NM_OBJECT (object));
 }
 
 static void
@@ -501,6 +496,7 @@ create_async_got_type (NMObjectTypeAsyncData *async_data, GType type)
 	                       NM_OBJECT_PATH, async_data->path,
 	                       NM_OBJECT_DBUS_CONNECTION, async_data->connection,
 	                       NULL);
+	_nm_object_cache_add (NM_OBJECT (object));
 	g_async_initable_init_async (G_ASYNC_INITABLE (object), G_PRIORITY_DEFAULT,
 	                             NULL, create_async_inited, async_data);
 }
