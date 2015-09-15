@@ -127,7 +127,7 @@ parent_state_changed (NMDevice *parent,
 	if (reason == NM_DEVICE_STATE_REASON_CARRIER)
 		return;
 
-	nm_device_set_unmanaged_by_flags (NM_DEVICE (self), NM_UNMANAGED_PARENT, !nm_device_get_managed (parent), reason);
+	nm_device_set_unmanaged_by_flags (NM_DEVICE (self), NM_UNMANAGED_PARENT, !nm_device_get_managed (parent, FALSE), reason);
 }
 
 static void
@@ -153,7 +153,7 @@ nm_device_macvlan_set_parent (NMDeviceMacvlan *self, NMDevice *parent)
 		/* Set parent-dependent unmanaged flag */
 		nm_device_set_unmanaged_by_flags (device,
 		                                  NM_UNMANAGED_PARENT,
-		                                  !nm_device_get_managed (parent),
+		                                  !nm_device_get_managed (parent, FALSE),
 		                                  NM_DEVICE_STATE_REASON_PARENT_MANAGED_CHANGED);
 	}
 

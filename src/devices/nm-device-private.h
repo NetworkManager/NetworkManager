@@ -95,7 +95,6 @@ void nm_device_master_check_slave_physical_port (NMDevice *self, NMDevice *slave
 
 void nm_device_set_carrier (NMDevice *self, gboolean carrier);
 
-void nm_device_emit_recheck_auto_activate (NMDevice *device);
 void nm_device_queue_recheck_assume (NMDevice *device);
 void nm_device_queue_recheck_available (NMDevice *device,
                                         NMDeviceStateReason available_reason,
