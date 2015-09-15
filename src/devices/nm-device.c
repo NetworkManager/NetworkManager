@@ -1118,7 +1118,7 @@ nm_device_finish_init (NMDevice *self)
 	if (   NM_DEVICE_GET_CLASS (self)->can_unmanaged_external_down (self)
 	    && !nm_platform_link_is_up (NM_PLATFORM_GET, priv->ifindex)
 	    && priv->ifindex > 0)
-		nm_device_set_initial_unmanaged_flag (self, NM_UNMANAGED_EXTERNAL_DOWN, TRUE);
+		nm_device_set_unmanaged_initial (self, NM_UNMANAGED_EXTERNAL_DOWN, TRUE);
 
 	if (priv->master)
 		nm_device_enslave_slave (priv->master, self, NULL);
@@ -1128,19 +1128,19 @@ nm_device_finish_init (NMDevice *self)
 			/* Unmanaged the loopback device with an explicit NM_UNMANAGED_LOOPBACK flag.
 			 * Later we might want to manage 'lo' too. Currently that doesn't work because
 			 * NetworkManager might down the interface or remove the 127.0.0.1 address. */
-			nm_device_set_initial_unmanaged_flag (self, NM_UNMANAGED_LOOPBACK, TRUE);
+			nm_device_set_unmanaged_initial (self, NM_UNMANAGED_LOOPBACK, TRUE);
 		} else if (priv->platform_link_initialized || (priv->is_nm_owned && nm_device_is_software (self))) {
 			gboolean platform_unmanaged = FALSE;
 
 			if (nm_platform_link_get_unmanaged (NM_PLATFORM_GET, priv->ifindex, &platform_unmanaged))
-				nm_device_set_initial_unmanaged_flag (self, NM_UNMANAGED_DEFAULT, platform_unmanaged);
+				nm_device_set_unmanaged_initial (self, NM_UNMANAGED_DEFAULT, platform_unmanaged);
 		} else {
 			/* Hardware and externally-created software links stay unmanaged
 			 * until they are fully initialized by the platform. NM created
 			 * links must be available for activation immediately and thus
 			 * do not get the PLATFORM_INIT unmanaged flag set.
 			 */
-			nm_device_set_initial_unmanaged_flag (self, NM_UNMANAGED_PLATFORM_INIT, TRUE);
+			nm_device_set_unmanaged_initial (self, NM_UNMANAGED_PLATFORM_INIT, TRUE);
 		}
 	}
 
@@ -7797,7 +7797,7 @@ nm_device_set_unmanaged_quitting (NMDevice *self)
 }
 
 /**
- * nm_device_set_initial_unmanaged_flag():
+ * nm_device_set_unmanaged_initial():
  * @self: the #NMDevice
  * @flag: an #NMUnmanagedFlag
  * @unmanaged: %TRUE or %FALSE to set or clear @flag
@@ -7807,9 +7807,9 @@ nm_device_set_unmanaged_quitting (NMDevice *self)
  * Should only be used when initializing a device.
  */
 void
-nm_device_set_initial_unmanaged_flag (NMDevice *self,
-                                      NMUnmanagedFlags flag,
-                                      gboolean unmanaged)
+nm_device_set_unmanaged_initial (NMDevice *self,
+                                 NMUnmanagedFlags flag,
+                                 gboolean unmanaged)
 {
 	NMDevicePrivate *priv;
 

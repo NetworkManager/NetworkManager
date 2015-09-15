@@ -1769,10 +1769,10 @@ add_device (NMManager *self, NMDevice *device, gboolean try_assume)
 
 	unmanaged_specs = nm_settings_get_unmanaged_specs (priv->settings);
 	user_unmanaged = nm_device_spec_match_list (device, unmanaged_specs);
-	nm_device_set_initial_unmanaged_flag (device, NM_UNMANAGED_USER, user_unmanaged);
+	nm_device_set_unmanaged_initial (device, NM_UNMANAGED_USER, user_unmanaged);
 
 	sleeping = manager_sleeping (self);
-	nm_device_set_initial_unmanaged_flag (device, NM_UNMANAGED_INTERNAL, sleeping);
+	nm_device_set_unmanaged_initial (device, NM_UNMANAGED_INTERNAL, sleeping);
 
 	dbus_path = nm_exported_object_export (NM_EXPORTED_OBJECT (device));
 	nm_log_dbg (LOGD_DEVICE, "(%s): exported as %s", nm_device_get_iface (device), dbus_path);
