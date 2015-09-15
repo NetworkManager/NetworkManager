@@ -26,6 +26,7 @@
 #endif
 
 /* core */
+typedef struct _NMExportedObject     NMExportedObject;
 typedef struct _NMActiveConnection   NMActiveConnection;
 typedef struct _NMAuditManager       NMAuditManager;
 typedef struct _NMVpnConnection      NMVpnConnection;
