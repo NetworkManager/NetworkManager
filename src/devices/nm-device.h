@@ -412,6 +412,7 @@ RfKillType nm_device_get_rfkill_type (NMDevice *device);
  * @NM_UNMANAGED_EXTERNAL_DOWN: %TRUE when unmanaged because !IFF_UP and not created by NM
  * @NM_UNMANAGED_PLATFORM_INIT: %TRUE when unmanaged because platform link not
  *   yet initialized
+ * @NM_UNMANAGED_LOOPBACK: %TRUE for unmanaging loopback device
  */
 typedef enum {
 	NM_UNMANAGED_NONE          = 0,
@@ -421,6 +422,7 @@ typedef enum {
 	NM_UNMANAGED_PARENT        = (1LL <<  3),
 	NM_UNMANAGED_EXTERNAL_DOWN = (1LL <<  4),
 	NM_UNMANAGED_PLATFORM_INIT = (1LL <<  5),
+	NM_UNMANAGED_LOOPBACK      = (1LL <<  6),
 
 	/* Boundary value */
 	__NM_UNMANAGED_LAST,
