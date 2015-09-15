@@ -555,6 +555,19 @@ nm_exported_object_get_interfaces (NMExportedObject *self)
 	return priv->interfaces;
 }
 
+GDBusInterfaceSkeleton *
+nm_exported_object_get_interface_by_type (NMExportedObject *self, GType interface_type)
+{
+	GSList *interfaces;
+
+	interfaces = nm_exported_object_get_interfaces (self);
+	for (; interfaces; interfaces = interfaces->next) {
+		if (G_TYPE_CHECK_INSTANCE_TYPE (interfaces->data, interface_type))
+			return interfaces->data;
+	}
+	return NULL;
+}
+
 static void
 nm_exported_object_init (NMExportedObject *self)
 {
