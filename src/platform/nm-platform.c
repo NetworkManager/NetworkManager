@@ -1531,6 +1531,44 @@ nm_platform_vlan_add (NMPlatform *self,
 	return NM_PLATFORM_ERROR_SUCCESS;
 }
 
+/**
+ * nm_platform_tun_add:
+ * @self: platform instance
+ * @name: new interface name
+ * @tap: whether the interface is a TAP
+ * @owner: interface owner or -1
+ * @group: interface group or -1
+ * @pi: whether to clear the IFF_NO_PI flag
+ * @vnet_hdr: whether to set the IFF_VNET_HDR flag
+ * @multi_queue: whether to set the IFF_MULTI_QUEUE flag
+ * @out_link: on success, the link object
+ *
+ * Create a TUN or TAP interface.
+ */
+NMPlatformError
+nm_platform_tun_add (NMPlatform *self, const char *name, gboolean tap,
+                     gint64 owner, gint64 group, gboolean pi, gboolean vnet_hdr,
+                     gboolean multi_queue, NMPlatformLink *out_link)
+{
+	NMPlatformError plerr;
+
+	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
+
+	g_return_val_if_fail (name, NM_PLATFORM_ERROR_BUG);
+	g_return_val_if_fail (klass->tun_add, NM_PLATFORM_ERROR_BUG);
+
+	plerr = _link_add_check_existing (self, name, tap ? NM_LINK_TYPE_TAP : NM_LINK_TYPE_TUN, out_link);
+	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
+		return plerr;
+
+	_LOGD ("link: adding %s '%s' owner %" G_GINT64_FORMAT " group %" G_GINT64_FORMAT,
+	       tap ? "tap" : "tun", name, owner, group);
+	if (!klass->tun_add (self, name, tap, owner, group, pi, vnet_hdr, multi_queue, out_link))
+		return NM_PLATFORM_ERROR_UNSPECIFIED;
+	return NM_PLATFORM_ERROR_SUCCESS;
+}
+
+
 gboolean
 nm_platform_master_set_option (NMPlatform *self, int ifindex, const char *option, const char *value)
 {
@@ -1844,13 +1882,10 @@ nm_platform_tun_get_properties_ifname (NMPlatform *self, const char *ifname, NMP
 
 		flags = _nm_utils_ascii_str_to_int64 (val, 16, 0, G_MAXINT64, 0);
 		if (!errno) {
-#ifndef IFF_MULTI_QUEUE
-			const int IFF_MULTI_QUEUE = 0x0100;
-#endif
 			props->mode = ((flags & (IFF_TUN | IFF_TAP)) == IFF_TUN) ? "tun" : "tap";
 			props->no_pi = !!(flags & IFF_NO_PI);
 			props->vnet_hdr = !!(flags & IFF_VNET_HDR);
-			props->multi_queue = !!(flags & IFF_MULTI_QUEUE);
+			props->multi_queue = !!(flags & NM_IFF_MULTI_QUEUE);
 		} else
 			success = FALSE;
 		g_free (val);
