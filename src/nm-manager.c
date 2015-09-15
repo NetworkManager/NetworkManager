@@ -4465,10 +4465,10 @@ do_set_property_check (gpointer user_data)
 	const char *error_message = NULL;
 
 	if (!pfd->object) {
-		GObject *object;
+		NMExportedObject *object;
 
 		object = nm_bus_manager_get_registered_object (nm_bus_manager_get (),
-		                                                    g_dbus_message_get_path (pfd->message));
+		                                               g_dbus_message_get_path (pfd->message));
 		if (!object) {
 			reply = g_dbus_message_new_method_error (pfd->message,
 			                                         "org.freedesktop.DBus.Error.UnknownObject",

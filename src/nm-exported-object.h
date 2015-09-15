@@ -52,6 +52,7 @@ const char *nm_exported_object_export      (NMExportedObject *self);
 const char *nm_exported_object_get_path    (NMExportedObject *self);
 gboolean    nm_exported_object_is_exported (NMExportedObject *self);
 void        nm_exported_object_unexport    (NMExportedObject *self);
+GSList *    nm_exported_object_get_interfaces (NMExportedObject *self);
 
 G_END_DECLS
 

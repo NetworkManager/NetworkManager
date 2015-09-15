@@ -36,6 +36,7 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE (NMExportedObject, nm_exported_object, G_TYPE_O
 typedef struct {
 	GSList *interfaces;
 
+	NMBusManager *bus_mgr;
 	char *path;
 
 	GVariantBuilder pending_notifies;
@@ -427,15 +428,14 @@ const char *
 nm_exported_object_export (NMExportedObject *self)
 {
 	NMExportedObjectPrivate *priv;
-	NMBusManager *dbus_manager = nm_bus_manager_get ();
 	const char *class_export_path, *p;
-	GSList *iter;
 	GType type;
 
 	g_return_val_if_fail (NM_IS_EXPORTED_OBJECT (self), NULL);
 	priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
 
-	g_return_val_if_fail (priv->path == NULL, priv->path);
+	g_return_val_if_fail (!priv->path, priv->path);
+	g_return_val_if_fail (!priv->bus_mgr, NULL);
 
 	class_export_path = NM_EXPORTED_OBJECT_GET_CLASS (self)->export_path;
 	p = strchr (class_export_path, '%');
@@ -461,8 +461,12 @@ nm_exported_object_export (NMExportedObject *self)
 		type = g_type_parent (type);
 	}
 
-	for (iter = priv->interfaces; iter; iter = iter->next)
-		nm_bus_manager_register_object (dbus_manager, priv->path, iter->data);
+	priv->bus_mgr = g_object_ref (nm_bus_manager_get ());
+
+	/* Important: priv->path and priv->interfaces must not change while
+	 * the object is registered. */
+
+	nm_bus_manager_register_object (priv->bus_mgr, self);
 
 	return priv->path;
 }
@@ -510,19 +514,23 @@ void
 nm_exported_object_unexport (NMExportedObject *self)
 {
 	NMExportedObjectPrivate *priv;
-	GSList *iter;
 
 	g_return_if_fail (NM_IS_EXPORTED_OBJECT (self));
 	priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
 
-	g_return_if_fail (priv->path != NULL);
+	g_return_if_fail (priv->path);
+	g_return_if_fail (priv->bus_mgr);
 
-	g_clear_pointer (&priv->path, g_free);
+	/* Important: priv->path and priv->interfaces must not change while
+	 * the object is registered. */
 
-	for (iter = priv->interfaces; iter; iter = iter->next)
-		nm_bus_manager_unregister_object (nm_bus_manager_get (), iter->data);
+	nm_bus_manager_unregister_object (priv->bus_mgr, self);
+
 	g_slist_free_full (priv->interfaces, g_object_unref);
 	priv->interfaces = NULL;
+
+	g_clear_pointer (&priv->path, g_free);
+	g_clear_object (&priv->bus_mgr);
 
 	if (nm_clear_g_source (&priv->notify_idle_id)) {
 		/* We had a notification queued. Since we removed all interfaces,
@@ -530,6 +538,21 @@ nm_exported_object_unexport (NMExportedObject *self)
 		g_variant_builder_clear (&priv->pending_notifies);
 		g_variant_builder_init (&priv->pending_notifies, G_VARIANT_TYPE_VARDICT);
 	}
+}
+
+GSList *
+nm_exported_object_get_interfaces (NMExportedObject *self)
+{
+	NMExportedObjectPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_EXPORTED_OBJECT (self), NULL);
+
+	priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
+
+	g_return_val_if_fail (priv->path, NULL);
+	g_return_val_if_fail (priv->interfaces, NULL);
+
+	return priv->interfaces;
 }
 
 static void

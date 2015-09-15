@@ -87,13 +87,12 @@ gboolean nm_bus_manager_get_caller_info_from_message (NMBusManager *self,
                                                       gulong *out_pid);
 
 void nm_bus_manager_register_object (NMBusManager *self,
-                                     const char *path,
-                                     gpointer object);
+                                     NMExportedObject *object);
 
-void nm_bus_manager_unregister_object (NMBusManager *self, gpointer object);
+void nm_bus_manager_unregister_object (NMBusManager *self, NMExportedObject *object);
 
-gpointer nm_bus_manager_get_registered_object (NMBusManager *self,
-                                               const char *path);
+NMExportedObject *nm_bus_manager_get_registered_object (NMBusManager *self,
+                                                        const char *path);
 
 void nm_bus_manager_private_server_register (NMBusManager *self,
                                              const char *path,
