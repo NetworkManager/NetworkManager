@@ -4578,6 +4578,10 @@ prop_filter (GDBusConnection *connection,
 			glib_propname = NM_DEVICE_AUTOCONNECT;
 			permission = NM_AUTH_PERMISSION_NETWORK_CONTROL;
 			audit_op = NM_AUDIT_OP_DEVICE_AUTOCONNECT;
+		} else if (!strcmp (propname, "Managed")) {
+			glib_propname = NM_DEVICE_MANAGED;
+			permission = NM_AUTH_PERMISSION_NETWORK_CONTROL;
+			audit_op = NM_AUDIT_OP_DEVICE_MANAGED;
 		} else
 			return message;
 		interface_type = NMDBUS_TYPE_DEVICE_SKELETON;

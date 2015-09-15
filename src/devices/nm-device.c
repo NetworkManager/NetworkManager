@@ -215,6 +215,7 @@ typedef struct {
 	char *        physical_port_id;
 	guint         dev_id;
 
+	gboolean                managed_touched_by_user;
 	NMUnmanagedFlags        unmanaged_flags;
 	gboolean                is_nm_owned; /* whether the device is a device owned and created by NM */
 	DeleteOnDeactivateData *delete_on_deactivate_data; /* data for scheduled cleanup when deleting link (g_idle_add) */
@@ -7768,6 +7769,9 @@ nm_device_set_unmanaged_by_device_spec (NMDevice *self, const GSList *unmanaged_
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
+	if (priv->managed_touched_by_user)
+		return;
+
 	unmanaged = nm_device_spec_match_list (self, unmanaged_specs);
 	nm_device_set_unmanaged (self,
 	                         NM_UNMANAGED_USER,
@@ -9362,6 +9366,7 @@ set_property (GObject *object, guint prop_id,
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	const char *hw_addr, *p;
 	guint count;
+	gboolean val_bool;
 
 	switch (prop_id) {
 	case PROP_UDI:
@@ -9398,6 +9403,14 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_IP4_ADDRESS:
 		priv->ip4_address = g_value_get_uint (value);
+		break;
+	case PROP_MANAGED:
+		val_bool = g_value_get_boolean (value);
+		priv->managed_touched_by_user = TRUE;
+		nm_device_set_unmanaged (self,
+		                         NM_UNMANAGED_USER | (val_bool ? NM_UNMANAGED_DEFAULT : NM_UNMANAGED_NONE),
+		                         !val_bool,
+		                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
 		break;
 	case PROP_AUTOCONNECT:
 		nm_device_set_autoconnect (self, g_value_get_boolean (value));
@@ -9750,7 +9763,7 @@ nm_device_class_init (NMDeviceClass *klass)
 		(object_class, PROP_MANAGED,
 		 g_param_spec_boolean (NM_DEVICE_MANAGED, "", "",
 		                       FALSE,
-		                       G_PARAM_READABLE |
+		                       G_PARAM_READWRITE |
 		                       G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
