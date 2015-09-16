@@ -702,7 +702,7 @@ int dhcp_lease_new(sd_dhcp_lease **ret) {
         return 0;
 }
 
-int dhcp_lease_save(sd_dhcp_lease *lease, const char *lease_file) {
+int sd_dhcp_lease_save(sd_dhcp_lease *lease, const char *lease_file) {
         _cleanup_free_ char *temp_path = NULL;
         _cleanup_fclose_ FILE *f = NULL;
         struct sd_dhcp_raw_option *option;
@@ -853,7 +853,7 @@ fail:
         return log_error_errno(r, "Failed to save lease data %s: %m", lease_file);
 }
 
-int dhcp_lease_load(sd_dhcp_lease **ret, const char *lease_file) {
+int sd_dhcp_lease_load(sd_dhcp_lease **ret, const char *lease_file) {
 
         _cleanup_dhcp_lease_unref_ sd_dhcp_lease *lease = NULL;
         _cleanup_free_ char
