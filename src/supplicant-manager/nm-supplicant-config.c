@@ -612,7 +612,8 @@ gboolean
 nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
                                                     NMSettingWirelessSecurity *setting,
                                                     NMSetting8021x *setting_8021x,
-                                                    const char *con_uuid)
+                                                    const char *con_uuid,
+                                                    guint32 mtu)
 {
 	gboolean success = FALSE;
 	const char *key_mgmt, *auth_alg;
@@ -729,7 +730,7 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 		if (!strcmp (key_mgmt, "ieee8021x") || !strcmp (key_mgmt, "wpa-eap")) {
 		    if (!setting_8021x)
 		    	return FALSE;
-			if (!nm_supplicant_config_add_setting_8021x (self, setting_8021x, con_uuid, FALSE))
+			if (!nm_supplicant_config_add_setting_8021x (self, setting_8021x, con_uuid, mtu, FALSE))
 				return FALSE;
 		}
 
@@ -756,6 +757,7 @@ gboolean
 nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
                                         NMSetting8021x *setting,
                                         const char *con_uuid,
+                                        guint32 mtu,
                                         gboolean wired)
 {
 	NMSupplicantConfigPrivate *priv;
@@ -768,6 +770,8 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	guint32 i, num_eap;
 	gboolean fast_provisoning_allowed = FALSE;
 	const char *ca_path_override = NULL, *ca_cert_override = NULL;
+	guint32 frag, hdrs;
+	char *frag_str = NULL;
 
 	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), FALSE);
 	g_return_val_if_fail (setting != NULL, FALSE);
@@ -819,9 +823,19 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 		}
 	}
 
-	/* Drop the fragment size a bit for better compatibility */
-	if (!nm_supplicant_config_add_option (self, "fragment_size", "1300", -1, FALSE))
+	/* Adjust the fragment size according to MTU, but do not set it higher than 1280-14
+	 * for better compatibility */
+	hdrs = 14; /* EAPOL + EAP-TLS */
+	frag = 1280 - hdrs;
+	if (mtu > hdrs)
+		frag = CLAMP (mtu - hdrs, 100, frag);
+	frag_str = g_strdup_printf ("%u", frag);
+
+	if (!nm_supplicant_config_add_option (self, "fragment_size", frag_str, -1, FALSE)) {
+		g_free (frag_str);
 		return FALSE;
+	}
+	g_free (frag_str);
 
 	phase1 = g_string_new (NULL);
 	peapver = nm_setting_802_1x_get_phase1_peapver (setting);
