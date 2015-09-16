@@ -42,6 +42,7 @@
 #include "nm-default-route-manager.h"
 #include "nm-route-manager.h"
 #include "nm-firewall-manager.h"
+#include "nm-config.h"
 
 #include "nmdbus-vpn-connection.h"
 
@@ -1605,9 +1606,25 @@ static void
 connect_success (NMVpnConnection *self)
 {
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
+	NMSettingVpn *s_vpn;
+	guint32 timeout;
 
-	/* 40 second timeout waiting for IP config signal from VPN service */
-	priv->connect_timeout = g_timeout_add_seconds (40, connect_timeout_cb, self);
+	s_vpn = nm_connection_get_setting_vpn (_get_applied_connection (self));
+	g_assert (s_vpn);
+
+	/* Timeout waiting for IP config signal from VPN service
+	 * It is a configured value or 60 seconds */
+	timeout = nm_setting_vpn_get_timeout (s_vpn);
+	if (timeout == 0) {
+		char *value;
+
+		value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+		                                              "vpn.timeout", NULL);
+		timeout = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXUINT32, 60);
+		timeout = timeout == 0 ? 60 : timeout;
+		g_free (value);
+	}
+	priv->connect_timeout = g_timeout_add_seconds (timeout, connect_timeout_cb, self);
 
 	g_clear_pointer (&priv->connect_hash, g_variant_unref);
 }
