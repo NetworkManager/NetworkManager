@@ -516,6 +516,7 @@ NmcOutputField nmc_fields_setting_vpn[] = {
 	SETTING_FIELD (NM_SETTING_VPN_DATA, 30),                           /* 3 */
 	SETTING_FIELD (NM_SETTING_VPN_SECRETS, 15),                        /* 4 */
 	SETTING_FIELD (NM_SETTING_VPN_PERSISTENT, 15),                     /* 5 */
+	SETTING_FIELD (NM_SETTING_VPN_TIMEOUT, 10),                        /* 6 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_VPN_ALL     "name"","\
@@ -523,7 +524,8 @@ NmcOutputField nmc_fields_setting_vpn[] = {
                                        NM_SETTING_VPN_USER_NAME","\
                                        NM_SETTING_VPN_DATA","\
                                        NM_SETTING_VPN_SECRETS","\
-                                       NM_SETTING_VPN_PERSISTENT
+                                       NM_SETTING_VPN_PERSISTENT","\
+                                       NM_SETTING_VPN_TIMEOUT
 #define NMC_FIELDS_SETTING_VPN_COMMON  NMC_FIELDS_SETTING_VPN_ALL
 
 /* Available fields for NM_SETTING_WIMAX_SETTING_NAME */
@@ -1522,6 +1524,7 @@ nmc_property_vpn_get_secrets (NMSetting *setting, NmcPropertyGetType get_type)
 }
 
 DEFINE_GETTER (nmc_property_vpn_get_persistent, NM_SETTING_VPN_PERSISTENT)
+DEFINE_GETTER (nmc_property_vpn_get_timeout, NM_SETTING_VPN_TIMEOUT)
 
 /* --- NM_SETTING_WIMAX_SETTING_NAME property get functions --- */
 DEFINE_GETTER (nmc_property_wimax_get_network_name, NM_SETTING_WIMAX_NETWORK_NAME)
@@ -6352,6 +6355,14 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL);
 
+	nmc_add_prop_funcs (GLUE (VPN, TIMEOUT),
+	                    nmc_property_vpn_get_timeout,
+	                    nmc_property_set_uint,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
+
 	/* Add editable properties for NM_SETTING_WIMAX_SETTING_NAME */
 	nmc_add_prop_funcs (GLUE (WIMAX, NETWORK_NAME),
 	                    nmc_property_wimax_get_network_name,
@@ -7520,6 +7531,7 @@ setting_vpn_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboo
 	set_val_str (arr, 3, nmc_property_vpn_get_data (setting, NMC_PROPERTY_GET_PRETTY));
 	set_val_str (arr, 4, GET_SECRET (secrets, setting, nmc_property_vpn_get_secrets));
 	set_val_str (arr, 5, nmc_property_vpn_get_persistent (setting, NMC_PROPERTY_GET_PRETTY));
+	set_val_str (arr, 6, nmc_property_vpn_get_timeout (setting, NMC_PROPERTY_GET_PRETTY));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
