@@ -56,6 +56,7 @@
 #include "NetworkManagerUtils.h"
 
 #include "nmdbus-manager.h"
+#include "nmdbus-device.h"
 
 static void add_device (NMManager *self, NMDevice *device, gboolean try_assume);
 
@@ -1083,17 +1084,8 @@ system_unmanaged_devices_changed_cb (NMSettings *settings,
 	const GSList *unmanaged_specs, *iter;
 
 	unmanaged_specs = nm_settings_get_unmanaged_specs (priv->settings);
-	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		NMDevice *device = NM_DEVICE (iter->data);
-		gboolean unmanaged;
-
-		unmanaged = nm_device_spec_match_list (device, unmanaged_specs);
-		nm_device_set_unmanaged (device,
-		                         NM_UNMANAGED_USER,
-		                         unmanaged,
-		                         unmanaged ? NM_DEVICE_STATE_REASON_NOW_UNMANAGED :
-		                                     NM_DEVICE_STATE_REASON_NOW_MANAGED);
-	}
+	for (iter = priv->devices; iter; iter = g_slist_next (iter))
+		nm_device_set_unmanaged_by_device_spec (NM_DEVICE (iter->data), unmanaged_specs);
 }
 
 static void
@@ -4404,8 +4396,8 @@ typedef struct {
 	const char *permission;
 	const char *audit_op;
 	char *audit_prop_value;
-	GObject *object;
-	const char *property;
+	GType interface_type;
+	const char *glib_propname;
 	gboolean set_enable;
 } PropertyFilterData;
 
@@ -4416,7 +4408,6 @@ free_property_filter_data (PropertyFilterData *pfd)
 	g_object_unref (pfd->connection);
 	g_object_unref (pfd->message);
 	g_clear_object (&pfd->subject);
-	g_clear_object (&pfd->object);
 	g_free (pfd->audit_prop_value);
 	g_slice_free (PropertyFilterData, pfd);
 }
@@ -4431,20 +4422,45 @@ prop_set_auth_done_cb (NMAuthChain *chain,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (pfd->self);
 	NMAuthCallResult result;
 	GDBusMessage *reply;
+	const char *error_message;
+	NMExportedObject *object;
 
 	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
 	result = nm_auth_chain_get_result (chain, pfd->permission);
 	if (error || (result != NM_AUTH_CALL_RESULT_YES)) {
 		reply = g_dbus_message_new_method_error (pfd->message,
 		                                         NM_PERM_DENIED_ERROR,
-		                                         "Not authorized to perform this operation");
-		nm_audit_log_control_op (pfd->audit_op, pfd->audit_prop_value, FALSE, pfd->subject, error ? error->message : NULL);
-	} else {
-		g_object_set (pfd->object, pfd->property, pfd->set_enable, NULL);
-		reply = g_dbus_message_new_method_reply (pfd->message);
-		g_dbus_message_set_body (reply, g_variant_new_tuple (NULL, 0));
-		nm_audit_log_control_op (pfd->audit_op, pfd->audit_prop_value, TRUE, pfd->subject, NULL);
+		                                         (error_message = "Not authorized to perform this operation"));
+		if (error)
+			error_message = error->message;
+		goto done;
 	}
+
+	object = nm_bus_manager_get_registered_object (priv->dbus_mgr,
+	                                               g_dbus_message_get_path (pfd->message));
+	if (!object) {
+		reply = g_dbus_message_new_method_error (pfd->message,
+		                                         "org.freedesktop.DBus.Error.UnknownObject",
+		                                         (error_message = "Object doesn't exist."));
+		goto done;
+	}
+
+	/* do some extra type checking... */
+	if (!nm_exported_object_get_interface_by_type (object, pfd->interface_type)) {
+		reply = g_dbus_message_new_method_error (pfd->message,
+		                                         "org.freedesktop.DBus.Error.InvalidArgs",
+		                                         (error_message = "Object is of unexpected type."));
+		goto done;
+	}
+
+	/* ... but set the property on the @object itself. It would be correct to set the property
+	 * on the skeleton interface, but as it is now, the result is the same. */
+	g_object_set (object, pfd->glib_propname, pfd->set_enable, NULL);
+	reply = g_dbus_message_new_method_reply (pfd->message);
+	g_dbus_message_set_body (reply, g_variant_new_tuple (NULL, 0));
+	error_message = NULL;
+done:
+	nm_audit_log_control_op (pfd->audit_op, pfd->audit_prop_value, !error_message, pfd->subject, error_message);
 
 	g_dbus_connection_send_message (pfd->connection, reply,
 	                                G_DBUS_SEND_MESSAGE_FLAGS_NONE,
@@ -4463,30 +4479,6 @@ do_set_property_check (gpointer user_data)
 	GDBusMessage *reply = NULL;
 	NMAuthChain *chain;
 	const char *error_message = NULL;
-
-	if (!pfd->object) {
-		GObject *object;
-
-		object = nm_bus_manager_get_registered_object (nm_bus_manager_get (),
-		                                                    g_dbus_message_get_path (pfd->message));
-		if (!object) {
-			reply = g_dbus_message_new_method_error (pfd->message,
-			                                         "org.freedesktop.DBus.Error.UnknownObject",
-			                                         (error_message = "Object doesn't exist."));
-			goto out;
-		}
-
-		/* If we lookup the object, we expect the object to be of a certain type.
-		 * Only NMDevice type have settable properties. */
-		if (!NM_IS_DEVICE (object)) {
-			reply = g_dbus_message_new_method_error (pfd->message,
-			                                         "org.freedesktop.DBus.Error.InvalidArgs",
-			                                         (error_message = "Object is of unexpected type."));
-			goto out;
-		}
-
-		pfd->object = g_object_ref (object);
-	}
 
 	pfd->subject = nm_auth_subject_new_unix_process_from_message (pfd->connection, pfd->message);
 	if (!pfd->subject) {
@@ -4534,7 +4526,7 @@ prop_filter (GDBusConnection *connection,
 	const char *glib_propname = NULL, *permission = NULL;
 	const char *audit_op = NULL;
 	gboolean set_enable;
-	GObject *object = NULL;
+	GType interface_type = G_TYPE_INVALID;
 	PropertyFilterData *pfd;
 
 	self = g_weak_ref_get (user_data);
@@ -4580,8 +4572,7 @@ prop_filter (GDBusConnection *connection,
 			audit_op = NM_AUDIT_OP_RADIO_CONTROL;
 		} else
 			return message;
-
-		object = g_object_ref (self);
+		interface_type = NMDBUS_TYPE_MANAGER_SKELETON;
 	} else if (!strcmp (propiface, NM_DBUS_INTERFACE_DEVICE)) {
 		if (!strcmp (propname, "Autoconnect")) {
 			glib_propname = NM_DEVICE_AUTOCONNECT;
@@ -4589,6 +4580,7 @@ prop_filter (GDBusConnection *connection,
 			audit_op = NM_AUDIT_OP_DEVICE_AUTOCONNECT;
 		} else
 			return message;
+		interface_type = NMDBUS_TYPE_DEVICE_SKELETON;
 	} else
 		return message;
 
@@ -4602,11 +4594,11 @@ prop_filter (GDBusConnection *connection,
 	pfd->connection = g_object_ref (connection);
 	pfd->message = message;
 	pfd->permission = permission;
-	pfd->object = object;
-	pfd->property = glib_propname;
+	pfd->interface_type = interface_type;
+	pfd->glib_propname = glib_propname;
 	pfd->set_enable = set_enable;
 	pfd->audit_op = audit_op;
-	pfd->audit_prop_value = g_strdup_printf ("%s:%d", pfd->property, pfd->set_enable);
+	pfd->audit_prop_value = g_strdup_printf ("%s:%d", pfd->glib_propname, pfd->set_enable);
 	g_idle_add (do_set_property_check, pfd);
 
 	return NULL;
@@ -4996,7 +4988,7 @@ nm_manager_init (NMManager *manager)
 
 static void
 get_property (GObject *object, guint prop_id,
-			  GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
 	NMManager *self = NM_MANAGER (object);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);

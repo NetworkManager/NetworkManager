@@ -22,7 +22,6 @@
 #define NM_EXPORTED_OBJECT_H
 
 #include "nm-default.h"
-#include "nm-types.h"
 
 G_BEGIN_DECLS
 
@@ -33,9 +32,9 @@ G_BEGIN_DECLS
 #define NM_IS_EXPORTED_OBJECT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_EXPORTED_OBJECT))
 #define NM_EXPORTED_OBJECT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_EXPORTED_OBJECT, NMExportedObjectClass))
 
-typedef struct {
+struct _NMExportedObject {
 	GObject parent;
-} NMExportedObject;
+};
 
 typedef struct {
 	GObjectClass parent;
@@ -53,6 +52,8 @@ const char *nm_exported_object_export      (NMExportedObject *self);
 const char *nm_exported_object_get_path    (NMExportedObject *self);
 gboolean    nm_exported_object_is_exported (NMExportedObject *self);
 void        nm_exported_object_unexport    (NMExportedObject *self);
+GSList *    nm_exported_object_get_interfaces (NMExportedObject *self);
+GDBusInterfaceSkeleton *nm_exported_object_get_interface_by_type (NMExportedObject *self, GType interface_type);
 
 G_END_DECLS
 

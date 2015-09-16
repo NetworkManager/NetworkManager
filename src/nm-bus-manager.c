@@ -25,14 +25,14 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <errno.h>
+#include <string.h>
 
 #include "nm-default.h"
 #include "nm-dbus-interface.h"
 #include "nm-bus-manager.h"
 #include "nm-core-internal.h"
 #include "nm-dbus-compat.h"
-
-#include <string.h>
+#include "nm-exported-object.h"
 #include "NetworkManagerUtils.h"
 
 #define PRIV_SOCK_PATH NMRUNDIR "/private"
@@ -72,7 +72,6 @@ typedef struct {
 static gboolean nm_bus_manager_init_bus (NMBusManager *self);
 static void nm_bus_manager_cleanup (NMBusManager *self);
 static void start_reconnection_timeout (NMBusManager *self);
-static void object_destroyed (NMBusManager *self, gpointer object);
 
 NM_DEFINE_SINGLETON_REGISTER (NMBusManager);
 
@@ -100,6 +99,60 @@ nm_bus_manager_setup (NMBusManager *instance)
 	singleton_instance = instance;
 	nm_singleton_instance_register ();
 	nm_log_dbg (LOGD_CORE, "setup %s singleton (%p)", "NMBusManager", singleton_instance);
+}
+
+/**************************************************************/
+
+static void
+nm_assert_exported (NMBusManager *self, const char *path, NMExportedObject *object)
+{
+#ifdef NM_MORE_ASSERTS
+	NMBusManagerPrivate *priv;
+	const char *p2, *po;
+	NMExportedObject *o2;
+
+	/* NMBusManager and NMExportedObject are tied closely together. For example, while
+	 * being registered, NMBusManager uses the path from nm_exported_object_get_path()
+	 * as index. It relies on the path being stable.
+	 *
+	 * The alternative would be that NMBusManager copies the path upon registration
+	 * to support diversion of NMExportedObject's path while being registered. But such
+	 * a inconsistency would already indicate a bug, or at least a strange situation.
+	 *
+	 * So instead require some close cooperation between the two classes and add an
+	 * assert here... */
+
+	nm_assert (NM_IS_BUS_MANAGER (self));
+	nm_assert (!path || *path);
+	nm_assert (!object || NM_IS_EXPORTED_OBJECT (object));
+	nm_assert (!!path || !!object);
+
+	priv = NM_BUS_MANAGER_GET_PRIVATE (self);
+	nm_assert (priv->exported);
+
+	if (!path) {
+		nm_assert (NM_IS_EXPORTED_OBJECT (object));
+
+		po = nm_exported_object_get_path (object);
+		nm_assert (po && *po);
+
+		if (!g_hash_table_lookup_extended (priv->exported, po, (gpointer *) &p2, (gpointer *) &o2))
+			nm_assert (FALSE);
+
+		nm_assert (object == o2);
+		nm_assert (po == p2);
+	} else {
+		nm_assert (path && *path);
+
+		if (!g_hash_table_lookup_extended (priv->exported, path, (gpointer *) &p2, (gpointer *) &o2))
+			nm_assert (FALSE);
+
+		nm_assert (NM_IS_EXPORTED_OBJECT (o2));
+		nm_assert (!object || object == o2);
+		nm_assert (!g_strcmp0 (path, p2));
+		nm_assert (p2 == nm_exported_object_get_path (o2));
+	}
+#endif
 }
 
 /**************************************************************/
@@ -488,21 +541,29 @@ private_connection_new (NMBusManager *self, GDBusConnection *connection)
 {
 	NMBusManagerPrivate *priv = NM_BUS_MANAGER_GET_PRIVATE (self);
 	GHashTableIter iter;
-	GDBusInterfaceSkeleton *interface;
+	NMExportedObject *object;
 	const char *path;
 	GError *error = NULL;
 
 	/* Register all exported objects on this private connection */
 	g_hash_table_iter_init (&iter, priv->exported);
-	while (g_hash_table_iter_next (&iter, (gpointer) &interface, (gpointer) &path)) {
-		if (g_dbus_interface_skeleton_export (interface, connection, path, &error)) {
-			nm_log_trace (LOGD_CORE, "(%s) registered %p (%s) at '%s' on private socket.",
-			              PRIV_SOCK_TAG, interface, G_OBJECT_TYPE_NAME (interface), path);
-		} else {
-			nm_log_warn (LOGD_CORE, "(%s) could not register %p (%s) at '%s' on private socket: %s.",
-			             PRIV_SOCK_TAG, interface, G_OBJECT_TYPE_NAME (interface), path,
-			             error->message);
-			g_clear_error (&error);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &path, (gpointer *) &object)) {
+		GSList *interfaces = nm_exported_object_get_interfaces (object);
+
+		nm_assert_exported (self, path, object);
+
+		for (; interfaces; interfaces = interfaces->next) {
+			GDBusInterfaceSkeleton *interface = G_DBUS_INTERFACE_SKELETON (interfaces->data);
+
+			if (g_dbus_interface_skeleton_export (interface, connection, path, &error)) {
+				nm_log_trace (LOGD_CORE, "(%s) registered %p (%s) at '%s' on private socket.",
+				              PRIV_SOCK_TAG, object, G_OBJECT_TYPE_NAME (interface), path);
+			} else {
+				nm_log_warn (LOGD_CORE, "(%s) could not register %p (%s) at '%s' on private socket: %s.",
+				             PRIV_SOCK_TAG, object, G_OBJECT_TYPE_NAME (interface), path,
+				             error->message);
+				g_clear_error (&error);
+			}
 		}
 	}
 }
@@ -536,7 +597,7 @@ nm_bus_manager_init (NMBusManager *self)
 {
 	NMBusManagerPrivate *priv = NM_BUS_MANAGER_GET_PRIVATE (self);
 
-	priv->exported = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, g_free);
+	priv->exported = g_hash_table_new (g_str_hash, g_str_equal);
 
 	private_server_setup (self);
 }
@@ -546,13 +607,13 @@ nm_bus_manager_dispose (GObject *object)
 {
 	NMBusManager *self = NM_BUS_MANAGER (object);
 	NMBusManagerPrivate *priv = NM_BUS_MANAGER_GET_PRIVATE (self);
-	GHashTableIter iter;
-	GObject *exported;
 
 	if (priv->exported) {
-		g_hash_table_iter_init (&iter, priv->exported);
-		while (g_hash_table_iter_next (&iter, (gpointer) &exported, NULL))
-			g_object_weak_unref (exported, (GWeakNotify) object_destroyed, self);
+		/* We don't take references to the registered objects.
+		 * We rely on the objects to properly unregister.
+		 * Especially, they must unregister before destroying the
+		 * NMBusManager instance. */
+		g_assert (g_hash_table_size (priv->exported) == 0);
 
 		g_hash_table_destroy (priv->exported);
 		priv->exported = NULL;
@@ -784,74 +845,104 @@ nm_bus_manager_get_connection (NMBusManager *self)
 	return NM_BUS_MANAGER_GET_PRIVATE (self)->connection;
 }
 
-static void
-object_destroyed (NMBusManager *self, gpointer object)
-{
-	g_hash_table_remove (NM_BUS_MANAGER_GET_PRIVATE (self)->exported, object);
-}
-
 void
 nm_bus_manager_register_object (NMBusManager *self,
-                                const char *path,
-                                gpointer object)
+                                NMExportedObject *object)
 {
-	NMBusManagerPrivate *priv = NM_BUS_MANAGER_GET_PRIVATE (self);
-	GHashTableIter iter;
+	NMBusManagerPrivate *priv;
 	GDBusConnection *connection;
+	GHashTableIter iter;
+	const char *path;
+	GSList *interfaces, *ifs;
 
-	g_assert (G_IS_DBUS_INTERFACE_SKELETON (object));
+	g_return_if_fail (NM_IS_BUS_MANAGER (self));
+	g_return_if_fail (NM_IS_EXPORTED_OBJECT (object));
 
-	if (g_hash_table_lookup (priv->exported, G_OBJECT (object)))
+	path = nm_exported_object_get_path (object);
+	g_return_if_fail (path && *path);
+
+	priv = NM_BUS_MANAGER_GET_PRIVATE (self);
+
+	/* We hold a direct reference to the @path of the @object. Note that
+	 * this requires the object not to modify the path as long as the object
+	 * is registered. Especially, it must not free the path.
+	 *
+	 * This is a reasonable requirement, because having the object change
+	 * the path while being registered is an awkward situation in the first
+	 * place. While being registered, the @path and @interfaces must stay
+	 * stable -- because the path is the identifier for the object in this
+	 * situation. */
+
+	if (!g_hash_table_insert (priv->exported, (gpointer) path, object))
 		g_return_if_reached ();
 
-	g_hash_table_insert (priv->exported, G_OBJECT (object), g_strdup (path));
-	g_object_weak_ref (G_OBJECT (object), (GWeakNotify) object_destroyed, self);
+	nm_assert_exported (self, path, object);
+
+	interfaces = nm_exported_object_get_interfaces (object);
 
 	if (priv->connection) {
-		g_dbus_interface_skeleton_export (G_DBUS_INTERFACE_SKELETON (object),
-		                                  priv->connection, path, NULL);
+		for (ifs = interfaces; ifs; ifs = ifs->next) {
+			g_dbus_interface_skeleton_export (G_DBUS_INTERFACE_SKELETON (ifs->data),
+			                                  priv->connection, path, NULL);
+		}
 	}
 
 	if (priv->priv_server) {
 		g_hash_table_iter_init (&iter, priv->priv_server->connections);
 		while (g_hash_table_iter_next (&iter, (gpointer) &connection, NULL)) {
-			g_dbus_interface_skeleton_export (G_DBUS_INTERFACE_SKELETON (object),
-			                                  connection, path, NULL);
+			for (ifs = interfaces; ifs; ifs = ifs->next) {
+				g_dbus_interface_skeleton_export (G_DBUS_INTERFACE_SKELETON (ifs->data),
+				                                  connection, path, NULL);
+			}
 		}
 	}
 }
 
-gpointer
+NMExportedObject *
 nm_bus_manager_get_registered_object (NMBusManager *self,
                                       const char *path)
 {
-	NMBusManagerPrivate *priv = NM_BUS_MANAGER_GET_PRIVATE (self);
-	GHashTableIter iter;
-	GObject *object;
-	const char *export_path;
+	NMBusManagerPrivate *priv;
+	NMExportedObject *object;
 
-	g_hash_table_iter_init (&iter, priv->exported);
-	while (g_hash_table_iter_next (&iter, (gpointer *) &object, (gpointer *) &export_path)) {
-		if (!strcmp (path, export_path))
-			return object;
-	}
-	return NULL;
+	g_return_val_if_fail (NM_IS_BUS_MANAGER (self), NULL);
+	g_return_val_if_fail (path && *path, NULL);
+
+	priv = NM_BUS_MANAGER_GET_PRIVATE (self);
+
+	object = g_hash_table_lookup (priv->exported, path);
+
+	if (object)
+		nm_assert_exported (self, path, object);
+
+	return object;
 }
 
 void
-nm_bus_manager_unregister_object (NMBusManager *self, gpointer object)
+nm_bus_manager_unregister_object (NMBusManager *self, NMExportedObject *object)
 {
-	NMBusManagerPrivate *priv = NM_BUS_MANAGER_GET_PRIVATE (self);
+	NMBusManagerPrivate *priv;
+	GSList *interfaces;
+	const char *path;
 
-	g_assert (G_IS_DBUS_INTERFACE_SKELETON (object));
+	g_return_if_fail (NM_IS_BUS_MANAGER (self));
+	g_return_if_fail (NM_IS_EXPORTED_OBJECT (object));
 
-	if (!g_hash_table_lookup (priv->exported, G_OBJECT (object)))
+	path = nm_exported_object_get_path (object);
+	g_return_if_fail (path && *path);
+
+	nm_assert_exported (self, NULL, object);
+
+	priv = NM_BUS_MANAGER_GET_PRIVATE (self);
+
+	if (!g_hash_table_remove (priv->exported, path))
 		g_return_if_reached ();
 
-	g_hash_table_remove (priv->exported, G_OBJECT (object));
-	g_object_weak_unref (G_OBJECT (object), (GWeakNotify) object_destroyed, self);
+	for (interfaces = nm_exported_object_get_interfaces (object); interfaces; interfaces = interfaces->next) {
+		GDBusInterfaceSkeleton *interface = G_DBUS_INTERFACE_SKELETON (interfaces->data);
 
-	g_dbus_interface_skeleton_unexport (G_DBUS_INTERFACE_SKELETON (object));
+		g_dbus_interface_skeleton_unexport (interface);
+	}
 }
 
 gboolean
