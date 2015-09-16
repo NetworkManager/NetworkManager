@@ -55,14 +55,11 @@ noinst_LTLIBRARIES = \
 # libsystemd-nm
 ######################
 
-SYSTEMD_NM_CFLAGS = \
+SYSTEMD_NM_CFLAGS_PATHS = \
 	-I$(top_srcdir)/src/systemd/src/systemd \
 	-I$(top_srcdir)/src/systemd/src/libsystemd-network \
 	-I$(top_srcdir)/src/systemd/src/basic \
-	-I$(top_srcdir)/src/systemd/src/shared \
-	-I$(top_srcdir)/src/systemd \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core
+	-I$(top_srcdir)/src/systemd
 
 libsystemd_nm_la_SOURCES = \
 	systemd/nm-sd-adapt.c \
@@ -133,7 +130,10 @@ libsystemd_nm_la_SOURCES = \
 
 libsystemd_nm_la_CPPFLAGS = \
 	-I$(top_srcdir)/include \
-	$(SYSTEMD_NM_CFLAGS) \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
+	$(SYSTEMD_NM_CFLAGS_PATHS) \
+	-I$(top_srcdir)/src/systemd/src/shared \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD \
 	$(GLIB_CFLAGS)
 
@@ -398,7 +398,7 @@ AM_CPPFLAGS += \
 	$(LIBAUDIT_CFLAGS) \
 	$(SYSTEMD_LOGIN_CFLAGS) \
 	$(SYSTEMD_JOURNAL_CFLAGS) \
-	$(SYSTEMD_NM_CFLAGS) \
+	$(SYSTEMD_NM_CFLAGS_PATHS) \
 	\
 	-DBINDIR=\"$(bindir)\" \
 	-DDATADIR=\"$(datadir)\" \
