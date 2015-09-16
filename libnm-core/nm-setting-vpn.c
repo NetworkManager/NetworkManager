@@ -80,6 +80,9 @@ typedef struct {
 	 * freed with g_free().  Should contain secrets only.
 	 */
 	GHashTable *secrets;
+
+	/* Timeout for the VPN service to establish the connection */
+	guint32 timeout;
 } NMSettingVpnPrivate;
 
 enum {
@@ -89,6 +92,7 @@ enum {
 	PROP_PERSISTENT,
 	PROP_DATA,
 	PROP_SECRETS,
+	PROP_TIMEOUT,
 
 	LAST_PROP
 };
@@ -385,6 +389,22 @@ nm_setting_vpn_foreach_secret (NMSettingVpn *setting,
 	g_return_if_fail (NM_IS_SETTING_VPN (setting));
 
 	foreach_item_helper (NM_SETTING_VPN_GET_PRIVATE (setting)->secrets, func, user_data);
+}
+
+/**
+ * nm_setting_vpn_get_timeout:
+ * @setting: the #NMSettingVpn
+ *
+ * Returns: the #NMSettingVpn:timeout property of the setting
+ *
+ * Since: 1.2
+ **/
+guint32
+nm_setting_vpn_get_timeout (NMSettingVpn *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), 0);
+
+	return NM_SETTING_VPN_GET_PRIVATE (setting)->timeout;
 }
 
 static gboolean
@@ -753,6 +773,9 @@ set_property (GObject *object, guint prop_id,
 		g_hash_table_unref (priv->secrets);
 		priv->secrets = _nm_utils_copy_strdict (g_value_get_boxed (value));
 		break;
+	case PROP_TIMEOUT:
+		priv->timeout = g_value_get_uint (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -781,6 +804,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_SECRETS:
 		g_value_take_boxed (value, _nm_utils_copy_strdict (priv->secrets));
+		break;
+	case PROP_TIMEOUT:
+		g_value_set_uint (value, nm_setting_vpn_get_timeout (setting));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -909,4 +935,22 @@ nm_setting_vpn_class_init (NMSettingVpnClass *setting_class)
 	                                      G_VARIANT_TYPE ("a{ss}"),
 	                                      _nm_utils_strdict_to_dbus,
 	                                      _nm_utils_strdict_from_dbus);
+
+	/**
+	 * NMSettingVpn:timeout:
+	 *
+	 * Timeout for the VPN service to establish the connection. Some services
+	 * may take quite a long time to connect.
+	 * Value of 0 means a default timeout, which is 60 seconds (unless overriden
+	 * by vpn.timeout in configuration file). Values greater than zero mean
+	 * timeout in seconds.
+	 *
+	 * Since: 1.2
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_TIMEOUT,
+		 g_param_spec_uint (NM_SETTING_VPN_TIMEOUT, "", "",
+		                    0, G_MAXUINT32, 0,
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS));
 }
