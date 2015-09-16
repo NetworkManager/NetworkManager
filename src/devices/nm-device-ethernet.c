@@ -566,15 +566,18 @@ build_supplicant_config (NMDeviceEthernet *self)
 	NMSupplicantConfig *config = NULL;
 	NMSetting8021x *security;
 	NMConnection *connection;
+	guint32 mtu;
 
 	connection = nm_device_get_applied_connection (NM_DEVICE (self));
 	g_assert (connection);
 	con_uuid = nm_connection_get_uuid (connection);
+	mtu = nm_platform_link_get_mtu (NM_PLATFORM_GET,
+	                                nm_device_get_ifindex (NM_DEVICE (self)));
 
 	config = nm_supplicant_config_new ();
 
 	security = nm_connection_get_setting_802_1x (connection);
-	if (!nm_supplicant_config_add_setting_8021x (config, security, con_uuid, TRUE)) {
+	if (!nm_supplicant_config_add_setting_8021x (config, security, con_uuid, mtu, TRUE)) {
 		_LOGW (LOGD_DEVICE, "Couldn't add 802.1X security setting to supplicant config.");
 		g_object_unref (config);
 		config = NULL;

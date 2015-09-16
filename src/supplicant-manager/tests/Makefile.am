@@ -1,3 +1,5 @@
+SUBDIRS=certs
+
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/libnm-core \
@@ -7,6 +9,7 @@ AM_CPPFLAGS = \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
+	-DTEST_CERT_DIR=\"$(srcdir)/certs/\" \
 	$(GLIB_CFLAGS)
 
 noinst_PROGRAMS = test-supplicant-config

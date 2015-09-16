@@ -2225,13 +2225,16 @@ build_supplicant_config (NMDeviceWifi *self,
 	if (s_wireless_sec) {
 		NMSetting8021x *s_8021x;
 		const char *con_uuid = nm_connection_get_uuid (connection);
+		guint32 mtu = nm_platform_link_get_mtu (NM_PLATFORM_GET,
+		                                        nm_device_get_ifindex (NM_DEVICE (self)));
 
 		g_assert (con_uuid);
 		s_8021x = nm_connection_get_setting_802_1x (connection);
 		if (!nm_supplicant_config_add_setting_wireless_security (config,
 		                                                         s_wireless_sec,
 		                                                         s_8021x,
-		                                                         con_uuid)) {
+		                                                         con_uuid,
+		                                                         mtu)) {
 			_LOGE (LOGD_WIFI, "Couldn't add 802-11-wireless-security setting to supplicant config.");
 			goto error;
 		}
