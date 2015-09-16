@@ -28,9 +28,8 @@
 
 #include "util.h"
 #include "time-util.h"
-#if 0 /* NM_IGNORED */
+#include "path-util.h"
 #include "strv.h"
-#endif /* NM_IGNORED */
 
 usec_t now(clockid_t clock_id) {
         struct timespec ts;
@@ -38,6 +37,14 @@ usec_t now(clockid_t clock_id) {
         assert_se(clock_gettime(clock_id, &ts) == 0);
 
         return timespec_load(&ts);
+}
+
+nsec_t now_nsec(clockid_t clock_id) {
+        struct timespec ts;
+
+        assert_se(clock_gettime(clock_id, &ts) == 0);
+
+        return timespec_load_nsec(&ts);
 }
 
 dual_timestamp* dual_timestamp_get(dual_timestamp *ts) {
@@ -92,6 +99,32 @@ dual_timestamp* dual_timestamp_from_monotonic(dual_timestamp *ts, usec_t u) {
         return ts;
 }
 
+dual_timestamp* dual_timestamp_from_boottime_or_monotonic(dual_timestamp *ts, usec_t u) {
+        int64_t delta;
+
+        if (u == USEC_INFINITY) {
+                ts->realtime = ts->monotonic = USEC_INFINITY;
+                return ts;
+        }
+        ts->realtime = now(CLOCK_REALTIME);
+        ts->monotonic = now(CLOCK_MONOTONIC);
+
+        delta = (int64_t) now(clock_boottime_or_monotonic()) - (int64_t) u;
+
+        if ((int64_t) ts->realtime > delta)
+                ts->realtime -= delta;
+        else
+                ts->realtime = 0;
+
+        if ((int64_t) ts->monotonic > delta)
+                ts->monotonic -= delta;
+        else
+                ts->monotonic = 0;
+
+        return ts;
+}
+
+
 usec_t timespec_load(const struct timespec *ts) {
         assert(ts);
 
@@ -105,6 +138,18 @@ usec_t timespec_load(const struct timespec *ts) {
         return
                 (usec_t) ts->tv_sec * USEC_PER_SEC +
                 (usec_t) ts->tv_nsec / NSEC_PER_USEC;
+}
+
+nsec_t timespec_load_nsec(const struct timespec *ts) {
+        assert(ts);
+
+        if (ts->tv_sec == (time_t) -1 &&
+            ts->tv_nsec == (long) -1)
+                return NSEC_INFINITY;
+
+        return
+                (nsec_t) ts->tv_sec * NSEC_PER_SEC +
+                (nsec_t) ts->tv_nsec;
 }
 
 struct timespec *timespec_store(struct timespec *ts, usec_t u)  {
@@ -946,13 +991,17 @@ int get_timezones(char ***ret) {
 
         return 0;
 }
+#endif /* NM_IGNORED */
 
 bool timezone_is_valid(const char *name) {
         bool slash = false;
         const char *p, *t;
         struct stat st;
 
-        if (!name || *name == 0 || *name == '/')
+        if (isempty(name))
+                return false;
+
+        if (name[0] == '/')
                 return false;
 
         for (p = name; *p; p++) {
@@ -984,7 +1033,6 @@ bool timezone_is_valid(const char *name) {
 
         return true;
 }
-#endif /* NM_IGNORED */
 
 clockid_t clock_boottime_or_monotonic(void) {
         static clockid_t clock = -1;
@@ -1003,3 +1051,32 @@ clockid_t clock_boottime_or_monotonic(void) {
 
         return clock;
 }
+
+#if 0 /* NM_IGNORED */
+int get_timezone(char **tz) {
+        _cleanup_free_ char *t = NULL;
+        const char *e;
+        char *z;
+        int r;
+
+        r = readlink_malloc("/etc/localtime", &t);
+        if (r < 0)
+                return r; /* returns EINVAL if not a symlink */
+
+        e = path_startswith(t, "/usr/share/zoneinfo/");
+        if (!e)
+                e = path_startswith(t, "../usr/share/zoneinfo/");
+        if (!e)
+                return -EINVAL;
+
+        if (!timezone_is_valid(e))
+                return -EINVAL;
+
+        z = strdup(e);
+        if (!z)
+                return -ENOMEM;
+
+        *tz = z;
+        return 0;
+}
+#endif /* NM_IGNORED */

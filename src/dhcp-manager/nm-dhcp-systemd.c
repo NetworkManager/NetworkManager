@@ -222,7 +222,7 @@ lease_to_ip4_config (const char *iface,
 	guint16 mtu;
 	int r, num;
 	guint64 end_time;
-	const uint8_t *data;
+	const void *data;
 	gsize data_len;
 	gboolean metered = FALSE;
 
@@ -607,7 +607,7 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 		                              client_id + 1,
 		                              client_id_len - 1);
 	} else if (lease) {
-		r = sd_dhcp_lease_get_client_id (lease, &client_id, &client_id_len);
+		r = sd_dhcp_lease_get_client_id (lease, (const void **) &client_id, &client_id_len);
 		if (r == 0 && client_id_len) {
 			sd_dhcp_client_set_client_id (priv->client4,
 			                              client_id[0],

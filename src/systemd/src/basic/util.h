@@ -89,7 +89,7 @@ int strcmp_ptr(const char *a, const char *b) _pure_;
 
 #define newdup(t, p, n) ((t*) memdup_multiply(p, sizeof(t), (n)))
 
-#define malloc0(n) (calloc((n), 1))
+#define malloc0(n) (calloc(1, (n)))
 
 static inline void *mfree(void *memory) {
         free(memory);
@@ -155,12 +155,18 @@ void safe_close_pair(int p[]);
 
 void close_many(const int fds[], unsigned n_fd);
 
-int parse_size(const char *t, off_t base, off_t *size);
+int fclose_nointr(FILE *f);
+FILE* safe_fclose(FILE *f);
+
+int parse_size(const char *t, uint64_t base, uint64_t *size);
 
 int parse_boolean(const char *v) _pure_;
 int parse_pid(const char *s, pid_t* ret_pid);
 int parse_uid(const char *s, uid_t* ret_uid);
-#define parse_gid(s, ret_uid) parse_uid(s, ret_uid)
+#define parse_gid(s, ret_gid) parse_uid(s, ret_gid)
+
+bool uid_is_valid(uid_t uid);
+#define gid_is_valid(gid) uid_is_valid(gid)
 
 int safe_atou(const char *s, unsigned *ret_u);
 int safe_atoi(const char *s, int *ret_i);
@@ -369,6 +375,9 @@ int fd_is_temporary_fs(int fd);
 
 int pipe_eof(int fd);
 
+DEFINE_TRIVIAL_CLEANUP_FUNC(cpu_set_t*, CPU_FREE);
+#define _cleanup_cpu_free_ _cleanup_(CPU_FREEp)
+
 cpu_set_t* cpu_set_malloc(unsigned *ncpus);
 
 #define xsprintf(buf, fmt, ...) assert_se((size_t) snprintf(buf, ELEMENTSOF(buf), fmt, __VA_ARGS__) < ELEMENTSOF(buf))
@@ -399,8 +408,6 @@ void execute_directories(const char* const* directories, usec_t timeout, char *a
 bool nulstr_contains(const char*nulstr, const char *needle);
 
 bool plymouth_running(void);
-
-bool machine_name_is_valid(const char *s) _pure_;
 
 char* strshorten(char *s, size_t l);
 
@@ -477,7 +484,7 @@ bool kexec_loaded(void);
 
 int prot_from_flags(int flags) _const_;
 
-char *format_bytes(char *buf, size_t l, off_t t);
+char *format_bytes(char *buf, size_t l, uint64_t t);
 
 int fd_wait_for_event(int fd, int event, usec_t timeout);
 
@@ -516,7 +523,10 @@ static inline void close_pairp(int (*p)[2]) {
         safe_close_pair(*p);
 }
 
-DEFINE_TRIVIAL_CLEANUP_FUNC(FILE*, fclose);
+static inline void fclosep(FILE **f) {
+        safe_fclose(*f);
+}
+
 DEFINE_TRIVIAL_CLEANUP_FUNC(FILE*, pclose);
 DEFINE_TRIVIAL_CLEANUP_FUNC(DIR*, closedir);
 DEFINE_TRIVIAL_CLEANUP_FUNC(FILE*, endmntent);
@@ -568,7 +578,10 @@ void *xbsearch_r(const void *key, const void *base, size_t nmemb, size_t size,
                  int (*compar) (const void *, const void *, void *),
                  void *arg);
 
+#if 0 /* NM_IGNORED */
 #define _(String) gettext (String)
+#define N_(String) String
+#endif
 void init_gettext(void);
 bool is_locale_utf8(void);
 
@@ -809,8 +822,8 @@ int get_proc_cmdline_key(const char *parameter, char **value);
 
 int container_get_leader(const char *machine, pid_t *pid);
 
-int namespace_open(pid_t pid, int *pidns_fd, int *mntns_fd, int *netns_fd, int *root_fd);
-int namespace_enter(int pidns_fd, int mntns_fd, int netns_fd, int root_fd);
+int namespace_open(pid_t pid, int *pidns_fd, int *mntns_fd, int *netns_fd, int *userns_fd, int *root_fd);
+int namespace_enter(int pidns_fd, int mntns_fd, int netns_fd, int userns_fd, int root_fd);
 
 #if 0 /* NM_IGNORED */
 int getpeercred(int fd, struct ucred *ucred);
@@ -864,20 +877,17 @@ int is_symlink(const char *path);
 int is_dir(const char *path, bool follow);
 int is_device_node(const char *path);
 
-typedef enum UnquoteFlags {
-        UNQUOTE_RELAX           = 1,
-        UNQUOTE_CUNESCAPE       = 2,
-        UNQUOTE_CUNESCAPE_RELAX = 4,
-} UnquoteFlags;
+typedef enum ExtractFlags {
+        EXTRACT_RELAX           = 1,
+        EXTRACT_CUNESCAPE       = 2,
+        EXTRACT_CUNESCAPE_RELAX = 4,
+        EXTRACT_QUOTES          = 8,
+        EXTRACT_DONT_COALESCE_SEPARATORS = 16,
+} ExtractFlags;
 
-int unquote_first_word(const char **p, char **ret, UnquoteFlags flags);
-int unquote_first_word_and_warn(const char **p, char **ret, UnquoteFlags flags, const char *unit, const char *filename, unsigned line, const char *rvalue);
-int unquote_many_words(const char **p, UnquoteFlags flags, ...) _sentinel_;
-
-static inline void free_and_replace(char **s, char *v) {
-        free(*s);
-        *s = v;
-}
+int extract_first_word(const char **p, char **ret, const char *separators, ExtractFlags flags);
+int extract_first_word_and_warn(const char **p, char **ret, const char *separators, ExtractFlags flags, const char *unit, const char *filename, unsigned line, const char *rvalue);
+int extract_many_words(const char **p, const char *separators, ExtractFlags flags, ...) _sentinel_;
 
 int free_and_strdup(char **p, const char *s);
 
@@ -927,6 +937,7 @@ void cmsg_close_all(struct msghdr *mh);
 
 int rename_noreplace(int olddirfd, const char *oldpath, int newdirfd, const char *newpath);
 
+char *shell_escape(const char *s, const char *bad);
 char *shell_maybe_quote(const char *s);
 
 int parse_mode(const char *s, mode_t *ret);
