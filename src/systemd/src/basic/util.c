@@ -327,6 +327,33 @@ void close_many(const int fds[], unsigned n_fd) {
                 safe_close(fds[i]);
 }
 
+int fclose_nointr(FILE *f) {
+        assert(f);
+
+        /* Same as close_nointr(), but for fclose() */
+
+        if (fclose(f) == 0)
+                return 0;
+
+        if (errno == EINTR)
+                return 0;
+
+        return -errno;
+}
+
+FILE* safe_fclose(FILE *f) {
+
+        /* Same as safe_close(), but for fclose() */
+
+        if (f) {
+                PROTECT_ERRNO;
+
+                assert_se(fclose_nointr(f) != EBADF);
+        }
+
+        return NULL;
+}
+
 int unlink_noerrno(const char *path) {
         PROTECT_ERRNO;
         int r;
@@ -373,6 +400,19 @@ int parse_pid(const char *s, pid_t* ret_pid) {
         return 0;
 }
 
+bool uid_is_valid(uid_t uid) {
+
+        /* Some libc APIs use UID_INVALID as special placeholder */
+        if (uid == (uid_t) 0xFFFFFFFF)
+                return false;
+
+        /* A long time ago UIDs where 16bit, hence explicitly avoid the 16bit -1 too */
+        if (uid == (uid_t) 0xFFFF)
+                return false;
+
+        return true;
+}
+
 int parse_uid(const char *s, uid_t* ret_uid) {
         unsigned long ul = 0;
         uid_t uid;
@@ -389,13 +429,11 @@ int parse_uid(const char *s, uid_t* ret_uid) {
         if ((unsigned long) uid != ul)
                 return -ERANGE;
 
-        /* Some libc APIs use UID_INVALID as special placeholder */
-        if (uid == (uid_t) 0xFFFFFFFF)
-                return -ENXIO;
-
-        /* A long time ago UIDs where 16bit, hence explicitly avoid the 16bit -1 too */
-        if (uid == (uid_t) 0xFFFF)
-                return -ENXIO;
+        if (!uid_is_valid(uid))
+                return -ENXIO; /* we return ENXIO instead of EINVAL
+                                * here, to make it easy to distuingish
+                                * invalid numeric uids invalid
+                                * strings. */
 
         if (ret_uid)
                 *ret_uid = uid;
@@ -2176,7 +2214,7 @@ int loop_write(int fd, const void *buf, size_t nbytes, bool do_poll) {
         return 0;
 }
 
-int parse_size(const char *t, off_t base, off_t *size) {
+int parse_size(const char *t, uint64_t base, uint64_t *size) {
 
         /* Soo, sometimes we want to parse IEC binary suffixes, and
          * sometimes SI decimal suffixes. This function can parse
@@ -2204,8 +2242,8 @@ int parse_size(const char *t, off_t base, off_t *size) {
                 { "G", 1024ULL*1024ULL*1024ULL },
                 { "M", 1024ULL*1024ULL },
                 { "K", 1024ULL },
-                { "B", 1 },
-                { "", 1 },
+                { "B", 1ULL },
+                { "",  1ULL },
         };
 
         static const struct table si[] = {
@@ -2215,8 +2253,8 @@ int parse_size(const char *t, off_t base, off_t *size) {
                 { "G", 1000ULL*1000ULL*1000ULL },
                 { "M", 1000ULL*1000ULL },
                 { "K", 1000ULL },
-                { "B", 1 },
-                { "", 1 },
+                { "B", 1ULL },
+                { "",  1ULL },
         };
 
         const struct table *table;
@@ -2238,33 +2276,32 @@ int parse_size(const char *t, off_t base, off_t *size) {
 
         p = t;
         do {
-                long long l;
-                unsigned long long l2;
+                unsigned long long l, tmp;
                 double frac = 0;
                 char *e;
                 unsigned i;
 
-                errno = 0;
-                l = strtoll(p, &e, 10);
-
-                if (errno > 0)
-                        return -errno;
-
-                if (l < 0)
+                p += strspn(p, WHITESPACE);
+                if (*p == '-')
                         return -ERANGE;
 
+                errno = 0;
+                l = strtoull(p, &e, 10);
+                if (errno > 0)
+                        return -errno;
                 if (e == p)
                         return -EINVAL;
 
                 if (*e == '.') {
                         e++;
+
+                        /* strtoull() itself would accept space/+/- */
                         if (*e >= '0' && *e <= '9') {
+                                unsigned long long l2;
                                 char *e2;
 
-                                /* strotoull itself would accept space/+/- */
                                 l2 = strtoull(e, &e2, 10);
-
-                                if (errno == ERANGE)
+                                if (errno > 0)
                                         return -errno;
 
                                 /* Ignore failure. E.g. 10.M is valid */
@@ -2277,26 +2314,26 @@ int parse_size(const char *t, off_t base, off_t *size) {
                 e += strspn(e, WHITESPACE);
 
                 for (i = start_pos; i < n_entries; i++)
-                        if (startswith(e, table[i].suffix)) {
-                                unsigned long long tmp;
-                                if ((unsigned long long) l + (frac > 0) > ULLONG_MAX / table[i].factor)
-                                        return -ERANGE;
-                                tmp = l * table[i].factor + (unsigned long long) (frac * table[i].factor);
-                                if (tmp > ULLONG_MAX - r)
-                                        return -ERANGE;
-
-                                r += tmp;
-                                if ((unsigned long long) (off_t) r != r)
-                                        return -ERANGE;
-
-                                p = e + strlen(table[i].suffix);
-
-                                start_pos = i + 1;
+                        if (startswith(e, table[i].suffix))
                                 break;
-                        }
 
                 if (i >= n_entries)
                         return -EINVAL;
+
+                if (l + (frac > 0) > ULLONG_MAX / table[i].factor)
+                        return -ERANGE;
+
+                tmp = l * table[i].factor + (unsigned long long) (frac * table[i].factor);
+                if (tmp > ULLONG_MAX - r)
+                        return -ERANGE;
+
+                r += tmp;
+                if ((unsigned long long) (uint64_t) r != r)
+                        return -ERANGE;
+
+                p = e + strlen(table[i].suffix);
+
+                start_pos = i + 1;
 
         } while (*p);
 
@@ -3004,21 +3041,6 @@ char* strshorten(char *s, size_t l) {
                 s[l] = 0;
 
         return s;
-}
-
-bool machine_name_is_valid(const char *s) {
-
-        if (!hostname_is_valid(s, false))
-                return false;
-
-        /* Machine names should be useful hostnames, but also be
-         * useful in unit names, hence we enforce a stricter length
-         * limitation. */
-
-        if (strlen(s) > 64)
-                return false;
-
-        return true;
 }
 
 int pipe_eof(int fd) {
@@ -3762,38 +3784,38 @@ int prot_from_flags(int flags) {
         }
 }
 
-char *format_bytes(char *buf, size_t l, off_t t) {
+char *format_bytes(char *buf, size_t l, uint64_t t) {
         unsigned i;
 
         static const struct {
                 const char *suffix;
-                off_t factor;
+                uint64_t factor;
         } table[] = {
-                { "E", 1024ULL*1024ULL*1024ULL*1024ULL*1024ULL*1024ULL },
-                { "P", 1024ULL*1024ULL*1024ULL*1024ULL*1024ULL },
-                { "T", 1024ULL*1024ULL*1024ULL*1024ULL },
-                { "G", 1024ULL*1024ULL*1024ULL },
-                { "M", 1024ULL*1024ULL },
-                { "K", 1024ULL },
+                { "E", UINT64_C(1024)*UINT64_C(1024)*UINT64_C(1024)*UINT64_C(1024)*UINT64_C(1024)*UINT64_C(1024) },
+                { "P", UINT64_C(1024)*UINT64_C(1024)*UINT64_C(1024)*UINT64_C(1024)*UINT64_C(1024) },
+                { "T", UINT64_C(1024)*UINT64_C(1024)*UINT64_C(1024)*UINT64_C(1024) },
+                { "G", UINT64_C(1024)*UINT64_C(1024)*UINT64_C(1024) },
+                { "M", UINT64_C(1024)*UINT64_C(1024) },
+                { "K", UINT64_C(1024) },
         };
 
-        if (t == (off_t) -1)
+        if (t == (uint64_t) -1)
                 return NULL;
 
         for (i = 0; i < ELEMENTSOF(table); i++) {
 
                 if (t >= table[i].factor) {
                         snprintf(buf, l,
-                                 "%llu.%llu%s",
-                                 (unsigned long long) (t / table[i].factor),
-                                 (unsigned long long) (((t*10ULL) / table[i].factor) % 10ULL),
+                                 "%" PRIu64 ".%" PRIu64 "%s",
+                                 t / table[i].factor,
+                                 ((t*UINT64_C(10)) / table[i].factor) % UINT64_C(10),
                                  table[i].suffix);
 
                         goto finish;
                 }
         }
 
-        snprintf(buf, l, "%lluB", (unsigned long long) t);
+        snprintf(buf, l, "%" PRIu64 "B", t);
 
 finish:
         buf[l-1] = 0;
@@ -4288,7 +4310,7 @@ bool is_locale_utf8(void) {
         /* Check result, but ignore the result if C was set
          * explicitly. */
         cached_answer =
-                streq(set, "C") &&
+                STR_IN_SET(set, "C", "POSIX") &&
                 !getenv("LC_ALL") &&
                 !getenv("LC_CTYPE") &&
                 !getenv("LANG");
@@ -4821,7 +4843,7 @@ int shall_restore_state(void) {
 int proc_cmdline(char **ret) {
         assert(ret);
 
-        if (detect_container(NULL) > 0)
+        if (detect_container() > 0)
                 return get_process_cmdline(1, 0, false, ret);
         else
                 return read_one_line_file("/proc/cmdline", ret);
@@ -4843,7 +4865,7 @@ int parse_proc_cmdline(int (*parse_item)(const char *key, const char *value)) {
                 _cleanup_free_ char *word = NULL;
                 char *value = NULL;
 
-                r = unquote_first_word(&p, &word, UNQUOTE_RELAX);
+                r = extract_first_word(&p, &word, NULL, EXTRACT_QUOTES|EXTRACT_RELAX);
                 if (r < 0)
                         return r;
                 if (r == 0)
@@ -4883,7 +4905,7 @@ int get_proc_cmdline_key(const char *key, char **value) {
                 _cleanup_free_ char *word = NULL;
                 const char *e;
 
-                r = unquote_first_word(&p, &word, UNQUOTE_RELAX);
+                r = extract_first_word(&p, &word, NULL, EXTRACT_QUOTES|EXTRACT_RELAX);
                 if (r < 0)
                         return r;
                 if (r == 0)
@@ -4928,6 +4950,9 @@ int container_get_leader(const char *machine, pid_t *pid) {
         assert(machine);
         assert(pid);
 
+        if (!machine_name_is_valid(machine))
+                return -EINVAL;
+
         p = strjoina("/run/systemd/machines/", machine);
         r = parse_env_file(p, NEWLINE, "LEADER", &s, "CLASS", &class, NULL);
         if (r == -ENOENT)
@@ -4950,8 +4975,8 @@ int container_get_leader(const char *machine, pid_t *pid) {
         return 0;
 }
 
-int namespace_open(pid_t pid, int *pidns_fd, int *mntns_fd, int *netns_fd, int *root_fd) {
-        _cleanup_close_ int pidnsfd = -1, mntnsfd = -1, netnsfd = -1;
+int namespace_open(pid_t pid, int *pidns_fd, int *mntns_fd, int *netns_fd, int *userns_fd, int *root_fd) {
+        _cleanup_close_ int pidnsfd = -1, mntnsfd = -1, netnsfd = -1, usernsfd = -1;
         int rfd = -1;
 
         assert(pid >= 0);
@@ -4983,6 +5008,15 @@ int namespace_open(pid_t pid, int *pidns_fd, int *mntns_fd, int *netns_fd, int *
                         return -errno;
         }
 
+        if (userns_fd) {
+                const char *userns;
+
+                userns = procfs_file_alloca(pid, "ns/user");
+                usernsfd = open(userns, O_RDONLY|O_NOCTTY|O_CLOEXEC);
+                if (usernsfd < 0 && errno != ENOENT)
+                        return -errno;
+        }
+
         if (root_fd) {
                 const char *root;
 
@@ -5001,15 +5035,33 @@ int namespace_open(pid_t pid, int *pidns_fd, int *mntns_fd, int *netns_fd, int *
         if (netns_fd)
                 *netns_fd = netnsfd;
 
+        if (userns_fd)
+                *userns_fd = usernsfd;
+
         if (root_fd)
                 *root_fd = rfd;
 
-        pidnsfd = mntnsfd = netnsfd = -1;
+        pidnsfd = mntnsfd = netnsfd = usernsfd = -1;
 
         return 0;
 }
 
-int namespace_enter(int pidns_fd, int mntns_fd, int netns_fd, int root_fd) {
+int namespace_enter(int pidns_fd, int mntns_fd, int netns_fd, int userns_fd, int root_fd) {
+        if (userns_fd >= 0) {
+                /* Can't setns to your own userns, since then you could
+                 * escalate from non-root to root in your own namespace, so
+                 * check if namespaces equal before attempting to enter. */
+                _cleanup_free_ char *userns_fd_path = NULL;
+                int r;
+                if (asprintf(&userns_fd_path, "/proc/self/fd/%d", userns_fd) < 0)
+                        return -ENOMEM;
+
+                r = files_same(userns_fd_path, "/proc/self/ns/user");
+                if (r < 0)
+                        return r;
+                if (r)
+                        userns_fd = -1;
+        }
 
         if (pidns_fd >= 0)
                 if (setns(pidns_fd, CLONE_NEWPID) < 0)
@@ -5021,6 +5073,10 @@ int namespace_enter(int pidns_fd, int mntns_fd, int netns_fd, int root_fd) {
 
         if (netns_fd >= 0)
                 if (setns(netns_fd, CLONE_NEWNET) < 0)
+                        return -errno;
+
+        if (userns_fd >= 0)
+                if (setns(userns_fd, CLONE_NEWUSER) < 0)
                         return -errno;
 
         if (root_fd >= 0) {
@@ -5698,7 +5754,7 @@ int is_device_node(const char *path) {
         return !!(S_ISBLK(info.st_mode) || S_ISCHR(info.st_mode));
 }
 
-int unquote_first_word(const char **p, char **ret, UnquoteFlags flags) {
+int extract_first_word(const char **p, char **ret, const char *separators, ExtractFlags flags) {
         _cleanup_free_ char *s = NULL;
         size_t allocated = 0, sz = 0;
         int r;
@@ -5711,12 +5767,18 @@ int unquote_first_word(const char **p, char **ret, UnquoteFlags flags) {
                 SINGLE_QUOTE_ESCAPE,
                 DOUBLE_QUOTE,
                 DOUBLE_QUOTE_ESCAPE,
-                SPACE,
+                SEPARATOR,
         } state = START;
 
         assert(p);
-        assert(*p);
         assert(ret);
+
+        if (!separators)
+                separators = WHITESPACE;
+
+        /* Bail early if called after last value or with no input */
+        if (!*p)
+                goto finish_force_terminate;
 
         /* Parses the first word of a string, and returns it in
          * *ret. Removes all quotes in the process. When parsing fails
@@ -5729,32 +5791,45 @@ int unquote_first_word(const char **p, char **ret, UnquoteFlags flags) {
                 switch (state) {
 
                 case START:
+                        if (flags & EXTRACT_DONT_COALESCE_SEPARATORS)
+                                if (!GREEDY_REALLOC(s, allocated, sz+1))
+                                        return -ENOMEM;
+
                         if (c == 0)
-                                goto finish;
-                        else if (strchr(WHITESPACE, c))
+                                goto finish_force_terminate;
+                        else if (strchr(separators, c)) {
+                                if (flags & EXTRACT_DONT_COALESCE_SEPARATORS) {
+                                        (*p) ++;
+                                        goto finish_force_next;
+                                }
                                 break;
+                        }
+
+                        /* We found a non-blank character, so we will always
+                         * want to return a string (even if it is empty),
+                         * allocate it here. */
+                        if (!GREEDY_REALLOC(s, allocated, sz+1))
+                                return -ENOMEM;
 
                         state = VALUE;
                         /* fallthrough */
 
                 case VALUE:
                         if (c == 0)
-                                goto finish;
-                        else if (c == '\'') {
-                                if (!GREEDY_REALLOC(s, allocated, sz+1))
-                                        return -ENOMEM;
-
+                                goto finish_force_terminate;
+                        else if (c == '\'' && (flags & EXTRACT_QUOTES))
                                 state = SINGLE_QUOTE;
-                        } else if (c == '\\')
+                        else if (c == '\\')
                                 state = VALUE_ESCAPE;
-                        else if (c == '\"') {
-                                if (!GREEDY_REALLOC(s, allocated, sz+1))
-                                        return -ENOMEM;
-
+                        else if (c == '\"' && (flags & EXTRACT_QUOTES))
                                 state = DOUBLE_QUOTE;
-                        } else if (strchr(WHITESPACE, c))
-                                state = SPACE;
-                        else {
+                        else if (strchr(separators, c)) {
+                                if (flags & EXTRACT_DONT_COALESCE_SEPARATORS) {
+                                        (*p) ++;
+                                        goto finish_force_next;
+                                }
+                                state = SEPARATOR;
+                        } else {
                                 if (!GREEDY_REALLOC(s, allocated, sz+2))
                                         return -ENOMEM;
 
@@ -5765,8 +5840,8 @@ int unquote_first_word(const char **p, char **ret, UnquoteFlags flags) {
 
                 case SINGLE_QUOTE:
                         if (c == 0) {
-                                if (flags & UNQUOTE_RELAX)
-                                        goto finish;
+                                if (flags & EXTRACT_RELAX)
+                                        goto finish_force_terminate;
                                 return -EINVAL;
                         } else if (c == '\'')
                                 state = VALUE;
@@ -5804,29 +5879,29 @@ int unquote_first_word(const char **p, char **ret, UnquoteFlags flags) {
                                 return -ENOMEM;
 
                         if (c == 0) {
-                                if ((flags & UNQUOTE_CUNESCAPE_RELAX) &&
-                                    (state == VALUE_ESCAPE || flags & UNQUOTE_RELAX)) {
+                                if ((flags & EXTRACT_CUNESCAPE_RELAX) &&
+                                    (state == VALUE_ESCAPE || flags & EXTRACT_RELAX)) {
                                         /* If we find an unquoted trailing backslash and we're in
-                                         * UNQUOTE_CUNESCAPE_RELAX mode, keep it verbatim in the
+                                         * EXTRACT_CUNESCAPE_RELAX mode, keep it verbatim in the
                                          * output.
                                          *
-                                         * Unbalanced quotes will only be allowed in UNQUOTE_RELAX
-                                         * mode, UNQUOTE_CUNESCAP_RELAX mode does not allow them.
+                                         * Unbalanced quotes will only be allowed in EXTRACT_RELAX
+                                         * mode, EXTRACT_CUNESCAPE_RELAX mode does not allow them.
                                          */
                                         s[sz++] = '\\';
-                                        goto finish;
+                                        goto finish_force_terminate;
                                 }
-                                if (flags & UNQUOTE_RELAX)
-                                        goto finish;
+                                if (flags & EXTRACT_RELAX)
+                                        goto finish_force_terminate;
                                 return -EINVAL;
                         }
 
-                        if (flags & UNQUOTE_CUNESCAPE) {
+                        if (flags & EXTRACT_CUNESCAPE) {
                                 uint32_t u;
 
                                 r = cunescape_one(*p, (size_t) -1, &c, &u);
                                 if (r < 0) {
-                                        if (flags & UNQUOTE_CUNESCAPE_RELAX) {
+                                        if (flags & EXTRACT_CUNESCAPE_RELAX) {
                                                 s[sz++] = '\\';
                                                 s[sz++] = c;
                                                 goto end_escape;
@@ -5849,24 +5924,27 @@ end_escape:
                                 VALUE;
                         break;
 
-                case SPACE:
+                case SEPARATOR:
                         if (c == 0)
+                                goto finish_force_terminate;
+                        if (!strchr(separators, c))
                                 goto finish;
-                        if (!strchr(WHITESPACE, c))
-                                goto finish;
-
                         break;
                 }
 
                 (*p) ++;
         }
 
+finish_force_terminate:
+        *p = NULL;
 finish:
         if (!s) {
+                *p = NULL;
                 *ret = NULL;
                 return 0;
         }
 
+finish_force_next:
         s[sz] = 0;
         *ret = s;
         s = NULL;
@@ -5874,26 +5952,27 @@ finish:
         return 1;
 }
 
-int unquote_first_word_and_warn(
+int extract_first_word_and_warn(
                 const char **p,
                 char **ret,
-                UnquoteFlags flags,
+                const char *separators,
+                ExtractFlags flags,
                 const char *unit,
                 const char *filename,
                 unsigned line,
                 const char *rvalue) {
         /* Try to unquote it, if it fails, warn about it and try again but this
-         * time using UNQUOTE_CUNESCAPE_RELAX to keep the backslashes verbatim
+         * time using EXTRACT_CUNESCAPE_RELAX to keep the backslashes verbatim
          * in invalid escape sequences. */
         const char *save;
         int r;
 
         save = *p;
-        r = unquote_first_word(p, ret, flags);
-        if (r < 0 && !(flags&UNQUOTE_CUNESCAPE_RELAX)) {
-                /* Retry it with UNQUOTE_CUNESCAPE_RELAX. */
+        r = extract_first_word(p, ret, separators, flags);
+        if (r < 0 && !(flags&EXTRACT_CUNESCAPE_RELAX)) {
+                /* Retry it with EXTRACT_CUNESCAPE_RELAX. */
                 *p = save;
-                r = unquote_first_word(p, ret, flags|UNQUOTE_CUNESCAPE_RELAX);
+                r = extract_first_word(p, ret, separators, flags|EXTRACT_CUNESCAPE_RELAX);
                 if (r < 0)
                         log_syntax(unit, LOG_ERR, filename, line, EINVAL,
                                    "Unbalanced quoting in command line, ignoring: \"%s\"", rvalue);
@@ -5904,7 +5983,7 @@ int unquote_first_word_and_warn(
         return r;
 }
 
-int unquote_many_words(const char **p, UnquoteFlags flags, ...) {
+int extract_many_words(const char **p, const char *separators, ExtractFlags flags, ...) {
         va_list ap;
         char **l;
         int n = 0, i, c, r;
@@ -5930,7 +6009,7 @@ int unquote_many_words(const char **p, UnquoteFlags flags, ...) {
         l = newa0(char*, n);
         for (c = 0; c < n; c++) {
 
-                r = unquote_first_word(p, &l[c], flags);
+                r = extract_first_word(p, &l[c], separators, flags);
                 if (r < 0) {
                         int j;
 
@@ -6012,7 +6091,7 @@ int ptsname_malloc(int fd, char **ret) {
 }
 
 int openpt_in_namespace(pid_t pid, int flags) {
-        _cleanup_close_ int pidnsfd = -1, mntnsfd = -1, rootfd = -1;
+        _cleanup_close_ int pidnsfd = -1, mntnsfd = -1, usernsfd = -1, rootfd = -1;
         _cleanup_close_pair_ int pair[2] = { -1, -1 };
         union {
                 struct cmsghdr cmsghdr;
@@ -6029,7 +6108,7 @@ int openpt_in_namespace(pid_t pid, int flags) {
 
         assert(pid > 0);
 
-        r = namespace_open(pid, &pidnsfd, &mntnsfd, NULL, &rootfd);
+        r = namespace_open(pid, &pidnsfd, &mntnsfd, NULL, &usernsfd, &rootfd);
         if (r < 0)
                 return r;
 
@@ -6045,12 +6124,15 @@ int openpt_in_namespace(pid_t pid, int flags) {
 
                 pair[0] = safe_close(pair[0]);
 
-                r = namespace_enter(pidnsfd, mntnsfd, -1, rootfd);
+                r = namespace_enter(pidnsfd, mntnsfd, -1, usernsfd, rootfd);
                 if (r < 0)
                         _exit(EXIT_FAILURE);
 
                 master = posix_openpt(flags);
                 if (master < 0)
+                        _exit(EXIT_FAILURE);
+
+                if (unlockpt(master) < 0)
                         _exit(EXIT_FAILURE);
 
                 cmsg = CMSG_FIRSTHDR(&mh);
@@ -6511,6 +6593,32 @@ int rename_noreplace(int olddirfd, const char *oldpath, int newdirfd, const char
         return 0;
 }
 
+static char *strcpy_backslash_escaped(char *t, const char *s, const char *bad) {
+        assert(bad);
+
+        for (; *s; s++) {
+                if (*s == '\\' || strchr(bad, *s))
+                        *(t++) = '\\';
+
+                *(t++) = *s;
+        }
+
+        return t;
+}
+
+char *shell_escape(const char *s, const char *bad) {
+        char *r, *t;
+
+        r = new(char, strlen(s)*2+1);
+        if (!r)
+                return NULL;
+
+        t = strcpy_backslash_escaped(r, s, bad);
+        *t = 0;
+
+        return r;
+}
+
 char *shell_maybe_quote(const char *s) {
         const char *p;
         char *r, *t;
@@ -6537,13 +6645,7 @@ char *shell_maybe_quote(const char *s) {
         *(t++) = '"';
         t = mempcpy(t, s, p - s);
 
-        for (; *p; p++) {
-
-                if (strchr(SHELL_NEED_ESCAPE, *p))
-                        *(t++) = '\\';
-
-                *(t++) = *p;
-        }
+        t = strcpy_backslash_escaped(t, p, SHELL_NEED_ESCAPE);
 
         *(t++)= '"';
         *t = 0;

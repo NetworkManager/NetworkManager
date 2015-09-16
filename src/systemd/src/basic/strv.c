@@ -270,15 +270,13 @@ char **strv_split_newlines(const char *s) {
         if (n <= 0)
                 return l;
 
-        if (isempty(l[n-1])) {
-                free(l[n-1]);
-                l[n-1] = NULL;
-        }
+        if (isempty(l[n - 1]))
+                l[n - 1] = mfree(l[n - 1]);
 
         return l;
 }
 
-int strv_split_quoted(char ***t, const char *s, UnquoteFlags flags) {
+int strv_split_extract(char ***t, const char *s, const char *separators, ExtractFlags flags) {
         size_t n = 0, allocated = 0;
         _cleanup_strv_free_ char **l = NULL;
         int r;
@@ -289,7 +287,7 @@ int strv_split_quoted(char ***t, const char *s, UnquoteFlags flags) {
         for (;;) {
                 _cleanup_free_ char *word = NULL;
 
-                r = unquote_first_word(&s, &word, flags);
+                r = extract_first_word(&s, &word, separators, flags);
                 if (r < 0)
                         return r;
                 if (r == 0)
@@ -688,6 +686,26 @@ char **strv_reverse(char **l) {
                 t = l[i];
                 l[i] = l[n-1-i];
                 l[n-1-i] = t;
+        }
+
+        return l;
+}
+
+char **strv_shell_escape(char **l, const char *bad) {
+        char **s;
+
+        /* Escapes every character in every string in l that is in bad,
+         * edits in-place, does not roll-back on error. */
+
+        STRV_FOREACH(s, l) {
+                char *v;
+
+                v = shell_escape(*s, bad);
+                if (!v)
+                        return NULL;
+
+                free(*s);
+                *s = v;
         }
 
         return l;

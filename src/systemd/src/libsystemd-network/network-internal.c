@@ -32,6 +32,7 @@
 #include "conf-parser.h"
 #include "condition.h"
 #include "network-internal.h"
+#include "sd-icmp6-nd.h"
 
 const char *net_get_name(struct udev_device *device) {
         const char *name, *field;
@@ -384,6 +385,20 @@ int deserialize_in_addrs(struct in_addr **ret, const char *string) {
         return size;
 }
 
+void serialize_in6_addrs(FILE *f, const struct in6_addr *addresses,
+                         size_t size) {
+        unsigned i;
+
+        assert(f);
+        assert(addresses);
+        assert(size);
+
+        for (i = 0; i < size; i++)
+                fprintf(f, SD_ICMP6_ADDRESS_FORMAT_STR"%s",
+                        SD_ICMP6_ADDRESS_FORMAT_VAL(addresses[i]),
+                        (i < (size - 1)) ? " ": "");
+}
+
 int deserialize_in6_addrs(struct in6_addr **ret, const char *string) {
         _cleanup_free_ struct in6_addr *addresses = NULL;
         int size = 0;
@@ -510,7 +525,7 @@ int deserialize_dhcp_routes(struct sd_dhcp_route **ret, size_t *ret_size, size_t
         return 0;
 }
 
-int serialize_dhcp_option(FILE *f, const char *key, const uint8_t *data, size_t size) {
+int serialize_dhcp_option(FILE *f, const char *key, const void *data, size_t size) {
         _cleanup_free_ char *hex_buf = NULL;
 
         assert(f);
@@ -526,7 +541,7 @@ int serialize_dhcp_option(FILE *f, const char *key, const uint8_t *data, size_t 
         return 0;
 }
 
-int deserialize_dhcp_option(uint8_t **data, size_t *data_len, const char *string) {
+int deserialize_dhcp_option(void **data, size_t *data_len, const char *string) {
         assert(data);
         assert(data_len);
         assert(string);
