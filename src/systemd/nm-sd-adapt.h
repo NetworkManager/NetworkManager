@@ -13,7 +13,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2014 Red Hat, Inc.
+ * Copyright (C) 2014 - 2015 Red Hat, Inc.
  */
 
 #ifndef NM_SD_ADAPT_H
@@ -21,30 +21,13 @@
 
 #include "config.h"
 
-#include <glib.h>
-
-#include <netinet/in.h>
 #include <stdbool.h>
 #include <syslog.h>
-#include <string.h>
-#include <stdio.h>
-#include <errno.h>
-#include <elf.h>
-#ifdef HAVE_SYS_AUXV_H
-#include <sys/auxv.h>
-#endif
-#include <unistd.h>
-#include <sys/syscall.h>
-
-#include <net/if_arp.h>
 #include <sys/resource.h>
 
 #include "nm-default.h"
 
-/* Missing in Linux 3.2.0, in Ubuntu 12.04 */
-#ifndef BPF_XOR
-#define BPF_XOR 0xa0
-#endif
+#define noreturn G_GNUC_NORETURN
 
 /*****************************************************************************/
 
@@ -92,6 +75,32 @@ G_STMT_START { \
 	(void) 0; \
 })
 
+
+/*****************************************************************************
+ * The remainder of the header is only enabled when building the systemd code
+ * itself.
+ *****************************************************************************/
+
+#if (NETWORKMANAGER_COMPILATION) == NM_NETWORKMANAGER_COMPILATION_SYSTEMD
+
+#include <netinet/in.h>
+#include <string.h>
+#include <stdio.h>
+#include <errno.h>
+#include <elf.h>
+#ifdef HAVE_SYS_AUXV_H
+#include <sys/auxv.h>
+#endif
+#include <unistd.h>
+#include <sys/syscall.h>
+
+#include <net/if_arp.h>
+
+/* Missing in Linux 3.2.0, in Ubuntu 12.04 */
+#ifndef BPF_XOR
+#define BPF_XOR 0xa0
+#endif
+
 /*****************************************************************************/
 
 /* Can't include both net/if.h and linux/if.h; so have to define this here */
@@ -103,7 +112,6 @@ G_STMT_START { \
 #define MAX_HANDLE_SZ 128
 #endif
 
-#define noreturn G_GNUC_NORETURN
 
 /*
  * Some toolchains (E.G. uClibc 0.9.33 and earlier) don't export
@@ -122,6 +130,8 @@ G_STMT_START { \
 static inline pid_t gettid(void) {
         return (pid_t) syscall(SYS_gettid);
 }
+
+#endif /* (NETWORKMANAGER_COMPILATION) == NM_NETWORKMANAGER_COMPILATION_SYSTEMD */
 
 #endif /* NM_SD_ADAPT_H */
 

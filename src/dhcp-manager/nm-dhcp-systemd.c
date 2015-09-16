@@ -35,8 +35,6 @@
 #include "NetworkManagerUtils.h"
 #include "nm-platform.h"
 
-#include "nm-sd-adapt.h"
-
 #include "sd-dhcp-client.h"
 #include "sd-dhcp6-client.h"
 #include "dhcp-protocol.h"

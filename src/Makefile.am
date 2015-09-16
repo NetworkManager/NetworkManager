@@ -62,8 +62,7 @@ SYSTEMD_NM_CFLAGS = \
 	-I$(top_srcdir)/src/systemd/src/shared \
 	-I$(top_srcdir)/src/systemd \
 	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON
+	-I$(top_builddir)/libnm-core
 
 libsystemd_nm_la_SOURCES = \
 	systemd/nm-sd-adapt.c \
@@ -135,6 +134,7 @@ libsystemd_nm_la_SOURCES = \
 libsystemd_nm_la_CPPFLAGS = \
 	-I$(top_srcdir)/include \
 	$(SYSTEMD_NM_CFLAGS) \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD \
 	$(GLIB_CFLAGS)
 
 libsystemd_nm_la_LIBADD = \

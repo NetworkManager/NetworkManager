@@ -27,6 +27,7 @@
 #define NM_NETWORKMANAGER_COMPILATION_DEFAULT             0x0001
 #define NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON       0x0002
 #define NM_NETWORKMANAGER_COMPILATION_LIB                 0x0004
+#define NM_NETWORKMANAGER_COMPILATION_SYSTEMD             0x0008
 
 #ifndef NETWORKMANAGER_COMPILATION
 /* For convenience, we don't require our Makefile.am to define
@@ -57,7 +58,7 @@
 
 /*****************************************************************************/
 
-#if (NETWORKMANAGER_COMPILATION) == NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON
+#if (NETWORKMANAGER_COMPILATION) == NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON || (NETWORKMANAGER_COMPILATION) == NM_NETWORKMANAGER_COMPILATION_SYSTEMD
 
 /* the header is used inside src/, where additional
  * headers are available. */
