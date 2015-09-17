@@ -391,10 +391,11 @@ nm_dhcp_systemd_get_lease_ip_configs (const char *iface,
 
 	path = get_leasefile_path (iface, uuid, FALSE);
 	r = dhcp_lease_load (&lease, path);
-	if (r == 0 && lease) {
+	if (r == 0) {
 		ip4_config = lease_to_ip4_config (iface, ifindex, lease, NULL, default_route_metric, FALSE, NULL);
 		if (ip4_config)
 			leases = g_slist_append (leases, ip4_config);
+		sd_dhcp_lease_unref (lease);
 	}
 
 	return leases;
@@ -531,6 +532,7 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 	struct in_addr last_addr = { 0 };
 	const char *hostname;
 	int r, i;
+	gboolean success = FALSE;
 
 	g_assert (priv->client4 == NULL);
 	g_assert (priv->client6 == NULL);
@@ -617,8 +619,6 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 		}
 	}
 
-	if (lease)
-		sd_dhcp_lease_unref (lease);
 
 	/* Add requested options */
 	for (i = 0; dhcp4_requests[i].name; i++) {
@@ -641,12 +641,13 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 		goto error;
 	}
 
-	return TRUE;
+	success = TRUE;
 
 error:
-	sd_dhcp_client_unref (priv->client4);
-	priv->client4 = NULL;
-	return FALSE;
+	sd_dhcp_lease_unref (lease);
+	if (!success)
+		priv->client4 = sd_dhcp_client_unref (priv->client4);
+	return success;
 }
 
 static void
