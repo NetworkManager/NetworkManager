@@ -130,7 +130,7 @@ nm_exported_object_signal_hook (GSignalInvocationHint *ihint,
 	NMExportedObject *self = g_value_get_object (&param_values[0]);
 	NMExportedObjectPrivate *priv;
 	GSignalQuery *signal_info = data;
-	GDBusObjectSkeleton *interface = NULL;
+	GDBusInterfaceSkeleton *interface = NULL;
 	GSList *iter;
 	GValue *dbus_param_values;
 	int i;
@@ -141,7 +141,7 @@ nm_exported_object_signal_hook (GSignalInvocationHint *ihint,
 
 	for (iter = priv->interfaces; iter; iter = iter->next) {
 		if (g_type_is_a (G_OBJECT_TYPE (iter->data), signal_info->itype)) {
-			interface = iter->data;
+			interface = G_DBUS_INTERFACE_SKELETON (iter->data);
 			break;
 		}
 	}
@@ -177,7 +177,7 @@ nm_exported_object_signal_hook (GSignalInvocationHint *ihint,
 /**
  * nm_exported_object_class_add_interface:
  * @object_class: an #NMExportedObjectClass
- * @dbus_skeleton_type: the type of the #GDBusObjectSkeleton to add
+ * @dbus_skeleton_type: the type of the #GDBusInterfaceSkeleton to add
  * @...: method name / handler pairs, %NULL-terminated
  *
  * Adds @dbus_skeleton_type to the list of D-Bus interfaces implemented by
@@ -361,7 +361,7 @@ nm_exported_object_create_skeletons (NMExportedObject *self,
 	GObjectClass *object_class = g_type_class_peek (object_type);
 	NMExportedObjectClassInfo *classinfo;
 	GSList *iter;
-	GDBusObjectSkeleton *interface;
+	GDBusInterfaceSkeleton *interface;
 	guint n_properties;
 	int i;
 
@@ -373,7 +373,8 @@ nm_exported_object_create_skeletons (NMExportedObject *self,
 		GType dbus_skeleton_type = GPOINTER_TO_SIZE (iter->data);
 		gs_free GParamSpec **properties = NULL;
 
-		interface = g_object_new (dbus_skeleton_type, NULL);
+		interface = G_DBUS_INTERFACE_SKELETON (g_object_new (dbus_skeleton_type, NULL));
+
 		priv->interfaces = g_slist_prepend (priv->interfaces, interface);
 
 		/* Bind properties */
@@ -582,7 +583,7 @@ idle_emit_properties_changed (gpointer self)
 	NMExportedObjectPrivate *priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
 	GVariant *notifies;
 	GSList *iter;
-	GDBusObjectSkeleton *interface = NULL;
+	GDBusInterfaceSkeleton *interface = NULL;
 	guint signal_id = 0;
 
 	priv->notify_idle_id = 0;
@@ -593,7 +594,7 @@ idle_emit_properties_changed (gpointer self)
 	for (iter = priv->interfaces; iter; iter = iter->next) {
 		signal_id = g_signal_lookup ("properties-changed", G_OBJECT_TYPE (iter->data));
 		if (signal_id != 0) {
-			interface = iter->data;
+			interface = G_DBUS_INTERFACE_SKELETON (iter->data);
 			break;
 		}
 	}
