@@ -353,6 +353,14 @@ nm_exported_object_meta_marshal (GClosure *closure, GValue *return_value,
 	g_free (local_param_values);
 }
 
+GQuark _skeleton_data_quark (void);
+G_DEFINE_QUARK (skeleton-data, _skeleton_data);
+
+typedef struct {
+	GBinding **prop_bindings;
+	gulong *method_signals;
+} SkeletonData;
+
 static void
 nm_exported_object_create_skeletons (NMExportedObject *self,
                                      GType object_type)
@@ -372,16 +380,22 @@ nm_exported_object_create_skeletons (NMExportedObject *self,
 	for (iter = classinfo->skeleton_types; iter; iter = iter->next) {
 		GType dbus_skeleton_type = GPOINTER_TO_SIZE (iter->data);
 		gs_free GParamSpec **properties = NULL;
+		SkeletonData *skeleton_data;
+		guint j;
 
 		interface = G_DBUS_INTERFACE_SKELETON (g_object_new (dbus_skeleton_type, NULL));
 
 		priv->interfaces = g_slist_prepend (priv->interfaces, interface);
 
+		skeleton_data = g_slice_new (SkeletonData);
+
 		/* Bind properties */
 		properties = g_object_class_list_properties (G_OBJECT_GET_CLASS (interface), &n_properties);
-		for (i = 0; i < n_properties; i++) {
+		skeleton_data->prop_bindings = g_new (GBinding *, n_properties + 1);
+		for (i = 0, j = 0; i < n_properties; i++) {
 			GParamSpec *nm_property;
 			GBindingFlags flags;
+			GBinding *prop_binding;
 
 			nm_property = g_object_class_find_property (object_class, properties[i]->name);
 			if (!nm_property)
@@ -391,23 +405,61 @@ nm_exported_object_create_skeletons (NMExportedObject *self,
 			if (   (nm_property->flags & G_PARAM_WRITABLE)
 			    && !(nm_property->flags & G_PARAM_CONSTRUCT_ONLY))
 				flags |= G_BINDING_BIDIRECTIONAL;
-			g_object_bind_property (self, properties[i]->name,
-			                        interface, properties[i]->name,
-			                        flags);
+			prop_binding = g_object_bind_property (self, properties[i]->name,
+			                                       interface, properties[i]->name,
+			                                       flags);
+			if (prop_binding)
+				skeleton_data->prop_bindings[j++] = prop_binding;
 		}
+		skeleton_data->prop_bindings[j++] = NULL;
 
 		/* Bind methods */
-		for (i = 0; i < classinfo->methods->len; i++) {
+		skeleton_data->method_signals = g_new (gulong, classinfo->methods->len + 1);
+		for (i = 0, j = 0; i < classinfo->methods->len; i++) {
 			NMExportedObjectDBusMethodImpl *method = &g_array_index (classinfo->methods, NMExportedObjectDBusMethodImpl, i);
 			GClosure *closure;
+			gulong method_signal;
 
 			if (method->dbus_skeleton_type != dbus_skeleton_type)
 				continue;
 
 			closure = g_cclosure_new_swap (method->impl, self, NULL);
 			g_closure_set_meta_marshal (closure, NULL, nm_exported_object_meta_marshal);
-			g_signal_connect_closure (interface, method->method_name, closure, FALSE);
+			method_signal = g_signal_connect_closure (interface, method->method_name, closure, FALSE);
+
+			if (method_signal != 0)
+				skeleton_data->method_signals[j++] = method_signal;
 		}
+		skeleton_data->method_signals[j++] = 0;
+
+		g_object_set_qdata ((GObject *) interface, _skeleton_data_quark (), skeleton_data);
+	}
+}
+
+static void
+nm_exported_object_destroy_skeletons (NMExportedObject *self)
+{
+	NMExportedObjectPrivate *priv = NM_EXPORTED_OBJECT_GET_PRIVATE (self);
+
+	g_return_if_fail (priv->interfaces);
+
+	while (priv->interfaces) {
+		gs_unref_object GDBusInterfaceSkeleton *interface = G_DBUS_INTERFACE_SKELETON (priv->interfaces->data);
+		SkeletonData *skeleton_data;
+		guint j;
+
+		priv->interfaces = g_slist_remove (priv->interfaces, interface);
+
+		skeleton_data = g_object_steal_qdata ((GObject *) interface, _skeleton_data_quark ());
+
+		for (j = 0; skeleton_data->prop_bindings[j]; j++)
+			g_object_unref (skeleton_data->prop_bindings[j]);
+		for (j = 0; skeleton_data->method_signals[j]; j++)
+			g_signal_handler_disconnect (interface, skeleton_data->method_signals[j]);
+
+		g_free (skeleton_data->prop_bindings);
+		g_free (skeleton_data->method_signals);
+		g_slice_free (SkeletonData, skeleton_data);
 	}
 }
 
@@ -527,8 +579,7 @@ nm_exported_object_unexport (NMExportedObject *self)
 
 	nm_bus_manager_unregister_object (priv->bus_mgr, self);
 
-	g_slist_free_full (priv->interfaces, g_object_unref);
-	priv->interfaces = NULL;
+	nm_exported_object_destroy_skeletons (self);
 
 	g_clear_pointer (&priv->path, g_free);
 	g_clear_object (&priv->bus_mgr);
@@ -690,9 +741,6 @@ nm_exported_object_dispose (GObject *object)
 
 	g_variant_builder_clear (&priv->pending_notifies);
 	nm_clear_g_source (&priv->notify_idle_id);
-
-	g_slist_free_full (priv->interfaces, g_object_unref);
-	priv->interfaces = NULL;
 
 	G_OBJECT_CLASS (nm_exported_object_parent_class)->dispose (object);
 }
