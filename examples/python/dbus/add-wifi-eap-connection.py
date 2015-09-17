@@ -17,14 +17,14 @@
 # Copyright (C) 2011 Red Hat, Inc.
 #
 
-import dbus
+import dbus, uuid
 
 def path_to_value(path):
     return dbus.ByteArray("file://" + path + "\0")
 
 s_con = dbus.Dictionary({
     'type': '802-11-wireless',
-    'uuid': '7371bb78-c1f7-42a3-a9db-5b9566e8ca07',
+    'uuid': str(uuid.uuid4()),
     'id': 'My Wifi'})
 
 s_wifi = dbus.Dictionary({
