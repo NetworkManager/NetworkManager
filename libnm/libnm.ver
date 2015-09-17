@@ -859,6 +859,7 @@ libnm_1_2_0 {
 global:
 	nm_access_point_get_last_seen;
 	nm_connection_get_setting_ip_tunnel;
+	nm_connection_get_setting_macvlan;
 	nm_connection_verify_secrets;
 	nm_device_ethernet_get_s390_subchannels;
 	nm_client_get_all_devices;
@@ -944,6 +945,13 @@ global:
 	nm_setting_tun_new;
 	nm_setting_verify_secrets;
 	nm_setting_vpn_get_timeout;
+	nm_setting_macvlan_get_mode;
+	nm_setting_macvlan_get_parent;
+	nm_setting_macvlan_get_promiscuous;
+	nm_setting_macvlan_get_tap;
+	nm_setting_macvlan_get_type;
+	nm_setting_macvlan_mode_get_type;
+	nm_setting_macvlan_new;
 	nm_setting_wired_get_wake_on_lan;
 	nm_setting_wired_get_wake_on_lan_password;
 	nm_setting_wired_wake_on_lan_get_type;

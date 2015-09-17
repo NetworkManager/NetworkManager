@@ -28,6 +28,7 @@ libnm_core_headers =				\
 	$(core)/nm-setting-ip-tunnel.h		\
 	$(core)/nm-setting-ip4-config.h		\
 	$(core)/nm-setting-ip6-config.h		\
+	$(core)/nm-setting-macvlan.h		\
 	$(core)/nm-setting-olpc-mesh.h		\
 	$(core)/nm-setting-ppp.h		\
 	$(core)/nm-setting-pppoe.h		\
@@ -86,6 +87,7 @@ libnm_core_sources =				\
 	$(core)/nm-setting-ip-tunnel.c		\
 	$(core)/nm-setting-ip4-config.c		\
 	$(core)/nm-setting-ip6-config.c		\
+	$(core)/nm-setting-macvlan.c		\
 	$(core)/nm-setting-olpc-mesh.c		\
 	$(core)/nm-setting-ppp.c		\
 	$(core)/nm-setting-pppoe.c		\
