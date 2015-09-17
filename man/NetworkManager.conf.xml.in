@@ -511,6 +511,7 @@ unmanaged-devices=mac:00:22:68:1c:59:b1;mac:00:1E:65:30:D1:C4;interface-name:eth
 [connection]
 ipv6.ip6-privacy=0
 connection.autoconnect-slaves=1
+vpn.timeout=120
 
 [connection-wifi-wlan0]
 match-device=interface-name:wlan0
@@ -589,6 +590,10 @@ ipv6.ip6-privacy=1
           <term><varname>ipv6.route-metric</varname></term>
         </varlistentry>
       </variablelist>
+      <varlistentry>
+        <term><varname>vpn.timeout</varname></term>
+        <listitem><para>If left unspecified, default value of 60 seconds is used.</para></listitem>
+      </varlistentry>
     </para>
   </refsect1>
 
