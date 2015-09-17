@@ -4716,7 +4716,12 @@ linklocal6_start (NMDevice *self)
 
 	check_and_add_ipv6ll_addr (self);
 
-	priv->linklocal6_timeout_id = g_timeout_add_seconds (5, linklocal6_timeout_cb, self);
+	/* Depending on the network and what the 'dad_transmits' and 'retrans_time_ms'
+	 * sysctl values are, DAD for the IPv6LL address may take quite a while.
+	 * FIXME: use dad/retrans sysctl values if they are higher than a minimum time.
+	 * (rh #1101809)
+	 */
+	priv->linklocal6_timeout_id = g_timeout_add_seconds (15, linklocal6_timeout_cb, self);
 
 	return NM_ACT_STAGE_RETURN_POSTPONE;
 }
