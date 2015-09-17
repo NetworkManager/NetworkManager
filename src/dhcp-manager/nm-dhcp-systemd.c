@@ -474,7 +474,6 @@ bound4_handle (NMDhcpSystemd *self)
 		g_clear_error (&error);
 	}
 
-	sd_dhcp_lease_unref (lease);
 	g_hash_table_destroy (options);
 	g_clear_object (&ip4_config);
 }
