@@ -72,6 +72,7 @@ static void ip_check_ping_watch_cb (GPid pid, gint status, gpointer user_data);
 static gboolean ip_config_valid (NMDeviceState state);
 static NMActStageReturn dhcp4_start (NMDevice *self, NMConnection *connection, NMDeviceStateReason *reason);
 static gboolean dhcp6_start (NMDevice *self, gboolean wait_for_ll, NMDeviceStateReason *reason);
+static void nm_device_start_ip_check (NMDevice *self);
 
 G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, NM_TYPE_EXPORTED_OBJECT)
 
@@ -5554,8 +5555,12 @@ fw_change_zone_cb (NMFirewallManager *firewall_manager,
 		/* FIXME: fail the device activation? */
 	}
 
-	activation_source_schedule (self, nm_device_activate_stage3_ip_config_start, 0);
-	_LOGD (LOGD_DEVICE, "Activation: Stage 3 of 5 (IP Configure Start) scheduled.");
+	if (priv->state == NM_DEVICE_STATE_IP_CHECK)
+		nm_device_start_ip_check (self);
+	else {
+		activation_source_schedule (self, nm_device_activate_stage3_ip_config_start, 0);
+		_LOGD (LOGD_DEVICE, "Activation: Stage 3 of 5 (IP Configure Start) scheduled.");
+	}
 }
 
 /*
@@ -8745,6 +8750,7 @@ _set_state_full (NMDevice *self,
 	NMActRequest *req;
 	gboolean no_firmware = FALSE;
 	NMSettingsConnection *connection;
+	NMConnection *applied_connection;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
@@ -8995,7 +9001,28 @@ _set_state_full (NMDevice *self,
 		nm_device_queue_state (self, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_NONE);
 		break;
 	case NM_DEVICE_STATE_IP_CHECK:
-		nm_device_start_ip_check (self);
+		/* Now that IP config has completed, check if the firewall
+		 * zone must be set again for the IP interface.
+		 */
+		applied_connection = nm_device_get_applied_connection (self);
+
+		if (   applied_connection
+		    && priv->ifindex != priv->ip_ifindex
+		    && !nm_device_uses_assumed_connection (self)) {
+			NMSettingConnection *s_con;
+			const char *zone;
+
+			s_con = nm_connection_get_setting_connection (applied_connection);
+			zone = nm_setting_connection_get_zone (s_con);
+			g_assert (!priv->fw_call);
+			priv->fw_call = nm_firewall_manager_add_or_change_zone (nm_firewall_manager_get (),
+			                                                        nm_device_get_ip_iface (self),
+			                                                        zone,
+			                                                        FALSE,
+			                                                        fw_change_zone_cb,
+			                                                        self);
+		} else
+			nm_device_start_ip_check (self);
 
 		/* IP-related properties are only valid when the device has IP configuration;
 		 * now that it does, ensure their change notifications are emitted.
