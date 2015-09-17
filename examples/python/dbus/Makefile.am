@@ -2,7 +2,8 @@ EXTRA_DIST = \
 	nm-state.py \
 	add-connection.py \
 	add-connection-compat.py \
-	add-system-wifi-connection.py \
+	add-wifi-eap-connection.py \
+	add-wifi-psk-connection.py \
 	vpn.py \
 	update-secrets.py \
 	list-connections.py \
