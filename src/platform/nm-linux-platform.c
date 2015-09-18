@@ -1132,6 +1132,7 @@ _rtnl_addr_last_update_time_to_nm (const struct rtnl_addr *rtnladdr, gint32 *out
 	guint32 last_update_time = rtnl_addr_get_last_update_time ((struct rtnl_addr *) rtnladdr);
 	struct timespec tp;
 	gint64 now_nl, now_nm, result;
+	int err;
 
 	/* timestamp is unset. Default to 1. */
 	if (!last_update_time) {
@@ -1142,7 +1143,8 @@ _rtnl_addr_last_update_time_to_nm (const struct rtnl_addr *rtnladdr, gint32 *out
 
 	/* do all the calculations in milliseconds scale */
 
-	clock_gettime (CLOCK_MONOTONIC, &tp);
+	err = clock_gettime (CLOCK_MONOTONIC, &tp);
+	g_assert (err == 0);
 	now_nm = nm_utils_get_monotonic_timestamp_ms ();
 	now_nl = (((gint64) tp.tv_sec) * ((gint64) 1000)) +
 	         (tp.tv_nsec / (NM_UTILS_NS_PER_SECOND/1000));
