@@ -266,6 +266,7 @@ set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
 	NMSettingAdslPrivate *priv = NM_SETTING_ADSL_GET_PRIVATE (object);
+	const char *str;
 
 	switch (prop_id) {
 	case PROP_USERNAME:
@@ -281,11 +282,13 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_PROTOCOL:
 		g_free (priv->protocol);
-		priv->protocol = g_ascii_strdown (g_value_get_string (value), -1);
+		str = g_value_get_string (value);
+		priv->protocol = str ? g_ascii_strdown (str, -1) : NULL;
 		break;
 	case PROP_ENCAPSULATION:
 		g_free (priv->encapsulation);
-		priv->encapsulation = g_ascii_strdown (g_value_get_string (value), -1);
+		str = g_value_get_string (value);
+		priv->encapsulation = str ? g_ascii_strdown (str, -1) : NULL;
 		break;
 	case PROP_VPI:
 		priv->vpi = g_value_get_uint (value);
