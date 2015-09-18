@@ -8699,6 +8699,14 @@ editor_init_new_connection (NmCli *nmc, NMConnection *connection)
 			nmc_setting_custom_init (base_setting);
 		}
 
+		/* ADSL */
+		if (g_strcmp0 (con_type, NM_SETTING_ADSL_SETTING_NAME) == 0) {
+			/* Initialize a protocol */
+			g_object_set (NM_SETTING_ADSL (base_setting),
+			              NM_SETTING_ADSL_PROTOCOL, NM_SETTING_ADSL_PROTOCOL_PPPOE,
+			              NULL);
+		}
+
 		/* Always add IPv4 and IPv6 settings for non-slave connections */
 		setting = nm_setting_ip4_config_new ();
 		nmc_setting_custom_init (setting);
