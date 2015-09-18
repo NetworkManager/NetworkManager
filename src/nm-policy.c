@@ -1563,26 +1563,19 @@ add_or_change_zone_cb (GError *error, gpointer user_data)
 }
 
 static void
-firewall_update_zone (NMPolicy *policy, NMConnection *connection)
+firewall_update_zone (NMPolicy *policy, NMConnection *connection, NMDevice *device)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	NMSettingConnection *s_con = nm_connection_get_setting_connection (connection);
-	const GSList *iter;
 
-	/* find dev with passed connection and change zone its interface belongs to */
-	for (iter = nm_manager_get_devices (priv->manager); iter; iter = g_slist_next (iter)) {
-		NMDevice *dev = NM_DEVICE (iter->data);
-
-		if (   (nm_device_get_connection (dev) == connection)
-		    && (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED)
-		    && !nm_device_uses_assumed_connection (dev)) {
-			nm_firewall_manager_add_or_change_zone (priv->firewall_manager,
-			                                        nm_device_get_ip_iface (dev),
-			                                        nm_setting_connection_get_zone (s_con),
-			                                        FALSE, /* change zone */
-			                                        add_or_change_zone_cb,
-			                                        g_object_ref (dev));
-		}
+	if (   nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED
+	    && !nm_device_uses_assumed_connection (device)) {
+		nm_firewall_manager_add_or_change_zone (priv->firewall_manager,
+		                                        nm_device_get_ip_iface (device),
+		                                        nm_setting_connection_get_zone (s_con),
+		                                        FALSE, /* change zone */
+		                                        add_or_change_zone_cb,
+		                                        g_object_ref (device));
 	}
 }
 
@@ -1655,11 +1648,7 @@ connection_updated (NMSettings *settings,
                     NMConnection *connection,
                     gpointer user_data)
 {
-	NMPolicy *policy = (NMPolicy *) user_data;
-
-	firewall_update_zone (policy, connection);
-
-	schedule_activate_all (policy);
+	schedule_activate_all ((NMPolicy *) user_data);
 }
 
 static void
@@ -1667,6 +1656,25 @@ connection_updated_by_user (NMSettings *settings,
                             NMSettingsConnection *connection,
                             gpointer user_data)
 {
+	NMPolicy *policy = (NMPolicy *) user_data;
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
+	const GSList *iter;
+	NMDevice *device = NULL;
+
+	/* find device with given connection */
+	for (iter = nm_manager_get_devices (priv->manager); iter; iter = g_slist_next (iter)) {
+		NMDevice *dev = NM_DEVICE (iter->data);
+
+		if (nm_device_get_connection (dev) == NM_CONNECTION (connection)) {
+			device = dev;
+			break;
+		}
+	}
+
+	if (device) {
+		firewall_update_zone (policy, NM_CONNECTION (connection), device);
+		nm_device_update_metered (device);
+	}
 	/* Reset auto retries back to default since connection was updated */
 	nm_settings_connection_reset_autoconnect_retries (connection);
 }

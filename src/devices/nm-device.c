@@ -68,7 +68,6 @@ _LOG_DECLARE_SELF (NMDevice);
 
 #include "nmdbus-device.h"
 
-static void nm_device_update_metered (NMDevice *self);
 static void ip_check_ping_watch_cb (GPid pid, gint status, gpointer user_data);
 static gboolean ip_config_valid (NMDeviceState state);
 static NMActStageReturn dhcp4_start (NMDevice *self, NMConnection *connection, NMDeviceStateReason *reason);
@@ -7841,7 +7840,7 @@ nm_device_set_dhcp_anycast_address (NMDevice *self, const char *addr)
 	priv->dhcp_anycast_address = g_strdup (addr);
 }
 
-static void
+void
 nm_device_update_metered (NMDevice *self)
 {
 #define NM_METERED_INVALID ((NMMetered) -1)

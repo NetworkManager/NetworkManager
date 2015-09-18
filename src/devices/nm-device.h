@@ -498,6 +498,7 @@ const NMPlatformIP4Route *nm_device_get_ip4_default_route (NMDevice *self, gbool
 const NMPlatformIP6Route *nm_device_get_ip6_default_route (NMDevice *self, gboolean *out_is_assumed);
 
 void nm_device_spawn_iface_helper (NMDevice *self);
+void nm_device_update_metered (NMDevice *self);
 
 G_END_DECLS
 
