@@ -774,7 +774,7 @@ examined. To get information for a specific device, the interface name has
 to be provided.
 .TP
 .TP
-.B set <ifname> [autoconnect yes|no] [managed yes|no]
+.B set [ifname] <ifname> [autoconnect yes|no] [managed yes|no]
 .br
 Set device properties.
 .TP

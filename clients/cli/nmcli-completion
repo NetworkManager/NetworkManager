@@ -596,6 +596,7 @@ _nmcli_compl_ARGS()
 
 # some commands expect a connection as parameter. This connection can either be given
 # as id|uuid|path|apath. Parse that connection parameter.
+# Actually, it can also ask for a device name, like `nmcli device set [ifname] <ifname>`
 _nmcli_compl_ARGS_CONNECTION()
 {
     if ! _nmcli_array_has_value OPTIONS "${words[0]}"; then
@@ -1274,9 +1275,11 @@ _nmcli()
                         ;;
                     se|set)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_compl_COMMAND_nl "${words[2]}" "$(_nmcli_dev_status DEVICE)"
+                            _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "ifname\n%s" "$(_nmcli_con_show NAME)")"
                         else
-                            _nmcli_array_delete_at words 0 2
+                            _nmcli_array_delete_at words 0 1
+                            OPTIONS=(ifname)
+                            _nmcli_compl_ARGS_CONNECTION && return 0
                             OPTIONS=(autoconnect managed)
                             _nmcli_compl_ARGS
                         fi

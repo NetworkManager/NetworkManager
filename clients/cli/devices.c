@@ -259,7 +259,7 @@ usage (void)
 	              "COMMAND := { status | show | connect | disconnect | delete | wifi }\n\n"
 	              "  status\n\n"
 	              "  show [<ifname>]\n\n"
-	              "  set <ifname> [autoconnect yes|no] [managed yes|no]\n\n"
+	              "  set [ifname] <ifname> [autoconnect yes|no] [managed yes|no]\n\n"
 	              "  connect <ifname>\n\n"
 	              "  disconnect <ifname> ...\n\n"
 	              "  delete <ifname> ...\n\n"
@@ -338,7 +338,8 @@ usage_device_set (void)
 {
 	g_printerr (_("Usage: nmcli device set { ARGUMENTS | help }\n"
 	              "\n"
-	              "ARGUMENTS := <ifname> { PROPERTY [ PROPERTY ... ] }\n"
+	              "ARGUMENTS := DEVICE { PROPERTY [ PROPERTY ... ] }\n"
+	              "DEVICE    := [ifname] <ifname> \n"
 	              "PROPERTY  := { autoconnect { yes | no } |\n"
 	              "             { managed { yes | no }\n"
 	              "\n"
@@ -1924,6 +1925,11 @@ do_device_set (NmCli *nmc, int argc, char **argv)
 		[DEV_SET_AUTOCONNECT] = { -1 },
 		[DEV_SET_MANAGED]     = { -1 },
 	};
+
+	if (argc >= 1 && g_strcmp0 (*argv, "ifname") == 0) {
+		argc--;
+		argv++;
+	}
 
 	if (argc == 0) {
 		g_string_printf (nmc->return_text, _("Error: No interface specified."));
