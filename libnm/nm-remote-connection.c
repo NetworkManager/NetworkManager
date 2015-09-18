@@ -706,7 +706,7 @@ init_get_settings_cb (GObject *proxy,
 	priv->visible = TRUE;
 	replace_settings (init_data->connection, settings);
 	g_variant_unref (settings);
-	g_object_notify (init_data->connection, NM_REMOTE_CONNECTION_VISIBLE);
+	g_object_notify (G_OBJECT (init_data->connection), NM_REMOTE_CONNECTION_VISIBLE);
 
 	init_async_complete (init_data, NULL);
 }
