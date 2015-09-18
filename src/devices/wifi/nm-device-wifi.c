@@ -742,8 +742,6 @@ complete_connection (NMDevice *device,
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMSettingWireless *s_wifi;
-	NMSettingWirelessSecurity *s_wsec;
-	NMSetting8021x *s_8021x;
 	const char *setting_mac;
 	char *str_ssid = NULL;
 	NMAccessPoint *ap = NULL;
@@ -754,8 +752,6 @@ complete_connection (NMDevice *device,
 	const char *perm_hw_addr;
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
-	s_wsec = nm_connection_get_setting_wireless_security (connection);
-	s_8021x = nm_connection_get_setting_802_1x (connection);
 
 	if (!specific_object) {
 		/* If not given a specific object, we need at minimum an SSID */
