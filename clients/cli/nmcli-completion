@@ -387,7 +387,7 @@ _nmcli_compl_ARGS()
                         # user friendly. Only complete them, if the current word already starts with an "8".
                         _nmcli_list "802-3-ethernet 802-11-wireless 802-11-olpc-mesh"
                     else
-                        _nmcli_list "ethernet wifi wimax gsm cdma infiniband bluetooth vpn olpc-mesh vlan bond bridge team pppoe"
+                        _nmcli_list "ethernet wifi wimax gsm cdma infiniband bluetooth vpn olpc-mesh vlan bond bridge team pppoe adsl"
                     fi
                     return 0
                 fi
@@ -560,6 +560,18 @@ _nmcli_compl_ARGS()
             bssid)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     _nmcli_list_nl "$(_nmcli_wifi_list BSSID)"
+                    return 0
+                fi
+                ;;
+            encapsulation)
+                if [[ "${#words[@]}" -eq 2 ]]; then
+                    _nmcli_list "vcmux llc"
+                    return 0
+                fi
+                ;;
+            protocol)
+                if [[ "${#words[@]}" -eq 2 ]]; then
+                    _nmcli_list "pppoa pppoe ipoatm"
                     return 0
                 fi
                 ;;
@@ -1053,6 +1065,11 @@ _nmcli()
                                     OPTIONS_TYPE=pppoe
                                     OPTIONS_TYPED=(username password service mtu mac)
                                     OPTIONS_MANDATORY=(username)
+                                    ;;
+                                a|ad|ads|adsl)
+                                    OPTIONS_TYPE=adsl
+                                    OPTIONS_TYPED=(username password protocol encapsulation)
+                                    OPTIONS_MANDATORY=(username protocol)
                                     ;;
                                 *)
                                     # for an unknown connection type, we stop completion here
