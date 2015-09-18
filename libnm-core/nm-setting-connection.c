@@ -1533,6 +1533,9 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * (for example "Home", "Work", "Public").  %NULL or unspecified zone means
 	 * the connection will be placed in the default zone as defined by the
 	 * firewall.
+	 *
+	 * When updating this property on a currently activated connection,
+	 * the change takes effect immediately.
 	 **/
 	/* ---ifcfg-rh---
 	 * property: zone
@@ -1549,6 +1552,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		                      G_PARAM_READWRITE |
 		                      G_PARAM_CONSTRUCT |
 		                      NM_SETTING_PARAM_FUZZY_IGNORE |
+		                      NM_SETTING_PARAM_REAPPLY_IMMEDIATELY |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1677,6 +1681,9 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 *
 	 * Whether the connection is metered.
 	 *
+	 * When updating this property on a currently activated connection,
+	 * the change takes effect immediately.
+	 *
 	 * Since: 1.2
 	 **/
 	/* ---ifcfg-rh---
@@ -1693,5 +1700,6 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		                    NM_TYPE_METERED,
 		                    NM_METERED_UNKNOWN,
 		                    G_PARAM_READWRITE |
+		                    NM_SETTING_PARAM_REAPPLY_IMMEDIATELY |
 		                    G_PARAM_STATIC_STRINGS));
 }

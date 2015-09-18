@@ -89,6 +89,16 @@ gboolean _nm_setting_clear_secrets_with_flags (NMSetting *setting,
 /* This is a legacy property, which clients should not send to the daemon. */
 #define NM_SETTING_PARAM_LEGACY (1 << (5 + G_PARAM_USER_SHIFT))
 
+/* When a connection is active and gets modified, usually the change
+ * to the settings-connection does not propagate automatically to the
+ * applied-connection of the device. For certain properties like the
+ * firewall zone and the metered property, this is different.
+ *
+ * Such fields can be ignored during nm_connection_compare() with the
+ * NMSettingCompareFlag NM_SETTING_COMPARE_FLAG_IGNORE_REAPPLY_IMMEDIATELY.
+ */
+#define NM_SETTING_PARAM_REAPPLY_IMMEDIATELY (1 << (6 + G_PARAM_USER_SHIFT))
+
 /* Ensure the setting's GType is registered at library load time */
 #define NM_SETTING_REGISTER_TYPE(x) \
 static void __attribute__((constructor)) register_setting (void) \

@@ -80,8 +80,20 @@
  * takes into account properties marked with the %NM_SETTING_PARAM_INFERRABLE
  * flag.
  */
-#define NM_SETTING_COMPARE_FLAG_INFERRABLE 0x80000000
+#define NM_SETTING_COMPARE_FLAG_INFERRABLE ((NMSettingCompareFlags) 0x80000000)
 
+/* NM_SETTING_COMPARE_FLAG_IGNORE_REAPPLY_IMMEDIATELY: this flag is used for properties
+ * that automatically get re-applied on an active connection when the settings
+ * connection is modified. For most properties, the applied-connection is distinct
+ * from the setting-connection and changes don't propagate. Exceptions are the
+ * firewall-zone and the metered property.
+ */
+#define NM_SETTING_COMPARE_FLAG_IGNORE_REAPPLY_IMMEDIATELY ((NMSettingCompareFlags) 0x40000000)
+
+/* NM_SETTING_COMPARE_FLAG_NONE: for convenience, define a special flag NONE -- which
+ * equals to numeric zero (NM_SETTING_COMPARE_FLAG_EXACT).
+ */
+#define NM_SETTING_COMPARE_FLAG_NONE ((NMSettingCompareFlags) 0)
 
 
 #define NM_SETTING_SECRET_FLAGS_ALL \
