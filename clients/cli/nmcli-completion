@@ -491,6 +491,7 @@ _nmcli_compl_ARGS()
                     return 0
                 fi
                 ;;
+            managed| \
             autoconnect| \
             stp| \
             hairpin| \
@@ -595,6 +596,7 @@ _nmcli_compl_ARGS()
 
 # some commands expect a connection as parameter. This connection can either be given
 # as id|uuid|path|apath. Parse that connection parameter.
+# Actually, it can also ask for a device name, like `nmcli device set [ifname] <ifname>`
 _nmcli_compl_ARGS_CONNECTION()
 {
     if ! _nmcli_array_has_value OPTIONS "${words[0]}"; then
@@ -1251,7 +1253,7 @@ _nmcli()
             ;;
         d|de|dev|devi|devic|device)
             if [[ ${#words[@]} -eq 2 ]]; then
-                _nmcli_compl_COMMAND "$command" status show connect disconnect delete wifi
+                _nmcli_compl_COMMAND "$command" status show connect disconnect delete wifi set
             elif [[ ${#words[@]} -gt 2 ]]; then
                 case "$command" in
                     s|st|sta|stat|statu|status)
@@ -1269,6 +1271,17 @@ _nmcli()
                     de|del|dele|delet|delete)
                         if [[ ${#words[@]} -ge 3 ]]; then
                             _nmcli_compl_COMMAND_nl "${words[2]}" "$(_nmcli_dev_status DEVICE)"
+                        fi
+                        ;;
+                    se|set)
+                        if [[ ${#words[@]} -eq 3 ]]; then
+                            _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "ifname\n%s" "$(_nmcli_con_show NAME)")"
+                        else
+                            _nmcli_array_delete_at words 0 1
+                            OPTIONS=(ifname)
+                            _nmcli_compl_ARGS_CONNECTION && return 0
+                            OPTIONS=(autoconnect managed)
+                            _nmcli_compl_ARGS
                         fi
                         ;;
                     w|wi|wif|wifi)

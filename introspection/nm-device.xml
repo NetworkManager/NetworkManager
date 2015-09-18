@@ -96,9 +96,13 @@
         NM_DEVICE_STATE_ACTIVATED state.
       </tp:docstring>
     </property>
-    <property name="Managed" type="b" access="read">
+    <property name="Managed" type="b" access="readwrite">
       <tp:docstring>
-        Whether or not this device is managed by NetworkManager.
+        Whether or not this device is managed by NetworkManager. Setting this
+        property has a similar effect to configuring the device as unmanaged
+        via the keyfile.unmanaged-devices setting in NetworkManager.conf.
+        Changes to this value are not persistent and lost after NetworkManager
+        restart.
       </tp:docstring>
     </property>
     <property name="Autoconnect" type="b" access="readwrite">

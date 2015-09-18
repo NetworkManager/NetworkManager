@@ -1584,7 +1584,7 @@ recheck_assume_connection (NMDevice *device, gpointer user_data)
 
 	if (manager_sleeping (self))
 		return FALSE;
-	if (nm_device_get_unmanaged_flag (device, NM_UNMANAGED_ALL & ~NM_UNMANAGED_DEFAULT))
+	if (nm_device_get_unmanaged (device, NM_UNMANAGED_ALL & ~NM_UNMANAGED_DEFAULT))
 		return FALSE;
 
 	state = nm_device_get_state (device);
@@ -1613,7 +1613,7 @@ recheck_assume_connection (NMDevice *device, gpointer user_data)
 			                         NM_DEVICE_STATE_REASON_CONFIG_FAILED);
 
 			/* Return default-unmanaged devices to their original state */
-			if (nm_device_get_unmanaged_flag (device, NM_UNMANAGED_DEFAULT)) {
+			if (nm_device_get_unmanaged (device, NM_UNMANAGED_DEFAULT)) {
 				nm_device_state_changed (device,
 				                         NM_DEVICE_STATE_UNMANAGED,
 				                         NM_DEVICE_STATE_REASON_CONFIG_FAILED);
@@ -1769,10 +1769,10 @@ add_device (NMManager *self, NMDevice *device, gboolean try_assume)
 
 	unmanaged_specs = nm_settings_get_unmanaged_specs (priv->settings);
 	user_unmanaged = nm_device_spec_match_list (device, unmanaged_specs);
-	nm_device_set_initial_unmanaged_flag (device, NM_UNMANAGED_USER, user_unmanaged);
+	nm_device_set_unmanaged_initial (device, NM_UNMANAGED_USER, user_unmanaged);
 
 	sleeping = manager_sleeping (self);
-	nm_device_set_initial_unmanaged_flag (device, NM_UNMANAGED_INTERNAL, sleeping);
+	nm_device_set_unmanaged_initial (device, NM_UNMANAGED_INTERNAL, sleeping);
 
 	dbus_path = nm_exported_object_export (NM_EXPORTED_OBJECT (device));
 	nm_log_dbg (LOGD_DEVICE, "(%s): exported as %s", nm_device_get_iface (device), dbus_path);
@@ -4578,6 +4578,10 @@ prop_filter (GDBusConnection *connection,
 			glib_propname = NM_DEVICE_AUTOCONNECT;
 			permission = NM_AUTH_PERMISSION_NETWORK_CONTROL;
 			audit_op = NM_AUDIT_OP_DEVICE_AUTOCONNECT;
+		} else if (!strcmp (propname, "Managed")) {
+			glib_propname = NM_DEVICE_MANAGED;
+			permission = NM_AUTH_PERMISSION_NETWORK_CONTROL;
+			audit_op = NM_AUDIT_OP_DEVICE_MANAGED;
 		} else
 			return message;
 		interface_type = NMDBUS_TYPE_DEVICE_SKELETON;

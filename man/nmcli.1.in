@@ -757,7 +757,7 @@ of its latest state.
 .B device - show and manage network interfaces
 .br
 .TP
-.SS \fICOMMAND\fP := { status | show | connect | disconnect | delete | wifi }
+.SS \fICOMMAND\fP := { status | show | set | connect | disconnect | delete | wifi }
 .sp
 .RS
 .TP
@@ -772,6 +772,11 @@ This is the default action if no command is specified to \fIdevice\fP object.
 Show detailed information about devices.  Without an argument, all devices are
 examined. To get information for a specific device, the interface name has
 to be provided.
+.TP
+.TP
+.B set [ifname] <ifname> [autoconnect yes|no] [managed yes|no]
+.br
+Set device properties.
 .TP
 .B connect <ifname>
 .br

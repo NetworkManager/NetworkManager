@@ -215,6 +215,7 @@ typedef struct {
 	char *        physical_port_id;
 	guint         dev_id;
 
+	gboolean                managed_touched_by_user;
 	NMUnmanagedFlags        unmanaged_flags;
 	gboolean                is_nm_owned; /* whether the device is a device owned and created by NM */
 	DeleteOnDeactivateData *delete_on_deactivate_data; /* data for scheduled cleanup when deleting link (g_idle_add) */
@@ -1117,7 +1118,7 @@ nm_device_finish_init (NMDevice *self)
 	if (   NM_DEVICE_GET_CLASS (self)->can_unmanaged_external_down (self)
 	    && !nm_platform_link_is_up (NM_PLATFORM_GET, priv->ifindex)
 	    && priv->ifindex > 0)
-		nm_device_set_initial_unmanaged_flag (self, NM_UNMANAGED_EXTERNAL_DOWN, TRUE);
+		nm_device_set_unmanaged_initial (self, NM_UNMANAGED_EXTERNAL_DOWN, TRUE);
 
 	if (priv->master)
 		nm_device_enslave_slave (priv->master, self, NULL);
@@ -1127,19 +1128,19 @@ nm_device_finish_init (NMDevice *self)
 			/* Unmanaged the loopback device with an explicit NM_UNMANAGED_LOOPBACK flag.
 			 * Later we might want to manage 'lo' too. Currently that doesn't work because
 			 * NetworkManager might down the interface or remove the 127.0.0.1 address. */
-			nm_device_set_initial_unmanaged_flag (self, NM_UNMANAGED_LOOPBACK, TRUE);
+			nm_device_set_unmanaged_initial (self, NM_UNMANAGED_LOOPBACK, TRUE);
 		} else if (priv->platform_link_initialized || (priv->is_nm_owned && nm_device_is_software (self))) {
 			gboolean platform_unmanaged = FALSE;
 
 			if (nm_platform_link_get_unmanaged (NM_PLATFORM_GET, priv->ifindex, &platform_unmanaged))
-				nm_device_set_initial_unmanaged_flag (self, NM_UNMANAGED_DEFAULT, platform_unmanaged);
+				nm_device_set_unmanaged_initial (self, NM_UNMANAGED_DEFAULT, platform_unmanaged);
 		} else {
 			/* Hardware and externally-created software links stay unmanaged
 			 * until they are fully initialized by the platform. NM created
 			 * links must be available for activation immediately and thus
 			 * do not get the PLATFORM_INIT unmanaged flag set.
 			 */
-			nm_device_set_initial_unmanaged_flag (self, NM_UNMANAGED_PLATFORM_INIT, TRUE);
+			nm_device_set_unmanaged_initial (self, NM_UNMANAGED_PLATFORM_INIT, TRUE);
 		}
 	}
 
@@ -1426,7 +1427,7 @@ device_link_changed (NMDevice *self)
 		/* Manage externally-created software interfaces only when they are IFF_UP */
 		g_assert (priv->ifindex > 0);
 		if (NM_DEVICE_GET_CLASS (self)->can_unmanaged_external_down (self)) {
-			gboolean external_down = nm_device_get_unmanaged_flag (self, NM_UNMANAGED_EXTERNAL_DOWN);
+			gboolean external_down = nm_device_get_unmanaged (self, NM_UNMANAGED_EXTERNAL_DOWN);
 
 			if (external_down && NM_FLAGS_HAS (info.flags, IFF_UP)) {
 				if (nm_device_get_state (self) < NM_DEVICE_STATE_DISCONNECTED) {
@@ -7677,13 +7678,13 @@ nm_device_get_managed (NMDevice *self)
 }
 
 /**
- * nm_device_get_unmanaged_flag():
+ * nm_device_get_unmanaged():
  * @self: the #NMDevice
  *
  * Returns: %TRUE if the device is unmanaged for @flag.
  */
 gboolean
-nm_device_get_unmanaged_flag (NMDevice *self, NMUnmanagedFlags flag)
+nm_device_get_unmanaged (NMDevice *self, NMUnmanagedFlags flag)
 {
 	return NM_FLAGS_ANY (NM_DEVICE_GET_PRIVATE (self)->unmanaged_flags, flag);
 }
@@ -7697,7 +7698,7 @@ nm_device_get_unmanaged_flag (NMDevice *self, NMUnmanagedFlags flag)
 static gboolean
 nm_device_get_default_unmanaged (NMDevice *self)
 {
-	return nm_device_get_unmanaged_flag (self, NM_UNMANAGED_DEFAULT);
+	return nm_device_get_unmanaged (self, NM_UNMANAGED_DEFAULT);
 }
 
 static void
@@ -7768,6 +7769,9 @@ nm_device_set_unmanaged_by_device_spec (NMDevice *self, const GSList *unmanaged_
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
+	if (priv->managed_touched_by_user)
+		return;
+
 	unmanaged = nm_device_spec_match_list (self, unmanaged_specs);
 	nm_device_set_unmanaged (self,
 	                         NM_UNMANAGED_USER,
@@ -7793,7 +7797,7 @@ nm_device_set_unmanaged_quitting (NMDevice *self)
 }
 
 /**
- * nm_device_set_initial_unmanaged_flag():
+ * nm_device_set_unmanaged_initial():
  * @self: the #NMDevice
  * @flag: an #NMUnmanagedFlag
  * @unmanaged: %TRUE or %FALSE to set or clear @flag
@@ -7803,9 +7807,9 @@ nm_device_set_unmanaged_quitting (NMDevice *self)
  * Should only be used when initializing a device.
  */
 void
-nm_device_set_initial_unmanaged_flag (NMDevice *self,
-                                      NMUnmanagedFlags flag,
-                                      gboolean unmanaged)
+nm_device_set_unmanaged_initial (NMDevice *self,
+                                 NMUnmanagedFlags flag,
+                                 gboolean unmanaged)
 {
 	NMDevicePrivate *priv;
 
@@ -7920,7 +7924,7 @@ nm_device_check_connection_available (NMDevice *self,
 	if (state < NM_DEVICE_STATE_UNMANAGED)
 		return FALSE;
 	if (   state < NM_DEVICE_STATE_UNAVAILABLE
-	    && nm_device_get_unmanaged_flag (self, NM_UNMANAGED_ALL & ~NM_UNMANAGED_DEFAULT))
+	    && nm_device_get_unmanaged (self, NM_UNMANAGED_ALL & ~NM_UNMANAGED_DEFAULT))
 		return FALSE;
 	if (   state < NM_DEVICE_STATE_DISCONNECTED
 	    && (   (   !NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER)
@@ -9362,6 +9366,7 @@ set_property (GObject *object, guint prop_id,
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	const char *hw_addr, *p;
 	guint count;
+	gboolean val_bool;
 
 	switch (prop_id) {
 	case PROP_UDI:
@@ -9398,6 +9403,14 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_IP4_ADDRESS:
 		priv->ip4_address = g_value_get_uint (value);
+		break;
+	case PROP_MANAGED:
+		val_bool = g_value_get_boolean (value);
+		priv->managed_touched_by_user = TRUE;
+		nm_device_set_unmanaged (self,
+		                         NM_UNMANAGED_USER | (val_bool ? NM_UNMANAGED_DEFAULT : NM_UNMANAGED_NONE),
+		                         !val_bool,
+		                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
 		break;
 	case PROP_AUTOCONNECT:
 		nm_device_set_autoconnect (self, g_value_get_boolean (value));
@@ -9750,7 +9763,7 @@ nm_device_class_init (NMDeviceClass *klass)
 		(object_class, PROP_MANAGED,
 		 g_param_spec_boolean (NM_DEVICE_MANAGED, "", "",
 		                       FALSE,
-		                       G_PARAM_READABLE |
+		                       G_PARAM_READWRITE |
 		                       G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
