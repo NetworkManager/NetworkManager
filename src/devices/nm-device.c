@@ -5263,7 +5263,6 @@ act_stage3_ip6_config_start (NMDevice *self,
                              NMDeviceStateReason *reason)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	const char *ip_iface;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	NMConnection *connection;
 	const char *method;
@@ -5273,8 +5272,6 @@ act_stage3_ip6_config_start (NMDevice *self,
 	gboolean ready_slaves;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
-
-	ip_iface = nm_device_get_ip_iface (self);
 
 	connection = nm_device_get_applied_connection (self);
 	g_assert (connection);
@@ -6630,7 +6627,6 @@ nm_device_set_ip4_config (NMDevice *self,
                           NMDeviceStateReason *reason)
 {
 	NMDevicePrivate *priv;
-	const char *ip_iface;
 	NMIP4Config *old_config = NULL;
 	gboolean has_changes = FALSE;
 	gboolean success = TRUE;
@@ -6640,7 +6636,6 @@ nm_device_set_ip4_config (NMDevice *self,
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
-	ip_iface = nm_device_get_ip_iface (self);
 	ip_ifindex = nm_device_get_ip_ifindex (self);
 
 	if (new_config) {
@@ -6769,7 +6764,6 @@ nm_device_set_ip6_config (NMDevice *self,
                           NMDeviceStateReason *reason)
 {
 	NMDevicePrivate *priv;
-	const char *ip_iface;
 	NMIP6Config *old_config = NULL;
 	gboolean has_changes = FALSE;
 	gboolean success = TRUE;
@@ -6779,7 +6773,6 @@ nm_device_set_ip6_config (NMDevice *self,
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
-	ip_iface = nm_device_get_ip_iface (self);
 	ip_ifindex = nm_device_get_ip_ifindex (self);
 
 	if (new_config) {
