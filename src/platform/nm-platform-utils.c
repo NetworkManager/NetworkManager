@@ -138,21 +138,31 @@ nmp_utils_ethtool_get_permanent_address (const char *ifname,
                                          guint8 *buf,
                                          size_t *length)
 {
-	gs_free struct ethtool_perm_addr *epaddr = NULL;
+	struct {
+		struct ethtool_perm_addr e;
+		guint8 _extra_data[NM_UTILS_HWADDR_LEN_MAX + 1];
+	} edata;
+	guint zeros[NM_UTILS_HWADDR_LEN_MAX] = { 0 };
 
 	if (!ifname)
 		return FALSE;
 
-	epaddr = g_malloc0 (sizeof (*epaddr) + NM_UTILS_HWADDR_LEN_MAX);
-	epaddr->cmd = ETHTOOL_GPERMADDR;
-	epaddr->size = NM_UTILS_HWADDR_LEN_MAX;
+	memset (&edata, 0, sizeof (edata));
+	edata.e.cmd = ETHTOOL_GPERMADDR;
+	edata.e.size = NM_UTILS_HWADDR_LEN_MAX;
 
-	if (!ethtool_get (ifname, epaddr))
+	if (!ethtool_get (ifname, &edata.e))
 		return FALSE;
 
-	g_assert (epaddr->size <= NM_UTILS_HWADDR_LEN_MAX);
-	memcpy (buf, epaddr->data, epaddr->size);
-	*length = epaddr->size;
+	g_assert (edata.e.size <= NM_UTILS_HWADDR_LEN_MAX);
+
+	/* Some drivers might return a permanent address of all zeros.
+	 * Reject that (rh#1264024) */
+	if (memcmp (edata.e.data, zeros, edata.e.size) == 0)
+		return FALSE;
+
+	memcpy (buf, edata.e.data, edata.e.size);
+	*length = edata.e.size;
 	return TRUE;
 }
 
