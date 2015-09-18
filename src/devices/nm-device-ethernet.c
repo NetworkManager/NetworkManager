@@ -104,6 +104,7 @@ typedef struct {
 	char *              subchan2;
 	char *              subchan3;
 	char *              subchannels; /* Composite used for checking unmanaged specs */
+	char **             subchannels_dbus; /* Array exported on D-Bus */
 	char *              s390_nettype;
 	GHashTable *        s390_options;
 
@@ -123,6 +124,7 @@ enum {
 	PROP_0,
 	PROP_PERM_HW_ADDRESS,
 	PROP_SPEED,
+	PROP_S390_SUBCHANNELS,
 
 	LAST_PROP
 };
@@ -225,6 +227,12 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 	} else
 		priv->subchannels = g_strdup (priv->subchan1);
 
+	priv->subchannels_dbus = g_new (char *, 3 + 1);
+	priv->subchannels_dbus[0] = g_strdup (priv->subchan1);
+	priv->subchannels_dbus[1] = g_strdup (priv->subchan2);
+	priv->subchannels_dbus[2] = g_strdup (priv->subchan3);
+	priv->subchannels_dbus[3] = NULL;
+
 	driver = nm_device_get_driver (NM_DEVICE (self));
 	_LOGI (LOGD_DEVICE | LOGD_HW, "found s390 '%s' subchannels [%s]",
 	       driver ? driver : "(unknown driver)", priv->subchannels);
@@ -318,21 +326,39 @@ get_generic_capabilities (NMDevice *device)
 	}
 }
 
+static guint32
+_subchannels_count_num (const char * const *array)
+{
+	int i;
+
+	if (!array)
+		return 0;
+	for (i = 0; array[i]; i++)
+		/* NOP */;
+	return i;
+}
+
 static gboolean
 match_subchans (NMDeviceEthernet *self, NMSettingWired *s_wired, gboolean *try_mac)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	const char * const *subchans;
+	guint32 num1, num2;
 	int i;
 
 	*try_mac = TRUE;
 
 	subchans = nm_setting_wired_get_s390_subchannels (s_wired);
-	if (!subchans)
+	num1 = _subchannels_count_num (subchans);
+	num2 = _subchannels_count_num ((const char * const *) priv->subchannels_dbus);
+	/* connection has no subchannels */
+	if (num1 == 0)
 		return TRUE;
-
 	/* connection requires subchannels but the device has none */
-	if (!priv->subchannels)
+	if (num2 == 0)
+		return FALSE;
+	/* number of subchannels differ */
+	if (num1 != num2)
 		return FALSE;
 
 	/* Make sure each subchannel in the connection is a subchannel of this device */
@@ -1546,16 +1572,8 @@ update_connection (NMDevice *device, NMConnection *connection)
 	/* We don't set the MTU as we don't know whether it was set explicitly */
 
 	/* s390 */
-	if (priv->subchannels) {
-		char **subchannels = g_new (char *, 3 + 1);
-
-		subchannels[0] = g_strdup (priv->subchan1);
-		subchannels[1] = g_strdup (priv->subchan2);
-		subchannels[2] = g_strdup (priv->subchan3);
-		subchannels[3] = NULL;
-		g_object_set (s_wired, NM_SETTING_WIRED_S390_SUBCHANNELS, subchannels, NULL);
-		g_strfreev (subchannels);
-	}
+	if (priv->subchannels_dbus)
+		g_object_set (s_wired, NM_SETTING_WIRED_S390_SUBCHANNELS, priv->subchannels_dbus, NULL);
 	if (priv->s390_nettype)
 		g_object_set (s_wired, NM_SETTING_WIRED_S390_NETTYPE, priv->s390_nettype, NULL);
 	g_hash_table_iter_init (&iter, priv->s390_options);
@@ -1631,6 +1649,7 @@ finalize (GObject *object)
 	g_free (priv->subchan2);
 	g_free (priv->subchan3);
 	g_free (priv->subchannels);
+	g_strfreev (priv->subchannels_dbus);
 	g_free (priv->s390_nettype);
 	g_hash_table_destroy (priv->s390_options);
 
@@ -1650,6 +1669,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_SPEED:
 		g_value_set_uint (value, priv->speed);
+		break;
+	case PROP_S390_SUBCHANNELS:
+		g_value_set_boxed (value, priv->subchannels_dbus);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1717,6 +1739,13 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 		                    0, G_MAXUINT32, 0,
 		                    G_PARAM_READABLE |
 		                    G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property
+		(object_class, PROP_S390_SUBCHANNELS,
+		 g_param_spec_boxed (NM_DEVICE_ETHERNET_S390_SUBCHANNELS, "", "",
+		                     G_TYPE_STRV,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        NMDBUS_TYPE_DEVICE_ETHERNET_SKELETON,
