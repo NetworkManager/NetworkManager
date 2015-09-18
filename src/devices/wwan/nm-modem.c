@@ -30,6 +30,7 @@
 #include "nm-device-private.h"
 #include "nm-modem-enum-types.h"
 #include "nm-route-manager.h"
+#include "gsystem-local-alloc.h"
 
 G_DEFINE_TYPE (NMModem, nm_modem, G_TYPE_OBJECT)
 
@@ -490,7 +491,7 @@ ppp_stage3_ip_config_start (NMModem *self,
 		return NM_ACT_STAGE_RETURN_POSTPONE;
 
 	if (NM_MODEM_GET_CLASS (self)->get_user_pass) {
-		NMConnection *connection = nm_act_request_get_connection (req);
+		NMConnection *connection = nm_act_request_get_applied_connection (req);
 
 		g_assert (connection);
 		if (!NM_MODEM_GET_CLASS (self)->get_user_pass (self, connection, &ppp_name, NULL))
@@ -560,7 +561,7 @@ nm_modem_stage3_ip4_config_start (NMModem *self,
 
 	req = nm_device_get_act_request (device);
 	g_assert (req);
-	connection = nm_act_request_get_connection (req);
+	connection = nm_act_request_get_applied_connection (req);
 	g_assert (connection);
 	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
 
@@ -677,7 +678,7 @@ nm_modem_stage3_ip6_config_start (NMModem *self,
 	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
-	connection = nm_act_request_get_connection (req);
+	connection = nm_act_request_get_applied_connection (req);
 	g_assert (connection);
 	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
 
@@ -728,7 +729,7 @@ cancel_get_secrets (NMModem *self)
 static void
 modem_secrets_cb (NMActRequest *req,
                   NMActRequestGetSecretsCallId call_id,
-                  NMConnection *connection,
+                  NMSettingsConnection *connection,
                   GError *error,
                   gpointer user_data)
 {
@@ -797,7 +798,7 @@ nm_modem_act_stage1_prepare (NMModem *self,
 		g_object_unref (priv->act_request);
 	priv->act_request = g_object_ref (req);
 
-	connection = nm_act_request_get_connection (req);
+	connection = nm_act_request_get_applied_connection (req);
 	g_assert (connection);
 
 	setting_name = nm_connection_need_secrets (connection, &hints);

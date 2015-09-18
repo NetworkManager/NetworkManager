@@ -96,7 +96,7 @@ NM_DEFINE_SINGLETON_GETTER (NMDefaultRouteManager, nm_default_route_manager_get,
 		(entry_idx), \
 		NM_IS_DEVICE ((entry)->source.pointer) ? "dev" : "vpn", \
 		(entry)->source.pointer, \
-		NM_IS_DEVICE ((entry)->source.pointer) ? nm_device_get_iface ((entry)->source.device) : nm_vpn_connection_get_connection_id ((entry)->source.vpn), \
+		NM_IS_DEVICE ((entry)->source.pointer) ? nm_device_get_iface ((entry)->source.device) : nm_active_connection_get_settings_connection_id (NM_ACTIVE_CONNECTION ((entry)->source.vpn)), \
 		((entry)->never_default ? '0' : '1'), \
 		((entry)->synced ? '+' : '-')
 
@@ -757,7 +757,7 @@ _ipx_update_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, 
 			} else
 				synced = default_route && !is_assumed;
 		} else {
-			NMConnection *connection = nm_active_connection_get_connection ((NMActiveConnection *) vpn);
+			NMConnection *connection = nm_active_connection_get_applied_connection ((NMActiveConnection *) vpn);
 
 			if (   connection
 			    && nm_vpn_connection_get_vpn_state (vpn) == NM_VPN_CONNECTION_STATE_ACTIVATED) {
@@ -1026,7 +1026,7 @@ _ipx_get_best_activating_device (const VTableIP *vtable, NMDefaultRouteManager *
 			    || state >= NM_DEVICE_STATE_DEACTIVATING)
 				continue;
 
-			if (!_ipx_connection_has_default_route (vtable, self, nm_device_get_connection (device), NULL))
+			if (!_ipx_connection_has_default_route (vtable, self, nm_device_get_applied_connection (device), NULL))
 				continue;
 
 			prio = nm_device_get_ip4_route_metric (device);

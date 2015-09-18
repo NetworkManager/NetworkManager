@@ -55,47 +55,45 @@ typedef struct {
 	NMActiveConnectionClass parent;
 
 	/* Signals */
-	void (*vpn_state_changed) (NMVpnConnection *connection,
+	void (*vpn_state_changed) (NMVpnConnection *self,
 	                           NMVpnConnectionState new_state,
 	                           NMVpnConnectionStateReason reason);
 
 	/* not exported over D-Bus */
-	void (*internal_state_changed) (NMVpnConnection *connection,
+	void (*internal_state_changed) (NMVpnConnection *self,
 	                                NMVpnConnectionState new_state,
 	                                NMVpnConnectionState old_state,
 	                                NMVpnConnectionStateReason reason);
 
-	void (*internal_failed_retry)  (NMVpnConnection *connection);
+	void (*internal_failed_retry)  (NMVpnConnection *self);
 } NMVpnConnectionClass;
 
 GType nm_vpn_connection_get_type (void);
 
-NMVpnConnection * nm_vpn_connection_new (NMConnection *connection,
+NMVpnConnection * nm_vpn_connection_new (NMSettingsConnection *settings_connection,
                                          NMDevice *parent_device,
                                          const char *specific_object,
                                          NMAuthSubject *subject);
 
-void                 nm_vpn_connection_activate        (NMVpnConnection *connection);
-NMConnection *       nm_vpn_connection_get_connection  (NMVpnConnection *connection);
-const char*          nm_vpn_connection_get_connection_id (NMVpnConnection *connection);
-NMVpnConnectionState nm_vpn_connection_get_vpn_state   (NMVpnConnection *connection);
-const char *         nm_vpn_connection_get_banner      (NMVpnConnection *connection);
+void                 nm_vpn_connection_activate        (NMVpnConnection *self);
+NMVpnConnectionState nm_vpn_connection_get_vpn_state   (NMVpnConnection *self);
+const char *         nm_vpn_connection_get_banner      (NMVpnConnection *self);
 
-gboolean             nm_vpn_connection_deactivate      (NMVpnConnection *connection,
+gboolean             nm_vpn_connection_deactivate      (NMVpnConnection *self,
                                                         NMVpnConnectionStateReason reason,
                                                         gboolean quitting);
-void                 nm_vpn_connection_disconnect      (NMVpnConnection *connection,
+void                 nm_vpn_connection_disconnect      (NMVpnConnection *self,
                                                         NMVpnConnectionStateReason reason,
                                                         gboolean quitting);
 
-NMIP4Config *        nm_vpn_connection_get_ip4_config  (NMVpnConnection *connection);
-NMIP6Config *        nm_vpn_connection_get_ip6_config  (NMVpnConnection *connection);
-const char *         nm_vpn_connection_get_ip_iface    (NMVpnConnection *connection);
-int                  nm_vpn_connection_get_ip_ifindex  (NMVpnConnection *connection);
-guint32              nm_vpn_connection_get_ip4_internal_gateway (NMVpnConnection *connection);
-struct in6_addr *    nm_vpn_connection_get_ip6_internal_gateway (NMVpnConnection *connection);
+NMIP4Config *        nm_vpn_connection_get_ip4_config  (NMVpnConnection *self);
+NMIP6Config *        nm_vpn_connection_get_ip6_config  (NMVpnConnection *self);
+const char *         nm_vpn_connection_get_ip_iface    (NMVpnConnection *self);
+int                  nm_vpn_connection_get_ip_ifindex  (NMVpnConnection *self);
+guint32              nm_vpn_connection_get_ip4_internal_gateway (NMVpnConnection *self);
+struct in6_addr *    nm_vpn_connection_get_ip6_internal_gateway (NMVpnConnection *self);
 
-guint32              nm_vpn_connection_get_ip4_route_metric (NMVpnConnection *connection);
-guint32              nm_vpn_connection_get_ip6_route_metric (NMVpnConnection *connection);
+guint32              nm_vpn_connection_get_ip4_route_metric (NMVpnConnection *self);
+guint32              nm_vpn_connection_get_ip6_route_metric (NMVpnConnection *self);
 
 #endif /* __NETWORKMANAGER_VPN_CONNECTION_H__ */

@@ -317,7 +317,7 @@ static NMActStageReturn
 act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMActStageReturn ret;
-	NMConnection *connection = nm_device_get_connection (device);
+	NMConnection *connection = nm_device_get_applied_connection (device);
 
 	g_assert (connection);
 

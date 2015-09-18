@@ -821,7 +821,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
 	NMConnection *connection;
 
-	connection = nm_device_get_connection (device);
+	connection = nm_device_get_applied_connection (device);
 	g_assert (connection);
 	priv->bt_type = get_connection_bt_type (connection);
 	if (priv->bt_type == NM_BT_CAPABILITY_NONE) {

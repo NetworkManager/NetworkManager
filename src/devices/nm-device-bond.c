@@ -264,7 +264,7 @@ apply_bonding_config (NMDevice *device)
 	 *     arp_interval doesn't require miimon to be 0
 	 */
 
-	connection = nm_device_get_connection (device);
+	connection = nm_device_get_applied_connection (device);
 	g_assert (connection);
 	s_bond = nm_connection_get_setting_bond (connection);
 	g_assert (s_bond);
@@ -377,7 +377,7 @@ ip4_config_pre_commit (NMDevice *self, NMIP4Config *config)
 	NMSettingWired *s_wired;
 	guint32 mtu;
 
-	connection = nm_device_get_connection (self);
+	connection = nm_device_get_applied_connection (self);
 	g_assert (connection);
 	s_wired = nm_connection_get_setting_wired (connection);
 

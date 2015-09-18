@@ -31,6 +31,7 @@
 #include "nm-core-internal.h"
 #include "nm-utils-private.h"
 #include "nm-property-compare.h"
+#include "nm-macros-internal.h"
 
 #include "nm-setting-connection.h"
 #include "nm-setting-bond.h"
@@ -1098,15 +1099,20 @@ nm_setting_compare (NMSetting *a,
 		GParamSpec *prop_spec = property_specs[i];
 
 		/* Fuzzy compare ignores secrets and properties defined with the FUZZY_IGNORE flag */
-		if (   (flags & NM_SETTING_COMPARE_FLAG_FUZZY)
-		    && (prop_spec->flags & (NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_SECRET)))
+		if (   NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_FUZZY)
+		    && !NM_FLAGS_ANY (prop_spec->flags, NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_SECRET))
 			continue;
 
-		if ((flags & NM_SETTING_COMPARE_FLAG_INFERRABLE) && !(prop_spec->flags & NM_SETTING_PARAM_INFERRABLE))
+		if (   NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_INFERRABLE)
+		    && !NM_FLAGS_HAS (prop_spec->flags, NM_SETTING_PARAM_INFERRABLE))
 			continue;
 
-		if (   (flags & NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS)
-		    && (prop_spec->flags & NM_SETTING_PARAM_SECRET))
+		if (   NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_IGNORE_REAPPLY_IMMEDIATELY)
+		    && NM_FLAGS_HAS (prop_spec->flags, NM_SETTING_PARAM_REAPPLY_IMMEDIATELY))
+			continue;
+
+		if (   NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS)
+		    && NM_FLAGS_HAS (prop_spec->flags, NM_SETTING_PARAM_SECRET))
 			continue;
 
 		same = NM_SETTING_GET_CLASS (a)->compare_property (a, b, prop_spec, flags);
@@ -1128,6 +1134,9 @@ should_compare_prop (NMSetting *setting,
 		return FALSE;
 
 	if ((comp_flags & NM_SETTING_COMPARE_FLAG_INFERRABLE) && !(prop_flags & NM_SETTING_PARAM_INFERRABLE))
+		return FALSE;
+
+	if ((comp_flags & NM_SETTING_COMPARE_FLAG_IGNORE_REAPPLY_IMMEDIATELY) && !(prop_flags & NM_SETTING_PARAM_REAPPLY_IMMEDIATELY))
 		return FALSE;
 
 	if (prop_flags & NM_SETTING_PARAM_SECRET) {

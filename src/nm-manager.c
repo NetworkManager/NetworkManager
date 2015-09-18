@@ -74,7 +74,7 @@ static void rfkill_change (const char *desc, RfKillType rtype, gboolean enabled)
 static gboolean find_master (NMManager *self,
                              NMConnection *connection,
                              NMDevice *device,
-                             NMConnection **out_master_connection,
+                             NMSettingsConnection **out_master_connection,
                              NMDevice **out_master_device,
                              NMActiveConnection **out_master_ac,
                              GError **error);
@@ -83,6 +83,7 @@ static void nm_manager_update_state (NMManager *manager);
 
 #define SSD_POKE_INTERVAL 120
 #define ORIGDEV_TAG "originating-device"
+#define TAG_ACTIVE_CONNETION_ADD_AND_ACTIVATE "act-con-add-and-activate"
 
 typedef struct {
 	gboolean user_enabled;
@@ -209,7 +210,7 @@ active_connection_remove (NMManager *self, NMActiveConnection *active)
 	/* FIXME: switch to a GList for faster removal */
 	found = g_slist_find (priv->active_connections, active);
 	if (found) {
-		NMConnection *connection;
+		NMSettingsConnection *connection;
 
 		priv->active_connections = g_slist_remove (priv->active_connections, active);
 		g_signal_emit (self, signals[ACTIVE_CONNECTION_REMOVED], 0, active);
@@ -217,8 +218,8 @@ active_connection_remove (NMManager *self, NMActiveConnection *active)
 		g_signal_handlers_disconnect_by_func (active, active_connection_default_changed, self);
 
 		if (   nm_active_connection_get_assumed (active)
-		    && (connection = nm_active_connection_get_connection (active))
-		    && nm_settings_connection_get_nm_generated_assumed (NM_SETTINGS_CONNECTION (connection)))
+		    && (connection = nm_active_connection_get_settings_connection (active))
+		    && nm_settings_connection_get_nm_generated_assumed (connection))
 			g_object_ref (connection);
 		else
 			connection = NULL;
@@ -228,7 +229,7 @@ active_connection_remove (NMManager *self, NMActiveConnection *active)
 		if (   connection
 		    && nm_settings_has_connection (priv->settings, connection)) {
 			nm_log_dbg (LOGD_DEVICE, "Assumed connection disconnected. Deleting generated connection '%s' (%s)",
-			            nm_connection_get_id (connection), nm_connection_get_uuid (connection));
+			            nm_settings_connection_get_id (connection), nm_settings_connection_get_uuid (connection));
 			nm_settings_connection_delete (NM_SETTINGS_CONNECTION (connection), NULL, NULL);
 			g_object_unref (connection);
 		}
@@ -340,19 +341,30 @@ find_ac_for_connection (NMManager *manager, NMConnection *connection)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	GSList *iter;
-	NMActiveConnection *ac;
-	NMConnection *ac_connection;
-	NMActiveConnectionState ac_state;
-	const char *uuid;
+	const char *uuid = NULL;
+	gboolean is_settings_connection;
 
-	uuid = nm_connection_get_uuid (connection);
+	is_settings_connection = NM_IS_SETTINGS_CONNECTION (connection);
+
+	if (is_settings_connection)
+		uuid = nm_connection_get_uuid (connection);
+
 	for (iter = priv->active_connections; iter; iter = iter->next) {
-		ac = iter->data;
-		ac_connection = nm_active_connection_get_connection (ac);
-		ac_state = nm_active_connection_get_state (ac);
+		NMActiveConnection *ac = iter->data;
+		NMSettingsConnection *con;
 
-		if (   !strcmp (nm_connection_get_uuid (ac_connection), uuid)
-		    && (ac_state < NM_ACTIVE_CONNECTION_STATE_DEACTIVATED))
+		con = nm_active_connection_get_settings_connection (ac);
+
+		/* depending on whether we have a NMSettingsConnection or a NMConnection,
+		 * we lookup by UUID or by reference. */
+		if (is_settings_connection) {
+			if (con != (NMSettingsConnection *) connection)
+				continue;
+		} else {
+			if (strcmp (uuid, nm_connection_get_uuid (NM_CONNECTION (con))) != 0)
+				continue;
+		}
+		if (nm_active_connection_get_state (ac) < NM_ACTIVE_CONNECTION_STATE_DEACTIVATED)
 			return ac;
 	}
 
@@ -371,12 +383,12 @@ nm_manager_get_activatable_connections (NMManager *manager)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	GSList *all_connections = nm_settings_get_connections (priv->settings);
 	GSList *connections = NULL, *iter;
-	NMConnection *connection;
+	NMSettingsConnection *connection;
 
 	for (iter = all_connections; iter; iter = iter->next) {
 		connection = iter->data;
 
-		if (!find_ac_for_connection (manager, connection))
+		if (!find_ac_for_connection (manager, NM_CONNECTION (connection)))
 			connections = g_slist_prepend (connections, connection);
 	}
 
@@ -821,7 +833,7 @@ find_parent_device_for_connection (NMManager *self, NMConnection *connection)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMDeviceFactory *factory;
 	const char *parent_name = NULL;
-	NMConnection *parent_connection;
+	NMSettingsConnection *parent_connection;
 	NMDevice *parent, *first_compatible = NULL;
 	GSList *iter;
 
@@ -844,7 +856,7 @@ find_parent_device_for_connection (NMManager *self, NMConnection *connection)
 		return parent;
 
 	/* Maybe a connection UUID */
-	parent_connection = (NMConnection *) nm_settings_get_connection_by_uuid (priv->settings, parent_name);
+	parent_connection = nm_settings_get_connection_by_uuid (priv->settings, parent_name);
 	if (!parent_connection)
 		return NULL;
 
@@ -854,11 +866,11 @@ find_parent_device_for_connection (NMManager *self, NMConnection *connection)
 	for (iter = priv->devices; iter; iter = iter->next) {
 		NMDevice *candidate = iter->data;
 
-		if (nm_device_get_connection (candidate) == parent_connection)
+		if (nm_device_get_settings_connection (candidate) == parent_connection)
 			return candidate;
 
 		if (   !first_compatible
-		    && nm_device_check_connection_compatible (candidate, parent_connection))
+		    && nm_device_check_connection_compatible (candidate, NM_CONNECTION (parent_connection)))
 			first_compatible = candidate;
 	}
 
@@ -1438,12 +1450,13 @@ match_connection_filter (NMConnection *connection, gpointer user_data)
  * Returns: a #NMSettingsConnection to be assumed by the device, or %NULL if
  *   the device does not support assuming existing connections.
  */
-static NMConnection *
+static NMSettingsConnection *
 get_existing_connection (NMManager *manager, NMDevice *device, gboolean *out_generated)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	gs_free_slist GSList *connections = nm_manager_get_activatable_connections (manager);
-	NMConnection *connection = NULL, *matched;
+	NMConnection *connection = NULL;
+	NMSettingsConnection *matched;
 	NMSettingsConnection *added = NULL;
 	GError *error = NULL;
 	NMDevice *master = NULL;
@@ -1492,15 +1505,15 @@ get_existing_connection (NMManager *manager, NMDevice *device, gboolean *out_gen
 	 * the generated connection instead.
 	 */
 	connections = g_slist_reverse (g_slist_sort (connections, nm_settings_sort_connections));
-	matched = nm_utils_match_connection (connections,
-	                                     connection,
-	                                     nm_device_has_carrier (device),
-	                                     match_connection_filter,
-	                                     device);
+	matched = NM_SETTINGS_CONNECTION (nm_utils_match_connection (connections,
+	                                                             connection,
+	                                                             nm_device_has_carrier (device),
+	                                                             match_connection_filter,
+	                                                             device));
 	if (matched) {
 		nm_log_info (LOGD_DEVICE, "(%s): found matching connection '%s'",
 		             nm_device_get_iface (device),
-		             nm_connection_get_id (matched));
+		             nm_settings_connection_get_id (matched));
 		g_object_unref (connection);
 		return matched;
 	}
@@ -1526,11 +1539,11 @@ get_existing_connection (NMManager *manager, NMDevice *device, gboolean *out_gen
 	}
 	g_object_unref (connection);
 
-	return added ? NM_CONNECTION (added) : NULL;
+	return added ? added : NULL;
 }
 
 static gboolean
-assume_connection (NMManager *self, NMDevice *device, NMConnection *connection)
+assume_connection (NMManager *self, NMDevice *device, NMSettingsConnection *connection)
 {
 	NMActiveConnection *active, *master_ac;
 	NMAuthSubject *subject;
@@ -1548,12 +1561,12 @@ assume_connection (NMManager *self, NMDevice *device, NMConnection *connection)
 	g_return_val_if_fail (nm_device_get_state (device) >= NM_DEVICE_STATE_DISCONNECTED, FALSE);
 
 	subject = nm_auth_subject_new_internal ();
-	active = _new_active_connection (self, connection, NULL, device, subject, &error);
+	active = _new_active_connection (self, NM_CONNECTION (connection), NULL, device, subject, &error);
 	g_object_unref (subject);
 
 	if (!active) {
 		nm_log_warn (LOGD_DEVICE, "assumed connection %s failed to activate: (%d) %s",
-		             nm_connection_get_path (connection),
+		             nm_connection_get_path (NM_CONNECTION (connection)),
 		             error ? error->code : -1,
 		             error && error->message ? error->message : "(unknown)");
 		g_error_free (error);
@@ -1562,7 +1575,7 @@ assume_connection (NMManager *self, NMDevice *device, NMConnection *connection)
 
 	/* If the device is a slave or VLAN, find the master ActiveConnection */
 	master_ac = NULL;
-	if (find_master (self, connection, device, NULL, NULL, &master_ac, NULL) && master_ac)
+	if (find_master (self, NM_CONNECTION (connection), device, NULL, NULL, &master_ac, NULL) && master_ac)
 		nm_active_connection_set_master (active, master_ac);
 
 	nm_active_connection_set_assumed (active, TRUE);
@@ -1578,7 +1591,7 @@ static gboolean
 recheck_assume_connection (NMDevice *device, gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
-	NMConnection *connection;
+	NMSettingsConnection *connection;
 	gboolean was_unmanaged = FALSE, success, generated;
 	NMDeviceState state;
 
@@ -1624,7 +1637,7 @@ recheck_assume_connection (NMDevice *device, gpointer user_data)
 			nm_log_dbg (LOGD_DEVICE, "(%s): connection assumption failed. Deleting generated connection",
 			            nm_device_get_iface (device));
 
-			nm_settings_connection_delete (NM_SETTINGS_CONNECTION (connection), NULL, NULL);
+			nm_settings_connection_delete (connection, NULL, NULL);
 		}
 	}
 
@@ -2141,7 +2154,7 @@ static gboolean
 find_master (NMManager *self,
              NMConnection *connection,
              NMDevice *device,
-             NMConnection **out_master_connection,
+             NMSettingsConnection **out_master_connection,
              NMDevice **out_master_device,
              NMActiveConnection **out_master_ac,
              GError **error)
@@ -2150,7 +2163,7 @@ find_master (NMManager *self,
 	NMSettingConnection *s_con;
 	const char *master;
 	NMDevice *master_device = NULL;
-	NMConnection *master_connection = NULL;
+	NMSettingsConnection *master_connection = NULL;
 	GSList *iter, *connections = NULL;
 
 	s_con = nm_connection_get_setting_connection (connection);
@@ -2169,8 +2182,8 @@ find_master (NMManager *self,
 			return FALSE;
 		}
 
-		master_connection = nm_device_get_connection (master_device);
-		if (master_connection && !is_compatible_with_slave (master_connection, connection)) {
+		master_connection = nm_device_get_settings_connection (master_device);
+		if (master_connection && !is_compatible_with_slave (NM_CONNECTION (master_connection), connection)) {
 			g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_DEPENDENCY_FAILED,
 			             "The active connection on %s is not a valid master for '%s'",
 			             nm_device_get_iface (master_device),
@@ -2179,7 +2192,7 @@ find_master (NMManager *self,
 		}
 	} else {
 		/* Try master as a connection UUID */
-		master_connection = (NMConnection *) nm_settings_get_connection_by_uuid (priv->settings, master);
+		master_connection = nm_settings_get_connection_by_uuid (priv->settings, master);
 		if (master_connection) {
 			/* Check if the master connection is activated on some device already */
 			for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
@@ -2188,7 +2201,7 @@ find_master (NMManager *self,
 				if (candidate == device)
 					continue;
 
-				if (nm_device_get_connection (candidate) == master_connection) {
+				if (nm_device_get_settings_connection (candidate) == master_connection) {
 					master_device = candidate;
 					break;
 				}
@@ -2201,11 +2214,11 @@ find_master (NMManager *self,
 			 */
 			connections = nm_manager_get_activatable_connections (self);
 			for (iter = connections; iter && !master_connection; iter = g_slist_next (iter)) {
-				NMConnection *candidate = iter->data;
+				NMSettingsConnection *candidate = iter->data;
 				char *vname;
 
-				vname = get_virtual_iface_name (self, candidate, NULL, NULL);
-				if (g_strcmp0 (master, vname) == 0 && is_compatible_with_slave (candidate, connection))
+				vname = get_virtual_iface_name (self, NM_CONNECTION (candidate), NULL, NULL);
+				if (g_strcmp0 (master, vname) == 0 && is_compatible_with_slave (NM_CONNECTION (candidate), connection))
 					master_connection = candidate;
 				g_free (vname);
 			}
@@ -2218,7 +2231,7 @@ find_master (NMManager *self,
 	if (out_master_device)
 		*out_master_device = master_device;
 	if (out_master_ac && master_connection)
-		*out_master_ac = find_ac_for_connection (self, master_connection);
+		*out_master_ac = find_ac_for_connection (self, NM_CONNECTION (master_connection));
 
 	if (master_device || master_connection)
 		return TRUE;
@@ -2262,7 +2275,7 @@ ensure_master_active_connection (NMManager *self,
                                  NMAuthSubject *subject,
                                  NMConnection *connection,
                                  NMDevice *device,
-                                 NMConnection *master_connection,
+                                 NMSettingsConnection *master_connection,
                                  NMDevice *master_device,
                                  GError **error)
 {
@@ -2278,13 +2291,13 @@ ensure_master_active_connection (NMManager *self,
 	 * compatible connection.  If it's already activating we can just proceed.
 	 */
 	if (master_device) {
-		NMConnection *device_connection = nm_device_get_connection (master_device);
+		NMSettingsConnection *device_connection = nm_device_get_settings_connection (master_device);
 
 		/* If we're passed a connection and a device, we require that connection
 		 * be already activated on the device, eg returned from find_master().
 		 */
 		g_assert (!master_connection || master_connection == device_connection);
-		if (device_connection && !is_compatible_with_slave (device_connection, connection)) {
+		if (device_connection && !is_compatible_with_slave (NM_CONNECTION (device_connection), connection)) {
 			g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_DEPENDENCY_FAILED,
 			             "The active connection on %s is not a valid master for '%s'",
 			             nm_device_get_iface (master_device),
@@ -2311,15 +2324,15 @@ ensure_master_active_connection (NMManager *self,
 			/* Find a compatible connection and activate this device using it */
 			connections = nm_manager_get_activatable_connections (self);
 			for (iter = connections; iter; iter = g_slist_next (iter)) {
-				NMConnection *candidate = NM_CONNECTION (iter->data);
+				NMSettingsConnection *candidate = NM_SETTINGS_CONNECTION (iter->data);
 
 				/* Ensure eg bond/team slave and the candidate master is a
 				 * bond/team master
 				 */
-				if (!is_compatible_with_slave (candidate, connection))
+				if (!is_compatible_with_slave (NM_CONNECTION (candidate), connection))
 					continue;
 
-				if (nm_device_check_connection_available (master_device, candidate, NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST, NULL)) {
+				if (nm_device_check_connection_available (master_device, NM_CONNECTION (candidate), NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST, NULL)) {
 					master_ac = nm_manager_activate_connection (self,
 					                                            candidate,
 					                                            NULL,
@@ -2360,7 +2373,7 @@ ensure_master_active_connection (NMManager *self,
 				continue;
 			}
 
-			if (!nm_device_check_connection_available (candidate, master_connection, NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST, NULL))
+			if (!nm_device_check_connection_available (candidate, NM_CONNECTION (master_connection), NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST, NULL))
 				continue;
 
 			found_device = TRUE;
@@ -2382,7 +2395,7 @@ ensure_master_active_connection (NMManager *self,
 		/* Device described by master_connection may be a virtual one that's
 		 * not created yet.
 		 */
-		if (!found_device && nm_connection_is_virtual (master_connection)) {
+		if (!found_device && nm_connection_is_virtual (NM_CONNECTION (master_connection))) {
 			master_ac = nm_manager_activate_connection (self,
 			                                            master_connection,
 			                                            NULL,
@@ -2398,7 +2411,7 @@ ensure_master_active_connection (NMManager *self,
 		             NM_MANAGER_ERROR,
 		             NM_MANAGER_ERROR_UNKNOWN_DEVICE,
 		             "No compatible disconnected device found for master connection %s.",
-		             nm_connection_get_uuid (master_connection));
+		             nm_settings_connection_get_uuid (master_connection));
 	} else
 		g_assert_not_reached ();
 
@@ -2408,17 +2421,17 @@ ensure_master_active_connection (NMManager *self,
 /**
  * find_slaves:
  * @manager: #NMManager object
- * @connection: the master #NMConnection to find slave connections for
+ * @connection: the master #NMSettingsConnection to find slave connections for
  * @device: the master #NMDevice for the @connection
  *
- * Given an #NMConnection, attempts to find its slaves. If @connection is not
+ * Given an #NMSettingsConnection, attempts to find its slaves. If @connection is not
  * master, or has not any slaves, this will return %NULL.
  *
  * Returns: list of slave connections for given master @connection, or %NULL
  **/
 static GSList *
 find_slaves (NMManager *manager,
-             NMConnection *connection,
+             NMSettingsConnection *connection,
              NMDevice *device)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
@@ -2427,7 +2440,7 @@ find_slaves (NMManager *manager,
 	NMSettingConnection *s_con;
 	const char *master;
 
-	s_con = nm_connection_get_setting_connection (connection);
+	s_con = nm_connection_get_setting_connection (NM_CONNECTION (connection));
 	g_assert (s_con);
 	master = nm_setting_connection_get_master (s_con);
 
@@ -2440,7 +2453,7 @@ find_slaves (NMManager *manager,
 	 */
 	all_connections = nm_settings_get_connections (priv->settings);
 	for (iter = all_connections; iter; iter = iter->next) {
-		NMConnection *master_connection = NULL;
+		NMSettingsConnection *master_connection = NULL;
 		NMDevice *master_device = NULL;
 		NMConnection *candidate = iter->data;
 
@@ -2486,34 +2499,34 @@ out:
 
 static gboolean
 autoconnect_slaves (NMManager *manager,
-                    NMConnection *master_connection,
+                    NMSettingsConnection *master_connection,
                     NMDevice *master_device,
                     NMAuthSubject *subject)
 {
 	GError *local_err = NULL;
 	gboolean ret = FALSE;
 
-	if (should_connect_slaves (master_connection, master_device)) {
+	if (should_connect_slaves (NM_CONNECTION (master_connection), master_device)) {
 		GSList *slaves, *iter;
 
 		iter = slaves = find_slaves (manager, master_connection, master_device);
 		ret = slaves != NULL;
 
 		while (iter) {
-			NMConnection *slave_connection = iter->data;
+			NMSettingsConnection *slave_connection = iter->data;
 
 			iter = iter->next;
 			nm_log_dbg (LOGD_CORE, "will activate slave connection '%s' (%s) as a dependency for master '%s' (%s)",
-			            nm_connection_get_id (slave_connection),
-			            nm_connection_get_uuid (slave_connection),
-			            nm_connection_get_id (master_connection),
-			            nm_connection_get_uuid (master_connection));
+			            nm_settings_connection_get_id (slave_connection),
+			            nm_settings_connection_get_uuid (slave_connection),
+			            nm_settings_connection_get_id (master_connection),
+			            nm_settings_connection_get_uuid (master_connection));
 
 			/* Schedule slave activation */
 			nm_manager_activate_connection (manager,
 			                                slave_connection,
 			                                NULL,
-			                                nm_manager_get_best_device_for_connection (manager, slave_connection),
+			                                nm_manager_get_best_device_for_connection (manager, NM_CONNECTION (slave_connection)),
 			                                subject,
 			                                &local_err);
 			if (local_err) {
@@ -2547,8 +2560,9 @@ static gboolean
 _internal_activate_device (NMManager *self, NMActiveConnection *active, GError **error)
 {
 	NMDevice *device, *existing, *master_device = NULL;
-	NMConnection *connection;
-	NMConnection *master_connection = NULL;
+	NMConnection *applied;
+	NMSettingsConnection *connection;
+	NMSettingsConnection *master_connection = NULL;
 	NMActiveConnection *master_ac = NULL;
 	GError *local_err = NULL;
 
@@ -2558,13 +2572,15 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 
 	g_assert (NM_IS_VPN_CONNECTION (active) == FALSE);
 
-	connection = nm_active_connection_get_connection (active);
+	connection = nm_active_connection_get_settings_connection (active);
 	g_assert (connection);
+
+	applied = nm_active_connection_get_applied_connection (active);
 
 	device = nm_active_connection_get_device (active);
 	if (!device) {
-		if (!nm_connection_is_virtual (connection)) {
-			NMSettingConnection *s_con = nm_connection_get_setting_connection (connection);
+		if (!nm_connection_is_virtual (applied)) {
+			NMSettingConnection *s_con = nm_connection_get_setting_connection (applied);
 
 			g_assert (s_con);
 			g_set_error (error,
@@ -2575,7 +2591,7 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 			return FALSE;
 		}
 
-		device = system_create_virtual_device (self, connection, &local_err);
+		device = system_create_virtual_device (self, applied, &local_err);
 		if (!device) {
 			g_set_error (error,
 			             NM_MANAGER_ERROR,
@@ -2614,27 +2630,27 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 		 * should not be allowed to implicitly deactivate private connections
 		 * by activating a connection of their own.
 		 */
-		existing_connection = nm_device_get_connection (device);
+		existing_connection = nm_device_get_applied_connection (device);
 		subject = nm_active_connection_get_subject (active);
 		if (existing_connection &&
 		    !nm_auth_is_subject_in_acl (existing_connection,
 			                            subject,
 			                            &error_desc)) {
 			g_set_error (error,
-					     NM_MANAGER_ERROR,
-					     NM_MANAGER_ERROR_PERMISSION_DENIED,
-					     "Private connection already active on the device: %s",
-					     error_desc);
+			             NM_MANAGER_ERROR,
+			             NM_MANAGER_ERROR_PERMISSION_DENIED,
+			             "Private connection already active on the device: %s",
+			             error_desc);
 			g_free (error_desc);
 			return FALSE;
 		}
 	}
 
 	/* Final connection must be available on device */
-	if (!nm_device_check_connection_available (device, connection, NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST, NULL)) {
+	if (!nm_device_check_connection_available (device, applied, NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST, NULL)) {
 		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
 		             "Connection '%s' is not available on the device %s at this time.",
-		             nm_connection_get_id (connection), nm_device_get_iface (device));
+		             nm_settings_connection_get_id (connection), nm_device_get_iface (device));
 		return FALSE;
 	}
 
@@ -2650,7 +2666,7 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	}
 
 	/* Try to find the master connection/device if the connection has a dependency */
-	if (!find_master (self, connection, device,
+	if (!find_master (self, applied, device,
 	                  &master_connection, &master_device, &master_ac,
 	                  error))
 		return FALSE;
@@ -2661,17 +2677,17 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	if (master_connection || master_device) {
 		if (master_connection) {
 			nm_log_dbg (LOGD_CORE, "Activation of '%s' requires master connection '%s'",
-			            nm_connection_get_id (connection),
-			            nm_connection_get_id (master_connection));
+			            nm_settings_connection_get_id (connection),
+			            nm_settings_connection_get_id (master_connection));
 		}
 		if (master_device) {
 			nm_log_dbg (LOGD_CORE, "Activation of '%s' requires master device '%s'",
-			            nm_connection_get_id (connection),
+			            nm_settings_connection_get_id (connection),
 			            nm_device_get_ip_iface (master_device));
 		}
 
 		/* Ensure eg bond slave and the candidate master is a bond master */
-		if (master_connection && !is_compatible_with_slave (master_connection, connection)) {
+		if (master_connection && !is_compatible_with_slave (NM_CONNECTION (master_connection), applied)) {
 			g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_DEPENDENCY_FAILED,
 			                     "The master connection was not compatible");
 			return FALSE;
@@ -2680,7 +2696,7 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 		if (!master_ac) {
 			master_ac = ensure_master_active_connection (self,
 			                                             nm_active_connection_get_subject (active),
-			                                             connection,
+			                                             applied,
 			                                             device,
 			                                             master_connection,
 			                                             master_device,
@@ -2694,7 +2710,7 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 
 		nm_active_connection_set_master (active, master_ac);
 		nm_log_dbg (LOGD_CORE, "Activation of '%s' depends on active connection %p",
-		            nm_connection_get_id (connection),
+		            nm_settings_connection_get_id (connection),
 		            master_ac);
 	}
 
@@ -2702,7 +2718,7 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	autoconnect_slaves (self, connection, device, nm_active_connection_get_subject (active));
 
 	/* Disconnect the connection if connected or queued on another device */
-	existing = nm_manager_get_connection_device (self, connection);
+	existing = nm_manager_get_connection_device (self, NM_CONNECTION (connection));
 	if (existing)
 		nm_device_steal_connection (existing, connection);
 
@@ -2751,8 +2767,8 @@ _internal_activate_generic (NMManager *self, NMActiveConnection *active, GError 
 }
 
 static NMActiveConnection *
-_new_vpn_active_connection (NMManager *self, 
-                            NMConnection *connection,
+_new_vpn_active_connection (NMManager *self,
+                            NMSettingsConnection *settings_connection,
                             const char *specific_object,
                             NMAuthSubject *subject,
                             GError **error)
@@ -2760,6 +2776,8 @@ _new_vpn_active_connection (NMManager *self,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMActiveConnection *parent = NULL;
 	NMDevice *device = NULL;
+
+	g_return_val_if_fail (!settings_connection || NM_IS_SETTINGS_CONNECTION (settings_connection), NULL);
 
 	if (specific_object) {
 		/* Find the specific connection the client requested we use */
@@ -2785,7 +2803,7 @@ _new_vpn_active_connection (NMManager *self,
 		return NULL;
 	}
 
-	return (NMActiveConnection *) nm_vpn_connection_new (connection,
+	return (NMActiveConnection *) nm_vpn_connection_new (settings_connection,
 	                                                     device,
 	                                                     nm_exported_object_get_path (NM_EXPORTED_OBJECT (parent)),
 	                                                     subject);
@@ -2799,7 +2817,9 @@ _new_active_connection (NMManager *self,
                         NMAuthSubject *subject,
                         GError **error)
 {
+	NMSettingsConnection *settings_connection = NULL;
 	NMActiveConnection *existing_ac;
+	gboolean is_vpn;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 	g_return_val_if_fail (NM_IS_AUTH_SUBJECT (subject), NULL);
@@ -2817,15 +2837,20 @@ _new_active_connection (NMManager *self,
 	if (specific_object && g_strcmp0 (specific_object, "/") == 0)
 		specific_object = NULL;
 
-	if (nm_connection_is_type (connection, NM_SETTING_VPN_SETTING_NAME)) {
+	is_vpn = nm_connection_is_type (NM_CONNECTION (connection), NM_SETTING_VPN_SETTING_NAME);
+
+	if (NM_IS_SETTINGS_CONNECTION (connection))
+		settings_connection = (NMSettingsConnection *) connection;
+
+	if (is_vpn) {
 		return _new_vpn_active_connection (self,
-		                                   connection,
+		                                   settings_connection,
 		                                   specific_object,
 		                                   subject,
 		                                   error);
 	}
 
-	return (NMActiveConnection *) nm_act_request_new (connection,
+	return (NMActiveConnection *) nm_act_request_new (settings_connection,
 	                                                  specific_object,
 	                                                  subject,
 	                                                  device);
@@ -2837,7 +2862,7 @@ _internal_activation_failed (NMManager *self,
                              const char *error_desc)
 {
 	nm_log_dbg (LOGD_CORE, "Failed to activate '%s': %s",
-	            nm_connection_get_id (nm_active_connection_get_connection (active)),
+	            nm_active_connection_get_settings_connection_id (active),
 	            error_desc);
 
 	if (nm_active_connection_get_state (active) <= NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
@@ -2875,7 +2900,7 @@ _internal_activation_auth_done (NMActiveConnection *active,
 /**
  * nm_manager_activate_connection():
  * @self: the #NMManager
- * @connection: the #NMConnection to activate on @device
+ * @connection: the #NMSettingsConnection to activate on @device
  * @specific_object: the specific object path, if any, for the activation
  * @device: the #NMDevice to activate @connection on
  * @subject: the subject which requested activation
@@ -2892,7 +2917,7 @@ _internal_activation_auth_done (NMActiveConnection *active,
  */
 NMActiveConnection *
 nm_manager_activate_connection (NMManager *self,
-                                NMConnection *connection,
+                                NMSettingsConnection *connection,
                                 const char *specific_object,
                                 NMDevice *device,
                                 NMAuthSubject *subject,
@@ -2909,7 +2934,7 @@ nm_manager_activate_connection (NMManager *self,
 	g_return_val_if_fail (*error == NULL, NULL);
 
 	/* Ensure the subject has permissions for this connection */
-	if (!nm_auth_is_subject_in_acl (connection,
+	if (!nm_auth_is_subject_in_acl (NM_CONNECTION (connection),
 	                                subject,
 	                                &error_desc)) {
 		g_set_error_literal (error,
@@ -2928,7 +2953,7 @@ nm_manager_activate_connection (NMManager *self,
 	for (iter = priv->authorizing_connections; iter; iter = g_slist_next (iter)) {
 		active = iter->data;
 
-		if (   connection == nm_active_connection_get_connection (active)
+		if (   connection == nm_active_connection_get_settings_connection (active)
 		    && g_strcmp0 (nm_active_connection_get_specific_object (active), specific_object) == 0
 		    && nm_active_connection_get_device (active) == device
 		    && nm_auth_subject_is_internal (nm_active_connection_get_subject (active))
@@ -2937,14 +2962,14 @@ nm_manager_activate_connection (NMManager *self,
 	}
 
 	active = _new_active_connection (self,
-	                                 connection,
+	                                 NM_CONNECTION (connection),
 	                                 specific_object,
 	                                 device,
 	                                 subject,
 	                                 error);
 	if (active) {
 		priv->authorizing_connections = g_slist_prepend (priv->authorizing_connections, active);
-		nm_active_connection_authorize (active, _internal_activation_auth_done, self, NULL);
+		nm_active_connection_authorize (active, NULL, _internal_activation_auth_done, self, NULL);
 	}
 	return active;
 }
@@ -3070,10 +3095,10 @@ _activation_auth_done (NMActiveConnection *active,
 	GDBusMethodInvocation *context = user_data2;
 	GError *error = NULL;
 	NMAuthSubject *subject;
-	NMConnection *connection;
+	NMSettingsConnection *connection;
 
 	subject = nm_active_connection_get_subject (active);
-	connection = nm_active_connection_get_connection (active);
+	connection = nm_active_connection_get_settings_connection (active);
 
 	if (success) {
 		if (_internal_activate_generic (self, active, &error)) {
@@ -3110,7 +3135,7 @@ impl_manager_activate_connection (NMManager *self,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMActiveConnection *active = NULL;
 	NMAuthSubject *subject = NULL;
-	NMConnection *connection = NULL;
+	NMSettingsConnection *connection = NULL;
 	NMDevice *device = NULL;
 	gboolean is_vpn = FALSE;
 	GError *error = NULL;
@@ -3170,7 +3195,7 @@ impl_manager_activate_connection (NMManager *self,
 	}
 
 	g_assert (connection_path);
-	connection = (NMConnection *) nm_settings_get_connection_by_path (priv->settings, connection_path);
+	connection = nm_settings_get_connection_by_path (priv->settings, connection_path);
 	if (!connection) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
@@ -3180,7 +3205,7 @@ impl_manager_activate_connection (NMManager *self,
 
 	subject = validate_activation_request (self,
 	                                       context,
-	                                       connection,
+	                                       NM_CONNECTION (connection),
 	                                       device_path,
 	                                       &device,
 	                                       &is_vpn,
@@ -3189,7 +3214,7 @@ impl_manager_activate_connection (NMManager *self,
 		goto error;
 
 	active = _new_active_connection (self,
-	                                 connection,
+	                                 NM_CONNECTION (connection),
 	                                 specific_object_path,
 	                                 device,
 	                                 subject,
@@ -3197,7 +3222,7 @@ impl_manager_activate_connection (NMManager *self,
 	if (!active)
 		goto error;
 
-	nm_active_connection_authorize (active, _activation_auth_done, self, context);
+	nm_active_connection_authorize (active, NULL, _activation_auth_done, self, context);
 	g_clear_object (&subject);
 	return;
 
@@ -3221,7 +3246,7 @@ typedef struct {
 } AddAndActivateInfo;
 
 static void
-activation_add_done (NMSettings *self,
+activation_add_done (NMSettings *settings,
                      NMSettingsConnection *new_connection,
                      GError *error,
                      GDBusMethodInvocation *context,
@@ -3229,44 +3254,46 @@ activation_add_done (NMSettings *self,
                      gpointer user_data)
 {
 	AddAndActivateInfo *info = user_data;
+	NMManager *self;
+	gs_unref_object NMActiveConnection *active = NULL;
 	GError *local = NULL;
 
-	if (!error) {
-		nm_active_connection_set_connection (info->active, NM_CONNECTION (new_connection));
+	self = info->manager;
+	active = info->active;
+	g_slice_free (AddAndActivateInfo, info);
 
-		if (_internal_activate_generic (info->manager, info->active, &local)) {
+	if (!error) {
+		nm_active_connection_set_settings_connection (active, new_connection);
+
+		if (_internal_activate_generic (self, active, &local)) {
 			nm_settings_connection_commit_changes (new_connection,
 			                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION | NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED,
 			                                       NULL, NULL);
 			g_dbus_method_invocation_return_value (
-				context,
-				g_variant_new ("(oo)",
-				               nm_connection_get_path (NM_CONNECTION (new_connection)),
-				               nm_exported_object_get_path (NM_EXPORTED_OBJECT (info->active))));
+			    context,
+			    g_variant_new ("(oo)",
+			                   nm_connection_get_path (NM_CONNECTION (new_connection)),
+			                   nm_exported_object_get_path (NM_EXPORTED_OBJECT (active))));
 			nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD_ACTIVATE,
-			                            nm_active_connection_get_connection (info->active),
+			                            nm_active_connection_get_settings_connection (active),
 			                            TRUE,
-			                            nm_active_connection_get_subject (info->active),
+			                            nm_active_connection_get_subject (active),
 			                            NULL);
-			goto done;
+			return;
 		}
 		error = local;
 	}
 
 	g_assert (error);
-	_internal_activation_failed (info->manager, info->active, error->message);
+	_internal_activation_failed (self, active, error->message);
 	nm_settings_connection_delete (new_connection, NULL, NULL);
 	g_dbus_method_invocation_return_gerror (context, error);
 	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD_ACTIVATE,
-	                            nm_active_connection_get_connection (info->active),
+	                            NULL,
 	                            FALSE,
-	                            nm_active_connection_get_subject (info->active),
+	                            nm_active_connection_get_subject (active),
 	                            error->message);
 	g_clear_error (&local);
-
-done:
-	g_object_unref (info->active);
-	g_free (info);
 }
 
 static void
@@ -3283,24 +3310,30 @@ _add_and_activate_auth_done (NMActiveConnection *active,
 	GError *error = NULL;
 
 	if (success) {
-		info = g_malloc0 (sizeof (*info));
+		NMConnection *connection;
+
+		connection = g_object_steal_data (G_OBJECT (active),
+		                                  TAG_ACTIVE_CONNETION_ADD_AND_ACTIVATE);
+
+		info = g_slice_new (AddAndActivateInfo);
 		info->manager = self;
 		info->active = g_object_ref (active);
 
 		/* Basic sender auth checks performed; try to add the connection */
 		nm_settings_add_connection_dbus (priv->settings,
-		                                 nm_active_connection_get_connection (active),
+		                                 connection,
 		                                 FALSE,
 		                                 context,
 		                                 activation_add_done,
 		                                 info);
+		g_object_unref (connection);
 	} else {
 		g_assert (error_desc);
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                             error_desc);
 		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD_ACTIVATE,
-		                            nm_active_connection_get_connection (active),
+		                            NULL,
 		                            FALSE,
 		                            nm_active_connection_get_subject (active),
 		                            error->message);
@@ -3400,13 +3433,17 @@ impl_manager_add_and_activate_connection (NMManager *self,
 	if (!active)
 		goto error;
 
-	nm_active_connection_authorize (active, _add_and_activate_auth_done, self, context);
-	g_object_unref (connection);
+	g_object_set_data_full (G_OBJECT (active),
+	                        TAG_ACTIVE_CONNETION_ADD_AND_ACTIVATE,
+	                        connection,
+	                        g_object_unref);
+
+	nm_active_connection_authorize (active, connection, _add_and_activate_auth_done, self, context);
 	g_object_unref (subject);
 	return;
 
 error:
-	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD_ACTIVATE, connection, FALSE, subject, error->message);
+	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD_ACTIVATE, NULL, FALSE, subject, error->message);
 	g_clear_object (&connection);
 	g_slist_free (all_connections);
 	g_clear_object (&subject);
@@ -3501,7 +3538,7 @@ deactivate_net_auth_done_cb (NMAuthChain *chain,
 
 	if (active) {
 		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_DEACTIVATE,
-		                            nm_active_connection_get_connection (active),
+		                            nm_active_connection_get_settings_connection (active),
 		                            !error,
 		                            nm_auth_chain_get_subject (chain),
 		                            error ? error->message : NULL);
@@ -3521,22 +3558,17 @@ impl_manager_deactivate_connection (NMManager *self,
                                     const char *active_path)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	NMConnection *connection = NULL;
+	NMActiveConnection *ac;
+	NMSettingsConnection *connection = NULL;
 	GError *error = NULL;
 	NMAuthSubject *subject = NULL;
-	GSList *iter;
 	NMAuthChain *chain;
 	char *error_desc = NULL;
 
 	/* Find the connection by its object path */
-	for (iter = priv->active_connections; iter; iter = g_slist_next (iter)) {
-		NMActiveConnection *ac = iter->data;
-
-		if (g_strcmp0 (nm_exported_object_get_path (NM_EXPORTED_OBJECT (ac)), active_path) == 0) {
-			connection = nm_active_connection_get_connection (ac);
-			break;
-		}
-	}
+	ac = active_connection_get_by_path (self, active_path);
+	if (ac)
+		connection = nm_active_connection_get_settings_connection (ac);
 
 	if (!connection) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
@@ -3555,7 +3587,7 @@ impl_manager_deactivate_connection (NMManager *self,
 	}
 
 	/* Ensure the subject has permissions for this connection */
-	if (!nm_auth_is_subject_in_acl (connection,
+	if (!nm_auth_is_subject_in_acl (NM_CONNECTION (connection),
 	                                subject,
 	                                &error_desc)) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
@@ -4346,7 +4378,7 @@ policy_default_device_changed (GObject *object, GParamSpec *pspec, gpointer user
 			g_signal_connect (priv->primary_connection, NM_ACTIVE_CONNECTION_DEVICE_METERED_CHANGED,
 			                  G_CALLBACK (connection_metered_changed), self);
 		}
-		nm_log_dbg (LOGD_CORE, "PrimaryConnection now %s", ac ? nm_active_connection_get_id (ac) : "(none)");
+		nm_log_dbg (LOGD_CORE, "PrimaryConnection now %s", ac ? nm_active_connection_get_settings_connection_id (ac) : "(none)");
 		g_object_notify (G_OBJECT (self), NM_MANAGER_PRIMARY_CONNECTION);
 		g_object_notify (G_OBJECT (self), NM_MANAGER_PRIMARY_CONNECTION_TYPE);
 		nm_manager_update_metered (self);
@@ -4381,7 +4413,7 @@ policy_activating_device_changed (GObject *object, GParamSpec *pspec, gpointer u
 	if (ac != priv->activating_connection) {
 		g_clear_object (&priv->activating_connection);
 		priv->activating_connection = ac ? g_object_ref (ac) : NULL;
-		nm_log_dbg (LOGD_CORE, "ActivatingConnection now %s", ac ? nm_active_connection_get_id (ac) : "(none)");
+		nm_log_dbg (LOGD_CORE, "ActivatingConnection now %s", ac ? nm_active_connection_get_settings_connection_id (ac) : "(none)");
 		g_object_notify (G_OBJECT (self), NM_MANAGER_ACTIVATING_CONNECTION);
 	}
 }
@@ -4793,7 +4825,7 @@ periodic_update_active_connection_timestamps (gpointer user_data)
 		NMSettingsConnection *connection;
 
 		if (nm_active_connection_get_state (ac) == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
-			connection = NM_SETTINGS_CONNECTION (nm_active_connection_get_connection (ac));
+			connection = nm_active_connection_get_settings_connection (ac);
 			nm_settings_connection_update_timestamp (connection, (guint64) time (NULL), FALSE);
 		}
 	}
@@ -5040,7 +5072,14 @@ get_property (GObject *object, guint prop_id,
 		nm_utils_g_value_set_object_path (value, priv->primary_connection);
 		break;
 	case PROP_PRIMARY_CONNECTION_TYPE:
-		type = priv->primary_connection ? nm_active_connection_get_connection_type (priv->primary_connection) : NULL;
+		type = NULL;
+		if (priv->primary_connection) {
+			NMConnection *con;
+
+			con = nm_active_connection_get_applied_connection (priv->primary_connection);
+			if (con)
+				type = nm_connection_get_connection_type (con);
+		}
 		g_value_set_string (value, type ? type : "");
 		break;
 	case PROP_ACTIVATING_CONNECTION:

@@ -65,24 +65,51 @@ enum {
 
 /*******************************************************************/
 
-NMConnection *
-nm_act_request_get_connection (NMActRequest *req)
+NMSettingsConnection *
+nm_act_request_get_settings_connection (NMActRequest *req)
 {
 	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), NULL);
 
-	return nm_active_connection_get_connection (NM_ACTIVE_CONNECTION (req));
+	return nm_active_connection_get_settings_connection (NM_ACTIVE_CONNECTION (req));
+}
+
+NMConnection *
+nm_act_request_get_applied_connection (NMActRequest *req)
+{
+	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), NULL);
+
+	return nm_active_connection_get_applied_connection (NM_ACTIVE_CONNECTION (req));
 }
 
 /*******************************************************************/
 
 struct _NMActRequestGetSecretsCallId {
 	NMActRequest *self;
-	NMSettingsConnectionCallId call_id_s;
 	NMActRequestSecretsFunc callback;
 	gpointer callback_data;
+	NMSettingsConnectionCallId call_id;
 };
 
 typedef struct _NMActRequestGetSecretsCallId GetSecretsInfo;
+
+static GetSecretsInfo *
+_get_secrets_info_new (NMActRequest *self, NMActRequestSecretsFunc callback, gpointer callback_data)
+{
+	GetSecretsInfo *info;
+
+	info = g_slice_new0 (GetSecretsInfo);
+	info->self = self;
+	info->callback = callback;
+	info->callback_data = callback_data;
+
+	return info;
+}
+
+static void
+_get_secrets_info_free (GetSecretsInfo *info)
+{
+	g_slice_free (GetSecretsInfo, info);
+}
 
 static void
 get_secrets_cb (NMSettingsConnection *connection,
@@ -93,16 +120,24 @@ get_secrets_cb (NMSettingsConnection *connection,
                 gpointer user_data)
 {
 	GetSecretsInfo *info = user_data;
-	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (info->self);
+	NMActRequestPrivate *priv;
 
-	g_return_if_fail (info->call_id_s == call_id_s);
+	g_return_if_fail (info && info->call_id == call_id_s);
+	g_return_if_fail (NM_IS_ACT_REQUEST (info->self));
+
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	priv = NM_ACT_REQUEST_GET_PRIVATE (info->self);
+
 	g_return_if_fail (g_slist_find (priv->secrets_calls, info));
 
 	priv->secrets_calls = g_slist_remove (priv->secrets_calls, info);
 
 	if (info->callback)
-		info->callback (info->self, info, NM_CONNECTION (connection), error, info->callback_data);
-	g_free (info);
+		info->callback (info->self, info, connection, error, info->callback_data);
+
+	_get_secrets_info_free (info);
 }
 
 /**
@@ -135,57 +170,92 @@ nm_act_request_get_secrets (NMActRequest *self,
 	NMActRequestPrivate *priv;
 	GetSecretsInfo *info;
 	NMSettingsConnectionCallId call_id_s;
-	NMConnection *connection;
+	NMSettingsConnection *settings_connection;
+	NMConnection *applied_connection;
 	const char *hints[2] = { hint, NULL };
 
-	g_return_val_if_fail (self, 0);
 	g_return_val_if_fail (NM_IS_ACT_REQUEST (self), 0);
 
 	priv = NM_ACT_REQUEST_GET_PRIVATE (self);
 
-	info = g_malloc0 (sizeof (GetSecretsInfo));
-	info->self = self;
-	info->callback = callback;
-	info->callback_data = callback_data;
+	settings_connection = nm_act_request_get_settings_connection (self);
+	applied_connection = nm_act_request_get_applied_connection (self);
+
+	info = _get_secrets_info_new (self, callback, callback_data);
+
+	priv->secrets_calls = g_slist_append (priv->secrets_calls, info);
 
 	if (nm_active_connection_get_user_requested (NM_ACTIVE_CONNECTION (self)))
 		flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_USER_REQUESTED;
 
-	connection = nm_active_connection_get_connection (NM_ACTIVE_CONNECTION (self));
-	call_id_s = nm_settings_connection_get_secrets (NM_SETTINGS_CONNECTION (connection),
+	call_id_s = nm_settings_connection_get_secrets (settings_connection,
+	                                                applied_connection,
 	                                                nm_active_connection_get_subject (NM_ACTIVE_CONNECTION (self)),
 	                                                setting_name,
 	                                                flags,
 	                                                hints,
 	                                                get_secrets_cb,
-	                                                info,
-	                                                NULL);
-	if (call_id_s) {
-		info->call_id_s = call_id_s;
-		priv->secrets_calls = g_slist_append (priv->secrets_calls, info);
-	} else
-		g_free (info);
-
+	                                                info);
+	info->call_id = call_id_s;
+	g_return_val_if_fail (call_id_s, NULL);
 	return info;
+}
+
+static void
+_do_cancel_secrets (NMActRequest *self, GetSecretsInfo *info, gboolean is_disposing)
+{
+	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (self);
+
+	nm_assert (info && info->self == self);
+	nm_assert (g_slist_find (priv->secrets_calls, info));
+
+	priv->secrets_calls = g_slist_remove (priv->secrets_calls, info);
+
+	nm_settings_connection_cancel_secrets (nm_act_request_get_settings_connection (self), info->call_id);
+
+	if (info->callback) {
+		gs_free_error GError *error = NULL;
+
+		if (is_disposing) {
+			/* Use a different error code. G_IO_ERROR_CANCELLED is only used synchronously
+			 * when the user calls nm_act_request_cancel_secrets(). Disposing the instance
+			 * with pending requests also cancels the requests, but with a different error
+			 * code. */
+			g_set_error_literal (&error, G_IO_ERROR, G_IO_ERROR_FAILED,
+			                     "Disposing NMActRequest instance");
+		} else {
+			g_set_error_literal (&error, G_IO_ERROR, G_IO_ERROR_CANCELLED,
+			                     "Request cancelled");
+		}
+
+		info->callback (self, info, NULL, error, info->callback_data);
+	}
+
+	_get_secrets_info_free (info);
 }
 
 void
 nm_act_request_cancel_secrets (NMActRequest *self, NMActRequestGetSecretsCallId call_id)
 {
 	NMActRequestPrivate *priv;
-	NMConnection *connection;
 
-	g_return_if_fail (self);
 	g_return_if_fail (NM_IS_ACT_REQUEST (self));
 	g_return_if_fail (call_id);
 
 	priv = NM_ACT_REQUEST_GET_PRIVATE (self);
 
-	if (g_slist_find (priv->secrets_calls, call_id))
+	if (!g_slist_find (priv->secrets_calls, call_id))
 		g_return_if_reached ();
 
-	connection = nm_active_connection_get_connection (NM_ACTIVE_CONNECTION (self));
-	nm_settings_connection_cancel_secrets (NM_SETTINGS_CONNECTION (connection), call_id->call_id_s);
+	_do_cancel_secrets (self, call_id, FALSE);
+}
+
+void
+nm_act_request_clear_secrets (NMActRequest *self)
+{
+	g_return_if_fail (NM_IS_ACT_REQUEST (self));
+
+	nm_active_connection_clear_secrets ((NMActiveConnection *) self);
 }
 
 /********************************************************************/
@@ -405,7 +475,7 @@ master_failed (NMActiveConnection *self)
 /**
  * nm_act_request_new:
  *
- * @connection: the connection to activate @device with
+ * @settings_connection: (allow-none): the connection to activate @device with
  * @specific_object: the object path of the specific object (ie, WiFi access point,
  *    etc) that will be used to activate @connection and @device
  * @subject: the #NMAuthSubject representing the requestor of the activation
@@ -418,17 +488,17 @@ master_failed (NMActiveConnection *self)
  * Returns: the new activation request on success, %NULL on error.
  */
 NMActRequest *
-nm_act_request_new (NMConnection *connection,
+nm_act_request_new (NMSettingsConnection *settings_connection,
                     const char *specific_object,
                     NMAuthSubject *subject,
                     NMDevice *device)
 {
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+	g_return_val_if_fail (!settings_connection || NM_IS_SETTINGS_CONNECTION (settings_connection), NULL);
 	g_return_val_if_fail (!device || NM_IS_DEVICE (device), NULL);
 	g_return_val_if_fail (NM_IS_AUTH_SUBJECT (subject), NULL);
 
 	return (NMActRequest *) g_object_new (NM_TYPE_ACT_REQUEST,
-	                                      NM_ACTIVE_CONNECTION_INT_CONNECTION, connection,
+	                                      NM_ACTIVE_CONNECTION_INT_SETTINGS_CONNECTION, settings_connection,
 	                                      NM_ACTIVE_CONNECTION_INT_DEVICE, device,
 	                                      NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT, specific_object,
 	                                      NM_ACTIVE_CONNECTION_INT_SUBJECT, subject,
@@ -443,23 +513,17 @@ nm_act_request_init (NMActRequest *req)
 static void
 dispose (GObject *object)
 {
-	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (object);
-	NMConnection *connection;
+	NMActRequest *self = NM_ACT_REQUEST (object);
+	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (self);
+
+	/* Kill any in-progress secrets requests */
+	while (priv->secrets_calls)
+		_do_cancel_secrets (self, priv->secrets_calls->data, TRUE);
 
 	/* Clear any share rules */
 	if (priv->share_rules) {
 		nm_act_request_set_shared (NM_ACT_REQUEST (object), FALSE);
 		clear_share_rules (NM_ACT_REQUEST (object));
-	}
-
-	/* Kill any in-progress secrets requests */
-	connection = nm_active_connection_get_connection (NM_ACTIVE_CONNECTION (object));
-	while (priv->secrets_calls) {
-		GetSecretsInfo *info = priv->secrets_calls->data;
-
-		nm_settings_connection_cancel_secrets (NM_SETTINGS_CONNECTION (connection), info->call_id_s);
-
-		g_return_if_fail (!priv->secrets_calls || info != priv->secrets_calls->data);
 	}
 
 	G_OBJECT_CLASS (nm_act_request_parent_class)->dispose (object);
