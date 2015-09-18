@@ -1540,6 +1540,12 @@ nm_match_spec_join (GSList *specs)
 	return g_string_free (str, FALSE);
 }
 
+/**
+ * nm_utils_get_shared_wifi_permission:
+ * @connection: the NMConnection to lookup the permission.
+ *
+ * Returns: a static string of the wifi-permission (if any) or %NULL.
+ */
 const char *
 nm_utils_get_shared_wifi_permission (NMConnection *connection)
 {

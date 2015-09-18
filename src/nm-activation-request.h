@@ -33,6 +33,9 @@
 #define NM_IS_ACT_REQUEST_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_ACT_REQUEST))
 #define NM_ACT_REQUEST_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_ACT_REQUEST, NMActRequestClass))
 
+struct _NMActRequestGetSecretsCallId;
+typedef struct _NMActRequestGetSecretsCallId *NMActRequestGetSecretsCallId;
+
 struct _NMActRequest {
 	NMActiveConnection parent;
 };
@@ -62,19 +65,19 @@ void          nm_act_request_add_share_rule (NMActRequest *req,
 /* Secrets handling */
 
 typedef void (*NMActRequestSecretsFunc) (NMActRequest *req,
-                                         guint32 call_id,
+                                         NMActRequestGetSecretsCallId call_id,
                                          NMConnection *connection,
                                          GError *error,
                                          gpointer user_data);
 
-guint32 nm_act_request_get_secrets (NMActRequest *req,
-                                    const char *setting_name,
-                                    NMSecretAgentGetSecretsFlags flags,
-                                    const char *hint,
-                                    NMActRequestSecretsFunc callback,
-                                    gpointer callback_data);
+NMActRequestGetSecretsCallId nm_act_request_get_secrets (NMActRequest *req,
+                                                         const char *setting_name,
+                                                         NMSecretAgentGetSecretsFlags flags,
+                                                         const char *hint,
+                                                         NMActRequestSecretsFunc callback,
+                                                         gpointer callback_data);
 
-void nm_act_request_cancel_secrets (NMActRequest *req, guint32 call_id);
+void nm_act_request_cancel_secrets (NMActRequest *req, NMActRequestGetSecretsCallId call_id);
 
 #endif /* __NETWORKMANAGER_ACTIVATION_REQUEST_H__ */
 

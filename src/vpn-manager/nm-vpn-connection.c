@@ -80,7 +80,7 @@ typedef struct {
 	gboolean service_can_persist;
 	gboolean connection_can_persist;
 
-	guint32 secrets_id;
+	NMSettingsConnectionCallId secrets_id;
 	SecretsReq secrets_idx;
 	char *username;
 
@@ -332,10 +332,8 @@ _set_vpn_state (NMVpnConnection *connection,
 	                                _state_to_ac_state (vpn_state));
 
 	/* Clear any in-progress secrets request */
-	if (priv->secrets_id) {
+	if (priv->secrets_id)
 		nm_settings_connection_cancel_secrets (NM_SETTINGS_CONNECTION (priv->connection), priv->secrets_id);
-		priv->secrets_id = 0;
-	}
 
 	dispatcher_cleanup (connection);
 
@@ -2009,7 +2007,7 @@ plugin_new_secrets_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_da
 
 static void
 get_secrets_cb (NMSettingsConnection *connection,
-                guint32 call_id,
+                NMSettingsConnectionCallId call_id,
                 const char *agent_username,
                 const char *setting_name,
                 GError *error,
@@ -2022,7 +2020,10 @@ get_secrets_cb (NMSettingsConnection *connection,
 	g_return_if_fail (NM_CONNECTION (connection) == priv->connection);
 	g_return_if_fail (call_id == priv->secrets_id);
 
-	priv->secrets_id = 0;
+	priv->secrets_id = NULL;
+
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
 
 	if (error && priv->secrets_idx >= SECRETS_REQ_NEW) {
 		nm_log_err (LOGD_VPN, "Failed to request VPN secrets #%d: (%d) %s",
@@ -2227,7 +2228,6 @@ dispose (GObject *object)
 	if (priv->secrets_id) {
 		nm_settings_connection_cancel_secrets (NM_SETTINGS_CONNECTION (priv->connection),
 		                                       priv->secrets_id);
-		priv->secrets_id = 0;
 	}
 
 	if (priv->cancellable) {
