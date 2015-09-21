@@ -639,6 +639,18 @@ The value can be prefixed with \fBifname/\fP, \fBuuid/\fP or \fBid/\fP to disamb
 .RE
 .RS
 .TP
+.B adsl:
+.IP "\fIusername <username>\fP" 42
+\(en ADSL user name
+.IP "\fIprotocol pppoa|pppoe|ipoatm\fP" 42
+\(en ADSL protocol
+.IP "\fI[password <password>]\fP" 42
+\(en ADSL password
+.IP "\fI[encapsulation vcmux|llc]\fP" 42
+\(en ADSL encapsulation
+.RE
+.RS
+.TP
 .B SLAVE_OPTIONS:
 .RE
 .RS
