@@ -45,6 +45,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_VPN_PERSISTENT   "persistent"
 #define NM_SETTING_VPN_DATA         "data"
 #define NM_SETTING_VPN_SECRETS      "secrets"
+#define NM_SETTING_VPN_TIMEOUT      "timeout"
 
 struct _NMSettingVpn {
 	NMSetting parent;
@@ -96,6 +97,8 @@ gboolean          nm_setting_vpn_remove_secret     (NMSettingVpn *setting,
 void              nm_setting_vpn_foreach_secret    (NMSettingVpn *setting,
                                                     NMVpnIterFunc func,
                                                     gpointer user_data);
+NM_AVAILABLE_IN_1_2
+guint32           nm_setting_vpn_get_timeout       (NMSettingVpn *setting);
 
 G_END_DECLS
 
