@@ -1137,7 +1137,9 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 
 	wol = nm_setting_wired_get_wake_on_lan (s_wired);
 	wol_password = nm_setting_wired_get_wake_on_lan_password (s_wired);
-	if (wol == NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT)
+	if (wol == NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE)
+		svSetValueFull (ifcfg, "ETHTOOL_OPTS", "", FALSE);
+	else if (wol == NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT)
 		svSetValue (ifcfg, "ETHTOOL_OPTS", NULL, FALSE);
 	else {
 		str = g_string_sized_new (30);
