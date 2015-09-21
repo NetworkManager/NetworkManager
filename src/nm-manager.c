@@ -5183,7 +5183,16 @@ dispose (GObject *object)
 		g_clear_object (&priv->policy);
 	}
 
-	g_clear_object (&priv->settings);
+	if (priv->settings) {
+		g_signal_handlers_disconnect_by_func (priv->settings, settings_startup_complete_changed, manager);
+		g_signal_handlers_disconnect_by_func (priv->settings, system_unmanaged_devices_changed_cb, manager);
+		g_signal_handlers_disconnect_by_func (priv->settings, system_hostname_changed_cb, manager);
+		g_signal_handlers_disconnect_by_func (priv->settings, connection_added, manager);
+		g_signal_handlers_disconnect_by_func (priv->settings, connection_changed, manager);
+		g_signal_handlers_disconnect_by_func (priv->settings, connection_removed, manager);
+		g_clear_object (&priv->settings);
+	}
+
 	g_free (priv->state_file);
 	g_clear_object (&priv->vpn_manager);
 
