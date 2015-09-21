@@ -4572,8 +4572,8 @@ prop_filter (GDBusConnection *connection,
 	/* Only filter org.freedesktop.DBus.Properties.Set calls */
 	if (   !incoming
 	    || g_dbus_message_get_message_type (message) != G_DBUS_MESSAGE_TYPE_METHOD_CALL
-	    || strcmp (g_dbus_message_get_interface (message), DBUS_INTERFACE_PROPERTIES) != 0
-	    || strcmp (g_dbus_message_get_member (message), "Set") != 0)
+	    || g_strcmp0 (g_dbus_message_get_interface (message), DBUS_INTERFACE_PROPERTIES) != 0
+	    || g_strcmp0 (g_dbus_message_get_member (message), "Set") != 0)
 		return message;
 
 	/* Only filter calls with correct arguments (all filtered properties are boolean) */
