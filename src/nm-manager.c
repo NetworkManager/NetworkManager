@@ -5221,6 +5221,11 @@ dispose (GObject *object)
 		g_clear_object (&priv->fw_monitor);
 	}
 
+	if (priv->rfkill_mgr) {
+		g_signal_handlers_disconnect_by_func (priv->rfkill_mgr, rfkill_manager_rfkill_changed_cb, manager);
+		g_clear_object (&priv->rfkill_mgr);
+	}
+
 	nm_device_factory_manager_for_each_factory (_deinit_device_factory, manager);
 	
 	if (priv->timestamp_update_id) {
