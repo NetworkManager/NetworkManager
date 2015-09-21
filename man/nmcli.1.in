@@ -619,6 +619,18 @@ to be sent back out through the slave the frame was received on (default: yes)
 .RE
 .RS
 .TP
+.B adsl:
+.IP "\fIusername <username>\fP" 42
+\(en ADSL user name
+.IP "\fIprotocol pppoa|pppoe|ipoatm\fP" 42
+\(en ADSL protocol
+.IP "\fI[password <password>]\fP" 42
+\(en ADSL password
+.IP "\fI[encapsulation vcmux|llc]\fP" 42
+\(en ADSL encapsulation
+.RE
+.RS
+.TP
 .B IP_OPTIONS:
 .IP "\fI[ip4 <IPv4 address>] [gw4 <IPv4 gateway>]\fP" 42
 \(en IPv4 addresses
