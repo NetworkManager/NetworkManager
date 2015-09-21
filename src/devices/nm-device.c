@@ -8727,17 +8727,20 @@ _set_state_full (NMDevice *self,
                  NMDeviceStateReason reason,
                  gboolean quitting)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDevicePrivate *priv;
 	NMDeviceState old_state;
 	NMActRequest *req;
 	gboolean no_firmware = FALSE;
 	NMSettingsConnection *connection;
 
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
 	/* Track re-entry */
 	g_warn_if_fail (priv->in_state_changed == FALSE);
-	priv->in_state_changed = TRUE;
 
-	g_return_if_fail (NM_IS_DEVICE (self));
+	old_state = priv->state;
 
 	/* Do nothing if state isn't changing, but as a special case allow
 	 * re-setting UNAVAILABLE if the device is missing firmware so that we
@@ -8745,13 +8748,15 @@ _set_state_full (NMDevice *self,
 	 */
 	if (   (priv->state == state)
 	    && !(state == NM_DEVICE_STATE_UNAVAILABLE && priv->firmware_missing)) {
-		priv->in_state_changed = FALSE;
+		_LOGt (LOGD_DEVICE, "device state change: %s -> %s (reason '%s') [%d %d %d] (skip due to missing firmware)",
+		       state_to_string (old_state),
+		       state_to_string (state),
+		       reason_to_string (reason),
+		       old_state,
+		       state,
+		       reason);
 		return;
 	}
-
-	old_state = priv->state;
-	priv->state = state;
-	priv->state_reason = reason;
 
 	_LOGI (LOGD_DEVICE, "device state change: %s -> %s (reason '%s') [%d %d %d]",
 	       state_to_string (old_state),
@@ -8760,6 +8765,11 @@ _set_state_full (NMDevice *self,
 	       old_state,
 	       state,
 	       reason);
+
+	priv->in_state_changed = TRUE;
+
+	priv->state = state;
+	priv->state_reason = reason;
 
 	/* Clear any queued transitions */
 	nm_device_queued_state_clear (self);
