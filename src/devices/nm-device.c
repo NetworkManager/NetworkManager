@@ -7732,7 +7732,7 @@ _set_unmanaged_flags (NMDevice *self,
 			       (long long unsigned) (priv->unmanaged_flags | flags),
 			       (long long unsigned) priv->unmanaged_flags,
 			       "set",
-			       (long long unsigned) (~priv->unmanaged_flags & flags));
+			       (long long unsigned) flags);
 			priv->unmanaged_flags |= flags;
 		}
 	} else {
@@ -7741,7 +7741,7 @@ _set_unmanaged_flags (NMDevice *self,
 			       (long long unsigned) (priv->unmanaged_flags & (~flags)),
 			       (long long unsigned) priv->unmanaged_flags,
 			       "clear",
-			       (long long unsigned) (priv->unmanaged_flags & flags));
+			       (long long unsigned) flags);
 			priv->unmanaged_flags &= ~flags;
 		}
 	}
