@@ -3560,18 +3560,23 @@ wireless_connection_from_ifcfg (const char *file,
 static void
 parse_ethtool_options (shvarFile *ifcfg, NMSettingWired *s_wired, char *value)
 {
-	NMSettingWiredWakeOnLan wol_flags = NM_SETTING_WIRED_WAKE_ON_LAN_NONE;
+	NMSettingWiredWakeOnLan wol_flags = NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE;
 	gboolean use_password = FALSE;
-	char **words, **iter, *flag;
+	char **words = NULL, **iter = NULL, *flag;
 
-	if (!value || !value[0])
+	if (!value)
 		return;
 
-	words = g_strsplit_set (value, " ", 0);
-	iter = words;
+	if (value[0]) {
+		words = g_strsplit_set (value, " ", 0);
+		iter = words;
+	}
 
-	while (iter[0]) {
+	while (iter && iter[0]) {
 		if (g_str_equal (iter[0], "wol") && iter[1] && *iter[1]) {
+
+			wol_flags = NM_SETTING_WIRED_WAKE_ON_LAN_NONE;
+
 			for (flag = iter[1]; *flag; flag++) {
 				switch (*flag) {
 				case 'p':
@@ -3607,7 +3612,6 @@ parse_ethtool_options (shvarFile *ifcfg, NMSettingWired *s_wired, char *value)
 			if (!NM_FLAGS_HAS (wol_flags, NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC))
 				use_password = FALSE;
 
-			g_object_set (s_wired, NM_SETTING_WIRED_WAKE_ON_LAN, wol_flags, NULL);
 			iter += 2;
 			continue;
 		}
@@ -3628,6 +3632,7 @@ parse_ethtool_options (shvarFile *ifcfg, NMSettingWired *s_wired, char *value)
 		iter++;
 	}
 
+	g_object_set (s_wired, NM_SETTING_WIRED_WAKE_ON_LAN, wol_flags, NULL);
 	g_strfreev (words);
 }
 
@@ -3766,7 +3771,7 @@ make_wired_setting (shvarFile *ifcfg,
 		g_free (value);
 	}
 
-	value = svGetValue (ifcfg, "ETHTOOL_OPTS", FALSE);
+	value = svGetValueFull (ifcfg, "ETHTOOL_OPTS", FALSE);
 	parse_ethtool_options (ifcfg, s_wired, value);
 	g_free (value);
 

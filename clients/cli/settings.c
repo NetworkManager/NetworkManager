@@ -1587,7 +1587,10 @@ nmc_property_wired_set_wake_on_lan (NMSetting *setting, const char *prop,
 	gboolean ret;
 	long int t;
 
-	if (nmc_string_to_int_base (val, 0, TRUE, 0, NM_SETTING_WIRED_WAKE_ON_LAN_ALL, &t))
+	if (nmc_string_to_int_base (val, 0, TRUE, 0,
+	                            NM_SETTING_WIRED_WAKE_ON_LAN_ALL
+	                            | NM_SETTING_WIRED_WAKE_ON_LAN_EXCLUSIVE_FLAGS,
+	                            &t))
 		wol = (NMSettingWiredWakeOnLan) t;
 	else {
 		ret = nm_utils_enum_from_str (nm_setting_wired_wake_on_lan_get_type (), val,
@@ -1599,7 +1602,7 @@ nmc_property_wired_set_wake_on_lan (NMSetting *setting, const char *prop,
 			    || g_ascii_strcasecmp (err_token, "disabled") == 0)
 				wol = NM_SETTING_WIRED_WAKE_ON_LAN_NONE;
 			else {
-				g_set_error (error, 1, 0, _("invalid option '%s', use  a combination of [%s] or 'default' or 'none'"),
+				g_set_error (error, 1, 0, _("invalid option '%s', use  a combination of [%s] or 'ignore', 'default' or 'none'"),
 				             err_token,
 				             nm_utils_enum_to_str (nm_setting_wired_wake_on_lan_get_type (),
 				                                   NM_SETTING_WIRED_WAKE_ON_LAN_ALL));
@@ -1608,9 +1611,9 @@ nmc_property_wired_set_wake_on_lan (NMSetting *setting, const char *prop,
 		}
 	}
 
-	if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT) &&
-		NM_FLAGS_ANY (wol, NM_SETTING_WIRED_WAKE_ON_LAN_ALL)) {
-		g_set_error_literal (error, 1, 0, _("'default' is incompatible with other flags"));
+	if (   NM_FLAGS_ANY (wol, NM_SETTING_WIRED_WAKE_ON_LAN_EXCLUSIVE_FLAGS)
+	    && !nm_utils_is_power_of_two (wol)) {
+		g_set_error_literal (error, 1, 0, _("'default' and 'ignore' are incompatible with other flags"));
 		return FALSE;
 	}
 
