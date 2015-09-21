@@ -1292,7 +1292,7 @@ _nmcli()
                         ;;
                     se|set)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "ifname\n%s" "$(_nmcli_con_show NAME)")"
+                            _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "ifname\n%s" "$(_nmcli_dev_status DEVICE)")"
                         else
                             _nmcli_array_delete_at words 0 1
                             OPTIONS=(ifname)
