@@ -421,7 +421,7 @@ write_resolv_conf (FILE *f,
 
 	if (options) {
 		tmp_str = g_strjoinv (" ", options);
-		options_str = g_strconcat ("option ", tmp_str, "\n", NULL);
+		options_str = g_strconcat ("options ", tmp_str, "\n", NULL);
 		g_free (tmp_str);
 	}
 
