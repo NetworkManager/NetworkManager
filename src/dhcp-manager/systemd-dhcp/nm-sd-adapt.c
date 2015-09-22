@@ -91,6 +91,7 @@ static gboolean
 io_ready (GIOChannel *channel, GIOCondition condition, struct sd_event_source *source)
 {
 	int r, revents = 0;
+	gboolean result;
 
 	if (condition & G_IO_IN)
 		revents |= EPOLLIN;
@@ -103,13 +104,18 @@ io_ready (GIOChannel *channel, GIOCondition condition, struct sd_event_source *s
 	if (condition & G_IO_HUP)
 		revents |= EPOLLHUP;
 
-	r = source->io_cb (source, g_io_channel_unix_get_fd (channel), revents, source->user_data);
-	if (r < 0) {
-		source->id = 0;
-		return G_SOURCE_REMOVE;
-	}
+	source->refcount++;
 
-	return G_SOURCE_CONTINUE;
+	r = source->io_cb (source, g_io_channel_unix_get_fd (channel), revents, source->user_data);
+	if (r < 0 || source->refcount <= 1) {
+		source->id = 0;
+		result = G_SOURCE_REMOVE;
+	} else
+		result = G_SOURCE_CONTINUE;
+
+	sd_event_source_unref (source);
+
+	return result;
 }
 
 int
@@ -151,14 +157,20 @@ static gboolean
 time_ready (struct sd_event_source *source)
 {
 	int r;
+	gboolean result;
+
+	source->refcount++;
 
 	r = source->time_cb (source, source->usec, source->user_data);
-	if (r < 0) {
+	if (r < 0 || source->refcount <= 1) {
 		source->id = 0;
-		return G_SOURCE_REMOVE;
-	}
+		result = G_SOURCE_REMOVE;
+	} else
+		result = G_SOURCE_CONTINUE;
 
-	return G_SOURCE_CONTINUE;
+	sd_event_source_unref (source);
+
+	return result;
 }
 
 int
