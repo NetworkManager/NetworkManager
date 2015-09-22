@@ -42,7 +42,7 @@ source_new (void)
 {
 	struct sd_event_source *source;
 
-	source = g_new0 (struct sd_event_source, 1);
+	source = g_slice_new0 (struct sd_event_source);
 	source->refcount = 1;
 	return source;
 }
@@ -72,7 +72,7 @@ sd_event_source_unref (sd_event_source *s)
 			 */
 			g_io_channel_unref (s->channel);
 		}
-		g_free (s);
+		g_slice_free (struct sd_event_source, s);
 	}
 	return NULL;
 }
