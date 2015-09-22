@@ -125,6 +125,10 @@ sd_event_add_io (sd_event *e, sd_event_source **s, int fd, uint32_t events, sd_e
 	GIOChannel *channel;
 	GIOCondition condition = 0;
 
+	/* systemd supports floating sd_event_source by omitting the @s argument.
+	 * We don't have such users and don't implement floating references. */
+	g_return_val_if_fail (s, -EINVAL);
+
 	channel = g_io_channel_unix_new (fd);
 	if (!channel)
 		return -EINVAL;
@@ -178,6 +182,10 @@ sd_event_add_time(sd_event *e, sd_event_source **s, clockid_t clock, uint64_t us
 {
 	struct sd_event_source *source;
 	uint64_t n = now (clock);
+
+	/* systemd supports floating sd_event_source by omitting the @s argument.
+	 * We don't have such users and don't implement floating references. */
+	g_return_val_if_fail (s, -EINVAL);
 
 	source = source_new ();
 	source->time_cb = callback;
