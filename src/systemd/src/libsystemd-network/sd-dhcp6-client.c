@@ -864,7 +864,10 @@ static int client_receive_advertise(sd_dhcp6_client *client, DHCP6Message *adver
         r = dhcp6_lease_get_preference(client->lease, &pref_lease);
 
         if (r < 0 || pref_advertise > pref_lease) {
-                sd_dhcp6_lease_unref(client->lease);
+                if (client->lease) {
+                        dhcp6_lease_clear_timers(&client->lease->ia);
+                        sd_dhcp6_lease_unref(client->lease);
+                }
                 client->lease = lease;
                 lease = NULL;
                 r = 0;
