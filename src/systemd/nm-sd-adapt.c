@@ -37,6 +37,16 @@ struct sd_event_source {
 	sd_event_time_handler_t time_cb;
 };
 
+static struct sd_event_source *
+source_new (void)
+{
+	struct sd_event_source *source;
+
+	source = g_new0 (struct sd_event_source, 1);
+	source->refcount = 1;
+	return source;
+}
+
 int
 sd_event_source_set_priority (sd_event_source *s, int64_t priority)
 {
@@ -113,8 +123,7 @@ sd_event_add_io (sd_event *e, sd_event_source **s, int fd, uint32_t events, sd_e
 	if (!channel)
 		return -EINVAL;
 
-	source = g_new0 (struct sd_event_source, 1);
-	source->refcount = 1;
+	source = source_new ();
 	source->io_cb = callback;
 	source->user_data = userdata;
 	source->channel = channel;
@@ -158,8 +167,7 @@ sd_event_add_time(sd_event *e, sd_event_source **s, clockid_t clock, uint64_t us
 	struct sd_event_source *source;
 	uint64_t n = now (clock);
 
-	source = g_new0 (struct sd_event_source, 1);
-	source->refcount = 1;
+	source = source_new ();
 	source->time_cb = callback;
 	source->user_data = userdata;
 	source->usec = usec;
