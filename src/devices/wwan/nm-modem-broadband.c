@@ -1153,6 +1153,19 @@ sim_changed (MMModem *modem, GParamSpec *pspec, gpointer user_data)
 }
 
 static void
+supported_ip_families_changed (MMModem *modem, GParamSpec *pspec, gpointer user_data)
+{
+	NMModemBroadband *self = NM_MODEM_BROADBAND (user_data);
+
+	g_return_if_fail (modem == self->priv->modem_iface);
+
+	g_object_set (G_OBJECT (self),
+	              NM_MODEM_IP_TYPES,
+	              mm_ip_family_to_nm (mm_modem_get_supported_ip_families (modem)),
+	              NULL);
+}
+
+static void
 nm_modem_broadband_init (NMModemBroadband *self)
 {
 	self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
@@ -1183,6 +1196,10 @@ set_property (GObject *object,
 		                  G_CALLBACK (sim_changed),
 		                  self);
 		sim_changed (self->priv->modem_iface, NULL, self);
+		g_signal_connect (self->priv->modem_iface,
+		                  "notify::supported-ip-families",
+		                  G_CALLBACK (supported_ip_families_changed),
+		                  self);
 
 		/* Note: don't grab the Simple iface here; the Modem interface is the
 		 * only one assumed to be always valid and available */
