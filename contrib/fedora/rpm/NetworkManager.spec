@@ -343,8 +343,8 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 cp -R docs ORIG-docs
 %endif
 
-#autopoint --force
-#intltoolize --force
+autopoint --force
+intltoolize --automake --copy --force
 %configure \
 	--disable-static \
 	--with-dhclient=yes \
