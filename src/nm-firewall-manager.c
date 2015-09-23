@@ -62,7 +62,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 typedef struct {
 	NMFirewallManager *self;
 	char *iface;
-	FwAddToZoneFunc callback;
+	NMFirewallManagerAddRemoveCallback callback;
 	gpointer user_data;
 	guint id;
 
@@ -113,7 +113,7 @@ _cb_info_complete_and_free (CBInfo *info,
 }
 
 static CBInfo *
-_cb_info_create (NMFirewallManager *self, const char *iface, FwAddToZoneFunc callback, gpointer user_data)
+_cb_info_create (NMFirewallManager *self, const char *iface, NMFirewallManagerAddRemoveCallback callback, gpointer user_data)
 {
 	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
 	static guint id = 1;
@@ -157,7 +157,7 @@ nm_firewall_manager_add_or_change_zone (NMFirewallManager *self,
                                         const char *iface,
                                         const char *zone,
                                         gboolean add, /* TRUE == add, FALSE == change */
-                                        FwAddToZoneFunc callback,
+                                        NMFirewallManagerAddRemoveCallback callback,
                                         gpointer user_data)
 {
 	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
