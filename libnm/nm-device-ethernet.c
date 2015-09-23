@@ -42,6 +42,7 @@ typedef struct {
 	char *perm_hw_address;
 	guint32 speed;
 	gboolean carrier;
+	char **s390_subchannels;
 } NMDeviceEthernetPrivate;
 
 enum {
@@ -50,6 +51,7 @@ enum {
 	PROP_PERM_HW_ADDRESS,
 	PROP_SPEED,
 	PROP_CARRIER,
+	PROP_S390_SUBCHANNELS,
 
 	LAST_PROP
 };
@@ -118,6 +120,25 @@ nm_device_ethernet_get_carrier (NMDeviceEthernet *device)
 	g_return_val_if_fail (NM_IS_DEVICE_ETHERNET (device), FALSE);
 
 	return NM_DEVICE_ETHERNET_GET_PRIVATE (device)->carrier;
+}
+
+/**
+ * nm_device_ethernet_get_s390_subchannels:
+ * @device: a #NMDeviceEthernet
+ *
+ * Return the list of s390 subchannels if the device supports them.
+ *
+ * Returns: (transfer none) (element-type utf8): array of strings, each specifying
+ *   one subchannel the s390 device uses to communicate to the host.
+ *
+ * Since: 1.2
+ **/
+const char * const *
+nm_device_ethernet_get_s390_subchannels (NMDeviceEthernet *device)
+{
+	g_return_val_if_fail (NM_IS_DEVICE_ETHERNET (device), NULL);
+
+	return (const char * const *) NM_DEVICE_ETHERNET_GET_PRIVATE (device)->s390_subchannels;
 }
 
 static gboolean
@@ -193,6 +214,7 @@ init_dbus (NMObject *object)
 		{ NM_DEVICE_ETHERNET_PERMANENT_HW_ADDRESS, &priv->perm_hw_address },
 		{ NM_DEVICE_ETHERNET_SPEED,                &priv->speed },
 		{ NM_DEVICE_ETHERNET_CARRIER,              &priv->carrier },
+		{ NM_DEVICE_ETHERNET_S390_SUBCHANNELS,     &priv->s390_subchannels },
 		{ NULL },
 	};
 
@@ -210,6 +232,7 @@ finalize (GObject *object)
 
 	g_free (priv->hw_address);
 	g_free (priv->perm_hw_address);
+	g_strfreev (priv->s390_subchannels);
 
 	G_OBJECT_CLASS (nm_device_ethernet_parent_class)->finalize (object);
 }
@@ -221,6 +244,7 @@ get_property (GObject *object,
               GParamSpec *pspec)
 {
 	NMDeviceEthernet *device = NM_DEVICE_ETHERNET (object);
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
 
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:
@@ -234,6 +258,9 @@ get_property (GObject *object,
 		break;
 	case PROP_CARRIER:
 		g_value_set_boolean (value, nm_device_ethernet_get_carrier (device));
+		break;
+	case PROP_S390_SUBCHANNELS:
+		g_value_set_boxed (value, priv->s390_subchannels);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -312,4 +339,18 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *eth_class)
 		                       G_PARAM_READABLE |
 		                       G_PARAM_STATIC_STRINGS));
 
+	/**
+	 * NMDeviceEthernet:s390-subchannels:
+	 *
+	 * Identifies subchannels of this network device used for
+	 * communication with z/VM or s390 host.
+	 *
+	 * Since: 1.2
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_S390_SUBCHANNELS,
+		 g_param_spec_boxed (NM_DEVICE_ETHERNET_S390_SUBCHANNELS, "", "",
+		                     G_TYPE_STRV,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 }

@@ -858,6 +858,7 @@ libnm_1_0_6 {
 libnm_1_2_0 {
 global:
 	nm_access_point_get_last_seen;
+	nm_device_ethernet_get_s390_subchannels;
 	nm_device_get_metered;
 	nm_device_get_nm_plugin_missing;
 	nm_device_set_managed;
