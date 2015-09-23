@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2011 Red Hat, Inc.
+ * Copyright (C) 2011 - 2015 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -24,6 +24,7 @@
 
 #include "nm-default.h"
 #include "nm-firewall-manager.h"
+#include "gsystem-local-alloc.h"
 #include "NetworkManagerUtils.h"
 
 #define NM_FIREWALL_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
@@ -43,7 +44,7 @@ typedef struct {
 	GDBusProxy *    proxy;
 	gboolean        running;
 
-	GSList         *pending_calls;
+	GHashTable     *pending_calls;
 } NMFirewallManagerPrivate;
 
 enum {
@@ -54,102 +55,314 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
+NM_DEFINE_SINGLETON_GETTER (NMFirewallManager, nm_firewall_manager_get, NM_TYPE_FIREWALL_MANAGER);
+
 /********************************************************************/
 
-#define PENDING_CALL_DUMMY               ((NMFirewallManagerCallId) GUINT_TO_POINTER(1))
-#define PENDING_CALL_FROM_INFO(info)     ((NMFirewallManagerCallId) info)
+typedef enum {
+	CB_INFO_OPS_ADD = 1,
+	CB_INFO_OPS_CHANGE,
+	CB_INFO_OPS_REMOVE,
+} CBInfoOpsType;
 
-typedef struct {
+typedef enum {
+	CB_INFO_MODE_IDLE = 1,
+	CB_INFO_MODE_DBUS,
+	CB_INFO_MODE_DBUS_COMPLETED,
+} CBInfoMode;
+
+struct _NMFirewallManagerCallId {
 	NMFirewallManager *self;
+	gboolean keep_mgr_alive;
+	CBInfoOpsType ops_type;
+	CBInfoMode mode;
 	char *iface;
 	NMFirewallManagerAddRemoveCallback callback;
 	gpointer user_data;
-	guint id;
 
-	guint idle_id;
-	GCancellable *cancellable;
-} CBInfo;
+	union {
+		struct {
+			GCancellable *cancellable;
+		} dbus;
+		struct {
+			guint id;
+		} idle;
+	};
+};
+typedef struct _NMFirewallManagerCallId CBInfo;
 
-static void
-_cb_info_complete_and_free (CBInfo *info,
-                            const char *tag,
-                            const char *debug_error_match,
-                            GError *error)
+/********************************************************************/
+
+static const char *
+_ops_type_to_string (CBInfoOpsType ops_type)
 {
-	gs_free_error GError *local = NULL;
-
-	g_return_if_fail (info != NULL);
-	g_return_if_fail (tag != NULL);
-
-	/* A cancelled idle call won't set the error; catch that here */
-	if (!error && g_cancellable_is_cancelled (info->cancellable)) {
-		error = local = g_error_new_literal (G_IO_ERROR, G_IO_ERROR_CANCELLED,
-		                                     "Operation was cancelled");
+	switch (ops_type) {
+	case CB_INFO_OPS_ADD:    return "add";
+	case CB_INFO_OPS_REMOVE: return "remove";
+	case CB_INFO_OPS_CHANGE: return "change";
+	default: g_return_val_if_reached ("unknown");
 	}
+}
 
-	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
-		nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone %s call cancelled [%u]",
-		            info->iface, tag, info->id);
-	} else if (error) {
-		g_dbus_error_strip_remote_error (error);
-		if (!g_strcmp0 (error->message, debug_error_match)) {
-			nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone %s failed [%u]: %s",
-			            info->iface, tag, info->id, error->message);
-		} else {
-			nm_log_warn (LOGD_FIREWALL, "(%s) firewall zone %s failed [%u]: %s",
-			             info->iface, tag, info->id, error->message);
-		}
-	} else {
-		nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone %s succeeded [%u]",
-		            info->iface, tag, info->id);
-	}
+#define _NMLOG_DOMAIN      LOGD_FIREWALL
+#define _NMLOG_PREFIX_NAME "firewall"
+#define _NMLOG(level, info, ...) \
+    G_STMT_START { \
+        if (nm_logging_enabled ((level), (_NMLOG_DOMAIN))) { \
+            CBInfo *__info = (info); \
+            char __prefix_name[30]; \
+            char __prefix_info[64]; \
+            \
+            _nm_log ((level), (_NMLOG_DOMAIN), 0, \
+                     "%s: %s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                     (self) != singleton_instance \
+                        ? ({ \
+                                g_snprintf (__prefix_name, sizeof (__prefix_name), "%s[%p]", ""_NMLOG_PREFIX_NAME, (self)); \
+                                __prefix_name; \
+                           }) \
+                        : _NMLOG_PREFIX_NAME, \
+                     __info \
+                        ? ({ \
+                                g_snprintf (__prefix_info, sizeof (__prefix_info), "[%p,%s%s:%s%s%s]: ", __info, \
+                                            _ops_type_to_string (__info->ops_type), _cb_info_is_idle (__info) ? "*" : "", \
+                                            NM_PRINT_FMT_QUOTE_STRING (__info->iface)); \
+                                __prefix_info; \
+                           }) \
+                        : "" \
+                     _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+        } \
+    } G_STMT_END
 
-	if (info->callback)
-		info->callback (info->self, PENDING_CALL_FROM_INFO (info), error, info->user_data);
+/********************************************************************/
 
-	g_free (info->iface);
-	g_object_unref (info->cancellable);
-	g_slice_free (CBInfo, info);
+static gboolean
+_cb_info_is_idle (CBInfo *info)
+{
+	return info->mode == CB_INFO_MODE_IDLE;
 }
 
 static CBInfo *
-_cb_info_create (NMFirewallManager *self, const char *iface, NMFirewallManagerAddRemoveCallback callback, gpointer user_data)
+_cb_info_create (NMFirewallManager *self,
+                 CBInfoOpsType ops_type,
+                 const char *iface,
+                 gboolean keep_mgr_alive,
+                 NMFirewallManagerAddRemoveCallback callback,
+                 gpointer user_data)
 {
 	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
-	static guint id = 1;
 	CBInfo *info;
 
 	info = g_slice_new0 (CBInfo);
-	info->self = g_object_ref (self);
-	info->id = id++;
+	info->self = self;
+	info->keep_mgr_alive = keep_mgr_alive;
+	info->ops_type = ops_type;
 	info->iface = g_strdup (iface);
-	info->cancellable = g_cancellable_new ();
 	info->callback = callback;
 	info->user_data = user_data;
 
-	priv->pending_calls = g_slist_prepend (priv->pending_calls, info);
+	if (keep_mgr_alive)
+		g_object_ref (self);
+
+	if (priv->running) {
+		info->mode = CB_INFO_MODE_DBUS;
+		info->dbus.cancellable = g_cancellable_new ();
+	} else
+		info->mode = CB_INFO_MODE_IDLE;
+
+	if (!g_hash_table_add (priv->pending_calls, info))
+		g_return_val_if_reached (NULL);
+
 	return info;
 }
 
-static gboolean
-add_or_change_idle_cb (gpointer user_data)
+static void
+_cb_info_free (CBInfo *info)
 {
+	if (!_cb_info_is_idle (info))
+		g_object_unref (info->dbus.cancellable);
+	g_free (info->iface);
+	if (info->keep_mgr_alive)
+		g_object_unref (info->self);
+	g_slice_free (CBInfo, info);
+}
+
+static void
+_cb_info_callback (CBInfo *info,
+                   GError *error)
+{
+	if (info->callback)
+		info->callback (info->self, info, error, info->user_data);
+}
+
+static void
+_cb_info_complete_normal (CBInfo *info, GError *error)
+{
+	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (info->self);
+
+	if (!g_hash_table_remove (priv->pending_calls, info))
+		g_return_if_reached ();
+
+	_cb_info_callback (info, error);
+	_cb_info_free (info);
+}
+
+static void
+_cb_info_complete_cancel (CBInfo *info, gboolean is_disposing)
+{
+	NMFirewallManager *self = info->self;
+	gs_free_error GError *error = NULL;
+
+	nm_utils_error_set_cancelled (&error, is_disposing, "NMFirewallManager");
+
+	_LOGD (info, "complete: cancel (%s)", error->message);
+
+	_cb_info_callback (info, error);
+
+	if (_cb_info_is_idle (info)) {
+		g_source_remove (info->idle.id);
+		_cb_info_free (info);
+	} else {
+		info->mode = CB_INFO_MODE_DBUS_COMPLETED;
+		g_cancellable_cancel (info->dbus.cancellable);
+		if (info->keep_mgr_alive) {
+			info->keep_mgr_alive = FALSE;
+			g_object_unref (self);
+		}
+	}
+}
+
+static gboolean
+_handle_idle (gpointer user_data)
+{
+	NMFirewallManager *self;
 	CBInfo *info = user_data;
 
-	info->idle_id = 0;
-	_cb_info_complete_and_free (info, "idle call", NULL, NULL);
+	nm_assert (info && NM_IS_FIREWALL_MANAGER (info->self));
+
+	self = info->self;
+
+	_LOGD (info, "complete: fake success");
+
+	_cb_info_complete_normal (info, NULL);
 	return G_SOURCE_REMOVE;
 }
 
 static void
-add_or_change_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
+_handle_dbus (GObject *proxy, GAsyncResult *result, gpointer user_data)
 {
+	NMFirewallManager *self;
 	CBInfo *info = user_data;
 	gs_free_error GError *error = NULL;
 	gs_unref_variant GVariant *ret = NULL;
 
+	if (info->mode != CB_INFO_MODE_DBUS) {
+		_cb_info_free (info);
+		return;
+	}
+
+	self = info->self;
+
 	ret = g_dbus_proxy_call_finish (G_DBUS_PROXY (proxy), result, &error);
-	_cb_info_complete_and_free (info, "add/change", "ZONE_ALREADY_SET", error);
+
+	if (error) {
+		const char *non_error = NULL;
+
+		g_dbus_error_strip_remote_error (error);
+
+		switch (info->ops_type) {
+		case CB_INFO_OPS_ADD:
+		case CB_INFO_OPS_CHANGE:
+			non_error = "ZONE_ALREADY_SET";
+			break;
+		case CB_INFO_OPS_REMOVE:
+			non_error = "UNKNOWN_INTERFACE";
+			break;
+		}
+		if (!g_strcmp0 (error->message, non_error)) {
+			_LOGD (info, "complete: request failed with a non-error (%s)", error->message);
+
+			/* The operation failed with an error reason that we don't want
+			 * to propagate. Instead, signal success. */
+			g_clear_error (&error);
+		}
+		else
+			_LOGW (info, "complete: request failed (%s)", error->message);
+	} else
+		_LOGD (info, "complete: success");
+
+	_cb_info_complete_normal (info, error);
+}
+
+static NMFirewallManagerCallId
+_start_request (NMFirewallManager *self,
+                CBInfoOpsType ops_type,
+                const char *iface,
+                const char *zone,
+                gboolean keep_mgr_alive,
+                NMFirewallManagerAddRemoveCallback callback,
+                gpointer user_data)
+{
+	NMFirewallManagerPrivate *priv;
+	CBInfo *info;
+	const char *dbus_method;
+
+	g_return_val_if_fail (NM_IS_FIREWALL_MANAGER (self), NULL);
+	g_return_val_if_fail (iface && *iface, NULL);
+
+	priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
+
+	info = _cb_info_create (self, ops_type, iface, keep_mgr_alive, callback, user_data);
+
+	_LOGD (info, "firewall zone %s %s:%s%s%s%s",
+	       _ops_type_to_string (info->ops_type),
+	       iface,
+	       NM_PRINT_FMT_QUOTED (zone, "\"", zone, "\"", "default"),
+	       _cb_info_is_idle (info) ? " (not running, simulate success)" : "");
+
+	if (!_cb_info_is_idle (info)) {
+
+		switch (ops_type) {
+		case CB_INFO_OPS_ADD:
+			dbus_method = "addInterface";
+			break;
+		case CB_INFO_OPS_CHANGE:
+			dbus_method = "changeZone";
+			break;
+		case CB_INFO_OPS_REMOVE:
+			dbus_method = "removeInterface";
+			break;
+		default:
+			g_assert_not_reached ();
+		}
+
+		g_dbus_proxy_call (priv->proxy,
+		                   dbus_method,
+		                   g_variant_new ("(ss)", zone ? zone : "", iface),
+		                   G_DBUS_CALL_FLAGS_NONE, 10000,
+		                   info->dbus.cancellable,
+		                   _handle_dbus,
+		                   info);
+
+		if (!info->callback) {
+			/* if the user did not provide a callback, the call_id is useless.
+			 * Especially, the user cannot use the call-id to cancel the request,
+			 * because he cannot know whether the request is still pending.
+			 *
+			 * Hence, returning %NULL doesn't mean that the request could not be started
+			 * (the request will always be started). */
+			return NULL;
+		}
+	} else if (!info->callback) {
+		/* if the user did not provide a callback and firewalld is not running,
+		 * there is no point in scheduling an idle-request to fake success. Just
+		 * return right away. */
+		_LOGD (info, "complete: drop request simulating success");
+		_cb_info_free (info);
+		return NULL;
+	} else
+		info->idle.id = g_idle_add (_handle_idle, info);
+
+	return info;
 }
 
 NMFirewallManagerCallId
@@ -157,86 +370,54 @@ nm_firewall_manager_add_or_change_zone (NMFirewallManager *self,
                                         const char *iface,
                                         const char *zone,
                                         gboolean add, /* TRUE == add, FALSE == change */
+                                        gboolean keep_mgr_alive,
                                         NMFirewallManagerAddRemoveCallback callback,
                                         gpointer user_data)
 {
-	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
-	CBInfo *info;
-
-	if (priv->running == FALSE) {
-		if (callback) {
-			info = _cb_info_create (self, iface, callback, user_data);
-			info->idle_id = g_idle_add (add_or_change_idle_cb, info);
-			nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone %s -> %s%s%s [%u] (not running, simulate success)", iface, add ? "add" : "change",
-			            zone?"\"":"", zone ? zone : "default", zone?"\"":"", info->id);
-			return PENDING_CALL_FROM_INFO (info);
-		} else {
-			nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone add/change skipped (not running)", iface);
-			return PENDING_CALL_DUMMY;
-		}
-	}
-
-	info = _cb_info_create (self, iface, callback, user_data);
-
-	nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone %s -> %s%s%s [%u]", iface, add ? "add" : "change",
-	                           zone?"\"":"", zone ? zone : "default", zone?"\"":"", info->id);
-	g_dbus_proxy_call (priv->proxy,
-	                   add ? "addInterface" : "changeZone",
-	                   g_variant_new ("(ss)", zone ? zone : "", iface),
-	                   G_DBUS_CALL_FLAGS_NONE, 10000,
-	                   info->cancellable,
-	                   add_or_change_cb, info);
-	return (NMFirewallManagerCallId) info;
-}
-
-static void
-remove_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
-{
-	CBInfo *info = user_data;
-	gs_free_error GError *error = NULL;
-	gs_unref_variant GVariant *ret = NULL;
-
-	ret = g_dbus_proxy_call_finish (G_DBUS_PROXY (proxy), result, &error);
-	_cb_info_complete_and_free (info, "remove", "UNKNOWN_INTERFACE", error);
+	return _start_request (self,
+	                       add ? CB_INFO_OPS_ADD : CB_INFO_OPS_CHANGE,
+	                       iface,
+	                       zone,
+	                       keep_mgr_alive,
+	                       callback,
+	                       user_data);
 }
 
 NMFirewallManagerCallId
 nm_firewall_manager_remove_from_zone (NMFirewallManager *self,
                                       const char *iface,
-                                      const char *zone)
+                                      const char *zone,
+                                      gboolean keep_mgr_alive,
+                                      NMFirewallManagerAddRemoveCallback callback,
+                                      gpointer user_data)
 {
-	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
-	CBInfo *info;
-
-	if (priv->running == FALSE) {
-		nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone remove skipped (not running)", iface);
-		return PENDING_CALL_DUMMY;
-	}
-
-	info = _cb_info_create (self, iface, NULL, NULL);
-
-	nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone remove -> %s%s%s [%u]", iface,
-	                           zone?"\"":"", zone ? zone : "*", zone?"\"":"", info->id);
-	g_dbus_proxy_call (priv->proxy,
-	                   "removeInterface",
-	                   g_variant_new ("(ss)", zone ? zone : "", iface),
-	                   G_DBUS_CALL_FLAGS_NONE, 10000,
-	                   info->cancellable,
-	                   remove_cb, info);
-	return (NMFirewallManagerCallId) info;
+	return _start_request (self,
+	                       CB_INFO_OPS_REMOVE,
+	                       iface,
+	                       zone,
+	                       keep_mgr_alive,
+	                       callback,
+	                       user_data);
 }
 
 void
-nm_firewall_manager_cancel_call (NMFirewallManager *self, NMFirewallManagerCallId call)
+nm_firewall_manager_cancel_call (NMFirewallManagerCallId call)
 {
-	CBInfo *info = (CBInfo *) call;
+	NMFirewallManagerPrivate *priv;
+	CBInfo *info = call;
 
-	g_return_if_fail (NM_IS_FIREWALL_MANAGER (self));
+	g_return_if_fail (info);
+	g_return_if_fail (NM_IS_FIREWALL_MANAGER (info->self));
 
-	info->callback = NULL;
-	info->idle_id = 0;
-	g_cancellable_cancel (info->cancellable);
+	priv = NM_FIREWALL_MANAGER_GET_PRIVATE (info->self);
+
+	if (!g_hash_table_remove (priv->pending_calls, info))
+		g_return_if_reached ();
+
+	_cb_info_complete_cancel (info, FALSE);
 }
+
+/*******************************************************************/
 
 static void
 set_running (NMFirewallManager *self, gboolean now_running)
@@ -259,24 +440,33 @@ name_owner_changed (GObject    *object,
 
 	owner = g_dbus_proxy_get_name_owner (G_DBUS_PROXY (object));
 	if (owner) {
-		nm_log_dbg (LOGD_FIREWALL, "firewall started");
+		_LOGD (NULL, "firewall started");
 		set_running (self, TRUE);
 		g_signal_emit (self, signals[STARTED], 0);
 	} else {
-		nm_log_dbg (LOGD_FIREWALL, "firewall stopped");
+		_LOGD (NULL, "firewall stopped");
 		set_running (self, FALSE);
 	}
 }
 
 /*******************************************************************/
 
-NM_DEFINE_SINGLETON_GETTER (NMFirewallManager, nm_firewall_manager_get, NM_TYPE_FIREWALL_MANAGER);
-
 static void
 nm_firewall_manager_init (NMFirewallManager * self)
 {
 	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
+
+	priv->pending_calls = g_hash_table_new (g_direct_hash, g_direct_equal);
+}
+
+static void
+constructed (GObject *object)
+{
+	NMFirewallManager *self = (NMFirewallManager *) object;
+	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
 	gs_free char *owner = NULL;
+
+	G_OBJECT_CLASS (nm_firewall_manager_parent_class)->constructed (object);
 
 	priv->proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
 	                                             G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES |
@@ -291,14 +481,7 @@ nm_firewall_manager_init (NMFirewallManager * self)
 	                  G_CALLBACK (name_owner_changed), self);
 	owner = g_dbus_proxy_get_name_owner (priv->proxy);
 	priv->running = (owner != NULL);
-	nm_log_dbg (LOGD_FIREWALL, "firewall %s running", priv->running ? "is" : "is not" );
-
-}
-
-static void
-set_property (GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
-{
-	G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+	_LOGD (NULL, "firewall constructed (%srunning)", priv->running ? "" : "not");
 }
 
 static void
@@ -317,9 +500,27 @@ get_property (GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 static void
 dispose (GObject *object)
 {
-	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (object);
+	NMFirewallManager *self = NM_FIREWALL_MANAGER (object);
+	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
+	GHashTableIter iter;
 
-	g_assert (priv->pending_calls == NULL);
+	if (priv->pending_calls) {
+		CBInfo *info;
+
+		/* we don't really expect any pending calls at this point because users
+		 * should keep the firewall manager alive as long as there are pending calls.
+		 * Anyway, cancel them now. */
+cancel_more:
+		g_hash_table_iter_init (&iter, priv->pending_calls);
+		if (g_hash_table_iter_next (&iter, (gpointer *) &info, NULL)) {
+			g_hash_table_iter_remove (&iter);
+			_cb_info_complete_cancel (info, TRUE);
+			/* restart iterating, the user might cancelled another call and modified the hash-table */
+			goto cancel_more;
+		}
+		g_hash_table_unref (priv->pending_calls);
+		priv->pending_calls = NULL;
+	}
 
 	g_clear_object (&priv->proxy);
 
@@ -334,25 +535,25 @@ nm_firewall_manager_class_init (NMFirewallManagerClass *klass)
 
 	g_type_class_add_private (object_class, sizeof (NMFirewallManagerPrivate));
 
+	object_class->constructed = constructed;
 	object_class->get_property = get_property;
-	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 
 	g_object_class_install_property
-		(object_class, PROP_AVAILABLE,
-		 g_param_spec_boolean (NM_FIREWALL_MANAGER_AVAILABLE, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
+	    (object_class, PROP_AVAILABLE,
+	     g_param_spec_boolean (NM_FIREWALL_MANAGER_AVAILABLE, "", "",
+	                           FALSE,
+	                           G_PARAM_READABLE |
+	                           G_PARAM_STATIC_STRINGS));
 
 	signals[STARTED] =
-		g_signal_new ("started",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMFirewallManagerClass, started),
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__VOID,
-					  G_TYPE_NONE, 0);
+	    g_signal_new ("started",
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  G_STRUCT_OFFSET (NMFirewallManagerClass, started),
+	                  NULL, NULL,
+	                  g_cclosure_marshal_VOID__VOID,
+	                  G_TYPE_NONE, 0);
 
 }
 

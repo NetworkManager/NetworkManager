@@ -323,7 +323,8 @@ fw_call_cleanup (NMVpnConnection *self)
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
 	if (priv->fw_call) {
-		nm_firewall_manager_cancel_call (nm_firewall_manager_get (), priv->fw_call);
+		nm_firewall_manager_cancel_call (priv->fw_call);
+		g_warn_if_fail (!priv->fw_call);
 		priv->fw_call = NULL;
 	}
 }
@@ -343,10 +344,14 @@ vpn_cleanup (NMVpnConnection *self, NMDevice *parent_dev)
 	nm_device_set_vpn6_config (parent_dev, NULL);
 
 	/* Remove zone from firewall */
-	if (priv->ip_iface)
+	if (priv->ip_iface) {
 		nm_firewall_manager_remove_from_zone (nm_firewall_manager_get (),
 		                                      priv->ip_iface,
+		                                      NULL,
+		                                      TRUE,
+		                                      NULL,
 		                                      NULL);
+	}
 	/* Cancel pending firewall call */
 	fw_call_cleanup (self);
 
@@ -1095,17 +1100,20 @@ fw_change_zone_cb (NMFirewallManager *firewall_manager,
                    GError *error,
                    gpointer user_data)
 {
-	NMVpnConnection *self = NM_VPN_CONNECTION (user_data);
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
+	NMVpnConnection *self = user_data;
+	NMVpnConnectionPrivate *priv;
 
-	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
-		return;
+	g_return_if_fail (NM_IS_VPN_CONNECTION (self));
+
+	priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
+	g_return_if_fail (priv->fw_call == call_id);
 
 	priv->fw_call = NULL;
 
+	if (nm_utils_error_is_cancelled (error, FALSE))
+		return;
+
 	if (error) {
-		_LOGW ("VPN connection: setting firewall zone failed: '%s'",
-		       error->message);
 		// FIXME: fail the activation?
 	}
 
@@ -1155,6 +1163,7 @@ nm_vpn_connection_config_maybe_complete (NMVpnConnection *self,
 			                                                        priv->ip_iface,
 			                                                        zone,
 			                                                        FALSE,
+			                                                        TRUE,
 			                                                        fw_change_zone_cb,
 			                                                        self);
 			return;
