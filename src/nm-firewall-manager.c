@@ -56,8 +56,8 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 /********************************************************************/
 
-#define PENDING_CALL_DUMMY               ((NMFirewallPendingCall) GUINT_TO_POINTER(1))
-#define PENDING_CALL_FROM_INFO(info)     ((NMFirewallPendingCall) info)
+#define PENDING_CALL_DUMMY               ((NMFirewallManagerCallId) GUINT_TO_POINTER(1))
+#define PENDING_CALL_FROM_INFO(info)     ((NMFirewallManagerCallId) info)
 
 typedef struct {
 	NMFirewallManager *self;
@@ -152,7 +152,7 @@ add_or_change_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 	_cb_info_complete_and_free (info, "add/change", "ZONE_ALREADY_SET", error);
 }
 
-NMFirewallPendingCall
+NMFirewallManagerCallId
 nm_firewall_manager_add_or_change_zone (NMFirewallManager *self,
                                         const char *iface,
                                         const char *zone,
@@ -186,7 +186,7 @@ nm_firewall_manager_add_or_change_zone (NMFirewallManager *self,
 	                   G_DBUS_CALL_FLAGS_NONE, 10000,
 	                   info->cancellable,
 	                   add_or_change_cb, info);
-	return (NMFirewallPendingCall) info;
+	return (NMFirewallManagerCallId) info;
 }
 
 static void
@@ -200,7 +200,7 @@ remove_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 	_cb_info_complete_and_free (info, "remove", "UNKNOWN_INTERFACE", error);
 }
 
-NMFirewallPendingCall
+NMFirewallManagerCallId
 nm_firewall_manager_remove_from_zone (NMFirewallManager *self,
                                       const char *iface,
                                       const char *zone)
@@ -223,11 +223,11 @@ nm_firewall_manager_remove_from_zone (NMFirewallManager *self,
 	                   G_DBUS_CALL_FLAGS_NONE, 10000,
 	                   info->cancellable,
 	                   remove_cb, info);
-	return (NMFirewallPendingCall) info;
+	return (NMFirewallManagerCallId) info;
 }
 
 void
-nm_firewall_manager_cancel_call (NMFirewallManager *self, NMFirewallPendingCall call)
+nm_firewall_manager_cancel_call (NMFirewallManager *self, NMFirewallManagerCallId call)
 {
 	CBInfo *info = (CBInfo *) call;
 

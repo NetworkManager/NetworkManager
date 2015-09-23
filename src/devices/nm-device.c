@@ -291,7 +291,7 @@ typedef struct {
 	gulong            dnsmasq_state_id;
 
 	/* Firewall */
-	NMFirewallPendingCall fw_call;
+	NMFirewallManagerCallId fw_call;
 
 	/* IPv4LL stuff */
 	sd_ipv4ll *    ipv4ll;

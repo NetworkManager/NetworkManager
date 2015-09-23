@@ -91,7 +91,7 @@ typedef struct {
 	NMVpnServiceState service_state;
 
 	/* Firewall */
-	NMFirewallPendingCall fw_call;
+	NMFirewallManagerCallId fw_call;
 
 	NMDefaultRouteManager *default_route_manager;
 	NMRouteManager *route_manager;
