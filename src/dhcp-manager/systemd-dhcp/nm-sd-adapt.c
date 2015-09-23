@@ -31,10 +31,16 @@ struct sd_event_source {
 	gpointer user_data;
 
 	GIOChannel *channel;
-	sd_event_io_handler_t io_cb;
 
-	uint64_t usec;
-	sd_event_time_handler_t time_cb;
+	union {
+		struct {
+			sd_event_io_handler_t cb;
+		} io;
+		struct {
+			sd_event_time_handler_t cb;
+			uint64_t usec;
+		} time;
+	};
 };
 
 static struct sd_event_source *
@@ -106,7 +112,7 @@ io_ready (GIOChannel *channel, GIOCondition condition, struct sd_event_source *s
 
 	source->refcount++;
 
-	r = source->io_cb (source, g_io_channel_unix_get_fd (channel), revents, source->user_data);
+	r = source->io.cb (source, g_io_channel_unix_get_fd (channel), revents, source->user_data);
 	if (r < 0 || source->refcount <= 1) {
 		source->id = 0;
 		result = G_SOURCE_REMOVE;
@@ -134,7 +140,7 @@ sd_event_add_io (sd_event *e, sd_event_source **s, int fd, uint32_t events, sd_e
 		return -EINVAL;
 
 	source = source_new ();
-	source->io_cb = callback;
+	source->io.cb = callback;
 	source->user_data = userdata;
 	source->channel = channel;
 
@@ -165,7 +171,7 @@ time_ready (struct sd_event_source *source)
 
 	source->refcount++;
 
-	r = source->time_cb (source, source->usec, source->user_data);
+	r = source->time.cb (source, source->time.usec, source->user_data);
 	if (r < 0 || source->refcount <= 1) {
 		source->id = 0;
 		result = G_SOURCE_REMOVE;
@@ -188,9 +194,9 @@ sd_event_add_time(sd_event *e, sd_event_source **s, clockid_t clock, uint64_t us
 	g_return_val_if_fail (s, -EINVAL);
 
 	source = source_new ();
-	source->time_cb = callback;
+	source->time.cb = callback;
 	source->user_data = userdata;
-	source->usec = usec;
+	source->time.usec = usec;
 
 	if (usec > 1000)
 		usec = n < usec - 1000 ? usec - n : 1000;
