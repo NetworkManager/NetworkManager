@@ -105,7 +105,7 @@ _cb_info_complete_and_free (CBInfo *info,
 	}
 
 	if (info->callback)
-		info->callback (error, info->user_data);
+		info->callback (info->self, PENDING_CALL_FROM_INFO (info), error, info->user_data);
 
 	g_free (info->iface);
 	g_object_unref (info->cancellable);

@@ -1090,7 +1090,10 @@ _cleanup_failed_config (NMVpnConnection *self)
 }
 
 static void
-fw_change_zone_cb (GError *error, gpointer user_data)
+fw_change_zone_cb (NMFirewallManager *firewall_manager,
+                   NMFirewallManagerCallId call_id,
+                   GError *error,
+                   gpointer user_data)
 {
 	NMVpnConnection *self = NM_VPN_CONNECTION (user_data);
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);

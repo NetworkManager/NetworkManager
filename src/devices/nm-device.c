@@ -5527,7 +5527,10 @@ out:
 
 
 static void
-fw_change_zone_cb (GError *error, gpointer user_data)
+fw_change_zone_cb (NMFirewallManager *firewall_manager,
+                   NMFirewallManagerCallId call_id,
+                   GError *error,
+                   gpointer user_data)
 {
 	NMDevice *self;
 	NMDevicePrivate *priv;

@@ -58,7 +58,10 @@ GType nm_firewall_manager_get_type (void);
 
 NMFirewallManager *nm_firewall_manager_get (void);
 
-typedef void (*NMFirewallManagerAddRemoveCallback) (GError *error, gpointer user_data);
+typedef void (*NMFirewallManagerAddRemoveCallback) (NMFirewallManager *self,
+                                                    NMFirewallManagerCallId call_id,
+                                                    GError *error,
+                                                    gpointer user_data);
 
 NMFirewallManagerCallId nm_firewall_manager_add_or_change_zone (NMFirewallManager *mgr,
                                                                 const char *iface,
