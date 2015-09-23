@@ -36,6 +36,7 @@ G_BEGIN_DECLS
 #define NM_VPN_SERVICE_PLUGIN_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_VPN_SERVICE_PLUGIN, NMVpnServicePluginClass))
 
 #define NM_VPN_SERVICE_PLUGIN_DBUS_SERVICE_NAME "service-name"
+#define NM_VPN_SERVICE_PLUGIN_DBUS_WATCH_PEER   "watch-peer"
 #define NM_VPN_SERVICE_PLUGIN_STATE             "state"
 
 typedef struct {
