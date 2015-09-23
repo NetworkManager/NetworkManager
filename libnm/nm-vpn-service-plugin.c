@@ -443,6 +443,7 @@ _connect_generic (NMVpnServicePlugin *plugin,
 		                                       "Invalid connection: (%d) %s",
 		                                       error->code, error->message);
 		g_clear_error (&error);
+		return;
 	}
 
 	priv->interactive = FALSE;
