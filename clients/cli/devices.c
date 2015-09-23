@@ -108,12 +108,13 @@ static NmcOutputField nmc_fields_dev_show_cap[] = {
 
 /* Available fields for 'device show' - wired properties part */
 static NmcOutputField nmc_fields_dev_show_wired_prop[] = {
-	{"NAME",            N_("NAME")},     /* 0 */
-	{"CARRIER",         N_("CARRIER")},  /* 1 */
+	{"NAME",             N_("NAME")},              /* 0 */
+	{"CARRIER",          N_("CARRIER")},           /* 1 */
+	{"S390-SUBCHANNELS", N_("S390-SUBCHANNELS")},  /* 2 */
 	{NULL, NULL}
 };
-#define NMC_FIELDS_DEV_SHOW_WIRED_PROP_ALL     "NAME,CARRIER"
-#define NMC_FIELDS_DEV_SHOW_WIRED_PROP_COMMON  "NAME,CARRIER"
+#define NMC_FIELDS_DEV_SHOW_WIRED_PROP_ALL     "NAME,CARRIER,S390-SUBCHANNELS"
+#define NMC_FIELDS_DEV_SHOW_WIRED_PROP_COMMON  "NAME,CARRIER,S390-SUBCHANNELS"
 
 /* Available fields for 'device show' - wireless properties part */
 static NmcOutputField nmc_fields_dev_show_wifi_prop[] = {
@@ -978,6 +979,7 @@ show_device_info (NMDevice *device, NmCli *nmc)
 				set_val_strc (arr, 0, nmc_fields_dev_show_sections[4].name);  /* "WIRED-PROPERTIES" */
 				set_val_strc (arr, 1, (nm_device_ethernet_get_carrier (NM_DEVICE_ETHERNET (device))) ?
 				                        _("on") : _("off"));
+				set_val_arrc (arr, 2, ((const char **) nm_device_ethernet_get_s390_subchannels (NM_DEVICE_ETHERNET (device))));
 				g_ptr_array_add (nmc->output_data, arr);
 
 				print_data (nmc);  /* Print all data */
