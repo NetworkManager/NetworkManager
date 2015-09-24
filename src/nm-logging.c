@@ -431,8 +431,11 @@ _nm_log_impl (const char *file,
 		return;
 
 	/* Make sure that %m maps to the specified error */
-	if (error != 0)
+	if (error != 0) {
+		if (error < 0)
+			error = -error;
 		errno = error;
+	}
 
 	va_start (args, fmt);
 	msg = g_strdup_vprintf (fmt, args);

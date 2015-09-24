@@ -31,11 +31,27 @@ struct sd_event_source {
 	gpointer user_data;
 
 	GIOChannel *channel;
-	sd_event_io_handler_t io_cb;
 
-	uint64_t usec;
-	sd_event_time_handler_t time_cb;
+	union {
+		struct {
+			sd_event_io_handler_t cb;
+		} io;
+		struct {
+			sd_event_time_handler_t cb;
+			uint64_t usec;
+		} time;
+	};
 };
+
+static struct sd_event_source *
+source_new (void)
+{
+	struct sd_event_source *source;
+
+	source = g_slice_new0 (struct sd_event_source);
+	source->refcount = 1;
+	return source;
+}
 
 int
 sd_event_source_set_priority (sd_event_source *s, int64_t priority)
@@ -62,7 +78,7 @@ sd_event_source_unref (sd_event_source *s)
 			 */
 			g_io_channel_unref (s->channel);
 		}
-		g_free (s);
+		g_slice_free (struct sd_event_source, s);
 	}
 	return NULL;
 }
@@ -81,6 +97,7 @@ static gboolean
 io_ready (GIOChannel *channel, GIOCondition condition, struct sd_event_source *source)
 {
 	int r, revents = 0;
+	gboolean result;
 
 	if (condition & G_IO_IN)
 		revents |= EPOLLIN;
@@ -93,13 +110,18 @@ io_ready (GIOChannel *channel, GIOCondition condition, struct sd_event_source *s
 	if (condition & G_IO_HUP)
 		revents |= EPOLLHUP;
 
-	r = source->io_cb (source, g_io_channel_unix_get_fd (channel), revents, source->user_data);
-	if (r < 0) {
-		source->id = 0;
-		return G_SOURCE_REMOVE;
-	}
+	source->refcount++;
 
-	return G_SOURCE_CONTINUE;
+	r = source->io.cb (source, g_io_channel_unix_get_fd (channel), revents, source->user_data);
+	if (r < 0 || source->refcount <= 1) {
+		source->id = 0;
+		result = G_SOURCE_REMOVE;
+	} else
+		result = G_SOURCE_CONTINUE;
+
+	sd_event_source_unref (source);
+
+	return result;
 }
 
 int
@@ -109,13 +131,16 @@ sd_event_add_io (sd_event *e, sd_event_source **s, int fd, uint32_t events, sd_e
 	GIOChannel *channel;
 	GIOCondition condition = 0;
 
+	/* systemd supports floating sd_event_source by omitting the @s argument.
+	 * We don't have such users and don't implement floating references. */
+	g_return_val_if_fail (s, -EINVAL);
+
 	channel = g_io_channel_unix_new (fd);
 	if (!channel)
 		return -EINVAL;
 
-	source = g_new0 (struct sd_event_source, 1);
-	source->refcount = 1;
-	source->io_cb = callback;
+	source = source_new ();
+	source->io.cb = callback;
 	source->user_data = userdata;
 	source->channel = channel;
 
@@ -142,14 +167,20 @@ static gboolean
 time_ready (struct sd_event_source *source)
 {
 	int r;
+	gboolean result;
 
-	r = source->time_cb (source, source->usec, source->user_data);
-	if (r < 0) {
+	source->refcount++;
+
+	r = source->time.cb (source, source->time.usec, source->user_data);
+	if (r < 0 || source->refcount <= 1) {
 		source->id = 0;
-		return G_SOURCE_REMOVE;
-	}
+		result = G_SOURCE_REMOVE;
+	} else
+		result = G_SOURCE_CONTINUE;
 
-	return G_SOURCE_CONTINUE;
+	sd_event_source_unref (source);
+
+	return result;
 }
 
 int
@@ -158,11 +189,14 @@ sd_event_add_time(sd_event *e, sd_event_source **s, clockid_t clock, uint64_t us
 	struct sd_event_source *source;
 	uint64_t n = now (clock);
 
-	source = g_new0 (struct sd_event_source, 1);
-	source->refcount = 1;
-	source->time_cb = callback;
+	/* systemd supports floating sd_event_source by omitting the @s argument.
+	 * We don't have such users and don't implement floating references. */
+	g_return_val_if_fail (s, -EINVAL);
+
+	source = source_new ();
+	source->time.cb = callback;
 	source->user_data = userdata;
-	source->usec = usec;
+	source->time.usec = usec;
 
 	if (usec > 1000)
 		usec = n < usec - 1000 ? usec - n : 1000;
