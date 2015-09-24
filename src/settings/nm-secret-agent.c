@@ -29,6 +29,7 @@
 #include "nm-bus-manager.h"
 #include "nm-auth-subject.h"
 #include "nm-simple-connection.h"
+#include "NetworkManagerUtils.h"
 
 #include "nmdbus-secret-agent.h"
 
@@ -428,23 +429,12 @@ do_cancel_secrets (NMSecretAgent *self, Request *r, gboolean disposing)
 	 * Only clear r->cancellable to indicate that the request was cancelled. */
 
 	if (callback) {
-		GError *error = NULL;
+		gs_free_error GError *error = NULL;
 
-		if (disposing) {
-			/* hijack an error code. G_IO_ERROR_CANCELLED is only used synchronously
-			 * when the user calls nm_act_request_cancel_secrets().
-			 * When the user disposes the instance, we also invoke the callback synchronously,
-			 * but with a different error-reason. */
-			g_set_error_literal (&error, G_IO_ERROR, G_IO_ERROR_FAILED,
-		                         "Disposing NMSecretAgent instance");
-		} else {
-			g_set_error_literal (&error, G_IO_ERROR, G_IO_ERROR_CANCELLED,
-			                     "Request cancelled");
-		}
+		nm_utils_error_set_cancelled (&error, disposing, "NMSecretAgent");
 		/* @r might be a dangling pointer at this point. However, that is no problem
 		 * to pass it as (opaque) call_id. */
 		callback (self, r, NULL, error, callback_data);
-		g_error_free (error);
 	}
 }
 

@@ -216,18 +216,7 @@ _do_cancel_secrets (NMActRequest *self, GetSecretsInfo *info, gboolean is_dispos
 	if (info->callback) {
 		gs_free_error GError *error = NULL;
 
-		if (is_disposing) {
-			/* Use a different error code. G_IO_ERROR_CANCELLED is only used synchronously
-			 * when the user calls nm_act_request_cancel_secrets(). Disposing the instance
-			 * with pending requests also cancels the requests, but with a different error
-			 * code. */
-			g_set_error_literal (&error, G_IO_ERROR, G_IO_ERROR_FAILED,
-			                     "Disposing NMActRequest instance");
-		} else {
-			g_set_error_literal (&error, G_IO_ERROR, G_IO_ERROR_CANCELLED,
-			                     "Request cancelled");
-		}
-
+		nm_utils_error_set_cancelled (&error, is_disposing, "NMActRequest");
 		info->callback (self, info, NULL, error, info->callback_data);
 	}
 

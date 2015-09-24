@@ -1270,10 +1270,9 @@ schedule_dummy:
 static void
 _get_secrets_cancel (NMSettingsConnection *self,
                      GetSecretsInfo *info,
-                     gboolean shutdown)
+                     gboolean is_disposing)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
-
 	gs_free_error GError *error = NULL;
 
 	if (!g_slist_find (priv->get_secret_requests, info))
@@ -1286,17 +1285,7 @@ _get_secrets_cancel (NMSettingsConnection *self,
 	else
 		g_source_remove (info->t.idle.id);
 
-	if (shutdown) {
-		/* Use a different error code. G_IO_ERROR_CANCELLED is only used synchronously
-		 * when the user calls nm_act_request_cancel_secrets(). Disposing the instance
-		 * with pending requests also cancels the requests, but with a different error
-		 * code. */
-		g_set_error_literal (&error, G_IO_ERROR, G_IO_ERROR_FAILED,
-		                     "Disposing NMActRequest instance");
-	} else {
-		g_set_error_literal (&error, G_IO_ERROR, G_IO_ERROR_CANCELLED,
-		                     "Request cancelled");
-	}
+	nm_utils_error_set_cancelled (&error, is_disposing, "NMSettingsConnection");
 
 	_get_secrets_info_callback (info, NULL, NULL, error);
 
