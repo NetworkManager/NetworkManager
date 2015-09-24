@@ -110,6 +110,39 @@ _nm_utils_set_testing (NMUtilsTestFlags flags)
 
 /*****************************************************************************/
 
+G_DEFINE_QUARK (nm-utils-error-quark, nm_utils_error)
+
+void
+nm_utils_error_set_cancelled (GError **error,
+                              gboolean is_disposing,
+                              const char *instance_name)
+{
+	if (is_disposing) {
+		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_CANCELLED_DISPOSING,
+		             "Disposing %s instance",
+		             instance_name && *instance_name ? instance_name : "source");
+	} else {
+		g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_CANCELLED,
+		                     "Request cancelled");
+	}
+}
+
+gboolean
+nm_utils_error_is_cancelled (GError *error,
+                             gboolean consider_is_disposing)
+{
+	if (error) {
+		if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+			return TRUE;
+		if (   consider_is_disposing
+		    && g_error_matches (error, NM_UTILS_ERROR, NM_UTILS_ERROR_CANCELLED_DISPOSING))
+			return TRUE;
+	}
+	return FALSE;
+}
+
+/*****************************************************************************/
+
 static GSList *_singletons = NULL;
 static gboolean _singletons_shutdown = FALSE;
 
