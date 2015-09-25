@@ -26,7 +26,6 @@
 #include <net/ethernet.h>
 
 #include "nm-setting-wireless.h"
-#include "nm-dbus-interface.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
