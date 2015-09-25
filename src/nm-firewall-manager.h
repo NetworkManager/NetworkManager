@@ -40,8 +40,8 @@ G_BEGIN_DECLS
 
 #define NM_FIREWALL_MANAGER_AVAILABLE "available"
 
-struct _NMFirewallPendingCall;
-typedef struct _NMFirewallPendingCall *NMFirewallPendingCall;
+struct _NMFirewallManagerCallId;
+typedef struct _NMFirewallManagerCallId *NMFirewallManagerCallId;
 
 typedef struct {
 	GObject parent;
@@ -58,18 +58,23 @@ GType nm_firewall_manager_get_type (void);
 
 NMFirewallManager *nm_firewall_manager_get (void);
 
-typedef void (*FwAddToZoneFunc) (GError *error, gpointer user_data);
+typedef void (*NMFirewallManagerAddRemoveCallback) (NMFirewallManager *self,
+                                                    NMFirewallManagerCallId call_id,
+                                                    GError *error,
+                                                    gpointer user_data);
 
-NMFirewallPendingCall nm_firewall_manager_add_or_change_zone (NMFirewallManager *mgr,
+NMFirewallManagerCallId nm_firewall_manager_add_or_change_zone (NMFirewallManager *mgr,
+                                                                const char *iface,
+                                                                const char *zone,
+                                                                gboolean add,
+                                                                NMFirewallManagerAddRemoveCallback callback,
+                                                                gpointer user_data);
+NMFirewallManagerCallId nm_firewall_manager_remove_from_zone (NMFirewallManager *mgr,
                                                               const char *iface,
                                                               const char *zone,
-                                                              gboolean add,
-                                                              FwAddToZoneFunc callback,
+                                                              NMFirewallManagerAddRemoveCallback callback,
                                                               gpointer user_data);
-NMFirewallPendingCall nm_firewall_manager_remove_from_zone (NMFirewallManager *mgr,
-                                                            const char *iface,
-                                                            const char *zone);
 
-void nm_firewall_manager_cancel_call (NMFirewallManager *mgr, NMFirewallPendingCall fw_call);
+void nm_firewall_manager_cancel_call (NMFirewallManagerCallId fw_call);
 
 #endif /* __NETWORKMANAGER_FIREWALL_MANAGER_H__ */

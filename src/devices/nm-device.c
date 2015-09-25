@@ -291,7 +291,7 @@ typedef struct {
 	gulong            dnsmasq_state_id;
 
 	/* Firewall */
-	NMFirewallPendingCall fw_call;
+	NMFirewallManagerCallId fw_call;
 
 	/* IPv4LL stuff */
 	sd_ipv4ll *    ipv4ll;
@@ -5527,18 +5527,23 @@ out:
 
 
 static void
-fw_change_zone_cb (GError *error, gpointer user_data)
+fw_change_zone_cb (NMFirewallManager *firewall_manager,
+                   NMFirewallManagerCallId call_id,
+                   GError *error,
+                   gpointer user_data)
 {
-	NMDevice *self;
+	NMDevice *self = user_data;
 	NMDevicePrivate *priv;
 
-	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
-		return;
+	g_return_if_fail (NM_IS_DEVICE (self));
 
-	self = NM_DEVICE (user_data);
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
+	g_return_if_fail (priv->fw_call == call_id);
 	priv->fw_call = NULL;
+
+	if (nm_utils_error_is_cancelled (error, FALSE))
+		return;
 
 	if (error) {
 		/* FIXME: fail the device activation? */
@@ -8310,7 +8315,8 @@ _cancel_activation (NMDevice *self)
 
 	/* Clean up when device was deactivated during call to firewall */
 	if (priv->fw_call) {
-		nm_firewall_manager_cancel_call (nm_firewall_manager_get (), priv->fw_call);
+		nm_firewall_manager_cancel_call (priv->fw_call);
+		g_warn_if_fail (!priv->fw_call);
 		priv->fw_call = NULL;
 	}
 
@@ -8334,6 +8340,8 @@ _cleanup_generic_pre (NMDevice *self, CleanupType cleanup_type)
 	    && !nm_device_uses_assumed_connection (self)) {
 		nm_firewall_manager_remove_from_zone (nm_firewall_manager_get (),
 		                                      nm_device_get_ip_iface (self),
+		                                      NULL,
+		                                      NULL,
 		                                      NULL);
 	}
 

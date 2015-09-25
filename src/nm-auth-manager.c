@@ -175,9 +175,8 @@ check_authorization_cb (GDBusProxy *proxy,
 	value = _nm_dbus_proxy_call_finish (proxy, res, G_VARIANT_TYPE ("((bba{ss}))"), &error);
 	if (value == NULL) {
 		if (data->cancellation_id != NULL &&
-		    (!g_dbus_error_is_remote_error (error) &&
-		     error->domain == G_IO_ERROR &&
-		     error->code == G_IO_ERROR_CANCELLED)) {
+		    (   g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)
+		     && !g_dbus_error_is_remote_error (error))) {
 			_LOGD ("call[%u]: CheckAuthorization cancelled", data->call_id);
 			g_dbus_proxy_call (priv->proxy,
 			                   "CancelCheckAuthorization",

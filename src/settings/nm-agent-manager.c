@@ -576,19 +576,15 @@ req_complete_release (Request *req,
 }
 
 static void
-req_complete_cancel (Request *req,
-                     GQuark domain,
-                     guint code,
-                     const char *message)
+req_complete_cancel (Request *req, gboolean is_disposing)
 {
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 
 	nm_assert (req && req->self);
 	nm_assert (!g_hash_table_contains (NM_AGENT_MANAGER_GET_PRIVATE (req->self)->requests, req));
 
-	g_set_error_literal (&error, domain, code, message);
+	nm_utils_error_set_cancelled (&error, is_disposing, "NMAgentManager");
 	req_complete_release (req, NULL, NULL, NULL, error);
-	g_error_free (error);
 }
 
 static void
@@ -1242,7 +1238,7 @@ nm_agent_manager_cancel_secrets (NMAgentManager *self,
 	                          request_id))
 		g_return_if_reached ();
 
-	req_complete_cancel (request_id, G_IO_ERROR, G_IO_ERROR_CANCELLED, "Request cancelled");
+	req_complete_cancel (request_id, FALSE);
 }
 
 /*************************************************************/
@@ -1571,12 +1567,14 @@ dispose (GObject *object)
 		GHashTableIter iter;
 		Request *req;
 
+cancel_more:
 		g_hash_table_iter_init (&iter, priv->requests);
-		while (g_hash_table_iter_next (&iter, (gpointer *) &req, NULL)) {
+		if (g_hash_table_iter_next (&iter, (gpointer *) &req, NULL)) {
 			g_hash_table_iter_remove (&iter);
-			req_complete_cancel (req, G_IO_ERROR, G_IO_ERROR_FAILED, "Disposing NMAgentManagerClass instance");
+			req_complete_cancel (req, TRUE);
+			goto cancel_more;
 		}
-		g_hash_table_destroy (priv->requests);
+		g_hash_table_unref (priv->requests);
 		priv->requests = NULL;
 	}
 
