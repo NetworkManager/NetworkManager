@@ -129,7 +129,6 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             _("'%s' not allowed for %s=%s"),
 			             _("this property is not allowed for '%s=%s'"),
 			             NM_SETTING_IP_CONFIG_METHOD, method);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP_CONFIG_DNS);

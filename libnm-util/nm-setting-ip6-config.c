@@ -853,7 +853,6 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			g_set_error (error,
 			             NM_SETTING_IP6_CONFIG_ERROR,
 			             NM_SETTING_IP6_CONFIG_ERROR_NOT_ALLOWED_FOR_METHOD,
-			             _("'%s' not allowed for %s=%s"),
 			             _("this property is not allowed for '%s=%s'"),
 			             NM_SETTING_IP6_CONFIG_METHOD, priv->method);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_DNS);
