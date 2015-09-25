@@ -21,6 +21,8 @@
 #ifndef NM_VERSION_H
 #define NM_VERSION_H
 
+#include <glib.h>
+
 /**
  * NM_MAJOR_VERSION:
  *
