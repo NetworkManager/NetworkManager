@@ -100,6 +100,29 @@ add_device (const char *method, const char *ifname, char **out_path)
 	return TRUE;
 }
 
+static gboolean
+add_wired_device (const char *method, const char *ifname, char **out_path)
+{
+	const char *empty[] = { NULL };
+	GError *error = NULL;
+	GVariant *ret;
+
+	ret = g_dbus_proxy_call_sync (sinfo->proxy,
+	                              method,
+	                              g_variant_new ("(ss^as)", ifname, "/", empty),
+	                              G_DBUS_CALL_FLAGS_NO_AUTO_START,
+	                              3000,
+	                              NULL,
+	                              &error);
+	g_assert_no_error (error);
+	g_assert (ret);
+	g_assert_cmpstr (g_variant_get_type_string (ret), ==, "(o)");
+	if (out_path)
+		g_variant_get (ret, "(o)", out_path);
+	g_variant_unref (ret);
+	return TRUE;
+}
+
 /*******************************************************************/
 
 typedef struct {
@@ -168,7 +191,7 @@ test_device_added (void)
 	g_assert (devices == NULL);
 
 	/* Tell the test service to add a new device */
-	add_device ("AddWiredDevice", "eth0", NULL);
+	add_wired_device ("AddWiredDevice", "eth0", NULL);
 
 	g_signal_connect (client,
 	                  "device-added",
@@ -731,8 +754,8 @@ test_devices_array (void)
 	/*************************************/
 	/* Add some devices */
 	add_device ("AddWifiDevice", "wlan0", &paths[0]);
-	add_device ("AddWiredDevice", "eth0", &paths[1]);
-	add_device ("AddWiredDevice", "eth1", &paths[2]);
+	add_wired_device ("AddWiredDevice", "eth0", &paths[1]);
+	add_wired_device ("AddWiredDevice", "eth1", &paths[2]);
 	info.quit_count = 3;
 
 	g_signal_connect (client,

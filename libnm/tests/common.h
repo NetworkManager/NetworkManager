@@ -36,3 +36,10 @@ NMDevice *nm_test_service_add_device (NMTestServiceInfo *info,
                                       NMClient *client,
                                       const char *method,
                                       const char *ifname);
+
+NMDevice * nm_test_service_add_wired_device (NMTestServiceInfo *sinfo,
+                                             NMClient *client,
+                                             const char *ifname,
+                                             const char *hwaddr,
+                                             const char **subchannels);
+

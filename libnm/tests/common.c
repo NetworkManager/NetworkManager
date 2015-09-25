@@ -149,22 +149,53 @@ timeout (gpointer user_data)
 	return G_SOURCE_REMOVE;
 }
 
-NMDevice *
-nm_test_service_add_device (NMTestServiceInfo *sinfo, NMClient *client,
-                            const char *method, const char *ifname)
+static GVariant *
+call_add_wired_device (GDBusProxy *proxy, const char *ifname, const char *hwaddr,
+                       const char **subchannels, GError **error)
+{
+	const char *empty[] = { NULL };
+
+	if (!hwaddr)
+		hwaddr = "/";
+	if (!subchannels)
+		subchannels = empty;
+
+	return g_dbus_proxy_call_sync (proxy,
+	                               "AddWiredDevice",
+	                               g_variant_new ("(ss^as)", ifname, hwaddr, subchannels),
+	                               G_DBUS_CALL_FLAGS_NO_AUTO_START,
+	                               3000,
+	                               NULL,
+	                               error);
+}
+
+static GVariant *
+call_add_device (GDBusProxy *proxy, const char *method, const char *ifname, GError **error)
+{
+	return g_dbus_proxy_call_sync (proxy,
+	                              method,
+	                              g_variant_new ("(s)", ifname),
+	                              G_DBUS_CALL_FLAGS_NO_AUTO_START,
+	                              3000,
+	                              NULL,
+	                              error);
+}
+
+static NMDevice *
+add_device_common (NMTestServiceInfo *sinfo, NMClient *client,
+                   const char *method, const char *ifname,
+                   const char *hwaddr, const char **subchannels)
 {
 	AddDeviceInfo info;
 	GError *error = NULL;
 	GVariant *ret;
 	guint timeout_id;
 
-	ret = g_dbus_proxy_call_sync (sinfo->proxy,
-	                              method,
-	                              g_variant_new ("(s)", ifname),
-	                              G_DBUS_CALL_FLAGS_NO_AUTO_START,
-	                              3000,
-	                              NULL,
-	                              &error);
+	if (g_strcmp0 (method, "AddWiredDevice") == 0)
+		ret = call_add_wired_device (sinfo->proxy, ifname, hwaddr, subchannels, &error);
+	else
+		ret = call_add_device (sinfo->proxy, method, ifname, &error);
+
 	g_assert_no_error (error);
 	g_assert (ret);
 	g_assert_cmpstr (g_variant_get_type_string (ret), ==, "(o)");
@@ -185,4 +216,19 @@ nm_test_service_add_device (NMTestServiceInfo *sinfo, NMClient *client,
 	g_main_loop_unref (info.loop);
 
 	return info.device;
+}
+
+NMDevice *
+nm_test_service_add_device (NMTestServiceInfo *sinfo, NMClient *client,
+                            const char *method, const char *ifname)
+{
+	return add_device_common (sinfo, client, method, ifname, NULL, NULL);
+}
+
+NMDevice *
+nm_test_service_add_wired_device (NMTestServiceInfo *sinfo, NMClient *client,
+                                  const char *ifname, const char *hwaddr,
+                                  const char **subchannels)
+{
+	return add_device_common (sinfo, client, "AddWiredDevice", ifname, hwaddr, subchannels);
 }

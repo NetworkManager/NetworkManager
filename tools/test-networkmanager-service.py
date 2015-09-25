@@ -207,14 +207,19 @@ PE_HW_ADDRESS = "HwAddress"
 PE_PERM_HW_ADDRESS = "PermHwAddress"
 PE_SPEED = "Speed"
 PE_CARRIER = "Carrier"
+PE_S390_SUBCHANNELS = "S390Subchannels"
 
 class WiredDevice(Device):
-    def __init__(self, bus, iface):
+    def __init__(self, bus, iface, mac, subchannels):
         Device.__init__(self, bus, iface, NM_DEVICE_TYPE_ETHERNET)
         self.add_dbus_interface(IFACE_WIRED, self.__get_props)
 
-        self.mac = random_mac()
+        if mac is None:
+            self.mac = random_mac()
+        else:
+            self.mac = mac
         self.carrier = False
+        self.s390_subchannels = subchannels
 
     # Properties interface
     def __get_props(self):
@@ -223,6 +228,7 @@ class WiredDevice(Device):
         props[PE_PERM_HW_ADDRESS] = self.mac
         props[PE_SPEED] = dbus.UInt32(100)
         props[PE_CARRIER] = self.carrier
+        props[PE_S390_SUBCHANNELS] = self.s390_subchannels
         return props
 
     def __notify(self, propname):
@@ -838,12 +844,12 @@ class NetworkManager(ExportedObj):
     def Quit(self):
         mainloop.quit()
 
-    @dbus.service.method(IFACE_TEST, in_signature='s', out_signature='o')
-    def AddWiredDevice(self, ifname):
+    @dbus.service.method(IFACE_TEST, in_signature='ssas', out_signature='o')
+    def AddWiredDevice(self, ifname, mac, subchannels):
         for d in self.devices:
             if d.iface == ifname:
                 raise PermissionDeniedException("Device already added")
-        dev = WiredDevice(self._bus, ifname)
+        dev = WiredDevice(self._bus, ifname, mac, subchannels)
         self.add_device(dev)
         return to_path(dev)
 
